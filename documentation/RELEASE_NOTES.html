@@ -49,6 +49,10 @@ O.Common directories are not removed. </p>
 <p>epicsExportAddress(typ,obj) now generates an extern named pvar_typ_obj and
 epicsExportRegistrar(func) an extern named pvar_func_obj. Previously both just named the variable pobj.</p>
 
+<p>epicsRegisterFunction(name) in conjunction with the dbd 'function' keyword
+can be used to register functions referred to by record subroutine name
+fields.</p>
+
 <h4>Access Security</h4>
 
 <p>The access security configuration rules now accept quoted strings where

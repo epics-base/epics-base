@@ -31,8 +31,9 @@ extern epicsThreadPrivateId caClientContextId;
 ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
     ca_exception_func ( 0 ), ca_exception_arg ( 0 ), 
     pVPrintfFunc ( errlogVprintf ), fdRegFunc ( 0 ), fdRegArg ( 0 ),
-    pndRecvCnt ( 0u ), ioSeqNo ( 0u ), localPort ( 0 ),
-    fdRegFuncNeedsToBeCalled ( false ), noWakeupSincePend ( true )
+    pndRecvCnt ( 0u ), ioSeqNo ( 0u ), callbackThreadsPending ( 0u ), 
+    localPort ( 0 ), fdRegFuncNeedsToBeCalled ( false ), 
+    noWakeupSincePend ( true )
 {
     static const unsigned short PORT_ANY = 0u;
 
@@ -95,12 +96,11 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
     }
 
     epics_auto_ptr < cac > pCAC ( 
-        new cac ( *this, enablePreemptiveCallback ) );
+        new cac ( *this ) );
 
-    epics_auto_ptr < epicsGuard < callbackMutex > > pCBGuard;
+    epics_auto_ptr < epicsGuard < epicsMutex > > pCBGuard;
     if ( ! enablePreemptiveCallback ) {
-        pCBGuard.reset ( new epicsGuard < callbackMutex > 
-            ( pCAC->callbackGuardFactory () ) );
+        pCBGuard.reset ( new epicsGuard < epicsMutex > ( this->callbackMutex ) );
     }
 
     // multiple steps ensure exception safety
@@ -395,17 +395,21 @@ int ca_client_context::pendEvent ( const double & timeout )
 
     this->flushRequest ();
 
-    {
-        bool cleanupNeeded = false;
-        {
-            epicsGuard < ca_client_context_mutex > guard ( this->mutex );
-            if ( this->fdRegFunc ) {
-                cleanupNeeded = true;
-            }
-        }
-        if ( cleanupNeeded ) {
-            // send short udp message to wake up a file descriptor manager
-            // when a message arrives
+    // process at least once if preemptive callback is disabled
+    if ( this->pCallbackGuard.get() ) {
+        //
+        // This is needed because in non-preemptive callback mode 
+        // legacy applications that use file descriptor managers 
+        // will register for ca receive thread activity and keep
+        // calling ca_pend_event until all of the socket data has
+        // been read. We must guarantee that other threads get a 
+        // chance to run if there is data in any of the sockets.
+        //
+        epicsGuardRelease < epicsMutex > unguardcb ( *this->pCallbackGuard );
+        epicsGuard < ca_client_context_mutex > guard ( this->mutex );
+        if ( this->fdRegFunc ) {
+            epicsGuardRelease < ca_client_context_mutex > unguard ( guard );
+            // remove short udp message sent to wake up a file descriptor manager
             osiSockAddr tmpAddr;
             osiSocklen_t addrSize = sizeof ( tmpAddr.sa );
             char buf = 0;
@@ -414,17 +418,12 @@ int ca_client_context::pendEvent ( const double & timeout )
                 status = recvfrom ( this->sock, & buf, sizeof ( buf ),
                         0, & tmpAddr.sa, & addrSize );
             } while ( status > 0 );
-            {
-                epicsGuard < ca_client_context_mutex > guard ( this->mutex );
-                this->noWakeupSincePend = true;
-            }
         }
-    }
-
-    // process at least once if preemptive callback is disabled
-    if ( this->pCallbackGuard.get() ) {
-        epicsGuardRelease < callbackMutex > unguard ( *this->pCallbackGuard );
-        this->pClientCtx->waitUntilNoRecvThreadsPending ();
+        this->noWakeupSincePend = true;
+        while ( this->callbackThreadsPending > 0 ) {
+            epicsGuardRelease < ca_client_context_mutex > unguard ( guard );
+            this->callbackThreadActivityComplete.wait ( 30.0 );
+        }
     }
 
     double elapsed = epicsTime::getCurrent() - current;
@@ -439,7 +438,7 @@ int ca_client_context::pendEvent ( const double & timeout )
 
     if ( delay >= CAC_SIGNIFICANT_DELAY ) {
         if ( this->pCallbackGuard.get() ) {
-            epicsGuardRelease < callbackMutex > unguard ( *this->pCallbackGuard );
+            epicsGuardRelease < epicsMutex > unguard ( *this->pCallbackGuard );
             epicsThreadSleep ( delay );
         }
         else {
@@ -454,7 +453,7 @@ void ca_client_context::blockForEventAndEnableCallbacks (
     epicsEvent & event, const double & timeout )
 {
     if ( this->pCallbackGuard.get() ) {
-        epicsGuardRelease < callbackMutex > unguard ( *this->pCallbackGuard );
+        epicsGuardRelease < epicsMutex > unguard ( *this->pCallbackGuard );
         event.wait ( timeout );
     }
     else {
@@ -462,25 +461,75 @@ void ca_client_context::blockForEventAndEnableCallbacks (
     }
 }
 
-void ca_client_context::messageArrivalNotify ()
+void ca_client_context::callbackLock ()
 {
-    bool sendNeeded = false;
-    {
-        epicsGuard < ca_client_context_mutex > guard ( this->mutex );
-        if ( this->fdRegFunc && this->noWakeupSincePend ) {
-            this->noWakeupSincePend = false;
-            sendNeeded = true;
+    // if preemptive callback is enabled then this is a noop
+    if ( this->pCallbackGuard.get() ) {
+        bool sendNeeded = false;
+        {
+            epicsGuard < ca_client_context_mutex > guard ( this->mutex );
+            this->callbackThreadsPending++;
+            if ( this->fdRegFunc && this->noWakeupSincePend ) {
+                this->noWakeupSincePend = false;
+                sendNeeded = true;
+            }
+        }
+        if ( sendNeeded ) {
+            // send short udp message to wake up a file descriptor manager
+            // when a message arrives
+            osiSockAddr tmpAddr;
+            tmpAddr.ia.sin_family = AF_INET;
+            tmpAddr.ia.sin_addr.s_addr = epicsHTON32 ( INADDR_LOOPBACK );
+            tmpAddr.ia.sin_port = epicsHTON16 ( this->localPort );
+            char buf = 0;
+            sendto ( this->sock, & buf, sizeof ( buf ),
+                    0, & tmpAddr.sa, sizeof ( tmpAddr.sa ) );
         }
     }
-    if ( sendNeeded ) {
-        // send short udp message to wake up a file descriptor manager
-        // when a message arrives
-        osiSockAddr tmpAddr;
-        tmpAddr.ia.sin_family = AF_INET;
-        tmpAddr.ia.sin_addr.s_addr = epicsHTON32 ( INADDR_LOOPBACK );
-        tmpAddr.ia.sin_port = epicsHTON16 ( this->localPort );
-        char buf = 0;
-        sendto ( this->sock, & buf, sizeof ( buf ),
-                0, & tmpAddr.sa, sizeof ( tmpAddr.sa ) );
+
+    this->callbackMutex.lock ();
+}
+
+void ca_client_context::callbackUnlock ()
+{
+    this->callbackMutex.unlock ();
+
+    // if preemptive callback is enabled then this is a noop
+    if ( this->pCallbackGuard.get() ) {
+        bool signalNeeded = false;
+        {
+            epicsGuard < ca_client_context_mutex > guard ( this->mutex );
+            if ( this->callbackThreadsPending <= 1 ) {
+                if ( this->callbackThreadsPending == 1 ) {
+                    this->callbackThreadsPending = 0;
+                    signalNeeded = true;
+                }
+            }
+            else {
+                this->callbackThreadsPending--;
+            }
+        }
+        if ( signalNeeded ) {
+            this->callbackThreadActivityComplete.signal ();
+        }
     }
+}
+
+void ca_client_context::changeConnCallBack ( 
+    caCh * pfunc, caCh * & pConnCallBack, const bool & currentlyConnected )
+{
+    epicsGuard < epicsMutex > callbackGuard ( this->callbackMutex );
+    if ( ! currentlyConnected ) {
+         if ( pfunc ) { 
+            if ( ! pConnCallBack ) {
+                this->decrementOutstandingIO ( this->ioSeqNo );
+            }
+        }
+        else {
+            if ( pConnCallBack ) {
+                this->incrementOutstandingIO ( this->ioSeqNo );
+            }
+        }
+    }
+    pConnCallBack = pfunc;
 }

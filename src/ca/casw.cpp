@@ -86,7 +86,7 @@ int main ( int argc, char ** argv )
     }
 
     if ( ! validCommandLine ) {
-        printf ( "usage: \"%s <-i interestLevel>\"", argv[0] );
+        printf ( "usage: casw <-i interestLevel>\n" );
         return 0;
     }
 

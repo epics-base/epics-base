@@ -14,7 +14,7 @@
  *
  */
 #ifndef _UCX_H_
-#define _UCX_H_ 
+#   define _UCX_H_ 
 #ifdef UCX
 
 #define	IFF_UP		0x1		/* interface is up */
@@ -62,17 +62,17 @@ struct	ifconf {
 };
 
 #ifndef NBBY
-#define NBBY 8
+#   define NBBY 8
 #endif
 
 #ifndef FD_SETSIZE
-#define FD_SETSIZE    256
+#   define FD_SETSIZE    256
 #endif
 
 typedef long fd_mask ;
 #define NFDBITS (sizeof (fd_mask) * NBBY )       /* bits per mask */
 #ifndef howmany
-#define howmany(x, y)  (((x)+((y)-1))/(y))
+#   define howmany(x, y)  (((x)+((y)-1))/(y))
 #endif
 
 /*

@@ -27,7 +27,7 @@ void tcpSendWatchdog::expire ()
     char hostName[128];
     this->iiu.hostName ( hostName, sizeof (hostName) );
     ca_printf ( "Request not accepted by CA server %s for %g sec. Disconnecting.\n", 
-        hostName, this->period);
+        hostName, this->period );
     this->iiu.forcedShutdown ();
 }
 

@@ -404,7 +404,7 @@ tcpiiu::tcpiiu ( cac &cac, double connectionTimeout,
 
     {
         int nBytes;
-        socklen_t sizeOfParameter = static_cast < int > ( sizeof ( nBytes ) );
+        osiSocklen_t sizeOfParameter = static_cast < int > ( sizeof ( nBytes ) );
         status = getsockopt ( this->sock, SOL_SOCKET, SO_SNDBUF,
                 ( char * ) &nBytes, &sizeOfParameter );
         if ( status < 0 || nBytes < 0 || 

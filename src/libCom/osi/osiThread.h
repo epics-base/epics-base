@@ -126,6 +126,9 @@ private:
     epicsEvent begin;
     bool cancel;
 
+    osiThread ( const osiThread & );
+    osiThread & operator = ( const osiThread & );
+
     friend void osiThreadCallEntryPoint (void *pPvt);
 };
 

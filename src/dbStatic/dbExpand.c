@@ -26,75 +26,96 @@
 
 DBBASE *pdbbase = NULL;
 
+void usage() 
+{
+    fprintf(stderr, "Usage:\n\tdbExpand -Ipath -ooutfile "
+	    "-S macro=value file1.dbd file2.dbd ...\n");
+    fprintf(stderr,"Specifying any path will replace the default of '.'\n");
+}
+
 int main(int argc,char **argv)
 {
-    int		i;
-    int		strip;
     char	*path = NULL;
     char	*sub = NULL;
     int		pathLength = 0;
     int		subLength = 0;
-    char	**pstr;
-    char	*psep;
-    int		*len;
+    char        *outFilename = NULL;
+    FILE        *outFP = stdout;
     long	status;
     long	returnStatus = 0;
     static char *pathSep = OSI_PATH_LIST_SEPARATOR;
     static char *subSep = ",";
 
-    /*Look for options*/
-    if(argc<2) {
-	fprintf(stderr,
-	    "usage:\ndbExpand -Ipath -Ipath "
-		"-S substitutions -S substitutions"
-		" file1.dbd file2.dbd ...\n");
-	fprintf(stderr,"Specifying path will replace the default '.'\n");
-	exit(0);
+    /* Discard program name argv[0] */
+    ++argv;
+    --argc;
+    
+    while ((argc > 1) && (**argv == '-')) {
+        char optLtr = (*argv)[1];
+        char *optArg;
+        
+        if (strlen(*argv) > 2) {
+            optArg = *argv+2;
+            ++argv;
+            --argc;
+        } else {
+            optArg = argv[1];
+            argv += 2;
+            argc -= 2;
+        }
+        
+        switch (optLtr) {
+        case 'o':
+            outFilename = optArg;
+            break;
+            
+        case 'I':
+            dbCatString(&path, &pathLength, optArg, pathSep);
+            break;
+            
+        case 'S':
+            dbCatString(&sub, &subLength, optArg, subSep);
+            break;
+            
+        default:
+            fprintf(stderr, "dbExpand: Unknown option '-%c'\n", optLtr);
+            usage();
+            exit(1);
+        }
     }
-    while((strncmp(argv[1],"-I",2)==0)||(strncmp(argv[1],"-S",2)==0)) {
-	if(strncmp(argv[1],"-I",2)==0) {
-	    pstr = &path;
-	    psep = pathSep;
-	    len = &pathLength;
-	} else {
-	    pstr = &sub;
-	    psep = subSep;
-	    len = &subLength;
-	}
-	if(strlen(argv[1])==2) {
-	    dbCatString(pstr,len,argv[2],psep);
-	    strip = 2;
-	} else {
-	    dbCatString(pstr,len,argv[1]+2,psep);
-	    strip = 1;
-	}
-	argc -= strip;
-	for(i=1; i<argc; i++) argv[i] = argv[i + strip];
+    
+    if (argc < 1) {
+	fprintf(stderr, "dbExpand: No input file specified\n");
+        usage();
+	exit(1);
     }
-    if(argc<2 || (strncmp(argv[1],"-",1)==0)) {
-	fprintf(stderr,
-	    "usage:\ndbExpand -Idir -Idir "
-		"-S substitutions -S substitutions"
-		" file1.dbd file2.dbd ...\n");
-	fprintf(stderr,"Specifying path will replace the default '.'\n");
-	exit(0);
+    
+    for (; argc>0; --argc, ++argv) {
+	status = dbReadDatabase(&pdbbase,*argv,path,sub);
+	if (status) returnStatus = status;
     }
-    for(i=1; i<argc; i++) {
-	status = dbReadDatabase(&pdbbase,argv[i],path,sub);
-	if(!status) continue;
-        returnStatus = status;
-	fprintf(stderr,"For input file %s",argv[i]);
-	errMessage(status,"from dbReadDatabase");
+    if (returnStatus) {
+        fprintf(stderr, "dbExpand: Input errors, no output generated\n");
+        exit(1);
     }
-    dbWriteMenuFP(pdbbase,stdout,0);
-    dbWriteRecordTypeFP(pdbbase,stdout,0);
-    dbWriteDeviceFP(pdbbase,stdout);
-    dbWriteDriverFP(pdbbase,stdout);
-    dbWriteRegistrarFP(pdbbase,stdout);
-    dbWriteVariableFP(pdbbase,stdout);
-    dbWriteBreaktableFP(pdbbase,stdout);
-    dbWriteRecordFP(pdbbase,stdout,0,0);
+    if (outFilename) {
+        outFP = fopen(outFilename, "w");
+        if (!outFP) {
+            perror("dbExpand");
+            exit(1);
+        }
+    }
+    
+    dbWriteMenuFP(pdbbase,outFP,0);
+    dbWriteRecordTypeFP(pdbbase,outFP,0);
+    dbWriteDeviceFP(pdbbase,outFP);
+    dbWriteDriverFP(pdbbase,outFP);
+    dbWriteRegistrarFP(pdbbase,outFP);
+    dbWriteVariableFP(pdbbase,outFP);
+    dbWriteBreaktableFP(pdbbase,outFP);
+    dbWriteRecordFP(pdbbase,outFP,0,0);
+    
     free((void *)path);
     free((void *)sub);
-    return(returnStatus);
+    return 0;
 }

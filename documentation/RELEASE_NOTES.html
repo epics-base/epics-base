@@ -9,10 +9,77 @@
 <body lang="en">
 
 <center>
-<h1>EPICS Release base 3.14.1</h1>
+<h1>EPICS Release base 3.14.2</h1>
 
-<h1>Dec 20 2002</h1>
+<h1>April 12 2003</h1>
+</center>
 
+<center>
+<h2>Changes since 3.14.1</h2>
+</center>
+
+<p><strong>Build System</strong></p>
+<p>Major changes have been made to the build system.
+The good news is that the rules for support and ioc applications
+are now greatly simplified. The bad news is that it does mean
+changes for existing 3.14.1 applications. Please see:</p>
+<p><a href="ConvertingR3.14.1AppsToR3.14.2.html">ConvertingR3.14.1AppsToR3.14.2</a></p>
+<p>for details.</p>
+
+<p><strong>Application Developer's Guide</strong></p>
+<p>The old chapter "New Feature's for 3.14" has been replaced by
+a new chapter "Getting Started". Please read it. It provides
+a simplified set of rules that can be used to build most
+support and ioc applications. Many minor changes have also been made.</p>
+
+<p><strong>dbGetLink</strong></p>
+<p>A bug in dbGetLink resulted in nRequest not being given the value 0
+if the link is a constant link. This in turn caused the waveform
+record to always set NORD=NELEM. Thus if an application trys
+to write a waveform via the steps:</p>
+<pre>
+    prset->get_array_info(paddr,&no_elements,&offset);
+    /*write nNew elements into array*/
+    prset->put_array_info(paddr,nNew);
+</pre>
+<p>This sets NORD = nNew.
+But because of the dbGetLink bug, the soft device support attached to
+the waveform record sets NORD to NELM.</p>
+<p>This problem is fixed. The actual bug was in macros in dbAccessDefs.h</p>
+
+<p><strong>Access Security</strong></p>
+<p>The host names are now converted to lower case.
+This fixes incompatibilities between various platforms.</p>
+
+<p><strong>string records</strong></p>
+<p>Both the stringin and stringout records have two new DBF_MENU fields: 
+APST and MPST. These control whether CA monitors are fired if the new VAL
+field string is identical to the old one. The default (zero) menu value is
+"On Change" with behaviour identical to before,
+set to "Always" if you want a record to fire monitors every time the record
+is processed (analagous to setting ADEL/MDEL=-1 for numeric record types).</p>
+
+<p><strong>epicsStdio and errlogPrintf</strong></p>
+<p>A new facility has been added to libCom described by epicsStdio.h.
+It contains the functions epicsSnprintf and epicsVsnprintf.
+These are like the C99 functions snprintf and vsnprintf.
+These are like printf except that thet accept a argument
+limiting the number of characters written.</p>
+<p>The errlogPrintf facility has been modified to use this facility.
+Thus it is not longer subject to a possible buffer overflow.</p>
+
+<p><strong>scanPeriod</strong></p>
+<p>This is a new function provided by the Database Scanning facility.
+Given an index for the choices defined by menuScan.h, it returns
+the scan period in seconds. The argument can just be the scan field
+of a database record. If the index is not associated with a periodic
+scan rate, the value 0.0 is returned.</p>
+
+<p><strong>New epicsString.h function</strong></p>
+A new function epicsStrCaseCmp has been added. It is like strcmp
+except that it ignores case.</p>
+
+<center>
 <h2>Changes since beta2</h2>
 </center>
 

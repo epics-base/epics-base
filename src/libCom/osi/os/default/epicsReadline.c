@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #define epicsExportSharedSymbols
 
@@ -326,6 +327,12 @@ epicsReadline (const char *prompt, void *context)
     }
     while ((c = getc (in)) !=  '\n') {
         if (c == EOF) {
+            if (ferror(in)) {
+                if ((errno == EINTR) || (errno == EPIPE)) {
+                    clearerr(in);
+                    continue;
+                }
+            }
             free (line);
             return NULL;
         }

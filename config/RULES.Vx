@@ -1,5 +1,9 @@
 # $Id$
 
+ifneq (x$(LIBOBJS_$(ARCH_CLASS)),x)
+LIBOBJS += $(subst -nil-,,$(LIBOBJS_$(ARCH_CLASS)))
+endif
+
 INCREC +=$(RECTYPES) $(MENUS)
 INSTALL_PROD = $(PROD:%= $(INSTALL_BIN)/%)
 INSTALL_LIBS = $(LIBNAME:%= $(INSTALL_BIN)/%)

@@ -52,8 +52,8 @@ casClient::pCASMsgHandler casClient::msgHandlers[CA_PROTO_LAST_CMMD+1u];
 // casClient::casClient()
 //
 casClient::casClient(caServerI &serverInternal, bufSizeT ioSizeMinIn) : 
-    inBuf (MAX_MSG_SIZE, ioSizeMinIn), outBuf (MAX_MSG_SIZE), 
-        casCoreClient (serverInternal)
+    casCoreClient (serverInternal),
+    inBuf (MAX_MSG_SIZE, ioSizeMinIn), outBuf (MAX_MSG_SIZE)
 {
     //
     // static member init 
@@ -200,7 +200,7 @@ caStatus casClient::processMsg ()
 	//
 	status = S_cas_success;
 
-	while (bytesLeft = this->inBuf::bytesPresent()) {
+	while ( (bytesLeft = this->inBuf::bytesPresent()) ) {
 
 		/*
 		 * incomplete message - return success and

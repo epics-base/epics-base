@@ -56,8 +56,6 @@ fi
 	vw
 
 echo EPICS_BASE=${BASE} >> EPICS_BASE
-ln -s ${BASE} base
-
 
 touch .current_rel_hist
 echo ${BASE} - `date` >> .current_rel_hist

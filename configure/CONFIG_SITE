@@ -100,9 +100,9 @@ HDEPENDS=YES
 # CMPLR - use c/c++ compiler (recommended)
 # MKMF  - use mkmf.pl perl script in tools directory (has limitations)
 #
-# CMPLR Note: On solaris and WIN32 hosts, gnu compilers gcc and g++
-#             are used to generate dependancy files for host builds,
-#             and they must be in your path. 
+# CMPLR Note: On WIN32 hosts, gnu compilers gcc and g++ are used to
+#             generate dependancy files for host builds,and they must
+#             be in your path. 
 # WIN32 Note: CONFIG.win32-x86.win32-x86 distribution file contains 
 #             HOST_HDEPENDS_CMD=MKMF override
 #

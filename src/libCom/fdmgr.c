@@ -71,6 +71,9 @@
  *			we eliminate delete ambiguity (chance of the same
  *			being reused).
  * $Log$
+ * Revision 1.30  1998/06/16 02:03:22  jhill
+ * recover from winsock select differences
+ *
  * Revision 1.29  1998/02/27 01:34:12  jhill
  * cleaned up the DLL symbol export
  *
@@ -203,7 +206,7 @@ typedef struct{
 #	define UNLOCK_FD_HANDLER(PFDCTX) \
 		assert(semGive((PFDCTX)->fd_handler_lock)==FDMGR_OK);
 
-#elif defined(UNIX) || defined(VMS) || defined(_WIN32)
+#elif defined(UNIX) || defined(VMS) || defined(_WIN32) || defined(CYGWIN32)
 #	define LOCK(PFDCTX)
 #	define UNLOCK(PFDCTX)
 #	define UNLOCK_FDMGR_PEND_EVENT(PFDCTX) \
@@ -1104,7 +1107,7 @@ LOCAL void select_alarm(void *pParam)
  * fdmgr_gettimeval
  *
  */
-#if defined(UNIX) || defined(VMS)
+#if defined(UNIX) || defined(VMS) || defined(CYGWIN32)
 LOCAL int fdmgr_gettimeval(
 fdctx 		*pfdctx,
 struct timeval	*pt 

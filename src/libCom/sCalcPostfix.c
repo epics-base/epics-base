@@ -267,7 +267,7 @@ static struct expression_element	fetch_string_element = {
 "AA",		0,	0,	OPERAND,	SFETCH,   /* fetch var */
 };
 
-#if !defined(UNIX)
+#if !defined(UNIX) && !defined(CYGWIN32)
 static int strncasecmp(char *s1, char *s2, size_t n)
 {
 	short i;

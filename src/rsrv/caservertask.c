@@ -335,7 +335,7 @@ LOCAL int req_server (void)
                 threadSleep(15.0);
                 continue;
             }
-            id = threadCreate ("CAclient", threadPriorityChannelAccessClient,
+            id = threadCreate ("CAS-client", threadPriorityChannelAccessClient,
                     threadGetStackSize (threadStackBig),
                     (THREADFUNC)camsgtask, (void *)pClient);
             if (id==0) {
@@ -364,12 +364,12 @@ epicsShareFunc int epicsShareAPI rsrv_init (void)
     prsrv_cast_client = NULL;
     pCaBucket = NULL;
 
-    threadCreate ("CAtcp",
+    threadCreate ("CAS-TCP",
         threadPriorityChannelAccessServer,
         threadGetStackSize(threadStackMedium),
         (THREADFUNC)req_server,0);
 
-    threadCreate ("CAudp",
+    threadCreate ("CAS-UDP",
         threadPriorityChannelAccessServer-1,
         threadGetStackSize(threadStackMedium),
         (THREADFUNC)cast_server,0);

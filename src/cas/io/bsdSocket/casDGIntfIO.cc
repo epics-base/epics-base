@@ -199,7 +199,7 @@ casDGIntfIO::casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager & memMgr
     //
     // WIN32 specific:
     // On windows this appears to only create problems because
-    // they correctly allow broadcast to be received when
+    // they allow broadcast to be received when
     // binding to a particular interface's IP address, and
     // always fill in this interface's address as the reply 
     // address.

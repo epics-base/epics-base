@@ -13,11 +13,14 @@
  */
 
 extern "C" {
-int epicsStdioTest ( void );
+int epicsStdioTest (const char *report);
 }
 
-int main ( int  , char *[] )
+int main ( int argc, char *argv[] )
 {
-    epicsStdioTest ();
+    char *report = "";
+    if(argc>1) report = argv[1];
+
+    epicsStdioTest (report);
     return 0;
 }

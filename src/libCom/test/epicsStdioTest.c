@@ -18,6 +18,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <fcntl.h>
+#include <errno.h>
 
 #include "epicsStdio.h"
 
@@ -33,12 +35,13 @@ static int xsnprintf(char *str, size_t size, const char *format, ...)
 }
 
     
-int epicsStdioTest ()
+int epicsStdioTest (const char *report)
 {
     char buffer[20];
     int rtn;
     int value = 10;
     int size = 10;
+    FILE *stream = 0;
 
     memset(buffer,'*',sizeof(buffer)-1);
     buffer[sizeof(buffer)-1] = 0;
@@ -63,5 +66,39 @@ int epicsStdioTest ()
     memset(buffer,'*',sizeof(buffer)-1);
     rtn = epicsSnprintf(buffer,size,"%d",value);
     printf("size %d rtn %d value %d buffer |%s|\n",size,rtn,value,buffer);
+    printf("\nTest epicsSetStdout/epicsGetStdout stdout %p epicsGetStdout %p\n",
+        stdout,epicsGetStdout());
+    if(report && strlen(report)>0) {
+        int fd;
+
+        errno = 0;
+        fd = open(report, O_CREAT | O_WRONLY | O_TRUNC, 0644 );
+        if(fd<0) {
+            fprintf(stderr,"%s could not be created %s\n",
+                report,strerror(errno));
+        } else {
+            stream = fdopen(fd,"w");
+            if(!stream) {
+                fprintf(stderr,"%s could not be opened for output %s\n",
+                    report,strerror(errno));
+            } else {
+                epicsSetStdout(stream);
+                printf("After epicsSetStdout stream %p epicsGetStdout %p\n",
+                    stream,epicsGetStdout());
+            }
+        }
+    }
+    fprintf(stdout,"This is first line of sample report");
+    fprintf(stdout,"\nThis is second and last line of sample report\n");
+    errno = 0;
+    if(stream) {
+        epicsSetStdout(0);
+        if(fclose(stream)) {
+            fprintf(stderr,"fclose failed %s\n",strerror(errno));
+        }
+    } else {
+        fflush(stdout);
+    }
+    printf("at end stdout %p epicsGetStdout %p\n",stdout,epicsGetStdout());
     return(0);
 }

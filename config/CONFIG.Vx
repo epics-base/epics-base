@@ -87,6 +87,11 @@ CPLUSPLUS = $(CPLUSPLUS_$(TORNADO))
 LD_CXX = $(LD_$(CPLUSPLUS))
 
 #--------------------------------------------------
+# Override flags in CONFIG_COMMON
+GCC_DEP_CFLAGS = -D_REENTRANT
+G++_DEP_CFLAGS = -D_REENTRANT
+
+#--------------------------------------------------
 # Operating system flags
 OP_SYS_INCLUDES = -I$(VX_INCLUDE)
 OP_SYS_CFLAGS = -DvxWorks -DV5_vxWorks -fno-builtin 

@@ -94,7 +94,7 @@ epicsShareFunc void * epicsShareAPI threadPrivateGet (threadPrivateId);
 #ifdef __cplusplus
 
 #include "locationException.h"
-#include "osiEvent.h"
+#include "epicsEvent.h"
 
 class epicsShareClass osiThread {
 public:
@@ -122,8 +122,8 @@ public:
     static const char * getNameSelf ();
 private:
     threadId id;
-    osiEvent exit;
-    osiEvent begin;
+    epicsEvent exit;
+    epicsEvent begin;
     bool cancel;
 
     friend void osiThreadCallEntryPoint (void *pPvt);

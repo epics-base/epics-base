@@ -45,6 +45,14 @@ epicsShareFunc int epicsShareAPI threadIsSuspended(threadId id);
 epicsShareFunc void epicsShareAPI threadSleep(double seconds);
 epicsShareFunc threadId epicsShareAPI threadGetIdSelf(void);
 
+epicsShareFunc const char * epicsShareAPI threadGetNameSelf(void);
+
+/* For threadGetName name is guaranteed to be null terminated */
+/* size is size of buffer to hold name (including terminator */
+/* Failure results in a null string stored in name */
+epicsShareFunc void epicsShareAPI threadGetName(
+    threadId id, char *name,size_t size);
+
 typedef void * threadPrivateId;
 epicsShareFunc threadPrivateId epicsShareAPI threadPrivateCreate (void);
 epicsShareFunc void epicsShareAPI threadPrivateDelete (threadPrivateId id);

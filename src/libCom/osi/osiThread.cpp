@@ -4,6 +4,7 @@
 // Author: Jeff Hill
 //
 
+#include <stddef.h>
 #define epicsExportSharedSymbols
 #include "osiThread.h"
 

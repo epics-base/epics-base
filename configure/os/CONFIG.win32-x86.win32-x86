@@ -28,14 +28,6 @@ ARCMD = lib /nologo /verbose /out:$@ $(LIBRARY_LD_OBJS)
 
 BAFCMD = bscmake /nologo /o $@
 
-# gnu compiler used to create depends files 
-HDEPENDS_FLAGS_CMPLR = -MM
-HDEPENDS.c_CMPLR = gcc
-HDEPENDS.cpp_CMPLR = g++
-
-# override of CONFIG_SITE
-HOST_HDEPENDS_CMD=MKMF
-
 #
 # Configure OS vendor C compiler
 CC = cl 

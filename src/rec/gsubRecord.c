@@ -43,8 +43,9 @@
 #include        <sysSymTbl.h>   /* for sysSymTbl*/
 #include        <a_out.h>       /* for N_TEXT */
 
+#include "dbDefs.h"
+#include "epicsPrint.h"
 #include	<alarm.h>
-#include	<dbDefs.h>
 #include	<dbAccess.h>
 #include	<dbEvent.h>
 #include	<dbFldTypes.h>

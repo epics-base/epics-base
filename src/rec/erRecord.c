@@ -58,8 +58,9 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include	<stdioLib.h>
 #include	<lstLib.h>
 
+#include "dbDefs.h"
+#include "epicsPrint.h"
 #include	<alarm.h>
-#include	<dbDefs.h>
 #include	<dbAccess.h>
 #include	<dbEvent.h>
 #include	<dbFldTypes.h>

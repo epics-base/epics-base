@@ -38,24 +38,26 @@
  * -----------------
  */
 
-#include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
-#include	<lstLib.h>
-#include	<stdlib.h>
-#include	<string.h>
+#include <vxWorks.h>
+#include <types.h>
+#include <stdioLib.h>
+#include <lstLib.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include	<alarm.h>
-#include	<dbDefs.h>
-#include	<dbAccess.h>
-#include	<dbFldTypes.h>
-#include	<dbScan.h>
-#include	<dbEvent.h>
-#include	<devSup.h>
-#include	<errMdef.h>
-#include	<recSup.h>
+#include "dbDefs.h"
+#include "epicsPrint.h"
+
+#include "alarm.h"
+#include "dbAccess.h"
+#include "dbFldTypes.h"
+#include "dbScan.h"
+#include "dbEvent.h"
+#include "devSup.h"
+#include "errMdef.h"
+#include "recSup.h"
 #define GEN_SIZE_OFFSET
-#include	<aaiRecord.h>
+#include "aaiRecord.h"
 #undef  GEN_SIZE_OFFSET
 
 /* Create RSET - Record Support Entry Table*/

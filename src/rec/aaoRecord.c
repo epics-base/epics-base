@@ -45,14 +45,14 @@
 #include	<stdlib.h>
 #include	<string.h>
 
+#include "dbDefs.h"
+#include "epicsPrint.h"
 #include	<alarm.h>
-#include	<dbDefs.h>
 #include	<dbAccess.h>
 #include	<dbFldTypes.h>
 #include	<dbScan.h>
 #include	<dbEvent.h>
 #include	<devSup.h>
-#include	<errMdef.h>
 #include	<recSup.h>
 #define GEN_SIZE_OFFSET
 #include	<aaoRecord.h>

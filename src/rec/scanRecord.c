@@ -126,8 +126,9 @@
 #include        <wdLib.h>
 #include        <sysLib.h>
 
+#include "dbDefs.h"
+#include "epicsPrint.h"
 #include	<alarm.h>
-#include	<dbDefs.h>
 #include	<dbAccess.h>
 #include	<dbEvent.h>
 #include	<dbScan.h>

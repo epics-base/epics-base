@@ -15,7 +15,8 @@ of this distribution.
 #include <stddef.h>
 #include <stdio.h>
 
-#include <dbDefs.h>
+#include "dbDefs.h"
+#include "epicsPrint.h"
 #include <tsDefs.h>
 #include <recDynLink.h>
 #include <dbAccess.h>

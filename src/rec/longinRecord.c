@@ -51,8 +51,9 @@
 #include        <lstLib.h>
 #include        <string.h>
 
+#include "dbDefs.h"
+#include "epicsPrint.h"
 #include        <alarm.h>
-#include        <dbDefs.h>
 #include        <dbAccess.h>
 #include        <dbEvent.h>
 #include        <dbFldTypes.h>
@@ -169,6 +170,7 @@ static long process(plongin)
 	plongin->pact = TRUE;
 
 	recGblGetTimeStamp(plongin);
+	if (status==0) plongin->udf = FALSE;
 
 	/* check for alarms */
 	alarm(plongin);

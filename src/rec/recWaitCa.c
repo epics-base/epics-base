@@ -13,7 +13,9 @@
 #include <stdio.h>
 #include <rngLib.h>
 #include <vxLib.h>
-#include <dbDefs.h>
+
+#include "dbDefs.h"
+#include "epicsPrint.h"
 #include <taskwd.h>
 #include <fast_lock.h>
 #include <cadef.h>

@@ -50,9 +50,10 @@
 #include     <wdLib.h>
 #include     <stdlib.h>
 
+#include "dbDefs.h"
+#include "epicsPrint.h"
 #include     <alarm.h>
 #include     <callback.h>
-#include     <dbDefs.h>
 #include     <dbAccess.h>
 #include     <dbEvent.h>
 #include     <epicsPrint.h>

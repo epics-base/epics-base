@@ -312,8 +312,8 @@ logReset (void)
                 break;
         }
     }
-    syslog (LOG_NOTICE, "IOC startup after %s.", cbuf);
-    printf ("IOC startup after %s.\n", cbuf);
+    syslog (LOG_NOTICE, "Startup after %s.", cbuf);
+    printf ("Startup after %s.\n", cbuf);
     m360.rsr = ~0;
 }
 
@@ -322,7 +322,7 @@ logReset (void)
 static void
 logReset (void)
 {
-    syslog (LOG_NOTICE, "IOC started.");
+    syslog (LOG_NOTICE, "Started.");
 }
 
 #endif

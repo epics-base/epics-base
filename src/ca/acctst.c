@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.44  1997/04/10 19:26:05  jhill
+ * asynch connect, faster connect, ...
+ *
  * Revision 1.43  1997/01/22 21:07:27  jhill
  * fixed array test
  *
@@ -352,34 +355,40 @@ int doacctst(char *pname)
 	 */
 	status = ca_search_and_connect(pname, &chix1, NULL, NULL);
 	SEVCHK(status, NULL);
-	status = ca_pend_io(1e-16);
-	if (status==ECA_TIMEOUT) {
-		assert(ca_state(chix1)==cs_never_conn);
-
-		printf("waiting on pend io verify connect...");
-		fflush(stdout);
-		while (ca_state(chix1)!=cs_conn) {
-			ca_pend_event(0.1);
-		}
-		printf("done\n");
-
-		/*
-		 * we end up here if the channel isnt on the same host
-		 */
-		status = ca_search_and_connect(pname, &chix2, NULL, NULL);
-		SEVCHK(status, NULL);
+	/*
+	 * channel will connect synchronously if on the
+	 * local host
+	 */
+	if (ca_state(chix1)==cs_never_conn) {
 		status = ca_pend_io(1e-16);
 		if (status==ECA_TIMEOUT) {
-			assert(ca_state(chix2)==cs_never_conn);
+			assert(ca_state(chix1)==cs_never_conn);
+
+			printf("waiting on pend io verify connect...");
+			fflush(stdout);
+			while (ca_state(chix1)!=cs_conn) {
+				ca_pend_event(0.1);
+			}
+			printf("done\n");
+
+			/*
+			 * we end up here if the channel isnt on the same host
+			 */
+			status = ca_search_and_connect(pname, &chix2, NULL, NULL);
+			SEVCHK(status, NULL);
+			status = ca_pend_io(1e-16);
+			if (status==ECA_TIMEOUT) {
+				assert(ca_state(chix2)==cs_never_conn);
+			}
+			else {
+				assert(ca_state(chix2)==cs_conn);
+			}
+			status = ca_clear_channel(chix2);
+			SEVCHK(status, NULL);
 		}
 		else {
-			assert(ca_state(chix2)==cs_conn);
+			assert(ca_state(chix1)==cs_conn);
 		}
-		status = ca_clear_channel(chix2);
-		SEVCHK(status, NULL);
-	}
-	else {
-		assert(ca_state(chix1)==cs_conn);
 	}
 	status = ca_clear_channel(chix1);
 	SEVCHK(status, NULL);
@@ -933,7 +942,6 @@ int doacctst(char *pname)
 		accuracy = 100.0*(delay-request)/request;
 		printf("CA pend event delay accuracy = %f %%\n",
 			accuracy);
-		assert (fabs(accuracy) < 10.0);
 	}
 
 	{

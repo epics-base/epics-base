@@ -32,96 +32,112 @@ recordtype(mbboDirect) {
 	}
 	field(B0,DBF_UCHAR) {
 		prompt("Bit 0")
+		promptgroup(GUI_BTS1)
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 	}
 	field(B1,DBF_UCHAR) {
 		prompt("Bit 1")
+		promptgroup(GUI_BTS1)
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 	}
 	field(B2,DBF_UCHAR) {
 		prompt("Bit 2")
+		promptgroup(GUI_BTS1)
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 	}
 	field(B3,DBF_UCHAR) {
 		prompt("Bit 3")
+		promptgroup(GUI_BTS1)
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 	}
 	field(B4,DBF_UCHAR) {
 		prompt("Bit 4")
+		promptgroup(GUI_BTS1)
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 	}
 	field(B5,DBF_UCHAR) {
 		prompt("Bit 5")
+		promptgroup(GUI_BTS1)
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 	}
 	field(B6,DBF_UCHAR) {
 		prompt("Bit 6")
+		promptgroup(GUI_BTS1)
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 	}
 	field(B7,DBF_UCHAR) {
 		prompt("Bit 7")
+		promptgroup(GUI_BTS1)
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 	}
 	field(B8,DBF_UCHAR) {
 		prompt("Bit 8")
+		promptgroup(GUI_BTS2)
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 	}
 	field(B9,DBF_UCHAR) {
 		prompt("Bit 9")
+		promptgroup(GUI_BTS2)
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 	}
 	field(BA,DBF_UCHAR) {
 		prompt("Bit 10")
+		promptgroup(GUI_BTS2)
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 	}
 	field(BB,DBF_UCHAR) {
 		prompt("Bit 11")
+		promptgroup(GUI_BTS2)
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 	}
 	field(BC,DBF_UCHAR) {
 		prompt("Bit 12")
+		promptgroup(GUI_BTS2)
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 	}
 	field(BD,DBF_UCHAR) {
 		prompt("Bit 13")
+		promptgroup(GUI_BTS2)
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 	}
 	field(BE,DBF_UCHAR) {
 		prompt("Bit 14")
+		promptgroup(GUI_BTS2)
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 	}
 	field(BF,DBF_UCHAR) {
 		prompt("Bit 15")
+		promptgroup(GUI_BTS2)
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)

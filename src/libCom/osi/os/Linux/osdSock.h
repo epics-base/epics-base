@@ -36,12 +36,7 @@ extern "C" {
 #include <net/if.h>
 #include <netdb.h>
 #include <unistd.h> /* close() and others */
- 
-/*
- * as far as I can tell there is no header file for these
- */
-int gethostname(char *name, int namelen);
-int sethostname(char *name, int namelen);
+
 
 #ifdef __cplusplus
 }
@@ -54,6 +49,20 @@ typedef int                     SOCKET;
 #define socket_ioctl(A,B,C)     ioctl(A,B,C)
 
 #define FD_IN_FDSET(FD) ((FD)<FD_SETSIZE)
+
+#define SOCK_EWOULDBLOCK EWOULDBLOCK
+#define SOCK_ENOBUFS ENOBUFS
+#define SOCK_ECONNRESET ECONNRESET
+#define SOCK_ETIMEDOUT ETIMEDOUT
+#define SOCK_EADDRINUSE EADDRINUSE
+#define SOCK_ECONNREFUSED ECONNREFUSED
+#define SOCK_ECONNABORTED ECONNABORTED
+#define SOCK_EINPROGRESS EINPROGRESS
+#define SOCK_EISCONN EISCONN
+#define SOCK_EALREADY EALREADY
+#define SOCK_EINVAL EINVAL
+#define SOCK_EINTR EINTR
+#define SOCK_EPIPE EPIPE
 
 #endif /*osiSockH*/
 

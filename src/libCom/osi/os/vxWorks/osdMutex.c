@@ -16,13 +16,14 @@
 #include <time.h>
 #include <objLib.h>
 #include <sysLib.h>
+
 /* The following not defined in an vxWorks header */
 int sysClkRateGet(void);
 
 
 #include "epicsMutex.h"
 
-epicsMutexOSD * epicsMutexOsdCreate(void)
+struct epicsMutexOSD * epicsMutexOsdCreate(void)
 {
     return((epicsMutexId)
         semMCreate(SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY));

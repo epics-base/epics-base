@@ -653,8 +653,9 @@ bool udpiiu::searchRespAction ( // X aCC 361
     return true;
 }
 
-bool udpiiu::beaconAction ( epicsGuard < epicsMutex > &, const caHdr &msg, 
-    const osiSockAddr &net_addr, const epicsTime &currentTime )
+bool udpiiu::beaconAction ( 
+    epicsGuard < epicsMutex > &, const caHdr & msg, 
+    const osiSockAddr & net_addr, const epicsTime & currentTime )
 {
     struct sockaddr_in ina;
 

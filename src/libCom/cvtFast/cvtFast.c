@@ -441,7 +441,7 @@ int epicsShareAPI cvtLongToString(
     }
     if(source<0) {
 	if(source == LONG_MIN) {
-	    sprintf(pdest,"%ld",(long)LONG_MIN);
+	    sprintf(pdest,"%ld",LONG_MIN);
 	    return((int)strlen(pdest));
 	}
 	*pdest++ = '-';
@@ -511,12 +511,13 @@ int epicsShareAPI cvtLongToHexString(
     }
     if(source<0) {
 	if(source == LONG_MIN) {
-	    sprintf(pdest,"%lx",(long)LONG_MIN);
+	    sprintf(pdest,"-0x%lx",LONG_MIN);
 	    return((int)strlen(pdest));
 	}
 	*pdest++ = '-';
 	source = -source;
     }
+    *pdest++ = '0'; *pdest++ = 'x';
     val = source;
     for(i=0; val!=0; i++) {
 	temp = val/16;
@@ -547,12 +548,13 @@ int epicsShareAPI cvtLongToOctalString(
     }
     if(source<0) {
 	if(source == LONG_MIN) {
-	    sprintf(pdest,"%lo",(long)LONG_MIN);
+	    sprintf(pdest,"-0%lo",LONG_MIN);
 	    return((int)strlen(pdest));
 	}
 	*pdest++ = '-';
 	source = -source;
     }
+    *pdest++ = '0';
     val = source;
     for(i=0; val!=0; i++) {
 	temp = val/8;

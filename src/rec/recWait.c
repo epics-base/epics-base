@@ -324,7 +324,6 @@ static long process(pwait)
         long  options  = 0;
 
         pwait->pact = TRUE;
-        pwait->oval = pwait->val;
 
         /* Check for simulation mode */
         status=recGblGetLinkValue(&(pwait->siml),
@@ -390,6 +389,8 @@ static long process(pwait)
           default:
             break;
         }
+
+        pwait->oval = pwait->val;
 
         recGblGetTimeStamp(pwait); 
         /* check event list */

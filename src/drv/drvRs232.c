@@ -57,6 +57,7 @@
 
 #include <drvMsg.h>
 #include <drvRs232.h>
+#include <drvTy232.h>
 
 int	drv232Debug = 0;
 
@@ -108,7 +109,7 @@ msgDrvGenXParm	*p;
 {
   long		stat = -1;
   char		message[100];
-  dev232Link	*pdev232Link;
+  devTy232Link	*pdevTy232Link;
 
   if (drv232Debug)
     printf("RS-232 genXact entered for link %d, addr %d, parm %s\n", p->plink->value.gpibio.link, p->plink->value.gpibio.addr, p->plink->value.gpibio.parm);
@@ -118,12 +119,12 @@ msgDrvGenXParm	*p;
 
   while ((p->pmsgXact->phwpvt != NULL) && (stat == -1))
   {
-    pdev232Link = (dev232Link *)(p->pmsgXact->phwpvt->pmsgLink->p);
+    pdevTy232Link = (devTy232Link *)(p->pmsgXact->phwpvt->pmsgLink->p);
 
-    if ((pdev232Link->link == p->plink->value.gpibio.link)
-       && (pdev232Link->port == p->plink->value.gpibio.addr))
+    if ((pdevTy232Link->link == p->plink->value.gpibio.link)
+       && (pdevTy232Link->port == p->plink->value.gpibio.addr))
     {
-      if (pdev232Link->pparmBlock != p->pmsgXact->pparmBlock)
+      if (pdevTy232Link->pparmBlock != p->pmsgXact->pparmBlock)
       {
         sprintf(message, "%s: Two different devices on same RS-232 port\n",  p->pmsgXact->prec->name);
         errMessage(S_db_badField, message);
@@ -173,8 +174,8 @@ msgDrvGenHParm	*p;
   p->pmsgHwpvt->pmsgLink = drv232Block.pmsgLink;
   while ((p->pmsgHwpvt->pmsgLink != NULL) && (stat == ERROR))
   {
-    if ((((dev232Link *)(p->pmsgHwpvt->pmsgLink->p))->link == p->plink->value.gpibio.link)
-       && (((dev232Link *)(p->pmsgHwpvt->pmsgLink->p))->port == p->plink->value.gpibio.addr))
+    if ((((devTy232Link *)(p->pmsgHwpvt->pmsgLink->p))->link == p->plink->value.gpibio.link)
+       && (((devTy232Link *)(p->pmsgHwpvt->pmsgLink->p))->port == p->plink->value.gpibio.addr))
       stat = OK;
     else
       p->pmsgHwpvt->pmsgLink = p->pmsgHwpvt->pmsgLink->next;
@@ -199,7 +200,7 @@ msgDrvGenLParm	*p;
 {
   char	name[20];
   char	message[100];
-  dev232Link	*pdev232Link;
+  devTy232Link	*pdevTy232Link;
 
   if (drv232Debug)
     printf("In RS-232's genLink, link = %d, addr = %d\n", p->plink->value.gpibio.link,p->plink->value.gpibio.addr);
@@ -207,16 +208,16 @@ msgDrvGenLParm	*p;
   switch (p->op) {
   case MSG_GENLINK_CREATE:
 
-    if ((p->pmsgLink->p = malloc(sizeof(dev232Link))) == NULL)
+    if ((p->pmsgLink->p = malloc(sizeof(devTy232Link))) == NULL)
       return(ERROR);
 
-    pdev232Link = (dev232Link *)(p->pmsgLink->p);
+    pdevTy232Link = (devTy232Link *)(p->pmsgLink->p);
 
-    pdev232Link->link = p->plink->value.gpibio.link;
-    pdev232Link->port = p->plink->value.gpibio.addr;
-    pdev232Link->pparmBlock = p->pparmBlock;
+    pdevTy232Link->link = p->plink->value.gpibio.link;
+    pdevTy232Link->port = p->plink->value.gpibio.addr;
+    pdevTy232Link->pparmBlock = p->pparmBlock;
 
-    if ((pdev232Link->doggie = wdCreate()) == NULL)
+    if ((pdevTy232Link->doggie = wdCreate()) == NULL)
     {
       printf("RS-232 driver can't create a watchdog\n");
       /* errMessage(******, message); */
@@ -226,20 +227,20 @@ msgDrvGenLParm	*p;
     sprintf(name, "/tyCo/%d", p->plink->value.gpibio.addr);
 
     if (drv232Debug)
-      printf ("in genlink opening >%s<, baud %d\n", name, ((dev232ParmBlock *)(p->pparmBlock->p))->baud);
+      printf ("in genlink opening >%s<, baud %d\n", name, ((devTy232ParmBlock *)(p->pparmBlock->p))->baud);
 
-    if ((((dev232Link *)(p->pmsgLink->p))->ttyFd = open(name, O_RDWR, 0)) != -1)
+    if ((((devTy232Link *)(p->pmsgLink->p))->ttyFd = open(name, O_RDWR, 0)) != -1)
     {
       if (drv232Debug)
-        printf("Successful open w/fd=%d\n", pdev232Link->ttyFd);
+        printf("Successful open w/fd=%d\n", pdevTy232Link->ttyFd);
 
       /* set baud rate and unbuffered mode */
-      (void) ioctl (pdev232Link->ttyFd, FIOBAUDRATE, ((dev232ParmBlock *)(p->pparmBlock->p))->baud);
-      (void) ioctl (pdev232Link->ttyFd, FIOSETOPTIONS, ((dev232ParmBlock *)(p->pparmBlock->p))->ttyOptions);
+      (void) ioctl (pdevTy232Link->ttyFd, FIOBAUDRATE, ((devTy232ParmBlock *)(p->pparmBlock->p))->baud);
+      (void) ioctl (pdevTy232Link->ttyFd, FIOSETOPTIONS, ((devTy232ParmBlock *)(p->pparmBlock->p))->ttyOptions);
 
-      pdev232Link->callback.callback = callbackAbortSerial;
-      pdev232Link->callback.priority = priorityHigh;
-      pdev232Link->callback.user = (void *) pdev232Link;
+      pdevTy232Link->callback.callback = callbackAbortSerial;
+      pdevTy232Link->callback.priority = priorityHigh;
+      pdevTy232Link->callback.user = (void *) pdevTy232Link;
 
       return(OK);
     }
@@ -254,7 +255,7 @@ msgDrvGenLParm	*p;
     if (drv232Debug)
       printf("RS-232 genLink called with abort status\n");
 
-    pdev232Link = (dev232Link *)(p->pmsgLink->p);
+    pdevTy232Link = (devTy232Link *)(p->pmsgLink->p);
     /* free(p->pmsgLink->p);  Don't forget to take it out of the list */
     return(OK);
   }
@@ -288,24 +289,24 @@ msgChkEParm	*p;
 
 
 static void
-dogAbortSerial(pdev232Link)
-dev232Link	*pdev232Link;
+dogAbortSerial(pdevTy232Link)
+devTy232Link	*pdevTy232Link;
 {
-  logMsg("RS-232 driver watch-dog timeout on link %d, port %d, fd=%d\n", pdev232Link->link, pdev232Link->port, pdev232Link->ttyFd);
+  logMsg("RS-232 driver watch-dog timeout on link %d, port %d, fd=%d\n", pdevTy232Link->link, pdevTy232Link->port, pdevTy232Link->ttyFd);
 
   /* Annoying vxWorks implementation... can't IOCTL from here */
-  callbackRequest(&(pdev232Link->callback));
+  callbackRequest(&(pdevTy232Link->callback));
 }
 
 static void
 callbackAbortSerial(p)
 CALLBACK	*p;
 {
-  ((dev232Link *)(p->user))->dogAbort = TRUE;
+  ((devTy232Link *)(p->user))->dogAbort = TRUE;
 
-  ioctl(((dev232Link *)(p->user))->ttyFd, FIOCANCEL);
+  ioctl(((devTy232Link *)(p->user))->ttyFd, FIOCANCEL);
   /* I am not sure if I should really do this, but... */
-  ioctl(((dev232Link *)(p->user))->ttyFd, FIOFLUSH);
+  ioctl(((devTy232Link *)(p->user))->ttyFd, FIOFLUSH);
 }
 
 /******************************************************************************
@@ -319,12 +320,12 @@ drvWrite(pxact, pwrParm)
 msgXact		*pxact;
 msgStrParm	*pwrParm;
 {
-  dev232Link	*pdev232Link = (dev232Link *)(pxact->phwpvt->pmsgLink->p);
+  devTy232Link	*pdevTy232Link = (devTy232Link *)(pxact->phwpvt->pmsgLink->p);
   int		len;
   char		*out;
   char		in;
 
-  if (wdStart(pdev232Link->doggie, ((dev232ParmBlock *)(pxact->pparmBlock->p))->dmaTimeout, dogAbortSerial, pdev232Link) == ERROR)
+  if (wdStart(pdevTy232Link->doggie, ((devTy232ParmBlock *)(pxact->pparmBlock->p))->dmaTimeout, dogAbortSerial, pdevTy232Link) == ERROR)
   {
     printf("RS-232 driver can not start watchdog timer\n");
     /* errMessage(***,message); */
@@ -332,28 +333,28 @@ msgStrParm	*pwrParm;
     return(pxact->status);
   }
 
-  if (((dev232ParmBlock *)(pxact->pparmBlock->p))->flags & ECHO)
+  if (((devTy232ParmBlock *)(pxact->pparmBlock->p))->flags & ECHO)
   { /* ping-pong the characters out */
 
     /*BUG ???  This will only work if we are sure that the RX buffer is clean */
-    ioctl(pdev232Link->ttyFd, FIORFLUSH);
+    ioctl(pdevTy232Link->ttyFd, FIORFLUSH);
 
     out = pwrParm->buf;
     while ((*out != '\0') && (pxact->status == XACT_OK))
     {
       if (drv232Debug > 5)
         printf("out >%c<\n", *out);
-      if (write(pdev232Link->ttyFd, out, 1) != 1)
+      if (write(pdevTy232Link->ttyFd, out, 1) != 1)
       {
-	printf("RS-232 write error on link %d, port %d\n", pdev232Link->link, pdev232Link->port);
+	printf("RS-232 write error on link %d, port %d\n", pdevTy232Link->link, pdevTy232Link->port);
 	pxact->status = XACT_IOERR;
       }
       else
       {
-        if (read(pdev232Link->ttyFd, &in, 1) != 1)
+        if (read(pdevTy232Link->ttyFd, &in, 1) != 1)
         {
 printf("Read problem encountered in echo reading mode of a write operation\n");
-	  if (pdev232Link->dogAbort)
+	  if (pdevTy232Link->dogAbort)
 	    pxact->status = XACT_TIMEOUT;
           else
 	    pxact->status = XACT_IOERR;
@@ -366,12 +367,12 @@ printf("Read problem encountered in echo reading mode of a write operation\n");
           if (drv232Debug > 5)
             printf("in  >%c<\n", in);
   
-	  if ((*out == '\r') && (((dev232ParmBlock *)(pxact->pparmBlock->p))->flags & CRLF))
+	  if ((*out == '\r') && (((devTy232ParmBlock *)(pxact->pparmBlock->p))->flags & CRLF))
 	  {
-            if (read(pdev232Link->ttyFd, &in, 1) != 1)
+            if (read(pdevTy232Link->ttyFd, &in, 1) != 1)
             {
 printf("Read problem encountered in echo reading mode of a write operation\n");
-	      if (pdev232Link->dogAbort)
+	      if (pdevTy232Link->dogAbort)
 	        pxact->status = XACT_TIMEOUT;
               else
 	        pxact->status = XACT_IOERR;
@@ -397,13 +398,13 @@ printf("Read problem encountered in echo reading mode of a write operation\n");
     if (drv232Debug > 4)
       printf("block-writing >%s<\n", pwrParm->buf);
 
-    if (write(pdev232Link->ttyFd, pwrParm->buf, len) != len)
+    if (write(pdevTy232Link->ttyFd, pwrParm->buf, len) != len)
     {
-      printf("RS-232 write error on link %d, port %d\n", pdev232Link->link, pdev232Link->port);
+      printf("RS-232 write error on link %d, port %d\n", pdevTy232Link->link, pdevTy232Link->port);
       pxact->status = XACT_IOERR;
     }
   }
-  if (wdCancel(pdev232Link->doggie) == ERROR)
+  if (wdCancel(pdevTy232Link->doggie) == ERROR)
     printf("Can not cancel RS-232 watchdog timer\n");
 
   return(pxact->status);
@@ -419,16 +420,16 @@ drvRead(pxact, prdParm)
 msgXact		*pxact;
 msgStrParm	*prdParm;
 {
-  dev232Link	*pdev232Link = (dev232Link *)(pxact->phwpvt->pmsgLink->p);
+  devTy232Link	*pdevTy232Link = (devTy232Link *)(pxact->phwpvt->pmsgLink->p);
   int		len;
   int		clen;
   char		*ch;
   int		flags;
   int		eoi;
-  dev232ParmBlock *pdev232ParmBlock = (dev232ParmBlock *)(pxact->pparmBlock->p);
+  devTy232ParmBlock *pdevTy232ParmBlock = (devTy232ParmBlock *)(pxact->pparmBlock->p);
 
-  pdev232Link->dogAbort = FALSE;
-  if (wdStart(pdev232Link->doggie, pdev232ParmBlock->dmaTimeout, dogAbortSerial, pdev232Link) == ERROR)
+  pdevTy232Link->dogAbort = FALSE;
+  if (wdStart(pdevTy232Link->doggie, pdevTy232ParmBlock->dmaTimeout, dogAbortSerial, pdevTy232Link) == ERROR)
   {
     printf("RS-232 driver can not start watchdog timer\n");
     /* errMessage(***,message); */
@@ -439,17 +440,17 @@ msgStrParm	*prdParm;
   ch = prdParm->buf;
   len = prdParm->len - 1;
 
-  flags = pdev232ParmBlock->flags;
+  flags = pdevTy232ParmBlock->flags;
 /* BUG -- This should have a timeout check specified in here */
-  if ((pdev232ParmBlock->eoi != -1) || (flags & KILL_CRLF))
+  if ((pdevTy232ParmBlock->eoi != -1) || (flags & KILL_CRLF))
   {
     eoi = 0;
     while ((!eoi) && (len > 0))
     {
-      if (read(pdev232Link->ttyFd, ch, 1) != 1)
+      if (read(pdevTy232Link->ttyFd, ch, 1) != 1)
       {
 printf("Read problem encountered in eoi/KILL_CRLF reading mode\n");
-	if (pdev232Link->dogAbort)
+	if (pdevTy232Link->dogAbort)
 	  pxact->status = XACT_TIMEOUT;
         else
 	  pxact->status = XACT_IOERR;
@@ -460,7 +461,7 @@ printf("Read problem encountered in eoi/KILL_CRLF reading mode\n");
         if (drv232Debug > 6)
 	  printf("in >%c<\n", *ch);
   
-        if (*ch == pdev232ParmBlock->eoi)
+        if (*ch == pdevTy232ParmBlock->eoi)
           eoi = 1;
   
         if (!(flags & KILL_CRLF) || ((*ch != '\n') && (*ch != '\r')))
@@ -482,8 +483,8 @@ printf("Read problem encountered in eoi/KILL_CRLF reading mode\n");
   { /* Read xact->rxLen bytes from the device */
     while(len)
     {
-      clen = read(pdev232Link->ttyFd, ch, len);
-      if (pdev232Link->dogAbort)
+      clen = read(pdevTy232Link->ttyFd, ch, len);
+      if (pdevTy232Link->dogAbort)
       {
 printf("Read problem encountered in raw mode\n");
         pxact->status = XACT_TIMEOUT;
@@ -500,8 +501,8 @@ printf("Read problem encountered in raw mode\n");
   if (drv232Debug)
     printf("drvRead: got >%s<\n", prdParm->buf);
 
-  if (wdCancel(pdev232Link->doggie) == ERROR)
-    printf("Can not cancel RS-232 watchdog timer, dogAbort=%d \n", pdev232Link->dogAbort);
+  if (wdCancel(pdevTy232Link->doggie) == ERROR)
+    printf("Can not cancel RS-232 watchdog timer, dogAbort=%d \n", pdevTy232Link->dogAbort);
 
   return(pxact->status);
 }
@@ -527,6 +528,8 @@ void	*pparm;
     return(genLink(pparm));
   case MSGIOCTL_CHECKEVENT:
     return(checkEvent(pparm));
+  case MSGIOCTL_COMMAND:	/* BUG -- finish this routine! */
+    return(ERROR);
   }
   return(ERROR);
 }

@@ -472,7 +472,7 @@ LOCAL void no_read_access_event ( struct client *pClient,
     }
     else {
         send_err ( &pevext->msg, ECA_TOLARGE, pClient, 
-            "server unable to load no read access response into protocol buffer PV=\"%s max bytes=%u\"",
+            "server unable to load read access denied response into protocol buffer PV=\"%s max bytes=%u\"",
             RECORD_NAME ( &pevext->pciu->addr ), rsrvSizeofLargeBufTCP );
     }
 }
@@ -2160,14 +2160,14 @@ int camessage ( struct client *client )
     
     DLOG ( 2, ( "CAS: Parsing %d(decimal) bytes\n", recv->cnt ) );
     
-    bytes_left = client->recv.cnt;
-    while ( bytes_left )
+    while ( 1 )
     {  
         caHdrLargeArray msg;
         caHdr *mp;
         void *pBody;
 
         /* wait for at least a complete caHdr */
+        bytes_left = client->recv.cnt - client->recv.stk;
         if ( bytes_left < sizeof(*mp) )
             return RSRV_OK;
         
@@ -2251,7 +2251,6 @@ int camessage ( struct client *client )
         }
         
         client->recv.stk += msgsize;
-        bytes_left = client->recv.cnt - client->recv.stk;
     }
     
     return RSRV_OK;

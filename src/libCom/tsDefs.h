@@ -208,7 +208,6 @@ struct tsDetail {
 *----------------------------------------------------------------------------*/
 #if WIN32 /* the microsoft compiler will not compile the TsAddDouble() macro */ 
 #define TsAddDouble(pSum, pS1, dbl) tsAddDouble(pSum, pS1, dbl)
-void TsAddDouble(TS_STAMP *pSum, TS_STAMP *pS1, double dbl);
 #else /*WIN32*/
 #define TsAddDouble(pSum, pS1, dbl) \
   (void)( \

@@ -222,6 +222,7 @@
 	}
 	field(UDF,DBF_UCHAR) {
 		prompt("Undefined")
+		promptgroup(GUI_COMMON)
 		pp(TRUE)
 		interest(1)
 		initial("1")

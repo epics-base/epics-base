@@ -17,6 +17,7 @@
 #include <string.h>
 
 #include "osiSock.h"
+#include "osiWireFormat.h"
 
 #include "iocinf.h"
 #include "caProto.h"
@@ -44,10 +45,10 @@ typedef unsigned long arrayElementCount;
  * 
  */
 
-#define dbr_ntohs(A)    (ntohs(A))
-#define dbr_ntohl(A)    (ntohl(A))
-#define dbr_htons(A)    (htons(A))
-#define dbr_htonl(A)    (htonl(A))
+#define dbr_ntohs(A)    (epicsNTOH16(A))
+#define dbr_ntohl(A)    (epicsNTOH32(A))
+#define dbr_htons(A)    (epicsHTON16(A))
+#define dbr_htonl(A)    (epicsHTON32(A))
 
 /*
  *  CVRT_STRING()

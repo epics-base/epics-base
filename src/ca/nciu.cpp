@@ -25,6 +25,7 @@
 
 #include "iocinf.h"
 #include "cac.h"
+#include "osiWireFormat.h"
 
 #define epicsExportSharedSymbols
 #include "udpiiu.h"
@@ -166,10 +167,10 @@ bool nciu::searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThisCh
     caHdr msg;
     bool success;
 
-    msg.m_cmmd = htons ( CA_PROTO_SEARCH );
+    msg.m_cmmd = epicsHTON16 ( CA_PROTO_SEARCH );
     msg.m_available = this->getId ();
-    msg.m_dataType = htons ( DONTREPLY );
-    msg.m_count = htons ( CA_MINOR_PROTOCOL_REVISION );
+    msg.m_dataType = epicsHTON16 ( DONTREPLY );
+    msg.m_count = epicsHTON16 ( CA_MINOR_PROTOCOL_REVISION );
     msg.m_cid = this->getId ();
 
     success = this->piiu->pushDatagramMsg ( msg, 

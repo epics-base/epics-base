@@ -59,6 +59,7 @@
 #include "tsDLList.h"
 #include "envDefs.h"
 #include "tsFreeList.h"
+#include "osiWireFormat.h"
 
 #include "iocinf.h"
 #include "caProto.h"
@@ -151,8 +152,8 @@ LOCAL makeSocketReturn makeSocket ( unsigned short port, bool reuseAddr )
 
         memset ( (char *) &bd, 0, sizeof (bd) );
         bd.ia.sin_family = AF_INET;
-        bd.ia.sin_addr.s_addr = htonl (INADDR_ANY); 
-        bd.ia.sin_port = htons (port);  
+        bd.ia.sin_addr.s_addr = epicsHTON32 (INADDR_ANY); 
+        bd.ia.sin_port = epicsHTON16 (port);  
         status = bind ( msr.sock, &bd.sa, (int) sizeof(bd) );
         if ( status < 0 ) {
             msr.errNumber = SOCKERRNO;
@@ -181,7 +182,7 @@ LOCAL makeSocketReturn makeSocket ( unsigned short port, bool reuseAddr )
 repeaterClient::repeaterClient ( const osiSockAddr &fromIn ) :
     from ( fromIn ), sock ( INVALID_SOCKET )
 {
-    debugPrintf ( ( "new client %u\n", ntohs ( from.ia.sin_port ) ) );
+    debugPrintf ( ( "new client %u\n", epicsNTOH16 ( from.ia.sin_port ) ) );
 }
 
 bool repeaterClient::connect ()
@@ -216,7 +217,7 @@ bool repeaterClient::sendConfirm () // X aCC 361
 
     caHdr confirm;
     memset ( (char *) &confirm, '\0', sizeof (confirm) );
-    confirm.m_cmmd = htons ( REPEATER_CONFIRM );
+    confirm.m_cmmd = epicsHTON16 ( REPEATER_CONFIRM );
     confirm.m_available = this->from.ia.sin_addr.s_addr;
     status = send ( this->sock, (char *) &confirm,
                     sizeof (confirm), 0 );
@@ -241,13 +242,13 @@ bool repeaterClient::sendMessage ( const void *pBuf, unsigned bufSize ) // X aCC
     status = send ( this->sock, (char *) pBuf, bufSize, 0 );
     if ( status >= 0 ) {
         assert ( static_cast <unsigned> ( status ) == bufSize );
-        debugPrintf ( ("Sent to %u\n", ntohs ( this->from.ia.sin_port ) ) );
+        debugPrintf ( ("Sent to %u\n", epicsNTOH16 ( this->from.ia.sin_port ) ) );
         return true;
     }
     else {
         int errnoCpy = SOCKERRNO;
         if ( errnoCpy == SOCK_ECONNREFUSED ) {
-            debugPrintf ( ("Client refused message %u\n", ntohs ( this->from.ia.sin_port ) ) );
+            debugPrintf ( ("Client refused message %u\n", epicsNTOH16 ( this->from.ia.sin_port ) ) );
         }
         else {
             debugPrintf ( ( "CA Repeater: UDP send err was \"%s\"\n", SOCKERRSTR (errnoCpy) ) );
@@ -261,7 +262,7 @@ repeaterClient::~repeaterClient ()
     if ( this->sock != INVALID_SOCKET ) {
         socket_close ( this->sock );
     }
-    debugPrintf ( ( "Deleted client %u\n", ntohs ( this->from.ia.sin_port ) ) );
+    debugPrintf ( ( "Deleted client %u\n", epicsNTOH16 ( this->from.ia.sin_port ) ) );
 }
 
 inline void * repeaterClient::operator new ( size_t size )
@@ -283,7 +284,7 @@ inline void repeaterClient::destroy ()
 
 inline unsigned short repeaterClient::port () const
 {
-    return ntohs ( this->from.ia.sin_port );
+    return epicsNTOH16 ( this->from.ia.sin_port );
 }
 
 inline bool repeaterClient::identicalAddress ( const osiSockAddr &fromIn )
@@ -391,7 +392,7 @@ LOCAL void register_new_client ( osiSockAddr &from )
     /*
      * the repeater and its clients must be on the same host
      */
-    if ( htonl ( INADDR_LOOPBACK ) != from.ia.sin_addr.s_addr ) {
+    if ( epicsHTON32 ( INADDR_LOOPBACK ) != from.ia.sin_addr.s_addr ) {
         static SOCKET testSock = INVALID_SOCKET;
         static bool init = false;
 
@@ -463,7 +464,7 @@ LOCAL void register_new_client ( osiSockAddr &from )
         client_list.remove ( *pNewClient );
         pNewClient->destroy ();
         debugPrintf ( ( "Deleted repeater client=%u (error while sending ack)\n",
-                    ntohs (from.ia.sin_port) ) );
+                    epicsNTOH16 (from.ia.sin_port) ) );
     }
 
     /*
@@ -472,7 +473,7 @@ LOCAL void register_new_client ( osiSockAddr &from )
      */
     caHdr noop;
     memset ( (char *) &noop, '\0', sizeof ( noop ) );
-    noop.m_cmmd = htons ( CA_PROTO_VERSION );
+    noop.m_cmmd = epicsHTON16 ( CA_PROTO_VERSION );
     fanOut ( from, &noop, sizeof ( noop ) );
 
     if ( newClient ) {
@@ -555,7 +556,7 @@ void ca_repeater ()
          * will register a new client
          */
         if ( ( (size_t) size) >= sizeof (*pMsg) ) {
-            if ( ntohs ( pMsg->m_cmmd ) == REPEATER_REGISTER ) {
+            if ( epicsNTOH16 ( pMsg->m_cmmd ) == REPEATER_REGISTER ) {
                 register_new_client ( from );
 
                 /*
@@ -567,7 +568,7 @@ void ca_repeater ()
                     continue;
                 }
             }
-            else if ( ntohs ( pMsg->m_cmmd ) == CA_PROTO_RSRV_IS_UP ) {
+            else if ( epicsNTOH16 ( pMsg->m_cmmd ) == CA_PROTO_RSRV_IS_UP ) {
                 if ( pMsg->m_available == 0u ) {
                     pMsg->m_available = from.ia.sin_addr.s_addr;
                 }

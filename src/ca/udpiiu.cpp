@@ -14,6 +14,7 @@
 
 #include "envDefs.h"
 #include "osiProcess.h"
+#include "osiWireFormat.h"
 
 #define epicsExportSharedSymbols
 #include "addrList.h"
@@ -106,8 +107,8 @@ udpiiu::udpiiu ( cac &cac ) :
      */
     memset ( (char *)&addr, 0 , sizeof (addr) );
     addr.ia.sin_family = AF_INET;
-    addr.ia.sin_addr.s_addr = htonl (INADDR_ANY); 
-    addr.ia.sin_port = htons (PORT_ANY); // X aCC 818
+    addr.ia.sin_addr.s_addr = epicsHTON32 (INADDR_ANY); 
+    addr.ia.sin_port = epicsHTON16 (PORT_ANY); // X aCC 818
     status = bind (this->sock, &addr.sa, sizeof (addr) );
     if ( status < 0 ) {
         socket_close (this->sock);
@@ -130,7 +131,7 @@ udpiiu::udpiiu ( cac &cac ) :
             this->pCAC ()->printf ( "CAC: UDP socket was not inet addr family\n" );
             throwWithLocation ( noSocket () );
         }
-        this->localPort = ntohs ( tmpAddr.ia.sin_port );
+        this->localPort = epicsNTOH16 ( tmpAddr.ia.sin_port );
     }
 
     this->nBytesInXmitBuf = 0u;
@@ -340,21 +341,21 @@ void epicsShareAPI caRepeaterRegistrationMessage (
              * this will only work with 3.13 beta 12 CA repeaters or later
              */
             saddr.ia.sin_family = AF_INET;
-            saddr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
-            saddr.ia.sin_port = htons ( port );
+            saddr.ia.sin_addr.s_addr = epicsHTON32 ( INADDR_LOOPBACK );
+            saddr.ia.sin_port = epicsHTON16 ( port );
         }
         else {
-            saddr.ia.sin_port = htons ( port );
+            saddr.ia.sin_port = epicsHTON16 ( port );
         }
     }
     else {
         saddr.ia.sin_family = AF_INET;
-        saddr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
-        saddr.ia.sin_port = htons ( port );
+        saddr.ia.sin_addr.s_addr = epicsHTON32 ( INADDR_LOOPBACK );
+        saddr.ia.sin_port = epicsHTON16 ( port );
     }
 
     memset ( (char *) &msg, 0, sizeof (msg) );
-    msg.m_cmmd = htons ( REPEATER_REGISTER ); // X aCC 818
+    msg.m_cmmd = epicsHTON16 ( REPEATER_REGISTER ); // X aCC 818
     msg.m_available = saddr.ia.sin_addr.s_addr;
 
     /*
@@ -436,8 +437,8 @@ void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
         ca_uint16_t port = static_cast < ca_uint16_t > ( repeaterPort );
         memset ( (char *) &bd, 0, sizeof ( bd ) );
         bd.ia.sin_family = AF_INET;
-        bd.ia.sin_addr.s_addr = htonl ( INADDR_ANY ); 
-        bd.ia.sin_port = htons ( port );   
+        bd.ia.sin_addr.s_addr = epicsHTON32 ( INADDR_ANY ); 
+        bd.ia.sin_port = epicsHTON16 ( port );   
         status = bind ( tmpSock, &bd.sa, sizeof ( bd ) );
         if ( status < 0 ) {
             if ( SOCKERRNO == SOCK_EADDRINUSE ) {
@@ -536,7 +537,7 @@ bool udpiiu::searchRespAction ( const caHdr &msg, // X aCC 361
      */
     if ( msg.m_postsize >= sizeof (*pMinorVersion) ){
         pMinorVersion = (ca_uint16_t *) ( &msg + 1 );
-        minorVersion = ntohs ( *pMinorVersion );      
+        minorVersion = epicsNTOH16 ( *pMinorVersion );      
     }
     else {
         minorVersion = CA_UKN_MINOR_VERSION;
@@ -558,14 +559,14 @@ bool udpiiu::searchRespAction ( const caHdr &msg, // X aCC 361
         else {
             serverAddr.ia.sin_addr = addr.ia.sin_addr;
         }
-        serverAddr.ia.sin_port = htons ( msg.m_dataType );
+        serverAddr.ia.sin_port = epicsHTON16 ( msg.m_dataType );
     }
     else if ( CA_V45 (minorVersion) ) {
-        serverAddr.ia.sin_port = htons ( msg.m_dataType );
+        serverAddr.ia.sin_port = epicsHTON16 ( msg.m_dataType );
         serverAddr.ia.sin_addr = addr.ia.sin_addr;
     }
     else {
-        serverAddr.ia.sin_port = htons ( this->serverPort );
+        serverAddr.ia.sin_port = epicsHTON16 ( this->serverPort );
         serverAddr.ia.sin_addr = addr.ia.sin_addr;
     }
 
@@ -596,25 +597,25 @@ bool udpiiu::beaconAction ( const caHdr &msg,
      *
      * old servers:
      *   1) set this field to one of the ip addresses of the host _or_
-     *   2) set this field to htonl(INADDR_ANY)
+     *   2) set this field to epicsHTON32(INADDR_ANY)
      * new servers:
-     *   always set this field to htonl(INADDR_ANY)
+     *   always set this field to epicsHTON32(INADDR_ANY)
      *
      * clients always assume that if this
-     * field is set to something that isnt htonl(INADDR_ANY)
+     * field is set to something that isnt epicsHTON32(INADDR_ANY)
      * then it is the overriding IP address of the server.
      */
     ina.sin_family = AF_INET;
     ina.sin_addr.s_addr = msg.m_available;
     if ( msg.m_count != 0 ) {
-        ina.sin_port = htons ( msg.m_count );
+        ina.sin_port = epicsHTON16 ( msg.m_count );
     }
     else {
         /*
          * old servers dont supply this and the
          * default port must be assumed
          */
-        ina.sin_port = htons ( this->serverPort );
+        ina.sin_port = epicsHTON16 ( this->serverPort );
     }
 
     this->pCAC ()->beaconNotify ( ina, currentTime );
@@ -646,12 +647,12 @@ bool udpiiu::exceptionRespAction ( const caHdr &msg,
 
     if ( msg.m_postsize > sizeof ( caHdr ) ){
         errlogPrintf ( "error condition \"%s\" detected by %s with context \"%s\" at %s\n", 
-            ca_message ( htonl ( msg.m_available ) ), 
+            ca_message ( epicsHTON32 ( msg.m_available ) ), 
             name, reinterpret_cast <const char *> ( &reqMsg + 1 ), date );
     }
     else{
         errlogPrintf ( "error condition \"%s\" detected by %s at %s\n", 
-            ca_message ( htonl ( msg.m_available ) ), name, date );
+            ca_message ( epicsHTON32 ( msg.m_available ) ), name, date );
     }
 
     return true;
@@ -680,10 +681,10 @@ void udpiiu::postMsg ( const osiSockAddr & net_addr,
         /* 
          * fix endian of bytes 
          */
-        pCurMsg->m_postsize = ntohs ( pCurMsg->m_postsize );
-        pCurMsg->m_cmmd = ntohs ( pCurMsg->m_cmmd );
-        pCurMsg->m_dataType = ntohs ( pCurMsg->m_dataType );
-        pCurMsg->m_count = ntohs ( pCurMsg->m_count );
+        pCurMsg->m_postsize = epicsNTOH16 ( pCurMsg->m_postsize );
+        pCurMsg->m_cmmd = epicsNTOH16 ( pCurMsg->m_cmmd );
+        pCurMsg->m_dataType = epicsNTOH16 ( pCurMsg->m_dataType );
+        pCurMsg->m_count = epicsNTOH16 ( pCurMsg->m_count );
 
 #if 0
         printf ( "UDP Cmd=%3d Type=%3d Count=%4d Size=%4d",
@@ -762,7 +763,7 @@ bool udpiiu::pushDatagramMsg ( const caHdr &msg, const void *pExt, ca_uint16_t e
         char *pDest = (char *) ( pbufmsg + 1 );
         memset ( pDest + extsize, '\0', alignedExtSize - extsize );
     }
-    pbufmsg->m_postsize = htons ( alignedExtSize );
+    pbufmsg->m_postsize = epicsHTON16 ( alignedExtSize );
     this->nBytesInXmitBuf += msgsize;
 
     return true;
@@ -854,17 +855,17 @@ void udpiiu::wakeupMsg ()
     }
 
     caHdr msg;
-    msg.m_cmmd = htons ( CA_PROTO_VERSION );
-    msg.m_available = htonl ( 0u );
-    msg.m_dataType = htons ( 0u );
-    msg.m_count = htons ( 0u );
-    msg.m_cid = htonl ( 0u );
-    msg.m_postsize = htons ( 0u );
+    msg.m_cmmd = epicsHTON16 ( CA_PROTO_VERSION );
+    msg.m_available = epicsHTON32 ( 0u );
+    msg.m_dataType = epicsHTON16 ( 0u );
+    msg.m_count = epicsHTON16 ( 0u );
+    msg.m_cid = epicsHTON32 ( 0u );
+    msg.m_postsize = epicsHTON16 ( 0u );
 
     osiSockAddr addr;
     addr.ia.sin_family = AF_INET;
-    addr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
-    addr.ia.sin_port = htons ( this->localPort );
+    addr.ia.sin_addr.s_addr = epicsHTON32 ( INADDR_LOOPBACK );
+    addr.ia.sin_port = epicsHTON16 ( this->localPort );
 
     // send a wakeup msg so the UDP recv thread will exit
     int status = sendto ( this->sock, reinterpret_cast < const char * > ( &msg ),  

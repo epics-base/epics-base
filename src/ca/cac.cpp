@@ -1416,7 +1416,7 @@ bool cac::eventRespAction ( tcpiiu &iiu, const caHdrLargeArray &hdr, void *pMsgB
                  pMsgBdy, pMsgBdy, false, hdr.m_count);
         }
         else {
-            caStatus = htonl ( ECA_BADTYPE );
+            caStatus = epicsHTON32 ( ECA_BADTYPE );
         }
 #   endif
 
@@ -1506,12 +1506,12 @@ bool cac::exceptionRespAction ( tcpiiu &iiu, const caHdrLargeArray &hdr, void *p
         return false;
     }
     caHdrLargeArray req;
-    req.m_cmmd = ntohs ( pReq->m_cmmd );
-    req.m_postsize = ntohs ( pReq->m_postsize );
-    req.m_dataType = ntohs ( pReq->m_dataType );
-    req.m_count = ntohs ( pReq->m_count );
-    req.m_cid = ntohl ( pReq->m_cid );
-    req.m_available = ntohl ( pReq->m_available );
+    req.m_cmmd = epicsNTOH16 ( pReq->m_cmmd );
+    req.m_postsize = epicsNTOH16 ( pReq->m_postsize );
+    req.m_dataType = epicsNTOH16 ( pReq->m_dataType );
+    req.m_count = epicsNTOH16 ( pReq->m_count );
+    req.m_cid = epicsNTOH32 ( pReq->m_cid );
+    req.m_available = epicsNTOH32 ( pReq->m_available );
     const ca_uint32_t * pLW = reinterpret_cast < const ca_uint32_t * > ( pReq + 1 );
     if ( req.m_postsize == 0xffff ) {
         static const unsigned annexSize = 
@@ -1520,8 +1520,8 @@ bool cac::exceptionRespAction ( tcpiiu &iiu, const caHdrLargeArray &hdr, void *p
         if ( hdr.m_postsize < bytesSoFar ) {
             return false;
         }
-        req.m_postsize = ntohl ( pLW[0] );
-        req.m_count = ntohl ( pLW[1] );
+        req.m_postsize = epicsNTOH32 ( pLW[0] );
+        req.m_count = epicsNTOH32 ( pLW[1] );
         pLW += 2u;
     }
 

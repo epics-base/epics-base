@@ -1,7 +1,7 @@
 TOP = ../..
 include $(TOP)/configure/CONFIG
 
-LIBCOM = $(TOP)/src/libComNew
+LIBCOM = $(TOP)/src/libCom
 
 
 # From osi

@@ -59,27 +59,47 @@ unsigned comQueRecv::occupiedBytes () const
     return nBytes;
 }
 
-bool comQueRecv::copyOutBytes ( void *pBuf, unsigned nBytes )
+unsigned comQueRecv::copyOutBytes ( void *pBuf, unsigned nBytes )
 {
     char *pCharBuf = static_cast < char * > ( pBuf );
 
-    // dont return partial message
-    if ( nBytes > this->occupiedBytes () ) {
-        return false;
-    }
-
-    unsigned bytesLeft = nBytes;
-    while ( bytesLeft ) {
+    unsigned totalBytes = 0u;
+    do {
         comBuf * pComBuf = this->bufs.first ();
-        assert ( pComBuf );
-        bytesLeft -= pComBuf->copyOutBytes ( &pCharBuf[nBytes-bytesLeft], bytesLeft );
+        if ( ! pComBuf ) {
+            return totalBytes;
+        }
+        totalBytes += pComBuf->copyOutBytes ( &pCharBuf[totalBytes], nBytes - totalBytes );
         if ( pComBuf->occupiedBytes () == 0u ) {
             this->bufs.remove ( *pComBuf );
             pComBuf->destroy ();
         }
     }
+    while ( totalBytes < nBytes );
+    return totalBytes;
+}
 
-    return true;
+unsigned comQueRecv::removeBytes ( unsigned nBytes )
+{
+    unsigned totalBytes = 0u;
+    unsigned bytesLeft = nBytes;
+    while ( bytesLeft ) {
+        comBuf * pComBuf = this->bufs.first ();
+        if ( ! pComBuf ) {
+            return totalBytes;
+        }
+        unsigned nBytes = pComBuf->removeBytes ( bytesLeft );
+        if ( pComBuf->occupiedBytes () == 0u ) {
+            this->bufs.remove ( *pComBuf );
+            pComBuf->destroy ();
+        }
+        if ( nBytes == 0u) {
+            return totalBytes;
+        }
+        totalBytes += nBytes;
+        bytesLeft = nBytes - totalBytes;
+    }
+    return nBytes;
 }
 
 void comQueRecv::pushLastComBufReceived ( comBuf & bufIn )
@@ -97,4 +117,20 @@ void comQueRecv::pushLastComBufReceived ( comBuf & bufIn )
         bufIn.destroy ();
     }
 }
+
+epicsUInt8 comQueRecv::popUInt8 ()
+{
+    comBuf *pComBuf = this->bufs.first ();
+    if ( pComBuf ) {
+        epicsUInt8 tmp = pComBuf->getByte ();
+        if ( pComBuf->occupiedBytes() == 0u ) {
+            this->bufs.remove ( *pComBuf );
+            pComBuf->destroy ();
+        }
+        return tmp;
+    }
+    throw insufficentBytesAvailable ();
+}
+
+
 

@@ -41,6 +41,7 @@
 #include "asLib.h"
 #include "dbAddr.h"
 #include "dbNotify.h"
+#define CA_MINOR_PROTOCOL_REVISION 9
 #include "caProto.h"
 #include "ellLib.h"
 #include "epicsTime.h"
@@ -51,47 +52,38 @@
 
 #define LOCAL static
 
+/* a modified ca header with capacity for large arrays */
+typedef struct caHdrLargeArray {
+    ca_uint32_t m_postsize;     /* size of message extension */
+    ca_uint32_t m_count;        /* operation data count      */
+    ca_uint32_t m_cid;          /* channel identifier        */
+    ca_uint32_t m_available;    /* protocol stub dependent   */
+    ca_uint16_t m_dataType;     /* operation data type       */
+    ca_uint16_t m_cmmd;         /* operation to be performed */
+}caHdrLargeArray;
+
 /*
  * !! buf must be the first item in this structure !!
  * This guarantees that buf will have 8 byte natural
  * alignment
  *
- * Conversions:
- * The contents of message_buffer has to be converted
- * from network to host format and vice versa.
- * For efficiency reasons, the caHdr structure that's common
- * to all messages is converted only once:
- * 1) from net to host just after receiving it in camessage()
- * 2) from host to net in cas_send_msg()
- * 
- * The remaining message_buffer content, however, is always
- * in net format!
- *
- * The terminating unsigned long pad0 field is there to force the
+ * The terminating unsigned pad0 field is there to force the
  * length of the message_buffer to be a multiple of 8 bytes.
  * This is due to the sequential placing of two message_buffer
  * structures (trans, rec) within the client structure.
  * Eight-byte alignment is required by the Sparc 5 and other RISC
  * processors.
- *
- * CAVEAT: This assumes the following:
- *    o an array of MAX_MSG_SIZE chars takes a multiple of 8 bytes.
- *    o four unsigned longs also take up a multiple of 8 bytes
- *      (usually 2).
- * NOTE:
- *    o we should solve the above message alignment problems by 
- *      allocating the message buffers
- *
  */
+enum messageBufferType { mbtUDP, mbtSmallTCP, mbtLargeTCP };
 struct message_buffer {
-  char              buf[MAX_MSG_SIZE];
-  unsigned long     stk;
-  unsigned long     maxstk;
-  unsigned long     cnt;    
-  unsigned long     pad0;   /* force 8 byte alignement */
+  char                      *buf;
+  unsigned                  stk;
+  unsigned                  maxstk;
+  unsigned                  cnt;    
+  enum messageBufferType    type;
 };
 
-struct client {
+typedef struct client {
   ELLNODE               node;
   struct message_buffer send;
   struct message_buffer recv;
@@ -102,8 +94,8 @@ struct client {
   ELLLIST               addrq;
   ELLLIST               putNotifyQue;
   struct sockaddr_in    addr;
-  epicsTimeStamp              time_at_last_send;
-  epicsTimeStamp              time_at_last_recv;
+  epicsTimeStamp        time_at_last_send;
+  epicsTimeStamp        time_at_last_recv;
   void                  *evuser;
   char                  *pUserName;
   char                  *pHostName;
@@ -112,8 +104,9 @@ struct client {
   int                   proto;
   epicsThreadId         tid;
   unsigned              minor_version_number;
+  unsigned              recvBytesToDrain;
   char                  disconnect; /* disconnect detected */
-};
+} client;
 
 
 /*
@@ -122,8 +115,8 @@ struct client {
 typedef struct rsrv_put_notify {
     ELLNODE         node;
     PUTNOTIFY       dbPutNotify;
-    caHdr           msg;
-    unsigned long   valueSize; /* size of block pointed to by dbPutNotify */
+    caHdrLargeArray msg;
+    unsigned        valueSize; /* size of block pointed to by dbPutNotify */
     int             busy; /* put notify in progress */
 } RSRVPUTNOTIFY;
 
@@ -139,7 +132,7 @@ struct channel_in_use {
     RSRVPUTNOTIFY   *pPutNotify; /* potential active put notify */
     const unsigned  cid;    /* client id */
     const unsigned  sid;    /* server id */
-    epicsTimeStamp        time_at_creation;   /* for UDP timeout */
+    epicsTimeStamp  time_at_creation;   /* for UDP timeout */
     struct dbAddr   addr;
     ASCLIENTPVT     asClientPVT;
 };
@@ -151,7 +144,7 @@ struct channel_in_use {
  */
 struct event_ext {
     ELLNODE                 node;
-    caHdr                   msg;
+    caHdrLargeArray         msg;
     struct channel_in_use   *pciu;
     struct event_block      *pdbev;     /* ptr to db event block */
     unsigned                size;       /* for speed */
@@ -173,13 +166,10 @@ struct event_ext {
  *  for debug-level dependent messages:
  */
 #ifdef DEBUG
-#   define DLOG(level, fmt, a1, a2, a3, a4, a5, a6) \
-    if (CASDEBUG > level) errlogPrintf (fmt, a1, a2, a3, a4, a5, a6)
-#   define DBLOCK(level, code) \
-    if (CASDEBUG > level) { code; }
+#   define DLOG(LEVEL,ARGSINPAREN) \
+    if (CASDEBUG > LEVEL) errlogPrintf ARGSINPAREN
 #else
-#   define DLOG(level, fmt, a1, a2, a3, a4, a5, a6) 
-#   define DBLOCK(level, code)      
+#   define DLOG(LEVEL,ARGSINPAREN) 
 #endif
 
 GLBLTYPE int                CASDEBUG;
@@ -194,6 +184,9 @@ GLBLTYPE BUCKET             *pCaBucket;
 GLBLTYPE void               *rsrvClientFreeList; 
 GLBLTYPE void               *rsrvChanFreeList;
 GLBLTYPE void               *rsrvEventFreeList;
+GLBLTYPE void               *rsrvSmallBufFreeListTCP; 
+GLBLTYPE void               *rsrvLargeBufFreeListTCP; 
+GLBLTYPE unsigned           rsrvSizeofLargeBufTCP;
 
 #define CAS_HASH_TABLE_SIZE 4096
 
@@ -202,37 +195,37 @@ GLBLTYPE int casSufficentSpaceInPool;
 #define SEND_LOCK(CLIENT) epicsMutexMustLock((CLIENT)->lock)
 #define SEND_UNLOCK(CLIENT) epicsMutexUnlock((CLIENT)->lock)
 
-#define EXTMSGPTR(CLIENT)\
- ((caHdr *) &(CLIENT)->send.buf[(CLIENT)->send.stk])
-
-/*
- *  ALLOC_MSG   get a ptr to space in the buffer
- *  END_MSG     push a message onto the buffer stack
- *
- */
-#define ALLOC_MSG(CLIENT, EXTSIZE)  cas_alloc_msg (CLIENT, EXTSIZE)
-
-#define END_MSG(CLIENT)\
-  EXTMSGPTR(CLIENT)->m_postsize = CA_MESSAGE_ALIGN(EXTMSGPTR(CLIENT)->m_postsize),\
-  (CLIENT)->send.stk += sizeof(caHdr) + EXTMSGPTR(CLIENT)->m_postsize
-
 #define LOCK_CLIENTQ    epicsMutexMustLock (clientQlock);
 #define UNLOCK_CLIENTQ  epicsMutexUnlock (clientQlock);
 
 void camsgtask (struct client *client);
 void cas_send_msg (struct client *pclient, int lock_needed);
-caHdr *cas_alloc_msg (struct client *pclient, unsigned extsize);
 int rsrv_online_notify_task (void);
-void cac_send_heartbeat (void);
 int cast_server (void);
-struct client *create_base_client ();
-int camessage (struct client *client, 
-               struct message_buffer *recv);
-void cas_send_heartbeat (struct client *pc);
-void write_notify_reply (void *pArg);
-int rsrvCheckPut (const struct channel_in_use *pciu);
-struct client *create_client (SOCKET sock);
-void destroy_client (struct client *client);
+struct client *create_client ();
+void destroy_client ( struct client * );
+struct client *create_tcp_client ( SOCKET sock );
+void destroy_tcp_client ( struct client * );
+void casAttachThreadToClient ( struct client * );
+int camessage ( struct client *client );
+void write_notify_reply ( void *pArg );
+int rsrvCheckPut ( const struct channel_in_use *pciu );
+
+/*
+ * inclming protocol maintetnance
+ */
+void casExpandRecvBuffer ( struct client *pClient, ca_uint32_t size );
+
+/*
+ * outgoing protocol maintenance
+ */
+void casExpandSendBuffer ( struct client *pClient, ca_uint32_t size );
+int cas_copy_in_header ( 
+    struct client *pClient, ca_uint16_t response, ca_uint32_t payloadSize,
+    ca_uint16_t dataType, ca_uint32_t nElem, ca_uint32_t cid, 
+    ca_uint32_t responseSpecific, void **pPayload );
+void cas_set_header_cid ( struct client *pClient, ca_uint32_t );
+void cas_commit_msg ( struct client *pClient, ca_uint32_t size );
 
 /*
  * !!KLUDGE!!

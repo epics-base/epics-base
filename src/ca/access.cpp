@@ -12,6 +12,8 @@
  *
  */
 
+#include <new>
+
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 
@@ -79,32 +81,6 @@ int fetchClientContext ( oldCAC **ppcac )
     }
 
     return status;
-}
-
-/*
- *  Default Exception Handler
- */
-extern "C" void ca_default_exception_handler ( struct exception_handler_args args )
-{
-    if ( args.chid && args.op != CA_OP_OTHER ) {
-        ca_signal_formated (
-            args.stat, 
-            args.pFile, 
-            args.lineNo, 
-            "%s - with request chan=%s op=%ld data type=%s count=%ld",
-            args.ctx,
-            ca_name ( args.chid ),
-            args.op,
-            dbr_type_to_text ( args.type ),
-            args.count );
-    }
-    else {
-        ca_signal_formated (
-            args.stat, 
-            args.pFile, 
-            args.lineNo, 
-            args.ctx );
-    }
 }
 
 /*
@@ -211,7 +187,7 @@ extern "C" int epicsShareAPI ca_task_exit ()
  *      backwards compatible entry point to ca_search_and_connect()
  */
 extern "C" int epicsShareAPI ca_build_and_connect ( const char *name_str, chtype get_type,
-            unsigned long get_count, chid * chan, void *pvalue, 
+            arrayElementCount get_count, chid * chan, void *pvalue, 
             caCh *conn_func, void *puser )
 {
     if ( get_type != TYPENOTCONN && pvalue != 0 && get_count != 0 ) {
@@ -269,7 +245,7 @@ extern "C" int epicsShareAPI ca_clear_channel ( chid pChan )
  * ca_array_get ()
  */
 extern "C" int epicsShareAPI ca_array_get ( chtype type, 
-            unsigned long count, chid pChan, void *pValue )
+            arrayElementCount count, chid pChan, void *pValue )
 {
     oldCAC *pcac;
     int caStatus = fetchClientContext ( &pcac );
@@ -283,7 +259,7 @@ extern "C" int epicsShareAPI ca_array_get ( chtype type,
     unsigned tmpType = static_cast < unsigned > ( type );
 
     autoPtrDestroy < getCopy > pNotify 
-        ( new getCopy ( *pcac, tmpType, count, pValue ) );
+        ( new getCopy ( *pcac, *pChan, tmpType, count, pValue ) );
     if ( ! pNotify.get() ) {
         return ECA_ALLOCMEM;
     }
@@ -317,9 +293,12 @@ extern "C" int epicsShareAPI ca_array_get ( chtype type,
     {
         return ECA_NOTINSERVICE;
     }
-    catch ( cacChannel::noMemory & )
+    catch ( std::bad_alloc & )
     {
         return ECA_ALLOCMEM;
+    }
+    catch ( cacChannel::msgBodyCacheTooSmall ) {
+        return ECA_TOLARGE;
     }
     catch ( ... )
     {
@@ -331,7 +310,7 @@ extern "C" int epicsShareAPI ca_array_get ( chtype type,
  * ca_array_get_callback ()
  */
 extern "C" int epicsShareAPI ca_array_get_callback ( chtype type, 
-            unsigned long count, chid pChan,
+            arrayElementCount count, chid pChan,
             caEventCallBackFunc *pfunc, void *arg )
 {
     if ( type < 0 ) {
@@ -374,9 +353,12 @@ extern "C" int epicsShareAPI ca_array_get_callback ( chtype type,
     {
         return ECA_NOTINSERVICE;
     }
-    catch ( cacChannel::noMemory & )
+    catch ( std::bad_alloc & )
     {
         return ECA_ALLOCMEM;
+    }
+    catch ( cacChannel::msgBodyCacheTooSmall ) {
+        return ECA_TOLARGE;
     }
     catch ( ... )
     {
@@ -387,7 +369,7 @@ extern "C" int epicsShareAPI ca_array_get_callback ( chtype type,
 /*
  *  ca_array_put_callback ()
  */
-extern "C" int epicsShareAPI ca_array_put_callback ( chtype type, unsigned long count, 
+extern "C" int epicsShareAPI ca_array_put_callback ( chtype type, arrayElementCount count, 
     chid pChan, const void *pValue, caEventCallBackFunc *pfunc, void *usrarg )
 {
     if ( type < 0 ) {
@@ -430,7 +412,7 @@ extern "C" int epicsShareAPI ca_array_put_callback ( chtype type, unsigned long 
     {
         return ECA_NOTINSERVICE;
     }
-    catch ( cacChannel::noMemory & )
+    catch ( std::bad_alloc & )
     {
         return ECA_ALLOCMEM;
     }
@@ -443,7 +425,7 @@ extern "C" int epicsShareAPI ca_array_put_callback ( chtype type, unsigned long 
 /*
  *  ca_array_put ()
  */
-extern "C" int epicsShareAPI ca_array_put ( chtype type, unsigned long count, 
+extern "C" int epicsShareAPI ca_array_put ( chtype type, arrayElementCount count, 
                                 chid pChan, const void *pValue )
 {
     if ( type < 0 ) {
@@ -479,7 +461,7 @@ extern "C" int epicsShareAPI ca_array_put ( chtype type, unsigned long count,
     {
         return ECA_NOTINSERVICE;
     }
-    catch ( cacChannel::noMemory & )
+    catch ( std::bad_alloc & )
     {
         return ECA_ALLOCMEM;
     }
@@ -526,7 +508,7 @@ extern "C" int epicsShareAPI ca_add_exception_event ( caExceptionHandler *pfunc,
  *  ca_add_masked_array_event
  */
 extern "C" int epicsShareAPI ca_add_masked_array_event ( 
-        chtype type, unsigned long count, chid pChan, 
+        chtype type, arrayElementCount count, chid pChan, 
         caEventCallBackFunc *pCallBack, void *pCallBackArg, 
         ca_real, ca_real, ca_real, 
         evid *monixptr, long mask )
@@ -551,20 +533,6 @@ extern "C" int epicsShareAPI ca_add_masked_array_event (
 
     if ( mask & ~maskMask ) {
         return ECA_BADMASK;
-    }
-
-    /*
-     * Check for huge waveform
-     *
-     * (the count is not checked here against the native count
-     * when connected because this introduces a race condition 
-     * for the client tool - the requested count is clipped to 
-     * the actual count when the monitor request is sent so
-     * verifying that the requested count is valid here isnt
-     * required)
-     */
-    if ( dbr_size_n ( type, count ) > MAX_MSG_SIZE - sizeof ( caHdr ) ) {
-        return ECA_TOLARGE;
     }
 
     try {
@@ -600,9 +568,12 @@ extern "C" int epicsShareAPI ca_add_masked_array_event (
     {
         return ECA_NOTINSERVICE;
     }
-    catch ( cacChannel::noMemory & )
+    catch ( std::bad_alloc & )
     {
         return ECA_ALLOCMEM;
+    }
+    catch ( cacChannel::msgBodyCacheTooSmall ) {
+        return ECA_TOLARGE;
     }
     catch ( ... )
     {
@@ -732,56 +703,24 @@ extern "C" void epicsShareAPI ca_signal_formated ( long ca_status, const char *p
                                        int lineno, const char *pFormat, ... )
 {
     oldCAC *pcac;
-    va_list theArgs;
-    static const char *severity[] = 
-    {
-        "Warning",
-        "Success",
-        "Error",
-        "Info",
-        "Fatal",
-        "Fatal",
-        "Fatal",
-        "Fatal"
-    };
 
     if ( caClientContextId ) {
-        pcac = (oldCAC *) epicsThreadPrivateGet ( caClientContextId );
+        pcac = ( oldCAC * ) epicsThreadPrivateGet ( caClientContextId );
     }
     else {
-        pcac = NULL;
+        pcac = 0;
     }
-    
-    va_start ( theArgs, pFormat );  
-    
-    pcac->printf ( "CA.Client.Diagnostic..............................................\n" );
-    
-    pcac->printf ( "    %s: \"%s\"\n", 
-        severity[ CA_EXTRACT_SEVERITY ( ca_status ) ], 
-        ca_message ( ca_status ) );
 
-    if  ( pFormat ) {
-        pcac->printf ( "    Context: \"" );
-        pcac->vPrintf ( pFormat, theArgs );
-        pcac->printf ( "\"\n" );
+    va_list theArgs;
+    va_start ( theArgs, pFormat );  
+    if ( pcac ) {
+        pcac->vSignal ( ca_status, pfilenm, lineno, pFormat, theArgs );
     }
-        
-    if (pfilenm) {
-        pcac->printf ( "    Source File: %s Line Number: %d\n",
-            pfilenm, lineno );    
+    else {
+        fprintf ( stderr, "file=%s line=%d: CA exception delivered to a thread w/o ca context\n", 
+            pfilenm, lineno );
+        vfprintf ( stderr, pFormat, theArgs );
     }
-    
-    /*
-     *  Terminate execution if unsuccessful
-     */
-    if( ! ( ca_status & CA_M_SUCCESS ) && 
-        CA_EXTRACT_SEVERITY ( ca_status ) != CA_K_WARNING ){
-        errlogFlush();
-        abort();
-    }
-    
-    pcac->printf ( "..................................................................\n" );
-    
     va_end ( theArgs );
 }
 
@@ -836,7 +775,7 @@ extern "C" int epicsShareAPI ca_v42_ok ( chid pChan )
  */
 extern "C" const char * epicsShareAPI ca_version () 
 {
-    return CA_VERSION_STRING;
+    return CA_VERSION_STRING ( CA_MINOR_PROTOCOL_REVISION );
 }
 
 /*
@@ -866,7 +805,7 @@ extern "C" short epicsShareAPI ca_field_type ( chid pChan )
 /*
  * ca_element_count ()
  */
-extern "C" unsigned long epicsShareAPI ca_element_count ( chid pChan ) 
+extern "C" arrayElementCount epicsShareAPI ca_element_count ( chid pChan ) 
 {
     return pChan->nativeElementCount ();
 }

@@ -67,7 +67,7 @@ extern "C" {
  * net format: big endian and IEEE float
  */
 
-typedef void CACVRTFUNC (const void *pSrc, void *pDest, int hton, unsigned long count);
+typedef void CACVRTFUNC (const void *pSrc, void *pDest, int hton, arrayElementCount count);
 
 #ifdef CONVERSION_REQUIRED
 /*  cvrt is (array of) (pointer to) (function returning) int */

@@ -48,19 +48,19 @@ void netReadNotifyIO::completion ()
 
 void netReadNotifyIO::exception ( int status, const char *pContext )
 {
-    this->notify.exception ( status, pContext, UINT_MAX, 0 );
+    this->notify.exception ( status, pContext, UINT_MAX, 0u );
+}
+
+void netReadNotifyIO::exception ( int status, const char *pContext, 
+                                 unsigned type, arrayElementCount count )
+{
+    this->notify.exception ( status, pContext, type, count );
 }
 
 void netReadNotifyIO::completion ( unsigned type, 
-    unsigned long count, const void *pData )
+    arrayElementCount count, const void *pData )
 {
     this->notify.completion ( type, count, pData );
-}
-
-void netReadNotifyIO::exception ( int status, 
-    const char *pContext, unsigned type, unsigned long count )
-{
-    this->notify.exception ( status, pContext, type, count );
 }
 
 

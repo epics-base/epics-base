@@ -47,8 +47,8 @@ recvProcessThread::~recvProcessThread ()
 
 void recvProcessThread::run ()
 {
-    int status = ca_attach_context ( this->pcac );
-    SEVCHK ( status, "attaching to client context in recv process thread" );
+    this->pcac->attachToClientCtx ();
+
     while ( ! this->shutDown ) {
 
         {

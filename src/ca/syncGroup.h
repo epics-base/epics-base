@@ -58,7 +58,7 @@ public:
     static syncGroupReadNotify * factory ( 
         tsFreeList < class syncGroupReadNotify, 128 > &, 
         struct CASG &, chid, unsigned type, 
-        unsigned long count, void *pValueIn );
+        arrayElementCount count, void *pValueIn );
     void destroy ( casgRecycle & );
     void show ( unsigned level ) const;
 protected:
@@ -66,7 +66,7 @@ protected:
 private:
     void *pValue;
     syncGroupReadNotify ( struct CASG &sgIn, chid, 
-        unsigned type, unsigned long count, void *pValueIn );
+        unsigned type, arrayElementCount count, void *pValueIn );
     void * operator new ( size_t, 
         tsFreeList < class syncGroupReadNotify, 128 > & );
 #   if ! defined ( NO_PLACEMENT_DELETE )
@@ -74,9 +74,9 @@ private:
         tsFreeList < class syncGroupReadNotify, 128 > & );
 #   endif
     void completion (
-        unsigned type, unsigned long count, const void *pData );
+        unsigned type, arrayElementCount count, const void *pData );
     void exception (
-        int status, const char *pContext, unsigned type, unsigned long count );
+        int status, const char *pContext, unsigned type, arrayElementCount count );
 };
 
 class syncGroupWriteNotify : public syncGroupNotify, public cacWriteNotify {
@@ -84,7 +84,7 @@ public:
     static syncGroupWriteNotify * factory ( 
         tsFreeList < class syncGroupWriteNotify, 128 > &, 
         struct CASG &, chid, unsigned type, 
-        unsigned long count, const void *pValueIn );
+        arrayElementCount count, const void *pValueIn );
     void destroy ( casgRecycle & );
     void show ( unsigned level ) const;
 protected:
@@ -92,7 +92,7 @@ protected:
 private:
     void *pValue;
     syncGroupWriteNotify  ( struct CASG &, chid, unsigned type, 
-                       unsigned long count, const void *pValueIn );
+                       arrayElementCount count, const void *pValueIn );
     void * operator new ( size_t, 
         tsFreeList < class syncGroupWriteNotify, 128 > & );
 #   if ! defined ( NO_PLACEMENT_DELETE )
@@ -100,7 +100,7 @@ private:
         tsFreeList < class syncGroupWriteNotify, 128 > & );
 #   endif
     void completion ();
-    void exception (int status, const char *pContext );
+    void exception ( int status, const char *pContext, unsigned type, arrayElementCount count );
 };
 
 class oldCAC;
@@ -114,8 +114,8 @@ public:
     int block ( double timeout );
     void reset ();
     void show ( unsigned level ) const;
-    int get ( chid pChan, unsigned type, unsigned long count, void *pValue );
-    int put ( chid pChan, unsigned type, unsigned long count, const void *pValue );
+    int get ( chid pChan, unsigned type, arrayElementCount count, void *pValue );
+    int put ( chid pChan, unsigned type, arrayElementCount count, const void *pValue );
     void destroyIO ( syncGroupNotify & );
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );

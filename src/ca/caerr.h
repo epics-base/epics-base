@@ -142,7 +142,7 @@ READONLY char   *ca_message_text[]
 "Unable to allocate additional dynamic memory",
 "Unknown IO channel",
 "Record field specified inappropriate for channel specified",
-"The array or data structure specified will not fit in CA message buffer",
+"The array or data structure specified is less than EPICS_CA_MAX_ARRAY_BYTES",
 "User specified timeout on IO operation expired",
 "Sorry, that feature is planned but not supported at this time",
 "The supplied string is unusually large",

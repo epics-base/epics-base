@@ -21,33 +21,23 @@
 #include <new> // needed by comQueueSend
 
 #include "epicsTimer.h"
+#include "epicsMemory.h"
 #include "ipAddrToAsciiAsynchronous.h"
+#include "osiWireFormat.h"
 
 #include "comBuf.h"
 #include "netiiu.h"
 
-enum iiu_conn_state {iiu_connecting, iiu_connected, iiu_disconnected};
+enum iiu_conn_state { iiu_connecting, iiu_connected, iiu_disconnected };
 
 class nciu;
 class tcpiiu;
-
-class bufferReservoir {
-public:
-    ~bufferReservoir ();
-    void addOneBuffer ();
-    comBuf *fetchOneBuffer ();
-    unsigned nBytes ();
-    void drain ();
-private:
-    tsDLList < comBuf > reservedBufs;
-};
 
 class comQueSend {
 public:
     comQueSend ( wireSendAdapter & );
     ~comQueSend ();
     void clear ();
-    void reserveSpace ( unsigned msgSize );
     unsigned occupiedBytes () const;
     bool flushEarlyThreshold ( unsigned nBytesThisMsg ) const;
     bool flushBlockThreshold ( unsigned nBytesThisMsg ) const;
@@ -55,13 +45,12 @@ public:
     void pushUInt16 ( const ca_uint16_t value );
     void pushUInt32 ( const ca_uint32_t value );
     void pushFloat32 ( const ca_float32_t value );
-    void pushString ( const char *pVal, unsigned nElem );
+    void pushString ( const char *pVal, unsigned nChar );
     void push_dbr_type ( unsigned type, const void *pVal, unsigned nElem );
     comBuf * popNextComBufToSend ();
 private:
     wireSendAdapter & wire;
     tsDLList < comBuf > bufs;
-    bufferReservoir reservoir;
     unsigned nBytesPending;
     void copy_dbr_string ( const void *pValue, unsigned nElem );
     void copy_dbr_short ( const void *pValue, unsigned nElem );
@@ -72,6 +61,63 @@ private:
     typedef void ( comQueSend::*copyFunc_t ) (  
         const void *pValue, unsigned nElem );
     static const copyFunc_t dbrCopyVector [39];
+
+    //
+    // visual C++ version 6.0 does not allow out of 
+    // class member template function definition
+    //
+    template < class T >
+    inline void copyIn ( const T *pVal, unsigned nElem )
+    {
+        unsigned nCopied;
+        comBuf *pComBuf = this->bufs.last ();
+        if ( pComBuf ) {
+            nCopied = pComBuf->copyIn ( pVal, nElem );
+            this->nBytesPending += nCopied * sizeof ( T );
+        }
+        else {
+            nCopied = 0u;
+        }
+        while ( nElem > nCopied ) {
+            comBuf *pComBuf = new ( std::nothrow ) comBuf;
+            if ( ! pComBuf ) {
+                this->wire.forcedShutdown ();
+                throw std::bad_alloc ();
+            }
+            unsigned nNew =  pComBuf->copyIn ( &pVal[nCopied], nElem - nCopied );
+            nCopied +=  nNew;
+            this->nBytesPending += nNew * sizeof ( T );
+            this->bufs.add ( *pComBuf );
+        }
+    }
+
+    //
+    // visual C++ version 6.0 does not allow out of 
+    // class member template function definition
+    //
+    template < class T >
+    inline void copyIn ( const T &val )
+    {
+        comBuf *pComBuf = this->bufs.last ();
+        if ( pComBuf ) {
+            if ( pComBuf->copyIn ( &val, 1u ) >= 1u ) {
+                this->nBytesPending += sizeof ( T );
+                return;
+            }
+        }
+        pComBuf = new ( std::nothrow ) comBuf;
+        if ( ! pComBuf ) {
+            this->wire.forcedShutdown ();
+            throw std::bad_alloc ();
+        }
+        if ( pComBuf->copyIn ( &val, 1u ) == 0u ) {
+            this->wire.forcedShutdown ();
+            throw -1;
+        }
+        this->bufs.add ( *pComBuf );
+        this->nBytesPending += sizeof ( T );
+        return;
+    }
 };
 
 static const unsigned maxBytesPendingTCP = 0x4000;
@@ -81,9 +127,21 @@ public:
     comQueRecv ();
     ~comQueRecv ();
     unsigned occupiedBytes () const;
-    bool copyOutBytes ( void *pBuf, unsigned nBytes );
+    unsigned copyOutBytes ( void *pBuf, unsigned nBytes );
+    unsigned removeBytes ( unsigned nBytes );
     void pushLastComBufReceived ( comBuf & );
     void clear ();
+    epicsInt8 popInt8 ();
+    epicsUInt8 popUInt8 ();
+    epicsInt16 popInt16 ();
+    epicsUInt16 popUInt16 ();
+    epicsInt32 popInt32 ();
+    epicsUInt32 popUInt32 ();
+    epicsFloat32 popFloat32 ();
+    epicsFloat64 popFloat64 ();
+    void popString ( epicsOldString * );
+
+    class insufficentBytesAvailable {};
 private:
     tsDLList < comBuf > bufs;
 };
@@ -93,6 +151,7 @@ public:
     tcpRecvWatchdog ( tcpiiu &, double periodIn, epicsTimerQueue & queueIn );
     virtual ~tcpRecvWatchdog ();
     void rescheduleRecvTimer ();
+    void sendBacklogProgressNotify ();
     void messageArrivalNotify ();
     void beaconArrivalNotify ();
     void beaconAnomalyNotify ();
@@ -105,7 +164,7 @@ private:
     tcpiiu &iiu;
     bool responsePending;
     bool beaconAnomaly;
-    expireStatus expire ();
+    expireStatus expire ( const epicsTime & currentTime );
 };
 
 class tcpSendWatchdog : private epicsTimerNotify {
@@ -118,19 +177,18 @@ private:
     const double period;
     epicsTimer &timer;
     tcpiiu &iiu;
-    expireStatus expire ();
+    expireStatus expire ( const epicsTime & currentTime );
 };
 
 class hostNameCache : public ipAddrToAsciiAsynchronous {
 public:
     hostNameCache ( const osiSockAddr &addr, ipAddrToAsciiEngine &engine );
+    ~hostNameCache ();
     void destroy ();
     void ioCompletionNotify ( const char *pHostName );
     void hostName ( char *pBuf, unsigned bufLength ) const;
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
-protected:
-    ~hostNameCache ();
 private:
     bool ioComplete;
     char hostNameBuf [128];
@@ -141,14 +199,25 @@ private:
 extern "C" void cacSendThreadTCP ( void *pParam );
 extern "C" void cacRecvThreadTCP ( void *pParam );
 
+// a modified ca header with capacity for large arrays
+struct  caHdrLargeArray {
+    ca_uint32_t m_postsize;     // size of message extension 
+    ca_uint32_t m_count;        // operation data count 
+    ca_uint32_t m_cid;          // channel identifier 
+    ca_uint32_t m_available;    // protocol stub dependent
+    ca_uint16_t m_dataType;     // operation data type 
+    ca_uint16_t m_cmmd;         // operation to be performed 
+};
+
 class tcpiiu : 
         public netiiu, public tsDLNode < tcpiiu >,
         private wireSendAdapter, private wireRecvAdapter {
 public:
-    tcpiiu ( cac &cac, double connectionTimeout, epicsTimerQueue &timerQueue );
+    tcpiiu ( cac &cac, double connectionTimeout, 
+        epicsTimerQueue &timerQueue, const osiSockAddr &addrIn, 
+        unsigned minorVersion, class bhe &bhe, 
+        ipAddrToAsciiEngine &engineIn );
     ~tcpiiu ();
-    bool initiateConnect ( const osiSockAddr &addrIn, unsigned minorVersion, 
-        class bhe &bhe, ipAddrToAsciiEngine &engineIn );
     void connect ();
     void processIncoming ();
     void destroy ();
@@ -157,7 +226,6 @@ public:
     void beaconAnomalyNotify ();
     void beaconArrivalNotify ();
 
-    bool fullyConstructed () const;
     void flushRequest ();
     bool flushBlockThreshold () const;
     void flushRequestIfAboveEarlyThreshold ();
@@ -168,13 +236,14 @@ public:
     bool ca_v41_ok () const;
     bool ca_v42_ok () const;
     bool ca_v44_ok () const;
+    bool ca_v49_ok () const;
 
     void hostName ( char *pBuf, unsigned bufLength ) const;
     const char * pHostName () const; // deprecated - please do not use
     bool isVirtaulCircuit ( const char *pChannelName, const osiSockAddr &addr ) const;
     bool alive () const;
     double beaconPeriod () const;
-    bhe * getBHE () const;
+    bhe & getBHE () const;
 
     SOCKET getSock() const;
     bool trueOnceOnly ();
@@ -184,26 +253,29 @@ private:
     tcpSendWatchdog sendDog;
     comQueSend sendQue;
     comQueRecv recvQue;
+    caHdrLargeArray curMsg;
     osiSockAddr addr;
-    hostNameCache *pHostNameCache;
-    caHdr curMsg;
-    unsigned long curDataMax;
-    class bhe *pBHE;
+    arrayElementCount curDataMax;
+    arrayElementCount curDataBytes;
+    epics_auto_ptr < hostNameCache > pHostNameCache;
+    class bhe & BHE;
     char *pCurData;
     unsigned minorProtocolVersion;
     iiu_conn_state state;
-    epicsEventId sendThreadFlushSignal;
-    epicsEventId recvThreadRingBufferSpaceAvailableSignal;
-    epicsEventId sendThreadExitSignal;
-    epicsEventId recvThreadExitSignal;
-    epicsEventId flushBlockSignal;
+    epicsEvent sendThreadFlushEvent;
+    epicsEvent recvThreadRingBufferSpaceAvailableEvent;
+    epicsEvent sendThreadExitEvent;
+    epicsEvent recvThreadExitEvent;
+    epicsEvent flushBlockEvent;
     SOCKET sock;
     unsigned contigRecvMsgCount;
     unsigned blockingForFlush;
-    bool fullyConstructedFlag;
+    unsigned socketLibrarySendBufferSize;
+    unsigned unacknowledgedSendBytes;
     bool busyStateDetected; // only modified by the recv thread
     bool flowControlActive; // only modified by the send process thread
     bool echoRequestPending; 
+    bool oldMsgHeaderAvailable;
     bool msgHeaderAvailable;
     bool sockCloseCompleted;
     bool f_trueOnceOnly;
@@ -235,38 +307,6 @@ private:
     bool flush (); // only to be called by the send thread
 };
 
-inline bufferReservoir::~bufferReservoir ()
-{
-    this->drain ();
-}
-
-inline comBuf *bufferReservoir::fetchOneBuffer ()
-{
-    return this->reservedBufs.get ();
-}
-
-inline void bufferReservoir::addOneBuffer ()
-{
-    comBuf *pBuf = new comBuf;
-    if ( ! pBuf ) {
-        throw std::bad_alloc();
-    }
-    this->reservedBufs.add ( *pBuf );
-}
-
-inline unsigned bufferReservoir::nBytes ()
-{
-    return ( this->reservedBufs.count () * comBuf::capacityBytes () );
-}
-
-inline void bufferReservoir::drain ()
-{
-    comBuf *pBuf;
-    while ( ( pBuf = this->reservedBufs.get () ) ) {
-        pBuf->destroy ();
-    }
-}
-
 inline bool comQueSend::dbr_type_ok ( unsigned type )
 {
     if ( type >= ( sizeof ( this->dbrCopyVector ) / sizeof ( this->dbrCopyVector[0] )  ) ) {
@@ -278,105 +318,24 @@ inline bool comQueSend::dbr_type_ok ( unsigned type )
     return true;
 }
 
-//
-// 1) This routine does not return status because of the following
-// argument.  The routine can fail because the wire disconnects or 
-// because their isnt memory to create a buffer. For the former we 
-// just discard the message, but do not fail. For the latter we 
-// shutdown() the connection and discard the rest of the message
-// (this eliminates the possibility of message fragments getting
-// onto the wire).
-//
-// 2) Arguments here are a bit verbose until compilers all implement
-// member template functions.
-//
-
-template < class T >
-inline void comQueSend_copyIn ( unsigned &nBytesPending, 
-         tsDLList < comBuf > &comBufList, bufferReservoir &reservoir,
-                               const T *pVal, unsigned nElem )
-{
-    nBytesPending += sizeof ( T ) * nElem;
-
-    comBuf *pComBuf = comBufList.last ();
-    if ( pComBuf ) {
-        unsigned nCopied = pComBuf->copyIn ( pVal, nElem );
-        if ( nElem > nCopied ) {
-            comQueSend_copyInWithReservour ( comBufList, reservoir, &pVal[nCopied], 
-                nElem - nCopied );
-        }
-    }
-    else {
-        comQueSend_copyInWithReservour ( comBufList, reservoir, pVal, nElem );
-    }
-}
-
-template < class T >
-void comQueSend_copyInWithReservour ( 
-         tsDLList < comBuf > &comBufList, bufferReservoir &reservoir,
-                               const T *pVal, unsigned nElem )
-{
-    unsigned nCopied = 0u;
-    while ( nElem > nCopied ) {
-        comBuf *pComBuf = reservoir.fetchOneBuffer ();
-        //
-        // This fails only if space was not preallocated.
-        // See comments at the top of this program on
-        // why space must always be preallocated.
-        //
-        assert ( pComBuf );
-        nCopied += pComBuf->copyIn ( &pVal[nCopied], nElem - nCopied );
-        comBufList.add ( *pComBuf );
-    }
-}
-
-template < class T >
-inline void comQueSend_copyIn ( unsigned &nBytesPending, 
-       tsDLList < comBuf > &comBufList, bufferReservoir &reservoir,
-                               const T &val )
-{
-    nBytesPending += sizeof ( T );
-
-    comBuf *pComBuf = comBufList.last ();
-    if ( pComBuf ) {
-        if ( pComBuf->copyIn ( &val, 1u ) >= 1u ) {
-            return;
-        }
-    }
-
-    pComBuf = reservoir.fetchOneBuffer ();
-    //
-    // This fails only if space was not preallocated.
-    // See comments at the top of this program on
-    // space must always be preallocated.
-    //
-    assert ( pComBuf );
-    pComBuf->copyIn ( &val, 1u );
-    comBufList.add ( *pComBuf );
-}
-
 inline void comQueSend::pushUInt16 ( const ca_uint16_t value )
 {
-    comQueSend_copyIn ( this->nBytesPending, 
-        this->bufs, this->reservoir, value );
+    this->copyIn ( value );
 }
 
 inline void comQueSend::pushUInt32 ( const ca_uint32_t value )
 {
-    comQueSend_copyIn ( this->nBytesPending, 
-        this->bufs, this->reservoir, value );
+    this->copyIn ( value );
 }
 
 inline void comQueSend::pushFloat32 ( const ca_float32_t value )
 {
-    comQueSend_copyIn ( this->nBytesPending, 
-        this->bufs, this->reservoir, value );
+    this->copyIn ( value );
 }
 
-inline void comQueSend::pushString ( const char *pVal, unsigned nElem )
+inline void comQueSend::pushString ( const char *pVal, unsigned nChar )
 {
-    comQueSend_copyIn ( this->nBytesPending, 
-        this->bufs, this->reservoir, pVal, nElem );
+    this->copyIn ( pVal, nChar );
 }
 
 // it is assumed that dbr_type_ok() was called prior to calling this routine
@@ -415,19 +374,80 @@ inline comBuf * comQueSend::popNextComBufToSend ()
     return pBuf;
 }
 
-inline bool tcpiiu::fullyConstructed () const
+
+inline epicsInt8 comQueRecv::popInt8 ()
 {
-    return this->fullyConstructedFlag;
+    return static_cast < epicsInt8 > ( this->popUInt8() );
+}
+
+inline epicsUInt16 comQueRecv::popUInt16 ()
+{
+    epicsUInt16 tmp = this->popUInt8 ();
+    tmp <<= 8u;
+    tmp |= this->popUInt8 ();
+    return tmp;
+}
+
+inline epicsInt16 comQueRecv::popInt16 ()
+{
+    epicsInt16 tmp = this->popInt8 ();
+    tmp <<= 8u;
+    tmp |= this->popInt8 ();
+    return tmp;
+}
+
+inline epicsUInt32 comQueRecv::popUInt32 ()
+{
+    epicsUInt32 tmp = this->popUInt8 ();
+    tmp <<= 24u;
+    tmp |= this->popUInt8 () << 16u;
+    tmp |= this->popUInt8 () << 8u;
+    tmp |= this->popUInt8 ();
+    return tmp;
+}
+
+inline epicsInt32 comQueRecv::popInt32 ()
+{
+    epicsInt32 tmp = this->popInt8 ();
+    tmp <<= 24u;
+    tmp |= this->popInt8 () << 16u;
+    tmp |= this->popInt8 () << 8u;
+    tmp |= this->popInt8 ();
+    return tmp;
+}
+
+inline epicsFloat32 comQueRecv::popFloat32 ()
+{
+    epicsFloat32 tmp;
+    epicsUInt8 wire[ sizeof ( tmp ) ];
+    for ( unsigned i = 0u; i < sizeof ( tmp ); i++ ) {
+        wire[i] = this->popUInt8 ();
+    }
+    osiConvertFromWireFormat ( tmp, wire );
+    return tmp;
+}
+
+inline epicsFloat64 comQueRecv::popFloat64 ()
+{
+    epicsFloat64 tmp;
+    epicsUInt8 wire[ sizeof ( tmp ) ];
+    for ( unsigned i = 0u; i < sizeof ( tmp ); i++ ) {
+        wire[i] = this->popUInt8 ();
+    }
+    osiConvertFromWireFormat ( tmp, wire );
+    return tmp;
+}
+
+inline void comQueRecv::popString ( epicsOldString *pStr )
+{
+    for ( unsigned i = 0u; i < sizeof ( *pStr ); i++ ) {
+        pStr[0][i] = this->popInt8 ();
+    }
 }
 
 inline void tcpiiu::hostName ( char *pBuf, unsigned bufLength ) const
 {   
-    if ( this->pHostNameCache ) {
-        this->pHostNameCache->hostName ( pBuf, bufLength );
-    }
-    else {
-        netiiu::hostName ( pBuf, bufLength );
-    }
+    this->pHostNameCache->hostName ( pBuf, bufLength );
 }
 
 // deprecated - please dont use - this is _not_ thread safe
@@ -440,17 +460,22 @@ inline const char * tcpiiu::pHostName () const
 
 inline void tcpiiu::flushRequest ()
 {
-    epicsEventSignal ( this->sendThreadFlushSignal );
-}
-
-inline bool tcpiiu::ca_v44_ok () const
-{
-    return CA_V44 ( CA_PROTOCOL_VERSION, this->minorProtocolVersion );
+    this->sendThreadFlushEvent.signal ();
 }
 
 inline bool tcpiiu::ca_v41_ok () const
 {
-    return CA_V41 ( CA_PROTOCOL_VERSION, this->minorProtocolVersion );
+    return CA_V41 ( this->minorProtocolVersion );
+}
+
+inline bool tcpiiu::ca_v44_ok () const
+{
+    return CA_V44 ( this->minorProtocolVersion );
+}
+
+inline bool tcpiiu::ca_v49_ok () const
+{
+    return CA_V49 ( this->minorProtocolVersion );
 }
 
 inline bool tcpiiu::alive () const
@@ -464,9 +489,9 @@ inline bool tcpiiu::alive () const
     }
 }
 
-inline bhe * tcpiiu::getBHE () const
+inline bhe & tcpiiu::getBHE () const
 {
-    return this->pBHE;
+    return this->BHE;
 }
 
 inline void tcpiiu::beaconAnomalyNotify ()

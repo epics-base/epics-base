@@ -81,7 +81,7 @@ nciu::~nciu ()
 }
 
 void nciu::connect ( unsigned nativeType, 
-	unsigned long nativeCount, unsigned sidIn )
+	unsigned nativeCount, unsigned sidIn )
 {
     bool v41Ok;
 
@@ -99,6 +99,12 @@ void nciu::connect ( unsigned nativeType,
         return;
     }
 
+    if ( ! dbf_type_is_valid ( nativeType ) ) {
+        this->cacCtx.printf (
+            "CAC: Ignored conn resp with bad native data type CID=%u SID=%u?\n",
+            this->getId (), sidIn );
+        return;
+    }
 
     if ( ! this->f_connectTimeOutSeen && ! this->f_previousConn ) {
         if ( this->f_firstConnectDecrementsOutstandingIO ) {
@@ -112,7 +118,7 @@ void nciu::connect ( unsigned nativeType,
     else {
         v41Ok = false;
     }    
-    this->typeCode = nativeType;
+    this->typeCode = static_cast < unsigned short > ( nativeType );
     this->count = nativeCount;
     this->sid = sidIn;
     this->f_connected = true;
@@ -131,6 +137,11 @@ void nciu::connect ( unsigned nativeType,
     // resubscribe for monitors from this channel 
     this->cacCtx.connectAllIO ( *this );
 
+static bool once = 0;
+if ( ! once ) {
+    printf ( "there is a problem here where we are calling through a defunct vf table\n" );
+    once = 1;
+}
     this->notify().connectNotify ();
 
     /*
@@ -189,7 +200,7 @@ bool nciu::searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThisCh
     msg.m_cmmd = htons ( CA_PROTO_SEARCH );
     msg.m_available = this->getId ();
     msg.m_dataType = htons ( DONTREPLY );
-    msg.m_count = htons ( CA_MINOR_VERSION );
+    msg.m_count = htons ( CA_MINOR_PROTOCOL_REVISION );
     msg.m_cid = this->getId ();
 
     success = this->piiu->pushDatagramMsg ( msg, 
@@ -199,7 +210,7 @@ bool nciu::searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThisCh
         // increment the number of times we have tried 
         // to find this channel
         //
-        if ( this->retry < MAXCONNTRIES ) {
+        if ( this->retry < UINT_MAX ) {
             this->retry++;
         }
         this->retrySeqNo = retrySeqNumber;
@@ -226,7 +237,7 @@ void nciu::createChannelRequest ()
     this->f_claimSent = true;
 }
 
-cacChannel::ioStatus nciu::read ( unsigned type, unsigned long countIn, 
+cacChannel::ioStatus nciu::read ( unsigned type, arrayElementCount countIn, 
                      cacReadNotify &notify, ioid *pId )
 {
     //
@@ -270,7 +281,7 @@ void nciu::stringVerify ( const char *pStr, const unsigned count )
 }
 
 void nciu::write ( unsigned type, 
-                 unsigned long countIn, const void *pValue )
+                 arrayElementCount countIn, const void *pValue )
 {
     if ( ! this->accessRightState.writePermit() ) {
         throw noWriteAccess();
@@ -287,7 +298,7 @@ void nciu::write ( unsigned type,
     this->cacCtx.writeRequest ( *this, type, countIn, pValue );
 }
 
-cacChannel::ioStatus nciu::write ( unsigned type, unsigned long countIn, 
+cacChannel::ioStatus nciu::write ( unsigned type, arrayElementCount countIn, 
                         const void *pValue, cacWriteNotify &notify, ioid *pId )
 {
     if ( ! this->accessRightState.writePermit() ) {
@@ -309,7 +320,7 @@ cacChannel::ioStatus nciu::write ( unsigned type, unsigned long countIn,
     return cacChannel::iosAsynch;
 }
 
-void nciu::subscribe ( unsigned type, unsigned long nElem, 
+void nciu::subscribe ( unsigned type, arrayElementCount nElem, 
                          unsigned mask, cacStateNotify &notify, ioid *pId )
 {
     if ( INVALID_DB_REQ(type) ) {
@@ -380,10 +391,10 @@ short nciu::nativeType () const
     return type;
 }
 
-unsigned long nciu::nativeElementCount () const
+arrayElementCount nciu::nativeElementCount () const
 {
     epicsAutoMutex locker ( this->cacCtx.mutexRef() );
-    unsigned long countOut;
+    arrayElementCount countOut;
     if ( this->f_connected ) {
         countOut = this->count;
     }
@@ -466,7 +477,6 @@ void nciu::show ( unsigned level ) const
         ::printf ( "\tname length=%u\n", this->nameLength );
     }
 }
-
 
 
 

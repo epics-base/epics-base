@@ -22,7 +22,7 @@
 #define NO_PLACEMENT_DELETE
 
 #ifdef DEBUG
-#   define debugPrintf(argsInParen) printf argsInParen
+#   define debugPrintf(argsInParen) ::printf argsInParen
 #else
 #   define debugPrintf(argsInParen)
 #endif
@@ -38,18 +38,6 @@
 #define MSEC_PER_SEC    1000L
 #define USEC_PER_SEC    1000000L
 
-/*
- * these control the duration and period of name resolution
- * broadcasts
- */
-#define MAXCONNTRIES        100 /* N conn retries on unchanged net */
-
-#define INITIALTRIESPERFRAME    1u  /* initial UDP frames per search try */
-#define MAXTRIESPERFRAME        64u /* max UDP frames per search try */
-
-#define CA_RECAST_DELAY     0.5    /* initial delay to next search (sec) */
-#define CA_RECAST_PORT_MASK 0xff    /* additional random search interval from port */
-#define CA_RECAST_PERIOD    5.0     /* quiescent search period (sec) */
 
 #if defined (CLOCKS_PER_SEC)
 #   define CAC_SIGNIFICANT_SELECT_DELAY ( 1.0 / CLOCKS_PER_SEC )

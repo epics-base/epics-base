@@ -21,6 +21,7 @@
 #include "ipAddrToAsciiAsynchronous.h"
 #include "epicsTimer.h"
 #include "epicsEvent.h"
+#include "freeList.h"
 
 #include "nciu.h"
 
@@ -93,6 +94,7 @@ public:
 
 struct CASG;
 class inetAddrID;
+struct caHdrLargeArray;
 
 class cac : private cacRecycle
 {
@@ -101,7 +103,8 @@ public:
     virtual ~cac ();
 
     // beacon management
-    void beaconNotify ( const inetAddrID &addr );
+    void beaconNotify ( const inetAddrID &addr, 
+        const epicsTime &currentTime );
     void repeaterSubscribeConfirmNotify ();
 
     // IIU routines
@@ -122,7 +125,7 @@ public:
     void connectAllIO ( nciu &chan );
     void disconnectAllIO ( nciu &chan );
     void destroyAllIO ( nciu &chan );
-    void executeResponse ( tcpiiu &, caHdr &, char *pMshBody );
+    bool executeResponse ( tcpiiu &, caHdrLargeArray &, char *pMsgBody );
     void ioCancel ( nciu &chan, const cacChannel::ioid &id );
     void ioShow ( const cacChannel::ioid &id, unsigned level ) const;
 
@@ -130,8 +133,8 @@ public:
     bool connectChannel ( unsigned id );
     void installNetworkChannel ( nciu &, netiiu *&piiu );
     bool lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid, 
-             unsigned typeCode, unsigned long count, unsigned minorVersionNumber,
-             const osiSockAddr & );
+             ca_uint16_t typeCode, arrayElementCount count, unsigned minorVersionNumber,
+             const osiSockAddr &, const epicsTime & currentTime );
     void uninstallChannel ( nciu & );
     cacChannel & createChannel ( const char *name_str, cacChannelNotify &chan );
     void registerService ( cacService &service );
@@ -144,7 +147,7 @@ public:
     cacChannel::ioid readNotifyRequest ( nciu &, unsigned type, 
         unsigned nElem, cacReadNotify & );
     cacChannel::ioid subscriptionRequest ( nciu &, unsigned type, 
-        unsigned long nElem, unsigned mask, cacStateNotify & );
+        arrayElementCount nElem, unsigned mask, cacStateNotify & );
 
     // sync group routines
     CASG * lookupCASG ( unsigned id );
@@ -154,9 +157,6 @@ public:
     // exception generation
     void exception ( int status, const char *pContext,
         const char *pFileName, unsigned lineNo );
-    void exception ( int status, const char *pContext,
-        unsigned type, unsigned long count, 
-        const char *pFileName, unsigned lineNo );
 
     // callback preemption control
     void enableCallbackPreemption ();
@@ -165,21 +165,30 @@ public:
     // diagnostics
     unsigned connectionCount () const;
     void show ( unsigned level ) const;
-    int printf ( const char *pformat, ... );
-    int vPrintf ( const char *pformat, va_list args );
+    int printf ( const char *pformat, ... ) const;
+    int vPrintf ( const char *pformat, va_list args ) const;
     void ipAddrToAsciiAsynchronousRequestInstall ( ipAddrToAsciiAsynchronous & request );
+    void signal ( int ca_status, const char *pfilenm, 
+                     int lineno, const char *pFormat, ... );
+    void vSignal ( int ca_status, const char *pfilenm, 
+                     int lineno, const char *pFormat, va_list args );
 
     // misc
     const char * userNamePointer () const;
     unsigned getInitializingThreadsPriority () const;
-
     epicsMutex & mutexRef ();
+    void attachToClientCtx ();
+    char * allocateSmallBufferTCP ();
+    void releaseSmallBufferTCP ( char * );
+    unsigned largeBufferSizeTCP () const;
+    char * allocateLargeBufferTCP ();
+    void releaseLargeBufferTCP ( char * );
 
 private:
     ioCounterNet            ioCounter;
     ipAddrToAsciiEngine     ipToAEngine;
     cacServiceList          services;
-    tsDLList <tcpiiu>       iiuList;
+    tsDLList < tcpiiu >     iiuList;
     chronIntIdResTable
         < nciu >            chanTable;
     chronIntIdResTable 
@@ -208,10 +217,13 @@ private:
     class searchTimer       *pSearchTmr;
     class repeaterSubscribeTimer  
                             *pRepeaterSubscribeTmr;
+    void                    *tcpSmallRecvBufFreeList;
+    void                    *tcpLargeRecvBufFreeList;
     cacNotify               &notify;
     unsigned                ioNotifyInProgressId;
     unsigned                initializingThreadsPriority;
     unsigned                threadsBlockingOnNotifyCompletion;
+    unsigned                maxRecvBytesTCP;
     bool                    enablePreemptiveCallback;
     bool                    ioInProgress;
     bool setupUDP ();
@@ -220,39 +232,57 @@ private:
     void recycleWriteNotifyIO ( netWriteNotifyIO &io );
     void recycleSubscription ( netSubscription &io );
 
-    bool ioCompletionNotify ( unsigned id, unsigned type, 
-        unsigned long count, const void *pData );
-    bool ioExceptionNotify ( unsigned id, 
+    void ioCompletionNotify ( unsigned id, unsigned type, 
+        arrayElementCount count, const void *pData );
+    void ioExceptionNotify ( unsigned id, 
         int status, const char *pContext );
-    bool ioExceptionNotify ( unsigned id, int status, 
-        const char *pContext, unsigned type, unsigned long count );
-    bool ioCompletionNotifyAndDestroy ( unsigned id );
-    bool ioCompletionNotifyAndDestroy ( unsigned id, 
-        unsigned type, unsigned long count, const void *pData );
-    bool ioExceptionNotifyAndDestroy ( unsigned id, 
+    void ioExceptionNotify ( unsigned id, int status, 
+        const char *pContext, unsigned type, arrayElementCount count );
+
+    void ioCompletionNotifyAndDestroy ( unsigned id );
+    void ioCompletionNotifyAndDestroy ( unsigned id, 
+        unsigned type, arrayElementCount count, const void *pData );
+    void ioExceptionNotifyAndDestroy ( unsigned id, 
        int status, const char *pContext );
-    bool ioExceptionNotifyAndDestroy ( unsigned id, 
-       int status, const char *pContext, unsigned type, unsigned long count );
+    void ioExceptionNotifyAndDestroy ( unsigned id, 
+       int status, const char *pContext, unsigned type, arrayElementCount count );
 
     // recv protocol stubs
-    bool noopAction ( tcpiiu &, const caHdr &, void *pMsgBdy );
-    bool echoRespAction ( tcpiiu &, const caHdr &, void *pMsgBdy );
-    bool writeNotifyRespAction ( tcpiiu &, const caHdr &, void *pMsgBdy );
-    bool readNotifyRespAction ( tcpiiu &, const caHdr &, void *pMsgBdy );
-    bool eventRespAction ( tcpiiu &, const caHdr &, void *pMsgBdy );
-    bool readRespAction ( tcpiiu &, const caHdr &, void *pMsgBdy );
-    bool clearChannelRespAction ( tcpiiu &, const caHdr &, void *pMsgBdy );
-    bool exceptionRespAction ( tcpiiu &, const caHdr &, void *pMsgBdy );
-    bool accessRightsRespAction ( tcpiiu &, const caHdr &, void *pMsgBdy );
-    bool claimCIURespAction ( tcpiiu &, const caHdr &, void *pMsgBdy );
-    bool verifyAndDisconnectChan ( tcpiiu &, const caHdr &, void *pMsgBdy );
-    bool badTCPRespAction ( tcpiiu &, const caHdr &, void *pMsgBdy );
+    bool noopAction ( tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );
+    bool echoRespAction ( tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );
+    bool writeNotifyRespAction ( tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );
+    bool readNotifyRespAction ( tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );
+    bool eventRespAction ( tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );
+    bool readRespAction ( tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );
+    bool clearChannelRespAction ( tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );
+    bool exceptionRespAction ( tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );
+    bool accessRightsRespAction ( tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );
+    bool claimCIURespAction ( tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );
+    bool verifyAndDisconnectChan ( tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );
+    bool badTCPRespAction ( tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );
     typedef bool ( cac::*pProtoStubTCP ) ( 
-        tcpiiu &, const caHdr &, void *pMsgBdy );
+        tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );
     static const pProtoStubTCP tcpJumpTableCAC [];
-};
 
-extern "C" void ca_default_exception_handler ( struct exception_handler_args args );
+    bool defaultExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr, 
+                    const char *pCtx, unsigned status );
+    bool eventAddExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr, 
+                    const char *pCtx, unsigned status );
+    bool readExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr, 
+                    const char *pCtx, unsigned status );
+    bool writeExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr, 
+                    const char *pCtx, unsigned status );
+    bool clearChanExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr, 
+                    const char *pCtx, unsigned status );
+    bool readNotifyExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr, 
+                    const char *pCtx, unsigned status );
+    bool writeNotifyExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr, 
+                    const char *pCtx, unsigned status );
+    typedef bool ( cac::*pExcepProtoStubTCP ) ( 
+                    tcpiiu &iiu, const caHdrLargeArray &hdr, 
+                    const char *pCtx, unsigned status );
+    static const pExcepProtoStubTCP tcpExcepJumpTableCAC [];
+};
 
 inline const char * cac::userNamePointer () const
 {
@@ -300,16 +330,39 @@ inline void cac::exception ( int status, const char *pContext,
     this->notify.exception ( status, pContext, pFileName, lineNo );
 }
 
-inline void cac::exception ( int status, const char *pContext,
-    unsigned type, unsigned long count, 
-    const char *pFileName, unsigned lineNo )
-{
-    this->notify.exception ( status, pContext, type, count, pFileName, lineNo );
-}
-
-inline int cac::vPrintf ( const char *pformat, va_list args )
+inline int cac::vPrintf ( const char *pformat, va_list args ) const
 {
     return this->notify.vPrintf ( pformat, args );
+}
+
+inline void cac::attachToClientCtx ()
+{
+    this->notify.attachToClientCtx ();
+}
+
+inline char * cac::allocateSmallBufferTCP ()
+{
+    return ( char * ) freeListMalloc ( this->tcpSmallRecvBufFreeList );
+}
+
+inline void cac::releaseSmallBufferTCP ( char *pBuf )
+{
+    freeListFree ( this->tcpSmallRecvBufFreeList, pBuf );
+}
+
+inline unsigned cac::largeBufferSizeTCP () const
+{
+    return this->maxRecvBytesTCP;
+}
+
+inline char * cac::allocateLargeBufferTCP ()
+{
+    return ( char * ) freeListMalloc ( this->tcpLargeRecvBufFreeList );
+}
+
+inline void cac::releaseLargeBufferTCP ( char *pBuf )
+{
+    freeListFree ( this->tcpLargeRecvBufFreeList, pBuf );
 }
 
 inline bool recvProcessThread::isCurrentThread () const

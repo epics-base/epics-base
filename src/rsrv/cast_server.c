@@ -60,7 +60,7 @@
 
 #include "server.h"
     
-#define     TIMEOUT 60.0 /* sec */
+#define TIMEOUT 60.0 /* sec */
 
 /*
  * clean_addrq
@@ -233,34 +233,33 @@ int cast_server(void)
      * possible
      *
      */
-    while (TRUE) {
-        prsrv_cast_client = create_base_client ();
-        if (prsrv_cast_client) {
+    while ( TRUE ) {
+        prsrv_cast_client = create_client ( IOC_cast_sock, IPPROTO_UDP );
+        if ( prsrv_cast_client ) {
             break;
         }
         epicsThreadSleep(300.0);
     }
 
-    prsrv_cast_client->sock = IOC_cast_sock;
-    prsrv_cast_client->tid = epicsThreadGetIdSelf ();
+    casAttachThreadToClient ( prsrv_cast_client );
     
     while (TRUE) {
         status = recvfrom (
             IOC_cast_sock,
             prsrv_cast_client->recv.buf,
-            sizeof(prsrv_cast_client->recv.buf),
+            prsrv_cast_client->recv.maxstk,
             0,
             (struct sockaddr *)&new_recv_addr, 
             &recv_addr_size);
         if (status<0) {
             epicsPrintf ("CAS: UDP recv error (errno=%s)\n",
                     SOCKERRSTR(SOCKERRNO));
-        epicsThreadSleep(1.0);
+            epicsThreadSleep(1.0);
         }
         else {
-            prsrv_cast_client->recv.cnt = (unsigned long) status;
+            prsrv_cast_client->recv.cnt = (unsigned) status;
             prsrv_cast_client->recv.stk = 0ul;
-        epicsTimeGetCurrent(&prsrv_cast_client->time_at_last_recv);
+            epicsTimeGetCurrent(&prsrv_cast_client->time_at_last_recv);
 
             /*
              * If we are talking to a new client flush to the old one 
@@ -292,8 +291,7 @@ int cast_server(void)
             if (CASDEBUG>2)
                 count = ellCount (&prsrv_cast_client->addrq);
 
-            status = camessage(
-                prsrv_cast_client,&prsrv_cast_client->recv);
+            status = camessage ( prsrv_cast_client );
             if(status == RSRV_OK){
                 if(prsrv_cast_client->recv.cnt != 
                     prsrv_cast_client->recv.stk){

@@ -48,19 +48,20 @@ void netWriteNotifyIO::completion ()
 
 void netWriteNotifyIO::exception ( int status, const char *pContext )
 {
-    this->notify.exception ( status, pContext );
+    this->notify.exception ( status, pContext, UINT_MAX, 0u );
 }
+
+void netWriteNotifyIO::exception ( int status, const char *pContext, 
+                                  unsigned type, arrayElementCount count )
+{
+    this->notify.exception ( status, pContext, type, count );
+}
+
 
 void netWriteNotifyIO::completion ( unsigned /* type */, 
-    unsigned long /* count */, const void * /* pData */ )
+    arrayElementCount /* count */, const void * /* pData */ )
 {
     this->chan.getClient().printf ( "Write response with data ?\n" );
-}
-
-void netWriteNotifyIO::exception ( int status, 
-    const char *pContext, unsigned /* type */, unsigned long /* count */ )
-{
-    this->notify.exception ( status, pContext );
 }
 
 

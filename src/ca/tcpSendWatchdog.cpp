@@ -17,7 +17,7 @@
 
 tcpSendWatchdog::tcpSendWatchdog 
     ( tcpiiu &iiuIn, double periodIn, epicsTimerQueue & queueIn ) :
-    period ( periodIn ), timer ( queueIn.createTimer ( *this ) ),
+    period ( periodIn ), timer ( queueIn.createTimer () ),
     iiu ( iiuIn )
 {
 }
@@ -27,7 +27,7 @@ tcpSendWatchdog::~tcpSendWatchdog ()
     delete & this->timer;
 }
 
-epicsTimerNotify::expireStatus tcpSendWatchdog::expire ()
+epicsTimerNotify::expireStatus tcpSendWatchdog::expire ( const epicsTime & currentTime )
 {
     char hostName[128];
     this->iiu.hostName ( hostName, sizeof ( hostName ) );
@@ -39,7 +39,7 @@ epicsTimerNotify::expireStatus tcpSendWatchdog::expire ()
 
 void tcpSendWatchdog::start ()
 {
-    this->timer.start ( this->period );
+    this->timer.start ( *this, this->period );
 }
 
 void tcpSendWatchdog::cancel ()

@@ -32,7 +32,7 @@ getCallback::~getCallback ()
 }
 
 void getCallback::completion (
-    unsigned type, unsigned long count, const void *pData )
+    unsigned type, arrayElementCount count, const void *pData )
 {
     struct event_handler_args   args;
     args.usr = this->pPrivate;
@@ -47,7 +47,7 @@ void getCallback::completion (
 
 void getCallback::exception (
     int status, const char * /* pContext */, 
-    unsigned type, unsigned long count )
+    unsigned type, arrayElementCount count )
 {
     struct event_handler_args   args;
     args.usr = this->pPrivate;

@@ -13,3 +13,19 @@ o detect name conflicts at boot time
 o multi priority connections (quality of service)
 o reduce protocol overhead
 o compressed protocol
+
+
+o If there is a beacon anomaly then this indicates that
+the server is _not_ available. Perhaps we should only
+reset the search timer interval when we see a beacon 
+anomaly transition into a sure steady beacon.
+
+o make certain that a monitor callback canceling itself
+does not deadlock.
+
+o the free list library does not now cause exceptions to
+occur (it uses new ( nothrow )), and therefore we should
+change the new handlers to be nothrow also if this is 
+the design goal.
+
+o test the library when an IOC is running low on memory.

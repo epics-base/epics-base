@@ -45,12 +45,16 @@
 
 class cacChannel;
 
-// this should not be passing caerr.h status to the exception callback
+typedef unsigned long arrayElementCount;
+
+// 1) this should not be passing caerr.h status to the exception callback
+// 2) needless-to-say the data should be passed here using the new data access API
 class epicsShareClass cacWriteNotify {
 public:
     virtual ~cacWriteNotify () = 0;
     virtual void completion () = 0;
-    virtual void exception ( int status, const char *pContext ) = 0;
+    virtual void exception ( int status, const char *pContext, 
+        unsigned type, arrayElementCount count ) = 0;
 };
 
 // 1) this should not be passing caerr.h status to the exception callback
@@ -59,9 +63,9 @@ class epicsShareClass cacReadNotify {
 public:
     virtual ~cacReadNotify () = 0;
     virtual void completion ( unsigned type, 
-        unsigned long count, const void *pData ) = 0;
+        arrayElementCount count, const void *pData ) = 0;
     virtual void exception ( int status, 
-        const char *pContext, unsigned type, unsigned long count ) = 0;
+        const char *pContext, unsigned type, arrayElementCount count ) = 0;
 };
 
 // 1) this should not be passing caerr.h status to the exception callback
@@ -70,9 +74,9 @@ class epicsShareClass cacStateNotify {
 public:
     virtual ~cacStateNotify () = 0;
     virtual void current ( unsigned type, 
-        unsigned long count, const void *pData ) = 0;
+        arrayElementCount count, const void *pData ) = 0;
     virtual void exception ( int status, 
-        const char *pContext, unsigned type, unsigned long count ) = 0;
+        const char *pContext, unsigned type, arrayElementCount count ) = 0;
 };
 
 class caAccessRights {
@@ -103,6 +107,10 @@ public:
     virtual void disconnectNotify () = 0;
     virtual void accessRightsNotify ( const caAccessRights & ) = 0;
     virtual void exception ( int status, const char *pContext ) = 0;
+    virtual void readException ( int status, const char *pContext,
+        unsigned type, arrayElementCount count, void *pValue ) = 0;
+    virtual void writeException ( int status, const char *pContext,
+        unsigned type, arrayElementCount count ) = 0;
     // not for public consumption -- can we get rid of this ????
     virtual bool includeFirstConnectInCountOfOutstandingIO () const;
 };
@@ -125,21 +133,21 @@ public:
     virtual const char *pName () const = 0;
     virtual void show ( unsigned level ) const = 0;
     virtual void initiateConnect () = 0;
-    virtual void write ( unsigned type, unsigned long count, 
+    virtual void write ( unsigned type, arrayElementCount count, 
         const void *pValue ) = 0;
 // we may need to include an optimization for read copy here if we want to enable
 // reasonable performance of the old API. Adding it here means that the outstanding IO
 // count must be visible :-(.
-    virtual ioStatus read ( unsigned type, unsigned long count, 
+    virtual ioStatus read ( unsigned type, arrayElementCount count, 
         cacReadNotify &, ioid * = 0 ) = 0;
-    virtual ioStatus write ( unsigned type, unsigned long count, 
+    virtual ioStatus write ( unsigned type, arrayElementCount count, 
         const void *pValue, cacWriteNotify &, ioid * = 0 ) = 0;
-    virtual void subscribe ( unsigned type, unsigned long count, 
+    virtual void subscribe ( unsigned type, arrayElementCount count, 
         unsigned mask, cacStateNotify &, ioid * = 0 ) = 0;
     virtual void ioCancel ( const ioid & ) = 0;
     virtual void ioShow ( const ioid &, unsigned level ) const = 0;
     virtual short nativeType () const = 0;
-    virtual unsigned long nativeElementCount () const = 0;
+    virtual arrayElementCount nativeElementCount () const = 0;
     virtual caAccessRights accessRights () const; // defaults to unrestricted access
     virtual unsigned searchAttempts () const; // defaults to zero
     virtual double beaconPeriod () const; // defaults to negative DBL_MAX
@@ -160,7 +168,7 @@ public:
     class noReadAccess {};
     class notConnected {};
     class unsupportedByService {};
-    class noMemory {};
+    class msgBodyCacheTooSmall {}; // hopefully this one goes away in the future
 
 private:
     cacChannelNotify & callback;
@@ -169,17 +177,15 @@ private:
 class cacNotify {
 public:
     virtual ~cacNotify () = 0;
-// exception mechanism needs to be designed
-    virtual void exception ( int status, const char *pContext,
-        const char *pFileName, unsigned lineNo ) = 0;
-    virtual void exception ( int status, const char *pContext,
-        unsigned type, unsigned long count, 
+    virtual void exception ( int status, const char *pContext, 
         const char *pFileName, unsigned lineNo ) = 0;
 // perhaps this should be phased out in deference to the exception mechanism
-    virtual int vPrintf ( const char *pformat, va_list args ) = 0;
+    virtual int vPrintf ( const char *pformat, va_list args ) const = 0;
 // this should probably be phased out (its not OS independent)
     virtual void fdWasCreated ( int fd ) = 0;
     virtual void fdWasDestroyed ( int fd ) = 0;
+// backwards compatibility
+    virtual void attachToClientCtx () = 0;
 };
 
 struct cacService : public tsDLNode < cacService > {

@@ -34,7 +34,7 @@
 #include "net_convert.h"
 #undef epicsExportSharedSymbols
 
-// TCP protocol jump table
+// TCP response dispatch table
 const cac::pProtoStubTCP cac::tcpJumpTableCAC [] = 
 {
     &cac::noopAction,
@@ -67,6 +67,39 @@ const cac::pProtoStubTCP cac::tcpJumpTableCAC [] =
     &cac::verifyAndDisconnectChan
 };
 
+// TCP exception dispatch table
+const cac::pExcepProtoStubTCP cac::tcpExcepJumpTableCAC [] = 
+{
+    &cac::defaultExcep,     // CA_PROTO_NOOP
+    &cac::eventAddExcep,    // CA_PROTO_EVENT_ADD
+    &cac::defaultExcep,     // CA_PROTO_EVENT_CANCEL
+    &cac::readExcep,        // CA_PROTO_READ
+    &cac::writeExcep,       // CA_PROTO_WRITE
+    &cac::defaultExcep,     // CA_PROTO_SNAPSHOT
+    &cac::defaultExcep,     // CA_PROTO_SEARCH
+    &cac::defaultExcep,     // CA_PROTO_BUILD
+    &cac::defaultExcep,     // CA_PROTO_EVENTS_OFF
+    &cac::defaultExcep,     // CA_PROTO_EVENTS_ON
+    &cac::defaultExcep,     // CA_PROTO_READ_SYNC
+    &cac::defaultExcep,     // CA_PROTO_ERROR
+    &cac::defaultExcep,     // CA_PROTO_CLEAR_CHANNEL
+    &cac::defaultExcep,     // CA_PROTO_RSRV_IS_UP
+    &cac::defaultExcep,     // CA_PROTO_NOT_FOUND
+    &cac::readNotifyExcep,  // CA_PROTO_READ_NOTIFY
+    &cac::defaultExcep,     // CA_PROTO_READ_BUILD
+    &cac::defaultExcep,     // REPEATER_CONFIRM
+    &cac::defaultExcep,     // CA_PROTO_CLAIM_CIU 
+    &cac::writeNotifyExcep, // CA_PROTO_WRITE_NOTIFY
+    &cac::defaultExcep,     // CA_PROTO_CLIENT_NAME
+    &cac::defaultExcep,     // CA_PROTO_HOST_NAME
+    &cac::defaultExcep,     // CA_PROTO_ACCESS_RIGHTS
+    &cac::defaultExcep,     // CA_PROTO_ECHO
+    &cac::defaultExcep,     // REPEATER_REGISTER
+    &cac::defaultExcep,     // CA_PROTO_SIGNAL
+    &cac::defaultExcep,     // CA_PROTO_CLAIM_CIU_FAILED
+    &cac::defaultExcep      // CA_PROTO_SERVER_DISCONN
+};
+
 //
 // cac::cac ()
 //
@@ -79,10 +112,13 @@ cac::cac ( cacNotify &notifyIn, bool enablePreemptiveCallbackIn ) :
     pudpiiu ( 0 ),
     pSearchTmr ( 0 ),
     pRepeaterSubscribeTmr ( 0 ),
+    tcpSmallRecvBufFreeList ( 0 ),
+    tcpLargeRecvBufFreeList ( 0 ),
     notify ( notifyIn ),
     ioNotifyInProgressId ( 0 ),
     initializingThreadsPriority ( epicsThreadGetPrioritySelf () ),
     threadsBlockingOnNotifyCompletion ( 0u ),
+    maxRecvBytesTCP ( MAX_TCP ),
     enablePreemptiveCallback ( enablePreemptiveCallbackIn ),
     ioInProgress ( false )
 {
@@ -130,9 +166,46 @@ cac::cac ( cacNotify &notifyIn, bool enablePreemptiveCallbackIn ) :
         this->printf ( "Defaulting \"%s\" = %f\n", EPICS_CA_CONN_TMO.name, this->connTMO);
     }
 
+    long maxBytesAsALong;
+    status =  envGetLongConfigParam ( &EPICS_CA_MAX_ARRAY_BYTES, &maxBytesAsALong );
+    if ( status || maxBytesAsALong < 0 ) {
+        errlogPrintf ( "cac: EPICS_CA_MAX_ARRAY_BYTES was not a positive integer\n" );
+    }
+    else {
+        /* allow room for the protocol header so that they get the array size they requested */
+        static const unsigned headerSize = sizeof ( caHdr ) + 2 * sizeof ( ca_uint32_t );
+        ca_uint32_t maxBytes = ( unsigned ) maxBytesAsALong;
+        if ( maxBytes < 0xffffffff - headerSize ) {
+            maxBytes += headerSize;
+        }
+        else {
+            maxBytes = 0xffffffff;
+        }
+        if ( maxBytes < MAX_TCP ) {
+            errlogPrintf ( "cac: EPICS_CA_MAX_ARRAY_BYTES was rounded up to %u\n", MAX_TCP );
+        }
+        else {
+            this->maxRecvBytesTCP = maxBytes;
+        }
+    }
+    freeListInitPvt ( &this->tcpSmallRecvBufFreeList, MAX_TCP, 1 );
+    if ( ! this->tcpSmallRecvBufFreeList ) {
+        free ( this->pUserName );
+        throwWithLocation ( caErrorCode ( ECA_ALLOCMEM ) );
+    }
+
+    freeListInitPvt ( &this->tcpLargeRecvBufFreeList, this->maxRecvBytesTCP, 1 );
+    if ( ! this->tcpLargeRecvBufFreeList ) {
+        free ( this->pUserName );
+        freeListCleanup ( this->tcpSmallRecvBufFreeList );
+        throwWithLocation ( caErrorCode ( ECA_ALLOCMEM ) );
+    }
+
     this->pTimerQueue = & epicsTimerQueueActive::allocate ( false, abovePriority );
     if ( ! this->pTimerQueue ) {
         free ( this->pUserName );
+        freeListCleanup ( this->tcpSmallRecvBufFreeList );
+        freeListCleanup ( this->tcpLargeRecvBufFreeList );
         throwWithLocation ( caErrorCode ( ECA_ALLOCMEM ) );
     }
 
@@ -146,6 +219,8 @@ cac::cac ( cacNotify &notifyIn, bool enablePreemptiveCallbackIn ) :
     if ( ! this->pRecvProcThread ) {
         this->pTimerQueue->release ();
         free ( this->pUserName );
+        freeListCleanup ( this->tcpSmallRecvBufFreeList );
+        freeListCleanup ( this->tcpLargeRecvBufFreeList );
         throwWithLocation ( caErrorCode ( ECA_ALLOCMEM ) );
     }
     else if ( this->enablePreemptiveCallback ) {
@@ -196,6 +271,9 @@ cac::~cac ()
     delete this->pRepeaterSubscribeTmr;
     delete this->pSearchTmr;
 
+    freeListCleanup ( this->tcpSmallRecvBufFreeList );
+    freeListCleanup ( this->tcpLargeRecvBufFreeList );
+
     {
         epicsAutoMutex autoMutex ( this->mutex );
         if ( this->pudpiiu ) {
@@ -242,11 +320,7 @@ void cac::processRecvBacklog ()
             if ( ! piiu->alive () ) {
                 assert ( this->pudpiiu && this->pSearchTmr );
 
-                bhe *pBHE = piiu->getBHE ();
-                if ( pBHE ) {
-                    this->beaconTable.remove ( *pBHE );
-                    pBHE->destroy ();
-                }
+                piiu->getBHE().unbindFromIIU ();
 
                 if ( piiu->channelCount () ) {
                     char hostNameTmp[64];
@@ -281,9 +355,12 @@ void cac::processRecvBacklog ()
 	    }
     }
     if ( deadIIU.count() ) {
-        this->pSearchTmr->resetPeriod ( CA_RECAST_DELAY );
         while ( tcpiiu *piiu = deadIIU.get() ) {
             piiu->destroy ();
+        }
+        {
+            epicsAutoMutex autoMutex ( this->mutex );
+            this->pSearchTmr->resetPeriod ( 0.0 );
         }
     }
 }
@@ -381,11 +458,9 @@ void cac::signalRecvActivity ()
 /*
  *  cac::beaconNotify
  */
-void cac::beaconNotify ( const inetAddrID &addr )
+void cac::beaconNotify ( const inetAddrID &addr, const epicsTime &currentTime )
 {
     epicsAutoMutex autoMutex ( this->mutex );
-    unsigned port;  
-    bhe *pBHE;
 
     if ( ! this->pudpiiu ) {
         return;
@@ -394,12 +469,12 @@ void cac::beaconNotify ( const inetAddrID &addr )
     /*
      * look for it in the hash table
      */
-    pBHE = this->beaconTable.lookup ( addr );
+    bhe *pBHE = this->beaconTable.lookup ( addr );
     if ( pBHE ) {
         /*
          * return if the beacon period has not changed significantly
          */
-        if ( ! pBHE->updatePeriod ( this->programBeginTime ) ) {
+        if ( ! pBHE->updatePeriod ( this->programBeginTime, currentTime ) ) {
             return;
         }
     }
@@ -411,7 +486,7 @@ void cac::beaconNotify ( const inetAddrID &addr )
          * time that we have seen a server's beacon
          * shortly after the program started up)
          */
-        pBHE = new bhe ( epicsTime::getCurrent (), addr );
+        pBHE = new bhe ( currentTime, addr );
         if ( pBHE ) {
             if ( this->beaconTable.add ( *pBHE ) < 0 ) {
                 pBHE->destroy ();
@@ -432,17 +507,13 @@ void cac::beaconNotify ( const inetAddrID &addr )
      * order bits as a pseudo random delay to prevent every 
      * one from replying at once.
      */
-    port = this->pudpiiu->getPort ();
-    {
-        ca_real     delay;
-
-        delay = ( port & CA_RECAST_PORT_MASK );
-        delay /= MSEC_PER_SEC;
-        delay += CA_RECAST_DELAY;
-
-        if ( this->pudpiiu->channelCount () > 0u  && this->pSearchTmr ) {
-            this->pSearchTmr->resetPeriod ( delay );
-        }
+    if ( this->pSearchTmr ) {
+        static const double portTicksPerSec = 1000u;
+        static const unsigned portBasedDelayMask = 0xff;
+        unsigned port = this->pudpiiu->getPort ();
+        double delay = ( port & portBasedDelayMask );
+        delay /= portTicksPerSec; 
+        this->pSearchTmr->resetPeriod ( delay );
     }
 
     this->pudpiiu->resetChannelRetryCounts ();
@@ -613,7 +684,7 @@ void cac::installNetworkChannel ( nciu & chan, netiiu * & piiu )
     this->chanTable.add ( chan );
     this->pudpiiu->attachChannel ( chan );
     piiu = this->pudpiiu;
-    this->pSearchTmr->resetPeriod ( CA_RECAST_DELAY );
+    this->pSearchTmr->resetPeriod ( 0.0 );
 }
 
 bool cac::setupUDP ()
@@ -670,8 +741,9 @@ void cac::repeaterSubscribeConfirmNotify ()
 }
 
 bool cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid, 
-             unsigned typeCode, unsigned long count, 
-             unsigned minorVersionNumber, const osiSockAddr &addr )
+             ca_uint16_t typeCode, arrayElementCount count, 
+             unsigned minorVersionNumber, const osiSockAddr &addr,
+             const epicsTime & currentTime )
 {
     unsigned  retrySeqNumber;
 
@@ -679,88 +751,82 @@ bool cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
         return false;
     }
 
-    {
-        epicsAutoMutex autoMutex ( this->mutex );
-        nciu *chan;
+    epicsAutoMutex autoMutex ( this->mutex );
+    nciu *chan;
 
-        /*
-         * ignore search replies for deleted channels
-         */
-        chan = this->chanTable.lookup ( cid );
-        if ( ! chan ) {
-            return true;
+    /*
+     * ignore search replies for deleted channels
+     */
+    chan = this->chanTable.lookup ( cid );
+    if ( ! chan ) {
+        return true;
+    }
+
+    retrySeqNumber = chan->getRetrySeqNo ();
+
+    /*
+     * Ignore duplicate search replies
+     */
+    if ( chan->getPIIU()->isVirtaulCircuit( chan->pName(), addr ) ) {
+        return true;
+    }
+
+    /*
+     * look for an existing virtual circuit
+     */
+    tcpiiu *piiu;
+    bhe *pBHE = this->beaconTable.lookup ( addr.ia );
+    if ( pBHE ) {
+        piiu = pBHE->getIIU ();
+        if ( piiu ) {
+            if ( ! piiu->alive () ) {
+                return true;
+            }
         }
-
-        retrySeqNumber = chan->getRetrySeqNo ();
-
-        /*
-         * Ignore duplicate search replies
-         */
-        if ( chan->getPIIU()->isVirtaulCircuit( chan->pName(), addr ) ) {
-            return true;
-        }
-
-        /*
-         * look for an existing virtual circuit
-         */
-        tcpiiu *piiu;
-        bhe *pBHE = this->beaconTable.lookup ( addr.ia );
+    }
+    else {
+        pBHE = new bhe ( epicsTime (), addr.ia );
         if ( pBHE ) {
-            piiu = pBHE->getIIU ();
-            if ( piiu ) {
-                if ( ! piiu->alive () ) {
-                    return true;
-                }
+            if ( this->beaconTable.add ( *pBHE ) < 0 ) {
+                pBHE->destroy ();
+                return true;
             }
         }
         else {
-            pBHE = new bhe ( epicsTime (), addr.ia );
-            if ( pBHE ) {
-                if ( this->beaconTable.add ( *pBHE ) < 0 ) {
-                    pBHE->destroy ();
-                    return true;
-                }
-            }
-            else {
-                return true;
-            }
-            piiu = 0;
+            return true;
         }
+        piiu = 0;
+    }
 
-        if ( ! piiu ) {
-            piiu = new tcpiiu ( *this, this->connTMO, *this->pTimerQueue );
+    if ( ! piiu ) {
+        try {
+            piiu = new tcpiiu ( *this, this->connTMO, *this->pTimerQueue,
+                        addr, minorVersionNumber, *pBHE, this->ipToAEngine );
             if ( ! piiu ) {
                 return true;
             }
-            if ( piiu->fullyConstructed () ) {
-                this->iiuList.add ( *piiu  );
-                if ( ! piiu->initiateConnect ( addr, minorVersionNumber, 
-                            *pBHE, this->ipToAEngine ) ) {
-                    this->iiuList.remove ( *piiu  );
-                    piiu->destroy ();
-                    return true;
-                }
-            }
-            else {
-                delete piiu;
-                return true;
-            }
+            this->iiuList.add ( *piiu  );
+
         }
-
-        this->pudpiiu->detachChannel ( *chan );
-        chan->searchReplySetUp ( *piiu, sid, typeCode, count );
-        piiu->attachChannel ( *chan );
-
-        chan->createChannelRequest ();
-        piiu->flushRequest ();
-
-        if ( ! piiu->ca_v42_ok () ) {
-            chan->connect ();
+        catch ( ... ) {
+            this->printf ( "CAC: Exception caught during virtual circuit creation\n" );
+            return true;
         }
     }
 
+    this->pudpiiu->detachChannel ( *chan );
+    chan->searchReplySetUp ( *piiu, sid, typeCode, count );
+    piiu->attachChannel ( *chan );
+
+    chan->createChannelRequest ();
+    piiu->flushRequest ();
+
+    if ( ! piiu->ca_v42_ok () ) {
+        chan->connect ();
+    }
+
     if ( this->pSearchTmr ) {
-        this->pSearchTmr->notifySearchResponse ( retrySeqNumber );
+        this->pSearchTmr->notifySearchResponse ( retrySeqNumber, currentTime );
     }
 
     return true;
@@ -776,7 +842,7 @@ void cac::uninstallChannel ( nciu & chan )
     chan.getPIIU()->detachChannel ( chan );
 }
 
-int cac::printf ( const char *pformat, ... )
+int cac::printf ( const char *pformat, ... ) const
 {
     va_list theArgs;
     int status;
@@ -800,22 +866,20 @@ void cac::flushIfRequired ( nciu &chan )
         // send thread which runs at a higher priority than the 
         // send thread. The same applies to the UDP thread for
         // locking hierarchy reasons.
-        bool flushPermit = true;
+        bool blockPermit = true;
         if ( this->pRecvProcThread ) {
             if ( this->pRecvProcThread->isCurrentThread () ) {
-                flushPermit = false;
+                blockPermit = false;
             }
         }
         if ( this->pudpiiu ) {
             if ( this->pudpiiu->isCurrentThread () ) {
-                flushPermit = false;
+                blockPermit = false;
             }
         }
-        if ( flushPermit ) {
+        this->flushRequest ();
+        if ( blockPermit ) {
             chan.getPIIU()->blockUntilSendBacklogIsReasonable ( this->mutex );
-        }
-        else {
-            this->flushRequest ();
         }
     }
     else {
@@ -845,7 +909,7 @@ cacChannel::ioid cac::writeNotifyRequest ( nciu &chan, unsigned type, unsigned n
         return pIO.release()->getId ();
     }
     else {
-        throw cacChannel::noMemory ();
+        throw std::bad_alloc ();
     }
 }
 
@@ -862,7 +926,7 @@ cacChannel::ioid cac::readNotifyRequest ( nciu &chan, unsigned type, unsigned nE
         return pIO.release()->getId ();
     }
     else {
-        throw cacChannel::noMemory ();
+        throw std::bad_alloc ();
     }
 }
 
@@ -879,7 +943,7 @@ void cac::ioCancel ( nciu &chan, const cacChannel::ioid &id )
         assert ( this->threadsBlockingOnNotifyCompletion < UINT_MAX );
         this->threadsBlockingOnNotifyCompletion++;
         while ( this->ioInProgress && this->ioNotifyInProgressId == id ) {
-            epicsAutoMutex autoMutexRelease ( this->mutex );
+            epicsAutoMutexRelease autoRelease ( this->mutex );
             this->notifyCompletionEvent.wait ( 0.5 );
         }
         assert ( this->threadsBlockingOnNotifyCompletion > 0u );
@@ -900,18 +964,18 @@ void cac::ioShow ( const cacChannel::ioid &id, unsigned level ) const
     }
 }
 
-bool cac::ioCompletionNotify ( unsigned id, unsigned type, 
-                              unsigned long count, const void *pData )
+void cac::ioCompletionNotify ( unsigned id, unsigned type, 
+                              arrayElementCount count, const void *pData )
 {
     baseNMIU * pmiu = this->ioTable.lookup ( id );
     if ( ! pmiu ) {
-        return false;
+        return;
     }
     assert ( ! this->ioInProgress );
     this->ioInProgress = true;
     this->ioNotifyInProgressId = id;
     {
-        epicsAutoMutexRelease ( this->mutex );
+        epicsAutoMutexRelease autoRelease ( this->mutex );
         pmiu->completion ( type, count, pData );
     }
     // threads blocked canceling this IO will wait
@@ -920,20 +984,19 @@ bool cac::ioCompletionNotify ( unsigned id, unsigned type,
     if ( this->threadsBlockingOnNotifyCompletion ) {
         this->notifyCompletionEvent.signal ();
     }
-    return true;
 }
 
-bool cac::ioExceptionNotify ( unsigned id, int status, const char *pContext )
+void cac::ioExceptionNotify ( unsigned id, int status, const char *pContext )
 {
     baseNMIU * pmiu = this->ioTable.lookup ( id );
     if ( ! pmiu ) {
-        return false;
+        return;
     }
     assert ( ! this->ioInProgress );
     this->ioInProgress = true;
     this->ioNotifyInProgressId = id;
     {
-        epicsAutoMutexRelease ( this->mutex );
+        epicsAutoMutexRelease autoRelease ( this->mutex );
         pmiu->exception ( status, pContext );
     }
     // threads blocked canceling this IO will wait
@@ -942,21 +1005,20 @@ bool cac::ioExceptionNotify ( unsigned id, int status, const char *pContext )
     if ( this->threadsBlockingOnNotifyCompletion ) {
         this->notifyCompletionEvent.signal ();
     }
-    return true;
 }
 
-bool cac::ioExceptionNotify ( unsigned id, int status, 
-                   const char *pContext, unsigned type, unsigned long count )
+void cac::ioExceptionNotify ( unsigned id, int status, 
+                   const char *pContext, unsigned type, arrayElementCount count )
 {
     baseNMIU * pmiu = this->ioTable.lookup ( id );
     if ( ! pmiu ) {
-        return false;
+        return;
     }
     assert ( ! this->ioInProgress );
     this->ioInProgress = true;
     this->ioNotifyInProgressId = id;
     {
-        epicsAutoMutexRelease ( this->mutex );
+        epicsAutoMutexRelease autoRelease ( this->mutex );
         pmiu->exception ( status, pContext, type, count );
     }
     // threads blocked canceling this IO will wait
@@ -965,21 +1027,20 @@ bool cac::ioExceptionNotify ( unsigned id, int status,
     if ( this->threadsBlockingOnNotifyCompletion ) {
         this->notifyCompletionEvent.signal ();
     }
-    return true;
 }
 
-bool cac::ioCompletionNotifyAndDestroy ( unsigned id )
+void cac::ioCompletionNotifyAndDestroy ( unsigned id )
 {
     baseNMIU * pmiu = this->ioTable.remove ( id );
     if ( ! pmiu ) {
-        return false;
+        return;
     }
     pmiu->channel().cacPrivateListOfIO::eventq.remove ( *pmiu );
     assert ( ! this->ioInProgress );
     this->ioInProgress = true;
     this->ioNotifyInProgressId = id;
     {
-        epicsAutoMutexRelease ( this->mutex );
+        epicsAutoMutexRelease autoRelease ( this->mutex );
         pmiu->completion ();
     }
     pmiu->destroy ( *this );
@@ -989,22 +1050,21 @@ bool cac::ioCompletionNotifyAndDestroy ( unsigned id )
     if ( this->threadsBlockingOnNotifyCompletion ) {
         this->notifyCompletionEvent.signal ();
     }
-    return true;
 }
 
-bool cac::ioCompletionNotifyAndDestroy ( unsigned id, 
-    unsigned type, unsigned long count, const void *pData )
+void cac::ioCompletionNotifyAndDestroy ( unsigned id, 
+    unsigned type, arrayElementCount count, const void *pData )
 {
     baseNMIU * pmiu = this->ioTable.remove ( id );
     if ( ! pmiu ) {
-        return false;
+        return;
     }
     assert ( ! this->ioInProgress );
     this->ioInProgress = true;
     this->ioNotifyInProgressId = id;
     pmiu->channel().cacPrivateListOfIO::eventq.remove ( *pmiu );
     {
-        epicsAutoMutexRelease ( this->mutex );
+        epicsAutoMutexRelease autoRelease ( this->mutex );
         pmiu->completion ( type, count, pData );
     }
     pmiu->destroy ( *this );
@@ -1014,21 +1074,21 @@ bool cac::ioCompletionNotifyAndDestroy ( unsigned id,
     if ( this->threadsBlockingOnNotifyCompletion ) {
         this->notifyCompletionEvent.signal ();
     }
-    return true;
 }
 
-bool cac::ioExceptionNotifyAndDestroy ( unsigned id, int status, const char *pContext )
+void cac::ioExceptionNotifyAndDestroy ( unsigned id, int status, 
+                                       const char *pContext )
 {
     baseNMIU * pmiu = this->ioTable.remove ( id );
     if ( ! pmiu ) {
-        return false;
+        return;
     }
     assert ( ! this->ioInProgress );
     this->ioInProgress = true;
     this->ioNotifyInProgressId = id;
     pmiu->channel().cacPrivateListOfIO::eventq.remove ( *pmiu );
     {
-        epicsAutoMutexRelease ( this->mutex );
+        epicsAutoMutexRelease autoRelease ( this->mutex );
         pmiu->exception ( status, pContext );
     }
     pmiu->destroy ( *this );
@@ -1038,22 +1098,21 @@ bool cac::ioExceptionNotifyAndDestroy ( unsigned id, int status, const char *pCo
     if ( this->threadsBlockingOnNotifyCompletion ) {
         this->notifyCompletionEvent.signal ();
     }
-    return true;
 }
 
-bool cac::ioExceptionNotifyAndDestroy ( unsigned id, int status, 
-                        const char *pContext, unsigned type, unsigned long count )
+void cac::ioExceptionNotifyAndDestroy ( unsigned id, int status, 
+                        const char *pContext, unsigned type, arrayElementCount count )
 {
     baseNMIU * pmiu = this->ioTable.remove ( id );
     if ( ! pmiu ) {
-        return false;
+        return;
     }
     assert ( ! this->ioInProgress );
     this->ioInProgress = true;
     this->ioNotifyInProgressId = id;
     pmiu->channel().cacPrivateListOfIO::eventq.remove ( *pmiu );
     {
-        epicsAutoMutexRelease ( this->mutex );
+        epicsAutoMutexRelease autoRelease ( this->mutex );
         pmiu->exception ( status, pContext, type, count );
     }
     pmiu->destroy ( *this );
@@ -1063,7 +1122,6 @@ bool cac::ioExceptionNotifyAndDestroy ( unsigned id, int status,
     if ( this->threadsBlockingOnNotifyCompletion ) {
         this->notifyCompletionEvent.signal ();
     }
-    return true;
 }
 
 // resubscribe for monitors from this channel
@@ -1079,7 +1137,12 @@ void cac::connectAllIO ( nciu &chan )
             next++;
             class netSubscription *pSubscr = pNetIO->isSubscription ();
             if ( pSubscr ) {
-                chan.getPIIU()->subscriptionRequest ( chan, *pSubscr );
+                try {
+                    chan.getPIIU()->subscriptionRequest ( chan, *pSubscr );
+                }
+                catch (...) {
+                    this->printf ( "cac: no memory to queue event subscription\n" );
+                }
             }
             else {
                 // it shouldnt be here at this point - so uninstall it
@@ -1092,7 +1155,6 @@ void cac::connectAllIO ( nciu &chan )
         chan.getPIIU()->flushRequest ();
     }
     while ( baseNMIU *pIO = tmpList.get () ) {
-        pIO->exception ( ECA_INTERNAL, "strange IO exists when connecting channel?" );
         pIO->destroy ( *this );
     }
 }
@@ -1118,7 +1180,9 @@ void cac::disconnectAllIO ( nciu &chan )
         }
     }
     while ( baseNMIU *pIO = tmpList.get () ) {
-        pIO->exception ( ECA_DISCONN, chan.pHostName() );
+        char buf[128];
+        sprintf ( buf, "host = %100s", chan.pHostName() );
+        pIO->exception ( ECA_DISCONN, buf );
         pIO->destroy ( *this );
     }
 }
@@ -1153,7 +1217,7 @@ void cac::recycleSubscription ( netSubscription &io )
 }
 
 cacChannel::ioid cac::subscriptionRequest ( nciu &chan, unsigned type, 
-    unsigned long nElem, unsigned mask, cacStateNotify &notifyIn )
+    arrayElementCount nElem, unsigned mask, cacStateNotify &notifyIn )
 {
     epicsAutoMutex autoMutex ( this->mutex );
     autoPtrRecycle  < netSubscription > pIO ( *this, netSubscription::factory ( 
@@ -1161,42 +1225,50 @@ cacChannel::ioid cac::subscriptionRequest ( nciu &chan, unsigned type,
     if ( pIO.get() ) {
         chan.cacPrivateListOfIO::eventq.add ( *pIO );
         this->ioTable.add ( *pIO );
-        if ( chan.connected() ) {
-            this->flushIfRequired ( chan );
-            chan.getPIIU()->subscriptionRequest ( chan, *pIO );
+        if ( chan.connected () ) {
+            try {
+                this->flushIfRequired ( chan );
+                chan.getPIIU()->subscriptionRequest ( chan, *pIO );
+            }
+            catch ( ... ) {
+                chan.cacPrivateListOfIO::eventq.remove ( *pIO );
+                this->ioTable.remove ( *pIO );
+                throw;
+            }
         }
         cacChannel::ioid id = pIO->getId ();
-        pIO.release();
+        pIO.release ();
         return id;
     }
     else {
-        throw cacChannel::noMemory();
+        throw std::bad_alloc();
     }
 }
 
-bool cac::noopAction ( tcpiiu &, const caHdr &, void * /* pMsgBdy */ )
+bool cac::noopAction ( tcpiiu &, const caHdrLargeArray &, void * /* pMsgBdy */ )
 {
     return true;
 }
  
-bool cac::echoRespAction ( tcpiiu &, const caHdr &, void * /* pMsgBdy */ )
+bool cac::echoRespAction ( tcpiiu &, const caHdrLargeArray &, void * /* pMsgBdy */ )
 {
     return true;
 }
 
-bool cac::writeNotifyRespAction ( tcpiiu &, const caHdr &hdr, void * /* pMsgBdy */ )
+bool cac::writeNotifyRespAction ( tcpiiu &, const caHdrLargeArray &hdr, void * /* pMsgBdy */ )
 {
     int caStatus = hdr.m_cid;
     if ( caStatus == ECA_NORMAL ) {
-        return this->ioCompletionNotifyAndDestroy ( hdr.m_available );
+        this->ioCompletionNotifyAndDestroy ( hdr.m_available );
     }
     else {
-        return this->ioExceptionNotifyAndDestroy ( hdr.m_available, 
+        this->ioExceptionNotifyAndDestroy ( hdr.m_available, 
                     caStatus, "write notify request rejected" );
     }
+    return true;
 }
 
-bool cac::readNotifyRespAction ( tcpiiu &iiu, const caHdr &hdr, void *pMsgBdy )
+bool cac::readNotifyRespAction ( tcpiiu &iiu, const caHdrLargeArray &hdr, void *pMsgBdy )
 {
 
     /*
@@ -1221,21 +1293,22 @@ bool cac::readNotifyRespAction ( tcpiiu &iiu, const caHdr &hdr, void *pMsgBdy )
                  pMsgBdy, pMsgBdy, false, hdr.m_count);
         }
         else {
-            caStatus = htonl ( ECA_BADTYPE );
+            caStatus = ECA_BADTYPE;
         }
 #   endif
 
     if ( caStatus == ECA_NORMAL ) {
-        return this->ioCompletionNotifyAndDestroy ( hdr.m_available,
+        this->ioCompletionNotifyAndDestroy ( hdr.m_available,
             hdr.m_dataType, hdr.m_count, pMsgBdy );
     }
     else {
-        return this->ioExceptionNotifyAndDestroy ( hdr.m_available,
+        this->ioExceptionNotifyAndDestroy ( hdr.m_available,
             caStatus, "read failed", hdr.m_dataType, hdr.m_count );
     }
+    return true;
 }
 
-bool cac::eventRespAction ( tcpiiu &iiu, const caHdr &hdr, void *pMsgBdy )
+bool cac::eventRespAction ( tcpiiu &iiu, const caHdrLargeArray &hdr, void *pMsgBdy )
 {   
     int caStatus;
 
@@ -1273,71 +1346,123 @@ bool cac::eventRespAction ( tcpiiu &iiu, const caHdr &hdr, void *pMsgBdy )
 #   endif
 
     if ( caStatus == ECA_NORMAL ) {
-        return this->ioCompletionNotify ( hdr.m_available,
+        this->ioCompletionNotify ( hdr.m_available,
             hdr.m_dataType, hdr.m_count, pMsgBdy );
     }
     else {
-        return this->ioExceptionNotify ( hdr.m_available,
+        this->ioExceptionNotify ( hdr.m_available,
                 caStatus, "subscription update failed", 
                 hdr.m_dataType, hdr.m_count );
     }
+    return true;
 }
 
-bool cac::readRespAction ( tcpiiu &, const caHdr &hdr, void *pMsgBdy )
+bool cac::readRespAction ( tcpiiu &, const caHdrLargeArray &hdr, void *pMsgBdy )
 {
-    return this->ioCompletionNotifyAndDestroy ( hdr.m_available,
+    this->ioCompletionNotifyAndDestroy ( hdr.m_available,
         hdr.m_dataType, hdr.m_count, pMsgBdy );
+    return true;
 }
 
-bool cac::clearChannelRespAction ( tcpiiu &, const caHdr &, void * /* pMsgBdy */ )
+bool cac::clearChannelRespAction ( tcpiiu &, const caHdrLargeArray &, void * /* pMsgBdy */ )
 {
     return true; // currently a noop
 }
 
-bool cac::exceptionRespAction ( tcpiiu &iiu, const caHdr &hdr, void *pMsgBdy )
+bool cac::defaultExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr, 
+                    const char *pCtx, unsigned status )
 {
-    const caHdr * req = reinterpret_cast < const caHdr * > ( pMsgBdy );
-    char context[255];
+    char buf[512];
     char hostName[64];
-
-    const char *pName = reinterpret_cast < const char * > ( req + 1 );
-
-    iiu.hostName ( hostName, sizeof(hostName) );
-    sprintf ( context, "detected by: %s for: %s", 
-        hostName,  pName);
-
-    switch ( ntohs ( req->m_cmmd ) ) {
-    case CA_PROTO_READ_NOTIFY:
-        return this->ioExceptionNotifyAndDestroy ( ntohl ( req->m_available ), 
-            ntohl ( hdr.m_available ), context, 
-            ntohs ( req->m_dataType ), ntohs ( req->m_count ) );
-    case CA_PROTO_READ:
-        return this->ioExceptionNotifyAndDestroy ( ntohl (req->m_available), 
-            ntohl ( hdr.m_available ), context, 
-            ntohs ( req->m_dataType ), ntohs ( req->m_count ) );
-    case CA_PROTO_WRITE_NOTIFY:
-        return this->ioExceptionNotifyAndDestroy ( ntohl (req->m_available), 
-            ntohl ( hdr.m_available ), context, 
-            ntohs ( req->m_dataType ), ntohs ( req->m_count ) );
-    case CA_PROTO_WRITE:
-        this->exception ( ntohl ( hdr.m_available ), 
-                context, ntohs ( req->m_dataType ), ntohs ( req->m_count ), __FILE__, __LINE__);
-        return true;
-    case CA_PROTO_EVENT_ADD:
-        return this->ioExceptionNotify ( ntohl ( req->m_available ), 
-            ntohl ( hdr.m_available ), context, 
-            ntohs ( req->m_dataType ), ntohs ( req->m_count ) );
-    case CA_PROTO_EVENT_CANCEL:
-        return this->ioExceptionNotifyAndDestroy ( ntohl ( req->m_available ), 
-            ntohl ( hdr.m_available ), context );
-    default:
-        this->exception ( ntohl ( hdr.m_available ), 
-            context, __FILE__, __LINE__ );
-        return true;
-    }
+    iiu.hostName ( hostName, sizeof ( hostName ) );
+    sprintf ( buf, "host=%64s ctx=%400s", hostName, pCtx );
+    this->notify.exception ( status, buf, 0, 0u );
+    return true;
 }
 
-bool cac::accessRightsRespAction ( tcpiiu &, const caHdr &hdr, void * /* pMsgBdy */ )
+bool cac::eventAddExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr, 
+                         const char *pCtx, unsigned status )
+{
+    this->ioExceptionNotify ( hdr.m_available, status, pCtx, 
+        hdr.m_dataType, hdr.m_count );
+    return true;
+}
+
+bool cac::readExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr, 
+                     const char *pCtx, unsigned status )
+{
+    this->ioExceptionNotifyAndDestroy ( hdr.m_available, 
+        status, pCtx, hdr.m_dataType, hdr.m_count );
+    return true;
+}
+
+bool cac::writeExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr, 
+                      const char *pCtx, unsigned status )
+{
+    nciu * pChan = this->chanTable.lookup ( hdr.m_available );
+    if ( pChan ) {
+        pChan->writeException ( status, pCtx, 
+            hdr.m_dataType, hdr.m_count );
+    }
+    return true;
+}
+
+bool cac::readNotifyExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr, 
+                           const char *pCtx, unsigned status )
+{
+    this->ioExceptionNotifyAndDestroy ( hdr.m_available, 
+        status, pCtx, hdr.m_dataType, hdr.m_count );
+    return true;
+}
+
+bool cac::writeNotifyExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr, 
+                            const char *pCtx, unsigned status )
+{
+    this->ioExceptionNotifyAndDestroy ( hdr.m_available, 
+        status, pCtx, hdr.m_dataType, hdr.m_count );
+    return true;
+}
+
+bool cac::exceptionRespAction ( tcpiiu &iiu, const caHdrLargeArray &hdr, void *pMsgBdy )
+{
+    const caHdr * pReq = reinterpret_cast < const caHdr * > ( pMsgBdy );
+    unsigned bytesSoFar = sizeof ( *pReq );
+    if ( hdr.m_postsize < bytesSoFar ) {
+        return false;
+    }
+    caHdrLargeArray req;
+    req.m_cmmd = ntohs ( pReq->m_cmmd );
+    req.m_postsize = ntohs ( pReq->m_postsize );
+    req.m_dataType = ntohs ( pReq->m_dataType );
+    req.m_count = ntohs ( pReq->m_count );
+    req.m_cid = ntohl ( pReq->m_cid );
+    req.m_available = ntohl ( pReq->m_available );
+    const ca_uint32_t * pLW = reinterpret_cast < const ca_uint32_t * > ( pReq + 1 );
+    if ( req.m_postsize == 0xffff ) {
+        static const unsigned annexSize = 
+            sizeof ( req.m_postsize ) + sizeof ( req.m_count );
+        bytesSoFar += annexSize;
+        if ( hdr.m_postsize < bytesSoFar ) {
+            return false;
+        }
+        req.m_postsize = ntohl ( pLW[0] );
+        req.m_count = ntohl ( pLW[1] );
+        pLW += 2u;
+    }
+
+    // execute the exception message
+    pExcepProtoStubTCP pStub;
+    if ( hdr.m_cmmd >= NELEMENTS ( cac::tcpExcepJumpTableCAC ) ) {
+        pStub = &cac::defaultExcep;
+    }
+    else {
+        pStub = cac::tcpExcepJumpTableCAC [req.m_cmmd];
+    }
+    const char *pCtx = reinterpret_cast < const char * > ( pLW );
+    return ( this->*pStub ) ( iiu, req, pCtx, hdr.m_available );
+}
+
+bool cac::accessRightsRespAction ( tcpiiu &, const caHdrLargeArray &hdr, void * /* pMsgBdy */ )
 {
     nciu * pChan = this->chanTable.lookup ( hdr.m_cid );
     if ( pChan ) {
@@ -1350,7 +1475,7 @@ bool cac::accessRightsRespAction ( tcpiiu &, const caHdr &hdr, void * /* pMsgBdy
     return true;
 }
 
-bool cac::claimCIURespAction ( tcpiiu &iiu, const caHdr &hdr, void * /* pMsgBdy */ )
+bool cac::claimCIURespAction ( tcpiiu &iiu, const caHdrLargeArray &hdr, void *pMsgBdy )
 {
     nciu * pChan = this->chanTable.lookup ( hdr.m_cid );
     if ( pChan ) {
@@ -1365,22 +1490,22 @@ bool cac::claimCIURespAction ( tcpiiu &iiu, const caHdr &hdr, void * /* pMsgBdy 
         return true;
     }
     else {
-        return false;
+        return true; // ignore claim response to deleted channel
     }
 }
 
-bool cac::verifyAndDisconnectChan ( tcpiiu &, const caHdr &hdr, void * /* pMsgBdy */ )
+bool cac::verifyAndDisconnectChan ( tcpiiu &, const caHdrLargeArray &hdr, void * /* pMsgBdy */ )
 {
     nciu * pChan = this->chanTable.lookup ( hdr.m_cid );
     if ( pChan ) {
         assert ( this->pudpiiu && this->pSearchTmr );
         pChan->disconnect ( *this->pudpiiu );
-        this->pSearchTmr->resetPeriod ( CA_RECAST_DELAY );
+        this->pSearchTmr->resetPeriod ( 0.0 );
     }
     return true;
 }
 
-bool cac::badTCPRespAction ( tcpiiu &iiu, const caHdr &hdr, void * /* pMsgBdy */ )
+bool cac::badTCPRespAction ( tcpiiu &iiu, const caHdrLargeArray &hdr, void * /* pMsgBdy */ )
 {
     char hostName[64];
     iiu.hostName ( hostName, sizeof(hostName) );
@@ -1389,7 +1514,7 @@ bool cac::badTCPRespAction ( tcpiiu &iiu, const caHdr &hdr, void * /* pMsgBdy */
     return false;
 }
 
-void cac::executeResponse ( tcpiiu &iiu, caHdr &hdr, char *pMshBody )
+bool cac::executeResponse ( tcpiiu &iiu, caHdrLargeArray &hdr, char *pMshBody )
 {
     // execute the response message
     pProtoStubTCP pStub;
@@ -1399,7 +1524,59 @@ void cac::executeResponse ( tcpiiu &iiu, caHdr &hdr, char *pMshBody )
     else {
         pStub = cac::tcpJumpTableCAC [hdr.m_cmmd];
     }
-    ( this->*pStub ) ( iiu, hdr, pMshBody );
+    return ( this->*pStub ) ( iiu, hdr, pMshBody );
 }
 
+void cac::signal ( int ca_status, const char *pfilenm, 
+                     int lineno, const char *pFormat, ... )
+{
+    va_list theArgs;
+    va_start ( theArgs, pFormat );  
+    this->vSignal ( ca_status, pfilenm, lineno, pFormat, theArgs);
+    va_end ( theArgs );
+}
+
+void cac::vSignal ( int ca_status, const char *pfilenm, 
+                     int lineno, const char *pFormat, va_list args )
+{
+    static const char *severity[] = 
+    {
+        "Warning",
+        "Success",
+        "Error",
+        "Info",
+        "Fatal",
+        "Fatal",
+        "Fatal",
+        "Fatal"
+    };
+    
+    this->printf ( "CA.Client.Diagnostic..............................................\n" );
+    
+    this->printf ( "    %s: \"%s\"\n", 
+        severity[ CA_EXTRACT_SEVERITY ( ca_status ) ], 
+        ca_message ( ca_status ) );
+
+    if  ( pFormat ) {
+        this->printf ( "    Context: \"" );
+        this->vPrintf ( pFormat, args );
+        this->printf ( "\"\n" );
+    }
+        
+    if (pfilenm) {
+        this->printf ( "    Source File: %s Line Number: %d\n",
+            pfilenm, lineno );    
+    } 
+    
+    /*
+     *  Terminate execution if unsuccessful
+     */
+    if( ! ( ca_status & CA_M_SUCCESS ) && 
+        CA_EXTRACT_SEVERITY ( ca_status ) != CA_K_WARNING ){
+        errlogFlush();
+        abort();
+    }
+    
+    this->printf ( "..................................................................\n" );
+}
 

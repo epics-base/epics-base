@@ -23,6 +23,7 @@
 #include "tsFreeList.h"
 #include "epicsMutex.h"
 
+#define CA_MINOR_PROTOCOL_REVISION 9
 #include "caProto.h"
 
 #define epicsExportSharedSymbols
@@ -44,7 +45,7 @@ public:
     nciu ( cac &, netiiu &, 
         cacChannelNotify &, const char *pNameIn );
     void connect ( unsigned nativeType, 
-        unsigned long nativeCount, unsigned sid );
+        unsigned nativeCount, unsigned sid );
     void connect ();
     void disconnect ( netiiu &newiiu );
     bool searchMsg ( unsigned short retrySeqNumber, 
@@ -61,15 +62,16 @@ public:
     netiiu * getPIIU ();
     cac & getClient ();
     void searchReplySetUp ( netiiu &iiu, unsigned sidIn, 
-        unsigned typeIn, unsigned long countIn );
+        ca_uint16_t typeIn, arrayElementCount countIn );
     void show ( unsigned level ) const;
     void connectTimeoutNotify ();
     const char *pName () const;
     unsigned nameLen () const;
     const char * pHostName () const; // deprecated - please do not use
-    unsigned long nativeElementCount () const;
+    arrayElementCount nativeElementCount () const;
     bool connected () const;
     bool previouslyConnected () const;
+    void writeException ( int status, const char *pContext, unsigned type, arrayElementCount count );
 protected:
     ~nciu (); // force pool allocation
 private:
@@ -80,22 +82,22 @@ private:
     netiiu *piiu;
     ca_uint32_t sid; // server id
     unsigned retry; // search retry number
-    unsigned short retrySeqNo; // search retry seq number
-    unsigned short nameLength; // channel name length
-    unsigned short typeCode;
+    ca_uint16_t retrySeqNo; // search retry seq number
+    ca_uint16_t nameLength; // channel name length
+    ca_uint16_t typeCode;
     unsigned f_connected:1;
     unsigned f_previousConn:1; // T if connected in the past
     unsigned f_claimSent:1;
     unsigned f_firstConnectDecrementsOutstandingIO:1;
     unsigned f_connectTimeOutSeen:1;
     void initiateConnect ();
-    ioStatus read ( unsigned type, unsigned long count, 
+    ioStatus read ( unsigned type, arrayElementCount count, 
         cacReadNotify &, ioid * );
-    void write ( unsigned type, unsigned long count, 
+    void write ( unsigned type, arrayElementCount count, 
         const void *pValue );
-    ioStatus write ( unsigned type, unsigned long count, 
+    ioStatus write ( unsigned type, arrayElementCount count, 
         const void *pValue, cacWriteNotify &, ioid * );
-    void subscribe ( unsigned type, unsigned long nElem, 
+    void subscribe ( unsigned type, arrayElementCount nElem, 
         unsigned mask, cacStateNotify &notify, ioid * );
     void ioCancel ( const ioid & );
     void ioShow ( const ioid &, unsigned level ) const;
@@ -161,7 +163,7 @@ inline void nciu::connect ()
 }
 
 inline void nciu::searchReplySetUp ( netiiu &iiu, unsigned sidIn, 
-    unsigned typeIn, unsigned long countIn )
+    ca_uint16_t typeIn, arrayElementCount countIn )
 {
     this->piiu = &iiu;
     this->typeCode = typeIn;      
@@ -192,6 +194,12 @@ inline cac & nciu::getClient ()
 inline void nciu::connectTimeoutNotify ()
 {
     this->f_connectTimeOutSeen = true;
+}
+
+inline void nciu::writeException ( int status,
+    const char *pContext, unsigned type, arrayElementCount count )
+{
+    this->notify().writeException ( status, pContext, type, count );
 }
 
 #endif // ifdef nciuh

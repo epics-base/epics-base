@@ -153,7 +153,7 @@ bool CASG::ioComplete () const
     return ( this->ioList.count () == 0u );
 }
 
-int CASG::put ( chid pChan, unsigned type, unsigned long count, const void *pValue )
+int CASG::put ( chid pChan, unsigned type, arrayElementCount count, const void *pValue )
 {
     try {
         epicsAutoMutex locker ( this->mutex );
@@ -191,7 +191,7 @@ int CASG::put ( chid pChan, unsigned type, unsigned long count, const void *pVal
     {
         return ECA_NOTINSERVICE;
     }
-    catch ( cacChannel::noMemory & )
+    catch ( std::bad_alloc & )
     {
         return ECA_ALLOCMEM;
     }
@@ -201,7 +201,7 @@ int CASG::put ( chid pChan, unsigned type, unsigned long count, const void *pVal
     }
 }
 
-int CASG::get ( chid pChan, unsigned type, unsigned long count, void *pValue )
+int CASG::get ( chid pChan, unsigned type, arrayElementCount count, void *pValue )
 {
 
     try {
@@ -240,7 +240,7 @@ int CASG::get ( chid pChan, unsigned type, unsigned long count, void *pValue )
     {
         return ECA_NOTINSERVICE;
     }
-    catch ( cacChannel::noMemory & )
+    catch ( std::bad_alloc & )
     {
         return ECA_ALLOCMEM;
     }
@@ -300,4 +300,4 @@ int CASG::printf ( const char *pformat, ... )
     return status;
 }
 
-
+ 

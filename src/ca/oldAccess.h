@@ -44,24 +44,24 @@ public:
     void show ( unsigned level ) const;
     void initiateConnect ();
     void read ( 
-        unsigned type, unsigned long count, 
+        unsigned type, arrayElementCount count, 
         cacReadNotify &notify, cacChannel::ioid *pId = 0 );
     void read ( 
-        unsigned type, unsigned long count, 
+        unsigned type, arrayElementCount count, 
         void *pValue );
     void write ( 
-        unsigned type, unsigned long count, 
+        unsigned type, arrayElementCount count, 
         const void *pValue );
     void write ( 
-        unsigned type, unsigned long count, const void *pValue, 
+        unsigned type, arrayElementCount count, const void *pValue, 
         cacWriteNotify &, cacChannel::ioid *pId = 0 );
     void subscribe ( 
-        unsigned type, unsigned long count, unsigned mask, 
+        unsigned type, arrayElementCount count, unsigned mask, 
         cacStateNotify &, cacChannel::ioid & );
     void ioCancel ( const cacChannel::ioid & );
     void ioShow ( const cacChannel::ioid &, unsigned level ) const;
     short nativeType () const;
-    unsigned long nativeElementCount () const;
+    arrayElementCount nativeElementCount () const;
     caAccessRights accessRights () const; // defaults to unrestricted access
     unsigned searchAttempts () const; // defaults to zero
     double beaconPeriod () const; // defaults to negative DBL_MAX
@@ -81,6 +81,10 @@ private:
     void disconnectNotify ();
     void accessRightsNotify ( const caAccessRights & );
     void exception ( int status, const char *pContext );
+    void readException ( int status, const char *pContext,
+        unsigned type, arrayElementCount count, void *pValue );
+    void writeException ( int status, const char *pContext,
+        unsigned type, arrayElementCount count );
     bool includeFirstConnectInCountOfOutstandingIO () const;
     static tsFreeList < struct oldChannelNotify, 1024 > freeList;
     static epicsMutex freeListMutex;
@@ -88,8 +92,8 @@ private:
 
 class getCopy : public cacReadNotify {
 public:
-    getCopy ( oldCAC &cacCtx, unsigned type, 
-        unsigned long count, void *pValue );
+    getCopy ( oldCAC &cacCtx, oldChannelNotify &, unsigned type, 
+        arrayElementCount count, void *pValue );
     void destroy ();
     void show ( unsigned level ) const;
     void * operator new ( size_t size );
@@ -97,15 +101,16 @@ public:
 protected:
     ~getCopy (); // allocate only out of pool
 private:
-    unsigned long count;
+    arrayElementCount count;
     oldCAC &cacCtx;
+    oldChannelNotify &chan;
     void *pValue;
     unsigned readSeq;
     unsigned type;
     void completion (
-        unsigned type, unsigned long count, const void *pData);
-    void exception (
-        int status, const char *pContext, unsigned type, unsigned long count );
+        unsigned type, arrayElementCount count, const void *pData);
+    void exception ( int status, 
+        const char *pContext, unsigned type, arrayElementCount count );
     static tsFreeList < class getCopy, 1024 > freeList;
     static epicsMutex freeListMutex;
 };
@@ -124,9 +129,9 @@ private:
     caEventCallBackFunc *pFunc;
     void *pPrivate;
     void completion (
-        unsigned type, unsigned long count, const void *pData);
-    void exception (
-        int status, const char *pContext, unsigned type, unsigned long count );
+        unsigned type, arrayElementCount count, const void *pData);
+    void exception ( int status, 
+        const char *pContext, unsigned type, arrayElementCount count );
     static tsFreeList < class getCallback, 1024 > freeList;
     static epicsMutex freeListMutex;
 };
@@ -145,8 +150,8 @@ private:
     caEventCallBackFunc *pFunc;
     void *pPrivate;
     void completion ();
-    void exception ( 
-        int status, const char *pContext );
+    void exception ( int status, const char *pContext, 
+        unsigned type, arrayElementCount count );
     static tsFreeList < class putCallback, 1024 > freeList;
     static epicsMutex freeListMutex;
 };
@@ -155,7 +160,7 @@ struct oldSubscription : public cacStateNotify {
 public:
     oldSubscription ( 
         oldChannelNotify &,
-        unsigned type, unsigned long nElem, unsigned mask, 
+        unsigned type, arrayElementCount nElem, unsigned mask, 
         caEventCallBackFunc *pFunc, void *pPrivate );
     bool ioAttachOK ();
     void destroy ();
@@ -171,9 +176,9 @@ private:
     void *pPrivate;
     bool subscribed;
     void current (
-        unsigned type, unsigned long count, const void *pData );
-    void exception (
-        int status, const char *pContext, unsigned type, unsigned long count );
+        unsigned type, arrayElementCount count, const void *pData );
+    void exception ( int status, 
+        const char *pContext, unsigned type, arrayElementCount count );
     static tsFreeList < struct oldSubscription, 1024 > freeList;
     static epicsMutex freeListMutex;
 };
@@ -197,22 +202,24 @@ public:
     unsigned sequenceNumberOfOutstandingIO () const;
     void incrementOutstandingIO ();
     void decrementOutstandingIO ( unsigned sequenceNo );
-    void exception ( int status, const char *pContext,
+    void exception ( int status, const char *pContext, 
         const char *pFileName, unsigned lineNo );
     void exception ( int status, const char *pContext,
-        unsigned type, unsigned long count, 
-        const char *pFileName, unsigned lineNo );
-// perhaps these should be eliminated in deference to the exception mechanism
-    int printf ( const char *pformat, ... );
-    int vPrintf ( const char *pformat, va_list args );
+        const char *pFileName, unsigned lineNo, oldChannelNotify &chan, 
+        unsigned type, arrayElementCount count, unsigned op );
     CASG * lookupCASG ( unsigned id );
     void installCASG ( CASG & );
     void uninstallCASG ( CASG & );
     void enableCallbackPreemption ();
     void disableCallbackPreemption ();
+// perhaps these should be eliminated in deference to the exception mechanism
+    int printf ( const char *pformat, ... ) const;
+    int vPrintf ( const char *pformat, va_list args ) const;
+    void vSignal ( int ca_status, const char *pfilenm, 
+                     int lineno, const char *pFormat, va_list args );
 private:
-    cac & clientCtx;
     mutable epicsMutex mutex; 
+    cac & clientCtx;
     caExceptionHandler *ca_exception_func;
     void *ca_exception_arg;
     caPrintfFunc *pVPrintfFunc;
@@ -221,6 +228,7 @@ private:
 // this should probably be phased out (its not OS independent)
     void fdWasCreated ( int fd );
     void fdWasDestroyed ( int fd );
+    void attachToClientCtx ();
 };
 
 int fetchClientContext ( oldCAC **ppcac );
@@ -250,26 +258,26 @@ inline void oldChannelNotify::initiateConnect ()
     this->io.initiateConnect ();
 }
 
-inline void oldChannelNotify::read ( unsigned type, unsigned long count, 
+inline void oldChannelNotify::read ( unsigned type, arrayElementCount count, 
                         cacReadNotify &notify, cacChannel::ioid *pId )
 {
     this->io.read ( type, count, notify, pId );
 }
 
 inline void oldChannelNotify::write ( unsigned type, 
-    unsigned long count, const void *pValue )
+    arrayElementCount count, const void *pValue )
 {
     this->io.write ( type, count, pValue );
 }
 
-inline void oldChannelNotify::write ( unsigned type, unsigned long count, 
+inline void oldChannelNotify::write ( unsigned type, arrayElementCount count, 
                  const void *pValue, cacWriteNotify &notify, cacChannel::ioid *pId )
 {
     this->io.write ( type, count, pValue, notify, pId );
 }
 
 inline void oldChannelNotify::subscribe ( unsigned type, 
-    unsigned long count, unsigned mask, cacStateNotify &notify,
+    arrayElementCount count, unsigned mask, cacStateNotify &notify,
     cacChannel::ioid &idOut)
 {
     this->io.subscribe ( type, count, mask, notify, &idOut );
@@ -290,7 +298,7 @@ inline short oldChannelNotify::nativeType () const
     return this->io.nativeType ();
 }
 
-inline unsigned long oldChannelNotify::nativeElementCount () const
+inline arrayElementCount oldChannelNotify::nativeElementCount () const
 {
     return this->io.nativeElementCount ();
 }
@@ -337,7 +345,7 @@ inline const char * oldChannelNotify::pHostName () const
 
 inline oldSubscription::oldSubscription  (
         oldChannelNotify &chanIn,
-        unsigned type, unsigned long nElem, unsigned mask, 
+        unsigned type, arrayElementCount nElem, unsigned mask, 
         caEventCallBackFunc *pFuncIn, void *pPrivateIn ) :
     chan ( chanIn ), id ( 0 ), pFunc ( pFuncIn ), 
         pPrivate ( pPrivateIn ), subscribed ( false )
@@ -495,6 +503,13 @@ inline void oldCAC::enableCallbackPreemption ()
 inline void oldCAC::disableCallbackPreemption ()
 {
     this->clientCtx.disableCallbackPreemption ();
+}
+
+inline void oldCAC::vSignal ( int ca_status, const char *pfilenm, 
+                     int lineno, const char *pFormat, va_list args )
+{
+    this->clientCtx.vSignal ( ca_status, pfilenm, 
+                     lineno, pFormat, args );
 }
 
 #endif // ifndef oldAccessh

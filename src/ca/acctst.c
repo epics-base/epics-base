@@ -617,7 +617,7 @@ void performCtrlDoubleTest (chid chan)
                     ca_element_count(chan),
                     chan, pCtrlDbl);
     SEVCHK (status, "performCtrlDoubleTest, ca_array_get");
-    status = ca_pend_io (20.0);
+    status = ca_pend_io (30.0);
     assert (status==ECA_NORMAL);
 
     /*
@@ -1246,17 +1246,37 @@ void eventClearTest ( chid chan )
     SEVCHK ( status, NULL);
 }
 
+
 /*
  * array test
  *
  * verify that we can at least write and read back the same array
  * if multiple elements are present
  */
+static arrayReadNotifyComplete = 0;
+static arrayWriteNotifyComplete = 0;
+void arrayReadNotify ( struct event_handler_args args )
+{
+    dbr_double_t *pWF = ( dbr_double_t * ) ( args.usr );
+    dbr_double_t *pRF = ( dbr_double_t * ) ( args.dbr );
+    int i;
+    for ( i = 0; i < args.count; i++ ) {
+        if ( pWF[i] != pRF[i] ) {
+            assert ( 0 );
+        }
+    }
+    arrayReadNotifyComplete = 1;
+}
+void arrayWriteNotify ( struct event_handler_args args )
+{
+    arrayWriteNotifyComplete = 1;
+}
 void arrayTest ( chid chan )
 {
     dbr_double_t *pRF, *pWF;
     unsigned i;
     int status;
+    evid id;
 
     if ( ! ca_write_access ( chan ) ) {
         printf ( "skipping array test - no write access\n" );
@@ -1293,7 +1313,7 @@ void arrayTest ( chid chan )
     /*
      * verify read response matches values written
      */
-    for ( i = 0; i < ca_element_count (chan); i++ ) {
+    for ( i = 0; i < ca_element_count ( chan ); i++ ) {
         assert ( pWF[i] == pRF[i] );
     }
 
@@ -1302,25 +1322,54 @@ void arrayTest ( chid chan )
      */
     {
         char *pRS;
-        /* clip to 16k message buffer limit */
-        unsigned maxElem = ( ( 1 << 14 ) - 16 ) / MAX_STRING_SIZE;
-        unsigned nElem;
 
-        if ( maxElem > ca_element_count (chan) ) {
-            nElem = ca_element_count (chan);
-        }
-        else {
-            nElem = maxElem;
-        }
-
-        pRS = malloc ( nElem * MAX_STRING_SIZE );
+        pRS = malloc ( ca_element_count (chan) * MAX_STRING_SIZE );
         assert ( pRS );
-        status = ca_array_get ( DBR_STRING, nElem, chan, pRS ); 
+        status = ca_array_get ( DBR_STRING, 
+            ca_element_count (chan), chan, pRS ); 
         SEVCHK  ( status, "array read request failed" );
         status = ca_pend_io ( 30.0 );
         SEVCHK ( status, "array read failed" );
         free ( pRS );
     }
+
+    /*
+     * write some random numbers into the array
+     */
+    for ( i = 0; i < ca_element_count (chan); i++ ) {
+        pWF[i] =  rand ();
+        pRF[i] = - pWF[i];
+    }
+    status = ca_array_put_callback ( DBR_DOUBLE, ca_element_count ( chan ), 
+                    chan, pWF, arrayWriteNotify, 0 ); 
+    SEVCHK ( status, "array write notify request failed" );
+    status = ca_array_get_callback ( DBR_DOUBLE, ca_element_count (chan), 
+                    chan, arrayReadNotify, pWF ); 
+    SEVCHK  ( status, "array read notify request failed" );
+
+    while ( ! arrayWriteNotifyComplete && ! arrayReadNotifyComplete ) {
+        ca_pend_event ( 0.1 );
+    }
+
+    /*
+     * write some random numbers into the array
+     */
+    for ( i = 0; i < ca_element_count (chan); i++ ) {
+        pWF[i] =  rand ();
+        pRF[i] = - pWF[i];
+    }
+    arrayReadNotifyComplete = 0;
+    status = ca_array_put ( DBR_DOUBLE, ca_element_count ( chan ), 
+                    chan, pWF ); 
+    SEVCHK ( status, "array write notify request failed" );
+    status = ca_add_array_event ( DBR_DOUBLE, ca_element_count ( chan ), 
+                    chan, arrayReadNotify, pWF, 0.0, 0.0, 0.0, &id ); 
+    SEVCHK ( status, "array subscription request failed" );
+    while ( ! arrayReadNotifyComplete ) {
+        ca_pend_event ( 0.1 );
+    }
+    status = ca_clear_event ( id );
+    SEVCHK ( status, "clear event request failed" );
 
     free ( pRF );
     free ( pWF );
@@ -1629,6 +1678,8 @@ int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
 
     printf ( "CA Client V%s, channel name \"%s\"\n", ca_version (), pName );
 
+    putenv ( "EPICS_CA_MAX_ARRAY_BYTES=10000000" ); 
+
     verifyDataTypeMacros ();
 
     connections = ca_get_ioc_connection_count ();
@@ -1646,6 +1697,7 @@ int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
         printf ( "testing with a local channel\n" );
     }
 
+    arrayTest ( chan ); 
     verifyMonitorSubscriptionFlushIO ( chan );
     monitorSubscriptionFirstUpdateTest ( chan );
     performGrEnumTest ( chan );
@@ -1665,7 +1717,6 @@ int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
     test_sync_groups ( chan );
     performDeleteTest ( chan );
     eventClearTest ( chan );
-    arrayTest ( chan ); 
     performMonitorUpdateTest ( chan );
 
     /*

@@ -37,8 +37,10 @@
 #include "osiSock.h"
 #include "epicsTime.h"
 #include "errlog.h"
-#include "net_convert.h"
 
+typedef unsigned long arrayElementCount;
+
+#include "net_convert.h"
 #include "server.h"
 
 /*
@@ -46,65 +48,27 @@
  *
  *  (channel access server send message)
  */
-void cas_send_msg (struct client *pclient, int lock_needed)
+void cas_send_msg ( struct client *pclient, int lock_needed )
 {
     int status;
 
-    if (CASDEBUG>2 && pclient->send.stk) {
-        errlogPrintf ("CAS: Sending a message of %d bytes\n", pclient->send.stk);
+    if ( CASDEBUG > 2 && pclient->send.stk ) {
+        errlogPrintf ( "CAS: Sending a message of %d bytes\n", pclient->send.stk );
     }
 
-    if (pclient->disconnect) {
-        if (CASDEBUG>2) {
-            errlogPrintf ("CAS: msg Discard for sock %d addr %x\n",
-                pclient->sock, pclient->addr.sin_addr.s_addr);
+    if ( pclient->disconnect ) {
+        if ( CASDEBUG > 2 ) {
+            errlogPrintf ( "CAS: msg Discard for sock %d addr %x\n",
+                pclient->sock, pclient->addr.sin_addr.s_addr );
         }
         return;
     }
 
-    if(lock_needed){
-        SEND_LOCK(pclient);
+    if ( lock_needed ) {
+        SEND_LOCK ( pclient );
     }
 
-    if (pclient->send.stk) {
-#ifdef CONVERSION_REQUIRED
-        /*  Convert all caHdr into net format.
-         *  The remaining bytes must already be in
-         *  net format, because here we have no clue
-         *  how to convert them.
-         */
-        char            *buf;
-        unsigned long   msg_size, num_bytes;
-        caHdr           *mp;
-
-        
-        buf       = (char *) pclient->send.buf;
-        num_bytes = pclient->send.stk;
-
-        /* convert only if we have at least a complete caHdr */
-        while (num_bytes >= sizeof(caHdr))
-        {
-            mp = (caHdr *) buf;
-
-            msg_size  = sizeof (caHdr) + mp->m_postsize;
-
-            DLOG(3,"CAS: sending cmmd %d, postsize %d\n",
-                mp->m_cmmd, (int)mp->m_postsize,
-                0, 0, 0, 0);
-
-            /* convert the complete header into host format */
-            mp->m_cmmd      = htons (mp->m_cmmd);
-            mp->m_postsize  = htons (mp->m_postsize);
-            mp->m_dataType  = htons (mp->m_dataType);
-            mp->m_count     = htons (mp->m_count);
-            mp->m_cid       = htonl (mp->m_cid);
-            mp->m_available = htonl (mp->m_available);
-
-            /* get next message: */
-            buf       += msg_size;
-            num_bytes -= msg_size;
-        }
-#endif
+    if ( pclient->send.stk ) {
 
         status = sendto (pclient->sock, pclient->send.buf, pclient->send.stk, 0,
                         (struct sockaddr *)&pclient->addr, sizeof(pclient->addr));
@@ -156,39 +120,52 @@ void cas_send_msg (struct client *pclient, int lock_needed)
         SEND_UNLOCK(pclient);
     }
 
-    DLOG(3, "------------------------------\n\n", 0,0,0,0,0,0);
+    DLOG ( 3, ( "------------------------------\n\n" ) );
 
     return;
 }
 
 /*
  *
- *  cas_alloc_msg() 
+ *  cas_copy_in_header() 
  *
- *  see also ALLOC_MSG()/END_MSG() in server.h
- *
- *  (allocate space in the outgoing message buffer)
+ *  Allocate space in the outgoing message buffer and
+ *  copy in message header. Return pointer to message body.
  *
  *  send lock must be on while in this routine
  *
- *  returns     1)  a valid ptr to msg buffer space
- *              2)  NULL (msg will not fit)
+ *  Returns a valid ptr to message body or NULL if the msg 
+ *  will not fit.
  */         
-caHdr *cas_alloc_msg (struct client *pclient, unsigned extsize)
+int cas_copy_in_header ( 
+    struct client *pclient, ca_uint16_t response, ca_uint32_t payloadSize,
+    ca_uint16_t dataType, ca_uint32_t nElem, ca_uint32_t cid, 
+    ca_uint32_t responseSpecific, void **ppPayload )
 {
-    unsigned    msgsize;
+    unsigned    msgSize;
     
-    extsize = CA_MESSAGE_ALIGN(extsize);
-
-    if ( extsize > UINT_MAX - sizeof(caHdr) ) {
-        return NULL;
-    }
-    msgsize = extsize + sizeof(caHdr);
-    if ( msgsize > pclient->send.maxstk ) {
-        return NULL;
+    if ( payloadSize > UINT_MAX - sizeof ( caHdr ) - 8u ) {
+        return FALSE;
     }
 
-    if ( pclient->send.stk > pclient->send.maxstk - msgsize ) {
+    payloadSize = CA_MESSAGE_ALIGN ( payloadSize );
+
+    msgSize = payloadSize + sizeof ( caHdr );
+    if ( payloadSize >= 0xffff || nElem >= 0xffff ) {
+        if ( ! CA_V49 ( pclient->minor_version_number ) ) {
+            return FALSE;
+        }
+        msgSize += 2 * sizeof ( ca_uint32_t );
+    }
+
+    if ( msgSize > pclient->send.maxstk ) {
+        casExpandSendBuffer ( pclient, msgSize );
+        if ( msgSize > pclient->send.maxstk ) {
+            return FALSE;
+        }
+    }
+
+    if ( pclient->send.stk > pclient->send.maxstk - msgSize ) {
         if ( pclient->disconnect ) {
             pclient->send.stk = 0;
         }
@@ -197,8 +174,95 @@ caHdr *cas_alloc_msg (struct client *pclient, unsigned extsize)
         }
     }
 
+    if ( payloadSize < 0xffff && nElem < 0xffff ) {
+        caHdr *pMsg = ( caHdr * ) &pclient->send.buf[pclient->send.stk];        
+        pMsg->m_cmmd = htons ( response );   
+        pMsg->m_postsize = htons ( ( ( ca_uint16_t ) payloadSize ) ); 
+        pMsg->m_dataType = htons ( dataType );  
+        pMsg->m_count = htons ( ( ( ca_uint16_t ) nElem ) );      
+        pMsg->m_cid = htonl ( cid );          
+        pMsg->m_available = htonl ( responseSpecific );  
+        if ( ppPayload ) {
+            *ppPayload = ( void * ) ( pMsg + 1 );
+        }
+    }
+    else {
+        caHdr *pMsg = ( caHdr * ) &pclient->send.buf[pclient->send.stk];
+        ca_uint32_t *pW32 = ( ca_uint32_t * ) ( pMsg + 1 );
+        pMsg->m_cmmd = htons ( response );   
+        pMsg->m_postsize = htons ( 0xffff ); 
+        pMsg->m_dataType = htons ( dataType );  
+        pMsg->m_count = htons ( 0u );      
+        pMsg->m_cid = htonl ( cid );          
+        pMsg->m_available = htonl ( responseSpecific ); 
+        pW32[0] = htonl ( payloadSize );
+        pW32[1] = htonl ( nElem );
+        if ( ppPayload ) {
+            *ppPayload = ( void * ) ( pW32 + 2 );
+        }
+    }
+
+    return TRUE;
+}
+
+void cas_set_header_cid ( struct client *pClient, ca_uint32_t cid )
+{
+    caHdr *pMsg = ( caHdr * ) &pClient->send.buf[pClient->send.stk];
+    pMsg->m_cid = htonl ( cid );
+}
+
+void cas_commit_msg ( struct client *pClient, ca_uint32_t size )
+{
+    caHdr * pMsg = ( caHdr * ) &pClient->send.buf[pClient->send.stk];
+    size = CA_MESSAGE_ALIGN ( size );
+    if ( pMsg->m_postsize == htons ( 0xffff ) ) {
+        ca_uint32_t * pLW = ( ca_uint32_t * ) ( pMsg + 1 );
+        assert ( size <= ntohl ( *pLW ) );
+        pLW[0] = htonl ( size );
+        size += sizeof ( caHdr ) + 2 * sizeof ( *pLW );
+    }
+    else {
+        assert ( size <= ntohs ( pMsg->m_postsize ) );
+        pMsg->m_postsize = htons ( (ca_uint16_t) size );
+        size += sizeof ( caHdr );
+    }
+    pClient->send.stk += size;
+}
+
+/*
+ * this assumes that we have already checked to see 
+ * if sufficent bytes are available
+ */
+ca_uint16_t rsrvGetUInt16 ( struct message_buffer *recv )
+{
+    ca_uint16_t tmp;
     /*
-     * it fits END_MSG will push it on the stack
+     * this assumes that we have already checked to see 
+     * if sufficent bytes are available
      */
-    return (caHdr *) &pclient->send.buf[pclient->send.stk];
+    assert ( recv->cnt - recv->stk >= 2u );
+    tmp = recv->buf[recv->stk++];
+    tmp <<= 8u;
+    tmp |= recv->buf[recv->stk++];
+    return tmp;
+}
+
+/*
+ * this assumes that we have already checked to see 
+ * if sufficent bytes are available
+ */
+ca_uint16_t rsrvGetUInt32 ( struct message_buffer *recv )
+{
+    ca_uint16_t tmp;
+    /*
+     * this assumes that we have already checked to see 
+     * if sufficent bytes are available
+     */
+    assert ( recv->cnt - recv->stk >= 4u );
+    tmp = recv->buf[recv->stk++];
+    tmp <<= 24u;
+    tmp |= recv->buf[recv->stk++] << 16u;
+    tmp |= recv->buf[recv->stk++] << 8u;
+    tmp |= recv->buf[recv->stk++];
+    return tmp;
 }

@@ -23,6 +23,7 @@ public:
     resTableIndex hash ( unsigned nBitsHashIndex ) const;
     static unsigned maxIndexBitWidth ();
     static unsigned minIndexBitWidth ();
+    void name ( char *pBuf, unsigned bufSize ) const;
 private:
     const struct sockaddr_in addr;
 };
@@ -58,6 +59,11 @@ inline unsigned inetAddrID::maxIndexBitWidth ()
 inline unsigned inetAddrID::minIndexBitWidth ()
 {
     return 8u;
+}
+
+inline void inetAddrID::name ( char *pBuf, unsigned bufSize ) const
+{
+    ipAddrToDottedIP ( &this->addr, pBuf, bufSize );
 }
 
 #endif // ifdef inetAddrID

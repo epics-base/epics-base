@@ -135,7 +135,7 @@ udpiiu::udpiiu ( cac &cac ) :
     this->recvThreadExitSignal = epicsEventMustCreate ( epicsEventEmpty );
     if ( ! this->recvThreadExitSignal ) {
         socket_close ( this->sock );
-        throwWithLocation ( noMemory () );
+        throwWithLocation ( std::bad_alloc () );
     }
 
     /*
@@ -164,7 +164,7 @@ udpiiu::udpiiu ( cac &cac ) :
             this->printf ("CA: unable to create UDP receive thread\n");
             epicsEventDestroy (this->recvThreadExitSignal);
             socket_close (this->sock);
-            throwWithLocation ( noMemory () );
+            throwWithLocation ( std::bad_alloc () );
         }
     }
 
@@ -232,8 +232,8 @@ void udpiiu::recvMsg ()
             SOCKERRSTR (errnoCpy) );
     }
     else if ( status > 0 ) {
-        this->postMsg ( src,
-                    this->recvBuf, (unsigned long) status );
+        this->postMsg ( src, this->recvBuf, (arrayElementCount) status, 
+            epicsTime::getCurrent() );
     }
     return;
 }
@@ -485,21 +485,25 @@ void udpiiu::shutdown ()
     epicsEventMustWait ( this->recvThreadExitSignal );
 }
 
-bool udpiiu::badUDPRespAction ( const caHdr &msg, const osiSockAddr &netAddr )
+bool udpiiu::badUDPRespAction ( const caHdr &msg, 
+    const osiSockAddr &netAddr, const epicsTime &currentTime )
 {
     char buf[64];
     sockAddrToDottedIP ( &netAddr.sa, buf, sizeof ( buf ) );
-    this->printf ( "CAC: undecipherable ( bad msg code %u ) UDP message from %s\n", 
-                msg.m_cmmd, buf );
+    char date[64];
+    currentTime.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S");
+    this->printf ( "CAC: undecipherable ( bad msg code %u ) UDP message from %s at %s\n", 
+                msg.m_cmmd, buf, date );
     return false;
 }
 
-bool udpiiu::noopAction ( const caHdr &, const osiSockAddr & )
+bool udpiiu::noopAction ( const caHdr &, const osiSockAddr &, const epicsTime & )
 {
     return true;
 }
 
-bool udpiiu::searchRespAction ( const caHdr &msg, const osiSockAddr &addr )
+bool udpiiu::searchRespAction ( const caHdr &msg, 
+    const osiSockAddr &addr, const epicsTime &currentTime )
 {
     osiSockAddr serverAddr;
     unsigned minorVersion;
@@ -527,7 +531,7 @@ bool udpiiu::searchRespAction ( const caHdr &msg, const osiSockAddr &addr )
      * so that we can have multiple servers on one host
      */
     serverAddr.ia.sin_family = AF_INET;
-    if ( CA_V48 ( CA_PROTOCOL_VERSION,minorVersion ) ) {
+    if ( CA_V48 ( minorVersion ) ) {
         if ( msg.m_cid != INADDR_BROADCAST ) {
             /*
              * Leave address in network byte order (m_cid has not been 
@@ -540,7 +544,7 @@ bool udpiiu::searchRespAction ( const caHdr &msg, const osiSockAddr &addr )
         }
         serverAddr.ia.sin_port = htons ( msg.m_dataType );
     }
-    else if ( CA_V45 (CA_PROTOCOL_VERSION,minorVersion) ) {
+    else if ( CA_V45 (minorVersion) ) {
         serverAddr.ia.sin_port = htons ( msg.m_dataType );
         serverAddr.ia.sin_addr = addr.ia.sin_addr;
     }
@@ -549,19 +553,20 @@ bool udpiiu::searchRespAction ( const caHdr &msg, const osiSockAddr &addr )
         serverAddr.ia.sin_addr = addr.ia.sin_addr;
     }
 
-    if ( CA_V42 ( CA_PROTOCOL_VERSION, minorVersion ) ) {
+    if ( CA_V42 ( minorVersion ) ) {
         return this->pCAC ()->lookupChannelAndTransferToTCP 
-            ( msg.m_available, msg.m_cid, USHRT_MAX, 
-                0, minorVersion, serverAddr );
+            ( msg.m_available, msg.m_cid, 0xffff, 
+                0, minorVersion, serverAddr, currentTime );
     }
     else {
         return this->pCAC ()->lookupChannelAndTransferToTCP 
             ( msg.m_available, msg.m_cid, msg.m_dataType, 
-                msg.m_count, minorVersion, serverAddr );
+                msg.m_count, minorVersion, serverAddr, currentTime );
     }
 }
 
-bool udpiiu::beaconAction ( const caHdr &msg, const osiSockAddr &net_addr )
+bool udpiiu::beaconAction ( const caHdr &msg, 
+    const osiSockAddr &net_addr, const epicsTime &currentTime )
 {
     struct sockaddr_in ina;
 
@@ -596,49 +601,54 @@ bool udpiiu::beaconAction ( const caHdr &msg, const osiSockAddr &net_addr )
         ina.sin_port = htons ( this->serverPort );
     }
 
-    this->pCAC ()->beaconNotify ( ina );
+    this->pCAC ()->beaconNotify ( ina, currentTime );
 
     return true;
 }
 
-bool udpiiu::repeaterAckAction ( const caHdr &,  const osiSockAddr &)
+bool udpiiu::repeaterAckAction ( const caHdr &,  
+        const osiSockAddr &, const epicsTime &)
 {
     this->pCAC ()->repeaterSubscribeConfirmNotify ();
     return true;
 }
 
-bool udpiiu::notHereRespAction ( const caHdr &,  const osiSockAddr &)
+bool udpiiu::notHereRespAction ( const caHdr &,  
+        const osiSockAddr &, const epicsTime & )
 {
     return true;
 }
 
-bool udpiiu::exceptionRespAction ( const caHdr &msg, const osiSockAddr &net_addr )
+bool udpiiu::exceptionRespAction ( const caHdr &msg, 
+        const osiSockAddr &net_addr, const epicsTime &currentTime )
 {
     const caHdr &reqMsg = * ( &msg + 1 );
     char name[64];
-
     sockAddrToDottedIP ( &net_addr.sa, name, sizeof ( name ) );
+    char date[64];
+    currentTime.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S");
 
     if ( msg.m_postsize > sizeof ( caHdr ) ){
-        errlogPrintf ( "error condition \"%s\" detected by %s with context \"%s\"\n", 
+        errlogPrintf ( "error condition \"%s\" detected by %s with context \"%s\" at %s\n", 
             ca_message ( htonl ( msg.m_available ) ), 
-            name, reinterpret_cast <const char *> ( &reqMsg + 1 ) );
+            name, reinterpret_cast <const char *> ( &reqMsg + 1 ), date );
     }
     else{
-        errlogPrintf ( "error condition \"%s\" detected by %s\n", 
-            ca_message ( htonl ( msg.m_available ) ), name );
+        errlogPrintf ( "error condition \"%s\" detected by %s at %s\n", 
+            ca_message ( htonl ( msg.m_available ) ), name, date );
     }
 
     return true;
 }
 
 void udpiiu::postMsg ( const osiSockAddr &net_addr, 
-              char *pInBuf, unsigned long blockSize )
+              char *pInBuf, arrayElementCount blockSize,
+              const epicsTime &currentTime)
 {
     caHdr *pCurMsg;
 
     while ( blockSize ) {
-        unsigned long size;
+        arrayElementCount size;
 
         if ( blockSize < sizeof ( *pCurMsg ) ) {
             char buf[64];
@@ -694,7 +704,7 @@ void udpiiu::postMsg ( const osiSockAddr &net_addr,
         else {
             pStub = &udpiiu::badUDPRespAction;
         }
-        bool success = ( this->*pStub ) ( *pCurMsg, net_addr );
+        bool success = ( this->*pStub ) ( *pCurMsg, net_addr, currentTime );
         if ( ! success ) {
             char buf[256];
             sockAddrToDottedIP ( &net_addr.sa, buf, sizeof ( buf ) );
@@ -712,9 +722,9 @@ void udpiiu::postMsg ( const osiSockAddr &net_addr,
  */ 
 bool udpiiu::pushDatagramMsg ( const caHdr &msg, const void *pExt, ca_uint16_t extsize )
 {
-    unsigned long   msgsize;
-    ca_uint16_t     allignedExtSize;
-    caHdr           *pbufmsg;
+    arrayElementCount   msgsize;
+    ca_uint16_t         allignedExtSize;
+    caHdr               *pbufmsg;
 
     allignedExtSize = CA_MESSAGE_ALIGN ( extsize );
     msgsize = sizeof ( caHdr ) + allignedExtSize;

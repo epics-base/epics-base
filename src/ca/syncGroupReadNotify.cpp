@@ -35,7 +35,7 @@
 #include "oldAccess.h"
 
 syncGroupReadNotify::syncGroupReadNotify ( CASG &sgIn, chid pChan, 
-                           unsigned type, unsigned long count, void *pValueIn ) :
+                           unsigned type, arrayElementCount count, void *pValueIn ) :
     syncGroupNotify ( sgIn, pChan ), pValue ( pValueIn )
 {
     pChan->read ( type, count, *this, &this->id );
@@ -45,7 +45,7 @@ syncGroupReadNotify::syncGroupReadNotify ( CASG &sgIn, chid pChan,
 syncGroupReadNotify * syncGroupReadNotify::factory ( 
     tsFreeList < class syncGroupReadNotify, 128 > &freeList, 
     struct CASG &sg, chid chan, unsigned type, 
-    unsigned long count, void *pValueIn )
+    arrayElementCount count, void *pValueIn )
 {
     return new ( freeList ) syncGroupReadNotify ( sg, chan, type, 
             count, pValueIn);
@@ -62,7 +62,7 @@ syncGroupReadNotify::~syncGroupReadNotify ()
 }
 
 void syncGroupReadNotify::completion (
-    unsigned type, unsigned long count, const void *pData )
+    unsigned type, arrayElementCount count, const void *pData )
 {
     if ( this->magic != CASG_MAGIC ) {
         this->sg.printf ( "cac: sync group io_complete(): bad sync grp op magic number?\n" );
@@ -79,7 +79,7 @@ void syncGroupReadNotify::completion (
 }
 
 void syncGroupReadNotify::exception (
-    int status, const char *pContext, unsigned type, unsigned long count )
+    int status, const char *pContext, unsigned type, arrayElementCount count )
 {
     ca_signal_formated ( status, __FILE__, __LINE__, 
             "CA sync group read request failed with chan=%s type=%d count=%ld because \"%s\"\n", 

@@ -34,7 +34,7 @@ private:
     unsigned attempts;
     bool registered;
     bool once;
-	expireStatus expire ();
+	expireStatus expire ( const epicsTime & currentTime );
 };
 
 #endif // ifdef repeaterSubscribeTimerh

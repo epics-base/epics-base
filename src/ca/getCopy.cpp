@@ -24,9 +24,9 @@
 tsFreeList < class getCopy, 1024 > getCopy::freeList;
 epicsMutex getCopy::freeListMutex;
 
-getCopy::getCopy ( oldCAC &cacCtxIn, unsigned typeIn, 
-        unsigned long countIn, void *pValueIn ) :
-    count ( countIn ), cacCtx ( cacCtxIn ), pValue ( pValueIn ), 
+getCopy::getCopy ( oldCAC &cacCtxIn, oldChannelNotify &chanIn, unsigned typeIn, 
+        arrayElementCount countIn, void *pValueIn ) :
+    count ( countIn ), cacCtx ( cacCtxIn ), chan ( chanIn ), pValue ( pValueIn ), 
         readSeq ( cacCtxIn.sequenceNumberOfOutstandingIO () ), type ( typeIn )
 {
     cacCtxIn.incrementOutstandingIO ();
@@ -37,7 +37,7 @@ getCopy::~getCopy ()
 }
 
 void getCopy::completion ( unsigned typeIn, 
-    unsigned long countIn, const void *pDataIn )
+    arrayElementCount countIn, const void *pDataIn )
 {
     if  ( this->type == typeIn ) {
         memcpy ( this->pValue, pDataIn, dbr_size_n ( typeIn, countIn ) );
@@ -52,10 +52,10 @@ void getCopy::completion ( unsigned typeIn,
 }
 
 void getCopy::exception (
-    int status, const char *pContext, unsigned typeIn, unsigned long countIn )
+    int status, const char *pContext, unsigned typeIn, arrayElementCount countIn )
 {
-    this->cacCtx.exception ( status, pContext, typeIn, 
-        countIn, __FILE__, __LINE__  );
+    this->cacCtx.exception ( status, pContext, 
+        __FILE__, __LINE__, this->chan, this->type, this->count, CA_OP_GET );
     delete this;
 }
 

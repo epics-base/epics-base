@@ -35,7 +35,7 @@
 #include "oldAccess.h"
 
 syncGroupWriteNotify::syncGroupWriteNotify ( CASG &sgIn, chid pChan, unsigned type, 
-                       unsigned long count, const void *pValueIn  ) :
+                       arrayElementCount count, const void *pValueIn  ) :
     syncGroupNotify ( sgIn, pChan )
 {
     pChan->write ( type, count, pValueIn, *this, &this->id );
@@ -45,7 +45,7 @@ syncGroupWriteNotify::syncGroupWriteNotify ( CASG &sgIn, chid pChan, unsigned ty
 syncGroupWriteNotify * syncGroupWriteNotify::factory ( 
     tsFreeList < class syncGroupWriteNotify, 128 > &freeList, 
     struct CASG &sg, chid chan, unsigned type, 
-    unsigned long count, const void *pValueIn )
+    arrayElementCount count, const void *pValueIn )
 {
     return new ( freeList ) syncGroupWriteNotify ( sg, chan, type, 
             count, pValueIn);
@@ -73,11 +73,11 @@ void syncGroupWriteNotify::completion ()
 }
 
 void syncGroupWriteNotify::exception (
-    int status, const char *pContext )
+    int status, const char *pContext, unsigned type, arrayElementCount count )
 {
     ca_signal_formated ( status, __FILE__, __LINE__, 
-            "CA sync group write request for channel \"%s\" failed because \"%s\"\n", 
-            this->chan->pName(), pContext);
+            "CA sync group write request for channel \"%s\" failed because \"%s\" type=%s count=%u\n", 
+            this->chan->pName(), pContext, dbr_type_to_text ( type ), count);
     //
     // This notify is left installed at this point as a place holder indicating that
     // all requests have not been completed. This notify is not uninstalled until

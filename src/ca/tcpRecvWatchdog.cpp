@@ -20,7 +20,7 @@
 //
 tcpRecvWatchdog::tcpRecvWatchdog 
     ( tcpiiu &iiuIn, double periodIn, epicsTimerQueue & queueIn ) :
-        period ( periodIn ), timer ( queueIn.createTimer ( *this ) ),
+        period ( periodIn ), timer ( queueIn.createTimer () ),
         iiu ( iiuIn ), responsePending ( false ),
         beaconAnomaly ( true )
 {
@@ -31,7 +31,7 @@ tcpRecvWatchdog::~tcpRecvWatchdog ()
     delete & this->timer;
 }
 
-epicsTimerNotify::expireStatus tcpRecvWatchdog::expire ()
+epicsTimerNotify::expireStatus tcpRecvWatchdog::expire ( const epicsTime & currentTime )
 {
     if ( this->responsePending ) {
         this->cancel ();
@@ -52,7 +52,7 @@ epicsTimerNotify::expireStatus tcpRecvWatchdog::expire ()
 void tcpRecvWatchdog::beaconArrivalNotify ()
 {
     if ( ! this->beaconAnomaly && ! this->responsePending ) {
-        this->timer.start ( this->period );
+        this->timer.start ( *this, this->period );
         debugPrintf ( ("Saw a normal beacon - reseting TCP recv watchdog\n") );
     }
 }
@@ -74,13 +74,35 @@ void tcpRecvWatchdog::messageArrivalNotify ()
 {
     this->beaconAnomaly = false;
     this->responsePending = false;
-    this->timer.start ( this->period );
+    this->timer.start ( *this, this->period );
     debugPrintf ( ("received a message - reseting TCP recv watchdog\n") );
+}
+
+//
+// The thread for outgoing requests in the client runs 
+// at a higher priority than the thread in the client
+// that receives responses. Therefore, there could 
+// be considerable large array write send backlog that 
+// is delaying departure of an echo request and also 
+// interrupting delivery of an echo response. 
+// We must be careful not to timeout the echo response as 
+// long as we see indication of regular departures of  
+// message buffers from the client in a situation where 
+// we know that the TCP send queueing has been exceeded. 
+// The send watchdog will be responsible for detecting 
+// dead connections in this case.
+//
+void tcpRecvWatchdog::sendBacklogProgressNotify ()
+{
+    this->beaconAnomaly = false;
+    this->responsePending = false;
+    this->timer.start ( *this, this->period );
+    debugPrintf ( ("saw heavy send backlog - reseting TCP recv watchdog\n") );
 }
 
 void tcpRecvWatchdog::connectNotify ()
 {
-    this->timer.start ( this->period );
+    this->timer.start ( *this, this->period );
     debugPrintf ( ("connected to the server - reseting TCP recv watchdog\n") );
 }
 

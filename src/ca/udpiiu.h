@@ -39,6 +39,8 @@ epicsShareFunc void epicsShareAPI caRepeaterRegistrationMessage ( SOCKET sock, u
 extern "C" epicsShareFunc void caRepeaterThread ( void *pDummy );
 epicsShareFunc void ca_repeater ( void );
 
+class epicsTime;
+
 class udpiiu : public netiiu {
 public:
     udpiiu ( class cac & );
@@ -46,7 +48,8 @@ public:
     void shutdown ();
     void recvMsg ();
     void postMsg ( const osiSockAddr &net_addr, 
-              char *pInBuf, unsigned long blockSize );
+              char *pInBuf, arrayElementCount blockSize,
+              const epicsTime &currenTime);
     void repeaterRegistrationMessage ( unsigned attemptNumber );
     void datagramFlush ();
     unsigned getPort () const;
@@ -55,7 +58,6 @@ public:
 
     // exceptions
     class noSocket {};
-    class noMemory {};
 
     SOCKET getSock () const;
 
@@ -75,19 +77,27 @@ private:
 
     bool pushDatagramMsg ( const caHdr &msg, const void *pExt, ca_uint16_t extsize );
 
-    typedef bool ( udpiiu::*pProtoStubUDP ) ( const caHdr &, const osiSockAddr & );
+    typedef bool ( udpiiu::*pProtoStubUDP ) ( const caHdr &, 
+        const osiSockAddr &, const epicsTime & );
 
     // UDP protocol dispatch table
     static const pProtoStubUDP udpJumpTableCAC[];
 
     // UDP protocol stubs
-    bool noopAction ( const caHdr &, const osiSockAddr & );
-    bool badUDPRespAction ( const caHdr &msg, const osiSockAddr &netAddr );
-    bool searchRespAction ( const caHdr &msg, const osiSockAddr &net_addr );
-    bool exceptionRespAction ( const caHdr &msg, const osiSockAddr &net_addr );
-    bool beaconAction ( const caHdr &msg, const osiSockAddr &net_addr );
-    bool notHereRespAction ( const caHdr &msg, const osiSockAddr &net_addr );
-    bool repeaterAckAction ( const caHdr &msg, const osiSockAddr &net_addr );
+    bool noopAction ( const caHdr &, 
+        const osiSockAddr &, const epicsTime & );
+    bool badUDPRespAction ( const caHdr &msg, 
+        const osiSockAddr &netAddr, const epicsTime & );
+    bool searchRespAction ( const caHdr &msg, 
+        const osiSockAddr &net_addr, const epicsTime & );
+    bool exceptionRespAction ( const caHdr &msg, 
+        const osiSockAddr &net_addr, const epicsTime & );
+    bool beaconAction ( const caHdr &msg, 
+        const osiSockAddr &net_addr, const epicsTime & );
+    bool notHereRespAction ( const caHdr &msg, 
+        const osiSockAddr &net_addr, const epicsTime & );
+    bool repeaterAckAction ( const caHdr &msg, 
+        const osiSockAddr &net_addr, const epicsTime & );
 
     friend void cacRecvThreadUDP ( void *pParam );
 };

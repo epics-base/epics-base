@@ -27,11 +27,13 @@ public:
     virtual class netSubscription * isSubscription ();
     virtual void destroy ( class cacRecycle & ) = 0; // only called by cac
     virtual void completion () = 0;
-    virtual void exception ( int status, const char *pContext ) = 0;
-    virtual void completion ( unsigned type, 
-        unsigned long count, const void *pData ) = 0;
     virtual void exception ( int status, 
-        const char *pContext, unsigned type, unsigned long count ) = 0;
+        const char *pContext ) = 0;
+    virtual void exception ( int status, 
+        const char *pContext, unsigned type, 
+        arrayElementCount count ) = 0;
+    virtual void completion ( unsigned type, 
+        arrayElementCount count, const void *pData ) = 0;
     void show ( unsigned level ) const;
     ca_uint32_t getID () const;
     nciu & channel () const;
@@ -48,27 +50,29 @@ class netSubscription : public baseNMIU  {
 public:
     static netSubscription * factory ( 
         tsFreeList < class netSubscription, 1024 > &, 
-        nciu &chan, unsigned type, unsigned long count, 
+        nciu &chan, unsigned type, arrayElementCount count, 
         unsigned mask, cacStateNotify &notify );
     void show ( unsigned level ) const;
-    unsigned long getCount () const;
+    arrayElementCount getCount () const;
     unsigned getType () const;
     unsigned getMask () const;
     void destroy ( class cacRecycle & );
     void completion ();
-    void exception ( int status, const char *pContext );
-    void completion ( unsigned type, 
-        unsigned long count, const void *pData );
     void exception ( int status, 
-        const char *pContext, unsigned type, unsigned long count );
+        const char *pContext );
+    void completion ( unsigned type, 
+        arrayElementCount count, const void *pData );
+    void exception ( int status, 
+        const char *pContext, unsigned type, 
+        arrayElementCount count );
 protected:
     ~netSubscription ();
 private:
-    const unsigned long count;
+    const arrayElementCount count;
     cacStateNotify &notify;
     const unsigned type;
     const unsigned mask;
-    netSubscription ( nciu &chan, unsigned type, unsigned long count, 
+    netSubscription ( nciu &chan, unsigned type, arrayElementCount count, 
         unsigned mask, cacStateNotify &notify );
     class netSubscription * isSubscription ();
     void * operator new ( size_t, 
@@ -89,9 +93,9 @@ public:
     void completion ();
     void exception ( int status, const char *pContext );
     void completion ( unsigned type, 
-        unsigned long count, const void *pData );
-    void exception ( int status, 
-        const char *pContext, unsigned type, unsigned long count );
+        arrayElementCount count, const void *pData );
+    void exception ( int status, const char *pContext, 
+        unsigned type, arrayElementCount count );
 protected:
     ~netReadNotifyIO ();
 private:
@@ -115,9 +119,9 @@ public:
     void completion ();
     void exception ( int status, const char *pContext );
     void completion ( unsigned type, 
-        unsigned long count, const void *pData );
-    void exception ( int status, 
-        const char *pContext, unsigned type, unsigned long count );
+        arrayElementCount count, const void *pData );
+    void exception ( int status, const char *pContext, 
+        unsigned type, arrayElementCount count );
 protected:
     ~netWriteNotifyIO ();
 private:
@@ -143,7 +147,7 @@ inline class nciu & baseNMIU::channel () const
 
 inline netSubscription * netSubscription::factory ( 
     tsFreeList < class netSubscription, 1024 > &freeList, 
-    nciu &chan, unsigned type, unsigned long count, 
+    nciu &chan, unsigned type, arrayElementCount count, 
     unsigned mask, cacStateNotify &notify )
 {
     return new ( freeList ) netSubscription ( chan, type, 
@@ -169,9 +173,9 @@ inline void netSubscription::operator delete ( void *pCadaver, size_t size,
 }
 #endif
 
-inline unsigned long netSubscription::getCount () const
+inline arrayElementCount netSubscription::getCount () const
 {
-    unsigned long nativeCount = this->chan.nativeElementCount ();
+    arrayElementCount nativeCount = this->chan.nativeElementCount ();
     if ( this->count == 0u || this->count > nativeCount ) {
         return nativeCount;
     }

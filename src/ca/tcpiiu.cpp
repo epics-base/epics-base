@@ -10,7 +10,6 @@
  *
  *  Author: Jeff Hill
  */
-
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #include "localHostName.h"
@@ -43,51 +42,58 @@ extern "C" void cacSendThreadTCP ( void *pParam )
 {
     tcpiiu *piiu = ( tcpiiu * ) pParam;
 
-    while ( true ) {
-        bool flowControlLaborNeeded;
-        bool echoLaborNeeded;
+    try {
+        while ( true ) {
+            bool flowControlLaborNeeded;
+            bool echoLaborNeeded;
 
-        epicsEventMustWait ( piiu->sendThreadFlushSignal );
+            piiu->sendThreadFlushEvent.wait ();
 
-        if ( piiu->state != iiu_connected ) {
-            break;
-        }
-
-        {
-            epicsAutoMutex autoMutex ( piiu->pCAC()->mutexRef() );
-            flowControlLaborNeeded = piiu->busyStateDetected != piiu->flowControlActive;
-            echoLaborNeeded = piiu->echoRequestPending;
-            piiu->echoRequestPending = false;
-        }
-
-        if ( flowControlLaborNeeded ) {
-            if ( piiu->flowControlActive ) {
-                piiu->disableFlowControlRequest ();
-                piiu->flowControlActive = false;
-                debugPrintf ( ( "fc off\n" ) );
+            if ( piiu->state != iiu_connected ) {
+                break;
             }
-            else {
-                piiu->enableFlowControlRequest ();
-                piiu->flowControlActive = true;
-                debugPrintf ( ( "fc on\n" ) );
-            }
-        }
 
-        if ( echoLaborNeeded ) {
-            if ( CA_V43 ( CA_PROTOCOL_VERSION, piiu->minorProtocolVersion ) ) {
-                piiu->echoRequest ();
+            {
+                epicsAutoMutex autoMutex ( piiu->pCAC()->mutexRef() );
+                flowControlLaborNeeded = 
+                    piiu->busyStateDetected != piiu->flowControlActive;
+                echoLaborNeeded = piiu->echoRequestPending;
+                piiu->echoRequestPending = false;
             }
-            else {
-                piiu->noopRequest ();
-            }
-        }
 
-        if ( ! piiu->flush () ) {
-            break;
+            if ( flowControlLaborNeeded ) {
+                if ( piiu->flowControlActive ) {
+                    piiu->disableFlowControlRequest ();
+                    piiu->flowControlActive = false;
+                    debugPrintf ( ( "fc off\n" ) );
+                }
+                else {
+                    piiu->enableFlowControlRequest ();
+                    piiu->flowControlActive = true;
+                    debugPrintf ( ( "fc on\n" ) );
+                }
+            }
+
+            if ( echoLaborNeeded ) {
+                if ( CA_V43 ( piiu->minorProtocolVersion ) ) {
+                    piiu->echoRequest ();
+                }
+                else {
+                    piiu->noopRequest ();
+                }
+            }
+
+            if ( ! piiu->flush () ) {
+                break;
+            }
         }
     }
+    catch ( ... ) {
+        piiu->printf ("cac: tcp send thread received an exception - diconnecting\n");
+        piiu->forcedShutdown ();
+    }
 
-    epicsEventSignal ( piiu->sendThreadExitSignal );
+    piiu->sendThreadExitEvent.signal ();
 }
 
 unsigned tcpiiu::sendBytes ( const void *pBuf, 
@@ -217,15 +223,15 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
             tid = epicsThreadCreate ( "CAC-TCP-send", priorityOfSend,
                     epicsThreadGetStackSize ( epicsThreadStackMedium ), cacSendThreadTCP, piiu );
             if ( ! tid ) {
-                epicsEventSignal ( piiu->recvThreadExitSignal );
-                epicsEventSignal ( piiu->sendThreadExitSignal );
+                piiu->recvThreadExitEvent.signal ();
+                piiu->sendThreadExitEvent.signal ();
                 piiu->cleanShutdown ();
                 return;
             }
         }
         else {
-            epicsEventSignal ( piiu->recvThreadExitSignal );
-            epicsEventSignal ( piiu->sendThreadExitSignal );
+            piiu->recvThreadExitEvent.signal ();
+            piiu->sendThreadExitEvent.signal ();
             piiu->cleanShutdown ();
             return;
         }
@@ -234,12 +240,12 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
     unsigned nBytes = 0u;
     while ( piiu->state == iiu_connected ) {
         if ( nBytes >= maxBytesPendingTCP ) {
-            epicsEventMustWait ( piiu->recvThreadRingBufferSpaceAvailableSignal );
+            piiu->recvThreadRingBufferSpaceAvailableEvent.wait ();
             epicsAutoMutex autoMutex ( piiu->pCAC()->mutexRef() );
             nBytes = piiu->recvQue.occupiedBytes ();
         }
         else {
-            comBuf * pComBuf = new comBuf;
+            comBuf * pComBuf = new ( std::nothrow ) comBuf;
             if ( pComBuf ) {
                 unsigned nBytesIn = pComBuf->fillFromWire ( *piiu );
                 if ( nBytesIn ) {
@@ -247,7 +253,7 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
                     {
                         epicsAutoMutex autoMutex ( piiu->pCAC()->mutexRef() );
                         nBytes = piiu->recvQue.occupiedBytes ();
-                        msgHeaderButNoBody = piiu->msgHeaderAvailable; 
+                        msgHeaderButNoBody = piiu->oldMsgHeaderAvailable; 
                         piiu->recvQue.pushLastComBufReceived ( *pComBuf );
                         if ( nBytesIn == pComBuf->capacityBytes () ) {
                             if ( piiu->contigRecvMsgCount >= contiguousMsgCountWhichTriggersFlowControl ) {
@@ -261,15 +267,18 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
                             piiu->contigRecvMsgCount = 0u;
                             piiu->busyStateDetected = false;
                         }         
+                        piiu->unacknowledgedSendBytes = 0u;
                         // reschedule connection activity watchdog
                         piiu->recvDog.messageArrivalNotify (); 
                     }
+
                     // wake up recv thread only if
                     // 1) there are currently no bytes in the queue
                     // 2) if the recv thread is currently blocking for an incomplete msg
                     if ( nBytes < sizeof ( caHdr ) || msgHeaderButNoBody ) {
-                        piiu->pCAC ()->signalRecvActivity ();
+                        piiu->pCAC()->signalRecvActivity ();
                     }
+
                     if ( nBytes <= UINT_MAX - nBytesIn ) {
                         nBytes += nBytesIn;
                     }
@@ -292,126 +301,62 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
         }
     }
 
-    epicsEventSignal ( piiu->recvThreadExitSignal );
+    piiu->recvThreadExitEvent.signal ();
 }
 
 //
 // tcpiiu::tcpiiu ()
 //
-tcpiiu::tcpiiu ( cac &cac, double connectionTimeout, epicsTimerQueue &timerQueue ) :
+tcpiiu::tcpiiu ( cac &cac, double connectionTimeout, 
+        epicsTimerQueue &timerQueue, const osiSockAddr &addrIn, 
+        unsigned minorVersion, class bhe &bheIn, 
+        ipAddrToAsciiEngine &engineIn ) :
     netiiu ( &cac ),
     recvDog ( *this, connectionTimeout, timerQueue ),
     sendDog ( *this, connectionTimeout, timerQueue ),
     sendQue ( *this ),
-    pHostNameCache ( 0 ),
-    curDataMax ( 0ul ),
-    pBHE ( 0 ),
-    pCurData ( 0 ),
-    minorProtocolVersion ( 0u ),
+    addr ( addrIn ),
+    curDataMax ( MAX_TCP ),
+    curDataBytes ( 0ul ),
+    pHostNameCache ( new hostNameCache ( addrIn, engineIn ) ),
+    BHE ( bheIn ),
+    pCurData ( cac.allocateSmallBufferTCP () ),
+    minorProtocolVersion ( minorVersion ),
     state ( iiu_connecting ),
     sock ( INVALID_SOCKET ),
     contigRecvMsgCount ( 0u ),
     blockingForFlush ( 0u ),
+    socketLibrarySendBufferSize ( 0u ),
+    unacknowledgedSendBytes ( 0u ),
     busyStateDetected ( false ),
     flowControlActive ( false ),
     echoRequestPending ( false ),
+    oldMsgHeaderAvailable ( false ),
     msgHeaderAvailable ( false ),
     sockCloseCompleted ( false ),
     f_trueOnceOnly ( true ),
     earlyFlush ( false )
 {
-    this->addr.sa.sa_family = AF_UNSPEC;
-
-    this->sendThreadExitSignal = epicsEventCreate ( epicsEventEmpty );
-    if ( ! this->sendThreadExitSignal ) {
-        this->printf ("CA: unable to create CA client send thread exit semaphore\n");
-        this->fullyConstructedFlag = false;
-        return;
+    if ( ! this->pCurData ) {
+        throw std::bad_alloc ();
     }
 
-    this->recvThreadExitSignal = epicsEventCreate ( epicsEventEmpty );
-    if ( ! this->recvThreadExitSignal ) {
-        this->printf ("CA: unable to create CA client send thread exit semaphore\n");
-        epicsEventDestroy (this->sendThreadExitSignal);
-        this->fullyConstructedFlag = false;
-        return;
+    if ( ! this->pHostNameCache.get () ) {
+        throw std::bad_alloc ();
     }
 
-    this->sendThreadFlushSignal = epicsEventCreate ( epicsEventEmpty );
-    if ( ! this->sendThreadFlushSignal ) {
-        this->printf ("CA: unable to create sendThreadFlushSignal object\n");
-        epicsEventDestroy (this->sendThreadExitSignal);
-        this->fullyConstructedFlag = false;
-        return;
-    }
-
-    this->flushBlockSignal = epicsEventCreate ( epicsEventEmpty );
-    if ( ! this->flushBlockSignal ) {
-        this->printf ("CA: unable to create flushBlockSignal object\n");
-        epicsEventDestroy (this->sendThreadExitSignal);
-        epicsEventDestroy (this->sendThreadFlushSignal);
-        this->fullyConstructedFlag = false;
-        return;
-    }
-
-    this->recvThreadRingBufferSpaceAvailableSignal = epicsEventCreate ( epicsEventEmpty );
-    if ( ! this->recvThreadRingBufferSpaceAvailableSignal ) {
-        this->printf ("CA: unable to create recvThreadRingBufferSpaceAvailableSignal object\n");
-        epicsEventDestroy (this->sendThreadExitSignal);
-        epicsEventDestroy (this->sendThreadFlushSignal);
-        epicsEventDestroy (this->flushBlockSignal);
-        this->fullyConstructedFlag = false;
-        return;
-    }
-
-    this->fullyConstructedFlag = true;
-}
-
-/*
- * tcpiiu::initiateConnect ()
- */
-bool tcpiiu::initiateConnect ( const osiSockAddr &addrIn, unsigned minorVersion, 
-                              class bhe &bhe, ipAddrToAsciiEngine &engineIn )
-{
-    unsigned priorityOfRecv;
-    epicsThreadBooleanStatus tbs;
-    epicsThreadId tid;
-    int status;
-    int flag;
-
-    this->addr = addrIn;
-
-    this->pHostNameCache = new hostNameCache ( addrIn, engineIn );
-    if ( ! this->pHostNameCache ) {
-        return false;
-    }
-
-    this->pBHE = &bhe;
-    bhe.bindToIIU ( *this );
-
-    this->state = iiu_connecting;
-    this->minorProtocolVersion = minorVersion;
-
-    this->contigRecvMsgCount = 0u;
-    this->busyStateDetected = false;
-    this->flowControlActive = false;
-    this->echoRequestPending = false;
-    this->msgHeaderAvailable = false;
-    this->sockCloseCompleted = false;
-
-    // first message informs server of user and host name of client
-    this->userNameSetRequest ();
-    this->hostNameSetRequest ();
+    this->BHE.bindToIIU ( *this );
 
     this->sock = socket ( AF_INET, SOCK_STREAM, IPPROTO_TCP );
     if ( this->sock == INVALID_SOCKET ) {
         this->printf ( "CAC: unable to create virtual circuit because \"%s\"\n",
             SOCKERRSTR ( SOCKERRNO ) );
-        return false;
+        cac.releaseSmallBufferTCP ( this->pCurData );
+        throw std::bad_alloc ();
     }
 
-    flag = true;
-    status = setsockopt ( this->sock, IPPROTO_TCP, TCP_NODELAY,
+    int flag = true;
+    int status = setsockopt ( this->sock, IPPROTO_TCP, TCP_NODELAY,
                 (char *) &flag, sizeof ( flag ) );
     if ( status < 0 ) {
         this->printf ("CAC: problems setting socket option TCP_NODELAY = \"%s\"\n",
@@ -425,6 +370,12 @@ bool tcpiiu::initiateConnect ( const osiSockAddr &addrIn, unsigned minorVersion,
         this->printf ( "CAC: problems setting socket option SO_KEEPALIVE = \"%s\"\n",
             SOCKERRSTR ( SOCKERRNO ) );
     }
+
+    // load message queue with messages informing server 
+    // of user and host name of client
+    this->userNameSetRequest ();
+    this->hostNameSetRequest ();
+
 
 #   if 0
     {
@@ -451,23 +402,43 @@ bool tcpiiu::initiateConnect ( const osiSockAddr &addrIn, unsigned minorVersion,
     }
 #   endif
 
+    {
+        int nBytes;
+        int sizeOfParameter = static_cast < int > ( sizeof ( nBytes ) );
+        status = getsockopt ( this->sock, SOL_SOCKET, SO_SNDBUF,
+                ( char * ) &nBytes, &sizeOfParameter );
+        if ( status < 0 || nBytes < 0 || 
+                sizeOfParameter != static_cast < int > ( sizeof ( nBytes ) ) ) {
+            this->printf ("CAC: problems getting socket option SO_SNDBUF = \"%s\"\n",
+                SOCKERRSTR ( SOCKERRNO ) );
+            this->socketLibrarySendBufferSize = 0u;
+        }
+        else {
+            this->socketLibrarySendBufferSize = static_cast < unsigned > ( nBytes );
+        }
+    }
+
     memset ( (void *) &this->curMsg, '\0', sizeof ( this->curMsg ) );
 
-    tbs  = epicsThreadHighestPriorityLevelBelow ( this->pCAC ()->getInitializingThreadsPriority (), &priorityOfRecv );
+    unsigned priorityOfRecv;
+    epicsThreadBooleanStatus tbs = epicsThreadHighestPriorityLevelBelow ( 
+        this->pCAC ()->getInitializingThreadsPriority (), &priorityOfRecv );
     if ( tbs != epicsThreadBooleanStatusSuccess ) {
         priorityOfRecv = this->pCAC ()->getInitializingThreadsPriority ();
     }
 
-    tid = epicsThreadCreate ("CAC-TCP-recv", priorityOfRecv,
-            epicsThreadGetStackSize (epicsThreadStackMedium), cacRecvThreadTCP, this);
+    epicsThreadId tid = epicsThreadCreate ( "CAC-TCP-recv", priorityOfRecv,
+            epicsThreadGetStackSize ( epicsThreadStackMedium ), 
+            cacRecvThreadTCP, this);
     if ( tid == 0 ) {
         this->printf ("CA: unable to create CA client receive thread\n");
+        cac.releaseSmallBufferTCP ( this->pCurData );
         socket_close ( this->sock );
-        return false;
+        throw std::bad_alloc ();
     }
-
-    return true;
 }
+
+
 
 /*
  * tcpiiu::connect ()
@@ -529,9 +500,6 @@ void tcpiiu::connect ()
  */
 void tcpiiu::cleanShutdown ()
 {
-    this->sendDog.cancel ();
-    this->recvDog.cancel ();
-
     epicsAutoMutex autoMutex ( this->pCAC()->mutexRef() );
 
     if ( this->state == iiu_connected ) {
@@ -564,8 +532,8 @@ void tcpiiu::cleanShutdown ()
             this->state = iiu_disconnected;
         }
     }
-    epicsEventSignal ( this->sendThreadFlushSignal );
-    epicsEventSignal ( this->recvThreadRingBufferSpaceAvailableSignal );
+    this->sendThreadFlushEvent.signal ();
+    this->recvThreadRingBufferSpaceAvailableEvent.signal ();
     this->pCAC ()->signalRecvActivity ();
 }
 
@@ -574,9 +542,6 @@ void tcpiiu::cleanShutdown ()
  */
 void tcpiiu::forcedShutdown ()
 {
-    this->sendDog.cancel ();
-    this->recvDog.cancel ();
-
     epicsAutoMutex autoMutex ( this->pCAC()->mutexRef() );
 
     if ( this->state != iiu_disconnected ) {
@@ -603,9 +568,9 @@ void tcpiiu::forcedShutdown ()
         }
     }
 
-    epicsEventSignal ( this->sendThreadFlushSignal );
-    epicsEventSignal ( this->recvThreadRingBufferSpaceAvailableSignal );
-    this->pCAC ()->signalRecvActivity ();
+    this->sendThreadFlushEvent.signal ();
+    this->recvThreadRingBufferSpaceAvailableEvent.signal ();
+    this->pCAC()->signalRecvActivity ();
 }
 
 //
@@ -613,21 +578,18 @@ void tcpiiu::forcedShutdown ()
 //
 tcpiiu::~tcpiiu ()
 {
-    if ( ! this->fullyConstructedFlag ) {
-        return;
-    }
+    this->sendDog.cancel ();
+    this->recvDog.cancel ();
 
     this->cleanShutdown ();
 
     // wait for send thread to exit
     static const double shutdownDelay = 15.0;
-    epicsEventWaitStatus semStat;
     while ( true ) {
-        semStat = epicsEventWaitWithTimeout ( this->sendThreadExitSignal, shutdownDelay );
-        if ( semStat == epicsEventWaitOK ) {
+        bool signaled = this->sendThreadExitEvent.wait ( shutdownDelay );
+        if ( signaled ) {
             break;
         }
-        assert ( semStat == epicsEventWaitTimeout );
         if ( ! this->sockCloseCompleted ) {
             printf ( "Gave up waiting for \"shutdown()\" to force send thread to exit after %f sec\n", 
                 shutdownDelay);
@@ -645,11 +607,10 @@ tcpiiu::~tcpiiu ()
 
     // wait for recv thread to exit
     while ( true ) {
-        semStat = epicsEventWaitWithTimeout ( this->recvThreadExitSignal, shutdownDelay );
-        if ( semStat == epicsEventWaitOK ) {
+        bool signaled = this->recvThreadExitEvent.wait ( shutdownDelay );
+        if ( signaled ) {
             break;
         }
-        assert ( semStat == epicsEventWaitTimeout );
         if ( ! this->sockCloseCompleted ) {
             printf ( "Gave up waiting for \"shutdown()\" to force receive thread to exit after %f sec\n", 
                 shutdownDelay);
@@ -683,38 +644,23 @@ tcpiiu::~tcpiiu ()
         epicsAutoMutex autoMutex ( this->pCAC()->mutexRef() );
 
         if ( this->pCurData ) {
-            delete [] this->pCurData;
-            this->pCurData = 0;
-            this->curDataMax = 0u;
+            if ( this->curDataMax == MAX_TCP ) {
+                this->pCAC()->releaseSmallBufferTCP ( this->pCurData );
+            }
+            else {
+                this->pCAC()->releaseLargeBufferTCP ( this->pCurData );
+            }
         }
 
-        this->addr.sa.sa_family = AF_UNSPEC;
-
-        this->minorProtocolVersion = 0u;
-        if ( this->pHostNameCache ) {
-            this->pHostNameCache->destroy ();
-            this->pHostNameCache = 0;
-        }
-        this->pBHE = 0;
         this->sendQue.clear ();
         this->recvQue.clear ();
     }
 
     // wakeup user threads blocking for send backlog to be reduced
     // and wait for them to stop using this IIU
-    epicsEventSignal ( this->flushBlockSignal );
+    this->flushBlockEvent.signal ();
     while ( this->blockingForFlush ) {
         epicsThreadSleep ( 0.1 );
-    }
-
-    epicsEventDestroy ( this->sendThreadExitSignal );
-    epicsEventDestroy ( this->recvThreadExitSignal );
-    epicsEventDestroy ( this->sendThreadFlushSignal );
-    epicsEventDestroy ( this->recvThreadRingBufferSpaceAvailableSignal );
-    epicsEventDestroy ( this->flushBlockSignal );
-
-    if ( this->pHostNameCache ) {
-        this->pHostNameCache->destroy ();
     }
 }
 
@@ -752,14 +698,12 @@ bool tcpiiu::isVirtaulCircuit ( const char *pChannelName, const osiSockAddr &add
     if ( ! match ) {
         epicsAutoMutex locker ( this->pCAC()->mutexRef() );
         char acc[64];
-        if ( this->pHostNameCache ) {
-            this->pHostNameCache->hostName ( acc, sizeof ( acc ) );
-            assert ( this->pCAC () );
-            msgForMultiplyDefinedPV *pMsg = new msgForMultiplyDefinedPV ( 
-                *this->pCAC (), pChannelName, acc, addrIn );
-            if ( pMsg ) {
-                this->pCAC ()->ipAddrToAsciiAsynchronousRequestInstall ( *pMsg );
-            }
+        this->pHostNameCache->hostName ( acc, sizeof ( acc ) );
+        assert ( this->pCAC () );
+        msgForMultiplyDefinedPV *pMsg = new msgForMultiplyDefinedPV ( 
+            *this->pCAC (), pChannelName, acc, addrIn );
+        if ( pMsg ) {
+            this->pCAC ()->ipAddrToAsciiAsynchronousRequestInstall ( *pMsg );
         }
     }
 
@@ -770,16 +714,9 @@ void tcpiiu::show ( unsigned level ) const
 {
     epicsAutoMutex locker ( this->pCAC()->mutexRef() );
     char buf[256];
-    if ( this->pHostNameCache ) {
-        this->pHostNameCache->hostName ( buf, sizeof ( buf ) );
-    }
-    else {
-        strncpy ( buf, "<disconnected>", sizeof ( buf ) );
-        buf [ sizeof ( buf ) - 1 ] = '\0';
-    }
-    ::printf ( "Virtual circuit to \"%s\" at version %u.%u state %u\n", 
-        buf, CA_PROTOCOL_VERSION, this->minorProtocolVersion,
-        this->state );
+    this->pHostNameCache->hostName ( buf, sizeof ( buf ) );
+    ::printf ( "Virtual circuit to \"%s\" at version %s state %u\n", 
+        buf, CA_VERSION_STRING ( this->minorProtocolVersion ), this->state );
     if ( level > 1u ) {
         this->netiiu::show ( level - 1u );
     }
@@ -792,20 +729,16 @@ void tcpiiu::show ( unsigned level ) const
     if ( level > 3u ) {
         ::printf ( "\tvirtual circuit socket identifier %d\n", this->sock );
         ::printf ( "\tsend thread flush signal:\n" );
-        epicsEventShow ( this->sendThreadFlushSignal, level-3u );
+        this->sendThreadFlushEvent.show ( level-3u );
         ::printf ( "\trecv thread buffer space available signal:\n" );
-        epicsEventShow ( this->recvThreadRingBufferSpaceAvailableSignal, level-3u );
+        this->recvThreadRingBufferSpaceAvailableEvent.show ( level-3u );
         ::printf ( "\tsend thread exit signal:\n" );
-        epicsEventShow ( this->sendThreadExitSignal, level-3u );
+        this->sendThreadExitEvent.show ( level-3u );
         ::printf ( "\trecv thread exit signal:\n" );
-        epicsEventShow ( this->recvThreadExitSignal, level-3u );
-        ::printf ( "\tfully constructed bool %u\n", this->fullyConstructedFlag );
+        this->recvThreadExitEvent.show ( level-3u );
         ::printf ("\techo pending bool = %u\n", this->echoRequestPending );
-        ::printf ("\treceive message header available bool = %u\n", this->msgHeaderAvailable );
-        if ( this->pBHE ) {
-            this->pBHE->show ( level - 3u );
-        }
         ::printf ( "IO identifier hash table:\n" );
+        this->BHE.show ( level - 3u );
     }
 }
 
@@ -816,7 +749,7 @@ bool tcpiiu::setEchoRequestPending ()
         this->echoRequestPending = true;
     }
     this->flushRequest ();
-    if ( CA_V43 (CA_PROTOCOL_VERSION, this->minorProtocolVersion ) ) {
+    if ( CA_V43 ( this->minorProtocolVersion ) ) {
         // we send an echo
         return true;
     }
@@ -826,12 +759,149 @@ bool tcpiiu::setEchoRequestPending ()
     }
 }
 
+//
+// tcpiiu::processIncoming()
+//
+void tcpiiu::processIncoming ()
+{
+    while ( 1 ) {
+
+        //
+        // fetch a complete message header
+        //
+        unsigned nBytes = this->recvQue.occupiedBytes ();
+
+        if ( ! this->msgHeaderAvailable ) {
+            if ( ! this->oldMsgHeaderAvailable ) {
+                if ( nBytes < sizeof ( caHdr ) ) {
+                    return;
+                } 
+                this->curMsg.m_cmmd = this->recvQue.popUInt16 ();
+                this->curMsg.m_postsize = this->recvQue.popUInt16 ();
+                this->curMsg.m_dataType = this->recvQue.popUInt16 ();
+                this->curMsg.m_count = this->recvQue.popUInt16 ();
+                this->curMsg.m_cid = this->recvQue.popUInt32 ();
+                this->curMsg.m_available = this->recvQue.popUInt32 ();
+                this->oldMsgHeaderAvailable = true;
+            }
+            if ( this->curMsg.m_postsize == 0xffff ) {
+                static const unsigned annexSize = 
+                    sizeof ( this->curMsg.m_postsize ) + sizeof ( this->curMsg.m_count );
+                if ( this->recvQue.occupiedBytes () < annexSize ) {
+                    return;
+                }
+                this->curMsg.m_postsize = this->recvQue.popUInt32 ();
+                this->curMsg.m_count = this->recvQue.popUInt32 ();
+            }
+            this->msgHeaderAvailable = true;
+            debugPrintf (
+                ( "%s Cmd=%3u Type=%3u Count=%8u Size=%8u",
+                this->pHostName (),
+                this->curMsg.m_cmmd,
+                this->curMsg.m_dataType,
+                this->curMsg.m_count,
+                this->curMsg.m_postsize) );
+            debugPrintf (
+                ( " Avail=%8u Cid=%8u\n",
+                this->curMsg.m_available,
+                this->curMsg.m_cid) );
+        }
+
+        //
+        // make sure we have a large enough message body cache
+        //
+        if ( this->curMsg.m_postsize > this->curDataMax ) {
+            if ( this->curDataMax == MAX_TCP && 
+                    this->pCAC()->largeBufferSizeTCP() >= this->curMsg.m_postsize ) {
+                char * pBuf = this->pCAC()->allocateLargeBufferTCP ();
+                if ( pBuf ) {
+                    this->pCAC()->releaseSmallBufferTCP ( this->pCurData );
+                    this->pCurData = pBuf;
+                    this->curDataMax = this->pCAC()->largeBufferSizeTCP ();
+                }
+                else {
+                    this->printf ("CAC: not enough memory for message body cache (ignoring response message)\n");
+                }
+            }
+        }
+
+        if ( this->curMsg.m_postsize <= this->curDataMax ) {
+            if ( this->curMsg.m_postsize > 0u ) {
+                this->curDataBytes += this->recvQue.copyOutBytes ( 
+                            &this->pCurData[this->curDataBytes], 
+                            this->curMsg.m_postsize - this->curDataBytes );
+                if ( this->curDataBytes < this->curMsg.m_postsize ) {
+                    this->recvThreadRingBufferSpaceAvailableEvent.signal ();
+                    return;
+                }
+            }
+            bool msgOK = this->pCAC()->executeResponse ( *this, 
+                                this->curMsg, this->pCurData );
+            if ( ! msgOK ) {
+                this->cleanShutdown ();
+                return;
+            }
+        }
+        else {
+            static bool once = false;
+            if ( ! once ) {
+                this->printf (
+    "CAC: response with payload size=%u > EPICS_CA_MAX_ARRAY_BYTES ignored\n",
+                    this->curMsg.m_postsize );
+            }
+            this->curDataBytes += this->recvQue.removeBytes ( 
+                    this->curMsg.m_postsize - this->curDataBytes );
+            if ( this->curDataBytes < this->curMsg.m_postsize  ) {
+                this->recvThreadRingBufferSpaceAvailableEvent.signal ();
+                return;
+            }
+        }
+
+        if ( nBytes >= maxBytesPendingTCP && 
+            this->recvQue.occupiedBytes () < maxBytesPendingTCP ) {
+            this->recvThreadRingBufferSpaceAvailableEvent.signal ();
+        }
+ 
+        this->oldMsgHeaderAvailable = false;
+        this->msgHeaderAvailable = false;
+        this->curDataBytes = 0u;
+    }
+}
+
+inline void insertRequestHeader (
+    comQueSend &sendQue, ca_uint16_t request, ca_uint32_t payloadSize, 
+    ca_uint16_t dataType, ca_uint32_t nElem, ca_uint32_t cid, 
+    ca_uint32_t requestDependent, bool v49Ok )
+{
+    if ( payloadSize < 0xffff && nElem < 0xffff ) {
+        sendQue.pushUInt16 ( request ); 
+        sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( payloadSize ) ); 
+        sendQue.pushUInt16 ( dataType ); 
+        sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( nElem ) ); 
+        sendQue.pushUInt32 ( cid ); 
+        sendQue.pushUInt32 ( requestDependent );  
+    }
+    else if ( v49Ok ) {
+        sendQue.pushUInt16 ( request ); 
+        sendQue.pushUInt16 ( 0xffff ); 
+        sendQue.pushUInt16 ( dataType ); 
+        sendQue.pushUInt16 ( 0u ); 
+        sendQue.pushUInt32 ( cid ); 
+        sendQue.pushUInt32 ( requestDependent );  
+        sendQue.pushUInt32 ( payloadSize ); 
+        sendQue.pushUInt32 ( nElem ); 
+    }
+    else {
+        throw cacChannel::outOfBounds ();
+    }
+}
+
 /*
  * tcpiiu::hostNameSetRequest ()
  */
 void tcpiiu::hostNameSetRequest ()
 {
-    if ( ! CA_V41 ( CA_PROTOCOL_VERSION, this->minorProtocolVersion ) ) {
+    if ( ! CA_V41 ( this->minorProtocolVersion ) ) {
         return;
     }
 
@@ -846,14 +916,12 @@ void tcpiiu::hostNameSetRequest ()
 
     epicsAutoMutex locker ( this->pCAC()->mutexRef() );
 
-    this->sendQue.reserveSpace ( postSize + 16u );
     this->sendQue.pushUInt16 ( CA_PROTO_HOST_NAME ); // cmd
-    this->sendQue.pushUInt16 ( postSize ); // postsize
+    this->sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( postSize ) ); // postsize
     this->sendQue.pushUInt16 ( 0u ); // dataType
     this->sendQue.pushUInt16 ( 0u ); // count
-    this->sendQue.pushUInt32 ( static_cast <ca_uint32_t> ( 0u ) ); // cid
-    this->sendQue.pushUInt32 ( static_cast <ca_uint32_t> ( 0u ) ); // available 
-
+    this->sendQue.pushUInt32 ( 0u ); // cid
+    this->sendQue.pushUInt32 ( 0u ); // available 
     this->sendQue.pushString ( pName, size );
     this->sendQue.pushString ( nillBytes, postSize - size );
 }
@@ -863,7 +931,7 @@ void tcpiiu::hostNameSetRequest ()
  */
 void tcpiiu::userNameSetRequest ()
 {
-    if ( ! CA_V41 ( CA_PROTOCOL_VERSION, this->minorProtocolVersion ) ) {
+    if ( ! CA_V41 ( this->minorProtocolVersion ) ) {
         return;
     }
 
@@ -877,15 +945,12 @@ void tcpiiu::userNameSetRequest ()
     }
 
     epicsAutoMutex locker (  this->pCAC()->mutexRef()  );
-
-    this->sendQue.reserveSpace ( postSize + 16u );
     this->sendQue.pushUInt16 ( CA_PROTO_CLIENT_NAME ); // cmd
     this->sendQue.pushUInt16 ( postSize ); // postsize
     this->sendQue.pushUInt16 ( 0u ); // dataType
     this->sendQue.pushUInt16 ( 0u ); // count
     this->sendQue.pushUInt32 ( 0u ); // cid
     this->sendQue.pushUInt32 ( 0u ); // available 
-
     this->sendQue.pushString ( pName, size );
     this->sendQue.pushString ( nillBytes, postSize - size );
 }
@@ -898,7 +963,6 @@ void tcpiiu::disableFlowControlRequest ()
 
     epicsAutoMutex locker (  this->pCAC()->mutexRef() );
 
-    this->sendQue.reserveSpace ( 16u );
     this->sendQue.pushUInt16 ( CA_PROTO_EVENTS_ON ); // cmd
     this->sendQue.pushUInt16 ( 0u ); // postsize
     this->sendQue.pushUInt16 ( 0u ); // dataType
@@ -915,7 +979,6 @@ void tcpiiu::enableFlowControlRequest ()
 
     epicsAutoMutex locker ( this->pCAC()->mutexRef()  );
 
-    this->sendQue.reserveSpace ( 16u );
     this->sendQue.pushUInt16 ( CA_PROTO_EVENTS_OFF ); // cmd
     this->sendQue.pushUInt16 ( 0u ); // postsize
     this->sendQue.pushUInt16 ( 0u ); // dataType
@@ -932,7 +995,6 @@ void tcpiiu::noopRequest ()
 
     epicsAutoMutex locker (  this->pCAC()->mutexRef() );
 
-    this->sendQue.reserveSpace ( 16u );
     this->sendQue.pushUInt16 ( CA_PROTO_NOOP ); // cmd
     this->sendQue.pushUInt16 ( 0u ); // postsize
     this->sendQue.pushUInt16 ( 0u ); // dataType
@@ -949,7 +1011,6 @@ void tcpiiu::echoRequest ()
 
     epicsAutoMutex locker ( this->pCAC()->mutexRef() );
 
-    this->sendQue.reserveSpace ( 16u );
     this->sendQue.pushUInt16 ( CA_PROTO_ECHO ); // cmd
     this->sendQue.pushUInt16 ( 0u ); // postsize
     this->sendQue.pushUInt16 ( 0u ); // dataType
@@ -958,110 +1019,51 @@ void tcpiiu::echoRequest ()
     this->sendQue.pushUInt32 ( 0u ); // available 
 }
 
-//
-// tcpiiu::processIncoming()
-//
-void tcpiiu::processIncoming ()
+inline void insertRequestWithPayLoad (
+    comQueSend &sendQue, ca_uint16_t request,  
+    unsigned dataType, ca_uint32_t nElem, ca_uint32_t cid, 
+    ca_uint32_t requestDependent, const void *pPayload,
+    bool v49Ok )
 {
-    while ( 1 ) {
-        unsigned nBytes;
-
-        //
-        // fetch a complete message header
-        //
-        nBytes = this->recvQue.occupiedBytes ();
-
-        if ( ! this->msgHeaderAvailable ) {
-
-            this->msgHeaderAvailable = this->recvQue.copyOutBytes ( 
-                &this->curMsg, sizeof ( this->curMsg ) );
-
-            if ( ! this->msgHeaderAvailable ) {
-                return;
-            }
-
-            //
-            // fix endian of bytes 
-            //
-            this->curMsg.m_cmmd = ntohs ( this->curMsg.m_cmmd );
-            this->curMsg.m_postsize = ntohs ( this->curMsg.m_postsize );
-            this->curMsg.m_dataType = ntohs ( this->curMsg.m_dataType );
-            this->curMsg.m_count = ntohs ( this->curMsg.m_count );
-            this->curMsg.m_cid = ntohl ( this->curMsg.m_cid );
-            this->curMsg.m_available = ntohl ( this->curMsg.m_available );
-
-            debugPrintf (
-                ( "%s Cmd=%3d Type=%3d Count=%4d Size=%4d",
-                this->pHostName (),
-                this->curMsg.m_cmmd,
-                this->curMsg.m_dataType,
-                this->curMsg.m_count,
-                this->curMsg.m_postsize) );
-
-            debugPrintf (
-                ( " Avail=%8x Cid=%6d\n",
-                this->curMsg.m_available,
-                this->curMsg.m_cid) );
-        }
-
-        //
-        // dont allow huge msg body until
-        // the client library supports it
-        //
-        if ( this->curMsg.m_postsize > ( unsigned ) MAX_TCP ) {
-            this->msgHeaderAvailable = false;
-            this->printf ( "CAC: message body was too large ( disconnecting )\n" );
-            this->cleanShutdown ();
-            return;
-        }
-
-        //
-        // make sure we have a large enough message body cache
-        //
-        if ( this->curMsg.m_postsize > this->curDataMax ) {
-
-            /* 
-             * scalar DBR_STRING is sometimes clipped to the
-             * actual string size so make sure this cache is
-             * as large as one DBR_STRING so they will
-             * not page fault if they read MAX_STRING_SIZE
-             * bytes (instead of the actual string size).
-             */
-            unsigned cacheSize = this->curMsg.m_postsize * 2u;
-            if ( cacheSize < MAX_STRING_SIZE ) {
-                cacheSize = MAX_STRING_SIZE;
-            }
-
-            char *pData = new char [cacheSize];
-            if ( ! pData ) {
-                this->printf ("CAC: not enough memory for message body cache (disconnecting)\n");
-                this->cleanShutdown ();
-                return;
-            }
-            if ( this->pCurData ) {
-                delete [] this->pCurData;
-            }
-            this->pCurData = pData;
-            this->curDataMax = cacheSize;
-        }
-
-        if ( this->curMsg.m_postsize > 0u ) {
-            bool msgBodyAvailable = this->recvQue.copyOutBytes ( 
-                        this->pCurData, this->curMsg.m_postsize );
-            if ( ! msgBodyAvailable ) {
-                return;
-            }
-        }
-
-        if ( nBytes >= maxBytesPendingTCP && 
-            this->recvQue.occupiedBytes () < maxBytesPendingTCP ) {
-            epicsEventSignal ( this->recvThreadRingBufferSpaceAvailableSignal );
-        }
-
-        this->pCAC()->executeResponse ( *this, this->curMsg, this->pCurData );
-         
-        this->msgHeaderAvailable = false;
+    if ( ! sendQue.dbr_type_ok ( dataType ) ) {
+        throw cacChannel::badType();
     }
+    ca_uint32_t size;
+    bool stringOptim;
+    if ( dataType == DBR_STRING && nElem == 1 ) {
+        const char *pStr = static_cast < const char * >  ( pPayload );
+        size = strlen ( pStr ) + 1u;
+        if ( size > MAX_STRING_SIZE ) {
+            throw cacChannel::outOfBounds();
+        }
+        stringOptim = true;
+    }
+    else {
+        unsigned maxBytes;
+        if ( v49Ok ) {
+            maxBytes = 0xffffffff;
+        }
+        else {
+            maxBytes = MAX_TCP;
+        }
+        unsigned maxElem = ( maxBytes - dbr_size[dataType] ) / dbr_value_size[dataType];
+        if ( nElem >= maxElem ) {
+            throw cacChannel::outOfBounds();
+        }
+        size = dbr_size_n ( dataType, nElem );
+        stringOptim = false;
+    }
+    ca_uint32_t payloadSize = CA_MESSAGE_ALIGN ( size );
+    insertRequestHeader ( sendQue, request, payloadSize, 
+        static_cast <ca_uint16_t> ( dataType ), 
+        nElem, cid, requestDependent, v49Ok );
+    if ( stringOptim ) {
+        sendQue.pushString ( static_cast < const char * > ( pPayload ), size );  
+    }
+    else {
+        sendQue.push_dbr_type ( dataType, pPayload, nElem );  
+    }
+    sendQue.pushString ( nillBytes, payloadSize - size );
 }
 
 void tcpiiu::writeRequest ( nciu &chan, unsigned type, unsigned nElem, const void *pValue )
@@ -1069,47 +1071,11 @@ void tcpiiu::writeRequest ( nciu &chan, unsigned type, unsigned nElem, const voi
     if ( ! chan.connected () ) {
         throw cacChannel::notConnected();
     }
-
-    if ( ! this->sendQue.dbr_type_ok ( type ) ) {
-        throw cacChannel::badType();
-    }
-
-    if ( nElem > 0xffff) {
-        throw cacChannel::outOfBounds();
-    }
-
-    bool stringOptim;
-    unsigned size;
-    if ( type == DBR_STRING && nElem == 1 ) {
-        const char *pstr = static_cast < const char * > ( pValue );
-        size = strlen ( pstr ) + 1;
-        stringOptim = true;
-    }
-    else {
-        size = dbr_size_n ( type, nElem );
-        stringOptim = false;
-    }
-
-    unsigned postcnt = CA_MESSAGE_ALIGN ( size );
-    if ( postcnt > 0xffff ) {
-        throw cacChannel::unsupportedByService();
-    }
-
-    this->sendQue.reserveSpace ( postcnt + 16u );
-    this->sendQue.pushUInt16 ( CA_PROTO_WRITE ); // cmd
-    this->sendQue.pushUInt16 ( postcnt ); // postsize
-    this->sendQue.pushUInt16 ( type ); // dataType
-    this->sendQue.pushUInt16 ( nElem ); // count
-    this->sendQue.pushUInt32 ( chan.getSID () ); // cid
-    this->sendQue.pushUInt32 ( ~0UL ); // available 
-    if ( stringOptim ) {
-        this->sendQue.pushString ( static_cast < const char * > ( pValue ), size );  
-    }
-    else {
-        this->sendQue.push_dbr_type ( type, pValue, nElem );  
-    }
-    this->sendQue.pushString ( nillBytes, postcnt - size );
+    insertRequestWithPayLoad ( this->sendQue, CA_PROTO_WRITE,  
+        type, nElem, chan.getSID(), chan.getCID(), pValue,
+        CA_V49 ( this->minorProtocolVersion ) );
 }
+
 
 void tcpiiu::writeNotifyRequest ( nciu &chan, netWriteNotifyIO &io, unsigned type,  
                                 unsigned nElem, const void *pValue )
@@ -1117,72 +1083,42 @@ void tcpiiu::writeNotifyRequest ( nciu &chan, netWriteNotifyIO &io, unsigned typ
     if ( ! chan.connected () ) {
         throw cacChannel::notConnected();
     }
-
     if ( ! this->ca_v41_ok () ) {
         throw cacChannel::unsupportedByService();
     }
-
-    if ( ! this->sendQue.dbr_type_ok ( type ) ) {
-        throw cacChannel::badType();
-    }
-
-    if ( nElem > 0xffff ) {
-        throw cacChannel::unsupportedByService();
-    }
-
-    ca_uint32_t size;
-    bool stringOptim;
-    if ( type == DBR_STRING && nElem == 1 ) {
-        char *pstr = (char *) pValue;
-        size = strlen ( pstr ) +1;
-        stringOptim = true;
-    }
-    else {
-        size = dbr_size_n ( type, nElem );
-        stringOptim = false;
-    }
-    ca_uint32_t postcnt = CA_MESSAGE_ALIGN ( size );
-    if ( postcnt > 0xffff ) {
-        throw cacChannel::unsupportedByService();
-    }
-
-    this->sendQue.reserveSpace ( postcnt + 16u );
-    this->sendQue.pushUInt16 ( CA_PROTO_WRITE_NOTIFY ); // cmd
-    this->sendQue.pushUInt16 ( postcnt ); // postsize
-    this->sendQue.pushUInt16 ( type ); // dataType
-    this->sendQue.pushUInt16 ( nElem ); // count
-    this->sendQue.pushUInt32 ( chan.getSID () ); // cid
-    this->sendQue.pushUInt32 ( io.getID () ); // available 
-    if ( stringOptim ) {
-        this->sendQue.pushString ( static_cast < const char * > ( pValue ), size );  
-    }
-    else {
-        this->sendQue.push_dbr_type ( type, pValue, nElem );  
-    }
-    this->sendQue.pushString ( nillBytes, postcnt - size );
+    insertRequestWithPayLoad ( this->sendQue, CA_PROTO_WRITE_NOTIFY,  
+        type, nElem, chan.getSID(), io.getID(), pValue,
+        CA_V49 ( this->minorProtocolVersion ) );
 }
 
 void tcpiiu::readNotifyRequest ( nciu &chan, netReadNotifyIO &io, 
-                               unsigned type, unsigned nElem )
+                               unsigned dataType, unsigned nElem )
 {
     if ( ! chan.connected () ) {
-        throw cacChannel::notConnected();
+        throw cacChannel::notConnected ();
     }
-
-    if ( nElem > 0xffff) {
-        throw cacChannel::unsupportedByService();
-     }
-    if ( type > 0xffff) {
-        throw cacChannel::unsupportedByService();
-     }
-
-    this->sendQue.reserveSpace ( 16u );
-    this->sendQue.pushUInt16 ( CA_PROTO_READ_NOTIFY ); // cmd
-    this->sendQue.pushUInt16 ( 0u ); // postsize
-    this->sendQue.pushUInt16 ( type ); // dataType
-    this->sendQue.pushUInt16 ( nElem ); // count
-    this->sendQue.pushUInt32 ( chan.getSID () ); // cid
-    this->sendQue.pushUInt32 ( io.getID () ); // available 
+    if ( ! dbr_type_is_valid ( dataType ) ) {
+        throw cacChannel::badType();
+    }
+    if ( nElem > chan.nativeElementCount() ) {
+        throw cacChannel::outOfBounds ();
+    }
+    unsigned maxBytes;
+    if ( CA_V49 ( this->minorProtocolVersion ) ) {
+        maxBytes = this->pCAC()->largeBufferSizeTCP ();
+    }
+    else {
+        maxBytes = MAX_TCP;
+    }
+    unsigned maxElem = ( maxBytes - dbr_size[dataType] ) / dbr_value_size[dataType];
+    if ( nElem > maxElem ) {
+        throw cacChannel::msgBodyCacheTooSmall ();
+    }
+    insertRequestHeader ( this->sendQue, 
+        CA_PROTO_READ_NOTIFY, 0u, 
+        static_cast < ca_uint16_t > ( dataType ), 
+        nElem, chan.getSID(), io.getID(), 
+        CA_V49 ( this->minorProtocolVersion ) );
 }
 
 void tcpiiu::createChannelRequest ( nciu &chan )
@@ -1203,11 +1139,10 @@ void tcpiiu::createChannelRequest ( nciu &chan )
 
     unsigned postCnt = CA_MESSAGE_ALIGN ( nameLength );
 
-    if ( postCnt > 0xffff ) {
+    if ( postCnt >= 0xffff ) {
         throw cacChannel::unsupportedByService();
     }
 
-    this->sendQue.reserveSpace ( postCnt + 16u );
     this->sendQue.pushUInt16 ( CA_PROTO_CLAIM_CIU ); // cmd
     this->sendQue.pushUInt16 ( postCnt ); // postsize
     this->sendQue.pushUInt16 ( 0u ); // dataType
@@ -1218,7 +1153,7 @@ void tcpiiu::createChannelRequest ( nciu &chan )
     // here to communicate the minor version number
     // starting with CA 4.1.
     //
-    this->sendQue.pushUInt32 ( CA_MINOR_VERSION ); // available 
+    this->sendQue.pushUInt32 ( CA_MINOR_PROTOCOL_REVISION ); // available 
     if ( nameLength ) {
         this->sendQue.pushString ( pName, nameLength );
     }
@@ -1229,15 +1164,14 @@ void tcpiiu::createChannelRequest ( nciu &chan )
 
 void tcpiiu::clearChannelRequest ( nciu &chan )
 {
-    // we go ahead and send this even if the channel isnt connected
-    // because we dont want to leak the resource in the server
-    this->sendQue.reserveSpace ( 16u );
-    this->sendQue.pushUInt16 ( CA_PROTO_CLEAR_CHANNEL ); // cmd
-    this->sendQue.pushUInt16 ( 0u ); // postsize
-    this->sendQue.pushUInt16 ( 0u ); // dataType
-    this->sendQue.pushUInt16 ( 0u ); // count
-    this->sendQue.pushUInt32 ( chan.getSID () ); // cid
-    this->sendQue.pushUInt32 ( chan.getCID () ); // available 
+    if ( chan.connected () ) {
+        this->sendQue.pushUInt16 ( CA_PROTO_CLEAR_CHANNEL ); // cmd
+        this->sendQue.pushUInt16 ( 0u ); // postsize
+        this->sendQue.pushUInt16 ( 0u ); // dataType
+        this->sendQue.pushUInt16 ( 0u ); // count
+        this->sendQue.pushUInt32 ( chan.getSID () ); // cid
+        this->sendQue.pushUInt32 ( chan.getCID () ); // available 
+    }
 }
 
 //
@@ -1249,50 +1183,46 @@ void tcpiiu::subscriptionRequest ( nciu &chan, netSubscription & subscr )
     if ( ! chan.connected() ) {
         return;
     }
-
-    if ( subscr.getType() > 0xffff ) {
-        this->pCAC()->printf ( "CAC: subscriptionRequest() ignored because of unexpected bad type that was checked earlier\n" );
-        return;
+    unsigned mask = subscr.getMask();
+    if ( mask > 0xffff ) {
+        mask &= 0xffff;
+        this->pCAC()->printf ( "CAC: subscriptionRequest() truncated unusual event select mask\n" );
     }
-
-    if ( subscr.getMask() > 0xffff || subscr.getMask () == 0u ) {
-        this->pCAC()->printf ( "CAC: subscriptionRequest() ignored because of unexpected bad mask that was checked earlier\n" );
-        return;
+    arrayElementCount nElem = subscr.getCount ();
+    unsigned maxBytes;
+    if ( CA_V49 ( this->minorProtocolVersion ) ) {
+        maxBytes = this->pCAC()->largeBufferSizeTCP ();
     }
-
-    unsigned long count = subscr.getCount ();
-    if ( count == 0u || count > 0xffff ) {
-        this->pCAC()->printf ( "CAC: subscriptionRequest() ignored because of unexpected bad count that was checked earlier\n" );
-        return;
+    else {
+        maxBytes = MAX_TCP;
     }
-
-    this->sendQue.reserveSpace ( 32u );
-
-    // header
-    this->sendQue.pushUInt16 ( CA_PROTO_EVENT_ADD ); // cmd
-    this->sendQue.pushUInt16 ( 16u ); // postsize
-    this->sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( subscr.getType () ) ); // dataType
-    this->sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( count ) ); // count
-    this->sendQue.pushUInt32 ( chan.getSID() ); // cid
-    this->sendQue.pushUInt32 ( subscr.getID() ); // available 
+    unsigned dataType = subscr.getType ();
+    unsigned maxElem = ( maxBytes - dbr_size[dataType] ) / dbr_value_size[dataType];
+    if ( nElem > maxElem ) {
+        throw cacChannel::msgBodyCacheTooSmall ();
+    }
+    insertRequestHeader ( this->sendQue, 
+        CA_PROTO_EVENT_ADD, 16u, 
+        static_cast < ca_uint16_t > ( dataType ), 
+        nElem, chan.getSID(), subscr.getID(), 
+        CA_V49 ( this->minorProtocolVersion ) );
 
     // extension
     this->sendQue.pushFloat32 ( 0.0 ); // m_lval
     this->sendQue.pushFloat32 ( 0.0 ); // m_hval
     this->sendQue.pushFloat32 ( 0.0 ); // m_toval
-    this->sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( subscr.getMask () ) ); // m_mask
+    this->sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( mask ) ); // m_mask
     this->sendQue.pushUInt16 ( 0u ); // m_pad
 }
 
 void tcpiiu::subscriptionCancelRequest ( nciu &chan, netSubscription &subscr )
 {
-    this->sendQue.reserveSpace ( 16u );
-    this->sendQue.pushUInt16 ( CA_PROTO_EVENT_CANCEL ); // cmd
-    this->sendQue.pushUInt16 ( 0u ); // postsize
-    this->sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( subscr.getType () ) ); // dataType
-    this->sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( subscr.getCount () ) ); // count
-    this->sendQue.pushUInt32 ( chan.getSID () ); // cid
-    this->sendQue.pushUInt32 ( subscr.getID() ); // available
+    insertRequestHeader ( this->sendQue, 
+        CA_PROTO_EVENT_CANCEL, 0u, 
+        static_cast < ca_uint16_t > ( subscr.getType () ), 
+        static_cast < ca_uint16_t > ( subscr.getCount () ), 
+        chan.getSID(), subscr.getID(), 
+        CA_V49 ( this->minorProtocolVersion ) );
 }
 
 void tcpiiu::lastChannelDetachNotify ()
@@ -1308,9 +1238,16 @@ bool tcpiiu::flush ()
         {
             epicsAutoMutex autoMutex ( this->pCAC()->mutexRef() );
             pBuf = this->sendQue.popNextComBufToSend ();
-            if ( ! pBuf ) {
+            if ( pBuf ) {
+                this->unacknowledgedSendBytes += pBuf->occupiedBytes ();
+                if ( this->unacknowledgedSendBytes > 
+                    this->socketLibrarySendBufferSize ) {
+                    this->recvDog.sendBacklogProgressNotify ();
+                }
+            }
+            else {
                 if ( this->blockingForFlush ) {
-                    epicsEventSignal ( this->flushBlockSignal );
+                    this->flushBlockEvent.signal ();
                 }
                 this->earlyFlush = false;
                 return true;
@@ -1327,7 +1264,7 @@ bool tcpiiu::flush ()
                 pBuf->destroy ();
             }
             if ( this->blockingForFlush ) {
-                epicsEventSignal ( this->flushBlockSignal );
+                this->flushBlockEvent.signal ();
             }
             return false;
         }
@@ -1336,18 +1273,21 @@ bool tcpiiu::flush ()
 
 void tcpiiu::blockUntilSendBacklogIsReasonable ( epicsMutex &mutex )
 {
+    this->pCAC()->enableCallbackPreemption ();
     assert ( this->blockingForFlush < UINT_MAX );
     this->blockingForFlush++;
     while ( this->sendQue.flushBlockThreshold(0u) && this->state == iiu_connected ) {
-        epicsAutoMutexRelease autoMutex ( mutex );
-        this->pCAC()->enableCallbackPreemption ();
-        epicsEventWaitWithTimeout ( this->flushBlockSignal, 5.0 );
-        this->pCAC()->disableCallbackPreemption ();
+        epicsAutoMutexRelease autoRelease ( mutex );
+        this->flushBlockEvent.wait ( 5.0 );
     }
     assert ( this->blockingForFlush > 0u );
     this->blockingForFlush--;
     if ( this->blockingForFlush ) {
-        epicsEventSignal ( this->flushBlockSignal );
+        this->flushBlockEvent.signal ();
+    }
+    {
+        epicsAutoMutexRelease autoRelease ( mutex );
+        this->pCAC()->disableCallbackPreemption ();
     }
 }
 
@@ -1355,7 +1295,7 @@ void tcpiiu::flushRequestIfAboveEarlyThreshold ()
 {
     if ( ! this->earlyFlush && this->sendQue.flushEarlyThreshold(0u) ) {
         this->earlyFlush = true;
-        epicsEventSignal ( this->sendThreadFlushSignal );
+        this->sendThreadFlushEvent.signal ();
     }
 }
 
@@ -1366,18 +1306,13 @@ bool tcpiiu::flushBlockThreshold () const
 
 double tcpiiu::beaconPeriod () const
 {
-    if ( this->pBHE ) {
-        return this->pBHE->period ();
-    }
-    else {
-        return netiiu::beaconPeriod ();
-    }
+    return this->BHE.period ();
 }
 
 // not inline because its virtual
 bool tcpiiu::ca_v42_ok () const
 {
-    return CA_V42 ( CA_PROTOCOL_VERSION, this->minorProtocolVersion );
+    return CA_V42 ( this->minorProtocolVersion );
 }
 
 

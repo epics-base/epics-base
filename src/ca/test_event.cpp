@@ -22,26 +22,26 @@ extern "C" void epicsShareAPI ca_test_event ( struct event_handler_args args )
 
   switch ( args.type ) {
   case	DBR_STRING:
-    printf ( "CAC: Value:\t<%s>\n", (const char *) args.dbr );
+    printf ( "CAC: Value:\t<%s>\n", (dbr_string_t *) args.dbr );
     break;
   case	DBR_CHAR:
-    printf ( "CAC: Value:\t<%d>\n", *(char *) args.dbr );
+    printf ( "CAC: Value:\t<%d>\n", *(dbr_char_t *) args.dbr );
     break;
 #if DBR_INT != DBR_SHORT
   case	DBR_INT:
 #endif
   case	DBR_SHORT:
   case	DBR_ENUM:
-    printf ( "CAC: Value:\t<%d>\n", *(short *) args.dbr );
+    printf ( "CAC: Value:\t<%d>\n", *(dbr_short_t *) args.dbr );
     break;
   case	DBR_LONG:
-    printf ( "CAC: Value:\t<%ld>\n", *(long *)args.dbr );
+    printf ( "CAC: Value:\t<%ld>\n", *(dbr_long_t *)args.dbr );
     break;
   case	DBR_FLOAT:
-    printf ( "CAC: Value:\t<%f>\n", *(float *)args.dbr );
+    printf ( "CAC: Value:\t<%f>\n", *(dbr_float_t *)args.dbr );
     break;
   case	DBR_DOUBLE:
-    printf ( "CAC: Value:\t<%f>\n", *(double *)args.dbr );
+    printf ( "CAC: Value:\t<%f>\n", *(dbr_double_t *)args.dbr );
     break;
   case	DBR_STS_STRING:
     printf ( "CAC: Value:\t<%s>\n", ((struct dbr_sts_string *)args.dbr)->value );

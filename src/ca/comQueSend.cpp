@@ -87,66 +87,36 @@ void comQueSend::clear ()
         this->nBytesPending -= pBuf->occupiedBytes ();
         pBuf->destroy ();
     }
-    this->reservoir.drain ();
-}
-
-
-//   reserve sufficent space for entire message
-//   (this allows the recv thread to add a message
-//   to the que while some other thread is flushing
-//   and therefore prevents deadlocks, and it also
-//   allows proper status to be returned)
-void comQueSend::reserveSpace ( unsigned msgSize )
-{
-    unsigned bytesReserved;
-
-    bytesReserved = this->reservoir.nBytes ();
-
-    comBuf *pComBuf = this->bufs.last ();
-    if ( pComBuf ) {
-        bytesReserved += pComBuf->unoccupiedBytes ();
-    }
-
-    while ( bytesReserved < msgSize ) {
-        reservoir.addOneBuffer ();
-        bytesReserved += comBuf::capacityBytes ();
-    }
 }
 
 void comQueSend::copy_dbr_string ( const void *pValue, unsigned nElem )
 {
-    comQueSend_copyIn ( this->nBytesPending, this->bufs, this->reservoir, 
-        static_cast <const dbr_string_t *> ( pValue ), nElem );
+    this->copyIn ( static_cast <const dbr_string_t *> ( pValue ), nElem );
 }
 
 void comQueSend::copy_dbr_short ( const void *pValue, unsigned nElem )
 {
-    comQueSend_copyIn ( this->nBytesPending, this->bufs, this->reservoir, 
-        static_cast <const dbr_short_t *> ( pValue ), nElem );
+    this->copyIn ( static_cast <const dbr_short_t *> ( pValue ), nElem );
 }
 
 void comQueSend::copy_dbr_float ( const void *pValue, unsigned nElem )
 {
-    comQueSend_copyIn ( this->nBytesPending, this->bufs, this->reservoir, 
-        static_cast <const dbr_float_t *> ( pValue ), nElem );
+    this->copyIn ( static_cast <const dbr_float_t *> ( pValue ), nElem );
 }
 
 void comQueSend::copy_dbr_char ( const void *pValue, unsigned nElem )
 {
-    comQueSend_copyIn ( this->nBytesPending, this->bufs, this->reservoir, 
-        static_cast <const dbr_char_t *> ( pValue ), nElem );
+    this->copyIn ( static_cast <const dbr_char_t *> ( pValue ), nElem );
 }
 
 void comQueSend::copy_dbr_long ( const void *pValue, unsigned nElem )
 {
-    comQueSend_copyIn ( this->nBytesPending, this->bufs, this->reservoir, 
-        static_cast <const dbr_long_t *> ( pValue ), nElem );
+    this->copyIn ( static_cast <const dbr_long_t *> ( pValue ), nElem );
 }
 
 void comQueSend::copy_dbr_double ( const void *pValue, unsigned nElem )
 {
-    comQueSend_copyIn ( this->nBytesPending, this->bufs, this->reservoir, 
-        static_cast <const dbr_double_t *> ( pValue ), nElem );
+    this->copyIn ( static_cast <const dbr_double_t *> ( pValue ), nElem );
 }
 
 const comQueSend::copyFunc_t comQueSend::dbrCopyVector [39] = {

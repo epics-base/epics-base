@@ -40,8 +40,10 @@ public:
     epicsShareFunc bhe ( const epicsTime &initialTimeStamp, const inetAddrID &addr );
     tcpiiu *getIIU () const;
     void bindToIIU ( tcpiiu & );
+    void unbindFromIIU ();
     epicsShareFunc void destroy ();
-    epicsShareFunc bool updatePeriod ( epicsTime programBeginTime );
+    epicsShareFunc bool updatePeriod ( const epicsTime &programBeginTime, 
+                        const epicsTime & currentTime );
     epicsShareFunc double period () const;
     epicsShareFunc void show ( unsigned level) const;
     epicsShareFunc void * operator new ( size_t size );
@@ -71,13 +73,14 @@ private:
  * between the 1st and 2nd beacons)
  */
 inline bhe::bhe ( const epicsTime &initialTimeStamp, const inetAddrID &addr ) :
-    inetAddrID (addr), piiu (0), timeStamp (initialTimeStamp), averagePeriod ( - DBL_MAX )
+    inetAddrID ( addr ), piiu ( 0 ), 
+    timeStamp ( initialTimeStamp ), averagePeriod ( - DBL_MAX )
 {
 #   ifdef DEBUG
     {
         char name[64];
-        ipAddrToDottedIP (&addr, name, sizeof(name));
-        ::printf ("created beacon entry for %s\n", name);
+        addr.name ( name, sizeof ( name ) );
+        ::printf ( "created beacon entry for %s\n", name );
     }
 #   endif
 }
@@ -93,6 +96,13 @@ inline void bhe::bindToIIU ( tcpiiu &iiuIn )
         assert ( this->piiu == 0 );
         this->piiu = &iiuIn;
     }
+}
+
+inline void bhe::unbindFromIIU ()
+{
+    this->piiu = 0;
+    this->timeStamp = epicsTime();
+    this->averagePeriod = - DBL_MAX;
 }
 
 #endif // ifdef bheh

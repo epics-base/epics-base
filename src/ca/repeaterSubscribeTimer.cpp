@@ -22,10 +22,10 @@
 #undef epicsExportSharedSymbols
 
 repeaterSubscribeTimer::repeaterSubscribeTimer ( udpiiu &iiuIn, epicsTimerQueue &queueIn ) :
-    timer ( queueIn.createTimer ( *this ) ), iiu ( iiuIn ), 
+    timer ( queueIn.createTimer () ), iiu ( iiuIn ), 
         attempts ( 0 ), registered ( false ), once ( false )
 {
-    this->timer.start ( 10.0 );
+    this->timer.start ( *this, 10.0 );
 }
 
 repeaterSubscribeTimer::~repeaterSubscribeTimer ()
@@ -33,7 +33,7 @@ repeaterSubscribeTimer::~repeaterSubscribeTimer ()
     delete & this->timer;
 }
 
-epicsTimerNotify::expireStatus repeaterSubscribeTimer::expire ()
+epicsTimerNotify::expireStatus repeaterSubscribeTimer::expire ( const epicsTime & currentTime )
 {
     static const unsigned nTriesToMsg = 50;
     if ( this->attempts > nTriesToMsg && ! this->once ) {

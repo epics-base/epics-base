@@ -29,8 +29,8 @@ int main ( int, char ** )
     char buf [0x4000];
     const char *pCurBuf;
     const caHdr *pCurMsg;
-    unsigned serverPort;
-    unsigned repeaterPort;
+    ca_uint16_t serverPort;
+    ca_uint16_t repeaterPort;
     int status;
 
     serverPort =
@@ -151,13 +151,14 @@ int main ( int, char ** )
                 }
 
                 bool netChange;
+                epicsTime currentTime = epicsTime::getCurrent();
 
                 /*
                  * look for it in the hash table
                  */
                 bhe *pBHE = beaconTable.lookup ( ina );
                 if ( pBHE ) {
-                    netChange = pBHE->updatePeriod ( programBeginTime );
+                    netChange = pBHE->updatePeriod ( programBeginTime, currentTime );
                 }
                 else {
                     /*
@@ -168,7 +169,7 @@ int main ( int, char ** )
                      * shortly after the program started up)
                      */
                     netChange = false;
-                    pBHE = new bhe ( epicsTime::getCurrent (), ina );
+                    pBHE = new bhe ( currentTime, ina );
                     if ( pBHE ) {
                         if ( beaconTable.add ( *pBHE ) < 0 ) {
                             pBHE->destroy ();
@@ -178,8 +179,7 @@ int main ( int, char ** )
 
                 if ( netChange ) {
                     char date[64];
-                    epicsTime current = epicsTime::getCurrent ();
-                    current.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S");
+                    currentTime.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S");
                     char host[64];
                     ipAddrToA ( &ina, host, sizeof ( host ) );
                     printf ("CA server beacon anomaly: %s %s\n", date, host );

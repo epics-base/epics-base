@@ -22,11 +22,17 @@
 #undef epicsExportSharedSymbols
 
 netSubscription::netSubscription ( nciu &chan, 
-        unsigned typeIn, unsigned long countIn, 
+        unsigned typeIn, arrayElementCount countIn, 
         unsigned maskIn, cacStateNotify &notifyIn ) :
     baseNMIU ( chan ), count ( countIn ), 
     notify ( notifyIn ), type ( typeIn ), mask ( maskIn )
 {
+    if ( ! dbr_type_is_valid ( typeIn ) ) {
+        throw cacChannel::badType ();
+    }
+    if ( this->mask == 0u ) {
+        throw cacChannel::badEventSelection ();
+    }
 }
 
 netSubscription::~netSubscription () 
@@ -65,16 +71,17 @@ void netSubscription::exception ( int status, const char *pContext )
     this->notify.exception ( status, pContext, UINT_MAX, 0 );
 }
 
+void netSubscription::exception ( int status, const char *pContext, 
+                                 unsigned type, arrayElementCount count )
+{
+    this->notify.exception ( status, pContext, type, count );
+}
+
 void netSubscription::completion ( unsigned typeIn, 
-    unsigned long countIn, const void *pDataIn )
+    arrayElementCount countIn, const void *pDataIn )
 {
     this->notify.current ( typeIn, countIn, pDataIn );
 }
 
-void netSubscription::exception ( int status, 
-    const char *pContext, unsigned typeIn, unsigned long countIn )
-{
-    this->notify.exception ( status, pContext, typeIn, countIn );
-}
 
 

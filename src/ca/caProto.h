@@ -35,55 +35,57 @@
 #define capStrOfX(A) capStrOf ( A )
 
 /* 
- * CA protocol number
+ * CA protocol revision
  * TCP/UDP port number (bumped each major protocol change) 
  */
-#define CA_PROTOCOL_VERSION     4
-#define CA_MINOR_VERSION        8
-#define CA_VERSION_STRING       \
-( capStrOfX ( CA_PROTOCOL_VERSION ) "." capStrOfX ( CA_MINOR_VERSION ) )
+#define CA_MAJOR_PROTOCOL_REVISION 4
+#define CA_VERSION_STRING( MINOR_REVISION ) \
+( capStrOfX ( CA_MAJOR_PROTOCOL_REVISION ) "." capStrOfX ( MINOR_REVISION ) )
 #define CA_UKN_MINOR_VERSION    0u /* unknown minor version */
-#if CA_PROTOCOL_VERSION == 4u
-#   define CA_V41(MAJOR,MINOR) ((MINOR)>=1u) 
-#   define CA_V42(MAJOR,MINOR) ((MINOR)>=2u)
-#   define CA_V43(MAJOR,MINOR) ((MINOR)>=3u)
-#   define CA_V44(MAJOR,MINOR) ((MINOR)>=4u)
-#   define CA_V45(MAJOR,MINOR) ((MINOR)>=5u)
-#   define CA_V46(MAJOR,MINOR) ((MINOR)>=6u)
-#   define CA_V47(MAJOR,MINOR) ((MINOR)>=7u)
-#   define CA_V48(MAJOR,MINOR) ((MINOR)>=8u)
-#elif CA_PROTOCOL_VERSION > 4u
-#   define CA_V41(MAJOR,MINOR) ( 1u )
-#   define CA_V42(MAJOR,MINOR) ( 1u )
-#   define CA_V43(MAJOR,MINOR) ( 1u )
-#   define CA_V44(MAJOR,MINOR) ( 1u )
-#   define CA_V45(MAJOR,MINOR) ( 1u )
-#   define CA_V46(MAJOR,MINOR) ( 1u )
-#   define CA_V47(MAJOR,MINOR) ( 1u )
-#   define CA_V48(MAJOR,MINOR) ( 1u )
+#if CA_MAJOR_PROTOCOL_REVISION == 4u
+#   define CA_V41(MINOR) ((MINOR)>=1u) 
+#   define CA_V42(MINOR) ((MINOR)>=2u)
+#   define CA_V43(MINOR) ((MINOR)>=3u)
+#   define CA_V44(MINOR) ((MINOR)>=4u)
+#   define CA_V45(MINOR) ((MINOR)>=5u)
+#   define CA_V46(MINOR) ((MINOR)>=6u)
+#   define CA_V47(MINOR) ((MINOR)>=7u)
+#   define CA_V48(MINOR) ((MINOR)>=8u)
+#   define CA_V49(MINOR) ((MINOR)>=9u)
+#elif CA_MAJOR_PROTOCOL_REVISION > 4u
+#   define CA_V41(MINOR) ( 1u )
+#   define CA_V42(MINOR) ( 1u )
+#   define CA_V43(MINOR) ( 1u )
+#   define CA_V44(MINOR) ( 1u )
+#   define CA_V45(MINOR) ( 1u )
+#   define CA_V46(MINOR) ( 1u )
+#   define CA_V47(MINOR) ( 1u )
+#   define CA_V48(MINOR) ( 1u )
+#   define CA_V49(MINOR) ( 1u )
 #else
-#   define CA_V41(MAJOR,MINOR) ( 0u )
-#   define CA_V42(MAJOR,MINOR) ( 0u )
-#   define CA_V43(MAJOR,MINOR) ( 0u )
-#   define CA_V44(MAJOR,MINOR) ( 0u )
-#   define CA_V45(MAJOR,MINOR) ( 0u )
-#   define CA_V46(MAJOR,MINOR) ( 0u )
-#   define CA_V47(MAJOR,MINOR) ( 0u )
-#   define CA_V48(MAJOR,MINOR) ( 0u )
+#   define CA_V41(MINOR) ( 0u )
+#   define CA_V42(MINOR) ( 0u )
+#   define CA_V43(MINOR) ( 0u )
+#   define CA_V44(MINOR) ( 0u )
+#   define CA_V45(MINOR) ( 0u )
+#   define CA_V46(MINOR) ( 0u )
+#   define CA_V47(MINOR) ( 0u )
+#   define CA_V48(MINOR) ( 0u )
+#   define CA_V49(MINOR) ( 0u )
 #endif 
 
 /*
- * NOTE: These port numbers are only used if the CA repeater and 
+ * These port numbers are only used if the CA repeater and 
  * CA server port numbers cant be obtained from the EPICS 
  * environment variables "EPICS_CA_REPEATER_PORT" and
  * "EPICS_CA_SERVER_PORT"
  */
 #define CA_PORT_BASE            IPPORT_USERRESERVED + 56U
-#define CA_SERVER_PORT          (CA_PORT_BASE+CA_PROTOCOL_VERSION*2u)
-#define CA_REPEATER_PORT        (CA_PORT_BASE+CA_PROTOCOL_VERSION*2u+1u)
+#define CA_SERVER_PORT          (CA_PORT_BASE+CA_MAJOR_PROTOCOL_REVISION*2u)
+#define CA_REPEATER_PORT        (CA_PORT_BASE+CA_MAJOR_PROTOCOL_REVISION*2u+1u)
 /* 
  * 1500 (max of ethernet and 802.{2,3} MTU) - 20(IP) - 8(UDP) 
- * (the MTU of Ethernet is currently independent of speed varient)
+ * (the MTU of Ethernet is currently independent of its speed varient)
  */
 #define ETHERNET_MAX_UDP        ( 1500u - 20u - 8u )
 #define MAX_UDP_RECV            ( 0xffff + 16u ) /* allow large frames to be received in the future */
@@ -174,30 +176,24 @@ typedef ca_uint32_t     caResId;
  * the common part of each message sent/recv by the
  * CA server.
  */
-typedef struct  ca_hdr {
+typedef struct ca_hdr {
     ca_uint16_t m_cmmd;         /* operation to be performed */
-    ca_uint16_t m_postsize;     /* size of message extension */ 
-    ca_uint16_t m_dataType;     /* operation data type */ 
+    ca_uint16_t m_postsize;     /* size of payload */
+    ca_uint16_t m_dataType;     /* operation data type */
     ca_uint16_t m_count;        /* operation data count */
     ca_uint32_t m_cid;          /* channel identifier */
-    ca_uint32_t m_available;    /* undefined message location for use
-                                 * by client processes */
-}caHdr;
+    ca_uint32_t m_available;    /* protocol stub dependent */
+} caHdr;
 
 /*
  * for  monitor (event) message extension
  */
-struct  mon_info{
+struct  mon_info {
     ca_float32_t    m_lval;     /* low delta */
     ca_float32_t    m_hval;     /* high delta */ 
     ca_float32_t    m_toval;    /* period btween samples */
     ca_uint16_t     m_mask;     /* event select mask */
     ca_uint16_t     m_pad;      /* extend to 32 bits */
-};
-
-struct  monops {            /* monitor req opi to ioc */
-    caHdr           m_header;
-    struct mon_info m_info;
 };
 
 /*

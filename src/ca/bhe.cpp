@@ -43,11 +43,11 @@ bhe::~bhe ()
  *
  * updates beacon period, and looks for beacon anomalies
  */
-bool bhe::updatePeriod ( epicsTime programBeginTime )
+bool bhe::updatePeriod ( const epicsTime & programBeginTime, 
+                        const epicsTime & currentTime )
 {
     double currentPeriod;
     bool netChange = false;
-    epicsTime current = epicsTime::getCurrent ();
 
     if ( this->timeStamp == epicsTime () ) {
 
@@ -61,7 +61,7 @@ bool bhe::updatePeriod ( epicsTime programBeginTime )
          * a TCP/IP connection created the beacon.
          * (nothing to do but set the beacon time stamp and return)
          */
-        this->timeStamp = current;
+        this->timeStamp = currentTime;
 
         return netChange;
     }
@@ -69,7 +69,7 @@ bool bhe::updatePeriod ( epicsTime programBeginTime )
     /*
      * compute the beacon period (if we have seen at least two beacons)
      */
-    currentPeriod = current - this->timeStamp;
+    currentPeriod = currentTime - this->timeStamp;
     if ( this->averagePeriod < 0.0 ) {
         double totalRunningTime;
 
@@ -158,7 +158,7 @@ bool bhe::updatePeriod ( epicsTime programBeginTime )
         this->averagePeriod = currentPeriod * 0.125 + this->averagePeriod * 0.875;
     }
 
-    this->timeStamp = current;
+    this->timeStamp = currentTime;
 
     return netChange;
 }

@@ -49,13 +49,13 @@ typedef void tf ( ti *pItems, unsigned iterations, unsigned *pInlineIter );
  * test_pend()
  */
 LOCAL void test_pend(
-ti      *pItems,
+ti          *pItems,
 unsigned    iterations,
 unsigned    *pInlineIter
 )
 {
     unsigned    i;
-    int     status;
+    int         status;
 
     for (i=0; i<iterations; i++) {
         status = ca_pend_event(1e-9);
@@ -107,6 +107,7 @@ unsigned    *pInlineIter
 /*
  * test_sync_search()
  */
+#if 0
 LOCAL void test_sync_search(
 ti      *pItems,
 unsigned    iterations,
@@ -125,6 +126,7 @@ unsigned    *pInlineIter
 
     *pInlineIter = 1;
 }
+#endif
 
 /*
  * test_free ()

@@ -48,24 +48,23 @@
  *
  *  CA server TCP client task (one spawned for each client)
  */
-void camsgtask (struct client *client)
+void camsgtask ( struct client *client )
 {
-    int             nchars;
-    int             status;
+    int nchars;
+    int status;
 
-    client->tid = epicsThreadGetIdSelf ();
+    casAttachThreadToClient ( client );
 
-    taskwdInsert (epicsThreadGetIdSelf(), NULL, NULL);
-
-    while (TRUE) {
+    while ( TRUE ) {
         client->recv.stk = 0;
             
-        nchars = recv (client->sock, &client->recv.buf[client->recv.cnt], 
-                (int)(sizeof(client->recv.buf)-client->recv.cnt), 0);
-        if (nchars==0){
-            if (CASDEBUG>0) {
+        assert ( client->recv.maxstk >= client->recv.cnt );
+        nchars = recv ( client->sock, &client->recv.buf[client->recv.cnt], 
+                (int) ( client->recv.maxstk - client->recv.cnt ), 0 );
+        if ( nchars == 0 ){
+            if ( CASDEBUG > 0 ) {
                 errlogPrintf ( "CAS: nill message disconnect ( %u bytes request )\n",
-                    sizeof (client->recv.buf) - client->recv.cnt );
+                    sizeof ( client->recv.buf ) - client->recv.cnt );
             }
             break;
         }
@@ -75,19 +74,19 @@ void camsgtask (struct client *client)
             /*
              * normal conn lost conditions
              */
-            if (    (anerrno!=SOCK_ECONNABORTED&&
-                    anerrno!=SOCK_ECONNRESET&&
-                    anerrno!=SOCK_ETIMEDOUT)||
-                    CASDEBUG>2) {
-                    errlogPrintf ("CAS: client disconnect(errno=%d)\n", anerrno);
+            if (    ( anerrno != SOCK_ECONNABORTED &&
+                    anerrno != SOCK_ECONNRESET &&
+                    anerrno != SOCK_ETIMEDOUT ) ||
+                    CASDEBUG > 2 ) {
+                    errlogPrintf ( "CAS: client disconnect(errno=%d)\n", anerrno );
             }
             break;
         }
 
-        epicsTimeGetCurrent (&client->time_at_last_recv);
-        client->recv.cnt += (unsigned long) nchars;
+        epicsTimeGetCurrent ( &client->time_at_last_recv );
+        client->recv.cnt += ( unsigned ) nchars;
 
-        status = camessage (client, &client->recv);
+        status = camessage ( client );
         if (status == 0) {
             /*
              * if there is a partial message
@@ -138,6 +137,10 @@ void camsgtask (struct client *client)
             cas_send_msg(client, TRUE);
         }
     }
-    
-    destroy_client (client);
+
+    LOCK_CLIENTQ;
+    ellDelete ( &clientQ, &client->node );
+    UNLOCK_CLIENTQ;
+
+    destroy_tcp_client ( client );
 }

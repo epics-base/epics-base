@@ -21,6 +21,8 @@
 #include "iocinf.h"
 #include "caProto.h"
 
+typedef unsigned long arrayElementCount;
+
 #define epicsExportSharedSymbols
 #include "net_convert.h"
 
@@ -55,10 +57,10 @@
  *
  */
 LOCAL void cvrt_string(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     char        *pSrc = (char *) s;
@@ -79,15 +81,15 @@ unsigned long   num         /* number of values     */
  *  CVRT_SHORT()
  */
 LOCAL void cvrt_short(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
-    dbr_short_t *pSrc = (dbr_short_t *) s;
-    dbr_short_t *pDest = (dbr_short_t *) d;
-    unsigned long   i;
+    dbr_short_t         *pSrc = (dbr_short_t *) s;
+    dbr_short_t         *pDest = (dbr_short_t *) d;
+    arrayElementCount   i;
 
     for(i=0; i<num; i++){
         *pDest = dbr_ntohs( *pSrc );
@@ -107,15 +109,15 @@ unsigned long   num         /* number of values     */
  *
  */
 LOCAL void cvrt_char(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
-    unsigned long   i;
-    dbr_char_t      *pSrc = (dbr_char_t *) s;
-    dbr_char_t      *pDest = (dbr_char_t *) d;
+    arrayElementCount   i;
+    dbr_char_t          *pSrc = (dbr_char_t *) s;
+    dbr_char_t          *pDest = (dbr_char_t *) d;
 
     /* convert "in place" -> nothing to do */
     if (s == d)
@@ -129,15 +131,15 @@ unsigned long   num         /* number of values     */
  *  CVRT_LONG()
  */
 LOCAL void cvrt_long(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
-    unsigned long   i;
-    dbr_long_t  *pSrc = (dbr_long_t *) s;
-    dbr_long_t  *pDest = (dbr_long_t *) d;
+    arrayElementCount   i;
+    dbr_long_t          *pSrc = (dbr_long_t *) s;
+    dbr_long_t          *pDest = (dbr_long_t *) d;
 
     for(i=0; i<num; i++){
         *pDest = dbr_ntohl( *pSrc );
@@ -157,15 +159,15 @@ unsigned long   num         /* number of values     */
  *
  */
 LOCAL void cvrt_enum(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
-    unsigned long   i;
-    dbr_enum_t      *pSrc;
-    dbr_enum_t      *pDest;
+    arrayElementCount   i;
+    dbr_enum_t          *pSrc;
+    dbr_enum_t          *pDest;
 
     pSrc = (dbr_enum_t *) s;
     pDest = (dbr_enum_t *) d;
@@ -189,15 +191,15 @@ unsigned long   num         /* number of values     */
  *
  */
 LOCAL void cvrt_float(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
-    unsigned long   i;
-    dbr_float_t *pSrc = (dbr_float_t *) s;
-    dbr_float_t *pDest = (dbr_float_t *) d;
+    arrayElementCount   i;
+    dbr_float_t         *pSrc = (dbr_float_t *) s;
+    dbr_float_t         *pDest = (dbr_float_t *) d;
 
     for(i=0; i<num; i++){
         if(encode){
@@ -218,15 +220,15 @@ unsigned long   num         /* number of values     */
  *  CVRT_DOUBLE()
  */
 LOCAL void cvrt_double(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
-    unsigned long   i;
-    dbr_double_t    *pSrc = (dbr_double_t *) s;
-    dbr_double_t    *pDest = (dbr_double_t *) d;
+    arrayElementCount   i;
+    dbr_double_t        *pSrc = (dbr_double_t *) s;
+    dbr_double_t        *pDest = (dbr_double_t *) d;
 
     for(i=0; i<num; i++){
         if(encode){
@@ -257,10 +259,10 @@ unsigned long   num         /* number of values     */
 ****************************************************************************/
 
 LOCAL void cvrt_sts_string(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     struct dbr_sts_string   *pSrc = (struct dbr_sts_string *) s;
@@ -295,10 +297,10 @@ unsigned long   num         /* number of values     */
 ****************************************************************************/
 
 LOCAL void cvrt_sts_short(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     struct dbr_sts_int  *pSrc = (struct dbr_sts_int *) s;
@@ -330,10 +332,10 @@ unsigned long   num         /* number of values     */
 ****************************************************************************/
 
 LOCAL void cvrt_sts_float(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     struct dbr_sts_float    *pSrc = (struct dbr_sts_float *) s;
@@ -356,10 +358,10 @@ unsigned long   num         /* number of values     */
 ****************************************************************************/
 
 LOCAL void cvrt_sts_double(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     struct dbr_sts_double   *pSrc = (struct dbr_sts_double *) s;
@@ -385,10 +387,10 @@ unsigned long   num         /* number of values     */
 ****************************************************************************/
 
 LOCAL void cvrt_sts_enum(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     struct dbr_sts_enum *pSrc = (struct dbr_sts_enum *) s;
@@ -413,10 +415,10 @@ unsigned long   num         /* number of values     */
 ****************************************************************************/
 
 LOCAL void cvrt_gr_short(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     struct dbr_gr_int   *pSrc = (struct dbr_gr_int *) s;
@@ -450,10 +452,10 @@ unsigned long   num         /* number of values     */
 ****************************************************************************/
 
 LOCAL void cvrt_gr_char(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     struct dbr_gr_char  *pSrc = (struct dbr_gr_char *) s;
@@ -491,10 +493,10 @@ unsigned long   num         /* number of values     */
 ****************************************************************************/
 
 LOCAL void cvrt_gr_long(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     struct dbr_gr_long  *pSrc = (struct dbr_gr_long *) s;
@@ -529,10 +531,10 @@ unsigned long   num         /* number of values     */
 ****************************************************************************/
 
 LOCAL void cvrt_gr_enum(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     struct dbr_gr_enum  *pSrc = (struct dbr_gr_enum *) s;
@@ -562,10 +564,10 @@ unsigned long   num         /* number of values     */
 ****************************************************************************/
 
 LOCAL void cvrt_gr_double(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     struct dbr_gr_double    *pSrc = (struct dbr_gr_double *) s;
@@ -624,10 +626,10 @@ unsigned long   num         /* number of values     */
 ****************************************************************************/
 
 LOCAL void cvrt_gr_float(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     struct dbr_gr_float     *pSrc = (struct dbr_gr_float *) s;
@@ -687,10 +689,10 @@ unsigned long   num         /* number of values     */
 ****************************************************************************/
 
 LOCAL void cvrt_ctrl_short(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     struct dbr_ctrl_int *pSrc = (struct dbr_ctrl_int *) s;
@@ -727,10 +729,10 @@ unsigned long   num         /* number of values     */
 ****************************************************************************/
 
 LOCAL void cvrt_ctrl_long(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     struct dbr_ctrl_long    *pSrc = (struct dbr_ctrl_long*) s;
@@ -767,10 +769,10 @@ unsigned long   num         /* number of values     */
 ****************************************************************************/
 
 LOCAL void cvrt_ctrl_char(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     struct dbr_ctrl_char    *pSrc = (struct dbr_ctrl_char *) s;
@@ -805,10 +807,10 @@ unsigned long   num         /* number of values     */
 ****************************************************************************/
 
 LOCAL void cvrt_ctrl_double(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     struct dbr_ctrl_double  *pSrc = (struct dbr_ctrl_double *) s;
@@ -869,10 +871,10 @@ unsigned long   num         /* number of values     */
 ****************************************************************************/
 
 LOCAL void cvrt_ctrl_float(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     struct dbr_ctrl_float   *pSrc = (struct dbr_ctrl_float *) s;
@@ -932,10 +934,10 @@ unsigned long   num         /* number of values     */
 ****************************************************************************/
 
 LOCAL void cvrt_ctrl_enum(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     struct dbr_ctrl_enum    *pSrc = (struct dbr_ctrl_enum *) s;
@@ -968,10 +970,10 @@ unsigned long   num         /* number of values     */
 ****************************************************************************/
 
 LOCAL void cvrt_sts_char(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     struct dbr_sts_char *pSrc = (struct dbr_sts_char *) s;
@@ -999,10 +1001,10 @@ unsigned long   num         /* number of values     */
 ****************************************************************************/
 
 LOCAL void cvrt_sts_long(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     struct dbr_sts_long *pSrc = (struct dbr_sts_long *) s;
@@ -1031,10 +1033,10 @@ unsigned long   num         /* number of values     */
 ****************************************************************************/
 
 LOCAL void cvrt_time_string(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     struct dbr_time_string  *pSrc = (struct dbr_time_string *) s;
@@ -1063,10 +1065,10 @@ unsigned long   num         /* number of values     */
 ****************************************************************************/
 
 LOCAL void cvrt_time_short(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     struct dbr_time_short   *pSrc = (struct dbr_time_short *) s;
@@ -1097,10 +1099,10 @@ unsigned long   num         /* number of values     */
 ****************************************************************************/
 
 LOCAL void cvrt_time_float(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     struct dbr_time_float   *pSrc = (struct dbr_time_float *) s;
@@ -1125,10 +1127,10 @@ unsigned long   num         /* number of values     */
 ****************************************************************************/
 
 LOCAL void cvrt_time_double(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     struct dbr_time_double  *pSrc = (struct dbr_time_double *) s;
@@ -1154,10 +1156,10 @@ unsigned long   num         /* number of values     */
 ****************************************************************************/
 
 LOCAL void cvrt_time_enum(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     struct dbr_time_enum    *pSrc = (struct dbr_time_enum *) s;
@@ -1184,10 +1186,10 @@ unsigned long   num         /* number of values     */
 ****************************************************************************/
 
 LOCAL void cvrt_time_char(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     struct dbr_time_char    *pSrc = (struct dbr_time_char *) s;
@@ -1216,10 +1218,10 @@ unsigned long   num         /* number of values     */
 ****************************************************************************/
 
 LOCAL void cvrt_time_long(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     struct dbr_time_long    *pSrc = (struct dbr_time_long *) s;
@@ -1247,15 +1249,15 @@ unsigned long   num         /* number of values     */
  *
  */
 LOCAL void cvrt_put_ackt(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,     /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,     /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
-    dbr_put_ackt_t  *pSrc = (dbr_put_ackt_t *) s;
-    dbr_put_ackt_t  *pDest = (dbr_put_ackt_t *) d;
-    unsigned long   i;
+    dbr_put_ackt_t      *pSrc = (dbr_put_ackt_t *) s;
+    dbr_put_ackt_t      *pDest = (dbr_put_ackt_t *) d;
+    arrayElementCount   i;
 
     for(i=0; i<num; i++){
         *pDest = dbr_ntohs( *pSrc );
@@ -1281,10 +1283,10 @@ unsigned long   num         /* number of values     */
 ****************************************************************************/
 
 LOCAL void cvrt_stsack_string(
-const void      *s,         /* source           */
-void            *d,         /* destination          */
-int             encode,         /* cvrt HOST to NET if T    */
-unsigned long   num         /* number of values     */
+const void          *s,         /* source           */
+void                *d,         /* destination          */
+int                 encode,         /* cvrt HOST to NET if T    */
+arrayElementCount   num         /* number of values     */
 )
 {
     struct dbr_stsack_string    *pSrc = (struct dbr_stsack_string *) s;

@@ -22,7 +22,7 @@ oldSubscription::~oldSubscription ()
 }
 
 void oldSubscription::current (  
-    unsigned type, unsigned long count, const void *pData)
+    unsigned type, arrayElementCount count, const void *pData)
 {
     struct event_handler_args args;
 
@@ -37,7 +37,7 @@ void oldSubscription::current (
     
 void oldSubscription::exception (
     int status, const char * /* pContext */, 
-    unsigned type, unsigned long count )
+    unsigned type, arrayElementCount count )
 {
     struct event_handler_args args;
 

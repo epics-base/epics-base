@@ -27,10 +27,13 @@ class searchTimer : private epicsTimerNotify {
 public:
     searchTimer ( udpiiu &iiu, epicsTimerQueue &queue, epicsMutex & );
     virtual ~searchTimer ();
-    void notifySearchResponse ( unsigned short retrySeqNo );
+    void notifySearchResponse ( unsigned short retrySeqNo, const epicsTime & currentTime );
     void resetPeriod ( double delayToNextTry );
     void show ( unsigned level ) const;
 private:
+    epicsTime timeAtLastRetry;
+    double period; /* period between tries */
+    double roundTripDelayEstimate;
     epicsTimer &timer;
     epicsMutex &mutex;
     udpiiu &iiu;
@@ -38,13 +41,16 @@ private:
     unsigned framesPerTryCongestThresh; /* one half N tries w congest */
     unsigned minRetry; /* min retry number so far */
     unsigned retry;
-    unsigned searchTriesWithinThisPass; /* num search tries within this pass through the list */
-    unsigned searchResponsesWithinThisPass; /* num search resp within this pass through the list */
+    unsigned searchAttempts; /* num search tries within this timer experation */
+    unsigned searchResponses; /* num search resp within this timer experation */
+    unsigned searchAttemptsThisPass; /* num search tries within this pass */
+    unsigned searchResponsesThisPass; /* num search resp within this pass */
     unsigned short retrySeqNo; /* search retry seq number */
     unsigned short retrySeqAtPassBegin; /* search retry seq number at beg of pass through list */
-    double period; /* period between tries */
-    expireStatus expire ();
-    void setRetryInterval (unsigned retryNo);
+    bool active;
+    bool noDelay;
+    expireStatus expire ( const epicsTime & currentTime );
+    void setRetryInterval ( unsigned retryNo );
 };
 
 #endif // ifdef searchTimerh

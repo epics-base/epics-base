@@ -1,9 +1,10 @@
 #!/usr/bin/perl
 #
+#   Usage: perl makeEpicsVersion.pl CONFIG_BASE_VERSION outdir
 
 print "Building epicsVersion.h from CONFIG_BASE_VERSION\n";
 
-die unless $#ARGV==0;
+die unless $#ARGV==1;
 
 open VARS, $ARGV[0] or die "Cannot get variables from $ARGV[0]";
 
@@ -24,7 +25,12 @@ $ver_str = "$ver_str.$upd_level" if $upd_level;
 
 print "Found EPICS Version $ver_str\n";
 
-open OUT, ">epicsVersion.h";
+$dir = $ARGV[1];
+$epicsVersion="$dir/epicsVersion.h";
+
+mkdir ($dir, 0777)  unless -d $dir;
+
+open OUT, "> $epicsVersion" or die "Cannot create $epicsVersion";
 
 print OUT "#define BASE_VERSION        $ver\n";
 print OUT "#define BASE_REVISION       $rev\n";

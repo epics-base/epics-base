@@ -114,6 +114,7 @@ epicsShareFunc int errlogPrintf( const char *pFormat, ...)
 {
     va_list	pvar;
     int		nchar;
+    int isOkToBlock = epicsThreadIsOkToBlock();
 
     if(epicsInterruptIsInterruptContext()) {
 	epicsInterruptContextMessage
@@ -121,6 +122,12 @@ epicsShareFunc int errlogPrintf( const char *pFormat, ...)
 	return 0;
     }
     errlogInit(0);
+    if(pvtData.atExit || (isOkToBlock && pvtData.toConsole)) {
+        va_start(pvar, pFormat);
+        vfprintf(stdout,pFormat,pvar);
+        va_end (pvar);
+        fflush(stdout);
+    }
     va_start(pvar, pFormat);
     nchar = errlogVprintf(pFormat,pvar);
     va_end (pvar);
@@ -140,10 +147,6 @@ epicsShareFunc int errlogVprintf(
 	return 0;
     }
     errlogInit(0);
-    if(pvtData.atExit || (isOkToBlock && pvtData.toConsole)) {
-        vfprintf(stdout,pFormat,pvar);
-        fflush(stdout);
-    }
     if(pvtData.atExit) return 0;
     pbuffer = msgbufGetFree(isOkToBlock);
     if(!pbuffer) return(0);
@@ -200,6 +203,7 @@ epicsShareFunc int errlogSevPrintf(
 {
     va_list	pvar;
     int		nchar;
+    int         isOkToBlock = epicsThreadIsOkToBlock();
 
     if(epicsInterruptIsInterruptContext()) {
 	epicsInterruptContextMessage
@@ -208,6 +212,13 @@ epicsShareFunc int errlogSevPrintf(
     }
     errlogInit(0);
     if(pvtData.sevToLog>severity) return(0);
+    if(pvtData.atExit || (isOkToBlock && pvtData.toConsole)) {
+        fprintf(stdout,"sevr=%s ",errlogGetSevEnumString(severity));
+        va_start(pvar, pFormat);
+        vfprintf(stdout,pFormat,pvar);
+        va_end (pvar);
+        fflush(stdout);
+    }
     va_start(pvar, pFormat);
     nchar = errlogSevVprintf(severity,pFormat,pvar);
     va_end (pvar);
@@ -229,11 +240,6 @@ epicsShareFunc int errlogSevVprintf(
 	return 0;
     }
     errlogInit(0);
-    if(pvtData.atExit || (isOkToBlock && pvtData.toConsole)) {
-        fprintf(stdout,"sevr=%s ",errlogGetSevEnumString(severity));
-        vfprintf(stdout,pFormat,pvar);
-        fflush(stdout);
-    }
     if(pvtData.atExit) return 0;
     pnext = msgbufGetFree(isOkToBlock);
     if(!pnext) return(0);

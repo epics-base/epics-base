@@ -193,7 +193,7 @@ extern "C" void  epicsShareAPI epicsTimerQueuePassiveShow (
 }
 
 extern "C" epicsTimerQueueId epicsShareAPI
-    epicsTimerQueueCreate ( int okToShare, unsigned int threadPriority )
+    epicsTimerQueueAllocate ( int okToShare, unsigned int threadPriority )
 {
     try {
         epicsTimerQueueForC &tmr = queueMgr.allocate ( okToShare ? true : false, threadPriority );

@@ -52,6 +52,8 @@
  *			fdentry is reused
  *	.10 joh 091192	added SCCS ID	
  *	.11 joh	092192	added std header
+ *	.11 joh	092192	return an error if the timeout supplied to fdmgr
+ *			pend event is out of range	
  *
  *	NOTES:
  *	.01 write fd callbacks are one shots consistent with the lower
@@ -509,6 +511,9 @@ struct timeval 			*ptimeout;
 
 	pfdctx->select_tmo = FALSE;
 	palarm = fdmgr_add_timeout(pfdctx, ptimeout, select_alarm ,pfdctx);
+	if(!palarm){
+		return ERROR;
+	}
 
 	process_alarm_queue(pfdctx, &t);
 

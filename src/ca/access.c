@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.107.2.6  2000/11/30 22:07:50  jhill
+ * changes from Ken Evans
+ *
  * Revision 1.107.2.5  2000/08/29 20:03:04  jhill
  * fixed alignment bug check on hosts that have 64 bit longs
  *
@@ -837,7 +840,7 @@ void cac_create_udp_fd()
 					name,
 					pri+1,
 					VX_FP_TASK,
-					4096,
+					8192,
 					(FUNCPTR)cac_recv_task,
 					(int)taskIdCurrent,
 					0,

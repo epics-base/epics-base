@@ -45,12 +45,12 @@
  *			so I left TsAddDouble() code - which works - 
  *			at the end of the file but commented it out
  *
- * make options
- *	-DvxWorks	makes a version for VxWorks
- *	-DNDEBUG	don't compile assert() checking
- *      -DDEBUG         compile various debug code, including checks on
  *                      malloc'd memory
+ *  .05 02-05-98 mrk	move pvt stuff from tsDefs.h to here
+ *			move code for nextXXX to here and made static
+ *			use standard C function declarations everywhere
  */
+
 /*+/mod***********************************************************************
 * TITLE	tsSubr.c - time stamp routines
 *
@@ -113,17 +113,19 @@
 * (Some of the code here is based somewhat on time-related routines from
 * 4.2 BSD.)
 *-***************************************************************************/
-
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
 
+#define TS_PRIVATE_DATA
+#include "tsDefs.h"
+#undef TS_PRIVATE_DATA
 
 #if defined(vxWorks)
 #   include <vxWorks.h>
-#   include <stdioLib.h>
-#   include <strLib.h>
+#   include "drvTS.h"
 #elif defined(VMS)
 #   include <sys/types.h>
 #   include <sys/time.h>
@@ -139,13 +141,78 @@
 #define epicsExportSharedSymbols
 #include "epicsAssert.h"
 #include "envDefs.h"
-#define TS_PRIVATE_DATA
-#include "tsDefs.h"
+
+/*/subhead configuration------------------------------------------------------
+*		C O N F I G U R A T I O N   D E F I N I T I O N S
+*
+* TS_DST_BEGIN	the day number for starting DST
+* TS_DST_END	the day number for ending DST
+* TS_MIN_WEST	the number of minutes west of GMT for time zone (zones east
+*		will have negative values)
+* TS_DST_HOUR_ON the hour (standard time) when DST turns on
+* TS_DST_HOUR_OFF the hour (standard time) when DST turns off
+* TS_DST_HRS_ADD hours to add when DST is on
+*
+* day numbers start with 0 for Jan 1; day numbers in these defines are
+* based on a NON-leap year.  The start and end days for DST are assumed to be
+* Sundays.  A negative day indicates that the following Sunday is to be used;
+* a positive day indicates the prior Sunday.  If the begin date is larger than
+* the end date, then DST overlaps the change of the year (e.g., for southern
+* hemisphere).
+*
+* Note well that TS_DST_HOUR_ON and TS_DST_HOUR_OFF are both STANDARD time.
+* So, if dst begins at 2 a.m. (standard time) and ends at 2 a.m. (daylight
+* time), the two values would be 2 and 1, respectively (assuming
+* TS_DST_HRS_ADD is 1).
+*----------------------------------------------------------------------------*/
+#define TS_DST_BEGIN -90	/* first Sun in Apr (Apr 1 = 90) */
+#define TS_DST_END 303		/* last Sun in Oct (Oct 31 = 303) */
+#define TS_DST_HOUR_ON 2	/* 2 a.m. (standard time) */
+#define TS_DST_HOUR_OFF 1	/* 2 a.m. (1 a.m. standard time) */
+#define TS_DST_HRS_ADD 1	/* add one hour */
+#define TS_MIN_WEST 7 * 60	/* USA mountain time zone */
+#if 0		/* first set is for testing only */
+#define TS_EPOCH_YEAR 1989
+#define TS_EPOCH_SEC_PAST_1970 6940*86400 /* 1/1/89 19 yr (5 leap) of seconds */
+#define TS_EPOCH_WDAY_NUM 0	/* Jan 1 1989 was Sun (wkday num = 0) */
+#else
+#define TS_EPOCH_YEAR 1990
+#define TS_EPOCH_SEC_PAST_1970 7305*86400 /* 1/1/90 20 yr (5 leap) of seconds */
+#define TS_EPOCH_WDAY_NUM 1	/* Jan 1 1990 was Mon (wkday num = 1) */
+#endif
+#define TS_MAX_YEAR TS_EPOCH_YEAR+134	/* ULONG can handle 135 years */
+#define TS_TRUNC 1000000	/* truncate to milli-second significance */
 
-static void tsStampFromLocal();
-static void tsStampToLocal();
-static void tsStampToLocalZone();
-static void tsInitMinWest();
+/*/subhead struct tsDetail----------------------------------------------------
+*    breakdown structure for working with secPastEpoch
+*----------------------------------------------------------------------------*/
+
+struct tsDetail {
+    int         year;           /* 4 digit year */
+    int         dayYear;        /* day number in year; 0 = Jan 1 */
+    int         monthNum;       /* month number; 0 = Jan */
+    int         dayMonth;       /* day number; 0 = 1st of month */
+    int         hours;          /* hours within day */
+    int         minutes;        /* minutes within hour */
+    int         seconds;        /* seconds within minute */
+    int         dayOfWeek;      /* weekday number; 0 = Sun */
+    int         leapYear;       /* (0, 1) for year (isn't, is) a leap year */
+    char	dstOverlapChar;	/* indicator for distinguishing duplicate
+				times in the `switch to standard' time period:
+				':'--time isn't ambiguous;
+				's'--time is standard time
+				'd'--time is daylight time */
+};
+
+static void tsStampFromLocal(TS_STAMP *pStamp, struct tsDetail *pT);
+static void tsStampToLocal(TS_STAMP stamp,struct tsDetail *pT);
+static void tsStampToLocalZone(TS_STAMP *pStamp,struct tsDetail *pT);
+static void tsInitMinWest(void);
+
+static int nextAlph1UCField(char **ppText,char **ppField, char *pDelim);
+static int nextIntField(char **ppText,char **ppField,char *pDelim);
+static int nextIntFieldAsInt(char **ppText,int *pIntVal,char *pDelim);
+static int nextIntFieldAsLong(char **ppText,long *pLongVal,char	*pDelim);
 
 static int needToInitMinWest=1;
 static long tsMinWest=TS_MIN_WEST;
@@ -154,6 +221,7 @@ static int daysInMonth[] =    {31,28,31,30, 31, 30, 31, 31, 30, 31, 30, 31};
 static int dayYear1stOfMon[] = {0,31,59,90,120,151,181,212,243,273,304,334};
 static char	monthText[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
 
+#define TEXTBUFSIZE 40
 
 /*/subhead tsTest-------------------------------------------------------------
 *    some test code.
@@ -161,12 +229,13 @@ static char	monthText[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
 #if TS_TEST || LINT
 
 #  ifndef vxWorks
-  main()
+int tsTest(void);
+int  main()
   {
     return tsTest();
   }
 #  endif
-tsTest()
+int tsTest()
 {
     long	stat;
     double	dbl;
@@ -326,9 +395,9 @@ tsTest()
 		(void)printf("%s\n", TsStatusToText(stat));
 	    }
 	    else {
-		(void)printf("stamp is: %lu %lu %s\n", inStamp.secPastEpoch,
+		(void)printf("stamp is: %u %u %s\n", inStamp.secPastEpoch,
 			inStamp.nsec,
-			tsStampToText(&inStamp, TS_TEXT_MMDDYY, inStampTxt));
+			tsStampToText(&inStamp, TS_TEXT_MONDDYYYY, inStampTxt));
 	    }
 	}
     }
@@ -349,8 +418,7 @@ tsTest()
 *	void
 *
 *-*/
-void
-date()
+void date()
 {
     TS_STAMP	now;
     char	nowText[32];
@@ -372,12 +440,11 @@ date()
 *	day of year for the desired Sunday
 *
 *-*/
-static
-int sunday(day, leap, dayYear, dayOfWeek)
-int	day;		/* I day of year to find closest Sunday */
-int	leap;		/* I 0, 1 for not leap year, leap year, respectively */
-int	dayYear;	/* I known day of year */
-int	dayOfWeek;	/* I day of week for dayYear */
+static int sunday(
+int	day,		/* I day of year to find closest Sunday */
+int	leap,		/* I 0, 1 for not leap year, leap year, respectively */
+int	dayYear,	/* I known day of year */
+int	dayOfWeek)	/* I day of week for dayYear */
 {
     int		offset;		/* controls direction of offset */
 
@@ -458,10 +525,7 @@ int	dayOfWeek;	/* I day of week for dayYear */
 *
 *-*/
 void epicsShareAPI
-tsAddDouble(pSum, pStamp, dbl)
-TS_STAMP *pSum;		/* O sum time stamp */
-TS_STAMP *pStamp;	/* I addend time stamp */
-double	dbl;		/* I number of seconds to add */
+tsAddDouble(TS_STAMP *pSum,TS_STAMP *pStamp, double dbl)
 {
     TS_STAMP	stamp;		/* stamp equivalent of the double */
 
@@ -523,10 +587,7 @@ double	dbl;		/* I number of seconds to add */
 *	    printf("first stamp is later\n");
 *
 *-*/
-int epicsShareAPI
-tsCmpStamps(pStamp1, pStamp2)
-TS_STAMP *pStamp1;	/* pointer to first stamp */
-TS_STAMP *pStamp2;	/* pointer to second stamp */
+int epicsShareAPI tsCmpStamps(TS_STAMP *pStamp1,TS_STAMP *pStamp2)
 {
     if (pStamp1->secPastEpoch < pStamp2->secPastEpoch)
 	return -1;
@@ -599,51 +660,54 @@ TS_STAMP *pStamp2;	/* pointer to second stamp */
 *-*/
 long epicsShareAPI tsLocalTime(TS_STAMP *pStamp)
 {
-    	long	retStat=S_ts_OK;/* return status to caller */
+    long	retStat=S_ts_OK;/* return status to caller */
+
+    assert(pStamp != NULL);
+
+    {
+#   if defined(vxWorks)
+	    retStat = TScurrentTimeStamp((struct timespec*)pStamp);
+	    if (retStat == 0) {
+		return S_ts_OK;
+	    }
+	    else {
+		return S_ts_sysTimeError;
+	    }
+#   elif defined(_WIN32)
+	DWORD win_sys_time_ms;		/* time (ms) since windows started */
+        static DWORD prev_time_ms;      /* time (ms) of previous call */
+        static long start_time_s=0;     /* time (sec) from 1990 when windows started */
+
+        if (start_time_s == 0) {
+            prev_time_ms = timeGetTime();
+            start_time_s = time(NULL)
+		- TS_EPOCH_SEC_PAST_1970 - (long)prev_time_ms/1000;
+         }
+         win_sys_time_ms = timeGetTime();
+         if (prev_time_ms > win_sys_time_ms) {
+	     /* must have been a timer roll-over */
+
+             start_time_s += 4294967;  /* add number of seconds in 49.7 days */
+         }
+         /* time (sec) since 1990 */
+         pStamp->secPastEpoch = (long)win_sys_time_ms/1000 + start_time_s;
+         pStamp->nsec = (long)((win_sys_time_ms % 1000) * 1000000);
+         prev_time_ms = win_sys_time_ms;
+#   else
+	struct timeval curtime;
 
 	assert(pStamp != NULL);
-
-	{
-#	if defined(vxWorks)
-		retStat = TScurrentTimeStamp((struct timespec*)pStamp);
-		if (retStat == 0) {
-			return S_ts_OK;
-		}
-		else {
-			return S_ts_sysTimeError;
-		}
-#	elif defined(_WIN32)
-		DWORD win_sys_time_ms;		/* time (ms) since windows started */
-                static DWORD prev_time_ms;      /* time (ms) of previous call */
-                static long start_time_s=0;     /* time (sec) from 1990 when windows started */
-
-                if (start_time_s == 0) {
-                       prev_time_ms = timeGetTime();
-                       start_time_s = time(NULL) - TS_EPOCH_SEC_PAST_1970 - (long)prev_time_ms/1000;
-                }
-                win_sys_time_ms = timeGetTime();
-                if (prev_time_ms > win_sys_time_ms) {       /* must have been a timer roll-over */
-                       start_time_s += 4294967;             /* add number of seconds in 49.7 days */
-                }
-                pStamp->secPastEpoch = (long)win_sys_time_ms/1000 + start_time_s; /* time (sec) since 1990 */
-                pStamp->nsec = (long)((win_sys_time_ms % 1000) * 1000000);
-                prev_time_ms = win_sys_time_ms;
-#	else
-		struct timeval curtime;
-
-		assert(pStamp != NULL);
-		if (gettimeofday(&curtime, (struct timezone *)NULL) == -1)
-			retStat = S_ts_sysTimeError;
-		else {
-			pStamp->nsec = ( curtime.tv_usec/1000 ) * 1000000;
-			pStamp->secPastEpoch = curtime.tv_sec - 
-					TS_EPOCH_SEC_PAST_1970;
-		}
-#	endif
+	if (gettimeofday(&curtime, (struct timezone *)NULL) == -1)
+		retStat = S_ts_sysTimeError;
+	else {
+	    pStamp->nsec = ( curtime.tv_usec/1000 ) * 1000000;
+	    pStamp->secPastEpoch = curtime.tv_sec - TS_EPOCH_SEC_PAST_1970;
 	}
+#	endif
+    }
 
-    	pStamp->nsec = pStamp->nsec - (pStamp->nsec % TS_TRUNC);
-    	return retStat;
+    pStamp->nsec = pStamp->nsec - (pStamp->nsec % TS_TRUNC);
+    return retStat;
 }
 
 /*+/subr**********************************************************************
@@ -665,10 +729,7 @@ long epicsShareAPI tsLocalTime(TS_STAMP *pStamp)
 *	tsRoundDownLocal(&now, 86400);
 *
 *-*/
-long epicsShareAPI
-tsRoundDownLocal(pStamp, interval)
-TS_STAMP *pStamp;	/* IO pointer to time stamp buffer */
-unsigned long interval;	/* I rounding interval, in seconds */
+long epicsShareAPI tsRoundDownLocal(TS_STAMP *pStamp, unsigned long interval)
 {
     long	retStat=S_ts_OK;/* return status to caller */
     struct tsDetail detail;
@@ -710,10 +771,7 @@ unsigned long interval;	/* I rounding interval, in seconds */
 *	tsRoundUpLocal(&now, 86400);
 *
 *-*/
-long epicsShareAPI
-tsRoundUpLocal(pStamp, interval)
-TS_STAMP *pStamp;	/* IO pointer to time stamp buffer */
-unsigned long interval;	/* I rounding interval, in seconds */
+long epicsShareAPI tsRoundUpLocal(TS_STAMP *pStamp, unsigned long interval)
 {
     long	retStat=S_ts_OK;/* return status to caller */
     struct tsDetail detail;
@@ -752,10 +810,7 @@ unsigned long interval;	/* I rounding interval, in seconds */
 * o	doesn't handle 0 time stamps for time zones west of Greenwich
 *
 *-*/
-static void
-tsStampFromLocal(pStamp, pT)
-TS_STAMP	*pStamp;/* O EPICS time stamp resulting from conversion */
-struct tsDetail *pT;	/* I pointer to time structure to convert */
+static void tsStampFromLocal(TS_STAMP *pStamp, struct tsDetail *pT)
 {
     long	retStat=S_ts_OK;/* return status to caller */
 
@@ -830,7 +885,7 @@ struct tsDetail *pT;	/* I pointer to time structure to convert */
     stamp.secPastEpoch += tsMinWest*60;
     *pStamp = stamp;
 }
-
+
 /*+/internal******************************************************************
 * NAME	tsStampToLocal - convert time stamp to local time
 *
@@ -845,10 +900,7 @@ struct tsDetail *pT;	/* I pointer to time structure to convert */
 * o	doesn't handle 0 time stamps for time zones west of Greenwich
 *
 *-*/
-static void
-tsStampToLocal(stamp, pT)
-TS_STAMP	stamp;	/* I EPICS time stamp to convert */
-struct tsDetail *pT;	/* O pointer to time structure for conversion */
+static void tsStampToLocal(TS_STAMP stamp,struct tsDetail *pT)
 {
     int		dstBegin;	/* day DST begins */
     int		dstEnd;		/* day DST ends */
@@ -905,9 +957,8 @@ struct tsDetail *pT;	/* O pointer to time structure for conversion */
 
     return;
 }
-
-static void
-tsInitMinWest()
+
+static void tsInitMinWest()
 {
     int		error=0;
 
@@ -925,10 +976,7 @@ EPICS_TS_MIN_WEST.name, tsMinWest);
     needToInitMinWest = 0;
 }
 
-static void
-tsStampToLocalZone(pStamp, pT)
-TS_STAMP	*pStamp;/* pointer to EPICS time stamp to convert */
-struct tsDetail *pT;	/* pointer to time structure for conversion */
+static void tsStampToLocalZone(TS_STAMP *pStamp,struct tsDetail *pT)
 {
     int		ndays;		/* number of days in this month or year */
     unsigned long secPastEpoch;	/* time from stamp, in local zone */
@@ -1164,10 +1212,9 @@ char	*textBuffer;	/* O buffer to receive text */
 *	tsTextToStamp(&equiv, &text);
 *
 *-*/
-long epicsShareAPI
-tsTextToStamp(pStamp, pText)
-TS_STAMP *pStamp;	/* O time stamp corresponding to text */
-char	**pText;	/* IO ptr to ptr to string containing time and date */
+long epicsShareAPI tsTextToStamp(
+TS_STAMP *pStamp,	/* O time stamp corresponding to text */
+char	**pCallerText)	/* IO ptr to ptr to string containing time and date */
 {
     long	retStat=S_ts_OK;/* status return to caller */
     long	stat;		/* status from calls */
@@ -1177,14 +1224,20 @@ char	**pText;	/* IO ptr to ptr to string containing time and date */
     char	delim;		/* delimiter character */
     long	nsec;		/* temp for nano-seconds */
     int		count;		/* count from scan of next field */
+    char	textbuf[TEXTBUFSIZE];
+    char	*ptextbuf;
+    char	**pText;
 
     if (needToInitMinWest)
 	tsInitMinWest();
-
     assert(pStamp != NULL);
-    assert(pText != NULL);
-    assert(*pText != NULL);
-
+    assert(pCallerText != NULL);
+    assert(*pCallerText != NULL);
+    /*Lets be nice and not modify *pCallerText or **pCallerText */
+    strncpy(textbuf,*pCallerText,TEXTBUFSIZE);
+    textbuf[TEXTBUFSIZE-1] = 0;
+    ptextbuf = textbuf;
+    pText = &ptextbuf;
 /*----------------------------------------------------------------------------
 *    skip over leading white space
 *----------------------------------------------------------------------------*/
@@ -1410,9 +1463,9 @@ char	**pText;	/* IO ptr to ptr to string containing time and date */
 *
 *-*/
 long epicsShareAPI
-tsTimeTextToStamp(pStamp, pText)
+tsTimeTextToStamp(pStamp, pCallerText)
 TS_STAMP *pStamp;	/* O time stamp corresponding to text */
-char	**pText;	/* IO ptr to ptr to string containing time and date */
+char	**pCallerText;	/* IO ptr to ptr to string containing time and date */
 {
     long	retStat=S_ts_OK;/* status return to caller */
     struct tsDetail t;		/* detailed breakdown of text */
@@ -1420,11 +1473,18 @@ char	**pText;	/* IO ptr to ptr to string containing time and date */
     char	delim;		/* delimiter character */
     int		count;		/* count from scan of next field */
     long	nsec;		/* temp for nano-seconds */
+    char	textbuf[TEXTBUFSIZE];
+    char	*ptextbuf;
+    char	**pText;
 
     assert(pStamp != NULL);
-    assert(pText != NULL);
-    assert(*pText != NULL);
-
+    assert(pCallerText != NULL);
+    assert(*pCallerText != NULL);
+    /*Lets be nice and not modify *pCallerText or **pCallerText */
+    strncpy(textbuf,*pCallerText,TEXTBUFSIZE);
+    textbuf[TEXTBUFSIZE-1] = 0;
+    ptextbuf = textbuf;
+    pText = &ptextbuf;
 /*----------------------------------------------------------------------------
 *    skip over leading white space
 *----------------------------------------------------------------------------*/
@@ -1504,4 +1564,171 @@ char	**pText;	/* IO ptr to ptr to string containing time and date */
     *pStamp = stamp;
     return retStat;
 }
+
+/*+/mod***********************************************************************
+* TITLE	nextFieldSubr.c - text field scanning routines
+*
+* GENERAL DESCRIPTION
+*	The routines in this module provide for scanning fields in text
+*	strings.  They can be used as the basis for parsing text input
+*	to a program.
+*
+* QUICK REFERENCE
+* char	(*pText)[];
+* char	(*pField)[];
+* char	*pDelim;
+*
+*   int  nextAlph1UCField(	<>pText,   >pField,   >pDelim		)
+*   int  nextIntField(		<>pText,   >pField,   >pDelim		)
+*   int  nextIntFieldAsInt(	<>pText,   >pIntVal,  >pDelim		)
+*   int  nextIntFieldAsLong(	<>pText,   >pLongVal, >pDelim		)
+*
+* DESCRIPTION
+*	The input text string is scanned to identify the beginning and
+*	end of a field.  At return, the input pointer points to the character
+*	following the delimiter and the delimiter has been returned through
+*	its pointer; the field contents are `returned' either as a pointer
+*	to the first character of the field or as a value returned through
+*	a pointer.
+*
+*	In the input string, a '\0' is stored in place of the delimiter,
+*	so that standard string handling tools can be used for text fields.
+*
+*	nextAlph1UCField	scans the next alphabetic field, changes
+*				the first character to upper case, and
+*				changes the rest to lower case
+*	nextIntField		scans the next integer field
+*	nextIntFieldAsInt	scans the next integer field as an int
+*	nextIntFieldAsLong	scans the next integer field as a long
+*
+* RETURNS
+*	count of characters in field, including the delimiter.  A special
+*	case exists when only '\0' is encountered; in this case 0 is returned.
+*	(For quoted alpha strings, the count will include the " characters.)
+*
+* BUGS
+* o	use of type checking macros isn't protected by isascii()
+*
+* SEE ALSO
+*	tsTextToStamp()
+*
+* NOTES
+* 1.	fields involving alpha types consider underscore ('_') to be
+*	alphabetic.
+*
+* EXAMPLE
+*	char text[]="process 30 samples"
+*	char *pText;	pointer into text string
+*	char *pCmd;	pointer to first field, to use as a command
+*	int  count;	value of second field, number of items to process
+*	char *pUnits;	pointer to third field, needed for command processing
+*	int  length;	length of field
+*	char delim;	delimiter for field
+*
+*	pText = text;
+*	if (nextIntFieldAsInt(&pText, &count, &delim) <= 1)
+*	    error action if empty field
+*	printf("command=%s, count=%d, units=%s\n", pCmd, count, pUnits);
+*
+*-***************************************************************************/
+
+/*-----------------------------------------------------------------------------
+*    the preamble skips over leading white space, stopping either at
+*    end of string or at a non-white-space character.  If EOS is encountered,
+*    then the appropriate return conditions are set up and a return 0 is done.
+*----------------------------------------------------------------------------*/
+#define NEXT_PREAMBLE \
+    char	*pDlm;		/* pointer to field delimiter */ \
+    int		count;		/* count of characters (plus delim) */ \
+ \
+    assert(ppText != NULL); \
+    assert(*ppText != NULL); \
+    assert(ppField != NULL); \
+    assert(pDelim != NULL); \
+ \
+    if (**ppText == '\0') { \
+	*ppField = *ppText; \
+	*pDelim = **ppText; \
+	return 0; \
+    } \
+    while (**ppText != '\0' && isspace(**ppText)) \
+	(*ppText)++;		/* skip leading white space */ \
+    pDlm = *ppField = *ppText; \
+    if (*pDlm == '\0') { \
+	*pDelim = **ppText; \
+	return 0; \
+    } \
+    count = 1;			/* include delimiter in count */
+/*-----------------------------------------------------------------------------
+*    the postamble is called for each character in the field.  It moves
+*    the pointers and increments the count.  If the loop terminates, then
+*    the caller is informed of the delimiter and the source character
+*    string has '\0' inserted in place of the delimiter, so that the field
+*    is now a proper '\0' terminated string.
+*----------------------------------------------------------------------------*/
+#define NEXT_POSTAMBLE \
+	pDlm++; \
+	count++; \
+    } \
+    *pDelim = *pDlm; \
+    *ppText = pDlm; \
+    if (*pDlm != '\0') { \
+	(*ppText)++;		/* point to next available character */ \
+	*pDlm = '\0'; \
+    }
+
+static int nextAlph1UCField(char **ppText,char **ppField, char *pDelim)
+{
+    NEXT_PREAMBLE
+    while (isalpha(*pDlm) || *pDlm == '_') {
+	if (count == 1) {
+	    if (islower(*pDlm))
+		*pDlm = toupper(*pDlm);
+	}
+	else {
+	    if (isupper(*pDlm))
+		*pDlm = tolower(*pDlm);
+	}
+	NEXT_POSTAMBLE
+    return count;
+}
 
+static int nextIntField(char **ppText,char **ppField,char *pDelim)
+{
+    NEXT_PREAMBLE
+    while (isdigit(*pDlm) || ((*pDlm=='-' || *pDlm=='+') && count==1)) {
+	NEXT_POSTAMBLE
+    return count;
+}
+
+static int nextIntFieldAsInt(char **ppText,int *pIntVal,char *pDelim)
+{
+    char	*pField;	/* pointer to field */
+    int		count;		/* count of char in field, including delim */
+
+    assert(pIntVal != NULL);
+
+    count = nextIntField(ppText, &pField, pDelim);
+    if (count > 1) {
+	if (sscanf(pField, "%d", pIntVal) != 1)
+	    assert(0);
+    }
+
+    return count;
+}
+
+static int nextIntFieldAsLong(char **ppText,long *pLongVal,char	*pDelim)
+{
+    char	*pField;	/* pointer to field */
+    int		count;		/* count of char in field, including delim */
+
+    assert(pLongVal != NULL);
+
+    count = nextIntField(ppText, &pField, pDelim);
+    if (count > 1) {
+	if (sscanf(pField, "%ld", pLongVal) != 1)
+	    assert(0);
+    }
+
+    return count;
+}

@@ -58,7 +58,6 @@ LIBSRCS += fdmgr.c
 LIBSRCS += freeListLib.c
 LIBSRCS += gpHashLib.c
 LIBSRCS += memDebugLib.c
-LIBSRCS += nextFieldSubr.c
 LIBSRCS += postfix.c
 LIBSRCS += realpath.c
 LIBSRCS += tsSubr.c
@@ -99,9 +98,9 @@ LIBTYPE:=SHARED
 #	libs needed for PROD and TESTPRODUCT
 PROD_LIBS = Com 
 
-#	tsTest does not use the default tsTest.c:
+#USR_CFLAGS += -DTS_TEST
 #TESTPROD_SRCS=tsSubr.c
-#TESTPROD=tsTest 
+#TESTPROD=testtsLib
 #TESTPROD=envtest
 #TESTPROD=osiTimeTest fdManagerTest
 

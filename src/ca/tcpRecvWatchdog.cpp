@@ -107,7 +107,7 @@ void tcpRecvWatchdog::cancelRecvWatchdog ()
 
 void tcpRecvWatchdog::show ( unsigned level ) const
 {
-    printf ( "Receive virtual circuit watchdog at %p, period %s\n",
+    printf ( "Receive virtual circuit watchdog at %p, period %f\n",
         this, this->period );
     if ( level > 0u ) {
         printf ( "\tresponse pending boolean %u, beacon anomaly boolean %u\n",

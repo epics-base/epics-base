@@ -41,14 +41,78 @@ if(status) { \
 #undef _POSIX_THREAD_PROCESS_SHARED
 #undef _POSIX_THREAD_PRIO_INHERIT
 
-/* Two completely different implementations are provided below
+/* Three completely different implementations are provided below
+ * If support is available for _POSIX_SPIN_LOCK is available
+ *      then pthread_spin is used
  * If support is available for PTHREAD_MUTEX_RECURSIVE then
  *      only pthread_mutex is used.
  * If support is not available for PTHREAD_MUTEX_RECURSIVE then
  *      a much more complicated solution is required
  */
+
+#if defined ( _POSIX_SPIN_LOCK ) && ( _POSIX_SPIN_LOCK ) >= 200112L && EPICS_TEST_SPINLOCKS
+
+typedef struct epicsMutexOSD {
+    pthread_mutexattr_t mutexAttr;
+    pthread_spinlock_t lock;
+} epicsMutexOSD;
+
+epicsMutexOSD * epicsMutexOsdCreate ( void ) {
+    epicsMutexOSD *pmutex;
+    int           status;
+
+    pmutex = callocMustSucceed ( 1, sizeof(*pmutex),"epicsMutexOsdCreate" );
+    status = pthread_spin_init ( &pmutex->lock,PTHREAD_PROCESS_PRIVATE );
+    checkStatusQuit ( status, "pthread_spin_init","epicsMutexOsdCreate" );
+    return ( pmutex );
+}
+
+void epicsMutexOsdDestroy ( struct epicsMutexOSD * pmutex )
+{
+    int   status;
+
+    status = pthread_spin_destroy ( & pmutex->lock );
+    checkStatus ( status, "pthread_mutex_destroy" );
+    free ( pmutex );
+}
 
-#if defined(_XOPEN_SOURCE) && (_XOPEN_SOURCE)>=500
+void epicsMutexOsdUnlock ( struct epicsMutexOSD * pmutex )
+{
+    int status;
+
+    status = pthread_spin_unlock(&pmutex->lock);
+    checkStatusQuit ( status,"pthread_spin_unlock","epicsMutexOsdUnlock" );
+}
+
+epicsMutexLockStatus epicsMutexOsdLock ( struct epicsMutexOSD * pmutex )
+{
+    int status;
+
+    if ( ! pmutex ) return ( epicsMutexLockError );
+    status = pthread_spin_lock ( &pmutex->lock );
+    checkStatusQuit ( status, "pthread_spin_lock", "epicsMutexOsdLock" );
+    return ( epicsMutexLockOK );
+}
+
+epicsMutexLockStatus epicsMutexOsdTryLock(struct epicsMutexOSD * pmutex)
+{
+    epicsMutexLockStatus status;
+    int pthreadStatus;
+
+    if ( ! pmutex ) return(epicsMutexLockError);
+    pthreadStatus = pthread_spin_trylock ( &pmutex->lock );
+    if ( pthreadStatus != 0 ) {
+        if ( pthreadStatus == EBUSY ) return ( epicsMutexLockTimeout );
+        checkStatusQuit ( pthreadStatus, "pthread_spin_trylock", "epicsMutexOsdTryLock" );
+    }
+    return ( epicsMutexLockOK );
+}
+
+void epicsMutexOsdShow ( struct epicsMutexOSD * pmutex, unsigned int level )
+{
+}
+
+#elif defined(_XOPEN_SOURCE) && (_XOPEN_SOURCE)>=500
 typedef struct epicsMutexOSD {
     pthread_mutexattr_t mutexAttr;
     pthread_mutex_t	lock;
@@ -78,10 +142,7 @@ void epicsMutexOsdDestroy(struct epicsMutexOSD * pmutex)
     int   status;
 
     status = pthread_mutex_destroy(&pmutex->lock);
-/*    checkStatus(status,"pthread_mutex_destroy");*/
-if(status) { 
-    errlogPrintf("%s failed: error %s\n","duhhhh",strerror((status)));
-}
+    checkStatus(status,"pthread_mutex_destroy");
     status = pthread_mutexattr_destroy(&pmutex->mutexAttr);
     checkStatus(status,"pthread_mutexattr_destroy");
     free(pmutex);

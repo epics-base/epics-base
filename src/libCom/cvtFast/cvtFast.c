@@ -76,7 +76,7 @@ int cvtFloatToString(
 
 	/* can this routine handle this conversion */
 	if (precision > 8 || flt_value > 10000000.0 || flt_value < -10000000.0) {
-		sprintf(pstr_value,"%12.5e\0",(double)flt_value);
+		sprintf(pstr_value,"%12.5e",(double)flt_value);
 		return((int)strlen(pstr_value));
 	}
 	startAddr = pstr_value;
@@ -88,12 +88,12 @@ int cvtFloatToString(
         };
 
  	/* remove the whole number portion */
-	whole = flt_value;
+	whole = (long)flt_value;
 	ftemp = flt_value - whole;
 
 	/* multiplier to convert fractional portion to integer */
 	fplace = frac_multiplier[precision];
-	fraction = ftemp * fplace * 10;	
+	fraction = (long)(ftemp * fplace * 10);	
 	fraction = (fraction + 5) / 10;		/* round up */
 
 	/* determine rounding into the whole number portion */
@@ -152,10 +152,10 @@ int cvtDoubleToString(
 	if (precision > 8 || flt_value > 10000000.0 || flt_value < -10000000.0) {
 		if (precision > 8 || flt_value > 1e16 || flt_value < -1e16) {
 		    if(precision>17) precision=17;
-		    sprintf(pstr_value,"%*.*e\0",precision+7,precision,
+		    sprintf(pstr_value,"%*.*e",precision+7,precision,
 			flt_value);
 		} else {
-		    sprintf(pstr_value,"%.0f\0",flt_value);
+		    sprintf(pstr_value,"%.0f",flt_value);
 		}
 		return((int)strlen(pstr_value));
 	}
@@ -168,12 +168,12 @@ int cvtDoubleToString(
         };
 
  	/* remove the whole number portion */
-	whole = flt_value;
+	whole = (long)flt_value;
 	ftemp = flt_value - whole;
 
 	/* multiplier to convert fractional portion to integer */
 	fplace = frac_multiplier[precision];
-	fraction = ftemp * fplace * 10;	
+	fraction = (long)(ftemp * fplace * 10);	
 	fraction = (fraction + 5) / 10;		/* round up */
 
 	/* determine rounding into the whole number portion */

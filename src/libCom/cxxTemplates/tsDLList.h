@@ -1,7 +1,7 @@
 /*
  *      $Id$
  *
- *  type safe doubly linked list templates
+ *      type safe doubly linked list templates
  *
  *      Author  Jeffrey O. Hill
  *              johill@lanl.gov
@@ -43,18 +43,14 @@ template <class T> class tsDLBwdIter; // deprecated
 //
 // class tsDLNode<T>
 //
-//
-// class tsDLNode<T>
-//
-// a node in a doubly linked list
-//
-// NOTE: class T must derive from tsDLNode<T>
+// a node in a doubly linked list containing entries of type T
+// ( class T must publicly derive from class tsDLNode<T> )
 //
 template <class T>
 class tsDLNode {
 public:
-    tsDLNode();
-    tsDLNode <T> operator = (const tsDLNode<T> &) const;
+    tsDLNode ();
+    tsDLNode <T> operator = ( const tsDLNode<T> & ) const;
 private:
     T *pNext;
     T *pPrev;
@@ -64,14 +60,14 @@ private:
     friend class tsDLIter<T>; // deprecated
     friend class tsDLFwdIter<T>; // deprecated
     friend class tsDLBwdIter<T>; // deprecated
+    tsDLNode ( const tsDLNode<T> & );
 };
 
 //
 // class tsDLList<T>
 //
-// a doubly linked list
-//
-// NOTE: class T must derive from tsDLNode<T>
+// a doubly linked list containing entries of type T
+// ( class T must publicly derive from class tsDLNode<T> )
 //
 template <class T>
 class tsDLList {
@@ -110,7 +106,7 @@ private:
 //
 // class tsDLIterConstBD<T>
 //
-// bi-directional const doubly linked list iterator
+// bi-directional iterator for a const doubly linked list 
 //
 template <class T>
 class tsDLIterConstBD {
@@ -135,7 +131,7 @@ private:
 //
 // class tsDLIterBD<T>
 //
-// bi-directional doubly linked list iterator
+// bi-directional iterator for a doubly linked list 
 //
 template <class T>
 class tsDLIterBD {

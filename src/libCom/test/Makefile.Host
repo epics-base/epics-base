@@ -1,0 +1,19 @@
+#	Makefile.Host  for  base/src/libCom
+#
+#
+
+TOP = ../../../..
+include $(TOP)/config/CONFIG_BASE
+CMPLR = STRICT
+
+USR_CFLAGS = -D_NO_PROTO 
+
+#	libs needed for PROD and TESTPRODUCT
+PROD_LIBS := Com 
+SYS_PROD_LIBS_WIN32 := ws2_32 advapi32
+
+PROD = buckTest osiTimeTest
+
+include $(TOP)/config/RULES.Host
+
+#	EOF Makefile.Host  for  base/src/libCom

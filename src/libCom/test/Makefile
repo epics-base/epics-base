@@ -47,6 +47,10 @@ epicsThreadPrivateTestHost_SRCS += epicsThreadPrivateTestMain.cpp epicsThreadPri
 PROD_HOST += epicsThreadPrivateTestHost
 OBJS_IOC_vxWorks += epicsThreadPrivateTest
 
+epicsMaxThreadsHost_SRCS += epicsMaxThreadsMain.cpp epicsMaxThreads.c
+PROD_HOST += epicsMaxThreadsHost
+OBJS_IOC_vxWorks += epicsMaxThreads
+
 epicsOkToBlockTestHost_SRCS += epicsOkToBlockTestMain.cpp epicsOkToBlockTest.cpp
 PROD_HOST += epicsOkToBlockTestHost
 OBJS_IOC_vxWorks += epicsOkToBlockTest

@@ -155,7 +155,7 @@ static const iocshArg * const dbLockShowLockedArgs[1] = {&dbLockShowLockedArg0};
 static const iocshFuncDef dbLockShowLockedFuncDef =
     {"dbLockShowLocked",1,dbLockShowLockedArgs};
 static void dbLockShowLockedCallFunc(const iocshArgBuf *args)
-{ dbLockShowLocked(args[0].sval);}
+{ dbLockShowLocked(args[0].ival);}
 
 /* scanppl */
 static const iocshArg scanpplArg0 = { "rate",iocshArgDouble};

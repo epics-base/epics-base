@@ -16,5 +16,5 @@ BPTS += bptTypeKdegF.dbd
 
 include $(TOP)/configure/RULES_BUILD
 
-$(BPTS): $(EPICS_BASE_HOST_BIN)/makeBpt$(HOSTEXE)
+$(BPTS): $(INSTALL_PROD)
 

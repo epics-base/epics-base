@@ -36,6 +36,7 @@
  * .05	03-13-92	jba	ANSI C changes
  * .05  04-10-92        jba     pact now used to test for asyn processing, not return value
  * .05  04-13-92        jba     Removed filename fp from report
+ * .06  09-20-93        jbk     disallowed load reg values < 2
  *      ...
  */
 
@@ -757,11 +758,8 @@ static long write_pd(pr)
 	mode = 0x0042; /* MODE G Waveform */
     }
 
-    /* for a delay of zero */
-    if(pr->dly==0)
-    {
-	load=1;
-    }
+    /* for very small delays, less then two is bad */
+    if(load < 2) load=2;
 
     if(pr->cedg==FALLING_EDGE)
 	mode |= 0x1000; /*count on falling edge*/
@@ -896,6 +894,8 @@ static long write_pt(pr)
 
     load = loadCount + .5;
     hold = holdCount + .5;
+
+    if(load < 2) load=2;
 
     /* compute mode */
     mode = 0x0062; /*MODE J: reload load or hold, count repeatedly, TC toggled*/

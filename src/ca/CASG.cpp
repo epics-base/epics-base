@@ -35,6 +35,7 @@
 #include "oldAccess.h"
 #include "autoPtrDestroy.h"
 #include "cac.h"
+#include "sgAutoPtr.h"
 
 epicsSingleton < tsFreeList < struct CASG, 128 > > CASG::pFreeList;
 
@@ -199,135 +200,46 @@ bool CASG::ioComplete ()
     return isCompleted;
 }
 
-int CASG::put ( chid pChan, unsigned type, arrayElementCount count, const void *pValue )
+void CASG::put ( chid pChan, unsigned type, arrayElementCount count, const void * pValue )
 {
-    syncGroupWriteNotify * pNotify = 0;
-    try {
-        {
-            epicsGuard < casgMutex > locker ( this->mutex );
-            pNotify = syncGroupWriteNotify::factory ( 
-                this->freeListWriteOP, *this, pChan );
-            if ( pNotify ) {
-                this->ioPendingList.add ( *pNotify );
-            }
-            else {
-                return ECA_ALLOCMEM;
-            }
+    sgAutoPtr < syncGroupWriteNotify > pNotify ( *this );
+    {
+        epicsGuard < casgMutex > locker ( this->mutex );
+        pNotify = syncGroupWriteNotify::factory ( 
+            this->freeListWriteOP, *this, pChan );
+        if ( pNotify.get () ) {
+            this->ioPendingList.add ( *pNotify );
         }
-        pNotify->begin ( type, count, pValue );
-        return ECA_NORMAL;
+        else {
+            return;
+        }
     }
-    catch ( cacChannel::badString & )
-    {
-        destroyPendingIO ( pNotify );
-        return ECA_BADSTR;
-    }
-    catch ( cacChannel::badType & )
-    {
-        destroyPendingIO ( pNotify );
-        return ECA_BADTYPE;
-    }
-    catch ( cacChannel::outOfBounds & )
-    {
-        destroyPendingIO ( pNotify );
-        return ECA_BADCOUNT;
-    }
-    catch ( cacChannel::noWriteAccess & )
-    {
-        destroyPendingIO ( pNotify );
-        return ECA_NOWTACCESS;
-    }
-    catch ( cacChannel::notConnected & )
-    {
-        destroyPendingIO ( pNotify );
-        return ECA_DISCONN;
-    }
-    catch ( cacChannel::unsupportedByService & )
-    {
-        destroyPendingIO ( pNotify );
-        return ECA_NOTINSERVICE;
-    }
-    catch ( cacChannel::requestTimedOut & )
-    {
-        destroyPendingIO ( pNotify );
-        return ECA_TIMEOUT;
-    }
-    catch ( std::bad_alloc & )
-    {
-        destroyPendingIO ( pNotify );
-        return ECA_ALLOCMEM;
-    }
-    catch ( ... )
-    {
-        destroyPendingIO ( pNotify );
-        return ECA_INTERNAL;
-    }
+    pNotify->begin ( type, count, pValue );
+    pNotify.release ();
 }
 
-int CASG::get ( chid pChan, unsigned type, arrayElementCount count, void *pValue )
+void CASG::get ( chid pChan, unsigned type, arrayElementCount count, void *pValue )
 {
-    syncGroupReadNotify * pNotify = 0;
-    try {
-        {
-            epicsGuard < casgMutex > locker ( this->mutex );
-            pNotify = syncGroupReadNotify::factory ( 
-                this->freeListReadOP, *this, pChan, pValue );
-            if ( pNotify ) {
-                this->ioPendingList.add ( *pNotify );
-            }
-            else {
-                return ECA_ALLOCMEM;
-            }
+    sgAutoPtr < syncGroupReadNotify > pNotify ( *this );
+    {
+        epicsGuard < casgMutex > locker ( this->mutex );
+        pNotify = syncGroupReadNotify::factory ( 
+            this->freeListReadOP, *this, pChan, pValue );
+        if ( pNotify.get () ) {
+            this->ioPendingList.add ( *pNotify );
         }
-        pNotify->begin ( type, count );
-        return ECA_NORMAL;
+        else {
+            return;
+        }
     }
-    catch ( cacChannel::badString & )
-    {
-        destroyPendingIO ( pNotify );
-        return ECA_BADSTR;
-    }
-    catch ( cacChannel::badType & )
-    {
-        destroyPendingIO ( pNotify );
-        return ECA_BADTYPE;
-    }
-    catch ( cacChannel::outOfBounds & )
-    {
-        destroyPendingIO ( pNotify );
-        return ECA_BADCOUNT;
-    }
-    catch ( cacChannel::noReadAccess & )
-    {
-        destroyPendingIO ( pNotify );
-        return ECA_NORDACCESS;
-    }
-    catch ( cacChannel::notConnected & )
-    {
-        destroyPendingIO ( pNotify );
-        return ECA_DISCONN;
-    }
-    catch ( cacChannel::unsupportedByService & )
-    {
-        destroyPendingIO ( pNotify );
-        return ECA_NOTINSERVICE;
-    }
-    catch ( std::bad_alloc & )
-    {
-        destroyPendingIO ( pNotify );
-        return ECA_ALLOCMEM;
-    }
-    catch ( ... )
-    {
-        destroyPendingIO ( pNotify );
-        return ECA_INTERNAL;
-    }
+    pNotify->begin ( type, count );
+    pNotify.release ();
 }
 
 void CASG::destroyPendingIO ( syncGroupNotify * pNotify )
 {
-    epicsGuard < casgMutex > locker ( this->mutex );
     if ( pNotify ) {
+        epicsGuard < casgMutex > locker ( this->mutex );
         this->ioPendingList.remove ( *pNotify );
         pNotify->destroy ( *this );
     }

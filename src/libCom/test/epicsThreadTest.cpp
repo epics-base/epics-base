@@ -70,7 +70,8 @@ static double threadSleepMeasureDelayError( const double & delay )
 static void threadSleepTest()
 {
     double errorSum = 0.0;
-    for ( int i = 0u; i < 20; i++ ) {
+    int i;
+    for ( i = 0u; i < 20; i++ ) {
         double delay = ldexp ( 1.0 , -i );
         errorSum += threadSleepMeasureDelayError ( delay );
     }

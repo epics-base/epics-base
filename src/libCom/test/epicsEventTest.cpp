@@ -129,7 +129,8 @@ static void eventWaitTest()
 {
     double errorSum = 0.0;
     epicsEventId event = epicsEventMustCreate ( epicsEventEmpty );
-    for ( int i = 0u; i < 20; i++ ) {
+    int i;
+    for ( i = 0u; i < 20; i++ ) {
         double delay = ldexp ( 1.0 , -i );
         errorSum += eventWaitMeasureDelayError ( event, delay );
     }

@@ -183,7 +183,7 @@ void epicsShareAPI callbackRequestProcessCallback(CALLBACK *pcallback,
     callbackRequest(pcallback);
 }
 
-void notify(void *pPrivate)
+static void notify(void *pPrivate)
 {
     CALLBACK *pcallback = (CALLBACK *)pPrivate;
     callbackRequest(pcallback);

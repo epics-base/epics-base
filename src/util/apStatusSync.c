@@ -13,7 +13,7 @@
  *		else 
  *			1. place on the remove list
  *	if link - do
- *		if a relative link (starts with ../ or ./ )
+ *		if a relative link (doesn't start with / )
  *			should agree with the appl system area (relative)
  *		else if it doesn't terminate (no access)
  *			1. (report as link component failure)
@@ -136,11 +136,12 @@ procLinkEntries(path)
     /* skip any link path with "/templates/" in it */
     if ((strstr(resolved_path, "/templates/")) != NULL)
 	return;
-    /* skip any link path with "/vw/" in it */
-    if ((strstr(resolved_path, "/vw/")) != NULL)
+    /* skip any link path with "vw" in it */
+    if ((strstr(path, "vw")) != NULL) {
 	return;
+    }
     /* skip any link path with "/vxWorks" in it */
-    if ((strstr(resolved_path, "/vxWorks")) != NULL)
+    if ((strstr(path, "/vxWorks")) != NULL)
 	return;
 
 /* assume a relative link name doesn't begin with a '/' character */
@@ -239,15 +240,35 @@ PROCDIRENTRIES
 void
 procDirEntries(name, dir)
     char           *name;	/* entry name */
-    char           *dir;	/* current directory */
+    char           *dir;	
 {
     struct stat     stbuf;
+    char           *pbeg;	/* beg of file pathname */
+    char           *pend;	/* beg of filename */
+    char           *pendm1;	/* beg of filename */
+    int             len;
+    int             j;
+    char            buffer[MAXNAMLEN];
 
     if (lstat(name, &stbuf) == -1) {
 	fprintf(stdout, "procDirEntries: can't access %s\n", name);
 	return;
     }
-
+    pbeg = name;
+    len = strlen(name);
+    if (len + 7 > MAXNAMLEN) {
+	fprintf(stdout, "processFile: pathname  %s too long\n", name);
+	return ;
+    }
+    /* search for last slash '/' in pathname */
+    for (j = len, pend = pbeg + len; j > 0; j--, pend--) {
+	if (*pend == '/')
+	    break;
+    }
+    pend++;
+    pendm1 = pend;
+    pendm1--;
+    /* pend points to filename */
     if ((stbuf.st_mode & S_IFMT) == S_IFLNK) {
 	procLinkEntries(name);
 	return;
@@ -257,6 +278,13 @@ procDirEntries(name, dir)
 	return;
     }
     if ((stbuf.st_mode & S_IFMT) == S_IFDIR) {
+    /* if current directory is SCCS - ... */
+    if ((strstr(pendm1, "SCCS")) != NULL) {
+	fprintf(stdout, "FATAL ERROR - directory ./%s should be a link\n", name);
+	sprintf(buffer, "#/bin/rm -fr  ./%s\n", name);
+	if ((appendToScriptFile(buffer)) < 0)
+	    return;
+    }
 	dirwalk(name, procDirEntries);
     }
     return;

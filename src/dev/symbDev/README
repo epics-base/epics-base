@@ -17,27 +17,35 @@ The following files are in the release:
 README			This file
 
 Makefile		UAE Makefile
+Makefile.LibObjs	UAE list of objects
 Makefile.Vx		UAE vxWorks Makefile
 
-devAiSymb.c		Modified versions of standard EPICS
-devAoSymb.c		vxWorks global variable device support
+devAiSymb.c		Device support for various record types
+devAoSymb.c
+devBiSymb.c
+devBoSymb.c
 devLiSymb.c
 devLoSymb.c
+devMbbiSymb.c
+devMbbiSymbRaw.c
+devMbboSymb.c
+devMbboSymbRaw.c
 devSiSymb.c
 devSoSymb.c
+devWfSymb.c
 
 devSymbFind.c		New module containing parsing code
 			(includes conditionally compiled test routine)
 
 devSymbTest.c		Defines globals and a routine for test
 
-devSup.ascii		New INST_IO entries for the above six records
+symb.dbd		New INST_IO entries for the above record types
 
+symb.db			Test database (works with devSymbTest.c)
 symb.sr			Test database (works with devSymbTest.c)
 symbStartup.vws		Test vxWorks startup script
 
 
-08-Jun-96, William Lupton (wlupton@keck.hawaii.edu), CVS tag: symb-1-0
+12-Mar-98, William Lupton (wlupton@keck.hawaii.edu), CVS tag: symb-3-0
 ----------------------------------------------------------------------
 
-first release

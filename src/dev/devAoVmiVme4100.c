@@ -30,8 +30,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
- * .02  mm-dd-yy        iii     Comment
+ * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  *      ...
  */
 
@@ -43,6 +42,7 @@
 #include	<alarm.h>
 #include	<dbAccess.h>
 #include	<dbDefs.h>
+#include        <recSup.h>
 #include	<devSup.h>
 #include	<link.h>
 #include	<special.h>
@@ -114,16 +114,10 @@ static long write_ao(pao)
 	status = ao_driver(pvmeio->card,pvmeio->signal,VMI4100,&value,&rbvalue);
 	if(status==0 || status==-2) pao->rbv = rbvalue;
 	if(status==-1) {
-		if(pao->nsev<VALID_ALARM ) {
-			pao->nsta = WRITE_ALARM;
-			pao->nsev = VALID_ALARM;
-		}
+                recGblSetSevr(pao,WRITE_ALARM,VALID_ALARM);
 	}else if(status==-2) {
 		status=0;
-		if(pao->nsev<VALID_ALARM ) {
-			pao->nsta = HW_LIMIT_ALARM;
-			pao->nsev = VALID_ALARM;
-		}
+                recGblSetSevr(pao,HW_LIMIT_ALARM,VALID_ALARM);
 	}
 	return(status);
 }

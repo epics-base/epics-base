@@ -30,8 +30,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
- * .02  mm-dd-yy        iii     Comment
+ * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  *      ...
  */
 
@@ -43,6 +42,7 @@
 #include	<alarm.h>
 #include	<dbAccess.h>
 #include	<dbDefs.h>
+#include        <recSup.h>
 #include	<devSup.h>
 #include	<link.h>
 #include	<module_types.h>
@@ -116,10 +116,7 @@ static long write_bo(pbo)
 	pvmeio = (struct vmeio *)&(pbo->out.value);
 	status = bo_driver(pvmeio->card,pbo->rval,pbo->mask,XY220);
 	if(status!=0) {
-		if(pbo->nsev<VALID_ALARM ) {
-			pbo->nsta = WRITE_ALARM;
-			pbo->nsev = VALID_ALARM;
-		}
+                recGblSetSevr(pbo,WRITE_ALARM,VALID_ALARM);
 	}
 	return(status);
 }

@@ -29,7 +29,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
+ * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
 */
 
 #include	<vxWorks.h>
@@ -39,6 +39,7 @@
 #include	<alarm.h>
 #include	<dbAccess.h>
 #include	<dbDefs.h>
+#include        <recSup.h>
 #include	<devSup.h>
 #include	<link.h>
 #include	<module_types.h>
@@ -77,18 +78,13 @@ static long write_longout(plongout)
 	status = dbPutLink(&plongout->out.value.db_link,plongout,DBR_LONG,
 	               &plongout->val,1L);
         if(status!=0) {
-                if(plongout->nsev<VALID_ALARM) {
-                        plongout->nsev = VALID_ALARM;
-                        plongout->nsta = LINK_ALARM;
-                }
+                recGblSetSevr(plongout,LINK_ALARM,VALID_ALARM);
         }
 	break;
     case (CA_LINK) :
 	break;
     default :
-	if(plongout->nsev<VALID_ALARM) {
-		plongout->nsev = VALID_ALARM;
-		plongout->nsta = SOFT_ALARM;
+        if(recGblSetSevr(plongout,SOFT_ALARM,VALID_ALARM)){
 		if(plongout->stat!=SOFT_ALARM) {
 			strcpy(message,plongout->name);
 			strcat(message,": devLoSoft (write_longout) Illegal OUT field");

@@ -30,8 +30,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
- * .02  mm-dd-yy        iii     Comment
+ * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  *      ...
  */
 
@@ -44,6 +43,7 @@
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include        <recSup.h>
 #include	<devSup.h>
 #include	<link.h>
 #include	<waveformRecord.h>
@@ -72,24 +72,23 @@ struct {
 struct callback {
 	void (*callback)();
 	int priority;
-	struct dbAddr dbAddr;
+	struct dbCommon *prec;
 	WDOG_ID wd_id;
-	void (*process)();
 };
 void callbackRequest();
 
 static void myCallback(pcallback)
     struct callback *pcallback;
 {
-    struct wfRecord *pwf=(struct wfRecord *)(pcallback->dbAddr.precord);
+    struct waveformRecord *pwf=(struct waveformRecord *)(pcallback->prec);
+    struct rset     *prset=(struct rset *)(pwf->rset);
 
     dbScanLock(pwf);
-    (pcallback->process)(&pcallback->dbAddr);
+    (*prset->process)(pwf->pdba);
     dbScanUnlock(pwf);
 }
-static long init_record(pwf,process)
+static long init_record(pwf)
     struct waveformRecord	*pwf;
-    void (*process)();
 {
     char message[100];
     struct callback *pcallback;
@@ -101,12 +100,8 @@ static long init_record(pwf,process)
 	pwf->dpvt = (caddr_t)pcallback;
 	pcallback->callback = myCallback;
 	pcallback->priority = priorityLow;
-	if(dbNameToAddr(pwf->name,&(pcallback->dbAddr))) {
-		logMsg("dbNameToAddr failed in init_record for devWfTestAsyn\n");
-		exit(1);
-	}
+        pcallback->prec = (struct dbCommon *)pwf;
 	pcallback->wd_id = wdCreate();
-	pcallback->process = process;
 	pwf->nord = 0;
 	break;
     default :
@@ -140,9 +135,7 @@ static long read_wf(pwf)
 		return(1);
 	}
     default :
-	if(pwf->nsev<VALID_ALARM) {
-		pwf->nsev = VALID_ALARM;
-		pwf->nsta = SOFT_ALARM;
+        if(recGblSetSevr(pwf,SOFT_ALARM,VALID_ALARM)){
 		if(pwf->stat!=SOFT_ALARM) {
 			strcpy(message,pwf->name);
 			strcat(message,": devWfTestAsyn (read_wf) Illegal INP field");

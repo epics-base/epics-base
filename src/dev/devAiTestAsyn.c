@@ -30,8 +30,6 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
- * .02  mm-dd-yy        iii     Comment
  *      ...
  */
 
@@ -73,9 +71,8 @@ struct {
 struct callback {
 	void (*callback)();
 	int priority;
-	struct dbAddr dbAddr;
+	struct dbCommon *prec;
 	WDOG_ID wd_id;
-	void (*process)();
 };
 
 void callbackRequest();
@@ -83,18 +80,18 @@ void callbackRequest();
 static void myCallback(pcallback)
     struct callback *pcallback;
 {
-    struct aiRecord *pai=(struct aiRecord *)(pcallback->dbAddr.precord);
+    struct aiRecord *pai=(struct aiRecord *)(pcallback->prec);
+    struct rset     *prset=(struct rset *)(pai->rset);
 
     dbScanLock(pai);
-    (pcallback->process)(&pcallback->dbAddr);
+    (*prset->process)(pai->pdba);
     dbScanUnlock(pai);
 }
     
     
 
-static long init_record(pai,process)
+static long init_record(pai)
     struct aiRecord	*pai;
-    void (*process)();
 {
     char message[100];
     struct callback *pcallback;
@@ -106,12 +103,8 @@ static long init_record(pai,process)
 	pai->dpvt = (caddr_t)pcallback;
 	pcallback->callback = myCallback;
 	pcallback->priority = priorityLow;
-	if(dbNameToAddr(pai->name,&(pcallback->dbAddr))) {
-		logMsg("dbNameToAddr failed in init_record for devAiTestAsyn\n");
-		exit(1);
-	}
+	pcallback->prec = (struct dbCommon *)pai;
 	pcallback->wd_id = wdCreate();
-	pcallback->process = process;
 	pai->val = pai->inp.value.value;
 	pai->udf = FALSE;
 	break;
@@ -146,9 +139,7 @@ static long read_ai(pai)
 		return(1);
 	}
     default :
-	if(pai->nsev<VALID_ALARM) {
-		pai->nsev = VALID_ALARM;
-		pai->nsta = SOFT_ALARM;
+        if(recGblSetSevr(pai,SOFT_ALARM,VALID_ALARM)){
 		if(pai->stat!=SOFT_ALARM) {
 			strcpy(message,pai->name);
 			strcat(message,": devAiTestAsyn (read_ai) Illegal INP field");

@@ -31,8 +31,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
- * .02  mm-dd-yy        iii     Comment
+ * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  *      ...
  */
 
@@ -44,6 +43,7 @@
 #include	<alarm.h>
 #include	<dbAccess.h>
 #include	<dbDefs.h>
+#include        <recSup.h>
 #include	<devSup.h>
 #include	<link.h>
 #include	<module_types.h>
@@ -108,15 +108,9 @@ static long write_mbbo(pmbbo)
 	if(status==0) {
 		status = bo_read(pvmeio->card,pmbbo->mask,&value,XY220);
 		if(status==0) pmbbo->rbv = value;
-		else if(pmbbo->nsev<VALID_ALARM ) {
-			pmbbo->nsta = READ_ALARM;
-			pmbbo->nsev = VALID_ALARM;
-		}
+                else recGblSetSevr(pmbbo,READ_ALARM,VALID_ALARM);
 	} else {
-		if(pmbbo->nsev<VALID_ALARM ) {
-			pmbbo->nsta = WRITE_ALARM;
-			pmbbo->nsev = VALID_ALARM;
-		}
+                recGblSetSevr(pmbbo,WRITE_ALARM,VALID_ALARM);
 	}
 	return(status);
 }

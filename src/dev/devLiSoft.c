@@ -29,7 +29,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
+ * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
 */
 
 
@@ -40,6 +40,7 @@
 #include	<alarm.h>
 #include	<dbAccess.h>
 #include	<dbDefs.h>
+#include        <recSup.h>
 #include	<devSup.h>
 #include	<link.h>
 #include	<module_types.h>
@@ -107,18 +108,13 @@ static long read_longin(plongin)
         status = dbGetLink(&(plongin->inp.value.db_link),plongin,DBR_LONG,
                &plongin->val,&options,&nRequest);
         if(status!=0) {
-                if(plongin->nsev<VALID_ALARM) {
-                        plongin->nsev = VALID_ALARM;
-                        plongin->nsta = LINK_ALARM;
-                }
+                recGblSetSevr(plongin,LINK_ALARM,VALID_ALARM);
         } else plongin->udf = FALSE;
         break;
     case (CA_LINK) :
         break;
     default :
-        if(plongin->nsev<VALID_ALARM) {
-                plongin->nsev = VALID_ALARM;
-                plongin->nsta = SOFT_ALARM;
+        if(recGblSetSevr(plongin,SOFT_ALARM,VALID_ALARM)){
                 if(plongin->stat!=SOFT_ALARM) {
                         strcpy(message,plongin->name);
                         strcat(message,": devLiSoft (read_longin) Illegal INP field");

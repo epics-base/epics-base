@@ -30,8 +30,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
- * .02  mm-dd-yy        iii     Comment
+ * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  *      ...
  */
 
@@ -43,6 +42,7 @@
 #include	<alarm.h>
 #include	<dbAccess.h>
 #include	<dbDefs.h>
+#include        <recSup.h>
 #include	<devSup.h>
 #include	<link.h>
 #include	<module_types.h>
@@ -111,18 +111,13 @@ static long read_bi(pbi)
         status = dbGetLink(&(pbi->inp.value.db_link),pbi,DBR_USHORT,
                 &pbi->val,&options,&nRequest);
         if(status!=0) {
-                if(pbi->nsev<VALID_ALARM) {
-                        pbi->nsev = VALID_ALARM;
-                        pbi->nsta = LINK_ALARM;
-                }
+                recGblSetSevr(pbi,LINK_ALARM,VALID_ALARM);
         } else pbi->udf = FALSE;
         break;
     case (CA_LINK) :
         break;
     default :
-        if(pbi->nsev<VALID_ALARM) {
-                pbi->nsev = VALID_ALARM;
-                pbi->nsta = SOFT_ALARM;
+        if(recGblSetSevr(pbi,SOFT_ALARM,VALID_ALARM)){
                 if(pbi->stat!=SOFT_ALARM) {
                         strcpy(message,pbi->name);
                         strcat(message,": devBiSoft (read_bi) Illegal INP field");

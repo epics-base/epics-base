@@ -30,8 +30,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
- * .02  mm-dd-yy        iii     Comment
+ * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  *      ...
  */
 
@@ -75,27 +74,26 @@ struct {
 struct callback {
 	void (*callback)();
 	int priority;
-	struct dbAddr dbAddr;
+	struct dbCommon *prec;
 	WDOG_ID wd_id;
-	void (*process)();
 };
 void callbackRequest();
 
 static void myCallback(pcallback)
     struct callback *pcallback;
 {
-    struct boRecord *pbo=(struct boRecord *)(pcallback->dbAddr.precord);
+    struct boRecord *pbo=(struct boRecord *)(pcallback->prec);
+    struct rset     *prset=(struct rset *)(pbo->rset);
 
     dbScanLock(pbo);
-    (pcallback->process)(&pcallback->dbAddr);
+    (*prset->process)(pbo->pdba);
     dbScanUnlock(pbo);
 }
     
     
 
-static long init_record(pbo,process)
+static long init_record(pbo)
     struct boRecord	*pbo;
-    void (*process)();
 {
     char message[100];
     struct callback *pcallback;
@@ -107,12 +105,8 @@ static long init_record(pbo,process)
 	pbo->dpvt = (caddr_t)pcallback;
 	pcallback->callback = myCallback;
 	pcallback->priority = priorityLow;
-	if(dbNameToAddr(pbo->name,&(pcallback->dbAddr))) {
-		logMsg("dbNameToAddr failed in init_record for devBoTestAsyn\n");
-		exit(1);
-	}
+	pcallback->prec = (struct dbCommon *)pbo;
 	pcallback->wd_id = wdCreate();
-	pcallback->process = process;
 	break;
     default :
 	strcpy(message,pbo->name);
@@ -145,9 +139,7 @@ static long write_bo(pbo)
 		return(1);
 	}
     default :
-	if(pbo->nsev<VALID_ALARM) {
-		pbo->nsev = VALID_ALARM;
-		pbo->nsta = SOFT_ALARM;
+        if(recGblSetSevr(pbo,SOFT_ALARM,VALID_ALARM)){
 		if(pbo->stat!=SOFT_ALARM) {
 			strcpy(message,pbo->name);
 			strcat(message,": devBoTestAsyn (read_bo) Illegal OUT field");

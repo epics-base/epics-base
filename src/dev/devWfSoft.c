@@ -30,8 +30,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
- * .02  mm-dd-yy        iii     Comment
+ * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  *      ...
  */
 
@@ -43,6 +42,7 @@
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include        <recSup.h>
 #include	<devSup.h>
 #include	<link.h>
 #include	<waveformRecord.h>
@@ -106,19 +106,14 @@ static long read_wf(pwf)
 	nRequest=pwf->nelm;
 	if(dbGetLink(&(pwf->inp.value.db_link),pwf,pwf->ftvl,
 		pwf->bptr,&options,&nRequest)!=0){
-                       if(pwf->nsev < VALID_ALARM) {
-                               pwf->nsev = VALID_ALARM;
-                               pwf->nsta = LINK_ALARM;
-                       }
+                       recGblSetSevr(pwf,LINK_ALARM,VALID_ALARM);
                 }
 	pwf->nord = nRequest;
 	break;
     case (CA_LINK) :
 	break;
     default :
-	if(pwf->nsev<VALID_ALARM) {
-		pwf->nsev = VALID_ALARM;
-		pwf->nsta = SOFT_ALARM;
+        if(recGblSetSevr(pwf,SOFT_ALARM,VALID_ALARM)){
 		if(pwf->stat!=SOFT_ALARM) {
 			strcpy(message,pwf->name);
 			strcat(message,": devWfSoft (read_wf) Illegal INP field");

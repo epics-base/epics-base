@@ -29,8 +29,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
- * .02  mm-dd-yy        iii     Comment
+ * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  *      ...
  */
 
@@ -72,9 +71,8 @@ struct {
 struct callback {
 	void (*callback)();
 	int priority;
-	struct dbAddr dbAddr;
+	struct dbCommon *prec;
 	WDOG_ID wd_id;
-	void (*process)();
 };
 
 void callbackRequest();
@@ -82,18 +80,18 @@ void callbackRequest();
 static void myCallback(pcallback)
     struct callback *pcallback;
 {
-    struct stringinRecord *pstringin=(struct stringinRecord *)(pcallback->dbAddr.precord);
+    struct stringinRecord *pstringin=(struct stringinRecord *)(pcallback->prec);
+    struct rset     *prset=(struct rset *)(pstringin->rset);
 
     dbScanLock(pstringin);
-    (pcallback->process)(&pcallback->dbAddr);
+    (*prset->process)(pstringin->pdba);
     dbScanUnlock(pstringin);
 }
     
     
 
-static long init_record(pstringin,process)
+static long init_record(pstringin)
     struct stringinRecord	*pstringin;
-    void (*process)();
 {
     char message[100];
     struct callback *pcallback;
@@ -105,12 +103,8 @@ static long init_record(pstringin,process)
 	pstringin->dpvt = (caddr_t)pcallback;
 	pcallback->callback = myCallback;
 	pcallback->priority = priorityLow;
-	if(dbNameToAddr(pstringin->name,&(pcallback->dbAddr))) {
-		logMsg("dbNameToAddr failed in init_record for devSiTestAsyn\n");
-		exit(1);
-	}
+        pcallback->prec = (struct dbCommon *)pstringin;
 	pcallback->wd_id = wdCreate();
-	pcallback->process = process;
 	if (pstringin->inp.value.value!=0.0) {
         	sprintf(pstringin->val,"%-14.7g",pstringin->inp.value.value);
 		pstringin->udf = FALSE;
@@ -147,9 +141,7 @@ static long read_stringin(pstringin)
 		return(1);
 	}
     default :
-	if(pstringin->nsev<VALID_ALARM) {
-		pstringin->nsev = VALID_ALARM;
-		pstringin->nsta = SOFT_ALARM;
+        if(recGblSetSevr(pstringin,SOFT_ALARM,VALID_ALARM)){
 		if(pstringin->stat!=SOFT_ALARM) {
 			strcpy(message,pstringin->name);
 			strcat(message,": devSiTestAsyn (read_stringin) Illegal INP field");

@@ -30,8 +30,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
- * .02  mm-dd-yy        iii     Comment
+ * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  *      ...
  */
 
@@ -43,6 +42,7 @@
 #include	<alarm.h>
 #include	<dbAccess.h>
 #include	<dbDefs.h>
+#include        <recSup.h>
 #include	<devSup.h>
 #include	<link.h>
 #include	<module_types.h>
@@ -84,18 +84,13 @@ static long write_mbbo(pmbbo)
         status = dbPutLink(&pmbbo->out.value.db_link,pmbbo,DBR_USHORT,
                 &pmbbo->val,1L);
         if(status!=0) {
-                if(pmbbo->nsev<VALID_ALARM) {
-                        pmbbo->nsev = VALID_ALARM;
-                        pmbbo->nsta = LINK_ALARM;
-                }
+                recGblSetSevr(pmbbo,LINK_ALARM,VALID_ALARM);
         }
         break;
     case (CA_LINK) :
         break;
     default :
-        if(pmbbo->nsev<VALID_ALARM) {
-                pmbbo->nsev = VALID_ALARM;
-                pmbbo->nsta = SOFT_ALARM;
+        if(recGblSetSevr(pmbbo,SOFT_ALARM,VALID_ALARM)){
                 if(pmbbo->stat!=SOFT_ALARM) {
                         strcpy(message,pmbbo->name);
                         strcat(message,": devMbboSoft (write_mbbo) Illegal OUT field");

@@ -30,8 +30,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
- * .02  mm-dd-yy        iii     Comment
+ * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  *      ...
  */
 
@@ -42,6 +41,7 @@
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include        <recSup.h>
 #include	<devSup.h>
 #include	<link.h>
 #include	<special.h>
@@ -81,18 +81,13 @@ static long write_ao(pao)
 	status = dbPutLink(&pao->out.value.db_link,pao,DBR_DOUBLE,
 		&pao->oval,1L);
         if(status!=0) {
-                if(pao->nsev<VALID_ALARM) {
-                        pao->nsev = VALID_ALARM;
-                        pao->nsta = LINK_ALARM;
-                }
+                recGblSetSevr(pao,LINK_ALARM,VALID_ALARM);
         }
 	break;
     case (CA_LINK) :
 	break;
     default :
-	if(pao->nsev<VALID_ALARM) {
-		pao->nsev = VALID_ALARM;
-		pao->nsta = SOFT_ALARM;
+        if(recGblSetSevr(pao,SOFT_ALARM,VALID_ALARM)){
 		if(pao->stat!=SOFT_ALARM) {
 			strcpy(message,pao->name);
 			strcat(message,": devAoSoft (write_ao) Illegal OUT field");

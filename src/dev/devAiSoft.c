@@ -30,8 +30,7 @@
  *
  * Modification Log:
  * -----------------
- * .01	mm-dd-yy	iii	Comment
- * .02	mm-dd-yy	iii	Comment
+ * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  * 	...
  */
 
@@ -45,6 +44,7 @@
 #include	<cvtTable.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include        <recSup.h>
 #include	<devSup.h>
 #include	<link.h>
 #include	<aiRecord.h>
@@ -114,18 +114,13 @@ static long read_ai(pai)
 	status = dbGetLink(&(pai->inp.value.db_link),pai,DBR_DOUBLE,
 		&(pai->val),&options,&nRequest);
 	if(status!=0) {
-		if(pai->nsev<VALID_ALARM) {
-			pai->nsev = VALID_ALARM;
-			pai->nsta = LINK_ALARM;
-		}
+                recGblSetSevr(pai,LINK_ALARM,VALID_ALARM);
 	} else pai->udf = FALSE;
 	break;
     case (CA_LINK) :
 	break;
     default :
-	if(pai->nsev<VALID_ALARM) {
-		pai->nsev = VALID_ALARM;
-		pai->nsta = SOFT_ALARM;
+        if(recGblSetSevr(pai,SOFT_ALARM,VALID_ALARM)){
 		if(pai->stat!=SOFT_ALARM) {
 			strcpy(message,pai->name);
 			strcat(message,": devAiSoft (read_ai) Illegal INP field");

@@ -30,8 +30,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
- * .02  mm-dd-yy        iii     Comment
+ * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  *      ...
  */
 
@@ -43,6 +42,7 @@
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include        <recSup.h>
 #include	<devSup.h>
 #include	<link.h>
 #include	<module_types.h>
@@ -92,11 +92,7 @@ static void myCallback(pcallback,no_read,pdata)
 	} else {
 		recGblRecSupError(S_db_badField,&pcallback->dbAddr,
 			"read_wf - illegal ftvl");
-		if(pwf->nsev<VALID_ALARM ) {
-                        pwf->nsta = READ_ALARM;
-                        pwf->nsev = VALID_ALARM;
-
-                }
+                recGblSetSevr(pwf,READ_ALARM,VALID_ALARM);
 	}
 	(pcallback->process)(&pcallback->dbAddr);
         dbScanUnlock(pwf);
@@ -159,11 +155,7 @@ struct waveformRecord   *pwf;
 
 	pwf->busy = TRUE;
 	if(wf_driver(XY566WF,pvmeio->card,myCallback,pwf->dpvt)<0) {
-		if(pwf->nsev<VALID_ALARM ) {
-                	pwf->nsta = READ_ALARM;
-                	pwf->nsev = VALID_ALARM;
-
-		}
+                recGblSetSevr(pwf,READ_ALARM,VALID_ALARM);
 		pwf->busy = FALSE;
 		return(0);
 	}

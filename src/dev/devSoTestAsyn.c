@@ -29,8 +29,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
- * .02  mm-dd-yy        iii     Comment
+ * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  *      ...
  */
 
@@ -73,27 +72,26 @@ struct {
 struct callback {
 	void (*callback)();
 	int priority;
-	struct dbAddr dbAddr;
+	struct dbCommon *prec;
 	WDOG_ID wd_id;
-	void (*process)();
 };
 void callbackRequest();
 
 static void myCallback(pcallback)
     struct callback *pcallback;
 {
-    struct stringoutRecord *pstringout=(struct stringoutRecord *)(pcallback->dbAddr.precord);
+    struct stringoutRecord *pstringout=(struct stringoutRecord *)(pcallback->prec);
+    struct rset     *prset=(struct rset *)(pstringout->rset);
 
     dbScanLock(pstringout);
-    (pcallback->process)(&pcallback->dbAddr);
+    (*prset->process)(pstringout->pdba);
     dbScanUnlock(pstringout);
 }
     
     
 
-static long init_record(pstringout,process)
+static long init_record(pstringout)
     struct stringoutRecord	*pstringout;
-    void (*process)();
 {
     char message[100];
     struct callback *pcallback;
@@ -105,12 +103,8 @@ static long init_record(pstringout,process)
 	pstringout->dpvt = (caddr_t)pcallback;
 	pcallback->callback = myCallback;
 	pcallback->priority = priorityLow;
-	if(dbNameToAddr(pstringout->name,&(pcallback->dbAddr))) {
-		logMsg("dbNameToAddr failed in init_record for devSoTestAsyn\n");
-		exit(1);
-	}
+        pcallback->prec = (struct dbCommon *)pstringout;
 	pcallback->wd_id = wdCreate();
-	pcallback->process = process;
 	break;
     default :
 	strcpy(message,pstringout->name);
@@ -143,9 +137,7 @@ static long write_stringout(pstringout)
 		return(1);
 	}
     default :
-	if(pstringout->nsev<VALID_ALARM) {
-		pstringout->nsev = VALID_ALARM;
-		pstringout->nsta = SOFT_ALARM;
+        if(recGblSetSevr(pstringout,SOFT_ALARM,VALID_ALARM)){
 		if(pstringout->stat!=SOFT_ALARM) {
 			strcpy(message,pstringout->name);
 			strcat(message,": devSoTestAsyn (read_stringout) Illegal OUT field");

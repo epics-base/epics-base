@@ -30,8 +30,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
- * .02  mm-dd-yy        iii     Comment
+ * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  *      ...
  */
 
@@ -73,9 +72,8 @@ struct {
 struct callback {
 	void (*callback)();
 	int priority;
-	struct dbAddr dbAddr;
+	struct dbCommon *prec;
 	WDOG_ID wd_id;
-	void (*process)();
 };
 
 void callbackRequest();
@@ -83,18 +81,18 @@ void callbackRequest();
 static void myCallback(pcallback)
     struct callback *pcallback;
 {
-    struct mbbiRecord *pmbbi=(struct mbbiRecord *)(pcallback->dbAddr.precord);
+    struct mbbiRecord *pmbbi=(struct mbbiRecord *)(pcallback->prec);
+    struct rset     *prset=(struct rset *)(pmbbi->rset);
 
     dbScanLock(pmbbi);
-    (pcallback->process)(&pcallback->dbAddr);
+    (*prset->process)(pmbbi->pdba);
     dbScanUnlock(pmbbi);
 }
     
     
 
-static long init_record(pmbbi,process)
+static long init_record(pmbbi)
     struct mbbiRecord	*pmbbi;
-    void (*process)();
 {
     char message[100];
     struct callback *pcallback;
@@ -106,12 +104,8 @@ static long init_record(pmbbi,process)
 	pmbbi->dpvt = (caddr_t)pcallback;
 	pcallback->callback = myCallback;
 	pcallback->priority = priorityLow;
-	if(dbNameToAddr(pmbbi->name,&(pcallback->dbAddr))) {
-		logMsg("dbNameToAddr failed in init_record for devMbbiTestAsyn\n");
-		exit(1);
-	}
+        pcallback->prec = (struct dbCommon *)pmbbi;
 	pcallback->wd_id = wdCreate();
-	pcallback->process = process;
 	pmbbi->val = pmbbi->inp.value.value;
 	pmbbi->udf = FALSE;
 	break;
@@ -146,9 +140,7 @@ static long read_mbbi(pmbbi)
 		return(1);
 	}
     default :
-	if(pmbbi->nsev<VALID_ALARM) {
-		pmbbi->nsev = VALID_ALARM;
-		pmbbi->nsta = SOFT_ALARM;
+        if(recGblSetSevr(pmbbi,SOFT_ALARM,VALID_ALARM)){
 		if(pmbbi->stat!=SOFT_ALARM) {
 			strcpy(message,pmbbi->name);
 			strcat(message,": devMbbiTestAsyn (read_mbbi) Illegal INP field");

@@ -30,8 +30,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
- * .02  mm-dd-yy        iii     Comment
+ * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  *      ...
  */
 
@@ -73,7 +72,7 @@ struct {
 struct callback {
 	void (*callback)();
 	int priority;
-	struct dbAddr dbAddr;
+	struct dbCommon *prec;
 	WDOG_ID wd_id;
 	void (*process)();
 };
@@ -83,18 +82,18 @@ void callbackRequest();
 static void myCallback(pcallback)
     struct callback *pcallback;
 {
-    struct biRecord *pbi=(struct biRecord *)(pcallback->dbAddr.precord);
+    struct biRecord *pbi=(struct biRecord *)(pcallback->prec);
+    struct rset     *prset=(struct rset *)(pbi->rset);
 
     dbScanLock(pbi);
-    (pcallback->process)(&pcallback->dbAddr);
+    (*prset->process)(pbi->pdba);
     dbScanUnlock(pbi);
 }
     
     
 
-static long init_record(pbi,process)
+static long init_record(pbi)
     struct biRecord	*pbi;
-    void (*process)();
 {
     char message[100];
     struct callback *pcallback;
@@ -106,12 +105,8 @@ static long init_record(pbi,process)
 	pbi->dpvt = (caddr_t)pcallback;
 	pcallback->callback = myCallback;
 	pcallback->priority = priorityLow;
-	if(dbNameToAddr(pbi->name,&(pcallback->dbAddr))) {
-		logMsg("dbNameToAddr failed in init_record for devBiTestAsyn\n");
-		exit(1);
-	}
+	pcallback->prec = (struct dbCommon *)pbi;
 	pcallback->wd_id = wdCreate();
-	pcallback->process = process;
 	pbi->val = pbi->inp.value.value;
 	pbi->udf = FALSE;
 	break;
@@ -146,9 +141,7 @@ static long read_bi(pbi)
 		return(1);
 	}
     default :
-	if(pbi->nsev<VALID_ALARM) {
-		pbi->nsev = VALID_ALARM;
-		pbi->nsta = SOFT_ALARM;
+        if(recGblSetSevr(pbi,SOFT_ALARM,VALID_ALARM)){
 		if(pbi->stat!=SOFT_ALARM) {
 			strcpy(message,pbi->name);
 			strcat(message,": devBiTestAsyn (read_bi) Illegal INP field");

@@ -30,6 +30,8 @@
  * Modification Log:
  * -----------------
  * .01  10-22-91	mrk	Initial Implementation
+ * .02  11-26-91	jba	Initialized clockDiv to 0
+ * .03  11-11-91        jba     Moved set of alarm stat and sevr to macros
  *      ...
  */
 
@@ -48,6 +50,7 @@
 #include	<dbRecType.h>
 #include	<dbDefs.h>
 #include	<dbCommon.h>
+#include        <recSup.h>
 #include	<devSup.h>
 #include	<link.h>
 #include	<special.h>
@@ -204,7 +207,8 @@ getData(preg,pdata)
     if(mz8310Debug) printf("mz8310:getData: preg=%x data=%x %d\n",preg,*pdata,*pdata);
 }
 
-static long init()
+static long init(after)
+    short after;
 {
     int card,chip,channel;
 /*volatile*/
@@ -214,6 +218,7 @@ static long init()
     unsigned short data;
     int dummy;
 
+    if(after)return(0);
     if(sysBusToLocalAdrs(VME_AM_USR_SHORT_IO, 0, &shortaddr)) {
 	logMsg("devMz8310: sysBusToLocalAdrs failed\n");
 	exit(1);
@@ -244,7 +249,7 @@ static long init()
 	    }
 	}
     }
-    return OK;
+    return(0);
 }
 
 static long report(fp,interest)
@@ -413,10 +418,7 @@ static long cmd_pc(pr)
 	    }
 	    /*set count source selection*/
 	    if(pr->clks<0 || pr->clks>15) {
-		if(pr->nsev<VALID_ALARM) {
-		    pr->nsta = WRITE_ALARM;
-		    pr->nsev = VALID_ALARM;
-		}
+                recGblSetSevr(pr,WRITE_ALARM,VALID_ALARM);
 		recGblRecordError(S_db_badField,pr,
 		    "devMz8310 : illegal clks value");
 		return(1);
@@ -435,15 +437,12 @@ static long cmd_pc(pr)
 	    pr->udf = FALSE;
 	    break;
 	default:
-	    if(pr->nsev<MAJOR_ALARM) {
-		pr->nsta = WRITE_ALARM;
-		pr->nsev = MAJOR_ALARM;
-	    }
+            recGblSetSevr(pr,WRITE_ALARM,MAJOR_ALARM);
 	    recGblRecordError(S_db_badField,pr,
 		"devMz8310 : illegal command");
 	    return(0);
     }
-    return(OK);
+    return(0);
 }  
 
 static long write_pd(pr)
@@ -457,7 +456,7 @@ static long write_pd(pr)
     int card,chip,channel,signal;
     unsigned short  load,hold,mode;
     double clockRate,holdCount,loadCount;
-    int clockDiv;
+    int clockDiv=0;
 	
     if(!pr->dpvt) return(S_dev_NoInit);
     pvmeio = (struct vmeio *)&(pr->out.value);
@@ -471,10 +470,7 @@ static long write_pd(pr)
     /* compute hold count and load count */
     clockRate = (pr->csrc==INTERNAL ? INT_CLOCK_RATE : pr->clkr);
     if(clockRate<=0 || clockRate>MAX_CLOCK_RATE) {
-	if(pr->nsev<VALID_ALARM) {
-		pr->nsta = WRITE_ALARM;
-		pr->nsev = VALID_ALARM;
-	}
+        recGblSetSevr(pr,WRITE_ALARM,VALID_ALARM);
 	recGblRecordError(S_db_badField,pr,
 		"devMz8310 : computed illegal clock rate");
 	return(1);
@@ -494,10 +490,7 @@ static long write_pd(pr)
         }
     }
     if(loadCount>65536.0 || holdCount>65535.0) {
-	if(pr->nsev<VALID_ALARM) {
-		pr->nsta = WRITE_ALARM;
-		pr->nsev = VALID_ALARM;
-	}
+        recGblSetSevr(pr,WRITE_ALARM,VALID_ALARM);
 	recGblRecordError(S_db_badField,pr,
 		"devMz8310 : computed illegal clock rate");
 	return(1);
@@ -515,10 +508,7 @@ static long write_pd(pr)
 	mode |= internalCountSource[clockDiv];
     } else {/*external clock. Determine source*/
 	if(pr->clks<0 || pr->clks>15) {
-	    if(pr->nsev<VALID_ALARM) {
-		pr->nsta = WRITE_ALARM;
-		pr->nsev = VALID_ALARM;
-	    }
+            recGblSetSevr(pr,WRITE_ALARM,VALID_ALARM);
 	    recGblRecordError(S_db_badField,pr,
 		"devMz8310 : illegal clks value");
 	    return(1);
@@ -546,7 +536,7 @@ static long write_pd(pr)
     putCmd(pcmd,(STEP | (channel+1)));
     putCmd(pcmd,(ARM | (1<<channel)));
     pr->udf = FALSE;
-    return(OK);
+    return(0);
 }
 
 static long write_pt(pr)
@@ -560,7 +550,7 @@ static long write_pt(pr)
     int card,chip,channel,signal;
     unsigned short  load,hold,mode;
     double clockRate,periodInClockUnits,holdCount,loadCount;
-    int clockDiv;
+    int clockDiv=0;
 	
     if(!pr->dpvt) return(S_dev_NoInit);
     pvmeio = (struct vmeio *)&(pr->out.value);
@@ -591,10 +581,7 @@ static long write_pt(pr)
     clockRate = (pr->csrc==INTERNAL ? INT_CLOCK_RATE : pr->clkr);
     periodInClockUnits = pr->per * clockRate;
     if(clockRate<=0 || clockRate>MAX_CLOCK_RATE || periodInClockUnits<=1) {
-	if(pr->nsev<VALID_ALARM) {
-		pr->nsta = WRITE_ALARM;
-		pr->nsev = VALID_ALARM;
-	}
+        recGblSetSevr(pr,WRITE_ALARM,VALID_ALARM);
 	recGblRecordError(S_db_badField,pr,
 		"devMz8310 : computed illegal clock rate");
 	return(1);
@@ -613,10 +600,7 @@ static long write_pt(pr)
         }
     }
     if(loadCount>65536.0 || holdCount>65535.0) {
-	if(pr->nsev<VALID_ALARM) {
-		pr->nsta = WRITE_ALARM;
-		pr->nsev = VALID_ALARM;
-	}
+        recGblSetSevr(pr,WRITE_ALARM,VALID_ALARM);
 	recGblRecordError(S_db_badField,pr,
 		"devMz8310 : computed illegal clock rate");
 	return(1);
@@ -640,10 +624,7 @@ static long write_pt(pr)
 	mode |= internalCountSource[clockDiv];
     } else {/*external clock. Determine source*/
 	if(pr->clks<0 || pr->clks>15) {
-	    if(pr->nsev<VALID_ALARM) {
-		pr->nsta = WRITE_ALARM;
-		pr->nsev = VALID_ALARM;
-	    }
+            recGblSetSevr(pr,WRITE_ALARM,VALID_ALARM);
 	    recGblRecordError(S_db_badField,pr,
 		"devMz8310 : illegal clks value");
 	    return(1);
@@ -669,5 +650,5 @@ static long write_pt(pr)
     /* Load and arm counter*/
     putCmd(pcmd,(LOADARM | (1<<channel)));
     pr->udf = FALSE;
-    return(OK);
+    return(0);
 }

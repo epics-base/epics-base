@@ -30,8 +30,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
- * .02  mm-dd-yy        iii     Comment
+ * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  *      ...
  */
 
@@ -43,6 +42,7 @@
 #include	<alarm.h>
 #include	<dbAccess.h>
 #include	<dbDefs.h>
+#include        <recSup.h>
 #include	<devSup.h>
 #include	<link.h>
 #include	<module_types.h>
@@ -104,10 +104,7 @@ static long read_bi(pbi)
 		pbi->rval = value;
 		return(0);
 	} else {
-		if(pbi->nsev<VALID_ALARM ) {
-			pbi->nsta = READ_ALARM;
-			pbi->nsev = VALID_ALARM;
-		}
+                recGblSetSevr(pbi,READ_ALARM,VALID_ALARM);
 		return(2);
 	}
 }

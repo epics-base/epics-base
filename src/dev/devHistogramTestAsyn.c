@@ -29,8 +29,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
- * .02  mm-dd-yy        iii     Comment
+ * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  *      ...
  */
 
@@ -72,9 +71,8 @@ struct {
 struct callback {
 	void (*callback)();
 	int priority;
-	struct dbAddr dbAddr;
+	struct dbCommon *prec;
 	WDOG_ID wd_id;
-	void (*process)();
 };
 
 void callbackRequest();
@@ -82,18 +80,17 @@ void callbackRequest();
 static void myCallback(pcallback)
     struct callback *pcallback;
 {
-    struct histogramRecord *phistogram=(struct histogramRecord *)(pcallback->dbAddr.precord);
+    struct histogramRecord *phistogram=(struct histogramRecord *)(pcallback->prec);
+    struct rset     *prset=(struct rset *)(phistogram->rset);
 
     dbScanLock(phistogram);
-    (pcallback->process)(&pcallback->dbAddr);
+    (*prset->process)(phistogram->pdba);
     dbScanUnlock(phistogram);
+    return;
 }
-    
-    
 
-static long init_record(phistogram,process)
+static long init_record(phistogram)
     struct histogramRecord	*phistogram;
-    void (*process)();
 {
     char message[100];
     struct callback *pcallback;
@@ -105,12 +102,8 @@ static long init_record(phistogram,process)
 	phistogram->dpvt = (caddr_t)pcallback;
 	pcallback->callback = myCallback;
 	pcallback->priority = priorityLow;
-	if(dbNameToAddr(phistogram->name,&(pcallback->dbAddr))) {
-		logMsg("dbNameToAddr failed in init_record for devHistogramTestAsyn\n");
-		exit(1);
-	}
+        pcallback->prec = (struct dbCommon *)phistogram;
 	pcallback->wd_id = wdCreate();
-	pcallback->process = process;
 	phistogram->sgnl = phistogram->svl.value.value;
 	break;
     default :
@@ -144,9 +137,7 @@ static long read_histogram(phistogram)
 		return(1);
 	}
     default :
-	if(phistogram->nsev<VALID_ALARM) {
-		phistogram->nsev = VALID_ALARM;
-		phistogram->nsta = SOFT_ALARM;
+        if(recGblSetSevr(phistogram,SOFT_ALARM,VALID_ALARM)){
 		if(phistogram->stat!=SOFT_ALARM) {
 			strcpy(message,phistogram->name);
 			strcat(message,": devHistogramTestAsyn (read_histogram) Illegal SVL field");

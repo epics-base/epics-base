@@ -29,8 +29,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
- * .02  mm-dd-yy        iii     Comment
+ * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  *      ...
  */
 
@@ -42,6 +41,7 @@
 #include	<alarm.h>
 #include	<dbAccess.h>
 #include	<dbDefs.h>
+#include        <recSup.h>
 #include	<devSup.h>
 #include	<link.h>
 #include	<module_types.h>
@@ -80,18 +80,13 @@ static long write_pt(ppt)
     case (DB_LINK) :
         status = dbPutLink(&ppt->out.value.db_link,ppt,DBR_SHORT,&ppt->val,1L);
         if(status!=0) {
-                if(ppt->nsev<VALID_ALARM) {
-                        ppt->nsev = VALID_ALARM;
-                        ppt->nsta = LINK_ALARM;
-                }
+                recGblSetSevr(ppt,LINK_ALARM,VALID_ALARM);
         } else ppt->udf=FALSE;
         break;
     case (CA_LINK) :
         break;
     default :
-        if(ppt->nsev<VALID_ALARM) {
-                ppt->nsev = VALID_ALARM;
-                ppt->nsta = SOFT_ALARM;
+        if(recGblSetSevr(ppt,WRITE_ALARM,VALID_ALARM)){
                 if(ppt->stat!=SOFT_ALARM) {
                         strcpy(message,ppt->name);
                         strcat(message,": devPtSoft (write_pt) Illegal OUT field");

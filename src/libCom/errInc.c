@@ -12,8 +12,6 @@
 #include "dbRecType.h"
 #include "dbRecords.h"
 #include "tsDefs.h"
-#include "arAccessLib.h"
-#include "sydDefs.h"
 #include "drvGpibErr.h"
 #include "drvBitBusErr.h"
 #include "calink.h"

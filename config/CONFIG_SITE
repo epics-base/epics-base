@@ -41,7 +41,7 @@ endif
 #	frc5ce
 #	hkbaja47
 #
-CROSS_COMPILER_TARGET_ARCHS=mv167
+CROSS_COMPILER_TARGET_ARCHS=mv167 ppc604
 
 
 #  If only a subset of the host architectures perform
@@ -57,7 +57,8 @@ TORNADO=YES
  
 #  VxWorks directory for TORNADO=YES
 #VX_DIR_YES=c:\\Tornado
-VX_DIR_YES = /usr/local/vw/tornado101
+#VX_DIR_YES = /usr/local/vw/tornado101
+VX_DIR_YES = /usr/local/vw/tornado20
 
 #  VxWorks directory for TORNADO=NO
 #VX_DIR_NO=$(VW)
@@ -99,6 +100,10 @@ CMPLR=STRICT
 #   NORMAL -  ANSI C++ optional warning flags
 #   Individual Makefiles may override
 CXXCMPLR=STRICT
+
+#  Build should install all include files first?
+#	must be either YES or NO
+MAKE_INC_TARGET_FIRST=NO
 
 #  Build shared libraries?
 #  (archive libraries will also be built)

@@ -215,7 +215,8 @@ int cast_server(void)
 				NULL,
 				NULL,
 				NULL);
-     	 		taskSuspend(0);
+			taskDelay(sysClkRateGet());
+			continue;
     		}
 
 		prsrv_cast_client->recv.cnt = status;
@@ -347,15 +348,8 @@ LOCAL void clean_addrq()
 			s = bucketRemoveItemUnsignedId (
 				pCaBucket,
 				&pciu->sid);
-			if(s != BUCKET_SUCCESS){
-				logMsg(
-					"%s Bad id at close",
-					(int)__FILE__,
-					NULL,
-					NULL,
-					NULL,
-					NULL,
-					NULL);
+			if(s){
+				errMessage (s, "Bad id at close");
 			}
 			ellAdd(&rsrv_free_addrq, &pciu->node);
        			FASTUNLOCK(&rsrv_free_addrq_lck);

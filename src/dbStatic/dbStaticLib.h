@@ -193,4 +193,5 @@ extern int dbStaticDebug;
 #define S_dbLib_badLink (M_dbLib|15)		/*Bad Link Field*/
 #define S_dbLib_nameLength (M_dbLib|17)		/*Record Name is too long*/
 #define S_dbLib_noRecSup (M_dbLib|19)		/*Record support not found*/
+#define S_dbLib_strLen (M_dbLib|21)		/*String is too long*/
 #endif /*INCdbStaticLibh*/

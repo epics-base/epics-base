@@ -165,9 +165,9 @@ static long checkDevChoice(DBENTRY *pdbentry, long link_type)
 	    status = S_dbLib_badField;
 	    goto clean_up;
 	}
-	plink->type = link_type;
 	if(plink->type==CONSTANT) free((void *)plink->value.constantStr);
 	memset((char *)plink,0,sizeof(struct link));
+	plink->type = link_type;
 	switch(plink->type) {
 	    case VME_IO: plink->value.vmeio.parm = pNullString; break;
 	    case CAMAC_IO: plink->value.camacio.parm = pNullString; break;
@@ -1470,6 +1470,7 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
 	    status = postfix(pstring,rpcl,&error_number);
 	    if(status) status = S_dbLib_badField;
 	}
+	if((short)strlen(pstring) >= pflddes->size) status = S_dbLib_strLen;
 	break;
     case DBF_CHAR :
     case DBF_SHORT :

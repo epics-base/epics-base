@@ -180,6 +180,7 @@ OPT_LDFLAGS =
 # Static build options
 STATIC_CFLAGS = $($(ANSI)_SFLAGS_$(STATIC_BUILD))
 STATIC_CXXCFLAGS = $($(CPLUSPLUS)_SFLAGS_$(STATIC_BUILD))
+STATIC_LDFLAGS = $($(ANSI)_SLDFLAGS_$(STATIC_BUILD))
 STATIC_LDLIBS = $($(ANSI)_SLIBS_$(STATIC_BUILD))
  
 #--------------------------------------------------

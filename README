@@ -27,7 +27,7 @@ Notes:
 
 1.2  To add a target architecture to EPICS:
 
-   cd epics/config
+   cd config
    cp CONFIG_ARCH.mv167 CONFIG_ARCH.YOUR_ARCH
    edit CONFIG_ARCH.YOUR_ARCH   - For compiler flags / etc.
 
@@ -48,7 +48,7 @@ Notes:
 
 1.4  To create an EPICS release:
 
-   edit base/include/version.h  - ONLY IF you need to change the EPICS
+   edit src/include/epicsVersion.h  - ONLY IF you need to change the EPICS
                                   version number.
 
    gnumake release          - Will create Tar file
@@ -66,7 +66,7 @@ Notes:
 NOTES:
    1. base/MakeRelease will create tar files in the directory ABOVE
       base.  These tar files are then meant to be untarred at that level.
-      This release will include the "epics/config" directory.
+      This release will include the "epics/startup" directory.
 
    2. EPICS binaries and shellscripts are installed into the bin/ARCH and
       lib/ARCH directories. 

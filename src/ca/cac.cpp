@@ -1177,7 +1177,7 @@ void cac::destroyAllIO ( nciu &chan )
     tsDLList < baseNMIU > eventQ;
     {
         epicsAutoMutex autoMutex ( this->defaultMutex );
-        while ( baseNMIU *pIO = eventQ.get () ) {
+        while ( baseNMIU *pIO = chan.cacPrivateListOfIO::eventq.get () ) {
             this->ioTable.remove ( *pIO );
             eventQ.add ( *pIO );
         }

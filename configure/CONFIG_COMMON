@@ -34,7 +34,7 @@ PERL=perl
 #-------------------------------------------------------
 # Directories
 
-INSTALL_LOCATION            = $(TOP)
+INSTALL_LOCATION            = $(TOP)/install
 TOOLS = $(CONFIG)/tools
 
 INSTALL_LOCATION_LIB        = $(INSTALL_LOCATION)/lib
@@ -63,8 +63,8 @@ INSTALL_LIBRARY = $(INSTALL)
 
 #-------------------------------------------------------
 # vpath directories
-GENERIC_SRC_DIRS = . .. $(SRC_DIRS)
-OS_SRC_DIRS += $(foreach dir, $(SRC_DIRS) .., \
+GENERIC_SRC_DIRS = .. $(SRC_DIRS)
+OS_SRC_DIRS += . $(foreach dir, $(SRC_DIRS) .., \
             $(dir)/os/$(OS_CLASS) $(dir)/os/posix $(dir)/os/default )
 ALL_SRC_DIRS = $(OS_SRC_DIRS) $(GENERIC_SRC_DIRS)
 
@@ -332,14 +332,14 @@ INSTALL_DBDNAME = $(DBDNAME:%= $(INSTALL_DBD)/%)
 #
 INSTALL_INC += $(foreach inc, $(INC), \
     $(firstword \
-        $(INSTALL_INC_hhh) \
-        $(INSTALL_INC_ddd) \
-        $(INSTALL_INC_iii) ) )
+        $(OS_INSTALL_INC) \
+        $(GENERIC_INSTALL_INC) \
+        $(GENERATED_INSTALL_INC) ) )
 
 #
 # Rule 1
 #
-INSTALL_INC_hhh = $(addprefix $(INSTALL_INCLUDE)/os/$(OS_CLASS)/, $(INSTALL_INC_ggg) )
+OS_INSTALL_INC = $(addprefix $(INSTALL_INCLUDE)/os/$(OS_CLASS)/, $(INSTALL_INC_ggg) )
 INSTALL_INC_ggg = $(foreach dir, $(OS_SRC_DIRS), $(INSTALL_INC_fff)  )
 INSTALL_INC_fff = $(subst $(dir)/, , $(INSTALL_INC_eee) )
 INSTALL_INC_eee = $(wildcard $(addsuffix /$(inc), $(dir)) )
@@ -347,7 +347,7 @@ INSTALL_INC_eee = $(wildcard $(addsuffix /$(inc), $(dir)) )
 #
 # Rule 2
 #
-INSTALL_INC_ddd = $(addprefix $(INSTALL_INCLUDE)/, $(INSTALL_INC_ccc) )
+GENERIC_INSTALL_INC = $(addprefix $(INSTALL_INCLUDE)/, $(INSTALL_INC_ccc) )
 INSTALL_INC_ccc = $(foreach dir, .. $(SRC_DIRS), $(INSTALL_INC_bbb)  )
 INSTALL_INC_bbb = $(subst $(dir)/, , $(INSTALL_INC_aaa) )
 INSTALL_INC_aaa = $(wildcard $(addsuffix /$(inc), $(dir)) )
@@ -355,6 +355,6 @@ INSTALL_INC_aaa = $(wildcard $(addsuffix /$(inc), $(dir)) )
 #
 # Rule 3
 #
-INSTALL_INC_iii = $(INSTALL_INCLUDE)/os/$(OS_CLASS)/$(inc)
+GENERATED_INSTALL_INC = $(INSTALL_INCLUDE)/os/$(OS_CLASS)/$(inc)
 
 endif

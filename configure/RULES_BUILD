@@ -37,9 +37,7 @@ vpath %.cpp $(USER_VPATH) $(ALL_SRC_DIRS)
 vpath %.C $(USER_VPATH) $(ALL_SRC_DIRS)
 vpath %.rc $(USER_VPATH) $(ALL_SRC_DIRS)
 vpath %.h $(USER_VPATH) $(ALL_SRC_DIRS)
-vpath %.skel.static $(USER_VPATH) $(ALL_SRC_DIRS)
-#	This prevents base/src/include/*.h from being installed. Why??
-#vpath %.h ../os/$(OS_CLASS)
+vpath %.skel.static $(USER_VPATH) $(GENERIC_SRC_DIRS)
 
 #---------------------------------------------------------------
 
@@ -583,12 +581,12 @@ $(addsuffix /%,$(MAN_DIRECTORY_TARGETS)) : ../%
 	@echo "Installing man file $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
-$(INSTALL_INCLUDE)/os/$(OS_CLASS)/%: %
-	@echo "Installing include file $@"
+$(INSTALL_INCLUDE)/os/$(OS_CLASS)/% : %
+	@echo "Installing os dependent include file $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
-$(INSTALL_INCLUDE)/%: %
-	@echo "Installing include file $@"
+$(INSTALL_INCLUDE)/% : %
+	@echo "Installing generic include file $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
 $(INSTALL_DOC)/%: %

@@ -66,6 +66,9 @@ PROD =
 TESTPROD = 
 LIBRARY_HOST =
 LIBRARY_IOC += $(LIBRARY)
+ifdef MUNCH
+LIBRARY_IOC += $(MUNCH_LIBRARY)
+endif
 endif
 
 
@@ -133,8 +136,8 @@ rebuild: clean install
 
 inc: $(DIRECTORY_TARGETS) $(INSTALL_INC) $(INSTALL_INCREC)
 
-build: $(OBJSNAME) \
-	$(LIBTARGETS) $(PRODNAME) $(TESTPRODNAME) $(TARGETS)
+build: $(OBJSNAME) $(LIBTARGETS) $(PRODNAME) $(TESTPRODNAME) \
+	$(TARGETS) $(MUNCHNAME)
 
 buildInstall : \
 	$(INSTALL_SCRIPTS) $(INSTALL_PROD) \
@@ -145,7 +148,7 @@ buildInstall : \
 	$(INSTALL_TEMPLATE) \
 	$(INSTALL_CONFIGS) \
 	$(INSTALL_DBS) $(INSTALL_BPTS) \
-	$(INSTALL_DBDNAME)
+	$(INSTALL_DBDNAME) $(INSTALL_MUNCHS)
 
 ifdef BIN_INSTALLS
 buildInstall : binInstalls
@@ -190,7 +193,7 @@ depends: $(LIBSRCS) $(SRCS) $(PROD_SRCS)
 	$(DEPENDS_RULE)
 
 # C++ munching for VxWorks
-%.out : %.o
+%.munch : %.o
 	@ $(RM) ctct.o ctdt.c
 	$(NM) $< | $(MUNCH) > ctdt.c
 	$(COMPILE.c) -traditional ctdt.c

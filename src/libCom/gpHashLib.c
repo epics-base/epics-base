@@ -54,6 +54,7 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <stdio.h>
 #ifdef vxWorks
 #include <vxWorks.h>
+#include <taskLib.h>
 #endif
 
 #include <dbDefs.h>
@@ -64,12 +65,14 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <ellLib.h>
 #include <epicsPrint.h>
 
-
-static int tableSize=0;
-static int nShift=0;
+typedef struct gphPvt {
+    int		tableSize;
+    int		nShift;
+    ELLLIST	**paplist; /*pointer to array of pointers to ELLLIST */
 #ifdef vxWorks
-static FAST_LOCK lock;
+    FAST_LOCK	lock;
 #endif
+}gphPvt;
 
 
 /*The hash algorithm is the algorithm described in			*/
@@ -112,7 +115,7 @@ static void *myCalloc(size_t nobj,size_t size)
     return(NULL);
 }
 
-static int hash( char *pname)
+static int hash( char *pname,int nShift)
 {
     unsigned char	h0=0;
     unsigned char	h1=0;
@@ -131,10 +134,12 @@ static int hash( char *pname)
     return((ind1<<nShift) ^ ind0);
 }
 
-void gphInitPvt(void **pgphPvt,int size)
+void gphInitPvt(void **ppvt,int size)
 {
-    ELLLIST	**pgph;
-    int		i;
+    gphPvt *pgphPvt;
+    int	   i;
+    int	   tableSize=0;
+    int	   nShift=0;
 
     for(i=0; i<NSIZES; i++) {
 	if(size==allowSize[i]) {
@@ -146,27 +151,32 @@ void gphInitPvt(void **pgphPvt,int size)
 	epicsPrintf("gphInitPvt: Illegal size\n");
 	return;
     }
-    pgph = myCalloc(tableSize, sizeof(ELLLIST *));
+    pgphPvt = myCalloc(1,sizeof(gphPvt));
+    pgphPvt->tableSize = tableSize;
+    pgphPvt->nShift = nShift;
+    pgphPvt->paplist = myCalloc(tableSize, sizeof(ELLLIST *));
 #ifdef vxWorks
-    FASTLOCKINIT(&lock);
+    FASTLOCKINIT(&pgphPvt->lock);
 #endif
-    *pgphPvt = (void *)pgph;
+    *ppvt = (void *)pgphPvt;
     return;
 }
 	
-GPHENTRY *gphFind(void *gphPvt,char *name,void *pvtid)
+GPHENTRY *gphFind(void *pvt,char *name,void *pvtid)
 {
     int		hashInd;
-    ELLLIST	**pgph = (ELLLIST **) gphPvt;
+    gphPvt	*pgphPvt = (gphPvt *)pvt;
+    ELLLIST	**paplist;
     ELLLIST	*gphlist;
     GPHENTRY	*pgphNode;
     
-    if(tableSize==0) return(NULL);
-    hashInd = hash(name);
+    if(pgphPvt==NULL) return(NULL);
+    paplist = pgphPvt->paplist;
+    hashInd = hash(name,pgphPvt->nShift);
 #ifdef vxWorks
-    FASTLOCK(&lock);
+    FASTLOCK(&pgphPvt->lock);
 #endif
-    if ((gphlist=pgph[hashInd]) == NULL) {
+    if ((gphlist=paplist[hashInd]) == NULL) {
 	pgphNode = NULL;
     } else {
 	pgphNode = (GPHENTRY *) ellFirst(gphlist);
@@ -178,34 +188,36 @@ GPHENTRY *gphFind(void *gphPvt,char *name,void *pvtid)
 	pgphNode = (GPHENTRY *) ellNext((ELLNODE*)pgphNode);
     }
 #ifdef vxWorks
-    FASTUNLOCK(&lock);
+    FASTUNLOCK(&pgphPvt->lock);
 #endif
     return(pgphNode);
 }
 
-GPHENTRY *gphAdd(void *gphPvt,char *name,void *pvtid)
+GPHENTRY *gphAdd(void *pvt,char *name,void *pvtid)
 {
     int		hashInd;
-    ELLLIST	**pgph = (ELLLIST **) gphPvt;
+    gphPvt	*pgphPvt = (gphPvt *)pvt;
+    ELLLIST	**paplist;
     ELLLIST	*plist;
     GPHENTRY	*pgphNode;
     
-    if(tableSize==0) return(NULL);
-    hashInd = hash(name);
+    if(pgphPvt==NULL) return(NULL);
+    paplist = pgphPvt->paplist;
+    hashInd = hash(name,pgphPvt->nShift);
 #ifdef vxWorks
-    FASTLOCK(&lock);
+    FASTLOCK(&pgphPvt->lock);
 #endif
-    if (pgph[hashInd] == NULL) {
-	pgph[hashInd] = myCalloc(1, sizeof(ELLLIST));
-	ellInit(pgph[hashInd]);
+    if(paplist[hashInd] == NULL) {
+	paplist[hashInd] = myCalloc(1, sizeof(ELLLIST));
+	ellInit(paplist[hashInd]);
     }
-    plist=pgph[hashInd];
+    plist=paplist[hashInd];
     pgphNode = (GPHENTRY *) ellFirst(plist);
     while(pgphNode) {
 	if((strcmp(name,(char *)pgphNode->name) == 0)
 	&&(pvtid == pgphNode->pvtid)) {
 #ifdef vxWorks
-	    FASTUNLOCK(&lock);
+	    FASTUNLOCK(&pgphPvt->lock);
 #endif
 	    return(NULL);
 	}
@@ -216,27 +228,29 @@ GPHENTRY *gphAdd(void *gphPvt,char *name,void *pvtid)
     pgphNode->pvtid = pvtid;
     ellAdd(plist, (ELLNODE*)pgphNode);
 #ifdef vxWorks
-    FASTUNLOCK(&lock);
+    FASTUNLOCK(&pgphPvt->lock);
 #endif
     return (pgphNode);
 }
 
-void gphDelete(void *gphPvt,char *name,void *pvtid)
+void gphDelete(void *pvt,char *name,void *pvtid)
 {
     int		hashInd;
-    ELLLIST	**pgph = (ELLLIST **) gphPvt;
+    gphPvt	*pgphPvt = (gphPvt *)pvt;
+    ELLLIST	**paplist;
     ELLLIST	*plist;
     GPHENTRY	*pgphNode;
     
-    if(tableSize==0) return;
-    hashInd = hash(name);
+    if(pgphPvt==NULL) return;
+    paplist = pgphPvt->paplist;
+    hashInd = hash(name,pgphPvt->nShift);
 #ifdef vxWorks
-    FASTLOCK(&lock);
+    FASTLOCK(&pgphPvt->lock);
 #endif
-    if (pgph[hashInd] == NULL) {
+    if(paplist[hashInd] == NULL) {
 	pgphNode = NULL;
     } else {
-	plist=pgph[hashInd];
+	plist=paplist[hashInd];
 	pgphNode = (GPHENTRY *) ellFirst(plist);
     }
     while(pgphNode) {
@@ -249,26 +263,26 @@ void gphDelete(void *gphPvt,char *name,void *pvtid)
 	pgphNode = (GPHENTRY *) ellNext((ELLNODE*)pgphNode);
     }
 #ifdef vxWorks
-    FASTUNLOCK(&lock);
+    FASTUNLOCK(&pgphPvt->lock);
 #endif
     return;
 }
 
-void gphFreeMem(void * gphPvt)
+void gphFreeMem(void *pvt)
 {
     int		hashInd;
-    ELLLIST	**pgph = (ELLLIST **) gphPvt;
+    gphPvt	*pgphPvt = (gphPvt *)pvt;
+    ELLLIST	**paplist;
     ELLLIST	*plist;
     GPHENTRY	*pgphNode;
     GPHENTRY	*next;;
     
-    if (pgph == NULL) return;
-#ifdef vxWorks
-    FASTLOCK(&lock);
-#endif
-    for (hashInd=0; hashInd<tableSize; hashInd++) {
-	if(pgph[hashInd] == NULL) continue;
-	plist=pgph[hashInd];
+    /*caller must ensure that no other thread is using *pvt */
+    if(pgphPvt==NULL) return;
+    paplist = pgphPvt->paplist;
+    for (hashInd=0; hashInd<pgphPvt->tableSize; hashInd++) {
+	if(paplist[hashInd] == NULL) continue;
+	plist=paplist[hashInd];
 	pgphNode = (GPHENTRY *) ellFirst(plist);
 	while(pgphNode) {
 	    next = (GPHENTRY *) ellNext((ELLNODE*)pgphNode);
@@ -276,31 +290,31 @@ void gphFreeMem(void * gphPvt)
 	    free((void *)pgphNode);
 	    pgphNode = next;
 	}
-	free((void *)pgph[hashInd]);
+	free((void *)paplist[hashInd]);
     }
-    free((void *)pgph);
-#ifdef vxWorks
-    FASTUNLOCK(&lock);
-#endif
+    free((void *)paplist);
+    free((void *)pgphPvt);
 }
 
-void gphDump(void * gphPvt)
+void gphDump(void *pvt)
 {
     int		hashInd;
-    ELLLIST	**pgph = (ELLLIST **) gphPvt;
+    gphPvt	*pgphPvt = (gphPvt *)pvt;
+    ELLLIST	**paplist;
     ELLLIST	*plist;
     GPHENTRY	*pgphNode;
     int		number;
     
-    if (pgph == NULL) return;
-    for (hashInd=0; hashInd<tableSize; hashInd++) {
-	if(pgph[hashInd] == NULL) continue;
-	plist=pgph[hashInd];
+    if(pgphPvt==NULL) return;
+    paplist = pgphPvt->paplist;
+    for (hashInd=0; hashInd<pgphPvt->tableSize; hashInd++) {
+	if(paplist[hashInd] == NULL) continue;
+	plist=paplist[hashInd];
 	pgphNode = (GPHENTRY *) ellFirst(plist);
 	printf("\n %3.3hd=%3.3d",hashInd,ellCount(plist));
 	number=0;
 	while(pgphNode) {
-	    printf(" %s %8x",pgphNode->name,pgphNode->pvtid);
+	    printf(" %s %p",pgphNode->name,pgphNode->pvtid);
 	    if(number++ ==2) {number=0;printf("\n        ");}
 	    pgphNode = (GPHENTRY *) ellNext((ELLNODE*)pgphNode);
 	}

@@ -131,7 +131,6 @@ LOCAL void eventCallback(struct event_handler_args eha)
     struct dbr_sts_double *pdata = eha.dbr;
     int			Ilocked=FALSE;
 
-    
     if(!caInitializing) {
 	FASTLOCK(&asLock);
 	Ilocked = TRUE;

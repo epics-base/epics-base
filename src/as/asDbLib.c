@@ -301,7 +301,10 @@ ASMEMBERPVT  asDbGetMemberPvt(void *paddress)
 
 static void astacCallback(ASCLIENTPVT clientPvt,asClientStatus status)
 {
-    printf("astac callback: status=%d",status);
+    char *recordname;
+
+    recordname = (char *)asGetClientPvt(clientPvt);
+    printf("astac callback %s: status=%d",recordname,status);
     printf(" get %s put %s\n",(asCheckGet(clientPvt) ? "Yes" : "No"),
 	(asCheckPut(clientPvt) ? "Yes" : "No"));
 }
@@ -329,6 +332,7 @@ int astac(char *pname,char *user,char *location)
 	errMessage(status,"asAddClient error");
 	return(1);
     } else {
+	asPutClientPvt(*pasclientpvt,(void *)precord->name);
 	asRegisterClientCallback(*pasclientpvt,astacCallback);
     }
     return(0);

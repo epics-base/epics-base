@@ -10,22 +10,17 @@ SRCS.c = \
 	../dbNotify.c ../dbStaticLib.c ../iocInit.c ../drvTS.c ../dbScan.c \
 	../dbEvent.c ../dbTest.c ../dbls.c ../db_access.c \
 	../db_test.c ../recGbl.c ../callback.c ../taskwd.c \
-	../dbCaLink.c ../dbCaDblink.c ../devLib.c ../initHooks.c
+	../dbCaLink.c ../dbCaDblink.c ../devLib.c ../initHooks.c ../cvtBpt.c
 
-OBJSdbLib = \
+LIBOBJS = \
 	dbAccess.o dbBkpt.o dbFastLinkConv.o dbLink.o dbNotify.o \
 	dbStaticLib.o iocInit.o drvTS.o dbScan.o dbEvent.o dbTest.o dbls.o \
 	db_access.o db_test.o recGbl.o callback.o taskwd.o dbCaLink.o \
-	dbCaDblink.o  devLib.o
+	dbCaDblink.o  devLib.o cvtBpt.o
 
+PROD = initHooks.o
 
-PROD = initHooks.o dbLib
+LIBNAME = dbLib
 
 include $(EPICS)/config/RULES.Vx
-
-dbLib: $(OBJSdbLib)
-	$(RM) $@
-	$(LINK.c) $@ $(OBJSdbLib) $(LDLIBS)
-
-
 

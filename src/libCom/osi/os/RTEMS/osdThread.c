@@ -93,7 +93,7 @@ epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadLowestPriorityL
     newPriority = priority + 1;
     if (newPriority <= 99) {
         *pPriorityJustAbove = newPriority;
-        return threadBoolStatusSuccess;
+        return epicsThreadBooleanStatusSuccess;
     }
     return threadBoolStatusFail;
 }
@@ -108,7 +108,7 @@ epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadHighestPriority
 
     if (newPriority <= 99) {
         *pPriorityJustBelow = newPriority;
-        return threadBoolStatusSuccess;
+        return epicsThreadBooleanStatusSuccess;
     }
     return threadBoolStatusFail;
 }

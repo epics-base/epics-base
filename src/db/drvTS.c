@@ -12,6 +12,9 @@ of this distribution.
 **********************************************************************/
 /*
  * $Log$
+ * Revision 1.28.2.4  2000/11/10 22:00:26  mrk
+ * make sure TSinit gets called
+ *
  * Revision 1.28.2.3  2000/10/12 15:47:13  anj
  * Fixed TSgetMasterTime() bug - round-trip adjustment was garbage
  * Replaced TSprintf() with printf() where logging inappropriate
@@ -171,6 +174,7 @@ of this distribution.
 #include <netinet/in.h>
 #include <net/if.h>
 
+#include "osiSock.h"
 #include "envDefs.h"
 #include "envLib.h"
 #include "dbDefs.h"
@@ -1215,7 +1219,7 @@ static int TSgetBroadcastSocket(int port, struct sockaddr_in* sin)
     sin->sin_port=htons(port);
     sin->sin_family=AF_INET;
     sin->sin_addr.s_addr=htonl(INADDR_ANY);
-    if( (soc=socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP)) < 0 )
+    if( (soc=socket(AF_INET,SOCK_DGRAM,0)) < 0 )
     { perror("socket create failed"); return -1; }
 
     setsockopt(soc,SOL_SOCKET,SO_BROADCAST,(char*)&on,sizeof(on));
@@ -1250,16 +1254,18 @@ static long TSgetBroadcastAddr(int soc, struct sockaddr* sin)
     i=0;
     do
     {
-	if(ifr[i].ifr_addr.sa_family==AF_INET)
+	if(ifr->ifr_addr.sa_family==AF_INET)
 	{
-	    if(ioctl(soc,SIOCGIFFLAGS,(int)&ifr[i])<0)
+	    if(ioctl(soc,SIOCGIFFLAGS,(int)ifr)<0)
 	    { perror("ioctl SIOCGIFFLAGS failed"); return -1; }
 
-	    if( (ifr[i].ifr_flags&IFF_UP) && 
-		!(ifr[i].ifr_flags&IFF_LOOPBACK) &&
-		(ifr[i].ifr_flags&IFF_BROADCAST))
-	    { save=&ifr[i]; }
+	    if( (ifr->ifr_flags&IFF_UP) && 
+		!(ifr->ifr_flags&IFF_LOOPBACK) &&
+		(ifr->ifr_flags&IFF_BROADCAST))
+	    { save=ifr; }
 	}
+        /*ifreq_size is defined in osiSock.h*/
+        ifr = (struct ifreq*)((char *)ifr + ifreq_size(ifr));
     } while( !save && ++i<tot );
 
     if(save)
@@ -1834,7 +1840,7 @@ static int TSgetSocket(int port, struct sockaddr_in* sin)
     sin->sin_port=htons(port);
     sin->sin_family=AF_INET;
     sin->sin_addr.s_addr=htonl(INADDR_ANY);
-    if( (soc=socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP)) < 0 )
+    if( (soc=socket(AF_INET,SOCK_DGRAM,0)) < 0 )
     { perror("socket create failed"); return -1; }
     Debug(5,"sizeof sin = %d\n", (int) sizeof(struct sockaddr_in));
     if( bind(soc,(struct sockaddr*)sin,sizeof(struct sockaddr_in)) < 0 )

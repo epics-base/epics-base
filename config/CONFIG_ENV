@@ -20,19 +20,42 @@
 #	from white space separated ip addresses in this
 #	environment variable. "Quote" if more than one addr.
 # EPICS_CA_AUTO_ADDR_LIST YES = augment beacon/search dest ip
-#	addr list from interfaces found; NO = only use
+#	addr list from network interfaces found; NO = only use
 #	EPICS_CA_ADDR_LIST to create this list.
 # EPICS_CA_CONN_TMO sec before sending echo request from client.
-# EPICS_CA_BEACON_PERIOD quiescent sec between server beacons.
 # EPICS_CA_REPEATER_PORT CA repeater port number.
 # EPICS_CA_SERVER_PORT CA server port number.
 
 EPICS_CA_ADDR_LIST=""
 EPICS_CA_AUTO_ADDR_LIST=YES
 EPICS_CA_CONN_TMO=30.0
-EPICS_CA_BEACON_PERIOD=15.0
 EPICS_CA_REPEATER_PORT=5065
 EPICS_CA_SERVER_PORT=5064
+
+#
+# These parameters are only used by the CA server library
+#
+# EPICS_CA_BEACON_PERIOD quiescent sec between server beacons.
+# EPICS_CAS_INTF_ADDR_LIST - list of IP addresses identifying
+#	a limited set of interfaces that the server should bind to.
+#	If this parameter is empty then connections are accepted
+#	from any interface. Beacons are sent only to the broadcast
+#	address of each interface in this list (or the destination 
+#	address of point to point interfaces) if EPICS_CA_AUTO_ADDR_LIST
+#	is YES. Type "ifconfig -a" in order to determine which 
+# 	interfaces are available.
+# EPICS_CAS_BEACON_ADDR_LIST - If this parameter is specified
+#	or if EPICS_CAS_INTF_ADDR_LIST isnt empty then this parameter
+#	is used instead of EPICS_CA_ADDR_LIST by the server library 
+# 	to augment the list of addresses to send beacons to.
+# EPICS_CAS_SERVER_PORT - If this parameter is specified then it
+#	and not EPICS_CA_SERVER_PORT is used to determine the server's
+# 	port number.
+#
+EPICS_CA_BEACON_PERIOD=15.0
+EPICS_CAS_INTF_ADDR_LIST=""
+EPICS_CAS_BEACON_ADDR_LIST=""
+EPICS_CAS_SERVER_PORT=
 
 
 # Log Server:

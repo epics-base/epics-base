@@ -6,4 +6,5 @@
 #
 # All RTEMS targets use the same Makefile fragment
 #
+RTEMS_TARGET_CPU=m68k
 include $(CONFIG)/os/CONFIG.Common.RTEMS

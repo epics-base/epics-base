@@ -27,10 +27,10 @@ VALID_BUILDS = Ioc
 # Pick up the RTEMS tool/path definitions from the RTEMS BSP directory.
 #
 ifneq "$(T_A)" ""
-RTEMS_MAKEFILE_PATH := $(dir $(RTEMS_MAKEFILE_PATH))/$(subst RTEMS-,,$(T_A))
--include $(RTEMS_MAKEFILE_PATH)/Makefile.inc
--include $(RTEMS_CUSTOM)
--include $(CONFIG.CC)
+RTEMS_BASE=/usr/local/RTEMS
+include $(RTEMS_BASE)/$(RTEMS_TARGET_CPU)/$(subst RTEMS-,,$(T_A))/Makefile.inc
+include $(RTEMS_CUSTOM)
+include $(CONFIG.CC)
 endif
 
 #
@@ -74,7 +74,7 @@ CPPSNCFLAGS += -x c
 
 #--------------------------------------------------
 # c++ exceptions,  YES or NO
-CXX_EXCEPTIONS = NO
+CXX_EXCEPTIONS = YES
 
 #--------------------------------------------------
 # osithead use default stack, YES or NO

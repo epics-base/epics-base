@@ -343,7 +343,7 @@ outBuf::flushCondition casDGIntfIO::osdSend (const char *pBufIn, bufSizeT size,
 bufSizeT casDGIntfIO::incommingBytesPresent () const
 {
 	int status;
-	osiSockIoctl_t nchars;
+	osiSockIoctl_t nchars = 0;
 
 	status = socket_ioctl (this->sock, FIONREAD, &nchars);
 	if (status<0) {

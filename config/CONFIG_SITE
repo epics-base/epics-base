@@ -95,3 +95,15 @@ UNIX_WARN=YES
 #	must be either YES or NO
 VX_WARN=YES
 
+# sch2edif compiler and flags
+SCH2EDIF = sch2edif
+SCH2EDIF_PATH =
+SCH2EDIF_SYSFLAGS = -n -ap -p.+..+$(SCH2EDIF_PATH)+$(EPICS_EXTENSIONS)/templates/capfast/sym+
+SCH2EDIF_FLAGS =
+ 
+# e2db and flags
+#    - again there is an assumption where edb.def is installed.
+E2DB = $(EPICS_EXTENSIONS)/bin/$(HOST_ARCH)/e2db
+E2DB_SYSFLAGS = -ate -d $(EPICS_EXTENSIONS)/templates/capfast/edb.def
+E2DB_FLAGS =
+

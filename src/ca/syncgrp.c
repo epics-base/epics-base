@@ -28,6 +28,7 @@
  *
  *      Modification Log:
  *      -----------------
+ * $Log$
  *
  *	NOTES:
  *	1) Need to fix if the OP is on a FD that

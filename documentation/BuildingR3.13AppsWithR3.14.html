@@ -89,16 +89,24 @@ Also remove
 from the st.cmd files in the iocBoot subdirectories.
 
 <h3>iocCore changes</h3>
-
-<p>iocCore has been renamed to iocCoreLibrary.o. <br>
-Change</p>
-<pre>INSTALLS=iocCore</pre>
-to
-<pre>LIBOBJS += $(EPICS_BASE_BIN)/iocCoreLibrary.o</pre>
-in your application src/Makefile.Vx files . <br>
-Also remove
-<pre>ld &lt; iocCore</pre>
-from the st.cmd files in the iocBoot subdirectories.
+<ul>
+  <li>src/Makefile.Vx
+    <p>iocCore has been renamed to iocCoreLibrary.o. Change</p>
+    <pre>INSTALLS=iocCore
+    </pre>
+    <p>to</p>
+    <pre>LIBOBJS += $(EPICS_BASE_BIN)/iocCoreLibrary.o
+    </pre>
+  </li>
+  <li>iocBoot/iocxxx/st.cmd
+    <p>Remove</p>
+    <pre>ld &lt; iocCore
+    </pre>
+    <p>Immediately after the dbLoadDatabase command add</p>
+    <pre>registerRecordDeviceDriver(pdbbase)
+    </pre>
+  </li>
+</ul>
 
 <h3>Library db changes</h3>
 

@@ -1,0 +1,13 @@
+# CONFIG_SITE.win32-x86-borland.Common
+#
+# $Id$
+#
+# Site specific definitions for win32-x86 borland compiler host
+# Only the local epics system manager should modify this file
+ 
+# jba overrides
+#CROSS_COMPILER_TARGET_ARCHS=vxWorks-486
+CROSS_COMPILER_TARGET_ARCHS=
+VX_DIR = D:/tornado
+#INSTALL_LOCATION = G:\\testBaseNew
+

@@ -23,7 +23,7 @@ epicsShareFunc INLINE void ringDelete(ringId id)
 
 epicsShareFunc INLINE int ringGet(ringId id, char *value,int nbytes)
 {
-    return(rngBufGet((RING_ID)id,value,nbytes);
+    return(rngBufGet((RING_ID)id,value,nbytes));
 }
 
 epicsShareFunc INLINE int ringPut(ringId id, char *value,int nbytes)

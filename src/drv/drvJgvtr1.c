@@ -110,7 +110,7 @@ static int jgvtr1_dump(
 /*
  * should be in a header file
  */
-static int jgvtr1_driver(
+int jgvtr1_driver(
 	unsigned short	card,
 	unsigned int	*pcbroutine,
 	unsigned int	*parg	/* number of values read */

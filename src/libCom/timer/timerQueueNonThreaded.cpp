@@ -31,58 +31,25 @@
 #define epicsExportSharedSymbols
 #include "epicsTimerPrivate.h"
 
-unsigned timerQueueNonThreaded::useCount;
-timerQueueNonThreaded * timerQueueNonThreaded::pQueue;
-epicsMutex timerQueueNonThreaded::mutex;
+epicsTimerQueueNonThreaded::~epicsTimerQueueNonThreaded () {}
 
-epicsNonThreadedTimerQueue::~epicsNonThreadedTimerQueue () {}
-
-epicsNonThreadedTimerQueue &epicsNonThreadedTimerQueue::allocate ()
+epicsTimerQueueNonThreaded &epicsTimerQueueNonThreaded::create ( epicsTimerQueueNotify &notify )
 {
-    return epicsNonThreadedTimerQueue::allocate ();
-}
-
-timerQueueNonThreaded &timerQueueNonThreaded::allocate ()
-{
-    epicsAutoMutex locker ( timerQueueNonThreaded::mutex );
-    if ( timerQueueNonThreaded::pQueue ) {
-        timerQueueNonThreaded::useCount++;
-        return *timerQueueNonThreaded::pQueue;
+    timerQueueNonThreaded *pQueue = new timerQueueNonThreaded ( notify );
+    if ( ! pQueue ) {
+        throwWithLocation ( timer::noMemory () );
     }
-    else {
-        timerQueueNonThreaded::pQueue = new timerQueueNonThreaded ();
-        if ( ! timerQueueNonThreaded::pQueue ) {
-            throw timer::noMemory ();
-        }
-        timerQueueNonThreaded::useCount = 1u;
-        return *timerQueueNonThreaded::pQueue;
-    }
+    return *pQueue;
 }
 
-timerQueueNonThreaded::timerQueueNonThreaded () :
-    queue ( *this )
-{
-}
+timerQueueNonThreaded::timerQueueNonThreaded ( epicsTimerQueueNotify &notifyIn ) :
+    queue ( notifyIn ) {}
 
-timerQueueNonThreaded::~timerQueueNonThreaded ()
-{
+timerQueueNonThreaded::~timerQueueNonThreaded () {}
 
-}
-
-void timerQueueNonThreaded::release ()
+epicsTimer & timerQueueNonThreaded::createTimer ( epicsTimerNotify & notifyIn )
 {
-    epicsAutoMutex locker ( timerQueueNonThreaded::mutex );
-    assert ( timerQueueNonThreaded::useCount >= 1u );
-    timerQueueNonThreaded::useCount--;
-    if ( timerQueueNonThreaded::useCount == 0u ) {
-        delete timerQueueNonThreaded::pQueue;
-        timerQueueNonThreaded::pQueue = 0;
-    }
-}
-
-epicsTimer & timerQueueNonThreaded::createTimer ( epicsTimerNotify & notify )
-{
-    timer *pTmr = new timer ( notify, this->queue );
+    timer *pTmr = new timer ( notifyIn, this->queue );
     if ( ! pTmr ) {
         throwWithLocation ( timer::noMemory () );
     }

@@ -33,9 +33,9 @@
 
 static timerQueueThreadedMgr queueMgr;
 
-epicsThreadedTimerQueue::~epicsThreadedTimerQueue () {}
+epicsTimerQueueThreaded::~epicsTimerQueueThreaded () {}
 
-epicsThreadedTimerQueue &epicsThreadedTimerQueue::allocate ( bool okToShare, int threadPriority )
+epicsTimerQueueThreaded &epicsTimerQueueThreaded::allocate ( bool okToShare, int threadPriority )
 {
     return queueMgr.allocate ( okToShare, threadPriority );
 }

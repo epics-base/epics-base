@@ -49,27 +49,32 @@ public:
     virtual void show ( unsigned int level ) const = 0;
 };
 
-struct epicsShareClass epicsThreadedTimerQueue {
+struct epicsShareClass epicsTimerQueueThreaded {
 public:
-    static epicsThreadedTimerQueue & allocate (
+    static epicsTimerQueueThreaded & allocate (
         bool okToShare, int threadPriority = epicsThreadPriorityMin + 10 );
     virtual void release () = 0; 
     virtual epicsTimer & createTimer ( epicsTimerNotify & ) = 0;
     virtual void show ( unsigned int level ) const = 0;
 protected:
-    virtual ~epicsThreadedTimerQueue () = 0;
+    virtual ~epicsTimerQueueThreaded () = 0;
 };
 
-struct epicsShareClass epicsNonThreadedTimerQueue {
+class epicsTimerQueueNotify {
 public:
-    static epicsNonThreadedTimerQueue & allocate ();
-    virtual void release () = 0;
+    // called when a new timer is inserted into the queue and the
+    // delay to the next expire has changed
+    virtual void reschedule () = 0;
+};
+
+struct epicsShareClass epicsTimerQueueNonThreaded {
+public:
+    static epicsTimerQueueNonThreaded & create ( epicsTimerQueueNotify & );
+    virtual ~epicsTimerQueueNonThreaded () = 0;
     virtual epicsTimer & createTimer ( epicsTimerNotify & ) = 0;
     virtual void process () = 0;
     virtual double getNextExpireDelay () const = 0;
     virtual void show ( unsigned int level ) const = 0;
-protected:
-    virtual ~epicsNonThreadedTimerQueue () = 0;
 };
 
 inline epicsTimerNotify::expireStatus::expireStatus ( restart_t restart ) : 
@@ -99,35 +104,38 @@ inline double epicsTimerNotify::expireStatus::expirationDelay () const
 extern "C" {
 #endif /* __cplusplus */
 
-typedef struct epicsNonThreadedTimerQueue * epicsNonThreadedTimerQueueId;
-typedef struct epicsThreadedTimerQueue * epicsThreadedTimerQueueId;
-typedef struct epicsTimer * epicsTimerId;
-typedef void ( *epicsTimerCallback ) ( void * );
-
-epicsShareFunc epicsNonThreadedTimerQueueId epicsShareAPI
-    epicsNonThreadedTimerQueueAttach ();
+/* threaded timer queue management */
+typedef struct epicsTimerQueueThreaded * epicsTimerQueueThreadedId;
+epicsShareFunc epicsTimerQueueThreadedId epicsShareAPI
+    epicsTimerQueueThreadedAllocate ( int okToShare, unsigned int threadPriority );
 epicsShareFunc void epicsShareAPI 
-    epicsNonThreadedTimerQueueRelease ( epicsNonThreadedTimerQueueId );
-epicsShareFunc void epicsShareAPI 
-    epicsNonThreadedTimerQueueProcess ( epicsNonThreadedTimerQueueId );
-epicsShareFunc double epicsShareAPI 
-    epicsNonThreadedTimerQueueGetDelayToNextExpire (
-        epicsNonThreadedTimerQueueId );
-epicsShareFunc epicsTimerId epicsShareAPI epicsNonThreadedTimerQueueCreateTimer (
-    epicsNonThreadedTimerQueueId queueid, epicsTimerCallback pCallback, void *pArg );
-epicsShareFunc void  epicsShareAPI epicsNonThreadedTimerQueueShow (
-    epicsNonThreadedTimerQueueId id, unsigned int level );
-
-epicsShareFunc epicsThreadedTimerQueueId epicsShareAPI
-    epicsThreadedTimerQueueAttach ( int okToShare, unsigned int threadPriority );
-epicsShareFunc void epicsShareAPI 
-    epicsThreadedTimerQueueRelease ( epicsThreadedTimerQueueId );
-epicsShareFunc epicsTimerId epicsShareAPI 
-    epicsThreadedTimerQueueCreateTimer ( epicsThreadedTimerQueueId queueid, 
-        epicsTimerCallback callback, void *arg );
+    epicsTimerQueueThreadedRelease ( epicsTimerQueueThreadedId );
 epicsShareFunc void  epicsShareAPI 
-    epicsThreadedTimerQueueShow ( epicsThreadedTimerQueueId id, unsigned int level );
+    epicsTimerQueueThreadedShow ( epicsTimerQueueThreadedId id, unsigned int level );
 
+/* non-threaded timer queue management */
+typedef struct epicsTimerQueueNonThreaded * epicsTimerQueueNonThreadedId;
+typedef void ( *epicsTimerQueueReschedualCallback ) ( void *pPrivate );
+epicsShareFunc epicsTimerQueueNonThreadedId epicsShareAPI
+    epicsTimerQueueNonThreadedCreate ( epicsTimerQueueReschedualCallback, void *pPrivate );
+epicsShareFunc void epicsShareAPI 
+    epicsTimerQueueNonThreadedDestroy ( epicsTimerQueueNonThreadedId );
+epicsShareFunc void epicsShareAPI 
+    epicsTimerQueueNonThreadedProcess ( epicsTimerQueueNonThreadedId );
+epicsShareFunc double epicsShareAPI 
+    epicsTimerQueueNonThreadedGetDelayToNextExpire (
+        epicsTimerQueueNonThreadedId );
+epicsShareFunc void  epicsShareAPI epicsTimerQueueNonThreadedShow (
+    epicsTimerQueueNonThreadedId id, unsigned int level );
+
+/* timer management */
+typedef struct epicsTimer * epicsTimerId;
+typedef void ( *epicsTimerCallback ) ( void *pPrivate );
+epicsShareFunc epicsTimerId epicsShareAPI 
+    epicsTimerQueueThreadedCreateTimer ( epicsTimerQueueThreadedId queueid, 
+        epicsTimerCallback callback, void *arg );
+epicsShareFunc epicsTimerId epicsShareAPI epicsTimerQueueNonThreadedCreateTimer (
+    epicsTimerQueueNonThreadedId queueid, epicsTimerCallback pCallback, void *pArg );
 epicsShareFunc void epicsShareAPI 
     epicsTimerDestroy ( epicsTimerId id );
 epicsShareFunc void epicsShareAPI 

@@ -67,14 +67,9 @@ private:
     friend class timerQueue;
 };
 
-class timerQueueNotify {
-public:
-    virtual void reschedule () = 0;
-};
-
 class timerQueue {
 public:
-    timerQueue ( timerQueueNotify &notify );
+    timerQueue ( epicsTimerQueueNotify &notify );
     ~timerQueue ();
     void process ();
     double delayToFirstExpire () const;
@@ -83,7 +78,7 @@ private:
     mutable epicsMutex mutex;
     epicsEvent cancelBlockingEvent;
     tsDLList < timer > timerList;
-    timerQueueNotify &notify;
+    epicsTimerQueueNotify &notify;
     timer *pExpireTmr;
     epicsThreadId processThread;
     bool cancelPending;
@@ -100,8 +95,8 @@ private:
     friend class timerQueueThreadedMgr;
 };
 
-class timerQueueThreaded : public epicsThreadedTimerQueue, 
-    public epicsThreadRunable, public timerQueueNotify,
+class timerQueueThreaded : public epicsTimerQueueThreaded, 
+    public epicsThreadRunable, public epicsTimerQueueNotify,
     public timerQueueThreadedMgrPrivate,
     public tsDLNode < timerQueueThreaded > {
 public:
@@ -139,10 +134,9 @@ private:
     tsDLList < timerQueueThreaded > sharedQueueList;
 };
 
-class timerQueueNonThreaded : public epicsNonThreadedTimerQueue, 
-    public timerQueueNotify {
+class timerQueueNonThreaded : public epicsTimerQueueNonThreaded {
 public:
-    timerQueueNonThreaded ();
+    timerQueueNonThreaded ( epicsTimerQueueNotify & );
     ~timerQueueNonThreaded ();
     epicsTimer & createTimer ( epicsTimerNotify & );
     void process ();
@@ -150,12 +144,8 @@ public:
     void reschedule ();
     void show ( unsigned int level ) const;
     void release ();
-    static timerQueueNonThreaded & allocate ();
 private:
     timerQueue queue;
-    static epicsMutex mutex;
-    static timerQueueNonThreaded *pQueue;
-    static unsigned useCount;
 };
 
 inline void * timer::operator new ( size_t size )

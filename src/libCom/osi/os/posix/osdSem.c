@@ -53,6 +53,8 @@ static void convertDoubleToWakeTime(double timeout,struct timespec *wakeTime)
     struct timespec wait;
     TS_STAMP stamp;
 
+    if(timeout<0.0) timeout = 0.0;
+    else if(timeout>3600.0) timeout = 3600.0;
     tsStampGetCurrent(&stamp);
     tsStampToTimespec(wakeTime, &stamp);
     wait.tv_sec = timeout;

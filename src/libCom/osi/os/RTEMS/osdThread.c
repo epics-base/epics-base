@@ -206,13 +206,13 @@ threadMustCreate (const char *name,
 }
 
 void
-threadSuspend (void)
+threadSuspendSelf (void)
 {
     rtems_status_code sc;
 
     sc = rtems_task_suspend (RTEMS_SELF);
     if(sc != RTEMS_SUCCESSFUL)
-        errlogPrintf("threadSuspend failed: %s\n", rtems_status_text (sc));
+        errlogPrintf("threadSuspendSelf failed: %s\n", rtems_status_text (sc));
 }
 
 void threadResume(threadId id)

@@ -101,12 +101,12 @@ threadId threadCreate(const char *name,
     return((threadId)tid);
 }
 
-void threadSuspend()
+void threadSuspendSelf()
 {
     STATUS status;
 
     status = taskSuspend(taskIdSelf());
-    if(status) errlogPrintf("threadSuspend failed\n");
+    if(status) errlogPrintf("threadSuspendSelf failed\n");
 }
 
 void threadResume(threadId id)
@@ -163,6 +163,19 @@ threadId threadGetIdSelf(void)
 {
     return((threadId)taskIdSelf());
 }
+
+const char *threadGetNameSelf (void)
+{
+    return taskName(taskIdSelf());
+}
+
+void threadGetName (threadId id, char *name, size_t size)
+{
+    int tid = (int)id;
+    strncpy(name,taskName(tid),size-1);
+    name[size-1] = '\0';
+}
+
 
 /* The following algorithm was thought of by Andrew Johnson APS/ASD .
  * The basic idea is to use a single vxWorks task variable.

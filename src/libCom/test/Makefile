@@ -26,5 +26,7 @@ OBJS_IOC += threadTest
 osiTimeTest_SRCS += osiTimeTest.cc
 PROD += osiTimeTest
 
+SYS_PROD_LIBS_solaris += pthread thread posix4
+
 include $(TOP)/configure/RULES
 

@@ -46,5 +46,5 @@ epicsShareFunc void epicsShareAPI cantProceed(const char *errorMessage)
     if(errorMessage) errlogPrintf("fatal error: %s\n",errorMessage);
     else errlogPrintf("fatal error\n");
     threadSleep(1.0);
-    threadSuspend();
+    threadSuspendSelf();
 }

@@ -452,7 +452,7 @@ LOCAL void msgbufFreeSend()
     pnextSend = (msgNode *)ellFirst(&pvtData.msgQueue);
     if(!pnextSend) {
 	printf("errlog: msgbufFreeSend logic error\n");
-	threadSuspend();
+	threadSuspendSelf();
     }
     ellDelete(&pvtData.msgQueue,&pnextSend->node);
     semMutexGive(pvtData.msgQueueLock);
@@ -465,7 +465,7 @@ LOCAL void *pvtCalloc(size_t count,size_t size)
     pmem = calloc(count,size);
     if(!pmem) {
 	printf("calloc failed in errlog\n");
-	threadSuspend();
+	threadSuspendSelf();
     }
     return(pmem);
 }

@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include <stddef.h>
+
 #include "shareLib.h"
 
 typedef void (*THREADFUNC)(void *parm);
@@ -34,7 +36,7 @@ typedef void *threadId;
 epicsShareFunc threadId epicsShareAPI threadCreate(const char *name,
     unsigned int priority, unsigned int stackSize,
     THREADFUNC funptr,void *parm);
-epicsShareFunc void epicsShareAPI threadSuspend(void);
+epicsShareFunc void epicsShareAPI threadSuspendSelf(void);
 epicsShareFunc void epicsShareAPI threadResume(threadId id);
 epicsShareFunc unsigned int epicsShareAPI threadGetPriority(threadId id);
 epicsShareFunc void epicsShareAPI threadSetPriority(
@@ -48,10 +50,11 @@ epicsShareFunc threadId epicsShareAPI threadGetIdSelf(void);
 epicsShareFunc const char * epicsShareAPI threadGetNameSelf(void);
 
 /* For threadGetName name is guaranteed to be null terminated */
-/* size is size of buffer to hold name (including terminator */
-/* Failure results in a null string stored in name */
-epicsShareFunc void epicsShareAPI threadGetName(
-    threadId id, char *name,size_t size);
+/* size is size of buffer to hold name (including terminator) */
+/* Failure results in an empty string stored in name */
+epicsShareFunc void epicsShareAPI threadGetName(threadId id, char *name, size_t size);
+
+epicsShareFunc void epicsShareAPI threadShow(void);
 
 typedef void * threadPrivateId;
 epicsShareFunc threadPrivateId epicsShareAPI threadPrivateCreate (void);
@@ -72,8 +75,8 @@ public:
 
     virtual void entryPoint () = 0;
 
-    void suspend ();
     void resume ();
+    void getName (char *name, size_t size) const;
     unsigned getPriority () const;
     void setPriority (unsigned);
     bool priorityIsEqual (const osiThread &otherThread) const;
@@ -83,8 +86,10 @@ public:
     bool operator == (const osiThread &rhs) const;
 
     /* these operate on the current thread */
+    static void suspendSelf ();
     static void sleep (double seconds);
     static osiThread & getSelf ();
+    static const char * getNameSelf ();
 private:
     threadId id;
 };
@@ -109,14 +114,14 @@ private:
 
 #include <epicsAssert.h>
 
-inline void osiThread::suspend ()
-{
-    threadSuspend ();
-}
-
 inline void osiThread::resume ()
 {
     threadResume (this->id);
+}
+
+inline void osiThread::getName (char *name, size_t size) const
+{
+    return threadGetName (this->id, name, size);
 }
 
 inline unsigned osiThread::getPriority () const
@@ -164,6 +169,11 @@ inline bool osiThread::operator == (const osiThread &rhs) const
     return (this->id == rhs.id);
 }
 
+inline void osiThread::suspendSelf ()
+{
+    threadSuspendSelf ();
+}
+
 inline void osiThread::sleep (double seconds)
 {
     threadSleep (seconds);
@@ -172,6 +182,11 @@ inline void osiThread::sleep (double seconds)
 inline osiThread & osiThread::getSelf ()
 {
     return * static_cast<osiThread *> ( threadGetIdSelf () );
+}
+
+inline const char *osiThread::getNameSelf ()
+{
+    return threadGetNameSelf ();
 }
 
 template <class T>

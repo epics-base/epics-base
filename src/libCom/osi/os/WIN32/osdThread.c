@@ -231,9 +231,9 @@ epicsShareFunc threadId epicsShareAPI threadCreate (const char *pName,
 }
 
 /*
- * threadSuspend ()
+ * threadSuspendSelf ()
  */
-epicsShareFunc void epicsShareAPI threadSuspend ()
+epicsShareFunc void epicsShareAPI threadSuspendSelf ()
 {
     win32ThreadParam *pParm = (win32ThreadParam *) TlsGetValue (tlsIndexWIN32);
     DWORD stat;
@@ -299,8 +299,8 @@ epicsShareFunc int epicsShareAPI threadIsEqual (threadId id1, threadId id2)
  * threadIsSuspended ()
  *
  * This implementation is deficient if the thread is not suspended by
- * threadSuspend () or resumed by threadResume(). This would happen
- * if a WIN32 call was used instead of threadSuspend(), or if WIN32
+ * threadSuspendSelf () or resumed by threadResume(). This would happen
+ * if a WIN32 call was used instead of threadSuspendSelf(), or if WIN32
  * suspended the thread when it receives an unhandled run time exception.
  * 
  */
@@ -340,6 +340,24 @@ epicsShareFunc void epicsShareAPI threadSleep (double seconds)
 epicsShareFunc threadId epicsShareAPI threadGetIdSelf (void) 
 { 
     return (threadId) TlsGetValue (tlsIndexWIN32);
+}
+
+/*
+ * threadGetNameSelf ()
+ */
+epicsShareFunc const char * epicsShareAPI threadGetNameSelf (void)
+{
+    /* not implemented (WFL) */
+    return (const char *) "";
+}
+
+/*
+ * threadGetName ()
+ */
+epicsShareFunc void epicsShareAPI threadGetName (threadId id, char *name, size_t size)
+{
+    /* not implemented (WFL) */
+    *name = '\0';
 }
 
 epicsShareFunc threadPrivateId epicsShareAPI threadPrivateCreate ()

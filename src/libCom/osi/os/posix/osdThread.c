@@ -20,6 +20,7 @@ of this distribution.
 #include <sched.h>
 #include <unistd.h>
 
+#include "ellLib.h"
 #include "osiThread.h"
 #include "osiSem.h"
 #include "cantProceed.h"
@@ -35,6 +36,7 @@ typedef struct commonAttr{
 
 
 typedef struct threadInfo {
+    ELLNODE            node;
     pthread_t          tid;
     pthread_attr_t     attr;
     struct sched_param schedParam;
@@ -43,11 +45,14 @@ typedef struct threadInfo {
     semBinaryId        suspendSem;
     int		       isSuspended;
     unsigned int       osiPriority;
+    char               *name;
 } threadInfo;
 
-static pthread_key_t getpthreadInfo;
-static commonAttr *pcommonAttr = 0;
 static pthread_once_t once_control = PTHREAD_ONCE_INIT;
+static pthread_key_t getpthreadInfo;
+static semMutexId pthreadMutex;
+static ELLLIST pthreadList;
+static commonAttr *pcommonAttr = 0;
 
 #define checkStatus(status,message) \
 if((status))  {\
@@ -59,57 +64,6 @@ if(status) { \
     cantProceed((method)); \
 }
 
-static void once(void)
-{
-    int status;
-
-    pthread_key_create(&getpthreadInfo,0);
-    pcommonAttr = callocMustSucceed(1,sizeof(commonAttr),"osdThread:once");
-    status = pthread_attr_init(&pcommonAttr->attr);
-    checkStatusQuit(status,"pthread_attr_init","threadCreate::once");
-    status = pthread_attr_setdetachstate(
-        &pcommonAttr->attr, PTHREAD_CREATE_DETACHED);
-    checkStatus(status,"pthread_attr_setdetachstate");
-    status = pthread_attr_setscope(&pcommonAttr->attr,PTHREAD_SCOPE_PROCESS);
-    if(errVerbose) checkStatus(status,"pthread_attr_setscope");
-#if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) 
-    status = pthread_attr_getschedpolicy(
-        &pcommonAttr->attr,&pcommonAttr->schedPolicy);
-    checkStatus(status,"pthread_attr_getschedpolicy");
-    status = pthread_attr_getschedparam(
-        &pcommonAttr->attr,&pcommonAttr->schedParam);
-    checkStatus(status,"pthread_attr_getschedparam");
-    pcommonAttr->maxPriority = sched_get_priority_max(pcommonAttr->schedPolicy);
-    if(pcommonAttr->maxPriority == -1) {
-        pcommonAttr->maxPriority = pcommonAttr->schedParam.sched_priority;
-        printf("sched_get_priority_max failed set to %d\n",
-            pcommonAttr->maxPriority);
-    }
-    pcommonAttr->minPriority = sched_get_priority_min(pcommonAttr->schedPolicy);
-    if(pcommonAttr->minPriority == -1) {
-        pcommonAttr->minPriority = pcommonAttr->schedParam.sched_priority;
-        printf("sched_get_priority_min failed set to %d\n",
-            pcommonAttr->maxPriority);
-    }
-#else
-    if(errVerbose) printf("task priorities are not implemented\n");
-#endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
-}
-
-static void * start_routine(void *arg)
-{
-    threadInfo *pthreadInfo = (threadInfo *)arg;
-    int status;
-    status = pthread_setspecific(getpthreadInfo,arg);
-    checkStatusQuit(status,"pthread_setspecific","start_routine");
-    (*pthreadInfo->createFunc)(pthreadInfo->createArg);
-    semBinaryDestroy(pthreadInfo->suspendSem);
-    status = pthread_attr_destroy(&pthreadInfo->attr);
-    checkStatusQuit(status,"pthread_attr_destroy","start_routine");
-    free(pthreadInfo);
-    return(0);
-}
-
 static int getOssPriorityValue(threadInfo *pthreadInfo)
 {
     double maxPriority,minPriority,slope,oss;
@@ -123,54 +77,25 @@ static int getOssPriorityValue(threadInfo *pthreadInfo)
     return((int)oss);
 }
 
-
-#if CPU_FAMILY == MC680X0
-#define ARCH_STACK_FACTOR 1
-#elif CPU_FAMILY == SPARC
-#define ARCH_STACK_FACTOR 2
-#else
-#define ARCH_STACK_FACTOR 2
-#endif
-/*
- * threadGetStackSize ()
- */
-unsigned int threadGetStackSize (threadStackSizeClass stackSizeClass)
-{
-    static const unsigned stackSizeTable[threadStackBig+1] =
-        {4000*ARCH_STACK_FACTOR, 6000*ARCH_STACK_FACTOR, 11000*ARCH_STACK_FACTOR};
-
-    if (stackSizeClass<threadStackSmall) {
-        errlogPrintf("threadGetStackSize illegal argument (too small)");
-        return stackSizeTable[threadStackBig];
-    }
-
-    if (stackSizeClass>threadStackBig) {
-        errlogPrintf("threadGetStackSize illegal argument (too large)");
-        return stackSizeTable[threadStackBig];
-    }
-
-    return stackSizeTable[stackSizeClass];
-}
-
-threadId threadCreate(const char *name,
+static threadInfo * init_threadInfo(const char *name,
     unsigned int priority, unsigned int stackSize,
     THREADFUNC funptr,void *parm)
 {
     threadInfo *pthreadInfo;
-    pthread_t *ptid;
     int status;
 
-    status = pthread_once(&once_control,once);
-    checkStatusQuit(status,"pthread_once","threadCreate");
-    pthreadInfo = callocMustSucceed(1,sizeof(threadInfo),"threadCreate");
+    pthreadInfo = callocMustSucceed(1,sizeof(threadInfo),"init_threadInfo");
     pthreadInfo->createFunc = funptr;
     pthreadInfo->createArg = parm;
     status = pthread_attr_init(&pthreadInfo->attr);
-    checkStatusQuit(status,"pthread_attr_init","threadCreate");
+    checkStatusQuit(status,"pthread_attr_init","init_threadInfo");
     status = pthread_attr_setdetachstate(
         &pthreadInfo->attr, PTHREAD_CREATE_DETACHED);
     if(errVerbose) checkStatus(status,"pthread_attr_setdetachstate");
 #if defined (_POSIX_THREAD_ATTR_STACKSIZE)
+#if defined (OSITHREAD_USE_DEFAULT_STACK)
+    stackSize = 0;
+#endif
     status = pthread_attr_setstacksize(
         &pthreadInfo->attr, (size_t)stackSize);
     if(errVerbose) checkStatus(status,"pthread_attr_setstacksize");
@@ -196,24 +121,139 @@ threadId threadCreate(const char *name,
     if(errVerbose) checkStatus(status,"pthread_attr_setinheritsched");
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
     pthreadInfo->suspendSem = semBinaryMustCreate(semFull);
+    pthreadInfo->name = mallocMustSucceed(strlen(name)+1,"threadCreate");
+    strcpy(pthreadInfo->name,name);
+    return((threadId)pthreadInfo);
+}
+
+static void once(void)
+{
+    threadInfo *pthreadInfo;
+    int status;
+
+    pthread_key_create(&getpthreadInfo,0);
+    pthreadMutex = semMutexMustCreate();
+    ellInit(&pthreadList);
+    pcommonAttr = callocMustSucceed(1,sizeof(commonAttr),"osdThread::once");
+    status = pthread_attr_init(&pcommonAttr->attr);
+    checkStatusQuit(status,"pthread_attr_init","osdThread::once");
+    status = pthread_attr_setdetachstate(
+        &pcommonAttr->attr, PTHREAD_CREATE_DETACHED);
+    checkStatus(status,"pthread_attr_setdetachstate");
+    status = pthread_attr_setscope(&pcommonAttr->attr,PTHREAD_SCOPE_PROCESS);
+    if(errVerbose) checkStatus(status,"pthread_attr_setscope");
+#if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) 
+    status = pthread_attr_getschedpolicy(
+        &pcommonAttr->attr,&pcommonAttr->schedPolicy);
+    checkStatus(status,"pthread_attr_getschedpolicy");
+    status = pthread_attr_getschedparam(
+        &pcommonAttr->attr,&pcommonAttr->schedParam);
+    checkStatus(status,"pthread_attr_getschedparam");
+    pcommonAttr->maxPriority = sched_get_priority_max(pcommonAttr->schedPolicy);
+    if(pcommonAttr->maxPriority == -1) {
+        pcommonAttr->maxPriority = pcommonAttr->schedParam.sched_priority;
+        errlogPrintf("sched_get_priority_max failed set to %d\n",
+            pcommonAttr->maxPriority);
+    }
+    pcommonAttr->minPriority = sched_get_priority_min(pcommonAttr->schedPolicy);
+    if(pcommonAttr->minPriority == -1) {
+        pcommonAttr->minPriority = pcommonAttr->schedParam.sched_priority;
+        errlogPrintf("sched_get_priority_min failed set to %d\n",
+            pcommonAttr->maxPriority);
+    }
+#else
+    if(errVerbose) errlogPrintf("task priorities are not implemented\n");
+#endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
+    pthreadInfo = init_threadInfo("_main_",0,0,0,0);
+    status = pthread_setspecific(getpthreadInfo,(void *)pthreadInfo);
+    checkStatusQuit(status,"pthread_setspecific","start_routine");
+    semMutexMustTake(pthreadMutex);
+    ellAdd(&pthreadList,(ELLNODE *)pthreadInfo);
+    semMutexGive(pthreadMutex);
+}
+
+static void * start_routine(void *arg)
+{
+    threadInfo *pthreadInfo = (threadInfo *)arg;
+    int status;
+    status = pthread_setspecific(getpthreadInfo,arg);
+    checkStatusQuit(status,"pthread_setspecific","start_routine");
+
+    semMutexMustTake(pthreadMutex);
+    ellAdd(&pthreadList,(ELLNODE *)pthreadInfo);
+    semMutexGive(pthreadMutex);
+
+    (*pthreadInfo->createFunc)(pthreadInfo->createArg);
+
+    semMutexMustTake(pthreadMutex);
+    ellDelete(&pthreadList,(ELLNODE *)pthreadInfo);
+    semMutexGive(pthreadMutex);
+
+    semBinaryDestroy(pthreadInfo->suspendSem);
+    status = pthread_attr_destroy(&pthreadInfo->attr);
+    checkStatusQuit(status,"pthread_attr_destroy","start_routine");
+    free(pthreadInfo->name);
+    free(pthreadInfo);
+    return(0);
+}
+
+#if CPU_FAMILY == MC680X0
+#define ARCH_STACK_FACTOR 1
+#elif CPU_FAMILY == SPARC
+#define ARCH_STACK_FACTOR 2
+#else
+#define ARCH_STACK_FACTOR 2
+#endif
+
+unsigned int threadGetStackSize (threadStackSizeClass stackSizeClass)
+{
+#if defined (OSITHREAD_USE_DEFAULT_STACK)
+    return 0;
+#else
+    static const unsigned stackSizeTable[threadStackBig+1] =
+        {4000*ARCH_STACK_FACTOR, 6000*ARCH_STACK_FACTOR, 11000*ARCH_STACK_FACTOR};
+    if (stackSizeClass<threadStackSmall) {
+        errlogPrintf("threadGetStackSize illegal argument (too small)");
+        return stackSizeTable[threadStackBig];
+    }
+
+    if (stackSizeClass>threadStackBig) {
+        errlogPrintf("threadGetStackSize illegal argument (too large)");
+        return stackSizeTable[threadStackBig];
+    }
+
+    return stackSizeTable[stackSizeClass];
+#endif /* OSITHREAD_USE_DEFAULT_STACK */
+}
+
+threadId threadCreate(const char *name,
+    unsigned int priority, unsigned int stackSize,
+    THREADFUNC funptr,void *parm)
+{
+    threadInfo *pthreadInfo;
+    int status;
+
+    status = pthread_once(&once_control,once);
+    checkStatusQuit(status,"pthread_once","threadCreate");
+    pthreadInfo = init_threadInfo(name,priority,stackSize,funptr,parm);
     status = pthread_create(&pthreadInfo->tid,
 	&pthreadInfo->attr,start_routine,pthreadInfo);
     checkStatusQuit(status,"pthread_create","threadCreate");
     return((threadId)pthreadInfo);
 }
 
-void threadSuspend()
+void threadSuspendSelf()
 {
     threadInfo *pthreadInfo;
     int status;
 
     status = pthread_once(&once_control,once);
-    checkStatusQuit(status,"pthread_once","threadSuspend");
+    checkStatusQuit(status,"pthread_once","threadSuspendSelf");
     pthreadInfo = (threadInfo *)pthread_getspecific(getpthreadInfo);
     if(!pthreadInfo) {
-        printf("threadSuspend pthread_getspecific returned 0\n");
+        errlogPrintf("threadSuspendSelf pthread_getspecific returned 0\n");
         while(1) {
-            printf("sleeping for 5 seconds\n");
+            errlogPrintf("sleeping for 5 seconds\n");
             threadSleep(5.0);
         }
     }
@@ -286,6 +326,44 @@ threadId threadGetIdSelf(void) {
     pthreadInfo = (threadInfo *)pthread_getspecific(getpthreadInfo);
     return((threadId)pthreadInfo);
 }
+
+const char *threadGetNameSelf()
+{
+    threadInfo *pthreadInfo;
+    int status;
+
+    status = pthread_once(&once_control,once);
+    checkStatusQuit(status,"pthread_once","threadGetNameSelf");
+    pthreadInfo = (threadInfo *)pthread_getspecific(getpthreadInfo);
+    return(pthreadInfo->name);
+}
+
+void threadGetName(threadId id, char *name, size_t size)
+{
+    threadInfo *pthreadInfo = (threadInfo *)id;
+    int status;
+
+    status = pthread_once(&once_control,once);
+    checkStatusQuit(status,"pthread_once","threadGetName");
+    strncpy (name, pthreadInfo->name, size - 1);
+    name[size-1] = '\0';
+}
+
+void threadShow (void)
+{
+    threadInfo *pthreadInfo;
+    int status;
+
+    status = pthread_once(&once_control,once);
+    errlogPrintf ("        NAME       ID      PRI    STATE     WAIT\n");
+    semMutexMustTake(pthreadMutex);
+    for(pthreadInfo=(threadInfo *)ellFirst(&pthreadList); pthreadInfo;
+	pthreadInfo=(threadInfo *)ellNext((ELLNODE *)pthreadInfo)) {
+	errlogPrintf("%12.12s %8x %8d\n", pthreadInfo->name,(threadId)
+		pthreadInfo,pthreadInfo->osiPriority);
+    }
+    semMutexGive(pthreadMutex);
+}
 
 threadPrivateId threadPrivateCreate(void)
 {
@@ -319,7 +397,6 @@ void threadPrivateSet (threadPrivateId id, void *value)
 void *threadPrivateGet(threadPrivateId id)
 {
     pthread_key_t *key = (pthread_key_t *)id;
-    int status;
     void *value;
 
     value = pthread_getspecific(*key);

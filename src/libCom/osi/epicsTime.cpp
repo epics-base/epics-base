@@ -378,13 +378,24 @@ static char *fracFormat (const char *pFormat, unsigned long *width)
     // point at char past format string
     const char *ptr = pFormat + strlen (pFormat);
 
+    // allow trailing ws
+    while (isspace (*(--ptr))); 
+
     // if (last) char not 'f', no match
-    if (*(--ptr) != 'f') return NULL;
+    if (*ptr != 'f') return NULL;
+
+    // look for %f
+    if ( *(ptr-1) == '%' ) {
+        *width = 9;
+        return (char *) (ptr-1);
+    }
 
     // skip digits, extracting <n> (must start with 0)
     while (isdigit (*(--ptr))); // NB, empty loop body
+    if (*ptr != '%') {
+        return NULL;
+    }
     ++ptr; // points to first digit, if any
-    if (*ptr != '0') return NULL;
     if (sscanf (ptr, "%lu", width) != 1) return NULL;
 
     // if (prev) char not '%', no match
@@ -397,8 +408,19 @@ static char *fracFormat (const char *pFormat, unsigned long *width)
 //
 // size_t epicsTime::strftime (char *pBuff, size_t bufLength, const char *pFormat)
 //
-size_t epicsTime::strftime (char *pBuff, size_t bufLength, const char *pFormat) const
+size_t epicsTime::strftime ( char *pBuff, size_t bufLength, const char *pFormat ) const
 {
+    if ( bufLength == 0u ) {
+        return 0u;
+    }
+
+    // dont report EPOCH date if its an uninitialized time stamp
+    if ( this->secPastEpoch == 0 && this->nSec == 0u ) {
+        strncpy ( pBuff, "<undefined>", bufLength );
+        pBuff[bufLength-1] = '\0';
+        return strlen ( pBuff );
+    }
+
     // copy format (needs to be writable)
     char format[256];
     strcpy (format, pFormat);

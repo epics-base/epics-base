@@ -11,20 +11,16 @@ actionArchPart = $(join $(word 2, $(subst $(DIVIDER), ,$@)), \
  $(addprefix $(DIVIDER),$(word 3, $(subst $(DIVIDER), ,$@))))
  
 dirActionArchTargets = $(foreach dir, $(DIRS), \
-                       $(foreach action, $(ACTIONS) install,\
+                       $(foreach action, $(ACTIONS),\
                        $(foreach arch, $(ARCHS), \
                        $(dir)$(DIVIDER)$(action)$(DIVIDER)$(arch))))
 dirArchTargets += $(foreach dir, $(DIRS), \
                   $(foreach arch, $(ARCHS),\
                   $(dir)$(DIVIDER)$(arch)))
 dirActionTargets += $(foreach dir, $(DIRS), \
-                    $(foreach action, $(ACTIONS) install,\
+                    $(foreach action, $(ACTIONS),\
                     $(dir)$(DIVIDER)$(action)))
-actionArchTargets = $(foreach action, $(ACTIONS) install,\
-                    $(foreach arch, $(ARCHS), \
-                    $(action)$(DIVIDER)$(arch)))
-
-installArchTargets = $(foreach action, install,\
+actionArchTargets = $(foreach action, $(ACTIONS),\
                     $(foreach arch, $(ARCHS), \
                     $(action)$(DIVIDER)$(arch)))
 
@@ -39,11 +35,9 @@ $(ARCHS) $(ACTIONS) $(actionArchTargets) ::%: \
 	$(foreach dir, $(DIRS), $(dir)$(DIVIDER)%)
  
 
-.PHONY :: $(DIRS) all install rebuild
+.PHONY :: $(DIRS) all rebuild
 .PHONY :: $(ARCHS) $(ACTIONS)
 .PHONY :: $(dirActionTargets) $(dirArchTargets)
 .PHONY :: $(dirActionArchTargets)
 .PHONY :: $(actionArchTargets)
-.PHONY :: $(installArchTargets)
-
 

@@ -372,6 +372,8 @@ epicsThreadSleep (double seconds)
     extern double rtemsTicksPerSecond_double;
     
     delay = seconds * rtemsTicksPerSecond_double;
+    if (delay == 0)
+        delay++;
     sc = rtems_task_wake_after (delay);
     if(sc != RTEMS_SUCCESSFUL)
         errlogPrintf("epicsThreadSleep: %s\n", rtems_status_text (sc));

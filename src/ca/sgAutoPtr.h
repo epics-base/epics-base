@@ -35,7 +35,7 @@ private:
 
 template < class T >
 inline sgAutoPtr < T > :: sgAutoPtr ( struct CASG & sgIn  ) : 
-    sg ( sgIn ), pNotify ( 0 )
+    pNotify ( 0 ), sg ( sgIn )
 {
 }
 

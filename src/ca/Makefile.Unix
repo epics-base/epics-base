@@ -1,0 +1,32 @@
+EPICS = ../../..
+include $(EPICS)/config/CONFIG
+
+T_ARCH = sun4
+
+USR_LDLIBS = -lm
+USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
+
+CC = acc -Xs
+
+SRCS = \
+	iocinf.c access.c test_event.c service.c flow_control.c \
+	repeater.c ca_printf.c conn.c syncgrp.c if_depen.c \
+	netdb_depen.c posix_depen.c caRepeater.c
+
+
+OBJS = \
+	$(OBDIR)/iocinf.o $(OBDIR)/access.o $(OBDIR)/test_event.o \
+	$(OBDIR)/service.o $(OBDIR)/flow_control.o \
+        $(OBDIR)/repeater.o $(OBDIR)/ca_printf.o $(OBDIR)/conn.o \
+	$(OBDIR)/syncgrp.o $(OBDIR)/if_depen.o $(OBDIR)/netdb_depen.o \
+	$(OBDIR)/posix_depen.o
+
+LIB = libca.a
+LIBNAME = $(OBDIR)/libca.a
+
+PROD = $(OBDIR)/caRepeater
+
+all :: $(LIBNAME) $(PROD)
+
+include $(EPICS)/config/RULES
+

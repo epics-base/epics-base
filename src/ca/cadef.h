@@ -264,7 +264,7 @@ struct pending_event{
   	unsigned short	mask;
 };
 
-void epicsShareAPI ca_test_event
+epicsShareFunc void epicsShareAPI ca_test_event
 	(
 #ifdef CAC_ANSI_FUNC_PROTO 
 	struct event_handler_args
@@ -310,14 +310,14 @@ struct	exception_handler_args{
 /*									*/
 /*	Must be called once before calling any of the other routines	*/
 /************************************************************************/
-int epicsShareAPI ca_task_initialize (void);
+epicsShareFunc int epicsShareAPI ca_task_initialize (void);
 
 /************************************************************************/
 /*	Remove CA facility from your task				*/
 /*									*/
 /*	Normally called automatically at task exit			*/
 /************************************************************************/
-int epicsShareAPI ca_task_exit (void);
+epicsShareFunc int epicsShareAPI ca_task_exit (void);
 
 /************************************************************************
  * anachronistic entry points                                           *
@@ -359,7 +359,7 @@ ca_search_and_connect(pChanName, pChanID, 0, 0)
  *			(fetched later by ca_puser(CHID))
  *			(passed as void * arg to (*pFunc)() above)
  */
-int epicsShareAPI ca_search_and_connect
+epicsShareFunc int epicsShareAPI ca_search_and_connect
 (
 	 const char *pChanName, 
 	 chid *pChanID,	
@@ -378,7 +378,7 @@ int epicsShareAPI ca_search_and_connect
  *			(fetched later by ca_puser(CHID))
  *			(passed as void * arg to (*pFunc)() above)
  */
-int epicsShareAPI ca_build_and_connect
+epicsShareFunc int epicsShareAPI ca_build_and_connect
 (
 	 const char *pChanName, 
 	 chtype, /* pass TYPENOTCONN */
@@ -395,7 +395,7 @@ int epicsShareAPI ca_build_and_connect
  * chan 	R	channel identifier	
  * pfunc	R	address of connection call-back function
  */
-int epicsShareAPI ca_change_connection_event
+epicsShareFunc int epicsShareAPI ca_change_connection_event
 (
 	 chid	chan,
 	 void	(*pfunc)(struct connection_handler_args)
@@ -407,7 +407,7 @@ int epicsShareAPI ca_change_connection_event
  * chan 	R	channel identifier	
  * pfunc	R	address of access rights call-back function
  */
-int epicsShareAPI ca_replace_access_rights_event(
+epicsShareFunc int epicsShareAPI ca_replace_access_rights_event(
 	 chid	chan,
 	 void 	(*pfunc)(struct access_rights_handler_args)
 );
@@ -421,7 +421,7 @@ int epicsShareAPI ca_replace_access_rights_event(
  * pArg		R	copy of this pointer passed to exception 
  *			call-back function
  */
-int epicsShareAPI ca_add_exception_event
+epicsShareFunc int epicsShareAPI ca_add_exception_event
 (
 	 void           (*pfunc) (struct exception_handler_args),
 	 const void	*pArg
@@ -433,7 +433,7 @@ int epicsShareAPI ca_add_exception_event
  *
  * chanId	R	channel ID
  */
-int epicsShareAPI ca_clear_channel
+epicsShareFunc int epicsShareAPI ca_clear_channel
 (
 	 chid	chanId
 );
@@ -481,7 +481,7 @@ ca_array_put(DBR_FLOAT, 1u, chan, (const dbr_float_t *) pValue)
  * chan 	R	channel identifier	
  * pValue       R       new channel value copied from this location
  */
-int epicsShareAPI ca_array_put
+epicsShareFunc int epicsShareAPI ca_array_put
 (
 	 chtype type,	
 	 unsigned long count,	
@@ -506,7 +506,7 @@ int epicsShareAPI ca_array_put
  * pFunc	R	pointer to call-back function
  * pArg		R	copy of this pointer passed to pFunc
  */
-int epicsShareAPI ca_array_put_callback
+epicsShareFunc int epicsShareAPI ca_array_put_callback
 (
 	 chtype type,	
 	 unsigned long count,	
@@ -560,7 +560,7 @@ ca_array_get(DBR_FLOAT, 1u, chan, (dbr_float_t *)(pValue))
  * chan 	R	channel identifier	
  * pValue	W	channel value copied to this location
  */
-int epicsShareAPI ca_array_get
+epicsShareFunc int epicsShareAPI ca_array_get
 (
 	 chtype type,	
 	 unsigned long count,	
@@ -619,7 +619,7 @@ ca_array_get_callback(type, 1u, chan, pFunc, pArg)
  * pFunc	R	pointer to call-back function
  * pArg		R	copy of this pointer passed to pFunc
  */
-int epicsShareAPI ca_array_get_callback
+epicsShareFunc int epicsShareAPI ca_array_get_callback
 (
 	 chtype type,	
 	 unsigned long count,	
@@ -679,7 +679,7 @@ ca_add_masked_array_event(TYPE,COUNT,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID, DBE
  * pEventID	W	event id written at specified address
  * mask		R	event mask - one of {DBE_VALUE, DBE_ALARM, DBE_LOG}
  */
-int epicsShareAPI ca_add_masked_array_event
+epicsShareFunc int epicsShareAPI ca_add_masked_array_event
 (
 	 chtype type,	
 	 unsigned long count,	
@@ -703,7 +703,7 @@ int epicsShareAPI ca_add_masked_array_event
  *
  * eventID	R	event id
  */
-int epicsShareAPI ca_clear_event
+epicsShareFunc int epicsShareAPI ca_clear_event
 (
 	 evid eventID
 );
@@ -769,7 +769,7 @@ int epicsShareAPI ca_clear_event
  *			have completed)
  *			F: wait for the entire delay to expire
  */
-int epicsShareAPI ca_pend
+epicsShareFunc int epicsShareAPI ca_pend
 (
 	 ca_real timeOut,
 	 int early
@@ -781,7 +781,7 @@ int epicsShareAPI ca_pend
  * returns TRUE when get requests (or search requests with null 
  * connection handler pointer) are outstanding
  */
-int epicsShareAPI ca_test_io (void);
+epicsShareFunc int epicsShareAPI ca_test_io (void);
 
 /************************************************************************/
 /*	Send out all outstanding messages in the send queue		*/
@@ -789,7 +789,7 @@ int epicsShareAPI ca_test_io (void);
 /*
  * ca_flush_io()
  */
-int epicsShareAPI ca_flush_io (void);
+epicsShareFunc int epicsShareAPI ca_flush_io (void);
 
 
 /*
@@ -798,7 +798,7 @@ int epicsShareAPI ca_flush_io (void);
  * errorCode	R	status returned from channel access function
  * pCtxStr	R	context string included with error print out
  */
-void epicsShareAPI ca_signal
+epicsShareFunc void epicsShareAPI ca_signal
 (
 	 long errorCode, 	
 	 const char *pCtxStr 	
@@ -812,7 +812,7 @@ void epicsShareAPI ca_signal
  * lineNo	R	line number included with error print out
  *
  */
-void epicsShareAPI ca_signal_with_file_and_lineno
+epicsShareFunc void epicsShareAPI ca_signal_with_file_and_lineno
 (
 	 long errorCode,	
 	 const char *pCtxStr,	
@@ -839,7 +839,7 @@ void epicsShareAPI ca_signal_with_file_and_lineno
  *
  * channel	R	channel identifier
  */
-const char * epicsShareAPI ca_host_name_function ( chid channel);
+epicsShareFunc const char * epicsShareAPI ca_host_name_function ( chid channel);
 
 /*
  *      CA_ADD_FD_REGISTRATION
@@ -861,7 +861,7 @@ typedef void CAFDHANDLER(void *parg, int fd, int opened);
  *			when an fd is created or deleted
  * pArg		R	argument passed to above function
  */
-int epicsShareAPI ca_add_fd_registration
+epicsShareFunc int epicsShareAPI ca_add_fd_registration
 (
 	 CAFDHANDLER 	*pHandler,
 	 const void    	*pArg
@@ -873,7 +873,7 @@ int epicsShareAPI ca_add_fd_registration
  * tid		R	task id
  */
 #ifdef vxWorks
-int epicsShareAPI ca_channel_status( int tid);
+epicsShareFunc int epicsShareAPI ca_channel_status( int tid);
 #endif
 
 /*
@@ -912,7 +912,7 @@ typedef unsigned CA_SYNC_GID;
  *
  * pgid		W	pointer to sync group id that will be written	
  */
-int epicsShareAPI ca_sg_create( CA_SYNC_GID *  pgid);
+epicsShareFunc int epicsShareAPI ca_sg_create( CA_SYNC_GID *  pgid);
 
 /*
  * ca_sg_delete()
@@ -921,7 +921,7 @@ int epicsShareAPI ca_sg_create( CA_SYNC_GID *  pgid);
  *
  * gid		R	sync group id 
  */
-int epicsShareAPI ca_sg_delete(const CA_SYNC_GID gid);
+epicsShareFunc int epicsShareAPI ca_sg_delete(const CA_SYNC_GID gid);
 
 /*
  * ca_sg_block()
@@ -932,7 +932,7 @@ int epicsShareAPI ca_sg_delete(const CA_SYNC_GID gid);
  * timeout	R	wait for this duration prior to timing out
  *			and returning ECA_TIMEOUT
  */
-int epicsShareAPI ca_sg_block(const CA_SYNC_GID gid, ca_real timeout);
+epicsShareFunc int epicsShareAPI ca_sg_block(const CA_SYNC_GID gid, ca_real timeout);
 
 /*
  * ca_sg_test()
@@ -943,14 +943,14 @@ int epicsShareAPI ca_sg_block(const CA_SYNC_GID gid, ca_real timeout);
  * 
  * returns one of ECA_BADSYNCGRP, ECA_IOINPROGRESS, ECA_IODONE
  */
-int epicsShareAPI ca_sg_test(const CA_SYNC_GID gid);
+epicsShareFunc int epicsShareAPI ca_sg_test(const CA_SYNC_GID gid);
 
 /*
  * ca_sg_reset
  *
  * gid		R	sync group id
  */
-int epicsShareAPI ca_sg_reset(const CA_SYNC_GID gid);
+epicsShareFunc int epicsShareAPI ca_sg_reset(const CA_SYNC_GID gid);
 
 /*
  * ca_sg_array_get()
@@ -964,7 +964,7 @@ int epicsShareAPI ca_sg_reset(const CA_SYNC_GID gid);
  * chan 	R	channel identifier	
  * pValue	W	channel value copied to this location
  */
-int epicsShareAPI ca_sg_array_get
+epicsShareFunc int epicsShareAPI ca_sg_array_get
 (
 	const CA_SYNC_GID gid,
 	chtype type, /*      TYPE    R       channel type                            */
@@ -985,7 +985,7 @@ int epicsShareAPI ca_sg_array_get
  * chan 	R	channel identifier	
  * pValue	R	new channel value copied from this location
  */
-int epicsShareAPI ca_sg_array_put
+epicsShareFunc int epicsShareAPI ca_sg_array_put
 (
 	const CA_SYNC_GID gid,
 	chtype type, 
@@ -1001,7 +1001,7 @@ int epicsShareAPI ca_sg_array_put
  *
  * gid		R	sync group id
  */
-int epicsShareAPI ca_sg_stat(const CA_SYNC_GID gid);
+epicsShareFunc int epicsShareAPI ca_sg_stat(const CA_SYNC_GID gid);
 
 /*
  * ca_modify_user_name()
@@ -1011,7 +1011,7 @@ int epicsShareAPI ca_sg_stat(const CA_SYNC_GID gid);
  *
  * pUserName	R	new user name string copied from this location	
  */
-int epicsShareAPI ca_modify_user_name(const char *pUserName);
+epicsShareFunc int epicsShareAPI ca_modify_user_name(const char *pUserName);
 
 /*
  * CA_MODIFY_HOST_NAME()
@@ -1021,7 +1021,7 @@ int epicsShareAPI ca_modify_user_name(const char *pUserName);
  *
  * pHostName	R	new host name string copied from this location	
  */
-int epicsShareAPI ca_modify_host_name(const char *pHostName);
+epicsShareFunc int epicsShareAPI ca_modify_host_name(const char *pHostName);
 
 /*
  * ca_v42_ok()
@@ -1033,14 +1033,14 @@ int epicsShareAPI ca_modify_host_name(const char *pHostName);
  * 
  * (returns true or false)
  */
-int epicsShareAPI ca_v42_ok(chid chan);
+epicsShareFunc int epicsShareAPI ca_v42_ok(chid chan);
 
 /*
  * ca_version()
  *
  * returns the CA version string
  */
-const char * epicsShareAPI ca_version(void);
+epicsShareFunc const char * epicsShareAPI ca_version(void);
 
 /*
  * ca_replace_printf_handler ()
@@ -1054,52 +1054,52 @@ const char * epicsShareAPI ca_version(void);
  *				CA prints an error message
  */
 #ifndef CA_DONT_INCLUDE_STDARGH
-int epicsShareAPI ca_replace_printf_handler (
+epicsShareFunc int epicsShareAPI ca_replace_printf_handler (
 	int (*ca_printf_func)(const char *pformat, va_list args)
 );
 #endif /*CA_DONT_INCLUDE_STDARGH*/
 
 #else /* CAC_ANSI_FUNC_PROTO */
 
-int epicsShareAPI ca_task_initialize ();
-int epicsShareAPI ca_task_exit ();
-int epicsShareAPI ca_search_and_connect ();
-int epicsShareAPI ca_build_and_connect ();
-int epicsShareAPI ca_change_connection_event ();
-int epicsShareAPI ca_replace_access_rights_event ();
-int epicsShareAPI ca_add_exception_event ();
-int epicsShareAPI ca_clear_channel ();
-int epicsShareAPI ca_array_put ();
-int epicsShareAPI ca_array_put_callback ();
-int epicsShareAPI ca_array_get ();
-int epicsShareAPI ca_array_get_callback ();
-int epicsShareAPI ca_add_masked_array_event ();
-int epicsShareAPI ca_clear_event ();
-int epicsShareAPI ca_pend ();
-int epicsShareAPI ca_test_io ();
-int epicsShareAPI ca_flush_io ();
-void epicsShareAPI ca_signal ();
-void epicsShareAPI ca_signal_with_file_and_lineno ();
-char * epicsShareAPI ca_host_name_function ();
+epicsShareFunc int epicsShareAPI ca_task_initialize ();
+epicsShareFunc int epicsShareAPI ca_task_exit ();
+epicsShareFunc int epicsShareAPI ca_search_and_connect ();
+epicsShareFunc int epicsShareAPI ca_build_and_connect ();
+epicsShareFunc int epicsShareAPI ca_change_connection_event ();
+epicsShareFunc int epicsShareAPI ca_replace_access_rights_event ();
+epicsShareFunc int epicsShareAPI ca_add_exception_event ();
+epicsShareFunc int epicsShareAPI ca_clear_channel ();
+epicsShareFunc int epicsShareAPI ca_array_put ();
+epicsShareFunc int epicsShareAPI ca_array_put_callback ();
+epicsShareFunc int epicsShareAPI ca_array_get ();
+epicsShareFunc int epicsShareAPI ca_array_get_callback ();
+epicsShareFunc int epicsShareAPI ca_add_masked_array_event ();
+epicsShareFunc int epicsShareAPI ca_clear_event ();
+epicsShareFunc int epicsShareAPI ca_pend ();
+epicsShareFunc int epicsShareAPI ca_test_io ();
+epicsShareFunc int epicsShareAPI ca_flush_io ();
+epicsShareFunc void epicsShareAPI ca_signal ();
+epicsShareFunc void epicsShareAPI ca_signal_with_file_and_lineno ();
+epicsShareFunc char * epicsShareAPI ca_host_name_function ();
 typedef void CAFDHANDLER(); 
-int epicsShareAPI ca_add_fd_registration();
-int epicsShareAPI ca_replace_printf_handler ();
-int epicsShareAPI ca_sg_create();
-int epicsShareAPI ca_sg_delete();
-int epicsShareAPI ca_sg_block();
-int epicsShareAPI ca_sg_test();
-int epicsShareAPI ca_sg_reset();
-int epicsShareAPI ca_sg_array_get();
-int epicsShareAPI ca_sg_array_put();
-int epicsShareAPI ca_sg_stat();
-int epicsShareAPI ca_modify_user_name();
-int epicsShareAPI ca_modify_host_name();
-int epicsShareAPI ca_v42_ok();
-char * epicsShareAPI ca_version();
+epicsShareFunc int epicsShareAPI ca_add_fd_registration();
+epicsShareFunc int epicsShareAPI ca_replace_printf_handler ();
+epicsShareFunc int epicsShareAPI ca_sg_create();
+epicsShareFunc int epicsShareAPI ca_sg_delete();
+epicsShareFunc int epicsShareAPI ca_sg_block();
+epicsShareFunc int epicsShareAPI ca_sg_test();
+epicsShareFunc int epicsShareAPI ca_sg_reset();
+epicsShareFunc int epicsShareAPI ca_sg_array_get();
+epicsShareFunc int epicsShareAPI ca_sg_array_put();
+epicsShareFunc int epicsShareAPI ca_sg_stat();
+epicsShareFunc int epicsShareAPI ca_modify_user_name();
+epicsShareFunc int epicsShareAPI ca_modify_host_name();
+epicsShareFunc int epicsShareAPI ca_v42_ok();
+epicsShareFunc char * epicsShareAPI ca_version();
 #ifdef vxWorks
-	int epicsShareAPI ca_channel_status()
-	int ca_import();
-	int ca_import_cancel();
+	epicsShareFunc int epicsShareAPI ca_channel_status()
+	epicsShareFunc int epicsShareAPI ca_import();
+	epicsShareFunc int epicsShareAPI ca_import_cancel();
 #endif
 
 #endif /* CAC_ANSI_FUNC_PROTO */

@@ -224,7 +224,7 @@ READONLY char	*ca_message_text[]
 #endif
 
 #ifdef CAERR_USE_FUNC_PROTO
-READONLY char * epicsShareAPI ca_message(long ca_status);
+epicsShareFunc READONLY char * epicsShareAPI ca_message(long ca_status);
 #else /* CAERR_USE_FUNC_PROTO */
 READONLY char *ca_message();
 #endif

@@ -7,10 +7,10 @@
 #include <stdio.h>
 #include <ctype.h>
 
-#include <osiThread.h>
+#include "osiThread.h"
 
-#include "ioccrf.h"
 #define epicsExportSharedSymbols
+#include "ioccrf.h"
 
 
 /* < (runScript) command */

@@ -12,6 +12,7 @@ of this distribution.
 #include <stdio.h>
 #include <ctype.h>
 
+#include "iocInit.h"
 #include "dbAccess.h"
 #include "dbLoadTemplate.h"
 #include "registryRecordType.h"
@@ -68,7 +69,7 @@ static ioccrfFuncDef registerRecordDeviceDriverFuncDef =
     {"registerRecordDeviceDriver",1,registerRecordDeviceDriverArgs};
 static void registerRecordDeviceDriverCallFunc(ioccrfArg **args)
 {
-    registerRecordDeviceDriver(pdbbase);
+    registerRecordDeviceDriverBase(pdbbase);
 }
 
 /* iocInit */

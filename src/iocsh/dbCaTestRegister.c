@@ -12,9 +12,9 @@ of this distribution.
 #include <stdio.h>
 #include <ctype.h>
 
-#include "ioccrf.h"
 #include "dbCaTest.h"
 #define epicsExportSharedSymbols
+#include "ioccrf.h"
 #include "dbCaTestRegister.h"
 
 /* dbcar */

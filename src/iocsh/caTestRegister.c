@@ -12,10 +12,10 @@ of this distribution.
 #include <stdio.h>
 #include <ctype.h>
 
-#include "ioccrf.h"
 #include "rsrv.h"
 #include "dbEvent.h"
 #define epicsExportSharedSymbols
+#include "ioccrf.h"
 #include "caTestRegister.h"
 
 /* casr */

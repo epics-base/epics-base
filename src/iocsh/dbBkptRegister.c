@@ -12,7 +12,6 @@ of this distribution.
 #include <stdio.h>
 #include <ctype.h>
 
-#include "ioccrf.h"
 #include "ellLib.h"
 #include "osiThread.h"
 #include "osiSem.h"
@@ -25,6 +24,7 @@ of this distribution.
 #include "dbCommon.h"
 #include "dbBkpt.h"
 #define epicsExportSharedSymbols
+#include "ioccrf.h"
 #include "dbBkptRegister.h"
 
 /* dbb */

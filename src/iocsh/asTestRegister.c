@@ -12,9 +12,9 @@ of this distribution.
 #include <stdio.h>
 #include <ctype.h>
 
-#include "ioccrf.h"
 #include "asDbLib.h"
 #define epicsExportSharedSymbols
+#include "ioccrf.h"
 #include "asTestRegister.h"
 
 /* asSetFilename */

@@ -12,11 +12,11 @@ of this distribution.
 #include <stdio.h>
 #include <ctype.h>
 
-#include "ioccrf.h"
 #include "dbAccess.h"
 #include "dbStaticLib.h"
 #include "registryRecordType.h"
 #define epicsExportSharedSymbols
+#include "ioccrf.h"
 #include "dbStaticRegister.h"
 
 /* dbDumpRecDes */

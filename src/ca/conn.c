@@ -173,6 +173,9 @@ void manage_conn(int silent)
 	/*
 	 * Stop here if there are not any disconnected channels
 	 */
+	if(!piiuCast) {
+		return;
+	}
 	if (piiuCast->chidlist.count == 0) {
 		ca_static->ca_manage_conn_active = FALSE;
 		return;

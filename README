@@ -27,9 +27,9 @@ Notes:
 
 1.2  To add a target architecture to EPICS:
 
-   cd config
-   cp CONFIG_ARCH.mv167 CONFIG_ARCH.YOUR_ARCH
-   edit CONFIG_ARCH.YOUR_ARCH   - For compiler flags / etc.
+   cd base/config
+   cp CONFIG.mv167 CONFIG.YOUR_ARCH
+   edit CONFIG.YOUR_ARCH   - For compiler flags / etc.
 
    cp CONFIG.Vx.68k CONFIG.Vx.YOUR_ARCH_CLASS
    cp CONFIG_SITE.Vx.68k CONFIG_SITE.Vx.YOUR_ARCH_CLASS
@@ -43,20 +43,12 @@ Notes:
    cd epics/base
    gnumake             - To build and install EPICS.
    gnumake clean       - To clean temporary object files.  Top level 
-                       clean will remove all the O.ARCH dirs, not
-                       only those specified in BUILD_ARCHS.
+                         clean will remove all the O.ARCH dirs, not
+                         only those specified in BUILD_ARCHS.
+   gnumake uninstall   - Only available at the top level directory.
+                         Cleans directories created by the install.
 
-1.4  To create an EPICS release:
-
-   edit src/include/epicsVersion.h  - ONLY IF you need to change the EPICS
-                                  version number.
-
-   gnumake release          - Will create Tar file
-
-   gnumake built_release    - Will create Tar file, after generating
-                              dependencies, INCLUDING BINARIES.
-
-1.5  "Partial" build commands:
+1.4  "Partial" build commands:
 
    gnumake clean.sun4       - Cleans sun4 binaries in O.sun4 dirs only.
    gnumake install.sun4     - Builds sun4 only.
@@ -64,12 +56,12 @@ Notes:
                               be complete before this can be issued).
 
 NOTES:
-   1. base/MakeRelease will create tar files in the directory ABOVE
-      base.  These tar files are then meant to be untarred at that level.
-      This release will include the "epics/startup" directory.
 
-   2. EPICS binaries and shellscripts are installed into the bin/ARCH and
-      lib/ARCH directories. 
+   1. EPICS binaries and shellscripts are installed into the directory
+      $(INSTALL_LOCATION)/bin/ARCH.
+
+   2. EPICS libraries are installed into the $(INSTALL_LOCATION)/lib/ARCH
+      directory.
 
    3. During a normal build (a "make" or "make install"), the "depends"
       dependency will NOT be invoked.  Only if "make depends" is run
@@ -88,7 +80,7 @@ NOTES:
       mv167 target.
 
 ----------------------------------------------------------------------------
-   Part 2  ---  Configuration Files in epics/config
+   Part 2  ---  Configuration Files in epics/base/config
 ----------------------------------------------------------------------------
 CONFIG - This file is meant to be included in the low-level EPICS Makefiles.
 It includes the other EPICS makefiles, and allows individual developers
@@ -107,7 +99,7 @@ manager.  It specifies:
 	etc.
 
 ----------------------------------------------------------------------------
-CONFIG_ARCH.ARCH - This file defines a particular architecture.  It
+CONFIG.ARCH - This file defines a particular architecture.  It
 contains the following variables:
 
 	BUILD_TYPE: Unix / Vx
@@ -115,22 +107,20 @@ contains the following variables:
 	Architecture dependent build flags.  The flag names / contents
 		depend on your architecture class.
 ----------------------------------------------------------------------------
-CONFIG_SITE.BUILD_TYPE.ARCH_CLASS - Contains definitions of where to
-find things, like X11 / Motif, etc.
 ----------------------------------------------------------------------------
-CONFIG.BUILD_TYPE.ARCH_CLASS - Contains definitions pertaining to a
-particular architecture class.  This file's primary usefulness is to
-define compile and link flags.
+CONFIG_SITE.ARCH - Contains site specific definitions pertaining to a
+particular architecture.  This file's primary usefulness is to
+define site specific compile and link flags.
 ----------------------------------------------------------------------------
 CONFIG_COMMON - Contains definitions describing the layout of base.
 ----------------------------------------------------------------------------
-CONFIG_BASE
-CONFIG_EXTENSIONS - Defines what subdirectories get built by default under
-base and extensions.
+CONFIG_BASE -  Defines what subdirectories get built by default under base.
 ----------------------------------------------------------------------------
 RULES.Vx - Rules for building with VxWorks makefiles.
 ----------------------------------------------------------------------------
 RULES.Unix - Rules for building with Unix makefiles.
+----------------------------------------------------------------------------
+RULES_TOP - Top level rules for building.
 ----------------------------------------------------------------------------
 RULES_ARCHS
 RULES_DIRS - Allows top-level type command syntax in low-level directories.
@@ -143,18 +133,18 @@ Filename                  SYS_MGR  ADD_VX_ARCH  ADD_UNIX_ARCH  DEVELOPER
 
 CONFIG                       m         -             -             m
 CONFIG_SITE                  m         m             m             -
-CONFIG_ARCH.ARCH             -         c             c             -
-CONFIG_SITE.Unix.ARCH_CLASS  m         -             c*            -
-CONFIG_SITE.Vx.ARCH_CLASS    m         c*            -             -
-CONFIG.Unix.ARCH_CLASS       -         -             c*            -
+CONFIG_SITE_ENV              m         -             -             -
+CONFIG.ARCH                  -         c             c             -
+CONFIG_SITE.ARCH             -         c             c             -
 CONFIG.Vx.ARCH_CLASS         -         c*            -             -
 RULES.Vx                     -         -             -             -
 RULES.Unix                   -         -             -             -
 CONFIG_BASE                  -         -             -             -
-CONFIG_EXTENSIONS            -         -             -             -
 CONFIG_COMMON                -         -             -             -
+CONFIG_ENV                   -         -             -             -
 RULES_ARCHS                  -         -             -             -
 RULES_DIRS                   -         -             -             -
+RULES_TOP                    -         -             -             -
 
      m -  Modify an existing file.
      c -  Create a new file.
@@ -172,63 +162,57 @@ RULES_DIRS                   -         -             -             -
             (files are numbered in the order of their inclusion)
 
  src/db/Makefile.Vx     (An example EPICS makefile)
- ^  ^   ^
- |  |   +--- 3.  RULES.Vx
- |  |              Default rules.
- |  +------- 2.  CONFIG
- |              ^ ^ ^ ^ ^
- |              | | | | |
- |              | | | | +- 1. CONFIG_SITE
- |              | | | |             HOST_ARCH = sun4
- |              | | | |             BUILD_ARCHS = $(HOST_ARCH) mv167 hkv2f
- |              | | | |             VX_DIR = /vxworks
- |              | | | |             More.
- |              | | | +--- 2. CONFIG_COMMON
- |              | | |               General info about base.
- |              | | +----- 3. CONFIG_ARCH.hkv2f
- |              | |                 BUILD_TYPE = Vx
- |              | |                 ARCH_CLASS = 68k 
- |              | |                 Arch Specific Compiler Flag Setup
- |              | +------- 4. CONFIG_SITE.Vx.68k
- |              |                   Directory locations
- |              +--------- 5. CONFIG.Vx.68k
- |                                  Compiler/utility setup for ARCH_CLASS
- +---------- 1.  Target.include
-                   T_A definition (target architecture)
+    ^   ^
+    |   +--- 3.  RULES.Vx
+    |              Default rules.
+    +------- 2.  CONFIG
+                  ^ ^ ^ ^
+                  | | | |
+                  | | | +- 1. CONFIG_SITE
+                  | | |             HOST_ARCH = sun4
+                  | | |             BUILD_ARCHS = $(HOST_ARCH) mv167 hkv2f
+                  | | |             VX_DIR = /vxworks
+                  | | |             More.
+                  | | +--- 2. CONFIG_COMMON
+                  | |               General info about base.
+                  | +----- 3. CONFIG.hkv2f
+                  |           ^     BUILD_TYPE = Vx
+                  |           |     ARCH_CLASS = 68k 
+                  |           |     Arch Specific Compiler Flag Setup
+                  |           +---  a. CONFIG.Vx.68k
+                  |                         Compiler/utility setup for ARCH_CLASS
+                  +------- 4. CONFIG_SITE.hkv2f
+                                    Site Specific setup 
 
 ----------------------------  sun4  example --------------------------------
             (files are numbered in the order of their inclusion)
 
  src/db/Makefile.Unix   (An example EPICS makefile)
- ^  ^   ^
- |  |   +--- 3.  RULES.Unix
- |  |              Default rules.
- |  +------- 2.  CONFIG
- |              ^ ^ ^ ^ ^
- |              | | | | |
- |              | | | | +- 1. CONFIG_SITE
- |              | | | |             HOST_ARCH = sun4
- |              | | | |             BUILD_ARCHS = $(HOST_ARCH) mv167 hkv2f
- |              | | | |             VX_DIR = /vxworks
- |              | | | |             More.
- |              | | | +--- 2. CONFIG_COMMON
- |              | | |               General info about base.
- |              | | +----- 3. CONFIG_ARCH.sun4
- |              | |                 BUILD_TYPE = Unix
- |              | |                 ARCH_CLASS = sun4 
- |              | |                 Arch Specific Compiler Flag Setup
- |              | +------- 4. CONFIG_SITE.Unix.sun4
- |              |                   Directory locations
- |              +--------- 5. CONFIG.Unix.sun4
- |                                  Compiler/utility setup for ARCH_CLASS
- +---------- 1.  Target.include
-                   T_A definition (target architecture)
+    ^   ^
+    |   +--- 3.  RULES.Unix
+    |              Default rules.
+    +------- 2.  CONFIG
+                  ^ ^ ^ ^
+                  | | | |
+                  | | | +- 1. CONFIG_SITE
+                  | | |             HOST_ARCH = sun4
+                  | | |             BUILD_ARCHS = $(HOST_ARCH) mv167 hkv2f
+                  | | |             VX_DIR = /vxworks
+                  | | |             More.
+                  | | +--- 2. CONFIG_COMMON
+                  | |               General info about base.
+                  | +----- 3. CONFIG.sun4
+                  |                 BUILD_TYPE = Unix
+                  |                 ARCH_CLASS = sun4 
+                  |                 Arch Specific Compiler Flag Setup
+                  +------- 4. CONFIG_SITE.sun4
+                                    Directory locations
 
 ----------------------------------------------------------------------------
-   Part 4  ---  EPICS dependencies
+   Part 4  ---  EPICS makefile rules
 ----------------------------------------------------------------------------
 
- Dependencies supported by lower level Makefiles:
+ Rules supported by lower level Makefiles:
 
     depends		- Generate include dependencies
     build		- Builds objects, using libraries from "build_libs"

@@ -23,6 +23,9 @@ ca_SRCS_DEFAULT = posix_depen.c if_depen.c
 # on WIN32 only
 ca_SRCS_WIN32   = windows_depen.c
 
+# on vxWorks only
+ca_SRCS_vxWorks   = vxWorks_depen.c
+
 # on all systems
 ca_SRCS += iocinf.c
 ca_SRCS += service.c
@@ -54,8 +57,8 @@ TESTPROD_DEFAULT := catime acctst
 TESTPROD_vxWorks :=
 
 caLib_SRCS = \
-	iocinf.o access.c test_event.c service.c flow_control.c \
-	repeater.c conn.c syncgrp.c if_depen.c bsd_depen.c vxWorks_depen.c \
+	iocinf.c access.c test_event.c service.c flow_control.c \
+	repeater.c conn.c syncgrp.c bsd_depen.c vxWorks_depen.c \
 	convert.c
 
 LIBRARY_vxWorks = caLib 

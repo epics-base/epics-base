@@ -590,21 +590,23 @@ dbBase *dbAllocBase(void)
 
 void dbFreeBase(dbBase *pdbbase)
 {
-    dbMenu	*pdbMenu;
-    dbMenu	*pdbMenuNext;
+    dbMenu		*pdbMenu;
+    dbMenu		*pdbMenuNext;
     dbRecordType	*pdbRecordType;
     dbRecordType	*pdbRecordTypeNext;
-    dbFldDes	*pdbFldDes;
-    dbRecordNode *pdbRecordNode;
-    dbRecordNode *pdbRecordNodeNext;
-    devSup	*pdevSup;
-    devSup	*pdevSupNext;
-    drvSup	*pdrvSup;
-    drvSup	*pdrvSupNext;
-    brkTable	*pbrkTable;
-    brkTable	*pbrkTableNext;
-    int		i;
-    DBENTRY	dbentry;
+    dbFldDes	*	pdbFldDes;
+    dbRecordNode 	*pdbRecordNode;
+    dbRecordNode 	*pdbRecordNodeNext;
+    dbRecordAttribute	*pAttribute;
+    dbRecordAttribute	*pAttributeNext;
+    devSup		*pdevSup;
+    devSup		*pdevSupNext;
+    drvSup		*pdrvSup;
+    drvSup		*pdrvSupNext;
+    brkTable		*pbrkTable;
+    brkTable		*pbrkTableNext;
+    int			i;
+    DBENTRY		dbentry;
     
 
     dbInitEntry(pdbbase,&dbentry);
@@ -646,6 +648,15 @@ void dbFreeBase(dbBase *pdbbase)
 	    free((void *)pdevSup->choice);
 	    free((void *)pdevSup);
 	    pdevSup = pdevSupNext;
+	}
+	pAttribute =
+	    (dbRecordAttribute *)ellFirst(&pdbRecordType->attributeList);
+	while(pAttribute) {
+	    pAttributeNext = (dbRecordAttribute *)ellNext(&pAttribute->node);
+	    ellDelete(&pdbRecordType->attributeList,&pAttribute->node);
+	    free((void *)pAttribute->name);
+	    free((void *)pAttribute->pdbFldDes);
+	    pAttribute = pAttributeNext;
 	}
 	pdbRecordTypeNext = (dbRecordType *)ellNext(&pdbRecordType->node);
 	gphDelete(pdbbase->pgpHash,pdbRecordType->name,&pdbbase->recordTypeList);
@@ -761,116 +772,89 @@ long dbPath(DBBASE *pdbbase,const char *path)
 long dbAddPath(DBBASE *pdbbase,const char *path)
 {
     ELLLIST	*ppathList;
-
     const char	*pcolon;
-	const char	*plast;
-    int			len;
-	unsigned	expectingPath;
-	unsigned	sawMissingPath;
+    const char	*plast;
+    unsigned	expectingPath;
+    unsigned	sawMissingPath;
 	
     if(!pdbbase) return(-1);
     ppathList = (ELLLIST *)pdbbase->pathPvt;
     if(!ppathList) {
-		ppathList = dbCalloc(1,sizeof(ELLLIST));
-		ellInit(ppathList);
-		pdbbase->pathPvt = (void *)ppathList;
+	ppathList = dbCalloc(1,sizeof(ELLLIST));
+	ellInit(ppathList);
+	pdbbase->pathPvt = (void *)ppathList;
     }
- 
-	/*
-	 * Empty path strings are ignored
-	 */
-	if (!path) {
-		return(0);
-	}
-
-	/*
-	 * care is taken to properly deal with white space
-	 * 1) preceding and trailing white space is removed from paths
-	 * 2) white space inbetween path separator counts as an empty name
-	 *		(see below)
-	 */
-	expectingPath = FALSE;
-	sawMissingPath = FALSE;
-	while (*path) {
-		int len;
+    if (!path) return(0); /* Empty path strings are ignored */
+    /* care is taken to properly deal with white space
+     * 1) preceding and trailing white space is removed from paths
+     * 2) white space inbetween path separator counts as an empty name
+     *		(see below)
+     */
+    expectingPath = FALSE;
+    sawMissingPath = FALSE;
+    while (*path) {
+	int len;
 		
-		/*
-		 * preceding white space is removed
-		 */
-		if (isspace(*path)) {
-			path++;
-			continue;
-		}
-
-		pcolon = strstr (path, OSI_PATH_LIST_SEPARATOR);
-		
-		if (pcolon==path) {
-			sawMissingPath = TRUE;
-			path += strlen (OSI_PATH_LIST_SEPARATOR);
-			continue;
-		}
-
-		if (pcolon) {
-			plast = pcolon-1u;
-			expectingPath = TRUE;
-		}
-		else {
-			plast = strlen (path) + path - 1u;
-			expectingPath = FALSE;
-		}
-		/*
-		 * trailing white space is removed
-		 */
-		while (isspace(*plast)) {
-			plast--;
-		}
-
-		/*
-		 * len is always nonzero because we found something that
-		 * 1) isnt white space
-		 * 2) isnt a path separator
-		 */
-		len = (plast - path) + 1u;
-
-		if (dbAddOnePath (pdbbase, path, len)) {
-			return (-1);
-		}
-
-		path += len;
-		if (pcolon) {
-			path += strlen(OSI_PATH_LIST_SEPARATOR);
-		}
+	/* preceding white space is removed */
+	if (isspace(*path)) {
+	    path++;
+	    continue;
+	}
+	pcolon = strstr (path, OSI_PATH_LIST_SEPARATOR);
+	if (pcolon==path) {
+	    sawMissingPath = TRUE;
+	    path += strlen (OSI_PATH_LIST_SEPARATOR);
+	    continue;
+	}
+	if (pcolon) {
+	    plast = pcolon - 1;
+	    expectingPath = TRUE;
+	} else {
+	    plast = strlen (path) + path - 1;
+	    expectingPath = FALSE;
+	}
+	/* trailing white space is removed */
+	while (isspace(*plast)) {
+		plast--;
 	}
 
 	/*
-	 * an empty name at beginning, middle, or end of a path string that isnt
-	 * empty means current directory
+	 * len is always nonzero because we found something that
+	 * 1) isnt white space
+	 * 2) isnt a path separator
 	 */
-	if (expectingPath||sawMissingPath) {
-		return dbAddOnePath (pdbbase, ".", 2);
+	len = (plast - path) + 1;
+	if (dbAddOnePath (pdbbase, path, len)) return (-1);
+	path += len;
+	if (pcolon) {
+	    path += strlen(OSI_PATH_LIST_SEPARATOR);
 	}
+    }
 
-	return(0);
+    /*
+     * an empty name at beginning, middle, or end of a path string that isnt
+     * empty means current directory
+     */
+    if (expectingPath||sawMissingPath) {
+	return dbAddOnePath (pdbbase, ".", 1);
+    }
+    return(0);
 }
 
-/*
- * dbAddOnePath ()
- */
 static long dbAddOnePath (DBBASE *pdbbase, const char *path, unsigned length)
 {
-	ELLLIST	*ppathList;
+    ELLLIST	*ppathList;
     dbPathNode *pdbPathNode;
 	
     if(!pdbbase) return(-1);
     ppathList = (ELLLIST *)pdbbase->pathPvt;
 
-	pdbPathNode = (dbPathNode *) dbCalloc (1, sizeof(dbPathNode));
-	pdbPathNode->directory = (char *) calloc (length+1, sizeof(char));
-	strncpy (pdbPathNode->directory, path, length);
-	pdbPathNode->directory[length] = '\0';
-	ellAdd (ppathList, &pdbPathNode->node);
-
-	return 0;
+    pdbPathNode = (dbPathNode *)dbCalloc(1, sizeof(dbPathNode));
+    pdbPathNode->directory = (char *)dbCalloc(length+1, sizeof(char));
+    strncpy(pdbPathNode->directory, path, length);
+    pdbPathNode->directory[length] = '\0';
+    ellAdd(ppathList, &pdbPathNode->node);
+    return 0;
 }
 
 
@@ -901,6 +885,7 @@ long dbWriteRecordFP(DBBASE *pdbbase,FILE *fp,char *precordTypename,int level)
 	status = dbFirstRecordType(pdbentry);
 	if(status) {
 	    fprintf(stderr,"dbWriteRecordFP: No record descriptions\n");
+    	    dbFinishEntry(pdbentry);
 	    return(status);
 	}
     } else {
@@ -908,6 +893,7 @@ long dbWriteRecordFP(DBBASE *pdbbase,FILE *fp,char *precordTypename,int level)
 	if(status) {
 	    fprintf(stderr,"dbWriteRecordFP: No record description for %s\n",
 		precordTypename);
+    	    dbFinishEntry(pdbentry);
 	    return(status);
 	}
     }
@@ -1254,6 +1240,73 @@ int dbGetNRecordTypes(DBENTRY *pdbentry)
     return(ellCount(&pdbentry->pdbbase->recordTypeList));
 }
 
+long dbPutRecordAttribute(DBENTRY *pdbentry, char *name,char*value)
+{
+    dbRecordType	*precordType = pdbentry->precordType;
+    int			createNew = TRUE;
+    int			compare;
+    dbRecordAttribute	*pattribute;
+
+    if(!precordType) return(S_dbLib_recordTypeNotFound);
+    pattribute = (dbRecordAttribute *)ellFirst(&precordType->attributeList);
+    /*put new attribute name in sort order*/
+    while(pattribute) {
+	compare = strcmp(pattribute->name,name);
+	if(compare==0) {
+	    createNew = FALSE;
+	}
+	if(compare>=0) break;
+	pattribute = (dbRecordAttribute *)ellNext(&pattribute->node);
+    }
+    if(createNew) {
+	dbRecordAttribute *pnew;
+	dbFldDes	  *pdbFldDes;
+
+	pnew = dbCalloc(1,sizeof(dbRecordAttribute));
+	if(pattribute) {
+	    ellInsert(&precordType->attributeList,&pattribute->node,
+		&pnew->node);
+	} else {
+	    ellAdd(&precordType->attributeList,&pnew->node);
+	}
+	pattribute = pnew;
+	pattribute->name = dbCalloc(strlen(name)+1,sizeof(char));
+	strcpy(pattribute->name,name);
+	pdbFldDes = dbCalloc(1,sizeof(dbFldDes));
+	pdbFldDes->name = pattribute->name;
+	pdbFldDes->pdbRecordType = precordType;
+	pdbFldDes->special = SPC_ATTRIBUTE;
+	pdbFldDes->field_type = DBF_STRING;
+	pdbFldDes->as_level = ASL1;
+	pdbFldDes->size = MAX_STRING_SIZE;
+	pattribute->pdbFldDes = pdbFldDes;
+    }
+    strncpy(pattribute->value,value,MAX_STRING_SIZE);
+    pattribute->value[MAX_STRING_SIZE-1] = 0;
+    return(0);
+}
+
+long dbGetRecordAttribute(DBENTRY *pdbentry,char *name)
+{
+    dbRecordType	*precordType = pdbentry->precordType;
+    int			compare;
+    dbRecordAttribute *pattribute;
+
+    if(!precordType) return(S_dbLib_recordTypeNotFound);
+    pattribute = (dbRecordAttribute *)ellFirst(&precordType->attributeList);
+    while(pattribute) {
+	compare = strcmp(pattribute->name,name);
+	if(compare==0) {
+	    pdbentry->pflddes = pattribute->pdbFldDes;
+	    pdbentry->pfield = pattribute->value;
+	    return(0);
+	}
+	if(compare>=0) break;
+	pattribute = (dbRecordAttribute *)ellNext(&pattribute->node);
+    }
+    return(S_dbLib_fieldNotFound);
+}
+
 long dbFirstField(DBENTRY *pdbentry,int dctonly)
 {
 
@@ -1263,7 +1316,7 @@ long dbFirstField(DBENTRY *pdbentry,int dctonly)
 
 long dbNextField(DBENTRY *pdbentry,int dctonly)
 {
-    dbRecordType		*precordType = pdbentry->precordType;
+    dbRecordType	*precordType = pdbentry->precordType;
     dbRecordNode	*precnode = pdbentry->precnode;
     dbFldDes  		*pflddes;
     short		indfield = pdbentry->indfield;
@@ -1362,7 +1415,7 @@ int dbGetPromptGroup(DBENTRY *pdbentry)
 
 long dbCreateRecord(DBENTRY *pdbentry,char *precordName)
 {
-    dbRecordType		*precordType = pdbentry->precordType;
+    dbRecordType	*precordType = pdbentry->precordType;
     dbFldDes		*pdbFldDes;
     PVDENTRY       	*ppvd;
     ELLLIST           	*preclist = NULL;
@@ -1604,9 +1657,9 @@ long dbCopyRecord(DBENTRY *pdbentry,char *newRecordName,int overWriteOK)
 	    return(S_dbLib_recExists);
 	}
 	status = dbDeleteRecord(&dbentry);
-	if(status) return(status);
     }
     dbFinishEntry(&dbentry);
+    if(status) return(status);
     if((status = dbFindRecordType(&dbentry,precordType->name))) return(status);
     if((status = dbCreateRecord(&dbentry,newRecordName))) return(status);
     if((status = dbFirstField(pdbentry,TRUE))) return(status);
@@ -1614,7 +1667,7 @@ long dbCopyRecord(DBENTRY *pdbentry,char *newRecordName,int overWriteOK)
     while(!status) {
 	if(!dbIsDefaultValue(pdbentry)) {
 	    pvalue = dbGetString(pdbentry);
-	    if(status = dbPutString(&dbentry,pvalue)) return(status);
+	    if((status = dbPutString(&dbentry,pvalue))) return(status);
 	}
 	status = dbNextField(pdbentry,TRUE);
 	if(!status) status = dbNextField(&dbentry,TRUE);
@@ -1636,7 +1689,6 @@ long dbFindField(DBENTRY *pdbentry,const char *pname)
     short           	top, bottom, test;
     char  		**papsortFldName;
     short          	*sortFldInd;
-    long		status;
     int			compare,ind;
     char		fieldName[MAX_FIELD_NAME_LENGTH];
     char		*pfieldName;
@@ -1660,8 +1712,7 @@ long dbFindField(DBENTRY *pdbentry,const char *pname)
 		return(S_dbLib_recordTypeNotFound);
 	pdbentry->pflddes = pflddes;
 	pdbentry->indfield = precordType->indvalFlddes;
-	status = dbGetFieldAddress(pdbentry);
-	return (status);
+	return(dbGetFieldAddress(pdbentry));
     }
     /* binary search through ordered field names */
     top = precordType->no_fields - 1;
@@ -1675,18 +1726,18 @@ long dbFindField(DBENTRY *pdbentry,const char *pname)
 		return(S_dbLib_recordTypeNotFound);
 	    pdbentry->pflddes = pflddes;
 	    pdbentry->indfield = sortFldInd[test];
-	    status = dbGetFieldAddress(pdbentry);
-	    return (status);
+	    return(dbGetFieldAddress(pdbentry));
 	} else if (compare > 0) {
 	    top = test - 1;
-	    if (top < bottom) return (S_dbLib_fieldNotFound);
+	    if (top < bottom) break;
 	    test = (top + bottom) / 2;
 	} else {
 	    bottom = test + 1;
-	    if (top < bottom) return (S_dbLib_fieldNotFound);
+	    if (top < bottom) break;
 	    test = (top + bottom) / 2;
 	}
     }
+    return(dbGetRecordAttribute(pdbentry,pfieldName));
 }
 
 int dbFoundField(DBENTRY *pdbentry)
@@ -1884,7 +1935,7 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
     case DBF_STRING:
 	if(!pfield) return(S_dbLib_fieldNotFound);
 	strncpy((char *)pfield, pstring,pflddes->size);
-	if(pflddes->special == SPC_CALC) {
+	if((pflddes->special == SPC_CALC) && !stringHasMacro) {
 	    char  rpcl[RPCL_LEN];
 	    short error_number;
 
@@ -2236,8 +2287,10 @@ done:
 char *dbVerify(DBENTRY *pdbentry,char *pstring)
 {
     dbFldDes  	*pflddes = pdbentry->pflddes;
-    char		*message;
+    char	*message;
+    int		stringHasMacro=FALSE;
 
+    stringHasMacro = (strstr(pstring,"$(") || strstr(pstring,"${"))?TRUE:FALSE;
     message = getpMessage(pdbentry);
     *message = 0;
     if(!pflddes) {strcpy(message,"fldDes not found"); return(message);}
@@ -2251,7 +2304,7 @@ char *dbVerify(DBENTRY *pdbentry,char *pstring)
 		sprintf(message,"string to big. max=%hd",pflddes->size);
 		return(message);
 	    }
-	    if(pflddes->special == SPC_CALC) {
+	    if((pflddes->special == SPC_CALC) && !stringHasMacro) {
 		char  rpcl[RPCL_LEN];
 		short error_number;
 		long  status;
@@ -3397,6 +3450,7 @@ void dbDumpFldDes(DBBASE *pdbbase,char *recordTypeName,char *fname)
     dbFldDes	*pdbFldDes;
     int		gotMatch;
     int		i;
+    dbRecordAttribute *pAttribute;
 
     if(!pdbbase) {
 	printf("pdbbase not specified\n");
@@ -3466,6 +3520,13 @@ void dbDumpFldDes(DBBASE *pdbbase,char *recordTypeName,char *fname)
 	    }
 	    printf("\t           size: %hd\n",pdbFldDes->size);
 	    printf("\t         offset: %hd\n",pdbFldDes->offset);
+	}
+	pAttribute =
+	    (dbRecordAttribute *)ellFirst(&pdbRecordType->attributeList);
+	while(pAttribute) {
+	    printf("Attribute: name %s value %s\n",
+		pAttribute->name,pAttribute->value);
+	    pAttribute = (dbRecordAttribute *)ellNext(&pAttribute->node);
 	}
 	if(recordTypeName) break;
     }

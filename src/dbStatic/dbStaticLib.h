@@ -122,6 +122,8 @@ long dbFirstRecordType(DBENTRY *pdbentry);
 long dbNextRecordType(DBENTRY *pdbentry);
 char *dbGetRecordTypeName(DBENTRY *pdbentry);
 int  dbGetNRecordTypes(DBENTRY *pdbentry);
+long dbPutRecordAttribute(DBENTRY *pdbentry,char *name,char*value);
+long dbGetRecordAttribute(DBENTRY *pdbentry,char *name);
 
 long dbFirstField(DBENTRY *pdbentry,int dctonly);
 long dbNextField(DBENTRY *pdbentry,int dctonly);

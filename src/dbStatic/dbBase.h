@@ -114,8 +114,19 @@ typedef struct dbRecordNode {
 	int		visible;
 }dbRecordNode;
 
+/*dbRecordAttribute is for "psuedo" fields */
+/*pdbFldDes is so that other access routines work correctly*/
+/*Until base supports char * value MUST be fixed length string*/
+typedef struct dbRecordAttribute {
+	ELLNODE		node;
+	char		*name;
+	dbFldDes	*pdbFldDes;
+	char		value[MAX_STRING_SIZE];
+}dbRecordAttribute;
+
 typedef struct dbRecordType {
 	ELLNODE		node;
+	ELLLIST		attributeList;	/*LIST head of attributes*/
 	ELLLIST		recList;	/*LIST head of sorted dbRecordNodes*/
 	ELLLIST		devList;	/*List of associated device support*/
 	char		*name;

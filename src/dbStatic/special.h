@@ -44,6 +44,7 @@
 #define SPC_SCAN	3	/*A scan related field is being changed		*/
 #define SPC_ALARMACK	5	/*Special Alarm Acknowledgement*/
 #define SPC_AS		6	/* Access Security*/
+#define SPC_ATTRIBUTE	7	/* psuedo field, i.e. attribute field*/
 /* useful when record support must be notified of a field changing value*/
 #define SPC_MOD		100
 /* used by all records that support a reset field		*/

@@ -176,7 +176,7 @@ static void freeInputFileList(void)
 {
     inputFile *pinputFileNow;
 
-    while(pinputFileNow=(inputFile *)ellFirst(&inputFileList)) {
+    while((pinputFileNow=(inputFile *)ellFirst(&inputFileList))) {
 	if(fclose(pinputFileNow->fp)) 
 	    errPrintf(0,__FILE__, __LINE__,
 			"Closing file %s",pinputFileNow->filename);
@@ -253,7 +253,7 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     ellAdd(&inputFileList,&pinputFile->node);
     status = pvt_yy_parse();
     if(status) {
-	fprintf(stderr,"db_parse returned %d\n",status);
+	fprintf(stderr,"db_parse returned %ld\n",status);
     }
     if(macHandle) {
 	macDeleteHandle(macHandle);
@@ -264,6 +264,28 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     free((void *)my_buffer);
     freeInputFileList();
     dbFreePath(pdbbase);
+    if(!status) { /*add RTYP and VERS as an attribute */
+	DBENTRY	dbEntry;
+	DBENTRY	*pdbEntry = &dbEntry;
+	long	localStatus;
+
+	dbInitEntry(pdbbase,pdbEntry);
+	localStatus = dbFirstRecordType(pdbEntry);
+	while(!localStatus) {
+	    localStatus = dbPutRecordAttribute(pdbEntry,"RTYP",
+		dbGetRecordTypeName(pdbEntry));
+	    if(!localStatus)  {
+		localStatus = dbPutRecordAttribute(pdbEntry,"VERS",
+		    "none specified");
+	    }
+	    if(localStatus) {
+		fprintf(stderr,"dbPutRecordAttribute status %ld\n",status);
+	    } else {
+	        localStatus = dbNextRecordType(pdbEntry);
+	    }
+	}
+	dbFinishEntry(pdbEntry);
+    }
     return(status);
 }
 
@@ -630,9 +652,11 @@ static void dbRecordtypeBody(void)
 	}
     }
     /*Initialize lists*/
+    ellInit(&pdbRecordType->attributeList);
     ellInit(&pdbRecordType->recList);
     ellInit(&pdbRecordType->devList);
-    pgphentry = gphAdd(pdbbase->pgpHash,pdbRecordType->name,&pdbbase->recordTypeList);
+    pgphentry = gphAdd(pdbbase->pgpHash,pdbRecordType->name,
+	&pdbbase->recordTypeList);
     if(!pgphentry) {
 	yyerrorAbort("gphAdd failed");
     } else {
@@ -804,8 +828,18 @@ static void dbRecordHead(char *recordType,char *name, int visible)
 	yyerrorAbort(NULL);
 	return;
     }
-    /*Duplicate records ok. Thus dont check return status.*/
-    dbCreateRecord(pdbentry,name);
+    /*Duplicate records ok if the same type */
+    status = dbCreateRecord(pdbentry,name);
+    if(status==S_dbLib_recExists) {
+	if(strcmp(recordType,dbGetRecordTypeName(pdbentry))!=0) {
+	    yyerror("already defined for different record type");
+	    duplicate = TRUE;
+	    return;
+	}
+    } else if(status) {
+	errMessage(status,"new record instance error");
+	yyerrorAbort(NULL);
+    }
     if(visible) dbVisibleRecord(pdbentry);
 }
 
@@ -815,6 +849,7 @@ static void dbRecordField(char *name,char *value)
     tempListNode	*ptempListNode;
     long		status;
 
+    if(duplicate) return;
     ptempListNode = (tempListNode *)ellFirst(&tempList);
     pdbentry = ptempListNode->item;
     status = dbFindField(pdbentry,name);
@@ -835,6 +870,10 @@ static void dbRecordBody(void)
 {
     DBENTRY	*pdbentry;
 
+    if(duplicate) {
+	duplicate = FALSE;
+	return;
+    }
     pdbentry = (DBENTRY *)popFirstTemp();
     if(ellCount(&tempList))
 	yyerrorAbort("dbRecordBody: tempList not empty");

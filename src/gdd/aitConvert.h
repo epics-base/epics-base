@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.1  1996/06/25 19:11:29  jbk
+ * new in EPICS base
+ *
  *
  * *Revision 1.1  1996/05/31 13:15:18  jbk
  * *add new stuff
@@ -15,7 +18,13 @@
  */
 
 #include <sys/types.h>
+
+#ifdef WIN32
+#include <winsock.h>
+#else
 #include <netinet/in.h>
+#endif
+
 #include "aitTypes.h"
 
 #if defined(__i386) || defined(i386)

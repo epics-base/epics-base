@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1  1996/07/10 23:44:12  jhill
+ * moved here from src/cas/generic
+ *
  * Revision 1.2  1996/06/26 21:19:01  jhill
  * now matches gdd api revisions
  *
@@ -223,7 +226,7 @@ inline gddAppFuncTableStatus gddAppFuncTable<PV>::read(PV &pv, gdd &value)
 		return S_gddAppFuncTable_badType;
 	}
 	pFunc = this->pMFuncRead[type];
-	if (!pFunc) {
+	if (pFunc==NULL) {
 		errPrintf (S_gddAppFuncTable_badType, __FILE__,
 			__LINE__, "- ukn appl type code = %u\n", 
 			type);

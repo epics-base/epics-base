@@ -30,6 +30,7 @@
  * .01  07-20-91	rac	print release data; set env params
  * .02	08-06-91	mrk	parm string length test changed to warning
  *				with continue
+ * .03	08-30-91	mrk	completed .02 fix
  */
 
 #include	<vxWorks.h>
@@ -564,10 +565,10 @@ static long getResources(fname) /* Resource Definition File interpreter */
 	switch (cvType) {
 	case 0:		/* DBF_STRING */
 	    len = strlen(s3);
-	    len2 = strlen((char *)pSymAddr);
-	    if (len > len2) {
+	    len2 = 20;
+	    if (len >= len2) {
 		sprintf(message,
-			"getResources: Warning, string might exceed previous reserved space - line=%d",
+                       "getResources: Warning, string might exceed previous reserved space - line=%d",
 			lineNum);
 		errMessage(-1L, message);
 	    }

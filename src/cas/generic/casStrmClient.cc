@@ -80,7 +80,8 @@ casStrmClient::casStrmClient ( caServerI & cas, clientBufMemoryManager & mgrIn )
     pUserName ( 0 ),
     pHostName ( 0 ),
     incommingBytesToDrain ( 0 ),
-    minor_version_number ( 0 )
+    minor_version_number ( 0 ),
+    payloadNeedsByteSwap ( true )
 {
     this->pHostName = new char [1u];
     *this->pHostName = '\0';
@@ -1973,12 +1974,16 @@ caStatus casStrmClient::write()
 	}
 
 #ifdef CONVERSION_REQUIRED
-	/* use type as index into conversion jumptable */
-	(* cac_dbr_cvrt[pHdr->m_dataType])
-		( this->ctx.getData(),
-		  this->ctx.getData(),
-		  false,       /* net -> host format */
-		  pHdr->m_count);
+    // dont byte swap twice 
+    if ( this->payloadNeedsByteSwap ) {
+	    /* use type as index into conversion jumptable */
+	    (* cac_dbr_cvrt[pHdr->m_dataType])
+		    ( this->ctx.getData(),
+		    this->ctx.getData(),
+		    false,       /* net -> host format */
+		    pHdr->m_count);
+        this->payloadNeedsByteSwap = false;
+    }
 #endif
 
 	//
@@ -2003,17 +2008,21 @@ caStatus casStrmClient::write()
 	// indicating so (and vise versa)
 	//
 	if ( this->userStartedAsyncIO ) {
-		if (status!=S_casApp_asyncCompletion) {
+		if ( status != S_casApp_asyncCompletion ) {
 			fprintf(stderr, 
 "Application returned %d from casChannel::write() - expected S_casApp_asyncCompletion\n",
 				status);
 			status = S_casApp_asyncCompletion;
 		}
+        this->payloadNeedsByteSwap = true;
 	}
-	else if ( status == S_casApp_asyncCompletion ) {
-		status = S_cas_badParameter;
-		errMessage ( status, 
-		"- expected asynch IO creation from casChannel::write()" );
+    else if ( status != S_casApp_postponeAsyncIO ) {
+        if ( status == S_casApp_asyncCompletion ) {
+		    status = S_cas_badParameter;
+		    errMessage ( status, 
+		        "- expected asynch IO creation from casChannel::write()" );
+        }
+        this->payloadNeedsByteSwap = true;
 	}
 
 	return status;

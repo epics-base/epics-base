@@ -64,6 +64,7 @@ private:
 	char * pHostName;
     unsigned incommingBytesToDrain;
 	ca_uint16_t minor_version_number;
+    bool payloadNeedsByteSwap;
 
 	caStatus createChannel ( const char * pName );
 	caStatus verifyRequest ( casChannelI * & pChan );

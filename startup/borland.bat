@@ -37,6 +37,8 @@ set PATH=%PATH%;c:\Borland\Bcc55\bin
 REM    --------------- EPICS -----------------------------
 REM    R3.14 requirements
 set EPICS_HOST_ARCH=win32-x86-borland
+set PATH=%PATH%;G:\epics\base\bin\%EPICS_HOST_ARCH%
+set PATH=%PATH%;G:\epics\extensions\bin\%EPICS_HOST_ARCH%
 
 REM    ===================================================
 REM    ====== OPTIONAL ENVIRONMENT VARIABLES FOLLOW ======
@@ -44,8 +46,6 @@ REM    ====== OPTIONAL ENVIRONMENT VARIABLES FOLLOW ======
 REM    -------------------- EPICS ------------------------
 REM HOST_ARCH needed for Makefile.Host builds
 set HOST_ARCH=Borland
-set PATH=%PATH%;G:\epics\base\bin\%EPICS_HOST_ARCH%
-set PATH=%PATH%;G:\epics\extensions\bin\%EPICS_HOST_ARCH%
 
 REM    --------------- GNU make flags --------------------
 REM set MAKEFLAGS=-w

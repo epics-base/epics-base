@@ -648,7 +648,7 @@ void dbCaTask()
     int        status;
 
     taskwdInsert(epicsThreadGetIdSelf(),NULL,NULL);
-    SEVCHK(ca_context_create(enablePreemption),
+    SEVCHK(ca_context_create(enablePreemption,32768),
         "dbCaTask calling ca_context_create");
     SEVCHK(ca_add_exception_event(exceptionCallback,NULL),
         "ca_add_exception_event");

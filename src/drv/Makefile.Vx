@@ -35,7 +35,6 @@ SRCS.c = \
 	../drvComet.c\
 	../drvJgvtr1.c\
 	../drvFp.c\
-	../drvMvme162.c\
 	../drvFpm.c
 
 OBJS = \
@@ -69,7 +68,6 @@ OBJS = \
 	drvComet.o\
 	drvJgvtr1.o\
 	drvFp.o\
-	drvMvme162.o\
 	drvFpm.o
 
 PROD = drvSup

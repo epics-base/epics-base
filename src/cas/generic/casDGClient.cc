@@ -127,7 +127,7 @@ caStatus casDGClient::searchAction()
 	// search requests, and therefore dont thrash through
 	// caServer::pvExistTest() and casCreatePV::pvAttach()
 	//
-    if (!osiSufficentSpaceInPool()) {
+    if (!osiSufficentSpaceInPool(0)) {
         return S_cas_success;
     }
 
@@ -368,7 +368,7 @@ outBuf::flushCondition casDGClient::xSend (char *pBufIn, // X aCC 361
     assert (nBytesAvailableToSend>=nBytesNeedToBeSent);
 
     totalBytes = 0;
-    while (1) {
+    while ( true ) {
         pHdr = reinterpret_cast<cadg *>(&pBufIn[totalBytes]);
 
         assert (totalBytes<=bufSizeT_MAX-pHdr->cadg_nBytes);

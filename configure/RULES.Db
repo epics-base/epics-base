@@ -11,12 +11,15 @@
 
 #####################################################  vpath
 
-vpath %.dbd $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DBD)) $(COMMON_DIR)
+vpath %.dbd $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DBD)) $(COMMON_DIR) \
+ $(subst -I,,$(RELEASE_DBDFLAGS))
 vpath %.db $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DB)) $(COMMON_DIR)
 vpath %.vdb $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DB)) $(COMMON_DIR)
 vpath %.substitutions $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 vpath %.template $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 vpath bpt%.data $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
+
+#vpath %Include.dbd $(COMMON_DIR)
 
 ##################################################### dbdflags
 
@@ -212,6 +215,14 @@ $(COMMON_DIR)/%.dbd: %Include.dbd
 	@echo "Expanding dbd"
 	@$(RM) $@
 	$(DBEXPAND) $(DBDFLAGS) -o $@ $<
+
+$(COMMON_DIR)/%Include.dbd:
+	@$(RM) $@
+	$(PERL) $(TOOLS)/makeIncludeDbd.pl $($*_DBD) $@
+
+$(INSTALL_DBD)/%: $(COMMON_DIR)/%
+	@echo "Installing dbd file $@"
+	@$(INSTALL) -d -m 644 $< $(@D)
 
 $(INSTALL_DBD)/%: %
 	@echo "Installing dbd file $@"

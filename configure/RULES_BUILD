@@ -79,7 +79,7 @@ ifneq (,$(strip $(PROD) $(TESTPROD) $(LIBRARY) $(LOADABLE_LIBRARY)))
 
 MakefileInclude: ../Makefile
 	@$(RM) $@
-	@$(PERL) $(TOOLS)/makeMakefileInclude.pl $(PROD) $(TESTPROD) $(LIBRARY) $(LOADABLE_LIBRARY) $@
+	@$(PERL) $(TOOLS)/makeMakefileInclude.pl $(PROD) $(TESTPROD) $(LIBRARY) $(LOADABLE_LIBRARY) $(DBD) $@
 
 -include MakefileInclude
 

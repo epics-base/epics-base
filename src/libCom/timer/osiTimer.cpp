@@ -560,19 +560,28 @@ void osiTimerQueue::process ()
 		pTmr->curState = osiTimer::stateIdle;
 		this->idle.add (*pTmr);
 
-#ifdef DEBUG
-		double diff = cur-pTmr->exp;
-		printf ("expired %lx for \"%s\" with error %f\n", 
-			(unsigned long)pTmr, pTmr->name(), diff);
-#endif
-		
 		//
 		// Tag current tmr so that we
 		// can detect if it was deleted
 		// during the expire call back
 		//
 		this->pExpireTmr = pTmr;
+
+        //
+        // remove lock while calling their callback
+        //
+        this->mutex.unlock ();
+
+#ifdef DEBUG
+		double diff = cur-pTmr->exp;
+		printf ("expired %lx for \"%s\" with error %f\n", 
+			(unsigned long)pTmr, pTmr->name(), diff);
+#endif
+		
 		pTmr->expire();
+
+        this-> mutex.lock();
+
 		if ( this->pExpireTmr == pTmr ) {
 			if ( pTmr->again () ) {
 		        this->idle.remove (*pTmr);

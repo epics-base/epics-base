@@ -38,7 +38,7 @@ OBJ = .
 RES = .
 
 # Default for perl if it's on the PATH,
-# otherwise override this in CONFIG_SITE.<host_arch>
+# otherwise override this in CONFIG_SITE.Host.<host_arch>
 PERL=perl
 
 # install 
@@ -78,7 +78,8 @@ GCC_SLIBS_YES =
 GCC_SLIBS_NO =
 GCC_CFLAGS_CROSS = -B$(GNU_LIB)/gcc-lib/ -nostdinc
 GCC_CPPFLAGS_CROSS = -nostdinc
-GCC_SHRLIB_CFLAGS_YES =  -fPIC
+GCC_SHRLIB_CFLAGS_YES =  -fPIC -D_REENTRANT
+
 GCC_SHRLIB_LDFLAGS_YES =  -shared
 
 G++ = $(GNU_BIN)/cc$(CMPLR_SUFFIX)
@@ -100,7 +101,8 @@ G++_SFLAGS_NO =
 G++_SLIBS_YES =
 G++_SLIBS_NO =
 G++_DEPENDS_FLAG = -MM
-G++_SHRLIB_CFLAGS_YES =  -fPIC
+G++_SHRLIB_CFLAGS_YES =  -fPIC -D_REENTRANT
+
 G++_SHRLIB_LDFLAGS_YES =  -shared
 
 #--------------------------------------------------
@@ -152,13 +154,13 @@ USR_DBDFLAGS =
 
 #--------------------------------------------------
 # Target specific options
-TARGET_INCLUDES = $($(basename $@)_INCLUDES)
-TARGET_CFLAGS = $($(basename $@)_CFLAGS)
-TARGET_CXXFLAGS = $($(basename $@)_CXXFLAGS)
-TARGET_LDFLAGS = $($(basename $@)_LDFLAGS)
-TARGET_LDLIBS = $($(basename $@)_LDLIBS)
-TARGET_CPPFLAGS = $($(basename $@)_CPPFLAGS)
-TARGET_SNCFLAGS = $($(basename $@)_SNCFLAGS)
+TARGET_INCLUDES = $($(basename $@)_INCLUDES) $($(basename $@)_INCLUDES_$(OS_CLASS))
+TARGET_CFLAGS = $($(basename $@)_CFLAGS) $($(basename $@)_CFLAGS_$(OS_CLASS))
+TARGET_CXXFLAGS = $($(basename $@)_CXXFLAGS) $($(basename $@)_CXXFLAGS_$(OS_CLASS))
+TARGET_LDFLAGS = $($(basename $@)_LDFLAGS) $($(basename $@)_LDFLAGS_$(OS_CLASS))
+TARGET_LDLIBS = $($(basename $@)_LDLIBS) $($(basename $@)_LDLIBS_$(OS_CLASS))
+TARGET_CPPFLAGS = $($(basename $@)_CPPFLAGS) $($(basename $@)_CPPFLAGS_$(OS_CLASS))
+TARGET_SNCFLAGS = $($(basename $@)_SNCFLAGS) $($(basename $@)_SNCFLAGS_$(OS_CLASS))
 
 #--------------------------------------------------
 # Depends flag
@@ -203,21 +205,21 @@ DEPENDS_RULE = -$(COMPILE.cc) $(DEPENDS_FLAG) $^ > DEPENDS
 
 INCLUDES = -I. -I.. $(USR_INCLUDES) $(INSTALL_INCLUDES) $(TARGET_INCLUDES) $(OP_SYS_INCLUDES)
 
+#--------------------------------------------------
+# Flags
+
 CFLAGS = $(OPT_CFLAGS) $(DEBUG_CFLAGS) $(WARN_CFLAGS) $(TARGET_CFLAGS)\
  $(USR_CFLAGS) $(ARCH_DEP_CFLAGS) $(VENDOR_DEP_CFLAGS) $(STATIC_CFLAGS)\
  $(OP_SYS_CFLAGS) $(INCLUDES)
-
-#--------------------------------------------------
-# Flags
 
 CXXFLAGS = $(OPT_CXXFLAGS) $(DEBUG_CXXFLAGS) $(WARN_CXXFLAGS) $(TARGET_CXXFLAGS)\
  $(USR_CXXFLAGS) $(ARCH_DEP_CXXFLAGS) $(VENDOR_DEP_CXXFLAGS) $(STATIC_CXXCFLAGS)\
  $(OP_SYS_CFLAGS) $(TEMPL_INST_CXXFLAG) $(INCLUDES)
 
-LDFLAGS = $(OPT_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS)\
+LDFLAGS = $(OPT_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS) $(DEPLIB_LDFLAGS)\
  $(ARCH_DEP_LDFLAGS) $(STATIC_LDFLAGS) $(OP_SYS_LDFLAGS)
 
-LDLIBS = $(TARGET_LDLIBS) $(USR_LDLIBS) $(ARCH_DEP_LDLIBS)\
+LDLIBS = $(TARGET_LDLIBS) $(USR_LDLIBS) $(DEPLIB_LDLIBS) $(ARCH_DEP_LDLIBS)\
  $(STATIC_LDLIBS) $(OP_SYS_LDLIBS)
 
 CPPFLAGS += $(TARGET_CPPFLAGS) $(USR_CPPFLAGS) $(ARCH_DEP_CPPFLAGS)

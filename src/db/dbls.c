@@ -2,7 +2,7 @@
 /* share/src/db $Id$ */
 
 /*
- *      Author:          Bob Zeiman
+ *      Author:          Bob Zieman
  *      Date:            11-7-90
  *
  *      Experimental Physics and Industrial Control System (EPICS)
@@ -29,7 +29,8 @@
  * Modification Log:
  * -----------------
  * .01  11-26-91        jba     Initialized fp to null
- * .01  02-28-92        jba     ANSI C changes
+ * .02  02-28-92        jba     ANSI C changes
+ * .03  05-19-92	mrk	Mods for internal database structure changes
  */
 
 
@@ -45,11 +46,14 @@
 #include <devSup.h>
 #include <drvSup.h>
 #include <recSup.h>
+#include <dbBase.h>
 #include <dbRecDes.h>
 #include <dbRecords.h>
 #include <errMdef.h>
 #include <error.h>
 #include <sdrHeader.h>
+
+extern struct dbBase *pdbBase;
 
 /* forward references */
 void            DbRecType();
@@ -138,11 +142,11 @@ dbls()
                    *fopen();
     char            fname[80];
     long            status;
+    struct recType *precType;
 
-
-    if (!dbRecType) {
+    if (!(precType=pdbBase->precType)) {
 	status = S_sdr_notLoaded;
-	errMessage(status, "dbls: Error - dbRecType not loaded");
+	errMessage(status, "dbls: Error - precType not loaded");
 	return -1;
     }
     begNumI = 0;
@@ -176,7 +180,10 @@ dbls()
 }				/* end of main */
 getRecTypeSel()
 {
-    endNumI = dbRecType->number;
+    struct recType *precType;
+
+    if (!(precType=pdbBase->precType)) return(0);
+    endNumI = precType->number;
 
     printf("DO YOU WANT TO LIST ALL RECORD TYPES ??? (y|n) : ");
     scanf("%s", ibuff);
@@ -184,14 +191,14 @@ getRecTypeSel()
     if (ibuff[0] != 'y') {
 	FOREVER {
 	    printf("\nRECTYPE MENU:\n");
-	    for (i = 0; i < dbRecType->number; i++) {
-		if (dbRecType->papName[i]) {
-		    printf("%d\t%s\n", i, dbRecType->papName[i]);
+	    for (i = 0; i < precType->number; i++) {
+		if (precType->papName[i]) {
+		    printf("%d\t%s\n", i, precType->papName[i]);
 		}
 	    }
 	    printf("ENTER SELECTION NUMBER  (X-%d) : ", i - 1);
 	    scanf("%d", &inum);
-	    if ((dbRecType->papName[inum])
+	    if ((precType->papName[inum])
 		    && (inum >= 0) && (inum < i)) {
 		begNumI = inum;
 		endNumI = begNumI + 1;
@@ -201,9 +208,9 @@ getRecTypeSel()
 	    }
 	}
     } else {
-	for (i = 0; i < dbRecType->number; i++) {
+	for (i = 0; i < precType->number; i++) {
 	    /* start at first record definition */
-	    if (dbRecType->papName[i]) {
+	    if (precType->papName[i]) {
 		begNumI = i;
 		break;
 	    }
@@ -249,23 +256,25 @@ DbRecType(fp, fflag)
     FILE           *fp;
     int             fflag;
 {
+    struct recType *precType;
 
-    sprintf(buffer, "\n\ndbls: listing the dbRecType structure\n");
+    if(!(precType=pdbBase->precType)) return;
+    sprintf(buffer, "\n\ndbls: listing the precType structure\n");
     bufOut(fp, fflag);
-    sprintf(buffer, "%8x[%8x]    dbRecType-> recType", &dbRecType, dbRecType);
+    sprintf(buffer, "%8x[%8x]    precType-> recType", &precType, precType);
     bufOut(fp, fflag);
     sprintf(buffer, "%8x\t      number\t    [  %d  ]\t/* number of types */",
-	    &dbRecType->number, dbRecType->number);
+	    &precType->number, precType->number);
     bufOut(fp, fflag);
     sprintf(buffer, "%8x[%8x]  **papName\t\t /* pap to record type */",
-	    &dbRecType->papName, dbRecType->papName);
+	    &precType->papName, precType->papName);
     bufOut(fp, fflag);
-    for (i = 0; i < dbRecType->number; i++) {
-	if (dbRecType->papName[i]) {
+    for (i = 0; i < precType->number; i++) {
+	if (precType->papName[i]) {
 	    sprintf(buffer, "%8x[%8x]    papName->[%d]->\t\"%s\"",
-		    &dbRecType->papName[i],
-		    dbRecType->papName[i],
-		    i, dbRecType->papName[i]);
+		    &precType->papName[i],
+		    precType->papName[i],
+		    i, precType->papName[i]);
 	    bufOut(fp, fflag);
 	}
     }
@@ -275,43 +284,45 @@ ChoiceGbl(fp, fflag)
     FILE           *fp;
     int             fflag;
 {
-    if (!choiceGbl) {
+    struct arrChoiceSet *pchoiceGbl;
+
+    if (!(pchoiceGbl=pdbBase->pchoiceGbl)) {
 	printf("ChoiceGbl: Error - choiceGbl not loaded\n");
 	return;
     }
     sprintf(buffer, "\n\ndbls: listing the choiceGbl structure\n");
     bufOut(fp, fflag);
-    sprintf(buffer, "%8x[%8x]    choiceGbl -> arrChoiceSet", &choiceGbl, choiceGbl);
+    sprintf(buffer, "%8x[%8x]    pchoiceGbl -> arrChoiceSet", &pchoiceGbl, pchoiceGbl);
     bufOut(fp, fflag);
     sprintf(buffer, "%8x\t\t  number\t\t[%d]\t/* number of choice sets */",
-	    &choiceGbl->number,
-	    choiceGbl->number);
+	    &pchoiceGbl->number,
+	    pchoiceGbl->number);
     bufOut(fp, fflag);
     sprintf(buffer, "%8x[%8x]\t**papChoiceSet -> choiceSet",
-	    &choiceGbl->papChoiceSet,
-	    choiceGbl->papChoiceSet);
+	    &pchoiceGbl->papChoiceSet,
+	    pchoiceGbl->papChoiceSet);
     bufOut(fp, fflag);
-    for (i = 0; i < choiceGbl->number; i++) {
-	if (choiceGbl->papChoiceSet[i]) {
+    for (i = 0; i < pchoiceGbl->number; i++) {
+	if (pchoiceGbl->papChoiceSet[i]) {
 	    sprintf(buffer, "%8x[%8x]\t  papChoiceSet->[%d]\tINDEX[%d]",
-		    &choiceGbl->papChoiceSet[i],
-		    choiceGbl->papChoiceSet[i], i, i);
+		    &pchoiceGbl->papChoiceSet[i],
+		    pchoiceGbl->papChoiceSet[i], i, i);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x\t\t      number [%d]\t\t/* number of choices */",
-		    &choiceGbl->papChoiceSet[i]->number,
-		    choiceGbl->papChoiceSet[i]->number);
+		    &pchoiceGbl->papChoiceSet[i]->number,
+		    pchoiceGbl->papChoiceSet[i]->number);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x[%8x]\t    **papChoice -> \t\"choice string\"",
-		    &choiceGbl->papChoiceSet[i]->papChoice,
-		    choiceGbl->papChoiceSet[i]->papChoice);
+		    &pchoiceGbl->papChoiceSet[i]->papChoice,
+		    pchoiceGbl->papChoiceSet[i]->papChoice);
 	    bufOut(fp, fflag);
-	    for (j = 0; j < choiceGbl->papChoiceSet[i]->number; j++) {
-		if (choiceGbl->papChoiceSet[i]->papChoice[j]) {
+	    for (j = 0; j < pchoiceGbl->papChoiceSet[i]->number; j++) {
+		if (pchoiceGbl->papChoiceSet[i]->papChoice[j]) {
 		    sprintf(buffer, "%8x[%8x]\t\t  papChoice->[%d]\t\"%s\"",
-			    &choiceGbl->papChoiceSet[i]->papChoice[j],
-			    choiceGbl->papChoiceSet[i]->papChoice[j],
+			    &pchoiceGbl->papChoiceSet[i]->papChoice[j],
+			    pchoiceGbl->papChoiceSet[i]->papChoice[j],
 			    j,
-			    choiceGbl->papChoiceSet[i]->papChoice[j]);
+			    pchoiceGbl->papChoiceSet[i]->papChoice[j]);
 		    bufOut(fp, fflag);
 		}
 	    }
@@ -323,51 +334,55 @@ ChoiceDev(fp, fflag)
     FILE           *fp;
     int             fflag;
 {
-    if (!choiceDev) {
+    struct devChoiceRec *pchoiceDev;
+    struct recType	*precType;
+
+    if (!(pchoiceDev=pdbBase->pchoiceDev)) {
 	printf("ChoiceDev: Error - choiceDev not loaded\n");
 	return;
     }
+    if(!(precType=pdbBase->precType)) return;
     getRecTypeSel();
     sprintf(buffer, "\n\ndbls: listing the  choiceDev structure");
     bufOut(fp, fflag);
-    sprintf(buffer, "%8x[%8x]choiceDev-> devChoiceRec ", &choiceDev, choiceDev);
+    sprintf(buffer, "%8x[%8x]pchoiceDev-> devChoiceRec ", &pchoiceDev, pchoiceDev);
     bufOut(fp, fflag);
     sprintf(buffer, "%8x\t      number\t[%d]\t\t\t/* number of devChoiceSet */",
-	    &choiceDev->number, choiceDev->number);
+	    &pchoiceDev->number, pchoiceDev->number);
     bufOut(fp, fflag);
     sprintf(buffer, "%8x[%8x]    **papDevChoiceSet -> devChoiceSet ",
-	    &choiceDev->papDevChoiceSet,
-	    choiceDev->papDevChoiceSet);
+	    &pchoiceDev->papDevChoiceSet,
+	    pchoiceDev->papDevChoiceSet);
     bufOut(fp, fflag);
     for (i = begNumI; i < endNumI; i++) {
-	if (choiceDev->papDevChoiceSet[i]) {
+	if (pchoiceDev->papDevChoiceSet[i]) {
 	    sprintf(buffer, "\n%8x[%8x]\tpapDevChoiceSet->[%d]\t\tRECTYPE \"%s\"",
-		    &choiceDev->papDevChoiceSet[i],
-		    choiceDev->papDevChoiceSet[i], i,
-		    dbRecType->papName[i]);
+		    &pchoiceDev->papDevChoiceSet[i],
+		    pchoiceDev->papDevChoiceSet[i], i,
+		    precType->papName[i]);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x\t\t   number\t[%d]\t\t/*number of choices */ ",
-		    &choiceDev->papDevChoiceSet[i]->number,
-		    choiceDev->papDevChoiceSet[i]->number);
+		    &pchoiceDev->papDevChoiceSet[i]->number,
+		    pchoiceDev->papDevChoiceSet[i]->number);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x[%8x]\t   **papDevChoice -> devChoice",
-		    &choiceDev->papDevChoiceSet[i]->papDevChoice,
-		    choiceDev->papDevChoiceSet[i]->papDevChoice);
+		    &pchoiceDev->papDevChoiceSet[i]->papDevChoice,
+		    pchoiceDev->papDevChoiceSet[i]->papDevChoice);
 	    bufOut(fp, fflag);
-	    for (j = 0; j < choiceDev->papDevChoiceSet[i]->number; j++) {
-		if (choiceDev->papDevChoiceSet[i]->papDevChoice[j]) {
+	    for (j = 0; j < pchoiceDev->papDevChoiceSet[i]->number; j++) {
+		if (pchoiceDev->papDevChoiceSet[i]->papDevChoice[j]) {
 		    sprintf(buffer, "%8x[%8x]\t   papDevChoice[%d]",
-			    &choiceDev->papDevChoiceSet[i]->papDevChoice[j],
-			 choiceDev->papDevChoiceSet[i]->papDevChoice[j], j);
+			    &pchoiceDev->papDevChoiceSet[i]->papDevChoice[j],
+			 pchoiceDev->papDevChoiceSet[i]->papDevChoice[j], j);
 		    bufOut(fp, fflag);
 		    sprintf(buffer, "%8x\t\t       link_type [%d]",
-			    &choiceDev->papDevChoiceSet[i]->papDevChoice[j]->link_type,
-			    choiceDev->papDevChoiceSet[i]->papDevChoice[j]->link_type);
+			    &pchoiceDev->papDevChoiceSet[i]->papDevChoice[j]->link_type,
+			    pchoiceDev->papDevChoiceSet[i]->papDevChoice[j]->link_type);
 		    bufOut(fp, fflag);
 		    sprintf(buffer, "%8x[%8x]\t\t*pchoice\t\t\"%s\"",
-		    &choiceDev->papDevChoiceSet[i]->papDevChoice[j]->pchoice,
-		    choiceDev->papDevChoiceSet[i]->papDevChoice[j]->pchoice,
-		    choiceDev->papDevChoiceSet[i]->papDevChoice[j]->pchoice);
+		    &pchoiceDev->papDevChoiceSet[i]->papDevChoice[j]->pchoice,
+		    pchoiceDev->papDevChoiceSet[i]->papDevChoice[j]->pchoice,
+		    pchoiceDev->papDevChoiceSet[i]->papDevChoice[j]->pchoice);
 		    bufOut(fp, fflag);
 		}
 	    }
@@ -379,27 +394,28 @@ ChoiceCvt(fp, fflag)
     FILE           *fp;
     int             fflag;
 {
+    struct choiceSet *pchoiceCvt;
 
-    if (!choiceCvt) {
+    if (!(pchoiceCvt=pdbBase->pchoiceCvt)) {
 	printf("ChoiceCvt: Error - choiceCvt not loaded\n");
 	return;
     }
     sprintf(buffer, "\n\ndbls: listing the  choiceCvt structure");
     bufOut(fp, fflag);
-    sprintf(buffer, "%8x[%8x] choiceCvt -> choiceCvt", &choiceCvt, choiceCvt);
+    sprintf(buffer, "%8x[%8x] choiceCvt -> choiceCvt", &pchoiceCvt, pchoiceCvt);
 
     bufOut(fp, fflag);
     sprintf(buffer, "%8x               number\t    [  %d  ]\t/* number of choices */",
-	    &choiceCvt->number, choiceCvt->number);
+	    &pchoiceCvt->number, pchoiceCvt->number);
     bufOut(fp, fflag);
     sprintf(buffer, "%8x[%8x]   **papChoice -> \"choice string\"",
-	    &choiceCvt->papChoice, choiceCvt->papChoice);
+	    &pchoiceCvt->papChoice, pchoiceCvt->papChoice);
     bufOut(fp, fflag);
-    for (i = 0; i < choiceCvt->number; i++)
-	if (choiceCvt->papChoice[i]) {
+    for (i = 0; i < pchoiceCvt->number; i++)
+	if (pchoiceCvt->papChoice[i]) {
 	    sprintf(buffer, "%8x[%8x]     papChoice[%d]\t\"%s\" ",
-		    &choiceCvt->papChoice[i], choiceCvt->papChoice[i], i,
-		    choiceCvt->papChoice[i]);
+		    &pchoiceCvt->papChoice[i], pchoiceCvt->papChoice[i], i,
+		    pchoiceCvt->papChoice[i]);
 	    bufOut(fp, fflag);
 	}
     return;
@@ -409,12 +425,14 @@ CvtTable(fp, fflag)
     FILE           *fp;
     int             fflag;
 {
-    if (!cvtTable) {
+    struct arrBrkTable *pcvtTable;
+
+    if (!(pcvtTable=pdbBase->pcvtTable)) {
 	printf("CvtTable: Error - cvtTable not loaded\n");
 	return;
     }
     begNumI = 0;
-    endNumI = cvtTable->number;
+    endNumI = pcvtTable->number;
 
     printf("DO YOU WANT TO LIST ALL CVT TABLES ??? (y|n) : ");
     scanf("%s", ibuff);
@@ -423,14 +441,14 @@ CvtTable(fp, fflag)
 	FOREVER {
 	    printf("\nBRKPOINT MENU:\n");
 	    for (i = begNumI; i < endNumI; i++) {
-		if (cvtTable->papBrkTable[i]) {
-		    sprintf(buffer, "%d\t%s", i, cvtTable->papBrkTable[i]->name);
+		if (pcvtTable->papBrkTable[i]) {
+		    sprintf(buffer, "%d\t%s", i, pcvtTable->papBrkTable[i]->name);
 		    bufOut(fp, 0);
 		}
 	    }
 	    printf("ENTER SELECTION NUMBER  (N-%d) : ", i - 1);
 	    scanf("%d", &inum);
-	    if ((cvtTable->papBrkTable[inum]) && inum < endNumI) {
+	    if ((pcvtTable->papBrkTable[inum]) && inum < endNumI) {
 		begNumI = inum;
 		endNumI = begNumI + 1;
 		break;
@@ -439,66 +457,66 @@ CvtTable(fp, fflag)
 	    }
 	}
     } else {
-	for (i = 0; i < cvtTable->number; i++) {
-	    if (cvtTable->papBrkTable[i]) {
+	for (i = 0; i < pcvtTable->number; i++) {
+	    if (pcvtTable->papBrkTable[i]) {
 		begNumI = i;
 		break;
 	    }
 	}
     }
-    sprintf(buffer, "\n\ndbls: listing the  cvtTable structure");
+    sprintf(buffer, "\n\ndbls: listing the  pcvtTable structure");
     bufOut(fp, fflag);
-    sprintf(buffer, "%8x[%8x] cvtTable -> arrBrkTable", &cvtTable, cvtTable);
+    sprintf(buffer, "%8x[%8x] pcvtTable -> arrBrkTable", &pcvtTable, pcvtTable);
     bufOut(fp, fflag);
     sprintf(buffer, "%8x               number\t    [  %d  ]\t/* number of break tables */",
-	    &cvtTable->number, cvtTable->number);
+	    &pcvtTable->number, pcvtTable->number);
     bufOut(fp, fflag);
     sprintf(buffer, "%8x[%8x]   **papBrkTable -> brkTable",
-	    &cvtTable->papBrkTable, cvtTable->papBrkTable);
+	    &pcvtTable->papBrkTable, pcvtTable->papBrkTable);
     bufOut(fp, fflag);
     for (i = begNumI; i < endNumI; i++) {
-	if (cvtTable->papBrkTable[i]) {
+	if (pcvtTable->papBrkTable[i]) {
 	    sprintf(buffer, "%8x[%8x]     papBrkTable[%d] ",
-		    &cvtTable->papBrkTable[i], cvtTable->papBrkTable[i], i);
+		    &pcvtTable->papBrkTable[i], pcvtTable->papBrkTable[i], i);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x[%8x]\t *name\t\t\t\"%s\"",
-		    &cvtTable->papBrkTable[i]->name,
-		    cvtTable->papBrkTable[i]->name,
-		    cvtTable->papBrkTable[i]->name);
+		    &pcvtTable->papBrkTable[i]->name,
+		    pcvtTable->papBrkTable[i]->name,
+		    pcvtTable->papBrkTable[i]->name);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x\t\t  number    [  %d  ]\t/* number of brkInt in this table */ ",
-		    &cvtTable->papBrkTable[i]->number,
-		    cvtTable->papBrkTable[i]->number);
+		    &pcvtTable->papBrkTable[i]->number,
+		    pcvtTable->papBrkTable[i]->number);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x\t\t  rawLow\t\t\t%-d",
-		    &cvtTable->papBrkTable[i]->rawLow,
-		    cvtTable->papBrkTable[i]->rawLow);
+		    &pcvtTable->papBrkTable[i]->rawLow,
+		    pcvtTable->papBrkTable[i]->rawLow);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x\t\t  rawHigh\t\t\t%-d",
-		    &cvtTable->papBrkTable[i]->rawHigh,
-		    cvtTable->papBrkTable[i]->rawHigh);
+		    &pcvtTable->papBrkTable[i]->rawHigh,
+		    pcvtTable->papBrkTable[i]->rawHigh);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x[%8x]\t**papBrkInt",
-		    &cvtTable->papBrkTable[i]->papBrkInt,
-		    cvtTable->papBrkTable[i]->papBrkInt);
+		    &pcvtTable->papBrkTable[i]->papBrkInt,
+		    pcvtTable->papBrkTable[i]->papBrkInt);
 	    bufOut(fp, fflag);
-	    for (j = 0; j < cvtTable->papBrkTable[i]->number; j++) {
-		if (cvtTable->papBrkTable[i]->papBrkInt[j]) {
+	    for (j = 0; j < pcvtTable->papBrkTable[i]->number; j++) {
+		if (pcvtTable->papBrkTable[i]->papBrkInt[j]) {
 		    sprintf(buffer, "%8x[%8x]\t  papBrkInt[%d] -> brkInt",
-			    &cvtTable->papBrkTable[i]->papBrkInt[j],
-			    cvtTable->papBrkTable[i]->papBrkInt[j], j);
+			    &pcvtTable->papBrkTable[i]->papBrkInt[j],
+			    pcvtTable->papBrkTable[i]->papBrkInt[j], j);
 		    bufOut(fp, fflag);
 		    sprintf(buffer, "%8x\t\t      raw\t\t\t%-d",
-			    &cvtTable->papBrkTable[i]->papBrkInt[j]->raw,
-			    cvtTable->papBrkTable[i]->papBrkInt[j]->raw);
+			    &pcvtTable->papBrkTable[i]->papBrkInt[j]->raw,
+			    pcvtTable->papBrkTable[i]->papBrkInt[j]->raw);
 		    bufOut(fp, fflag);
 		    sprintf(buffer, "%8x\t\t      slope\t\t\t%-.5f",
-			    &cvtTable->papBrkTable[i]->papBrkInt[j]->slope,
-			    cvtTable->papBrkTable[i]->papBrkInt[j]->slope);
+			    &pcvtTable->papBrkTable[i]->papBrkInt[j]->slope,
+			    pcvtTable->papBrkTable[i]->papBrkInt[j]->slope);
 		    bufOut(fp, fflag);
 		    sprintf(buffer, "%8x\t\t      eng\t\t\t%-.5f",
-			    &cvtTable->papBrkTable[i]->papBrkInt[j]->eng,
-			    cvtTable->papBrkTable[i]->papBrkInt[j]->eng);
+			    &pcvtTable->papBrkTable[i]->papBrkInt[j]->eng,
+			    pcvtTable->papBrkTable[i]->papBrkInt[j]->eng);
 		    bufOut(fp, fflag);
 		}
 	    }
@@ -510,52 +528,55 @@ DevSup(fp, fflag)
     FILE           *fp;
     int             fflag;
 {
+    struct recType	*precType;
+    struct recDevSup	*precDevSup;
 
-    if (!devSup) {
+    if (!(precDevSup=pdbBase->precDevSup)) {
 	printf("DevSup: Error - devSup not loaded\n");
 	return;
     }
+    if(!(precType=pdbBase->precType)) return;
     getRecTypeSel();
     sprintf(buffer, "\n\ndbls: listing the devSup structure");
     bufOut(fp, fflag);
-    sprintf(buffer, "%8x[%8x] devSup -> recDevSup ", &devSup, devSup);
+    sprintf(buffer, "%8x[%8x] precDevSup -> recDevSup ", &precDevSup, precDevSup);
     bufOut(fp, fflag);
     sprintf(buffer, "%8x\t\tnumber\t   [  %d  ]\t/* number of record types */",
-	    &devSup->number, devSup->number);
+	    &precDevSup->number, precDevSup->number);
     bufOut(fp, fflag);
-    sprintf(buffer, "%8x[%8x]   **papDevSup -> devSup ",
-	    &devSup->papDevSup, devSup->papDevSup);
+    sprintf(buffer, "%8x[%8x]   **papDevSup -> precDevSup ",
+	    &precDevSup->papDevSup, precDevSup->papDevSup);
     bufOut(fp, fflag);
     for (i = begNumI; i < endNumI; i++) {
-	if (devSup->papDevSup[i]) {
+	if (precDevSup->papDevSup[i]) {
 	    sprintf(buffer, "%8x[%8x]     papDevSup->[%d]\t\"%s\"",
-		    &devSup->papDevSup[i],
-		    devSup->papDevSup[i], i,
-		    dbRecType->papName[i]);
+		    &precDevSup->papDevSup[i],
+		    precDevSup->papDevSup[i], i,
+		    precType->papName[i]);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x\t\t   number\t[%d]\t/* number of dset */",
-		    &devSup->papDevSup[i]->number,
-		    devSup->papDevSup[i]->number);
+		    &precDevSup->papDevSup[i]->number,
+		    precDevSup->papDevSup[i]->number);
 	    bufOut(fp, fflag);
-	    sprintf(buffer, "%8x[%8x]       **dsetName",
-		    &devSup->papDevSup[i]->dsetName,
-		    devSup->papDevSup[i]->dsetName);
+	    sprintf(buffer, "%8x[%8x]       **papDsetName",
+		    &precDevSup->papDevSup[i]->papDsetName,
+		    precDevSup->papDevSup[i]->papDsetName);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x[%8x]       **papDset",
-		    &devSup->papDevSup[i]->papDset,
-		    devSup->papDevSup[i]->papDset);
+		    &precDevSup->papDevSup[i]->papDset,
+		    precDevSup->papDevSup[i]->papDset);
 	    bufOut(fp, fflag);
-	    for (j = 0; j < devSup->papDevSup[i]->number; j++) {
-		if (devSup->papDevSup[i]->dsetName[j]) {
-		    sprintf(buffer, "%8x[%8x]\t\tdsetName[%d]\t%s",
-			    &devSup->papDevSup[i]->dsetName[j],
-			    devSup->papDevSup[i]->dsetName[j],
+	    for (j = 0; j < precDevSup->papDevSup[i]->number; j++) {
+		if (precDevSup->papDevSup[i]->papDsetName[j]) {
+		    sprintf(buffer, "%8x[%8x]\t\tpapDsetName[%d]\t%s",
+			    &precDevSup->papDevSup[i]->papDsetName[j],
+			    precDevSup->papDevSup[i]->papDsetName[j],
 			    j,
-			    devSup->papDevSup[i]->dsetName[j]);
+			    precDevSup->papDevSup[i]->papDsetName[j]);
 		    bufOut(fp, fflag);
 		    sprintf(buffer, "%8x[%8x]\t\tpapDset[%d]",
-			    &devSup->papDevSup[i]->papDset[j],
-			    devSup->papDevSup[i]->papDset[j], j);
+			    &precDevSup->papDevSup[i]->papDset[j],
+			    precDevSup->papDevSup[i]->papDset[j], j);
 		    bufOut(fp, fflag);
 		}
 	    }
@@ -567,31 +588,33 @@ DrvSup(fp, fflag)
     FILE           *fp;
     int             fflag;
 {
-    if (!drvSup) {
+    struct drvSup  *pdrvSup;
+
+    if (!(pdrvSup=pdbBase->pdrvSup)) {
 	printf("DrvSup: Error - drvSup not loaded\n");
     }
     sprintf(buffer, "\n\ndbls: listing the drvSup structure");
     bufOut(fp, fflag);
-    sprintf(buffer, "%8x[%8x]  drvSup -> drvSup ", &drvSup, drvSup);
+    sprintf(buffer, "%8x[%8x]  pdrvSup -> pdrvSup ", &pdrvSup, pdrvSup);
     bufOut(fp, fflag);
-    sprintf(buffer, "%8x\t\t number\t[%d]\t/* number of dset */", &drvSup->number, drvSup->number);
+    sprintf(buffer, "%8x\t\t number\t[%d]\t/* number of dset */", &pdrvSup->number, pdrvSup->number);
     bufOut(fp, fflag);
-    sprintf(buffer, "%8x[%8x]     **drvetName ->  \t/* pArr of ptr to drvetName */ ",
-	    &drvSup->drvetName, drvSup->drvetName);
+    sprintf(buffer, "%8x[%8x]     **papDrvName ->  \t/* pArr of ptr to papDrvName */ ",
+	    &pdrvSup->papDrvName, pdrvSup->papDrvName);
     bufOut(fp, fflag);
     sprintf(buffer, "%8x[%8x]     **papDrvet-> drvet \t/* pArr ptr to drvet */",
-	    &drvSup->papDrvet, drvSup->papDrvet);
+	    &pdrvSup->papDrvet, pdrvSup->papDrvet);
     bufOut(fp, fflag);
-    for (i = 0; i < drvSup->number; i++) {
-	if (drvSup->drvetName[i])
-	    sprintf(buffer, "%8x[%8x]\t   drvetName->[%d]\t\"%s\"",
-		    &drvSup->drvetName[i],
-		    drvSup->drvetName[i],
-		    i, drvSup->drvetName[i]);
+    for (i = 0; i < pdrvSup->number; i++) {
+	if (pdrvSup->papDrvName[i])
+	    sprintf(buffer, "%8x[%8x]\t   papDrvName->[%d]\t\"%s\"",
+		    &pdrvSup->papDrvName[i],
+		    pdrvSup->papDrvName[i],
+		    i, pdrvSup->papDrvName[i]);
 	bufOut(fp, fflag);
 	sprintf(buffer, "%8x[%8x]\t   papDrvet->[%d] /* reserved ptr to drvet */",
-		&drvSup->papDrvet[i],
-		drvSup->papDrvet[i], i);
+		&pdrvSup->papDrvet[i],
+		pdrvSup->papDrvet[i], i);
 	bufOut(fp, fflag);
     }
 }				/* end of DrvSup */
@@ -603,23 +626,27 @@ DbRecDes(fp, fflag)
     char           *ptemp;
     long            buff[6];
     int             allJ = 0;
-    if (!dbRecDes) {
-	printf("DbRecDes: Error - dbRecDes not loaded\n");
+    struct recDes  *precDes;
+    struct recType	*precType;
+
+    if(!(precType=pdbBase->precType)) return;
+    if (!(precDes=pdbBase->precDes)) {
+	printf("DbRecDes: Error - precDes not loaded\n");
 	return;
     }
     getRecTypeSel();
     begNumJ = 0;
-    endNumJ = dbRecDes->papRecTypDes[begNumI]->no_fields;
+    endNumJ = precDes->papRecTypDes[begNumI]->no_fields;
     if ((endNumI - begNumI) < 2) {
 	printf("DO YOU WANT TO LIST ALL FIELDS ??? (y|n) : ");
 	scanf("%s", ibuff);
 	if (ibuff[0] != 'y')
 	    FOREVER {
-	    printf("\nFIELDNAME MENU FOR RECTYPE %s:\n", dbRecType->papName[begNumI]);
+	    printf("\nFIELDNAME MENU FOR RECTYPE %s:\n", precType->papName[begNumI]);
 	    for (j = 0; j < endNumJ; j++) {
 		printf("%3d %4.4s",
-		       dbRecDes->papRecTypDes[begNumI]->sortFldInd[j],
-		       &dbRecDes->papRecTypDes[begNumI]->sortFldName[j]);
+		       precDes->papRecTypDes[begNumI]->sortFldInd[j],
+		       &precDes->papRecTypDes[begNumI]->sortFldName[j]);
 		if (!((j + 1) % 8))
 		    printf("\n");
 	    }
@@ -637,73 +664,73 @@ DbRecDes(fp, fflag)
     } else
 	allJ = 1;
 
-    sprintf(buffer, "\n\ndbls: listing the dbRecDes structure");
+    sprintf(buffer, "\n\ndbls: listing the precDes structure");
     bufOut(fp, fflag);
-    sprintf(buffer, "%8x[%8x]  dbRecDes-> recDes", &dbRecDes, dbRecDes);
+    sprintf(buffer, "%8x[%8x]  precDes-> recDes", &precDes, precDes);
     bufOut(fp, fflag);
     sprintf(buffer, "%8x\t\tnumber [%d] \t/* number of recTypDes */",
-	    &dbRecDes->number, dbRecDes->number);
+	    &precDes->number, precDes->number);
     bufOut(fp, fflag);
     for (i = begNumI; i < endNumI; i++) {
 
-	if (dbRecDes->papRecTypDes[i]) {
+	if (precDes->papRecTypDes[i]) {
 	    sprintf(buffer, "\n%8x[%8x]    **papRecTypDes-> recTypDes\t\"%s\"",
-		    &dbRecDes->papRecTypDes,
-		    dbRecDes->papRecTypDes,
-		    dbRecType->papName[i]);
+		    &precDes->papRecTypDes,
+		    precDes->papRecTypDes,
+		    precType->papName[i]);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x\t\t    rec_size [%d]",
-		    &dbRecDes->papRecTypDes[i]->rec_size,
-		    dbRecDes->papRecTypDes[i]->rec_size);
+		    &precDes->papRecTypDes[i]->rec_size,
+		    precDes->papRecTypDes[i]->rec_size);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x\t\t    no_fields [%d]",
-		    &dbRecDes->papRecTypDes[i]->no_fields,
-		    dbRecDes->papRecTypDes[i]->no_fields);
+		    &precDes->papRecTypDes[i]->no_fields,
+		    precDes->papRecTypDes[i]->no_fields);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x\t\t    no_prompt [%d]",
-		    &dbRecDes->papRecTypDes[i]->no_prompt,
-		    dbRecDes->papRecTypDes[i]->no_prompt);
+		    &precDes->papRecTypDes[i]->no_prompt,
+		    precDes->papRecTypDes[i]->no_prompt);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x\t\t    no_links [%d]",
-		    &dbRecDes->papRecTypDes[i]->no_links,
-		    dbRecDes->papRecTypDes[i]->no_links);
+		    &precDes->papRecTypDes[i]->no_links,
+		    precDes->papRecTypDes[i]->no_links);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x[%8x]\t    *link_ind",
-		    &dbRecDes->papRecTypDes[i]->link_ind,
-		    dbRecDes->papRecTypDes[i]->link_ind);
+		    &precDes->papRecTypDes[i]->link_ind,
+		    precDes->papRecTypDes[i]->link_ind);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x[%8x]\t    *sortFldName",
-		    &dbRecDes->papRecTypDes[i]->sortFldName,
-		    dbRecDes->papRecTypDes[i]->sortFldName);
+		    &precDes->papRecTypDes[i]->sortFldName,
+		    precDes->papRecTypDes[i]->sortFldName);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x[%8x]\t    *sortFldInd",
-		    &dbRecDes->papRecTypDes[i]->sortFldInd,
-		    dbRecDes->papRecTypDes[i]->sortFldInd);
+		    &precDes->papRecTypDes[i]->sortFldInd,
+		    precDes->papRecTypDes[i]->sortFldInd);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x[%8x]\t   **papFldDes-> fldDes",
-		    &dbRecDes->papRecTypDes[i]->papFldDes,
-		    dbRecDes->papRecTypDes[i]->papFldDes);
+		    &precDes->papRecTypDes[i]->papFldDes,
+		    precDes->papRecTypDes[i]->papFldDes);
 	    bufOut(fp, fflag);
 
 	    if (allJ) {
-		endNumJ = dbRecDes->papRecTypDes[i]->no_fields;
+		endNumJ = precDes->papRecTypDes[i]->no_fields;
 		/* expand *link_ind */
-		for (j = 0; j < dbRecDes->papRecTypDes[i]->no_links; j++) {
+		for (j = 0; j < precDes->papRecTypDes[i]->no_links; j++) {
 		    sprintf(buffer,"%8x\tlink_ind[%d] offset=[%d]",
-			   &dbRecDes->papRecTypDes[i]->link_ind[j],
+			   &precDes->papRecTypDes[i]->link_ind[j],
 			   j,
-			   dbRecDes->papRecTypDes[i]->link_ind[j]);
+			   precDes->papRecTypDes[i]->link_ind[j]);
     		    bufOut(fp, fflag);
 		}
 		/* expand *sortFldName and *sortFldInd */
-		ptemp = (char *) dbRecDes->papRecTypDes[i]->sortFldName;
-		for (j = 0; j < dbRecDes->papRecTypDes[i]->no_fields; j++) {
+		ptemp = (char *) precDes->papRecTypDes[i]->sortFldName;
+		for (j = 0; j < precDes->papRecTypDes[i]->no_fields; j++) {
 		    sprintf(buffer,"[%8x] sortFldName[%2d]=%4.4s [%8x] sortFldInd=%2d",
 			   ptemp,
 			   j,
 			   ptemp,
-			   &dbRecDes->papRecTypDes[i]->sortFldInd[j],
-			   dbRecDes->papRecTypDes[i]->sortFldInd[j]
+			   &precDes->papRecTypDes[i]->sortFldInd[j],
+			   precDes->papRecTypDes[i]->sortFldInd[j]
 			);
     		    bufOut(fp, fflag);
 		    ptemp += 4;
@@ -713,89 +740,89 @@ DbRecDes(fp, fflag)
 		sprintf(buffer, "\n");
 		bufOut(fp, fflag);
 		sprintf(buffer, "%8x[%8x]\t   **papFldDes->fldDes[%d]",
-			&dbRecDes->papRecTypDes[i]->papFldDes[j],
-			dbRecDes->papRecTypDes[i]->papFldDes[j], j);
+			&precDes->papRecTypDes[i]->papFldDes[j],
+			precDes->papRecTypDes[i]->papFldDes[j], j);
 		bufOut(fp, fflag);
 		sprintf(buffer, "%8x\t\t\tprompt\t\t\"%s\"",
-			dbRecDes->papRecTypDes[i]->papFldDes[j]->prompt,
-			dbRecDes->papRecTypDes[i]->papFldDes[j]->prompt);
+			precDes->papRecTypDes[i]->papFldDes[j]->prompt,
+			precDes->papRecTypDes[i]->papFldDes[j]->prompt);
 		bufOut(fp, fflag);
 		sprintf(buffer, "%8x\t\t\tfldname\t\t\"%4.4s\"",
-			dbRecDes->papRecTypDes[i]->papFldDes[j]->fldname,
-			dbRecDes->papRecTypDes[i]->papFldDes[j]->fldname);
+			precDes->papRecTypDes[i]->papFldDes[j]->fldname,
+			precDes->papRecTypDes[i]->papFldDes[j]->fldname);
 		bufOut(fp, fflag);
 		sprintf(buffer, "%8x\t\t\toffset [%d]",
-			&dbRecDes->papRecTypDes[i]->papFldDes[j]->offset,
-			dbRecDes->papRecTypDes[i]->papFldDes[j]->offset);
+			&precDes->papRecTypDes[i]->papFldDes[j]->offset,
+			precDes->papRecTypDes[i]->papFldDes[j]->offset);
 		bufOut(fp, fflag);
 		sprintf(buffer, "%8x\t\t\tsize [%d]",
-			&dbRecDes->papRecTypDes[i]->papFldDes[j]->size,
-			dbRecDes->papRecTypDes[i]->papFldDes[j]->size);
+			&precDes->papRecTypDes[i]->papFldDes[j]->size,
+			precDes->papRecTypDes[i]->papFldDes[j]->size);
 		bufOut(fp, fflag);
 		sprintf(buffer, "%8x\t\t\tspecial [%d]",
-			&dbRecDes->papRecTypDes[i]->papFldDes[j]->special,
-			dbRecDes->papRecTypDes[i]->papFldDes[j]->special);
+			&precDes->papRecTypDes[i]->papFldDes[j]->special,
+			precDes->papRecTypDes[i]->papFldDes[j]->special);
 		bufOut(fp, fflag);
 		sprintf(buffer, "%8x\t\t\tfield_type [%d]",
-			&dbRecDes->papRecTypDes[i]->papFldDes[j]->field_type,
-			dbRecDes->papRecTypDes[i]->papFldDes[j]->field_type);
+			&precDes->papRecTypDes[i]->papFldDes[j]->field_type,
+			precDes->papRecTypDes[i]->papFldDes[j]->field_type);
 		bufOut(fp, fflag);
 		sprintf(buffer, "%8x\t\t\tdbr_field_type [%d]",
-		   &dbRecDes->papRecTypDes[i]->papFldDes[j]->dbr_field_type,
-		   dbRecDes->papRecTypDes[i]->papFldDes[j]->dbr_field_type);
+		   &precDes->papRecTypDes[i]->papFldDes[j]->dbr_field_type,
+		   precDes->papRecTypDes[i]->papFldDes[j]->dbr_field_type);
 		bufOut(fp, fflag);
 		sprintf(buffer, "%8x\t\t\tprocess_passive [%d]",
-		   &dbRecDes->papRecTypDes[i]->papFldDes[j]->process_passive,
-		   dbRecDes->papRecTypDes[i]->papFldDes[j]->process_passive);
+		   &precDes->papRecTypDes[i]->papFldDes[j]->process_passive,
+		   precDes->papRecTypDes[i]->papFldDes[j]->process_passive);
 		bufOut(fp, fflag);
 		sprintf(buffer, "%8x\t\t\tchoice_set [%d]",
-			&dbRecDes->papRecTypDes[i]->papFldDes[j]->choice_set,
-			dbRecDes->papRecTypDes[i]->papFldDes[j]->choice_set);
+			&precDes->papRecTypDes[i]->papFldDes[j]->choice_set,
+			precDes->papRecTypDes[i]->papFldDes[j]->choice_set);
 		bufOut(fp, fflag);
 		sprintf(buffer, "%8x\t\t\tcvt_type [%d]",
-			&dbRecDes->papRecTypDes[i]->papFldDes[j]->cvt_type,
-			dbRecDes->papRecTypDes[i]->papFldDes[j]->cvt_type);
+			&precDes->papRecTypDes[i]->papFldDes[j]->cvt_type,
+			precDes->papRecTypDes[i]->papFldDes[j]->cvt_type);
 		bufOut(fp, fflag);
 		sprintf(buffer, "%8x\t\t\tpromptflag [%d]",
-			&dbRecDes->papRecTypDes[i]->papFldDes[j]->promptflag,
-			dbRecDes->papRecTypDes[i]->papFldDes[j]->promptflag);
+			&precDes->papRecTypDes[i]->papFldDes[j]->promptflag,
+			precDes->papRecTypDes[i]->papFldDes[j]->promptflag);
 		bufOut(fp, fflag);
 		sprintf(buffer, "%8x\t\t\tlowfl [%d]",
-			&dbRecDes->papRecTypDes[i]->papFldDes[j]->lowfl,
-			dbRecDes->papRecTypDes[i]->papFldDes[j]->lowfl);
+			&precDes->papRecTypDes[i]->papFldDes[j]->lowfl,
+			precDes->papRecTypDes[i]->papFldDes[j]->lowfl);
 		bufOut(fp, fflag);
 		sprintf(buffer, "%8x\t\t\thighfl [%d]",
-			&dbRecDes->papRecTypDes[i]->papFldDes[j]->highfl,
-			dbRecDes->papRecTypDes[i]->papFldDes[j]->highfl);
+			&precDes->papRecTypDes[i]->papFldDes[j]->highfl,
+			precDes->papRecTypDes[i]->papFldDes[j]->highfl);
 		bufOut(fp, fflag);
 		sprintf(buffer, "%8x\t\t\tinterest [%d]",
-			&dbRecDes->papRecTypDes[i]->papFldDes[j]->interest,
-			dbRecDes->papRecTypDes[i]->papFldDes[j]->interest);
+			&precDes->papRecTypDes[i]->papFldDes[j]->interest,
+			precDes->papRecTypDes[i]->papFldDes[j]->interest);
 		bufOut(fp, fflag);
 		memcpy((void *) buff,
-			(void *) & dbRecDes->papRecTypDes[i]->papFldDes[j]->initial, 8);
+			(void *) & precDes->papRecTypDes[i]->papFldDes[j]->initial, 8);
 		sprintf(buffer, "%8x[%8x][%8x]\tinitial",
-			&dbRecDes->papRecTypDes[i]->papFldDes[j]->initial,
+			&precDes->papRecTypDes[i]->papFldDes[j]->initial,
 			buff[0], buff[1]);
 		bufOut(fp, fflag);
 		sprintf(buffer, "%8x\t\t\trange1.fldnum [%d]",
-		    &dbRecDes->papRecTypDes[i]->papFldDes[j]->range1.fldnum,
-		    dbRecDes->papRecTypDes[i]->papFldDes[j]->range1.fldnum);
+		    &precDes->papRecTypDes[i]->papFldDes[j]->range1.fldnum,
+		    precDes->papRecTypDes[i]->papFldDes[j]->range1.fldnum);
 		bufOut(fp, fflag);
 		memcpy((void *) buff,
-			(void *) & dbRecDes->papRecTypDes[i]->papFldDes[j]->range1.value, 8);
+			(void *) & precDes->papRecTypDes[i]->papFldDes[j]->range1.value, 8);
 		sprintf(buffer, "%8x[%8x][%8x]\trange1.value",
-		     &dbRecDes->papRecTypDes[i]->papFldDes[j]->range1.value,
+		     &precDes->papRecTypDes[i]->papFldDes[j]->range1.value,
 			buff[0], buff[1]);
 		bufOut(fp, fflag);
 		sprintf(buffer, "%8x\t\t\trange2.fldnum [%d]",
-		    &dbRecDes->papRecTypDes[i]->papFldDes[j]->range2.fldnum,
-		    dbRecDes->papRecTypDes[i]->papFldDes[j]->range2.fldnum);
+		    &precDes->papRecTypDes[i]->papFldDes[j]->range2.fldnum,
+		    precDes->papRecTypDes[i]->papFldDes[j]->range2.fldnum);
 		bufOut(fp, fflag);
 		memcpy((void *) buff,
-			(void *) & dbRecDes->papRecTypDes[i]->papFldDes[j]->range2.value, 8);
+			(void *) & precDes->papRecTypDes[i]->papFldDes[j]->range2.value, 8);
 		sprintf(buffer, "%8x[%8x][%8x]\trange2.value",
-		     &dbRecDes->papRecTypDes[i]->papFldDes[j]->range2.value,
+		     &precDes->papRecTypDes[i]->papFldDes[j]->range2.value,
 			buff[0], buff[1]);
 		bufOut(fp, fflag);
 	    }
@@ -807,11 +834,15 @@ ChoiceRec(fp, fflag)
     FILE           *fp;
     int             fflag;
 {
-    if (!choiceRec) {
+    struct choiceRec *pchoiceRec;
+    struct recType	*precType;
+
+    if(!(precType=pdbBase->precType)) return;
+    if (!(pchoiceRec=pdbBase->pchoiceRec)) {
 	printf("ChoiceRec: Error - choiceRec not loaded\n");
 	return;
     }
-    endNumI = dbRecType->number;
+    endNumI = precType->number;
 
     printf("DO YOU WANT TO LIST ALL RECORD TYPES ??? (y|n) : ");
     scanf("%s", ibuff);
@@ -819,15 +850,15 @@ ChoiceRec(fp, fflag)
     if (ibuff[0] != 'y') {
 	FOREVER {
 	    printf("\nRECTYPE MENU:\n");
-	    for (i = 0; i < dbRecType->number; i++) {
-		if (dbRecType->papName[i]
-			&& choiceRec->papArrChoiceSet[i]) {
-		    printf("%d\t%s\n", i, dbRecType->papName[i]);
+	    for (i = 0; i < precType->number; i++) {
+		if (precType->papName[i]
+			&& pchoiceRec->papArrChoiceSet[i]) {
+		    printf("%d\t%s\n", i, precType->papName[i]);
 		}
 	    }
 	    printf("ENTER SELECTION NUMBER  (X-%d) : ", i - 1);
 	    scanf("%d", &inum);
-	    if ((choiceRec->papArrChoiceSet[inum])
+	    if ((pchoiceRec->papArrChoiceSet[inum])
 		    && (inum >= 0) && (inum < i)) {
 		begNumI = inum;
 		endNumI = begNumI + 1;
@@ -837,9 +868,9 @@ ChoiceRec(fp, fflag)
 	    }
 	}
     } else {
-	for (i = 0; i < dbRecType->number; i++) {
+	for (i = 0; i < precType->number; i++) {
 	    /* start at first record definition */
-	    if (choiceRec->papArrChoiceSet[i]) {
+	    if (pchoiceRec->papArrChoiceSet[i]) {
 		begNumI = i;
 		break;
 	    }
@@ -847,51 +878,51 @@ ChoiceRec(fp, fflag)
     }
     sprintf(buffer, "\n\ndbls: listing the  choiceRec structure");
     bufOut(fp, fflag);
-    sprintf(buffer, "%8x[%8x]   choiceRec -> choiceRec", &choiceRec, choiceRec);
+    sprintf(buffer, "%8x[%8x]   pchoiceRec -> pchoiceRec", &pchoiceRec, pchoiceRec);
     bufOut(fp, fflag);
-    sprintf(buffer, "%8x\t\tnumber\t\t[%d]", &choiceRec->number, choiceRec->number);
+    sprintf(buffer, "%8x\t\tnumber\t\t[%d]", &pchoiceRec->number, pchoiceRec->number);
     bufOut(fp, fflag);
     sprintf(buffer, "%8x[%8x]\t**papArrChoiceSet -> arrChoiceSet",
-	    &choiceRec->papArrChoiceSet,
-	    choiceRec->papArrChoiceSet);
+	    &pchoiceRec->papArrChoiceSet,
+	    pchoiceRec->papArrChoiceSet);
     bufOut(fp, fflag);
 
     for (i = begNumI; i < endNumI; i++) {
-	if (choiceRec->papArrChoiceSet[i]) {
+	if (pchoiceRec->papArrChoiceSet[i]) {
 	    sprintf(buffer, "%8x[%8x]\tpapArrChoiceSet[%d] -> arrChoiceSet\t\tRECTYPE \"%s\"",
-		    &choiceRec->papArrChoiceSet[i],
-		    choiceRec->papArrChoiceSet[i], i,
-		    dbRecType->papName[i]);
+		    &pchoiceRec->papArrChoiceSet[i],
+		    pchoiceRec->papArrChoiceSet[i], i,
+		    precType->papName[i]);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x\t\t    number\t\t[%d]\t/* number of choice sets */",
-		    &choiceRec->papArrChoiceSet[i]->number,
-		    choiceRec->papArrChoiceSet[i]->number);
+		    &pchoiceRec->papArrChoiceSet[i]->number,
+		    pchoiceRec->papArrChoiceSet[i]->number);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x[%8x]\t    **papChoiceSet",
-		    &choiceRec->papArrChoiceSet[i]->papChoiceSet,
-		    choiceRec->papArrChoiceSet[i]->papChoiceSet);
+		    &pchoiceRec->papArrChoiceSet[i]->papChoiceSet,
+		    pchoiceRec->papArrChoiceSet[i]->papChoiceSet);
 	    bufOut(fp, fflag);
-	    for (j = 0; j < choiceRec->papArrChoiceSet[i]->number; j++) {
-		if (choiceRec->papArrChoiceSet[i]->papChoiceSet[j]) {
+	    for (j = 0; j < pchoiceRec->papArrChoiceSet[i]->number; j++) {
+		if (pchoiceRec->papArrChoiceSet[i]->papChoiceSet[j]) {
 		    sprintf(buffer, "%8x[%8x]\t    papChoiceSet[%d] -> choiceSet \t\tINDEX[%d]",
 
-			    &choiceRec->papArrChoiceSet[i]->papChoiceSet[j],
-		      choiceRec->papArrChoiceSet[i]->papChoiceSet[j], j, j);
+			    &pchoiceRec->papArrChoiceSet[i]->papChoiceSet[j],
+		      pchoiceRec->papArrChoiceSet[i]->papChoiceSet[j], j, j);
 		    bufOut(fp, fflag);
 		    sprintf(buffer, "%8x\t\t\tnumber\t\t[%d]\t/* number of choices */ ",
-		    &choiceRec->papArrChoiceSet[i]->papChoiceSet[j]->number,
-		    choiceRec->papArrChoiceSet[i]->papChoiceSet[j]->number);
+		    &pchoiceRec->papArrChoiceSet[i]->papChoiceSet[j]->number,
+		    pchoiceRec->papArrChoiceSet[i]->papChoiceSet[j]->number);
 		    bufOut(fp, fflag);
 		    sprintf(buffer, "%8x[%8x]\t\t**papChoice -> \"string\"",
-			    &choiceRec->papArrChoiceSet[i]->papChoiceSet[j]->papChoice,
-			    choiceRec->papArrChoiceSet[i]->papChoiceSet[j]->papChoice);
+			    &pchoiceRec->papArrChoiceSet[i]->papChoiceSet[j]->papChoice,
+			    pchoiceRec->papArrChoiceSet[i]->papChoiceSet[j]->papChoice);
 		    bufOut(fp, fflag);
-		    for (k = 0; k < choiceRec->papArrChoiceSet[i]->papChoiceSet[j]->number; k++) {
-			if (choiceRec->papArrChoiceSet[i]->papChoiceSet[j]->papChoice[k]) {
+		    for (k = 0; k < pchoiceRec->papArrChoiceSet[i]->papChoiceSet[j]->number; k++) {
+			if (pchoiceRec->papArrChoiceSet[i]->papChoiceSet[j]->papChoice[k]) {
 			    sprintf(buffer, "%8x[%8x]\t\tpapChoice[%d]\t\"%s\"",
-				    &choiceRec->papArrChoiceSet[i]->papChoiceSet[j]->papChoice[k],
-				    choiceRec->papArrChoiceSet[i]->papChoiceSet[j]->papChoice[k], k,
-				    choiceRec->papArrChoiceSet[i]->papChoiceSet[j]->papChoice[k]);
+				    &pchoiceRec->papArrChoiceSet[i]->papChoiceSet[j]->papChoice[k],
+				    pchoiceRec->papArrChoiceSet[i]->papChoiceSet[j]->papChoice[k], k,
+				    pchoiceRec->papArrChoiceSet[i]->papChoiceSet[j]->papChoice[k]);
 			    bufOut(fp, fflag);
 			}
 		    }
@@ -950,47 +981,43 @@ DbRecords(fp, fflag)
     FILE           *fp;
     int             fflag;
 {
-    if (!dbRecords) {
-	printf("DbRecords: Error - dbRecords not loaded\n");
+    struct recType	*precType;
+    struct recHeader	*precHeader;
+
+    if(!(precType=pdbBase->precType)) return;
+    if (!(precHeader=pdbBase->precHeader)) {
+	printf("DbRecords: Error - precHeader not loaded\n");
 	return;
     }
     getRecTypeSel();
-    sprintf(buffer, "\n\ndbls: listing the dbRecords structure\n");
+    sprintf(buffer, "\n\ndbls: listing the precHeader structure\n");
     bufOut(fp, fflag);
-    sprintf(buffer, "%8x[%8x]    dbRecords -> recHeader", &dbRecords, dbRecords);
+    sprintf(buffer, "%8x[%8x]    precHeader -> recHeader", &precHeader, precHeader);
     bufOut(fp, fflag);
     sprintf(buffer, "%8x\t\t  number\t\t[%d]\t/* number of record types */",
-	    &dbRecords->number,
-	    dbRecords->number);
+	    &precHeader->number,
+	    precHeader->number);
     bufOut(fp, fflag);
     sprintf(buffer, "%8x[%8x]\t**papRecLoc -> recLoc",
-	    &dbRecords->papRecLoc,
-	    dbRecords->papRecLoc);
+	    &precHeader->papRecLoc,
+	    precHeader->papRecLoc);
     bufOut(fp, fflag);
     for (i = begNumI; i < endNumI; i++) {
-	if (dbRecords->papRecLoc[i]) {
+	if (precHeader->papRecLoc[i]) {
 	    sprintf(buffer, "%8x[%8x]\t  papRecLoc->[%d]\tRECTYPE[\"%s\"]",
-		    &dbRecords->papRecLoc[i],
-		    dbRecords->papRecLoc[i],
+		    &precHeader->papRecLoc[i],
+		    precHeader->papRecLoc[i],
 			 i,
-		    dbRecType->papName[i]);
+		    precType->papName[i]);
 	    bufOut(fp, fflag);
 
-	    sprintf(buffer, "%8x\t\t      no_records [%d]\t\t/* no_records of this type */",
-		    &dbRecords->papRecLoc[i]->no_records,
-		    dbRecords->papRecLoc[i]->no_records);
-	    bufOut(fp, fflag);
-	    sprintf(buffer, "%8x\t\t      no_used [%d]\t\t/* no_used of this type */",
-		    &dbRecords->papRecLoc[i]->no_used,
-		    dbRecords->papRecLoc[i]->no_used);
-	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x\t\t      rec_size [%d]\t\t/* rec_size in bytes */",
-		    &dbRecords->papRecLoc[i]->rec_size,
-		    dbRecords->papRecLoc[i]->rec_size);
+		    &precHeader->papRecLoc[i]->rec_size,
+		    precHeader->papRecLoc[i]->rec_size);
 	    bufOut(fp, fflag);
-	    sprintf(buffer, "%8x[%8x]\t     *pFirst\t\t\t/* ptr to first record */",
-		    &dbRecords->papRecLoc[i]->pFirst,
-		    dbRecords->papRecLoc[i]->pFirst);
+	    sprintf(buffer, "%8x\t\t      record_type [%d]\t\t/* record_type in bytes */",
+		    &precHeader->papRecLoc[i]->record_type,
+		    precHeader->papRecLoc[i]->record_type);
 	    bufOut(fp, fflag);
 	}
     }
@@ -1001,93 +1028,97 @@ RecSup(fp, fflag)
     FILE           *fp;
     int             fflag;
 {
-    if (!recSup) {
+    struct recType	*precType;
+    struct recSup	*precSup;
+
+    if(!(precType=pdbBase->precType)) return;
+    if (!(precSup=pdbBase->precSup)) {
 	printf("RecSup: Error - recSup not loaded\n");
 	return;
     }
     getRecTypeSel();
     sprintf(buffer, "\n\ndbls: listing the recSup structure\n");
     bufOut(fp, fflag);
-    sprintf(buffer, "%8x[%8x]   recSup -> recSup", &recSup, recSup);
+    sprintf(buffer, "%8x[%8x]   precSup -> precSup", &precSup, precSup);
     bufOut(fp, fflag);
     sprintf(buffer, "%8x\t\t number\t\t[%d]\t/* number of record types */",
-	    &recSup->number,
-	    recSup->number);
+	    &precSup->number,
+	    precSup->number);
     bufOut(fp, fflag);
     sprintf(buffer, "%8x[%8x]     **papRset -> rset",
-	    &recSup->papRset,
-	    recSup->papRset);
+	    &precSup->papRset,
+	    precSup->papRset);
     bufOut(fp, fflag);
     for (i = begNumI; i < endNumI; i++) {
-	if (recSup->papRset[i]) {
+	if (precSup->papRset[i]) {
 	    sprintf(buffer, "%8x[%8x]\t papRset->[%d]\t\tRECTYPE[\"%s\"]",
-		    &recSup->papRset[i],
-		    recSup->papRset[i], i,
-		    dbRecType->papName[i]);
+		    &precSup->papRset[i],
+		    precSup->papRset[i], i,
+		    precType->papName[i]);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x[%8x]\t     number\t\t/*number of support routines */",
-		    &recSup->papRset[i]->number,
-		    recSup->papRset[i]->number);
+		    &precSup->papRset[i]->number,
+		    precSup->papRset[i]->number);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x[%8x]\t     report\t\t/*print report */",
-		    &recSup->papRset[i]->report,
-		    recSup->papRset[i]->report);
+		    &precSup->papRset[i]->report,
+		    precSup->papRset[i]->report);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x[%8x]\t     init\t\t/*init support */",
-		    &recSup->papRset[i]->init,
-		    recSup->papRset[i]->init);
+		    &precSup->papRset[i]->init,
+		    precSup->papRset[i]->init);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x[%8x]\t     init_record\t/*init record */",
-		    &recSup->papRset[i]->init_record,
-		    recSup->papRset[i]->init_record);
+		    &precSup->papRset[i]->init_record,
+		    precSup->papRset[i]->init_record);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x[%8x]\t     process\t\t/*process record */",
-		    &recSup->papRset[i]->process,
-		    recSup->papRset[i]->process);
+		    &precSup->papRset[i]->process,
+		    precSup->papRset[i]->process);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x[%8x]\t     special\t\t/*special processing */",
-		    &recSup->papRset[i]->special,
-		    recSup->papRset[i]->special);
+		    &precSup->papRset[i]->special,
+		    precSup->papRset[i]->special);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x[%8x]\t     get_precision\t/* get_precision of this type */",
-		    &recSup->papRset[i]->get_precision,
-		    recSup->papRset[i]->get_precision);
+		    &precSup->papRset[i]->get_precision,
+		    precSup->papRset[i]->get_precision);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x[%8x]\t     get_value\t\t/*get value field */",
-		    &recSup->papRset[i]->get_value,
-		    recSup->papRset[i]->get_value);
+		    &precSup->papRset[i]->get_value,
+		    precSup->papRset[i]->get_value);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x[%8x]\t     cvt_dbaddr\t\t/*cvt dbAddr */",
-		    &recSup->papRset[i]->cvt_dbaddr,
-		    recSup->papRset[i]->cvt_dbaddr);
+		    &precSup->papRset[i]->cvt_dbaddr,
+		    precSup->papRset[i]->cvt_dbaddr);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x[%8x]\t     get_array_info\t/* get_array_info of this type */",
-		    &recSup->papRset[i]->get_array_info,
-		    recSup->papRset[i]->get_array_info);
+		    &precSup->papRset[i]->get_array_info,
+		    precSup->papRset[i]->get_array_info);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x[%8x]\t     put_array_info\t/* put_array_info of this type */",
-		    &recSup->papRset[i]->put_array_info,
-		    recSup->papRset[i]->put_array_info);
+		    &precSup->papRset[i]->put_array_info,
+		    precSup->papRset[i]->put_array_info);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x[%8x]\t     get_enum_str\t/*get string from enum item*/",
-		    &recSup->papRset[i]->get_enum_str,
-		    recSup->papRset[i]->get_enum_str);
+		    &precSup->papRset[i]->get_enum_str,
+		    precSup->papRset[i]->get_enum_str);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x[%8x]\t     get_units \t\t/* get_units of this type */",
-		    &recSup->papRset[i]->get_units,
-		    recSup->papRset[i]->get_units);
+		    &precSup->papRset[i]->get_units,
+		    precSup->papRset[i]->get_units);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x[%8x]\t     get_graphic_double /* get_graphic_double of this type */",
-		    &recSup->papRset[i]->get_graphic_double,
-		    recSup->papRset[i]->get_graphic_double);
+		    &precSup->papRset[i]->get_graphic_double,
+		    precSup->papRset[i]->get_graphic_double);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x[%8x]\t     get_control_double /* get_control_double of this type */",
-		    &recSup->papRset[i]->get_control_double,
-		    recSup->papRset[i]->get_control_double);
+		    &precSup->papRset[i]->get_control_double,
+		    precSup->papRset[i]->get_control_double);
 	    bufOut(fp, fflag);
 	    sprintf(buffer, "%8x[%8x]\t     get_enum_strs\t/*get all enum strings */",
-		    &recSup->papRset[i]->get_enum_strs,
-		    recSup->papRset[i]->get_enum_strs);
+		    &precSup->papRset[i]->get_enum_strs,
+		    precSup->papRset[i]->get_enum_strs);
 	    bufOut(fp, fflag);
 	}
     }

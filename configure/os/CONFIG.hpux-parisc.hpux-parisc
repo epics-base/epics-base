@@ -21,7 +21,7 @@ CONFORM_CFLAGS_TRAD = -Ac
 ######################################################
 # +DAportable causes portable object code to be created for execution
 # on different PA-Risc machines
-CODE_CFLAGS = +DAportable
+CODE_CFLAGS = +DAportable +z
 WARN_CFLAGS_YES =
 WARN_CFLAGS_NO = -w
 OPT_CFLAGS_YES = -O
@@ -39,7 +39,7 @@ CONFORM_CXXFLAGS_STRICT = -AA -mt -Aa
 ######################################################
 # +DAportable causes portable object code to be created for execution
 # on different PA-Risc machines
-CODE_CXXFLAGS = +DAportable
+CODE_CXXFLAGS = +DAportable +z
 WARN_CXXFLAGS_YES = +w
 WARN_CXXFLAGS_NO =
 OPT_CXXFLAGS_YES = +O3

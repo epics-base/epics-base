@@ -553,25 +553,27 @@ name resolution requests are responded to, then it sends name resolution
 requests at an interval that is twice the estimated round trip interval for
 the set of servers responding, or at the minimum delay quantum for the
 operating system - whichever is greater. The number of UDP frames per
-interval is also dynamically adjusted based on the past success rate.</p>
+interval is also dynamically adjusted based on the past success rates.</p>
 
-<p>If name resolution requests are not responded to, then the client library
+<p>If a name resolution request is not responded to, then the client library
 doubles the delay between name resolution attempts and reduces the number of
-requests per interval. The delay between attempts is initially limited by a
-maximum however, after some long interval, if the client library does not
-receive any responses it stops sending name resolution attempts altogether
-until it sees a beacon anomaly.</p>
+requests per interval. The maximum delay between attempts is limited by
+EPICS_CA_MAX_SEARCH_PERIOD (see <a href="#Configurin3">Configuring the
+Maximum Search Period</a>). Note however that prior to R3.14.7, if the client
+library did not receive any responses over a long interval it stoped sending
+name resolution attempts altogether until a beacon anomaly was detected (see
+below).</p>
 
 <p>The CA client library continually estimates the beacon period of all
 server beacons received. If a particular server's beacon period becomes
 significantly shorter or longer then the client is said to detect a beacon
-anomaly. When a client sees a beacon anomaly then it resumes search requests
-but with a longer initial interval between requests than is used when the
-application creates a channel. An initial delay based on the client's
-ephemeral port number is also imposed before the first name resolution
-request to avoid all clients responding to a beacon anomaly at the same
-instant. The program "casw" prints a message on standard out each time that a
-CA client will detect a beacon anomaly.</p>
+anomaly. The library boosts the search interval for unresolved channels when
+a beacon anomaly is seen or when <em>any</em> successful search response is
+received, but with a longer initial interval between requests than is used
+when the application creates a channel. Creation of a new channel does
+<em>not</em> (starting with EPICS R3.14.7) change the interval used when
+searching for preexisting unresolved channels. The program "casw" prints a
+message on standard out for each CA client beacon anomaly detect event.</p>
 
 <p>See also <a href="#Client1">When a Client Does not See the Server's
 Beacon</a>.</p>
@@ -1575,12 +1577,10 @@ beacon anomaly is seen. Therefore, if the client library is from before
 version R3.14.7 of EPICS and it timed out attempting to find a server whoose
 beacon cant be seen by the client library then the client application might
 need to be restarted in order to connect to this new beacon-out-of-range
-server.</p>
-
-<p>The typical situation where a client would not see the server's beacon
-might be when the client isnt on the same IP subnet as the server, and the
-client's EPICS_CA_ADDR_LIST was modified to include a destination address for
-the server, but the server's beacon address list was not modified so that
+server. The typical situation where a client would not see the server's
+beacon might be when the client isnt on the same IP subnet as the server, and
+the client's EPICS_CA_ADDR_LIST was modified to include a destination address
+for the server, but the server's beacon address list was not modified so that
 it's beacons are received by the client.</p>
 
 <h4><a name="Server1">A Server's IP Address Was Changed</a></h4>

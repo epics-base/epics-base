@@ -70,7 +70,6 @@ OP_SYS_LDLIBS =
 
 # Fix for vxWorks headers using macros defined in
 # vxWorks.h but not including vxWorks.h 
-OP_SYS_CFLAGS += -include $(GNU_TARGET_INCLUDE_DIR)/vxWorks.h
 OP_SYS_CPPFLAGS += -include $(GNU_TARGET_INCLUDE_DIR)/vxWorks.h
 
 #--------------------------------------------------

@@ -5,6 +5,9 @@
 // $Id$
 //
 // $Log$
+// Revision 1.9  1998/05/05 21:08:26  jhill
+// fixed warning
+//
 // Revision 1.8  1997/08/05 00:51:05  jhill
 // fixed problems in aitString and the conversion matrix
 //
@@ -31,9 +34,27 @@
 // new in EPICS base
 //
 //
+
 #define epicsExportSharedSymbols
 #include "aitTypes.h"
+
+//
+// force this module to include code that can convert
+// to an EPICS time stamp, but dont force this library
+// to link with libCom
+//
+#define INC_tsDefs_h
+typedef struct {
+	aitUint32    secPastEpoch;   /* seconds since 0000 Jan 1, 1990 */
+	aitUint32    nsec;           /* nanoseconds within second */
+} TS_STAMP;
+
 #include "aitHelpers.h"
+
+//
+// 1/1/90 20 yr (5 leap) of seconds
+//
+const unsigned aitTimeStamp::epicsEpochSecPast1970 = 7305 * 86400; 
 
 void aitString::mallocFailure(void)
 {

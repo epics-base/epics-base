@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.17  1999/04/30 00:09:47  jhill
+ * proper borrow
+ *
  * Revision 1.16  1998/05/05 21:08:49  jhill
  * fixed warning
  *
@@ -106,7 +109,8 @@ public:
 	// fetched as fields so this file is not required 
 	// to include os dependent struct timeval
 	//
-	void getTV(long &tv_secOut, long &uSecOut) {
+	void getTV(long &tv_secOut, long &uSecOut) const
+	{
 		assert (this->tv_sec<=LONG_MAX);
 		tv_secOut = (long) this->tv_sec;
 		assert (this->tv_nsec<=LONG_MAX);
@@ -115,25 +119,58 @@ public:
 	//
 	// for use when loading struct timeval
 	//
-	void get(unsigned long &tv_secOut, unsigned long &tv_nsecOut) {
+	void get(unsigned long &tv_secOut, unsigned long &tv_nsecOut) const
+	{
 		tv_secOut = this->tv_sec;
 		tv_nsecOut = this->tv_nsec;
 	}
 
-	operator double()
+	operator double() const
 	{
 		return ((double)this->tv_nsec)/NSecPerSec+this->tv_sec;
 	}
 
-	operator float()
+	operator float() const
 	{
 		return ((float)this->tv_nsec)/NSecPerSec+this->tv_sec;
 	}
+
+	//
+	// convert to and from EPICS TS_STAMP format
+	//
+	// include tsDefs.h prior to including osiTime.h
+	// if you need these capabilities
+	//
+#ifdef INC_tsDefs_h
+	operator TS_STAMP () const
+	{
+		TS_STAMP ts;
+		assert (this->tv_sec>=aitTimeStamp::epicsEpochSecPast1970);
+		ts.secPastEpoch = this->tv_sec - aitTimeStamp::epicsEpochSecPast1970;
+		ts.nsec = this->tv_nsec;
+		return ts;
+	}
+
+	aitTimeStamp (const TS_STAMP &ts) 
+	{
+		this->tv_sec = ts.secPastEpoch + aitTimeStamp::epicsEpochSecPast1970;
+		this->tv_nsec = ts.nsec;
+	}
+
+	operator = (const TS_STAMP &rhs)
+	{
+		this->tv_sec = rhs.secPastEpoch + aitTimeStamp::epicsEpochSecPast1970;
+		this->tv_nsec = rhs.nsec;
+	}
+#endif
 
 	static aitTimeStamp getCurrent();
 // private:
 	unsigned long tv_sec;
 	unsigned long tv_nsec;
+
+private:
+	static const unsigned epicsEpochSecPast1970; 
 };
 
 inline aitTimeStamp operator+ (const aitTimeStamp &lhs, const aitTimeStamp &rhs)

@@ -28,6 +28,9 @@
  * -----------------
  * .01  02-16-95        mrk     Extracted from errSymLib.c
  * $Log$
+ * Revision 1.7  1995/11/08 23:44:41  jhill
+ * changes associated with fixing the log client
+ *
  ***************************************************************************
  */
 
@@ -126,8 +129,8 @@ void errPrintf(long status, const char *pFileName,
     va_list	pvar;
 
     if(INT_CONTEXT()) {
-	int	logMsgArgs[6];
-	int	i;
+	int		logMsgArgs[6];
+	unsigned	i;
 
 	va_start (pvar, pformat);
 	for (i=0; i<NELEMENTS(logMsgArgs); i++) {
@@ -210,8 +213,8 @@ int epicsVprintf(const char *pformat, va_list pvar)
     int status;
 
     if(INT_CONTEXT()) {
-	int	logMsgArgs[6];
-	int	i;
+	int		logMsgArgs[6];
+	unsigned	i;
 
 	for (i=0; i<NELEMENTS(logMsgArgs); i++) {
 	    logMsgArgs[i] = va_arg(pvar, int);

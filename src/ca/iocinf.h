@@ -174,7 +174,7 @@ struct  ca_static{
   struct in_addr	ca_castaddr;
 #if defined(UNIX)
   fd_set                ca_readch;  
-#wlif defined(VMS)
+#elif defined(VMS)
   int			ca_io_done_flag;
   char			ca_peek_ast_buf;
 #elif defined(vxWorks)

@@ -28,7 +28,3 @@ built_release:
 	@echo TOP: Creating Fully Built Release...
 	@./MakeRelease -b $(INSTALL_LOCATION)
 
-uninstall::
-	@DIR1=`pwd`;cd $(INSTALL_LOCATION);DIR2=`pwd`;cd $$DIR1;\
-	if [ "$$DIR1" != "$$DIR2" ]; then $(RMDIR) $(INSTALL_LOCATION)/config; fi
-

@@ -29,6 +29,7 @@ print OUT "appbin = \"$appbin\"\n";
 
 $top = $cwd;
 $top =~ s/\/iocBoot.*//;
+$applications{TOP} = $top;
 print OUT "top = \"$top\"\n";
 $topbin = "${top}/bin/${arch}";
 #skip check that top/bin/${arch} exists; src may not have been builT

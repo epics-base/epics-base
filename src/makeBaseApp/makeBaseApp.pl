@@ -173,6 +173,7 @@ sub get_commandline_opts { #no args
 	    $top = $epics_base . "/templates/makeBaseApp/top";
 	}
     }
+	$top=~s'^\$\(TOP\)\/'';
     "$top" or Cleanup(1, "Cannot find template top directory");
 	$app_top = $top;
 	$app_top=~s'^\.\.'$(TOP)/..';

@@ -34,7 +34,7 @@ public:
     virtual void completion ( unsigned type, 
         arrayElementCount count, const void *pData ) = 0;
     virtual class netSubscription * isSubscription ();
-    void show ( unsigned level ) const;
+    virtual void show ( unsigned level ) const;
     ca_uint32_t getID () const;
     nciu & channel () const;
 protected:
@@ -45,8 +45,8 @@ protected:
 //
     nciu & chan;
 private:
-	baseNMIU ( const baseNMIU & );
-	baseNMIU & operator = ( const baseNMIU & );
+    baseNMIU ( const baseNMIU & );
+    baseNMIU & operator = ( const baseNMIU & );
 };
 
 class netSubscription : public baseNMIU  {
@@ -84,8 +84,8 @@ private:
     void operator delete ( void *, size_t, 
         tsFreeList < class netSubscription, 1024, epicsMutexNOOP > & );
 #   endif
-	netSubscription ( const netSubscription & );
-	netSubscription & operator = ( const netSubscription & );
+    netSubscription ( const netSubscription & );
+    netSubscription & operator = ( const netSubscription & );
 };
 
 class netReadNotifyIO : public baseNMIU {
@@ -112,8 +112,8 @@ private:
     void operator delete ( void *, size_t, 
         tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > & );
 #   endif
-	netReadNotifyIO ( const netReadNotifyIO & );
-	netReadNotifyIO & operator = ( const netReadNotifyIO & );
+    netReadNotifyIO ( const netReadNotifyIO & );
+    netReadNotifyIO & operator = ( const netReadNotifyIO & );
 };
 
 class netWriteNotifyIO : public baseNMIU {
@@ -140,8 +140,8 @@ private:
     void operator delete ( void *, size_t, 
         tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > & );
 #   endif
-	netWriteNotifyIO ( const netWriteNotifyIO & );
-	netWriteNotifyIO & operator = ( const netWriteNotifyIO & );
+    netWriteNotifyIO ( const netWriteNotifyIO & );
+    netWriteNotifyIO & operator = ( const netWriteNotifyIO & );
 };
 
 inline ca_uint32_t baseNMIU::getID () const

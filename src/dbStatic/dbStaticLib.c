@@ -3872,7 +3872,9 @@ void  epicsShareAPI dbReportDeviceConfig(dbBase *pdbbase,FILE *report)
     char	cvtValue[40];
     int		ilink,nlinks;
     struct link	*plink;
+    FILE        *fp;
 
+    fp = (report==0) ? stdout : report;
     dbInitEntry(pdbbase,pdbentry);
     status = dbFirstRecordType(pdbentry);
     while(!status) {
@@ -3907,7 +3909,7 @@ void  epicsShareAPI dbReportDeviceConfig(dbBase *pdbbase,FILE *report)
 			strcat(cvtValue,")");
 		    }
 		}
-		fprintf(report,"%-8s %-20s %-20s %-20s %-s\n",
+		fprintf(fp,"%-8s %-20s %-20s %-20s %-s\n",
 			busName,linkValue,dtypValue,
 			dbGetRecordName(pdbentry),cvtValue);
 		break;

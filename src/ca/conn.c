@@ -30,6 +30,9 @@
 /*			(dont send all chans in a block)		*/
 /*									*/
 /* $Log$
+ * Revision 1.38  1997/04/10 19:26:09  jhill
+ * asynch connect, faster connect, ...
+ *
  * Revision 1.37  1996/11/02 00:50:46  jhill
  * many pc port, const in API, and other changes
  *
@@ -67,6 +70,7 @@ LOCAL void logRetryInterval(char *pFN, unsigned lineno);
 #endif
 
 LOCAL void retrySearchRequest();
+LOCAL unsigned bhtHashIP(const struct sockaddr_in *pina);
 
 
 /*
@@ -232,6 +236,11 @@ LOCAL void retrySearchRequest ()
 	}
 
 	LOCK;
+	
+	/*
+	 * increment the retry sequence number
+	 */
+	ca_static->ca_search_retry_seq_no++; /* allowed to roll over */
 
 	/*
 	 * dynamically adjust the number of UDP frames per 
@@ -265,7 +274,7 @@ LOCAL void retrySearchRequest ()
 		/*
 		 * double UDP frames per try if we have a good score
 		 */
-		if (ca_static->ca_frames_per_try < (UINT_MAX/2u) ) {
+		if (ca_static->ca_frames_per_try < (UINT_MAX/4u) ) {
 			ca_static->ca_frames_per_try += ca_static->ca_frames_per_try;
 #ifdef DEBUG
 			printf ("Increasing frame count to %u t=%u r=%u\n", 
@@ -309,11 +318,31 @@ LOCAL void retrySearchRequest ()
 			if (ca_static->ca_search_responses==0u) {
 				cacSetRetryInterval(ca_static->ca_min_retry+1u);
 			}
-			else {
-				ca_static->ca_search_responses=0u;
-			}
-			ca_static->ca_search_tries = 0u;
+
 			ca_static->ca_min_retry = UINT_MAX;
+
+			/*
+			 * increment the retry sequence number
+			 * (this prevents the time of the next search
+			 * try from being set to the current time if
+			 * we are handling a response from an old
+			 * search message)
+			 */
+			ca_static->ca_search_retry_seq_no++; /* allowed to roll over */
+
+			/*
+			 * so that old search tries will not update the counters
+			 */
+			ca_static->ca_seq_no_at_list_begin = ca_static->ca_search_retry_seq_no;
+			/*
+			 * keeps the search try/response counters in bounds
+			 * (but keep some of the info from the previous iteration)
+			 */
+			ca_static->ca_search_responses = ca_static->ca_search_responses/16u;
+			ca_static->ca_search_tries = ca_static->ca_search_tries/16u;
+#ifdef DEBUG
+			printf ("saw end of list\n");
+#endif	
 		}
 
 		/*
@@ -323,6 +352,10 @@ LOCAL void retrySearchRequest ()
 		status = search_msg (chan, DONTREPLY);
 		if (status != ECA_NORMAL) {
 			nSent++;
+
+			if (nSent>=ca_static->ca_frames_per_try) {
+				break;
+			}
 
 			/*
 			 * flush out the search request buffer
@@ -337,11 +370,7 @@ LOCAL void retrySearchRequest ()
 				break;
 			}
 		}
-
-		if (nSent>=ca_static->ca_frames_per_try) {
-			break;
-		}
-
+		chan->retrySeqNo = ca_static->ca_search_retry_seq_no;
 		chan = (ciu) ellFirst (&piiuCast->chidlist);
 
 		/*
@@ -374,19 +403,13 @@ LOCAL void retrySearchRequest ()
 			&ca_static->currentTime,
 			&ca_static->ca_conn_retry_delay);
 	LOGRETRYINTERVAL 
-}
-
-/* 
- * cacClrSearchCounters()
- * (reset broadcasted search counters)
- */
-void cacClrSearchCounters()
-{
-        ca_static->ca_search_responses = 0u;
-        ca_static->ca_search_tries = 0;
-        ca_static->ca_frames_per_try = TRIESPERFRAME;
-        ca_static->ca_conn_next_retry = ca_static->currentTime;
-        cacSetRetryInterval(0u);
+#ifdef DEBUG
+printf("sent %u at cur sec=%u cur usec=%u delay sec=%u delay usec = %u\n",
+	nSent, ca_static->currentTime.tv_sec,
+	ca_static->currentTime.tv_usec,
+	ca_static->ca_conn_retry_delay.tv_sec,
+	ca_static->ca_conn_retry_delay.tv_usec);
+#endif
 }
 
 /* 
@@ -399,17 +422,10 @@ void cacSetRetryInterval(unsigned retryNo)
 	ca_real	delay;
 
 	/*
-	 * NOOP if no change
-	 */
-	if (ca_static->ca_search_retry == retryNo) {
-		return;
-	}
-
-	/*
 	 * set the retry interval
 	 */
+	retryNo = min(retryNo, CHAR_BIT*sizeof(idelay)-1);
 	ca_static->ca_search_retry = retryNo;
-	assert(ca_static->ca_search_retry < CHAR_BIT*sizeof(idelay));
 	idelay = 1;
 	idelay = idelay << ca_static->ca_search_retry;
 	delay = idelay * CA_RECAST_DELAY; /* sec */	
@@ -418,6 +434,11 @@ void cacSetRetryInterval(unsigned retryNo)
 	ca_static->ca_conn_retry_delay.tv_sec = idelay;
 	ca_static->ca_conn_retry_delay.tv_usec = 
 		(long) ((delay-idelay)*USEC_PER_SEC);
+#if 0 
+	printf ("new search period is %u sec %u usec\n",
+			ca_static->ca_conn_retry_delay.tv_sec,
+			ca_static->ca_conn_retry_delay.tv_usec);
+#endif	
 }
 
 
@@ -454,7 +475,7 @@ LOCAL void logRetryInterval(char *pFN, unsigned lineno)
 /*
  *	MARK_SERVER_AVAILABLE
  */
-void mark_server_available(const struct in_addr *pnet_addr)
+void mark_server_available(const struct sockaddr_in *pnet_addr)
 {
 	ciu		chan;
 	ca_real		currentPeriod;
@@ -527,7 +548,7 @@ void mark_server_available(const struct in_addr *pnet_addr)
 #ifdef 	DEBUG
 				ca_printf(	
 					"new server at %x cur=%f avg=%f\n", 
-					pnet_addr->s_addr,
+					pnet_addr->sin_addr.s_addr,
 					currentPeriod, 
 					pBHE->averagePeriod);
 #endif
@@ -549,7 +570,7 @@ void mark_server_available(const struct in_addr *pnet_addr)
 #ifdef 	DEBUG
 				ca_printf(	
 					"net resume seen %x cur=%f avg=%f\n", 
-					pnet_addr->s_addr,
+					pnet_addr->sin_addr.s_addr,
 					currentPeriod, 
 					pBHE->averagePeriod);
 #endif
@@ -563,7 +584,7 @@ void mark_server_available(const struct in_addr *pnet_addr)
 #ifdef DEBUG
 				ca_printf(
 					"reboot seen %x cur=%f avg=%f\n", 
-					pnet_addr->s_addr,
+					pnet_addr->sin_addr.s_addr,
 					currentPeriod, 
 					pBHE->averagePeriod);
 #endif
@@ -658,20 +679,17 @@ void mark_server_available(const struct in_addr *pnet_addr)
  *
  * LOCK must be applied
  */
-bhe *createBeaconHashEntry(const struct in_addr *pnet_addr, unsigned sawBeacon)
+bhe *createBeaconHashEntry(const struct sockaddr_in *pina, unsigned sawBeacon)
 {
 	bhe		*pBHE;
 	unsigned	index;
 
-	pBHE = lookupBeaconInetAddr(pnet_addr);
+	pBHE = lookupBeaconInetAddr(pina);
 	if(pBHE){
 		return pBHE;
 	}
 
-	index = ntohl(pnet_addr->s_addr);
-	index &= BHT_INET_ADDR_MASK;
-
-	assert(index<NELEMENTS(ca_static->ca_beaconHash));
+	index = bhtHashIP(pina);
 
 	pBHE = (bhe *)calloc(1,sizeof(*pBHE));
 	if(!pBHE){
@@ -679,13 +697,13 @@ bhe *createBeaconHashEntry(const struct in_addr *pnet_addr, unsigned sawBeacon)
 	}
 
 #ifdef DEBUG
-	ca_printf("new beacon at %x\n", pnet_addr->s_addr);
+	ca_printf("new beacon at %x %u\n", pina->sin_addr.s_addr, pina->sin_port);
 #endif
 
 	/*
 	 * store the inet address
 	 */
-	pBHE->inetAddr = *pnet_addr;
+	pBHE->inetAddr = *pina;
 
 	/*
 	 * set average to -1.0 so that when the next beacon
@@ -727,19 +745,17 @@ bhe *createBeaconHashEntry(const struct in_addr *pnet_addr, unsigned sawBeacon)
  *
  * LOCK must be applied
  */
-bhe *lookupBeaconInetAddr (const struct in_addr *pnet_addr)
+bhe *lookupBeaconInetAddr (const struct sockaddr_in *pina)
 {
 	bhe		*pBHE;
 	unsigned	index;
 
-	index = ntohl(pnet_addr->s_addr);
-	index &= BHT_INET_ADDR_MASK;
-
-	assert(index<NELEMENTS(ca_static->ca_beaconHash));
+	index = bhtHashIP(pina);
 
 	pBHE = ca_static->ca_beaconHash[index];
-	while(pBHE){
-		if(pBHE->inetAddr.s_addr == pnet_addr->s_addr){
+	while (pBHE) {
+		if (	pBHE->inetAddr.sin_addr.s_addr == pina->sin_addr.s_addr &&
+			pBHE->inetAddr.sin_port == pina->sin_port) {
 			break;
 		}
 		pBHE = pBHE->pNext;
@@ -754,21 +770,19 @@ bhe *lookupBeaconInetAddr (const struct in_addr *pnet_addr)
  *
  * LOCK must be applied
  */
-void removeBeaconInetAddr (const struct in_addr *pnet_addr)
+void removeBeaconInetAddr (const struct sockaddr_in *pina)
 {
 	bhe		*pBHE;
 	bhe		**ppBHE;
 	unsigned	index;
 
-	index = ntohl (pnet_addr->s_addr);
-	index &= BHT_INET_ADDR_MASK;
-
-	assert (index<NELEMENTS(ca_static->ca_beaconHash));
+	index = bhtHashIP(pina);
 
 	ppBHE = &ca_static->ca_beaconHash[index];
 	pBHE = *ppBHE;
 	while (pBHE) {
-		if (pBHE->inetAddr.s_addr == pnet_addr->s_addr) {
+		if (	pBHE->inetAddr.sin_addr.s_addr == pina->sin_addr.s_addr &&
+			pBHE->inetAddr.sin_port == pina->sin_port) {
 			*ppBHE = pBHE->pNext;
 			free (pBHE);
 			return;
@@ -779,13 +793,34 @@ void removeBeaconInetAddr (const struct in_addr *pnet_addr)
 	assert (0);
 }
 
+/*
+ * bhtHashIP()
+ */
+LOCAL unsigned bhtHashIP(const struct sockaddr_in *pina)
+{
+	unsigned index;
+
+#if BHT_INET_ADDR_MASK != 0xff
+#	error BHT_INET_ADDR_MASK changed - recode this routine !
+#endif
+
+	index = pina->sin_addr.s_addr;
+	index ^= pina->sin_port;
+	index = (index>>16u) ^ index;
+	index = (index>>8u) ^ index;
+	index &= BHT_INET_ADDR_MASK;
+	assert(index<NELEMENTS(ca_static->ca_beaconHash));
+	return index;
+}
+
+
 
 /*
  * freeBeaconHash()
  *
  * LOCK must be applied
  */
-void freeBeaconHash(struct ca_static *ca_temp)
+void freeBeaconHash(struct CA_STATIC *ca_temp)
 {
 	bhe		*pBHE;
 	bhe		**ppBHE;

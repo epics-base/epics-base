@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.94  1997/05/05 04:40:29  jhill
+ * send_needed replaced by pushPending flag
+ *
  * Revision 1.93  1997/04/29 06:05:57  jhill
  * use free list
  *
@@ -636,10 +639,10 @@ LOCAL void cac_add_msg (IIU *piiu)
 int epicsShareAPI ca_task_initialize(void)
 {
 	int			status;
-	struct ca_static	*ca_temp;
+	struct CA_STATIC	*ca_temp;
 
 	if (!ca_static) {
-		ca_temp = (struct ca_static *) 
+		ca_temp = (struct CA_STATIC *) 
 			calloc(1, sizeof(*ca_temp));
 		if (!ca_temp) {
 			return ECA_ALLOCMEM;
@@ -691,7 +694,13 @@ int ca_os_independent_init (void)
 	 * init broadcasted search counters
 	 * (current time must be initialized before calling this)
 	 */
-	cacClrSearchCounters();
+        ca_static->ca_search_responses = 0u;
+        ca_static->ca_search_tries = 0u;
+	ca_static->ca_search_retry_seq_no = 0u;
+	ca_static->ca_seq_no_at_list_begin = 0u;
+        ca_static->ca_frames_per_try = TRIESPERFRAME;
+        ca_static->ca_conn_next_retry = ca_static->currentTime;
+        cacSetRetryInterval (0u);
 
 	ellInit(&ca_static->ca_iiuList);
 	ellInit(&ca_static->ca_ioeventlist);
@@ -759,7 +768,6 @@ LOCAL void create_udp_fd()
 	status = create_net_chan(
 			&ca_static->ca_piiuCast,
 			NULL,
-			ca_static->ca_server_port,
 			IPPROTO_UDP);
 	if (~status & CA_M_SUCCESS) {
 		ca_static->ca_piiuCast = NULL;
@@ -1154,8 +1162,8 @@ int epicsShareAPI ca_search_and_connect
 	/*
 	 * reset broadcasted search counters
 	 */
-	cacClrSearchCounters();
-
+        ca_static->ca_conn_next_retry = ca_static->currentTime;
+        cacSetRetryInterval (0u);
 	UNLOCK;
 
 	/*
@@ -1726,7 +1734,7 @@ LOCAL void ca_put_notify_action(PUTNOTIFY *ppn)
 {
 	CACLIENTPUTNOTIFY	*pcapn;
 	struct ioc_in_use	*piiu;
-	struct ca_static	*pcas;
+	struct CA_STATIC	*pcas;
 	chid			chix;
 
 	/*
@@ -3589,7 +3597,7 @@ int ca_channel_status(int tid)
 {
 	chid			chix;
 	IIU			*piiu;
-	struct ca_static 	*pcas;
+	struct CA_STATIC	*pcas;
 
 	pcas = (struct ca_static *) 
 		taskVarGet(tid, (int *)&ca_static);

@@ -32,6 +32,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.27  1997/05/01 19:46:32  jhill
+ * fixed unintialized variable bug
+ *
  * Revision 1.26  1997/04/11 20:36:00  jhill
  * kay's perl branch
  *
@@ -147,7 +150,7 @@ void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV)
 /*
  * cac_os_depen_init()
  */
-int cac_os_depen_init(struct ca_static *pcas)
+int cac_os_depen_init(struct CA_STATIC *pcas)
 {
     int status;
 
@@ -164,7 +167,7 @@ int cac_os_depen_init(struct ca_static *pcas)
 /*
  * cac_os_depen_exit ()
  */
-void cac_os_depen_exit (struct ca_static *pcas)
+void cac_os_depen_exit (struct CA_STATIC *pcas)
 {
 	ca_static = pcas;
         ca_process_exit();

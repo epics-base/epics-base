@@ -32,6 +32,9 @@
  * 	cjm 20-Nov-95 Add code for gettimeofday
  *
  * $Log$
+ * Revision 1.21  1997/01/22 21:11:49  jhill
+ * moved vms includes here
+ *
  * Revision 1.20  1996/07/02 23:04:07  jhill
  * took &tz out of gettimeofday()
  *
@@ -164,7 +167,7 @@ void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV)
 /*
  * cac_os_depen_init()
  */
-int cac_os_depen_init(struct ca_static *pcas)
+int cac_os_depen_init(struct CA_STATIC *pcas)
 {
 	int	status;
 
@@ -179,7 +182,7 @@ int cac_os_depen_init(struct ca_static *pcas)
 /*
  * cac_os_depen_exit ()
  */
-void cac_os_depen_exit (struct ca_static *pcas)
+void cac_os_depen_exit (struct CA_STATIC *pcas)
 {
 	ca_static = pcas;
         ca_process_exit();

@@ -95,7 +95,7 @@ LOCAL CACVRTFUNC	cvrt_put_ackt;
 LOCAL CACVRTFUNC	cvrt_stsack_string;
 
 /*  cvrt is (array of) (pointer to) (function returning) int */
-CACVRTFUNC *cac_dbr_cvrt[]
+epicsShareDef CACVRTFUNC *cac_dbr_cvrt[]
 	=
 	{
 	cvrt_string,

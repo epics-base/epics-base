@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.45  1997/04/29 06:07:16  jhill
+ * local host connect compatible
+ *
  * Revision 1.44  1997/04/10 19:26:05  jhill
  * asynch connect, faster connect, ...
  *
@@ -100,6 +103,7 @@ void 	write_event(struct event_handler_args args);
 void 	conn(struct connection_handler_args args);
 void 	get_cb(struct event_handler_args args);
 void 	accessSecurity_cb(struct access_rights_handler_args args);
+void	pend_event_delay_test(dbr_double_t request);
 
 void doubleTest(
 chid		chan,
@@ -179,26 +183,12 @@ int doacctst(char *pname)
 
 	/*
 	 * CA pend event delay accuracy test
+	 * (CA asssumes that search requests can be sent
+	 * at least every 25 mS on all supported os)
 	 */
-	{
-		TS_STAMP	end_time;
-		TS_STAMP	start_time;
-		dbr_double_t	delay;
-		dbr_double_t	request = 0.5;
-		dbr_double_t	accuracy;
-
-		tsLocalTime(&start_time);
-		status = ca_pend_event(request);
-		if (status != ECA_TIMEOUT) {
-			SEVCHK(status, NULL);
-		}
-		tsLocalTime(&end_time);
-		TsDiffAsDouble(&delay,&end_time,&start_time);
-		accuracy = 100.0*(delay-request)/request;
-		printf("CA pend event delay accuracy = %f %%\n",
-			accuracy);
-		assert (fabs(accuracy) < 10.0);
-	}
+	pend_event_delay_test(1.0);
+	pend_event_delay_test(0.1);
+	pend_event_delay_test(0.25);
 
 	size = dbr_size_n(DBR_GR_FLOAT, NUM);
 	ptr = (struct dbr_gr_float *) malloc(size);  
@@ -972,6 +962,30 @@ int doacctst(char *pname)
 	}
 
 	return(0);
+}
+
+/*
+ * pend_event_delay_test()
+ */
+void pend_event_delay_test(dbr_double_t request)
+{
+	int		status;
+	TS_STAMP	end_time;
+	TS_STAMP	start_time;
+	dbr_double_t	delay;
+	dbr_double_t	accuracy;
+
+	tsLocalTime(&start_time);
+	status = ca_pend_event(request);
+	if (status != ECA_TIMEOUT) {
+		SEVCHK(status, NULL);
+	}
+	tsLocalTime(&end_time);
+	TsDiffAsDouble(&delay,&end_time,&start_time);
+	accuracy = 100.0*(delay-request)/request;
+	printf("CA pend event delay = %f sec results in accuracy = %f %%\n",
+		request, accuracy);
+	assert (fabs(accuracy) < 10.0);
 }
 
 void floatTest(

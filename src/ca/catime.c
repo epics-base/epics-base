@@ -142,7 +142,7 @@ int catime (char *channelName, enum appendNumberFlag appNF)
 		itemList[i].name[strsize]= '\0';
 		itemList[i].count = 1;
 	}
-
+#if 0
 	printf ("sync search test\n");
 	assert (100u<=NELEMENTS(itemList));
 	timeIt (test_sync_search, itemList, 100u);
@@ -155,7 +155,7 @@ int catime (char *channelName, enum appendNumberFlag appNF)
 	fflush (stdout);
 	ca_pend_event(1.0);
   	printf ("hopefully done\n");
-
+#endif
 	printf ("search test\n");
 	timeIt (test_search, itemList, NELEMENTS(itemList));
 	printSearchStat(NELEMENTS(itemList));

@@ -47,6 +47,9 @@
 /*			address in use so that test works on UNIX	*/
 /*			kernels that support multicast			*/
 /* $Log$
+ * Revision 1.70  1997/05/05 04:44:39  jhill
+ * socket buf matches CA buf size, and pushPending flag added
+ *
  * Revision 1.69  1997/04/23 17:05:05  jhill
  * pc port changes
  *
@@ -133,9 +136,8 @@ LOCAL void 	close_ioc (IIU *piiu);
  *
  */
 int alloc_ioc(
-const struct in_addr	*pnet_addr,
-unsigned short		port,
-struct ioc_in_use	**ppiiu
+const struct sockaddr_in	*pina,
+struct ioc_in_use		**ppiiu
 )
 {
   	int			status;
@@ -145,9 +147,9 @@ struct ioc_in_use	**ppiiu
 	 * look for an existing connection
 	 */
 	LOCK;
-	pBHE = lookupBeaconInetAddr(pnet_addr);
+	pBHE = lookupBeaconInetAddr(pina);
 	if(!pBHE){
-		pBHE = createBeaconHashEntry(pnet_addr, FALSE);
+		pBHE = createBeaconHashEntry(pina, FALSE);
 		if(!pBHE){
 			UNLOCK;
 			return ECA_ALLOCMEM;
@@ -166,8 +168,7 @@ struct ioc_in_use	**ppiiu
 	else{
   		status = create_net_chan(
 				ppiiu, 
-				pnet_addr, 
-				port,
+				pina,
 				IPPROTO_TCP);
 		if(status == ECA_NORMAL){
 			pBHE->piiu = *ppiiu;
@@ -181,14 +182,13 @@ struct ioc_in_use	**ppiiu
 
 
 /*
- *	CREATE_NET_CHANNEL()
+ *	CREATE_NET_CHAN()
  *
  */
 int create_net_chan(
-struct ioc_in_use 	**ppiiu,
-const struct in_addr	*pnet_addr,	/* only used by TCP connections */
-unsigned short		port,
-int			net_proto
+struct ioc_in_use 		**ppiiu,
+const struct sockaddr_in	*pina, /* only used by TCP connections */
+int				net_proto
 )
 {
 	struct ioc_in_use	*piiu;
@@ -228,7 +228,6 @@ int			net_proto
   	{
     		case	IPPROTO_TCP:
 
-		assert(pnet_addr);
 		pNode = (caAddrNode *)calloc(1,sizeof(*pNode));
 		if(!pNode){
 			free(piiu);
@@ -236,9 +235,8 @@ int			net_proto
 			return ECA_ALLOCMEM;
 		}
       		memset((char *)&pNode->destAddr,0,sizeof(pNode->destAddr));
-  		pNode->destAddr.in.sin_family = AF_INET;
-		pNode->destAddr.in.sin_addr = *pnet_addr;
-  		pNode->destAddr.in.sin_port = htons (port);
+
+		pNode->destAddr.in = *pina;
 		ellAdd(&piiu->destAddr, &pNode->node);
 		piiu->recvBytes = tcp_recv_msg; 
 		piiu->sendBytes = cac_connect_iiu; 
@@ -321,7 +319,6 @@ int			net_proto
 
 		{
 			int i;
-			int size;
 
 			/* set TCP buffer sizes */
 			i = MAX_MSG_SIZE;
@@ -352,25 +349,9 @@ int			net_proto
 				UNLOCK;
 				return ECA_SOCK;
 			}
-
-			/* fetch the TCP send buffer size */
-			i = sizeof(size); 
-			status = getsockopt(
-					sock,
-					SOL_SOCKET,
-					SO_SNDBUF,
-					(char *)&size,
-					&i);
-			if(status < 0 || i != sizeof(size)){
-				free(pNode);
-				free(piiu);
-				socket_close(sock);
-				UNLOCK;
-				return ECA_SOCK;
-			}
 		}
 
-		cacRingBufferInit(&piiu->recv, sizeof(piiu->send.buf));
+		cacRingBufferInit(&piiu->recv, sizeof(piiu->recv.buf));
 		cacRingBufferInit(&piiu->send, sizeof(piiu->send.buf));
 
 		cac_gettimeval (&piiu->timeAtLastRecv);
@@ -401,7 +382,6 @@ int			net_proto
 
     	case	IPPROTO_UDP:
 	
-		assert(!pnet_addr);
 		piiu->recvBytes = udp_recv_msg; 
 		piiu->sendBytes = cac_udp_send_msg_piiu; 
 		piiu->procInput = ca_process_udp; 
@@ -492,7 +472,7 @@ int			net_proto
 			ca_static->ca_server_port);
 
 
-		cacRingBufferInit(&piiu->recv, sizeof(piiu->send.buf));
+		cacRingBufferInit(&piiu->recv, sizeof(piiu->recv.buf));
 		cacRingBufferInit(&piiu->send, min(MAX_UDP, 
 			sizeof(piiu->send.buf)));
 
@@ -513,7 +493,7 @@ int			net_proto
 
 	default:
 		free(piiu);
-      		genLocalExcep (ECA_INTERNAL,"alloc_ioc: ukn protocol");
+      		genLocalExcep (ECA_INTERNAL,"create_net_chan: ukn protocol");
 		/*
 		 * turn off gcc warnings
 		 */
@@ -622,9 +602,6 @@ LOCAL void cac_connect_iiu (struct ioc_in_use *piiu)
 			errnoCpy==EALREADY ||
 			errnoCpy==EINVAL /* for early WINSOCK */
 			) {
-			ca_printf(
-				"CAC: duplicate connect err %d=\"%s\"\n", 
-				errnoCpy, strerror(errnoCpy));
 			return;	
 		}
 		else if(errnoCpy==EINTR) {
@@ -971,7 +948,7 @@ LOCAL void cac_tcp_send_msg_piiu(struct ioc_in_use *piiu)
 	localError = SOCKERRNO;
 
 	if(	localError == EWOULDBLOCK ||
-		localError == ENOBUFS ||
+		/* localError == ENOBUFS || */
 		localError == EINTR){
 			UNLOCK;
 			return;
@@ -1388,7 +1365,7 @@ LOCAL void close_ioc (IIU *piiu)
 		 */
 		pNode = (caAddrNode *) piiu->destAddr.node.next;
 		assert (pNode);
-		removeBeaconInetAddr (&pNode->destAddr.in.sin_addr);
+		removeBeaconInetAddr (&pNode->destAddr.in);
 
 		/*
 		 * Mark all of their channels disconnected

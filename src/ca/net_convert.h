@@ -28,6 +28,11 @@
 #define _NET_CONVERT_H
 
 #include "db_access.h"
+#include "shareLib.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
  * Here are the definitions for architecture dependent byte ordering 
@@ -85,7 +90,7 @@ typedef void CACVRTFUNC(void *pSrc, void *pDest, int hton, unsigned long count);
 
 #ifdef CONVERSION_REQUIRED
 /*  cvrt is (array of) (pointer to) (function returning) int */
-extern CACVRTFUNC *cac_dbr_cvrt[LAST_BUFFER_TYPE+1];
+epicsShareExtern CACVRTFUNC *cac_dbr_cvrt[LAST_BUFFER_TYPE+1];
 #endif
 
 
@@ -123,20 +128,20 @@ extern CACVRTFUNC *cac_dbr_cvrt[LAST_BUFFER_TYPE+1];
 #ifdef CA_LITTLE_ENDIAN 
 #  	ifndef ntohl
 #  	define ntohl(LONG)\
-  	(\
-   		((LONG) & (dbr_long_t) 0xff000000) >> 24 |\
-          	((LONG) & (dbr_long_t) 0x000000ff) << 24 |\
-         	((LONG) & (dbr_long_t) 0x0000ff00) << 8  |\
-         	((LONG) & (dbr_long_t) 0x00ff0000) >> 8\
+  	( (dbr_long_t) (\
+   		( ((dbr_ulong_t)LONG) & 0xff000000 ) >> 24u |\
+          	( ((dbr_ulong_t)LONG) & 0x000000ff ) << 24u |\
+         	( ((dbr_ulong_t)LONG) & 0x0000ff00 ) << 8u  |\
+         	( ((dbr_ulong_t)LONG) & 0x00ff0000 ) >> 8u )\
   	)
 #  	endif
 #  	ifndef htonl
 #  	define htonl(LONG)\
-  	( (dbr_long_t) \
-          	(((LONG) & (dbr_long_t) 0x000000ff) << 24 |\
-   		((LONG) & (dbr_long_t) 0xff000000) >> 24 |\
-         	((LONG) & (dbr_long_t) 0x00ff0000) >> 8  |\
-         	((LONG) & (dbr_long_t) 0x0000ff00) << 8 )\
+  	( (dbr_long_t) (\
+          	( ((dbr_ulong_t)(LONG)) & 0x000000ff ) << 24u |\
+   		( ((dbr_ulong_t)(LONG)) & 0xff000000 ) >> 24u |\
+         	( ((dbr_ulong_t)(LONG)) & 0x00ff0000 ) >> 8u  |\
+         	( ((dbr_ulong_t)(LONG)) & 0x0000ff00 ) << 8u )\
   	)
 #  	endif
 #	else 
@@ -181,6 +186,10 @@ extern CACVRTFUNC *cac_dbr_cvrt[LAST_BUFFER_TYPE+1];
 	void dbr_ntohd(dbr_double_t *pNet, dbr_double_t *pHost);
 	void dbr_htonf(dbr_float_t *pHost, dbr_float_t *pNet);
 	void dbr_ntohf(dbr_float_t *pNet, dbr_float_t *pHost);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif	/* define _NET_CONVERT_H */

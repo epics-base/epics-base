@@ -32,6 +32,9 @@
 /************************************************************************/
 
 /* $Log$
+ * Revision 1.63  1997/05/05 04:45:25  jhill
+ * send_needed => pushPending, and added ca_number_iiu_in_fc
+ *
  * Revision 1.62  1997/04/29 06:11:08  jhill
  * use free lists
  *
@@ -315,7 +318,7 @@ typedef struct caclient_put_notify{
 	unsigned long		valueSize; /* size of block pointed to by dbPutNotify */
 	void			(*caUserCallback)(struct event_handler_args);
 	void			*caUserArg;
-	struct ca_static	*pcas;
+	struct CA_STATIC	*pcas;
 	int			busy;
 }CACLIENTPUTNOTIFY;
 #endif /*vxWorks*/
@@ -434,7 +437,7 @@ typedef struct ioc_in_use{
 	struct ca_buffer	send;
 	struct ca_buffer	recv;
 	caHdr			curMsg;
-	struct ca_static	*pcas;
+	struct CA_STATIC	*pcas;
 	void			*pCurData;
 	void			(*sendBytes)(struct ioc_in_use *);
 	void			(*recvBytes)(struct ioc_in_use *);
@@ -464,11 +467,11 @@ typedef struct ioc_in_use{
 /*
  * for the beacon's recvd hash table
  */
-#define BHT_INET_ADDR_MASK		0x7f
+#define BHT_INET_ADDR_MASK		0xff
 typedef struct beaconHashEntry{
 	struct beaconHashEntry	*pNext;
 	IIU			*piiu;
-	struct in_addr 		inetAddr;
+	struct sockaddr_in	inetAddr;
 	ca_time			timeStamp;
 	ca_real			averagePeriod;
 }bhe;
@@ -483,7 +486,7 @@ typedef struct {
 	fd_set          writeMask;  
 }caFDInfo;
 
-struct  ca_static{
+struct  CA_STATIC {
 	ELLLIST		ca_iiuList;
 	ELLLIST		ca_ioeventlist;
 	ELLLIST		ca_pend_read_list;
@@ -516,8 +519,8 @@ struct  ca_static{
 	void		*ca_sgFreeListPVT;
 	void		*ca_sgopFreeListPVT;
 	ciu		ca_pEndOfBCastList;
-	unsigned long	ca_search_responses; /* num valid search resp within seq # */
-	unsigned long	ca_search_tries; /* num search tries within seq # */
+	unsigned 	ca_search_responses; /* num valid search resp within seq # */
+	unsigned 	ca_search_tries; /* num search tries within seq # */
 	unsigned	ca_search_retry; /* search retry seq number */
 	unsigned	ca_min_retry; /* min retry no so far */
 	unsigned	ca_frames_per_try; /* # of UDP frames per search try */
@@ -528,6 +531,8 @@ struct  ca_static{
 	unsigned	ca_number_iiu_in_fc;
 	unsigned short	ca_server_port;
 	unsigned short	ca_repeater_port;
+	unsigned short 	ca_search_retry_seq_no; /* search retry seq number */
+	unsigned short 	ca_seq_no_at_list_begin; /* search retry seq number at beg of list*/
 	char		ca_sprintf_buf[256];
 	char		ca_new_err_code_msg_buf[128u];
 	unsigned 	ca_post_msg_active:1; 
@@ -592,7 +597,7 @@ typedef struct{
  */
 
 GLBLTYPE
-struct ca_static *ca_static;
+struct CA_STATIC *ca_static;
 
 /*
  * CA internal functions
@@ -614,14 +619,14 @@ void 	issue_client_host_name(struct ioc_in_use *piiu);
 int	ca_defunct(void);
 int 	ca_printf(char *pformat, ...);
 void 	manage_conn();
-void 	mark_server_available(const struct in_addr *pnet_addr);
+void 	mark_server_available(const struct sockaddr_in *pnet_addr);
 void	flow_control_on(struct ioc_in_use *piiu);
 void	flow_control_off(struct ioc_in_use *piiu);
 int	broadcast_addr(struct in_addr *pcastaddr);
 void	ca_repeater(void);
 void 	cac_recv_task(int tid);
 void 	ca_sg_init(void);
-void	ca_sg_shutdown(struct ca_static *ca_temp);
+void	ca_sg_shutdown(struct CA_STATIC *ca_temp);
 int 	cac_select_io(struct timeval *ptimeout, int flags);
 void caHostFromInetAddr(
 	const struct in_addr 	*pnet_addr,
@@ -635,9 +640,8 @@ int post_msg(
 	unsigned long		blockSize
 );
 int alloc_ioc(
-	const struct in_addr	*pnet_addr,
-	unsigned short		port,
-	struct ioc_in_use	**ppiiu
+	const struct sockaddr_in	*pina,
+	struct ioc_in_use		**ppiiu
 );
 unsigned long cacRingBufferWrite(
 	struct ca_buffer        *pRing,
@@ -668,20 +672,19 @@ char *localUserName(void);
 char *localHostName(void);
 
 int create_net_chan(
-struct ioc_in_use       **ppiiu,
-const struct in_addr	*pnet_addr,	/* only used by TCP connections */
-unsigned short		port,
-int                     net_proto
+struct ioc_in_use       	**ppiiu,
+const struct sockaddr_in	*pina, /* only used by TCP connections */
+int                     	net_proto
 );
 
 void caSetupBCastAddrList (ELLLIST *pList, SOCKET sock, unsigned port);
 
 int ca_os_independent_init (void);
 
-void freeBeaconHash(struct ca_static *ca_temp);
-void removeBeaconInetAddr(const struct in_addr *pnet_addr);
-bhe *lookupBeaconInetAddr(const struct in_addr *pnet_addr);
-bhe *createBeaconHashEntry(const struct in_addr *pnet_addr, unsigned sawBeacon);
+void freeBeaconHash(struct CA_STATIC *ca_temp);
+void removeBeaconInetAddr(const struct sockaddr_in *pnet_addr);
+bhe *lookupBeaconInetAddr(const struct sockaddr_in *pnet_addr);
+bhe *createBeaconHashEntry(const struct sockaddr_in *pnet_addr, unsigned sawBeacon);
 void notify_ca_repeater(void);
 void cac_clean_iiu_list(void);
 
@@ -691,8 +694,8 @@ void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV);
 void os_specific_sg_create(CASG *pcasg);
 void os_specific_sg_delete(CASG *pcasg);
 void os_specific_sg_io_complete(CASG *pcasg);
-int cac_os_depen_init(struct ca_static *pcas);
-void cac_os_depen_exit (struct ca_static *pcas);
+int cac_os_depen_init(struct CA_STATIC *pcas);
+void cac_os_depen_exit (struct CA_STATIC *pcas);
 void ca_process_exit();
 void ca_spawn_repeater(void);
 void cac_gettimeval(struct timeval  *pt);
@@ -711,7 +714,6 @@ void genLocalExcepWFL(long stat, char *ctx,
 genLocalExcepWFL (STAT, PCTX, __FILE__, __LINE__)
 void cac_reconnect_channel(ciu chan);
 void retryPendingClaims(IIU *piiu);
-void cacClrSearchCounters();
 void cacSetRetryInterval(unsigned retryNo);
 void addToChanList(ciu chan, IIU *piiu);
 void removeFromChanList(ciu chan);

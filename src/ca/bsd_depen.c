@@ -127,16 +127,15 @@ int cac_select_io(struct timeval *ptimeout, int flags)
 			piiu->recvPending = FALSE;
 		}
 
-                if (flags&CA_DO_SENDS || piiu->pushPending) {
-			if (piiu->state==iiu_connecting) {
+		if (piiu->state==iiu_connecting) {
+			FD_SET (piiu->sock_chan, &pfdi->writeMask);
+			ioPending = TRUE;
+		}               
+		else if (flags&CA_DO_SENDS || piiu->pushPending) {
+			if (cacRingBufferReadSize(&piiu->send, FALSE)>0) {
+				maxfd = max (maxfd,piiu->sock_chan);
 				FD_SET (piiu->sock_chan, &pfdi->writeMask);
 				ioPending = TRUE;
-			}
-			else {
-				if (cacRingBufferReadSize(&piiu->send, FALSE)>0) {
-					maxfd = max (maxfd,piiu->sock_chan);
-					FD_SET (piiu->sock_chan, &pfdi->writeMask);
-				}
 			}
                 }
         }

@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.30  1997/04/29 06:13:49  jhill
+ * use free lists
+ *
  * Revision 1.29  1997/04/23 17:05:10  jhill
  * pc port changes
  *
@@ -71,8 +74,8 @@
 LOCAL void ca_repeater_task();
 LOCAL void ca_task_exit_tcb(WIND_TCB *ptcb);
 LOCAL void ca_extra_event_labor(void *pArg);
-LOCAL int cac_os_depen_exit_tid (struct ca_static *pcas, int tid);
-LOCAL int cac_add_task_variable (struct ca_static *ca_temp);
+LOCAL int cac_os_depen_exit_tid (struct CA_STATIC *pcas, int tid);
+LOCAL int cac_add_task_variable (struct CA_STATIC *ca_temp);
 LOCAL void deleteCallBack(CALLBACK *pcb);
 LOCAL void ca_check_for_fp();
 LOCAL int event_import(int tid);
@@ -238,7 +241,7 @@ void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV)
 /*
  * CAC_ADD_TASK_VARIABLE()
  */
-LOCAL int cac_add_task_variable (struct ca_static *ca_temp)
+LOCAL int cac_add_task_variable (struct CA_STATIC *ca_temp)
 {
         static char             ca_installed;
         TVIU                    *ptviu;
@@ -314,7 +317,7 @@ LOCAL int cac_add_task_variable (struct ca_static *ca_temp)
 LOCAL void ca_task_exit_tcb(WIND_TCB *ptcb)
 {
 	int			status;
-	struct ca_static	*ca_temp;
+	struct CA_STATIC	*ca_temp;
 
 #       ifdef DEBUG
                 ca_printf("CAC: entering the exit handler %x\n", ptcb);
@@ -327,9 +330,9 @@ LOCAL void ca_task_exit_tcb(WIND_TCB *ptcb)
          * the task id - somthing which may not be true
          * on future releases of vxWorks
          */
-	ca_temp = (struct ca_static *)
+	ca_temp = (struct CA_STATIC *)
 		taskVarGet((int)ptcb, (int *) &ca_static);
-	if (ca_temp == (struct ca_static *) ERROR){
+	if (ca_temp == (struct CA_STATIC *) ERROR){
 		return;
 	}
 
@@ -362,7 +365,7 @@ LOCAL void ca_task_exit_tcb(WIND_TCB *ptcb)
 /*
  * cac_os_depen_init()
  */
-int cac_os_depen_init(struct ca_static *pcas)
+int cac_os_depen_init(struct CA_STATIC *pcas)
 {
 	char            name[15];
 	int             status;
@@ -426,7 +429,7 @@ int cac_os_depen_init(struct ca_static *pcas)
 /*
  * cac_os_depen_exit ()
  */
-void cac_os_depen_exit (struct ca_static *pcas)
+void cac_os_depen_exit (struct CA_STATIC *pcas)
 {
 	cac_os_depen_exit_tid (pcas, 0);
 }
@@ -435,7 +438,7 @@ void cac_os_depen_exit (struct ca_static *pcas)
 /*
  * cac_os_depen_exit_tid ()
  */
-LOCAL int cac_os_depen_exit_tid (struct ca_static *pcas, int tid)
+LOCAL int cac_os_depen_exit_tid (struct CA_STATIC *pcas, int tid)
 {
 	int		status;
 	ciu		chix;
@@ -665,7 +668,7 @@ LOCAL int event_import(int tid)
 int ca_import(int tid)
 {
         int             status;
-        struct ca_static *pcas;
+        struct CA_STATIC *pcas;
         TVIU            *ptviu;
 
         ca_check_for_fp();
@@ -674,9 +677,9 @@ int ca_import(int tid)
 	 * just return success if they have already done
 	 * a ca import for this task
 	 */
-        pcas = (struct ca_static *)
+        pcas = (struct CA_STATIC *)
                 taskVarGet(taskIdSelf(), (int *)&ca_static);
-        if (pcas != (struct ca_static *) ERROR){
+        if (pcas != (struct CA_STATIC *) ERROR){
                 return ECA_NORMAL;
         }
 
@@ -685,9 +688,9 @@ int ca_import(int tid)
                 return ECA_ALLOCMEM;
         }
 
-        pcas = (struct ca_static *)
+        pcas = (struct CA_STATIC *)
                 taskVarGet(tid, (int *)&ca_static);
-        if (pcas == (struct ca_static *) ERROR){
+        if (pcas == (struct CA_STATIC *) ERROR){
                 free(ptviu);
                 return ECA_NOCACTX;
         }
@@ -718,7 +721,7 @@ int ca_import_cancel(int tid)
 {
         int 			status;
         TVIU    		*ptviu;
-        struct ca_static 	*pcas;
+        struct CA_STATIC 	*pcas;
 
 	if (tid == taskIdSelf()) {
 		pcas = NULL;
@@ -730,9 +733,9 @@ int ca_import_cancel(int tid)
 	/*
 	 * Attempt to attach to the specified context
 	 */
-	ca_static = (struct ca_static *) 
+	ca_static = (struct CA_STATIC *) 
 		taskVarGet(tid, (int *)&ca_static);
-	if (ca_static == (struct ca_static *) ERROR){
+	if (ca_static == (struct CA_STATIC *) ERROR){
 		ca_static = pcas;
 		return ECA_NOCACTX;
 	}
@@ -829,7 +832,7 @@ LOCAL void ca_extra_event_labor(void *pArg)
 {
         int                     status;
         CACLIENTPUTNOTIFY       *ppnb;
-        struct ca_static        *pcas;
+        struct CA_STATIC        *pcas;
         struct event_handler_args args;
 
         pcas = pArg;

@@ -533,21 +533,33 @@ const struct in_addr  	*pnet_addr
 	case CA_PROTO_RSRV_IS_UP:
 		LOCK;
 		{
-			struct in_addr ina;
+			struct sockaddr_in ina;
 			
 			/* 
 			 * this allows a fan-out server to potentially
 			 * insert the true address of a server 
-			 * (servers prior to 3.13 always set this
+			 *
+			 * (servers always set this
 			 * field to one of the ip addresses of the host)
-			 * (clients prior to 3.13 always expect that this
+			 * (clients always expect that this
 			 * field is set to the server's IP address).
 			 */
+			ina.sin_family = AF_INET;
 			if (piiu->curMsg.m_available != INADDR_ANY) {
-				ina.s_addr = piiu->curMsg.m_available;
+				ina.sin_addr.s_addr = piiu->curMsg.m_available;
 			}
 			else {
-				ina = *pnet_addr;
+				ina.sin_addr = *pnet_addr;
+			}
+			if (piiu->curMsg.m_count != 0) {
+				ina.sin_port = htons (piiu->curMsg.m_count);
+			}
+			else {
+				/*
+				 * old servers dont supply this and the
+				 * default port must be assumed
+				 */
+				ina.sin_port = htons (ca_static->ca_server_port);
 			}
 			mark_server_available(&ina);
 		}
@@ -788,13 +800,13 @@ IIU			*piiu,
 const struct in_addr	*pnet_addr
 )
 {
-	unsigned short	port;
-	char		rej[64];
-      	ciu		chan;
-	int		status;
-	IIU		*allocpiiu;
-	unsigned short	*pMinorVersion;
-	unsigned	minorVersion;
+	struct sockaddr_in	ina;
+	char			rej[64];
+      	ciu			chan;
+	int			status;
+	IIU			*allocpiiu;
+	unsigned short		*pMinorVersion;
+	unsigned		minorVersion;
 
 	if (piiu!=piiuCast) {
 		return;
@@ -829,29 +841,6 @@ const struct in_addr	*pnet_addr
 	}
 
 	/*
-	 * Ignore duplicate search replies
-	 */
-	if (piiuCast != (IIU *) chan->piiu) {
-		caAddrNode	*pNode;
-		IIU		*tcpPIIU = (IIU *) chan->piiu;
-
-		pNode = (caAddrNode *) ellFirst(&tcpPIIU->destAddr);
-		assert(pNode);
-		if (pNode->destAddr.in.sin_addr.s_addr != pnet_addr->s_addr) {
-			caHostFromInetAddr(pnet_addr,rej,sizeof(rej));
-			sprintf(
-				sprintf_buf,
-		"Channel: %s Accepted: %s Rejected: %s ",
-				(char *)(chan + 1),
-				tcpPIIU->host_name_str,
-				rej);
-			genLocalExcep (ECA_DBLCHNL, sprintf_buf);
-		}
-		UNLOCK;
-		return;
-	}
-
-	/*
 	 * Starting with CA V4.1 the minor version number
 	 * is appended to the end of each search reply.
 	 * This value is ignored by earlier clients.
@@ -868,13 +857,50 @@ const struct in_addr	*pnet_addr
 	 * the type field is abused to carry the port number
 	 * so that we can have multiple servers on one host
 	 */
-	if (CA_V45 (CA_PROTOCOL_VERSION,minorVersion)) {
-		port = piiu->curMsg.m_type;
+	ina.sin_family = AF_INET;
+	if (CA_V48 (CA_PROTOCOL_VERSION,minorVersion)) {
+		if (piiu->curMsg.m_cid != ~0ul) {
+			ina.sin_addr.s_addr = htonl(piiu->curMsg.m_cid);
+		}
+		else {
+			ina.sin_addr = *pnet_addr;
+		}
+		ina.sin_port = htons(piiu->curMsg.m_type);
+	}
+	else if (CA_V45 (CA_PROTOCOL_VERSION,minorVersion)) {
+		ina.sin_port = htons(piiu->curMsg.m_type);
+		ina.sin_addr = *pnet_addr;
 	}
 	else {
-		port = ca_static->ca_server_port;
+		ina.sin_port = htons(ca_static->ca_server_port);
+		ina.sin_addr = *pnet_addr;
 	}
-        status = alloc_ioc (pnet_addr, port, &allocpiiu);
+
+	/*
+	 * Ignore duplicate search replies
+	 */
+	if (piiuCast != (IIU *) chan->piiu) {
+		caAddrNode	*pNode;
+		IIU		*tcpPIIU = (IIU *) chan->piiu;
+
+		pNode = (caAddrNode *) ellFirst(&tcpPIIU->destAddr);
+		assert(pNode);
+		if (pNode->destAddr.in.sin_addr.s_addr != ina.sin_addr.s_addr ||
+			pNode->destAddr.in.sin_port != ina.sin_port) {
+			caHostFromInetAddr(pnet_addr,rej,sizeof(rej));
+			sprintf(
+				sprintf_buf,
+		"Channel: %s Accepted: %s Rejected: %s ",
+				(char *)(chan + 1),
+				tcpPIIU->host_name_str,
+				rej);
+			genLocalExcep (ECA_DBLCHNL, sprintf_buf);
+		}
+		UNLOCK;
+		return;
+	}
+
+        status = alloc_ioc (&ina, &allocpiiu);
 	switch (status) {
 
 	case ECA_NORMAL:
@@ -913,8 +939,15 @@ const struct in_addr	*pnet_addr
 		issue_client_host_name(allocpiiu);
 	}
 
-	if (ca_static->ca_search_responses<ULONG_MAX) {
-		ca_static->ca_search_responses++;
+	/*
+	 * increase the valid search response count only if this
+	 * response matches up with a request since the beginning
+	 * of the search list
+	 */
+	if (ca_static->ca_seq_no_at_list_begin <= chan->retrySeqNo) {
+		if (ca_static->ca_search_responses<ULONG_MAX) {
+			ca_static->ca_search_responses++;
+		}
 	}
 
 	/*
@@ -948,13 +981,12 @@ const struct in_addr	*pnet_addr
 
 	/*
 	 * Reset the delay to the next search request if we get
-	 * at least one response. This may result in an over 
-	 * run of the UDP input queue of the server in some 
-	 * cases (and therefore in redundant search requests) 
-	 * but it does significantly reduce the connect delays 
-	 * when 1000's of channels must be connected.
+	 * at least one response. However, dont reset this delay if we
+	 * get a delayed response to an old search request.
 	 */
-	ca_static->ca_conn_next_retry = ca_static->currentTime;
+	if (chan->retrySeqNo == ca_static->ca_search_retry_seq_no) {
+		ca_static->ca_conn_next_retry = ca_static->currentTime;
+	}
 
 	/*
 	 * claim the resource in the IOC

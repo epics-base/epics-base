@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.21  1997/04/10 19:26:17  jhill
+ * asynch connect, faster connect, ...
+ *
  * Revision 1.20  1996/11/02 00:51:02  jhill
  * many pc port, const in API, and other changes
  *
@@ -110,7 +113,7 @@ void os_specific_sg_delete(CASG *pcasg)
 /*
  * CAC_ADD_TASK_VARIABLE()
  */
-int cac_add_task_variable(struct ca_static *ca_temp)
+int cac_add_task_variable(struct CA_STATIC *ca_temp)
 {
 	ca_static = ca_temp;
 	return ECA_NORMAL;
@@ -120,7 +123,7 @@ int cac_add_task_variable(struct ca_static *ca_temp)
 /*
  * cac_os_depen_init()
  */
-int cac_os_depen_init(struct ca_static *pcas)
+int cac_os_depen_init(struct CA_STATIC *pcas)
 {
         int 			status;
 
@@ -135,7 +138,7 @@ int cac_os_depen_init(struct ca_static *pcas)
 /*
  * cac_os_depen_exit ()
  */
-void cac_os_depen_exit (struct ca_static *pcas)
+void cac_os_depen_exit (struct CA_STATIC *pcas)
 {
 	ca_static = pcas;
 	ca_process_exit();

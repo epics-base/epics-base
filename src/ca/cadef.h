@@ -190,22 +190,25 @@ typedef void caArh(struct access_rights_handler_args args);
 typedef void caArh();
 #endif /*CAC_ANSI_FUNC_PROTO*/
 
+/*
+ * The fields in this structure may change or even vanish in the future.
+ * Please use the macros above to access the information in this structure.
+ */
 struct channel_in_use{
-	ELLNODE			node;	/* list ptrs			*/
-	short			type;	/* database field type 		*/
-#define TYPENOTCONN	(-1)		/* the type when disconnected	*/
-	unsigned short		count;	/* array element count 		*/
+	ELLNODE			node;		/* list ptrs			*/
+	short			type;		/* database field type 		*/
+#define TYPENOTCONN	(-1)			/* the type when disconnected	*/
+	unsigned short		count;		/* array element count 		*/
 	union{
-	  unsigned 		sid;	/* server id			*/
-	  struct dbAddr		*paddr;	/* database address		*/
+	  unsigned 		sid;		/* server id			*/
+	  struct dbAddr		*paddr;		/* database address		*/
 	}			id;
-	const void		*puser;	/* user available area		*/
-	enum channel_state	state;	/* connected/ disconnected etc	*/
-	caar			ar;	/* access rights		*/
+	const void		*puser;		/* user available area		*/
+	short			state;		/* connected/ disconnected etc	*/
+	unsigned short		retrySeqNo;	/* search retry seq number	*/
+	caar			ar;		/* access rights		*/
 
-	/*
-	 *	The following fields may change or even vanish in the future
-	 */
+
 	caCh			*pConnFunc;
 	caArh			*pAccessRightsFunc;
 	ELLLIST			eventq;

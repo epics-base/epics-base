@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.23  1997/04/29 06:12:42  jhill
+ * use free lists
+ *
  * Revision 1.22  1996/11/22 19:08:02  jhill
  * added const to API
  *
@@ -81,7 +84,7 @@ void ca_sg_init(void)
 /*
  * ca_sg_shutdown()
  */
-void ca_sg_shutdown(struct ca_static *ca_temp)
+void ca_sg_shutdown(struct CA_STATIC *ca_temp)
 {
 	CASG 	*pcasg;
 	CASG 	*pnextcasg;

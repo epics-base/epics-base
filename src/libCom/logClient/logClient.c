@@ -447,7 +447,6 @@ LOCAL void logRestart (void *pPrivate)
 {
     epicsEventWaitStatus semStatus;
     logClient *pClient;
-    unsigned ioPending;
 
     /*
      * roll the local port forward so that we dont collide
@@ -458,7 +457,6 @@ LOCAL void logRestart (void *pPrivate)
 #endif
 
     while (1) {
-        ioPending = 0;
 
         semStatus = epicsEventWaitWithTimeout (logClientGlobalSignal, LOG_RESTART_DELAY);
         assert ( semStatus==epicsEventWaitOK || semStatus==epicsEventWaitTimeout );

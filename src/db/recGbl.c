@@ -48,83 +48,59 @@ static void getMaxRangeValues();
 
 
 void epicsShareAPI recGblDbaddrError(
-    long status,struct dbAddr *paddr,char *pcaller_name)
+    long status,struct dbAddr *paddr,char *pmessage)
 {
-	char		buffer[200];
-	struct dbCommon *precord;
-	dbFldDes	*pdbFldDes=(dbFldDes *)(paddr->pfldDes);
+    dbCommon *precord = 0;
+    dbFldDes	*pdbFldDes = 0;
 
-	buffer[0]=0;
-	if(paddr) { /* print process variable name */
-		precord=(struct dbCommon *)(paddr->precord);
-		strcat(buffer,"PV: ");
-		strcat(buffer,precord->name);
-		strcat(buffer,".");
-		strcat(buffer,pdbFldDes->name);
-		strcat(buffer," ");
-	}
-	if(pcaller_name) {
-		strcat(buffer,"error detected in routine: ");
-		strcat(buffer,pcaller_name);
-	}
-	errMessage(status,buffer);
-	return;
+    if(paddr) {
+        pdbFldDes = paddr->pfldDes;
+        precord = paddr->precord;
+    }
+    errPrintf(status,0,0,
+        "PV: %s.%s "
+        "error detected in routine: %s\n",
+        (paddr ? precord->name : "Unknown"),
+        (pdbFldDes ? pdbFldDes->name : ""),
+        (pmessage ? pmessage : "Unknown"));
+    return;
 }
 
-void epicsShareAPI recGblRecordError(long status,void *pdbc,char *pcaller_name)
+void epicsShareAPI recGblRecordError(long status,void *pdbc,char *pmessage)
 {
-	struct dbCommon	*precord = pdbc;
-	char		buffer[200];
+    dbCommon	*precord = pdbc;
 
-	buffer[0]=0;
-	if(precord) { /* print process variable name */
-		strcat(buffer,"PV: ");
-		strcat(buffer,precord->name);
-		strcat(buffer,"  ");
-	}
-	if(pcaller_name) {
-		strcat(buffer,pcaller_name);
-	}
-	errMessage(status,buffer);
-	return;
+    errPrintf(status,0,0,
+        "PV: %s %s\n",
+        (precord ? precord->name : "Unknown"),
+        (pmessage ? pmessage : ""));
+    return;
 }
 
 void epicsShareAPI recGblRecSupError(
-    long status,struct dbAddr *paddr,char *pcaller_name,
+    long status,struct dbAddr *paddr,char *pmessage,
     char *psupport_name)
 {
-	char 		buffer[200];
-	struct dbCommon *precord;
-	dbFldDes	*pdbFldDes = 0;
-	dbRecordType	*pdbRecordType = 0;
+    dbCommon *precord = 0;
+    dbFldDes	*pdbFldDes = 0;
+    dbRecordType	*pdbRecordType = 0;
 
-	if(paddr) pdbFldDes=(dbFldDes *)(paddr->pfldDes);
-	if(pdbFldDes) pdbRecordType = pdbFldDes->pdbRecordType;
-	buffer[0]=0;
-	strcat(buffer,"Record Support Routine (");
-	if(psupport_name)
-		strcat(buffer,psupport_name);
-	else
-		strcat(buffer,"Unknown");
-	strcat(buffer,") not available.\n");
-	if(pdbRecordType) {
-	    strcat(buffer,"Record Type is ");
-	    strcat(buffer,pdbRecordType->name);
-	    if(paddr) { /* print process variable name */
-		precord=(struct dbCommon *)(paddr->precord);
-		strcat(buffer,", PV is ");
-		strcat(buffer,precord->name);
-		strcat(buffer,".");
-		strcat(buffer,pdbFldDes->name);
-		strcat(buffer,"\n");
-	    }
-	}
-	if(pcaller_name) {
-		strcat(buffer,"error detected in routine: ");
-		strcat(buffer,pcaller_name);
-	}
-	errMessage(status,buffer);
-	return;
+    if(paddr) {
+        precord = paddr->precord;
+        pdbFldDes=(dbFldDes *)(paddr->pfldDes);
+        if(pdbFldDes) pdbRecordType = pdbFldDes->pdbRecordType;
+    }
+    errPrintf(status,0,0,
+        "Record Support Routine (%s) "
+        "Record Type %s "
+        "PV %s.%s "
+        " %s\n",
+        (psupport_name ? psupport_name : "Unknown"),
+        (pdbRecordType ? pdbRecordType->name : "Unknown"),
+        (paddr ? precord->name : "Unknown"),
+        (pdbFldDes ? pdbFldDes->name : ""),
+        (pmessage ? pmessage : ""));
+    return;
 }
 
 void epicsShareAPI recGblGetPrec(struct dbAddr *paddr,long *precision)
@@ -242,7 +218,7 @@ int  epicsShareAPI recGblInitConstantLink(
 
 unsigned short epicsShareAPI recGblResetAlarms(void *precord)
 {
-    struct dbCommon *pdbc = precord;
+    dbCommon *pdbc = precord;
     unsigned short mask,stat,sevr,nsta,nsev,ackt,acks;
     unsigned short stat_mask=0;
 
@@ -274,7 +250,7 @@ unsigned short epicsShareAPI recGblResetAlarms(void *precord)
 
 void epicsShareAPI recGblFwdLink(void *precord)
 {
-    struct dbCommon *pdbc = precord;
+    dbCommon *pdbc = precord;
 
     dbScanFwdLink(&pdbc->flnk);
     /*Handle dbPutFieldNotify record completions*/
@@ -290,7 +266,7 @@ void epicsShareAPI recGblFwdLink(void *precord)
 
 void epicsShareAPI recGblGetTimeStamp(void* prec)
 {
-    struct dbCommon* pr = (struct dbCommon*)prec;
+    dbCommon* pr = (dbCommon*)prec;
     struct link *plink = &pr->tsel;
  
     if(plink->type!=CONSTANT) {

@@ -66,6 +66,7 @@
 #include	<dbDefs.h>
 #include	<dbAccess.h>
 #include	<dbFldTypes.h>
+#include	<dbEvent.h>
 #include	<devSup.h>
 #include	<errMdef.h>
 #include	<recSup.h>
@@ -79,7 +80,7 @@
 static long init_record();
 static long process();
 #define special NULL
-static long get_value();
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -185,16 +186,6 @@ static long process(pbi)
 	return(status);
 }
 
-static long get_value(pbi,pvdes)
-    struct biRecord		*pbi;
-    struct valueDes	*pvdes;
-{
-    pvdes->field_type = DBF_ENUM;
-    pvdes->no_elements=1;
-    (unsigned short *)(pvdes->pvalue) = &pbi->val;
-    return(0);
-}
-
 static long get_enum_str(paddr,pstring)
     struct dbAddr *paddr;
     char	  *pstring;

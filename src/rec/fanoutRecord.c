@@ -55,6 +55,7 @@
 #include        <alarm.h>
 #include        <dbDefs.h>
 #include        <dbAccess.h>
+#include        <dbEvent.h>
 #include        <dbFldTypes.h>
 #include        <errMdef.h>
 #include        <recSup.h>
@@ -107,7 +108,6 @@ static long init_record(pfanout,pass)
     struct fanoutRecord	*pfanout;
     int pass;
 {
-    long status;
 
     if (pass==0) return(0);
     recGblInitConstantLink(&pfanout->sell,DBF_USHORT,&pfanout->seln);
@@ -117,12 +117,9 @@ static long init_record(pfanout,pass)
 static long process(pfanout)
     struct fanoutRecord     *pfanout;
 {
-    unsigned short   stat,sevr,nsta,nsev;
-
     struct link    *plink;
     unsigned short state;
     short          i;
-    long           status=0;
     unsigned short monitor_mask;
 
     pfanout->pact = TRUE;

@@ -62,6 +62,7 @@
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include	<dbEvent.h>
 #include	<dbFldTypes.h>
 #include	<devSup.h>
 #include	<errMdef.h>
@@ -77,7 +78,7 @@
 static long init_record();
 static long process();
 #define special NULL
-static long get_value();
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -135,8 +136,6 @@ static long init_record(ptimer, pass)
     struct timerRecord	*ptimer;
     int pass;
 {
-    long status;
-/* Added for Channel Access Links */
 
     if (pass==0) return(0);
 
@@ -168,16 +167,6 @@ static long process(ptimer)
 
         ptimer->pact=FALSE;
         return status;
-}
-
-static long get_value(ptimer,pvdes)
-    struct timerRecord		*ptimer;
-    struct valueDes	*pvdes;
-{
-    pvdes->field_type = DBF_SHORT;
-    pvdes->no_elements=1;
-    (short *)(pvdes->pvalue) = &ptimer->val;
-    return(0);
 }
 
 static void monitor(ptimer)
@@ -255,7 +244,6 @@ struct timerRecord	*ptimer;
 static long read_timer(struct timerRecord *ptimer)
 {
    struct tmdset *pdset;
-   double constant;
 
    /* initiate the write */
    if (ptimer->out.type != VME_IO) {

@@ -57,6 +57,7 @@
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include	<dbEvent.h>
 #include	<dbFldTypes.h>
 #include	<errMdef.h>
 #include	<recSup.h>
@@ -70,7 +71,7 @@
 static long init_record();
 static long process();
 #define special NULL
-static long get_value();
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -115,10 +116,6 @@ static int fetch_values();
 static void monitor();
 
 #define ARG_MAX 12
- /* Fldnames should have as many as ARG_MAX */
- static char *Fldnames[ARG_MAX] =
-     {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"};
-
 
 static long init_record(psel,pass)
     struct selRecord	*psel;
@@ -127,8 +124,6 @@ static long init_record(psel,pass)
     struct link *plink;
     int i;
     double *pvalue;
-/* Added for Channel Access Links */
-    long status;
 
     if (pass==0) return(0);
 
@@ -175,16 +170,6 @@ static long process(psel)
 }
 
 
-static long get_value(psel,pvdes)
-    struct selRecord		*psel;
-    struct valueDes	*pvdes;
-{
-    pvdes->field_type = DBF_DOUBLE;
-    pvdes->no_elements=1;
-    (double *)(pvdes->pvalue) = &psel->val;
-    return(0);
-}
-
 static long get_units(paddr,units)
     struct dbAddr *paddr;
     char	  *units;

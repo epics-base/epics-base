@@ -62,6 +62,7 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include	<dbEvent.h>
 #include	<dbFldTypes.h>
 #include	<devSup.h>
 #include	<errMdef.h>
@@ -83,7 +84,7 @@ STATIC void EgMonitor(struct egRecord *pRec);
 STATIC long EgInitRec(struct egRecord *, int);
 STATIC long EgProc(struct egRecord *);
 #define special NULL
-STATIC long EgGetValue();
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -103,7 +104,7 @@ struct rset egRSET={
 	EgInitRec,
 	EgProc,
 	special,
-	EgGetValue,
+	get_value,
 	cvt_dbaddr,
 	get_array_info,
 	put_array_info,
@@ -170,18 +171,6 @@ STATIC long EgProc(struct egRecord *pRec)
   recGblFwdLink(pRec);
 
   pRec->pact=FALSE;
-  return(0);
-}
-/******************************************************************************
- *
- * Value fields are worthless.
- *
- ******************************************************************************/
-STATIC long EgGetValue(struct egRecord *pRec, struct valueDes *pvdes)
-{
-  pvdes->field_type = DBF_CHAR;
-  pvdes->no_elements=1;
-  (char *)(pvdes->pvalue) = pRec->val;
   return(0);
 }
 

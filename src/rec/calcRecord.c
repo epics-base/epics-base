@@ -81,6 +81,7 @@
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include	<dbEvent.h>
 #include	<dbFldTypes.h>
 #include	<errMdef.h>
 #include	<recSup.h>
@@ -95,7 +96,7 @@
 static long init_record();
 static long process();
 static long special();
-static long get_value();
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -134,10 +135,6 @@ static int fetch_values();
 
 
 #define ARG_MAX 12
- /* Fldnames should have as many as ARG_MAX */
- static char *Fldnames[ARG_MAX] =
-     {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"};
-
 
 static long init_record(pcalc,pass)
     struct calcRecord	*pcalc;
@@ -216,16 +213,6 @@ static long special(paddr,after)
 	recGblDbaddrError(S_db_badChoice,paddr,"calc: special");
 	return(S_db_badChoice);
     }
-}
-
-static long get_value(pcalc,pvdes)
-    struct calcRecord		*pcalc;
-    struct valueDes	*pvdes;
-{
-    pvdes->field_type = DBF_DOUBLE;
-    pvdes->no_elements=1;
-    (double *)(pvdes->pvalue) = &pcalc->val;
-    return(0);
 }
 
 static long get_units(paddr,units)

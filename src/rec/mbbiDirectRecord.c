@@ -43,6 +43,7 @@
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include	<dbEvent.h>
 #include	<dbFldTypes.h>
 #include	<devSup.h>
 #include	<errMdef.h>
@@ -58,7 +59,7 @@
 static long init_record();
 static long process();
 #define special NULL
-static long get_value();
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -111,7 +112,7 @@ static void refresh_bits(pmbbiDirect)
     struct mbbiDirectRecord	*pmbbiDirect;
 {
    int i, mask = 1;
-   char *bit;
+   unsigned char *bit;
 
    bit = &(pmbbiDirect->b0);
    for (i=0; i<NUM_BITS; i++, mask = mask << 1, bit++) {
@@ -213,16 +214,6 @@ static long process(pmbbiDirect)
 
 	pmbbiDirect->pact=FALSE;
 	return(status);
-}
-
-static long get_value(pmbbiDirect,pvdes)
-    struct mbbiDirectRecord		*pmbbiDirect;
-    struct valueDes	*pvdes;
-{
-    pvdes->field_type = DBF_USHORT;
-    pvdes->no_elements=1;
-    (unsigned short *)(pvdes->pvalue) = &pmbbiDirect->val;
-    return(0);
 }
 
 static void monitor(pmbbiDirect)

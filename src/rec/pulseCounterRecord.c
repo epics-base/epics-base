@@ -39,13 +39,15 @@
  */ 
 
 #include     <vxWorks.h>
-#include     <types.h>
-#include     <stdioLib.h>
+#include     <stdlib.h>
+#include     <stdio.h>
+#include     <string.h>
 #include     <lstLib.h>
 
 #include        <alarm.h>
 #include     <dbDefs.h>
 #include     <dbAccess.h>
+#include     <dbEvent.h>
 #include     <dbFldTypes.h>
 #include     <devSup.h>
 #include     <errMdef.h>
@@ -61,7 +63,7 @@
 static long init_record();
 static long process();
 #define special NULL
-static long get_value();
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -124,12 +126,15 @@ struct callback {
 
 void callbackRequest();
  
-static void myCallback(struct callback *pcallback)
+static void myCallback(CALLBACK *p)
 {
+    struct callback *pcallback;
+    struct pulseCounterRecord *pc;
+    struct rset     *prset;
  
-    struct pulseCounterRecord *pc=(struct pulseCounterRecord *)pcallback->precord;
-    struct rset     *prset=(struct rset *)(pc->rset);
- 
+    callbackGetUser(pcallback,p);
+    pc=(struct pulseCounterRecord *)pcallback->precord;
+    prset=(struct rset *)(pc->rset);
     dbScanLock((struct dbCommon *)pc);
     (*prset->process)(pc);
     dbScanUnlock((struct dbCommon *)pc);
@@ -163,7 +168,9 @@ static long init_record(struct pulseCounterRecord *ppc, int pass)
     }
 
     pcallback=(struct callback *)malloc(sizeof(struct callback));
-    callbackSetCallback(myCallback,(CALLBACK *)pcallback);
+    callbackSetCallback(myCallback,&pcallback->callback);
+    callbackSetPriority(ppc->prio,&pcallback->callback);
+    callbackSetUser(pcallback,&pcallback->callback);
     pcallback->precord=(struct dbCommon *)ppc;
 
     /* call device support init_record */
@@ -217,7 +224,7 @@ static long process(struct pulseCounterRecord *ppc)
 
 		if(ppc->pact==TRUE)
 		{
-		    callbackRequest((CALLBACK *)pcallback);
+		    callbackRequest(&pcallback->callback);
 		    return(0);
 		}
             }
@@ -258,14 +265,6 @@ static long process(struct pulseCounterRecord *ppc)
      return(status);
 }
 
-static long get_value(struct pulseCounterRecord *ppc, struct valueDes *pvdes)
-{
-    pvdes->field_type = DBF_ULONG;
-    pvdes->no_elements=1;
-    (short *)pvdes->pvalue = &ppc->val;
-    return(0);
-}
-
 static long get_graphic_double(struct dbAddr *paddr, struct dbr_grDouble *pgd)
 {
     struct pulseCounterRecord *ppc=(struct pulseCounterRecord *)paddr->precord;

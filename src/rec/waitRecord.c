@@ -75,10 +75,12 @@
 #include	<semLib.h>
 #include	<taskLib.h>
 #include        <wdLib.h>
+#include        <sysLib.h>
 
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include	<dbEvent.h>
 #include	<dbScan.h>
 #include        <dbDefs.h>
 #include	<dbFldTypes.h>
@@ -103,7 +105,7 @@
 static long init_record();
 static long process();
 static long special();
-static long get_value();
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL 
 #define put_array_info NULL 
@@ -214,7 +216,6 @@ struct qStruct {
 
 int    recWaitDebug=0;
 int    recWaitCacheMode=0;
-static unsigned long tickStart;
 static void schedOutput(struct waitRecord *pwait);
 static void execOutput(struct cbStruct *pcbst);
 static int fetch_values(struct waitRecord *pwait);
@@ -223,7 +224,6 @@ static long initSiml();
 static void ioIntProcess(CALLBACK *pioProcCb);
 
 static void pvSearchCallback(recDynLink *precDynLink);
-static void pvMonitorCallback(recDynLink *precDynLink);
 static void inputChanged(recDynLink *precDynLink);
 
 
@@ -237,7 +237,6 @@ static long init_record(pwait,pass)
 
     char            *ppvn[PVN_SIZE];
     unsigned short  *pPvStat;
-    unsigned short  *piointInc;	  /* include for IO_INT ? */
 
     recDynLinkPvt   *puserPvt;
 
@@ -419,10 +418,8 @@ static long special(paddr,after)
     int           	special_type = paddr->special;
     char                *ppvn[PVN_SIZE];
     unsigned short      *pPvStat;
-    unsigned short      *piointInc;   /* include for IO_INT ? */
     unsigned short       oldStat;
     int  index;
-    long status;
     short error_number;
     char rpbuf[184];
 
@@ -494,16 +491,6 @@ static long special(paddr,after)
 	return(S_db_badChoice);
         return(0);
     }
-}
-
-static long get_value(pwait,pvdes)
-    struct waitRecord	*pwait;
-    struct valueDes	*pvdes;
-{
-    pvdes->field_type = DBF_DOUBLE;
-    pvdes->no_elements=1;
-    (double *)(pvdes->pvalue) = &pwait->val;
-    return(0);
 }
 
 static long get_precision(paddr,precision)
@@ -592,7 +579,6 @@ static void monitor(pwait)
 static long initSiml(pwait)
 struct waitRecord   *pwait;
 { 
-    long status;
 
     /* wait.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
     if (pwait->siml.type == CONSTANT) {
@@ -614,7 +600,8 @@ struct waitRecord *pwait;
         double          *pvalue;
         unsigned short  *pPvStat;
         unsigned short  *piointInc;   /* include for IO_INT ? */
-        long            status=0,options=0,nRequest=1;
+        long            status=0;
+	size_t		nRequest=1;
         int             i;
 
         piointInc  = &pwait->inap;
@@ -680,8 +667,7 @@ void execOutput(pcbst)
    struct cbStruct *pcbst;
 {
 long status;
-long nRequest = 1;
-long options  = 0;
+size_t nRequest = 1;
 double oldDold; 
 
     /* if output link is valid , decide between VAL and DOL */
@@ -732,8 +718,7 @@ static void inputChanged(recDynLink *precDynLink)
   struct waitRecord *pwait = ((recDynLinkPvt *)precDynLink->puserPvt)->pwait;
   struct cbStruct   *pcbst = (struct cbStruct   *)pwait->cbst;
   double             monData;
-  unsigned long      nRequest;
-  long               status;
+  size_t      	     nRequest;
   char               index;
   unsigned short    *piointInc;
 
@@ -747,7 +732,7 @@ static void inputChanged(recDynLink *precDynLink)
     /* put input index and monitored data on processing queue */
     recDynLinkGet(precDynLink, &monData, &nRequest, 0, 0, 0); 
     if(recWaitDebug>5)
-        printf("queuing monitor on %d = %lf\n",index,monData);
+        printf("queuing monitor on %d = %f\n",index,monData);
     if(rngBufPut(pcbst->monitorQ, (void *)&index, sizeof(char))
         != sizeof(char)) errMessage(0,"recWait rngBufPut error");
     if(rngBufPut(pcbst->monitorQ, (void *)&monData, sizeof(double))
@@ -783,7 +768,7 @@ static void ioIntProcess(CALLBACK *pioProcCb)
           != sizeof(double)) errMessage(0, "recWait: rngBufGet error");
 
       if(recWaitDebug>=5)
-          printf("processing on %d = %lf  (%lf)\n",
+          printf("processing on %d = %f  (%f)\n",
                   inputIndex, monData,pwait->val);
 
       pInput += inputIndex;   /* pointer arithmetic for appropriate input */ 

@@ -54,6 +54,7 @@
 #include        <alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include	<dbEvent.h>
 #include	<dbFldTypes.h>
 #include	<devSup.h>
 #include	<errMdef.h>
@@ -69,7 +70,7 @@
 static long init_record();
 static long process();
 #define special NULL
-static long get_value();
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -202,17 +203,6 @@ finish:
 	pstringout->pact=FALSE;
 	return(status);
 }
-
-static long get_value(pstringout,pvdes)
-    struct stringoutRecord             *pstringout;
-    struct valueDes     *pvdes;
-{
-    pvdes->field_type = DBF_STRING;
-    pvdes->no_elements=1;
-    pvdes->pvalue = (void *)(&pstringout->val[0]);
-    return(0);
-}
-
 
 static void monitor(pstringout)
     struct stringoutRecord             *pstringout;

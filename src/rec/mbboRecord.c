@@ -70,6 +70,7 @@
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include	<dbEvent.h>
 #include	<dbFldTypes.h>
 #include	<devSup.h>
 #include	<errMdef.h>
@@ -86,7 +87,7 @@
 static long init_record();
 static long process();
 static long special();
-static long get_value();
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -219,6 +220,8 @@ static long init_record(pmbbo,pass)
 	} else if (status==2) status=0;
     }
     init_common(pmbbo);
+    /* convert val to rval */
+    convert(pmbbo);
     return(0);
 }
 
@@ -313,16 +316,6 @@ static long special(paddr,after)
         recGblDbaddrError(S_db_badChoice,paddr,"mbbo: special");
         return(S_db_badChoice);
     }
-}
-
-static long get_value(pmbbo,pvdes)
-    struct mbboRecord		*pmbbo;
-    struct valueDes	*pvdes;
-{
-    pvdes->field_type = DBF_ENUM;
-    pvdes->no_elements=1;
-    (unsigned short *)(pvdes->pvalue) = &pmbbo->val;
-    return(0);
 }
 
 static long get_enum_str(paddr,pstring)

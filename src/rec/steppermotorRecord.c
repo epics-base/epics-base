@@ -109,6 +109,7 @@
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include	<dbEvent.h>
 #include	<dbFldTypes.h>
 #include	<dbScan.h>
 #include	<devSup.h>
@@ -126,7 +127,7 @@
 static long init_record();
 static long process();
 static long  special();
-static long get_value();
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -259,16 +260,6 @@ static long process(psm)
 	return(0);
 }
 
-static long get_value(psm,pvdes)
-    struct steppermotorRecord		*psm;
-    struct valueDes	*pvdes;
-{
-    pvdes->field_type = DBF_FLOAT;
-    pvdes->no_elements=1;
-    (float *)(pvdes->pvalue) = &psm->val;
-    return(0);
-}
-
 static long special(paddr,after)
     struct dbAddr *paddr;
     int           after;
@@ -447,7 +438,6 @@ struct motor_data	*psm_data;
 struct steppermotorRecord	*psm;
 {
     struct smdset   *pdset = (struct smdset *)(psm->dset);
-    unsigned short   stat,sevr,nsta,nsev;
     int		intAccept=interruptAccept;
     short	post_events;
     double          temp;

@@ -52,6 +52,7 @@
 #include        <alarm.h>
 #include     <dbDefs.h>
 #include     <dbAccess.h>
+#include     <dbEvent.h>
 #include     <dbFldTypes.h>
 #include     <devSup.h>
 #include     <errMdef.h>
@@ -66,7 +67,7 @@
 static long init_record();
 static long process();
 #define special NULL
-static long get_value();
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -211,15 +212,6 @@ static long process(ppt)
      return(0);
 }
 
-static long get_value(ppt,pvdes)
-    struct pulseTrainRecord             *ppt;
-    struct valueDes     *pvdes;
-{
-    pvdes->field_type = DBF_SHORT;
-    pvdes->no_elements=1;
-    (short *)pvdes->pvalue = &ppt->val;
-    return(0);
-}
 static long get_precision(paddr,precision)
     struct dbAddr *paddr;
     long          *precision;

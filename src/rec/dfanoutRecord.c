@@ -22,6 +22,7 @@
 #include        <alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include	<dbEvent.h>
 #include	<dbFldTypes.h>
 #include	<devSup.h>
 #include	<errMdef.h>
@@ -37,7 +38,7 @@
 static long init_record();
 static long process();
 #define special NULL
-static long get_value();
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -96,7 +97,6 @@ static long process(pdfanout)
         struct dfanoutRecord     *pdfanout;
 {
     long		 status=0;
-    unsigned char    pact=pdfanout->pact;
 
     if (!pdfanout->pact && pdfanout->omsl == CLOSED_LOOP){
 	status = dbGetLink(&(pdfanout->dol),DBR_LONG,&(pdfanout->val),0,0);
@@ -111,16 +111,6 @@ static long process(pdfanout)
     recGblFwdLink(pdfanout);
     pdfanout->pact=FALSE;
     return(status);
-}
-
-static long get_value(pdfanout,pvdes)
-    struct dfanoutRecord             *pdfanout;
-    struct valueDes     *pvdes;
-{
-    pvdes->field_type = DBF_LONG;
-    pvdes->no_elements=1;
-    (long *)(pvdes->pvalue) = &pdfanout->val;
-    return(0);
 }
 
 static long get_units(paddr,units)

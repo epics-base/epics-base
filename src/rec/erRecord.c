@@ -61,6 +61,7 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include	<dbEvent.h>
 #include	<dbFldTypes.h>
 #include	<devSup.h>
 #include	<errMdef.h>
@@ -82,7 +83,7 @@ STATIC void ErMonitor(struct erRecord *pRec);
 STATIC long ErInitRec(struct erRecord *, int);
 STATIC long ErProc(struct erRecord *);
 #define ErSpecial NULL
-STATIC long ErGetValue();
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -102,7 +103,7 @@ struct rset erRSET={
 	ErInitRec,
 	ErProc,
 	ErSpecial,
-	ErGetValue,
+	get_value,
 	cvt_dbaddr,
 	get_array_info,
 	put_array_info,
@@ -210,19 +211,6 @@ STATIC long ErSpecial(struct dbAddr *paddr, int after)
 #endif
 /******************************************************************************
  *
- * Value fields are worthless.
- *
- ******************************************************************************/
-STATIC long ErGetValue(struct erRecord *pRec, struct valueDes *pvdes)
-{
-  pvdes->field_type = DBF_CHAR;
-  pvdes->no_elements=1;
-  (char *)(pvdes->pvalue) = pRec->val;
-  return(0);
-}
-
-/******************************************************************************
- *
  * Post any events for fields that might have changed while processing.
  *
  ******************************************************************************/
@@ -293,7 +281,6 @@ static long get_control_double(struct dbAddr *paddr, struct dbr_ctrlDouble *pcd)
  
 static long get_alarm_double(struct dbAddr *paddr, struct dbr_alDouble *pad)
 {
-  struct erRecord     *pRec=(struct erRecord *)paddr->precord;
 #if 0
   {
      pad->upper_alarm_limit = 2;

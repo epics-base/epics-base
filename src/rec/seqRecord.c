@@ -31,16 +31,19 @@
  *  .01	09-21-92	jrw	created
  */
 #include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
+#include	<stdlib.h>
+#include	<stdio.h>
+#include	<string.h>
 #include	<lstLib.h>
 #include	<string.h>
 #include	<memLib.h>
 #include	<wdLib.h>
+#include	<sysLib.h>
 
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include	<dbEvent.h>
 #include	<dbFldTypes.h>
 #include	<devSup.h>
 #include	<errMdef.h>
@@ -99,6 +102,8 @@ struct	callbackSeq {
   struct linkDesc *plinks[NUM_LINKS+1]; /* Pointers to links to process */
   int			index;
 };
+
+int processNextLink();
 /*****************************************************************************
  *
  * Initialize a sequence record.
@@ -144,7 +149,6 @@ int pass;
   index = 0;
   while (index < NUM_LINKS)
   {
-    char DumbCaString[10];
 
     if (plink->dol.type == CONSTANT)
 	recGblInitConstantLink(&plink->dol,DBF_DOUBLE,&plink->dov);
@@ -293,7 +297,7 @@ struct seqRecord *pseq;
  *   dbScanLock is already held for pseq before this function is called.
  *
  ******************************************************************************/
-processNextLink(pseq)
+int processNextLink(pseq)
 struct seqRecord *pseq;
 {
   struct  callbackSeq   *pcb = (struct callbackSeq *) (pseq->dpvt);

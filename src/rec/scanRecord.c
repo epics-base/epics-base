@@ -124,10 +124,12 @@
 #include	<semLib.h>
 #include	<taskLib.h>
 #include        <wdLib.h>
+#include        <sysLib.h>
 
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include	<dbEvent.h>
 #include	<dbScan.h>
 #include        <dbDefs.h>
 #include	<dbFldTypes.h>
@@ -229,7 +231,7 @@
 static long init_record();
 static long process();
 static long special();
-static long get_value();
+#define get_value NULL
 static long cvt_dbaddr();
 static long get_array_info();
 static long put_array_info();
@@ -397,7 +399,6 @@ static void previewScan(struct scanRecord *pscan);
 static void lookupPV(struct scanRecord *pscan, unsigned short i); 
 static void checkConnections(struct scanRecord *pscan); 
 static void pvSearchCallback(recDynLink *precDynLink);
-static void pvMonitorCallback(recDynLink *precDynLink);
 static void posMonCallback(recDynLink *precDynLink);
 static void restorePosParms(struct scanRecord *pscan, unsigned short i);
 static void savePosParms(struct scanRecord *pscan, unsigned short i);
@@ -416,7 +417,6 @@ static long init_record(pscan,pass)
     recPvtStruct *precPvt = (recPvtStruct *)pscan->rpvt;
     posFields    *pPosFields;
     detFields    *pDetFields;
-    long    status = 0;
 
     char            *ppvn[PVN_SIZE];
     unsigned short  *pPvStat;
@@ -638,7 +638,7 @@ static long special(paddr,after)
                     /* postpone the scan for 5 seconds via watchdog */
                     pscan->alrt = 1;
                     db_post_events(pscan,&pscan->alrt,DBE_VALUE);
-                    sprintf(pscan->smsg,"Some PV's not connected ...");
+		    strcpy(pscan->smsg,"Some PV's not connected ...");
                     db_post_events(pscan,&pscan->smsg,DBE_VALUE);
                     precPvt->phase = SCAN_PENDING;
                     wdStart(precPvt->wd_id,(3 * sysClkRateGet()), 
@@ -656,7 +656,7 @@ static long special(paddr,after)
             if(pscan->cmnd == CLEAR_MSG) {
                 pscan->alrt = 0;
                 db_post_events(pscan,&pscan->alrt,DBE_VALUE);
-                sprintf(pscan->smsg,"");
+		strcpy(pscan->smsg,"");
                 db_post_events(pscan,&pscan->smsg,DBE_VALUE);
             }
             else if((pscan->cmnd == CHECK_LIMITS) && !(pscan->exsc)) {
@@ -703,8 +703,8 @@ static long special(paddr,after)
                 for(i=0; i<NUM_PVS; i++) {
                     puserPvt = (recDynLinkPvt *)precPvt->caLinkStruct[i].puserPvt;
                     if((pscan->cmnd == CLEAR_RECORD) ||
-                       (pscan->cmnd == CLEAR_POSITIONERS) &&
-                       (puserPvt->linkType == POSITIONER)) {
+                       ((pscan->cmnd == CLEAR_POSITIONERS) &&
+                       (puserPvt->linkType == POSITIONER))) {
                         /* clear this PV */
                         pPvStat = &pscan->p1nv + i; /* pointer arithmetic */
                         oldStat = *pPvStat;
@@ -809,7 +809,7 @@ static long special(paddr,after)
         /* resolve linear scan parameters affected by this fields change */
         prevAlrt = pscan->alrt;
         pscan->alrt = 0;
-        sprintf(pscan->smsg,"");
+	strcpy(pscan->smsg,"");
         adjLinParms(paddr);       
         db_post_events(pscan,&pscan->smsg,DBE_VALUE);
         if(pscan->alrt != prevAlrt) {
@@ -828,7 +828,7 @@ static long special(paddr,after)
         }
         prevAlrt = pscan->alrt;
         pscan->alrt = 0;
-        sprintf(pscan->smsg,"");
+	strcpy(pscan->smsg,"");
         precPvt->nptsCause = -1; /* resolve all positioner parameters */
         changedNpts(pscan);       
         db_post_events(pscan,&pscan->smsg,DBE_VALUE);
@@ -912,7 +912,6 @@ static long cvt_dbaddr(paddr)
 {
     struct scanRecord *pscan=(struct scanRecord *)paddr->precord;
     
-    recPvtStruct       *precPvt = (recPvtStruct *)pscan->rpvt;
     posFields          *pPosFields = (posFields *)&pscan->p1pp;
     detFields          *pDetFields = (detFields *)&pscan->d1hr;
     short               fieldOffset;
@@ -1029,7 +1028,6 @@ static long put_array_info(paddr,nNew)
     recPvtStruct       *precPvt = (recPvtStruct *)pscan->rpvt;
     posFields          *pPosFields = (posFields *)&pscan->p1pp;
     short               fieldOffset;
-    unsigned short     *pPvStat;
     unsigned short      i;
 
     /* This routine is called because someone wrote a table to the
@@ -1049,7 +1047,7 @@ static long put_array_info(paddr,nNew)
                     db_post_events(pscan,&pscan->alrt,DBE_VALUE);
                 }
             } else {
-                sprintf(pscan->smsg,"");
+		strcpy(pscan->smsg,"");
                 db_post_events(pscan,&pscan->smsg,DBE_VALUE);
                 if(pscan->alrt) {
                     pscan->alrt = 0;
@@ -1109,7 +1107,7 @@ static long put_enum_str(paddr,pstring)
 
     if(paddr->pfield==(void *)&pscan->cmnd)
     {
-        if(sscanf(pstring,"%i",&pscan->cmnd)<=0)
+        if(sscanf(pstring,"%hu",&pscan->cmnd)<=0)
             return(S_db_badChoice);
     }
     else
@@ -1117,17 +1115,6 @@ static long put_enum_str(paddr,pstring)
         return(S_db_badChoice);
     }
 
-    return(0);
-}
-
-
-static long get_value(pscan,pvdes)
-    struct scanRecord		*pscan;
-    struct valueDes	*pvdes;
-{
-    pvdes->field_type = DBF_DOUBLE;
-    pvdes->no_elements=1;
-    (double *)(pvdes->pvalue) = &pscan->p1dv;
     return(0);
 }
 
@@ -1579,7 +1566,7 @@ LOCAL void pvSearchCallback(recDynLink *precDynLink)
             /*
             if(puserPvt->nelem) {
                 printf("Freeing memory for dynLink %d  \n", index);
-                /* free(pDetFields->d_da);
+                free(pDetFields->d_da);
             }
             */
             
@@ -1625,8 +1612,7 @@ LOCAL void posMonCallback(recDynLink *precDynLink)
     unsigned short     index    = puserPvt->linkIndex;
     posFields         *pPosFields = (posFields *)&pscan->p1pp + index;
     long               status;
-    long               nRequest = 1;
-    long               options = 0;
+    size_t	       nRequest = 1;
 
 
     /* update p_cv with current positioner value */
@@ -1682,11 +1668,8 @@ static long initScan(pscan)
 struct scanRecord *pscan;
 {
   recPvtStruct    *precPvt = (recPvtStruct *)pscan->rpvt;
-  recDynLinkPvt   *puserPvt;
   posFields       *pPosFields;
   long  status;
-  long  nRequest = 1;
-  long  options = 0;
   unsigned short  *pPvStat;
   int   i;
 
@@ -1811,8 +1794,7 @@ struct scanRecord *pscan;
   unsigned short *pPvStatPos;
   unsigned short i;          
   long  status;
-  long  nRequest = 1;
-  long  options = 0;
+  size_t  nRequest = 1;
 
   switch (precPvt->phase) {
     case TRIG_DETCTRS:
@@ -1838,7 +1820,7 @@ struct scanRecord *pscan;
             }
             else {
                 status = dbGet(puserPvt->pAddr,DBR_DOUBLE, &pPosFields->r_cv,
-                           &options, &nRequest,NULL);
+                           0,0,NULL);
             }
  
             if((pPosFields->r_dl > 0) &&
@@ -1885,7 +1867,7 @@ struct scanRecord *pscan;
             }
             else {
                 status = dbGet(puserPvt->pAddr,DBR_DOUBLE, &pPosFields->r_cv,
-                           &options, &nRequest,NULL);
+                           0,0,NULL);
             }
 
             precPvt->posBufPtr[i].pFill[pscan->cpt] = pPosFields->r_cv;
@@ -1935,7 +1917,7 @@ struct scanRecord *pscan;
               }
               else {
                   status |= dbGet(puserPvt->pAddr, DBR_FLOAT, &pDetFields->d_cv,
-                           &options, &nRequest, NULL);
+                           0,0, NULL);
               }
             }
             else {
@@ -2008,7 +1990,6 @@ struct scanRecord *pscan;
   int              counter;
   unsigned short  *pPvStat, i;
   detFields       *pDetFields;
-  posFields       *pPosFields;
 
 
   /* Done with scan. Do we want to fill the remainder of the
@@ -2106,7 +2087,6 @@ void doPuts(precPvt)
   unsigned short *pPvStat;
   int   i;
   long status;
-  long nRequest = 1;
 
   switch (precPvt->phase) {
     case MOVE_MOTORS:
@@ -2281,7 +2261,7 @@ void doPuts(precPvt)
         if(pscan->exsc && !precPvt->badOutputPv && !precPvt->badInputPv)  {
             pscan->alrt = 0;
             db_post_events(pscan,&pscan->alrt,DBE_VALUE);
-            sprintf(pscan->smsg,"");
+            strcpy(pscan->smsg,"");
             db_post_events(pscan,&pscan->smsg,DBE_VALUE);
             scanOnce(pscan);
             if(recScanDebug) printf("scanPending - start scan\n");
@@ -2294,8 +2274,8 @@ void doPuts(precPvt)
             if(recScanDebug) printf("scanPending - end scan\n");
         }
         break;
-
     default:
+	break;
   }
 }
 
@@ -2831,8 +2811,7 @@ static long checkScanLimits(pscan)
 
   /* for each valid positioner, fetch control limits */
   long    status;
-  long    nRequest = 1;
-  long    options = 0;
+  size_t    nRequest = 1;
   int     i,j;
   double  value;
 
@@ -2863,7 +2842,7 @@ static long checkScanLimits(pscan)
       }
       else {
           status |= dbGet(puserPvt->pAddr, DBR_DOUBLE, &pPosFields->p_pp,
-                     &options, &nRequest, NULL);
+                     0,0, NULL);
       }
       db_post_events(pscan,&pPosFields->p_pp,DBE_VALUE);
     }
@@ -2973,8 +2952,7 @@ static void previewScan(pscan)
   float             value;
   int               i,j;
   long    status;
-  long    nRequest = 1;
-  long    options = 0;
+  size_t    nRequest = 1;
 
   /* Update "previous position" of positioners to use in relative mode */
   pPvStat = &pscan->p1nv;
@@ -2988,7 +2966,7 @@ static void previewScan(pscan)
       }
       else {
           status |= dbGet(puserPvt->pAddr, DBR_DOUBLE, &pPosFields->p_pp,
-                     &options, &nRequest, NULL);
+                     0,0, NULL);
       }
       db_post_events(pscan,&pPosFields->p_pp,DBE_VALUE);
     }
@@ -3099,7 +3077,6 @@ static void savePosParms(struct scanRecord *pscan, unsigned short i)
 static void zeroPosParms(struct scanRecord *pscan, unsigned short i)
 {
 
-    recPvtStruct *precPvt = (recPvtStruct *)pscan->rpvt;
     posFields    *pPosFields = (posFields *)&pscan->p1pp + i;
 
     /* set them to 0 */
@@ -3120,7 +3097,6 @@ static void resetFrzFlags(pscan)
     struct scanRecord   *pscan;
 {
 
-    recPvtStruct *precPvt = (recPvtStruct *)pscan->rpvt;
     posFields    *pPosFields = (posFields *)&pscan->p1pp;
     int           i;
 
@@ -3330,3 +3306,4 @@ SIECW (Start,Incr,End,Center,Width freeze-switch states; '1' = 'frozen')
 
 
 */
+

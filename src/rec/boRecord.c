@@ -79,6 +79,7 @@
 #include	<callback.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include	<dbEvent.h>
 #include	<dbFldTypes.h>
 #include	<devSup.h>
 #include	<errMdef.h>
@@ -95,7 +96,7 @@
 static long init_record();
 static long process();
 #define special NULL
-static long get_value();
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -156,7 +157,6 @@ static void myCallback(pcallback)
 {
 
     struct boRecord *pbo=(struct boRecord *)pcallback->precord;
-    struct rset     *prset=(struct rset *)(pbo->rset);
     int		    wait_time;
 
     dbScanLock((struct dbCommon *)pbo);
@@ -224,6 +224,11 @@ static long init_record(pbo,pass)
 		pbo->udf = FALSE;
 	} else if (status==2) status=0;
     }
+    /* convert val to rval */
+    if ( pbo->mask != 0 ) {
+	if(pbo->val==0) pbo->rval = 0;
+	else pbo->rval = pbo->mask;
+    } else pbo->rval = (unsigned long)pbo->val;
     return(status);
 }
 
@@ -314,16 +319,6 @@ static long process(pbo)
 	return(status);
 }
 
-static long get_value(pbo,pvdes)
-    struct boRecord		*pbo;
-    struct valueDes	*pvdes;
-{
-    pvdes->field_type = DBF_ENUM;
-    pvdes->no_elements=1;
-    (unsigned short *)(pvdes->pvalue) = &pbo->val;
-    return(0);
-}
-
 static long get_precision(paddr,precision)
     struct dbAddr *paddr;
     long	  *precision;

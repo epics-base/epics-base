@@ -66,7 +66,9 @@
 
 #include	<alarm.h>
 #include	<dbDefs.h>
+#include	<dbStaticLib.h>
 #include	<dbAccess.h>
+#include	<dbEvent.h>
 #include	<dbFldTypes.h>
 #include	<errMdef.h>
 #include	<special.h>

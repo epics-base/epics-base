@@ -80,6 +80,7 @@
 #include        <cvtTable.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include	<dbEvent.h>
 #include	<dbFldTypes.h>
 #include	<devSup.h>
 #include	<errMdef.h>
@@ -96,7 +97,7 @@
 static long init_record();
 static long process();
 static long special();
-static long get_value();
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -304,16 +305,6 @@ static long special(paddr,after)
         recGblDbaddrError(S_db_badChoice,paddr,"ao: special");
         return(S_db_badChoice);
     }
-}
-
-static long get_value(pao,pvdes)
-    struct aoRecord		*pao;
-    struct valueDes	*pvdes;
-{
-    pvdes->field_type = DBF_DOUBLE;
-    pvdes->no_elements=1;
-    (double *)(pvdes->pvalue) = &pao->val;
-    return(0);
 }
 
 static long get_units(paddr,units)

@@ -46,6 +46,7 @@
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include	<dbEvent.h>
 #include	<dbFldTypes.h>
 #include	<dbScan.h>
 #include	<devSup.h>
@@ -298,7 +299,6 @@ static void monitor(psa)
     struct subArrayRecord	*psa;
 {
 	unsigned short	monitor_mask;
-        short           stat,sevr,nsta,nsev;
 
         /* get previous stat and sevr  and new stat and sevr*/
         monitor_mask = recGblResetAlarms(psa);

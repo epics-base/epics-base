@@ -50,6 +50,7 @@
 #include	<dbAccess.h>
 #include	<dbFldTypes.h>
 #include	<dbScan.h>
+#include	<dbEvent.h>
 #include	<devSup.h>
 #include	<errMdef.h>
 #include	<recSup.h>

@@ -44,6 +44,7 @@
 
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include	<dbEvent.h>
 #include	<dbFldTypes.h>
 #include	<errMdef.h>
 #include	<recSup.h>
@@ -57,7 +58,7 @@
 #define init_record NULL
 static long process();
 #define special NULL
-static long get_value();
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -102,17 +103,6 @@ static long process(ppermissive)
     monitor(ppermissive);
     recGblFwdLink(ppermissive);
     ppermissive->pact=FALSE;
-    return(0);
-}
-
-
-static long get_value(ppermissive,pvdes)
-    struct permissiveRecord             *ppermissive;
-    struct valueDes     *pvdes;
-{
-    pvdes->field_type = DBF_USHORT;
-    pvdes->no_elements=1;
-    (unsigned short *)(pvdes->pvalue) = &(ppermissive->val);
     return(0);
 }
 

@@ -27,7 +27,7 @@ extern int interruptAccept;
 int   recWaitCaQsize = 256;
 
 LOCAL int	taskid=0;
-LOCAL RING_ID	ringQ;;
+LOCAL RING_ID	ringQ;
 LOCAL FAST_LOCK	lock;
 
 typedef enum {cmdNone,cmdAdd,cmdRemove} COMMAND;
@@ -45,7 +45,7 @@ void recWaitCaTask(void);
 
 LOCAL void eventCallback(struct event_handler_args eha)
 {
-    struct dbr_sts_double *pdata = eha.dbr;
+    const struct dbr_sts_double *pdata = eha.dbr;
     CAPVT	*pcapvt;
     RECWAITCA	*pcamonitor;
     
@@ -84,6 +84,7 @@ long recWaitCaAdd(RECWAITCA *pcamonitor)
     if(rngBufPut(ringQ,(void *)&pcapvt,sizeof(pcapvt))
         !=sizeof(pcamonitor)) errMessage(0,"recWaitCaAdd: rngBufPut error");
     FASTUNLOCK(&lock);
+    return(0);
 }
 
 long recWaitCaDelete(RECWAITCA *pcamonitor)
@@ -95,6 +96,7 @@ long recWaitCaDelete(RECWAITCA *pcamonitor)
     if(rngBufPut(ringQ,(void *)&pcapvt,sizeof(pcapvt))
 	!=sizeof(pcamonitor)) errMessage(0,"recWaitCaDelete: rngBufPut error");
     FASTUNLOCK(&lock);
+    return(0);
 }
 
 /*LOCAL */

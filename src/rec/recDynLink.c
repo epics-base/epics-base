@@ -21,6 +21,7 @@ of this distribution.
 #include <sysLib.h>
 
 #include <dbDefs.h>
+#include <epicsPrint.h>
 #include <taskwd.h>
 #include <fast_lock.h>
 #include <db_access.h>
@@ -58,9 +59,6 @@ of this distribution.
 #define newDBR_DOUBLE      newDBF_DOUBLE
 #define newDBR_ENUM        newDBF_ENUM
 #define VALID_newDB_REQ(x) ((x >= 0) && (x <= newDBR_ENUM))
-static short mapOldToNew[DBF_DOUBLE+1] = {
-	newDBR_STRING,newDBR_SHORT,newDBR_FLOAT,newDBR_ENUM,
-	newDBR_CHAR,newDBR_LONG,newDBR_DOUBLE};
 static short mapNewToOld[newDBR_ENUM+1] = {
 	DBF_STRING,DBF_CHAR,DBF_CHAR,DBF_SHORT,DBF_SHORT,
 	DBF_LONG,DBF_LONG,DBF_FLOAT,DBF_DOUBLE,DBF_ENUM};
@@ -71,8 +69,8 @@ int   recDynLinkQsize = 256;
 
 LOCAL int	inpTaskId=0;
 LOCAL int	outTaskId=0;
-LOCAL RING_ID	inpRingQ;;
-LOCAL RING_ID	outRingQ;;
+LOCAL RING_ID	inpRingQ;
+LOCAL RING_ID	outRingQ;
 LOCAL SEM_ID	wakeUpSem;
 
 typedef enum{cmdSearch,cmdClear,cmdPut} cmdType;

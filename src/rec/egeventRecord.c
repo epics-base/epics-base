@@ -61,6 +61,7 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include	<dbEvent.h>
 #include	<dbFldTypes.h>
 #include	<devSup.h>
 #include	<errMdef.h>
@@ -82,7 +83,7 @@ STATIC void EgEventMonitor(struct egeventRecord *pRec);
 STATIC long EgEventInitRec(struct egeventRecord *, int);
 STATIC long EgEventProc(struct egeventRecord *);
 #define special NULL
-STATIC long EgEventGetValue();
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -102,7 +103,7 @@ struct rset egeventRSET={
 	EgEventInitRec,
 	EgEventProc,
 	special,
-	EgEventGetValue,
+	get_value,
 	cvt_dbaddr,
 	get_array_info,
 	put_array_info,
@@ -166,18 +167,6 @@ STATIC long EgEventProc(struct egeventRecord *pRec)
   recGblFwdLink(pRec);
 
   pRec->pact=FALSE;
-  return(0);
-}
-/******************************************************************************
- *
- * Value fields are worthless.
- *
- ******************************************************************************/
-STATIC long EgEventGetValue(struct egeventRecord *pRec, struct valueDes *pvdes)
-{
-  pvdes->field_type = DBF_CHAR;
-  pvdes->no_elements=1;
-  (char *)(pvdes->pvalue) = pRec->val;
   return(0);
 }
 
@@ -253,7 +242,6 @@ static long get_control_double(struct dbAddr *paddr, struct dbr_ctrlDouble *pcd)
  
 static long get_alarm_double(struct dbAddr *paddr, struct dbr_alDouble *pad)
 {
-  struct egeventRecord     *pRec=(struct egeventRecord *)paddr->precord;
 #if 0
   {
      pad->upper_alarm_limit = 2;

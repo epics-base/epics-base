@@ -61,6 +61,7 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include	<dbEvent.h>
 #include	<dbFldTypes.h>
 #include	<devSup.h>
 #include	<errMdef.h>
@@ -81,7 +82,7 @@ STATIC void ErEventMonitor(struct ereventRecord *pRec);
 STATIC long ErEventInitRec(struct ereventRecord *, int);
 STATIC long ErEventProc(struct ereventRecord *);
 #define special NULL
-STATIC long ErEventGetValue();
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -101,7 +102,7 @@ struct rset ereventRSET={
 	ErEventInitRec,
 	ErEventProc,
 	special,
-	ErEventGetValue,
+	get_value,
 	cvt_dbaddr,
 	get_array_info,
 	put_array_info,
@@ -164,18 +165,6 @@ STATIC long ErEventProc(struct ereventRecord *pRec)
   recGblFwdLink(pRec);
 
   pRec->pact=FALSE;
-  return(0);
-}
-/******************************************************************************
- *
- * Value fields are worthless.
- *
- ******************************************************************************/
-STATIC long ErEventGetValue(struct ereventRecord *pRec, struct valueDes *pvdes)
-{
-  pvdes->field_type = DBF_CHAR;
-  pvdes->no_elements=1;
-  (char *)(pvdes->pvalue) = pRec->val;
   return(0);
 }
 

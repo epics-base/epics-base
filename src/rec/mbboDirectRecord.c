@@ -43,6 +43,7 @@
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include	<dbEvent.h>
 #include	<dbFldTypes.h>
 #include	<devSup.h>
 #include	<errMdef.h>
@@ -58,7 +59,7 @@
 static long init_record();
 static long process();
 static long special();
-static long get_value();
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -206,7 +207,7 @@ static long special(paddr,after)
 {
     struct mbboDirectRecord     *pmbboDirect = (struct mbboDirectRecord *)(paddr->precord);
     int special_type = paddr->special, offset = 1, i;
-    char *bit;
+    unsigned char *bit;
 
     if(!after) return(0);
     switch(special_type) {
@@ -254,16 +255,6 @@ static long special(paddr,after)
     }
 }
 
-static long get_value(pmbboDirect,pvdes)
-    struct mbboDirectRecord		*pmbboDirect;
-    struct valueDes	*pvdes;
-{
-    pvdes->field_type = DBF_USHORT;
-    pvdes->no_elements=1;
-    (unsigned short *)(pvdes->pvalue) = &pmbboDirect->val;
-    return(0);
-}
-
 static void monitor(pmbboDirect)
     struct mbboDirectRecord	*pmbboDirect;
 {
@@ -272,7 +263,7 @@ static void monitor(pmbboDirect)
         monitor_mask = recGblResetAlarms(pmbboDirect);
         monitor_mask |= (DBE_LOG|DBE_VALUE);
         if(monitor_mask)
-         db_post_events(pmbboDirect,pmbboDirect->val,monitor_mask);
+         db_post_events(pmbboDirect,&pmbboDirect->val,monitor_mask);
 
         /* check for value change */
         if (pmbboDirect->mlst != pmbboDirect->val){

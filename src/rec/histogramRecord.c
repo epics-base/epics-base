@@ -54,6 +54,8 @@
 #include     <callback.h>
 #include     <dbDefs.h>
 #include     <dbAccess.h>
+#include     <dbEvent.h>
+#include     <epicsPrint.h>
 #include     <dbFldTypes.h>
 #include     <devSup.h>
 #include     <errMdef.h>
@@ -69,7 +71,7 @@
 static long init_record();
 static long process();
 static long special();
-static long get_value();
+#define get_value NULL
 static long cvt_dbaddr();
 static long get_array_info();
 #define  put_array_info NULL
@@ -184,7 +186,7 @@ static long init_record(phistogram,pass)
           pcallback->callback = wdCallback;
           pcallback->priority = priorityLow;
           if(dbNameToAddr(phistogram->name,&(pcallback->dbAddr))) {
-               logMsg("dbNameToAddr failed in init_record for recHistogram\n");
+               epicsPrintf("dbNameToAddr failed in init_record for recHistogram\n");
                exit(1);
           }
           pcallback->wd_id = wdCreate();
@@ -306,17 +308,6 @@ static void monitor(phistogram)
      return;
 }
 
-static long get_value(phistogram,pvdes)
-    struct histogramRecord *phistogram;
-    struct valueDes     *pvdes;
-{
-
-    pvdes->no_elements=phistogram->nelm;
-    (unsigned long *)(pvdes->pvalue) = phistogram->bptr;
-    pvdes->field_type = DBF_ULONG;
-    return(0);
-}
-
 static long cvt_dbaddr(paddr)
     struct dbAddr *paddr;
 {

@@ -41,9 +41,11 @@
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include	<dbEvent.h>
 #include	<dbFldTypes.h>
 #include	<errMdef.h>
 #include	<recSup.h>
+#include	<pal.h>
 #include	<special.h>
 #define GEN_SIZE_OFFSET
 #include	<palRecord.h>
@@ -55,7 +57,7 @@
 static long init_record();
 static long process();
 #define special NULL
-static long get_value();
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -94,9 +96,6 @@ struct pal * palinit();
 
 
 #define ARG_MAX 12
- /* Fldnames should have as many as ARG_MAX */
- static char *Fldnames[ARG_MAX] =
-     {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"};
 #define OUT_MAX 12
 
 
@@ -104,12 +103,9 @@ static long init_record(ppal,pass)
     struct palRecord	*ppal;
     int pass;
 {
-    long status;
     struct link *plink;
     int i;
     double *pvalue;
-    short error_number;
-    char rpbuf[184];
 
     if (pass==0) return(0);
 
@@ -130,14 +126,15 @@ static long process(ppal)
 {
 	unsigned char *temp;
 	int i;
-	double *tptr;
+	unsigned int result = 0;
 
 	ppal->pact = TRUE;
 
 	if (fetch_values(ppal)==0)
 		{
-		if(pal(ppal->pptr,&ppal->a,12,&ppal->val))
-			printf("palrec - error, pptr = %x\n",ppal->pptr);
+		if(pal(ppal->pptr,&ppal->a,12,&result))
+			printf("palrec - error, pptr = %p\n",ppal->pptr);
+		ppal->val = result;
                 ppal->udf = FALSE;
 		}
 	for (i = 0, temp = &ppal->q0; i < OUT_MAX; i++, temp++)
@@ -153,16 +150,6 @@ static long process(ppal)
 	recGblFwdLink(ppal);
 	ppal->pact = FALSE;
 	return(0);
-}
-
-static long get_value(ppal,pvdes)
-    struct palRecord		*ppal;
-    struct valueDes	*pvdes;
-{
-    pvdes->field_type = DBF_ULONG;
-    pvdes->no_elements=1;
-    (double *)(pvdes->pvalue) = &ppal->val;
-    return(0);
 }
 
 static long get_units(paddr,units)
@@ -191,8 +178,6 @@ static void monitor(ppal)
     struct palRecord	*ppal;
 {
 	unsigned short	monitor_mask;
-	double		delta;
-        short           stat,sevr,nsta,nsev;
 	double		*pnew;
 	double		*pprev;
 	int		i;
@@ -229,9 +214,9 @@ static int fetch_values(ppal)
 struct palRecord *ppal;
 {
 	struct link	*plink;	/* structure of the link field  */
-	double		*pvalue,sval;
+	double		*pvalue;
 	long		status;
-	int		i,j;
+	int		i;
 
 	for(i=0, plink=&ppal->inpa, pvalue=&ppal->a; i<ARG_MAX; i++, plink++, pvalue++) {
 

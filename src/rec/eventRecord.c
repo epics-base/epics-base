@@ -46,6 +46,7 @@
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include	<dbEvent.h>
 #include	<dbScan.h>
 #include	<dbFldTypes.h>
 #include	<devSup.h>

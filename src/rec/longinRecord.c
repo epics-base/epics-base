@@ -54,6 +54,7 @@
 #include        <alarm.h>
 #include        <dbDefs.h>
 #include        <dbAccess.h>
+#include        <dbEvent.h>
 #include        <dbFldTypes.h>
 #include        <devSup.h>
 #include        <errMdef.h>
@@ -68,7 +69,7 @@
 static long init_record();
 static long process();
 #define special NULL
-static long get_value();
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -179,17 +180,6 @@ static long process(plongin)
 	plongin->pact=FALSE;
 	return(status);
 }
-
-static long get_value(plongin,pvdes)
-    struct longinRecord             *plongin;
-    struct valueDes     *pvdes;
-{
-    pvdes->field_type = DBF_LONG;
-    pvdes->no_elements=1;
-    (long *)(pvdes->pvalue) = &plongin->val;
-    return(0);
-}
-
 
 static long get_units(paddr,units)
     struct dbAddr *paddr;

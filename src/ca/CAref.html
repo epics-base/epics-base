@@ -637,8 +637,8 @@ EPICS_CA_ADDR_LIST will inetead be used to augment this list.</p>
 <p>The parameter EPICS_CAS_INTF_ADDR_LIST allows a ca server to bind itself
 to a limited set of network interfaces (each specified by its IP address). By
 defualt, the CA server is accessible from all network interfaces configured
-into its host.  <em>I</em><em>n R3.14 the CA server used in iocCore does not
-implemet this feature</em>.</p>
+into its host.  <em>In R3.14 and R3.13 the CA server employed by
+iocCore does not implemet this feature</em>.</p>
 
 <p>See also <a href="#Configurin1">Configuring the Maximum Array Size</a>.</p>
 
@@ -670,21 +670,21 @@ EPICS_CAS_SERVER_PORT then the default port will be 5064.</p>
 <h4><a name="Unicast">Unicast addreses in the EPICS_CA_ADDR_LIST does not
 reliably contact servers sharing the same UDP port on the same host</a></h4>
 
-<p>Two servers can run on the same host with the same server port number if
-the following restrictions are understood. If the host has a modern IP kernel
-it is possible to have two or more servers share the same UDP port. It is not
-possible for these servers to run on the same host using the same TCP server
-port. If the CA server library detects that a server is attempting to start
-on the same port as an existing CA server then both servers will use the same
-UDP port, and the 2nd server will be allocated an ephemeral TCP port. In this
-situation the clients could be configured to use the same port number for
-both servers. The clients will find the 2nd server via the shared UDP port,
-and transparently connect to the 2nd server's ephemeral TCP port. Be aware
-that If there are two server's running on the same host on the same UDP port
-then they will both receive UDP search requests sent as broadcasts, but
-unfortunately (due to a weakness of most IP kernel implementations) only one
-of the servers will typically receive UDP search requests sent to unicast
-addresses (i.e. a single specific host's ip address).</p>
+<p>Two servers can run on the same host with the same server port number, but
+there are restrictions. If the host has a modern IP kernel it is possible to
+have two or more servers share the same UDP port. It is not possible for
+these servers to run on the same host using the same TCP port. If the CA
+server library detects that a server is attempting to start on the same port
+as an existing CA server then both servers will use the same UDP port, and
+the 2nd server will be allocated an ephemeral TCP port. Clients can be
+configured to use the same port number for both servers. They will locate the
+2nd server via the shared UDP port, and transparently connect to the 2nd
+server's ephemeral TCP port. Be aware however that If there are two server's
+running on the same host sharing the same UDP port then they will both
+receive UDP search requests sent as broadcasts, but unfortunately (due to a
+weakness of most IP kernel implementations) only one of the servers will
+typically receive UDP search requests sent to unicast addresses (i.e. a
+single specific host's ip address).</p>
 
 <h2>Function Call Interface General Guidelines</h2>
 
@@ -2505,14 +2505,7 @@ and then output to the console.</p>
     <dd>write access denied</dd>
 </dl>
 
-<p><small>CVS Revision $Id: CAref.html,v 1.24 2002/08/06 22:48:42 anj Exp
-$</small></p>
+<p><small>CVS Revision $Id$</small></p>
 </body>
 </html>
-/*************************************************************************\ *
-Copyright (c) 2002 The University of Chicago, as Operator of Argonne *
-National Laboratory. * Copyright (c) 2002 The Regents of the University of
-California, as *     Operator of Los Alamos National Laboratory. * EPICS BASE
-Versions 3.13.7 * and higher are distributed subject to a Software License
-Agreement found * in file LICENSE that is included with this distribution.
-\*************************************************************************/ 
+ 

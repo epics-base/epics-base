@@ -933,7 +933,7 @@ unsigned    cid
                 pCaBucket, 
                 &pchannel->sid, 
                 pchannel);
-    } while (status != S_bucket_success);
+    } while (status == S_bucket_idInUse);
 
     UNLOCK_CLIENTQ;
 

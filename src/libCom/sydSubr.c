@@ -30,6 +30,8 @@
  * .02  06-19-91	rac	replace <fields.h> with <alarm.h>
  * .03	08-15-91	rac	update documentation; add args to sydChanOpen;
  *				enhance for use by ordinary users
+ * .04	09-11-91	rac	for CA, report "noData" if ts==0; add more
+ *				documentation
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -1018,7 +1020,10 @@ int	*pMoreFlag;	/* O pointer to flag or NULL; a return value of 1
 	return S_syd_noDataNow;
     }
     if (nextTs.secPastEpoch == 0)
-	return S_syd_EOF;
+	if (pSspec->type != SYD_TY_CA)
+	    return S_syd_EOF;
+	else
+	    return S_syd_noDataNow;
 
     if (pSspec->refTs.secPastEpoch == 0) {
 /*----------------------------------------------------------------------------

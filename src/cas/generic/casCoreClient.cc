@@ -219,7 +219,7 @@ void casCoreClient::postEvent ( tsDLList < casMonitor > & monitorList,
     epicsGuard < epicsMutex > guard ( this->mutex );
     tsDLIter < casMonitor > iter = monitorList.firstIter ();
     while ( iter.valid () ) {
-        iter->postEvent ( select, event );
+        iter->postEvent ( this->eventSys, select, event );
 	    ++iter;
     }
 }
@@ -296,12 +296,6 @@ caStatus casCoreClient::addToEventQueue ( casAsyncIOI & io,
     return S_cas_success;
 }
 
-void casCoreClient::insertEventQueue ( casEvent & insert, casEvent & prevEvent )
-{
-    epicsGuard < epicsMutex > guard ( this->mutex );
-	this->eventSys.insertEventQueue ( insert, prevEvent );
-}
-
 void casCoreClient::removeFromEventQueue ( casEvent &  ev )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -337,10 +331,5 @@ void casCoreClient::setDestroyPending ()
     this->eventSys.setDestroyPending ();
 }
 
-bool casCoreClient::eventSysIsFull ()
-{
-    epicsGuard < epicsMutex > guard ( this->mutex );
-    return this->eventSys.full ();
-}
 
 

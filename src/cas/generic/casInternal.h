@@ -145,7 +145,9 @@ public:
 
 	caStatus executeEvent ( casMonEvent & );
 
-	void postEvent ( const casEventMask & select, const smartConstGDDPointer & pValue );
+	void postEvent ( class casEventSys & evSys, 
+        const casEventMask & select, 
+        const smartConstGDDPointer & pValue );
 
 	caResId getClientId () const 
 	{
@@ -185,7 +187,7 @@ private:
 	void enable ();
 	void disable ();
     casResType resourceType () const;
-	void push ( const smartConstGDDPointer & pValue );
+	void push ( casEventSys & evSys, const smartConstGDDPointer & pValue );
     void * operator new ( size_t );
     void operator delete ( void * );
 	casMonitor ( const casMonitor & );
@@ -196,21 +198,23 @@ private:
 // casMonitor::postEvent()
 // (check for NOOP case in line)
 //
-inline void casMonitor::postEvent (const casEventMask &select, const smartConstGDDPointer &pValue)
+inline void casMonitor::postEvent ( casEventSys & evSys, 
+    const casEventMask & select, const smartConstGDDPointer & pValue)
 {
-	casEventMask	result (select&this->mask);
+	casEventMask result ( select & this->mask );
+
 	//
 	// NOOP if this event isnt selected
 	// or if it is disabled
 	//
-	if ( result.noEventsSelected() || !this->enabled ) {
+	if ( result.noEventsSelected() || ! this->enabled ) {
 		return;
 	}
 
 	//
 	// else push it on the queue
 	//
-	this->push (pValue);
+	this->push ( evSys, pValue );
 }
 
 class caServer;

@@ -479,13 +479,10 @@ public:
 	void addToEventQueue ( casEvent & );
 	caStatus addToEventQueue ( casAsyncIOI &, 
         bool & onTheQueue, bool & posted );
-	void insertEventQueue ( casEvent & insert, 
-        casEvent & prevEvent );
 	void removeFromEventQueue ( casEvent & );
     void removeFromEventQueue ( casAsyncIOI & );
     void enableEvents ();
     void disableEvents ();
-    bool eventSysIsFull ();
 
 	void setDestroyPending ();
 

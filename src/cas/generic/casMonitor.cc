@@ -89,7 +89,8 @@ void casMonitor::disable()
 //
 // casMonitor::push()
 //
-void casMonitor::push ( const smartConstGDDPointer & pNewValue )
+void casMonitor::push ( casEventSys & evSys, 
+                       const smartConstGDDPointer & pNewValue )
 {	
 	casCoreClient & client = this->ciu.getClient ();
     client.getCAS().incrEventsPostedCounter ();
@@ -97,14 +98,14 @@ void casMonitor::push ( const smartConstGDDPointer & pNewValue )
 	//
 	// get a new block if we havent exceeded quotas
 	//
-	bool full = ( this->nPend >= individualEventEntries ) 
-		|| client.eventSysIsFull ();
+	bool full = ( this->nPend >= individualEventEntries ) || evSys.full ();
 	casMonEvent * pLog;
 	if ( ! full ) {
         try {
             // I should get rid of this try block by implementing a no 
             // throw version of the free list alloc
             pLog = & client.casMonEventFactory ( *this, pNewValue );
+            assert ( this->nPend != UCHAR_MAX );
 			this->nPend++; // X aCC 818
         }
         catch ( ... ) {
@@ -129,7 +130,7 @@ void casMonitor::push ( const smartConstGDDPointer & pNewValue )
 			this->overFlowEvent.assign ( *this, *pNewValue ); 
             // this inserts it out of order, but this is fixed below when the 
             // overflow event is removed from the queue 
-			client.insertEventQueue ( *pLog, this->overFlowEvent );
+			evSys.insertEventQueue ( *pLog, this->overFlowEvent );
 		}
 		else {
 			// replace the old OVF value with the current one
@@ -138,7 +139,7 @@ void casMonitor::push ( const smartConstGDDPointer & pNewValue )
         // remove OVF entry (with its new value) from the queue so
         // that it ends up properly ordered at the back of the
         // queue
-		client.removeFromEventQueue ( this->overFlowEvent );
+        evSys.removeFromEventQueue ( this->overFlowEvent );
 		pLog = & this->overFlowEvent;
 	}
 	else if ( ! pLog ) {
@@ -148,11 +149,12 @@ void casMonitor::push ( const smartConstGDDPointer & pNewValue )
 		//
 		this->ovf = true;
 		this->overFlowEvent.assign ( * this, pNewValue );
+        assert ( this->nPend != UCHAR_MAX );
 		this->nPend++; // X aCC 818
 		pLog = &this->overFlowEvent;
 	}
 	
-	client.addToEventQueue ( * pLog );
+    evSys.addToEventQueue ( * pLog );
 }
 
 //
@@ -183,6 +185,7 @@ caStatus casMonitor::executeEvent ( casMonEvent & ev )
 	//
 	// decrement the count of the number of events pending
 	//
+    assert ( this->nPend != 0u );
 	this->nPend--; // X aCC 818
 	
 	//

@@ -142,20 +142,6 @@ caStatus casStrmClient::verifyRequest (casChannelI *&pChan)
 }
 
 //
-// find the monitor associated with a resource id
-//
-inline casClientMon * caServerI::resIdToClientMon (
-    const caResId & idIn )
-{
-	casRes * pRes = this->lookupRes ( idIn, casMonitorT );
-	//
-	// cast is ok since the type code was verified 
-	// (and we know casClientMon derived from resource)
-	//
-	return reinterpret_cast < casClientMon * > ( pRes );
-}
-
-//
 // casStrmClient::show (unsigned level)
 //
 void casStrmClient::show ( unsigned level ) const

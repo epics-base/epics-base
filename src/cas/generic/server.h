@@ -863,7 +863,6 @@ private:
 #include "casIOD.h" // IO dependent
 #include "casOSD.h" // OS dependent
 
-class casClientMon;
 class beaconTimer;
 class beaconAnomalyGovernor;
 
@@ -889,11 +888,6 @@ public:
 	// find the PV associated with a resource id
 	//
 	casPVI *resIdToPV (const caResId &id);
-
-	//
-	// find the client monitor associated with a resource id
-	//
-	casClientMon *resIdToClientMon (const caResId &idIn);
 
 	void installClient (casStrmClient *pClient);
 

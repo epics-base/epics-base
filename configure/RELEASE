@@ -18,6 +18,11 @@
 VX_DIR = /usr/local/vw/tornado202p1
 #VX_DIR = /usr/local/vw/tornado22-$(ARCH_CLASS)
 
+#-------------------------------------------------------
+# Where to find RTEMS
+RTEMS_BASE=/usr/local/rtems/rtems-4.7
+RTEMS_VERSION=4.7
+
 # If you don't want to install into $(TOP) dir then 
 # define INSTALL_LOCATION here
 #INSTALL_LOCATION=<fullpathname>

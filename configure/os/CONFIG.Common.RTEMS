@@ -14,11 +14,6 @@
 #
 
 #-------------------------------------------------------
-# Where to find RTEMS
-RTEMS_BASE=/usr/local/rtems/rtems-4.7
-RTEMS_VERSION=4.7
-
-#-------------------------------------------------------
 # RTEMS tools are similar to UNIX tools
 -include $(CONFIG)/os/CONFIG.Common.UnixCommon
 

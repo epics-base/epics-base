@@ -1,5 +1,5 @@
-/* DB_EVENT.C */
-/* share/src/db $Id$ */
+/* db_event.c */
+/* share/src/db  $Id$ */
 
 /* routines for scheduling events to lower priority tasks via the RT kernel */
 /*
@@ -57,82 +57,40 @@
  * joh  16    	111992  removed unused taskpri var
  * joh  17    	111992  added task priority offset arg to
  *             	   	db_start_events()
+ * joh  18	072993	changed npend to unsigned long to be safe
+ * joh  19	080393 	fixed sem timeout while waiting for marker bug	
+ * joh  20	080393 	ANSI C changes
+ * joh  21	080393 	added task watch dog	
  */
 
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<wdLib.h>
-#include	<ellLib.h>
 #include	<semLib.h>
+#include	<stdioLib.h>
+#include	<vxLib.h>
+#include	<lstLib.h>
+#include	<sysLib.h>
+#include	<string.h>
+#include	<logLib.h>
+#include	<taskLib.h>
 
+#include	<taskwd.h>
 #include 	<tsDefs.h>
 #include	<dbDefs.h>
-#include	<db_access.h>
-#include	<rec/dbCommon.h>
+#include	<dbCommon.h>
 #include	<task_params.h>
+#include	<db_access.h>
+#include 	<dbEvent.h>
 
+static char *sccsId = "$Id$\t$Date$";
 
-/* function declarations */
-static void wake_cancel();
-
-
-/* included text from dblib.h */
-/*********************************************************************/
-/*
- * Simple native types (anything which is not a string or an array for
- * now) logged by db_post_events() for reliable interprocess communication.
- * (for other types they get whatever happens to be there when the lower
- * priority task pending on the event queue wakes up). Strings would slow down
- * events for more reasonable size values. DB fields of native type string
- * will most likely change infrequently.
- * 
- */
-union native_value{
-/*
-      	char		dbf_string[MAXSTRINGSIZE];
-*/
-      	short		dbf_int;
-      	short		dbf_short;
-      	float		dbf_float;
-      	short		dbf_enum;
-      	char		dbf_char;
-      	long		dbf_long;
-      	double		dbf_double;
-};
-
-/*
- *	structure to log the state of a data base field at the time
- *	an event is triggered.
- */
-typedef struct{
-        unsigned short		stat;	/* Alarm Status         */
-        unsigned short		sevr;	/* Alarm Severity       */
-	TS_STAMP		time;	/* time stamp		*/
-	union native_value	field;	/* field value		*/
-}db_field_log;
-
-/*********************************************************************/
-
-
+/* local function declarations */
+LOCAL void wake_cancel(SEM_ID psem);
+LOCAL int event_read(struct event_que *ev_que);
 
 /* what to do with unrecoverable errors */
-#define abort taskSuspend;
-
-struct event_block{
-  	ELLNODE			node;
-  	struct db_addr		*paddr;
-  	void			(*user_sub)();
-  	void			*user_arg;
-  	struct event_que	*ev_que;
-  	unsigned char		select;
-  	char			valque;
-  	unsigned short		npend;	/* n times this event is on the que */
-};
-
-
-#define EVENTQUESIZE	EVENTENTRIES  *32 
-#define EVENTENTRIES	16	/* the number of que entries for each event */
-#define EVENTQEMPTY	((struct event_block *)NULL)
+#define abort(S) taskSuspend((int)taskIdCurrent);
 
 /*
  * Reliable intertask communication requires copying the current value of the
@@ -145,44 +103,9 @@ struct event_block{
  * LOCKEVUSER.
  */
 
-/*
- * really a ring buffer
- */
-struct event_que{	
-  	struct event_block	*evque[EVENTQUESIZE];
-  	db_field_log		valque[EVENTQUESIZE];
-  	unsigned short	putix;
-  	unsigned short	getix;
-  	unsigned short	quota;		/* the number of assigned entries*/
-
-  	/* lock writers to the ring buffer only */
-  	/* readers must never slow up writers */
-  	FAST_LOCK		writelock;
-
-  	struct event_que	*nextque;	/* in case que quota exceeded */
-  	struct event_user	*evuser;	/* event user parent struct */
-};
-
-struct event_user{
-  	int			taskid;		/* event handler task id */
-
-  	char			pendlck;	/* Only one task can pend */
-  	SEM_ID			ppendsem;	/* Wait while empty */
-  	unsigned char		pendexit;	/* exit pend task */
-
-  	unsigned short	queovr;			/* event que overflow count */
-  	void			(*overflow_sub)();/* called overflow detect */
-  	void			*overflow_arg;	/* parameter to above 	*/
-
-  	struct event_que	firstque;	/* the first event que */
-};
-
-
-
 
 #define	RNGINC(OLD)\
 ((OLD)+1)>=EVENTQUESIZE ? 0 : ((OLD)+1)
-
 
 #define LOCKEVQUE(EV_QUE)\
 FASTLOCK(&(EV_QUE)->writelock);
@@ -196,17 +119,13 @@ FASTLOCK(&(RECPTR)->mlok);
 #define UNLOCKREC(RECPTR)\
 FASTUNLOCK(&(RECPTR)->mlok);
 
-
-#define VXTASKIDSELF 0
-
 
 /*
  *	DB_EVENT_LIST()
  *
  *
  */
-db_event_list(name)
-char				*name;
+int db_event_list(char *name)
 {
   	struct db_addr		addr;
   	int				status;
@@ -235,7 +154,7 @@ char				*name;
 		printf(	"task %x select %x pfield %x behind by %d\n",
 			pevent->ev_que->evuser->taskid,
 			pevent->select,
-			pevent->paddr->pfield,
+			(unsigned int) pevent->paddr->pfield,
 			pevent->npend);
      	}
   	UNLOCKREC(precord);
@@ -253,11 +172,9 @@ char				*name;
  * 
  * returns:	ptr to event user block or NULL if memory can't be allocated
  */
-struct event_user		
-*db_init_events()
+struct event_user *db_init_events(void)
 {
   	register struct event_user	*evuser;
-  	int				logMsg();
 
   	evuser = (struct event_user *) calloc(1, sizeof(*evuser));
   	if(!evuser)
@@ -265,11 +182,7 @@ struct event_user
 
   	evuser->firstque.evuser = evuser;
 	FASTLOCKINIT(&(evuser->firstque.writelock));
-#	ifdef V5_vxWorks
-		evuser->ppendsem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
-#	else
-		evuser->ppendsem = semCreate();
-#	endif
+	evuser->ppendsem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
 	if(!evuser->ppendsem){
 		free(evuser);
 		return NULL;
@@ -287,8 +200,7 @@ struct event_user
  *	itself
  *
  */
-db_close_events(evuser)
-register struct event_user	*evuser;
+int	db_close_events(struct event_user *evuser)
 {
 	/*
 	 * Exit not forced on event blocks for now - this is left to channel
@@ -317,7 +229,7 @@ register struct event_user	*evuser;
  * those who wish for the event block to be a sub structure) see pevent !=
  * NULL on db_add_event()
  */
-db_sizeof_event_block()
+unsigned db_sizeof_event_block(void)
 {
   	return sizeof(struct event_block);
 }
@@ -329,13 +241,14 @@ db_sizeof_event_block()
  *
  *
  */
-db_add_event(evuser, paddr, user_sub, user_arg, select, pevent)
-register struct event_user	*evuser;
-register struct db_addr		*paddr;
-register void			(*user_sub)();
-register void			*user_arg;
-register unsigned int		select;
-register struct event_block	*pevent; /* ptr to event blk (not required) */
+int db_add_event(
+struct event_user	*evuser,
+struct db_addr		*paddr,
+void			(*user_sub)(),
+void			*user_arg,
+unsigned int		select,
+struct event_block	*pevent /* ptr to event blk (not required) */
+)
 {
   	register struct dbCommon	*precord;
   	register struct event_que	*ev_que;
@@ -403,7 +316,7 @@ register struct event_block	*pevent; /* ptr to event blk (not required) */
   		pevent->valque = FALSE;
 
   	LOCKREC(precord);
-  	ellAdd((ELLLIST*)&precord->mlis, (ELLNODE*)pevent);
+  	lstAdd((LIST*)&precord->mlis, (NODE*)pevent);
   	UNLOCKREC(precord);
 
   	return OK;
@@ -420,8 +333,7 @@ register struct event_block	*pevent; /* ptr to event blk (not required) */
  * This routine does not deallocate the event block since it normally will be
  * part of a larger structure.
  */
-db_cancel_event(pevent)
-register struct event_block	*pevent;
+int	db_cancel_event(struct event_block	*pevent)
 {
   	register struct dbCommon	*precord;
   	register int			status;
@@ -434,9 +346,9 @@ register struct event_block	*pevent;
 
   	LOCKREC(precord);
   	/* dont let a misplaced event corrupt the queue */
-  	status = ellFind((ELLLIST*)&precord->mlis, (ELLNODE*)pevent);
+  	status = lstFind((LIST*)&precord->mlis, (NODE*)pevent);
   	if(status!=ERROR)
-    		ellDelete((ELLLIST*)&precord->mlis, (ELLNODE*)pevent);
+    		lstDelete((LIST*)&precord->mlis, (NODE*)pevent);
   	UNLOCKREC(precord);
   	if(status == ERROR)
     		return ERROR;
@@ -451,11 +363,7 @@ register struct event_block	*pevent;
   	if(pevent->npend){
 		SEM_ID			pflush_sem;
 
-#		ifdef V5_vxWorks
-			pflush_sem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
-#		else
-			pflush_sem = semCreate();
-#		endif
+		pflush_sem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
 
 		if(pflush_sem){
     			struct event_block	flush_event;
@@ -466,17 +374,26 @@ register struct event_block	*pevent;
     			flush_event.npend = 0;
 
     			if(db_post_single_event(&flush_event)==OK){
-#				ifdef V5_vxWorks
-      					semTake(pflush_sem, sysClkRateGet()*10);
-#				else
-      					semTake(pflush_sem);
-#				endif
+				semTake(
+					pflush_sem, 
+					WAIT_FOREVER);
+
+				/*
+				 * insure that the event is 
+				 * removed from the queue
+				 */
+    				while(flush_event.npend)
+      					taskDelay(sysClkRateGet());
 			}
 
 			semDelete(pflush_sem);
 		}
 
-    		/* insurance- incase the event could not be queued */
+    		/* 
+		 *
+		 * in case the event could not be queued 
+		 *
+		 */
     		while(pevent->npend)
       			taskDelay(sysClkRateGet());
   	}
@@ -496,8 +413,7 @@ register struct event_block	*pevent;
  * a very short routine to inform a db_clear thread that the deleted event
  * has been flushed
  */
-static void wake_cancel(psem)
-SEM_ID	psem;
+LOCAL void wake_cancel(SEM_ID  psem)
 {
     	semGive(psem);
 }
@@ -508,10 +424,11 @@ SEM_ID	psem;
  *
  * Specify a routine to be executed for event que overflow condition
  */
-db_add_overflow_event(evuser, overflow_sub, overflow_arg)
-register struct event_user	*evuser;
-register void			(*overflow_sub)();	
-register void			*overflow_arg;
+int db_add_overflow_event(
+struct event_user	*evuser,
+void			(*overflow_sub)(),	
+void			*overflow_arg
+)
 {
 
   	evuser->overflow_sub = overflow_sub;
@@ -526,8 +443,7 @@ register void			*overflow_arg;
  *
  *
  */
-db_post_single_event(pevent)
-register struct event_block		*pevent;
+int db_post_single_event(struct event_block	*pevent)
 {  
   	register struct event_que	*ev_que = pevent->ev_que;
   	int				success = FALSE;
@@ -560,7 +476,7 @@ register struct event_block		*pevent;
 		 	* address
 		 	*/
 			bcopy(	pevent->paddr->pfield,
-				&ev_que->valque[putix].field,
+				(char *)&ev_que->valque[putix].field,
 				dbr_size[pevent->paddr->field_type]);
 	
 		}
@@ -586,10 +502,11 @@ register struct event_block		*pevent;
  *
  *
  */
-db_post_events(precord,pvalue,select)
-register struct dbCommon	*precord;
-register union native_value	*pvalue;
-register unsigned int		select;
+int db_post_events(
+struct dbCommon		*precord,
+union native_value	*pvalue,
+unsigned int		select
+)
 {  
   	register struct event_block	*event;
   	register struct event_que	*ev_que;
@@ -637,8 +554,8 @@ register unsigned int		select;
 				 	* union copy of char in the db at an odd 
 				 	* address
 				 	*/
-					bcopy(	pvalue,
-						&ev_que->valque[putix].field,
+					bcopy(	(char *)pvalue,
+						(char *)&ev_que->valque[putix].field,
 						dbr_size[event->paddr->field_type]);
 
 				}
@@ -666,14 +583,14 @@ register unsigned int		select;
  * DB_START_EVENTS()
  *
  */
-db_start_events(evuser,taskname,init_func,init_func_arg,priority_offset)
-struct event_user	*evuser;
-char			*taskname;	/* defaulted if NULL */
-void			(*init_func)();
-int			init_func_arg;
-int			priority_offset;
+int db_start_events(
+struct event_user	*evuser,
+char			*taskname,	/* defaulted if NULL */
+void			(*init_func)(),
+int			init_func_arg,
+int			priority_offset
+)
 {
-  	int		myprio;
   	int		status;
 	int		taskpri;
   	int		event_task();
@@ -682,7 +599,7 @@ int			priority_offset;
   	while(!vxTas(&evuser->pendlck))
     		return ERROR;
 
-  	status = taskPriorityGet(VXTASKIDSELF, &taskpri);
+  	status = taskPriorityGet(taskIdSelf(), &taskpri);
   	if(status == ERROR)
     		return ERROR;
  
@@ -717,12 +634,15 @@ int			priority_offset;
  * EVENT_TASK()
  *
  */
-event_task(evuser, init_func, init_func_arg)
-register struct event_user	*evuser;
-register void			(*init_func)();
-register int			init_func_arg;
+int event_task(
+struct event_user	*evuser,
+void			(*init_func)(),
+int			init_func_arg
+)
 {
   	register struct event_que	*ev_que;
+
+	taskwdInsert((int)taskIdCurrent,NULL,NULL);
 
   	/* init hook */
   	if(init_func)
@@ -733,11 +653,7 @@ register int			init_func_arg;
 	 * routine at a time
 	 */
   	do{
-#		ifdef V5_vxWorks
-    			semTake(evuser->ppendsem, WAIT_FOREVER);
-#		else
-    			semTake(evuser->ppendsem);
-#		endif
+		semTake(evuser->ppendsem, WAIT_FOREVER);
 
     		for(	ev_que= &evuser->firstque; 
 			ev_que; 
@@ -756,7 +672,12 @@ register int			init_func_arg;
 					evuser->queovr);
       			else
 				logMsg("Events lost, discard count was %d\n",
-					evuser->queovr);
+					evuser->queovr,
+					NULL,
+					NULL,
+					NULL,
+					NULL,
+					NULL);
       			evuser->queovr = 0;
     		}
 
@@ -765,7 +686,13 @@ register int			init_func_arg;
   	evuser->pendlck = FALSE;
 
 	if(FASTLOCKFREE(&evuser->firstque.writelock)<0)
-		logMsg("evtsk: fast lock free fail 1\n");
+		logMsg("evtsk: fast lock free fail 1\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
 
   	/* joh- added this code to free additional event queues */
   	{
@@ -776,13 +703,21 @@ register int			init_func_arg;
 
       			nextque = ev_que->nextque;
 			if(FASTLOCKFREE(&ev_que->writelock)<0)
-				logMsg("evtsk: fast lock free fail 2\n",0,0,0,0,0,0);
+				logMsg("evtsk: fast lock free fail 2\n",
+					NULL,
+					NULL,
+					NULL,
+					NULL,
+					NULL,
+					NULL);
       			free(ev_que);
  			ev_que = nextque;
    		}
   	}
 
   	free(evuser);
+
+	taskwdRemove((int)taskIdCurrent);
 
   	return OK;
 }
@@ -792,8 +727,7 @@ register int			init_func_arg;
  * EVENT_READ()
  *
  */
-event_read(ev_que)
-register struct event_que	*ev_que;
+LOCAL int event_read(struct event_que       *ev_que)
 {
   	register struct event_block	*event;
  	register unsigned int		getix;
@@ -856,88 +790,3 @@ register struct event_que	*ev_que;
   	return OK;
 }
 
-#ifdef JUNKYARD
-
-struct event_user	*tevuser;
-struct db_addr		taddr;
-
-
-db_test_event(precord_name)
-register char	*precord_name;
-{
-  int			status;
-  int			i;
-
-  if(!tevuser){
-    tevuser = db_init_events();
-
-    status = db_name_to_addr(precord_name, &taddr);
-    if(status==ERROR)
-      return ERROR;
-
-/* (MDA) in LANL stuff, this used to taskSuspend if invalid address
-    PADDRCHK(&taddr);
- */
-
-    status = db_start_events(tevuser);
-    if(status==ERROR)
-      return ERROR;
-
-    status = db_add_event(tevuser, &taddr, logMsg, "Val\n", DBE_VALUE, NULL);
-    if(status==ERROR)
-      return ERROR;
-    status = db_add_event(tevuser, &taddr, logMsg, "Log\n", DBE_LOG, NULL);
-    if(status==ERROR)
-      return ERROR;
-    status = db_add_event(tevuser, &taddr, logMsg, "Alarm\n", DBE_ALARM, NULL);
-    if(status==ERROR)
-      return ERROR;
-
-  }
-/*
-  timexN(db_post_events, taddr.precord, taddr.pfield, DBE_VALUE | DBE_LOG);
-*/
-/*
-  gremlin(taddr.precord, taddr.pfield);
-  while(TRUE)taskDelay(100);
-*/
-
-  return OK;
-
-}
-
-gremlin(p1,p2)
-void *p1;
-void *p2;
-{
-  static unsigned int myprio = 250;
-  static unsigned int delay;
-  static unsigned int cnt;
-
-  if(cnt<200)
-  {
-/*
-    taskDelay((delay++)&0x3);
-*/
-    taskSpawn(	"gremlin",
-		myprio-- & 0xff,
-		EVENT_PEND_OPT,
-		EVENT_PEND_STACK,
-		gremlin,
-		p1,
-		p2);
-
-    taskSpawn(	"gremlin",
-		myprio-- & 0xff,
-		EVENT_PEND_OPT,
-		EVENT_PEND_STACK,
-		gremlin,
-		p1,
-		p2);
-    db_post_events(p1,p2,DBE_VALUE | DBE_LOG);
-    cnt++;
-  }
-}
-
-
-#endif

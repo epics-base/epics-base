@@ -5,6 +5,7 @@ LIBOBJS += $(EPICS_BASE_BIN)/aoRecord.o
 LIBOBJS += $(EPICS_BASE_BIN)/biRecord.o
 LIBOBJS += $(EPICS_BASE_BIN)/boRecord.o
 LIBOBJS += $(EPICS_BASE_BIN)/calcRecord.o
+LIBOBJS += $(EPICS_BASE_BIN)/calcoutRecord.o
 LIBOBJS += $(EPICS_BASE_BIN)/compressRecord.o
 LIBOBJS += $(EPICS_BASE_BIN)/dfanoutRecord.o
 #LIBOBJS += $(EPICS_BASE_BIN)/egRecord.o

@@ -206,7 +206,7 @@ void exPV::show(unsigned level) const
 		if ( this->pValue.valid () ) {
 			printf ( "exPV: cond=%d\n", this->pValue->getStat () );
 			printf ( "exPV: sevr=%d\n", this->pValue->getSevr () );
-			printf ( "exPV: value=%f\n", static_cast < double > ( * this->pValue );
+			printf ( "exPV: value=%f\n", static_cast < double > ( * this->pValue ) );
 		}
 		printf ( "exPV: interest=%d\n", this->interest );
 		printf ( "exPV: pScanTimer=%p\n", 

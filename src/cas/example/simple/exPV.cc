@@ -200,7 +200,7 @@ void exPV::show(unsigned level) const
 			printf("exPV: value=%f\n", (double) *this->pValue);
 		}
 		printf("exPV: interest=%d\n", this->interest);
-		printf("exPV: pScanTimer=%x\n", (unsigned) this->pScanTimer);
+		printf("exPV: pScanTimer=%p\n", this->pScanTimer);
 	}
 }
 

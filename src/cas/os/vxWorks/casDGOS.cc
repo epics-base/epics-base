@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  1996/09/16 18:27:09  jhill
+ * vxWorks port changes
+ *
  * Revision 1.1  1996/09/04 22:06:45  jhill
  * installed
  *
@@ -98,7 +101,7 @@ casDGOS::~casDGOS()
 void casDGOS::show(unsigned level)
 {
 	this->casDGClient::show(level);
-	printf ("casDGOS at %x\n", (unsigned) this);
+	printf ("casDGOS at %p\n", this);
 	if (taskIdVerify(this->clientTId) == OK) {
 		taskShow(this->clientTId, level);
 	}

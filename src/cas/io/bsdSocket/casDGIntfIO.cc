@@ -247,7 +247,7 @@ void casDGIntfIO::clientHostName (char *pBuf, unsigned /* bufSize */) const
 //
 void casDGIntfIO::osdShow (unsigned level) const
 {
-	printf ("casDGIntfIO at %x\n", (unsigned) this);
+	printf ("casDGIntfIO at %p\n", this);
 	if (level>=1u) {
 		char buf[64];
 		this->clientHostName(buf, sizeof(buf));

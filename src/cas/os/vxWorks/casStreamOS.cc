@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.3  1996/11/02 00:55:01  jhill
+// many improvements
+//
 // Revision 1.2  1996/09/16 18:27:11  jhill
 // vxWorks port changes
 //
@@ -108,7 +111,7 @@ casStreamOS::~casStreamOS()
 void casStreamOS::show(unsigned level)
 {
 	this->casStrmClient::show(level);
-	printf("casStreamOS at %x\n", (unsigned) this);
+	printf("casStreamOS at %p\n", this);
 	if (taskIdVerify(this->clientTId)==OK) {
 		taskShow(this->clientTId, level);
 	}

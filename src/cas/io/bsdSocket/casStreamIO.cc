@@ -5,6 +5,9 @@
 //
 //
 // $Log$
+// Revision 1.12  1997/06/13 09:16:16  jhill
+// connect proto changes
+//
 // Revision 1.11  1997/05/01 19:59:09  jhill
 // new header file for ipAddrToA()
 //
@@ -240,7 +243,7 @@ xRecvStatus casStreamIO::osdRecv(char *pInBuf, bufSizeT nBytes,
 //
 void casStreamIO::osdShow (unsigned level) const
 {
-	printf ("casStreamIO at %x\n", (unsigned) this);
+	printf ("casStreamIO at %p\n", this);
 	if (level>1u) {
 		char buf[64];
 		ipAddrToA(&this->addr, buf, sizeof(buf));

@@ -5,6 +5,9 @@
 //
 //
 // $Log$
+// Revision 1.5  1997/06/13 09:16:12  jhill
+// connect proto changes
+//
 // Revision 1.4  1997/04/10 19:40:31  jhill
 // API changes
 //
@@ -145,7 +148,7 @@ caStatus caServerIO::init(caServerI &cas)
 //
 void caServerIO::show (unsigned /* level */) const
 {
-	printf ("caServerIO at %x\n", (unsigned) this);
+	printf ("caServerIO at %p\n", this);
 }
 
 //

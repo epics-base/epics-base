@@ -38,10 +38,12 @@ extern long initRecSup();
 extern long initDevSup();
 extern long initDatabase();
 extern long addToSet();
+extern long getResources();
 
 
-iocInit(pfilename)
+iocInit(pfilename,pResourceFilename)
 char * pfilename;
+char * pResourceFilename;
 {
     long status;
     char name[40];
@@ -61,6 +63,11 @@ char * pfilename;
 	logMsg("iocInit aborting because sdrLoad failed\n");
 	return(-1);
     }
+    if(status=getResources(pResourceFilename)) {
+	logMsg("iocInit aborting because getResources failed\n");
+	return(-1);
+    }
+    logMsg("getResources completed\n");
     initialized = TRUE;
     logMsg("sdrLoad completed\n");
     /* enable interrupt level 5 and 6 */
@@ -88,19 +95,19 @@ char * pfilename;
 
 #include	<module_types.h>
 
-long initBusController(){ /*static */
+static long initBusController(){ /*static */
     char	ctemp;
 
     /* initialize the  Xycom SRM010 bus controller card */
     ctemp = XY_LED;
     if (vxMemProbe(SRM010_ADDR, WRITE,1,&ctemp) == -1) {
-    	logMsg("Xycom SRM010 Bus Controller Not Present\n");
+    	errMessage(-1L,"Xycom SRM010 Bus Controller Not Present");
     	return(-1);
     }
     return(0);
 }
 
-long initDrvSup() /* Locate all driver support entry tables */
+static long initDrvSup() /* Locate all driver support entry tables */
 {
     char	*pname;
     char	name[40];
@@ -124,7 +131,7 @@ long initDrvSup() /* Locate all driver support entry tables */
 	    strcpy(message,"driver entry table not found for ");
 	    strcat(message,pname);
 	    status = S_drv_noDrvet;
-	    errMessage(-1L,message);
+	    errMessage(status,message);
 	    if(rtnval==OK) rtnval=status;
 	    continue;
 	}
@@ -134,7 +141,7 @@ long initDrvSup() /* Locate all driver support entry tables */
     return(rtnval);
 }
 
-long initRecSup()
+static long initRecSup()
 {
     char	name[40];
     int		i;
@@ -163,7 +170,7 @@ long initRecSup()
 	    strcpy(message,"record support entry table not found for ");
 	    strcat(message,name);
 	    status = S_rec_noRSET;
-	    errMessage(-1L,message);
+	    errMessage(status,message);
 	    if(rtnval==OK)rtnval=status;
 	    continue;
 	}
@@ -176,7 +183,7 @@ long initRecSup()
     return(rtnval);
 }
 
-long initDevSup() /* Locate all device support entry tables */
+static long initDevSup() /* Locate all device support entry tables */
 {
     char	*pname;
     char	name[40];
@@ -206,7 +213,7 @@ long initDevSup() /* Locate all device support entry tables */
 		strcpy(message,"device support entry table not found for ");
 		strcat(message,pname);
 		status = S_dev_noDSET;
-		errMessage(-1L,message);
+		errMessage(status,message);
 		if(rtnval==OK)rtnval=status;
 		continue;
 	    }
@@ -230,7 +237,7 @@ long initDevSup() /* Locate all device support entry tables */
     return(rtnval);
 }
 
-long initDatabase()
+static long initDatabase()
 {
     char	name[PVNAME_SZ+FLDNAME_SZ+2];
     short	i,j,k;
@@ -260,7 +267,7 @@ long initDatabase()
 	    strcpy(message,"record support entry table not found for ");
 	    strcat(message,name);
 	    status = S_rec_noRSET;
-	    errMessage(-1L,message);
+	    errMessage(status,message);
 	    if(rtnval==OK) rtnval = status;
 	    continue;
 	}
@@ -310,7 +317,7 @@ long initDatabase()
 			    strcat(message,name);
 			    strcat(message," not found");
 			    status = S_db_notFound;
-			    errMessage(-1L,message);
+			    errMessage(status,message);
 			    if(rtnval==OK) rtnval=status;
 			}
 		    }
@@ -349,7 +356,7 @@ long initDatabase()
     return(rtnval);
 }
 
-long addToSet(precord,record_type,lookAhead,i,j,lset)
+static long addToSet(precord,record_type,lookAhead,i,j,lset)
     struct dbCommon *precord;	/* record being added to lock set*/
     short  record_type;		/* record being added to lock set*/
     short lookAhead;		/*should following records be checked*/
@@ -436,4 +443,157 @@ long addToSet(precord,record_type,lookAhead,i,j,lset)
 	j1st = 0;
     }
     return(0);
+}
+
+#define MAX 128
+#define SAME 0
+static char    *cvt_str[] = {
+    "DBF_STRING",
+    "DBF_SHORT",
+    "DBF_LONG",
+    "DBF_FLOAT",
+    "DBF_DOUBLE"
+};
+#define CVT_COUNT (sizeof(cvt_str) / sizeof(char*))
+
+static long getResources(fname) /* Resource Definition File interpreter */
+    char           *fname;
+{
+    int             fd;
+    int             len;
+    int             len2;
+    int             lineNum = 0;
+    int             i = 0;
+    int             found = 0;
+    int             cvType = 0;
+    char            buff[MAX + 1];
+    char            name[40];
+    char            s1[MAX];
+    char            s2[MAX];
+    char            s3[MAX];
+    char            message[100];
+    long            rtnval = 0;
+    UTINY           type;
+    char           *pSymAddr;
+    short           n_short;
+    long            n_long;
+    float           n_float;
+    double          n_double;
+    if (!fname) {
+	printf("getResources(): RETURNING because of NULL arg\n");
+	return (0);
+    }
+    if ((fd = open(fname, READ, 0x0)) < 0) {
+	errMessage(0L, "getResources: No such Resource file");
+	return (-1);
+    }
+    while ((len = fioRdString(fd, buff, MAX)) != EOF) {
+	lineNum++;
+	if (len < 2)
+	    goto CLEAR;
+	if (len >= MAX) {
+	    sprintf(message,
+		    "getResources: Line too long - line=%d", lineNum);
+	    errMessage(-1L, message);
+	    return (-1);
+	}
+	for (i = 0; i < len; i++) {
+	    if (buff[i] == '!') {
+		goto CLEAR;
+	    }
+	}
+	/* extract the 3 fields as strings */
+	if ((sscanf(buff, "%s %s %[^\n]", s1, s2, s3)) != 3) {
+	    sprintf(message,
+		    "getResources: Not enough fields - line=%d", lineNum);
+	    errMessage(-1L, message);
+	    return (-1);
+	}
+	found = 0;
+	len2 = strlen(s2);
+	for (i = 0; i < CVT_COUNT; i++) {
+	    if ((strncmp(s2, cvt_str[i], len2)) == SAME) {
+		found = 1;
+		cvType = i;
+		break;
+	    }
+	}
+	if (!found) {
+	    sprintf(message,
+		    "getResources: Field 2 not defined - line=%d", lineNum);
+	    errMessage(-1L, message);
+	    return (-1);
+	}
+	strcpy(name, "_");
+	strcat(name, s1);
+	rtnval = symFindByName(sysSymTbl, name, &pSymAddr, &type);
+	if (rtnval != OK || (type & N_TEXT == 0)) {
+	    sprintf(message,
+		  "getResources: Symbol name not found - line=%d", lineNum);
+	    errMessage(0L, message);
+	    return (-1);
+	}
+	switch (cvType) {
+	case 0:		/* DBF_STRING */
+	    len = strlen(s3);
+	    len2 = strlen((char *)pSymAddr);
+	    if (len > len2) {
+		sprintf(message,
+			"getResources: Not enough reserved space for string - line=%d",
+			lineNum);
+		errMessage(-1L, message);
+	        return (-1);
+	    }
+	    strncpy(pSymAddr, s3, len + 1);
+	    break;
+	case 1:		/* DBF_SHORT */
+	    if ((sscanf(s3, "%hd", &n_short)) != 1) {
+		sprintf(message,
+		      "getResources: conversion failed - line=%d", lineNum);
+		errMessage(0L, message);
+	        return (-1);
+	    }
+	    *(short *) pSymAddr = n_short;
+	    break;
+	case 2:		/* DBF_LONG */
+	    if ((sscanf(s3, "%ld", &n_long)) != 1) {
+		sprintf(message,
+		      "getResources: conversion failed - line=%d", lineNum);
+		errMessage(0L, message);
+	        return (-1);
+	    }
+	    *(long *) pSymAddr = n_long;
+	    break;
+	case 3:		/* DBF_FLOAT */
+	    if ((sscanf(s3, "%e", &n_float)) != 1) {
+		sprintf(message,
+		      "getResources: conversion failed - line=%d", lineNum);
+		errMessage(0L, message);
+	        return (-1);
+	    }
+	    *(float *) pSymAddr = n_float;
+	    break;
+	case 4:		/* DBF_DOUBLE */
+	    if ((sscanf(s3, "%le", &n_double)) != 1) {
+		sprintf(message,
+		      "getResources: conversion failed - line=%d", lineNum);
+		errMessage(0L, message);
+	        return (-1);
+	    }
+	    *(double *) pSymAddr = n_double;
+	    break;
+	default:
+	    sprintf(message,
+		 "getResources: switch default reached - line=%d", lineNum);
+	    errMessage(-1L, message);
+	    return (-1);
+	    break;
+	}
+CLEAR:	bzero(buff, MAX);
+	bzero(s1, MAX);
+	bzero(s2, MAX);
+	bzero(s3, MAX);
+    }
+    close(fd);
+    return (0);
 }

@@ -216,6 +216,11 @@ mkdir myapp
 cd myapp
 /usr/local/epics/baseR3.13.0.beta12/bin/solaris/makeBaseApp.pl -t example example
 /usr/local/epics/baseR3.13.0.beta12/bin/solaris/makeBaseApp.pl -i -t example example</PRE>
+WIN95/NT notes:&nbsp; Perl scripts are invoked with the command "perl&nbsp;
+&lt;scriptname>" on win95/NT and
+<BR>Perl scripts are case sensitive. For example to create an application
+on WIN95/NT:
+<PRE>&nbsp;&nbsp;&nbsp;&nbsp; perl C:\epics\base\bin\win32\makeBaseApp.pl -t example example</PRE>
 
 <H3>
 Inspect Files</H3>
@@ -1429,9 +1434,6 @@ the CVS directories excluded.</UL>
 <DD>
 Two useful commands at this level are</DD>
 
-<DD>
-</DD>
-
 <DL>
 <DL>
 <PRE>gnumake</PRE>
@@ -1488,9 +1490,6 @@ This removes the host and target architecture directories created by make.
 ".&lt;arch>" can be appended to invoke clean for a particular architecture.</DD>
 
 <DD>
-</DD>
-
-<DD>
 The command:</DD>
 
 <DL>
@@ -1502,18 +1501,12 @@ The command:</DD>
 <DD>
 is the same as "<TT>gnumake clean install</TT>".</DD>
 
-<DD>
-</DD>
-
 <DT>
 <TT>xxxApp/xxxDb</TT></DT>
 
 <DD>
 Executing gnumake in this directory generates and installs database instance
 files, template and substitution files plain sources or CapFast schematics.</DD>
-
-<DD>
-</DD>
 
 <DT>
 <TT>iocBoot</TT></DT>
@@ -1525,9 +1518,6 @@ Executing</DD>
 
 <DD>
 is the same as issuing "gnumake" in each subdirectory of <TT>iocBoot</TT>.</DD>
-
-<DD>
-</DD>
 
 <DT>
 <TT>iocBoot/iocxxx</TT></DT>
@@ -2140,9 +2130,6 @@ cvs checkout iocsys/&lt;top></PRE>
 
 <DD>
 <TT>iocsys/&lt;top></TT> appears under <TT>&lt;anywhere></TT></DD>
-
-<DD>
-<TT></TT></DD>
 
 <DT>
 <B>watch</B></DT>

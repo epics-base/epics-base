@@ -160,6 +160,10 @@ sub configAppInclude {
     print OUT "# be lost when the application is next rebuilt.\n\n";
     
     if ($arch) {
+	print OUT "export TOP\n";
+	foreach $app (@includes) {
+	    print OUT "export ${app}\n";
+	}
 	foreach $app (@includes) {
             $path = $macros{$app};
 	    next unless (-d "$path/bin/$hostarch");

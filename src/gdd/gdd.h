@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.20  1997/01/12 20:32:46  jbk
+ * many errors fixed
+ *
  * Revision 1.18  1996/11/04 17:12:50  jbk
  * fix setFirst
  *
@@ -242,6 +245,17 @@ inline gddBounds* gddBounds3D::boundArray(void) { return (gddBounds*)b; }
 // function run(void*).  The default behavior will be to treat the void*
 // data as an array of aitInt8 and call remove.
 
+// **** WARNING!
+// The reference count is initialized to zero.  This means that if you
+// create one and want to keep it, you must reference it twice - the
+// initial time and a time for your personal use.  This is because the
+// gdd library automatically increments the reference count on 
+// destructors when data is referenced into a gdd with a destructor.
+// Remember the rule: if you pass a destructor to someone, then that
+// someone now owns the destructor.  A reference count of 1 indicates that
+// the thing will go away when unreferenced - which is what you will
+// have if you only reference the destructor once after it is created.
+
 class gddDestructor
 {
 public:
@@ -262,7 +276,7 @@ private:
 	gdd_NEWDEL_DATA(gddDestructor)
 };
 
-inline gddDestructor::gddDestructor(void) { ref_cnt=1; arg=NULL; }
+inline gddDestructor::gddDestructor(void) { ref_cnt=0; arg=NULL; }
 inline gddDestructor::gddDestructor(void* usr_arg) { ref_cnt=1; arg=usr_arg; }
 inline void gddDestructor::reference(void)		{ ref_cnt++; }
 inline int gddDestructor::refCount(void) const	{ return ref_cnt; }

@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.18  1997/01/21 15:13:06  jbk
+// free up resources in clearData
+//
 // Revision 1.17  1997/01/12 20:32:45  jbk
 // many errors fixed
 //
@@ -304,6 +307,7 @@ gddStatus gdd::registerDestructor(gddDestructor* dest)
 gddStatus gdd::replaceDestructor(gddDestructor* dest)
 {
 	destruct=dest;
+	destruct->reference();
 
 	if(isContainer()||isFlat())
 		markManaged();
@@ -333,6 +337,7 @@ gddStatus gdd::genCopy(aitEnum t, const void* d)
 			{
 				setData(buf);
 				destruct=new gddDestructor;
+				destruct->reference();
 				aitConvert(primitiveType(),dataPointer(),t,d,
 					getDataSizeElements());
 			}
@@ -451,6 +456,7 @@ gddStatus gdd::copyStuff(gdd* dd,int ctype)
 				if(array=new aitUint8[a_size])
 				{
 					destruct=new gddDestructor;
+					destruct->reference();
 					memcpy(array,dd->dataPointer(),a_size);
 					setData(array);
 				}
@@ -843,6 +849,7 @@ int gdd::flattenDDs(gddContainer* dd, void* buf, size_t size)
 			{
 				ptr[i].setData(NULL);
 				ptr[i].destruct=new gddContainerCleaner(&ptr[i]);
+				ptr[i].destruct->reference();
 			}
 		}
 	}
@@ -1353,6 +1360,7 @@ gddStatus gdd::put(const gdd* dd)
 				if((arr=new aitUint8[sz]))
 				{
 					destruct=new gddDestructor;
+					destruct->reference();
 					setData(arr);
 				}
 				else

@@ -81,7 +81,7 @@ void delayVerify::checkError () const
 {
     double actualDelay =  this->expireStamp - this->beginStamp;
     double measuredError = actualDelay - this->expectedDelay;
-    double percentError = measuredError /= this->expectedDelay;
+    double percentError = measuredError / this->expectedDelay;
     percentError *= 100.0;
     if ( percentError > 1.0 ) {
         printf ( "TEST FAILED timer delay = %f sec, error = %f sec (%f %%)\n", 

@@ -59,7 +59,7 @@ typedef struct scan_list{
 	epicsMutexId	lock;
 	ELLLIST		list;
 	short		modified;/*has list been modified?*/
-	double		rate;
+	double		period;
 }scan_list;
 /*scan_elements are allocated and the address stored in dbCommon.spvt*/
 typedef struct scan_element{
@@ -284,8 +284,17 @@ void epicsShareAPI scanDelete(struct dbCommon *precord)
 	}
 	return;
 }
+
+double epicsShareAPI scanPeriod(int scan) {
+    if (scan>=SCAN_1ST_PERIODIC) {
+	int ind = scan - SCAN_1ST_PERIODIC;
+	scan_list *psl = papPeriodic[ind];
+	return psl->period;
+    }
+    return 0.0;
+}
 
-int epicsShareAPI scanppl(double rate)	/*print periodic list*/
+int epicsShareAPI scanppl(double period)	/*print periodic list*/
 {
     scan_list	*psl;
     char	message[80];
@@ -294,8 +303,8 @@ int epicsShareAPI scanppl(double rate)	/*print periodic list*/
     for (i=0; i<nPeriodic; i++) {
 	psl = papPeriodic[i];
 	if(psl==NULL) continue;
-	if(rate>0.0 && (fabs(rate - psl->rate) >.05)) continue;
-	sprintf(message,"Scan Period= %f seconds ",psl->rate);
+	if(period>0.0 && (fabs(period - psl->period) >.05)) continue;
+	sprintf(message,"Scan Period= %f seconds ",psl->period);
 	printList(psl,message);
     }
     return(0);
@@ -477,7 +486,7 @@ static void periodicTask(void *arg)
 	if(interruptAccept)scanList(psl);
         epicsTimeGetCurrent(&end_time);
         diff = epicsTimeDiffInSeconds(&end_time,&start_time);
-	delay = psl->rate - diff;
+	delay = psl->period - diff;
         delay = (delay<=0.0) ? .1 : delay;
 	epicsThreadSleep(delay);
         epicsTimeGetCurrent(&start_time);
@@ -489,7 +498,7 @@ static void initPeriodic()
 {
 	dbMenu			*pmenu;
 	scan_list 	*psl;
-	float			temp;
+	double			temp;
 	int			i;
 
 	pmenu = dbFindMenu(pdbbase,"menuScan");
@@ -506,7 +515,7 @@ static void initPeriodic()
                 psl->lock = epicsMutexMustCreate();
 		ellInit(&psl->list);
 		sscanf(pmenu->papChoiceValue[i+SCAN_1ST_PERIODIC],"%f",&temp);
-		psl->rate = temp;
+		psl->period = temp;
 	}
 }
 
@@ -516,7 +525,7 @@ static void spawnPeriodic(int ind)
     char	taskName[20];
 
     psl = papPeriodic[ind];
-    sprintf(taskName,"scan%f",psl->rate);
+    sprintf(taskName,"scan%f",psl->period);
     /*strip off trailing 0s*/
     while(taskName[strlen(taskName)-1]=='0') taskName[strlen(taskName)-1] = 0;
     /*strip trailing . */

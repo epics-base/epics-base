@@ -37,6 +37,7 @@ epicsShareFunc long epicsShareAPI scanInit(void);
 epicsShareFunc void epicsShareAPI post_event(int event);
 epicsShareFunc void epicsShareAPI scanAdd(struct dbCommon *);
 epicsShareFunc void epicsShareAPI scanDelete(struct dbCommon *);
+epicsShareFunc double epicsShareAPI scanPeriod(int scan);
 epicsShareFunc void epicsShareAPI scanOnce(void *precord);
 epicsShareFunc int epicsShareAPI scanOnceSetQueueSize(int size);
 /*print periodic lists*/

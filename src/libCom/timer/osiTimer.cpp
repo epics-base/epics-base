@@ -223,7 +223,7 @@ void osiTimer::arm (osiTimerQueue &queueIn, double initialDelay)
 
     queueIn.mutex.unlock ();
 
-    queueIn.event.signal ();
+    queueIn.rescheduleEvent.signal ();
 }
 
 //
@@ -319,7 +319,7 @@ void osiTimer::unlock () const
 //
 osiTimerQueue::osiTimerQueue (unsigned managerThreadPriority) :
     osiThread ("osiTimerQueue", threadGetStackSize (threadStackMedium), managerThreadPriority),
-    pExpireTmr (0), inProcess (false), terminateFlag (false)
+    pExpireTmr (0), inProcess (false), terminateFlag (false), exitFlag (false)
 {
 }
 
@@ -348,7 +348,10 @@ osiTimerQueue::~osiTimerQueue()
 		pTmr->destroy ();
 	}
     this->terminateFlag = true;
-    this->event.signal ();
+    this->rescheduleEvent.signal ();
+    while (!this->exitFlag) {
+        this->exitEvent.wait ();
+    }
 }
 
 //
@@ -356,10 +359,13 @@ osiTimerQueue::~osiTimerQueue()
 //
 void osiTimerQueue::entryPoint ()
 {
+    this->exitFlag = false;
     while (!this->terminateFlag) {
         this->process ();
-        this->event.wait ( this->delayToFirstExpire () );
+        this->rescheduleEvent.wait ( this->delayToFirstExpire () );
     }
+    this->exitFlag = true; 
+    this->exitEvent.signal (); // no access to this ptr after this statement
 }
 
 //

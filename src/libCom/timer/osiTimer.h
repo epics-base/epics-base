@@ -174,12 +174,14 @@ public:
 	void show (unsigned level) const;
 private:
     osiMutex mutex;
-    osiEvent event;
+    osiEvent rescheduleEvent;
+    osiEvent exitEvent;
 	tsDLList <osiTimer> pending;	
 	tsDLList <osiTimer> expired;
 	osiTimer *pExpireTmr;
 	bool inProcess;
     bool terminateFlag;
+    bool exitFlag;
 
     virtual void entryPoint ();
 	void install (osiTimer &tmr, double delay);

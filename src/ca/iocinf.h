@@ -829,14 +829,14 @@ private:
 
 class bhe : public tsSLNode <bhe>, public inetAddrID {
 public:
-    bhe (class cac &cacIn, const osiTime &initialTimeStamp, const inetAddrID &addr);
+    bhe ( class cac &cacIn, const osiTime &initialTimeStamp, const inetAddrID &addr );
     tcpiiu *getIIU () const;
     void bindToIIU ( tcpiiu & );
     void destroy ();
-    bool updateBeaconPeriod (osiTime programBeginTime);
+    bool updateBeaconPeriod ( osiTime programBeginTime );
 
-    static void * operator new (size_t size);
-    static void operator delete (void *pCadaver, size_t size);
+    static void * operator new ( size_t size );
+    static void operator delete ( void *pCadaver, size_t size );
 
 private:
     class cac &cac;
@@ -857,7 +857,7 @@ private:
 
 class recvProcessThread : public osiThread {
 public:
-    recvProcessThread (class cac *pcacIn);
+    recvProcessThread ( class cac *pcacIn );
     ~recvProcessThread ();
     void entryPoint ();
     void signalShutDown ();
@@ -936,9 +936,9 @@ public:
     bool ioComplete () const;
     int block ( double timeout );
     void reset ();
-    void show (unsigned level) const;
-    int get (chid pChan, unsigned type, unsigned long count, void *pValue);
-    int put (chid pChan, unsigned type, unsigned long count, const void *pValue);
+    void show ( unsigned level ) const;
+    int get ( chid pChan, unsigned type, unsigned long count, void *pValue );
+    int put ( chid pChan, unsigned type, unsigned long count, const void *pValue );
 
     static void * operator new (size_t size);
     static void operator delete (void *pCadaver, size_t size);
@@ -963,17 +963,17 @@ public:
     cac ( bool enablePreemptiveCallback = false );
     virtual ~cac ();
     void flush ();
-    int pend (double timeout, int early);
+    int pend ( double timeout, int early );
 
     // beacon management
-    void beaconNotify (const inetAddrID &addr);
-    bhe *lookupBeaconInetAddr (const inetAddrID &ina);
-    bhe *createBeaconHashEntry (const inetAddrID &ina, 
-            const osiTime &initialTimeStamp);
+    void beaconNotify ( const inetAddrID &addr );
+    bhe *lookupBeaconInetAddr ( const inetAddrID &ina );
+    bhe *createBeaconHashEntry ( const inetAddrID &ina, 
+            const osiTime &initialTimeStamp );
     void repeaterSubscribeConfirmNotify ();
 
     // outstanding IO count maintenance
-    void removeBeaconInetAddr (const inetAddrID &ina);
+    void removeBeaconInetAddr ( const inetAddrID &ina );
     void decrementOutstandingIO ();
     void incrementOutstandingIO ();
     void decrementOutstandingIO ( unsigned seqNumber );
@@ -991,13 +991,13 @@ public:
     double connectionTimeout () const;
 
     // exception routines
-    void exceptionNotify (int status, const char *pContext,
-        const char *pFileName, unsigned lineNo);
-    void exceptionNotify (int status, const char *pContext,
+    void exceptionNotify ( int status, const char *pContext,
+        const char *pFileName, unsigned lineNo );
+    void exceptionNotify ( int status, const char *pContext,
         unsigned type, unsigned long count, 
-        const char *pFileName, unsigned lineNo);
+        const char *pFileName, unsigned lineNo );
     void changeExceptionEvent ( caExceptionHandler *pfunc, void *arg );
-    void genLocalExcepWFL (long stat, const char *ctx, const char *pFile, unsigned lineNo);
+    void genLocalExcepWFL ( long stat, const char *ctx, const char *pFile, unsigned lineNo );
 
     // IO management routines
     bool ioComplete () const;
@@ -1023,9 +1023,9 @@ public:
           unsigned nativeType, unsigned long nativeCount, unsigned sid );
     void channelDestroy ( unsigned id );
     void disconnectChannel ( unsigned id );
-    void registerChannel (nciu &chan);
+    void registerChannel ( nciu &chan );
     void unregisterChannel ( nciu &chan );
-    bool createChannelIO (const char *name_str, cacChannel &chan);
+    bool createChannelIO ( const char *name_str, cacChannel &chan );
     void lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid, 
              unsigned typeCode, unsigned long count, unsigned minorVersionNumber,
              const osiSockAddr & );
@@ -1033,9 +1033,9 @@ public:
     void accessRightsNotify ( unsigned id, caar );
 
     // sync group routines
-    CASG * lookupCASG (unsigned id);
-    void installCASG (CASG &);
-    void uninstallCASG (CASG &);
+    CASG * lookupCASG ( unsigned id );
+    void installCASG ( CASG & );
+    void uninstallCASG ( CASG & );
 
     void registerService ( cacServiceIO &service );
     void registerForFileDescriptorCallBack ( CAFDHANDLER *pFunc, void *pArg );
@@ -1047,7 +1047,7 @@ public:
 
     // diagnostics
     unsigned connectionCount () const;
-    void show (unsigned level) const;
+    void show ( unsigned level ) const;
     int printf ( const char *pformat, ... );
     int vPrintf ( const char *pformat, va_list args );
     void replaceErrLogHandler ( caPrintfFunc *ca_printf_func );
@@ -1086,7 +1086,6 @@ private:
     osiMutex                iiuListMutex;
     unsigned                pndrecvcnt;
     unsigned                readSeq;
-    unsigned                ca_nextSlowBucketId;
     bool                    enablePreemptiveCallback;
 
     int pendPrivate ( double timeout, int early );

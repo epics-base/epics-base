@@ -26,9 +26,7 @@ USR_CPPFLAGS_hp700 := -DSCO_UNIX
 
 #	This applies to all arch.classes:
 #
-ifndef BORLANDC
-USR_CPPFLAGS = -DDEFAULT_SKELETON_FILE=\"$(SKELETON_FILE)\"
-endif
+USR_CPPFLAGS = -DDEFAULT_SKELETON_FILE="\"$(SKELETON_FILE)\""
 
 INC += flex.skel.static
 

@@ -123,7 +123,7 @@ long recDynLinkAddInput(recDynLink *precDynLink,char *pvname,
 	recDynCallback searchCallback,recDynCallback monitorCallback)
 {
     dynLinkPvt		*pdynLinkPvt;
-    struct db_addr	dbaddr;
+    struct dbAddr	dbaddr;
     ringBufCmd		cmd;
     
 
@@ -156,7 +156,7 @@ long recDynLinkAddOutput(recDynLink *precDynLink,char *pvname,
 	recDynCallback searchCallback)
 {
     dynLinkPvt		*pdynLinkPvt;
-    struct db_addr	dbaddr;
+    struct dbAddr	dbaddr;
     ringBufCmd		cmd;
     
 
@@ -415,7 +415,7 @@ LOCAL void monitorCallback(struct event_handler_args eha)
     recDynLink	*precDynLink;
     dynLinkPvt	*pdynLinkPvt;
     long	count = eha.count;
-    void	*pbuffer = eha.dbr;
+    const void	*pbuffer = eha.dbr;
     struct dbr_time_string *pdbr_time_string;
     void	*pdata;
     short	timeType;
@@ -446,7 +446,6 @@ LOCAL void recDynLinkInp(void)
     int		status;
     recDynLink	*precDynLink;
     dynLinkPvt	*pdynLinkPvt;
-    int		caStatus;
     ringBufCmd	cmd;
 
     taskwdInsert(taskIdSelf(),NULL,NULL);

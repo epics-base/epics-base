@@ -5,6 +5,8 @@
 TOP = ../../../..
 include $(TOP)/config/CONFIG_BASE
 
+HOST_WARN=NO
+
 USR_CFLAGS = -D_NO_PROTO
 
 SRCS=	closure.c error.c lalr.c lr0.c main.c \

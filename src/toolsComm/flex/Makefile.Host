@@ -4,6 +4,8 @@
 
 TOP = ../../../..
 include $(TOP)/config/CONFIG_BASE
+
+HOST_WARN=NO
  
 YACC = $(EYACC)
 YACCOPT = -l -d

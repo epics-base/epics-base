@@ -27,6 +27,7 @@
  *
  * Modification Log:
  * -----------------
+ *  $Log$
  */
 
 /*
@@ -64,7 +65,7 @@
 #include	<vxLib.h>
 #include	<tickLib.h>
 #include	<sysLib.h>
-
+
 #include	<fast_lock.h>
 #include	<alarm.h>
 #include	<choice.h>
@@ -681,7 +682,15 @@ int dbBkpt(struct dbCommon *precord)
   *    breakpoint handler will not work as expected.
   */
 
+ /*
+  *  Take and give a semaphore to check for breakpoints
+  *	every time a record is processed.  Slow.  Thank
+  *	goodness breakpoint checking is turned off during
+  *	normal operation.
+  */
+  semTake(bkpt_stack_sem, WAIT_FOREVER);
   FIND_LOCKSET(precord, pnode);
+  semGive(bkpt_stack_sem);
 
   if (pnode == NULL) {
     /* no breakpoints in precord's lockset */

@@ -5,11 +5,11 @@
 include $(TOP)/config/RULES_DIRS
 
 uninstall$(DIVIDER)%::
-	@rm -rf $(INSTALL_LOCATION_BIN)/$* $(INSTALL_LOCATION_LIB)/$* \
+	@$(RMDIR) $(INSTALL_LOCATION_BIN)/$* $(INSTALL_LOCATION_LIB)/$* \
 		$(INSTALL_LOCATION)/dbd $(INSTALL_MAN) $(INSTALL_INCLUDE)
-	@rm -rf  rec.bak rec
+	@$(RMDIR)  rec.bak rec
 
-uninstall:: $(addprefix uninstall$(DIVIDER),$(BUILDARCHS))
+uninstall:: $(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS))
 
 tar:
 	@DIRNAME=$(notdir $(shell pwd)); \

@@ -21,11 +21,11 @@ CMPLR = STRICT
 #	try to put them in CONFIG.YourSystem!
 #
 #	This is used on all systems:
-USR_CFLAGS         := -DVAR=value -Ddefine_for_all_systems
+USR_CFLAGS         = -DVAR=value -Ddefine_for_all_systems
 #	This is added to the above, but only for ARCH_CLASS=BSD:
-USR_CFLAGS_BSD     := -DVERSION='Berkeley enhanced'
+USR_CFLAGS_BSD     = -DVERSION='Berkeley enhanced'
 #	..only for WIN32:
-USR_CFLAGS_WIN32   := -DVERSION='WIN32 port'
+USR_CFLAGS_WIN32   = -DVERSION='WIN32 port'
 #
 #	-nil- is special:
 #	if USR_CFLAGS_SYSV was undefined or empty, .._DEFAULT would have
@@ -33,13 +33,13 @@ USR_CFLAGS_WIN32   := -DVERSION='WIN32 port'
 #	To indicate
 #		"yes, there is a special USR_CFLAGS for SYSV, but it's empty"
 #	you have to set it to -nil-:
-USR_CFLAGS_SYSV    := -nil-
+USR_CFLAGS_SYSV    = -nil-
 #	.. for all other arch classes:
-USR_CFLAGS_DEFAULT := -DVERSION='generic Unix'
+USR_CFLAGS_DEFAULT = -DVERSION='generic Unix'
 
 #	CFLAGS that are only used to compile a_file.c or a_file.cc:
 #
-a_file_CFLAGS      := -DIN_A_FILE
+a_file_CFLAGS      = -DIN_A_FILE
 
 #	---------------------------------------------------------
 #	general rule for all .c .cc .h .hh files and scripts:
@@ -59,10 +59,10 @@ a_file_CFLAGS      := -DIN_A_FILE
 #	again: if INC_$(ARCH_CLASS) is defined, it is added to INC,
 #	otherwise INC_DEFAULT (if defined) is added:
 #
-INC_DEFAULT := for_all_but_WIN32_or_hp700.h
-INC_WIN32   := only_for_WIN32.h
-INC_hp700   := -nil-		# hp700 uses no special include
-INC         := file.h
+INC_DEFAULT = for_all_but_WIN32_or_hp700.h
+INC_WIN32   = only_for_WIN32.h
+INC_hp700   = -nil-		# hp700 uses no special include
+INC         = file.h
 
 # --------------------------------------------------------------------
 #	defining a library
@@ -84,14 +84,14 @@ INC         := file.h
 #	.
 #	So usually only LIBSRCS should be sufficient!
 #
-LIBSRCS         := file_for_lib.c another_file.cc
-LIBSRCS_DEFAULT := posix.c
-LIBSRCS_WIN32   := win32_special.c
-LIBSRCS_BSD     := -nil-
+LIBSRCS         = file_for_lib.c another_file.cc
+LIBSRCS_DEFAULT = posix.c
+LIBSRCS_WIN32   = win32_special.c
+LIBSRCS_BSD     = -nil-
 
 #	Type of library to build.
 #	On WIN32, SHARED results in a DLL, others may ignore this.
-LIBTYPE:=SHARED
+LIBTYPE=SHARED
 
 #	Ugly but necessary for WIN32:
 #	If LIBRARY is build as a dll, it may need other libraries
@@ -106,14 +106,14 @@ LIBTYPE:=SHARED
 #	1) you may not use a def file ('proper' code needs no def files)
 #	2) you may have one and still not want a DLL (for testing etc.)
 #	
-DLL_LIBS:=some_dll
+DLL_LIBS=some_dll
 
 #	Library to build:
 #	lib$(LIBRARY).a  or   ..dll/..exp/..lib
 #
 #	Currently you can build only one (1) lib per Makefile.Host!
 #	
-LIBRARY:=libname
+LIBRARY=libname
 
 # --------------------------------------------------------------------
 #	defining products (executable programs)
@@ -125,37 +125,37 @@ SRCS=a.c b.c c.c
 #	EPICS libs needed to link PROD and TESTPROD
 #
 # for all systems:
-PROD_LIBS         := Com Ca
+PROD_LIBS         = Com Ca
 # for most systems:
-PROD_LIBS_DEFAULT := mathlib
-PROD_LIBS_WIN32   := -nil-
+PROD_LIBS_DEFAULT = mathlib
+PROD_LIBS_WIN32   = -nil-
 
 #	system libs needed to link PROD and TESTPROD
 #
 # for all systems:
-SYS_PROD_LIBS     := m
+SYS_PROD_LIBS     = m
 # for most systems:
-SYS_PROD_LIBS_DEFAULT := foolib
-SYS_PROD_LIBS_WIN32   := -nil-
+SYS_PROD_LIBS_DEFAULT = foolib
+SYS_PROD_LIBS_WIN32   = -nil-
 
 #	Product,
 #	may be   caRepeater.o -> caRepeater
 #	or       caRepeater.obj -> caRepeater.exe
-PROD         := prod
-PROD_DEFAULT := product_for_rest
-PROD_WIN32   := product_only_for_WIN32
-PROD_BSD     := product_only_for_BSD
-PROD_SYSV    := product_only_for_SYSV
+PROD         = prod
+PROD_DEFAULT = product_for_rest
+PROD_WIN32   = product_only_for_WIN32
+PROD_BSD     = product_only_for_BSD
+PROD_SYSV    = product_only_for_SYSV
 
 #	Scripts to install
 #
 #	If there is  both  ../$(SCRIPT) and  ../$(ARCH_CLASS)/$(SCRIPT),
 #	the latter, system specific version will be installed!
 #
-SCRIPTS_DEFAULT := script_for_rest
-SCRIPTS_WIN32   := script_only_for_WIN32
-SCRIPTS_BSD     := script_only_for_BSD
-SCRIPTS         := script
+SCRIPTS_DEFAULT = script_for_rest
+SCRIPTS_WIN32   = script_only_for_WIN32
+SCRIPTS_BSD     = script_only_for_BSD
+SCRIPTS         = script
 
 
 #	uncomment if you want to build these locally without installing:
@@ -163,9 +163,9 @@ SCRIPTS         := script
 
 
 # Unfortunately the above allows you only to
-# 1) build one PROD:=p from many SRCS:=a.c b.c c.c
+# 1) build one PROD=p from many SRCS=a.c b.c c.c
 # or
-# 2) build many PROD:=a b c  each from a single source (a.c, b.c, c.c)
+# 2) build many PROD=a b c  each from a single source (a.c, b.c, c.c)
 #
 # If you have several multi-source products in the same dir
 # you have to fall back to explicit rules.

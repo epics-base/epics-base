@@ -170,6 +170,16 @@ void netSubscription::subscribeIfRequired (
     }
 }
 
+void netSubscription::unsubscribeIfRequired ( 
+    epicsGuard < epicsMutex > & guard, nciu & chan )
+{
+    if ( this->subscribed ) {
+        chan.getPIIU(guard)->subscriptionCancelRequest ( 
+            guard, chan, *this );
+        this->subscribed = false;
+    }
+}
+
 void netSubscription::subscriptionUpdateIfRequired (
     epicsGuard < epicsMutex > & guard, nciu & chan )
 {

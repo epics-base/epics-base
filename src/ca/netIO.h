@@ -89,6 +89,8 @@ public:
         epicsGuard < epicsMutex > & ) const;
     void subscribeIfRequired (
         epicsGuard < epicsMutex > & guard, nciu & chan );
+    void unsubscribeIfRequired ( 
+        epicsGuard < epicsMutex > & guard, nciu & chan );
     void subscriptionUpdateIfRequired (
         epicsGuard < epicsMutex > &, nciu & );
 protected:

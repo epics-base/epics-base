@@ -658,8 +658,7 @@ baseNMIU * cac::destroyIO (
     if ( pIO ) {
         class netSubscription * pSubscr = pIO->isSubscription ();
         if ( pSubscr ) {
-            chan.getPIIU(guard)->subscriptionCancelRequest ( 
-                guard, chan, *pSubscr );  
+            pSubscr->unsubscribeIfRequired ( guard, chan );  
         }
 
         // this uninstalls from the list and destroys the IO

@@ -83,15 +83,16 @@ void nciu::destroy (
     epicsGuard < epicsMutex > & callbackControlGuard, 
     epicsGuard < epicsMutex > & mutualExclusionGuard )
 {    
+    while ( baseNMIU * pNetIO = this->eventq.first () ) {
+        assert ( this->cacCtx.destroyIO ( 
+            callbackControlGuard, mutualExclusionGuard, 
+            pNetIO->getId (), *this ) );
+    }
+
     // if the claim reply has not returned yet then we will issue
     // the clear channel request to the server when the claim reply
     // arrives and there is no matching nciu in the client
     if ( this->channelNode::isInstalledInServer ( mutualExclusionGuard ) ) {
-        while ( baseNMIU * pNetIO = this->eventq.first () ) {
-            assert ( this->cacCtx.destroyIO ( 
-                callbackControlGuard, mutualExclusionGuard, 
-                pNetIO->getId (), *this ) );
-        }
         this->getPIIU(mutualExclusionGuard)->clearChannelRequest ( 
             mutualExclusionGuard, this->sid, this->id );
     }

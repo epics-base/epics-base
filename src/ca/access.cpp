@@ -554,7 +554,7 @@ int epicsShareAPI ca_array_put_callback ( chtype type, arrayElementCount count,
     }
     catch ( ... )
     {
-        caStatus = ECA_PUTFAIL;
+        caStatus = ECA_INTERNAL;
     }
     return caStatus;
 }
@@ -610,7 +610,7 @@ int epicsShareAPI ca_array_put ( chtype type, arrayElementCount count,
     }
     catch ( ... )
     {
-        caStatus = ECA_PUTFAIL;
+        caStatus = ECA_INTERNAL;
     }
     return caStatus;
 }

@@ -28,6 +28,10 @@
  * .01	12-04-90	rac	initial version
  * .02	07-20-91	rac	installed in SCCS; finalized "how to access"
  * .03	08-09-91	rac	fix a problem with pprMark when clipping
+ * .04	09-04-91	rac	change pprAreaErase to pprRegionErase; add
+ *				pprAreaErase; update documentation; add
+ *				pprPixXToXFrac and pprPixYToYFrac; add
+ *				various Line and Point erase functions
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -58,7 +62,7 @@
 *                                       drawLine, yLabel, yAnnot, angle   )
 *     void  pprAnnotYMark(   pArea,   offset,   markNum                   )
 *     void  pprAreaClose(    pArea                                        )
-*     void  pprAreaErase(    pArea    fracL,    fracB,    fracR,   fracT  )
+*     void  pprAreaErase(    pArea    xDblLft,  yDblBot,  xDblRt,  yDblTop)
 * PPR_AREA *pprAreaOpen(     pWin,    fracL,    fracB,    fracR,   fracT,
 *                                     dataL,    dataB,    dataR,   dataT,
 *                                               nXint,    nYint,   charHt )
@@ -83,19 +87,33 @@
 *     void  pprLineF(        pArea,   xFltAry,  yFltAry,  nPts            )
 *     void  pprLineL(        pArea,   xLngAry,  yLngAry,  nPts            )
 *     void  pprLineS(        pArea,   xShtAry,  yShtAry,  nPts            )
+*     void  pprLineEraseD(   pArea,   xDblAry,  yDblAry,  nPts            )
+*     void  pprLineEraseF(   pArea,   xFltAry,  yFltAry,  nPts            )
+*     void  pprLineEraseL(   pArea,   xLngAry,  yLngAry,  nPts            )
+*     void  pprLineEraseS(   pArea,   xShtAry,  yShtAry,  nPts            )
 *     void  pprLineSegD(     pArea,   xDbl1,    yDbl1,    xDbl2,  yDbl2   )
 *     void  pprLineSegL(     pArea,   xLng1,    yLng1,    xLng2,  yLng2   )
+*     void  pprLineSegEraseD(pArea,   xDbl1,    yDbl1,    xDbl2,  yDbl2   )
+*     void  pprLineSegEraseL(pArea,   xLng1,    yLng1,    xLng2,  yLng2   )
 *     void  pprMarkD(        pArea,   xDbl1,    yDbl1,    markNum         )
 *     void  pprMarkL(        pArea,   xLng1,    yLng1,    markNum         )
+*     void  pprMarkEraseD(   pArea,   xDbl1,    yDbl1,    markNum         )
+*     void  pprMarkEraseL(   pArea,   xLng1,    yLng1,    markNum         )
 *     void  pprMoveD(        pArea,   xDbl1,    yDbl1,    penDown         )
 *     void  pprPerim(        pArea                                        )
 *     void  pprPerimErase(   pArea                                        )
 *     void  pprPerimLabel(   pArea,   xLabel, xAnnot, yLabel, yAnnot, angle)
+*   double  pprPixXToXFrac(  pWin,    xPixel                              )
+*   double  pprPixYToYFrac(  pWin,    yPixel                              )
 *     void  pprPointD(       pArea,   xDbl1,    yDbl1                     )
 *     void  pprPointL(       pArea,   xLng1,    yLng1                     )
+*     void  pprPointEraseD(  pArea,   xDbl1,    yDbl1                     )
+*     void  pprPointEraseL(  pArea,   xLng1,    yLng1                     )
+*     void  pprRegionErase(  pArea    fracL,    fracB,    fracR,   fracT  )
 *   double  pprSin_deg(      angle                                        )
 *     void  pprText(         pArea,   xDbl, yDbl, text, just, charHt, angle)
 *				just: PPR_TXT_{CEN,RJ,LJ}
+*     void  pprTextErase(    pArea,   xDbl, yDbl, text, just, charHt, angle)
 *     void  pprWinClose(     pWin                                         )
 *     void  pprWinErase(     pWin                                         )
 *     void  pprWinInfo(      pWin,   >pXpos,   >pYpos,   >pXwid,   >pYht  )
@@ -107,7 +125,6 @@
 *  PPR_WIN *pprWinOpenUW(    pFrame,  pCanvas,  NULL,     NULL            )
 *  PPR_WIN *pprWinOpenUW(    ppDisp,  pWindow,  pGC,      NULL            )
 *     void  pprWinReplot(    pWin,    drawFn,   pDrawArg                  )
-*     long  pprWinSetAttr(   pWin,    code,     pAttr                     )
 *               code: PPR_ATTR_{COLORNUM,GC,KEYNUM,LINE_THICK,PATT_ARRAY}
 *   double  pprYFracToXFrac( pWin,    yFrac                               )
 *   
@@ -157,14 +174,14 @@
 *	When a `click right' is done in the plot window, the window is
 *	closed.  A PostScript file named "testPS" is produced; the size of
 *	the plot in this file is about the same as it was when the plot
-*	window was closed.  (The plot window can be closed using the `quit'
-*	item on the window's title bar menu (but not under X!!).)
+*	window was closed.
 *
 *	The program is compiled and linked for X11 with the following
 *	command.  (If making to run on sun3, use lib.sun3 in the command.)
 *
-*          % cc -I~epics/epicsH plotTest.c \
-*			-L~epics/share/bin/lib.sun4 -lppr -lX11 -lm
+*          % cc plotTest.c -I~epics/epicsH -I$(OPENWINHOME)/include \
+*			-L~epics/share/bin/lib.sun4 -L$(OPENWINHOME)/lib \
+*			-lppr -lX -lm
 *
 *   #include <stdio.h>
 *   #include <pprPlotDefs.h>
@@ -276,7 +293,8 @@
 * ----------------------------------------------------------------------------
 *    First, figure out how big to make the characters for axis labels and
 *    annotations.  The character size will be used to specify the left and
-*    bottom margins for the actual area used for plotting.
+*    bottom margins for the actual area used for plotting.  (See pprText
+*    for a discussion of PprDfltCharHt.)
 *
 *    The pprAreaOpen call establishes a plot area that will be used for
 *    the actual plotting.  A left margin of 12 lines and a bottom margin
@@ -609,6 +627,33 @@ replot(pWin, pMyData)
 PPR_WIN	*pWin;	/* I pointer to plot window structure */
 MY_DATA	*pMyData;
 {
+    char	answer[80];
+
+    replotDraw(pWin, pMyData, 0);
+
+#if 1
+    if (pWin->winType == PPR_WIN_SCREEN) {
+#ifdef XWINDOWS
+        XFlush(pWin->pDisp);
+#endif
+	(void)printf("eraseTest? (e or cr)  ");
+	fflush(stdout);
+	if (fgets(answer, 80, stdin) == NULL || answer[0] == '\n')
+	    ;	/* no action */
+	else {
+	    if (answer[0] == 'e')
+		replotDraw(pWin, pMyData, 1);
+	}
+    }
+#endif
+
+    return;
+}
+replotDraw(pWin, pMyData, erase)
+PPR_WIN	*pWin;	/* I pointer to plot window structure */
+MY_DATA	*pMyData;
+int	erase;
+{
     double	xlo=0., ylo=0., xhi=.95, yhi=.95;
     double	charHt, charHtX;
     PPR_AREA	*pArea;
@@ -627,38 +672,99 @@ MY_DATA	*pMyData;
 		pMyData->xMin, pMyData->yMin, pMyData->xMax, pMyData->yMax,
 		5, 5, charHt);
     pprAreaSetAttr(pArea, PPR_ATTR_LINE_THICK, thin, NULL);
-    pprPerimLabel(pArea, "x label", NULL, "y label", NULL, 0.);
+    if (!erase)
+	pprPerimLabel(pArea, "x label", NULL, "y label", NULL, 0.);
     pprAreaSetAttr(pArea, PPR_ATTR_KEYNUM, 0, NULL);
     pprAreaSetAttr(pArea, PPR_ATTR_LINE_THICK, thick, NULL);
-    pprLineF(pArea, pMyData->x, pMyData->y, pMyData->nPts);
+    if (!erase)
+	pprLineF(pArea, pMyData->x, pMyData->y, pMyData->nPts);
+    else
+	pprLineEraseF(pArea, pMyData->x, pMyData->y, pMyData->nPts);
 
     pprAreaSetAttr(pArea, PPR_ATTR_LINE_THICK, thick, NULL);
-    for (x=1.; x<10.; x+=1.)
-	pprPointD(pArea, x, x*x+100.);
+    for (x=1.; x<10.; x+=1.) {
+	if (!erase)
+	    pprPointD(pArea, x, x*x+100.);
+	else
+	    pprPointEraseD(pArea, x, x*x+100.);
+    }
     pprAreaSetAttr(pArea, PPR_ATTR_LINE_THICK, thin, NULL);
-    for (x=1.; x<10.; x+=1.)
-	pprPointD(pArea, x, x*x+200.);
-    pprAnnotYMark(pArea, 0, 1);
+    for (x=1.; x<10.; x+=1.) {
+	if (!erase)
+	    pprPointD(pArea, x, x*x+200.);
+	else
+	    pprPointEraseD(pArea, x, x*x+200.);
+    }
+    if (!erase)
+	pprAnnotYMark(pArea, 0, 1);
 
     for (keyNum=0; keyNum<=PPR_NKEYS; keyNum++) {
 	pprAreaSetAttr(pArea, PPR_ATTR_KEYNUM, keyNum, NULL);
-	pprLineSegD(pArea, 0., y, 50., y);
+	if (!erase)
+	    pprLineSegD(pArea, 0., y, 50., y);
+	else
+	    pprLineSegEraseD(pArea, 0., y, 50., y);
 	pprAreaSetAttr(pArea, PPR_ATTR_LINE_THICK, thick, NULL);
-	pprLineSegD(pArea, 50., y, 70., y);
+	if (!erase)
+	    pprLineSegD(pArea, 50., y, 70., y);
+	else
+	    pprLineSegEraseD(pArea, 50., y, 70., y);
 	pprAreaSetAttr(pArea, PPR_ATTR_LINE_THICK, thin, NULL);
 	y -= 100.;
     }
     pprAreaSetAttr(pArea, PPR_ATTR_KEYNUM, 0, NULL);
     for (i=0; i<=PPR_NCOLORS; i++) {
 	pprAreaSetAttr(pArea, PPR_ATTR_COLORNUM, i, NULL);
-	pprLineSegD(pArea, 0., y, 50., y);
+	if (!erase)
+	    pprLineSegD(pArea, 0., y, 50., y);
+	else
+	    pprLineSegEraseD(pArea, 0., y, 50., y);
 	y -= 100.;
     }
     x = 1.;
     for (i=0; i<PPR_NMARKS; i++) {
 	pprAreaSetAttr(pArea, PPR_ATTR_COLORNUM, i, NULL);
-	pprMarkD(pArea, x, y, i);
+	if (!erase)
+	    pprMarkD(pArea, x, y, i);
+	else
+	    pprMarkEraseD(pArea, x, y, i);
 	x += 1.5;
+    }
+    y -= 100.;
+    x = 20.;
+    if (!erase) {
+	pprText(pArea, x, y, "centered", PPR_TXT_CEN, 0., 0.);
+	y -= 100.;
+	pprText(pArea, x, y, "right just", PPR_TXT_RJ, 0., 0.);
+	y -= 100.;
+	pprText(pArea, x, y, "left just", PPR_TXT_LJ, 0., 0.);
+	y -= 100.;
+    }
+    else {
+	pprTextErase(pArea, x, y, "centered", PPR_TXT_CEN, 0., 0.);
+	y -= 100.;
+	pprTextErase(pArea, x, y, "right just", PPR_TXT_RJ, 0., 0.);
+	y -= 100.;
+	pprTextErase(pArea, x, y, "left just", PPR_TXT_LJ, 0., 0.);
+	y -= 100.;
+    }
+    y -= 200.;
+    x = 20.;
+    if (!erase) {
+	pprText(pArea, x, y, "centered", PPR_TXT_CEN, 0., 170.);
+	y -= 200.;
+	pprText(pArea, x, y, "right just", PPR_TXT_RJ, 0., 170.);
+	y -= 200.;
+	pprText(pArea, x, y, "left just", PPR_TXT_LJ, 0., 170.);
+	y -= 200.;
+    }
+    else {
+	pprTextErase(pArea, x, y, "centered", PPR_TXT_CEN, 0., 170.);
+	y -= 200.;
+	pprTextErase(pArea, x, y, "right just", PPR_TXT_RJ, 0., 170.);
+	y -= 200.;
+	pprTextErase(pArea, x, y, "left just", PPR_TXT_LJ, 0., 170.);
+	y -= 200.;
     }
 
 /*-----------------------------------------------------------------------------
@@ -666,48 +772,78 @@ MY_DATA	*pMyData;
 *----------------------------------------------------------------------------*/
     pAreaClip = pprAreaOpenDflt(pWin, .65, .06, .9, .26, 0., 0., 1., 1.);
     PprAssert(pAreaClip != NULL);
-    pprPerim(pAreaClip);
+    if (!erase)
+	pprPerim(pAreaClip);
     pprAreaSetAttr(pAreaClip, PPR_ATTR_CLIP, 0, NULL);
-    pprLineSegD(pAreaClip, .1,.1, .9,.9);
-    pprLineSegD(pAreaClip, .1,.9, .9,.1);
+    if (!erase) {
+	pprLineSegD(pAreaClip, .1,.1, .9,.9);
+	pprLineSegD(pAreaClip, .1,.9, .9,.1);
+    }
+    else {
+	pprLineSegEraseD(pAreaClip, .1,.1, .9,.9);
+	pprLineSegEraseD(pAreaClip, .1,.9, .9,.1);
+    }
 #if 0
 	pprLineSegD(pAreaClip, -1.,.5, .5,.9);
 #endif
     for (y=-1.; y<=2.; y+=.5) {
-	pprLineSegD(pAreaClip, -1.,.5, .5,y);
-	pprLineSegD(pAreaClip, -1.,.5, 2.,y);
-	pprLineSegD(pAreaClip, 2.,.5, .5,y);
-	pprLineSegD(pAreaClip, 2.,.5, -1.,y);
+	if (!erase) {
+	    pprLineSegD(pAreaClip, -1.,.5, .5,y);
+	    pprLineSegD(pAreaClip, -1.,.5, 2.,y);
+	    pprLineSegD(pAreaClip, 2.,.5, .5,y);
+	    pprLineSegD(pAreaClip, 2.,.5, -1.,y);
+	}
+	else {
+	    pprLineSegEraseD(pAreaClip, -1.,.5, .5,y);
+	    pprLineSegEraseD(pAreaClip, -1.,.5, 2.,y);
+	    pprLineSegEraseD(pAreaClip, 2.,.5, .5,y);
+	    pprLineSegEraseD(pAreaClip, 2.,.5, -1.,y);
+	}
     }
     for (x=-1.; x<=2.; x+=.5) {
-	pprLineSegD(pAreaClip, .5,-1., x,.5);
-	pprLineSegD(pAreaClip, .5,-1., x,2.);
-	pprLineSegD(pAreaClip, .5,2., x,.5);
-	pprLineSegD(pAreaClip, .5,2., x,-1.);
+	if (!erase) {
+	    pprLineSegD(pAreaClip, .5,-1., x,.5);
+	    pprLineSegD(pAreaClip, .5,-1., x,2.);
+	    pprLineSegD(pAreaClip, .5,2., x,.5);
+	    pprLineSegD(pAreaClip, .5,2., x,-1.);
+	}
+	else {
+	    pprLineSegEraseD(pAreaClip, .5,-1., x,.5);
+	    pprLineSegEraseD(pAreaClip, .5,-1., x,2.);
+	    pprLineSegEraseD(pAreaClip, .5,2., x,.5);
+	    pprLineSegEraseD(pAreaClip, .5,2., x,-1.);
+	}
     }
+    pprAreaClose(pAreaClip);
 
     pAreaClip2 = pprAreaOpenDflt(pWin, .65, .3, .9, .5, 0., 0., 1., 1.);
     PprAssert(pAreaClip2 != NULL);
-    pprPerim(pAreaClip2);
+    if (!erase)
+	pprPerim(pAreaClip2);
     pprAreaSetAttr(pAreaClip2, PPR_ATTR_CLIP, 0, NULL);
-    printf("25 marks with squares should appear; no others!\n");
+    if (!erase)
+	printf("25 marks with squares should appear; no others!\n");
     for (y=-.25; y<=2.; y+=.25) {
 	for (x=-.25; x<=2.; x+=.25) {
 	    if (y < -.01 || y > 2.01 || x < -.01 || x > 2.01)
 		markNum = 3;
 	    else
 		markNum = 1;
-	    pprMarkD(pAreaClip2, x, y, markNum);
+	    if (!erase)
+		pprMarkD(pAreaClip2, x, y, markNum);
+	    else
+		pprMarkEraseD(pAreaClip2, x, y, markNum);
 	}
     }
+    pprAreaClose(pAreaClip2);
 
 
 #if 1
-    if (pWin->winType == PPR_WIN_SCREEN) {
+    if (!erase && pWin->winType == PPR_WIN_SCREEN) {
 #ifdef XWINDOWS
         XFlush(pWin->pDisp);
 #endif
-	(void)printf("erase win, area, grid, or perim? (w,a,g,p, or cr)  ");
+	(void)printf( "erase win, area, grid, or perim? (w,a,g,p, or cr)  ");
 	fflush(stdout);
 	if (fgets(answer, 80, stdin) == NULL || answer[0] == '\n')
 	    ;	/* no action */
@@ -715,14 +851,13 @@ MY_DATA	*pMyData;
 	    if (answer[0] == 'w')
 		pprWinErase(pWin);
 	    else if (answer[0] == 'a')
-		pprAreaErase(pArea,.3,.3,.6,.9);
+		pprRegionErase(pArea,.3,.3,.6,.9);
 	    else if (answer[0] == 'p')
 		pprPerimErase(pArea);
 	    else if (answer[0] == 'g')
 		pprGridErase(pArea);
 	    (void)printf("done erasing: ");
 	    fflush(stdout);
-	    fgetc(stdin);
 	}
     }
 #endif
@@ -809,7 +944,7 @@ void	*pArg;
 *-*/
 void
 pprAnnotX(pArea, offset, xLeft, xRight, xNint, drawLine, xLabel, xAnnot, angle)
-PPR_AREA *pArea;	/* IO pointer to plotter area */
+PPR_AREA *pArea;	/* I pointer to plotter area */
 int	offset;		/* I offset as number of lines below yBot to annotate */
 double	xLeft;		/* I x data value at left end of axis */
 double	xRight;		/* I x data value at right end of axis */
@@ -824,7 +959,7 @@ double	angle;		/* I orientation angle for annotation text; 0. or 90. */
 }
 void
 pprAnnotX_wc(pArea,offset,xLeft,xRight,xNint,drawLine,xLabel,xAnnot,angle)
-PPR_AREA *pArea;	/* IO pointer to plotter area */
+PPR_AREA *pArea;	/* I pointer to plotter area */
 int	offset;		/* I offset as number of lines below yBot to annotate */
 double	xLeft;		/* I x data value at left end of axis */
 double	xRight;		/* I x data value at right end of axis */
@@ -840,7 +975,7 @@ double	angle;		/* I orientation angle for annotation text; 0. or 90. */
 static void
 pprAnnotX_gen(pArea,offset,xLeft,xRight,xNint,drawLine,xLabel,xAnnot,angle,
 		fnTick, fnLine, fnText)
-PPR_AREA *pArea;	/* IO pointer to plotter area */
+PPR_AREA *pArea;	/* I pointer to plotter area */
 int	offset;		/* I offset as number of lines below yBot to annotate */
 double	xLeft;		/* I x data value at left end of axis */
 double	xRight;		/* I x data value at right end of axis */
@@ -901,9 +1036,6 @@ void	(*fnText)();
     x = pArea->xRight;
     if (drawLine) {
 	fnTick(pArea, x, tick1, x, tick2);
-#if 0
-	fnLine(pArea, xBase, pArea->yBot, xBase, pArea->yTop);
-#endif
     }
     if (xAnnot == NULL) {
 	pprCvtDblToTxt(text, nCol, xRight, sigDigits);
@@ -964,7 +1096,7 @@ void	(*fnText)();
 *-*/
 void
 pprAnnotY(pArea, offset, yBot, yTop, yNint, drawLine, yLabel, yAnnot, angle)
-PPR_AREA *pArea;	/* IO pointer to plotter area */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 int	offset;		/* I number of lines to left of axis for annotation */
 double	yBot;		/* I y data value at bottom end of axis */
 double	yTop;		/* I y data value at top end of axis */
@@ -979,7 +1111,7 @@ double	angle;		/* I orientation angle for annotation text; 0. or 90. */
 }
 void
 pprAnnotY_wc(pArea, offset, yBot, yTop, yNint, drawLine, yLabel, yAnnot, angle)
-PPR_AREA *pArea;	/* IO pointer to plotter area */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 int	offset;		/* I number of lines to left of axis for annotation */
 double	yBot;		/* I y data value at bottom end of axis */
 double	yTop;		/* I y data value at top end of axis */
@@ -995,7 +1127,7 @@ double	angle;		/* I orientation angle for annotation text; 0. or 90. */
 void
 pprAnnotY_gen(pArea, offset, yBot, yTop, yNint, drawLine, yLabel, yAnnot, angle,
 		fnTick, fnLine, fnText)
-PPR_AREA *pArea;	/* IO pointer to plotter area */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 int	offset;		/* I number of lines to left of axis for annotation */
 double	yBot;		/* I y data value at bottom end of axis */
 double	yTop;		/* I y data value at top end of axis */
@@ -1227,6 +1359,8 @@ PPR_AREA *pArea;	/* I pointer to plot area structure */
     if (pWin->winType == PPR_WIN_SCREEN) {
 	if (pArea->attr.myGC)
 	    XFree(pArea->attr.gc);
+	if (pArea->attr.bgGC)
+	    XFree(pArea->attr.gcBG);
     }
 #endif
     DoubleListRemove(pArea, pWin->pAreaHead, pWin->pAreaTail);
@@ -1243,44 +1377,64 @@ PPR_AREA *pArea;	/* I pointer to plot area structure */
 *	void
 *
 * SEE ALSO
-*	pprWinErase, pprGridErase, pprPerimErase
-*
-* NOTES
-* 1.	Another mode of calling pprAreaErase, in which the arguments are
-*	pixel offsets from the data area boundaries, can be invoked by
-*	having one or more of the arguments be greater than 1. or less
-*	than 0.
+*	pprWinErase, pprGridErase, pprPerimErase, pprRegionErase
+*	the ppr...Erase... entry points for the various drawing routines
 *
 * EXAMPLES
-* 1.	Erase within a data area, preserving the perimeter line.
+* 1.	A data area occupies the upper right quarter of the plot window,
+*	with data values at the lower left corner of xleft,ybot and at
+*	the upper right of xright,ytop.  3 annotation areas are used to
+*	the left of the data area, extending from the left edge of the
+*	plot window to the left edge of the data area; each annotation
+*	area occupies 1/3 of the height of the data area.  Erase the
+*	middle annotation area.
 *
-*		pprAreaErase(pArea, 1., 1., -1., -1.);
+*	double	xl,yb,xr,yt;
+*
+*	The region to erase is expressed as data values.  The y values are
+*	straightforward--just 1/3 and 2/3 of the range of the y axis.  The
+*	right-hand x value is just a bit less than the x at the left end
+*	of the x axis; the left hand x value requires a bit of analytic
+*	geometry to get.
+*
+*	xl = xleft - (xright - xleft)/(1. - .5) * (.5 - 0.);
+*	yb = ybot + (ytop - ybot)/3.;
+*	xr = xright - .001 * (xright - xleft);
+*	yt = ybot + 2.*(ytop - ybot)/3.;
+*	pprAreaErase(pArea, xl, yb, xr, yt);
 *
 *-*/
 void
-pprAreaErase(pArea, wfracXleft, wfracYbot, wfracXright, wfracYtop)
+pprAreaErase(pArea, xDblLeft, yDblBot, xDblRight, yDblTop)
 PPR_AREA *pArea;	/* I pointer to plot area structure */
-double	wfracXleft;	/* I x window fraction of left edge of area */
-double	wfracYbot;	/* I y window fraction of bottom edge of area */
-double	wfracXright;	/* I x window fraction of right edge of area */
-double	wfracYtop;	/* I y window fraction of top edge of area */
+double	xDblLeft;	/* I x data value at left edge of area */
+double	yDblBot;	/* I y data value at bottom edge of area */
+double	xDblRight;	/* I x data value at right edge of area */
+double	yDblTop;	/* I y data value at top edge of area */
 {
-    int		x,y,width,height;
+    int		x,y,x1,x2,y1,y2,width,height;
 
     if (pArea->pWin->winType != PPR_WIN_SCREEN)
 	return;
-    if (wfracXleft<0. || wfracXleft>1. || wfracXright<0. || wfracXright>1. ||
-	wfracYbot<0. || wfracYbot>1. || wfracYtop<0. || wfracYtop>1.) {
-	x = pArea->xPixLeft + wfracXleft;
-	y = pArea->yPixBot + wfracYbot;
-	width = pArea->xPixRight + wfracXright - x + 1.;
-	height = pArea->yPixTop + wfracYtop - y + 1.;
+    x1 = pArea->xPixLeft + (xDblLeft - pArea->xLeft) * pArea->xScale;
+    x2 = pArea->xPixLeft + (xDblRight - pArea->xLeft) * pArea->xScale;
+    if (x1 < x2) {
+	x = x1;
+	width = x2 - x1;
     }
     else {
-	x = wfracXleft * pArea->pWin->width;
-	y = wfracYbot * pArea->pWin->height;
-	width = (wfracXright - wfracXleft) * pArea->pWin->width;
-	height = (wfracYtop - wfracYbot) * pArea->pWin->height;
+	x = x2;
+	width = x1 - x2;
+    }
+    y1 = pArea->yPixBot + (yDblBot - pArea->yBot) * pArea->yScale;
+    y2 = pArea->yPixBot + (yDblTop - pArea->yBot) * pArea->yScale;
+    if (y1 < y2) {
+	y = y1;
+	height = y2 - y1;
+    }
+    else {
+	y = y2;
+	height = y1 - y2;
     }
 #ifdef SUNVIEW
     y = pArea->pWin->height - y - height;
@@ -1416,7 +1570,10 @@ double	charHt;		/* I value to use as default for character size, as
 							pArea->attr.gc);
 	pArea->attr.myGC = 1;
     }
+#elif
+    pArea->attr.myGC = 0;
 #endif
+    pArea->attr.bgGC = 0;
     pArea->attr.pPatt = NULL;
     pArea->attr.lineThick = 1;
     pArea->attr.ltCurr = -1;
@@ -1508,7 +1665,7 @@ double	yTop;		/* I y data value at top side of data area */
 *	void
 *
 * SEE ALSO
-*	pprAreaSetAttr, pprAreaErase
+*	pprAreaSetAttr, pprAreaErase, pprRegionErase
 *
 *-*/
 void 
@@ -1636,6 +1793,11 @@ double	yTop;		/* I y data value at top side of data area */
 *	    short	pattern[]={16,4,2,4,0};
 *	    pprAreaSetAttr(pArea, PPR_ATTR_PATT_ARRAY, 0, pattern);
 *
+*	If one of the ppr...Erase routines is to be used in conjunction
+*	with a dashed line pattern, then the sequence of operations for
+*	erasing must be made the same as the sequence of operations for
+*	the original drawing.
+*
 *
 *	Some pprXxx routines don't use the attributes from the plot
 *	area, but instead use the `generic' attributes from the
@@ -1659,7 +1821,7 @@ double	yTop;		/* I y data value at top side of data area */
 *-*/
 long
 pprAreaSetAttr(pArea, code, arg, pArg)
-PPR_AREA *pArea;	/* IO pointer to plotter area */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 PPR_ATTR_CODE code;	/* I attribute code: one of PPR_ATTR_xxx */
 int	arg;		/* I attribute value, or 0 */
 void	*pArg;		/* I pointer to attribute, or NULL */
@@ -2108,7 +2270,7 @@ double	angle;		/* I angle, in degrees */
 *-*/
 void
 pprChar(pArea, x, y, chr, height, angle)
-PPR_AREA *pArea;	/* IO pointer to plot area structure */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 double	x;		/* I x data coordinate of character */
 double	y;		/* I y data coordinate of character */
 char	chr;		/* I character to plot */
@@ -2293,7 +2455,7 @@ int	sigDig;		/* I max # of dec places to print */
 *-*/
 void
 pprGrid(pArea)
-PPR_AREA *pArea;	/* IO pointer to plotter area */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 {
     int		i;
     double	x, y;
@@ -2336,12 +2498,13 @@ PPR_AREA *pArea;	/* IO pointer to plotter area */
 *	void
 *
 * SEE ALSO
-*	pprPerimErase, pprAreaErase, pprWinErase
+*	pprPerimErase, pprAreaErase, pprWinErase, pprRegionErase
+*	the ppr...Erase... entry points for the various drawing routines
 *
 *-*/
 void
 pprGridErase(pArea)
-PPR_AREA *pArea;	/* IO pointer to plotter area */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 {
     int		x,y,width,height;
 
@@ -2387,7 +2550,7 @@ PPR_AREA *pArea;	/* IO pointer to plotter area */
 *-*/
 void
 pprGridLabel(pArea, xLabel, xAnnot, yLabel, yAnnot, angle)
-PPR_AREA *pArea;	/* IO pointer to plotter area */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 char	*xLabel;	/* I label for x axis, or NULL */
 char	**xAnnot;	/* I pointer to array of x annotations, or NULL */
 char	*yLabel;	/* I label for y axis, or NULL */
@@ -2415,6 +2578,13 @@ double	angle;		/* I angle for y annotations; 0. or 90. */
 *		pprLineS(pArea, x, y, npts)	x and y are short[]
 *		pprLineL(pArea, x, y, npts)	x and y are long[]
 *
+*	Several entry points are available for erasing:
+*
+*		pprLineEraseF(pArea, x, y, npts)	x and y are float[]
+*		pprLineEraseD(pArea, x, y, npts)	x and y are double[]
+*		pprLineEraseS(pArea, x, y, npts)	x and y are short[]
+*		pprLineEraseL(pArea, x, y, npts)	x and y are long[]
+*
 * RETURNS
 *	void
 *
@@ -2427,7 +2597,7 @@ double	angle;		/* I angle for y annotations; 0. or 90. */
 *-*/
 void
 pprLineF(pArea, x, y, npts)
-PPR_AREA *pArea;	/* IO pointer to plot area structure */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 float	*x;		/* I x array of data values */
 float	*y;		/* I y array of data values */
 int	npts;		/* I number of points to plot */
@@ -2439,7 +2609,7 @@ int	npts;		/* I number of points to plot */
 }
 void
 pprLineD(pArea, x, y, npts)
-PPR_AREA *pArea;	/* IO pointer to plot area structure */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 double	*x;		/* I x array of data values */
 double	*y;		/* I y array of data values */
 int	npts;		/* I number of points to plot */
@@ -2451,7 +2621,7 @@ int	npts;		/* I number of points to plot */
 }
 void
 pprLineS(pArea, x, y, npts)
-PPR_AREA *pArea;	/* IO pointer to plot area structure */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 short	*x;		/* I x array of data values */
 short	*y;		/* I y array of data values */
 int	npts;		/* I number of points to plot */
@@ -2463,7 +2633,7 @@ int	npts;		/* I number of points to plot */
 }
 void
 pprLineL(pArea, x, y, npts)
-PPR_AREA *pArea;	/* IO pointer to plot area structure */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 long	*x;		/* I x array of data values */
 long	*y;		/* I y array of data values */
 int	npts;		/* I number of points to plot */
@@ -2472,6 +2642,54 @@ int	npts;		/* I number of points to plot */
     pprMoveD(pArea, (double)x[0], (double)y[0], 0);
     for (i=1; i<npts; i++) 
 	pprMoveD(pArea, (double)x[i], (double)y[i], 1);
+}
+void
+pprLineEraseF(pArea, x, y, npts)
+PPR_AREA *pArea;	/* I pointer to plot area structure */
+float	*x;		/* I x array of data values */
+float	*y;		/* I y array of data values */
+int	npts;		/* I number of points to plot */
+{
+    int		i;
+    pprMoveD(pArea, (double)(x[0]), (double)(y[0]), 0);
+    for (i=1; i<npts; i++) 
+	pprMoveEraseD(pArea, (double)(x[i]), (double)(y[i]));
+}
+void
+pprLineEraseD(pArea, x, y, npts)
+PPR_AREA *pArea;	/* I pointer to plot area structure */
+double	*x;		/* I x array of data values */
+double	*y;		/* I y array of data values */
+int	npts;		/* I number of points to plot */
+{
+    int		i;
+    pprMoveD(pArea, x[0], y[0], 0);
+    for (i=1; i<npts; i++) 
+	pprMoveEraseD(pArea, x[i], y[i]);
+}
+void
+pprLineEraseS(pArea, x, y, npts)
+PPR_AREA *pArea;	/* I pointer to plot area structure */
+short	*x;		/* I x array of data values */
+short	*y;		/* I y array of data values */
+int	npts;		/* I number of points to plot */
+{
+    int		i;
+    pprMoveD(pArea, (double)x[0], (double)y[0], 0);
+    for (i=1; i<npts; i++) 
+	pprMoveEraseD(pArea, (double)x[i], (double)y[i]);
+}
+void
+pprLineEraseL(pArea, x, y, npts)
+PPR_AREA *pArea;	/* I pointer to plot area structure */
+long	*x;		/* I x array of data values */
+long	*y;		/* I y array of data values */
+int	npts;		/* I number of points to plot */
+{
+    int		i;
+    pprMoveD(pArea, (double)x[0], (double)y[0], 0);
+    for (i=1; i<npts; i++) 
+	pprMoveEraseD(pArea, (double)x[i], (double)y[i]);
 }
 
 /*+/subr**********************************************************************
@@ -2494,6 +2712,10 @@ int	npts;		/* I number of points to plot */
 *		pprLineSegD_ac(pArea, x1, y1, x2, y2)	x and y are double
 *		pprLineSegL_ac(pArea, x1, y1, x2, y2)	x and y are long
 *
+*	Two entry points are available for erasing:
+*
+*		pprLineSegEraseD(pArea, x1, y1, x2, y2)	x and y are double
+*		pprLineSegEraseL(pArea, x1, y1, x2, y2)	x and y are long
 * RETURNS
 *	void
 *
@@ -2506,7 +2728,7 @@ int	npts;		/* I number of points to plot */
 *-*/
 void
 pprLineSegD(pArea, x1, y1, x2, y2)
-PPR_AREA *pArea;	/* IO pointer to plot area structure */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 double	x1;		/* I first x point */
 double	y1;		/* I first y point */
 double	x2;		/* I second x point */
@@ -2517,7 +2739,7 @@ double	y2;		/* I second y point */
 }
 void
 pprLineSegL(pArea, x1, y1, x2, y2)
-PPR_AREA *pArea;	/* IO pointer to plot area structure */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 long	x1;		/* I first x point */
 long	y1;		/* I first y point */
 long	x2;		/* I second x point */
@@ -2528,7 +2750,7 @@ long	y2;		/* I second y point */
 }
 void
 pprLineSegD_ac(pArea, x1, y1, x2, y2)
-PPR_AREA *pArea;	/* IO pointer to plot area structure */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 double	x1;		/* I first x point */
 double	y1;		/* I first y point */
 double	x2;		/* I second x point */
@@ -2539,7 +2761,7 @@ double	y2;		/* I second y point */
 }
 void
 pprLineSegD_wc(pArea, x1, y1, x2, y2)
-PPR_AREA *pArea;	/* IO pointer to plot area structure */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 double	x1;		/* I first x point */
 double	y1;		/* I first y point */
 double	x2;		/* I second x point */
@@ -2550,7 +2772,7 @@ double	y2;		/* I second y point */
 }
 void
 pprLineSegL_ac(pArea, x1, y1, x2, y2)
-PPR_AREA *pArea;	/* IO pointer to plot area structure */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 long	x1;		/* I first x point */
 long	y1;		/* I first y point */
 long	x2;		/* I second x point */
@@ -2558,6 +2780,28 @@ long	y2;		/* I second y point */
 {
     pprMoveD_ac(pArea, (double)x1, (double)y1, 0);
     pprMoveD_ac(pArea, (double)x2, (double)y2, 1);
+}
+void
+pprLineSegEraseD(pArea, x1, y1, x2, y2)
+PPR_AREA *pArea;	/* I pointer to plot area structure */
+double	x1;		/* I first x point */
+double	y1;		/* I first y point */
+double	x2;		/* I second x point */
+double	y2;		/* I second y point */
+{
+    pprMoveD(pArea, x1, y1, 0);
+    pprMoveEraseD(pArea, x2, y2);
+}
+void
+pprLineSegEraseL(pArea, x1, y1, x2, y2)
+PPR_AREA *pArea;	/* I pointer to plot area structure */
+long	x1;		/* I first x point */
+long	y1;		/* I first y point */
+long	x2;		/* I second x point */
+long	y2;		/* I second y point */
+{
+    pprMoveD(pArea, (double)x1, (double)y1, 0);
+    pprMoveEraseD(pArea, (double)x2, (double)y2);
 }
 
 /*+/internal******************************************************************
@@ -2576,6 +2820,17 @@ long	y2;		/* I second y point */
 #ifdef SUNVIEW
 short glSvPattern[3]={100,0,0};	/* line pattern to make pw_line happy */
 struct pr_texture texture;
+static int	initTexture=1;
+static initTex()
+{
+    bzero((char *)&texture, sizeof(texture));
+    texture.pattern = glSvPattern;
+    texture.offset = 0;
+    texture.options.startpoint = 1;
+    texture.options.endpoint = 1;
+    texture.options.givenpattern = 1;
+    initTexture = 0;
+}
 #endif
 static void
 pprLineSegPixD_ac(pArea, xp0, yp0, xp1, yp1)
@@ -2588,17 +2843,8 @@ double	xp0, xp1, yp0, yp1;	/* y must be corrected properly by the caller
 				this. */
 {
 #ifdef SUNVIEW
-    static int	init=1;
-
-    if (init) {
-	bzero((char *)&texture, sizeof(texture));
-	texture.pattern = glSvPattern;
-	texture.offset = 0;
-	texture.options.startpoint = 1;
-	texture.options.endpoint = 1;
-	texture.options.givenpattern = 1;
-	init = 0;
-    }
+    if (initTexture)
+	initTex();
 #endif
     if (pArea->pWin->winType == PPR_WIN_SCREEN) {
 #ifdef SUNVIEW
@@ -2630,17 +2876,8 @@ double	xp0, xp1, yp0, yp1;	/* y must be corrected properly by the caller
 				this. */
 {
 #ifdef SUNVIEW
-    static int	init=1;
-
-    if (init) {
-	bzero((char *)&texture, sizeof(texture));
-	texture.pattern = glSvPattern;
-	texture.offset = 0;
-	texture.options.startpoint = 1;
-	texture.options.endpoint = 1;
-	texture.options.givenpattern = 1;
-	init = 0;
-    }
+    if (initTexture)
+	initTex();
 #endif
     if (pArea->pWin->winType == PPR_WIN_SCREEN) {
 #ifdef SUNVIEW
@@ -2660,6 +2897,34 @@ double	xp0, xp1, yp0, yp1;	/* y must be corrected properly by the caller
 	(void)fprintf(pArea->pWin->file, "%.1f %.1f %.1f %.1f DS\n",
 							xp0, yp0, xp1, yp1);
     }
+}
+static void
+pprLineSegPixEraseD(pArea, xp0, yp0, xp1, yp1)
+PPR_AREA *pArea;
+double	xp0, xp1, yp0, yp1;	/* y must be corrected properly by the caller
+				for the windowing system being used.  I.e.,
+				most of the pprXxx routines assume 0,0 is
+				lower left, but X and SunView assume it is
+				upper left--the caller must have dealt with
+				this. */
+{
+#ifdef SUNVIEW
+    if (initTexture)
+	initTex();
+#endif
+    if (pArea->pWin->winType != PPR_WIN_SCREEN)
+	return;
+#ifdef SUNVIEW
+    if (pArea->pWin->brush.width > 1)
+	pw_line(pArea->pWin->pw, (int)xp0, (int)yp0, (int)xp1, (int)yp1,
+		&pArea->pWin->brush, &texture, (int)(PIX_NOT(PIX_SRC)&PIX_DST));
+    else
+	pw_vector(pArea->pWin->pw, (int)xp0, (int)yp0, (int)xp1, (int)yp1,
+			PIX_SRC, 0);
+#elif defined XWINDOWS
+    XDrawLine(pArea->pWin->pDisp, pArea->pWin->plotWindow,
+	    pArea->pWin->attr.gcBG, (int)xp0, (int)yp0, (int)xp1, (int)yp1);
+#endif
 }
 
 /*+/internal******************************************************************
@@ -2681,7 +2946,7 @@ double	xp0, xp1, yp0, yp1;	/* y must be corrected properly by the caller
 *-*/
 static void
 pprLineSegDashD_wc(pArea, x0, y0, x1, y1, pPatt)
-PPR_AREA *pArea;	/* IO pointer to plot area structure */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 double	x0;		/* I x data coordinate of first point */
 double	y0;		/* I y data coordinate of first point */
 double	x1;		/* I x data coordinate of second point */
@@ -2741,7 +3006,7 @@ short	*pPatt;		/* I pointer to pattern array */
 			pw_put(pArea->pWin->pw, (int)xbeg, (int)ybeg, 1);
 #elif defined XWINDOWS
 			XDrawPoint(pArea->pWin->pDisp, pArea->pWin->plotWindow,
-				pArea->pWin->attr.gc, (int)xbeg, (int)ybeg, 1);
+				pArea->pWin->attr.gc, (int)xbeg, (int)ybeg);
 #endif
 		    }
 		}
@@ -2812,6 +3077,10 @@ short	thick;	/* I thickness in thousandths of window height */
 	    pArea->attr.ltPix = ltPix;
 	    XSetLineAttributes(pWin->pDisp, pArea->attr.gc, ltPix, LineSolid,
 				CapButt, JoinRound);
+	    if (pArea->pWin->attr.bgGC) {
+		XSetLineAttributes(pWin->pDisp, pArea->pWin->attr.gcBG,
+				ltPix, LineSolid, CapButt, JoinRound);
+	    }
 #endif
 	}
     }
@@ -2830,6 +3099,11 @@ short	thick;	/* I thickness in thousandths of window height */
 *		pprMarkD(pArea, x, y, markNum)	x and y are double
 *		pprMarkL(pArea, x, y, markNum)	x and y are long
 *
+*	Two additional entry points are available for erasing plotting marks:
+*
+*		pprMarkEraseD(pArea, x, y, markNum)	x and y are double
+*		pprMarkEraseL(pArea, x, y, markNum)	x and y are long
+*
 * RETURNS
 *	void
 *
@@ -2846,6 +3120,16 @@ PPR_AREA *pArea;	/* I pointer to plot area structure */
 double	x;		/* I x data coordinate */
 double	y;		/* I y data coordinate */
 int	markNum;	/* I mark number--0 to PPR_NMARKS-1, inclusive */
+{
+    pprMark_gen(pArea, x, y, markNum, pprLineSegPixD_ac);
+}
+static
+pprMark_gen(pArea, x, y, markNum, drawFn)
+PPR_AREA *pArea;	/* I pointer to plot area structure */
+double	x;		/* I x data coordinate */
+double	y;		/* I y data coordinate */
+int	markNum;	/* I mark number--0 to PPR_NMARKS-1, inclusive */
+void	(*drawFn)();	/* I function to draw lines, using pixel coordinates */
 {
     short	*pMark;
     double	xp0, xp1, yp0, yp1;
@@ -2872,7 +3156,7 @@ int	markNum;	/* I mark number--0 to PPR_NMARKS-1, inclusive */
 	else						yp1 = yp0 + *pMark++;
 	pen = *pMark++;
 	if (pen) {
-	    pprLineSegPixD_ac(pArea, xp0, yp0, xp1, yp1);
+	    drawFn(pArea, xp0, yp0, xp1, yp1);
 	    if (pen == 2)
 		break;
 	}
@@ -2887,30 +3171,25 @@ long	x;		/* I x data coordinate */
 long	y;		/* I y data coordinate */
 int	markNum;	/* I mark number--0 to PPR_NMARKS-1, inclusive */
 {
-    short	*pMark;
-    double	xp0, xp1, yp0, yp1;
-    int		pen;
-
-    pprLineThick(pArea, pArea->attr.lineThick);
-    markNum %= PPR_NMARKS;
-    pMark = pglPprMarkS[markNum];	/* use small marks */
-    xp0 = pArea->xPixLeft + (x - pArea->xLeft) * pArea->xScale;
-    yp0 = pArea->yPixBot + (y - pArea->yBot) * pArea->yScale;
-    if (pArea->pWin->winType == PPR_WIN_SCREEN)
-	yp0 = pArea->pWin->height - yp0;
-    while (1) {
-	xp1 = xp0 + *pMark++;
-	if (pArea->pWin->winType == PPR_WIN_SCREEN)	yp1 = yp0 - *pMark++;
-	else						yp1 = yp0 + *pMark++;
-	pen = *pMark++;
-	if (pen) {
-	    pprLineSegPixD_ac(pArea, xp0, yp0, xp1, yp1);
-	    if (pen == 2)
-		break;
-	}
-	xp0 = xp1;
-	yp0 = yp1;
-    }
+    pprMark_gen(pArea, (double)x, (double)y, markNum, pprLineSegPixD_ac);
+}
+void
+pprMarkEraseD(pArea, x, y, markNum)
+PPR_AREA *pArea;	/* I pointer to plot area structure */
+double	x;		/* I x data coordinate */
+double	y;		/* I y data coordinate */
+int	markNum;	/* I mark number--0 to PPR_NMARKS-1, inclusive */
+{
+    pprMark_gen(pArea, (double)x, (double)y, markNum, pprLineSegPixEraseD);
+}
+void
+pprMarkEraseL(pArea, x, y, markNum)
+PPR_AREA *pArea;	/* I pointer to plot area structure */
+long	x;		/* I x data coordinate */
+long	y;		/* I y data coordinate */
+int	markNum;	/* I mark number--0 to PPR_NMARKS-1, inclusive */
+{
+    pprMark_gen(pArea, (double)x, (double)y, markNum, pprLineSegPixEraseD);
 }
 
 /*+/subr**********************************************************************
@@ -2929,10 +3208,14 @@ int	markNum;	/* I mark number--0 to PPR_NMARKS-1, inclusive */
 *	Two alternate entry points are available for drawing plain lines,
 *	ignoring all attributes except color.  One uses the color for the
 *	plot area (pprMoveD_ac); the other uses the plot window color
-*	(pprMoveD_wc).
+*	(pprMoveD_wc).  (As noted above, these routines don't clip.)
 *
 *		pprMoveD_ac(pArea, x, y, pen)	x and y are double
 *		pprMoveD_wc(pArea, x, y, pen)	x and y are double
+*
+*	An additional entry point is available for erasing:
+*
+*		pprMoveEraseD(pArea, x, y)	x and y are double
 *
 * RETURNS
 *	void
@@ -2946,10 +3229,21 @@ int	markNum;	/* I mark number--0 to PPR_NMARKS-1, inclusive */
 *-*/
 void
 pprMoveD(pArea, x, y, pen)
-PPR_AREA *pArea;	/* IO pointer to plot area structure */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 double	x;		/* I x data coordinate of new point */
 double	y;		/* I y data coordinate of new point */
 int	pen;		/* I pen indicator--non-zero draws a line */
+{
+    pprMoveD_gen(pArea, x, y, pen, pprLineSegPixD_ac);
+}
+
+
+pprMoveD_gen(pArea, x, y, pen, drawFn)
+PPR_AREA *pArea;	/* I pointer to plot area structure */
+double	x;		/* I x data coordinate of new point */
+double	y;		/* I y data coordinate of new point */
+int	pen;		/* I pen indicator--non-zero draws a line */
+void	(*drawFn)();	/* I pointer to function to use in drawing */
 {
     double	xp0, xp1, yp0, yp1;
     double	segLen, endLen, dashLen, xbeg, xend, ybeg, yend;
@@ -3014,7 +3308,7 @@ int	pen;		/* I pen indicator--non-zero draws a line */
 	    }
 	}
 	if (pArea->attr.pPatt == NULL)
-	    pprLineSegPixD_ac(pArea, xp0, yp0, xp1, yp1);
+	    drawFn(pArea, xp0, yp0, xp1, yp1);
 	else {
 /*-----------------------------------------------------------------------------
 * draw a dashed line pattern
@@ -3041,7 +3335,7 @@ int	pen;		/* I pen indicator--non-zero draws a line */
 		xend = xp0 + endLen/segLen * (xp1 - xp0);
 		yend = yp0 + endLen/segLen * (yp1 - yp0);
 		if (pArea->attr.pen)
-		    pprLineSegPixD_ac(pArea, xbeg, ybeg, xend, yend);
+		    drawFn(pArea, xbeg, ybeg, xend, yend);
 		xbeg = xend;
 		ybeg = yend;
 		pArea->attr.rem -= dashLen;
@@ -3051,7 +3345,7 @@ int	pen;		/* I pen indicator--non-zero draws a line */
 }
 void
 pprMoveD_ac(pArea, x, y, pen)
-PPR_AREA *pArea;	/* IO pointer to plot area structure */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 double	x;		/* I x data coordinate of new point */
 double	y;		/* I y data coordinate of new point */
 int	pen;		/* I pen indicator--1 draws a line */
@@ -3070,7 +3364,7 @@ int	pen;		/* I pen indicator--1 draws a line */
 }
 void
 pprMoveD_wc(pArea, x, y, pen)
-PPR_AREA *pArea;	/* IO pointer to plot area structure */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 double	x;		/* I x data coordinate of new point */
 double	y;		/* I y data coordinate of new point */
 int	pen;		/* I pen indicator--1 draws a line */
@@ -3086,6 +3380,14 @@ int	pen;		/* I pen indicator--1 draws a line */
     }
     pArea->xPix[0] = pArea->xPix[1];
     pArea->yPix[0] = pArea->yPix[1];
+}
+void
+pprMoveEraseD(pArea, x, y)
+PPR_AREA *pArea;	/* I pointer to plot area structure */
+double	x;		/* I x data coordinate of new point */
+double	y;		/* I y data coordinate of new point */
+{
+    pprMoveD_gen(pArea, x, y, 1, pprLineSegPixEraseD);
 }
 
 /*+/subr**********************************************************************
@@ -3111,7 +3413,7 @@ int	pen;		/* I pen indicator--1 draws a line */
 *-*/
 void
 pprPerim(pArea)
-PPR_AREA *pArea;	/* IO pointer to plotter area */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 {
     double	tickHalf;
     int		i;
@@ -3162,12 +3464,13 @@ PPR_AREA *pArea;	/* IO pointer to plotter area */
 *	void
 *
 * SEE ALSO
-*	pprGridErase, pprAreaErase, pprWinErase
+*	pprGridErase, pprAreaErase, pprWinErase, pprRegionErase
+*	the ppr...Erase... entry points for the various drawing routines
 *
 *-*/
 void
 pprPerimErase(pArea)
-PPR_AREA *pArea;	/* IO pointer to plotter area */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 {
     int		x,y,width,height;
 
@@ -3213,7 +3516,7 @@ PPR_AREA *pArea;	/* IO pointer to plotter area */
 *-*/
 void
 pprPerimLabel(pArea, xLabel, xAnnot, yLabel, yAnnot, angle)
-PPR_AREA *pArea;	/* IO pointer to plotter area */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 char	*xLabel;	/* I label for x axis, or NULL */
 char	**xAnnot;	/* I pointer to array of x annotations, or NULL */
 char	*yLabel;	/* I label for y axis, or NULL */
@@ -3227,6 +3530,21 @@ double	angle;		/* I angle for y annotations; 0. or 90. */
 						0, yLabel, yAnnot, angle);
 }
 
+/*+/macro*********************************************************************
+* NAME	PprPixXToXFrac - convert pixel address to window fraction
+*
+* DESCRIPTION
+*	Converts an x or y pixel address (for example, from a mouse click)
+*	into a fraction of the plot window's width or height.
+*
+*	PprPixXToXFrac(pWin, xPixel)
+*	PprPixYToYFrac(pWin, yPixel)
+*
+* RETURNS
+*	window fraction
+*
+*-*/
+
 /*+/subr**********************************************************************
 * NAME	pprPoint - plot a point at a coordinate
 *
@@ -3239,6 +3557,11 @@ double	angle;		/* I angle for y annotations; 0. or 90. */
 *		pprPointD(pArea, x, y)	x and y are double
 *		pprPointL(pArea, x, y)	x and y are long
 *
+*	Two entry points are available for erasing:
+*
+*		pprPointEraseD(pArea, x, y)	x and y are double
+*		pprPointEraseL(pArea, x, y)	x and y are long
+*
 * RETURNS
 *	void
 *
@@ -3246,12 +3569,13 @@ double	angle;		/* I angle for y annotations; 0. or 90. */
 * o	only linear calibration is handled
 *
 * SEE ALSO
-*	pprMark, pprAreaOpen, pprAreaSetAttr, pprLine, pprMove, pprText
+*	pprMark, pprAreaOpen, pprAreaSetAttr, pprLine,
+*	pprMove, pprText
 *
 *-*/
 void
 pprPointD(pArea, x, y)
-PPR_AREA *pArea;	/* IO pointer to plot area structure */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 double	x;		/* I x data coordinate */
 double	y;		/* I y data coordinate */
 {
@@ -3281,7 +3605,7 @@ double	y;		/* I y data coordinate */
 	    pw_put(pArea->pWin->pw, (int)xPix, (int)yPix, 1);
 #elif defined XWINDOWS
 	    XDrawPoint(pArea->pWin->pDisp, pArea->pWin->plotWindow,
-				pArea->attr.gc, (int)xPix, (int)yPix, 1);
+				pArea->attr.gc, (int)xPix, (int)yPix);
 #endif
 	}
     }
@@ -3292,11 +3616,56 @@ double	y;		/* I y data coordinate */
 }
 void
 pprPointL(pArea, x, y)
-PPR_AREA *pArea;	/* IO pointer to plot area structure */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 long	x;		/* I first x point */
 long	y;		/* I first y point */
 {
     pprPointD(pArea, (double)x, (double)y);
+}
+void
+pprPointEraseD(pArea, x, y)
+PPR_AREA *pArea;	/* I pointer to plot area structure */
+double	x;		/* I x data coordinate */
+double	y;		/* I y data coordinate */
+{
+    double	xPix, yPix;
+    double	xp0,yp0,xp1;
+
+    if (pArea->pWin->winType != PPR_WIN_SCREEN)
+	return;
+    xPix = pArea->xPixLeft + (x - pArea->xLeft) * pArea->xScale;
+    yPix = pArea->yPixBot + (y - pArea->yBot) * pArea->yScale;
+    pprLineThick(pArea, pArea->attr.lineThick);
+    yPix = pArea->pWin->height - yPix;
+#ifdef SUNVIEW
+    if (pArea->pWin->attr.ltPix > 1) {
+	yp0 = yPix;
+	xp0 = xPix - pArea->pWin->attr.ltPix / 2;
+	xp1 = xp0 + pArea->pWin->attr.ltPix - 1;
+#elif defined XWINDOWS
+    if (pArea->attr.ltPix > 1) {
+	yp0 = yPix;
+	xp0 = xPix - pArea->attr.ltPix / 2;
+	xp1 = xp0 + pArea->attr.ltPix - 1;
+#endif
+	pprLineSegPixEraseD(pArea, xp0, yp0, xp1, yp0);
+    }
+    else {
+#ifdef SUNVIEW
+	pw_put(pArea->pWin->pw, (int)xPix, (int)yPix, 0);
+#elif defined XWINDOWS
+	XDrawPoint(pArea->pWin->pDisp, pArea->pWin->plotWindow,
+				pArea->pWin->attr.gcBG, (int)xPix, (int)yPix);
+#endif
+    }
+}
+void
+pprPointEraseL(pArea, x, y)
+PPR_AREA *pArea;	/* I pointer to plot area structure */
+long	x;		/* I first x point */
+long	y;		/* I first y point */
+{
+    pprPointEraseD(pArea, (double)x, (double)y);
 }
 
 /*/subhead pprPSProg-------------------------------------------------------
@@ -3365,6 +3734,88 @@ static char *pprPSProg[]={
 "	show",
 "	grestore } def"
 };
+
+/*+/subr**********************************************************************
+* NAME	pprRegionErase - erase an area within a plot window
+*
+* DESCRIPTION
+*	Erases an area within a plot window.
+*
+* RETURNS
+*	void
+*
+* SEE ALSO
+*	pprWinErase, pprAreaErase, pprGridErase, pprPerimErase
+*	the ppr...Erase... entry points for the various drawing routines
+*
+* NOTES
+* 1.	Another mode of calling pprRegionErase, in which the arguments are
+*	pixel offsets from the data area boundaries, is invoked by
+*	having one or more of the arguments be greater than 1. or less
+*	than 0.  In this case, all the "wfrac" arguments are treated as
+*	pixel offsets.
+*
+* EXAMPLES
+* 1.	Erase within a data area, preserving the perimeter line.  This
+*	example uses pixel offsets from the plot area boundary--one pixel
+*	inside each edge of the plot area.
+*
+*		pprRegionErase(pArea, 1., 1., -1., -1.);
+*
+* 2.	A data area occupies the upper right quarter of the plot window.
+*	An annotation area (using default character height) extends from
+*	the left edge of the plot window to the left edge of the data area,
+*	centered at the vertical midpoint of the data area.  Erase the
+*	annotation area.
+*
+*	double	yb,yt;
+*
+*	The region to erase is expressed as fractions of window width and
+*	height.  For x, the region is from 0. (the left edge of the plot
+*	window) to .49 (just a bit left of the center of the plot window).
+*	For y, the region is centered at .75 (the vertical midpoint of the
+*	plot area within the plot window), with a height of the default
+*	character height.
+*
+*	yb = .75 - PprDfltCharHt(.5,1.);
+*	yt = yb + PprDfltCharHt(.5,1.);
+*	pprRegionErase(pArea, 0., yb, .49, yt);
+*
+*-*/
+void
+pprRegionErase(pArea, wfracXleft, wfracYbot, wfracXright, wfracYtop)
+PPR_AREA *pArea;	/* I pointer to plot area structure */
+double	wfracXleft;	/* I x win frac of left edge of area (see Note 1) */
+double	wfracYbot;	/* I y win frac of bottom edge of area (see Note 1) */
+double	wfracXright;	/* I x win frac of right edge of area (see Note 1) */
+double	wfracYtop;	/* I y win frac of top edge of area (see Note 1) */
+{
+    int		x,y,width,height;
+
+    if (pArea->pWin->winType != PPR_WIN_SCREEN)
+	return;
+    if (wfracXleft<0. || wfracXleft>1. || wfracXright<0. || wfracXright>1. ||
+	wfracYbot<0. || wfracYbot>1. || wfracYtop<0. || wfracYtop>1.) {
+	x = pArea->xPixLeft + wfracXleft;
+	y = pArea->yPixBot + wfracYbot;
+	width = pArea->xPixRight + wfracXright - x + 1.;
+	height = pArea->yPixTop + wfracYtop - y + 1.;
+    }
+    else {
+	x = wfracXleft * pArea->pWin->width;
+	y = wfracYbot * pArea->pWin->height;
+	width = (wfracXright - wfracXleft) * pArea->pWin->width;
+	height = (wfracYtop - wfracYbot) * pArea->pWin->height;
+    }
+#ifdef SUNVIEW
+    y = pArea->pWin->height - y - height;
+    pw_writebackground(pArea->pWin->pw, x, y, width, height, PIX_SRC);
+#elif defined XWINDOWS
+    y = pArea->pWin->height - y - height;
+    XClearArea(pArea->pWin->pDisp, pArea->pWin->plotWindow,
+						x, y, width, height, False);
+#endif
+}
 
 /*+/subr**********************************************************************
 * NAME	pprSin_deg - get the sine of an angle in degrees
@@ -3582,6 +4033,12 @@ static char	*glPprFont1[]={
 *	An alternate entry point, pprText_wc, is available to use the
 *	plot window's color for drawing the text.
 *
+*	An additional entry point is available for erasing (which requires
+*	all arguments to be exactly the same as when the text was originally
+*	plotted):
+*
+*		pprTextErase(pArea, x, y, text, just, height, angle)
+*
 * RETURNS
 *	void
 *
@@ -3598,7 +4055,7 @@ static char	*glPprFont1[]={
 *-*/
 void
 pprText(pArea, x, y, text, just, height, angle)
-PPR_AREA *pArea;	/* IO pointer to plot area structure */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 double	x;		/* I x data coordinate of text */
 double	y;		/* I y data coordinate of text */
 char	*text;		/* I text to plot */
@@ -3675,6 +4132,21 @@ void	(*fn)();
 	pprTextPS(pArea->pWin->file, xWin, yWin, just, text, height, angle);
     }
 }
+void
+pprTextErase(pArea, x, y, text, just, height, angle)
+PPR_AREA *pArea;	/* I pointer to plot area structure */
+double	x;		/* I x data coordinate of text */
+double	y;		/* I y data coordinate of text */
+char	*text;		/* I text to plot */
+PPR_TXT_JUST just;	/* I text justification selector: one of
+				PPR_TXT_CEN, PPR_TXT_RJ, or PPR_TXT_LJ */
+double	height;		/* I height of text characters, as a fraction of
+				the height of the window; a value of
+				zero results in using a default height */
+double	angle;		/* I orientation angle of text string, ccw degrees */
+{
+    pprText_gen(pArea, x, y, text, just, height, angle, pprLineSegPixEraseD);
+}
 
 /*+/internal******************************************************************
 * NAME	pprText1 - plot a "drawn" character
@@ -3692,7 +4164,7 @@ void	(*fn)();
 *-*/
 void
 pprText1(pArea, xWin, yWin, ic, nfont, scale, sinT, cosT, fn)
-PPR_AREA *pArea;	/* I pointer to plot area */
+PPR_AREA *pArea;	/* I pointer to plot area structure */
 double	xWin;		/* IO x position, in window coordinates */
 double	yWin;		/* IO y position, in window coordinates */
 int	ic;		/* I character code to plot */
@@ -3900,13 +4372,15 @@ PPR_WIN	*pWin;
 *-*/
 void
 pprWinClose(pWin)
-PPR_WIN	*pWin;	/* IO pointer to plot window structure */
+PPR_WIN	*pWin;	/* I pointer to plot window structure */
 {
     PPR_AREA	*pArea, *pAreaNext;
 #ifdef XWINDOWS
     if (pWin->winType == PPR_WIN_SCREEN) {
 	if (pWin->attr.myGC)
 	    XFree(pWin->attr.gc);
+	if (pWin->attr.bgGC)
+	    XFree(pWin->attr.gcBG);
     }
 #endif
     pArea = pWin->pAreaHead;
@@ -3928,12 +4402,13 @@ PPR_WIN	*pWin;	/* IO pointer to plot window structure */
 *	void
 *
 * SEE ALSO
-*	pprGridErase, pprPerimErase, pprAreaErase
+*	pprGridErase, pprPerimErase, pprAreaErase, pprRegionErase
+*	the ppr...Erase... entry points for the various drawing routines
 *
 *-*/
 void
 pprWinErase(pWin)
-PPR_WIN	*pWin;	/* IO pointer to plot window structure */
+PPR_WIN	*pWin;	/* I pointer to plot window structure */
 {
     if (pWin->winType == PPR_WIN_SCREEN) {
 #ifdef SUNVIEW
@@ -4162,7 +4637,7 @@ jjj
 *-*/
 long
 pprWinLoop(pWin, drawFun, pDrawArg)
-PPR_WIN	*pWin;	/* IO pointer to plot window structure */
+PPR_WIN	*pWin;	/* I pointer to plot window structure */
 void	(*drawFun)();/* I pointer to function to draw the plot */
 void	*pDrawArg;/* I pointer to pass to drawFun */
 {
@@ -4220,7 +4695,7 @@ void	*pDrawArg;/* I pointer to pass to drawFun */
 *-*/
 long
 pprWinMap(pWin)
-PPR_WIN	*pWin;	/* IO pointer to plot window structure */
+PPR_WIN	*pWin;	/* I pointer to plot window structure */
 {
 #ifdef XWINDOWS
     int		screenNo, x, y, width, height;
@@ -4258,6 +4733,8 @@ PPR_WIN	*pWin;	/* IO pointer to plot window structure */
 	window_fit(pWin->frame);
 	window_set(pWin->frame, WIN_SHOW, 1, 0);
 	window_set(pWin->canvas, WIN_SHOW, 1, 0);
+	pArea->attr.myGC = 0;
+	pArea->attr.bgGC = 0;
 #elif defined XWINDOWS
 	if (pWin->winDispName[0] == '\0')
 	    pWin->pDisp = XOpenDisplay((char *)NULL);
@@ -4288,6 +4765,11 @@ PPR_WIN	*pWin;	/* IO pointer to plot window structure */
 	XSelectInput(pWin->pDisp, pWin->plotWindow,
 		ExposureMask | ButtonPressMask | ButtonReleaseMask);
 	XMapWindow(pWin->pDisp, pWin->plotWindow);
+	pWin->attr.gcBG = XCreateGC(pWin->pDisp, pWin->plotWindow, 0, NULL);
+	XCopyGC(pWin->pDisp, pWin->attr.gc,
+				GCBackground|GCForeground, pWin->attr.gcBG);
+	XSetFunction(pWin->pDisp, pWin->attr.gcBG, GXclear);
+	pWin->attr.bgGC = 1;
 #endif
     }
     else if (pWin->winType == PPR_WIN_POSTSCRIPT ||
@@ -4330,8 +4812,8 @@ PPR_WIN	*pWin;	/* IO pointer to plot window structure */
 *			in pixels.  If values of 0 are supplied, then
 *			a size of 512,512 will be used.
 *
-*	    for X,
-*	    	`winDispName' specifies the X display name on which the
+*	    for X11,
+*	    	`winDispName' specifies the X11 display name on which the
 *			plot window is to appear.  If NULL, then the
 *			DISPLAY environment variable will be used.
 *		`winTitle' appears on the window's title bar and icon
@@ -4485,6 +4967,7 @@ int	yHt;		/* I height of window; 0 for default */
     pWin->attr.ltCurr = -1;
     pWin->attr.pPatt = NULL;
     pWin->attr.myGC = 0;
+    pWin->attr.bgGC = 0;
 
 /*-----------------------------------------------------------------------------
 * PostScript printer initialization
@@ -4587,7 +5070,7 @@ int	yHt;		/* I height of window; 0 for default */
 *	pprWinOpenUW, pprWinClose, pprWinInfo, pprWinLoop
 *
 * EXAMPLES
-* 1.	for X
+* 1.	for X11
 *
 *	PPR_WIN *pWin;
 *	Display *pDisp;
@@ -4614,6 +5097,10 @@ int	yHt;		/* I height of window; 0 for default */
 *	pprWinClose(pWin);
 *
 * 3.	for XView
+*	(Since XView doesn't have any built-in line drawing capabilities,
+*	some fussing is needed to get the X11 items needed for plotting.
+*	In the following, pDisp, plotWindow, and plotGC are X11 items which
+*	are obtained from XView items.)
 *
 *	PPR_WIN	*pWin;
 *	Display	*pDisp;
@@ -4621,7 +5108,7 @@ int	yHt;		/* I height of window; 0 for default */
 *	GC	plotGC;
 *
 *	pDisp = (Display *)xv_get(frame, XV_DISPLAY);
-*	window = (Window)xv_get(canvas_paint_window(canvas), XV_XID);
+*	plotWindow = (Window)xv_get(canvas_paint_window(canvas), XV_XID);
 *	plotGC = DefaultGC(pDisp, DefaultScreen(pDisp));
 *
 *	pWin = pprWinOpenUW(&pDisp, &plotWindow, &plotGC, NULL);
@@ -4655,11 +5142,17 @@ void	*pArg4;
     pWin->frame = *(Frame *)pArg1;
     pWin->canvas = *(Canvas *)pArg2;
     pWin->pw = canvas_pixwin(pWin->canvas);
+    pWin->attr.bgGC = 0;
 #elif defined XWINDOWS
     pWin->pDisp = *(Display **)pArg1;
     pWin->plotWindow = *(Window *)pArg2;
     pWin->attr.gc = *(GC *)pArg3;
     pWin->attr.myGC = 0;
+    pWin->attr.gcBG = XCreateGC(pWin->pDisp, pWin->plotWindow, 0, NULL);
+    XCopyGC(pWin->pDisp, pWin->attr.gc,
+				GCBackground|GCForeground, pWin->attr.gcBG);
+    XSetFunction(pWin->pDisp, pWin->attr.gcBG, GXclear);
+    pWin->attr.bgGC = 1;
 #endif
     pprWinAttr(pWin);
 
@@ -4734,7 +5227,7 @@ void	*pArg;
 *-*/
 void
 pprWinWrapup(pWin)
-PPR_WIN	*pWin;	/* IO pointer to plot window structure */
+PPR_WIN	*pWin;	/* I pointer to plot window structure */
 {
     if (pWin->winType == PPR_WIN_POSTSCRIPT)
 	(void)fprintf(pWin->file, "showpage");
@@ -4759,7 +5252,7 @@ PPR_WIN	*pWin;	/* IO pointer to plot window structure */
 *	labels.
 *
 * RETURNS
-*	void
+*	X fraction
 *
 * SEE ALSO
 *	pprText

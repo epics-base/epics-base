@@ -2,18 +2,100 @@
 <html>
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4u) [Netscape]">
+   <meta name="GENERATOR" content="Mozilla/4.72 [en] (X11; U; SunOS 5.8 sun4u) [Netscape]">
    <title>EPICS Release baseR3.13.0.beta12
 </title>
 </head>
 <body>
 
 <h1>
-EPICS Release 3.13.2</h1>
+EPICS Release 3.13.3</h1>
 
 <h4>
-Dec 16, 1999</h4>
+June 29, 2000</h4>
 
+<h3>
+Changes since 3.13.2</h3>
+<b>Channel Access Changes</b><b></b>
+<p>Fixed the RISC architecture specific problem in iocCore which results
+in an intermittent and infrequent assert failure with this message: "assert
+(ev_que->evUser->nDuplicates>=1u)". This was actually fixed in release
+3.13.2.
+<p>All structure members with names "m_type" were changed to "m_dataType"
+to avoid a macro name compile time conflict present in the SENS IP kernel
+supplied with Tornado II and optionally in Tornado I.
+<p>The network interface query code used by Channel Access for auto-configure
+was modified to be compatible with changed API's present in the SENS IP&nbsp;
+kernel supplied with Tornado II and optionally in Tornado I.
+<br>&nbsp;
+<p><b>task_params.h</b>
+<p>Change task names so that they do not contain blanks.
+<p><b>tsLib.h</b>
+<p>Made tsStampFromLocal and tsStampToLocal public rather than private.
+<p><b>dbAccess</b>
+<p>The following new routines have been added.
+<blockquote>dbGetControlLimits
+<br>dbGetGraphicLimits
+<br>dbGetAlarmLimits
+<br>dbGetPrecision
+<br>dbGetUnits
+<br>dbGetNelements
+<br>dbGetSevr
+<br>dbGetTimeStamp</blockquote>
+<b>menuAlarmStat.dbd</b>
+<p>choice(menuAlarmStat,"NO_ALARM")
+<p>is changed to
+<p>choice(menuAlarmStatNO_ALARM,"NO_ALARM")
+<p><b>recGblResetAlarms</b>
+<p>a monitor for the STAT field is fired if either the STAT or SEVR changes.
+Previously a monotor was fired only if the STAT changes.
+<p><b>dbAccess.c</b>
+<p>In dbPutLinkValue, if the (out)link has MS property, the old severity
+was propagated instead of the actual one. This is fixed by calling recGblSetSevr
+with NSEV instead of SEVR of the source record.
+<p><b>mbboDirectRecord</b>
+<ul>
+<li>
+IVOV and IVOA are now fully supported. Behaviour is similar to other output
+record types.</li>
+
+<li>
+UDF behaviour is fixed: UDF is now reset after warm reboot, after setting
+any of the BX fields in supervisory mode and after (successful) reading
+from DOL in closed_loop mode. Also, UDF_ALARM is raised if UDF has not
+yet been reset, as with other record types</li>
+
+<li>
+LINK / INVALID alarm is raised if reading from DOL fails. This, also, is
+similar to other output records.</li>
+</ul>
+
+<p><br><b>devVXStats.c</b>
+<p>The stack size for cpuUsageTask was increased. The precious stack size
+was too small for mv172s, which do not have a separate interrupt stack
+like the mv167.&nbsp; The same problem may exist on other processors such
+as the powerPC.
+<p><b>dbel.c</b>
+<p>It was incorrectly reporting VALUE,&nbsp; ALARM and LOG for all events.
+<p><b>longoutRecord</b>
+<p>Added fields drvl and drvh
+<p><b>aiRecord, calcRecord, calcoutRecord, selRecord, and subRecord</b>
+<p>In alarm the definitions of hihi, high, low, lolo; are changed from
+float to double.
+<p><b>aoRecord.c</b>
+<p>The convert routine no longer sets udf false. Fetch_value does set udf
+false when it successfully fetched a value. Thus udf is now only set false
+when a new value is obtained.
+<p><b>dfanoutRecord.c</b>
+<p>A dbPutLink is attempted for all links even if a put for a previous
+link fails. If a dbPutLink fails&nbsp; recGblSetSevr(pdfanout,LINK_ALARM,MAJOR_ALARM)
+is called.
+<p><b>dbStaticLib</b>
+<p>When dbPutString&nbsp; writes to the VAL field then udf is set false.
+<p><b>cvtFast</b>
+<p>cvtLongToHexString now puts 0x in frount of the number and cvtLongToOctalString
+writes a leading 0.
+<br>&nbsp;
 <h3>
 Changes since 3.13.1</h3>
 <b>tsSubr</b>

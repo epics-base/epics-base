@@ -210,10 +210,16 @@ static void semStatCallFunc(ioccrfArg **args)
 {
     rtems_semstat(*(int *)args[0]->value);
 }
+static ioccrfFuncDef stackCheckFuncDef = {"stackCheck",0,NULL};
+static void stackCheckCallFunc(ioccrfArg **args)
+{
+    Stack_check_Dump_usage ();
+}
 static void ioccrfRegisterRTEMS (void)
 {
     ioccrfRegister(&netStatFuncDef, netStatCallFunc);
     ioccrfRegister(&semStatFuncDef, semStatCallFunc);
+    ioccrfRegister(&stackCheckFuncDef, stackCheckCallFunc);
 }
 
 /*

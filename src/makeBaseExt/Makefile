@@ -13,6 +13,7 @@ TEMPLATES += top/configure/RELEASE
 TEMPLATES += top/configure/RULES
 TEMPLATES += top/configure/RULES_DIRS
 TEMPLATES += top/configure/RULES_TOP
+TEMPLATES += top/configure/RULES_PYTHON
 
 TEMPLATES += $(subst ../,,$(wildcard ../top/configure/os/CONFIG*))
 
@@ -27,3 +28,4 @@ TEMPLATES += top/simpleExt/Makefile
 SCRIPTS_HOST += makeBaseExt.pl
 
 include $(TOP)/configure/RULES
+

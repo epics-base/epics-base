@@ -109,7 +109,7 @@ void epicsMutexOsdDestroy(struct epicsMutexOSD * id)
         sc = rtems_semaphore_delete (sid);
     }
     if (sc != RTEMS_SUCCESSFUL)
-        errlogPrintf ("Can't destroy semaphore %p (%lx): %s\n", id, sid, rtems_status_text (sc));
+        errlogPrintf ("Can't destroy semaphore %p (%lx): %s\n", id, (unsigned long)sid, rtems_status_text (sc));
 }
 
 void epicsMutexOsdUnlock(struct epicsMutexOSD * id)

@@ -21,6 +21,7 @@
 /*	.10 111991 joh	mobe IODONESUB macro to service.c		*/
 /*	.11 031692 joh	added declaration for post_msg()		*/
 /*	.12 031892 joh	initial rebroadcast delay is now a #define	*/
+/*	.13 050492 joh	added exception channel fd set			*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -136,7 +137,7 @@ typedef unsigned long ca_time;
 #if defined(UNIX)
 #	define readch		(ca_static->ca_readch)
 #	define writech		(ca_static->ca_writech)
-#	define execch		(ca_static->ca_execch)
+#	define excepch		(ca_static->ca_excepch)
 #elif defined(vxWorks)
 #	define io_done_sem	(ca_static->ca_io_done_sem)
 #	define evuser		(ca_static->ca_evuser)
@@ -175,6 +176,7 @@ struct  ca_static{
   char			ca_sprintf_buf[128];
 #if defined(UNIX)
   fd_set                ca_readch;  
+  fd_set                ca_excepch;  
 #elif defined(VMS)
   int			ca_io_done_flag;
   char			ca_peek_ast_buf;
@@ -203,7 +205,9 @@ struct  ca_static{
     unsigned		read_seq;
     unsigned 		cur_read_seq;
     LIST		chidlist;		/* chans on this connection */
-    int			conn_up;		/* boolean: T-conn /F-disconn */
+    short		conn_up;		/* boolean: T-conn /F-disconn */
+    short		send_needed;		/* CA needs a send */
+    char		host_name_str[32];
     unsigned		nconn_tries;
     ca_time		next_retry;
     ca_time		retry_delay;

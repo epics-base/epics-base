@@ -20,7 +20,6 @@ DIRS_Vx= \
 	src/as\
 	src/drv/ansi\
 	src/drv/old\
-	src/drv/combine\
 	src/dev\
 	src/devOpt\
 	src/iocCore

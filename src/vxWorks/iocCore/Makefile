@@ -5,8 +5,6 @@ include $(TOP)/configure/CONFIG
 
 LIBRARY_vxWorks = iocCore
 
-include $(TOP)/configure/RULES_BUILD
-
 LIBOBJS = \
 	$(INSTALL_BIN)/asLibrary \
 	$(INSTALL_BIN)/caLib \
@@ -20,3 +18,6 @@ LIBOBJS = \
 	$(INSTALL_BIN)/vxComLib \
 	$(INSTALL_BIN)/vxDbLib
 
+include $(TOP)/configure/RULES_BUILD
+
+iocCore: $(LIBOBJS)

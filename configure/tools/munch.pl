@@ -24,43 +24,62 @@ while ($line = <STDIN>)
         ($adr,$type,$name) = split ' ',$line,3;
         chop $name;
         $name =~ s/^__/_/;
-        next if ( $name =~ /^__?GLOBAL_.D.*.\.cpp/ );
-        next if ( $name =~ /^__?GLOBAL_.D.\.\./ );
         @dtorlist = (@dtorlist,$name);
     };
     if ($line =~ /__?GLOBAL_.I.+/) {
         ($adr,$type,$name) = split ' ',$line,3;
         chop $name;
         $name =~ s/^__/_/;
-        next if ( $name =~ /^__?GLOBAL_.I.*.\.cpp/ );
-        next if ( $name =~ /^__?GLOBAL_.I.\.\./ );
         @ctorlist = (@ctorlist,$name);
     };
 }
 
 foreach $ctor (@ctorlist)
 {
-    printf "void %s();\n",$ctor;
+	if ( $ctor =~ /\./ ) {
+		printf "void %s() __asm__ (\"_%s\");\n",convertName($ctor),$ctor;
+    } else {
+		printf "void %s();\n",$ctor;
+	}
 }
 
 print "extern void (*_ctors[])();\n";
 print "void (*_ctors[])() = {\n";
 foreach $ctor (@ctorlist)
 {
-    printf "        %s,\n",$ctor;
+	if ( $ctor =~ /\./ ) {
+		printf "        %s,\n",convertName($ctor);
+    } else {
+    	printf "        %s,\n",$ctor;
+	}
 }
 print "        0};\n";
 
 
 foreach $dtor (@dtorlist)
 {
-    printf "void %s();\n",$dtor;
+	if ( $dtor =~ /\./ ) {
+		printf "void %s() __asm__ (\"_%s\");\n",convertName($dtor),$dtor;
+    } else {
+		printf "void %s();\n",$dtor;
+	}
 }
 
 print "extern void (*_ctors[])();\n";
 print "void (*_dtors[])() = {\n";
 foreach $dtor (@dtorlist)
 {
-    printf "        %s,\n",$dtor;
+	if ( $dtor =~ /\./ ) {
+		printf "        %s,\n",convertName($dtor);
+    } else {
+    	printf "        %s,\n",$dtor;
+	}
 }
 print "        0};\n";
+
+sub convertName {
+	my ($name) = @_;
+	$name =~ s/\./\$/g;
+	return $name;
+}
+

@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.42  1996/12/12 18:51:41  jhill
+ * doc
+ *
  * Revision 1.41  1996/12/11 01:10:33  jhill
  * added additional vector tests
  *
@@ -45,10 +48,6 @@ static char *sccsId = "@(#) $Id$";
  *
  */
 
-#ifdef VMS
-#include <LIB$ROUTINES.H>
-#endif
-
 /*
  * ANSI
  */
@@ -57,10 +56,11 @@ static char *sccsId = "@(#) $Id$";
 #include	<math.h>
 #include	<float.h>
 #include	<string.h>
-
-#include	"os_depen.h"
-
 #include	<assert.h>
+
+/*
+ * CA 
+ */
 #include 	<cadef.h>
 
 #define EVENT_ROUTINE	null_event
@@ -110,6 +110,8 @@ dbr_float_t 	epsilon,
 unsigned 	iterations);
 
 #ifdef vxWorks
+#include <vxWorks.h>
+#include <taskLib.h>
 int acctst(char *pname)
 {
 
@@ -166,9 +168,6 @@ int doacctst(char *pname)
 	conn_cb_count = 0;
 
 	printf("begin\n");
-#ifdef VMS
-	lib$init_timer();
-#endif /*VMS*/
 
 	printf("CA Client V%s\n", ca_version());
 
@@ -359,14 +358,6 @@ int doacctst(char *pname)
 		printf("waiting on connect...");
 		fflush(stdout);
 	}
-
-#ifdef VMS
-	lib$show_timer();
-#endif /*VMS*/
-
-#ifdef VMS
-	lib$init_timer();
-#endif /*VMS*/
 
 	printf("Read Access=%d Write Access=%d\n", 
 		ca_read_access(chix1),
@@ -759,51 +750,71 @@ int doacctst(char *pname)
 	 * if multiple elements are present
 	 */
 	if (VALID_DB_REQ(chix1->type)) {
-		if (ca_element_count(chix1)>1u) {
-			dbr_float_t	*pRF, *pWF, *pEF, *pT;
+		if (ca_element_count(chix1)>1u && ca_read_access(chix1)) {
+			dbr_float_t	*pRF, *pWF, *pEF, *pT1, *pT2;
 
-			printf("Performing array test...");
+			printf("Performing %u element array test...",
+					ca_element_count(chix1));
 			fflush(stdout);
 
-			pRF = (dbr_float_t *) calloc(ca_element_count(chix1), sizeof(*pRF));
+			pRF = (dbr_float_t *) calloc(ca_element_count(chix1), 
+						sizeof(*pRF));
 			assert(pRF!=NULL);
 
-			pWF = (dbr_float_t *)calloc(ca_element_count(chix1), sizeof(*pWF));
+			pWF = (dbr_float_t *)calloc(ca_element_count(chix1), 
+						sizeof(*pWF));
 			assert(pWF!=NULL);
 
+			/*
+			 * write some random numbers into the array
+			 */
 			if (ca_write_access(chix1)) {
-				pT = pWF;
-				while(pRF<pEF) {
-					*pT++ = rand();
+				pT1 = pWF;
+				pEF = &pWF[ca_element_count(chix1)];
+				while(pT1<pEF) {
+					*pT1++ = rand();
 				}
 				status = ca_array_put(
 						DBR_FLOAT, 
 						ca_element_count(chix1), 
 						chix1, 
 						pWF); 
-				SEVCHK(status, "array write test failed");
+				SEVCHK(status, "array write request failed");
 			}
+
+			/*
+			 * read back the array
+			 */
 			if (ca_read_access(chix1)) {
 				status = ca_array_get(
 						DBR_FLOAT, 
 						ca_element_count(chix1), 
 						chix1, 
 						pRF); 
-				SEVCHK(status, "array read test failed");
+				SEVCHK(status, "array read request failed");
+				status = ca_pend_io(30.0);
+				SEVCHK(status, "array read failed");
 			}
+
+			/*
+			 * verify read response matches values written
+			 */
 			if (ca_read_access(chix1) && ca_write_access(chix1)) {
 				pEF = &pRF[ca_element_count(chix1)];
-				while(pRF<pEF) {
-					assert(*pRF++ == *pWF++);
+				pT1 = pRF;
+				pT2 = pWF;
+				while (pT1<pEF) {
+					assert (*pT1 == *pT2);
+					pT1++;
+					pT2++;
 				}
 			}
 			printf("done\n");
+			free(pRF);
+			free(pWF);
 		}
 	}
 
-#ifdef VMS
-	lib$show_timer();
-#endif /*VMS*/
 	for (i = 0; i < NUM; i++) {
 		printf("Float value Returned from put/get %f\n", pfloat[i]);
 		printf("Double value Returned from put/get %f\n", pdouble[i]);

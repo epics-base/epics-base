@@ -249,7 +249,14 @@ repeaterClient::~repeaterClient ()
     debugPrintf ( ( "Deleted client %u\n", epicsNTOH16 ( this->from.ia.sin_port ) ) );
 }
 
-inline void repeaterClient::operator delete ( void * )
+void * repeaterClient::operator new ( size_t )
+{
+    // The HPUX compiler seems to require this even though no code
+    // calls it directly
+    throw std::logic_error ( "why is the compiler calling private operator new" );
+}
+
+void repeaterClient::operator delete ( void * )
 { 
     // Visual C++ .net appears to require operator delete if
     // placement operator delete is defined? I smell a ms rat
@@ -260,14 +267,14 @@ inline void repeaterClient::operator delete ( void * )
         __FILE__, __LINE__ );
 }
 
-inline void * repeaterClient::operator new ( size_t size, 
+void * repeaterClient::operator new ( size_t size, 
     tsFreeList < repeaterClient, 0x20 > & freeList )
 { 
     return freeList.allocate ( size );
 }
 
 #ifdef CXX_PLACEMENT_DELETE
-inline void repeaterClient::operator delete ( void *pCadaver, 
+void repeaterClient::operator delete ( void *pCadaver, 
     tsFreeList < repeaterClient, 0x20 > & freeList ) epicsThrows(())
 { 
     freeList.release ( pCadaver );

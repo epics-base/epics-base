@@ -278,6 +278,13 @@ void CASG::exception ( int status, const char *pContext,
         lineNo, chan, type, count, op );
 }
 
+void * CASG::operator new ( size_t )
+{
+    // The HPUX compiler seems to require this even though no code
+    // calls it directly
+    throw std::logic_error ( "why is the compiler calling private operator new" );
+}
+
 void CASG::operator delete ( void * )
 {
     // Visual C++ .net appears to require operator delete if

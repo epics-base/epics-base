@@ -388,24 +388,25 @@ void resTable<T,ID>::show ( unsigned level ) const
 {    
     const unsigned N = this->tableSize ();
 
-    printf ( "%u bucket hash table with %u items of type %s installed\n", 
+    printf ( "Hash table with %u buckets and %u items of type %s installed\n", 
         N, this->nInUse, typeid(T).name() );
 
-    if ( N ) {
-        tsSLList<T> * pList = this->pTable;
-        while ( pList < & this->pTable[N] ) {
-            tsSLIter<T> pItem = pList->firstIter ();
-            while ( pItem.valid () ) {
-                tsSLIter<T> pNext = pItem;
-                pNext++;
-                pItem.pointer()->show ( level );
-                pItem = pNext;
-            }
-            pList++;
-        }
-    }
+    if ( level >= 1u && N ) {
 
-    if ( level >=1u && N ) {
+        if ( level >= 2u ) {
+            tsSLList<T> * pList = this->pTable;
+            while ( pList < & this->pTable[N] ) {
+                tsSLIter<T> pItem = pList->firstIter ();
+                while ( pItem.valid () ) {
+                    tsSLIter<T> pNext = pItem;
+                    pNext++;
+                    pItem.pointer()->show ( level - 2u );
+                    pItem = pNext;
+                }
+                pList++;
+            }
+        }
+
         double X = 0.0;
         double XX = 0.0;
         unsigned maxEntries = 0u;

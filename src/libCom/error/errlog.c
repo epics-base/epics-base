@@ -344,6 +344,7 @@ epicsShareFunc int epicsShareAPI errlogInit(int bufsize)
 epicsShareFunc void epicsShareAPI errlogFlush(void)
 {
     int count;
+    errlogInit(0);
    /*If nothing in queue dont wake up errlogThread*/
     epicsMutexMustLock(pvtData.msgQueueLock);
     count = ellCount(&pvtData.msgQueue);

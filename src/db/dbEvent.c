@@ -568,7 +568,7 @@ int epicsShareAPI db_post_extra_labor (dbEventCtx ctx)
  *
  *  NOTE: This assumes that the db scan lock is already applied
  */
-LOCAL void epicsShareAPI db_post_single_event_private (struct evSubscrip *event)
+LOCAL void db_post_single_event_private (struct evSubscrip *event)
 {  
     struct event_que    *ev_que;
     db_field_log        *pLog;
@@ -727,7 +727,7 @@ unsigned int    select
 /*
  *  DB_POST_SINGLE_EVENT()
  */
-void db_post_single_event (dbEventSubscription es)
+void epicsShareAPI db_post_single_event (dbEventSubscription es)
 {  
     struct evSubscrip *event = (struct evSubscrip *) es;
     struct dbCommon *precord = event->paddr->precord;

@@ -631,15 +631,19 @@ extern "C" int epicsShareAPI ca_pend_event (ca_real timeout)
         return status;
     }
 
-    // preserve past odd ball behavior of waiting forever when
-    // the delay is zero
-    if ( timeout == 0.0 ) {
-        while ( true ) {
-            pcac->pendEvent ( 60.0 );
+    try {
+        // preserve past odd ball behavior of waiting forever when
+        // the delay is zero
+    	if ( timeout == 0.0 ) {
+            while ( true ) {
+                pcac->pendEvent ( 60.0 );
+            }
         }
+        return pcac->pendEvent ( timeout );
     }
-
-    return pcac->pendEvent ( timeout );
+    catch ( ... ) {
+        return ECA_INTERNAL;
+    }
 }
 
 /*

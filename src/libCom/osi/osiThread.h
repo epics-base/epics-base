@@ -71,6 +71,8 @@ epicsShareFunc void * epicsShareAPI threadPrivateGet (threadPrivateId);
 
 #ifdef __cplusplus
 
+#include "locationException.h"
+
 class osiThread {
 public:
     osiThread (const char *name, unsigned stackSize,
@@ -200,11 +202,7 @@ inline osiThreadPrivate<T>::osiThreadPrivate ()
 {
     this->id = threadPrivateCreate ();
     if (this->id == 0) {
-#       ifdef noExceptionsFromCXX
-            assert (this->id != 0);
-#       else            
-            throw unableToCreateThreadPrivate ();
-#       endif
+        throwWithLocation ( unableToCreateThreadPrivate () );
     }
 }
 

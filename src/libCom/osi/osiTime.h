@@ -41,6 +41,7 @@
 #include "epicsTypes.h"
 #include "tsStamp.h"
 #include "epicsAssert.h"
+#include "locationException.h"
 
 struct timespec; // POSIX real time 
 struct timeval; // BSD 
@@ -264,11 +265,7 @@ inline osiTime osiTime::getCurrent ()
 
 	status = tsStampGetCurrent (&current);
     if (status) {
-#       ifdef noExceptionsFromCXX
-            assert (0);
-#       else
-            throw unableToFetchCurrentTime ();
-#       endif
+        throwWithLocation ( unableToFetchCurrentTime () );
     }
 
     return osiTime (current);
@@ -281,11 +278,7 @@ inline osiTime osiTime::getEvent (const osiTimeEvent &event)
 
 	status = tsStampGetEvent (&current, event.eventNumber);
     if (status) {
-#       ifdef noExceptionsFromCXX
-            assert (0);
-#       else
-            throw unableToFetchCurrentTime ();
-#       endif
+        throwWithLocation ( unableToFetchCurrentTime () );
     }
 
     return osiTime (current);

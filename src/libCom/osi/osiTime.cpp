@@ -35,6 +35,7 @@
 #include <limits.h>
 
 #define epicsExportSharedSymbols
+#include "locationException.h"
 #include "epicsAssert.h"
 #include "envDefs.h"
 #include "osiTime.h"
@@ -259,11 +260,7 @@ osiTime::osiTime (const tm_nano_sec &tm)
 
 	ansiTimeTicks.ts = mktime (&tmp);
     if (ansiTimeTicks.ts ==  mktimeFailure) {
-#       ifdef noExceptionsFromCXX
-            assert (0);
-#       else            
-            throw formatProblemWithStructTM ();
-#       endif
+        throwWithLocation ( formatProblemWithStructTM () );
     }
 
     *this = osiTime (ansiTimeTicks);

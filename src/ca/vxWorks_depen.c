@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.38  1998/06/16 00:56:03  jhill
+ * moved code from here to libCom
+ *
  * Revision 1.37  1998/05/08 00:20:56  jhill
  * added missing call to freeListCleanup()
  *
@@ -158,25 +161,25 @@ void cac_gettimeval(struct timeval  *pt)
  */
 void cac_block_for_io_completion(struct timeval *pTV)
 {
-        struct timeval  itimeout;
+	struct timeval  itimeout;
 	int		ticks;
 	int		rate = sysClkRateGet();
 
 #ifdef NOASYNCRECV 
-        cac_mux_io(pTV);
+	cac_mux_io(pTV);
 #else
 	/*
 	 * flush outputs
 	 * (recv occurs in another thread)
 	 */
-        itimeout.tv_usec = 0;
-        itimeout.tv_sec = 0;
-        cac_mux_io(&itimeout);
+	itimeout.tv_usec = 0;
+	itimeout.tv_sec = 0;
+	cac_mux_io (&itimeout);
         
 	ticks = (int) (pTV->tv_sec*rate + (pTV->tv_usec*rate)/USEC_PER_SEC);
 	ticks = min(LOCALTICKS, ticks);
 
-	semTake(io_done_sem, ticks);
+	semTake (io_done_sem, ticks);
 	/*
 	 * force a time update because we are not
 	 * going to get one with a nill timeout in
@@ -929,25 +932,25 @@ LOCAL void ca_extra_event_labor (void *pArg)
  */
 void cac_recv_task(int  tid)
 {
-        struct timeval  timeout;
-        int             status;
-	int		count;
-
-        taskwdInsert((int) taskIdCurrent, NULL, NULL);
-
-        status = ca_import(tid);
-        SEVCHK(status, "cac_recv_task()");
-
-        /*
-         * once started, does not exit until
-         * ca_task_exit() is called.
-         */
-        while(TRUE){
+	struct timeval timeout;
+	int status;
+	int count;
+	
+	taskwdInsert((int) taskIdCurrent, NULL, NULL);
+	
+	status = ca_import(tid);
+	SEVCHK(status, "cac_recv_task()");
+	
+	/*
+	 * once started, does not exit until
+	 * ca_task_exit() is called.
+	 */
+	while (TRUE) {
 #ifdef NOASYNCRECV 
-		taskDelay(60);
+		taskDelay (60);
 #else
-        	cac_clean_iiu_list();
 
+		
 		/*
 		 * first check for pending recv's with a 
 		 * zero time out so that
@@ -955,28 +958,31 @@ void cac_recv_task(int  tid)
 		 * 2) we queue up sends resulting from recvs properly
 		 */
 		while (TRUE) {
-			CLR_CA_TIME (&timeout);
-			count = cac_select_io(&timeout, CA_DO_RECVS);
+			CLR_CA_TIME(&timeout);
+			count = cac_select_io (&timeout, CA_DO_RECVS);
 			if (count<=0) {
 				break;
 			}
-			ca_process_input_queue();
+			ca_process_input_queue ();
 		}
-
+		
+		manage_conn ();
+		
 		/*
 		 * flush out all pending io prior to blocking
 		 *
 		 * NOTE: this must be longer than one vxWorks
 		 * tick or we will infinite loop 
 		 */
-                timeout.tv_usec = (4/*ticks*/ * USEC_PER_SEC)/sysClkRateGet();
-                timeout.tv_sec = 0;
-		count = cac_select_io(&timeout, 
-			CA_DO_RECVS|CA_DO_SENDS);
-		ca_process_input_queue();
-        	manage_conn();
+		timeout.tv_usec = (4/*ticks*/ * USEC_PER_SEC)/sysClkRateGet();
+		timeout.tv_sec = 0;
+		count = cac_select_io (&timeout, CA_DO_RECVS|CA_DO_SENDS);
+
+		ca_process_input_queue ();
+
+		checkConnWatchdogs ();
 #endif
-        }
+	}
 }
 
 

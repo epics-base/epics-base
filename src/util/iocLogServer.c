@@ -65,6 +65,7 @@ static char	*pSCCSID = "@(#)iocLogServer.c	1.9\t05/05/94";
 #include	<string.h>
 #include	<errno.h>
 #include	<assert.h>
+#include	<signal.h>
 
 #include 	<unistd.h>
 
@@ -87,8 +88,10 @@ static char	*pSCCSID = "@(#)iocLogServer.c	1.9\t05/05/94";
 
 static unsigned short	ioc_log_port;
 static long		ioc_log_file_limit;
-static char		ioc_log_file_name[64];
+static char		ioc_log_file_name[256];
+static char		ioc_log_file_command[256];
 
+static int		sighupPipe[2];
 
 #ifndef TRUE
 #define	TRUE			1
@@ -110,6 +113,7 @@ struct iocLogClient {
 
 struct ioc_log_server {
 	int		sock;
+	char		outfile[256];
 	FILE		*poutfile;
 	unsigned	max_file_size;
 	void   		*pfdctx;
@@ -132,6 +136,10 @@ static void handleLogFileError(void);
 static void envFailureNotify(ENV_PARAM *pparam);
 static void freeLogClient(struct iocLogClient *pclient);
 
+static void sighupHandler(void);
+static void serviceSighupRequest(void *pParam);
+static int getDirectory(void);
+
 
 /*
  *
@@ -144,12 +152,20 @@ int main()
 	struct timeval          timeout;
 	int			status;
 	struct ioc_log_server	*pserver;
+	struct sigaction	sigact;
 	int			optval;
 
 	status = getConfig();
 	if(status<0){
 		fprintf(stderr, "iocLogServer: EPICS environment underspecified\n");
 		fprintf(stderr, "iocLogServer: failed to initialize\n");
+		return ERROR;
+	}
+
+	status = getDirectory();
+	if (status<0){
+		fprintf(stderr, "iocLogServer: failed to determine log file "
+			"directory\n");
 		return ERROR;
 	}
 
@@ -162,6 +178,18 @@ int main()
 
 	pserver->pfdctx = (void *) fdmgr_init();
 	if(!pserver->pfdctx){
+		fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
+		return ERROR;
+	}
+
+	/*
+	 * Set up SIGHUP handler. SIGHUP will cause the log file to be
+	 * closed and re-opened, possibly with a different name.
+	 */
+	sigact.sa_handler = sighupHandler;
+	sigact.sa_mask = (sigset_t) 0;
+	sigact.sa_flags = 0;
+	if (sigaction(SIGHUP, &sigact, NULL)){
 		fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
 		return ERROR;
 	}
@@ -228,7 +256,7 @@ int main()
 	status = openLogFile(pserver);
 	if(status<0){
 		fprintf(stderr,
-			"File access problems to `%s' becuse `%s'\n", 
+			"File access problems to `%s' because `%s'\n", 
 			ioc_log_file_name,
 			strerror(errno));
 		return ERROR;
@@ -241,6 +269,28 @@ int main()
 			acceptNewClient,
 			pserver);
 	if(status<0){
+		fprintf(stderr,
+			"iocLogServer: failed to add read callback\n");
+		return ERROR;
+	}
+
+	status = pipe(sighupPipe);
+	if(status<0){
+                fprintf(stderr,
+                        "iocLogServer: failed to create pipe because `%s'\n",
+                        strerror(errno));
+                return ERROR;
+        }
+
+	status = fdmgr_add_callback(
+			pserver->pfdctx, 
+			sighupPipe[0], 
+			fdi_read,
+			serviceSighupRequest,
+			pserver);
+	if(status<0){
+		fprintf(stderr,
+			"iocLogServer: failed to add SIGHUP callback\n");
 		return ERROR;
 	}
 
@@ -259,7 +309,7 @@ int main()
  */
 static int openLogFile(struct ioc_log_server *pserver)
 {
-	if(pserver->poutfile){
+	if(pserver->poutfile && pserver->poutfile != stderr){
 		pserver->poutfile = freopen(
 					ioc_log_file_name, 
 					"a+", 
@@ -269,8 +319,10 @@ static int openLogFile(struct ioc_log_server *pserver)
 		pserver->poutfile = fopen(ioc_log_file_name, "a+");
 	}
 	if(!pserver->poutfile){
+		pserver->poutfile = stderr;
 		return ERROR;
 	}
+	strcpy(pserver->outfile, ioc_log_file_name);
 	return OK;
 }
 
@@ -518,7 +570,8 @@ static void readFromClient(void *pParam)
 	 * becomes to large
 	 */
 	length = ftell(pclient->pserver->poutfile);
-	if (length > pclient->pserver->max_file_size) {
+	if (length > pclient->pserver->max_file_size   &&
+		     pclient->pserver->max_file_size > 0) {
 #		ifdef DEBUG
 			fprintf(stderr,
 				"ioc log server: resetting the file pointer\n");
@@ -667,6 +720,15 @@ static int getConfig(void)
 		envFailureNotify(&EPICS_IOC_LOG_FILE_NAME);
 		return ERROR;
 	}
+
+	pstring = envGetConfigParam(
+			&EPICS_IOC_LOG_FILE_COMMAND, 
+			sizeof ioc_log_file_command,
+			ioc_log_file_command);
+	if(pstring == NULL){
+		envFailureNotify(&EPICS_IOC_LOG_FILE_COMMAND);
+		return ERROR;
+	}
 	return OK;
 }
 
@@ -683,4 +745,143 @@ static void envFailureNotify(ENV_PARAM *pparam)
 	fprintf(stderr,
 		"iocLogServer: EPICS environment variable `%s' undefined\n",
 		pparam->name);
+}
+
+
+
+/*
+ *
+ *	sighupHandler()
+ *
+ *
+ */
+static void sighupHandler()
+{
+	(void) write(sighupPipe[1], "SIGHUP\n", 7);
+}
+		
+
+
+/*
+ *	serviceSighupRequest()
+ *
+ */
+static void serviceSighupRequest(void *pParam)
+{
+	struct ioc_log_server	*pserver = (struct ioc_log_server *)pParam;
+	char			buff[256];
+	int			status;
+
+	/*
+	 * Read and discard message from pipe.
+	 */
+	(void) read(sighupPipe[0], buff, sizeof buff);
+
+	/*
+	 * Determine new log file name.
+	 */
+	status = getDirectory();
+	if (status<0){
+		fprintf(stderr, "iocLogServer: failed to determine new log "
+			"file name\n");
+		return;
+	}
+
+	/*
+	 * If it's changed, open the new file.
+	 */
+	if (strcmp(ioc_log_file_name, pserver->outfile) == 0) {
+		fprintf(stderr,
+			"iocLogServer: log file name unchanged; not re-opened\n");
+	}
+	else {
+		status = openLogFile(pserver);
+		if(status<0){
+			fprintf(stderr,
+				"File access problems to `%s' because `%s'\n", 
+				ioc_log_file_name,
+				strerror(errno));
+			strcpy(ioc_log_file_name, pserver->outfile);
+			status = openLogFile(pserver);
+			if(status<0){
+				fprintf(stderr,
+                                "File access problems to `%s' because `%s'\n",
+                                ioc_log_file_name,
+                                strerror(errno));
+				return;
+			}
+			else {
+				fprintf(stderr,
+				"iocLogServer: re-opened old log file %s\n",
+				ioc_log_file_name);
+			}
+		}
+		else {
+			fprintf(stderr,
+				"iocLogServer: opened new log file %s\n",
+				ioc_log_file_name);
+		}
+	}
+}
+
+
+
+/*
+ *
+ *	getDirectory()
+ *
+ *
+ */
+static int getDirectory()
+{
+	FILE		*pipe;
+	char		dir[256];
+	int		i;
+
+	if (ioc_log_file_command[0] != '\0') {
+
+		/*
+		 * Use popen() to execute command and grab output.
+		 */
+		if ((pipe = popen( ioc_log_file_command, "r")) == NULL) {
+			fprintf(stderr,
+				"Problem executing `%s' because `%s'\n", 
+				ioc_log_file_command,
+				strerror(errno));
+			return ERROR;
+		}
+		if (fgets(dir, sizeof(dir), pipe) == NULL) {
+			fprintf(stderr,
+				"Problem reading o/p from `%s' because `%s'\n", 
+				ioc_log_file_command,
+				strerror(errno));
+			return ERROR;
+		}
+		(void) pclose(pipe);
+
+		/*
+		 * Terminate output at first newline and discard trailing
+		 * slash character if present..
+		 */
+		for (i=0; dir[i] != '\n' && dir[i] != '\0'; i++)
+			;
+		dir[i] = '\0';
+
+		i = strlen(dir);
+		if (i > 1 && dir[i-1] == '/') dir[i-1] = '\0';
+
+		/*
+		 * Use output as directory part of file name.
+		 */
+		if (dir[0] != '\0') {
+			char *name = ioc_log_file_name;
+			char *slash = strrchr(ioc_log_file_name, '/');
+			char temp[256];
+
+			if (slash != NULL) name = slash + 1;
+			strcpy(temp,name);
+			sprintf(ioc_log_file_name,"%s/%s",dir,temp);
+		}
+	}
+	return OK;
 }

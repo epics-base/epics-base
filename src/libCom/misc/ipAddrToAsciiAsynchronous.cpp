@@ -18,7 +18,7 @@
 #include "osiThread.h"
 #include "ipAddrToAsciiAsynchronous.h"
 
-osiMutex ipAddrToAsciiEngine::mutex;
+epicsMutex ipAddrToAsciiEngine::mutex;
 
 ipAddrToAsciiEngine::ipAddrToAsciiEngine ( const char *pName ) :
     osiThread ( pName, 0x1000, threadPriorityLow ), nextId ( 0u ),

@@ -17,7 +17,7 @@
 #ifndef ipAddrToAsciiAsynchronous_h
 #define ipAddrToAsciiAsynchronous_h
 
-#include "osiEvent.h"
+#include "epicsMutex.h"
 #include "osiSock.h"
 #include "tsDLList.h"
 #include "shareLib.h"
@@ -38,7 +38,7 @@ private:
     char nameTmp [1024];
     unsigned nextId;
     bool exitFlag;
-    static osiMutex mutex;
+    static epicsMutex mutex;
     void entryPoint ();
     friend class ipAddrToAsciiAsynchronous;
 };

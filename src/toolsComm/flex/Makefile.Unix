@@ -15,6 +15,8 @@ USR_CFLAGS = -DDEFAULT_SKELETON_FILE=\"$(SKELETON_FILE)\" -DUSG
 endif
 USR_LDLIBS = -s
 
+INC += flex.skel.static
+
 # main.c is included in parse.c
 SRCS.c =  ../ccl.c ../dfa.c ../ecs.c ../gen.c  \
 	../misc.c ../nfa.c ../sym.c \

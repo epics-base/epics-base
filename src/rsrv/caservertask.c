@@ -109,7 +109,7 @@ struct client *create_base_client ()
     ellInit(&client->putNotifyQue);
     memset((char *)&client->addr, 0, sizeof(client->addr));
     client->tid = 0;
-    client->sock = SOCKET_ERROR;
+    client->sock = INVALID_SOCKET;
     client->send.stk = 0ul;
     client->send.cnt = 0ul;
     client->recv.stk = 0ul;
@@ -281,7 +281,7 @@ LOCAL int req_server (void)
      * Open the socket. Use ARPA Internet address format and stream
      * sockets. Format described in <sys/socket.h>.
      */
-    if ((IOC_sock = socket(AF_INET, SOCK_STREAM, 0)) == SOCKET_ERROR) {
+    if ((IOC_sock = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
         errlogPrintf ("CAS: Socket creation error\n");
         threadSuspendSelf ();
     }
@@ -309,7 +309,7 @@ LOCAL int req_server (void)
         struct sockaddr     sockAddr;
         int                 addLen = sizeof(sockAddr);
 
-        if ((clientSock = accept(IOC_sock, &sockAddr, &addLen)) == SOCKET_ERROR) {
+        if ((clientSock = accept(IOC_sock, &sockAddr, &addLen)) == INVALID_SOCKET) {
             errlogPrintf("CAS: Client accept error was \"%s\"\n",
                 (int) SOCKERRSTR(SOCKERRNO));
             threadSleep(15.0);
@@ -639,7 +639,7 @@ void destroy_client (struct client *client)
         db_close_events (client->evuser);
     }
     
-    if (client->sock!=SOCKET_ERROR) {
+    if (client->sock!=INVALID_SOCKET) {
         if ( socket_close (client->sock) < 0) {
             errlogPrintf("CAS: Unable to close socket\n");
         }

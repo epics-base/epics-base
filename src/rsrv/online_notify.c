@@ -55,7 +55,7 @@
  */
 int rsrv_online_notify_task()
 {
-    caAddrNode          *pNode;
+    osiSockAddrNode     *pNode;
     double              delay;
     double              maxdelay;
     long                longStatus;
@@ -66,7 +66,7 @@ int rsrv_online_notify_task()
     int                 true = TRUE;
     unsigned short      port;
     
-    taskwdInsert(threadGetIdSelf(),NULL,NULL);
+    taskwdInsert (threadGetIdSelf(),NULL,NULL);
     
     longStatus = envGetDoubleConfigParam (
                 &EPICS_CA_BEACON_PERIOD, &maxPeriod);
@@ -86,7 +86,7 @@ int rsrv_online_notify_task()
      *  Use ARPA Internet address format and datagram socket.
      *  Format described in <sys/socket.h>.
      */
-    if( (sock = socket (AF_INET, SOCK_DGRAM, 0)) == SOCKET_ERROR){
+    if ( (sock = socket (AF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET) {
         errlogPrintf ("CAS: online socket creation error\n");
         threadSuspendSelf ();
     }
@@ -137,7 +137,7 @@ int rsrv_online_notify_task()
          */
         casSufficentSpaceInPool = osiSufficentSpaceInPool ();
   
-        pNode = (caAddrNode *) ellFirst (&beaconAddrList);
+        pNode = (osiSockAddrNode *) ellFirst (&beaconAddrList);
         while (pNode) {
             char buf[64];
  
@@ -173,7 +173,7 @@ printf ("**** Setting local address to \"%s\" - this may not work correctly ****
                     }
                 }
             }
-            pNode = (caAddrNode *)pNode->node.next;
+            pNode = (osiSockAddrNode *) pNode->node.next;
         }
 
         threadSleep(delay);

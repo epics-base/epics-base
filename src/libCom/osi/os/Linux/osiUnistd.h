@@ -31,4 +31,3 @@
  * There seems to be no way to handle this automatically, so
  * if you get compile errors, just make the appropriate changes here.
  */
-int putenv (char *);

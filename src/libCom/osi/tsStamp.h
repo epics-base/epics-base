@@ -35,7 +35,7 @@ struct timespec;
  */
 typedef struct TS_STAMP {
     epicsUInt32    secPastEpoch;   /* seconds since 0000 Jan 1, 1990 */
-    epicsUInt32    nSec;           /* nanoseconds within second */
+    epicsUInt32    nsec;           /* nanoseconds within second */
 } TS_STAMP;
 
 

@@ -246,12 +246,13 @@ osiTime::operator tm_nano_sec () const
 
 	ansiTimeTicks = *this;
 
+    //
 	// reentrant version of localtime() - from POSIX RT
-    // WRS prototype is incorrect ?
+    //
+    // ???? WRS prototype is incorrect ????
+    //
 	p = localtime_r (&ansiTimeTicks.ts, &tm.ansi_tm);
-    if (p != &tm.ansi_tm) {
-        throw internalFailure ();
-    }
+    assert (p == &tm.ansi_tm);
 
 	tm.nSec = this->nSec;
 
@@ -263,20 +264,24 @@ osiTime::operator tm_nano_sec () const
 //
 osiTime::osiTime (const tm_nano_sec &tm)
 {
+    static const time_t mktimeFailure = static_cast<time_t> (-1);
 	time_t_wrapper ansiTimeTicks;
 	struct tm tmp = tm.ansi_tm;
 
 	ansiTimeTicks.ts = mktime (&tmp);
-    if (ansiTimeTicks.ts==(time_t)-1) {
-        throw formatProblemWithStructTM ();
+    if (ansiTimeTicks.ts ==  mktimeFailure) {
+#       ifdef noExceptionsFromCXX
+            assert (0);
+#       else            
+            throw formatProblemWithStructTM ();
+#       endif
     }
 
     *this = osiTime (ansiTimeTicks);
 
-    if (tm.nSec>=nSecPerSec) {
-        throw nanoSecFieldIsTooLarge ();
-    }
-    *this = osiTime (this->secPastEpoch, this->nSec + tm.nSec);
+    unsigned long nSecAdj = tm.nSec % nSecPerSec;
+    unsigned long secAdj = tm.nSec / nSecPerSec;
+    *this = osiTime (this->secPastEpoch+secAdj, this->nSec+nSecAdj);
 }
 
 //
@@ -355,10 +360,9 @@ osiTime::osiTime (const aitTimeStamp &ts)
     ansiTimeTicks.ts = ts.tv_sec;
     *this = osiTime (ansiTimeTicks);
 
-    if ( ts.tv_nsec>=nSecPerSec ) {
-        throw nanoSecFieldIsTooLarge ();
-    }
-    *this = osiTime ( this->secPastEpoch, this->nSec + ts.tv_nsec );
+    unsigned long secAdj = ts.tv_nsec / nSecPerSec;
+    unsigned long nSecAdj = ts.tv_nsec % nSecPerSec;
+    *this = osiTime (this->secPastEpoch+secAdj, this->nSec+nSecAdj);
 }
 
 //
@@ -647,71 +651,97 @@ extern "C" {
     //
     epicsShareFunc int epicsShareAPI tsStampToTime_t (time_t *pDest, const TS_STAMP *pSrc)
     {
-        try {
-            time_t_wrapper dst;
-            dst = osiTime (*pSrc);
+#       ifdef noExceptionsFromCXX
+            time_t_wrapper dst = osiTime (*pSrc);
             *pDest = dst.ts;
-        }
-        catch (...) {
-            return tsStampERROR;
-        }
+#       else
+            try {
+                time_t_wrapper dst = osiTime (*pSrc);
+                *pDest = dst.ts;
+            }
+            catch (...) {
+                return tsStampERROR;
+            }
+#       endif
         return tsStampOK;
     }
     epicsShareFunc int epicsShareAPI tsStampFromTime_t (TS_STAMP *pDest, time_t src)
     {
-        try {
-            time_t_wrapper dst;
-            dst.ts = src;
+        time_t_wrapper dst;
+        dst.ts = src;
+#       ifdef noExceptionsFromCXX
             *pDest = osiTime (dst);
-        }
-        catch (...) {
-            return tsStampERROR;
-        }
+#       else
+            try {
+                *pDest = osiTime (dst);
+            }
+            catch (...) {
+                return tsStampERROR;
+            }
+#       endif
         return tsStampOK;
     }
     epicsShareFunc int epicsShareAPI tsStampToTM (struct tm *pDest, unsigned long *pNSecDest, const TS_STAMP *pSrc)
     {
-        try {
-            tm_nano_sec tmns = osiTime (*pSrc);
-            *pDest = tmns.ansi_tm;
-            *pNSecDest = tmns.nSec;
-        }
-        catch (...) {
-            return tsStampERROR;
-        }
+        tm_nano_sec tmns;
+#       ifdef noExceptionsFromCXX
+            tmns = osiTime (*pSrc);
+#       else
+            try {
+                tmns = osiTime (*pSrc);
+            }
+            catch (...) {
+                return tsStampERROR;
+            }
+#       endif       
+        *pDest = tmns.ansi_tm;
+        *pNSecDest = tmns.nSec;
         return tsStampOK;
     }
     epicsShareFunc int epicsShareAPI tsStampFromTM (TS_STAMP *pDest, const struct tm *pSrc, unsigned long nSecSrc)
     {
-        try {
-            tm_nano_sec tmns;
-            tmns.ansi_tm = *pSrc;
-            tmns.nSec = nSecSrc;
+        tm_nano_sec tmns;
+        tmns.ansi_tm = *pSrc;
+        tmns.nSec = nSecSrc;
+
+#       ifdef noExceptionsFromCXX
             *pDest = osiTime (tmns);
-        }
-        catch (...) {
-            return tsStampERROR;
-        }
+#       else
+            try {
+                *pDest = osiTime (tmns);
+            }
+            catch (...) {
+                return tsStampERROR;
+            }
+#       endif
         return tsStampOK;
     }
     epicsShareFunc int epicsShareAPI tsStampToTimespec (struct timespec *pDest, const TS_STAMP *pSrc)
     {
-        try {
+#       ifdef noExceptionsFromCXX
             *pDest = osiTime (*pSrc);
-        }
-        catch (...) {
-            return tsStampERROR;
-        }
+#       else
+            try {
+                *pDest = osiTime (*pSrc);
+            }
+            catch (...) {
+                return tsStampERROR;
+            }
+#       endif
         return tsStampOK;
     }
     epicsShareFunc int epicsShareAPI tsStampFromTimespec (TS_STAMP *pDest, const struct timespec *pSrc)
     {
-        try {
+#       ifdef noExceptionsFromCXX
             *pDest = osiTime (*pSrc);
-        }
-        catch (...) {
-            return tsStampERROR;
-        }
+#       else
+            try {
+                *pDest = osiTime (*pSrc);
+            }
+            catch (...) {
+                return tsStampERROR;
+            }
+#       endif
         return tsStampOK;
     }
     epicsShareFunc long double epicsShareAPI tsStampDiffInSeconds (const TS_STAMP *pLeft, const TS_STAMP *pRight)

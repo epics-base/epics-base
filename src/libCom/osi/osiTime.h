@@ -120,10 +120,7 @@ public:
     // exceptions
     //
     class unableToFetchCurrentTime {};
-    class negNanoSecInTimeStampFromUNIX {};
-    class nanoSecFieldIsTooLarge {};
     class formatProblemWithStructTM {};
-    class internalFailure {};
 
 	//
 	// fetch the current time
@@ -256,13 +253,13 @@ inline osiTime osiTime::getCurrent ()
     int status;
 
 	status = tsStampGetCurrent (&current);
-#   ifdef osiTimeCanThrowException
-        if (status) {
+    if (status) {
+#       ifdef noExceptionsFromCXX
+            assert (0);
+#       else
             throw unableToFetchCurrentTime ();
-        }
-#   else
-        assert (!status);
-#   endif
+#       endif
+    }
 
     return osiTime (current);
 }
@@ -273,13 +270,13 @@ inline osiTime osiTime::getEvent (const osiTimeEvent &event)
     int status;
 
 	status = tsStampGetEvent (&current, event.eventNumber);
-#   ifdef osiTimeCanThrowException
-        if (status) {
+    if (status) {
+#       ifdef noExceptionsFromCXX
+            assert (0);
+#       else
             throw unableToFetchCurrentTime ();
-        }
-#   else
-        assert (!status);
-#   endif
+#       endif
+    }
 
     return osiTime (current);
 }
@@ -353,7 +350,7 @@ inline osiTime osiTime::operator = (const aitTimeStamp &rhs)
 inline osiTime::osiTime (const TS_STAMP &ts) 
 {
 	this->secPastEpoch = ts.secPastEpoch;
-	this->nSec = ts.nSec;
+	this->nSec = ts.nsec;
 }
 
 inline osiTime osiTime::operator = (const TS_STAMP &rhs)
@@ -366,7 +363,7 @@ inline osiTime::operator TS_STAMP () const
 {
     TS_STAMP ts;
     ts.secPastEpoch = this->secPastEpoch;
-    ts.nSec = this->nSec;
+    ts.nsec = this->nSec;
     return ts;
 }
 

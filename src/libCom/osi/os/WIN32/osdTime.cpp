@@ -358,7 +358,7 @@ extern "C" epicsShareFunc int epicsShareAPI tsStampGetCurrent (TS_STAMP *pDest)
 	perf_last = time_cur;
 
 	pDest->secPastEpoch = (unsigned long) (time_sec%ULONG_MAX);
-    pDest->nSec = (unsigned long) ((time_remainder*osiTime::nSecPerSec)/perf_freq);
+    pDest->nsec = (unsigned long) ((time_remainder*osiTime::nSecPerSec)/perf_freq);
 
     status = ReleaseMutex (osdTimeMutex);
     if (!status) {

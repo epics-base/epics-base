@@ -7,12 +7,13 @@
 ifdef JAVA
 
 INSTALL_JAVA = $(INSTALL_LOCATION)/javalib
-DIRECTORY_TARGETS += $(INSTALL_JAVA)
+JAVA_DIRECTORY_TARGETS += $(INSTALL_JAVA)
 ifdef PACKAGE
-DIRECTORY_TARGETS += $(INSTALL_JAVA)/$(PACKAGE)
+JAVA_DIRECTORY_TARGETS += $(INSTALL_JAVA)/$(PACKAGE)
 endif #ifdef PACKAGE
 
 vpath %.class $(INSTALL_JAVA)/$(PACKAGE)
+vpath %.java .. 
 
 CLASSES += $(subst .java,.class,$(JAVA))
 TESTCLASSES += $(subst .java,.class,$(TESTJAVA))
@@ -25,15 +26,15 @@ JAR_OPTIONS = cvmf
 endif
 JAR_DEPFILES +=  $(wildcard $(JAR_INPUT) $(addsuffix /*,$(JAR_INPUT)))
 
-$(DIRECTORY_TARGETS) :
-#	$(MKDIR) -p $@
-
 build: $(TESTCLASSES) $(JAR)
 
-buildInstall : $(DIRECTORY_TARGETS) $(INSTALL_CLASSES) $(INSTALL_JAR)
+buildInstall : $(JAVA_DIRECTORY_TARGETS) $(INSTALL_CLASSES) $(INSTALL_JAR)
 
 clean::
 	@$(RM) $(TESTCLASSES) $(JAR)
+
+$(JAVA_DIRECTORY_TARGETS):
+	$(MKDIR) -p $@
 
 %.class:%.java
 	@echo Creating java class file $@

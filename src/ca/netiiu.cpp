@@ -206,27 +206,26 @@ int netiiu::clearChannelRequest ( nciu & )
     return ECA_DISCONNCHID;
 }
 
-int netiiu::subscriptionRequest ( netSubscription &, bool )
+void netiiu::subscriptionRequest ( netSubscription &, bool )
 {
-    return ECA_NORMAL;
 }
 
 void netiiu::subscriptionCancelRequest ( netSubscription &, bool )
 {
 }
 
-int netiiu::installSubscription ( netSubscription &subscr )
+void netiiu::installSubscription ( netSubscription &subscr )
 {
+    bool connectedWhenInstalled;
     {
         epicsAutoMutex autoMutex ( this->mutex );
         subscr.channel ().tcpiiuPrivateListOfIO::eventq.add ( subscr );
+        connectedWhenInstalled = subscr.channel ().connected ();
     }
-    int status = this->subscriptionRequest ( subscr, true );
-    if ( status != ECA_NORMAL ) {
-        epicsAutoMutex autoMutex ( this->mutex );
-        subscr.channel ().tcpiiuPrivateListOfIO::eventq.remove ( subscr );
+    // iiu pointer briefly points at tcpiiu before the channel is connected
+    if ( connectedWhenInstalled ) {
+        this->subscriptionRequest ( subscr, true );
     }
-    return status;
 }
 
 void netiiu::hostName ( char *pBuf, unsigned bufLength ) const

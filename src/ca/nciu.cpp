@@ -444,17 +444,20 @@ int nciu::subscribe ( unsigned type, unsigned long nElem,
                          unsigned mask, cacNotify &notify,
                          cacNotifyIO *&pNotifyIO )
 {
+    if ( INVALID_DB_REQ (type) ) {
+        return ECA_BADTYPE;
+    }
+
+    if ( mask > 0xffff || mask == 0u ) {
+        return ECA_BADMASK;
+    }
+
     netSubscription *pSubcr = new netSubscription ( *this, 
         type, nElem, mask, notify );
     if ( pSubcr ) {
-        int status = this->piiu->installSubscription ( *pSubcr );
-        if ( status != ECA_NORMAL ) {
-            delete static_cast < baseNMIU * > ( pSubcr );
-        }
-        else {
-            pNotifyIO = pSubcr;
-        }
-        return status;
+        this->piiu->installSubscription ( *pSubcr );
+        pNotifyIO = pSubcr;
+        return ECA_NORMAL;;
     }
     else {
         return ECA_ALLOCMEM;

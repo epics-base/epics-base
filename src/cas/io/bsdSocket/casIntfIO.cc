@@ -221,3 +221,12 @@ void casIntfIO::show(unsigned level) const
 	}
 }
 
+//
+// casIntfIO::serverAddress ()
+// (avoid problems with GNU inliner)
+//
+caNetAddr casIntfIO::serverAddress () const
+{
+    return caNetAddr (this->addr);
+}
+

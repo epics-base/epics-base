@@ -63,6 +63,12 @@
  *			datagram socket (and watching for ECONNREFUSED)
  *
  * $Log$
+ * Revision 1.32.6.1  1996/07/12 00:39:59  jhill
+ * fixed client disconnect problem under solaris
+ *
+ * Revision 1.35  1996/07/10 23:30:11  jhill
+ * fixed GNU warnings
+ *
  * Revision 1.34  1996/06/19 17:59:24  jhill
  * many 3.13 beta changes
  *
@@ -95,8 +101,9 @@ static char	buf[MAX_UDP];
 
 LOCAL void register_new_client(struct sockaddr_in *pLocal, 
 					struct sockaddr_in *pFrom);
+LOCAL void verifyClients();
 #define PORT_ANY 0U
-LOCAL SOCKET makeSocket(unsigned short port);
+LOCAL SOCKET makeSocket(unsigned short port, int reuseAddr);
 LOCAL void fanOut(struct sockaddr_in *pFrom, const char *pMsg, unsigned msgSize);
 
 
@@ -122,7 +129,7 @@ void ca_repeater()
 
 	ellInit(&client_list);
 
-	sock = makeSocket(port);
+	sock = makeSocket(port, TRUE);
 	if (sock==INVALID_SOCKET) {
 		/*
 		 * test for server was already started
@@ -258,9 +265,45 @@ LOCAL void fanOut(struct sockaddr_in *pFrom, const char *pMsg, unsigned msgSize)
 
 
 /*
+ * verifyClients()
+ * (this is required because solaris has a half baked version of sockets)
+ */
+LOCAL void verifyClients()
+{
+	ELLLIST			theClients;
+	SOCKET			sock;
+  	struct one_client	*pclient;
+
+	ellInit(&theClients);
+	while ( (pclient=(struct one_client *)ellGet(&client_list)) ) {
+		ellAdd(&theClients, &pclient->node);
+
+		sock = makeSocket(ntohs(pclient->from.sin_port), FALSE);
+		if (sock>=0) {
+#ifdef DEBUG
+			ca_printf("Deleted client %d\n",
+					pclient->from.sin_port);
+#endif
+			ellDelete(&theClients, &pclient->node);
+			socket_close(sock);
+			socket_close(pclient->sock);
+			free(pclient);
+		}
+		else {
+			if (MYERRNO!=EADDRINUSE) {
+				ca_printf(
+	"CA Repeater: bind test err was \"%s\"\n", strerror(MYERRNO));
+			}
+		}
+	}
+	ellConcat(&client_list, &theClients);
+}
+
+
+/*
  * makeSocket()
  */
-LOCAL SOCKET makeSocket(unsigned short port)
+LOCAL SOCKET makeSocket(unsigned short port, int reuseAddr)
 {
 	int			status;
   	struct sockaddr_in 	bd;
@@ -278,21 +321,24 @@ LOCAL SOCKET makeSocket(unsigned short port)
 	 * no need to bind if unconstrained
 	 */
 	if (port != PORT_ANY) {
-		status = setsockopt(	sock,	
-					SOL_SOCKET,
-					SO_REUSEADDR,
-					(char *)&true,
-					sizeof(true));
-		if (status<0) {
-			ca_printf("%s: set socket option failed because \"%s\"\n", 
-					__FILE__, strerror(MYERRNO));
+		if (reuseAddr) {
+			status = setsockopt(	sock,	
+						SOL_SOCKET,
+						SO_REUSEADDR,
+						(char *)&true,
+						sizeof(true));
+			if (status<0) {
+				ca_printf(
+			"%s: set socket option failed because \"%s\"\n", 
+						__FILE__, strerror(MYERRNO));
+			}
 		}
 
 		memset((char *)&bd, 0, sizeof(bd));
 		bd.sin_family = AF_INET;
 		bd.sin_addr.s_addr = INADDR_ANY;	
 		bd.sin_port = htons(port);	
-		status = bind(sock, (struct sockaddr *)&bd, sizeof(bd));
+		status = bind(sock, (struct sockaddr *)&bd, (int)sizeof(bd));
 		if(status<0){
 			socket_close(sock);
 			return INVALID_SOCKET;
@@ -314,8 +360,16 @@ struct sockaddr_in 	*pFrom)
   	struct one_client	*pclient;
 	caHdr			confirm;
 	caHdr			noop;
+	int			newClient = FALSE;
 
 	if (pFrom->sin_family != AF_INET) {
+		return;
+	}
+
+	/*
+	 * the repeater and its clients must be on the same host
+	 */
+	if (pLocal->sin_addr.s_addr != pFrom->sin_addr.s_addr) {
 		return;
 	}
 
@@ -323,22 +377,20 @@ struct sockaddr_in 	*pFrom)
 		pclient;
 		pclient = (struct one_client *) ellNext(&pclient->node)){
 
-		if(	pFrom->sin_port == pclient->from.sin_port &&
-			pFrom->sin_addr.s_addr ==  
-				pclient->from.sin_addr.s_addr) {
+		if (pFrom->sin_port == pclient->from.sin_port) {
 			break;
 		}
 	}		
 
-	if(!pclient){
+	if (!pclient) {
 		pclient = (struct one_client *)calloc (1, sizeof(*pclient));
-		if(!pclient){
+		if (!pclient) {
 			ca_printf("%s: no memory for new client\n",
 					__FILE__);
 			return;
 		}
 
-		pclient->sock = makeSocket(PORT_ANY);
+		pclient->sock = makeSocket(PORT_ANY, FALSE);
 		if (pclient->sock==INVALID_SOCKET) {
 			free(pclient);
 			ca_printf("%s: no client sock because \"%s\"\n",
@@ -362,6 +414,7 @@ struct sockaddr_in 	*pFrom)
 		pclient->from = *pFrom;
 
 		ellAdd (&client_list, &pclient->node);
+		newClient = TRUE;
 #ifdef DEBUG
 		ca_printf (
 			"Added %d\n", 
@@ -377,7 +430,7 @@ struct sockaddr_in 	*pFrom)
 		(char *)&confirm,
 		sizeof(confirm),
 		0);
-	if(status >= 0){
+	if (status >= 0) {
 		assert(status == sizeof(confirm));
 	}
 	else if (MYERRNO == ECONNREFUSED){
@@ -401,5 +454,20 @@ struct sockaddr_in 	*pFrom)
 	memset((char *)&noop, '\0', sizeof(noop));
 	confirm.m_cmmd = htons(CA_PROTO_NOOP);
 	fanOut(pFrom, (char *)&noop, sizeof(noop));
+
+	if (newClient) {
+		/*
+		 * on solaris we need to verify that the clients
+		 * have not gone away (because ICMP does not
+		 * get through to send()
+		 *
+		 * this is done each time that a new client is 
+		 * created
+		 *
+		 * this is done here in order to avoid deleting
+		 * a client prior to sending its confirm message
+		 */
+		verifyClients();
+	}
 }
 

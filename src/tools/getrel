@@ -5,6 +5,9 @@
 #           Author: Matthew Needes
 #
 #  $Log$
+#  Revision 1.1  1996/02/20 20:58:42  jba
+#  Moved tools to src/tools dir. base/tools dir removed.
+#
 #  Revision 1.13  1996/01/25 21:03:20  mrk
 #  Changes for new all ascii database definitions
 #
@@ -46,15 +49,12 @@
 #
 
 USAGE="Usage:
-        getrel <EpicsNode> [arch1 arch2 ...]
+        getrel <EpicsNode> 
 
 ex:     getrel  /usr/local/epics/R3.12
         --------- OR -----------
-        getrel  ~/epics  mv197
+        getrel  ~/epics 
 
-  If the optional architecture list is left out links
-  for supported architectures will automatically be
-  created.
 "
 
 # one arg
@@ -68,7 +68,6 @@ fi
 
 EPICS=${1}
 BASE=${1}/base
-CONFIG=${1}/config
 
 if [ ! -d ${BASE}/bin -o \
      ! -d ${BASE}/db ]; then
@@ -83,72 +82,17 @@ fi
 
 
 /bin/rm -f \
+	epics \
 	base \
 	config \
 	target* \
 	vxWorks* \
 	vw
 
-ln -s ${BASE} base
-ln -s ${CONFIG} config
+ln -s ${EPICS} epics
 
-# Read config/CONFIG_SITE for VX_DIR variable
-VW=`${EPICS}/base/bin/${HOST_ARCH}/GetVar ${EPICS} VX_DIR`
-ln -s ${VW} vw
 
 touch .current_rel_hist
 echo ${EPICS} - `date` >> .current_rel_hist
-
-# Create/Parse VX architecture list reliably
-if [ $# -eq 1 ]; then
-	# Find what architectures are supported in
-	#   the release by examining bin
-	ARCHS=`ls -1 ${BASE}/bin`
-	# Suppress some error messages in automatic mode.
-	QUIET="T"
-else
-	# Look at command line arguments 2 and onward
-	#   shift to remove first argument.
-	shift
-	ARCHS=${*}
-	QUIET="F"
-fi
-
-#
-# Check architecture list by examining:
-#      $CONFIG/CONFIG_ARCH.ARCH file
-#      $BASE/bin/ARCH directory
-#
-echo
-echo "Creating soft links for:"
-
-for T_A in $ARCHS; do
-    if [ -f ${CONFIG}/CONFIG_ARCH.${T_A} ]; then
-	TYPE=`${EPICS}/base/bin'${HOST_ARCH}/GetVar ${EPICS} BUILD_TYPE ${T_A}`
-
-	if [ "${TYPE}" = "Vx" ]; then
-        	if [ ! -f ${BASE}/bin/${T_A}/iocCore ]; then
-	    		echo "   ${T_A}: Warning: This architecture has not been built in EPICS base."
-		fi
-		echo "   ${T_A}: Creating soft links."
-		ln -s base/bin/${T_A} target${T_A}
-		ln -s ./target${T_A}/vxWorks vxWorks${T_A}
-		ln -s ./target${T_A}/vxWorks.sym vxWorks${T_A}.sym
-	else
-		if [ "${QUIET}" = "F" ]; then
-			echo "   ${T_A}: This is not an IOC architecture."
-			echo "   ${T_A}: NOT creating soft links."
-		fi
-	fi
-    else
-	echo "   ${T_A}: No configuration file exists for ${T_A} in EPICS config."
-	echo "   ${T_A}:   Create config/CONFIG_ARCH.${T_A} and build."
-	echo "   ${T_A}:   NOT creating soft links."
-    fi
-done
-
-echo
-echo "getrel:    -  completed!"
-echo
 
 exit 0

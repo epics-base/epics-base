@@ -19,10 +19,10 @@ MENUS += menuYesNo.h
 RECTYPES += dbCommon.h
 USER_DBDFLAGS += -I .. -I $(EPICS_BASE)/dbd
 
-DBINSTALL +=  dbCommonRecord.dbd 
-DBINSTALL +=  menuGlobal.dbd
-DBINSTALL +=  epics.dbd
-DBINSTALL += epicsLIBOBJS
+DBDINSTALL +=  dbCommonRecord.dbd 
+DBDINSTALL +=  menuGlobal.dbd
+DBDINSTALL +=  base.dbd
+DBDINSTALL += baseLIBOBJS
 
 SRCS.c = \
 	../dbLock.c\

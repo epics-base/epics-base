@@ -427,7 +427,7 @@ recordtype(wait) {
 		promptgroup(GUI_CLOCK)
 		asl(ASL0)
 		special(SPC_CALC)
-		size(36)
+		size(40)
 	}
 	field(RPCL,DBF_NOACCESS) {
 		prompt("Reverse Polish Calc")

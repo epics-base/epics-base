@@ -608,17 +608,20 @@ bool udpiiu::beaconAction ( const caHdr &msg,
     ina.sin_family = AF_INET;
     ina.sin_addr.s_addr = msg.m_available;
     if ( msg.m_count != 0 ) {
-        ina.sin_port = epicsHTON16 ( msg.m_count );
+        ina.sin_port = epicsNTOH16 ( msg.m_count );
     }
     else {
         /*
          * old servers dont supply this and the
          * default port must be assumed
          */
-        ina.sin_port = epicsHTON16 ( this->serverPort );
+        ina.sin_port = epicsNTOH16 ( this->serverPort );
     }
+    unsigned protocolRevision = epicsNTOH16 ( msg.m_dataType );
+    unsigned beaconNumber = epicsNTOH32 ( msg.m_cid );
 
-    this->pCAC ()->beaconNotify ( ina, currentTime );
+    this->pCAC ()->beaconNotify ( ina, currentTime, 
+        beaconNumber, protocolRevision );
 
     return true;
 }

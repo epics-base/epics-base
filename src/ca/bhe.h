@@ -16,6 +16,7 @@
 
 #include "shareLib.h"
 
+#include <limits.h>
 #include <float.h>
 
 #ifdef epicsExportSharedSymbols
@@ -42,7 +43,8 @@ public:
     epicsShareFunc bhe ( const epicsTime &initialTimeStamp, const inetAddrID &addr );
     epicsShareFunc void destroy ();
     epicsShareFunc bool updatePeriod ( const epicsTime & programBeginTime, 
-                        const epicsTime & currentTime );
+                        const epicsTime & currentTime, unsigned beaconNumber, 
+                        unsigned protocolRevision );
     epicsShareFunc double period () const;
     epicsShareFunc void show ( unsigned level) const;
     epicsShareFunc void registerIIU ( tcpiiu & );
@@ -55,6 +57,7 @@ private:
     tsDLList < tcpiiu > iiuList;
     epicsTime timeStamp;
     double averagePeriod;
+    unsigned lastBeaconNumber;
     void beaconAnomalyNotify ();
     static tsFreeList < class bhe, 1024 > freeList;
     static epicsMutex freeListMutex;
@@ -77,7 +80,8 @@ private:
  * between the 1st and 2nd beacons)
  */
 inline bhe::bhe ( const epicsTime & initialTimeStamp, const inetAddrID & addr ) :
-    inetAddrID ( addr ), timeStamp ( initialTimeStamp ), averagePeriod ( - DBL_MAX )
+    inetAddrID ( addr ), timeStamp ( initialTimeStamp ), averagePeriod ( - DBL_MAX ),
+    lastBeaconNumber ( UINT_MAX )
 {
 #   ifdef DEBUG
     {

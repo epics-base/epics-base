@@ -121,8 +121,15 @@ int main ( int, char ** )
             continue;
         }
         
+        unsigned byteCount = static_cast <unsigned> ( status );
         pCurMsg = reinterpret_cast < const caHdr * > ( ( pCurBuf = buf ) );
-        while ( status >= static_cast < int > ( sizeof ( *pCurMsg ) ) ) {
+        while ( byteCount ) {
+            size_t msgSize = epicsNTOH32 ( pCurMsg->m_postsize ) + sizeof (*pCurMsg) ;
+            if ( msgSize > byteCount ) {
+                errlogPrintf ( "CASW: udp input protocol violation\n" );
+                break;
+            }
+
             if ( epicsNTOH16 ( pCurMsg->m_cmmd ) == CA_PROTO_RSRV_IS_UP ) {
                 struct sockaddr_in ina;
 
@@ -154,6 +161,9 @@ int main ( int, char ** )
                     ina.sin_port = epicsNTOH16 ( serverPort );
                 }
 
+                unsigned beaconNumber = ntohl ( pCurMsg->m_cid );
+                unsigned protocolRevision = ntohs ( pCurMsg->m_dataType );
+
                 bool netChange;
                 epicsTime currentTime = epicsTime::getCurrent();
 
@@ -162,7 +172,7 @@ int main ( int, char ** )
                  */
                 bhe *pBHE = beaconTable.lookup ( ina );
                 if ( pBHE ) {
-                    netChange = pBHE->updatePeriod ( programBeginTime, currentTime );
+                    netChange = pBHE->updatePeriod ( programBeginTime, currentTime, beaconNumber, protocolRevision );
                 }
                 else {
                     /*
@@ -189,9 +199,9 @@ int main ( int, char ** )
                     errlogPrintf ("CA server beacon anomaly: %s %s\n", date, host );
                 }
             }
-            pCurBuf += sizeof ( *pCurMsg ) + epicsNTOH32 ( pCurMsg->m_postsize );
+            pCurBuf += msgSize;
             pCurMsg = reinterpret_cast < const caHdr * > ( pCurBuf );
-            status -= sizeof ( *pCurMsg ) + epicsNTOH32 ( pCurMsg->m_postsize );
+            byteCount -= msgSize;
         }
     }
 }

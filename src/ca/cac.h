@@ -59,8 +59,8 @@ public:
     virtual ~cac ();
 
     // beacon management
-    void beaconNotify ( const inetAddrID & addr, 
-        const epicsTime & currentTime );
+    void beaconNotify ( const inetAddrID & addr, const epicsTime & currentTime, 
+        unsigned beaconNumber, unsigned protocolRevision );
     void repeaterSubscribeConfirmNotify ();
 
     // outstanding IO count management routines
@@ -172,7 +172,7 @@ private:
     epicsMutex                  callbackMutex; 
     epicsEvent                  ioDone;
     epicsEvent                  noRecvThreadsPending;
-    epicsEvent                  iiuUninstal;
+    epicsEvent                  iiuUninstall;
     epicsTimerQueueActive       & timerQueue;
     char                        * pUserName;
     class udpiiu                * pudpiiu;
@@ -192,7 +192,6 @@ private:
 
     void privateUninstallIIU ( tcpiiu &iiu ); 
     void flushRequestPrivate ();
-    void uninstallChannelPrivate ( nciu & );
     void run ();
     bool setupUDP ();
     void connectAllIO ( nciu &chan );

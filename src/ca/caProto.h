@@ -52,6 +52,7 @@
 #   define CA_V47(MINOR) ((MINOR)>=7u)
 #   define CA_V48(MINOR) ((MINOR)>=8u)
 #   define CA_V49(MINOR) ((MINOR)>=9u)
+#   define CA_V410(MINOR) ((MINOR)>=10u) /* beacon counter */
 #elif CA_MAJOR_PROTOCOL_REVISION > 4u
 #   define CA_V41(MINOR) ( 1u )
 #   define CA_V42(MINOR) ( 1u )
@@ -62,6 +63,7 @@
 #   define CA_V47(MINOR) ( 1u )
 #   define CA_V48(MINOR) ( 1u )
 #   define CA_V49(MINOR) ( 1u )
+#   define CA_V410(MINOR) ( 1u )
 #else
 #   define CA_V41(MINOR) ( 0u )
 #   define CA_V42(MINOR) ( 0u )
@@ -72,6 +74,7 @@
 #   define CA_V47(MINOR) ( 0u )
 #   define CA_V48(MINOR) ( 0u )
 #   define CA_V49(MINOR) ( 0u )
+#   define CA_V410(MINOR) ( 0u )
 #endif 
 
 /*

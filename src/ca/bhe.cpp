@@ -65,12 +65,14 @@ void bhe::beaconAnomalyNotify ()
  * updates beacon period, and looks for beacon anomalies
  */
 bool bhe::updatePeriod ( const epicsTime & programBeginTime, 
-                        const epicsTime & currentTime )
+    const epicsTime & currentTime, unsigned beaconNumber, 
+    unsigned protocolRevision )
 {
-    double currentPeriod;
-    bool netChange = false;
-
     if ( this->timeStamp == epicsTime () ) {
+
+        if ( CA_V410 ( protocolRevision ) ) {
+            this->lastBeaconNumber = beaconNumber;
+        }
 
         this->beaconAnomalyNotify ();
 
@@ -82,13 +84,23 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
          */
         this->timeStamp = currentTime;
 
-        return netChange;
+        return false;
+    }
+
+    // detect beacon duplications due to IP redundant packet routes
+    if ( CA_V410 ( protocolRevision ) ) {
+        unsigned lastBeaconNumberSave = this->lastBeaconNumber;
+        this->lastBeaconNumber = beaconNumber;
+        if ( beaconNumber != lastBeaconNumberSave + 1 ) {
+            return false;
+        }
     }
 
     /*
      * compute the beacon period (if we have seen at least two beacons)
      */
-    currentPeriod = currentTime - this->timeStamp;
+    bool netChange = false;
+    double currentPeriod = currentTime - this->timeStamp;
     if ( this->averagePeriod < 0.0 ) {
         double totalRunningTime;
 

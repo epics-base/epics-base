@@ -52,7 +52,6 @@ typedef struct win32ThreadParam {
     DWORD id;
     unsigned epicsPriority;
     char isSuspended;
-    int isOkToBlock;
 } win32ThreadParam;
 
 typedef struct epicsThreadPrivateOSD {
@@ -843,28 +842,6 @@ epicsShareFunc void epicsShareAPI epicsThreadGetName (
         strncpy ( pName, pParm->pName, sizeMinusOne );
         pName [sizeMinusOne] = '\0';
     }
-}
-
-/*
- * epicsThreadIsOkToBlock () 
- */
-epicsShareFunc int epicsShareAPI epicsThreadIsOkToBlock (void);
-{
-    epicsThreadId id = epicsThreadGetIdSelf();
-    win32ThreadParam *pParm = ( win32ThreadParam * ) id;
-
-    return pParm->isOkToBlock;
-}
-
-/*
- * epicsThreadSetOkToBlock () 
- */
-epicsShareFunc int epicsShareAPI epicsThreadSetOkToBlock ( int isOkToBlock) 
-{
-    epicsThreadId id = epicsThreadGetIdSelf();
-    win32ThreadParam *pParm = ( win32ThreadParam * ) id;
-
-    pParm->isOkToBlock = isOkToBlock;
 }
 
 /*

@@ -240,7 +240,7 @@ const char *epicsThread::getNameSelf ()
     return epicsThreadGetNameSelf ();
 }
 
-bool epicsThread::isOkToBlock () 
+bool epicsThread::isOkToBlock ()
 {
     return static_cast<int>(epicsThreadIsOkToBlock());
 }
@@ -250,3 +250,37 @@ void epicsThread::setOkToBlock(bool isOkToBlock)
     epicsThreadSetOkToBlock(static_cast<int>(isOkToBlock));
 }
 
+extern "C" {
+    static epicsThreadOnceId okToBlockOnce = EPICS_THREAD_ONCE_INIT;
+    epicsThreadPrivateId okToBlockPrivate;
+    typedef struct okToBlockStruct okToBlockStruct;
+    struct okToBlockStruct {
+        int okToBlock;
+    };
+    static okToBlockStruct okToBlockNo = {0};
+    static okToBlockStruct okToBlockYes = {1};
+    
+    static void epicsThreadOnceIdInit(void *)
+    {
+        okToBlockPrivate = epicsThreadPrivateCreate();
+    }
+        
+    
+    int epicsShareAPI epicsThreadIsOkToBlock(void)
+    {
+        okToBlockStruct *pokToBlock;
+        void *arg = 0;
+        epicsThreadOnce(&okToBlockOnce,epicsThreadOnceIdInit,arg);
+        pokToBlock = (okToBlockStruct*)epicsThreadPrivateGet(okToBlockPrivate);
+        return (pokToBlock ? pokToBlock->okToBlock : 0);
+    }
+    
+    void epicsShareAPI epicsThreadSetOkToBlock(int isOkToBlock)
+    {
+        okToBlockStruct *pokToBlock;
+        void *arg = 0;
+        epicsThreadOnce(&okToBlockOnce,epicsThreadOnceIdInit,arg);
+        pokToBlock = (isOkToBlock) ? &okToBlockYes : &okToBlockNo;
+        epicsThreadPrivateSet(okToBlockPrivate,pokToBlock);
+    }
+} // extern "C"

@@ -48,7 +48,6 @@ struct taskVar {
     void                *parm;
     unsigned int        threadVariableCapacity;
     void                **threadVariables;
-    int              okToBlock;
 };
 static epicsMutexId taskVarMutex;
 static struct taskVar *taskVarHead;
@@ -214,7 +213,6 @@ setThreadInfo (rtems_id tid, const char *name, EPICSTHREADFUNC funptr,void *parm
     v->parm = parm;
     v->threadVariableCapacity = 0;
     v->threadVariables = NULL;
-    v->okToBlock = 0;
     note = (rtems_unsigned32)v;
     rtems_task_set_note (tid, RTEMS_NOTEPAD_TASKVAR, note);
     taskVarLock ();
@@ -452,43 +450,6 @@ epicsThreadId epicsThreadGetId (const char *name)
     }
     taskVarUnlock ();
     return (epicsThreadId)tid;
-}
-
-int epicsThreadIsOkToBlock (void)
-{
-    rtems_id tid = (rtems_id)epicsThreadGetIdSelf();
-    rtems_status_code sc;
-    rtems_unsigned32 note;
-    struct taskVar *v;
-    int okToBlock;
-
-    taskVarLock ();
-    sc = rtems_task_get_note (tid, RTEMS_NOTEPAD_TASKVAR, &note);
-    if (sc == RTEMS_SUCCESSFUL) {
-        v = (void *)note;
-        okToBlock = v->okToBlock;
-    }
-    else {
-        okToBlock = 0;
-    }
-    taskVarUnlock ();
-    return okToBlock;
-}
-
-void epicsThreadSetOkToBlock (int isOkToBlock)
-{
-    rtems_id tid = (rtems_id)epicsThreadGetIdSelf();
-    rtems_status_code sc;
-    rtems_unsigned32 note;
-    struct taskVar *v;
-
-    taskVarLock ();
-    sc = rtems_task_get_note (tid, RTEMS_NOTEPAD_TASKVAR, &note);
-    if (sc == RTEMS_SUCCESSFUL) {
-        v = (void *)note;
-        v->okToBlock = isOkToBlock;
-    }
-    taskVarUnlock ();
 }
 
 /*

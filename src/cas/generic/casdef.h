@@ -417,7 +417,7 @@ class casPV : private casPVI {
 public:
     epicsShareFunc casPV ();
     
-    epicsShareFunc virtual ~casPV () = 0;
+    epicsShareFunc virtual ~casPV ();
     
     //
     // This is called for each PV in the server if

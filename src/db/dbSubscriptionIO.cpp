@@ -23,6 +23,7 @@
 
 #include "cacIO.h"
 #include "db_access.h" // need to eliminate this
+#include "cadef.h" // this can be eliminated when the callbacks use the new interface
 
 #define epicsExportSharedSymbols
 #include "dbCAC.h"
@@ -74,6 +75,12 @@ extern "C" void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr * /*
 {
     dbSubscriptionIO *pIO = static_cast < dbSubscriptionIO * > ( pPrivate );
     pIO->chan.callStateNotify ( pIO->type, pIO->count, pfl, pIO->notify );
+}
+
+void dbSubscriptionIO::channelDestroyNotify ()
+{
+    this->notify.exception ( ECA_CHANDESTROY,
+        this->chan.pName(), this->type, this->count );
 }
 
 void dbSubscriptionIO::show ( unsigned level ) const

@@ -29,6 +29,7 @@
  * .01  jrw     07-02-92        created
  * .02  rcz     07-23-93        changed name
  * .03  rcz     07-26-93        changed name again
+ * .04  joh		12-12-97		added ellverify()
  */
 #ifndef INCellLibh
 #define INCellLibh
@@ -92,6 +93,7 @@ epicsShareFunc ELLNODE * epicsShareAPI ellNth (ELLLIST *pList, int nodeNum);
 epicsShareFunc ELLNODE * epicsShareAPI ellNStep (ELLNODE *pNode, int nStep);
 epicsShareFunc int  epicsShareAPI ellFind (ELLLIST *pList, ELLNODE *pNode);
 epicsShareFunc void epicsShareAPI ellFree (ELLLIST *pList);
+epicsShareFunc void epicsShareAPI ellVerify (ELLLIST *pList);
 
 #else				/*__STDC__*/
 
@@ -132,6 +134,8 @@ epicsShareFunc ELLNODE * epicsShareAPI ellNth ();
 epicsShareFunc ELLNODE * epicsShareAPI ellNStep ();
 epicsShareFunc int epicsShareAPI ellFind ();
 epicsShareFunc void epicsShareAPI ellFree ();
+epicsShareFunc void ellVerify ();
+
 #endif				/*__STDC__*/
 
 #ifdef __cplusplus

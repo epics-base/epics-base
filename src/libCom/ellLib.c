@@ -28,15 +28,20 @@
  * -----------------
  * .01	jrw	07-02-92	created
  * .02	rcz	08-26-92	moved to libCom
+ * .03  joh 12-12-97	added ellverify()
  */
 
 /* #define	DEBUG_DRIVER */
+
+
 
 #ifdef vxWorks
 #include <vxWorks.h>
 #endif
 
 #include <stdlib.h>
+
+#include <epicsAssert.h>
 
 #define epicsExportSharedSymbols
 #include "ellLib.h"
@@ -487,6 +492,43 @@ ELLLIST *pList;
 
   return;
 }
+
+/****************************************************************************
+ *
+ * This function verifies that the list is consistent.
+ * joh 12-12-97
+ *
+ *****************************************************************************/
+void epicsShareAPI ellVerify (ELLLIST *pList) 
+{
+	ELLNODE *pNode;
+	ELLNODE *pNext;
+	int count;
+
+	assert (pList);
+
+	count = 0u;	
+	pNode = ellFirst(pList);
+	if (pNode) {
+		assert (ellPrevious(pNode)==NULL);
+		while (1) {
+			count++;
+			pNext = ellNext(pNode);
+			if (pNext) {
+				assert (ellPrevious(pNext)==pNode);
+			}
+			else {
+				break;
+			}
+			pNode = pNext;
+		}
+		assert (ellNext(pNode)==NULL);
+	}
+
+	assert (pNode==ellLast(pList));
+	assert (count==ellCount(pList));
+}
+
 #ifdef DEBUG_DRIVER
 /****************************************************************************
  *

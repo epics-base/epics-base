@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1996/09/04 20:19:02  jhill
+ * include db_access.h
+ *
  * Revision 1.3  1996/08/13 22:56:13  jhill
  * added init for mutex class
  *
@@ -44,6 +47,9 @@
 
 #include <server.h>
 #include <casClientIL.h> // inline func for casClient
+#include <casEventSysIL.h> // inline func for casEventSys
+#include <casCtxIL.h> // inline func for casCtx
+#include <inBufIL.h> // inline func for inBuf 
 #include <db_access.h>
 
 VERSIONID(camsgtaskc,"%W% %G%")
@@ -62,11 +68,9 @@ pCASMsgHandler casClient::msgHandlers[CA_PROTO_LAST_CMMD+1u];
 //
 // casClient::casClient()
 //
-casClient::casClient(caServerI &serverInternal, casMsgIO &msgIOIn) : 
-		inBuf(msgIOIn, *this),
-		outBuf(msgIOIn, *this),
-		casCoreClient(serverInternal),
-		msgIO(msgIOIn)
+casClient::casClient(caServerI &serverInternal, inBuf &inBufIn, outBuf &outBufIn) : 
+		casCoreClient(serverInternal), 
+		inBufRef(inBufIn), outBufRef(outBufIn)
 {
 	//
 	// static member init 
@@ -86,14 +90,6 @@ caStatus casClient::init()
 	//
 	// call base class initializers
 	//
-	status = this->inBuf::init();
-	if (status) {
-		return status;
-	}
-	status = this->outBuf::init();
-	if (status) {
-		return status;
-	}
 	status = this->casCoreClient::init();
 	if (status) {
 		return status;
@@ -101,8 +97,10 @@ caStatus casClient::init()
 
 	serverDebugLevel = this->ctx.getServer()->getDebugLevel();
         if (serverDebugLevel>0u) {
-                ca_printf("CAS: created a new client for\n");
-		this->msgIO.show(serverDebugLevel);
+		char pName[64u];
+
+		this->clientHostName (pName, sizeof (pName));
+                ca_printf("CAS: created a new client for %s\n", pName);
         }
 
 	return S_cas_success;
@@ -192,13 +190,10 @@ casClient::~casClient ()
 //
 // casClient::show()
 //
-void casClient::show(unsigned level) 
+void casClient::show(unsigned level) const
 {
 	printf ("casClient at %x\n", (unsigned) this);
 	this->casCoreClient::show(level);
-	this->inBuf::show(level);
-	this->outBuf::show(level);
-	this->msgIO.show(level);
 }
 
 
@@ -213,17 +208,20 @@ caStatus casClient::processMsg()
 	const caHdr 	*mp;
 	const char	*rawMP;
 
-	/*
-	 * parse all any pending messages 
-	 */
-	bytesLeft = this->inBuf::bytesPresent();
+	//
+	// process any messages in the in buffer
+	//
+	status = S_cas_success;
+
+	bytesLeft = this->inBufRef.bytesPresent();
 	while (bytesLeft) {
 
 		if (bytesLeft < sizeof(*mp)) {
-			return S_cas_partialMessage;
+			status = S_cas_partialMessage;
+			break;
 		}
 
-		rawMP = this->inBuf::msgPtr();
+		rawMP = this->inBufRef.msgPtr();
 		this->ctx.setMsg(rawMP);
 
 		//
@@ -234,7 +232,8 @@ caStatus casClient::processMsg()
 		msgsize = mp->m_postsize + sizeof(*mp);
 
 		if (msgsize > bytesLeft) { 
-			return S_cas_partialMessage;
+			status = S_cas_partialMessage;
+			break;
 		}
 
 		this->ctx.setData((void *)(rawMP+sizeof(*mp)));
@@ -243,20 +242,35 @@ caStatus casClient::processMsg()
 			this->dumpMsg(mp, (void *)(mp+1));
 		}
 
+		//
+		// Reset the context to the default
+		// (guarantees that previous message does not get mixed 
+		// up with the current message)
+		//
+		this->ctx.setChannel(NULL);
+		this->ctx.setPV(NULL);
+
+		//
+		// Check for bad protocol element
+		//
 		if (mp->m_cmmd >= NELEMENTS(casClient::msgHandlers)){
-			return this->uknownMessageAction ();
+			status = this->uknownMessageAction ();
+			break;
 		}
 
+		//
+		// Call protocol stub 
+		//
 		status = (this->*casClient::msgHandlers[mp->m_cmmd]) ();
 		if (status) {
-			return status;
+			break;
 		}
 
-		this->inBuf::removeMsg(msgsize);
-		bytesLeft = this->inBuf::bytesPresent();
+		this->inBufRef.removeMsg(msgsize);
+		bytesLeft = this->inBufRef.bytesPresent();
 	}
 
-	return S_cas_success;
+	return status;
 }
 
 
@@ -349,7 +363,7 @@ caStatus casClient::echoAction ()
 	int		status;
 	caHdr 		*reply; 
 
-	status = this->allocMsg(mp->m_postsize, &reply);
+	status = this->outBufRef.allocMsg(mp->m_postsize, &reply);
 	if (status) {
 		if (status==S_cas_hugeRequest) {
 			status = sendErr(mp, ECA_TOLARGE, NULL);
@@ -358,7 +372,7 @@ caStatus casClient::echoAction ()
 	}
 	*reply = *mp;
 	memcpy((char *) (reply+1), (char *) dp, mp->m_postsize);
-	this->commitMsg();
+	this->outBufRef.commitMsg();
 
 	return S_cas_success;
 }
@@ -397,7 +411,7 @@ const char	*pformat,
 	/*
 	 * allocate plenty of space for a sprintf() buffer
 	 */
-	status = this->allocMsg(1024u, &reply);
+	status = this->outBufRef.allocMsg(1024u, &reply);
 	if(status){
 		return status;
 	}
@@ -459,7 +473,7 @@ const char	*pformat,
 	size += sizeof(*curp);
 	reply->m_postsize = size;
 
-	this->commitMsg();
+	this->outBufRef.commitMsg();
 
 	return S_cas_success;
 }
@@ -526,7 +540,7 @@ void casClient::dumpMsg(const caHdr *mp, const void *dp)
 	char		pName[64u];
 	char		pPVName[64u];
 
-	this->msgIO.hostNameFromAddr (pName, sizeof (pName));
+	this->clientHostName (pName, sizeof (pName));
 
 	pciu = this->resIdToChannel(mp->m_cid);
 

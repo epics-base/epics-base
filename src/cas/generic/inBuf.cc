@@ -29,42 +29,18 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
+ * ca server installation
+ *
  *
  */
 
-#include<server.h>
-
-//
-// inBuf::inBuf()
-//
-inBuf::inBuf(casMsgIO &virtualCircuit, osiMutex &mutexIn) : 
-	mutex(mutexIn),
-	io(virtualCircuit)
-{
-	assert(&this->io);
-
-	this->bytesInBuffer = 0u;
-	this->nextReadIndex = 0u;
-	this->bufSize = 0u;
-	this->pBuf = NULL;
-}
-
-//
-// inBuf::init()
-//
-caStatus inBuf::init()
-{
-	this->bufSize = io.optimumBufferSize();
-	this->pBuf = new char [this->bufSize];
-	if (!this->pBuf) {
-		this->bufSize = 0u;
-		return S_cas_noMemory;
-	}
-	return S_cas_success;
-}
+#include "server.h"
+#include "inBufIL.h" // inBuf in line func
 
 //
 // inBuf::~inBuf()
+// (virtual destructor)
 //
 inBuf::~inBuf()
 {
@@ -73,7 +49,10 @@ inBuf::~inBuf()
 	}
 }
 
-void inBuf::show(unsigned level)
+//
+// inBuf::show()
+//
+void inBuf::show(unsigned level) const
 {
         if (level>1u) {
                 printf(
@@ -82,13 +61,18 @@ void inBuf::show(unsigned level)
         }
 }
 
+//
+// inBuf::fill()
+//
 casFillCondition inBuf::fill()
 {
 	unsigned bytesReq;
 	unsigned bytesRecv;
 	xRecvStatus stat;
 
-	assert(this->pBuf);
+	if (!this->pBuf) {
+		return casFillDisconnect;
+	}
 
 	//
 	// move back any prexisting data to the start of the buffer
@@ -115,7 +99,7 @@ casFillCondition inBuf::fill()
 		return casFillFull;
 	}
 
-	stat = this->io.xRecv( &this->pBuf[this->bytesInBuffer], 
+	stat = this->xRecv(&this->pBuf[this->bytesInBuffer], 
 			bytesReq, bytesRecv);
 	if (stat != xRecvOK) {
 		return casFillDisconnect;
@@ -125,6 +109,16 @@ casFillCondition inBuf::fill()
 	}
 	assert (bytesRecv<=bytesReq);
 	this->bytesInBuffer += bytesRecv;
+
+	if (this->getDebugLevel()>2u) {
+		char buf[64];
+
+		this->clientHostName(buf, sizeof(buf));
+
+		printf ("CAS: incomming %u byte msg from %s\n",
+			bytesRecv, buf);
+	}
+
 	if (this->bufSize==this->bytesInBuffer) {
 		return casFillFull;
 	}

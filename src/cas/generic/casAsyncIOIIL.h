@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/09/16 18:23:58  jhill
+ * vxWorks port changes
+ *
  * Revision 1.2  1996/09/04 20:16:24  jhill
  * moved operator -> here
  *
@@ -44,6 +47,11 @@
 
 //
 // void casAsyncIOI::lock()
+//
+// NOTE:
+// If this changed to use another lock other than the one in the
+// client structure then the locking in casAsyncIOI::cbFunc()
+// must be changed
 //
 inline void casAsyncIOI::lock()
 {
@@ -63,7 +71,16 @@ inline void casAsyncIOI::unlock()
 //
 inline casAsyncIO * casAsyncIOI::operator -> ()
 {
-	return &this->asyncIO;
+	return &this->ioExternal;
+}
+
+//
+// void casAsyncIOI::destroy ()
+//
+inline void casAsyncIOI::destroy ()
+{
+	this->serverDelete = TRUE;
+	(*this)->destroy();
 }
 
 #endif // casAsyncIOIIL_h

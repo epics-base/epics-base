@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1996/09/16 18:24:07  jhill
+ * vxWorks port changes
+ *
  * Revision 1.3  1996/09/04 20:27:01  jhill
  * doccasdef.h
  *
@@ -41,21 +44,18 @@
  *
  */
 
-
-
-#include<server.h>
+#include "server.h"
+#include "outBufIL.h" // outBuf in line func
 
 //
 // outBuf::outBuf()
 //
-outBuf::outBuf(casMsgIO &virtualCircuit, osiMutex &mutexIn) : 
-	io(virtualCircuit),
+outBuf::outBuf(osiMutex &mutexIn, unsigned bufSizeIn) : 
 	mutex(mutexIn),
 	pBuf(NULL),
-	bufSize(io.optimumBufferSize()),
+	bufSize(bufSizeIn),
 	stack(0u)
 {
-	assert(&io);
 }
 
 //
@@ -67,6 +67,7 @@ caStatus outBuf::init()
 	if (!this->pBuf) {
 		return S_cas_noMemory;
 	}
+	memset (this->pBuf, '\0', this->bufSize);
 	return S_cas_success;
 }
 
@@ -162,13 +163,14 @@ void outBuf::commitMsg ()
 
   	if (this->getDebugLevel()) {
 		ca_printf (
-	"CAS Response => cmd=%d id=%x typ=%d cnt=%d psz=%d avail=%x\n",
+"CAS Response => cmd=%d id=%x typ=%d cnt=%d psz=%d avail=%x outBuf ptr=%lx\n",
 			mp->m_cmmd,
 			mp->m_cid,
 			mp->m_type,
 			mp->m_count,
 			mp->m_postsize,
-			mp->m_available);
+			mp->m_available,
+			(long)mp);
 	}
 
 	/*
@@ -191,8 +193,7 @@ void outBuf::commitMsg ()
 //
 // outBuf::flush()
 //
-casFlushCondition outBuf::flush(casFlushRequest req,
-				bufSizeT spaceRequired)
+casFlushCondition outBuf::flush(casFlushRequest req, bufSizeT spaceRequired)
 {
 	bufSizeT 		nBytes;
 	bufSizeT 		stackNeeded;
@@ -219,46 +220,68 @@ casFlushCondition outBuf::flush(casFlushRequest req,
 		}
 	}
 
-	stat = this->io.xSend(this->pBuf, this->stack, 
-			nBytesNeeded, nBytes);
-	if (nBytes) {
-		bufSizeT len;
+	if (nBytesNeeded==0u) {
+		this->mutex.osiUnlock();
+		return casFlushCompleted;
+	}
 
-		if (nBytes >= this->stack) {
-			this->stack=0u;	
-			cond = casFlushCompleted;
+	nBytes = 0u;
+	stat = this->xSend(this->pBuf, this->stack, 
+			nBytesNeeded, nBytes);
+	if (stat == xSendOK) {
+		if (nBytes) {
+			bufSizeT len;
+			char buf[64];
+
+			if (nBytes >= this->stack) {
+				this->stack=0u;	
+				cond = casFlushCompleted;
+			}
+			else {
+				len = this->stack-nBytes;
+				//
+				// memmove() is ok with overlapping buffers
+				//
+				memmove (this->pBuf, &this->pBuf[nBytes], len);
+				this->stack = len;
+				cond = casFlushPartial;
+			}
+
+			if (this->getDebugLevel()>2u) {
+				this->clientHostName(buf,sizeof(buf));
+				ca_printf(
+					"CAS: Sent a %d byte reply to %s\n",
+					nBytes, buf);
+			}
 		}
 		else {
-			len = this->stack-nBytes;
-			//
-			// memmove() is ok with overlapping buffers
-			//
-			memmove (this->pBuf, &this->pBuf[nBytes], len);
-			this->stack = len;
-			cond = casFlushPartial;
+			cond = casFlushNone;
 		}
 	}
 	else {
-		cond = casFlushNone;
-	}
-
-	if (stat!=xSendOK) {
 		cond = casFlushDisconnect;
 	}
 	this->mutex.osiUnlock();
 	return cond;
-
 }
 
 //
 // outBuf::show(unsigned level)
 //
-void outBuf::show(unsigned level)
+void outBuf::show(unsigned level) const
 {
 	if (level>1u) {
                 printf(
 			"\tUndelivered response bytes =%d\n",
                         this->bytesPresent());
 	}
+}
+
+//
+// outBuf::sendBlockSignal()
+//
+void outBuf::sendBlockSignal()
+{
+	fprintf(stderr, "In virtula base sendBlockSignal() ?\n");
 }
 

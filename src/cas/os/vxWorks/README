@@ -1,5 +1,5 @@
 
-WORK IN PROGRESS
+!! WORK IN PROGRESS - this code isnt yet thread safe !!
 
 this directory contains the vxWorks os dependent source for 
 the EPICS ca server. This is a multi-threaded port of the

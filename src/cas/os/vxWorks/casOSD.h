@@ -7,6 +7,9 @@
 // Some BSD calls have crept in here
 //
 // $Log$
+// Revision 1.2  1996/09/16 18:27:10  jhill
+// vxWorks port changes
+//
 // Revision 1.1  1996/09/04 22:06:46  jhill
 // installed
 //
@@ -18,18 +21,6 @@
 #ifndef includeCASOSDH 
 #define includeCASOSDH 
 
-
-#include <unistd.h>
-#include <errno.h>
-
-
-extern "C" {
-//
-// for htons() etc  
-//
-#	include <netinet/in.h>
-#	include <ioLib.h>
-} // extern "C"
 
 #include <osiMutex.h>
 #include <osiTimer.h>
@@ -78,15 +69,50 @@ public:
 	caStatus init ();
 	~caServerOS ();
 
-        //caStatus start ();
-
 	inline caServerI * operator -> ();
-
-	//int getFD();
 
 private:
 	caServerI	&cas;
 	casBeaconTimer	*pBTmr;
+};
+
+//
+// casDGIntfOS
+//
+class casDGIntfOS : public casDGIO {
+public:
+        casDGIntfOS(casDGClient &client);
+        ~casDGIntfOS();
+ 
+        caStatus start();
+ 
+        void show(unsigned level) const;
+ 
+        void recvCB();
+        void sendCB();
+private:
+        casDGClient     &client;
+	int		tid;
+};
+
+//
+// casIntfOS
+//
+class casIntfOS : public casIntfIO, public tsDLNode<casIntfOS>
+{
+public:
+        casIntfOS (caServerI &casIn) :
+                cas (casIn), pRdReg (NULL) {}
+        caStatus init(const caAddr &addr, casDGClient &dgClientIn,
+                        int autoBeaconAddr, int addConfigBeaconAddr);
+        ~casIntfOS();
+ 
+        void recvCB ();
+        void sendCB () {}; // NOOP satifies template
+ 
+        casDGIO *newDGIO (casDGClient &dgClientIn) const;
+private:
+        caServerI       &cas;
 	int		tid;
 };
 

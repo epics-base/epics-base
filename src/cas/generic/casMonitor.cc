@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1996/09/16 18:24:03  jhill
+ * vxWorks port changes
+ *
  * Revision 1.4  1996/07/24 22:00:49  jhill
  * added pushOnToEventQueue()
  *
@@ -49,6 +52,7 @@
 #include <casChannelIIL.h> // casChannelI inline func
 #include <casEventSysIL.h> // casEventSys inline func
 #include <casMonEventIL.h> // casMonEvent inline func
+#include <casCtxIL.h> // casCtx inline func
 
 
 //

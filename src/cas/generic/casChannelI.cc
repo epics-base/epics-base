@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/09/04 20:18:03  jhill
+ * init new chan member
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:14  jhill
  * ca server installation
  *
@@ -39,6 +42,7 @@
 #include <casEventSysIL.h> // casEventSys inline func
 #include <casAsyncIOIIL.h> // casAsyncIOI inline func
 #include <casPVIIL.h> // casPVI inline func
+#include <casCtxIL.h> // casCtx inline func
 
 
 //
@@ -64,9 +68,7 @@ casChannelI::casChannelI(const casCtx &ctx, casChannel &chanAdapter) :
 casChannelI::~casChannelI()
 {
         casAsyncIOI		*pIO;
-	tsDLIter<casAsyncIOI>	iterIO(this->ioInProgList);
         casMonitor		*pMonitor;
-	tsDLIter<casMonitor>	iterMon(this->monitorList);
 	casChanDelEv		*pCDEV;
 	caStatus		status;
 
@@ -75,28 +77,29 @@ casChannelI::~casChannelI()
         //
         // cancel any pending asynchronous IO 
         //
-	pIO = iterIO();
+	tsDLFwdIter<casAsyncIOI> iterIO(this->ioInProgList);
+	pIO = iterIO.next();
         while (pIO) {
 		casAsyncIOI	*pNextIO;
 		//
 		// destructor removes from this list
 		//
-		pNextIO = iterIO();
-		pIO->setServerDelete();
-		(*pIO)->destroy();
+		pNextIO = iterIO.next();
+		pIO->destroy();
                 pIO = pNextIO;
         }
 
 	//
 	// cancel the monitors 
 	//
-	pMonitor = iterMon();
+	tsDLFwdIter<casMonitor>	iterMon(this->monitorList);
+	pMonitor = iterMon.next();
         while (pMonitor) {
         	casMonitor *pNextMon;
 		//
 		// destructor removes from this list
 		//
-		pNextMon = iterMon();
+		pNextMon = iterMon.next();
 		delete pMonitor;
 		pMonitor = pNextMon;
         }
@@ -134,15 +137,43 @@ casChannelI::~casChannelI()
 
 
 //
+// casChannelI::clearOutstandingReads()
+//
+void casChannelI::clearOutstandingReads()
+{
+	casAsyncIOI *pIO;
+
+	this->lock();
+
+        //
+        // cancel any pending asynchronous IO 
+        //
+	tsDLFwdIter<casAsyncIOI> iterIO(this->ioInProgList);
+	pIO = iterIO.next();
+        while (pIO) {
+		casAsyncIOI	*pNextIO;
+		//
+		// destructor removes from this list
+		//
+		pNextIO = iterIO.next();
+		pIO->destroyIfReadOP();
+                pIO = pNextIO;
+        }
+
+	this->unlock();
+}
+
+
+//
 // casChannelI::postAllModifiedEvents()
 //
 void casChannelI::postAllModifiedEvents()
 {
 	casMonitor		*pMon;
-	tsDLIter<casMonitor> 	iter(this->monitorList);
 
         this->lock();
-        while ( (pMon=iter()) ) {
+	tsDLFwdIter<casMonitor>	iter(this->monitorList);
+        while ( (pMon=iter.next()) ) {
 		pMon->postIfModified(); 
         }
         this->unlock();
@@ -155,18 +186,18 @@ void casChannelI::postAllModifiedEvents()
 void casChannelI::show(unsigned level)
 {
 	casMonitor	 	*pMon;
-	tsDLIter<casMonitor>	iter(this->monitorList);
 
 	this->lock();
+	tsDLFwdIter<casMonitor>	iter(this->monitorList);
 
-	if ( (pMon = iter()) ) {
+	if ( (pMon = iter.next()) ) {
 		printf("List of CA events (monitors) for \"%s\".\n",
 			this->pv.resourceName());
 	}
 
 	while (pMon) {
 		pMon->show(level);
-		pMon = iter();
+		pMon = iter.next();
 	}
 
 	(*this)->show(level);

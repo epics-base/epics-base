@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -42,6 +45,85 @@
 // undefined
 //
 
+//
+// casMonEvent::casMonEvent()
+//
+inline casMonEvent::casMonEvent () : 
+	pValue(NULL), id(0u) {}
+
+//
+// casMonEvent::casMonEvent()
+//
+inline casMonEvent::casMonEvent (casMonitor &monitor, gdd &newValue) :
+        pValue(&newValue),
+        id(monitor.casRes::getId())
+{
+        int gddStatus;
+        gddStatus = this->pValue->reference();
+        assert (!gddStatus);
+}
+
+//
+// casMonEvent::casMonEvent()
+//
+inline casMonEvent::casMonEvent (casMonEvent &initValue) :
+        pValue(initValue.pValue),
+        id(initValue.id)
+{
+        int gddStatus;
+        if (this->pValue) {
+                gddStatus = this->pValue->reference();
+                assert (!gddStatus);
+        }
+}
+
+//
+// casMonEvent::operator =  ()
+//
+inline void casMonEvent::operator = (class casMonEvent &monEventIn)
+{
+	int gddStatus;
+	if (this->pValue) {
+		gddStatus = this->pValue->unreference();
+		assert (!gddStatus);
+	}
+	if (monEventIn.pValue) {
+		gddStatus = monEventIn.pValue->reference();
+		assert (!gddStatus);
+	}
+	this->pValue = monEventIn.pValue;
+	this->id = monEventIn.id;
+}
+
+//
+//  casMonEvent::clear()
+//
+inline void casMonEvent::clear()
+{
+	int gddStatus;
+	if (this->pValue) {
+		gddStatus = this->pValue->unreference();
+		assert (!gddStatus);
+		this->pValue = NULL;
+	}
+	this->id = 0u;
+}
+
+//
+// ~casMonEvent ()
+//
+inline casMonEvent::~casMonEvent ()
+{
+        this->clear();
+}
+
+//
+// casMonEvent::getValue()
+//
+inline gdd *casMonEvent::getValue() const
+{
+	return this->pValue;
+}
 
 #endif // casMonEventIL_h
 

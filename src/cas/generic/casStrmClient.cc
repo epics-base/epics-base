@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.10  1996/09/16 18:24:05  jhill
+ * vxWorks port changes
+ *
  * Revision 1.9  1996/09/04 20:25:53  jhill
  * use correct app type for exist test gdd, correct byte 
  * oder for mon mask, and efficient use of PV name gdd
@@ -57,14 +60,18 @@
  *
  */
 
-#include <server.h>
-#include <dbMapper.h>		// ait to dbr types
-#include <gddAppTable.h>        // EPICS application type table
-#include <caServerIIL.h>	// caServerI inline functions
-#include <casClientIL.h>	// casClient inline functions
-#include <casChannelIIL.h>	// casChannelI inline functions
-#include <casPVIIL.h>		// casPVI inline functions
-#include <gddApps.h>
+#include "server.h"
+#include "dbMapper.h"		// ait to dbr types
+#include "gddAppTable.h"        // EPICS application type table
+#include "caServerIIL.h"	// caServerI inline functions
+#include "casClientIL.h"	// casClient inline functions
+#include "casChannelIIL.h"	// casChannelI inline functions
+#include "casPVIIL.h"		// casPVI inline functions
+#include "casCtxIL.h"		// casCtx inline functions
+#include "casEventSysIL.h"	// casEventSys inline functions
+#include "inBufIL.h"		// inBuf inline functions
+#include "outBufIL.h"		// outBuf inline functions
+#include "gddApps.h"
 
 VERSIONID(casStrmClientcc,"%W% %G%")
 
@@ -105,7 +112,7 @@ caStatus casStrmClient::verifyRequest (casChannelI *&pChan)
         // request.
         //
 	if (pChan->getPVI().okToBeginNewIO()!=aitTrue) {
-		this->ioBlocked::setBlocked (pChan->getPVI());
+		pChan->getPVI().addItemToIOBLockedList(*this);
                 return S_cas_ioBlocked;
 	}
 	else {
@@ -120,35 +127,31 @@ caStatus casStrmClient::verifyRequest (casChannelI *&pChan)
 inline caStatus casStrmClient::createChannel (const char *pName) 
 {
 	caStatus	status;
-	int		gddStatus;
-	gdd		*pCanonicalName;
-
-	pCanonicalName = new gddScalar(gddAppType_name, aitEnumString);
-	if (!pCanonicalName) {
-		return S_cas_noMemory;
-	}
 
 	/*
 	 * Verify that the server still has this channel
-	 * and that we have its correct official name.
+	 * and that we have it's correct official name.
 	 * I assume that we may have found this server by
 	 * contacting a name resolution service so we need to
 	 * verify that the specified channel still exists here.
 	 */
-	status = this->ctx.getServer()->pvExistTest(
-			this->ctx, pName, *pCanonicalName);
-	if (status == S_casApp_asyncCompletion) {
+	pvExistReturn retVal =
+		this->ctx.getServer()->pvExistTest(this->ctx, pName);
+	if (retVal.getStatus() == S_casApp_asyncCompletion) {
 		status = S_cas_success;
 	}
-	else if (status == S_cas_ioBlocked) {
-		this->ioBlocked::setBlocked (this->getCAS());
+	else if (retVal.getStatus() == S_cas_ioBlocked) {
+		this->ctx.getServer()->addItemToIOBLockedList(*this);
+		status = S_cas_ioBlocked;
 	}
 	else {
-		status = createChanResponse (NULL, *this->ctx.getMsg(),
-				pCanonicalName, status);
+		//
+		// All use of the string in retVal below ends up getting
+		// copied (not referenced) so we are ok if they wrap
+		// pName through into retVal
+		//
+		status = createChanResponse (*this->ctx.getMsg(), retVal);
 	}
-	gddStatus = pCanonicalName->unreference ();
-	assert (!gddStatus);
 	return status;
 }
 
@@ -157,15 +160,13 @@ inline caStatus casStrmClient::createChannel (const char *pName)
 //
 // casStrmClient::casStrmClient()
 //
-casStrmClient::casStrmClient(caServerI &serverInternal, casMsgIO &ioIn) :
-	casClient(serverInternal, ioIn)
+casStrmClient::casStrmClient(caServerI &serverInternal) :
+	inBuf(*(osiMutex *)this, casStreamIO::optimumBufferSize()),
+	outBuf(*(osiMutex *)this, casStreamIO::optimumBufferSize()),
+	casClient(serverInternal, *this, *this),
+	pUserName(NULL), pHostName(NULL)
 {
-	assert(&ioIn);
 	this->ctx.getServer()->installClient(this);
-
-	this->pUserName = NULL;
-	this->pHostName = NULL;
-	this->ioBlockCache = NULL;
 }
 
 //
@@ -175,10 +176,21 @@ caStatus casStrmClient::init()
 {
         caStatus status;
  
+        //
+        // call base class initializers
+        //
 	status = casClient::init();
 	if (status) {
 		return status;
 	}
+        status = this->inBuf::init();
+        if (status) {
+                return status;
+        }
+        status = this->outBuf::init();
+        if (status) {
+                return status;
+        }
 
         this->pHostName = new char [1u];
         if (!this->pHostName) {
@@ -203,7 +215,8 @@ casStrmClient::~casStrmClient()
 {
 	casChannelI		*pChan;
 	casChannelI		*pNextChan;
-	tsDLIter<casChannelI>	iter(this->chanList);
+
+        this->osiLock();
 
 	//
 	// remove this from the list of connected clients
@@ -217,13 +230,12 @@ casStrmClient::~casStrmClient()
         if (this->pHostName) {
                 delete [] this->pHostName;
         }
-
-        this->osiLock();
  
 	//
 	// delete all channel attached
 	//
-	pChan = iter();
+	tsDLFwdIter<casChannelI> iter(this->chanList);
+	pChan = iter.next();
 	while (pChan) {
 		//
 		// destroying the channel removes it from the list
@@ -232,8 +244,6 @@ casStrmClient::~casStrmClient()
 		pChan->clientDestroy();
 		pChan = pNextChan;
         }
-
-	delete &this->msgIO;
 
         this->osiUnlock();
 }
@@ -257,13 +267,15 @@ inline casClientMon *caServerI::resIdToClientMon(const caResId &idIn)
 //
 // casStrmClient::show (unsigned level)
 //
-void casStrmClient::show (unsigned level)
+void casStrmClient::show (unsigned level) const
 {
 	this->casClient::show (level);
 	printf ("casStrmClient at %x\n", (unsigned) this);
 	if (level > 1u) {
 		printf ("\tuser %s at %s\n", this->pUserName, this->pHostName);
 	}
+        this->inBuf::show(level);
+	this->outBuf::show(level);
 }
 
 
@@ -693,14 +705,9 @@ caStatus casStrmClient::writeAction()
 // casStrmClient::writeResponse()
 //
 caStatus casStrmClient::writeResponse (casChannelI *, 
-		const caHdr &msg, gdd *pDesc, const caStatus completionStatus)
+		const caHdr &msg, const caStatus completionStatus)
 {
 	caStatus status;
-
-	if (pDesc) {
-		errMessage(S_cas_badParameter, 
-			"didnt expect a data descriptor from asynch write");
-	}
 
 	if (completionStatus) {
 		errMessage(completionStatus, NULL);
@@ -734,7 +741,7 @@ caStatus casStrmClient::writeNotifyAction()
 	// 
 	if ((*pChan)->writeAccess()!=aitTrue) {
 		return casStrmClient::writeNotifyResponse(pChan, *mp,
-				NULL, S_cas_noWrite);
+				S_cas_noWrite);
 	}
 
 	//
@@ -746,7 +753,7 @@ caStatus casStrmClient::writeNotifyAction()
 	}
 	else {
 		status = casStrmClient::writeNotifyResponse(pChan, *mp,
-				NULL, status);
+				status);
 	}
 
 	return status;
@@ -757,15 +764,10 @@ caStatus casStrmClient::writeNotifyAction()
  * casStrmClient::writeNotifyResponse()
  */
 caStatus casStrmClient::writeNotifyResponse(casChannelI *, 
-		const caHdr &msg, gdd *pDesc, const caStatus completionStatus)
+		const caHdr &msg, const caStatus completionStatus)
 {
 	caHdr		*preply;
 	caStatus	opStatus;
-
-	if (pDesc) {
-		errMessage(S_cas_badParameter, 
-			"didnt expect a data descriptor from asynch write");
-	}
 
 	opStatus = this->allocMsg(0u, &preply);
 	if (opStatus) {
@@ -801,7 +803,6 @@ caStatus casStrmClient::hostNameAction()
 	const caHdr 		*mp = this->ctx.getMsg();
 	char 			*pName = (char *) this->ctx.getData();
 	casChannelI		*pciu;
-	tsDLIter<casChannelI>	iter(this->chanList);
 	unsigned		size;
 	char 			*pMalloc;
 
@@ -827,7 +828,8 @@ caStatus casStrmClient::hostNameAction()
 	}
 	this->pHostName = pMalloc;
 
-	while ( (pciu = iter()) ) {
+	tsDLFwdIter<casChannelI> iter(this->chanList);
+	while ( (pciu = iter.next()) ) {
 		(*pciu)->setOwner(this->pUserName, this->pHostName);
 	}
 
@@ -845,7 +847,6 @@ caStatus casStrmClient::clientNameAction()
 	const caHdr 		*mp = this->ctx.getMsg();
 	char 			*pName = (char *) this->ctx.getData();
 	casChannelI		*pciu;
-	tsDLIter<casChannelI>	iter(this->chanList);
 	unsigned		size;
 	char 			*pMalloc;
 
@@ -866,12 +867,14 @@ caStatus casStrmClient::clientNameAction()
 	pMalloc[size-1]='\0';
 
 	this->osiLock();
+
 	if (this->pUserName) {
 		delete [] this->pUserName;
 	}
 	this->pUserName = pMalloc;
 
-	while ( (pciu = iter()) ) {
+	tsDLFwdIter<casChannelI>	iter(this->chanList);
+	while ( (pciu = iter.next()) ) {
 		(*pciu)->setOwner(this->pUserName, this->pHostName);
 	}
 	this->osiUnlock();
@@ -1015,16 +1018,16 @@ caStatus casStrmClient::disconnectChan(caResId id)
 caStatus casStrmClient::eventsOnAction ()
 {
 	casChannelI		*pciu;
-	tsDLIter<casChannelI>	iter(this->chanList);
 
-	this->setEventsOff();
+	this->setEventsOn();
 
 	//
 	// perhaps this is to slow - perhaps there
 	// should be a queue of modified events
 	//
 	this->osiLock();
-	while ( (pciu = iter()) ) {
+	tsDLFwdIter<casChannelI> iter(this->chanList);
+	while ( (pciu = iter.next()) ) {
 		pciu->postAllModifiedEvents();
 	}
 	this->osiUnlock();
@@ -1037,7 +1040,7 @@ caStatus casStrmClient::eventsOnAction ()
 //
 caStatus casStrmClient::eventsOffAction()
 {
-	this->setEventsOn();
+	this->setEventsOff();
 	return S_cas_success;
 }
 
@@ -1271,14 +1274,28 @@ caStatus casStrmClient::noReadAccessEvent(casClientMon *pMon)
 #endif
 
 
-/*
- *	casStrmClient::readSyncAction()
- */
+//
+// casStrmClient::readSyncAction()
+//
 caStatus casStrmClient::readSyncAction()
 {
 	const caHdr 	*mp = this->ctx.getMsg();
 	int		status;
 	caHdr 		*reply;
+	casChannelI	*pChan;
+
+	//
+	// This messages indicates that the client
+	// timed out on a read so we must clear out 
+	// any pending asynchronous IO associated with 
+	// a read.
+	//
+	this->osiLock();
+	tsDLFwdIter<casChannelI> iter(this->chanList);
+	while ( (pChan = iter.next()) ) {
+		pChan->clearOutstandingReads();
+	}
+	this->osiUnlock();
 
 	status = this->allocMsg(0u, &reply);
 	if(status){
@@ -1363,7 +1380,7 @@ caStatus casStrmClient::write()
 	// DBR_STRING is stored outside the DD so it
 	// lumped in with arrays
 	//
-	if (pHdr->m_count > 1u || pHdr->m_type==DBR_STRING) {
+	if (pHdr->m_count > 1u) {
 		status = this->writeArrayData();
 	}
 	else {
@@ -1397,7 +1414,14 @@ caStatus casStrmClient::writeScalarData()
 		return S_cas_noMemory;
 	}
 
-	gddStat = pDD->genCopy(type, this->ctx.getData());
+	if (type==aitEnumFixedString) {
+		aitFixedString *pFStr = 
+			(aitFixedString *) this->ctx.getData();
+		gddStat = pDD->put(*pFStr);
+	}
+	else {
+		gddStat = pDD->genCopy(type, this->ctx.getData());
+	}
 	if (gddStat) {
 		pDD->unreference();
 		return S_cas_badType;
@@ -1617,9 +1641,8 @@ const char *casStrmClient::hostName() const
 //
 // casStrmClient::createChanResponse()
 //
-caStatus casStrmClient::createChanResponse(casChannelI *, 
-		const caHdr &msg, gdd *pCanonicalName, 
-		const caStatus completionStatus)
+caStatus casStrmClient::createChanResponse(const caHdr &msg, 
+		const pvExistReturn &retVal) 
 {
 	casChannel 	*pChan;
 	casChannelI 	*pChanI;
@@ -1630,11 +1653,15 @@ caStatus casStrmClient::createChanResponse(casChannelI *,
 
 	this->ctx.getServer()->pvExistTestCompletion();
 
-	if (completionStatus) {
-		return this->channelCreateFailed(&msg, completionStatus);
+	if (retVal.getStatus()) {
+		return this->channelCreateFailed(&msg, retVal.getStatus());
 	}
 
-	if (!pCanonicalName) {
+	if (!retVal.getString()) {
+		return this->channelCreateFailed(&msg, S_cas_badParameter);
+	}
+
+	if (retVal.getString()[0]=='\0') {
 		return this->channelCreateFailed(&msg, S_cas_badParameter);
 	}
 
@@ -1649,9 +1676,7 @@ caStatus casStrmClient::createChanResponse(casChannelI *,
 	//
 	this->osiLock();
 
-	pCanonicalName->markConstant();
-
-	pPV = this->ctx.getServer()->createPV(*pCanonicalName);
+	pPV = this->ctx.getServer()->createPV(retVal.getString());
 	if (!pPV) {
 		this->osiUnlock();
 		return this->channelCreateFailed(&msg, S_cas_noMemory);
@@ -1694,37 +1719,22 @@ caStatus casStrmClient::createChanResponse(casChannelI *,
 //
 // caServerI::createPV ()
 //
-casPVI *caServerI::createPV (gdd &name)
+casPVI *caServerI::createPV (const char *pName)
 {
         casPVI          *pPVI;
-        caStatus        status;
-	aitString	*pNameStr;
 
 	//
-	// dont proceed unless its a valid PV name
+	// create resource id
+	// (this does a malloc to obtain space for the string)
 	//
-	status = casPVI::verifyPVName (name);
-	if (status) {
-		return NULL;
-	}
-
-	//
-	// this assumes that they did a put() 
-	// and not a putRef() 
-	//
-	// if this assumption is wrong (and there is no
-	// way currently to test) it will prove fatal
-	// to the server
-	//
-	name.getRef(pNameStr);
-	stringId id (pNameStr->string());
+	stringId id (pName);
 
         this->osiLock ();
 
         pPVI = this->stringResTbl.lookup (id);
 	if (!pPVI) {
         	casPV	*pPV;
-		pPV = (*this)->createPV (this->ctx, pNameStr->string());
+		pPV = (*this)->createPV (this->ctx, pName);
 		if (pPV) {
 			pPVI = (casPVI *) pPV;
 		}
@@ -1770,5 +1780,78 @@ void casStrmClient::removeChannel(casChannelI &chan)
         assert (&chan == (casChannelI *)pRes);
         this->chanList.remove(chan);
         this->osiUnlock();
+}
+
+//
+//  casStrmClient::xSend()
+//
+xSendStatus casStrmClient::xSend(char *pBufIn, bufSizeT nBytesAvailableToSend,
+        bufSizeT nBytesNeedToBeSent, bufSizeT &nActualBytes)
+{
+        xSendStatus stat;
+        bufSizeT nActualBytesDelta;
+ 
+        assert (nBytesAvailableToSend>=nBytesNeedToBeSent);
+ 
+        nActualBytes = 0u;
+        if (this->blockingState() == xIsntBlocking) {
+		//
+		// !! this time fetch may be slowing things down !!
+		//
+                stat = this->osdSend(pBufIn, nBytesAvailableToSend, 
+				nActualBytes);
+                if (stat == xSendOK) {
+                        this->elapsedAtLastSend = osiTime::getCurrent();
+                }
+                return stat;
+        }
+ 
+	nActualBytes = 0u;
+        while (TRUE) {
+                stat = this->osdSend(&pBufIn[nActualBytes], 
+				nBytesAvailableToSend, nActualBytesDelta);
+                if (stat != xSendOK) {
+                        return stat;
+                }
+ 
+		//
+		// !! this time fetch may be slowing things down !!
+		//
+                this->elapsedAtLastSend = osiTime::getCurrent();
+                nActualBytes += nActualBytesDelta;
+
+		if (nBytesNeedToBeSent <= nActualBytesDelta) {
+			break;
+		}
+		nBytesAvailableToSend -= nActualBytesDelta;
+                nBytesNeedToBeSent -= nActualBytesDelta;
+        }
+        return xSendOK;
+}
+
+//
+// casStrmClient::xRecv()
+//
+xRecvStatus casStrmClient::xRecv(char *pBufIn, bufSizeT nBytes,
+        bufSizeT &nActualBytes)
+{
+        xRecvStatus stat;
+ 
+        stat = this->osdRecv(pBufIn, nBytes, nActualBytes);
+        if (stat==xRecvOK) {
+		//
+		// !! this time fetch may be slowing things down !!
+		//
+                this->elapsedAtLastRecv = osiTime::getCurrent();
+        }
+        return stat;
+}
+
+//
+// casStrmClient::getDebugLevel()
+//
+unsigned casStrmClient::getDebugLevel() const
+{
+	return this->getCAS().getDebugLevel();
 }
 

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/09/16 18:23:59  jhill
+ * vxWorks port changes
+ *
  * Revision 1.2  1996/08/13 22:53:14  jhill
  * changes for MVC++
  *
@@ -40,13 +43,29 @@
 
 
 #include <server.h>
-#include <caServerIIL.h>
+#include <caServerIIL.h>	// caServerI in line func
+#include <casAsyncIOIIL.h>	// casAsyncIOI in line func
+#include <casEventSysIL.h>	// casEventSys in line func
+#include <casCtxIL.h>		// casCtx in line func
+#include <inBufIL.h>		// inBuf in line func
+#include <outBufIL.h>		// outBuf in line func
+
+//
+// casCoreClient::init()
+//
+caStatus casCoreClient::init()
+{
+        if (this->osiMutex::init()) {
+                return S_cas_noMemory;
+        }
+        return this->casEventSys::init();
+}
 
 //
 // static declartions for class casCoreClient
 //
-int casCoreClient::msgHandlersInit;
-pAsyncIoCallBack casCoreClient::asyncIOJumpTable[CA_PROTO_LAST_CMMD+1u];
+//int casCoreClient::msgHandlersInit;
+//pAsyncIoCallBack casCoreClient::asyncIOJumpTable[CA_PROTO_LAST_CMMD+1u];
  
 
 //
@@ -61,9 +80,10 @@ casCoreClient::casCoreClient(caServerI &serverInternal) : casEventSys(*this)
 	//
 	// static member init
 	//
-	casCoreClient::loadProtoJumpTable();
+	//casCoreClient::loadProtoJumpTable();
 }
 
+#if 0
 //
 // casCoreClient::loadProtoJumpTable()
 //
@@ -93,9 +113,10 @@ void casCoreClient::loadProtoJumpTable()
                         casCoreClient::writeNotifyResponse;
         casCoreClient::asyncIOJumpTable[CA_PROTO_EVENT_ADD] =
                         casCoreClient::monitorResponse;
- 
+
         casCoreClient::msgHandlersInit = TRUE;
 }
+#endif
  
 
 //
@@ -103,7 +124,6 @@ void casCoreClient::loadProtoJumpTable()
 //
 casCoreClient::~casCoreClient()
 {
-	tsDLIter<casAsyncIOI>   iterIO(this->ioInProgList);
 	casAsyncIOI		*pCurIO;
 
         if (this->ctx.getServer()->getDebugLevel()>0u) {
@@ -111,18 +131,19 @@ casCoreClient::~casCoreClient()
         }
 
 	this->osiLock();
+	tsDLFwdIter<casAsyncIOI>   iterIO(this->ioInProgList);
 
         //
         // cancel any pending asynchronous IO
         //
-        pCurIO = iterIO();
+        pCurIO = iterIO.next();
         while (pCurIO) {
                 casAsyncIOI     *pNextIO;
                 //
                 // destructor removes from this list
                 //
-                pNextIO = iterIO();
-                delete pCurIO;
+                pNextIO = iterIO.next();
+		pCurIO->destroy();
                 pCurIO = pNextIO;
         }
 
@@ -146,7 +167,7 @@ caStatus casCoreClient::disconnectChan(caResId)
 	return S_cas_success;
 }
 
-void casCoreClient::show (unsigned level)
+void casCoreClient::show (unsigned level) const
 {
 	printf ("Core client\n");
 	this->casEventSys::show (level);
@@ -158,13 +179,12 @@ void casCoreClient::show (unsigned level)
 // one of these for each CA request type that has
 // asynchronous completion
 //
-caStatus casCoreClient::searchResponse(casChannelI *, const caHdr &, 
-		gdd *, const caStatus)
+caStatus casCoreClient::asyncSearchResponse(casDGIntfIO &,
+		const caAddr &, const caHdr &, const pvExistReturn &)
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::createChanResponse(casChannelI *, const caHdr &, 
-	gdd *, const caStatus)
+caStatus casCoreClient::createChanResponse(const caHdr &, const pvExistReturn &)
 {
 	return S_casApp_noSupport;
 }
@@ -179,12 +199,12 @@ caStatus casCoreClient::readNotifyResponse(casChannelI *, const caHdr &,
 	return S_casApp_noSupport;
 }
 caStatus casCoreClient::writeResponse(casChannelI *, const caHdr &, 
-	gdd *, const caStatus)
+	const caStatus)
 {
 	return S_casApp_noSupport;
 }
 caStatus casCoreClient::writeNotifyResponse(casChannelI *, const caHdr &, 
-	gdd *, const caStatus)
+	const caStatus)
 {
 	return S_casApp_noSupport;
 }
@@ -211,28 +231,20 @@ void casCoreClient::removeChannel(casChannelI &)
 }
 
 //
-// casCoreClient::lookupRes()
-// (this shows up undefined if it is inline and compiled by g++?)
+// casCoreClient::fetchRespAddr()
 //
-casRes *casCoreClient::lookupRes(const caResId &idIn, casResType type)
+caAddr casCoreClient::fetchRespAddr()
 {
-        return this->ctx.getServer()->lookupRes(idIn, type);
+	caAddr	addr;
+	memset (&addr, '\0', sizeof(addr));
+	return addr;
 }
 
 //
-// casCoreClient::asyncIOCompletion()
-// (this shows up undefined if it is inline and compiled by g++?)
+// casCoreClient::fetchOutIntf()
 //
-caStatus casCoreClient::asyncIOCompletion(casChannelI *pChan,
-        const caHdr &msg, gdd *pDesc, caStatus completionStatus)
+casDGIntfIO* casCoreClient::fetchOutIntf()
 {
-        pAsyncIoCallBack        pCB;
- 
-        pCB = casCoreClient::asyncIOJumpTable[msg.m_cmmd];
-        if (pCB==NULL) {
-                return S_casApp_noSupport;
-        }
- 
-        return (this->*pCB)(pChan, msg, pDesc, completionStatus);
+	return NULL;
 }
 

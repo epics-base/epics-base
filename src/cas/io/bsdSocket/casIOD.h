@@ -7,6 +7,9 @@
 // Some BSD calls have crept in here
 //
 // $Log$
+// Revision 1.5  1996/09/16 18:25:15  jhill
+// vxWorks port changes
+//
 // Revision 1.4  1996/09/04 20:29:08  jhill
 // removed os depen stuff
 //
@@ -24,113 +27,182 @@
 #ifndef includeCASIODH
 #define includeCASIODH 
 
-
-#include <osiSock.h>
-
-// ca
-#include <addrList.h>
-
 void hostNameFromIPAddr (const caAddr *pAddr, 
 			char *pBuf, unsigned bufSize);
 
-class caServerIO {
-public:
-	caServerIO() : sockState(casOffLine), sock(-1) {}
-	~caServerIO() 
-	{
-		if (this->sock>=0 && this->sockState==casOnLine) {
-			socket_close(this->sock);
-		}
-	}
-        caStatus init(); //constructor does not return status
- 
-        //
-        // show status of IO subsystem
-        //
-        void show (unsigned level);
- 
-        int getFD() const;
- 
-        void setNonBlocking();
- 
-        unsigned serverPortNumber() const;
- 
-       	// 
-        // called when we expect that a virtual circuit for a
-        // client can be created
-       	// 
-       	casMsgIO *newStreamIO() const;
- 
-        //
-        // called to create datagram IO
-        //
-        casMsgIO *newDGIO() const;
 
+class casDGClient;
+
+//
+// casDGIntfIO
+//
+class casDGIntfIO {
+public:
+	casDGIntfIO (casDGClient &clientIn);
+	caStatus init(const caAddr &addr, unsigned connectWithThisPort,
+		int autoBeaconAddr=TRUE, int addConfigBeaconAddr=FALSE, 
+		int useBroadcastAddr=FALSE, casDGIntfIO *pAltOutIn=NULL);
+	virtual ~casDGIntfIO();
+
+	int getFD() const;
+	void xSetNonBlocking();
+	void sendBeacon(char &msg, bufSizeT length, aitUint32 &m_avail);
+	casIOState state() const;
+	void clientHostName (char *pBuf, unsigned bufSize) const;
+	
+	xSendStatus osdSend (const char *pBuf, bufSizeT nBytesReq, 
+		bufSizeT &nBytesActual, const caAddr &addr);
+	xRecvStatus osdRecv (char *pBuf, bufSizeT nBytesReq, 
+		bufSizeT &nBytesActual, caAddr &addr);
+	void osdShow (unsigned level) const;
+
+	static bufSizeT optimumBufferSize ();
+
+	//
+	// The server's port number
+	// (to be used for connection requests)
+	//
+	unsigned serverPortNumber();
+
+	virtual caStatus start()=0; // OS specific
+
+	inline void processDG();
+
+private:
+        ELLLIST        		beaconAddrList;
+	casDGIntfIO		*pAltOutIO;
+	casDGClient		&client;
+        SOCKET         		sock;
+        casIOState     		sockState;
+	aitInt16		connectWithThisPort;
+};
+
+struct ioArgsToNewStreamIO {
+	caAddr addr;
+	SOCKET sock;
+};
+
+//
+// casDGIO 
+//
+class casDGIO : public casDGClient {
+public:
+	casDGIO(caServerI &cas) :
+		casDGClient(cas) {}
+
+	//
+	// clientHostName()
+	//
+	void clientHostName (char *pBufIn, unsigned bufSizeIn) const;
+};
+
+//
+// casStreamIO
+//
+class casStreamIO : public casStrmClient {
+public:
+	casStreamIO(caServerI &cas, const ioArgsToNewStreamIO &args);
+	caStatus init();
+	~casStreamIO();
+
+	int getFD() const;
+	void xSetNonBlocking();
+
+	casIOState state() const;
+	void clientHostName (char *pBuf, unsigned bufSize) const;
+	
+	xSendStatus osdSend (const char *pBuf, bufSizeT nBytesReq, 
+		bufSizeT &nBytesActual);
+	xRecvStatus osdRecv (char *pBuf, bufSizeT nBytesReq, 
+		bufSizeT &nBytesActual);
+
+	xBlockingStatus blockingState() const;
+
+	bufSizeT incommingBytesPresent() const;
+
+	static bufSizeT optimumBufferSize ();
+
+	void osdShow (unsigned level) const;
+
+	//
+	// The server's port number
+	// (to be used for connection requests)
+	//
+	unsigned serverPortNumber();
+
+	const caAddr &getAddr()
+	{
+		return addr;
+	}
 private:
         casIOState              sockState;
         SOCKET                  sock;
         caAddr                  addr;
+	xBlockingStatus		blockingFlag;
+};
+
+class caServerIO;
+class casDGClient;
+
+class casStreamOS;
+
+//
+// casIntfIO
+//
+class casIntfIO {
+public:
+	casIntfIO();
+	//constructor does not return status
+	caStatus init(const caAddr &addr, casDGClient &dgClientIn,
+		int autoBeaconAddr, int addConfigBeaconAddr); 
+	virtual ~casIntfIO();
+	void show(unsigned level) const;
+
+        unsigned portNumber() const;
+
+        int getFD() const;
+
+        void setNonBlocking();
+
+       	// 
+        // called when we expect that a virtual circuit for a
+        // client can be created
+       	// 
+       	casStreamOS *newStreamClient(caServerI &cas) const;
+	
+	virtual casDGIntfIO *newDGIntfIO (casDGClient &dgClientIn) const = 0;
+
+	void requestBeacon();
+private:
+	casDGIntfIO *pNormalUDP;	// attached to this intf's addr
+	casDGIntfIO *pBCastUDP;	// attached to this intf's broadcast addr
+	SOCKET sock;
+	caAddr addr;
+};
+
+//
+// caServerIO
+//
+class caServerIO {
+public:
+        caStatus init(caServerI &cas); //constructor does not return status
+	~caServerIO();
+ 
+        //
+        // show status of IO subsystem
+        //
+        void show (unsigned level) const;
+ 
+private:
+
         //
         // static member data
         //
-        static int              staticInitialized;
+        static int staticInitialized;
         //
         // static member func
         //
         static inline void staticInit();
-};
-
-class casStreamIO : public casMsgIO {
-public:
-	casStreamIO(const SOCKET s, const caAddr &a);
-	caStatus init();
-	~casStreamIO();
-
-	int getFileDescriptor() const;
-	void xSetNonBlocking();
-	bufSizeT optimumBufferSize ();
-
-	casIOState state() const;
-	void hostNameFromAddr (char *pBuf, unsigned bufSize);
-	
-	xSendStatus osdSend (const char *pBuf,
-		bufSizeT nBytesReq, bufSizeT &nBytesActual);
-	xRecvStatus osdRecv (char *pBuf,
-		bufSizeT nBytesReq, bufSizeT &nBytesActual);
-	void osdShow (unsigned level) const;
-
-	bufSizeT incommingBytesPresent() const;
-private:
-        casIOState      sockState;
-        SOCKET          sock;
-        caAddr          addr;
-};
-
-class casDGIO : public casMsgIO {
-public:
-	casDGIO();
-	caStatus init();
-	~casDGIO();
-
-	int getFileDescriptor() const;
-	void xSetNonBlocking();
-	bufSizeT optimumBufferSize ();
-	void sendBeacon(char &msg, bufSizeT length,
-			aitUint32 &m_avail);
-	casIOState state() const;
-	void hostNameFromAddr (char *pBuf, unsigned bufSize);
-	
-	xSendStatus osdSend (const char *pBuf,
-		bufSizeT nBytesReq, bufSizeT &nBytesActual);
-	xRecvStatus osdRecv (char *pBuf,
-		bufSizeT nBytesReq, bufSizeT &nBytesActual);
-	void osdShow (unsigned level) const;
-private:
-        ELLLIST         destAddrList;
-        caAddr          lastRecvAddr;
-        SOCKET          sock;
-        casIOState      sockState;
-        char            lastRecvAddrInit;
 };
 
 // no additions below this line

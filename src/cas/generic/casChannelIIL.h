@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1996/09/16 18:23:59  jhill
+ * vxWorks port changes
+ *
  * Revision 1.3  1996/09/04 20:18:27  jhill
  * moved operator -> here
  *
@@ -44,6 +47,8 @@
 
 #ifndef casChannelIIL_h
 #define casChannelIIL_h
+
+#include <casCoreClientIL.h>
 
 //
 // casChannelI::operator -> ()
@@ -75,10 +80,10 @@ inline void casChannelI::unlock()
 inline void casChannelI::postEvent(const casEventMask &select, gdd &event)
 {
         casMonitor              *pMon;
-        tsDLIter<casMonitor>    iter(this->monitorList);
  
 	this->lock();
-        while ( (pMon = iter()) ) {
+        tsDLFwdIter<casMonitor>    iter(this->monitorList);
+        while ( (pMon = iter.next()) ) {
                 pMon->post(select, event);
         }
 	this->unlock();
@@ -95,8 +100,8 @@ inline void casChannelI::deleteMonitor(casMonitor &mon)
 	this->getClient().casEventSys::removeMonitor();
 	this->monitorList.remove(mon);
 	pRes = this->getClient().getCAS().removeItem(mon);
-	assert(&mon == (casMonitor *)pRes);
 	this->unlock();
+	assert(&mon == (casMonitor *)pRes);
 }
 
 //
@@ -119,14 +124,16 @@ inline void casChannelI::addMonitor(casMonitor &mon)
 //
 inline casMonitor *casChannelI::findMonitor(const caResId clientIdIn)
 {
-	tsDLIter<casMonitor>    iter(this->monitorList);
 	casMonitor              *pMon;
 
-	while ( (pMon = iter()) ) {
+	this->lock();
+	tsDLFwdIter<casMonitor>    iter(this->monitorList);
+	while ( (pMon = iter.next()) ) {
 		if ( clientIdIn == pMon->getClientId()) {
 			return pMon;
 		}
 	}
+	this->unlock();
 	return NULL;
 }
 

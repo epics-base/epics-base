@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.2  1996/09/16 18:27:11  jhill
+// vxWorks port changes
+//
 // Revision 1.1  1996/09/04 22:06:46  jhill
 // installed
 //
@@ -20,14 +23,6 @@
 #include <casClientIL.h> // casClient inline func
 #include <task_params.h> // EPICS task priorities
 
-
-//
-// casStreamOS::ioBlockedSignal()
-//
-void casStreamOS::ioBlockedSignal()
-{
-	printf("in casStreamOS::ioBlockedSignal() ?\n");
-}
 
 //
 // casStreamOS::eventSignal()
@@ -175,15 +170,6 @@ caStatus casStreamOS::start()
                 return S_cas_noMemory;
         }
 	return S_cas_success;
-}
-
-
-//
-// casStreamOS::sendBlockSignal()
-//
-void casStreamOS::sendBlockSignal()
-{
-	printf("in casStreamOS::sendBlockSignal()\n");
 }
 
 //

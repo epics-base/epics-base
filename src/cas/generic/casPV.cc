@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/07/01 19:56:12  jhill
+ * one last update prior to first release
+ *
  * Revision 1.2  1996/06/21 02:30:53  jhill
  * solaris port
  *
@@ -47,6 +50,7 @@
 
 #include <server.h>
 #include <casPVIIL.h> 	// casPVI inline func
+#include <casCtxIL.h> 	// casCtx inline func
 
 casPV::casPV (const casCtx &ctx, const char * const pPVName) :
 	casPVI (*ctx.getServer(), pPVName, *this)

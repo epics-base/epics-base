@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/09/16 18:24:01  jhill
+ * vxWorks port changes
+ *
  * Revision 1.2  1996/07/24 22:00:49  jhill
  * added pushOnToEventQueue()
  *
@@ -49,19 +52,10 @@
 #include <server.h>
 #include <casEventSysIL.h> // casMonitor inline func
 
-#if 0
-VERSIONID(caEventQueuec,"%W% %G%")
-#endif
-
-#if 0
-#include 	<memDebugLib.h>
-#endif
-
-
 //
 // casEventSys::show()
 //
-void casEventSys::show(unsigned level)
+void casEventSys::show(unsigned level) const
 {
 	printf ("casEventSys at %x\n", (unsigned) this);
 	if (level>=1u) {

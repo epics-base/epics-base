@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1996/09/04 20:23:17  jhill
+ * init new member cas and add arg to serverToolDebug()
+ *
  * Revision 1.3  1996/07/01 19:56:13  jhill
  * one last update prior to first release
  *
@@ -42,9 +45,9 @@
  */
 
 
-#include <server.h>
-#include <casPVIIL.h> // casPVI inline func
-#include <caServerIIL.h> // caServerI inline func
+#include "server.h"
+#include "casPVIIL.h" // casPVI inline func
+#include "caServerIIL.h" // caServerI inline func
 
 
 //
@@ -71,64 +74,32 @@ casPVI::~casPVI()
 {
 	casPVListChan		*pChan;
 	casPVListChan		*pNextChan;
-	tsDLIter<casPVListChan>	iter(this->chanList);
 
 	this->lock();
 
 	//
 	// delete any attached channels
 	//
-	pChan = iter();
+	tsDLFwdIter<casPVListChan> iter(this->chanList);
+	pChan = iter.next();
 	while (pChan) {
 		//
 		// deleting the channel removes it from the list
 		//
-		pNextChan = iter();
+		pNextChan = iter.next();
 		(*pChan)->destroy();
 		pChan = pNextChan;
 	}
 
 	this->cas.removePV(*this);
 
-	casVerify (this->nIOAttached==0u);
-
 	this->unlock();
-}
 
-//
-// caPVI::verifyPVName()
-//
-caStatus casPVI::verifyPVName(gdd &name)
-{
-	int		gddStatus;
- 
-        //
-        // verify up front that they have supplied
-        // a valid name (so that we wont fail
-        // in the PV constructor)
-        //
-        gddStatus = name.reference();
-        if (gddStatus) {
-                serverToolDebug("GDD PV name must not be \"no ref\"");
-                return S_cas_badPVName;
-        }
-        gddStatus = name.unreference();
-        if (gddStatus) {
-                serverToolDebug("corruption expected");
-                return S_cas_badPVName;
-        }
- 
-	if (name.primitiveType() != aitEnumString) {
-                serverToolDebug("GDD PV name must be stored as an aitString");
-                return S_cas_badPVName;
-	}
-
-        if (name.dimension() != 0u) {
-                serverToolDebug("GDD Dimension must be zero (gddScaler)");
-                return S_cas_badPVName;
-        }
-
-	return S_cas_success;
+	//
+	// all outstanding IO should have been deleted
+	// when we destroyed the channels
+	//
+	casVerify (this->nIOAttached==0u);
 }
 
 

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.7  1996/09/16 18:24:02  jhill
+ * vxWorks port changes
+ *
  * Revision 1.6  1996/09/04 20:21:41  jhill
  * removed operator -> and added member pv
  *
@@ -53,9 +56,9 @@
 //
 // EPICS
 //
-#include <tsDLList.h>
-#include <resourceLib.h>
-#include <caProto.h>
+#include "tsDLList.h"
+#include "resourceLib.h"
+#include "caProto.h"
 
 typedef aitUint32 caResId;
 
@@ -67,7 +70,7 @@ class casChannelI;
 //
 class casEvent : public tsDLNode<casEvent> {
 public:
-        virtual ~casEvent() {}
+        virtual ~casEvent();
         virtual caStatus cbFunc(casEventSys &)=0;
 private:
 };
@@ -85,11 +88,14 @@ enum casResType {casChanT=1, casClientMonT, casPVT};
 class casRes : public uintRes<casRes>
 {
 public:
-        virtual ~casRes() {}
+        virtual ~casRes();
         virtual casResType resourceType() const = 0;
 	virtual void show (unsigned level) = 0;
 private:
 };
+
+class ioBlockedList;
+class osiMutex;
 
 //
 // ioBlocked
@@ -98,89 +104,24 @@ class ioBlocked : public tsDLNode<ioBlocked> {
 friend class ioBlockedList;
 public:
 	ioBlocked ();
-	virtual ~ioBlocked ();
-	void setBlocked (ioBlockedList &list);
+	virtual ~ioBlocked ()=0;
 private:
 	ioBlockedList	*pList;
-	virtual void ioBlockedSignal () = 0;
+	virtual void ioBlockedSignal ();
 };
 
 //
 // ioBlockedList
 //
-class ioBlockedList : public tsDLList<ioBlocked> {
-friend class ioBlocked;
+class ioBlockedList : private tsDLList<ioBlocked> {
 public:
-	~ioBlockedList ();
-	void signal ();
+        ioBlockedList ();
+        ~ioBlockedList ();
+        void signal ();
+	void removeItemFromIOBLockedList(ioBlocked &item);
+	void addItemToIOBLockedList(ioBlocked &item);
 };
-
-
-//
-// ioBlockedList::~ioBlockedList ()
-//
-inline ioBlockedList::~ioBlockedList ()
-{
-	ioBlocked *pB;
-	while ( (pB = this->get ()) ) {
-		pB->pList = NULL;
-	}
-}
-
-//
-// ioBlockedList::signal ()
-//
-// works from a temporary list to avoid problems
-// where the virtual function adds items to the 
-// list
-//
-inline void ioBlockedList::signal ()
-{
-	tsDLList<ioBlocked> tmp(*this);
-	ioBlocked *pB;
-
-	while ( (pB = tmp.get ()) ) {
-		pB->pList = NULL;
-		pB->ioBlockedSignal ();
-	}
-}
-
-//
-// ioBlocked::ioBlocked ()
-//
-inline ioBlocked::ioBlocked() : pList (NULL) 
-{
-}
-
-//
-// ioBlocked::~ioBlocked ()
-//
-inline ioBlocked::~ioBlocked ()
-{
-	if (this->pList) {
-		this->pList->remove (*this);
-		this->pList = NULL;
-	}
-}
-
-//
-// ioBlocked::setBlocked ()
-// 
-inline void ioBlocked::setBlocked (ioBlockedList &list) 
-{
-	if (!this->pList) {
-		this->pList = &list;
-		list.add (*this);
-	}
-	else {
-		//
-		// requests to be in more than one
-		// list at at time are fatal
-		//
-		assert (&list == this->pList);
-	}
-}
-
+ 
 class casMonitor;
 
 //
@@ -192,50 +133,25 @@ public:
 	// only used when this part of another structure
 	// (and we need to postpone true construction)
 	//
-	casMonEvent () : pValue(NULL), id(0u) {}
-	casMonEvent (casMonitor &monitor, gdd &newValue);
-	casMonEvent (casMonEvent &initValue);
+	inline casMonEvent ();
+	inline casMonEvent (casMonitor &monitor, gdd &newValue);
+	inline casMonEvent (casMonEvent &initValue);
 
 	//
 	// ~casMonEvent ()
 	//
-	~casMonEvent ();
+	inline ~casMonEvent ();
 
 	caStatus cbFunc(casEventSys &);
 
 	//
 	// casMonEvent::getValue()
 	//
-	gdd *getValue() const
-	{
-		return this->pValue;
-	}
+	inline gdd *getValue() const;
 
-	void operator = (class casMonEvent &monEventIn)
-	{
-		int gddStatus;
-		if (this->pValue) {
-			gddStatus = this->pValue->unreference();
-			assert (!gddStatus);
-		}
-		if (monEventIn.pValue) {
-			gddStatus = monEventIn.pValue->reference();
-			assert (!gddStatus);
-		}
-		this->pValue = monEventIn.pValue;
-		this->id = monEventIn.id;
-	}
+	inline void operator = (class casMonEvent &monEventIn);
 	
-	void clear()
-	{
-		int gddStatus;
-		if (this->pValue) {
-			gddStatus = this->pValue->unreference();
-			assert (!gddStatus);
-			this->pValue = NULL;
-		}
-		this->id = 0u;
-	}
+	inline void clear();
 
 	void assign (casMonitor &monitor, gdd *pValueIn);
 private:
@@ -243,7 +159,6 @@ private:
 	caResId		id;
 };
 
-class osiMutex;
 
 //
 // casMonitor()
@@ -330,79 +245,169 @@ inline void casMonitor::post(const casEventMask &select, gdd &value)
 }
 
 
+class caServer;
 class casCoreClient;
-class casAsyncIO;
 class casChannelI;
 class casCtx;
 class caServer;
+class casAsyncIO;
+class casAsyncReadIO;
+class casAsyncWriteIO;
+class casAsyncPVExistIO;
 
-//
-// casAsyncIOI
-//
-// (server internal asynchronous IO class)
-//
-// 
-// Operations may be completed asynchronously
-// by the server tool if the virtual function creates a
-// casAsyncIO object and returns the status code
-// S_casApp_asyncCompletion
-//
 class casAsyncIOI : public casEvent, public tsDLNode<casAsyncIOI> {
 public:
-        casAsyncIOI(const casCtx &ctx, casAsyncIO &ioIn, gdd *pDD=NULL);
+	casAsyncIOI (casCoreClient &client, casAsyncIO &ioExternal);
 	virtual ~casAsyncIOI();
 
         //
         // place notification of IO completion on the event queue
         //
-	caStatus postIOCompletion(caStatus completionStatus, gdd *pDesc=NULL);
-
-	caServer *getCAS();
-
-	inline casAsyncIO * operator -> ();
-
-	void setServerDelete()
-	{
-		this->serverDelete = 1u;
-	}
+	caStatus postIOCompletionI();
 
 	inline void lock();
 	inline void unlock();
 
-	gdd *getValuePtr ()
-	{
-		return this->pDesc;
-	}
+	virtual caStatus cbFuncAsyncIO()=0;
+	virtual int readOP();
 
-	void clrValue ()
-	{
-		if (this->pDesc) {
-			gddStatus status;
-			status = this->pDesc->unreference();
-			assert(!status);
-			this->pDesc = NULL;
-		}
-	}
+	void destroyIfReadOP();
+
+	caServer *getCAS();
+
+	inline void destroy();
+
+	void reportInvalidAsynchIO(unsigned);
+
+protected:
+        casCoreClient	&client;   
+	casAsyncIO	&ioExternal;
+
 private:
+	unsigned	inTheEventQueue:1;
+	unsigned	posted:1;
+	unsigned	ioComplete:1;
+	unsigned	serverDelete:1;
         //
         // casEvent virtual call back function
         // (called when IO completion event reaches top of event queue)
         //
         caStatus cbFunc(casEventSys &);
 
-        caHdr const	msg;
-        casCoreClient	&client;   
-	casAsyncIO	&asyncIO;
-	casChannelI	*pChan; // optional
-        gdd		*pDesc; // optional
-        caStatus	completionStatus;
-	unsigned	inTheEventQueue:1;
-	unsigned	posted:1;
-	unsigned	ioComplete:1;
-	unsigned	serverDelete:1;
+	inline casAsyncIO * operator -> ();
 };
 
-class casCoreClient;
+//
+// casAsyncRdIOI
+//
+// (server internal asynchronous read IO class)
+//
+class casAsyncRdIOI : public casAsyncIOI { 
+public:
+        casAsyncRdIOI(const casCtx &ctx, casAsyncReadIO &ioIn);
+	virtual ~casAsyncRdIOI();
+
+	void destroyIfReadOP();
+
+	caStatus cbFuncAsyncIO();
+	casAsyncIO &getAsyncIO();
+
+	caStatus postIOCompletion(caStatus completionStatus,
+			gdd &valueRead);
+	int readOP();
+private:
+        caHdr const	msg;
+	casChannelI	&chan; 
+	gdd		*pDD;
+        caStatus	completionStatus;
+};
+
+//
+// casAsyncWtIOI
+//
+// (server internal asynchronous write IO class)
+//
+class casAsyncWtIOI : public casAsyncIOI { 
+public:
+        casAsyncWtIOI(const casCtx &ctx, casAsyncWriteIO &ioIn);
+	virtual ~casAsyncWtIOI();
+
+        //
+        // place notification of IO completion on the event queue
+        //
+	caStatus postIOCompletion(caStatus completionStatus);
+
+	caStatus cbFuncAsyncIO();
+	casAsyncIO &getAsyncIO();
+private:
+        caHdr const	msg;
+	casChannelI	&chan; 
+        caStatus	completionStatus;
+};
+
+union ca_addr;
+
+//
+// casOpaqueAddr
+//
+// store address as an opaque array of bytes so that
+// we dont drag the socket (or other IO specific)
+// headers into the server tool.
+//
+//
+// get() will assert fail if the init flag has not been
+//	set
+//
+class casOpaqueAddr
+{
+public:
+	inline casOpaqueAddr();
+	inline void clear();
+	inline int hasBeenInitialized() const;
+	inline casOpaqueAddr (const union ca_addr &addr);
+	inline void set (const union ca_addr &);
+	inline union ca_addr get () const;
+private:
+	char	opaqueAddr[16u]; // large enough for socket addresses
+	char	init;
+	
+	//
+	// simple class that will assert fail if
+	// sizeof(opaqueAddr) < sizeof(caAddr)
+	//
+	class checkSize {
+	public:
+		checkSize();
+	};
+	static checkSize sizeChecker;
+};
+
+class casDGIntfIO;
+
+//
+// casAsyncExIOI 
+//
+// (server internal asynchronous read IO class)
+//
+class casAsyncExIOI : public casAsyncIOI { 
+public:
+        casAsyncExIOI(const casCtx &ctx, casAsyncPVExistIO &ioIn);
+	virtual ~casAsyncExIOI();
+
+        //
+        // place notification of IO completion on the event queue
+        //
+	caStatus postIOCompletion(const pvExistReturn &retVal);
+
+	caStatus cbFuncAsyncIO();
+	casAsyncIO &getAsyncIO();
+private:
+        caHdr const		msg;
+	pvExistReturn 		retVal;
+	casDGIntfIO * const 	pOutDGIntfIO;
+	const casOpaqueAddr	dgOutAddr;
+};
+
 class casChannel;
 class casPVI;
 
@@ -468,6 +473,8 @@ public:
 
 	inline casChannel * operator -> ();
 
+	void clearOutstandingReads();
+
 protected:
         tsDLList<casMonitor>	monitorList;
 	tsDLList<casAsyncIOI>	ioInProgList;
@@ -510,8 +517,6 @@ public:
         // for use by the server library
         //
         caServerI &getCAS() {return this->cas;}
-
-	static caStatus verifyPVName(gdd &name);
 
         //
         // CA only does 1D arrays for now (and the new server
@@ -573,4 +578,47 @@ private:
 	inline void lock();
 	inline void unlock();
 };
+
+//
+// inline functions associated with the return arg from
+// caServer::pvExistTest()
+//
+inline pvExistReturn::pvExistReturn(caStatus status,
+        char* pCanonicalNameStr) :
+        stat(status), str(pCanonicalNameStr) 
+{
+}
+inline pvExistReturn::pvExistReturn(caStatus status,
+        const char* pCanonicalNameStr) :
+        stat(status), str(pCanonicalNameStr) 
+{
+}
+inline pvExistReturn::pvExistReturn(pvExistReturn &init) :
+        stat(init.stat), str(init.str) 
+{
+}
+inline pvExistReturn::pvExistReturn(const pvExistReturn &init) :
+        stat(init.stat), str(init.str) 
+{
+}
+inline const caStatus pvExistReturn::getStatus() const
+{
+        return this->stat;
+}
+inline const char* pvExistReturn::getString() const
+{
+        return str.string();
+}
+inline pvExistReturn& pvExistReturn::operator=(pvExistReturn &rhs) 
+{
+        this->stat = rhs.stat;
+        this->str = rhs.str;
+        return *this;
+}
+inline pvExistReturn& pvExistReturn::operator=(const pvExistReturn &rhs) 
+{
+        this->stat = rhs.stat;
+        this->str = rhs.str;
+        return *this;
+}
 

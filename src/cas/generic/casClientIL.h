@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -37,6 +40,7 @@
 #define casClientIL_h
 
 #include <caServerIIL.h> // caServerI inline func 
+#include <casCtxIL.h> // caServerI inline func 
 
 //
 // find the channel associated with a resource id
@@ -56,10 +60,10 @@ inline casChannelI *casClient::resIdToChannel(const caResId &id)
 //
 // casClient::getDebugLevel()
 //
-inline unsigned casClient::getDebugLevel()
-{
-	return this->ctx.getServer()->getDebugLevel();
-}
+//inline unsigned casClient::getDebugLevel() const
+//{
+//	return this->ctx.getServer()->getDebugLevel();
+//}
 
 #endif // casClientIL_h
 

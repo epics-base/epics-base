@@ -49,8 +49,7 @@ exServer::exServer(unsigned pvMaxNameLength, unsigned pvCountEstimate,
 //
 // exServer::pvExistTest()
 //
-caStatus exServer::pvExistTest(const casCtx &ctxIn, const char *pPVName, 
-				gdd &canonicalPVName)
+pvExistReturn exServer::pvExistTest(const casCtx &ctxIn, const char *pPVName)
 {
 	const pvInfo	*pPVI;
 
@@ -58,24 +57,20 @@ caStatus exServer::pvExistTest(const casCtx &ctxIn, const char *pPVName,
 	if (pPVI) {
 		if (pPVI->getIOType()==excasIoAsync) {
 			exAsyncExistIO	*pIO;
-			pIO = new exAsyncExistIO(pPVI, ctxIn, canonicalPVName);
+			pIO = new exAsyncExistIO(*pPVI, ctxIn);
 			if (pIO) {
-				return S_casApp_asyncCompletion;
+				return pvExistReturn(S_casApp_asyncCompletion);
 			}
 			else {
-				return S_casApp_noMemory;
+				return pvExistReturn(S_casApp_noMemory);
 			}
 		}
 
-		//
-		// there are no name aliases in this
-		// server's PV name syntax
-		//
-		canonicalPVName.put (pPVI->getName());
-		return S_casApp_success;
+		const char *pName = pPVI->getName();
+		return pvExistReturn(S_casApp_success, pName);
 	}
 
-	return S_casApp_pvNotFound;
+	return pvExistReturn(S_casApp_pvNotFound);
 }
 
 //
@@ -138,7 +133,7 @@ void exServer::show (unsigned level)
 // destroy so the exAsyncIO class will hang around until the
 // casAsyncIO::destroy() is called
 //
-void exAsyncIOTimer::destroy()
+void exOSITimer::destroy()
 {
 }
 
@@ -148,9 +143,19 @@ void exAsyncIOTimer::destroy()
 //
 void exAsyncExistIO::expire()
 {
+	const char *pName = pvi.getName();
+
         //
         // post IO completion
         //
-        this->postIOCompletion(S_cas_success);
+        this->postIOCompletion (pvExistReturn(S_cas_success, pName));
+}
+
+//
+// exAsyncExistIO::name()
+//
+const char *exAsyncExistIO::name() const
+{
+	return "exAsyncExistIO";
 }
 

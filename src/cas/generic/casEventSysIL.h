@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/09/16 18:24:02  jhill
+ * vxWorks port changes
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
  * ca server installation
  *
@@ -38,6 +41,33 @@
 
 #ifndef casEventSysIL_h
 #define casEventSysIL_h
+
+//
+// required for casCoreClient::lookupRes()
+//
+#include "casCoreClientIL.h"
+
+//
+// casEventSys::casEventSys ()
+//
+inline casEventSys::casEventSys (casCoreClient &coreClientIn) :
+	coreClient(coreClientIn),
+	numEventBlocks(0u),
+	maxLogEntries(individualEventEntries),
+	eventsOff(aitFalse)
+{
+}
+
+//
+// casEventSys::init()
+//
+inline caStatus casEventSys::init()
+{
+	if (mutex.init()) {
+		return S_cas_noMemory;
+	}
+	return S_cas_success;
+}
 
 //
 // casEventSys::addToEventQueue()
@@ -51,6 +81,81 @@ inline void casEventSys::addToEventQueue(casEvent &event)
         // wakes up the event queue consumer
         //
         this->coreClient.eventSignal();
+}
+
+//
+// casEventSys::getCoreClient
+//
+inline casCoreClient &casEventSys::getCoreClient()
+{
+	return this->coreClient;
+}
+
+//
+// casEventSys::getEventsOff ()
+//
+inline aitBool casEventSys::getEventsOff () const
+{
+	return this->eventsOff?aitTrue:aitFalse;
+}
+
+//
+// casEventSys::setEventsOn()
+//
+void casEventSys::setEventsOn()
+{
+	this->eventsOff = aitFalse;
+}
+
+//
+// casEventSys::setEventsOff()
+//
+void casEventSys::setEventsOff()
+{
+	this->eventsOff = aitTrue;
+}
+
+//
+// casEventSys::insertEventQueue()
+//
+inline void casEventSys::insertEventQueue(casEvent &insert, casEvent &prevEvent)
+{
+        this->mutex.osiLock();
+        this->eventLogQue.insertAfter(insert, prevEvent);
+        this->mutex.osiUnlock();
+}
+ 
+//
+// casEventSys::pushOnToEventQueue()
+//
+inline void casEventSys::pushOnToEventQueue(casEvent &event)
+{
+        this->mutex.osiLock();
+        this->eventLogQue.push(event);
+        this->mutex.osiUnlock();
+}
+ 
+//
+// casEventSys::removeFromEventQueue()
+//
+inline void casEventSys::removeFromEventQueue(casEvent &event)
+{
+        this->mutex.osiLock();
+        this->eventLogQue.remove(event);
+        this->mutex.osiUnlock();
+}
+ 
+//
+// casEventSys::full()
+//
+inline aitBool casEventSys::full()
+{
+        if (this->eventLogQue.count()>=this->maxLogEntries) {
+                return aitTrue;
+        }
+        else {
+                return aitFalse;
+        }
 }
 
 //

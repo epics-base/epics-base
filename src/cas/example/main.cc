@@ -4,6 +4,7 @@
 
 //
 // main()
+// (example single threaded ca server tool main loop)
 //
 int main (int argc, const char **argv)
 {

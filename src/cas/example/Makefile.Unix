@@ -55,6 +55,7 @@ GLOMBOBJ += $(BUILDDIR)casMonEvent.o
 GLOMBOBJ += $(BUILDDIR)outBuf.o
 GLOMBOBJ += $(BUILDDIR)inBuf.o
 GLOMBOBJ += $(BUILDDIR)casEventMask.o
+GLOMBOBJ += $(BUILDDIR)ioBlocked.o
 
 GLOMBOBJ += $(BUILDDIR)caServerOS.o
 GLOMBOBJ += $(BUILDDIR)casDGOS.o
@@ -73,19 +74,19 @@ excas: $(OBJS) $(DEPLIBS)
 #
 # fast link (without waiting for library build)
 #
-nolib:  $(OBJS) $(GLOMBOBJ) $(DEPLIBSWOCAS)
+fexcas:  $(OBJS) $(GLOMBOBJ) $(DEPLIBSWOCAS)
 	$(LINK.cc) -o $@ $(OBJS) $(GLOMBOBJ) $(DEPLIBSWOCAS) 
 
 #
 # build with purify 
 #
-purify: $(OBJS) $(GLOMBOBJ) $(DEPLIBSWOCAS)
-	$(PURIFY) -best-effort $(LINK.cc) -o $@ $(OBJS) $(GLOMBOBJ) $(DEPLIBSWOCAS) 
+pexcas: $(OBJS) $(DEPLIBS)
+	$(PURIFY) $(LINK.cc) -o $@ $(OBJS) $(LDFLAGS) $(LDLIBS)  
 
 clean::
 	@$(RM) excas 
-	@$(RM) nolib
-	@$(RM) purify
+	@$(RM) fexcas 
+	@$(RM) pexcas 
 	@$(RM) -rf Templates.DB
 	@$(RM) core 
 

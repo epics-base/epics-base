@@ -6,48 +6,63 @@ TOP = $(CAS)/../..
 SRC = $(CAS)/generic
 CA = $(CAS)/../ca
 IOSRC = $(CAS)/io/bsdSocket
-OSSRC = $(CAS)/os/posix
-VPATH = $(SRC) $(IOSRC) $(OSSRC) 
+STSRC = $(SRC)/st
+VPATH = $(SRC) $(STSRC) $(IOSRC)  
 
 include $(TOP)/config/CONFIG_BASE
 
-CXXCMPLR = STRICT
+#
+# Too many errors from sun's include files
+#
+#CXXCMPLR = STRICT
 
-USR_INCLUDES = -I$(SRC) -I$(OSSRC) -I$(IOSRC) -I$(CA) \
-		-I$(TOP)/src/include/os/$(T_A)
+USR_INCLUDES = -I$(SRC) -I$(IOSRC) -I$(STSRC) -I$(CA) 
 
 DEPLIBS_BASE = $(EPICS_BASE_LIB)
 
-SRCS.cc += $(SRC)/caServer.cc 
-SRCS.cc += $(SRC)/caServerI.cc 
-SRCS.cc += $(SRC)/casCoreClient.cc 
-SRCS.cc += $(SRC)/casClient.cc 
-SRCS.cc += $(SRC)/casDGClient.cc 
-SRCS.cc += $(SRC)/casStrmClient.cc 
-SRCS.cc += $(SRC)/casPV.cc 
-SRCS.cc += $(SRC)/casPVI.cc 
-SRCS.cc += $(SRC)/casChannel.cc 
-SRCS.cc += $(SRC)/casChannelI.cc 
-SRCS.cc += $(SRC)/casClientMon.cc 
-SRCS.cc += $(SRC)/casChanDelEv.cc 
-SRCS.cc += $(SRC)/casMsgIO.cc 
-SRCS.cc += $(SRC)/casAsyncIO.cc 
-SRCS.cc += $(SRC)/casAsyncIOI.cc 
-SRCS.cc += $(SRC)/casEventSys.cc 
-SRCS.cc += $(SRC)/casMonitor.cc 
-SRCS.cc += $(SRC)/casMonEvent.cc 
-SRCS.cc += $(SRC)/outBuf.cc 
-SRCS.cc += $(SRC)/inBuf.cc 
-SRCS.cc += $(SRC)/casEventMask.cc
+SRCS.cc += caServer.cc 
+SRCS.cc += caServerI.cc 
+SRCS.cc += casCoreClient.cc 
+SRCS.cc += casClient.cc 
+SRCS.cc += casDGClient.cc 
+SRCS.cc += casStrmClient.cc 
+SRCS.cc += casPV.cc 
+SRCS.cc += casPVI.cc 
+SRCS.cc += casChannel.cc 
+SRCS.cc += casChannelI.cc 
+SRCS.cc += casClientMon.cc 
+SRCS.cc += casChanDelEv.cc 
+SRCS.cc += casMsgIO.cc 
+SRCS.cc += casAsyncIO.cc 
+SRCS.cc += casAsyncIOI.cc 
+SRCS.cc += casAsyncXXIO.cc 
+SRCS.cc += casAsyncRdIOI.cc 
+SRCS.cc += casAsyncWtIOI.cc 
+SRCS.cc += casAsyncExIOI.cc 
+SRCS.cc += casEventSys.cc 
+SRCS.cc += casMonitor.cc 
+SRCS.cc += casMonEvent.cc 
+SRCS.cc += inBuf.cc 
+SRCS.cc += outBuf.cc 
+SRCS.cc += dgInBuf.cc 
+SRCS.cc += dgOutBuf.cc 
+SRCS.cc += casCtx.cc 
+SRCS.cc += casEventMask.cc
+SRCS.cc += ioBlocked.cc
+SRCS.cc += templInst.cc
 
-SRCS.cc += $(OSSRC)/caServerOS.cc
-SRCS.cc += $(OSSRC)/casDGOS.cc
-SRCS.cc += $(OSSRC)/casStreamOS.cc
+SRCS.cc += caServerOS.cc
+SRCS.cc += casIntfOS.cc
+SRCS.cc += casDGIntfOS.cc
+SRCS.cc += casDGOS.cc
+SRCS.cc += casStreamOS.cc
 
-SRCS.cc += $(IOSRC)/caServerIO.cc
-SRCS.cc += $(IOSRC)/casDGIO.cc
-SRCS.cc += $(IOSRC)/casStreamIO.cc
-SRCS.c  += $(IOSRC)/sigPipeIgnore.c
+SRCS.cc += caServerIO.cc
+SRCS.cc += casIntfIO.cc
+SRCS.cc += casDGIntfIO.cc
+SRCS.cc += casDGIO.cc
+SRCS.cc += casStreamIO.cc
+SRCS.c  += sigPipeIgnore.c
 
 LIBOBJS += caServer.o
 LIBOBJS += caServerI.o
@@ -64,20 +79,33 @@ LIBOBJS += casChanDelEv.o
 LIBOBJS += casMsgIO.o
 LIBOBJS += casAsyncIO.o
 LIBOBJS += casAsyncIOI.o
+LIBOBJS += casAsyncXXIO.o
+LIBOBJS += casAsyncRdIOI.o
+LIBOBJS += casAsyncWtIOI.o
+LIBOBJS += casAsyncExIOI.o
 LIBOBJS += casEventSys.o
 LIBOBJS += casMonitor.o
 LIBOBJS += casMonEvent.o
-LIBOBJS += outBuf.o
 LIBOBJS += inBuf.o 
+LIBOBJS += outBuf.o
+LIBOBJS += dgInBuf.o 
+LIBOBJS += dgOutBuf.o
+LIBOBJS += casCtx.o 
 LIBOBJS += casEventMask.o
+LIBOBJS += ioBlocked.o
+LIBOBJS += templInst.o
 
 LIBOBJS += caServerOS.o
+LIBOBJS += casIntfOS.o
+LIBOBJS += casDGIntfOS.o
 LIBOBJS += casDGOS.o
 LIBOBJS += casStreamOS.o
 
 LIBOBJS += caServerIO.o
-LIBOBJS += casDGIO.o
+LIBOBJS += casIntfIO.o
+LIBOBJS += casDGIntfIO.o
 LIBOBJS += casStreamIO.o
+LIBOBJS += casDGIO.o
 LIBOBJS += sigPipeIgnore.o
 
 LIBNAME = libcas.a

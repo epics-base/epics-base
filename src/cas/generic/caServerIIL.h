@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/09/16 18:23:57  jhill
+ * vxWorks port changes
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
  * ca server installation
  *
@@ -40,6 +43,22 @@
 #define caServerIIL_h
 
 //
+// caServerI::getAdapter()
+//
+inline caServer *caServerI::getAdapter()
+{
+	return &this->adapter;
+}
+
+//
+// call virtual function in the interface class
+//
+inline caServer * caServerI::operator -> ()
+{
+	return this->getAdapter();
+}
+
+//
 // caServerI::lookupRes()
 //
 inline casRes *caServerI::lookupRes(const caResId &idIn, casResType type)
@@ -47,12 +66,14 @@ inline casRes *caServerI::lookupRes(const caResId &idIn, casResType type)
 	uintId	id(idIn);
 	casRes	*pRes;
 
+	this->osiLock();
 	pRes = this->uintResTable<casRes>::lookup(id);
 	if (pRes) {
 		if (pRes->resourceType()!=type) {
-			pRes = 0;
+			pRes = NULL;
 		}
 	}
+	this->osiUnlock();
 	return pRes;
 }
 
@@ -86,14 +107,19 @@ inline aitBool caServerI::pvExistTestPossible()
 //
 // find the channel associated with a resource id
 //
-inline caStatus caServerI::pvExistTest(const casCtx &ctxIn,
-                        const char *pPVName, gdd &canonicalPVName)
+inline pvExistReturn caServerI::pvExistTest(
+		const casCtx &ctxIn, const char *pPVName)
 {
-	if (!pvExistTestPossible()) {
-		return S_cas_ioBlocked;
+	this->osiLock();
+	if (pvExistTestPossible()) {
+		this->nExistTestInProg++;
+		osiUnlock();
+		return (*this)->pvExistTest(ctxIn, pPVName);
 	}
-	this->nExistTestInProg++;
-        return (*this)->pvExistTest(ctxIn, pPVName, canonicalPVName);
+	else {
+		osiUnlock();
+		return pvExistReturn(S_cas_ioBlocked);
+	}
 }
 
 //
@@ -101,7 +127,9 @@ inline caStatus caServerI::pvExistTest(const casCtx &ctxIn,
 //
 inline void caServerI::pvExistTestCompletion()
 {
+	this->osiLock();
 	this->nExistTestInProg--;
+	this->osiUnlock();
 	this->ioBlockedList::signal();
 }
 
@@ -134,6 +162,51 @@ inline void caServerI::removePV(casPVI &pv)
 	this->osiUnlock();
 	casVerify (pPV!=0);
 	casVerify (pPV==&pv);
+}
+
+//
+// caServerI::getPVMaxNameLength()
+//
+inline unsigned caServerI::getPVMaxNameLength() const
+{
+	return this->pvMaxNameLength;
+}
+
+//
+// caServerI::installItem()
+//
+inline void caServerI::installItem(casRes &res)
+{
+	this->uintResTable<casRes>::installItem(res);
+}
+
+//
+// caServerI::removeItem()
+//
+inline casRes *caServerI::removeItem(casRes &res)
+{
+	return this->uintResTable<casRes>::remove(res);
+}
+
+//
+// caServerI::ready()
+//
+inline aitBool caServerI::ready()
+{
+	if (this->haveBeenInitialized) {
+		return aitTrue;
+	}
+	else {
+		return aitFalse;
+	}
+}
+
+//
+// caServerI::setDebugLevel()
+//
+inline void caServerI::setDebugLevel(unsigned debugLevelIn)
+{
+	this->debugLevel = debugLevelIn;
 }
 
 #endif // caServerIIL_h

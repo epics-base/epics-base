@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -36,7 +39,7 @@
 #ifndef casEventMaskH
 #define casEventMaskH
 
-#include <resourceLib.h>
+#include "resourceLib.h"
  
 
 class casEventMaskEntry;
@@ -97,38 +100,6 @@ public:
 private:
 };
  
-class casEventRegistry : resTable <casEventMaskEntry, stringId> {
-public:
-	casEventRegistry() : allocator(0) 
-	{
-		int status;
-		status = this->resTable <casEventMaskEntry, stringId>::init(1u<<8u);
-		if (status) {
-			this->init = 0u;
-			return;
-		}
-		this->init = 1u;
-	}
-	~casEventRegistry()
-	{
-		this->destroyAllEntries();
-	}
-        casEventMask registerEvent (const char *pName);
-
-	void show (unsigned level);
-
-private:
-	unsigned allocator;
-	unsigned char init;
-
-        casEventMask maskAllocator();
-};
-
-inline casEventMask::casEventMask (casEventRegistry &reg, const char *pName)
-{
-	*this = reg.registerEvent (pName);
-}
-
 inline casEventMask operator| (const casEventMask &lhs, const casEventMask &rhs)
 {
         casEventMask result;

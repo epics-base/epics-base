@@ -20,7 +20,7 @@ unsigned exAsyncPV::maxSimultAsyncOps () const
 //
 caStatus exAsyncPV::read (const casCtx &ctx, gdd &valueIn)
 {
-	exAsyncIO	*pIO;
+	exAsyncReadIO	*pIO;
 	
 	pIO = new exAsyncReadIO(ctx, *this, valueIn);
 	if (!pIO) {
@@ -36,7 +36,7 @@ caStatus exAsyncPV::read (const casCtx &ctx, gdd &valueIn)
 //
 caStatus exAsyncPV::write (const casCtx &ctx, gdd &valueIn)
 {
-	exAsyncIO	*pIO;
+	exAsyncWriteIO	*pIO;
 	
 	pIO = new exAsyncWriteIO(ctx, *this, valueIn);
 	if (!pIO) {
@@ -53,9 +53,16 @@ caStatus exAsyncPV::write (const casCtx &ctx, gdd &valueIn)
 void exAsyncWriteIO::expire() 
 {
 	caStatus status;
-	status = this->pv.update(*this->getValuePtr());
-	this->clrValue();
+	status = this->pv.update(this->value);
 	this->postIOCompletion (status);
+}
+
+//
+// exAsyncWriteIO::name()
+//
+const char *exAsyncWriteIO::name() const
+{
+	return "exAsyncWriteIO";
 }
 
 //
@@ -65,17 +72,24 @@ void exAsyncWriteIO::expire()
 void exAsyncReadIO::expire()
 {
 	caStatus status;
-	gdd *pValue = this->getValuePtr();
 
 	//
 	// map between the prototype in and the
 	// current value
 	//
-	status = exServer::read(this->pv, *pValue);
+	status = exServer::read(this->pv, this->proto);
 
 	//
 	// post IO completion
 	//
-	this->postIOCompletion(status);
+	this->postIOCompletion(status, this->proto);
+}
+
+//
+// exAsyncReadIO::name()
+//
+const char *exAsyncReadIO::name() const
+{
+	return "exAsyncReadIO";
 }
 

@@ -97,12 +97,9 @@ public:
 	exScanTimer (double delayIn, exPV &pvIn) : 
 		pv(pvIn), osiTimer(delayIn) {}
 	void expire ();
-	osiBool again();
-	const osiTime delay();
-	const char *name()
-	{
-		return "exScanTimer";
-	}
+	osiBool again() const;
+	const osiTime delay() const;
+	const char *name() const;
 private:
 	exPV	&pv;
 };
@@ -188,8 +185,7 @@ public:
 	exServer(unsigned pvMaxNameLength, unsigned pvCountEstimate=0x3ff,
 			unsigned maxSimultaneousIO=1u);
         void show (unsigned level);
-        caStatus pvExistTest (const casCtx &ctxIn, const char *pPVName, 
-				gdd &canonicalPVName);
+        pvExistReturn pvExistTest (const casCtx &ctxIn, const char *pPVName);
         casPV *createPV (const casCtx &ctxIn, const char *pPVName);
 
 	static const pvInfo *findPV(const char *pName);
@@ -281,46 +277,44 @@ public:
 private:
 };
 
-
 //
-// exAsyncIOTimer 
+// exOSITimer
 //
-class exAsyncIOTimer : public osiTimer {
+// a special version of osiTimer which is only to be used 
+// within an exAsyncIO. The destroy() method is replaced 
+// so that the timer destroy() will not destroy the
+// exAsyncIO until the casAsyncIO has completed
+//
+class exOSITimer : public osiTimer {
 public:
-	exAsyncIOTimer (osiTime delayIn) : osiTimer(delayIn) {}
+	exOSITimer() : osiTimer(osiTime(0.010)) {} // 10 mSec
+
 	//
 	// this is a noop that postpones the timer expiration
 	// destroy so this object will hang around until the
 	// casAsyncIO::destroy() is called
 	//
 	void destroy();
-
-	const char *name()
-	{
-		return "exAsyncIOTimer";
-	}
-};
-
-//
-// exAsyncIO()
-//
-class exAsyncIO : public casAsyncIO, public exAsyncIOTimer {
-public:
-	exAsyncIO(const casCtx &ctxIn, gdd *pValue = 0) :
-		casAsyncIO(ctxIn, pValue),
-		exAsyncIOTimer(osiTime(0.010)) {} // 10 mSec 
 };
 
 //
 // exAsyncWriteIO
 //
-class exAsyncWriteIO : public exAsyncIO {
+class exAsyncWriteIO : public casAsyncWriteIO, public exOSITimer {
 public:
 	//
 	// exAsyncWriteIO() 
 	//
 	exAsyncWriteIO(const casCtx &ctxIn, exAsyncPV &pvIn, gdd &valueIn) :
-		exAsyncIO(ctxIn, &valueIn), pv(pvIn) {}
+		casAsyncWriteIO(ctxIn), pv(pvIn), value(valueIn) 
+	{
+		this->value.reference();
+	}
+
+	~exAsyncWriteIO()
+	{
+		this->value.unreference();
+	}
 
 	//
 	// expire()
@@ -328,20 +322,32 @@ public:
 	// see exAsyncPV.cc
 	//
 	void expire();
+
+	const char *name() const;
+
 private:
 	exAsyncPV	&pv;
+	gdd		&value;
 };
 
 //
 // exAsyncReadIO
 //
-class exAsyncReadIO : public exAsyncIO {
+class exAsyncReadIO : public casAsyncReadIO, public exOSITimer {
 public:
 	//
 	// exAsyncReadIO()
 	//
 	exAsyncReadIO(const casCtx &ctxIn, exAsyncPV &pvIn, gdd &protoIn) :
-		exAsyncIO(ctxIn, &protoIn), pv(pvIn) {}
+		casAsyncReadIO(ctxIn), pv(pvIn), proto(protoIn) 
+	{
+		this->proto.reference();
+	}
+
+	~exAsyncReadIO()
+	{
+		this->proto.unreference();
+	}
 
 	//
 	// expire()
@@ -350,25 +356,24 @@ public:
 	//
 	void expire();
 		
+	const char *name() const;
+
 private:
 	exAsyncPV	&pv;
+	gdd		&proto;
 };
 
 //
 // exAsyncExistIO
 // (PV exist async IO)
 //
-class exAsyncExistIO : public exAsyncIO {
+class exAsyncExistIO : public casAsyncPVExistIO, public exOSITimer {
 public:
 	//
 	// exAsyncExistIO()
 	//
-	exAsyncExistIO(const pvInfo *pPVI, 
-		const casCtx &ctxIn, gdd &canonicalPVName) :
-		exAsyncIO(ctxIn, &canonicalPVName)
-	{
-		canonicalPVName.put (pPVI->getName());
-	}
+	exAsyncExistIO(const pvInfo &pviIn, const casCtx &ctxIn) :
+		casAsyncPVExistIO(ctxIn), pvi(pviIn) {}
 
 	//
 	// expire()
@@ -376,7 +381,10 @@ public:
 	// see exServer.cc
 	//
 	void expire();
+
+	const char *name() const;
 private:
+	const pvInfo	&pvi;
 };
 
  

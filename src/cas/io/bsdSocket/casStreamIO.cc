@@ -5,6 +5,9 @@
 //
 //
 // $Log$
+// Revision 1.5  1996/09/16 18:25:16  jhill
+// vxWorks port changes
+//
 // Revision 1.4  1996/07/24 22:03:36  jhill
 // fixed net proto for gnu compiler
 //
@@ -20,29 +23,15 @@
 //
 
 #include <server.h>
-#ifdef SOLARIS
-#       include <sys/filio.h>
-#endif
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-//
-// the SUNOS4 and vxWorks5.2 prototypes are trad C 
-//
-#if !defined(SUNOS4) && !defined(vxWorks) 
-#include <arpa/inet.h>
-#else
-extern "C" {
-char * inet_ntoa(struct in_addr);
-}
-#endif
 
 
 //
 // casStreamIO::casStreamIO()
 //
-casStreamIO::casStreamIO(const SOCKET s, const caAddr &a) :
-	sockState(casOffLine), sock(s), addr(a) 
+casStreamIO::casStreamIO(caServerI &cas, const ioArgsToNewStreamIO &args) :
+	casStrmClient(cas),
+	sockState(casOffLine), sock(args.sock), addr(args.addr),
+	blockingFlag(xIsBlocking)
 {
 	assert (sock>=0);
 }
@@ -69,8 +58,7 @@ caStatus casStreamIO::init()
         if (status<0) {
 		ca_printf(
 			"CAS: %s TCP_NODELAY option set failed %s\n",
-			__FILE__,
-			strerror(SOCKERRNO));
+			__FILE__, strerror(SOCKERRNO));
 		return S_cas_internal;
         }
 
@@ -87,8 +75,7 @@ caStatus casStreamIO::init()
         if (status<0) {
 		ca_printf(
 			"CAS: %s SO_KEEPALIVE option set failed %s\n",
-			__FILE__,
-			strerror(SOCKERRNO));
+			__FILE__, strerror(SOCKERRNO));
 		return S_cas_internal;
         }
 #ifdef MATCHING_BUFFER_SIZES
@@ -123,7 +110,7 @@ caStatus casStreamIO::init()
 #endif
 	this->sockState = casOnLine;
 
-	return S_cas_success;
+	return this->casStrmClient::init();
 }
 
 
@@ -134,7 +121,6 @@ casStreamIO::~casStreamIO()
 {
 	if (sock>=0) {
 		close(this->sock);
-printf("closing sock=%d\n", this->sock);
 	}
 }
 
@@ -142,25 +128,10 @@ printf("closing sock=%d\n", this->sock);
 //
 // casStreamIO::osdSend()
 //
-xSendStatus casStreamIO::osdSend(const char *pBuf, bufSizeT nBytesReq, 
+xSendStatus casStreamIO::osdSend(const char *pInBuf, bufSizeT nBytesReq, 
 		bufSizeT &nBytesActual)
 {
         int	status;
-
-#if 0
-        if(this->pCAS->debugLevel>2u){
-                char    buf[64];
-
-                (*pCAS->osm.hostName) (
-                        &this->addr,
-                        buf,
-                        sizeof(buf));
-                ca_printf(
-                        "CAS: Sending a %d byte reply to %s\n",
-                        this->pSend->stk,
-                        buf);
-        }
-#endif
 
         if (this->sockState!=casOnLine) {
                 return xSendDisconnect;
@@ -173,7 +144,7 @@ xSendStatus casStreamIO::osdSend(const char *pBuf, bufSizeT nBytesReq,
 
 	status = send (
 			this->sock,
-			(char *) pBuf,
+			(char *) pInBuf,
 			nBytesReq,
 			0);
 	if (status == 0) {
@@ -197,7 +168,7 @@ xSendStatus casStreamIO::osdSend(const char *pBuf, bufSizeT nBytesReq,
 //
 // casStreamIO::osdRecv()
 //
-xRecvStatus casStreamIO::osdRecv(char *pBuf, bufSizeT nBytes, 
+xRecvStatus casStreamIO::osdRecv(char *pInBuf, bufSizeT nBytes, 
 		bufSizeT &nBytesActual)
 {
   	int 		nchars;
@@ -206,12 +177,14 @@ xRecvStatus casStreamIO::osdRecv(char *pBuf, bufSizeT nBytes,
 		return xRecvDisconnect;
 	}
 
-	nchars = recv(this->sock, pBuf, nBytes, 0);
+	nchars = recv(this->sock, pInBuf, nBytes, 0);
 	if (nchars==0) {
 		this->sockState = casOffLine;
 		return xRecvDisconnect;
 	}
 	else if (nchars<0) {
+		char buf[64];
+
 		/*
 		 * normal conn lost conditions
 		 */
@@ -226,9 +199,10 @@ xRecvStatus casStreamIO::osdRecv(char *pBuf, bufSizeT nBytes,
 			break;
 
 		default:
+			ipAddrToA(&this->addr.in, buf, sizeof(buf));
 			ca_printf(
-		"CAS: client disconnect because \"%s\"\n",
-				strerror(SOCKERRNO));
+		"CAS: client %s disconnected because \"%s\"\n",
+				buf, strerror(SOCKERRNO));
 			break;
 		}
 		this->sockState = casOffLine;
@@ -246,10 +220,11 @@ void casStreamIO::osdShow (unsigned level) const
 {
 	printf ("casStreamIO at %x\n", (unsigned) this);
 	if (level>1u) {
+		char buf[64];
+		ipAddrToA(&this->addr.in, buf, sizeof(buf));
 		printf (
-			"client address=%x, port=%x\n",
-			(unsigned) ntohl(this->addr.in.sin_addr.s_addr),
-			ntohs(this->addr.in.sin_port));
+			"client=%s, port=%x\n",
+			buf, ntohs(this->addr.in.sin_port));
 	}
 }
 
@@ -267,11 +242,22 @@ void casStreamIO::xSetNonBlocking()
         }
 
 	status = socket_ioctl(this->sock, FIONBIO, &yes);
-	if (status<0) {
+	if (status>=0) {
+		this->blockingFlag = xIsntBlocking;
+	}
+	else {
 		ca_printf("%s:CAS: TCP non blocking IO set fail because \"%s\"\n", 
 				__FILE__, strerror(SOCKERRNO));
 		this->sockState = casOffLine;
 	}
+}
+
+//
+// casStreamIO::blockingState()
+//
+xBlockingStatus casStreamIO::blockingState() const
+{
+	return this->blockingFlag;
 }
 
 
@@ -298,75 +284,27 @@ bufSizeT casStreamIO::incommingBytesPresent() const
 
 
 //
-// casStreamIO::hostName()
+// casStreamIO::clientHostName()
 //
-void casStreamIO::hostNameFromAddr(char *pBuf, unsigned bufSize)
+void casStreamIO::clientHostName (char *pInBuf, unsigned bufSizeIn) const
 {
-	hostNameFromIPAddr(&this->addr, pBuf, bufSize);
-}
-
-
-//
-// hostNameFromIPAddr()
-//
-void hostNameFromIPAddr (const caAddr *pAddr, 
-                char *pBuf, unsigned bufSize)
-{
-        char            *pName;
-
-        assert (bufSize>0U);
-
-        if (pAddr->sa.sa_family != AF_INET) {
-                strncpy (pBuf, "UKN ADDR FAMILY", bufSize);
-        }
-        else {
-                int port = ntohs(pAddr->in.sin_port);
-#               define maxPortDigits 15U
-                char tmp[maxPortDigits+1];
-                unsigned size;
-
-#if 0 // bypass this because of problems with SUNOS4 header files and C++
-        	struct hostent  *ent;
-
-                ent = gethostbyaddr(
-                        (char *) &pAddr->in.sin_addr.s_addr,
-                        sizeof(pAddr->in.sin_addr.s_addr),
-                        AF_INET);
-                if (ent) {
-                        pName = ent->h_name;
-                }
-                else {
-                        pName = inet_ntoa (pAddr->in.sin_addr);
-                }
-#else
-		pName = inet_ntoa (pAddr->in.sin_addr);
-#endif
-		
-                assert (bufSize>maxPortDigits);
-                size = bufSize - maxPortDigits;
-                strncpy (pBuf, pName, size);
-                pBuf[size] = '\0';
-                sprintf (tmp, ".%d", port);
-                strncat (pBuf, tmp, maxPortDigits);
-        }
-        pBuf[bufSize-1] = '\0';
-        assert(strlen(pBuf)<=bufSize);
+	ipAddrToA (&this->addr.in, pInBuf, bufSizeIn);
 }
 
 //
 // casStreamIO:::optimumBufferSize()
 //
-bufSizeT casStreamIO::optimumBufferSize ()
+bufSizeT casStreamIO::optimumBufferSize () 
 {
-
-        if (this->sockState!=casOnLine) {
-                return 0x400;
-        }
 
 #if 0
 	int n;
 	int size;
 	int status;
+
+        if (this->sockState!=casOnLine) {
+                return MAX_TCP;
+        }
 
 	/* fetch the TCP send buffer size */
 	n = sizeof(size);
@@ -392,13 +330,12 @@ printf("the tcp buf size is %d\n", size);
 }
 
 //
-// casStreamIO::getFileDescriptor()
+// casStreamIO::getFD()
 //
-int casStreamIO::getFileDescriptor() const
+int casStreamIO::getFD() const
 {
-	return sock;
+	return this->sock;
 }
-
 
 //
 // casStreamIO::state()

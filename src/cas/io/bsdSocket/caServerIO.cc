@@ -5,21 +5,29 @@
 //
 //
 // $Log$
+// Revision 1.2  1996/06/21 02:12:40  jhill
+// SOLARIS port
+//
 // Revision 1.1.1.1  1996/06/20 00:28:19  jhill
 // ca server installation
 //
 //
 
+#include <ctype.h>
+
 #include <server.h>
 #include <sigPipeIgnore.h>
 
-#ifdef SOLARIS
-#       include <sys/filio.h>
-#endif
-
-const unsigned caServerConnectPendQueueSize = 10u;
+static char *getToken(char **ppString);
 
 int caServerIO::staticInitialized;
+
+//
+// caServerIO::~caServerIO()
+//
+caServerIO::~caServerIO()
+{
+}
 
 //
 // caServerIO::staticInit()
@@ -39,186 +47,124 @@ inline void caServerIO::staticInit()
 //
 // caServerIO::init()
 //
-caStatus caServerIO::init()
+caStatus caServerIO::init(caServerI &cas)
 {
-	caAddr	serverAddr;
-	int	yes = TRUE;
-	int	status;
-	int	len;
-	int	port;
+	ENV_PARAM buf;
+	char *pStr;
+	char *pToken;
+	caStatus stat;
+	unsigned short port;
+	caAddr addr;
+	int autoBeaconAddr;
 
 	caServerIO::staticInit();
 
-        /*
-         * Setup the server socket
-         */
-        this->sock = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
-        if (this->sock<0) {
-                return S_cas_noFD;
-        }
+        //
+        // first try for the server's private port number env var.
+        // If this available use the CA server port number (used by
+        // clients to find the server). If this also isnt available
+        // then use a hard coded default - CA_SERVER_PORT.
+        //
+	if (envParamIsEmpty(&EPICS_CAS_SERVER_PORT)) {
+		port = caFetchPortConfig(&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
+	}
+	else {
+		port = caFetchPortConfig(&EPICS_CAS_SERVER_PORT, CA_SERVER_PORT);
+	}
 
-        /*
-         * release the port in case we exit early
-         */
-        status = setsockopt (
-                        this->sock,
-                        SOL_SOCKET,
-                        SO_REUSEADDR,
-                        (char *) &yes,
-                        sizeof (yes));
-        if (status<0) {
-                ca_printf("CAS: server set SO_REUSEADDR failed?\n",
-			strerror(SOCKERRNO));
-		return S_cas_internal;
-        }
+	memset((char *)&addr,0,sizeof(addr));
+	addr.sa.sa_family = AF_INET;
+	addr.in.sin_port =  ntohs (port);
 
-        memset ((char *)&serverAddr, '\0', sizeof(serverAddr));
-        serverAddr.sa.sa_family = AF_INET;
-        serverAddr.in.sin_addr.s_addr = INADDR_ANY;
-	port = caFetchPortConfig(&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
-        serverAddr.in.sin_port = ntohs (port);
-        status = bind(
-                        this->sock,
-                        &serverAddr.sa,
-                        sizeof(serverAddr.sa));
-        if (status<0) {
-                if (SOCKERRNO == EADDRINUSE) {
-			//
-			// force assignement of a default port
-			// (so the getsockname() call below will
-			// work correctly)
-			//
-        		serverAddr.in.sin_port = ntohs (0);
-			status = bind(
-					this->sock,
-					&serverAddr.sa,
-					sizeof(serverAddr.sa));
-			if (status<0) {
-                        	ca_printf (
-			"CAS: default bind failed because \"%s\"\n",
-                       		         strerror(SOCKERRNO));
-				return S_cas_portInUse;
+	pStr = envGetConfigParam(&EPICS_CA_AUTO_ADDR_LIST,
+			sizeof(buf.dflt), buf.dflt);
+	if (strstr(pStr,"no")||strstr(pStr,"NO")) {
+		autoBeaconAddr = FALSE;
+	}
+	else {
+		autoBeaconAddr = TRUE;
+	}
+
+	//
+	// bind to the the interfaces specified - otherwise wildcard
+	// with INADDR_ANY and allow clients to attach from any interface
+	//
+	pStr = envGetConfigParam(&EPICS_CAS_INTF_ADDR_LIST, 
+		sizeof(buf.dflt), buf.dflt);
+	if (pStr) {
+		int configAddrOnceFlag = TRUE;
+		stat = S_cas_noInterface; 
+		while ( (pToken = getToken(&pStr)) ) {
+			addr.in.sin_addr.s_addr = inet_addr(pToken);
+			if (addr.in.sin_addr.s_addr == ~0ul) {
+				ca_printf(
+					"%s: Parsing '%s'\n",
+					__FILE__,
+					EPICS_CAS_INTF_ADDR_LIST.name);
+				ca_printf(
+					"\tBad internet address format: '%s'\n",
+					pToken);
+				continue;
 			}
+			stat = cas.addAddr(addr, autoBeaconAddr, configAddrOnceFlag);
+			if (stat) {
+				errMessage(stat, NULL);
+				break;
+			}
+			configAddrOnceFlag = FALSE;
 		}
-		else {
-                        ca_printf("CAS: bind failed because \"%s\"\n",
-                                strerror(SOCKERRNO));
-			return S_cas_portInUse;
-                }
-        }
+	}
+	else {
+		addr.in.sin_addr.s_addr = INADDR_ANY;
+		stat = cas.addAddr(addr, autoBeaconAddr, TRUE);
+		if (stat) {
+			errMessage(stat, NULL);
+		}
+	}
 
-        len = sizeof (this->addr.sa);
-        status = getsockname (
-                        this->sock,
-                        &this->addr.sa,
-                        &len);
-        if (status<0) {
-                ca_printf("CAS: getsockname failed because: %s\n",
-                        strerror(SOCKERRNO));
-                return S_cas_internal;
-        }
-
-	//
-	// be sure of this now so that we can fetch the IP 
-	// address and port number later
-	//
-        assert (this->addr.sa.sa_family == AF_INET);
-
-        status = listen(this->sock, caServerConnectPendQueueSize);
-        if(status < 0) {
-                ca_printf("CAS: Listen error %s\n",strerror(SOCKERRNO));
-                return S_cas_internal;
-        }
-	this->sockState = casOnLine;
-	return S_cas_success;
-}
-
-//
-// caServerIO::serverPortNumber()
-//
-unsigned caServerIO::serverPortNumber() const
-{
-	return (unsigned) ntohs(this->addr.in.sin_port);
+	return stat;
 }
 
 //
 // caServerIO::show()
 //
-void caServerIO::show (unsigned level)
+void caServerIO::show (unsigned /* level */) const
 {
 	printf ("caServerIO at %x\n", (unsigned) this);
-	if (level>1u) {
-		printf ("\tsock = %d, state = %d\n", 
-			this->sock, this->sockState);
-	}
 }
 
 //
-// caServerIO::newDGIO()
+// getToken()
 //
-casMsgIO *caServerIO::newDGIO() const
+static char *getToken(char **ppString)
 {
-	casDGIO		*pDG;
-
-	pDG = new casDGIO();
-	if (!pDG) {
-		return pDG;
-	}
-
-	return pDG;
-}
-
-//
-// caServerIO::newStreamIO()
-//
-casMsgIO *caServerIO::newStreamIO() const
-{
-	caAddr 		newAddr;
-	SOCKET  	newSock;
-        int     	length;
-
-        length = sizeof(newAddr.sa);
-        newSock = accept(this->sock, &newAddr.sa, &length);
-        if (newSock<0) {
-                if (SOCKERRNO!=EWOULDBLOCK) {
-                        ca_printf(
-                                "CAS: %s accept error %s\n",
-                                __FILE__,
-                                strerror(SOCKERRNO));
-                }
+        char *pToken;
+        char *pStr;
+ 
+        pToken = *ppString;
+        while(isspace(*pToken)&&*pToken){
+                pToken++;
+        }
+ 
+        pStr = pToken;
+        while(!isspace(*pStr)&&*pStr){
+                pStr++;
+        }
+ 
+        if(isspace(*pStr)){
+                *pStr = '\0';
+                *ppString = pStr+1;
+        }
+        else{
+                *ppString = pStr;
+                assert(*pStr == '\0');
+        }
+ 
+        if(*pToken){
+                return pToken;
+        }
+        else{
                 return NULL;
         }
-	else if (sizeof(newAddr.sa)>(size_t)length) {
-		ca_printf("CAS: accept returned bad address len?\n");
-		return NULL;
-	}
-
-	return new casStreamIO(newSock, newAddr);
 }
-
-//
-// caServerIO::setNonBlocking()
-//
-void caServerIO::setNonBlocking()
-{
-	int status;
-	int yes = TRUE;
-
-	status = socket_ioctl(this->sock, FIONBIO, &yes);
-	if (status<0) {
-		ca_printf(
-		"%s:CAS: server non blocking IO set fail because \"%s\"\n", 
-				__FILE__, strerror(SOCKERRNO));
-		this->sockState = casOffLine;
-	}
-}
-
-//
-// caServerIO::getFD()
-//
-int caServerIO::getFD() const
-{
-	return this->sock;
-}
-
 

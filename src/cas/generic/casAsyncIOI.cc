@@ -29,53 +29,26 @@
  *
  * History
  * $Log$
- * Revision 1.2  1996/06/26 21:18:50  jhill
- * now matches gdd api revisions
- *
- * Revision 1.1.1.1  1996/06/20 00:28:14  jhill
- * ca server installation
- *
  *
  */
 
 
 #include <server.h>
-#include <casAsyncIOIIL.h> // casAsyncIOI inline func
-#include <casChannelIIL.h> // casChannelI inline func
-#include <casEventSysIL.h> // casEventSys inline func
+#include <casEventSysIL.h> // casEventSys in line func
+#include <casAsyncIOIIL.h> // casAsyncIOI in line func
+#include <casCtxIL.h> // casCtx in line func
 
 //
 // casAsyncIOI::casAsyncIOI()
 //
-casAsyncIOI::casAsyncIOI(const casCtx &ctx, casAsyncIO &ioIn, gdd *pDD) :
-	msg(*ctx.getMsg()), 
-	client(*ctx.getClient()), 
-	asyncIO(ioIn),
-	pChan(ctx.getChannel()), 
-	pDesc(pDD),
-	completionStatus(S_cas_internal),
+casAsyncIOI::casAsyncIOI(casCoreClient &clientIn, casAsyncIO &ioExternalIn) :
+	client(clientIn),
+	ioExternal(ioExternalIn),
 	inTheEventQueue(FALSE),
 	posted(FALSE),
 	ioComplete(FALSE),
 	serverDelete(FALSE)
 {
-	assert (&this->client);
-	assert (&this->msg);
-	assert (&this->asyncIO);
-
-	if (this->pChan) {
-		this->pChan->installAsyncIO(*this);
-	}
-	else {
-		this->client.installAsyncIO(*this);
-	}
-
-	if (this->pDesc) {
-		int gddStatus;
-
-		gddStatus = this->pDesc->reference();
-		assert(!gddStatus);
-	}
 }
 
 //
@@ -108,7 +81,6 @@ casAsyncIOI::casAsyncIOI(const casCtx &ctx, casAsyncIO &ioIn, gdd *pDD) :
 //
 casAsyncIOI::~casAsyncIOI()
 {
-	
 	this->lock();
 
 	if (!this->serverDelete) {
@@ -117,18 +89,11 @@ casAsyncIOI::~casAsyncIOI()
 		fprintf(stderr, 
 	"WARNING: by the server tool. This results in no IO cancel\n");
 		fprintf(stderr, 
-	"WARNING: message being sent to the client. PLease cancel\n");
+	"WARNING: message being sent to the client. Please cancel\n");
 		fprintf(stderr, 
 	"WARNING: IO by posting S_casApp_canceledAsyncIO instead of\n");
 		fprintf(stderr, 
 	"WARNING: by deleting the async IO object.\n");
-	}
-
-	if (this->pChan) {
-		this->pChan->removeAsyncIO(*this);
-	}
-	else {
-		this->client.removeAsyncIO(*this);
 	}
 
 	//
@@ -137,14 +102,6 @@ casAsyncIOI::~casAsyncIOI()
 	//
 	if (this->inTheEventQueue) {
 		this->client.casEventSys::removeFromEventQueue(*this);
-	}
-
-	if (this->pDesc) {
-		int	gddStatus;
-
-		gddStatus = this->pDesc->unreference();
-		assert (gddStatus==0);
-		this->pDesc = NULL;
 	}
 
 	this->unlock();
@@ -157,14 +114,19 @@ casAsyncIOI::~casAsyncIOI()
 //
 caStatus casAsyncIOI::cbFunc(class casEventSys &)
 {
-	caStatus 		status;
+	casCoreClient	&theClient = this->client;
+	caStatus 	status;
 
-	this->lock();
+	//
+	// Use the client's lock here (which is the same as the
+	// asynch IO's lock) here because we need to leave the lock
+	// applied arround the destroy() call here.
+	//
+	theClient.osiLock();
 
 	this->inTheEventQueue = FALSE;
 
-	status = this->client.asyncIOCompletion(this->pChan,
-			this->msg, this->pDesc, this->completionStatus);
+	status = this->cbFuncAsyncIO();
 
         if (status == S_cas_sendBlocked) {
 		//
@@ -178,24 +140,25 @@ caStatus casAsyncIOI::cbFunc(class casEventSys &)
                 errMessage (status, "Asynch IO completion failed");
         }
 
-	//
-	// dont use "this" after this delete
-	//
 	this->ioComplete = TRUE;
 
-	this->unlock();
-
-	this->setServerDelete();
+	//
+	// dont use "this" after potentially destroying the
+	// object here
+	//
+	this->serverDelete = TRUE;
 	(*this)->destroy();
+
+	theClient.osiUnlock();
 
 	return S_cas_success;
 }
 
 
 //
-// casAsyncIOI::postIOCompletion()
+// casAsyncIOI::postIOCompletionI()
 //
-caStatus casAsyncIOI::postIOCompletion(caStatus completionStatusIn, gdd *pValue)
+caStatus casAsyncIOI::postIOCompletionI()
 {
 	this->lock();
 
@@ -211,28 +174,6 @@ caStatus casAsyncIOI::postIOCompletion(caStatus completionStatusIn, gdd *pValue)
 	// dont call the server tool's cancel() when this object deletes 
 	//
 	this->posted = TRUE;
-	this->completionStatus = completionStatusIn;
-
-	if (pValue) {
-		int gddStatus;
-
-		gddStatus = pValue->reference();
-		assert(!gddStatus);
-
-		if (this->pDesc) {
-			gddStatus = this->pDesc->unreference();
-			assert (gddStatus==0);
-		}
-
-		this->pDesc = pValue;
-	}
-
-	//
-	// No changes after the IO completes
-	//
-	if (this->pDesc) {
-		pDesc->markConstant();
-	}
 
 	//
 	// place this event in the event queue
@@ -253,5 +194,45 @@ caStatus casAsyncIOI::postIOCompletion(caStatus completionStatusIn, gdd *pValue)
 caServer *casAsyncIOI::getCAS()
 {
         return this->client.getCAS().getAdapter();
+}
+
+//
+// casAsyncIOI::readOP()
+//
+int casAsyncIOI::readOP()
+{
+	//
+	// not a read op
+	//
+	return FALSE;
+}
+
+//
+// casAsyncIOI::destroyIfReadOP()
+//
+void casAsyncIOI::destroyIfReadOP()
+{
+        //
+        // client lock used because this object's
+        // lock may be destroyed
+        //
+        this->client.osiLock();
+ 
+	if (this->readOP()) {
+        	this->serverDelete = TRUE;
+        	(*this)->destroy();
+	}
+ 
+        this->client.osiUnlock();
+}
+
+//
+// casAsyncIOI::reportInvalidAsynchIO()
+//
+void casAsyncIOI::reportInvalidAsynchIO(unsigned request)
+{
+	ca_printf("Server tools selection of async IO type\n");
+	ca_printf("is inappropriate = %u and will be ignored\n",
+		request);
 }
 

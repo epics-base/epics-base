@@ -30,6 +30,9 @@
  * 	Modification Log:
  * 	-----------------
  * 	$Log$
+ * 	Revision 1.6  1996/09/04 20:27:00  jhill
+ * 	doccasdef.h
+ *
  * 	Revision 1.5  1996/08/13 22:54:42  jhill
  * 	doc
  *
@@ -80,22 +83,18 @@
  *	3) some form of locking (similar to (1) above)
  */
 
-
-
 #ifndef includecasdefh
 #define includecasdefh
 
 //
 // EPICS
 //
-#include <alarm.h>		// EPICS alarm severity/condition 
-#include <errMdef.h>		// EPICS error codes 
-#include <gdd.h> 		// EPICS data descriptors 
+#include "alarm.h"		// EPICS alarm severity/condition 
+#include "errMdef.h"		// EPICS error codes 
+#include "gdd.h" 		// EPICS data descriptors 
 
 typedef aitUint32 caStatus;
 
-#include <casEventMask.h>	// EPICS event select class 
-#include <casInternal.h>	// CA server private 
 
 /*
  * ===========================================================
@@ -106,7 +105,7 @@ typedef aitUint32 caStatus;
 #define S_cas_success 0
 #define S_cas_internal (M_cas| 1) /*Internal failure*/
 #define S_cas_noMemory (M_cas| 2) /*Memory allocation failed*/
-#define S_cas_portInUse (M_cas| 3) /*IP port already in use*/
+#define S_cas_bindFail (M_cas| 3) /*Attempt to set server's IP address/port failed*/
 #define S_cas_hugeRequest (M_cas | 4) /*Requested op does not fit*/
 #define S_cas_sendBlocked (M_cas | 5) /*Blocked for send q space*/
 #define S_cas_badElementCount (M_cas | 6) /*Bad element count*/
@@ -132,6 +131,7 @@ typedef aitUint32 caStatus;
 #define S_cas_badParameter (M_cas | 26) /*bad parameter from server tool*/
 #define S_cas_validRequest (M_cas | 27) /*valid request*/
 #define S_cas_tooManyEvents (M_cas | 28) /*maximum simult event types exceeded*/
+#define S_cas_noInterface (M_cas | 29) /*server isnt attached to a network*/
 
 
 /*
@@ -152,108 +152,36 @@ typedef aitUint32 caStatus;
 
 
 //
-// casAsyncIO - Channel Access Asynchronous IO API Class
+// pvExistReturn
+// Only for use with caServer::pvExistTest()
 //
-// The following virtual functions allow for asynchronous completion:
-// 	caServer::pvExistTest()
-// 	casPV::read()
-// 	casPV::write()
-// To initiate asynchronous completion create a casAsyncIO object 
-// inside one of the above virtual functions and return the status code
-// S_casApp_asyncCompletion
-//
-// All asynchronous completion data must be returned in the 
-// gdd provided in the virtual functions parameters. 
-//
-// Deletion Responsibility
-// -------- --------------
-// o the server lib will not call "delete" directly for any
-// casAsyncIO created by the server tool because we dont know 
-// that "new" was called to create the object.
-// o The server tool is responsible for reclaiming storage for any
-// casAsyncIO it creates. The destroy virtual function will
-// assist the server tool with this responsibility. The 
-// virtual function casAsyncIO::destroy() does a "delete this".
-// o Avoid deleting the casAsyncIO immediately after calling
-// postIOCompletion(). Instead proper operation requires that
-// the server tool wait for the server lib to call destroy after 
-// the response is succesfully queued to the client
-// o If for any reason the server tool needs to cancel an IO
-// operation then it should post io completion with status
-// S_casApp_canceledAsyncIO. Deleting the asyncronous io
-// object prior to its being allowed to forward an IO termination 
-// message to the client will result in NO IO CALL BACK TO THE
-// CLIENT PROGRAM (in this situation a warning message will be printed by 
-// the server lib).
-//
-class casAsyncIO : private casAsyncIOI {
+class pvExistReturn {
 public:
 	//
-	// casAsyncIO()
+	// for use by the server tool when creating a return value
 	//
-	// Any DD ptr supplied here is used if postIOCompletion()
-	// is called with a nill DD pointer
+	inline pvExistReturn(caStatus status=S_casApp_pvNotFound, 
+		const char* pCanonicalNameStr=0); 
+	inline pvExistReturn(caStatus status, char* pCanonicalNameStr);
 	//
-        casAsyncIO(const casCtx &ctx, gdd *pValue=0) : 
-		casAsyncIOI(ctx, *this,  pValue) {}
-
+	// for use by the server lib when extracting the result
 	//
-	// force virtual destructor 
+	inline const caStatus getStatus() const;
+	inline const char *getString() const;
 	//
-	virtual ~casAsyncIO() {}
-
+	// these make certain that copy and assignment are correct
 	//
-	// called by the server lib after the response message
-	// is succesfully queued to the client or when the
-	// IO operation is canceled (client disconnects etc).
-	//
-	// default destroy executes a "delete this".
-	//
-	virtual void destroy();
-
-	//
-	// place notification of IO completion on the event queue
-	// (this function does not delete the casAsyncIO object). 
-	// Only the first call to this function has any effect.
-	//
-	caStatus postIOCompletion(caStatus completionStatusIn, gdd *pValue=0)
-	{
-		return this->casAsyncIOI::postIOCompletion(completionStatusIn, pValue);
-	}
-
-	//
-	// Find the server associated with this async IO 
-	// ****WARNING****
-	// this returns NULL if the async io isnt currently installed 
-	// into a server
-	// ***************
-	//
-	caServer *getCAS()
-	{
-		return this->casAsyncIOI::getCAS();
-	}
-
-	//
-	// return gdd DD ptr stored in base
-	// (a mechanism to avoid duplicate storage of DD ptr
-	// - in the base and in the derived)
-	//
-	gdd *getValuePtr ()
-	{
-		return this->casAsyncIOI::getValuePtr();
-	}
-
-	//
-	// release any data optionally attached to the asynchronous IO
-	// object by the constructor - used when the asynchronous
-	// io saves data but does not return datai with the post
-	// (ie write)
-	//
-	void clrValue()
-	{
-		this->casAsyncIOI::clrValue();
-	}
+	inline pvExistReturn(pvExistReturn &init);
+	inline pvExistReturn(const pvExistReturn &init);
+	inline pvExistReturn& operator=(pvExistReturn &rhs);
+	inline pvExistReturn& operator=(const pvExistReturn &rhs);
+private:	
+	caStatus stat;	
+	aitString str;
 };
+
+#include "casEventMask.h"	// EPICS event select class 
+#include "casInternal.h"	// CA server private 
 
 class caServerI;
 
@@ -290,22 +218,36 @@ public:
         virtual void show (unsigned level);
 
         //
+	// pvExistTest()
+	//
         // The server tool is encouraged to accept multiple PV name
-        // aliases for the same PV here. However, a unique canonical name
-	// must be selected for each PV.
+        // aliases for the same PV here. However, one unique canonical name
+	// must be selected by the srever tool and returned to the 
+	// server lib for each PV. The server will use this canonical 
+	// name to prevent internal duplication of data structures for 
+	// process variables that have multiple aliases.
 	//
-	// returns S_casApp_success and fills in canonicalPVName
-	// if the PV is in this server tool
+	// o returns S_casApp_success and a valid canonical name string
+	// when the PV is in this server tool
 	//
-	// returns S_casApp_pvNotFound if the PV does not exist in
+	// o returns S_casApp_pvNotFound if the PV does not exist in
 	// the server tool
-	//
-	// The server tool returns the unique canonical name for 
-	// the pv into the gdd. A gdd is used here becuase this 
-	// operation is allowed to complete asynchronously.
         //
-        virtual caStatus pvExistTest (const casCtx &ctx, const char *pPVName,
-                        	gdd &canonicalPVName) = 0;
+	// Examples:
+	// caServerXXX::pvExistTest(const casCtx &ctx, const char *pPVName)
+	// {
+	// 	return pvExistReturn(S_casApp_success, pPVName); // common 
+	// 	return pvExistReturn(S_casApp_pvNotFound); // no PV by that name
+	//
+	// 	const char *pConstName = "myPVName";
+	// 	char pName[9] = "myPVName";
+	// 	return pvExistReturn(S_casApp_success, pConstName); // efficent
+	// 	return pvExistReturn(S_casApp_success, pName"); // less efficent
+	// 	return pvExistReturn(S_casApp_asyncCompletion); // not now
+	// }
+	//
+	virtual pvExistReturn pvExistTest (const casCtx &ctx, 
+			const char *pPVName)=0;
 
         //
         // createPV() is called each time that a PV is attached to
@@ -541,6 +483,215 @@ public:
 	// ***************
 	//
 	casPV *getPV();
+};
+
+//
+// Asynchronous IO Classes
+//
+// The following virtual functions allow for asynchronous completion:
+//
+//	Vitrtual Function		Asynchronous IO Class
+//	-----------------		---------------------
+// 	caServer::pvExistTest()		casAsyncPVExistIO
+// 	casPV::read()			casAsyncReadIO
+// 	casPV::write()			casAsyncWriteIO
+//
+// To initiate asynchronous completion create a corresponding
+// asynchronous IO object from the table above from within
+// one of the above virtual functions and return the status code
+// S_casApp_asyncCompletion. Use the member function 
+// "postIOCompletion()" to inform the server library that the 
+// requested operation has completed.
+//
+//
+// Deletion Responsibility
+// -------- --------------
+// o the server lib will not call "delete" directly for any
+// casAsyncIO created by the server tool because we dont know 
+// that "new" was called to create the object.
+// o The server tool is responsible for reclaiming storage for any
+// casAsyncIO it creates. The destroy virtual function will
+// assist the server tool with this responsibility. The 
+// virtual function casAsyncIO::destroy() does a "delete this".
+// o Avoid deleting the casAsyncIO immediately after calling
+// postIOCompletion(). Instead proper operation requires that
+// the server tool wait for the server lib to call destroy after 
+// the response is succesfully queued to the client
+// o If for any reason the server tool needs to cancel an IO
+// operation then it should post io completion with status
+// S_casApp_canceledAsyncIO. Deleting the asyncronous io
+// object prior to its being allowed to forward an IO termination 
+// message to the client will result in NO IO CALL BACK TO THE
+// CLIENT PROGRAM (in this situation a warning message will be printed by 
+// the server lib).
+//
+
+//
+// casAsyncIO
+//
+// this class implements a common virtual destroy for
+// all of the asynchronous IO classes
+//
+class casAsyncIO {
+public:
+	//
+	// force virtual destructor 
+	//
+	virtual ~casAsyncIO();
+
+	//
+	// called by the server lib after the response message
+	// is succesfully queued to the client or when the
+	// IO operation is canceled (client disconnects etc).
+	//
+	// default destroy executes a "delete this".
+	//
+	virtual void destroy();
+};
+
+//
+// casAsyncReadIO 
+// - for use with casPV::read()
+//
+// **Warning**
+// The server tool must reference the gdd object
+// passed in the arguments to casPV::read() if it is 
+// necessary for this gdd object to continue to exist
+// after the return from casPV::read(). If this
+// is done then it is suggested that this gdd object
+// be referenced in the constructor, and unreferenced
+// in the destructor, for the class deriving from 
+// casAsyncReadIO.
+// **
+class casAsyncReadIO : public casAsyncIO, private casAsyncRdIOI {
+public:
+	//
+	// casAsyncReadIO()
+	//
+        casAsyncReadIO(const casCtx &ctx) : 
+		casAsyncRdIOI(ctx, *this) {}
+
+	//
+	// force virtual destructor 
+	//
+	virtual ~casAsyncReadIO(); 
+
+	//
+	// place notification of IO completion on the event queue
+	// (this function does not delete the casAsyncIO object). 
+	// Only the first call to this function has any effect.
+	//
+	caStatus postIOCompletion(caStatus completionStatusIn, gdd &valueRead)
+	{
+		return this->casAsyncRdIOI::postIOCompletion (
+			completionStatusIn, valueRead);
+	}
+
+	//
+	// Find the server associated with this async IO 
+	// ****WARNING****
+	// this returns NULL if the async io isnt currently installed 
+	// into a server
+	// ***************
+	//
+	caServer *getCAS()
+	{
+		return this->casAsyncRdIOI::getCAS();
+	}
+};
+
+//
+// casAsyncWriteIO 
+// - for use with casPV::write()
+//
+// **Warning**
+// The server tool must reference the gdd object
+// passed in the arguments to casPV::write() if it is 
+// necessary for this gdd object to continue to exist
+// after the return from casPV::write(). If this
+// is done then it is suggested that this gdd object
+// be referenced in the constructor, and unreferenced
+// in the destructor, for the class deriving from 
+// casAsyncWriteIO.
+// **
+//
+class casAsyncWriteIO : public casAsyncIO, private casAsyncWtIOI {
+public:
+	//
+	// casAsyncWriteIO()
+	//
+        casAsyncWriteIO(const casCtx &ctx) : 
+		casAsyncWtIOI(ctx, *this) {}
+
+	//
+	// force virtual destructor 
+	//
+	virtual ~casAsyncWriteIO(); 
+
+	//
+	// place notification of IO completion on the event queue
+	// (this function does not delete the casAsyncIO object). 
+	// Only the first call to this function has any effect.
+	//
+	caStatus postIOCompletion(caStatus completionStatusIn)
+	{
+		return this->casAsyncWtIOI::postIOCompletion (completionStatusIn);
+	}
+
+	//
+	// Find the server associated with this async IO 
+	// ****WARNING****
+	// this returns NULL if the async io isnt currently installed 
+	// into a server
+	// ***************
+	//
+	caServer *getCAS()
+	{
+		return this->casAsyncWtIOI::getCAS();
+	}
+};
+
+//
+// casAsyncPVExistIO 
+// - for use with caServer::pvExistTest()
+//
+class casAsyncPVExistIO : public casAsyncIO, private casAsyncExIOI {
+public:
+	//
+	// casAsyncPVExistIO()
+	//
+	// Any DD ptr supplied here is used if postIOCompletion()
+	// is called with a nill DD pointer
+	//
+        casAsyncPVExistIO(const casCtx &ctx) : 
+		casAsyncExIOI(ctx, *this) {}
+
+	//
+	// force virtual destructor 
+	//
+	virtual ~casAsyncPVExistIO(); 
+
+	//
+	// place notification of IO completion on the event queue
+	// (this function does not delete the casAsyncIO object). 
+	// Only the first call to this function has any effect.
+	//
+	caStatus postIOCompletion(const pvExistReturn &retValIn)
+	{
+		return this->casAsyncExIOI::postIOCompletion (retValIn);
+	}
+
+	//
+	// Find the server associated with this async IO 
+	// ****WARNING****
+	// this returns NULL if the async io isnt currently installed 
+	// into a server
+	// ***************
+	//
+	caServer *getCAS()
+	{
+		return this->casAsyncExIOI::getCAS();
+	}
 };
 
 #endif // ifdef includecasdefh (this must be the last line in this file) 

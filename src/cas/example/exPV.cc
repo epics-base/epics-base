@@ -103,7 +103,7 @@ void exScanTimer::expire ()
 //
 // exScanTimer::again()
 //
-osiBool exScanTimer::again()
+osiBool exScanTimer::again() const
 {
 	return osiTrue;
 }
@@ -111,9 +111,17 @@ osiBool exScanTimer::again()
 //
 // exScanTimer::delay()
 //
-const osiTime exScanTimer::delay()
+const osiTime exScanTimer::delay() const
 {
 	return pv.getScanRate();
+}
+
+//
+// exScanTimer::name()
+//
+const char *exScanTimer::name() const
+{
+	return "exScanTimer";
 }
 
 //
@@ -135,10 +143,11 @@ caStatus exPV::update(gdd &valueIn)
 		return S_casApp_noSupport; 
 	}
 
-#	if DEBUG
-		printf("%s = %f\n", 
-			this->info.getName().string, valueIn);
+#	if DEBUG 
+		printf("Setting %s too:\n", this->info.getName().string());
+		valueIn.dump();
 #	endif
+
 
 	if (valueIn.isScalar()) {
 		pNewValue = &valueIn;

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/09/04 20:20:44  jhill
+ * removed sizeof(casEventMask::mask) for MSVISC++
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
  * ca server installation
  *
@@ -40,8 +43,7 @@
 #include <stdio.h>
 #include <limits.h>
 
-#include <casdef.h>
-#include <casEventMask.h>
+#include <server.h>
 
 #ifdef TEST
 main ()
@@ -86,6 +88,23 @@ main ()
 }
 #endif
 
+//
+// casEventRegistry::init()
+//
+int casEventRegistry::init()  
+{
+	if (!this->hasBeenInitialized) {
+		int status;
+		status = this->resTable <casEventMaskEntry, stringId>::
+				init(1u<<8u);
+		if (status==0) {
+			this->hasBeenInitialized = 1u;        
+		}
+		return status;
+	}
+	return 0;
+}
+
 
 //
 // casEventRegistry::maskAllocator()
@@ -94,15 +113,16 @@ inline casEventMask casEventRegistry::maskAllocator()
 {
         casEventMask    evMask;
  
-        if (this->allocator>=CHAR_BIT*sizeof(evMask.mask)) {
-                return evMask;
+	this->mutex.osiLock();
+        if (this->allocator<CHAR_BIT*sizeof(evMask.mask)) {
+        	evMask.mask = 1u<<(this->allocator++);
         }
-        evMask.mask = 1u<<(this->allocator++);
+	this->mutex.osiUnlock();
         return evMask;
 }
 
 //
-// casEventMask::registerEvent()
+// casEventRegistry::registerEvent()
 //
 casEventMask casEventRegistry::registerEvent(const char *pName)
 {
@@ -111,29 +131,38 @@ casEventMask casEventRegistry::registerEvent(const char *pName)
 	int			stat;
 	casEventMask		mask;
 
-	if (!this->init) {
-		errMessage(S_cas_noMemory, "no memory during init?");
+	if (!this->hasBeenInitialized) {
+		errMessage(S_cas_noMemory, 
+			"casEventRegistry: not initialized?");
 		return mask;
 	}
 
+	this->mutex.osiLock();
 	pEntry = this->lookup (id);
 	if (pEntry) {
-		return *pEntry;
+		mask = *pEntry;
 	}
-	mask = this->maskAllocator();
-	if (mask.mask == 0u) {
-		errMessage(S_cas_tooManyEvents, NULL);
-		return mask;
+	else {
+		mask = this->maskAllocator();
+		if (mask.mask == 0u) {
+			errMessage(S_cas_tooManyEvents, NULL);
+		}
+		else {
+			pEntry = new casEventMaskEntry(mask, pName);
+			if (pEntry) {
+				stat = this->add(*pEntry);
+				assert(stat==0);
+				mask = *pEntry;
+			}
+			else {
+				mask.mask = 0u;
+				errMessage(S_cas_noMemory, 
+					"mask bit was lost during init");
+			}
+		}
 	}
-	pEntry = new casEventMaskEntry(mask, pName);
-	if (!pEntry) {
-		mask.mask = 0u;
-		errMessage(S_cas_noMemory, "mask bit was lost during init");
-		return mask;
-	}
-	stat = this->add(*pEntry);
-	assert(stat==0);
-	return *pEntry;
+	this->mutex.osiUnlock();
+	return mask;
 }
 
 //
@@ -146,15 +175,25 @@ void casEventMask::show(unsigned level)
 	}
 }
 
+casEventMask::casEventMask (casEventRegistry &reg, const char *pName)
+{
+        *this = reg.registerEvent (pName);
+}
+
 //
 // casEventRegistry::show()
 //
 void casEventRegistry::show(unsigned level)
 {
+	if (!this->hasBeenInitialized) {
+		printf ("casEventRegistry: not initialized\n");
+	}
+	this->mutex.osiLock();
 	if (level>1u) {
-		printf ("init = %d bit allocator = %d\n", 
-				this->init, this->allocator);
+		printf ("casEventRegistry: bit allocator = %d\n", 
+				this->allocator);
 	}
 	this->resTable <casEventMaskEntry, stringId>::show(level);
+	this->mutex.osiUnlock();
 }
 

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/06/26 21:18:55  jhill
+ * now matches gdd api revisions
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
  * ca server installation
  *
@@ -37,41 +40,9 @@
 
 
 #include <server.h>
-#include <casEventSysIL.h>
-
-//
-// casMonEvent::casMonEvent()
-//
-casMonEvent::casMonEvent (casMonitor &monitor, gdd &newValue) :
-        pValue(&newValue),
-        id(monitor.casRes::getId())
-{
-        int gddStatus;
-        gddStatus = this->pValue->reference();
-        assert (!gddStatus);
-}
- 
-//
-// casMonEvent::casMonEvent()
-//
-casMonEvent::casMonEvent (casMonEvent &initValue) :
-        pValue(initValue.pValue),
-        id(initValue.id)
-{
-        int gddStatus;
-        if (this->pValue) {
-                gddStatus = this->pValue->reference();
-                assert (!gddStatus);
-        }
-}
-
-//
-// ~casMonEvent ()
-//
-casMonEvent::~casMonEvent ()
-{
-	this->clear();
-}
+#include <casEventSysIL.h> // casEventSys in line func
+#include <casMonEventIL.h> // casMonEvent in line func
+#include <casCtxIL.h> // casCtx in line func
 
 //
 // casMonEvent::cbFunc()

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/09/16 18:24:04  jhill
+ * vxWorks port changes
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
  * ca server installation
  *
@@ -39,6 +42,61 @@
 
 
 #include<server.h>
+
+class casMsgIO {
+public:
+        casMsgIO();
+        virtual ~casMsgIO();
+ 
+        osiTime timeOfLastXmit() const;
+        osiTime timeOfLAstRecv() const;
+ 
+        //
+        // show status of IO subsystem
+        // (cant be const because a lock is taken)
+        //
+        void show (unsigned level) const;
+ 
+        //
+        // io independent send/recv
+        //
+        xSendStatus xSend (char *pBuf, bufSizeT nBytesAvailableToSend,
+                        bufSizeT nBytesNeedToBeSent, bufSizeT &nBytesSent,
+                        const caAddr &addr);
+        xRecvStatus xRecv (char *pBuf, bufSizeT nBytesToRecv,
+                        bufSizeT &nByesRecv, caAddr &addr);
+ 
+        virtual bufSizeT incommingBytesPresent() const;
+        virtual casIOState state() const=0;
+        virtual void clientHostName (char *pBuf, unsigned bufSize) const =0;
+        virtual int getFD() const;
+        void setNonBlocking()
+        {
+                this->xSetNonBlocking();
+                this->blockingStatus = xIsntBlocking;
+        }
+ 
+        //
+        // The server's port number
+        // (to be used for connection requests)
+        //
+        virtual unsigned serverPortNumber()=0;
+private:
+        //
+        // private data members
+        //
+        osiTime elapsedAtLastSend;
+        osiTime elapsedAtLastRecv;
+        xBlockingStatus blockingStatus;
+ 
+        virtual xSendStatus osdSend (const char *pBuf, bufSizeT nBytesReq,
+                        bufSizeT &nBytesActual, const caAddr &addr) =0;
+        virtual xRecvStatus osdRecv (char *pBuf, bufSizeT nBytesReq,
+                        bufSizeT &nBytesActual, caAddr &addr) =0;
+        virtual void osdShow (unsigned level) const = 0;
+        virtual void xSetNonBlocking();
+};
+
 
 casMsgIO::casMsgIO()
 {
@@ -53,9 +111,9 @@ casMsgIO::~casMsgIO()
 
 
 //
-// casMsgIO::show(unsigned level)
+// casMsgIO::show(unsigned level) const
 //
-void casMsgIO::show(unsigned level)
+void casMsgIO::show(unsigned level) const
 {
         osiTime  elapsed;
         osiTime  current;
@@ -74,19 +132,27 @@ void casMsgIO::show(unsigned level)
         }
 }
 
-xRecvStatus casMsgIO::xRecv(char *pBuf, bufSizeT nBytes, bufSizeT &nActualBytes)
+//
+// casMsgIO::xRecv()
+//
+xRecvStatus casMsgIO::xRecv(char *pBuf, bufSizeT nBytes, 
+	bufSizeT &nActualBytes, caAddr &from)
 {
 	xRecvStatus stat;
 
-	stat = this->osdRecv(pBuf, nBytes, nActualBytes);
+	stat = this->osdRecv(pBuf, nBytes, nActualBytes, from);
 	if (stat==xRecvOK) {
 		this->elapsedAtLastRecv = osiTime::getCurrent();
 	}
 	return stat;
 }
 
+//
+//  casMsgIO::xSend()
+//
 xSendStatus casMsgIO::xSend(char *pBuf, bufSizeT nBytesAvailableToSend, 
-	bufSizeT nBytesNeedToBeSent, bufSizeT &nActualBytes)
+	bufSizeT nBytesNeedToBeSent, bufSizeT &nActualBytes, 
+	const caAddr &to)
 {
 	xSendStatus stat;
 	bufSizeT nActualBytesDelta;
@@ -96,7 +162,7 @@ xSendStatus casMsgIO::xSend(char *pBuf, bufSizeT nBytesAvailableToSend,
 	nActualBytes = 0u;
 	if (this->blockingStatus == xIsntBlocking) {
 		stat = this->osdSend(pBuf, nBytesAvailableToSend, 
-				nActualBytes);
+				nActualBytes, to);
 		if (stat == xSendOK) {
 			this->elapsedAtLastSend = osiTime::getCurrent();
 		}
@@ -105,7 +171,7 @@ xSendStatus casMsgIO::xSend(char *pBuf, bufSizeT nBytesAvailableToSend,
 
 	while (nBytesNeedToBeSent) {
 		stat = this->osdSend(pBuf, nBytesAvailableToSend, 
-				nActualBytesDelta);
+				nActualBytesDelta, to);
 		if (stat != xSendOK) {
 			return stat;
 		}
@@ -122,13 +188,7 @@ xSendStatus casMsgIO::xSend(char *pBuf, bufSizeT nBytesAvailableToSend,
 	return xSendOK;
 }
 
-void casMsgIO::sendBeacon(char & /*msg*/, bufSizeT /*length*/, 
-		aitUint32 &/*m_avail*/)
-{
-	printf("virtual base sendBeacon() called?\n");
-}
-
-int casMsgIO::getFileDescriptor() const
+int casMsgIO::getFD() const
 {
 	return -1;	// some os will not have file descriptors
 }

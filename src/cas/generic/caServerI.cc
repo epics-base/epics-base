@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1996/09/16 18:23:56  jhill
+ * vxWorks port changes
+ *
  * Revision 1.4  1996/09/04 20:12:04  jhill
  * added arg to serverToolDebugFunc()
  *
@@ -48,8 +51,10 @@
 
 #define caServerGlobal
 #include <server.h>
+#include <casCtxIL.h> // casCtx in line func
 
-VERSIONID(casAccessc,"%W% %G%")
+static const osiTime CAServerMaxBeaconPeriod (5.0 /* sec */);
+static const osiTime CAServerMinBeaconPeriod (1.0e-3 /* sec */);
 
 
 //
@@ -58,7 +63,6 @@ VERSIONID(casAccessc,"%W% %G%")
 void caServerI::show (unsigned level)
 {
         casStrmClient		*pClient;
-	tsDLIter<casStrmClient>	iter(this->clientList);
         int			bytes_reserved;
 
         printf( "Channel Access Server Status V%d.%d\n",
@@ -67,11 +71,18 @@ void caServerI::show (unsigned level)
 	this->osiMutex::show(level);
 
         this->osiLock();
-        while ( (pClient = iter()) ) {
+	tsDLFwdIter<casStrmClient> iterCl(this->clientList);
+        while ( (pClient = iterCl.next()) ) {
                 pClient->show(level);
         }
-
         this->dgClient.show(level);
+
+	casIntfOS *pIF;
+	tsDLFwdIter<casIntfOS> iterIF(this->intfList);
+	while ( (pIF = iterIF.next()) ) {
+		pIF->show(level);
+	}
+
         this->osiUnlock();
 
         bytes_reserved = 0u;
@@ -120,6 +131,8 @@ void caServerI::show (unsigned level)
 //
 caServerI::caServerI (caServer &tool, unsigned maxNameLength, 
 		unsigned nPV, unsigned maxSimultIO) :
+	caServerOS(*this),
+	casEventRegistry(* (osiMutex *) this),
 	dgClient(*this),
         //
         // Set up periodic beacon interval
@@ -134,10 +147,17 @@ caServerI::caServerI (caServer &tool, unsigned maxNameLength,
 	pvMaxNameLength(maxNameLength), 
 	pvCountEstimate(nPV<100u?100u:nPV), 
 	maxSimultaneousIO(maxSimultIO),
-	caServerOS(*this)
+	haveBeenInitialized(FALSE)
 {
+	caStatus	status;
+
 	assert(&adapter);
 	ctx.setServer(this);
+
+	status = this->init();
+	if (status) {
+		errMessage(status, "CA server internals init");
+	}
 }
 
 
@@ -146,17 +166,26 @@ caServerI::caServerI (caServer &tool, unsigned maxNameLength,
 //
 caStatus caServerI::init()
 {
-	int	status;
-	int	resLibStatus;
+	int		status;
+	int		resLibStatus;
 
         if (this->osiMutex::init()) {
                 return S_cas_noMemory;
         }
 
-        status = caServerIO::init();
+        status = casEventRegistry::init();
         if (status) {
                 return status;
         }
+
+        status = caServerIO::init(*this);
+        if (status) {
+                return status;
+        }
+
+	if (this->intfList.count()==0u) {
+		return S_cas_noInterface;
+	}
 
         status = caServerOS::init();
         if (status) {
@@ -186,6 +215,7 @@ caStatus caServerI::init()
 		return S_cas_noMemory;
 	}
 
+	this->haveBeenInitialized = TRUE;
 	return S_cas_success;
 }
 
@@ -196,15 +226,24 @@ caStatus caServerI::init()
  */
 caServerI::~caServerI()
 {
-	casClient *pClient;
 
 	this->osiLock();
 
 	//
 	// delete all clients
 	//
-	while ( (pClient = this->clientList.get()) ) {
+	casClient *pClient;
+	tsDLFwdIter<casStrmClient>	iter(this->clientList);
+	pClient = iter.next();
+	while (pClient) {
+		casClient *pNextClient = iter.next();
 		delete pClient;
+		pClient = pNextClient;
+	}
+
+	casIntfOS *pIF;
+	while ( (pIF = this->intfList.get()) ) {
+		delete pIF;
 	}
 
 	this->osiUnlock();
@@ -241,31 +280,17 @@ void caServerI::removeClient(casStrmClient *pClient)
 //
 // caServerI::connectCB()
 //
-void caServerI::connectCB()
+void caServerI::connectCB(casIntfOS &intf)
 {
         casStreamOS *pNewClient;
-	casMsgIO *pIO;
         caStatus status;
  
-	pIO = this->newStreamIO();
-	if (!pIO) {
+	pNewClient = intf.newStreamClient(*this);
+	if (!pNewClient) {
                 errMessage(S_cas_noMemory, NULL);
                 return;
 	}
 
-	status = pIO->init();
-	if (status) {
-                errMessage(status, NULL);
-		delete pIO;
-                return;
-	}
-
-        pNewClient = new casStreamOS(*this, *pIO);
-        if (!pNewClient) {
-                errMessage(S_cas_noMemory, NULL);
-                return;
-        }
- 
         status = pNewClient->init();
         if (status) {
                 errMessage(status, NULL);
@@ -300,9 +325,11 @@ void caServerI::advanceBeaconPeriod()
 //
 void casVerifyFunc(const char *pFile, unsigned line, const char *pExp)
 {
+        fprintf(stderr, "the expression \"%s\" didnt evaluate to boolean true \n",
+			pExp);
         fprintf(stderr,
-"We suspect internal problems at line %u in \"%s\" because \"%s\"==0\n",
-                        line, pFile, pExp);
+"and therefore internal problems are suspected at line %u in \"%s\"\n",
+                        line, pFile);
         fprintf(stderr,
 		"Please forward above text to johill@lanl.gov - thanks\n");
 }
@@ -315,5 +342,62 @@ void serverToolDebugFunc(const char *pFile, unsigned line, const char *pComment)
        fprintf(stderr,
 "Bad server tool response detected at line %u in \"%s\" because \"%s\"\n",
                 line, pFile, pComment);
+}
+
+//
+// caServerI::addAddr()
+//
+caStatus caServerI::addAddr(const caAddr &caAddr, int autoBeaconAddr,
+			int addConfigBeaconAddr)
+{
+        caStatus stat;
+        casIntfOS *pIntf;
+ 
+        pIntf = new casIntfOS(*this);
+        if (pIntf) {
+                stat = pIntf->init(caAddr, this->dgClient, 
+				autoBeaconAddr, addConfigBeaconAddr);
+                if (stat==S_cas_success) {
+			this->osiLock();
+                        this->intfList.add(*pIntf);
+			this->osiUnlock();
+                }
+                else {
+                        errMessage(stat, NULL); 
+                        delete pIntf;
+                }
+        }
+        else {
+                stat = S_cas_noMemory;
+        }
+        return stat;
+}
+
+
+//
+// caServerI::sendBeacon()
+// (implemented here because this has knowledge of the protocol)
+//
+void caServerI::sendBeacon()
+{
+	casIntfOS *pIntf;
+
+	//
+	// send a broadcast beacon over each configured
+	// interface unless EPICS_CA_AUTO_ADDR_LIST specifies
+	// otherwise. Also send a beacon to all configured
+	// addresses.
+	// 
+	this->osiLock();
+	tsDLFwdIter<casIntfOS> iter(this->intfList);
+	while ( (pIntf = iter.next()) ) {
+		pIntf->requestBeacon();
+	}
+	this->osiUnlock();
+ 
+        //
+        // double the period between beacons (but dont exceed max)
+        //
+        this->advanceBeaconPeriod();
 }
 

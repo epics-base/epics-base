@@ -18,9 +18,6 @@ public:
         casProcCond processInput();
         caStatus start();
 
-	void sendBlockSignal();
-	void ioBlockedSignal();
-
 	void eventSignal();
 	void eventFlush();
 
@@ -55,8 +52,6 @@ public:
         //
         casProcCond processInput();
         caStatus start();
-
-	void sendBlockSignal() {}
 
 	void eventSignal();
 	void eventFlush();

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/09/16 18:23:56  jhill
+ * vxWorks port changes
+ *
  * Revision 1.2  1996/06/21 02:30:52  jhill
  * solaris port
  *
@@ -39,6 +42,7 @@
  */
 
 #include <server.h>
+#include <caServerIIL.h>	// caServerI in line func
 #include <dbMapper.h>        	// ait to dbr types 
 #include <gddAppTable.h>        // EPICS application type table
 
@@ -61,7 +65,6 @@ caServer::caServer(unsigned pvMaxNameLengthIn, unsigned pvCountEstimateIn,
 		logEventMask(this->registerEvent("log")),
 		alarmEventMask(this->registerEvent("alarm"))
 {
-	caStatus 	status;
 	static		init;
 
 	if (!init) {
@@ -69,21 +72,16 @@ caServer::caServer(unsigned pvMaxNameLengthIn, unsigned pvCountEstimateIn,
 		init = TRUE;
 	}
 
-	//
-	// OS and IO dependent
-	//
 	if (!this->pCAS) {
 		errMessage(S_cas_noMemory, NULL);
 		return;
 	}
 
-	status = this->pCAS->init();
-        if (status) {
-                errMessage(status, NULL);
+	if (!this->pCAS->ready()) {
 		delete this->pCAS;
 		this->pCAS = NULL;
-                return;
-        }
+		return;
+	}
 }
 
 //
@@ -106,6 +104,7 @@ casEventMask caServer::registerEvent (const char *pName)
 	}
 	else {
 		casEventMask emptyMask;
+		printf("caServer:: no server internals attached\n");
 		return emptyMask;
 	}
 }
@@ -132,7 +131,7 @@ void caServer::setDebugLevel (unsigned level)
 		this->pCAS->setDebugLevel(level);
 	}
 	else {
-		errMessage(S_cas_noMemory, NULL);
+		printf("caServer:: no server internals attached\n");
 	}
 }
 
@@ -145,8 +144,24 @@ unsigned caServer::getDebugLevel ()
                 return this->pCAS->getDebugLevel();
         }
         else {
-                errMessage(S_cas_noMemory, NULL);
+		printf("caServer:: no server internals attached\n");
 		return 0u;
         }
 }
- 
+
+//
+// This must be virtual so that derived destructor will
+// be run indirectly. Therefore it cannot be inline.
+//
+casRes::~casRes()
+{
+}
+
+//
+// This must be virtual so that derived destructor will
+// be run indirectly. Therefore it cannot be inline.
+//
+casEvent::~casEvent() 
+{
+}
+

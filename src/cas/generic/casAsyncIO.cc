@@ -29,14 +29,25 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:14  jhill
+ * ca server installation
+ *
  *
  */
-
 
 #include<server.h>
 
 //
+// This must be virtual so that derived destructor will
+// be run indirectly. Therefore it cannot be inline.
+//
+casAsyncIO::~casAsyncIO()
+{
+}
+
+//
 // casAsyncIO::destroy()
+// (default is a normal delete)
 //
 void casAsyncIO::destroy()
 {

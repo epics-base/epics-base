@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  1996/09/16 18:24:05  jhill
+ * vxWorks port changes
+ *
  * Revision 1.5  1996/09/04 20:23:59  jhill
  * added operator ->
  *
@@ -51,7 +54,7 @@
 #ifndef casPVIIL_h
 #define casPVIIL_h
 
-#include <dbMapper.h>
+#include "dbMapper.h"
 
 
 //
@@ -219,10 +222,12 @@ inline void casPVI::postEvent (const casEventMask &select, gdd &event)
         //
         event.markConstant();
  
-        tsDLIter<casPVListChan> iter(this->chanList);
-        while ( (pChan = iter()) ) {
+	this->lock();
+        tsDLFwdIter<casPVListChan> iter(this->chanList);
+        while ( (pChan = iter.next()) ) {
                 pChan->postEvent(select, event);
         }
+	this->unlock();
 }
 
 #endif // casPVIIL_h

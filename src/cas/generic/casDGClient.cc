@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  1996/09/16 18:24:00  jhill
+ * vxWorks port changes
+ *
  * Revision 1.5  1996/09/04 20:19:47  jhill
  * added missing byte swap on search reply port no
  *
@@ -50,6 +53,12 @@
 #include <server.h>
 #include <caServerIIL.h> // caServerI inline func
 #include <casClientIL.h> // casClient inline func
+#include <dgOutBufIL.h> // dgOutBuf inline func
+#include <dgInBufIL.h> // dgInBuf inline func
+#include <casCtxIL.h> // casCtx inline func
+#include <inBufIL.h> // inBuf inline func
+#include <outBufIL.h> // outBuf inline func
+#include <casCoreClientIL.h> // casCoreClient inline func
 #include <gddApps.h>
 
 //
@@ -60,9 +69,32 @@
 // casDGClient::casDGClient()
 //
 casDGClient::casDGClient(caServerI &serverIn) :
-	casClient(serverIn, * (casDGIO *) this)
+	dgInBuf(*(osiMutex *)this, casDGIntfIO::optimumBufferSize()),
+	dgOutBuf(*(osiMutex *)this, casDGIntfIO::optimumBufferSize()),
+	casClient(serverIn, *this, *this),
+	pOutMsgIO(NULL),
+	pInMsgIO(NULL)
 {
 }
+
+//
+// casDGClient::init()
+//
+caStatus casDGClient::init() 
+{
+	caStatus status;
+
+        status = this->dgInBuf::init();
+        if (status) {
+                return status;
+        }
+        status = this->dgOutBuf::init();
+        if (status) {
+                return status;
+        }
+	return S_cas_success;
+}
+
 //
 // casDGClient::destroy()
 //
@@ -74,10 +106,12 @@ void casDGClient::destroy()
 //
 // casDGClient::show()
 //
-void casDGClient::show(unsigned level)
+void casDGClient::show(unsigned level) const
 {
 	this->casClient::show(level);
 	printf("casDGClient at %x\n", (unsigned) this);
+        this->dgInBuf::show(level);
+	this->dgOutBuf::show(level);
 }
 
 //
@@ -87,34 +121,22 @@ caStatus casDGClient::searchAction()
 {
 	const caHdr	*mp = this->ctx.getMsg();
 	void		*dp = this->ctx.getData();
-	const char	*pChanName = (const char *)dp;
-	gdd		*pCanonicalName;
+	const char	*pChanName = (const char *) dp;
 	caStatus	status;
-	int 		gddStatus;
 
 	if (this->ctx.getServer()->getDebugLevel()>2u) {
 		printf("client is searching for \"%s\"\n", pChanName);
 	}
 
 	//
-	// If we cant allocate a gdd large enogh to hold the
-	// longest PV name then just ignore this request
-	// (and let the client to try again later)
-	//
-	pCanonicalName = new gddScalar(gddAppType_name, aitEnumString);
-	if (!pCanonicalName) {
-		return S_cas_success;
-	}
-
-	//
 	// ask the server tool if this PV exists
 	//
-	status = this->ctx.getServer()->pvExistTest(this->ctx, 
-			pChanName, *pCanonicalName);
-	if (status == S_casApp_asyncCompletion) {
+	pvExistReturn retVal = 
+		this->ctx.getServer()->pvExistTest(this->ctx, pChanName);
+	if (retVal.getStatus() == S_casApp_asyncCompletion) {
 		status = S_cas_success;
 	}
-	else if (status==S_cas_ioBlocked) {
+	else if (retVal.getStatus()==S_cas_ioBlocked) {
 		//
 		// If too many exist test IO operations are in progress
 		// then we will just ignore this request (and wait for
@@ -123,15 +145,8 @@ caStatus casDGClient::searchAction()
 		status = S_cas_success;
 	}
 	else {
-		status = this->searchResponse(NULL, *mp,
-				pCanonicalName, status);
+		status = this->searchResponse(*mp, retVal);
 	}
-
-	//
-	// delete the PV name object
-	//
-	gddStatus = pCanonicalName->unreference();
-	assert(gddStatus==0);
 
 	return S_cas_success;
 }
@@ -140,21 +155,27 @@ caStatus casDGClient::searchAction()
 //
 // caStatus casDGClient::searchResponse()
 //
-caStatus casDGClient::searchResponse(casChannelI *nullPtr, const caHdr &msg,
-		gdd *pCanonicalName, const caStatus completionStatus)
+caStatus casDGClient::searchResponse(const caHdr &msg, 
+	const pvExistReturn &retVal)
 {
 	caStatus	status;
 	caHdr 		*search_reply;
 	unsigned short	*pMinorVersion;
-
-	assert(nullPtr==NULL);
 
 	this->ctx.getServer()->pvExistTestCompletion();
 
 	//
 	// normal search failure is ignored
 	//
-	if (completionStatus==S_casApp_pvNotFound) {
+	if (retVal.getStatus()==S_casApp_pvNotFound) {
+		return S_cas_success;
+	}
+
+	//
+	// if we dont have a virtual out msg io pointer
+	// then ignore the request
+	//
+	if (!this->pOutMsgIO) {
 		return S_cas_success;
 	}
 
@@ -180,21 +201,24 @@ caStatus casDGClient::searchResponse(casChannelI *nullPtr, const caHdr &msg,
 	//
 	// check for bad parameters
 	//
-	if (!pCanonicalName) {
+	if (retVal.getStatus()) {
+		errMessage(retVal.getStatus(),NULL);
+		return S_cas_success;
+	}
+	if (retVal.getString()) {
+		if (retVal.getString()[0]=='\0') {
+			errMessage(S_cas_badParameter, 
+				"PV name descr is empty");
+			return S_cas_success;
+		}
+		if (this->ctx.getServer()->getDebugLevel()>2u) {
+			printf("Search request matched for PV=\"%s\"\n", 
+				retVal.getString());
+		}
+	}
+	else {
 		errMessage(S_cas_badParameter, "PV name descr is nill");
 		return S_cas_success;
-	}
-	if (completionStatus) {
-		errMessage(completionStatus,NULL);
-		return S_cas_success;
-	}
-
-	if (this->ctx.getServer()->getDebugLevel()>2u) {
-		char	*pCN;
-		pCN = *pCanonicalName;
-		if (pCN) {
-			printf("Search request matched for PV=\"%s\"\n", pCN);
-		}
 	}
 
 	/*
@@ -205,7 +229,6 @@ caStatus casDGClient::searchResponse(casChannelI *nullPtr, const caHdr &msg,
 		return status;
 	}
 
-
 	/*
 	 * type field is abused to carry the IP 
 	 * port number here CA_V44 or higher
@@ -215,7 +238,7 @@ caStatus casDGClient::searchResponse(casChannelI *nullPtr, const caHdr &msg,
 	*search_reply = msg;
 	search_reply->m_postsize = sizeof(*pMinorVersion);
 	search_reply->m_cid = ~0U;
-	search_reply->m_type = this->ctx.getServer()->serverPortNumber();
+	search_reply->m_type = this->pOutMsgIO->serverPortNumber();
 	search_reply->m_count = 0ul;
 
 	/*
@@ -259,10 +282,10 @@ caStatus casDGClient::searchFailResponse(const caHdr *mp)
 
 
 //
-// caServerI::sendBeacon()
+// casDGClient::sendBeacon()
 // (implemented here because this has knowledge of the protocol)
 //
-void caServerI::sendBeacon()
+void casDGClient::sendBeacon(casDGIntfIO &io)
 {
 	union {
 		caHdr	msg;
@@ -278,16 +301,11 @@ void caServerI::sendBeacon()
 	//
 	// send it to all addresses on the beacon list
 	//
-	this->dgClient.sendDGBeacon(buf, sizeof(msg), msg.m_available);
-
-	//
-	// double the period between beacons (but dont exceed max)
-	//
-	this->advanceBeaconPeriod();
+	io.sendBeacon(buf, sizeof(msg), msg.m_available);
 }
 
 //
-// casDGClient::ioSignal()
+// casDGClient::ioBlockedSignal()
 //
 void casDGClient::ioBlockedSignal() 
 {
@@ -302,53 +320,164 @@ void casDGClient::ioBlockedSignal()
 }
 
 //
-// casDGClient::process()
+// casDGClient::processDG()
 //
-void casDGClient::process()
+void casDGClient::processDG(casDGIntfIO &inMsgIO, casDGIntfIO &outMsgIO)
 {
         caStatus                status;
-        casFlushCondition       flushCond;
-        casFillCondition        fillCond;
  
+	//
+	// !! special locking required here in mt case
+	//
         //
         // force all replies to be sent to the client
         // that made the request
         //
+	this->pInMsgIO = &inMsgIO;
+	this->pOutMsgIO = &outMsgIO;
         this->inBuf::clear();
         this->outBuf::clear();
  
         //
         // read in new input
         //
-        fillCond = this->fill();
-        if (fillCond == casFillDisconnect) {
-                casVerify(0);
-        }
-        //
-        // verify that we have a message to process
-        //
-        else if (this->inBuf::bytesPresent()>0u) {
-                //
-                // process the message
-                //
-                status = this->processMsg();
-                if (status) {
-                        errMessage (status,
-                "unexpected error processing stateless protocol");
-                }
+	if (this->fill() != casFillDisconnect) {
+
 		//
-		// force all replies to go to the sender
+		// verify that we have a message to process
 		//
-		flushCond = this->flush();
-		if (flushCond!=casFlushCompleted) {
-			casVerify(0);
+		if (this->inBuf::bytesPresent()>0u) {
+			this->setRecipient(this->getSender());
+
+			//
+			// process the message
+			//
+			status = this->processMsg();
+			if (status) {
+				errMessage (status,
+			"unexpected error processing stateless protocol");
+			}
+			//
+			// force all replies to go to the sender
+			//
+			if (this->outBuf::bytesPresent()>0u) {
+				casVerify (this->flush()==casFlushCompleted);
+			}
 		}
-        }
+	}
+
 	//
 	// clear the input/output buffers so replies
 	// are always sent to the sender of the request
 	//
+	this->pInMsgIO = NULL;
+	this->pOutMsgIO = NULL;
 	this->inBuf::clear();
 	this->outBuf::clear();
+}
+
+//
+// casDGClient::asyncSearchResp()
+//
+caStatus casDGClient::asyncSearchResponse(casDGIntfIO &outMsgIO, const caAddr &outAddr,
+		const caHdr &msg, const pvExistReturn &retVal)
+{
+	caStatus stat;
+
+	//
+	// !! special locking required here in mt case
+	//
+	this->pOutMsgIO = &outMsgIO;
+        this->dgOutBuf::clear();
+	this->setRecipient(outAddr);
+
+	stat = this->searchResponse(msg, retVal);
+
+	this->dgOutBuf::flush();
+	this->dgOutBuf::clear();
+	this->pOutMsgIO = NULL;
+
+	return stat;
+}
+
+//
+// casDGClient::xDGSend()
+//
+xSendStatus casDGClient::xDGSend (char *pBufIn, bufSizeT nBytesNeedToBeSent, 
+		bufSizeT &nBytesSent, const caAddr &recipient)
+{
+	xSendStatus stat;
+
+	if (!this->pOutMsgIO) {
+		return xSendDisconnect;
+	}
+	stat = this->pOutMsgIO->osdSend(pBufIn, nBytesNeedToBeSent, 
+				nBytesSent, recipient);	
+	if (stat==xSendOK) {
+                //
+                // !! this time fetch may be slowing things down !!
+                //
+                this->elapsedAtLastSend = osiTime::getCurrent();
+	}
+	return stat;
+}
+
+//
+// casDGClient::xDGRecv()
+//
+xRecvStatus casDGClient::xDGRecv (char *pBufIn, bufSizeT nBytesToRecv,
+			bufSizeT &nByesRecv, caAddr &sender)
+{
+	xRecvStatus stat;
+
+	if (!this->pInMsgIO) {
+		return xRecvDisconnect;
+	}
+	stat = this->pInMsgIO->osdRecv(pBufIn, nBytesToRecv, 
+						nByesRecv, sender);
+	if (stat==xRecvOK) {
+                //
+                // !! this time fetch may be slowing things down !!
+                //
+                this->elapsedAtLastRecv = osiTime::getCurrent();
+	}
+	return stat;
+}
+
+//
+// casDGClient::incommingBytesPresent()
+//
+bufSizeT casDGClient::incommingBytesPresent() const
+{
+	//
+	// !!!! perhaps this would run faster if we
+	// !!!! checked to see if UDP frames are in
+	// !!!! the queue from the same client
+	//
+	return 0u;
+}
+
+//
+// casDGClient::getDebugLevel()
+//
+unsigned casDGClient::getDebugLevel() const
+{
+	return this->getCAS().getDebugLevel();
+}
+
+//
+// casDGClient::fetchRespAddr()
+//
+caAddr casDGClient::fetchRespAddr()
+{
+	return this->getRecipient();
+}
+ 
+//
+// casDGClient::fetchOutIntf()
+//
+casDGIntfIO* casDGClient::fetchOutIntf()
+{
+        return this->pOutMsgIO;
 }
 

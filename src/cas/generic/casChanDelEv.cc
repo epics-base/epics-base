@@ -29,11 +29,15 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
+ * ca server installation
+ *
  *
  */
 
 
 #include <server.h>
+#include <casEventSysIL.h> // casEventSys in line func
 
 //
 // casChanDelEv()

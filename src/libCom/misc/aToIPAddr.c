@@ -8,17 +8,19 @@
 #include <limits.h>
 #include <string.h>
 
-#define LOCAL
-
 #define epicsExportSharedSymbols
 #include "bsdSocketResource.h"
+
+#ifndef LOCAL
+#define LOCAL static
+#endif
 
 #ifndef NELEMENTS
 #define NELEMENTS(A) (sizeof(A)/sizeof(A[0]))
 #endif /*NELEMENTS*/
 
-LOCAL int addrArrayToUL (const long *pAddr, unsigned nElements, unsigned long *pIpAddr);
-LOCAL int initIPAddr (unsigned long ipAddr, unsigned short port, struct sockaddr_in *pIP);
+LOCAL int initIPAddr (struct in_addr ipAddr, unsigned short port, struct sockaddr_in *pIP);
+LOCAL int addrArrayToUL (const long *pAddr, unsigned nElements, struct in_addr  *pIpAddr);
 
 /*
  * rational replacement for inet_addr()
@@ -38,8 +40,7 @@ epicsShareFunc int epicsShareAPI
 	long addr[4];
 	char hostName[512]; /* !! change n elements here requires change in format below !! */
 	int port;
-
-	unsigned long ipAddr;
+	struct in_addr ina;
 
 	/*
 	 * traditional dotted ip addres
@@ -47,7 +48,7 @@ epicsShareFunc int epicsShareAPI
 	status = sscanf (pAddrString, "%li.%li.%li.%li:%i", 
 			addr, addr+1u, addr+2u, addr+3u, &port);
 	if (status>=4) {
-		if (addrArrayToUL (addr, NELEMENTS(addr), &ipAddr)<0) {
+		if (addrArrayToUL (addr, NELEMENTS(addr), &ina)<0) {
 			return -1;
 		}
 		if (status==4) {
@@ -56,7 +57,7 @@ epicsShareFunc int epicsShareAPI
 		if (port<0 || port>USHRT_MAX) {
 			return -1;
 		}
-		return initIPAddr (ipAddr, (unsigned short) port, pIP);
+		return initIPAddr (ina, (unsigned short) port, pIP);
 	}
 	
 	/*
@@ -73,7 +74,8 @@ epicsShareFunc int epicsShareAPI
 		if (port<0 || port>USHRT_MAX) {
 			return -1;
 		}
-		return initIPAddr ((unsigned long)*addr, (unsigned short)port, pIP);
+		ina.s_addr = htonl ( ((unsigned long)*addr) );
+		return initIPAddr (ina, (unsigned short)port, pIP);
 	}
 
 	/*
@@ -81,8 +83,6 @@ epicsShareFunc int epicsShareAPI
 	 */
 	status = sscanf (pAddrString, "%511s:%i", hostName, &port);
 	if (status>=1) {
-		struct in_addr ina;
-
 		if (status==1) {
 			port = defaultPort;
 		}
@@ -91,7 +91,7 @@ epicsShareFunc int epicsShareAPI
 		}
 		status = hostToIPAddr (hostName, &ina);
 		if (status==0) {
-			return initIPAddr (ina.s_addr, (unsigned short)port, pIP);
+			return initIPAddr (ina, (unsigned short)port, pIP);
 		}
 	}
 
@@ -103,30 +103,34 @@ epicsShareFunc int epicsShareAPI
 
 /*
  * initIPAddr()
+ * !! ipAddr should be passed in in network byte order !!
+ * !! port is passed in in host byte order !!
  */
-LOCAL int initIPAddr (unsigned long ipAddr, unsigned short port, struct sockaddr_in *pIP)
+LOCAL int initIPAddr (struct in_addr ipAddr, unsigned short port, struct sockaddr_in *pIP)
 {
 	memset (pIP, '\0', sizeof(*pIP));
 	pIP->sin_family = AF_INET;
 	pIP->sin_port = htons(port);
-	pIP->sin_addr.s_addr = htonl(ipAddr);
+	pIP->sin_addr = ipAddr;
 	return 0;
 }
 
 /*
  * addrArrayToUL()
  */
-LOCAL int addrArrayToUL (const long *pAddr, unsigned nElements, unsigned long *pIpAddr)
+LOCAL int addrArrayToUL (const long *pAddr, unsigned nElements, struct in_addr  *pIpAddr)
 {
 	unsigned i;
+	unsigned long addr = 0ul;
 	
 	for (i=0u; i<nElements; i++) {
 		if (pAddr[i]<0x0 || pAddr[i]>0xff) {
 			return -1;
 		}
+		addr <<= 8;
+		addr |= (unsigned long) pAddr[i];
 	}
-	*pIpAddr = (unsigned long) 
-		(pAddr[3u] | (pAddr[2u]<<8u) | 
-		(pAddr[1u]<<16u) | (pAddr[0u]<<24u));
+	pIpAddr->s_addr = htonl (addr);
+		
 	return 0;
 }

@@ -4,7 +4,6 @@
 /* share/src/drv $Id$ */
 #include	<vxWorks.h>
 #include	<stdioLib.h>
-#include	 <semLib.h>
 #include	 <vme.h>
 
 #include	<dbDefs.h>
@@ -86,6 +85,7 @@
  * BG 6/23/92   combined dvx_driver.c and drvDvx.c 
  * BG 6/26/92   added level to dvx_io_report in drvDvx structure.
  * JH 6/29/92	moved the rest of the dvx io_report here
+ * BG 7/2/92	removed the semaphores from dvx_io_report
  */
 
 
@@ -120,7 +120,6 @@ static char *SccsId = "@(#)dvx_driver.c 1.0\t5/1/90";
 struct dvx_rec dvx[MAX_DVX_CARDS];
 static char *dvx_shortaddr;
 static char *dvx_stdaddr;
-SEMAPHORE dvx_rpt_sem;
 
 /* variable used in io_report to report which cards have been found. */
 
@@ -197,8 +196,6 @@ dvx_driver_init()
   */
  rebootHookAdd(dvx_reset);
 
- semInit(&dvx_rpt_sem);
- semGive(&dvx_rpt_sem);
 
  if ((status = sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO,ai_addrs[DVX2502],&dvx_shortaddr)) != OK){
    printf("Addressing error in dvx driver short address \n");
@@ -468,11 +465,9 @@ int dvx_io_report(level)
 			continue;
                 if (ptr->dev_id == DVX_ID){	/* If detected card is a 2502
                                                    print out its number.  */
-                     semTake(&dvx_rpt_sem);
                      num_cards++;
                      dvx_cards_found[i] = 1;
                      printf("DVX2505: card %d\n",i);
-                     semGive(&dvx_rpt_sem);
                 }
           
          }
@@ -493,10 +488,6 @@ int dvx_io_report(level)
 				printf("Last channel is %d\n",lastchan);
 				dvx_chan_print(dvx_card,firstchan,lastchan);
 			}
-#if 0 /* ?????? joh */
-			semTake(&dvx_rpt_sem);
-			semGive(&dvx_rpt_sem);
-#endif
 		}
 	}
 
@@ -506,10 +497,7 @@ int dvx_io_report(level)
  int dvx_chan_print(dvx_card,firstchan,lastchan)
     short int dvx_card,firstchan,lastchan;
  {
-                    printf("card %d, Firstchan = %d, Lastchan = %d\n",dvx_card,firstchan,lastchan);
-                    semTake(&dvx_rpt_sem);
                     dvx_dump(dvx_card,firstchan,lastchan);
-                    semGive(&dvx_rpt_sem);
  }
 /*
  * dvx_fempty
@@ -658,7 +646,6 @@ dvx_reset()
 	/* 
 	 * search for cards 
 	 */
-        semDelete(dvx_rpt_sem);
  	for (i = 0; i < ai_num_cards[DVX2502]; i++, ptr++){
 		status = vxMemProbe (ptr,READ,sizeof(card_id),&card_id);
    		if (status != OK)

@@ -1442,8 +1442,8 @@ void write_notify_reply(void *pArg)
          * the channel id field is being abused to carry 
          * status here
          */
-        if(ppnb->dbPutNotify.status){
-            if(ppnb->dbPutNotify.status == S_db_Blocked){
+        if(ppnb->dbPutNotify.status != putNotifyOK){
+            if(ppnb->dbPutNotify.status == putNotifyBlocked){
                 status = ECA_PUTCBINPROG;
             }
             else{
@@ -1600,16 +1600,7 @@ LOCAL int write_notify_action ( caHdrLargeArray *mp, void *pPayload,
         return RSRV_OK;
     }
 
-    status = dbPutNotify(&pciu->pPutNotify->dbPutNotify);
-    if(status && status != S_db_Pending){
-        /*
-         * let the call back take care of failure
-         * even if it is immediate
-         */
-        pciu->pPutNotify->dbPutNotify.status = status;
-        (*pciu->pPutNotify->dbPutNotify.userCallback)
-                    (&pciu->pPutNotify->dbPutNotify);
-    }
+    dbPutNotify(&pciu->pPutNotify->dbPutNotify);
     return RSRV_OK;
 }
 

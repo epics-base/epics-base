@@ -657,7 +657,7 @@ static void print_returned(type,pbuffer,count)
 static void tpnCallback(putNotify *ppn)
 {
     struct dbAddr	*pdbaddr = (struct dbAddr *)ppn->paddr;
-    long	status = ppn->status;
+    putNotifyStatus     status = ppn->status;
     char	*pname;
 
     /*This is really cheating. It only works because first field is name*/
@@ -665,7 +665,7 @@ static void tpnCallback(putNotify *ppn)
     if(status==0)
 	printf("tpnCallback: success record=%s\n",pname);
     else
-        errPrintf(status,__FILE__,__LINE__,"%s tpnCallback\n",pname);
+        errlogPrintf("%s tpnCallback status = %d\n",status);
     free((void *)pdbaddr);
     free(ppn);
 }
@@ -707,9 +707,6 @@ int epicsShareAPI tpn(char	*pname,char *pvalue)
 	return(-1);
     }
     ppn->userCallback = tpnCallback;
-    status = dbPutNotify(ppn);
-    if(status) {
-    	errMessage(status, "tpn");
-    }
+    dbPutNotify(ppn);
     return(0);
 }

@@ -226,14 +226,4 @@ int cas_copy_in_header (
 void cas_set_header_cid ( struct client *pClient, ca_uint32_t );
 void cas_commit_msg ( struct client *pClient, ca_uint32_t size );
 
-/*
- * !!KLUDGE!!
- *
- * this was extracted from dbAccess.h because we are unable
- * to include both dbAccess.h and db_access.h at the
- * same time.
- */
-#define S_db_Blocked    (M_dbAccess|39) /*Request is Blocked*/
-#define S_db_Pending    (M_dbAccess|37) /*Request is pending*/
-
 #endif /*INCLserverh*/

@@ -34,9 +34,6 @@
 #include "dbChannelIOIL.h"
 #include "dbNotifyBlockerIL.h"
 
-#define S_db_Blocked 	(M_dbAccess|39)
-#define S_db_Pending 	(M_dbAccess|37)
-
 #if defined ( _MSC_VER )
 #   pragma warning ( push )
 #   pragma warning ( disable: 4660 )
@@ -80,8 +77,8 @@ extern "C" void putNotifyCompletion ( putNotify *ppn )
 {
     dbPutNotifyBlocker *pBlocker = static_cast < dbPutNotifyBlocker * > ( ppn->usrPvt );
     if ( pBlocker->pNotify ) {
-        if ( pBlocker->pn.status ) {
-            if ( pBlocker->pn.status == S_db_Blocked ) {
+        if ( pBlocker->pn.status != putNotifyOK) {
+            if ( pBlocker->pn.status == putNotifyBlocked ) {
                 pBlocker->pNotify->exception ( 
                     ECA_PUTCBINPROG, "put notify blocked",
                     static_cast <unsigned> (pBlocker->pn.dbrType), 
@@ -156,18 +153,7 @@ void dbPutNotifyBlocker::initiatePutNotify ( epicsAutoMutex & locker, cacWriteNo
     this->pn.userCallback = putNotifyCompletion;
     this->pn.usrPvt = this;
 
-    status = ::dbPutNotify ( &this->pn );
-    if ( status && status != S_db_Pending ) {
-        memset ( &this->pn, '\0', sizeof ( this->pn ) );
-        this->pNotify = 0;
-        {
-            epicsAutoMutexRelease autoRelease ( locker );
-            notify.exception (
-                ECA_PUTFAIL, "dbPutNotify() returned failure",
-                static_cast <unsigned> (this->pn.dbrType), 
-                static_cast <unsigned> (this->pn.nRequest) );
-        }
-    }
+    ::dbPutNotify ( &this->pn );
 }
 
 void dbPutNotifyBlocker::show ( unsigned level ) const

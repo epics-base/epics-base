@@ -16,7 +16,11 @@ LAG	{return(tokenLAG);}
 ASG	{return(tokenASG);}
 LEVEL	{return(tokenLEVEL);}
 CALC	{return(tokenCALC);}
-INP[A-L] {return(tokenINP);}
+INP[A-L] {/* If A-L is changed then ASMAXINP must also be changed*/
+	yylval.Int = (unsigned char)yytext[3];
+	yylval.Int -= 'A';
+	return(tokenINP);
+	}
 
 {integer}+ {
 	sscanf(yytext,"%d",&yylval.Int);
@@ -44,17 +48,18 @@ INP[A-L] {return(tokenINP);}
         return(tokenSTRING);
     }
 
-"{"     { return(O_BRACE);      }
-"}"     { return(C_BRACE);      }
-"("     { return(O_PAREN);      }
-")"     { return(C_PAREN);      }
-[,\-*]	{ return(yytext[0]);	}
+"{"     { return(yytext[0]);      }
+"}"     { return(yytext[0]);      }
+"("     { return(yytext[0]);      }
+")"     { return(yytext[0]);      }
+","	{ return(yytext[0]);	}
+^#.*
 [ \t\r]	;
 \n      { line_num ++;}
 .       { 
 		char message[20];
 	  
-		sprintf(message,"invalid charecter '%c'",yytext[0]);
+		sprintf(message,"invalid character '%c'",yytext[0]);
 	  	yyerror(message);
 	}
 

@@ -1,12 +1,12 @@
 %{
 static int yyerror();
+static int myParse();
 #include "asLibRoutines.c"
 static int line_num=1;
 static UAG *yyUag=NULL;
 static LAG *yyLag=NULL;
 static ASG *yyAsg=NULL;
 static ASGLEVEL *yyAsgLevel=NULL;
-static int yyLevelLow,yyLevelHigh;
 %}
 
 %start asconfig
@@ -15,7 +15,6 @@ static int yyLevelLow,yyLevelHigh;
 %token <Str> tokenINP
 %token <Int> tokenINTEGER
 %token <Str> tokenNAME tokenPVNAME tokenSTRING
-%left O_BRACE C_BRACE O_PAREN C_PAREN
 
 %union
 {
@@ -31,11 +30,14 @@ asconfig:	asconfig asconfig_item
 	|	asconfig_item
 
 asconfig_item:	tokenUAG uag_head uag_body
+	|	tokenUAG uag_head
 	|	tokenLAG lag_head lag_body
+	|	tokenLAG lag_head
 	|	tokenASG asg_head asg_body
+	|	tokenASG asg_head
 	;
 
-uag_head:	O_PAREN tokenNAME C_PAREN
+uag_head:	'(' tokenNAME ')'
 	{
 		yyUag = asUagAdd($2);
 		if(!yyUag) yyerror($2);
@@ -43,7 +45,7 @@ uag_head:	O_PAREN tokenNAME C_PAREN
 	}
 	;
 
-uag_body:	O_BRACE uag_user_list C_BRACE
+uag_body:	'{' uag_user_list '}'
 	{
 		 ;
 	}
@@ -66,7 +68,7 @@ uag_user_list_name:	tokenNAME
 	}
 	;
 
-lag_head:	O_PAREN tokenNAME C_PAREN
+lag_head:	'(' tokenNAME ')'
 	{
 		yyLag = asLagAdd($2);
 		if(!yyLag) yyerror($2);
@@ -74,7 +76,7 @@ lag_head:	O_PAREN tokenNAME C_PAREN
 	}
 	;
 
-lag_body:	O_BRACE lag_user_list C_BRACE
+lag_body:	'{' lag_user_list '}'
 	;
 
 lag_user_list:	lag_user_list ',' lag_user_list_name
@@ -94,7 +96,7 @@ lag_user_list_name:	tokenNAME
 	}
 	;
 
-asg_head:	O_PAREN tokenNAME C_PAREN
+asg_head:	'(' tokenNAME ')'
 	{
 		yyAsg = asAsgAdd($2);
 		if(!yyAsg) yyerror($2);
@@ -102,7 +104,7 @@ asg_head:	O_PAREN tokenNAME C_PAREN
 	}
 	;
 
-asg_body:	O_BRACE asg_body_list C_BRACE
+asg_body:	'{' asg_body_list '}'
 	{
 	}
 
@@ -112,14 +114,14 @@ asg_body_list:	asg_body_list asg_body_item
 asg_body_item:	inp_config | level_config 
 	;
 
-inp_config:	tokenINP O_PAREN inp_body C_PAREN
+inp_config:	tokenINP '(' inp_body ')'
 	{
 		long	status;
 
-		status = asAsgAddInp(yyAsg,$<Str>3,(*(($<Str>1) + 3)-'A'));
+		status = asAsgAddInp(yyAsg,$<Str>3,$<Int>1);
 		if(status) {
 			errMessage(status,"Error while adding INP");
-			yyerror($<Str>1);
+			yyerror($1);
 		}
 		free((void *)$<Str>3);
 	}
@@ -131,11 +133,13 @@ inp_body:	tokenNAME | tokenPVNAME
 level_config:	tokenLEVEL level_head level_body
 	|	tokenLEVEL level_head
 
-level_head:	O_PAREN level_range ',' tokenNAME C_PAREN
+level_head:	'(' tokenINTEGER ',' tokenNAME ')'
 	{
 		asAccessRights	rights;
 
-		if((strcmp($4,"READ")==0)) {
+		if((strcmp($4,"NONE")==0)) {
+			rights=asNOACCESS;
+		} else if((strcmp($4,"READ")==0)) {
 			rights=asREAD;
 		} else if((strcmp($4,"WRITE")==0)) {
 			rights=asWRITE;
@@ -143,32 +147,22 @@ level_head:	O_PAREN level_range ',' tokenNAME C_PAREN
 			yyerror("Illegal access type");
 			rights = asNOACCESS;
 		}
-		yyAsgLevel = asAsgAddLevel(yyAsg,rights,yyLevelLow,yyLevelHigh);
+		yyAsgLevel = asAsgAddLevel(yyAsg,rights,$2);
 		free((void *)$4);
 	}
 	;
 
-level_range:	tokenINTEGER
-	{
-		yyLevelLow = yyLevelHigh = $1;
-	}
-	|	tokenINTEGER '-' tokenINTEGER
-	{
-		yyLevelLow = $1;
-		yyLevelHigh = $3;
-	}
-	
 
-level_body:	O_BRACE level_list C_BRACE
+level_body:	'{' level_list '}'
 	;
 
 level_list:	level_list level_list_item
 	|	level_list_item
 	;
 
-level_list_item: tokenUAG O_PAREN level_uag_list C_PAREN
-	|	tokenLAG  O_PAREN level_lag_list C_PAREN
-	|	tokenCALC O_PAREN tokenSTRING C_PAREN
+level_list_item: tokenUAG '(' level_uag_list ')'
+	|	tokenLAG  '(' level_lag_list ')'
+	|	tokenCALC '(' tokenSTRING ')'
 	{
 		long status;
 
@@ -187,8 +181,13 @@ level_uag_list:	level_uag_list ',' level_uag_list_name
 
 level_uag_list_name:	tokenNAME
 	{
-		if(asAsgLevelUagAdd(yyAsgLevel,$1))
-		    yyerror("Why did asAsgLevelUagAdd fail");
+		long status;
+
+		status = asAsgLevelUagAdd(yyAsgLevel,$1);
+		if(status) {
+		    errMessage(status,"Error while adding UAG");
+		    yyerror($1);
+		}
 		free((void *)$1);
 	}
 	;
@@ -199,8 +198,13 @@ level_lag_list:	level_lag_list ',' level_lag_list_name
 
 level_lag_list_name:	tokenNAME
 	{
-		if(asAsgLevelLagAdd(yyAsgLevel,$1))
-		    yyerror("Why did asAsgLevelLagAdd fail");
+		long status;
+
+		status = asAsgLevelLagAdd(yyAsgLevel,$1);
+		if(status) {
+		    errMessage(status,"Error while adding LAG");
+		    yyerror($1);
+		}
 		free((void *)$1);
 	}
 	;

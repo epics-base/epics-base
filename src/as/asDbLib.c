@@ -36,6 +36,7 @@
 #include <dbDefs.h>
 #include <dbStaticLib.h>
 #include <asLib.h>
+#include <dbCommon.h>
 
 extern struct dbBase *pdbBase;
 static FILE *stream;
@@ -59,8 +60,8 @@ printf("INPUT: %s",my_buffer);
     my_buffer_ptr += n;
     return(n);
 }
-
-static long asDbEnterRecords(void)
+
+static long asDbAddRecords(void)
 {
     DBENTRY		dbentry;
     DBENTRY		*pdbentry=&dbentry;
@@ -75,7 +76,7 @@ static long asDbEnterRecords(void)
 	    precord = pdbentry->precnode->precord;
 	    if(!precord->asp) {
 		status = asAddMember((ASMEMBERPVT *)&precord->asp,precord->asg);
-		if(status) errMessage(status,"asDbEnterRecords:asAddMember");
+		if(status) errMessage(status,"asDbAddRecords:asAddMember");
 		asPutMemberPvt(precord->asp,precord);
 	    }
 	    status = dbNextRecord(pdbentry);
@@ -85,7 +86,7 @@ static long asDbEnterRecords(void)
     dbFinishEntry(pdbentry);
     return(0);
 }
-
+
 int asInit(char *filename)
 {
     long status;
@@ -103,10 +104,10 @@ int asInit(char *filename)
     status = asInitialize(my_yyinput);
     if(fclose(stream)==EOF) errMessage(0,"asInit fclose failure");
     free((void *)my_buffer);
-    asDbEnterRecords();
+    asDbAddRecords();
     return(0);
 }
-
+
 void static myMemberCallback(ASMEMBERPVT memPvt)
 {
     struct dbCommon	*precord;
@@ -118,5 +119,31 @@ void static myMemberCallback(ASMEMBERPVT memPvt)
 int asdbdump()
 {
     asDump(myMemberCallback,NULL);
+    return(0);
+}
+
+int astac(char *pname,char *user,char *location)
+{
+    struct dbAddr	*paddr;
+    long		status;
+    ASCLIENTPVT		*pasclientpvt=NULL;
+    struct dbCommon	*precord;
+    struct fldDes	*pflddes;
+
+    paddr = dbCalloc(1,sizeof(struct dbAddr) + sizeof(ASCLIENTPVT));
+    pasclientpvt = (ASCLIENTPVT *)(paddr + 1);
+    status=dbNameToAddr(pname,paddr);
+    if(status) {
+	errMessage(status,"dbNameToAddr error");
+	return(1);
+    }
+    precord = paddr->precord;
+    pflddes = paddr->pfldDes;
+    status = asAddClient(pasclientpvt,(ASMEMBERPVT)precord->asp,
+	(int)pflddes->as_level,user,location);
+    if(status) {
+	errMessage(status,"asAddClient error");
+	return(1);
+    }
     return(0);
 }

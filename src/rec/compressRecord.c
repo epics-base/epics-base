@@ -329,7 +329,7 @@ static long process(pcompress)
 
     pcompress->pact = TRUE;
     if(!dbIsLinkConnected(&pcompress->inp)
-    || !dbGetNelements(&pcompress->inp,&nelements)
+    || dbGetNelements(&pcompress->inp,&nelements)
     || nelements<=0) {
 	recGblSetSevr(pcompress,READ_ALARM,INVALID_ALARM);
     } else {

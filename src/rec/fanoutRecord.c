@@ -63,6 +63,7 @@
 #define GEN_SIZE_OFFSET
 #include        <fanoutRecord.h>
 #undef  GEN_SIZE_OFFSET
+#include        <dbCommon.h>
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
@@ -114,27 +115,6 @@ static long init_record(pfanout,pass)
     recGblInitConstantLink(&pfanout->sell,DBF_USHORT,&pfanout->seln);
     return(0);
 }
-
-static void scanLink(fanoutRecord *pfanout,struct link *plink)
-{
-    /*This routine pokes into private db stuff */
-    void 		*precord = (void *)pfanout;
-    struct pv_link	*pvlink;
-    short		fwdLinkValue;
-
-    if(plink->type==CONSTANT) return;
-    if(plink->type==DB_LINK) {
-	DBADDR *paddr = (DBADDR *)plink->value.pv_link.pvt;
-	dbScanPassive(precord,paddr->precord);
-	return;
-    }
-    if(plink->type!=CA_LINK) return;
-    pvlink = &plink->value.pv_link;
-    if(!(pvlink->pvlMask & pvlOptFWD)) return;
-    fwdLinkValue = 1;
-    dbCaPutLink(plink,DBR_SHORT,&fwdLinkValue,1);
-    return;
-}
 	
 static long process(pfanout)
     struct fanoutRecord     *pfanout;
@@ -153,12 +133,12 @@ static long process(pfanout)
     dbGetLink(&(pfanout->sell),DBR_USHORT,&(pfanout->seln),0,0);
     switch (pfanout->selm){
     case (fanoutSELM_All):
-        if (pfanout->lnk1.type!=CONSTANT) scanLink(pfanout,&pfanout->lnk1);
-        if (pfanout->lnk2.type!=CONSTANT) scanLink(pfanout,&pfanout->lnk2);
-        if (pfanout->lnk3.type!=CONSTANT) scanLink(pfanout,&pfanout->lnk3);
-        if (pfanout->lnk4.type!=CONSTANT) scanLink(pfanout,&pfanout->lnk4);
-        if (pfanout->lnk5.type!=CONSTANT) scanLink(pfanout,&pfanout->lnk5);
-        if (pfanout->lnk6.type!=CONSTANT) scanLink(pfanout,&pfanout->lnk6);
+        plink=&(pfanout->lnk1);
+        state=pfanout->seln;
+        for ( i=0; i<6; i++, state>>=1, plink++) {
+            if(plink->type!=CONSTANT)
+		dbScanFwdLink((dbCommon *)pfanout,plink);
+        }
         break;
     case (fanoutSELM_Specified):
         if(pfanout->seln>6) {
@@ -170,7 +150,7 @@ static long process(pfanout)
         }
         plink=&(pfanout->lnk1);
         plink += (pfanout->seln-1);
-	scanLink(pfanout,plink);
+	dbScanFwdLink((dbCommon *)pfanout,plink);
         break;
     case (fanoutSELM_Mask):
         if(pfanout->seln==0) {
@@ -183,7 +163,8 @@ static long process(pfanout)
         plink=&(pfanout->lnk1);
         state=pfanout->seln;
         for ( i=0; i<6; i++, state>>=1, plink++) {
-            if(state & 1 && plink->type!=CONSTANT) scanLink(pfanout,plink);
+            if(state & 1 && plink->type!=CONSTANT)
+		dbScanFwdLink((dbCommon *)pfanout,plink);
         }
         break;
     default:

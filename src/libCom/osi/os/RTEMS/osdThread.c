@@ -48,7 +48,7 @@ struct taskVar {
     void                *parm;
     unsigned int        threadVariableCapacity;
     void                **threadVariables;
-    int              isOkToBlock;
+    int              okToBlock;
 };
 static epicsMutexId taskVarMutex;
 static struct taskVar *taskVarHead;
@@ -214,7 +214,7 @@ setThreadInfo (rtems_id tid, const char *name, EPICSTHREADFUNC funptr,void *parm
     v->parm = parm;
     v->threadVariableCapacity = 0;
     v->threadVariables = NULL;
-    v->isOkToBlock = 0;
+    v->okToBlock = 0;
     note = (rtems_unsigned32)v;
     rtems_task_set_note (tid, RTEMS_NOTEPAD_TASKVAR, note);
     taskVarLock ();
@@ -454,26 +454,41 @@ epicsThreadId epicsThreadGetId (const char *name)
     return (epicsThreadId)tid;
 }
 
-int epicsThreadIsOkToBlock (epicsThreadPrivateId id)
+int epicsThreadIsOkToBlock (epicsThreadId id)
 {
-    unsigned int varIndex = (unsigned int)id;
+    rtems_id tid = (rtems_id)id;
+    rtems_status_code sc;
     rtems_unsigned32 note;
     struct taskVar *v;
+    int okToBlock;
 
-    rtems_task_get_note (RTEMS_SELF, RTEMS_NOTEPAD_TASKVAR, &note);
-    v = (struct taskVar *)note;
-    return v->isOkToBlock;
+    taskVarLock ();
+    sc = rtems_task_get_note (tid, RTEMS_NOTEPAD_TASKVAR, &note);
+    if (sc == RTEMS_SUCCESSFUL) {
+        v = (void *)note;
+        okToBlock = v->okToBlock;
+    }
+    else {
+        okToBlock = 0;
+    }
+    taskVarUnlock ();
+    return okToBlock;
 }
 
-void epicsThreadSetOkToBlock (epicsThreadPrivateId id,int isOkToBlock)
+void epicsThreadSetOkToBlock (epicsThreadId id,int isOkToBlock)
 {
-    unsigned int varIndex = (unsigned int)id;
+    rtems_id tid = (rtems_id)id;
+    rtems_status_code sc;
     rtems_unsigned32 note;
     struct taskVar *v;
 
-    rtems_task_get_note (RTEMS_SELF, RTEMS_NOTEPAD_TASKVAR, &note);
-    v = (struct taskVar *)note;
-    v->isOkToBlock = isOkToBlock;
+    taskVarLock ();
+    sc = rtems_task_get_note (tid, RTEMS_NOTEPAD_TASKVAR, &note);
+    if (sc == RTEMS_SUCCESSFUL) {
+        v = (void *)note;
+        v->okToBlock = isOkToBlock;
+    }
+    taskVarUnlock ();
 }
 
 /*

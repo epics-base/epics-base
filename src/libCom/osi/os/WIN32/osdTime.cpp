@@ -101,82 +101,85 @@ static unsigned __stdcall osdTimeSynchThreadEntry (LPVOID)
 static void osdTimeInit ()
 {
 	LARGE_INTEGER parm;
-	BOOL win32Stat;
+	BOOL success;
     int unixStyleStatus;
+    unsigned threadAddr;
+    unsigned long handle;                
+	FILETIME epicsEpochFT;
+    DWORD status;
+
+    if ( osdTimeMutex ) {
+        /* wait for init to complete */
+        status = WaitForSingleObject ( osdTimeMutex, INFINITE );
+        assert ( status == WAIT_OBJECT_0 );
+        success = ReleaseMutex ( osdTimeMutex );
+        assert (success);
+        return;
+    }
+    else {
+        HANDLE osdTimeMutexTmp;
+        osdTimeMutexTmp = CreateMutex (NULL, TRUE, NULL);
+        if ( osdTimeMutexTmp == 0 ) {
+            return;
+        }
+
+        /* not supported on W95, but the alternative requires assuming that pointer and integer are the same */
+        if (InterlockedCompareExchange ( (PVOID *) &osdTimeMutex, (PVOID) osdTimeMutexTmp, (PVOID)0 ) != 0) {
+            CloseHandle (osdTimeMutexTmp);
+            /* wait for init to complete */
+            status = WaitForSingleObject (osdTimeMutex, INFINITE);
+            assert ( status == WAIT_OBJECT_0 );
+            success = ReleaseMutex (osdTimeMutex);
+            assert (success);
+            return;
+        }
+    }
 
 	//
-	// one time initialization of constants
+	// initialize elapsed time counters
 	//
-	if (!osdTimeMutex) {
-        unsigned threadAddr;
-        unsigned long handle;                
-		FILETIME epicsEpochFT;
-        HANDLE mutex;
-
-        mutex = CreateMutex (NULL, TRUE, "osdTimeMutex");
-        if (mutex==NULL) {
-            return;
-        }
-        if ( GetLastError () == ERROR_ALREADY_EXISTS ) {
-            static const DWORD tmoTwentySec = 20 * osiTime::mSecPerSec;
-            DWORD semStatus;
-
-            //
-            // synchronize with some other thread 
-            // that is already in this routine
-            //
-            semStatus = WaitForSingleObject (mutex, tmoTwentySec);
-            if ( semStatus == WAIT_OBJECT_0 ) {
-                ReleaseMutex (mutex);
-            }
-            return;
-        }
-
-		//
-		// initialize elapsed time counters
-		//
-		// All CPUs running win32 currently have HR
-		// counters (Intel and Mips processors do)
-		//
-		if (QueryPerformanceFrequency (&parm)==0) {
-            CloseHandle (mutex);
-            return;
-		}
-		perf_freq = parm.QuadPart;
-
-		//
-		// convert the EPICS epoch to file time
-		//
-		win32Stat = SystemTimeToFileTime (&epicsEpochST, &epicsEpochFT);
-        if (win32Stat==0) {
-            CloseHandle (mutex);
-            return;
-        }
-		parm.LowPart = epicsEpochFT.dwLowDateTime;
-		parm.HighPart = epicsEpochFT.dwHighDateTime;
-		epicsEpoch = parm.QuadPart;
-
-        osdTimeMutex = mutex;
-        ReleaseMutex (mutex);
-
-        unixStyleStatus = osdTimeSych ();
-        if (unixStyleStatus!=tsStampOK) {
-            osdTimeMutex = NULL;
-            CloseHandle (mutex);
-            return;
-        }
-
-        //
-        // spawn off a thread which periodically resynchronizes the offset
-        //
-        handle = _beginthreadex (NULL, 4096, osdTimeSynchThreadEntry, 
-                    0, 0, &threadAddr);
-        if (handle==NULL) {
-            errlogPrintf ("osdTimeInit(): unable to start time synch thread\n");;
-        }
-
-        atexit (osdTimeExit);
+	// All CPUs running win32 currently have HR
+	// counters (Intel and Mips processors do)
+	//
+	if ( QueryPerformanceFrequency (&parm) == 0 ) {
+        CloseHandle (osdTimeMutex);
+        osdTimeMutex = NULL;
+        return;
 	}
+	perf_freq = parm.QuadPart;
+
+	//
+	// convert the EPICS epoch to file time
+	//
+	success = SystemTimeToFileTime (&epicsEpochST, &epicsEpochFT);
+    if ( ! success ) {
+        CloseHandle ( osdTimeMutex );
+        osdTimeMutex = NULL;
+        return;
+    }
+	parm.LowPart = epicsEpochFT.dwLowDateTime;
+	parm.HighPart = epicsEpochFT.dwHighDateTime;
+	epicsEpoch = parm.QuadPart;
+
+    ReleaseMutex ( osdTimeMutex );
+
+    unixStyleStatus = osdTimeSych ();
+    if ( unixStyleStatus != tsStampOK ) {
+        CloseHandle ( osdTimeMutex );
+        osdTimeMutex = NULL;
+        return;
+    }
+
+    //
+    // spawn off a thread which periodically resynchronizes the offset
+    //
+    handle = _beginthreadex ( NULL, 4096, osdTimeSynchThreadEntry, 
+                0, 0, &threadAddr );
+    if ( handle == NULL ) {
+        errlogPrintf ( "osdTimeInit(): unable to start time synch thread\n" );
+    }
+
+    atexit ( osdTimeExit );
 }
 
 //

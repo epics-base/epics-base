@@ -525,6 +525,7 @@ void epicsShareAPI db_cancel_event (dbEventSubscription es)
     pevent->ev_que->quota -= EVENTENTRIES;
 
     UNLOCKEVQUE ( pevent->ev_que )
+        
     freeListFree ( dbevEventBlockFreeList, pevent );
 
     return;

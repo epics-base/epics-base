@@ -26,8 +26,8 @@
  */
 #include "epicsMessageQueue.h"
 #include <epicsAssert.h>
-#include <memory.h>
 #include <stdexcept>
+# include <string.h>
 
 epicsMessageQueue::epicsMessageQueue(unsigned int aCapacity,
                                      unsigned int aMaxMessageSize) 

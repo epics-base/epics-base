@@ -66,15 +66,7 @@ epicsShareFunc int epicsShareAPI epicsStdoutPrintf(
 #ifdef printf
 #undef printf
 #endif /*printf*/
-#if defined(__STDC_VERSION__) && __STDC_VERSION__>=199901L
-#define printf(...) epicsStdoutPrintf(...) 
-#elif defined(__GNUC__)
-#define printf(format...) epicsStdoutPrintf(format)
-#else
 #define printf epicsStdoutPrintf
-#endif /* defined(__STDC_VERSION__) && __STDC_VERSION__>=199901_*/
-#endif /* epicsStdioPVT */
-
 
 #ifdef  __cplusplus
 }

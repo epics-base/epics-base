@@ -88,7 +88,7 @@
  * Enable format-string checking if possible
  */
 #ifdef __GNUC__
-# define EPICS_PRINTF_STYLE(f,a) __attribute__((format(printf,f,a)))
+# define EPICS_PRINTF_STYLE(f,a) __attribute__((format(__printf__,f,a)))
 #else
 # define EPICS_PRINTF_STYLE(f,a)
 #endif

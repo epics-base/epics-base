@@ -145,9 +145,7 @@ void dbLockSetGblLock(void)
 
 void dbLockSetGblUnlock(void)
 {
-    threadLockContextSwitch();
     changingLockSets = FALSE;
-    threadUnlockContextSwitch();
     semMutexGive(globalLock);
     return;
 }

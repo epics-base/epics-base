@@ -1,0 +1,15 @@
+#!/bin/sh
+#
+#
+
+if [ $# -ne 1 ]
+then
+	echo "USAGE:"
+	echo "$0 dirname"
+	echo 'Function: if dirname does not exist, create it.'
+	exit 2
+fi
+
+DIR=$1
+
+test -d ${DIR} || mkdir ${DIR}

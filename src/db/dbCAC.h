@@ -125,6 +125,8 @@ private:
 
     void lock () const;
     void unlock () const;
+    void lockOutstandingIO () const;
+    void unlockOutstandingIO () const;
 
     friend dbSubscriptionIO::dbSubscriptionIO ( dbChannelIO &chanIO, cacNotify &, unsigned type, unsigned long count );
     friend dbSubscriptionIO::~dbSubscriptionIO ();

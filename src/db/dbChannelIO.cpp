@@ -178,4 +178,11 @@ int dbChannelIO::subscribe ( unsigned type, unsigned long count,
     return status;
 }
 
+void dbChannelIO::lockOutstandingIO () const
+{
+}
+
+void dbChannelIO::unlockOutstandingIO () const
+{
+}
 

@@ -1,8 +1,0 @@
-registerRecordDeviceDriver.o: registerRecordDeviceDriver.cpp
-
-registerRecordDeviceDriver.cpp: $(DBDNAME:%=$(INSTALL_DBD)/%)
-	$(RM) registerRecordDeviceDriver.cpp
-	$(PERL) $(EPICS_BASE_HOST_BIN)/registerRecordDeviceDriver.pl $(DBDNAME:%=$(INSTALL_DBD)/%) > registerRecordDeviceDriver.cpp
-
-clean::
-	@$(RM) registerRecordDeviceDriver.cpp

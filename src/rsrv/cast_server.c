@@ -100,7 +100,7 @@ int cast_server(void)
     FAST int                status;
     int                     count=0;
     struct sockaddr_in      new_recv_addr;
-    int                     recv_addr_size;
+    osiSocklen_t            recv_addr_size;
     unsigned short          port;
     int                     nchars;
 
@@ -227,7 +227,7 @@ int cast_server(void)
                 status = bcmp(
                     (char *)&prsrv_cast_client->addr, 
                     (char *)&new_recv_addr, 
-                    recv_addr_size);
+                    (int) recv_addr_size);
                 if(status){ 	
                     /* 
                      * if the address is different 

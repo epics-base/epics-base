@@ -296,7 +296,7 @@ xRecvStatus casDGIntfIO::osdRecv(char *pBuf, bufSizeT size,
 	bufSizeT &actualSize, caNetAddr &fromOut)
 {
 	int status;
-	int addrSize;
+	osiSocklen_t addrSize;
 	struct sockaddr from;
 
 	if (this->sockState!=casOnLine) {

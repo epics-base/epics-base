@@ -101,7 +101,7 @@ void epicsShareAPI ca_repeater()
   	SOCKET sock;
 	struct sockaddr_in from;
   	struct sockaddr_in local;
-  	int from_size = sizeof from;
+  	osiSocklen_t from_size = sizeof from;
 	unsigned short port;
 	makeSocketReturn msr;
 

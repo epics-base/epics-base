@@ -48,6 +48,9 @@
 /*			kernels that support multicast			*/
 /*
  * $Log$
+ * Revision 1.84.4.1  1999/07/15 20:50:23  jhill
+ * fixed infinite loop when ENOBUFS returned by sendto()
+ *
  * Revision 1.85  1999/07/15 20:15:30  jhill
  * fixed infinite loop when ENOBUFS returned by sendto()
  *
@@ -1247,10 +1250,10 @@ LOCAL void ca_process_tcp(struct ioc_in_use *piiu)
  */
 LOCAL void udp_recv_msg(struct ioc_in_use *piiu)
 {
-  	int			status;
-  	int			reply_size;
-	struct udpmsglog	*pmsglog;
-	unsigned long		bytesAvailable;
+  	int status;
+  	osiSocklen_t reply_size;
+	struct udpmsglog *pmsglog;
+	unsigned long bytesAvailable;
 	
 	if(piiu->state!=iiu_connected){
 		return;

@@ -16,7 +16,11 @@
 #include <limits.h>
 #include <errno.h>
 #include <ctype.h>
-int dbTranslateEscape(char *to, const char *from)
+
+#define epicsExportSharedSymbols
+#include "epicsString.h"
+
+epicsShareFunc int epicsShareAPI dbTranslateEscape(char *to, const char *from)
 {
     const char *pfrom  = from;
     char       *pto = to;
@@ -80,4 +84,22 @@ int dbTranslateEscape(char *to, const char *from)
     }
     *pto = '\0'; /*NOTE that nto does not have to be incremented*/
     return(nto);
+}
+
+epicsShareFunc int epicsShareAPI epicsStrCaseCmp(
+    const char *s1, const char *s2, int n)
+{
+    size_t ind = 0;
+    int nexts1,nexts2;
+    
+    while(1) {
+        if(ind++ >= n) break;
+        nexts1 = toupper(*s1++);
+        nexts2 = toupper(*s2++);
+        if(nexts1==0) return( (nexts2==0) ? 0 : 1 );
+        if(nexts2==0) return(-1);
+        if(nexts1<nexts2) return(-1);
+        if(nexts1>nexts2) return(1);
+    }
+    return(0);
 }

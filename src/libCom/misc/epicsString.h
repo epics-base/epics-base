@@ -16,10 +16,15 @@
  * returns the length of the resultant string (may contain nulls)
 */
 
+#include <shareLib.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-int dbTranslateEscape(char *s,const char *ct);
+
+epicsShareFunc int epicsShareAPI dbTranslateEscape(char *s,const char *ct);
+epicsShareFunc int epicsShareAPI epicsStrCaseCmp(
+    const char *s1, const char *s2, int n);
 
 #ifdef __cplusplus
 }

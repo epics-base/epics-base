@@ -113,6 +113,7 @@
 
 #define epicsExportSharedSymbols
 #include	"postfix.h"
+#include	"postfixPvt.h"
 
 static double	local_random();
 

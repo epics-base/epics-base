@@ -102,6 +102,7 @@
 
 #define epicsExportSharedSymbols
 #include	"postfix.h"
+#include	"postfixPvt.h"
 
 
 /* declarations for postfix */

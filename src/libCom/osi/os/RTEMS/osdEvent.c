@@ -125,14 +125,22 @@ epicsEventWaitWithTimeout(epicsEventId id, double timeOut)
 {
     rtems_id sid = (rtems_id)id;
     rtems_status_code sc;
+    rtems_unsigned32 wait;
     rtems_interval delay;
     extern double rtemsTicksPerSecond_double;
     
     SEMSTAT(1)
-    delay = timeOut * rtemsTicksPerSecond_double;
-    if (delay == 0)
-        delay = 1;
-    sc = rtems_semaphore_obtain (sid, RTEMS_WAIT, delay);
+    if (timeOut <= 0.0) {
+        wait = RTEMS_NO_WAIT;
+        delay = 0;
+    }
+    else {
+        wait = RTEMS_WAIT;
+        delay = timeOut * rtemsTicksPerSecond_double;
+        if (delay == 0)
+            delay++;
+    }
+    sc = rtems_semaphore_obtain (sid, wait, delay);
     if (sc == RTEMS_SUCCESSFUL)
         return epicsEventWaitOK;
     else if (sc == RTEMS_TIMEOUT)

@@ -416,8 +416,8 @@ void tcpRecvThread::run ()
     }
 
     // Although this is redundant in certain situations it is
-    // required in other because the receive thread must hang
-    // around until it receives its blocking socket call interrupt 
+    // required because the receive thread must hang around 
+    // until it receives its blocking socket call interrupt 
     // signal.
     this->iiu.cacRef.initiateAbortShutdown ( this->iiu );
 }

@@ -19,7 +19,6 @@
 
 #include "epicsMutex.h"
 #include "epicsEvent.h"
-#include "osiThread.h"
 #include "errlog.h"
 
 #define RTEMS_FAST_MUTEX

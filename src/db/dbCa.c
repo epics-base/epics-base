@@ -33,7 +33,7 @@ of this distribution.
 #include "dbDefs.h"
 #include "epicsMutex.h"
 #include "epicsEvent.h"
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "tsStamp.h"
 #include "errlog.h"
 #include "taskwd.h"
@@ -85,8 +85,8 @@ void epicsShareAPI dbCaLinkInit(void)
 	ellInit(&caList);
 	caListSem = epicsMutexMustCreate();
 	caWakeupSem = epicsEventMustCreate(epicsEventEmpty);
-	threadCreate("dbCaLink", threadPriorityMedium,
-	    threadGetStackSize(threadStackBig), (THREADFUNC) dbCaTask,0);
+	epicsThreadCreate("dbCaLink", epicsThreadPriorityMedium,
+	    epicsThreadGetStackSize(epicsThreadStackBig), (EPICSTHREADFUNC) dbCaTask,0);
 }
 
 void epicsShareAPI dbCaAddLink( struct link *plink)
@@ -627,13 +627,13 @@ void dbCaTask()
     short	link_action;
     int		status;
 
-    taskwdInsert(threadGetIdSelf(),NULL,NULL);
+    taskwdInsert(epicsThreadGetIdSelf(),NULL,NULL);
     SEVCHK(ca_context_create(enablePreemption),
         "dbCaTask calling ca_context_create");
     SEVCHK(ca_add_exception_event(exceptionCallback,NULL),
 	"ca_add_exception_event");
     /*Dont do anything until iocInit initializes database*/
-    while(!interruptAccept) threadSleep(.1);
+    while(!interruptAccept) epicsThreadSleep(.1);
     /* channel access event loop */
     while (TRUE){
 	epicsEventMustWait(caWakeupSem);

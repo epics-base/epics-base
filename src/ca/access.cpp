@@ -27,16 +27,16 @@
 #include "oldAccess.h"
 #include "cac_IL.h"
 
-threadPrivateId caClientContextId;
+epicsThreadPrivateId caClientContextId;
 
-threadPrivateId cacRecursionLock;
+epicsThreadPrivateId cacRecursionLock;
 
-static threadOnceId caClientContextIdOnce = OSITHREAD_ONCE_INIT;
+static epicsThreadOnceId caClientContextIdOnce = EPICS_THREAD_ONCE_INIT;
 
 extern "C" void ca_client_exit_handler ()
 {
     if ( caClientContextId ) {
-        threadPrivateDelete ( caClientContextId );
+        epicsThreadPrivateDelete ( caClientContextId );
         caClientContextId = 0;
     }
 }
@@ -44,7 +44,7 @@ extern "C" void ca_client_exit_handler ()
 // runs once only for each process
 extern "C" void ca_init_client_context ( void * )
 {
-    caClientContextId = threadPrivateCreate ();
+    caClientContextId = epicsThreadPrivateCreate ();
     if ( caClientContextId ) {
         atexit ( ca_client_exit_handler );
     }
@@ -58,20 +58,20 @@ int fetchClientContext ( cac **ppcac )
     int status;
 
     if ( caClientContextId == 0 ) {
-        threadOnce ( &caClientContextIdOnce, ca_init_client_context, 0 );
+        epicsThreadOnce ( &caClientContextIdOnce, ca_init_client_context, 0 );
         if ( caClientContextId == 0 ) {
             return ECA_ALLOCMEM;
         }
     }
 
-    *ppcac = ( cac * ) threadPrivateGet ( caClientContextId );
+    *ppcac = ( cac * ) epicsThreadPrivateGet ( caClientContextId );
     if ( *ppcac ) {
         status = ECA_NORMAL;
     }
     else {
         status = ca_task_initialize ();
         if ( status == ECA_NORMAL ) {
-            *ppcac = (cac *) threadPrivateGet ( caClientContextId );
+            *ppcac = (cac *) epicsThreadPrivateGet ( caClientContextId );
             if ( ! *ppcac ) {
                 status = ECA_INTERNAL;
             }
@@ -119,13 +119,13 @@ extern "C" epicsShareFunc int epicsShareAPI ca_context_create ( int preemptiveCa
 {
     cac *pcac;
 
-    threadOnce ( &caClientContextIdOnce, ca_init_client_context, 0);
+    epicsThreadOnce ( &caClientContextIdOnce, ca_init_client_context, 0);
 
     if ( caClientContextId == 0 ) {
         return ECA_ALLOCMEM;
     }
 
-    pcac = (cac *) threadPrivateGet ( caClientContextId );
+    pcac = (cac *) epicsThreadPrivateGet ( caClientContextId );
 	if ( pcac ) {
 		return ECA_NORMAL;
 	}
@@ -135,7 +135,7 @@ extern "C" epicsShareFunc int epicsShareAPI ca_context_create ( int preemptiveCa
 		return ECA_ALLOCMEM;
 	}
 
-    threadPrivateSet ( caClientContextId, (void *) pcac );
+    epicsThreadPrivateSet ( caClientContextId, (void *) pcac );
 
     return ECA_NORMAL;
 }
@@ -185,10 +185,10 @@ extern "C" epicsShareFunc int epicsShareAPI ca_context_destroy ()
     cac   *pcac;
 
     if ( caClientContextId != NULL ) {
-        pcac = (cac *) threadPrivateGet ( caClientContextId );
+        pcac = (cac *) epicsThreadPrivateGet ( caClientContextId );
         if ( pcac ) {
             delete pcac;
-            threadPrivateSet ( caClientContextId, 0 );
+            epicsThreadPrivateSet ( caClientContextId, 0 );
         }
     }
 
@@ -553,7 +553,7 @@ extern "C" void epicsShareAPI ca_signal_formated ( long ca_status, const char *p
     };
 
     if ( caClientContextId ) {
-        pcac = (cac *) threadPrivateGet ( caClientContextId );
+        pcac = (cac *) epicsThreadPrivateGet ( caClientContextId );
     }
     else {
         pcac = NULL;
@@ -688,7 +688,7 @@ int ca_printf ( const char *pformat, ... )
 int ca_vPrintf ( const char *pformat, va_list args )
 {
     if ( caClientContextId ) {
-        cac *pcac = (cac *) threadPrivateGet ( caClientContextId );
+        cac *pcac = (cac *) epicsThreadPrivateGet ( caClientContextId );
         if ( pcac ) {
             return pcac->vPrintf ( pformat, args );
         }
@@ -790,7 +790,7 @@ extern "C" unsigned epicsShareAPI ca_get_ioc_connection_count ()
     return pcac->connectionCount ();
 }
 
-extern "C" epicsShareFunc int epicsShareAPI ca_channel_status ( threadId /* tid */ )
+extern "C" epicsShareFunc int epicsShareAPI ca_channel_status ( epicsThreadId /* tid */ )
 {
     printf ("new OSI API does not allow peeking at thread private storage of another thread\n");
     printf ("please call \"ca_client_status ( unsigned level )\" from the subsystem specific diagnostic code.\n");
@@ -820,7 +820,7 @@ extern "C" epicsShareFunc int epicsShareAPI ca_client_status ( unsigned level )
 extern "C" epicsShareFunc int epicsShareAPI ca_current_context (caClientCtx *pCurrentContext)
 {
     if ( caClientContextId ) {
-        void *pCtx = threadPrivateGet ( caClientContextId );
+        void *pCtx = epicsThreadPrivateGet ( caClientContextId );
         if (pCtx) {
             *pCurrentContext = pCtx;
             return ECA_NORMAL;
@@ -844,11 +844,11 @@ extern "C" epicsShareFunc int epicsShareAPI ca_attach_context (caClientCtx conte
 {
     cac *pcac;
 
-    pcac = (cac *) threadPrivateGet ( caClientContextId );
+    pcac = (cac *) epicsThreadPrivateGet ( caClientContextId );
     if ( pcac && context != 0 ) {
         return ECA_ISATTACHED;
     }
-    threadPrivateSet ( caClientContextId, context );
+    epicsThreadPrivateSet ( caClientContextId, context );
     return ECA_NORMAL;
 }
 

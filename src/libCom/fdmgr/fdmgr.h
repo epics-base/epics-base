@@ -45,7 +45,7 @@
 #include "ellLib.h"
 #include "bucketLib.h"
 #include "osiSock.h"
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "shareLib.h"
 
 #ifdef __cplusplus

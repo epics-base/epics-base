@@ -14,7 +14,7 @@ of this distribution.
 #include <string.h>
 #include <stdio.h>
 
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "osiTimer.h"
 #include "errlog.h"
 #include "tsStamp.h"
@@ -42,8 +42,7 @@ void timerTest(void)
     TS_STAMP start;
     int i;
 
-    threadInit ();
-    timerQueue = osiTimerQueueCreate(threadPriorityLow);
+    timerQueue = osiTimerQueueCreate(epicsThreadPriorityLow);
     for(i=0; i<ntimers ; i++) {
         timer[i] = calloc(1,sizeof(myPvt));
         timer[i]->timer = osiTimerCreate(&jumpTable,timerQueue,(void *)timer[i]);
@@ -52,7 +51,7 @@ void timerTest(void)
         timer[i]->requestedDiff = (double)i;
         osiTimerArm(timer[i]->timer,(double)i);
     }
-    threadSleep((double)(ntimers + 2));
+    epicsThreadSleep((double)(ntimers + 2));
     printf("timerTest returning\n");
 }
 

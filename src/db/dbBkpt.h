@@ -32,6 +32,10 @@
 #ifndef INCdbBkptsh
 #define INCdbBkptsh 1
 
+#include "ellLib.h"
+#include "epicsEvent.h"
+#include "epicsThread.h"
+#include "tsStamp.h"
 #include "shareLib.h"
 #ifdef __cplusplus
 extern "C" {
@@ -73,7 +77,7 @@ struct LS_LIST {
    ELLLIST bp_list;  /* list of records containing breakpoints in a lockset */
    ELLLIST ep_queue; /* queue of entrypoints found so far */
    epicsEventId ex_sem; /* semaphore for execution queue */
-   threadId taskid;    /* saved taskid for the task in stepping mode */
+   epicsThreadId taskid;    /* saved taskid for the task in stepping mode */
    int step;      /* one if currently "stepping," else zero */
    unsigned long l_num;   /* lockset number */
 };

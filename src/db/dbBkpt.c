@@ -14,6 +14,9 @@ of this distribution.
 /* Modification Log:
  * -----------------
  *  $Log$
+ *  Revision 1.25  2001/01/12 00:27:16  jhill
+ *  fixed bugs introduced by APS's osi => epics name changes
+ *
  *  Revision 1.24  2001/01/11 16:11:21  mrk
  *  replace osiSem with epicsMutex and/or epicsEvent
  *
@@ -33,7 +36,7 @@ of this distribution.
  *  changes for creating win dlls
  *
  *  Revision 1.18  2000/02/26 23:45:22  norume
- *  Reflect routine name change from threadSuspend() to threadSuspendSelf().
+ *  Reflect routine name change from threadSuspend() to epicsThreadSuspendSelf().
  *
  *  Revision 1.17  2000/02/25 22:26:38  mrk
  *  more changes for creating dlls
@@ -107,7 +110,7 @@ of this distribution.
 #include <string.h>
 
 #include "dbDefs.h"
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "epicsMutex.h"
 #include "epicsEvent.h"
 #include "tsStamp.h"
@@ -426,9 +429,9 @@ long epicsShareAPI dbb(const char *record_name)
     /*
      *  Spawn continuation task
      */
-     pnode->taskid = threadCreate("bkptCont",threadPriorityScanLow-1,
-         threadGetStackSize(threadStackBig),
-         (THREADFUNC)dbBkptCont,precord);
+     pnode->taskid = epicsThreadCreate("bkptCont",epicsThreadPriorityScanLow-1,
+         epicsThreadGetStackSize(epicsThreadStackBig),
+         (EPICSTHREADFUNC)dbBkptCont,precord);
      if (pnode->taskid == 0) {
         printf("   BKPT> Cannot spawn task to process record\n");
         pnode->taskid = 0;
@@ -567,7 +570,7 @@ long epicsShareAPI dbc(const char *record_name)
   *    for a record with a breakpoint.  This occurs
   *    because stepping mode has been switched off.
   */
-  threadResume(pnode->taskid);
+  epicsThreadResume(pnode->taskid);
   epicsMutexUnlock(bkpt_stack_sem);
   return(0);
 }
@@ -596,7 +599,7 @@ long epicsShareAPI dbs(const char *record_name)
 
   last_lset = pnode->l_num;
 
-  threadResume(pnode->taskid);
+  epicsThreadResume(pnode->taskid);
   epicsMutexUnlock(bkpt_stack_sem);
   return(0);
 }
@@ -758,7 +761,7 @@ int epicsShareAPI dbBkpt(dbCommon *precord)
   *    source, queue its execution, but dump out of dbProcess without
   *    calling record support. 
   */
-  if (pnode->taskid && (threadGetIdSelf() != pnode->taskid)) {
+  if (pnode->taskid && (epicsThreadGetIdSelf() != pnode->taskid)) {
     /* CONTINUE TASK CANNOT ENTER HERE */
 
     /*
@@ -855,7 +858,7 @@ int epicsShareAPI dbBkpt(dbCommon *precord)
       */
       epicsMutexUnlock(bkpt_stack_sem);
       dbScanUnlock(precord);
-      threadSuspendSelf();
+      epicsThreadSuspendSelf();
       dbScanLock(precord);
       epicsMutexMustLock(bkpt_stack_sem);
    }

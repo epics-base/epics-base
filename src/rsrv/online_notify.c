@@ -86,7 +86,7 @@ int rsrv_online_notify_task()
     
     casSufficentSpaceInPool = osiSufficentSpaceInPool ();
 
-    taskwdInsert (threadGetIdSelf(),NULL,NULL);
+    taskwdInsert (epicsThreadGetIdSelf(),NULL,NULL);
     
     longStatus = envGetDoubleConfigParam (
                 &EPICS_CA_BEACON_PERIOD, &maxPeriod);
@@ -108,14 +108,14 @@ int rsrv_online_notify_task()
      */
     if ( (sock = socket (AF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET) {
         errlogPrintf ("CAS: online socket creation error\n");
-        threadSuspendSelf ();
+        epicsThreadSuspendSelf ();
     }
     
     status = setsockopt (sock, SOL_SOCKET, SO_BROADCAST, 
                 (char *)&true, sizeof(true));
     if (status<0) {
         errlogPrintf ("CAS: online socket set up error\n");
-        threadSuspendSelf ();
+        epicsThreadSuspendSelf ();
     }
     
 #if 0
@@ -199,7 +199,7 @@ int rsrv_online_notify_task()
             pNode = (osiSockAddrNode *) pNode->node.next;
         }
 
-        threadSleep(delay);
+        epicsThreadSleep(delay);
         if (delay<maxdelay) {
             delay *= 2.0;
             if (delay>maxdelay) {

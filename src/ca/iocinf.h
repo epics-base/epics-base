@@ -45,7 +45,7 @@
 #include "tsDLList.h"
 #include "osiSock.h"
 #include "epicsEvent.h"
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "osiTimer.h"
 #include "epicsMutex.h"
 #include "epicsEvent.h"
@@ -486,7 +486,7 @@ static const unsigned contiguousMsgCountWhichTriggersFlowControl = 10u;
 
 enum iiu_conn_state {iiu_connecting, iiu_connected, iiu_disconnected};
 
-extern threadPrivateId cacRecursionLock;
+extern epicsThreadPrivateId cacRecursionLock;
 
 class netiiu {
 public:
@@ -610,7 +610,7 @@ private:
     char xmitBuf [MAX_UDP_SEND];   
     char recvBuf [MAX_UDP_RECV];
     ELLLIST dest;
-    threadId recvThreadId;
+    epicsThreadId recvThreadId;
     epicsEventId recvThreadExitSignal;
     unsigned nBytesInXmitBuf;
     SOCKET sock;
@@ -900,16 +900,17 @@ private:
     int code;
 };
 
-class recvProcessThread : public osiThread {
+class recvProcessThread : public epicsThreadRunable {
 public:
     recvProcessThread ( class cac *pcacIn );
     ~recvProcessThread ();
-    void entryPoint ();
+    void run ();
     void signalShutDown ();
     void enable ();
     void disable ();
     void signalActivity ();
     void show ( unsigned level ) const;
+    epicsThread thread;
 private:
     //
     // The additional complexity associated with
@@ -929,13 +930,14 @@ private:
     bool shutDown;
 };
 
-class sendProcessThread : public osiThread {
+class sendProcessThread : public epicsThreadRunable {
 public:
     sendProcessThread ( class cac &cacIn );
     ~sendProcessThread ();
-    void entryPoint ();
+    void run ();
     void signalShutDown ();
     void signalActivity ();
+    epicsThread thread;
 private:
     epicsEvent sendActivity;
     class cac &cacRef;

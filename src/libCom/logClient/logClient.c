@@ -46,7 +46,7 @@
 #include "dbDefs.h"
 #include "epicsEvent.h"
 #include "epicsMutex.h"
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "osiSock.h"
 #include "epicsAssert.h"
 #include "errlog.h"
@@ -81,7 +81,7 @@ typedef struct {
 LOCAL epicsMutexId logClientGlobalMutex;  
 LOCAL epicsEventId logClientGlobalSignal;
 LOCAL ELLLIST logClientList;
-LOCAL threadId logClientThreadId;
+LOCAL epicsThreadId logClientThreadId;
 LOCAL logClient *pLogClientDefaultClient;
 
 LOCAL const double      LOG_RESTART_DELAY = 5.0; /* sec */
@@ -416,7 +416,7 @@ LOCAL void logClientConnect (logClient *pClient)
     pClient->file = fdopen (pClient->sock, "a");
     if (!pClient->file) {
         logClientReset (pClient);
-        threadSleep (10.0);
+        epicsThreadSleep (10.0);
     }
 
     pClient->connectReset = 0u;
@@ -513,7 +513,7 @@ LOCAL void logClientGlobalInit ()
         return;
     }
     
-    logClientThreadId = threadCreate ("logRestart", threadPriorityLow, 
+    logClientThreadId = epicsThreadCreate ("logRestart", epicsThreadPriorityLow, 
                             logRestartStackSize, logRestart, 0);
     if (logClientThreadId==NULL) {
         epicsMutexDestroy (logClientGlobalMutex);
@@ -590,7 +590,7 @@ epicsShareFunc logClientId epicsShareAPI logClientInit ()
 
         epicsEventSignal (logClientGlobalSignal);
 
-        threadSleep (50e-3);
+        epicsThreadSleep (50e-3);
 
         connectTries++;
         if (connectTries>=maxConnectTries) {

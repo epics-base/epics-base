@@ -32,7 +32,7 @@
 #define osiTimerHInclude
 
 #include "shareLib.h" /* reset share lib defines */
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "tsStamp.h"
 
 #ifdef __cplusplus
@@ -183,7 +183,7 @@ public:
         mtsCreateManagerThread // manager thread expires timers asnychronously
     };
     epicsShareFunc osiTimerQueue ( managerThreadSelect mts, 
-        unsigned managerThreadPriority = threadPriorityMin );
+        unsigned managerThreadPriority = epicsThreadPriorityMin );
     epicsShareFunc virtual ~osiTimerQueue();
     epicsShareFunc double delayToFirstExpire () const; /* returns seconds */
     epicsShareFunc void process ();
@@ -235,7 +235,7 @@ typedef struct osiTimerJumpTable {
 }osiTimerJumpTable;
 
 typedef void * osiTimerQueueId;
-/* see osiThread.h for the range of priorities allowed here */
+/* see epicsThread.h for the range of priorities allowed here */
 epicsShareFunc osiTimerQueueId epicsShareAPI osiTimerQueueCreate (unsigned managerThreadPriority);
 
 typedef void * osiTimerId;

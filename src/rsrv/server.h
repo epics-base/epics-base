@@ -34,7 +34,7 @@
 #   error suspect that libCom is being exported from rsrv?
 #endif /* ifdef epicsExportSharedSymbols */
 
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "epicsMutex.h"
 #include "epicsEvent.h"
 #include "bucketLib.h"
@@ -109,7 +109,7 @@ struct client {
   epicsEventId           blockSem; /* used whenever the client blocks */
   SOCKET                sock;
   int                   proto;
-  threadId              tid;
+  epicsThreadId         tid;
   unsigned              minor_version_number;
   char                  disconnect; /* disconnect detected */
 };

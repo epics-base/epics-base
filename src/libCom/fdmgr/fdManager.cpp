@@ -49,7 +49,7 @@
 #define epicsExportSharedSymbols
 #include "epicsAssert.h"
 #include "osiTimer.h"
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "tsMinMax.h"
 #include "fdManager.h"
 #include "locationException.h"
@@ -183,7 +183,7 @@ epicsShareFunc void fdManager::process (double delay)
          * windows sockets and UNIX sockets implementation
          * of select()
          */
-        if (minDelay>0.0) threadSleep(minDelay);
+        if (minDelay>0.0) epicsThreadSleep(minDelay);
         status = 0;
     }
     else {

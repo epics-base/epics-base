@@ -23,7 +23,7 @@
 #include <rtems/rtems_bsdnet.h>
 #include <rtems/tftp.h>
 
-#include <osiThread.h>
+#include <epicsThread.h>
 #include <logClient.h>
 #include <ioccrf.h>
 #include <dbStaticLib.h>
@@ -311,7 +311,7 @@ Init (rtems_task_argument ignored)
     /*
      * Do EPICS initialization
      */
-    threadInit ();
+    epicsThreadInit ();
 
     /*
      * Run the EPICS startup script
@@ -323,7 +323,7 @@ Init (rtems_task_argument ignored)
     /*
      * Everything's running!
      */
-    threadSleep (2.0);
+    epicsThreadSleep (2.0);
     ioccrf (NULL);
     LogFatal ("Console command interpreter terminated");
 }

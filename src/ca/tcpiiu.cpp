@@ -303,15 +303,15 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
         epicsAutoMutex autoMutex ( piiu->mutex );
         if ( piiu->state == iiu_connected ) {
             unsigned priorityOfSend;
-            threadBoolStatus tbs;
-            threadId tid;
+            epicsThreadBooleanStatus tbs;
+            epicsThreadId tid;
 
-            tbs  = threadLowestPriorityLevelAbove ( piiu->pCAC ()->getInitializingThreadsPriority (), &priorityOfSend );
-            if ( tbs != tbsSuccess ) {
+            tbs  = epicsThreadLowestPriorityLevelAbove ( piiu->pCAC ()->getInitializingThreadsPriority (), &priorityOfSend );
+            if ( tbs != epicsThreadBooleanStatusSuccess ) {
                 priorityOfSend = piiu->pCAC ()->getInitializingThreadsPriority ();
             }
-            tid = threadCreate ( "CAC-TCP-send", priorityOfSend,
-                    threadGetStackSize ( threadStackMedium ), cacSendThreadTCP, piiu );
+            tid = epicsThreadCreate ( "CAC-TCP-send", priorityOfSend,
+                    epicsThreadGetStackSize ( epicsThreadStackMedium ), cacSendThreadTCP, piiu );
             if ( ! tid ) {
                 epicsEventSignal ( piiu->recvThreadExitSignal );
                 epicsEventSignal ( piiu->sendThreadExitSignal );
@@ -353,7 +353,7 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
             }
             else {
                 // no way to be informed when memory is available
-                threadSleep ( 0.5 );
+                epicsThreadSleep ( 0.5 );
             }
         }
     }
@@ -429,8 +429,8 @@ bool tcpiiu::initiateConnect ( const osiSockAddr &addrIn, unsigned minorVersion,
                               class bhe &bhe, ipAddrToAsciiEngine &engineIn )
 {
     unsigned priorityOfRecv;
-    threadBoolStatus tbs;
-    threadId tid;
+    epicsThreadBooleanStatus tbs;
+    epicsThreadId tid;
     int status;
     int flag;
 
@@ -511,13 +511,13 @@ bool tcpiiu::initiateConnect ( const osiSockAddr &addrIn, unsigned minorVersion,
 
     memset ( (void *) &this->curMsg, '\0', sizeof ( this->curMsg ) );
 
-    tbs  = threadHighestPriorityLevelBelow ( this->pCAC ()->getInitializingThreadsPriority (), &priorityOfRecv );
-    if ( tbs != tbsSuccess ) {
+    tbs  = epicsThreadHighestPriorityLevelBelow ( this->pCAC ()->getInitializingThreadsPriority (), &priorityOfRecv );
+    if ( tbs != epicsThreadBooleanStatusSuccess ) {
         priorityOfRecv = this->pCAC ()->getInitializingThreadsPriority ();
     }
 
-    tid = threadCreate ("CAC-TCP-recv", priorityOfRecv,
-            threadGetStackSize (threadStackMedium), cacRecvThreadTCP, this);
+    tid = epicsThreadCreate ("CAC-TCP-recv", priorityOfRecv,
+            epicsThreadGetStackSize (epicsThreadStackMedium), cacRecvThreadTCP, this);
     if ( tid == 0 ) {
         ca_printf ("CA: unable to create CA client receive thread\n");
         socket_close ( this->sock );

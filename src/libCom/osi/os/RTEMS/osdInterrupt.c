@@ -11,7 +11,7 @@
 #include <rtems/error.h>
 #include "errlog.h"
 #include "osiInterrupt.h"
-#include "osiThread.h"
+#include "epicsThread.h"
 
 #define INTERRUPT_CONTEXT_MESSAGE_QUEUE_COUNT    100
 
@@ -69,7 +69,7 @@ InterruptContextMessageDaemon (void *unused)
         &interruptContextMessageQueue);
     if (sc != RTEMS_SUCCESSFUL) {
         errlogPrintf ("Can't create interrupt context message queue: %s\n", rtems_status_text (sc));
-        threadSuspendSelf ();
+        epicsThreadSuspendSelf ();
     }
     for (;;) {
         sc = rtems_message_queue_receive (interruptContextMessageQueue,
@@ -79,7 +79,7 @@ InterruptContextMessageDaemon (void *unused)
             RTEMS_NO_TIMEOUT);
         if (sc != RTEMS_SUCCESSFUL) {
             errlogPrintf ("Can't receive message from interrupt context: %s\n", rtems_status_text (sc));
-	    threadSuspendSelf ();
+	    epicsThreadSuspendSelf ();
         }
         if (size == sizeof message)
             syslog (LOG_ERR, "%s", message);

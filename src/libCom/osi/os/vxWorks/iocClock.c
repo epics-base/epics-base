@@ -24,7 +24,7 @@ of this distribution.
 #include "epicsTypes.h"
 #include "cantProceed.h"
 #include "errlog.h"
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "epicsMutex.h"
 #include "tsStamp.h"
 #include "iocClock.h"
@@ -60,7 +60,7 @@ static void syncNTP(void)
 
     while(1) {
         double diffTime;
-        if(!firstTime)threadSleep(iocClockSyncRate);
+        if(!firstTime)epicsThreadSleep(iocClockSyncRate);
         firstTime = 0;
         status = sntpcTimeGet(piocClockPvt->pserverAddr,
             piocClockPvt->tickRate,&Currtime);
@@ -111,9 +111,10 @@ void iocClockInit()
         errlogPrintf("No NTP server is defined. Clock does not work\n");
         return;
     }
-    threadCreate("syncNTP",
-        threadPriorityHigh,threadGetStackSize(threadStackSmall),
-        (THREADFUNC)syncNTP,0);
+    epicsThreadCreate("syncNTP",
+        epicsThreadPriorityHigh,
+        epicsThreadGetStackSize(epicsThreadStackSmall),
+        (EPICSTHREADFUNC)syncNTP,0);
     return;
 }
 

@@ -39,13 +39,17 @@
 #include "locationException.h"
 #include "errlog.h"
 
-class osiTimerThread : public osiThread {
+class osiTimerThread : public epicsThreadRunable {
 public:
     osiTimerThread (osiTimerQueue &, unsigned priority);
+    virtual ~osiTimerThread();
 private:
+    friend class osiTimer;
+    friend class osiTimerQueue;
+    epicsThread thread;
     osiTimerQueue &queue;
 
-    virtual void entryPoint ();
+    virtual void run();
 };
 
 //
@@ -460,7 +464,7 @@ void osiTimerQueue::terminateManagerThread ()
         
         this->rescheduleEvent.signal ();
 
-        while ( ! this->exitFlag && ! this->pMgrThread->isSuspended () ) {
+        while ( ! this->exitFlag && ! this->pMgrThread->thread.isSuspended () ) {
             this->exitEvent.wait ( 1.0 );
         }
 
@@ -480,16 +484,19 @@ void osiTimerQueue::terminateManagerThread ()
 // osiTimerThread::osiTimerThread ()
 //
 osiTimerThread::osiTimerThread (osiTimerQueue &queueIn, unsigned priority) :
-    osiThread ("osiTimerQueue", threadGetStackSize (threadStackMedium), priority), 
+    thread( *this, "osiTimerQueue",
+        epicsThreadGetStackSize (epicsThreadStackMedium), priority) , 
     queue (queueIn)
 {
-    this->start ();
+    this->thread.start ();
 }
 
+osiTimerThread::~osiTimerThread() {};
+
 //
-// osiTimerThread::entryPoint ()
+// osiTimerThread::run ()
 //
-void osiTimerThread::entryPoint ()
+void osiTimerThread::run ()
 {
     queue.exitFlag = false;
     while ( ! queue.terminateFlag ) {

@@ -13,8 +13,6 @@ of this distribution.
 #include <ctype.h>
 
 #include "ellLib.h"
-#include "osiThread.h"
-#include "epicsEvent.h"
 #include "tsStamp.h"
 #include "errlog.h"
 #include "alarm.h"

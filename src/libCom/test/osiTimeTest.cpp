@@ -3,7 +3,7 @@
 #include <math.h>
 
 #include "osiTime.h"
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "errlog.h"
 
 extern "C" {

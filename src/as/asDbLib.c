@@ -25,7 +25,7 @@ of this distribution.
 
 #include "dbDefs.h"
 #include "cantProceed.h"
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "errlog.h"
 #include "taskwd.h"
 #include "alarm.h"
@@ -46,7 +46,7 @@ of this distribution.
 
 static char	*pacf=NULL;
 static char	*psubstitutions=NULL;
-static threadId	asInitTheadId=0;
+static epicsThreadId	asInitTheadId=0;
 static int	firstTime = TRUE;
 
 static long asDbAddRecords(void)
@@ -123,10 +123,10 @@ static long asInitCommon(void)
     long	status;
     int		asWasActive = asActive;
     int		wasFirstTime = firstTime;
-    static threadOnceId asInitCommonOnceFlag = OSITHREAD_ONCE_INIT;
+    static epicsThreadOnceId asInitCommonOnceFlag = EPICS_THREAD_ONCE_INIT;
 
     
-    threadOnce(&asInitCommonOnceFlag,asInitCommonOnce,(void *)&firstTime);
+    epicsThreadOnce(&asInitCommonOnceFlag,asInitCommonOnce,(void *)&firstTime);
     if(wasFirstTime) {
         if(!pacf) return(0); /*access security will NEVER be turned on*/
     } else {
@@ -167,9 +167,9 @@ static void asInitTask(ASDBCALLBACK *pcallback)
 {
     long status;
 
-    taskwdInsert(threadGetIdSelf(),(TASKWDFUNCPRR)wdCallback,(void *)pcallback);
+    taskwdInsert(epicsThreadGetIdSelf(),(TASKWDFUNCPRR)wdCallback,(void *)pcallback);
     status = asInitCommon();
-    taskwdRemove(threadGetIdSelf());
+    taskwdRemove(epicsThreadGetIdSelf());
     asInitTheadId = 0;
     if(pcallback) {
 	pcallback->status = status;
@@ -188,12 +188,12 @@ int epicsShareAPI asInitAsyn(ASDBCALLBACK *pcallback)
 	}
 	return(-1);
     }
-    asInitTheadId = threadCreate("asInitTask",
-        (threadPriorityChannelAccessServer + 9),
-        threadGetStackSize(threadStackBig),
-        (THREADFUNC)asInitTask,(void *)pcallback);
+    asInitTheadId = epicsThreadCreate("asInitTask",
+        (epicsThreadPriorityChannelAccessServer + 9),
+        epicsThreadGetStackSize(epicsThreadStackBig),
+        (EPICSTHREADFUNC)asInitTask,(void *)pcallback);
     if(asInitTheadId==0) {
-	errMessage(0,"asInit: threadCreate Error");
+	errMessage(0,"asInit: epicsThreadCreate Error");
 	if(pcallback) {
 	    pcallback->status = S_asLib_InitFailed;
 	    callbackRequest(&pcallback->callback);

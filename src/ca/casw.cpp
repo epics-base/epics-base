@@ -68,7 +68,7 @@ int main ( int argc, char **argv )
     unsigned attemptNumber = 0u;
     while ( true ) {
         caRepeaterRegistrationMessage ( sock, repeaterPort, attemptNumber );
-        threadSleep ( 0.1 );
+        epicsThreadSleep ( 0.1 );
         addrSize = ( osiSocklen_t ) sizeof ( addr );
         status = recvfrom ( sock, buf, sizeof ( buf ), 0,
                             &addr.sa, &addrSize );

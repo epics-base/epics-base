@@ -36,7 +36,7 @@
 #include <stdlib.h>
 
 #define epicsExportSharedSymbols
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "epicsEvent.h"
 #include "epicsMutex.h"
 #include "osiSock.h"
@@ -53,9 +53,9 @@ static void createInfoMutex (void *unused)
 }
 static void lockInfo (void)
 {
-    static threadOnceId infoMutexOnceFlag = OSITHREAD_ONCE_INIT;
+    static epicsThreadOnceId infoMutexOnceFlag = EPICS_THREAD_ONCE_INIT;
 
-    threadOnce (&infoMutexOnceFlag, createInfoMutex, NULL);
+    epicsThreadOnce (&infoMutexOnceFlag, createInfoMutex, NULL);
 	epicsMutexMustLock (infoMutex);
 }
 static void unlockInfo (void)

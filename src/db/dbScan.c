@@ -55,7 +55,7 @@
 #include "epicsMutex.h"
 #include "epicsEvent.h"
 #include "osiInterrupt.h"
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "tsStamp.h"
 #include "cantProceed.h"
 #include "epicsRingPointer.h"
@@ -79,7 +79,7 @@
 int onceQueueSize = 1000;
 static epicsEventId onceSem;
 static epicsRingPointerId onceQ;
-static threadId onceTaskId;
+static epicsThreadId onceTaskId;
 
 /*all other scan types */
 typedef struct scan_list{
@@ -117,7 +117,7 @@ static io_scan_list *iosl_head[NUM_CALLBACK_PRIORITIES]={NULL,NULL,NULL};
 /* PERIODIC SCANNER */
 static int nPeriodic=0;
 static scan_list **papPeriodic; /* pointer to array of pointers*/
-static threadId *periodicTaskId; /*array of thread ids*/
+static epicsThreadId *periodicTaskId; /*array of thread ids*/
 
 /* Private routines */
 static void onceTask(void);
@@ -485,9 +485,9 @@ static void initOnce(void)
         cantProceed("dbScan: initOnce failed");
     }
     onceSem=epicsEventMustCreate(epicsEventEmpty);
-    onceTaskId = threadCreate("scanOnce",threadPriorityScanHigh,
-        threadGetStackSize(threadStackBig),
-        (THREADFUNC)onceTask,0);
+    onceTaskId = epicsThreadCreate("scanOnce",epicsThreadPriorityScanHigh,
+        epicsThreadGetStackSize(epicsThreadStackBig),
+        (EPICSTHREADFUNC)onceTask,0);
     taskwdInsert(onceTaskId,NULL,0L);
 }
 
@@ -506,7 +506,7 @@ static void periodicTask(void *arg)
         diff = tsStampDiffInSeconds(&end_time,&start_time);
 	delay = psl->rate - diff;
         delay = (delay<=0.0) ? .1 : delay;
-	threadSleep(delay);
+	epicsThreadSleep(delay);
         tsStampGetCurrent(&start_time);
     }
 }
@@ -548,11 +548,11 @@ static void spawnPeriodic(int ind)
     while(taskName[strlen(taskName)-1]=='0') taskName[strlen(taskName)-1] = 0;
     /*strip trailing . */
     if(taskName[strlen(taskName)-1]=='.') taskName[strlen(taskName)-1] = 0;
-    periodicTaskId[ind] = threadCreate(
+    periodicTaskId[ind] = epicsThreadCreate(
         taskName,
-        threadPriorityScanLow + ind,
-        threadGetStackSize(threadStackBig),
-        (THREADFUNC)periodicTask,
+        epicsThreadPriorityScanLow + ind,
+        epicsThreadGetStackSize(epicsThreadStackBig),
+        (EPICSTHREADFUNC)periodicTask,
         (void *)psl);
     taskwdInsert(periodicTaskId[ind],NULL,0L);
 }

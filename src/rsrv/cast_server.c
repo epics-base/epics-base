@@ -121,9 +121,9 @@ LOCAL void clean_addrq()
  */
 int cast_server(void)
 {
-    unsigned            priorityOfSelf = threadGetPrioritySelf ();
+    unsigned            priorityOfSelf = epicsThreadGetPrioritySelf ();
     unsigned            priorityOfBeacon;
-    threadBoolStatus    tbs;
+    epicsThreadBooleanStatus    tbs;
     struct sockaddr_in  sin;    
     int                 status;
     int                 count=0;
@@ -131,10 +131,10 @@ int cast_server(void)
     osiSocklen_t        recv_addr_size;
     unsigned short      port;
     int                 nchars;
-    threadId            tid;
+    epicsThreadId            tid;
     int                 flag;
 
-    taskwdInsert(threadGetIdSelf(),NULL,NULL);
+    taskwdInsert(epicsThreadGetIdSelf(),NULL,NULL);
 
     port = envGetInetPortConfigParam (&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
 
@@ -153,7 +153,7 @@ int cast_server(void)
 
     if ( ( IOC_cast_sock = socket (AF_INET, SOCK_DGRAM, 0) ) == INVALID_SOCKET ) {
         epicsPrintf ("CAS: cast socket creation error\n");
-        threadSuspendSelf ();
+        epicsThreadSuspendSelf ();
     }
 
     /*
@@ -203,7 +203,7 @@ int cast_server(void)
     if( bind(IOC_cast_sock, (struct sockaddr *)&sin, sizeof (sin)) < 0){
         epicsPrintf ("CAS: UDP server port bind error was \"%s\"\n", SOCKERRSTR ( SOCKERRNO ) );
         socket_close (IOC_cast_sock);
-        threadSuspendSelf ();
+        epicsThreadSuspendSelf ();
     }
 
     flag = 1;
@@ -216,14 +216,14 @@ int cast_server(void)
                 __FILE__, SOCKERRSTR (errnoCpy) );
     }
     
-    tbs  = threadHighestPriorityLevelBelow ( priorityOfSelf, &priorityOfBeacon );
-    if ( tbs != tbsSuccess ) {
+    tbs  = epicsThreadHighestPriorityLevelBelow ( priorityOfSelf, &priorityOfBeacon );
+    if ( tbs != epicsThreadBooleanStatusSuccess ) {
         priorityOfBeacon = priorityOfSelf;
     }
 
-    tid = threadCreate ( "CAS-beacon", priorityOfBeacon,
-        threadGetStackSize (threadStackSmall),
-        (THREADFUNC) rsrv_online_notify_task, 0 );
+    tid = epicsThreadCreate ( "CAS-beacon", priorityOfBeacon,
+        epicsThreadGetStackSize (epicsThreadStackSmall),
+        (EPICSTHREADFUNC) rsrv_online_notify_task, 0 );
     if ( tid == 0 ) {
         epicsPrintf ( "CAS: unable to start beacon thread\n" );
     }
@@ -238,11 +238,11 @@ int cast_server(void)
         if (prsrv_cast_client) {
             break;
         }
-        threadSleep(300.0);
+        epicsThreadSleep(300.0);
     }
 
     prsrv_cast_client->sock = IOC_cast_sock;
-    prsrv_cast_client->tid = threadGetIdSelf ();
+    prsrv_cast_client->tid = epicsThreadGetIdSelf ();
     
     while (TRUE) {
         status = recvfrom (
@@ -255,7 +255,7 @@ int cast_server(void)
         if (status<0) {
             epicsPrintf ("CAS: UDP recv error (errno=%s)\n",
                     SOCKERRSTR(SOCKERRNO));
-        threadSleep(1.0);
+        epicsThreadSleep(1.0);
         }
         else {
             prsrv_cast_client->recv.cnt = (unsigned long) status;

@@ -22,11 +22,11 @@ of this distribution.
 #ifndef INCtaskwdh
 #define INCtaskwdh 1
 
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "shareLib.h"
 
 typedef void (*TASKWDFUNCPRR)(void *parm);
-typedef void (*TASKWDANYFUNCPRR)(void *parm,threadId tid);
+typedef void (*TASKWDANYFUNCPRR)(void *parm,epicsThreadId tid);
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,10 +34,10 @@ extern "C" {
 
 epicsShareFunc void epicsShareAPI taskwdInit(void);
 epicsShareFunc void epicsShareAPI taskwdInsert(
-    threadId tid, TASKWDFUNCPRR callback,void *arg);
+    epicsThreadId tid, TASKWDFUNCPRR callback,void *arg);
 epicsShareFunc void epicsShareAPI taskwdAnyInsert(
     void *userpvt, TASKWDANYFUNCPRR callback,void *arg);
-epicsShareFunc void epicsShareAPI taskwdRemove(threadId tid);
+epicsShareFunc void epicsShareAPI taskwdRemove(epicsThreadId tid);
 epicsShareFunc void epicsShareAPI taskwdAnyRemove(void *userpvt);
 
 #ifdef __cplusplus

@@ -20,24 +20,26 @@
 #include "cac_IL.h"
 
 recvProcessThread::recvProcessThread (cac *pcacIn) :
-    osiThread ( "CAC-recv-process", threadGetStackSize (threadStackSmall), 
-        pcacIn->getInitializingThreadsPriority () ), 
+    thread(*this, "CAC-recv-process",
+        epicsThreadGetStackSize(epicsThreadStackSmall), 
+        pcacIn->getInitializingThreadsPriority() ), 
     pcac ( pcacIn ),
     enableRefCount ( 0u ),
     blockingForCompletion ( 0u ),
     processing ( false ),
     shutDown ( false )
 {
-    this->start ();
+    this->thread.start ();
 }
 
 recvProcessThread::~recvProcessThread ()
 {
     this->signalShutDown ();
     this->exit.wait ();
+    delete &thread;
 }
 
-void recvProcessThread::entryPoint ()
+void recvProcessThread::run ()
 {
     int status = ca_attach_context ( this->pcac );
     SEVCHK ( status, "attaching to client context in recv process thread" );

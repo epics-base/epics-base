@@ -19,7 +19,7 @@ of this distribution.
 
 #include "dbDefs.h"
 #include "epicsEvent.h"
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "osiInterrupt.h"
 #include "osiTimer.h"
 #include "epicsRingPointer.h"
@@ -42,7 +42,7 @@ of this distribution.
 int callbackQueueSize = 2000;
 static epicsEventId callbackSem[NUM_CALLBACK_PRIORITIES];
 static epicsRingPointerId callbackQ[NUM_CALLBACK_PRIORITIES];
-static threadId callbackTaskId[NUM_CALLBACK_PRIORITIES];
+static epicsThreadId callbackTaskId[NUM_CALLBACK_PRIORITIES];
 static int ringOverflow[NUM_CALLBACK_PRIORITIES];
 static void callbackInitPvt(void *);
 volatile int callbackRestart=FALSE;
@@ -74,7 +74,7 @@ static void callbackInitPvt(void *arg)
 {
     int i;
 
-    timerQueue = osiTimerQueueCreate(threadPriorityScanHigh);
+    timerQueue = osiTimerQueueCreate(epicsThreadPriorityScanHigh);
     for(i=0; i<NUM_CALLBACK_PRIORITIES; i++) {
 	start(i);
     }
@@ -82,9 +82,9 @@ static void callbackInitPvt(void *arg)
 
 void epicsShareAPI callbackInit()
 {
-    static threadOnceId callbackOnceFlag = OSITHREAD_ONCE_INIT;
+    static epicsThreadOnceId callbackOnceFlag = EPICS_THREAD_ONCE_INIT;
     void *arg = 0;
-    threadOnce(&callbackOnceFlag,callbackInitPvt,arg);
+    epicsThreadOnce(&callbackOnceFlag,callbackInitPvt,arg);
 }
 
 /* Routine which places requests into callback queue*/
@@ -137,9 +137,9 @@ static void start(int ind)
     char taskName[20];
 
     callbackSem[ind] = epicsEventMustCreate(epicsEventEmpty);
-    if(ind==0) priority = threadPriorityScanLow - 1;
-    else if(ind==1) priority = threadPriorityScanLow +4;
-    else if(ind==2) priority = threadPriorityScanHigh + 1;
+    if(ind==0) priority = epicsThreadPriorityScanLow - 1;
+    else if(ind==1) priority = epicsThreadPriorityScanLow +4;
+    else if(ind==2) priority = epicsThreadPriorityScanHigh + 1;
     else {
 	errMessage(0,"callback start called with illegal priority\n");
 	return;
@@ -147,8 +147,8 @@ static void start(int ind)
     if((callbackQ[ind]=epicsRingPointerCreate(callbackQueueSize)) == 0) 
 	errMessage(0,"epicsRingPointerCreate failed while starting a callback task");
     sprintf(taskName,"cb%s",priorityName[ind]);
-    callbackTaskId[ind] = threadCreate(taskName,priority,
-        threadGetStackSize(threadStackBig),(THREADFUNC)callbackTask,
+    callbackTaskId[ind] = epicsThreadCreate(taskName,priority,
+        epicsThreadGetStackSize(epicsThreadStackBig),(EPICSTHREADFUNC)callbackTask,
         &priorityValue[ind]);
     if(callbackTaskId[ind]==0) {
 	errMessage(0,"Failed to spawn a callback task");

@@ -15,7 +15,7 @@ of this distribution.
 #include <stdio.h>
 #include <ctype.h>
 
-#include "osiThread.h"
+#include "epicsThread.h"
 void ringPointerTest(void);
 
 

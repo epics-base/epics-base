@@ -48,7 +48,6 @@
 #include <limits.h>
 
 #include "dbDefs.h"
-#include "osiThread.h"
 #include "tsStamp.h"
 #include "epicsPrint.h"
 #include "dbBase.h"

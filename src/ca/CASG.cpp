@@ -85,12 +85,12 @@ int CASG::block ( double timeout )
     /*
      * dont allow recursion
      */
-    void *p = threadPrivateGet (cacRecursionLock);
+    void *p = epicsThreadPrivateGet (cacRecursionLock);
     if ( p ) {
         return ECA_EVDISALLOW;
     }
 
-    threadPrivateSet (cacRecursionLock, &cacRecursionLock);
+    epicsThreadPrivateSet (cacRecursionLock, &cacRecursionLock);
 
     cur_time = osiTime::getCurrent ();
 
@@ -140,7 +140,7 @@ int CASG::block ( double timeout )
 
     this->client.disableCallbackPreemption ();
 
-    threadPrivateSet (cacRecursionLock, NULL);
+    epicsThreadPrivateSet (cacRecursionLock, NULL);
 
     return status;
 }

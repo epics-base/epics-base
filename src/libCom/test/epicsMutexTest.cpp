@@ -16,7 +16,7 @@ of this distribution.
 #include <errno.h>
 #include <time.h>
 
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "epicsMutex.h"
 #include "errlog.h"
 
@@ -46,16 +46,16 @@ static void mutexThread(void *arg)
         }
         printf("mutexThread %d epicsMutexLock time %ld\n",
             pinfo->threadnum,time(&tp));
-        threadSleep(.1);
+        epicsThreadSleep(.1);
         epicsMutexUnlock(pinfo->mutex);
-        threadSleep(.9);
+        epicsThreadSleep(.9);
     }
 }
 
 extern "C" void epicsMutexTest(int nthreads,int verbose)
 {
     unsigned int stackSize;
-    threadId *id;
+    epicsThreadId *id;
     int i;
     char **name;
     void **arg;
@@ -65,7 +65,6 @@ extern "C" void epicsMutexTest(int nthreads,int verbose)
     time_t tp;
     int errVerboseSave = errVerbose;
 
-    threadInit ();
     errVerbose = verbose;
     mutex = epicsMutexMustCreate();
     printf("calling epicsMutexLock(mutex) time %ld\n",time(&tp));
@@ -90,11 +89,11 @@ extern "C" void epicsMutexTest(int nthreads,int verbose)
         errVerbose = errVerboseSave;
         return;
     }
-    id = (void **)calloc(nthreads,sizeof(threadId));
+    id = (void **)calloc(nthreads,sizeof(epicsThreadId));
     name = (char **)calloc(nthreads,sizeof(char *));
     arg = (void **)calloc(nthreads,sizeof(void *));
     pinfo = (info **)calloc(nthreads,sizeof(info *));
-    stackSize = threadGetStackSize(threadStackSmall);
+    stackSize = epicsThreadGetStackSize(epicsThreadStackSmall);
     for(i=0; i<nthreads; i++) {
         name[i] = (char *)calloc(10,sizeof(char));
         sprintf(name[i],"task%d",i);
@@ -102,15 +101,15 @@ extern "C" void epicsMutexTest(int nthreads,int verbose)
         pinfo[i]->threadnum = i;
         pinfo[i]->mutex = mutex;
         arg[i] = pinfo[i];
-        id[i] = threadCreate(name[i],40,stackSize,(THREADFUNC)mutexThread,arg[i]);
+        id[i] = epicsThreadCreate(name[i],40,stackSize,(EPICSTHREADFUNC)mutexThread,arg[i]);
         printf("semTest created mutexThread %d id %p time %ld\n",
             i, id[i],time(&tp));
     }
-    threadSleep(5.0);
+    epicsThreadSleep(5.0);
     printf("semTest setting quit time %ld\n",time(&tp));
     for(i=0; i<nthreads; i++) {
         pinfo[i]->quit = 1;
     }
-    threadSleep(2.0);
+    epicsThreadSleep(2.0);
     errVerbose = errVerboseSave;
 }

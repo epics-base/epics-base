@@ -68,7 +68,7 @@ since this will delay all other threads.
 #include "dbBase.h"
 #include "epicsMutex.h"
 #include "tsStamp.h"
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "cantProceed.h"
 #include "ellLib.h"
 #include "dbBase.h"
@@ -96,7 +96,7 @@ typedef struct lockSet {
 	ELLNODE		node;
 	ELLLIST		recordList;
 	epicsMutexId	lock;
-	threadId	thread_id;
+	epicsThreadId	thread_id;
 	dbCommon	*precord;
 	unsigned long	id;
 } lockSet;
@@ -166,11 +166,11 @@ void epicsShareAPI dbLockSetRecordLock(dbCommon *precord)
     if(!plockRecord) return;
     plockSet = plockRecord->plockSet;
     if(!plockSet) return;
-    if(plockSet->thread_id==threadGetIdSelf()) return;
+    if(plockSet->thread_id==epicsThreadGetIdSelf()) return;
     /*Wait for up to 1 minute*/
     status = epicsMutexLockWithTimeout(plockRecord->plockSet->lock,60.0);
     if(status==epicsMutexLockOK) {
-	plockSet->thread_id = threadGetIdSelf();
+	plockSet->thread_id = epicsThreadGetIdSelf();
 	plockSet->precord = (void *)precord;
 	/*give it back in case it will not be changed*/
 	epicsMutexUnlock(plockRecord->plockSet->lock);
@@ -178,7 +178,7 @@ void epicsShareAPI dbLockSetRecordLock(dbCommon *precord)
     }
     /*Should never reach this point*/
     errlogPrintf("dbLockSetRecordLock timeout caller 0x%x owner 0x%x",
-	threadGetIdSelf(),plockSet->thread_id);
+	epicsThreadGetIdSelf(),plockSet->thread_id);
     errlogPrintf(" record %s\n",precord->name);
     cantProceed("dbLockSetRecordLock");
 }
@@ -192,16 +192,16 @@ void epicsShareAPI dbScanLock(dbCommon *precord)
     if(!(plockRecord= precord->lset)) {
 	epicsPrintf("dbScanLock plockRecord is NULL record %s\n",
 	    precord->name);
-	threadSuspendSelf();
+	epicsThreadSuspendSelf();
     }
     while(TRUE) {
-        while(changingLockSets) threadSleep(.05);
+        while(changingLockSets) epicsThreadSleep(.05);
 	status = epicsMutexLock(plockRecord->plockSet->lock);
 	/*epicsMutexLock fails if epicsMutexDestroy was called while active*/
 	if(status==epicsMutexLockOK) break;
     }
     plockSet = plockRecord->plockSet;
-    plockSet->thread_id = threadGetIdSelf();
+    plockSet->thread_id = epicsThreadGetIdSelf();
     plockSet->precord = (void *)precord;
     return;
 }

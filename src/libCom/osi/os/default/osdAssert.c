@@ -36,7 +36,7 @@
 #include "epicsPrint.h"
 #include "epicsVersion.h"
 #include "epicsAssert.h"
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "cantProceed.h"
 
 /*
@@ -77,7 +77,7 @@ epicsShareFunc void epicsShareAPI
 
 	}
 	errlogPrintf ("This problem occurred in \"%s\"\n", epicsReleaseVersion);
-        errlogPrintf("calling threadSuspendSelf()\n");
-        threadSuspendSelf();
+        errlogPrintf("calling epicsThreadSuspendSelf()\n");
+        epicsThreadSuspendSelf();
 }
 

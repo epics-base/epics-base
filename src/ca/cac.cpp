@@ -24,14 +24,14 @@
 extern "C" void cacRecursionLockExitHandler ()
 {
     if ( cacRecursionLock ) {
-        threadPrivateDelete ( cacRecursionLock );
+        epicsThreadPrivateDelete ( cacRecursionLock );
         cacRecursionLock = 0;
     }
 }
 
 extern "C" void cacInitRecursionLock ( void * )
 {
-    cacRecursionLock = threadPrivateCreate ();
+    cacRecursionLock = epicsThreadPrivateCreate ();
     if ( cacRecursionLock ) {
         atexit ( cacRecursionLockExitHandler );
     }
@@ -50,14 +50,14 @@ cac::cac ( bool enablePreemptiveCallbackIn ) :
     pudpiiu ( 0 ),
     pSearchTmr ( 0 ),
     pRepeaterSubscribeTmr ( 0 ),
-    initializingThreadsPriority ( threadGetPrioritySelf () ),
+    initializingThreadsPriority ( epicsThreadGetPrioritySelf () ),
     enablePreemptiveCallback ( enablePreemptiveCallbackIn )
 {
 	long status;
-    static threadOnceId once = OSITHREAD_ONCE_INIT;
+    static epicsThreadOnceId once = EPICS_THREAD_ONCE_INIT;
     unsigned abovePriority;
 
-    threadOnce ( &once, cacInitRecursionLock, 0 );
+    epicsThreadOnce ( &once, cacInitRecursionLock, 0 );
 
     if ( cacRecursionLock == 0 ) {
         throwWithLocation ( caErrorCode (ECA_ALLOCMEM) );
@@ -68,10 +68,10 @@ cac::cac ( bool enablePreemptiveCallbackIn ) :
 	}
 
     {
-        threadBoolStatus tbs;
+        epicsThreadBooleanStatus tbs;
 
-        tbs = threadLowestPriorityLevelAbove ( this->initializingThreadsPriority, &abovePriority);
-        if ( tbs != tbsSuccess ) {
+        tbs = epicsThreadLowestPriorityLevelAbove ( this->initializingThreadsPriority, &abovePriority);
+        if ( tbs != epicsThreadBooleanStatusSuccess ) {
             abovePriority = this->initializingThreadsPriority;
         }
     }
@@ -518,12 +518,12 @@ int cac::pend ( double timeout, int early )
     /*
      * dont allow recursion
      */
-    p = threadPrivateGet ( cacRecursionLock );
+    p = epicsThreadPrivateGet ( cacRecursionLock );
     if (p) {
         return ECA_EVDISALLOW;
     }
 
-    threadPrivateSet ( cacRecursionLock, &cacRecursionLock );
+    epicsThreadPrivateSet ( cacRecursionLock, &cacRecursionLock );
 
     this->enableCallbackPreemption ();
 
@@ -531,7 +531,7 @@ int cac::pend ( double timeout, int early )
 
     this->disableCallbackPreemption ();
 
-    threadPrivateSet ( cacRecursionLock, NULL );
+    epicsThreadPrivateSet ( cacRecursionLock, NULL );
 
     return status;
 }
@@ -1039,7 +1039,7 @@ void cac::destroyNCIU ( nciu & chan )
 bool cac::flushPermit () const
 {
     if ( this->pRecvProcThread ) {
-        if ( this->pRecvProcThread->isCurrentThread () ) {
+        if ( this->pRecvProcThread->thread.isCurrentThread () ) {
             return false;
         }
     }

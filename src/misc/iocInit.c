@@ -52,7 +52,7 @@ of this distribution.
 #include <errno.h>
 
 #include "dbDefs.h"
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "epicsPrint.h"
 #include "tsStamp.h"
 #include "ellLib.h"
@@ -121,7 +121,7 @@ int epicsShareAPI iocInit()
     taskwdInit();
     callbackInit();
     /* let threads start */
-    threadSleep(.1);
+    epicsThreadSleep(.1);
     initHooks(initHookAfterCallbackInit);
     dbCaLinkInit(); initHooks(initHookAfterCaLinkInit);
     initDrvSup(); initHooks(initHookAfterInitDrvSup);
@@ -139,7 +139,7 @@ int epicsShareAPI iocInit()
 	errlogPrintf("iocInit: asInit Failed during initialization\n");
 	return(-1);
     }
-    threadSleep(.5);
+    epicsThreadSleep(.5);
     initHooks(initHookAfterScanInit);
 
    /* Enable scan tasks and some driver support functions.  */

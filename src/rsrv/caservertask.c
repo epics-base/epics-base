@@ -231,11 +231,11 @@ struct client *create_client (SOCKET sock)
     }
 
     {
-        unsigned priorityOfSelf = threadGetPrioritySelf ();
-        threadBoolStatus    tbs;
+        unsigned priorityOfSelf = epicsThreadGetPrioritySelf ();
+        epicsThreadBooleanStatus    tbs;
 
-        tbs  = threadLowestPriorityLevelAbove ( priorityOfSelf, &priorityOfEvents );
-        if ( tbs != tbsSuccess ) {
+        tbs  = epicsThreadLowestPriorityLevelAbove ( priorityOfSelf, &priorityOfEvents );
+        if ( tbs != epicsThreadBooleanStatusSuccess ) {
             priorityOfEvents = priorityOfSelf;
         }
     }
@@ -276,17 +276,17 @@ struct client *create_client (SOCKET sock)
  */
 LOCAL int req_server (void)
 {
-    unsigned priorityOfSelf = threadGetPrioritySelf ();
+    unsigned priorityOfSelf = epicsThreadGetPrioritySelf ();
     unsigned priorityOfUDP;
-    threadBoolStatus tbs;
+    epicsThreadBooleanStatus tbs;
     struct sockaddr_in serverAddr;  /* server's address */
     osiSocklen_t addrSize;
     int status;
     SOCKET clientSock;
-    threadId tid;
+    epicsThreadId tid;
     int portChange;
 
-    taskwdInsert ( threadGetIdSelf (), NULL, NULL );
+    taskwdInsert ( epicsThreadGetIdSelf (), NULL, NULL );
 
     ca_server_port = envGetInetPortConfigParam (&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
 
@@ -300,7 +300,7 @@ LOCAL int req_server (void)
      */
     if ( ( IOC_sock = socket(AF_INET, SOCK_STREAM, 0) ) == INVALID_SOCKET ) {
         errlogPrintf ("CAS: Socket creation error\n");
-        threadSuspendSelf ();
+        epicsThreadSuspendSelf ();
     }
 
     /*
@@ -346,7 +346,7 @@ LOCAL int req_server (void)
 		if ( status < 0 ) {
             errlogPrintf ( "CAS: Socket bind error was \"%s\"\n",
                 SOCKERRSTR (SOCKERRNO) );
-            threadSuspendSelf ();
+            epicsThreadSuspendSelf ();
 		}
         portChange = 1;
 	}
@@ -360,7 +360,7 @@ LOCAL int req_server (void)
 	if ( status ) {
 		errlogPrintf ( "CAS: getsockname() error %s\n", 
 			SOCKERRSTR(SOCKERRNO) );
-        threadSuspendSelf ();
+        epicsThreadSuspendSelf ();
 	}
 
     ca_server_port = ntohs (serverAddr.sin_port);
@@ -378,17 +378,17 @@ LOCAL int req_server (void)
     if ( listen ( IOC_sock, 10 ) < 0 ) {
         errlogPrintf ("CAS: Listen error\n");
         socket_close (IOC_sock);
-        threadSuspendSelf ();
+        epicsThreadSuspendSelf ();
     }
 
-    tbs  = threadHighestPriorityLevelBelow ( priorityOfSelf, &priorityOfUDP );
-    if ( tbs != tbsSuccess ) {
+    tbs  = epicsThreadHighestPriorityLevelBelow ( priorityOfSelf, &priorityOfUDP );
+    if ( tbs != epicsThreadBooleanStatusSuccess ) {
         priorityOfUDP = priorityOfSelf;
     }
 
-    tid = threadCreate ( "CAS-UDP", priorityOfUDP,
-        threadGetStackSize (threadStackMedium),
-        (THREADFUNC) cast_server, 0 );
+    tid = epicsThreadCreate ( "CAS-UDP", priorityOfUDP,
+        epicsThreadGetStackSize (epicsThreadStackMedium),
+        (EPICSTHREADFUNC) cast_server, 0 );
     if ( tid == 0 ) {
         epicsPrintf ( "CAS: unable to start connection request thread\n" );
     }
@@ -400,19 +400,19 @@ LOCAL int req_server (void)
         if ( ( clientSock = accept ( IOC_sock, &sockAddr, &addLen ) ) == INVALID_SOCKET ) {
             errlogPrintf("CAS: Client accept error was \"%s\"\n",
                 (int) SOCKERRSTR(SOCKERRNO));
-            threadSleep(15.0);
+            epicsThreadSleep(15.0);
             continue;
         } 
         else {
             unsigned priorityOfClient;
-            threadId id;
+            epicsThreadId id;
             struct client *pClient;
 
             pClient = create_client (clientSock);
             if (!pClient) {
                 errlogPrintf ( "CAS: unable to create new client because \"%s\"\n",
                     strerror (errno) );
-                threadSleep(15.0);
+                epicsThreadSleep(15.0);
                 continue;
             }
 
@@ -420,25 +420,25 @@ LOCAL int req_server (void)
              * go up two levels in priority so that the event task is above the
              * task waiting in accept ()
              */
-            tbs  = threadLowestPriorityLevelAbove ( priorityOfSelf, &priorityOfClient );
-            if ( tbs != tbsSuccess ) {
+            tbs  = epicsThreadLowestPriorityLevelAbove ( priorityOfSelf, &priorityOfClient );
+            if ( tbs != epicsThreadBooleanStatusSuccess ) {
                 priorityOfClient = priorityOfSelf;
             }
             else {
                 unsigned belowPriorityOfClient = priorityOfClient;
-                tbs  = threadLowestPriorityLevelAbove ( belowPriorityOfClient, &priorityOfClient );
-                if ( tbs != tbsSuccess ) {
+                tbs  = epicsThreadLowestPriorityLevelAbove ( belowPriorityOfClient, &priorityOfClient );
+                if ( tbs != epicsThreadBooleanStatusSuccess ) {
                     priorityOfClient = belowPriorityOfClient;
                 }
             }
 
-            id = threadCreate ( "CAS-client", priorityOfClient,
-                    threadGetStackSize (threadStackBig),
-                    (THREADFUNC)camsgtask, (void *)pClient );
+            id = epicsThreadCreate ( "CAS-client", priorityOfClient,
+                    epicsThreadGetStackSize (epicsThreadStackBig),
+                    (EPICSTHREADFUNC)camsgtask, (void *)pClient );
             if (id==0) {
                 destroy_client ( pClient );
                 errlogPrintf ( "CAS: task creation for new client failed\n" );
-                threadSleep ( 15.0 );
+                epicsThreadSleep ( 15.0 );
                 continue;
             }
         }
@@ -450,7 +450,7 @@ LOCAL int req_server (void)
  */
 epicsShareFunc int epicsShareAPI rsrv_init (void)
 {
-    threadId tid;
+    epicsThreadId tid;
 
     clientQlock = epicsMutexMustCreate();
 
@@ -462,10 +462,10 @@ epicsShareFunc int epicsShareAPI rsrv_init (void)
     prsrv_cast_client = NULL;
     pCaBucket = NULL;
 
-    tid = threadCreate ("CAS-TCP",
-        threadPriorityChannelAccessServer,
-        threadGetStackSize(threadStackMedium),
-        (THREADFUNC)req_server,0);
+    tid = epicsThreadCreate ("CAS-TCP",
+        epicsThreadPriorityChannelAccessServer,
+        epicsThreadGetStackSize(epicsThreadStackMedium),
+        (EPICSTHREADFUNC)req_server,0);
     if ( tid == 0 ) {
         epicsPrintf ( "CAS: unable to start connection request thread\n" );
     }

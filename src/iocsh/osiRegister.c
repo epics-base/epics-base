@@ -12,34 +12,34 @@ of this distribution.
 #include <stdio.h>
 #include <ctype.h>
 
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "dbEvent.h"
 #define epicsExportSharedSymbols
 #include "ioccrf.h"
 #include "osiRegister.h"
 
-/* threadShowAll */
-static const ioccrfArg threadShowAllArg0 = { "level",ioccrfArgInt};
-static const ioccrfArg * const threadShowAllArgs[1] = {&threadShowAllArg0};
-static const ioccrfFuncDef threadShowAllFuncDef =
-    {"threadShowAll",1,threadShowAllArgs};
-static void threadShowAllCallFunc(const ioccrfArgBuf *args)
+/* epicsThreadShowAll */
+static const ioccrfArg epicsThreadShowAllArg0 = { "level",ioccrfArgInt};
+static const ioccrfArg * const epicsThreadShowAllArgs[1] = {&epicsThreadShowAllArg0};
+static const ioccrfFuncDef epicsThreadShowAllFuncDef =
+    {"epicsThreadShowAll",1,epicsThreadShowAllArgs};
+static void epicsThreadShowAllCallFunc(const ioccrfArgBuf *args)
 {
-    threadShowAll(args[0].ival);
+    epicsThreadShowAll(args[0].ival);
 }
 
-/* threadSleep */
-static const ioccrfArg threadSleepArg0 = { "seconds",ioccrfArgDouble};
-static const ioccrfArg * const threadSleepArgs[1] = {&threadSleepArg0};
-static const ioccrfFuncDef threadSleepFuncDef =
-    {"threadSleep",1,threadSleepArgs};
-static void threadSleepCallFunc(const ioccrfArgBuf *args)
+/* epicsThreadSleep */
+static const ioccrfArg epicsThreadSleepArg0 = { "seconds",ioccrfArgDouble};
+static const ioccrfArg * const epicsThreadSleepArgs[1] = {&epicsThreadSleepArg0};
+static const ioccrfFuncDef epicsThreadSleepFuncDef =
+    {"epicsThreadSleep",1,epicsThreadSleepArgs};
+static void epicsThreadSleepCallFunc(const ioccrfArgBuf *args)
 {
-    threadSleep(args[0].dval);
+    epicsThreadSleep(args[0].dval);
 }
 
 void epicsShareAPI osiRegister(void)
 {
-    ioccrfRegister(&threadShowAllFuncDef,threadShowAllCallFunc);
-    ioccrfRegister(&threadSleepFuncDef,threadSleepCallFunc);
+    ioccrfRegister(&epicsThreadShowAllFuncDef,epicsThreadShowAllCallFunc);
+    ioccrfRegister(&epicsThreadSleepFuncDef,epicsThreadSleepCallFunc);
 }

@@ -6,6 +6,11 @@ PROD_LIBS += Com
 
 USR_LIBS_hpux += cma
 
+
+epicsThreadTestHost_SRCS += epicsThreadTestMain.cpp epicsThreadTest.cpp
+PROD += epicsThreadTestHost
+OBJS_IOC += epicsThreadTest
+
 timerTestHost_SRCS += timerTestMain.c timerTest.c
 PROD += timerTestHost
 OBJS_IOC += timerTest
@@ -21,10 +26,6 @@ OBJS_IOC += epicsEventTest
 epicsMutexTestHost_SRCS += epicsMutexTestMain.cpp epicsMutexTest.cpp
 PROD += epicsMutexTestHost
 OBJS_IOC += epicsMutexTest
-
-threadTestHost_SRCS += threadTestMain.c threadTest.c
-PROD += threadTestHost
-OBJS_IOC += threadTest
 
 #fdmgrTest_SRCS += fdmgrTest.c
 #PROD += fdmgrTest

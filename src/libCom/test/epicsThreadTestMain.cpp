@@ -15,8 +15,8 @@ of this distribution.
 #include <stdio.h>
 #include <ctype.h>
 
-#include "osiThread.h"
-void threadTest(int nthreads,int errVerbose);
+#include "epicsThread.h"
+extern "C" void threadTest(int nthreads,int errVerbose);
 
 int main(int argc,char *argv[])
 {

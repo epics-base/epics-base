@@ -46,7 +46,7 @@ of this distribution.
 #include <string.h>
 
 #include "dbDefs.h"
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "errlog.h"
 #include "cantProceed.h"
 #include "cvtFast.h"

@@ -314,10 +314,10 @@ epicsShareFunc void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repea
 	     */
         osptr = osiSpawnDetachedProcess ( "CA Repeater", "caRepeater" );
         if ( osptr == osiSpawnDetachedProcessNoSupport ) {
-            threadId tid;
+            epicsThreadId tid;
 
-            tid = threadCreate ( "CAC-repeater", threadPriorityLow,
-                    threadGetStackSize (threadStackMedium), caRepeaterThread, 0);
+            tid = epicsThreadCreate ( "CAC-repeater", epicsThreadPriorityLow,
+                    epicsThreadGetStackSize (epicsThreadStackMedium), caRepeaterThread, 0);
             if ( tid == 0 ) {
                 ca_printf ("caStartRepeaterIfNotInstalled : unable to create CA repeater daemon thread\n");
             }
@@ -413,16 +413,16 @@ udpiiu::udpiiu ( cac &cac ) :
   
     {
         unsigned priorityOfRecv;
-        threadBoolStatus tbs;
+        epicsThreadBooleanStatus tbs;
 
-        tbs  = threadLowestPriorityLevelAbove ( 
+        tbs  = epicsThreadLowestPriorityLevelAbove ( 
             this->pCAC ()->getInitializingThreadsPriority (), &priorityOfRecv );
-        if ( tbs != tbsSuccess ) {
+        if ( tbs != epicsThreadBooleanStatusSuccess ) {
             priorityOfRecv = this->pCAC ()->getInitializingThreadsPriority ();
         }
 
-        this->recvThreadId = threadCreate ( "CAC-UDP", priorityOfRecv,
-                threadGetStackSize (threadStackMedium), cacRecvThreadUDP, this );
+        this->recvThreadId = epicsThreadCreate ( "CAC-UDP", priorityOfRecv,
+                epicsThreadGetStackSize (epicsThreadStackMedium), cacRecvThreadUDP, this );
         if ( this->recvThreadId == 0 ) {
             ca_printf ("CA: unable to create UDP receive thread\n");
             epicsEventDestroy (this->recvThreadExitSignal);
@@ -852,5 +852,5 @@ void udpiiu::show ( unsigned level ) const
 
 bool udpiiu::isCurrentThread () const
 {
-    return ( this->recvThreadId == threadGetIdSelf () );
+    return ( this->recvThreadId == epicsThreadGetIdSelf () );
 }

@@ -132,8 +132,9 @@ INC += epicsAssert.h
 INC += epicsFindSymbol.h
 INC += osiPoolStatus.h
 INC += osdPoolStatus.h
-INC += osiThread.h
 INC += osdThread.h
+
+INC += epicsThread.h
 INC += osiTime.h
 INC += osdTime.h
 INC += osiSigPipeIgnore.h
@@ -143,6 +144,9 @@ INC += osiProcess.h
 INC += osiUnistd.h
 INC += osiWireFormat.h
 
+SRCS += epicsThread.cpp
+SRCS += osiTime.cpp
+
 SRCS += osdSock.c
 SRCS += osiSock.c
 SRCS += osdAssert.c
@@ -150,12 +154,10 @@ SRCS += osdFindSymbol.c
 SRCS += osdInterrupt.c
 SRCS += osdPoolStatus.c
 
+SRCS += osdThread.c
 SRCS += osdMutex.c
 SRCS += osdEvent.c
-SRCS += osdThread.c
-SRCS += osiThread.cpp
 SRCS += osdTime.cpp
-SRCS += osiTime.cpp
 SRCS += osdSigPipeIgnore.c
 SRCS += osdProcess.c
 SRCS += osdNetIntf.c

@@ -18,7 +18,6 @@ of this distribution.
 #include <pthread.h>
 
 #include "epicsEvent.h"
-#include "osiThread.h"
 #include "cantProceed.h"
 #include "tsStamp.h"
 #include "errlog.h"

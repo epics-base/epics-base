@@ -8,7 +8,7 @@
 #include <logClient.h>
 
 #include "osiUnistd.h"
-#include "osiThread.h"
+#include "epicsThread.h"
 
 #define epicsExportSharedSymbols
 #include "ioccrf.h"
@@ -69,7 +69,7 @@ static void showCallFunc(const ioccrfArgBuf *args)
     int first = 1;
     int level = 0;
     char *cp;
-    threadId tid;
+    epicsThreadId tid;
     unsigned long ltmp;
     char *endp;
 
@@ -79,7 +79,7 @@ static void showCallFunc(const ioccrfArgBuf *args)
         i++;
     }
     if ((cp = args[i].sval) == NULL) {
-        threadShowAll (level);
+        epicsThreadShowAll (level);
         return;
     }
     for ( ; i < 10 ; i++) {
@@ -87,29 +87,29 @@ static void showCallFunc(const ioccrfArgBuf *args)
             return;
         ltmp = strtoul (cp, &endp, 16);
         if (*endp) {
-            tid = threadGetId (cp);
+            tid = epicsThreadGetId (cp);
             if (!tid) {
                 printf ("*** argument %d (%s) is not a valid task name ***\n", i+1, cp);
                 continue;
             }
         }
         else {
-            tid = (threadId)ltmp;
+            tid = (epicsThreadId)ltmp;
         }
         if (first) {
-            threadShow (0, level);
+            epicsThreadShow (0, level);
             first = 0;
         }
-        threadShow (tid, level);
+        epicsThreadShow (tid, level);
     }
 }
 
-/* threadInit */
-static const ioccrfFuncDef threadInitFuncDef =
-    {"threadInit",0};
-static void threadInitCallFunc(const ioccrfArgBuf *args)
+/* epicsThreadInit */
+static const ioccrfFuncDef epicsThreadInitFuncDef =
+    {"epicsThreadInit",0};
+static void epicsThreadInitCallFunc(const ioccrfArgBuf *args)
 {
-    threadInit();
+    epicsThreadInit();
 }
 
 /* putenv */
@@ -149,7 +149,7 @@ void epicsShareAPI iocUtilRegister(void)
     ioccrfRegister(&chdirFuncDef,chdirCallFunc);
     ioccrfRegister(&pwdFuncDef,pwdCallFunc);
     ioccrfRegister(&showFuncDef,showCallFunc);
-    ioccrfRegister(&threadInitFuncDef,threadInitCallFunc);
+    ioccrfRegister(&epicsThreadInitFuncDef,epicsThreadInitCallFunc);
     ioccrfRegister(&putenvFuncDef,putenvCallFunc);
     ioccrfRegister(&iocLogInitFuncDef,iocLogInitCallFunc);
 }

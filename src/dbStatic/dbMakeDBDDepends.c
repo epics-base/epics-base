@@ -19,7 +19,6 @@ of this distribution.
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
 #include "osiFileName.h"
-#include "osiThread.h"
 
 epicsShareExtern char *makeDbdDepends;
 
@@ -40,7 +39,6 @@ int main(int argc,char **argv)
     static char *pathSep = OSI_PATH_LIST_SEPARATOR;
     static char *subSep = ",";
 
-    threadInit();
     /*Look for options*/
     if(argc<2) {
         printf("usage: makeDbdDepends -Idir -Smacsub target.dbd input.dbd \n");

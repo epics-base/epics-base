@@ -24,7 +24,7 @@ of this distribution.
 #define epicsExportSharedSymbols
 #define ERRLOG_INIT
 #include "dbDefs.h"
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "epicsMutex.h"
 #include "epicsEvent.h"
 #include "osiInterrupt.h"
@@ -301,7 +301,7 @@ static void errlogInitPvt(void *arg)
 {
     int bufsize = *(int *)arg;
     void	*pbuffer;
-    threadId tid;
+    epicsThreadId tid;
 
     pvtData.errlogInitFailed = TRUE;
     if(bufsize<BUFFER_SIZE) bufsize = BUFFER_SIZE;
@@ -315,17 +315,17 @@ static void errlogInitPvt(void *arg)
     /*Allow an extra MAX_MESSAGE_SIZE for extra margain of safety*/
     pbuffer = pvtCalloc(pvtData.buffersize+MAX_MESSAGE_SIZE,sizeof(char));
     pvtData.pbuffer = pbuffer;
-    tid = threadCreate("errlog",threadPriorityLow,
-        threadGetStackSize(threadStackSmall),
-        (THREADFUNC)errlogTask,0);
+    tid = epicsThreadCreate("errlog",epicsThreadPriorityLow,
+        epicsThreadGetStackSize(epicsThreadStackSmall),
+        (EPICSTHREADFUNC)errlogTask,0);
     if(tid) pvtData.errlogInitFailed = FALSE;
 }
 
 epicsShareFunc int epicsShareAPI errlogInit(int bufsize)
 {
-    static threadOnceId errlogOnceFlag=OSITHREAD_ONCE_INIT;
+    static epicsThreadOnceId errlogOnceFlag=EPICS_THREAD_ONCE_INIT;
 
-    threadOnce(&errlogOnceFlag,errlogInitPvt,(void *)&bufsize);
+    epicsThreadOnce(&errlogOnceFlag,errlogInitPvt,(void *)&bufsize);
     if(pvtData.errlogInitFailed) {
         fprintf(stderr,"errlogInit failed\n");
         exit(1);
@@ -464,7 +464,7 @@ LOCAL void msgbufFreeSend()
     pnextSend = (msgNode *)ellFirst(&pvtData.msgQueue);
     if(!pnextSend) {
 	printf("errlog: msgbufFreeSend logic error\n");
-	threadSuspendSelf();
+	epicsThreadSuspendSelf();
     }
     ellDelete(&pvtData.msgQueue,&pnextSend->node);
     epicsMutexUnlock(pvtData.msgQueueLock);
@@ -477,7 +477,7 @@ LOCAL void *pvtCalloc(size_t count,size_t size)
     pmem = calloc(count,size);
     if(!pmem) {
 	printf("calloc failed in errlog\n");
-	threadSuspendSelf();
+	epicsThreadSuspendSelf();
     }
     return(pmem);
 }

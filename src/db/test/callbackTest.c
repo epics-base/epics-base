@@ -14,7 +14,7 @@ of this distribution.
 #include <string.h>
 #include <stdio.h>
 
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "errlog.h"
 #include "callback.h"
 #include "taskwd.h"
@@ -68,6 +68,6 @@ void callbackTest(void)
         wait[i]->requestedDiff = (double)i;
         callbackRequestDelayed(&wait[i]->callback,wait[i]->requestedDiff);
     }
-    threadSleep((double)(ncallbacks + 2));
+    epicsThreadSleep((double)(ncallbacks + 2));
     printf("callbackTest returning\n");
 }

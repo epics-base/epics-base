@@ -132,10 +132,10 @@ dbEventSubscription dbServiceIO::subscribe ( struct dbAddr &addr, dbSubscription
             return 0;
         }
    
-        unsigned selfPriority = threadGetPrioritySelf ();
+        unsigned selfPriority = epicsThreadGetPrioritySelf ();
         unsigned above;
-        threadBoolStatus tbs = threadLowestPriorityLevelAbove (selfPriority, &above);
-        if ( tbs != tbsSuccess ) {
+        epicsThreadBooleanStatus tbs = epicsThreadLowestPriorityLevelAbove (selfPriority, &above);
+        if ( tbs != epicsThreadBooleanStatusSuccess ) {
             above = selfPriority;
         }
         status = db_start_events ( this->ctx, "CAC-event", 

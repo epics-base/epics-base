@@ -24,7 +24,7 @@ of this distribution.
 
 #define epicsExportSharedSymbols
 #include "dbDefs.h"
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "epicsMutex.h"
 #include "errlog.h"
 #include "ellLib.h"
@@ -38,7 +38,7 @@ struct task_list {
     MYFUNCPTR	callback;
     void	*arg;
     union {
-        threadId tid;
+        epicsThreadId tid;
         void     *userpvt;
     } id;
     int suspended;
@@ -49,7 +49,7 @@ static ELLLIST anylist;
 static epicsMutexId lock;
 static epicsMutexId anylock;
 static epicsMutexId alloclock;
-static threadId taskwdid=0;
+static epicsThreadId taskwdid=0;
 volatile int taskwdOn=TRUE;
 struct freeList{
     struct freeList *next;
@@ -71,19 +71,19 @@ static void taskwdInitPvt(void *arg)
     alloclock = epicsMutexMustCreate();
     ellInit(&list);
     ellInit(&anylist);
-    taskwdid = threadCreate(
-        "taskwd",threadPriorityLow,
-         threadGetStackSize(threadStackSmall),
-        (THREADFUNC)taskwdTask,0);
+    taskwdid = epicsThreadCreate(
+        "taskwd",epicsThreadPriorityLow,
+         epicsThreadGetStackSize(epicsThreadStackSmall),
+        (EPICSTHREADFUNC)taskwdTask,0);
 }
 void epicsShareAPI taskwdInit()
 {
-    static threadOnceId taskwdOnceFlag = OSITHREAD_ONCE_INIT;
+    static epicsThreadOnceId taskwdOnceFlag = EPICS_THREAD_ONCE_INIT;
     void *arg = 0;
-    threadOnce(&taskwdOnceFlag,taskwdInitPvt,arg);
+    epicsThreadOnce(&taskwdOnceFlag,taskwdInitPvt,arg);
 }
 
-void epicsShareAPI taskwdInsert(threadId tid,TASKWDFUNCPRR callback,void *arg)
+void epicsShareAPI taskwdInsert(epicsThreadId tid,TASKWDFUNCPRR callback,void *arg)
 {
     struct task_list *pt;
 
@@ -112,7 +112,7 @@ void epicsShareAPI taskwdAnyInsert(void *userpvt,TASKWDANYFUNCPRR callback,void 
     epicsMutexUnlock(anylock);
 }
 
-void epicsShareAPI taskwdRemove(threadId tid)
+void epicsShareAPI taskwdRemove(epicsThreadId tid)
 {
     struct task_list *pt;
 
@@ -162,7 +162,7 @@ static void taskwdTask(void)
             pt = (struct task_list *)ellFirst(&list);
             while(pt) {
                 next = (struct task_list *)ellNext((void *)pt);
-                if(threadIsSuspended(pt->id.tid)) {
+                if(epicsThreadIsSuspended(pt->id.tid)) {
                     char message[100];
 
                     if(!pt->suspended) {
@@ -197,7 +197,7 @@ static void taskwdTask(void)
             }
             epicsMutexUnlock(lock);
         }
-        threadSleep(TASKWD_DELAY);
+        epicsThreadSleep(TASKWD_DELAY);
     }
 }
 

@@ -1,4 +1,4 @@
-/* osi/os/vxWorks/osiThread.c */
+/* osi/os/vxWorks/epicsThread.c */
 
 /* Author:  Marty Kraimer Date:    25AUG99 */
 
@@ -23,7 +23,7 @@ int sysClkRateGet(void);
 
 #include "errlog.h"
 #include "ellLib.h"
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "cantProceed.h"
 #include "epicsAssert.h"
 #include "vxLib.h"
@@ -36,14 +36,14 @@ int sysClkRateGet(void);
 #else
 #define ARCH_STACK_FACTOR 2
 #endif
-static const unsigned stackSizeTable[threadStackBig+1] = 
+static const unsigned stackSizeTable[epicsThreadStackBig+1] = 
    {4000*ARCH_STACK_FACTOR, 6000*ARCH_STACK_FACTOR, 11000*ARCH_STACK_FACTOR};
 
-/* definitions for implementation of threadPrivate */
+/* definitions for implementation of epicsThreadPrivate */
 static void **papTSD = 0;
-static int nthreadPrivate = 0;
+static int nepicsThreadPrivate = 0;
 
-static SEM_ID threadOnceMutex = 0;
+static SEM_ID epicsThreadOnceMutex = 0;
 
 /* Just map osi 0 to 99 into vx 100 to 199 */
 /* remember that for vxWorks lower number means higher priority */
@@ -53,10 +53,10 @@ static SEM_ID threadOnceMutex = 0;
 static unsigned int getOsiPriorityValue(int ossPriority)
 {   
     if ( ossPriority < 100 ) {
-        return threadPriorityMax;
+        return epicsThreadPriorityMax;
     }
     else if ( ossPriority > 199 ) {
-        return threadPriorityMin;
+        return epicsThreadPriorityMin;
     }
     else {
         return ( 199u - (unsigned int) ossPriority );
@@ -73,49 +73,49 @@ static int getOssPriorityValue(unsigned int osiPriority)
     }
 }
 
-unsigned int threadGetStackSize (threadStackSizeClass stackSizeClass) 
+unsigned int epicsThreadGetStackSize (epicsThreadStackSizeClass stackSizeClass) 
 {
 
-    if (stackSizeClass<threadStackSmall) {
-        errlogPrintf("threadGetStackSize illegal argument (too small)");
-        return stackSizeTable[threadStackBig];
+    if (stackSizeClass<epicsThreadStackSmall) {
+        errlogPrintf("epicsThreadGetStackSize illegal argument (too small)");
+        return stackSizeTable[epicsThreadStackBig];
     }
 
-    if (stackSizeClass>threadStackBig) {
-        errlogPrintf("threadGetStackSize illegal argument (too large)");
-        return stackSizeTable[threadStackBig];
+    if (stackSizeClass>epicsThreadStackBig) {
+        errlogPrintf("epicsThreadGetStackSize illegal argument (too large)");
+        return stackSizeTable[epicsThreadStackBig];
     }
 
     return stackSizeTable[stackSizeClass];
 }
 
-void threadInit(void)
+void epicsThreadInit(void)
 {
     static int lock = 0;
 
     while(!vxTas(&lock)) taskDelay(1);
-    if(threadOnceMutex==0) {
-        threadOnceMutex = semMCreate(
+    if(epicsThreadOnceMutex==0) {
+        epicsThreadOnceMutex = semMCreate(
                 SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
-        assert(threadOnceMutex);
+        assert(epicsThreadOnceMutex);
     }
     lock = 0;
     iocClockInit();
 }
 
-void threadOnceOsd(threadOnceId *id, void (*func)(void *), void *arg)
+void epicsThreadOnceOsd(epicsThreadOnceId *id, void (*func)(void *), void *arg)
 {
-    threadInit();
-    assert(semTake(threadOnceMutex,WAIT_FOREVER)==OK);
+    epicsThreadInit();
+    assert(semTake(epicsThreadOnceMutex,WAIT_FOREVER)==OK);
     if (*id == 0) { /*  0 => first call */
         *id = -1;   /* -1 => func() active */
         func(arg);
-        *id = +1;   /* +1 => func() done (see threadOnce() macro defn) */
+        *id = +1;   /* +1 => func() done (see epicsThreadOnce() macro defn) */
     }
-    semGive(threadOnceMutex);
+    semGive(epicsThreadOnceMutex);
 }
 
-static void createFunction(THREADFUNC func, void *parm)
+static void createFunction(EPICSTHREADFUNC func, void *parm)
 {
     int tid = taskIdSelf();
 
@@ -127,14 +127,14 @@ static void createFunction(THREADFUNC func, void *parm)
     free(papTSD);
 }
 
-threadId threadCreate(const char *name,
+epicsThreadId epicsThreadCreate(const char *name,
     unsigned int priority, unsigned int stackSize,
-    THREADFUNC funptr,void *parm)
+    EPICSTHREADFUNC funptr,void *parm)
 {
     int tid;
-    if(threadOnceMutex==0) threadInit();
+    if(epicsThreadOnceMutex==0) epicsThreadInit();
     if(stackSize<100) {
-        errlogPrintf("threadCreate %s illegal stackSize %d\n",name,stackSize);
+        errlogPrintf("epicsThreadCreate %s illegal stackSize %d\n",name,stackSize);
         return(0);
     }
     tid = taskSpawn((char *)name,getOssPriorityValue(priority),
@@ -142,51 +142,51 @@ threadId threadCreate(const char *name,
         (FUNCPTR)createFunction,(int)funptr,(int)parm,
         0,0,0,0,0,0,0,0);
     if(tid==0) {
-        errlogPrintf("threadCreate taskSpawn failure for %s\n",name);
+        errlogPrintf("epicsThreadCreate taskSpawn failure for %s\n",name);
         return(0);
     }
-    return((threadId)tid);
+    return((epicsThreadId)tid);
 }
 
-void threadSuspendSelf()
+void epicsThreadSuspendSelf()
 {
     STATUS status;
 
     status = taskSuspend(taskIdSelf());
-    if(status) errlogPrintf("threadSuspendSelf failed\n");
+    if(status) errlogPrintf("epicsThreadSuspendSelf failed\n");
 }
 
-void threadResume(threadId id)
+void epicsThreadResume(epicsThreadId id)
 {
     int tid = (int)id;
     STATUS status;
 
     status = taskResume(tid);
-    if(status) errlogPrintf("threadResume failed\n");
+    if(status) errlogPrintf("epicsThreadResume failed\n");
 }
 
-void threadExitMain(void)
+void epicsThreadExitMain(void)
 {
-    errlogPrintf("threadExitMain was called for vxWorks. Why?\n");
+    errlogPrintf("epicsThreadExitMain was called for vxWorks. Why?\n");
 }
 
-unsigned int threadGetPriority(threadId id)
+unsigned int epicsThreadGetPriority(epicsThreadId id)
 {
     int tid = (int)id;
     STATUS status;
     int priority = 0;
 
     status = taskPriorityGet(tid,&priority);
-    if(status) errlogPrintf("threadGetPriority failed\n");
+    if(status) errlogPrintf("epicsThreadGetPriority failed\n");
     return(getOsiPriorityValue(priority));
 }
 
-unsigned int threadGetPrioritySelf(void)
+unsigned int epicsThreadGetPrioritySelf(void)
 {
-    return(threadGetPriority(threadGetIdSelf()));
+    return(epicsThreadGetPriority(epicsThreadGetIdSelf()));
 }
 
-void threadSetPriority(threadId id,unsigned int osip)
+void epicsThreadSetPriority(epicsThreadId id,unsigned int osip)
 {
     int tid = (int)id;
     STATUS status;
@@ -194,21 +194,21 @@ void threadSetPriority(threadId id,unsigned int osip)
 
     priority = getOssPriorityValue(osip);
     status = taskPrioritySet(tid,priority);
-    if(status) errlogPrintf("threadSetPriority failed\n");
+    if(status) errlogPrintf("epicsThreadSetPriority failed\n");
 }
 
-threadBoolStatus threadHighestPriorityLevelBelow(
+epicsThreadBooleanStatus epicsThreadHighestPriorityLevelBelow(
     unsigned int priority, unsigned *pPriorityJustBelow)
 {
     unsigned newPriority = priority - 1;
     if (newPriority <= 99) {
         *pPriorityJustBelow = newPriority;
-        return tbsSuccess;
+        return epicsThreadBooleanStatusSuccess;
     }
-    return tbsFail;
+    return epicsThreadBooleanStatusFail;
 }
 
-threadBoolStatus threadLowestPriorityLevelAbove(
+epicsThreadBooleanStatus epicsThreadLowestPriorityLevelAbove(
     unsigned int priority, unsigned *pPriorityJustAbove)
 {
     unsigned newPriority = priority + 1;
@@ -216,59 +216,59 @@ threadBoolStatus threadLowestPriorityLevelAbove(
     newPriority = priority + 1;
     if (newPriority <= 99) {
         *pPriorityJustAbove = newPriority;
-        return tbsSuccess;
+        return epicsThreadBooleanStatusSuccess;
     }
-    return tbsFail;
+    return epicsThreadBooleanStatusFail;
 }
 
-int threadIsEqual(threadId id1, threadId id2)
+int epicsThreadIsEqual(epicsThreadId id1, epicsThreadId id2)
 {
     return((id1==id2) ? 1 : 0);
 }
 
-int threadIsSuspended(threadId id)
+int epicsThreadIsSuspended(epicsThreadId id)
 {
     int tid = (int)id;
     return((int)taskIsSuspended(tid));
 }
 
-void threadSleep(double seconds)
+void epicsThreadSleep(double seconds)
 {
     STATUS status;
 
     status = taskDelay((int)(seconds*sysClkRateGet()));
-    if(status) errlogPrintf(0,"threadSleep\n");
+    if(status) errlogPrintf(0,"epicsThreadSleep\n");
 }
 
-threadId threadGetIdSelf(void)
+epicsThreadId epicsThreadGetIdSelf(void)
 {
-    return((threadId)taskIdSelf());
+    return((epicsThreadId)taskIdSelf());
 }
 
-threadId threadGetId(const char *name)
+epicsThreadId epicsThreadGetId(const char *name)
 {
     int tid = taskNameToId((char *)name);
-    return((threadId)(tid==ERROR?0:tid));
+    return((epicsThreadId)(tid==ERROR?0:tid));
 }
 
-const char *threadGetNameSelf(void)
+const char *epicsThreadGetNameSelf(void)
 {
     return taskName(taskIdSelf());
 }
 
-void threadGetName (threadId id, char *name, size_t size)
+void epicsThreadGetName (epicsThreadId id, char *name, size_t size)
 {
     int tid = (int)id;
     strncpy(name,taskName(tid),size-1);
     name[size-1] = '\0';
 }
 
-void threadShowAll(unsigned int level)
+void epicsThreadShowAll(unsigned int level)
 {
     taskShow(0,2);
 }
 
-void threadShow(threadId id,unsigned int level)
+void epicsThreadShow(epicsThreadId id,unsigned int level)
 {
     int tid = (int)id;
     taskShow(tid,level);
@@ -277,29 +277,29 @@ void threadShow(threadId id,unsigned int level)
 /* The following algorithm was thought of by Andrew Johnson APS/ASD .
  * The basic idea is to use a single vxWorks task variable.
  * The task variable is papTSD, which is an array of pointers to the TSD
- * The array size is equal to the number of threadPrivateIds created + 1
- * when threadPrivateSet is called.
- * Until the first call to threadPrivateCreate by a application papTSD=0
- * After first call papTSD[0] is value of nthreadPrivate when 
- * threadPrivateSet was last called by the thread. This is also
- * the value of threadPrivateId.
- * The algorithm allows for threadPrivateCreate being called after
- * the first call to threadPrivateSet.
+ * The array size is equal to the number of epicsThreadPrivateIds created + 1
+ * when epicsThreadPrivateSet is called.
+ * Until the first call to epicsThreadPrivateCreate by a application papTSD=0
+ * After first call papTSD[0] is value of nepicsThreadPrivate when 
+ * epicsThreadPrivateSet was last called by the thread. This is also
+ * the value of epicsThreadPrivateId.
+ * The algorithm allows for epicsThreadPrivateCreate being called after
+ * the first call to epicsThreadPrivateSet.
  */
-threadPrivateId threadPrivateCreate()
+epicsThreadPrivateId epicsThreadPrivateCreate()
 {
     static int lock = 0;
-    threadPrivateId id;
+    epicsThreadPrivateId id;
 
-    threadInit();
-    /*lock is necessary because ++nthreadPrivate may not be indivisible*/
+    epicsThreadInit();
+    /*lock is necessary because ++nepicsThreadPrivate may not be indivisible*/
     while(!vxTas(&lock)) taskDelay(1);
-    id = (threadPrivateId)++nthreadPrivate;
+    id = (epicsThreadPrivateId)++nepicsThreadPrivate;
     lock = 0;
     return(id);
 }
 
-void threadPrivateDelete(threadPrivateId id)
+void epicsThreadPrivateDelete(epicsThreadPrivateId id)
 {
     /*nothing to delete */
     return;
@@ -309,34 +309,34 @@ void threadPrivateDelete(threadPrivateId id)
  * Note that it is not necessary to have mutex for following
  * because they must be called by the same thread
  */
-void threadPrivateSet (threadPrivateId id, void *pvt)
+void epicsThreadPrivateSet (epicsThreadPrivateId id, void *pvt)
 {
-    int indpthreadPrivate = (int)id;
-    int nthreadPrivateOld = 0;
+    int indpepicsThreadPrivate = (int)id;
+    int nepicsThreadPrivateOld = 0;
 
-    if(papTSD) nthreadPrivateOld = (int)papTSD[0];
-    if(!papTSD || (nthreadPrivateOld<indpthreadPrivate)) {
+    if(papTSD) nepicsThreadPrivateOld = (int)papTSD[0];
+    if(!papTSD || (nepicsThreadPrivateOld<indpepicsThreadPrivate)) {
         void **papTSDold = papTSD;
         int i;
 
-        papTSD = callocMustSucceed(indpthreadPrivate + 1,sizeof(void *),
-            "threadPrivateSet");
-        papTSD[0] = (void *)(indpthreadPrivate);
-        for(i=1; i<= nthreadPrivateOld; i++) papTSD[i] = papTSDold[i];
+        papTSD = callocMustSucceed(indpepicsThreadPrivate + 1,sizeof(void *),
+            "epicsThreadPrivateSet");
+        papTSD[0] = (void *)(indpepicsThreadPrivate);
+        for(i=1; i<= nepicsThreadPrivateOld; i++) papTSD[i] = papTSDold[i];
     }
-    papTSD[indpthreadPrivate] = pvt;
+    papTSD[indpepicsThreadPrivate] = pvt;
 }
 
-void *threadPrivateGet(threadPrivateId id)
+void *epicsThreadPrivateGet(epicsThreadPrivateId id)
 {
-    int indpthreadPrivate = (int)id;
+    int indpepicsThreadPrivate = (int)id;
     void *data;
     if(!papTSD) {
-        papTSD = callocMustSucceed(indpthreadPrivate + 1,sizeof(void *),
-            "threadPrivateSet");
-        papTSD[0] = (void *)(indpthreadPrivate);
+        papTSD = callocMustSucceed(indpepicsThreadPrivate + 1,sizeof(void *),
+            "epicsThreadPrivateSet");
+        papTSD[0] = (void *)(indpepicsThreadPrivate);
     }
-    /* Note that threadPrivateGet may be called BEFORE threadPrivateSet*/
+    /* Note that epicsThreadPrivateGet may be called BEFORE epicsThreadPrivateSet*/
     if ( (int) id <= (int) papTSD[0] ) {
         data = papTSD[(int)id];
     }

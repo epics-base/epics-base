@@ -13,14 +13,14 @@ of this distribution.
 #include <string.h>
 #include <stdio.h>
 
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "ioccrf.h"
 
 int main(int argc,char *argv[])
 {
     if(argc>=2) {    
         ioccrf(argv[1]);
-        threadSleep(.2);
+        epicsThreadSleep(.2);
     }
     ioccrf(NULL);
     return(0);

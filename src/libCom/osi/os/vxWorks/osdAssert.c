@@ -36,7 +36,7 @@
 #include <taskLib.h>
 
 #define epicsExportSharedSymbols
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "epicsPrint.h"
 #include "epicsVersion.h"
 #include "epicsAssert.h"
@@ -45,13 +45,13 @@
  * epicsAssert ()
  *
  * This forces assert failures into the log file and then
- * calls threadSuspendSelf() instead of exit() so that we can debug
+ * calls epicsThreadSuspendSelf() instead of exit() so that we can debug
  * the problem.
  */
 epicsShareFunc void epicsShareAPI epicsAssert (const char *pFile, const unsigned line, const char *pExp,
 	const char *pAuthorName)
 {
-    threadId threadid = threadGetIdSelf();
+    epicsThreadId threadid = epicsThreadGetIdSelf();
 
     epicsPrintf (	
 "\n\n\n%s: A call to \"assert (%s)\" failed in %s at %d\n", 
@@ -83,6 +83,6 @@ epicsShareFunc void epicsShareAPI epicsAssert (const char *pFile, const unsigned
 	}
 	epicsPrintf ("This problem occurred in \"%s\"\n", epicsReleaseVersion);
 
-    threadSuspendSelf ();
+    epicsThreadSuspendSelf ();
 }
 

@@ -16,7 +16,7 @@ of this distribution.
 #include <errno.h>
 #include <time.h>
 
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "epicsEvent.h"
 #include "epicsMutex.h"
 #include "epicsRingPointer.h"
@@ -30,11 +30,15 @@ typedef struct info {
     epicsRingPointerId ring;
 }info;
 
+extern "C" {
+static void consumer(void *arg);
+}
+
 static void consumer(void *arg)
 {
     info *pinfo = (info *)arg;
     time_t tp;
-    threadId idSelf = threadGetIdSelf();
+    epicsThreadId idSelf = epicsThreadGetIdSelf();
 
     printf("consumer %p starting time %ld\n",idSelf,time(&tp));
     while(1) {
@@ -50,7 +54,7 @@ static void consumer(void *arg)
                 idSelf,(int)status,time(&tp));
         }
         while(epicsRingPointerGetUsed(pinfo->ring)>=2) {
-            threadId message[2];
+            epicsThreadId message[2];
             int i;
 
             for(i=0; i<2; i++) {
@@ -66,11 +70,15 @@ static void consumer(void *arg)
     }
 }
 
+extern "C" {
+static void producer(void *arg);
+}
+
 static void producer(void *arg)
 {
     info *pinfo = (info *)arg;
     time_t tp;
-    threadId idSelf = threadGetIdSelf();
+    epicsThreadId idSelf = epicsThreadGetIdSelf();
     int ntimes=0;
 
     printf("producer %p starting time %ld\n",idSelf,time(&tp));
@@ -94,14 +102,14 @@ static void producer(void *arg)
             for(i=0; i<2; i++) {
                 if(!epicsRingPointerPush(pinfo->ring,idSelf))
                     printf("producer %p error\n",idSelf);
-                if(i==0 && (ntimes%4==0)) threadSleep(.1);
+                if(i==0 && (ntimes%4==0)) epicsThreadSleep(.1);
             }
             printf("producer %p sending\n",idSelf);
         } else {
            printf("producer %p ring buffer is full\n",idSelf); 
         }
         epicsMutexUnlock(pinfo->lockRing);
-        threadSleep(1.0);
+        epicsThreadSleep(1.0);
         epicsEventSignal(pinfo->event);
     }
 }
@@ -109,7 +117,7 @@ static void producer(void *arg)
 extern "C" void epicsEventTest(int nthreads,int verbose)
 {
     unsigned int stackSize;
-    threadId *id;
+    epicsThreadId *id;
     char **name;
     int i;
     info *pinfo;
@@ -118,7 +126,6 @@ extern "C" void epicsEventTest(int nthreads,int verbose)
     time_t tp;
     int errVerboseSave = errVerbose;
 
-    threadInit ();
     errVerbose = verbose;
     event = epicsEventMustCreate(epicsEventEmpty);
     printf("calling epicsEventWaitWithTimeout(event,2.0) time %ld\n",time(&tp));
@@ -146,23 +153,23 @@ extern "C" void epicsEventTest(int nthreads,int verbose)
     pinfo->event = event;
     pinfo->lockRing = epicsMutexCreate();
     pinfo->ring = epicsRingPointerCreate(1024*2);
-    stackSize = threadGetStackSize(threadStackSmall);
-    threadCreate("consumer",50,stackSize,consumer,pinfo);
-    id = (threadId *)calloc(nthreads,sizeof(threadId));
+    stackSize = epicsThreadGetStackSize(epicsThreadStackSmall);
+    epicsThreadCreate("consumer",50,stackSize,consumer,pinfo);
+    id = (epicsThreadId *)calloc(nthreads,sizeof(epicsThreadId));
     name = (char **)calloc(nthreads,sizeof(char *));
     for(i=0; i<nthreads; i++) {
         name[i] = (char *)calloc(10,sizeof(char));
         sprintf(name[i],"producer%d",i);
-        id[i] = threadCreate(name[i],40,stackSize,producer,pinfo);
+        id[i] = epicsThreadCreate(name[i],40,stackSize,producer,pinfo);
         printf("created producer %d id %p time %ld\n",
             i, id[i],time(&tp));
     }
-    threadSleep(5.0);
+    epicsThreadSleep(5.0);
     printf("semTest setting quit time %ld\n",time(&tp));
     pinfo->quit = 1;
-    threadSleep(2.0);
+    epicsThreadSleep(2.0);
     epicsEventSignal(pinfo->event);
-    threadSleep(1.0);
+    epicsThreadSleep(1.0);
     printf("semTest returning time %ld\n",time(&tp));
     errVerbose = errVerboseSave;
 }

@@ -29,7 +29,7 @@ of this distribution.
 #include "dbDefs.h"
 #include "epicsMutex.h"
 #include "epicsEvent.h"
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "errlog.h"
 #include "taskwd.h"
 #include "freeList.h"
@@ -97,13 +97,13 @@ struct event_user {
     EXTRALABORFUNC      *extralabor_sub;/* off load to event task */
     void                *extralabor_arg;/* parameter to above */
     
-    threadId            taskid;         /* event handler task id */
+    epicsThreadId            taskid;         /* event handler task id */
     unsigned            queovr;         /* event que overflow count */
     unsigned char       pendexit;       /* exit pend task */
     unsigned char       extra_labor;    /* if set call extra labor func */
     unsigned char       flowCtrlMode;   /* replace existing monitor */
     void                (*init_func)();
-    threadId            init_func_arg;
+    epicsThreadId            init_func_arg;
 };
 
 
@@ -528,7 +528,7 @@ int epicsShareAPI db_flush_extra_labor_event (dbEventCtx ctx)
     struct event_user *evUser = (struct event_user *) ctx;
 
     while(evUser->extra_labor){
-        threadSleep(1.0);
+        epicsThreadSleep(1.0);
     }
 
     return DB_EVENT_OK;
@@ -880,7 +880,7 @@ LOCAL void event_task (void *pParm)
         (*evUser->init_func)(evUser->init_func_arg);
     }
 
-    taskwdInsert ( threadGetIdSelf(), NULL, NULL );
+    taskwdInsert ( epicsThreadGetIdSelf(), NULL, NULL );
 
     do{
         epicsEventMustWait(evUser->ppendsem);
@@ -936,7 +936,7 @@ LOCAL void event_task (void *pParm)
 
     freeListFree(dbevEventUserFreeList, evUser);
 
-    taskwdRemove(threadGetIdSelf());
+    taskwdRemove(epicsThreadGetIdSelf());
 
     return;
 }
@@ -945,7 +945,7 @@ LOCAL void event_task (void *pParm)
  * DB_START_EVENTS()
  */
 int epicsShareAPI db_start_events (
-    dbEventCtx ctx,const char *taskname, void (*init_func)(threadId), 
+    dbEventCtx ctx,const char *taskname, void (*init_func)(epicsThreadId), 
     void *init_func_arg, unsigned osiPriority )
 {
      struct event_user *evUser = (struct event_user *) ctx;
@@ -967,8 +967,8 @@ int epicsShareAPI db_start_events (
      if (!taskname) {
          taskname = EVENT_PEND_NAME;
      }
-     evUser->taskid = threadCreate (
-         taskname, osiPriority, threadGetStackSize(threadStackMedium),
+     evUser->taskid = epicsThreadCreate (
+         taskname, osiPriority, epicsThreadGetStackSize(epicsThreadStackMedium),
          event_task, (void *)evUser);
      if (!evUser->taskid) {
          epicsMutexUnlock (evUser->firstque.writelock);

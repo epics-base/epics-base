@@ -25,7 +25,7 @@ of this distribution.
 #include <string.h>
 
 #include "dbDefs.h"
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "ellLib.h"
 #include "cantProceed.h"
 #include "epicsMutex.h"
@@ -100,9 +100,9 @@ long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction)
     UAGNAME	*puagname;
     HAG		*phag;
     HAGNAME	*phagname;
-    static threadOnceId asInitializeOnceFlag = OSITHREAD_ONCE_INIT;
+    static epicsThreadOnceId asInitializeOnceFlag = EPICS_THREAD_ONCE_INIT;
 
-    threadOnce(&asInitializeOnceFlag,asInitializeOnce,(void *)0);
+    epicsThreadOnce(&asInitializeOnceFlag,asInitializeOnce,(void *)0);
     LOCK;
     pasbasenew = asCalloc(1,sizeof(ASBASE));
     if(!freeListPvt) freeListInitPvt(&freeListPvt,sizeof(ASGCLIENT),20);

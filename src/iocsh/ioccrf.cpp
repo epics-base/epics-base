@@ -18,7 +18,7 @@ of this distribution.
 
 #include "errlog.h"
 #include "dbAccess.h"
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "epicsMutex.h"
 #include "registry.h"
 #define epicsExportSharedSymbols
@@ -36,7 +36,7 @@ struct ioccrfCommand {
 static struct ioccrfCommand *ioccrfCommandHead;
 static char ioccrfID[] = "ioccrf";
 static epicsMutexId commandTableMutex;
-static threadOnceId commandTableOnceId = OSITHREAD_ONCE_INIT;
+static epicsThreadOnceId commandTableOnceId = EPICS_THREAD_ONCE_INIT;
 
 /*
  * Set up command table mutex
@@ -52,7 +52,7 @@ static void commandTableOnce (void *)
 static void
 commandTableLock (void)
 {
-    threadOnce (&commandTableOnceId, commandTableOnce, NULL);
+    epicsThreadOnce (&commandTableOnceId, commandTableOnce, NULL);
     epicsMutexMustLock (commandTableMutex);
 }
 
@@ -62,7 +62,7 @@ commandTableLock (void)
 static void
 commandTableUnlock (void)
 {
-    threadOnce (&commandTableOnceId, commandTableOnce, NULL);
+    epicsThreadOnce (&commandTableOnceId, commandTableOnce, NULL);
     epicsMutexUnlock (commandTableMutex);
 }
 

@@ -26,7 +26,7 @@ of this distribution.
 
 #include "dbDefs.h"
 #include "ellLib.h"
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "epicsMutex.h"
 #include "epicsEvent.h"
 #include "cantProceed.h"
@@ -46,7 +46,7 @@ of this distribution.
 
 epicsShareDef int asCaDebug = 0;
 LOCAL int firstTime = TRUE;
-LOCAL threadId threadid=0;
+LOCAL epicsThreadId threadid=0;
 LOCAL int caInitializing=FALSE;
 LOCAL epicsMutexId asCaTaskLock;		/*lock access to task */
 LOCAL epicsEventId asCaTaskWait;		/*Wait for task to respond*/
@@ -72,6 +72,7 @@ static void exceptionCallback(struct exception_handler_args args)
     int  readAccess;
     int writeAccess;
 
+printf("as exceptionCallback\n");
     channel = (chid ? ca_name(chid) : unknown);
     context = (args.ctx ? args.ctx : unknown);
     nativeType = dbr_type_to_text((chid ? ca_field_type(chid) : -1));
@@ -99,6 +100,7 @@ LOCAL void connectCallback(struct connection_handler_args arg)
     ASGINP		*pasginp = (ASGINP *)ca_puser(chid);
     ASG			*pasg = pasginp->pasg;
 
+printf("as connectCallback %s\n",ca_name(chid));
     if(ca_state(chid)!=cs_conn) {
 	if(!(pasg->inpBad & (1<<pasginp->inpIndex))) {
 	    /*was good so lets make it bad*/
@@ -119,6 +121,7 @@ LOCAL void eventCallback(struct event_handler_args arg)
     CAPVT	*pcapvt;
     READONLY struct dbr_sts_double *pdata;
 
+printf("as eventCallback %s\n",ca_name(chid));
     if(caStatus!=ECA_NORMAL) {
 	if(chid) {
 	    epicsPrintf("asCa: eventCallback error %s channel %s\n",
@@ -168,13 +171,15 @@ LOCAL void eventCallback(struct event_handler_args arg)
 
 LOCAL void asCaTask(void)
 {
+    static const int enablePreemption = 1u;
     ASG		*pasg;
     ASGINP	*pasginp;
     CAPVT	*pcapvt;
     int		status;
 
-    taskwdInsert(threadGetIdSelf(),NULL,NULL);
-    SEVCHK(ca_task_initialize(),"ca_task_initialize");
+    taskwdInsert(epicsThreadGetIdSelf(),NULL,NULL);
+    SEVCHK(ca_context_create(enablePreemption),
+        "asCaTask calling ca_context_create");
     SEVCHK(ca_add_exception_event(exceptionCallback,NULL),
         "ca_add_exception_event");
     while(TRUE) { 
@@ -194,6 +199,7 @@ LOCAL void asCaTask(void)
 			ca_message(status));
 		}
 		/*Note calls eventCallback immediately  for local Pvs*/
+printf("as ca_add_event %s\n",pasginp->inp);
 		status = ca_add_event(DBR_STS_DOUBLE,pcapvt->chid,
 		    eventCallback,pasginp,0);
 		if(status!=ECA_NORMAL) {
@@ -204,14 +210,14 @@ LOCAL void asCaTask(void)
 	    }
 	    pasg = (ASG *)ellNext((ELLNODE *)pasg);
 	}
+printf("as calling ca_flush_io\n");
+        SEVCHK(ca_flush_io(),"asCaTask");
+epicsThreadSleep(2.0);
 	asComputeAllAsg();
 	caInitializing = FALSE;
 	if(asCaDebug) printf("asCaTask initialized\n");
 	epicsEventSignal(asCaTaskWait);
-	while(TRUE) {
-	    if(epicsEventTryWait(asCaTaskClearChannels)==epicsEventWaitOK) break;
-	    ca_pend_event(2.0);
-	}
+        epicsEventMustWait(asCaTaskClearChannels);
 	pasg = (ASG *)ellFirst(&pasbase->asgList);
 	while(pasg) {
 	    pasginp = (ASGINP *)ellFirst(&pasg->inpList);
@@ -242,10 +248,10 @@ void epicsShareAPI asCaStart(void)
         asCaTaskWait=epicsEventMustCreate(epicsEventEmpty);
         asCaTaskAddChannels=epicsEventMustCreate(epicsEventEmpty);
         asCaTaskClearChannels=epicsEventMustCreate(epicsEventEmpty);
-        threadid = threadCreate("asCaTask",
-            (threadPriorityScanLow - 3),
-            threadGetStackSize(threadStackBig),
-            (THREADFUNC)asCaTask,0);
+        threadid = epicsThreadCreate("asCaTask",
+            (epicsThreadPriorityScanLow - 3),
+            epicsThreadGetStackSize(epicsThreadStackBig),
+            (EPICSTHREADFUNC)asCaTask,0);
 	if(threadid==0) {
 	    errMessage(0,"asCaStart: taskSpawn Failure\n");
 	}

@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "osiThread.h"
 #include "tsStamp.h"
 #include "cadef.h"
 #include "dbDefs.h"

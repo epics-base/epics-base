@@ -37,7 +37,7 @@
 #   endif
 #endif
 
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "shareLib.h"
 #include "caerr.h"
 #include "db_access.h"
@@ -941,14 +941,14 @@ typedef void * caClientCtx;
 epicsShareFunc int epicsShareAPI ca_current_context (caClientCtx *pCurrentContext);
 epicsShareFunc int epicsShareAPI ca_attach_context (caClientCtx context);
 
-epicsShareFunc int epicsShareAPI ca_channel_status (threadId tid);
+epicsShareFunc int epicsShareAPI ca_channel_status (epicsThreadId tid);
 epicsShareFunc int epicsShareAPI ca_client_status (unsigned level);
 
 /*
  * deprecated
  */
-epicsShareFunc int epicsShareAPI ca_import (threadId tid);
-epicsShareFunc int epicsShareAPI ca_import_cancel (threadId tid);
+epicsShareFunc int epicsShareAPI ca_import (epicsThreadId tid);
+epicsShareFunc int epicsShareAPI ca_import_cancel (epicsThreadId tid);
 
 
 #else /* CAC_ANSI_FUNC_PROTO */

@@ -16,7 +16,7 @@ of this distribution.
 #include <errno.h>
 #include <time.h>
 
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "epicsRingPointer.h"
 #include "errlog.h"
 #include "epicsEvent.h"
@@ -62,7 +62,7 @@ void ringPointerTest()
     if(!consumerEvent) {printf("epicsEventMustCreate failed\n");exit(1);}
     pinfo->ring = ring = epicsRingPointerCreate(ringSize);
     if(!ring) {printf("epicsRingPointerCreate failed\n");exit(1);}
-    threadCreate("consumer",50,threadGetStackSize(threadStackSmall),
+    epicsThreadCreate("consumer",50,epicsThreadGetStackSize(epicsThreadStackSmall),
         consumer,pinfo);
     if(!epicsRingPointerIsEmpty(ring)) printf("epicsRingPointerIsEmpty failed\n");
     printf("fill ring\n");
@@ -83,11 +83,11 @@ void ringPointerTest()
     for(i=0; i<ringSize*2; i++) {
         while(epicsRingPointerIsFull(ring)) {
             epicsEventSignal(consumerEvent);
-            threadSleep(2.0);
+            epicsThreadSleep(2.0);
         }
         if(!epicsRingPointerPush(ring,(void *)&value[i]))
             printf("Why is ring full\n");
     }
     epicsEventSignal(consumerEvent);
-    threadSleep(2.0);
+    epicsThreadSleep(2.0);
 }

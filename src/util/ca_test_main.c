@@ -32,12 +32,10 @@
 
 #include "ca_test.h"
 #include "dbDefs.h"
-#include "osiThread.h"
 
 int main(int argc, char **argv)
 {
 
-        threadInit ();
 	/*
 	 * print error and return if arguments are invalid
 	 */

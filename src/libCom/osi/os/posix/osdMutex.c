@@ -18,7 +18,6 @@ of this distribution.
 #include <pthread.h>
 
 #include "epicsMutex.h"
-#include "osiThread.h"
 #include "cantProceed.h"
 #include "tsStamp.h"
 #include "errlog.h"

@@ -17,7 +17,7 @@ of this distribution.
 #define epicsExportSharedSymbols
 #include "errlog.h"
 #include "cantProceed.h"
-#include "osiThread.h"
+#include "epicsThread.h"
 
 epicsShareFunc void * epicsShareAPI callocMustSucceed(size_t count, size_t size, const char *errorMessage)
 {
@@ -45,6 +45,6 @@ epicsShareFunc void epicsShareAPI cantProceed(const char *errorMessage)
 {
     if(errorMessage) errlogPrintf("fatal error: %s\n",errorMessage);
     else errlogPrintf("fatal error\n");
-    threadSleep(1.0);
-    threadSuspendSelf();
+    epicsThreadSleep(1.0);
+    epicsThreadSuspendSelf();
 }

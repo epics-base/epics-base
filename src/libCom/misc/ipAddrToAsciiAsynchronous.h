@@ -17,6 +17,7 @@
 #ifndef ipAddrToAsciiAsynchronous_h
 #define ipAddrToAsciiAsynchronous_h
 
+#include "epicsThread.h"
 #include "epicsMutex.h"
 #include "epicsEvent.h"
 #include "tsDLList.h"
@@ -27,12 +28,14 @@ class ipAddrToAsciiAsynchronous;
 
 // - this class executes the synchronous DNS query
 // - it creates one thread
-class ipAddrToAsciiEngine : public osiThread {
+class ipAddrToAsciiEngine : public epicsThreadRunable {
 public:
     epicsShareFunc ipAddrToAsciiEngine ( const char *pName );
     epicsShareFunc ~ipAddrToAsciiEngine ();
+    virtual void run();
     epicsShareFunc void show ( unsigned level ) const;
 private:
+    epicsThread &thread;
     tsDLList < ipAddrToAsciiAsynchronous > labor;
     epicsEvent event;
     epicsEvent threadExit;
@@ -40,7 +43,6 @@ private:
     unsigned nextId;
     bool exitFlag;
     static epicsMutex mutex;
-    void entryPoint ();
     friend class ipAddrToAsciiAsynchronous;
 };
 

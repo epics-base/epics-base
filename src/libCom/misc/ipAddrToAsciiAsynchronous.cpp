@@ -15,16 +15,16 @@
  */
 
 #define epicsExportSharedSymbols
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "ipAddrToAsciiAsynchronous.h"
 
 epicsMutex ipAddrToAsciiEngine::mutex;
 
 ipAddrToAsciiEngine::ipAddrToAsciiEngine ( const char *pName ) :
-    osiThread ( pName, 0x1000, threadPriorityLow ), nextId ( 0u ),
-    exitFlag ( false )
+    thread(*(new epicsThread(*this,pName,0x1000,epicsThreadPriorityLow))),
+    nextId ( 0u ), exitFlag ( false )
 {
-    this->start (); // start the thread
+    this->thread.start (); // start the thread
 }
 
 ipAddrToAsciiEngine::~ipAddrToAsciiEngine ()
@@ -44,9 +44,10 @@ ipAddrToAsciiEngine::~ipAddrToAsciiEngine ()
         pItem->ioCompletionNotify ( this->nameTmp );
     }
     ipAddrToAsciiEngine::mutex.unlock ();
+    delete &thread;
 }
 
-void ipAddrToAsciiEngine::entryPoint ()
+void ipAddrToAsciiEngine::run ()
 {
     osiSockAddr addr;
     unsigned tmpId;

@@ -15,7 +15,7 @@ of this distribution.
 #include <stdio.h>
 #include <ctype.h>
 
-#include "osiThread.h"
+#include "epicsThread.h"
 extern "C" void epicsMutexTest(int nthreads,int errVerbose);
 
 

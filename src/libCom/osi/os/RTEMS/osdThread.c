@@ -25,7 +25,7 @@
 
 #include "errlog.h"
 #include "epicsMutex.h"
-#include "osiThread.h"
+#include "epicsThread.h"
 #include "osiInterrupt.h"
 #include "cantProceed.h"
 
@@ -37,7 +37,7 @@ struct taskVar {
     struct taskVar  *back;
     char            *name;
     rtems_id             id;
-    THREADFUNC              funptr;
+    EPICSTHREADFUNC              funptr;
     void                *parm;
     unsigned int        threadVariableCapacity;
     void                **threadVariables;
@@ -59,20 +59,20 @@ static epicsMutexId onceMutex;
   *      = 199 - osi
  *   osi =  199 - RTEMS
  */
-int threadGetOsiPriorityValue(int ossPriority)
+int epicsThreadGetOsiPriorityValue(int ossPriority)
 {
     if (ossPriority < 100) {
-        return threadPriorityMax;
+        return epicsThreadPriorityMax;
     }
     else if (ossPriority > 199) {
-        return threadPriorityMin;
+        return epicsThreadPriorityMin;
     }
     else {
         return (199u - (unsigned int)ossPriority);
     }
 }
 
-int threadGetOssPriorityValue(unsigned int osiPriority)
+int epicsThreadGetOssPriorityValue(unsigned int osiPriority)
 {
     if (osiPriority > 99) {
         return 100;
@@ -83,9 +83,9 @@ int threadGetOssPriorityValue(unsigned int osiPriority)
 }
 
 /*
- * threadLowestPriorityLevelAbove ()
+ * epicsThreadLowestPriorityLevelAbove ()
  */
-epicsShareFunc threadBoolStatus epicsShareAPI threadLowestPriorityLevelAbove 
+epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadLowestPriorityLevelAbove 
             (unsigned int priority, unsigned *pPriorityJustAbove)
 {
     unsigned newPriority = priority + 1;
@@ -93,37 +93,37 @@ epicsShareFunc threadBoolStatus epicsShareAPI threadLowestPriorityLevelAbove
     newPriority = priority + 1;
     if (newPriority <= 99) {
         *pPriorityJustAbove = newPriority;
-        return tbsSuccess;
+        return threadBoolStatusSuccess;
     }
-    return tbsFail;
+    return threadBoolStatusFail;
 }
 
 /*
- * threadHighestPriorityLevelBelow ()
+ * epicsThreadHighestPriorityLevelBelow ()
  */
-epicsShareFunc threadBoolStatus epicsShareAPI threadHighestPriorityLevelBelow 
+epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadHighestPriorityLevelBelow 
             (unsigned int priority, unsigned *pPriorityJustBelow)
 {
     unsigned newPriority = priority - 1;
 
     if (newPriority <= 99) {
         *pPriorityJustBelow = newPriority;
-        return tbsSuccess;
+        return threadBoolStatusSuccess;
     }
-    return tbsFail;
+    return threadBoolStatusFail;
 }
 
 #define ARCH_STACK_FACTOR 2
 
 unsigned int
-threadGetStackSize (threadStackSizeClass size)
+epicsThreadGetStackSize (epicsThreadStackSizeClass size)
 {
     switch(size) {
-    case threadStackSmall:  return( 4000*ARCH_STACK_FACTOR);
-    case threadStackMedium: return( 6000*ARCH_STACK_FACTOR);
-    case threadStackBig:    return(11000*ARCH_STACK_FACTOR);
+    case epicsThreadStackSmall:  return( 4000*ARCH_STACK_FACTOR);
+    case epicsThreadStackMedium: return( 6000*ARCH_STACK_FACTOR);
+    case epicsThreadStackBig:    return(11000*ARCH_STACK_FACTOR);
     default:
-        errlogPrintf("threadGetStackSize illegal argument");
+        errlogPrintf("epicsThreadGetStackSize illegal argument");
     }
     return(11000*ARCH_STACK_FACTOR);
 }
@@ -170,7 +170,7 @@ threadWrapper (rtems_task_argument arg)
 /*
  * The task wrapper takes care of cleanup
  */
-void threadExitMain (void)
+void epicsThreadExitMain (void)
 {
 }
 
@@ -180,7 +180,7 @@ void threadExitMain (void)
 static void
 badInit (const char *msg)
 {
-    const char fmt[] = "%s called before threadInit finished!";
+    const char fmt[] = "%s called before epicsThreadInit finished!";
 
     syslog (LOG_CRIT, fmt, msg);
     fprintf (stderr, fmt, msg);
@@ -189,13 +189,13 @@ badInit (const char *msg)
 }
 
 static void
-setThreadInfo (rtems_id tid, const char *name, THREADFUNC funptr,void *parm)
+setThreadInfo (rtems_id tid, const char *name, EPICSTHREADFUNC funptr,void *parm)
 {
     struct taskVar *v;
     rtems_unsigned32 note;
 
-    v = mallocMustSucceed (sizeof *v, "threadCreate_vars");
-    v->name = mallocMustSucceed (strlen (name) + 1, "threadCreate_name");
+    v = mallocMustSucceed (sizeof *v, "epicsThreadCreate_vars");
+    v->name = mallocMustSucceed (strlen (name) + 1, "epicsThreadCreate_name");
     strcpy (v->name, name);
     v->id = tid;
     v->funptr = funptr;
@@ -218,11 +218,11 @@ setThreadInfo (rtems_id tid, const char *name, THREADFUNC funptr,void *parm)
 /*
  * OS-dependent initialization
  * No need to worry about making this thread-safe since
- * it must be called before threadCreate creates
+ * it must be called before epicsThreadCreate creates
  * any new threads.
  */
 void
-threadInit (void)
+epicsThreadInit (void)
 {
     if (!initialized) {
         rtems_id tid;
@@ -230,14 +230,14 @@ threadInit (void)
         extern void clockInit (void);
 
         clockInit ();
-        rtems_task_set_priority (RTEMS_SELF, threadGetOssPriorityValue(99), &old);
+        rtems_task_set_priority (RTEMS_SELF, epicsThreadGetOssPriorityValue(99), &old);
         onceMutex = epicsMutexMustCreate();
         taskVarMutex = epicsMutexMustCreate ();
         rtems_task_ident (RTEMS_SELF, 0, &tid);
         setThreadInfo (tid, "_main_", NULL, NULL);
         initialized = 1;
-        threadCreate ("ImsgDaemon", 99,
-                threadGetStackSize (threadStackSmall),
+        epicsThreadCreate ("ImsgDaemon", 99,
+                epicsThreadGetStackSize (epicsThreadStackSmall),
                 InterruptContextMessageDaemon, NULL);
     }
 }
@@ -245,68 +245,68 @@ threadInit (void)
 /*
  * Create and start a new thread
  */
-threadId
-threadCreate (const char *name,
+epicsThreadId
+epicsThreadCreate (const char *name,
     unsigned int priority, unsigned int stackSize,
-    THREADFUNC funptr,void *parm)
+    EPICSTHREADFUNC funptr,void *parm)
 {
     rtems_id tid;
     rtems_status_code sc;
     char c[4];
 
-    if (!initialized) threadInit();
+    if (!initialized) epicsThreadInit();
     if (stackSize < RTEMS_MINIMUM_STACK_SIZE) {
-        errlogPrintf ("threadCreate %s illegal stackSize %d\n",name,stackSize);
+        errlogPrintf ("epicsThreadCreate %s illegal stackSize %d\n",name,stackSize);
         return 0;
     }
     strncpy (c, name, sizeof c);
     sc = rtems_task_create (rtems_build_name (c[0], c[1], c[2], c[3]),
-         threadGetOssPriorityValue (priority),
+         epicsThreadGetOssPriorityValue (priority),
          stackSize,
          RTEMS_PREEMPT|RTEMS_NO_TIMESLICE|RTEMS_NO_ASR|RTEMS_INTERRUPT_LEVEL(0),
          RTEMS_FLOATING_POINT|RTEMS_LOCAL,
          &tid);
     if (sc !=  RTEMS_SUCCESSFUL) {
-        errlogPrintf ("threadCreate create failure for %s: %s\n",name, rtems_status_text (sc));
+        errlogPrintf ("epicsThreadCreate create failure for %s: %s\n",name, rtems_status_text (sc));
         return 0;
     }
     setThreadInfo (tid, name, funptr,parm);
-    return (threadId)tid;
+    return (epicsThreadId)tid;
 }
 
-threadId
+epicsThreadId
 threadMustCreate (const char *name,
     unsigned int priority, unsigned int stackSize,
-    THREADFUNC funptr,void *parm)
+    EPICSTHREADFUNC funptr,void *parm)
 {
-    threadId tid;
+    epicsThreadId tid;
 
-    if ((tid = threadCreate (name, priority, stackSize, funptr, parm)) == NULL)
+    if ((tid = epicsThreadCreate (name, priority, stackSize, funptr, parm)) == NULL)
         cantProceed (0);
     return tid;
 }
 
 void
-threadSuspendSelf (void)
+epicsThreadSuspendSelf (void)
 {
     rtems_status_code sc;
 
     sc = rtems_task_suspend (RTEMS_SELF);
     if(sc != RTEMS_SUCCESSFUL)
-        errlogPrintf("threadSuspendSelf failed: %s\n", rtems_status_text (sc));
+        errlogPrintf("epicsThreadSuspendSelf failed: %s\n", rtems_status_text (sc));
 }
 
-void threadResume(threadId id)
+void epicsThreadResume(epicsThreadId id)
 {
     rtems_id tid = (rtems_id)id;
     rtems_status_code sc;
 
     sc = rtems_task_resume (tid);
     if(sc != RTEMS_SUCCESSFUL)
-        errlogPrintf("threadResume failed: %s\n", rtems_status_text (sc));
+        errlogPrintf("epicsThreadResume failed: %s\n", rtems_status_text (sc));
 }
 
-unsigned int threadGetPriority(threadId id)
+unsigned int epicsThreadGetPriority(epicsThreadId id)
 {
     rtems_id tid = (rtems_id)id;
     rtems_status_code sc;
@@ -314,35 +314,35 @@ unsigned int threadGetPriority(threadId id)
 
     sc = rtems_task_set_priority (tid, RTEMS_CURRENT_PRIORITY, &pri);
     if (sc != RTEMS_SUCCESSFUL)
-        errlogPrintf("threadGetPriority failed: %s\n", rtems_status_text (sc));
-    return threadGetOsiPriorityValue (pri);
+        errlogPrintf("epicsThreadGetPriority failed: %s\n", rtems_status_text (sc));
+    return epicsThreadGetOsiPriorityValue (pri);
 }
 
-unsigned int threadGetPrioritySelf(void)
+unsigned int epicsThreadGetPrioritySelf(void)
 {
-    return threadGetPriority((threadId)RTEMS_SELF);
+    return epicsThreadGetPriority((epicsThreadId)RTEMS_SELF);
 }
 
 void
-threadSetPriority (threadId id,unsigned int osip)
+epicsThreadSetPriority (epicsThreadId id,unsigned int osip)
 {
     rtems_id tid = (rtems_id)id;
     rtems_status_code sc;
-    rtems_task_priority pri = threadGetOssPriorityValue(osip);
+    rtems_task_priority pri = epicsThreadGetOssPriorityValue(osip);
 
     sc = rtems_task_set_priority (tid, pri, &pri);
     if (sc != RTEMS_SUCCESSFUL)
-        errlogPrintf("threadSetPriority failed\n", rtems_status_text (sc));
+        errlogPrintf("epicsThreadSetPriority failed\n", rtems_status_text (sc));
 }
 
 int
-threadIsEqual (threadId id1, threadId id2)
+epicsThreadIsEqual (epicsThreadId id1, epicsThreadId id2)
 {
     return (id1 == id2);
 }
 
 int
-threadIsSuspended (threadId id)
+epicsThreadIsSuspended (epicsThreadId id)
 {
     rtems_id tid = (rtems_id)id;
     rtems_status_code sc;
@@ -355,13 +355,13 @@ threadIsSuspended (threadId id)
         return 1;
 
     default:
-        errlogPrintf("threadIsSuspended: %s\n", rtems_status_text (sc));
+        errlogPrintf("epicsThreadIsSuspended: %s\n", rtems_status_text (sc));
         return 0;
     }
 }
 
 void
-threadSleep (double seconds)
+epicsThreadSleep (double seconds)
 {
     rtems_status_code sc;
     rtems_interval delay;
@@ -370,19 +370,19 @@ threadSleep (double seconds)
     delay = seconds * rtemsTicksPerSecond_double;
     sc = rtems_task_wake_after (delay);
     if(sc != RTEMS_SUCCESSFUL)
-        errlogPrintf("threadSleep: %s\n", rtems_status_text (sc));
+        errlogPrintf("epicsThreadSleep: %s\n", rtems_status_text (sc));
 }
 
-threadId
-threadGetIdSelf (void)
+epicsThreadId
+epicsThreadGetIdSelf (void)
 {
     rtems_id tid;
 
     rtems_task_ident (RTEMS_SELF, 0, &tid);
-    return (threadId)tid;
+    return (epicsThreadId)tid;
 }
 
-const char *threadGetNameSelf(void)
+const char *epicsThreadGetNameSelf(void)
 {
     rtems_unsigned32 note;
     struct taskVar *v;
@@ -392,7 +392,7 @@ const char *threadGetNameSelf(void)
     return v->name;
 }
 
-void threadGetName (threadId id, char *name, size_t size)
+void epicsThreadGetName (epicsThreadId id, char *name, size_t size)
 {
     rtems_id tid = (rtems_id)id;
     rtems_status_code sc;
@@ -412,7 +412,7 @@ void threadGetName (threadId id, char *name, size_t size)
     taskVarUnlock ();
 }
 
-threadId threadGetId (const char *name)
+epicsThreadId epicsThreadGetId (const char *name)
 {
     struct taskVar *v;
     rtems_id tid = 0;
@@ -429,15 +429,15 @@ threadId threadGetId (const char *name)
         } 
     }
     taskVarUnlock ();
-    return (threadId)tid;
+    return (epicsThreadId)tid;
 }
 
 /*
  * Ensure func() is run only once.
  */
-void threadOnceOsd(threadOnceId *id, void(*func)(void *), void *arg)
+void epicsThreadOnceOsd(epicsThreadOnceId *id, void(*func)(void *), void *arg)
 {
-    if (!initialized) threadInit();
+    if (!initialized) epicsThreadInit();
     epicsMutexMustLock(onceMutex);
     if (*id == 0) {
             *id = -1;
@@ -451,24 +451,24 @@ void threadOnceOsd(threadOnceId *id, void(*func)(void *), void *arg)
  * Thread private storage implementation based on the vxWorks
  * implementation by Andrew Johnson APS/ASD.
  */
-threadPrivateId threadPrivateCreate ()
+epicsThreadPrivateId epicsThreadPrivateCreate ()
 {
     unsigned int taskVarIndex;
     static volatile unsigned int threadVariableCount = 0;
 
-    if (!initialized) threadInit ();
+    if (!initialized) epicsThreadInit ();
     taskVarLock ();
     taskVarIndex = ++threadVariableCount;
     taskVarUnlock ();
-    return (threadPrivateId)taskVarIndex;
+    return (epicsThreadPrivateId)taskVarIndex;
 }
 
-void threadPrivateDelete (threadPrivateId id)
+void epicsThreadPrivateDelete (epicsThreadPrivateId id)
 {
     /* empty */
 }
 
-void threadPrivateSet (threadPrivateId id, void *pvt)
+void epicsThreadPrivateSet (epicsThreadPrivateId id, void *pvt)
 {
     unsigned int varIndex = (unsigned int)id;
     rtems_unsigned32 note;
@@ -480,7 +480,7 @@ void threadPrivateSet (threadPrivateId id, void *pvt)
     if (varIndex >= v->threadVariableCapacity) {
         v->threadVariables = realloc (v->threadVariables, (varIndex + 1) * sizeof (void *));
         if (v->threadVariables == NULL)
-            cantProceed("threadPrivateSet realloc failed\n");
+            cantProceed("epicsThreadPrivateSet realloc failed\n");
         for (i = v->threadVariableCapacity ; i < varIndex ; i++)
             v->threadVariables[i] = NULL;
         v->threadVariableCapacity = varIndex + 1;
@@ -488,7 +488,7 @@ void threadPrivateSet (threadPrivateId id, void *pvt)
     v->threadVariables[varIndex] = pvt;
 }
 
-void * threadPrivateGet (threadPrivateId id)
+void * epicsThreadPrivateGet (epicsThreadPrivateId id)
 {
     unsigned int varIndex = (unsigned int)id;
     rtems_unsigned32 note;
@@ -556,7 +556,7 @@ showInternalTaskInfo (rtems_id tid)
     _Thread_Enable_dispatch();
     /*
      * Show both real and current priorities if they differ.
-     * Note that the threadGetOsiPriorityValue routine is not used here.
+     * Note that the epicsThreadGetOsiPriorityValue routine is not used here.
      * If a thread has a priority outside the normal EPICS range then
      * that priority should be displayed, not the value truncated to
      * the EPICS range.
@@ -575,32 +575,32 @@ showInternalTaskInfo (rtems_id tid)
 }
 
 static void
-threadShowHeader (void)
+epicsThreadShowHeader (void)
 {
     printf ("      NAME        ID    PRIORITY   STATE    WAIT   \n");
     printf ("+-------------+--------+--------+--------+--------+\n");
 }
 
 static void
-threadShowInfo (struct taskVar *v, unsigned int level)
+epicsThreadShowInfo (struct taskVar *v, unsigned int level)
 {
         printf ("%14.14s %8.8x", v->name, v->id);
         showInternalTaskInfo (v->id);
         printf ("\n");
 }
 
-void threadShow (threadId id, unsigned int level)
+void epicsThreadShow (epicsThreadId id, unsigned int level)
 {
     struct taskVar *v;
 
     if (!id) {
-        threadShowHeader ();
+        epicsThreadShowHeader ();
         return;
     }
     taskVarLock ();
     for (v = taskVarHead ; v != NULL ; v = v->forw) {
         if ((rtems_id)id == v->id) {
-            threadShowInfo (v, level);
+            epicsThreadShowInfo (v, level);
             return;
         }
     }
@@ -608,11 +608,11 @@ void threadShow (threadId id, unsigned int level)
     printf ("*** Thread %x does not exist.\n", (unsigned int)id);
 }
 
-void threadShowAll (unsigned int level)
+void epicsThreadShowAll (unsigned int level)
 {
     struct taskVar *v;
 
-    threadShowHeader ();
+    epicsThreadShowHeader ();
     taskVarLock ();
     /*
      * Show tasks in the order of creation (backwards through list)
@@ -620,7 +620,7 @@ void threadShowAll (unsigned int level)
     for (v = taskVarHead ; v != NULL && v->forw != NULL ; v = v->forw)
         continue;
     while (v) {
-        threadShowInfo (v, level);
+        epicsThreadShowInfo (v, level);
         v = v->back;
     }
     taskVarUnlock ();

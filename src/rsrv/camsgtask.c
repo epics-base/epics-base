@@ -53,9 +53,9 @@ void camsgtask (struct client *client)
     int             nchars;
     int             status;
 
-    client->tid = threadGetIdSelf ();
+    client->tid = epicsThreadGetIdSelf ();
 
-    taskwdInsert (threadGetIdSelf(), NULL, NULL);
+    taskwdInsert (epicsThreadGetIdSelf(), NULL, NULL);
 
     while (TRUE) {
         client->recv.stk = 0;

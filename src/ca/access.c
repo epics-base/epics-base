@@ -87,6 +87,7 @@
 /*	070293	joh	set ca_static to nill at the end of		*/
 /*			ca_process_exit() under all os and not just	*/
 /*			vxWorks						*/
+/*	120293	joh	flush in ca_pend_io() if no IO oustanding	*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -2504,9 +2505,12 @@ int			early;
     		return ECA_EVDISALLOW;
 	}
 
-  	/*	Flush the send buffers	*/
-
+  	/*	
+	 * Flush the send buffers
+	 */
     	if(pndrecvcnt<1 && early){
+      		manage_conn(TRUE);
+  		cac_send_msg();
         	return ECA_NORMAL;
 	}
 

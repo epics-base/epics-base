@@ -79,15 +79,3 @@ void exAsyncReadIO::expire()
 	this->postIOCompletion(status);
 }
 
-//
-// exAsyncExistIO::expire()
-// (a virtual function that runs when the base timer expires)
-//
-void exAsyncExistIO::expire()
-{
-	//
-	// post IO completion
-	//
-	this->postIOCompletion(S_cas_success);
-}
-

@@ -168,7 +168,7 @@ caStatus exPV::update(gdd &valueIn)
 //
 aitEnum exPV::bestExternalType()
 {
-	return aitEnumFloat64;
+	return aitEnumFloat32;
 }
 
 //

@@ -14,9 +14,9 @@
 osiTime exServer::currentTime;
 
 const pvInfo exServer::pvList[] = {
-	pvInfo (1.0e-4, "jane", 10.0f, 0.0f, excasIoSync),
+	pvInfo (1.0e-1, "jane", 10.0f, 0.0f, excasIoSync),
 	pvInfo (2.0, "fred", 10.0f, -10.0f, excasIoSync),
-	pvInfo (1.0e-4, "janet", 10.0f, 0.0f, excasIoAsync),
+	pvInfo (1.0e-1, "janet", 10.0f, 0.0f, excasIoAsync),
 	pvInfo (2.0, "freddy", 10.0f, -10.0f, excasIoAsync)
 };
 
@@ -105,11 +105,11 @@ caStatus exServer::pvExistTest(const casCtx &ctxIn, const char *pPVName,
 			}
 		}
 
-		/*
-		 * there are no name aliases in this
-		 * server's PV name syntax
-		 */
-		canonicalPVName.putRef (&pPVI->getName());
+		//
+		// there are no name aliases in this
+		// server's PV name syntax
+		//
+		canonicalPVName.put (pPVI->getName());
 		return S_casApp_success;
 	}
 
@@ -178,5 +178,17 @@ void exServer::show (unsigned level)
 //
 void exAsyncIOTimer::destroy()
 {
+}
+
+//
+// exAsyncExistIO::expire()
+// (a virtual function that runs when the base timer expires)
+//
+void exAsyncExistIO::expire()
+{
+        //
+        // post IO completion
+        //
+        this->postIOCompletion(S_cas_success);
 }
 

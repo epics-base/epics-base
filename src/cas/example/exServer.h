@@ -370,13 +370,13 @@ public:
 		const casCtx &ctxIn, gdd &canonicalPVName) :
 		exAsyncIO(ctxIn, &canonicalPVName)
 	{
-		canonicalPVName.putRef(&pPVI->getName());
+		canonicalPVName.put (pPVI->getName());
 	}
 
 	//
 	// expire()
 	// (a virtual function that runs when the base timer expires)
-	// see exAsyncPV.cc
+	// see exServer.cc
 	//
 	void expire();
 private:

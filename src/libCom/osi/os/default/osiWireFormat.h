@@ -28,20 +28,17 @@
 
 // this endian test will hopefully vanish during optimization
 // and therefore be executed only at compile time
-inline bool osiLittleEndian ()
-{
-    union {
-        epicsUInt32 uint;
-        epicsUInt8 uchar[4];
-    } osiWireFormatEndianTest;
-    osiWireFormatEndianTest.uint = 1;
-    if ( osiWireFormatEndianTest.uchar[0] == 1 ) {
-        return true;
-    }
-    else {
-        return false;
-    }
-}
+union endianTest {
+public:
+        endianTest () : uint ( 1u ) {}
+        bool littleEndian () const { return uchar[0] & 1u;  }
+        bool bigEndian () const { return ! littleEndian(); }
+private:
+        unsigned uint;
+        unsigned char uchar[4];
+};
+
+static const endianTest endianTester;
 
 inline void osiConvertToWireFormat ( const epicsFloat32 &value, epicsUInt8 *pWire )
 {
@@ -50,10 +47,10 @@ inline void osiConvertToWireFormat ( const epicsFloat32 &value, epicsUInt8 *pWir
         epicsFloat32 ftmp;
     };
     ftmp = value;
-    pWire[0] = static_cast < unsigned char > ( utmp >> 24u );
-    pWire[1] = static_cast < unsigned char > ( utmp >> 16u );
-    pWire[2] = static_cast < unsigned char > ( utmp >> 8u );
-    pWire[3] = static_cast < unsigned char > ( utmp >> 0u );
+    pWire[0] = static_cast < epicsUInt8 > ( utmp >> 24u );
+    pWire[1] = static_cast < epicsUInt8 > ( utmp >> 16u );
+    pWire[2] = static_cast < epicsUInt8 > ( utmp >> 8u );
+    pWire[3] = static_cast < epicsUInt8 > ( utmp >> 0u );
 }
 
 inline void osiConvertToWireFormat ( const epicsFloat64 &value, epicsUInt8 *pWire )
@@ -64,7 +61,7 @@ inline void osiConvertToWireFormat ( const epicsFloat64 &value, epicsUInt8 *pWir
     };
     ftmp = value;
     // this endian test should vanish during optimization
-    if ( osiLittleEndian () ) {
+    if ( endianTester.littleEndian () ) {
         // little endian
         pWire[0] = btmp[7];
         pWire[1] = btmp[6];
@@ -88,7 +85,7 @@ inline void osiConvertToWireFormat ( const epicsFloat64 &value, epicsUInt8 *pWir
     }
 }
 
-inline void osiConvertFromWireFormat ( epicsFloat32 &value, epicsUInt8 *pWire )
+inline void osiConvertFromWireFormat ( epicsFloat32 &value, const epicsUInt8 *pWire )
 {
     union {
         epicsUInt32 utmp;
@@ -101,13 +98,13 @@ inline void osiConvertFromWireFormat ( epicsFloat32 &value, epicsUInt8 *pWire )
     value = ftmp;
 }
 
-inline void osiConvertFromWireFormat ( epicsFloat64 &value, epicsUInt8 *pWire )
+inline void osiConvertFromWireFormat ( epicsFloat64 &value, const epicsUInt8 *pWire )
 {
     union {
         epicsUInt8 btmp[8];
         epicsFloat64 ftmp;
     };
-    if ( osiLittleEndian () ) {
+    if ( endianTester.littleEndian () ) {
         btmp[7] = pWire[0];
         btmp[6] = pWire[1];
         btmp[5] = pWire[2];

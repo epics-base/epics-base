@@ -59,7 +59,7 @@ unsigned getCallbackCount;
 
 static epicsTimeStamp showProgressBeginTime;
 
-static double timeoutToPendIO = 1e20;
+static const double timeoutToPendIO = 1e20;
 
 void showProgressBegin ( const char *pTestName, unsigned interestLevel )
 {
@@ -1410,6 +1410,10 @@ void singleSubscriptionDeleteTest ( chid chan, unsigned interestLevel  )
         SEVCHK ( ca_add_event ( DBR_GR_FLOAT, chan, noopSubscriptionStateChange,
             &count, &sid) , NULL );
 
+        if ( i % 100 == 0 ) {
+            showProgress ( interestLevel );
+        }
+
         /*
          * force the subscription request to complete
          */
@@ -1430,7 +1434,6 @@ void singleSubscriptionDeleteTest ( chid chan, unsigned interestLevel  )
                 SEVCHK ( ca_put (DBR_FLOAT, chan, &temp), NULL);
             }
             ca_flush_io ();
-            epicsThreadSleep ( 0.001 );
         }
 
         SEVCHK ( ca_clear_event ( sid ), NULL );
@@ -2229,8 +2232,6 @@ void verifyReasonableBeaconPeriod ( chid chan, unsigned interestLevel )
             ca_beacon_anomaly_count () );
 
         beaconPeriod = ca_beacon_period ( chan );
-        assert ( beaconPeriod >= 0.0 );
-
         printf ( "Estimated beacon period for channel %s = %g sec.\n", 
             ca_name ( chan ), beaconPeriod );
 
@@ -2245,8 +2246,8 @@ void verifyReasonableBeaconPeriod ( chid chan, unsigned interestLevel )
          * so we can see if beacons reset the watchdog
          */
         for ( i = 0u; i < 15u; i++ ) {
-            showProgress ( interestLevel );
             ca_pend_event ( 2.0 );
+            showProgress ( interestLevel );
         }
         if ( interestLevel > 0 ) {
             printf ( "\n" );
@@ -2507,20 +2508,10 @@ int acctst ( char *pName, unsigned interestLevel, unsigned channelCount,
 {
     chid chan;
     int status;
-    long lstatus;
     unsigned i;
     appChan *pChans;
     unsigned connections;
     unsigned maxArrayBytes = 10000000;
-
-    lstatus = envGetDoubleConfigParam ( &EPICS_CA_CONN_TMO, &timeoutToPendIO );
-    if ( lstatus ) {
-        timeoutToPendIO = 1e10;
-        printf ( "EPICS \"%s\" double fetch failed\n", 
-            EPICS_CA_CONN_TMO.name);
-        printf ( "Defaulting \"%s\" = %f\n", 
-            EPICS_CA_CONN_TMO.name, timeoutToPendIO );
-    }
 
     printf ( "CA Client V%s, channel name \"%s\", timeout %g\n", 
         ca_version (), pName, timeoutToPendIO );

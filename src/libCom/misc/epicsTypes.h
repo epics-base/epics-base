@@ -28,6 +28,9 @@
  * Modification Log:
  * -----------------
  * $Log$
+ * Revision 1.2  1996/06/20 16:27:33  jhill
+ * eliminated sbufs
+ *
  * Revision 1.1  1996/01/25 21:38:48  mrk
  * moved files from /base/include
  *
@@ -41,14 +44,6 @@
 
 #ifndef INCepicsTypesh
 #define INCepicsTypesh 1
-
-#ifdef __STDC__
-#	define READONLY const
-#else
-#	define READONLY 
-#endif
-
-#include <stdio.h>
 
 #include <shareLib.h>
 
@@ -148,18 +143,18 @@ typedef enum {
  * of type name strings.
  */
 #ifdef epicsTypesGLOBAL
-READONLY char *epicsTypeNames [lastEpicsType+1] = {
-		stringOf (epicsInt8),
-		stringOf (epicsUInt8),
-		stringOf (epicsInt16),
-		stringOf (epicsUInt16),
-		stringOf (epicsEnum16),
-		stringOf (epicsInt32),
-		stringOf (epicsUInt32),
-		stringOf (epicsFloat32),
-		stringOf (epicsFloat64),
-		stringOf (epicsString),
-		stringOf (epicsOldString),
+epicsShareDecl READONLY char *epicsTypeNames [lastEpicsType+1] = {
+		"epicsInt8",
+		"epicsUInt8",
+		"epicsInt16",
+		"epicsUInt16",
+		"epicsEnum16",
+		"epicsInt32",
+		"epicsUInt32",
+		"epicsFloat32",
+		"epicsFloat64",
+		"epicsString",
+		"epicsOldString",
 };
 #else /* epicsTypesGLOBAL */
 epicsShareExtern READONLY char *epicsTypeNames [lastEpicsType+1];
@@ -170,25 +165,25 @@ epicsShareExtern READONLY char *epicsTypeNames [lastEpicsType+1];
  * of type code name strings.
  */
 #ifdef epicsTypesGLOBAL
-READONLY char *epicsTypeCodeNames [lastEpicsType+1] = {
-		stringOf (epicsInt8T),
-		stringOf (epicsUInt8T),
-		stringOf (epicsInt16T),
-		stringOf (epicsUInt16T),
-		stringOf (epicsEnum16T),
-		stringOf (epicsInt32T),
-		stringOf (epicsUInt32T),
-		stringOf (epicsFloat32T),
-		stringOf (epicsFloat64T),
-		stringOf (epicsStringT),
-		stringOf (epicsOldStringT),
+epicsShareDecl READONLY char *epicsTypeCodeNames [lastEpicsType+1] = {
+		"epicsInt8T",
+		"epicsUInt8T",
+		"epicsInt16T",
+		"epicsUInt16T",
+		"epicsEnum16T",
+		"epicsInt32T",
+		"epicsUInt32T",
+		"epicsFloat32T",
+		"epicsFloat64T",
+		"epicsStringT",
+		"epicsOldStringT",
 };
 #else /* epicsTypesGLOBAL */
 epicsShareExtern READONLY char *epicsTypeCodeNames [lastEpicsType+1];
 #endif /* epicsTypesGLOBAL */
 
 #ifdef epicsTypesGLOBAL
-READONLY unsigned epicsTypeSizes [lastEpicsType+1] = {
+epicsShareDecl READONLY unsigned epicsTypeSizes [lastEpicsType+1] = {
 		sizeof (epicsInt8),
 		sizeof (epicsUInt8),
 		sizeof (epicsInt16),
@@ -217,7 +212,7 @@ typedef enum {
 	epicsStringC,
 	epicsOldStringC} epicsTypeClass;
 #ifdef epicsTypesGLOBAL
-READONLY epicsTypeClass epicsTypeClasses [lastEpicsType+1] = {
+epicsShareDecl READONLY epicsTypeClass epicsTypeClasses [lastEpicsType+1] = {
 		epicsIntC,
 		epicsUIntC,
 		epicsIntC,
@@ -236,17 +231,17 @@ epicsShareExtern READONLY epicsTypeClass epicsTypeClasses [lastEpicsType+1];
 
 
 #ifdef epicsTypesGLOBAL
-READONLY char *epicsTypeAnyFieldName [lastEpicsType+1] = {
-			stringOf (int8),
-			stringOf (uInt8),
-			stringOf (int16),
-			stringOf (uInt16),
-			stringOf (enum16),
-			stringOf (int32),
-			stringOf (uInt32),
-			stringOf (float32),
-			stringOf (float64),
-			stringOf (string),
+epicsShareDecl READONLY char *epicsTypeAnyFieldName [lastEpicsType+1] = {
+			"int8",
+			"uInt8",
+			"int16",
+			"uInt16",
+			"enum16",
+			"int32",
+			"uInt32",
+			"float32",
+			"float64",
+			"string",
 			"", /* Old Style Strings will not be in epicsAny type */
 	};
 #else /* epicsTypesGLOBAL */

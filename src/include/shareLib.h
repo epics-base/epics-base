@@ -11,9 +11,10 @@
  * In header files, declare variables, classes and functions
  * to be __exported__ like this:
  *
- *	epicsShareAPI     int a_func (int arg);
- *	epicsShareExtern  int a_var;
- *	class epicsShareClass a_class;
+ *	epicsShareAPI     int a_func (int arg); 	reference function 
+ *	epicsShareExtern  int a_var; 			reference variable 
+ *	epicsShareDecl int a_var= 4; 			create variable instance 
+ *	class epicsShareClass a_class; 			reference a class 
  *
  * Usually the epicsShare... macros expand to
  *  "import this from a DLL"  (on WIN32, on Unix it's a NOP)
@@ -34,10 +35,13 @@
  */
 
 #undef epicsShareExtern
+#undef epicsShareDecl
 #undef epicsShareClass
 #undef epicsShareAPI
+#undef READONLY
 
-#ifdef WIN32
+
+#if defined(WIN32)
 
 #	if defined(_WINDLL)  ||  defined(epicsExportSharedSymbols)
 #		define epicsShareExtern __declspec(dllexport) extern
@@ -50,6 +54,24 @@
 	 * Subroutine removes arguments 
 	 */
 #	define epicsShareAPI __stdcall
+#	define epicsShareDecl 
+#       define READONLY const
+
+#elif defined(VAXC)
+
+	/* 
+	 * VAXC creates FORTRAN common blocks when
+	 * we use "extern int fred"/"int fred=4". Therefore,
+	 * the initialization is not loaded unless we
+	 * call a function in that object module.
+	 *
+	 * DEC CXX does not have this problem.
+	 * We suspect (but do not know) that DEC C 
+	 * 	also does not have this problem.
+	 */
+#	define epicsShareExtern globalref 
+#	define epicsShareDecl globaldef 
+#       define READONLY const
 
 #else
 
@@ -58,5 +80,12 @@
 #	define epicsShareExtern extern
 #	define epicsShareAPI
 #	define epicsShareClass
+#	define epicsShareDecl 
+#	if defined(__STDC__) || defined(VAXC)
+#		define READONLY const
+#	else
+#		define READONLY
+#	endif
+
 #endif
 

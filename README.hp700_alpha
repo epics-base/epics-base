@@ -1,12 +1,28 @@
 #
-# supplement README for HP700 and Alpha OSF/1 builds
+# supplement README for HP700 
 #
-# M. Anderson and J. Tang
+# Johnny Tang  5-29-97
+#
 
+1. VxWorks 5.2 for HP-UX
 
-- Directory permissions may not be correct across multiple machines, so a
+   - Make sure that you have set VX_DIR and VX_GNU to your
+     VxWorks root directory. 
 
- % chmod -R ugo+rw base extensions
+   - Under $(VX_DIR), create a soft link:
+     hp700.68k -> hp9700.68k
 
- might be necessary.
+2. Modify base/config/CONFIG_SITE file
 
+   - ANSI=HPACC
+   - STANDARD=HPCC
+   - CPLUSPLUS=G++
+
+3. HP native c++ compiler has problem to handle the head files
+   in which a inline function is used in conjuction with template
+
+   base/src/cas, the portable CA server is compiled successfully with
+   gnu c++ but not HP native c++ because of the above limitation.
+
+   This problem can be resolved by spliting the function declarations
+   from the inline code in the files in base/src/cxxTemplates.

@@ -61,12 +61,12 @@
 #include "epicsPrint.h"
 #include "dbBase.h"
 #include "dbStaticLib.h"
-#include "dbAddr.h"
 #include "dbFldTypes.h"
 #include "link.h"
 #include "devSup.h"
 #include "dbCommon.h"
 #define epicsExportSharedSymbols
+#include "dbAddr.h"
 #include "callback.h"
 #include "dbAccess.h"
 #include "dbLock.h"

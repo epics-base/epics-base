@@ -211,27 +211,20 @@ epicsShareExtern READONLY int epicsTypeToDBR_XXXX [lastEpicsType+1];
 /*Definitions that allow old database access to use new conversion routines*/
 #define newDBF_DEVICE 11
 #define newDBR_ENUM    9
-#ifdef __STDC__
-extern long (*dbGetConvertRoutine[newDBF_DEVICE+1][newDBR_ENUM+1])
+epicsShareExtern long (*dbGetConvertRoutine[newDBF_DEVICE+1][newDBR_ENUM+1])
     (struct dbAddr *paddr, void *pbuffer,long nRequest,
         long no_elements, long offset);
-extern long (*dbPutConvertRoutine[newDBR_ENUM+1][newDBF_DEVICE+1])
+epicsShareExtern long (*dbPutConvertRoutine[newDBR_ENUM+1][newDBF_DEVICE+1])
     (struct dbAddr *paddr, void *pbuffer,long nRequest,
         long no_elements, long offset);
-extern long (*dbFastGetConvertRoutine[newDBF_DEVICE+1][newDBR_ENUM+1])();
-extern long (*dbFastPutConvertRoutine[newDBR_ENUM+1][newDBF_DEVICE+1])();
-#else
-extern long (*dbGetConvertRoutine[newDBF_DEVICE+1][newDBR_ENUM+1]) ();
-extern long (*dbPutConvertRoutine[newDBR_ENUM+1][newDBF_DEVICE+1]) ();
-extern long (*dbFastGetConvertRoutine[newDBF_DEVICE+1][newDBR_ENUM+1])();
-extern long (*dbFastPutConvertRoutine[newDBR_ENUM+1][newDBF_DEVICE+1])();
-#endif /*__STDC__*/
+epicsShareExtern long (*dbFastGetConvertRoutine[newDBF_DEVICE+1][newDBR_ENUM+1])();
+epicsShareExtern long (*dbFastPutConvertRoutine[newDBR_ENUM+1][newDBF_DEVICE+1])();
 
 /*Conversion between old and new DBR types*/
-extern unsigned short dbDBRoldToDBFnew[DBR_DOUBLE+1];
-extern unsigned short dbDBRnewToDBRold[newDBR_ENUM+1];
+epicsShareExtern unsigned short dbDBRoldToDBFnew[DBR_DOUBLE+1];
+epicsShareExtern unsigned short dbDBRnewToDBRold[newDBR_ENUM+1];
 #ifdef DB_TEXT_GLBLSOURCE
-unsigned short dbDBRoldToDBFnew[DBR_DOUBLE+1] = {
+epicsShareDef unsigned short dbDBRoldToDBFnew[DBR_DOUBLE+1] = {
 	0, /*DBR_STRING to DBF_STRING*/
 	3, /*DBR_INT to DBF_SHORT*/
 	7, /*DBR_FLOAT to DBF_FLOAT*/
@@ -240,7 +233,7 @@ unsigned short dbDBRoldToDBFnew[DBR_DOUBLE+1] = {
 	5, /*DBR_LONG to DBF_LONG*/
 	8  /*DBR_DOUBLE to DBF_DOUBLE*/
 };
-unsigned short dbDBRnewToDBRold[newDBR_ENUM+1] = {
+epicsShareDef unsigned short dbDBRnewToDBRold[newDBR_ENUM+1] = {
 	0, /*DBR_STRING to DBR_STRING*/
 	4, /*DBR_CHAR to DBR_CHAR*/
 	4, /*DBR_UCHAR to DBR_CHAR*/

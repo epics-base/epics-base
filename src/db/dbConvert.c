@@ -23,12 +23,12 @@ of this distribution.
 #include "tsStamp.h"
 #include "dbBase.h"
 #include "link.h"
-#include "dbAddr.h"
 #include "dbFldTypes.h"
 #include "dbStaticLib.h"
 #include "errMdef.h"
 #include "recSup.h"
 #define epicsExportSharedSymbols
+#include "dbAddr.h"
 #include "dbAccess.h"
 #include "recGbl.h"
 #include "dbConvert.h"

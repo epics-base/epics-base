@@ -38,7 +38,6 @@ of this distribution.
 #include "cadef.h"
 #include "caerr.h"
 #include "alarm.h"
-#include "db_access.h"
 #include "link.h"
 #include "errMdef.h"
 #include "epicsPrint.h"
@@ -47,6 +46,7 @@ of this distribution.
 epicsShareFunc void * epicsShareAPI dbCalloc(size_t nobj,size_t size);
 #include "dbCaPvt.h"
 #define epicsExportSharedSymbols
+#include "db_access.h"
 #include "dbScan.h"
 #include "dbCa.h"
 

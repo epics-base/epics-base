@@ -40,8 +40,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#include <dbDefs.h>
-
+#include "dbDefs.h"
 #include "ellLib.h"
 #define epicsExportSharedSymbols
 #include "initHooks.h"

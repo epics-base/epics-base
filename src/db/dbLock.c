@@ -75,11 +75,11 @@ since this will delay all other threads.
 #include "dbStaticLib.h"
 #include "dbFldTypes.h"
 #include "link.h"
-#include "dbAddr.h"
 #include "dbCommon.h"
 #include "epicsPrint.h"
 #include "errMdef.h"
 #define epicsExportSharedSymbols
+#include "dbAddr.h"
 #include "dbAccess.h"
 #include "dbLock.h"
 

@@ -27,7 +27,6 @@ of this distribution.
 #include "dbBase.h"
 #include "dbStaticLib.h"
 #include "link.h"
-#include "dbAddr.h"
 #include "dbFldTypes.h"
 #include "recSup.h"
 #include "devSup.h"
@@ -36,6 +35,7 @@ of this distribution.
 #include "special.h"
 #include "db_field_log.h"
 #define epicsExportSharedSymbols
+#include "dbAddr.h"
 #include "dbLock.h"
 #include "dbAccess.h"
 #include "recGbl.h"

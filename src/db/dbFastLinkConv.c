@@ -41,7 +41,6 @@
 #include "dbBase.h"
 #include "link.h"
 #include "dbFldTypes.h"
-#include "dbAddr.h"
 #include "dbStaticLib.h"
 #include "dbCommon.h"
 #include "dbFldTypes.h"
@@ -49,6 +48,7 @@
 #include "recSup.h"
 #include "special.h"
 #define epicsExportSharedSymbols
+#include "dbAddr.h"
 #include "dbAccess.h"
 #include "recGbl.h"
 #include "dbConvertFast.h"

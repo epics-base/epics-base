@@ -47,8 +47,8 @@
 #include "dbFldTypes.h"
 #include "link.h"
 #include "dbCommon.h"
-#include "dbAddr.h"
 #define epicsExportSharedSymbols
+#include "dbAddr.h"
 #include "dbScan.h"
 #include "dbLock.h"
 #include "callback.h"

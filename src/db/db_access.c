@@ -58,14 +58,12 @@
 #include "dbBase.h"
 #include "dbAddr.h"
 #include "dbNotify.h"
-#include "dbAccess.h"
 #include "dbCommon.h"
 #include "errMdef.h"
 #include "recSup.h"
-
 #include "alarm.h"
-
-extern struct dbBase *pdbbase;
+#define epicsExportSharedSymbols
+#include "dbAccess.h"
 
 #ifndef NULL
 #define NULL 0
@@ -579,7 +577,7 @@ void fill(pbuffer,size,fillchar)
 /*
  * DB_NAME_TO_ADDR
  */
-int db_name_to_addr(const char *pname, struct dbAddr *paddr)
+int epicsShareAPI db_name_to_addr(const char *pname, struct dbAddr *paddr)
 {
         long    status;
 	short   ftype;
@@ -588,7 +586,7 @@ int db_name_to_addr(const char *pname, struct dbAddr *paddr)
         if(!status) {
 	    ftype = paddr->dbr_field_type;
 	    if(INVALID_DB_REQ(ftype)) {
-	        recGblDbaddrError(S_db_badDbrtype,paddr,"db_name_to_addr error");
+                errlogPrintf("%s dbNameToAddr failed\n",pname);
 		return(-2);
 	    }
 	    paddr->dbr_field_type = dbDBRnewToDBRold[ftype];
@@ -600,7 +598,7 @@ int db_name_to_addr(const char *pname, struct dbAddr *paddr)
 
 typedef char DBSTRING[MAX_STRING_SIZE];
 
-int db_get_field(
+int epicsShareAPI db_get_field(
 struct dbAddr	*paddr,
 int		buffer_type,
 void		*pbuffer,
@@ -1445,7 +1443,7 @@ void		*pfl
 
 /* DB_PUT_FIELD put a field and convert it to the desired type */
 
-int db_put_field(
+int epicsShareAPI db_put_field(
 struct dbAddr	*paddr,		/* where to put it */
 int		src_type, 
 const void	*psrc,		/* where to get it from */

@@ -43,6 +43,7 @@ of this distribution.
 #include "shareLib.h"
 #include "dbCaPvt.h"
 epicsShareExtern struct dbBase *pdbbase;
+#define epicsExportSharedSymbols
 #include "dbCa.h"
 
 long dbcar(char	*precordname,int level)

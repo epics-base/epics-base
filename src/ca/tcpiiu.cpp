@@ -367,7 +367,6 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
         piiu->pCAC()->uninstallIIU ( *piiu );
         piiu->pCAC()->notifyDestroyFD ( piiu->sock );
     }
-
     piiu->destroy ();
 }
 
@@ -375,18 +374,17 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
 // tcpiiu::tcpiiu ()
 //
 tcpiiu::tcpiiu ( cac &cac, double connectionTimeout, 
-        epicsTimerQueue &timerQueue, const osiSockAddr &addrIn, 
-        unsigned minorVersion, class bhe &bheIn, 
-        ipAddrToAsciiEngine &engineIn ) :
+        epicsTimerQueue & timerQueue, const osiSockAddr & addrIn, 
+        unsigned minorVersion, ipAddrToAsciiEngine & engineIn, 
+        cacChannel::priLev priorityIn ) :
     netiiu ( &cac ),
+    caServerID ( addrIn.ia, priorityIn ),
     recvDog ( *this, connectionTimeout, timerQueue ),
     sendDog ( *this, connectionTimeout, timerQueue ),
     sendQue ( *this ),
-    addr ( addrIn ),
     curDataMax ( MAX_TCP ),
     curDataBytes ( 0ul ),
     pHostNameCache ( new hostNameCache ( addrIn, engineIn ) ),
-    BHE ( bheIn ),
     pCurData ( cac.allocateSmallBufferTCP () ),
     minorProtocolVersion ( minorVersion ),
     state ( iiu_connecting ),
@@ -411,8 +409,6 @@ tcpiiu::tcpiiu ( cac &cac, double connectionTimeout,
     if ( ! this->pHostNameCache.get () ) {
         throw std::bad_alloc ();
     }
-
-    this->BHE.bindToIIU ( *this );
 
     this->sock = socket ( AF_INET, SOCK_STREAM, IPPROTO_TCP );
     if ( this->sock == INVALID_SOCKET ) {
@@ -515,9 +511,9 @@ void tcpiiu::connect ()
     this->sendDog.start ();
 
     while ( true ) {
-
-        int status = ::connect ( this->sock, &this->addr.sa, sizeof ( addr.sa ) );
-
+        osiSockAddr tmp = this->address ();
+        int status = ::connect ( this->sock, 
+                        &tmp.sa, sizeof ( tmp.sa ) );
         if ( status == 0 ) {
 
             this->sendDog.cancel ();
@@ -683,7 +679,7 @@ void tcpiiu::destroy ()
 
 bool tcpiiu::isVirtaulCircuit ( const char *pChannelName, const osiSockAddr &addrIn ) const
 {
-    osiSockAddr addrTmp = this->addr;
+    osiSockAddr addrTmp = this->address ();
 
     if ( addrTmp.sa.sa_family == AF_UNSPEC ) {
         return false;
@@ -747,7 +743,6 @@ void tcpiiu::show ( unsigned level ) const
         this->sendThreadExitEvent.show ( level-3u );
         ::printf ("\techo pending bool = %u\n", this->echoRequestPending );
         ::printf ( "IO identifier hash table:\n" );
-        this->BHE.show ( level - 3u );
     }
 }
 
@@ -1321,9 +1316,9 @@ bool tcpiiu::flushBlockThreshold () const
     return this->sendQue.flushBlockThreshold ( 0u );
 }
 
-double tcpiiu::beaconPeriod () const
+osiSockAddr tcpiiu::getNetworkAddress () const
 {
-    return this->BHE.period ();
+    return this->address();
 }
 
 // not inline because its virtual

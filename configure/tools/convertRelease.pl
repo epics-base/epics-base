@@ -20,7 +20,7 @@ getopt "aht";
 
 if ($opt_a) {
     $arch = $opt_a;
-} else {		# Look for O.arch in current path
+} else {		# Look for O.<arch> in current path
     $_ = $cwd;
     ($arch) = /.*\/O.([\w-]+)$/;
 }
@@ -30,7 +30,7 @@ $hostarch = $opt_h if ($opt_h);
 
 if ($opt_t) {
     $top = $opt_t;
-} else {		# 
+} else {		# Find $top from current path
     $top = $cwd;
     $top =~ s/\/iocBoot.*//;
     $top =~ s/\/configure\/O\..*//;
@@ -39,7 +39,7 @@ if ($opt_t) {
 unless (@ARGV == 1) {
     print "Usage: convertRelease.pl [-a arch] [-h hostarch] [-t top] outfile\n";
     print "   where outfile is be one of:\n";
-    print "\tcheckRelease - checks consistency of support apps\n";
+    print "\tcheckRelease - checks consistency with support apps\n";
     print "\tcdCommands - generate cd path strings for IOC use\n";
     print "\tCONFIG_APP_INCLUDE - additional build variables\n";
     print "\tRULES_INCLUDE - supports installable build rules\n";
@@ -47,18 +47,18 @@ unless (@ARGV == 1) {
 }
 $outfile = $ARGV[0];
 
-# TOP is set to this application for macro expansion purposes
-$apps{TOP} = $top;
-@apporder = ();
+# TOP refers to this application
+%macros = (TOP => $top);
+@apps   = (TOP);	# Provides the order of apps in RELEASE file
 
-# Read the RELEASE file(s) into %apps
+# Read the RELEASE file(s)
 $relfile = "$top/configure/RELEASE";
 die "Can't find configure/RELEASE file" unless (-r $relfile);
-&readrelease($relfile, \%apps, \@apporder);
+&readRelease($relfile, \%macros, \@apps);
 
 if ($hostarch) {
     $relfile .= ".$hostarch";
-    &readrelease($relfile, \%apps, \@apporder) if (-r $relfile);
+    &readRelease($relfile, \%macros, \@apps) if (-r $relfile);
 }
 
 # This is a perl switch statement:
@@ -70,9 +70,9 @@ for ($outfile) {
     die "Output file type \'$outfile\' not supported";
 }
 
-sub readrelease {
-    my ($file, $apps, $order) = @_;
-    # $apps is a reference to a hash, $order a ref to a list
+sub readRelease {
+    my ($file, $Rmacros, $Rapps) = @_;
+    # $Rmacros is a reference to a hash, $Rapps a ref to an array
     my ($pre, $macro, $post, $path);
     local *IN;
     open(IN, $file) or die "Can't open $file: $!\n";
@@ -83,26 +83,25 @@ sub readrelease {
 	
 	# Expand all macros in the line:
 	while (($pre,$macro,$post) = /(.*)\$\((\w+)\)(.*)/, $macro ne "") {
-	    $_ = $pre . $apps->{$macro} . $post;
+	    $_ = $pre . $Rmacros->{$macro} . $post;
 	}
 	
 	# Handle "<macro> = <path>"
 	($macro, $path) = /^\s*(\w+)\s*=\s*(.*)/;
 	if ($macro ne "") {
-	    $apps->{$macro} = $path;
-	    push @$order, $macro;
+	    $Rmacros->{$macro} = $path;
+	    push @$Rapps, $macro;
 	    next;
 	}
 	# Handle "include <path>" syntax
 	($path) = /^\s*include\s+(.*)/;
-	&readrelease($path, $apps, $order) if (-r $path);
+	&readRelease($path, $Rmacros, $Rapps) if (-r $path);
     }
     close IN;
 }
 
 sub configAppInclude {
-    delete $apps{TOP};
-    delete $apps{TEMPLATE_TOP};
+    @includes = grep !/^(TOP|TEMPLATE_TOP)$/, @apps;
     
     unlink($outfile);
     open(OUT,">$outfile") or die "$! creating $outfile";
@@ -110,35 +109,35 @@ sub configAppInclude {
     print OUT "# be lost when the application is next rebuilt.\n\n";
     
     if ($arch) {
-	foreach $app (@apporder) {
-            $path = $apps{$app};
+	foreach $app (@includes) {
+            $path = $macros{$app};
 	    next unless (-d "$path/bin/$hostarch");
 	    print OUT "${app}_HOST_BIN = \$($app)/bin/\$(EPICS_HOST_ARCH)\n";
 	}
-	foreach $app (@apporder) {
-            $path = $apps{$app};
+	foreach $app (@includes) {
+            $path = $macros{$app};
 	    next unless (-d "$path/lib/$hostarch");
 	    print OUT "${app}_HOST_LIB = \$($app)/bin/\$(EPICS_HOST_ARCH)\n";
 	}
-	foreach $app (@apporder) {
-            $path = $apps{$app};
+	foreach $app (@includes) {
+            $path = $macros{$app};
             next unless (-d "$path/bin/$arch");
 	    print OUT "${app}_BIN = \$($app)/bin/$arch\n";
 	}
-	foreach $app (@apporder) {
-            $path = $apps{$app};
+	foreach $app (@includes) {
+            $path = $macros{$app};
             next unless (-d "$path/lib/$arch");
 	    print OUT "${app}_LIB = \$($app)/lib/$arch\n";
 	}
     }
-    foreach $app (@apporder) {
-        $path = $apps{$app};
+    foreach $app (@includes) {
+        $path = $macros{$app};
         next unless (-d "$path/include");
 	print OUT "RELEASE_INCLUDES += -I\$($app)/include/os/\$(OS_CLASS)\n";
 	print OUT "RELEASE_INCLUDES += -I\$($app)/include\n";
     }
-    foreach $app (@apporder) {
-        $path = $apps{$app};
+    foreach $app (@includes) {
+        $path = $macros{$app};
         next unless (-d "$path/dbd");
         print OUT "RELEASE_DBDFLAGS += -I \$($app)/dbd\n";
     }
@@ -146,16 +145,15 @@ sub configAppInclude {
 }
 
 sub rulesInclude {
-    delete $apps{TOP};
-    delete $apps{EPICS_BASE};
-    delete $apps{TEMPLATE_TOP};
+    @includes = grep !/^(TOP|TEMPLATE_TOP|EPICS_BASE)$/, @apps;
     
     unlink($outfile);
     open(OUT,">$outfile") or die "$! creating $outfile";
     print OUT "# Do not modify this file, changes made here will\n";
     print OUT "# be lost when the application is next rebuilt.\n\n";
     
-    while (($app, $path) = each %apps) {
+    foreach $app (@includes) {
+        $path = $macros{$app};
         next unless (-r "$path/configure/RULES_BUILD");
 	print OUT "-include \$($app)/configure/RULES_BUILD\n";
     }
@@ -164,9 +162,9 @@ sub rulesInclude {
 
 sub cdCommands {
     die "Architecture not set (use -a option)" unless ($arch);
-    delete $apps{TEMPLATE_TOP};
+    @includes = grep !/^TEMPLATE_TOP$/, @apps;
     
-    # if -t was given, substitute it in the startup path
+    # if -t <top> was given, substitute it in the startup path
     $startup = $cwd;
     $startup =~ s/.*(\/iocBoot\/.*)/$top$1/ if ($opt_t);
     
@@ -175,8 +173,8 @@ sub cdCommands {
     print OUT "startup = \"$startup\"\n";
     print OUT "appbin = \"$top/bin/$arch\"\n";	# compatibility with R3.13.1
     
-    foreach $app (@apporder) {
-        $path = $apps{$app};
+    foreach $app (@includes) {
+        $path = $macros{$app};
 	$lcapp = lc($app);
         print OUT "$lcapp = \"$path\"\n" if (-d $path);
 	print OUT "${lcapp}bin = \"$path/bin/$arch\"\n" if (-d "$path/bin/$arch");
@@ -186,26 +184,26 @@ sub cdCommands {
 
 sub checkRelease {
     $status = 0;
-    delete $apps{TOP};
-    delete $apps{TEMPLATE_TOP};
+    delete $macros{TOP};
+    delete $macros{TEMPLATE_TOP};
     
-    while (($app, $path) = each %apps) {
+    while (($app, $path) = each %macros) {
 	%check = (TOP => $path);
 	@order = ();
 	$relfile = "$path/configure/RELEASE";
-	&readrelease($relfile, \%check, \@order) if (-r $relfile);
+	&readRelease($relfile, \%check, \@order) if (-r $relfile);
 	if ($hostarch) {
 	    $relfile .= ".$hostarch";
-	    &readrelease($relfile, \%check, \@order) if (-r $relfile);
+	    &readRelease($relfile, \%check, \@order) if (-r $relfile);
 	}
 	delete $check{TOP};
 	
 	while (($parent, $ppath) = each %check) {
-	    if (exists $apps{$parent} && ($apps{$parent} ne $ppath)) {
+	    if (exists $macros{$parent} && ($macros{$parent} ne $ppath)) {
 		print "\n" unless ($status);
 		print "Definition of $parent conflicts with $app support.\n";
 		print "In this application configure/RELEASE defines\n";
-		print "\t$parent = $apps{$parent}\n";
+		print "\t$parent = $macros{$parent}\n";
 		print "but $app at $path has\n";
 		print "\t$parent = $ppath\n";
 		$status = 1;

@@ -10,12 +10,18 @@ YACCOPT = -d -v
 PROD_LIBS_DEFAULT := m
 PROD_LIBS_WIN32   := -nil-
 
-INC := seq.h seqCom.h
+INC += seq.h
+INC += seqCom.h
 
-SRCS =  snc_main.c parse.c phase2.c gen_ss_code.c \
-	gen_tables.c sncVersion.c snc.c
+SRCS += snc_main.c
+SRCS += parse.c
+SRCS += phase2.c
+SRCS += gen_ss_code.c
+SRCS += gen_tables.c
+SRCS += sncVersion.c
+SRCS += snc.c
 
-PROD = snc
+PROD += snc
 
 include $(TOP)/config/RULES.Host
 

@@ -73,7 +73,7 @@ extern "C" {
 *
 *----------------------------------------------------------------------------
 */
-typedef struct {
+typedef struct TS_STAMP {
     epicsUInt32    secPastEpoch;   /* seconds since 0000 Jan 1, 1990 */
     epicsUInt32    nsec;           /* nanoseconds within second */
 } TS_STAMP;

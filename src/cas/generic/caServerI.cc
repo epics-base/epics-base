@@ -109,15 +109,14 @@ caServerI::~caServerI()
 	//
 	// delete all clients
 	//
-	tsDLIterBD<casStrmClient> iter(this->clientList.first());
-    while ( iter!=tsDLIterBD<casStrmClient>::eol() ) {
-		tsDLIterBD<casStrmClient> tmp = iter;
+	tsDLIterBD <casStrmClient> iter ( this->clientList.first () );
+    while ( iter.valid () ) {
+		tsDLIterBD <casStrmClient> tmp = iter;
 		++tmp;
 		//
 		// destructor takes client out of list
 		//
-		casStrmClient *pC = iter;
-		delete pC;
+		iter->destroy ();
 		iter = tmp;
 	}
 
@@ -246,9 +245,9 @@ void caServerI::sendBeacon()
 	// addresses.
 	// 
 	this->lock();
-	tsDLIterBD<casIntfOS> iter(this->intfList.first());
-	while ( iter ) {
-		iter->sendBeacon();
+	tsDLIterBD <casIntfOS> iter ( this->intfList.first () );
+	while ( iter.valid () ) {
+		iter->sendBeacon ();
 		iter++;
 	}
 	this->unlock();
@@ -280,15 +279,15 @@ void caServerI::show (unsigned level) const
     this->osiMutex::show(level);
     
     this->lock();
-    tsDLIterBD<casStrmClient> iterCl(this->clientList.first());
-    while ( iterCl!=tsDLIterBD<casStrmClient>::eol() ) {
-        iterCl->show(level);
+    tsDLIterBD<casStrmClient> iterCl( this->clientList.first () );
+    while ( iterCl.valid () ) {
+        iterCl->show (level);
         ++iterCl;
     }
     
-    tsDLIterBD<casIntfOS> iterIF(this->intfList.first());
-    while ( iterIF!=tsDLIterBD<casIntfOS>::eol() ) {
-        iterIF->casIntfOS::show(level);
+    tsDLIterBD<casIntfOS> iterIF ( this->intfList.first () );
+    while ( iterIF.valid () ) {
+        iterIF->casIntfOS::show ( level );
         ++iterIF;
     }
     

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.10  1999/05/07 20:34:50  jhill
+ * fixed operator return type
+ *
  * Revision 1.9  1999/05/07 19:12:39  jhill
  * many improvements to osiTime
  *
@@ -201,8 +204,8 @@ public:
 	long getNSecTruncToLong() const;
 
 private:
-	unsigned long sec;
-	unsigned long nSec;
+	unsigned long sec; /* seconds since O000 Jan 1, 1990 */
+	unsigned long nSec; /* nanoseconds within second */
 
 	static const unsigned epicsEpochSecPast1970;
 	static osiTime osdGetCurrent();
@@ -225,7 +228,7 @@ inline unsigned long osiTime::getNSec() const
 
 inline osiTime::osiTime (double t) 
 {
-	assert (t>0.0);
+	assert (t>=0.0);
 	this->sec = (unsigned long) t;
 	this->nSec = (unsigned long) ((t-this->sec)*nSecPerSec);
 }

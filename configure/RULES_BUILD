@@ -266,6 +266,7 @@ endif
 
 # Adl2dl rule
 %.dl : ../%.adl
+	@$(RM) $@
 	-$(ADL2DL) $< $@
 
 # Mangen Rule:
@@ -301,9 +302,11 @@ ifneq ($(strip $(RANLIB)),)
 endif # RANLIB
 
 $(DLL_LINK_LIBNAME):$(LIB_PREFIX)%.lib: $(LIBRARY_OBJS) $(LIBRARY_RESS)
+	@$(RM) $@
 	$(LINK.shrlib)
 
 $(SHRLIBNAME):$(LIB_PREFIX)%$(SHRLIB_SUFFIX): $(LIBRARY_OBJS) $(LIBRARY_RESS)
+	@$(RM) $@
 	$(LINK.shrlib)
 
 # C++ munching for VxWorks
@@ -329,6 +332,7 @@ $(OBJLIB_MUNCHNAME):%.munch : %_ctdt$(OBJ) %$(OBJ)
 
 # Ext, app and module rules
 RULES_INCLUDE CONFIG_APP_INCLUDE: $(wildcard $(TOP)/configure/RELEASE*)
+	@$(RM) $@
 	$(PERL) $(TOOLS)/convertRelease.pl -h $(EPICS_HOST_ARCH) $@
 
 binInstalls:  $(BIN_INSTALLS)

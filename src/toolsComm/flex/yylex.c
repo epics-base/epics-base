@@ -26,6 +26,7 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
+/*
 #ifndef lint
 static char rcsid[] =
     "@(#) $Header$ (LBL)";
@@ -34,7 +35,7 @@ static char rcsid[] =
 #include <ctype.h>
 #include "flexdef.h"
 #include "parse.h"
-
+*/
 
 /* ANSI C does not guarantee that isascii() is defined */
 #ifndef isascii
@@ -214,3 +215,4 @@ int yylex()
 	    
     return ( toktype );
     }
+

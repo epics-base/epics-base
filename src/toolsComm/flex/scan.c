@@ -194,15 +194,18 @@ typedef struct yy_buffer_state *YY_BUFFER_STATE;
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
+/*
 #ifndef lint
 static char rcsid[] =
     "@(#) $Header$ (LBL)";
 #endif
+#include "flexdef.h"
+#include <parse.h>
+
+*/
 
 #undef yywrap
 
-#include "flexdef.h"
-#include <parse.h>
 
 #define ACTION_ECHO fprintf( temp_action_file, "%s", yytext )
 #define MARK_END_OF_PROLOG fprintf( temp_action_file, "%%%% end of prolog\n" );

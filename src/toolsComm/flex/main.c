@@ -32,13 +32,14 @@ char copyright[] =
  All rights reserved.\n";
 #endif /* not lint */
 
+/*
 #ifndef lint
 static char rcsid[] =
     "@(#) $Header$ (LBL)";
 #endif
 
-
 #include "flexdef.h"
+*/
 
 static char flex_version[] = "2.3";
 

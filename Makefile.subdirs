@@ -1,0 +1,47 @@
+
+# "Diabolical" EPICS Makefile For Top-Level Subdirectory Recursions
+#    by Matthew Needes and Mike Bordua
+#
+
+include config.${T_ARCH}.mk
+
+all: build
+
+depends:
+	@echo "${T_ARCH}: DEPENDS"
+	@(for DIR in ${DIRS};					\
+		do						\
+			echo "${T_ARCH}: --$$DIR"; cd $$DIR;	\
+			${MAKE} ${MFLAGS};			\
+		done)
+
+build_libs:
+	@echo "${T_ARCH}: BUILD LIBS"
+	@(for DIR in ${DIRS};					\
+		do						\
+			echo "${T_ARCH}: --$$DIR"; cd $$DIR;	\
+			${MAKE} ${MFLAGS};			\
+		done)
+
+install_libs:
+	@echo "${T_ARCH}: INSTALL LIBS"
+	@(for DIR in ${DIRS};					\
+		do						\
+			echo "${T_ARCH}: --$$DIR"; cd $$DIR;	\
+			${MAKE} ${MFLAGS};			\
+		done)
+
+build:
+	@(for DIR in ${DIRS};					\
+		do						\
+			echo "${T_ARCH}: --$$DIR"; cd $$DIR;	\
+			${MAKE} ${MFLAGS};			\
+		done)
+
+install:
+	@(for DIR in ${DIRS};					\
+		do						\
+			echo "${T_ARCH}: --$$DIR"; cd $$DIR;	\
+			${MAKE} ${MFLAGS};			\
+		done)
+

@@ -552,13 +552,18 @@ long epicsShareAPI dbLockShowLocked(int level)
     int     indListType;
     lockSet *plockSet;
     epicsMutexLockStatus status;
-    epicsMutexLockStatus lockSetModifyLockStatus;
+    epicsMutexLockStatus lockSetModifyLockStatus = epicsMutexLockOK;
+    int itry;
 
     printf("listTypeScanLock %d listTypeRecordLock %d listTypeFree %d\n",
         ellCount(&lockSetList[0]),
         ellCount(&lockSetList[1]),
         ellCount(&lockSetList[2]));
-    lockSetModifyLockStatus = epicsMutexLockWithTimeout(lockSetModifyLock,5.0);
+    for(itry=0; itry<100; itry++) {
+        lockSetModifyLockStatus = epicsMutexTryLock(lockSetModifyLock);
+        if(lockSetModifyLockStatus==epicsMutexLockOK) break;
+        epicsThreadSleep(.05);
+    }
     if(lockSetModifyLockStatus!=epicsMutexLockOK) {
         printf("Could not lock lockSetModifyLock\n");
         epicsMutexShow(lockSetModifyLock,level);

@@ -390,9 +390,14 @@ int epicsShareAPI dbNotifyDump(void)
     putNotify    *ppn;
     putNotify    *ppnRestart;
     putNotifyRecord *ppnrWait;
+    int itry;
    
     
-    lockStatus = epicsMutexLockWithTimeout(notifyLock,2.0);
+    for(itry=0; itry<100; itry++) {
+        lockStatus = epicsMutexTryLock(notifyLock);
+        if(lockStatus==epicsMutexLockOK) break;
+        epicsThreadSleep(.05);
+    }
     for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
     pdbRecordType;
     pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {

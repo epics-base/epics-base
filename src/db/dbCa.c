@@ -192,6 +192,7 @@ long epicsShareAPI dbCaGetLink(struct link *plink,short dbrType, void *pdest,
 
     assert(pca);
     epicsMutexMustLock(pca->lock);
+    assert(pca->plink);
     if(!pca->isConnected || !pca->hasReadAccess) {
         pca->sevr = INVALID_ALARM; status = -1;
         goto done;
@@ -256,6 +257,7 @@ long epicsShareAPI dbCaPutLink(struct link *plink,short dbrType,
     assert(pca);
     /* put the new value in */
     epicsMutexMustLock(pca->lock);
+    assert(pca->plink);
     if(!pca->isConnected || !pca->hasWriteAccess) {
         epicsMutexUnlock(pca->lock);
         return(-1);
@@ -308,6 +310,7 @@ long epicsShareAPI dbCaPutLink(struct link *plink,short dbrType,
     pca = (caLink *)plink->value.pv_link.pvt; \
     assert(pca); \
     epicsMutexMustLock(pca->lock); \
+    assert(pca->plink); \
     if(!pca->isConnected) { \
         epicsMutexUnlock(pca->lock); \
         return(-1); \
@@ -383,6 +386,7 @@ long epicsShareAPI dbCaGetAttributes(const struct link *plink,
     pca = (caLink *)plink->value.pv_link.pvt;
     assert(pca);
     epicsMutexMustLock(pca->lock);
+    assert(pca->plink);
     pca->callback = callback;
     pca->userPvt = usrPvt;
     gotAttributes = pca->gotAttributes;
@@ -481,7 +485,6 @@ STATIC void exceptionCallback(struct exception_handler_args args)
             "DB CA Exception: channel \"%s\"\n",
             ca_name(args.chid));
         if (ca_state(args.chid)==cs_conn) {
-            const char * pAccessRights;
             errlogPrintf(
                 "DB CA Exception:  native  T=%s, request T=%s,"
                 " native N=%ld, request N=%ld, "

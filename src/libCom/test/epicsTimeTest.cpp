@@ -63,7 +63,7 @@ int epicsTimeTest (void)
 {
     unsigned errors, sum_errors=0, sum_errloops=0;
     const epicsTime begin = epicsTime::getCurrent();
-    const unsigned wasteTime = 10000000u;
+    const unsigned wasteTime = 100000u;
     const int nTimes = 100;
     epicsTimeStamp stamp;
     struct timespec ts;

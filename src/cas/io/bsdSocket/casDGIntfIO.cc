@@ -369,7 +369,7 @@ void casDGIntfIO::sendBeaconIO (char &msg, unsigned length, aitUint16 &portField
 	int 			    status;
     char                buf[64];
 
-    portField = htons (inetAddr.sin_port); // the TCP port
+    portField = inetAddr.sin_port; // the TCP port
 
 	for (pAddr = (osiSockAddrNode *)ellFirst(&this->beaconAddrList);
 				pAddr; pAddr = (osiSockAddrNode *)ellNext(&pAddr->node)) {

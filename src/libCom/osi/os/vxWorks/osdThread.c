@@ -360,8 +360,8 @@ void *epicsThreadPrivateGet(epicsThreadPrivateId id)
 
 double epicsThreadSleepQuantum ()
 {
-    double HZ;
-    HZ = sysClkRateGet ();
+    /* If HZ is a double, under -O3 optimization the Tornado 2.x
+     * compilers generate bad code. Using a float works. */
+    float HZ = sysClkRateGet();
     return 1.0 / HZ;
 }
-

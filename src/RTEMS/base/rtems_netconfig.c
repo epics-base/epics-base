@@ -38,17 +38,11 @@ static struct rtems_bsdnet_ifconfig loopback_config = {
  * application directory and make the appropriate changes.
  */
 #if defined(__i386__)
-extern int rtems_fxp_attach (struct rtems_bsdnet_ifconfig *, int);
-static struct rtems_bsdnet_ifconfig fxp_driver_config = {
-    "fxp1",                             /* name */
-    rtems_fxp_attach,                   /* attach function */
-    &loopback_config,                   /* link to next interface */
-};
 extern int rtems_3c509_driver_attach (struct rtems_bsdnet_ifconfig *, int);
 static struct rtems_bsdnet_ifconfig e3c509_driver_config = {
     "ep0",                              /* name */
     rtems_3c509_driver_attach,          /* attach function */
-    &fxp_driver_config,                 /* link to next interface */
+    &loopback_config,                   /* link to next interface */
 };
 #define FIRST_DRIVER_CONFIG &e3c509_driver_config
 #else

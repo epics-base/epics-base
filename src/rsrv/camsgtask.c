@@ -195,10 +195,6 @@ FAST int 		sock;
 			NULL);
   	}
 
-	LOCK_CLIENTQ;
-	ellAdd(&clientQ, &client->node);
-	UNLOCK_CLIENTQ;
-
 	client->evuser = (struct event_user *) db_init_events();
 	if (!client->evuser) {
 		logMsg("CAS: unable to init the event facility\n",
@@ -243,6 +239,10 @@ FAST int 		sock;
 		free_client(client);
 		return ERROR;
 	}
+	
+	LOCK_CLIENTQ;
+	ellAdd(&clientQ, &client->node);
+	UNLOCK_CLIENTQ;
 
 	client->recv.cnt = 0ul;
 	while (TRUE) {
@@ -354,6 +354,10 @@ FAST int 		sock;
 			cas_send_msg(client, TRUE);
 		}
 	}
+	
+	LOCK_CLIENTQ;
+	ellRemove(&clientQ, &client->node);
+	UNLOCK_CLIENTQ;
 	
 	free_client(client);
 

@@ -179,12 +179,6 @@ int free_client(struct client *client)
 		return ERROR;
 	}
 
-	/* remove it from the list of clients */
-	/* list delete returns no status */
-	LOCK_CLIENTQ;
-	ellDelete(&clientQ, &client->node);
-	UNLOCK_CLIENTQ;
-
 	terminate_one_client(client);
 
 	freeListFree(rsrvClientFreeList, client);

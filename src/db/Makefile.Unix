@@ -2,7 +2,7 @@ EPICS = ../../../..
 include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
-USR_LDLIBS = -lDb -lCom
+USR_LDLIBS = -lDb -lCom -lm
 USR_LDFLAGS = -L.
 
 LEX = $(ELEX)

@@ -3,7 +3,7 @@ include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
 USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
-USR_LDLIBS = -lca -lCom
+USR_LDLIBS = -lca -lCom -lm
 USR_LDFLAGS = -L.
 
 DEPLIBS_BASE = $(EPICS_BASE_LIB)

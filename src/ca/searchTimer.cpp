@@ -23,10 +23,6 @@
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
-#if 0
-#define DEBUG
-#endif
-
 #include "tsMinMax.h"
 
 #define epicsExportSharedSymbols

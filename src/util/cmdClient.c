@@ -28,9 +28,10 @@
  * .01	11-26-90	rac	initial version
  * .02	07-30-91	rac	installed in SCCS
  * .03  09-11-91	joh	updated for v5 vxWorks
+ * .03	11-07-91	rac	be more forgiving of unexpected interactions
+ * .04	12-06-91	rac	total rewrite, Unix-only, no LWP
  *
  * make options
- *	-DvxWorks	makes a version for VxWorks
  *	-DNDEBUG	don't compile assert() checking
  *      -DDEBUG         compile various debug code, including checks on
  *                      malloc'd memory
@@ -51,93 +52,39 @@
 *		> cmdClient "hostName",portNum
 *
 * BUGS
-* o	need to clean up structure to be more in line with cmdProto's structure
 * o	the stdout stream from this program contains, intermixed, the
 *	server's stdout and stderr streams
-* o	under VxWorks, if the server is on the same IOC, then the IOC itself
-*	must be added to the host table with hostAdd()
-* o	this program should use tasks.h to establish priorities, stack
-*	sizes, etc.
 * o	not all signals are caught
 *-***************************************************************************/
 #include <genDefs.h>
-#include <genTasks.h>
-#include <cmdDefs.h>
+#include <tsDefs.h>
 #include <ezsSockSubr.h>
 
-#ifdef vxWorks
-/*----------------------------------------------------------------------------
-*    includes and defines for VxWorks compile
-*---------------------------------------------------------------------------*/
-#   include <vxWorks.h>
-#   include <stdioLib.h>
-#   include <ctype.h>
-#   include <strLib.h>
-#   include <sigLib.h>
-#   include <setjmp.h>
-#   include <taskLib.h>
-#   define MAXPRIO 160
-#else
-/*----------------------------------------------------------------------------
-*    includes and defines for Sun compile
-*---------------------------------------------------------------------------*/
-#   include <stdio.h>
-#   include <ctype.h>
-#   include <strings.h>
-#   include <signal.h>
-#   include <setjmp.h>
-#   define MAXPRIO 50
-#endif
+#include <stdio.h>
+#include <ctype.h>
+#include <strings.h>
+#include <signal.h>
+#include <setjmp.h>
+#include <sys/types.h>
+#include <sys/time.h>
 
 
-/*/subhead CMDCL_CTX-------------------------------------------------------
-* CMDCL_CTX - context information
-*
-*	A cmdcl descriptor is the `master handle' which is used for
-*	handling business.
-*----------------------------------------------------------------------------*/
-#define CmdclLock semTake(pglCmdclCtx->semLock, WAIT_FOREVER)
-#define CmdclUnlock semGive(pglCmdclCtx->semLock)
-#define CmdclLockCheck semClear(pglCmdclCtx->semLock)
-#define CmdclLockInitAndLock semInit(pglCmdclCtx->semLock)
-
-typedef struct {
-    TASK_ID	id;		/* ID of task */
-    int		status;		/* status of task--initially ERROR */
-    int		stop;		/* task requested to stop if != 0 */
-    int		stopped;	/* task has stopped if != 0 */
-    int		serviceNeeded;	/* task needs servicing */
-    int		serviceDone;	/* task servicing completed */
-    jmp_buf	sigEnv;		/* environment for longjmp at signal time */
-} CMDCL_TASK_INFO;
-
-typedef struct cmdclCtx {
-    SEM_ID	semLock;
-    CMDCL_TASK_INFO cmdclTaskInfo;
-    CMDCL_TASK_INFO cmdclInTaskInfo;
-    int		showStack;		/* show stack stats on task terminate */
-} CMDCL_CTX;
 
 /*-----------------------------------------------------------------------------
 * prototypes
 *----------------------------------------------------------------------------*/
 int cmdcl();
 void cmdclCmdProcess();
-long cmdclInitAtStartup();
-long cmdclInTask();
+char *cmdclInTask();
 long cmdclTask();
 void cmdclTaskSigHandler();
-void cmdclTaskSigInit();
 
 /*-----------------------------------------------------------------------------
 * global definitions
 *----------------------------------------------------------------------------*/
-CX_CMD	glCmdclCxCmd;
-CX_CMD	*pglCmdclCxCmd=NULL;
-CMDCL_CTX	glCmdclCtx;
-CMDCL_CTX	*pglCmdclCtx=NULL;
 
-#ifndef vxWorks
+jmp_buf	sigEnv;		/* environment for longjmp at signal time */
+
 main(argc, argv)
 int     argc;           /* number of command line args */
 char   *argv[];         /* command line args */
@@ -153,46 +100,15 @@ char   *argv[];         /* command line args */
 	goto mainUsage;
     }
 
-/*----------------------------------------------------------------------------
-*    do some lwp initialization:
-*    o  set allowable priorities between 1 and MAXPRIO
-*    o  set up a cache of stacks for MAXTHREAD stacks
-*
-*    A side effect is that this routine is turned into a lwp thread with a
-*    priority of MAXPRIO.
-*---------------------------------------------------------------------------*/
-    (void)pod_setmaxpri(MAXPRIO);
-    lwp_setstkcache(100000, 9);
-
     return cmdClient(hostName, portNum);
 
 mainUsage:
     printf("Usage: %s serverHostName serverPortNumber\n", argv[0]);
     return -1;
 }
-#endif
 
 /*+/subr**********************************************************************
 * NAME	cmdClient - shell callable interface for cmdClient
-*
-* DESCRIPTION
-*	This routine is the only part of cmdClient which is intended to be
-*	called directly from the shell.  Several functions are performed here:
-*	o   spawn the cmdclTask
-*	o   spawn the cmdclInTask
-*	o   wait until the cmdclInTask quits, then return to the shell.  If
-*	    other tasks belonging to cmdClient are being stopped, then this
-*	    routine waits until they, too, are stopped before returning to
-*	    the shell.
-*
-* RETURNS
-*	OK, or
-*	ERROR
-*
-* BUGS
-* o	stack size and priority should come from tasks.h
-* o	there are lots of "holes" in detecting whether tasks exist, are
-*	suspended, etc.
 *
 *-*/
 int
@@ -201,108 +117,21 @@ char	*hostName;	/* I host name for server */
 int	portNum;	/* I port number for server */
 {
     long	stat;		/* status return from calls */
-
-    pglCmdclCtx = &glCmdclCtx;
-    pglCmdclCxCmd = &glCmdclCxCmd;
-    stat = cmdclInitAtStartup(pglCmdclCtx, pglCmdclCxCmd);
-    assert(stat == OK);
-
-#ifdef vxWorks
-    assert(taskNameToId("cmdclTask") == ERROR);
-    assert(taskNameToId("cmdclInTask") == ERROR);
-#endif
-    pglCmdclCtx->showStack = 0;
-
-    pglCmdclCtx->cmdclTaskInfo.status = ERROR;
-    pglCmdclCtx->cmdclTaskInfo.stop = 0;
-    pglCmdclCtx->cmdclTaskInfo.stopped = 1;
-
-    pglCmdclCtx->cmdclInTaskInfo.status = ERROR;
-    pglCmdclCtx->cmdclInTaskInfo.stop = 0;
-    pglCmdclCtx->cmdclInTaskInfo.stopped = 1;
-
-    pglCmdclCtx->cmdclInTaskInfo.serviceNeeded = 0;
-    pglCmdclCtx->cmdclInTaskInfo.serviceDone = 1;
-
-/*-----------------------------------------------------------------------------
-* cmdclTask
-*	spawn it
-*----------------------------------------------------------------------------*/
-    pglCmdclCtx->cmdclTaskInfo.id = taskSpawn("cmdclTask", MAXPRIO,
-		VX_STDIO | VX_FP_TASK, 50000, cmdclTask,
-		&pglCmdclCxCmd, hostName, portNum);
-    if (GenTaskNull(pglCmdclCtx->cmdclTaskInfo.id)) {
-	(void)fprintf(stdout, "error spawning cmdclTask\n");
-	return ERROR;
-    }
-    pglCmdclCtx->cmdclTaskInfo.status = OK;
-    pglCmdclCtx->cmdclTaskInfo.stopped = 0;
-
-/*-----------------------------------------------------------------------------
-* cmdclInTask
-*	spawn it
-*----------------------------------------------------------------------------*/
-    pglCmdclCtx->cmdclInTaskInfo.id = taskSpawn("cmdclInTask", MAXPRIO,
-		VX_STDIO | VX_FP_TASK, 50000, cmdclInTask, &pglCmdclCxCmd);
-    if (GenTaskNull(pglCmdclCtx->cmdclInTaskInfo.id)) {
-	(void)fprintf(stdout, "error spawning cmdclInTask\n");
-	return ERROR;
-    }
-    pglCmdclCtx->cmdclInTaskInfo.status = OK;
-    pglCmdclCtx->cmdclInTaskInfo.stopped = 0;
-
-/*-----------------------------------------------------------------------------
-*    wait for cmdclInTask to exit and then return to the shell.  If other
-*    "cmdClient tasks" are also exiting, wait until their wrapups are complete.
-*----------------------------------------------------------------------------*/
-    while (!pglCmdclCtx->cmdclInTaskInfo.stopped)
-	taskSleep(SELF, 1, 0);
-    if (pglCmdclCtx->cmdclTaskInfo.stop) {
-	while (!pglCmdclCtx->cmdclTaskInfo.stopped)
-	    taskSleep(SELF, 1, 0);
-    }
-
-    return OK;
-}
-
-/*+/subr**********************************************************************
-* NAME	cmdclTask - main processing task for cmdClient
-*
-* DESCRIPTION
-*
-* RETURNS
-*	OK, or
-*	ERROR
-*
-* BUGS
-* o	text
-*
-*-*/
-long
-cmdclTask(ppCxCmd, hostName, portNum)
-CX_CMD	**ppCxCmd;
-char	*hostName;	/* I host name for server */
-int	portNum;	/* I port number for server */
-{
-    long	stat;
-    CX_CMD	*pCxCmd;
     int		serverSock=-1;	/* socket connected to server */
     char	serverBuf[80];
+    char	*pBuf;
     FILE	*myIn=NULL;
     FILE	*myOut=NULL;
     char	*findNl;
     char	message[80];
-
     int		i;
+    char	keyboard[80];	/* line from keyboard */
+    int		eofFlag=0;
+    int		discardNL=0;
 
-    pCxCmd = *ppCxCmd;
+    genSigInit(cmdclTaskSigHandler);
 
-    CmdclLockInitAndLock;
-    CmdclUnlock;
-
-    cmdclTaskSigInit();
-
-    if (setjmp(pglCmdclCtx->cmdclTaskInfo.sigEnv) != 0)
+    if (setjmp(sigEnv) != 0)
 	goto cmdclTaskWrapup;
 
 /*-----------------------------------------------------------------------------
@@ -327,6 +156,7 @@ int	portNum;	/* I port number for server */
 	myIn = NULL;
 	goto cmdclTaskWrapup;
     }
+    setbuf(myIn, NULL);
     if (ezsFopenToFd(&myOut, &serverSock) < 0) {
 	perror("myOut");
 	myOut = NULL;
@@ -338,34 +168,60 @@ int	portNum;	/* I port number for server */
 *	do the interactions with the server, attempting as much as possible
 *	to show the messages as they come in from the server.
 *---------------------------------------------------------------------------*/
-    while (!pglCmdclCtx->cmdclTaskInfo.stop) {
-	if (pglCmdclCtx->cmdclInTaskInfo.serviceNeeded) {
-	    fputs(pCxCmd->line, myOut);
+    while (!eofFlag) {
+        if (cmdclInTask(keyboard) != NULL) {
+	    fputs(keyboard, myOut);
 	    fflush(myOut);
-	    pglCmdclCtx->cmdclInTaskInfo.serviceNeeded = 0;
-	    pglCmdclCtx->cmdclInTaskInfo.serviceDone = 1;
 	}
+
 	if (ezsCheckFpRead(myIn)) {
-	    if (fgets(serverBuf, 80, myIn) != NULL) {
-		if (strncmp(serverBuf, "#p#r#", 5) == 0) {
-		    if ((findNl = index(serverBuf, '\n')) != NULL)
-			*findNl = '\0';
-		    fputs(serverBuf+5, stdout);
+	    int		i, c;
+
+	    i = 0;
+	    while (ezsCheckFpRead(myIn)) {
+		if ((c = fgetc(myIn)) == EOF) {
+		    eofFlag++;
+		    break;
+		}
+		serverBuf[i++] = c;
+		if (i >= 79 || c == '\n')
+		    break;
+	    }
+	    pBuf = serverBuf;
+	    serverBuf[i] = '\0';
+	    if (i > 0) {
+		char	*findChr;
+		if ((findChr = index(pBuf, '#')) != NULL) {
+		    while (pBuf != findChr) {
+			putchar(*pBuf);
+			pBuf++;
+		    }
+		    if (strncmp(pBuf, "#p#r#", 5) == 0) {
+			pBuf += 5;
+			discardNL = 1;
+		    }
 		}
 		else
-		    fputs(serverBuf, stdout);
+		    pBuf = serverBuf;
+		if (discardNL) {
+		    if ((findNl = index(pBuf, '\n')) != NULL) {
+			*findNl = '\0';
+			discardNL = 0;
+		    }
+		}
+		fputs(pBuf, stdout);
 		fflush(stdout);
 	    }
 	    else {
-		if (strncmp(pCxCmd->line, "quit", 4) == 0)
+		if (strncmp(keyboard, "quit", 4) == 0)
 		    break;
-		else if (strncmp(pCxCmd->line, "close", 5) == 0)
+		else if (strncmp(keyboard, "close", 5) == 0)
 		    break;
-		printf("server gone (?)\n");
-		break;
+		else
+		    printf("null message from server\n");
 	    }
 	}
-	taskSleep(SELF, 0, 100000);	/* wait .1 sec */
+	usleep(100000);
     }
 
 cmdclTaskWrapup:
@@ -375,23 +231,6 @@ cmdclTaskWrapup:
 	fclose(myOut);
     if (serverSock >= 0)
 	close(serverSock);
-
-    while ((*ppCxCmd)->pPrev != NULL)
-	cmdCloseContext(ppCxCmd);
-    pCxCmd = *ppCxCmd;
-
-    pglCmdclCtx->cmdclInTaskInfo.stop = 1;
-    while (pglCmdclCtx->cmdclInTaskInfo.stopped == 0) {
-	taskSleep(SELF, 1, 0);
-    }
-
-#ifdef vxWorks
-    if (pglCmdclCtx->showStack)
-	checkStack(pglCmdclCtx->cmdclTaskInfo.id);
-#endif
-
-    pglCmdclCtx->cmdclTaskInfo.stopped = 1;
-    pglCmdclCtx->cmdclTaskInfo.status = ERROR;
 
     return 0;
 }
@@ -408,7 +247,6 @@ cmdclTaskWrapup:
 *
 * BUGS
 * o	not all signals are caught
-* o	under VxWorks, taskDeleteHookAdd isn't used
 * o	it's not clear how useful it is to catch the signals which originate
 *	from the keyboard
 *
@@ -419,129 +257,54 @@ int	signo;
 {
     printf("entered cmdclTaskSigHandler for signal:%d\n", signo);
     signal(signo, SIG_DFL);
-    longjmp(pglCmdclCtx->cmdclTaskInfo.sigEnv, 1);
-}
-
-
-void
-cmdclTaskSigInit()
-{
-    (void)signal(SIGTERM, cmdclTaskSigHandler);	/* SunOS plain kill (not -9) */
-    (void)signal(SIGQUIT, cmdclTaskSigHandler);	/* SunOS ^\ */
-    (void)signal(SIGINT, cmdclTaskSigHandler);	/* SunOS ^C */
-    (void)signal(SIGILL, cmdclTaskSigHandler);	/* illegal instruction */
-#ifndef vxWorks
-    (void)signal(SIGABRT, cmdclTaskSigHandler);	/* SunOS assert */
-#else
-    (void)signal(SIGUSR1, cmdclTaskSigHandler);	/* VxWorks assert */
-#endif
-    (void)signal(SIGBUS, cmdclTaskSigHandler);	/* bus error */
-    (void)signal(SIGSEGV, cmdclTaskSigHandler);	/* segmentation violation */
-    (void)signal(SIGFPE, cmdclTaskSigHandler);	/* arithmetic exception */
+    longjmp(sigEnv, 1);
 }
 
 /*+/subr**********************************************************************
-* NAME	cmdclInTask - handle the keyboard and keyboard commands
+* NAME	cmdclInTask - handle keyboard input
 *
 * DESCRIPTION
-*	Gets input text and passes the input to cmdclTask.
-*
-*	This task exists to avoid the possibility of blocking cmdclTask
-*	while waiting for operator input.
-*
-*	This task waits for input to be available from the keyboard.  When
-*	an input line is ready, this task does some preliminary processing:
-*
-*	o   if the command is control-D, "^D" is echoed and the command is
-*	    changed to "quit"
-*
-*	Then cmdclTask is signalled and this task goes into a sleeping loop
-*	until cmdclTask signals that it is ready for the next command.
+*	Checks to see if input is available and reads it, if so.  If
+*	there is EOF, then question is asked whether to shut down the
+*	server.
 *
 * RETURNS
-*	OK, or
-*	ERROR
+*	char *, or
+*	NULL
 *
 *-*/
-long
-cmdclInTask(ppCxCmd)
-CX_CMD	**ppCxCmd;	/* IO ptr to pointer to command context */
+char *
+cmdclInTask(buf)
+char	*buf;
 {
-/*----------------------------------------------------------------------------
-*    wait for input from keyboard.  When some is received, signal caller,
-*    wait for caller to process it, and then wait for some more input.
-*
-*    stay in the main loop until .stop flag is set by cmdclTask.
-*---------------------------------------------------------------------------*/
-    while (1) {
-	while (pglCmdclCtx->cmdclInTaskInfo.serviceDone == 0) {
-	    if (pglCmdclCtx->cmdclInTaskInfo.stop == 1)
-		goto cmdclInTaskDone;
-	    taskSleep(SELF, 0, 500000);		/* sleep .5 sec */
-	}
-	cmdRead(ppCxCmd, &pglCmdclCtx->cmdclInTaskInfo.stop);
+    char	*input;
+    char	message[80];
+    fd_set      fdSet;          /* set of fd's to watch with select */
+    int         fdSetWidth;     /* width of select bit mask */
+    struct timeval fdSetTimeout;/* timeout interval for select */
 
-	if (pglCmdclCtx->cmdclInTaskInfo.stop == 1)
-	    goto cmdclInTaskDone;
+    fdSetWidth = getdtablesize();
+    fdSetTimeout.tv_sec = 0;
+    fdSetTimeout.tv_usec = 0;
+    FD_ZERO(&fdSet);
+    FD_SET(fileno(stdin), &fdSet);
 
-	if (strncmp((*ppCxCmd)->line, "quit", 4) == 0) {
-	    char	*prompt;
-	    if (*ppCxCmd != (*ppCxCmd)->pCxCmdRoot) {
-		(void)printf("can't use quit command in source file\n");
-		(*ppCxCmd)->line[0] = '\0';
-	    }
-	    else {
-		prompt = (*ppCxCmd)->prompt;
-		(*ppCxCmd)->prompt = "stop the server (y/n) ? ";
-		cmdRead(ppCxCmd, &pglCmdclCtx->cmdclInTaskInfo.stop);
-		if ((*ppCxCmd)->line[0] == 'y' || (*ppCxCmd)->line[0] == 'Y')
-		    (void)strcpy((*ppCxCmd)->line, "quit\n");
-		else
-		    (*ppCxCmd)->line[0] = '\0';
-		(*ppCxCmd)->prompt = prompt;
-	    }
+    if (select(fdSetWidth, &fdSet, NULL, NULL, &fdSetTimeout) == 0)
+	return NULL;
+    if (fgets(buf, 80, stdin) == NULL) {
+	strcpy(buf, "quit\n");
+	clearerr(stdin);
+    }
+    if (strncmp(buf, "quit", 4) == 0) {
+	(void)printf("stop the server (y/n) ? ");
+	if (fgets(message, 80, stdin) == NULL) {
+	    strcpy(message, "y");
 	}
-	pglCmdclCtx->cmdclInTaskInfo.serviceDone = 0;
-	pglCmdclCtx->cmdclInTaskInfo.serviceNeeded = 1;
+	if (message[0] == 'y' || message[0] == 'Y')
+	    strcpy(buf, "quit\n");
+	else
+	    strcpy(buf, "\n");
     }
 
-cmdclInTaskDone:
-    cmdCloseContext(ppCxCmd);
-
-#ifdef vxWorks
-    if (pglCmdclCtx->showStack)
-	checkStack(pglCmdclCtx->cmdclInTaskInfo.id);
-#endif
-    pglCmdclCtx->cmdclInTaskInfo.stop = 1;
-    pglCmdclCtx->cmdclInTaskInfo.stopped = 1;
-    pglCmdclCtx->cmdclInTaskInfo.status = ERROR;
-
-    return;
-}
-
-/*+/subr**********************************************************************
-* NAME	cmdclInitAtStartup - initialization for cmdClient
-*
-* DESCRIPTION
-*	Perform several initialization duties:
-*	o   initialize the command context block
-*
-* RETURNS
-*	OK, or
-*	ERROR
-*
-*-*/
-long
-cmdclInitAtStartup(pCmdclCtx, pCxCmd)
-CMDCL_CTX *pCmdclCtx;
-CX_CMD	*pCxCmd;
-{
-    pCxCmd->prompt = NULL;
-    pCxCmd->input = stdin;
-    pCxCmd->inputName = NULL;
-    pCxCmd->dataOut = stdout;
-    pCxCmd->pPrev = NULL;
-    pCxCmd->pCxCmdRoot = pCxCmd;
-
-    return OK;
+    return buf;
 }

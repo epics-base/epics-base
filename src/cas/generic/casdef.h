@@ -30,6 +30,9 @@
  * 	Modification Log:
  * 	-----------------
  * 	$Log$
+ * 	Revision 1.16  1998/03/18 23:59:28  jhill
+ * 	use _MSC_VER to turn of vis C++ specific warning
+ *
  * 	Revision 1.15  1998/02/05 23:00:20  jhill
  * 	removed assignement operator
  *
@@ -351,7 +354,7 @@ public:
 	// (see Asynchronous IO Classes below).
 	//
 	// IMPORTANT: 
-	// o It is the responsability of the server tool 
+	// It is a responsability of the server tool 
 	// to detect attempts by the server lib to create a 2nd PV with 
 	// the same name as an existing PV. It is also the responsability 
 	// of the server tool to detect attempts by the server lib to 

@@ -51,7 +51,7 @@ typedef struct threadInfo {
     int		       isSuspended;
     unsigned int       osiPriority;
     char               *name;
-} threadInfo;
+} epicsThreadPrivateOSD;
 
 static pthread_key_t getpthreadInfo;
 static epicsMutexId onceLock;
@@ -90,7 +90,7 @@ if(status) { \
 /* myAtExit just cancels all threads. Someday propercleanup is needed*/
 static void myAtExit(void)
 {
-    threadInfo *pthreadInfo;
+    epicsThreadPrivateOSD *pthreadInfo;
     static int ntimes=0;
 
     ntimes++;
@@ -99,12 +99,12 @@ static void myAtExit(void)
         return;
     }
     epicsMutexMustLock(listLock);
-    pthreadInfo=(threadInfo *)ellFirst(&pthreadList);
+    pthreadInfo=(epicsThreadPrivateOSD *)ellFirst(&pthreadList);
     while(pthreadInfo) {
         if(pthreadInfo->createFunc){/* dont cancel main thread*/
             pthread_cancel(pthreadInfo->tid);
         }
-        pthreadInfo=(threadInfo *)ellNext(&pthreadInfo->node);
+        pthreadInfo=(epicsThreadPrivateOSD *)ellNext(&pthreadInfo->node);
     }
     epicsMutexUnlock(listLock);
     /* delete all resources created by once */
@@ -114,7 +114,7 @@ static void myAtExit(void)
     pthread_key_delete(getpthreadInfo);
 }
 
-static int getOssPriorityValue(threadInfo *pthreadInfo)
+static int getOssPriorityValue(epicsThreadPrivateOSD *pthreadInfo)
 {
     double maxPriority,minPriority,slope,oss;
 
@@ -127,14 +127,14 @@ static int getOssPriorityValue(threadInfo *pthreadInfo)
     return((int)oss);
 }
 
-static threadInfo * init_threadInfo(const char *name,
+static epicsThreadPrivateOSD * init_threadInfo(const char *name,
     unsigned int priority, unsigned int stackSize,
     EPICSTHREADFUNC funptr,void *parm)
 {
-    threadInfo *pthreadInfo;
+    epicsThreadPrivateOSD *pthreadInfo;
     int status;
 
-    pthreadInfo = callocMustSucceed(1,sizeof(threadInfo),"init_threadInfo");
+    pthreadInfo = callocMustSucceed(1,sizeof(epicsThreadPrivateOSD),"init_threadInfo");
     pthreadInfo->createFunc = funptr;
     pthreadInfo->createArg = parm;
     status = pthread_attr_init(&pthreadInfo->attr);
@@ -175,7 +175,7 @@ static threadInfo * init_threadInfo(const char *name,
     return(pthreadInfo);
 }
 
-static void free_threadInfo(threadInfo *pthreadInfo)
+static void free_threadInfo(epicsThreadPrivateOSD *pthreadInfo)
 {
     int status;
 
@@ -191,7 +191,7 @@ static void free_threadInfo(threadInfo *pthreadInfo)
 
 static void once(void)
 {
-    threadInfo *pthreadInfo;
+    epicsThreadPrivateOSD *pthreadInfo;
     int status;
 
     pthread_key_create(&getpthreadInfo,0);
@@ -242,7 +242,7 @@ static void once(void)
 
 static void * start_routine(void *arg)
 {
-    threadInfo *pthreadInfo = (threadInfo *)arg;
+    epicsThreadPrivateOSD *pthreadInfo = (epicsThreadPrivateOSD *)arg;
     int status;
 
     status = pthread_setspecific(getpthreadInfo,arg);
@@ -321,7 +321,7 @@ epicsThreadId epicsThreadCreate(const char *name,
     unsigned int priority, unsigned int stackSize,
     EPICSTHREADFUNC funptr,void *parm)
 {
-    threadInfo *pthreadInfo;
+    epicsThreadPrivateOSD *pthreadInfo;
     int status;
 
     if(!epicsThreadInitCalled) epicsThreadInit();
@@ -330,26 +330,25 @@ epicsThreadId epicsThreadCreate(const char *name,
     status = pthread_create(&pthreadInfo->tid,&pthreadInfo->attr,
 			    start_routine,pthreadInfo);
     checkStatusQuit(status,"pthread_create","epicsThreadCreate");
-    return((epicsThreadId)pthreadInfo);
+    return(pthreadInfo);
 }
 
 void epicsThreadSuspendSelf(void)
 {
-    threadInfo *pthreadInfo = (threadInfo *)pthread_getspecific(getpthreadInfo);
+    epicsThreadPrivateOSD *pthreadInfo = (epicsThreadPrivateOSD *)pthread_getspecific(getpthreadInfo);
     pthreadInfo->isSuspended = 1;
     epicsEventMustWait(pthreadInfo->suspendEvent);
 }
 
-void epicsThreadResume(epicsThreadId id)
+void epicsThreadResume(pthreadInfo id)
 {
-    threadInfo *pthreadInfo = (threadInfo *)id;
     pthreadInfo->isSuspended = 0;
     epicsEventSignal(pthreadInfo->suspendEvent);
 }
 
 void epicsThreadExitMain(void)
 {
-    threadInfo *pthreadInfo = (threadInfo *)pthread_getspecific(getpthreadInfo);
+    epicsThreadPrivateOSD *pthreadInfo = (epicsThreadPrivateOSD *)pthread_getspecific(getpthreadInfo);
     if(pthreadInfo->createFunc) {
         errlogPrintf("called from non-main thread\n");
         cantProceed("epicsThreadExitMain");
@@ -360,9 +359,8 @@ void epicsThreadExitMain(void)
     }
 }
 
-unsigned int epicsThreadGetPriority(epicsThreadId id)
+unsigned int epicsThreadGetPriority(epicsThreadId pthreadInfo)
 {
-    threadInfo *pthreadInfo = (threadInfo *)id;
     return(pthreadInfo->osiPriority);
 }
 
@@ -371,9 +369,8 @@ unsigned int epicsThreadGetPrioritySelf(void)
     return(epicsThreadGetPriority(epicsThreadGetIdSelf()));
 }
 
-void epicsThreadSetPriority(epicsThreadId id,unsigned int priority)
+void epicsThreadSetPriority(epicsThreadId pthreadInfo,unsigned int priority)
 {
-    threadInfo *pthreadInfo = (threadInfo *)id;
 #if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) 
     int status;
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
@@ -425,15 +422,12 @@ epicsThreadBooleanStatus epicsThreadLowestPriorityLevelAbove(
     return epicsThreadBooleanStatusFail;
 }
 
-int epicsThreadIsEqual(epicsThreadId id1, epicsThreadId id2)
+int epicsThreadIsEqual(epicsThreadId p1, epicsThreadId p2)
 {
-    threadInfo *p1 = (threadInfo *)id1;
-    threadInfo *p2 = (threadInfo *)id2;
     return(pthread_equal(p1->tid,p2->tid));
 }
 
-int epicsThreadIsSuspended(epicsThreadId id) {
-    threadInfo *pthreadInfo = (threadInfo *)id;
+int epicsThreadIsSuspended(epicsThreadId pthreadInfo) {
     return(pthreadInfo->isSuspended ? 1 : 0);
 }
 
@@ -450,52 +444,49 @@ void epicsThreadSleep(double seconds)
 }
 
 epicsThreadId epicsThreadGetIdSelf(void) {
-    threadInfo *pthreadInfo = (threadInfo *)pthread_getspecific(getpthreadInfo);
-    return((epicsThreadId)pthreadInfo);
+    epicsThreadPrivateOSD *pthreadInfo = (epicsThreadPrivateOSD *)pthread_getspecific(getpthreadInfo);
+    return(pthreadInfo);
 }
 
 epicsThreadId epicsThreadGetId(const char *name) {
-    threadInfo *pthreadInfo;
+    epicsThreadPrivateOSD *pthreadInfo;
     epicsMutexMustLock(listLock);
-    pthreadInfo=(threadInfo *)ellFirst(&pthreadList);
+    pthreadInfo=(epicsThreadPrivateOSD *)ellFirst(&pthreadList);
     while(pthreadInfo) {
 	if(strcmp(name,pthreadInfo->name) == 0) break;
-        pthreadInfo=(threadInfo *)ellNext(&pthreadInfo->node);
+        pthreadInfo=(epicsThreadPrivateOSD *)ellNext(&pthreadInfo->node);
     }
     epicsMutexUnlock(listLock);
-    return((epicsThreadId)pthreadInfo);
+    return(pthreadInfo);
 }
 
 const char *epicsThreadGetNameSelf()
 {
-    threadInfo *pthreadInfo = (threadInfo *)pthread_getspecific(getpthreadInfo);
+    epicsThreadPrivateOSD *pthreadInfo = (epicsThreadPrivateOSD *)pthread_getspecific(getpthreadInfo);
     return(pthreadInfo->name);
 }
 
-void epicsThreadGetName(epicsThreadId id, char *name, size_t size)
+void epicsThreadGetName(epicsThreadId pthreadInfo, char *name, size_t size)
 {
-    threadInfo *pthreadInfo = (threadInfo *)id;
     strncpy(name, pthreadInfo->name, size-1);
     name[size-1] = '\0';
 }
 
 void epicsThreadShowAll(unsigned int level)
 {
-    threadInfo *pthreadInfo;
+    epicsThreadPrivateOSD *pthreadInfo;
     epicsThreadShow(0,level);
     epicsMutexMustLock(listLock);
-    pthreadInfo=(threadInfo *)ellFirst(&pthreadList);
+    pthreadInfo=(epicsThreadPrivateOSD *)ellFirst(&pthreadList);
     while(pthreadInfo) {
-	epicsThreadShow((epicsThreadId)pthreadInfo,level);
-        pthreadInfo=(threadInfo *)ellNext(&pthreadInfo->node);
+	epicsThreadShow(pthreadInfo,level);
+        pthreadInfo=(epicsThreadPrivateOSD *)ellNext(&pthreadInfo->node);
     }
     epicsMutexUnlock(listLock);
 }
 
-void epicsThreadShow(epicsThreadId id,unsigned int level)
+void epicsThreadShow(epicsThreadId pthreadInfo,unsigned int level)
 {
-    threadInfo *pthreadInfo = (threadInfo *)id;
-
     if(!id) {
 	printf ("            NAME       ID   OSIPRI   OSSPRI    STATE\n");
     }
@@ -507,7 +498,7 @@ void epicsThreadShow(epicsThreadId id,unsigned int level)
 
         status = pthread_getschedparam(pthreadInfo->tid,&policy,&param);
         priority = (status ? 0 : param.sched_priority);
-	printf("%16.16s %p %d %8d %8.8s\n", pthreadInfo->name,(epicsThreadId)
+	printf("%16.16s %p %d %8d %8.8s\n", pthreadInfo->name,(void *)
 	       pthreadInfo,pthreadInfo->osiPriority,priority,pthreadInfo->
 		     isSuspended?"SUSPEND":"OK");
 	if(level>0)

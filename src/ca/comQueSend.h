@@ -10,7 +10,6 @@
 
 
 /*  
- *  $Id$
  *
  *                              
  *                    L O S  A L A M O S

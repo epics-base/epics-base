@@ -8,7 +8,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
- *	$Id$	
  *
  *	Author: J. Hill 
  *

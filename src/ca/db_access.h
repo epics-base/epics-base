@@ -8,8 +8,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* base/include/db_access.h */
-/* $Id$ */
-
 /*      Author:          Bob Dalesio
  *      Date:            4-4-88
 */

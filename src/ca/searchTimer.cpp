@@ -8,7 +8,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 // 
-// $Id$
 //
 //                    L O S  A L A M O S
 //              Los Alamos National Laboratory

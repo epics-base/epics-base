@@ -86,8 +86,7 @@ CXXCMPLR=STRICT
 #     NOTE solaris and sun4: If YES then LD_LIBRARY_PATH must
 #     include fullpathname $(INSTALL_LOCATION)/lib/$(HOST_ARCH)
 #     for both the base build and when invoking base executables
-#SHARED_LIBRARIES=NO
-SHARED_LIBRARIES=YES
+SHARED_LIBRARIES=NO
 
 #  Build client objects statically ?
 #        must be either YES or NO

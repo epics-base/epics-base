@@ -75,6 +75,7 @@ template < class T >
 class tsSLList : public tsSLNode < T > {
 public:
     tsSLList (); // creates an empty list
+    tsSLList ( tsSLList & ); 
     void insert ( T &item, tsSLNode < T > &itemBefore ); // insert after item before
     void add ( T &item ); // add to the beginning of the list
     T * get (); // remove from the beginning of the list
@@ -85,8 +86,7 @@ public:
     tsSLIterConst <T> firstIter () const;
     tsSLIter <T> firstIter ();
 private:
-    tsSLList ( const tsSLList & ); // dissallowed
-    const tsSLList < T > & operator = ( const tsSLList < T > & ) const;
+    const tsSLList < T > & operator = ( const tsSLList < T > & );
 };
 
 //
@@ -148,7 +148,8 @@ tsSLNode < T > ::tsSLNode () : pNext ( 0 ) {}
 // do _not_ change the node pointers
 //
 template < class T >
-inline const tsSLNode < T > &  tsSLNode < T >::operator = ( const tsSLNode < T > & ) const 
+inline const tsSLNode < T > &  tsSLNode < T >::operator = 
+    ( const tsSLNode < T > & ) const 
 {
     return *this;
 }
@@ -181,6 +182,16 @@ inline void tsSLNode<T>::removeNextItem ()
 template < class T >
 inline tsSLList < T > :: tsSLList ()
 {
+}
+
+//
+// tsSLList<T>::tsSLList( tsSLList & )
+//
+template < class T >
+inline tsSLList < T > :: tsSLList ( tsSLList &listIn )
+{
+    this->pNext = listIn.pNext;
+    listIn.pNext = 0;
 }
 
 //

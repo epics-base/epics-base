@@ -334,7 +334,8 @@ static void monitor(plongout)
         /* check for value change */
         delta = plongout->mlst - plongout->val;
         if(delta<0) delta = -delta;
-        if (delta > plongout->mdel) {
+        /*If delta=0x80000000 then delta==-delta*/
+        if (delta > plongout->mdel || delta==0x80000000) {
                 /* post events for value change */
                 monitor_mask |= DBE_VALUE;
                 /* update last value monitored */

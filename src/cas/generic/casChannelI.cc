@@ -29,11 +29,15 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:14  jhill
+ * ca server installation
+ *
  *
  */
 
 #include <server.h>
 #include <casEventSysIL.h> // casEventSys inline func
+#include <casAsyncIOIIL.h> // casAsyncIOI inline func
 #include <casPVIIL.h> // casPVI inline func
 
 
@@ -43,14 +47,12 @@
 casChannelI::casChannelI(const casCtx &ctx, casChannel &chanAdapter) :
 		client(* (casStrmClient *) ctx.getClient()), 
 		pv(*ctx.getPV()), 
+		chan(chanAdapter),
 		cid(ctx.getMsg()->m_cid)
 {
 	assert(&this->client);
 	assert(&this->pv);
-	//
-	// enforce that casChannelI is always a base of casChannel
-	//
-	assert(&chanAdapter == (casChannel *) this);
+	assert(&this->chan);
 
 	this->client.installChannel(*this);
 }

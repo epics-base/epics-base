@@ -3,6 +3,9 @@
 
 /*
  * $Log$
+ * Revision 1.28  1996/06/06 14:35:41  winans
+ * Fixed external reference to GPIB driver's DRVET
+ *
  * Revision 1.27  1996/02/16 22:04:58  jba
  * Changed field reference from val to oval in devGpibLib_aoGpibWork
  *
@@ -723,34 +726,49 @@ struct link	*plink;
     pdpvt->parm = -1;     /* In case the sscanf fails */
     pdpvt->linkType = plink->type;
 
-    switch (plink->type) {
-    case GPIB_IO:         /* Is a straight Network Instruments link */
-	pdpvt->head.link = plink->value.gpibio.link;   /* NI link number */
-	pdpvt->head.device = plink->value.gpibio.addr; /* gpib dev address */
-	sscanf(plink->value.gpibio.parm, "%hd", &(pdpvt->parm));
-	pdpvt->head.bitBusDpvt = NULL;      /* no bitbus data needed */
-	break;
+	switch (plink->type) {
+	case GPIB_IO:         /* Is a straight Network Instruments link */
+		pdpvt->head.link = plink->value.gpibio.link;   /* NI link number */
+		pdpvt->head.device = plink->value.gpibio.addr; /* gpib dev address */
+		sscanf(plink->value.gpibio.parm, "%hd", &(pdpvt->parm));
+		pdpvt->head.bitBusDpvt = NULL;      /* no bitbus data needed */
+		if (*parmBlock->debugFlag > 5)
+		{
+			printf("initXx GPIB_IO link info for record '%s':\n", prec->name);
+			printf("  link:  '%d'\n", plink->value.gpibio.link);
+			printf("  addr:  '%d'\n", plink->value.gpibio.addr);
+			printf("  parm:  '%s'\n", plink->value.gpibio.parm);
+		}
+		break;
 
-    case BBGPIB_IO:       /* Is a bitbus -> gpib link */
-	pdpvt->head.device = plink->value.bbgpibio.gpibaddr; /* dev address */
-        sscanf(plink->value.bbgpibio.parm, "%hd", &(pdpvt->parm));
-	pdpvt->head.bitBusDpvt = (struct dpvtBitBusHead *) malloc(sizeof(struct dpvtBitBusHead));
-	pdpvt->head.bitBusDpvt->txMsg.data = (unsigned char *) malloc(BB_MAX_DAT_LEN);
-	pdpvt->head.bitBusDpvt->rxMsg.data = (unsigned char *) malloc(BB_MAX_DAT_LEN);
-	pdpvt->head.bitBusDpvt->txMsg.node = plink->value.bbgpibio.bbaddr; /* bug node address */
-	pdpvt->head.bitBusDpvt->link = plink->value.bbgpibio.link;  /* bug link number */
-	pdpvt->head.link = plink->value.bbgpibio.link;
-	pdpvt->head.bitBusDpvt->rxMaxLen = sizeof(struct bitBusMsg);
-	break;
+	case BBGPIB_IO:       /* Is a bitbus -> gpib link */
+		pdpvt->head.device = plink->value.bbgpibio.gpibaddr; /* dev address */
+		sscanf(plink->value.bbgpibio.parm, "%hd", &(pdpvt->parm));
+		pdpvt->head.bitBusDpvt = (struct dpvtBitBusHead *) malloc(sizeof(struct dpvtBitBusHead));
+		pdpvt->head.bitBusDpvt->txMsg.data = (unsigned char *) malloc(BB_MAX_DAT_LEN);
+		pdpvt->head.bitBusDpvt->rxMsg.data = (unsigned char *) malloc(BB_MAX_DAT_LEN);
+		pdpvt->head.bitBusDpvt->txMsg.node = plink->value.bbgpibio.bbaddr; /* bug node address */
+		pdpvt->head.bitBusDpvt->link = plink->value.bbgpibio.link;  /* bug link number */
+		pdpvt->head.link = plink->value.bbgpibio.link;
+		pdpvt->head.bitBusDpvt->rxMaxLen = sizeof(struct bitBusMsg);
+		if (*parmBlock->debugFlag > 5)
+		{
+			printf("initXx BBGPIB_IO link info for record '%s':\n", prec->name);
+			printf("  link:     '%d'\n", plink->value.bbgpibio.link);
+			printf("  bbaddr:   '%d'\n", plink->value.bbgpibio.bbaddr);
+			printf("  gpibaddr: '%d'\n", plink->value.bbgpibio.gpibaddr);
+			printf("  parm:     '%s'\n", plink->value.bbgpibio.parm);
+		}
+		break;
 
-    default:
-        strcpy(message, pdbCommon->name);
-	sprintf(message,": init_record : GPIB link type %ld is invalid", plink->type);
-	errMessage(S_db_badField, message);
-        prec->pact = TRUE;		/* keep record from being processed */
-	return(S_db_badField);
-	break;
-    }
+	default:
+		strcpy(message, pdbCommon->name);
+		sprintf(message,": init_record : GPIB link type %ld is invalid", plink->type);
+		errMessage(S_db_badField, message);
+		prec->pact = TRUE;		/* keep record from being processed */
+		return(S_db_badField);
+		break;
+	}
     /* Try to find the hardware private structure */
 
     if (*parmBlock->debugFlag > 5)
@@ -835,7 +853,7 @@ struct link	*plink;
     }
   
     if (*parmBlock->debugFlag > 5)
-      printf("initXx checking param entry for record >%s< device >%s<\n", prec->name, parmBlock->name);
+      printf("initXx checking param entry for record >%s< device >%s< parsed parm number %d\n", prec->name, parmBlock->name, pdpvt->parm);
 
     /* Check for valid param entry */
     if ((pdpvt->parm < 0) || (pdpvt->parm > parmBlock->numparams))

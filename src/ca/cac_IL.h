@@ -23,7 +23,12 @@
 
 inline int cac::vPrintf ( const char *pformat, va_list args )
 {
-    return ( *this->pVPrintfFunc ) ( pformat, args );
+    if ( this ) {
+        return ( *this->pVPrintfFunc ) ( pformat, args );
+    }
+    else {
+        return vfprintf ( stderr, pformat, args );
+    }
 }
 
 inline const char * cac::userNamePointer () const

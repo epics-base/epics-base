@@ -20,9 +20,7 @@ SHRLIB_SUFFIX = .so
 
 SHRLIBNAME = lib$(LIBRARY)$(SHRLIB_SUFFIX)$(SHRLIB_VERSION:%=.%)
 
-#For backward compatability only
-DLL_LIBS = $(subst $(LIBRARY),, $(PROD_LIBS))
-
+DLL_LIBS = $(patsubst $(LIBRARY),, $(PROD_LIBS) $(USR_LIBS))
 DLL_LDLIBS = $(PRODNAME_LIBS:%=-l%) $(DLL_LIBS:%=-l%)
 
 INSTALL_SHRLIB = $(INSTALL_LIB)

@@ -195,10 +195,17 @@ $(INSTALL_DB)/%.template: %.template
 $(COMMON_DIR)/%Record.h: %Record.dbd
 	@$(RM) $@
 	$(DBTORECORDTYPEH) $(DBDFLAGS)  $< $@
+ifeq '$(OS_CLASS)' 'WIN32'
+	@$(PERL) $(TOOLS)/dos2unix.pl $@
+endif
 
 $(COMMON_DIR)/menu%.h: menu%.dbd
 	@$(RM) $@
 	$(DBTOMENUH) $< $@
+ifeq '$(OS_CLASS)' 'WIN32'
+	@$(PERL) $(TOOLS)/dos2unix.pl $@
+endif
+
 
 ##################################################### DBD files
 

@@ -69,7 +69,7 @@ public:
     void reset();
     
 private: // Data
-    static const int blocksize = 256;
+    enum {blocksize = 256};	// Poor man's const int, for MSVC++
     
     epicsListNode _node[blocksize];
 };
@@ -134,11 +134,22 @@ inline void epicsListLink::swap(epicsListLink& node) {
 
 
 // epicsListNode
+
+// Disable spurious warnings from MSVC
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:4355)
+#endif
+
 inline epicsListNode::epicsListNode() :
     _next(this + 1), _prev(0), payload(0) {}
 
 inline epicsListNode::epicsListNode(int) :
     _next(this), _prev(this), payload(0) {}
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 inline bool epicsListNode::hasNext() const {
     return (_next != this);

@@ -17,7 +17,6 @@
  * 1) This interface is preliminary and will change in the future
  */
 
-
 #include "dbNotify.h"
 #include "dbEvent.h"
 #include "dbAddr.h"
@@ -44,31 +43,6 @@ public:
 	dbBaseIO & operator = ( const dbBaseIO & );
 };
 
-class dbPutNotifyBlocker : public dbBaseIO {
-public:
-    dbPutNotifyBlocker ( dbChannelIO &chanIn );
-    void initiatePutNotify ( epicsAutoMutex &locker, cacWriteNotify &notify, struct dbAddr &addr, 
-            unsigned type, unsigned long count, const void *pValue );
-    void cancel ();
-    void show ( unsigned level ) const;
-    void * operator new ( size_t size );
-    void operator delete ( void *pCadaver, size_t size );
-    void destroy ();
-protected:
-    virtual ~dbPutNotifyBlocker ();
-private:
-    putNotify pn;
-    epicsEvent block;
-    dbChannelIO &chan;
-    cacWriteNotify *pNotify;
-    dbSubscriptionIO * isSubscription ();
-    static tsFreeList < dbPutNotifyBlocker > freeList;
-    static epicsMutex freeListMutex;
-    friend void putNotifyCompletion ( putNotify *ppn );
-	dbPutNotifyBlocker ( const dbPutNotifyBlocker & );
-	dbPutNotifyBlocker & operator = ( const dbPutNotifyBlocker & );
-};
-
 extern "C" void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr *paddr,
 	int eventsRemaining, struct db_field_log *pfl );
 
@@ -92,8 +66,7 @@ private:
     unsigned long count;
     unsigned id;
     dbSubscriptionIO * isSubscription ();
-    static tsFreeList < dbSubscriptionIO > freeList;
-    static epicsMutex freeListMutex;
+    static epicsSingleton < tsFreeList < dbSubscriptionIO > > freeList;
     friend void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr *paddr,
 	    int eventsRemaining, struct db_field_log *pfl );
 	dbSubscriptionIO ( const dbSubscriptionIO & );
@@ -144,8 +117,7 @@ private:
     void ioShow ( const ioid &, unsigned level ) const;
     short nativeType () const;
     unsigned long nativeElementCount () const;
-    static tsFreeList < dbChannelIO > freeList;
-    static epicsMutex freeListMutex;
+    static epicsSingleton < tsFreeList < dbChannelIO > > freeList;
     static unsigned nextIdForIO;
 	dbChannelIO ( const dbChannelIO & );
 	dbChannelIO & operator = ( const dbChannelIO & );

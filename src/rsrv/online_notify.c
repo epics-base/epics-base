@@ -35,6 +35,8 @@
  *      .00 joh 021192  better diagnostics
  */
 
+char *sccsId = "$Id$\t$Date$";
+
 /*
  *	system includes
  */

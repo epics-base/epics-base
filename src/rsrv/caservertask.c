@@ -1,5 +1,4 @@
-/*	@(#)caservertask.c
- *   @(#)caservertask.c	1.2	6/27/91
+/*
  *	Author:	Jeffrey O. Hill
  *		hill@luke.lanl.gov
  *		(505) 665 1831
@@ -42,6 +41,8 @@
  *	.09 joh 022092	print free list statistics in client_stat()
  *	.10 joh 022592	print more statistics in client_stat()
  */
+
+static char *sccsId = "$Id$\t$Date$";
 
 #include <vxWorks.h>
 #include <lstLib.h>

@@ -1,5 +1,4 @@
-/*	@(#)globalsource.c
- *   $Id$
+/*
  *	Author:	Jeffrey O. Hill
  *		hill@luke.lanl.gov
  *		(505) 665 1831
@@ -30,6 +29,8 @@
  * 	-----------------
  */
 #define GLBLSOURCE
+
+static char *sccsId = "$Id$\t$Date$";
 
 #include <vxWorks.h>
 #include <lstLib.h>

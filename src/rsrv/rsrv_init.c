@@ -1,5 +1,4 @@
-/*	@(#)rsrv_init.c
- *   $Id$
+/*
  *	Author:	Jeffrey O. Hill
  *		hill@luke.lanl.gov
  *		(505) 665 1831
@@ -29,6 +28,9 @@
  * 	Modification Log:
  * 	-----------------
  */
+
+char *sccsId = "$Id$\t$Date$";
+
 #include <vxWorks.h>
 #include <lstLib.h>
 #include <taskLib.h>

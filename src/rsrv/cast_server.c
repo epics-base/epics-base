@@ -1,5 +1,4 @@
-/*	@(#)cast_server.c
- *   @(#)cast_server.c	1.4	6/27/91
+/*
  *	Author:	Jeffrey O. Hill
  *		hill@luke.lanl.gov
  *		(505) 665 1831
@@ -56,6 +55,8 @@
  * 	an existing TCP connection to avoid a TCP
  * 	pend which could lock up the cast server.
  */
+
+static char	*sccsId = "$Id$\t$Date$";
 
 #include <vxWorks.h>
 #include <lstLib.h>

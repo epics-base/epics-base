@@ -1,5 +1,4 @@
-/*	@(#)server.h
- *   $Id$
+/*
  *	Author:	Jeffrey O. Hill
  *		hill@luke.lanl.gov
  *		(505) 665 1831
@@ -39,6 +38,11 @@
  *	.07 joh 022492	added get flag to the event ext block
  *
  */
+
+#ifndef INCLserverh
+#define INCLserverh
+
+static char *serverhSccsId = "$Id$\t$Date$";
 
 #ifndef INCLfast_lockh
 #include <fast_lock.h>
@@ -166,3 +170,6 @@ struct extmsg 	*cas_alloc_msg();
 void		rsrv_online_notify_task();
 struct client 	*create_udp_client();
 void		cac_send_heartbeat();
+
+
+#endif INCLserverh

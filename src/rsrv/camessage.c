@@ -1,5 +1,4 @@
-/*	@(#)camessage.c
- *   @(#)camessage.c	1.2	6/27/91
+/*	
  *	Author:	Jeffrey O. Hill
  *		hill@luke.lanl.gov
  *		(505) 665 1831
@@ -45,6 +44,8 @@
  *	.10 joh	050692	added new routine - cas_send_heartbeat()
  *	.11 joh 062492	dont allow flow control to turn off gets
  */
+
+char *sccsId = "$Id$\t$Date$";
 
 #include <vxWorks.h>
 #include <taskLib.h>

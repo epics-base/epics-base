@@ -1,5 +1,4 @@
-/*	@(#)camsgtask.c
- *   @(#)camsgtask.c	1.2	6/27/91
+/*
  *	Author:	Jeffrey O. Hill
  *		hill@luke.lanl.gov
  *		(505) 665 1831
@@ -39,6 +38,8 @@
  *	.06 joh 021192  better diagnostics
  *	.07 joh 031692  disconnect on bad message
  */
+
+char *sccsId = "$Id$\t$Date$";
 
 #include <vxWorks.h>
 #include <lstLib.h>

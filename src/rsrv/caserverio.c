@@ -1,5 +1,4 @@
-/*	@(#)caserverio.c
- *   @(#)caserverio.c	1.2	6/27/91
+/*	
  *	Author:	Jeffrey O. Hill
  *		hill@luke.lanl.gov
  *		(505) 665 1831
@@ -35,6 +34,8 @@
  *	.05 joh	022092	improved diagnostics
  *	.06 joh	031992	improved diagnostics
  */
+
+static char *sccsId = "$Id$\t$Date$";
 
 #include <vxWorks.h>
 #include <lstLib.h>

@@ -71,9 +71,9 @@ int rsrv_online_notify_task()
 	 */
   	unsigned long		delay = sysClkRateGet();
 	/*
-	 * CA_ONLINE_DELAY [sec] max delay
+	 * CA_ONLINE_DELAY max delay in ticks
 	 */
-  	unsigned long		maxdelay = CA_ONLINE_DELAY * sysClkRateGet();
+  	unsigned long		maxdelay = CA_ONLINE_DELAY;
 	struct extmsg		msg;
 
   	struct sockaddr_in	send_addr;

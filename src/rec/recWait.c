@@ -27,25 +27,28 @@
  *
  * Modification Log:
  * -----------------
- * .01  05-31-94        nda     initial try            
- * .02  07-11-94    mrk/nda     added "process on input change" feature
- * .03  08-16-94    mrk/nda     continuing "process on input change" feature
- * .04  08-16-94        nda     record does not get notified when a SCAN related field changes,
+ * 1.01  05-31-94        nda    initial try            
+ * 1.02  07-11-94    mrk/nda    added "process on input change" feature
+ * 1.03  08-16-94    mrk/nda    continuing "process on input change" feature
+ * 1.04  08-16-94        nda    record does not get notified when a SCAN related field changes,
  *                              so for now we have to always add monitors. Search for MON_ALWAYS
  *                              Modifications for this are flagged with MON_ALWAYS
- * .05  08-18-94        nda     Starting with R3.11.6, dbGetField locks the record before fetching
+ * 1.05  08-18-94        nda    Starting with R3.11.6, dbGetField locks the record before fetching
  *                              the data. This can cause deadlocks within a database. Change all
  *                              dbGetField() to dbGet()
- * .06  08-19-94        nda     added Output data option of VAL or DOL                         
- * .07  09-14-94        nda     corrected bug that caused SCAN_DISABLE to lock up the record forever
- * .08  02-01-95        nda     added VERS and ODLY (output execution delay)
- * .09  02-15-95        nda     addedd INxP to determine which inputs should cause the record
+ * 1.06  08-19-94        nda    added Output data option of VAL or DOL                         
+ * 1.07  09-14-94        nda    corrected bug that caused SCAN_DISABLE to lock up the record forever
+ * 1.08  02-01-95        nda    added VERS and ODLY (output execution delay)
+ * 1.09  02-15-95        nda    addedd INxP to determine which inputs should cause the record
  *                              to process when in I/O INTR mode.
+ * 2.00  02-20-95        nda    added queuing to SCAN_IO_EVENT mode so no transitions of data 
+ *                              would be missed. Can put back to cached mode by setting
+ *                              recWaitCacheMode (effects all wait records !)
  *
  *
  */
 
-#define VERSION 1.09
+#define VERSION 2.00
 
 
 
@@ -69,6 +72,7 @@
 #include	<dbFldTypes.h>
 #include	<devSup.h>
 #include	<errMdef.h>
+#include	<rngLib.h>
 #include	<recSup.h>
 #include	<special.h>
 #include	<callback.h>
@@ -119,7 +123,6 @@ struct rset waitRSET={
 	get_alarm_double
 };
 
-
 /* Create DSET for "soft channel" to allow for IO Event (this is to implement
    the feature of processing the record when an input changes) */
 
@@ -142,32 +145,26 @@ struct {
 
 /* DEFINES */
 #define   ARG_MAX   12
-#define   PVN_SIZE     40   /* must match the string length defined in waitRecord.ascii */
+#define   PVN_SIZE  40  /* must match the string length defined in waitRecord.ascii */
+#define   Q_SIZE    50
 
-/***************************
-  Declare constants
-***************************/
-int    waitRecDebug=0;
-static unsigned long tickStart;
-static void schedOutput();
-static void reqOutput();
-static void execOutput();
-static int fetch_values();
-static void monitor();
-static long initSiml();
-static void inputChanged();
+/**********************************************
+  Declare constants and structures 
+***********************************************/
 
-
-/* callback structure and miscellaneous data */
+/* callback structures and record private data */
 struct cbStruct {
-        CALLBACK           callback;  /* code assumes CALLBACK is 1st in structure */
+        CALLBACK           doOutCb;   /* callback structure for executing the output link */
+        CALLBACK           ioProcCb;  /* callback structure for io_event scanning  */
         struct waitRecord *pwait;     /* pointer to wait record which needs work done */
         WDOG_ID            wd_id;     /* Watchdog used for delays */
-        IOSCANPVT          ioscanpvt; /* used for IO_EVENT scanning */
         RECWAITCA          inpMonitor[12];  /* required structures for each input variable */
+        RING_ID            monitorQ;	    /* queue to store ca callback data */
+        IOSCANPVT          ioscanpvt; /* used for IO_EVENT scanning */
+        int                outputWait;      /* flag to indicate waiting to do output */
         int                procPending;     /* flag to indicate record processing is pending */
 };
- 
+
 
 static long get_ioint_info(cmd,pwait,ppvt)
         int                     cmd;
@@ -177,6 +174,26 @@ static long get_ioint_info(cmd,pwait,ppvt)
     *ppvt = (((struct cbStruct *)pwait->cbst)->ioscanpvt);
     return(0);
 }
+
+
+/* This is the data that will be put on the work queue ring buffer */
+struct qStruct {
+        char               inputIndex;
+        double             monData;
+};
+
+
+int    recWaitDebug=0;
+int    recWaitCacheMode=0;
+static unsigned long tickStart;
+static void schedOutput(struct waitRecord *pwait);
+static void reqOutput(struct waitRecord *pwait);
+static void execOutput(struct cbStruct *pcbst);
+static int fetch_values(struct waitRecord *pwait);
+static void monitor(struct waitRecord *pwait);
+static long initSiml();
+static void inputChanged(struct recWaitCa *pcamonitor, char inputIndex, double monData);
+static void ioIntProcess(CALLBACK *pioProcCb);
 
 
 static long init_record(pwait,pass)
@@ -217,10 +234,11 @@ static long init_record(pwait,pass)
       *ppvn = &pwait->inan[0];
       for(i=0;i<ARG_MAX; i++, *ppvn += PVN_SIZE) {
         ((struct cbStruct *)pwait->cbst)->inpMonitor[i].channame = (char *)*ppvn;
+        ((struct cbStruct *)pwait->cbst)->inpMonitor[i].inputIndex = i;
         ((struct cbStruct *)pwait->cbst)->inpMonitor[i].callback = inputChanged;
         ((struct cbStruct *)pwait->cbst)->inpMonitor[i].userPvt = pwait;
       }
-      
+
     /* do scanIoInit here because init_dev doesn't know which record */
     scanIoInit(&(((struct cbStruct *)pwait->cbst)->ioscanpvt));
 
@@ -228,6 +246,10 @@ static long init_record(pwait,pass)
     }
 
     /* Do initial lookup of PV Names to dbAddr's */
+
+    /* This is pass == 1, so pwait->cbst is valid */
+
+    pcbst = (struct cbStruct *)pwait->cbst;
 
     *ppvn = &pwait->inan[0];
     ppdbAddr = (struct dbAddr **)&pwait->inaa;
@@ -250,11 +272,17 @@ static long init_record(pwait,pass)
     }
     db_post_events(pwait,&pwait->clcv,DBE_VALUE);
 
-    callbackSetCallback(execOutput, &((struct cbStruct *)pwait->cbst)->callback);
-    callbackSetPriority(pwait->prio, &((struct cbStruct *)pwait->cbst)->callback);
-    pcbst = (struct cbStruct *)pwait->cbst;
+    callbackSetCallback(execOutput, &pcbst->doOutCb);
+    callbackSetPriority(pwait->prio, &pcbst->doOutCb);
+    callbackSetCallback(ioIntProcess, &pcbst->ioProcCb);
+    callbackSetPriority(pwait->prio, &pcbst->ioProcCb);
+    callbackSetUser(pwait, &pcbst->ioProcCb);
     pcbst->pwait = pwait;
     pcbst->wd_id = wdCreate();
+    if((pcbst->monitorQ = rngCreate(sizeof(struct qStruct) * Q_SIZE)) == NULL) {
+        errMessage(0,"recWait can't create ring buffer");
+        exit(1);
+    }
 
     /* Set up monitors on input channels if scan type is IO Event */
 
@@ -266,7 +294,7 @@ static long init_record(pwait,pass)
         for(i=0;i<ARG_MAX; i++, paddrValid++, piointInc++) {
             /* if valid PV AND input include flag is true ... */
             if(!(*paddrValid) && (*piointInc)) {
-                if(waitRecDebug) printf("adding monitor on input %d\n", i);
+                if(recWaitDebug) printf("adding monitor on input %d\n", i);
                 status = recWaitCaAdd(&(((struct cbStruct *)pwait->cbst)->inpMonitor[i]));
                 if(status) errMessage(status,"recWaitCaAdd error");
             }
@@ -275,8 +303,9 @@ static long init_record(pwait,pass)
 
     if (status=initSiml(pwait)) return(status);
 
-    /* now reset procPending so the next monitor processes the record */
-    ((struct cbStruct *)pwait->cbst)->procPending = 0;
+    /* reset miscellaneous flags */
+    pcbst->outputWait = 0;
+    pcbst->procPending = 0;
 
     pwait->init = TRUE;
     return(0);
@@ -297,7 +326,7 @@ static long process(pwait)
         status=recGblGetLinkValue(&(pwait->siml),
                (void *)pwait,DBR_ENUM,&(pwait->simm),&options,&nRequest);
 
-        /* reset procPending before getting values so we don't miss any monitors */
+        /* reset procPending before getting values */
         ((struct cbStruct *)pwait->cbst)->procPending = 0;
 
         if(pwait->simm == NO) {
@@ -384,7 +413,7 @@ static long special(paddr,after)
     short error_number;
     char rpbuf[184];
 
-    if(waitRecDebug) printf("entering special %d \n",after);
+    if(recWaitDebug) printf("entering special %d \n",after);
 
     if(!after) {  /* this is called before ca changes the field */
         /* MON_ALWAYS This case doesn't currently happen */
@@ -393,7 +422,7 @@ static long special(paddr,after)
             paddrValid = &pwait->inav;
             for(i=0;i<ARG_MAX; i++, paddrValid++) {
                 if(!(*paddrValid)) {
-                    if(waitRecDebug) printf("deleting monitor\n");
+                    if(recWaitDebug) printf("deleting monitor\n");
                     status = recWaitCaDelete(&(((struct cbStruct *)pwait->cbst)->inpMonitor[i]));
                     if(status) errMessage(status,"recWaitCaDelete error");
                 }
@@ -410,7 +439,7 @@ static long special(paddr,after)
             piointInc  = &pwait->inap + i; /* pointer arithmetic */
             /* If PV name is valid and the INxP flag is true, ... */
             if(!(*paddrValid) && (*piointInc)) {
-                if(waitRecDebug) printf("deleting monitor on input %d\n",i);
+                if(recWaitDebug) printf("deleting monitor on input %d\n",i);
                 status = recWaitCaDelete(&(((struct cbStruct *)pwait->cbst)->inpMonitor[i]));
                 if(status) errMessage(status,"recWaitCaDelete error");
             }
@@ -426,7 +455,7 @@ static long special(paddr,after)
               paddrValid = &pwait->inav;
               for(i=0;i<ARG_MAX; i++, paddrValid++) {
                   if(!(*paddrValid)) {
-                     if(waitRecDebug) printf("adding monitor on input %d\n", i);
+                     if(recWaitDebug) printf("adding monitor on input %d\n", i);
                      status = recWaitCaAdd(&(((struct cbStruct *)pwait->cbst)->inpMonitor[i]));
                      if(status) errMessage(status,"recWaitCaAdd error");
                   }
@@ -465,7 +494,7 @@ static long special(paddr,after)
           /* If the INxP flag is set, add a monitor */
           piointInc  = &pwait->inap + i;    /* pointer arithmetic */
           if(!(*paddrValid) && (*piointInc)) {
-              if(waitRecDebug) printf("adding monitor on input %d\n", i);
+              if(recWaitDebug) printf("adding monitor on input %d\n", i);
               status = recWaitCaAdd(&(((struct cbStruct *)pwait->cbst)->inpMonitor[i]));
               if(status) errMessage(status,"recWaitCaAdd error");
           }
@@ -488,7 +517,8 @@ static long special(paddr,after)
             }
         }
         else if(paddr->pfield==(void *)&pwait->prio) {
-            callbackSetPriority(pwait->prio, &((struct cbStruct *)pwait->cbst)->callback);
+            callbackSetPriority(pwait->prio, &((struct cbStruct *)pwait->cbst)->doOutCb);
+            callbackSetPriority(pwait->prio, &((struct cbStruct *)pwait->cbst)->ioProcCb);
         }
 
         return(0);
@@ -653,14 +683,17 @@ struct waitRecord *pwait;
         struct dbAddr   **ppdba; /* a ptr to a ptr to dbAddr  */
         double          *pvalue;
         long            *pvalid;
+        unsigned short  *piointInc;   /* include for IO_INT ? */
         long            status=0,options=0,nRequest=1;
         int             i;
 
+        piointInc  = &pwait->inap;
         for(i=0, ppdba= (struct dbAddr **)&pwait->inaa, pvalue=&pwait->a, pvalid = &pwait->inav;
-            i<ARG_MAX; i++, ppdba++, pvalue++, pvalid++) {
+            i<ARG_MAX; i++, ppdba++, pvalue++, pvalid++, piointInc++) {
 
             /* only fetch a value if the dbAddr is valid, otherwise, leave it alone */
-            if(!(*pvalid)) {
+            /* if in SCAN_IO_EVENT, only fetch inputs if INxP !=  1 (not monitored) */
+            if(!(*pvalid) && !((pwait->scan == SCAN_IO_EVENT) && (*piointInc))) {
                 status = dbGet(*ppdba, DBR_DOUBLE,
                                pvalue, &options, &nRequest, NULL);
             }
@@ -675,6 +708,7 @@ struct waitRecord *pwait;
  * The following functions schedule and/or request the execution of the output
  * PV and output event based on the Output Execution Delay (ODLY).
  * If .odly > 0, a watchdog is scheduled; if 0, reqOutput() is called immediately.
+ * NOTE: THE RECORD REMAINS "ACTIVE" WHILE WAITING ON THE WATCHDOG
  *
  ******************************************************************************/
 static void schedOutput(pwait)
@@ -687,6 +721,7 @@ int                   wdDelay;
  
     if(pwait->odly > 0.0) {
       /* Use the watch-dog as a delay mechanism */
+      pcbst->outputWait = 1;
       wdDelay = pwait->odly * sysClkRateGet();
       wdStart(pcbst->wd_id, wdDelay, (FUNCPTR)reqOutput, (int)(pwait));
     } else {
@@ -741,6 +776,7 @@ static double oldDold;
 
     recGblFwdLink(pcbst->pwait);
     pcbst->pwait->pact = FALSE;
+    pcbst->outputWait = 0;
 
     /* If I/O Interrupt scanned, see if any inputs changed during delay */
     if((pcbst->pwait->scan == SCAN_IO_EVENT) && (pcbst->procPending == 1)) {
@@ -752,7 +788,11 @@ static double oldDold;
 
 
 
-static void inputChanged(struct recWaitCa *pcamonitor)
+/* This routine is called by the recWaitCaTask whenver a monitored input
+   changes. The input index and new data is put on a work queue, and a callback
+   request is issued to the routine ioIntProcess
+*/
+static void inputChanged(struct recWaitCa *pcamonitor, char inputIndex, double monData)
 {
 
     struct waitRecord *pwait = (struct waitRecord *)pcamonitor->userPvt;
@@ -761,17 +801,80 @@ static void inputChanged(struct recWaitCa *pcamonitor)
 /* the next line is here because the monitors are always active ... MON_ALWAYS */
     if(pwait->scan != SCAN_IO_EVENT) return; 
 
-
-    /* if record hasn't been processed or is DISABLED, don't set procPending yet */
-    if((pwait->stat == DISABLE_ALARM) || pwait->udf) { 
-        if(waitRecDebug) printf("processing due to monitor\n");
-        scanIoRequest(pcbst->ioscanpvt);
-    } else if(pcbst->procPending) {
-        if(waitRecDebug) printf("discarding monitor\n");
-        return;
-    } else {
-        pcbst->procPending = 1;
-        if(waitRecDebug) printf("processing due to monitor\n");
-        scanIoRequest(pcbst->ioscanpvt);
-    } 
+    if(recWaitCacheMode) {
+      /* if record hasn't been processed or is DISABLED, don't set procPending yet */
+      if((pwait->stat == DISABLE_ALARM) || pwait->udf) { 
+          if(recWaitDebug) printf("queuing monitor (cached)\n");
+          callbackRequest(&pcbst->ioProcCb);
+      } else if(pcbst->procPending) {
+/*        if(recWaitDebug) printf("discarding monitor\n"); */
+          printf("discarding monitor\n");
+          return;
+      } else {
+          pcbst->procPending = 1;
+          if(recWaitDebug) printf("queuing monitor (cached)\n");
+          callbackRequest(&pcbst->ioProcCb);
+      } 
+    }
+    else {  /* put input index and monitored data on processing queue */
+        if(recWaitDebug) printf("queuing monitor on %d = %lf\n", inputIndex, monData);
+        if(rngBufPut(pcbst->monitorQ, (void *)&inputIndex, sizeof(char))
+            != sizeof(char)) errMessage(0,"recWait rngBufPut error");
+        if(rngBufPut(pcbst->monitorQ, (void *)&monData, sizeof(double))
+            != sizeof(double)) errMessage(0,"recWait rngBufPut error");
+        callbackRequest(&pcbst->ioProcCb);
+    }
 }
+
+
+/* This routine performs the record processing when in SCAN_IO_EVENT. An
+   event queue is built by inputChanged() and emptied here so each change
+   of an input causes the record to process.
+*/
+static void ioIntProcess(CALLBACK *pioProcCb)
+{
+
+    struct waitRecord *pwait;
+    struct cbStruct   *pcbst;
+
+    char     inputIndex;
+    double   monData;
+    double   *pInput; 
+
+    callbackGetUser(pwait, pioProcCb);
+    pcbst = (struct cbStruct *)pwait->cbst;
+    pInput = &pwait->a;  /* a pointer to the first input field */
+
+    if(pwait->scan != SCAN_IO_EVENT) return;
+
+    if(!recWaitCacheMode) {
+      if(rngBufGet(pcbst->monitorQ, (void *)&inputIndex, sizeof(char))
+          != sizeof(char)) errMessage(0, "recWait: rngBufGet error");
+      if(rngBufGet(pcbst->monitorQ, (void *)&monData, sizeof(double))
+          != sizeof(double)) errMessage(0, "recWait: rngBufGet error");
+
+      if(recWaitDebug) printf("processing on %d = %lf  (%lf)\n", inputIndex, monData,pwait->val);
+
+      pInput += inputIndex;   /* pointer arithmetic to choose appropriate input */ 
+      dbScanLock((struct dbCommon *)pwait);
+      *pInput = monData;                       /* put data in input data field */
+      
+      /* Process the record, unless it's busy waiting to do the output link */
+      if(pcbst->outputWait) {
+          pcbst->procPending = 1;
+          if(recWaitDebug) printf("record busy, setting procPending\n");
+      }
+      else {
+          dbProcess((struct dbCommon *)pwait);     /* process the record */
+      }
+      dbScanUnlock((struct dbCommon *)pwait);
+    }
+    else {
+      if(recWaitDebug) printf("processing (cached)\n");
+      dbScanLock((struct dbCommon *)pwait);
+      dbProcess((struct dbCommon *)pwait);     /* process the record */
+      dbScanUnlock((struct dbCommon *)pwait);
+    } 
+
+}
+    

@@ -48,7 +48,7 @@ LOCAL void eventCallback(struct event_handler_args eha)
     
     pcapvt = (CAPVT *)eha.usr;
     pcamonitor = pcapvt->pcamonitor;
-    (pcamonitor->callback)(pcamonitor);
+    (pcamonitor->callback)(pcamonitor, pcamonitor->inputIndex, pdata->value);
 }
     
 LOCAL void recWaitCaStart(void)
@@ -134,7 +134,7 @@ void recWaitCaTask(void)
     }
 }
 
-static void myCallback(struct recWaitCa *pcamonitor)
+static void myCallback(struct recWaitCa *pcamonitor, char inputIndex, double monData)
 {
     printf("myCallback: %s\n",pcamonitor->channame);
 }

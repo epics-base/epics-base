@@ -1,6 +1,7 @@
 typedef struct recWaitCa{
 	char	*channame;
-	void	(*callback)(struct recWaitCa *pcamonitor);
+        char    inputIndex;
+	void	(*callback)(struct recWaitCa *pcamonitor, char inputIndex, double monData);
 	void	*userPvt;
 	void	*recWaitCaPvt;
 } RECWAITCA;

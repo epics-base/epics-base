@@ -47,8 +47,15 @@ static char SccsId[] = "@(#)bb902_driver.c $Id$ ";
 #include <vxWorks.h>
 #include  <vme.h>
 #include <module_types.h>
-#include <bo_driver.h>
 #include <drvsubs.h>
+
+/* Burr-Brown 902 binary output memory structure */
+struct bo_bb902{
+        short   csr;                    /* control status register */
+        short   low_value;              /* low order 16 bits value */
+        short   high_value;             /* high order 16 bits value */
+        char    end_pad[0x100-6];       /* pad until next card */
+};
 
 static char *bb902_shortaddr;
 

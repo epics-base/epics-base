@@ -78,8 +78,8 @@ public:
 
 template < class T, unsigned N = 0x400, unsigned DEBUG_LEVEL = 0u >
 struct tsFreeListChunk {
-    tsFreeListChunk < T, N, DEBUG_LEVEL > *pNext;
     tsFreeListItem < T, DEBUG_LEVEL > items [N];
+    tsFreeListChunk < T, N, DEBUG_LEVEL > *pNext;
 };
 
 template < class T, unsigned N = 0x400, unsigned DEBUG_LEVEL = 0u >

@@ -7,6 +7,8 @@
 
 #< ../nfsCommands
 
+#putenv("TIMEZONE=<name>::<minutesWest>:<start daylight>:<end daylight>")
+
 cd topbin
 ld < exampleLibrary.munch
 

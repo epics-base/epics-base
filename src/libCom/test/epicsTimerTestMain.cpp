@@ -17,7 +17,7 @@
  *
  */
 
-void epicsTimerTest ( void );
+extern "C" void epicsTimerTest ( void );
 
 int main ( int /* argc */, char /* *argv[] */ )
 {

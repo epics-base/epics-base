@@ -347,7 +347,7 @@ void testPeriodic ()
     queue.release ();
 }
 
-void epicsTimerTest ()
+extern "C" void epicsTimerTest ()
 {
     testExpireDestroy ();
     testAccuracy ();

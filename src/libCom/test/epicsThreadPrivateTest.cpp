@@ -58,7 +58,7 @@ inline void callItTenTimesSquared ()
     callItTenTimes ();
 }
 
-void epicsThreadPrivateTest ()
+extern "C" void epicsThreadPrivateTest ()
 {
     static bool var;
     priv.set ( &var );

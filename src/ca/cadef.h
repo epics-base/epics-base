@@ -72,10 +72,10 @@ typedef long                    chtype;
 typedef struct oldSubscription  *evid;
 typedef double                  ca_real;
 
-/* Format for the arguments to user connection handlers         */
+/* arguments passed to user connection handlers */
 struct  connection_handler_args {
-    chanId  chid;  /* Channel id           */
-    long    op; /* External codes for CA op */
+    chanId  chid;  /* channel id */
+    long    op;    /* one of CA_OP_CONN_UP or CA_OP_CONN_DOWN */
 };
 
 #ifdef CAC_ANSI_FUNC_PROTO
@@ -84,15 +84,15 @@ typedef void caCh (struct connection_handler_args args);
 typedef void caCh ();
 #endif /*CAC_ANSI_FUNC_PROTO*/
 
-typedef struct ca_access_rights{
+typedef struct ca_access_rights {
     unsigned    read_access:1;
     unsigned    write_access:1;
-}caar;
+} caar;
 
-/* Format for the arguments to user access rights handlers      */
+/* arguments passed to user access rights handlers */
 struct  access_rights_handler_args {
-    chanId  chid;   /* Channel id           */
-    caar    ar;     /* New access rights state  */
+    chanId  chid;   /* channel id */
+    caar    ar;     /* new access rights state */
 };
 
 #ifdef CAC_ANSI_FUNC_PROTO
@@ -113,13 +113,13 @@ typedef void caArh ();
  * If the status is not ECA_NORMAL then the dbr pointer will be NULL
  * and the requested operation can not be assumed to be successful.
  */
-typedef struct  event_handler_args {
-    void            *usr;   /* User argument supplied when event added  */
-    chanId          chid;   /* Channel id                   */
-    long            type;   /* the type of the value returned       */ 
-    long            count;  /* the element count of the item returned   */
-    READONLY void   *dbr;   /* Pointer to the value returned        */
-    int             status; /* ECA_XXX Status of the requested op from server   */
+typedef struct event_handler_args {
+    void            *usr;   /* user argument supplied with request */
+    chanId          chid;   /* channel id */
+    long            type;   /* the type of the item returned */ 
+    long            count;  /* the element count of the item returned */
+    READONLY void   *dbr;   /* a pointer to the item returned */
+    int             status; /* ECA_XXX status of the requested op from the server */
 } evargs;
 #ifdef CAC_ANSI_FUNC_PROTO
 typedef void caEventCallBackFunc (struct event_handler_args);
@@ -134,18 +134,18 @@ epicsShareFunc void epicsShareAPI ca_test_event
 #endif /*CAC_ANSI_FUNC_PROTO*/
 );
 
-/* Format for the arguments to user exception handlers */
+/* arguments passed to user exception handlers */
 struct exception_handler_args {
-    void            *usr;   /* User argument supplied when event added  */
-    chanId          chid;   /* Channel id (may be NULL)                 */
-    long            type;   /* Requested type for the operation     */
-    long            count;  /* Requested count for the operation        */
-    void            *addr;  /* User's address to write results of CA_OP_GET */
-    long            stat;   /* Channel access std status code       */
-    long            op;     /* External codes for channel access operations */
-    READONLY char   *ctx;   /* A character string containing context info   */
+    void            *usr;   /* user argument supplied when installed */
+    chanId          chid;   /* channel id (may be nill) */
+    long            type;   /* type requested */
+    long            count;  /* count requested */
+    void            *addr;  /* user's address to write results of CA_OP_GET */
+    long            stat;   /* channel access ECA_XXXX status code */
+    long            op;     /* CA_OP_GET, CA_OP_PUT, ..., CA_OP_OTHER */
+    READONLY char   *ctx;   /* a character string containing context info */
     READONLY char   *pFile; /* source file name (may be NULL) */
-    unsigned        lineNo; /* source file line number */
+    unsigned        lineNo; /* source file line number (may be zero) */
 };
 
 typedef unsigned CA_SYNC_GID;
@@ -153,14 +153,21 @@ typedef unsigned CA_SYNC_GID;
 /*
  *  External OP codes for CA operations
  */
-#define CA_OP_GET           0
-#define CA_OP_PUT           1
-#define CA_OP_SEARCH        2
-#define CA_OP_ADD_EVENT     3
-#define CA_OP_CLEAR_EVENT   4
-#define CA_OP_OTHER         5
+#define CA_OP_GET             0
+#define CA_OP_PUT             1
+#define CA_OP_CREATE_CHANNEL  2
+#define CA_OP_ADD_EVENT       3
+#define CA_OP_CLEAR_EVENT     4
+#define CA_OP_OTHER           5
+
+/* 
+ * used with connection_handler_args 
+ */
 #define CA_OP_CONN_UP       6
 #define CA_OP_CONN_DOWN     7
+
+/* depricated */
+#define CA_OP_SEARCH        2
 
 /*
  * provides efficient test and display of channel access errors

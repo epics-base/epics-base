@@ -19,6 +19,7 @@ TEMPLATES += top/exampleApp/Makefile
 TEMPLATES += top/exampleApp/Db/Makefile
 TEMPLATES += top/exampleApp/Db/dbExample1.db
 TEMPLATES += top/exampleApp/Db/dbExample2.db
+TEMPLATES += top/exampleApp/Db/dbSubExample.db
 TEMPLATES += top/exampleApp/src/Makefile
 TEMPLATES += top/exampleApp/src/base.dbd
 TEMPLATES += top/exampleApp/src/devXxxSoft.c
@@ -29,6 +30,7 @@ TEMPLATES += top/exampleApp/src/exampleInclude.dbd
 TEMPLATES += top/exampleApp/src/sncExample.stt
 TEMPLATES += top/exampleApp/src/xxxRecord.dbd
 TEMPLATES += top/exampleApp/src/exampleMain.cpp
+TEMPLATES += top/exampleApp/src/dbSubExample.cpp
 
 TEMPLATES += top/exampleBoot/Makefile
 TEMPLATES += top/exampleBoot/nfsCommands@vxWorks

@@ -171,17 +171,6 @@ LIB_LDFLAGS+=$(LIB_LDFLAGS_DEFAULT)
 endif
 endif
 
-#	check for special includes:
-#
-ifneq ($(strip $(INC_$(OS_CLASS))),)
-#	os-specific includes go to the include/os-directory:
-INC += $(subst -nil-,,$(INC_$(OS_CLASS)))
-else
-ifdef INC_DEFAULT
-INC += $(INC_DEFAULT)
-endif
-endif
-
 #	concat specific library contents (if defined)
 #
 ifneq ($(strip $(LIBSRCS_$(OS_CLASS))),)

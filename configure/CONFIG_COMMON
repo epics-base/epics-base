@@ -353,6 +353,7 @@ INSTALL_INC += $(foreach inc, $(INC), \
         $(OS_INSTALL_INC) \
         $(GENERIC_INSTALL_INC) \
         $(GENERATED_INSTALL_INC) ) )
+INSTALL_INC += $(addprefix $(INSTALL_INCLUDE)/os/$(OS_CLASS)/, $(INC_$(OS_CLASS)) )
 
 #
 # Rule 1

@@ -363,7 +363,7 @@ LOCAL void logClientShutdown(void)
 	if (iocLogFD!=ERROR) {
 	/*
 	 * unfortunately this does not currently work because WRS
-	 * runs the reboot hooks in the order the order that
+	 * runs the reboot hooks in the order that
 	 * they are installed (and the network is already shutdown 
 	 * by the time we get here)
 	 */

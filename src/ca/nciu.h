@@ -144,7 +144,7 @@ inline void * nciu::operator new ( size_t size,
 
 #ifdef CXX_PLACEMENT_DELETE
 inline void nciu::operator delete ( void * pCadaver,
-    tsFreeList < class nciu, 1024 > & freeList ) epicsThrows(())
+    tsFreeList < class nciu, 1024 > & freeList )
 { 
     freeList.release ( pCadaver, sizeof ( nciu ) );
 }

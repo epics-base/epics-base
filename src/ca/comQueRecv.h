@@ -31,54 +31,51 @@
 
 class comQueRecv {
 public:
-    comQueRecv ( comBufMemoryManager & ) epicsThrows (());
-    ~comQueRecv () epicsThrows (());
-    unsigned occupiedBytes () const epicsThrows (());
-    unsigned copyOutBytes ( epicsInt8 *pBuf, unsigned nBytes ) epicsThrows (());
-    unsigned removeBytes ( unsigned nBytes ) epicsThrows (());
-    void pushLastComBufReceived ( comBuf & ) epicsThrows (());
-    void clear () epicsThrows (());
-    epicsInt8 popInt8 () epicsThrows (( comBuf::insufficentBytesAvailable ));
-    epicsUInt8 popUInt8 () epicsThrows (( comBuf::insufficentBytesAvailable ));
-    epicsInt16 popInt16 () epicsThrows (( comBuf::insufficentBytesAvailable ));
-    epicsUInt16 popUInt16 () epicsThrows (( comBuf::insufficentBytesAvailable ));
-    epicsInt32 popInt32 () epicsThrows (( comBuf::insufficentBytesAvailable ));
-    epicsUInt32 popUInt32 () epicsThrows (( comBuf::insufficentBytesAvailable ));
-    epicsFloat32 popFloat32 () epicsThrows (( comBuf::insufficentBytesAvailable ));
-    epicsFloat64 popFloat64 () epicsThrows (( comBuf::insufficentBytesAvailable ));
-    void popString ( epicsOldString * ) epicsThrows (( comBuf::insufficentBytesAvailable ));
+    comQueRecv ( comBufMemoryManager & );
+    ~comQueRecv ();
+    unsigned occupiedBytes () const;
+    unsigned copyOutBytes ( epicsInt8 *pBuf, unsigned nBytes );
+    unsigned removeBytes ( unsigned nBytes );
+    void pushLastComBufReceived ( comBuf & );
+    void clear ();
+    epicsInt8 popInt8 ();
+    epicsUInt8 popUInt8 ();
+    epicsInt16 popInt16 ();
+    epicsUInt16 popUInt16 ();
+    epicsInt32 popInt32 ();
+    epicsUInt32 popUInt32 ();
+    epicsFloat32 popFloat32 ();
+    epicsFloat64 popFloat64 ();
+    void popString ( epicsOldString * );
 private:
     tsDLList < comBuf > bufs;
     comBufMemoryManager & comBufMemMgr;
     unsigned nBytesPending;
-    epicsUInt16 multiBufferPopUInt16 () epicsThrows (( comBuf::insufficentBytesAvailable ));
-    epicsUInt32 multiBufferPopUInt32 () epicsThrows (( comBuf::insufficentBytesAvailable ));
-    void removeAndDestroyBuf ( comBuf & ) epicsThrows (());
-	comQueRecv ( const comQueRecv & ) epicsThrows (());
-	comQueRecv & operator = ( const comQueRecv & ) epicsThrows (());
+    epicsUInt16 multiBufferPopUInt16 ();
+    epicsUInt32 multiBufferPopUInt32 ();
+    void removeAndDestroyBuf ( comBuf & );
+	comQueRecv ( const comQueRecv & );
+	comQueRecv & operator = ( const comQueRecv & );
 };
 
 inline unsigned comQueRecv::occupiedBytes () const
-    epicsThrows (())
+   
 {
     return this->nBytesPending;
 }
 
 inline epicsInt8 comQueRecv::popInt8 ()
-    epicsThrows (( comBuf::insufficentBytesAvailable ))
 {
     return static_cast < epicsInt8 > ( this->popUInt8() );
 }
 
 inline epicsInt16 comQueRecv::popInt16 ()
-    epicsThrows (( comBuf::insufficentBytesAvailable ))
 {
     return static_cast < epicsInt16 > ( ( this->popInt8() << 8u )
                                        | ( this->popInt8() << 0u ) );
 }
 
 inline epicsInt32 comQueRecv::popInt32 ()
-    epicsThrows (( comBuf::insufficentBytesAvailable ))
 {
     epicsInt32 tmp ;
     tmp  = this->popInt8() << 24u;
@@ -89,7 +86,6 @@ inline epicsInt32 comQueRecv::popInt32 ()
 }
 
 inline epicsFloat32 comQueRecv::popFloat32 ()
-    epicsThrows (( comBuf::insufficentBytesAvailable ))
 {
     epicsFloat32 tmp;
     epicsUInt8 wire[ sizeof ( tmp ) ];
@@ -102,7 +98,6 @@ inline epicsFloat32 comQueRecv::popFloat32 ()
 }
 
 inline epicsFloat64 comQueRecv::popFloat64 ()
-    epicsThrows (( comBuf::insufficentBytesAvailable ))
 {
     epicsFloat64 tmp;
     epicsUInt8 wire[ sizeof ( tmp ) ];
@@ -115,7 +110,6 @@ inline epicsFloat64 comQueRecv::popFloat64 ()
 }
 
 inline epicsUInt8 comQueRecv::popUInt8 () 
-    epicsThrows (( comBuf::insufficentBytesAvailable ))
 {
     comBuf * pComBuf = this->bufs.first ();
     if ( ! pComBuf ) {
@@ -131,7 +125,6 @@ inline epicsUInt8 comQueRecv::popUInt8 ()
 
 // optimization here complicates this function somewhat
 inline epicsUInt16 comQueRecv::popUInt16 ()
-    epicsThrows (( comBuf::insufficentBytesAvailable ))
 {
     comBuf *pComBuf = this->bufs.first ();
     if ( ! pComBuf ) {
@@ -157,7 +150,6 @@ inline epicsUInt16 comQueRecv::popUInt16 ()
 
 // optimization here complicates this function somewhat
 inline epicsUInt32 comQueRecv::popUInt32 ()
-    epicsThrows (( comBuf::insufficentBytesAvailable ))
 {
     comBuf *pComBuf = this->bufs.first ();
     if ( ! pComBuf ) {

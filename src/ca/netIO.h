@@ -171,7 +171,7 @@ inline void * netSubscription::operator new ( size_t size,
 
 #if defined ( CXX_PLACEMENT_DELETE )
     inline void netSubscription::operator delete ( void *pCadaver, 
-        tsFreeList < class netSubscription, 1024, epicsMutexNOOP > &freeList ) epicsThrows(())
+        tsFreeList < class netSubscription, 1024, epicsMutexNOOP > &freeList ) 
     {
         freeList.release ( pCadaver );
     }
@@ -222,7 +222,7 @@ inline void * netReadNotifyIO::operator new ( size_t size,
 
 #if defined ( CXX_PLACEMENT_DELETE )
     inline void netReadNotifyIO::operator delete ( void *pCadaver, 
-        tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > &freeList ) epicsThrows(())
+        tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > &freeList ) 
     {
         freeList.release ( pCadaver );
     }
@@ -243,7 +243,7 @@ inline void * netWriteNotifyIO::operator new ( size_t size,
 
 #if defined ( CXX_PLACEMENT_DELETE )
     inline void netWriteNotifyIO::operator delete ( void *pCadaver, 
-        tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > &freeList ) epicsThrows(())
+        tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > &freeList ) 
     {
         freeList.release ( pCadaver );
     }

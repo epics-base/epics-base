@@ -56,20 +56,20 @@ public:
 class bhe : public tsSLNode < bhe >, public inetAddrID {
 public:
     epicsShareFunc bhe ( const epicsTime & initialTimeStamp, 
-        unsigned initialBeaconNumber, const inetAddrID & addr ) epicsThrows (());
+        unsigned initialBeaconNumber, const inetAddrID & addr );
     epicsShareFunc ~bhe (); 
     epicsShareFunc bool updatePeriod ( 
         const epicsTime & programBeginTime, 
         const epicsTime & currentTime, ca_uint32_t beaconNumber, 
         unsigned protocolRevision );
-    epicsShareFunc double period () const epicsThrows (());
+    epicsShareFunc double period () const;
     epicsShareFunc epicsTime updateTime () const;
     epicsShareFunc void show ( unsigned level) const;
     epicsShareFunc void registerIIU ( tcpiiu &, const epicsTime & );
     epicsShareFunc void unregisterIIU ( tcpiiu & );
     epicsShareFunc void * operator new ( size_t size, bheMemoryManager & );
 #ifdef CXX_PLACEMENT_DELETE
-    epicsShareFunc void operator delete ( void *, bheMemoryManager & ) epicsThrows (());
+    epicsShareFunc void operator delete ( void *, bheMemoryManager & );
 #endif
 private:
     epicsTime timeStamp;
@@ -101,7 +101,7 @@ inline void * bhe::operator new ( size_t size,
 
 #ifdef CXX_PLACEMENT_DELETE
 inline void bhe::operator delete ( void * pCadaver, 
-        bheMemoryManager & mgr ) epicsThrows(())
+        bheMemoryManager & mgr )
 { 
     mgr.release ( pCadaver );
 }

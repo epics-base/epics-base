@@ -27,17 +27,17 @@
 #include "iocinf.h"
 #include "virtualCircuit.h"
 
-comQueRecv::comQueRecv ( comBufMemoryManager & comBufMemoryManagerIn ) epicsThrows (()) : 
+comQueRecv::comQueRecv ( comBufMemoryManager & comBufMemoryManagerIn ): 
     comBufMemMgr ( comBufMemoryManagerIn ), nBytesPending ( 0u ) 
 {
 }
 
-comQueRecv::~comQueRecv () epicsThrows (())
+comQueRecv::~comQueRecv ()
 {
     this->clear ();
 }
 
-void comQueRecv::clear () epicsThrows (())
+void comQueRecv::clear ()
 {
     comBuf *pBuf;
     while ( ( pBuf = this->bufs.get () ) ) {
@@ -47,7 +47,7 @@ void comQueRecv::clear () epicsThrows (())
     this->nBytesPending = 0u;
 }
 
-unsigned comQueRecv::copyOutBytes ( epicsInt8 *pBuf, unsigned nBytes ) epicsThrows (())
+unsigned comQueRecv::copyOutBytes ( epicsInt8 *pBuf, unsigned nBytes )
 {
     unsigned totalBytes = 0u;
     do {
@@ -68,7 +68,7 @@ unsigned comQueRecv::copyOutBytes ( epicsInt8 *pBuf, unsigned nBytes ) epicsThro
     return totalBytes;
 }
 
-unsigned comQueRecv::removeBytes ( unsigned nBytes ) epicsThrows (())
+unsigned comQueRecv::removeBytes ( unsigned nBytes )
 {
     unsigned totalBytes = 0u;
     unsigned bytesLeft = nBytes;
@@ -95,7 +95,6 @@ unsigned comQueRecv::removeBytes ( unsigned nBytes ) epicsThrows (())
 }
 
 void comQueRecv::popString ( epicsOldString *pStr )
-    epicsThrows (( comBuf::insufficentBytesAvailable ))
 {
     for ( unsigned i = 0u; i < sizeof ( *pStr ); i++ ) {
         pStr[0][i] = this->popInt8 ();
@@ -103,7 +102,7 @@ void comQueRecv::popString ( epicsOldString *pStr )
 }
 
 void comQueRecv::pushLastComBufReceived ( comBuf & bufIn )
-    epicsThrows (())
+   
 {
     bufIn.commitIncomming ();
     comBuf * pComBuf = this->bufs.last ();
@@ -128,7 +127,6 @@ void comQueRecv::pushLastComBufReceived ( comBuf & bufIn )
 // 2) using canonical unsigned tmp avoids ANSI C conversions to int
 // 3) cast required because sizeof(unsigned) >= sizeof(epicsUInt32)
 epicsUInt16 comQueRecv::multiBufferPopUInt16 ()
-    epicsThrows (( comBuf::insufficentBytesAvailable ))
 {
     epicsUInt16 tmp;
     if ( this->occupiedBytes() >= sizeof (tmp) ) {
@@ -147,7 +145,6 @@ epicsUInt16 comQueRecv::multiBufferPopUInt16 ()
 // 2) using canonical unsigned temporary avoids ANSI C conversions to int
 // 3) cast required because sizeof(unsigned) >= sizeof(epicsUInt32)
 epicsUInt32 comQueRecv::multiBufferPopUInt32 ()
-    epicsThrows (( comBuf::insufficentBytesAvailable ))
 {
     epicsUInt32 tmp;
     if ( this->occupiedBytes() >= sizeof (tmp) ) {
@@ -169,7 +166,7 @@ epicsUInt32 comQueRecv::multiBufferPopUInt32 ()
     return tmp;
 }
 
-void comQueRecv::removeAndDestroyBuf ( comBuf & buf ) epicsThrows (())
+void comQueRecv::removeAndDestroyBuf ( comBuf & buf )
 {
     this->bufs.remove ( buf );
     buf.~comBuf ();

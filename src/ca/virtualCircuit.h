@@ -176,8 +176,8 @@ private:
     bool discardingPendingData;
 
     bool processIncoming ( epicsGuard < callbackMutex > & );
-    unsigned sendBytes ( const void *pBuf, unsigned nBytesInBuf ) epicsThrows (());
-    unsigned recvBytes ( void *pBuf, unsigned nBytesInBuf ) epicsThrows (());
+    unsigned sendBytes ( const void *pBuf, unsigned nBytesInBuf );
+    unsigned recvBytes ( void *pBuf, unsigned nBytesInBuf );
     void connect ();
     const char * pHostName () const;
     void blockUntilBytesArePendingInOS ();

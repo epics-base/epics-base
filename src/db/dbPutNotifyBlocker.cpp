@@ -197,7 +197,7 @@ void * dbPutNotifyBlocker::operator new ( size_t ) // X aCC 361
 
 #ifdef CXX_PLACEMENT_DELETE
 void dbPutNotifyBlocker::operator delete ( void *pCadaver, 
-    tsFreeList < dbPutNotifyBlocker > & freeList ) epicsThrows(())
+    tsFreeList < dbPutNotifyBlocker > & freeList )
 {
     freeList.release ( pCadaver );
 }

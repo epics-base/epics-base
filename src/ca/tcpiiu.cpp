@@ -145,7 +145,7 @@ void tcpSendThread::run ()
 }
 
 unsigned tcpiiu::sendBytes ( const void *pBuf, 
-                            unsigned nBytesInBuf ) epicsThrows (())
+                            unsigned nBytesInBuf )
 {
     int status;
     unsigned nBytes = 0u;
@@ -195,7 +195,7 @@ unsigned tcpiiu::sendBytes ( const void *pBuf,
     return nBytes;
 }
 
-unsigned tcpiiu::recvBytes ( void * pBuf, unsigned nBytesInBuf ) epicsThrows (())
+unsigned tcpiiu::recvBytes ( void * pBuf, unsigned nBytesInBuf )
 {
     unsigned bytesAvailable = 0u;
 

@@ -1585,12 +1585,12 @@ void cac::initiateConnect ( nciu & chan )
     this->pudpiiu->installChannel ( chan );
 }
 
-void *cacComBufMemoryManager::allocate ( size_t size ) epicsThrows (( std::bad_alloc ))
+void *cacComBufMemoryManager::allocate ( size_t size )
 {
     return this->freeList.allocate ( size );
 }
 
-void cacComBufMemoryManager::release ( void * pCadaver ) epicsThrows (())
+void cacComBufMemoryManager::release ( void * pCadaver )
 {
     this->freeList.release ( pCadaver );
 }

@@ -427,7 +427,7 @@ inline void * oldChannelNotify::operator new ( size_t size,
 
 #ifdef CXX_PLACEMENT_DELETE
 inline void oldChannelNotify::operator delete ( void *pCadaver, 
-    tsFreeList < struct oldChannelNotify, 1024 > & freeList ) epicsThrows(())
+    tsFreeList < struct oldChannelNotify, 1024 > & freeList ) 
 {
     freeList.release ( pCadaver );
 }
@@ -458,7 +458,7 @@ inline void * oldSubscription::operator new ( size_t size,
 
 #ifdef CXX_PLACEMENT_DELETE
 inline void oldSubscription::operator delete ( void *pCadaver, 
-    tsFreeList < struct oldSubscription, 1024 > & freeList ) epicsThrows(())
+    tsFreeList < struct oldSubscription, 1024 > & freeList ) 
 {
     freeList.release ( pCadaver );
 }
@@ -477,7 +477,7 @@ inline void * getCopy::operator new ( size_t size,
 
 #ifdef CXX_PLACEMENT_DELETE
 inline void getCopy::operator delete ( void *pCadaver, 
-    tsFreeList < class getCopy, 1024 > & freeList ) epicsThrows(())
+    tsFreeList < class getCopy, 1024 > & freeList ) 
 {
     freeList.release ( pCadaver );
 }
@@ -491,7 +491,7 @@ inline void * putCallback::operator new ( size_t size,
 
 #ifdef CXX_PLACEMENT_DELETE
 inline void putCallback::operator delete ( void * pCadaver, 
-    tsFreeList < class putCallback, 1024 > & freeList ) epicsThrows(())
+    tsFreeList < class putCallback, 1024 > & freeList ) 
 {
     freeList.release ( pCadaver );
 }
@@ -510,7 +510,7 @@ inline void * getCallback::operator new ( size_t size,
 
 #ifdef CXX_PLACEMENT_DELETE
 inline void getCallback::operator delete ( void *pCadaver, 
-    tsFreeList < class getCallback, 1024 > & freeList ) epicsThrows(())
+    tsFreeList < class getCallback, 1024 > & freeList ) 
 {
     freeList.release ( pCadaver );
 }

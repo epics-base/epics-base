@@ -45,7 +45,7 @@
  * between the 1st and 2nd beacons)
  */
 bhe::bhe ( const epicsTime & initialTimeStamp, 
-          unsigned initialBeaconNumber, const inetAddrID & addr ) epicsThrows (()) :
+          unsigned initialBeaconNumber, const inetAddrID & addr ) :
     inetAddrID ( addr ), timeStamp ( initialTimeStamp ), averagePeriod ( - DBL_MAX ),
     pIIU ( 0 ), lastBeaconNumber ( initialBeaconNumber )
 {
@@ -218,7 +218,7 @@ void bhe::show ( unsigned /* level */ ) const
         static_cast <const void *> ( this ), this->averagePeriod );
 }
 
-double bhe::period () const epicsThrows (())
+double bhe::period () const 
 {
     return this->averagePeriod;
 }

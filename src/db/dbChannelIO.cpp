@@ -144,7 +144,7 @@ void * dbChannelIO::operator new ( size_t ) // X aCC 361
 
 #ifdef CXX_PLACEMENT_DELETE
 void dbChannelIO::operator delete ( void *pCadaver, 
-    tsFreeList < dbChannelIO > & freeList ) epicsThrows(())
+    tsFreeList < dbChannelIO > & freeList )
 {
     freeList.release ( pCadaver );
 }

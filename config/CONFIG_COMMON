@@ -170,7 +170,17 @@ TEMPL_INST_CXXFLAG = $($(CPLUSPLUS)_TEMPL_INST_FLAG)
 #--------------------------------------------------
 # Epics includes (CONFIG.Vx will override OS_CLASS)
 OS_CLASS = $(ARCH_CLASS)
-EPICS_INCLUDES = -I$(INSTALL_INCLUDE) -I$(INSTALL_INCLUDE)/os/$(OS_CLASS)
+
+#---------------------------------------------------------------
+EPICS_INCLUDES = -I$(INSTALL_INCLUDE)/os/$(OS_CLASS) -I$(INSTALL_INCLUDE)
+
+#       if we are not building base add base includes and ld dirs
+#       (convenience for extensions and applications)
+ifneq ($(EPICS_BASE),$(TOP))
+ifneq ($(EPICS_BASE),$(INSTALL_LOCATION))
+EPICS_INCLUDES += -I$(EPICS_BASE_INCLUDE)/os/$(OS_CLASS) += -I$(EPICS_BASE_INCLUDE)
+endif
+endif
 
 #--------------------------------------------------
 # Warnings flags  (CONFIG.Vx will override)

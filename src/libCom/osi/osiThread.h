@@ -37,11 +37,11 @@ epicsShareFunc unsigned int epicsShareAPI threadGetStackSize(threadStackSizeClas
 typedef int threadOnceId;
 #define OSITHREAD_ONCE_INIT 0
 
-/* void threadOnce(threadOnceId *id, void (*func)(void *), void *arg); */
+/* void threadOnce(threadOnceId *id, THREADFUNC, void *arg); */
 /* threadOnce is implemented as a macro */
 /* threadOnceOsd should not be called by user code */
 epicsShareFunc void epicsShareAPI threadOnceOsd(
-    threadOnceId *id, void (*func)(void *), void *arg);
+    threadOnceId *id, THREADFUNC, void *arg);
 
 #define threadOnce(id,func,arg) \
 if(*(id)<=0) threadOnceOsd((id),(func),(arg))

@@ -72,13 +72,29 @@ LOCAL void connectCallback(struct connection_handler_args arg)
 
 LOCAL void eventCallback(struct event_handler_args arg)
 {
-    ASGINP		*pasginp = (ASGINP *)arg.usr;
-    ASG			*pasg = pasginp->pasg;
-    CAPVT		*pcapvt = (CAPVT *)pasginp->capvt;
-    chid		chid = pcapvt->chid;
-    int			caStatus = arg.status;
-    READONLY struct dbr_sts_double *pdata = arg.dbr;
+    int		caStatus = arg.status;
+    chid	chid = arg.chid;
+    ASGINP	*pasginp = (ASGINP *)arg.usr;
+    ASG		*pasg;
+    CAPVT	*pcapvt;
+    READONLY struct dbr_sts_double *pdata;
 
+    if(caStatus!=ECA_NORMAL) {
+	if(chid) {
+	    epicsPrintf("asCa: eventCallback error %s channel %s\n",
+	        ca_message(caStatus),ca_name(chid));
+	} else {
+	    epicsPrintf("asCa: eventCallback error %s chid is null\n",
+		ca_message(caStatus));
+	}
+	return;
+    }
+    pasg = pasginp->pasg;
+    pcapvt = (CAPVT *)pasginp->capvt;
+    if(chid!=pcapvt->chid) {
+	epicsPrintf("asCa: eventCallback error pcapvt->chid != arg.chid\n");
+	return;
+    }
     if(ca_state(chid)!=cs_conn || !ca_read_access(chid)) {
 	if(!(pasg->inpBad & (1<<pasginp->inpIndex))) {
 	    /*was good so lets make it bad*/
@@ -86,31 +102,28 @@ LOCAL void eventCallback(struct event_handler_args arg)
 	    if(!caInitializing) asComputeAsg(pasg);
 	    if(asCaDebug) {
 		printf("as eventCallback %s inpBad ca_state %d"
-		       " ca_read_access %d\n",
+		    " ca_read_access %d\n",
 		    ca_name(chid),ca_state(chid),ca_read_access(chid));
 	    }
 	}
-    } else {
-	if(caStatus!=ECA_NORMAL) {
-	    epicsPrintf("asCa: eventCallback error %s\n",ca_message(caStatus));
-	} else {
-	    pcapvt->rtndata = *pdata; /*structure copy*/
-	    if(pdata->severity==INVALID_ALARM) {
-	        pasg->inpBad |= (1<<pasginp->inpIndex);
-		if(asCaDebug)
-		    printf("as eventCallback %s inpBad because INVALID_ALARM\n",
-		    ca_name(chid));
-	    } else {
-	        pasg->inpBad &= ~((1<<pasginp->inpIndex));
-                pasg->pavalue[pasginp->inpIndex] = pdata->value;
-		if(asCaDebug)
-		    printf("as eventCallback %s inpGood data %f\n",
-			ca_name(chid),pdata->value);
-	    }
-	    pasg->inpChanged |= (1<<pasginp->inpIndex);
-	    if(!caInitializing) asComputeAsg(pasg);
-	}
+	return;
     }
+    pdata = arg.dbr;
+    pcapvt->rtndata = *pdata; /*structure copy*/
+    if(pdata->severity==INVALID_ALARM) {
+        pasg->inpBad |= (1<<pasginp->inpIndex);
+	if(asCaDebug)
+	    printf("as eventCallback %s inpBad because INVALID_ALARM\n",
+	    ca_name(chid));
+    } else {
+        pasg->inpBad &= ~((1<<pasginp->inpIndex));
+        pasg->pavalue[pasginp->inpIndex] = pdata->value;
+	if(asCaDebug)
+	    printf("as eventCallback %s inpGood data %f\n",
+		ca_name(chid),pdata->value);
+    }
+    pasg->inpChanged |= (1<<pasginp->inpIndex);
+    if(!caInitializing) asComputeAsg(pasg);
 }
 
 LOCAL void asCaTask(void)

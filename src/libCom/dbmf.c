@@ -41,11 +41,6 @@ typedef struct itemHeader{
     chunkNode  *pchunkNode;
 }itemHeader;
 
-<<<<<<< dbmf.c
-/* returns handle to user */
-epicsShareFunc void* epicsShareAPI 
-	dbmfInit(size_t size, size_t alignment, int init_num_free_list_items)
-=======
 typedef struct dbmfPrivate {
     ELLLIST    chunkList;
     SEM_ID     sem;
@@ -62,8 +57,7 @@ dbmfPrivate dbmfPvt;
 static dbmfPrivate *pdbmfPvt = NULL;
 int dbmfDebug=0;
 
-int dbmfInit(size_t size, int chunkItems)
->>>>>>> 1.3
+int epicsShareAPI dbmfInit(size_t size, int chunkItems)
 {
     if(pdbmfPvt) {
         printf("dbmfInit: Already initialized\n");
@@ -83,14 +77,9 @@ int dbmfInit(size_t size, int chunkItems)
     pdbmfPvt->freeList = NULL;
     return(0);
 }
-<<<<<<< dbmf.c
 
-epicsShareFunc void* epicsShareAPI 
-	dbmfMalloc(void* handle,size_t x)
-=======
 
-void* dbmfMalloc(size_t size)
->>>>>>> 1.3
+void* epicsShareAPI dbmfMalloc(size_t size)
 {
     void      **pnextFree;
     void      **pfreeList;
@@ -142,14 +131,9 @@ void* dbmfMalloc(size_t size)
     semGive(pdbmfPvt->sem);
     return((void *)(pmem + sizeof(itemHeader)));
 }
-<<<<<<< dbmf.c
 
-epicsShareFunc void epicsShareAPI 
-	dbmfFree(void* handle,void* x)
-=======
 
-void dbmfFree(void* mem)
->>>>>>> 1.3
+void epicsShareAPI dbmfFree(void* mem)
 {
     char       *pmem = (char *)mem;
     chunkNode  *pchunkNode;
@@ -178,7 +162,7 @@ void dbmfFree(void* mem)
     semGive(pdbmfPvt->sem);
 }
 
-int  dbmfShow(int level)
+int epicsShareAPI dbmfShow(int level)
 {
     if(pdbmfPvt==NULL) {
 	printf("Never initialized\n");
@@ -213,7 +197,7 @@ int  dbmfShow(int level)
     return(0);
 }
 
-void  dbmfFreeChunks(void)
+void  epicsShareAPI dbmfFreeChunks(void)
 {
     chunkNode  *pchunkNode;
     chunkNode  *pnext;;

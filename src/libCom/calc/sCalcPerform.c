@@ -66,6 +66,7 @@
 
 #include	"dbDefs.h"
 #define epicsExportSharedSymbols
+#include    "epicsMath.h"
 #include	"cvtFast.h"
 #include	"sCalcPostfix.h"
 #include	"sCalcPostfixPvt.h"
@@ -141,7 +142,7 @@ static void to_string(struct stackElement *ps)
 {
 	ps->s = calloc(20, 1);
 	/* any precision greater than 8 results in (slow) sprintf call */
-	if (isnan(ps->d))
+	if (epicsIsNAN(ps->d))
 		strcpy(ps->s,"NaN");
 	else
 		(void)cvtDoubleToString(ps->d, ps->s, 8);
@@ -636,7 +637,7 @@ printf(") \n");
 #endif
 		*presult = *pd;
 		if (psresult && (lenSresult > 15)) {
-			if (isnan(*pd))
+			if (epicsIsNAN(*pd))
 				strcpy(psresult,"NaN");
 			else
 				(void)cvtDoubleToString(*pd, psresult, 8);

@@ -29,7 +29,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
+ * .01  07-26-91	mrk	Allow choices to be retrieved as numeric
  */
 
 /* Global Database Access Routines
@@ -2820,23 +2820,6 @@ static long getGchoiceString(paddr,pbuffer,nRequest,no_elements,offset)
     return(0);
 }
 
-static long getGchoiceEnum(paddr,pbuffer,nRequest,no_elements,offset)
-struct dbAddr	*paddr;
-unsigned short 	*pbuffer;
-long		nRequest;
-long		no_elements;
-long		offset;
-{
-    unsigned short *psrc=(unsigned short *)(paddr->pfield);
-
-    if(no_elements!=1){
-        recGblDbaddrError(S_db_onlyOne,paddr,"dbGetField(getGchoiceEnum)");
-        return(S_db_onlyOne);
-    }
-    *pbuffer = *psrc;
-    return(0);
-}
-
 static long getCchoiceString(paddr,pbuffer,nRequest,no_elements,offset)
     struct dbAddr	*paddr;
     char		*pbuffer;
@@ -2859,22 +2842,6 @@ static long getCchoiceString(paddr,pbuffer,nRequest,no_elements,offset)
     return(0);
 }
 
-static long getCchoiceEnum(paddr,pbuffer,nRequest,no_elements,offset)
-struct dbAddr	*paddr;
-unsigned short 	*pbuffer;
-long		nRequest;
-long		no_elements;
-long		offset;
-{
-    unsigned short *psrc=(unsigned short *)(paddr->pfield);
-
-    if(no_elements!=1){
-        recGblDbaddrError(S_db_onlyOne,paddr,"dbGetField(getCchoiceEnum)");
-        return(S_db_onlyOne);
-    }
-    *pbuffer = *psrc;
-    return(0);
-}
 
 static long getRchoiceString(paddr,pbuffer,nRequest,no_elements,offset)
     struct dbAddr	*paddr;
@@ -2903,23 +2870,7 @@ static long getRchoiceString(paddr,pbuffer,nRequest,no_elements,offset)
     return(0);
 }
 
-static long getRchoiceEnum(paddr,pbuffer,nRequest,no_elements,offset)
-struct dbAddr	*paddr;
-unsigned short 	*pbuffer;
-long		nRequest;
-long		no_elements;
-long		offset;
-{
-    unsigned short *psrc=(unsigned short *)(paddr->pfield);
 
-    if(no_elements!=1){
-        recGblDbaddrError(S_db_onlyOne,paddr,"dbGetField(getRchoiceEnum)");
-        return(S_db_onlyOne);
-    }
-    *pbuffer = *psrc;
-    return(0);
-}
-
 static long getDchoiceString(paddr,pbuffer,nRequest,no_elements,offset)
     struct dbAddr	*paddr;
     char		*pbuffer;
@@ -2941,23 +2892,6 @@ static long getDchoiceString(paddr,pbuffer,nRequest,no_elements,offset)
         return(S_db_badChoice);
     }
     strncpy(pbuffer,pdevChoice->pchoice,MAX_STRING_SIZE);
-    return(0);
-}
-
-static long getDchoiceEnum(paddr,pbuffer,nRequest,no_elements,offset)
-struct dbAddr	*paddr;
-unsigned short 	*pbuffer;
-long		nRequest;
-long		no_elements;
-long		offset;
-{
-    unsigned short *psrc=(unsigned short *)(paddr->pfield);
-
-    if(no_elements!=1){
-        recGblDbaddrError(S_db_onlyOne,paddr,"dbGetField(getDchoiceEnum)");
-        return(S_db_onlyOne);
-    }
-    *pbuffer = *psrc;
     return(0);
 }
 
@@ -3003,17 +2937,17 @@ long (*get_convert_table[DBF_DEVCHOICE+1][DBR_ENUM+1])() = {
 {getEnumString,   getEnumChar,     getEnumUchar,    getEnumShort,    getEnumUshort,
  getEnumLong,     getEnumUlong,    getEnumFloat,    getEnumDouble,   getEnumEnum},
 /* source is a DBF_GBLCHOICE	*/
-{getGchoiceString,NULL,            NULL,            NULL,            NULL,
- NULL,            NULL,            NULL,            NULL,            getGchoiceEnum},
+{getGchoiceString,getEnumChar,     getEnumUchar,    getEnumShort,    getEnumUshort,
+ getEnumLong,     getEnumUlong,    getEnumFloat,    getEnumDouble,   getEnumEnum},
 /* source is a DBF_CVTCHOICE	*/
-{getCchoiceString,NULL,            NULL,            NULL,            NULL,
- NULL,            NULL,            NULL,            NULL,            getCchoiceEnum},
+{getCchoiceString,getEnumChar,     getEnumUchar,    getEnumShort,    getEnumUshort,
+ getEnumLong,     getEnumUlong,    getEnumFloat,    getEnumDouble,   getEnumEnum},
 /* source is a DBF_RECCHOICE	*/
-{getRchoiceString,NULL,            NULL,            NULL,            NULL,
- NULL,            NULL,            NULL,            NULL,            getRchoiceEnum},
+{getRchoiceString,getEnumChar,     getEnumUchar,    getEnumShort,    getEnumUshort,
+ getEnumLong,     getEnumUlong,    getEnumFloat,    getEnumDouble,   getEnumEnum},
 /* source is a DBF_DEVCHOICE	*/
-{getDchoiceString,NULL,            NULL,            NULL,            NULL,
- NULL,            NULL,            NULL,            NULL,            getDchoiceEnum}
+{getDchoiceString,getEnumChar,     getEnumUchar,    getEnumShort,    getEnumUshort,
+ getEnumLong,     getEnumUlong,    getEnumFloat,    getEnumDouble,   getEnumEnum}
 };
 
 
@@ -3306,7 +3240,7 @@ long		*options;
 		(*prset->get_alarm_double)(paddr,&ald);
 		got_data=TRUE;
 	}
-	if( (*options) & (DBR_GR_LONG) ) {
+	if( (*options) & (DBR_AL_LONG) ) {
 		char	*pbuffer=*ppbuffer;
 
 		if(got_data) {
@@ -3321,7 +3255,7 @@ long		*options;
 		}
 		*ppbuffer += dbr_alLong_size;
 	}
-	if( (*options) & (DBR_GR_DOUBLE) ) {
+	if( (*options) & (DBR_AL_DOUBLE) ) {
 		char	*pbuffer=*ppbuffer;
 
 		if(got_data) {

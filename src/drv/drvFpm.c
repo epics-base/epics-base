@@ -251,7 +251,7 @@ void    fpm_reboot()
 {
         int i;
 
-        for (i = 0; i < bi_num_cards[AT8_FP10M_BI]; i++){
+        for (i = 0; i < bo_num_cards[AT8_FP10M_BO]; i++){
 
                 if(!fpm[i].fmptr){
                         continue;

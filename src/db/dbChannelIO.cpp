@@ -196,7 +196,7 @@ void dbChannelIO::show ( unsigned level ) const
 {
     this->lock ();
     printf ("channel at %p attached to local database record %s\n", 
-        this, this->addr.precord->name );
+        static_cast <const void *> ( this ), this->addr.precord->name );
 
     if ( level > 0u ) {
         printf ( "\ttype %s, element count %li, field at %p\n",

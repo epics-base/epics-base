@@ -317,7 +317,7 @@ gddAppFuncTableStatus gddAppFuncTable<PV>::callReadFunc (PV &pv, gdd &value)
         return S_gddAppFuncTable_badType;
     }
     pFunc = this->pMFuncRead[type];
-    if (pFunc==NULL) {
+    if ( ! pFunc ) {
         errPrintf (S_gddAppFuncTable_badType, __FILE__,
             __LINE__, "- ukn appl type code = %u\n", 
             type);

@@ -96,17 +96,19 @@ int dbSubscriptionIO::begin ( struct dbAddr &addr, unsigned mask )
 
 void dbSubscriptionIO::show ( unsigned level ) const
 {
-    printf ( "Data base subscription IO at %p\n", this );
+    printf ( "Data base subscription IO at %p\n", 
+        static_cast <const void *> ( this ) );
     if ( level > 0u ) {
         short tmpType;
         if ( this->type < SHRT_MAX ) {
             tmpType = static_cast < short > ( this->type );
             printf ( "\ttype %s, count %lu, channel at %p\n",
-                dbf_type_to_text ( tmpType ), this->count, &this->chan );
+                dbf_type_to_text ( tmpType ), this->count, 
+                static_cast <void *> ( &this->chan ) );
         }
         else {
-            printf ("strange type !, count %lu, channel at %p\n",
-                this->count, &this->chan );
+            printf ( "strange type !, count %lu, channel at %p\n",
+                this->count, static_cast <void *> ( &this->chan ) );
         }
     }
 }

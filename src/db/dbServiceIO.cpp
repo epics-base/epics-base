@@ -165,7 +165,8 @@ dbEventSubscription dbServiceIO::subscribe ( struct dbAddr &addr, dbSubscription
 void dbServiceIO::show ( unsigned level ) const
 {
     this->mutex.lock ();
-    printf ( "dbServiceIO at %p\n", this );
+    printf ( "dbServiceIO at %p\n", 
+        static_cast <const void *> ( this ) );
     if (level > 0u ) {
         printf ( "\tevent call back cache location %p, and its size %lu\n", 
             this->pEventCallbackCache, this->eventCallbackCacheSize );

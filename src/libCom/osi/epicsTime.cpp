@@ -391,7 +391,7 @@ epicsTime::epicsTime (const aitTimeStamp &ts)
 // 631152000 (at posix epic) + 2272060800 (btw posix and epics epoch) +
 // 15 ( leap seconds )
 static const unsigned long epicsEpocSecsPastEpochNTP = 2903212815u;
-static const double NTP_FRACTION DENOMINATOR = (static_cast<double>(0xffffffff) + 1.0);
+static const double NTP_FRACTION_DENOMINATOR = (static_cast<double>(0xffffffff) + 1.0);
 
 struct l_fp { /* NTP time stamp */
     epicsUInt32 l_ui; /* sec past NTP epoch */
@@ -406,7 +406,7 @@ epicsTime::operator l_fp () const
     l_fp ts;
     ts.l_ui = this->secPastEpoch + epicsEpocSecsPastEpochNTP;
     ts.l_uf = static_cast < unsigned long > 
-        ( ( this->nSec * NTP_FRACTION DENOMINATOR ) / nSecPerSec );
+        ( ( this->nSec * NTP_FRACTION_DENOMINATOR ) / nSecPerSec );
     return ts;
 }
 
@@ -417,7 +417,7 @@ epicsTime::epicsTime ( const l_fp & ts )
 {
     this->secPastEpoch = ts.l_ui - epicsEpocSecsPastEpochNTP;
     this->nSec = static_cast < unsigned long > 
-        ( ( ts.l_uf / NTP_FRACTION DENOMINATOR ) * nSecPerSec );
+        ( ( ts.l_uf / NTP_FRACTION_DENOMINATOR ) * nSecPerSec );
 }
 
 // return pointer to trailing "%0<n>f" (<n> is a number) in a format string,

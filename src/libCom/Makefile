@@ -205,6 +205,7 @@ SRCS_RTEMS += rtems_util.c
 # For vxWorks a clock
 INC_vxWorks += iocClock.h
 SRCS_vxWorks += iocClock.c
+SRCS_vxWorks += isnan.c
 
 #       Library to build:
 #       lib$(LIBRARY).a  or   ..dll/..exp/..lib

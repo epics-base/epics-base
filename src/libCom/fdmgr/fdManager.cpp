@@ -19,8 +19,10 @@
 //
 // NOTES: 
 // 1) This library is not thread safe
+// 2) The maximum number of file desriptiors is currently set to 4096
 //
-//
+
+#define FD_SETSIZE 4096
 
 //
 // ANSI C

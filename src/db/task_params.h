@@ -51,11 +51,17 @@
  *				to 60 sec
  * .17	03-18-94	mcn	added entries for breakpoint tasks
  * $Log$
+ * Revision 1.2  1996/04/22 14:31:08  mrk
+ * Changes for dynamic link modification
+ *
  * Revision 1.1  1996/01/25 21:13:29  mrk
  * moved includes; .ascii=> .db; path changes
  *
  * Revision 1.27  1995/11/29 19:27:59  jhill
  * added $Log$
+ * added Revision 1.2  1996/04/22 14:31:08  mrk
+ * added Changes for dynamic link modification
+ * added
  * added Revision 1.1  1996/01/25 21:13:29  mrk
  * added moved includes; .ascii=> .db; path changes
  * added
@@ -205,7 +211,7 @@
 #define RSP_SRVR_STACK		5096
 #define REQ_SRVR_STACK		5096
 #define CAST_SRVR_STACK		5096
-#define CA_CLIENT_STACK		5096
+#define CA_CLIENT_STACK		10000	
 #define CA_REPEATER_STACK	5096
 #define CA_ONLINE_STACK		3048
 #define TASKWD_STACK		2000	/* moved up by 1000 for v5 vxWorks */

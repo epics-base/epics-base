@@ -3,7 +3,7 @@
 # $Id$
 # This file is maintained by the build community.
 #
-# Definitions for win32-x86 target arch when host arch is win32-x86 with borland compiler
+# Definitions for win32-x86-borland target arch when host arch is win32-x86-borland
 # Sites may override these definitions in CONFIG_SITE.win32-x86-borland.win32-x86-borland
 #-------------------------------------------------------
 
@@ -281,7 +281,7 @@ LDFLAGS += -c -C -Gn -Tpe -x -w -L$(BORLAND_LIB) -L$(BORLAND_LIB)\\Psdk
 LINKSTARTUP = c0x32.obj
 LINKLIBS=import32.lib cw32$(LIBSUF).lib
 
-LINK.cpp = $(WINLINK) $(LDFLAGS) $(LINKSTARTUP) $(PROD_LD_OBJS)
+LINK.cpp = $(WINLINK) $(LDFLAGS) $(LINKSTARTUP) $(subst /,\\,$(PROD_LD_OBJS))
 LINK.cpp += , $@ ,,$(LINKLIBS)  $(subst /,\\,$(LDLIBS))
 
 #--------------------------------------------------

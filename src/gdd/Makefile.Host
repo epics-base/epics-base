@@ -22,6 +22,7 @@ INC += dbMapper.h
 INC += gddAppTable.h
 INC += gddAppFuncTable.h
 INC += gddApps.h
+INC += smartGDDPointer.h
 
 AITGENSRCS := gdd.cc gddTest.cc gddAppTable.cc gddNewDel.cc \
 	gddAppDefs.cc aitTypes.c aitConvert.cc aitHelpers.cc  \

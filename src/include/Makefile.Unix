@@ -11,6 +11,9 @@ INC += shareLib.h
 INC += createSoftLinks.sh 
 INC += bsdProto.h
 INC += task_params.h
+INC += osiMutexNOOP.h
+
+OSINC += osiSock.h
 
 include $(TOP)/config/RULES.Unix
 

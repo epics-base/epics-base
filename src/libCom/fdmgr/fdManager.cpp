@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.5  1997/04/23 17:22:57  jhill
+// fixed WIN32 DLL symbol exports
+//
 // Revision 1.4  1997/04/10 19:45:33  jhill
 // API changes and include with  not <>
 //
@@ -143,8 +146,8 @@ void fdManager::process (const osiTime &delay)
 		FD_SET(iter->getFD(), &this->fdSets[iter->getType()]); 
 	}
 	minDelay.getTV (tv.tv_sec, tv.tv_usec);
-	status = select (this->maxFD, &this->fdSets[fdrRead], 
-		&this->fdSets[fdrWrite], &this->fdSets[fdrExcp], &tv);
+	status = select (this->maxFD, (int *)&this->fdSets[fdrRead], 
+		(int *)&this->fdSets[fdrWrite], (int *)&this->fdSets[fdrExcp], &tv);
 	staticTimerQueue.process();
 	if (status==0) {
 		this->processInProg = 0;

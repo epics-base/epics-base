@@ -20,13 +20,19 @@ of this distribution.
 #include "osiSem.h"
 #include "errlog.h"
 
+threadPrivateId privateKey;
 
 static void threadFunc(void *arg)
 {
+    int myPrivate;
     int argvalue = *(int *)arg;
+    myPrivate = argvalue;
+    threadPrivateSet(privateKey,(void *)argvalue);
     errlogPrintf("threadFunc %d starting\n",argvalue);
     threadSleep(2.0);
-    errlogPrintf("threadFunc %d stopping\n",argvalue);
+    argvalue = -1;
+    argvalue = (int)threadPrivateGet(privateKey);
+    errlogPrintf("threadFunc %d stopping myPrivate %d\n",argvalue,myPrivate);
 }
 
 void threadTest(int ntasks,int verbose)
@@ -48,6 +54,7 @@ void threadTest(int ntasks,int verbose)
     errlogPrintf("threadTest starting\n");
     stackSize = threadGetStackSize(threadStackSmall);
     errlogPrintf("stackSize %u\n",stackSize);
+    privateKey = threadPrivateCreate();
     for(i=0; i<ntasks; i++) {
         int *argvalue;
         name[i] = calloc(10,sizeof(char));
@@ -56,6 +63,7 @@ void threadTest(int ntasks,int verbose)
         argvalue = (int *)arg[i];
         *argvalue = i;
         startPriority = 50+i;
+        
         id[i] = threadCreate(name[i],startPriority,stackSize,threadFunc,arg[i]);
         errlogPrintf("threadTest created %d id %p\n",i,id[i]);
         startPriority = threadGetPriority(id[i]);

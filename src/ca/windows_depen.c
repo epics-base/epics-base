@@ -32,6 +32,12 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.23.2.1  1996/11/25 16:29:18  jhill
+ * stuct=>struct and added debug msg
+ *
+ * Revision 1.23  1996/11/02 00:51:12  jhill
+ * many pc port, const in API, and other changes
+ *
  * Revision 1.22  1996/09/16 16:40:13  jhill
  * make EPICS version be the console title
  *
@@ -43,6 +49,12 @@
  *
  * Revision 1.19  1995/11/29  19:15:42  jhill
  * added $Log$
+ * added Revision 1.23.2.1  1996/11/25 16:29:18  jhill
+ * added stuct=>struct and added debug msg
+ * added
+ * added Revision 1.23  1996/11/02 00:51:12  jhill
+ * added many pc port, const in API, and other changes
+ * added
  * added Revision 1.22  1996/09/16 16:40:13  jhill
  * added make EPICS version be the console title
  * added
@@ -295,7 +307,7 @@ int local_addr (SOCKET s, struct sockaddr_in *plcladdr)
  * 	(this is also called from the server)
  */
 void caDiscoverInterfaces(ELLLIST *pList, SOCKET socket, int port,
-	stuct in_addr matchAddr)
+	struct in_addr matchAddr)
 {
 	struct in_addr bcast_addr;
 	caAddrNode	*pNode;
@@ -473,6 +485,8 @@ static int RegKeyData (CHAR *RegPath, HANDLE hKeyRoot, LPSTR lpzValueName,
 
  }
 
+#define NO_PROCESS_MSG
+
 BOOL epicsShareAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
 	int status;
@@ -489,8 +503,11 @@ BOOL epicsShareAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 			SetConsoleTitle(EPICS_VERSION_STRING);
     		freopen( "CONOUT$", "a", stderr );
 		}
+#ifndef NO_PROCESS_MSG
 		fprintf(stderr, "Process attached to ca.dll\n");
-#endif	 			  /* init. winsock */
+#endif
+#endif
+		/* init. winsock */
 		if ((status = WSAStartup(MAKEWORD(1,1), &WsaData)) != 0) {
 			fprintf(stderr,"Cant init winsock \n");
 			return FALSE;
@@ -520,13 +537,17 @@ BOOL epicsShareAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 
 	case DLL_THREAD_ATTACH:
 #if _DEBUG
+#ifndef NO_PROCESS_MSG
 		fprintf(stderr, "Thread attached to ca.dll\n");
+#endif
 #endif
 		break;
 
 	case DLL_THREAD_DETACH:
 #if _DEBUG
+#ifndef NO_PROCESS_MSG
 		fprintf(stderr, "Thread detached from ca.dll\n");
+#endif
 #endif
 		break;
 

@@ -369,6 +369,13 @@ epicsShareFunc void epicsShareAPI threadShow(void)
     printf("threadShow not implemented\n");
 }
 
+epicsShareFunc void epicsShareAPI threadOnce(
+    threadOnceId *id, void (*func)(void *), void *arg)
+{
+    printf("threadOnce not implemented\n");
+    cantProceed("threadOnce");
+}
+
 epicsShareFunc threadPrivateId epicsShareAPI threadPrivateCreate ()
 {
     osdThreadPrivate *p = (osdThreadPrivate *) malloc (sizeof (*p));

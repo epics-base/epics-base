@@ -113,7 +113,8 @@ private:
 
 #include "osdThread.h"
 
-void threadOnce(threadOnceId *id, void (*func)(void *), void *arg);
+epicsShareFunc void epicsShareAPI threadOnce(
+    threadOnceId *id, void (*func)(void *), void *arg);
 
 #ifdef __cplusplus
 

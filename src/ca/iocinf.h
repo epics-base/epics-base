@@ -339,8 +339,6 @@ private:
     static tsFreeList < class nciu, 1024 > freeList;
 
     ~nciu (); // force pool allocation
-    //int issuePut ( ca_uint16_t cmd, unsigned id, chtype type, 
-    //                 unsigned long count, const void *pvalue );
     void lock () const;
     void unlock () const;
     void lockPIIU () const;

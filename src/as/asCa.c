@@ -249,6 +249,10 @@ int ascar(int level)
     int  n=0,nbad=0;
     enum channel_state state;
 
+    if(!pasbase) {
+        printf("access security not started\n");
+        return(0);
+    }
     pasg = (ASG *)ellFirst(&pasbase->asgList);
     while(pasg) {
         ASGINP *pasginp;

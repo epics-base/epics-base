@@ -11,12 +11,33 @@
 <center>
 <h1>EPICS Release base 3.14.3</h1>
 
-<h1>May 21 2003</h1>
+<h1>Aug 05 2003</h1>
 </center>
 
 <center>
 <h2>Changes since 3.14.2</h2>
 </center>
+<h4>calcRecord and calcoutRecord</h4>
+<p>Previously if a dbGetLink failed on one of the input links, dbGetLink
+was not called for the remaining links. Now it is.</p>
+<h4>put notify</h4>
+<p>put notify did not act properly if a record had disp=TRUE, i.e.
+if puts are disabled. It now returns putNotifyPutDisabled.</p>
+<h4>fastlock.h</h4>
+<p>This is no longer supported</p>
+
+<h4>devLib</h4>
+<p>devLib is now supported on vxWorks and RTEMS.
+It has been moved from src/vxWorks/src to src/libCom/osi.
+devLibVirtualOS has been extended to support allocating A24 addresss
+and an init method.</p>
+
+<h4>vxWorks dependent modules moved</h4>
+The following have been moved from src/vxWorks/src to src/libCom/osi/os/vxWorks:
+camacLib.h, drvTS.c, drvTS.h, epicsDynLink.c, epicsDynLink.h, module_types.h,
+task_params.h, veclist.c. Brief documentation has been added to the Application
+Developer's Guide.</p>
+
 
 <h4>Close-On-Exec flag set for all sockets created in EPICS base</h4>
 

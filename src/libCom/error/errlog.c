@@ -323,8 +323,10 @@ static void errlogInitPvt(void *arg)
     tid = epicsThreadCreate("errlog",epicsThreadPriorityLow,
         epicsThreadGetStackSize(epicsThreadStackSmall),
         (EPICSTHREADFUNC)errlogTask,0);
-    atexit(exitHandler);
-    if(tid) pvtData.errlogInitFailed = FALSE;
+    if(tid) {
+        pvtData.errlogInitFailed = FALSE;
+        atexit(exitHandler);
+    }
 }
 
 epicsShareFunc int epicsShareAPI errlogInit(int bufsize)

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.20  1998/04/14 23:51:10  jhill
+ * improved diagnostic
+ *
  * Revision 1.19  1998/02/18 22:46:25  jhill
  * improved message
  *
@@ -155,35 +158,35 @@ casStrmClient::casStrmClient(caServerI &serverInternal) :
 //
 caStatus casStrmClient::init()
 {
-        caStatus status;
- 
-        //
-        // call base class initializers
-        //
+	caStatus status;
+
+	//
+	// call base class initializers
+	//
 	status = casClient::init();
 	if (status) {
 		return status;
 	}
-        status = this->inBuf::init();
-        if (status) {
-                return status;
-        }
-        status = this->outBuf::init();
-        if (status) {
-                return status;
-        }
+    status = this->inBuf::init();
+    if (status) {
+            return status;
+    }
+    status = this->outBuf::init();
+    if (status) {
+            return status;
+    }
 
-        this->pHostName = new char [1u];
-        if (!this->pHostName) {
-                return S_cas_noMemory;
-        }
-        *this->pHostName = '\0';
- 
-        this->pUserName = new char [1u];
-        if (!this->pUserName) {
-                return S_cas_noMemory;
-        }
-        *this->pUserName= '\0';
+    this->pHostName = new char [1u];
+    if (!this->pHostName) {
+            return S_cas_noMemory;
+    }
+    *this->pHostName = '\0';
+
+    this->pUserName = new char [1u];
+    if (!this->pUserName) {
+            return S_cas_noMemory;
+    }
+    *this->pUserName= '\0';
  
 	return this->start();
 }
@@ -201,14 +204,14 @@ casStrmClient::~casStrmClient()
 	//
 	this->ctx.getServer()->removeClient(this);
 
-        if (this->pUserName) {
-                delete [] this->pUserName;
-        }
- 
-        if (this->pHostName) {
-                delete [] this->pHostName;
-        }
- 
+	if (this->pUserName) {
+		delete [] this->pUserName;
+	}
+
+	if (this->pHostName) {
+		delete [] this->pHostName;
+	}
+
 	//
 	// delete all channel attached
 	//
@@ -223,9 +226,9 @@ casStrmClient::~casStrmClient()
 		++tmp;
 		iter->clientDestroy();
 		iter = tmp;
-        }
+	}
 
-        this->osiUnlock();
+	this->osiUnlock();
 }
 
 //
@@ -254,7 +257,7 @@ void casStrmClient::show (unsigned level) const
 	if (level > 1u) {
 		printf ("\tuser %s at %s\n", this->pUserName, this->pHostName);
 	}
-        this->inBuf::show(level);
+	this->inBuf::show(level);
 	this->outBuf::show(level);
 }
 
@@ -550,13 +553,13 @@ caStatus casStrmClient::readNotifyResponse (casChannelI *pChan,
 caStatus casStrmClient::monitorResponse (casChannelI *pChan, 
 		const caHdr &msg, gdd *pDesc, const caStatus completionStatus)
 {
-	caStatus	completionStatusCopy = completionStatus;
-	gdd		*pDBRDD = NULL;
-	caHdr 		*pReply;
-	unsigned	size;
-	caStatus	status;
-	int        	strcnt;
-	gddStatus       gdds;
+	caStatus completionStatusCopy = completionStatus;
+	gdd *pDBRDD = NULL;
+	caHdr *pReply;
+	unsigned size;
+	caStatus status;
+	int strcnt;
+	gddStatus gdds;
 
 	size = dbr_size_n (msg.m_type, msg.m_count);
 	status = this->allocMsg(size, &pReply);
@@ -582,9 +585,9 @@ caStatus casStrmClient::monitorResponse (casChannelI *pChan,
 	//
 	// verify read access
 	//
-        if (!(*pChan)->readAccess()) {
+	if (!(*pChan)->readAccess()) {
 		completionStatusCopy = S_cas_noRead;
-        }
+	}
 
 	//
 	// cid field abused to store the status here
@@ -941,15 +944,15 @@ caStatus casStrmClient::claimChannelAction()
 	// an R3.11 client because we will not respond to their
 	// search requests (if so we disconnect)
 	//
-        if (!CA_V44(CA_PROTOCOL_VERSION,this->minor_version_number)) {
-                //
-                // old connect protocol was dropped when the
-                // new API was added to the server (they must
-                // now use clients at EPICS 3.12 or higher)
-                //
-                this->sendErr(mp, ECA_DEFUNCT,
-                        "R3.11 connect sequence from old client was ignored");
-                return S_cas_badProtocol; // disconnect client
+	if (!CA_V44(CA_PROTOCOL_VERSION,this->minor_version_number)) {
+		//
+		// old connect protocol was dropped when the
+		// new API was added to the server (they must
+		// now use clients at EPICS 3.12 or higher)
+		//
+		this->sendErr(mp, ECA_DEFUNCT,
+				"R3.11 connect sequence from old client was ignored");
+		return S_cas_badProtocol; // disconnect client
 	}
 
 
@@ -1132,23 +1135,23 @@ caStatus        createStatus)
 	else {
 		errMessage (createStatus, "- Server unable to create a new PV");
 	}
-        if (CA_V46(CA_PROTOCOL_VERSION,this->minor_version_number)) {
- 
-                status = allocMsg (0u, &reply);
-                if (status) {
-                        return status;
-                }
-                *reply = nill_msg;
-                reply->m_cmmd = CA_PROTO_CLAIM_CIU_FAILED;
-                reply->m_cid = mp->m_cid;
-                this->commitMsg();
-                createStatus = S_cas_success;
-        }
-        else {
+	if (CA_V46(CA_PROTOCOL_VERSION,this->minor_version_number)) {
+
+		status = allocMsg (0u, &reply);
+		if (status) {
+			return status;
+		}
+		*reply = nill_msg;
+		reply->m_cmmd = CA_PROTO_CLAIM_CIU_FAILED;
+		reply->m_cid = mp->m_cid;
+		this->commitMsg();
+		createStatus = S_cas_success;
+	}
+	else {
 		this->sendErrWithEpicsStatus(mp, createStatus, ECA_ALLOCMEM);
-        }
- 
-        return createStatus;
+	}
+
+	return createStatus;
 }
 
 
@@ -1160,29 +1163,29 @@ caStatus        createStatus)
  */
 caStatus casStrmClient::disconnectChan(caResId id)
 {
-        caStatus        status;
-	caStatus	createStatus;
-        caHdr   	*reply;
- 
-        if (CA_V47(CA_PROTOCOL_VERSION,this->minor_version_number)) {
- 
-                status = allocMsg (0u, &reply);
-                if (status) {
-                        return status;
-                }
-                *reply = nill_msg;
-                reply->m_cmmd = CA_PROTO_SERVER_DISCONN;
-                reply->m_cid = id;
-                this->commitMsg();
-                createStatus = S_cas_success;
-        }
-        else {
+	caStatus status;
+	caStatus createStatus;
+	caHdr *reply;
+
+	if (CA_V47(CA_PROTOCOL_VERSION,this->minor_version_number)) {
+
+		status = allocMsg (0u, &reply);
+		if (status) {
+			return status;
+		}
+		*reply = nill_msg;
+		reply->m_cmmd = CA_PROTO_SERVER_DISCONN;
+		reply->m_cid = id;
+		this->commitMsg();
+		createStatus = S_cas_success;
+	}
+	else {
 		ca_printf(
-"Disconnecting old client because of internal channel or PV delete\n");
+		"Disconnecting old client because of internal channel or PV delete\n");
 		createStatus = S_cas_disconnect;
-        }
- 
-        return createStatus;
+	}
+
+	return createStatus;
 }
 
 
@@ -1226,15 +1229,15 @@ caStatus casStrmClient::eventsOffAction()
 //
 caStatus casStrmClient::eventAddAction ()
 {
-	const caHdr 		*mp = this->ctx.getMsg();
-	struct mon_info		*pMonInfo = (struct mon_info *) 
+	const caHdr *mp = this->ctx.getMsg();
+	struct mon_info *pMonInfo = (struct mon_info *) 
 					this->ctx.getData();
-	casClientMon		*pMonitor;
-	casChannelI		*pciu;
-	gdd			*pDD;
-	caStatus		status;
-	casEventMask		mask;
-	unsigned short		caProtoMask;
+	casClientMon *pMonitor;
+	casChannelI *pciu;
+	gdd *pDD;
+	caStatus status;
+	casEventMask mask;
+	unsigned short caProtoMask;
 
 	status = casStrmClient::verifyRequest (pciu);
 	if (status != S_cas_validRequest) {
@@ -1331,15 +1334,15 @@ caStatus casStrmClient::eventAddAction ()
 //
 caStatus casStrmClient::clearChannelAction ()
 {
-	const caHdr 	*mp = this->ctx.getMsg();
-	void		*dp = this->ctx.getData();
-        caHdr		*reply;
-        casChannelI	*pciu;
-        int        	status;
+	const caHdr *mp = this->ctx.getMsg();
+	void *dp = this->ctx.getData();
+	caHdr *reply;
+	casChannelI *pciu;
+	int status;
 
-        /*
-         * Verify the channel
-         */
+	/*
+	 * Verify the channel
+	 */
 	pciu = this->resIdToChannel (mp->m_cid);
 	if (!pciu) {
 		logBadId (mp, dp);

@@ -215,29 +215,29 @@ $(INSTALL_DBD)/%: ../%
 
 %Record.h: %Record.dbd
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH$(EXE) \
+	$(EPICS_BASE_HOST_BIN)/dbToRecordtypeH$(EXE) \
 		$(DBDFLAGS)  $<
 
 %Record.h: ../%Record.dbd
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH$(EXE) \
+	$(EPICS_BASE_HOST_BIN)/dbToRecordtypeH$(EXE) \
 		$(DBDFLAGS)  $<
 
 menu%.h: menu%.dbd
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToMenuH$(EXE) $<
+	$(EPICS_BASE_HOST_BIN)/dbToMenuH$(EXE) $<
 
 menu%.h: ../menu%.dbd
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToMenuH$(EXE) $<
+	$(EPICS_BASE_HOST_BIN)/dbToMenuH$(EXE) $<
 
 bpt%.dbd: bpt%.data
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt$(EXE) $<
+	$(EPICS_BASE_HOST_BIN)/makeBpt$(EXE) $<
 
 bpt%.dbd: ../bpt%.data
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt$(EXE) $<
+	$(EPICS_BASE_HOST_BIN)/makeBpt$(EXE) $<
 
 # Patch for old applications
 ifdef USER_DBDFLAGS
@@ -248,7 +248,7 @@ ifdef DBDEXPAND
 $(DBDNAME): ../$(DBDEXPAND)
 	@echo Expanding dbd
 	@$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand$(EXE) $(DBDFLAGS) $< > $@
+	$(EPICS_BASE_HOST_BIN)/dbExpand$(EXE) $(DBDFLAGS) $< > $@
 endif
 
 $(LIBNAME): $(LIBOBJS)

@@ -687,10 +687,10 @@ int epicsShareAPI ca_create_subscription (
                 new ( pChan->getClientCtx().subscriptionFreeList )
                     oldSubscription  ( *pChan, 
                         pCallBack, pCallBackArg ) );
-        pSubsr->begin ( guard, tmpType, count, mask );
         if ( monixptr ) {
             *monixptr = pSubsr.get ();
         }
+        pSubsr->begin ( guard, tmpType, count, mask );
         pSubsr.release ();
         // dont touch pTmp after this because
         // the first callback might have canceled it

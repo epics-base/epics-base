@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1996/07/01 19:56:11  jhill
+ * one last update prior to first release
+ *
  * Revision 1.4  1996/06/26 23:32:17  jhill
  * changed where caProto.h comes from (again)
  *
@@ -125,7 +128,7 @@ inline ioBlockedList::~ioBlockedList ()
 // ioBlockedList::signal ()
 //
 // works from a temporary list to avoid problems
-// where the virtual function adds ites to the 
+// where the virtual function adds items to the 
 // list
 //
 inline void ioBlockedList::signal ()
@@ -353,14 +356,7 @@ public:
 
 	caServer *getCAS();
 
-	//
-	// casAsyncIOI must always be a base for casAsyncIO
-	// (the constructor assert fails if this isnt the case)
-	//
-	casAsyncIO * operator -> ()
-	{
-		return  (casAsyncIO *) this;
-	}
+	inline casAsyncIO * operator -> ();
 
 	void setServerDelete()
 	{
@@ -393,6 +389,7 @@ private:
 
         caHdr const	msg;
         casCoreClient	&client;   
+	casAsyncIO	&asyncIO;
 	casChannelI	*pChan; // optional
         gdd		*pDesc; // optional
         caStatus	completionStatus;
@@ -461,24 +458,19 @@ public:
 		return casChanT;
 	}
 
-	//
-	// casChannelI must always be a base for casPV
-	// (the constructor assert fails if this isnt the case)
-	//
-	casChannel * operator -> ()
-	{
-		return (casChannel *) this;
-	}
-
 	inline void lock();
 	inline void unlock();
 
 	inline void clientDestroy();
+
+	inline casChannel * operator -> ();
+
 protected:
         tsDLList<casMonitor>	monitorList;
 	tsDLList<casAsyncIOI>	ioInProgList;
         casCoreClient		&client;
         casPVI 			&pv;
+	casChannel		&chan;
         caResId const           cid;    // client id 
 	unsigned		clientDestroyPending:1;
 };
@@ -493,7 +485,6 @@ public:
         inline ~casPVListChan();
 };
 
-class caServer;
 class caServerI;
 class casCtx;
 class casChannel;
@@ -509,7 +500,7 @@ public:
         // The PV name here must be the canonical and unique name
         // for the PV in this system
         //
-	casPVI (caServerI &cas, const char * const pName, casPV &pvAdapter);
+	casPVI (caServerI &cas, const char * const pNameIn, casPV &pvAdapter);
 	~casPVI(); 
 
         //
@@ -556,22 +547,11 @@ public:
 
 	inline void postEvent (const casEventMask &select, gdd &event);
 
-	casPV *intefaceObjectPointer() const
-	{
-		return (casPV *) this;
-	}
+	inline casPV *interfaceObjectPointer() const;
 
-	//
-	// casPVI must always be a base for casPV
-	// (the constructor assert fails if this isnt the case)
-	//
-	casPV * operator -> () const
-	{
-		return  intefaceObjectPointer();
-	}
+	inline casPV * operator -> () const;
 
 	caServer *getExtServer();
-
 
 	//
 	// bestDBRType()
@@ -585,6 +565,7 @@ public:
 private:
 	tsDLList<casPVListChan>	chanList;
 	caServerI		&cas;
+	casPV			&pv;
 	unsigned		nMonAttached;
 	unsigned		nIOAttached;
 };

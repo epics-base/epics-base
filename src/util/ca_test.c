@@ -363,7 +363,7 @@ LOCAL void tsStampToText(char * text, const TS_STAMP *pstamp)
     if((nsec%1000000)*1000000 == nsec) nsectext[4] = 0;
     else if((nsec%1000)*1000 == nsec) nsectext[7] = 0;
     else nsectext[10] = 0;
-    strftime(text,40,"%m/%d/%Y %H:%M:%S",&tmstruct);
+    strftime(text,40,"%Y/%m/%d %H:%M:%S",&tmstruct);
     strcat(text,nsectext);
 }
     

@@ -45,9 +45,10 @@ int main ()
 
 	clk = clock();
 	{
-		tsSLIter<fred>	iter(list);
-		while ( (pFred = iter()) ) {
-			pFred->inc();
+		tsSLIter <fred> iter ( list.first () );
+		while ( iter.valid () ) {
+			iter->inc ();
+            iter++;
 		}
 	}
 	diff = clock() - clk;
@@ -59,9 +60,9 @@ int main ()
 	pFred = new fred();
 	clk = clock();
 	{
-		tsSLIter<fred>	iter(list);
-		for (i=0; i<LOOPCOUNT; i++) {
-			pFred->inc();
+		tsSLIter <fred>	iter ( list.first () );
+		for ( i=0; i<LOOPCOUNT; i++ ) {
+			iter->inc();
 		}
 	}
 	diff = clock() - clk;

@@ -387,16 +387,12 @@ void resTable<T,ID>::destroyAllEntries()
     tsSLList<T> *pList = this->pTable;
 
     while (pList<&this->pTable[this->hashIdMask+1]) {
-        T *pItem;
-        T *pNextItem;
-
         {
-            tsSLIter<T> iter(*pList);
-            pItem = iter();
-            while (pItem) {
-                pNextItem = iter();
-                pItem->destroy();
-                pItem = pNextItem;
+            tsSLIter<T> iter ( pList->first () );
+            while ( iter.valid () ) {
+                tsSLIter <T> iterTmp = iter.itemAfter ();
+                iter->destroy();
+                iter = iterTmp;
             }
         }
 
@@ -406,15 +402,14 @@ void resTable<T,ID>::destroyAllEntries()
         // from the resTable when it is destroyed.
         //
         {
-            tsSLIterRm<T> iter(*pList);
-            while ( (pItem=iter()) ) {
-                fprintf (stderr, 
-"Warning: Defective class still in resTable<T,ID> after it was destroyed\n");
+            T *pItem;
+            while ( ( pItem = pList.get () ) ) {
+                fprintf ( stderr, 
+"Warning: Defective class still in resTable<T,ID> after it was destroyed\n" );
                 //
                 // remove defective class
                 //
-                iter.remove();
-                this->nInUse--;
+               this->nInUse--;
             }
         }
 
@@ -437,27 +432,27 @@ void resTable<T,ID>::show (unsigned level) const
 
     printf("resTable with %d resources installed\n", this->nInUse);
 
-    if (level >=1u) {
+    if ( level >=1u ) {
         pList = this->pTable;
         X = 0.0;
         XX = 0.0;
         maxEntries = 0u;
-        while (pList < &this->pTable[this->hashIdMask+1]) {
+        while ( pList < &this->pTable[this->hashIdMask+1] ) {
             unsigned count;
-            tsSLIter<T> iter(*pList);
-            T *pItem;
+            tsSLIter<T> pItem ( pList->first () );
 
             count = 0;
-            while ( (pItem = iter()) ) {
-                if (level >= 3u) {
+            while ( pItem.valid () ) {
+                if ( level >= 3u ) {
                     pItem->show (level);
                 }
                 count++;
+                pItem = pItem->itemAfter ();
             }
-            if (count>0u) {
+            if ( count > 0u ) {
                 X += count;
-                XX += count*count;
-                if (count>maxEntries) {
+                XX += count * count;
+                if ( count > maxEntries ) {
                     maxEntries = count;
                 }
             }
@@ -481,12 +476,12 @@ void resTable<T,ID>::traverse (pSetMFArg(pCB)) const
     tsSLList<T> *pList;
 
     pList = this->pTable;
-    while (pList < &this->pTable[this->hashIdMask+1]) {
-        tsSLIter<T> iter(*pList);
-        T *pItem;
+    while ( pList < &this->pTable[this->hashIdMask+1] ) {
+        tsSLIter<T> pItem ( pList->first () );
 
-        while ( (pItem = iter()) ) {
+        while ( pItem.valid () ) {
             (pItem->*pCB) ();
+            pItem = pItem->itemAfter ();
         }
         pList++;
     }
@@ -526,15 +521,15 @@ int resTable<T,ID>::add (T &res)
 template <class T, class ID>
 T *resTable<T,ID>::find (tsSLList<T> &list, const ID &idIn) const
 {
-    tsSLIter<T> iter(list);
-    T *pItem;
+    tsSLIter <T> pItem ( list.first () );
     ID *pId;
 
-    while ( (pItem = iter()) ) {
-        pId = pItem;
-        if (*pId == idIn) {
+    while ( pItem.valid () ) {
+        pId = & (*pItem) ;
+        if ( *pId == idIn ) {
             break;
         }
+        pItem = pItem->itemAfter ();
     }
     return pItem;
 }
@@ -552,19 +547,26 @@ T *resTable<T,ID>::find (tsSLList<T> &list, const ID &idIn) const
 template <class T, class ID>
 T *resTable<T,ID>::findDelete (tsSLList<T> &list, const ID &idIn)
 {
-    tsSLIterRm<T> iter(list);
-    T *pItem;
+    tsSLIter <T> pItem ( list.first () );
+    tsSLIter <T> pPrev ( 0 );
     ID *pId;
 
-    while ( (pItem = iter()) ) {
-        pId = pItem;
-        if (*pId == idIn) {
-            iter.remove();
+    while ( pItem.valid () ) {
+        pId = & (*pItem);
+        if ( *pId == idIn ) {
+            if ( pPrev.valid () ) {
+                list.remove ( *pPrev );
+            }
+            else {
+                list.get ();
+            }
             this->nInUse--;
             break;
         }
+        pPrev = pItem;
+        pItem = pItem->itemAfter ();
     }
-    return pItem;
+    return & (*pItem);
 }
 
 //
@@ -599,15 +601,15 @@ inline resTableIter<T,ID>::resTableIter (const resTable<T,ID> &tableIn) :
 template <class T, class ID>
 inline T * resTableIter<T,ID>::next ()
 {
-    T *pNext = this->iter.next();
-    if (pNext) {
-        return pNext;
+    this->iter = this->iter.itemAfter ();
+    if ( this->iter.valid () ) {
+        return & ( *this->iter );
     }
     if ( this->index >= (1u<<this->table.hashIdNBits) ) {
         return 0;
     }
-    this->iter = tsSLIter<T> (this->table.pTable[this->index++]);
-    return this->iter.next ();
+    this->iter = tsSLIter<T> ( this->table.pTable[this->index++].first () );
+    return & ( *this->iter );
 }
 
 //

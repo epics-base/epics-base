@@ -34,26 +34,22 @@ int main ()
 	list.add(*pFred);
 	list.add(*pFredII);
 	{
-		tsSLIterRm<fred> iter(list);
-		pFredBack = iter();
-		assert(pFredBack == pFredII);
-		pFredBack = iter();
-		assert(pFredBack == pFred);
-        iter.remove(); // removes pFred
+        tsSLIter<fred> iter1( pFredII );
+		tsSLIter<fred> iter2( list.first () );
+		tsSLIter<fred> iter3( pFred );
+		assert ( iter1 == iter2 );
+		iter2++;
+		assert ( iter3 == iter2 );
+        list.remove ( *pFredII ); // removes pFred
 	}
-	list.add(*pFred);
+	list.add ( *pFred );
 	pFredBack = list.get();
 	assert (pFredBack == pFred);
 	pFredBack = list.get();
 	assert (pFredBack == pFredII);
 	list.add(*pFredII);
 	list.add(*pFred);
-	{
-		tsSLIterRm<fred> iter(list);
-		while ( (pFredBack = iter()) ) {
-			iter.remove();
-		}
-	}
+    while ( list.get () );
 	pFredBack = list.get();
 	assert (pFredBack == 0);
 	list.add(*pFred);
@@ -62,9 +58,10 @@ int main ()
 	list.add(* new fred("D"));
 
 	{
-		tsSLIter<fred> iter(list);
-		while ( (pFredBack = iter()) ) {
-			pFredBack->show();
+		tsSLIter<fred> iter ( list.first() );
+		while ( iter.valid () ) {
+			iter->show();
+            ++iter;
 		}
 	}
 
@@ -74,30 +71,26 @@ int main ()
 	janeList.add(*pJane);	
 
 	{
-		tsSLIter<jane>	janeIter(janeList);
-		while ( (pJane = janeIter()) ) {
-			pJane->show();
+		tsSLIter<jane> iter ( janeList.first() );
+		while ( iter.valid () ) {
+			iter->show();
+            ++iter;
 		}
 	}
 
 	{
-		tsSLIter<fred> iter(list);
-		while ( (pFredBack = iter()) ) {
-			pFredBack->show();
+		tsSLIter <fred> iter ( list.first () );
+		while ( iter.valid () ) {
+			iter->show();
+            iter++;
 		}
 	}
 
-	{
-		tsSLIterRm<fred> iter(list);
-		while ( (pFredBack = iter()) ) {
-			iter.remove();
-		}
-	}
+    while ( list.get () );
 
 	{
-		tsSLIter<fred> iter(list);
-		pFredBack = iter();
-		assert(pFredBack==NULL);
+		tsSLIter<fred> iter (list.first());
+        assert ( iter == tsSLIter<fred>::eol() );
 	}
 
 	return 0;

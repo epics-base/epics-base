@@ -178,9 +178,6 @@ private:
 	T *findDelete (tsSLList<T> &list, const ID &idIn);
 };
 
-//
-// Some ID classes that work with the above template
-//
 
 //
 // class resTableIter
@@ -198,6 +195,10 @@ private:
     unsigned                index;
 	const resTable<T,ID>    *pTable;
 };
+
+//
+// Some ID classes that work with the above template
+//
 
 //
 // class intId

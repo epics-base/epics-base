@@ -43,8 +43,8 @@
 #define	DSET_LO		devLoDg535Gpib
 #define	DSET_BI		devBiDg535Gpib
 #define	DSET_BO		devBoDg535Gpib
-#define	DSET_MBBO	devMbbiDg535Gpib
-#define	DSET_MBBI	devMbboDg535Gpib
+#define	DSET_MBBO	devMbboDg535Gpib
+#define	DSET_MBBI	devMbbiDg535Gpib
 #define	DSET_SI		devSiDg535Gpib
 #define	DSET_SO		devSoDg535Gpib
 
@@ -692,93 +692,6 @@ struct  devGpibParmBlock devSupParms = {
 
 /******************************************************************************
  *
- * This is invoked by the linkTask when an SRQ is detected from a device
- * operated by this module.
- *
- * It calls the work routine associated with the type of record expecting
- * the SRQ response.
- *
- * No semaphore locks are needed around the references to anything in the
- * hwpvt structure, because it is static unless modified by the linkTask and
- * the linkTask is what will execute this function.
- *
- * THIS ROUTINE WILL GENERATE UNPREDICTABLE RESULTS IF...
- * - the MAGIC_SRQ_PARM command is a GPIBREADW command.
- * - the device generates unsolicited SRQs while processing GPIBREADW commands.
- *
- * In general, this function will have to be heavily modified for each device
- * type that SRQs are to be supported.  This is because the serial poll byte
- * format varies from device to device.
- *
- ******************************************************************************/
-
-/* NOT USED FOR DG535 ... NO SRQHANDLER FUNCTION POINTER DEFINED */
-
-#define	DG535_CMDERR	97
-#define	DG535_EXEERR	98
-#define	DG535_INTERR	99
-
-#define	DG535_PON	65	/* power just turned on */
-#define DG535_OPC	66	/* operation just completed */
-#define	DG535_USER	67	/* user requested SRQ */
-
-static int srqHandler(phwpvt, srqStatus)
-struct hwpvt	*phwpvt;
-int		srqStatus;	/* The poll response from the device */
-{
-  int	status = IDLE;		/* assume device will be idle when finished */
-
-  if (Dg535Debug || ibSrqDebug)
-    logMsg("srqHandler(0x%08.8X, 0x%02.2X): called\n", phwpvt, srqStatus);
-
-  switch (srqStatus & 0xef) {
-  case DG535_OPC:
-
-    /* Invoke the command-type specific SRQ handler */
-    if (phwpvt->srqCallback != NULL)
-      status = ((*(phwpvt->srqCallback))(phwpvt->parm, srqStatus));
-    else
-      logMsg("Unsolicited operation complete from DG535 device support!\n");
-    break;
-/* BUG - I have to clear out the error status by doing an err? read operation */
-
-  case DG535_USER:
-
-    /* user requested srq event is specific to the Dg535 */
-      logMsg("Dg535 User requested srq event link %d, device %d\n", phwpvt->link, phwpvt->device);
-      break;
-/* BUG - I have to clear out the error status by doing an err? read operation */
-
-  case DG535_PON:
-
-    logMsg("Power cycled on DG535\n");
-    break;
-/* BUG - I have to clear out the error status by doing an err? read operation */
-
-  default:
-
-
-    if (phwpvt->unsolicitedDpvt != NULL)
-    {
-      if(Dg535Debug || ibSrqDebug)
-        logMsg("Unsolicited SRQ being handled from link %d, device %d, status = 0x%02.2X\n",
-          phwpvt->link, phwpvt->device, srqStatus);
-
-      ((struct gpibDpvt*)(phwpvt->unsolicitedDpvt))->head.header.callback.finishProc = ((struct gpibDpvt *)(phwpvt->unsolicitedDpvt))->process;
-      ((struct gpibDpvt *)(phwpvt->unsolicitedDpvt))->head.header.callback.priority = ((struct gpibDpvt *)(phwpvt->unsolicitedDpvt))->processPri;
-      callbackRequest(phwpvt->unsolicitedDpvt);
-    }
-    else
-    {
-      logMsg("Unsolicited SRQ ignored from link %d, device %d, status = 0x%02.2X\n",
-          phwpvt->link, phwpvt->device, srqStatus);
-    }
-  }
-  return(status);
-}
-
-/******************************************************************************
- *
  * Initialization for device support
  * This is called one time before any records are initialized with a parm
  * value of 0.  And then again AFTER all record-level init is complete
@@ -808,7 +721,7 @@ report()
   return(devGpibLib_report(&DSET_AI));
 }
 
-
+
 /****************************************************************************
  *
  * 
@@ -817,7 +730,6 @@ report()
  *
  ***************************************************************************/
 
-
 /******************************************************************************
  *
  * Unique message interpretaion for reading Channel Delays :
@@ -829,19 +741,24 @@ report()
  * in the val field of the SI record. (ex:  T + .000000500000)
  *****************************************************************************/
 
-static int rdDelay(pdpvt)
+static int rdDelay(pdpvt, p1, p2, p3)
 struct gpibDpvt *pdpvt;
+int	p1;
+int	p2;
+char	**p3;
 {
   int         status;
   double      delay;
   unsigned long chan;
 
-  struct aiRecord *pai= (struct aiRecord *)(pdpvt->precord);
-  struct mbbiRecord *pmbbi= (struct mbbiRecord *)(pdpvt->precord);
-  struct stringinRecord *psi= (struct stringinRecord *)(pdpvt->precord);
+  union delayRec {
+    struct aiRecord ai;
+    struct mbbiRecord mbbi;
+    struct stringinRecord si;
+  } *prec = (union delayRec *) (pdpvt->precord);
 
   if(Dg535Debug)
-    logMsg("rdDelay : returned msg :%s\n",pdpvt->msg);
+    printf("rdDelay : returned msg :%s\n",pdpvt->msg);
 
   /* Change the "," in returned string to a " " to separate fields */
   pdpvt->msg[1] = 0x20;
@@ -850,8 +767,10 @@ struct gpibDpvt *pdpvt;
   status = sscanf(pdpvt->msg, "%ld%lf", &chan, &delay);
 
   if(Dg535Debug)
-    logMsg("rdDelay :sscanf status = %d\n",status);
-
+  {
+    printf("Dg535 rdDelay(): pdpvt=%08.8X prec=%08.8X status=%ld msg=%s\n",
+	pdpvt, prec, status, pdpvt->msg);
+  }
   switch (pdpvt->parm)
   {
   case 4:   /* A Delay monitor, must be an si record */
@@ -861,15 +780,15 @@ struct gpibDpvt *pdpvt;
     if (status == 2)    /* make sure both parameters were assigned */
     {
       /* create a string in the value field*/
-      strcpy(psi->val, pchanName[chan]);
-      strcat(pai->val, &((pdpvt->msg)[3]));
+      strcpy(prec->si.val, pchanName[chan]);
+      strcat(prec->si.val, &((pdpvt->msg)[3]));
     }
     else
     {
-      if (psi->nsev < VALID_ALARM)
+      if (prec->si.nsev < VALID_ALARM)
       {
-        psi->nsev = VALID_ALARM;
-        psi->nsta = READ_ALARM;
+        prec->si.nsev = VALID_ALARM;
+        prec->si.nsta = READ_ALARM;
       }
     }
     break;
@@ -881,14 +800,14 @@ struct gpibDpvt *pdpvt;
     if (status == 2)    /* make sure both parameters were assigned */
     {
       /* assign new delay to value field*/
-      pai->val = delay;
+      prec->ai.val = delay;
     }
     else
     {
-      if (pai->nsev < VALID_ALARM)
+      if (prec->ai.nsev < VALID_ALARM)
       {
-        pai->nsev = VALID_ALARM;
-        pai->nsta = READ_ALARM;
+        prec->ai.nsev = VALID_ALARM;
+        prec->ai.nsta = READ_ALARM;
       }
     }
     break;
@@ -899,14 +818,14 @@ struct gpibDpvt *pdpvt;
   case 64:   /* D Delay Reference monitor, must be an mbbi record */
     if (status == 2)    /* make sure both parameters were assigned */
     {
-      pmbbi->rval = chan;
+      prec->mbbi.rval = chan;
     }
     else
     {
-      if (pmbbi->nsev < VALID_ALARM)
+      if (prec->mbbi.nsev < VALID_ALARM)
       {
-        pmbbi->nsev = VALID_ALARM;
-        pmbbi->nsta = READ_ALARM;
+        prec->mbbi.nsev = VALID_ALARM;
+        prec->mbbi.nsta = READ_ALARM;
       }
     }
     break;
@@ -926,18 +845,21 @@ struct gpibDpvt *pdpvt;
  *
  *************************************************************************/
 
-static int setDelay(pdpvt)
+static int setDelay(pdpvt, p1, p2, p3)
 struct gpibDpvt *pdpvt;
+int	p1;
+int	p2;
+char	**p3;
 {
   int         status;
   char        curChan;
   char        tempMsg[32];
 
-  struct aoRecord *pao= (struct aoRecord *)(pdpvt->precord);
-  struct mbboRecord *pmbbo= (struct mbboRecord *)(pdpvt->precord);
+  union delayRec {
+    struct aoRecord ao;
+    struct mbboRecord mbbo;
+  } *prec = (union delayRec *) (pdpvt->precord);
 
-  if(Dg535Debug)
-    logMsg("setDelay : returned msg :%s\n",pdpvt->msg);
 
   /* go read the current delay & channel reference setting */
   /* this is done by specifying a GPIBREAD even though the gpibCmd is 
@@ -966,7 +888,7 @@ struct gpibDpvt *pdpvt;
     case 59:
       curChan = pdpvt->msg[0];		/* save current chan reference */
       /* generate new delay string (correct rounding error) */
-      sprintf(pdpvt->msg,gpibCmds[pdpvt->parm].format, (pao->val + 1.0e-13)); 
+      sprintf(pdpvt->msg,gpibCmds[pdpvt->parm].format, (prec->ao.val + 1.0e-13)); 
       pdpvt->msg[5] = curChan;    /* replace "?" with current chan */
       break;
 
@@ -976,10 +898,13 @@ struct gpibDpvt *pdpvt;
     case 63:
       strcpy(tempMsg, &((pdpvt->msg)[3])); /* save current delay setting */
       /* generate new channel reference */
-      sprintf(pdpvt->msg, gpibCmds[pdpvt->parm].format, (unsigned int)pmbbo->rval);
+      sprintf(pdpvt->msg, gpibCmds[pdpvt->parm].format, (unsigned int)prec->mbbo.rval);
       strcat(pdpvt->msg, tempMsg); /* append current delay setting */
       break;
   }
+
+  if(Dg535Debug)
+    printf("setDelay : returned msg :%s\n",pdpvt->msg);
 
   return(OK);         /* aoGpibWork or mbboGpibWork will call xxGpibWork */
 }

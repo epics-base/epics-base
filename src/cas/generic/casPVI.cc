@@ -192,7 +192,6 @@ void casPVI::updateEnumStringTable ()
     // empty string table for non-enumerated PVs
     //
     if (nativeType!=aitEnumEnum16) {
-        this->enumStrTbl.clear ();
         return;
     }
     

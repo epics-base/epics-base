@@ -131,6 +131,7 @@ public:
     static void sleep (double seconds);
     //static epicsThread & getSelf ();
     static const char * getNameSelf ();
+    class mustBeCalledByManagedThread {}; // exception
 private:
     epicsThreadRunable &runable;
     epicsThreadId id;

@@ -210,6 +210,7 @@ USR_LDFLAGS =
 USR_LDLIBS =
 USR_CPPFLAGS =
 USR_DBDFLAGS =
+USR_ARFLAGS =
 
 # Target specific options
 TARGET_INCLUDES = $($(basename $@)_INCLUDES) $($(basename $@)_INCLUDES_$(OS_CLASS))
@@ -276,7 +277,7 @@ DBDFLAGS = $(USR_DBDFLAGS) -I . -I .. $(INSTALL_DBDFLAGS)
 # ar definition default
 AR = $($(ANSI)_AR)
 ARFLAGS =
-ARCMD = $(AR) $(ARFLAGS) $@  $(LIBRARY_LD_OBJS)
+ARCMD = $(AR) $(ARFLAGS) $(USR_ARFLAGS) $@  $(LIBRARY_LD_OBJS)
 
 #--------------------------------------------------
 # C compiler

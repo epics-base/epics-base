@@ -114,8 +114,6 @@ public:
 	virtual ~casIntfIO();
 	void show(unsigned level) const;
 
-	unsigned portNumber() const;
-
 	int getFD() const;
 
 	void setNonBlocking();

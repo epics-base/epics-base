@@ -53,6 +53,7 @@
  * .23	09-10-92	rcz	changed funcptr pinitHooks from ret long to void 
  * .24	09-11-92	rcz	moved setMasterTimeToSelf to a seperate C file
  * .25	07-15-93	mrk	Changed dbLoad for new dbStaticLib support
+ * .26	02-09-94	jbk changed to new time stamp support software ts_init()
  *
  */
 
@@ -176,7 +177,8 @@ int iocInit(char * pResourceFilename)
     if (pinitHooks) (*pinitHooks)(INITHOOKafterInitRecSup);
     if(initDevSup()!=0) logMsg("iocInit: Device Support Failed during Initialization\n",0,0,0,0,0,0);
     if (pinitHooks) (*pinitHooks)(INITHOOKafterInitDevSup);
-    ts_init();
+    /* ts_init(); */ /* old time stamp driver (jbk) */
+    TSinit(); /* new time stamp driver (jbk) */
     if (pinitHooks) (*pinitHooks)(INITHOOKafterTS_init);
     if(initDatabase()!=0) logMsg("iocInit: Database Failed during Initialization\n",0,0,0,0,0,0);
     createLockSets();

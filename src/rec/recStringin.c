@@ -1,13 +1,10 @@
 /* recStringin.c */
 /* share/src/rec $Id$ */
 
-/* recState.c - Record Support Routines for State records
- *
+/* recStringin.c - Record Support Routines for Stringin records */
+/*
  *      Author: 	Janet Anderson
  *      Date:   	4/23/91
- *
- *      Author:
- *      Date:   mm-dd-yy
  *
  *      Experimental Physics and Industrial Control System (EPICS)
  *

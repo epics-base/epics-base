@@ -1,30 +1,32 @@
 /* recTimer.c */
 /* share/src/rec $Id$ */
 
-/* recTimer.c - Record Support Routines for Timer records
+/* recTimer.c - Record Support Routines for Timer records */
+/*
+ *      Original Author: Bob Dalesio
+ *      Current Author:  Marty Kraimer
+ *      Date:            1-9-89
  *
- * Author: 	Bob Dalesio
- * Date:        1-9-89
+ *      Experimental Physics and Industrial Control System (EPICS)
  *
- *	Control System Software for the GTA Project
+ *      Copyright 1991, the Regents of the University of California,
+ *      and the University of Chicago Board of Governors.
  *
- *	Copyright 1988, 1989, the Regents of the University of California.
+ *      This software was produced under  U.S. Government contracts:
+ *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *      and (W-31-109-ENG-38) at Argonne National Laboratory.
  *
- *	This software was produced under a U.S. Government contract
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory, which is
- *	operated by the University of California for the U.S. Department
- *	of Energy.
+ *      Initial development by:
+ *              The Controls and Automation Group (AT-8)
+ *              Ground Test Accelerator
+ *              Accelerator Technology Division
+ *              Los Alamos National Laboratory
  *
- *	Developed by the Controls and Automation Group (AT-8)
- *	Accelerator Technology Division
- *	Los Alamos National Laboratory
- *
- *	Direct inqueries to:
- *	Bob Dalesio, AT-8, Mail Stop H820
- *	Los Alamos National Laboratory
- *	Los Alamos, New Mexico 87545
- *	Phone: (505) 667-3414
- *	E-mail: dalesio@luke.lanl.gov
+ *      Co-developed with
+ *              The Controls and Computing Group
+ *              Accelerator Systems Division
+ *              Advanced Photon Source
+ *              Argonne National Laboratory
  *
  * Modification Log:
  * -----------------
@@ -125,6 +127,7 @@ static long process(paddr)
 
 	/* write the new value */
 	write_timer(ptimer);
+	ptimer->udf=FALSE;
 	tsLocalTime(&ptimer->time);
 
         /* check event list */
@@ -269,6 +272,14 @@ struct timerRecord	*ptimer;
 	}
 	pvmeio = (struct vmeio *)(&ptimer->out.value);
 
+        /* should we maintain through a reboot */
+        if (ptimer->main && ptimer->rdt1 && ptimer->rpw1){
+                ptimer->dut1 = ptimer->rdt1 - ptimer->trdl;
+                ptimer->opw1 = ptimer->rpw1;
+                ptimer->main = 0;       /* only kept on the first write */
+        }
+
+
 	/* convert the value */
 	convert_timer(ptimer);
 
@@ -334,9 +345,7 @@ struct timerRecord	*ptimer;
 	/* timing pulse 1 is currently active				   */
 	/* put its parameters into the database so that it will not change */
 	/* when the timer record is written				   */
-	ptimer->dut1 = time_pulse[0] * constant;	/* delay to trigger */
-	ptimer->opw1 = time_pulse[1] * constant;	/* pulse width */
-	ptimer->ptst = ptst;				/* pre-trigger state */
-	ptimer->tsrc = source;				/* clock source */
+	ptimer->rdt1 = time_pulse[0] * constant;	/* delay to trigger */
+	ptimer->rpw1 = time_pulse[1] * constant;	/* pulse width */
 	return;
 }

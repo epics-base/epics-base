@@ -1,30 +1,32 @@
 /* recMbbi.c */
 /* share/src/rec $Id$ */
 
-/* recMbbi.c - Record Support Routines for multi bit binary Input records
+/* recMbbi.c - Record Support Routines for multi bit binary Input records */
+/*
+ *      Original Author: Bob Dalesio
+ *      Current Author:  Marty Kraimer
+ *      Date:            5-9-88
  *
- * Author: 	Bob Dalesio
- * Date:        5-9-88
+ *      Experimental Physics and Industrial Control System (EPICS)
  *
- *	Control System Software for the GTA Project
+ *      Copyright 1991, the Regents of the University of California,
+ *      and the University of Chicago Board of Governors.
  *
- *	Copyright 1988, 1989, the Regents of the University of California.
+ *      This software was produced under  U.S. Government contracts:
+ *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *      and (W-31-109-ENG-38) at Argonne National Laboratory.
  *
- *	This software was produced under a U.S. Government contract
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory, which is
- *	operated by the University of California for the U.S. Department
- *	of Energy.
+ *      Initial development by:
+ *              The Controls and Automation Group (AT-8)
+ *              Ground Test Accelerator
+ *              Accelerator Technology Division
+ *              Los Alamos National Laboratory
  *
- *	Developed by the Controls and Automation Group (AT-8)
- *	Accelerator Technology Division
- *	Los Alamos National Laboratory
- *
- *	Direct inqueries to:
- *	Bob Dalesio, AT-8, Mail Stop H820
- *	Los Alamos National Laboratory
- *	Los Alamos, New Mexico 87545
- *	Phone: (505) 667-3414
- *	E-mail: dalesio@luke.lanl.gov
+ *      Co-developed with
+ *              The Controls and Computing Group
+ *              Accelerator Systems Division
+ *              Advanced Photon Source
+ *              Argonne National Laboratory
  *
  * Modification Log:
  * -----------------
@@ -122,7 +124,7 @@ static void init_common(pmbbi)
         pstate_values = &(pmbbi->zrvl);
         pmbbi->sdef = FALSE;
         for (i=0; i<16; i++) {
-                if (*(pstate_values+i) != udfUlong) {
+                if (*(pstate_values+i) != 0) {
 			pmbbi->sdef = TRUE;
 			return;
 		}
@@ -184,19 +186,20 @@ static long process(paddr)
 		if(pmbbi->shft>0) rval >>= pmbbi->shft;
 		if (pmbbi->sdef){
 			pstate_values = &(pmbbi->zrvl);
-			pmbbi->val = udfUshort;/* initalize to unknown state*/
-			if(rval!=udfUlong) {
-				for (i = 0; i < 16; i++){
-			    		if (*pstate_values == rval){
-                                		pmbbi->val = i;
-                                		break;
-			    		}
-			    		pstate_values++;
-				}
+			pmbbi->val = 65535;         /* initalize to unknown state*/
+			pmbbi->udf = TRUE;
+			for (i = 0; i < 16; i++){
+				if (*pstate_values == rval){
+                               		pmbbi->val = i;
+                               		pmbbi->udf = FALSE;
+                               		break;
+			    	}
+			    	pstate_values++;
 			}
 		}else{
 			/* the raw value is the desired value */
 			pmbbi->val =  (unsigned short)rval;
+			pmbbi->udf =  FALSE;
 		}
 	}
 	else if(status == 2) status = 0;
@@ -269,11 +272,15 @@ static long get_enum_strs(paddr,pes)
     struct mbbiRecord	*pmbbi=(struct mbbiRecord *)paddr->precord;
     char		*psource;
     int			i;
+    short		no_str;
 
-    pes->no_str = 16;
+    no_str = 0;
     bzero(pes->strs,sizeof(pes->strs));
-    for(i=0,psource=(pmbbi->zrst); i<pes->no_str; i++, psource += sizeof(pmbbi->zrst) ) 
+    for(i=0,psource=(pmbbi->zrst); i<16; i++, psource += sizeof(pmbbi->zrst) ) {
 	strncpy(pes->strs[i],psource,sizeof(pmbbi->zrst));
+	if(*psource!=0) no_str=i+1;
+    }
+    pes->no_str=no_str;
     return(0);
 }
 static long put_enum_str(paddr,pstring)
@@ -321,7 +328,6 @@ static void alarm(pmbbi)
 	}
 
         /* check for cos alarm */
-	if(pmbbi->lalm==udfUshort) pmbbi->lalm = val;
 	if(val == pmbbi->lalm) return;
         if (pmbbi->nsev<pmbbi->cosv){
                 pmbbi->nsta = COS_ALARM;

@@ -1,29 +1,32 @@
-/* recWaveform.c - Record Support Routines for Waveform records
+/* recWaveform.c */
 /* share/src/rec $Id$ */
-/*
- * Author:      Bob Dalesio
- * Date:        7-14-89
 
+/* recWaveform.c - Record Support Routines for Waveform records */
+/*
+ *      Original Author: Bob Dalesio
+ *      Current Author:  Marty Kraimer
+ *      Date:            7-14-89
  *
- *	Control System Software for the GTA Project
+ *      Experimental Physics and Industrial Control System (EPICS)
  *
- *	Copyright 1988, 1989, the Regents of the University of California.
+ *      Copyright 1991, the Regents of the University of California,
+ *      and the University of Chicago Board of Governors.
  *
- *	This software was produced under a U.S. Government contract
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory, which is
- *	operated by the University of California for the U.S. Department
- *	of Energy.
+ *      This software was produced under  U.S. Government contracts:
+ *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *      and (W-31-109-ENG-38) at Argonne National Laboratory.
  *
- *	Developed by the Controls and Automation Group (AT-8)
- *	Accelerator Technology Division
- *	Los Alamos National Laboratory
+ *      Initial development by:
+ *              The Controls and Automation Group (AT-8)
+ *              Ground Test Accelerator
+ *              Accelerator Technology Division
+ *              Los Alamos National Laboratory
  *
- *	Direct inqueries to:
- *	Bob Dalesio, AT-8, Mail Stop H820
- *	Los Alamos National Laboratory
- *	Los Alamos, New Mexico 87545
- *	Phone: (505) 667-3414
- *	E-mail: dalesio@luke.lanl.gov
+ *      Co-developed with
+ *              The Controls and Computing Group
+ *              Accelerator Systems Division
+ *              Advanced Photon Source
+ *              Argonne National Laboratory
  *
  * Modification Log:
  * -----------------
@@ -115,6 +118,12 @@ struct wfdset { /* waveform dset */
 static int sizeofTypes[] = {0,1,1,2,2,4,4,4,8,2};
 void monitor();
 
+
+/* The following is taken from dbScan.c */
+#define E_IO_INTERRUPT  7
+/*Following from timing system          */
+extern unsigned int     gts_trigger_counter;
+
 
 static long init_record(pwf)
     struct waveformRecord	*pwf;
@@ -161,11 +170,21 @@ static long process(paddr)
                 recGblRecordError(S_dev_missingSup,pwf,"read_wf");
                 return(S_dev_missingSup);
         }
+        /* event throttling */
+        if (pwf->scan == E_IO_INTERRUPT){
+                if ((pwf->evnt != 0)  && (gts_trigger_counter != 0)){
+                        if ((gts_trigger_counter % pwf->evnt) != 0){
+                                return(0);
+                        }
+                }
+        }
+
         /*pact must not be set true until read_wf completes*/
         status=(*pdset->read_wf)(pwf); /* read the new value */
         pwf->pact = TRUE;
         /* status is one if an asynchronous record is being processed*/
         if(status==1) return(0);
+	pwf->udf=FALSE;
 	tsLocalTime(&pwf->time);
 
 	monitor(pwf);

@@ -1,31 +1,33 @@
 /* recAi.c */
-/* share/src/rec $Id$ */
-
-/* recAi.c - Record Support Routines for Analog Input records
+/* share/src/rec  $Id$ */
+  
+/* recAi.c - Record Support Routines for Analog Input records */
+/*
+ *      Original Author: Bob Dalesio
+ *      Current Author:  Marty Kraimer
+ *      Date:            7-14-89
  *
- * Author: 	Bob Dalesio
- * Date:	7-9-87
- * @(#)iocai.c	1.1	9/22/88
+ *	Experimental Physics and Industrial Control System (EPICS)
  *
- *	Control System Software for the GTA Project
+ *	Copyright 1991, the Regents of the University of California,
+ *	and the University of Chicago Board of Governors.
  *
- *	Copyright 1988, 1989, the Regents of the University of California.
+ *	This software was produced under  U.S. Government contracts:
+ *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *	and (W-31-109-ENG-38) at Argonne National Laboratory.
  *
- *	This software was produced under a U.S. Government contract
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory, which is
- *	operated by the University of California for the U.S. Department
- *	of Energy.
+ *	Initial development by:
+ *		The Controls and Automation Group (AT-8)
+ *		Ground Test Accelerator
+ *		Accelerator Technology Division
+ *		Los Alamos National Laboratory
  *
- *	Developed by the Controls and Automation Group (AT-8)
- *	Accelerator Technology Division
- *	Los Alamos National Laboratory
+ *	Co-developed with
+ *		The Controls and Computing Group
+ *		Accelerator Systems Division
+ *		Advanced Photon Source
+ *		Argonne National Laboratory
  *
- *	Direct inqueries to:
- *	Bob Dalesio, AT-8, Mail Stop H820
- *	Los Alamos National Laboratory
- *	Los Alamos, New Mexico 87545
- *	Phone: (505) 667-3414
- *	E-mail: dalesio@luke.lanl.gov
  *
  * Modification Log:
  * -----------------
@@ -122,6 +124,12 @@ struct aidset { /* analog input dset */
 	DEVSUPFUN	special_linconv;
 };
 
+
+/*NOTE FOLLOWING IS TAKEN FROM dbScan.c */
+#define E_IO_INTERRUPT  7
+/*Following from timing system		*/
+extern unsigned int     gts_trigger_counter;
+
 void alarm();
 void convert();
 void monitor();
@@ -169,6 +177,15 @@ static long process(paddr)
 		recGblRecordError(S_dev_missingSup,pai,"read_ai");
 		return(S_dev_missingSup);
 	}
+
+        /* event throttling */
+        if (pai->scan == E_IO_INTERRUPT){
+                if ((pai->evnt != 0)  && (gts_trigger_counter != 0)){
+                        if ((gts_trigger_counter % pai->evnt) != 0){
+                                return(0);
+                        }
+                }
+        }
 
 	/*pact must not be set true until read_ai is called*/
 	status=(*pdset->read_ai)(pai); /* read the new value */
@@ -285,9 +302,9 @@ static void alarm(pai)
 	double	ftemp;
 	double	val=pai->val;
 
-	if(val>0.0 && val<udfDtest){
+	if(pai->udf == TRUE ){
 		if (pai->nsev<VALID_ALARM){
-			pai->nsta = SOFT_ALARM;
+			pai->nsta = UDF_ALARM;
 			pai->nsev = VALID_ALARM;
 		}
 		return;
@@ -349,8 +366,7 @@ struct aiRecord	*pai;
 
 	val = pai->rval + pai->roff;
 	/* adjust slope and offset */
-	if(aslo < 0.0 || aslo>udfFtest) val = val * aslo;
-	if(aoff < 0.0 || aoff>udfFtest) val = val + aoff;
+	val = val * aslo + aoff;
 
 	/* convert raw to engineering units and signal units */
 	if(pai->linr == 0) {
@@ -411,6 +427,7 @@ struct aiRecord	*pai;
 	}else{
 	    pai->val = val;
 	}
+	pai->udf = FALSE;
 	return;
 }
 

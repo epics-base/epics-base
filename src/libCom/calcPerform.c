@@ -1,27 +1,28 @@
 /* share/src/libCom/calcPerform  $Id$ */
 /*
- * Author:	Julie Sander and Bob Dalesio
- * Date:	7-27-87
+ *	Author: Julie Sander and Bob Dalesio
+ *	Date:	07-27-87
  *
- *	Control System Software for the GTA Project
+ *	Experimental Physics and Industrial Control System (EPICS)
  *
- *	Copyright 1988, 1989, the Regents of the University of California.
+ *	Copyright 1991, the Regents of the University of California,
+ *	and the University of Chicago Board of Governors.
  *
- *	This software was produced under a U.S. Government contract
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory, which is
- *	operated by the University of California for the U.S. Department
- *	of Energy.
+ *	This software was produced under  U.S. Government contracts:
+ *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *	and (W-31-109-ENG-38) at Argonne National Laboratory.
  *
- *	Developed by the Controls and Automation Group (AT-8)
- *	Accelerator Technology Division
- *	Los Alamos National Laboratory
+ *	Initial development by:
+ *		The Controls and Automation Group (AT-8)
+ *		Ground Test Accelerator
+ *		Accelerator Technology Division
+ *		Los Alamos National Laboratory
  *
- *	Direct inqueries to:
- *	Bob Dalesio, AT-8, Mail Stop H820
- *	Los Alamos National Laboratory
- *	Los Alamos, New Mexico 87545
- *	Phone: (505) 667-3414
- *	E-mail: dalesio@luke.lanl.gov
+ *	Co-developed with
+ *		The Controls and Computing Group
+ *		Accelerator Systems Division
+ *		Advanced Photon Source
+ *		Argonne National Laboratory
  *
  * Modification Log:
  * -----------------
@@ -84,14 +85,8 @@
 #include	<stdio.h>
 #include	<dbDefs.h>
 #include	<post.h>
+#include	<math.h>
 double	random();
-
-/* the floating point math routines need to be declared as doubles */
-double	sqrt(),log(),log10();
-double	acos(),asin(),atan();
-double	cos(),sin(),tan();
-double	cosh(),sinh(),tanh();
-double	srand(),rand();
 
 #define	NOT_SET		0
 #define	TRUE_COND	1
@@ -102,11 +97,11 @@ double *parg;
 double *presult;
 char   *post;
 {
-	register double *pstacktop;	/* stack of values	*/
+	double *pstacktop;	/* stack of values	*/
 	double		stack[80];
-	register double temp;
+	double temp;
 	short		temp1;
-	register short	i;
+	short	i;
 	double 		*top;
 	int 		itop;		/* integer top value	*/
 	int 		inexttop;	/* ineteger next to top value 	*/
@@ -125,73 +120,61 @@ char   *post;
 		case FETCH_A:
 			++pstacktop;
 			*pstacktop = parg[0];
-			if(*pstacktop>0.0 && *pstacktop<udfDtest) return(-1);
 			break;
 
 		case FETCH_B:
 			++pstacktop;
 			*pstacktop = parg[1];
-			if(*pstacktop>0.0 && *pstacktop<udfDtest) return(-1);
 			break;
 
 		case FETCH_C:
 			++pstacktop;
 			*pstacktop = parg[2];
-			if(*pstacktop>0.0 && *pstacktop<udfDtest) return(-1);
 			break;
 
 		case FETCH_D:
 			++pstacktop;
 			*pstacktop = parg[3];
-			if(*pstacktop>0.0 && *pstacktop<udfDtest) return(-1);
 			break;
 
 		case FETCH_E:
 			++pstacktop;
 			*pstacktop = parg[4];
-			if(*pstacktop>0.0 && *pstacktop<udfDtest) return(-1);
 			break;
 
 		case FETCH_F:
 			++pstacktop;
 			*pstacktop = parg[5];
-			if(*pstacktop>0.0 && *pstacktop<udfDtest) return(-1);
 			break;
 
 		case FETCH_G:
 			++pstacktop;
 			*pstacktop = parg[6];
-			if(*pstacktop>0.0 && *pstacktop<udfDtest) return(-1);
 			break;
 
 		case FETCH_H:
 			++pstacktop;
 			*pstacktop = parg[7];
-			if(*pstacktop>0.0 && *pstacktop<udfDtest) return(-1);
 			break;
 
 		case FETCH_I:
 			++pstacktop;
 			*pstacktop = parg[8];
-			if(*pstacktop>0.0 && *pstacktop<udfDtest) return(-1);
 			break;
 
 		case FETCH_J:
 			++pstacktop;
 			*pstacktop = parg[9];
-			if(*pstacktop>0.0 && *pstacktop<udfDtest) return(-1);
 			break;
 
 		case FETCH_K:
 			++pstacktop;
 			*pstacktop = parg[10];
-			if(*pstacktop>0.0 && *pstacktop<udfDtest) return(-1);
 			break;
 
 		case FETCH_L:
 			++pstacktop;
 			*pstacktop = parg[11];
-			if(*pstacktop>0.0 && *pstacktop<udfDtest) return(-1);
 			break;
 
 
@@ -450,7 +433,7 @@ char   *post;
  * seed = (multy * seed) + addy         Random Number Generator by Knuth
  *                                              SemiNumerical Algorithms
  *                                              Chapter 1
- * randy = 1.0 / (seed & 0xff)          To normalize the number between 0 - 1
+ * randy = seed / 65535.0          To normalize the number between 0 - 1
  */
 static unsigned short seed = 0xa3bf;
 static unsigned short multy = 191 * 8 + 5;  /* 191 % 8 == 5 */
@@ -461,7 +444,7 @@ static double random()
 
         /* random number */
         seed = (seed * multy) + addy;
-        randy = 1.0 / (seed & 0xffff);
+        randy = seed / 65535.0;
 
         /* between 0 - 1 */
         return(randy);

@@ -1,30 +1,32 @@
 /* recMbbo.c */
 /* share/src/rec $Id$ */
 
-/* recMbbo.c - Record Support Routines for multi bit binary Output records
+/* recMbbo.c - Record Support Routines for multi bit binary Output records */
+/*
+ *      Original Author: Bob Dalesio
+ *      Current Author:  Marty Kraimer
+ *      Date:            7-17-87
  *
- * Author: 	Bob Dalesio
- * Date:        7-17-87
+ *      Experimental Physics and Industrial Control System (EPICS)
  *
- *	Control System Software for the GTA Project
+ *      Copyright 1991, the Regents of the University of California,
+ *      and the University of Chicago Board of Governors.
  *
- *	Copyright 1988, 1989, the Regents of the University of California.
+ *      This software was produced under  U.S. Government contracts:
+ *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *      and (W-31-109-ENG-38) at Argonne National Laboratory.
  *
- *	This software was produced under a U.S. Government contract
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory, which is
- *	operated by the University of California for the U.S. Department
- *	of Energy.
+ *      Initial development by:
+ *              The Controls and Automation Group (AT-8)
+ *              Ground Test Accelerator
+ *              Accelerator Technology Division
+ *              Los Alamos National Laboratory
  *
- *	Developed by the Controls and Automation Group (AT-8)
- *	Accelerator Technology Division
- *	Los Alamos National Laboratory
- *
- *	Direct inqueries to:
- *	Bob Dalesio, AT-8, Mail Stop H820
- *	Los Alamos National Laboratory
- *	Los Alamos, New Mexico 87545
- *	Phone: (505) 667-3414
- *	E-mail: dalesio@luke.lanl.gov
+ *      Co-developed with
+ *              The Controls and Computing Group
+ *              Accelerator Systems Division
+ *              Advanced Photon Source
+ *              Argonne National Laboratory
  *
  * Modification Log:
  * -----------------
@@ -105,11 +107,11 @@ struct rset mbboRSET={
 	get_control_double,
 	get_alarm_double };
 
-struct mbbodset { /* multi bit binary input dset */
+struct mbbodset { /* multi bit binary output dset */
 	long		number;
 	DEVSUPFUN	dev_report;
 	DEVSUPFUN	init;
-	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
+	DEVSUPFUN	init_record;  /*returns: (0,2)=>(success,success no convert)*/
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	write_mbbo;/*(0,1)=>(success,don't Continue*/
 };
@@ -129,7 +131,7 @@ static void init_common(pmbbo)
         pstate_values = &(pmbbo->zrvl);
         pmbbo->sdef = FALSE;
         for (i=0; i<16; i++) {
-                if (*(pstate_values+i)!= udfUlong) {
+                if (*(pstate_values+i)!= 0) {
                         pmbbo->sdef = TRUE;
                         return;
                 }
@@ -153,9 +155,9 @@ static long init_record(pmbbo)
 	recGblRecordError(S_dev_missingSup,pmbbo,"mbbo: init_record");
 	return(S_dev_missingSup);
     }
-    if ((pmbbo->dol.type == CONSTANT)
-    && (pmbbo->dol.value.value<=0.0 || pmbbo->dol.value.value>=udfFtest)){
+    if (pmbbo->dol.type == CONSTANT){
 	pmbbo->val = pmbbo->dol.value.value;
+	pmbbo->udf = FALSE;
     }
     /* initialize mask*/
     pmbbo->mask = 0;
@@ -166,30 +168,31 @@ static long init_record(pmbbo)
     if( pdset->init_record ) {
 	unsigned long rval;
 
-	if((status=(*pdset->init_record)(pmbbo,process))) return(status);
+	status=(*pdset->init_record)(pmbbo,process);
         /* init_record might set status */
         init_common(pmbbo);
-	rval = pmbbo->rval;
-	if(rval!=udfUlong) {
-	    if(pmbbo->shft>0) rval >>= pmbbo->shft;
-            if (pmbbo->sdef){
-	        unsigned long   *pstate_values;
-	        short           i;
+	if(status==0){
+		rval = pmbbo->rval;
+		if(pmbbo->shft>0) rval >>= pmbbo->shft;
+		if (pmbbo->sdef){
+			unsigned long   *pstate_values;
+			short           i;
 
-	        pstate_values = &(pmbbo->zrvl);
-	        pmbbo->val = udfUshort;        /* initalize to unknown state*/
-		for (i = 0; i < 16; i++){
-		    if (*pstate_values == rval){
-			pmbbo->val = i;
-			break;
-		   }
-		   pstate_values++;
-	        }
-            }else{
-	        /* the raw  is the desired val */
-	        pmbbo->val =  (unsigned short)rval;
-            }
-        }
+			pstate_values = &(pmbbo->zrvl);
+			pmbbo->val = 65535;        /* initalize to unknown state*/
+			for (i = 0; i < 16; i++){
+				if (*pstate_values == rval){
+					pmbbo->val = i;
+					break;
+				}
+				pstate_values++;
+			}
+		}else{
+		/* the raw  is the desired val */
+		pmbbo->val =  (unsigned short)rval;
+		}
+		pmbbo->udf = FALSE;
+	} else if (status==2) status==0;
     }
     init_common(pmbbo);
     return(0);
@@ -221,7 +224,8 @@ static long process(paddr)
 			&val,&options,&nRequest);
 	    pmbbo->pact = FALSE;
 	    if(status==0) {
-		pmbbo->val=val;
+		pmbbo->val= val;
+		pmbbo->udf= FALSE;
 	    } else {
 		if(pmbbo->nsev < VALID_ALARM) {
 		    pmbbo->nsev = VALID_ALARM;
@@ -230,10 +234,10 @@ static long process(paddr)
 		goto DONT_WRITE;
 	    }
 	}
-	if(pmbbo->val==udfEnum) {
+	if(pmbbo->udf==TRUE) {
 		if(pmbbo->nsev < VALID_ALARM) {
 		    pmbbo->nsev = VALID_ALARM;
-		    pmbbo->nsta = SOFT_ALARM;
+		    pmbbo->nsta = UDF_ALARM;
 		}
 		goto DONT_WRITE;
 	}
@@ -323,11 +327,16 @@ static long get_enum_strs(paddr,pes)
     struct mbboRecord	*pmbbo=(struct mbboRecord *)paddr->precord;
     char		*psource;
     int			i;
+    short		no_str;
 
-    pes->no_str = 16;
+    no_str=0;
     bzero(pes->strs,sizeof(pes->strs));
-    for(i=0,psource=(pmbbo->zrst); i<pes->no_str; i++, psource += sizeof(pmbbo->zrst) ) 
+    for(i=0,psource=(pmbbo->zrst); i<16; i++, psource += sizeof(pmbbo->zrst) ) {
 	strncpy(pes->strs[i],psource,sizeof(pmbbo->zrst));
+  	if(*psource!=0)no_str=i+1;
+    }
+    pes->no_str = no_str;
+
     return(0);
 }
 static long put_enum_str(paddr,pstring)
@@ -375,7 +384,6 @@ static void alarm(pmbbo)
 	}
 
         /* check for cos alarm */
-	if(pmbbo->lalm==udfUshort) pmbbo->lalm = val;
 	if(val == pmbbo->lalm) return;
         if (pmbbo->nsev<pmbbo->cosv){
                 pmbbo->nsta = COS_ALARM;

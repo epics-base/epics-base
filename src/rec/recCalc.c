@@ -1,30 +1,32 @@
 /* recCalc.c */
 /* share/src/rec $Id$ */
 
-/* recCalc.c - Record Support Routines for Calculation records
+/* recCalc.c - Record Support Routines for Calculation records */
+/*
+ *      Original Author: Julie Sander and Bob Dalesio
+ *      Current  Author: Marty Kraimer
+ *      Date:            7-27-87
  *
- * Author:      Julie Sander and Bob Dalesio
- * Date:        7-27-87
+ *      Experimental Physics and Industrial Control System (EPICS)
  *
- *	Control System Software for the GTA Project
+ *      Copyright 1991, the Regents of the University of California,
+ *      and the University of Chicago Board of Governors.
  *
- *	Copyright 1988, 1989, the Regents of the University of California.
+ *      This software was produced under  U.S. Government contracts:
+ *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *      and (W-31-109-ENG-38) at Argonne National Laboratory.
  *
- *	This software was produced under a U.S. Government contract
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory, which is
- *	operated by the University of California for the U.S. Department
- *	of Energy.
+ *      Initial development by:
+ *              The Controls and Automation Group (AT-8)
+ *              Ground Test Accelerator
+ *              Accelerator Technology Division
+ *              Los Alamos National Laboratory
  *
- *	Developed by the Controls and Automation Group (AT-8)
- *	Accelerator Technology Division
- *	Los Alamos National Laboratory
- *
- *	Direct inqueries to:
- *	Bob Dalesio, AT-8, Mail Stop H820
- *	Los Alamos National Laboratory
- *	Los Alamos, New Mexico 87545
- *	Phone: (505) 667-3414
- *	E-mail: dalesio@luke.lanl.gov
+ *      Co-developed with
+ *              The Controls and Computing Group
+ *              Accelerator Systems Division
+ *              Advanced Photon Source
+ *              Argonne National Laboratory
  *
  * Modification Log:
  * -----------------
@@ -152,7 +154,7 @@ static long process(paddr)
 				pcalc->nsta = CALC_ALARM;
 				pcalc->nsev = VALID_ALARM;
 			}
-		}
+		} else pcalc->udf = FALSE;
 	}
 	tsLocalTime(&pcalc->time);
 	/* check for alarms */
@@ -260,10 +262,10 @@ static void alarm(pcalc)
 	double	ftemp;
 	double	val=pcalc->val;
 
-	if(val>0.0 && val<udfDtest) {
+	if(pcalc->udf == TRUE ) {
 		if(pcalc->nsev<VALID_ALARM) {
 			pcalc->nsev = VALID_ALARM;
-			pcalc->nsta = SOFT_ALARM;
+			pcalc->nsta = UDF_ALARM;
 		}
 		return;
 	}
@@ -397,13 +399,6 @@ struct calcRecord *pcalc;
 			if(pcalc->nsev<VALID_ALARM) {
 				pcalc->nsev=VALID_ALARM;
 				pcalc->nsta=LINK_ALARM;
-			}
-			return(-1);
-		}
-		if(*pvalue>0.0 && *pvalue<udfDtest) {
-			if(pcalc->nsev<VALID_ALARM) {
-				pcalc->nsev=VALID_ALARM;
-				pcalc->nsta=SOFT_ALARM;
 			}
 			return(-1);
 		}

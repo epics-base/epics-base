@@ -1,30 +1,33 @@
 /* recBi.c */
-/* share/src/rec $Id$ */
-
-/* recBi.c - Record Support Routines for Binary Input records
+/* share/src/rec  $Id$ */
+  
+/* recBi.c - Record Support Routines for Binary Input records */
+/*
+ *      Original Author: Bob Dalesio
+ *      Current Author:  Marty Kraimer
+ *      Date:            7-14-89
  *
- * Author: 	Bob Dalesio
- * Date:	7-9-87
+ *	Experimental Physics and Industrial Control System (EPICS)
  *
- *	Control System Software for the GTA Project
+ *	Copyright 1991, the Regents of the University of California,
+ *	and the University of Chicago Board of Governors.
  *
- *	Copyright 1988, 1989, the Regents of the University of California.
+ *	This software was produced under  U.S. Government contracts:
+ *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *	and (W-31-109-ENG-38) at Argonne National Laboratory.
  *
- *	This software was produced under a U.S. Government contract
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory, which is
- *	operated by the University of California for the U.S. Department
- *	of Energy.
+ *	Initial development by:
+ *		The Controls and Automation Group (AT-8)
+ *		Ground Test Accelerator
+ *		Accelerator Technology Division
+ *		Los Alamos National Laboratory
  *
- *	Developed by the Controls and Automation Group (AT-8)
- *	Accelerator Technology Division
- *	Los Alamos National Laboratory
+ *	Co-developed with
+ *		The Controls and Computing Group
+ *		Accelerator Systems Division
+ *		Advanced Photon Source
+ *		Argonne National Laboratory
  *
- *	Direct inqueries to:
- *	Bob Dalesio, AT-8, Mail Stop H820
- *	Los Alamos National Laboratory
- *	Los Alamos, New Mexico 87545
- *	Phone: (505) 667-3414
- *	E-mail: dalesio@luke.lanl.gov
  *
  * Modification Log:
  * -----------------
@@ -150,6 +153,7 @@ static long process(paddr)
 	if(status==0) { /* convert rval to val */
 		if(pbi->rval==0) pbi->val =0;
 		else pbi->val = 1;
+		pbi->udf = FALSE;
 	}
 	/* status is one if an asynchronous record is being processed*/
 	else if(status==2) status=0;
@@ -223,9 +227,9 @@ static void alarm(pbi)
 	unsigned short val = pbi->val;
 
 
-        if(val==udfUshort){
+        if(pbi->udf == TRUE){
                 if (pbi->nsev<VALID_ALARM){
-                        pbi->nsta = SOFT_ALARM;
+                        pbi->nsta = UDF_ALARM;
                         pbi->nsev = VALID_ALARM;
                 }
                 return;
@@ -246,7 +250,6 @@ static void alarm(pbi)
         }
 
         /* check for cos alarm */
-	if(pbi->lalm==udfUshort) pbi->lalm = val;
 	if(val == pbi->lalm) return;
         if (pbi->nsev<pbi->cosv) {
                 pbi->nsta = COS_ALARM;

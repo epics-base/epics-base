@@ -1,8 +1,8 @@
 /* recStringout.c */
 /* share/src/rec $Id$ */
 
-/* recStringout.c - Record Support Routines for Stringout records
- *
+/* recStringout.c - Record Support Routines for Stringout records */
+/*
  * Author: 	Janet Anderson
  * Date:	4/23/91
  *
@@ -114,9 +114,9 @@ static long init_record(pstringout)
 	return(S_dev_missingSup);
     }
     /* get the initial value dol is a constant*/
-    if (pstringout->dol.type == CONSTANT
-    && (pstringout->dol.value.value<=0.0 || pstringout->dol.value.value>=udfFtest)){
-        sprintf(pstringout->val,"%-13.6g",pstringout->dol.value.value); 
+    if (pstringout->dol.type == CONSTANT && pstringout->dol.value.value!=0.0 ){
+        sprintf(pstringout->val,"%-14.7g",pstringout->dol.value.value); 
+	pstringout->udf=FALSE;
     }
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(pstringout,process))) return(status);

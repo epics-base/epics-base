@@ -1,36 +1,37 @@
 /* recSel.c */
 /* share/src/rec $Id$ */
 
-/* recSel.c - Record Support Routines for Select records
+/* recSel.c - Record Support Routines for Select records */
+/*
+ *      Original Author: Bob Dalesio
+ *      Current Author:  Marty Kraimer
+ *      Date:            6-2-89
  *
- * Author: 	Bob Dalesio
- * Date:        06-02-89
+ *      Experimental Physics and Industrial Control System (EPICS)
  *
- *	Control System Software for the GTA Project
+ *      Copyright 1991, the Regents of the University of California,
+ *      and the University of Chicago Board of Governors.
  *
- *	Copyright 1988, 1989, the Regents of the University of California.
+ *      This software was produced under  U.S. Government contracts:
+ *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *      and (W-31-109-ENG-38) at Argonne National Laboratory.
  *
- *	This software was produced under a U.S. Government contract
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory, which is
- *	operated by the University of California for the U.S. Department
- *	of Energy.
+ *      Initial development by:
+ *              The Controls and Automation Group (AT-8)
+ *              Ground Test Accelerator
+ *              Accelerator Technology Division
+ *              Los Alamos National Laboratory
  *
- *	Developed by the Controls and Automation Group (AT-8)
- *	Accelerator Technology Division
- *	Los Alamos National Laboratory
- *
- *	Direct inqueries to:
- *	Bob Dalesio, AT-8, Mail Stop H820
- *	Los Alamos National Laboratory
- *	Los Alamos, New Mexico 87545
- *	Phone: (505) 667-3414
- *	E-mail: dalesio@luke.lanl.gov
+ *      Co-developed with
+ *              The Controls and Computing Group
+ *              Accelerator Systems Division
+ *              Advanced Photon Source
+ *              Argonne National Laboratory
  *
  * Modification Log:
  * -----------------
  * .01  11-16-89        lrd     fixed select algorithms not to compare against
  *                              the previous value
- * 
  * .02  10-12-90	mrk	changes for new record support
  */
 
@@ -104,6 +105,9 @@ static long init_record(psel)
     struct link *plink;
     int i;
     double *pvalue;
+
+    /* get seln initial value if nvl is a constant*/
+    if (psel->nvl.type == CONSTANT ) psel->seln = psel->nvl.value.value;
 
     plink = &psel->inpa;
     pvalue = &psel->a;
@@ -218,7 +222,14 @@ static void alarm(psel)
 	double	ftemp;
 	double	val=psel->val;
 
-	if(val>0.0 && val<udfDtest) return;
+        /* undefined condition */
+	if(psel->udf ==TRUE){
+        	if (psel->nsev<VALID_ALARM){
+                        psel->nsta = UDF_ALARM;
+                        psel->nsev = VALID_ALARM; 
+                        return;
+                }
+        }
         /* if difference is not > hysterisis use lalm not val */
         ftemp = psel->lalm - psel->val;
         if(ftemp<0.0) ftemp = -ftemp;
@@ -345,7 +356,6 @@ struct selRecord *psel;  /* pointer to selection record  */
 	case (SELECT_HIGH):
 		psel->val = *pvalue;
 		for (i = 0; i < SEL_MAX; i++,pvalue++){
-			if (*pvalue>0.0 && *pvalue<udfDtest) continue;
 			if (psel->val < *pvalue)
 				psel->val = *pvalue;
 		}
@@ -353,7 +363,6 @@ struct selRecord *psel;  /* pointer to selection record  */
 	case (SELECT_LOW):
 		psel->val = *pvalue;
 		for (i = 0; i < SEL_MAX; i++,pvalue++){
-			if (*pvalue>0.0 && *pvalue<udfDtest) continue;
 			if (psel->val > *pvalue)
 				psel->val = *pvalue;
 		}
@@ -363,7 +372,6 @@ struct selRecord *psel;  /* pointer to selection record  */
 		plink = &psel->inpa;
 		order_inx = 0;
 		for (i = 0; i < SEL_MAX; i++,pvalue++,plink++){
-			if (*pvalue>0.0 && *pvalue<udfDtest) continue;
 			if (plink->type == DB_LINK){
 				j = order_inx;
 				while ((order[j-1] > *pvalue) && (j > 0)){
@@ -379,7 +387,7 @@ struct selRecord *psel;  /* pointer to selection record  */
 	default:
 		return(-1);
 	}
-
+	psel->udf=FALSE;
 	/* initialize flag  */
 	return(0);
 }
@@ -403,6 +411,20 @@ struct selRecord *psel;
 	pvalue = &psel->a;
 	/* If select mechanism is SELECTED only get selected input*/
 	if(psel->selm == SELECTED) {
+	        /* fetch the select index */
+	        if(psel->nvl.type == DB_LINK ){
+			options=0;
+			nRequest=1;
+			if(dbGetLink(&(psel->nvl.value.db_link),psel,DBR_USHORT,
+				&(psel->seln),&options,&nRequest)!=NULL) {
+				if (psel->nsev<VALID_ALARM) {
+					psel->stat = LINK_ALARM;
+					psel->sevr = VALID_ALARM;
+					return(0);
+				}
+				return(-1);
+			}
+		}
 		plink += psel->seln;
 		pvalue += psel->seln;
                 if(plink->type==DB_LINK) {
@@ -412,13 +434,6 @@ struct selRecord *psel;
 				if(psel->nsev<VALID_ALARM) {
 					psel->nsev=VALID_ALARM;
 					psel->nsta=LINK_ALARM;
-				}
-				return(-1);
-			}
-			if(*pvalue>0.0 && *pvalue<udfDtest) {
-				if(psel->nsev<VALID_ALARM) {
-					psel->nsev=VALID_ALARM;
-					psel->nsta=SOFT_ALARM;
 				}
 				return(-1);
 			}
@@ -434,13 +449,6 @@ struct selRecord *psel;
 				if(psel->nsev<VALID_ALARM) {
 					psel->nsev=VALID_ALARM;
 					psel->nsta=LINK_ALARM;
-				}
-				return(-1);
-			}
-			if(*pvalue>0.0 && *pvalue<udfDtest) {
-				if(psel->nsev<VALID_ALARM) {
-					psel->nsev=VALID_ALARM;
-					psel->nsta=SOFT_ALARM;
 				}
 				return(-1);
 			}

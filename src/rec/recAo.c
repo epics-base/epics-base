@@ -1,30 +1,32 @@
 /* recAo.c */
-/* share/src/rec $Id$ */
-
-/* recAo.c - Record Support Routines for Analog Output records
+/* share/src/rec  $Id$ */
+  
+/* recAo.c - Record Support Routines for Analog Output records */
+/*
+ *      Original Author: Bob Dalesio
+ *      Current Author:  Marty Kraimer
+ *      Date:            7-14-89
  *
- * Author: 	Bob Dalesio
- * Date:	7-9-87
+ *	Experimental Physics and Industrial Control System (EPICS)
  *
- *	Control System Software for the GTA Project
+ *	Copyright 1991, the Regents of the University of California,
+ *	and the University of Chicago Board of Governors.
  *
- *	Copyright 1988, 1989, the Regents of the University of California.
+ *	This software was produced under  U.S. Government contracts:
+ *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *	and (W-31-109-ENG-38) at Argonne National Laboratory.
  *
- *	This software was produced under a U.S. Government contract
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory, which is
- *	operated by the University of California for the U.S. Department
- *	of Energy.
+ *	Initial development by:
+ *		The Controls and Automation Group (AT-8)
+ *		Ground Test Accelerator
+ *		Accelerator Technology Division
+ *		Los Alamos National Laboratory
  *
- *	Developed by the Controls and Automation Group (AT-8)
- *	Accelerator Technology Division
- *	Los Alamos National Laboratory
- *
- *	Direct inqueries to:
- *	Bob Dalesio, AT-8, Mail Stop H820
- *	Los Alamos National Laboratory
- *	Los Alamos, New Mexico 87545
- *	Phone: (505) 667-3414
- *	E-mail: dalesio@luke.lanl.gov
+ *	Co-developed with
+ *		The Controls and Computing Group
+ *		Accelerator Systems Division
+ *		Advanced Photon Source
+ *		Argonne National Laboratory
  *
  * Modification Log:
  * -----------------
@@ -109,7 +111,7 @@ struct aodset { /* analog input dset */
 	long		number;
 	DEVSUPFUN	dev_report;
 	DEVSUPFUN	init;
-	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
+	DEVSUPFUN	init_record; /*returns: (0,2)=>(success,success no convert)*/
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	write_ao;/*(0,1)=>success and */
 			/*(continue, don`t continue) */
@@ -140,8 +142,8 @@ static long init_record(pao)
 	return(S_dev_noDSET);
     }
     /* get the initial value if dol is a constant*/
-    if (pao->dol.type == CONSTANT &&
-	(pao->dol.value.value<=0.0 || pao->dol.value.value>udfFtest)){
+    if (pao->dol.type == CONSTANT ){
+	    pao->udf = FALSE;
             pao->val = pao->dol.value.value;
     }
     /* must have write_ao function defined */
@@ -151,14 +153,16 @@ static long init_record(pao)
     }
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(pao,process))) return(status);
-	if(pao->rval != udfLong) { /* convert */
+	if(status == 0) { /* convert */
             if (pao->linr == LINEAR){
                 pao->val = (pao->rval + pao->roff)*pao->eslo + pao->egul;
             }else{
                 pao->val = pao->rval;
             }
 	}
+	pao->udf = FALSE;
     }
+    pao->pval = pao->val;
     return(0);
 }
 
@@ -291,9 +295,9 @@ static void alarm(pao)
 	double	ftemp;
 	double	val=pao->val;
 
-        if(val>0.0 && val<udfDtest){
+        if(pao->udf == TRUE ){
                 if (pao->nsev<VALID_ALARM){
-                        pao->nsta = SOFT_ALARM;
+                        pao->nsta = UDF_ALARM;
                         pao->nsev = VALID_ALARM;
                 }
                 return;
@@ -363,9 +367,7 @@ static int convert(pao)
 		save_pact = pao->pact;
 		pao->pact = TRUE;
 		/* don't allow dbputs to val field */
- 		if(pao->pval<=0.0 || pao->pval>udfDtest){
-			pao->val=pao->pval;
-		}
+		pao->val=pao->pval;
                 status = dbGetLink(&pao->dol.value.db_link,pao,DBR_DOUBLE,
 			&value,&options,&nRequest);
 		pao->pact = save_pact;
@@ -379,14 +381,6 @@ static int convert(pao)
                 if (pao->oif == OUTPUT_INCREMENTAL) value += pao->val;
         } else value = pao->val;
 
-	if(value>0.0 && value<udfDtest) {
-		if(pao->nsev<VALID_ALARM) {
-			pao->nsta = SOFT_ALARM;
-			pao->nsev = VALID_ALARM;
-		}
-		return(1);
-	}
-
         /* check drive limits */
 	if(pao->drvh > pao->drvl) {
         	if (value > pao->drvh) value = pao->drvh;
@@ -394,11 +388,11 @@ static int convert(pao)
 	}
 	pao->val = value;
 	pao->pval = value;
+	pao->udf = FALSE;
 
-	if(pao->oval>0.0 && pao->oval<udfDtest) pao->oval = value;
 	/* now set value equal to desired output value */
         /* apply the output rate of change */
-        if ( pao->oroc>=udfDtest){/*must be defined and >0*/
+        if ( pao->oroc ){/*must be defined and >0*/
 		float		diff;
 
                 diff = value - pao->oval;

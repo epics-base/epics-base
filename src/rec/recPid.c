@@ -1,30 +1,32 @@
 /* recPid.c */
 /* share/src/rec $Id$ */
 
-/* recPid.c - Record Support Routines for Pid records
+/* recPid.c - Record Support Routines for Pid records */
+/*
+ *      Original Author: Bob Dalesio
+ *      Current Author:  Marty Kraimer
+ *      Date:            5-19-89 
  *
- * Author: 	Bob Dalesio
- * Date:        05-19-89
+ *      Experimental Physics and Industrial Control System (EPICS)
  *
- *	Control System Software for the GTA Project
+ *      Copyright 1991, the Regents of the University of California,
+ *      and the University of Chicago Board of Governors.
  *
- *	Copyright 1988, 1989, the Regents of the University of California.
+ *      This software was produced under  U.S. Government contracts:
+ *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *      and (W-31-109-ENG-38) at Argonne National Laboratory.
  *
- *	This software was produced under a U.S. Government contract
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory, which is
- *	operated by the University of California for the U.S. Department
- *	of Energy.
+ *      Initial development by:
+ *              The Controls and Automation Group (AT-8)
+ *              Ground Test Accelerator
+ *              Accelerator Technology Division
+ *              Los Alamos National Laboratory
  *
- *	Developed by the Controls and Automation Group (AT-8)
- *	Accelerator Technology Division
- *	Los Alamos National Laboratory
- *
- *	Direct inqueries to:
- *	Bob Dalesio, AT-8, Mail Stop H820
- *	Los Alamos National Laboratory
- *	Los Alamos, New Mexico 87545
- *	Phone: (505) 667-3414
- *	E-mail: dalesio@luke.lanl.gov
+ *      Co-developed with
+ *              The Controls and Computing Group
+ *              Accelerator Systems Division
+ *              Advanced Photon Source
+ *              Argonne National Laboratory
  *
  * Modification Log:
  * -----------------
@@ -96,8 +98,10 @@ static long init_record(ppid)
     struct pidRecord     *ppid;
 {
         /* initialize the setpoint for constant setpoint */
-        if (ppid->stpl.type == CONSTANT)
+        if (ppid->stpl.type == CONSTANT){
                 ppid->val = ppid->stpl.value.value;
+                ppid->udf = FALSE;
+	}
 	return(0);
 }
 
@@ -384,15 +388,15 @@ struct pidRecord     *ppid;
                                 ppid->sevr = VALID_ALARM;
                                 return(0);
                         }
-                }
+                } else ppid->udf=FALSE;
         }
 	val = ppid->val;
-	if(ppid->val>0.0 && ppid->val<udfFtest) {
-		if (ppid->nsev<VALID_ALARM) {
-			ppid->nsta = SOFT_ALARM;
-			ppid->nsev = VALID_ALARM;
+	if (ppid->udf == TRUE ) {
+                if (ppid->nsev<VALID_ALARM) {
+                         ppid->stat = UDF_ALARM;
+                         ppid->sevr = VALID_ALARM;
                 }
-		return(0);
+                return(0);
 	}
 
 	/* compute time difference and make sure it is large enough*/

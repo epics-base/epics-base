@@ -1,30 +1,32 @@
 /* recBo.c */
-/* share/src/rec $Id$ */
-
-/* recBo.c - Record Support Routines for Binary Output records
+/* share/src/rec   $Id$ */
+  
+/* recBo.c - Record Support Routines for Binary Output records */
+/*
+ *      Original Author: Bob Dalesio
+ *      Current Author:  Marty Kraimer
+ *      Date:            7-14-89
  *
- * Author: 	Bob Dalesio
- * Date:        7-17-87
+ *	Experimental Physics and Industrial Control System (EPICS)
  *
- *	Control System Software for the GTA Project
+ *	Copyright 1991, the Regents of the University of California,
+ *	and the University of Chicago Board of Governors.
  *
- *	Copyright 1988, 1989, the Regents of the University of California.
+ *	This software was produced under  U.S. Government contracts:
+ *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *	and (W-31-109-ENG-38) at Argonne National Laboratory.
  *
- *	This software was produced under a U.S. Government contract
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory, which is
- *	operated by the University of California for the U.S. Department
- *	of Energy.
+ *	Initial development by:
+ *		The Controls and Automation Group (AT-8)
+ *		Ground Test Accelerator
+ *		Accelerator Technology Division
+ *		Los Alamos National Laboratory
  *
- *	Developed by the Controls and Automation Group (AT-8)
- *	Accelerator Technology Division
- *	Los Alamos National Laboratory
- *
- *	Direct inqueries to:
- *	Bob Dalesio, AT-8, Mail Stop H820
- *	Los Alamos National Laboratory
- *	Los Alamos, New Mexico 87545
- *	Phone: (505) 667-3414
- *	E-mail: dalesio@luke.lanl.gov
+ *	Co-developed with
+ *		The Controls and Computing Group
+ *		Accelerator Systems Division
+ *		Advanced Photon Source
+ *		Argonne National Laboratory
  *
  * Modification Log:
  * -----------------
@@ -112,9 +114,9 @@ struct bodset { /* binary output dset */
 	long		number;
 	DEVSUPFUN	dev_report;
 	DEVSUPFUN	init;
-	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
+	DEVSUPFUN	init_record;  /*returns:(0,2)=>(success,success no convert*/
 	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_bo;/*(-1,0,1)=>(failure,success,don't Continue*/
+	DEVSUPFUN	write_bo;/*returns: (-1,0,1)=>(failure,success,don't continue)*/
 };
 
 
@@ -148,7 +150,7 @@ static long init_record(pbo)
     struct boRecord	*pbo;
 {
     struct bodset *pdset;
-    long status;
+    long status=0;
     struct callback *pcallback;
 
     if(!(pdset = (struct bodset *)(pbo->dset))) {
@@ -161,10 +163,10 @@ static long init_record(pbo)
 	return(S_dev_missingSup);
     }
     /* get the initial value */
-    if (pbo->dol.type == CONSTANT
-    && (pbo->dol.value.value<=0.0 || pbo->dol.value.value>=udfFtest)){
+    if (pbo->dol.type == CONSTANT){
 	if (pbo->dol.value.value == 0)  pbo->val = 0;
 	else                            pbo->val = 1;
+	pbo->udf = FALSE;
     }
     pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
     pbo->dpvt = (caddr_t)pcallback;
@@ -175,13 +177,14 @@ static long init_record(pbo)
             exit(1);
     }
     if( pdset->init_record ) {
-	if((status=(*pdset->init_record)(pbo,process))) return(status);
-	if(pbo->rval!=udfUlong) { /* convert*/
-	    if(pbo->rval==0) pbo->val = 0;
-	    else pbo->val = 1;
-	}
+	status=(*pdset->init_record)(pbo,process);
+	if(status==0) {
+		if(pbo->rval==0) pbo->val = 0;
+		else pbo->val = 1;
+		pbo->udf = FALSE;
+	} else if (status==2) status=0;
     }
-    return(0);
+    return(status);
 }
 
 static long process(paddr)
@@ -209,6 +212,7 @@ static long process(paddr)
 			pbo->pact = FALSE;
 			if(status==0){
 				pbo->val = val;
+				pbo->udf = FALSE;
 			}else {
 				if(pbo->nsev < VALID_ALARM) {
 					pbo->nsev = VALID_ALARM;
@@ -216,25 +220,19 @@ static long process(paddr)
 				}
 			}
 		}
-		if(pbo->mask != udfUlong) {
+		if ( pbo->mask != 0 ) {
 			if(pbo->val==0) pbo->rval = 0;
 			else pbo->rval = pbo->mask;
 		}
 	}
 	if(status==0) {
-	     if(pbo->val==udfEnum) {
-	      	     if(pbo->nsev < VALID_ALARM) {
-		   	     pbo->nsev = VALID_ALARM;
-			     pbo->nsta = SOFT_ALARM;
-		     }
-		     status = 0;
-	     } else status=(*pdset->write_bo)(pbo); /* write the new value */
+	     status=(*pdset->write_bo)(pbo); /* write the new value */
  	}
 	pbo->pact = TRUE;
 	/* status is one if an asynchronous record is being processed*/
 	if(status==1) return(0);
 	tsLocalTime(&pbo->time);
-	wait_time = (int)(pbo->high) * vxTicksPerSecond; /* seconds to ticks */
+	wait_time = (int)((pbo->high) * vxTicksPerSecond); /* seconds to ticks */
 	if(pbo->val==1 && wait_time>0) {
 		struct callback *pcallback;
 	
@@ -325,7 +323,6 @@ static void alarm(pbo)
         }
 
         /* check for cos alarm */
-	if(pbo->lalm==udfUshort) pbo->lalm = val;
 	if(val == pbo->lalm) return;
         if (pbo->nsev<pbo->cosv) {
                 pbo->nsta = COS_ALARM;

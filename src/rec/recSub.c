@@ -1,30 +1,32 @@
 /* recSub.c */
 /* share/src/rec $Id$ */
 
-/* recSub.c - Record Support Routines for Subroutine records
+/* recSub.c - Record Support Routines for Subroutine records */
+/*
+ *      Original Author: Bob Dalesio
+ *      Current Author:  Marty Kraimer
+ *      Date:            01-25-90
  *
- * Author:      Bob Dalesio
- * Date:        01-25-90
+ *      Experimental Physics and Industrial Control System (EPICS)
  *
- *	Control System Software for the GTA Project
+ *      Copyright 1991, the Regents of the University of California,
+ *      and the University of Chicago Board of Governors.
  *
- *	Copyright 1988, 1989, the Regents of the University of California.
+ *      This software was produced under  U.S. Government contracts:
+ *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *      and (W-31-109-ENG-38) at Argonne National Laboratory.
  *
- *	This software was produced under a U.S. Government contract
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory, which is
- *	operated by the University of California for the U.S. Department
- *	of Energy.
+ *      Initial development by:
+ *              The Controls and Automation Group (AT-8)
+ *              Ground Test Accelerator
+ *              Accelerator Technology Division
+ *              Los Alamos National Laboratory
  *
- *	Developed by the Controls and Automation Group (AT-8)
- *	Accelerator Technology Division
- *	Los Alamos National Laboratory
- *
- *	Direct inqueries to:
- *	Bob Dalesio, AT-8, Mail Stop H820
- *	Los Alamos National Laboratory
- *	Los Alamos, New Mexico 87545
- *	Phone: (505) 667-3414
- *	E-mail: dalesio@luke.lanl.gov
+ *      Co-developed with
+ *              The Controls and Computing Group
+ *              Accelerator Systems Division
+ *              Advanced Photon Source
+ *              Argonne National Laboratory
  *
  * Modification Log:
  * -----------------
@@ -240,7 +242,14 @@ static void alarm(psub)
 	double	ftemp;
 	double	val=psub->val;
 
-	if(val>0.0 && val<udfDtest)return;
+        /* undefined condition */
+	if(psub->udf == TRUE) {
+        	if (psub->nsev<VALID_ALARM){
+                        psub->nsta = UDF_ALARM;
+                        psub->nsev = VALID_ALARM;
+                        return;
+                }
+        }
         /* if difference is not > hysterisis use lalm not val */
         ftemp = psub->lalm - psub->val;
         if(ftemp<0.0) ftemp = -ftemp;
@@ -372,13 +381,6 @@ struct subRecord *psub;
                         }
                         return(-1);
                 }
-                if(*pvalue>0.0 && *pvalue<udfDtest) {
-                        if(psub->nsev<VALID_ALARM) {
-                                psub->nsev=VALID_ALARM;
-                                psub->nsta=SOFT_ALARM;
-                        }
-                        return(-1);
-                }
         }
         return(0);
 }
@@ -405,6 +407,6 @@ struct subRecord *psub;  /* pointer to subroutine record  */
 			psub->nsta = SOFT_ALARM;
 			psub->nsev = psub->brsv;
 		}
-	}
+	} else psub->udf = FALSE;
 	return(status);
 }

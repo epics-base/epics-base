@@ -1,31 +1,30 @@
 /* share/src/libCom/postfix.c  $Id$ */
+ 
+/* Subroutines used to convert an infix expression to a postfix expression */
 /*
+ *      Author:          Bob Dalesio
+ *      Date:            12-12-86
  *
- * Subroutines used to convert an infix expression to a postfix expression
+ *      Experimental Physics and Industrial Control System (EPICS)
  *
- *      Author: Bob Dalesio
- *      Date:   12-12-86
- *      @(#)postfix.c   1.3     12/6/90
+ *      Copyright 1991, the Regents of the University of California,
+ *      and the University of Chicago Board of Governors.
  *
- *      Control System Software for the GTA Project
+ *      This software was produced under  U.S. Government contracts:
+ *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *      and (W-31-109-ENG-38) at Argonne National Laboratory.
  *
- *      Copyright 1988, 1989, the Regents of the University of California.
+ *      Initial development by:
+ *              The Controls and Automation Group (AT-8)
+ *              Ground Test Accelerator
+ *              Accelerator Technology Division
+ *              Los Alamos National Laboratory
  *
- *      This software was produced under a U.S. Government contract
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory, which is
- *      operated by the University of California for the U.S. Department
- *      of Energy.
- *
- *      Developed by the Controls and Automation Group (AT-8)
- *      Accelerator Technology Division
- *      Los Alamos National Laboratory
- *
- *      Direct inqueries to:
- *      Andy Kozubal, AT-8, Mail Stop H820
- *      Los Alamos National Laboratory
- *      Los Alamos, New Mexico 87545
- *      Phone: (505) 667-6508
- *      E-mail: kozubal@k2.lanl.gov
+ *      Co-developed with
+ *              The Controls and Computing Group
+ *              Accelerator Systems Division
+ *              Advanced Photon Source
+ *              Argonne National Laboratory
  *
  * Modification Log:
  * -----------------
@@ -132,8 +131,8 @@ static struct expression_element	elements[] = {
 "ABS",		7,	8,	UNARY_OPERATOR,	ABS_VAL,   /* absolute value */
 "NOT",		7,	8,	UNARY_OPERATOR,	UNARY_NEG, /* unary negate */
 "SQR",		7,	8,	UNARY_OPERATOR,	SQU_RT,    /* square root */
-"LOG",		7,	8,	UNARY_OPERATOR,	LOG_10,    /* log 10 */
 "LOGE",		7,	8,	UNARY_OPERATOR,	LOG_E,     /* log E */
+"LOG",		7,	8,	UNARY_OPERATOR,	LOG_10,    /* log 10 */
 "ACOS",		7,	8,	UNARY_OPERATOR,	ACOS,      /* arc cosine */
 "ASIN",		7,	8,	UNARY_OPERATOR,	ASIN,      /* arc sine */
 "ATAN",		7,	8,	UNARY_OPERATOR,	ATAN,      /* arc tangent */

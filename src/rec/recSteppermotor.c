@@ -1,30 +1,32 @@
 /* recSteppermotor.c */
 /* share/src/rec $Id$ */
 
-/* recSteppermotor.c - Record Support Routines for Steppermotor records
+/* recSteppermotor.c - Record Support Routines for Steppermotor records */
+/*
+ *      Original Author: Bob Dalesio
+ *      Current Author:  Marty Kraimer
+ *      Date:            12-11-89
  *
- * Author: 	Bob Dalesio
- * Date:        12-11-89
+ *      Experimental Physics and Industrial Control System (EPICS)
  *
- *	Control System Software for the GTA Project
+ *      Copyright 1991, the Regents of the University of California,
+ *      and the University of Chicago Board of Governors.
  *
- *	Copyright 1988, 1989, the Regents of the University of California.
+ *      This software was produced under  U.S. Government contracts:
+ *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *      and (W-31-109-ENG-38) at Argonne National Laboratory.
  *
- *	This software was produced under a U.S. Government contract
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory, which is
- *	operated by the University of California for the U.S. Department
- *	of Energy.
+ *      Initial development by:
+ *              The Controls and Automation Group (AT-8)
+ *              Ground Test Accelerator
+ *              Accelerator Technology Division
+ *              Los Alamos National Laboratory
  *
- *	Developed by the Controls and Automation Group (AT-8)
- *	Accelerator Technology Division
- *	Los Alamos National Laboratory
- *
- *	Direct inqueries to:
- *	Bob Dalesio, AT-8, Mail Stop H820
- *	Los Alamos National Laboratory
- *	Los Alamos, New Mexico 87545
- *	Phone: (505) 667-3414
- *	E-mail: dalesio@luke.lanl.gov
+ *      Co-developed with
+ *              The Controls and Computing Group
+ *              Accelerator Systems Division
+ *              Advanced Photon Source
+ *              Argonne National Laboratory
  *
  * Modification Log:
  * -----------------
@@ -38,7 +40,28 @@
  * .06  04-20-90        lrd     make readback occur before setting MOVN to 0
  * .07  07-02-90        lrd     make conversion compute in floating point
  * .08  10-01-90        lrd     modify readbacks to be throttled by delta
- * .09  10-15-90	mrk	extensible record and device support
+ * .09  10-23-90        lrd     update rbv even when there are no monitors
+ * .10  10-25-90        lrd     change initialization to set all variables to IVAL
+ * .11  10-26-90        lrd     add DMOV to indicate all retries exhausted or
+ *                              motor is at position within deadband
+ * .12  10-31-90        lrd     add time stamps
+ * .13  11-28-90        lrd     make initialization work when readbacks are
+ *                              from LVDTs, Motor position and encoders.
+ *                              Fixed sm_get_position to be aware of the motion
+ *                              status before it was set in the record see .06
+ * .14  11-29-90        lrd     conditionally process soft channels
+ * .15  12-14-90        lrd     fixed limit switch monitor notification
+ * .16  12-17-90        lrd     stop motor on overshoot
+ * .17  12-17-90        lrd     fix limits on initialization
+ * .18  03-15-91        lrd     change acceleration and velocity for positional
+ *                              motors
+ * .19  03-21-91        lrd     add forward link processing
+ * .20  06-04-91        lrd     apply drive high and low software clamps before
+ *                              checking if the setpoint is different
+ *                              move the conversion to steps in line
+ *                              apply deadband to overshoot checking
+
+ * .21  10-15-90	mrk	extensible record and device support
  */
 
 #include	<vxWorks.h>
@@ -403,15 +426,15 @@ struct steppermotorRecord	*psm;
 	/* limit switches */
 	if (psm->mcw != psm_data->cw_limit){
 		psm->mcw = psm_data->cw_limit;
-		if (psm->mlis.count)
-			db_post_events(psm,&psm->mcw,DBE_VALUE);
 		psm->cw = (psm->mcw)?0:1;
+		if (psm->mlis.count)
+			db_post_events(psm,&psm->cw,DBE_VALUE);
 	}
 	if (psm->mccw != psm_data->ccw_limit){
 		psm->mccw = psm_data->ccw_limit;
-		if (psm->mlis.count)
-			db_post_events(psm,&psm->mccw,DBE_VALUE);
 		psm->ccw = (psm->mccw)?0:1;
+		if (psm->mlis.count)
+			db_post_events(psm,&psm->ccw,DBE_VALUE);
 	}
 
 	/* alarm conditions for limit switches */
@@ -423,7 +446,7 @@ struct steppermotorRecord	*psm;
 	}
 
 	/* get the read back value */
-	sm_get_position(psm);
+	sm_get_position(psm,psm_data->moving);
 
         /* get previous stat and sevr  and new stat and sevr*/
         stat=psm->stat;
@@ -454,6 +477,23 @@ struct steppermotorRecord	*psm;
 		if (psm->mlis.count)
 			db_post_events(psm,&psm->movn,DBE_VALUE|DBE_LOG);
 	}
+
+        /* stop motor on overshoot */
+        if (psm->movn){
+                if (psm->posm){ /* moving in the positive direction */
+                        if (psm->rbv > (psm->val + psm->rdbd))
+                                sm_driver(psm->dtyp,
+                                        psm->out.value.vmeio.card,
+                                        psm->out.value.vmeio.signal,
+                                        SM_MOTION,0);
+                }else{          /* moving in the negative direction */
+                        if (psm->rbv < (psm->val + psm->rdbd) )
+                                sm_driver(psm->dtyp,
+                                        psm->out.value.vmeio.card,
+                                        psm->out.value.vmeio.signal,
+                                        SM_MOTION,0);
+                }
+        }
     }
     psm->pact = FALSE;
     dbScanUnlock(psm);
@@ -502,12 +542,14 @@ struct steppermotorRecord      *psm;
 
 	/* set the velocity */
 	sm_driver(psm->dtyp,card,channel,SM_VELOCITY,velocity,acceleration);
+        psm->lvel = psm->velo;
+        psm->lacc = psm->accl;
 
 	/* set the callback routine */
 	sm_driver(psm->dtyp,card,channel,SM_CALLBACK,smcb_callback,psm);
 
 	/* initialize the limit values */
-	psm->cw = psm->ccw = 1;	/* 1 - means not at limit */
+	psm->cw = psm->ccw = -1;
 
 	/*  set initial position */
 	if (psm->mode == POSITION){
@@ -539,29 +581,6 @@ struct steppermotorRecord      *psm;
 }
 
 /*
- * CONVERT_SM
- *
- */
-static void convert_sm(psm)
-struct steppermotorRecord	*psm;
-{
-	double	temp;
-
-	/* check drive limits */
-	if (psm->dist > 0){
-		if (psm->val > psm->drvh) psm->val = psm->drvh;
-		else if (psm->val < psm->drvl) psm->val = psm->drvl;
-	}else{
-		if (-psm->val > psm->drvh) psm->val = -psm->drvh;
-		else if (-psm->val < psm->drvl) psm->val = -psm->drvl;
-	}
-
-	/* convert */
-	temp = psm->val / psm->dist;
-	psm->rval = temp;
-}
-
-/*
  * POSITIONAL_SM
  *
  * control a stepper motor through position
@@ -569,7 +588,9 @@ struct steppermotorRecord	*psm;
 static void positional_sm(psm)
 struct steppermotorRecord	*psm;
 {
-	short	card,channel;
+	short	card,channel,done_move;
+        int             acceleration,velocity;
+	double          temp;
 
 	/* only VME stepper motor cards supported */
 	if (psm->out.type != VME_IO) return;
@@ -589,6 +610,15 @@ struct steppermotorRecord	*psm;
 	/* no need to do anymore if the motor is in motion */
 	if (psm->movn != 0)
 		return;
+
+        /* set the velocity and acceleration */
+        if ((psm->velo != psm->lvel) || (psm->lacc != psm->accl)){
+                acceleration = (1/psm->accl) * psm->velo * psm->mres;
+                velocity = psm->velo * psm->mres;
+                sm_driver(psm->dtyp,card,channel,SM_VELOCITY,velocity,acceleration);
+                psm->lvel = psm->velo;
+                psm->lacc = psm->accl;
+        }
 
 	/* set home when requested */
 	if (psm->sthm != 0){
@@ -618,13 +648,24 @@ struct steppermotorRecord	*psm;
 				psm->nsev = VALID_ALARM;
 			}
 			return;
-		}
+		} else psm->udf = FALSE;
 	}
+
+        /* check drive limits */
+        if (psm->dist > 0){
+                if (psm->val > psm->drvh) psm->val = psm->drvh;
+                else if (psm->val < psm->drvl) psm->val = psm->drvl;
+        }else{
+                if (-psm->val > psm->drvh) psm->val = -psm->drvh;
+                else if (-psm->val < psm->drvl) psm->val = -psm->drvl;
+        }
+
 
 	/* Change of desired position */
 	if (psm->lval != psm->val){
 		psm->rcnt = 0;
 		psm->lval = psm->val;
+                psm->movn = 0;          /* start moving to desired location */
 		if (psm->mlis.count){
 			db_post_events(psm,&psm->rcnt,DBE_VALUE|DBE_LOG);
 			db_post_events(psm,&psm->lval,DBE_VALUE|DBE_LOG);
@@ -634,6 +675,10 @@ struct steppermotorRecord	*psm;
 	/* difference between desired position and readback pos */
 	if ( (psm->rbv < (psm->val - psm->rdbd))
 	  || (psm->rbv > (psm->val + psm->rdbd)) ){
+                /* determine direction */
+                if (psm->rcnt == 0)
+                        psm->posm = (psm->rbv < psm->val);
+
 		/* one attempt was made - record the error */
 		if (psm->rcnt == 1){
 			psm->miss = (psm->val - psm->rbv);
@@ -643,8 +688,10 @@ struct steppermotorRecord	*psm;
 
 		/* should we retry */
 		if (psm->rcnt <= psm->rtry){
-			/* convert and write the desired value to position */
-			convert_sm(psm);
+                        /* convert */
+                        temp = psm->val / psm->dist;
+                        psm->rval = temp;
+
 
 			/* move motor */
 			if (sm_driver(psm->dtyp,card,channel,SM_MOVE,psm->rval-psm->rrbv,0) < 0){
@@ -660,10 +707,24 @@ struct steppermotorRecord	*psm;
 				db_post_events(psm,&psm->movn,DBE_VALUE|DBE_LOG);
 				db_post_events(psm,&psm->rcnt,DBE_VALUE|DBE_LOG);
 			}
-		/* no more retries - put the record in alarm */
-		}else{
-			alarm(psm);
-		}
+                        done_move = 0;
+                /* no more retries - put the record in alarm */
+                }else{
+                        done_move = 1;
+                }
+        }else{
+                /* error doesn't exceed deadband - done moving */
+                done_move = 1;
+        }
+        /* there was a move in progress and now it is complete */
+        if (done_move && (psm->movn == 0)){
+                psm->movn = 1;
+                if (psm->mlis.count)
+                        db_post_events(psm,&psm->movn,DBE_VALUE|DBE_LOG);
+
+                /* check for deviation from desired value */
+                alarm(psm);
+
 	}
 	return;
 }
@@ -694,7 +755,7 @@ struct steppermotorRecord	*psm;
 				psm->nsev = VALID_ALARM;
 			}
 			return;
-		}
+		} else psm->udf=FALSE;
 	}
 
 	/* the motor number is the card number */
@@ -760,8 +821,9 @@ struct steppermotorRecord	*psm;
  *
  * get the stepper motor readback position
  */
-static void sm_get_position(psm)
+static void sm_get_position(psm,moving)
 struct steppermotorRecord	*psm;
+short                           moving;
 {
 	short	reset;
 	float		new_pos,delta;
@@ -773,6 +835,9 @@ struct steppermotorRecord	*psm;
 
 	/* when readback comes from another field of this record   */
 	/* the fetch will fail if the record is uninitialized      */
+        /* also - prdl (process readback location) should be set   */
+        /* to NO if the readback is from the same record           */
+
 	reset = psm->init;
 	if (reset == 0)	psm->init = 1;
 	if(dbGetLink(&(psm->rdbl.value.db_link),psm,DBR_FLOAT,&new_pos,&options,&nRequest)){
@@ -790,16 +855,16 @@ struct steppermotorRecord	*psm;
     }
 
     /* readback position at initialization */
-    if ((psm->init == 0) && (psm->movn == 0)){
-	if (psm->ival == 0){
-		psm->rbv = psm->val = new_pos;
-	}else{
+    if ((psm->init == 0) && (moving == 0)){
+	if (psm->sthm){
 		sm_driver(psm->dtyp,
 		  psm->out.value.vmeio.card,
 		  psm->out.value.vmeio.signal,
 		  SM_SET_HOME,0,0);
-		psm->rbv = new_pos = psm->val = psm->ival;
+		psm->sthm = 0;
+		return;
 	}
+        psm->rbv = psm->val = psm->ival + new_pos;
 	psm->rval = psm->rrbv = psm->rbv / psm->dist;
 	psm->init = 1;
 	if (psm->mlis.count != 0){
@@ -823,6 +888,8 @@ struct steppermotorRecord	*psm;
 			db_post_events(psm,&psm->rbv,DBE_VALUE|DBE_ALARM);
 			db_post_events(psm,&psm->rrbv,DBE_VALUE|DBE_ALARM);
 		}
+        }else{
+                psm->rbv = new_pos;
 	}
     }
 

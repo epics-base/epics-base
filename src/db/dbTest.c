@@ -37,7 +37,8 @@
  * .06  04-17-92        rcz     removed dbPvd for mrk
  * .07  05-19-92        mrk	Mods for changes to internal database structures
  * .08  07-21-92        jba	ansi c changes
- * .09  09-24-93        jbk adjusted dbpr to print vxi links correctly
+ * .09  09-24-93        jbk 	adjusted dbpr to print vxi links correctly
+ * .10  02-02-94	mrk	added dbtpn (test dbPutNotify)
  */
 
 /* Global Database Test Routines - All can be invoked via vxWorks shell
@@ -71,6 +72,10 @@
  *	char	*pname;
  *	char	*pvalue
  *
+ * dbtpn(pname,pvalue)		test put notify
+ *	char	*pname;
+ *	char	*pvalue
+ *
  * dbior(pname,type)		io_report
  *	char	*pname		Driver name. If null all drivers
  *	int	type		<0,1> => <short, full> report
@@ -101,6 +106,7 @@
 #include	<dbRecDes.h>
 #include	<dbStaticLib.h>
 #include	<ellLib.h>
+#include 	<callback.h>
 
 extern struct dbBase *pdbBase;
 
@@ -605,6 +611,59 @@ long dbtpf(char	*pname,char *pvalue)
     } else printf("sscanf failed for DBR_SHORT\n");
     pmsg[0] = '\0';
     dbpr_msgOut(pMsgBuff, tab_size);
+    return(0);
+}
+
+static void dbtpnCallback(PUTNOTIFY *ppn)
+{
+    DBADDR	*pdbaddr = ppn->paddr;
+    long	status = ppn->status;
+
+    if(status==S_db_Blocked)
+	printf("dbtpnCallback: blocked record=%s\n",ppn->paddr->precord);
+    else if(status==0)
+	printf("dbtpnCallback: success record=%s\n",ppn->paddr->precord);
+    else
+	recGblRecordError(status,pdbaddr->precord,"dbtpnCallback");
+    free((void *)pdbaddr);
+    free(ppn);
+}
+
+long dbtpn(char	*pname,char *pvalue)
+{
+    long	status;
+    DBADDR	*pdbaddr=NULL;
+    PUTNOTIFY	*ppn=NULL;
+    char	*psavevalue;
+    int		len;
+
+    len = strlen(pvalue);
+    /*allocate space for value immediately following DBADDR*/
+    pdbaddr = dbCalloc(1,sizeof(DBADDR) + len+1);
+    psavevalue = (char *)(pdbaddr + 1);
+    strcpy(psavevalue,pvalue);
+    status = dbNameToAddr(pname,pdbaddr);
+    if(status) {
+	errMessage(status, "dbtpn: dbNameToAddr");
+	free((void *)pdbaddr);
+	return(-1);
+    }
+    ppn = dbCalloc(1,sizeof(PUTNOTIFY));
+    ppn->paddr = pdbaddr;
+    ppn->pbuffer = psavevalue;
+    ppn->nRequest = 1;
+    ppn->dbrType = DBR_STRING;
+    ppn->userCallback = dbtpnCallback;
+    status = dbPutNotify(ppn);
+    if(status==S_db_Pending) {
+	printf("dbtpn: Pending nwaiting=%d\n",ppn->nwaiting);
+	return(0);
+    }
+    if(status==S_db_Blocked) {
+	printf("dbtpn: blocked record=%s\n",pname);
+    } else if(status) {
+    	errMessage(status, "dbtpn");
+    }
     return(0);
 }
 

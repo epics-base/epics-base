@@ -376,9 +376,6 @@ Init (rtems_task_argument ignored)
      */
 #if defined(__i386__)
     initRemoteGdb(ticksPerSecond);
-rtems_bsdnet_bootp_server_name = "164.54.8.131";
-rtems_bsdnet_bootp_cmdline = "epics/vlinac/st.cmd";
-rtems_bsdnet_bootp_cmdline = "epics/test/iocrtems/st.cmd";
 #endif
 #if defined(HAVE_PPCBUG)
     {

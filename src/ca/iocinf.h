@@ -497,7 +497,7 @@ private:
 };
 
 class tcpiiu : public tcpRecvWatchdog, public tcpSendWatchdog,
-        public netiiu, public tsDLNode<tcpiiu> {
+        public netiiu, public tsDLNode <tcpiiu> {
 public:
     tcpiiu (cac *pcac, const struct sockaddr_in &ina, unsigned minorVersion, class bhe &bhe);
     ~tcpiiu ();
@@ -518,6 +518,8 @@ public:
     bool fullyConstructed () const;
     void recvMsg ();
     void flush ();
+    virtual void show (unsigned level) const;
+    osiSockAddr ipAddress () const;
 
     void noopRequestMsg ();
     void echoRequestMsg ();
@@ -526,9 +528,9 @@ public:
     void hostNameSetMsg ();
     void userNameSetMsg ();
 
-    char                    host_name_str[32];
     ringBuffer              send;
     ringBuffer              recv;
+    char                    host_name_str[64];
     osiSockAddr             dest;
     caHdr                   curMsg;
     unsigned long           curDataMax;
@@ -548,8 +550,6 @@ public:
     bool                    sendPending;
     bool                    recvPending;
     bool                    pushPending;
-
-    virtual void show (unsigned level) const;
 
 private:
     bool compareIfTCP (nciu &chan, const sockaddr_in &) const;

@@ -1468,4 +1468,3 @@ void tcpiiu::disconnect (nciu *chan)
     this->pcas->pudpiiu->searchTmr.reset ( CA_RECAST_DELAY );
     UNLOCK (this->pcas);
 }
-

@@ -75,7 +75,7 @@ errSymTbl.c errInc.o: errInc.c
 	@$(RM) errInc.o
 	@../blderrSymTbl $(EPICS) $(HOST_ARCH) "$(MAKE)"
 
-envData.c: $(EPICS_BASE)/include/envDefs.h $(EPICS)/config/CONFIG_ENV \
+envData.c: ../envDefs.h $(EPICS)/config/CONFIG_ENV \
 		$(EPICS)/config/CONFIG_SITE_ENV
 	../bldEnvData $(EPICS)
 

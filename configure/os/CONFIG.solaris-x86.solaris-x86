@@ -1,0 +1,78 @@
+# CONFIG.solaris-sparc.solaris-sparc
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for linux-x86 host archs
+# Sites may override these definitions in CONFIG_SITE.solaris-sparc.solaris-sparc
+#-------------------------------------------------------
+
+# Include definitions common to all Unix target archs
+include $(CONFIG)/os/CONFIG.Common.UnixCommon
+
+OS_CLASS = solaris
+ARCH_CLASS = x86
+
+SPARCWORKS = /opt/SUNWspro
+
+#Prepare the object code for profiling with prof. (YES or NO)
+PROFILE=YES
+
+# Configure OS vendor C compiler
+ACC = $(SPARCWORKS)/bin/cc
+ACC_CONFORM_CFLAGS_ANSI = -Xa
+ACC_CONFORM_CFLAGS_STRICT = -Xc -v
+ACC_CONFORM_CFLAGS_TRAD = -Xs
+ACC_PROF_CFLAGS_YES = +p
+ACC_PROF_CFLAGS_NO =
+ACC_CODE_CFLAGS = -KPIC -D_REENTRANT $(CCC_PROF_CFLAGS_$(PROFILE))
+ACC_WARN_YES =
+ACC_WARN_NO = -w
+ACC_OPT_YES = -xO4
+ACC_OPT_NO = -g
+ACC_STATIC_LDFLAGS_YES= -Bstatic
+ACC_STATIC_LDLIBS_YES= -lw -lintl -Bdynamic -ldl -lposix4 -lpthread -lthread -Bstatic -lXext -lX
+ACC_STATIC_LDLIBS_NO= -lposix4 -lpthread -lthread
+ACC_SHRLIB_LDFLAGS_YES =  -G -h $@
+ACC_POSIX_CPPFLAGS = -D_POSIX_C_SOURCE=199506L -D__EXTENSIONS__
+
+# Configure OS vendor C++ compiler
+CCC = $(SPARCWORKS)/bin/CC
+CCC_CONFORM_CFLAGS_NORMAL =
+CCC_CONFORM_CFLAGS_STRICT =
+CCC_PROF_CFLAGS_YES = +p
+CCC_PROF_CFLAGS_NO =
+CCC_CODE_CFLAGS = -KPIC -D_REENTRANT $(CCC_PROF_CFLAGS_$(PROFILE))
+CCC_TEMPL_INST_FLAG =
+CCC_WARN_YES = +w
+CCC_WARN_NO =
+CCC_OPT_YES = -O
+CCC_OPT_NO = -g
+CCC_STATIC_LDFLAGS_YES= -Bstatic
+CCC_STATIC_LDLIBS_YES= -lw -lintl -Bdynamic -ldl -lposix4 -lpthread -lthread -Bstatic -lXext -lX
+CCC_STATIC_LDLIBS_NO= -lposix4 -lpthread -lthread
+CCC_SHRLIB_LDFLAGS_YES =  -G -h $@
+CCC_DEPENDS_FLAG = -xM1
+CCC_POSIX_CPPFLAGS = -D_POSIX_C_SOURCE=199506L -D__EXTENSIONS_
+
+ACC_CPP = cpp
+
+#Configure gnu compiler
+GCC = gcc
+G++ = g++
+GCC_CPP = $(GCC) -x c -E
+
+GCC_POSIX_CPPFLAGS += -D__EXTENSIONS__
+G++_POSIX_CPPFLAGS += -D__EXTENSIONS__
+
+RANLIB =
+# required by sun's C++ compiler
+AR = $(CCC) -xar -o
+
+ARCH_DEP_CPPFLAGS = -DSOLARIS -D_X86_
+# socket and nsl needed by libca.a
+ARCH_DEP_LDLIBS += -lsocket -lnsl
+
+# use loader's -R option
+DEPLIB_LDFLAGS += $(sort $(DEPLIB_DIRS:%=-R%))
+

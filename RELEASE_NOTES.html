@@ -16,6 +16,44 @@
 
 <h2>Changes since beta1</h2>
 
+<p><strong>CA puts to disabled record</strong></p>
+
+<p>If a CA client issues a put to a disabled record then, when the record is ena
+bled, database puts to the record will not make the record process until a CA pu
+t is again issued. This is fixed.</p>
+
+<p><strong>TPRO - trace processing</strong></p>
+
+<p>If dbProcess is called recursively by different tasks, it did not properly
+handle TPRO. Consider the following database:</p>
+<pre>record(ao,"mrkao") {
+    field(OUT,"mrkai CA")
+    field(TPRO,"1")
+}
+record(ai,"mrkai") {
+    field(TPRO,"1")
+}</pre>
+
+<p>If a channel access put is sent to mrkao, no message is issued when mrkai
+is processed.</p>
+
+<p>This is now fixed.</p>
+
+<p><strong>TSconfigure</strong></p>
+
+<p>If in your st.cmd file you issue the command.</p>
+
+<p>TSconfigure(0,0,0,0,0,0,1)</p>
+
+<p>And set the TSE field of any record to a non zero value, then a crash will
+occur when recGblGetTimeStamp is called.</p>
+
+<p>This is now fixed.</p>
+
+<p><strong>calcoutRecord</strong></p>
+
+<p>nsev not sevr must be checked to decide if dbPutLink should be called.</p>
+
 <p><strong>dbCa</strong></p>
 
 <p>Whenever a connection is made, a request to retrieve the control, display,

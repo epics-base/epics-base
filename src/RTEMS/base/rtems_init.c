@@ -267,16 +267,16 @@ Init (rtems_task_argument ignored)
     rtems_task_priority newpri;
 
     /*
+     * Get configuration
+     */
+    rtems_clock_get (RTEMS_CLOCK_GET_TICKS_PER_SECOND, &ticksPerSecond);
+
+    /*
      * Architecture-specific hooks
      */
 #if defined(__i386__)
     initRemoteGdb(ticksPerSecond);
 #endif
-
-    /*
-     * Get configuration
-     */
-    rtems_clock_get (RTEMS_CLOCK_GET_TICKS_PER_SECOND, &ticksPerSecond);
 
     /*
      * Override RTEMS configuration

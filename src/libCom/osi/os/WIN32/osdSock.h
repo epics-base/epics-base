@@ -67,4 +67,3 @@ epicsShareFunc unsigned epicsShareAPI wsaMajorVersion ();
  * they exit ( even if SO_REUSEADDR isnt set ).
  */
 #define SO_REUSEADDR_ALLOWS_SIMULTANEOUS_TCP_SERVERS_TO_USE_SAME_PORT
-

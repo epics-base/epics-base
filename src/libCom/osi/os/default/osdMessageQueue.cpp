@@ -22,7 +22,7 @@
 #include <epicsEvent.h>
 #include <epicsMutex.h>
 #include <stdexcept>
-# include <string.h>
+#include <string.h>
 
 /*
  * Event cache

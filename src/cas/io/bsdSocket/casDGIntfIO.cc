@@ -258,7 +258,7 @@ void casDGIntfIO::osdShow (unsigned level) const
 void casDGIntfIO::xSetNonBlocking() 
 {
         int status;
-        int yes = TRUE;
+        osiSockIoctl_t yes = TRUE;
  
         if (this->sockState!=casOnLine) {
                 return;
@@ -357,43 +357,36 @@ xSendStatus casDGIntfIO::osdSend(const char *pBuf, bufSizeT size,
 	return xSendOK;
 }
 
-
 //
 // casDGIntfIO::sendBeacon()
 // 
 void casDGIntfIO::sendBeacon(char &msg, unsigned length, aitUint32 &m_ipa, aitUint16 &m_port) 
 {
-        caAddrNode      *pAddr;
-        int             status;
-
-        if (this->sockState!=casOnLine) {
-                return;
-        }
-
-        for(    pAddr = (caAddrNode *)ellFirst(&this->beaconAddrList);
-                pAddr;
-                pAddr = (caAddrNode *)ellNext(&pAddr->node)) {
-
-                m_ipa = htonl(pAddr->srcAddr.in.sin_addr.s_addr);
+	caAddrNode		*pAddr;
+	int 			status;
+	
+	if (this->sockState!=casOnLine) {
+		return;
+	}
+	
+	for (pAddr = (caAddrNode *)ellFirst(&this->beaconAddrList);
+				pAddr; pAddr = (caAddrNode *)ellNext(&pAddr->node)) {
+					
+		m_ipa = pAddr->srcAddr.in.sin_addr.s_addr;
 		m_port = htons(this->dgPort);
-                status = sendto(
-                                this->sock,
-                                &msg,
-                                length,
-                                0,
-                                &pAddr->destAddr.sa,
-                                sizeof(pAddr->destAddr.sa));
-                if (status < 0) {
+		status = sendto (this->sock, &msg, length, 0,
+					&pAddr->destAddr.sa, sizeof(pAddr->destAddr.sa));
+		if (status < 0) {
 			char buf[64];
 			ipAddrToA(&pAddr->destAddr.in, buf, sizeof(buf));
-
-                        ca_printf(
-        "CAS:beacon error was \"%s\" dest=%s sock=%d\n",
-								SOCKERRSTR,
-								buf,
-								this->sock);
-                }
-        }
+			
+			ca_printf(
+				"CAS:beacon error was \"%s\" dest=%s sock=%d\n",
+				SOCKERRSTR,
+				buf,
+				this->sock);
+		}
+	}
 }
 
 //

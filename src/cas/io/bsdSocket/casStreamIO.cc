@@ -5,6 +5,9 @@
 //
 //
 // $Log$
+// Revision 1.14  1998/02/05 23:12:01  jhill
+// use osiSock macros
+//
 // Revision 1.13  1997/06/30 23:40:50  jhill
 // use %p for pointers
 //
@@ -263,11 +266,11 @@ void casStreamIO::osdShow (unsigned level) const
 void casStreamIO::xSetNonBlocking()
 {
 	int status;
-	int yes = TRUE;
+	osiSockIoctl_t yes = TRUE;
 
-        if (this->sockState!=casOnLine) {
-                return;
-        }
+	if (this->sockState!=casOnLine) {
+		return;
+	}
 
 	status = socket_ioctl(this->sock, FIONBIO, &yes);
 	if (status>=0) {
@@ -295,7 +298,7 @@ xBlockingStatus casStreamIO::blockingState() const
 bufSizeT casStreamIO::incommingBytesPresent() const
 {
 	int status;
-	int nchars;
+	osiSockIoctl_t nchars;
 
 	status = socket_ioctl(this->sock, FIONREAD, &nchars);
 	if (status<0) {

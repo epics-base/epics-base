@@ -6,6 +6,9 @@
 //
 //
 // $Log$
+// Revision 1.4  1998/02/05 23:11:16  jhill
+// use osiSock macros
+//
 // Revision 1.3  1997/06/13 09:16:15  jhill
 // connect proto changes
 //
@@ -140,7 +143,7 @@ caStatus casIntfIO::init(const caNetAddr &addrIn, casDGClient &dgClientIn,
 	// we will also need to bind to the broadcast address 
 	// for that interface (if it has one)
 	//
-	if (this->addr.sin_addr.s_addr != INADDR_ANY) {
+	if (this->addr.sin_addr.s_addr != htonl(INADDR_ANY)) {
 		this->pBCastUDP = this->newDGIntfIO(dgClientIn);
 		if (this->pBCastUDP) {
 			stat = this->pBCastUDP->init(addr, this->portNumber(), 
@@ -226,7 +229,7 @@ casStreamOS *casIntfIO::newStreamClient(caServerI &cas) const
 void casIntfIO::setNonBlocking()
 {
         int status;
-        int yes = TRUE;
+        osiSockIoctl_t yes = TRUE;
  
         status = socket_ioctl(this->sock, FIONBIO, &yes);
         if (status<0) {

@@ -5,6 +5,9 @@
 //
 //
 // $Log$
+// Revision 1.7  1997/08/05 00:47:22  jhill
+// fixed warnings
+//
 // Revision 1.6  1997/06/30 23:40:48  jhill
 // use %p for pointers
 //
@@ -136,7 +139,7 @@ caStatus caServerIO::init(caServerI &cas)
 		}
 	}
 	else {
-		saddr.sin_addr.s_addr = INADDR_ANY;
+		saddr.sin_addr.s_addr = htonl(INADDR_ANY);
 		stat = cas.addAddr(caNetAddr(saddr), autoBeaconAddr, TRUE);
 		if (stat) {
 			errMessage(stat, NULL);

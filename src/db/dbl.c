@@ -175,7 +175,7 @@ char *precdesname;
 	status = dbFirstRecdes(pdbentry);
     else
 	status = dbFindRecdes(pdbentry,precdesname);
-    if(status) {printf("No record description\n"); return;}
+    if(status) {printf("No record description\n"); return(0);}
     while(!status) {
 	strcpy(dbType[i],  dbGetRecdesName(pdbentry));
 	status = dbFirstRecord(pdbentry);
@@ -204,7 +204,7 @@ DBBASE *pdbbase;
 
     dbInitEntry(pdbbase,pdbentry);
 	status = dbFirstRecdes(pdbentry);
-    if(status) {printf("No record description\n"); return;}
+    if(status) {printf("No record description\n"); return(0);}
     while(!status) {
 	strcpy(dbType[i],  dbGetRecdesName(pdbentry));
 	i++;

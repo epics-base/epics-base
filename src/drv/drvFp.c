@@ -318,9 +318,9 @@ unsigned int addr;
 		/* start up module */
 		fp[i].fptr->csr |= CSR_IEN;	/* enable interrupts */
 		fp[i].mode = FP_RUN;		/* normal run mode */
-ifndef EPICS_V2
+#ifndef EPICS_V2
 		scanIoInit(&fp[i].ioscanpvt);
-endif
+#endif
 	}
 	fp_num = i - 1;				/* record max card # */
 
@@ -372,18 +372,18 @@ void	fp_reboot()
  *
  */
 fp_en(card)
- short card;
+short card;
 {
- unsigned short temp;
+	unsigned short temp;
 
- if (card < 0 || (card > fp_num))
-  return -1;
- fp[card].fptr->csr = fp[card].fptr->csr ^ CSR_IEN;
- if (fp[card].fptr->csr & CSR_IEN)
-  printf("fast protect interrupts enabled\n");
- else
-  printf("fast protect interrupts disabled\n");
- return 0;
+	if (card < 0 || (card > fp_num))
+		return -1;
+	fp[card].fptr->csr = fp[card].fptr->csr ^ CSR_IEN;
+	if (fp[card].fptr->csr & CSR_IEN)
+		printf("fast protect interrupts enabled\n");
+	else
+		printf("fast protect interrupts disabled\n");
+	return 0;
 }
 /*
  * fp_mode

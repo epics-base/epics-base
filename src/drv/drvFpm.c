@@ -378,17 +378,17 @@ fpm_srd(card)
  *
  */
 fpm_driver(card,mask,prval)
- register unsigned short card;
- unsigned int mask;
- register unsigned int prval;
+register unsigned short card;
+unsigned int mask;
+register unsigned int prval;
 {
- register unsigned int temp;
+	register unsigned int temp;
 
- if (card < 0 || (card > fpm_num))
-  return -1;
- temp = fpm[card].fmptr->cr;
- fpm[card].fmptr->cr = (temp & (~mask | 0xf0)) | ((prval & mask) & 0xf);
- return 0;
+	if (card > fpm_num)
+		return -1;
+	temp = fpm[card].fmptr->cr;
+	fpm[card].fmptr->cr = (temp & (~mask | 0xf0)) | ((prval & mask) & 0xf);
+	return 0;
 }
 /*
  * fpm_write
@@ -409,14 +409,14 @@ fpm_write(card,val)
  *
  */
 fpm_read(card,mask,pval)
- register unsigned short card;
- unsigned int mask;
- register unsigned int *pval;
+register unsigned short card;
+unsigned int mask;
+register unsigned int *pval;
 {
-if (card < 0 || (card > fpm_num))
-  return -1;
-*pval = fpm[card].fmptr->cr & 0x000f;
-return 0;
+	if (card > fpm_num)
+  		return -1;
+	*pval = fpm[card].fmptr->cr & 0x000f;
+	return 0;
 }
 
 

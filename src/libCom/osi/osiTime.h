@@ -35,7 +35,6 @@
 //
 // ANSI
 //
-#include <String>
 #include <time.h>
 
 #include "shareLib.h"

@@ -34,6 +34,12 @@ struct event_handler_args	args;
   ca_printf("CAC: User argument\t%x\n", args.usr);
   ca_printf("CAC: Native channel data type\t%d\n", args.chid->type);
   ca_printf("CAC: Monitor data type\t%d\n", args.type);
+  ca_printf("CAC: CA Status \"%s\"\n", ca_message(args.status));
+
+  if(!args.dbr || !(CA_M_SUCCESS&args.status)){
+	return;
+  }
+
   switch(args.type){
   case	DBR_STRING:
     ca_printf("CAC: Value:\t<%s>\n",args.dbr);

@@ -160,13 +160,9 @@ int ca_repeater_task()
 
 	ca_repeater();
 
-#define DEBUG
-#	ifdef DEBUG
-		ca_printf("CA: Only one CA repeater thread per host\n");
-#	endif
-#undef DEBUG
+	ca_printf("%s, exiting\n", __FILE__);
 
-	return ERROR;
+	exit(0);
 }
 
 
@@ -202,17 +198,17 @@ LOCAL int ca_repeater()
 				SOL_SOCKET,
 				SO_REUSEADDR,
 				(char *)&true,
-				sizeof true);
+				sizeof(true));
 	if(status<0){
 		ca_printf(	"%s: set socket option failed\n", 
 				__FILE__);
 	}
 
-      	memset((char *)&bd,0,sizeof bd);
+      	memset((char *)&bd,0,sizeof(bd));
       	bd.sin_family = AF_INET;
-      	bd.sin_addr.s_addr = htonl(INADDR_ANY);	
+      	bd.sin_addr.s_addr = INADDR_ANY;	
      	bd.sin_port = htons(CA_CLIENT_PORT);	
-      	status = bind(sock, (struct sockaddr *)&bd, sizeof bd);
+      	status = bind(sock, (struct sockaddr *)&bd, sizeof(bd));
      	if(status<0){
 		if(MYERRNO != EADDRINUSE){
 			ca_printf("CA Repeater: unexpected bind fail %d\n", 
@@ -288,7 +284,7 @@ LOCAL int ca_repeater()
 		
 			if(!pclient){
 				pclient = (struct one_client *) 
-					malloc(sizeof *pclient);
+					calloc(1,sizeof *pclient);
 				if(pclient){
 					pclient->from = from;
 					ellAdd(	&client_list, 
@@ -365,7 +361,7 @@ struct one_client		*pclient;
 
       	memset((char *)&bd,0,sizeof bd);
       	bd.sin_family = AF_INET;
-      	bd.sin_addr.s_addr = htonl(INADDR_ANY);	
+      	bd.sin_addr.s_addr = INADDR_ANY;	
      	bd.sin_port = port;	
       	status = bind(sock, (struct sockaddr *)&bd, sizeof bd);
      	if(status<0){

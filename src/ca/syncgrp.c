@@ -36,8 +36,14 @@
  */
 
 #include "assert.h"
+#include "string.h"
 #include "db_access.h"
 #include "iocinf.h"
+
+#ifdef vxWorks
+#include <tickLib.h>
+#include <sysLib.h>
+#endif
 
 #define CASG_MAGIC	0xFAB4CAFE
 
@@ -73,9 +79,9 @@ typedef struct{
 }CASG;
 
 #ifdef __STDC__
-static void io_complete(struct event_handler_args args);
+LOCAL void io_complete(struct event_handler_args args);
 #else /*__STDC__*/
-static void io_complete();
+LOCAL void io_complete();
 #endif /*__STDC__*/
 
 
@@ -93,8 +99,6 @@ void ca_sg_init()
 	 */
 	ellInit(&ca_static->activeCASG);
 	ellInit(&ca_static->freeCASG);
-	ellInit(&ca_static->activeCASGOP);
-	ellInit(&ca_static->freeCASGOP);
 
 	return;
 }
@@ -113,10 +117,10 @@ struct ca_static *ca_temp;
 	/*
 	 * free all sync group lists
 	 */
-	ellFree(&ca_static->activeCASG);
-	ellFree(&ca_static->freeCASG);
-	ellInit(&ca_static->activeCASGOP);
-	ellInit(&ca_static->freeCASGOP);
+	ellFree(&ca_temp->activeCASG);
+	ellFree(&ca_temp->freeCASG);
+	ellInit(&ca_temp->activeCASGOP);
+	ellInit(&ca_temp->freeCASGOP);
 
 	return;
 }
@@ -285,15 +289,15 @@ float timeout;
 		UNLOCK;
 		return ECA_BADSYNCGRP;
 	}
+	UNLOCK;
 
 	/*
 	 * always flush and take care
 	 * of connection management
 	 * at least once.
 	 */
+	ca_flush_io();
 	manage_conn(TRUE);
-	cac_send_msg();
-	UNLOCK;
 
 	status = ECA_NORMAL;
 	beg_time = time(NULL);
@@ -307,11 +311,12 @@ float timeout;
 
                         itimeout.tv_usec        = LOCALTICKS;
                         itimeout.tv_sec         = 0;
-                        LOCK;
-                        recv_msg_select(&itimeout);
-                        UNLOCK;
+                        ca_mux_io(&itimeout, CA_DO_SENDS|CA_DO_RECVS);
                 }
+#else /*UNIX*/
+			ca_flush_io();
 #endif /*UNIX*/
+
 #ifdef vxWorks
 		{
                         semTake(pcasg->sem, LOCALTICKS);
@@ -342,18 +347,8 @@ float timeout;
 			status = ECA_TIMEOUT;
 			break;
 		}
-
-		/*
-		 * flush and take care of conn
-		 * management prior to each time 
-		 * that we pend
-		 */
-		LOCK;
 		manage_conn(TRUE);
-		cac_send_msg();
-		UNLOCK;
 	}
-	UNLOCK;
 	pcasg->opPendCount = 0;
 	pcasg->seqNo++;
 	return status;
@@ -460,7 +455,6 @@ void 		*pvalue;
 			return ECA_ALLOCMEM;
 		}
 	}
-	UNLOCK;
 
 	memset(pcasgop, 0,sizeof(*pcasgop));
 	pcasgop->id = gid;
@@ -468,6 +462,7 @@ void 		*pvalue;
 	pcasgop->magic = CASG_MAGIC;
 	pcasgop->pValue = NULL; /* handler will know its a put */
 	ellAdd(&ca_static->activeCASGOP, &pcasgop->node);
+	UNLOCK;
 
 	status = ca_array_put_callback(
 			type, 
@@ -523,7 +518,6 @@ void 		*pvalue;
 			return ECA_ALLOCMEM;
 		}
 	}
-	UNLOCK;
 
 	memset(pcasgop, 0,sizeof(*pcasgop));
 	pcasgop->id = gid;
@@ -531,6 +525,8 @@ void 		*pvalue;
 	pcasgop->magic = CASG_MAGIC;
 	pcasgop->pValue = pvalue;
 	ellAdd(&ca_static->activeCASGOP, &pcasgop->node);
+
+	UNLOCK;
 
 	status = ca_array_get_callback(
 			type, 
@@ -546,9 +542,9 @@ void 		*pvalue;
  * io_complete()
  */
 #ifdef __STDC__
-static void io_complete(struct event_handler_args args)
+LOCAL void io_complete(struct event_handler_args args)
 #else /*__STDC__*/
-static void io_complete(args)
+LOCAL void io_complete(args)
 struct event_handler_args args;
 #endif /*__STDC__*/
 {
@@ -579,8 +575,9 @@ struct event_handler_args args;
 
 	if(!(args.status&CA_M_SUCCESS)){
 		ca_printf(
-			"CA Sync Group (id=%d) operation failed because \"%s\"\n",
+			"CA Sync Group (id=%d) operation failed because %d \"%s\"\n",
 			pcasgop->id,
+			args.status,
 			ca_message(args.status));
 		UNLOCK;
 		return;

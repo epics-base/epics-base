@@ -36,12 +36,12 @@ static char *sccsId = "$Id$";
 
 #if defined(UNIX) || defined(VMS)
 #	include <stdio.h>
-#else
-#  if defined(vxWorks)
+#endif
+#if defined(vxWorks)
 # 	include <vxWorks.h>
 #	include <logLib.h>
-#  endif
 #endif
+
 #ifdef __STDC__
 #include <stdarg.h>
 #else
@@ -85,8 +85,9 @@ va_dcl
 				pformat,
 				args);
 	}
-#else
-#  if defined(vxWorks)
+#endif
+
+#ifdef vxWorks
 	{
 		int	logMsgArgs[6];
 		int	i;
@@ -105,9 +106,6 @@ va_dcl
 				logMsgArgs[5]);
 			
 	}
-#  else
-		#### dont compile in this case ####
-#  endif
 #endif
 
 	va_end(args);

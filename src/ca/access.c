@@ -90,6 +90,8 @@
 /*	120293	joh	flush in ca_pend_io() if no IO oustanding	*/
 /*	121693	joh	fixed bucketLib level memory leak		*/
 /*	011394	joh	fixed bucketLib level memory leak (vxWorks)	*/
+/*	020494	joh	Added user name protocol			*/
+/*      022294  joh     fixed recv task id verify at exit (vxWorks)     */
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -114,7 +116,7 @@
 /************************************************************************/
 /*_end									*/
 
-static char *sccsId = "@(#)access.c	1.45 1/14/94";
+static char *sccsId = "$Id$";
 
 /*
  * allocate error message string array 
@@ -122,47 +124,46 @@ static char *sccsId = "@(#)access.c	1.45 1/14/94";
  */
 #define CA_ERROR_GLBLSOURCE
 
-#if defined(VMS)
-#	include		stsdef.h
-#	include		ssdef.h
-#	include		psldef.h
-#	include		prcdef.h
-#	include 	descrip.h
-#else
-#  if defined(UNIX)
-#  else
-#    if defined(vxWorks)
+#include <unistd.h>
+#include <string.h>
+#include <stdlib.h>
+
+#ifdef VMS
+#	include		<stsdef.h>
+#	include		<ssdef.h>
+#	include		<psldef.h>
+#	include		<prcdef.h>
+#	include 	<descrip.h>
+#endif /*VMS*/
+
+#ifdef UNIX
+#	include		<signal.h>
+#endif /*UNIX*/
+
+#ifdef vxWorks
 #	include		<vxWorks.h>
 # 	include		<taskLib.h>
 # 	include		<task_params.h>
 #	include		<sysLib.h>
-#	include		<string.h>
 #	include		<tickLib.h>
 #	include		<taskLib.h>
 #	include		<taskHookLib.h>
 #	include		<logLib.h>
 #	include		<usrLib.h>
 #	include		<dbgLib.h>
-#	include		<stdio.h>
-#	include		<unistd.h>
 #	include		<taskVarLib.h>
-#    else
-	@@@@ dont compile @@@@
-#    endif
-#  endif
-#endif
+#endif /*vxWorks*/
 
 /*
  * allocate db_access message strings here
  */
 #define DB_TEXT_GLBLSOURCE
-#include 		<cadef.h>
-#include		<iocmsg.h>
 #include 		<iocinf.h>
 #include		<net_convert.h>
+
 #ifdef vxWorks
 #include		<taskwd.h>
-#endif
+#endif /*vxWorks*/
 
 /*
  * logistical problems prevent including this file
@@ -179,21 +180,21 @@ static char *sccsId = "@(#)access.c	1.45 1/14/94";
 /*	Macros for syncing message insertion into send buffer	*/
 /****************************************************************/
 #define EXTMSGPTR(PIIU)\
- 	((struct extmsg *) &(PIIU)->send->buf[(PIIU)->send->stk])
+ 	((struct extmsg *) &(PIIU)->send.buf[(PIIU)->send.wtix])
 
-#define CAC_ALLOC_MSG(PIIU, EXTSIZE) cac_alloc_msg((PIIU), (EXTSIZE))
+#define CAC_ALLOC_MSG(PIIU, EXTSIZE, PPTR) cac_alloc_msg((PIIU), (EXTSIZE), (PPTR))
+
 /*
- * Make sure string is aligned for the most restrictive architecture
- * VAX 		none required
- * 680xx	binary rounding
- * SPARC	octal rounding 
+ * Performs worst case message alignment
  */
 #define CAC_ADD_MSG(PIIU) \
 { \
+	unsigned long	size; \
 	struct extmsg *mp = EXTMSGPTR(PIIU); \
-	mp->m_postsize = CA_MESSAGE_ALIGN(mp->m_postsize); \
-	(PIIU)->send->stk += sizeof(struct extmsg) + mp->m_postsize; \
+	size = mp->m_postsize = CA_MESSAGE_ALIGN(mp->m_postsize); \
 	mp->m_postsize = htons(mp->m_postsize); \
+	CAC_RING_BUFFER_WRITE_ADVANCE( \
+		&(PIIU)->send, sizeof(struct extmsg) + size); \
 }
 
 
@@ -225,15 +226,6 @@ static char *sccsId = "@(#)access.c	1.45 1/14/94";
 	} \
 }
 
-#define INITCHK \
-if(!ca_static){ \
-	int	s; \
-  	s = ca_task_initialize(); \
-	if(s != ECA_NORMAL){ \
-		return s; \
-	} \
-}
-
 static struct extmsg	nullmsg;
 
 /*
@@ -241,9 +233,10 @@ static struct extmsg	nullmsg;
  */
 #ifdef __STDC__
 
-LOCAL struct extmsg *cac_alloc_msg(
+LOCAL int cac_alloc_msg(
 struct ioc_in_use 	*piiu,
-unsigned		extsize
+unsigned		extsize,
+struct extmsg		**ppMsg
 );
 LOCAL void 	spawn_repeater();
 LOCAL int 	check_for_fp();
@@ -251,10 +244,10 @@ LOCAL int 	ca_add_task_variable(struct ca_static *ca_temp);
 #ifdef vxWorks
 LOCAL void 	ca_task_exit_tcb(WIND_TCB *ptcb);
 LOCAL void 	ca_task_exit_tid(int tid);
-#else
-void 		ca_process_exit();
-#endif
-LOCAL void 	issue_get_callback(evid monix);
+#else /*vxWorks*/
+LOCAL void 	ca_process_exit();
+#endif /*vxWorks*/
+LOCAL int	issue_get_callback(evid monix);
 LOCAL void ca_event_handler(
 evid 		monix,
 struct db_addr	*paddr,
@@ -262,28 +255,181 @@ int		hold,
 void		*pfl
 );
 LOCAL void 	ca_pend_io_cleanup();
-void 		create_udp_fd();
+LOCAL void 	create_udp_fd();
+static int issue_ca_array_put
+(
+unsigned			cmd,
+unsigned long			avail,
+chtype				type,
+unsigned long			count,
+chid				chix,
+void				*pvalue
+);
+LOCAL void ca_put_notify_action(PUTNOTIFY *ppn);
+LOCAL void ca_extra_event_labor(void *pArg);
+LOCAL void ca_default_exception_handler(struct exception_handler_args args);
 
-#else
+LOCAL int cac_push_msg(
+struct ioc_in_use 	*piiu,
+struct extmsg		*pmsg,
+void			*pext
+);
 
-LOCAL struct extmsg 	*cac_alloc_msg();
+LOCAL void cac_wait_for_flush(IIU *piiu);
+
+#else /*__STDC__*/
+
+LOCAL int 	cac_alloc_msg();
 LOCAL void 	spawn_repeater();
 LOCAL int	check_for_fp(); 
 LOCAL int	ca_add_task_variable();
 #ifdef vxWorks
 LOCAL void    	ca_task_exit_tcb();
-LOCAL void 		ca_task_exit_tid();
+LOCAL void 	ca_task_exit_tid();
 #else
-void 		ca_process_exit();
+LOCAL void 	ca_process_exit();
 #endif 
 LOCAL void    	issue_get_callback();
 LOCAL void    	ca_event_handler();
 LOCAL void	ca_pend_io_cleanup();
 
-void 		ca_default_exception_handler();
-void 		create_udp_fd();
+LOCAL void 	ca_default_exception_handler();
+LOCAL void 	create_udp_fd();
+LOCAL int 	issue_ca_array_put();
+LOCAL void 	ca_put_notify_action();
+LOCAL void 	ca_extra_event_labor();
+LOCAL int 	cac_push_msg();
+LOCAL void 	cac_wait_for_flush();
 
+#endif /*__STDC__*/
+
+
+/*
+ *
+ * 	cac_push_msg()
+ *
+ *	return a pointer to reserved message buffer space or
+ *	nill if the message will not fit
+ *
+ */ 
+#ifdef __STDC__
+LOCAL int cac_push_msg(
+struct ioc_in_use 	*piiu,
+struct extmsg		*pmsg,
+void			*pext
+)
+#else
+LOCAL int cac_push_msg(piiu, pmsg, pext)
+struct ioc_in_use 	*piiu;
+struct extmsg		*pmsg;
+void			*pext;
 #endif
+{
+	struct extmsg	msg;
+	unsigned long	bytesAvailable;
+	unsigned long	extsize;
+	unsigned long	bytesSent;
+
+	msg = *pmsg;
+	extsize = CA_MESSAGE_ALIGN(pmsg->m_postsize);
+	msg.m_postsize = htons(extsize);
+
+
+	LOCK;
+
+	/*
+	 * 	Force contiguous header and body 
+	 *
+	 * o	Forces hdr and bdy into the same frame if UDP
+	 *
+	 * o	Does not allow interleaved messages
+	 *	caused by removing recv backlog during 
+	 *	send under UNIX.
+	 *
+	 * o	Does not allow for messages larger than the
+	 *	ring buffer size.
+	 */
+	if(extsize+sizeof(msg)>piiu->send.max_msg){
+		return ECA_TOLARGE;
+	}
+	while(TRUE){
+		bytesAvailable = 
+			cacRingBufferWriteSize(&piiu->send, FALSE);
+		if(bytesAvailable>=extsize+sizeof(msg)){
+			break;
+		}
+		/*
+		 * if connection drops request
+		 * cant be completed
+		 */
+		if(!piiu->conn_up){
+			UNLOCK;
+			return ECA_BADCHID;
+		}
+		UNLOCK;
+		cac_wait_for_flush(piiu);
+		LOCK;
+	}
+
+
+	/*
+	 * push the header onto the ring 
+	 */
+	bytesSent = cacRingBufferWrite(
+				&piiu->send, 
+				&msg, 
+				sizeof(msg));
+	assert(bytesSent == sizeof(msg));
+
+	/*
+	 * push message body onto the ring
+	 *
+	 * (optionally encode in netrwork format as we send)
+	 */
+	bytesSent = cacRingBufferWrite(
+				&piiu->send, 
+				pext, 
+				extsize);
+	assert(bytesSent == extsize);
+
+	UNLOCK;
+
+	return ECA_NORMAL;
+}
+
+
+/*
+ * cac_wait_for_flush()
+ *
+ */
+#ifdef __STDC__
+LOCAL void cac_wait_for_flush(IIU *piiu)
+#else /*__STDC__*/
+LOCAL void cac_wait_for_flush(piiu)
+IIU 	*piiu;
+#endif /*__STDC__*/
+{
+
+#ifdef UNIX
+	{
+		int		flags;
+      		struct timeval	itimeout;
+
+		flags = CA_DO_RECVS | CA_DO_SENDS;
+
+      		itimeout.tv_usec 	= LOCALTICKS;	
+      		itimeout.tv_sec  	= 0;
+		if(post_msg_active){
+			ca_select_io(&itimeout, flags);
+		}
+		else{
+			ca_mux_io(&itimeout, flags);
+		}
+	}
+#else /*UNIX*/
+	(*piiu->sendBytes)(piiu);
+#endif /*UNIX*/
+}
 
 
 /*
@@ -297,68 +443,71 @@ void 		create_udp_fd();
  *
  */ 
 #ifdef __STDC__
-LOCAL struct extmsg *cac_alloc_msg(
+LOCAL int cac_alloc_msg(
 struct ioc_in_use 	*piiu,
-unsigned		extsize
+unsigned		extsize,
+struct extmsg		**ppMsg
 )
 #else
-LOCAL struct extmsg *cac_alloc_msg(piiu, extsize)
+LOCAL int cac_alloc_msg(piiu, extsize, ppMsg)
 struct ioc_in_use 	*piiu;
 unsigned		extsize;
+struct extmsg		**ppMsg;
 #endif
 {
 	unsigned 	msgsize;
-	unsigned	msglimit;
+	unsigned long	bytesAvailable;
 	struct extmsg	*pmsg;
 
 	msgsize = sizeof(struct extmsg)+extsize;
 
 	/*
-	 * dont allow client to send enough messages to 
-	 * to get into a deadlock
+	 * fail if max message size exceeded
 	 */
-	if(piiu->outstanding_ack_count > ((unsigned)0) && !post_msg_active){
-		unsigned	max1;
-		unsigned	size;
-
-		size = piiu->tcp_send_buff_size;
-		if(RECV_ACTIVE(piiu)){
-			max1=size<<2;
-		}
-		else{
-			max1=size<<1;
-		}
-
-		if(piiu->bytes_pushing_an_ack > max1){
-			if(RECV_ACTIVE(piiu)){
-				return NULL;
-			}
-
-			while(piiu->outstanding_ack_count>0){
-    				cac_send_msg(); 
-				UNLOCK;
-				TCPDELAY;
-				LOCK;
-			}
-		}
-		piiu->bytes_pushing_an_ack += msgsize;
+	if(msgsize>=piiu->send.max_msg){
+		return ECA_TOLARGE;
 	}
 
-	msglimit = piiu->max_msg - msgsize;
-  	if(piiu->send->stk > msglimit){
-    		cac_send_msg(); 
-		if(piiu->send->stk > msglimit){
-			if(piiu->outstanding_ack_count > 0){
-				piiu->bytes_pushing_an_ack -= msgsize;
+	bytesAvailable = cacRingBufferWriteSize(&piiu->send, TRUE);
+  	while(bytesAvailable<msgsize){
+#ifdef UNIX
+		{
+	      		struct timeval	itimeout;
+			int		flags;
+
+      			itimeout.tv_usec 	= LOCALTICKS;	
+      			itimeout.tv_sec  	= 0;
+			flags = CA_DO_RECVS | CA_DO_SENDS;
+
+			UNLOCK;
+			if(post_msg_active){
+				ca_select_io(&itimeout, flags);
 			}
-			return NULL;
+			else{
+				ca_mux_io(&itimeout, flags);
+			}
+			LOCK;
 		}
+#else /*UNIX*/
+		(*piiu->sendBytes)(piiu);
+#endif /*UNIX*/
+
+		/*
+		 * if connection drops request
+		 * cant be completed
+		 */
+		if(!piiu->conn_up){
+			return ECA_BADCHID;
+		}
+
+		bytesAvailable = cacRingBufferWriteSize(&piiu->send, TRUE);
 	}
 
-	pmsg = (struct extmsg *) (piiu->send->buf + piiu->send->stk);
+	pmsg = (struct extmsg *) &piiu->send.buf[piiu->send.wtix];
 	pmsg->m_postsize = extsize;
+	*ppMsg = pmsg;
 
-	return pmsg;
+	return ECA_NORMAL;
 }
 
 
@@ -384,7 +533,18 @@ int ca_task_initialize()
 		if(status != ECA_NORMAL){
 			return status;
 		}
-#endif
+#endif /*vxWorks*/
+
+#ifdef UNIX
+		/*
+		 * dont allow disconnect to terminate process
+		 * when running in UNIX enviroment
+		 *
+		 * allow error to be returned to sendto()
+		 * instead of handling disconnect at interrupt
+		 */
+		signal(SIGPIPE,SIG_IGN);
+#endif /*UNIX*/
 
 		if (repeater_installed()==FALSE) {
 			spawn_repeater();
@@ -393,32 +553,62 @@ int ca_task_initialize()
 		ca_temp = (struct ca_static *) 
 				calloc(1, sizeof(*ca_temp));
 		if (!ca_temp)
-			return ERROR;
+			return ECA_ALLOCMEM;
 
 #ifdef vxWorks
 		if (ca_add_task_variable(ca_temp)<0){
 			free(ca_temp);
 			return ECA_ALLOCMEM;
 		}
-#else
+#else /* vxWorks */
 		ca_static = ca_temp;
-#endif
+#endif /* vxWorks */
 
 		ca_static->ca_exception_func = ca_default_exception_handler;
 		ca_static->ca_exception_arg = NULL;
 
+		/* record a default user name */
+		ca_static->ca_pUserName = localUserName();
+		if(!ca_static->ca_pUserName){
+			free(ca_static);
+			return ECA_ALLOCMEM;
+		}
+
+		/* record a default user name */
+		ca_static->ca_pLocationName = localLocationName();
+		if(!ca_static->ca_pLocationName){
+			free(ca_static->ca_pUserName);
+			free(ca_static);
+			return ECA_ALLOCMEM;
+		}
+
+		/* init sync group facility */
+		ca_sg_init();
+
+		ellInit(&ca_static->ca_iiuList);
+		ellInit(&ca_static->ca_ioeventlist);
+		ellInit(&ca_static->ca_free_event_list);
+		ellInit(&ca_static->ca_pend_read_list);
+		ellInit(&ca_static->ca_pend_write_list);
+#ifdef vxWorks
+		ellInit(&ca_static->ca_local_chidlist);
+		ellInit(&ca_static->ca_dbfree_ev_list);
+		ellInit(&ca_static->ca_lcl_buff_list);
+		ellInit(&ca_static->ca_taskVarList);
+		ellInit(&ca_static->ca_putNotifyQue);
+#endif /* vxWorks */
 		ca_static->ca_pBucket = bucketCreate(CLIENT_ID_WIDTH);
 		if(!ca_static->ca_pBucket)
 			abort(0);
 
-#if defined(VMS)
+#ifdef VMS
 		{
 			status = lib$get_ef(&io_done_flag);
 			if (status != SS$_NORMAL)
 				lib$signal(status);
 		}
-#else
-#  if defined(vxWorks)
+#endif /*VMS*/
+#ifdef vxWorks
 		{
 			char            name[15];
 			int             status;
@@ -427,17 +617,28 @@ int ca_task_initialize()
 
 			ca_static->ca_local_ticks = LOCALTICKS;
 
-			FASTLOCKINIT(&client_lock);
-			FASTLOCKINIT(&event_lock);
-			io_done_sem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
-			if(!io_done_sem){
-				abort(0);
-			}
+			ca_static->ca_client_lock = semMCreate(SEM_DELETE_SAFE);
+			assert(ca_static->ca_client_lock);
+			ca_static->ca_event_lock = semMCreate(SEM_DELETE_SAFE);
+			assert(ca_static->ca_event_lock);
+			ca_static->ca_putNotifyLock = semMCreate(SEM_DELETE_SAFE);
+			assert(ca_static->ca_putNotifyLock);
+			ca_static->ca_io_done_sem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
+			assert(ca_static->ca_io_done_sem);
+			ca_static->ca_blockSem = 
+				semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
+			assert(ca_static->ca_blockSem);
 
 			evuser = (void *) db_init_events();
 			if (!evuser)
 				abort(0);
 
+			status = db_add_extra_labor_event(
+					evuser,
+					ca_extra_event_labor,
+					ca_static);
+			if(status)
+				abort(0);
 			strcpy(name, "EV ");
 			strncat(
 				name,
@@ -452,14 +653,7 @@ int ca_task_initialize()
 			if (status != OK)
 				abort(0);
 		}
-#  else
-#    if defined(UNIX)
-#    else
-		@@@@ dont compile in this case @@@@
-#    endif
-#  endif
-#endif
-
+#endif /*vxWorks*/
 	}
 	return ECA_NORMAL;
 }
@@ -468,7 +662,7 @@ int ca_task_initialize()
 /*
  * create_udp_fd
  */
-void create_udp_fd()
+LOCAL void create_udp_fd()
 {
 	int     pri;
 	char	name[64];
@@ -551,8 +745,10 @@ LOCAL void spawn_repeater()
 		status = fork();
 		if (status < 0)
 			SEVCHK(ECA_NOREPEATER, NULL);
-		if (status == 0)
+		if (status == 0){
 			ca_repeater_task();
+			exit(0);
+		}
 	}
 #endif
 #ifdef vxWorks
@@ -680,13 +876,165 @@ int             tid;
 	ca_static = pcas;
 
 	ptviu->tid = taskIdSelf();
+	LOCK;
 	ellAdd(&ca_static->ca_taskVarList, &ptviu->node);	
+	UNLOCK;
 
 	return ECA_NORMAL;
 }
 #endif
 
+
+/*
+ * CA_IMPORT_CANCEL()
+ */
+#ifdef vxWorks
+int ca_import_cancel(tid)
+int		tid;
+{
+	int	status;
+	TVIU	*ptviu;
 
+	LOCK;
+	ptviu = (TVIU *) ca_static->ca_taskVarList.node.next; 
+	while(ptviu){
+		if(ptviu->tid == tid){
+			break;
+		}
+	}
+
+	if(!ptviu){
+		return ECA_NOCACTX;
+	}
+
+	ellDelete(&ca_static->ca_taskVarList, &ptviu->node);
+	UNLOCK;
+
+	status = taskVarDelete(tid, (void *)&ca_static);
+	assert (status == OK);
+
+	return ECA_NORMAL;
+}
+#endif
+
+
+/*
+ * CA_MODIFY_CLIENT_LOCATION_NAME()
+ *
+ * Modify or override the default 
+ * client location name.
+ */
+#ifdef __STDC__
+int ca_modify_client_location(char *pLocationName)
+#else /*__STDC__*/
+int ca_modify_client_location(pLocationName)
+char *pLocationName;
+#endif /*__STDC__*/
+{
+	char		*pTmp;
+	unsigned	size;
+	IIU		*piiu;
+
+	INITCHK;
+
+	size = strlen(pLocationName)+1;
+	if (size > STRING_LIMIT){
+		return ECA_STRTOBIG;
+	}
+
+	pTmp = malloc(size);
+	if(!pTmp){
+		return ECA_ALLOCMEM;
+	}
+
+	if(ca_static->ca_pLocationName){
+		free(ca_static->ca_pLocationName);
+	}
+	ca_static->ca_pLocationName = pTmp;
+
+	/*
+	 * force null termination
+	 */
+	strncpy(	
+		ca_static->ca_pLocationName, 
+		pLocationName, 
+		size-1);
+	ca_static->ca_pLocationName[size-1]='\0';
+
+	/*
+	 * update all servers we are currently
+	 * attached to.
+	 */
+	LOCK;
+	piiu = (struct ioc_in_use *) ca_static->ca_iiuList.node.next;
+	while(piiu){
+		issue_identify_client_location(piiu);
+		piiu = (struct ioc_in_use *) piiu->node.next;
+	}
+	UNLOCK;
+
+	return ECA_NORMAL;
+}
+
+
+
+/*
+ * CA_MODIFY_CLIENT_NAME()
+ *
+ * Modify or override the default 
+ * client (user) name.
+ */
+#ifdef __STDC__
+int ca_modify_client_name(char *pClientName)
+#else /*__STDC__*/
+int ca_modify_client_name(pClientName)
+char *pClientName;
+#endif /*__STDC__*/
+{
+	char		*pTmp;
+	unsigned	size;
+	IIU		*piiu;
+
+	INITCHK;
+
+	size = strlen(pClientName)+1;
+	if (size > STRING_LIMIT){
+		return ECA_STRTOBIG;
+	}
+
+	pTmp = malloc(size);
+	if(!pTmp){
+		return ECA_ALLOCMEM;
+	}
+
+	if(ca_static->ca_pUserName){
+		free(ca_static->ca_pUserName);
+	}
+	ca_static->ca_pUserName = pTmp;
+
+	/*
+	 * force null termination
+	 */
+	strncpy(	
+		ca_static->ca_pUserName, 
+		pClientName, 
+		size-1);
+	ca_static->ca_pUserName[size-1]='\0';
+
+	/*
+	 * update all servers we are currently
+	 * attached to.
+	 */
+	LOCK;
+	piiu = (struct ioc_in_use *) ca_static->ca_iiuList.node.next;
+	while(piiu){
+		issue_identify_client(piiu);
+		piiu = (struct ioc_in_use *) piiu->node.next;
+	}
+	UNLOCK;
+
+	return ECA_NORMAL;
+}
 
 
 
@@ -922,6 +1270,7 @@ LOCAL void ca_process_exit()
 
 		/*
 		 * Cancel all local events
+		 * (and put call backs)
 		 */
 #		ifdef vxWorks
 			chix = (chid) & ca_temp->ca_local_chidlist.node;
@@ -931,6 +1280,15 @@ LOCAL void ca_process_exit()
 					if (status == ERROR)
 						abort(0);
 					free(monix);
+				}
+				if(chix->ppn){
+					CACLIENTPUTNOTIFY *ppn;
+
+					ppn = chix->ppn;
+					if(ppn->busy){
+						dbNotifyCancel(&ppn->dbPutNotify);
+					}
+					free(ppn);
 				}
 			}
 #		endif
@@ -963,8 +1321,10 @@ LOCAL void ca_process_exit()
 				}
 				free(ptviu);
 			}
-			if(ca_temp->recv_tid != tid){
-				taskDelete(ca_temp->recv_tid);
+			if(taskIdVerify(ca_temp->recv_tid)==OK){
+				if(ca_temp->recv_tid != tid){
+					taskDelete(ca_temp->recv_tid);
+				}
 			}
 		 }
 #		endif
@@ -986,9 +1346,7 @@ LOCAL void ca_process_exit()
 #		endif
 
 		/*
-		 * after activity eliminated:
-		 */
-		/*
+		 * after activity eliminated
 		 * close all sockets before clearing chid blocks and remote
 		 * event blocks
 		 */
@@ -1006,8 +1364,6 @@ LOCAL void ca_process_exit()
 					ECA_INTERNAL, 
 					"Corrupt iiu list- at close");
 			}
-			free((char *)piiu->send);
-			free((char *)piiu->recv);
 			piiu = (struct ioc_in_use *) piiu->node.next;
 		}
 
@@ -1035,6 +1391,26 @@ LOCAL void ca_process_exit()
 				}
 				free((char *)chix);
 			}
+
+			/*
+			 * free message body cache
+			 */
+			if(piiu->pCurData){
+				free(piiu->pCurData);
+				piiu->pCurData = NULL;
+				piiu->curDataMax = 0;
+			}
+
+#ifdef VAX
+			/*
+			 * free put convert cache
+			 */
+			if(piiu->pPutConvertBuf){
+				free(piiu->pPutConvertBuf);
+				piiu->pPutConvertBuf = NULL;
+				piiu->putConvertBufSize = 0;
+			}
+#endif
 			piiu = (struct ioc_in_use *) piiu->node.next;
 		}
 
@@ -1042,8 +1418,7 @@ LOCAL void ca_process_exit()
 		 * remove local chid blocks, paddr blocks, waiting ev blocks
 		 */
 #		ifdef vxWorks
-			while (chix = (chid) ellGet(&ca_temp->ca_local_chidlist))
-				free((char *)chix);
+			ellFree(&ca_temp->ca_local_chidlist);
 			ellFree(&ca_temp->ca_dbfree_ev_list);
 #		endif
 
@@ -1051,6 +1426,13 @@ LOCAL void ca_process_exit()
 		ellFree(&ca_temp->ca_free_event_list);
 		/* remove any pending read blocks */
 		ellFree(&ca_temp->ca_pend_read_list);
+		/* remove any pending write blocks */
+		ellFree(&ca_temp->ca_pend_write_list);
+		/* remove any pending io event blocks */
+		ellFree(&ca_temp->ca_ioeventlist);
+
+		/* reclaim sync group resources */
+		ca_sg_shutdown(ca_temp);
 
 		/*
 		 * force this macro to use ca_temp
@@ -1060,22 +1442,36 @@ LOCAL void ca_process_exit()
 #		undef ca_static
 
 #		if defined(vxWorks)
-			if(FASTLOCKFREE(&ca_temp->ca_client_lock) < 0)
-				ca_signal(ECA_INTERNAL, "couldnt free memory");
-			if(FASTLOCKFREE(&ca_temp->ca_event_lock) < 0)
-				ca_signal(ECA_INTERNAL, "couldnt free memory");
-			status = semDelete(ca_temp->ca_io_done_sem);
-			if(status < 0){
-				ca_signal(
-					ECA_INTERNAL, 
-					"couldnt free sem");
-			}
+			assert(semDelete(ca_temp->ca_client_lock)==OK);
+			assert(semDelete(ca_temp->ca_event_lock)==OK);
+			assert(semDelete(ca_temp->ca_putNotifyLock)==OK);
+			assert(semDelete(ca_temp->ca_io_done_sem)==OK);
+			assert(semDelete(ca_temp->ca_blockSem)==OK);
+#		endif
+
+#		if defined(VMS)
+			status = lib$free_ef(&ca_temp->ca_io_done_flag);
+			assert(status == SS$_NORMAL)
 #		endif
 
 		/*
 		 * remove IOCs in use
 		 */
 		ellFree(&ca_temp->ca_iiuList);
+
+		/*
+		 * free user name string
+		 */
+		if(ca_temp->ca_pUserName){
+			free(ca_temp->ca_pUserName);
+		}
+
+		/*
+		 * free location name string
+		 */
+		if(ca_temp->ca_pLocationName){
+			free(ca_temp->ca_pLocationName);
+		}
 
 		/*
 		 * free top level bucket
@@ -1182,6 +1578,7 @@ int ca_build_and_connect
 		/* Find out quickly if channel is on this node  */
 		status = db_name_to_addr(name_str, &tmp_paddr);
 		if (status == OK) {
+			int size;
 
 			/*
 			 * allocate CHIU (channel in use) block
@@ -1189,11 +1586,11 @@ int ca_build_and_connect
 			 * also allocate enough for the channel name & paddr
 			 * block
 			 */
-			*chixptr = chix = (chid) malloc(sizeof(*chix)
-					 + strcnt + sizeof(struct db_addr));
-			if (!chix)
-				abort(0);
-
+			size = sizeof(*chix) + strcnt + sizeof(struct db_addr);
+			*chixptr = chix = (chid) calloc(1,size);
+			if (!chix){
+				return ECA_ALLOCMEM;
+			}
 			chix->id.paddr = (struct db_addr *) 
 				(strcnt + (char *) (chix + 1));
 			*chix->id.paddr = tmp_paddr;
@@ -1246,7 +1643,7 @@ int ca_build_and_connect
 
 	/* allocate CHIU (channel in use) block */
 	/* also allocate enough for the channel name */
-	*chixptr = chix = (chid) malloc(sizeof(*chix) + strcnt);
+	*chixptr = chix = (chid) calloc(1, sizeof(*chix) + strcnt);
 	if (!chix){
 		return ECA_ALLOCMEM;
 	}
@@ -1257,8 +1654,8 @@ int ca_build_and_connect
 	if(status != BUCKET_SUCCESS){
 		*chixptr = (chid) NULL;
 		free((char *) chix);
-		status = ECA_ALLOCMEM;
-		goto exit;
+		UNLOCK;
+		return ECA_ALLOCMEM;
 	}
 
 	chix->puser = puser;
@@ -1289,6 +1686,8 @@ int ca_build_and_connect
 	piiuCast->next_retry = CA_CURRENT_TIME;
 	piiuCast->retry_delay = CA_RECAST_DELAY;
 
+	UNLOCK;
+
 	build_msg(chix, DONTREPLY);
 	if (!chix->connection_func) {
 		SETPENDRECV;
@@ -1296,12 +1695,7 @@ int ca_build_and_connect
 			SETPENDRECV;
 	}
 
-	status = ECA_NORMAL;
-
-exit:
-	UNLOCK;
-
-	return status;
+	return ECA_NORMAL;
 
 }
 
@@ -1324,6 +1718,7 @@ chid            chix;
 int             reply_type;
 #endif
 {
+	int			status;
 	int    			size;
 	int    			cmd;
 	struct extmsg		*mptr;
@@ -1339,9 +1734,10 @@ int             reply_type;
 		cmd = IOC_SEARCH;
 	}
 
-	mptr = CAC_ALLOC_MSG(piiu, size);
-	if(!mptr){
-		ca_printf("%s: %s\n",__FILE__,ca_message(ECA_TOLARGE));
+	LOCK;
+	status = CAC_ALLOC_MSG(piiu, size, &mptr);
+	if(status != ECA_NORMAL){
+		ca_printf("%s: %s\n",__FILE__,ca_message(status));
 		return;
 	}
 
@@ -1370,6 +1766,8 @@ int             reply_type;
 
 	CAC_ADD_MSG(piiu);
 
+	UNLOCK;
+
 	piiu->send_needed = TRUE;
 }
 
@@ -1396,9 +1794,8 @@ void 		*pvalue
 	void  		*pvalue;
 #endif
 {
-	register struct extmsg	*mptr;
-	unsigned		size=0;
-	struct ioc_in_use	*piiu;
+	struct extmsg		hdr;
+	int			status;
 
 	CHIXCHK(chix);
 
@@ -1427,32 +1824,20 @@ void 		*pvalue
 	}
 #endif
 
-	LOCK;
-	piiu = chix->piiu;
-	mptr = CAC_ALLOC_MSG(piiu, size);
-	if(!mptr){
-		UNLOCK;
-		return ECA_TOLARGE;
-	}
-
 	/* 
 	 * 	msg header only on db read req	 
 	 */
-	mptr->m_cmmd = htons(IOC_READ);
-	mptr->m_type = htons(type);
-	mptr->m_available = (long) pvalue;
-	mptr->m_count = htons(count);
-	mptr->m_cid = chix->id.sid;
+	hdr.m_cmmd = htons(IOC_READ);
+	hdr.m_type = htons(type);
+	hdr.m_available = (long) pvalue;
+	hdr.m_count = htons(count);
+	hdr.m_cid = chix->id.sid;
+	hdr.m_postsize = 0;
 
-	CAC_ADD_MSG(piiu);
-
-	/*
-	 * keep track of the number of messages 
- 	 * outstanding on this connection that 
-	 * require a response
-	 */
-	piiu->outstanding_ack_count++;
-	UNLOCK;
+	status = cac_push_msg(chix->piiu, &hdr, 0);
+	if(status != ECA_NORMAL){
+		return status;
+	}
 
 	SETPENDRECV;
 
@@ -1513,25 +1898,26 @@ int ca_array_get_callback
 
 	LOCK;
 	if (!(monix = (evid) ellGet(&free_event_list)))
-		monix = (evid) malloc(sizeof *monix);
+		monix = (evid) malloc(sizeof(*monix));
+	UNLOCK;
 
 	if (monix) {
 
+		memset(monix, 0, sizeof(*monix));
 		monix->chan = chix;
 		monix->usr_func = pfunc;
 		monix->usr_arg = arg;
 		monix->type = type;
 		monix->count = count;
 
+		LOCK;
 		ellAdd(&pend_read_list, &monix->node);
+		UNLOCK;
 
-		issue_get_callback(monix);
-
-		status = ECA_NORMAL;
+		status = issue_get_callback(monix);
 	} else
 		status = ECA_ALLOCMEM;
 
-	UNLOCK;
 	return status;
 }
 
@@ -1543,16 +1929,16 @@ int ca_array_get_callback
  *	(lock must be on)
  */
 #ifdef __STDC__
-LOCAL void issue_get_callback(evid monix)
+LOCAL int issue_get_callback(evid monix)
 #else
-LOCAL void issue_get_callback(monix)
+LOCAL int issue_get_callback(monix)
 evid   monix;
 #endif
 {
-	register chid   	chix = monix->chan;
-	unsigned		size = 0;
+	int			status;
+	chid   			chix = monix->chan;
 	unsigned        	count;
-	register struct extmsg	*mptr;
+	struct extmsg		hdr;
 	struct ioc_in_use	*piiu;
 
 	piiu = chix->piiu;
@@ -1562,7 +1948,7 @@ evid   monix;
 	 * (it will be sent once connected)
   	 */
 	if(chix->state != cs_conn){
-		return;
+		return ECA_BADCHID;
 	}
 
 	/*
@@ -1575,58 +1961,49 @@ evid   monix;
 		count = monix->count;
 	}
 	
-	mptr = CAC_ALLOC_MSG(piiu, size);
-	if(!mptr){
-		ca_printf("%s: %s\n",__FILE__,ca_message(ECA_TOLARGE));
-		return;
-	}
-
 	/* msg header only on db read notify req	 */
-	mptr->m_cmmd = htons(IOC_READ_NOTIFY);
-	mptr->m_type = htons(monix->type);
-	mptr->m_available = (long) monix;
-	mptr->m_count = htons(count);
-	mptr->m_cid = chix->id.sid;
+	hdr.m_cmmd = htons(IOC_READ_NOTIFY);
+	hdr.m_type = htons(monix->type);
+	hdr.m_available = (long) monix;
+	hdr.m_count = htons(count);
+	hdr.m_postsize = 0;
+	hdr.m_cid = chix->id.sid;
 
-	CAC_ADD_MSG(piiu);
-
-	/*
-	 * keep track of the number of messages 
- 	 * outstanding on this connection that 
-	 * require a response
-	 */
-	piiu->outstanding_ack_count++;
+	status = cac_push_msg(piiu, &hdr, 0);
 
 	piiu->send_needed = TRUE;
+
+	return status;
 }
 
 
 /*
- *	CA_ARRAY_PUT()
- *
+ *	CA_ARRAY_PUT_CALLBACK()
  *
  */
-int ca_array_put
 #ifdef __STDC__
+int ca_array_put_callback
 (
 chtype				type,
 unsigned long			count,
 chid				chix,
-void				*pvalue
+void				*pvalue,
+void				(*pfunc)(struct event_handler_args),
+void				*usrarg
 )
-#else
-(type,count,chix,pvalue)
+#else /*__STDC__*/
+int ca_array_put_callback(type,count,chix,pvalue,pfunc,usrarg)
 chtype				type;
 unsigned long			count;
 chid				chix;
 void 				*pvalue;
-#endif
+void				(*pfunc)();
+void				*usrarg;
+#endif /*__STDC__*/
 {
-	struct extmsg	*mptr;
-  	int  		postcnt;
-  	void		*pdest;
-  	unsigned	size_of_one;
-  	int 		i;
+	IIU	*piiu;
+	int	status;
+	evid 	monix;
 
 	/*
 	 * valid channel id test
@@ -1645,25 +2022,352 @@ void 				*pvalue;
   	if(count > chix->count || count == 0)
     		return ECA_BADCOUNT;
 
+	piiu = chix->piiu;
+
+	if(!CA_V41(CA_PROTOCOL_VERSION, piiu->minor_version_number)){
+		return ECA_NOSUPPORT;
+	}
+
+	if(piiu){
+		LOCK;
+		monix = (evid) ellGet(&free_event_list);
+		UNLOCK;
+		if (!monix){
+			monix = (evid) malloc(sizeof(*monix));
+		}
+		if (!monix){
+			return ECA_ALLOCMEM;
+		}
+
+		memset(monix,0,sizeof(*monix));
+		monix->chan = chix;
+		monix->usr_func = pfunc;
+		monix->usr_arg = usrarg;
+		monix->type = type;
+		monix->count = count;
+	}
 #ifdef vxWorks
-  	{
+	else{
+		CACLIENTPUTNOTIFY	*ppn;
+		int 			size;
+
+		size = dbr_size_n(type,count);
+		LOCK;
+
+		ppn = chix->ppn;
+		if(ppn){
+			/*
+			 * wait while it is busy
+			 */
+			if(ppn->busy){
+				UNLOCK;
+				status = semTake(
+					ca_static->ca_blockSem,
+					sysClkRateGet()*60);
+				if(status != OK){
+					return ECA_PUTCBINPROG;
+				}
+				LOCK;
+			}
+
+			/*
+		 	 * if not busy then free the current
+			 * block if it is to small
+			 */
+			if(ppn->valueSize<size){
+				free(ppn);
+				ppn = chix->ppn = NULL;
+			}
+		}
+
+		if(!ppn){
+			ppn = (CACLIENTPUTNOTIFY *) 
+				calloc(1, sizeof(*ppn)+size);
+			if(!ppn){
+				UNLOCK;
+				return ECA_ALLOCMEM;
+			}
+			chix->ppn = ppn;
+			ppn->pcas = ca_static;
+			ppn->dbPutNotify.userCallback = 
+				ca_put_notify_action;
+			ppn->dbPutNotify.usrPvt = chix;
+			ppn->dbPutNotify.paddr = chix->id.paddr;
+			ppn->dbPutNotify.pbuffer = (ppn+1);
+		}
+		ppn->busy = TRUE;
+		ppn->caUserCallback = pfunc;
+		ppn->caUserArg = usrarg;
+		ppn->dbPutNotify.nRequest = count;
+		memcpy(ppn->dbPutNotify.pbuffer, (char *)pvalue, size);
+		status = dbPutNotifyMapType(&ppn->dbPutNotify, type);
+		if(status){
+			UNLOCK;
+			ppn->busy = FALSE;
+			return ECA_PUTFAIL;
+		}
+		status = dbPutNotify(&ppn->dbPutNotify);
+		UNLOCK;
+		if(status){
+			if(status==S_db_Blocked){
+				return ECA_PUTCBINPROG;
+			}
+			ppn->busy = FALSE;
+			return ECA_PUTFAIL;
+		}
+		return ECA_NORMAL;
+	}
+#endif /*vxWorks*/
+
+	status = issue_ca_array_put(
+			IOC_WRITE_NOTIFY, 
+			(unsigned long)monix, 
+			type, 
+			count, 
+			chix, 
+			pvalue);
+	if(status != ECA_NORMAL){
+		if(chix->piiu){
+			LOCK;
+			ellAdd(&free_event_list, &monix->node);
+			UNLOCK;
+		}
+		return status;
+	}
+
+
+	if(piiu){
+		LOCK;
+		ellAdd(&pend_write_list, &monix->node);
+		UNLOCK;
+	}
+
+  	return status;
+}
+
+
+/*
+ * 	CA_PUT_NOTIFY_ACTION
+ */
+#ifdef vxWorks
+LOCAL void ca_put_notify_action(PUTNOTIFY *ppn)
+{
+	CACLIENTPUTNOTIFY	*pcapn;
+	struct ioc_in_use	*piiu;
+	struct ca_static	*pcas;
+	chid			chix;
+
+	/*
+	 * we choose to suspend the task if there
+	 * is an internal failure
+	 */
+	chix = (chid) ppn->usrPvt;
+	if(!chix){
+		taskSuspend(0);
+	}
+	if(!chix->ppn){
+		taskSuspend(0);
+	}
+
+	piiu = chix->piiu;
+	pcapn = chix->ppn;
+	pcas = pcapn->pcas;
+
+        /*
+         * independent lock used here in order to
+         * avoid any possibility of blocking
+         * the database (or indirectly blocking
+         * one client on another client).
+         */
+        semTake(pcas->ca_putNotifyLock, WAIT_FOREVER);
+        ellAdd(&pcas->ca_putNotifyQue, &pcapn->node);
+        semGive(pcas->ca_putNotifyLock);
+
+        /*
+         * offload the labor for this to the
+         * event task so that we never block
+         * the db or another client.
+         */
+        db_post_extra_labor(pcas->ca_evuser);
+
+}
+#endif /*vxWorks*/
+
+
+/*
+ * 	CA_EXTRA_EVENT_LABOR
+ */
+#ifdef vxWorks
+LOCAL void ca_extra_event_labor(void *pArg)
+{
+	int			status;
+	CACLIENTPUTNOTIFY	*ppnb;
+	struct ca_static 	*pcas;
+	struct event_handler_args args;
+
+	pcas = pArg;
+
+	while(TRUE){
+                /*
+                 * independent lock used here in order to
+                 * avoid any possibility of blocking
+                 * the database (or indirectly blocking
+                 * one client on another client).
+                 */
+        	semTake(pcas->ca_putNotifyLock, WAIT_FOREVER);
+		ppnb = (CACLIENTPUTNOTIFY *)ellGet(&pcas->ca_putNotifyQue);
+        	semGive(pcas->ca_putNotifyLock);
+
+		/*
+                 * break to loop exit
+                 */
+                if(!ppnb){
+                        break;
+                }
+
+		/*
+ 		 * setup arguments and call user's function 
+		 */
+		args.usr = ppnb->caUserArg;
+		args.chid = ppnb->dbPutNotify.usrPvt;
+		args.type = ppnb->dbPutNotify.dbrType;
+		args.count = ppnb->dbPutNotify.nRequest;
+		args.dbr = NULL;
+		if(ppnb->dbPutNotify.status){
+			if(ppnb->dbPutNotify.status == S_db_Blocked){
+				args.status = ECA_PUTCBINPROG;
+			}
+			else{
+				args.status = ECA_PUTFAIL;
+			}
+		}
+		else{
+			args.status = ECA_NORMAL;
+		}
+
+		LOCKEVENTS;
+		(*ppnb->caUserCallback) (args);
+		UNLOCKEVENTS;	
+
+		ppnb->busy = FALSE;
+	}
+
+        /*
+         * wakeup the TCP thread if it is waiting for a cb to complete
+         */
+        status = semGive(pcas->ca_blockSem);
+        if(status != OK){
+                logMsg("CA block sem corrupted\n",
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL);
+        }
+	
+}
+#endif /*vxWorks*/
+
+
+/*
+ *	CA_ARRAY_PUT()
+ *
+ *
+ */
+int ca_array_put
+#ifdef __STDC__
+(
+chtype				type,
+unsigned long			count,
+chid				chix,
+void				*pvalue
+)
+#else /*__STDC__*/
+(type,count,chix,pvalue)
+chtype				type;
+unsigned long			count;
+chid				chix;
+void 				*pvalue;
+#endif /*__STDC__*/
+{
+	/*
+	 * valid channel id test
+	 */
+  	CHIXCHK(chix);
+
+	/*
+	 * compound types not allowed
+	 */
+  	if(INVALID_DB_FIELD(type))
+    		return ECA_BADTYPE;
+
+	/*
+	 * check for valid count
+	 */
+  	if(count > chix->count || count == 0)
+    		return ECA_BADCOUNT;
+
+#ifdef vxWorks
+	/*
+	 * If channel is on this client's host then
+	 * call the database directly
+	 */
+  	if(!chix->piiu){
     		int status;
 
-    		if(!chix->piiu){
-      			status = db_put_field(  chix->id.paddr,  
-                                		type,   
-                                		pvalue,
-                                		count);            
-      			if(status==OK)
-				return ECA_NORMAL;
-      			else
-        			return ECA_PUTFAIL;
-    		}
+      		status = db_put_field(  chix->id.paddr,  
+                               		type,   
+                               		pvalue,
+                               		count);            
+      		if(status==OK)
+			return ECA_NORMAL;
+      		else
+        		return ECA_PUTFAIL;
   	}
-#endif
+#endif /*vxWorks*/
 
-  	size_of_one = dbr_size[type];
-  	postcnt = size_of_one*count;
+	return issue_ca_array_put(IOC_WRITE, ~0L, type, count, chix, pvalue);
+}
+
+
+/*
+ * issue_ca_array_put()
+ */
+#ifdef __STDC__
+static int issue_ca_array_put
+(
+unsigned			cmd,
+unsigned long			avail,
+chtype				type,
+unsigned long			count,
+chid				chix,
+void				*pvalue
+)
+#else /*__STDC__*/
+static int issue_ca_array_put(cmd, avail, type, count, chix, pvalue)
+unsigned			cmd;
+unsigned long			avail;
+chtype				type;
+unsigned long			count;
+chid				chix;
+void 				*pvalue;
+#endif /*__STDC__*/
+{ 
+	int			status;
+	struct ioc_in_use	*piiu;
+	struct extmsg		hdr;
+  	int  			postcnt;
+#ifdef VAX
+  	void			*pdest;
+#endif
+  	unsigned		size_of_one;
+  	int 			i;
+
+
+	piiu = chix->piiu;
+	size_of_one = dbr_size[type];
+	postcnt = dbr_size_n(type,count);
 
 	/*
 	 *
@@ -1691,16 +2395,21 @@ void 				*pvalue;
 
 
 	LOCK;
-	mptr = CAC_ALLOC_MSG(chix->piiu, postcnt);
-	if(!mptr){
-		UNLOCK;
-		return ECA_TOLARGE;
-	}
-
-    	pdest = (void *)(mptr+1);
-
-
 #ifdef VAX
+	if(piiu->putConvertBufSize<postcnt){
+		if(piiu->pPutConvertBuf){
+			free(piiu->pPutConvertBuf);
+		}
+		piiu->putConvertBufSize = 0;
+		piiu->pPutConvertBuf = malloc(postcnt);
+		if(!piiu->pPutConvertBuf){
+			UNLOCK;
+			return ECA_ALLOCMEM;
+		}
+		piiu->putConvertBufSize = postcnt;
+	}
+	pdest = piiu->pPutConvertBuf;
+
 	/*
 	 * No compound types here because these types are read only
 	 * and therefore only appropriate for gets or monitors
@@ -1719,7 +2428,7 @@ void 				*pvalue;
       		case	DBR_SHORT:
 #if DBR_INT != DBR_SHORT
       		case	DBR_INT:
-#endif
+#endif /*DBR_INT != DBR_SHORT*/
         		*(short *)pdest = htons(*(short *)pvalue);
         		break;
 
@@ -1737,25 +2446,29 @@ void 				*pvalue;
 
       		case	DBR_DOUBLE: /* no cvrs for double yet */
       		default:
+			UNLOCK;
         		return ECA_BADTYPE;
       		}
       		(char *) pdest += size_of_one;
       		(char *) pvalue += size_of_one;
     	}
-#else
-        memcpy(pdest,pvalue,postcnt);
-#endif
+	
+	pvalue = pdest;
+#endif /*VAX*/
 
-    	mptr->m_cmmd 		= htons(IOC_WRITE);
-   	mptr->m_type		= htons(type);
-    	mptr->m_count 		= htons(count);
-    	mptr->m_cid 		= chix->id.sid;
-    	mptr->m_available 	= ~0L;
+    	hdr.m_cmmd 		= htons(cmd);
+   	hdr.m_type		= htons(type);
+    	hdr.m_count 		= htons(count);
+    	hdr.m_cid 		= chix->id.sid;
+    	hdr.m_available 	= avail;
+	hdr.m_postsize 		= postcnt;
 
-	CAC_ADD_MSG(((IIU *)chix->piiu));
+	status = cac_push_msg(piiu, &hdr, pvalue);
+
 	UNLOCK;
+	piiu->send_needed = TRUE;
 
-  	return ECA_NORMAL;
+  	return status;
 }
 
 
@@ -1863,12 +2576,13 @@ void		*astarg;
   if(pndrecvcnt<1)
     (*ast)(astarg);
   else{
-    LOCK;
     pioe = (struct pending_io_event *) malloc(sizeof(*pioe));
     if(!pioe)
       return ECA_ALLOCMEM;
+    memset(pioe,0,sizeof(*pioe));
     pioe->io_done_arg = astarg;
     pioe->io_done_sub = ast;
+    LOCK;
     ellAdd(&ioeventlist, &pioe->node);
     UNLOCK;
   }
@@ -1912,9 +2626,11 @@ evid				*monixptr;
 long				mask;
 #endif
 {
-  register evid			monix;
-  register int			status;
+  evid		monix;
+  int		status;
+  int		size;
 
+  INITCHK;
   LOOSECHIXCHK(chix);
 
   if(INVALID_DB_REQ(type))
@@ -1938,23 +2654,30 @@ long				mask;
       if(!dbevsize)
         dbevsize = db_sizeof_event_block();
 
-
-      if(!(monix = (evid)ellGet(&dbfree_ev_list)))
-        monix = (evid)malloc(sizeof(*monix)+dbevsize);
+      size = sizeof(*monix)+dbevsize;
+      if(!(monix = (evid)ellGet(&dbfree_ev_list))){
+        monix = (evid)malloc(size);
+      }
     }
-    else
-      if(!(monix = (evid)ellGet(&free_event_list)))
-        monix = (evid)malloc(sizeof *monix);
+    else{
+      size = sizeof(*monix);
+      if(!(monix = (evid)ellGet(&free_event_list))){
+        monix = (evid)malloc(size);
+      }
+    }
   }
 # else
+  size = sizeof(*monix);
   if(!(monix = (evid)ellGet(&free_event_list)))
-    monix = (evid) malloc(sizeof *monix);
+    monix = (evid) malloc(size);
 # endif
 
   if(!monix){
-    status = ECA_ALLOCMEM;
-    goto unlock_rtn;
+    UNLOCK;
+    return ECA_ALLOCMEM;
   }
+
+  memset(monix,0,size);
 
   /* they dont have to supply one if they dont want to */
   if(monixptr)
@@ -1981,8 +2704,8 @@ long				mask;
 				mask,
 				monix+1);
       if(status == ERROR){
-        status = ECA_DBLCLFAIL;
-        goto unlock_rtn;
+	UNLOCK;
+       	return ECA_DBLCLFAIL; 
       }
 
       /* 
@@ -1999,13 +2722,12 @@ long				mask;
 	to force the first (untriggered) event.
       */
       if(db_post_single_event(monix+1)==ERROR){
-        status = ECA_OVEVFAIL;
-        goto unlock_rtn;
+	UNLOCK;
+        return ECA_OVEVFAIL;
       }
 
-      status = ECA_NORMAL;
-      goto unlock_rtn;
-
+      UNLOCK;
+      return ECA_NORMAL;
     } 
   }
 # endif
@@ -2014,35 +2736,28 @@ long				mask;
   /* Place in the channel list */
   ellAdd(&chix->eventq, &monix->node);
 
-  ca_request_event(monix);
-
-  status = ECA_NORMAL;
-
-unlock_rtn:
-
   UNLOCK;
 
-  return status;
+  return ca_request_event(monix);
 }
 
 
 /*
  *	CA_REQUEST_EVENT()
- *
- * 	LOCK must be applied while in this routine
  */
 #ifdef __STDC__
-void ca_request_event(evid monix)
+int ca_request_event(evid monix)
 #else
-void ca_request_event(monix)
+int ca_request_event(monix)
 evid            monix;
 #endif
 {
-	register chid   	chix = monix->chan;
-	unsigned		size = sizeof(struct mon_info);
+	int			status;
+	chid   			chix = monix->chan;
 	unsigned        	count;
-	register struct monops	*mptr;
+	struct monops		msg;
 	struct ioc_in_use	*piiu;
+	
 
 	piiu = chix->piiu;
 
@@ -2051,7 +2766,7 @@ evid            monix;
 	 * (it will be sent once connected)
   	 */
 	if(chix->state != cs_conn){
-		return;
+		return ECA_BADCHID;
 	}
 
 	/*
@@ -2065,28 +2780,25 @@ evid            monix;
 		count = monix->count;
 	}
 
-	mptr = (struct monops *) CAC_ALLOC_MSG(piiu, size);
-	if(!mptr){
-		ca_printf("%s: %s\n",__FILE__,ca_message(ECA_TOLARGE));
-		return;
-	}
-
 	/* msg header	 */
-	mptr->m_header.m_cmmd = htons(IOC_EVENT_ADD);
-	mptr->m_header.m_available = (long) monix;
-	mptr->m_header.m_type = htons(monix->type);
-	mptr->m_header.m_count = htons(count);
-	mptr->m_header.m_cid = chix->id.sid;
+	msg.m_header.m_cmmd = htons(IOC_EVENT_ADD);
+	msg.m_header.m_available = (long) monix;
+	msg.m_header.m_type = htons(monix->type);
+	msg.m_header.m_count = htons(count);
+	msg.m_header.m_cid = chix->id.sid;
+	msg.m_header.m_postsize = sizeof(msg.m_info);
 
 	/* msg body	 */
-	htonf(&monix->p_delta, &mptr->m_info.m_hval);
-	htonf(&monix->n_delta, &mptr->m_info.m_lval);
-	htonf(&monix->timeout, &mptr->m_info.m_toval);
-	mptr->m_info.m_mask = htons(monix->mask);
+	htonf(&monix->p_delta, &msg.m_info.m_hval);
+	htonf(&monix->n_delta, &msg.m_info.m_lval);
+	htonf(&monix->timeout, &msg.m_info.m_toval);
+	msg.m_info.m_mask = htons(monix->mask);
 
-	CAC_ADD_MSG(piiu);
+	status = cac_push_msg(piiu, &msg.m_header, &msg.m_info);
 
 	piiu->send_needed = TRUE;
+
+	return status;
 }
 
 
@@ -2140,10 +2852,7 @@ void		*pfl;
     		status = OK;
   	}
   	else{
-    		if(count == 1)
-      			size = dbr_size[type];
-    		else
-      			size = (count-1)*dbr_value_size[type]+dbr_size[type];
+		size = dbr_size_n(type,count);
 
     		if( size <= sizeof(valbuf) ){
       			pval = (void *) &valbuf;
@@ -2172,11 +2881,13 @@ void		*pfl;
 			if(!pbuf){
 				pbuf = (struct tmp_buff *)
 					malloc(sizeof(*pbuf)+size);
-				if(!pbuf)
-					abort(0);
+				if(!pbuf){
+					ca_printf("%s: No Mem, Event Discarded\n",
+						__FILE__);
+					return;
+				}
 				pbuf->size = size;
 			}
-
 			pval = (void *) (pbuf+1);
 		}
 	}
@@ -2189,33 +2900,26 @@ void		*pfl;
 				pfl);
 
   	/*
-  	 *   I would like to tell um with the event handler but this would
-  	 *   not be upward compatible. so I run the exception handler.
+	 * Call user's callback
    	 */
 	LOCKEVENTS;
-  	if(status == ERROR){
-    		if(ca_static->ca_exception_func){
-			struct exception_handler_args	args;
+	{
+		struct event_handler_args args;
+		
+		args.usr = monix->usr_arg;
+		args.chid = monix->chan;
+		args.type = type;
+		args.count = count;
+		args.dbr = pval;
 
-			args.usr = ca_static->ca_exception_arg;	
-			args.chid = monix->chan;	
-			args.type = type;		
-			args.count = count;		
-			args.addr = NULL;		
-			args.stat = ECA_GETFAIL;	
-			args.op = CA_OP_GET;		
-			args.ctx = "Event lost due to local get fail\n"; 
+  		if(status == OK){
+			args.status = ECA_NORMAL;
+		}
+		else{
+			args.status = ECA_GETFAIL;
+		}
 
-        		(*ca_static->ca_exception_func)(args);
-    		}
-  	}
-  	else{
-   	 	(*monix->usr_func)(
-				monix->usr_arg, 
-				monix->chan, 
-				type, 
-				count,
-				pval);
+   	 	(*monix->usr_func)(args);
 	}
 	UNLOCKEVENTS;
 
@@ -2274,10 +2978,22 @@ int ca_clear_event
 evid   monix;
 #endif
 {
-	register chid   chix = monix->chan;
-	register struct extmsg *mptr;
+	int		status;
+	chid   		chix = monix->chan;
+	struct extmsg 	hdr;
 
+	/*
+	 * is it a valid channel ?
+	 */
 	LOOSECHIXCHK(chix);
+
+	/*
+	 * is it a valid monitor id
+	 */
+	status = ellFind(&chix->eventq, &monix->node);
+	if(status==ERROR){
+		return ECA_BADMONID;
+	}
 
 	/* disable any further events from this event block */
 	monix->usr_func = NULL;
@@ -2290,20 +3006,14 @@ evid   monix;
 		 * dont allow two threads to delete the same moniitor at once
 		 */
 		LOCK;
-		status = ellFind(&chix->eventq, &monix->node);
-		if (status != ERROR) {
-			ellDelete(&chix->eventq, &monix->node);
-			status = db_cancel_event(monix + 1);
-		}
-		UNLOCK;
-		if (status == ERROR)
-			return ECA_BADMONID;
-
+		ellDelete(&chix->eventq, &monix->node);
+		status = db_cancel_event(monix + 1);
 		ellAdd(&dbfree_ev_list, &monix->node);
+		UNLOCK;
 
 		return ECA_NORMAL;
 	}
-#endif
+#endif /*vxWorks*/
 
 	/*
 	 * dont send the message if the conn is down (just delete from the
@@ -2311,44 +3021,36 @@ evid   monix;
 	 * 
 	 * check for conn down while locked to avoid a race
 	 */
-	LOCK;
 	if(chix->state == cs_conn){
 		struct ioc_in_use 	*piiu;
 		
 		piiu = chix->piiu;
 
-		mptr = CAC_ALLOC_MSG(piiu, 0);
-		if(!mptr){
-			UNLOCK;
-			return ECA_TOLARGE;
-		}
-
 		/* msg header	 */
-		mptr->m_cmmd = htons(IOC_EVENT_CANCEL);
-		mptr->m_available = (long) monix;
-		mptr->m_type = chix->type;
-		mptr->m_count = chix->count;
-		mptr->m_cid = chix->id.sid;
+		hdr.m_cmmd = htons(IOC_EVENT_CANCEL);
+		hdr.m_available = (long) monix;
+		hdr.m_type = htons(chix->type);
+		hdr.m_count = htons(chix->count);
+		hdr.m_cid = chix->id.sid;
+		hdr.m_postsize = 0;
 	
+		status = cac_push_msg(piiu, &hdr, NULL);
+
 		/* 
 		 *	NOTE: I free the monitor block only
 		 *	after confirmation from IOC 
 		 */
-		CAC_ADD_MSG(piiu);
-
-		/*
-		 * keep track of the number of messages outstanding on this
-		 * connection that require a response
-		 */
-		piiu->outstanding_ack_count++;
 	}
 	else{
+		LOCK;
 		ellDelete(&monix->chan->eventq, &monix->node);
+		UNLOCK;
+		status = ECA_NORMAL;
 	}
-	UNLOCK;
 
-	return ECA_NORMAL;
+	return status;
 }
+
 
 /*
  *
@@ -2374,9 +3076,9 @@ chid   chix;
 #endif
 {
 	int				status;
-	register evid   		monix;
+	evid   				monix;
 	struct ioc_in_use 		*piiu = chix->piiu;
-	register struct extmsg 		*mptr;
+	struct extmsg 			hdr;
 	enum channel_state		old_chan_state;
 
 	LOOSECHIXCHK(chix);
@@ -2388,102 +3090,103 @@ chid   chix;
 
 	/* the while is only so I can break to the lock exit */
 	LOCK;
-	while (TRUE) {
-		/* disable any further events from this channel */
-		for (monix = (evid) chix->eventq.node.next;
-		     monix;
-		     monix = (evid) monix->node.next)
+	/* disable any further events from this channel */
+	for (monix = (evid) chix->eventq.node.next;
+	     monix;
+	     monix = (evid) monix->node.next)
+		monix->usr_func = NULL;
+	/* disable any further get callbacks from this channel */
+	for (monix = (evid) pend_read_list.node.next;
+	     monix;
+	     monix = (evid) monix->node.next)
+		if (monix->chan == chix)
 			monix->usr_func = NULL;
-		/* disable any further get callbacks from this channel */
-		for (monix = (evid) pend_read_list.node.next;
-		     monix;
-		     monix = (evid) monix->node.next)
-			if (monix->chan == chix)
-				monix->usr_func = NULL;
+	/* disable any further put callbacks from this channel */
+	for (monix = (evid) pend_write_list.node.next;
+	     monix;
+	     monix = (evid) monix->node.next)
+		if (monix->chan == chix)
+			monix->usr_func = NULL;
 
 #ifdef vxWorks
-		if (!chix->piiu) {
-			int             status;
+	if (!chix->piiu) {
+		CACLIENTPUTNOTIFY	*ppn;
+		int             	status;
 
-			/*
-			 * clear out the events for this channel
-			 */
-			while (monix = (evid) ellGet(&chix->eventq)) {
-				status = db_cancel_event(monix + 1);
-				if (status == ERROR)
-					abort(0);
-				ellAdd(&dbfree_ev_list, &monix->node);
-			}
-
-			/*
-			 * clear out this channel
-			 */
-			ellDelete(&local_chidlist, &chix->node);
-			free((char *) chix);
-
-			break;	/* to unlock exit */
+		/*
+		 * clear out the events for this channel
+		 */
+		while (monix = (evid) ellGet(&chix->eventq)) {
+			status = db_cancel_event(monix + 1);
+			assert (status == OK);
+			ellAdd(&dbfree_ev_list, &monix->node);
 		}
+
+		/*
+		 * cancel any outstanding put notifies
+		 */
+		if(chix->ppn){
+			ppn = chix->ppn;
+			if(ppn->busy){
+				dbNotifyCancel(&ppn->dbPutNotify);
+			}
+			free(ppn);
+		}
+
+		/*
+		 * clear out this channel
+		 */
+		ellDelete(&local_chidlist, &chix->node);
+		free((char *) chix);
+
+		UNLOCK;
+		return ECA_NORMAL;
+	}
 #endif
 
-		/*
-		 * dont send the message if not conn 
-		 * (just delete from the queue and return)
-		 * 
-		 * check for conn state while locked to avoid a race
-		 */
-		if(old_chan_state != cs_conn){
-			ellConcat(&free_event_list, &chix->eventq);
-			ellDelete(&piiu->chidlist, &chix->node);
-			status = bucketRemoveItem(pBucket, chix->cid, chix);
-			if(status != BUCKET_SUCCESS){
-				ca_signal(	
-					ECA_INTERNAL, 
-					"bad id at channel delete");
-			}
-			free((char *) chix);
-			break;	/* to unlock exit */
-		}
-
-		/*
-		 * clear events and all other resources for this chid on the
-		 * IOC
-		 */
-		mptr = CAC_ALLOC_MSG(piiu, 0);
-		if(!mptr){
-			UNLOCK;
-			return ECA_TOLARGE;
-		}
-
-		/* msg header	 */
-		mptr->m_cmmd = htons(IOC_CLEAR_CHANNEL);
-		mptr->m_available = (int) chix;
-		mptr->m_type = 0;
-		mptr->m_count = 0;
-		mptr->m_cid = chix->id.sid;
-
-		/*
-		 * NOTE: I free the chid and monitor blocks only after
-		 * confirmation from IOC
-		 */
-
-		CAC_ADD_MSG(piiu);
-
-		/*
-		 * keep track of the number of messages 
-		 * outstanding on this connection that 
-		 * require a response
-		 */
-		piiu->outstanding_ack_count++;
-
-		break;		/* to unlock exit */
-	}
 	/*
-	 * message about unexecuted code from SUN's cheaper cc is a compiler
-	 * bug
+	 * dont send the message if not conn 
+	 * (just delete from the queue and return)
+	 * 
+	 * check for conn state while locked to avoid a race
 	 */
+	if(old_chan_state != cs_conn){
+		ellConcat(&free_event_list, &chix->eventq);
+		ellDelete(&piiu->chidlist, &chix->node);
+		status = bucketRemoveItem(pBucket, chix->cid, chix);
+		if(status != BUCKET_SUCCESS){
+			ca_signal(	
+				ECA_INTERNAL, 
+				"bad id at channel delete");
+		}
+		free((char *) chix);
+		UNLOCK;
+		return ECA_NORMAL;
+	}
+
+	/*
+	 * clear events and all other resources for this chid on the
+	 * IOC
+	 */
+
+	/* msg header	 */
+	hdr.m_cmmd = htons(IOC_CLEAR_CHANNEL);
+	hdr.m_available = (int) chix;
+	hdr.m_type = htons(0);
+	hdr.m_count = htons(0);
+	hdr.m_cid = chix->id.sid;
+	hdr.m_postsize = 0;
+	
+	status = cac_push_msg(piiu, &hdr, NULL);
+
+	/*
+	 * NOTE: I free the chid and monitor blocks only after
+	 * confirmation from IOC
+	 */
+
 	UNLOCK;
 
-	return ECA_NORMAL;
+	return status;
 }
 
 
@@ -2502,7 +3205,6 @@ chid   chix;
  */
 /************************************************************************/
 /*	This routine pends waiting for channel events and calls the 	*/
-/*	function specified with add_event when one occurs. If the 	*/
 /*	timeout is specified as 0 infinite timeout is assumed.		*/
 /*	if the argument early is specified TRUE then CA_NORMAL is 	*/
 /*	returned early (prior to timeout experation) when outstanding 	*/
@@ -2525,14 +3227,13 @@ int			early;
     		return ECA_EVDISALLOW;
 	}
 
+	manage_conn(TRUE);
+
   	/*	
 	 * Flush the send buffers
 	 */
     	if(pndrecvcnt<1 && early){
-		LOCK;
-      		manage_conn(TRUE);
-  		cac_send_msg();
-		UNLOCK;
+		ca_flush_io();
         	return ECA_NORMAL;
 	}
 
@@ -2541,8 +3242,6 @@ int			early;
 	 */
   	if((timeout*SYSFREQ)<LOCALTICKS && timeout != 0.0){
 
-  		LOCK;
-      		manage_conn(!early);
 		if(pndrecvcnt>0 && early){
 			ca_pend_io_cleanup();
 		}
@@ -2551,8 +3250,7 @@ int			early;
 		 * also takes care of outstanding recvs
 		 * under UNIX
 		 */
-  		cac_send_msg();
-  		UNLOCK;
+		ca_flush_io();
 
     		if(pndrecvcnt<1 && early){
         		return ECA_NORMAL;
@@ -2565,30 +3263,23 @@ int			early;
   	beg_time = time(NULL);
 
   	while(TRUE){
-		/*
-		 * also takes care of outstanding recvs
-		 * under UNIX
-		 */
-		LOCK;
-      		manage_conn(TRUE);
-  		cac_send_msg();
-		UNLOCK;
-
-#if 		defined(UNIX)
+#		ifdef UNIX
     		{
       			struct timeval	itimeout;
 
       			itimeout.tv_usec 	= LOCALTICKS;	
       			itimeout.tv_sec  	= 0;
-      			LOCK;
-      			recv_msg_select(&itimeout);
-      			UNLOCK;
+			ca_mux_io(&itimeout, CA_DO_RECVS | CA_DO_SENDS);
     		}
-#		else
-#  		if defined(vxWorks)
+#		else /*UNIX*/
+  			ca_flush_io();
+#	 	endif /*UNIX*/	
+
+#  		ifdef vxWorks
 			semTake(io_done_sem, LOCALTICKS);
-#  		else
-#    		if defined(VMS)
+#  		endif /*vxWorks*/	
+
+#    		ifdef VMS
     		{
       			int 		status; 
       			unsigned int 	systim[2]={-LOCALTICKS,~0};
@@ -2605,11 +3296,7 @@ int			early;
       			if(status != SS$_NORMAL)
         			lib$signal(status);
     		}   
-#    		else
-			@@@@ dont compile in this case @@@@ 
-#    		endif
-#  		endif
-#		endif
+#		endif /*VMS*/
 
 
     		if(pndrecvcnt<1 && early)
@@ -2617,16 +3304,15 @@ int			early;
 
     		if(timeout != 0.0){
       			if(timeout < time(NULL)-beg_time){
-				LOCK;
-      				manage_conn(!early);
 				if(early){
 					ca_pend_io_cleanup();
 				}
-  				cac_send_msg();
-				UNLOCK;
+				ca_flush_io();
         			return ECA_TIMEOUT;
       			}
   		}    
+
+		manage_conn(TRUE);
 	}
 }
 
@@ -2637,39 +3323,29 @@ int			early;
  * send a sync to each IOC and back. dont
  * count reads until we recv the sync
  *
- * LOCK must be on
  */
 LOCAL	void ca_pend_io_cleanup()
 {
 	struct ioc_in_use       *piiu;
 
+	LOCK;
 	for(	piiu = (IIU *) iiuList.node.next;
 		piiu;
 		piiu = (IIU *) piiu->node.next){
 
-		struct extmsg *mptr;
+		struct extmsg hdr;
 
 		if(piiu == piiuCast || !piiu->conn_up){
 			continue;
 		}
 
 		piiu->cur_read_seq++;
-		mptr = CAC_ALLOC_MSG(piiu, 0);
-		if(!mptr){
-	ca_printf("%s: %s\n",__FILE__,ca_message(ECA_TOLARGE));
-			return;
-		}
 
-		*mptr = nullmsg;
-		mptr->m_cmmd = htons(IOC_READ_SYNC);
-		CAC_ADD_MSG(piiu);
-		/*
-		 * keep track of the number of messages 
-		 * outstanding on this connection that 
-		 * require a response
-		 */
-		piiu->outstanding_ack_count++;
+		hdr = nullmsg;
+		hdr.m_cmmd = htons(IOC_READ_SYNC);
+		cac_push_msg(piiu, &hdr, NULL);
 	}
+	UNLOCK;
 	pndrecvcnt = 0;
 }
 
@@ -2679,6 +3355,7 @@ LOCAL	void ca_pend_io_cleanup()
 /*
  *	CA_FLUSH_IO()
  *
+ * 	Flush the send buffer 
  *
  */
 int ca_flush_io
@@ -2688,21 +3365,55 @@ int ca_flush_io
 ()
 #endif
 {
+	struct ioc_in_use	*piiu;
+	struct timeval  	timeout;
+	int			pending;
+	unsigned long		bytesPending;
 
-  INITCHK;
+  	INITCHK;
 
-  /*	Flush the send buffers			*/
-  LOCK;
-  cac_send_msg();
-  UNLOCK;
+	pending = TRUE;
+      	timeout.tv_usec = 0;	
+	timeout.tv_sec = 0;
+	while(pending){
 
-  return ECA_NORMAL;
+		/*
+		 * perform socket io
+		 * and process recv backlog
+		 */
+#		ifdef UNIX
+			ca_mux_io(&timeout, CA_DO_RECVS | CA_DO_SENDS);
+#		endif /*UNIX*/
+
+		/*
+		 * wait for all buffers to flush
+		 */
+		pending = FALSE;
+		LOCK;
+		for(	piiu = (IIU *) iiuList.node.next;
+			piiu;
+			piiu = (IIU *) piiu->node.next){
+
+			bytesPending = cacRingBufferReadSize(&piiu->send, FALSE);
+			if(bytesPending != 0){
+				pending = TRUE;
+#				ifndef UNIX
+					(*piiu->sendBytes)(piiu);
+#				endif /*UNIX*/
+			}
+		}
+		UNLOCK;
+
+      		timeout.tv_usec = LOCALTICKS;	
+		timeout.tv_sec = 0;
+	}
+
+  	return ECA_NORMAL;
 }
 
 
 /*
  *	CA_TEST_IO ()
- *
  *
  */
 int ca_test_io()
@@ -2825,7 +3536,7 @@ void ca_busy_message(piiu)
 struct ioc_in_use *piiu;
 #endif
 {
-	struct extmsg  *mptr;
+	struct extmsg  	hdr;
 
 	if(!piiu){
 		return;
@@ -2837,18 +3548,12 @@ struct ioc_in_use *piiu;
     	if(piiu == piiuCast)
 		return;
 
-	LOCK;
-	mptr = CAC_ALLOC_MSG(piiu, 0);
-	if(!mptr){
-		UNLOCK;
-		ca_printf("%s: %s\n",__FILE__,ca_message(ECA_TOLARGE));
-		return;
-	}
-	*mptr = nullmsg;
-	mptr->m_cmmd = htons(IOC_EVENTS_OFF);
-	CAC_ADD_MSG(piiu);
+	hdr = nullmsg;
+	hdr.m_cmmd = htons(IOC_EVENTS_OFF);
+	
+	cac_push_msg(piiu, &hdr, NULL);
+
 	piiu->send_needed = TRUE;
-	UNLOCK;
 }
 
 
@@ -2863,7 +3568,7 @@ void ca_ready_message(piiu)
 struct ioc_in_use *piiu;
 #endif
 {
-	struct extmsg  *mptr;
+	struct extmsg  	hdr;
 
 	if(!piiu){
 		return;
@@ -2875,44 +3580,145 @@ struct ioc_in_use *piiu;
     	if(piiu == piiuCast)
 		return;
 
-	LOCK;
-	mptr = CAC_ALLOC_MSG(piiu, 0);
-	if(!mptr){
-		UNLOCK;
-		ca_printf("%s: %s\n",__FILE__,ca_message(ECA_TOLARGE));
-		return;
-	}
-	*mptr = nullmsg;
-	mptr->m_cmmd = htons(IOC_EVENTS_ON);
-	CAC_ADD_MSG(piiu);
-	piiu->send_needed = TRUE;
-	UNLOCK;
+	hdr = nullmsg;
+	hdr.m_cmmd = htons(IOC_EVENTS_ON);
+	
+	cac_push_msg(piiu, &hdr, NULL);
 
+	piiu->send_needed = TRUE;
 }
 
 
 /*
+ *
  * NOOP_MSG (lock must be on)
  * 
+ * now allows variable size NOOP message
+ *
  */
 #ifdef __STDC__
 void noop_msg(struct ioc_in_use *piiu)
-#else
+#else /*__STDC__*/
 void noop_msg(piiu)
-struct ioc_in_use *piiu;
-#endif
+struct ioc_in_use 	*piiu;
+#endif /*__STDC__*/
 {
-	struct extmsg  *mptr;
+	struct extmsg  	hdr;
 
-	mptr = CAC_ALLOC_MSG(piiu, 0);
-	if(!mptr){
-		ca_printf("%s: %s\n",__FILE__,ca_message(ECA_TOLARGE));
+	hdr.m_cmmd = htons(IOC_NOOP);
+	hdr.m_type = htons(0);
+	hdr.m_count = htons(0);
+	hdr.m_cid = htons(0);
+	hdr.m_available = htons(0);
+	hdr.m_postsize = 0;
+	
+	cac_push_msg(piiu, &hdr, NULL);
+
+	piiu->send_needed = TRUE;
+}
+
+
+/*
+ * ISSUE_IDENTIFY_CLIENT_LOCATION (lock must be on)
+ * 
+ */
+#ifdef __STDC__
+void issue_identify_client_location(struct ioc_in_use *piiu)
+#else /*__STDC__*/
+void issue_identify_client_location(piiu)
+struct ioc_in_use	*piiu;
+#endif /*__STDC__*/
+{
+	unsigned	size;
+	struct extmsg  	hdr;
+	char		*pName;
+
+	if(!piiu){
 		return;
 	}
-	*mptr = nullmsg;
-	mptr->m_cmmd = htons(IOC_NOOP);
-	CAC_ADD_MSG(piiu);
+
+  	/* 
+	 * dont broadcast client identification protocol
+	 */
+    	if(piiu == piiuCast){
+		return;
+	}
+
+	/*
+	 * prior to version 4.1 client identification
+	 * protocol causes a disconnect - so
+	 * dont send it in this case
+	 */
+	if(!CA_V41(CA_PROTOCOL_VERSION, piiu->minor_version_number)){
+		return;
+	}
+
+	/*
+	 * allocate space in the outgoing buffer
+	 */
+	pName =	ca_static->ca_pLocationName, 
+	size = strlen(pName)+1;
+	hdr = nullmsg;
+	hdr.m_cmmd = htons(IOC_CLIENT_LOCATION);
+	hdr.m_postsize = size;
+	
+	cac_push_msg(piiu, &hdr, pName);
+
 	piiu->send_needed = TRUE;
+
+	return;
+}
+
+
+/*
+ * ISSUE_IDENTIFY_CLIENT (lock must be on)
+ * 
+ */
+#ifdef __STDC__
+void issue_identify_client(struct ioc_in_use *piiu)
+#else /*__STDC__*/
+void issue_identify_client(piiu)
+struct ioc_in_use	*piiu;
+#endif /*__STDC__*/
+{
+	unsigned	size;
+	struct extmsg  	hdr;
+	char		*pName;
+
+	if(!piiu){
+		return;
+	}
+
+  	/* 
+	 * dont broadcast client identification protocol
+	 */
+    	if(piiu == piiuCast){
+		return;
+	}
+
+	/*
+	 * prior to version 4.1 client identification
+	 * protocol causes a disconnect - so
+	 * dont send it in this case
+	 */
+	if(!CA_V41(CA_PROTOCOL_VERSION, piiu->minor_version_number)){
+		return;
+	}
+
+	/*
+	 * allocate space in the outgoing buffer
+	 */
+	pName =	ca_static->ca_pUserName, 
+	size = strlen(pName)+1;
+	hdr = nullmsg;
+	hdr.m_cmmd = htons(IOC_CLIENT_NAME);
+	hdr.m_postsize = size;
+	
+	cac_push_msg(piiu, &hdr, pName);
+
+	piiu->send_needed = TRUE;
+
+	return;
 }
 
 
@@ -2928,7 +3734,7 @@ struct ioc_in_use	*piiu;
 chid 			pchan;
 #endif
 {
-	struct extmsg  *mptr;
+	struct extmsg  	hdr;
 
 	if(!piiu){
 		return;
@@ -2940,15 +3746,19 @@ chid 			pchan;
     	if(piiu == piiuCast)
 		return;
 
-	mptr = CAC_ALLOC_MSG(piiu, 0);
-	if(!mptr){
-		ca_printf("%s: %s\n",__FILE__,ca_message(ECA_TOLARGE));
-		return;
-	}
-	*mptr = nullmsg;
-	mptr->m_cmmd = htons(IOC_CLAIM_CIU);
-	mptr->m_cid = pchan->id.sid;
-	CAC_ADD_MSG(piiu);
+	hdr = nullmsg;
+	hdr.m_cmmd = htons(IOC_CLAIM_CIU);
+	hdr.m_cid = pchan->id.sid;
+
+	/*
+	 * The available field is used (abused)
+	 * here to communicate the miner version number
+	 * starting with CA 4.1.
+	 */
+	hdr.m_available = CA_MINOR_VERSION;
+
+	cac_push_msg(piiu, &hdr, NULL);
+
 	piiu->send_needed = TRUE;
 }
 
@@ -2961,9 +3771,9 @@ chid 			pchan;
  *
  */
 #ifdef __STDC__
-void ca_default_exception_handler(struct exception_handler_args args)
+LOCAL void ca_default_exception_handler(struct exception_handler_args args)
 #else
-void ca_default_exception_handler(args)
+LOCAL void ca_default_exception_handler(args)
 struct exception_handler_args args;
 #endif
 {
@@ -3029,10 +3839,10 @@ int ca_defunct()
  */
 #ifdef __STDC__
 char *ca_host_name_function(chid chix)
-#else
+#else /*__STDC__*/
 char *ca_host_name_function(chix)
 chid	chix;
-#endif
+#endif /*__STDC__*/
 {
 	IIU	*piiu;
 
@@ -3055,10 +3865,10 @@ chid	chix;
 #ifdef vxWorks
 #ifdef __STDC__
 int ca_channel_status(int tid)
-#else
+#else /*__STDC__*/
 int ca_channel_status(tid)
 int tid;
-#endif
+#endif /*__STDC__*/
 {
 	chid			chix;
 	IIU			*piiu;
@@ -3097,6 +3907,7 @@ int tid;
 				printf("invalid channel");
 				break;
 			default:
+				break;
 			}
 			printf("\n");
 		}
@@ -3107,4 +3918,4 @@ int tid;
 #	undef ca_static
 	return ECA_NORMAL;
 }
-#endif vxWorks
+#endif /*vxWorks*/

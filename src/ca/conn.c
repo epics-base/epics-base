@@ -71,8 +71,6 @@ static char 	*sccsId = "$Id$\t$Date$";
  *	retry disconnected channels
  *
  *
- *	NOTES:
- *	Lock must be applied while in this routine
  */
 #ifdef __STDC__
 void manage_conn(int silent)
@@ -93,6 +91,7 @@ int	silent;
 	/*
 	 * issue connection heartbeat
 	 */
+	LOCK;
 	for(	piiu = (struct ioc_in_use *) iiuList.node.next;
 		piiu;
 		piiu = (struct ioc_in_use *) piiu->node.next){
@@ -120,6 +119,7 @@ int	silent;
 		noop_msg(piiu);
 		keepalive_cnt++;
 	}
+	UNLOCK;
 
 	if(!piiuCast){
 		return;
@@ -140,8 +140,11 @@ int	silent;
 	}
 	piiuCast->next_retry = current + piiuCast->retry_delay;
 
-    	chix = (chid) &piiuCast->chidlist.node.next;
-    	while(chix = (chid) chix->node.next){
+	LOCK;
+	for(	chix = (chid) piiuCast->chidlist.node.next;
+		chix;
+		chix = (chid) chix->node.next){
+
       		build_msg(chix, DONTREPLY);
      		retry_cnt++;
 
@@ -150,15 +153,15 @@ int	silent;
 			retry_cnt_no_handler++;
 		}
     	}
-  	
+ 	UNLOCK; 	
 
   	if(retry_cnt){
 #ifdef TRYING_MESSAGE
     		ca_printf("<Trying %d> ", retry_cnt);
 #ifdef UNIX
     		fflush(stdout);
-#endif UNIX
-#endif TRYING_MESSAGE
+#endif /*UNIX*/
+#endif /*TRYING_MESSAGE*/
 
     		if(!silent && retry_cnt_no_handler){
       			sprintf(sprintf_buf, "%d channels outstanding", retry_cnt);
@@ -174,8 +177,6 @@ int	silent;
  *	MARK_SERVER_AVAILABLE
  *
  *
- *	NOTES:
- *	Lock must be applied while in this routine
  *
  */
 #ifdef __STDC__
@@ -208,6 +209,7 @@ struct in_addr  *pnet_addr;
 	 */
 	index = ntohl(pnet_addr->s_addr);
 	index &= BHT_INET_ADDR_MASK;
+	LOCK;
 	pBHE = ca_static->ca_beaconHash[index];
 	while(pBHE){
 		if(pBHE->inetAddr.s_addr ==
@@ -256,6 +258,7 @@ struct in_addr  *pnet_addr;
 		}
 
 		if(!netChange){
+			UNLOCK;
 			return;
 		}
 	}
@@ -264,8 +267,9 @@ struct in_addr  *pnet_addr;
 		/*
 		 * create the hash entry
 		 */
-		pBHE = (bhe *)malloc(sizeof(*pBHE));
+		pBHE = (bhe *)calloc(1,sizeof(*pBHE));
 		if(!pBHE){
+			UNLOCK;
 			return;
 		}
 
@@ -311,7 +315,7 @@ struct in_addr  *pnet_addr;
 	 */
 	{
   	  	struct sockaddr_in	saddr;
-		unsigned		saddr_length = sizeof(saddr);
+		int			saddr_length = sizeof(saddr);
 		int			status;
 
 		status = getsockname(
@@ -345,5 +349,6 @@ struct in_addr  *pnet_addr;
     	fflush(stdout);
 #endif
 #endif
+	UNLOCK;
 
 }

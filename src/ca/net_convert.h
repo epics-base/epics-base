@@ -8,10 +8,10 @@
  *	joh 	09-13-90	force MIT sign to zero if exponent is zero
  *				to prevent a reseved operand fault.
  *
+ *	joh	03-16-94	Added double fp
+ *
  *
  */
-
-static char *net_converthSccsId = "@(#)net_convert.h	1.5\t7/27/92";
 
 /************************************************************************/
 /*	So byte swapping can be performed in line for efficiency	*/
@@ -62,7 +62,7 @@ static char *net_converthSccsId = "@(#)net_convert.h	1.5\t7/27/92";
 
 
 /************************************************************************/
-/*	So float convert can be performed in line for efficiency	*/
+/*	So float convert can be performed in line 			*/
 /*	(THIS ASSUMES IEEE IS THE NETWORK FLOATING POINT FORMAT)	*/
 /************************************************************************/
 struct ieeeflt{
@@ -93,9 +93,9 @@ struct ieeeflt{
   /*	Conversion Ranges	*/
   /*	-128<exp<126	with mantissa of form 1.mant			*/
 # define	EXPMAXMIT	126	/* max MIT exponent 		*/
+# define 	EXPMINMIT	-128	/* min MIT exponent		*/
 
-
-  /* passed by ref untill beter alternative found */
+  /* passed by ref until beter alternative found */
   /* (this includes mapping of fringe reals to zero or infinity) */
   /* (byte swaps included in conversion */
 
@@ -106,6 +106,7 @@ struct ieeeflt{
     if( (short)((struct mitflt *) (MIT))->exp < EXPMINIEEE + MIT_SB){\
       exp 	= 0;\
       mant 	= 0;\
+      sign      = 0;\
     }\
     else{\
       exp = (short)((struct mitflt *) (MIT))->exp-MIT_SB+IEEE_SB;\
@@ -156,199 +157,120 @@ struct ieeeflt{
 # define htonf(HOST,NET)  {*(float *)(NET) = *(float *)(HOST);}
 #endif
 
+/************************************************************************/
+/*	So double convert can be performed in line 			*/
+/*	(THIS ASSUMES IEEE IS THE NETWORK FLOATING POINT FORMAT)	*/
+/************************************************************************/
+struct ieeedbl{
+        unsigned int    mant1 : 20;
+        unsigned int    exp   : 11;
+        unsigned int    sign  : 1;
+        unsigned int    mant2 : 32;
+};
+
+#define	IEEE_DBL_SB		1023	
+
+/*	Conversion Range	*/
+/*	-1022<exp<1024	with mantissa of form 1.mant			*/
+#define	DBLEXPMINIEEE	-1022	/* min for norm # IEEE exponent	*/
+
 #ifdef VAX
-#ifdef __STDC__
-int cvrt_short(
-short           *s,                     /* source                       */
-short           *d,                     /* destination                  */
-int             encode,                 /* cvrt VAX to IEEE if T        */
-int             num                     /* number of values             */
-);
 
-int cvrt_char(
-char            *s;                     /* source                       */
-char            *d;                     /* destination                  */
-int             encode;                 /* cvrt VAX to IEEE if T        */
-int             num;                    /* number of values             */
-);
+  struct mitdbl{
+        unsigned int    mant1 : 7;
+        unsigned int    exp   : 8;
+        unsigned int    sign  : 1;
+        unsigned int    mant2 : 16;
+        unsigned int    mant3 : 16;
+        unsigned int    mant4 : 16;
+  };
 
-int cvrt_long(
-long            *s,                     /* source                       */
-long            *d,                     /* destination                  */
-int             encode,                 /* cvrt VAX to IEEE if T        */
-int             num                     /* number of values             */
-);
+  /*	Exponent sign bias	*/
+# define	MIT_DBL_SB	129	
 
-int cvrt_enum(
-short           *s,                     /* source                       */
-short           *d,                     /* destination                  */
-int             encode,                 /* cvrt VAX to IEEE if T        */
-int             num                     /* number of values             */
-);
+  /*	Conversion Ranges	*/
+  /*	-128<exp<126	with mantissa of form 1.mant			*/
+# define	DBLEXPMAXMIT	126	/* max MIT exponent 		*/
+# define	DBLEXPMINMIT	-128	/* min MIT exponent 		*/
 
-int cvrt_float(
-float		*s,                     /* source               	*/
-float		*d,                     /* destination          	*/
-int		encode,                 /* cvrt VAX to IEEE if T	*/
-int		num                     /* number of values     	*/
-);
 
-int cvrt_double(
-double          *s,                     /* source                       */
-double          *d,                     /* destination                  */
-int             encode,                 /* cvrt VAX to IEEE if T        */
-int             num                     /* number of values             */
-);
+  /* passed by ref until beter alternative found */
+  /* (this includes mapping of fringe reals to zero or infinity) */
+  /* (byte swaps included in conversion */
 
-int cvrt_string(
-char            *s,                     /* source                       */
-char            *d,                     /* destination                  */
-int             encode,                 /* cvrt VAX to IEEE if T        */
-int             num                     /* number of values             */
-);
+# define  htond(MIT,IEEE)\
+  {\
+    long	tmp;\
+    if( (short)((struct mitdbl *) (MIT))->exp < DBLEXPMINMIT + MIT_DBL_SB){\
+      ((struct ieeedbl *) (IEEE))->mant1 = 0;\
+      ((struct ieeedbl *) (IEEE))->mant2 = 0;\
+      ((struct ieeedbl *) (IEEE))->exp 	= 0;\
+      ((struct ieeedbl *) (IEEE))->sign	= 0;\
+    }\
+    else{\
+      ((struct ieeedbl *) (IEEE))->exp 	= \
+        (short)((struct mitdbl *) (MIT))->exp-MIT_DBL_SB+IEEE_DBL_SB;\
+      ((struct ieeedbl *) (IEEE))->mant1 = 
+	(((struct mitdbl *) (MIT))->mant1<<13) | \
+	(((struct mitdbl *) (MIT))->mant2>>3)
+      ((struct ieeedbl *) (IEEE))->mant2 = \
+	(((struct mitdbl *) (MIT))->mant2<<29) | \
+	(((struct mitdbl *) (MIT))->mant3<<13 | \
+	(((struct mitdbl *) (MIT))->mant4>>3;
+        ((struct ieeedbl *) (IEEE))->sign = \
+		((struct mitdbl *) (MIT))->sign;\
+    }\
+    tmp = htonl(*(long*)(IEEE));\
+    *(long *)(IEEE) = htonl(*((long*)(IEEE)+1));\
+    *((long *)(IEEE)+1) = tmp;\
+  }
 
-int cvrt_sts_string(
-struct dbr_sts_string   *s,                     /* source               */
-struct dbr_sts_string   *d,                     /* destination          */
-int encode,                                     /* do VAX to IEEE       */
-int                     num                    /* number of values     */
-);
+/*
+ * sign must be forced to zero if the exponent is zero to prevent a reserved
+ * operand fault- joh 9-13-90
+ */
+# define  ntohd(IEEE,MIT)\
+  {\
+    long	tmp;\
+    tmp = htonl(*(long*)(IEEE));\
+    *(long *)(IEEE) = htonl(*((long*)(IEEE)+1));\
+    *((long *)(IEEE)+1) = tmp;\
+    if( (short)((struct ieeedbl *) (IEEE))->exp > DBLEXPMAXMIT + IEEE_DBL_SB){\
+      ((struct mitdbl *) (MIT))->sign = ((struct ieeedbl *) (IEEE))->sign; \
+      ((struct mitdbl *) (MIT))->exp = DBLEXPMAXMIT + MIT_DBL_SB; \
+      ((struct mitdbl *) (MIT))->mant1 = ~0; \
+      ((struct mitdbl *) (MIT))->mant2 = ~0; \
+      ((struct mitdbl *) (MIT))->mant3 = ~0; \
+      ((struct mitdbl *) (MIT))->mant4 = ~0; \
+    }\
+    else if( ((struct ieeedbl *) (IEEE))->exp < DBLEXPMINMIT + IEEE_DBL_SB){\
+      ((struct mitdbl *) (MIT))->sign = 0; \
+      ((struct mitdbl *) (MIT))->exp = 0; \
+      ((struct mitdbl *) (MIT))->mant1 = 0; \
+      ((struct mitdbl *) (MIT))->mant2 = 0; \
+      ((struct mitdbl *) (MIT))->mant3 = 0; \
+      ((struct mitdbl *) (MIT))->mant4 = 0; \
+    }\
+    else{\
+      ((struct mitdbl *) (MIT))->sign = 
+		((struct ieeedbl *) (IEEE))->sign; \
+      ((struct mitdbl *) (MIT))->exp = 
+		((struct ieeedbl *) (IEEE))->exp+MIT_DBL_SB-IEEE_DBL_SB; \
+      ((struct mitdbl *) (MIT))->mant1 = 
+		((struct ieeedbl *) (IEEE))->mant1>>13; \
+      ((struct mitdbl *) (MIT))->mant2 = 
+		(((struct ieeedbl *) (IEEE))->mant1<<3) |
+		(((struct ieeedbl *) (IEEE))->mant2>>29); \
+      ((struct mitdbl *) (MIT))->mant3 = 
+		((struct ieeedbl *) (IEEE))->mant2>>13; \
+      ((struct mitdbl *) (MIT))->mant4 = 
+		((struct ieeedbl *) (IEEE))->mant2<<3; \
+    }\
+  }
 
-int cvrt_sts_short(
-struct dbr_sts_int      *s,                     /* source               */
-struct dbr_sts_int      *d,                     /* destination          */
-int                     encode,                 /* if true; vax to ieee */
-int                     num                    /* number of values     */
-);
-
-int cvrt_sts_float(
-struct dbr_sts_float    *s,                     /* source               */
-struct dbr_sts_float    *d,                     /* destination          */
-int                     encode,                 /* it true, vax to ieee */
-int                     num                    /* number of values     */
-);
-
-int cvrt_gr_short(
-struct dbr_gr_int       *s,                     /* source               */
-struct dbr_gr_int       *d,                     /* destination          */
-int                     encode,                 /* if true, vax to ieee */
-int                     num                    /* number of values     */
-);
-
-int cvrt_gr_float(
-struct dbr_gr_float     *s,                     /* source               */
-struct dbr_gr_float     *d,                     /* destination          */
-int                     encode,                 /* if true, vax to ieee */
-int                     num                     /* number of values     */
-);
-
-int cvrt_ctrl_short(
-struct dbr_ctrl_int     *s,                     /* source               */
-struct dbr_ctrl_int     *d,                     /* destination          */
-int                     encode,                 /* if true, vax to ieee */
-int                     num                     /* number of values     */
-);
-
-int cvrt_ctrl_float(
-struct dbr_ctrl_float   *s,                     /* source               */
-struct dbr_ctrl_float   *d,                     /* destination          */
-int                     encode,                 /* if true, vax to ieee */
-int                     num                     /* number of values     */
-);
-
-int cvrt_ctrl_enum(
-struct dbr_ctrl_enum    *s,                     /* source               */
-struct dbr_ctrl_enum    *d,                     /* destination          */
-int                     encode,                 /* if true, vax to ieee */
-int                     num                     /* number of values     */
-);
 
 #else
-int	cvrt_string();
-int	cvrt_short();
-int	cvrt_float();
-int	cvrt_enum();
-int	cvrt_char();
-int	cvrt_long();
-int	cvrt_double();
-
-int	cvrt_sts_string();
-int	cvrt_sts_short();
-int	cvrt_sts_float();
-int	cvrt_sts_enum();
-int	cvrt_sts_char();
-int	cvrt_sts_long();
-int	cvrt_sts_double();
-
-int	cvrt_time_string();
-int	cvrt_time_short();
-int	cvrt_time_float();
-int	cvrt_time_enum();
-int	cvrt_time_char();
-int	cvrt_time_long();
-int	cvrt_time_double();
-
-int	cvrt_gr_string();
-int	cvrt_gr_short();
-int	cvrt_gr_float();
-int	cvrt_gr_enum();
-int	cvrt_gr_char();
-int	cvrt_gr_long();
-int	cvrt_gr_double();
-int	cvrt_gr_string();
-
-int	cvrt_ctrl_string();
-int	cvrt_ctrl_short();
-int	cvrt_ctrl_float();
-int	cvrt_ctrl_enum();
-int	cvrt_ctrl_char();
-int	cvrt_ctrl_long();
-int	cvrt_ctrl_double();
+# define ntohd(NET,HOST)  {*(double *)(HOST) = *(double *)(NET);}
+# define htond(HOST,NET)  {*(double *)(NET) = *(double *)(HOST);}
 #endif
 
-/*  cvrt is (array of) (pointer to) (function returning) int */
-static
-int 	(*cvrt[])()
-	=
-	{
-	cvrt_string,
-	cvrt_short,
-	cvrt_float,
-	cvrt_enum,
-	cvrt_char,
-	cvrt_long,
-	cvrt_double,
-
-	cvrt_sts_string,
-	cvrt_sts_short,
-	cvrt_sts_float,
-	cvrt_sts_enum,
-	cvrt_sts_char,
-	cvrt_sts_long,
-	cvrt_sts_double,
-
-	cvrt_time_string,
-	cvrt_time_short,
-	cvrt_time_float,
-	cvrt_time_enum,
-	cvrt_time_char,
-	cvrt_time_long,
-	cvrt_time_double,
-
-	cvrt_gr_string,
-	cvrt_gr_short,
-	cvrt_gr_float,
-	cvrt_gr_enum,
-	cvrt_gr_char,
-	cvrt_gr_long,
-	cvrt_gr_double,
-
-	cvrt_ctrl_string,
-	cvrt_ctrl_short,
-	cvrt_ctrl_float,
-	cvrt_ctrl_enum,
-	cvrt_ctrl_char,
-	cvrt_ctrl_long,
-	cvrt_ctrl_double
-	};
-#endif

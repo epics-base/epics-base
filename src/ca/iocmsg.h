@@ -11,14 +11,21 @@
  *			SPARC alignment in db_access.h
  *	
  *	.04 071291 joh	New command added - claim channel in use block
+ *
+ *	.05 011294 joh	New command added - write notify 
+ *
+ *	.06 020194 joh	New command added for CA V4.1 - client name 
  */
 
 #define __IOCMSG__
 
-static char	*iocmsghSccsId = "@(#)iocmsg.h	1.5\t7/27/92";
+static char	*iocmsghSccsId = "$Id$ CA version 4.1";
 
 /* TCP/UDP port number (bumped each protocol change) */
 #define CA_PROTOCOL_VERSION	4
+#define CA_MINOR_VERSION	1
+#define CA_UKN_MINOR_VERSION	0 /* unknown minor version */
+#define CA_V41(MAJOR,MINOR)	( ((MAJOR)==4&&(MINOR)>0) || (MAJOR)>4 )
 #define	CA_PORT_BASE		IPPORT_USERRESERVED + 56
 #define CA_SERVER_PORT		(CA_PORT_BASE+CA_PROTOCOL_VERSION*2)
 #define CA_CLIENT_PORT		(CA_PORT_BASE+CA_PROTOCOL_VERSION*2+1)
@@ -26,7 +33,6 @@ static char	*iocmsghSccsId = "@(#)iocmsg.h	1.5\t7/27/92";
 #define MAX_UDP			1024
 #define MAX_TCP			(MAX_UDP*16) /* so waveforms fit */
 #define MAX_MSG_SIZE		(MAX_TCP) /* the larger of tcp and udp max */
-
 
 		/* values for m_cmmd */
 #define IOC_NOOP		0	/* do nothing, but verify TCP */
@@ -50,6 +56,9 @@ static char	*iocmsghSccsId = "@(#)iocmsg.h	1.5\t7/27/92";
 #define IOC_READ_BUILD		16	/* read accompanying a build */
 #define REPEATER_CONFIRM	17	/* registration confirmation */
 #define IOC_CLAIM_CIU		18	/* client claims resource in server */
+#define IOC_WRITE_NOTIFY	19	/* notify after write chan value */
+#define IOC_CLIENT_NAME		20	/* CA V4.1 identify client */
+#define IOC_CLIENT_LOCATION	21	/* CA V4.1 identify client */
 
 /*
  * for use with build and search and not_found (if search fails and
@@ -59,15 +68,15 @@ static char	*iocmsghSccsId = "@(#)iocmsg.h	1.5\t7/27/92";
 #define DONTREPLY	5
 
 /* size of object in bytes rounded up to nearest oct word */
-#define	OCT_ROUND(A)	(((A)+7)>>3)
+#define	OCT_ROUND(A)	((((unsigned long)A)+7)>>3)
 #define	OCT_SIZEOF(A)	(OCT_ROUND(sizeof(A)))
 
 /* size of object in bytes rounded up to nearest long word */
-#define	QUAD_ROUND(A)	(((A)+3)>>2)
+#define	QUAD_ROUND(A)	(((unsigned long)A)+3)>>2)
 #define	QUAD_SIZEOF(A)	(QUAD_ROUND(sizeof(A)))
 
 /* size of object in bytes rounded up to nearest short word */
-#define	BI_ROUND(A)	(((A)+1)>>1)
+#define	BI_ROUND(A)	((((unsigned long)A)+1)>>1)
 #define	BI_SIZEOF(A)	(BI_ROUND(sizeof(A)))
 
 /*
@@ -96,7 +105,6 @@ struct	extmsg {
 	unsigned long	m_available;	/* undefined message location for use
 					 * by client processes */
 };
-
 
 /*
  * for  monitor (event) message extension

@@ -86,6 +86,8 @@ struct ioc_in_use *piiu;
 	register int    status;
 	register int    busy = piiu->client_busy;
 
+	LOCK;
+
 	/*
 	 * use of the additional system call here does not
 	 * seem to slow things down appreciably
@@ -94,8 +96,7 @@ struct ioc_in_use *piiu;
 			      FIONREAD,
 			      (int)&nbytes);
 	if (status < 0) {
-		LOCK;
-		close_ioc(piiu);
+		piiu->conn_up = FALSE;
 		UNLOCK;
 		return;
 	}
@@ -111,7 +112,7 @@ struct ioc_in_use *piiu;
 			    MAX_CONTIGUOUS_MSG_COUNT) {
 				piiu->client_busy = TRUE;
 				ca_busy_message(piiu);
-#				if DEBUG	
+#				ifdef DEBUG	
 					printf("fc on\n");
 #				endif
 			}
@@ -125,6 +126,8 @@ struct ioc_in_use *piiu;
 			piiu->client_busy = FALSE;
 		}
 	}
+
+	UNLOCK;
 
 	return;
 }

@@ -98,17 +98,21 @@ static char *sccsId = "$Id$";
 #ifdef __STDC__
 
 LOCAL void reconnect_channel(
-struct extmsg           *hdrptr,
+IIU			*piiu,
 struct in_addr          *pnet_addr
+);
+
+LOCAL int cacMsg(
+struct ioc_in_use 	*piiu,
+struct in_addr  	*pnet_addr
 );
 
 #else
 
 LOCAL void 	reconnect_channel();
+LOCAL int 	cacMsg();
 
 #endif
-
-#define BUFSTAT ca_printf("CAC: expected %d left %d\n",msgcnt,*pbufcnt);
 
 
 
@@ -116,430 +120,558 @@ LOCAL void 	reconnect_channel();
  * post_msg()
  * 
  * 
+ * LOCK should be applied when calling this routine
  * 
  */
 #ifdef __STDC__
 int post_msg(
-struct extmsg 		*hdrptr,
-long   			*pbufcnt,
+struct ioc_in_use 	*piiu,
 struct in_addr  	*pnet_addr,
-struct ioc_in_use 	*piiu
+char			*pInBuf,
+unsigned long		blockSize
 )
 #else
-int post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
-struct extmsg 		*hdrptr;
-long   			*pbufcnt;
-struct in_addr  	*pnet_addr;
+int post_msg(piiu, pnet_addr)
 struct ioc_in_use 	*piiu;
+struct in_addr  	*pnet_addr;
+char			*pInBuf;
+unsigned long		blockSize;
 #endif
 {
-	evid            monix;
-	long            msgcnt;
+	int		status;
+	unsigned long 	size;
 
-	void  		*t_available;
-	unsigned short 	t_postsize;
-	unsigned short 	t_cmmd;
-	chtype 		t_type;
-	unsigned short 	t_count;
-	int             status;
+	while (blockSize) {
 
+		/*
+		 * fetch a complete message header
+		 */
+		if(piiu->curMsgBytes < sizeof(piiu->curMsg)){
+			char  *pHdr;
 
-	post_msg_active++;
+			size = sizeof(piiu->curMsg) - piiu->curMsgBytes;
+			size = min(size, blockSize);
+			
+			pHdr = (char *) &piiu->curMsg;
+			memcpy(	pHdr + piiu->curMsgBytes, 
+				pInBuf, 
+				size);
+			
+			piiu->curMsgBytes += size;
+			if(piiu->curMsgBytes < sizeof(piiu->curMsg)){
+				return OK;
+			}
 
-
-	while (*pbufcnt >= sizeof(*hdrptr)) {
-
-		/* byte swap the message up front */
-		t_available = (void *) hdrptr->m_available;
-		t_postsize = ntohs(hdrptr->m_postsize);
-		t_cmmd = ntohs(hdrptr->m_cmmd);
-		t_type = ntohs(hdrptr->m_type);
-		t_count = ntohs(hdrptr->m_count);
-
-#ifdef DEBUG
-		ca_printf("CAC: MSG=> cmd:%d type:%d cnt:%d npost:%d avail:%x\n",
-		       t_cmmd,
-		       t_type,
-		       t_count,
-		       t_postsize,
-		       t_available
-			);
+			pInBuf += size;
+			blockSize -= size;
+		
+			/* 
+			 * fix endian of bytes 
+			 */
+			piiu->curMsg.m_postsize = 
+				ntohs(piiu->curMsg.m_postsize);
+			piiu->curMsg.m_cmmd = ntohs(piiu->curMsg.m_cmmd);
+			piiu->curMsg.m_type = ntohs(piiu->curMsg.m_type);
+			piiu->curMsg.m_count = ntohs(piiu->curMsg.m_count);
+#if 0
+printf("%s Cmd=%3d Type=%3d Count=%4d Size=%4d Avail=%8x Cid=%6d\n",
+	piiu->host_name_str,
+	piiu->curMsg.m_cmmd,
+	piiu->curMsg.m_type,
+	piiu->curMsg.m_count,
+	piiu->curMsg.m_postsize,
+	piiu->curMsg.m_available,
+	piiu->curMsg.m_cid);
 #endif
-
-		msgcnt = sizeof(*hdrptr) + t_postsize;
-
-#ifdef DEBUG
-		ca_printf("CAC: bytes left %d, pending msgcnt %d\n",
-		       *pbufcnt,
-		       pndrecvcnt);
-#endif
-		if (*pbufcnt < msgcnt) {
-			post_msg_active--;
-			return OK;
 		}
 
-		switch (t_cmmd) {
 
-		case IOC_READ_NOTIFY:
-		{
-			/*
-			 * run the user's event handler
-			 * m_available points to event descriptor
-			 */
-			struct event_handler_args args;
-
-			monix = (evid) t_available;
-
-
-			/*
-			 * Currently only the VAXs need data
-			 * conversion
-			 */
-#ifdef VAX
-			(*cvrt[t_type]) (
-				hdrptr + 1, 
-				hdrptr + 1, 
-				FALSE, 
-				t_count);
-#endif
-
-			/*
-			 * 
-			 * call handler, only if they did not clear the
-			 * chid in the interim
-			 */
-			if (monix->usr_func) {
-				args.usr = monix->usr_arg;
-				args.chid = monix->chan;
-				args.type = t_type;
-				args.count = t_count;
-				args.dbr = (void *) (hdrptr + 1);
-
-				LOCKEVENTS;
-				(*monix->usr_func) (args);
-				UNLOCKEVENTS;
-			}
-			LOCK;
-			ellDelete(&pend_read_list, &monix->node);
-			ellAdd(&free_event_list, &monix->node);
-			UNLOCK;
-
-			piiu->outstanding_ack_count--;
-
-			break;
-		}
-		case IOC_EVENT_ADD:
-		{
-			struct event_handler_args args;
-
-			/*
-			 * run the user's event handler m_available
-			 * points to event descriptor
-			 */
-			monix = (evid) t_available;
-
-
-			/*
-			 * m_postsize = 0  is a confirmation of a
-			 * monitor cancel
-			 */
-			if (!t_postsize) {
-				LOCK;
-				ellDelete(&monix->chan->eventq, &monix->node);
-				ellAdd(&free_event_list, &monix->node);
-				UNLOCK;
-
-				piiu->outstanding_ack_count--;
-
-				break;
-			}
-			/* only call if not disabled */
-			if (!monix->usr_func)
-				break;
-
-			/*
-			 * Currently only the VAXs need data
-			 * conversion
-			 */
-#ifdef VAX
-			(*cvrt[t_type]) (
-				hdrptr + 1,
-				hdrptr + 1, 
-				FALSE, 
-				t_count);
-#endif
-
-			/*
-			 * Orig version of CA didnt use this
-			 * strucure. This would run faster if I had
-			 * decided to pass a pointer to this
-			 * structure rather than the structure itself
-			 * early on.
-			 * 
-			 * Pumping the arguments on the stack explicitly
-			 * could cause problems if a small item is in
-			 * the structure.
-			 * 
-			 */
-			args.usr = monix->usr_arg;
-			args.chid = monix->chan;
-			args.type = t_type;
-			args.count = t_count;
-			args.dbr = (void *) (hdrptr + 1);
-
-			/* call their handler */
-			LOCKEVENTS;
-			(*monix->usr_func) (args);
-			UNLOCKEVENTS;
-
-			break;
-		}
-		case IOC_READ:
-		case IOC_READ_BUILD:
-		{
-			chid            chan;
-			unsigned	size;
-
-			/*
-			 * verify the channel id
-			 */
-			LOCK;
-			chan = bucketLookupItem(pBucket, hdrptr->m_cid);
-			UNLOCK;
-			if(!chan){
-				if(t_cmmd == IOC_READ_BUILD){
-					printf(
-			"Stale build reply from %s with id %x ignored",
-						host_from_addr(pnet_addr),
-						hdrptr->m_cid);
-					UNLOCK;
-				}
-				else{
-					ca_signal(ECA_INTERNAL, 
-						"bad client channel id from server");
-				}
-				break;
-			}
-
-			/*
-			 * ignore IOC_READ_BUILDS after 
-			 * connection occurs
-			 */
-			if(t_cmmd == IOC_READ_BUILD){
-				if(chan->state == cs_conn){
-					break;
-				}
-			}
-
-			/*
-			 * only count get returns if from the current
-			 * read seq
-			 */
-			if (!VALID_MSG(piiu))
-				break;
-
-			size = dbr_size_n(t_type, t_count);
-
-			/*
-			 * Currently only the VAXs need data
-			 * conversion
-			 */
-#ifdef VAX
-			(*cvrt[t_type]) (
-				hdrptr + 1, 
-				t_available, 
-				FALSE, 
-				t_count);
-#else
-			memcpy(
-				       (char *) t_available,
-				       (char *) (hdrptr + 1),
-				       size);
-#endif
-
-			/*
-			 * decrement the outstanding IO count
-			 * 
-			 * This relies on the IOC_READ_BUILD msg
-			 * returning prior to the IOC_BUILD msg.
-			 */
-			if (t_cmmd == IOC_READ){
-				piiu->outstanding_ack_count--;
-				CLRPENDRECV(TRUE);
-			}
-			else if(chan->connection_func == NULL && 
-					chan->state == cs_never_conn){
-				CLRPENDRECV(TRUE);
-			}
-
-
-			break;
-		}
-		case IOC_SEARCH:
-		case IOC_BUILD:
-			reconnect_channel(hdrptr, pnet_addr);
-			break;
-
-		case IOC_READ_SYNC:
-			piiu->outstanding_ack_count--;
-			piiu->read_seq++;
-			break;
-
-		case IOC_RSRV_IS_UP:
-			LOCK;
-			{
-				struct in_addr ina;
-				
-				ina.s_addr = (long) t_available;
-				mark_server_available(&ina);
-			}
-			UNLOCK;
-			break;
-
-		case REPEATER_CONFIRM:
-			ca_static->ca_repeater_contacted = TRUE;
-#ifdef DEBUG
-			ca_printf("CAC: repeater confirmation recv\n");
-#endif
-			break;
-
-		case IOC_NOT_FOUND:
-			break;
-
-		case IOC_CLEAR_CHANNEL:
-		{
-			chid            	chix = (chid) t_available;
-			struct ioc_in_use 	*piiu = chix->piiu;
-			register evid   	monix;
-
-
-			LOCK;
-			/*
-			 * remove any orphaned get callbacks for this
-			 * channel
-			 */
-			for (monix = (evid) pend_read_list.node.next;
-			     monix;
-			     monix = (evid) monix->node.next)
-				if (monix->chan == chix) {
-					ellDelete(	
-						&pend_read_list, 
-						&monix->node);
-					ellAdd(
-						&free_event_list, 
-						&monix->node);
-				}
-			ellConcat(&free_event_list, &chix->eventq);
-			ellDelete(&piiu->chidlist, &chix->node);
-			status = bucketRemoveItem(pBucket, chix->cid, chix);
-			if(status != BUCKET_SUCCESS){
-				ca_signal(
-					ECA_INTERNAL,
-					"bad id at channel delete");
-			}
-			free(chix);
-			piiu->outstanding_ack_count--;
-			if (!piiu->chidlist.count){
-				close_ioc(piiu);
-			}
-			UNLOCK;
-			break;
-		}
-		case IOC_ERROR:
-		{
-			char            context[255];
-			char           *name;
-			struct extmsg  *req = hdrptr + 1;
-			int             op;
-			struct exception_handler_args args;
-
-
-			/*
-			 * dont process the message if they have
-			 * disable notification
-			 */
-			if (!ca_static->ca_exception_func){
-				break;
-			}
-
-			name = (char *) host_from_addr(pnet_addr);
-			if (!name){
-				name = "an unregistered IOC";
-			}
-
-			if (t_postsize > sizeof(struct extmsg)){
-				sprintf(context, 
-					"detected by: %s for: %s", 
-					name, 
-					(char *)(hdrptr + 2));
-			}
-			else{
-				sprintf(context, "detected by: %s", name);
-			}
-
-			/*
-			 * Map internal op id to external op id so I
-			 * can freely change the protocol in the
-			 * future. This is quite wasteful of space
-			 * however.
-			 */
-			switch (ntohs(req->m_cmmd)) {
-			case IOC_READ_NOTIFY:
-			case IOC_READ:
-				op = CA_OP_GET;
-				break;
-			case IOC_WRITE:
-				op = CA_OP_PUT;
-				break;
-			case IOC_SEARCH:
-			case IOC_BUILD:
-				op = CA_OP_SEARCH;
-				break;
-			case IOC_EVENT_ADD:
-				op = CA_OP_ADD_EVENT;
-				break;
-			case IOC_EVENT_CANCEL:
-				op = CA_OP_CLEAR_EVENT;
-				break;
-			default:
-				op = CA_OP_OTHER;
-				break;
-			}
-
-			LOCK;
-			args.chid = bucketLookupItem(pBucket, hdrptr->m_cid);
-			UNLOCK;
-			args.usr = ca_static->ca_exception_arg;
-			args.type = ntohs(req->m_type);	
-			args.count = ntohs(req->m_count);
-			args.addr = (void *) (req->m_available);
-			args.stat = ntohl((int) t_available);							args.op = op;
-			args.ctx = context;
-
-			LOCKEVENTS;
-			(*ca_static->ca_exception_func) (args);
-			UNLOCKEVENTS;
-			break;
-		}
-		default:
-			ca_printf("CAC: post_msg(): Corrupt cmd in msg %x\n", 
-				t_cmmd);
-
-			*pbufcnt = 0;
-			post_msg_active--;
+		/*
+		 * dont allow huge msg body until
+		 * the server supports it
+		 */
+		if(piiu->curMsg.m_postsize>(unsigned)MAX_TCP){
+			piiu->curMsgBytes = 0;
+			piiu->curDataBytes = 0;
 			return ERROR;
 		}
 
-		*pbufcnt -= msgcnt;
-		hdrptr = (struct extmsg *) (msgcnt + (char *) hdrptr);
+		/*
+		 * make sure we have a large enough message body cache
+		 */
+		if(piiu->curMsg.m_postsize>piiu->curDataMax){
+			if(piiu->pCurData){
+				free(piiu->pCurData);
+			}
+			piiu->curDataMax = 0;
+			piiu->pCurData = (void *) 
+				malloc(piiu->curMsg.m_postsize);
+			if(!piiu->pCurData){
+				piiu->curMsgBytes = 0;
+				piiu->curDataBytes = 0;
+				return ERROR;
+			}
+			piiu->curDataMax = 
+				piiu->curMsg.m_postsize;
+		}
 
+		/*
+ 		 * Fetch a complete message body
+		 */
+		if(piiu->curMsg.m_postsize>piiu->curDataBytes){
+			char *pBdy;
+
+			size = piiu->curMsg.m_postsize - piiu->curDataBytes; 
+			size = min(size, blockSize);
+			pBdy = piiu->pCurData;
+			memcpy(	pBdy+piiu->curDataBytes, 
+				pInBuf, 
+				size);
+			piiu->curDataBytes += size;
+			if(piiu->curDataBytes < piiu->curMsg.m_postsize){
+				return OK;
+			}
+			pInBuf += size;
+			blockSize -= size;
+		}	
+
+
+		/*
+ 		 * execute the response message
+		 */
+		status = cacMsg(piiu, pnet_addr);
+		piiu->curMsgBytes = 0;
+		piiu->curDataBytes = 0;
+		if(status != OK){
+			return ERROR;
+		}
 	}
+	return OK;
+}
 
-	if(piiu->outstanding_ack_count == 0){
-		piiu->bytes_pushing_an_ack = 0;
+#ifdef __STDC__
+LOCAL int cacMsg(
+struct ioc_in_use 	*piiu,
+struct in_addr  	*pnet_addr
+)
+#else
+LOCAL int cacMsg(piiu, pnet_addr)
+struct ioc_in_use 	*piiu;
+struct in_addr  	*pnet_addr;
+#endif
+{
+	evid            monix;
+	int             status;
+
+	switch (piiu->curMsg.m_cmmd) {
+
+	case IOC_NOOP:
+		break;
+
+	case IOC_WRITE_NOTIFY:
+	{
+		/*
+		 * run the user's event handler
+		 * m_available points to event descriptor
+		 */
+		struct event_handler_args args;
+
+		monix = (evid) piiu->curMsg.m_available;
+
+		/*
+		 * 
+		 * call handler, only if they did not clear the
+		 * chid in the interim
+		 */
+		if (monix->usr_func) {
+			args.usr = monix->usr_arg;
+			args.chid = monix->chan;
+			args.type = monix->type;
+			args.count = monix->count;
+			args.dbr = NULL;
+			/*
+			 * the channel id field is abused for
+			 * write notify status
+			 *
+			 * write notify was added vo CA V4.1
+			 */
+			args.status = ntohl(piiu->curMsg.m_cid); 
+
+			LOCKEVENTS;
+			(*monix->usr_func) (args);
+			UNLOCKEVENTS;
+		}
+		LOCK;
+		ellDelete(&pend_write_list, &monix->node);
+		ellAdd(&free_event_list, &monix->node);
+		UNLOCK;
+
+		break;
+
+	}	
+	case IOC_READ_NOTIFY:
+	{
+		/*
+		 * run the user's event handler
+		 * m_available points to event descriptor
+		 */
+		struct event_handler_args args;
+
+		monix = (evid) piiu->curMsg.m_available;
+
+		/*
+		 * 
+		 * call handler, only if they did not clear the
+	 	 * chid in the interim
+		 */
+		if (monix->usr_func) {
+			int v41;
+
+			/*
+			 * convert the data buffer from net
+			 * format to host format
+			 *
+			 * Currently only the VAXs need data
+			 * conversion
+			 */
+#			ifdef VAX
+				(*cvrt[piiu->curMsg.m_type])(
+					piiu->pCurData, 
+					piiu->pCurData, 
+					FALSE,
+					piiu->curMsg.m_count);
+#			endif
+
+			args.usr = monix->usr_arg;
+			args.chid = monix->chan;
+			args.type = piiu->curMsg.m_type;
+			args.count = piiu->curMsg.m_count;
+			args.dbr = piiu->pCurData;
+			/*
+			 * the channel id field is abused for
+			 * read notify status starting
+			 * with CA V4.1
+			 */
+			v41 = CA_V41(
+				CA_PROTOCOL_VERSION, 
+				piiu->minor_version_number);
+			if(v41){
+				args.status = ntohl(piiu->curMsg.m_cid);
+			}
+			else{
+				args.status = ECA_NORMAL;
+			}
+
+			LOCKEVENTS;
+			(*monix->usr_func) (args);
+			UNLOCKEVENTS;
+		}
+		LOCK;
+		ellDelete(&pend_read_list, &monix->node);
+		ellAdd(&free_event_list, &monix->node);
+		UNLOCK;
+
+		break;
 	}
+	case IOC_EVENT_ADD:
+	{
+		int v41;
+		struct event_handler_args args;
 
-	post_msg_active--;
+		/*
+		 * run the user's event handler m_available
+		 * points to event descriptor
+		 */
+		monix = (evid) piiu->curMsg.m_available;
+
+
+		/*
+		 * m_postsize = 0  is a confirmation of a
+		 * monitor cancel
+		 */
+		if (!piiu->curMsg.m_postsize) {
+			LOCK;
+			ellDelete(&monix->chan->eventq, &monix->node);
+			ellAdd(&free_event_list, &monix->node);
+			UNLOCK;
+
+			break;
+		}
+		/* only call if not disabled */
+		if (!monix->usr_func)
+			break;
+
+		/*
+		 * convert the data buffer from net
+		 * format to host format
+		 *
+		 * Currently only the VAXs need data
+		 * conversion
+		 */
+#		ifdef VAX
+			(*cvrt[piiu->curMsg.m_type])(
+				piiu->pCurData, 
+				piiu->pCurData, 
+				FALSE,
+				piiu->curMsg.m_count);
+#		endif
+
+		/*
+		 * Orig version of CA didnt use this
+		 * strucure. This would run faster if I had
+		 * decided to pass a pointer to this
+		 * structure rather than the structure itself
+		 * early on.
+		 */
+		args.usr = monix->usr_arg;
+		args.chid = monix->chan;
+		args.type = piiu->curMsg.m_type;
+		args.count = piiu->curMsg.m_count;
+		args.dbr = piiu->pCurData;
+		/*
+		 * the channel id field is abused for
+		 * event status starting
+		 * with CA V4.1
+		 */
+		v41 = CA_V41(
+			CA_PROTOCOL_VERSION, 
+			piiu->minor_version_number);
+		if(v41){
+			args.status = ntohl(piiu->curMsg.m_cid); 
+		}
+		else{
+			args.status = ECA_NORMAL;
+		}
+
+		/* call their handler */
+		LOCKEVENTS;
+		(*monix->usr_func) (args);
+		UNLOCKEVENTS;
+
+		break;
+	}
+	case IOC_READ:
+	case IOC_READ_BUILD:
+	{
+		chid            chan;
+
+		/*
+		 * verify the channel id
+		 */
+		LOCK;
+		chan = bucketLookupItem(pBucket, piiu->curMsg.m_cid);
+		UNLOCK;
+		if(!chan){
+			if(piiu->curMsg.m_cmmd != IOC_READ_BUILD){
+				ca_signal(ECA_INTERNAL, 
+					"bad client channel id from server");
+			}
+			break;
+		}
+
+		/*
+		 * ignore IOC_READ_BUILDS after 
+		 * connection occurs
+		 */
+		if(piiu->curMsg.m_cmmd == IOC_READ_BUILD){
+			if(chan->state == cs_conn || 
+				chan->state == cs_closed){
+				break;
+			}
+		}
+
+		/*
+		 * only count get returns if from the current
+		 * read seq
+		 */
+		if (!VALID_MSG(piiu))
+			break;
+
+		/*
+		 * convert the data buffer from net
+		 * format to host format
+		 *
+		 * Currently only the VAXs need data
+		 * conversion
+		 */
+#		ifdef VAX
+			(*cvrt[piiu->curMsg.m_type])(
+				piiu->pCurData, 
+				piiu->pCurData, 
+				FALSE,
+				piiu->curMsg.m_count);
+#		else
+			memcpy(
+				(char *)piiu->curMsg.m_available,
+				piiu->pCurData,
+				dbr_size_n(piiu->curMsg.m_type, piiu->curMsg.m_count));
+#		endif
+
+		/*
+		 * decrement the outstanding IO count
+		 * 
+		 * This relies on the IOC_READ_BUILD msg
+		 * returning prior to the IOC_BUILD msg.
+		 */
+		if (piiu->curMsg.m_cmmd == IOC_READ){
+			CLRPENDRECV(TRUE);
+		}
+		else if(chan->connection_func == NULL && 
+				chan->state == cs_never_conn){
+			CLRPENDRECV(TRUE);
+		}
+
+		break;
+	}
+	case IOC_SEARCH:
+	case IOC_BUILD:
+		reconnect_channel(piiu, pnet_addr);
+		break;
+
+	case IOC_READ_SYNC:
+		piiu->read_seq++;
+		break;
+
+	case IOC_RSRV_IS_UP:
+		LOCK;
+		{
+			struct in_addr ina;
+			
+			ina.s_addr = (long) piiu->curMsg.m_available;
+			mark_server_available(&ina);
+		}
+		UNLOCK;
+		break;
+
+	case REPEATER_CONFIRM:
+		ca_static->ca_repeater_contacted = TRUE;
+#ifdef DEBUG
+		ca_printf("CAC: repeater confirmation recv\n");
+#endif
+		break;
+
+	case IOC_NOT_FOUND:
+		break;
+
+	case IOC_CLEAR_CHANNEL:
+	{
+		chid            	chix = (chid) piiu->curMsg.m_available;
+		struct ioc_in_use 	*piiu = chix->piiu;
+		register evid   	monix;
+
+
+		LOCK;
+		/*
+		 * remove any orphaned get callbacks for this
+		 * channel
+		 */
+		for (monix = (evid) pend_read_list.node.next;
+		     monix;
+		     monix = (evid) monix->node.next){
+			if (monix->chan == chix) {
+				ellDelete(	
+					&pend_read_list, 
+					&monix->node);
+				ellAdd(
+					&free_event_list, 
+					&monix->node);
+			}
+		}
+		ellConcat(&free_event_list, &chix->eventq);
+		ellDelete(&piiu->chidlist, &chix->node);
+		status = bucketRemoveItem(pBucket, chix->cid, chix);
+		if(status != BUCKET_SUCCESS){
+			ca_signal(
+				ECA_INTERNAL,
+				"bad id at channel delete");
+		}
+		free(chix);
+		if (!piiu->chidlist.count){
+			piiu->conn_up = FALSE;
+		}
+		UNLOCK;
+		break;
+	}
+	case IOC_ERROR:
+	{
+		char		nameBuf[64];
+		char           	context[255];
+		struct extmsg  	*req = piiu->pCurData;
+		int             op;
+		struct exception_handler_args args;
+
+
+		/*
+		 * dont process the message if they have
+		 * disable notification
+		 */
+		if (!ca_static->ca_exception_func){
+			break;
+		}
+
+		host_from_addr(pnet_addr, nameBuf, sizeof(nameBuf));
+
+		if (piiu->curMsg.m_postsize > sizeof(struct extmsg)){
+			sprintf(context, 
+				"detected by: %s for: %s", 
+				nameBuf, 
+				(char *)(req+1));
+		}
+		else{
+			sprintf(context, "detected by: %s", nameBuf);
+		}
+
+		/*
+		 * Map internal op id to external op id so I
+		 * can freely change the protocol in the
+		 * future. This is quite wasteful of space
+		 * however.
+		 */
+		switch (ntohs(req->m_cmmd)) {
+		case IOC_READ_NOTIFY:
+		case IOC_READ:
+			op = CA_OP_GET;
+			break;
+		case IOC_WRITE_NOTIFY:
+		case IOC_WRITE:
+			op = CA_OP_PUT;
+			break;
+		case IOC_SEARCH:
+		case IOC_BUILD:
+			op = CA_OP_SEARCH;
+			break;
+		case IOC_EVENT_ADD:
+			op = CA_OP_ADD_EVENT;
+			break;
+		case IOC_EVENT_CANCEL:
+			op = CA_OP_CLEAR_EVENT;
+			break;
+		default:
+			op = CA_OP_OTHER;
+			break;
+		}
+
+		LOCK;
+		args.chid = bucketLookupItem(pBucket, piiu->curMsg.m_cid);
+		UNLOCK;
+		args.usr = ca_static->ca_exception_arg;
+		args.type = ntohs(req->m_type);	
+		args.count = ntohs(req->m_count);
+		args.addr = (void *) (req->m_available);
+		args.stat = ntohl((long) piiu->curMsg.m_available);							args.op = op;
+		args.ctx = context;
+
+		LOCKEVENTS;
+		(*ca_static->ca_exception_func) (args);
+		UNLOCKEVENTS;
+		break;
+	}
+	default:
+		ca_printf("CAC: post_msg(): Corrupt cmd in msg %x\n", 
+			piiu->curMsg.m_cmmd);
+
+		return ERROR;
+	}
 
 	return OK;
 }
@@ -547,27 +679,28 @@ struct ioc_in_use 	*piiu;
 
 /*
  *
- *	RECONNECT_CHANNEL()
- *	LOCK must be on
+ *	reconnect_channel()
  *
  */
 #ifdef __STDC__
 LOCAL void reconnect_channel(
-struct extmsg           *hdrptr,
+IIU			*piiu,
 struct in_addr          *pnet_addr
 )
 #else
 LOCAL void reconnect_channel(hdrptr,pnet_addr)
-struct extmsg		*hdrptr;
+IIU			*piiu;
 struct in_addr		*pnet_addr;
 #endif
 {
+	char			rej[64];
       	chid			chan;
       	evid			pevent;
 	int			status;
 	enum channel_state	prev_cs;
 	IIU			*allocpiiu;
 	IIU			*chpiiu;
+	unsigned short		*pMinorVersion;
 
 	/*
 	 * ignore broadcast replies for deleted channels
@@ -577,14 +710,8 @@ struct in_addr		*pnet_addr;
 	LOCK;
 	chan = bucketLookupItem(
 			pBucket, 
-			hdrptr->m_available);
+			piiu->curMsg.m_available);
 	if(!chan){
-		sprintf(
-			sprintf_buf,
-		"Search reply from %s with server id %x",
-			host_from_addr(pnet_addr),
-			hdrptr->m_available);
-		ca_signal(ECA_NOCHANMSG, sprintf_buf);
 		UNLOCK;
 		return;
 	}
@@ -597,6 +724,17 @@ struct in_addr		*pnet_addr;
 		return;
 	}
 
+	/*
+	 * Ignore search replies to closing channels 
+	 */ 
+	if(chan->state == cs_closed) {
+		UNLOCK;
+		return;
+	}
+
+	/*
+	 * Ignore duplicate search replies
+	 */
 	if (chan->state == cs_conn) {
 
 		if (chpiiu->sock_addr.sin_addr.s_addr == 
@@ -606,36 +744,16 @@ struct in_addr		*pnet_addr;
 			fflush(stdout);
 #		endif
 		} else {
-			char	acc[128];
-			char	rej[128];
 
-			sprintf(acc, 
-				"%s",
-				chpiiu->host_name_str);
-			sprintf(rej, 
-				"%s", 
-				host_from_addr(pnet_addr));
+			host_from_addr(pnet_addr,rej,sizeof(rej));
 			sprintf(
 				sprintf_buf,
 		"Channel: %s Accepted: %s Rejected: %s ",
 				(char *)(chan + 1),
-				acc,
+				chpiiu->host_name_str,
 				rej);
 			ca_signal(ECA_DBLCHNL, sprintf_buf);
 		}
-#		ifdef IOC_READ_FOLLOWING_BUILD
-		/*
-		 * IOC_BUILD messages always have a
-		 * IOC_READ msg following. (IOC_BUILD
-		 * messages are sometimes followed by
-		 * error messages which are ignored
-		 * on double replies)
-		 */
-		if (t_cmmd == IOC_BUILD){
-			msgcnt += sizeof(struct extmsg) +
-			ntohs((hdrptr + 1)->m_postsize);
-		}
-#		endif
 		UNLOCK;
 		return;
 	}
@@ -645,19 +763,31 @@ struct in_addr		*pnet_addr;
 				IPPROTO_TCP,		
 				&allocpiiu);
 	if(status != ECA_NORMAL){
-	  	ca_printf(	"CAC: ... %s ...\n", ca_message(status));
-	 	ca_printf(	"CAC: for %s on %s\n", 
-				chan+1, 
-				host_from_addr(pnet_addr));
-	 	ca_printf(	"CAC: ignored search reply- proceeding\n");
+		host_from_addr(pnet_addr,rej,sizeof(rej));
+	  	ca_printf("CAC: ... %s ...\n", ca_message(status));
+	 	ca_printf("CAC: for %s on %s\n", chan+1, rej);
+	 	ca_printf("CAC: ignored search reply- proceeding\n");
 		UNLOCK;
 	  	return;
 	}
 
         /*	Update rmt chid fields from extmsg fields	*/
-        chan->type  = ntohs(hdrptr->m_type);      
-        chan->count = ntohs(hdrptr->m_count);      
-        chan->id.sid = hdrptr->m_cid;
+        chan->type  = piiu->curMsg.m_type;      
+        chan->count = piiu->curMsg.m_count;      
+        chan->id.sid = piiu->curMsg.m_cid;
+
+	/*
+	 * Starting with CA V4.1 the minor version number
+	 * is appended to the end of each search reply.
+	 * This value is ignored by earlier clients.
+	 */
+	if(piiu->curMsg.m_postsize >= sizeof(*pMinorVersion)){
+		pMinorVersion = (unsigned short *)(piiu->pCurData);
+        	allocpiiu->minor_version_number = ntohs(*pMinorVersion);      
+	}
+	else{
+		allocpiiu->minor_version_number = CA_UKN_MINOR_VERSION;
+	}
 
         if(chpiiu != allocpiiu){
 
@@ -669,6 +799,17 @@ struct in_addr		*pnet_addr;
           	ellDelete(&chpiiu->chidlist, &chan->node);
           	chan->piiu = chpiiu = allocpiiu; 
           	ellAdd(&chpiiu->chidlist, &chan->node);
+
+		/*
+		 * If this is the first channel to be
+		 * added to this IIU then communicate
+		 * the client's name to the server. 
+		 * (CA V4.1 or higher)
+		 */
+		if(ellCount(&chpiiu->chidlist)==1){
+			issue_identify_client(chpiiu);
+			issue_identify_client_location(chpiiu);
+		}
         }
 
 	/*
@@ -727,6 +868,7 @@ struct in_addr		*pnet_addr;
           	CLRPENDRECV(TRUE);
 	}
 
+	UNLOCK;
 }
 
 
@@ -743,7 +885,7 @@ void cac_io_done(lock)
 int 	lock;
 #endif
 {
-  	register struct pending_io_event	*pioe;
+  	struct pending_io_event	*pioe;
 	
   	if(ioeventlist.count==0)
 		return;

@@ -116,16 +116,17 @@ static char *os_depenhSccsId = "@(#)os_depen.h	1.12\t2/19/93";
 #  	define	LOCKEVENTS
 #  	define	UNLOCKEVENTS
 #	define	EVENTLOCKTEST	(post_msg_active!=0)
-#	define  RECV_ACTIVE(PIIU) (piiu->active)
 #else
 #  if defined(vxWorks)
 #	define	VXTASKIDNONE	0
-#  	define	LOCK 		FASTLOCK(&client_lock);
-#  	define	UNLOCK  	FASTUNLOCK(&client_lock);
-#  	define	LOCKEVENTS 	{FASTLOCK(&event_lock); event_tid=(int)taskIdCurrent;}
-#  	define	UNLOCKEVENTS	{event_tid=VXTASKIDNONE; FASTUNLOCK(&event_lock);}
-#	define	EVENTLOCKTEST	(FASTLOCKTEST(&event_lock)&&((int)taskIdCurrent)==event_tid)
-#	define  RECV_ACTIVE(PIIU) (ca_static->recv_tid == (int)taskIdCurrent)
+#  	define	LOCK 		semTake(client_lock, WAIT_FOREVER);
+#  	define	UNLOCK  	semGive(client_lock);
+#	define	LOCKEVENTS \
+	{semTake(event_lock, WAIT_FOREVER); event_tid=(int)taskIdCurrent;}
+#  	define	UNLOCKEVENTS \
+	{event_tid=VXTASKIDNONE; semGive(event_lock);}
+#	define	EVENTLOCKTEST \
+(((int)taskIdCurrent)==event_tid || ca_static->recv_tid == (int)taskIdCurrent)
 #  else
 #    if defined(UNIX)
 #  	define	LOCK
@@ -133,7 +134,6 @@ static char *os_depenhSccsId = "@(#)os_depen.h	1.12\t2/19/93";
 #  	define	LOCKEVENTS
 #  	define	UNLOCKEVENTS
 #	define	EVENTLOCKTEST	(post_msg_active!=0)
-#	define  RECV_ACTIVE(PIIU) (piiu->active)
 #    else
 	@@@@ dont compile in this case @@@@
 #    endif
@@ -143,8 +143,6 @@ static char *os_depenhSccsId = "@(#)os_depen.h	1.12\t2/19/93";
 #ifdef vxWorks
 #	define VXTHISTASKID 	taskIdSelf()
 #	define abort(A) 	taskSuspend(VXTHISTASKID)
-#  	define memcpy(D,S,N)	bcopy(S,D,N)
-#  	define memset(D,V,N) 	bfill(D,N,V)
 #endif
 
 

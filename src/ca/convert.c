@@ -22,59 +22,169 @@
  *				This also provides for a cleaner seperation
  *				of function.
  *	joh	10-21-90	Added new DBR_XXXX types for release two
+ *	joh	03-15-94	Added many missing types	
  *
  *
  */
 
-static char	*sccsId = "@(#)convert.c	1.5\t7/27/92";
+static char	*sccsId = "%S% $Date$";
 
+#include	<string.h>
 
 #include	<db_access.h>
 #include	<net_convert.h>
 
-#ifdef vxWorks
-#  define memcpy(D,S,N)	bcopy(S,D,N)
-#  define memset(D,V,N)	bfill(D,N,V)
-#endif
+#ifdef __STDC__
+
+/*
+ * if hton is true then it is a host to network conversion
+ * otherwise vise-versa
+ *
+ * net format: big endian and IEEE float
+ * 
+ */
+typedef LOCAL void CACVRTFUNC(
+		void *pSource, 
+		void *pDestination, 
+		int hton, 
+		unsigned long count);
+#else /*__STDC__*/
+typedef LOCAL void CACVRTFUNC();
+#endif /*__STDC__*/
+
+CACVRTFUNC	cvrt_string;
+CACVRTFUNC	cvrt_short;
+CACVRTFUNC	cvrt_float;
+CACVRTFUNC	cvrt_enum;
+CACVRTFUNC	cvrt_char;
+CACVRTFUNC	cvrt_long;
+CACVRTFUNC	cvrt_double;
+
+CACVRTFUNC	cvrt_sts_string;
+CACVRTFUNC	cvrt_sts_short;
+CACVRTFUNC	cvrt_sts_float;
+CACVRTFUNC	cvrt_sts_enum;
+CACVRTFUNC	cvrt_sts_char;	
+CACVRTFUNC	cvrt_sts_long;
+CACVRTFUNC	cvrt_sts_double;
+
+CACVRTFUNC	cvrt_time_string;
+CACVRTFUNC	cvrt_time_short;
+CACVRTFUNC	cvrt_time_float;
+CACVRTFUNC	cvrt_time_enum;
+CACVRTFUNC	cvrt_time_char;
+CACVRTFUNC	cvrt_time_long;
+CACVRTFUNC	cvrt_time_double;
+
+CACVRTFUNC	cvrt_gr_short;
+CACVRTFUNC	cvrt_gr_float;
+CACVRTFUNC	cvrt_gr_enum;
+CACVRTFUNC	cvrt_gr_char;
+CACVRTFUNC	cvrt_gr_long;
+CACVRTFUNC	cvrt_gr_double;
+
+CACVRTFUNC	cvrt_ctrl_short;
+CACVRTFUNC	cvrt_ctrl_float;
+CACVRTFUNC	cvrt_ctrl_enum;
+CACVRTFUNC	cvrt_ctrl_char;
+CACVRTFUNC	cvrt_ctrl_long;
+CACVRTFUNC	cvrt_ctrl_double;
+
+/*  cvrt is (array of) (pointer to) (function returning) int */
+LOCAL CACVRTFUNC *cvrt[]
+	=
+	{
+	cvrt_string,
+	cvrt_short,
+	cvrt_float,
+	cvrt_enum,
+	cvrt_char,
+	cvrt_long,
+	cvrt_double,
+
+	cvrt_sts_string,
+	cvrt_sts_short,
+	cvrt_sts_float,
+	cvrt_sts_enum,
+	cvrt_sts_char,
+	cvrt_sts_long,
+	cvrt_sts_double,
+
+	cvrt_time_string,
+	cvrt_time_short,
+	cvrt_time_float,
+	cvrt_time_enum,
+	cvrt_time_char,
+	cvrt_time_long,
+	cvrt_time_double,
+
+	cvrt_sts_string, /* DBR_GR_STRING identical to dbr_sts_string */
+	cvrt_gr_short,
+	cvrt_gr_float,
+	cvrt_gr_enum,
+	cvrt_gr_char,
+	cvrt_gr_long,
+	cvrt_gr_double,
+
+	cvrt_sts_string, /* DBR_CTRL_STRING identical to dbr_sts_string */
+	cvrt_ctrl_short,
+	cvrt_ctrl_float,
+	cvrt_ctrl_enum,
+	cvrt_ctrl_char,
+	cvrt_ctrl_long,
+	cvrt_ctrl_double
+	};
 
 static void no_cvrt();
 
 /*
- *	Routine we will do later
+ * Native types may not match EPICS types
+ */
+typedef dbr_short_t	short;
+typedef dbr_float_t	float;
+typedef dbr_enum_t	enum;
+typedef dbr_char_t	char;
+typedef dbr_long_t	long;
+typedef dbr_double_t	double;
+#define dbr_ntohs(A)	ntohs(A)
+#define dbr_ntohl(A)	ntohl(A)
+#define dbr_htons(A)	htons(A)
+#define dbr_htonl(A)	htonl(A)
+
+
+
+/*
+ *	CVRT_STRING()
+ *
  *
  *
  *
  */
-static void no_cvrt()
+#ifdef __STDC__
+void cvrt_string(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
+)
+#else
+void cvrt_short(s,d,encode,num)
+void		*s;			/* source			*/
+void		*d;			/* destination			*/
+int 		encode;			/* cvrt VAX to IEEE if T	*/
+unsigned long	num;			/* number of values		*/
+#endif
 {
-	ca_printf("Sorry, conversion for that type currently not implemented\n");
-	exit();
+	dbr_char_t	*pSrc = s;
+	dbr_char_t	*pDest = d;
+
+	if(num == 1){
+		strcpy(pDest, pSrc);
+	}
+	else{
+		memcpy(pDest, pSrc, num*MAXSTRINGSIZE);
+	}
 }
-cvrt_sts_char()		{no_cvrt();}
-cvrt_sts_long()		{no_cvrt();}
-cvrt_sts_double()	{no_cvrt();}
-
-cvrt_time_string()	{no_cvrt();}
-cvrt_time_short()	{no_cvrt();}
-cvrt_time_float()	{no_cvrt();}
-cvrt_time_enum()	{no_cvrt();}
-cvrt_time_char()	{no_cvrt();}
-cvrt_time_long()	{no_cvrt();}
-cvrt_time_double()	{no_cvrt();}
-
-cvrt_gr_char()		{no_cvrt();}
-cvrt_gr_double()	{no_cvrt();}
-cvrt_gr_long()		{no_cvrt();}
-cvrt_gr_string()	{no_cvrt();}
-cvrt_gr_enum()		{no_cvrt();}
-
-cvrt_ctrl_char()	{no_cvrt();}
-cvrt_ctrl_long()	{no_cvrt();}
-cvrt_ctrl_string()	{no_cvrt();}
-cvrt_ctrl_double()	{no_cvrt();}
-
-
-
 
 
 /*
@@ -85,26 +195,27 @@ cvrt_ctrl_double()	{no_cvrt();}
  *
  */
 #ifdef __STDC__
-cvrt_short(
-short		*s,			/* source			*/
-short		*d,			/* destination			*/
+void cvrt_short(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
 int 		encode,			/* cvrt VAX to IEEE if T	*/
-int		num			/* number of values		*/
+unsigned long	num			/* number of values		*/
 )
 #else
-cvrt_short(s,d,encode,num)
-short		*s;			/* source			*/
-short		*d;			/* destination			*/
+void cvrt_short(s,d,encode,num)
+void		*s;			/* source			*/
+void		*d;			/* destination			*/
 int 		encode;			/* cvrt VAX to IEEE if T	*/
-int		num;			/* number of values		*/
+unsigned long	num;			/* number of values		*/
 #endif
 {
-      	unsigned int	i;
+	dbr_short_t	*pSrc = s;
+	dbr_short_t	*pDest = d;
+      	unsigned long	i;
 
       	for(i=0; i<num; i++){
-      	  	*d++ = ntohs( *s++ );
+      	  	*pDest++ = dbr_ntohs( *pSrc++ );
 	}
-	return 1;
 }
 
 
@@ -116,26 +227,27 @@ int		num;			/* number of values		*/
  *
  */
 #ifdef __STDC__
-int cvrt_char(
-char		*s,			/* source			*/
-char		*d,			/* destination			*/
+void cvrt_char(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
 int 		encode,			/* cvrt VAX to IEEE if T	*/
-int		num			/* number of values		*/
+unsigned long	num			/* number of values		*/
 )
 #else
-int cvrt_char(
-char		*s;			/* source			*/
-char		*d;			/* destination			*/
+void cvrt_char(
+void		*s;			/* source			*/
+void		*d;			/* destination			*/
 int 		encode;			/* cvrt VAX to IEEE if T	*/
-int		num;			/* number of values		*/
+unsigned long	num;			/* number of values		*/
 #endif
 {
       	unsigned int	i;
+	dbr_char_t	*pSrc = s;
+	dbr_char_t	*pDest = d;
 
       	for(i=0; i<num; i++){
-      	  	*d++ = *s++;
+      	  	*pDest++ = *pSrc++;
 	}
-	return 1;
 }
 
 
@@ -147,26 +259,27 @@ int		num;			/* number of values		*/
  *
  */
 #ifdef __STDC__
-int cvrt_long(
-long		*s,			/* source			*/
-long		*d,			/* destination			*/
+void cvrt_long(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
 int 		encode,			/* cvrt VAX to IEEE if T	*/
-int		num			/* number of values		*/
+unsigned long	num			/* number of values		*/
 )
 #else
-int cvrt_long(s,d,encode,num)
-long		*s;			/* source			*/
-long		*d;			/* destination			*/
+void cvrt_long(s,d,encode,num)
+void		*s;			/* source			*/
+void		*d;			/* destination			*/
 int 		encode;			/* cvrt VAX to IEEE if T	*/
-int		num;			/* number of values		*/
+unsigned long	num;			/* number of values		*/
 #endif
 {
-      	unsigned int	i;
+      	unsigned long	i;
+	dbr_long_t	*pSrc = s;
+	dbr_long_t	*pDest = d;
 
       	for(i=0; i<num; i++){
-      	  	*d++ = ntohl( *s++ );
+      	  	*pDest++ = dbr_ntohl( *pSrc++ );
 	}
-	return 1;
 }
 
 
@@ -178,26 +291,27 @@ int		num;			/* number of values		*/
  *
  */
 #ifdef __STDC__
-int cvrt_enum(
-short		*s,			/* source			*/
-short		*d,			/* destination			*/
+void cvrt_enum(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
 int 		encode,			/* cvrt VAX to IEEE if T	*/
-int		num			/* number of values		*/
+unsigned long	num			/* number of values		*/
 )
 #else
-int cvrt_enum(s,d,encode,num)
+void cvrt_enum(s,d,encode,num)
 short		*s;			/* source			*/
 short		*d;			/* destination			*/
 int 		encode;			/* cvrt VAX to IEEE if T	*/
-int		num;			/* number of values		*/
+unsigned long	num;			/* number of values		*/
 #endif
 {
       	unsigned int	i;
+	dbr_enum_t	*pSrc = s;
+	dbr_enum_t	*pDest = d;
 
       	for(i=0; i<num; i++){
-      	  	*d++ = ntohs(*s++);
+      	  	*pDest++ = dbr_ntohs(*pSrc++);
 	}
-	return 1;
 }
 
 
@@ -211,36 +325,36 @@ int		num;			/* number of values		*/
  *
  */
 #ifdef __STDC__
-int cvrt_float(
-float			*s,			/* source		*/
-float			*d,			/* destination		*/
-int 			encode,			/* cvrt VAX to IEEE if T*/
-int			num			/* number of values	*/
+void cvrt_float(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
 #else
-int cvrt_float(s,d,encode,num)
-float			*s;			/* source		*/
-float			*d;			/* destination		*/
+void cvrt_float(s,d,encode,num)
+void			*s;			/* source		*/
+void			*d;			/* destination		*/
 int 			encode;			/* cvrt VAX to IEEE if T*/
-int			num;			/* number of values	*/
+unsigned long		num;			/* number of values	*/
 #endif
 {
-      	unsigned int	i;
+      	unsigned long	i;
+	dbr_float_t	*pSrc = s;
+	dbr_float_t	*pDest = d;
 
       	for(i=0; i<num; i++){
 		if(encode){
-	  		htonf(s, d);
+	  		dbr_htonf(pSrc, pDest);
 		}
 		else{
-	  		ntohf(s, d);
+	  		dbr_ntohf(pSrc, pDest);
 		}
 		/*
 		 * incrementing these inside the MACRO could be unhealthy
 		 */
-		s++;
-		d++;
+		pSrc++;
+		pDest++;
 	}
-
-	return 1;
 }
 
 
@@ -252,63 +366,33 @@ int			num;			/* number of values	*/
  *
  */
 #ifdef __STDC__
-int cvrt_double(
-double		*s,			/* source			*/
-double		*d,			/* destination			*/
+void cvrt_double(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
 int 		encode,			/* cvrt VAX to IEEE if T	*/
-int		num			/* number of values		*/
+unsigned long	num			/* number of values		*/
 )
 #else
-int cvrt_double(s,d,encode,num)
-double		*s;			/* source			*/
-double		*d;			/* destination			*/
-int 		encode;			/* cvrt VAX to IEEE if T	*/
-int		num;			/* number of values		*/
+void cvrt_double(s,d,encode,num)
+void			*s;			/* source		*/
+void			*d;			/* destination		*/
+int 			encode;			/* cvrt VAX to IEEE if T*/
+unsigned long		num;			/* number of values	*/
 #endif
 {
       	unsigned int	i;
 
-	ca_printf("CA: sorry no code for conversions of doubles\n");
-	ca_printf("CA: setting your variable to nill\n");
-      	for(i=0; i<num; i++){
-	  	*d++ = 0.0;
+	if(encode){
+      		for(i=0; i<num; i++){
+			htond(s,d);
+		}
 	}
-
-	return 1;
+	else{
+      		for(i=0; i<num; i++){
+			ntohd(s,d;
+		}
+	}
 }
-
-
-/*
- *	CVRT_STRING()
- *
- *
- *
- *
- */
-#ifdef __STDC__
-int cvrt_string(
-char		*s,			/* source			*/
-char		*d,			/* destination			*/
-int 		encode,			/* cvrt VAX to IEEE if T	*/
-int		num			/* number of values		*/
-)
-#else
-int cvrt_string(s,d,encode,num)
-char		*s;			/* source			*/
-char		*d;			/* destination			*/
-int 		encode;			/* cvrt VAX to IEEE if T	*/
-int		num;			/* number of values		*/
-#endif
-{
-      	unsigned int	i;
-
-	if(num == 1)
-            	strcpy(d, s);
-	else
-		memcpy(d, s, (MAX_STRING_SIZE * num));
-	return 1;
-}
-
 
 
 
@@ -328,30 +412,31 @@ int		num;			/* number of values		*/
 ****************************************************************************/
 
 #ifdef __STDC__
-cvrt_sts_string(
-struct dbr_sts_string   *s,                     /* source               */
-struct dbr_sts_string   *d,                     /* destination          */
-int encode,                                     /* do VAX to IEEE       */
-int                     num                    /* number of values     */
+void cvrt_sts_string(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
 )
 #else
-cvrt_sts_string(s,d,encode,num)
-struct dbr_sts_string	*s;			/* source		*/
-struct dbr_sts_string	*d;			/* destination		*/
-int encode;					/* do VAX to IEEE 	*/
-int			num;			/* number of values	*/
+void cvrt_sts_string(s,d,encode,num)
+void			*s;			/* source		*/
+void			*d;			/* destination		*/
+int 			encode;			/* cvrt VAX to IEEE if T*/
+unsigned long		num;			/* number of values	*/
 #endif
 {
+	struct dbr_sts_string	*pSrc = s;
+	struct dbr_sts_string 	*pDest = d;
 			
-    /* convert ieee to vax format or vax to ieee */
-    d->status 		= ntohs(s->status);
-    d->severity		= ntohs(s->severity);
-    if (num == 1)	/* if single value */
-	strcpy(d->value,s->value);
-    else
-	memcpy(d->value,s->value,(MAX_STRING_SIZE * num));
+    	/* convert ieee to vax format or vax to ieee */
+    	pDest->status 		= dbr_ntohs(pSrc->status);
+    	pDest->severity		= dbr_ntohs(pSrc->severity);
+    	if (num == 1)	/* if single value */
+		strcpy(pDest->value, pSrc->value);
+    	else
+		memcpy(pDest->value, pSrc->value, (MAX_STRING_SIZE * num));
 
-  return 1;
 }
 
 
@@ -369,47 +454,35 @@ int			num;			/* number of values	*/
 ****************************************************************************/
 
 #ifdef __STDC__
-cvrt_sts_short(
-struct dbr_sts_int      *s,                     /* source               */
-struct dbr_sts_int      *d,                     /* destination          */
-int                     encode,                 /* if true; vax to ieee */
-int                     num                    /* number of values     */
+void cvrt_sts_short(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
 )
 #else
-cvrt_sts_short(s,d,encode,num)
-struct dbr_sts_int	*s;			/* source		*/
-struct dbr_sts_int	*d;			/* destination		*/
-int 			encode;			/* if true, vax to ieee	*/
-int			num;			/* number of values	*/
+void cvrt_sts_short(s,d,encode,num)
+void			*s;			/* source		*/
+void			*d;			/* destination		*/
+int 			encode;			/* cvrt VAX to IEEE if T*/
+unsigned long		num;			/* number of values	*/
 #endif
 {
-    register i;
-    short	*sval_ptr,*dval_ptr;	/* ptrs to source, destination */
+	struct dbr_sts_int	*pSrc = s;
+	struct dbr_sts_int	*pDest = d;
 
-    /* convert vax to ieee or ieee to vax format -- same code*/
-    d->status 		= ntohs(s->status);
-    d->severity		= ntohs(s->severity);
+    	/* convert vax to ieee or ieee to vax format -- same code*/
+    	pDest->status 		= dbr_ntohs(pSrc->status);
+    	pDest->severity		= dbr_ntohs(pSrc->severity);
 
-    if (num == 1)	/* single value */
-	d->value = ntohs(s->value);
-    else		/* array chan-- multiple pts */
-    {
-	sval_ptr = &(s->value);
-	dval_ptr = &(d->value);
-	for (i = 0; i < num; i++){
-	    *dval_ptr = ntohs(*sval_ptr);
-	    sval_ptr++;
-	    dval_ptr++;
-	}
-    }
-
-
-  return 1;
+    	if (num == 1)	/* single value */
+		pDest->value = dbr_ntohs(pSrc->value);
+    	else		/* array chan-- multiple pts */
+    	{
+		cvrt_short(&pSrc->value, &pDest->value, encode, num);
+    	}
 }
-
 
-
-
 /****************************************************************************
 **	cvrt_sts_float(s,d)
 **		struct dbr_sts_float *s  	pointer to source struct
@@ -425,62 +498,65 @@ int			num;			/* number of values	*/
 ****************************************************************************/
 
 #ifdef __STDC__
-cvrt_sts_float(
-struct dbr_sts_float    *s,                     /* source               */
-struct dbr_sts_float    *d,                     /* destination          */
-int                     encode,                 /* it true, vax to ieee */
-int                     num                    /* number of values     */
+void cvrt_sts_float(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
 )
 #else
-cvrt_sts_float(s,d,encode,num)
-struct dbr_sts_float	*s;			/* source		*/
-struct dbr_sts_float	*d;			/* destination		*/
-int 			encode;			/* it true, vax to ieee */
-int			num;			/* number of values	*/
+void cvrt_sts_float(s,d,encode,num)
+void			*s;			/* source		*/
+void			*d;			/* destination		*/
+int 			encode;			/* cvrt VAX to IEEE if T*/
+unsigned long		num;			/* number of values	*/
 #endif
 {
-    register i;
-    float *sval_ptr,*dval_ptr;
+	struct dbr_sts_float	*pSrc = s;
+	struct dbr_sts_float	*pDest = d;
 
-    d->status 		= ntohs(s->status);
-    d->severity		= ntohs(s->severity);
+    	pDest->status 		= dbr_ntohs(pSrc->status);
+    	pDest->severity		= dbr_ntohs(pSrc->severity);
 
-    if(encode)					/* vax to ieee convert */
-	if(num == 1){
-    	    htonf(&s->value, &d->value);
-	}
-	else 
-	{
-	    sval_ptr = &(s->value);
-	    dval_ptr = &(d->value);
-	    for (i = 0;i < num; i++){
-		htonf(sval_ptr,dval_ptr);
-		sval_ptr++;
-		dval_ptr++;
-	   }
-	}
-
-    else					/* ieee to vax convert */
-	if(num == 1){
-	    ntohf(&s->value,&d->value);
-	}
-	else
-	{
-	    sval_ptr = &(s->value);
-	    dval_ptr = &(d->value);
-	    for (i = 0;i < num; i++){
-		ntohf(sval_ptr,dval_ptr);
-		dval_ptr++;
-		sval_ptr++;
-	    }
-	}
-
-  return 1;
+	cvrt_float(&pSrc->value, &pDest->value, encode, num);
 }
 
 
+/****************************************************************************
+**	cvrt_sts_double(s,d)
+**
+**	   if encode 
+**		converts struct in VAX format to ieee format
+**	   else 
+**		converts fields of struct in IEEE format to fields with VAX 
+**		format;
+****************************************************************************/
 
+#ifdef __STDC__
+LOCAL void cvrt_sts_double(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
+)
+#else
+LOCAL void cvrt_sts_double(s,d,encode,num)
+void			*s;			/* source		*/
+void			*d;			/* destination		*/
+int 			encode;			/* cvrt VAX to IEEE if T*/
+unsigned long		num;			/* number of values	*/
+#endif
+{
+	struct dbr_sts_double	*pSrc = s;
+	struct dbr_sts_double	*pDest = d;
 
+    	pDest->status 		= dbr_ntohs(pSrc->status);
+    	pDest->severity		= dbr_ntohs(pSrc->severity);
+
+	cvrt_double(&pSrc->value, &pDest->value, encode, num);
+}
+
+
 /****************************************************************************
 **	cvrt_sts_enum(s,d)
 **		struct dbr_sts_enum *s  	pointer to source struct
@@ -494,41 +570,37 @@ int			num;			/* number of values	*/
 **	 
 ****************************************************************************/
 
-cvrt_sts_enum(s,d,encode,num)
-struct dbr_sts_enum	*s;			/* source		*/
-struct dbr_sts_enum	*d;			/* destination		*/
-int 			encode;			/* if true, vax to ieee */
-int			num;			/* number of values	*/
+#ifdef __STDC__
+LOCAL void cvrt_sts_enum(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
+)
+#else
+LOCAL void cvrt_sts_enum(s,d,encode,num)
+void		*s;			/* source			*/
+void		*d;			/* destination			*/
+int 		encode;			/* cvrt VAX to IEEE if T	*/
+unsigned long	num;			/* number of values		*/
+#endif
 {
-    register i;
-    short *dval_ptr,*sval_ptr;
+	struct dbr_sts_enum	*pSrc = s;
+	struct dbr_sts_enum	*pDest = d;
 
-    /* convert vax to ieee or ieee to vax --same code */
-    d->status 		= ntohs(s->status);
-    d->severity		= ntohs(s->severity);
-    if (num == 1)
-        d->value	= ntohs(s->value);
-    else {
-	sval_ptr = &(s->value);
-	dval_ptr = &(d->value);
-	for (i = 0; i < num; i++){
-	   *dval_ptr 	= ntohs(*sval_ptr);
-	    dval_ptr++;
-	    sval_ptr++;
-	}
-    }
-  return 1;
+    	pDest->status 		= dbr_ntohs(pSrc->status);
+    	pDest->severity		= dbr_ntohs(pSrc->severity);
+	memcpy(&pDest->strs, &pSrc->strs, sizeof(pDest->strs));
+    	if (num == 1)
+        	d->value	= dbr_ntohs(s->value);
+    	else {
+		cvrt_enum(&pSrc->value,&pDest->value,encode,num)
+    	}
 }
 
 
-
-
 /****************************************************************************
-**	cvrt_gr_short(s,d)
-**		struct dbr_gr_int *s  	pointer to source struct
-**		struct dbr_gr_int *d	pointer to destination struct
-**		int  encode;			boolean, if true vax to ieee
-**							 else ieee to vax
+**	cvrt_gr_short()
 **
 **	converts fields of struct in IEEE format to fields with VAX format
 **		 or  
@@ -537,54 +609,244 @@ int			num;			/* number of values	*/
 ****************************************************************************/
 
 #ifdef __STDC__
-int cvrt_gr_short(
-struct dbr_gr_int       *s,                     /* source               */
-struct dbr_gr_int       *d,                     /* destination          */
-int                     encode,                 /* if true, vax to ieee */
-int                     num                    /* number of values     */
+LOCAL void cvrt_gr_short(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
 )
 #else
-int cvrt_gr_short(s,d,encode,num)
-struct dbr_gr_int	*s;			/* source		*/
-struct dbr_gr_int	*d;			/* destination		*/
-int 			encode;			/* if true, vax to ieee */
-int			num;			/* number of values	*/
+LOCAL void cvrt_gr_short(s,d,encode,num)
+void			*s;			/* source		*/
+void			*d;			/* destination		*/
+int 			encode;			/* cvrt VAX to IEEE if T*/
+unsigned long		num;			/* number of values	*/
 #endif
 {
-    register i;
-    short *sval_ptr,*dval_ptr;
+	struct dbr_gr_int	*pSrc = s;
+	struct dbr_gr_int	*pDest = d;
 
-    /* convert ieee to vax or vax to ieee -- same code */
-    d->status 			= ntohs(s->status);
-    d->severity			= ntohs(s->severity);
-    strcpy(d->units,s->units);
+    	pDest->status 		= dbr_ntohs(pSrc->status);
+    	pDest->severity		= dbr_ntohs(pSrc->severity);
+	memcpy(pDest->units,pSrc->units,sizeof(pSrc->units));
 
-    d->upper_disp_limit 	= ntohs(s->upper_disp_limit);
-    d->lower_disp_limit 	= ntohs(s->lower_disp_limit);
-    d->upper_alarm_limit 	= ntohs(s->upper_alarm_limit);
-    d->upper_warning_limit 	= ntohs(s->upper_warning_limit);
-    d->lower_alarm_limit 	= ntohs(s->lower_alarm_limit);
-    d->lower_warning_limit 	= ntohs(s->lower_warning_limit);
+    	pDest->upper_disp_limit 	= dbr_ntohs(pSrc->upper_disp_limit);
+	pDest->lower_disp_limit 	= dbr_ntohs(pSrc->lower_disp_limit);
+    	pDest->upper_alarm_limit 	= dbr_ntohs(pSrc->upper_alarm_limit);
+    	pDest->upper_warning_limit 	= dbr_ntohs(pSrc->upper_warning_limit);
+    	pDest->lower_alarm_limit 	= dbr_ntohs(pSrc->lower_alarm_limit);
+    	pDest->lower_warning_limit 	= dbr_ntohs(pSrc->lower_warning_limit);
 
-    if (num == 1)
-    	d->value = ntohs(s->value);
-    else {
-	sval_ptr = &(s->value);
-	dval_ptr = &(d->value);
-	for (i = 0;i < num; i++){
-	    *dval_ptr = ntohs(*sval_ptr);
-	    dval_ptr++;
-	    sval_ptr++;
+    	if (num == 1)
+    		pDest->value = dbr_ntohs(pSrc->value);
+    	else {
+		cvrt_short(&pSrc->value, &pDest->value, encode,num);
 	}
-    }
-
-
-  return 1;
 }
 
 
+/****************************************************************************
+**	cvrt_gr_char()
+**
+**	converts fields of struct in IEEE format to fields with VAX format
+**		 or  
+**	converts fields of struct in VAX format to fields with IEEE format
+**	 
+****************************************************************************/
+
+#ifdef __STDC__
+LOCAL void cvrt_gr_char(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
+)
+#else /*__STDC__*/
+LOCAL void cvrt_gr_char(s,d,encode,num)
+void			*s;			/* source		*/
+void			*d;			/* destination		*/
+int 			encode;			/* cvrt VAX to IEEE if T*/
+unsigned long		num;			/* number of values	*/
+#endif /*__STDC__*/
+{
+	struct dbr_gr_char	*pSrc = s;
+	struct dbr_gr_char	*pDest = d;
+
+    	pDest->status 		= dbr_ntohs(pSrc->status);
+    	pDest->severity		= dbr_ntohs(pSrc->severity);
+	memcpy(pDest->units,pSrc->units,sizeof(pSrc->units));
+
+    	pDest->upper_disp_limit 	= pSrc->upper_disp_limit;
+	pDest->lower_disp_limit 	= pSrc->lower_disp_limit;
+    	pDest->upper_alarm_limit 	= pSrc->upper_alarm_limit;
+    	pDest->upper_warning_limit 	= pSrc->upper_warning_limit;
+    	pDest->lower_alarm_limit 	= pSrc->lower_alarm_limit;
+    	pDest->lower_warning_limit 	= pSrc->lower_warning_limit;
+
+    	if (num == 1)
+    		pDest->value = pSrc->value;
+    	else {
+		memcpy(&pDest->value, &pSrc->value, num);
+	}
+}
+
+
+/****************************************************************************
+**	cvrt_gr_long()
+**
+**	converts fields of struct in IEEE format to fields with VAX format
+**		 or  
+**	converts fields of struct in VAX format to fields with IEEE format
+**	 
+****************************************************************************/
+
+#ifdef __STDC__
+LOCAL void cvrt_gr_long(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
+)
+#else
+LOCAL void cvrt_gr_long(s,d,encode,num)
+void			*s;			/* source		*/
+void			*d;			/* destination		*/
+int 			encode;			/* cvrt VAX to IEEE if T*/
+unsigned long		num;			/* number of values	*/
+#endif
+{
+	struct dbr_gr_long	*pSrc = s;
+	struct dbr_gr_long	*pDest = d;
+
+    	pDest->status 		= dbr_ntohs(pSrc->status);
+    	pDest->severity		= dbr_ntohs(pSrc->severity);
+	memcpy(pDest->units,pSrc->units,sizeof(pSrc->units));
+
+    	pDest->upper_disp_limit 	= dbr_ntohl(pSrc->upper_disp_limit);
+	pDest->lower_disp_limit 	= dbr_ntohl(pSrc->lower_disp_limit);
+    	pDest->upper_alarm_limit 	= dbr_ntohl(pSrc->upper_alarm_limit);
+    	pDest->upper_warning_limit 	= dbr_ntohl(pSrc->upper_warning_limit);
+    	pDest->lower_alarm_limit 	= dbr_ntohl(pSrc->lower_alarm_limit);
+    	pDest->lower_warning_limit 	= dbr_ntohl(pSrc->lower_warning_limit);
+
+    	if (num == 1)
+    		pDest->value = dbr_ntohl(pSrc->value);
+    	else {
+		cvrt_long(&pSrc->value, &pDest->value, encode, num);
+	}
+}
+
+
+/****************************************************************************
+**	cvrt_gr_enum(s,d)
+**
+**	   if encode 
+**		converts struct in VAX format to ieee format
+**	   else 
+**		converts fields of struct in IEEE format to fields with VAX 
+**		format;
+****************************************************************************/
+
+#ifdef __STDC__
+LOCAL void cvrt_gr_enum(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
+)
+#else
+LOCAL void cvrt_gr_enum(s,d,encode,num)
+void			*s;			/* source		*/
+void			*d;			/* destination		*/
+int 			encode;			/* cvrt VAX to IEEE if T*/
+unsigned long		num;			/* number of values	*/
+#endif
+{
+	struct dbr_gr_enum	*pSrc = s;
+	struct dbr_gr_enum	*pDest = d;
+
+    	pDest->status 			= dbr_ntohs(pSrc->status);
+    	pDest->severity			= dbr_ntohs(pSrc->severity);
+    	pDest->no_str			= dbr_ntohs(pSrc->no_str);
+    	memcpy(pDest->strs,pSrc->strs,sizeof(pSrc->strs));
+
+    	if (num == 1)	/* single value */
+		pDest->value = dbr_ntohs(pSrc->value);
+    	else		/* array chan-- multiple pts */
+    	{
+		cvrt_enum(&(pSrc->value), &(pDest->value), encode, num);
+	}
+}
+
+
+/****************************************************************************
+**	cvrt_gr_double(s,d)
+**
+**	   if encode 
+**		converts struct in VAX format to ieee format
+**	   else 
+**		converts fields of struct in IEEE format to fields with VAX 
+**		format;
+****************************************************************************/
+
+#ifdef __STDC__
+LOCAL void cvrt_gr_double(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
+)
+#else
+LOCAL void cvrt_gr_double(s,d,encode,num)
+void			*s;			/* source		*/
+void			*d;			/* destination		*/
+int 			encode;			/* cvrt VAX to IEEE if T*/
+unsigned long		num;			/* number of values	*/
+#endif
+{
+	struct dbr_gr_double	*pSrc = s;
+	struct dbr_gr_double	*pDest = d;
+
+    	/* these are same for vax to ieee or ieee to vax */
+    	pDest->status 			= dbr_ntohs(pSrc->status);
+    	pDest->severity			= dbr_ntohs(pSrc->severity);
+    	pDest->precision		= dbr_ntohs(pSrc->precision);
+    	memcpy(pDest->units,pSrc->units,sizeof(pSrc->units));
+
+    	if (encode)			/* vax to ieee convert		*/
+    	{
+		if (num == 1){
+		    htond(&s->value, &d->value);
+		}
+		else {
+		    cvrt_double(&pSrc->value, &pDest->value, encode,num);
+		}
+    		htond(&pSrc->upper_disp_limit,&pDest->upper_disp_limit);
+    		htond(&pSrc->lower_disp_limit, &pDest->lower_disp_limit);
+    		htond(&pSrc->upper_alarm_limit, &pDest->upper_alarm_limit);
+    		htond(&pSrc->upper_warning_limit, &pDest->upper_warning_limit);
+    		htond(&pSrc->lower_alarm_limit, &pDest->lower_alarm_limit);
+    		htond(&pSrc->lower_warning_limit, &pDest->lower_warning_limit);
+    	}
+    	else			/* ieee to vax convert 	 	*/
+    	{
+		if (num == 1){
+		    ntohd(&pSrc->value, &pDest->value);
+		}
+		else {
+		    cvrt_double(&pSrc->value, &pDest->value, encode,num);
+		}
+    		ntohd(&pSrc->upper_disp_limit,&pDest->upper_disp_limit);
+    		ntohd(&pSrc->lower_disp_limit, &pDest->lower_disp_limit);
+    		ntohd(&pSrc->upper_alarm_limit, &pDest->upper_alarm_limit);
+    		ntohd(&pSrc->upper_warning_limit, &pDest->upper_warning_limit);
+   	 	ntohd(&pSrc->lower_alarm_limit, &pDest->lower_alarm_limit);
+    		ntohd(&pSrc->lower_warning_limit, &pDest->lower_warning_limit);
+    	}
+}
 
 
+
 /****************************************************************************
 **	cvrt_gr_float(s,d)
 **		struct dbr_gr_float *d		pointer to destination struct
@@ -599,74 +861,59 @@ int			num;			/* number of values	*/
 ****************************************************************************/
 
 #ifdef __STDC__
-int cvrt_gr_float(
-struct dbr_gr_float	*s,			/* source		*/
-struct dbr_gr_float	*d,			/* destination		*/
-int			encode,			/* if true, vax to ieee */
-int			num			/* number of values	*/
+LOCAL void cvrt_gr_float(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
 )
 #else
-int cvrt_gr_float(s,d,encode,num)
-struct dbr_gr_float	*s;			/* source		*/
-struct dbr_gr_float	*d;			/* destination		*/
-int			encode;			/* if true, vax to ieee */
-int			num;			/* number of values	*/
+LOCAL void cvrt_gr_float(s,d,encode,num)
+void			*s;			/* source		*/
+void			*d;			/* destination		*/
+int 			encode;			/* cvrt VAX to IEEE if T*/
+unsigned long		num;			/* number of values	*/
 #endif
 {
-    register i;
-    float *sval_ptr,*dval_ptr;
+	struct dbr_gr_float     *pSrc = s;
+	struct dbr_gr_float     *pDest = d;
 
-    /* these are same for vax to ieee or ieee to vax */
-    d->status 			= ntohs(s->status);
-    d->severity			= ntohs(s->severity);
-    d->precision		= ntohs(s->precision);
-    strcpy(d->units,s->units);
+    	/* these are same for vax to ieee or ieee to vax */
+    	pDest->status 			= dbr_ntohs(pSrc->status);
+    	pDest->severity			= dbr_ntohs(pSrc->severity);
+    	pDest->precision		= dbr_ntohs(pSrc->precision);
+    	memcpy(pDest->units,pSrc->units,sizeof(pSrc->units));
 
-    if (encode)			/* vax to ieee convert		*/
-    {
-	if (num == 1){
-	    htonf(&s->value, &d->value);
-	}
-	else {
-	    sval_ptr = &(s->value);
-	    dval_ptr = &(d->value);
-	    for (i = 0;i < num; i++){
-		htonf(sval_ptr,dval_ptr);
-		dval_ptr++;
-		sval_ptr++;
-	    }
-	}
-    	htonf(&s->upper_disp_limit,&d->upper_disp_limit);
-    	htonf(&s->lower_disp_limit, &d->lower_disp_limit);
-    	htonf(&s->upper_alarm_limit, &d->upper_alarm_limit);
-    	htonf(&s->upper_warning_limit, &d->upper_warning_limit);
-    	htonf(&s->lower_alarm_limit, &d->lower_alarm_limit);
-    	htonf(&s->lower_warning_limit, &d->lower_warning_limit);
-    }
-    else			/* ieee to vax convert 	 	*/
-    {
-	if (num == 1){
-	    ntohf(&s->value, &d->value);
-	}
-	else {
-	    sval_ptr = &(s->value);
-	    dval_ptr = &(d->value);
-	    for (i = 0;i < num; i++){
-		ntohf(sval_ptr,dval_ptr);
-		dval_ptr++;
-		sval_ptr++;
-	    }
-	}
-    	ntohf(&s->upper_disp_limit,&d->upper_disp_limit);
-    	ntohf(&s->lower_disp_limit, &d->lower_disp_limit);
-    	ntohf(&s->upper_alarm_limit, &d->upper_alarm_limit);
-    	ntohf(&s->upper_warning_limit, &d->upper_warning_limit);
-    	ntohf(&s->lower_alarm_limit, &d->lower_alarm_limit);
-    	ntohf(&s->lower_warning_limit, &d->lower_warning_limit);
-    }
-	
-    
-  return 1;
+    	if (encode)			/* vax to ieee convert		*/
+    	{
+		if (num == 1){
+		    htonf(&s->value, &d->value);
+		}
+		else {
+		    cvrt_float(&pSrc->value, &pDest->value, encode,num);
+		}
+    		htonf(&pSrc->upper_disp_limit,&pDest->upper_disp_limit);
+    		htonf(&pSrc->lower_disp_limit, &pDest->lower_disp_limit);
+    		htonf(&pSrc->upper_alarm_limit, &pDest->upper_alarm_limit);
+    		htonf(&pSrc->upper_warning_limit, &pDest->upper_warning_limit);
+    		htonf(&pSrc->lower_alarm_limit, &pDest->lower_alarm_limit);
+    		htonf(&pSrc->lower_warning_limit, &pDest->lower_warning_limit);
+    	}
+    	else			/* ieee to vax convert 	 	*/
+    	{
+		if (num == 1){
+		    ntohf(&pSrc->value, &pDest->value);
+		}
+		else {
+		    cvrt_float(&pSrc->value, &pDest->value, encode,num);
+		}
+    		ntohf(&pSrc->upper_disp_limit,&pDest->upper_disp_limit);
+    		ntohf(&pSrc->lower_disp_limit, &pDest->lower_disp_limit);
+    		ntohf(&pSrc->upper_alarm_limit, &pDest->upper_alarm_limit);
+    		ntohf(&pSrc->upper_warning_limit, &pDest->upper_warning_limit);
+   	 	ntohf(&pSrc->lower_alarm_limit, &pDest->lower_alarm_limit);
+    		ntohf(&pSrc->lower_warning_limit, &pDest->lower_warning_limit);
+    	}
 }
 
 
@@ -686,62 +933,212 @@ int			num;			/* number of values	*/
 ****************************************************************************/
 
 #ifdef __STDC__
-int cvrt_ctrl_short(
-struct dbr_ctrl_int	*s,			/* source		*/
-struct dbr_ctrl_int	*d,			/* destination		*/
-int			encode,			/* if true, vax to ieee */
-int			num			/* number of values	*/
+LOCAL void cvrt_ctrl_short(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
 )
 #else
-int cvrt_ctrl_short(s,d,encode,num)
-struct dbr_ctrl_int	*s;			/* source		*/
-struct dbr_ctrl_int	*d;			/* destination		*/
-int			encode;			/* if true, vax to ieee */
-int			num;			/* number of values	*/
+LOCAL void cvrt_ctrl_short(s,d,encode,num)
+void			*s;			/* source		*/
+void			*d;			/* destination		*/
+int 			encode;			/* cvrt VAX to IEEE if T*/
+unsigned long		num;			/* number of values	*/
 #endif
 {
-    register i;
-    short *sval_ptr,*dval_ptr;
+	struct dbr_ctrl_int	*pSrc = s;
+	struct dbr_ctrl_int	*pDest = d;
 
-    /* vax to ieee or ieee to vax -- same code */
-    d->status 			= ntohs(s->status);
-    d->severity			= ntohs(s->severity);
-    strcpy(d->units,s->units);
+    	/* vax to ieee or ieee to vax -- same code */
+    	pDest->status 			= dbr_ntohs(pSrc->status);
+    	pDest->severity			= dbr_ntohs(pSrc->severity);
+    	memcpy(pDest->units,pSrc->units,sizeof(pSrc->units));
 
-    d->upper_disp_limit 	= ntohs(s->upper_disp_limit);
-    d->lower_disp_limit 	= ntohs(s->lower_disp_limit);
-    d->upper_alarm_limit 	= ntohs(s->upper_alarm_limit);
-    d->upper_warning_limit 	= ntohs(s->upper_warning_limit);
-    d->lower_alarm_limit 	= ntohs(s->lower_alarm_limit);
-    d->lower_warning_limit 	= ntohs(s->lower_warning_limit);
-    d->lower_ctrl_limit 	= ntohs(s->lower_ctrl_limit);
-    d->upper_ctrl_limit 	= ntohs(s->upper_ctrl_limit);
+    	pDest->upper_disp_limit 	= dbr_ntohs(pSrc->upper_disp_limit);
+    	pDest->lower_disp_limit 	= dbr_ntohs(pSrc->lower_disp_limit);
+    	pDest->upper_alarm_limit 	= dbr_ntohs(pSrc->upper_alarm_limit);
+    	pDest->upper_warning_limit 	= dbr_ntohs(pSrc->upper_warning_limit);
+    	pDest->lower_alarm_limit 	= dbr_ntohs(pSrc->lower_alarm_limit);
+    	pDest->lower_warning_limit 	= dbr_ntohs(pSrc->lower_warning_limit);
+    	pDest->lower_ctrl_limit 	= dbr_ntohs(pSrc->lower_ctrl_limit);
+    	pDest->upper_ctrl_limit 	= dbr_ntohs(pSrc->upper_ctrl_limit);
 
-    if (num == 1)
-    	d->value = ntohs(s->value);
-    else {
-	sval_ptr = &(s->value);
-	dval_ptr = &(d->value);
-	for (i = 0;i < num; i++){
-	    *dval_ptr = ntohs(*sval_ptr);
-	    dval_ptr++;
-	    sval_ptr++;
-	}
-    }
-	
+    	if (num == 1)
+    		pDest->value = dbr_ntohs(pSrc->value);
+    	else {
+		cvrtshort(&pSrc->value, &pDest->value, encode, num);
+    	}
+}
 
-  return 1;
+/****************************************************************************
+**	cvrt_ctrl_long(s,d)
+**
+**	converts fields of struct in IEEE format to fields with VAX format
+**		 or  
+**	converts fields of struct in VAX format to fields with IEEE format
+**	 
+****************************************************************************/
+
+#ifdef __STDC__
+LOCAL void cvrt_ctrl_long(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
+)
+#else
+LOCAL void cvrt_ctrl_long(s,d,encode,num)
+void			*s;			/* source		*/
+void			*d;			/* destination		*/
+int 			encode;			/* cvrt VAX to IEEE if T*/
+unsigned long		num;			/* number of values	*/
+#endif
+{
+	struct dbr_ctrl_long	*pSrc = s;
+	struct dbr_ctrl_long	*pDest = d;
+
+    	/* vax to ieee or ieee to vax -- same code */
+    	pDest->status 			= dbr_ntohs(pSrc->status);
+    	pDest->severity			= dbr_ntohs(pSrc->severity);
+    	memcpy(pDest->units,pSrc->units,sizeof(pSrc->units));
+
+    	pDest->upper_disp_limit 	= dbr_ntohl(pSrc->upper_disp_limit);
+    	pDest->lower_disp_limit 	= dbr_ntohl(pSrc->lower_disp_limit);
+    	pDest->upper_alarm_limit 	= dbr_ntohl(pSrc->upper_alarm_limit);
+    	pDest->upper_warning_limit 	= dbr_ntohl(pSrc->upper_warning_limit);
+    	pDest->lower_alarm_limit 	= dbr_ntohl(pSrc->lower_alarm_limit);
+    	pDest->lower_warning_limit 	= dbr_ntohl(pSrc->lower_warning_limit);
+    	pDest->lower_ctrl_limit 	= dbr_ntohl(pSrc->lower_ctrl_limit);
+    	pDest->upper_ctrl_limit 	= dbr_ntohl(pSrc->upper_ctrl_limit);
+
+    	if (num == 1)
+    		pDest->value = dbr_ntohl(pSrc->value);
+    	else {
+		cvrtlong(&pSrc->value, &pDest->value, encode, num);
+    	}
+}
+
+/****************************************************************************
+**	cvrt_ctrl_short(s,d)
+**
+**	converts fields of struct in IEEE format to fields with VAX format
+**		 or  
+**	converts fields of struct in VAX format to fields with IEEE format
+**	 
+****************************************************************************/
+
+#ifdef __STDC__
+LOCAL void cvrt_ctrl_char(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
+)
+#else
+LOCAL void cvrt_ctrl_char(s,d,encode,num)
+void			*s;			/* source		*/
+void			*d;			/* destination		*/
+int 			encode;			/* cvrt VAX to IEEE if T*/
+unsigned long		num;			/* number of values	*/
+#endif
+{
+	struct dbr_ctrl_char	*pSrc = s;
+	struct dbr_ctrl_char	*pDest = d;
+
+    	/* vax to ieee or ieee to vax -- same code */
+    	pDest->status 			= dbr_ntohs(pSrc->status);
+    	pDest->severity			= dbr_ntohs(pSrc->severity);
+
+    	pDest->upper_disp_limit 	= pSrc->upper_disp_limit;
+    	pDest->lower_disp_limit 	= pSrc->lower_disp_limit;
+    	pDest->upper_alarm_limit 	= pSrc->upper_alarm_limit;
+    	pDest->upper_warning_limit 	= pSrc->upper_warning_limit;
+    	pDest->lower_ctrl_limit 	= pSrc->lower_ctrl_limit;
+    	pDest->upper_ctrl_limit 	= pSrc->upper_ctrl_limit;
+
+    	if (num == 1)
+    		pDest->value = pSrc->value;
+    	else {
+		memcpy(&pDest->value, &pSrc->value, num);
+    	}
 }
 
 
+/****************************************************************************
+**	cvrt_ctrl_double(s,d)
+**
+**	   if encode 
+**		converts struct in VAX format to ieee format
+**	   else 
+**		converts fields of struct in IEEE format to fields with VAX 
+**		format;
+****************************************************************************/
+
+#ifdef __STDC__
+LOCAL void cvrt_ctrl_double(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
+)
+#else
+LOCAL void cvrt_ctrl_double(s,d,encode,num)
+void			*s;			/* source		*/
+void			*d;			/* destination		*/
+int 			encode;			/* cvrt VAX to IEEE if T*/
+unsigned long		num;			/* number of values	*/
+#endif
+{
+	struct dbr_ctrl_double	*pSrc = s;
+	struct dbr_ctrl_double	*pDest = d;
+
+	    /* these are the same for ieee to vaax or vax to ieee */
+    	pDest->status 		= dbr_ntohs(pSrc->status);
+    	pDest->severity		= dbr_ntohs(pSrc->severity);
+    	pDest->precision	= dbr_ntohs(pSrc->precision);
+    	memcpy(pDest->units,pSrc->units,sizeof(pSrc->units));
+    	if (encode)			/* vax to ieee convert		*/
+    	{
+		if (num == 1){
+	    		htond(&pSrc->value, &pDest->value);
+		}
+		else {
+			cvrt_double(&pSrc->value, &pDest->value, encode, num);
+		}
+    		htond(&pSrc->upper_disp_limit,&pDest->upper_disp_limit);
+    		htond(&pSrc->lower_disp_limit, &pDest->lower_disp_limit);
+    		htond(&pSrc->upper_alarm_limit, &pDest->upper_alarm_limit);
+    		htond(&pSrc->upper_warning_limit, &pDest->upper_warning_limit);
+    		htond(&pSrc->lower_alarm_limit, &pDest->lower_alarm_limit);
+    		htond(&pSrc->lower_warning_limit, &pDest->lower_warning_limit);
+    		htond(&pSrc->lower_ctrl_limit, &pDest->lower_ctrl_limit);
+    		htond(&pSrc->upper_ctrl_limit, &pDest->upper_ctrl_limit);
+    	}
+    	else			/* ieee to vax convert 	 	*/
+    	{
+		if (num == 1){
+	    		ntohd(&pSrc->value, &pDest->value);
+		}
+		else {
+			cvrt_double(&pSrc->value, &pDest->value, encode, num);
+		}
+    		ntohd(&pSrc->lower_disp_limit, &pDest->lower_disp_limit);
+    		ntohd(&pSrc->upper_alarm_limit, &pDest->upper_alarm_limit);
+    		ntohd(&pSrc->upper_warning_limit, &pDest->upper_warning_limit);
+    		ntohd(&pSrc->lower_alarm_limit, &pDest->lower_alarm_limit);
+    		ntohd(&pSrc->lower_warning_limit, &pDest->lower_warning_limit);
+    		ntohd(&pSrc->lower_ctrl_limit, &pDest->lower_ctrl_limit);
+    		ntohd(&pSrc->upper_ctrl_limit, &pDest->upper_ctrl_limit);
+    	}
+
+}
 
 
+
+
 /****************************************************************************
 **	cvrt_ctrl_float(s,d)
-**		struct dbr_ctrl_float *s  	pointer to source struct
-**		struct dbr_ctrl_float *d	pointer to destination struct
-**		int  encode;			boolean, if true vax to ieee
-**							 else ieee to vax
 **
 **	   if encode 
 **		converts struct in VAX format to ieee format
@@ -751,85 +1148,68 @@ int			num;			/* number of values	*/
 ****************************************************************************/
 
 #ifdef __STDC__
-int cvrt_ctrl_float(
-struct dbr_ctrl_float	*s,			/* source		*/
-struct dbr_ctrl_float	*d,			/* destination		*/
-int 			encode,			/* if true, vax to ieee */
-int			num			/* number of values	*/
+LOCAL void cvrt_ctrl_float(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
 )
 #else
-int cvrt_ctrl_float(s,d,encode,num)
-struct dbr_ctrl_float	*s;			/* source		*/
-struct dbr_ctrl_float	*d;			/* destination		*/
-int 			encode;			/* if true, vax to ieee */
-int			num;			/* number of values	*/
+LOCAL void cvrt_ctrl_float(s,d,encode,num)
+void			*s;			/* source		*/
+void			*d;			/* destination		*/
+int 			encode;			/* cvrt VAX to IEEE if T*/
+unsigned long		num;			/* number of values	*/
 #endif
 {
-    register i;
-    float *sval_ptr,*dval_ptr;
+	struct dbr_ctrl_float	*pSrc = s;
+	struct dbr_ctrl_float	*pDest = d;
 
-    /* these are the same for ieee to vaax or vax to ieee */
-    d->status 			= ntohs(s->status);
-    d->severity			= ntohs(s->severity);
-    d->precision		= ntohs(s->precision);
-    strcpy(d->units,s->units);
-    if (encode)			/* vax to ieee convert		*/
-    {
-	if (num == 1){
-	    htonf(&s->value, &d->value);
-	}
-	else {
-	    sval_ptr = &(s->value);
-	    dval_ptr = &(d->value);
-	    for (i = 0;i < num; i++){
-		htonf(sval_ptr,dval_ptr);
-		dval_ptr++;
-		sval_ptr++;
-	    }
-	}
-    	htonf(&s->upper_disp_limit,&d->upper_disp_limit);
-    	htonf(&s->lower_disp_limit, &d->lower_disp_limit);
-    	htonf(&s->upper_alarm_limit, &d->upper_alarm_limit);
-    	htonf(&s->upper_warning_limit, &d->upper_warning_limit);
-    	htonf(&s->lower_alarm_limit, &d->lower_alarm_limit);
-    	htonf(&s->lower_warning_limit, &d->lower_warning_limit);
-    	htonf(&s->lower_ctrl_limit, &d->lower_ctrl_limit);
-    	htonf(&s->upper_ctrl_limit, &d->upper_ctrl_limit);
-    }
-    else			/* ieee to vax convert 	 	*/
-    {
-	if (num == 1){
-	    ntohf(&s->value, &d->value);
-	}
-	else {
-	    sval_ptr = &(s->value);
-	    dval_ptr = &(d->value);
-	    for (i = 0;i < num; i++){
-		ntohf(sval_ptr,dval_ptr);
-		dval_ptr++;
-		sval_ptr++;
-	    }
-	}
-    	ntohf(&s->lower_disp_limit, &d->lower_disp_limit);
-    	ntohf(&s->upper_alarm_limit, &d->upper_alarm_limit);
-    	ntohf(&s->upper_warning_limit, &d->upper_warning_limit);
-    	ntohf(&s->lower_alarm_limit, &d->lower_alarm_limit);
-    	ntohf(&s->lower_warning_limit, &d->lower_warning_limit);
-    	ntohf(&s->lower_ctrl_limit, &d->lower_ctrl_limit);
-    	ntohf(&s->upper_ctrl_limit, &d->upper_ctrl_limit);
-    }
+	    /* these are the same for ieee to vaax or vax to ieee */
+    	pDest->status 		= dbr_ntohs(pSrc->status);
+    	pDest->severity		= dbr_ntohs(pSrc->severity);
+    	pDest->precision		= dbr_ntohs(pSrc->precision);
+    	memcpy(pDest->units,pSrc->units,sizeof(pSrc->units));
+    	if (encode)			/* vax to ieee convert		*/
+    	{
+		if (num == 1){
+	    		htonf(&pSrc->value, &pDest->value);
+		}
+		else {
+			cvrt_float(&pSrc->value, &pDest->value, encode, num);
+		}
+    		htonf(&pSrc->upper_disp_limit,&pDest->upper_disp_limit);
+    		htonf(&pSrc->lower_disp_limit, &pDest->lower_disp_limit);
+    		htonf(&pSrc->upper_alarm_limit, &pDest->upper_alarm_limit);
+    		htonf(&pSrc->upper_warning_limit, &pDest->upper_warning_limit);
+    		htonf(&pSrc->lower_alarm_limit, &pDest->lower_alarm_limit);
+    		htonf(&pSrc->lower_warning_limit, &pDest->lower_warning_limit);
+    		htonf(&pSrc->lower_ctrl_limit, &pDest->lower_ctrl_limit);
+    		htonf(&pSrc->upper_ctrl_limit, &pDest->upper_ctrl_limit);
+    	}
+    	else			/* ieee to vax convert 	 	*/
+    	{
+		if (num == 1){
+	    		ntohf(&pSrc->value, &pDest->value);
+		}
+		else {
+			cvrt_float(&pSrc->value, &pDest->value, encode, num);
+		}
+    		ntohf(&pSrc->lower_disp_limit, &pDest->lower_disp_limit);
+    		ntohf(&pSrc->upper_alarm_limit, &pDest->upper_alarm_limit);
+    		ntohf(&pSrc->upper_warning_limit, &pDest->upper_warning_limit);
+    		ntohf(&pSrc->lower_alarm_limit, &pDest->lower_alarm_limit);
+    		ntohf(&pSrc->lower_warning_limit, &pDest->lower_warning_limit);
+    		ntohf(&pSrc->lower_ctrl_limit, &pDest->lower_ctrl_limit);
+    		ntohf(&pSrc->upper_ctrl_limit, &pDest->upper_ctrl_limit);
+    	}
 
-
-  return 1;
 }
 
 
+
 /****************************************************************************
 **	cvrt_ctrl_enum(s,d)
-**		struct dbr_ctrl_enum *s 	pointer to source struct
-**		struct dbr_ctrl_enum *d		pointer to destination struct
-**		int  encode;			boolean, if true vax to ieee
-**							 else ieee to vax
 **
 **	   if encode 
 **		converts struct in VAX format to ieee format
@@ -839,41 +1219,482 @@ int			num;			/* number of values	*/
 ****************************************************************************/
 
 #ifdef __STDC__
-cvrt_ctrl_enum(
-struct dbr_ctrl_enum	*s,			/* source		*/
-struct dbr_ctrl_enum	*d,			/* destination		*/
-int 			encode,			/* if true, vax to ieee */
-int			num			/* number of values	*/
+LOCAL void cvrt_ctrl_enum(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
 )
 #else
-cvrt_ctrl_enum(s,d,encode,num)
-struct dbr_ctrl_enum	*s;			/* source		*/
-struct dbr_ctrl_enum	*d;			/* destination		*/
-int 			encode;			/* if true, vax to ieee */
-int			num;			/* number of values	*/
+LOCAL void cvrt_ctrl_enum(s,d,encode,num)
+void			*s;			/* source		*/
+void			*d;			/* destination		*/
+int 			encode;			/* cvrt VAX to IEEE if T*/
+unsigned long		num;			/* number of values	*/
 #endif
 {
-    register i;
-    short *sval_ptr,*dval_ptr;
+	struct dbr_ctrl_enum	*pSrc = s;
+	struct dbr_ctrl_enum	*pDest = d;
 
-    /* vax to ieee or ieee to vax -- same code */
-    d->status 			= ntohs(s->status);
-    d->severity			= ntohs(s->severity);
-    d->no_str			= ntohs(s->no_str);
-    memcpy(d->strs,s->strs,sizeof(s->strs));
+    	pDest->status 			= dbr_ntohs(pSrc->status);
+    	pDest->severity			= dbr_ntohs(pSrc->severity);
+    	pDest->no_str			= dbr_ntohs(pSrc->no_str);
+    	memcpy(pDest->strs,pSrc->strs,sizeof(pSrc->strs));
 
-    if (num == 1)	/* single value */
-	d->value = ntohs(s->value);
-    else		/* array chan-- multiple pts */
-    {
-	sval_ptr = &(s->value);
-	dval_ptr = &(d->value);
-	for (i = 0; i < num; i++){
-	    *dval_ptr = ntohs(*sval_ptr);
-	    dval_ptr++;
-	    sval_ptr++;
+    	if (num == 1)	/* single value */
+		pDest->value = dbr_ntohs(pSrc->value);
+    	else		/* array chan-- multiple pts */
+    	{
+		cvrt_enum(&(pSrc->value), &(pDest->value), encode, num);
 	}
-    }
-
-  return 1;
 }
+
+
+/****************************************************************************
+**	cvrt_sts_char(s,d)
+**		struct dbr_sts_int *s  	pointer to source struct
+**		struct dbr_sts_int *d	pointer to destination struct
+**		int  encode;			boolean, if true vax to ieee
+**							 else ieee to vax
+**
+**	converts fields ofstruct in VAX format to ieee format
+**	   or 
+**	converts fields of struct in IEEE format to fields with VAX 
+**		format
+****************************************************************************/
+
+#ifdef __STDC__
+LOCAL void cvrt_sts_char(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
+)
+#else
+LOCAL void cvrt_sts_char(s,d,encode,num)
+void			*s;		/* source		*/
+void			*d;		/* destination		*/
+int 			encode;		/* cvrt VAX to IEEE if T*/
+unsigned long		num;		/* number of values	*/
+#endif
+{
+	struct dbr_sts_char	*pSrc = s;
+	struct dbr_sts_char	*pDest = d;
+
+    	/* convert vax to ieee or ieee to vax format -- same code*/
+    	pDest->status 		= dbr_ntohs(pSrc->status);
+    	pDest->severity		= dbr_ntohs(pSrc->severity);
+
+    	if (num == 1)	/* single value */
+		pDest->value = pSrc->value;
+    	else		/* array chan-- multiple pts */
+    	{
+		memcpy(&pDest->value, &pSrc->value, num);
+    	}
+}
+
+
+/****************************************************************************
+**	cvrt_sts_long(s,d)
+**
+**	converts fields ofstruct in VAX format to ieee format
+**	   or 
+**	converts fields of struct in IEEE format to fields with VAX 
+**		format
+****************************************************************************/
+
+#ifdef __STDC__
+LOCAL void cvrt_sts_long(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
+)
+#else
+LOCAL void cvrt_sts_long(s,d,encode,num)
+void			*s;		/* source		*/
+void			*d;		/* destination		*/
+int 			encode;		/* cvrt VAX to IEEE if T*/
+unsigned long		num;		/* number of values	*/
+#endif
+{
+	struct dbr_sts_long	*pSrc = s;
+	struct dbr_sts_long	*pDest = d;
+
+    	/* convert vax to ieee or ieee to vax format -- same code*/
+    	pDest->status 		= dbr_ntohs(pSrc->status);
+    	pDest->severity		= dbr_ntohs(pSrc->severity);
+
+    	if (num == 1)	/* single value */
+		pDest->value = dbr_ntohl(pSrc->value);
+    	else		/* array chan-- multiple pts */
+    	{
+		cvrt_long(&pDest->value, &pSrc->value, encode, num);
+    	}
+}
+
+
+
+/****************************************************************************
+**	cvrt_time_string(s,d)
+**	      
+**	converts fields of struct in VAX format to IEEE format
+**	   or 
+**	converts fields of struct in IEEE format to fields with VAX 
+**		format;
+****************************************************************************/
+
+#ifdef __STDC__
+LOCAL void cvrt_time_string(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
+)
+#else
+LOCAL void cvrt_time_string(s,d,encode,num)
+void			*s;			/* source		*/
+void			*d;			/* destination		*/
+int 			encode;			/* cvrt VAX to IEEE if T*/
+unsigned long		num;			/* number of values	*/
+#endif
+{
+	struct dbr_time_string	*pSrc = s;
+	struct dbr_time_string 	*pDest = d;
+			
+    	/* convert ieee to vax format or vax to ieee */
+    	pDest->status 		= dbr_ntohs(pSrc->status);
+    	pDest->severity		= dbr_ntohs(pSrc->severity);
+	pDest->stamp.secPastEpoch = dbr_ntohl(pSrc->stamp.secPastEpoch);
+	pDest->stamp.nsec 	= dbr_ntohl(pSrc->stamp.nsec);
+
+    	if (num == 1)	/* if single value */
+		strcpy(pDest->value, pSrc->value);
+    	else
+		memcpy(pDest->value, pSrc->value, (MAX_STRING_SIZE * num));
+
+}
+
+
+/****************************************************************************
+**	cvrt_time_short(s,d)
+**
+**	converts fields ofstruct in VAX format to ieee format
+**	   or 
+**	converts fields of struct in IEEE format to fields with VAX 
+**		format
+****************************************************************************/
+
+#ifdef __STDC__
+LOCAL void cvrt_time_short(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
+)
+#else
+LOCAL void cvrt_time_short(s,d,encode,num)
+void			*s;			/* source		*/
+void			*d;			/* destination		*/
+int 			encode;			/* cvrt VAX to IEEE if T*/
+unsigned long		num;			/* number of values	*/
+#endif
+{
+	struct dbr_time_int	*pSrc = s;
+	struct dbr_time_int	*pDest = d;
+
+    	/* convert vax to ieee or ieee to vax format -- same code*/
+    	pDest->status 		= dbr_ntohs(pSrc->status);
+    	pDest->severity		= dbr_ntohs(pSrc->severity);
+	pDest->stamp.secPastEpoch = dbr_ntohl(pSrc->stamp.secPastEpoch);
+	pDest->stamp.nsec 	= dbr_ntohl(pSrc->stamp.nsec);
+
+    	if (num == 1)	/* single value */
+		pDest->value = dbr_ntohs(pSrc->value);
+    	else		/* array chan-- multiple pts */
+    	{
+		cvrt_short(&pSrc->value, &pDest->value, encode, num);
+    	}
+}
+
+
+/****************************************************************************
+**	cvrt_time_float(s,d)
+**
+**	   if encode 
+**		converts struct in VAX format to ieee format
+**	   else 
+**		converts fields of struct in IEEE format to fields with VAX 
+**		format;
+****************************************************************************/
+
+#ifdef __STDC__
+LOCAL void cvrt_time_float(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
+)
+#else
+cvrt_time_float(s,d,encode,num)
+void			*s;			/* source		*/
+void			*d;			/* destination		*/
+int 			encode;			/* cvrt VAX to IEEE if T*/
+unsigned long		num;			/* number of values	*/
+#endif
+{
+	struct dbr_time_float	*pSrc = s;
+	struct dbr_time_float	*pDest = d;
+
+    	pDest->status 		= dbr_ntohs(pSrc->status);
+    	pDest->severity		= dbr_ntohs(pSrc->severity);
+	pDest->stamp.secPastEpoch = dbr_ntohl(pSrc->stamp.secPastEpoch);
+	pDest->stamp.nsec 	= dbr_ntohl(pSrc->stamp.nsec);
+
+	cvrt_float(&pSrc->value, &pDest->value, encode, num);
+}
+
+
+/****************************************************************************
+**	cvrt_time_double(s,d)
+**
+**	   if encode 
+**		converts struct in VAX format to ieee format
+**	   else 
+**		converts fields of struct in IEEE format to fields with VAX 
+**		format;
+****************************************************************************/
+
+#ifdef __STDC__
+LOCAL void cvrt_time_double(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
+)
+#else
+cvrt_time_double(s,d,encode,num)
+void			*s;			/* source		*/
+void			*d;			/* destination		*/
+int 			encode;			/* cvrt VAX to IEEE if T*/
+unsigned long		num;			/* number of values	*/
+#endif
+{
+	struct dbr_time_double	*pSrc = s;
+	struct dbr_time_double	*pDest = d;
+
+    	pDest->status 		= dbr_ntohs(pSrc->status);
+    	pDest->severity		= dbr_ntohs(pSrc->severity);
+	pDest->stamp.secPastEpoch = dbr_ntohl(pSrc->stamp.secPastEpoch);
+	pDest->stamp.nsec 	= dbr_ntohl(pSrc->stamp.nsec);
+
+	cvrt_double(&pSrc->value, &pDest->value, encode, num);
+}
+
+
+
+/****************************************************************************
+**	cvrt_time_string(s,d)
+**	      
+**	converts fields of struct in VAX format to IEEE format
+**	   or 
+**	converts fields of struct in IEEE format to fields with VAX 
+**		format;
+****************************************************************************/
+
+#ifdef __STDC__
+LOCAL void cvrt_time_string(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
+)
+#else
+LOCAL void cvrt_time_string(s,d,encode,num)
+void			*s;			/* source		*/
+void			*d;			/* destination		*/
+int 			encode;			/* cvrt VAX to IEEE if T*/
+unsigned long		num;			/* number of values	*/
+#endif
+{
+	struct dbr_time_string	*pSrc = s;
+	struct dbr_time_string 	*pDest = d;
+			
+    	/* convert ieee to vax format or vax to ieee */
+    	pDest->status 		= dbr_ntohs(pSrc->status);
+    	pDest->severity		= dbr_ntohs(pSrc->severity);
+	pDest->stamp.secPastEpoch = dbr_ntohl(pSrc->stamp.secPastEpoch);
+	pDest->stamp.nsec 	= dbr_ntohl(pSrc->stamp.nsec);
+    	if (num == 1)	/* if single value */
+		strcpy(pDest->value, pSrc->value);
+    	else
+		memcpy(pDest->value, pSrc->value, MAX_STRING_SIZE*num);
+
+}
+
+
+/****************************************************************************
+**	cvrt_time_short(s,d)
+**
+**	converts fields ofstruct in VAX format to ieee format
+**	   or 
+**	converts fields of struct in IEEE format to fields with VAX 
+**		format
+****************************************************************************/
+
+#ifdef __STDC__
+LOCAL void cvrt_time_short(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
+)
+#else
+LOCAL void cvrt_time_short(s,d,encode,num)
+void			*s;			/* source		*/
+void			*d;			/* destination		*/
+int 			encode;			/* cvrt VAX to IEEE if T*/
+unsigned long		num;			/* number of values	*/
+#endif
+{
+	struct dbr_time_int	*pSrc = s;
+	struct dbr_time_int	*pDest = d;
+
+    	/* convert vax to ieee or ieee to vax format -- same code*/
+    	pDest->status 		= dbr_ntohs(pSrc->status);
+    	pDest->severity		= dbr_ntohs(pSrc->severity);
+	pDest->stamp.secPastEpoch = dbr_ntohl(pSrc->stamp.secPastEpoch);
+	pDest->stamp.nsec 	= dbr_ntohl(pSrc->stamp.nsec);
+
+    	if (num == 1)	/* single value */
+		pDest->value = dbr_ntohs(pSrc->value);
+    	else		/* array chan-- multiple pts */
+    	{
+		cvrt_short(&pSrc->value, &pDest->value, encode, num);
+    	}
+}
+
+
+
+/****************************************************************************
+**	cvrt_time_enum(s,d)
+**
+**	converts fields of struct in IEEE format to fields with VAX format
+**		 or  
+**	converts fields of struct in VAX format to fields with IEEE format
+**	 
+****************************************************************************/
+
+#ifdef __STDC__
+LOCAL void cvrt_time_enum(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
+)
+#else /*__STDC__*/
+LOCAL void cvrt_time_enum(s,d,encode,num)
+void			*s;			/* source		*/
+void			*d;			/* destination		*/
+int 			encode;			/* cvrt VAX to IEEE if T*/
+unsigned long		num;			/* number of values	*/
+#endif /*__STDC__*/
+{
+	struct dbr_time_enum	*pSrc = s;
+	struct dbr_time_enum	*pDest = d;
+
+    	pDest->status 		= dbr_ntohs(pSrc->status);
+    	pDest->severity		= dbr_ntohs(pSrc->severity);
+	pDest->stamp.secPastEpoch = dbr_ntohl(pSrc->stamp.secPastEpoch);
+	pDest->stamp.nsec 	= dbr_ntohl(pSrc->stamp.nsec);
+    	if (num == 1)
+        	d->value	= dbr_ntohs(s->value);
+    	else {
+		cvrt_enum(&pSrc->value,&pDest->value,encode,num)
+    	}
+}
+
+
+/****************************************************************************
+**	cvrt_sts_char(s,d)
+**
+**	converts fields ofstruct in VAX format to ieee format
+**	   or 
+**	converts fields of struct in IEEE format to fields with VAX 
+**		format
+****************************************************************************/
+
+#ifdef __STDC__
+LOCAL void cvrt_time_char(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
+)
+#else
+LOCAL void cvrt_time_char(s,d,encode,num)
+void			*s;		/* source		*/
+void			*d;		/* destination		*/
+int 			encode;		/* cvrt VAX to IEEE if T*/
+unsigned long		num;		/* number of values	*/
+#endif
+{
+	struct dbr_time_char	*pSrc = s;
+	struct dbr_time_char	*pDest = d;
+
+    	/* convert vax to ieee or ieee to vax format -- same code*/
+    	pDest->status 		= dbr_ntohs(pSrc->status);
+    	pDest->severity		= dbr_ntohs(pSrc->severity);
+	pDest->stamp.secPastEpoch = dbr_ntohl(pSrc->stamp.secPastEpoch);
+	pDest->stamp.nsec 	= dbr_ntohl(pSrc->stamp.nsec);
+
+    	if (num == 1)	/* single value */
+		pDest->value = pSrc->value;
+    	else		/* array chan-- multiple pts */
+    	{
+		memcpy(&pDest->value, &pSrc->value, num);
+    	}
+}
+
+/****************************************************************************
+**	cvrt_time_long(s,d)
+**
+**	converts fields ofstruct in VAX format to ieee format
+**	   or 
+**	converts fields of struct in IEEE format to fields with VAX 
+**		format
+****************************************************************************/
+
+#ifdef __STDC__
+LOCAL void cvrt_time_long(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+unsigned long	num			/* number of values		*/
+)
+#else
+LOCAL void cvrt_time_long(s,d,encode,num)
+void			*s;		/* source		*/
+void			*d;		/* destination		*/
+int 			encode;		/* cvrt VAX to IEEE if T*/
+unsigned long		num;		/* number of values	*/
+#endif
+{
+	struct dbr_time_long	*pSrc = s;
+	struct dbr_time_long	*pDest = d;
+
+    	/* convert vax to ieee or ieee to vax format -- same code*/
+    	pDest->status 		= dbr_ntohs(pSrc->status);
+    	pDest->severity		= dbr_ntohs(pSrc->severity);
+	pDest->stamp.secPastEpoch = dbr_ntohl(pSrc->stamp.secPastEpoch);
+	pDest->stamp.nsec 	= dbr_ntohl(pSrc->stamp.nsec);
+
+    	if (num == 1)	/* single value */
+		pDest->value = dbr_ntohl(pSrc->value);
+    	else		/* array chan-- multiple pts */
+    	{
+		cvrt_long(&pDest->value, &pSrc->value, encode, num);
+    	}
+}
+
+

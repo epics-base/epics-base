@@ -347,7 +347,7 @@ endif
 
 $(INSTALL_LOADABLE_SHRLIBS): $(INSTALL_SHRLIB)/%: %
 	@echo "Installing loadable shared library $@"
-	@$(INSTALL) -d -m 555 $< $(INSTALL_SHRLIB)
+	@$(INSTALL_LIBRARY) -d -m 555 $< $(INSTALL_SHRLIB)
  
 $(INSTALL_CONFIG)/%: %
 	@echo "Installing config file $@"

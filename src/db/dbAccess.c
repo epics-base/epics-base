@@ -212,6 +212,11 @@ long dbProcess(paddr)
 	/* If already active dont process */
 	if(precord->pact) return(0);
 
+	/* set nsta and nsev to 0. Everyone else maximizes nsev.*/
+	/* process must raise alarm if nsta!=stat or nsev!=nsev */
+	precord->nsta = 0;
+	precord->nsev = 0;
+
 	/* get the scan disable link if defined*/
 	if(precord->sdis.type == DB_LINK) {
 	    (status = dbGetLink(precord->sdis.value.db_link,precord,
@@ -329,11 +334,11 @@ long dbGetLink(pdblink,pdest,dbrType,pbuffer,options,nRequest)
 	if(pdblink->maximize_sevr) {
 		struct dbCommon *pfrom=(struct dbCommon*)(paddr->precord);
 
-		if(pfrom->sevr>pdest->sevr && pdest->stat!=LINK_ALARM) {
+		if(pfrom->sevr>pdest->sevr) {
 			pdest->sevr = pfrom->sevr;
 			pdest->stat = LINK_ALARM;
-			pdest->achn = TRUE;
 		}
+	
 	}
 	return(dbGetField(paddr,dbrType,pbuffer,options,nRequest));
 }
@@ -353,10 +358,9 @@ long dbPutLink(pdblink,pdest,dbrType,pbuffer,options,nRequest)
 	if(pdblink->maximize_sevr) {
 		struct dbCommon *pfrom=(struct dbCommon*)(paddr->precord);
 
-		if(pfrom->sevr>pdest->sevr && pdest->stat!=LINK_ALARM) {
+		if(pfrom->sevr>pdest->sevr) {
 			pdest->sevr = pfrom->sevr;
 			pdest->stat = LINK_ALARM;
-			pdest->achn = TRUE;
 		}
 	}
 	if(!RTN_SUCCESS(status)) return(status);

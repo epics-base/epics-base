@@ -28,6 +28,9 @@
 #	vpath, of course, has the disadvantage that we need explicit rules
 #	for scripts or similar os-specific filed which have _no_ suffix...
 
+ifndef BASE_RULES_BUILD
+BASE_RULES_BUILD=1
+
 vpath %.c $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.cc $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.cpp $(USR_VPATH) $(ALL_SRC_DIRS)
@@ -420,5 +423,7 @@ $(INSTALL_TEMPLATES_SUBDIR)/%: %
 
 .PHONY: all inc build install clean rebuild buildInstall binInstalls
 
+endif # BASE_RULES_BUILD
 #	EOF RULES_BUILD
+
 

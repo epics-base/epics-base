@@ -66,7 +66,7 @@ int epicsStdioTest (const char *report)
     memset(buffer,'*',sizeof(buffer)-1);
     rtn = epicsSnprintf(buffer,size,"%d",value);
     printf("size %d rtn %d value %d buffer |%s|\n",size,rtn,value,buffer);
-    printf("\nTest epicsSetStdout/epicsGetStdout stdout %p epicsGetStdout %p\n",
+    printf("\nTest epicsSetThreadStdout/epicsGetStdout stdout %p epicsGetStdout %p\n",
         stdout,epicsGetStdout());
     if(report && strlen(report)>0) {
         int fd;
@@ -82,8 +82,8 @@ int epicsStdioTest (const char *report)
                 fprintf(stderr,"%s could not be opened for output %s\n",
                     report,strerror(errno));
             } else {
-                epicsSetStdout(stream);
-                printf("After epicsSetStdout stream %p epicsGetStdout %p\n",
+                epicsSetThreadStdout(stream);
+                printf("After epicsSetThreadStdout stream %p epicsGetStdout %p\n",
                     stream,epicsGetStdout());
             }
         }
@@ -92,7 +92,7 @@ int epicsStdioTest (const char *report)
     printf("\nThis is second and last line of sample report\n");
     errno = 0;
     if(stream) {
-        epicsSetStdout(0);
+        epicsSetThreadStdout(0);
         if(fclose(stream)) {
             fprintf(stderr,"fclose failed %s\n",strerror(errno));
         }

@@ -43,13 +43,17 @@ epicsShareFunc FILE * epicsShareAPI epicsTempFile ();
 enum TF_RETURN {TF_OK=0, TF_ERROR=1};
 epicsShareFunc enum TF_RETURN epicsShareAPI truncateFile ( const char *pFileName, unsigned size );
 
-/*The followig are for redirecting stdin,stdout,stderr */
+/* The following are for redirecting stdin,stdout,stderr */
 epicsShareFunc FILE * epicsShareAPI epicsGetStdin(void);
 epicsShareFunc FILE * epicsShareAPI epicsGetStdout(void);
 epicsShareFunc FILE * epicsShareAPI epicsGetStderr(void);
-epicsShareFunc void  epicsShareAPI epicsSetStdin(FILE *);
-epicsShareFunc void  epicsShareAPI epicsSetStdout(FILE *);
-epicsShareFunc void  epicsShareAPI epicsSetStderr(FILE *);
+/* These are intended for iocsh only */
+epicsShareFunc FILE * epicsShareAPI epicsGetThreadStdin(void);
+epicsShareFunc FILE * epicsShareAPI epicsGetThreadStdout(void);
+epicsShareFunc FILE * epicsShareAPI epicsGetThreadStderr(void);
+epicsShareFunc void  epicsShareAPI epicsSetThreadStdin(FILE *);
+epicsShareFunc void  epicsShareAPI epicsSetThreadStdout(FILE *);
+epicsShareFunc void  epicsShareAPI epicsSetThreadStderr(FILE *);
 
 epicsShareFunc int epicsShareAPI epicsStdoutPrintf(
     const char *pformat, ...) EPICS_PRINTF_STYLE(1,2);

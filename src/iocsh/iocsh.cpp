@@ -318,6 +318,13 @@ openRedirect(const char *filename, int lineno, struct iocshRedirect *redirect)
             if (redirect->fp == NULL) {
                 showError(filename, lineno, "Can't open \"%s\": %s.",
                                             redirect->name, strerror(errno));
+                while (i--) {
+                    redirect--;
+                    if (redirect->fp) {
+                        fclose(redirect->fp);
+                        redirect->fp = NULL;
+                    }
+                }
                 return -1;
             }
         }
@@ -337,16 +344,16 @@ startRedirect(const char *filename, int lineno, struct iocshRedirect *redirect)
         if (redirect->fp != NULL) {
             switch(i) {
             case 0:
-                redirect->oldFp = epicsGetStdin();
-                epicsSetStdin(redirect->fp);
+                redirect->oldFp = epicsGetThreadStdin();
+                epicsSetThreadStdin(redirect->fp);
                 break;
             case 1:
-                redirect->oldFp = epicsGetStdout();
-                epicsSetStdout(redirect->fp);
+                redirect->oldFp = epicsGetThreadStdout();
+                epicsSetThreadStdout(redirect->fp);
                 break;
             case 2:
-                redirect->oldFp = epicsGetStderr();
-                epicsSetStderr(redirect->fp);
+                redirect->oldFp = epicsGetThreadStderr();
+                epicsSetThreadStderr(redirect->fp);
                 break;
             }
         }
@@ -368,9 +375,9 @@ stopRedirect(const char *filename, int lineno, struct iocshRedirect *redirect)
                                             redirect->name, strerror(errno));
             redirect->fp = NULL;
             switch(i) {
-            case 0: epicsSetStdin(redirect->oldFp);  break;
-            case 1: epicsSetStdout(redirect->oldFp); break;
-            case 2: epicsSetStderr(redirect->oldFp); break;
+            case 0: epicsSetThreadStdin(redirect->oldFp);  break;
+            case 1: epicsSetThreadStdout(redirect->oldFp); break;
+            case 2: epicsSetThreadStderr(redirect->oldFp); break;
             }
         }
         redirect->name = NULL;
@@ -505,25 +512,21 @@ iocshBody (const char *pathname, const char *commandLine)
     }
 
     /*
+     * Set up redirection
+     */
+    redirects = (struct iocshRedirect *)calloc(NREDIRECTS, sizeof *redirects);
+    if (redirects == NULL) {
+        printf ("Out of memory!\n");
+        return -1;
+    }
+
+    /*
      * Read commands till EOF or exit
      */
     argc = 0;
     wasOkToBlock = epicsThreadIsOkToBlock();
     epicsThreadSetOkToBlock(1);
     for (;;) {
-
-        /*
-         * Undo redirection
-         */
-        if (redirects == NULL) {
-            redirects = (struct iocshRedirect *)calloc(NREDIRECTS, sizeof *redirects);
-            if (redirects == NULL) {
-                printf ("Out of memory!\n");
-                break;
-            }
-        }
-        stopRedirect(filename, lineno, redirects);
-
         /*
          * Read a line
          */
@@ -699,6 +702,7 @@ iocshBody (const char *pathname, const char *commandLine)
                 continue;
             startRedirect(filename, lineno, redirects);
             iocshBody(commandFile, NULL);
+            stopRedirect(filename, lineno, redirects);
             continue;
         }
         if (openRedirect(filename, lineno, redirects) < 0)
@@ -734,6 +738,7 @@ iocshBody (const char *pathname, const char *commandLine)
                 if (iarg == piocshFuncDef->nargs) {
                     startRedirect(filename, lineno, redirects);
                     (*found->func)(argBuf);
+                    stopRedirect(filename, lineno, redirects);
                     break;
                 }
                 if (iarg >= argBufCapacity) {

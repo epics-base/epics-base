@@ -36,47 +36,56 @@ static void once(void *junk)
 
 FILE * epicsShareAPI epicsGetStdin(void)
 {
-    FILE *fp;
-
-    epicsThreadOnce(&onceId,once,0);
-    fp = epicsThreadPrivateGet(stdinThreadPrivateId);
+    FILE *fp = epicsGetThreadStdin();
     if(!fp) fp = stdin;
     return fp;
 }
 
-void  epicsShareAPI epicsSetStdin(FILE *fp)
+FILE * epicsShareAPI epicsGetStdout(void)
+{
+    FILE *fp = epicsGetThreadStdout();
+    if(!fp) fp = stdout;
+    return fp;
+}
+
+FILE * epicsShareAPI epicsGetStderr(void)
+{
+    FILE *fp = epicsGetThreadStderr();
+    if(!fp) fp = stderr;
+    return fp;
+}
+
+FILE * epicsShareAPI epicsGetThreadStdin(void)
+{
+    epicsThreadOnce(&onceId,once,0);
+    return epicsThreadPrivateGet(stdinThreadPrivateId);
+}
+
+FILE * epicsShareAPI epicsGetThreadStdout(void)
+{
+    epicsThreadOnce(&onceId,once,0);
+    return epicsThreadPrivateGet(stdoutThreadPrivateId);
+}
+
+FILE * epicsShareAPI epicsGetThreadStderr(void)
+{
+    epicsThreadOnce(&onceId,once,0);
+    return epicsThreadPrivateGet(stderrThreadPrivateId);
+}
+
+void  epicsShareAPI epicsSetThreadStdin(FILE *fp)
 {
     epicsThreadOnce(&onceId,once,0);
     epicsThreadPrivateSet(stdinThreadPrivateId,fp);
 }
 
-FILE * epicsShareAPI epicsGetStdout(void)
-{
-    FILE *fp;
-
-    epicsThreadOnce(&onceId,once,0);
-    fp = epicsThreadPrivateGet(stdoutThreadPrivateId);
-    if(!fp) fp = stdout;
-    return fp;
-}
-
-void  epicsShareAPI epicsSetStdout(FILE *fp)
+void  epicsShareAPI epicsSetThreadStdout(FILE *fp)
 {
     epicsThreadOnce(&onceId,once,0);
     epicsThreadPrivateSet(stdoutThreadPrivateId,fp);
 }
 
-FILE * epicsShareAPI epicsGetStderr(void)
-{
-    FILE *fp;
-
-    epicsThreadOnce(&onceId,once,0);
-    fp = epicsThreadPrivateGet(stderrThreadPrivateId);
-    if(!fp) fp = stderr;
-    return fp;
-}
-
-void  epicsShareAPI epicsSetStderr(FILE *fp)
+void  epicsShareAPI epicsSetThreadStderr(FILE *fp)
 {
     epicsThreadOnce(&onceId,once,0);
     epicsThreadPrivateSet(stderrThreadPrivateId,fp);

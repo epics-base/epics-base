@@ -21,6 +21,7 @@
 #	hp700
 #	sgi
 #	solaris
+#	solaris-x86
 #	sun4
 #
 #  HOST_ARCH now an environment variable
@@ -42,6 +43,7 @@ endif
 #       mv162lc
 #       mv167
 #       mv177
+#       mv2700
 #       niCpu030
 #       pc486
 #       ppc604

@@ -226,7 +226,7 @@ int  epicsShareAPI recGblInitConstantLink(
 	short	value;
 	char	*pvalue = (char *)pdest;
 
-	sscanf(plink->value.constantStr,"%hd",&value);
+	sscanf(plink->value.constantStr,"%hi",&value);
 	*pvalue = value;
 	}
 	break;
@@ -234,24 +234,24 @@ int  epicsShareAPI recGblInitConstantLink(
 	unsigned short	value;
 	unsigned char	*pvalue = (unsigned char *)pdest;
 
-	sscanf(plink->value.constantStr,"%hu",&value);
+	sscanf(plink->value.constantStr,"%hi",&value);
 	*pvalue = value;
 	}
 	break;
     case DBF_SHORT : 
-	sscanf(plink->value.constantStr,"%hd",(short *)pdest);
+	sscanf(plink->value.constantStr,"%hi",(short *)pdest);
 	break;
     case DBF_USHORT : 
     case DBF_ENUM : 
     case DBF_MENU : 
     case DBF_DEVICE : 
-	sscanf(plink->value.constantStr,"%hu",(unsigned short *)pdest);
+	sscanf(plink->value.constantStr,"%hi",(unsigned short *)pdest);
 	break;
     case DBF_LONG : 
-	sscanf(plink->value.constantStr,"%ld",(long *)pdest);
+	sscanf(plink->value.constantStr,"%li",(long *)pdest);
 	break;
     case DBF_ULONG : 
-	sscanf(plink->value.constantStr,"%lu",(unsigned long *)pdest);
+	sscanf(plink->value.constantStr,"%li",(unsigned long *)pdest);
 	break;
     case DBF_FLOAT : 
 	sscanf(plink->value.constantStr,"%f",(float *)pdest);

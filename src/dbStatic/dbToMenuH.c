@@ -106,7 +106,9 @@ int main(int argc,char **argv)
 	fprintf(outFile,"#define INC%sH\n",pdbMenu->name);
 	fprintf(outFile,"typedef enum {\n");
 	for(i=0; i<pdbMenu->nChoice; i++) {
-	    fprintf(outFile,"\t%s,\n",pdbMenu->papChoiceName[i]);
+	    fprintf(outFile,"\t%s",pdbMenu->papChoiceName[i]);
+	    if(i < (pdbMenu->nChoice - 1)) fprintf(outFile,",");
+	    fprintf(outFile,"\n");
 	}
 	fprintf(outFile,"}%s;\n",pdbMenu->name);
 	fprintf(outFile,"#endif /*INC%sH*/\n",pdbMenu->name);

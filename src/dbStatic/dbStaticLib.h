@@ -60,7 +60,6 @@
 #define DCT_LINK_CONSTANT	0
 #define DCT_LINK_FORM		1
 #define DCT_LINK_PV		2
-#define DCT_LINK_DEVICE		3
 
 typedef dbBase DBBASE;
 
@@ -138,6 +137,7 @@ int dbGetPromptGroup(DBENTRY *pdbentry);
 
 long dbCreateRecord(DBENTRY *pdbentry,char *precordName);
 long dbDeleteRecord(DBENTRY *pdbentry);
+long dbFreeRecords(DBBASE *pdbbase);
 long dbFindRecord(DBENTRY *pdbentry,char *precordName);
 long dbFirstRecord(DBENTRY *pdbentry); /*first of record type*/
 long dbNextRecord(DBENTRY *pdbentry);
@@ -168,6 +168,7 @@ char  **dbGetFormPrompt(DBENTRY *pdbentry);
 char  **dbGetFormValue(DBENTRY *pdbentry);
 long  dbPutForm(DBENTRY *pdbentry,char **value);
 char  **dbVerifyForm(DBENTRY *pdbentry,char **value);
+char *dbGetRelatedField(DBENTRY *pdbentry);
 
 int  dbGetNLinks(DBENTRY *pdbentry);
 long dbGetLinkField(DBENTRY *pdbentry,int index);
@@ -207,4 +208,5 @@ extern int dbStaticDebug;
 #define S_dbLib_noRecSup (M_dbLib|19)		/*Record support not found*/
 #define S_dbLib_strLen (M_dbLib|21)		/*String is too long*/
 #define S_dbLib_noSizeOffset (M_dbLib|23)	/*Missing SizeOffset Routine*/
+#define S_dbLib_noForm (M_dbLib|25)		/*dbAllocForm was not called*/
 #endif /*INCdbStaticLibh*/

@@ -821,7 +821,7 @@ class caServerI :
 	private chronIntIdResTable<casRes>,
 	public casEventRegistry {
 public:
-	caServerI (caServer &tool, unsigned pvCountEstimate);
+	caServerI ( caServer &tool, unsigned pvCountEstimate );
 	~caServerI ();
 
 	//

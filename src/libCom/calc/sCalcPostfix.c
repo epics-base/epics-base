@@ -489,7 +489,7 @@ long epicsShareAPI sCalcPostfix(char *pinfix, char **pp_postfix, short *perror)
 			}
 
 			/* add operators of higher or equal priority to	postfix expression */
-			while ( (pstacktop >= &stack[1])) &&
+			while ( (pstacktop >= &stack[1]) &&
 				(pstacktop->in_stack_pri >= pelement->in_coming_pri)) {
 				*ppostfix++ = pstacktop->code;
 				pstacktop--;
@@ -509,7 +509,7 @@ long epicsShareAPI sCalcPostfix(char *pinfix, char **pp_postfix, short *perror)
 			}
 
 			/* add operators of higher or equal priority to	postfix expression */
-			while ( (pstacktop >= &stack[1])) &&
+			while ( (pstacktop >= &stack[1]) &&
 				(pstacktop->in_stack_pri >= pelement->in_coming_pri)) {
 				*ppostfix++ = pstacktop->code;
 				pstacktop--;
@@ -538,7 +538,7 @@ long epicsShareAPI sCalcPostfix(char *pinfix, char **pp_postfix, short *perror)
 			}
 
 			/* add operators of higher or equal priority to	postfix expression */
-			while ( (pstacktop >= &stack[1])) &&
+			while ( (pstacktop >= &stack[1]) &&
 				(pstacktop->in_stack_pri >= in_coming_pri)) {
 				*ppostfix++ = pstacktop->code;
 				pstacktop--;
@@ -644,7 +644,7 @@ long epicsShareAPI sCalcPostfix(char *pinfix, char **pp_postfix, short *perror)
 			}
 
 			/* add operators of higher priority to postfix expression */
-			while ( (pstacktop >= &stack[1])) &&
+			while ( (pstacktop >= &stack[1]) &&
 				(pstacktop->in_stack_pri > pelement->in_coming_pri)) {
 				*ppostfix++ = pstacktop->code;
 				pstacktop--;

@@ -36,7 +36,6 @@ public:
     tcpRecvWatchdog ( cac &, tcpiiu &, 
         double periodIn, epicsTimerQueue & );
     virtual ~tcpRecvWatchdog ();
-    void rescheduleRecvTimer ();
     void sendBacklogProgressNotify (
         const epicsTime & currentTime );
     void messageArrivalNotify (

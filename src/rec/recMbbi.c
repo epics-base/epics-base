@@ -272,7 +272,7 @@ static long get_enum_strs(paddr,pes)
 
     pes->no_str = 16;
     bzero(pes->strs,sizeof(pes->strs));
-    for(i=0,psource=(pmbbi->zrst); i<15; i++, psource += sizeof(pmbbi->zrst) ) 
+    for(i=0,psource=(pmbbi->zrst); i<pes->no_str; i++, psource += sizeof(pmbbi->zrst) ) 
 	strncpy(pes->strs[i],psource,sizeof(pmbbi->zrst));
     return(0);
 }

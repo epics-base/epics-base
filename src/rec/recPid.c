@@ -356,7 +356,7 @@ struct pidRecord     *ppid;
 	float		ep;	/*previous error	*/
 	float		de;	/*change in error	*/
 	float		dep;	/*prev change in error	*/
-	float		dm;	/*output value		*/
+	float		dm;	/*change in manip variable */
 	float		p;	/*proportional contribution*/
 	float		i;	/*integral contribution*/
 	float		d;	/*derivative contribution*/
@@ -412,8 +412,8 @@ struct pidRecord     *ppid;
 	/* get the rest of values needed */
 	dtp = ppid->dt;
 	kp = ppid->kp;
-	ki = ppid->ki;
-	kd = ppid->kd;
+	ki = ppid->ki/60.0;
+	kd = ppid->kd/60.0;
 	ep = ppid->err;
 	dep = ppid->derr;
 	e = val - cval;

@@ -375,7 +375,7 @@ static int convert(pao)
                 if (pao->oif == OUTPUT_INCREMENTAL) value += pao->val;
         } else value = pao->val;
 
-	if(value>0.0 && value<udfFtest) {
+	if(value>0.0 && value<udfDtest) {
 		if(pao->nsev<VALID_ALARM) {
 			pao->nsta = SOFT_ALARM;
 			pao->nsev = VALID_ALARM;

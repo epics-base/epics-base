@@ -341,6 +341,7 @@ struct steppermotorRecord	*psm;
 	return;
     }
     psm->pact = TRUE;
+    tsLocalTime(&psm->time);
     if (psm->cmod == VELOCITY){
 	/* check velocity */
 	if (psm->rrbv != psm_data->velocity){

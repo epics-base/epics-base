@@ -144,8 +144,6 @@ static long init_record(pmbbo)
     long status;
     int	i;
 
-    init_common(pmbbo);
-
     if(!(pdset = (struct mbbodset *)(pmbbo->dset))) {
 	recGblRecordError(S_dev_noDSET,pmbbo,"mbbo: init_record");
 	return(S_dev_noDSET);
@@ -193,6 +191,7 @@ static long init_record(pmbbo)
             }
         }
     }
+    init_common(pmbbo);
     return(0);
 }
 
@@ -327,7 +326,7 @@ static long get_enum_strs(paddr,pes)
 
     pes->no_str = 16;
     bzero(pes->strs,sizeof(pes->strs));
-    for(i=0,psource=(pmbbo->zrst); i<15; i++, psource += sizeof(pmbbo->zrst) ) 
+    for(i=0,psource=(pmbbo->zrst); i<pes->no_str; i++, psource += sizeof(pmbbo->zrst) ) 
 	strncpy(pes->strs[i],psource,sizeof(pmbbo->zrst));
     return(0);
 }

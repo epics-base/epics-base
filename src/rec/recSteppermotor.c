@@ -94,6 +94,9 @@
  *				Stops
  * .36  09-15-93	mrk	call monitor when starting
  * .37  03-29-94	mcn	converted to fast links
+ * .38  09-27-95	lrd	fix init to limit in overshoot check and retry
+ *				post monitors for mcw and mccw
+ *				reprocess records if the setpoint changed while they were moving
  */
 
 #include	<vxWorks.h>
@@ -295,7 +298,7 @@ static long get_units(paddr,units)
 {
     struct steppermotorRecord	*psm=(struct steppermotorRecord *)paddr->precord;
 
-    strncpy(units,psm->egu,DB_UNITS_SIZE);
+    strncpy(units,psm->egu,sizeof(psm->egu));
     return(0);
 }
 
@@ -524,14 +527,18 @@ struct steppermotorRecord	*psm;
 	if (psm->mcw != psm_data->cw_limit){
 		psm->mcw = psm_data->cw_limit;
 		psm->cw = (psm->mcw)?0:1;   /* change sense for VMS OPI */
-		if (psm->mlis.count)
+		if (psm->mlis.count){
 			db_post_events(psm,&psm->cw,DBE_VALUE|DBE_LOG);
+			db_post_events(psm,&psm->mcw,DBE_VALUE|DBE_LOG);
+		}
 	}
 	if (psm->mccw != psm_data->ccw_limit){
 		psm->mccw = psm_data->ccw_limit;
 		psm->ccw = (psm->mccw)?0:1; /* change sense for VMS OPI */
-		if (psm->mlis.count)
+		if (psm->mlis.count){
 			db_post_events(psm,&psm->ccw,DBE_VALUE|DBE_LOG);
+			db_post_events(psm,&psm->mccw,DBE_VALUE|DBE_LOG);
+		}
 	}
 
 	/* alarm conditions for limit switches */
@@ -565,7 +572,7 @@ struct steppermotorRecord	*psm;
 		db_post_events(psm,&psm->sevr,DBE_VALUE|DBE_LOG);
    	 }
         /* stop motor on overshoot */
-        if (psm->movn){
+        if ((psm->movn) && (psm->init == 1)){
                 if (psm->posm){ /* moving in the positive direction */
                         if (psm->rbv > (psm->val + psm->rdbd))
                                 (*pdset->sm_command)(psm,SM_MOTION,0,0);
@@ -574,7 +581,7 @@ struct steppermotorRecord	*psm;
                                 (*pdset->sm_command)(psm,SM_MOTION,0,0);
                 }
         }
-	if(!psm->movn) {
+	if((!psm->movn) && (psm->init == 1)) {
 	    /* difference between desired position and readback pos */
 	    if ( (psm->rbv < (psm->val - psm->rdbd))
 	      || (psm->rbv > (psm->val + psm->rdbd)) ){
@@ -589,7 +596,9 @@ struct steppermotorRecord	*psm;
 		    }
 
 		    /* should we retry */
-		    if (psm->rcnt < psm->rtry){
+		    if ((psm->rcnt < psm->rtry) || (psm->lval != psm->val)){
+  			    psm->lval = psm->val;
+
                             /* convert */
                             temp = psm->val / psm->dist;
                             psm->rval = temp;
@@ -680,9 +689,9 @@ struct steppermotorRecord      *psm;
 	if (psm->mode == POSITION){
 		if (psm->ialg != 0){
 			if (psm->ialg == POSITIVE_LIMIT){
-				status = (*pdset->sm_command)(psm,SM_MOVE,0x0fffffff,0);
+				status = (*pdset->sm_command)(psm,SM_MOVE,0x0fffff,0);
 			}else if (psm->ialg == NEGATIVE_LIMIT){
-				status = (*pdset->sm_command)(psm,SM_MOVE,-0x0fffffff,0);
+				status = (*pdset->sm_command)(psm,SM_MOVE,-0x0fffff,0);
 			}
 			psm->sthm = 1;
 		/* force a read of the position and status */
@@ -947,3 +956,4 @@ struct steppermotorRecord	*psm;
     }
 
 }
+

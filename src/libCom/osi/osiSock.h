@@ -50,8 +50,7 @@ epicsShareFunc void epicsShareAPI
 enum epicsSocketSystemCallInterruptMechanismQueryInfo { 
     esscimqi_socketCloseRequired, 
     esscimqi_socketBothShutdownRequired,
-    esscimqi_socketSigAlarmRequired,
-    esscimqi_shuechanismImplemenedHerein
+    esscimqi_socketSigAlarmRequired
 };
 epicsShareFunc enum epicsSocketSystemCallInterruptMechanismQueryInfo 
         epicsSocketSystemCallInterruptMechanismQuery ();

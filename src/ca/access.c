@@ -99,6 +99,11 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.78  1995/09/29  21:47:33  jhill
+ * alignment fix for SPARC IOC client and changes to prevent running of
+ * access rights or connection handlers when the connection is lost just
+ * after deleting a channel
+ *
  * Revision 1.77  1995/09/01  14:31:32  mrk
  * Fixed bug causing memory problem
  *
@@ -575,6 +580,8 @@ int ca_os_independent_init (void)
 	if (repeater_installed()==FALSE) {
 		ca_spawn_repeater();
 	}
+
+	ca_static->ca_flush_pending = FALSE;
 
 	return ECA_NORMAL;
 }
@@ -2682,18 +2689,16 @@ void clearChannelResources(unsigned id)
 /*	if the argument early is specified TRUE then CA_NORMAL is 	*/
 /*	returned early (prior to timeout experation) when outstanding 	*/
 /*	IO completes.							*/
-/*	ca_flush_io() is called by this routine.			*/
+/*	Output buffers are flushed by this routine			*/
 /************************************************************************/
 int epicsShareAPI ca_pend (ca_real timeout, int early)
 {
 	struct timeval	beg_time;
 	ca_real		delay;
+	struct timeval	tmo;
 
   	INITCHK;
 
-	if(timeout<0.0){
-		return ECA_TIMEOUT;
-	}
 
 	if(EVENTLOCKTEST){
     		return ECA_EVDISALLOW;
@@ -2706,19 +2711,37 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 	 * (guarantees that we wait for all send buffer to be 
 	 * flushed even if this requires blocking)
 	 */
-	ca_flush_io();
+	ca_static->ca_flush_pending = TRUE;
 
     	if(pndrecvcnt<1 && early){
+		/*
+		 * force the flush
+		 */
+		LD_CA_TIME (0.0, &tmo);
+		cac_mux_io(&tmo);
         	return ECA_NORMAL;
+	}
+
+	if(timeout<0.0){
+		/*
+		 * force the flush
+		 */
+		LD_CA_TIME (0.0, &tmo);
+		cac_mux_io(&tmo);
+		return ECA_TIMEOUT;
 	}
 
 	beg_time = ca_static->currentTime;
 	delay = 0.0;
   	while(TRUE){
 		ca_real 	remaining;
-		struct timeval	tmo;
 
     		if (pndrecvcnt<1 && early) {
+			/*
+			 * force the flush
+			 */
+			LD_CA_TIME (0.0, &tmo);
+			cac_mux_io(&tmo);
         		return ECA_NORMAL;
 		}
 
@@ -2749,14 +2772,16 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 		if (remaining <= (1.0/USEC_PER_SEC)) {
 			if(early){
 				ca_pend_io_cleanup();
-				ca_flush_io();
+				ca_static->ca_flush_pending = TRUE;
 			}
 			/* 
 			 * be certain that we processed
 			 * recv backlog at least once
 			 */
-			tmo.tv_sec = 0L;
-			tmo.tv_usec = 0L;
+			/*
+			 * force the flush
+			 */
+			LD_CA_TIME (0.0, &tmo);
 			cac_block_for_io_completion (&tmo);
 			return ECA_TIMEOUT;
 		}
@@ -2864,55 +2889,27 @@ LOCAL	void ca_pend_io_cleanup()
 
 /*
  *	CA_FLUSH_IO()
- *
+ * 	reprocess connection state and
  * 	flush the send buffer 
- *
  */
 int epicsShareAPI ca_flush_io()
 {
-	struct ioc_in_use	*piiu;
 	struct timeval  	timeout;
-	unsigned long		bytesPending;
 
   	INITCHK;
 
-	while (TRUE) {
-		int	pending;
+	/*
+	 * force early transmission of the first few search frames
+	 */
+	manage_conn(TRUE);
 
-		/*
-		 * wait for all buffers to flush
-		 */
-		pending = FALSE;
-		LOCK;
-		for(	piiu = (IIU *) iiuList.node.next;
-			piiu;
-			piiu = (IIU *) piiu->node.next){
-
-			if(piiu == piiuCast || piiu->conn_up == FALSE){
-
-				continue;
-			}
-
-			bytesPending = cacRingBufferReadSize(
-						&piiu->send, 
-						FALSE);
-			if(bytesPending != 0){
-				pending = TRUE;
-			}
-		}
-		UNLOCK;
-
-		if (!pending) {
-			break;
-		}
-
-		/*
-		 * perform socket io
-		 * and process recv backlog
-		 */
-		LD_CA_TIME (SELECT_POLL, &timeout);
-		cac_mux_io (&timeout);
-	}
+	/*
+	 * Wait for all send buffers to be flushed
+	 * while performing socket io and processing recv backlog
+	 */
+	ca_static->ca_flush_pending = TRUE;
+	LD_CA_TIME (0.0, &timeout);
+	cac_mux_io (&timeout);
 
   	return ECA_NORMAL;
 }

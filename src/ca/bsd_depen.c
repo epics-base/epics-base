@@ -48,6 +48,7 @@ int cac_select_io(struct timeval *ptimeout, int flags)
 	int		maxfd;
 	caFDInfo	*pfdi;
 
+
         LOCK;
 	pfdi = (caFDInfo *) ellGet(&ca_static->fdInfoFreeList);
 
@@ -60,7 +61,6 @@ int cac_select_io(struct timeval *ptimeout, int flags)
 		}
 	}
 	ellAdd (&ca_static->fdInfoList, &pfdi->node);
-	UNLOCK;
 
 	FD_ZERO (&pfdi->readMask);
 	FD_ZERO (&pfdi->writeMask);
@@ -93,9 +93,7 @@ int cac_select_io(struct timeval *ptimeout, int flags)
                         }
                 }
         }
-
-pfdi->writeSave = pfdi->writeMask;
-pfdi->readSave = pfdi->readMask;
+	UNLOCK;
 
 #if 0
 printf(	"max fd=%d tv_usec=%d tv_sec=%d\n", 
@@ -103,6 +101,15 @@ printf(	"max fd=%d tv_usec=%d tv_sec=%d\n",
 	ptimeout->tv_usec, 
 	ptimeout->tv_sec);
 #endif
+
+#if defined(vxWorks) && 0
+if(client_lock->recurse>0){
+	ca_printf("lock is on and we are going to sleep %d!",
+			client_lock->recurse);
+	taskSuspend(0);
+}
+#endif
+
         status = select(
                         maxfd+1,
                         &pfdi->readMask,
@@ -141,19 +148,7 @@ printf("leaving select stat=%d errno=%d \n", status, MYERRNO);
                         if (FD_ISSET(piiu->sock_chan,&pfdi->writeMask)) {
                                 (*piiu->sendBytes)(piiu);
                         }
-#if 0
-else{
-if (FD_ISSET(piiu->sock_chan, &pfdi->writeSave)) {
-	if(FD_ISSET(piiu->sock_chan, &pfdi->readSave) &&
-		!FD_ISSET(piiu->sock_chan,&pfdi->readMask)) {
-printf("Still waiting to send on %d with recv empty\n", piiu->sock_chan);
-	}
-	if(!FD_ISSET(piiu->sock_chan, &pfdi->readSave)){
-printf("Still waiting to send on %d with no recv wait?\n", piiu->sock_chan);
-	}
-}
-}
-#endif
+
                         if (FD_ISSET(piiu->sock_chan,&pfdi->readMask)) {
                                 (*piiu->recvBytes)(piiu);
                         }

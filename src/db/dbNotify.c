@@ -188,11 +188,13 @@ STATIC void callUser(dbCommon *precord,putNotify *ppn)
     if(pputNotifyPvt->cancelWait) {
         pputNotifyPvt->cancelWait = 0;
         epicsEventSignal(pputNotifyPvt->cancelEvent);
+        epicsMutexUnlock(pnotifyGlobal->lock);
         return;
     }
     assert(pputNotifyPvt->userCallbackWait);
     pputNotifyPvt->userCallbackWait = 0;
     epicsEventSignal(pputNotifyPvt->userCallbackEvent);
+    epicsMutexUnlock(pnotifyGlobal->lock);
     return;
 }
 

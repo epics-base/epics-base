@@ -175,7 +175,7 @@ int main ( int argc, char **argv )
                 if ( netChange ) {
                     char date[64];
                     osiTime current = osiTime::getCurrent ();
-                    current.strftime ( date, sizeof ( date ), "%a %b %d %H:%M:%S %Y");
+                    current.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S");
                     char host[64];
                     ipAddrToA ( &ina, host, sizeof ( host ) );
                     printf ("CA server beacon anomaly: %s %s\n", date, host );

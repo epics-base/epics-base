@@ -174,7 +174,6 @@ caStatus casStrmClient::processMsg ()
                 msgTmp.m_cid = epicsNTOH32 ( smallHdr.m_cid );
                 msgTmp.m_available = epicsNTOH32 ( smallHdr.m_available );
 
-
                 msgSize = hdrSize + payloadSize;
                 if ( bytesLeft < msgSize ) {
                     if ( msgSize > this->in.bufferSize() ) {
@@ -199,7 +198,6 @@ caStatus casStrmClient::processMsg ()
 			        caServerI::dumpMsg ( this->pHostName, this->pUserName, 
                         & msgTmp, rawMP + hdrSize, 0 );
 		        }
-
             }
 
 		    //
@@ -224,7 +222,6 @@ caStatus casStrmClient::processMsg ()
 		    if ( status ) {
 			    break;
 		    }
-
             this->in.removeMsg ( msgSize );
 	    }
     }
@@ -243,7 +240,7 @@ caStatus casStrmClient::processMsg ()
             except.what () );
         status = S_cas_internal;
     }
-    catch (...) {
+    catch ( ... ) {
 		status = this->sendErr ( guard,
             this->ctx.getMsg(), invalidResID, ECA_INTERNAL, 
             "unexpected C++ exception in server "

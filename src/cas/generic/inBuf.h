@@ -102,7 +102,7 @@ private:
 //
 inline bufSizeT inBuf::bytesPresent () const 
 {
-	return this->bytesInBuffer-this->nextReadIndex;
+	return this->bytesInBuffer - this->nextReadIndex;
 }
 
 //

@@ -27,8 +27,9 @@ close(INP) or die "$! closing file";
 # beginning of generated routine
 
 print << "END" ;
-/*#registerRecordDeviceDriver.c */
+/*#registerRecordDeviceDriver.cpp */
 /* THIS IS A GENERATED FILE. DO NOT EDIT */
+extern "C" {
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
@@ -45,7 +46,7 @@ print << "END" ;
 #include "registryRecordType.h"
 #include "registryDeviceSupport.h"
 #include "registryDriverSupport.h"
-
+#include "ioccrf.h"
 END
 
 #definitions for recordtype
@@ -177,4 +178,27 @@ END
 print << "END" ;
     return(0);
 }
+
+/* registerRecordDeviceDriver */
+static const ioccrfArg registerRecordDeviceDriverArg0 =
+                                            {"pdbbase",ioccrfArgPdbbase};
+static const ioccrfArg *registerRecordDeviceDriverArgs[1] =
+                                            {&registerRecordDeviceDriverArg0};
+static const ioccrfFuncDef registerRecordDeviceDriverFuncDef =
+                {"registerRecordDeviceDriver",1,registerRecordDeviceDriverArgs};
+static void registerRecordDeviceDriverCallFunc(const ioccrfArgBuf *args)
+{
+    registerRecordDeviceDriver(pdbbase);
+}
+
+/*
+ * Register commands on application startup
+ */
+class IoccrfReg {
+  public:
+    IoccrfReg() { ioccrfRegister(&registerRecordDeviceDriverFuncDef,registerRecordDeviceDriverCallFunc);}
+};
+namespace { IoccrfReg ioccrfReg; }
+
+} /* extern "C" */
 END

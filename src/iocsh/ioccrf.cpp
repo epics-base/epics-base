@@ -482,9 +482,8 @@ static void localRegister (void)
  * Register commands on application startup
  */
 #include "ioccrfRegisterCommon.h"
-#include "registerRecordDeviceDriverRegister.h"
 class IoccrfRegister {
   public:
-    IoccrfRegister() { localRegister(); ioccrfRegisterCommon(); registerRecordDeviceDriverRegister(); }
+    IoccrfRegister() { localRegister(); ioccrfRegisterCommon(); }
 };
 static IoccrfRegister ioccrfRegisterObj;

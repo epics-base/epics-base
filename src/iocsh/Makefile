@@ -16,7 +16,6 @@ INC += dbAccessRegister.h
 INC += ioccrfRegisterCommon.h
 INC += asTestRegister.h
 INC += envRegister.h
-INC += registerRecordDeviceDriverRegister.h
 
 
 #       general contents of library on all platforms
@@ -41,8 +40,6 @@ LIBSRCS += envRegister.c
 LIBSRCS += iocUtil.c
 
 LIBRARY_IOC = iocsh
-
-OBJS += registerRecordDeviceDriverRegister
 
 iocsh_DLL_LIBS  = miscIoc rsrvIoc dbtoolsIoc asIoc dbIoc registryIoc dbStaticIoc Com
 registryIoc_DIR=$(EPICS_BASE_LIB)

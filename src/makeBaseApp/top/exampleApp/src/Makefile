@@ -53,12 +53,11 @@ example_SRCS += xxxRecord.c
 example_SRCS += devXxxSoft.c
 example_SRCS += caMonitor.c
 
-example_SRCS_DEFAULT += registerRecordDeviceDriver.c
+example_SRCS_DEFAULT += registerRecordDeviceDriver.cpp
 example_SRCS_DEFAULT += exampleMain.c
 example_SRCS_vxWorks += -nil-
 #example_SRCS_vxWorks += sncExample.c
 
-example_OBJS_DEFAULT += $(EPICS_BASE_BIN)/registerRecordDeviceDriverRegister
 example_OBJS_vxWorks += $(EPICS_BASE_BIN)/registerRecordDeviceDriver
 example_OBJS_vxWorks += $(EPICS_BASE_BIN)/iocCoreLibrary
 #example_OBJS_vxWorks += $(SEQ_BIN)/seq

@@ -187,7 +187,6 @@ int  dbIsDefaultValue(DBENTRY *pdbentry)
 {
     dbFldDes  	*pflddes = pdbentry->pflddes;
     void       	*pfield = pdbentry->pfield;
-    char	*endp;
 
     if(!pflddes) return(FALSE);
     if(!pfield) return(TRUE);
@@ -244,6 +243,8 @@ int  dbIsDefaultValue(DBENTRY *pdbentry)
 		   return(TRUE);
 		return(FALSE);
 	    }
+	case DBF_NOACCESS:
+	    return(TRUE);
     }
     return(FALSE);
 }
@@ -339,7 +340,7 @@ long dbPutMenuIndex(DBENTRY *pdbentry,int index)
 
     nChoices = dbGetNMenuChoices(pdbentry);
     menuChoices = dbGetMenuChoices(pdbentry);
-    if(index<0 | index>=nChoices) return(S_dbLib_badField);
+    if(index<0 || index>=nChoices) return(S_dbLib_badField);
     dbPutStringNum(pdbentry,menuChoices[index]);
     return(0);
 }

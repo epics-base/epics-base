@@ -1409,7 +1409,7 @@ int dbGetPromptGroup(DBENTRY *pdbentry)
 {
     dbFldDes  	*pflddes = pdbentry->pflddes;
 
-    if(!pflddes) return(NULL);
+    if(!pflddes) return(0);
     return(pflddes->promptgroup);
 }
 

@@ -231,30 +231,33 @@ static long get_graphic_double(paddr,pgd)
     struct dbAddr *paddr;
     struct dbr_grDouble	*pgd;
 {
-    struct longoutRecord	*plongout=(struct longoutRecord *)paddr->precord;
+    struct longoutRecord	*plongout=(longoutRecord *)paddr->precord;
+    int fieldIndex = dbGetFieldIndex(paddr);
 
-    if(paddr->pfield==(void *)&plongout->val
-    || paddr->pfield==(void *)&plongout->hihi
-    || paddr->pfield==(void *)&plongout->high
-    || paddr->pfield==(void *)&plongout->low
-    || paddr->pfield==(void *)&plongout->lolo){
+    if(fieldIndex == longoutRecordVAL
+    || fieldIndex == longoutRecordHIHI
+    || fieldIndex == longoutRecordHIGH
+    || fieldIndex == longoutRecordLOW
+    || fieldIndex == longoutRecordLOLO) {
         pgd->upper_disp_limit = plongout->hopr;
         pgd->lower_disp_limit = plongout->lopr;
     } else recGblGetGraphicDouble(paddr,pgd);
     return(0);
 }
 
+
 static long get_control_double(paddr,pcd)
     struct dbAddr *paddr;
     struct dbr_ctrlDouble *pcd;
 {
-    struct longoutRecord	*plongout=(struct longoutRecord *)paddr->precord;
+    struct longoutRecord	*plongout=(longoutRecord *)paddr->precord;
+    int fieldIndex = dbGetFieldIndex(paddr);
 
-    if(paddr->pfield==(void *)&plongout->val
-    || paddr->pfield==(void *)&plongout->hihi
-    || paddr->pfield==(void *)&plongout->high
-    || paddr->pfield==(void *)&plongout->low
-    || paddr->pfield==(void *)&plongout->lolo){
+    if(fieldIndex == longoutRecordVAL
+    || fieldIndex == longoutRecordHIHI
+    || fieldIndex == longoutRecordHIGH
+    || fieldIndex == longoutRecordLOW
+    || fieldIndex == longoutRecordLOLO) {
         /* do not change pre drvh/drvl behavior */
         if(plongout->drvh > plongout->drvl) {
             pcd->upper_ctrl_limit = plongout->drvh;
@@ -270,9 +273,10 @@ static long get_alarm_double(paddr,pad)
     struct dbAddr *paddr;
     struct dbr_alDouble	*pad;
 {
-    struct longoutRecord	*plongout=(struct longoutRecord *)paddr->precord;
+    longoutRecord    *plongout=(longoutRecord *)paddr->precord;
+    int     fieldIndex = dbGetFieldIndex(paddr);
 
-    if(paddr->pfield==(void *)&plongout->val){
+    if(fieldIndex == longoutRecordVAL) {
          pad->upper_alarm_limit = plongout->hihi;
          pad->upper_warning_limit = plongout->high;
          pad->lower_warning_limit = plongout->low;

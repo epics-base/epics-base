@@ -38,11 +38,11 @@
 #include     <types.h>
 #include     <stdioLib.h>
 #include     <lstLib.h>
-#include     <strLib.h>
+#include     <string.h>
 #include     <math.h>
 #include     <limits.h>
 #include     <wdLib.h>
-#include     <memLib.h>
+#include     <stdlib.h>
 
 #include     <alarm.h>
 #include     <callback.h>

@@ -59,8 +59,8 @@
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<lstLib.h>
+#include	<stdlib.h>
 #include	<string.h>
-#include	<memLib.h>
 
 #include	<alarm.h>
 #include	<dbDefs.h>

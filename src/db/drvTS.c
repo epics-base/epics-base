@@ -1,6 +1,12 @@
 
 /*
  * $Log$
+ *
+ * added net-host conversions   kuk
+ *
+ * Revision 1.16  1996/05/31 12:23:20  jbk
+ * added support for user defined soft events
+ *
  * Revision 1.15  1995/09/12 15:01:09  jbk
  * Fixed bug in TSinit - Gives defaults to TSdirectTime() and TSdriverInit() if
  * event time disabled with TSconfigure().
@@ -743,7 +749,8 @@ long TSinit(void)
 static void TSstartSoftClock()
 {
 	/* simple watch dog to fire off syncs to slaves */
-	Debug(5,"start watch dog at rate %d\n",sysClkRateGet()*TSdata.sync_rate);
+	Debug(5,"start watch dog at rate %ld\n",
+		(long) sysClkRateGet()*TSdata.sync_rate);
 	wd = wdCreate();
 	if(TSdata.has_event_system)
 	{
@@ -936,7 +943,7 @@ static long TSgetUnixTime(struct timespec* ts)
 	/* set up for ntp transaction to boot server */
 	Debug(5,"host addr = %s\n",host_addr);
 	sin.sin_addr.s_addr = inet_addr(host_addr);
-	sin.sin_port = UDP_NTP_PORT; /* well known registered NTP port */
+	sin.sin_port = htons(UDP_NTP_PORT); /* well known registered NTP port */
 
 	TSdata.async_type=TS_async_ntp;
 
@@ -948,7 +955,8 @@ static long TSgetUnixTime(struct timespec* ts)
 	{
 		Debug0(2,"no reply from NTP server\n");
 
-		sin.sin_port = UDP_TIME_PORT; /* well known registered time port */
+		/* well known registered time port */
+		sin.sin_port = htons(UDP_TIME_PORT);
 		TSdata.async_type=TS_async_time;
 		buf_data=0;
 		if(TSgetData((char*)&buf_data,sizeof(buf_data),soc,
@@ -1012,7 +1020,7 @@ static long TSgetMasterTime(struct timespec* tsp)
 	if( (soc=TSgetBroadcastSocket(0,&sin)) <0)
 		{ Debug0(1,"TSgetBroadcastSocket failed\n"); return -1; }
 
-	sin.sin_port = TSdata.master_port;
+	sin.sin_port = htons(TSdata.master_port);
 	memcpy(&TSdata.hunt,&sin,sizeof(sin));
 
 	stran.type=(TStype)htonl(TS_time_request);
@@ -1036,7 +1044,7 @@ static long TSgetMasterTime(struct timespec* tsp)
 		and the master's processing time. */
 
 	/* set the global data structure for information from master */
-	Debug(8,"master port=%d\n",((struct sockaddr_in*)&fs)->sin_port);
+	Debug(8,"master port=%d\n",ntohs(((struct sockaddr_in*)&fs)->sin_port));
 	TSdata.master = fs;
 	TSdata.state = TS_master_alive;
 
@@ -1147,7 +1155,7 @@ static int TSgetBroadcastSocket(int port, struct sockaddr_in* sin)
 	int on=1;
 	int soc;
 
-	sin->sin_port=port;
+	sin->sin_port=htons(port);
 	sin->sin_family=AF_INET;
 	sin->sin_addr.s_addr=htonl(INADDR_ANY);
 	
@@ -1288,7 +1296,7 @@ static void TSsyncServer()
 	if( (soc=TSgetBroadcastSocket(0,&sin)) <0)
 		{ Debug0(1,"TSgetBroadcastSocket failed\n"); return; }
 
-	sin.sin_port = TSdata.slave_port;
+	sin.sin_port = htons(TSdata.slave_port);
 
 	stran.type=(TStype)htonl(TS_sync_msg);
 	stran.magic=htonl(TS_MAGIC);
@@ -1381,13 +1389,13 @@ static long TSasyncClient()
 		{ Debug0(1,"TSgetSocket failed\n"); return -1; }
 
 	sin_unix.sin_addr.s_addr = inet_addr(host_addr);
-	sin_unix.sin_port = UDP_NTP_PORT;
+	sin_unix.sin_port = htons(UDP_NTP_PORT);
 
 	/*------socket for finding master----------*/
 	if( (soc_bc=TSgetBroadcastSocket(0,&sin_bc)) <0)
 		{ Debug0(1,"TSgetBroadcastSocket failed\n"); return -1; }
 
-	sin_bc.sin_port = TSdata.master_port;
+	sin_bc.sin_port = htons(TSdata.master_port);
 	/*-----------------------------------------*/
 
 	while(1)
@@ -1481,7 +1489,10 @@ static long TSasyncClient()
 					{
 						TSdata.state=TS_master_alive;
 						Debug(8,"master port = %d\n",
-							((struct sockaddr_in*)&TSdata.master)->sin_port);
+						  ntohs(
+						  ((struct sockaddr_in*)
+						  &TSdata.master)->sin_port)
+						);
 					}
 
 					count=(TSdata.sync_rate>TS_SECS_ASYNC_TRY_MASTER)?
@@ -1805,14 +1816,14 @@ static int TSgetSocket(int port, struct sockaddr_in* sin)
 {
 	int soc; 
 
-	sin->sin_port=port;
+	sin->sin_port=htons(port);
 	sin->sin_family=AF_INET;
 	sin->sin_addr.s_addr=htonl(INADDR_ANY);
 	
 	if( (soc=socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP)) < 0 )
 		{ perror("socket create failed"); return -1; }
 
-	Debug(5,"sizeof sin = %d\n",sizeof(struct sockaddr_in));
+	Debug(5,"sizeof sin = %d\n", (int) sizeof(struct sockaddr_in));
 	if( bind(soc,(struct sockaddr*)sin,sizeof(struct sockaddr_in)) < 0 )
 		{ perror("socket bind failed"); close(soc); return -1; }
 
@@ -1843,7 +1854,8 @@ static long TSgetData(char* buf, int buf_size, int soc,
 
 	do
 	{
-		Debug(8,"sednto port %d\n",((struct sockaddr_in*)to_sin)->sin_port);
+		Debug(8,"sednto port %d\n",
+			ntohs(((struct sockaddr_in*)to_sin)->sin_port));
 		if(round_trip) clock_gettime(CLOCK_REALTIME,&send_time);
 		if( sendto(soc,buf,buf_size,0,to_sin,sizeof(struct sockaddr)) < 0 )
 			{ perror("sendto failed"); return -1; }
@@ -1869,7 +1881,9 @@ static long TSgetData(char* buf, int buf_size, int soc,
 		if(from_sin)
 		{
 			Debug(8,"recvfrom port %d\n",
-				((struct sockaddr_in*)from_sin)->sin_port);
+				ntohs(
+				((struct sockaddr_in*)from_sin)->sin_port)
+				);
 			Debug(8,"flen = %d\n",flen);
 			Debug(8,"mlen = %d\n",mlen);
 		}

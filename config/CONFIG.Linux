@@ -8,33 +8,45 @@
 #  Paths to compilers
 
 # BUILD_TYPE
-#   Currently either Vx or Unix
-BUILD_TYPE = Unix
+#   Currently either Vx or Host
+BUILD_TYPE = Host
+
+ARCH_CLASS = Linux
  
 GCC = gcc
 ACC = acc
-SUNCC = cc
+
 AR = ar 
+_AR = $(AR) $(ARFLAGS)
 ARFLAGS = r
 ARCMD = $(AR) $(ARFLAGS)
+
 RANLIB = ranlib
 RANLIBFLAGS = -t
 YACC = $(EYACC)
 LEX = $(ELEX)
 G++ = g++
 CCC = CC
-MV = mv
-RMDIR = rm -rf
-MKDIR = mkdir
+
+CP=cp
+MV=mv
+RM=rm -f
+MKDIR=mkdir
+RMDIR=rm -rf
 CHMOD = "/bin/chmod"
 WHAT = what
 
+EXE=
+OBJ=.o
+
 ACC_ANSI_INVOKE_W_NO = $(ACC) -Xa -w
 ACC_ANSI_INVOKE_W_YES = $(ACC) -Xa
-ACC_TRAD_INVOKE_W_NO = $(ACC) -Xs -w
-ACC_TRAD_INVOKE_W_YES = $(ACC) -Xs
 ACC_STRICT_INVOKE_W_NO = $(ACC) -Xc -w
 ACC_STRICT_INVOKE_W_YES = $(ACC) -Xc
+ACC_TRAD_INVOKE_W_NO = $(ACC) -Xs -w
+ACC_TRAD_INVOKE_W_YES = $(ACC) -Xs
+ACC_LD_FLAGS =
+ACC_LD_LIBS =
 SUNCC_TRAD_INVOKE_W_NO = $(SUNCC) -w
 SUNCC_TRAD_INVOKE_W_YES = $(SUNCC)
 GCC_ANSI_INVOKE_W_NO = $(GCC) -ansi -w
@@ -43,20 +55,31 @@ GCC_STRICT_INVOKE_W_NO = $(GCC) -ansi -pedantic
 GCC_STRICT_INVOKE_W_YES = $(GCC) -ansi -Wall -pedantic
 GCC_TRAD_INVOKE_W_NO = $(GCC) -traditional -w
 GCC_TRAD_INVOKE_W_YES = $(GCC) -traditional
+GCC_LD_LIBS = 
+GCC_LD_FLAGS =
  
 C_OLD = $($(STANDARD)_TRAD_INVOKE_W_$(UNIX_WARN))
 C_ANSI = $($(ANSI)_ANSI_INVOKE_W_$(UNIX_WARN))
 C_STRICT = $($(ANSI)_STRICT_INVOKE_W_YES)
 CC = $(C_$(CMPLR))
 
+LD_LIBS_OLD = $($(STANDARD)_LD_LIBS)
+LD_LIBS_ANSI = $($(ANSI)_LD_LIBS)
+LD_LIBS_STRICT = $($(ANSI)_LD_LIBS)
+CCOMPILER_LDLIBS = $(LD_LIBS_$(CMPLR))
+LD_FLAGS_OLD = $($(STANDARD)_LD_FLAGS)
+LD_FLAGS_ANSI = $($(ANSI)_LD_FLAGS)
+LD_FLAGS_STRICT = $($(ANSI)_LD_FLAGS)
+CCOMPILER_LDFLAGS = $(LD_FLAGS_$(CMPLR))
+ 
 CCC_NORMAL_INVOKE_W_NO = $(CCC) +p
-CCC_NORMAL_INVOKE_W_YES = $(CCC) +p +w 
-CCC_STRICT_INVOKE_W_YES = $(CCC) +p +w 
-CCC_LD_FLAGS = 
-CCC_LD_LIBS = 
+CCC_NORMAL_INVOKE_W_YES = $(CCC) +p +w
+CCC_STRICT_INVOKE_W_YES = $(CCC) +p +w
+CCC_LD_FLAGS =
+CCC_LD_LIBS =
 CCC_TEMPL_INST_FLAG =
 G++_NORMAL_INVOKE_W_NO = $(G++) -ansi -pedantic -w
-G++_NORMAL_INVOKE_W_YES = $(G++) -ansi -pedantic -Wall 
+G++_NORMAL_INVOKE_W_YES = $(G++) -ansi -pedantic -Wall
 G++_STRICT_INVOKE_W_YES = $(G++) -ansi -pedantic -Wtraditional -Wall \
       -Wmissing-prototypes -Woverloaded-virtual \
       -Wwrite-strings -Wconversion -Wstrict-prototypes\
@@ -83,6 +106,11 @@ SF_ANSI = $($(ANSI)_SFLAGS_$(STATIC_BUILD))
 SF_STRICT = $(SF_ANSI)
 UNIX_SFLAGS = $(SF_$(CMPLR))
  
+SL_OLD = $($(STANDARD)_SLIBS_$(STATIC_BUILD))
+SL_ANSI = $($(ANSI)_SLIBS_$(STATIC_BUILD))
+SL_STRICT = $(SL_ANSI)
+UNIX_SLIBS = $(SL_$(CMPLR))
+ 
 # Optimization
 OPTIM_YES = -O
 OPTIM_NO =
@@ -93,10 +121,10 @@ UNIX_INCLUDES = -I. -I.. $(USR_INCLUDES) -I$(INSTALL_INCLUDE) -I$(EPICS_BASE_INC
                 -I$(EPICS_BASE_INCLUDE)/os/$(T_A)
  
 # Operating system flags
-OP_SYS_FLAGS = -DUNIX 
+OP_SYS_FLAGS = -DUNIX
  
-UNIX_LDFLAGS = -L$(EPICS_BASE_LIB)
-UNIX_LDLIBS = -lm 
+UNIX_LDFLAGS = -L$(EPICS_BASE_LIB) $(CCOMPILER_LDFLAGS)
+UNIX_LDLIBS = $(UNIX_SLIBS) -lm $(CCOMPILER_LDLIBS)
  
 ARCH_DEP_CFLAGS = -D_X86_ -Dlinux
 ARCH_DEP_CXXFLAGS = $(ARCH_DEP_CFLAGS)
@@ -124,8 +152,8 @@ LDLIBS = $(TARGET_LDLIBS) $(USR_LDLIBS) $(ARCH_DEP_LDLIBS) $(UNIX_LDLIBS)
 # Override SUN defaults
 COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c
 COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c
-LINK.c = $(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
-LINK.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS)
+LINK.c = $(CC) -o $@ $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
+LINK.cc = $(CXX) -o $@ $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS)
 
 DEPENDS_RULE.c = -$(COMPILE.c) -M $(SRCS.c) > .DEPENDS
 DEPENDS_RULE.cc = @echo no DEPENDS_RULE.cc defined in CONFIG.Linux

@@ -10,20 +10,27 @@ extern "C" {
 #endif
 
 #include <sys/types.h>
-#if !defined(UCX)
+#if defined(UCX) /* GeG 09-DEC-1992 */
+#       include <sys/ucx$inetdef.h>
+#       include <ucx.h>
+#	include <errno.h>
+#else
 #       include <tcp/errno.h>
 #	include <sys/time.h>
 #	include <sys/ioctl.h>
-#else
-#	include <errno.h>
+#       include <net/if.h>
+#       include <vms/inetiodef.h>
+#       include <sys/ioctl.h>
 #endif
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <netdb.h>
 
+#if 0
 int ioctl (int fd, int req, ...);
 int close (int fd);
+#endif
 int gettimeofday (struct timeval *tp, struct timezone *tzp);
 int gethostname (char *name, int namelen); 
 
@@ -51,11 +58,12 @@ int getsockopt (int socket, int level, int optname,
 int socket (int domain, int type, int protocol);
 int recvfrom (int socket, char *buf, int len,
 		int flags, struct sockaddr *from, int *fromlen);
-	int getsockname (int socket, struct sockaddr *name, int *namelen);
+int getsockname (int socket, struct sockaddr *name, int *namelen);
 
 unsigned long inet_addr (char *);
 char * inet_ntoa (struct in_addr in);
 
+#if 0
 struct  hostent {
 	char    *h_name;        /* official name of host */
 	char    **h_aliases;    /* alias list */
@@ -64,6 +72,7 @@ struct  hostent {
 	char    **h_addr_list;  /* list of addresses from name server */
 #define h_addr  h_addr_list[0]  /* address, for backward compatiblity */
 };
+#endif
 struct hostent *gethostbyaddr(char *addr, int len, int type);
 
 void ipAddrToA (const struct sockaddr_in *pInetAddr, 
@@ -75,10 +84,20 @@ void ipAddrToA (const struct sockaddr_in *pInetAddr,
  
 typedef int                     SOCKET;
 #define INVALID_SOCKET		(-1)
-#define socket_close(S)         close(S)
-#define socket_ioctl(A,B,C)     ioctl(A,B,C)
+/* 
+ * (the VAXC runtime lib has its own close 
+ */
+#if defined(WINTCP)   /* Wallangong */
+#	define socket_close(S) netclose(S)
+#	define socket_ioctl(A,B,C) ioctl(A,B,C)
+#endif
+#if defined(UCX) /* GeG 09-DEC-1992 */
+#	define socket_close(S) close(S)
+#	define socket_ioctl(A,B,C) ioctl(A,B,C)
+#endif
 
-#ifdef WINTCP
+
+#ifdef WINTCP /* Wallangong */
 	extern int      uerrno;
 #	define SOCKERRNO  uerrno
 #else
@@ -87,23 +106,6 @@ typedef int                     SOCKET;
 #	else
 #		define SOCKERRNO  socket_errno
 #	endif
-#endif
-
-#if defined(WINTCP)   /* Wallangong */
-        /* (the VAXC runtime lib has its own close */
-#	define socket_close(S) netclose(S)
-#	define socket_ioctl(A,B,C) ioctl(A,B,C)
-#endif
-#if defined(UCX)                              /* GeG 09-DEC-1992 */
-#	define socket_close(S) close(S)
-#	define socket_ioctl(A,B,C) ioctl(A,B,C)
-#endif
-#       define POST_IO_EV
-#       define LOCK
-#       define UNLOCK
-#       define LOCKEVENTS
-#       define UNLOCKEVENTS
-#       define EVENTLOCKTEST    (post_msg_active)
 #endif
 
 #define MAXHOSTNAMELEN 75

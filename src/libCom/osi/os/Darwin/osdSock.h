@@ -66,6 +66,6 @@ typedef int osiSocklen_t;
 #define SD_BOTH 2
 #endif
 
-#define ifreq_size(pifreq) (sizeof(pifreq->ifr_name))
+#define ifreq_size(pifreq) ((pifreq)->ifr_addr.sa_len + sizeof((pifreq)->ifr_name))
 
 #endif /*osdSockH*/

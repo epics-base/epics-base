@@ -15,8 +15,7 @@ EXE=.exe
 # These are overrides of ANSI and CPLUSPLUS values in CONFIG_SITE
 # since OS vendor compilers ACC and CCC are not defined here for cygwin32
 ANSI=GCC
-# c++ code won't build with b19
-CPLUSPLUS=
+CPLUSPLUS=G++
 # Shared libraries not implemented yet
 SHARED_LIBRARIES=NO
 #==========================

@@ -9,10 +9,5 @@ EXE=.exe
 
 TORNADO=YES
 
-#==========================
-# inc for gdd won't build with b19
-CPLUSPLUS=
-#==========================
-
 WIND_HOST_TYPE = cygwin32
 

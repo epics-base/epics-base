@@ -1,0 +1,16 @@
+
+# $Id$
+#
+# This file is maintained by the EPICS community.
+
+BUILD_TYPE = Vx
+
+# For Vx directories of form:
+#   $(VX_DIR)/$(HOST_ARCH).$(ARCH_CLASS)/bin
+ARCH_CLASS = 68k
+
+include $(EPICS_BASE)/config/CONFIG.$(BUILD_TYPE).$(ARCH_CLASS)
+ 
+# Architecture specific build flags
+ARCH_DEP_CFLAGS = -DCPU=MC68060 -m68040 -DCPU_FAMILY=MC680X0
+ 

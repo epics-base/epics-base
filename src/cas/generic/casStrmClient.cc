@@ -412,128 +412,105 @@ caStatus casStrmClient::readNotifyFailureResponse ( const caHdrLargeArray & msg,
 }
 
 //
+// set bounds on an application type within a container, but dont 
+// preallocate space (not preallocating buffer space allows gdd::put 
+// to be more efficent if it discovers that the source has less data 
+// than the destination)
+//
+bool convertContainerMemberToAtomic ( gdd & dd, 
+         aitUint32 appType, aitUint32 elemCount )
+{
+    if ( elemCount <= 1 ) {
+        return true;
+    }
+
+    gdd *pVal;
+    if ( dd.isContainer() ) {
+ 	    // All DBR types have a value member 
+        aitUint32 valIndex;
+ 	    int gdds = gddApplicationTypeTable::app_table.mapAppToIndex
+ 		    ( dd.applicationType(), appType, valIndex );
+ 	    if ( gdds ) {
+ 		    return false;
+ 	    }
+
+ 	    pVal = dd.getDD ( valIndex );
+ 	    if ( ! pVal ) {
+ 		    return false;
+ 	    }
+    }
+    else {
+        if ( appType != dd.applicationType() ) {
+            return false;
+        }
+        pVal = & dd;
+    }
+
+    // we cant changed a managed type that is 
+    // already atomic (array)
+    if ( ! pVal->isScalar () ) {
+        return false;
+    }
+        
+ 	// convert to atomic
+ 	gddBounds bds;
+ 	bds.setSize ( elemCount );
+ 	bds.setFirst ( 0u );
+ 	pVal->setDimension ( 1u, & bds );
+    return true;
+}
+
+//
 // createDBRDD ()
 //
-static smartGDDPointer createDBRDD (unsigned dbrType, aitIndex dbrCount)
-{
-    smartGDDPointer pDescRet;
-	aitUint32 valIndex;
-	aitUint32 gddStatus;
-	aitUint16 appType;
-    gdd *pVal;
-	
+static smartGDDPointer createDBRDD ( unsigned dbrType, unsigned elemCount )
+{	
 	/*
 	 * DBR type has already been checked, but it is possible
 	 * that "gddDbrToAit" will not track with changes in
 	 * the DBR_XXXX type system
 	 */
-	if (dbrType>=NELEMENTS(gddDbrToAit)) {
-		return pDescRet;
+	if ( dbrType >= NELEMENTS ( gddDbrToAit ) ) {
+		return smartGDDPointer ();
 	}
-	if (gddDbrToAit[dbrType].type==aitEnumInvalid) {
-		return pDescRet;
+
+	if ( gddDbrToAit[dbrType].type == aitEnumInvalid ) {
+		return smartGDDPointer ();
 	}
-	appType = gddDbrToAit[dbrType].app;
+
+	aitUint16 appType = gddDbrToAit[dbrType].app;
 	
 	//
 	// create the descriptor
 	//
-	pDescRet = gddApplicationTypeTable::app_table.getDD (appType);
+	smartGDDPointer pDescRet = 
+        gddApplicationTypeTable::app_table.getDD ( appType );
 	if ( ! pDescRet.valid () ) {
 		return pDescRet;
 	}
 
-	//
 	// smart pointer class maintains the ref count from here down
-	//
-	gddStatus = pDescRet->unreference();
-	assert (!gddStatus);
-	
-	if ( pDescRet->isContainer () ) {
-		
-		//
-		// unable to change the bounds on the managed GDD that is
-		// returned for DBR types
-		//
-		if ( dbrCount > 1 ) {
-            gdd & gddRef = *pDescRet;
-            gddContainer * pContainer = (gddContainer*) & gddRef;
-            gdd *pDuplicate = new gdd ( pContainer );
-            pDescRet = pDuplicate;
+	aitUint32 gddStatus = pDescRet->unreference();
+	assert ( ! gddStatus );
 
-			//
-			// smart pointer class maintains the ref count from here down
-			//
-			gddStatus = pDescRet->unreference();
-			assert (!gddStatus);
-		}
+    // fix the value element count
+    bool success = convertContainerMemberToAtomic ( 
+        *pDescRet, gddAppType_value, elemCount );
+    if ( ! success ) {
+ 		return NULL;
+    }
 
-		//
-		// All DBR types have a value member 
-		//
-		gddStatus = 
-			gddApplicationTypeTable::app_table.mapAppToIndex
-			(appType, gddAppType_value, valIndex);
-		if ( gddStatus ) {
-			pDescRet = NULL;
-			return pDescRet;
-		}
-		pVal = pDescRet->getDD ( valIndex );
-		if ( ! pVal ) {
-            pDescRet = NULL;
-			return pDescRet;
-		}
-	}
-	else {
-		pVal = & ( *pDescRet );
-	}
-	
-	if ( pVal->isScalar () ) {
-		if (dbrCount<=1u) {
-			return pDescRet;
-		}
-		
-		//
-		// scalar and managed (and need to set the bounds)
-		//	=> out of luck (cant modify bounds)
-		//
-		if ( pDescRet->isManaged () ) {
-			pDescRet = NULL;
-			return pDescRet;
-		}
-		
-		//
-		// convert to atomic
-		//
-		gddBounds bds;
-		bds.setSize ( dbrCount );
-		bds.setFirst ( 0u );
-		pVal->setDimension ( 1u, &bds );
-	}
-	else if ( pVal->isAtomic () ) {
-		
-		if ( pDescRet->isManaged () || pDescRet->isFlat () ) {
-		    pDescRet = NULL;
-		    return pDescRet;
-		}
+    // fix the enum string table element count
+    // (this is done here because the application type table in gdd 
+    // does not appera to handle this correctly)
+    if ( dbrType == DBR_CTRL_ENUM || dbrType == DBR_GR_ENUM ) {
+        bool success = convertContainerMemberToAtomic ( 
+            *pDescRet, gddAppType_enums, MAX_ENUM_STATES );
+        if ( ! success ) {
+ 		    return NULL;
+        }
+    }
 
-		aitIndex bound = dbrCount;
-		const gddBounds* pB = pVal->getBounds ();
-		for ( unsigned dim = 0u; dim < pVal->dimension (); dim++ ) {
-			if ( pB[dim].first () != 0u && pB[dim].size() != bound ) {
-				pVal->setBound( dim, 0u, bound );
-			}
-			bound = 1u;
-		}
-	}
-	else {
-		//
-		// the GDD is container or isnt any of the normal types
-		//
-		pDescRet = NULL;
-		return pDescRet;
-	}
-	
 	return pDescRet;
 }
 
@@ -984,7 +961,7 @@ caStatus casStrmClient::claimChannelAction()
 	// indicating so (and vise versa)
 	//
 	if ( this->asyncIOFlag ) {
-		if ( status != S_casApp_asyncCompletion ) {
+		if ( pvar.getStatus() != S_casApp_asyncCompletion ) {
 			fprintf ( stderr, 
                 "Application returned %d from cas::pvAttach()"
                 " - expected S_casApp_asyncCompletion\n", status );
@@ -1005,6 +982,8 @@ caStatus casStrmClient::claimChannelAction()
 	}
 	return status;
 }
+
+
 
 //
 // casStrmClient::createChanResponse()
@@ -1824,7 +1803,7 @@ caStatus casStrmClient::read (smartGDDPointer &pDescRet)
 	const caHdrLargeArray *pHdr = this->ctx.getMsg();
 	caStatus        status;
 
-	pDescRet = createDBRDD (pHdr->m_dataType, pHdr->m_count);
+	pDescRet = createDBRDD ( pHdr->m_dataType, pHdr->m_count );
 	if ( ! pDescRet ) {
 		return S_cas_noMemory;
 	}

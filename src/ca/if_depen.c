@@ -43,7 +43,7 @@ static char	*sccsId = "@(#) $Id$";
  * also called by the server. All locks required are applied at
  * a higher level.
  */
-
+#define DEBUG
 #ifdef DEBUG
 #   define ifDepenDebugPrintf(argsInParen) printf argsInParen
 #else
@@ -197,6 +197,8 @@ epicsShareFunc void epicsShareAPI caDiscoverInterfaces
             free ( pNewNode );
             continue;
         }
+
+        pNewNode->srcAddr.sa = pifreq->ifr_addr;
 
         if ( pNewNode->destAddr.sa.sa_family == AF_INET ) {
             pNewNode->destAddr.in.sin_port = htons ( port );

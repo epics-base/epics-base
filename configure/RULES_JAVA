@@ -122,7 +122,7 @@ $(INSTALL_CLASSES): $(addprefix ../,$(DEPJAVA))
 $(INSTALL_JAVADOC): $(addprefix ../,$(DEPJAVA))
 	@echo Creating java class files 
 	@$(RM) $@
-	$(JAVACCMD) -d $(INSTALL_JAVA) $^
+	$(JAVADOCCMD) -d $(INSTALL_JAVA) $^
 
 $(COMMON_DIR)/%.jar: $(JARDEPFILES)
 	@echo Creating java jar file $@

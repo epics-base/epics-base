@@ -246,6 +246,28 @@ reportGpib(void)
   return(OK);
 }
 
+STATIC void rebootFunc(void)
+{
+  int 		i;
+  int		probeValue;
+  struct ibregs *pibregs;
+
+  if (ibDebug)
+    printf("NI-GPIB driver resetting\n");
+
+  probeValue = D_LMR | D_SFL;
+  pibregs = (struct ibregs *)((unsigned int)short_base + NIGPIB_SHORT_OFF);
+
+  for (i=0;i<NIGPIB_NUM_LINKS;i++)
+  {
+    if (pNiLink[i] != NULL)
+      vxMemProbe(&(pibregs->cfg2), WRITE, 1, &probeValue);
+
+    pibregs++;
+  }
+  taskDelay(10);
+  return;
+}
 /******************************************************************************
  *
  * Called by the iocInit processing.
@@ -294,6 +316,8 @@ initGpib(void)
 
   /* When probing, send out a reset signal to reset the DMAC and the TLC */
   probeValue = D_LMR | D_SFL;
+
+  rebootHookAdd(rebootFunc);
 
   pibregs = (struct ibregs *)((unsigned int)short_base + NIGPIB_SHORT_OFF);
   /* Gotta do all the probing first because the 1014D's LMRs are shared :-( */

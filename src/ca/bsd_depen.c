@@ -42,6 +42,11 @@
  */
 int cac_select_io(struct timeval *ptimeout, int flags)
 {
+	/*
+	 * Use auto timeout so there is no chance of
+	 * recursive reuse of ptimeout 
+	 */
+	struct timeval	autoTimeOut = *ptimeout;
         long            status;
         IIU             *piiu;
         unsigned long   freespace;
@@ -86,46 +91,59 @@ int cac_select_io(struct timeval *ptimeout, int flags)
                 }
 
                 if (flags&CA_DO_SENDS) {
-                        if (cacRingBufferReadSize(&piiu->send, FALSE)>0) {
+			if (cacRingBufferReadSize(&piiu->send, FALSE)>0) {
 				maxfd = max (maxfd,piiu->sock_chan);
-                                FD_SET (piiu->sock_chan, &pfdi->writeMask);
-                        }
+				FD_SET (piiu->sock_chan, &pfdi->writeMask);
+			}
                 }
         }
 	UNLOCK;
 
-#if 0
-printf(	"max fd=%d tv_usec=%d tv_sec=%d\n", 
-	maxfd, 	
-	ptimeout->tv_usec, 
-	ptimeout->tv_sec);
-#endif
+#	if 0
+		if (maxfd==0) {
+			printf(	"max fd=%d tv_usec=%d tv_sec=%d\n", 
+				maxfd, 	
+				ptimeout->tv_usec, 
+				ptimeout->tv_sec);
+		}
+#	endif
 
-#if defined(vxWorks) && 0
-if(client_lock->recurse>0){
-	ca_printf("lock is on and we are going to sleep %d!",
-			client_lock->recurse);
-	taskSuspend(0);
-}
-#endif
-#if defined(__hpux)
-        status = select(
-                        maxfd+1,
-                        (int *)&pfdi->readMask,
-                        (int *)&pfdi->writeMask,
-                        (int *)NULL,
-                        ptimeout);
-#else
-        status = select(
-                        maxfd+1,
-                        &pfdi->readMask,
-                        &pfdi->writeMask,
-                        NULL,
-                        ptimeout);
-#endif
-#if 0
-printf("leaving select stat=%d errno=%d \n", status, MYERRNO);
-#endif
+#	if 0 && defined(vxWorks) 
+		if(client_lock->recurse>0){
+			ca_printf("lock is on and we are going to sleep %d!",
+				client_lock->recurse);
+			taskSuspend(0);
+		}
+#	endif
+
+#	if defined(__hpux)
+		status = select(
+				maxfd+1,
+				(int *)&pfdi->readMask,
+				(int *)&pfdi->writeMask,
+				(int *)NULL,
+				&autoTimeOut);
+#	else
+		status = select(
+				maxfd+1,
+				&pfdi->readMask,
+				&pfdi->writeMask,
+				NULL,
+				&autoTimeOut);
+#	endif
+
+#	if 0
+		if(status<0){
+			printf("leaving select stat=%d - %s \n", 
+				status, strerror(MYERRNO) );
+		}
+		else if (status==0) {
+			printf("tmo in select\n");
+		}
+#	endif
+
+	cac_gettimeval (&ca_static->currentTime);
+
         if (status<0) {
                 if (MYERRNO == EINTR) {
                 }
@@ -151,13 +169,13 @@ printf("leaving select stat=%d errno=%d \n", status, MYERRNO);
                                 continue;
                         }
 
-                        if (FD_ISSET(piiu->sock_chan,&pfdi->writeMask)) {
-                                (*piiu->sendBytes)(piiu);
-                        }
-
                         if (FD_ISSET(piiu->sock_chan,&pfdi->readMask)) {
                                 (*piiu->recvBytes)(piiu);
                         }
+
+			if (FD_ISSET(piiu->sock_chan,&pfdi->writeMask)) {
+				(*piiu->sendBytes)(piiu);
+			}
                 }
         }
 

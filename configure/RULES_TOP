@@ -30,6 +30,9 @@ endif
 
 distclean: realclean realuninstall
 
+cvsclean:
+	@$(PERL) $(TOOLS)/cvsclean.pl 
+
 realuninstall:
 	@$(RMDIR) $(INSTALL_LOCATION_BIN) $(INSTALL_LOCATION_LIB)
 	@$(RMDIR) $(INSTALL_DBD) $(INSTALL_INCLUDE) $(INSTALL_DOC)\
@@ -66,10 +69,12 @@ help:
 	@echo "     uninstall      - Cleans directories created by the install."
 	@echo "     realuninstall  - Removes ALL install dirs"
 	@echo "     distclean      - Same as realclean realuninstall."
+	@echo "     cvsclean       - Removes cvs .#* files in all dirs of directory tree"
 	@echo "     help           - Prints this list of valid make targets "
 	@echo "Indiv. object targets are supported by O.<arch> level Makefile .e.g"
 	@echo "     xxxRecord.o"
 
 .PHONY : $(uninstallArchTargets)
 .PHONY : uninstall help cleandirs distclean uninstallDirs realuninstall
+.PHONY : cvsclean
 

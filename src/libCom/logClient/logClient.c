@@ -443,7 +443,7 @@ LOCAL void logClientConnect (logClient *pClient)
 /*
  * logRestart ()
  */
-LOCAL void logRestart (void *pPrivate)
+LOCAL void logRestart ( void *pPrivate )
 {
     epicsEventWaitStatus semStatus;
     logClient *pClient;

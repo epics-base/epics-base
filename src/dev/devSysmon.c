@@ -59,6 +59,9 @@
  *      ...
  *
  * $Log$
+ * Revision 1.3  1994/11/17  21:11:58  winans
+ * Major restructuring of init code.
+ *
  *
  */
 
@@ -361,11 +364,6 @@ STATIC void SysmonIsr(int Card)
 }
 
 
-
-STATIC long SysmonREPORT(void)
-{
-  printf("");
-}
 /**************************************************************************
 *
 * Initialization of SYSMON Binary I/O Card
@@ -797,7 +795,6 @@ static long SysmonGetIointInfoBi(
     }
     *ppvt = cards[pvmeio->card].ioscanpvt; 
 
-#if 0
     if (cmd == 0)
     {
       intmask = (((PvtStruct *)(pr->dpvt))->mask)>>8;
@@ -807,7 +804,6 @@ static long SysmonGetIointInfoBi(
 
       cards[pvmeio->card].SysmonBase->SysmonIntMask |= intmask;
     }
-#endif
 
     return(0);
 }

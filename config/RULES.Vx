@@ -32,7 +32,7 @@ rebuild:: clean install
 pre_build:: 
 
 build:: pre_build $(MENUS) $(RECTYPES) $(BPTS)\
-         $(LIBNAME) $(TARGETS) $(PROD)
+         $(LIBNAME) $(TARGETS) $(PROD) $(DBDNAME)
 
 inc:: $(INSTALL_INC) 
 
@@ -57,7 +57,7 @@ endif
 clean::
 	@echo "Cleaning"
 	@$(RM) *.i *.o *.a $(TARGETS) $(PROD) $(LIBNAME) $(INC) \
-	$(DBDINSTALL) $(MENUS) $(RECTYPES) $(BPTS) $(DBDEXPAND)
+	$(DBDINSTALL) $(MENUS) $(RECTYPES) $(BPTS) $(DBDNAME)
 
 
 #  The order of the following dependencies is

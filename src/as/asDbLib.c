@@ -147,7 +147,7 @@ static void asInitTask(ASDBCALLBACK *pcallback)
 {
     long status;
 
-    taskwdInsert(threadGetIdSelf(),wdCallback,pcallback);
+    taskwdInsert(threadGetIdSelf(),(TASKWDFUNCPRR)wdCallback,(void *)pcallback);
     status = asInitCommon();
     taskwdRemove(threadGetIdSelf());
     asInitTheadId = 0;
@@ -155,7 +155,6 @@ static void asInitTask(ASDBCALLBACK *pcallback)
 	pcallback->status = status;
 	callbackRequest(&pcallback->callback);
     }
-    threadDestroy(threadGetIdSelf());
 }
 
 int asInitAsyn(ASDBCALLBACK *pcallback)

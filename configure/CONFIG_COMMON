@@ -40,6 +40,9 @@ TOOLS                       = $(CONFIG)/tools
 INSTALL_LOCATION_LIB        = $(INSTALL_LOCATION)/lib
 INSTALL_LOCATION_BIN        = $(INSTALL_LOCATION)/bin
 
+INSTALL_HOST_BIN            = $(INSTALL_LOCATION_BIN)/$(EPICS_HOST_ARCH)
+INSTALL_HOST_LIB            = $(INSTALL_LOCATION_LIB)/$(EPICS_HOST_ARCH)
+
 INSTALL_INCLUDE             = $(INSTALL_LOCATION)/include
 INSTALL_DOC                 = $(INSTALL_LOCATION)/doc
 INSTALL_HTML                = $(INSTALL_LOCATION)/html
@@ -53,8 +56,6 @@ INSTALL_TCLLIB              = $(INSTALL_LOCATION_LIB)/$(T_A)
 INSTALL_BIN                 = $(INSTALL_LOCATION_BIN)/$(T_A)
 
 ifdef T_A
-
-INSTALL_HOST_BIN                 = $(INSTALL_LOCATION_BIN)/$(EPICS_HOST_ARCH)
 
 #-------------------------------------------------------
 # tools for installing libraries and products

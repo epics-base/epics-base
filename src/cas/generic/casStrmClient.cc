@@ -33,6 +33,7 @@
 #include "dbMapper.h"		// ait to dbr types
 #include "gddAppTable.h"    // EPICS application type table
 #include "gddApps.h"		// gdd predefined application type codes
+typedef unsigned long arrayElementCount;
 #include "net_convert.h"	// byte order conversion from libca
 
 #include "server.h"

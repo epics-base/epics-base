@@ -27,6 +27,10 @@ struct l_fp { /* NTP time stamp */
 
 epicsTime useSomeCPU;
 
+static const unsigned mSecPerSec = 1000u;
+static const unsigned uSecPerSec = 1000u * mSecPerSec;
+static const unsigned nSecPerSec = 1000u * uSecPerSec;
+
 void testStringConversion()
 {
     char buf[64];
@@ -72,7 +76,7 @@ int epicsTimeTest (void)
         const double diff = fabs ( tsf - tsi );
         // the difference in the precision of the two time formats
         static const double precisionNTP = 1.0 / ( 1.0 + UINT_MAX );
-        static const double precisionEPICS = 1.0 / epicsTime::nSecPerSec;
+        static const double precisionEPICS = 1.0 / nSecPerSec;
         assert ( diff <= precisionEPICS + precisionNTP );
     }
 
@@ -101,11 +105,11 @@ int epicsTimeTest (void)
 
             printf ("epicsTimeStamp = %s %lu nSec \n", asctime(&tmAnsi), nanoSec);
             printf ("local time zone struct tm = %s %f\n", asctime(&ansiDate.ansi_tm), 
-                ansiDate.nSec/(double)epicsTime::nSecPerSec);
+                ansiDate.nSec/(double)nSecPerSec);
             printf ("struct timespec = %s %f\n", asctime(&ansiDate.ansi_tm), 
-                ts.tv_nsec/(double)epicsTime::nSecPerSec);
+                ts.tv_nsec/(double)nSecPerSec);
             printf ("UTC struct tm = %s %f\n", asctime(&ansiDateGMT.ansi_tm), 
-                ansiDateGMT.nSec/(double)epicsTime::nSecPerSec);
+                ansiDateGMT.nSec/(double)nSecPerSec);
             begin.show (0);
             printf ("\n");
         } else {

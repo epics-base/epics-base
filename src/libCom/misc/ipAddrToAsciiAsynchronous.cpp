@@ -234,9 +234,12 @@ ipAddrToAsciiTransaction & ipAddrToAsciiEnginePrivate::createTransaction ()
 
 void ipAddrToAsciiEnginePrivate::run ()
 {
+    epicsGuard < epicsMutex > guard ( this->mutex );
     while ( ! this->exitFlag ) {
-        this->laborEvent.wait ();
-        epicsGuard < epicsMutex > guard ( this->mutex );
+        {
+            epicsGuardRelease < epicsMutex > unguard ( guard );
+            this->laborEvent.wait ();
+        }
         while ( true ) {
             ipAddrToAsciiTransactionPrivate * pItem = this->labor.get ();
             if ( ! pItem ) {

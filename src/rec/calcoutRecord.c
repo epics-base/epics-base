@@ -247,8 +247,8 @@ static long process(calcoutRecord *pcalc)
             if(pcalc->odly > 0.0) {
                 pcalc->dlya = 1;
                 db_post_events(pcalc,&pcalc->dlya,DBE_VALUE);
-                callbackRequestProcessCallback(&prpvt->doOutCb,
-                    (double)pcalc->odly,pcalc);
+                callbackRequestProcessCallbackDelayed(&prpvt->doOutCb,
+                    pcalc->prio,pcalc,(double)pcalc->odly);
                 return(0);
             } else {
                 pcalc->pact = FALSE;

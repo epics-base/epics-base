@@ -9,5 +9,4 @@ RM = rm -f
 MKDIR = mkdir
 RMDIR = rm -rf
 CHMOD = "/bin/chmod"
-WHAT = what
 

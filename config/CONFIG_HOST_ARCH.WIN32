@@ -9,7 +9,6 @@ RM   =$(PERL) $(EPICS_BASE_HOST_BIN)/rm.pl -f
 MKDIR=$(PERL) $(EPICS_BASE_HOST_BIN)/mkdir.pl
 RMDIR=$(PERL) $(EPICS_BASE_HOST_BIN)/rm.pl -rf
 CHMOD=echo
-WHAT=echo
 ECHO=echo
 
 WIND_HOST_TYPE = x86-win32

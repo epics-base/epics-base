@@ -138,7 +138,6 @@ cac::cac ( cacNotify & notifyIn, bool enablePreemptiveCallbackIn ) :
     ipToAEngine ( "dnsQuery" ), 
     programBeginTime ( epicsTime::getCurrent() ),
     connTMO ( CA_CONN_VERIFY_PERIOD ),
-    cbMutex ( ! enablePreemptiveCallbackIn ),
     globalServiceList ( globalServiceListCAC.getReference () ),
     timerQueue ( epicsTimerQueueActive::allocate ( false, 
         lowestPriorityLevelAbove(epicsThreadGetPrioritySelf()) ) ),
@@ -1604,6 +1603,68 @@ void cac::pvMultiplyDefinedNotify ( msgForMultiplyDefinedPV & mfmdpv,
     }
     mfmdpv.~msgForMultiplyDefinedPV ();
     this->mdpvFreeList.release ( & mfmdpv );
+}
+
+//
+// This is needed because in non-preemptive callback mode 
+// legacy applications that use file descriptor managers 
+// will register for ca receive thread activity and keep
+// calling ca_pend_event until all of the socket data has
+// been read. We must guarantee that other threads get a 
+// chance to run if there is data in any of the sockets.
+//
+void cac::waitUntilNoRecvThreadsPending ()
+{
+    if ( ! this->preemptiveCallbackEnabled ) {
+        {
+            const struct timeval delay = { 0, 0 };
+            fd_set mask;
+            FD_ZERO ( & mask );
+            int count = 0;
+            epicsGuard < cacMutex > guard ( this->mutex );
+            tsDLIter < tcpiiu > iter = this->serverList.firstIter ();
+            if ( this->pudpiiu ) {
+                this->pudpiiu->fdMaskSet ( mask );
+                count++;
+            }
+            while ( iter.valid() ) {
+                iter->fdMaskSet ( mask );
+                count++;
+                iter++;
+            }
+
+            int status = select ( count, & mask, 0, 0, & delay );
+            if ( status <= 0 ) {
+                return;
+            }
+            this->nRecvThreadsPending = 
+                static_cast < unsigned > ( count );
+        }
+
+        this->recvThreadActivityComplete.wait ( 0.1 );
+    }
+}
+
+void cac::signalRecvThreadActivity ()
+{
+    if ( ! this->preemptiveCallbackEnabled ) {
+        bool signalNeeded = false;
+        {
+            epicsGuard < cacMutex > guard ( this->mutex );
+            if ( this->nRecvThreadsPending <= 1 ) {
+                if ( this->nRecvThreadsPending == 1 ) {
+                    this->nRecvThreadsPending = 0;
+                    signalNeeded = true;
+                }
+            }
+            else {
+                this->nRecvThreadsPending--;
+            }
+        }
+        if ( signalNeeded ) {
+            this->recvThreadActivityComplete.signal ();
+        }
+    }
 }
 
 

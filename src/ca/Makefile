@@ -69,7 +69,6 @@ LIBSRCS += comQueSend.cpp
 LIBSRCS += comBuf.cpp
 LIBSRCS += hostNameCache.cpp
 LIBSRCS += msgForMultiplyDefinedPV.cpp
-LIBSRCS += callbackMutex.cpp
 LIBSRCS += templateInstances.cpp
 
 LIBRARY=ca

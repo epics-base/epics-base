@@ -73,17 +73,12 @@ extern epicsThreadPrivateId caClientCallbackThreadId;
 
 class callbackMutex {
 public:
-    callbackMutex ( bool threadsMayBeBlockingForRecvThreadsToFinish );
+    callbackMutex ();
     ~callbackMutex ();
     void lock ();
     void unlock ();
-    void waitUntilNoRecvThreadsPending ();
 private:
-    epicsMutex countMutex;
     epicsMutex primaryMutex; 
-    epicsEvent noRecvThreadsPending;
-    unsigned recvThreadsPendingCount;
-    bool threadsMayBeBlockingForRecvThreadsToFinish;
     callbackMutex ( callbackMutex & );
     callbackMutex & operator = ( callbackMutex & );
 };
@@ -198,6 +193,7 @@ public:
     void initiateAbortShutdown ( tcpiiu & );
     void disconnectNotify ( tcpiiu & );
     void uninstallIIU ( tcpiiu & ); 
+    void signalRecvThreadActivity ();
 
 private:
     localHostName hostNameCache;
@@ -244,6 +240,7 @@ private:
     callbackMutex cbMutex;
     mutable cacMutex mutex; 
     epicsEvent iiuUninstall;
+    epicsEvent recvThreadActivityComplete;
     epicsSingleton 
         < cacServiceList >::reference
             globalServiceList;
@@ -256,6 +253,7 @@ private:
     epicsThreadId initializingThreadsId;
     unsigned initializingThreadsPriority;
     unsigned maxRecvBytesTCP;
+    unsigned nRecvThreadsPending;
     bool preemptiveCallbackEnabled;
 
     void privateUninstallIIU ( epicsGuard < callbackMutex > &, tcpiiu &iiu ); 
@@ -406,11 +404,6 @@ inline bool cac::preemptiveCallbakIsEnabled () const
     return this->preemptiveCallbackEnabled;
 }
 
-inline void cac::waitUntilNoRecvThreadsPending ()
-{
-    this->cbMutex.waitUntilNoRecvThreadsPending ();
-}
-
 inline epicsGuard < callbackMutex > cac::callbackGuardFactory ()
 {
     // facilitate the return value optimization
@@ -430,6 +423,24 @@ inline void cacMutex::unlock ()
 inline void cacMutex::show ( unsigned level ) const
 {
     this->mutex.show ( level );
+}
+
+inline callbackMutex::callbackMutex () 
+{
+}
+
+inline callbackMutex::~callbackMutex ()
+{
+}
+
+inline void callbackMutex::lock ()
+{
+    this->primaryMutex.lock ();
+}
+
+inline void callbackMutex::unlock ()
+{
+    this->primaryMutex.unlock ();
 }
 
 #endif // ifdef cach

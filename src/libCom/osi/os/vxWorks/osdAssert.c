@@ -53,7 +53,7 @@ epicsShareFunc void epicsShareAPI epicsAssert (const char *pFile, const unsigned
 
     epicsPrintf (	
 "\n\n\n%s: A call to \"assert (%s)\" failed in %s at %d\n", 
-		threadGetName (threadid),
+		taskName ((int)threadid),
 		pExp, 
 		pFile, 
 		line);

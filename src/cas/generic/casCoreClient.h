@@ -138,7 +138,9 @@ private:
     // for io that does not have a channel
 	tsDLList < casAsyncIOI > ioList;
 
-    virtual void eventSignal () = 0;
+    // not pure because the base class noop must be called
+    // when in the destructor
+    virtual void eventSignal ();
 
 	casCoreClient ( const casCoreClient & );
 	casCoreClient & operator = ( const casCoreClient & );

@@ -150,9 +150,8 @@ ca_uint16_t casCoreClient::protocolRevision() const
     return 0;
 }
 
-// this is a pure virtual function, but we nevertheless need a  
-// noop to be called if they post events when a channel is being 
-// destroyed when we are in the casStrmClient destructor
+// we need a noop to be called if they post events when a channel 
+// is being destroyed when we are in the casStrmClient destructor
 void casCoreClient::eventSignal()
 {
 }

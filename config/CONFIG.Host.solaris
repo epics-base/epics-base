@@ -45,7 +45,7 @@ ACC_SFLAGS_NO=
 ACC_SLIBS_YES= -lw -lintl -Bdynamic -ldl -Bstatic
 ACC_SLIBS_NO=
 ACC_SHRLIB_CFLAGS_YES =
-ACC_SHRLIB_LDFLAGS_YES =  -G -h $@ -z ignore -z combreloc -z lazyload
+ACC_SHRLIB_LDFLAGS_YES =  -G -h $@
 
 # Configure OS vendor C++ compiler
 CCC = $(SPARCWORKS)/bin/CC
@@ -63,7 +63,7 @@ CCC_SLIBS_YES= -lw -lintl -Bdynamic -ldl -Bstatic
 CCC_SLIBS_NO=
 CCC_DEPENDS_FLAG = -xM1
 CCC_SHRLIB_CFLAGS_YES =
-CCC_SHRLIB_LDFLAGS_YES =  -G -h $@ -z ignore -z combreloc -z lazyload
+CCC_SHRLIB_LDFLAGS_YES =  -G -h $@
 
 SOLARIS_VERSION = $(subst 5.,,$(shell uname -r))
 ARCH_DEP_CPPFLAGS += -DSOLARIS=$(SOLARIS_VERSION) 
@@ -82,5 +82,7 @@ SYS_DLL_LIBS_solaris += posix4 pthread $(SYS_DLL_LIBS_solaris_$(SOLARIS_VERSION)
 # Runtime ldflags
 RUNTIME_LDFLAGS =$(addprefix -R,$(EPICS_BASE)/lib/$(EPICS_HOST_ARCH)\
  $(EPICS_EXTENSIONS)/lib/$(EPICS_HOST_ARCH))
+
+OP_SYS_LDFLAGS =  -z ignore -z combreloc -z lazyload
 
 

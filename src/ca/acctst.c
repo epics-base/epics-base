@@ -217,7 +217,7 @@ void ioTesterEvent ( struct event_handler_args args )
 	        printf("subscription update failed for \"%s\" because \"%s\"", 
                 ca_name ( args.chid ), ca_message ( args.status ) );
     }
-    status = ca_get_callback ( DBR_GR_STRING, args.chid, ioTesterGet, args.usr );
+    status = ca_get_callback ( DBR_STS_STRING, args.chid, ioTesterGet, args.usr );
     SEVCHK ( status, 0 );
 }
 
@@ -289,7 +289,7 @@ void connectionStateChange ( struct connection_handler_args args )
         }
         assert ( ! pChan->connected );
         pChan->connected = 1;
-        status = ca_get_callback ( DBR_GR_STRING, args.chid, getCallbackStateChange, pChan );
+        status = ca_get_callback ( DBR_STS_STRING, args.chid, getCallbackStateChange, pChan );
         SEVCHK (status, 0);
     }
     else if ( args.op == CA_OP_CONN_DOWN ) {
@@ -311,7 +311,7 @@ void subscriptionStateChange ( struct event_handler_args args )
 
     assert ( pChan->channel == args.chid );
     assert ( pChan->connected );
-    assert ( args.type == DBR_GR_STRING );
+    assert ( args.type == DBR_STS_STRING );
     pChan->subscriptionUpdateCount++;
     subscriptionUpdateCount++;
 
@@ -319,8 +319,10 @@ void subscriptionStateChange ( struct event_handler_args args )
 	        printf("subscription update failed for \"%s\" because \"%s\"", 
                 ca_name ( args.chid ), ca_message ( args.status ) );
     }
-
-    assert ( strlen ( (char *) args.dbr ) <= MAX_STRING_SIZE );
+    else {
+        struct dbr_sts_string * pdbrgs = ( struct dbr_sts_string * ) args.dbr;
+        assert ( strlen ( pdbrgs->value ) <= MAX_STRING_SIZE );
+    }
 }
 
 void noopSubscriptionStateChange ( struct event_handler_args args )
@@ -379,7 +381,7 @@ void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount, unsig
             SEVCHK ( status, NULL );
             pChans[j].accessRightsHandlerInstalled = 1;
 
-            status = ca_add_event ( DBR_GR_STRING, pChans[j].channel,
+            status = ca_add_event ( DBR_STS_STRING, pChans[j].channel,
                     subscriptionStateChange, &pChans[j], &pChans[j].subscription );
             SEVCHK ( status, NULL );
 
@@ -2014,7 +2016,7 @@ void verifyTimeStamps ( chid chan )
     assert ( status = ECA_NORMAL );
 
     length = epicsTimeToStrftime ( buf, sizeof ( buf ), 
-        "%a %b %d %H:%M:%S %Y", &first.stamp );
+        "%a %b %d %Y %H:%M:%S.%f", &first.stamp );
     assert ( length );
     printf ("Processing time of channel \"%s\" was \"%s\"\n", ca_name ( chan ), buf );
 

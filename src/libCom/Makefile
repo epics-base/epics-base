@@ -202,7 +202,8 @@ SRCS += osdProcess.c
 SRCS += osdNetIntf.c
 SRCS += osdMessageQueue.c
 
-SRCS_WIN32 += epicsGetopt.c
+SRCS_WIN32 += epicsGetopt.c 
+SRCS_WIN32 += setThreadName.cpp
 
 SRCS_vxWorks += devLib.c
 SRCS_vxWorks += devLibOSD.c

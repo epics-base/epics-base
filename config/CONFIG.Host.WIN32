@@ -265,3 +265,6 @@ LINK.cc = $(WINLINK) -nologo $(LDFLAGS) -out:$@
 # $(dir $(USR_DEPLIBS))
 #USR_LDFLAGS += $(sort $(USR_DIRS:%=-L%))
 
+# Overrides for CONFIG_COMMON default
+POSIX_CPPFLAGS_YES = 
+

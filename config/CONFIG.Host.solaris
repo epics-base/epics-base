@@ -35,7 +35,8 @@ ACC = $(SPARCWORKS)/bin/cc
 ACC_ANSI = $(ACC) -Xa -v
 ACC_STRICT = $(ACC) -Xc -v
 ACC_TRAD = $(ACC) -Xs
-ACC_DEP_CFLAGS = -KPIC  -D_POSIX_C_SOURCE=199506L -D__EXTENSIONS__
+ACC_DEP_CFLAGS = -KPIC
+
 ACC_WARN_YES = 
 ACC_WARN_NO =  -w
 ACC_OPT_YES =  -O
@@ -51,7 +52,7 @@ ACC_SHRLIB_LDFLAGS_YES =  -G -h $@ -z ignore -z combreloc -z lazyload
 CCC = $(SPARCWORKS)/bin/CC
 CCC_NORMAL = $(CCC) +p
 CCC_STRICT = $(CCC) +p
-CCC_DEP_CFLAGS = -KPIC  -D_POSIX_C_SOURCE=199506L -D__EXTENSIONS__
+CCC_DEP_CFLAGS = -KPIC
 CCC_TEMPL_INST_FLAG =
 CCC_WARN_YES = +w
 CCC_WARN_NO = 
@@ -67,8 +68,10 @@ CCC_SHRLIB_LDFLAGS_YES =  -G -h $@ -z ignore -z combreloc -z lazyload
  
 
 ARCH_DEP_CFLAGS = -DSOLARIS
+POSIX_CPPFLAGS_YES += -D__EXTENSIONS__
+
 # socket and nsl needed by libca.a
-ARCH_DEP_LDLIBS = -lsocket -lnsl
+ARCH_DEP_LDLIBS += -lsocket -lnsl
 ARCH_DEP_LDLIBS += -lposix4 -lpthread
 
 #Allows R3.13 built extensions to load R3.14 shared libs

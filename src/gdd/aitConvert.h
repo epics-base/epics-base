@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.5  1997/08/05 00:51:04  jhill
+ * fixed problems in aitString and the conversion matrix
+ *
  * Revision 1.4  1997/04/10 19:59:22  jhill
  * api changes
  *
@@ -69,7 +72,7 @@ epicsShareExtern aitFunc aitConvertFromNetTable[aitTotal][aitTotal];
 
 /* ---------- convenience routines for performing conversions ---------- */
 
-#if defined(__cplusplus) && !defined(__GNUC__)
+#if defined(__cplusplus) 
 
 inline int aitConvert(aitEnum desttype, void* dest,
  aitEnum srctype, const void* src, aitIndex count)
@@ -100,7 +103,7 @@ inline int aitConvertFromNet(aitEnum desttype, void* dest,
 
 #define aitUint64 aitUint32
 
-#if defined(__cplusplus) && !defined(__GNUC__)
+#if defined(__cplusplus) 
 
 inline void aitToNetOrder16(aitUint16* dest,aitUint16* src)
 	{ *dest=htons(*src); }
@@ -149,7 +152,7 @@ inline void aitFromNetOrder64(aitUint64* dest, aitUint64* src)
 	(dest)[0]=ait_temp_var_; \
 }
 
-#endif /* __cpluspluc && !__GNUC__ */
+#endif /* __cpluspluc */
 
 #define aitToNetFloat64 aitToNetOrder64
 #define aitToNetFloat32 aitToNetOrder32

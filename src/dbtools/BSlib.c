@@ -21,6 +21,7 @@
 #include <sockLib.h>
 #include <selectLib.h>
 #else
+#include <sys/sockio.h>
 #include <sys/time.h>
 #include <netdb.h>
 #include <fcntl.h>
@@ -552,7 +553,7 @@ int BSopenListenerTCP(int Port)
 	int nsoc;
 	struct sockaddr_in tsin;
 
-	memset (&tsin, 0, sizeof(struct  sockaddr_in));
+	memset ((void *)&tsin, 0, sizeof(struct  sockaddr_in));
 	tsin.sin_port=htons(Port);
 	tsin.sin_family=htons(AF_INET);
 	tsin.sin_addr.s_addr=htonl(INADDR_ANY);

@@ -51,6 +51,8 @@
  * .13	08-27-92	joh	silenced ANSI C function proto warning	
  * .14	08-27-92	joh	fixed no epics init
  * .15	08-02-93	mrk	Added call to taskwdInsert
+ * .16	10-29-93	jba	Fixed max number of cards to use module_types.c
+ *                      Fixed error in calculating card addresses
  */
 #include <vxWorks.h>
 #include <vme.h>
@@ -82,7 +84,7 @@ struct {
 	compu_driver_init};
 
 /* compumotor vme interface information */
-#define	MAX_COMPU_MOTORS	8		/********/
+#define MAX_COMPU_MOTORS		8
 
 #define RESP_SZ		16		/* card returns 16 chars - cmd & resp */
 #define RESPBUF_SZ	(RESP_SZ+1)	/* intr routine also passes motor no. */
@@ -483,7 +485,7 @@ compu_task()
     while(1){
 	/* This task is run 30 times a second */
 	taskDelay(2);
-	for (card = 0; card < MAX_COMPU_MOTORS; card++){
+	for (card = 0; card < sm_num_cards[CM57_83E]; card++){
 	    pmotor = pcompu_motors[card];
 	    if (pmotor == 0) continue;
 	    if ((compu_motor_array[card].active)
@@ -558,6 +560,7 @@ compu_driver_init(){
     int    cok = CBBR;			/*to reset board */
     short	none_found;		/* flags a steppermotor is present */
     int		taskId;
+    struct compumotor *pmtrb;
 
    /* intialize each driver which is present */
     none_found = TRUE;
@@ -571,9 +574,9 @@ compu_driver_init(){
       return ERROR;
     }
    
-    pmtr = (struct compumotor *)compu_addr;  
-    for (i = 0; i < MAX_COMPU_MOTORS; i++) {
-       pmtr =  (struct compumotor *)((int)pmtr + (i<<8)); 
+    pmtrb = (struct compumotor *)compu_addr;  
+    for (i = 0; i < sm_num_cards[CM57_83E]; i++) {
+       pmtr =  (struct compumotor *)((int)pmtrb + (i<<8)); 
 
 	/* initialize when card is present */
 
@@ -630,7 +633,7 @@ register int	arg2;
 	char		compu_msg[20];
 
 	/* verify the stepper motor driver card is present */
-	if ((card < 0) || (card > MAX_COMPU_MOTORS) || (!pcompu_motors[card]))
+	if ((card < 0) || (card > sm_num_cards[CM57_83E]) || (!pcompu_motors[card]))
 		return (-1);
 
 	switch (value_flag){
@@ -916,7 +919,7 @@ long compu_sm_io_report(level)
  {
    register int i;
 
-	for (i = 0; i < MAX_COMPU_MOTORS; i++){
+	for (i = 0; i < sm_num_cards[CM57_83E]; i++){
 		if (pcompu_motors[i]){	
                        
                     printf("SM: CM1830:     card %d\n",i);
@@ -959,7 +962,7 @@ VOID compu_sm_reset()
    short int i;
    char	compu_msg[20];
 
-	for (i = 0; i < MAX_COMPU_MOTORS; i++){
+	for (i = 0; i < sm_num_cards[CM57_83E]; i++){
 		if (pcompu_motors[i]){	
                     compu_msg[0] = SM_INT_INHBT;  
                     compu_send_msg(pcompu_motors[i],compu_msg,1);

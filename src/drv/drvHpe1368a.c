@@ -29,6 +29,7 @@
  *
  *      Modification Log:
  *      -----------------
+ *	.01 071792 joh	Added model name registration
  *
  */
 
@@ -122,7 +123,8 @@ unsigned la;
         int                     r0;
         struct hpe1368a_config	*pc;
 	struct vxi_csr		*pcsr;
-
+	int			model;
+	
         r0 = epvxiOpen(
                 la,
                 hpe1368aDriverId,
@@ -158,6 +160,17 @@ unsigned la;
 		return;
 
 	sysIntEnable(HPE1368A_INT_LEVEL);
+
+        model = VXIMODEL(pcsr);
+        r0 = epvxiRegisterModelName(
+                        VXIMAKE(pcsr),
+                        model,
+                        "E 1368A Microwave Switch\n");
+        if(r0<0){
+        	logMsg("%s: failed to register model at init: %x\n",
+                       __FILE__,
+                       model);
+        }
 
 }
 

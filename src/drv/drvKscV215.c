@@ -29,6 +29,7 @@
  *
  *      Modification Log:
  *      -----------------
+ *	.01 071792 joh	Added model name registration
  *
  */
 
@@ -159,6 +160,7 @@ unsigned la;
         struct KscV215_config	*pc;
 	struct KscV215_A24	*pA24;
 	struct vxi_csr		*pcsr;
+	int			model;
 
         status = epvxiOpen(
                 la,
@@ -215,15 +217,25 @@ unsigned la;
 	FASTLOCKINIT(&pc->lock);
 
 #ifdef INTERRUPTS
-        r0 = intConnect(
+        status = intConnect(
 		(unsigned char) INUM_TO_IVEC(la),
 		KscV215_int_service,
 		(void *) la);
-	if(r0 == ERROR)
+	if(status == ERROR)
 		return;
 	sysIntEnable(KSCV215_INT_LEVEL);
 #endif
 
+        model = VXIMODEL(pcsr);
+        status = epvxiRegisterModelName(
+                        VXIMAKE(pcsr),
+                        model,
+                        "V215 16 bit 32 channel ADC\n");
+        if(status<0){
+        	logMsg("%s: failed to register model at init: %x\n",
+                       __FILE__,
+                       model);
+        }
 
 }
 

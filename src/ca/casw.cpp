@@ -173,9 +173,12 @@ int main ( int argc, char **argv )
                 }
 
                 if ( netChange ) {
-                    char buf[64];
-                    ipAddrToA ( &ina, buf, sizeof ( buf ) );
-                    printf ("%s\n", buf);
+                    char date[64];
+                    osiTime current = osiTime::getCurrent ();
+                    current.strftime ( date, sizeof ( date ), "%a %b %d %H:%M:%S %Y");
+                    char host[64];
+                    ipAddrToA ( &ina, host, sizeof ( host ) );
+                    printf ("CA server beacon anomaly: %s %s\n", date, host );
                 }
             }
             pCurBuf += sizeof ( *pCurMsg ) + ntohl ( pCurMsg->m_postsize );

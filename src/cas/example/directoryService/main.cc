@@ -3,6 +3,7 @@
 
 #include "directoryServer.h"
 #include "fdManager.h"
+#include "bsdSocketResource.h"
 
 #define LOCAL static
 
@@ -158,27 +159,13 @@ LOCAL int parseDirectoryFP (FILE *pf, const char *pFileName)
 		// parse out server address
 		//
 		if (fscanf(pf, " %s ", hostNameStr) == 1) {
-			
-			ipa.sin_addr.s_addr = inet_addr(hostNameStr);
-			if (ipa.sin_addr.s_addr==INADDR_NONE) {
-				struct hostent *pent;
-				
-				pent = gethostbyname(hostNameStr);
-				if (!pent) {
-					fprintf (pf, "Unknown host name=\"%s\" (or bad dotted ip addr) in \"%s\" with PV=\"%s\"?\n", 
-						hostNameStr, pFileName, pvNameStr);
-					return -1;
-				}
-				if (pent->h_addrtype != AF_INET) {
-					fprintf (pf, "Unknown addr type for host=\"%s\" in \"%s\" with PV=\"%s\" addr type=%u?\n", 
-						hostNameStr, pFileName, pvNameStr, pent->h_addrtype);
-					return -1;
-				}
-				assert (pent->h_addr_list[0]);
-				assert (pent->h_length==sizeof(ipa.sin_addr));
+			int status;
 
-				memcpy ((char *)&ipa.sin_addr, pent->h_addr_list[0], pent->h_length);
-			
+			status = aToIPAddr (hostNameStr, 0u, &ipa);
+			if (status) {
+				fprintf (pf, "Unknown host name=\"%s\" (or bad dotted ip addr) in \"%s\" with PV=\"%s\"?\n", 
+					hostNameStr, pFileName, pvNameStr);
+				return -1;
 			}
 		}
 		else {

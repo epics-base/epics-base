@@ -47,20 +47,7 @@ inline SOCKET tcpiiu::getSock () const
 
 inline void tcpiiu::flush ()
 {
-    bool signalNeeded;
-    {
-        epicsAutoMutex autoMutex ( this->mutex );
-        if ( this->sendQue.occupiedBytes () ) {
-            this->flushPending = true;
-            signalNeeded = true;
-        }
-        else {
-            signalNeeded = false;
-        }
-    }
-    if ( signalNeeded ) {
-        epicsEventSignal ( this->sendThreadFlushSignal );
-    }
+    epicsEventSignal ( this->sendThreadFlushSignal );
 }
 
 inline bool tcpiiu::ca_v44_ok () const
@@ -94,3 +81,12 @@ inline bhe * tcpiiu::getBHE () const
     return this->pBHE;
 }
 
+inline void tcpiiu::beaconAnomalyNotify ()
+{
+    this->recvDog.beaconAnomalyNotify ();
+}
+
+inline void tcpiiu::beaconArrivalNotify ()
+{
+    this->recvDog.beaconArrivalNotify ();
+}

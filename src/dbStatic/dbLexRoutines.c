@@ -674,7 +674,7 @@ static void dbDevice(char *recordtype,char *linktype,
     pdevSup->name = strduplicate(dsetname);
     pdevSup->choice = strduplicate(choicestring);
     pdevSup->link_type = link_type;
-    pgphentry = gphAdd(pdbbase->pgpHash,pdevSup->name,&pdbRecordType->devList);
+    pgphentry = gphAdd(pdbbase->pgpHash,pdevSup->choice,&pdbRecordType->devList);
     if(!pgphentry) {
 	yyerror("gphAdd failed");
     } else {

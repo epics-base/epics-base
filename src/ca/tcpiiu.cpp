@@ -1428,11 +1428,10 @@ bool tcpiiu::bytesArePendingInOS () const
     osiSockIoctl_t bytesPending = 0; /* shut up purifys yapping */
     int status = socket_ioctl ( this->sock, // X aCC 392
                             FIONREAD, & bytesPending );
-    if ( status ) {
-        return false;
-    }
-    if ( bytesPending > 0 ) {
-        return true;
+    if ( status >= 0 ) {
+        if ( bytesPending > 0 ) {
+            return true;
+        }
     }
     return false;
 #endif

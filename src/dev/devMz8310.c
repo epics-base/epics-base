@@ -312,8 +312,8 @@ static long init(after)
 	FASTLOCK(&mz8310_info[card].lock);
 	for(chip=0; chip<NCHIP; chip ++) {
 	    pcmd = PCMDREG(card,chip); pdata = PDATAREG(card,chip);
-	    if(vxMemProbe(pcmd, READ, sizeof(*pcmd), &dummy) != OK)continue;
-	    if(vxMemProbe(pdata, READ, sizeof(*pdata), &dummy) != OK)continue;
+	    if(vxMemProbe((char *)pcmd, READ, sizeof(*pcmd), (char *)&dummy) != OK)continue;
+	    if(vxMemProbe((char *)pdata, READ, sizeof(*pdata), (char *)&dummy) != OK)continue;
 	    mz8310_info[card].present = TRUE;
 	    if(mz8310Debug) printf("mz8310: Found card %d chip %d\n",card,chip);
 	    putCmd(pcmd,BUS16);
@@ -529,10 +529,8 @@ static long get_ioint_info(
 static long cmd_pc(pr)
     struct pulseCounterRecord	*pr;
 {
-    /*volatile*/
-     unsigned char  *pcmd;
-    /*volatile*/
-    unsigned short *pdata;
+    volatile unsigned char  *pcmd;
+    volatile unsigned short *pdata;
     struct vmeio 	*pvmeio;
     int card,chip,channel,signal,set_chan_bits;
     unsigned short  load,hold,mode;
@@ -652,10 +650,8 @@ static long cmd_pc(pr)
 static long write_pd(pr)
     struct pulseDelayRecord	*pr;
 {
-    /*volatile*/ 
-    unsigned char  *pcmd;
-    /*volatile*/
-    unsigned short *pdata;
+    volatile unsigned char  *pcmd;
+    volatile unsigned short *pdata;
     struct vmeio 	*pvmeio;
     int card,chip,channel,signal;
     unsigned short  load,hold,mode;
@@ -828,10 +824,8 @@ static long write_pd(pr)
 static long write_pt(pr)
     struct pulseTrainRecord	*pr;
 {
-    /*volatile*/
-    unsigned char  *pcmd;
-    /*volatile*/
-    unsigned short *pdata;
+    volatile unsigned char  *pcmd;
+    volatile unsigned short *pdata;
     struct vmeio 	*pvmeio;
     int card,chip,channel,signal;
     unsigned short  load,hold,mode;

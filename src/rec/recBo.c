@@ -63,6 +63,7 @@
  * .27  08-14-92        jba     Added simulation processing
  * .28  08-19-92        jba     Added code for invalid alarm output action
  * .29  11-01-93        jba     Added get_precision routine
+ * .30  04-05-94	mrk	ANSI changes to callback routines
  */
 
 #include	<vxWorks.h>
@@ -209,7 +210,7 @@ static long init_record(pbo,pass)
     }
     pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
     pbo->rpvt = (void *)pcallback;
-    callbackSetCallback(myCallback,pcallback);
+    callbackSetCallback(myCallback,&pcallback->callback);
     pcallback->precord = (struct dbCommon *)pbo;
 
     if( pdset->init_record ) {
@@ -301,7 +302,7 @@ static long process(pbo)
 		struct callback *pcallback;
 		pcallback = (struct callback *)(pbo->rpvt);
         	if(pcallback->wd_id==NULL) pcallback->wd_id = wdCreate();
-                callbackSetPriority(pbo->prio,pcallback);
+                callbackSetPriority(pbo->prio,&pcallback->callback);
                	wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
 	}
 	/* check event list */

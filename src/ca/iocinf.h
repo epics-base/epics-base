@@ -32,6 +32,9 @@
 /************************************************************************/
 
 /* $Log$
+ * Revision 1.52  1996/06/19 17:59:07  jhill
+ * many 3.13 beta changes
+ *
  * Revision 1.51  1995/12/19  19:33:07  jhill
  * function prototype changes
  *
@@ -101,7 +104,6 @@ HDRVERSIONID(iocinfh, "$Id$")
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
-#include <signal.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <stdarg.h>

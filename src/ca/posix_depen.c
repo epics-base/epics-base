@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.17  1995/12/19  19:33:42  jhill
+ * added missing arg to execlp()
+ *
  * Revision 1.16  1995/10/12  01:35:28  jhill
  * Moved cac_mux_io() to iocinf.c
  *
@@ -43,6 +46,9 @@
 #include <sys/param.h>
 
 #include "iocinf.h"
+
+#define _POSIX_C_SOURCE 3 /* for solaris and "cc -Xc" */
+#include <signal.h>
 
 
 /*

@@ -13,6 +13,9 @@
 
 /*
  * $Log$
+ * Revision 1.30  1999/08/05 21:50:21  jhill
+ * global reformat
+ *
  * Revision 1.29  1999/02/11 17:02:34  jhill
  * removed potential infinite recursion from tsForceSoftSync()
  *
@@ -1830,6 +1833,27 @@ static long TSgetData(char* buf, int buf_size, int soc,
     struct timeval timeOut;
     struct timespec send_time,recv_time;
     
+    /*
+     * joh 08-26-99
+     * added this code which removes responses laying around from
+     * requests made in the past that timed out
+     */
+    Debug(8,"removing stale responses %s\n", "");
+    while (1) {
+        int status;
+
+        status = ioctl (soc, FIONREAD, (int) &mlen);
+        if (status<0) {
+            Debug(1,"ioctl FIONREAD failed because \"%s\"?\n", strerror(errno));
+            break;
+        }
+        else if (mlen==0) {
+            break;
+        }
+        Debug(1,"removing stale response of %d bytes\n", mlen);
+        recvfrom(soc,buf,buf_size,0,from_sin,&flen);
+    }
+
     /* convert millisecond time out to seconds/microseconds */
     s=TSdata.time_out/1000; us=(TSdata.time_out-(s*1000))*1000;
     Debug(6,"time_out Second=%lu\n",s);

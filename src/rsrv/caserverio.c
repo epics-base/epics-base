@@ -70,7 +70,7 @@ int		lock_needed;
 {
 	int	status;
 
-  	if(CASDEBUG>2){
+  	if(CASDEBUG>2 && pclient->send.stk){
 		logMsg(	"CAS: Sending a message of %d bytes\n",
 			pclient->send.stk,
 			NULL,

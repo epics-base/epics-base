@@ -17,6 +17,7 @@
  */
 #include "epicsAssert.h"
 #include "tsStamp.h"
+#include "envDefs.h"
 
 /*
  * CA 
@@ -113,6 +114,55 @@ void monitorSubscriptionFirstUpdateTest ( chid chan )
     showProgressEnd ();
 }
 
+void ioTesterGet ( struct event_handler_args args )
+{
+    unsigned *pCtr = (unsigned *) args.usr;
+    if ( args.status != ECA_NORMAL ) {
+	        printf("get call back failed for \"%s\" because \"%s\"", 
+                ca_name ( args.chid ), ca_message ( args.status ) );
+    }
+    ( *pCtr ) ++;
+}
+
+void ioTesterEvent ( struct event_handler_args args )
+{
+    int status;
+    if ( args.status != ECA_NORMAL ) {
+	        printf("subscription update failed for \"%s\" because \"%s\"", 
+                ca_name ( args.chid ), ca_message ( args.status ) );
+    }
+    status = ca_get_callback ( DBR_GR_STRING, args.chid, ioTesterGet, args.usr );
+    SEVCHK ( status, 0 );
+}
+
+void verifyMonitorSubscriptionFlushIO ( chid chan )
+{
+    int status;
+    unsigned eventCount = 0u;
+    unsigned waitCount = 0u;
+    evid id;
+
+    showProgressBegin ();
+
+    /*
+     * verify that the first event arrives
+     */
+    status = ca_add_event ( DBR_FLOAT, 
+                chan, nUpdatesTester, &eventCount, &id );
+    SEVCHK (status, 0);
+    ca_pend_event ( 0.1 );
+    while ( eventCount < 1 && waitCount++ < 100 ) {
+        printf ( "-" );
+        fflush ( stdout );
+        ca_pend_event ( 0.1 );
+    }
+    assert ( eventCount > 0 );
+    status = ca_clear_event ( id );
+    SEVCHK (status, 0);
+
+    showProgressEnd ();
+}
+
 void accessRightsStateChange ( struct access_rights_handler_args args )
 {
     appChan	*pChan = (appChan *) ca_puser ( args.chid );
@@ -149,8 +199,6 @@ void connectionStateChange ( struct connection_handler_args args )
         assert ( ! pChan->connected );
         pChan->connected = 1;
         status = ca_get_callback ( DBR_GR_STRING, args.chid, getCallbackStateChange, pChan );
-        SEVCHK (status, 0);
-        status = ca_flush_io ();
         SEVCHK (status, 0);
     }
     else if ( args.op == CA_OP_CONN_DOWN ) {
@@ -200,6 +248,7 @@ void noopSubscriptionStateChange ( struct event_handler_args args )
  * 2) verify that access rights handler runs during connect
  *
  * 3) verify that get call back runs from connection handler
+ *    (and that they are not required to flush in the connection handler)
  *
  * 4) verify that first event callback arrives after connect
  *
@@ -1510,6 +1559,28 @@ void performMonitorUpdateTest ( chid chan )
     showProgressEnd ();
 } 
 
+void verifyReasonableBeaconPeriod ( chid chan )
+{
+    double beaconPeriod, expectedBeaconPeriod, error;
+
+    long status = envGetDoubleConfigParam ( &EPICS_CA_BEACON_PERIOD, &expectedBeaconPeriod );
+    assert ( status >=0 );
+    
+    /* 
+     * 1) wait (hopefully) for a few beacons to arrive
+     * 2) watch inactive circuit for awhile to see if it prematurely disconnects
+     */
+    printf ( "Verifying beacon period - this takes %g sec. ", 
+        expectedBeaconPeriod * 2 );
+    fflush ( stdout );
+    epicsThreadSleep ( expectedBeaconPeriod * 2 );
+    beaconPeriod = ca_beacon_period ( chan );
+    error = fabs ( beaconPeriod - expectedBeaconPeriod );
+    // expect less than a 10% error
+    assert ( error / expectedBeaconPeriod < 0.1 ); 
+    printf ( "done\n" );
+}
+
 int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
 {
     chid chan;
@@ -1534,8 +1605,8 @@ int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
     connections = ca_get_ioc_connection_count ();
     assert ( connections == 1u );
 
+    verifyMonitorSubscriptionFlushIO ( chan );
     monitorSubscriptionFirstUpdateTest ( chan );
-    performMonitorUpdateTest ( chan );
     performGrEnumTest ( chan );
     performCtrlDoubleTest ( chan );
     verifyBlockInPendIO ( chan );
@@ -1554,6 +1625,7 @@ int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
     performDeleteTest ( chan );
     eventClearTest ( chan );
     arrayTest ( chan ); 
+    performMonitorUpdateTest ( chan );
 
     /*
      * CA pend event delay accuracy test
@@ -1579,6 +1651,7 @@ int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
     verifyConnectionHandlerConnect ( pChans, channelCount, repetitionCount );
     verifyBlockingConnect ( pChans, channelCount, repetitionCount );
     verifyClear ( pChans );
+    verifyReasonableBeaconPeriod ( chan );
 
     /*
      * Verify that we can do IO with the new types for ALH
@@ -1625,46 +1698,6 @@ int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
     printf ( "\nTest Complete\n" );
 
     return 0;
-}
-
-/*
- * write_event ()
- */
-void write_event (struct event_handler_args args)
-{
-    static unsigned iterations = 100;
-    int status;
-    dbr_float_t *pFloat = (dbr_float_t *) args.dbr;
-    dbr_float_t a;
-
-    if ( ! args.dbr ) {
-        return;
-    }
-
-    if ( iterations > 0 ) {
-        iterations--;
-
-        a = *pFloat;
-        a += 10.1F;
-
-        status = ca_array_put ( DBR_FLOAT, 1, args.chid, &a);
-        SEVCHK ( status, NULL );
-        SEVCHK ( ca_flush_io (), NULL );
-    }
-}
-
-/*
- * accessSecurity_cb()
- */
-void accessSecurity_cb(struct access_rights_handler_args args)
-{
-#   ifdef DEBUG
-        printf( "%s on %s has %s/%s access\n",
-            ca_name(args.chid),
-            ca_host_name(args.chid),
-            ca_read_access(args.chid)?"read":"noread",
-            ca_write_access(args.chid)?"write":"nowrite");
-#   endif
 }
 
 

@@ -105,6 +105,7 @@ typedef struct client {
   epicsThreadId         tid;
   unsigned              minor_version_number;
   unsigned              recvBytesToDrain;
+  unsigned              priority;
   char                  disconnect; /* disconnect detected */
 } client;
 

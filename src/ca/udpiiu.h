@@ -86,20 +86,20 @@ public:
     virtual ~udpiiu ();
     void installChannel ( const epicsTime & currentTime, nciu & );
     void repeaterRegistrationMessage ( unsigned attemptNumber );
-    bool searchMsg ( unsigned & retryNoForThisChannel );
-    void datagramFlush ( const epicsTime & currentTime );
-    ca_uint32_t datagramSeqNumber () const;
+    bool searchMsg ( epicsGuard < udpMutex > &, unsigned & retryNoForThisChannel );
+    void datagramFlush ( epicsGuard < udpMutex > &, const epicsTime & currentTime );
+    ca_uint32_t datagramSeqNumber ( epicsGuard < udpMutex > & ) const;
     void show ( unsigned level ) const;
     bool wakeupMsg ();
     void repeaterConfirmNotify ();
     void beaconAnomalyNotify ( const epicsTime & currentTime );
     int printf ( const char *pformat, ... );
-    unsigned channelCount () const;
+    unsigned channelCount ( epicsGuard < udpMutex > & ) const;
     void uninstallChan ( epicsGuard < cacMutex > &, nciu & );
     bool pushDatagramMsg ( const caHdr & hdr, 
         const void * pExt, ca_uint16_t extsize);
     void shutdown ();
-    double roundTripDelayEstimate () const;
+    double roundTripDelayEstimate ( epicsGuard < udpMutex > & ) const;
 
     // exceptions
     class noSocket {};
@@ -209,17 +209,20 @@ inline void udpMutex::show ( unsigned level ) const
     this->mutex.show ( level );
 }
 
-inline unsigned udpiiu::channelCount () const
+inline unsigned udpiiu::channelCount (
+    epicsGuard < udpMutex > & ) const
 {
     return this->channelList.count ();
 }
 
-inline ca_uint32_t udpiiu::datagramSeqNumber () const
+inline ca_uint32_t udpiiu::datagramSeqNumber (
+    epicsGuard < udpMutex > & ) const
 {
     return this->sequenceNumber;
 }
 
-inline double udpiiu::roundTripDelayEstimate () const
+inline double udpiiu::roundTripDelayEstimate (
+    epicsGuard < udpMutex > & ) const
 {
     return this->rtteMean;
 }

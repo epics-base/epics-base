@@ -185,7 +185,7 @@ int cast_server(void)
     
     /* get server's Internet address */
     if( bind(IOC_cast_sock, (struct sockaddr *)&sin, sizeof (sin)) < 0){
-        epicsPrintf ("CAS: cast bind error\n");
+        epicsPrintf ("CAS: UDP server port bind error was %s\n", SOCKERRSTR ( SOCKERRNO ) );
         socket_close (IOC_cast_sock);
         threadSuspendSelf ();
     }

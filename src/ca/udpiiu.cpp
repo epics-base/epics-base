@@ -421,14 +421,10 @@ udpiiu::udpiiu ( cac &cac ) :
  */
 udpiiu::~udpiiu ()
 {
-
-    // closes the udp socket
+    // closes the udp socket and waits for its recv thread to exit
     this->shutdown ();
 
     this->detachAllChan ();
-
-    // wait for recv threads to exit
-    semBinaryMustTake ( this->recvThreadExitSignal );
 
     semBinaryDestroy ( this->recvThreadExitSignal );
 
@@ -445,12 +441,15 @@ udpiiu::~udpiiu ()
 void udpiiu::shutdown ()
 {
     this->lock ();
-    if ( ! this->shutdownCmd ) {
+    bool laborNeeded = ! this->shutdownCmd;
+    this->shutdownCmd = true;
+    this->unlock ();
+
+    if ( laborNeeded ) {
         int status;
         osiSockAddr addr;
         osiSocklen_t size = sizeof ( addr.sa );
 
-        this->shutdownCmd = true;
         status = getsockname ( this->sock, &addr.sa, &size );
         if ( status < 0 ) {
             // this knocks the UDP input thread out of recv ()
@@ -479,8 +478,9 @@ void udpiiu::shutdown ()
                 this->sock = INVALID_SOCKET;
             }
         }
+        // wait for recv threads to exit
+        semBinaryMustTake ( this->recvThreadExitSignal );
     }
-    this->unlock ();
 }
 
 void udpiiu::badUDPRespAction ( const caHdr &msg, const osiSockAddr &netAddr )

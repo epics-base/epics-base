@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.14  1997/08/05 00:53:02  jhill
+ * changed some inline func to normal func
+ *
  * Revision 1.13  1997/06/30 18:16:13  jhill
  * guess at DEC C++ compiler bug workaround
  *
@@ -72,6 +75,18 @@
  *	NOTES:
  *	.01 Storage for identifier must persist until an item is deleted
  * 	.02 class T must derive from class ID and tsSLNode<T>
+ *
+ *	DESIGN NOTES:
+ *	.01 These routines could be made to be significantly faster if the 
+ *	size of the hash table was a template parameter, and therefore
+ *	known at compile time. However, there are many applications where
+ *	the size of the hash table must be read in from a file or otherwise
+ *	determined at runtime. The author does not see an easy way to 
+ *	provide both compile time and runtime determined hash table 
+ *	size without providing two nearly identical versions of these
+ * 	routines, and so has provided only runtime determined hash table
+ *	size capabilities.
+ *	
  */
 
 #ifndef INCresourceLibh
@@ -151,14 +166,27 @@ public:
 		return this->find(list, idIn);
 	}
 
+#ifdef _MSC_VER
+	//
+	// required by MS vis c++ 5.0 (but not by 4.0)
+	//
+	typedef void (T::*pResTableMFArg_t)();
+#	define pResTableMFArg(ARG) pResTableMFArg_t ARG
+#else
+	//
+	// required by gnu g++ 2.7.2
+	//
+#	define pResTableMFArg(ARG) void (T:: * ARG)()
+#endif
+
 	//
 	// Call (pT->*pCB) () for each item in the table
 	//
 	// where pT is a pointer to type T and pCB is
 	// a pointer to a memmber function of T with 
-	// no parameters and returning void
+	// no parameters that returns void
 	//
-	void traverse(void (T::*pCB)());
+	void traverse(pResTableMFArg(pCB));
 
 private:
 	tsSLList<T>	*pTable;
@@ -168,9 +196,8 @@ private:
 
 	resTableIndex hash(const ID & idIn)
 	{
-		resTableIndex hashid;
-		hashid = idIn.resourceHash(this->hashIdNBits);
-		return hashid & this->hashIdMask;
+		return idIn.resourceHash(this->hashIdNBits) 
+				& this->hashIdMask;
 	}
 
 	//
@@ -181,20 +208,7 @@ private:
 	// iterator points to the item found upon return
 	// (or NULL if nothing matching was found)
 	//
-	T *find (tsSLList<T> &list, const ID &idIn)
-	{
-		tsSLIter<T> 	iter(list);
-		T		*pItem;
-		ID		*pId;
-
-		while ( (pItem = iter()) ) {
-			pId = pItem;
-			if (*pId == idIn) {
-				break;
-			}
-		}
-		return pItem;
-	}
+	T *find (tsSLList<T> &list, const ID &idIn);
 
 	//
 	// findDelete
@@ -206,22 +220,7 @@ private:
 	//
 	// removes the item if it finds it
 	//
-	T *findDelete (tsSLList<T> &list, const ID &idIn)
-	{
-		tsSLIterRm<T> 	iter(list);
-		T		*pItem;
-		ID		*pId;
-
-		while ( (pItem = iter()) ) {
-			pId = pItem;
-			if (*pId == idIn) {
-				iter.remove();
-				this->nInUse--;
-				break;
-			}
-		}
-		return pItem;
-	}
+	T *findDelete (tsSLList<T> &list, const ID &idIn);
 };
 
 //
@@ -232,40 +231,80 @@ private:
 //
 // unsigned identifier
 //
-class uintId {
+class epicsShareClass uintId {
 public:
-	uintId(unsigned idIn=UINT_MAX) : id(idIn) {}
+	uintId (unsigned idIn=UINT_MAX) : id(idIn) {}
 
-        resTableIndex resourceHash(unsigned nBitsId) const
-        {
-                unsigned        src = this->id;
-                resTableIndex 	hashid;
- 
-                hashid = src;
-                src = src >> nBitsId;
-                while (src) {
-                        hashid = hashid ^ src;
-                        src = src >> nBitsId;
-                }
-                //
-                // the result here is always masked to the
-                // proper size after it is returned to the resource class
-                //
-                return hashid;
-        }
+	int operator == (const uintId &idIn)
+	{
+	    return this->id == idIn.id;
+	}
 
-        int operator == (const uintId &idIn)
-        {
-                return this->id == idIn.id;
-        }
+	//
+	// uintId::resourceHash()
+	//
+	resTableIndex resourceHash(unsigned nBitsId) const;
 
 	const unsigned getId() const
 	{
 		return id;
 	}
 protected:
-        unsigned id;
+	unsigned id;
 };
+
+//
+// this needs to be instanciated only once (normally in libCom)
+//
+#ifdef instantiateRecourceLib
+//
+// uintId::resourceHash()
+//
+resTableIndex uintId::resourceHash(unsigned /* nBitsId */) const
+{
+	//
+	// 0.5 uS Pent 200 MHz
+	//unsigned src = this->id;
+	//resTableIndex hashid;
+	//
+	//hashid = src;
+	//while ( (src >>= nBitsId) ) {
+	//	hashid ^= src;
+	//}
+
+	//
+	// 0.32 uS Pent 200 MHz
+	// 
+	// faster because it does not 
+	// check for the hash id size
+	// (assumes worst case hash id
+	// of 1 bit)
+	//
+	resTableIndex hashid = this->id;
+#if UINT_MAX >> 128u
+	hashid ^= (hashid>>128u);
+#endif
+#if UINT_MAX >> 64u
+	hashid ^= (hashid>>64u);
+#endif
+#if UINT_MAX >> 32u
+	hashid ^= (hashid>>32u);
+#endif
+#if UINTMAX >> 16u
+	hashid ^= (hashid>>16u);
+#endif
+	hashid ^= (hashid>>8u);
+	hashid ^= (hashid>>4u);
+	hashid ^= (hashid>>2u);
+	hashid ^= (hashid>>1u);
+
+	//
+	// the result here is always masked to the
+	// proper size after it is returned to the resource class
+	//
+	return hashid;
+}
+#endif // instantiateRecourceLib 
 
 //
 // special resource table which uses 
@@ -317,45 +356,6 @@ inline void uintResTable<ITEM>::installItem(ITEM &item)
 }
 
 //
-// pointer identifier
-//
-class ptrId {
-public:
-	ptrId (void const * const idIn) : id(idIn) {}
-
-	resTableIndex resourceHash(unsigned nBitsId) const
-	{
-		//
-		// This makes the assumption that
-		// a pointer will fit inside of a long
-		// (this assumption may not port to all
-		// CPU architectures)
-		//
-		unsigned long src = (unsigned long) this->id;
-		unsigned long hashid;
-
-		hashid = src;
-		src = src >> nBitsId;
-		while (src) {
-			hashid = hashid ^ src;
-			src = src >> nBitsId;
-		}
-		//
-		// the result here is always masked to the
-		// proper size after it is returned to the resource class
-		//
-		return (resTableIndex) hashid;
-	}
-
-	int operator == (const ptrId &idIn)
-	{
-		return this->id == idIn.id;
-	}
-private:
-	void const * const id;
-};
-
-//
 // not in stringId static because of problems with
 // shareable libraries under win32
 //
@@ -372,7 +372,7 @@ epicsShareExtern const unsigned char stringIdFastHash[256];
 // Eventually an exception will be thrown if
 // new fails (when this is portable).
 //
-class stringId {
+class epicsShareClass stringId {
 public:
 	enum allocationType {copyString, refString};
 
@@ -414,40 +414,7 @@ public:
 	// Communications of the ACM, June 1990 
 	// The modifications were designed by Marty Kraimer
 	//
-	resTableIndex resourceHash(unsigned nBitsId) const
-	{
-		if (this->pStr==NULL) {
-			return 0u;
-		}
-
-		unsigned h0 = 0u;
-		unsigned h1 = 0u;
-		unsigned c;
-		unsigned i;
-		for (i=0u; (c = this->pStr[i]); i++) {
-			//
-			// odd 
-			//
-			if (i&1u) {
-				h1 = stringIdFastHash[h1 ^ c];
-			}
-			//
-			// even 
-			//
-			else {
-				h0 = stringIdFastHash[h0 ^ c];
-			}
-		}
-
-		//
-		// does not work well for more than 65k entries ?
-		// (because some indexes in the table will not be produced)
-		//
-		if (nBitsId>=8u) {
-			h1 = h1 << (nBitsId-8u);
-		}
-		return h1 ^ h0;
-	}
+	resTableIndex resourceHash(unsigned nBitsId) const;
  
 	int operator == (const stringId &idIn)
 	{
@@ -479,6 +446,54 @@ private:
 	const char * const pStr;
 	allocationType const allocType;
 };
+
+//
+// this needs to be instanciated only once (normally in libCom)
+//
+#ifdef instantiateRecourceLib
+//
+// stringId::resourceHash()
+//
+// The hash algorithm is a modification of the algorithm described in 
+// Fast Hashing of Variable Length Text Strings, Peter K. Pearson, 
+// Communications of the ACM, June 1990 
+// The modifications were designed by Marty Kraimer
+//
+resTableIndex stringId::resourceHash(unsigned nBitsId) const
+{
+	if (this->pStr==NULL) {
+		return 0u;
+	}
+
+	unsigned h0 = 0u;
+	unsigned h1 = 0u;
+	unsigned c;
+	unsigned i;
+	for (i=0u; (c = this->pStr[i]); i++) {
+		//
+		// odd 
+		//
+		if (i&1u) {
+			h1 = stringIdFastHash[h1 ^ c];
+		}
+		//
+		// even 
+		//
+		else {
+			h0 = stringIdFastHash[h0 ^ c];
+		}
+	}
+
+	//
+	// does not work well for more than 65k entries ?
+	// (because some indexes in the table will not be produced)
+	//
+	if (nBitsId>=8u) {
+		h1 = h1 << (nBitsId-8u);
+	}
+	return h1 ^ h0;
+}
+#endif // instantiateRecourceLib 
 
 //
 // resTable<T,ID>::init()
@@ -560,12 +575,13 @@ void resTable<T,ID>::destroyAllEntries()
 template <class T, class ID>
 void resTable<T,ID>::show (unsigned level) const
 {
-	tsSLList<T> 	*pList;
-	double		X;
-	double		XX;
-	double		mean;
-	double		stdDev;
-	unsigned	maxEntries;
+	tsSLList<T> *pList;
+	double X;
+	double XX;
+	double mean;
+	double stdDev;
+	unsigned maxEntries;
+	unsigned totOccupiedEntries;
 
 	printf("resTable with %d resources installed\n", this->nInUse);
 
@@ -573,7 +589,8 @@ void resTable<T,ID>::show (unsigned level) const
 		pList = this->pTable;
 		X = 0.0;
 		XX = 0.0;
-		maxEntries = 0;
+		maxEntries = 0u;
+		totOccupiedEntries = 0u;
 		while (pList < &this->pTable[this->hashIdMask+1]) {
 			unsigned count;
 			tsSLIter<T> iter(*pList);
@@ -586,18 +603,21 @@ void resTable<T,ID>::show (unsigned level) const
 				}
 				count++;
 			}
-			X += count;
-			XX += count*count;
-			if (count>maxEntries) {
-				maxEntries = count;
+			if (count>0u) {
+				totOccupiedEntries++;
+				X += count;
+				XX += count*count;
+				if (count>maxEntries) {
+					maxEntries = count;
+				}
 			}
 			pList++;
 		}
 	 
-		mean = X/(this->hashIdMask+1);
-		stdDev = sqrt(XX/(this->hashIdMask+1)- mean*mean);
+		mean = X/totOccupiedEntries;
+		stdDev = sqrt(XX/totOccupiedEntries - mean*mean);
 		printf( 
-	"entries/table index - mean = %f std dev = %f max = %d\n",
+	"entries/occupied table entry - mean = %f std dev = %f max = %d\n",
 			mean, stdDev, maxEntries);
 	}
 }
@@ -605,10 +625,8 @@ void resTable<T,ID>::show (unsigned level) const
 //
 // resTable<T,ID>::traverse
 //
-// pCB is a pointer to a member function
-//
 template <class T, class ID>
-void resTable<T,ID>::traverse (void (T::*pCB)())
+void resTable<T,ID>::traverse (pResTableMFArg(pCB))
 {
 	tsSLList<T> 	*pList;
 
@@ -644,9 +662,61 @@ int resTable<T,ID>::add (T &res)
 }
 
 //
+// find
+// searches from where the iterator points to the
+// end of the list for idIn
+//
+// iterator points to the item found upon return
+// (or NULL if nothing matching was found)
+//
+template <class T, class ID>
+T *resTable<T,ID>::find (tsSLList<T> &list, const ID &idIn)
+{
+	tsSLIter<T> iter(list);
+	T *pItem;
+	ID *pId;
+
+	while ( (pItem = iter()) ) {
+		pId = pItem;
+		if (*pId == idIn) {
+			break;
+		}
+	}
+	return pItem;
+}
+
+//
+// findDelete
+// searches from where the iterator points to the
+// end of the list for idIn
+//
+// iterator points to the item found upon return
+// (or NULL if nothing matching was found)
+//
+// removes the item if it finds it
+//
+template <class T, class ID>
+T *resTable<T,ID>::findDelete (tsSLList<T> &list, const ID &idIn)
+{
+	tsSLIterRm<T> iter(list);
+	T *pItem;
+	ID *pId;
+
+	while ( (pItem = iter()) ) {
+		pId = pItem;
+		if (*pId == idIn) {
+			iter.remove();
+			this->nInUse--;
+			break;
+		}
+	}
+	return pItem;
+}
+
+//
 // this needs to be instanciated only once (normally in libCom)
 //
-#ifdef instantiateStringIdFastHash 
+#ifdef instantiateRecourceLib
 //
 // The hash algorithm is a modification of the algorithm described in
 // Fast Hashing of Variable Length Text Strings, Peter K. Pearson,
@@ -676,7 +746,7 @@ extern epicsShareDef const unsigned char stringIdFastHash[256] = {
 };
 #else
 epicsShareExtern const unsigned char stringIdFastHash[256];
-#endif // instantiateStringIdFastHash 
+#endif // instantiateRecourceLib 
 
 #endif // INCresourceLibh
 

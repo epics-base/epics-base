@@ -140,6 +140,7 @@ inline gddStatus gdd::reference(void) const
 
     if(isNoRef())
     {
+        fprintf(stderr,"reference of gdd marked \"no-referencing\" ignored!!\n");
         gddAutoPrint("gdd::reference()",gddErrorNotAllowed);
         rc=gddErrorNotAllowed;
     }

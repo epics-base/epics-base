@@ -19,7 +19,7 @@
    but then a warning message appears everywhere osdMutex.h is included
 */
 
-#define epicsMutexUnlock(ID) semGive((SEM_ID)(ID))
+#define epicsMutexOsdUnlock(ID) semGive((SEM_ID)(ID))
 
-#define epicsMutexLock(ID) \
+#define epicsMutexOsdLock(ID) \
 (semTake((SEM_ID)(ID),WAIT_FOREVER)==OK ? epicsMutexLockOK : epicsMutexLockError)

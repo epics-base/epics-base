@@ -22,18 +22,18 @@ int sysClkRateGet(void);
 
 #include "epicsMutex.h"
 
-epicsMutexId epicsMutexOsdCreate(void)
+epicsMutexOSD * epicsMutexOsdCreate(void)
 {
     return((epicsMutexId)
         semMCreate(SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY));
 }
 
-void epicsMutexOsdDestroy(epicsMutexId id)
+void epicsMutexOsdDestroy(struct epicsMutexOSD * id)
 {
     semDelete((SEM_ID)id);
 }
 
-epicsMutexLockStatus epicsMutexTryLock(epicsMutexId id)
+epicsMutexLockStatus epicsMutexOsdTryLock(struct epicsMutexOSD * id)
 {
     int status;
     status = semTake((SEM_ID)id,NO_WAIT);
@@ -42,7 +42,7 @@ epicsMutexLockStatus epicsMutexTryLock(epicsMutexId id)
     return(epicsMutexLockError);
 }
 
-void epicsMutexShow(epicsMutexId id,unsigned int level)
+void epicsMutexOsdShow(struct epicsMutexOSD * id,unsigned int level)
 {
     semShow((SEM_ID)id,level);
 }

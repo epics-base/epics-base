@@ -39,7 +39,7 @@ unsigned long semMstat[4];
 #define SEMSTAT(i) 
 #endif
 
-epicsMutexId
+epicsMutexOSD *
 epicsMutexOsdCreate(void)
 {
     rtems_status_code sc;
@@ -92,7 +92,7 @@ epicsMutexOsdCreate(void)
     return (epicsMutexId)sid;
 }
 
-void epicsMutexOsdDestroy(epicsMutexId id)
+void epicsMutexOsdDestroy(struct epicsMutexOSD * id)
 {
     rtems_status_code sc;
     rtems_id sid;
@@ -111,7 +111,7 @@ void epicsMutexOsdDestroy(epicsMutexId id)
         errlogPrintf ("Can't destroy semaphore: %s\n", rtems_status_text (sc));
 }
 
-void epicsMutexUnlock(epicsMutexId id)
+void epicsMutexOsdUnlock(struct epicsMutexOSD * id)
 {
 #ifdef RTEMS_FAST_MUTEX
     Semaphore_Control *the_semaphore = (Semaphore_Control *)id;
@@ -128,7 +128,7 @@ void epicsMutexUnlock(epicsMutexId id)
 
 }
 
-epicsMutexLockStatus epicsMutexLock(epicsMutexId id)
+epicsMutexLockStatus epicsMutexOsdLock(struct epicsMutexOSD * id)
 {
 #ifdef RTEMS_FAST_MUTEX
     Semaphore_Control *the_semaphore = (Semaphore_Control *)id;
@@ -153,7 +153,7 @@ epicsMutexLockStatus epicsMutexLock(epicsMutexId id)
 #endif
 }
 
-epicsMutexLockStatus epicsMutexTryLock(epicsMutexId id)
+epicsMutexLockStatus epicsMutexOsdTryLock(struct epicsMutexOSD * id)
 {
 #ifdef RTEMS_FAST_MUTEX
     Semaphore_Control *the_semaphore = (Semaphore_Control *)id;
@@ -185,7 +185,7 @@ epicsMutexLockStatus epicsMutexTryLock(epicsMutexId id)
 #endif
 }
 
-epicsShareFunc void epicsMutexShow(epicsMutexId id,unsigned int level)
+epicsShareFunc void epicsMutexOsdShow(struct epicsMutexOSD * id,unsigned int level)
 {
 #ifdef RTEMS_FAST_MUTEX
     Semaphore_Control *the_semaphore = (Semaphore_Control *)id;

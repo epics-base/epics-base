@@ -59,8 +59,7 @@ static LONG weHaveInitialized = 0;
 /*
  * epicsMutexCreate ()
  */
-epicsShareFunc epicsMutexId epicsShareAPI 
-    epicsMutexOsdCreate ( void ) 
+epicsMutexOSD * epicsMutexOsdCreate ( void ) 
 {
     epicsMutexOSD * pSem;
 
@@ -92,8 +91,7 @@ epicsShareFunc epicsMutexId epicsShareAPI
 /*
  * epicsMutexOsdDestroy ()
  */
-epicsShareFunc void epicsShareAPI 
-    epicsMutexOsdDestroy ( epicsMutexId pSem ) 
+void epicsMutexOsdDestroy ( epicsMutexOSD * pSem ) 
 {    
     if ( thisIsNT ) {
         DeleteCriticalSection  ( &pSem->os.criticalSection );
@@ -105,10 +103,9 @@ epicsShareFunc void epicsShareAPI
 }
 
 /*
- * epicsMutexUnlock ()
+ * epicsMutexOsdUnlock ()
  */
-epicsShareFunc void epicsShareAPI 
-    epicsMutexUnlock ( epicsMutexId pSem ) 
+void epicsMutexOsdUnlock ( epicsMutexOSD * pSem ) 
 {
     if ( thisIsNT ) {
         LeaveCriticalSection ( &pSem->os.criticalSection );
@@ -120,10 +117,9 @@ epicsShareFunc void epicsShareAPI
 }
 
 /*
- * epicsMutexLock ()
+ * epicsMutexOsdLock ()
  */
-epicsShareFunc epicsMutexLockStatus epicsShareAPI 
-    epicsMutexLock ( epicsMutexId pSem ) 
+epicsMutexLockStatus epicsMutexOsdLock ( epicsMutexOSD * pSem ) 
 {
     if ( thisIsNT ) {
         EnterCriticalSection ( &pSem->os.criticalSection );
@@ -138,9 +134,9 @@ epicsShareFunc epicsMutexLockStatus epicsShareAPI
 }
 
 /*
- * epicsMutexTryLock ()
+ * epicsMutexOsdTryLock ()
  */
-epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexTryLock ( epicsMutexId pSem ) 
+epicsMutexLockStatus epicsMutexOsdTryLock ( epicsMutexOSD * pSem ) 
 { 
     if ( thisIsNT ) {
         if ( TryEnterCriticalSection ( &pSem->os.criticalSection ) ) {
@@ -165,9 +161,9 @@ epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexTryLock ( epicsMutex
 }
 
 /*
- * epicsMutexShow ()
+ * epicsMutexOsdShow ()
  */
-epicsShareFunc void epicsShareAPI epicsMutexShow ( epicsMutexId pSem, unsigned level ) 
+void epicsMutexOsdShow ( epicsMutexOSD * pSem, unsigned level ) 
 { 
     if ( thisIsNT ) {
         printf ("epicsMutex: win32 critical section at %p\n",

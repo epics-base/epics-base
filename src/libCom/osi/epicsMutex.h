@@ -14,7 +14,7 @@
 
 #include "shareLib.h"
 
-typedef struct epicsMutexOSD *epicsMutexId;
+typedef struct epicsMutexParm *epicsMutexId;
 typedef enum {
     epicsMutexLockOK,epicsMutexLockTimeout,epicsMutexLockError
 } epicsMutexLockStatus;
@@ -50,16 +50,13 @@ private:
 #ifdef __cplusplus
 extern "C" {
 #endif /*__cplusplus*/
-/* The following should NOT be called by user code*/
-epicsShareFunc epicsMutexId epicsShareAPI epicsMutexOsdCreate(void);
-epicsShareFunc void epicsShareAPI epicsMutexOsdDestroy(epicsMutexId id);
-epicsShareFunc epicsMutexId epicsShareAPI epicsMutexOsiCreate(
-    const char *pFileName,int lineno);
-epicsShareFunc epicsMutexId epicsShareAPI epicsMutexOsiMustCreate(
-    const char *pFileName,int lineno);
 
 #define epicsMutexCreate() epicsMutexOsiCreate(__FILE__,__LINE__)
+epicsShareFunc epicsMutexId epicsShareAPI epicsMutexOsiCreate(
+    const char *pFileName,int lineno);
 #define epicsMutexMustCreate() epicsMutexOsiMustCreate(__FILE__,__LINE__)
+epicsShareFunc epicsMutexId epicsShareAPI epicsMutexOsiMustCreate(
+    const char *pFileName,int lineno);
 epicsShareFunc void epicsShareAPI epicsMutexDestroy(epicsMutexId id);
 epicsShareFunc void epicsShareAPI epicsMutexUnlock(epicsMutexId id);
 epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexLock(
@@ -76,6 +73,18 @@ epicsShareFunc void epicsShareAPI epicsMutexShowAll(
     epicsMutex MUST implement recursive locking
     epicsMutex should implement priority inheritance and deletion safe
 */
+
+/* 
+ * The following is the interface to the OS dependent 
+ * implementation and should NOT be called directly by 
+ * user code
+ */
+struct epicsMutexOSD * epicsMutexOsdCreate(void);
+void epicsMutexOsdDestroy(struct epicsMutexOSD *);
+void epicsMutexOsdUnlock(struct epicsMutexOSD *);
+epicsMutexLockStatus epicsMutexOsdLock(struct epicsMutexOSD *);
+epicsMutexLockStatus epicsMutexOsdTryLock(struct epicsMutexOSD *);
+void epicsMutexOsdShow(struct epicsMutexOSD *,unsigned  int level);
 
 #ifdef __cplusplus
 }

@@ -33,6 +33,9 @@
  * .03  09-30-91	mrk	Support for TPRO and DISP
  * .04  10-03-91	jba	Bug fix in putStringUchar
  * .05  11-06-91	jba	Moved processing message before record process
+ * .06  11-26-91	jba	Added return to dbGetLink
+ *              		Fixed bug in special processing of SPC_MOD (100) 
+ * .07  12-02-91	jba	Writing to PROC will always force record process
  */
 
 /* This is a major revision of the original implementation of database access.*/
@@ -197,8 +200,8 @@ long dbScanPassive(paddr)
 {
 	struct dbCommon *precord=(struct dbCommon *)(paddr->precord);
 	
-	/* if not passive just return success */
-	if(precord->scan != 0) return(0);
+	/* if not passive and field not PROC just return success */
+	if(precord->scan != 0 && paddr->pfield != &precord->proc) return(0);
 
 	/* return result of process */
 	return(dbProcess(paddr));
@@ -393,6 +396,7 @@ long dbGetLink(pdblink,pdest,dbrType,pbuffer,options,nRequest)
 	}
 	status= dbGetField(paddr,dbrType,pbuffer,options,nRequest,NULL);
 	if(status) recGblRecordError(status,pdest,"dbGetLink");
+        return(status);
 }
 
 long dbPutLink(pdblink,psource,dbrType,pbuffer,nRequest)
@@ -5830,7 +5834,7 @@ long		nRequest;
 
 	/* check for special processing	is required */
 	if(special) {
-	    if(special<=100) { /*global processing*/
+	    if(special<100) { /*global processing*/
 		if(special==SPC_SCAN) add_to_scan_list(paddr,0xffff);
 	    }
 	    else {

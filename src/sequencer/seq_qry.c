@@ -68,20 +68,22 @@ int	tid;
 
 	/* Print info about state program */
 	printf("State Program: \"%s\"\n", pSP->pProgName);
-	printf("  initial task id=%d=0x%x\n", pSP->taskId, pSP->taskId);
-	printf("  task priority=%d\n", pSP->taskPriority);
-	printf("  number of state sets=%d\n", pSP->numSS);
-	printf("  number of channels=%d\n", pSP->numChans);
-	printf("  number of channels assigned=%d\n", pSP->assignCount);
-	printf("  number of channels connected=%d\n", pSP->connCount);
+	printf("  initial task id=%lu=0x%lx\n", 
+		(unsigned long) pSP->taskId, (unsigned long) pSP->taskId);
+	printf("  task priority=%ld\n", pSP->taskPriority);
+	printf("  number of state sets=%ld\n", pSP->numSS);
+	printf("  number of channels=%ld\n", pSP->numChans);
+	printf("  number of channels assigned=%ld\n", pSP->assignCount);
+	printf("  number of channels connected=%ld\n", pSP->connCount);
 	printf("  options: async=%d, debug=%d,  newef=%d, reent=%d, conn=%d\n",
 	 ((pSP->options & OPT_ASYNC) != 0), ((pSP->options & OPT_DEBUG) != 0),
 	 ((pSP->options & OPT_NEWEF) != 0), ((pSP->options & OPT_REENT) != 0),
 	 ((pSP->options & OPT_CONN) != 0) );
 	if ((pSP->options & OPT_REENT) != 0)
-		printf("  user variables: address=%d=0x%x, length=%d=0x%x bytes\n",
-		 (long)pSP->pVar, (long)pSP->pVar, pSP->varSize, pSP->varSize);
-	printf("  log file fd=%d\n", pSP->logFd);
+		printf("  user variables: address=%lu=0x%lx, length=%ld=0x%lx bytes\n",
+		 (unsigned long)pSP->pVar, (unsigned long)pSP->pVar, 
+		 pSP->varSize, pSP->varSize);
+	printf("  log file fd=%ld\n", pSP->logFd);
 	status = ioctl(pSP->logFd, FIOGETNAME, (int)file_name);
 	if (status != ERROR)
 		printf("  log file name=\"%s\"\n", file_name);
@@ -95,7 +97,8 @@ int	tid;
 
 		printf("  task name=%s;  ", taskName(pSS->taskId));
 
-		printf("  task id=%d=0x%x\n", pSS->taskId, pSS->taskId);
+		printf("  task id=%lu=0x%lx\n", 
+			(unsigned long) pSS->taskId, (unsigned long) pSS->taskId);
 
 		pST = pSS->pStates;
 		printf("  First state = \"%s\"\n", pST->pStateName);
@@ -149,7 +152,7 @@ char		*pStr;	/* optional pattern matching string */
 		return 0;
 
 	printf("State Program: \"%s\"\n", pSP->pProgName);
-	printf("Number of channels=%d\n", pSP->numChans);
+	printf("Number of channels=%ld\n", pSP->numChans);
 
 	if (pStr != NULL)
 	{
@@ -185,13 +188,14 @@ char		*pStr;	/* optional pattern matching string */
 				continue; /* skip this channel */
 			}
 		}
-		printf("\n#%d of %d:\n", nch+1, pSP->numChans);
+		printf("\n#%d of %ld:\n", nch+1, pSP->numChans);
 		printf("Channel name: \"%s\"\n", pDB->dbName);
 		printf("  Unexpanded (assigned) name: \"%s\"\n", pDB->dbAsName);
 		printf("  Variable name: \"%s\"\n", pDB->pVarName);
-		printf("    address = %d = 0x%x\n", (long)pDB->pVar, (long)pDB->pVar);
+		printf("    address = %lu = 0x%lx\n", 
+			(unsigned long)pDB->pVar, (unsigned long)pDB->pVar);
 		printf("    type = %s\n", pDB->pVarType);
-		printf("    count = %d\n", pDB->count);
+		printf("    count = %ld\n", pDB->count);
 		printValue(pDB->pVar, pDB->putType, pDB->count);
 		printf("  Monitor flag=%d\n", pDB->monFlag);
 
@@ -306,7 +310,7 @@ int		count, type;
 		l = (long *)pVal;
 		for (i = 0; i < count; i++, l++)
 		{
-			printf(" %d", *l);
+			printf(" %ld", *l);
 		}
 		break;
 
@@ -375,8 +379,9 @@ SPROG		*pSP;
 			ptaskName = "(no task)";
 		else
 			ptaskName = taskName(pSS->taskId);
-		printf("%-16s %-10d %-16s %-16s\n",
-		 progName, pSS->taskId, ptaskName, pSS->pSSName );
+		printf("%-16s %-10lu %-16s %-16s\n",
+		 progName, (unsigned long) pSS->taskId, 
+		 ptaskName, pSS->pSSName );
 		progName = "";
 	}
 	printf("\n");

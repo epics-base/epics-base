@@ -27,9 +27,17 @@
 #ifndef hostNameCacheh  
 #define hostNameCacheh
 
+#ifdef epicsExportSharedSymbols
+#   define hostNameCache_epicsExportSharedSymbols
+#   undef epicsExportSharedSymbols
+#endif
+
 #include "ipAddrToAsciiAsynchronous.h"
 #include "tsFreeList.h"
-#include "epicsSingleton.h"
+
+#ifdef hostNameCache_epicsExportSharedSymbols
+#   define epicsExportSharedSymbols
+#endif
 
 class hostNameCache : public ipAddrToAsciiAsynchronous {
 public:
@@ -38,12 +46,9 @@ public:
     void destroy ();
     void ioCompletionNotify ( const char *pHostName );
     void hostName ( char *pBuf, unsigned bufLength ) const;
-    void * operator new ( size_t size );
-    void operator delete ( void *pCadaver, size_t size );
 private:
     bool ioComplete;
     char hostNameBuf [128];
-    static epicsSingleton < tsFreeList < class hostNameCache, 16 > > pFreeList;
 };
 
 #endif // #ifndef hostNameCacheh

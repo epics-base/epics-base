@@ -30,8 +30,6 @@
 #include "iocinf.h"
 #include "hostNameCache.h"
 
-epicsSingleton < tsFreeList < hostNameCache, 16 > > hostNameCache::pFreeList;
-
 hostNameCache::hostNameCache ( const osiSockAddr &addr, ipAddrToAsciiEngine &engine ) :
     ipAddrToAsciiAsynchronous ( addr ),
     ioComplete ( false )
@@ -68,12 +66,3 @@ void hostNameCache::hostName ( char *pBuf, unsigned bufSize ) const
     }
 }
 
-void * hostNameCache::operator new ( size_t size )
-{
-    return hostNameCache::pFreeList->allocate ( size );
-}
-
-void hostNameCache::operator delete ( void *pCadaver, size_t size )
-{
-    hostNameCache::pFreeList->release ( pCadaver, size );
-}

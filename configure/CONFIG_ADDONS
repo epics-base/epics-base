@@ -75,6 +75,14 @@ USR_LDFLAGS+=$(USR_LDFLAGS_DEFAULT)
 endif
 endif
 
+ifneq ($(strip $(HTMLS_$(OS_CLASS))),)
+HTMLS+=$(subst -nil-,,$(HTMLS_$(OS_CLASS)))
+else
+ifdef HTMLS_DEFAULT
+HTMLS+=$(HTMLS_DEFAULT)
+endif
+endif
+
 #	check for special includes:
 #
 ifneq ($(strip $(INC_$(OS_CLASS))),)

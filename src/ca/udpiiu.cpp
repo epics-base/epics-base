@@ -454,7 +454,7 @@ void udpiiu::shutdown ()
         if ( status < 0 ) {
             // this knocks the UDP input thread out of recv ()
             // on all os except linux
-            int status = socket_close ( this->sock );
+            status = socket_close ( this->sock );
             if ( status ) {
                 errlogPrintf ("CAC UDP socket close error was %s\n", 
                     SOCKERRSTR ( SOCKERRNO ) );
@@ -480,7 +480,7 @@ void udpiiu::shutdown ()
             if ( status < 0 ) {
                 // this knocks the UDP input thread out of recv ()
                 // on all os except linux
-                int status = socket_close ( this->sock );
+                status = socket_close ( this->sock );
                 if ( status ) {
                     errlogPrintf ("CAC UDP socket close error was %s\n", 
                         SOCKERRSTR ( SOCKERRNO ) );

@@ -40,7 +40,7 @@
 #include "osiTime.h"
 #include "tsDLList.h"
 #include "osiMutex.h"
-#include "osiEvent.h"
+#include "epicsEvent.h"
 
 class osiTimerQueue;
 
@@ -190,8 +190,8 @@ public:
     epicsShareFunc void show (unsigned level) const;
 private:
     osiMutex mutex;
-    osiEvent rescheduleEvent;
-    osiEvent exitEvent;
+    epicsEvent rescheduleEvent;
+    epicsEvent exitEvent;
     tsDLList <osiTimer> timerLists [osiTimer::numberOfTimerLists];
     osiTimer *pExpireTmr;
     class osiTimerThread *pMgrThread;

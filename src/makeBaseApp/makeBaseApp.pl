@@ -224,11 +224,13 @@ sub ListAppTypes { # no args
     print "Valid application types are:\n";
     foreach $name (<$top/*App>) {
 	$name =~ s|$top/||;
+	$name =~ s|App||;
 	printf "\t$name\n";
     }
     print "Valid iocBoot types are:\n";
     foreach $name (<$top/*Boot>) {
 	$name =~ s|$top/||;
+	$name =~ s|Boot||;
 	printf "\t$name\n";
     }
 }

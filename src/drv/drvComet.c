@@ -344,7 +344,7 @@ unsigned int		*parg;	/* pointer to the waveform record */
 	/* check for valid card number */
 	if(card >= wf_num_cards[COMET])
 		return ERROR;
-	pconfig = pcomet_config[card];
+	pconfig = (pcomet_config+card);
 	if(signal >= NELEMENTS(pconfig->parg))
 		return ERROR;
 

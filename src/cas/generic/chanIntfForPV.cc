@@ -21,8 +21,9 @@
 #include "casCoreClient.h"
 #include "casPVI.h"
 
-chanIntfForPV::chanIntfForPV ( class casCoreClient & clientIn ) :
-    clientRef ( clientIn )
+chanIntfForPV::chanIntfForPV ( class casCoreClient & clientIn, 
+                              casChannelDestroyFromPV & destroyRefIn ) :
+    clientRef ( clientIn ), destroyRef ( destroyRefIn )
 {
 }
 

@@ -149,10 +149,21 @@ void exServer::installAliasName(pvInfo &info, const char *pAliasName)
 }
 
 //
+// More advanced pvExistTest() isnt needed so we forward to
+// original version. This avoids sun pro warnings and speeds 
+// up execution.
+//
+pvExistReturn exServer::pvExistTest
+	( const casCtx & ctx, const caNetAddr &, const char * pPVName )
+{
+	return this->pvExistTest ( ctx, pPVName );
+}
+
+//
 // exServer::pvExistTest()
 //
 pvExistReturn exServer::pvExistTest // X aCC 361
-    ( const casCtx& ctxIn, const caNetAddr &, const char * pPVName )
+    ( const casCtx& ctxIn, const char * pPVName )
 {
     //
     // lifetime of id is shorter than lifetime of pName

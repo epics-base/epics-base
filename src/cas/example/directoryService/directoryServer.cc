@@ -82,10 +82,21 @@ void directoryServer::installAliasName(const pvInfo &info, const char *pAliasNam
 }
 
 //
+// More advanced pvExistTest() isnt needed so we forward to
+// original version. This avoids sun pro warnings and speeds 
+// up execution.
+//
+pvExistReturn directoryServer::pvExistTest
+	( const casCtx & ctx, const caNetAddr &, const char * pPVName )
+{
+	return this->pvExistTest ( ctx, pPVName );
+}
+
+//
 // directoryServer::pvExistTest()
 //
 pvExistReturn directoryServer::pvExistTest
-	( const casCtx &, const caNetAddr &, const char * pPVName )
+	( const casCtx & ctx, const char * pPVName )
 {
 	//
 	// lifetime of id is shorter than lifetime of pName
@@ -137,15 +148,6 @@ pvExistReturn directoryServer::pvExistTest
 	}
 
 	return pvExistReturn (caNetAddr(pPVE->getInfo().getAddr()));
-}
-//
-// Override fallback for pvExistTest()
-//
-pvExistReturn directoryServer::pvExistTest
-	( const casCtx & ctx, const char * pPVName )
-{
-	caNetAddr addr;
-	return pvExistTest (ctx, addr, pPVName);
 }
 
 //

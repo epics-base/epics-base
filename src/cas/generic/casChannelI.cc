@@ -19,17 +19,14 @@
 #include "casChannelI.h"
 #include "casAsyncIOI.h"
 
-casChannelI::casChannelI ( 
-    casCoreClient & clientIn,
-    casChannel & chanIn, 
-    casPVI & pvIn,  
-    ca_uint32_t cidIn ) :
-    chanIntfForPV ( clientIn ), 
-    pv ( pvIn ), 
-    chan ( chanIn ), 
-    cid ( cidIn ), 
-    serverDeletePending ( false ), 
-    accessRightsEvPending ( false )
+casChannelI::casChannelI ( casCoreClient & clientIn,
+    casChannel & chanIn, casPVI & pvIn, ca_uint32_t cidIn ) :
+        privateForPV ( clientIn, *this ),
+        pv ( pvIn ), 
+        chan ( chanIn ), 
+        cid ( cidIn ), 
+        serverDeletePending ( false ), 
+        accessRightsEvPending ( false )
 {
 }
 
@@ -47,7 +44,7 @@ casChannelI::~casChannelI ()
 void casChannelI::uninstallFromPV ( casEventSys & eventSys )
 {
     tsDLList < casMonitor > dest;
-    this->removeSelfFromPV ( this->pv, dest );
+    this->privateForPV.removeSelfFromPV ( this->pv, dest );
     while ( casMonitor * pMon = dest.get () ) {
         eventSys.prepareMonitorForDestroy ( *pMon );
 	}
@@ -58,7 +55,7 @@ void casChannelI::show ( unsigned level ) const
     printf ( "casChannelI: client id %u PV %s\n", 
         this->cid, this->pv.getName() );
     if ( level > 0 ) {
-        this->chanIntfForPV::show ( level - 1 );
+        this->privateForPV.show ( level - 1 );
         this->chan.show ( level - 1 );
     }
 }
@@ -70,7 +67,7 @@ caStatus casChannelI::cbFunc (
 {
     caStatus stat = S_cas_success;
     {
-	    stat = this->client().accessRightsResponse ( 
+	    stat = this->privateForPV.client().accessRightsResponse ( 
                     clientGuard, this );
     }
 	if ( stat == S_cas_success ) {
@@ -99,4 +96,12 @@ caStatus casChannelI::write ( const casCtx & ctx, const gdd & value )
     status = this->chan.write ( ctx, value );
     this->chan.endTransaction ();
     return status;
+}
+
+void casChannelI::postDestroyEvent ()
+{
+    if ( ! this->serverDeletePending ) {
+        this->privateForPV.client().casChannelDestroyFromInterfaceNotify ( 
+            *this, false );
+    }
 }

@@ -131,9 +131,9 @@ caStatus casMonitor::executeEvent ( casCoreClient & client,
 
     if ( ! this->pChannel && this->nPend == 0 ) {
         // we carefully avoid inverting the lock hierarchy here
-        epicsGuardRelease < evSysMutex > unguard ( evGuard );
+        epicsGuardRelease < evSysMutex > unGuardEv ( evGuard );
         {
-            epicsGuardRelease < casClientMutex > unguard ( clientGuard );
+            epicsGuardRelease < casClientMutex > unGuardClient ( clientGuard );
             client.destroyMonitor ( *this );
         }
     }

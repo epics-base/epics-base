@@ -27,7 +27,7 @@ casChannel::casChannel ( const casCtx & /* ctx */ ) :
 casChannel::~casChannel () 
 {
     if ( this->pChanI ) {
-        this->pChanI->casChannelDestroyFromInterfaceNotify ( true );
+        this->pChanI->casChannelDestroyFromInterfaceNotify ();
     }
 }
 

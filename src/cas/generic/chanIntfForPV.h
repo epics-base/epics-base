@@ -41,21 +41,27 @@ class casPVI;
 class casEventMask;
 class gdd;
 
+class casChannelDestroyFromPV {
+public:
+    virtual void postDestroyEvent () = 0;
+};
+
 class chanIntfForPV : public tsDLNode < chanIntfForPV > {
 public:
-    chanIntfForPV ( class casCoreClient & );
-    virtual ~chanIntfForPV ();
+    chanIntfForPV ( class casCoreClient &, casChannelDestroyFromPV & );
+    ~chanIntfForPV ();
     class casCoreClient & client () const;
-    virtual void casChannelDestroyFromInterfaceNotify ( bool immediateUninstall ) = 0;
     void installMonitor ( casPVI & pv, casMonitor & mon );
     casMonitor * removeMonitor ( casPVI &, ca_uint32_t monId );
     void removeSelfFromPV ( casPVI &, 
         tsDLList < casMonitor > & dest );
     void postEvent ( const casEventMask &, const gdd & );
     void show ( unsigned level ) const;
+    void postDestroyEvent ();
 private:
 	tsDLList < casMonitor > monitorList;
 	class casCoreClient & clientRef;
+    casChannelDestroyFromPV & destroyRef;
 	chanIntfForPV ( const chanIntfForPV & );
 	chanIntfForPV & operator = ( const chanIntfForPV & );
 };
@@ -76,6 +82,11 @@ inline void chanIntfForPV::removeSelfFromPV (
     casPVI & pv, tsDLList < casMonitor > & dest )
 {
     pv.removeChannel ( *this, this->monitorList, dest );
+}
+
+inline void chanIntfForPV::postDestroyEvent ()
+{
+    this->destroyRef.postDestroyEvent ();
 }
 
 #endif // chanIntfForPVh

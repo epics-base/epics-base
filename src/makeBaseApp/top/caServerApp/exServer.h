@@ -285,7 +285,10 @@ private:
     void installAliasName ( pvInfo & info, const char * pAliasName );
     pvExistReturn pvExistTest ( const casCtx &, 
         const caNetAddr &, const char * pPVName );
-    pvAttachReturn pvAttach ( const casCtx &, const char * pPVName );
+    pvExistReturn pvExistTest ( const casCtx &, 
+        const char * pPVName );
+    pvAttachReturn pvAttach ( const casCtx &, 
+        const char * pPVName );
 
     //
     // list of pre-created PVs

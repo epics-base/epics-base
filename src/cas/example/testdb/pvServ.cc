@@ -1,6 +1,9 @@
 
 // $Id$
 // $Log$
+// Revision 1.3  1997/06/13 09:15:47  jhill
+// connect proto changes
+//
 // Revision 1.2  1997/03/05 21:16:22  jbk
 // Fixes cvs log id at top
 //
@@ -150,7 +153,7 @@ pvExistReturn serv::pvExistTest(const casCtx&,const char* pvname)
 {
 	int val;
 	dBase* node=NULL;
-	caStatus rc=S_casApp_pvNotFound;
+	pvExistReturnEnum rc=pverDoesNotExistHere;
 
 	if(strncmp(pvname,prefix,prefix_len)==0)
 	{
@@ -161,13 +164,12 @@ pvExistReturn serv::pvExistTest(const casCtx&,const char* pvname)
 			{
 				Debug("ExistTest: I have this PV\n");
 				node=&db_sync[val];
-				rc=S_casApp_success;
+				rc=pverExistsHere;
 			}
 		}
 	}
 
-	return (rc==S_casApp_success)?pvExistReturn(rc,node->pvname):
-		pvExistReturn(rc);
+	return pvExistReturn(rc);
 }
 
 pvCreateReturn serv::createPV(const casCtx& in,const char* pvname)

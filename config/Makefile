@@ -15,10 +15,12 @@ TOP=..
 
 include $(TOP)/configure/CONFIG
 
+ifeq ($(strip $(COMPAT_313)),YES)
 INSTALL_CONFIG = $(INSTALL_LOCATION)/config
 
 CONFIGS += $(subst ../,,$(wildcard ../CONFIG*))
 CONFIGS += $(subst ../,,$(wildcard ../RULES*))
+endif
 
 include $(TOP)/configure/RULES
 

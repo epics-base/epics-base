@@ -15,8 +15,10 @@ TOP=../..
 
 include $(TOP)/configure/CONFIG
 
+ifeq ($(strip $(COMPAT_313)),YES)
 SCRIPTS_HOST += $(subst ../,,$(wildcard ../*.pl)) 
 SCRIPTS_HOST += installEpics
+endif
 
 include $(TOP)/configure/RULES
 

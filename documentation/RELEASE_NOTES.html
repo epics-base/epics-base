@@ -12,49 +12,60 @@ dd Month 2004</h1>
 
 <h2 align="center">Changes since 3.14.5</h2>
 
-<h4>db test shell commands</h4>
-<p>Many of the commands crashed if given no arguments. They are now more crash proof.</p>
+<h4>CONFIG_ENV and CONFIG_SITE_ENV</h4>
 
-<h4>db_access - conversion of double to float</h3>
+<p>These files are now parsed by a program that recognizes and ignores
+comment lines.  Previous versions of this parser would extract settings from
+these files even if they appear on a line starting with a '#' character, so
+the last line containing a setting for any variable would give the value used
+as the default. This was first noticed in R3.14.5 where a commented-out
+setting for the <code>EPICS_TIMEZONE</code> parameter was added
+<em>after</em> the uncommented version.</p>
+
+<h4>db test shell commands</h4>
+
+<p>Many of the commands crashed if given no arguments. They are now more
+crash proof.</p>
+
+<h4>db_access - conversion of double to float</h4>
+
 <p>When a CA user asked for display or control limits as a float a 0 value
 was returned as -1.17549435E-38. This is now fixed.</p>
 
 <h4>New DBD rule</h4>
-<p>A new dbd rule will create a  &lt;name&gt;Include.dbd from files
-specified in a &lt;name&gt;_DBD macro definition. An include line will
-be placed in the &lt;name&gt;Include.dbd for each file specified
-in the &lt;name&gt;_DBD definition. If a Makefile contains
-</p>
-<pre>
-	DBD=xxx.dbd 
-	xxx_DBD = f1.dbd f2.dbd f3.dbd 
-</pre>
-<p>
-an xxxInclude.dbd file will be created containing the lines
-</p>
-<pre>
-	include "f1.dbd"
-	include "f2.dbd"
-	include "f1.dbd"
-</pre>
-<p>
-and dbExpand will be invoked to create the xxx.dbd file from the
-xxxInclude.dbd.
-</p>
 
+<p>A new dbd rule will create a  &lt;name&gt;Include.dbd from files specified
+in a &lt;name&gt;_DBD macro definition. An include line will be placed in the
+&lt;name&gt;Include.dbd for each file specified in the &lt;name&gt;_DBD
+definition. If a Makefile contains</p>
+<pre>        DBD=xxx.dbd 
+        xxx_DBD = f1.dbd f2.dbd f3.dbd </pre>
 
-<h4>Solaris Builds </h4>
+<p>an xxxInclude.dbd file will be created containing the lines</p>
+<pre>        include "f1.dbd"
+        include "f2.dbd"
+        include "f1.dbd"</pre>
+
+<p>and dbExpand will be invoked to create the xxx.dbd file from the
+xxxInclude.dbd.</p>
+
+<h4>Solaris Builds</h4>
+
 <p>Old solaris 6 specific compiler options have been removed.</p>
 
 <h4>New make targets cvsclean and archclean</h4>
-<p>The new top level Makefile only target, cvsclean, removes cvs .#* files
-in all dirs of the top directory tree.</p>
-<p> The new archclean target is like the clean target except that
-O.Common directories are not removed. </p>
+
+<p>The new top level Makefile only target, cvsclean, removes cvs .#* files in
+all dirs of the top directory tree.</p>
+
+<p>The new archclean target is like the clean target except that O.Common
+directories are not removed.</p>
 
 <h4>epicsExport</h4>
+
 <p>epicsExportAddress(typ,obj) now generates an extern named pvar_typ_obj and
-epicsExportRegistrar(func) an extern named pvar_func_obj. Previously both just named the variable pobj.</p>
+epicsExportRegistrar(func) an extern named pvar_func_obj. Previously both
+just named the variable pobj.</p>
 
 <p>epicsRegisterFunction(name) in conjunction with the dbd 'function' keyword
 can be used to register functions referred to by record subroutine name

@@ -328,7 +328,12 @@ void epicsThreadOnceOsd(epicsThreadOnceId *id, void (*func)(void *), void *arg)
     }
     if (*id == 0) { /*  0 => first call */
     	*id = -1;   /* -1 => func() active */
-    	func(arg);
+        /* avoid recursive locking */
+        status = pthread_mutex_unlock(&onceLock);
+        checkStatusQuit(status,"pthread_mutex_unlock","epicsThreadOnceOsd");
+   	    func(arg);
+        status = pthread_mutex_lock(&onceLock);
+        checkStatusQuit(status,"pthread_mutex_lock","epicsThreadOnceOsd");
     	*id = +1;   /* +1 => func() done (see epicsThreadOnce() macro defn) */
     }
     status = pthread_mutex_unlock(&onceLock);

@@ -140,6 +140,7 @@ cac::cac ( cacNotify & notifyIn, bool enablePreemptiveCallbackIn ) :
     tcpLargeRecvBufFreeList ( 0 ),
     pCallbackLocker ( 0 ),
     notify ( notifyIn ),
+    initializingThreadsId ( epicsThreadGetIdSelf() ),
     initializingThreadsPriority ( epicsThreadGetPrioritySelf() ),
     maxRecvBytesTCP ( MAX_TCP ),
     pndRecvCnt ( 0u ), 
@@ -483,6 +484,13 @@ void cac::beaconNotify ( const inetAddrID & addr, const epicsTime & currentTime 
 #   endif
 }
 
+// !!!! This routine is only visible in the old interface - or in a new ST interface. 
+// !!!! In the old interface we restrict thread attach so that calls from threads 
+// !!!! other than the initializing thread are not allowed if preemptive callback 
+// !!!! is disabled. This prevents the preemptive callback lock from being released
+// !!!! by other threads than the one that locked it.
+//
+// this routine should probably be moved to the oldCAC?
 int cac::pendIO ( const double & timeout )
 {
     // prevent recursion nightmares by disabling calls to 
@@ -506,17 +514,12 @@ int cac::pendIO ( const double & timeout )
             break;
         }
 
-        {
-            // serialize access the blocking mechanism below
-            epicsAutoMutex autoMutex ( this->serializePendIO );
-
-            if ( this->pCallbackLocker ) {
-                epicsAutoMutexRelease autoRelease ( this->callbackMutex );
-                this->ioDone.wait ( remaining );
-            }
-            else {
-                this->ioDone.wait ( remaining );
-            }
+        if ( this->pCallbackLocker ) {
+            epicsAutoMutexRelease autoRelease ( this->callbackMutex );
+            this->ioDone.wait ( remaining );
+        }
+        else {
+            this->ioDone.wait ( remaining );
         }
 
         double delay = epicsTime::getCurrent () - beg_time;
@@ -542,8 +545,6 @@ int cac::pendIO ( const double & timeout )
 
 int cac::blockForEventAndEnableCallbacks ( epicsEvent &event, double timeout )
 {
-    epicsAutoMutex autoMutex ( this->serializeCallbackMutexUsage );
-
     if ( this->pCallbackLocker ) {
         epicsAutoMutexRelease autoMutexRelease ( this->callbackMutex );
         event.wait ( timeout );
@@ -555,6 +556,13 @@ int cac::blockForEventAndEnableCallbacks ( epicsEvent &event, double timeout )
     return ECA_NORMAL;
 }
 
+// !!!! This routine is only visible in the old interface - or in a new ST interface. 
+// !!!! In the old interface we restrict thread attach so that calls from threads 
+// !!!! other than the initializing thread are not allowed if preemptive callback 
+// !!!! is disabled. This prevents the preemptive callback lock from being released
+// !!!! by other threads than the one that locked it.
+//
+// this routine should probably be moved to the oldCAC?
 int cac::pendEvent ( const double & timeout )
 {
     // prevent recursion nightmares by disabling calls to 
@@ -570,17 +578,12 @@ int cac::pendEvent ( const double & timeout )
         this->flushRequestPrivate ();
     }
 
-    {
-        // serialize access the blocking mechanism below
-        epicsAutoMutex autoMutex ( this->serializeCallbackMutexUsage );
-
-        // process at least once if preemptive callback
-        // isnt enabled
-        if ( this->pCallbackLocker ) {
-            epicsAutoMutexRelease autoMutexRelease ( this->callbackMutex );
-            while ( this->recvThreadsPendingCount > 1 ) {
-                this->noRecvThreadsPending.wait ();
-            }
+    // process at least once if preemptive callback
+    // isnt enabled
+    if ( this->pCallbackLocker ) {
+        epicsAutoMutexRelease autoMutexRelease ( this->callbackMutex );
+        while ( this->recvThreadsPendingCount > 1 ) {
+            this->noRecvThreadsPending.wait ();
         }
     }
 
@@ -836,14 +839,20 @@ bool cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
 
 void cac::uninstallChannel ( nciu & chan )
 {
-    //
-    // dont block on the call back lock if this isnt the 
-    // primary thread
     this->udpWakeup ();
-
-    epicsAutoMutex autoMutex ( this->serializeCallbackMutexUsage );
-
-    if ( this->pCallbackLocker ) {
+    // wait for any IO callbacks in progress to complete
+    // prior to destroying the IO object
+    //
+    // If this is a callback thread then it already owns the 
+    // CB lock at this point. If this is the main thread then we 
+    // are not in pendEvent, pendIO, SG block, etc and 
+    // this->pCallbackLocker protects. Otherwise if this id
+    // the users auxillary thread then this->pCallbackLocker
+    // isnt set and we must take the call back lock.
+    if ( epicsThreadPrivateGet ( caClientCallbackThreadId ) ) {
+        this->uninstallChannelPrivate ( chan );
+    }
+    else if ( this->pCallbackLocker ) {
         this->uninstallChannelPrivate ( chan );
     }
     else {
@@ -857,10 +866,23 @@ void cac::uninstallChannel ( nciu & chan )
 void cac::uninstallChannelPrivate ( nciu & chan )
 {
     epicsAutoMutex autoMutex ( this->mutex );
+    this->flushIfRequired ( *chan.getPIIU() );
+    while ( baseNMIU *pIO = chan.cacPrivateListOfIO::eventq.get() ) {
+        this->ioTable.remove ( *pIO );
+        class netSubscription *pSubscr = pIO->isSubscription ();
+        if ( pSubscr && chan.connected() ) {
+            chan.getPIIU()->subscriptionCancelRequest ( chan, *pSubscr );
+        }
+        {
+            epicsAutoMutexRelease autoMutexRelease ( this->mutex );
+            // If they call ioCancel() here it will be ignored
+            // because the IO has been unregistered above
+            pIO->exception ( ECA_CHANDESTROY, chan.pName() );
+        }
+        pIO->destroy ( *this );
+    }        
     nciu * pChan = this->chanTable.remove ( chan );
     assert ( pChan = &chan );
-    // flush prior to taking the callback lock
-    this->flushIfRequired ( *chan.getPIIU() );
     // if the claim reply has not returned yet then we will issue
     // the clear channel request to the server when the claim reply
     // arrives and there is no matching nciu in the client
@@ -959,13 +981,22 @@ cacChannel::ioid cac::readNotifyRequest ( nciu &chan, unsigned type,
 
 void cac::ioCancel ( nciu &chan, const cacChannel::ioid &id )
 {   
-    if ( ! epicsThreadPrivateGet ( caClientCallbackThreadId ) &&
-        this->pCallbackLocker ) {
+    // wait for any IO callbacks in progress to complete
+    // prior to destroying the IO object
+    //
+    // If this is a callback thread then it already owns the 
+    // CB lock at this point. If this is the main thread then we 
+    // are not in pendEvent, pendIO, SG block, etc and 
+    // this->pCallbackLocker protects. Otherwise if this id
+    // the users auxillary thread then this->pCallbackLocker
+    // isnt set and we must take the call back lock.
+    if ( epicsThreadPrivateGet ( caClientCallbackThreadId ) ) {
+        this->ioCancelPrivate ( chan, id );
+    }
+    else if ( this->pCallbackLocker ) {
         this->ioCancelPrivate ( chan, id );
     }
     else {
-        // wait for any IO callbacks in progress to complete
-        // prior to destroying the IO object
         epicsAutoMutex autoMutex ( this->callbackMutex );
         this->ioCancelPrivate ( chan, id );
     }
@@ -1207,41 +1238,6 @@ void cac::disconnectAllIO ( nciu & chan, bool enableCallbacks )
         }
         pNetIO = pNext;
     }
-}
-
-// this gets called when the user destroys a channel
-void cac::destroyAllIO ( nciu & chan )
-{
-    if ( ! epicsThreadPrivateGet ( caClientCallbackThreadId ) &&
-        this->pCallbackLocker ) {
-        this->privateDestroyAllIO ( chan );
-    }
-    else {
-        // force any callbacks in progress to complete
-        // before deleting the IO
-        epicsAutoMutex autoMutex ( this->callbackMutex );
-        this->privateDestroyAllIO ( chan );
-    }
-}
-
-void cac::privateDestroyAllIO ( nciu & chan )
-{
-    epicsAutoMutex autoMutex ( this->mutex );
-    this->flushIfRequired ( *chan.getPIIU() );
-    while ( baseNMIU *pIO = chan.cacPrivateListOfIO::eventq.get() ) {
-        this->ioTable.remove ( *pIO );
-        class netSubscription *pSubscr = pIO->isSubscription ();
-        if ( pSubscr && chan.connected() ) {
-            chan.getPIIU()->subscriptionCancelRequest ( chan, *pSubscr );
-        }
-        {
-            epicsAutoMutexRelease autoMutexRelease ( this->mutex );
-            // If they call ioCancel() here it will be ignored
-            // because the IO has been unregistered above
-            pIO->exception ( ECA_CHANDESTROY, chan.pName() );
-        }
-        pIO->destroy ( *this );
-    }        
 }
 
 void cac::recycleReadNotifyIO ( netReadNotifyIO &io )

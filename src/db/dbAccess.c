@@ -520,7 +520,7 @@ void epicsShareAPI dbScanFwdLink(struct link *plink)
     pvlink = &plink->value.pv_link;
     precord = pvlink->precord;
     if(plink->type==DB_LINK) {
-        DBADDR *paddr = (DBADDR *)plink->value.pv_link.pvt;
+        dbAddr *paddr = (dbAddr *)plink->value.pv_link.pvt;
         dbScanPassive(precord,paddr->precord);
         return;
     }
@@ -830,37 +830,39 @@ long epicsShareAPI dbGetLinkValue(struct link *plink,
 long epicsShareAPI dbPutLinkValue(struct link *plink,
     short dbrType,const void *pbuffer,long nRequest)
 {
-	long		status=0;
+    long	status=0;
 
-	if(plink->type==DB_LINK) {
-		struct dbCommon	*psource = plink->value.pv_link.precord;
-		struct pv_link	*ppv_link= &(plink->value.pv_link);
-		DBADDR		*paddr	= (DBADDR*)(ppv_link->pvt);
-		dbCommon 	*pdest	= paddr->precord;
+    if(plink->type==DB_LINK) {
+        struct dbCommon	*psource = plink->value.pv_link.precord;
+        struct pv_link	*ppv_link= &(plink->value.pv_link);
+        DBADDR		*paddr	= (DBADDR*)(ppv_link->pvt);
+        dbCommon 	*pdest	= paddr->precord;
 
-		status=dbPut(paddr,dbrType,pbuffer,nRequest);
-		if(ppv_link->pvlMask&pvlOptMS)
-			recGblSetSevr(pdest,LINK_ALARM,psource->nsev);
-		if(status) return(status);
-		if((paddr->pfield==(void *)&pdest->proc)
-		|| (ppv_link->pvlMask&pvlOptPP && pdest->scan==0)) {
-			/*if dbPutField caused asyn record to process   */
-			/* ask for reprocessing*/
-			if(pdest->putf) pdest->rpro = TRUE;
-			/* otherwise ask for the record to be processed*/
-			else status=dbScanLink(psource,pdest);
-		}
-		if(status) recGblSetSevr(psource,LINK_ALARM,INVALID_ALARM);
-	} else if(plink->type==CA_LINK) {
-		struct dbCommon	*psource = plink->value.pv_link.precord;
+        status=dbPut(paddr,dbrType,pbuffer,nRequest);
+        if(ppv_link->pvlMask&pvlOptMS)
+            recGblSetSevr(pdest,LINK_ALARM,psource->nsev);
+        if(status) return(status);
+        if((paddr->pfield==(void *)&pdest->proc)
+        || (ppv_link->pvlMask&pvlOptPP && pdest->scan==0)) {
+            /*if dbPutField caused asyn record to process   */
+            /* ask for reprocessing*/
+            if(pdest->putf) {
+                pdest->rpro = TRUE;
+            } else { /* otherwise ask for the record to be processed*/
+                status=dbScanLink(psource,pdest);
+            }
+        }
+        if(status) recGblSetSevr(psource,LINK_ALARM,INVALID_ALARM);
+    } else if(plink->type==CA_LINK) {
+        struct dbCommon	*psource = plink->value.pv_link.precord;
 
-		status = dbCaPutLink(plink,dbrType,pbuffer, nRequest);
-		if(status < 0)
-			recGblSetSevr(psource,LINK_ALARM,INVALID_ALARM);
-	} else {
-                cantProceed("dbPutLinkValue: Illegal link type");
-	}
-	return(status);
+        status = dbCaPutLink(plink,dbrType,pbuffer, nRequest);
+        if(status < 0)
+            recGblSetSevr(psource,LINK_ALARM,INVALID_ALARM);
+    } else {
+            cantProceed("dbPutLinkValue: Illegal link type");
+    }
+    return(status);
 }
 
 long epicsShareAPI dbGetField(DBADDR *paddr,short dbrType,
@@ -1067,6 +1069,7 @@ long epicsShareAPI dbPutField(
 	if(plink->type == PV_LINK) {
 	    DBADDR		dbaddr;
 
+            if(plink==&precord->tsel) recGblTSELwasModified(plink);
 	    if(!(plink->value.pv_link.pvlMask &(pvlOptCA|pvlOptCP|pvlOptCPP))
 	    &&(dbNameToAddr(plink->value.pv_link.pvname,&dbaddr)==0)){
 		DBADDR	*pdbAddr;

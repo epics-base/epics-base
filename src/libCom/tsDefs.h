@@ -346,15 +346,15 @@ char    **pText         /* IO ptr to ptr to string containing time and date */
 
 #else /* !defined(__STDC__) && !defined(__cplusplus) */
 
-int nextIntFieldAsInt();
-int nextAlph1UCField();
-int nextIntFieldAsLong();
+int epicsShareAPI nextIntFieldAsInt();
+int epicsShareAPI nextAlph1UCField();
+int epicsShareAPI nextIntFieldAsLong();
 long epicsShareAPI tsLocalTime ();
 void epicsShareAPI tsAddDouble();
 int epicsShareAPI tsCmpStamps();
 long epicsShareAPI tsRoundDownLocal();
 long epicsShareAPI tsRoundUpLocal();
-char epicsShareAPI *tsStampToText();
+char * epicsShareAPI tsStampToText();
 long epicsShareAPI tsTextToStamp();
 long epicsShareAPI tsTimeTextToStamp();
 

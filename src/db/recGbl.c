@@ -315,10 +315,10 @@ void recGblGetTimeStamp(void* prec)
     if(pr->tsel.type!=CONSTANT)
     {
         dbGetLink(&(pr->tsel), DBR_SHORT,&(pr->tse),0,0);
-        status = tsStampGetEvent((int)pr->tse,&pr->time);
+        status = tsStampGetEvent(&pr->time,(unsigned)pr->tse);
     }
     else
-        status = tsStampGetEvent((int)pr->tse,&pr->time);
+        status = tsStampGetEvent(&pr->time,(unsigned)pr->tse);
     if(status) errlogPrintf("%s recGblGetTimeStamp failed\n",pr->name);
 }
 

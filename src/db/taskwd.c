@@ -165,15 +165,13 @@ static void taskwdTask(void)
 	    while(pt) {
 		next = (struct task_list *)ellNext((void *)pt);
 		if(threadIsSuspended(pt->id.tid)) {
-		    const char *pname;
 		    char message[100];
 
-		    pname = threadGetName(pt->id.tid);
 		    if(!pt->suspended) {
 			struct task_list *ptany;
 
 			pt->suspended = TRUE;
-			sprintf(message,"task %s suspended",pname);
+			sprintf(message,"task %p suspended",pt->id.tid);
 			errMessage(-1,message);
 			ptany = (struct task_list *)ellFirst(&anylist);
 			while(ptany) {

@@ -46,6 +46,7 @@ typedef struct callbackPvt {
 #endif
 	int		priority;
 	void		*user; /*for use by callback user*/
+        void            *timer; /*for use by callback itself*/
 }CALLBACK;
 
 #ifdef __STDC__

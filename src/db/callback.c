@@ -21,6 +21,7 @@ of this distribution.
 #include "osiSem.h"
 #include "osiThread.h"
 #include "osiInterrupt.h"
+#include "osiTimer.h"
 #include "osiRing.h"
 #include "errlog.h"
 #include "callback.h"
@@ -40,6 +41,16 @@ volatile int callbackRestart=FALSE;
 
 static int priorityValue[NUM_CALLBACK_PRIORITIES] = {0,1,2};
 
+/*for Delayed Requests */
+static void expire(void *pPrivate);
+static void destroy(void *pPrivate);
+static int again(void *pPrivate);
+static double delay(void *pPrivate);
+static void show(void *pPrivate, unsigned level);
+static osiTimerJumpTable jumpTable = { expire,destroy,again,delay,show};
+static osiTimerQueueId timerQueue;
+
+
 /* forward references */
 static void wdCallback(void *ind); /*callback from taskwd*/
 static void start(int ind); /*start or restart a callbackTask*/
@@ -55,6 +66,7 @@ long callbackInit()
 {
     int i;
 
+    timerQueue = osiTimerQueueCreate(threadPriorityScanLow);
     for(i=0; i<NUM_CALLBACK_PRIORITIES; i++) {
 	start(i);
     }
@@ -148,31 +160,67 @@ static void wdCallback(void *pind)
     start(ind);
 }
 
-static void ProcessCallback(CALLBACK *pCallback)
+static void ProcessCallback(CALLBACK *pcallback)
 {
     dbCommon    *pRec;
 
-    callbackGetUser(pRec, pCallback);
+    callbackGetUser(pRec, pcallback);
     dbScanLock(pRec);
     (*pRec->rset->process)(pRec);
     dbScanUnlock(pRec);
 }
-void callbackRequestProcessCallback(CALLBACK *pCallback,
+void callbackRequestProcessCallback(CALLBACK *pcallback,
 	int Priority, void *pRec)
 {
-    callbackSetCallback(ProcessCallback, pCallback);
-    callbackSetPriority(Priority, pCallback);
-    callbackSetUser(pRec, pCallback);
-    callbackRequest(pCallback);
+    callbackSetCallback(ProcessCallback, pcallback);
+    callbackSetPriority(Priority, pcallback);
+    callbackSetUser(pRec, pcallback);
+    callbackRequest(pcallback);
 }
 
-void callbackRequestDelayed(CALLBACK *pCallback,double seconds)
+void expire(void *pPrivate)
 {
-    printf("callbackRequestDelayed not yet implemented\n");
+    CALLBACK *pcallback = (CALLBACK *)pPrivate;
+    callbackRequest(pcallback);
 }
 
-void callbackRequestProcessCallbackDelayed(CALLBACK *pCallback,
+void destroy(void *pPrivate)
+{
+    return;
+}
+
+int again(void *pPrivate)
+{
+    return(0);
+}
+
+double delay(void *pPrivate)
+{
+    return(0.0);
+}
+
+void show(void *pPrivate, unsigned level)
+{
+    return;
+}
+
+
+void callbackRequestDelayed(CALLBACK *pcallback,double seconds)
+{
+    osiTimerId timer = (osiTimerId *)pcallback->timer;
+
+    if(timer==0) {
+        timer = osiTimerCreate(&jumpTable,(void *)pcallback);
+        pcallback->timer = timer;
+    }
+    osiTimerArm(timer,timerQueue,seconds);
+}
+
+void callbackRequestProcessCallbackDelayed(CALLBACK *pcallback,
     int Priority, void *pRec,double seconds)
 {
-    printf("callbackRequestDelayed not yet implemented\n");
+    callbackSetCallback(ProcessCallback, pcallback);
+    callbackSetPriority(Priority, pcallback);
+    callbackSetUser(pRec, pcallback);
+    callbackRequestDelayed(pcallback,seconds);
 }

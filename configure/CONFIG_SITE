@@ -130,11 +130,19 @@ HOST_WARN=YES
 #	must be either YES or NO
 CROSS_WARN=YES
 
+#  Create and/or install perl build tools for R3.13 extension builds?
+#  must be either YES or NO
+#
+#  NOTE: Set to YES only if you have existing R3.13 extensions to be
+#  built with this base
+#
+COMPAT_TOOLS_313=NO
+
 #  Create and/or install files for R3.13 ioc application and extension builds?
 #  must be either YES or NO
 #
 #  NOTE: Set to YES only if you have existing R3.13 ioc applications
-#  or extensions that will be built with this base
+#  and extensions to be built with this base
 #
 COMPAT_313=NO
 

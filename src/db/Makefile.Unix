@@ -1,8 +1,14 @@
 EPICS = ../../../..
 include Target.include
-include $(EPICS)/config/CONFIG
+include $(EPICS)/config/CONFIG_BASE
 
 USR_LDLIBS = -lDb -lCom
+
+DEPLIBS_BASE = $(EPICS_BASE_LIB)/$(T_A)
+DEPLIBS = ./libDb.a\
+	$(DEPLIBS_BASE)/libCom.a\
+	$(DEPLIBS_BASE)/libDb.a
+
 
 SRCS = \
 	../dbStaticLib.c \
@@ -13,23 +19,18 @@ SRCS = \
 	../dbl.c \
 	../dbls.c
 
-OBJS =
 
 LIBOBJS = dbStaticLib.o
 
 LIBNAME = libDb.a
 
-TARGET = dbta atdb dbl dbls
+PROD = dbta dbl dbls atdb
 
-all: install_libs install
+all: install
 
 atdb: atdb.o atdb_yacc.o
 	$(LINK.c) -o $@ atdb.o atdb_yacc.o $(LDLIBS)
 
-dbta: $(LIBNAME)
-atdb: $(LIBNAME)
-dbl: $(LIBNAME)
-dbls: $(LIBNAME)
 
 # Extra rule since atdb_lex.c is included in atdb_yacc.c
 #   In my opinion, these objects should really be built
@@ -37,6 +38,12 @@ dbls: $(LIBNAME)
 atdb_yacc.o: atdb_lex.c
 
 clean::
-	/bin/rm -f atdb_lex.c atdb_yacc.c dbta atdb dbl dbls
+	/bin/rm -f atdb_lex.c atdb_yacc.c $(PROD)
 
 include $(EPICS)/config/RULES.Unix
+
+
+%: %.o $(DEPLIBS)
+	$(LINK.c) -o $@ $<  $(LDLIBS)
+
+

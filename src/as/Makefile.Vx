@@ -1,16 +1,14 @@
 EPICS = ../../../..
 include Target.include
-include $(EPICS)/config/CONFIG
+include $(EPICS)/config/CONFIG_BASE
 
 USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
-LDLIBS =
 
 SRCS = ../asDbLib.c ../asCa.c asLib.c
-OBJS =
-LIBOBJS = asDbLib.o asCa.o asLib.o
-LIBNAME = asLibrary
+OBJS = asDbLib.o asCa.o asLib.o
+PROD = asLibrary
 
-all: install_libs
+include $(EPICS)/config/RULES.Vx
 
 # Extra rule since asLib_lex.c is included in asLib.c
 #   In my opinion, these objects should really be built
@@ -18,6 +16,10 @@ all: install_libs
 asLib.o: asLib_lex.c ../asLibRoutines.c
 
 clean::
-	rm -f asLib_lex.c asLibrary
+	@rm -f asLib_lex.c asLibrary asLib.c
 
-include $(EPICS)/config/RULES.Vx
+
+asLibrary : $(OBJS)
+	$(RM) $@
+	$(LINK.c) $@ $(OBJS) $(LDLIBS)
+

@@ -1,6 +1,6 @@
 EPICS = ../../../..
 include Target.include
-include $(EPICS)/config/CONFIG
+include $(EPICS)/config/CONFIG_BASE
 
 USR_INCLUDES = -I../../drv
 
@@ -26,13 +26,16 @@ OBJS = \
 	recEvent.o recPid.o recTimer.o recFanout.o recPulseCounter.o \
 	recWaveform.o recSubArray.o
 
-LIBOBJS = \
-
 PROD = recSup
 
-all: install
+include $(EPICS)/config/RULES.Vx
 
 clean::
-	rm -f recSup
+	@rm -f recSup
 
-include $(EPICS)/config/RULES.Vx
+$(PROD): $(OBJS)
+	$(RM) $@
+	$(LINK.c) $@ $(OBJS) $(LDLIBS)
+
+
+

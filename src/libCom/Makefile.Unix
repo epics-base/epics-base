@@ -1,6 +1,6 @@
 EPICS = ../../../..
 include Target.include
-include $(EPICS)/config/CONFIG
+include $(EPICS)/config/CONFIG_BASE
 
 USR_CFLAGS = -D_NO_PROTO
 
@@ -25,11 +25,11 @@ LIBOBJS = \
 
 LIBNAME = libCom.a
 
-TARGET = cvtTest tsTest sydTest
+#PROD = cvtTest tsTest sydTest
 
 all: install_libs install
 
-build:: errSymTbl.o errInc.o
+build: errSymTbl.o errInc.o
 
 errSymTbl.o: errSymTbl.c errInc.o
 	$(COMPILE.c) -o $@ $<
@@ -42,10 +42,12 @@ errInc.c:
 	cp ../errInc.c errInc.c
 
 cvtTest: cvtNumbers.o
-	$(LINK.c) -o $@ cvtNumbers.o -lCom -lDb -lCom -lm -s
+	$(LINK.c) -o $@ cvtNumbers.o -lCom  -lm -s
+	#$(LINK.c) -o $@ cvtNumbers.o -lCom -lDb -lCom -lm -s
 
 tsTest: tsSubr.o
-	$(LINK.c) -o $@ tsSubr.o -lCom -lDb -lCom -lm -s
+	#$(LINK.c) -o $@ tsSubr.o -lCom -lDb -lCom -lm -s
+	$(LINK.c) -o $@ tsSubr.o -lCom -lm -s
 
 sydTest: sydSubr.o
 	$(LINK.c) -o $@ sydSubr.o -lCom -lca -lDb -lCom -lm -s

@@ -1,6 +1,6 @@
 EPICS = ../../../..
 include Target.include
-include $(EPICS)/config/CONFIG
+include $(EPICS)/config/CONFIG_BASE
 
 USR_INCLUDES = -I../../drv
 
@@ -29,7 +29,7 @@ SRCS = \
         ../devSASoft.c ../devSoSymb.c \
 	../devSoTestAsyn.c ../devWfSoft.c ../devWfTestAsyn.c \
 	../devWfXy566Sc.c ../devAllenBradley.c ../devAt5Vxi.c \
-	../devMz8310.c devTimerMz8310.c \
+	../devMz8310.c ../devTimerMz8310.c \
 	../devVxiTDM.c ../devAiKscV215.c ../devXy240.c \
 	../devHpe1368a.c ../devAt8Fp.c ../devWfComet.c \
 	../devWfDvx2502.c ../devWfJoergerVtr1.c
@@ -56,13 +56,11 @@ OBJS = \
 	devXy240.o devHpe1368a.o devAt8Fp.o devWfComet.o \
 	devWfDvx2502.o devWfJoergerVtr1.o
 
-LIBOBJS =
-
 PROD = devSup
 
-all: install
-
-clean::
-	rm -f devSup
-
 include $(EPICS)/config/RULES.Vx
+
+$(PROD): $(OBJS)
+	$(RM) $@
+	$(LINK.c) $@ $(OBJS) $(LDLIBS)
+

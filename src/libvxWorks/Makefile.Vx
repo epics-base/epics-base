@@ -1,20 +1,19 @@
 EPICS = ../../../..
 include Target.include
-include $(EPICS)/config/CONFIG
+include $(EPICS)/config/CONFIG_BASE
 
-USR_CFLAGS =
 
 SRCS = ../iocLogClient.c ../veclist.c
 
-OBJS = \
+OBJS = veclist.o iocLogClient.o
 
-LIBOBJS = veclist.o iocLogClient.o
-
-LIBNAME = vxComLib
-
-all: install_libs
-
-clean::
-	rm -f vxComLib
+PROD = vxComLib
 
 include $(EPICS)/config/RULES.Vx
+
+clean::
+	@rm -f vxComLib
+
+vxComLib: $(OBJS)
+	$(RM) $@
+	$(LINK.c) $@ $(OBJS) $(LDLIBS)

@@ -1,6 +1,6 @@
 EPICS = ../../../..
 include Target.include
-include $(EPICS)/config/CONFIG
+include $(EPICS)/config/CONFIG_BASE
 
 USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
 
@@ -9,17 +9,17 @@ SRCS = \
 	../flow_control.c ../repeater.c ../conn.c ../syncgrp.c \
 	../if_depen.c ../bsd_depen.c ../vxWorks_depen.c
 
-OBJS = 
-
-LIBOBJS = \
+OBJS = \
 	iocinf.o access.o test_event.o service.o flow_control.o \
 	repeater.o conn.o syncgrp.o if_depen.o bsd_depen.o vxWorks_depen.o
 
-LIBNAME = caLib
+PROD = caLib
 
-all: install_libs
+include $(EPICS)/config/RULES.Vx
 
 clean::
 	rm -f caLib
 
-include $(EPICS)/config/RULES.Vx
+caLib: $(OBJS)
+	$(RM) $@
+	$(LINK.c) $@ $(OBJS) $(LDLIBS)

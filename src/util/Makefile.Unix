@@ -1,9 +1,16 @@
 EPICS = ../../../..
 include Target.include
-include $(EPICS)/config/CONFIG
+include $(EPICS)/config/CONFIG_BASE
 
 CMPLR = OLD
-USR_LDLIBS = -lm -s
+USR_LDLIBS = -lAs -lca -lCom -lDb -lCom -lm -s
+
+DEPLIBS_BASE = $(EPICS_BASE_LIB)/$(T_A)
+DEPLIBS = $(DEPLIBS_BASE)/libca.a\
+          $(DEPLIBS_BASE)/libDb.a \
+          $(DEPLIBS_BASE)/libCom.a \
+          $(DEPLIBS_BASE)/libAs.a
+#USR_LDLIBS = -lm -s
 USR_INCLUDES = -I$(OPENWIN)/include
 USR_CFLAGS = -DXWINDOWS -UvxWorks
 
@@ -23,13 +30,11 @@ LIBOBJS = \
 
 LIBNAME = libppr.a
 
-TARGETS = \
+PROD = \
 	apCreateShadow apStatusSync bfRing ca_test calcTest cmdClient \
 	extrDoc iocLogServer racPrint recListProg recordTest startCArepeater
 
-all: install_libs install
-
-clean::
-	rm -f $(TARGETS)
-
 include $(EPICS)/config/RULES.Unix
+
+%: %.o $(DEPLIBS)
+	$(LINK.c) -o $@ $< $(LDLIBS)

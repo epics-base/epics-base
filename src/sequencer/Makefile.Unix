@@ -1,6 +1,6 @@
 EPICS = ../../../..
 include Target.include
-include $(EPICS)/config/CONFIG
+include $(EPICS)/config/CONFIG_BASE
 
 USR_LDLIBS = -ll
 YACCOPT = -d -v
@@ -30,3 +30,6 @@ clean::
 	rm -f y.output sncVersion.c snc_lex.c snc.c snc.h snc
 
 include $(EPICS)/config/RULES.Unix
+
+$(PROD): $(OBJS)
+	$(LINK.c) -o $@ $(OBJS) $(LDLIBS)

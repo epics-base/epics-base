@@ -1,6 +1,6 @@
 EPICS = ../../../..
 include Target.include
-include $(EPICS)/config/CONFIG
+include $(EPICS)/config/CONFIG_BASE
 
 SRCS = \
 	../dbAccess.c ../dbBkpt.c ../dbFastLinkConv.c ../dbLink.c \
@@ -9,22 +9,23 @@ SRCS = \
 	../db_test.c ../recGbl.c ../callback.c ../taskwd.c \
 	../dbCaLink.c ../dbCaDblink.c ../devLib.c ../initHooks.c
 
-OBJS = \
-
-LIBOBJS = \
+OBJSdbLib = \
 	dbAccess.o dbBkpt.o dbFastLinkConv.o dbLink.o dbStaticLib.o \
 	iocInit.o drvTS.o dbScan.o dbEvent.o dbTest.o dbls.o db_access.o \
 	db_test.o recGbl.o callback.o taskwd.o dbCaLink.o dbCaDblink.o \
 	devLib.o
 
-LIBNAME = dbLib
 
-TARGET = initHooks.o
-
-all: install_libs
-
-clean::
-	rm -f dbLib
+PROD = initHooks.o dbLib
 
 include $(EPICS)/config/RULES.Vx
+
+clean::
+	@rm -f dbLib
+
+dbLib: $(OBJSdbLib)
+	$(RM) $@
+	$(LINK.c) $@ $(OBJSdbLib) $(LDLIBS)
+
+
 

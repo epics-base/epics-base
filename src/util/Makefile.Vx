@@ -1,6 +1,6 @@
 EPICS = ../../../..
 include Target.include
-include $(EPICS)/config/CONFIG
+include $(EPICS)/config/CONFIG_BASE
 
 SRCS = ../ca_test.c ../calcTest.c ../recordTest.c
 OBJS =
@@ -9,9 +9,8 @@ LIBOBJS =
 
 TARGETS = ca_test calcTest recordTest
 
-all: install
-
-clean::
-	rm -f $(TARGETS)
-
 include $(EPICS)/config/RULES.Vx
+
+%: %.o
+	$(LINK.c) $@ $< $(LDLIBS)
+

@@ -1,37 +1,40 @@
 EPICS = ../../../..
 include Target.include
-include $(EPICS)/config/CONFIG
+include $(EPICS)/config/CONFIG_BASE
 
 LINK.c=$(LD) $(LDFLAGS)
 
-all: install
+SRCS=
 
-depends:
+include $(EPICS)/config/RULES.Vx
 
-pre_build:
+build_libs build_prod build \
+install_libs install_prod install: installVX iocCore
 
-build_libs:
-
-install_libs:
-
-build: rm_iocCore
-
-install: installVX iocCore
+clean:: rm_iocCore
 
 installVX: $(EPICS_VX_IMAGE) $(EPICS_VX_IMAGE_SYM)
 
-$(EPICS_VX_IMAGE): $(VX_IMAGE)
-	install -m 444 $(VX_IMAGE) $@
+$(INSTALL_BIN):
+	mkdir $(INSTALL_BIN)
 
-$(EPICS_VX_IMAGE_SYM): $(VX_IMAGE_SYM)
-	install -m 444 $(VX_IMAGE_SYM) $@
+$(INSTALL_BIN)/$(T_A): $(INSTALL_BIN)
+	mkdir $(INSTALL_BIN)/$(T_A)
+
+$(EPICS_VX_IMAGE): $(VX_IMAGE) $(INSTALL_BIN) $(INSTALL_BIN)/$(T_A)
+	@echo "Installing $@"
+	@install -m 444 $(VX_IMAGE) $@
+
+$(EPICS_VX_IMAGE_SYM): $(VX_IMAGE_SYM) $(INSTALL_BIN) $(INSTALL_BIN)/$(T_A)
+	@echo "Installing $@"
+	@install -m 444 $(VX_IMAGE_SYM) $@
 
 rm_iocCore:
 	$(RM) $(IOC_CORE)
 
 iocCore: $(IOC_CORE)
 
-$(IOC_CORE):
+$(IOC_CORE): $(IOC_CORE_OBJS)
 	$(LINK.c) $@ $(IOC_CORE_OBJS)
 	@what $@
 

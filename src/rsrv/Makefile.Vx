@@ -1,6 +1,6 @@
 EPICS = ../../../..
 include Target.include
-include $(EPICS)/config/CONFIG
+include $(EPICS)/config/CONFIG_BASE
 
 USR_INCLUDES = -I../../ca
 USR_CFLAGS = -UUNIX
@@ -8,29 +8,25 @@ USR_CFLAGS = -UUNIX
 SRCS =  ../caserverio.c ../caservertask.c ../camsgtask.c ../camessage.c \
 	../rsrv_init.c ../cast_server.c ../online_notify.c ../globalsource.c
 
-OBJS =
-
-LIBOBJS = \
+OBJS = \
 	caserverio.o caservertask.o camsgtask.o camessage.o \
 	rsrv_init.o cast_server.o online_notify.o
 
-LIBNAME = dbgLib
-LIBNAME1 = rsrvLib
+PROD = dbgLib rsrvLib
 
-all: install_libs install
+include $(EPICS)/config/RULES.Vx
 
-build_libs: $(LIBNAME) $(LIBNAME1)
+clean::
+	@rm -f dbgLib rsrvLib
 
-$(LIBNAME1): $(LIBOBJS) globalsource.o
+dbgLib: $(OBJS) globalsource.o
 	$(RM) $@
-	$(LINK.c) $@ $(LIBOBJS) globalsource.o
+	$(LINK.c) $@ $(OBJS) globalsource.o $(LDLIBS)
 
-install: $(EPICS_BASE_LIB)/$(T_A)/$(LIBNAME1)
+rsrvLib: $(OBJS)
+	$(RM) $@
+	$(LINK.c) $@ $(OBJS) $(LDLIBS)
 
-$(EPICS_BASE_LIB)/$(T_A)/$(LIBNAME1): $(LIBNAME1)
-	$(INSTALL) $(LIBNAME1) $@
 
 clean::
 	rm -f dbgLib rsrvLib
-
-include $(EPICS)/config/RULES.Vx

@@ -1,21 +1,25 @@
 EPICS = ../../../..
 include Target.include
-include $(EPICS)/config/CONFIG
+include $(EPICS)/config/CONFIG_BASE
 
 USR_CFLAGS = -D_NO_PROTO
-USR_LDLIBS = -lAs -lca -lCom -lDb -lCom -s
+USR_LDLIBS = -lAs -lCom -lDb -lCom -s
+
+DEPLIBS_BASE = $(EPICS_BASE_LIB)/$(T_A)
+DEPLIBS = ./libAs.a\
+	  $(DEPLIBS_BASE)/libCom.a\
+	  $(DEPLIBS_BASE)/libDb.a
 
 LEX = $(ELEX)
 YACC = $(EYACC)
 
-SRCS = ../ascheck.c ../asLib.c
+SRCS = ../ascheck.c asLib.c
 OBJS = ascheck.o
 LIBOBJS = asLib.o
 LIBNAME = libAs.a
 PROD = ascheck
 
 all: install_libs install
-$(PROD): $(LIBNAME)
 
 # Extra rule since asLib_lex.c is included in asLib.c
 #   In my opinion, these objects should really be built
@@ -26,3 +30,6 @@ clean::
 	rm -f asLib.c asLib_lex.c ascheck
 
 include $(EPICS)/config/RULES.Unix
+
+%: %.o $(DEPLIBS)
+	$(LINK.c) -o $@ $<  $(LDLIBS)

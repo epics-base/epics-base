@@ -1,6 +1,6 @@
 EPICS = ../../../../..
 include Target.include
-include $(EPICS)/config/CONFIG
+include $(EPICS)/config/CONFIG_BASE
 
 CMPLR = OLD
 USR_LDLIBS = -lm -s
@@ -19,11 +19,8 @@ OBJS = \
 
 PROD = antelope
 
-all: install
-
-pre_build: install
-
-clean::
-	rm -f antelope
+$(PROD): $(OBJS)
+	$(LINK.c) -o $@ $(OBJS) $(LDLIBS)
 
 include $(EPICS)/config/RULES.Unix
+

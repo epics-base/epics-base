@@ -1,6 +1,6 @@
 EPICS = ../../../..
 include Target.include
-include $(EPICS)/config/CONFIG
+include $(EPICS)/config/CONFIG_BASE
 
 USR_INCLUDES = -I../../drv
 
@@ -12,15 +12,18 @@ SRCS = \
 	../devXxK263Gpib.c
 
 OBJS = \
-        devAnalytekGpib.c devXxDg535Gpib.c devXxSkeletonGpib.c devBBInteract.c \
-	devXxDig500Msg232.c devXxSoftMsg.c devGpibInteract.c devXxHvpsGpib.c \
-	devXxSr620Gpib.c devK486Gpib.c devXxK196Gpib.c devXxDc5009Gpib.c \
-	devXxK263Gpib.c
+        devAnalytekGpib.o devXxDg535Gpib.o devXxSkeletonGpib.o devBBInteract.o \
+	devXxDig500Msg232.o devXxSoftMsg.o devGpibInteract.o devXxHvpsGpib.o \
+	devXxSr620Gpib.o devK486Gpib.o devXxK196Gpib.o devXxDc5009Gpib.o \
+	devXxK263Gpib.o
 
-LIBOBJS =
-
-TARGETS =
-
-all: install
+#PROD = devLibOpt
 
 include $(EPICS)/config/RULES.Vx
+
+clean::
+	@rm devLibOpt
+
+devLibOpt: $(OBJS)
+	$(RM) $@
+	$(LINK.c) $@ $(OBJS) $(LDLIBS)

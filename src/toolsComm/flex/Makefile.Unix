@@ -1,6 +1,6 @@
 EPICS = ../../../../..
 include Target.include
-include $(EPICS)/config/CONFIG
+include $(EPICS)/config/CONFIG_BASE
 
 CMPLR = OLD
 YACCOPT = -d
@@ -21,9 +21,12 @@ OBJS = \
 PROD = e_flex
 
 all: install
-pre_build: install
 
 clean::
-	rm -f parse.c parse.h e_flex
+	rm -f parse.c parse.h
 
 include $(EPICS)/config/RULES.Unix
+
+$(PROD): $(OBJS)
+	$(LINK.c) -o $@ $(OBJS) $(LDLIBS)
+

@@ -5,6 +5,9 @@
 #    by Matthew Needes and Mike Bordua
 #
 # $Log$
+# Revision 1.10  1994/08/21  00:55:52  mcn
+# New stuff.
+#
 # Revision 1.9  1994/08/19  15:38:03  mcn
 # Dependencies are now generated with a "make release".
 #
@@ -14,14 +17,14 @@
 #
 
 EPICS=..
-include $(EPICS)/config/CONFIG
+include $(EPICS)/config/CONFIG_BASE
 
 all: build
 
 pre_build:
 	@(for DIR in ${DIRS};						\
 		do							\
-			TMP=$$PWD; echo "${T_A}: $@: $$DIR";	 	\
+			TMP=`pwd`; echo "${T_A}: $@: $$DIR";	 	\
 			cd $$DIR/O.${T_A}; ${MAKE} ${MFLAGS} $@;	\
 			cd $$TMP;					\
 		done)
@@ -29,7 +32,7 @@ pre_build:
 build_libs:
 	@(for DIR in ${DIRS};						\
 		do							\
-			TMP=$$PWD; echo "${T_A}: $@: $$DIR";	 	\
+			TMP=`pwd`; echo "${T_A}: $@: $$DIR";	 	\
 			cd $$DIR/O.${T_A}; ${MAKE} ${MFLAGS} $@;	\
 			cd $$TMP;					\
 		done)
@@ -37,7 +40,39 @@ build_libs:
 install_libs:
 	@(for DIR in ${DIRS};						\
 		do							\
-			TMP=$$PWD; echo "${T_A}: $@: $$DIR";	 	\
+			TMP=`pwd`; echo "${T_A}: $@: $$DIR";	 	\
+			cd $$DIR/O.${T_A}; ${MAKE} ${MFLAGS} $@;	\
+			cd $$TMP;					\
+		done)
+
+build_prod:
+	@(for DIR in ${DIRS};						\
+		do							\
+			TMP=`pwd`; echo "${T_A}: $@: $$DIR";	 	\
+			cd $$DIR/O.${T_A}; ${MAKE} ${MFLAGS} $@;	\
+			cd $$TMP;					\
+		done)
+
+install_prod:
+	@(for DIR in ${DIRS};						\
+		do							\
+			TMP=`pwd`; echo "${T_A}: $@: $$DIR";	 	\
+			cd $$DIR/O.${T_A}; ${MAKE} ${MFLAGS} $@;	\
+			cd $$TMP;					\
+		done)
+
+install_man:
+	@(for DIR in ${DIRS};						\
+		do							\
+			TMP=`pwd`; echo "${T_A}: $@: $$DIR";	 	\
+			cd $$DIR/O.${T_A}; ${MAKE} ${MFLAGS} $@;	\
+			cd $$TMP;					\
+		done)
+
+install_includes:
+	@(for DIR in ${DIRS};						\
+		do							\
+			TMP=`pwd`; echo "${T_A}: $@: $$DIR";	 	\
 			cd $$DIR/O.${T_A}; ${MAKE} ${MFLAGS} $@;	\
 			cd $$TMP;					\
 		done)
@@ -45,7 +80,7 @@ install_libs:
 build:
 	@(for DIR in ${DIRS};						\
 		do							\
-			TMP=$$PWD; echo "${T_A}: $@: $$DIR";	 	\
+			TMP=`pwd`; echo "${T_A}: $@: $$DIR";	 	\
 			cd $$DIR/O.${T_A}; ${MAKE} ${MFLAGS} $@;	\
 			cd $$TMP;					\
 		done)
@@ -53,7 +88,7 @@ build:
 install:
 	@(for DIR in ${DIRS};						\
 		do							\
-			TMP=$$PWD; echo "${T_A}: $@: $$DIR";	 	\
+			TMP=`pwd`; echo "${T_A}: $@: $$DIR";	 	\
 			cd $$DIR/O.${T_A}; ${MAKE} ${MFLAGS} $@;	\
 			cd $$TMP;					\
 		done)
@@ -61,8 +96,15 @@ install:
 depends:
 	@(for DIR in ${DIRS};						\
 		do							\
-			TMP=$$PWD; echo "${T_A}: $@: $$DIR";	 	\
+			TMP=`pwd`; echo "${T_A}: $@: $$DIR";	 	\
 			cd $$DIR/O.${T_A}; ${MAKE} ${MFLAGS} $@;	\
 			cd $$TMP;					\
 		done)
 
+clean:
+	@(for DIR in ${DIRS};						\
+		do							\
+			TMP=`pwd`; echo "${T_A}: $@: $$DIR";	 	\
+			cd $$DIR/O.${T_A}; ${MAKE} ${MFLAGS} $@;	\
+			cd $$TMP;					\
+		done)

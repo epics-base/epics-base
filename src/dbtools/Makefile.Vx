@@ -1,6 +1,6 @@
 EPICS = ../../../..
 include Target.include
-include $(EPICS)/config/CONFIG
+include $(EPICS)/config/CONFIG_BASE
 
 LEX = $(ELEX)
 YACC = $(EYACC)
@@ -9,11 +9,11 @@ LEXOPT = -L
 
 SRCS = ../dbVarSub.c dbLoadTemplate_lex.c dbLoadTemplate.c \
 		dbLoadRecords_lex.c dbLoadRecords.c
-OBJS =
-LIBOBJS = dbVarSub.o dbLoadTemplate.o dbLoadRecords.o
-LIBNAME = dbSubs
+OBJS = dbVarSub.o dbLoadTemplate.o dbLoadRecords.o
 
-all: install_libs install
+PROD = dbSubs
+
+include $(EPICS)/config/RULES.Vx
 
 dbLoadTemplate.o: dbLoadTemplate_lex.c
 dbLoadRecords.o: dbLoadRecords_lex.c 
@@ -27,5 +27,7 @@ clean::
 	rm -f dbLoadTemplate_lex.c dbLoadTemplate.c dbLoadRecords_lex.c \
 			dbLoadRecords.c subtool dbLoadTemplate dbSubs
 
-include $(EPICS)/config/RULES.Vx
+dbSubs: $(OBJS)
+	$(RM) $@
+	$(LINK.c) $@ $(OBJS) $(LDLIBS)
 

@@ -1,8 +1,9 @@
 EPICS = ../../../..
 include Target.include
-include $(EPICS)/config/CONFIG
+include $(EPICS)/config/CONFIG_BASE
 
 USR_CFLAGS = -fshared-data -fvolatile -mnobitfield -traditional
+
 
 SRCS = \
 	../module_types.c ../drvXy010.c ../drvAb.c ../drvBb902.c \
@@ -28,26 +29,19 @@ OBJS = \
 OBJS1 = drvBitBus.o
 OBJS2 = drvPEPBitBus.o
 
-LIBOBJS =
 
 PROD1 = drvSup
 PROD2 = drvSupPEP
 
-PRODS = $(PROD1) $(PROD2)
-
-all: install
-
-install: install_prods
-
-install_prods: $(PRODS)
-	$(INSTALL) $(PRODS) $(EPICS_BASE_BIN)/$(T_A)
-
-build:: $(PROD1) $(PROD2)
-
-$(PROD1): $(OBJS) $(OBJS1)
-	$(LINK.c) $@ $? $(LDLIBS)
-
-$(PROD2): $(OBJS) $(OBJS2)
-	$(LINK.c) $@ $? $(LDLIBS)
+PROD = $(PROD1) $(PROD2)
 
 include $(EPICS)/config/RULES.Vx
+
+$(PROD1): $(OBJS) $(OBJS1)
+	$(LINK.c) $@ $(OBJS) $(OBJS1) $(LDLIBS)
+
+$(PROD2): $(OBJS) $(OBJS2)
+	$(LINK.c) $@ $(OBJS) $(OBJS2) $(LDLIBS)
+
+clean::
+	@rm drvSup drvSupPEP

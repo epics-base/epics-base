@@ -13,6 +13,9 @@
 #         install because the release.% syntax is illegal.
 #
 # $Log$
+# Revision 1.12  1994/08/21  00:55:51  mcn
+# New stuff.
+#
 # Revision 1.11  1994/08/19  15:38:01  mcn
 # Dependencies are now generated with a "make release".
 #
@@ -24,50 +27,72 @@
 EPICS=..
 include $(EPICS)/config/CONFIG_SITE
 
+T_A = ${BUILD_ARCHS}
+
 all: install
 
 pre_build:
-	@(for ARCH in ${BUILD_ARCHS};					\
+	@(for ARCH in ${T_A};					\
 		do							\
 			${MAKE} ${MFLAGS} $@.$$ARCH;			\
 		done)
 
 build_libs:
-	@(for ARCH in ${BUILD_ARCHS};					\
+	@(for ARCH in ${T_A};					\
 		do							\
 			${MAKE} ${MFLAGS} $@.$$ARCH;			\
 		done)
 
 install_libs:
-	@(for ARCH in ${BUILD_ARCHS};					\
+	@(for ARCH in ${T_A};					\
+		do							\
+			${MAKE} ${MFLAGS} $@.$$ARCH;			\
+		done)
+
+build_prod:
+	@(for ARCH in ${T_A};					\
+		do							\
+			${MAKE} ${MFLAGS} $@.$$ARCH;			\
+		done)
+
+install_prod:
+	@(for ARCH in ${T_A};					\
+		do							\
+			${MAKE} ${MFLAGS} $@.$$ARCH;			\
+		done)
+
+install_man:
+	@(for ARCH in ${T_A};					\
+		do							\
+			${MAKE} ${MFLAGS} $@.$$ARCH;			\
+		done)
+
+install_includes:
+	@(for ARCH in ${T_A};					\
 		do							\
 			${MAKE} ${MFLAGS} $@.$$ARCH;			\
 		done)
 
 build:
-	@(for ARCH in ${BUILD_ARCHS};					\
+	@(for ARCH in ${T_A};					\
 		do							\
 			${MAKE} ${MFLAGS} $@.$$ARCH;			\
 		done)
 
-#  For installs, SDR utilities must be built if the current
-#	architecture is the host architecture.
-
 install:
-	@(for ARCH in ${BUILD_ARCHS};					\
+	@(for ARCH in ${T_A};					\
 		do							\
-			if [ "$$ARCH" = "${HOST_ARCH}" ];		\
-			then						\
-				${MAKE} ${MFLAGS} sdr.$$ARCH;		\
-			else						\
-				${MAKE} ${MFLAGS} $@.$$ARCH;		\
-			fi						\
+			${MAKE} ${MFLAGS} $@.$$ARCH;			\
 		done)
 
-sdr: sdr.${HOST_ARCH}
-
 depends:
-	@(for ARCH in ${BUILD_ARCHS};					\
+	@(for ARCH in ${T_A};					\
+		do							\
+			${MAKE} ${MFLAGS} $@.$$ARCH;			\
+		done)
+
+clean:
+	@(for ARCH in ${T_A};					\
 		do							\
 			${MAKE} ${MFLAGS} $@.$$ARCH;			\
 		done)
@@ -80,9 +105,9 @@ built_release: depends install
 	@echo TOP: Creating Fully Built Release...
 	@tools/MakeRelease -b
 
-clean:
-	@echo "TOP: Cleaning"
-	@tools/Clean
+#clean:
+#	@echo "TOP: Cleaning"
+#	@tools/Clean
 
 #  Notes for single architecture build rules:
 #    CheckArch only has to be run for dirs.% .  That
@@ -102,99 +127,56 @@ clean:
 #     basis.
 
 dirs.%:
+	@echo ------------------CheckArch $*
 	@tools/CheckArch $*
 	@echo $*: Creating Directories
 	@tools/MakeDirs $*
 
-# Pre_build RULE  syntax:  make pre_build.arch
-#                  e.g.:   make pre_build.arch
-#
-#  Build libraries  (depends must be finished)
-
 pre_build.%: dirs.%
 	@echo $*: Performing Pre Build
-	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs pre_build
+	@${MAKE} ${MFLAGS} ARCH=$* -f Makefile.subdirs pre_build
 
-# Build_libs RULE  syntax:  make build_libs.arch
-#                  e.g.:    make build_libs.arch
-#
-#  Build libraries  (depends must be finished)
 
-build_libs.%: pre_build.%
+build_libs.%: dirs.%
 	@echo $*: Building Libraries
-	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs build_libs
+	@${MAKE} ${MFLAGS} ARCH=$* -f Makefile.subdirs build_libs
 
-# Install_libs RULE  syntax:  make install_libs.arch
-#                    e.g.:    make install_libs.mv167
-#
-#  Create dependencies for an architecture.  We MUST
-#     do this separately for each architecture because
-#     some things may be included on a per architecture 
-#     basis.
 
-install_libs.%: build_libs.%
+install_libs.%: dirs.%
 	@echo $*: Installing Libraries
-	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs install_libs
+	@${MAKE} ${MFLAGS} ARCH=$* -f Makefile.subdirs install_libs
 
-# Build RULE  syntax:  make build.arch
-#             e.g.:    make build.mv167
-#
-#  Build executables/libraries for a particular architecture
-#
-#  Note:
-#      Depends must be completed before the build is finished.
-#
-
-build.%: install_libs.% 
+build_prod.%: dirs.% 
 	@echo $*: Building
-	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs
+	@${MAKE} ${MFLAGS} ARCH=$* -f Makefile.subdirs build_prod
 
-# Install RULE  syntax:  make install.arch
-#               e.g.:    make install.mv167
-#
-#  Install binaries for a particular architecture
-#
-#  Note:
-#      The build must be completed before you can install.
-#
+install_prod.%: dirs.% 
+	@echo $*: Building
+	@${MAKE} ${MFLAGS} ARCH=$* -f Makefile.subdirs install_prod
 
-install.%: build.%
+install_man.%: dirs.% 
+	@echo $*: Building
+	@${MAKE} ${MFLAGS} ARCH=$* -f Makefile.subdirs install_man
+
+install_includes.%: dirs.% 
+	@echo $*: Building
+	@${MAKE} ${MFLAGS} ARCH=$* -f Makefile.subdirs install_includes
+
+build.%: dirs.% 
+	@echo $*: Building
+	@${MAKE} ${MFLAGS} ARCH=$* -f Makefile.subdirs build
+
+install.%: dirs.%
 	@echo $*: Installing
-	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs install
-
-# SDR RULES 	syntax:  make sdr.arch
-#		e.g.:    make sdr.sun4
-#
-# Builds headers for SDR utilities.  sdr_no_install does not
-#	make sure the objects for a particular arch are
-#	installed before it runs the SDR utilities.
-
-sdr.%: install.%
-	@echo $*: Making SDR;						\
-	cd rec;								\
-	${MAKE} ${MFLAGS} T_A=$* -f Makefile.Unix
-
-sdr_no_install.%:
-	@echo $*: Making SDR;						\
-	cd rec;								\
-	${MAKE} ${MFLAGS} T_A=$* -f Makefile.Unix
-	
-# Depends RULE  syntax:  make depends.arch
-#               e.g.:    make depends.mv167
-#
-#  Create dependencies for an architecture.  We MUST
-#     do this separately for each architecture because
-#     some things may be included on a per architecture 
-#     basis.
-#
-#  This dependency must be invoked manually, it is
-#     not automatic in the build.  However, since depends
-#     are precomputed, this does not have to be done by
-#     most sites.
+	@${MAKE} ${MFLAGS} ARCH=$* -f Makefile.subdirs install
 
 depends.%: dirs.%
 	@echo $*: Performing Make Depends
-	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs depends
+	@${MAKE} ${MFLAGS} ARCH=$* -f Makefile.subdirs depends
+
+clean.%: dirs.%
+	@echo $*: Performing Make Depends
+	@${MAKE} ${MFLAGS} ARCH=$* -f Makefile.subdirs clean
 
 # Illegal Syntax
 
@@ -210,7 +192,7 @@ release.%:
 #  Clean files for a particular architecture
 #
 
-clean.%:
-	@echo "$*: Cleaning"
-	@tools/Clean $*
+#clean.%:
+#	@echo "$*: Cleaning"
+#	@tools/Clean $*
 

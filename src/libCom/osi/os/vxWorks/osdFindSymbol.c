@@ -1,4 +1,4 @@
-/* osi/os/vxWorks/osiFindGlobalSymbol */
+/* osi/os/vxWorks/osiFindSymbol */
 
 #include <vxWorks.h>
 #include <stdlib.h>
@@ -8,8 +8,8 @@
 #include <sysSymTbl.h>
 
 #include "dbmf.h"
-#include "epicsFindGlobalSymbol.h"
-void *epicsFindGlobalSymbol(const char *name)
+#include "epicsFindSymbol.h"
+void *epicsFindSymbol(const char *name)
 {
     STATUS status;
     SYM_TYPE type;

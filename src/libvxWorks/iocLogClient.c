@@ -32,19 +32,31 @@
  * -----------------
  * .00 joh 080791  	Created
  * .01 joh 081591	Added epics env config
+ * .02 joh 011995	Allow stdio also	
  */
+
+#include <string.h>
+#include <stdio.h>
 
 #include <vxWorks.h>
 #include <ioLib.h>
 #include <taskLib.h>
+
 #include <socket.h>
 #include <in.h>
+
 #include <inetLib.h>
+#include <errnoLib.h>
+#include <logLib.h>
+#include <sockLib.h>
+
+
 #include <envDefs.h>
 
 
-int 			iocLogFD = ERROR;
-int 			iocLogDisable;
+FILE	*iocLogFile = NULL;
+int 	iocLogFD = ERROR;
+int 	iocLogDisable;
 
 static long 		ioc_log_port;
 static struct in_addr 	ioc_log_addr;
@@ -73,8 +85,12 @@ iocLogInit()
 
 	status = getConfig();
 	if(status<0){
-		logMsg("iocLogClient: EPICS environment under specified\n");
-		logMsg("iocLogClient: failed to initialize\n");
+		logMsg (
+			"iocLogClient: EPICS environment under specified\n",
+			0,0,0,0,0,0);
+		logMsg (
+			"iocLogClient: failed to initialize\n",
+			0,0,0,0,0,0);
 		return ERROR;
 	}
 
@@ -83,7 +99,9 @@ iocLogInit()
 		      SOCK_STREAM,	/* type         */
 		      0);		/* deflt proto  */
 	if (sock < 0){
-		logMsg("iocLogClient: no socket errno %d\n", errnoGet(0));
+		logMsg(	"iocLogClient: no socket errno %d\n", 
+			errnoGet(),
+			0,0,0,0,0);
 		return ERROR;
 	}
 
@@ -99,21 +117,26 @@ iocLogInit()
 	/* connect */
 	status = connect(
 			 sock,
-			 &addr,
-			 sizeof addr);
+			 (struct sockaddr *)&addr,
+			 sizeof(addr));
 	if (status < 0) {
 		char name[INET_ADDR_LEN];
 
 		inet_ntoa_b(addr.sin_addr, name);
-		logMsg("iocLogClient: unable to connect to `%s' at port %d\n", 
-			name,
-			addr.sin_port);
-		printErrno(errnoGet(0));
+		logMsg(
+	"iocLogClient: unable to connect to %s port %d because \"%s\"\n", 
+			(int) name,
+			addr.sin_port,
+			(int) strerror(errnoGet()),
+			0,0,0);
 		close(sock);
 		return ERROR;
 	}
 
-	logFdAdd(sock);
+	logFdAdd (sock);
+
+	iocLogFile = fdopen (sock, "a");
+
 	iocLogFD = sock;
 
 	return OK;
@@ -131,9 +154,7 @@ iocLogInit()
 static int
 getConfig()
 {
-	char	inet_address_string[64];
 	long	status;
-	char	*pstring;
 
 	status = envGetLongConfigParam(
 			&EPICS_IOC_LOG_PORT, 
@@ -166,8 +187,9 @@ static void
 failureNoptify(pparam)
 ENV_PARAM       *pparam;
 {
-	logMsg(	"IocLogClient: EPICS environment variable `%s' undefined\n",
-		pparam->name);
+	logMsg(	"IocLogClient: EPICS environment variable \"%s\" undefined\n",
+		(int) pparam->name,
+		0,0,0,0,0);
 }
 
 

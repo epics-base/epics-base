@@ -3,9 +3,9 @@ include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
 
-SRCS.c = ../iocLogClient.c ../veclist.c
+SRCS.c = ../iocLogClient.c ../veclist.c 
 
-OBJS = veclist.o iocLogClient.o
+OBJS = veclist.o iocLogClient.o 
 
 PROD = vxComLib
 

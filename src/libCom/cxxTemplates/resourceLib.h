@@ -240,7 +240,11 @@ protected:
 // 
 // NOTE: ITEM must public inherit from chronIntIdRes <ITEM>
 //
-typedef intId<unsigned, 8u, sizeof(unsigned)*CHAR_BIT> chronIntId;
+class chronIntId : public intId<unsigned, 8u, sizeof(unsigned)*CHAR_BIT> 
+{
+public:
+    chronIntId ( const unsigned &idIn );
+};
 
 template <class ITEM>
 class chronIntIdResTable : public resTable<ITEM, chronIntId> {
@@ -289,6 +293,7 @@ public:
     static const unsigned minIndexBitWidth ();
 
 private:
+    stringId & operator = ( const stringId & );
     const char * pStr;
     const allocationType allocType;
     static const unsigned char fastHashPermutedIndexSpace[256];
@@ -305,7 +310,7 @@ template <class T, class ID>
 resTable<T,ID>::resTable (unsigned nHashTableEntries) :
     nInUse (0) 
 {
-    unsigned nbits, mask;
+    unsigned nbits, mask = 0u;
 
     //
     // count the number of bits in the hash index
@@ -602,6 +607,8 @@ inline T * resTableIter<T,ID>::operator () ()
 //////////////////////////////////////////////
 // chronIntIdResTable<ITEM> member functions
 //////////////////////////////////////////////
+inline chronIntId::chronIntId ( const unsigned &idIn ) : 
+    intId<unsigned, 8u, sizeof(unsigned)*CHAR_BIT> ( idIn ) {}
 
 //
 // chronIntIdResTable<ITEM>::chronIntIdResTable()

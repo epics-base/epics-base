@@ -755,8 +755,6 @@ void ca_process_exit()
 {
 	chid            	chix;
 	chid            	chixNext;
-	evid            	monix;
-	evid            	monixNext;
 	IIU			*piiu;
 	int             	status;
 

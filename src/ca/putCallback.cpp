@@ -49,15 +49,16 @@ void putCallback::exception (
     int status, const char * /* pContext */, 
     unsigned type, arrayElementCount count )
 {
-    struct event_handler_args args;
-
-    args.usr = this->pPrivate;
-    args.chid = & this->chan;
-    args.type = type;
-    args.count = count;
-    args.status = status;
-    args.dbr = 0;
-    ( *this->pFunc ) (args);
+    if ( status != ECA_CHANDESTROY ) {
+        struct event_handler_args args;
+        args.usr = this->pPrivate;
+        args.chid = & this->chan;
+        args.type = type;
+        args.count = count;
+        args.status = status;
+        args.dbr = 0;
+        ( *this->pFunc ) (args);
+    }
     delete this;
 }
 

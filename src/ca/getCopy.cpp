@@ -64,8 +64,11 @@ void getCopy::completion ( unsigned typeIn,
 void getCopy::exception (
     int status, const char *pContext, unsigned /* typeIn */, arrayElementCount /* countIn */ )
 {
-    this->cacCtx.exception ( status, pContext, 
-        __FILE__, __LINE__, this->chan, this->type, this->count, CA_OP_GET );
+    if ( status != ECA_CHANDESTROY ) {
+        this->cacCtx.exception ( status, pContext, 
+            __FILE__, __LINE__, this->chan, this->type, 
+            this->count, CA_OP_GET );
+    }
     delete this;
 }
 

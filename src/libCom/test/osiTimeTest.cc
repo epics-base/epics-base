@@ -6,7 +6,6 @@
 #include <winsock.h>
 #endif
 
-#include "tsDefs.h"
 #include "osiTime.h"
 #include "osiSleep.h"
 #include "epicsAssert.h"

@@ -224,7 +224,6 @@ osiTime::operator tm_nano_sec () const
 {
 	tm_nano_sec tm;
 	time_t_wrapper ansiTimeTicks;
-    struct tm *p;
 
 	ansiTimeTicks = *this;
 

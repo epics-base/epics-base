@@ -412,7 +412,7 @@ inline epicsUInt16 comBuf::popUInt16 ()
     }
     unsigned byte1 = this->buf[ this->nextReadIndex++ ];
     unsigned byte2 = this->buf[ this->nextReadIndex++ ];
-    return static_cast < epicsUInt16 > ( byte1 << ( 8u | byte2 ) );
+    return static_cast < epicsUInt16 > ( ( byte1 << 8u ) | byte2 );
 }
 
 inline epicsUInt32 comBuf::popUInt32 () 

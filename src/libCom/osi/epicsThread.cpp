@@ -46,19 +46,34 @@ extern "C" void epicsThreadCallEntryPoint ( void * pPvt )
     }
     catch ( std::exception & except ) {
         if ( ! waitRelease ) {
+            epicsTime cur = epicsTime::getCurrent ();
+            char date[64];
+            cur.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S.%f");
             char name [128];
             epicsThreadGetName ( pThread->id, name, sizeof ( name ) );
             errlogPrintf ( 
-                "epicsThread: Unexpected C++ exception \"%s\" with type \"%s\" - terminating thread \"%s\"",
-                except.what (), typeid ( except ).name (), name );
+                "epicsThread: Unexpected C++ exception \"%s\" with type \"%s\" in thread \"%s\" at %s\n",
+                except.what (), typeid ( except ).name (), name, date );
+            // this should behave as the C++ implementation intends when an 
+            // exception isnt handled. If users dont like this behavior, they 
+            // can install an application specific unexpected handler.
+            std::unexpected (); 
         }
     }
     catch ( ... ) {
         if ( ! waitRelease ) {
+            epicsTime cur = epicsTime::getCurrent ();
+            char date[64];
+            cur.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S.%f");
             char name [128];
             epicsThreadGetName ( pThread->id, name, sizeof ( name ) );
             errlogPrintf ( 
-                "epicsThread: Unknown C++ exception - terminating thread \"%s\"", name );
+                "epicsThread: Unknown C++ exception in thread \"%s\" at %s\n",
+                name, date );
+            // this should behave as the C++ implementation intends when an 
+            // exception isnt handled. If users dont like this behavior, they 
+            // can install an application specific unexpected handler.
+            std::unexpected ();
         }
     }
     if ( ! waitRelease ) {

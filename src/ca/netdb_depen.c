@@ -39,7 +39,7 @@ static char	*sccsId = "@(#) $Id$";
 #include <string.h>
 
 #ifdef _WIN32
-#	include <windows.h>
+#	include <winsock2.h>
 #else
 #	include <sys/types.h>
 #	include <sys/socket.h>

@@ -127,7 +127,7 @@
 #   include <sys/time.h>
 #   include <sys/socket.h>
 #elif defined(_WIN32)
-#   include <windows.h>
+#   include <winsock2.h>
 #   include <time.h>
 #   include <mmsystem.h>
 #else

@@ -8,7 +8,7 @@ extern "C" {
 #pragma warning (disable:4237)
 #include <time.h>
 #include <errno.h>
-#include <windows.h>
+#include <winsock2.h>
 
 #ifdef __cplusplus
 }

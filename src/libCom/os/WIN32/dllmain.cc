@@ -35,7 +35,7 @@
  *      -----------------
  */
 
-#include <windows.h>
+#include <winsock2.h>
 #include <stdio.h>
 
 #include "epicsVersion.h"

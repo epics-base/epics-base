@@ -1,6 +1,6 @@
 
 #include <time.h>
-#include <windows.h>
+#include <winsock2.h>
 #include <mmsystem.h>
 
 #define epicsExportSharedSymbols

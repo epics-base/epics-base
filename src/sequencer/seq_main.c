@@ -23,6 +23,7 @@
 04dec91,ajk	Implemented state program linked list, eliminating need for
 		task variables.
 11dec91,ajk	Cleaned up comments.
+05feb92,ajk	Decreased minimum allowable stack size to SPAWN_STACK_SIZE/2.
 ***************************************************************************/
 /*#define	DEBUG	1*/
 
@@ -127,14 +128,16 @@ int		stack_size;	/* optional stack size (bytes) */
 	seq_logInit(pSP);
 
 	/* Specify stack size */
+	if (stack_size == 0)
+		stack_size = SPAWN_STACK_SIZE;
 	pname = "stack";
 	pvalue = seqMacValGet(pname, strlen(pname), pSP->mac_ptr);
 	if (pvalue != NULL && strlen(pvalue) > 0)
 	{
 		sscanf(pvalue, "%d", &stack_size);
 	}
-	if (stack_size < SPAWN_STACK_SIZE)
-		stack_size = SPAWN_STACK_SIZE;
+	if (stack_size < SPAWN_STACK_SIZE/2)
+		stack_size = SPAWN_STACK_SIZE/2;
 
 	/* Specify task name */
 	pname = "name";

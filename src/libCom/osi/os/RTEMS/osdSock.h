@@ -55,6 +55,7 @@ typedef int osiSockIoctl_t;
 #define SOCK_EINTR EINTR
 #define SOCK_EPIPE EPIPE
 #define SOCK_EMFILE EMFILE
+#define SOCK_SHUTDOWN ESHUTDOWN
 
 #define bzero(p,n) memset(p,0,n)
 #include <sys/time.h>

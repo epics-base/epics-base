@@ -64,6 +64,7 @@ typedef int osiSockIoctl_t;
 #define SOCK_EINTR EINTR
 #define SOCK_EPIPE EPIPE
 #define SOCK_EMFILE EMFILE
+#define SOCK_SHUTDOWN ESHUTDOWN
 
 #define INADDR_LOOPBACK 0x7F000001
 

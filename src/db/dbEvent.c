@@ -1,4 +1,3 @@
-
 /* dbEvent.c */
 /* share/src/db $Id$ */
 
@@ -34,6 +33,7 @@ mrk(anl)07	09-18-90	Made changes for new record and device support
 #include	<semLib.h>
 
 #include	<dbDefs.h>
+#include	<tsDefs.h>
 #include	<dbCommon.h>
 #include	<dbAccess.h>
 #include	<taskParams.h>

@@ -1,3 +1,4 @@
+
 /* recGbl.c - Global record processing routines */
 /* share/src/db $Id$ */
 
@@ -36,7 +37,7 @@
 *
 **************************************************************************/
 
-recGblDbaddrError(status,paddr,pcaller_name)
+void recGblDbaddrError(status,paddr,pcaller_name)
 long		status;
 struct dbAddr	*paddr;	
 char		*pcaller_name;	/* calling routine name*/
@@ -65,7 +66,7 @@ char		*pcaller_name;	/* calling routine name*/
 	return;
 }
 
-recGblRecordError(status,precord,pcaller_name)
+void recGblRecordError(status,precord,pcaller_name)
 long		status;
 struct dbCommon *precord;	
 char		*pcaller_name;	/* calling routine name*/
@@ -89,7 +90,7 @@ char		*pcaller_name;	/* calling routine name*/
 	return;
 }
 
-recGblRecSupError(status,paddr,pcaller_name,psupport_name)
+void recGblRecSupError(status,paddr,pcaller_name,psupport_name)
 long		status;
 struct dbAddr	*paddr;
 char		*pcaller_name;

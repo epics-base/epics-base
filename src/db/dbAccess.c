@@ -1,3 +1,4 @@
+
 /* dbAccess.c */
 /* share/src/db $Id$ */
 
@@ -206,7 +207,7 @@ long dbProcess(paddr)
 	struct rset	*prset;
 	struct dbCommon *precord=(struct dbCommon *)(paddr->precord);
 	long		status;
-	
+    
 	/* If already active dont process */
 	if(precord->pact) {
 	        struct rset     *prset;
@@ -260,7 +261,6 @@ long dbProcess(paddr)
 
 	/* process record */
 	status = (*prset->process)(paddr);
-
 
 	return(status);
 
@@ -418,26 +418,12 @@ long dbBufferSize(dbr_type,options,no_elements)
     if(options & DBR_PRECISION) nbytes += dbr_precision_size;
     if(options & DBR_TIME)	nbytes += dbr_time_size;
     if(options & DBR_ENUM_STRS)	nbytes += dbr_enumStrs_size;
-    if(options&
-    (DBR_GR_UCHAR|DBR_GR_SHORT|DBR_GR_LONG|DBR_GR_ULONG|DBR_GR_FLOAT
-    |DBR_GR_DOUBLE)) {
-	if(options & DBR_GR_UCHAR)nbytes += dbr_grUchar_size;
-	else if(options & DBR_GR_SHORT)	nbytes += dbr_grShort_size;
-	else if(options & DBR_GR_LONG)	nbytes += dbr_grLong_size;
-	else if(options & DBR_GR_ULONG)	nbytes += dbr_grUlong_size;
-	else if(options & DBR_GR_FLOAT)	nbytes += dbr_grFloat_size;
-	else if(options & DBR_GR_DOUBLE)nbytes += dbr_grDouble_size;
-    }
-    if(options&
-    (DBR_CTRL_UCHAR|DBR_CTRL_SHORT|DBR_CTRL_LONG|DBR_CTRL_ULONG|DBR_CTRL_FLOAT
-    |DBR_CTRL_DOUBLE)) {
-	if(options & DBR_CTRL_UCHAR)     nbytes += dbr_ctrlUchar_size;
-	else if(options & DBR_CTRL_SHORT)nbytes += dbr_ctrlShort_size;
-	else if(options & DBR_CTRL_LONG) nbytes += dbr_ctrlLong_size;
-	else if(options & DBR_CTRL_ULONG)nbytes += dbr_ctrlUlong_size;
-	else if(options & DBR_CTRL_FLOAT)nbytes += dbr_ctrlFloat_size;
-	else if(options & DBR_CTRL_DOUBLE)nbytes += dbr_ctrlDouble_size;
-    }
+    if(options & DBR_GR_LONG)	nbytes += dbr_grLong_size;
+    if(options & DBR_GR_DOUBLE)	nbytes += dbr_grDouble_size;
+    if(options & DBR_CTRL_LONG) nbytes += dbr_ctrlLong_size;
+    if(options & DBR_CTRL_DOUBLE)nbytes += dbr_ctrlDouble_size;
+    if(options & DBR_AL_LONG)   nbytes += dbr_alLong_size;
+    if(options & DBR_AL_DOUBLE) nbytes += dbr_alDouble_size;
     return(nbytes);
 }
 
@@ -3007,6 +2993,12 @@ long (*get_convert_table[DBF_DEVCHOICE+1][DBR_ENUM+1])() = {
 };
 
 
+/* forward references for private routines used by dbGetField */
+void get_enum_strs();
+void get_graphics();
+void get_control();
+void get_alarm();
+
 long dbGetField(paddr,dbrType,pbuffer,options,nRequest)
 struct dbAddr	*paddr;
 short		dbrType;
@@ -3021,6 +3013,7 @@ long		*nRequest;
 	long		(*pconvert_routine)();
 	struct dbCommon *pcommon;
 	long		status;
+	long		*perr_status=NULL;
 
 
 	prset=GET_PRSET(paddr->record_type);
@@ -3032,6 +3025,8 @@ long		*nRequest;
 	if( (*options) & DBR_STATUS ) {
 	    *((unsigned short *)pbuffer)++ = pcommon->stat;
 	    *((unsigned short *)pbuffer)++ = pcommon->sevr;
+	    perr_status=((long *)pbuffer)++;
+	    *perr_status = 0;
 	}
 	if( (*options) & DBR_UNITS ) {
 	    if( prset && prset->get_units ){ 
@@ -3043,8 +3038,12 @@ long		*nRequest;
 	    pbuffer += dbr_units_size;
 	}
 	if( (*options) & DBR_PRECISION ) {
+	    struct dbr_precision *pdbr_precision=( struct dbr_precision *)pbuffer;
+
 	    if((field_type==DBF_FLOAT || field_type==DBF_DOUBLE) &&  prset && prset->get_precision ){ 
 		(*prset->get_precision)(paddr,pbuffer);
+		if(pdbr_precision->field_width<=0)
+			pdbr_precision->field_width = pdbr_precision->precision + 5;
 	    } else {
 		bzero(pbuffer,dbr_precision_size);
 		*options = (*options) ^ DBR_PRECISION; /*Turn off DBR_PRECISION*/
@@ -3052,17 +3051,16 @@ long		*nRequest;
 	    pbuffer += dbr_precision_size;
 	}
 	if( (*options) & DBR_TIME ) {
-	    *((unsigned long *)pbuffer)++ = pcommon->esec;
-	    *((unsigned long *)pbuffer)++ = pcommon->nsec;
+	    *((unsigned long *)pbuffer)++ = pcommon->time.secPastEpoch;
+	    *((unsigned long *)pbuffer)++ = pcommon->time.nsec;
 	}
-	/* get_enum_strs, get_graphics, and get_control follow this procedure*/
 	if( (*options) & DBR_ENUM_STRS ) get_enum_strs(paddr,&pbuffer,prset,options);
-	if( (*options) & (DBR_GR_UCHAR | DBR_GR_SHORT | DBR_GR_LONG
-                        | DBR_GR_ULONG | DBR_GR_FLOAT | DBR_GR_DOUBLE ))
+	if( (*options) & (DBR_GR_LONG|DBR_GR_DOUBLE ))
 			get_graphics(paddr,&pbuffer,prset,options);
-	if((*options) & (DBR_CTRL_UCHAR | DBR_CTRL_SHORT | DBR_CTRL_LONG
-          		| DBR_CTRL_ULONG | DBR_CTRL_FLOAT | DBR_CTRL_DOUBLE ))
+	if((*options) & (DBR_CTRL_LONG | DBR_CTRL_DOUBLE ))
 			get_control(paddr,&pbuffer,prset,options);
+	if((*options) & (DBR_AL_LONG | DBR_AL_DOUBLE ))
+			get_alarm(paddr,&pbuffer,prset,options);
 
 
 GET_DATA:
@@ -3074,6 +3072,7 @@ GET_DATA:
 
 		sprintf(message,"dbGetField - database request type is %d",dbrType);
 		recGblDbaddrError(S_db_badDbrtype,paddr,message);
+		if(perr_status) *perr_status = S_db_badDbrtype;
 		return(S_db_badDbrtype);
 	}
 	
@@ -3088,20 +3087,21 @@ GET_DATA:
 
 		sprintf(message,"dbGetField - database request type is %d",dbrType);
 		recGblDbaddrError(S_db_badDbrtype,paddr,message);
+		if(perr_status) *perr_status = S_db_badDbrtype;
 		return(S_db_badDbrtype);
 	}
 	/* convert database field to buffer type and place it in the buffer */
 	status=(*pconvert_routine)(paddr,pbuffer,*nRequest,no_elements,offset);
+	if(perr_status) *perr_status = status;
         return(status);
 }
 
-static get_enum_strs(paddr,ppbuffer,prset,options)
+static void get_enum_strs(paddr,ppbuffer,prset,options)
 struct dbAddr	*paddr;
 char		**ppbuffer;
 struct rset	*prset;
 long		*options;
 {
-	char			*pbuffer=*ppbuffer;
 	short			field_type=paddr->field_type;
 	struct choiceSet	*pchoiceSet;
 	struct arrChoiceSet	*parrChoiceSet;
@@ -3109,15 +3109,15 @@ long		*options;
 	struct devChoiceSet	*pdevChoiceSet;
 	unsigned long		no_str;
 	char			*ptemp;
-	struct dbr_enumStrs	*pdbr_enumStrs;
+	struct dbr_enumStrs	*pdbr_enumStrs=(struct dbr_enumStrs*)(*ppbuffer);
 	int			i;
 
+	bzero(pdbr_enumStrs,dbr_enumStrs_size);
 	switch(field_type) {
 		case DBF_ENUM:
 		    if( prset && prset->get_enum_strs ) {
-			(*prset->get_enum_strs)(paddr,pbuffer);
+			(*prset->get_enum_strs)(paddr,pdbr_enumStrs);
 		    } else {
-			bzero(pbuffer,dbr_enumStrs_size);
 			*options = (*options)^DBR_ENUM_STRS;/*Turn off option*/
 		    }
 		    break;
@@ -3133,14 +3133,13 @@ long		*options;
 		    pchoiceSet=GET_PCHOICE_SET(parrChoiceSet,paddr->choice_set);
 choice_common:
 		    if(pchoiceSet==NULL) {
-			bzero(pbuffer,dbr_enumStrs_size);
 			*options = (*options)^DBR_ENUM_STRS;/*Turn off option*/
 			break;
 		    }
 		    i = sizeof(pdbr_enumStrs->strs)/sizeof(pdbr_enumStrs->strs[0]);
 		    no_str=MIN(pchoiceSet->number,i);
-		    *(unsigned long*)pbuffer = no_str;
-		    ptemp = pbuffer + sizeof(unsigned long);
+		    pdbr_enumStrs->no_str = no_str;
+		    ptemp = &(pdbr_enumStrs->strs[0][0]);
 		    for (i=0; i<no_str; i++) {
 			if(pchoiceSet->papChoice[i]==NULL)
 			    *ptemp=0;
@@ -3153,14 +3152,13 @@ choice_common:
 		    pdevChoiceSet=GET_PDEV_CHOICE_SET(choiceDev,
 			paddr->record_type);
 		    if(pdevChoiceSet==NULL) {
-			bzero(pbuffer,dbr_enumStrs_size);
 			*options = (*options)^DBR_ENUM_STRS;/*Turn off option*/
 			break;
 		    }
 		    i = sizeof(pdbr_enumStrs->strs)/sizeof(pdbr_enumStrs->strs[0]);
 		    no_str=MIN(pdevChoiceSet->number,i);
-		    *(unsigned long*)pbuffer = no_str;
-		    ptemp = pbuffer + sizeof(unsigned long);
+		    pdbr_enumStrs->no_str = no_str;
+		    ptemp = &(pdbr_enumStrs->strs[0][0]);
 		    for (i=0; i<no_str; i++) {
 			pdevChoice=GET_DEV_CHOICE(pdevChoiceSet,i);
 			if(pdevChoice==NULL || pdevChoice->pchoice==NULL)
@@ -3171,7 +3169,6 @@ choice_common:
 		    }
 		    break;
 		default:
-		    bzero(pbuffer,dbr_enumStrs_size);
 		    *options = (*options)^DBR_ENUM_STRS;/*Turn off option*/
 		    break;
 	}
@@ -3179,7 +3176,7 @@ choice_common:
 	return;
 }
 
-static get_graphics(paddr,ppbuffer,prset,options)
+static void get_graphics(paddr,ppbuffer,prset,options)
 struct dbAddr	*paddr;
 char		**ppbuffer;
 struct rset	*prset;
@@ -3194,49 +3191,6 @@ long		*options;
 		(*prset->get_graphic_double)(paddr,&grd);
 		got_data=TRUE;
 	}
-	if( (*options) & (DBR_GR_UCHAR) ) {
-		char	*pbuffer=*ppbuffer;
-
-		if(got_data) {
-		    struct dbr_grUchar *pgr=(struct dbr_grUchar*)pbuffer;
-                    pgr->upper_disp_limit=MIN(255,MAX(0,grd.upper_disp_limit));
-                    pgr->lower_disp_limit=MIN(255,MAX(0,grd.lower_disp_limit));
-                    pgr->upper_alarm_limit=MIN(255,MAX(0,grd.upper_alarm_limit));
-                    pgr->upper_warning_limit=
-			MIN(255,MAX(0,grd.upper_warning_limit));
-                    pgr->lower_warning_limit=
-			MIN(255,MAX(0,grd.lower_warning_limit));
-                    pgr->lower_alarm_limit=
-			MIN(255,MAX(0,grd.lower_alarm_limit));
-		} else {
-		    bzero(pbuffer,dbr_grUchar_size);
-		    *options = (*options) ^ DBR_GR_UCHAR; /*Turn off option*/
-		}
-		*ppbuffer += dbr_grUchar_size;
-	}
-	if( (*options) & (DBR_GR_SHORT) ) {
-		char	*pbuffer=*ppbuffer;
-
-		if(got_data) {
-		    struct dbr_grShort *pgr=(struct dbr_grShort*)pbuffer;
-                    pgr->upper_disp_limit =
-			MIN(32767,MAX(-32768,grd.upper_disp_limit));
-                    pgr->lower_disp_limit =
-			MIN(32767,MAX(-32768,grd.lower_disp_limit));
-                    pgr->upper_alarm_limit =
-			MIN(32767,MAX(-32768,grd.upper_alarm_limit));
-                    pgr->upper_warning_limit =
-			MIN(32767,MAX(-32768,grd.upper_warning_limit));
-                    pgr->lower_warning_limit =
-			MIN(32767,MAX(-32768,grd.lower_warning_limit));
-                    pgr->lower_alarm_limit =
-			MIN(32767,MAX(-32768,grd.lower_alarm_limit));
-		} else {
-		    bzero(pbuffer,dbr_grShort_size);
-		    *options = (*options) ^ DBR_GR_SHORT; /*Turn off option*/
-		}
-		*ppbuffer += dbr_grShort_size;
-	}
 	if( (*options) & (DBR_GR_LONG) ) {
 		char	*pbuffer=*ppbuffer;
 
@@ -3244,55 +3198,11 @@ long		*options;
 		    struct dbr_grLong *pgr=(struct dbr_grLong*)pbuffer;
 		    pgr->upper_disp_limit = grd.upper_disp_limit;
 		    pgr->lower_disp_limit = grd.lower_disp_limit;
-		    pgr->upper_alarm_limit = grd.upper_alarm_limit;
-		    pgr->upper_warning_limit = grd.upper_warning_limit;
-		    pgr->lower_warning_limit = grd.lower_warning_limit;
-		    pgr->lower_alarm_limit = grd.lower_alarm_limit;
 		} else {
 		    bzero(pbuffer,dbr_grLong_size);
 		    *options = (*options) ^ DBR_GR_LONG; /*Turn off option*/
 		}
 		*ppbuffer += dbr_grLong_size;
-	}
-	if( (*options) & (DBR_GR_ULONG) ) {
-		char	*pbuffer=*ppbuffer;
-
-		if(got_data) {
-		    struct dbr_grUlong *pgr=(struct dbr_grUlong*)pbuffer;
-		    ltemp = grd.upper_disp_limit;
-		    pgr->upper_disp_limit = ltemp;
-		    ltemp = grd.lower_disp_limit;
-		    pgr->lower_disp_limit = ltemp;
-		    ltemp = grd.upper_alarm_limit;
-		    pgr->upper_alarm_limit = ltemp;
-		    ltemp = grd.upper_warning_limit;
-		    pgr->upper_warning_limit = ltemp;
-		    ltemp = grd.lower_warning_limit;
-		    pgr->lower_warning_limit = ltemp;
-		    ltemp = grd.lower_alarm_limit;
-		    pgr->lower_alarm_limit = ltemp;
-		} else {
-		    bzero(pbuffer,dbr_grUlong_size);
-		    *options = (*options) ^ DBR_GR_ULONG; /*Turn off option*/
-		}
-		*ppbuffer += dbr_grUlong_size;
-	}
-	if( (*options) & (DBR_GR_FLOAT) ) {
-		char	*pbuffer=*ppbuffer;
-
-		if(got_data) {
-		    struct dbr_grFloat *pgr=(struct dbr_grFloat*)pbuffer;
-		    pgr->upper_disp_limit = grd.upper_disp_limit;
-		    pgr->lower_disp_limit = grd.lower_disp_limit;
-		    pgr->upper_alarm_limit = grd.upper_alarm_limit;
-		    pgr->upper_warning_limit = grd.upper_warning_limit;
-		    pgr->lower_warning_limit = grd.lower_warning_limit;
-		    pgr->lower_alarm_limit = grd.lower_alarm_limit;
-		} else {
-		    bzero(pbuffer,dbr_grFloat_size);
-		    *options = (*options) ^ DBR_GR_FLOAT; /*Turn off option*/
-		}
-		*ppbuffer += dbr_grFloat_size;
 	}
 	if( (*options) & (DBR_GR_DOUBLE) ) {
 		char	*pbuffer=*ppbuffer;
@@ -3301,10 +3211,6 @@ long		*options;
 		    struct dbr_grDouble *pgr=(struct dbr_grDouble*)pbuffer;
 		    pgr->upper_disp_limit = grd.upper_disp_limit;
 		    pgr->lower_disp_limit = grd.lower_disp_limit;
-		    pgr->upper_alarm_limit = grd.upper_alarm_limit;
-		    pgr->upper_warning_limit = grd.upper_warning_limit;
-		    pgr->lower_warning_limit = grd.lower_warning_limit;
-		    pgr->lower_alarm_limit = grd.lower_alarm_limit;
 		} else {
 		    bzero(pbuffer,dbr_grDouble_size);
 		    *options = (*options) ^ DBR_GR_DOUBLE; /*Turn off option*/
@@ -3314,7 +3220,7 @@ long		*options;
 	return;
 }
 
-static get_control(paddr,ppbuffer,prset,options)
+static void get_control(paddr,ppbuffer,prset,options)
 struct dbAddr	*paddr;
 char		**ppbuffer;
 struct rset	*prset;
@@ -3329,36 +3235,6 @@ long		*options;
 		(*prset->get_control_double)(paddr,&ctrld);
 		got_data=TRUE;
 	}
-	if( (*options) & (DBR_CTRL_UCHAR) ) {
-		char	*pbuffer=*ppbuffer;
-
-		if(got_data) {
-		    struct dbr_ctrlUchar *pctrl=(struct dbr_ctrlUchar*)pbuffer;
-                    pctrl->upper_ctrl_limit =
-			MIN(255,MAX(0,ctrld.upper_ctrl_limit));
-                    pctrl->lower_ctrl_limit =
-			MIN(255,MAX(0,ctrld.lower_ctrl_limit));
-		} else {
-		    bzero(pbuffer,dbr_ctrlUchar_size);
-		    *options = (*options) ^ DBR_CTRL_UCHAR; /*Turn off option*/
-		}
-		*ppbuffer += dbr_ctrlUchar_size;
-	}
-	if( (*options) & (DBR_CTRL_SHORT) ) {
-		char	*pbuffer=*ppbuffer;
-
-		if(got_data) {
-		    struct dbr_ctrlShort *pctrl=(struct dbr_ctrlShort*)pbuffer;
-                    pctrl->upper_ctrl_limit =
-			MIN(32767,MAX(-32768,ctrld.upper_ctrl_limit));
-                    pctrl->lower_ctrl_limit =
-			MIN(32767,MAX(-32768,ctrld.lower_ctrl_limit));
-		} else {
-		    bzero(pbuffer,dbr_ctrlShort_size);
-		    *options = (*options) ^ DBR_CTRL_SHORT; /*Turn off option*/
-		}
-		*ppbuffer += dbr_ctrlShort_size;
-	}
 	if( (*options) & (DBR_CTRL_LONG) ) {
 		char	*pbuffer=*ppbuffer;
 
@@ -3372,34 +3248,6 @@ long		*options;
 		}
 		*ppbuffer += dbr_ctrlLong_size;
 	}
-	if( (*options) & (DBR_CTRL_ULONG) ) {
-		char	*pbuffer=*ppbuffer;
-
-		if(got_data) {
-		    struct dbr_ctrlUlong *pctrl=(struct dbr_ctrlUlong*)pbuffer;
-		    ltemp = ctrld.upper_ctrl_limit;
-		    pctrl->upper_ctrl_limit = ltemp;
-		    ltemp = ctrld.lower_ctrl_limit;
-		    pctrl->lower_ctrl_limit = ltemp;
-		} else {
-		    bzero(pbuffer,dbr_ctrlUlong_size);
-		    *options = (*options) ^ DBR_CTRL_ULONG; /*Turn off option*/
-		}
-		*ppbuffer += dbr_ctrlUlong_size;
-	}
-	if( (*options) & (DBR_CTRL_FLOAT) ) {
-		char	*pbuffer=*ppbuffer;
-
-		if(got_data) {
-		    struct dbr_ctrlFloat *pctrl=(struct dbr_ctrlFloat*)pbuffer;
-		    pctrl->upper_ctrl_limit = ctrld.upper_ctrl_limit;
-		    pctrl->lower_ctrl_limit = ctrld.lower_ctrl_limit;
-		} else {
-		    bzero(pbuffer,dbr_ctrlFloat_size);
-		    *options = (*options) ^ DBR_CTRL_FLOAT; /*Turn off option*/
-		}
-		*ppbuffer += dbr_ctrlFloat_size;
-	}
 	if( (*options) & (DBR_CTRL_DOUBLE) ) {
 		char	*pbuffer=*ppbuffer;
 
@@ -3412,6 +3260,54 @@ long		*options;
 		    *options = (*options) ^ DBR_CTRL_DOUBLE; /*Turn off option*/
 		}
 		*ppbuffer += dbr_ctrlDouble_size;
+	}
+	return;
+}
+
+static void get_alarm(paddr,ppbuffer,prset,options)
+struct dbAddr	*paddr;
+char		**ppbuffer;
+struct rset	*prset;
+long		*options;
+{
+	short			field_type=paddr->field_type;
+	struct			dbr_alDouble ald;
+	int			got_data=FALSE;
+	long	ltemp;/*vxWorks does not support double to unsigned long*/
+
+	if( prset && prset->get_alarm_double ) {
+		(*prset->get_alarm_double)(paddr,&ald);
+		got_data=TRUE;
+	}
+	if( (*options) & (DBR_GR_LONG) ) {
+		char	*pbuffer=*ppbuffer;
+
+		if(got_data) {
+		    struct dbr_alLong *pal=(struct dbr_alLong*)pbuffer;
+		    pal->upper_alarm_limit = ald.upper_alarm_limit;
+		    pal->upper_warning_limit = ald.upper_warning_limit;
+		    pal->lower_warning_limit = ald.lower_warning_limit;
+		    pal->lower_alarm_limit = ald.lower_alarm_limit;
+		} else {
+		    bzero(pbuffer,dbr_alLong_size);
+		    *options = (*options) ^ DBR_AL_LONG; /*Turn off option*/
+		}
+		*ppbuffer += dbr_alLong_size;
+	}
+	if( (*options) & (DBR_GR_DOUBLE) ) {
+		char	*pbuffer=*ppbuffer;
+
+		if(got_data) {
+		    struct dbr_alDouble *pal=(struct dbr_alDouble*)pbuffer;
+		    pal->upper_alarm_limit = ald.upper_alarm_limit;
+		    pal->upper_warning_limit = ald.upper_warning_limit;
+		    pal->lower_warning_limit = ald.lower_warning_limit;
+		    pal->lower_alarm_limit = ald.lower_alarm_limit;
+		} else {
+		    bzero(pbuffer,dbr_alDouble_size);
+		    *options = (*options) ^ DBR_AL_DOUBLE; /*Turn off option*/
+		}
+		*ppbuffer += dbr_alDouble_size;
 	}
 	return;
 }
@@ -3623,9 +3519,6 @@ long		offset;
     return(-1);
 }
 
-/* The next four routines are not used. I don't think that they should!!!*/
-
-
 static long putStringGchoice(paddr,pbuffer,nRequest,no_elements,offset)
 struct dbAddr	*paddr;
 char		*pbuffer;
@@ -5824,7 +5717,7 @@ long (*put_convert_table[DBR_ENUM+1][DBF_DEVCHOICE+1])() = {
 /* source is a DBR_STRING		*/
 {putStringString, putStringChar,   putStringUchar,  putStringShort,  putStringUshort,
  putStringLong,   putStringUlong,  putStringFloat,  putStringDouble, putStringEnum,
- putStringEnum,   putStringEnum,   putStringEnum,   putStringEnum},
+ putStringGchoice,putStringCchoice,putStringRchoice,putStringDchoice},
 /* source is a DBR_CHAR		*/
 {putCharString,   putCharChar,     putCharUchar,    putCharShort,    putCharUshort,
  putCharLong,     putCharUlong,    putCharFloat,    putCharDouble,   putCharEnum,

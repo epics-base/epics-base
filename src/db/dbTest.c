@@ -1,3 +1,4 @@
+
 /* dbTest.c */
 /* share/src/db $Id$ */
 
@@ -85,7 +86,6 @@
 #include	<dbPvd.h>
 #include	<link.h>
 
-#define BFSIZE 50
 #define MAXLINE 80
 struct msgBuff {		/* line output structure */
     char            out_buff[MAXLINE + 1];
@@ -190,6 +190,26 @@ long dbgf(pname)	/* get field value*/
 }
 
 
+/* vxWorks 4.x does not support strspn. Here it is*/
+static int strspn(ps,pp)
+char	*ps;	/* pointer to source*/
+char	*pp;	/* pointer to pattern*/
+{
+	int i;
+	char *p1=ps;
+	char *p2;
+
+	for (i=0; *p1; i++, p1++) {
+		for (p2=pp; *p2; p2++) {
+			if(*p1==*p2) goto ok;
+		}
+		return(i);
+ok:
+	continue;
+	}
+	return strlen(ps);
+}
+
 long dbpf(pname,pvalue)	/* put field value*/
 	char	*pname;
 	char	*pvalue;
@@ -198,12 +218,27 @@ long dbpf(pname,pvalue)	/* put field value*/
     struct dbAddr addr;
     long	  status;
 
+    /* make sure value was passed*/
+    if(pvalue==0) {
+	errMessage(0L,"No value was specified");
+	return(1);
+    }
     status=dbNameToAddr(pname,&addr);
     if(status) {
          errMessage(status,"dbNameToAddr error");
          return(1);
     }
-    status=dbPutField(&addr,DBR_STRING,pvalue,1L);
+    /* For enumerated types must allow for ENUM rather than string*/
+    /* If entire field is digits then use DBR_ENUM else DBR_STRING*/
+    if((addr.dbr_field_type==DBR_ENUM) && (*pvalue!=0)
+    &&  (strspn(pvalue,"0123456789")==strlen(pvalue))) {
+	    short value;
+
+	    sscanf(pvalue,"%hu",&value);
+	    status=dbPutField(&addr,DBR_ENUM,&value,1L);
+    } else {
+	status=dbPutField(&addr,DBR_STRING,pvalue,1L);
+    }
     if(status) {
          errMessage(status,"dbPutField error");
          return(1);
@@ -221,7 +256,6 @@ long dbpr(pname, interest_level)	/* print record */
     struct dbAddr    addr;
     long             status;
     char            *pmsg;
-    struct rset     *prset;
     int              tab_size;
 
     pmsg = pMsgBuff->message;
@@ -230,12 +264,7 @@ long dbpr(pname, interest_level)	/* print record */
     status = dbNameToAddr(pname, &addr);
     printDbAddr(status, &addr);
 
-    if (status)
-	return (1);
-    if (!(prset = GET_PRSET(addr.record_type))) {
-	printf("No record Support for this record type\n");
-	return (1);
-    }
+    if (status) return (1);
     if (dbpr_report(pname, &addr, interest_level, pMsgBuff, tab_size))
 	return (1);
     pmsg[0] = '\0';
@@ -267,7 +296,7 @@ long dbtr(pname)	/* test record and print*/
     status=dbProcess(&addr);
     if(!(RTN_SUCCESS(status)))
 	recGblRecSupError(S_db_noSupport,&addr,"dbtr","process");
-    dbpr(pname,0);
+    dbpr(pname,3);
     return(0);
 }
 
@@ -677,108 +706,28 @@ static void printBuffer(status, dbr_type, pbuffer, reqOptions,
 	    no_strs = *((unsigned long *) pbuffer);
 	    printf("no_strs=%lu\n", no_strs);
 	    for (i = 0; i < *((unsigned long *) pbuffer); i++)
-		printf("%s\n", (pbuffer + 4 + i * 26));
+		printf("%s\n", (pbuffer + 8 + i * 26));
 	} else
 	    printf("enum strings not returned\n");
 	pbuffer += dbr_enumStrs_size;
-    }
-    if (reqOptions & DBR_GR_UCHAR) {
-	usarr[0] = *((unsigned char *) pbuffer);
-	usarr[1] = *((unsigned char *) (pbuffer + 1));
-	usarr[2] = *((unsigned char *) (pbuffer + 2));
-	usarr[3] = *((unsigned char *) (pbuffer + 3));
-	usarr[4] = *((unsigned char *) (pbuffer + 4));
-	usarr[5] = *((unsigned char *) (pbuffer + 5));
-	if (retOptions & DBR_GR_UCHAR)
-	    printf("grUchar: %u %u %u %u %u %u\n",
-		usarr[0], usarr[1], usarr[2], usarr[3], usarr[4], usarr[5]);
-	else
-	    printf("DBRgrUchar not returned\n");
-	pbuffer += dbr_grUchar_size;
-    }
-    if (reqOptions & DBR_GR_SHORT) {
-	if (retOptions & DBR_GR_SHORT)
-	    printf("grShort: %d %d %d %d %d %d\n",
-		   *(short *) (pbuffer),
-		   *(short *) (pbuffer + 2),
-		   *(short *) (pbuffer + 4),
-		   *(short *) (pbuffer + 6),
-		   *(short *) (pbuffer + 8),
-		   *(short *) (pbuffer + 10));
-	else
-	    printf("DBRgrShort not returned\n");
-	pbuffer += dbr_grShort_size;
     }
     if (reqOptions & DBR_GR_LONG) {
 	if (retOptions & DBR_GR_LONG)
 	    printf("grLong: %ld %ld %ld %ld %ld %ld\n",
 		   *(long *) (pbuffer),
-		   *(long *) (pbuffer + 4),
-		   *(long *) (pbuffer + 8),
-		   *(long *) (pbuffer + 12),
-		   *(long *) (pbuffer + 16),
-		   *(long *) (pbuffer + 20));
+		   *(long *) (pbuffer + 4));
 	else
 	    printf("DBRgrLong not returned\n");
 	pbuffer += dbr_grLong_size;
-    }
-    if (reqOptions & DBR_GR_ULONG) {
-	if (retOptions & DBR_GR_ULONG)
-	    printf("grUlong: %lu %lu %lu %lu %lu %lu\n",
-		   *(unsigned long *) (pbuffer),
-		   *(unsigned long *) (pbuffer + 4),
-		   *(unsigned long *) (pbuffer + 8),
-		   *(unsigned long *) (pbuffer + 12),
-		   *(unsigned long *) (pbuffer + 16),
-		   *(unsigned long *) (pbuffer + 20));
-	else
-	    printf("DBRgrUlong not returned\n");
-	pbuffer += dbr_grUlong_size;
-    }
-    if (reqOptions & DBR_GR_FLOAT) {
-	if (retOptions & DBR_GR_FLOAT)
-	    printf("grFloat: %g %g %g %g %g %g\n",
-		   *(float *) (pbuffer),
-		   *(float *) (pbuffer + 4),
-		   *(float *) (pbuffer + 8),
-		   *(float *) (pbuffer + 12),
-		   *(float *) (pbuffer + 16),
-		   *(float *) (pbuffer + 20));
-	else
-	    printf("DBRgrFloat not returned\n");
-	pbuffer += dbr_grFloat_size;
     }
     if (reqOptions & DBR_GR_DOUBLE) {
 	if (retOptions & DBR_GR_DOUBLE)
 	    printf("grDouble: %lg %lg %lg %lg %lg %lg\n",
 		   *(double *) (pbuffer),
-		   *(double *) (pbuffer + 8),
-		   *(double *) (pbuffer + 16),
-		   *(double *) (pbuffer + 24),
-		   *(double *) (pbuffer + 32),
-		   *(double *) (pbuffer + 40));
+		   *(double *) (pbuffer + 8));
 	else
 	    printf("DBRgrDouble not returned\n");
 	pbuffer += dbr_grDouble_size;
-    }
-    if (reqOptions & DBR_CTRL_UCHAR) {
-	usarr[0] = *((unsigned char *) pbuffer);
-	usarr[1] = *((unsigned char *) (pbuffer + 1));
-	if (retOptions & DBR_CTRL_UCHAR)
-	    printf("ctrlUchar: %u %u\n",
-		   usarr[0], usarr[1]);
-	else
-	    printf("DBRctrlUchar not returned\n");
-	pbuffer += dbr_ctrlUchar_size;
-    }
-    if (reqOptions & DBR_CTRL_SHORT) {
-	if (retOptions & DBR_CTRL_SHORT)
-	    printf("ctrlShort: %d %d\n",
-		   *(short *) (pbuffer),
-		   *(short *) (pbuffer + 2));
-	else
-	    printf("DBRctrlShort not returned\n");
-	pbuffer += dbr_ctrlShort_size;
     }
     if (reqOptions & DBR_CTRL_LONG) {
 	if (retOptions & DBR_CTRL_LONG)
@@ -789,24 +738,6 @@ static void printBuffer(status, dbr_type, pbuffer, reqOptions,
 	    printf("DBRctrlLong not returned\n");
 	pbuffer += dbr_ctrlLong_size;
     }
-    if (reqOptions & DBR_CTRL_ULONG) {
-	if (retOptions & DBR_CTRL_ULONG)
-	    printf("ctrlUlong: %lu %lu\n",
-		   *(unsigned long *) (pbuffer),
-		   *(unsigned long *) (pbuffer + 4));
-	else
-	    printf("DBRctrlUlong not returned\n");
-	pbuffer += dbr_ctrlUlong_size;
-    }
-    if (reqOptions & DBR_CTRL_FLOAT) {
-	if (retOptions & DBR_CTRL_FLOAT)
-	    printf("ctrlFloat: %g %g\n",
-		   *(float *) (pbuffer),
-		   *(float *) (pbuffer + 4));
-	else
-	    printf("DBRctrlFloat not returned\n");
-	pbuffer += dbr_ctrlFloat_size;
-    }
     if (reqOptions & DBR_CTRL_DOUBLE) {
 	if (retOptions & DBR_CTRL_DOUBLE)
 	    printf("ctrlDouble: %lg %lg\n",
@@ -815,6 +746,28 @@ static void printBuffer(status, dbr_type, pbuffer, reqOptions,
 	else
 	    printf("DBRctrlDouble not returned\n");
 	pbuffer += dbr_ctrlDouble_size;
+    }
+    if (reqOptions & DBR_AL_LONG) {
+	if (retOptions & DBR_AL_LONG)
+	    printf("alLong: %ld %ld %ld %ld\n",
+		   *(long *) (pbuffer),
+		   *(long *) (pbuffer + 4),
+		   *(long *) (pbuffer + 8),
+		   *(long *) (pbuffer + 12));
+	else
+	    printf("DBRalLong not returned\n");
+	pbuffer += dbr_alLong_size;
+    }
+    if (reqOptions & DBR_AL_DOUBLE) {
+	if (retOptions & DBR_AL_DOUBLE)
+	    printf("alDouble: %lg %lg %lg %lg\n",
+		   *(double *) (pbuffer),
+		   *(double *) (pbuffer + 8),
+		   *(double *) (pbuffer + 16),
+		   *(double *) (pbuffer + 24));
+	else
+	    printf("DBRalDouble not returned\n");
+	pbuffer += dbr_alDouble_size;
     }
     /* Now print values */
     if (no_elements == 0) return;
@@ -962,6 +915,7 @@ static void printBuffer(status, dbr_type, pbuffer, reqOptions,
 	printf(" illegal request type.");
 	break;
     }
+    dbpr_msg_flush(pMsgBuff, tab_size);
     return;
 }
 
@@ -989,7 +943,7 @@ static int dbpr_report(pname, paddr, interest_level, pMsgBuff, tab_size)
     char            PvName[PVNAME_SZ + FLDNAME_SZ + 4];	/* recordname.<pvname> */
     short           n;
     long            status;
-    long            buffer[BFSIZE];	/* limit array buffer to 1st 50 */
+    long            buffer[100];
     caddr_t         pbuffer;
     long            options;
     long            nRequest;
@@ -1049,7 +1003,7 @@ static int dbpr_report(pname, paddr, interest_level, pMsgBuff, tab_size)
 	status = dbNameToAddr(pPvName, &Laddr);
 	if (status)
 	    return (1);
-	if (pfldDes->interest >= interest_level )
+	if (pfldDes->interest > interest_level )
 	    continue;
 	pLaddr = &Laddr;
 	switch (pfldDes->field_type) {
@@ -1082,6 +1036,23 @@ static int dbpr_report(pname, paddr, interest_level, pMsgBuff, tab_size)
 	    dbpr_msgOut(pMsgBuff, tab_size);
 	    break;
 	case DBF_NOACCESS:
+	    { /* lets just print field in hex */
+		char * pchar = (char *)(pLaddr->pfield);
+		char   temp_buf[42];
+		char *ptemp_buf = &temp_buf[0];
+		short n = pLaddr->field_size;
+		short i;
+		unsigned long value;
+
+		if(n>(sizeof(temp_buf)-2)/2) n = (sizeof(temp_buf)-2)/2;
+		for (i=0; i<n; i++, (ptemp_buf+=2), pchar++) {
+			value = *((unsigned char *)pchar);
+			sprintf(ptemp_buf,"%-2.2x",value);
+		}
+		*ptemp_buf = 0;
+		sprintf(pmsg, "%s: %s", pfield_name,temp_buf);
+		dbpr_msgOut(pMsgBuff, tab_size);
+	    }
 	    break;
 	case DBF_SHORT:
 	    sprintf(pmsg, "%s: %d", pfield_name, *(short *) pLaddr->pfield);
@@ -1150,7 +1121,7 @@ static int dbpr_report(pname, paddr, interest_level, pMsgBuff, tab_size)
     if (pLaddr->field_type != pfldDes->field_type
 	    || pLaddr->no_elements > 1) {
 	options = 0;
-	nRequest = MIN(BFSIZE, pLaddr->no_elements);
+	nRequest = MIN(pLaddr->no_elements,((sizeof(buffer)*4)/pLaddr->field_size));
 	status = dbGetField(&Laddr, Laddr.dbr_field_type, pbuffer,
 			    &options, &nRequest);
 	printBuffer(status, Laddr.dbr_field_type, pbuffer,
@@ -1318,22 +1289,33 @@ static void dbprReportLink(pMsgBuff,pfield_name,plink,field_type, tab_size)
 	dbpr_msgOut(pMsgBuff,tab_size);
 	break;
     case GPIB_IO:
-#if 0
-	sprintf(pmsg,"%4s: GPIB link=%2d taddr=%2d laddr=%2d signal=%3d",
+	sprintf(pmsg,"%4s: GPIB link=%2d addr=%2d parm=%s",
 	    pfield_name,
-	    plink->value.gpibio.link, plink->value.gpibio.taddr,
-	    plink->value.gpibio.laddr,plink->value.gpibio.signal);
+	    plink->value.gpibio.link, plink->value.gpibio.addr,
+	    &plink->value.gpibio.parm[0]);
 	dbpr_msgOut(pMsgBuff,tab_size);
-#endif
 	break;
     case BITBUS_IO:
-#if 0
-	sprintf(pmsg,"%4s: BITBUS link=%2d addr=%2d signal=%3d",
+	sprintf(pmsg,"%4s: BITBUS link=%2d node=%2d port=%2d signal=%2d parm=%s",
 	    pfield_name,
-	    plink->value.bitbusio.link,plink->value.bitbusio.addr,
-	    plink->value.bitbusio.signal);
+	    plink->value.bitbusio.link,plink->value.bitbusio.node,
+	    plink->value.bitbusio.port,plink->value.bitbusio.signal,
+	    &plink->value.bitbusio.parm[0]);
 	dbpr_msgOut(pMsgBuff,tab_size);
-#endif
+	break;
+    case BBGPIB_IO:
+	sprintf(pmsg,"%4s: BBGPIBIO link=%2d bbaddr=%2d gpibio=%2d parm=%s",
+	    pfield_name,
+	    plink->value.bbgpibio.link,plink->value.bbgpibio.bbaddr,
+	    plink->value.bbgpibio.gpibaddr,
+	    &plink->value.bbgpibio.parm[0]);
+	dbpr_msgOut(pMsgBuff,tab_size);
+	break;
+    case INST_IO:
+	sprintf(pmsg,"%4s: INSTIO  parm=%s",
+	    pfield_name,
+	    &plink->value.instio.string[0]);
+	dbpr_msgOut(pMsgBuff,tab_size);
 	break;
     case DB_LINK:
 	if(field_type != DBF_FWDLINK) {

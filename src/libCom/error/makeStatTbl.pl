@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/bin/perl
 #
 #	makeStatTbl.pl - Create Error Symbol Table
 #

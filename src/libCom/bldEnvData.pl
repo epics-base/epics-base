@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/bin/perl
 #
 # 	Author: Kay-Uwe Kasemir
 # 	based on bldEnvData shell scripts, Andrew Johnson (RGO)

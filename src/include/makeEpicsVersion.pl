@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/bin/perl
 #
 
 print "Building epicsVersion.h from CONFIG_BASE_VERSION\n";

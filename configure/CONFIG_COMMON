@@ -17,6 +17,10 @@
 # Common Configuration Information
 
 #-------------------------------------------------------
+# Divider symbol
+DIVIDER = .
+
+#-------------------------------------------------------
 # Build architectures
 
 # CROSS1 will be defined only when CROSS_COMPILER_HOST_ARCHS is NOT defined
@@ -29,53 +33,14 @@ CROSS2 = $(CROSS_COMPILER_TARGET_ARCHS$(filter-out 1,$(words $(filter $(EPICS_HO
 BUILD_ARCHS = $(EPICS_HOST_ARCH) $(CROSS1) $(CROSS2)
 
 #-------------------------------------------------------
-# Ext, app, and module configure dir targets
-CONFIG_TARGETS += CONFIG_APP_INCLUDE RULES_INCLUDE
-CONFIG_INSTALLS += ../RULES_BUILD
-
-#-------------------------------------------------------
-# Check configure/RELEASE file for consistency
-CHECK_RELEASE_YES = checkRelease
-CHECK_RELEASE_NO =
-
-#-------------------------------------------------------
-# Cross compile default, HOST or CROSS, CONFIG.crossCommon will override
-BUILD_CLASS = HOST
-
-#-------------------------------------------------------
-# Build defaults, CONFIG_SITE, CONFIG, or os/CONFIG* will override
-CMPLR=STRICT
-CXXCMPLR=STRICT
-STATIC_BUILD=NO
-SHARED_LIBRARIES=NO
-HDEPENDS=YES
-HOST_OPT=YES
-CROSS_OPT=YES
-HOST_WARN=YES
-CROSS_WARN=YES
-
-#-------------------------------------------------------
-# Prefix and suffix
-DEP=.depends
-DIVIDER = .
-OBJ = .
-RES = .
-
-#-------------------------------------------------------
 # Default for perl if it's on the PATH,
 # otherwise override this in os/CONFIG_SITE.<host_arch>.Common
 PERL=perl
 
 #-------------------------------------------------------
-# tools for installing libraries and products
-INSTALL = $(PERL) $(TOOLS)/installEpics.pl
-INSTALL_PRODUCT = $(INSTALL)
-INSTALL_LIBRARY = $(INSTALL)
-
-#---------------------------------------------------------------
-# tools for making header dependancies and variable replacement
-MKMF                       = $(PERL) $(TOOLS)/mkmf.pl
-REPLACEVAR                 = $(PERL) $(TOOLS)/replaceVAR.pl
+# Check configure/RELEASE file for consistency
+CHECK_RELEASE_YES = checkRelease
+CHECK_RELEASE_NO =
 
 #-------------------------------------------------------
 # Directories
@@ -107,6 +72,44 @@ INSTALL_LIB                 = $(INSTALL_LOCATION_LIB)/$(T_A)
 INSTALL_SHRLIB              = $(INSTALL_LOCATION_LIB)/$(T_A)
 INSTALL_TCLLIB              = $(INSTALL_LOCATION_LIB)/$(T_A)
 INSTALL_BIN                 = $(INSTALL_LOCATION_BIN)/$(T_A)
+
+#-------------------------------------------------------
+# Ext, app, and module configure dir targets
+CONFIG_TARGETS += CONFIG_APP_INCLUDE RULES_INCLUDE
+CONFIG_INSTALLS += ../RULES_BUILD
+
+#-------------------------------------------------------
+# Cross compile default, HOST or CROSS, CONFIG.crossCommon will override
+BUILD_CLASS = HOST
+
+#-------------------------------------------------------
+# Build defaults, CONFIG_SITE, CONFIG, or os/CONFIG* will override
+CMPLR=STRICT
+CXXCMPLR=STRICT
+STATIC_BUILD=NO
+SHARED_LIBRARIES=NO
+HDEPENDS=YES
+HOST_OPT=YES
+CROSS_OPT=YES
+HOST_WARN=YES
+CROSS_WARN=YES
+
+#-------------------------------------------------------
+# Prefix and suffix
+DEP=.depends
+OBJ = .
+RES = .
+
+#-------------------------------------------------------
+# tools for installing libraries and products
+INSTALL = $(PERL) $(TOOLS)/installEpics.pl
+INSTALL_PRODUCT = $(INSTALL)
+INSTALL_LIBRARY = $(INSTALL)
+
+#---------------------------------------------------------------
+# tools for making header dependancies and variable replacement
+MKMF                       = $(PERL) $(TOOLS)/mkmf.pl
+REPLACEVAR                 = $(PERL) $(TOOLS)/replaceVAR.pl
 
 #--------------------------------------------------
 # vpath directories

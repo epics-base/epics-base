@@ -158,7 +158,6 @@ $(INSTALL_BIN)/%: ../%
 
 $(INSTALL_BIN)/%: $(EPICS_BASE_BIN)/%
 	@echo "Installing $@"
-	@echo "======================================= $@"
 	@test -d $(INSTALL_LOCATION_BIN) || mkdir $(INSTALL_LOCATION_BIN)
 	@test -d $(INSTALL_BIN) || mkdir $(INSTALL_BIN)
 	@$(INSTALL) -m 555 $< $(INSTALL_BIN)

@@ -119,7 +119,9 @@ const char * ca_message_text []
 "Invalid channel priority",
 "Preemptive callback not enabled - additional threads may not join context",
 "Client's protocol revision does not support transfers exceeding 16k bytes",
-"Virtual circuit connection sequence aborted"
+"Virtual circuit connection sequence aborted",
+
+"Virtual circuit unresponsive"
 };
 
 static epicsThreadOnceId caClientContextIdOnce = EPICS_THREAD_ONCE_INIT;

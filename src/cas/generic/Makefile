@@ -1,8 +1,9 @@
 
 TOP = ../../..
 
-include $(TOP)/config/CONFIG_BASE
+include $(TOP)/configure/CONFIG
 
-include $(TOP)/config/RULES_ARCHS
+INC := casdef.h casInternal.h casEventMask.h caNetAddr.h
 
+include $(TOP)/configure/RULES_BUILD
 

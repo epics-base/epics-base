@@ -1,8 +1,8 @@
 
 TOP=../../../..
 
-include $(TOP)/config/CONFIG_BASE
+include $(TOP)/configure/CONFIG
 
-include $(TOP)/config/RULES_ARCHS
+include $(TOP)/configure/RULES_BUILD
 
 

@@ -147,18 +147,49 @@ int pass;
     }
 
   /* Copy over ALL the input link constants here */
-  index = NUM_LINKS;
   plink = (struct linkDesc *)(&(pseq->dly1));
 
-  while (index--)
+  index = 0;
+  while ((status == 0) && (index < NUM_LINKS))
   {
+    char DumbCaString[10];
+
     if (plink->dol.type == CONSTANT)
       plink->dov = plink->dol.value.value;
 
+    index++;
+
+    /*
+     * This is so &@$%-ing stupid I can't believe it.  This should be done
+     * in the iocCore record init code that deals with the rest of the
+     * link init stuff.
+     */
+    
+    status = 0;
+    if (plink->dol.type == PV_LINK)
+    {
+      if (seqRecDebug > 4)
+	printf("seq-record::init_record initializing CA-link DO%1.1X\n", index);
+
+      sprintf(DumbCaString, "DO%1.1X", index);
+      status = dbCaAddInlink(&(plink->dol), (void *) pseq, DumbCaString);
+    }
+    if (status == 0)
+    {
+      if (plink->lnk.type == PV_LINK)
+      {
+
+        if (seqRecDebug > 4)
+	  printf("seq-record::init_record initializing CA-link DO%1.1X\n", index);
+
+        sprintf(DumbCaString, "DO%1.1X", index);
+        status = dbCaAddOutlink(&(plink->lnk), (void *) pseq, DumbCaString);
+      }
+    }
     plink++;
   }
 
-    return(status);
+  return(status);
 }
 /*****************************************************************************
  *
@@ -192,6 +223,7 @@ struct seqRecord *pseq;
   unsigned short	lmask;
   long			options;
   long			nRequest;
+  int			tmp;
 
   if(seqRecDebug > 10)
     printf("seqRecord: process(%s) pact = %d\n", pseq->name, pseq->pact);
@@ -251,15 +283,24 @@ struct seqRecord *pseq;
   /* Figure out which links are going to be processed */
   pcb->index = 0;
   plink = (struct linkDesc *)(&(pseq->dly1));
+  tmp = 1;
   while (lmask)
   {
-    if ((lmask & 1) && ((plink->lnk.type == DB_LINK)||(plink->dol.type == DB_LINK)))
+    if (seqRecDebug > 4)
+      printf("seqRec-process Checking link %d - lnk %d dol %d\n", tmp,
+      plink->lnk.type, plink->dol.type);
+
+    if ((lmask & 1) && ((plink->lnk.type == DB_LINK)||(plink->dol.type == DB_LINK))||((plink->lnk.type == CA_LINK)||(plink->dol.type == CA_LINK)))
     {
+      if (seqRecDebug > 4)
+	printf("  seqRec-process Adding link %d at index %d\n", tmp, pcb->index);
+
       pcb->plinks[pcb->index] = plink;
       pcb->index++;
     }
     lmask >>= 1;
     plink++;
+    tmp++;
   }
   pcb->plinks[pcb->index] = NULL;	/* mark the bottom of the list */
 
@@ -348,6 +389,7 @@ struct seqRecord *pseq;
   recGblFwdLink(pseq);
 
   recGblGetTimeStamp(pseq);
+  /* tsLocalTime(&pseq->time); */
   pseq->pact = FALSE;
 
   return(0);
@@ -395,34 +437,33 @@ CALLBACK *pCallback;
   dbScanLock((struct dbCommon *)pseq);
 
   if (seqRecDebug > 5)
-    printf("processCallback(%s) processing field index %d\n", pseq->name, pcb->index);
+    printf("processCallback(%s) processing field index %d\n", pseq->name, pcb->index+1);
 
-  /* if the input link is a constant, don't call recGblGetLinkValue() */
+  /* Save the old value */
+  myDouble = pcb->plinks[pcb->index]->dov;
+
+  /* If the input link is a constant, don't call recGblGetLinkValue() */
   if (pcb->plinks[pcb->index]->dol.type != CONSTANT)
   {
     /* Get the value from the input link location */
     options = 0;
     nRequest = 1;
-    recGblGetLinkValue(&(pcb->plinks[pcb->index]->dol), (void *)pseq, DBR_DOUBLE, &myDouble, &options, &nRequest);
+    recGblGetLinkValue(&(pcb->plinks[pcb->index]->dol), (void *)pseq, DBR_DOUBLE, &(pcb->plinks[pcb->index]->dov), &options, &nRequest);
   }
-  else
-  {
-    myDouble = pcb->plinks[pcb->index]->dov;
-  }
+
   /* Dump the value to the destination field */
-  recGblPutLinkValue(&(pcb->plinks[pcb->index]->lnk), (void *)pseq, DBR_DOUBLE, &myDouble, &nRequest);
+  recGblPutLinkValue(&(pcb->plinks[pcb->index]->lnk), (void *)pseq, DBR_DOUBLE, &(pcb->plinks[pcb->index]->dov), &nRequest);
 
   if (myDouble != pcb->plinks[pcb->index]->dov)
   {
     if (seqRecDebug > 0)
-      printf("link %d changed from %f to %f\n", pcb->index, pcb->plinks[pcb->index]->dov, myDouble);
-    pcb->plinks[pcb->index]->dov = myDouble;
+      printf("link %d changed from %f to %f\n", pcb->index, myDouble, pcb->plinks[pcb->index]->dov);
     db_post_events(pseq, &pcb->plinks[pcb->index]->dov, DBE_VALUE);
   }
   else
   {
     if (seqRecDebug > 0)
-      printf("link %d not changed... %f\n", pcb->index, myDouble);
+      printf("link %d not changed... %f\n", pcb->index, pcb->plinks[pcb->index]->dov);
   }
 
   /* Find the 'next' link-seq that is ready for processing. */

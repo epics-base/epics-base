@@ -320,7 +320,7 @@ template < class T >
 inline tsSLIterConst<T> tsSLIterConst<T>::operator ++ (int) // postfix ++
 {
     tsSLIterConst<T> tmp = *this;
-    tsSLNode < T > *pCurNode = this->pConstEntry;
+    const tsSLNode < T > *pCurNode = this->pConstEntry;
     this->pConstEntry = pCurNode->pNext;
     return tmp;
 }

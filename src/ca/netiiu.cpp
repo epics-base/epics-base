@@ -218,7 +218,7 @@ int netiiu::clearChannelRequest ( unsigned, unsigned )
     return ECA_DISCONNCHID;
 }
 
-int netiiu::subscriptionRequest ( unsigned, unsigned, unsigned, unsigned, unsigned )
+int netiiu::subscriptionRequest ( unsigned, unsigned, unsigned, unsigned, unsigned, bool )
 {
     return ECA_DISCONNCHID;
 }

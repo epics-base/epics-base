@@ -18,8 +18,5 @@
 #ifndef comQueSend_ILh
 #define comQueSend_ILh
 
-
-
-
 #endif // comQueSend_ILh
 

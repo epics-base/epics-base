@@ -18,10 +18,11 @@ tsFreeList < class netSubscription, 1024 > netSubscription::freeList;
 
 netSubscription::netSubscription ( nciu &chan, chtype typeIn, unsigned long countIn, 
     unsigned short maskIn, cacNotify &notifyIn ) :
-    cacNotifyIO (notifyIn), baseNMIU (chan), 
-    type (typeIn), count (countIn), mask (maskIn)
+    cacNotifyIO ( notifyIn ), baseNMIU ( chan ), 
+    type ( typeIn ), count ( countIn ), mask ( maskIn )
 {
-    this->subscriptionMsg ();
+    this->chan.subscriptionMsg ( this->getId (), this->type, 
+        this->count, this->mask, true );
 }
 
 netSubscription::~netSubscription () 
@@ -37,7 +38,7 @@ void netSubscription::destroy()
 int netSubscription::subscriptionMsg ()
 {
     return this->chan.subscriptionMsg ( this->getId (), this->type, 
-        this->count, this->mask );
+        this->count, this->mask, false );
 }
 
 void netSubscription::disconnect ( const char * /* pHostName */ )

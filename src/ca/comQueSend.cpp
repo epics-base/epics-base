@@ -99,42 +99,38 @@ inline unsigned bufferReservoir::nBytes ()
     return ( this->reservedBufs.count () * comBuf::maxBytes () );
 }
 
-// o lock the comQueSend
-// o reserve sufficent space for entire message
+//   reserve sufficent space for entire message
 //   (this allows the recv thread to add a message
 //   to the que while some other thread is flushing
 //   and therefore prevents deadlocks, and it also
 //   allows proper status to be returned)
-// o unlock comQueSend if status is not ECA_NORMAL
-inline int comQueSend::lockAndReserveSpace ( unsigned msgSize, bufferReservoir &reservoir )
+inline int comQueSend::lockAndReserveSpace ( unsigned msgSize, 
+                  bufferReservoir &reservoir, bool enablePreemptionDuringFlush )
 {
     unsigned bytesReserved = reservoir.nBytes ();
-    unsigned unoccupied;
 
     this->mutex.lock ();
 
-    comBuf *pComBuf = this->bufs.last ();
-    if ( pComBuf ) {
-        unoccupied = pComBuf->unoccupiedBytes ();
-    }
-    else {
-        unoccupied = 0u;
-    }
+    while ( true ) {
+        comBuf *pComBuf = this->bufs.last ();
+        if ( pComBuf ) {
+            bytesReserved += pComBuf->unoccupiedBytes ();
+        }
 
-    // flush if conditions indicate. second part of this guarantees 
-    // that we will not flush out a buffer with almost nothing
-    // in it (this has a large impact on performance)
-    if ( this->bufs.count () <= 1u || unoccupied >= msgSize ) {
-        bytesReserved = unoccupied;
-    }
-    else {
+        if ( bytesReserved >= msgSize || this->bufs.count () < 4 ) {
+            break;
+        }
+
+        if ( ! this->flushToWirePermit () ) {
+            if ( this->bufs.count () >= 32u ) {
+                this->mutex.unlock ();
+                return ECA_TOLARGE;
+            }
+            break;
+        }
+
         this->mutex.unlock ();
-        if ( ! this->flushToWire () ) {
-            return ECA_DISCONNCHID;
-        }
-        if ( this->bufs.count () >= 32u ) {
-            return ECA_TOLARGE;
-        }
+        this->flushToWire ( enablePreemptionDuringFlush );
         this->mutex.lock ();
     }
 
@@ -320,7 +316,7 @@ unsigned comQueSend::occupiedBytes () const
     return nBytes;
 }
 
-bool comQueSend::flushToWire ()
+bool comQueSend::flushToWire ( bool enablePreemptionDuringFlush )
 {
     bool success = false;
 
@@ -345,7 +341,7 @@ bool comQueSend::flushToWire ()
             success = true;
             break;
         }
-        success = pBuf->flushToWire ( *this );
+        success = pBuf->flushToWire ( *this, enablePreemptionDuringFlush );
         pBuf->destroy ();
         if ( ! success ) {
             this->mutex.lock ();
@@ -396,7 +392,7 @@ int comQueSend::writeRequest ( unsigned serverId, unsigned type, unsigned nElem,
 
     assert ( serverId <= 0xffffffff );
 
-    int status = this->lockAndReserveSpace ( postcnt + 16u, reservoir );
+    int status = this->lockAndReserveSpace ( postcnt + 16u, reservoir, true );
     if ( status == ECA_NORMAL ) {
         comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint16_t> ( CA_PROTO_WRITE ) ); // cmd
         comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint16_t> ( postcnt ) ); // postsize
@@ -446,7 +442,7 @@ int comQueSend::writeNotifyRequest ( unsigned ioId, unsigned serverId, unsigned 
 
     assert ( serverId <= 0xffffffff );
 
-    int status = this->lockAndReserveSpace ( postcnt + 16u, reservoir );
+    int status = this->lockAndReserveSpace ( postcnt + 16u, reservoir, true );
     if ( status == ECA_NORMAL ) {
         comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint16_t> ( CA_PROTO_WRITE_NOTIFY ) ); // cmd
         comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint16_t> ( postcnt ) ); // postsize
@@ -475,7 +471,7 @@ int comQueSend::readCopyRequest ( unsigned ioId, unsigned serverId, unsigned typ
 
     assert ( serverId <= 0xffffffff );
 
-    int status = this->lockAndReserveSpace ( 16u, reservoir );
+    int status = this->lockAndReserveSpace ( 16u, reservoir, true );
     if ( status == ECA_NORMAL ) {
         comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint16_t> ( CA_PROTO_READ ) ); // cmd
         comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint16_t> ( 0u ) ); // postsize
@@ -502,7 +498,7 @@ int comQueSend::readNotifyRequest ( unsigned ioId, unsigned serverId, unsigned t
 
     assert ( serverId <= 0xffffffff );
 
-    int status = this->lockAndReserveSpace ( 16u, reservoir );
+    int status = this->lockAndReserveSpace ( 16u, reservoir, true );
     if ( status == ECA_NORMAL ) {
         comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint16_t> ( CA_PROTO_READ_NOTIFY ) ); // cmd
         comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint16_t> ( 0u ) ); // postsize
@@ -524,7 +520,7 @@ int comQueSend::createChannelRequest ( unsigned id, const char *pName, unsigned 
     assert ( id <= 0xffffffff );
     assert ( postCnt <= 0xffff );
 
-    int status = this->lockAndReserveSpace ( postCnt + 16u, reservoir );
+    int status = this->lockAndReserveSpace ( postCnt + 16u, reservoir, false );
     if ( status == ECA_NORMAL ) {
 
         comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint16_t> ( CA_PROTO_CLAIM_CIU ) ); // cmd
@@ -544,6 +540,7 @@ int comQueSend::createChannelRequest ( unsigned id, const char *pName, unsigned 
         if ( postCnt > nameLength ) {
             comQueSend_copyIn ( this->bufs, reservoir, nillBytes, postCnt - nameLength );
         }
+
         this->mutex.unlock ();
     }
 
@@ -557,7 +554,7 @@ int comQueSend::clearChannelRequest ( unsigned clientId, unsigned serverId )
     assert ( serverId <= 0xffffffff );
     assert ( clientId <= 0xffffffff );
 
-    int status = this->lockAndReserveSpace ( 16u, reservoir );
+    int status = this->lockAndReserveSpace ( 16u, reservoir, true );
     if ( status == ECA_NORMAL ) {
         comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint16_t> ( CA_PROTO_CLEAR_CHANNEL ) ); // cmd
         comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint16_t> ( 0u ) ); // postsize
@@ -571,7 +568,8 @@ int comQueSend::clearChannelRequest ( unsigned clientId, unsigned serverId )
     return status;
 }
 
-int comQueSend::subscriptionRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem, unsigned mask )
+int comQueSend::subscriptionRequest ( unsigned ioId, unsigned serverId, 
+        unsigned type, unsigned nElem, unsigned mask, bool enablePreemptionDuringFlush )
 {
     bufferReservoir reservoir;
 
@@ -584,7 +582,7 @@ int comQueSend::subscriptionRequest ( unsigned ioId, unsigned serverId, unsigned
     assert ( serverId <= 0xffffffff );
     assert ( ioId <= 0xffffffff );
 
-    int status = this->lockAndReserveSpace ( 32u, reservoir );
+    int status = this->lockAndReserveSpace ( 32u, reservoir, enablePreemptionDuringFlush );
     if ( status == ECA_NORMAL ) {
 
         // header
@@ -617,14 +615,14 @@ int comQueSend::subscriptionCancelRequest ( unsigned ioId, unsigned serverId, un
     assert ( serverId <= 0xffffffff );
     assert ( ioId <= 0xffffffff );
 
-    int status = this->lockAndReserveSpace ( 16u, reservoir );
+    int status = this->lockAndReserveSpace ( 16u, reservoir, true );
     if ( status == ECA_NORMAL ) {
-        comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint16_t> ( CA_PROTO_EVENT_CANCEL ) ); // cmd
-        comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint16_t> ( 0u ) ); // postsize
-        comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint16_t> ( type ) ); // dataType
-        comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint16_t> ( nElem ) ); // count
-        comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint32_t> ( serverId ) ); // cid
-        comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint32_t> ( ioId ) ); // available 
+        comQueSend_copyIn ( this->bufs, reservoir, static_cast < ca_uint16_t > ( CA_PROTO_EVENT_CANCEL ) ); // cmd
+        comQueSend_copyIn ( this->bufs, reservoir, static_cast < ca_uint16_t > ( 0u ) ); // postsize
+        comQueSend_copyIn ( this->bufs, reservoir, static_cast < ca_uint16_t > ( type ) ); // dataType
+        comQueSend_copyIn ( this->bufs, reservoir, static_cast < ca_uint16_t > ( nElem ) ); // count
+        comQueSend_copyIn ( this->bufs, reservoir, static_cast < ca_uint32_t > ( serverId ) ); // cid
+        comQueSend_copyIn ( this->bufs, reservoir, static_cast < ca_uint32_t > ( ioId ) ); // available 
         this->mutex.unlock ();
     }
 
@@ -635,7 +633,7 @@ int comQueSend::disableFlowControlRequest ()
 {
     bufferReservoir reservoir;
 
-    int status = this->lockAndReserveSpace ( 16u, reservoir );
+    int status = this->lockAndReserveSpace ( 16u, reservoir, false );
     if ( status == ECA_NORMAL ) {
         comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint16_t> ( CA_PROTO_EVENTS_ON ) ); // cmd
         comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint16_t> ( 0u ) ); // postsize
@@ -652,7 +650,7 @@ int comQueSend::enableFlowControlRequest ()
 {
     bufferReservoir reservoir;
 
-    int status = this->lockAndReserveSpace ( 16u, reservoir );
+    int status = this->lockAndReserveSpace ( 16u, reservoir, false );
     if ( status == ECA_NORMAL ) {
         comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint16_t> ( CA_PROTO_EVENTS_OFF ) ); // cmd
         comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint16_t> ( 0u ) ); // postsize
@@ -669,7 +667,7 @@ int comQueSend::noopRequest ()
 {
     bufferReservoir reservoir;
 
-    int status = this->lockAndReserveSpace ( 16u, reservoir );
+    int status = this->lockAndReserveSpace ( 16u, reservoir, false );
     if ( status == ECA_NORMAL ) {
         comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint16_t> ( CA_PROTO_NOOP ) ); // cmd
         comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint16_t> ( 0u ) ); // postsize
@@ -686,7 +684,7 @@ int comQueSend::echoRequest ()
 {
     bufferReservoir reservoir;
 
-    int status = this->lockAndReserveSpace ( 16u, reservoir );
+    int status = this->lockAndReserveSpace ( 16u, reservoir, false );
     if ( status == ECA_NORMAL ) {
         comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint16_t> ( CA_PROTO_ECHO ) ); // cmd
         comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint16_t> ( 0u ) ); // postsize
@@ -706,7 +704,7 @@ int comQueSend::hostNameSetRequest ( const char *pName )
     unsigned postSize = CA_MESSAGE_ALIGN ( size );
     assert ( postSize < 0xffff );
 
-    int status = this->lockAndReserveSpace ( postSize + 16u, reservoir );
+    int status = this->lockAndReserveSpace ( postSize + 16u, reservoir, false );
     if ( status == ECA_NORMAL ) {
         comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint16_t> ( CA_PROTO_HOST_NAME ) ); // cmd
         comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint16_t> ( postSize ) ); // postsize
@@ -717,6 +715,7 @@ int comQueSend::hostNameSetRequest ( const char *pName )
 
         comQueSend_copyIn ( this->bufs, reservoir, pName, size );
         comQueSend_copyIn ( this->bufs, reservoir, nillBytes, postSize - size );
+
         this->mutex.unlock ();
     }
     return status;
@@ -729,7 +728,7 @@ int comQueSend::userNameSetRequest ( const char *pName )
     unsigned postSize = CA_MESSAGE_ALIGN ( size );
     assert ( postSize < 0xffff );
 
-    int status = this->lockAndReserveSpace ( postSize + 16u, reservoir );
+    int status = this->lockAndReserveSpace ( postSize + 16u, reservoir, false );
     if ( status == ECA_NORMAL ) {
         comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint16_t> ( CA_PROTO_CLIENT_NAME ) ); // cmd
         comQueSend_copyIn ( this->bufs, reservoir, static_cast <ca_uint16_t> ( postSize ) ); // postsize
@@ -740,6 +739,7 @@ int comQueSend::userNameSetRequest ( const char *pName )
 
         comQueSend_copyIn ( this->bufs, reservoir, pName, size );
         comQueSend_copyIn ( this->bufs, reservoir, nillBytes, postSize - size );
+
         this->mutex.unlock ();
     }
     return status;

@@ -132,7 +132,7 @@ public:
     unsigned removeBytes ( unsigned nBytes );
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
-    bool flushToWire ( class comQueSend & );
+    bool flushToWire ( class comQueSend &, bool enablePreemptionDuringFlush );
     unsigned fillFromWire ( class comQueRecv & );
 private:
     static tsFreeList < class comBuf, 0x20 > freeList;
@@ -170,14 +170,15 @@ class comQueSend {
 public:
     virtual ~comQueSend ();
     unsigned occupiedBytes () const;
-    bool flushToWire ();
+    bool flushToWire ( bool enablePreemptionDuringFlush );
     int writeRequest ( unsigned serverId, unsigned type, unsigned nElem, const void *pValue );
     int writeNotifyRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem, const void *pValue );
     int readCopyRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem );
     int readNotifyRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem );
     int createChannelRequest ( unsigned clientId, const char *pName, unsigned nameLength );
     int clearChannelRequest ( unsigned clientId, unsigned serverId );
-    int subscriptionRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem, unsigned mask );
+    int subscriptionRequest ( unsigned ioId, unsigned serverId, unsigned type, 
+        unsigned nElem, unsigned mask, bool enablePreemptionDuringFlush );
     int subscriptionCancelRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem );
     int disableFlowControlRequest ();
     int enableFlowControlRequest ();
@@ -186,10 +187,11 @@ public:
     int hostNameSetRequest ( const char *pName );
     int userNameSetRequest ( const char *pName );
 
-    virtual unsigned sendBytes ( const void *pBuf, unsigned nBytesInBuf ) = 0;
+    virtual unsigned sendBytes ( const void *pBuf, 
+        unsigned nBytesInBuf, bool enablePreemptionDuringFlush ) = 0;
 
 private:
-    int lockAndReserveSpace ( unsigned msgSize, bufferReservoir & );
+    int lockAndReserveSpace ( unsigned msgSize, bufferReservoir &, bool enablePreemptionDuringFlush );
     virtual bool flushToWirePermit () = 0;
 
     void copy_dbr_string ( bufferReservoir &, const void *pValue, unsigned nElem );
@@ -295,7 +297,8 @@ public:
     void operator delete ( void *pCadaver, size_t size );
 
     int subscriptionMsg ( unsigned subscriptionId, 
-        unsigned typeIn, unsigned long countIn, unsigned short maskIn );
+        unsigned typeIn, unsigned long countIn, unsigned short maskIn,
+        bool enablePreemptionDuringFlush );
     void resetRetryCount ();
     unsigned getRetrySeqNo () const;
     void accessRightsStateChange ( const caar &arIn );
@@ -513,7 +516,8 @@ public:
     virtual int writeNotifyRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem, const void *pValue );
     virtual int readCopyRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem );
     virtual int readNotifyRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem );
-    virtual int subscriptionRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem, unsigned mask );
+    virtual int subscriptionRequest ( unsigned ioId, unsigned serverId, unsigned type, 
+        unsigned nElem, unsigned mask, bool enablePreemptionDuringFlush );
     virtual int subscriptionCancelRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem );
     virtual int createChannelRequest ( unsigned clientId, const char *pName, unsigned nameLength );
     virtual int clearChannelRequest ( unsigned clientId, unsigned serverId );
@@ -745,7 +749,8 @@ public:
     int readNotifyRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem );
     int createChannelRequest ( unsigned clientId, const char *pName, unsigned nameLength );
     int clearChannelRequest ( unsigned clientId, unsigned serverId );
-    int subscriptionRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem, unsigned mask );
+    int subscriptionRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem, 
+                        unsigned mask, bool enablePreemptionDuringFlush );
     int subscriptionCancelRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem );
 
     void hostName (char *pBuf, unsigned bufLength) const;
@@ -778,7 +783,8 @@ private:
 
     bool ca_v42_ok () const;
     void postMsg ();
-    unsigned sendBytes ( const void *pBuf, unsigned nBytesInBuf );
+    unsigned sendBytes ( const void *pBuf, unsigned nBytesInBuf, 
+        bool enablePreemptionDuringFlush );
     unsigned recvBytes ( void *pBuf, unsigned nBytesInBuf );
     bool flushToWirePermit ();
 

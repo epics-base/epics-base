@@ -119,11 +119,11 @@ inline unsigned comBuf::maxBytes ()
     return comBufSize;
 }
 
-inline bool comBuf::flushToWire ( class comQueSend &que )
+inline bool comBuf::flushToWire ( class comQueSend &que, bool enablePreemptionDuringFlush )
 {
     unsigned occupied = this->occupiedBytes ();
     while ( occupied ) {
-        unsigned nBytes = que.sendBytes ( &this->buf[this->nextReadIndex], occupied );
+        unsigned nBytes = que.sendBytes ( &this->buf[this->nextReadIndex], occupied, enablePreemptionDuringFlush );
         if ( nBytes == 0u ) {
             this->nextReadIndex = this->nextWriteIndex;
             return false;

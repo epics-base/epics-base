@@ -197,7 +197,7 @@ extern "C" void cacSendThreadTCP ( void *pParam )
         piiu->unlock ();
 
         if ( laborNeeded ) {
-            if ( ! piiu->flushToWire () ) {
+            if ( ! piiu->flushToWire ( false ) ) {
                 break;
             }
         }
@@ -206,7 +206,8 @@ extern "C" void cacSendThreadTCP ( void *pParam )
     semBinaryGive ( piiu->sendThreadExitSignal );
 }
 
-unsigned tcpiiu::sendBytes ( const void *pBuf, unsigned nBytesInBuf )
+unsigned tcpiiu::sendBytes ( const void *pBuf, 
+                            unsigned nBytesInBuf, bool enablePreemptionDuringFlush  )
 {
     int status;
     unsigned nBytes;
@@ -216,8 +217,13 @@ unsigned tcpiiu::sendBytes ( const void *pBuf, unsigned nBytesInBuf )
     }
 
     assert ( nBytesInBuf <= INT_MAX );
-    this->clientCtx ().enableCallbackPreemption ();
+
+    if ( enablePreemptionDuringFlush ) {
+        this->clientCtx ().enableCallbackPreemption ();
+    }
+
     this->armSendWatchdog ();
+
     while ( true ) {
         status = ::send ( this->sock, 
             static_cast < const char * > (pBuf), (int) nBytesInBuf, 0 );
@@ -253,8 +259,13 @@ unsigned tcpiiu::sendBytes ( const void *pBuf, unsigned nBytesInBuf )
             break;
         }
     }
+
     this->cancelSendWatchdog ();
-    this->clientCtx ().disableCallbackPreemption ();
+
+    if ( enablePreemptionDuringFlush ) {
+        this->clientCtx ().disableCallbackPreemption ();
+    }
+
     return nBytes;
 }
 
@@ -1142,9 +1153,11 @@ int tcpiiu::clearChannelRequest ( unsigned clientId, unsigned serverId )
     return this->comQueSend::clearChannelRequest ( clientId, serverId );
 }
 
-int tcpiiu::subscriptionRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem, unsigned mask )
+int tcpiiu::subscriptionRequest ( unsigned ioId, unsigned serverId, unsigned type, 
+                                 unsigned nElem, unsigned mask, bool enablePreemptionDuringFlush  )
 {
-    return this->comQueSend::subscriptionRequest ( ioId, serverId, type, nElem, mask );
+    return this->comQueSend::subscriptionRequest ( ioId, serverId, type, nElem, 
+                        mask, enablePreemptionDuringFlush );
 }
 
 int tcpiiu::subscriptionCancelRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem )

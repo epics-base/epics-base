@@ -456,7 +456,8 @@ bool nciu::searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThisCh
 }
 
 int nciu::subscriptionMsg ( unsigned subscriptionId, unsigned typeIn, 
-                           unsigned long countIn, unsigned short maskIn)
+                           unsigned long countIn, unsigned short maskIn,
+                           bool enablePreemptionDuringFlush )
 {
     int status;
 
@@ -471,7 +472,8 @@ int nciu::subscriptionMsg ( unsigned subscriptionId, unsigned typeIn,
     if ( this->f_connected ) {
         this->lockPIIU ();
         if ( this->piiu ) {
-            status = this->piiu->subscriptionRequest ( subscriptionId, this->sid, typeIn, countIn, maskIn );
+            status = this->piiu->subscriptionRequest ( subscriptionId, this->sid, 
+                typeIn, countIn, maskIn, enablePreemptionDuringFlush );
         }
         else {
             status = ECA_NORMAL;

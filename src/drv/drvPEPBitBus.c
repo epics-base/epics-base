@@ -535,14 +535,14 @@ int	link;
       
       switch (rxState) {
       case BBRX_HEAD:	/* getting the head of a new message */
-	if (rxTCount > 1)
+	if (rxTCount > 1)  /* Toss the 2 PEP specific header bytes */
 	  rxHead[rxTCount] = ch;
 	if (bbDebug>21)
 	  printf("xvmeRxTask(%d): >%02.2X< (Header)\n", link, ch);
 	
 	if (++rxTCount == 7) {
 	  /* find the message this is a reply to */
-	  rxTCount += 2;		/* adjust for the link field space */
+	  /* rxTCount += 2; PEP header bytes already messed up the count (jrw)*/
 	  
 	  /* Lock the busy list */
 	  FASTLOCK(&(pXvmeLink[link]->pbbLink->busyList.sem));

@@ -127,6 +127,7 @@ static char *SccsId = "$Id$";
 #include	<module_types.h>
 #include	<iv.h>
 #include	<dbScan.h>
+#include	<devLib.h>
 
 /* general constants */
 #define DVX_ID		0xCFF5		/* analogic ID code */
@@ -517,7 +518,12 @@ LOCAL long dvx_driver_init(void)
 			if (ibptr == NULL)
 				return -1;	/* unsuccessfull */
 
+			/* Needs to come from A24 mappable memory...? */
+#if 0
 			if ((ibptr->data = (short *) malloc(dvx[i].dmaSize * sizeof(short))) == NULL)
+#else
+			if ((ibptr->data = (short *) devLibA24Malloc(dvx[i].dmaSize * sizeof(short))) == NULL)
+#endif
 				return(-1);
 
 			if (j == 0){
@@ -1062,8 +1068,12 @@ LOCAL dvx_dma_init(struct dvx_rec *ptr)
 
 	dvx_dma_reset(dev);				/* reset the DMA chip */
 
-	/* build chain table */
+	/* build chain table, needs to come from A24 mappable memory */
+#if 0
 	if ((cptr = cptr0 = (short *)malloc(DVX_CTBL)) == NULL)
+#else
+	if ((cptr = cptr0 = (short *)devLibA24Malloc(DVX_CTBL)) == NULL)
+#endif
 		return -1;
 	dev->dma_point = DMA_MMR;		        /* enable chip */
 	dev->dma_data = MMR_ENABLE;
@@ -1094,7 +1104,12 @@ LOCAL dvx_dma_init(struct dvx_rec *ptr)
 		if ((i + 1) == DVX_NBUF)
 			cptra = cptr0;		/* close list */
 		else
+			/* needs to come from A24 mapped memory */
+#if 0
 			if ((cptra = (short *)malloc(DVX_CTBL)) == NULL)
+#else
+			if ((cptra = (short *)devLibA24Malloc(DVX_CTBL)) == NULL)
+#endif
 				return -1;	/* allocate next chain */
 
 		/* Set the reload word */

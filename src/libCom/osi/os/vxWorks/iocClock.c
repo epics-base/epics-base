@@ -28,6 +28,7 @@ of this distribution.
 #include "epicsMutex.h"
 #include "epicsTime.h"
 #include "iocClock.h"
+#include "envDefs.h"
 
 #define BILLION 1000000000
 #define iocClockSyncRate 10.0
@@ -110,6 +111,20 @@ void iocClockInit()
     if(!piocClockPvt->pserverAddr) {
         errlogPrintf("No NTP server is defined. Clock does not work\n");
         return;
+    }
+    /* if TIMEZONE not defined set TIMEZONE from EPICS_TIMEZONE */
+    if(getenv("TIMEZONE")==(char*)NULL) {
+        char timezone[80];
+        char envtimezone[100];
+        if(envGetConfigParam(&EPICS_TIMEZONE,sizeof(timezone),timezone)==NULL
+        || strlen(timezone)==0) {
+            printf("iocClockInit: No Time Zone Information\n");
+        } else {
+            sprintf(envtimezone,"TIMEZONE=%s",timezone);
+            if(putenv(envtimezone)==ERROR) {
+                printf("iocClockInit: TIMEZONE putenv failed\n");
+            }
+        }
     }
     epicsThreadCreate("syncNTP",
         epicsThreadPriorityHigh,

@@ -116,11 +116,13 @@ static long init_bi();
 static long ioinfo_bi();
 static long read_bi();
 static long init_bi16();
+static long ioinfo_bi16();
 static long read_bi16();
 static long init_mbbi();
 static long ioinfo_mbbi();
 static long read_mbbi();
 static long init_mbbi16();
+static long ioinfo_mbbi16();
 static long read_mbbi16();
 typedef struct {
 	long		number;
@@ -131,9 +133,9 @@ typedef struct {
 	DEVSUPFUN	read_bi;} ABBIDSET;
 
 ABBIDSET devBiAb={ 5, NULL, NULL, init_bi, ioinfo_bi, read_bi};
-ABBIDSET devBiAb16={ 5, NULL, NULL, init_bi16, ioinfo_bi, read_bi16};
+ABBIDSET devBiAb16={ 5, NULL, NULL, init_bi16, ioinfo_bi16, read_bi16};
 ABBIDSET devMbbiAb={ 5, NULL, NULL, init_mbbi, ioinfo_mbbi, read_mbbi};
-ABBIDSET devMbbiAb16={ 5, NULL, NULL, init_mbbi16, ioinfo_mbbi, read_mbbi16};
+ABBIDSET devMbbiAb16={ 5, NULL, NULL, init_mbbi16, ioinfo_mbbi16, read_mbbi16};
 
 static long init_bo();
 static long write_bo();
@@ -638,9 +640,15 @@ static long ioinfo_bi(
     IOSCANPVT		*ppvt)
 {
     struct abio *pabio;
+    long        value;
 
     pabio = (struct abio *)&(pbi->inp.value);
     ab_bi_getioscanpvt(pabio->link,pabio->adapter,pabio->card,ppvt);
+    /*call ab_bidriver so that it knows it has a binary input*/
+    if(cmd==0) {
+	(void) ab_bidriver(ABBI_08_BIT,pabio->link,pabio->adapter,
+		pabio->card,pabio->plc_flag,pbi->mask,&value);
+    }
     return(0);
 }
 
@@ -678,6 +686,24 @@ static long init_bi16(struct biRecord *pbi)
 	recGblRecordError(S_db_badField,(void *)pbi,
 		"devBiAb16 (init_record) Illegal INP field");
 	return(S_db_badField);
+    }
+    return(0);
+}
+
+static long ioinfo_bi16(
+    int			cmd,
+    struct biRecord	*pbi,
+    IOSCANPVT		*ppvt)
+{
+    struct abio *pabio;
+    long        value;
+
+    pabio = (struct abio *)&(pbi->inp.value);
+    ab_bi_getioscanpvt(pabio->link,pabio->adapter,pabio->card,ppvt);
+    /*call ab_bidriver so that it knows it has a binary input*/
+    if(cmd==0) {
+	(void) ab_bidriver(ABBI_16_BIT,pabio->link,pabio->adapter,
+		pabio->card,pabio->plc_flag,pbi->mask,&value);
     }
     return(0);
 }
@@ -724,9 +750,15 @@ static long ioinfo_mbbi(
     IOSCANPVT		*ppvt)
 {
     struct abio *pabio;
+    unsigned long value;
 
     pabio = (struct abio *)&(pmbbi->inp.value);
     ab_bi_getioscanpvt(pabio->link,pabio->adapter,pabio->card,ppvt);
+    /*call ab_bidriver so that it knows it has a binary input*/
+    if(cmd==0) {
+	(void) ab_bidriver(ABBI_08_BIT,pabio->link,pabio->adapter,
+		pabio->card,pabio->plc_flag,pmbbi->mask,&value);
+    }
     return(0);
 }
 
@@ -761,6 +793,24 @@ static long init_mbbi16(struct mbbiRecord *pmbbi)
 	recGblRecordError(S_db_badField,(void *)pmbbi,
 	    "devMbbiAb16 (init_record) Illegal INP field");
 	return(S_db_badField);
+    }
+    return(0);
+}
+
+static long ioinfo_mbbi16(
+    int			cmd,
+    struct mbbiRecord	*pmbbi,
+    IOSCANPVT		*ppvt)
+{
+    struct abio *pabio;
+    unsigned long value;
+
+    pabio = (struct abio *)&(pmbbi->inp.value);
+    ab_bi_getioscanpvt(pabio->link,pabio->adapter,pabio->card,ppvt);
+    /*call ab_bidriver so that it knows it has a binary input*/
+    if(cmd==0) {
+	(void) ab_bidriver(ABBI_16_BIT,pabio->link,pabio->adapter,
+		pabio->card,pabio->plc_flag,pmbbi->mask,&value);
     }
     return(0);
 }

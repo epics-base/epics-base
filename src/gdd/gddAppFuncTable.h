@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.8  1998/04/14 00:51:33  jhill
+ * code around ms sizeof() bug V5.0
+ *
  * Revision 1.7  1998/02/18 22:52:22  jhill
  * fixed to run on both vis C++ 5.0 and g++
  *
@@ -102,18 +105,20 @@ public:
 		}
 	}
 
+#if __GNUC__ == 2 && __GNUC_MINOR__ <= 7
 	//
-	// Both cases below are correct C++ syntax 
+	// This is required by gnu g++ 2.7.2, but produces the following warning under 
+	// g++ 2.8.1. Unfortunately, the parenthesis in gddAppFuncTablePMF_t below are 
+	// required by g++ 2.7.2. 
 	//
-#if __GNUG__
-	//
-	// required by gnu g++ 2.7.2
+	// warning: ANSI C++ forbids array dimensions with parenthesized type in new
 	//
 #	define gddAppFuncTablePMF(VAR) gddAppFuncTableStatus (PV:: * VAR)(gdd &)
 #	define gddAppFuncTablePMF_t (gddAppFuncTableStatus (PV::*)(gdd &))
 #else
 	//
-	// required by MS vis c++ and also sun pro c++ 
+	// This version should work on most modern C++ compilers. It is required 
+	// by MS vis c++ and also sun pro c++. This also works under g++ 2.8.1.
 	//
 	typedef gddAppFuncTableStatus (PV::*gddAppFuncTablePMF_t)(gdd &);
 #	define gddAppFuncTablePMF(VAR) gddAppFuncTablePMF_t VAR
@@ -129,7 +134,8 @@ public:
 	// gddAppFuncTableStatus PV::memberFunction(gdd &value);
 	//
 	//
-	// workaround for bug existing only in microsloth vis c++ 5.0
+	// workaround for bug existing only in microsloth vis c++ 5.0.
+	// (in this version we are unable to overload installReadFunc())
 	//
 #if _MSC_VER == 1100
 	gddAppFuncTableStatus installReadFuncVISC50 (const unsigned type, 
@@ -178,7 +184,7 @@ private:
 //
 // gddAppFuncTableStatus PV::memberFunction(gdd &value);
 //
-// The typedef is not used here because of portability 
+// A typedef is not used here because of portability 
 // problems resulting from compiler weaknesses
 //
 #if _MSC_VER == 1100

@@ -5,9 +5,6 @@ use the ca server library).
 simple - complete CA server example (includes asynchronous 
 	io and arrays)
 
-testdb - very simple ca server (does not provide some of the
-	pv attributes (ie precision and others))
-
 directoryService - fully functional pv name resolution server
 
 

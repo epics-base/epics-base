@@ -341,20 +341,20 @@ void epicsShareAPI caRepeaterRegistrationMessage (
              */
             saddr.ia.sin_family = AF_INET;
             saddr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
-            saddr.ia.sin_port = static_cast <unsigned short> ( htons ( port ) );
+            saddr.ia.sin_port = htons ( port );
         }
         else {
-            saddr.ia.sin_port = static_cast <unsigned short> ( htons ( port ) );
+            saddr.ia.sin_port = htons ( port );
         }
     }
     else {
         saddr.ia.sin_family = AF_INET;
         saddr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
-        saddr.ia.sin_port = static_cast <unsigned short> ( htons ( port ) );
+        saddr.ia.sin_port = htons ( port );
     }
 
     memset ( (char *) &msg, 0, sizeof (msg) );
-    msg.m_cmmd = static_cast <unsigned short> ( htons ( REPEATER_REGISTER ) );
+    msg.m_cmmd = htons ( REPEATER_REGISTER ); // X aCC 818
     msg.m_available = saddr.ia.sin_addr.s_addr;
 
     /*

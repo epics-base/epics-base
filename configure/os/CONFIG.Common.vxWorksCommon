@@ -116,6 +116,11 @@ POSIX_CPPFLAGS_YES = -D_POSIX_SOURCE
 POSIX_CPPFLAGS_NO =
 
 #--------------------------------------------------
+# no shared libs for vxWorks
+SHRLIB_CFLAGS = 
+SHRLIB_LDFLAGS = 
+
+#--------------------------------------------------
 # osithead use default stack, YES or NO override
 OSITHREAD_USE_DEFAULT_STACK = NO
 

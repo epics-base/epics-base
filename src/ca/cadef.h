@@ -920,8 +920,9 @@ epicsShareFunc double epicsShareAPI ca_beacon_period (chid chan);
  * used when an auxillary thread needs to join a CA client context started
  * by another thread
  */
-epicsShareFunc struct oldCAC * epicsShareAPI ca_current_context ();
-epicsShareFunc int epicsShareAPI ca_attach_context ( struct oldCAC * context );
+typedef struct oldCAC ca_client_context;
+epicsShareFunc ca_client_context * epicsShareAPI ca_current_context ();
+epicsShareFunc int epicsShareAPI ca_attach_context ( ca_client_context * context );
 
 
 epicsShareFunc int epicsShareAPI ca_client_status (unsigned level);

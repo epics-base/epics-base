@@ -1,5 +1,5 @@
 /* at5vxi_driver.c */
-/* share/src/drv @(#)at5vxi_driver.c	1.8     9/20/91 */
+/* share/src/drv @(#) $Id$ */
 
 /*
  * 	at5vxi_driver.c
@@ -52,6 +52,7 @@
  *			style register map
  *	.14 joh 071792	added model name registration
  *	.15 joh 072992	print more raw values in io report
+ *	.16 joh 081092	merged at5vxi_models.h into this source
  *
  *	Notes:
  *	------
@@ -70,8 +71,6 @@
  *
  *	change the pconfig pointer to be after the channel number 
  *	indexing in some cases?
- *
- *	tech note on how to write a new vxi driver
  *
  *	use dev255 to switch between static and dynamic addressing?
  *
@@ -111,9 +110,8 @@
 #include <task_params.h>
 #include <fast_lock.h>
 #include <epvxiLib.h>
-#include <at5vxi_models.h>
 
-static char SccsId[] = "@(#)at5vxi_driver.c	1.4\t11/14/88";
+static char SccsId[] = "$Id$\t$Date$";
 
 typedef long (*DRVSUPFUN) ();   /* ptr to driver support function*/
 
@@ -350,6 +348,47 @@ LOCAL unsigned long at5vxiDriverID;
 epvxiPConfig((CARD), at5vxiDriverID, struct at5vxi_config *)	
 
 #define AT5VXI_CORRECT_MAKE(PCSR) 	(VXIMAKE(PCSR)==VXI_MAKE_AT5)
+
+struct  at5vxi_model{
+        char            *name;          /* AT5 VXI module name */
+        char            *drawing;       /* AT5 VXI assembly drawing number */
+};
+
+#define AT5VXI_INDEX_FROM_MODEL(MODEL) ((unsigned)((MODEL)&0xff))
+#define AT5VXI_MODEL_FROM_INDEX(INDEX) ((unsigned)((INDEX)|0xf00))
+
+/*
+        NOTE: The macro AT5VXI_INDEX_FROM_MODEL(MODEL) defined above
+        should return an index into the correct data given the
+        VXI device's model code.
+*/
+struct at5vxi_model at5vxi_models[] = {
+        {"INTERFACE SIMULATOR",         "112Y-280158"},
+        {"I CONTROLLER",                "112Y-280176"},
+        {"CONTROL PREDISTORTER",        "112Y-280172"},
+        {"VECTOR DETECTOR",             "112Y-280230"},
+        {"VECTOR MODULATOR",            "112Y-280177"},
+        {"425MHz ENVELOPE DETECTOR",    "112Y-280169"},
+        {"425MHz DOWNCONVERTER",        "112Y-280165"},
+        {"POLAR DETECTOR",              "112Y-280567"},
+        {"UPCONVERTER",                 "112Y-280225"},
+        {"MONITOR TRANSMITTER",         "112Y-280187"},
+        {"TIMING DISTRIBUTION",         "112Y-280582"},
+        {"LINE CONDITIONER",            "112Y-280305"},
+        {"BEAM FEEDFORWARD",            "112Y-280564"},
+        {"TIMING RECEIVER",             "112Y-280243"},
+        {"FAST PROTECTION",             "112Y-280246"},
+        {"ADAPTIVE FEEDFORWARD",        "112Y-280563"},
+        {"CABLE CONTROLLER",            "112Y-280307"},
+        {"Q CONTROLLER",                "112Y-280180"},
+        {"ENVELOPE DETECTOR",           "112Y-280249"},
+        {"DOWNCONVERTER",               "112Y-280456"},
+        {"COAX MONITOR TRANSMITTER",    "112Y-280587"},
+        {"CAVITY SIMULATOR",            "112Y-280232"},
+};
+
+#define AT5VXI_VALID_MODEL(MODEL) \
+(AT5VXI_INDEX_FROM_MODEL(MODEL)<NELEMENTS(at5vxi_models))
 
 
 

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.8.6.1  2000/07/13 23:37:24  jhill
+ * fixed missing type in static init
+ *
  * Revision 1.8  1997/08/05 00:46:56  jhill
  * fixed warnings
  *
@@ -88,11 +91,11 @@ epicsShareFunc caServer::caServer(unsigned pvCountEstimateIn) :
 		logEventMask(this->registerEvent("log")),
 		alarmEventMask(this->registerEvent("alarm"))
 {
-	static bool init = false;
+	static int init = 0;
 
 	if (!init) {
 		gddMakeMapDBR(gddApplicationTypeTable::app_table);
-		init = true;
+		init = 1;
 	}
 
 	if (!this->pCAS) {

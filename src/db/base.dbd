@@ -201,12 +201,7 @@ device(waveform,CONSTANT,devWfSoft,"Soft Channel")
 #device(mbbi,VME_IO,devMbbiVmic2534,"Vmic2534")
 #device(mbbo,VME_IO,devMbboVmic2534,"Vmic2534")
 
-device(ai,CONSTANT,devAiSymb,"vxWorks Variable")
-device(ao,CONSTANT,devAoSymb,"vxWorks Variable")
-device(longin,CONSTANT,devLiSymb,"vxWorks Variable")
-device(longout,CONSTANT,devLoSymb,"vxWorks Variable")
-device(stringin,CONSTANT,devSiSymb,"vxWorks Variable")
-device(stringout,CONSTANT,devSoSymb,"vxWorks Variable")
+include "symb.dbd"
 
 #device(ai,AB_IO,devAiAbSlcDcm,"AB-SLC500DCM")
 #device(ai,AB_IO,devAiAbSlcDcmSigned,"AB-SLC500DCM-Signed")

@@ -151,12 +151,7 @@ LIBOBJS += $(EPICS_BASE_BIN)/devWfTestAsyn.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devMbboDirectCan.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devVmic2534.o
 
-LIBOBJS += $(EPICS_BASE_BIN)/devAiSymb.o
-LIBOBJS += $(EPICS_BASE_BIN)/devAoSymb.o
-LIBOBJS += $(EPICS_BASE_BIN)/devLiSymb.o
-LIBOBJS += $(EPICS_BASE_BIN)/devLoSymb.o
-LIBOBJS += $(EPICS_BASE_BIN)/devSiSymb.o
-LIBOBJS += $(EPICS_BASE_BIN)/devSoSymb.o
+LIBOBJS += $(EPICS_BASE_BIN)/symb
 
 #
 # Driver support ANSI

@@ -56,6 +56,7 @@
  * .20	11-29-90	lrd	conditionally process soft channels
  * .21	12-14-90	lrd	fixed post events for the variables
  * .22  03-15-91	mrk	moved code from calcRecord to here
+ * .23	08-01-91	rac	don't use FETCH_G ... for V2
  */
 
 /* This module contains the code for processing the arithmetic
@@ -147,6 +148,7 @@ char   *post;
 			*pstacktop = parg[5];
 			break;
 
+#ifndef EPICS_V2
 		case FETCH_G:
 			++pstacktop;
 			*pstacktop = parg[6];
@@ -176,6 +178,7 @@ char   *post;
 			++pstacktop;
 			*pstacktop = parg[11];
 			break;
+#endif
 
 
 		case ADD:

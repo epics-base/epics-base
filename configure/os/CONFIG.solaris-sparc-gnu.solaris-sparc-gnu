@@ -12,8 +12,8 @@ include $(CONFIG)/CONFIG.gnuCommon
 
 GNU_DIR = /opt/gnu
 
-CC = $(GNU_BIN)/gcc -D__`uname -s`_`uname -r`
-CCC = $(GNU_BIN)/g++ -D__`uname -s`_`uname -r`
+CC = $(GNU_BIN)/gcc -D__$(shell uname -s)_$(shell uname -r)
+CCC = $(GNU_BIN)/g++ -D__$(shell uname -s)_$(shell uname -r)
 AR = ar -rc
 RANLIB=
 LD = ld -r

@@ -141,18 +141,17 @@ $(TARGETS) $(PROD): $(DEPLIBS)
 
 # Mangen Rule:
 %.1:%
-	$(RM) $(<F)
 	$(RM) $(<F).nr
-	ln -s $<
-	$(MANGEN) -s $(<F)
+	$(MANGEN) -s $<
 	$(MV) $(<F).nr $(<F).1
 
 # Mangen Rule:
 %.1:../%
 	$(RM) $(<F)
 	$(RM) $(<F).nr
-	ln -s $<
-	$(MANGEN) -s $(<F)
+	$(CP) $< $(<F)
+	$(MANGEN) -s $<
+	$(RM) $(<F)
 	$(MV) $(<F).nr $(<F).1
 
 $(LIBNAME): $(LIBOBJS)

@@ -133,7 +133,7 @@ static long read_ai(pai)
 		return(2); /* don`t convert*/
 	} else {
 		wait_time = (int)(pai->disv * vxTicksPerSecond);
-		if(wait_time<=0) return(0);
+		if(wait_time<=0) return(2);
 		callbackSetPriority(pai->prio,&pcallback->callback);
 		printf("Starting asynchronous processing: %s\n",pai->name);
 		wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);

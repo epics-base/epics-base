@@ -6,7 +6,7 @@ include $(TOP)/configure/CONFIG
 
 #USR_CFLAGS += 
 PROD_LIBS	+= ca
-PROD_LIBS	+= Db
+PROD_LIBS	+= dbStaticHost
 PROD_LIBS	+= Com
 ca_DIR  = $(EPICS_BASE_LIB)
 Db_DIR  = $(EPICS_BASE_LIB)
@@ -24,14 +24,14 @@ LIBRARY_IOC = exampleLib
 
 exampleLib_SRCS += xxxRecord.c
 exampleLib_SRCS += devXxxSoft.c
-exampleLib_SRCS += sncExample.c
+#exampleLib_SRCS += sncExample.c
 
 #exampleLib_SRCS += registerRecordDeviceDriver.c
 
-LIBOBJS += $(EPICS_BASE_BIN)/registerRecordDeviceDriver.o
+exampleLib_OBJS += $(EPICS_BASE_BIN)/registerRecordDeviceDriver.o
 
-LIBOBJS += $(EPICS_BASE_BIN)/iocCore
-LIBOBJS += $(EPICS_BASE_BIN)/seq
+exampleLib_OBJS += $(EPICS_BASE_BIN)/iocCore
+#exampleLib_OBJS += $(EPICS_BASE_BIN)/seq
 
 -include ../baseLIBOBJS
 

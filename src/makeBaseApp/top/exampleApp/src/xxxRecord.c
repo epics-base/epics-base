@@ -7,6 +7,8 @@
 #include <string.h>
 
 #include "alarm.h"
+#include "dbAccess.h"
+#include "recGbl.h"
 #include "dbEvent.h"
 #include "dbDefs.h"
 #include "dbAccess.h"

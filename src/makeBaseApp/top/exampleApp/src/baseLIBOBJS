@@ -24,7 +24,6 @@ LIBOBJS += $(EPICS_BASE_BIN)/mbboRecord.o
 LIBOBJS += $(EPICS_BASE_BIN)/mbboDirectRecord.o
 #LIBOBJS += $(EPICS_BASE_BIN)/palRecord.o
 LIBOBJS += $(EPICS_BASE_BIN)/permissiveRecord.o
-LIBOBJS += $(EPICS_BASE_BIN)/pidRecord.o
 #LIBOBJS += $(EPICS_BASE_BIN)/pulseCounterRecord.o
 #LIBOBJS += $(EPICS_BASE_BIN)/pulseDelayRecord.o
 #LIBOBJS += $(EPICS_BASE_BIN)/pulseTrainRecord.o

@@ -3,12 +3,13 @@
 
 /* recDfanout.c - Record Support Routines for Dfanout records */
 /*
- * Author: 	Matt Bickley
- * Date:	Sometime in 1994
+ * Original Author: 	Matt Bickley   (Sometime in 1994)
+ * Current Author:	Johnny Tang
  *
  * Modification Log:
  * -----------------
  * .01  1994        mhb     Started with longout record to make the data fanout
+ * .02  May 10, 96  jt	    Bug Fix
  */
 
 
@@ -75,9 +76,6 @@ static void monitor();
 static long push_values();
 
 #define OUT_ARG_MAX 8
-
-static char *Ofldnames[OUT_ARG_MAX] =
-   {"OUTA", "OUTB", "OUTC", "OUTD", "OUTE", "OUTF", "OUTG", "OUTH"};
 
 
 static long init_record(pdfanout,pass)

@@ -44,11 +44,12 @@ of this distribution.
 
 /*define DB_CONVERT_GBLSOURCE because db_access.c does not include db_access.h*/
 #define DB_CONVERT_GBLSOURCE
+
+#define epicsExportSharedSymbols
 #include "db_access_routines.h"
 #include "db_convert.h"
 #include "dbCaPvt.h"
 #include "dbCa.h"
-#define epicsExportSharedSymbols
 #include "dbCaTest.h"
 
 long epicsShareAPI dbcar(char	*precordname,int level)

@@ -52,7 +52,7 @@
 #include "osiThread.h"
 #include "tsMinMax.h"
 #include "fdManager.h"
-#include "bsdSocketResource.h"
+#include "osiSockResource.h"
  
 //
 // if the compiler supports explicit instantiation of

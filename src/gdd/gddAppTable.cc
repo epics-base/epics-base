@@ -537,7 +537,7 @@ gddStatus gddApplicationTypeTable::copyDD_dest(gdd& dest, const gdd& src)
 
 gddStatus gddApplicationTypeTable::smartCopy(gdd* dest, const gdd* src)
 {
-	gddStatus rc=0;
+	gddStatus rc = gddErrorNotAllowed;
 
 	// only works with managed containers because app table mapping
 	// feature is used.
@@ -554,10 +554,9 @@ gddStatus gddApplicationTypeTable::smartCopy(gdd* dest, const gdd* src)
             rc=gddErrorNotDefined;
         }
     }
-	else
-		rc=gddErrorNotAllowed;
 
 	gddAutoPrint("gddAppTable::smartCopy()",rc);
+
 	return rc;
 }
 

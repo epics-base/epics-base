@@ -251,15 +251,15 @@ Build related components
      CONFIG_SITE.<host>.Common   Site specific host defs for all targets 
        
      base/configure/tools directory - contains Perl scripts used for the build 
+     MakeReleae              Unix shell script to create a release tar file
+     convertRelease.pl       Performs consistancy checks on RELEASE files
      cp.pl                   This Perl script copies an existing file 
      installEpics.pl         Installs built files into install directories. 
-     makeConfigAppInclude.pl Generates include,bin, lib dir definitions 
-     makeDbDepends.pl        Generates dependencies from substitution files 
-     makeIocCdCommands.pl    Generates cdCommands file for use in IOCs 
+     makeDependsTargets.pl   Creates targets of include dependency files
      makeMakefile.pl         Creates a Makefile in O.<arch> dirs 
      makeMakefileInclude.pl  Creates file to be included by Makefile 
-     makeRulesInclude.pl     Creates .h depends files included by Makefile 
      mkdir.pl                Creates a directory (like Unix mkdir) 
+     mkmf.pl                 Generates dependencies from include stmnts 
      munch.pl                Creates a ctdt.c file for vxWorks targets 
      mv.pl                   Renames an existing file. 
      replaceVAR.pl           Changes CapFast VAR(xxx) to $(xxx) notation 

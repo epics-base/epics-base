@@ -60,8 +60,8 @@ height="31" width="88"></a></p>
   <li><a href="#CA and Wide Area Networks">CA and Wide Area Networks</a></li>
   <li><a href="#Network">IP Network Administration Background
   Information</a></li>
+  <li><a href="#port">IP port numbers</a></li>
   <li><a href="#Environmen">WAN Environment</a></li>
-  <li><a href="#IP port numbers">IP port numbers</a></li>
   <li><a href="#Disconnect">Disconnect Time Out Interval / Server Beacon
     Period</a></li>
   <li><a href="#Configurin">Configuring the Time Zone</a></li>
@@ -189,7 +189,7 @@ files is used.</p>
     </tr>
     <tr>
       <td>EPICS_CA_ADDR_LIST</td>
-      <td>{N.N.N.N N.N.N.N ...}</td>
+      <td>{N.N.N.N N.N.N.N:P ...}</td>
       <td>&lt;none&gt;</td>
     </tr>
     <tr>
@@ -319,6 +319,44 @@ standardized facilities such as mail or file transfer. Port number between
 1024 and 5000 are typically reserved for ephemeral port number
 assignments.</p>
 
+<h3><a name="port">IP port numbers</a></h3>
+
+<p>The two IP port numbers used by Channel Access may be configured. This
+might occur when a site decides to set up two or more completely independent
+control systems that will share the same network. For instance, a site might
+set up an operational control system and a test control system on the same
+network. In this situation it is desirable for the test system and the
+operational system to use identical PV names without fear of collision.
+Usually the best choice is to assign new port numbers to the operational
+system and allow the test system to use the default CA port numbers. A site
+might also configure the CA port numbers because some other facility has
+already reserved the defaults.</p>
+
+<table cellspacing="1" cellpadding="1" width="80%" border="1">
+  <col><tbody>
+    <tr>
+      <td>Purpose</td>
+      <td>Default</td>
+      <td>Environment Variable</td>
+    </tr>
+    <tr>
+      <td>CA Server</td>
+      <td>5064</td>
+      <td>EPICS_CA_SERVER_PORT</td>
+    </tr>
+    <tr>
+      <td>CA Beacons (sent to CA repeater daemon)</td>
+      <td>5065</td>
+      <td>EPICS_CA_REPEATER_PORT</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>If a client needs to communicate with two servers that are residing at
+different port numbers then an extended syntax may be used with the
+EPICS_CA_ADDRESS_LIST environment variable. See <a href="#Environmen">WAN
+Environment</a> below.</p>
+
 <h3><a name="Environmen">WAN Environment</a></h3>
 
 <p>Typically vxWorks hosts boot with routes configured for the host's subnet.
@@ -388,35 +426,18 @@ broadcast addresses, but this will often be the most convenient choice.</p>
   </tbody>
 </table>
 
-<h3><a name="IP port numbers"></a>IP port numbers</h3>
+<p>If a client needs to communicate with two servers that are residing at
+different port numbers then an extended syntax may be used with the
+EPICS_CA_ADDRESS_LIST environment variable. Each host name or IP address in
+the EPICS_CA_ADDR_LIST may be immediately followed by a colon and an IP port
+number without intervening whitespace. Entries that do not specify a port
+number will default to EPICS_CA_SERVER_PORT.</p>
 
-<p>The two IP port numbers used by Channel Access may be configured. This
-might occur when a site decides to set up two or more completely independent
-control systems that will share the same network. For instance, a site might
-set up an operational control system and a test control system on the same
-network. In this situation it is desirable for the test system and the
-operational system to use identical PV names without fear of collision.
-Usually the best choice is to assign new port numbers to the operational
-system and allow the test system to use the default CA port numbers. A site
-might also configure the CA port numbers because some other facility has
-already reserved the defaults.</p>
-
-<table cellspacing="1" cellpadding="1" width="80%" border="1">
-  <col><tbody>
+<table border="1">
+  <tbody>
     <tr>
-      <td>Purpose</td>
-      <td>Default</td>
-      <td>Environment Variable</td>
-    </tr>
-    <tr>
-      <td>CA Server</td>
-      <td>5064</td>
-      <td>EPICS_CA_SERVER_PORT</td>
-    </tr>
-    <tr>
-      <td>CA Beacons (sent to CA repeater daemon)</td>
-      <td>5065</td>
-      <td>EPICS_CA_REPEATER_PORT</td>
+      <td>C shell</td>
+      <td>setenv EPICS_CA_ADDR_LIST "1.2.3.255 8.9.10.255:10000"</td>
     </tr>
   </tbody>
 </table>
@@ -533,7 +554,7 @@ request transportation of large arrays.</p>
     </tr>
     <tr>
       <td>EPICS_CAS_BEACON_ADDR_LIST</td>
-      <td>{N.N.N.NN.N.N.N...}</td>
+      <td>{N.N.N.NN.N.N.N:P...}</td>
       <td></td>
     </tr>
     <tr>
@@ -544,13 +565,31 @@ request transportation of large arrays.</p>
   </tbody>
 </table>
 
-<p>The server must build a list of addresses to send beacons to. If
-EPICS_CA_AUTO_ADDR_LIST has the value "YES" then the beacon address list will
-contain at least the broadcast address of all LAN interfaces found in the
-host and the destination address of all point-to-point interfaces found in
-the host. If EPICS_CAS_BEACON_ADDR_LIST is defined then its contents will be
-used to augment this list. Otherwise, if EPICS_CA_ADDR_LIST is define its
-contents will be used to augment this list.</p>
+<p><em>Readers Note: The CA server configurationn documentation is
+incomplete. Also, the configuration feature set is more advanced in the new
+server than in the original server which is still employed in
+iocCore.</em></p>
+
+<p>The server configures its UDP port number from the EPICS_CAS_SERVER_PORT
+environment variable if it is specified. Otherwise the EPICS_CA_SERVER_PORT
+environemnt variable determines the server's UDP port number. If two servers
+share the same UDP port number on the same host then both of them may not,
+depending on the local IP kernel, be reachable with IP unicast (an IP address
+specifying only one recipient in the client's EPICS_CA_ADDR_LIST). If
+available, the server will use the same TCP port number as its UDP port
+number. Otherwise, it will use an ephemeral TCP port number assigned by the
+opertaing system, and clients will discover this port number via the UDP
+search response. The server must build a list of addresses to send beacons
+to. If EPICS_CA_AUTO_ADDR_LIST has the value "YES" then the beacon address
+list will contain at least the broadcast address of all LAN interfaces found
+in the host and the destination address of all point-to-point interfaces
+found in the host. If EPICS_CAS_BEACON_ADDR_LIST is defined then its contents
+will be used to augment this list. Individual entries in
+EPICS_CAS_BEACON_ADDR_LIST may override the repeater's port number if a colun
+follows the host name or IP address there. Otherwise, if EPICS_CA_ADDR_LIST
+is defined, its contents will be used to augment this list, but its
+individual entries will not be allowed to override the repeater's port
+number.</p>
 
 <h2><a name="Notes"></a>Function Call Interface General Guidelines</h2>
 
@@ -2422,6 +2461,8 @@ and then output to the console.</p>
     <dd>write access denied</dd>
 </dl>
 <pre></pre>
-<p><small>CVS Revision $Id$</small></p>
+
+<p><small>CVS Revision $Id: CAref.html,v 1.16 2001/11/20 23:33:05 jhill Exp
+$</small></p>
 </body>
 </html>

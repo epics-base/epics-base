@@ -39,7 +39,7 @@ public:
     virtual caStatus cbFunc ( casCoreClient & ) = 0;
     virtual void eventSysDestroyNotify ( casCoreClient & ) = 0;
 protected:
-    virtual ~casEvent();
+    epicsShareFunc virtual ~casEvent();
 };
 
 class casChanDelEv : public casEvent {

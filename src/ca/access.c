@@ -2,7 +2,7 @@
 /*									*/
 /*	        	      L O S  A L A M O S			*/
 /*		        Los Alamos National Laboratory			*/
-/*		         Los Alamos, New Mexico 87545			*/	
+/*		         Los Alamos, New Mexico 87545			*/
 /*									*/
 /*	Copyright, 1986, The Regents of the University of California.	*/
 /*									*/
@@ -16,6 +16,12 @@
 /*	1/90		Jeff HIll	switched order in task exit	*/
 /*					so events are deleted first	*/
 /*					then closed			*/
+/*	3/90		Jeff Hill	Changed error message strings	*/
+/*					to allocate in this module only	*/
+/*					& further improved vx task exit	*/
+/*	021291 joh	fixed potential problem with strncpy and 	*/
+/*			the vxWorks task name.				*/
+/*	022791 mda	integration of ANL/LANL db code			*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -32,15 +38,11 @@
 /*	ioc high level access routines					*/
 /*									*/
 /*									*/
-/*	Special comments						*/	
+/*	Special comments						*/
 /*	------- --------						*/
 /*	Things that could be done to improve this code			*/
-/*	1)	Check timeouts on the ca_pend for values to large	*/
-/*	2)	When a chid is marked disconnected any associated	*/
-/*		monitors should be placed in inactive list as well	*/
-/*	3)	Fix the monitor cancel protocol				*/
-/*	4)	Allow them to recieve channel A when channel B changes	*/
-/*									*/
+/*	1)	Check timeouts on ca_pend for values to large		*/
+/*	2)	Allow them to recieve channel A when channel B changes	*/
 /*									*/
 /************************************************************************/
 /*_end									*/
@@ -50,6 +52,8 @@
 #include		stsdef.h
 #include		ssdef.h
 #include		psldef.h
+#include		prcdef.h
+#include 		descrip.h
 #else
 #endif
 
@@ -57,12 +61,22 @@
 
 #ifdef vxWorks
 # include		<taskLib.h>
-# include		<semLib.h>
-/*# include		<dblib.h>*/
+# include		<taskParams.h>
 #endif
 
+/*
+ * allocate error message string array 
+ * here so I can use sizeof
+ */
+#define CA_ERROR_GLBLSOURCE
+
+/*
+ * allocate db_access message strings here
+ */
+#define DB_TEXT_GLBLSOURCE
 #include 		<cadef.h>
 #include		<net_convert.h>
+
 #include		<db_access.h>
 #include		<iocmsg.h>
 #include 		<iocinf.h>
@@ -75,7 +89,10 @@
 #define SNDBEG(STRUCTURE) \
 SND_BEG(STRUCTURE, &iiu[chix->iocix])
 
-#define SND_BEG(STRUCTURE, PIIU) \
+#define SNDBEG_NOLOCK(STRUCTURE) \
+SND_BEG_NOLOCK(STRUCTURE, &iiu[chix->iocix])
+
+#define SND_BEG(STRUCTURE, PIIU)\
 LOCK SND_BEG_NOLOCK(STRUCTURE,PIIU)
 
 #define SND_BEG_NOLOCK(STRUCTURE,PIIU) \
@@ -115,25 +132,58 @@ LOCK SNDBEG_VARIABLE_NOLOCK(POSTSIZE)
 /****************************************************************/
 /*	Macros for error checking				*/
 /****************************************************************/
+/*
+	valid type check filters out disconnected channel
+*/
+
 #define CHIXCHK(CHIX) \
 { \
-  register unsigned short iocix = CHIX->iocix; \
+  register unsigned short iocix = (CHIX)->iocix; \
   if(	iocix == BROADCAST_IIU || \
 	(iocix >= nxtiiu && iocix != LOCAL_IIU) || \
-	INVALID_DB_REQ(CHIX->type)) \
+	INVALID_DB_REQ((CHIX)->type)  ) \
     return ECA_BADCHID; \
 }
 
-#define INITCHK \
-if(!ca_static) \
-  ca_task_initialize();
+/* type to detect them using deallocated channel in use block */
+#define TYPENOTINUSE (-2)
+
+/* allow them to add monitors to a disconnected channel */
+#define LOOSECHIXCHK(CHIX) \
+{ \
+  register unsigned short iocix = CHIX->iocix; \
+  if( 	(iocix >= nxtiiu && iocix != LOCAL_IIU) || \
+	(CHIX)->type==TYPENOTINUSE ) \
+    return ECA_BADCHID; \
+}
+
+#define INITCHK  if(!ca_static) ca_task_initialize();
 
 
 static struct extmsg	nullmsg;
 
 
+void 	ca_default_exception_handler();
+void	*db_init_events();
+void	ca_default_exception_handler();
+void	ca_repeater_task();
+int	ca_import();
+
+#ifdef vxWorks
+static check_for_fp();
+static ca_add_task_variable();
+static void ca_task_exit_tid();
+static void issue_get_callback();
+static void ca_event_handler();
+#endif
 
 
+/*
+ *
+ *	CA_TASK_INITIALIZE
+ *
+ *
+ */
 ca_task_initialize
 #ifdef VAXC
 (void)
@@ -142,34 +192,82 @@ ca_task_initialize
 #endif
 {
   int 		status;
-  char		*taskName();
   char		name[15];
-  void		*db_init_events();
-  int		ca_import();
 
   if(!ca_static){                                                 
 
+    /*
+	Spawn the repeater task as needed
+    */
+    if(!repeater_installed()){
+#   ifdef UNIX
+	/*
+	 * This method of spawn places a path name in the code so it has been
+	 * avoided for now
+	 * 
+	 * use of fork makes ca and repeaters image larger than required 
+	 * 
+	 * system("/path/repeater &");
+	 */
+	status = fork();
+	if(status<0)
+		SEVCHK(ECA_INTERNAL,"couldnt spawn the repeater task");
+	if(!status)
+		ca_repeater_task();
+#   endif
 #   ifdef vxWorks
-    {
-      int options;
+	status = taskSpawn(
+			CA_REPEATER_NAME,
+			CA_REPEATER_PRI,
+			CA_REPEATER_OPT,
+			CA_REPEATER_STACK,
+			ca_repeater_task
+			);
+      	if(status<0)
+		SEVCHK(ECA_INTERNAL,"couldnt spawn the repeater task");
+#   endif
+#   ifdef VMS
+      {
+      	static 		$DESCRIPTOR(image, "LAACS_CA_REPEATER");
+      	static 		$DESCRIPTOR(name, "CA repeater");
+      	static 		$DESCRIPTOR(in,	"CONSOLE");
+      	static 		$DESCRIPTOR(out, "CONSOLE");
+      	static 		$DESCRIPTOR(err, "CONSOLE");
+	int		privs = ~0;
+	unsigned long	pid;
 
-      if(taskOptionsGet(taskIdSelf(),&options)==ERROR)
-	abort();
-      if(!(options & VX_FP_TASK))
-	SEVCHK(ECA_NEEDSFP, NULL);
-
-      if(taskOptionsSet(taskIdSelf(),VX_FP_TASK,VX_FP_TASK)==ERROR)
-	abort();
-
-      if(ca_add_task_variable()== ERROR)
-        abort();
+      	status = sys$creprc(
+			&pid,
+			&image,
+			&in,
+			&out,
+			&err,
+			&privs,
+			NULL,
+			&name,
+			4,	/*base priority */
+			NULL,
+			NULL,
+			PRC$M_DETACH);
+      	if(status != SS$_NORMAL)
+        	lib$signal(status);
+printf("spawning repeater %x\n", pid);
+      }
+#   endif
     }
+
+#   ifdef vxWorks
+      check_for_fp();
+      if(ca_add_task_variable() == ERROR)
+        abort();
 #   endif
 
-    ca_static = (struct ca_static *) malloc(sizeof(*ca_static));  
+    ca_static = (struct ca_static *) calloc(1, sizeof(*ca_static));  
     if(!ca_static)
       abort();
-    memset(ca_static, NULL, sizeof(*ca_static));                  
+              
+    ca_static->ca_exception_func = ca_default_exception_handler;
+    ca_static->ca_exception_arg = NULL;
 
 #   ifdef VMS
       status = lib$get_ef(&io_done_flag);
@@ -178,19 +276,29 @@ ca_task_initialize
 #   endif
 
 #   ifdef vxWorks
+	{
+  		char		*taskName();
+      		ca_static->ca_tid = taskIdSelf();
 
-      FASTLOCKINIT(&client_lock);
+      		FASTLOCKINIT(&client_lock);
 
-      evuser = (void *) db_init_events();
-      if(!evuser)
-        abort();
+      		evuser = (void *) db_init_events();
+      		if(!evuser)
+        		abort();
 
-      name[0]=NULL;
-      strncat(name,"EV ", sizeof(name)-1);
-      strncat(name, taskName(VXTHISTASKID), sizeof(name)-1);
-      status = db_start_events(evuser, name, ca_import, taskIdSelf());
-      if(status != OK)
-        abort();
+		strcpy(name, "EV ");
+		strncat(
+			name, 
+			taskName(VXTHISTASKID),
+			sizeof(name)-strlen(name)-1);
+      		status = db_start_events(
+				evuser, 
+				name, 
+				ca_import, 
+				taskIdSelf());
+      		if(status != OK)
+       			abort();
+	}
 #   endif                                                         
 
   }                                                               
@@ -198,28 +306,72 @@ ca_task_initialize
   return ECA_NORMAL;
 }
 
+
+/*
+ *
+ *	CHECK_FOR_FP()
+ *
+ *
+ */
 #ifdef vxWorks
-ca_import(moms_tid)
-int	moms_tid;
+static check_for_fp()
 {
-  int                   status;                                     
-                                                                    
-  status = taskVarAdd(VXTHISTASKID, &ca_static);                    
-  if(status == ERROR)                                               
-    abort();                                                        
-                                                                    
-  ca_static = (struct ca_static *) taskVarGet(moms_tid, &ca_static);
-  if(ca_static == (struct ca_static*)ERROR)                         
-    abort();          
+    {
+      int options;
 
-  return ECA_NORMAL;                                              
+      if(taskOptionsGet(taskIdSelf(),&options)==ERROR)
+	abort();
+      if(!(options & VX_FP_TASK)){
+	ca_signal(ECA_NEEDSFP, NULL);
+
+      	if(taskOptionsSet(taskIdSelf(),VX_FP_TASK,VX_FP_TASK)==ERROR)
+	  abort();
+      }
+    }
 }
 #endif
 
 
+/*
+ *
+ *	CA_IMPORT()
+ *
+ *
+ */
 #ifdef vxWorks
-static
-ca_add_task_variable()
+ca_import(moms_tid)
+int	moms_tid;
+{
+  int                   status; 
+  struct ca_static	*pcas;                             
+                                                                    
+  pcas = (struct ca_static*) taskVarGet(moms_tid, &ca_static);
+  if(pcas == (struct ca_static*) ERROR)                         
+    return ECA_NOCACTX;   
+
+  status = taskVarAdd(VXTHISTASKID, &ca_static);                    
+  if(status == ERROR)                                               
+    abort();                                                        
+                                                                    
+  ca_static = pcas;
+
+  check_for_fp();
+
+  return ECA_NORMAL;                                                  
+}
+#endif
+
+
+
+
+
+/*
+ *
+ *	CA_ADD_TASK_VARIABLE()
+ *
+ */
+#ifdef vxWorks
+static ca_add_task_variable()
 {                                                 
   static void 	ca_task_exit_tcbx();
   static char	ca_installed;
@@ -247,10 +399,11 @@ ca_add_task_variable()
 
 
 /*
-	NOTE: only call this routine if you wish to free resources
-	prior to task exit- The following is executed routinely at 
-	task exit by the OS.
-*/
+ *	CA_TASK_EXIT()
+ *
+ * 	call this routine if you wish to free resources prior to task
+ * 	exit- ca_task_exit() is also executed routinely at task exit.
+ */
 ca_task_exit
 #ifdef VAXC
 (void)
@@ -259,11 +412,10 @@ ca_task_exit
 #endif
 {
   void ca_task_exit_tid();
-
 # ifdef vxWorks
   ca_task_exit_tid(VXTHISTASKID);
 # else
-  ca_task_exit_tid(0);
+  ca_task_exit_tid(NULL);
 #endif
 
   return ECA_NORMAL;
@@ -281,15 +433,24 @@ TCBX *ptcbx;
 }
 #endif
 
-
+/*
+ *
+ *	CA_TASK_EXIT_TID
+ *	attempts to release all resources alloc to a channel access client
+ *
+ *	NOTE: on vxWorks if a CA task is deleted or crashes while a 
+ *	lock is set then a deadlock will occur when this routine is called.
+ *
+ */
 static void
 ca_task_exit_tid(tid)
 int				tid;
 {
   int 				i;
   chid				chix;
-  evid				monix;
   struct ca_static		*ca_temp;
+  evid				monix;
+  int 				status;
 
 # ifdef vxWorks
     ca_temp = (struct ca_static *) taskVarGet(tid, &ca_static);
@@ -315,41 +476,56 @@ int				tid;
       logMsg("ca_task_exit: Removing task %x from CA\n",tid);
 #   endif
 
-/**********
     LOCK;
-***********/
+    /*
+	Fist I must stop any source of further activity
+	on vxWorks
+    */
 
-    for(i=0; i< ca_temp->ca_nxtiiu; i++){
-      if(socket_close(ca_temp->ca_iiu[i].sock_chan)<0)
-	SEVCHK(ECA_INTERNAL, "Corrupt iiu list- close");
-      if(free(ca_temp->ca_iiu[i].send)<0)
-	SEVCHK(ECA_INTERNAL, "Corrupt iiu list- send free");
-      if(free(ca_temp->ca_iiu[i].recv)<0)
-	SEVCHK(ECA_INTERNAL, "Corrupt iiu list- recv free");
-#     ifdef vxWorks
-        taskDelete(ca_temp->ca_iiu[i].recv_tid);
-#     endif
-    }
+    /*
+    	The main task is prevented from further CA activity
+   	 by the LOCK placed above
+    */
 
-    while(monix = (evid) lstGet(&ca_temp->ca_eventlist)){
-#     ifdef vxWorks
-      {int status;
-	if(monix->chan->iocix == LOCAL_IIU){
-          status = db_cancel_event(monix+1);
-          if(status==ERROR)
-            abort();
-	}
-      }
-#     endif
-      if(free(monix)<0)
-	SEVCHK(ECA_INTERNAL, "Corrupt evid list");
-    }
-
+    /*
+	stop socket recv tasks
+    */
 #   ifdef vxWorks
-    {int status;
+    for(i=0; i< ca_temp->ca_nxtiiu; i++){
+	/* 	
+		dont do a task delete if the 
+		exit handler is running for this task
+		- it botches vxWorks -
+	*/
+	if(tid != ca_temp->ca_iiu[i].recv_tid)
+      		taskDelete(ca_temp->ca_iiu[i].recv_tid);
+    }
+#   endif
+
+    /*
+	Cancel all local events
+    */
+#   ifdef vxWorks
+    chix = (chid) &ca_temp->ca_local_chidlist;
+    while(chix = (chid) chix->node.next)
+      while(monix = (evid) lstGet(&chix->eventq)){
+        status = db_cancel_event(monix+1);
+        if(status==ERROR)
+          abort();
+        if(free(monix)<0)
+	  ca_signal(ECA_INTERNAL, "Corrupt conn evid list");
+      }
+#   endif
+
+    /*
+	All local events must be canceled prior to closing the 
+	local event facility
+    */
+#   ifdef vxWorks
+    {
       status = db_close_events(ca_temp->ca_evuser);
       if(status==ERROR)
-        SEVCHK(ECA_INTERNAL, "could not close event facility by id");
+        ca_signal(ECA_INTERNAL, "could not close event facility by id");
     }
 
     if(ca_temp->ca_event_buf)
@@ -357,48 +533,71 @@ int				tid;
 	abort();
 #   endif
 
-    while(chix = (chid) lstGet(&ca_temp->ca_chidlist_conn)){
-#     ifdef vxWorks
-        if(chix->iocix == LOCAL_IIU)
-          if(free(chix->paddr)<0)
-	    SEVCHK(ECA_INTERNAL, "Corrupt paddr in chid list");
-#     endif
-      if(free(chix)<0)
-	SEVCHK(ECA_INTERNAL, "Corrupt connected chid list");
+    /*
+	after activity eliminated:
+    */
+    /*
+	close all sockets before clearing chid blocks
+	and remote event blocks
+    */
+    for(i=0; i< ca_temp->ca_nxtiiu; i++){
+      if(ca_temp->ca_iiu[i].conn_up)
+        if(socket_close(ca_temp->ca_iiu[i].sock_chan)<0)
+	  ca_signal(ECA_INTERNAL, "Corrupt iiu list- at close");
+      if(free(ca_temp->ca_iiu[i].send)<0)
+	ca_signal(ECA_INTERNAL, "Corrupt iiu list- send free");
+      if(free(ca_temp->ca_iiu[i].recv)<0)
+	ca_signal(ECA_INTERNAL, "Corrupt iiu list- recv free");
     }
 
-    while(chix = (chid) lstGet(&ca_temp->ca_chidlist_pend)){
-      if(free(chix)<0)
-	SEVCHK(ECA_INTERNAL, "Corrupt pending chid list");
+    /* 
+	remove remote chid blocks and event blocks
+    */
+    for(i=0; i< ca_temp->ca_nxtiiu; i++){
+      while(chix = (chid) lstGet(&ca_temp->ca_iiu[i].chidlist)){
+        while(monix = (evid) lstGet(&chix->eventq)){
+          if(free(monix)<0)
+	    ca_signal(ECA_INTERNAL, "Corrupt conn evid list");
+        }
+        if(free(chix)<0)
+	  ca_signal(ECA_INTERNAL, "Corrupt connected chid list");
+      }
     }
 
-    while(chix = (chid) lstGet(&ca_temp->ca_chidlist_noreply)){
-      if(free(chix)<0)
-	SEVCHK(ECA_INTERNAL, "Corrupt unanswered chid list");
-    }
+    /* 
+	remove local chid blocks, paddr blocks, waiting ev blocks
+    */
+#   ifdef vxWorks
+      while(chix = (chid) lstGet(&ca_temp->ca_local_chidlist))
+        if(free(chix)<0)
+	  ca_signal(ECA_INTERNAL, "Corrupt connected chid list");
+      lstFree(&ca_temp->ca_dbfree_ev_list);
+#   endif
 
-/**************
+    /* remove remote waiting ev blocks */
+    lstFree(&ca_temp->ca_free_event_list);
+    /* remove any pending read blocks */
+    lstFree(&ca_temp->ca_pend_read_list);
+
     UNLOCK;
-***************/
 
     if(free(ca_temp)<0)
-      SEVCHK(ECA_INTERNAL, "Unable to free task static variables");
+      ca_signal(ECA_INTERNAL, "Unable to free task static variables");
 
 
 /*
-	Only remove task variable if user is call this 
+	Only remove task variable if user is calling this 
 	from ca_task_exit with the task id = 0
 
 	This is because if I delete the task variable from
 	a vxWorks exit handler it botches vxWorks task exit
 */
 #   ifdef vxWorks                                                 
-    if(tid == VXTHISTASKID)
+    if(tid == taskIdSelf())
     {int status;
       status = taskVarDelete(tid, &ca_static);                          
       if(status == ERROR)  
-        SEVCHK(ECA_INTERNAL, "Unable to remove ca_static from task var list");
-
+        ca_signal(ECA_INTERNAL, "Unable to remove ca_static from task var list");
     }
 #   endif
 
@@ -407,23 +606,35 @@ int				tid;
   }
 }
 
+
+
 
-ca_array_build
+/*
+ *
+ *	CA_BUILD_AND_CONNECT
+ *
+ *
+ */
+ca_build_and_connect
 #ifdef VAXC
 (
 char			*name_str,
 chtype			get_type,
 unsigned int		get_count,
 chid			*chixptr,
-void			*pvalue
+void			*pvalue,
+void			(*conn_func)(),
+void			*puser
 )
 #else
-(name_str,get_type,get_count,chixptr,pvalue)
+(name_str,get_type,get_count,chixptr,pvalue,conn_func,puser)
 char 			*name_str;
 chtype			get_type;
 unsigned int		get_count;
 chid			*chixptr; 
 void			*pvalue;
+void			(*conn_func)();
+void			*puser;
 #endif
 {
   long			status;
@@ -449,8 +660,10 @@ void			*pvalue;
 
   /* Put some reasonable limit on user supplied string size */
   strcnt = strlen(name_str) + 1;
-  if(strcnt > MAX_STRING_SIZE || strcnt==1 )
+  if(strcnt > MAX_STRING_SIZE)
     return ECA_STRTOBIG;
+  if(strcnt == 1)
+    return ECA_EMPTYSTR;
 
 
   if(strcnt==1 )
@@ -460,33 +673,36 @@ void			*pvalue;
   /* Make sure string is aligned to short word boundaries for MC68000 */
   strcnt = BI_ROUND(strcnt)<<1;
 
-  /* allocate CHIU (channel in use) block */
-  /* also allocate enough for a copy of this msg */
-  *chixptr = chix = (chid) malloc(sizeof(*chix) + strcnt);
-  if(!chix)
-    return ECA_ALLOCMEM;
-
-
 # ifdef vxWorks    /* only for IO machines */
   {
-    struct db_addr	tmp_paddr;
+    struct db_addr			tmp_paddr;
+    struct connection_handler_args	args;
 
     /* Find out quickly if channel is on this node  */
     status = db_name_to_addr(name_str, &tmp_paddr);
     if(status==OK){
-      chix->paddr = (void *) malloc(sizeof(struct db_addr));
-      if(!chix->paddr)
-	abort();
 
+      /* allocate CHIU (channel in use) block */
+      /* also allocate enough for the channel name & paddr block*/
+      *chixptr = chix = (chid) malloc(sizeof(*chix) 
+			+ strcnt + sizeof(struct db_addr));
+      if(!chix)
+        abort();
+
+      chix->paddr =  (void *) (strcnt + (char *)(chix+1));
       *(struct db_addr *)chix->paddr = tmp_paddr;
+      chix->puser = puser;
+      chix->connection_func = conn_func;
       chix->type =  ( (struct db_addr *)chix->paddr )->field_type;
       chix->count = ( (struct db_addr *)chix->paddr )->no_elements;
       chix->iocix = LOCAL_IIU;
+      chix->state = cs_conn;
+      lstInit(&chix->eventq);
       strncpy(chix+1, name_str, strcnt);
 
       /* check for just a search */
-      if(get_count && get_type != TYPENOTCONN){ 
-        status = db_get_field(&tmp_paddr, get_type, pvalue, get_count, FALSE);
+      if(get_count && get_type != TYPENOTCONN && pvalue){ 
+        status=db_get_field(&tmp_paddr, get_type, pvalue, get_count);
         if(status!=OK){
 	  free(chix->paddr);
 	  *chixptr = (chid) free(chix);
@@ -494,13 +710,26 @@ void			*pvalue;
 	}
       }
       LOCK;
-      lstAdd(&chidlist_conn, chix);
+      lstAdd(&local_chidlist, chix);
       UNLOCK;
+
+      if(chix->connection_func){
+		args.chid = chix;
+		args.op = CA_OP_CONN_UP;
+
+        	(*chix->connection_func)(args);
+      }
 
       return ECA_NORMAL;
     }
   }
-# endif                                                         
+# endif            
+                                             
+  /* allocate CHIU (channel in use) block */
+  /* also allocate enough for the channel name */
+  *chixptr = chix = (chid) malloc(sizeof(*chix) + strcnt);
+  if(!chix)
+    return ECA_ALLOCMEM;
 
   LOCK;
 
@@ -514,7 +743,10 @@ void			*pvalue;
     goto exit;
   }
 
+  chix->puser = puser;
+  chix->connection_func = conn_func;
   chix->type = TYPENOTCONN;	/* invalid initial type 	*/
+  chix->count = 0;		/* invalid initial count	*/
   chix->paddr = (void *)NULL;	/* invalid initial paddr	*/
 
   /* save stuff for build retry if required */
@@ -522,12 +754,22 @@ void			*pvalue;
   chix->build_count = get_count;
   chix->build_value = (void *) pvalue;
   chix->name_length = strcnt;
+  chix->state = cs_never_conn;
+  lstInit(&chix->eventq);
 
   /* Save this channels name for retry if required */
   strncpy(chix+1, name_str, strcnt);
 
-  lstAdd(&chidlist_pend, chix);
-  status = build_msg(chix, FALSE);
+  lstAdd(&iiu[BROADCAST_IIU].chidlist, chix);
+  /* set the conn tries back to zero so this channel can be found */
+  iiu[BROADCAST_IIU].nconn_tries = 0;
+
+  status = build_msg(chix, FALSE, DONTREPLY);
+  if(!chix->connection_func){
+    SETPENDRECV;
+    if(VALID_BUILD(chix)) 
+      SETPENDRECV;
+  }
 
 exit:
 
@@ -540,18 +782,19 @@ exit:
 
 
 /*
-
-NOTE:	*** lock must be on while in this routine ***
-
-*/
-build_msg(chix,retry)
+ *	BUILD_MSG()
+ *
+ * 	NOTE:	*** lock must be applied while in this routine ***
+ * 
+ */
+build_msg(chix,reply_type)
 chid			chix;
-int			retry;
+int			reply_type;
 {
   register int size; 
   register int cmd;
 
-  if(chix->build_count && chix->build_type != TYPENOTCONN){ 
+  if(VALID_BUILD(chix)){ 
     size = chix->name_length + sizeof(struct extmsg);
     cmd = IOC_BUILD;
   }
@@ -565,32 +808,28 @@ int			retry;
 
     mptr->m_cmmd 	= htons(cmd);
     mptr->m_postsize 	= htons(size);
-    mptr->m_available 	= (long) chix;
-    mptr->m_type	= 0;
+    mptr->m_available 	= (int) chix;
+    mptr->m_type	= reply_type;
     mptr->m_count	= 0; 
-    mptr->m_paddr	= 0;
+    mptr->m_pciu	= (void *) chix;
 
     if(cmd == IOC_BUILD){
       /*	msg header only on db read req	*/
       mptr++;
       mptr->m_postsize	= 0;
-      mptr->m_cmmd 	= htons(IOC_READ);
+      mptr->m_cmmd 	= htons(IOC_READ_BUILD);
       mptr->m_type	= htons(chix->build_type);
       mptr->m_count	= htons(chix->build_count); 
       mptr->m_available = (int) chix->build_value;
-      mptr->m_paddr	= chix->paddr;
+      mptr->m_pciu	= 0;
 
-      if(!retry)
-        SETPENDRECV;
+
     }
 
     /* channel name string */
     /* forces a NULL at the end because strcnt is allways >= strlen + 1 */ 
     mptr++;
     strncpy(mptr, chix+1, chix->name_length);
-
-    if(!retry)
-      SETPENDRECV;
 
   SNDEND_NOLOCK;
 
@@ -600,6 +839,12 @@ int			retry;
 
 
 
+/*
+ *
+ *	CA_ARRAY_GET()
+ *
+ *
+ */
 ca_array_get
 #ifdef VAXC
 (
@@ -633,8 +878,7 @@ register void			*pvalue;
                                 chix->paddr,    
                                 type,     
                                 pvalue,  
-                                count,
-				FALSE);   
+                                count );
       if(status==OK)                           
 	return ECA_NORMAL;
       else
@@ -652,7 +896,7 @@ register void			*pvalue;
     mptr->m_type	= htons(type);
     mptr->m_available 	= (long) pvalue;
     mptr->m_count 	= htons(count);
-    mptr->m_paddr	= chix->paddr;
+    mptr->m_pciu	= chix->paddr;
   SNDEND
 
   SETPENDRECV;
@@ -660,6 +904,112 @@ register void			*pvalue;
 }
 
 
+/*
+ *
+ *	CA_ARRAY_GET_CALLBACK()
+ *
+ *
+ *
+ */
+ca_array_get_callback
+#ifdef VAXC
+(
+chtype				type,
+unsigned int			count,
+chid				chix,
+void				(*pfunc)(),
+void				*arg
+)
+#else
+(type,count,chix,pfunc,arg)
+chtype		type;
+unsigned int	count;
+chid		chix;
+void		(*pfunc)();
+void		*arg;
+#endif
+{
+  int 		status;
+  evid 		monix;
+  void		ca_event_handler();
+  void		issue_get_callback();
+
+  CHIXCHK(chix);
+
+  if(INVALID_DB_REQ(type))
+    return ECA_BADTYPE;
+
+  if(count > chix->count)
+    return ECA_BADCOUNT;
+
+# ifdef vxWorks
+  if(chix->iocix == LOCAL_IIU){
+    struct pending_event	ev;
+
+    ev.usr_func = pfunc;
+    ev.usr_arg = arg;
+    ev.chan = chix;
+    ev.type = type;
+    ev.count = count;
+    ca_event_handler(&ev, chix->paddr, NULL);
+    return ECA_NORMAL;
+  }
+# endif
+
+  LOCK;
+  if(!(monix = (evid) lstGet(&free_event_list)))
+    monix = (evid) malloc(sizeof *monix);
+
+  if(monix){
+
+    monix->chan		= chix;
+    monix->usr_func	= pfunc;
+    monix->usr_arg	= arg;
+    monix->type		= type;
+    monix->count	= count;
+
+    lstAdd(&pend_read_list, monix);
+
+    issue_get_callback(monix);
+
+    status = ECA_NORMAL;
+  }else
+    status = ECA_ALLOCMEM;
+
+  UNLOCK;
+  return status;
+}
+
+
+/*
+ *
+ *	ISSUE_GET_CALLBACK()
+ *	(lock must be on)
+ */
+static void issue_get_callback(monix)
+register evid		monix;
+{
+    register chid chix = monix->chan;
+
+    SNDBEG_NOLOCK(extmsg)
+
+    /*	msg header only on db read notify req	*/
+    mptr->m_cmmd 	= htons(IOC_READ_NOTIFY);
+    mptr->m_type	= htons(monix->type);
+    mptr->m_available 	= (long) monix;
+    mptr->m_count 	= htons(monix->count);
+    mptr->m_pciu	= chix->paddr;
+    mptr->m_postsize	= 0;
+
+    SNDEND_NOLOCK;
+}
+
+
+/*
+ *	CA_ARRAY_PUT()
+ *
+ *
+ */
 ca_array_put
 #ifdef VAXC
 (
@@ -721,6 +1071,7 @@ register void 			*pvalue;
         break;
 
       case	DBR_FLOAT:
+      case	DBR_DOUBLE:
         /* most compilers pass all floats as doubles */
         htonf(pvalue, pdest);
         break;
@@ -753,11 +1104,14 @@ register void 			*pvalue;
       case DBR_STS_STRING:
       case DBR_STS_INT:
       case DBR_STS_FLOAT:
+      case DBR_STS_DOUBLE:
       case DBR_STS_ENUM:
       case DBR_GR_INT:
       case DBR_GR_FLOAT:
+      case DBR_GR_DOUBLE:
       case DBR_CTRL_INT:
       case DBR_CTRL_FLOAT:
+      case DBR_CTRL_DOUBLE:
       case DBR_CTRL_ENUM:
 #       ifdef VAX
           (*cvrt[type])(pvalue,pdest,TRUE,count);
@@ -780,7 +1134,7 @@ array_loop_exit:
     mptr->m_postsize	= htons(postcnt);
     mptr->m_type	= htons(type);
     mptr->m_count 	= htons(count);
-    mptr->m_paddr	= chix->paddr;
+    mptr->m_pciu	= chix->paddr;
     mptr->m_available	= (long) chix;
   SNDEND
 
@@ -789,12 +1143,90 @@ array_loop_exit:
 
 
 /*
-	Specify a event subroutine to be run once when pending IO completes
+ *	Specify an event subroutine to be run for connection events
+ *
+ */
+ca_change_connection_event
+#ifdef VAXC
+(
+chid		chix,
+void 		(*pfunc)()
+)
+#else
+(chix, pfunc)
+chid		chix;
+void		(*pfunc)();
+#endif
+{
 
-	1) event sub runs right away if no IO pending
-	2) event sub runs when pending IO completes otherwise
+  	INITCHK;
+  	LOOSECHIXCHK(chix);
 
-*/
+	if(chix->connection_func == pfunc)
+  		return ECA_NORMAL;
+
+  	LOCK;
+  	if(chix->type == TYPENOTCONN){
+		if(!chix->connection_func){
+    			CLRPENDRECV;
+    			if(VALID_BUILD(chix)) 
+    				CLRPENDRECV;
+		}
+		if(!pfunc){
+    			SETPENDRECV;
+    			if(VALID_BUILD(chix)) 
+    				SETPENDRECV;
+		}
+	}
+  	chix->connection_func = pfunc;
+  	UNLOCK;
+
+  	return ECA_NORMAL;
+}
+
+
+/*
+ *	Specify an event subroutine to be run for asynch exceptions
+ *
+ */
+ca_add_exception_event
+#ifdef VAXC
+(
+void 		(*pfunc)(),
+void 		*arg
+)
+#else
+(pfunc,arg)
+void				(*pfunc)();
+void				*arg;
+#endif
+{
+
+  INITCHK;
+  LOCK;
+  if(pfunc){
+    ca_static->ca_exception_func = pfunc;
+    ca_static->ca_exception_arg = arg;
+  }
+  else{
+    ca_static->ca_exception_func = ca_default_exception_handler;
+    ca_static->ca_exception_arg = NULL;
+  }
+  UNLOCK;
+
+  return ECA_NORMAL;
+}
+
+
+/*
+ * Specify an event subroutine to be run once pending IO completes
+ * 
+ * 1) event sub runs right away if no IO pending 
+ * 2) otherwise event sub runs when pending IO completes
+ * 
+ * Undocumented entry for the VAX OPI which may vanish in the future.
+ *
+ */
 ca_add_io_event
 #ifdef VAXC
 (
@@ -803,11 +1235,13 @@ void 		*astarg
 )
 #else
 (ast,astarg)
-void				(*ast)();
-void				*astarg;
+void		(*ast)();
+void		*astarg;
 #endif
 {
   register struct pending_io_event	*pioe;
+
+  INITCHK;
 
   if(pndrecvcnt<1)
     (*ast)(astarg);
@@ -828,7 +1262,12 @@ void				*astarg;
 
 
 
-ca_add_array_event
+/*
+ *	CA_ADD_MASKED_ARRAY_EVENT
+ *
+ *
+ */
+ca_add_masked_array_event
 #ifdef VAXC
 (
 chtype 		type,
@@ -839,10 +1278,11 @@ void 		*astarg,
 ca_real		p_delta,
 ca_real		n_delta,
 ca_real		timeout,
-evid 		*monixptr
+evid 		*monixptr,
+long		mask
 )
 #else
-(type,count,chix,ast,astarg,p_delta,n_delta,timeout,monixptr)
+(type,count,chix,ast,astarg,p_delta,n_delta,timeout,monixptr,mask)
 chtype				type;
 unsigned int			count;
 chid				chix;
@@ -852,30 +1292,55 @@ ca_real				p_delta;
 ca_real				n_delta;
 ca_real				timeout;
 evid				*monixptr;
+unsigned			mask;
 #endif
 {
   register evid			monix;
+  void				ca_request_event();
+  int				evsize;
+  register int			status;
 
-  CHIXCHK(chix);
+  LOOSECHIXCHK(chix);
 
   if(INVALID_DB_REQ(type))
     return ECA_BADTYPE;
 
-  if(count > chix->count)
+  /*
+   *
+   *
+   */
+  if(count > chix->count && chix->type != TYPENOTCONN)
     return ECA_BADCOUNT;
 
-  if(count == 0)
-    count = chix->count;
+  LOCK;
 
-
-  /*	AST descriptor	*/
+  /*	event descriptor	*/
 # ifdef vxWorks
-    monix = (evid) malloc(sizeof(*monix)+db_sizeof_event_block());
+  {
+    static int			dbevsize;
+
+    if(chix->iocix == LOCAL_IIU){
+
+      if(!dbevsize)
+        dbevsize = db_sizeof_event_block();
+
+
+      if(!(monix = (evid)lstGet(&dbfree_ev_list)))
+        monix = (evid)malloc(sizeof(*monix)+dbevsize);
+    }
+    else
+      if(!(monix = (evid)lstGet(&free_event_list)))
+        monix = (evid)malloc(sizeof *monix);
+  }
 # else
-    monix = (evid) malloc(sizeof(*monix));
+  if(!(monix = (evid)lstGet(&free_event_list)))
+    monix = (evid) malloc(sizeof *monix);
 # endif
-  if(!monix)
-    return ECA_ALLOCMEM;
+
+  if(!monix){
+    status = ECA_ALLOCMEM;
+    goto unlock_rtn;
+  }
 
   /* they dont have to supply one if they dont want to */
   if(monixptr)
@@ -886,16 +1351,14 @@ evid				*monixptr;
   monix->usr_arg	= astarg;
   monix->type		= type;
   monix->count		= count;
-
-  LOCK;
-    /* Place in the channel list */
-    lstAdd(&eventlist, monix);
-  UNLOCK;
+  monix->p_delta	= p_delta;
+  monix->n_delta	= n_delta;
+  monix->timeout	= timeout;
+  monix->mask		= mask;
 
 # ifdef vxWorks
   {
     struct monops 	mon;
-    register int	status;
     void		ca_event_handler();
 
     if(chix->iocix == LOCAL_IIU){
@@ -903,45 +1366,108 @@ evid				*monixptr;
 				chix->paddr,
 				ca_event_handler,
 				monix,
-				DBE_VALUE | DBE_ALARM,
+				mask,
 				monix+1);
-      if(status == ERROR)
-	return ECA_DBLCLFAIL;
+      if(status == ERROR){
+        status = ECA_DBLCLFAIL;
+        goto unlock_rtn;
+      }
 
-      /* force event to be called at least once */
-      db_post_single_event(monix+1);
-      return ECA_NORMAL;
+      /* 
+	Place in the channel list 
+	- do it after db_add_event so there
+	is no chance that it will be deleted 
+	at exit before it is completely created
+      */
+      lstAdd(&chix->eventq, monix);
+
+      /* 
+	force event to be called at least once
+      	return warning msg if they have made the queue to full 
+	to force the first (untriggered) event.
+      */
+      if(db_post_single_event(monix+1)==ERROR){
+        status = ECA_OVEVFAIL;
+        goto unlock_rtn;
+      }
+
+      status = ECA_NORMAL;
+      goto unlock_rtn;
 
     } 
   }
 # endif
 
-  SNDBEG(monops)
+  /* It can be added to the list any place if it is remote */
+  /* Place in the channel list */
+  lstAdd(&chix->eventq, monix);
+
+  /* 
+	dont send the message if the conn is down 
+	(it will be sent once connected)
+  */
+  if(chix->iocix!=BROADCAST_IIU)
+    if(iiu[chix->iocix].conn_up)
+      ca_request_event(monix);
+
+  status = ECA_NORMAL;
+
+unlock_rtn:
+
+  UNLOCK;
+
+  return status;
+}
+
+
+/*
+ *	CA_REQUEST_EVENT()
+ *
+ * 	LOCK must be applied while in this routine
+ */
+void ca_request_event(monix)
+evid monix;
+{
+  register chid		chix = monix->chan;	/* for SNDBEG */ 
+
+  /*
+   * clip to the native count
+   */
+  if(monix->count > chix->count || monix->count == 0)
+	monix->count = chix->count;
+
+  SNDBEG_NOLOCK(monops)
 
     /*	msg header	*/
     mptr->m_header.m_cmmd 	= htons(IOC_EVENT_ADD);
     mptr->m_header.m_available 	= (long) monix;
     mptr->m_header.m_postsize	= htons(sizeof(struct mon_info));
-    mptr->m_header.m_type	= htons(type);
-    mptr->m_header.m_count	= htons(count);
-    mptr->m_header.m_paddr	= chix->paddr;
+    mptr->m_header.m_type	= htons(monix->type);
+    mptr->m_header.m_count	= htons(monix->count);
+    mptr->m_header.m_pciu	= chix->paddr;
 
     /*	msg body	*/
-    htonf(&p_delta, &mptr->m_info.m_hval);
-    htonf(&n_delta, &mptr->m_info.m_lval);
-    htonf(&timeout, &mptr->m_info.m_toval);
+    htonf(&monix->p_delta, &mptr->m_info.m_hval);
+    htonf(&monix->n_delta, &mptr->m_info.m_lval);
+    htonf(&monix->timeout, &mptr->m_info.m_toval);
+    mptr->m_info.m_mask = htons(monix->mask);
 
-  SNDEND
-  return ECA_NORMAL;
+  SNDEND_NOLOCK
 }
 
 
+/*
+ *
+ *	CA_EVENT_HANDLER()
+ *	(only for local (for now vxWorks) clients)
+ *
+ */
 #ifdef vxWorks
-static void
-ca_event_handler(monix, paddr, hold)
+static void ca_event_handler(monix, paddr, hold, pfl)
 register evid 		monix;
 register struct db_addr	*paddr;
 int			hold;
+caddr_t			pfl;
 {
   register int 		status;
   register int		count = monix->count;
@@ -972,15 +1498,21 @@ int			hold;
         abort();
       event_buf_size = size;
     }
-    status = db_get_field(	paddr,
+    status = db_event_get_field(paddr,
 				type,
 				pval,
 				count,
-				TRUE);
+				pfl);
   }
 
-  if(status == ERROR)
-    logMsg("CA post event get error\n");
+  /*
+   *   @@@@@@ should tell um with the event handler ?
+   *   or run an exception
+@@@@@@@@@@@@@@@@
+   */
+  if(status == ERROR){
+    SEVCHK(ECA_GETFAIL,"Event lost due to local get fail\n");
+  }
   else
     (*monix->usr_func)(		monix->usr_arg, 
 				monix->chan, 
@@ -994,91 +1526,74 @@ int			hold;
 
 
 
-#ifdef ZEBRA
-ca_clear
-#ifdef VAXC
-(register chid	chid)
-#else
-(chid)
-register chid	chid;
-#endif
-{
- 
-  CHIXCHK(chid);
-
-
 /*
-  cancel outstanding events
-*/
-
-/* 
-  free resources on the IOC
-*/
-
-/* 
-  free resources here when IOC confirms
-*/
-
-
-# ifdef vxWorks
-    if(chix->iocix == LOCAL_IIU){
-      register int status;
-      status = db_cancel_event(monix+1);
-      if(status == ERROR)
-	return ECA_DBLCLFAIL;
-      LOCK;
-      lstDelete(&eventlist, monix);
-      UNLOCK;
-      if(free(monix)<0)
-	return ECA_INTERNAL;
-      return ECA_NORMAL;
-    } 
-# endif
-
-  SNDBEG(extmsg)
-
-    /*	msg header	*/
-    mptr->m_cmmd 	= htons(IOC_EVENT_CANCEL);
-    mptr->m_available 	= (long) monix;
-    mptr->m_postsize	= 0;
-    mptr->m_type	= chix->type;
-    mptr->m_count 	= chix->count;
-    mptr->m_paddr	= chix->paddr;
-
-    /* 	NOTE: I free the monitor block only after confirmation from IOC */
-
-  SNDEND
-  return ECA_NORMAL;
-}
-#endif
-
-
+ *
+ *	CA_CLEAR_EVENT(MONIX)
+ *
+ *	Cancel an outstanding event for a channel.
+ *
+ *	NOTE: returns before operation completes in the server 
+ *	(and the client). 
+ *	This is a good reason not to allow them to make the monix 
+ *	block as part of a larger structure.
+ *	Nevertheless the caller is gauranteed that his specified
+ *	event is disabled and therefore will not run (from this source)
+ *	after leaving this routine.
+ *
+ */
 ca_clear_event
 #ifdef VAXC
 (register evid	monix)
 #else
 (monix)
-register evid			monix;
+register evid		monix;
 #endif
 {
-  register chid			chix = monix->chan;	/* for SNDBEG */ 
+  register chid		chix = monix->chan;	/* for SNDBEG */ 
  
-  CHIXCHK(chix);
+  LOOSECHIXCHK(chix);
+
+  /* disable any further events from this event block */
+  monix->usr_func = NULL;
 
 # ifdef vxWorks
     if(chix->iocix == LOCAL_IIU){
       register int status;
-      status = db_cancel_event(monix+1);
-      if(status == ERROR)
-	return ECA_DBLCLFAIL;
+
+      /* 
+	dont allow two threads to delete the same moniitor at once 
+      */
       LOCK;
-      lstDelete(&eventlist, monix);
+      status = lstFind(&chix->eventq, monix);
+      if(status != ERROR){
+        lstDelete(&chix->eventq, monix);
+        status = db_cancel_event(monix+1);
+      }
       UNLOCK;
-      if(free(monix)<0)
-	return ECA_INTERNAL;
+      if(status == ERROR)
+	return ECA_BADMONID;
+
+      lstAdd(&dbfree_ev_list, monix);
+
       return ECA_NORMAL;
     } 
 # endif
+
+  /* 
+	dont send the message if the conn is down 
+	(just delete from the queue and return)
+
+	check for conn down while locked to avoid a race
+  */
+  LOCK;
+    if(!iiu[chix->iocix].conn_up || chix->iocix == BROADCAST_IIU)
+      lstDelete(&monix->chan->eventq, monix); 
+  UNLOCK;
+
+  if(chix->iocix == BROADCAST_IIU)
+    return ECA_NORMAL;
+  if(!iiu[chix->iocix].conn_up)
+    return ECA_NORMAL;
 
   SNDBEG(extmsg)
 
@@ -1088,7 +1603,7 @@ register evid			monix;
     mptr->m_postsize	= 0;
     mptr->m_type	= chix->type;
     mptr->m_count 	= chix->count;
-    mptr->m_paddr	= chix->paddr;
+    mptr->m_pciu	= chix->paddr;
 
     /* 	NOTE: I free the monitor block only after confirmation from IOC */
 
@@ -1096,61 +1611,163 @@ register evid			monix;
   return ECA_NORMAL;
 }
 
+
+/*
+ *
+ *	CA_CLEAR_CHANNEL(CHID)
+ *
+ *	clear the resources allocated for a channel by search
+ *
+ *	NOTE: returns before operation completes in the server 
+ *	(and the client). 
+ *	This is a good reason not to allow them to make the monix 
+ *	block part of a larger structure.
+ *	Nevertheless the caller is gauranteed that his specified
+ *	event is disabled and therefore will not run 
+ *	(from this source) after leaving this routine.
+ *
+ */
+ca_clear_channel
+#ifdef VAXC
+(register chid	chix)
+#else
+(chix)
+register chid	chix;
+#endif
+{
+  register evid		monix;
+  struct ioc_in_use	*piiu = &iiu[chix->iocix];
 
+  LOOSECHIXCHK(chix);
+
+  /* disable their further use of deallocated channel */
+  chix->type = TYPENOTINUSE;
+
+  /* the while is only so I can break to the lock exit */
+  LOCK;
+  while(TRUE){
+    /* disable any further events from this channel */
+    for(	monix = (evid) chix->eventq.node.next; 
+		monix; 
+		monix = (evid) monix->node.next)
+ 		monix->usr_func = NULL;
+    /* disable any further get callbacks from this channel */
+    for(	monix = (evid) pend_read_list.node.next; 
+		monix; 
+		monix = (evid) monix->node.next)
+		if(monix->chan == chix)
+ 			monix->usr_func = NULL;
+ 
+#   ifdef vxWorks
+    if(chix->iocix == LOCAL_IIU){
+      int status;
+
+      /*
+      clear out the events for this channel
+      */
+      while(monix = (evid) lstGet(&chix->eventq)){
+        status = db_cancel_event(monix+1);
+        if(status==ERROR)
+          abort();
+        lstAdd(&dbfree_ev_list, monix);
+      }
+
+      /*
+      clear out this channel
+      */
+      lstDelete(&local_chidlist, chix);
+      if(free(chix)<0)
+	abort();
+
+      break; /* to unlock exit */
+    }
+# endif
+
+    /* 
+	dont send the message if the conn is down 
+	(just delete from the queue and return)
+
+	check for conn down while locked to avoid a race
+    */
+    if(!piiu->conn_up || chix->iocix == BROADCAST_IIU){
+      lstConcat(&free_event_list, &chix->eventq);
+      lstDelete(&piiu->chidlist, chix);
+      if(free(chix)<0)
+	abort();
+      if(chix->iocix != BROADCAST_IIU && !piiu->chidlist.count)
+        close_ioc(piiu);
+    }
+
+    if(chix->iocix == BROADCAST_IIU)
+      break;	/* to unlock exit */
+    if(!iiu[chix->iocix].conn_up)
+      break;	/* to unlock exit */
+
+    /*
+  	clear events and all other resources for this chid on the IOC
+    */
+    SNDBEG_NOLOCK(extmsg)
+
+      /*	msg header	*/
+      mptr->m_cmmd 	= htons(IOC_CLEAR_CHANNEL);
+      mptr->m_available = (int) chix;
+      mptr->m_type	= 0;
+      mptr->m_count 	= 0;
+      mptr->m_pciu	= chix->paddr;
+      mptr->m_postsize	= 0;
+
+      /* 	
+	NOTE: I free the chid and monitor blocks only after 
+	confirmation from IOC 
+      */
+
+    SNDEND_NOLOCK
+
+    break; /* to unlock exit */
+  }
+	/*
+	 * message about unexecuted code from SUN's cheaper cc is a compiler
+	 * bug
+	 */
+  UNLOCK;
+
+  return ECA_NORMAL;
+}
 
 
 /*
-NOTE:
-	This call not implemented with select on VMS or vxWorks
-	due to its poor implementation in those environments. 
-
-        Wallangong's SELECT() does not
-	return early if a timeout is specified and IO occurs before the end
-	of the timeout. Above call works because of the short timeout interval.
-
-	Another wallongong bug will cause problems if the timeout in 
-	secs is specified large. I have fixed this by keeping track of 
-	large timeouts myself.
-
-	JH
-*/
-
-/*	NOTE: DELAYVAL must be less than 1.0		*/
-#define DELAYVAL	0.150		/* 150 mS	*/
-#define CASTTMO		0.150		/* 150 mS	*/
-#define LKUPTMO		0.015		/* 5 mS 	*/
-
-#ifdef	VMS
-#define SYSFREQ		10000000	/* 10 MHz	*/
-#else
-# ifdef vxWorks
-#  define SYSFREQ	sysClkRateGet()	/* usually 60 Hz	*/
-#  define time(A) 	(tickGet()/sysfreq)
-# else
-#  define SYSFREQ	1000000		/* 1 MHz		*/
-# endif
-#endif
-
-/*
-NOTE:
-1) 	Timeout equal to zero blocks indefinately until
-	all oustanding IO is complete.
-2)	Timeout other than zero will return with status = ECA_TIMEOUT
-	when that time period expires and IO is still outstanding.
-*/
-ca_pend_io
+ * NOTE: This call not implemented with select on VMS or vxWorks due to its
+ * poor implementation in those environments.
+ * 
+ * Wallangong's SELECT() does not return early if a timeout is specified and IO
+ * occurs before the end of the timeout. Above call works because of the
+ * short timeout interval.
+ * 
+ * Another wallongong bug will cause problems if the timeout in secs is
+ * specified large. I have fixed this by keeping track of large timeouts
+ * myself.
+ * 
+ */
+/************************************************************************/
+/*	This routine pends waiting for channel events and calls the 	*/
+/*	function specified with add_event when one occurs. If the 	*/
+/*	timeout is specified as 0 infinite timeout is assumed.		*/
+/*	if the argument early is specified TRUE then CA_NORMAL is 	*/
+/*	returned early (prior to timeout experation) when outstanding 	*/
+/*	IO completes.							*/
+/*	ca_flush_io() is called by this routine.			*/
+/************************************************************************/
 #ifdef VAXC
-(ca_real timeout)
+ca_pend(ca_real timeout, int early)
 #else
-(timeout)
+ca_pend(timeout, early)
 ca_real			timeout;
+int			early;
 #endif
 {
   void			send_msg();
   time_t 		beg_time;
   time_t		clock();
-  int			chidcnt;
-  int			chidstart;
 
 # ifdef vxWorks
   static int		sysfreq;
@@ -1171,21 +1788,39 @@ ca_real			timeout;
   UNLOCK;
 
   if(pndrecvcnt<1)
-    return ECA_NORMAL;
+    if(early)
+      return ECA_NORMAL;
 
-  if(timeout<0.0)
-    return ECA_TIMEOUT;
+  if(timeout<DELAYVAL && timeout != 0.0){
+    	struct timeval	notimeout;
 
-  /* The number of polls to wait on a chid */
-  chidstart		= (CASTTMO+pndrecvcnt*LKUPTMO)/DELAYVAL + 1;
-  chidcnt 		= chidstart;
+	/*
+	 * on UNIX call recv_msg() with zero timeout. on vxWorks and VMS
+	 * recv_msg() need not be called.
+	 * 
+	 * send_msg() only calls recv_msg on UNIX if the buffer needs to be
+	 * flushed.
+	 */
+#ifdef UNIX
+	/*
+	 * locking only a comment on UNIX
+	 */
+    	notimeout.tv_sec = 0;
+   	notimeout.tv_usec = 0;
+  	LOCK;
+   	recv_msg_select(&notimeout);
+  	UNLOCK;
+#endif
+       	return ECA_TIMEOUT;
+  }
 
   beg_time = time(NULL);
 
   while(TRUE){
+
+
 #   ifdef UNIX
     {
-      void		recv_msg_select();
       struct timeval	itimeout;
 
       itimeout.tv_usec 	= SYSFREQ * DELAYVAL;	
@@ -1216,27 +1851,22 @@ ca_real			timeout;
     }    
 #   endif
     if(pndrecvcnt<1)
-      return ECA_NORMAL;
+      if(early)
+        return ECA_NORMAL;
 
-    chidcnt--;      
-    if(chidcnt<1){
-      if(chidlist_pend.count)
-        chid_retry(TRUE);
-      chidstart += chidstart;
-      chidcnt = chidstart;
-    }  
+    LOCK;
+      chid_retry(TRUE);
+    UNLOCK;
+
     if(timeout != 0.0)
-      if(timeout<time(NULL)-beg_time){
+      if(timeout < time(NULL)-beg_time){
 	int i;
-        if(chidlist_pend.count)
-          chid_retry(FALSE);
-	/* move unanswered chids to a waiting list */
-	lstConcat(&chidlist_noreply, &chidlist_pend);
+	LOCK;
+        chid_retry(FALSE);
 	/* set pending IO count back to zero and notify  */
 	/* send a sync to each IOC and back */
 	/* dont count reads until we recv the sync */
-	LOCK;
-	for(i=BROADCAST_IIU+1;i<nxtiiu;i++){	
+	for(i=BROADCAST_IIU+1; i<nxtiiu; i++){	
 	  struct ioc_in_use	*piiu = &iiu[i];
 	  piiu->cur_read_seq++;
   	  SND_BEG_NOLOCK(extmsg, piiu)
@@ -1253,116 +1883,16 @@ ca_real			timeout;
 
 }
 
+
+
+
+
 
 /*
-	NOTE:
-	1)	Timeout of zero causes user process to pend indefinately for 
-		events.
-	2)	Timeout other than zero specifies a time to pend for events
-		even if no IO is outstanding.
-*/
-ca_pend_event
-#ifdef VAXC
-(ca_real timeout)
-#else
-(timeout)
-ca_real			timeout;
-#endif
-{
-  int			status;
-  void			send_msg();
-# ifdef vxWorks
-  static int		sysfreq;
-
-  if(!sysfreq)
-    sysfreq = SYSFREQ;
-# endif
-
-  INITCHK;
-
-  if(post_msg_active)
-    return ECA_EVDISALLOW;
-
-  if(timeout<0.0)
-    return ECA_TIMEOUT;
-
-  /*	Flush the send buffers			*/
-  LOCK;
-  send_msg();
-  UNLOCK;
-
-# ifdef vxWorks
-  {
-    unsigned int clockticks = timeout * sysfreq;
-
-    if(timeout == 0.0){
-      SEMAPHORE sem;
-      semInit(&sem);
-      while(TRUE)
-	semTake(&sem);
-    }
-
-    taskDelay(clockticks);
-
-  }
-# endif
-
-
-# ifdef VMS
-  {
-    float  mytimeout = timeout;	/* conservative */
-
-    if(timeout == 0.0)
-      while(TRUE)
-	sys$hiber();
-
-    status = lib$wait(&mytimeout);
-    if(status != SS$_NORMAL)
-      lib$signal(status);
-  }    
-# endif
-
-
-# ifdef UNIX
-  /*
-  NOTE: locking here as a comment only in case someone does this on a multi
-	threaded UNIX.
-  */
-  {
-    struct timeval	itimeout;
-    unsigned		beg_time;
-    unsigned		elapsed;
-    void		recv_msg_select();
-
-    if(timeout == 0.0)
-      while(TRUE){
-        LOCK;
-        recv_msg_select(NULL);
-        UNLOCK;
-      }
-
-    beg_time = time(NULL);
-    elapsed = 0;
-    while(TRUE){
-      float delay = timeout-elapsed;
-      itimeout.tv_usec 	= (delay- ((int)delay))*SYSFREQ;	
-      itimeout.tv_sec  	= delay;
-      LOCK;
-      recv_msg_select(&itimeout);
-      UNLOCK;
-      elapsed = time(NULL)-beg_time;
-      if(elapsed>timeout)
-        break;
-    }
-  }
-# endif
-
-  return ECA_TIMEOUT;
-}
-
-
-
-
+ *	CA_FLUSH_IO()
+ *
+ *
+ */
 ca_flush_io
 #ifdef VAXC
 (void)
@@ -1382,8 +1912,14 @@ ca_flush_io
   return ECA_NORMAL;
 }
 
+
 
-		ca_signal(ca_status,message)
+/*
+ *	CA_SIGNAL()
+ *
+ *
+ */
+ca_signal(ca_status,message)
 int		ca_status;
 char		*message;
 {
@@ -1419,15 +1955,25 @@ char		*message;
     printf(
 "    Severity: [%s]\n", severity[CA_EXTRACT_SEVERITY(ca_status)]);
 
-
-  if( !(ca_status & CA_M_SUCCESS) ){
+  /*
+   *
+   *
+   *	Terminate execution if unsuccessful
+   *
+   *
+   */
+  if( !(ca_status & CA_M_SUCCESS) && 
+		CA_EXTRACT_SEVERITY(ca_status) != CA_K_WARNING ){
 #   ifdef VMS
       lib$signal(0);
 #   endif
 #   ifdef vxWorks
-      ti(taskIdCurrent);
-      tt(taskIdCurrent);
+      ti(VXTHISTASKID);
+      tt(VXTHISTASKID);
 #   endif
+/***
+    abort(ca_status);
+ ***/
     abort();
   }
 
@@ -1440,12 +1986,18 @@ char		*message;
 
 
 
+
+/*
+ *	CA_BUSY_MSG()
+ *
+ */
 ca_busy_message(piiu)
 register struct ioc_in_use	*piiu; 
 {
   void			send_msg();
 
-  SND_BEG(extmsg, piiu)
+  LOCK;
+  SND_BEG_NOLOCK(extmsg, piiu)
     *mptr 		= nullmsg;
     mptr->m_cmmd 	= htons(IOC_EVENTS_OFF);
   SNDEND_NOLOCK
@@ -1454,12 +2006,18 @@ register struct ioc_in_use	*piiu;
 
 }
 
+
+/*
+ *	CA_READY_MSG()
+ *
+ */
 ca_ready_message(piiu)
 register struct ioc_in_use	*piiu; 
 {
   void			send_msg();
 
-  SND_BEG(extmsg, piiu)
+  LOCK;
+  SND_BEG_NOLOCK(extmsg, piiu)
     *mptr 		= nullmsg;
     mptr->m_cmmd 	= htons(IOC_EVENTS_ON);
   SNDEND_NOLOCK
@@ -1467,3 +2025,79 @@ register struct ioc_in_use	*piiu;
   UNLOCK;
 
 }
+
+
+/*
+ *	NOOP_MSG
+ *	(lock must be on)
+ *
+ */
+void
+noop_msg(piiu)
+register struct ioc_in_use	*piiu; 
+{
+  SND_BEG_NOLOCK(extmsg, piiu)
+    *mptr 		= nullmsg;
+    mptr->m_cmmd 	= htons(IOC_NOOP);
+  SNDEND_NOLOCK
+}
+
+
+
+/*
+ *
+ *	Default Exception Handler
+ *
+ *
+ */
+void
+ca_default_exception_handler(args)
+struct exception_handler_args args;
+{
+ 
+      /* 
+	NOTE:
+	I should print additional diagnostic info when time permits......
+      */
+
+      ca_signal(args.stat, args.ctx);
+}
+
+
+
+/*
+ *
+ *	call their function with their argument whenever a new fd is added or removed
+ *	(for a manager of the select system call under UNIX)
+ *
+ */
+ca_add_fd_registration(func, arg)
+void	(*func)();
+void	*arg;
+{
+	fd_register_func = func;
+	fd_register_arg = arg;
+
+  	return ECA_NORMAL;
+}
+
+
+
+/*
+ *
+ *	call their function with their argument whenever a new fd is added or removed
+ *	(for a manager of the select system call under UNIX)
+ *
+ */
+ca_defunct(func, arg)
+void	(*func)();
+void	*arg;
+{
+#ifdef VMS
+	SEVCHK(ECA_DEFUNCT, "you must have a VMS share image mismatch\n");
+#else
+	SEVCHK(ECA_DEFUNCT, NULL);
+#endif
+}
+
+

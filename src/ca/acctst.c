@@ -11,15 +11,18 @@
 #endif
 
 #include 		<cadef.h>
-#include 		<caerr.h>
 #include		<db_access.h>
 
 /*
 #define CA_TEST_CHNL	"AI_T2000"
 */
-#define CA_TEST_CHNL	"AI_T2000.DESC"
-#define CA_TEST_CHNL4	"AI_DOGGY"
+#define CA_TEST_CHNL	"ca:ai_2000"
+#define CA_TEST_CHNL4	"ca:ai_2000"
 
+#define EVENT_ROUTINE	null_event
+/*
+#define EVENT_ROUTINE	ca_test_event
+*/
 
 #define NUM		1
 
@@ -60,6 +63,7 @@ main()
   struct dbr_ctrl_float	*pctrl;
   char			pstring[NUM][MAX_STRING_SIZE];
   void			write_event();
+  void			conn();
 
 
   SEVCHK(ca_task_initialize(),"Unable to initialize");
@@ -71,7 +75,9 @@ main()
 
   ptr = (struct dbr_gr_float *) 
 	malloc(dbr_size[DBR_GR_FLOAT] + dbr_value_size[DBR_GR_FLOAT]*(NUM-1));
-  for(i=0;i<2;i++){
+
+  for(i=0; i<0; i++){
+
     status = ca_array_build(	CA_TEST_CHNL,	/* channel ASCII name	*/
 				DBR_GR_FLOAT,	/* fetch external type	*/
 				NUM,		/* array element cnt	*/
@@ -79,16 +85,79 @@ main()
 				ptr		/* pointer to recv buf	*/
 				);
     SEVCHK(status, NULL);
+
+    SEVCHK(ca_build_and_connect(
+		CA_TEST_CHNL4,
+		TYPENOTCONN,
+		0,
+		&chix4,
+		NULL,
+		conn,
+		NULL),NULL);
+    SEVCHK(ca_build_and_connect(
+		CA_TEST_CHNL,
+		TYPENOTCONN,
+		0,
+		&chix2,
+		NULL,
+		conn,
+		NULL),NULL);
+    SEVCHK(ca_build_and_connect(
+		CA_TEST_CHNL,
+		TYPENOTCONN,
+		0,
+		&chix1,
+		NULL,
+		conn,
+		NULL),NULL);
+    status = ca_pend_io(10.0);
+    SEVCHK(status,NULL);
+
+    SEVCHK(ca_clear_channel(chix4),NULL);
+    SEVCHK(ca_clear_channel(chix2),NULL);
+    SEVCHK(ca_clear_channel(chix3),NULL);
+    SEVCHK(ca_clear_channel(chix1),NULL);
+
+    free(ptr);
   }
 
 
-  SEVCHK(ca_search(CA_TEST_CHNL4,&chix4),NULL);
-  SEVCHK(ca_search(CA_TEST_CHNL,&chix2),NULL);
+    status = ca_array_build(
+		CA_TEST_CHNL,	/* channel ASCII name	*/
+		DBR_GR_FLOAT,	/* fetch external type	*/
+		NUM,		/* array element cnt	*/
+		&chix3,		/* ptr to chid		*/
+		ptr		/* pointer to recv buf	*/
+		);
+    SEVCHK(status, NULL);
 
-  for(i=0;i<1;i++)
-    SEVCHK(ca_search(CA_TEST_CHNL,&chix1),NULL);
+    SEVCHK(ca_build_and_connect(
+		CA_TEST_CHNL4,
+		TYPENOTCONN,
+		0,
+		&chix4,
+		NULL,
+		conn,
+		NULL),NULL);
+    SEVCHK(ca_build_and_connect(
+		CA_TEST_CHNL,
+		TYPENOTCONN,
+		0,
+		&chix2,
+		NULL,
+		conn,
+		NULL),NULL);
+    SEVCHK(ca_build_and_connect(
+		CA_TEST_CHNL,
+		TYPENOTCONN,
+		0,
+		&chix1,
+		NULL,
+		conn,
+		NULL),NULL);
 
   status = ca_pend_io(1.0);
+  SEVCHK(status,NULL);
 
   if(INVALID_DB_REQ(chix1->type))
     printf("Failed to locate %s\n",CA_TEST_CHNL);
@@ -116,19 +185,25 @@ main()
   lib$init_timer();
 # endif
 
+
   if(VALID_DB_REQ(chix4->type)){
-    ca_add_event(DBR_FLOAT, chix4, ca_test_event, 0xaaaaaaaa, &monix);
-    ca_clear_event(monix);
+    status = ca_add_event(DBR_FLOAT, chix4, EVENT_ROUTINE, 0xaaaaaaaa, &monix);
+    SEVCHK(status,NULL);
+    SEVCHK(ca_clear_event(monix),NULL);
   }
   if(VALID_DB_REQ(chix4->type)){
-    ca_add_event(DBR_FLOAT, chix4, ca_test_event, 0xaaaaaaaa, &monix);
-    ca_clear_event(monix);
+    status = ca_add_event(DBR_FLOAT, chix4, EVENT_ROUTINE, 0xaaaaaaaa, &monix);
+    SEVCHK(status,NULL);
+    SEVCHK(ca_clear_event(monix),NULL);
   }
 
   if(VALID_DB_REQ(chix3->type)){
-    ca_add_event(DBR_FLOAT, chix3, ca_test_event, 0xaaaaaaaa, &monix);
-    ca_add_event(DBR_FLOAT, chix3, write_event, 0xaaaaaaaa, &monix);
+    status = ca_add_event(DBR_FLOAT, chix3, EVENT_ROUTINE, 0xaaaaaaaa, &monix);
+    SEVCHK(status,NULL);
+    status = ca_add_event(DBR_FLOAT, chix3, write_event, 0xaaaaaaaa, &monix);
+    SEVCHK(status,NULL);
   }
+
 
   pfloat = (float *) malloc(sizeof(float)*NUM);
 
@@ -144,7 +219,7 @@ main()
     else
       abort();
 
-  ca_pend_io(4.0);
+  SEVCHK(ca_pend_io(4.0),NULL);
 
 # ifdef VMS
   lib$show_timer();
@@ -152,14 +227,20 @@ main()
   for(i=0;i<NUM;i++)
     printf("Value Returned from put/get %f\n",pfloat[i]);
 
+  for(i=0;i<10;i++)
+    ca_get_callback(DBR_FLOAT, chix1, ca_test_event, NULL);
 
   printf("-- Put/Gets done- waiting for Events --\n");
-  ca_pend_event(30.0);
+  status = ca_pend_event(500.0);
+  if(status == ECA_TIMEOUT){
 
-  free(ptr);
-  free(pfloat);
+    free(ptr);
+    free(pfloat);
 
-  exit();
+    exit();
+  }else
+    SEVCHK(status,NULL);
+
 }
 
 
@@ -168,7 +249,12 @@ main()
 
 void null_event()
 {
-  printf("-");
+  static int i;
+
+  if(i++>100){
+    printf("100 occured\n");
+    i = 0;
+  }
 }
 
 
@@ -181,5 +267,23 @@ struct event_handler_args args;
 
   SEVCHK(ca_rput(args.chid, &a),"write fail in event");
   SEVCHK(ca_flush_io(),NULL);
+/*
+#ifdef vxWorks
+taskDelay(20);
+#endif
+*/
+
+}
+
+void conn(args)
+struct connection_handler_args args; 
+{
+
+  if(args.op == CA_OP_CONN_UP)
+    printf("Channel On Line [%s]\n", ca_name(args.chid));
+  else if(args.op == CA_OP_CONN_DOWN)
+    printf("Channel Off Line [%s]\n", ca_name(args.chid));
+  else
+    printf("Ukn conn ev\n");
 }
 

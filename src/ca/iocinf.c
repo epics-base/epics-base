@@ -2,17 +2,15 @@
 /*									*/
 /*	        	      L O S  A L A M O S			*/
 /*		        Los Alamos National Laboratory			*/
-/*		         Los Alamos, New Mexico 87545			*/	
+/*		         Los Alamos, New Mexico 87545			*/
 /*									*/
 /*	Copyright, 1986, The Regents of the University of California.	*/
 /*									*/
 /*									*/
 /*	History								*/
 /*	-------								*/
-/*									*/
-/*	Date		Programmer	Comments			*/
-/*	----		----------	--------			*/
-/*	8/87		Jeff Hill	Init Release			*/
+/*	8/87	joh	Init Release					*/
+/*	021291 	joh	Fixed vxWorks task name creation bug		*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -29,15 +27,15 @@
 /*	ioc socket interface module					*/
 /*									*/
 /*									*/
-/*	Special comments						*/	
+/*	Special comments						*/
 /*	------- --------						*/
-/*									*/	
+/*									*/
 /************************************************************************/
 /*_end									*/
 
 
 /*	Allocate storage for global variables in this module		*/
-#define			GLBLSOURCE
+#define			CA_GLBLSOURCE
 #ifdef VMS
 #include		<iodef.h>
 #include		<inetiodef.h>
@@ -56,21 +54,21 @@
 #include		<types.h>
 #include		<socket.h>
 #include		<in.h>
+#include		<tcp.h>
 #include		<ioctl.h>
 #include		<cadef.h>
 #include		<net_convert.h>
 #include		<iocmsg.h>
 #include		<iocinf.h>
 
-/* For older versions of berkley UNIX types.h and vxWorks types.h 	*/
-/*	64 times sizeof(fd_mask) is the maximum channels on a vax JH 	*/
-/*	Yuk - can a maximum channel be determined at run time ?		*/
 /*
+ * used to be that some TCP/IPs did not include this
+ */
+#ifdef JUNKYARD
 typedef long	fd_mask;
 typedef	struct fd_set {
 	fd_mask	fds_bits[64];
 } fd_set;
-*/
 
 #ifndef NBBY
 # define NBBY 8	/* number of bits per byte */
@@ -92,55 +90,22 @@ typedef	struct fd_set {
 #define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1 << ((n) % NFDBITS)))
 #endif
 
-/* my version is faster since it is in line 			*/
+/* my version is faster since it is in line 	*/
 #define FD_ZERO(p)\
 {\
   register int i;\
   for(i=0;i<NELEMENTS((p)->fds_bits);i++)\
     (p)->fds_bits[i]=0;\
 }
-
-
-/* 50 mS delay for TCP to finish transmitting 				*/
-/* select wakes you if message is only partly here 			*/
-/* so this wait free's up the processor until it completely arrives 	*/
-#define DELAYVAL	0.050		/* 50 mS	*/
-
-#ifdef	VMS
-# define SYSFREQ		10000000	/* 10 MHz	*/
-# define TCPDELAY\
-{float delay = DELAYVAL; static int ef=NULL;\
- int status; int systim[2]={-SYSFREQ*DELAYVAL,~0};\
-  if(!ef)ef= lib$get_ef(&ef);\
-  status = sys$setimr(ef,systim,NULL,MYTIMERID,NULL);\
-  if(~status&STS$M_SUCCESS)lib$signal(status);\
-  status = sys$waitfr(ef);\
-  if(~status&STS$M_SUCCESS)lib$signal(status);\
-};
 #endif
 
-#ifdef vxWorks
-/*
-###############
-insert sysClkRateGet() here ??? -slows it down but works on all systems ??
-###############
-*/
-# define SYSFREQ		60		/* 60 Hz	*/
-# define TCPDELAY taskDelay((unsigned int)DELAYVAL*SYSFREQ);	
-#endif
-
-#ifdef UNIX
-#  define SYSFREQ		1000000		/* 1 MHz	*/
-/*                                                                     
-#  define TCPDELAY if(usleep((unsigned int)DELAYVAL*SYSFREQ))abort();  
-*/                                                                     
-#  define TCPDELAY {if(select(0,NULL,NULL,NULL,&tcpdelayval)<0)abort();}
-static struct timeval tcpdelayval = {0,(unsigned int)DELAYVAL*SYSFREQ};
-#endif
 
 static struct timeval notimeout = {0,0};
 
+void close_ioc();
 
+
+
 /*
 	LOCK should be on while in this routine
 */
@@ -151,50 +116,74 @@ unsigned short			*iocix;
 {
   int				i;
   int				status;
-  int 				sock;
-  int				true = TRUE;
-  struct sockaddr_in		src;
-  struct sockaddr_in 		*local_addr();
-  struct ioc_in_use		*piiu;
-
 
   /**********************************************************************/
   /* 	IOC allready allocated ?					*/
   /**********************************************************************/
   for(i=0;i<nxtiiu;i++)
-    if(	(net_addr.s_addr == iiu[i].sock_addr.sin_addr.s_addr)
-	&&
-	(net_proto == iiu[i].sock_proto)){
+    if(		(net_addr.s_addr == iiu[i].sock_addr.sin_addr.s_addr)
+	&&	(net_proto == iiu[i].sock_proto)){
+
+      if(!iiu[i].conn_up){
+	/* an old connection is resumed */
+        status = create_net_chan(&iiu[i]);
+        if(status != ECA_NORMAL)
+          return status;
+        ca_signal(ECA_NEWCONN,host_from_addr(net_addr));
+      }
+
       *iocix = i;
       return ECA_NORMAL;
     }
 
-  /**********************************************************************/
-  /* 	allocate and initialize an IOC info block for unallocated IOC	*/
-  /**********************************************************************/
-
-  /* 	is there an IOC In Use block available to allocate		*/
+  /* 	is there an IOC In Use block available to allocate	*/
   if(nxtiiu>=MAXIIU)
     return ECA_MAXIOC;
 
-  piiu = &iiu[nxtiiu];
+  /* 	set network address block	*/
+  iiu[nxtiiu].sock_addr.sin_addr = net_addr;
+  iiu[nxtiiu].sock_proto = net_proto;
+  status = create_net_chan(&iiu[nxtiiu]);
+  if(status != ECA_NORMAL)
+    return status;
 
-  /* 	set network address block					*/
-  piiu->sock_addr.sin_addr = net_addr;
-  
-  /* 	set socket domain 						*/
+  *iocix = nxtiiu++;
+
+  return ECA_NORMAL;
+
+}
+
+
+
+/**********************************************************************/
+/* 	allocate and initialize an IOC info block for unallocated IOC */
+/**********************************************************************/
+/*
+	LOCK should be on while in this routine
+*/
+create_net_chan(piiu)
+struct ioc_in_use		*piiu;
+{
+  int				status;
+  int 				sock;
+  int				true = TRUE;
+  struct sockaddr_in		saddr;
+  int				i;
+
+  struct sockaddr_in 		*local_addr();
+
+ 
+  /* 	set socket domain 	*/
   piiu->sock_addr.sin_family = AF_INET;
 
-  piiu->sock_proto = net_proto;
+  /*	set the port 	*/
+  piiu->sock_addr.sin_port = htons(CA_SERVER_PORT);
 
-
-  switch(net_proto)
+  switch(piiu->sock_proto)
   {
     case	IPPROTO_TCP:
-      /*			set the port 			*/
-      piiu->sock_addr.sin_port = htons(SERVER_NUM);
 
-      /* 	allocate a socket					*/
+      /* 	allocate a socket	*/
       sock = socket(	AF_INET,	/* domain	*/
 			SOCK_STREAM,	/* type		*/
 			0);		/* deflt proto	*/
@@ -203,9 +192,59 @@ unsigned short			*iocix;
 
       piiu->sock_chan = sock;
 
+      /*
+  	see TCP(4P) this seems to make unsollicited single 
+	events much faster. I take care of queue up as load 
+	increases.
+      */
+      status = setsockopt(	sock,
+				IPPROTO_TCP,
+				TCP_NODELAY,
+				&true,
+				sizeof true);
+      if(status < 0){
+        socket_close(sock);
+        return ECA_ALLOCMEM;
+      }
+
+#ifdef KEEPALIVE
+      /*
+  	This should cause the connection to be checked periodically
+	and an error to be returned if it is lost.
+
+	In practice it is not much use since the conn is checked very
+	infrequently.
+      */
+      status = setsockopt(	sock,
+				SOL_SOCKET,
+				SO_KEEPALIVE,
+				&true,
+				sizeof true);
+      if(status < 0){
+        socket_close(sock);
+        return ECA_ALLOCMEM;
+      }
+#endif
+
+#ifdef JUNKYARD
+{
+struct linger 	linger;
+int		linger_size = sizeof linger;
+      status = getsockopt(	sock,
+				SOL_SOCKET,
+				SO_LINGER,
+				&linger,
+				&linger_size);
+      if(status < 0){
+	abort();
+      }
+printf("linger was on:%d linger:%d\n", linger.l_onoff, linger.l_linger);
+}
+#endif
+
       /* set TCP buffer sizes only if BSD 4.3 sockets */
       /* temporarily turned off */
-#     ifdef ZEBRA  
+#     ifdef JUNKYARD  
 
         i = (MAX_MSG_SIZE+sizeof(int)) * 2;
         status = setsockopt(	sock,
@@ -213,7 +252,7 @@ unsigned short			*iocix;
 				SO_SNDBUF,
 				&i,
 				sizeof(i));
-        if(status == -1){
+        if(status < 0){
           socket_close(sock);
           return ECA_ALLOCMEM;
         }
@@ -222,49 +261,55 @@ unsigned short			*iocix;
 				SO_RCVBUF,
 				&i,
 				sizeof(i));
-        if(status == -1){
+        if(status < 0){
           socket_close(sock);
           return ECA_ALLOCMEM;
         }
 #     endif
 
-      piiu->max_msg = MAX_TCP;
 
 
       /*	connect					*/
       status = connect(	
 			sock,
-			&iiu[nxtiiu].sock_addr,
-			sizeof(iiu[nxtiiu].sock_addr));
-      if(status == -1){
+			&piiu->sock_addr,
+			sizeof(piiu->sock_addr));
+      if(status < 0){
+	printf("no conn errno %d\n", MYERRNO);
         socket_close(sock);
         return ECA_CONN;
       }
+
+      piiu->max_msg = MAX_TCP;
 
       /* 
       place the broadcast addr/port in the stream so the
       ioc will know where this is coming from.
       */
-      i = sizeof(src);
+      i = sizeof(saddr);
       status = getsockname(	iiu[BROADCAST_IIU].sock_chan, 
-				&src,
+				&saddr,
 				&i);
       if(status == ERROR){
 	printf("alloc_ioc: cant get my name %d\n",MYERRNO);
 	abort();
       }
-      src.sin_addr.s_addr = 
+      saddr.sin_addr.s_addr = 
 	(local_addr(iiu[BROADCAST_IIU].sock_chan))->sin_addr.s_addr;
       status = send(	piiu->sock_chan,
-			&src,
-			sizeof(src),
+			&saddr,
+			sizeof(saddr),
 			0);
+
+      /*	Set non blocking IO for UNIX to prevent dead locks	*/
+#     ifdef UNIX
+        status = socket_ioctl(	piiu->sock_chan,
+				FIONBIO,
+				&true);
+#     endif
 
       break;
     case	IPPROTO_UDP:
-      /*			set the port 			*/
-      piiu->sock_addr.sin_port = htons(SERVER_NUM);
-
       /* 	allocate a socket			*/
       sock = socket(	AF_INET,	/* domain	*/
 			SOCK_DGRAM,	/* type		*/
@@ -273,7 +318,6 @@ unsigned short			*iocix;
         return ECA_SOCK;
 
       piiu->sock_chan = sock;
-
 
       /*
 	The following only needed on BSD 4.3 machines
@@ -285,44 +329,43 @@ unsigned short			*iocix;
         return ECA_CONN;
       }
 
+      memset(&saddr,0,sizeof(saddr));
+      saddr.sin_family = AF_INET;
+      saddr.sin_addr.s_addr = htonl(INADDR_ANY); /* let slib pick lcl addr */
+      saddr.sin_port = htons(0);	
 
-      memset(&src,0,sizeof(src));
-      src.sin_family = AF_INET;
-      src.sin_addr.s_addr = INADDR_ANY;		/* let TCP pick lcl addr */
-      src.sin_port = 0;				/* let TCP pick lcl port */
-
-      status = bind(sock, &src, sizeof(src));
+      status = bind(sock, &saddr, sizeof(saddr));
       if(status<0){
         printf("%d\n",MYERRNO);
-	SEVCHK(ECA_INTERNAL,"bind failed");
+	ca_signal(ECA_INTERNAL,"bind failed");
       }
 
-      piiu->max_msg = MAX_UDP - sizeof(iiu[nxtiiu].send->stk);
+      piiu->max_msg = MAX_UDP - sizeof(piiu->send->stk);
 
       break;
+
     default:
-      printf("alloc_ioc: ukn protocol\n");
-      abort();
+      ca_signal(ECA_INTERNAL,"alloc_ioc: ukn protocol\n");
   }
-
-  /*	Set non blocking IO for UNIX to prevent dead locks	*/
-# ifdef UNIX
-    status = socket_ioctl(	piiu->sock_chan,
-				FIONBIO,
-				&true);
-# endif
-
   /* 	setup send_msg(), recv_msg() buffers	*/
-  if(! (piiu->send = (struct buffer *) malloc(sizeof(struct buffer))) ){
-    socket_close(sock);
-    return ECA_ALLOCMEM;
-  }
+  if(!piiu->send)
+    if(! (piiu->send = (struct buffer *) malloc(sizeof(struct buffer))) ){
+      socket_close(sock);
+      return ECA_ALLOCMEM;
+    }
   piiu->send->stk = 0;
-  if(! (piiu->recv = (struct buffer *) malloc(sizeof(struct buffer))) ){
-    socket_close(sock);
-    return ECA_ALLOCMEM;
-  }
+
+  if(!piiu->recv)
+    if(! (piiu->recv = (struct buffer *) malloc(sizeof(struct buffer))) ){
+      socket_close(sock);
+      return ECA_ALLOCMEM;
+    }
+
   piiu->recv->stk = 0;
+  piiu->conn_up = TRUE;
+  if(fd_register_func)
+	(*fd_register_func)(fd_register_arg, sock, TRUE);
+
 
   /*	Set up recv thread for VMS	*/
 # ifdef VMS
@@ -333,7 +376,7 @@ unsigned short			*iocix;
 			IO$_RECEIVE,
 			&piiu->iosb,
 			recv_msg_ast,
-			nxtiiu,
+			piiu,
 			piiu->recv->buf,
 			sizeof(piiu->recv->buf),
 			NULL,
@@ -345,108 +388,180 @@ unsigned short			*iocix;
       exit();
     }
   }
-# else
-#   ifdef vxWorks
-    {  
+# endif
+# ifdef vxWorks
+  {  
       void	recv_task();
       int 	pri;
       char	name[15];
 
       status == taskPriorityGet(VXTASKIDSELF, &pri);
       if(status<0)
-	SEVCHK(ECA_INTERNAL,NULL);
+	ca_signal(ECA_INTERNAL,NULL);
 
-      name[0]=NULL;                                          
-      strncat(name,"RD ", sizeof(name)-1);                   
-      strncat(name, taskName(VXTHISTASKID), sizeof(name)-1); 
+      strcpy(name,"RD ");                   
+      strncat(name, taskName(VXTHISTASKID), sizeof(name)-strlen(name)-1); 
 
       status = taskSpawn(	name,
 				pri-1,
 				VX_FP_TASK,
 				4096,
 				recv_task,
-				(unsigned) nxtiiu,
+				piiu,
 				taskIdSelf());
       if(status<0)
-	SEVCHK(ECA_INTERNAL,NULL);
+	ca_signal(ECA_INTERNAL,NULL);
 
-      iiu[nxtiiu].recv_tid = status;
+      piiu->recv_tid = status;
 
-    }
-#   endif
+  }
 # endif
 
-  *iocix = nxtiiu++;
+/*
+	testing testing
+*/
+#ifdef ZEBRA /* vw does not have getsockopt */
+{
+int timeo;
+int timeolen = sizeof(timeo);
+
+      status = getsockopt(sock,SOL_SOCKET,SO_SNDTIMEO,&timeo,&timeolen);
+      if(status<0){
+        printf("%d\n",MYERRNO);
+      }
+if(timeolen != sizeof(timeo))
+printf("bomb\n");
+
+printf("send %d\n",timeo);
+      status = getsockopt(sock,SOL_SOCKET,SO_RCVTIMEO,&timeo,&timeolen);
+      if(status<0){
+        printf("%d\n",MYERRNO);
+      }
+if(timeolen != sizeof(timeo))
+printf("bomb\n");
+
+printf("recv %d\n",timeo);
+}
+#endif
+
+
 
   return ECA_NORMAL;
 }
 
 
-
+
 /*
-	NOTE: Wallangong select cant be called in an AST with a timeout
-	since they use timer ASTs to implement thier timeout.
+ *	NOTIFY_CA_REPEATER
+ *	tell the cast repeater that another client has come on line 
+ *
+ *	NOTES:
+ *	1)	local communication only (no LAN traffic)
+ *
+ */
+notify_ca_repeater()
+{
+	struct sockaddr_in	saddr;
+	int			status;
+  	struct sockaddr_in 	*local_addr();
 
-	NOTE: Wallangong select does not return early if IO is present prior
-	to the timeout expiring.
+	if(!iiu[BROADCAST_IIU].conn_up)
+		return;
 
-	LOCK should be on while in this routine
-*/
+     	saddr = *( local_addr(iiu[BROADCAST_IIU].sock_chan) );
+      	saddr.sin_port = htons(CA_CLIENT_PORT);	
+      	status = sendto(
+		iiu[BROADCAST_IIU].sock_chan,
+        	NULL,
+        	0, /* zero length message */
+        	0,
+       		&saddr, 
+		sizeof saddr);
+      	if(status < 0)
+		abort();
+}
 
+
+
+/*
+ * SEND_MSG
+ * 
+ * NOTE: Wallangong select cant be called in an AST with a timeout since they
+ * use timer ASTs to implement thier timeout.
+ * 
+ * NOTE: Wallangong select does not return early if IO is present prior to the
+ * timeout expiring.
+ * 
+ * LOCK should be on while in this routine
+ */
 void			
 send_msg()
 {
-  unsigned 		cnt;
-  void			*pmsg;    
-  unsigned 		iocix;
-  int			status;
+  unsigned 			cnt;
+  void				*pmsg;    
+  int				status;
+  register struct ioc_in_use 	*piiu;
 
   /**********************************************************************/
   /*	Note: this routine must not be called at AST level		*/
   /**********************************************************************/
-  for(iocix=0;iocix<nxtiiu;iocix++)
-    if(iiu[iocix].send->stk){
+  if(!ca_static->ca_repeater_contacted)
+	notify_ca_repeater();
 
-      /* don't allow UDP recieve messages to que up under UNIX */
-#     ifdef UNIX
-      {
-        void recv_msg_select();
+
+  /* don't allow UDP recieve messages to que up under UNIX */
+# ifdef UNIX
+  {
+	void recv_msg_select();
 	/* test for recieve allready in progress and NOOP if so */
 	if(!post_msg_active)
-          recv_msg_select(&notimeout);
-      }
-#     endif
+        	recv_msg_select(&notimeout);
+  }
+# endif
 
-      cnt = iiu[iocix].send->stk + sizeof(iiu[iocix].send->stk);
-      iiu[iocix].send->stk = htonl(cnt);	/* convert for 68000	*/
-      pmsg = iiu[iocix].send;			/* byte cnt then buf 	*/
+  for(piiu=iiu;piiu<&iiu[nxtiiu];piiu++)
+    if(piiu->send->stk){
+
+
+      cnt = piiu->send->stk + sizeof(piiu->send->stk);
+      piiu->send->stk = htonl(cnt);	/* convert for 68000	*/
+      pmsg = piiu->send;		/* byte cnt then buf 	*/
 
       while(TRUE){
-        status = sendto(	iiu[iocix].sock_chan,
+	if(piiu->conn_up){
+          status = sendto(	piiu->sock_chan,
 				pmsg,	
 			  	cnt,
 				0,
-				&iiu[iocix].sock_addr,
-				sizeof(iiu[iocix].sock_addr));
+				&piiu->sock_addr,
+				sizeof(piiu->sock_addr));
+        }
+        else{
+	  /* send a directed UDP message (for search retries) */
+          status = sendto(	iiu[BROADCAST_IIU].sock_chan,
+				pmsg,	
+			  	cnt,
+				0,
+				&piiu->sock_addr,
+				sizeof(piiu->sock_addr));
+	}
         if(status == cnt)
 	  break;
 
 	if(status>=0){
 	  if(status>cnt)
-	    SEVCHK(ECA_INTERNAL,"more sent than requested");
+	    ca_signal(ECA_INTERNAL,"more sent than requested");
 	  cnt = cnt-status;
 	  pmsg = (void *) (status+(char *)pmsg);
 	}
         else if(MYERRNO == EWOULDBLOCK){
 	}
-	else{
-	  if(MYERRNO != EPIPE){
-            printf("send_msg(): unexpected error on socket send() %d\n",MYERRNO);
-	  }
-	  SEVCHK(ECA_DISCONN, host_from_addr(iiu[iocix].sock_addr.sin_addr))
-	  mark_chids_disconnected(iocix);
+        else{
+	  if(MYERRNO != EPIPE && MYERRNO != ECONNRESET)
+            printf("send_msg(): error on socket send() %d\n",MYERRNO);
+	  close_ioc(piiu);
 	  break;
-  	}
+	}
 
   	/*	
 	Ensure we do not accumulate extra recv messages	(for TCP)	
@@ -461,88 +576,100 @@ send_msg()
       }
 
       /* reset send stack */
-      iiu[iocix].send->stk = 0;
+      piiu->send->stk = 0;
     }
 
 }
 
 
-
+
 /*
-	Recieve incomming messages
-	1) Wait no longer than timeout
-	2) Return early if nothing outstanding			
-
-*/
+ *	RECV_MSG_SELECT()
+ *
+ * 	Asynch notification of incomming messages under UNIX
+ *	1) Wait no longer than timeout 
+ *	2) Return early if nothing outstanding
+ * 
+ */
 #ifdef UNIX
 void			
 recv_msg_select(ptimeout)
-struct timeval 		*ptimeout;
+struct timeval 	*ptimeout;
 {
-  unsigned		iocix;
-  long			status;
-  void			recv_msg();
+  	long				status;
+  	register struct ioc_in_use 	*piiu;
+  	struct timeval 			*ptmptimeout;
+  	void				recv_msg();
 
-  for(iocix=0; iocix<nxtiiu; iocix++)
-    FD_SET(iiu[iocix].sock_chan, &readch);
+  	ptmptimeout = ptimeout;
+  	while(TRUE){
 
-  status = select(	sizeof(fd_set)*NBBY,
-			&readch,
-			&writech,
-			&execch,
-			ptimeout);
+    		for(piiu=iiu;piiu<&iiu[nxtiiu];piiu++)
+      			if(piiu->conn_up){
+        			FD_SET(piiu->sock_chan,&readch);
+      			}
 
-  while(status > 0){
+    		status = select(
+				sizeof(fd_set)*NBBY,
+				&readch,
+				NULL,
+				NULL,
+				ptmptimeout);
 
-    for(iocix=0; iocix<nxtiiu; iocix++){
-      if(!FD_ISSET(iiu[iocix].sock_chan,&readch))
-        continue;
-      recv_msg(iocix);
-    }
+  		if(status<=0){  
+			if(status == 0)
+				return;
+                                             
+    			if(MYERRNO == EINTR)
+				return;      
+    			else if(MYERRNO == EWOULDBLOCK){
+				printf("CA: blocked at select ?\n");
+				return;
+    			}                                           
+    			else{                                                  					char text[255];                                         
+     				sprintf(
+					text,
+					"unexpected select fail: %d",
+					MYERRNO); 
+      				ca_signal(ECA_INTERNAL,text);                       			}                                                         		}                                                         
 
-    /* make sure that nothing is left pending */
-    for(iocix=0;iocix<nxtiiu;iocix++)
-      FD_SET(iiu[iocix].sock_chan,&readch);
+    		for(piiu=iiu;piiu<&iiu[nxtiiu];piiu++)
+      			if(piiu->conn_up)
+      				if(FD_ISSET(piiu->sock_chan,&readch) )
+          				recv_msg(piiu);
 
-    status = select(	sizeof(fd_set)*NBBY,
-			&readch,
-			NULL,
-			NULL,
-			&notimeout);
-  }
+  		/*
+   		 * double check to make sure that nothing is left pending
+  	 	 */
+    		ptmptimeout = &notimeout;
+  	}
 
-  if(status<0){                                               
-    if(MYERRNO == EINTR)                                      
-      return;                                                 
-    else{                                                     
-      char text[255];                                         
-      sprintf(text,"Error Returned From Select: %d",MYERRNO); 
-      SEVCHK(ECA_INTERNAL,text);                              
-    }                                                         
-  }                                                           
-
-  return;
 }
 #endif
 
 
 
 void
-recv_msg(iocix)
-unsigned		iocix;
+recv_msg(piiu)
+struct ioc_in_use	*piiu;
 {
-  struct ioc_in_use	*piiu = &iiu[iocix];
   void			tcp_recv_msg();
   void			udp_recv_msg();
 
   switch(piiu->sock_proto){
   case	IPPROTO_TCP:
-    tcp_recv_msg(iocix);
+
+    /* #### remove this statement after debug is complete #### */
+    if(!piiu->conn_up)
+      ca_signal(ECA_INTERNAL,"TCP burp at conn close\n");
+
+    tcp_recv_msg(piiu);
     flow_control(piiu);
+
     break;
 	
   case 	IPPROTO_UDP:
-    udp_recv_msg(iocix);
+    udp_recv_msg(piiu);
     break;
 
   default:
@@ -556,100 +683,120 @@ unsigned		iocix;
 
 
 void
-tcp_recv_msg(iocix)
-unsigned		iocix;
+tcp_recv_msg(piiu)
+struct ioc_in_use	*piiu;
 {
-  struct ioc_in_use	*piiu = &iiu[iocix];
-  unsigned long		byte_cnt;
-  unsigned long		byte_sum;
-  int			status;
-  int			timeoutcnt;
-  struct buffer		*rcvb = 	piiu->recv;
-  int			sock = 		piiu->sock_chan;
+  	unsigned long		byte_cnt;
+  	unsigned long		byte_sum;
+  	int			status;
+  	int			timeoutcnt;
+  	struct buffer		*rcvb = 	piiu->recv;
+  	int			sock = 		piiu->sock_chan;
 
 
 
-  while(TRUE){
-    status = recv(	sock,
+ 	status = recv(	sock,
 			&rcvb->stk,
 			sizeof(rcvb->stk),
 			0);
-    if(status == sizeof(rcvb->stk))
-      break;
-    if( status > 0)
-      SEVCHK(ECA_INTERNAL,"partial recv on request of only 4 bytes");
+  	if(status != sizeof(rcvb->stk)){
 
-    if( status < 0){
-      if(MYERRNO != EWOULDBLOCK){
-        if(MYERRNO != EPIPE && MYERRNO != ECONNRESET)
-	  printf("unexpected recv error 1 = %d\n",MYERRNO);
+    		if( status > 0)
+      			ca_signal(	
+				ECA_INTERNAL,
+				"partial recv on request of only 4 bytes\n");
+		else if(status == 0){
+			printf("CA: recv of zero length?\n");
+			LOCK;
+			close_ioc(piiu);
+			UNLOCK;
+			return;
+		}
+    		else{
+    			/* try again on status of 0 or -1 and EWOULDBLOCK */
+      			if(MYERRNO == EWOULDBLOCK)
+				return;
 
-	SEVCHK(ECA_DISCONN, host_from_addr(piiu->sock_addr.sin_addr));
-	mark_chids_disconnected(iocix);
-	return;
-      }
-    }
+       	 		if(MYERRNO != EPIPE && MYERRNO != ECONNRESET)
+	  			printf(	"unexpected recv error 1 = %d %d\n",
+					MYERRNO, 
+					status);
 
-    /* try again on status of 0 or -1 and EWOULDBLOCK */
-    TCPDELAY;
-  }
-
-
-  /* switch from 68000 to VAX byte order */
-  byte_cnt = (unsigned long) ntohl(rcvb->stk) - sizeof(rcvb->stk);
-  if(byte_cnt>MAX_MSG_SIZE){
-    printf("recv_msg(): message overflow %u\n",byte_cnt-MAX_MSG_SIZE);
-    return;
-  }
+			LOCK;
+			close_ioc(piiu);
+			UNLOCK;
+			return;
+    		}
+  	}
 
 
-  timeoutcnt = byte_cnt + 3000;
-  for(byte_sum = 0; byte_sum < byte_cnt; byte_sum += status){
+  	/* switch from 68000 to VAX byte order */
+  	byte_cnt = (unsigned long) ntohl(rcvb->stk) - sizeof(rcvb->stk);
+  	if(byte_cnt>MAX_MSG_SIZE){
+    		printf(	"recv_msg(): message overflow %u\n",
+			byte_cnt-MAX_MSG_SIZE);
+		LOCK;
+		close_ioc(piiu);
+		UNLOCK;
+    		return;
+ 	}
 
-#   ifdef DEBUG
-      if(byte_sum)
-        printf(	"recv_msg(): Warning- reading %d leftover bytes \n",
-		byte_cnt-byte_sum); 
-#   endif
 
-    status = recv(	sock,
+  	timeoutcnt = byte_cnt + 3000;
+  	byte_sum = 0;
+  	while(TRUE){
+
+#   		ifdef DEBUG
+      		if(byte_sum)
+        		printf(	"recv_msg(): Warning- %d leftover bytes \n",
+			byte_cnt-byte_sum); 
+#   		endif
+
+   	 	status = recv(	sock,
 			&rcvb->buf[byte_sum],
 		  	byte_cnt - byte_sum,
 			0);
-    if(status < 0){
-      if(MYERRNO != EWOULDBLOCK){
-        if(MYERRNO != EPIPE && MYERRNO != ECONNRESET)
-	  printf("unexpected recv error 2 = %d\n",MYERRNO);
+    		if(status < 0){
+      			if(MYERRNO != EWOULDBLOCK){
+        			if(MYERRNO != EPIPE && MYERRNO != ECONNRESET)
+	  				printf("recv error 2 = %d\n",MYERRNO);
 
-	SEVCHK(ECA_DISCONN, host_from_addr(piiu->sock_addr.sin_addr));
-	mark_chids_disconnected(iocix);
-	return;
-      }
+				LOCK;
+				close_ioc(piiu);
+				UNLOCK;
+				return;
+      			}
 
-      status = 0;
-      if(--timeoutcnt < 0){
-	printf("recv_msg(): TCP message bdy wait timed out\n");
-	abort();
-      }
-    }
+      			if(--timeoutcnt < 0){
+				printf("recv_msg(): message bdy wait tmo\n");
+				LOCK;
+				close_ioc(piiu);
+				UNLOCK;
+				abort();
+      			}
+    		}
+    		else{
+      			byte_sum += status;
+      			if(byte_sum >= byte_cnt)
+			break;
+    		}
 
-    /* wait for TCP/IP to complete the message transfer */
-    TCPDELAY;
-  }
+    		/* wait for TCP/IP to complete the message transfer */
+    		TCPDELAY;
+  	}
 
-  /* post message to the user */
-  post_msg(rcvb->buf, byte_cnt, piiu->sock_addr.sin_addr, piiu);
+  	/* post message to the user */
+  	post_msg(rcvb->buf, byte_cnt, piiu->sock_addr.sin_addr, piiu);
 
-  return;
+ 	return;
 }
 
 
 
 void
-udp_recv_msg(iocix)
-unsigned		iocix;
+udp_recv_msg(piiu)
+struct ioc_in_use	*piiu;
 {
-  struct ioc_in_use	*piiu = 	&iiu[iocix];
   unsigned long		byte_cnt;
   int			status;
   struct buffer		*rcvb = 	piiu->recv;
@@ -674,7 +821,7 @@ unsigned		iocix;
       /* op would block which is ok to ignore till ready later */
       if(MYERRNO == EWOULDBLOCK)
         break;
-      SEVCHK(ECA_INTERNAL,"unexpected udp recv error");
+      ca_signal(ECA_INTERNAL,"unexpected udp recv error");
     }
 
     /* switch from 68000 to VAX byte order */
@@ -683,9 +830,9 @@ unsigned		iocix;
       printf("recieved a udp reply of %d bytes\n",byte_cnt);
 #   endif
     if(byte_cnt != status){
-      printf("recv_cast(): corrupt broadcast reply %d\n",MYERRNO);
+      printf("recv_cast(): corrupt UDP recv %d\n",MYERRNO);
       printf("recv_cast(): header %d actual %d\n",byte_cnt,status);
-      break;
+      return;
     }
     rcvb->stk += byte_cnt;
 
@@ -702,7 +849,7 @@ unsigned		iocix;
 				FIONREAD,
 				&nchars);
     if(status<0)
-      SEVCHK(ECA_INTERNAL,"unexpected udp ioctl err\n");
+      ca_signal(ECA_INTERNAL,"unexpected udp ioctl err\n");
 
   }while(nchars);
 
@@ -726,8 +873,8 @@ unsigned		iocix;
 
 #ifdef vxWorks
 void
-recv_task(iocix,moms_tid)
-unsigned		iocix;
+recv_task(piiu, moms_tid)
+struct ioc_in_use	*piiu;
 int			moms_tid;
 {
   int			status;
@@ -740,118 +887,269 @@ int			moms_tid;
   if(ca_static == (struct ca_static*)ERROR)
     abort();
 
-  while(TRUE)
-    recv_msg(iocix);
+  while(piiu->conn_up)
+    recv_msg(piiu);
+
+  /*
+	Exit recv task
+
+	NOTE on vxWorks I dont want the global channel access
+	exit handler to run for this pod of tasks when the recv
+	task exits so I delete the  task variable here.
+	The CA exit handler ignores tasks with out the ca task
+	var defined.
+  */
+
+  status = taskVarDelete(VXTHISTASKID, &ca_static); 
+  if(status == ERROR)                            
+    abort();                                     
+
+  exit();
 }
 #endif
 
+
+/*
+ *
+ *	RECV_MSG_AST()
+ *
+ *
+ */
 #ifdef VMS
 void
-recv_msg_ast(iocix)
-int iocix;
+recv_msg_ast(piiu)
+struct ioc_in_use	*piiu;
 {
-  struct ioc_in_use	*piiu = 	&iiu[iocix];
-  short			io_status =	piiu->iosb.status;
-  int			io_count =	piiu->iosb.count;
-  struct sockaddr_in	*paddr;
-  char			*pbuf;
-  unsigned int		*pcount=	(unsigned int *) piiu->recv->buf;
-  int			bufsize;
+  	short			io_status = piiu->iosb.status;
+  	int			io_count = piiu->iosb.count;
+  	struct sockaddr_in	*paddr;
+  	char			*pbuf;
+  	unsigned int		*pcount= (unsigned int *) piiu->recv->buf;
+  	int			bufsize;
+  	unsigned long		byte_cnt;
 
-  unsigned long		byte_cnt;
-
-  if(io_status != SS$_NORMAL){
-    if(io_status == SS$_CANCEL)
-      return;
-    lib$signal(io_status);
-  }
-  else{
-    /*
-    NOTE:	The following is a bug fix since WIN has returned
-		the address structure missaligned by 16 bits
-
-		the fix is reliable since this structure happens
-		to be padded with zeros at the end by more than 16 bits
-    */
-    if(piiu->sock_proto == IPPROTO_TCP)
-      paddr = (struct sockaddr_in *) &piiu->sock_addr;
-    else
+  	if(io_status != SS$_NORMAL){
+    		close_ioc(piiu);
+    		if(io_status != SS$_CANCEL)
+      			lib$signal(io_status);
+    		return;
+  	}
+	/*
+	 * NOTE: The following is a bug fix since WIN has returned the
+	 * address structure missaligned by 16 bits
+	 * 
+	 * the fix is reliable since this structure happens to be padded with
+	 * zeros at the end by more than 16 bits
+	 */
+    	if(piiu->sock_proto == IPPROTO_TCP)
+      		paddr = (struct sockaddr_in *) &piiu->sock_addr;
+    	else
 #ifdef WINTCP
-      paddr = (struct sockaddr_in *) ((char *)&piiu->recvfrom+sizeof(short));
+      		paddr = (struct sockaddr_in *) 
+			((char *)&piiu->recvfrom+sizeof(short));
 #else
-      paddr = (struct sockaddr_in *) (char *)&piiu->recvfrom;
+      		paddr = (struct sockaddr_in *) 
+			(char *)&piiu->recvfrom;
 #endif
 
-    piiu->recv->stk += io_count;
-    io_count = piiu->recv->stk;
+    	piiu->recv->stk += io_count;
+    	io_count = piiu->recv->stk;
 
-    while(TRUE){
-      pbuf = (char *) (pcount+1);
+    	while(TRUE){
+      		pbuf = (char *) (pcount+1);
 
-      /* switch from 68000 to VAX byte order */
-      byte_cnt = (unsigned long) ntohl(*pcount);
-      if(byte_cnt>MAX_MSG_SIZE || byte_cnt<sizeof(*pcount)){
-        printf("recv_msg_ast(): msg over/underflow %u\n",byte_cnt);
-        break;
-      }
+      		/* switch from 68000 to VAX byte order */
+     		 byte_cnt = (unsigned long) ntohl(*pcount);
+      		if(byte_cnt>MAX_MSG_SIZE || byte_cnt<sizeof(*pcount)){
+			if(byte_cnt)
+        			printf(	"CA: msg over/underflow %u\n", 
+					byte_cnt);
+        		close_ioc(piiu);
+			return;
+      		}
 
-      if(io_count == byte_cnt){
-        post_msg(pbuf, byte_cnt-sizeof(*pcount), paddr->sin_addr, piiu);
-        break;
-      }
-      else if(io_count > byte_cnt)
-        post_msg(pbuf, byte_cnt-sizeof(*pcount), paddr->sin_addr, piiu);
-      else{
-        if(pcount != &piiu->recv->buf){
-          memcpy(piiu->recv->buf, pcount, io_count);  
-          piiu->recv->stk = io_count;
-        }
+      		if(io_count == byte_cnt){
+        		post_msg(
+				pbuf, 
+				byte_cnt-sizeof(*pcount), 
+				paddr->sin_addr, 
+				piiu);
+        		break;
+      		}
+      		else if(io_count > byte_cnt)
+        		post_msg(
+				pbuf, 
+				byte_cnt-sizeof(*pcount), 
+				paddr->sin_addr, 
+				piiu);
+      		else{
+        		if(pcount != piiu->recv->buf){
+          			memcpy(piiu->recv->buf, pcount, io_count);  
+          			piiu->recv->stk = io_count;
+        		}
 
-        bufsize = sizeof(piiu->recv->buf) - piiu->recv->stk;
-        io_status = sys$qio(	NULL,
+        		bufsize = sizeof(piiu->recv->buf) - piiu->recv->stk;
+        		io_status = sys$qio(
+				NULL,
 				piiu->sock_chan,
 				IO$_RECEIVE,
 				&piiu->iosb,
 				recv_msg_ast,
-				iocix,
+				piiu,
 				&piiu->recv->buf[piiu->recv->stk],
 				bufsize,
 				NULL,
 				&piiu->recvfrom,
 				sizeof(piiu->recvfrom),
 				NULL);
-        if(io_status != SS$_NORMAL)
-          lib$signal(io_status);
-	return;
-      }
-      io_count -= byte_cnt;
-      pcount = (int *) (byte_cnt + (char *)pcount);
+        		if(io_status != SS$_NORMAL){
+	  			if(io_status == SS$_IVCHAN)
+	    				printf("CA: Unable to requeue AST?\n");
+	  			else
+            				lib$signal(io_status);
+			}
+			return;
+     		 }
+      		io_count -= byte_cnt;
+      		pcount = (int *) (byte_cnt + (char *)pcount);
 
-    }
-  }
+    	}
 
-  if(piiu->sock_proto == IPPROTO_TCP)  
-    flow_control(piiu);
+  	if(piiu->sock_proto == IPPROTO_TCP)  
+    		flow_control(piiu);
 
-  piiu->recv->stk = 0;
-  io_status = sys$qio(	NULL,
+  	piiu->recv->stk = 0;
+  	io_status = sys$qio(
+			NULL,
 			piiu->sock_chan,
 			IO$_RECEIVE,
 			&piiu->iosb,
 			recv_msg_ast,
-			iocix,
+			piiu,
 			piiu->recv->buf,
 			sizeof(piiu->recv->buf),
 			NULL,
 			&piiu->recvfrom,
 			sizeof(piiu->recvfrom),
 			NULL);
-  if(io_status != SS$_NORMAL)
-    lib$signal(io_status);
+  	if(io_status != SS$_NORMAL)
+    		lib$signal(io_status);
       
-  return;
+  	return;
 }
 #endif
 
+
+/*
+ *
+ *	CLOSE_IOC
+ *
+ *	set an iiu in the disconnected state
+ *
+ *
+ *	NOTES:
+ *	Lock must be applied while in this routine
+ */
+void
+close_ioc(piiu)
+struct ioc_in_use	*piiu;
+{
+  register chid				chix;
+  int					status;
+  register evid 			monix;
+  struct connection_handler_args	args;
+
+  if(!piiu->conn_up)
+	return;
+
+  /*
+   * reset send stack- discard pending ops when the conn broke (assume
+   * use as UDP buffer during disconn)
+   */
+  piiu->send->stk = 0;
+  piiu->max_msg = MAX_UDP;
+  piiu->conn_up = FALSE;
+
+# ifdef UNIX
+  /* clear unused select bit */
+  FD_CLR(piiu->sock_chan, &readch);
+# endif 
+
+  chix = (chid) &piiu->chidlist.node.next;
+  while(chix = (chid) chix->node.next){
+    chix->type = TYPENOTCONN;
+    chix->count = 0;
+    chix->state = cs_prev_conn;
+    chix->paddr = NULL;
+    if(chix->connection_func){
+	args.chid = chix;
+	args.op = CA_OP_CONN_DOWN;
+      	(*chix->connection_func)(args);
+    }
+  }
+
+  if(fd_register_func)
+	(*fd_register_func)(fd_register_arg, piiu->sock_chan, FALSE);
+
+  close(piiu->sock_chan);
+  piiu->sock_chan = -1;
+  if(piiu->chidlist.count)
+    ca_signal(ECA_DISCONN, host_from_addr(piiu->sock_addr.sin_addr));
+
+}
 
 
+
+/*
+ *
+ *	Test for the repeater allready installed
+ *
+ *	NOTE: potential race condition here can result
+ *	in two copies of the repeater being spawned
+ *	however the repeater detectes this prints a message
+ *	and lets the other task start the repeater.
+ *
+ *	QUESTION: is there a better way to test for a port in use? 
+ *	ANSWER: none that I can find.
+ *
+ *	Problems with checking for the repeater installed
+ *	by attempting to bind a socket to its address
+ *	and port.
+ *
+ *	1) Closed socket may not release the bound port
+ *	before the repeater wakes up and tries to grab it.
+ *	Attempting to bind the open socket to another port
+ *	also does not work.
+ *
+ */
+repeater_installed()
+{
+  	int				status;
+  	int 				sock;
+  	struct sockaddr_in		bd;
+
+	int 				installed = FALSE;
+
+     	/* 	allocate a socket			*/
+      	sock = socket(	AF_INET,	/* domain	*/
+			SOCK_DGRAM,	/* type		*/
+			0);		/* deflt proto	*/
+      	if(sock == ERROR)
+        	abort();
+
+      	memset(&bd,0,sizeof bd);
+      	bd.sin_family = AF_INET;
+      	bd.sin_addr.s_addr = htonl(INADDR_ANY);	
+     	bd.sin_port = htons(CA_CLIENT_PORT);	
+      	status = bind(sock, &bd, sizeof bd);
+     	if(status<0)
+		if(MYERRNO == EADDRINUSE)
+			installed = TRUE;
+		else
+			abort();
+
+
+	close(sock);
+
+	return installed;
+}

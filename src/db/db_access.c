@@ -2,6 +2,15 @@
 /* db_access.c */
 /* share/src/db $Id$ */
 /* db_access.c - Interface between old database access and new */
+/*
+
+
+/***
+ *** note:  the order of the DBR_... elements in the "new" structures
+ ***	in db_get_field() is important - and must correspond to
+ ***	the presumed order in dbAccess.c's dbGetField() routine
+ ***/
+
 #include        <vxWorks.h>
 #include        <types.h>
 
@@ -12,41 +21,106 @@
 #include        <dbCommon.h>
 #include        <errMdef.h>
 
+#include	<alarm.h>
+
 #ifndef NULL
 #define NULL 0
 #endif
 
+
 #define oldDBF_STRING      0
 #define oldDBF_INT         1
+#define oldDBF_SHORT       1
 #define oldDBF_FLOAT       2
 #define oldDBF_ENUM        3
-#define oldDBF_NO_ACCESS   4
+#define oldDBF_CHAR        4
+#define oldDBF_LONG        5
+#define oldDBF_DOUBLE      6
 
 /* data request buffer types */
-#define oldDBR_STRING		oldDBF_STRING	
-#define	oldDBR_INT		oldDBF_INT		
-#define	oldDBR_FLOAT		oldDBF_FLOAT	
-#define	oldDBR_ENUM		oldDBF_ENUM
-#define oldDBR_STS_STRING	4
-#define	oldDBR_STS_INT		5
-#define	oldDBR_STS_FLOAT	6
-#define	oldDBR_STS_ENUM		7
-#define	oldDBR_GR_INT		8
-#define	oldDBR_GR_FLOAT		9
-#define oldDBR_CTRL_INT		10
-#define	oldDBR_CTRL_FLOAT	11
-#define oldDBR_CTRL_ENUM	12
+#define oldDBR_STRING           oldDBF_STRING
+#define oldDBR_INT              oldDBF_INT
+#define oldDBR_SHORT            oldDBF_INT
+#define oldDBR_FLOAT            oldDBF_FLOAT
+#define oldDBR_ENUM             oldDBF_ENUM
+#define oldDBR_CHAR             oldDBF_CHAR
+#define oldDBR_LONG             oldDBF_LONG
+#define oldDBR_DOUBLE           oldDBF_DOUBLE
+#define oldDBR_STS_STRING       7
+#define oldDBR_STS_INT          8
+#define oldDBR_STS_SHORT        8
+#define oldDBR_STS_FLOAT        9
+#define oldDBR_STS_ENUM         10
+#define oldDBR_STS_CHAR         11
+#define oldDBR_STS_LONG         12
+#define oldDBR_STS_DOUBLE       13
+#define oldDBR_TIME_STRING      14
+#define oldDBR_TIME_INT         15
+#define oldDBR_TIME_SHORT       15
+#define oldDBR_TIME_FLOAT       16
+#define oldDBR_TIME_ENUM        17
+#define oldDBR_TIME_CHAR        18
+#define oldDBR_TIME_LONG        19
+#define oldDBR_TIME_DOUBLE      20
+#define oldDBR_GR_STRING        21
+#define oldDBR_GR_INT           22
+#define oldDBR_GR_SHORT         22
+#define oldDBR_GR_FLOAT         23
+#define oldDBR_GR_ENUM          24
+#define oldDBR_GR_CHAR          25
+#define oldDBR_GR_LONG          26
+#define oldDBR_GR_DOUBLE        27
+#define oldDBR_CTRL_STRING      28
+#define oldDBR_CTRL_INT         29
+#define oldDBR_CTRL_SHORT       29
+#define oldDBR_CTRL_FLOAT       30
+#define oldDBR_CTRL_ENUM        31
+#define oldDBR_CTRL_CHAR        32
+#define oldDBR_CTRL_LONG        33
+#define oldDBR_CTRL_DOUBLE      34
 
-/* structures for old database access*/
+
+/* function declarations */
+static adjust_severity();
+
+
+/* database access address structure (removed from db_access.h and put here) */
+struct db_addr{
+        char    *precord;       /* record number of specified type */
+        char    *pfield;        /* offset from the record origin */
+        char    *pad0;          /* not used by old              */
+        short   pad1;           /*not used by old               */
+        short   no_elements;    /* number of elements in arrays of data */
+        short   record_type;    /* type of record being accessed */
+        short   pad2;           /* not used by old              */
+        short   field_size;     /* size of the field being accessed */
+                                /* from database for values of waveforms */
+        short   special;        /* special processing                   */
+        short   choice_set;     /* index of choiceSet GBLCHOICE & RECCHOICE*/
+        short   field_type;     /* field type as seen by database request*/
+                                /*DBR_STRING,...,DBR_ENUM,DBR_NOACCESS*/
+};
+
+
+
+/* structures for old database access */
+
+/* VALUES WITH STATUS STRUCTURES */
+
 /* structure for a  string status field */
 struct dbr_sts_string{
 	short	status;	 		/* status of value */
 	short	severity;		/* severity of alarm */
-	char	value[MAX_STRING_SIZE];		/* current value */
+	char	value[MAX_STRING_SIZE];	/* current value */
 };
 
-/* structure for an integer status field */
+/* structure for an short status field */
 struct dbr_sts_int{
+	short	status;	 		/* status of value */
+	short	severity;		/* severity of alarm */
+	short	value;			/* current value */
+};
+struct dbr_sts_short{
 	short	status;	 		/* status of value */
 	short	severity;		/* severity of alarm */
 	short	value;			/* current value */
@@ -66,11 +140,104 @@ struct dbr_sts_enum{
 	short	value;			/* current value */
 };
 
-	
+/* structure for a char status field */
+struct dbr_sts_char{
+	short		status;	 		/* status of value */
+	short		severity;		/* severity of alarm */
+	unsigned char	value;			/* current value */
+};
 
+/* structure for a long status field */
+struct dbr_sts_long{
+	short	status;	 		/* status of value */
+	short	severity;		/* severity of alarm */
+	long	value;			/* current value */
+};
 
-/* structure for a graphic integer field */
+/* structure for a double status field */
+struct dbr_sts_double{
+	short	status;	 		/* status of value */
+	short	severity;		/* severity of alarm */
+	double	value;			/* current value */
+};
+
+/* VALUES WITH STATUS AND TIME STRUCTURES */
+
+/* structure for a  string time field */
+struct dbr_time_string{
+	short		status;	 		/* status of value */
+	short		severity;		/* severity of alarm */
+	TS_STAMP	stamp;			/* time stamp */
+	char		value[MAX_STRING_SIZE];	/* current value */
+};
+
+/* structure for an short time field */
+struct dbr_time_short{
+	short		status;	 		/* status of value */
+	short		severity;		/* severity of alarm */
+	TS_STAMP	stamp;			/* time stamp */
+	short		value;			/* current value */
+};
+
+/* structure for a  float time field */
+struct dbr_time_float{
+	short		status;	 		/* status of value */
+	short		severity;		/* severity of alarm */
+	TS_STAMP	stamp;			/* time stamp */
+	float		value;			/* current value */
+};
+
+/* structure for a  enum time field */
+struct dbr_time_enum{
+	short		status;	 		/* status of value */
+	short		severity;		/* severity of alarm */
+	TS_STAMP	stamp;			/* time stamp */
+	short		value;			/* current value */
+};
+
+/* structure for a char time field */
+struct dbr_time_char{
+	short			status;	 		/* status of value */
+	short			severity;		/* severity of alarm */
+	TS_STAMP		stamp;			/* time stamp */
+	unsigned char		value;			/* current value */
+};
+
+/* structure for a long time field */
+struct dbr_time_long{
+	short		status;	 		/* status of value */
+	short		severity;		/* severity of alarm */
+	TS_STAMP	stamp;			/* time stamp */
+	long		value;			/* current value */
+};
+
+/* structure for a double time field */
+struct dbr_time_double{
+	short		status;	 		/* status of value */
+	short		severity;		/* severity of alarm */
+	TS_STAMP	stamp;			/* time stamp */
+	double		value;			/* current value */
+};
+
+/* VALUES WITH STATUS AND GRAPHIC STRUCTURES */
+
+/* structure for a graphic string */
+	/* not implemented; use struct_dbr_sts_string */
+
+/* structure for a graphic short field */
 struct dbr_gr_int{
+	short	status;	 		/* status of value */
+	short	severity;		/* severity of alarm */
+	char	units[8];		/* units of value */
+	short	upper_disp_limit;	/* upper limit of graph */
+	short	lower_disp_limit;	/* lower limit of graph */
+	short	upper_alarm_limit;	
+	short	upper_warning_limit;
+	short	lower_warning_limit;
+	short	lower_alarm_limit;
+	short	value;			/* current value */
+};
+struct dbr_gr_short{
 	short	status;	 		/* status of value */
 	short	severity;		/* severity of alarm */
 	char	units[8];		/* units of value */
@@ -98,8 +265,79 @@ struct dbr_gr_float{
 	float	value;			/* current value */
 };
 
+/* structure for a graphic enumeration field */
+struct dbr_gr_enum{
+	short	status;	 		/* status of value */
+	short	severity;		/* severity of alarm */
+	short	no_str;			/* number of strings */
+	char	strs[16][26];		/* state strings */
+	short	value;			/* current value */
+};
+
+/* structure for a graphic char field */
+struct dbr_gr_char{
+	short		status;	 		/* status of value */
+	short		severity;		/* severity of alarm */
+	char		units[8];		/* units of value */
+	unsigned char	upper_disp_limit;	/* upper limit of graph */
+	unsigned char	lower_disp_limit;	/* lower limit of graph */
+	unsigned char	upper_alarm_limit;	
+	unsigned char	upper_warning_limit;
+	unsigned char	lower_warning_limit;
+	unsigned char	lower_alarm_limit;
+	unsigned char	value;			/* current value */
+};
+
+/* structure for a graphic long field */
+struct dbr_gr_long{
+	short	status;	 		/* status of value */
+	short	severity;		/* severity of alarm */
+	char	units[8];		/* units of value */
+	long	upper_disp_limit;	/* upper limit of graph */
+	long	lower_disp_limit;	/* lower limit of graph */
+	long	upper_alarm_limit;	
+	long	upper_warning_limit;
+	long	lower_warning_limit;
+	long	lower_alarm_limit;
+	long	value;			/* current value */
+};
+
+/* structure for a graphic double field */
+struct dbr_gr_double{
+	short	status;	 		/* status of value */
+	short	severity;		/* severity of alarm */
+	short	precision;		/* number of decimal places */
+	char	units[8];		/* units of value */
+	double	upper_disp_limit;	/* upper limit of graph */
+	double	lower_disp_limit;	/* lower limit of graph */
+	double	upper_alarm_limit;	
+	double	upper_warning_limit;
+	double	lower_warning_limit;
+	double	lower_alarm_limit;
+	double	value;			/* current value */
+};
+
+/* VALUES WITH STATUS, GRAPHIC and CONTROL STRUCTURES */
+
+/* structure for a control string */
+	/* not implemented; use struct_dbr_sts_string */
+
 /* structure for a control integer */
 struct dbr_ctrl_int{
+	short	status;	 		/* status of value */
+	short	severity;		/* severity of alarm */
+	char	units[8];		/* units of value */
+	short	upper_disp_limit;	/* upper limit of graph */
+	short	lower_disp_limit;	/* lower limit of graph */
+	short	upper_alarm_limit;	
+	short	upper_warning_limit;
+	short	lower_warning_limit;
+	short	lower_alarm_limit;
+	short	upper_ctrl_limit;	/* upper control limit */
+	short	lower_ctrl_limit;	/* lower control limit */
+	short	value;			/* current value */
+};
+struct dbr_ctrl_short{
 	short	status;	 		/* status of value */
 	short	severity;		/* severity of alarm */
 	char	units[8];		/* units of value */
@@ -139,6 +377,56 @@ struct dbr_ctrl_enum{
 	char	strs[16][26];		/* state strings */
 	short	value;			/* current value */
 };
+
+/* structure for a control char field */
+struct dbr_ctrl_char{
+	short		status;	 		/* status of value */
+	short		severity;		/* severity of alarm */
+	char		units[8];		/* units of value */
+	unsigned char	upper_disp_limit;	/* upper limit of graph */
+	unsigned char	lower_disp_limit;	/* lower limit of graph */
+	unsigned char	upper_alarm_limit;	
+	unsigned char	upper_warning_limit;
+	unsigned char	lower_warning_limit;
+	unsigned char	lower_alarm_limit;
+	unsigned char	upper_ctrl_limit;	/* upper control limit */
+	unsigned char	lower_ctrl_limit;	/* lower control limit */
+	unsigned char	value;			/* current value */
+};
+
+/* structure for a control long field */
+struct dbr_ctrl_long{
+	short	status;	 		/* status of value */
+	short	severity;		/* severity of alarm */
+	char	units[8];		/* units of value */
+	long	upper_disp_limit;	/* upper limit of graph */
+	long	lower_disp_limit;	/* lower limit of graph */
+	long	upper_alarm_limit;	
+	long	upper_warning_limit;
+	long	lower_warning_limit;
+	long	lower_alarm_limit;
+	long	upper_ctrl_limit;	/* upper control limit */
+	long	lower_ctrl_limit;	/* lower control limit */
+	long	value;			/* current value */
+};
+
+/* structure for a control double field */
+struct dbr_ctrl_double{
+	short	status;	 		/* status of value */
+	short	severity;		/* severity of alarm */
+	short	precision;		/* number of decimal places */
+	char	units[8];		/* units of value */
+	double	upper_disp_limit;	/* upper limit of graph */
+	double	lower_disp_limit;	/* lower limit of graph */
+	double	upper_alarm_limit;	
+	double	upper_warning_limit;
+	double	lower_warning_limit;
+	double	lower_alarm_limit;
+	double	upper_ctrl_limit;	/* upper control limit */
+	double	lower_ctrl_limit;	/* lower control limit */
+	double	value;			/* current value */
+};
+
 
 
 /* From $cs/dblib/src/dbiocsubs.c
@@ -231,11 +519,11 @@ new_alarm(){
 /*
  * DB_NAME_TO_ADDR
  */
-static short mapNewToOld[]={0,1,1,1,1,2,2,3,4};
+static short mapNewToOld[]={0,1,1,1,1,5,5,2,6,3,7};
 
 db_name_to_addr(pname,paddr)
-register char           *pname;
-register struct dbAddr *paddr;
+  char           *pname;
+  struct dbAddr *paddr;
 {
         long    status;
 	short   ftype;
@@ -275,7 +563,8 @@ unsigned short	no_elements;
 	nRequest=no_elements;
 	status = dbGetField(paddr,DBR_STRING,pbuffer,&options,&nRequest);
 	break;
-    case(oldDBR_INT):
+/*  case(oldDBR_INT): */
+    case(oldDBR_SHORT):
 	options=0;
 	nRequest=no_elements;
 	status = dbGetField(paddr,DBR_SHORT,pbuffer,&options,&nRequest);
@@ -290,7 +579,24 @@ unsigned short	no_elements;
 	nRequest=no_elements;
 	status = dbGetField(paddr,DBR_ENUM,pbuffer,&options,&nRequest);
 	break;
+    case(oldDBR_CHAR):
+	options=0;
+	nRequest=no_elements;
+	status = dbGetField(paddr,DBR_CHAR,pbuffer,&options,&nRequest);
+	break;
+    case(oldDBR_LONG):
+	options=0;
+	nRequest=no_elements;
+	status = dbGetField(paddr,DBR_LONG,pbuffer,&options,&nRequest);
+	break;
+    case(oldDBR_DOUBLE):
+	options=0;
+	nRequest=no_elements;
+	status = dbGetField(paddr,DBR_DOUBLE,pbuffer,&options,&nRequest);
+	break;
     case(oldDBR_STS_STRING):
+    case(oldDBR_GR_STRING):
+    case(oldDBR_CTRL_STRING):
 	{
 		struct dbr_sts_string *pold = (struct dbr_sts_string *)pbuffer;
 		struct {
@@ -305,10 +611,12 @@ unsigned short	no_elements;
 		adjust_severity(pbuffer);
 		options=0;
 		nRequest=no_elements;
-		status = dbGetField(paddr,DBR_STRING,&(pold->value[0]),&options,&nRequest);
+		status = dbGetField(paddr,DBR_STRING,&(pold->value[0]),
+			&options,&nRequest);
 	}
 	break;
-    case(oldDBR_STS_INT):
+/*  case(oldDBR_STS_INT): */
+    case(oldDBR_STS_SHORT):
 	{
 		struct dbr_sts_int *pold = (struct dbr_sts_int *)pbuffer;
 		struct {
@@ -323,7 +631,8 @@ unsigned short	no_elements;
 		adjust_severity(pbuffer);
 		options=0;
 		nRequest=no_elements;
-		status = dbGetField(paddr,DBR_SHORT,&(pold->value),&options,&nRequest);
+		status = dbGetField(paddr,DBR_SHORT,&(pold->value),&options,
+			&nRequest);
 	}
 	break;
     case(oldDBR_STS_FLOAT):
@@ -341,7 +650,8 @@ unsigned short	no_elements;
 		adjust_severity(pbuffer);
 		options=0;
 		nRequest=no_elements;
-		status = dbGetField(paddr,DBR_FLOAT,&(pold->value),&options,&nRequest);
+		status = dbGetField(paddr,DBR_FLOAT,&(pold->value),&options,
+			&nRequest);
 	}
 	break;
     case(oldDBR_STS_ENUM):
@@ -359,10 +669,218 @@ unsigned short	no_elements;
 		adjust_severity(pbuffer);
 		options=0;
 		nRequest=no_elements;
-		status = dbGetField(paddr,DBR_ENUM,&(pold->value),&options,&nRequest);
+		status = dbGetField(paddr,DBR_ENUM,&(pold->value),&options,
+			&nRequest);
 	}
 	break;
-    case(oldDBR_GR_INT):
+    case(oldDBR_STS_CHAR):
+	{
+		struct dbr_sts_char *pold = (struct dbr_sts_char *)pbuffer;
+		struct {
+			DBRstatus
+		} new;
+
+		options=DBR_STATUS;
+		nRequest=0;
+		status = dbGetField(paddr,DBR_UCHAR,&new,&options,&nRequest);
+		pold->status = new.status;
+		pold->severity = new.severity;
+		adjust_severity(pbuffer);
+		options=0;
+		nRequest=no_elements;
+		status = dbGetField(paddr,DBR_UCHAR,&(pold->value),&options,
+			&nRequest);
+	}
+	break;
+    case(oldDBR_STS_LONG):
+	{
+		struct dbr_sts_long *pold = (struct dbr_sts_long *)pbuffer;
+		struct {
+			DBRstatus
+		} new;
+
+		options=DBR_STATUS;
+		nRequest=0;
+		status = dbGetField(paddr,DBR_LONG,&new,&options,&nRequest);
+		pold->status = new.status;
+		pold->severity = new.severity;
+		adjust_severity(pbuffer);
+		options=0;
+		nRequest=no_elements;
+		status = dbGetField(paddr,DBR_LONG,&(pold->value),&options,
+			&nRequest);
+	}
+	break;
+    case(oldDBR_STS_DOUBLE):
+	{
+		struct dbr_sts_double *pold = (struct dbr_sts_double *)pbuffer;
+		struct {
+			DBRstatus
+		} new;
+
+		options=DBR_STATUS;
+		nRequest=0;
+		status = dbGetField(paddr,DBR_DOUBLE,&new,&options,&nRequest);
+		pold->status = new.status;
+		pold->severity = new.severity;
+		adjust_severity(pbuffer);
+		options=0;
+		nRequest=no_elements;
+		status = dbGetField(paddr,DBR_DOUBLE,&(pold->value),&options,
+			&nRequest);
+	}
+	break;
+    case(oldDBR_TIME_STRING):
+	{
+		struct dbr_time_string *pold=(struct dbr_time_string *)pbuffer;
+		struct {
+			DBRstatus
+			DBRtime
+		} new;
+
+		options=DBR_STATUS | DBR_TIME;
+		nRequest=0;
+		status = dbGetField(paddr,DBR_STRING,&new,&options,&nRequest);
+		pold->status = new.status;
+		pold->severity = new.severity;
+		pold->stamp = new.time;		/* structure copy */
+		adjust_severity(pbuffer);
+		options=0;
+		nRequest=no_elements;
+		status = dbGetField(paddr,DBR_STRING,pold->value,&options,
+			&nRequest);
+	}
+	break;
+/*  case(oldDBR_TIME_INT): */
+    case(oldDBR_TIME_SHORT):
+	{
+		struct dbr_time_short *pold=(struct dbr_time_short *)pbuffer;
+		struct {
+			DBRstatus
+			DBRtime
+		} new;
+
+		options=DBR_STATUS | DBR_TIME;
+		nRequest=0;
+		status = dbGetField(paddr,DBR_SHORT,&new,&options,&nRequest);
+		pold->status = new.status;
+		pold->severity = new.severity;
+		pold->stamp = new.time;		/* structure copy */
+		adjust_severity(pbuffer);
+		options=0;
+		nRequest=no_elements;
+		status = dbGetField(paddr,DBR_SHORT,&(pold->value),&options,
+			&nRequest);
+	}
+	break;
+    case(oldDBR_TIME_FLOAT):
+	{
+		struct dbr_time_float *pold=(struct dbr_time_float *)pbuffer;
+		struct {
+			DBRstatus
+			DBRtime
+		} new;
+
+		options=DBR_STATUS | DBR_TIME;
+		nRequest=0;
+		status = dbGetField(paddr,DBR_FLOAT,&new,&options,&nRequest);
+		pold->status = new.status;
+		pold->severity = new.severity;
+		pold->stamp = new.time;		/* structure copy */
+		adjust_severity(pbuffer);
+		options=0;
+		nRequest=no_elements;
+		status = dbGetField(paddr,DBR_FLOAT,&(pold->value),&options,
+			&nRequest);
+	}
+	break;
+    case(oldDBR_TIME_ENUM):
+	{
+		struct dbr_time_enum *pold=(struct dbr_time_enum *)pbuffer;
+		struct {
+			DBRstatus
+			DBRtime
+		} new;
+
+		options=DBR_STATUS | DBR_TIME;
+		nRequest=0;
+		status = dbGetField(paddr,DBR_ENUM,&new,&options,&nRequest);
+		pold->status = new.status;
+		pold->severity = new.severity;
+		pold->stamp = new.time;		/* structure copy */
+		adjust_severity(pbuffer);
+		options=0;
+		nRequest=no_elements;
+		status = dbGetField(paddr,DBR_ENUM,&(pold->value),&options,
+			&nRequest);
+	}
+	break;
+    case(oldDBR_TIME_CHAR):
+	{
+		struct dbr_time_char *pold=(struct dbr_time_char *)pbuffer;
+		struct {
+			DBRstatus
+			DBRtime
+		} new;
+
+		options=DBR_STATUS | DBR_TIME;
+		nRequest=0;
+		status = dbGetField(paddr,DBR_CHAR,&new,&options,&nRequest);
+		pold->status = new.status;
+		pold->severity = new.severity;
+		pold->stamp = new.time;		/* structure copy */
+		adjust_severity(pbuffer);
+		options=0;
+		nRequest=no_elements;
+		status = dbGetField(paddr,DBR_CHAR,&(pold->value),&options,
+			&nRequest);
+	}
+	break;
+    case(oldDBR_TIME_LONG):
+	{
+		struct dbr_time_long *pold=(struct dbr_time_long *)pbuffer;
+		struct {
+			DBRstatus
+			DBRtime
+		} new;
+
+		options=DBR_STATUS | DBR_TIME;
+		nRequest=0;
+		status = dbGetField(paddr,DBR_LONG,&new,&options,&nRequest);
+		pold->status = new.status;
+		pold->severity = new.severity;
+		pold->stamp = new.time;		/* structure copy */
+		adjust_severity(pbuffer);
+		options=0;
+		nRequest=no_elements;
+		status = dbGetField(paddr,DBR_LONG,&(pold->value),&options,
+			&nRequest);
+	}
+	break;
+    case(oldDBR_TIME_DOUBLE):
+	{
+		struct dbr_time_double *pold=(struct dbr_time_double *)pbuffer;
+		struct {
+			DBRstatus
+			DBRtime
+		} new;
+
+		options=DBR_STATUS | DBR_TIME;
+		nRequest=0;
+		status = dbGetField(paddr,DBR_DOUBLE,&new,&options,&nRequest);
+		pold->status = new.status;
+		pold->severity = new.severity;
+		pold->stamp = new.time;		/* structure copy */
+		adjust_severity(pbuffer);
+		options=0;
+		nRequest=no_elements;
+		status = dbGetField(paddr,DBR_DOUBLE,&(pold->value),&options,
+			&nRequest);
+	}
+	break;
+/*  case(oldDBR_GR_STRING): NOT IMPLEMENTED - use DBR_STS_STRING */
+/*  case(oldDBR_GR_INT): */
+    case(oldDBR_GR_SHORT):
 	{
 		struct dbr_gr_int *pold = (struct dbr_gr_int *)pbuffer;
 		struct {
@@ -387,7 +905,8 @@ unsigned short	no_elements;
 		pold->lower_alarm_limit = new.lower_alarm_limit;
 		options=0;
 		nRequest=no_elements;
-		status = dbGetField(paddr,DBR_SHORT,&(pold->value),&options,&nRequest);
+		status = dbGetField(paddr,DBR_SHORT,&(pold->value),&options,
+			&nRequest);
 	}
 	break;
     case(oldDBR_GR_FLOAT):
@@ -401,7 +920,8 @@ unsigned short	no_elements;
 			DBRalDouble
 		} new;
 
-		options=DBR_STATUS|DBR_UNITS|DBR_PRECISION|DBR_GR_DOUBLE|DBR_AL_DOUBLE;
+		options=DBR_STATUS|DBR_UNITS|DBR_PRECISION|DBR_GR_DOUBLE
+			|DBR_AL_DOUBLE;
 		nRequest=0;
 		status = dbGetField(paddr,DBR_FLOAT,&new,&options,&nRequest);
 		pold->status = new.status;
@@ -417,10 +937,103 @@ unsigned short	no_elements;
 		pold->lower_alarm_limit = new.lower_alarm_limit;
 		options=0;
 		nRequest=no_elements;
-		status = dbGetField(paddr,DBR_FLOAT,&(pold->value),&options,&nRequest);
+		status = dbGetField(paddr,DBR_FLOAT,&(pold->value),&options,
+			&nRequest);
 	}
 	break;
-    case(oldDBR_CTRL_INT):
+/*  case(oldDBR_GR_ENUM): see oldDBR_CTRL_ENUM */
+    case(oldDBR_GR_CHAR):
+	{
+		struct dbr_gr_char *pold = (struct dbr_gr_char *)pbuffer;
+		struct {
+			DBRstatus
+			DBRunits
+			DBRgrLong
+			DBRalLong
+		} new;
+
+		options=DBR_STATUS|DBR_UNITS|DBR_GR_LONG|DBR_AL_LONG;
+		nRequest=0;
+		status = dbGetField(paddr,DBR_UCHAR,&new,&options,&nRequest);
+		pold->status = new.status;
+		pold->severity = new.severity;
+		adjust_severity(pbuffer);
+		strncpy(pold->units,new.units,8);
+		pold->upper_disp_limit = new.upper_disp_limit;
+		pold->lower_disp_limit = new.lower_disp_limit;
+		pold->upper_alarm_limit = new.upper_alarm_limit;
+		pold->upper_warning_limit = new.upper_warning_limit;
+		pold->lower_warning_limit = new.lower_warning_limit;
+		pold->lower_alarm_limit = new.lower_alarm_limit;
+		options=0;
+		nRequest=no_elements;
+		status = dbGetField(paddr,DBR_UCHAR,&(pold->value),&options,
+			&nRequest);
+	}
+	break;
+    case(oldDBR_GR_LONG):
+	{
+		struct dbr_gr_long *pold = (struct dbr_gr_long *)pbuffer;
+		struct {
+			DBRstatus
+			DBRunits
+			DBRgrLong
+			DBRalLong
+		} new;
+
+		options=DBR_STATUS|DBR_UNITS|DBR_GR_LONG|DBR_AL_LONG;
+		nRequest=0;
+		status = dbGetField(paddr,DBR_LONG,&new,&options,&nRequest);
+		pold->status = new.status;
+		pold->severity = new.severity;
+		adjust_severity(pbuffer);
+		strncpy(pold->units,new.units,8);
+		pold->upper_disp_limit = new.upper_disp_limit;
+		pold->lower_disp_limit = new.lower_disp_limit;
+		pold->upper_alarm_limit = new.upper_alarm_limit;
+		pold->upper_warning_limit = new.upper_warning_limit;
+		pold->lower_warning_limit = new.lower_warning_limit;
+		pold->lower_alarm_limit = new.lower_alarm_limit;
+		options=0;
+		nRequest=no_elements;
+		status = dbGetField(paddr,DBR_LONG,&(pold->value),&options,
+			&nRequest);
+	}
+	break;
+    case(oldDBR_GR_DOUBLE):
+	{
+		struct dbr_gr_double *pold = (struct dbr_gr_double *)pbuffer;
+		struct {
+			DBRstatus
+			DBRunits
+			DBRprecision
+			DBRgrDouble
+			DBRalDouble
+		} new;
+
+		options=DBR_STATUS|DBR_UNITS|DBR_PRECISION|DBR_GR_DOUBLE
+			|DBR_AL_DOUBLE;
+		nRequest=0;
+		status = dbGetField(paddr,DBR_DOUBLE,&new,&options,&nRequest);
+		pold->status = new.status;
+		pold->severity = new.severity;
+		adjust_severity(pbuffer);
+		pold->precision = new.precision;
+		strncpy(pold->units,new.units,8);
+		pold->upper_disp_limit = new.upper_disp_limit;
+		pold->lower_disp_limit = new.lower_disp_limit;
+		pold->upper_alarm_limit = new.upper_alarm_limit;
+		pold->upper_warning_limit = new.upper_warning_limit;
+		pold->lower_warning_limit = new.lower_warning_limit;
+		pold->lower_alarm_limit = new.lower_alarm_limit;
+		options=0;
+		nRequest=no_elements;
+		status = dbGetField(paddr,DBR_DOUBLE,&(pold->value),&options,
+			&nRequest);
+	}
+	break;
+/*  case(oldDBR_CTRL_INT): */
+    case(oldDBR_CTRL_SHORT):
 	{
 		struct dbr_ctrl_int *pold = (struct dbr_ctrl_int *)pbuffer;
 		struct {
@@ -431,7 +1044,8 @@ unsigned short	no_elements;
 			DBRalLong
 		} new;
 
-		options=DBR_STATUS|DBR_UNITS|DBR_GR_LONG|DBR_CTRL_LONG|DBR_AL_LONG;
+		options=DBR_STATUS|DBR_UNITS|DBR_GR_LONG|DBR_CTRL_LONG
+			|DBR_AL_LONG;
 		nRequest=0;
 		status = dbGetField(paddr,DBR_SHORT,&new,&options,&nRequest);
 		pold->status = new.status;
@@ -448,7 +1062,8 @@ unsigned short	no_elements;
 		pold->lower_ctrl_limit = new.lower_ctrl_limit;
 		options=0;
 		nRequest=no_elements;
-		status = dbGetField(paddr,DBR_SHORT,&(pold->value),&options,&nRequest);
+		status = dbGetField(paddr,DBR_SHORT,&(pold->value),&options,
+			&nRequest);
 	}
 	break;
     case(oldDBR_CTRL_FLOAT):
@@ -463,7 +1078,8 @@ unsigned short	no_elements;
 			DBRalDouble
 		} new;
 
-		options=DBR_STATUS|DBR_UNITS|DBR_PRECISION|DBR_GR_DOUBLE|DBR_CTRL_DOUBLE|DBR_AL_DOUBLE;
+		options=DBR_STATUS|DBR_UNITS|DBR_PRECISION|DBR_GR_DOUBLE
+			|DBR_CTRL_DOUBLE|DBR_AL_DOUBLE;
 		nRequest=0;
 		status = dbGetField(paddr,DBR_FLOAT,&new,&options,&nRequest);
 		pold->status = new.status;
@@ -481,9 +1097,11 @@ unsigned short	no_elements;
 		pold->lower_ctrl_limit = new.lower_ctrl_limit;
 		options=0;
 		nRequest=no_elements;
-		status = dbGetField(paddr,DBR_FLOAT,&(pold->value),&options,&nRequest);
+		status = dbGetField(paddr,DBR_FLOAT,&(pold->value),&options,
+			&nRequest);
 	}
 	break;
+    case(oldDBR_GR_ENUM):
     case(oldDBR_CTRL_ENUM):
 	{
 		struct dbr_ctrl_enum *pold = (struct dbr_ctrl_enum *)pbuffer;
@@ -503,13 +1121,118 @@ unsigned short	no_elements;
 		if(no_str>16) no_str=16;
 		pold->no_str = no_str;
 		for (i=0; i<no_str; i++) 
-			strncpy(pold->strs[i],new.strs[i],sizeof(pold->strs[i]));
+			strncpy(pold->strs[i],new.strs[i],
+			sizeof(pold->strs[i]));
 		/*now get values*/
 		options=0;
 		nRequest=no_elements;
-		status = dbGetField(paddr,DBR_ENUM,&(pold->value),&options,&nRequest);
+		status = dbGetField(paddr,DBR_ENUM,&(pold->value),&options,
+			&nRequest);
 	}
 	break;
+    case(oldDBR_CTRL_CHAR):
+	{
+		struct dbr_ctrl_char *pold = (struct dbr_ctrl_char *)pbuffer;
+		struct {
+			DBRstatus
+			DBRunits
+			DBRgrLong
+			DBRctrlLong
+			DBRalLong
+		} new;
+
+		options=DBR_STATUS|DBR_UNITS|DBR_GR_LONG|DBR_CTRL_LONG
+			|DBR_AL_LONG;
+		nRequest=0;
+		status = dbGetField(paddr,DBR_UCHAR,&new,&options,&nRequest);
+		pold->status = new.status;
+		pold->severity = new.severity;
+		adjust_severity(pbuffer);
+		strncpy(pold->units,new.units,8);
+		pold->upper_disp_limit = new.upper_disp_limit;
+		pold->lower_disp_limit = new.lower_disp_limit;
+		pold->upper_alarm_limit = new.upper_alarm_limit;
+		pold->upper_warning_limit = new.upper_warning_limit;
+		pold->lower_warning_limit = new.lower_warning_limit;
+		pold->lower_alarm_limit = new.lower_alarm_limit;
+		pold->upper_ctrl_limit = new.upper_ctrl_limit;
+		pold->lower_ctrl_limit = new.lower_ctrl_limit;
+		options=0;
+		nRequest=no_elements;
+		status = dbGetField(paddr,DBR_UCHAR,&(pold->value),&options,
+			&nRequest);
+	}
+	break;
+    case(oldDBR_CTRL_LONG):
+	{
+		struct dbr_ctrl_long *pold = (struct dbr_ctrl_long *)pbuffer;
+		struct {
+			DBRstatus
+			DBRunits
+			DBRgrLong
+			DBRctrlLong
+			DBRalLong
+		} new;
+
+		options=DBR_STATUS|DBR_UNITS|DBR_GR_LONG|DBR_CTRL_LONG
+			|DBR_AL_LONG;
+		nRequest=0;
+		status = dbGetField(paddr,DBR_LONG,&new,&options,&nRequest);
+		pold->status = new.status;
+		pold->severity = new.severity;
+		adjust_severity(pbuffer);
+		strncpy(pold->units,new.units,8);
+		pold->upper_disp_limit = new.upper_disp_limit;
+		pold->lower_disp_limit = new.lower_disp_limit;
+		pold->upper_alarm_limit = new.upper_alarm_limit;
+		pold->upper_warning_limit = new.upper_warning_limit;
+		pold->lower_warning_limit = new.lower_warning_limit;
+		pold->lower_alarm_limit = new.lower_alarm_limit;
+		pold->upper_ctrl_limit = new.upper_ctrl_limit;
+		pold->lower_ctrl_limit = new.lower_ctrl_limit;
+		options=0;
+		nRequest=no_elements;
+		status = dbGetField(paddr,DBR_LONG,&(pold->value),&options,
+			&nRequest);
+	}
+	break;
+    case(oldDBR_CTRL_DOUBLE):
+	{
+		struct dbr_ctrl_double *pold=(struct dbr_ctrl_double *)pbuffer;
+		struct {
+			DBRstatus
+			DBRunits
+			DBRprecision
+			DBRgrDouble
+			DBRctrlDouble
+			DBRalDouble
+		} new;
+
+		options=DBR_STATUS|DBR_UNITS|DBR_PRECISION|DBR_GR_DOUBLE
+			|DBR_CTRL_DOUBLE|DBR_AL_DOUBLE;
+		nRequest=0;
+		status = dbGetField(paddr,DBR_DOUBLE,&new,&options,&nRequest);
+		pold->status = new.status;
+		pold->severity = new.severity;
+		adjust_severity(pbuffer);
+		pold->precision = new.precision;
+		strncpy(pold->units,new.units,8);
+		pold->upper_disp_limit = new.upper_disp_limit;
+		pold->lower_disp_limit = new.lower_disp_limit;
+		pold->upper_alarm_limit = new.upper_alarm_limit;
+		pold->upper_warning_limit = new.upper_warning_limit;
+		pold->lower_warning_limit = new.lower_warning_limit;
+		pold->lower_alarm_limit = new.lower_alarm_limit;
+		pold->upper_ctrl_limit = new.upper_ctrl_limit;
+		pold->lower_ctrl_limit = new.lower_ctrl_limit;
+		options=0;
+		nRequest=no_elements;
+		status = dbGetField(paddr,DBR_DOUBLE,&(pold->value),&options,
+			&nRequest);
+	}
+	break;
+
+
     default:
 	return(-1);
     }
@@ -517,11 +1240,35 @@ unsigned short	no_elements;
     return(0);
 }
 
-/* the old software did not have a severity of INFO */
+/* the old software did not have a severity of INFO or VALID */
 static adjust_severity(pbuffer)
-struct dbr_sts_string *pbuffer;
+  struct dbr_sts_string *pbuffer;
 {
-if (pbuffer->severity > 0) pbuffer->severity--;
+
+/***
+ *** Map {NO,INFO,MINOR,MAJOR,VALID} alarms onto {NO,MINOR,MAJOR} alarms of
+ ***  GTA  ( from GTA's  ..../h/fields.h )
+ ***/
+
+#define GTA_NO_ALARM	0x0
+#define GTA_MINOR	0x1
+#define GTA_MAJOR	0x2
+
+  switch(pbuffer->severity) {
+	case NO_ALARM:    pbuffer->severity = GTA_NO_ALARM;
+		break;
+	case INFO_ALARM:  pbuffer->severity = GTA_NO_ALARM;
+		break;
+	case MINOR_ALARM: pbuffer->severity = GTA_MINOR;
+		break;
+	case MAJOR_ALARM: pbuffer->severity = GTA_MAJOR;
+		break;
+	case VALID_ALARM: pbuffer->severity = GTA_MAJOR;
+		break;
+	default:
+		break;
+  }
+
 }
 
 /* DB_PUT_FIELD put a field and convert it to the desired type */
@@ -538,7 +1285,8 @@ char			*psrc;		/* where to get it from */
     case(oldDBR_STRING):
 	status = dbPutField(paddr,DBR_STRING,psrc,(long)no_elements);
 	break;
-    case(oldDBR_INT):
+/*  case(oldDBR_INT): */
+    case(oldDBR_SHORT):
 	status = dbPutField(paddr,DBR_SHORT,psrc,(long)no_elements);
 	break;
     case(oldDBR_FLOAT):
@@ -547,14 +1295,134 @@ char			*psrc;		/* where to get it from */
     case(oldDBR_ENUM):
 	status = dbPutField(paddr,DBR_ENUM,psrc,(long)no_elements);
 	break;
-    case(oldDBR_CTRL_INT):
+    case(oldDBR_CHAR):
+	status = dbPutField(paddr,DBR_UCHAR,psrc,(long)no_elements);
+	break;
+    case(oldDBR_LONG):
+	status = dbPutField(paddr,DBR_LONG,psrc,(long)no_elements);
+	break;
+    case(oldDBR_DOUBLE):
+	status = dbPutField(paddr,DBR_DOUBLE,psrc,(long)no_elements);
+	break;
+    case(oldDBR_STS_STRING):
+	status = dbPutField(paddr,DBR_STRING,
+	    ((struct dbr_sts_string *)psrc)->value,(long)no_elements);
+	break;
+/*  case(oldDBR_STS_INT): */
+    case(oldDBR_STS_SHORT):
 	status = dbPutField(paddr,DBR_SHORT,
-	    &(((struct dbr_ctrl_int *)psrc)->value),(long)no_elements);
+	    &(((struct dbr_sts_short *)psrc)->value),(long)no_elements);
+	break;
+    case(oldDBR_STS_FLOAT):
+	status = dbPutField(paddr,DBR_FLOAT,
+	    &(((struct dbr_sts_float *)psrc)->value),(long)no_elements);
+	break;
+    case(oldDBR_STS_ENUM):
+	status = dbPutField(paddr,DBR_ENUM,
+	    &(((struct dbr_sts_enum *)psrc)->value),(long)no_elements);
+	break;
+    case(oldDBR_STS_CHAR):
+	status = dbPutField(paddr,DBR_UCHAR,
+	    &(((struct dbr_sts_char *)psrc)->value),(long)no_elements);
+	break;
+    case(oldDBR_STS_LONG):
+	status = dbPutField(paddr,DBR_LONG,
+	    &(((struct dbr_sts_long *)psrc)->value),(long)no_elements);
+	break;
+    case(oldDBR_STS_DOUBLE):
+	status = dbPutField(paddr,DBR_DOUBLE,
+	    &(((struct dbr_sts_double *)psrc)->value),(long)no_elements);
+	break;
+    case(oldDBR_TIME_STRING):
+	status = dbPutField(paddr,DBR_TIME,
+	    ((struct dbr_time_string *)psrc)->value,(long)no_elements);
+	break;
+/*  case(oldDBR_TIME_INT): */
+    case(oldDBR_TIME_SHORT):
+	status = dbPutField(paddr,DBR_SHORT,
+	    &(((struct dbr_time_short *)psrc)->value),(long)no_elements);
+	break;
+    case(oldDBR_TIME_FLOAT):
+	status = dbPutField(paddr,DBR_FLOAT,
+	    &(((struct dbr_time_float *)psrc)->value),(long)no_elements);
+	break;
+    case(oldDBR_TIME_ENUM):
+	status = dbPutField(paddr,DBR_ENUM,
+	    &(((struct dbr_time_enum *)psrc)->value),(long)no_elements);
+	break;
+    case(oldDBR_TIME_CHAR):
+	status = dbPutField(paddr,DBR_UCHAR,
+	    &(((struct dbr_time_char *)psrc)->value),(long)no_elements);
+	break;
+    case(oldDBR_TIME_LONG):
+	status = dbPutField(paddr,DBR_LONG,
+	    &(((struct dbr_time_long *)psrc)->value),(long)no_elements);
+	break;
+    case(oldDBR_TIME_DOUBLE):
+	status = dbPutField(paddr,DBR_DOUBLE,
+	    &(((struct dbr_time_double *)psrc)->value),(long)no_elements);
+	break;
+    case(oldDBR_GR_STRING):
+	/* no struct dbr_gr_string - use dbr_sts_string instead */
+	status = dbPutField(paddr,DBR_STRING,
+	    ((struct dbr_sts_string *)psrc)->value,(long)no_elements);
+	break;
+/*  case(oldDBR_GR_INT): */
+    case(oldDBR_GR_SHORT):
+	status = dbPutField(paddr,DBR_SHORT,
+	    &(((struct dbr_gr_short *)psrc)->value),(long)no_elements);
+	break;
+    case(oldDBR_GR_FLOAT):
+	status = dbPutField(paddr,DBR_FLOAT,
+	    &(((struct dbr_gr_float *)psrc)->value),(long)no_elements);
+	break;
+    case(oldDBR_GR_ENUM):
+	status = dbPutField(paddr,DBR_ENUM,
+	    &(((struct dbr_gr_enum *)psrc)->value),(long)no_elements);
+	break;
+    case(oldDBR_GR_CHAR):
+	status = dbPutField(paddr,DBR_UCHAR,
+	    &(((struct dbr_gr_char *)psrc)->value),(long)no_elements);
+	break;
+    case(oldDBR_GR_LONG):
+	status = dbPutField(paddr,DBR_LONG,
+	    &(((struct dbr_gr_long *)psrc)->value),(long)no_elements);
+	break;
+    case(oldDBR_GR_DOUBLE):
+	status = dbPutField(paddr,DBR_DOUBLE,
+	    &(((struct dbr_gr_double *)psrc)->value),(long)no_elements);
+	break;
+    case(oldDBR_CTRL_STRING):
+	/* no struct dbr_ctrl_string - use dbr_sts_string instead */
+	status = dbPutField(paddr,DBR_STRING,
+	    ((struct dbr_sts_string *)psrc)->value,(long)no_elements);
+	break;
+/*  case(oldDBR_CTRL_INT): */
+    case(oldDBR_CTRL_SHORT):
+	status = dbPutField(paddr,DBR_SHORT,
+	    &(((struct dbr_ctrl_short *)psrc)->value),(long)no_elements);
 	break;
     case(oldDBR_CTRL_FLOAT):
 	status = dbPutField(paddr,DBR_FLOAT,
 	    &(((struct dbr_ctrl_float *)psrc)->value),(long)no_elements);
 	break;
+    case(oldDBR_CTRL_ENUM):
+	status = dbPutField(paddr,DBR_ENUM,
+	    &(((struct dbr_ctrl_enum *)psrc)->value),(long)no_elements);
+	break;
+    case(oldDBR_CTRL_CHAR):
+	status = dbPutField(paddr,DBR_UCHAR,
+	    &(((struct dbr_ctrl_char *)psrc)->value),(long)no_elements);
+	break;
+    case(oldDBR_CTRL_LONG):
+	status = dbPutField(paddr,DBR_LONG,
+	    &(((struct dbr_ctrl_long *)psrc)->value),(long)no_elements);
+	break;
+    case(oldDBR_CTRL_DOUBLE):
+	status = dbPutField(paddr,DBR_DOUBLE,
+	    &(((struct dbr_ctrl_double *)psrc)->value),(long)no_elements);
+	break;
+
     default:
 	return(-1);
     }

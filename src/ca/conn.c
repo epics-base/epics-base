@@ -2,7 +2,7 @@
 /*									*/
 /*	        	      L O S  A L A M O S			*/
 /*		        Los Alamos National Laboratory			*/
-/*		         Los Alamos, New Mexico 87545			*/	
+/*		         Los Alamos, New Mexico 87545			*/
 /*									*/
 /*	Copyright, 1986, The Regents of the University of California.	*/
 /*									*/
@@ -18,7 +18,7 @@
 /************************************************************************/
 /*									*/
 /*	Title:	IOC connection automation				*/
-/*	File:	atcs:[ca]access.c					*/
+/*	File:	atcs:[ca]conn.c						*/
 /*	Environment: VMS, UNIX, VRTX					*/
 /*	Equipment: VAX, SUN, VME					*/
 /*									*/
@@ -26,6 +26,9 @@
 /*									*/
 /************************************************************************/
 /*_end									*/
+#ifdef UNIX
+#include		<stdio.h>
+#endif
 
 #include		<vxWorks.h>
 #include 		<cadef.h>
@@ -34,54 +37,127 @@
 #include 		<iocinf.h>
 
 
+/*
+ *
+ *	CHID_RETRY
+ *
+ *	retry disconnected channels
+ *
+ *
+ *	NOTES:
+ *	Lock must be applied while in this routine
+ */
 chid_retry(silent)
 char			silent;
 {
-  register chid		chix;
-  register unsigned int	retry_cnt = 0;
-  char			string[100];
-  void			send_msg();
+  	register chid		chix;
+  	register unsigned int	retry_cnt = 0;
+  	unsigned int		retry_cnt_no_handler = 0;
+  	char			string[100];
+  	int			i;
+  	int			search_type;
 
-  if(!chidlist_pend.count)
-    return ECA_NORMAL;
+	/*
+	 * CASTTMO+pndrecvcnt*LKUPTMO)/DELAYVAL + 1
+	 */
+#define CASTTMO		0.150		/* 150 mS	*/
+#define LKUPTMO		0.015		/* 15 mS 	*/
 
-  LOCK;
-  chix = (chid) &chidlist_pend;
-  while(chix = (chid) chix->node.next){
-    build_msg(chix,TRUE);
-    retry_cnt++;
-    if(!silent)
-      ca_signal(ECA_CHIDNOTFND, chix+1);
-  }
-  send_msg();
-  printf("Sent ");
-  UNLOCK;
+  	for(i=0; i< nxtiiu; i++){
+    		if(i != BROADCAST_IIU && iiu[i].conn_up)
+      			continue;
 
-  if(retry_cnt && !silent){
-    sprintf(string, "%d channels outstanding", retry_cnt);
-    ca_signal(ECA_CHIDRETRY, string);
-  }
+    		if(iiu[i].nconn_tries++ > MAXCONNTRIES)
+      			continue;
 
-  return ECA_NORMAL;
+    		search_type = (i==BROADCAST_IIU? DONTREPLY: DOREPLY);
+
+    		chix = (chid) &iiu[i].chidlist;
+    		while(chix = (chid) chix->node.next){
+      			if(chix->type != TYPENOTCONN)
+				continue;
+      			build_msg(chix,search_type);
+     			retry_cnt++;
+
+      			if(!(silent || chix->connection_func)){
+       				 ca_signal(ECA_CHIDNOTFND, chix+1);
+				retry_cnt_no_handler++;
+			}
+    		}
+  	}
+
+  	if(retry_cnt){
+    		send_msg();
+    		printf("<Trying> ");
+#ifdef UNIX
+    		fflush(stdout);
+#endif
+
+    		if(!silent && retry_cnt_no_handler){
+      			sprintf(string, "%d channels outstanding", retry_cnt);
+      			ca_signal(ECA_CHIDRETRY, string);
+    		}
+  	}
+
+  	return ECA_NORMAL;
 }
 
+
+
 /*
-Locks must be applied while in this routine
-*/
-mark_chids_disconnected(iocix)
-register unsigned	iocix;
+ *
+ *
+ *	MARK_SERVER_AVAILABLE
+ *
+ *
+ *	NOTES:
+ *	Lock must be applied while in this routine
+ *
+ */
+void
+mark_server_available(net_addr)
+struct in_addr	net_addr;
 {
-  register chid		chix;
-  register chid		nextchix;
+  	int i;
+  	void noop_msg();
 
-  nextchix = (chid) &chidlist_conn.node;
-  while(chix = nextchix){
-    nextchix = (chid) chix->node.next;
-    if(chix->iocix == iocix){
-      lstDelete(&chidlist_conn, chix); 
-      lstAdd(&chidlist_pend, chix);    
-      chix->type = TYPENOTCONN;
-    }
-  }
+ 	for(i=0;i<nxtiiu;i++)
+    		if(	(net_addr.s_addr == 
+			iiu[i].sock_addr.sin_addr.s_addr)){
 
+			/*
+			 *	reset the retry count out
+			 *
+			 */
+      			iiu[i].nconn_tries = 0;
+
+			/*
+			 * Check if the conn is down but TCP 
+			 * has not informed me by sending a NULL msg
+			 */
+      			if(iiu[i].conn_up){
+        			noop_msg(&iiu[i]);
+        			send_msg();
+      			}
+      			return;
+    		}
+
+	/*
+	 *	Not on a known IOC so try a directed UDP
+	 *
+	 */
+/*
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	This connects when the client starts before the server
+	1) uses a broadcast- should use a directed UDP messaage
+	2) many clients with nonexsistent channels could
+	cause a flood here
+
+	
+
+
+
+  	iiu[BROADCAST_IIU].nconn_tries = MAXCONNTRIES-1;
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+*/
 }

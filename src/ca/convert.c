@@ -1,3 +1,33 @@
+/*
+ *	C O N V E R T . C
+ *
+ *	Author: D. Kersteins
+ *
+ *
+ * 	NOTES: 
+ *	1) converts arrays without subroutine call
+ *	for improved efficiency -joh
+ *
+ *	2) These routines only do VAX conversions for now - joh
+ *
+ *	3) All routines in this file have an encode argument which
+ *	determines if we are converting from the standard format to
+ *	the local format or vise versa. To date only float and double data 
+ *	types must be converted differently depending on the encode
+ *	argument - joh
+ *
+ *	History
+ *	joh	10-21-90	Moved atomic types here to avoid
+ *				maintenance problems in service.c
+ *				This also provides for a cleaner seperation
+ *				of function.
+ *	joh	10-21-90	Added new DBR_XXXX types for release two
+ *
+ *
+ */
+
+
+
 #include	<db_access.h>
 #include	<net_convert.h>
 
@@ -7,6 +37,219 @@
 #endif
 
 
+/*
+ *	Routine we will do later
+ *
+ *
+ *
+ */
+no_cvrt()
+{
+	printf("Sorry, conversion for that type currently not implemented\n");
+	exit();
+}
+cvrt_sts_char()		{no_cvrt();}
+cvrt_sts_long()		{no_cvrt();}
+cvrt_sts_double()	{no_cvrt();}
+
+cvrt_time_string()	{no_cvrt();}
+cvrt_time_short()	{no_cvrt();}
+cvrt_time_float()	{no_cvrt();}
+cvrt_time_enum()	{no_cvrt();}
+cvrt_time_char()	{no_cvrt();}
+cvrt_time_long()	{no_cvrt();}
+cvrt_time_double()	{no_cvrt();}
+
+cvrt_gr_char()		{no_cvrt();}
+cvrt_gr_double()	{no_cvrt();}
+cvrt_gr_long()		{no_cvrt();}
+cvrt_gr_string()	{no_cvrt();}
+cvrt_gr_enum()		{no_cvrt();}
+
+cvrt_ctrl_char()	{no_cvrt();}
+cvrt_ctrl_long()	{no_cvrt();}
+cvrt_ctrl_string()	{no_cvrt();}
+cvrt_ctrl_double()	{no_cvrt();}
+
+
+
+
+
+/*
+ *	CVRT_SHORT()
+ *
+ *
+ *
+ *
+ */
+cvrt_short(s,d,encode,num)
+short			*s;			/* source			*/
+short			*d;			/* destination			*/
+int 			encode;			/* cvrt VAX to IEEE if T	*/
+int			num;			/* number of values		*/
+{
+      	unsigned int	i;
+
+      	for(i=0; i<num; i++){
+      	  	*d++ = ntohs( *s++ );
+	}
+	return 1;
+}
+
+
+/*
+ *	CVRT_CHAR()
+ *
+ *
+ *
+ *
+ */
+cvrt_char(s,d,encode,num)
+char			*s;			/* source			*/
+char			*d;			/* destination			*/
+int 			encode;			/* cvrt VAX to IEEE if T	*/
+int			num;			/* number of values		*/
+{
+      	unsigned int	i;
+
+      	for(i=0; i<num; i++){
+      	  	*d++ = *s++;
+	}
+	return 1;
+}
+
+
+/*
+ *	CVRT_LONG()
+ *
+ *
+ *
+ *
+ */
+cvrt_long(s,d,encode,num)
+long			*s;			/* source			*/
+long			*d;			/* destination			*/
+int 			encode;			/* cvrt VAX to IEEE if T	*/
+int			num;			/* number of values		*/
+{
+      	unsigned int	i;
+
+      	for(i=0; i<num; i++){
+      	  	*d++ = ntohl( *s++ );
+	}
+	return 1;
+}
+
+
+/*
+ *	CVRT_ENUM()
+ *
+ *
+ *
+ *
+ */
+cvrt_enum(s,d,encode,num)
+short			*s;			/* source			*/
+short			*d;			/* destination			*/
+int 			encode;			/* cvrt VAX to IEEE if T	*/
+int			num;			/* number of values		*/
+{
+      	unsigned int	i;
+
+      	for(i=0; i<num; i++){
+      	  	*d++ = ntohs(*s++);
+	}
+	return 1;
+}
+
+
+/*
+ *	CVRT_FLOAT()
+ *
+ *
+ *	NOTES:
+ *	placing encode outside the loop results in more 
+ * 	code but better performance.
+ *
+ */
+cvrt_float(s,d,encode,num)
+float			*s;			/* source		*/
+float			*d;			/* destination		*/
+int 			encode;			/* cvrt VAX to IEEE if T*/
+int			num;			/* number of values	*/
+{
+      	unsigned int	i;
+
+      	for(i=0; i<num; i++){
+		if(encode){
+	  		htonf(s, d);
+		}
+		else{
+	  		ntohf(s, d);
+		}
+		/*
+		 * incrementing these inside the MACRO could be unhealthy
+		 */
+		s++;
+		d++;
+	}
+
+	return 1;
+}
+
+
+/*
+ *	CVRT_DOUBLE()
+ *
+ *
+ *
+ *
+ */
+cvrt_double(s,d,encode,num)
+double			*s;			/* source			*/
+double			*d;			/* destination			*/
+int 			encode;			/* cvrt VAX to IEEE if T	*/
+int			num;			/* number of values		*/
+{
+      	unsigned int	i;
+
+	printf("CA: sorry no code for conversions of doubles\n");
+	printf("CA: setting your variable to nill\n");
+      	for(i=0; i<num; i++){
+	  	*d++ = 0.0;
+	}
+
+	return 1;
+}
+
+
+/*
+ *	CVRT_STRING()
+ *
+ *
+ *
+ *
+ */
+cvrt_string(s,d,encode,num)
+char			*s;			/* source			*/
+char			*d;			/* destination			*/
+int 			encode;			/* cvrt VAX to IEEE if T	*/
+int			num;			/* number of values		*/
+{
+      	unsigned int	i;
+
+	if(num == 1)
+            	strcpy(d, s);
+	else
+		memcpy(d, s, (MAX_STRING_SIZE * num));
+	return 1;
+}
+
+
+
+
+
+
 /****************************************************************************
 **	cvrt_sts_string(s,d)
 **		struct dbr_sts_string *s  	pointer to source struct
@@ -39,10 +282,8 @@ int			num;			/* number of values	*/
 }
 
 
-
-
 /****************************************************************************
-**	cvrt_sts_int(s,d)
+**	cvrt_sts_short(s,d)
 **		struct dbr_sts_int *s  	pointer to source struct
 **		struct dbr_sts_int *d	pointer to destination struct
 **		int  encode;			boolean, if true vax to ieee
@@ -54,7 +295,7 @@ int			num;			/* number of values	*/
 **		format
 ****************************************************************************/
 
-cvrt_sts_int(s,d,encode,num)
+cvrt_sts_short(s,d,encode,num)
 struct dbr_sts_int	*s;			/* source		*/
 struct dbr_sts_int	*d;			/* destination		*/
 int 			encode;			/* if true, vax to ieee	*/
@@ -192,7 +433,7 @@ int			num;			/* number of values	*/
 
 
 /****************************************************************************
-**	cvrt_gr_int(s,d)
+**	cvrt_gr_short(s,d)
 **		struct dbr_gr_int *s  	pointer to source struct
 **		struct dbr_gr_int *d	pointer to destination struct
 **		int  encode;			boolean, if true vax to ieee
@@ -204,7 +445,7 @@ int			num;			/* number of values	*/
 **	 
 ****************************************************************************/
 
-cvrt_gr_int(s,d,encode,num)
+cvrt_gr_short(s,d,encode,num)
 struct dbr_gr_int	*s;			/* source		*/
 struct dbr_gr_int	*d;			/* destination		*/
 int 			encode;			/* if true, vax to ieee */
@@ -323,7 +564,7 @@ int			num;			/* number of values	*/
 
 
 /****************************************************************************
-**	cvrt_ctrl_int(s,d)
+**	cvrt_ctrl_short(s,d)
 **		struct dbr_gr_int *s  	pointer to source struct
 **		struct dbr_gr_int *d	pointer to destination struct
 **		int  encode;			boolean, if true vax to ieee
@@ -335,7 +576,7 @@ int			num;			/* number of values	*/
 **	 
 ****************************************************************************/
 
-cvrt_ctrl_int(s,d,encode,num)
+cvrt_ctrl_short(s,d,encode,num)
 struct dbr_ctrl_int	*s;			/* source		*/
 struct dbr_ctrl_int	*d;			/* destination		*/
 int			encode;			/* if true, vax to ieee */

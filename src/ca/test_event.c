@@ -5,48 +5,44 @@
 
 
 void 	
-ca_test_event(usr,chix,type,count,pval)
-void	*usr;
-chid	chix;
-chtype	type;
-int	count;
-void	*pval;
+ca_test_event(args)
+struct event_handler_args	args;
 {
 
-  printf("~~~### in test event for [%s] ###~~~\n",chix+1);
-  printf("user arg\t%x\n",usr);
-  printf("val  ptr\t%x\n",pval);
-  printf("mon type\t%x\n",type);
-  printf("channel type\t%x\n",chix->type);
-  switch(type){
+  printf("~~~### in test event for [%s] ###~~~\n",args.chid+1);
+  printf("User argument\t%x\n", args.usr);
+  printf("Native channel data type\t%x\n", args.chid->type);
+  printf("Monitor data type\t%x\n", args.type);
+  switch(args.type){
   case	DBR_STRING:
-    printf("Value:\t<%s>\n",pval);
+    printf("Value:\t<%s>\n",args.dbr);
     break;
   case	DBR_INT:
   case	DBR_ENUM:
-    printf("Value:\t<%d>\n",*(int *)pval);
+    printf("Value:\t<%d>\n",*(int *)args.dbr);
     break;
   case	DBR_FLOAT:
-    printf("Value:\t<%f>\n",*(float *)pval);
+    printf("Value:\t<%f>\n",*(float *)args.dbr);
     break;
   case	DBR_STS_STRING:
-    printf("Value:\t<%s>\n",((struct dbr_sts_string *)pval)->value);
+    printf("Value:\t<%s>\n",((struct dbr_sts_string *)args.dbr)->value);
     break;
   case	DBR_STS_INT:
-    printf("Value:\t<%d>\n",((struct dbr_sts_int *)pval)->value);
+    printf("Value:\t<%d>\n",((struct dbr_sts_int *)args.dbr)->value);
     break;
   case	DBR_STS_FLOAT:
-    printf("Value:\t<%f>\n",((struct dbr_sts_float *)pval)->value);
+    printf("Value:\t<%f>\n",((struct dbr_sts_float *)args.dbr)->value);
     break;
   case	DBR_STS_ENUM:
-    printf("Value:\t<%d>\n",((struct dbr_sts_enum *)pval)->value);
+    printf("Value:\t<%d>\n",((struct dbr_sts_enum *)args.dbr)->value);
     break;
   case	DBR_GR_FLOAT:
-    printf("Value:\t<%f>\n",((struct dbr_gr_float *)pval)->value);
+    printf("Value:\t<%f>\n",((struct dbr_gr_float *)args.dbr)->value);
     break;
 
   default:
-    printf("Sorry test_event does not handle this type monitor yet\n");
+    printf(	"Sorry test_event does not handle data type %d yet\n",
+		args.type);
   }
 }
 

@@ -1,5 +1,5 @@
 /* iocInit.c	ioc initialization */ 
-/* share/src/db $Id$ */
+/* share/src/db @(#)iocInit.c	1.7     3/6/91 */
 
 #include	<vxWorks.h>
 #include	<types.h>
@@ -29,15 +29,14 @@
 
 static initialized=FALSE;
 
-
 /* define forward references*/
-long initBusController();
-long sdrLoad();
-long initDrvSup();
-long initRecSup();
-long initDevSup();
-long initDatabase();
-long addToSet();
+extern long initBusController();
+extern long sdrLoad();
+extern long initDrvSup();
+extern long initRecSup();
+extern long initDevSup();
+extern long initDatabase();
+extern long addToSet();
 
 
 iocInit(pfilename)
@@ -70,7 +69,10 @@ char * pfilename;
     logMsg("Scanners Initialized\n");
     rsrv_init();
     logMsg("Channel Access Servers Initialized\n");
+    ts_init();
+    logMsg("Time Stamp Driver Initialized\n");
     logMsg("iocInit: All initialization complete\n");
+
     return(0);
 }
 
@@ -88,7 +90,7 @@ long initBusController(){ /*static */
     return(0);
 }
 
-static long initDrvSup() /* Locate all driver support entry tables */
+long initDrvSup() /* Locate all driver support entry tables */
 {
     char	*pname;
     char	name[40];
@@ -122,7 +124,7 @@ static long initDrvSup() /* Locate all driver support entry tables */
     return(rtnval);
 }
 
-static long initRecSup()
+long initRecSup()
 {
     char	name[40];
     int		i;
@@ -164,7 +166,7 @@ static long initRecSup()
     return(rtnval);
 }
 
-static long initDevSup() /* Locate all device support entry tables */
+long initDevSup() /* Locate all device support entry tables */
 {
     char	*pname;
     char	name[40];
@@ -218,7 +220,7 @@ static long initDevSup() /* Locate all device support entry tables */
     return(rtnval);
 }
 
-static long initDatabase()
+long initDatabase()
 {
     char	name[PVNAME_SZ+FLDNAME_SZ+2];
     short	i,j,k;
@@ -332,7 +334,7 @@ static long initDatabase()
     return(rtnval);
 }
 
-static long addToSet(precord,record_type,lookAhead,i,j,lset)
+long addToSet(precord,record_type,lookAhead,i,j,lset)
     struct dbCommon *precord;	/* record being added to lock set*/
     short  record_type;		/* record being added to lock set*/
     short lookAhead;		/*should following records be checked*/

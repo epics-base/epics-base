@@ -150,9 +150,7 @@ int nciu::read ( unsigned type, unsigned long countIn, void *pValue )
  */
 LOCAL int check_a_dbr_string ( const char *pStr, const unsigned count )
 {
-    unsigned i;
-
-    for ( i = 0; i < count; i++ ) {
+    for ( unsigned i = 0; i < count; i++ ) {
         unsigned int strsize = 0;
         while ( pStr[strsize++] != '\0' ) {
             if ( strsize >= MAX_STRING_SIZE ) {
@@ -167,8 +165,6 @@ LOCAL int check_a_dbr_string ( const char *pStr, const unsigned count )
 
 int nciu::write ( unsigned type, unsigned long countIn, const void *pValue )
 {
-    int status;
-
     // check this first so thet get a decent diagnostic
     if ( ! this->f_connected ) {
         return ECA_DISCONNCHID;
@@ -183,7 +179,7 @@ int nciu::write ( unsigned type, unsigned long countIn, const void *pValue )
     }
 
     if ( type == DBR_STRING ) {
-        status = check_a_dbr_string ( (char *) pValue, countIn );
+        int status = check_a_dbr_string ( (char *) pValue, countIn );
         if ( status != ECA_NORMAL ) {
             return status;
         }
@@ -194,8 +190,6 @@ int nciu::write ( unsigned type, unsigned long countIn, const void *pValue )
 
 int nciu::write ( unsigned type, unsigned long countIn, const void *pValue, cacNotify &notify )
 {
-    int status;
-
     // check this first so thet get a decent diagnostic
     if ( ! this->f_connected ) {
         return ECA_DISCONNCHID;
@@ -210,7 +204,7 @@ int nciu::write ( unsigned type, unsigned long countIn, const void *pValue, cacN
     }
 
     if ( type == DBR_STRING ) {
-        status = check_a_dbr_string ( (char *) pValue, countIn );
+        int status = check_a_dbr_string ( (char *) pValue, countIn );
         if ( status != ECA_NORMAL ) {
             return status;
         }

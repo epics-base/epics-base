@@ -166,7 +166,8 @@ public:
 		return this->ciu;
 	}
     void * operator new ( size_t size, 
-        tsFreeList < casMonitor, 1024 > & );
+        tsFreeList < casMonitor, 1024 > & ) 
+            epicsThrows ( (std::bad_alloc) );
     epicsPlacementDeleteOperator (( void *, 
         tsFreeList < casMonitor, 1024 > & ))
 

@@ -31,6 +31,7 @@
  * -----------------
  * .01  08-13-91	mrk	Added extra NULL arg to dbGetField calls
  * .02  10-23-91	mrk	Changed dbior so it also reports device support
+ * .03  11-26-91	jba	Fixed initializations and added hex print to printBuffer
  */
 
 /* Global Database Test Routines - All can be invoked via vxWorks shell
@@ -258,7 +259,8 @@ long dbpf(pname,pvalue)	/* put field value*/
          return(1);
     }
     if(status!=0) errPrint(status);
-    else return(dbgf(pname));
+    else status=dbgf(pname);
+    return(status);
 }
 
 long dbpr(pname, interest_level)	/* print record */
@@ -388,6 +390,7 @@ long dbtgf(pname)	/* test all options for dbGetField */
 
 long dbtpf(pname,pvalue)/* test all options for dbPutField */
 	char	*pname;
+	char	*pvalue;
 {
     /* declare buffer long just to ensure correct alignment */
     long          buffer[100];
@@ -848,7 +851,7 @@ static void printBuffer(status, dbr_type, pbuffer, reqOptions,
 	}
 	for (i = 0; i < no_elements; i++) {
 	    svalue = *(char *) pbuffer;
-	    sprintf(pmsg, "%-9d", svalue);
+	    sprintf(pmsg, "%-9d 0x%-9x", svalue,svalue);
 	    dbpr_msgOut(pMsgBuff, tab_size);
 	    pbuffer += 1;
 	}
@@ -863,7 +866,7 @@ static void printBuffer(status, dbr_type, pbuffer, reqOptions,
 	}
 	for (i = 0; i < no_elements; i++) {
 	    usvalue = *(unsigned char *) pbuffer;
-	    sprintf(pmsg, "%-9d", usvalue);
+	    sprintf(pmsg, "%-9d 0x%-9x", usvalue,usvalue);
 	    dbpr_msgOut(pMsgBuff, tab_size);
 	    pbuffer += 1;
 	}
@@ -877,7 +880,7 @@ static void printBuffer(status, dbr_type, pbuffer, reqOptions,
 	    break;
 	}
 	for (i = 0; i < no_elements; i++) {
-	    sprintf(pmsg, "%-9d", *((short *) pbuffer));
+	    sprintf(pmsg, "%-9d 0x%-9x", *((short *) pbuffer), *((short *) pbuffer));
 	    dbpr_msgOut(pMsgBuff, tab_size);
 	    pbuffer += 2;
 	}
@@ -891,7 +894,7 @@ static void printBuffer(status, dbr_type, pbuffer, reqOptions,
 	    break;
 	}
 	for (i = 0; i < no_elements; i++) {
-	    sprintf(pmsg, "%-3u", *((unsigned short *) pbuffer));
+	    sprintf(pmsg, "%-9u 0x%-9x",*((unsigned short *) pbuffer),*((unsigned short *) pbuffer));
 	    dbpr_msgOut(pMsgBuff, tab_size);
 	    pbuffer += 2;
 	}
@@ -905,7 +908,7 @@ static void printBuffer(status, dbr_type, pbuffer, reqOptions,
 	    break;
 	}
 	for (i = 0; i < no_elements; i++) {
-	    sprintf(pmsg, "%-9ld", *((long *) pbuffer));
+	    sprintf(pmsg, "%-9ld 0x%-9lx", *((long *) pbuffer), *((long *) pbuffer));
 	    dbpr_msgOut(pMsgBuff, tab_size);
 	    pbuffer += 4;
 	}
@@ -919,7 +922,7 @@ static void printBuffer(status, dbr_type, pbuffer, reqOptions,
 	    break;
 	}
 	for (i = 0; i < no_elements; i++) {
-	    sprintf(pmsg, "0x%-8lx", *((unsigned long *) pbuffer));
+	    sprintf(pmsg, "%-9ld 0x%-9lx",*((unsigned long *) pbuffer),*((unsigned long *) pbuffer));
 	    dbpr_msgOut(pMsgBuff, tab_size);
 	    pbuffer += 4;
 	}
@@ -994,7 +997,7 @@ static int dbpr_report(pname, paddr, interest_level, pMsgBuff, tab_size)
     char            RecordName[PVNAME_SZ + 2];	/* pv record name */
     char           *pfield_name;
     char            field_name[FLDNAME_SZ + 1];	/* pv field name */
-    char           *pPvName;
+    char           *pPvName=NULL;
     char            PvName[PVNAME_SZ + FLDNAME_SZ + 4];	/* recordname.<pvname> */
     short           n,n2;
     long            status;

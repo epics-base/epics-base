@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.106  1998/09/25 00:20:56  jhill
+ * fixed warnings
+ *
  * Revision 1.105  1998/09/24 21:10:38  jhill
  * o test routine added
  * o allow large PV names
@@ -472,7 +475,10 @@ const void		*pext
 		 * if present (this avoids messages from purify)
 		 */
 		{
-			static 		nullBuff[32];
+			/*
+			 * static variables are initialized to zero
+			 */
+			static char	nullBuff[32];
 			unsigned	n;
 
 			n = extsize-actualextsize;
@@ -568,7 +574,10 @@ const void		*pext)
 		 * if present (this avoids messages from purify)
 		 */
 		{
-			static 		nullBuff[32];
+			/*
+			 * static variables are initialized to zero
+			 */
+			static char	nullBuff[32];
 			unsigned	n;
 
 			n = extsize-actualextsize;

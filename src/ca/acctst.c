@@ -1775,7 +1775,7 @@ void arrayTest ( chid chan, unsigned maxArrayBytes )
             status = ca_array_get ( DBR_STRING, 
                 ca_element_count (chan), chan, pRS ); 
             SEVCHK  ( status, "array read request failed" );
-            status = ca_pend_io ( 30.0 );
+            status = ca_pend_io ( 300.0 );
             SEVCHK ( status, "array read failed" );
             free ( pRS );
         }

@@ -18,7 +18,7 @@
 #include <osiSock.h>
 #endif
 
-#include <assert.h>
+#include <epicsAssert.h>
 
 class verifyCANetAddr {
 public:

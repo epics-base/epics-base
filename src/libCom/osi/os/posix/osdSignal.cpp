@@ -99,9 +99,8 @@ epicsShareFunc void epicsShareAPI epicsSignalInstallSigUrgIgnore ( void )
 epicsShareFunc void epicsShareAPI epicsSignalRaiseSigUrg 
                                         ( struct epicsThreadOSD * threadId ) 
 {
-    int status;
     pthread_t id = epicsThreadGetPosixThreadId ( threadId );
-    status = pthread_kill ( SIGURG, id );
+    int status = pthread_kill ( SIGURG, id );
     if ( status ) {
         errlogPrintf ( "Failed to send SIGURG signal to thread. Status = \"%s\"\n", 
             strerror ( status ) );

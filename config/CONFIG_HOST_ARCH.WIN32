@@ -8,6 +8,7 @@ MV   =$(PERL) $(EPICS_BASE_HOST_BIN)/mv.pl
 RM   =$(PERL) $(EPICS_BASE_HOST_BIN)/rm.pl -f
 MKDIR=$(PERL) $(EPICS_BASE_HOST_BIN)/mkdir.pl
 RMDIR=$(PERL) $(EPICS_BASE_HOST_BIN)/rm.pl -rf
+CWD  =$(PERL) $(EPICS_BASE_HOST_BIN)/cwd.pl
 CHMOD=echo
 WHAT=echo
 ECHO=echo

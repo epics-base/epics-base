@@ -1925,9 +1925,9 @@ block&nbsp;only for outstanding outstanding <a href="#ca_get">ca_get</a>
 requests issued, and also any channels created specifying a nill connection
 handler function pointer, after the last call to ca_pend_io() or ca client
 context creation whichever is later. Note that <a
-href="#ca_create_channel">ca_create_channel</a> requests should not be
-reissued unless <a href="#ca_clear_channel">ca_clear_channel</a> is called
-first.</p>
+href="#ca_create_channel">ca_create_channel</a> requests generally should not
+be reissued for the same process variable unless <a
+href="#ca_clear_channel">ca_clear_channel</a> is called first.</p>
 
 <p>If no <a href="#ca_get">ca_get</a> or connection state change events are
 outstanding then ca_pend_io() will flush the send buffer and return

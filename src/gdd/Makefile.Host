@@ -58,7 +58,7 @@ aitConvertGenerated.cc: aitGen$(EXE) ../aitTypes.h
 	./aitGen$(EXE)
 
 gddApps.h : genApps$(EXE)
-	genApps$(EXE) $@
+	./genApps$(EXE) $@
 
 # unfortunately there is only one TESTPROD/TESTPROD_SRCS allowed
 # right now

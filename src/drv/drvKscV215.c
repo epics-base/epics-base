@@ -54,12 +54,9 @@
 #include <dbScan.h>
 #include <devLib.h>
 
-
-typedef long	kscV215Stat;
+#include <drvKscV215.h>
 
 
-#define VXI_MODEL_KSCV215 	(0x215)
-
 #define MAXTRIES 100
 
 #define KSCV215_PCONFIG(LA, PC) \
@@ -115,28 +112,10 @@ struct KscV215_A24{
 	unsigned short 	pad14;
 };
 
-/*
- * external
- */
-kscV215Stat	KscV215Init(void);
-kscV215Stat KscV215_ai_driver(
-unsigned 	la,
-unsigned 	chan,
-unsigned short 	*prval 
-);
-
-/*
- * internal
- */
 #ifdef INTERRUPTS
 LOCAL void KscV215_int_service(unsigned la);
 #endif
 LOCAL void KscV215_init_card(unsigned la);
-
-kscV215Stat KscV215_getioscanpvt(
-unsigned 	la,
-IOSCANPVT 	*scanpvt
-);
 
 LOCAL void KscV215_stat(
 unsigned 	la,

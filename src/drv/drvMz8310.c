@@ -69,8 +69,7 @@
 #include 	<devLib.h>
 #include 	<drvStc.h>
 
-typedef long mz8310Stat;
-#define	MZ8310_SUCCESS	0
+#include 	<drvMz8310.h>
 
 #define MZ8310CHIPSIZE		0x20
 #define MZ8310SIZE		0x00000100
@@ -174,41 +173,6 @@ LOCAL mz8310Stat	mz8310_io_report(int level);
 LOCAL mz8310Stat	mz8310_init(void);
 LOCAL mz8310Stat 	mz8310_read_test(int card, int channel);
 LOCAL void 		mz8310_int_service(struct mz8310_int_conf *icf);
-
-/* externals */
-mz8310Stat mz8310_one_shot_read(
-int			*preset,	/* TRUE or COMPLEMENT logic */
-double			*edge0_delay,	/* sec */
-double			*edge1_delay,	/* sec */
-int			card,		/* 0 through ... */
-int			channel,	/* 0 through channels on a card */
-int			*int_source 	/* (FALSE)External/(TRUE)Internal src */
-);
-
-mz8310Stat mz8310_one_shot(	
-int	preset,		/* TRUE or COMPLEMENT logic */
-double	edge0_delay,	/* sec */
-double	edge1_delay,	/* set */
-int	card,		/* 0 through ... */
-int	channel,	/* 0 through channels on a card */
-int	int_source, 	/* (FALSE)External/ (TRUE)Internal source */
-void	*event_rtn,	/* subroutine to run on events */
-int	event_rtn_param /* parameter to pass to above routine */
-);
-
-int	mz8310_cmd(
-unsigned 	value,
-unsigned 	card,
-unsigned 	chip
-);
-
-int mz8310_rdata(int card, int chip);
-
-int mz8310_wdata(
-unsigned 	value,
-int		card,
-int		chip
-);
 
 struct {
 	long	number;

@@ -42,6 +42,8 @@ static char *sccsID = "$Id$\t$Date$";
 #include	<vxWorks.h>
 #include	<module_types.h>
 
+#include 	<drvMz8310.h>
+
 struct pulse{
 double		offset;
 double		width;
@@ -91,7 +93,7 @@ unsigned int	npulmax;
 					channel,
 					int_source
 					);
-    if(status==OK)
+    if(status==0)
       *npulses=1;
 
     return status;
@@ -106,7 +108,7 @@ unsigned int	npulmax;
 					channel,
 					int_source
 					);
-    if(status==OK)
+    if(status==0)
       *npulses=1;
 
     return status;

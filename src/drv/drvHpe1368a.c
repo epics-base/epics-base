@@ -58,9 +58,9 @@ static char *sccsId = "$Id$\t$Date$";
 #include <dbScan.h>
 #include <devLib.h>
 
-
-#define VXI_MODEL_HPE1368A 	(0xf28)
+#include <drvHpe1368a.h>
 
+
 #define HPE1368A_PCONFIG(LA, PC) \
 epvxiFetchPConfig((LA), hpe1368aDriverId, (PC))
 
@@ -68,8 +68,6 @@ epvxiFetchPConfig((LA), hpe1368aDriverId, (PC))
 #define ModuleStatus(PCSR) ((PCSR)->dir.r.status)
 
 #define ALL_SWITCHES_OPEN	0
-
-typedef long	hpe1368aStat;
 
 struct hpe1368a_config{
 	FAST_LOCK	lock;		/* mutual exclusion */
@@ -83,31 +81,6 @@ struct hpe1368a_config{
 
 LOCAL int hpe1368aDriverId;
 
-/*
- * external
- */
-hpe1368aStat hpe1368a_init(void);
-
-hpe1368aStat hpe1368a_getioscanpvt(
-unsigned 	la,
-IOSCANPVT 	*scanpvt 
-);
-
-hpe1368aStat hpe1368a_bo_driver(
-unsigned 	la,
-unsigned 	val,
-unsigned 	mask 
-);
-
-hpe1368aStat hpe1368a_bi_driver(
-unsigned 	la,
-unsigned 	mask,
-unsigned 	*pval 
-);
-
-/*
- * internal
- */
 LOCAL void hpe1368a_int_service(unsigned la);
 LOCAL void hpe1368a_init_card(unsigned la);
 LOCAL void hpe1368a_stat(unsigned la, int level);

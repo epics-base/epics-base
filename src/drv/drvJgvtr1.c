@@ -86,8 +86,7 @@ static char *sccsID = "$Id$\t$Date$";
 #include 	<taskwd.h>
 #include 	<devLib.h>
 
-typedef long	jgvtr1Stat;
-#define JGVTR1_SUCCESS	0
+#include 	<drvJgvtr1.h>
 
 LOCAL jgvtr1Stat jgvtr1_io_report(
 	unsigned	level
@@ -115,15 +114,6 @@ LOCAL jgvtr1Stat jgvtr1_dump(
 LOCAL jgvtr1Stat jgvtr1_stat(
 	unsigned	card,
 	int 		level
-);
-
-/*
- * should be in a header file
- */
-jgvtr1Stat jgvtr1_driver(
-	unsigned 	card,
-	unsigned 	*pcbroutine,
-	unsigned 	*parg	/* number of values read */
 );
 
 struct {
@@ -177,7 +167,8 @@ struct jgvtr1_status{
 struct jgvtr1_config{
 	char		present;	/* card present			*/
 	char		std_ok;		/* std addr ok on first read	*/
-	void		(*psub)();	/* call back routine		*/
+	void		(*psub)		/* call back routine            */
+				(void *pprm, unsigned nbytes, uint16_t *pData);
 	void		*pprm;		/* call back parameter		*/
 	FAST_LOCK	lock;		/* mutual exclusion		*/
 	uint16_t 	*pdata;	/* pointer to the data buffer	*/
@@ -336,8 +327,8 @@ jgvtr1Stat jgvtr1_init(void)
  */
 jgvtr1Stat jgvtr1_driver(
 unsigned 	card,
-unsigned 	*pcbroutine,
-unsigned 	*parg	/* number of values read */
+void		(*pcbroutine)(void *, unsigned, uint16_t *),
+void		*parg
 )
 {
 	if(card >= jgvtr1_max_card_count)
@@ -354,7 +345,7 @@ unsigned 	*parg	/* number of values read */
 	*(volatile uint16_t *)JGVTR1BASE(card) = JGVTR1ARM;
 
 	pjgvtr1_config[card].pprm = parg;
- 	pjgvtr1_config[card].psub = (void (*)()) pcbroutine;
+ 	pjgvtr1_config[card].psub = pcbroutine;
  	
 	FASTUNLOCK(&pjgvtr1_config[card].lock);
 
@@ -411,12 +402,10 @@ LOCAL void 	jgvtr1DoneTask(void)
 			card < jgvtr1_max_card_count;
 			card++, pconfig++){
 
-			void (*psub)() = pconfig->psub;
-
 			if(!pconfig->present)
 				continue;
 
-			if(!psub)
+			if(!pconfig->psub)
 				continue;
 
 			stat = *(struct jgvtr1_status *) JGVTR1BASE(card);
@@ -490,7 +479,7 @@ LOCAL void 	jgvtr1DoneTask(void)
 			perhaps the size must be the size below+1 ?
 			(Joerger's documentation is not clear here)
 */
-			(*psub)(pconfig->pprm,JRG_MEM_SIZE,pconfig->pdata);
+			(*pconfig->psub)(pconfig->pprm,JRG_MEM_SIZE,pconfig->pdata);
     		} 
    	}
 }

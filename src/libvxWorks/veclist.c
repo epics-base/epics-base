@@ -65,8 +65,10 @@ veclist(int all)
 	int		value;
 #if defined(V4_vxWorks)
 	UTINY		type;
-#else
+#elif defined(V5_vxWorks)
 	SYM_TYPE	type;
+#else
+	UTINY		type;
 #endif
 	char		name[MAX_SYS_SYM_LEN];
 	char		function_type[10];

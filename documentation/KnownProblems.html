@@ -8,6 +8,8 @@
   <meta name="GENERATOR" content="amaya 5.1" />
 </head>
 
+<h4> January 17, 2003</h4>
+
 <body>
 <h1 style="text-align: center">EPICS base R3.14.1: Known Problems</h1>
 
@@ -26,5 +28,14 @@
   <li>A SHRLIB_SEARCH_DIRS += should be generated for everything found in
     configure/RELEASE</li>
 </ul>
+
+<h3>For shared library builds on solaris</h3>
+<ul>
+  <li>Change "SYS_SHRLIB_LIBS_8 += Crun" to "SYS_SHRLIB_LIBS_8 += Crun Cstd" in 
+configure/os/CONFIG.Common.solaris-sparc and configure/os/CONFIG.Common.solaris-x86
+and change "SYS_DLL_LIBS_solaris_8 = Crun" to "SYS_DLL_LIBS_solaris_8 = Crun Cstd" in 
+config/CONFIG.Host.solaris and config/CONFIG.Host.solarisGnu.</li>
+</ul>
+
 </body>
 </html>

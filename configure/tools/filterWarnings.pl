@@ -5,6 +5,8 @@ eval 'exec perl -S $0 ${1+"$@"}'      # -*- Mode: perl -*-
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
+# Copyright (c) 2002 Berliner Speicherringgesellschaft fuer
+#     Synchrotronstrahlung.
 # EPICS BASE Versions 3.13.7
 # and higher are distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
@@ -34,7 +36,7 @@ while ( $errline = <> ) {
     ($errno) = ($errline =~ m/.* ([0-9]+):/);
     $codeline = <>;
     $pointline = <>;
-    next if $codeline =~ m|//\s*X.*aCC[^a-zA-Z]*$errno|;
+    next if $codeline =~ m|/[/*]\s*X.*aCC[^a-zA-Z]*$errno|;
 
     print wrap ("", "    ", $errline);
     print $codeline;

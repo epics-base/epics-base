@@ -42,6 +42,7 @@
  *				rounding;
  *				args changed for: sydSampleSetPrint;
  *				sydSamplePrint; sydInputStoreInSet;
+ * .07	11-02-91	rac	add sydSampleWriteSSF, sydSampleSetWriteSSF
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -103,12 +104,14 @@
 *     long  sydSampleExport(     pSspec,  out,  fmtFlag,  hdrFlag,  sampNum)
 *     long  sydSamplePrint(      pSspec,  out,  fmtFlag,  hdrFlag,
 *						  nCol, colWidth, sampNum)
+*     long  sydSampleWriteSSF(   pSspec,  pFile, progDesc, sampDesc, sampNum)
 *
 *     long  sydSampleSetAlloc(   pSspec,  reqCount			)
 *     long  sydSampleSetExport(  pSspec,  out,  fmtFlag			)
 *     long  sydSampleSetFree(    pSspec					)
 *     long  sydSampleSetGet(     pSspec					)
 *     long  sydSampleSetPrint(   pSspec,  out,  fmtFlag, nCol, colWidth	)
+*     long  sydSampleSetWriteSSF(pSspec,  pFile, progDesc, sampDesc     )
 *
 *     long  sydTriggerAddFromText(pSspec,  text				)
 *     long  sydTriggerClose(     pSspec					)
@@ -591,11 +594,9 @@ char	*chanName;	/* I channel name to find in synchronous set spec */
     assert(pSspec != NULL);
     assert(chanName != NULL);
 
-    pSChan = pSspec->pChanHead;
-    while (pSChan != NULL) {
+    for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
         if (strcmp(pSChan->name, chanName) == 0)
 	    break;
-	pSChan = pSChan->pNext;
     }
 
     return pSChan;
@@ -1105,8 +1106,7 @@ int	*pMoreFlag;	/* O pointer to flag or NULL; a return value of 1
 *----------------------------------------------------------------------------*/
     sydInputGetIn(pSspec);
 
-    pSChan = pSspec->pChanHead;
-    while (pSChan != NULL) {
+    for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
 /*-----------------------------------------------------------------------------
 *    with two buffers of data, determine if this channel can contribute to
 *    the time stamp for the sample.  It can potentially contribute if:
@@ -1166,8 +1166,6 @@ int	*pMoreFlag;	/* O pointer to flag or NULL; a return value of 1
 	}
 	else
 	    later = 1;
-
-	pSChan = pSChan->pNext;
     }
 
 /*----------------------------------------------------------------------------
@@ -1222,8 +1220,7 @@ int	*pMoreFlag;	/* O pointer to flag or NULL; a return value of 1
     pSspec->sampleTs = nextTs;
     pSspec->partial = 0;
     TsDiffAsDouble(&pSspec->sampleSec, &pSspec->sampleTs, &pSspec->refTs);
-    pSChan = pSspec->pChanHead;
-    while (pSChan != NULL) {
+    for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
 	i = pSChan->firstInBuf;
 	i1 = NEXT_INBUF(pSChan, i);
 	if (i < 0) {
@@ -1279,10 +1276,7 @@ int	*pMoreFlag;	/* O pointer to flag or NULL; a return value of 1
 	    pSspec->partial = 1;
 	    retStat = S_syd_partial;
 	}
-
-	pSChan = pSChan->pNext;
     }
-    pSChan = pSspec->pChanHead;
     if (pMoreFlag != NULL)
 	*pMoreFlag = moreFlag;
 
@@ -1326,8 +1320,7 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
 *    either SYD_B_FULL, SYD_B_SAMPLED, SYD_B_MISSING, SYD_B_EMPTY,
 *    or SYD_B_EOF.
 *----------------------------------------------------------------------------*/
-    pSChan = pSspec->pChanHead;
-    while (pSChan != NULL) {
+    for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
 /*-----------------------------------------------------------------------------
 *    see if the oldest input can be thrown away.  This is possible if:
 *    o  buffer status is SYD_B_SAMPLED and one of the following is also true:
@@ -1372,12 +1365,10 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
 		    pSChan->firstInBuf = NEXT_INBUF(pSChan, i);
 	    }
 	}
-	pSChan = pSChan->pNext;
     }
     if (pSspec->type == SYD_TY_CA)
 	return;
-    pSChan = pSspec->pChanHead;
-    while (pSChan != NULL) {
+    for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
 /*-----------------------------------------------------------------------------
 *    after possibly throwing away the oldest input data, try to get two
 *    buffers of input data; if time stamp rounding is to be done, do it now
@@ -1416,7 +1407,7 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
 	    }
 	}
 skipSecondRead:
-	pSChan = pSChan->pNext;
+	;
     }
 }
 
@@ -1464,13 +1455,11 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
     SYD_CHAN	*pSChan;
     int		i;
 
-    pSChan = pSspec->pChanHead;
-    while (pSChan != NULL) {
+    for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
 	for (i=0; i<pSChan->nInBufs; i++)
 	    pSChan->inStatus[i] = SYD_B_EMPTY;
 	pSChan->firstInBuf = -1;
 	pSChan->lastInBuf = -1;
-	pSChan = pSChan->pNext;
     }
     pSspec->sampleTs.secPastEpoch = 0;
 }
@@ -1482,8 +1471,7 @@ SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
     SYD_CHAN	*pSChan;
     int		i;
 
-    pSChan = pSspec->pChanHead;
-    while (pSChan != NULL) {
+    for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
 	i = pSChan->firstInBuf;
 	while (i >= 0 && i != pSChan->lastInBuf) {
 	    pSChan->inStatus[i] = SYD_B_EMPTY;
@@ -1493,7 +1481,6 @@ SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
 	if ((i=pSChan->firstInBuf) > 0)
 	    pSChan->inStatus[i] = SYD_B_SAMPLED;
 	pSChan->sampInBuf = -1;
-	pSChan = pSChan->pNext;
     }
     pSspec->sampleTs.secPastEpoch = 0;
 }
@@ -1505,8 +1492,7 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
     SYD_CHAN	*pSChan;
     int		i;
 
-    pSChan = pSspec->pChanHead;
-    while (pSChan != NULL) {
+    for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
 	i = pSChan->firstInBuf;
 	while (i >= 0) {
 	    if (pSChan->inStatus[i] == SYD_B_SAMPLED) {
@@ -1525,7 +1511,6 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
 		i = NEXT_INBUF(pSChan, i);
 	}
 	pSChan->sampInBuf = -1;
-	pSChan = pSChan->pNext;
     }
     pSspec->sampleTs.secPastEpoch = 0;
 }
@@ -1565,12 +1550,10 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
     static struct sydChanFlags flags0={0,0,0,0,0,0,0};
  
     if (ignorePartial && pSspec->partial) {
-	pSChan = pSspec->pChanHead;
-	while (pSChan != NULL) {
+	for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
 	    i = pSChan->sampInBuf;
 	    if (i >= 0 && pSChan->inStatus[i] != SYD_B_MISSING)
 		pSChan->inStatus[i] = SYD_B_SAMPLED;
-	    pSChan = pSChan->pNext;
 	}
 	return;
     }
@@ -1581,8 +1564,7 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
     pSspec->pDeltaSec[sub] = pSspec->sampleSec;
     pSspec->pTimeStamp[sub] = pSspec->sampleTs;
     pSspec->pPartial[sub] = pSspec->partial;
-    pSChan = pSspec->pChanHead;
-    while (pSChan != NULL) {
+    for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
 	if (pSChan->pData == NULL || pSChan->dataChan == 0)
 		;	/* no action if no malloc's or if not data channel */
 	else if (pSChan->dataChan) {
@@ -1764,7 +1746,6 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 	    if (i >= 0 && pSChan->inStatus[i] != SYD_B_MISSING)
 		pSChan->inStatus[i] = SYD_B_SAMPLED;
 	}
-	pSChan = pSChan->pNext;
     }
 
     if (pSspec->firstData < 0 || pSspec->firstData == pSspec->lastData) {
@@ -1892,12 +1873,10 @@ TS_STAMP *pStamp;	/* I stamp at which to position; NULL to rewind */
     SYD_CHAN	*pSChan;
     long	stat;
 
-    pSChan = pSspec->pChanHead;
-    while (pSChan != NULL) {
+    for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
 	stat = (pSspec->pFunc)(pSspec, pSChan, SYD_FC_POSITION, pStamp);
 	if (pSspec->type == SYD_TY_SSF)
 	    break;
-	pSChan = pSChan->pNext;
     }
     sydInputReset(pSspec);
     pSspec->sampleTs.secPastEpoch = pSspec->sampleTs.nsec = 0;
@@ -1968,13 +1947,11 @@ int	samp;		/* I sample number in synchronous set */
 *    print the value for each channel for this sample.
 *----------------------------------------------------------------------------*/
     (void)fprintf(out, "%.3f", pSspec->pDeltaSec[samp]);
-    pSChan = pSspec->pChanHead;
-    while (pSChan != NULL) {
+    for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
 	if (option == 1)
 	    sydSamplePrint1(pSChan, out, '\t', 0, 0, 0, 1, samp);
 	else if (option == 2)
 	    sydSamplePrint1(pSChan, out, '\t', 1, 0, 0, 1, samp);
-	pSChan = pSChan->pNext;
     }
     (void)fprintf(out, "\n");
 }
@@ -2137,7 +2114,7 @@ int	samp;		/* I sample number in synchronous set */
 *-*/
 static void
 sydSamplePrint1(pSChan, out, sep, preFlag, postFlag, showArray, colWidth, sampNum)
-SYD_CHAN *pSChan;	/* I pointer to coincidence channel */
+SYD_CHAN *pSChan;	/* I pointer to sync channel */
 FILE	*out;		/* I file pointer for writing value */
 char	sep;		/* I character to use a a prefix for each field,
 				as a separator; usually ' ' or '\t' */
@@ -2146,7 +2123,7 @@ int	postFlag;	/* I != 0 prints status flag following value */
 int	showArray;	/* I != 0 to show all array elements, not just 1st */
 int	colWidth;	/* I >0 specifies column width, in characters;
 				== 2 requests only printing status code*/
-int	sampNum;	/* I sample number in coincidence set */
+int	sampNum;	/* I sample number in sync set */
 {
     int		i;
     chtype	type;		/* type of value */
@@ -2218,10 +2195,14 @@ int	sampNum;	/* I sample number in coincidence set */
     }
 }
 
+/*+/internal******************************************************************
+* NAME	sydSamplePrintArray
+*
+*-*/
 static
 sydSamplePrintArray(pSChan, sampNum)
-SYD_CHAN *pSChan;	/* I pointer to coincidence channel */
-int	sampNum;	/* I sample number in coincidence set */
+SYD_CHAN *pSChan;	/* I pointer to sync channel */
+int	sampNum;	/* I sample number in sync set */
 {
     int		nEl, nBytes, i;
     char	*pSrc;
@@ -2257,6 +2238,58 @@ int	sampNum;	/* I sample number in coincidence set */
 }
 
 /*+/subr**********************************************************************
+* NAME	sydSampleWriteSSF
+*
+* DESCRIPTION
+*
+* RETURNS
+*	S_syd_OK
+*
+* BUGS
+* o	
+*
+* SEE ALSO
+*
+* EXAMPLE
+*	sydSampleWriteSSF(pSspec, out, "PROGRAM: rfqTScan", "sample button",
+*			sampNum);
+*
+*-*/
+long
+sydSampleWriteSSF(pSspec, pFile, reqDesc, sampDesc, samp)
+SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
+FILE	*pFile;		/* I stream pointer for writing */
+char	*reqDesc;	/* I description of "request", or NULL */
+char	*sampDesc;	/* I description for "sample", or NULL */
+int	samp;		/* I sample number in synchronous set */
+{
+    SYD_CHAN	*pSChan;	/* pointer to channel in synchronous set */
+    char	stampText[28];
+
+    if (reqDesc != NULL)
+	(void)fprintf(pFile, "%s\n", reqDesc);
+    (void)fprintf(pFile, "SAMPLE: at %s", tsStampToText(
+		    &pSspec->pTimeStamp[samp], TS_TEXT_MMDDYY, stampText));
+    if (sampDesc != NULL)
+	(void)fprintf(pFile, "--%s", sampDesc);
+    (void)fprintf(pFile, "\n%%endHeader%%\n");
+
+    for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
+	if (pSChan->dataChan) {
+	    (void)fprintf(pFile, "%s %s %d %d", SydChanName(pSChan),
+		dbf_type_to_text(SydChanDbfType(pSChan)),
+		pSChan->pDataAlSev[samp], pSChan->pDataAlStat[samp]);
+	    sydSamplePrint1(pSChan, pFile, ' ', 0, 0, 1, 1, samp);
+	    (void)fprintf(pFile, "\n");
+	}
+    }
+    (void)fprintf(pFile, "%%endData%%\n");
+    (void)fflush(pFile);
+
+    return S_syd_OK;
+}
+
+/*+/subr**********************************************************************
 * NAME	sydSampleSetAlloc - acquire memory for holding a sample set
 *
 * DESCRIPTION
@@ -2265,7 +2298,8 @@ int	sampNum;	/* I sample number in coincidence set */
 *	of samples, then nothing is done.
 *
 *	This routine must be called prior to calling other sydSampleSet...
-*	routines.
+*	routines.  (But AFTER calling sydChanOpen for all channels of
+*	interest!)
 *
 *	If memory has already been allocated, but it isn't sufficient to
 *	hold the requested number of samples, then that memory is free'd
@@ -2308,8 +2342,7 @@ int	reqCount;	/* I number of samples in the set */
 	pSspec->dataDim = reqCount;
     }
 
-    pSChan = pSspec->pChanHead;
-    while (pSChan != NULL) {
+    for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
 	if (pSChan->conn == 0)
 	    ;			/* no action if never been connected */
 	else if (pSChan->pData == NULL) {
@@ -2339,7 +2372,6 @@ int	reqCount;	/* I number of samples in the set */
 	    if (pSChan->pFlags == NULL)
 		goto sampleMallocErr;
 	}
-	pSChan = pSChan->pNext;
     }
     pSspec->reqCount = reqCount;
     pSspec->firstData = -1;
@@ -2437,11 +2469,8 @@ SYD_SPEC *pSspec;
     pSspec->firstData = -1;
     pSspec->lastData = -1;
 
-    pSChan = pSspec->pChanHead;
-    while (pSChan != NULL) {
+    for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext)
 	sydChanFreeArrays(pSChan);
-	pSChan = pSChan->pNext;
-    }
     return S_syd_OK;
 }
 
@@ -2474,11 +2503,9 @@ SYD_SPEC *pSspec;
 
     assert(pSspec != NULL);
 
-    pSChan = pSspec->pChanHead;
-    while (pSChan != NULL) {
+    for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
 	if (pSChan->discon == 0)
 	    n++;
-	pSChan = pSChan->pNext;
     }
 
     pSspec->firstData = -1;
@@ -2535,6 +2562,41 @@ int	colWidth;	/* I >0 specifies column width, in characters */
 	headerFlag = 0;
 	if (++lineCount > 60)
 	    lineCount = 0;
+	if (samp == pSspec->lastData)
+	    samp = -1;
+	else if (++samp >= pSspec->dataDim)
+	    samp = 0;
+    }
+    return S_syd_OK;
+}
+
+/*+/subr**********************************************************************
+* NAME	sydSampleSetWriteSSF - write sample set data to `sample set' file
+*
+* DESCRIPTION
+*
+* RETURNS
+*
+* BUGS
+* o	text
+*
+* SEE ALSO
+*
+* EXAMPLE
+*
+*-*/
+long 
+sydSampleSetWriteSSF(pSspec, pFile, reqDesc, sampDesc)
+SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
+FILE	*pFile;		/* I stream pointer for writing */
+char	*reqDesc;	/* I description of "request", or NULL */
+char	*sampDesc;	/* I description for "sample", or NULL */
+{
+    int		samp;		/* sample number in synchronous set */
+
+    samp = pSspec->firstData;
+    while (samp >= 0) {
+	sydSampleWriteSSF(pSspec, pFile, reqDesc, sampDesc, samp);
 	if (samp == pSspec->lastData)
 	    samp = -1;
 	else if (++samp >= pSspec->dataDim)

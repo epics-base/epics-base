@@ -230,8 +230,9 @@ void ca_client_context::fdWasDestroyed ( int fd )
 
 void ca_client_context::show ( unsigned level ) const
 {
-    ::printf ( "ca_client_context at %p\n", 
-        static_cast <const void *> ( this ) );
+    ::printf ( "ca_client_context at %p pndRecvCnt=%u ioSeqNo=%u\n", 
+        static_cast <const void *> ( this ),
+        this->pndRecvCnt, this->ioSeqNo );
     if ( level > 0u ) {
         this->mutex.show ( level - 1u );
         this->clientCtx.show ( level - 1u );
@@ -243,7 +244,6 @@ void ca_client_context::show ( unsigned level ) const
                 this->ioSeqNo );
         ::printf ( "IO done event:\n");
         this->ioDone.show ( level - 1u );
-
     }
 }
 

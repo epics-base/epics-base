@@ -930,9 +930,11 @@ epicsShareFunc int epicsShareAPI ca_replace_printf_handler (
  * (for testing purposes only)
  */
 epicsShareFunc unsigned epicsShareAPI ca_get_ioc_connection_count (void);
+epicsShareFunc int epicsShareAPI ca_preemtive_callback_is_enabled (void);
+epicsShareFunc void epicsShareAPI ca_self_test (void);
+epicsShareFunc unsigned epicsShareAPI ca_beacon_anomaly_count (void);
 epicsShareFunc unsigned epicsShareAPI ca_search_attempts (chid chan);
 epicsShareFunc double epicsShareAPI ca_beacon_period (chid chan);
-epicsShareFunc int epicsShareAPI ca_preemtive_callback_is_enabled ();
 
 /*
  * used when an auxillary thread needs to join a CA client context started
@@ -945,7 +947,6 @@ epicsShareFunc int epicsShareAPI ca_attach_context ( struct ca_client_context * 
 epicsShareFunc int epicsShareAPI ca_client_status ( unsigned level );
 epicsShareFunc int epicsShareAPI ca_context_status ( struct ca_client_context *, unsigned level );
 
-epicsShareFunc void epicsShareAPI ca_self_test ();
 
 /*
  * deprecated

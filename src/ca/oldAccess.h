@@ -242,6 +242,7 @@ public:
     void show ( unsigned level ) const;
     unsigned connectionCount () const;
     unsigned sequenceNumberOfOutstandingIO () const;
+    unsigned beaconAnomaliesSinceProgramStart () const;
     void incrementOutstandingIO ( unsigned ioSeqNo );
     void decrementOutstandingIO ( unsigned ioSeqNo );
     void exception ( int status, const char *pContext, 
@@ -534,6 +535,11 @@ inline void ca_client_context::flushRequest ()
 inline unsigned ca_client_context::connectionCount () const
 {
     return this->clientCtx.connectionCount ();
+}
+
+inline unsigned ca_client_context::beaconAnomaliesSinceProgramStart () const
+{
+    return this->clientCtx.beaconAnomaliesSinceProgramStart ();
 }
 
 inline CASG * ca_client_context::lookupCASG ( unsigned id )

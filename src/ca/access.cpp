@@ -1079,13 +1079,24 @@ double epicsShareAPI ca_beacon_period ( chid pChan )
 // extern "C"
 unsigned epicsShareAPI ca_get_ioc_connection_count () 
 {
-    ca_client_context *pcac;
-    int caStatus = fetchClientContext ( &pcac );
+    ca_client_context * pcac;
+    int caStatus = fetchClientContext ( & pcac );
     if ( caStatus != ECA_NORMAL ) {
-        return caStatus;
+        return 0u;
     }
 
     return pcac->connectionCount ();
+}
+
+unsigned epicsShareAPI ca_beacon_anomaly_count ()
+{
+    ca_client_context * pcac;
+    int caStatus = fetchClientContext ( & pcac );
+    if ( caStatus != ECA_NORMAL ) {
+        return 0u;
+    }
+
+    return pcac->beaconAnomaliesSinceProgramStart ();
 }
 
 // extern "C"

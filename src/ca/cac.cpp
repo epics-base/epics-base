@@ -149,6 +149,8 @@ cac::cac ( cacNotify & notifyIn, bool enablePreemptiveCallbackIn ) :
     initializingThreadsId ( epicsThreadGetIdSelf() ),
     initializingThreadsPriority ( epicsThreadGetPrioritySelf() ),
     maxRecvBytesTCP ( MAX_TCP ),
+    nRecvThreadsPending ( 0u ),
+    beaconAnomalyCount ( 0u ),
     preemptiveCallbackEnabled ( enablePreemptiveCallbackIn )
 {
 	if ( ! osiSockAttach () ) {
@@ -426,6 +428,8 @@ void cac::beaconNotify ( const inetAddrID & addr, const epicsTime & currentTime,
         }
         return;
     }
+
+    this->beaconAnomalyCount++;
 
     this->pudpiiu->beaconAnomalyNotify ();
 

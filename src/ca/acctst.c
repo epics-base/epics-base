@@ -1978,21 +1978,16 @@ void pend_event_delay_test ( dbr_double_t request )
     assert ( fabs(accuracy) < 10.0 );
 }
 
-void caTaskExistTest ()
+void caTaskExistTest ( unsigned interestLevel )
 {
     int status;
 
-    epicsTimeStamp end_time;
-    epicsTimeStamp start_time;
-    dbr_double_t delay;
+    showProgressBegin ( "caTaskExistTest", interestLevel );
 
-    epicsTimeGetCurrent ( &start_time );
-    printf ( "entering ca_task_exit()\n" );
     status = ca_task_exit ();
     SEVCHK ( status, NULL );
-    epicsTimeGetCurrent ( &end_time );
-    delay = epicsTimeDiffInSeconds ( &end_time, &start_time );
-    printf ( "in ca_task_exit() for %f sec\n", delay );
+
+    showProgressEnd ( interestLevel );
 }
 
 void verifyDataTypeMacros ()
@@ -2221,43 +2216,20 @@ void monitorUpdateTest ( chid chan, unsigned interestLevel )
 
 void verifyReasonableBeaconPeriod ( chid chan )
 {
-    if ( ca_get_ioc_connection_count () > 0 ) {
-        double beaconPeriod, expectedBeaconPeriod, error, percentError;
-        unsigned attempts = 0u;
+    double beaconPeriod;
+    unsigned attempts = 0u;
+    int status;
 
-        int status;
-        if ( envGetConfigParamPtr ( & EPICS_CAS_BEACON_PERIOD ) ) {
-            status = envGetDoubleConfigParam ( & EPICS_CAS_BEACON_PERIOD, 
-                & expectedBeaconPeriod );
-        }
-        else {
-            status = envGetDoubleConfigParam ( & EPICS_CA_BEACON_PERIOD, 
-                & expectedBeaconPeriod );
-        }
-        assert ( status >=0 );
-    
-        while ( 1 ) {
-            static const unsigned maxAttempts = 10u;
-            const double delay = ( expectedBeaconPeriod * 4 ) / maxAttempts;
+    assert ( ca_get_ioc_connection_count () > 0 );
 
-            beaconPeriod = ca_beacon_period ( chan );
-            if ( beaconPeriod >= 0.0 ) {
-                error = beaconPeriod - expectedBeaconPeriod;
-                percentError = fabs ( error ) / expectedBeaconPeriod;
-                if ( percentError < 0.1 ) {
-                    break;
-                }
-                printf ( "Beacon period error estimate = %f sec.\n", error );
-            }
-            else {
-                printf ( "Beacon period unavailable\n" );
-            }
-            assert ( attempts++ < maxAttempts );
-            printf ( "Waiting for a better beacon period estimate result (%f sec).\n",
-                attempts * delay );
-            ca_pend_event ( delay );
-        }
-    }
+    printf ( "Beacon anomalies detected since program start %u\n",
+        ca_beacon_anomaly_count () );
+
+    beaconPeriod = ca_beacon_period ( chan );
+    assert ( beaconPeriod >= 0.0 );
+
+    printf ( "Estimated beacon period for channel %s = %f sec.\n", 
+        ca_name ( chan ), beaconPeriod );
 }
 
 void verifyOldPend ( unsigned interestLevel)
@@ -2538,7 +2510,7 @@ int acctst ( char *pName, unsigned interestLevel, unsigned channelCount,
     /* status = ca_clear_channel ( chan ); */
     /* SEVCHK ( status, NULL ); */
 
-    caTaskExistTest ();
+    caTaskExistTest ( interestLevel );
     
     free ( pChans );
 

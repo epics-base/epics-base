@@ -118,6 +118,7 @@ public:
     void beaconNotify ( const inetAddrID & addr, const epicsTime & currentTime, 
         ca_uint32_t beaconNumber, unsigned protocolRevision );
     void repeaterSubscribeConfirmNotify ();
+    unsigned beaconAnomaliesSinceProgramStart () const;
 
     // IO management
     void flushRequest ();
@@ -254,6 +255,7 @@ private:
     unsigned initializingThreadsPriority;
     unsigned maxRecvBytesTCP;
     unsigned nRecvThreadsPending;
+    unsigned beaconAnomalyCount;
     bool preemptiveCallbackEnabled;
 
     void privateUninstallIIU ( epicsGuard < callbackMutex > &, tcpiiu &iiu ); 
@@ -402,6 +404,11 @@ inline void cac::releaseLargeBufferTCP ( char *pBuf )
 inline bool cac::preemptiveCallbakIsEnabled () const
 {
     return this->preemptiveCallbackEnabled;
+}
+
+inline unsigned cac::beaconAnomaliesSinceProgramStart () const
+{
+    return this->beaconAnomalyCount;
 }
 
 inline epicsGuard < callbackMutex > cac::callbackGuardFactory ()

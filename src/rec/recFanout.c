@@ -35,28 +35,30 @@
  * .03  09-25-89        lrd     add conditional scanning
  * .04  01-21-90        lrd     unlock on scan disable exit
  * .05  04-19-90        lrd     user select disable on 0 or 1
- * .06  10-31-90	mrk	no user select disable on 0 or 1
- * .07  10-31-90	mrk	extensible record and device support
+ * .06  10-31-90        mrk        no user select disable on 0 or 1
+ * .07  10-31-90        mrk        extensible record and device support
+ * .08  09-25-91        jba     added input link for seln
+ * .09  09-26-91        jba     added select_mask option
  */
 
-#include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
-#include	<lstLib.h>
+#include        <vxWorks.h>
+#include        <types.h>
+#include        <stdioLib.h>
+#include        <lstLib.h>
 
-#include	<alarm.h>
-#include	<dbAccess.h>
-#include	<dbDefs.h>
-#include	<dbFldTypes.h>
-#include	<errMdef.h>
-#include	<link.h>
-#include	<recSup.h>
-#include	<fanoutRecord.h>
+#include        <alarm.h>
+#include        <dbAccess.h>
+#include        <dbDefs.h>
+#include        <dbFldTypes.h>
+#include        <errMdef.h>
+#include        <link.h>
+#include        <recSup.h>
+#include        <fanoutRecord.h>
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-#define init_record NULL
+long init_record();
 long process();
 #define special NULL
 #define get_value NULL
@@ -73,60 +75,114 @@ long process();
 #define get_alarm_double NULL
 
 struct rset fanoutRSET={
-	RSETNUMBER,
-	report,
-	initialize,
-	init_record,
-	process,
-	special,
-	get_value,
-	cvt_dbaddr,
-	get_array_info,
-	put_array_info,
-	get_units,
-	get_precision,
-	get_enum_str,
-	get_enum_strs,
-	put_enum_str,
-	get_graphic_double,
-	get_control_double,
-	get_alarm_double };
+        RSETNUMBER,
+        report,
+        initialize,
+        init_record,
+        process,
+        special,
+        get_value,
+        cvt_dbaddr,
+        get_array_info,
+        put_array_info,
+        get_units,
+        get_precision,
+        get_enum_str,
+        get_enum_strs,
+        put_enum_str,
+        get_graphic_double,
+        get_control_double,
+        get_alarm_double };
 
 #define SELECT_ALL  0
 #define SELECTED 1
+#define SELECT_MASK 2
+
 
-static long process(paddr)
-    struct dbAddr	*paddr;
+static long init_record(pfanout)
+    struct fanoutRecord        *pfanout;
 {
-    struct fanoutRecord	*pfanout=(struct fanoutRecord *)(paddr->precord);
+
+    /* get link selection if sell is a constant and nonzero*/
+    if (pfanout->sell.type==CONSTANT && pfanout->sell.value.value!=0 ){
+            pfanout->seln = pfanout->sell.value.value;
+    }
+    return(0);
+}
+
+static long process(paddr)
+    struct dbAddr        *paddr;
+{
+    struct fanoutRecord        *pfanout=(struct fanoutRecord *)(paddr->precord);
     short           stat,sevr,nsta,nsev;
 
+
+    struct link    *plink;
+    unsigned short state;
+    short          i;
+    long           status=0;
+    long           options=0;
+    long           nRequest=1;
+
     pfanout->pact = TRUE;
-    if(pfanout->selm==SELECT_ALL) {
+
+    /* fetch link selection  */
+    if(pfanout->sell.type == DB_LINK){
+         status=dbGetLink(&(pfanout->sell.value.db_link),pfanout,DBR_USHORT,
+         &(pfanout->seln),&options,&nRequest);
+         if(status!=0) {
+             if (pfanout->nsev<VALID_ALARM) {
+                 pfanout->nsev = VALID_ALARM;
+                 pfanout->nsta = LINK_ALARM;
+             }
+         }
+    }
+    switch (pfanout->selm){
+    case (SELECT_ALL):
         if (pfanout->lnk1.type==DB_LINK) dbScanPassive(pfanout->lnk1.value.db_link.pdbAddr);
         if (pfanout->lnk2.type==DB_LINK) dbScanPassive(pfanout->lnk2.value.db_link.pdbAddr);
         if (pfanout->lnk3.type==DB_LINK) dbScanPassive(pfanout->lnk3.value.db_link.pdbAddr);
         if (pfanout->lnk4.type==DB_LINK) dbScanPassive(pfanout->lnk4.value.db_link.pdbAddr);
         if (pfanout->lnk5.type==DB_LINK) dbScanPassive(pfanout->lnk5.value.db_link.pdbAddr);
         if (pfanout->lnk6.type==DB_LINK) dbScanPassive(pfanout->lnk6.value.db_link.pdbAddr);
-    } else if(pfanout->selm==SELECTED) {
-	if(pfanout->seln<1 || pfanout->seln>6) {
-	    if(pfanout->nsev<VALID_ALARM) {
-		pfanout->nsev = VALID_ALARM;
-		pfanout->nsta = SOFT_ALARM;
-	    }
-	} else {
-	    struct link *plink;
-
-	    plink=&(pfanout->lnk1);
-	    plink += (pfanout->seln-1);
-	    dbScanPassive(plink->value.db_link.pdbAddr);
-	}
-    } else {
-	if(pfanout->nsev<VALID_ALARM) {
-	    pfanout->nsev = VALID_ALARM;
-	    pfanout->nsta = SOFT_ALARM;
-	}
+        break;
+    case (SELECTED):
+        if(pfanout->seln<0 || pfanout->seln>6) {
+            if(pfanout->nsev<VALID_ALARM) {
+                pfanout->nsev = VALID_ALARM;
+                pfanout->nsta = SOFT_ALARM;
+            }
+            break;
+        }
+        if(pfanout->seln==0) {
+            break;
+        }
+        plink=&(pfanout->lnk1);
+        plink += (pfanout->seln-1);
+        dbScanPassive(plink->value.db_link.pdbAddr);
+        break;
+    case (SELECT_MASK):
+        if(pfanout->seln==0) {
+            break;
+        }
+        if(pfanout->seln<0 || pfanout->seln>63 ) {
+            if(pfanout->nsev<VALID_ALARM) {
+                pfanout->nsev = VALID_ALARM;
+                pfanout->nsta = SOFT_ALARM;
+            }
+            break;
+        }
+        plink=&(pfanout->lnk1);
+        state=pfanout->seln;
+        for ( i=0; i<6; i++, state>>=1, plink++) {
+            if(state & 1 && plink->type==DB_LINK) dbScanPassive(plink->value.db_link.pdbAddr);
+        }
+        break;
+    default:
+        if(pfanout->nsev<VALID_ALARM) {
+            pfanout->nsev = VALID_ALARM;
+            pfanout->nsta = SOFT_ALARM;
+        }
     }
     pfanout->udf=FALSE;
     tsLocalTime(&pfanout->time);
@@ -142,8 +198,8 @@ static long process(paddr)
     pfanout->nsta = 0;
     pfanout->nsev = 0;
     if((stat!=nsta || sevr!=nsev)){
-	db_post_events(pfanout,&pfanout->stat,DBE_VALUE);
-	db_post_events(pfanout,&pfanout->sevr,DBE_VALUE);
+        db_post_events(pfanout,&pfanout->stat,DBE_VALUE);
+        db_post_events(pfanout,&pfanout->sevr,DBE_VALUE);
     }
     pfanout->pact=FALSE;
     return(0);

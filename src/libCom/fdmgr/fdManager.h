@@ -32,6 +32,9 @@
  *
  * History
  * $Log$
+ * Revision 1.8  1998/02/05 21:12:10  jhill
+ * removed questionable inline
+ *
  * Revision 1.7  1997/08/05 00:37:01  jhill
  * removed warnings
  *
@@ -95,7 +98,7 @@ public:
 
 	virtual void show (unsigned level) const;
 private:
-      const SOCKET	fd;
+	const SOCKET	fd;
 	const fdRegType	type;
 };
 
@@ -162,7 +165,7 @@ private:
 	unsigned	processInProg;
 	//
 	// Set to fdreg when in call back
-	// and nill ortherwise
+	// and nill otherwise
 	//
 	fdReg		*pCBReg; 
 

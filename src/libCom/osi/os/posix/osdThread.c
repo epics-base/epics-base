@@ -55,7 +55,7 @@ typedef struct epicsThreadOSD {
     int                isSuspended;
     unsigned int       osiPriority;
     char              *name;
-    int               isShell;
+    int               isOkToBlock;
 } epicsThreadOSD;
 
 static pthread_key_t getpthreadInfo;
@@ -583,16 +583,16 @@ const char *epicsThreadGetNameSelf()
     return(pthreadInfo->name);
 }
 
-int epicsThreadIsShellContext(epicsThreadId pthreadInfo) {
+int epicsThreadIsOkToBlock(epicsThreadId pthreadInfo) {
     assert(epicsThreadOnceCalled);
     assert(pthreadInfo);
-    return pthreadInfo->isShell;
+    return pthreadInfo->isOkToBlock;
 }
 
-void epicsThreadSetShellContext(epicsThreadId pthreadInfo,int isShell) {
+void epicsThreadSetOkToBlock(epicsThreadId pthreadInfo,int isOkToBlock) {
     assert(epicsThreadOnceCalled);
     assert(pthreadInfo);
-    pthreadInfo->isShell = isShell;
+    pthreadInfo->isOkToBlock = isOkToBlock;
 }
 
 void epicsThreadGetName(epicsThreadId pthreadInfo, char *name, size_t size)

@@ -128,7 +128,7 @@ epicsShareFunc int errlogVprintf(
 {
     int nchar;
     char *pbuffer;
-    int isShell = epicsThreadIsShellContext(epicsThreadGetIdSelf());
+    int isOkToBlock = epicsThreadIsOkToBlock(epicsThreadGetIdSelf());
 
     if(epicsInterruptIsInterruptContext()) {
 	epicsInterruptContextMessage
@@ -136,11 +136,11 @@ epicsShareFunc int errlogVprintf(
 	return 0;
     }
     errlogInit(0);
-    pbuffer = msgbufGetFree(!isShell);
+    pbuffer = msgbufGetFree(!isOkToBlock);
     if(!pbuffer) return(0);
     nchar = tvsnPrint(pbuffer,MAX_MESSAGE_SIZE,pFormat?pFormat:"",pvar);
     msgbufSetSize(nchar);
-    if(isShell) printf("%s",pbuffer);
+    if(isOkToBlock) printf("%s",pbuffer);
     return nchar;
 }
 
@@ -211,7 +211,7 @@ epicsShareFunc int errlogSevVprintf(
     char *pnext;
     int	 nchar;
     int	 totalChar=0;
-    int  isShell = epicsThreadIsShellContext(epicsThreadGetIdSelf());
+    int  isOkToBlock = epicsThreadIsOkToBlock(epicsThreadGetIdSelf());
     char *pmessage;
 
     if(pvtData.sevToLog>severity) return(0);
@@ -221,7 +221,7 @@ epicsShareFunc int errlogSevVprintf(
 	return 0;
     }
     errlogInit(0);
-    pnext = msgbufGetFree(!isShell);
+    pnext = msgbufGetFree(!isOkToBlock);
     pmessage = pnext;
     if(!pnext) return(0);
     nchar = sprintf(pnext,"sevr=%s ",errlogGetSevEnumString(severity));
@@ -233,7 +233,7 @@ epicsShareFunc int errlogSevVprintf(
         totalChar++;
     }
     msgbufSetSize(totalChar);
-    if(isShell) printf("%s",pmessage);
+    if(isOkToBlock) printf("%s",pmessage);
     return(nchar);
 }
 
@@ -308,7 +308,7 @@ epicsShareFunc void errPrintf(long status, const char *pFileName,
     char    *pnext;
     int     nchar;
     int     totalChar=0;
-    int     isShell = epicsThreadIsShellContext(epicsThreadGetIdSelf());
+    int     isOkToBlock = epicsThreadIsOkToBlock(epicsThreadGetIdSelf());
     char    *pmessage;
 
     if(epicsInterruptIsInterruptContext()) {
@@ -316,7 +316,7 @@ epicsShareFunc void errPrintf(long status, const char *pFileName,
         return;
     }
     errlogInit(0);
-    pnext = msgbufGetFree(!isShell);
+    pnext = msgbufGetFree(!isOkToBlock);
     pmessage = pnext;
     if(!pnext) return;
     if(pFileName){
@@ -342,7 +342,7 @@ epicsShareFunc void errPrintf(long status, const char *pFileName,
     strcpy(pnext,"\n");
     totalChar++ ; /*include the \n */
     msgbufSetSize(totalChar);
-    if(isShell) printf("%s",pmessage);
+    if(isOkToBlock) printf("%s",pmessage);
 }
 
 static void errlogInitPvt(void *arg)

@@ -46,6 +46,11 @@ epicsThreadPrivateTestHost_SRCS += epicsThreadPrivateTestMain.cpp epicsThreadPri
 PROD_HOST += epicsThreadPrivateTestHost
 OBJS_IOC_vxWorks += epicsThreadPrivateTest
 
+epicsOkToBlockTestHost_SRCS += epicsOkToBlockTestMain.cpp epicsOkToBlockTest.cpp
+PROD_HOST += epicsOkToBlockTestHost
+OBJS_IOC_vxWorks += epicsOkToBlockTest
+
+
 epicsTimerTestHost_SRCS += epicsTimerTestMain.cpp epicsTimerTest.cpp
 PROD_HOST += epicsTimerTestHost
 OBJS_IOC_vxWorks += epicsTimerTest

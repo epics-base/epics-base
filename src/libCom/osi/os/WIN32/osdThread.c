@@ -52,7 +52,7 @@ typedef struct win32ThreadParam {
     DWORD id;
     unsigned epicsPriority;
     char isSuspended;
-    int isShell;
+    int isOkToBlock;
 } win32ThreadParam;
 
 typedef struct epicsThreadPrivateOSD {
@@ -846,24 +846,24 @@ epicsShareFunc void epicsShareAPI epicsThreadGetName (
 }
 
 /*
- * epicsThreadIsShellContext () 
+ * epicsThreadIsOkToBlock () 
  */
-epicsShareFunc int epicsShareAPI epicsThreadIsShellContext ( epicsThreadId id ) 
+epicsShareFunc int epicsShareAPI epicsThreadIsOkToBlock ( epicsThreadId id ) 
 {
     win32ThreadParam *pParm = ( win32ThreadParam * ) id;
 
-    return pParm->isShell;
+    return pParm->isOkToBlock;
 }
 
 /*
- * epicsThreadSetShellContext () 
+ * epicsThreadSetOkToBlock () 
  */
-epicsShareFunc int epicsShareAPI epicsThreadSetShellContext (
-      epicsThreadId id, int isShell) 
+epicsShareFunc int epicsShareAPI epicsThreadSetOkToBlock (
+      epicsThreadId id, int isOkToBlock) 
 {
     win32ThreadParam *pParm = ( win32ThreadParam * ) id;
 
-    pParm->isShell = isShell;
+    pParm->isOkToBlock = isOkToBlock;
 }
 
 /*

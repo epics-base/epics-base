@@ -1196,7 +1196,7 @@ int tcpiiu::post_msg (char *pInBuf, unsigned long blockSize)
 {
     unsigned long size;
 
-    while (blockSize) {
+    while ( blockSize ) {
 
         /*
          * fetch a complete message header
@@ -1208,10 +1208,10 @@ int tcpiiu::post_msg (char *pInBuf, unsigned long blockSize)
             size = min (size, blockSize);
             
             pHdr = (char *) &this->curMsg;
-            memcpy( pHdr + this->curMsgBytes, pInBuf, size);
+            memcpy ( pHdr + this->curMsgBytes, pInBuf, size);
             
             this->curMsgBytes += size;
-            if (this->curMsgBytes < sizeof(this->curMsg)) {
+            if ( this->curMsgBytes < sizeof (this->curMsg) ) {
 #if 0 
                 printf ("waiting for %d msg hdr bytes\n", 
                     sizeof(this->curMsg) - this->curMsgBytes);
@@ -1225,8 +1225,7 @@ int tcpiiu::post_msg (char *pInBuf, unsigned long blockSize)
             /* 
              * fix endian of bytes 
              */
-            this->curMsg.m_postsize = 
-                ntohs (this->curMsg.m_postsize);
+            this->curMsg.m_postsize = ntohs (this->curMsg.m_postsize);
             this->curMsg.m_cmmd = ntohs (this->curMsg.m_cmmd);
             this->curMsg.m_dataType = ntohs (this->curMsg.m_dataType);
             this->curMsg.m_count = ntohs (this->curMsg.m_count);

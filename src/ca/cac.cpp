@@ -254,7 +254,7 @@ void cac::processRecvBacklog ()
 
         this->iiuListMutex.lock ();
         piiu = this->iiuListRecvPending.get ();
-        if (!piiu) {
+        if ( ! piiu ) {
             this->iiuListMutex.unlock ();
             break;
         }
@@ -263,14 +263,14 @@ void cac::processRecvBacklog ()
         this->iiuListIdle.add (*piiu);
         this->iiuListMutex.unlock ();
 
-        if (piiu->state == iiu_disconnected) {
+        if ( piiu->state == iiu_disconnected ) {
             delete piiu;
             continue;
         }
 
         char *pProto = (char *) cacRingBufferReadReserveNoBlock 
                             (&piiu->recv, &bytesToProcess);
-        while (pProto) {
+        while ( pProto ) {
             status = piiu->post_msg (pProto, bytesToProcess);
             if ( status == ECA_NORMAL ) {
                 cacRingBufferReadCommit (&piiu->recv, bytesToProcess);

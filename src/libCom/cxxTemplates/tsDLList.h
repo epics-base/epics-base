@@ -78,27 +78,27 @@ class tsDLList {
 public:
     tsDLList (); // create empty list
     unsigned count () const; // number of items on list
-    void add ( T &item ); // add item to end of list
-    void add ( tsDLList<T> &addList ); // add to end of list - addList left empty
-    void push ( T &item ); // add item to beginning of list
-    void remove ( T &item ); // remove item from list
+    void add ( T & item ); // add item to end of list
+    void add ( tsDLList<T> & addList ); // add to end of list - addList left empty
+    void push ( T & item ); // add item to beginning of list
+    void remove ( T & item ); // remove item from list
     T * get (); // removes first item on list
     T * pop (); // same as get ()
-    void insertAfter ( T &item, T &itemBefore ); // insert item immediately after itemBefore
-    void insertBefore ( T &item, T &itemAfter ); // insert item immediately before itemAfter
-    int find (const T &item) const; // returns -1 if not present, node number if present
-    T *first (void) const; // ptr to first item on list
-    T *last (void) const; // ptr to last item on list
+    void insertAfter ( T & item, T & itemBefore ); // insert item immediately after itemBefore
+    void insertBefore ( T & item, T & itemAfter ); // insert item immediately before itemAfter
+    int find ( const T & item ) const; // returns -1 if not present, node number if present
+    T * first ( void ) const; // ptr to first item on list
+    T * last ( void ) const; // ptr to last item on list
     tsDLIterConstBD <T> firstIter () const;
     tsDLIterBD <T> firstIter ();
     tsDLIterConstBD <T> lastIter () const;
     tsDLIterBD <T> lastIter ();
 private:
-    T *pFirst;
-    T *pLast;
+    T * pFirst;
+    T * pLast;
     unsigned itemCount;
     void clear (); 
-    tsDLList (const tsDLList &); // not allowed
+    tsDLList ( const tsDLList & ); // not allowed
     const tsDLList <T> & operator = ( const tsDLList <T> & ); // not allowed
     friend class tsDLIter<T>; // deprecated
     friend class tsDLFwdIter<T>; // deprecated
@@ -124,8 +124,8 @@ public:
     tsDLIterConstBD<T> operator -- (int); 
     const T * pointer () const;
 private:
-    const T *pEntry;
-    tsDLIterConstBD ( const T *pInitialEntry );
+    const T * pEntry;
+    tsDLIterConstBD ( const T * pInitialEntry );
     friend class tsDLList <T>;
 };
 
@@ -138,17 +138,17 @@ template <class T>
 class tsDLIterBD {
 public:
     bool valid () const;
-    bool operator == (const tsDLIterBD<T> &rhs) const;
-    bool operator != (const tsDLIterBD<T> &rhs) const;
+    bool operator == ( const tsDLIterBD<T> & rhs ) const;
+    bool operator != ( const tsDLIterBD<T> & rhs ) const;
     T & operator * () const;
     T * operator -> () const;
     tsDLIterBD<T> & operator ++ (); 
-    tsDLIterBD<T> operator ++ (int); 
+    tsDLIterBD<T> operator ++ ( int ); 
     tsDLIterBD<T> & operator -- (); 
-    tsDLIterBD<T> operator -- (int);  
+    tsDLIterBD<T> operator -- ( int );  
     T * pointer () const;
 private:
-    T *pEntry;
+    T * pEntry;
     tsDLIterBD ( T *pInitialEntry );
     friend class tsDLList <T>;
 };

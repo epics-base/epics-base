@@ -13,8 +13,14 @@
  *
  *	epicsShareFunc int epicsShareAPI 
  *			a_func (int arg); 	function prototype
- *	epicsShareExtern  int a_var; 		reference variable 
- *	epicsShareDef int a_var= 4; 		create variable instance 
+ * or
+ *	epicsShareFunc int epicsShareAPIV 
+ *			a_func (int arg, ...); 	variable args function prototype
+ *                                                (using either ... or va_list)
+ *	epicsShareExtern  int a_var; 		reference variable
+ *                                                (reference declaration)
+ *	epicsShareDef int a_var= 4; 		create variable instance
+ *                                                (definition declaration)
  *	class epicsShareClass a_class; 		reference a class 
  *
  * Usually the epicsShare... macros expand to
@@ -42,6 +48,7 @@
 #undef epicsShareClass
 #undef epicsShareFunc
 #undef epicsShareAPI
+#undef epicsShareAPIV
 #undef READONLY
 
 #if defined(_WIN32)
@@ -61,6 +68,12 @@
 	 * __declspec(xxxx))
 	 */
 #	define epicsShareAPI __stdcall
+        /*
+	 * Variable args functions cannot be __stdcall
+	 * Use this for variable args functions
+	 * (Those using either ... or va_list arguments)
+	 */
+#	define epicsShareAPIV __cdecl
 #	define epicsShareDef __declspec(dllexport)
 #	define READONLY const
 
@@ -82,6 +95,7 @@
 #	define epicsShareClass
 #	define epicsShareFunc
 #	define epicsShareAPI
+#	define epicsShareAPIV
 
 #else
 
@@ -89,6 +103,7 @@
 
 #	define epicsShareExtern extern
 #	define epicsShareAPI
+#	define epicsShareAPIV
 #	define epicsShareClass
 #	define epicsShareDef
 

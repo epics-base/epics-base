@@ -1,0 +1,19 @@
+
+# $Id$
+#
+# This file is maintained by the EPICS community.
+
+# Vx GNU cross compiler suffix
+CMPLR_SUFFIX = mips
+ 
+# For Vx directories of form:
+#   $(VX_DIR)/$(HOST_ARCH).$(ARCH_CLASS)/bin
+ARCH_CLASS = mips
+
+# Architecture specific build flags
+ARCH_DEP_CFLAGS = -EB -mcpu=r4000 -mips3 -mgp32 -mfp32 -non_shared -G 0 -DCPU=R4000
+
+# Arch specific flags
+GCC += -fsigned-char -DsymFindByName=symFindByNameMips
+LD += -EB -X
+

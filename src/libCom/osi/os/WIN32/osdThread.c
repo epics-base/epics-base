@@ -22,8 +22,12 @@
 #include <stdio.h>
 
 #define VC_EXTRALEAN
-#include <winsock2.h>
-#include <process.h>
+#define STRICT
+#if _WIN64
+#   define _WIN32_WINNT 0x400 /* defining this drops support for W95 */
+#endif
+#include <windows.h>
+#include <process.h> /* for _endthread() etc */
 
 #define epicsExportSharedSymbols
 #include "shareLib.h"
@@ -403,16 +407,19 @@ static void epicsThreadInit ( void )
         }
 
         /* 
-         * not supported on W95 but supported by all other versions of
-         * windows and by Borland 551, and probably required by 64 bit 
-         * windows
+         * InterlockedCompareExchangePointer is not supported on W95 but is
+         * supported by all other versions of windows and by Borland 551.
+         * Since it will be convienent to build on NT and then run on W95
+         * then we use the new function only if its a build for 64 bit
+         * windows. On 32 bit windows the conversion from pointer to type
+         * LONG should always work correctly.
          */
-#   if _WIN32_WINDOWS >= 0x0410 && WINVER >= 0x0400
+#   if _WIN64
         if ( InterlockedCompareExchangePointer ( & win32ThreadGlobalMutex, 
             win32ThreadGlobalMutexTmp, 0 ) != 0) {
 #   else
-        if ( InterlockedCompareExchange ( & win32ThreadGlobalMutex, 
-            win32ThreadGlobalMutexTmp, 0 ) != 0 ) {
+        if ( InterlockedCompareExchange ( (LPLONG) & win32ThreadGlobalMutex, 
+            (LONG) win32ThreadGlobalMutexTmp, 0 ) != 0 ) {
 #   endif
             CloseHandle (win32ThreadGlobalMutexTmp);
             /* wait for init to complete */

@@ -5,6 +5,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.7  1999/05/13 22:09:23  jhill
+ * added new line at EOF
+ *
  * Revision 1.6  1999/05/13 20:59:39  jhill
  * removed redundant includes
  *
@@ -101,41 +104,5 @@ epicsShareDef const char* aitScanf[aitTotal] = {
 	0
 };
 
-/*
- * maximum value within type - joh
- */
-epicsShareDef double aitMax[aitTotal] = {
-	-1,
-	SCHAR_MAX,
-	UCHAR_MAX,
-	SHRT_MAX,
-	USHRT_MAX,
-	USHRT_MAX,
-	INT_MAX,
-	UINT_MAX,
-	FLT_MAX,
-	DBL_MAX,
-	-1,
-	-1,
-	-1
-};
 
-/*
- * minimum value within ait type - joh
- */
-epicsShareDef double aitMin[aitTotal] = {
-	+1,
-	SCHAR_MIN,
-	0u,
-	SHRT_MIN,
-	0u,
-	0u,
-	INT_MIN,
-	0u,
-	-FLT_MAX,
-	-DBL_MAX,
-	+1,
-	+1,
-	+1
-};
 

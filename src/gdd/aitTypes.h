@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.13  1999/10/21 23:41:11  jhill
+ * reformatted
+ *
  * Revision 1.12  1999/05/13 20:59:39  jhill
  * removed redundant includes
  *
@@ -161,8 +164,6 @@ epicsShareExtern const size_t aitSize[aitTotal];
 epicsShareExtern const char*  aitName[aitTotal];
 epicsShareExtern const char*  aitPrintf[aitTotal];
 epicsShareExtern const char*  aitScanf[aitTotal];
-epicsShareExtern double aitMax[aitTotal];
-epicsShareExtern double aitMin[aitTotal];
 #ifdef __cplusplus
 }
 #endif

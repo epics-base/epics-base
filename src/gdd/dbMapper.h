@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.12  2000/10/12 16:10:53  jhill
+ * changing include order fixes GNU warning
+ *
  * Revision 1.11  2000/06/27 22:32:22  jhill
  * backed out over-zelous use of smart pointers
  *
@@ -90,24 +93,6 @@ epicsShareExtern const gddDbrMapFuncTable gddMapDbr[DBM_N_DBR_TYPES];
 
 epicsShareFunc void gddMakeMapDBR(gddApplicationTypeTable& tt);
 epicsShareFunc void gddMakeMapDBR(gddApplicationTypeTable* tt);
-
-inline bool gddDbrToAitValidIndex (unsigned index) 
-{
-    epicsShareExtern const unsigned gddDbrToAitNElem;
-    return index < gddDbrToAitNElem; 
-}
-
-inline bool gddAitToDbrValidIndex (unsigned index) 
-{ 
-    epicsShareExtern const unsigned gddAitToDbrNElem;
-    return index < gddAitToDbrNElem; 
-}
-
-inline bool gddMapDbrValidIndex (unsigned index) 
-{
-    epicsShareExtern const unsigned gddMapDbrSize;
-    return index < gddMapDbrSize; 
-}
 
 #endif
 

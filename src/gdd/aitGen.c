@@ -5,6 +5,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.9  1999/10/28 23:33:41  jhill
+ * use fully qualified namespace names for C++ RTL classes
+ *
  * Revision 1.8  1999/10/28 00:27:20  jhill
  * special case enum to string conversion
  *
@@ -45,9 +48,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
+#include <float.h>
 
 #define epicsExportSharedSymbols
 #include "aitTypes.h"
+
+/*
+ * maximum value for each type - joh
+ */
+double aitMax[aitTotal];
+
+/*
+ * minimum value for each ait type - joh
+ */
+double aitMin[aitTotal];
 
 /*
    Still need to generate to "FromNet" matrix and rename the "Net" conversions
@@ -87,9 +102,47 @@ static const char* table_def[] = {
 
 static FILE *dfd;
 
+/*
+ * maximum, minimum value for each ait type - joh
+ */
+void initMinMaxAIT ()
+{
+    unsigned i;
+
+    for ( i = 0u; i < sizeof ( aitMax ) / sizeof ( aitMax [ 0 ] ); i++ ) {
+        aitMax [ i ] = -DBL_MAX;
+    }
+
+    for ( i = 0u; i < sizeof ( aitMax ) / sizeof ( aitMax [ 0 ] ); i++ ) {
+        aitMin [ i ] = DBL_MAX;
+    }
+
+	aitMax [ aitEnumInt8 ] = SCHAR_MAX;
+	aitMax [ aitEnumUint8 ] = UCHAR_MAX;
+	aitMax [ aitEnumInt16 ] = SHRT_MAX;
+	aitMax [ aitEnumUint16 ] = USHRT_MAX;
+	aitMax [ aitEnumEnum16 ] = USHRT_MAX;
+	aitMax [ aitEnumInt32 ] = INT_MAX;
+	aitMax [ aitEnumUint32 ] = UINT_MAX;
+	aitMax [ aitEnumFloat32 ] = FLT_MAX;
+	aitMax [ aitEnumFloat64 ] = DBL_MAX;
+
+	aitMin [ aitEnumInt8 ] = SCHAR_MIN;
+	aitMin [ aitEnumUint8 ] = 0u;
+	aitMin [ aitEnumInt16 ] = SHRT_MIN;
+	aitMin [ aitEnumUint16 ] = 0u;
+	aitMin [ aitEnumEnum16 ] = 0u;
+	aitMin [ aitEnumInt32 ] = INT_MIN;
+	aitMin [ aitEnumUint32 ] = 0u;
+	aitMin [ aitEnumFloat32 ] = -FLT_MAX;
+	aitMin [ aitEnumFloat64 ] = -DBL_MAX;
+};
+
 int main(int argc,char* argv[])
 {
 	int i,j,k;
+
+    initMinMaxAIT ();
 
 	if((dfd=fopen(FILE_NAME,"w"))==NULL)
 	{

@@ -31,6 +31,9 @@
 =======
  * History
  * $Log$
+ * Revision 1.11  1999/08/04 23:05:29  jhill
+ * applied chronIntId name change
+ *
  * Revision 1.10  1999/01/28 20:18:14  jhill
  * removed implicit int
  *
@@ -83,7 +86,7 @@
 	// This explicitly instantiates the template class's member
 	// functions into "templInst.o"
 	//
-	template class resTable <casEventMaskEntry, stringId>;
+	template class resTable <casEventMaskEntry, stringIdentifier <16,8> >;
 	template class resTable <casRes, chronIntId>;
 #endif
 

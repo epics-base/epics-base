@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.11  1999/08/04 23:53:20  jhill
+ * elimated init flag and init routine
+ *
  * Revision 1.10  1998/12/01 23:32:15  jhill
  * removed inline frm evt msk alloc
  *
@@ -134,9 +137,9 @@ casEventMask casEventRegistry::registerEvent(const char *pName)
 	// NOTE: pName outlives id here
 	// (so the refString option is ok)
 	//
-	stringId 		id (pName, stringId::refString);
-	casEventMaskEntry	*pEntry;
-	casEventMask		mask;
+	stringIdentifier <16,8> id (pName, stringId::refString);
+	casEventMaskEntry       *pEntry;
+	casEventMask            mask;
 
 	this->mutex.osiLock();
 	pEntry = this->lookup (id);
@@ -189,7 +192,7 @@ void casEventRegistry::show(unsigned level) const
 		printf ("casEventRegistry: bit allocator = %d\n", 
 				this->allocator);
 	}
-	this->resTable <casEventMaskEntry, stringId>::show(level);
+	this->resTable <casEventMaskEntry, stringIdentifier <16,8> >::show(level);
 	this->mutex.osiUnlock();
 }
 
@@ -198,7 +201,7 @@ void casEventRegistry::show(unsigned level) const
 //
 casEventMaskEntry::casEventMaskEntry(
 	casEventRegistry &regIn, casEventMask maskIn, const char *pName) :
-	casEventMask (maskIn), stringId (pName), reg (regIn)
+	casEventMask (maskIn), stringIdentifier <16,8> (pName), reg (regIn)
 {
 	int 	stat;
 
@@ -234,6 +237,6 @@ void casEventMaskEntry::destroy()
 void casEventMaskEntry::show (unsigned level) const 
 {
 	this->casEventMask::show(level);
-	this->stringId::show(level);
+	this->stringIdentifier <16,8>::show(level);
 }
 

@@ -755,7 +755,7 @@ private:
 // casEventMaskEntry
 //
 class casEventMaskEntry : public tsSLNode<casEventMaskEntry>,
-	public casEventMask, public stringId {
+	public casEventMask, public stringIdentifier <16,8> {
 public:
 	casEventMaskEntry (casEventRegistry &regIn,
 	    casEventMask maskIn, const char *pName);
@@ -772,12 +772,12 @@ static const unsigned casEventRegistryHashTableSize = 256u;
 //
 // casEventRegistry
 //
-class casEventRegistry : private resTable <casEventMaskEntry, stringId> {
+class casEventRegistry : private resTable <casEventMaskEntry, stringIdentifier <16,8> > {
     friend class casEventMaskEntry;
 public:
     
     casEventRegistry (osiMutex &mutexIn) : mutex(mutexIn), allocator(0), 
-        resTable<casEventMaskEntry, stringId> (casEventRegistryHashTableSize) {}
+        resTable<casEventMaskEntry, stringIdentifier <16,8> > (casEventRegistryHashTableSize) {}
     
     virtual ~casEventRegistry();
     

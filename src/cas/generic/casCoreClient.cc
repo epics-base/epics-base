@@ -26,45 +26,6 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
- *
- * History
- * $Log$
- * Revision 1.11  1998/12/19 00:04:50  jhill
- * renamed createPV() to pvAttach()
- *
- * Revision 1.10  1998/10/28 23:51:00  jhill
- * server nolonger throws exception when a poorly formed get/put call back
- * request arrives. Instead a get/put call back response is sent which includes
- * unsuccessful status
- *
- * Revision 1.9  1998/07/08 15:38:04  jhill
- * fixed lost monitors during flow control problem
- *
- * Revision 1.8  1998/06/16 02:25:05  jhill
- * cosmetic
- *
- * Revision 1.7  1998/02/05 22:52:46  jhill
- * removed trash
- *
- * Revision 1.6  1997/06/13 09:15:55  jhill
- * connect proto changes
- *
- * Revision 1.5  1997/04/10 19:34:03  jhill
- * API changes
- *
- * Revision 1.4  1996/11/02 00:54:07  jhill
- * many improvements
- *
- * Revision 1.3  1996/09/16 18:23:59  jhill
- * vxWorks port changes
- *
- * Revision 1.2  1996/08/13 22:53:14  jhill
- * changes for MVC++
- *
- * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
- * ca server installation
- *
- *
  */
 
 
@@ -108,17 +69,15 @@ casCoreClient::~casCoreClient()
 
 	this->osiLock();
 	tsDLIterBD<casAsyncIOI>   iterIO(this->ioInProgList.first());
-	tsDLIterBD<casAsyncIOI>   tmpIO;
-	tsDLIterBD<casAsyncIOI>   eolIO;
 
 	//
 	// cancel any pending asynchronous IO
 	//
-	while (iterIO!=eolIO) {
+	while (iterIO!=tsDLIterBD<casAsyncIOI>::eol()) {
 		//
 		// destructor removes from this list
 		//
-		tmpIO = iterIO;
+		tsDLIterBD<casAsyncIOI> tmpIO = iterIO;
 		++tmpIO;
 		iterIO->destroy();
 		iterIO = tmpIO;

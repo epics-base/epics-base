@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.7  1998/09/24 20:33:03  jhill
+ * cosmetic
+ *
  * Revision 1.6  1998/07/08 15:38:03  jhill
  * fixed lost monitors during flow control problem
  *
@@ -90,13 +93,11 @@ casChannelI::~casChannelI()
 	// cancel any pending asynchronous IO 
 	//
 	tsDLIterBD<casAsyncIOI> iterAIO(this->ioInProgList.first());
-	const tsDLIterBD<casAsyncIOI> eolAIO;
-	tsDLIterBD<casAsyncIOI> tmpAIO;
-	while ( iterAIO!=eolAIO ) {
+	while ( iterAIO!=tsDLIterBD<casAsyncIOI>::eol() ) {
 		//
 		// destructor removes from this list
 		//
-		tmpAIO = iterAIO;
+		tsDLIterBD<casAsyncIOI> tmpAIO = iterAIO;
 		++tmpAIO;
 		iterAIO->destroy();
 		iterAIO = tmpAIO;
@@ -106,14 +107,13 @@ casChannelI::~casChannelI()
 	// cancel the monitors 
 	//
 	tsDLIterBD<casMonitor> iterMon(this->monitorList.first());
-	const tsDLIterBD<casMonitor> eolMon;
-	tsDLIterBD<casMonitor> tmpMon;
-	while ( iterMon!=eolMon ) {
+	while ( iterMon!=tsDLIterBD<casMonitor>::eol() ) {
 		casMonitor *pMonitor;
 		//
 		// destructor removes from this list
 		//
-		pMonitor = tmpMon = iterMon;
+        tsDLIterBD<casMonitor> tmpMon = iterMon;
+		pMonitor = tmpMon;
 		++tmpMon;
 		delete pMonitor;
 		iterMon = tmpMon;
@@ -171,13 +171,11 @@ void casChannelI::clearOutstandingReads()
     // cancel any pending asynchronous IO 
     //
 	tsDLIterBD<casAsyncIOI> iterIO(this->ioInProgList.first());
-	tsDLIterBD<casAsyncIOI> eolIO;
-	tsDLIterBD<casAsyncIOI> tmp;
-	while (iterIO!=eolIO) {
+	while (iterIO!=tsDLIterBD<casAsyncIOI>::eol() ) {
 		//
 		// destructor removes from this list
 		//
-		tmp = iterIO;
+		tsDLIterBD<casAsyncIOI> tmp = iterIO;
 		++tmp;
 		iterIO->destroyIfReadOP();
 		iterIO = tmp;
@@ -195,12 +193,11 @@ void casChannelI::show(unsigned level) const
 	this->lock();
 
 	tsDLIterBD<casMonitor> iter(this->monitorList.first());
-	tsDLIterBD<casMonitor> eol;
-	if ( iter!=eol ) {
+	if ( iter!=tsDLIterBD<casMonitor>::eol() ) {
 		printf("List of CA events (monitors) for \"%s\".\n",
 			this->pv->getName());
 	}
-	while ( iter!=eol ) {
+	while ( iter!=tsDLIterBD<casMonitor>::eol() ) {
 		iter->show(level);
 		++iter;
 	}

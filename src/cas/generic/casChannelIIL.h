@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  1997/04/10 19:34:00  jhill
+ * API changes
+ *
  * Revision 1.5  1996/11/02 00:54:03  jhill
  * many improvements
  *
@@ -85,8 +88,7 @@ inline void casChannelI::postEvent(const casEventMask &select, gdd &event)
 {
 	this->lock();
         tsDLIterBD<casMonitor> iter(this->monitorList.first());
-        const tsDLIterBD<casMonitor> eol;
-        while ( iter!=eol ) {
+        while ( iter!=tsDLIterBD<casMonitor>::eol() ) {
                 iter->post(select, event);
 		++iter;
         }
@@ -130,8 +132,7 @@ inline casMonitor *casChannelI::findMonitor(const caResId clientIdIn)
 {
 	this->lock();
 	tsDLIterBD<casMonitor> iter(this->monitorList.first());
-	tsDLIterBD<casMonitor> eol;
-	while ( iter!=eol ) {
+    while ( iter!=tsDLIterBD<casMonitor>::eol() ) {
 		if ( clientIdIn == iter->getClientId()) {
 			casMonitor *pMon = iter;
 			return pMon;
@@ -184,7 +185,7 @@ inline void casChannelI::removeAsyncIO(casAsyncIOI &io)
 //
 inline const caResId casChannelI::getSID()
 {
-	return this->uintId::getId();
+    return this->casRes::getId();
 }
 
 //

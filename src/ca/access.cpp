@@ -623,7 +623,7 @@ extern "C" int epicsShareAPI ca_pend ( ca_real timeout, int early )
 /*
  * ca_pend_event ()
  */
-extern "C" int epicsShareAPI ca_pend_event (ca_real timeout)
+extern "C" int epicsShareAPI ca_pend_event ( ca_real timeout )
 {
     oldCAC *pcac;
     int status = fetchClientContext ( &pcac );
@@ -649,7 +649,7 @@ extern "C" int epicsShareAPI ca_pend_event (ca_real timeout)
 /*
  * ca_pend_io ()
  */
-extern "C" int epicsShareAPI ca_pend_io (ca_real timeout)
+extern "C" int epicsShareAPI ca_pend_io ( ca_real timeout )
 {
     oldCAC *pcac;
     int status = fetchClientContext ( &pcac );
@@ -657,13 +657,18 @@ extern "C" int epicsShareAPI ca_pend_io (ca_real timeout)
         return status;
     }
 
-    // preserve past odd ball behavior of waiting forever when
-    // the delay is zero
-    if ( timeout == 0.0 ) {
-        return pcac->pendIO ( DBL_MAX );
-    }
+    try {
+        // preserve past odd ball behavior of waiting forever when
+        // the delay is zero
+        if ( timeout == 0.0 ) {
+            return pcac->pendIO ( DBL_MAX );
+        }
 
-    return pcac->pendIO ( timeout );
+        return pcac->pendIO ( timeout );
+    }
+    catch ( ... ) {
+        return ECA_INTERNAL;
+    }
 }
 
 /*

@@ -337,7 +337,7 @@ epicsShareFunc threadId epicsShareAPI threadGetIdSelf (void)
     return (threadId) TlsGetValue (tlsIndexWIN32);
 }
 
-epicsShareFunc threadVarId epicsShareAPI threadPrivateCreate ()
+epicsShareFunc threadPrivateId epicsShareAPI threadPrivateCreate ()
 {
     osdThreadPrivate *p = (osdThreadPrivate *) malloc (sizeof (*p));
     if (p) {
@@ -347,24 +347,24 @@ epicsShareFunc threadVarId epicsShareAPI threadPrivateCreate ()
             p = 0;
         }
     }
-    return (threadVarId) p;
+    return (threadPrivateId) p;
 }
 
-epicsShareFunc void epicsShareAPI threadPrivateDelete (threadVarId id)
+epicsShareFunc void epicsShareAPI threadPrivateDelete (threadPrivateId id)
 {
     osdThreadPrivate *p = (osdThreadPrivate *) id;
     BOOL stat = TlsFree (p->key);
     assert (stat);
 }
 
-epicsShareFunc void epicsShareAPI threadPrivateSet (threadVarId id, void *pVal)
+epicsShareFunc void epicsShareAPI threadPrivateSet (threadPrivateId id, void *pVal)
 {
     struct osdThreadPrivate *pPvt = (struct osdThreadPrivate *) id;
     BOOL stat = TlsSetValue (pPvt->key, (void *) pVal );
     assert (stat);
 }
 
-epicsShareFunc void * epicsShareAPI threadPrivateGet (threadVarId id)
+epicsShareFunc void * epicsShareAPI threadPrivateGet (threadPrivateId id)
 {
     struct osdThreadPrivate *pPvt = (struct osdThreadPrivate *) id;
     return (void *) TlsGetValue (pPvt->key);

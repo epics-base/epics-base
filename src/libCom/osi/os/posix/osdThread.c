@@ -287,7 +287,7 @@ threadId threadGetIdSelf(void) {
     return((threadId)pthreadInfo);
 }
 
-threadVarId threadPrivateCreate(void)
+threadPrivateId threadPrivateCreate(void)
 {
     pthread_key_t *key;
     int status;
@@ -295,10 +295,10 @@ threadVarId threadPrivateCreate(void)
     key = callocMustSucceed(1,sizeof(pthread_key_t),"threadPrivateCreate");
     status = pthread_key_create(key,0);
     checkStatusQuit(status,"pthread_key_create","threadPrivateCreate");
-    return((threadVarId)key);
+    return((threadPrivateId)key);
 }
 
-void threadPrivateDelete(threadVarId id)
+void threadPrivateDelete(threadPrivateId id)
 {
     pthread_key_t *key = (pthread_key_t *)id;
     int status;
@@ -307,7 +307,7 @@ void threadPrivateDelete(threadVarId id)
     checkStatusQuit(status,"pthread_key_delete","threadPrivateDelete");
 }
 
-void threadPrivateSet (threadVarId id, void *value)
+void threadPrivateSet (threadPrivateId id, void *value)
 {
     pthread_key_t *key = (pthread_key_t *)id;
     int status;
@@ -316,7 +316,7 @@ void threadPrivateSet (threadVarId id, void *value)
     checkStatusQuit(status,"pthread_setspecific","threadPrivateSet");
 }
 
-void *threadPrivateGet(threadVarId id)
+void *threadPrivateGet(threadPrivateId id)
 {
     pthread_key_t *key = (pthread_key_t *)id;
     int status;

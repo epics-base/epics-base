@@ -228,17 +228,17 @@ threadGetIdSelf (void)
  * Thread private storage implementation based on the vxWorks
  * implementation by Andrew Johnson APS/ASD.
  */
-threadVarId threadPrivateCreate ()
+threadPrivateId threadPrivateCreate ()
 {
     return (void *)++threadVariableCount;
 }
 
-void threadPrivateDelete (threadVarId id)
+void threadPrivateDelete (threadPrivateId id)
 {
     /* empty */
 }
 
-void threadPrivateSet (threadVarId id, void *pvt)
+void threadPrivateSet (threadPrivateId id, void *pvt)
 {
     int varIndex = (int)id;
     rtems_unsigned32 note;
@@ -266,7 +266,7 @@ void threadPrivateSet (threadVarId id, void *pvt)
     v->threadVariables[varIndex] = pvt;
 }
 
-void * threadPrivateGet (threadVarId id)
+void * threadPrivateGet (threadPrivateId id)
 {
     assert (taskVars);
     return ((struct taskVars *)taskVars)->threadVariables[(int)id];

@@ -45,11 +45,11 @@ epicsShareFunc int epicsShareAPI threadIsSuspended(threadId id);
 epicsShareFunc void epicsShareAPI threadSleep(double seconds);
 epicsShareFunc threadId epicsShareAPI threadGetIdSelf(void);
 
-typedef void * threadVarId;
-epicsShareFunc threadVarId epicsShareAPI threadPrivateCreate (void);
-epicsShareFunc void epicsShareAPI threadPrivateDelete (threadVarId id);
-epicsShareFunc void epicsShareAPI threadPrivateSet (threadVarId, void *);
-epicsShareFunc void * epicsShareAPI threadPrivateGet (threadVarId);
+typedef void * threadPrivateId;
+epicsShareFunc threadPrivateId epicsShareAPI threadPrivateCreate (void);
+epicsShareFunc void epicsShareAPI threadPrivateDelete (threadPrivateId id);
+epicsShareFunc void epicsShareAPI threadPrivateSet (threadPrivateId, void *);
+epicsShareFunc void * epicsShareAPI threadPrivateGet (threadPrivateId);
 
 #ifdef __cplusplus
 }
@@ -90,7 +90,7 @@ public:
     void set (T *);
     class unableToCreateThreadPrivate {}; // exception
 private:
-    threadVarId id;
+    threadPrivateId id;
 };
 
 #endif /* __cplusplus */

@@ -30,6 +30,7 @@
 /*	120991	joh	better quit when unable to broadcast		*/
 /*	022692	joh	better prefix on messages			*/
 /*	031892	joh	initial rebroadcast delay is now a #define	*/
+/*	042892	joh	made local routines static			*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -101,8 +102,10 @@
 static struct timeval notimeout = {0,0};
 
 void 	close_ioc();
+void	recv_msg();
 void	tcp_recv_msg();
 void	udp_recv_msg();
+void	notify_ca_repeater();
 int	cac_send_msg_piiu();
 #ifdef VMS
 void   	vms_recv_msg_ast();
@@ -203,40 +206,11 @@ unsigned short			*iocix;
 
 
 /*
- *	client_channel_exists()
- *	(usually will find it in the first piiu)
- *
- *	LOCK should be on while in this routine
- *
- *	iocix field in the chid block not used here because
- *	I dont trust the chid ptr yet.
- */
-int 
-client_channel_exists(chan)
-	chid            chan;
-{
-  	register struct ioc_in_use 	*piiu;
-  	register struct ioc_in_use 	*pnext_iiu = &iiu[nxtiiu];
-	int				status;
-
-	for (piiu = iiu; piiu < pnext_iiu; piiu++) {
-		/*
-		 * lstFind returns the node number or ERROR
- 		 */
-		status = lstFind(&piiu->chidlist, chan);
-		if (status != ERROR) {
-			return TRUE;
-		}
-	}
-	return FALSE;
-}
-
-
-/*
  *	CREATE_NET_CHANNEL()
  *
  *	LOCK should be on while in this routine
  */
+static int
 create_net_chan(piiu)
 struct ioc_in_use		*piiu;
 {
@@ -549,6 +523,7 @@ struct ioc_in_use		*piiu;
  * 	LOCK should be on while in this routine
  * 	(MULTINET TCP/IP routines are not reentrant)
  */
+static void 
 notify_ca_repeater()
 {
 	struct sockaddr_in	saddr;
@@ -812,7 +787,6 @@ struct timeval 	*ptimeout;
   	long				status;
   	register struct ioc_in_use 	*piiu;
   	struct timeval 			*ptmptimeout;
-  	void				recv_msg();
 
   	ptmptimeout = ptimeout;
   	while(TRUE){
@@ -833,8 +807,11 @@ struct timeval 	*ptimeout;
 			if(status == 0)
 				return;
                                              
-    			if(MYERRNO == EINTR)
-				return;      
+    			if(MYERRNO == EINTR){
+				printf("cac: select was interrupted\n");
+				TCPDELAY;
+				continue;
+			}
     			else if(MYERRNO == EWOULDBLOCK){
 				printf("CAC: blocked at select ?\n");
 				return;
@@ -867,7 +844,8 @@ struct timeval 	*ptimeout;
  *
  *
  */
-void recv_msg(piiu)
+static void 
+recv_msg(piiu)
 struct ioc_in_use	*piiu;
 {
 
@@ -896,7 +874,8 @@ struct ioc_in_use	*piiu;
  * TCP_RECV_MSG()
  *
  */
-void tcp_recv_msg(piiu)
+static void 
+tcp_recv_msg(piiu)
 struct ioc_in_use	*piiu;
 {
   	long			byte_cnt;
@@ -996,7 +975,8 @@ struct ioc_in_use	*piiu;
  *	UDP_RECV_MSG()
  *
  */
-void udp_recv_msg(piiu)
+static void 
+udp_recv_msg(piiu)
 struct ioc_in_use	*piiu;
 {
   	int			status;
@@ -1097,7 +1077,8 @@ struct ioc_in_use	*piiu;
  * RECV_TASK()
  *
  */
-void recv_task(piiu, moms_tid)
+static void 
+recv_task(piiu, moms_tid)
 struct ioc_in_use	*piiu;
 int			moms_tid;
 {
@@ -1142,7 +1123,8 @@ int			moms_tid;
  *
  */
 #ifdef VMS
-void vms_recv_msg_ast(piiu)
+static void 
+vms_recv_msg_ast(piiu)
 struct ioc_in_use	*piiu;
 {
   	short		io_status;

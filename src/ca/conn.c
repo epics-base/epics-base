@@ -31,6 +31,9 @@
 /*									*/
 /*
  * $Log$
+ * Revision 1.43.4.2  1999/09/02 21:16:42  jhill
+ * fixed missing paramter to checkConnWatchDogs() func
+ *
  * Revision 1.43.4.1  1999/07/15 20:33:46  jhill
  * added congestion thresh to search sched alg
  *
@@ -619,9 +622,9 @@ void mark_server_available (const struct sockaddr_in *pnet_addr)
 	 * from replying at once.
 	 */
 	{
-  	  	struct sockaddr_in	saddr;
-		int			saddr_length = sizeof(saddr);
-		int			status;
+  	  	struct sockaddr_in  saddr;
+		osiSocklen_t        saddr_length = sizeof(saddr);
+		int                 status;
 
 		status = getsockname(
 				piiuCast->sock_chan,

@@ -18,6 +18,7 @@ extern "C" {
 #define socket_close(S)		closesocket(S)
 #define socket_ioctl(A,B,C)	ioctlsocket(A,B,C)
 typedef u_long FAR osiSockIoctl_t;
+typedef int osiSocklen_t;
 
 #define MAXHOSTNAMELEN		75
 #define IPPORT_USERRESERVED	5000U

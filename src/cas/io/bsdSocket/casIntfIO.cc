@@ -6,6 +6,9 @@
 //
 //
 // $Log$
+// Revision 1.7  1998/06/18 00:11:09  jhill
+// use ipAddrToA
+//
 // Revision 1.6  1998/06/16 02:35:51  jhill
 // use aToIPAddr and auto attach to winsock if its a static build
 //
@@ -54,7 +57,7 @@ caStatus casIntfIO::init(const caNetAddr &addrIn, casDGClient &dgClientIn,
 	int yes = TRUE;
 	int status;
 	caStatus stat;
-	int addrSize;
+	osiSocklen_t addrSize;
 
 	if (!bsdSockAttach()) {
 		return S_cas_internal;

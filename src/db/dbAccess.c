@@ -79,6 +79,7 @@
 #include	<tickLib.h>
 
 #include	<fast_lock.h>
+#include	<cvtFast.h>
 #include	<alarm.h>
 #include	<choice.h>
 #include	<dbDefs.h>
@@ -445,283 +446,6 @@ long dbBufferSize(
     return(nbytes);
 }
 
-/*
- * F_TO_STR
- *
- * converts floating point numbers to NULL terminated strings
- * 
- * This routine was written to provide fast conversion.
- * Timing figures on a 68020
- * F_TO_STR         .316 msec
- * gcvt            2.6   msec
- * sprintf[%9.3E] 33     msecs
- *
- * This routine will call gcvt for any number with an absolute value
- * greater than or equal to 10,000,000.00
- *
- */
-static void f_to_str(flt_value,pstr_value,precision)
-	double	flt_value;
-	char	*pstr_value;
-	int	precision;
-{
-	unsigned short	got_one;
-	double		place;
-	short		number;
-	char	*pfirst_digit;
-
-	pfirst_digit = pstr_value;
-	if (flt_value < 0){
-		*pstr_value = '-';
-		pstr_value++;
-		pfirst_digit++;
-		flt_value = -flt_value;
-	}
-
-	if (flt_value >= 10000000 || flt_value < 1e-7 ){
-		gcvt(flt_value,20,pstr_value);
-		return;
-	}
-
-	/* whole numbers */
-	got_one = 0;
-	for (place = 1000000; place >= 1; place /= 10){
-		if (flt_value >= place){
-			got_one = 1;
-			number = flt_value / place;
-			flt_value = flt_value - (number * place);
-			*pstr_value = number + '0';
-			pstr_value++;
-		}else if (got_one){
-			*pstr_value = '0';
-			pstr_value++;
-		}
-	}
-	if (!got_one){
-		*pstr_value = '0';
-		pstr_value++;
-	}
-
-	/* fraction */
-	if (precision > 0){
-		*pstr_value = '.';
-		pstr_value++;
-		for (place = .1; precision > 0; place /= 10, precision--){
-			number = flt_value / place;
-			flt_value = flt_value - (number * place);
-			*pstr_value = number + '0';
-			pstr_value++;
-		}
-	}
-	*pstr_value = 0;
-
-	/* rounding */
-	if (flt_value >= (place * 5)){
-		number = pstr_value - pfirst_digit;
-		pstr_value--;
-		while ((pstr_value >= pfirst_digit) && 
-		  ((*pstr_value == '9') || (*pstr_value == '.'))){
-			if (*pstr_value == '9')
-				*pstr_value = '0';
-			pstr_value--;
-		}
-		if (pstr_value < pfirst_digit){
-			while (number >= 0){
-				*(pfirst_digit + number + 1) = *(pfirst_digit + number);
-				number--;
-			}
-			*pfirst_digit = '1';
-		}else{
-			*pstr_value += 1;
-		}
-	}
-	return;
-}
-
-/* Convert various integer types to ascii */
-
-static char digit_to_ascii[10]={'0','1','2','3','4','5','6','7','8','9'};
-
-static void char_to_str(source,pdest)
-	char source;
-	char *pdest;
-{
-    unsigned char val,temp;
-    char	  digit[3];
-    int		  i,j;
-
-    if(source==0) {
-	*pdest++ = '0';
-	*pdest = 0;
-	return;
-    }
-    if(source<0) {
-	*pdest++ = '-';
-	if(source == -128) {
-	    strcpy(pdest,"128");
-	    return;
-	}
-	source = -source;
-    }
-    val = source;
-    for(i=0; val!=0; i++) {
-	temp = val/10;
-	digit[i] = digit_to_ascii[val - temp*10];
-	val = temp;
-    }
-    for(j=i-1; j>=0; j--) {
-	*pdest++ = digit[j];
-    }
-    *pdest = 0;
-    return;
-}
-
-static void uchar_to_str(source,pdest)
-    unsigned char source;
-    char	  *pdest;
-{
-    unsigned char val,temp;
-    char	  digit[3];
-    int		  i,j;
-
-    if(source==0) {
-	*pdest++ = '0';
-	*pdest = 0;
-	return;
-    }
-    val = source;
-    for(i=0; val!=0; i++) {
-	temp = val/10;
-	digit[i] = digit_to_ascii[val - temp*10];
-	val = temp;
-    }
-    for(j=i-1; j>=0; j--) {
-	*pdest++ = digit[j];
-    }
-    *pdest = 0;
-    return;
-}
-
-static void short_to_str(source,pdest)
-    short source;
-    char  *pdest;
-{
-    short val,temp;
-    char  digit[6];
-    int	  i,j;
-
-    if(source==0) {
-	*pdest++ = '0';
-	*pdest = 0;
-	return;
-    }
-    if(source<0) {
-	*pdest++ = '-';
-	if(source == -32768) {
-	    strcpy(pdest,"32768");
-	    return;
-	}
-	source = -source;
-    }
-    val = source;
-    for(i=0; val!=0; i++) {
-	temp = val/10;
-	digit[i] = digit_to_ascii[val - temp*10];
-	val = temp;
-    }
-    for(j=i-1; j>=0; j--) {
-	*pdest++ = digit[j];
-    }
-    *pdest = 0;
-    return;
-}
-
-static void ushort_to_str(source,pdest)
-    unsigned short source;
-    char	  *pdest;
-{
-    unsigned short val,temp;
-    char	  digit[5];
-    int		  i,j;
-
-    if(source==0) {
-	*pdest++ = '0';
-	*pdest = 0;
-	return;
-    }
-    val = source;
-    for(i=0; val!=0; i++) {
-	temp = val/10;
-	digit[i] = digit_to_ascii[val - temp*10];
-	val = temp;
-    }
-    for(j=i-1; j>=0; j--) {
-	*pdest++ = digit[j];
-    }
-    *pdest = 0;
-    return;
-}
-
-static void long_to_str(source,pdest)
-    long source;
-    char  *pdest;
-{
-    long val,temp;
-    char  digit[11];
-    int	  i,j;
-
-    if(source==0) {
-	*pdest++ = '0';
-	*pdest = 0;
-	return;
-    }
-    if(source<0) {
-	*pdest++ = '-';
-	if(source == -2147483648) {
-	    strcpy(pdest,"2147483648");
-	    return;
-	}
-	source = -source;
-    }
-    val = source;
-    for(i=0; val!=0; i++) {
-	temp = val/10;
-	digit[i] = digit_to_ascii[val - temp*10];
-	val = temp;
-    }
-    for(j=i-1; j>=0; j--) {
-	*pdest++ = digit[j];
-    }
-    *pdest = 0;
-    return;
-}
-
-static void ulong_to_str(source,pdest)
-    unsigned long source;
-    char	  *pdest;
-{
-    unsigned long val,temp;
-    char	  digit[10];
-    int		  i,j;
-
-    if(source==0) {
-	*pdest++ = '0';
-	*pdest = 0;
-	return;
-    }
-    val = source;
-    for(i=0; val!=0; i++) {
-	temp = val/10;
-	digit[i] = digit_to_ascii[val - temp*10];
-	val = temp;
-    }
-    for(j=i-1; j>=0; j--) {
-	*pdest++ = digit[j];
-    }
-    *pdest = 0;
-    return;
-}
-
 /* DATABASE ACCESS GET CONVERSION SUPPORT */
 
 static long getStringString(paddr,pbuffer,nRequest,no_elements,offset)
@@ -768,12 +492,12 @@ long		offset;
     char *psrc=(char *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	char_to_str(*psrc,pbuffer);
+	cvtCharToString(*psrc,pbuffer);
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	char_to_str(*psrc,pbuffer);
+	cvtCharToString(*psrc,pbuffer);
 	pbuffer += MAX_STRING_SIZE;
 	if(++offset==no_elements)
 		psrc=(char *)paddr->pfield;
@@ -992,12 +716,12 @@ long		offset;
     unsigned char  *psrc=(unsigned char *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	uchar_to_str(*psrc,pbuffer);
+	cvtUcharToString(*psrc,pbuffer);
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	uchar_to_str(*psrc,pbuffer);
+	cvtUcharToString(*psrc,pbuffer);
 	pbuffer += MAX_STRING_SIZE;
 	if(++offset==no_elements)
 		psrc=(unsigned char *)paddr->pfield;
@@ -1216,12 +940,12 @@ long		offset;
     short *psrc=(short *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	short_to_str(*psrc,pbuffer);
+	cvtShortToString(*psrc,pbuffer);
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	short_to_str(*psrc,pbuffer);
+	cvtShortToString(*psrc,pbuffer);
 	pbuffer += MAX_STRING_SIZE;
 	if(++offset==no_elements)
 		psrc=(short *)paddr->pfield;
@@ -1439,12 +1163,12 @@ long		offset;
     unsigned short *psrc=(unsigned short *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	ushort_to_str(*psrc,pbuffer);
+	cvtUshortToString(*psrc,pbuffer);
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	ushort_to_str(*psrc,pbuffer);
+	cvtUshortToString(*psrc,pbuffer);
 	pbuffer += MAX_STRING_SIZE;
 	if(++offset==no_elements)
 		psrc=(unsigned short *)paddr->pfield;
@@ -1662,12 +1386,12 @@ long		offset;
     long *psrc=(long *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	long_to_str(*psrc,pbuffer);
+	cvtLongToString(*psrc,pbuffer);
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	long_to_str(*psrc,pbuffer);
+	cvtLongToString(*psrc,pbuffer);
 	pbuffer += MAX_STRING_SIZE;
 	if(++offset==no_elements)
 		psrc=(long *)paddr->pfield;
@@ -1886,12 +1610,12 @@ long		offset;
     unsigned long *psrc=(unsigned long *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	ulong_to_str(*psrc,pbuffer);
+	cvtUlongToString(*psrc,pbuffer);
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	ulong_to_str(*psrc,pbuffer);
+	cvtUlongToString(*psrc,pbuffer);
 	pbuffer += MAX_STRING_SIZE;
 	if(++offset==no_elements)
 		psrc=(unsigned long *)paddr->pfield;
@@ -2123,12 +1847,12 @@ long		offset;
     }
 
     if(nRequest==1 && offset==0) {
-	f_to_str((double)(*psrc),pbuffer,precision);
+	cvtFloatToString(*psrc,pbuffer,precision);
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	f_to_str((double)(*psrc),pbuffer,precision);
+	cvtFloatToString(*psrc,pbuffer,precision);
 	pbuffer += MAX_STRING_SIZE;
 	if(++offset==no_elements)
 		psrc=(float *)paddr->pfield;
@@ -2363,12 +2087,12 @@ long		offset;
     }
 
     if(nRequest==1 && offset==0) {
-	f_to_str(*psrc,pbuffer,precision);
+	cvtDoubleToString(*psrc,pbuffer,precision);
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	f_to_str(*psrc,pbuffer,precision);
+	cvtDoubleToString(*psrc,pbuffer,precision);
 	pbuffer += MAX_STRING_SIZE;
 	if(++offset==no_elements)
 		psrc=(double *)paddr->pfield;
@@ -3631,12 +3355,12 @@ long		offset;
 
 
     if(nRequest==1 && offset==0) {
-	char_to_str(*pbuffer,pdest);
+	cvtCharToString(*pbuffer,pdest);
 	return(0);
     }
     pdest += (size*offset);
     while (nRequest) {
-	char_to_str(*pbuffer,pdest);
+	cvtCharToString(*pbuffer,pdest);
 	pbuffer++;
 	if(++offset==no_elements)
 		pdest=paddr->pfield;
@@ -3857,12 +3581,12 @@ long		offset;
 
 
     if(nRequest==1 && offset==0) {
-	uchar_to_str(*pbuffer,pdest);
+	cvtUcharToString(*pbuffer,pdest);
 	return(0);
     }
     pdest += (size*offset);
     while (nRequest) {
-	uchar_to_str(*pbuffer,pdest);
+	cvtUcharToString(*pbuffer,pdest);
 	pbuffer++;
 	if(++offset==no_elements)
 		pdest=paddr->pfield;
@@ -4083,12 +3807,12 @@ long		offset;
 
 
     if(nRequest==1 && offset==0) {
-	short_to_str(*pbuffer,pdest);
+	cvtShortToString(*pbuffer,pdest);
 	return(0);
     }
     pdest += (size*offset);
     while (nRequest) {
-	short_to_str(*pbuffer,pdest);
+	cvtShortToString(*pbuffer,pdest);
 	pbuffer++;
 	if(++offset==no_elements)
 		pdest=(char *)paddr->pfield;
@@ -4309,12 +4033,12 @@ long		offset;
 
 
     if(nRequest==1 && offset==0) {
-	ushort_to_str(*pbuffer,pdest);
+	cvtUshortToString(*pbuffer,pdest);
 	return(0);
     }
     pdest += (size*offset);
     while (nRequest) {
-	ushort_to_str(*pbuffer,pdest);
+	cvtUshortToString(*pbuffer,pdest);
 	pbuffer++;
 	if(++offset==no_elements)
 		pdest=(char *)paddr->pfield;
@@ -4535,12 +4259,12 @@ long		offset;
 
 
     if(nRequest==1 && offset==0) {
-	long_to_str(*pbuffer,pdest);
+	cvtLongToString(*pbuffer,pdest);
 	return(0);
     }
     pdest += (size*offset);
     while (nRequest) {
-	long_to_str(*pbuffer,pdest);
+	cvtLongToString(*pbuffer,pdest);
 	pbuffer++;
 	if(++offset==no_elements)
 		pdest=(char *)paddr->pfield;
@@ -4761,12 +4485,12 @@ long		offset;
 
 
     if(nRequest==1 && offset==0) {
-	ulong_to_str(*pbuffer,pdest);
+	cvtUlongToString(*pbuffer,pdest);
 	return(0);
     }
     pdest += (size*offset);
     while (nRequest) {
-	ulong_to_str(*pbuffer,pdest);
+	cvtUlongToString(*pbuffer,pdest);
 	pbuffer++;
 	if(++offset==no_elements)
 		pdest=(char *)paddr->pfield;
@@ -4999,12 +4723,12 @@ long		offset;
     }
 
     if(nRequest==1 && offset==0) {
-	f_to_str((double)(*pbuffer),pdest,precision);
+	cvtFloatToString(*pbuffer,pdest,precision);
 	return(0);
     }
     pdest += (size*offset);
     while (nRequest) {
-	f_to_str((double)(*pbuffer),pdest,precision);
+	cvtFloatToString(*pbuffer,pdest,precision);
 	pbuffer++;
 	if(++offset==no_elements)
 		pdest=(char *)paddr->pfield;
@@ -5240,12 +4964,12 @@ long		offset;
     }
 
     if(nRequest==1 && offset==0) {
-	f_to_str(*pbuffer,pdest,precision);
+	cvtDoubleToString(*pbuffer,pdest,precision);
 	return(0);
     }
     pdest += (size*offset);
     while (nRequest) {
-	f_to_str(*pbuffer,pdest,precision);
+	cvtDoubleToString(*pbuffer,pdest,precision);
 	pbuffer++;
 	if(++offset==no_elements)
 		pdest=(char *)paddr->pfield;
@@ -5469,12 +5193,12 @@ long		offset;
 
 
     if(nRequest==1 && offset==0) {
-	uchar_to_str(*pbuffer,pdest);
+	cvtUcharToString(*pbuffer,pdest);
 	return(0);
     }
     pdest += (size*offset);
     while (nRequest) {
-	uchar_to_str(*pbuffer,pdest);
+	cvtUcharToString(*pbuffer,pdest);
 	pbuffer++;
 	if(++offset==no_elements)
 		pdest=(char *)paddr->pfield;

@@ -77,7 +77,7 @@ GNU_DIR = /usr/local/hideos/gnu_install-2.7.2
 #  Client ANSI C Compiler (for Host builds)
 #   GCC     (gcc -ansi) GNU
 #   ACC     (acc)       OS VENDOR
-#   HPACC   (cc -Aa)    OTHER VENDOR 
+#   HPCC   (cc -Aa)    OTHER VENDOR 
 ANSI=ACC
  
 #  C++ Compiler (for Host builds)

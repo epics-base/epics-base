@@ -181,6 +181,7 @@ void scanAdd(struct dbCommon *precord)
 	    if(!pevent_scan_list ) {
 		pevent_scan_list = dbCalloc(1,sizeof(event_scan_list));
 		pevent_list[priority][evnt] = pevent_scan_list;
+                FASTLOCKINIT(&pevent_scan_list->scan_list.lock);
 		callbackSetCallback(eventCallback,&pevent_scan_list->callback);
 		callbackSetPriority(priority,&pevent_scan_list->callback);
 		callbackSetUser(pevent_scan_list,&pevent_scan_list->callback);

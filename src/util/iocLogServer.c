@@ -18,18 +18,6 @@
  *      Date:       080791 
  */
 
-/*
- * Under solaris if dont define _POSIX_C_SOURCE or _XOPEN_SOURCE
- * then none of the POSIX stuff (such as signals or pipes) can be used
- * with cc -v. However if one of _POSIX_C_SOURCE or _XOPEN_SOURCE
- * are defined then we cant use the socket library. Therefore I 
- * have been adding the following in order to use POSIX signals 
- * and also sockets on solaris with cc -v. What a pain....
- */
-#if defined(SOLARIS)
-#define __EXTENSIONS__ 
-#endif
-
 #include	<stdlib.h>
 #include	<string.h>
 #include	<errno.h>

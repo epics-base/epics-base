@@ -139,10 +139,12 @@ static bool makeSocket ( unsigned short port, bool reuseAddr, SOCKET * pSock )
             status = setsockopt ( sock,  SOL_SOCKET, SO_REUSEADDR,
                         (char *) &flag, sizeof (flag) );
             if ( status < 0 ) {
+                socket_close ( sock );
                 return false;
             }
         }
     }
+    *pSock = sock;
     return true;
 }
 

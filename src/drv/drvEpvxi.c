@@ -48,6 +48,9 @@
  *				Richard Baker (summer intern)
  *	.13 joh 07-21-92	Now stores extender info in a heirarchical
  *				linked list
+ *	.14 joh 07-29-92	vxi record topology needed check for
+ *				device present
+ *	.15 joh 07-29-92	added sccs id
  *
  * To do
  * -----
@@ -84,8 +87,6 @@
  *	vxi_vec_inuse		check to see if vector is in use
  *	vxi_configure_hierarchies	setup commander servant hierarchies
  *	vxi_self_test		test for dev self test passed
- *	vxi_find_slot0		find (and open) slot zero devices
- *	vxi_find_slot		what slot is that LA in
  *	open_slot0_device	open slot zero devices
  *	nicpu030_init		NI CPU030 controller setup
  *	nivxi_cpu030_set_modid	set modid on the NICPU030
@@ -125,6 +126,8 @@
  *
  */
 
+static char *sccsId = "$Id$\t$Date$";
+
 #include <vme.h>
 #include <vxWorks.h>
 #ifdef V5_vxWorks
@@ -139,6 +142,7 @@
 #include <epvxiLib.h>
 
 #define NICPU030
+#define LOCAL
 
 /*
  * EPICS driver entry point table
@@ -964,6 +968,10 @@ vxi_record_topology()
 	for(	la=0, pplac = epvxiLibDeviceList; 
 		la<=last_la; 
 		la++, pplac++){
+
+		if(!*pplac){
+			continue;
+		}
 
 		pdevice = VXIBASE(la);
 		status = vxi_find_slot(pdevice, &slot, &crate);

@@ -43,7 +43,8 @@ epicsTimerQueueActive & epicsTimerQueueActive::allocate ( bool okToShare, unsign
 timerQueueActive::timerQueueActive ( bool okToShareIn, unsigned priority ) :
     queue ( *this ), thread ( *this, "timerQueue", 
         epicsThreadGetStackSize ( epicsThreadStackMedium ), priority ),
-    okToShare ( okToShareIn ), exitFlag ( false ), terminateFlag ( false )
+    sleepQuantum ( epicsThreadSleepQuantum() ), okToShare ( okToShareIn ), 
+    exitFlag ( false ), terminateFlag ( false )
 {
     this->thread.start ();
 }
@@ -88,7 +89,7 @@ void timerQueueActive::reschedule ()
 
 double timerQueueActive::quantum ()
 {
-    return epicsThreadSleepQuantum ();
+    return this->sleepQuantum;
 }
 
 void timerQueueActive::show ( unsigned int level ) const

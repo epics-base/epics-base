@@ -100,7 +100,6 @@ private:
     mutable epicsMutex mutex;
     epicsEvent cancelBlockingEvent;
     tsDLList < timer > timerList;
-    const double sleepQuantumOverTwo;
     epicsTimerQueueNotify & notify;
     timer * pExpireTmr;
     epicsThreadId processThread;
@@ -138,6 +137,7 @@ private:
     epicsEvent rescheduleEvent;
     epicsEvent exitEvent;
     epicsThread thread;
+    double sleepQuantum;
     bool okToShare;
     bool exitFlag;
     bool terminateFlag;

@@ -36,5 +36,4 @@ ARCH_DEP_CPPFLAGS += -DIOCSH_USE_READLINE
 ARCH_DEP_CPPFLAGS += -D_X86_ -Dlinux
 
 ARCH_DEP_LDFLAGS =
-ARCH_DEP_LDLIBS = -lpthread -lreadline
-
+ARCH_DEP_LDLIBS = -lpthread -lreadline -lcurses -lrt

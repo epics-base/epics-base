@@ -548,7 +548,7 @@ void epicsThreadShow(epicsThreadId pthreadInfo,unsigned int level)
 {
     if(!epicsThreadInitCalled) epicsThreadInit();
     if(!pthreadInfo) {
-	printf ("            NAME        ID     OSIPRI  OSSPRI  STATE\n");
+	printf ("            NAME     EPICS ID   PTHREAD ID   OSIPRI  OSSPRI  STATE\n");
     }
     else {
         struct sched_param param;
@@ -558,9 +558,10 @@ void epicsThreadShow(epicsThreadId pthreadInfo,unsigned int level)
         if ((pthreadInfo->tid != 0)
          && (pthread_getschedparam(pthreadInfo->tid,&policy,&param) == 0))
             priority = param.sched_priority;
-	printf("%16.16s %12p   %3d%8d %8.8s\n", pthreadInfo->name,(void *)
-	       pthreadInfo,pthreadInfo->osiPriority,priority,pthreadInfo->
-		     isSuspended?"SUSPEND":"OK");
+	printf("%16.16s %12p %12lu    %3d%8d %8.8s\n", pthreadInfo->name,(void *)
+                                   pthreadInfo,(unsigned long)pthreadInfo->tid,
+                                   pthreadInfo->osiPriority,priority,
+                                   pthreadInfo->isSuspended?"SUSPEND":"OK");
 	if(level>0)
 	    ; /* more info */
     }

@@ -62,6 +62,6 @@ struct dset {	/* device support entry table */
 #define S_dev_badSignal     (M_devSup|17) /*Illegal signal*/
 #define S_dev_NoInit        (M_devSup|19) /*No init*/
 #define S_dev_Conflict      (M_devSup|21) /*Multiple records accessing same signal*/
-#define S_dev_noDevice      (M_devSup|23) /*No device at specified address*/
+#define S_dev_noDeviceFound (M_devSup|23) /*No device found at specified address*/
 
 #endif

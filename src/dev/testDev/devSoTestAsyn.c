@@ -39,7 +39,7 @@
 /* Create the dset for devSoTestAsyn */
 static long init_record();
 static long write_stringout();
-epicsShareExtern struct {
+epicsShareDef struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

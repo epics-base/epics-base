@@ -32,7 +32,7 @@
 static long init_record();
 static long read_longin();
 
-epicsShareExtern struct {
+epicsShareDef struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

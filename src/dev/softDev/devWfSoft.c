@@ -36,7 +36,7 @@
 /* Create the dset for devWfSoft */
 static long init_record();
 static long read_wf();
-epicsShareExtern struct {
+epicsShareDef struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

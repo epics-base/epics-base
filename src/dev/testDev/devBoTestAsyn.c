@@ -40,7 +40,7 @@
 /* Create the dset for devBoTestAsyn */
 static long init_record();
 static long write_bo();
-epicsShareExtern struct {
+epicsShareDef struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

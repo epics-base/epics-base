@@ -32,7 +32,7 @@
 /* Create the dset for devMbboDirectSoftRaw */
 static long init_record();
 static long write_mbbo();
-epicsShareExtern struct {
+epicsShareDef struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

@@ -35,7 +35,7 @@
 
 /* Create the dset for devAoSoftRaw */
 static long write_ao(aoRecord *pao);
-epicsShareExtern struct {
+epicsShareDef struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

@@ -34,7 +34,7 @@
 static long init_record();
 static long get_ioint_info();
 static long read_event();
-epicsShareExtern struct {
+epicsShareDef struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

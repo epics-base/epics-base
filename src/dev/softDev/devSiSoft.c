@@ -32,7 +32,7 @@
 /* Create the dset for devSiSoft */
 static long init_record();
 static long read_stringin();
-epicsShareExtern struct {
+epicsShareDef struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

@@ -30,7 +30,7 @@
 /* Create the dset for devLoSoft */
 static long init_record();
 static long write_longout();
-epicsShareExtern struct {
+epicsShareDef struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

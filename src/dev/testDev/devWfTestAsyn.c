@@ -39,7 +39,7 @@
 /* Create the dset for devWfTestAsyn */
 static long init_record();
 static long read_wf();
-epicsShareExtern struct {
+epicsShareDef struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

@@ -31,7 +31,7 @@
 /* Create the dset for devEventSoft */
 static long init_record();
 static long read_event();
-epicsShareExtern struct {
+epicsShareDef struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

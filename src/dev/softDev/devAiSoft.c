@@ -33,7 +33,7 @@
 /* Create the dset for devAiSoft */
 static long init_record();
 static long read_ai();
-epicsShareExtern struct {
+epicsShareDef struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

@@ -40,7 +40,7 @@
 /* Create the dset for devAoTestAsyn */
 static long init_record();
 static long write_ao();
-epicsShareExtern struct {
+epicsShareDef struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

@@ -31,7 +31,7 @@
 /* Create the dset for devMbbiSoftRaw */
 static long init_record();
 static long read_mbbi();
-epicsShareExtern struct {
+epicsShareDef struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

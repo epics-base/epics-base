@@ -31,7 +31,7 @@
 /* Create the dset for devBiSoft */
 static long init_record();
 static long read_bi();
-epicsShareExtern struct {
+epicsShareDef struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

@@ -29,7 +29,7 @@ sub GetEpicsHostArch { # no args
     } elsif ($arch =~ m/sun4-sunos/)    { return "sun4-68k";
     } elsif ($arch =~ m/i[3-6]86-linux/)    { return "linux-x86";
     } elsif ($arch =~ m/MSWin32-x86/)   { return "win32-x86";
-    } elsif ($arch =~ m/cygwin/)        { return "win32-x86";
+    } elsif ($arch =~ m/cygwin/)        { return "cygwin-x86";
     } elsif ($arch =~ m/PA-RISC1.1/)    { return "hpux-parisc";
     } elsif ($arch =~ m/darwin/)        { return "darwin-ppc";
     } else { return "unsupported"; }

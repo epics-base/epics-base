@@ -1,8 +1,36 @@
-
 /* db_access.c */
-/* share/src/db $Id$ */
+/* share/src/db  $Id$ */
+
 /* db_access.c - Interface between old database access and new */
 /*
+ *      Author:          Bob Dalesio
+ *      Date:            6-1-90
+ *
+ *      Experimental Physics and Industrial Control System (EPICS)
+ *
+ *      Copyright 1991, the Regents of the University of California,
+ *      and the University of Chicago Board of Governors.
+ *
+ *      This software was produced under  U.S. Government contracts:
+ *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *      and (W-31-109-ENG-38) at Argonne National Laboratory.
+ *
+ *      Initial development by:
+ *              The Controls and Automation Group (AT-8)
+ *              Ground Test Accelerator
+ *              Accelerator Technology Division
+ *              Los Alamos National Laboratory
+ *
+ *      Co-developed with
+ *              The Controls and Computing Group
+ *              Accelerator Systems Division
+ *              Advanced Photon Source
+ *              Argonne National Laboratory
+ *
+ * Modification Log:
+ * -----------------
+ * .01	mm-dd-yy	iii	Comment
+ */
 
 
 /***
@@ -81,7 +109,6 @@
 
 
 /* function declarations */
-static adjust_severity();
 
 
 /* database access address structure (removed from db_access.h and put here) */
@@ -608,7 +635,6 @@ unsigned short	no_elements;
 		status = dbGetField(paddr,DBR_STRING,&new,&options,&nRequest);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		adjust_severity(pold);
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_STRING,&(pold->value[0]),
@@ -628,7 +654,6 @@ unsigned short	no_elements;
 		status = dbGetField(paddr,DBR_SHORT,&new,&options,&nRequest);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		adjust_severity(pold);
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_SHORT,&(pold->value),&options,
@@ -647,7 +672,6 @@ unsigned short	no_elements;
 		status = dbGetField(paddr,DBR_FLOAT,&new,&options,&nRequest);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		adjust_severity(pold);
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_FLOAT,&(pold->value),&options,
@@ -666,7 +690,6 @@ unsigned short	no_elements;
 		status = dbGetField(paddr,DBR_ENUM,&new,&options,&nRequest);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		adjust_severity(pold);
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_ENUM,&(pold->value),&options,
@@ -685,7 +708,6 @@ unsigned short	no_elements;
 		status = dbGetField(paddr,DBR_UCHAR,&new,&options,&nRequest);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		adjust_severity(pold);
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_UCHAR,&(pold->value),&options,
@@ -704,7 +726,6 @@ unsigned short	no_elements;
 		status = dbGetField(paddr,DBR_LONG,&new,&options,&nRequest);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		adjust_severity(pold);
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_LONG,&(pold->value),&options,
@@ -723,7 +744,6 @@ unsigned short	no_elements;
 		status = dbGetField(paddr,DBR_DOUBLE,&new,&options,&nRequest);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		adjust_severity(pold);
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_DOUBLE,&(pold->value),&options,
@@ -744,7 +764,6 @@ unsigned short	no_elements;
 		pold->status = new.status;
 		pold->severity = new.severity;
 		pold->stamp = new.time;		/* structure copy */
-		adjust_severity(pold);
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_STRING,pold->value,&options,
@@ -766,7 +785,6 @@ unsigned short	no_elements;
 		pold->status = new.status;
 		pold->severity = new.severity;
 		pold->stamp = new.time;		/* structure copy */
-		adjust_severity(pold);
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_SHORT,&(pold->value),&options,
@@ -787,7 +805,6 @@ unsigned short	no_elements;
 		pold->status = new.status;
 		pold->severity = new.severity;
 		pold->stamp = new.time;		/* structure copy */
-		adjust_severity(pold);
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_FLOAT,&(pold->value),&options,
@@ -808,7 +825,6 @@ unsigned short	no_elements;
 		pold->status = new.status;
 		pold->severity = new.severity;
 		pold->stamp = new.time;		/* structure copy */
-		adjust_severity(pold);
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_ENUM,&(pold->value),&options,
@@ -829,7 +845,6 @@ unsigned short	no_elements;
 		pold->status = new.status;
 		pold->severity = new.severity;
 		pold->stamp = new.time;		/* structure copy */
-		adjust_severity(pold);
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_CHAR,&(pold->value),&options,
@@ -850,7 +865,6 @@ unsigned short	no_elements;
 		pold->status = new.status;
 		pold->severity = new.severity;
 		pold->stamp = new.time;		/* structure copy */
-		adjust_severity(pold);
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_LONG,&(pold->value),&options,
@@ -871,7 +885,6 @@ unsigned short	no_elements;
 		pold->status = new.status;
 		pold->severity = new.severity;
 		pold->stamp = new.time;		/* structure copy */
-		adjust_severity(pold);
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_DOUBLE,&(pold->value),&options,
@@ -895,7 +908,6 @@ unsigned short	no_elements;
 		status = dbGetField(paddr,DBR_SHORT,&new,&options,&nRequest);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		adjust_severity(pold);
 		strncpy(pold->units,new.units,8);
 		pold->upper_disp_limit = new.upper_disp_limit;
 		pold->lower_disp_limit = new.lower_disp_limit;
@@ -926,7 +938,6 @@ unsigned short	no_elements;
 		status = dbGetField(paddr,DBR_FLOAT,&new,&options,&nRequest);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		adjust_severity(pold);
 		pold->precision = new.precision;
 		strncpy(pold->units,new.units,8);
 		pold->upper_disp_limit = new.upper_disp_limit;
@@ -957,7 +968,6 @@ unsigned short	no_elements;
 		status = dbGetField(paddr,DBR_UCHAR,&new,&options,&nRequest);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		adjust_severity(pold);
 		strncpy(pold->units,new.units,8);
 		pold->upper_disp_limit = new.upper_disp_limit;
 		pold->lower_disp_limit = new.lower_disp_limit;
@@ -986,7 +996,6 @@ unsigned short	no_elements;
 		status = dbGetField(paddr,DBR_LONG,&new,&options,&nRequest);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		adjust_severity(pold);
 		strncpy(pold->units,new.units,8);
 		pold->upper_disp_limit = new.upper_disp_limit;
 		pold->lower_disp_limit = new.lower_disp_limit;
@@ -1017,7 +1026,6 @@ unsigned short	no_elements;
 		status = dbGetField(paddr,DBR_DOUBLE,&new,&options,&nRequest);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		adjust_severity(pold);
 		pold->precision = new.precision;
 		strncpy(pold->units,new.units,8);
 		pold->upper_disp_limit = new.upper_disp_limit;
@@ -1050,7 +1058,6 @@ unsigned short	no_elements;
 		status = dbGetField(paddr,DBR_SHORT,&new,&options,&nRequest);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		adjust_severity(pold);
 		strncpy(pold->units,new.units,8);
 		pold->upper_disp_limit = new.upper_disp_limit;
 		pold->lower_disp_limit = new.lower_disp_limit;
@@ -1084,7 +1091,6 @@ unsigned short	no_elements;
 		status = dbGetField(paddr,DBR_FLOAT,&new,&options,&nRequest);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		adjust_severity(pold);
 		pold->precision = new.precision;
 		strncpy(pold->units,new.units,8);
 		pold->upper_disp_limit = new.upper_disp_limit;
@@ -1118,7 +1124,6 @@ unsigned short	no_elements;
 		status = dbGetField(paddr,DBR_ENUM,&new,&options,&nRequest);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		adjust_severity(pold);
 		no_str = new.no_str;
 		if(no_str>16) no_str=16;
 		pold->no_str = no_str;
@@ -1149,7 +1154,6 @@ unsigned short	no_elements;
 		status = dbGetField(paddr,DBR_UCHAR,&new,&options,&nRequest);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		adjust_severity(pold);
 		strncpy(pold->units,new.units,8);
 		pold->upper_disp_limit = new.upper_disp_limit;
 		pold->lower_disp_limit = new.lower_disp_limit;
@@ -1182,7 +1186,6 @@ unsigned short	no_elements;
 		status = dbGetField(paddr,DBR_LONG,&new,&options,&nRequest);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		adjust_severity(pold);
 		strncpy(pold->units,new.units,8);
 		pold->upper_disp_limit = new.upper_disp_limit;
 		pold->lower_disp_limit = new.lower_disp_limit;
@@ -1216,7 +1219,6 @@ unsigned short	no_elements;
 		status = dbGetField(paddr,DBR_DOUBLE,&new,&options,&nRequest);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		adjust_severity(pold);
 		pold->precision = new.precision;
 		strncpy(pold->units,new.units,8);
 		pold->upper_disp_limit = new.upper_disp_limit;
@@ -1240,38 +1242,6 @@ unsigned short	no_elements;
     }
     if(!RTN_SUCCESS(status)) return(-1);
     return(0);
-}
-
-/* the old software did not have a severity of INFO or VALID */
-static adjust_severity(pbuffer)
-  struct dbr_sts_string *pbuffer;
-{
-
-/***
- *** Map {NO,INFO,MINOR,MAJOR,VALID} alarms onto {NO,MINOR,MAJOR} alarms of
- ***  GTA  ( from GTA's  ..../h/fields.h )
- ***/
-
-#define GTA_NO_ALARM	0x0
-#define GTA_MINOR	0x1
-#define GTA_MAJOR	0x2
-#define GTA_COMM	0x3
-
-  switch(pbuffer->severity) {
-	case NO_ALARM:    pbuffer->severity = GTA_NO_ALARM;
-		break;
-	case INFO_ALARM:  pbuffer->severity = GTA_NO_ALARM;
-		break;
-	case MINOR_ALARM: pbuffer->severity = GTA_MINOR;
-		break;
-	case MAJOR_ALARM: pbuffer->severity = GTA_MAJOR;
-		break;
-	case VALID_ALARM: pbuffer->severity = GTA_COMM;
-		break;
-	default:
-		break;
-  }
-
 }
 
 /* DB_PUT_FIELD put a field and convert it to the desired type */

@@ -1,37 +1,36 @@
-
 /* dbTest.c */
-/* share/src/db $Id$ */
+/* share/src/db  $Id$ */
 
-/* dbTest.c
+/*	database access test subroutines */
+/*
+ *      Original Author: Bob Dalesio
+ *      Current Author:  Marty Kraimer
+ *      Date:            11-7-90
  *
- *	database access test subroutines
+ *      Experimental Physics and Industrial Control System (EPICS)
  *
- *	Author:	Bob Dalesio(LANL) and Marty Kraimer(ANL)
+ *      Copyright 1991, the Regents of the University of California,
+ *      and the University of Chicago Board of Governors.
  *
- *	Control System Software for the GTA Project
+ *      This software was produced under  U.S. Government contracts:
+ *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *      and (W-31-109-ENG-38) at Argonne National Laboratory.
  *
- *	Copyright 1988, 1989, the Regents of the University of California.
+ *      Initial development by:
+ *              The Controls and Automation Group (AT-8)
+ *              Ground Test Accelerator
+ *              Accelerator Technology Division
+ *              Los Alamos National Laboratory
  *
- *	This software was produced under a U.S. Government contract
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory, which is
- *	operated by the University of California for the U.S. Department
- *	of Energy.
- *
- *	Developed by the Controls and Automation Group (AT-8)
- *	Accelerator Technology Division
- *	Los Alamos National Laboratory
- *
- *	Direct inqueries to:
- *	Bob Dalesio, AT-8, Mail Stop H820
- *	Los Alamos National Laboratory
- *	Los Alamos, New Mexico 87545
- *	Phone: (505) 667-3414
- *	E-mail: dalesio@luke.lanl.gov
+ *      Co-developed with
+ *              The Controls and Computing Group
+ *              Accelerator Systems Division
+ *              Advanced Photon Source
+ *              Argonne National Laboratory
  *
  * Modification Log:
  * -----------------
- * .xx mm-dd-yy         mrk	Comment
- *
+ * .01  mm-dd-yy        iii     Comment
  */
 
 /* Global Database Test Routines - All can be invoked via vxWorks shell
@@ -609,6 +608,7 @@ long dblls(ptypeName)	/* list lock set for specified record type*/
 	return(1);
     }
 got_it:
+    printf(" lset  lcnt  disv  disa  pact\n");
     for(rectype=beg; rectype<=end; rectype++) {
 	if(!(precLoc=GET_PRECLOC(rectype))) continue;
 	for(recnum=0; precord=(struct dbCommon *)(GET_PRECORD(precLoc,recnum));
@@ -616,7 +616,7 @@ got_it:
 		if(precord->name[0] == 0) continue; /*deleted record*/
 		strncpy(name,precord->name,PVNAME_SZ);
 		name[PVNAME_SZ]=0;
-		printf("%4.4d %4.4d %4.4d %4.4d %4.4d %s\n",
+		printf("%5.5d %5.5d %5.5d %5.5d %5.5d %s\n",
 			precord->lset,
 			precord->lcnt,
 			precord->disv,

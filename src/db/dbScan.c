@@ -1,34 +1,31 @@
 /* dbScan.c */
-/* share/src/db $Id$ */
+/* share/src/db  $Id$ */
 
+/* tasks and subroutines to scan the database */
 /*
- * dbScan.c - Database scanners
+ *      Author:          Bob Dalesio
+ *      Date:            11-30-88
  *
- * tasks and subroutines to scan the database
+ *      Experimental Physics and Industrial Control System (EPICS)
  *
- * Author:      Bob Dalesio
- * Date:	11-30-88
- * @(#)dbscan.c	1.1S
+ *      Copyright 1991, the Regents of the University of California,
+ *      and the University of Chicago Board of Governors.
  *
- *	Control System Software for the GTA Project
+ *      This software was produced under  U.S. Government contracts:
+ *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *      and (W-31-109-ENG-38) at Argonne National Laboratory.
  *
- *	Copyright 1988, 1989, the Regents of the University of California.
+ *      Initial development by:
+ *              The Controls and Automation Group (AT-8)
+ *              Ground Test Accelerator
+ *              Accelerator Technology Division
+ *              Los Alamos National Laboratory
  *
- *	This software was produced under a U.S. Government contract
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory, which is
- *	operated by the University of California for the U.S. Department
- *	of Energy.
- *
- *	Developed by the Controls and Automation Group (AT-8)
- *	Accelerator Technology Division
- *	Los Alamos National Laboratory
- *
- *	Direct inqueries to:
- *	Bob Dalesio, AT-8, Mail Stop H820
- *	Los Alamos National Laboratory
- *	Los Alamos, New Mexico 87545
- *	Phone: (505) 667-3414
- *	E-mail: dalesio@luke.lanl.gov
+ *      Co-developed with
+ *              The Controls and Computing Group
+ *              Accelerator Systems Division
+ *              Advanced Photon Source
+ *              Argonne National Laboratory
  *
  * Modification Log:
  * -----------------
@@ -187,6 +184,7 @@
 #include	<interruptEvent.h>
 #include	<taskParams.h>
 #include	<module_types.h>
+#include	<fast_lock.h>
 
 /* local routines */
 static int  add_to_periodic_list();
@@ -208,7 +206,7 @@ typedef	unsigned long TIME;
 
 /* db address struct: will contain the scan lists for all tasks */
 struct scan_list{
-	unsigned short	lock;
+	FAST_LOCK	lock;
 	unsigned short	scan_type;
 	unsigned short	num_records;
 	unsigned short	num_scan;
@@ -221,14 +219,15 @@ struct scan_list{
 };
 /* scan types */
 /* These must match the GBL_SCAN choices in choiceGbl.ascii */
+/* NOTE NOTE recAi.c and recWaveform.c both use E_IO_INTERRUPT*/
 #define PASSIVE         0
 #define P2SECOND        1
 #define PSECOND         2
 #define PHALFSECOND     3
 #define PFIFTHSECOND    4
 #define PTENTHSECOND    5
-#define E_IO_INTERRUPT  6
-#define E_EXTERNAL      7
+#define E_EXTERNAL      6
+#define E_IO_INTERRUPT  7
 
 #define	SL2SECOND	0
 #define SLSECOND        1
@@ -250,7 +249,7 @@ struct scan_element{
 #define	MAX_IO_EVENTS		10
 #define	MAX_IO_EVENT_CHANS	32
 struct io_event_list{
-	short	lock;
+	FAST_LOCK	lock;
 	short	defined;
 	short	io_type;
 	short	card_type;
@@ -264,7 +263,7 @@ struct io_event_list{
 #define	MAX_EVENTS		100
 #define	MAX_EVENT_CHANS		10
 struct event_list{
-	short	lock;
+	FAST_LOCK	lock;
 	short	defined;
 	short	event_number;
 	short	number_defined;
@@ -329,6 +328,7 @@ static int	eventTaskId = 0;
 /* WATCHDOG GLOBALS */
 static int	wdScanTaskId = 0;
 static int	wdScanOff = 0;
+int		wdRestart=0;
 
 
 /* CALLBACK GLOBALS */
@@ -385,7 +385,7 @@ periodicScanTask()
 	      	 if(disableListScan[list]) continue;
 
 		/* lock the list */
-		if (!vxTas(&plist->lock)) continue;
+		FASTLOCK(&plist->lock);
 
 		/* process each set in each scan list */
 		for (scan=0; scan < plist->num_scan; scan++){
@@ -420,7 +420,7 @@ periodicScanTask()
 			}
 		}
 		/* unlock it */
-		plist->lock = 0;
+		FASTUNLOCK(&plist->lock);
 	}
 
 	/* sleep until next tenth second */
@@ -501,7 +501,7 @@ ioEventTask()
 		}
 
 		/* process each record in the scan list */
-		if (!vxTas(&pio_event_list->lock)) return; /* lock it */
+		FASTLOCK(&pio_event_list->lock); /* lock it */
 		index = 0;
 		pelement = &pio_event_list->element[0];
 		while (index < pio_event_list->number_defined){
@@ -517,7 +517,7 @@ ioEventTask()
 			pelement++;
 			index++;
 		}
-		pio_event_list->lock = 0;		/* unlock it */
+		FASTUNLOCK(&pio_event_list->lock);		/* unlock it */
 	}
     }
 }
@@ -564,7 +564,7 @@ eventTask()
 		}
 
 		/* process each record in the scan list */
-		if (!vxTas(&pevent_list->lock)) return; /* lock it */
+		FASTLOCK(&pevent_list->lock); /* lock it */
 		index = 0;
 		pelement = &pevent_list->element[0];
 		while (index < pevent_list->number_defined){
@@ -580,7 +580,7 @@ eventTask()
 			pelement++;
 			index++;
 		}
-		pevent_list->lock = 0; /* unlock it */
+		FASTUNLOCK(&pevent_list->lock); /* unlock it */
 	}
     }
 }
@@ -619,7 +619,7 @@ wdScanTask()
 		}
 
 		/* if any are suspended - restart them */
-		if (lists){
+		if (lists && wdRestart){
 			/* remove scan tasks */
 			remove_scan_tasks(lists);
 
@@ -672,6 +672,19 @@ callbackRequest(pcallback)
  */
 scan_init()
 {
+	int i;
+
+	/* Initialize all the fast locks */
+	for(i=0; i<NUM_LISTS; i++) {
+		FASTLOCKINIT(&lists[i].lock);
+	}
+	for(i=0; i<MAX_IO_EVENTS; i++) {
+		FASTLOCKINIT(&io_event_lists[i].lock);
+	}
+	for(i=0; i<MAX_EVENTS; i++) {
+		FASTLOCKINIT(&event_lists[i].lock);
+	}
+
 	/* remove scan tasks */
 	remove_scan_tasks(EVENT | IO_EVENT | PERIODIC | CALLBACK);
 
@@ -986,9 +999,9 @@ register short		lists;
 		return;
 	}
 
-	if (status < 0){
-		((struct dbCommon *)(paddr->precord))->stat = SCAN_ALARM;
-		((struct dbCommon *)(paddr->precord))->sevr = MAJOR_ALARM;
+	if (status < 0 && (precord->nsev<MAJOR_ALARM)){
+		precord->nsta = SCAN_ALARM;
+		precord->nsev = MAJOR_ALARM;
 	}
 	return;
 }
@@ -1008,18 +1021,18 @@ short			list_index;
 	register struct scan_element	*ptest_element;
 
 	/* lock the list during modification */
-	if (!vxTas(&lists[list_index].lock)) return(-1); /* lock it */
+	FASTLOCK(&lists[list_index].lock); /* lock it */
 
 	/* determine if we need to create a new set on this scan list */
 	set = lists[list_index].num_records / NUM_RECS_PER_SET;
 	if ((lists[list_index].num_records % NUM_RECS_PER_SET) == 0){
 		if (set >= NUM_SETS){
-			lists[list_index].lock = 0; /* unlock it */
+			FASTUNLOCK(&lists[list_index].lock); /* unlock it */
 			return(-1);
 		}
 		if ((lists[list_index].psets[set] = 
 		  (struct scan_element *)malloc(NUM_RECS_PER_SET*sizeof(struct scan_element))) == 0){
-			lists[list_index].lock = 0; /* unlock it */
+			FASTUNLOCK(&lists[list_index].lock); /* unlock it */
 			return(-1);
 		}
 		fill(lists[list_index].psets[set],NUM_RECS_PER_SET*sizeof(struct scan_element),0);
@@ -1078,7 +1091,7 @@ short			list_index;
 	lists[list_index].set = 0;
 
 	/* unlock it */
-	lists[list_index].lock = 0;
+	FASTUNLOCK(&lists[list_index].lock);
 
 	return(0);
 }
@@ -1152,7 +1165,7 @@ short			card_number;
 	}
 
 	/* lock the list during modification */
-	if (!vxTas(&pio_event_list->lock)) return(-1);
+	FASTLOCK(&pio_event_list->lock);
 
 	/* add this record to the list */
 	if (pio_event_list->number_defined == 0){
@@ -1174,7 +1187,7 @@ short			card_number;
 	pio_event_list->number_defined++;
 
 	/* unlock the list */
-	pio_event_list->lock = 0;
+	FASTUNLOCK(&pio_event_list->lock);
 
 	return(0);
 }
@@ -1238,7 +1251,7 @@ short			event;
 	}
 
 	/* lock the list during modification */
-	if (!vxTas(&pevent_list->lock)) return(-1);
+	FASTLOCK(&pevent_list->lock);
 
 	/* add this record to the list */
 	if (pevent_list->number_defined == 0){
@@ -1260,7 +1273,7 @@ short			event;
 	pevent_list->number_defined++;
 
 	/* unlock the list */
-	pevent_list->lock = 0;
+	FASTUNLOCK(&pevent_list->lock);
 
 	return(0);
 }
@@ -1334,7 +1347,7 @@ short			list_index;
 	short				end_of_list;
 
 	/* lock the list during modification */
-	if (!vxTas(&lists[list_index].lock)) return(-1);
+	FASTLOCK(&lists[list_index].lock);
 
 	/* find this record */
 	found = FALSE;
@@ -1358,7 +1371,7 @@ short			list_index;
 		}
 	}
 	if (!found){
-		lists[list_index].lock = 0;	/* unlock it */
+		FASTUNLOCK(&lists[list_index].lock);	/* unlock it */
 		return(-1);
 	}
 
@@ -1398,7 +1411,7 @@ short			list_index;
 	}
 
 	/* unlock the scan list */
-	lists[list_index].lock = 0;
+	FASTUNLOCK(&lists[list_index].lock);
 
 	return(0);
 }
@@ -1441,7 +1454,7 @@ short			card_number;
 	if (!found) return(-1);
 
 	/* lock the list during modification */
-	if (!vxTas(&pio_event_list->lock)) return(-1);
+	FASTLOCK(&pio_event_list->lock);
 
 	/* find this record in the list */
 	index = 0;
@@ -1457,7 +1470,7 @@ short			card_number;
 		}
 	}
 	if (!found){
-		pio_event_list->lock = 0; /* unlock it */
+		FASTUNLOCK(&pio_event_list->lock); /* unlock it */
 		return(-1);
 	}
 
@@ -1482,7 +1495,7 @@ short			card_number;
 	}
 
 	/* unlock the list */
-	pio_event_list->lock = 0;
+	FASTUNLOCK(&pio_event_list->lock);
 
 	return(0);
 }
@@ -1521,7 +1534,7 @@ short			event;
 	if (!found) return(-1);
 
 	/* lock the list during modification */
-	if (!vxTas(&pevent_list->lock)) return(-1);
+	FASTLOCK(&pevent_list->lock);
 
 	/* find this record in the list */
 	index = 0;
@@ -1537,7 +1550,7 @@ short			event;
 		}
 	}
 	if (!found){
-		pevent_list->lock = 0;	/* unlock it */
+		FASTUNLOCK(&pevent_list->lock);	/* unlock it */
 		return(-1);
 	}
 
@@ -1560,7 +1573,7 @@ short			event;
 	}
 
 	/* unlock the list */
-	pevent_list->lock = 0;
+	FASTUNLOCK(&pevent_list->lock);
 
 	return(0);
 }
@@ -1764,5 +1777,3 @@ short	event_number;
 	rngBufPut(eventQ,&event_number,sizeof(short));
 	semGive(&eventSem);
 }
-
-

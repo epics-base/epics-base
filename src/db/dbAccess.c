@@ -1,42 +1,35 @@
-
-
 /* dbAccess.c */
- /* share/src/db $Id$ */
+/* share/src/db  $Id$ */
 
-
-/*dbAccess.c 
+/*
+ *      Original Author: Bob Dalesio
+ *      Current Author:  Marty Kraimer
+ *      Date:            11-7-90
  *
- *	This is the former IOCDBACCESS.C
+ *      Experimental Physics and Industrial Control System (EPICS)
  *
- *	database access subroutines
+ *      Copyright 1991, the Regents of the University of California,
+ *      and the University of Chicago Board of Governors.
  *
- *	Author:	Bob Dalesio(LANL) and Marty Kraimer(ANL)
- *	Date:	11/7/90
+ *      This software was produced under  U.S. Government contracts:
+ *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *      and (W-31-109-ENG-38) at Argonne National Laboratory.
  *
- *	Control System Software for the GTA Project
+ *      Initial development by:
+ *              The Controls and Automation Group (AT-8)
+ *              Ground Test Accelerator
+ *              Accelerator Technology Division
+ *              Los Alamos National Laboratory
  *
- *	Copyright 1988, 1989, the Regents of the University of California.
- *
- *	This software was produced under a U.S. Government contract
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory, which is
- *	operated by the University of California for the U.S. Department
- *	of Energy.
- *
- *	Developed by the Controls and Automation Group (AT-8)
- *	Accelerator Technology Division
- *	Los Alamos National Laboratory
- *
- *	Direct inqueries to:
- *	Bob Dalesio, AT-8, Mail Stop H820
- *	Los Alamos National Laboratory
- *	Los Alamos, New Mexico 87545
- *	Phone: (505) 667-3414
- *	E-mail: dalesio@luke.lanl.gov
+ *      Co-developed with
+ *              The Controls and Computing Group
+ *              Accelerator Systems Division
+ *              Advanced Photon Source
+ *              Argonne National Laboratory
  *
  * Modification Log:
  * -----------------
- * .xx mm-dd-yy         mrk	Comment
- *
+ * .01  mm-dd-yy        iii     Comment
  */
 
 /* Global Database Access Routines
@@ -236,7 +229,7 @@ long dbProcess(paddr)
 	        prset=GET_PRSET(paddr->record_type);
 		if( prset && prset->get_value ){
 			(*prset->get_value)(precord,&valueDes);
-			db_post_events(precord,valueDes.pvalue,DBE_VALUE|DBE_ALARM|DBE_LOG);
+			db_post_events(precord,valueDes.pvalue,DBE_VALUE|DBE_ALARM);
 		}
 		return(0);
 	} else precord->lcnt=0;
@@ -476,10 +469,6 @@ int	precision;
 	short		number;
 	char	*pfirst_digit;
 
-	if(flt_value>0e0 && flt_value<udfFtest) {
-		strcpy(pstr_value,"undefined");
-		return;
-	}
 	pfirst_digit = pstr_value;
 	if (flt_value < 0){
 		*pstr_value = '-';
@@ -625,10 +614,6 @@ static void short_to_str(source,pdest)
 	*pdest = 0;
 	return;
     }
-    if(source==udfShort) {
-	strcpy(pdest,"undefined");
-	return;
-    }
     if(source<0) {
 	*pdest++ = '-';
 	if(source == -32768) {
@@ -663,10 +648,6 @@ static void ushort_to_str(source,pdest)
 	*pdest = 0;
 	return;
     }
-    if(source==udfUshort) {
-	strcpy(pdest,"undefined");
-	return;
-    }
     val = source;
     for(i=0; val!=0; i++) {
 	temp = val/10;
@@ -691,10 +672,6 @@ static void long_to_str(source,pdest)
     if(source==0) {
 	*pdest++ = '0';
 	*pdest = 0;
-	return;
-    }
-    if(source==udfLong) {
-	strcpy(pdest,"undefined");
 	return;
     }
     if(source<0) {
@@ -729,10 +706,6 @@ static void ulong_to_str(source,pdest)
     if(source==0) {
 	*pdest++ = '0';
 	*pdest = 0;
-	return;
-    }
-    if(source==udfUlong) {
-	strcpy(pdest,"undefined");
 	return;
     }
     val = source;
@@ -5892,6 +5865,8 @@ long		nRequest;
 	/* if the field is VAL and process_passive is true dont propagate*/
 	pfldDes = (struct fldDes *)(paddr->pfldDes);
 	pfield_name = (long *)&(pfldDes->fldname[0]);
+	/* if field is val set udf FALSE */
+	if (*pval == *pfield_name) precord->udf=FALSE;
 	if(precord->mlis.count &&
 	((*pval != *pfield_name) || (!pfldDes->process_passive)))
 		db_post_events(precord,paddr->pfield,DBE_VALUE);

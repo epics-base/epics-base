@@ -37,6 +37,8 @@
 #ifndef INCpostfixh
 #define INCpostfixh
 
+#include <shareLib.h>
+
 /*	defines for element table      */
 #define		BAD_EXPRESSION	0
 #define 	FETCH_A		1

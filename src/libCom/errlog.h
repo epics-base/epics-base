@@ -15,6 +15,8 @@ of this distribution.
 
 #include <stdarg.h>
 
+#include <shareLib.h>
+
 #ifdef __cplusplus
 extern "C" {
 #define epicsPrintUseProtoANSI
@@ -36,20 +38,20 @@ extern "C" {
 
 typedef void(*errlogListener) (const char *message);
 typedef enum {errlogInfo,errlogMinor,errlogMajor,errlogFatal} errlogSevEnum;
-extern char * errlogSevEnumString[];
-#ifdef ERRLOG_INIT
-char * errlogSevEnumString[] = {"info","minor","major","fatal"};
+epicsShareExtern char * errlogSevEnumString[];
+#ifdef epicsExportSharedSymbols
+epicsShareDef char * errlogSevEnumString[] = {"info","minor","major","fatal"};
 #endif
 
 #ifdef epicsPrintUseProtoANSI
 
-epicsShareFunc int epicsShareAPI errlogPrintf(
+epicsShareFunc int epicsShareAPIV errlogPrintf(
     const char *pformat, ...);
-epicsShareFunc int epicsShareAPI errlogVprintf(
+epicsShareFunc int epicsShareAPIV errlogVprintf(
     const char *pformat,va_list pvar);
-epicsShareFunc int epicsShareAPI errlogSevPrintf(
+epicsShareFunc int epicsShareAPIV errlogSevPrintf(
     const errlogSevEnum severity,const char *pformat, ...);
-epicsShareFunc int epicsShareAPI errlogSevVprintf(
+epicsShareFunc int epicsShareAPIV errlogSevVprintf(
     const errlogSevEnum severity,const char *pformat,va_list pvar);
 epicsShareFunc int epicsShareAPI errlogMessage(
 	const char *message);
@@ -69,7 +71,7 @@ epicsShareFunc void epicsShareAPI eltc(int yesno);
 epicsShareFunc void epicsShareAPI errlogInit(int bufsize);
 
 /*other routines that write to log file*/
-epicsShareFunc void epicsShareAPI errPrintf(long status, const char *pFileName,
+epicsShareFunc void epicsShareAPIV errPrintf(long status, const char *pFileName,
     int lineno, const char *pformat, ...);
 
 #else /* not epicsPrintUseProtoANSI */

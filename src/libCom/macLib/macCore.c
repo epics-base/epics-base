@@ -37,9 +37,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "dbmf.h"
+
 #define epicsExportSharedSymbols
 #include "macLib.h"
-#include "dbmf.h"
 
 /*
  * Static function prototypes (these static functions provide an low-level
@@ -755,6 +756,9 @@ char *Strdup( char *string )
 }
 
 /* $Log$
+ * Revision 1.6  1997/06/05 18:28:48  mrk
+ * Allow message about referenced but undefined to be suppressed
+ *
  * Revision 1.5  1997/05/01 19:57:32  jhill
  * updated dll keywords
  *

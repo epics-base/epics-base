@@ -119,10 +119,6 @@
 #include <ctype.h>
 #include <string.h>
 
-#define TS_PRIVATE_DATA
-#include "tsDefs.h"
-#undef TS_PRIVATE_DATA
-
 #if defined(vxWorks)
 #   include <vxWorks.h>
 #   include "drvTS.h"
@@ -138,9 +134,14 @@
 #   include <sys/time.h>
 #endif
 
-#define epicsExportSharedSymbols
 #include "epicsAssert.h"
 #include "envDefs.h"
+
+#define epicsExportSharedSymbols
+/* The instance of glTsStatText[] will be defined */
+#include "tsDefs.h"
+
+
 
 /*/subhead configuration------------------------------------------------------
 *		C O N F I G U R A T I O N   D E F I N I T I O N S

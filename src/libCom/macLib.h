@@ -5,12 +5,23 @@
  * William Lupton, W. M. Keck Observatory
  */
 
+/* Defer declaring export functions until appropriate */
+#ifdef epicsExportSharedSymbols
+#undef epicsExportSharedSymbols
+#define restoreExport
+#endif
+
 /*
  * EPICS include files needed by this file
  */
 #include "ellLib.h"
 #include "epicsPrint.h"
 #include "errMdef.h"
+
+#ifdef restoreExport
+#define epicsExportSharedSymbols
+#undef restoreExport
+#endif
 #include "shareLib.h"
 
 /*
@@ -202,6 +213,9 @@ epicsShareAPI macInstallMacros(
 );
 
 /* $Log$
+ * Revision 1.4  1997/06/05 18:28:49  mrk
+ * Allow message about referenced but undefined to be suppressed
+ *
  * Revision 1.3  1997/05/01 19:57:34  jhill
  * updated dll keywords
  *

@@ -27,6 +27,9 @@
  * Modification Log: 
  * -----------------
  * $Log$
+ * Revision 1.8  1997/05/01 19:57:10  jhill
+ * updated dll keywords
+ *
  * Revision 1.7  1997/04/10 19:45:16  jhill
  * API changes and include with  not <>
  *
@@ -53,10 +56,12 @@
 #include <vxWorks.h>
 #include <taskLib.h>
 
-#define epicsExportSharedSymbols
-#include "epicsAssert.h"
 #include "epicsPrint.h"
 #include "epicsVersion.h"
+
+#define epicsExportSharedSymbols
+#include "epicsAssert.h"
+
 
 
 /*

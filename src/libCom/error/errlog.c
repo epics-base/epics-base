@@ -28,15 +28,30 @@ of this distribution.
 #include <logLib.h>
 
 #include "epicsAssert.h"
-#define epicsExportSharedSymbols
-#define ERRLOG_INIT
-#include "errlog.h"
-#undef ERRLOG_INIT
-#undef epicsExportSharedSymbols
+/* errlog.h is included in errMdef.h for historical reasons
+ * We want to include errMdef.h here but not errlog.h
+ * (If we include it here, the epicsShareThings will be declared as import)
+ * (Is only a problem for WIN32 but done here for consistency)
+ * Define INCerrlog to keep it from being included
+ */
+#define INCerrlogh
 #include "errMdef.h"
-#include "ellLib.h"
 #include "error.h"
+#include "ellLib.h"
 #include "task_params.h"
+/* Up to now epicsShareThings have been declared as imports
+ *   (Appropriate for other stuff)
+ * After setting the following they will be declared as exports
+ *   (Appropriate for what we implenment)
+ */
+#define epicsExportSharedSymbols
+/* Include errlog.h here (by undefining INCerrlogh) to:
+ *  (1) Make the declarations be export
+ *  (2) Allocate storage for errlogSevEnumString[]
+ */
+#undef INCerrlogh
+#include "errlog.h"
+
 
 #ifndef LOCAL
 #define LOCAL static
@@ -83,7 +98,7 @@ LOCAL struct {
     void	*pbuffer;
 }pvtData;
 
-epicsShareFunc int epicsShareAPI errlogPrintf( const char *pFormat, ...)
+epicsShareFunc int epicsShareAPIV errlogPrintf( const char *pFormat, ...)
 {
     va_list	pvar;
     int		nchar;
@@ -99,7 +114,7 @@ epicsShareFunc int epicsShareAPI errlogPrintf( const char *pFormat, ...)
     return(nchar);
 }
 
-epicsShareFunc int epicsShareAPI errlogVprintf(
+epicsShareFunc int epicsShareAPIV errlogVprintf(
     const char *pFormat,va_list pvar)
 {
     int nchar;
@@ -135,7 +150,7 @@ epicsShareFunc int epicsShareAPI errlogMessage(const char *message)
     return 0;
 }
 
-epicsShareFunc int epicsShareAPI errlogSevPrintf(
+epicsShareFunc int epicsShareAPIV errlogSevPrintf(
     const errlogSevEnum severity,const char *pFormat, ...)
 {
     va_list	pvar;
@@ -153,7 +168,7 @@ epicsShareFunc int epicsShareAPI errlogSevPrintf(
     return(nchar);
 }
 
-epicsShareFunc int epicsShareAPI errlogSevVprintf(
+epicsShareFunc int epicsShareAPIV errlogSevVprintf(
     const errlogSevEnum severity,const char *pFormat,va_list pvar)
 {
     char	*pnext;
@@ -240,7 +255,7 @@ epicsShareFunc void epicsShareAPI eltc(int yesno)
     pvtData.toConsole = yesno;
 }
 
-epicsShareFunc void epicsShareAPI errPrintf(long status, const char *pFileName, 
+epicsShareFunc void epicsShareAPIV errPrintf(long status, const char *pFileName, 
 	int lineno, const char *pformat, ...)
 {
     va_list	pvar;

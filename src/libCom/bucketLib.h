@@ -33,6 +33,9 @@
  * 	.02 121693 joh	added bucketFree() 
  * 	.03 052395 joh	use std EPICS status 
  *	$Log$
+ *	Revision 1.5  1997/05/01 19:57:13  jhill
+ *	updated dll keywords
+ *
  *	Revision 1.4  1997/04/29 06:17:18  jhill
  *	use free lists
  *
@@ -54,8 +57,19 @@
 extern "C" {
 #endif
 
+  /* Defer declaring export functions until appropriate */
+#ifdef epicsExportSharedSymbols
+#undef epicsExportSharedSymbols
+#define restoreExport
+#endif
+
 #include "errMdef.h"
 #include "epicsTypes.h"
+
+#ifdef restoreExport
+#define epicsExportSharedSymbols
+#undef restoreExport
+#endif
 #include "shareLib.h"
 
 typedef	unsigned 	BUCKETID;

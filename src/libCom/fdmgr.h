@@ -46,10 +46,21 @@
 extern "C" {
 #endif
 
+  /* Defer declaring export functions until appropriate */
+#ifdef epicsExportSharedSymbols
+#undef epicsExportSharedSymbols
+#define restoreExport
+#endif
+
 #include "ellLib.h"
 #include "bucketLib.h"
-#include "shareLib.h"
 #include "osiSock.h"
+
+#ifdef restoreExport
+#define epicsExportSharedSymbols
+#undef restoreExport
+#endif
+#include "shareLib.h"
 
 enum fdi_type {fdi_read, fdi_write, fdi_excp};
 enum alarm_list_type {alt_invalid, alt_alarm, alt_expired, alt_free};

@@ -70,7 +70,6 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#define epicsExportSharedSymbols
 #include "ellLib.h"
 #include "dbDefs.h"
 #include "errMdef.h"
@@ -82,6 +81,9 @@
 #include <types.h>
 #include <symLib.h>
 #include <errnoLib.h>
+
+#define epicsExportSharedSymbols
+#include "shareLib.h"
 
 extern SYMTAB_ID  statSymTbl;
 

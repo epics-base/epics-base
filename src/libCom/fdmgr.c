@@ -71,6 +71,9 @@
  *			we eliminate delete ambiguity (chance of the same
  *			being reused).
  * $Log$
+ * Revision 1.27  1998/02/05 21:08:52  jhill
+ * use SOCK error defs and use priority inheritance mutex
+ *
  * Revision 1.26  1997/08/05 00:37:02  jhill
  * removed warnings
  *
@@ -126,9 +129,13 @@ static char	*pSccsId = "@(#) $Id$";
 #include <semLib.h>
 #endif
 
-#define epicsExportSharedSymbols
 #include "epicsAssert.h"
 #include "epicsTypes.h"
+
+#ifdef includeFdmgrH
+#error fdmgr.h has been included too soon
+#endif
+#define epicsExportSharedSymbols
 #include "fdmgr.h"
 
 #if 0

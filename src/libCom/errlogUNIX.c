@@ -56,20 +56,17 @@
  *   (Appropriate for what we implenment)
  */
 #define epicsExportSharedSymbols
-#include <shareLib.h>
 /* Include errlog.h here (by undefining INCerrlogh) to:
  *  (1) Make the declarations be export
- *  (2) Allocate storage (Controlled by ERRLOG_INIT)
+ *  (2) Allocate storage for errlogSevEnumString[]
  */
 #undef INCerrlogh
-#define ERRLOG_INIT
 #include "errlog.h"
-#undef ERRLOG_INIT
 
 static int sevToLog=0;
 
 
-epicsShareFunc int epicsShareAPI errlogPrintf(const char *pformat, ...)
+epicsShareFunc int epicsShareAPIV errlogPrintf(const char *pformat, ...)
 {
     va_list	pvar;
     int		nchar;
@@ -80,7 +77,7 @@ epicsShareFunc int epicsShareAPI errlogPrintf(const char *pformat, ...)
     return(nchar);
 }
 
-epicsShareFunc int epicsShareAPI errlogVprintf(
+epicsShareFunc int epicsShareAPIV errlogVprintf(
     const char *pformat, va_list pvar)
 {
     return(vfprintf(stderr,pformat,pvar));
@@ -92,7 +89,7 @@ epicsShareFunc int epicsShareAPI errlogMessage(const char *message)
     return(0);
 }
 
-epicsShareFunc int epicsShareAPI errlogSevPrintf(
+epicsShareFunc int epicsShareAPIV errlogSevPrintf(
     const errlogSevEnum severity,const char *pformat, ...)
 {
     va_list     pvar;
@@ -105,7 +102,7 @@ epicsShareFunc int epicsShareAPI errlogSevPrintf(
     return(nchar);
 }
 
-epicsShareFunc int epicsShareAPI errlogSevVprintf(
+epicsShareFunc int epicsShareAPIV errlogSevVprintf(
     const errlogSevEnum severity,const char *pformat,va_list pvar)
 {
     char        *pnext;
@@ -155,7 +152,7 @@ epicsShareFunc void epicsShareAPI errlogRemoveListener(
 }
 
 
-epicsShareFunc void epicsShareAPI errPrintf(long status, const char *pFileName, 
+epicsShareFunc void epicsShareAPIV errPrintf(long status, const char *pFileName, 
 	int lineno, const char *pformat, ...)
 {
     va_list 	   pvar;

@@ -56,10 +56,20 @@
 extern "C" {
 #endif
 
-#include "shareLib.h"
-#include "epicsTypes.h"
+  /* Defer declaring export functions until appropriate */
+#ifdef epicsExportSharedSymbols
+#undef epicsExportSharedSymbols
+#define restoreExport
+#endif
 
+#include "epicsTypes.h"
 #include "errMdef.h"	/* get M_ts for this subsystem's `number' */
+
+#ifdef restoreExport
+#define epicsExportSharedSymbols
+#undef restoreExport
+#endif
+#include "shareLib.h"
 
 /*---------------------------------------------------------------------------
 -
@@ -244,20 +254,20 @@ epicsShareFunc long epicsShareAPI tsTimeTextToStamp();
 #define TsStatusToText(status) \
 	(glTsStatText[TsStatusToIndex(status)])
 
-#ifndef TS_PRIVATE_DATA
-    epicsShareExtern char *glTsStatText[7];
-#else
+epicsShareExtern char *glTsStatText[7];
+#ifdef epicsExportSharedSymbols
+  /* #error epicsExportSharedSymbols is defined in tsDefs.h */
     epicsShareDef char *glTsStatText[] = {
-	/* S_ts_OK                */ "success",
-	/* S_ts_sysTimeError      */ "error getting system time",
-	/* S_ts_badTextCode       */ "invalid TS_TEXT_xxx code",
-	/* S_ts_inputTextError    */ "error in text date or time",
-	/* S_ts_timeSkippedDST    */ "time skipped on switch to DST",
-	/* S_ts_badRoundInterval  */ "rounding interval is invalid",
+        /* S_ts_OK                */ "success",
+        /* S_ts_sysTimeError      */ "error getting system time",
+        /* S_ts_badTextCode       */ "invalid TS_TEXT_xxx code",
+        /* S_ts_inputTextError    */ "error in text date or time",
+        /* S_ts_timeSkippedDST    */ "time skipped on switch to DST",
+        /* S_ts_badRoundInterval  */ "rounding interval is invalid",
 
-	/* TS_S_PAST              */ "illegal TS status code",
+        /* TS_S_PAST              */ "illegal TS status code",
     };
-#endif /*TS_PRIVATE_DATA*/
+#endif
 
 #ifdef __cplusplus
 }

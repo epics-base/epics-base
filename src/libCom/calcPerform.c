@@ -109,9 +109,11 @@
 #include	<string.h>
 #include	<math.h>
 
-#define epicsExportSharedSymbols
 #include	"dbDefs.h"
 #include	"postfix.h"
+
+#define epicsExportSharedSymbols
+#include "shareLib.h"
 
 static double	local_random();
 

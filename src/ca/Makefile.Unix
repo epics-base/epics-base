@@ -1,13 +1,11 @@
 TOP = ../../..
 include $(TOP)/config/CONFIG_BASE
-CMPLR = STRICT
 
-USR_LDLIBS = -lca -lCom -lm
+USR_LDLIBS = -lca -lCom 
 USR_LDFLAGS = -L.
 
 DEPLIBS_BASE = $(INSTALL_LIB)
-DEPLIBS = ./libca.a\
-	$(DEPLIBS_BASE)/libCom.a
+DEPLIBS = ./libca.a $(DEPLIBS_BASE)/libCom.a
 
 INC += cadef.h
 INC += caerr.h
@@ -32,15 +30,7 @@ LIBNAME = libca.a
 
 PROD = caRepeater 
 
+TARGETS = acctst catime
 
 include $(TOP)/config/RULES.Unix
-
-acctst: acctst.o $(LIBOBJS) $(DEPLIBS_BASE)/libCom.a
-	$(LINK.c) -o $@ $< $(LIBOBJS) $(DEPLIBS_BASE)/libCom.a \
-		$(ARCH_DEP_LDLIBS) -lm
-
-catime: catime.o $(LIBOBJS) $(DEPLIBS_BASE)/libCom.a 
-	$(LINK.c) -o $@ $< $(LIBOBJS) $(DEPLIBS_BASE)/libCom.a \
-		$(ARCH_DEP_LDLIBS) -lm
-
 

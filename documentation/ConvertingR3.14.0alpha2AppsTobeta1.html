@@ -1,0 +1,145 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="Author" content="jba">
+   <meta name="GENERATOR" content="Mozilla/4.77 [en] (X11; U; SunOS 5.8 sun4u) [Netscape]">
+</head>
+<body>
+
+<center>
+<h2>
+Converting an EPICS R3.14.0 alpha2 application to beta1</h2></center>
+
+<p><br>This document describes how to convert a R3.14.0alpha2 application
+so that it builds with release R3.14.0beta1.
+<h3>
+Gnumake clean uninstall</h3>
+
+<blockquote>First do a "<tt>gnumake clean uninstall"</tt> in the application's
+root directory to remove all files created by earlier builds.</blockquote>
+
+<h3>
+Replace configure/RULES.ioc and configure/Makefile</h3>
+
+<blockquote>The rules defined in RULES.ioc have changed slightly, and new
+applications are now given a wrapper version which just includes $(EPICS_BASE)/configure/RULES.ioc.
+The new configure/Makefile contains an additional macro that causes the
+contents of the configure/RELEASE file to be checked at build time for
+consistency with all the support applications that it references. These
+files should be replaced with copies of the new versions from &lt;base>/templates/makeBaseApp/top/configure</blockquote>
+
+<h3>
+Remove baseLIBOBJS</h3>
+
+<blockquote>Record and device support from base now exists in archive libraries
+so baseLIBOBJS is no longer needed and the file and references to it in
+the Makefile can be deleted. e.g. remove
+<blockquote><tt>-include ../baseLIBOBJS</tt></blockquote>
+and the file baseLIBOBJS. If there are no LIBOBJS definitions in the Makefile,
+also remove
+<blockquote><tt>example_OBJS += $(LIBOBJS)</tt></blockquote>
+</blockquote>
+
+<h3>
+Libraries recIoc, softDevIoc, and testDevIoc</h3>
+
+<blockquote>Add the new record and dev support libraries to &lt;name>App/src/Makefile,
+i.e. add the lines
+<blockquote><tt>example_LIBS += recIoc</tt>
+<br><tt>example_LIBS += softDevIoc</tt>
+<br><tt>example_LIBS += testDevIoc</tt></blockquote>
+and remove any references to iocLibrary, e.g. remove the line
+<blockquote><tt>example_OBJS_vxWorks += $(EPICS_BASE_BIN)/iocCoreLibrary</tt></blockquote>
+The order of references to base libraries is important so place recIoc
+and softDevIoc&nbsp; before the the other base library references.
+<p>If you are building on a WIN32 host add the following lines instead:
+<blockquote><tt># Use win32 object libs for registered support</tt>
+<br><tt>example_LIBS_win32 += recIocObj</tt>
+<br><tt>example_LIBS_win32 += softDevIocObj</tt>
+<br><tt>example_LIBS_win32 += testDevIocObj</tt>
+<br><tt>example_LIBS_DEFAULT += recIoc</tt>
+<br><tt>example_LIBS_DEFAULT += softDevIoc</tt>
+<br><tt>example_LIBS_DEFAULT += testDevIoc</tt></blockquote>
+</blockquote>
+
+<h3>
+iocrf renamed to iocsh</h3>
+
+<blockquote>Change all references to ioccrf in your application src directories
+to iocsh e.g.
+<p>change <tt>#include "ioccrf.h"</tt>
+<br>to&nbsp; <tt>#include "iocsh.h"</tt>
+<p>change<tt> ioccrf(argv[1]);</tt>
+<br>to&nbsp;<tt> iocsh(argv[1]);</tt>
+<p>and change&nbsp;<tt> ioccrf(NULL);</tt>
+<br>to <tt>iocsh(NULL)</tt>;
+<p>in &lt;name>App/src/exampleMain.c.</blockquote>
+
+<h3>
+PROD changes</h3>
+
+<blockquote>PROD targets will now be built for all target architectures.
+If a product should be built only for host architectures change PROD to
+PROD_HOST .e.g.&nbsp; in your application src Makefiles
+<blockquote>change <tt>PROD += caExample</tt>
+<br>to&nbsp; <tt>PROD_HOST += caExample</tt>
+<br>and
+<br>change <tt>PROD = sncExample</tt>
+<br>to <tt>PROD_HOST += sncExample</tt></blockquote>
+</blockquote>
+<b>LIBRARY and PROD changes</b>
+<blockquote>The meaning of LIBRARY and PROD have now changed. For vxWorks,
+LIBRARY now means an archive library, OBJLIB is now a combined object file
+(only needed for R3.13 compatibility) and PROD is now a combined object
+file with library references resolved and will have a corresponding .munch
+file created. Thus, in your application src Makefiles,
+<blockquote>change <tt>LIBRARY_vxWorks = &lt;name></tt>
+<br>to <tt>PROD_vxWorks = &lt;name></tt>
+<br>or
+<br>remove the lines <tt>LIBRARY_vxWorks = &lt;name></tt>
+<br>and <tt>PROD_RTEMS = &lt;name></tt>
+<br>and change <tt>PROD = &lt;name></tt>
+<br>to <tt>PROD_IOC = &lt;name></tt>.</blockquote>
+In the iocBoot/ioc&lt;name>/st.cmd files,
+<blockquote>change <tt>ld &lt; &lt;name>Library.munch</tt>
+<br>to <tt>ld &lt; &lt;name>.munch</tt></blockquote>
+A SRCS definition is now required for every PROD&nbsp; and LIBRARY source
+file to determine correct header file dependancies. This is true even if
+there is only one source file for the PROD or LIBRARY . Thus, for the PROD
+caExample in your src Makefile, add&nbsp; the line
+<blockquote>&nbsp;caExample_SRCS += caExample.c</blockquote>
+</blockquote>
+
+<h3>
+registerRecordDeviceDriver changes</h3>
+
+<blockquote>The created file registerRecordDeviceDriver.cpp is now used
+for all target architectures. Thus in your application src Makefiles
+<blockquote>change <tt>example_SRCS_DEFAULT += example_registerRecordDeviceDriver.cpp</tt>
+<br>to&nbsp; <tt>example_SRCS += example_registerRecordDeviceDriver.cpp</tt>
+<br><tt></tt>&nbsp;</blockquote>
+</blockquote>
+
+<h3>
+RTEMS-specific pathname changes</h3>
+
+<blockquote>1. The RTEMS TFTP remote filesystem no longer ignores leading
+`../' components in path names.&nbsp; All st.cmd file lines with path names
+of the form <tt>dbLoadRecords("../../db/dbExample1.db","user=norume")</tt>
+<br>must be changed to
+<br><tt>dbLoadRecords("db/dbExample1.db","user=norume")</tt><tt></tt>
+<p>The makeBaseApp.pl script distributed with R3.14-beta1 creates st.cmd
+scripts with the proper path names.
+<p>2. The RTEMS TFTP remote filesystem supports a limited set of chdir
+operations.
+<br>All paths passed to chdir (or to the IOC shell `cd' command) must end
+in a `/'
+<br>character.</blockquote>
+
+<blockquote>
+<blockquote>&nbsp;</blockquote>
+</blockquote>
+
+</body>
+</html>

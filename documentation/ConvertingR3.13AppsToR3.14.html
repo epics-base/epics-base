@@ -1,0 +1,302 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="Author" content="jba">
+   <meta name="GENERATOR" content="Mozilla/4.77 [en] (X11; U; SunOS 5.8 sun4u) [Netscape]">
+</head>
+<body>
+
+<center>
+<h2>
+Converting an EPICS R3.13 application to R3.14.0.beta1</h2></center>
+
+<p><br>This document describes how to convert a R3.13 vxWorks application
+so that it builds with release R3.14.0beta1.&nbsp; It describes procedures
+such that:
+<ul>
+<li>
+The application uses the configure rules which are new to R3.14.</li>
+</ul>
+
+<ul>
+<li>
+The OSI (Operating System Independent) features of R3.14 are available,
+i.e. iocCore products can be build for vxWorks as well as other platforms,
+e.g. solaris and linux.</li>
+</ul>
+
+<h3>
+Gnumake clean uninstall</h3>
+
+<blockquote>First do a gnumake clean uninstall in the application's root
+directory to remove all files created by earlier builds.</blockquote>
+
+<h3>
+Create a new R3.14 application</h3>
+
+<blockquote><tt>mkdir &lt;top></tt>
+<br><tt>cd &lt;top></tt>
+<br><tt>&lt;full path to R3.14.0beta1 base>/bin/&lt;host_arch>/makeBaseApp.pl
+-t example example</tt></blockquote>
+
+<h3>
+Copy all *App and iocBoot directories and files to the new &lt;top> directory</h3>
+
+<blockquote><tt>cd &lt;oldtop></tt>
+<br><tt>find *App iocBoot -print | cpio -pvmd &lt;fullpath name to new
+top></tt></blockquote>
+
+<h3>
+Modify &lt;top>/configure/RELEASE</h3>
+
+<blockquote>Copy definitions of external modules excluding EPICS_BASE and
+TEMPLATES_TOP from old application RELEASE file.
+<br>If sequence programs (*.st or *.stt files) exist in your application,
+add the SNCSEQ location definition for the R3.14 seq external module
+<blockquote><tt>SNCSEQ =&lt;full path to seq module top></tt></blockquote>
+The R3.14 seq module must exist and be built with EPICS base R3.14.0beta1.</blockquote>
+
+<h3>
+Modify the Makefiles in &lt;top>/*App directories.</h3>
+
+<blockquote>Change&nbsp;&nbsp;&nbsp;&nbsp; <tt>include $(TOP)/config/CONFIG_APP</tt>
+<br>to&nbsp;&nbsp;&nbsp;&nbsp; <tt>include $(TOP)/configure/CONFIG</tt>
+<p>Change&nbsp;&nbsp;&nbsp;&nbsp; i<tt>nclude $(TOP)/config/RULES_DIRS</tt>
+<br>to&nbsp;&nbsp;&nbsp;&nbsp; <tt>include $(TOP)/configure/RULES_DIRS</tt></blockquote>
+
+<h3>
+Modify the Makefiles in &lt;top>/*App/*Db directories.</h3>
+
+<blockquote>Remove existing Makefile
+<br>Rename Makefile.Host to Makefile
+<br>Modify Makefile as follows:
+<p>Change&nbsp;&nbsp;&nbsp;&nbsp; <tt>TOP=../../..</tt>
+<br>to&nbsp;&nbsp;&nbsp;&nbsp; <tt>TOP=../..</tt>
+<p>Change&nbsp;&nbsp;&nbsp; i<tt>nclude $(TOP)/config/CONFIG_APP</tt>
+<br>to&nbsp;&nbsp;&nbsp;&nbsp; <tt>include $(TOP)/configure/CONFIG</tt>
+<p>Change&nbsp;&nbsp;&nbsp;&nbsp; <tt>include $(TOP)/config/RULES.Db</tt>
+<br>to <tt>include $(TOP)/configure/RULES</tt>
+<p>Place all definitions between the include lines.
+<p>Place any rules after the last include line.</blockquote>
+
+<h3>
+Modify the Makefiles in &lt;top>/*App/src directories.</h3>
+
+<blockquote>Remove existing Makefile
+<br>Rename Makefile.Host to Makefile
+<br>Modify Makefile as follows:
+<p>Change <tt>TOP=../../..</tt>
+<br>to&nbsp;&nbsp;&nbsp;&nbsp; <tt>TOP=../..</tt>
+<p>Change&nbsp;&nbsp;&nbsp;&nbsp; <tt>include $(TOP)/config/CONFIG_APP</tt>
+<br>to&nbsp;&nbsp;&nbsp;&nbsp; <tt>include $(TOP)/configure/CONFIG</tt>
+<p>Change&nbsp;&nbsp;&nbsp;&nbsp; i<tt>nclude $(TOP)/config/RULES.Host</tt>
+<br>to&nbsp;&nbsp;&nbsp;&nbsp; <tt>include $(TOP)/configure/RULES</tt>
+<p>Change&nbsp;&nbsp;&nbsp;&nbsp; <tt>PROD_LIBS = &lt;name></tt>
+<br>to&nbsp;&nbsp;&nbsp;&nbsp;<tt> &lt;prod name>_LIBS = dbStaticHost</tt>
+<br>where&nbsp; <tt>&lt;prod name></tt> is a specifified product to be
+built.
+<p>Change&nbsp; library name <tt>Db</tt> to <tt>dbStaticHost.</tt>
+<br>Change<tt> PROD_LIBS = Db</tt>
+<br>to&nbsp;<tt> &lt;prodname>_LIBS += dbStaticHost</tt>
+<br>and <tt>Db_DIR = $(EPICS_BASE_LIB)</tt>
+<br>to&nbsp;&nbsp;&nbsp;&nbsp; <tt>dbStaticHost_DIR = $(EPICS_BASE_LIB)</tt>
+<p>Change&nbsp;&nbsp;&nbsp;&nbsp; <tt>USER_DBDFLAGS</tt>
+<br>to&nbsp;&nbsp;&nbsp;&nbsp; <tt>USR_DBDFLAGS</tt>
+<p>Change&nbsp;&nbsp;&nbsp;&nbsp; <tt>RECTYPES +=&nbsp; xxxRecord.h</tt>
+<br>to&nbsp;&nbsp;&nbsp;&nbsp; <tt>DBDINC += xxxRecord</tt>
+<p>Change&nbsp;&nbsp;&nbsp;&nbsp; <tt>DBDNAME = &lt;name>App.dbd</tt>
+<br>to&nbsp;&nbsp;&nbsp;&nbsp; <tt>DBD += &lt;name>.dbd</tt>
+<p>Remove all <tt>DBDEXPAND</tt>&nbsp; lines.
+<p>Change&nbsp; <tt>PROD = &lt;prodname></tt>
+<br>to <tt>PROD_HOST = &lt;prodname></tt>
+<p>Change&nbsp; <tt>SRCS.c += &lt;name></tt>
+<br>to <tt>&lt;prodname>_SRCS += &lt;name></tt>
+<br>or<tt> &lt;libname>_SRCS += &lt;name></tt>
+<p>Add the contents of Makefile.Vx to Makefile removing the include lines
+and the TOP definition.</blockquote>
+
+<blockquote>Change&nbsp;&nbsp;&nbsp;&nbsp; <tt>LIBNAME = &lt;libname>Lib</tt>
+<br>to&nbsp;&nbsp;&nbsp;&nbsp; <tt>PROD_vxWorks = &lt;libname></tt>
+<p>Remove line&nbsp;<tt> -include ../baseLIBOBJS</tt>
+<p>Remove&nbsp; line&nbsp;&nbsp;&nbsp; <tt>INSTALLS = iocCore seq</tt>
+<p>Change all <tt>SRCS.c += ../&lt;name>.c </tt>lines
+<br>to&nbsp;&nbsp; <font face="Arial,Helvetica">&lt;prodname>_SRCS += &lt;name>.c</font>
+<br>if the source files exist in the current directory.
+<p>Change all <tt>*OBJS += &lt;name>.o</tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+lines
+<br>to&nbsp;&nbsp; <font face="Arial,Helvetica">&lt;prodname>_SRCS += &lt;name>.c</font>
+<br>or&nbsp;<font face="Arial,Helvetica"> &lt;prodname>_SRCS += &lt;name>.cc</font>
+<br>if the c/c++ source files exist in the current directory.
+<p>Change&nbsp;&nbsp;&nbsp; <tt>LIBOBJS += &lt;seq_program_name>.o</tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+lines
+<br>to&nbsp;&nbsp; <tt>&lt;prodname>_SRCS += &lt;seq_program_name>.stt</tt>
+<br>or&nbsp; <tt>&lt;prodname>_SRCS += &lt;seq_program_name>.st</tt>
+<p>Add the lines
+<blockquote><tt>#&lt;name>_LIBS += seq</tt>
+<br><tt>#&lt;name>_LIBS += pv</tt>
+<br><tt>#seq_DIR&nbsp;&nbsp;&nbsp; = $(SNCSEQ_LIB)</tt>
+<br><tt>#pv_DIR&nbsp;&nbsp;&nbsp;&nbsp; = $(SNCSEQ_LIB)</tt>
+<p><tt>&lt;name>_LIBS += recIoc</tt>
+<br><tt>&lt;name>_LIBS += softDevIoc</tt>
+<br><tt>&lt;name>_LIBS += testDevIoc</tt>
+<br><tt>&lt;name>_LIBS += iocsh</tt>
+<br><tt>&lt;name>_LIBS += miscIoc</tt>
+<br><tt>&lt;name>_LIBS += rsrvIoc</tt>
+<br><tt>&lt;name>_LIBS += dbtoolsIoc</tt>
+<br><tt>&lt;name>_LIBS += asIoc</tt>
+<br><tt>&lt;name>_LIBS += dbIoc</tt>
+<br><tt>&lt;name>_LIBS += registryIoc</tt>
+<br><tt>&lt;name>_LIBS += dbStaticIoc</tt>
+<br><tt>&lt;name>_LIBS += ca</tt>
+<br><tt>&lt;name>_LIBS += Com</tt></blockquote>
+where <tt>&lt;name></tt> is the&nbsp; name in the <tt>PROD_vxWorks</tt>
+definition, and uncomment the first four lines if you have sequence programs
+(.st or .stt files) in the current directory.
+<p>Place all macro definitions between the include lines.
+<p>Place any rules after the last include line.</blockquote>
+
+<h3>
+Modify the Makefiles in &lt;top>/iocBoot directory.</h3>
+
+<blockquote>Change i<tt>nclude $(TOP)/config/CONFIG_APP</tt>
+<br>to&nbsp;&nbsp;&nbsp;&nbsp; <tt>include $(TOP)/configure/CONFIG</tt>
+<p>Remove the line <tt>DIRS += $(wildcard *ioc*)</tt>
+<p>Change <tt>include $(TOP)/config/RULES.iocBoot</tt>
+<br>to&nbsp;&nbsp;&nbsp;&nbsp; i<tt>nclude $(TOP)/configure/RULES.iocBoot</tt></blockquote>
+
+<h3>
+Modify the Makefiles in &lt;top>/iocBoot/ioc* directories.</h3>
+
+<blockquote>Change <tt>include $(TOP)/config/CONFIG_APP</tt>
+<br>to&nbsp;&nbsp;&nbsp;&nbsp; <tt>include $(TOP)/configure/CONFIG</tt>
+<p>Change <tt>include ARCH = &lt;old arch specification e.g. mv167></tt>
+<br>to&nbsp;&nbsp;&nbsp;&nbsp; <tt>include ARCH = &lt;new arch specificatio
+e.g. vxWorks-68040></tt>
+<p>Change <tt>include $(TOP)/config/RULES.ioc</tt>
+<br>to&nbsp;&nbsp;&nbsp;&nbsp; <tt>include $(TOP)/configure/RULES.ioc</tt>
+<p>Add the following rule at the end of the Makefile.
+<blockquote><tt>buildInstall: cdCommands</tt></blockquote>
+</blockquote>
+
+<h3>
+Modify st.cmd in &lt;top>/iocBoot/ioc* directories.</h3>
+
+<blockquote>Remove the lines</blockquote>
+
+<blockquote>
+<blockquote>
+<pre>ld &lt; seq</pre>
+
+<pre>ld &lt; iocCore</pre>
+</blockquote>
+Change&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <tt>ld &lt; &lt;libname>Lib</tt>
+<br>to&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <tt>ld &lt; &lt;libname>.munch</tt>
+<p>Change&nbsp; load statements&nbsp; for db and dbd files from
+<blockquote><tt>cd startup</tt>
+<br><tt>dbLoadDatabase("../../dbd/exampleApp.dbd")</tt>
+<br><tt>dbLoadRecords("../../db/dbExample1.db","user=jba")</tt>
+<br><tt>dbLoadRecords("../../db/dbExample2.db")</tt></blockquote>
+to
+<blockquote><tt>cd top</tt>
+<br><tt>dbLoadDatabase("dbd/example.dbd")</tt>
+<br><tt>registerRecordDeviceDriver(pdbbase)</tt>
+<br><tt>dbLoadRecords("db/dbExample1.db","user=jba")</tt>
+<br><tt>dbLoadRecords("db/dbExample2.db")</tt></blockquote>
+</blockquote>
+
+<h3>
+Record support changes</h3>
+
+<blockquote>The steppermotor, scan, and pid records are no longer in base.&nbsp;
+If these records are not used in your application, comment out references
+to them in base.dbd. If these record types are used at your site, they&nbsp;
+should be downloaded and built with base R3.14 by your EPICS administrator.
+To update the R3.14 location of these record types in your application
+you must&nbsp; add appropriate module definitions to your application's
+config/RELEASE file and change the <tt>LIBOBJS</tt> definitions.
+<p>For example add</blockquote>
+
+<blockquote>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <tt>PID=&lt;full
+path to modules directory>/pid</tt>
+<p>to config/RELEASE.
+<br>Remove</blockquote>
+
+<blockquote>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <tt>LIBOBJS
++= $(EPICS_BASE_BIN)/pidRecord.o</tt>
+<p>from baseLIBOBJS, and add</blockquote>
+
+<blockquote>
+<blockquote><tt>LIBOBJS += $(PID_BIN)/pidRecord.o</tt></blockquote>
+to your application src/Makefile.</blockquote>
+
+<blockquote>You should consider changing any existing old steppermotor
+records to the new EPICS&nbsp; motor record&nbsp; module supported by Beamline
+Controls and Data Acquisition at APS.</blockquote>
+
+<h3>
+RecDynLink.o and devPtSoft changes</h3>
+
+<blockquote>recDynLink.o and devPtSoft.o are no longer in EPICS base and
+now exist as separate EPICS modules.You must now add the appropriate module
+full path definitions to your application config/RELEASE file, and change
+<tt>LIBOBJS</tt>
+location definition <tt>$(EPICS_BASE_BIN)</tt> to the module definition
+bin directory in your application src directory files.&nbsp; See "Hardware
+support changes" below for instructions.</blockquote>
+
+<h3>
+Hardware support changes</h3>
+
+<blockquote>All hardware support (dev, drv and dbd files) except soft support
+has been unbundled from base R3.14. This support includes the files symb.dbd,
+drvHp1404a.o, drvEpvxiMsg.o, and drvEpvxi.o. If these are not used by your
+application, comment out references to them in base.dbd.</blockquote>
+
+<blockquote>Hardware support now exists as separate EPICS modules. The
+hardware support for your site should be downloaded and built with base
+R3.14 by your EPICS administrator. You must now add the appropriate module
+full path definitions to your application config/RELEASE file, and change
+<tt>LIBOBJS</tt>
+location from <tt>$(EPICS_BASE_BIN) </tt>to the module&nbsp; bin directory
+in your application src directory files.
+<p>For example, remove</blockquote>
+
+<blockquote>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <tt>LIBOBJS+=$(EPICS_BASE_BIN)/symb</tt></blockquote>
+
+<blockquote>from baseLIBOBJS and add</blockquote>
+
+<blockquote>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <tt>LIBOBJS+=$(SYMB_BIN)/symb</tt></blockquote>
+
+<blockquote>to your application src/Makefile,
+<br>and add the line</blockquote>
+
+<blockquote>
+<blockquote><tt>SYMB=&lt;full path definition for the built module SYMB></tt></blockquote>
+</blockquote>
+
+<blockquote>into your application config/RELEASE file .</blockquote>
+
+<h3>
+dbLoadtemplate tool changes</h3>
+
+<blockquote>The host tool dbLoadTemplate has been replace by a new EPICS
+extension, msi, which should be downloaded and built with base R3.14 by
+your EPICS administrator. dbLoadTemplate is still supported on iocs.&nbsp;
+If, in your application, db files are created from template and substitution
+files you should&nbsp; add the definition
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <tt>EPICS_EXTENSIONS=&lt;full
+path name to epics extensions directory></tt>
+<p>to your application config/RELEASE file.</blockquote>
+
+<blockquote>
+<blockquote>&nbsp;</blockquote>
+
+<blockquote>
+<pre></pre>
+</blockquote>
+</blockquote>
+
+<br>&nbsp;
+</body>
+</html>

@@ -34,8 +34,6 @@ static const unsigned maxSearchTries = 100u; //  max tries on unchanged net
 static const unsigned initialTriesPerFrame = 1u; // initial UDP frames per search try
 static const unsigned maxTriesPerFrame = 64u; // max UDP frames per search try 
 
-static const double minRoundTripEstimate = 100e-6; // seconds
-static const double maxRoundTripEstimate = 5.0; // seconds
 static const double minSearchPeriod = 30e-3; // seconds
 static const double maxSearchPeriod = 5.0; // seconds
 
@@ -103,9 +101,10 @@ void searchTimer::recomputeTimerPeriod (
         ( tsMin ( this->minRetry, maxSearchTries + 1u ) );
 
     unsigned idelay = 1u << tsMin ( retry, CHAR_BIT * sizeof ( idelay ) - 1u );
-    this->period = idelay * this->iiu.roundTripDelayEstimate ( guard ) * 2.0; /* sec */ 
+    double delayFactor = tsMax ( 
+        this->iiu.roundTripDelayEstimate ( guard ) * 2.0, minSearchPeriod );
+    this->period = idelay * delayFactor; /* sec */ 
     this->period = tsMin ( maxSearchPeriod, this->period );
-    this->period = tsMax ( minSearchPeriod, this->period );
 }
 
 void searchTimer::recomputeTimerPeriodAndStartTimer ( epicsGuard < udpMutex > & guard,

@@ -145,5 +145,10 @@ done:
     printf(" no_write_access %d\n",noWriteAccess);
     printf(" nDisconnect %lu nNoWrite %lu\n",nDisconnect,nNoWrite);
     dbFinishEntry(pdbentry);
+    
+    if ( level > 2 ) {
+        ca_client_status ( level - 2 );
+    }
+
     return(0);
 }

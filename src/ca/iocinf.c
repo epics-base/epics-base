@@ -47,6 +47,9 @@
 /*			address in use so that test works on UNIX	*/
 /*			kernels that support multicast			*/
 /* $Log$
+ * Revision 1.81  1998/07/07 23:04:00  jhill
+ * cosmetic changes
+ *
  * Revision 1.80  1998/06/18 00:07:12  jhill
  * use ipAddrToA
  *
@@ -151,7 +154,6 @@ LOCAL void 	cacRingBufferInit(struct ca_buffer *pBuf,
 				unsigned long size);
 LOCAL char 	*getToken(const char **ppString, char *pBuf, 
 				unsigned bufSize);
-LOCAL void 	close_ioc (IIU *piiu);
 
 
 
@@ -1035,32 +1037,6 @@ LOCAL void cac_tcp_send_msg_piiu(struct ioc_in_use *piiu)
 
 
 /*
- * cac_clean_iiu_list()
- */
-void cac_clean_iiu_list()
-{
-	IIU *piiu;
-
-	LOCK;
-
-	piiu=(IIU *)iiuList.node.next;
-	while(piiu){
-		if (piiu->state==iiu_disconnected) {
-			IIU *pnextiiu;
-
-			pnextiiu = (IIU *)piiu->node.next;
-			close_ioc(piiu);
-			piiu = pnextiiu;
-			continue;
-		}
-		piiu=(IIU *)piiu->node.next;
-	}
-
-	UNLOCK;
-}
-
-
-/*
  * ca_process_input_queue()
  */
 void ca_process_input_queue()
@@ -1402,11 +1378,11 @@ LOCAL void ca_process_udp(struct ioc_in_use *piiu)
 
 
 /*
- *	CLOSE_IOC()
- *	set an iiu in the disconnected state
+ *	cac_close_ioc ()
+ *	(free resources associated with a client connection)
  *
  */
-LOCAL void close_ioc (IIU *piiu)
+void cac_close_ioc (IIU *piiu)
 {
 	caAddrNode	*pNode;
   	ciu		chix;
@@ -2024,13 +2000,6 @@ void cac_mux_io(struct timeval  *ptimeout)
 	struct timeval          timeout;
 	unsigned				countDown;
 
-	cac_clean_iiu_list();
-
-	/*
-	 * manage search timers and detect disconnects
-	 */
-	manage_conn();
-
 	/*
 	 * first check for pending recv's with a zero time out so that
 	 * 1) flow control works correctly (and)
@@ -2055,6 +2024,11 @@ void cac_mux_io(struct timeval  *ptimeout)
 		}
 		ca_process_input_queue();
     }
+
+	/*
+	 * manage search timers and detect disconnects
+	 */
+	manage_conn();
 
 	/*
 	 * next check for pending writes's with the specified time out 
@@ -2099,7 +2073,10 @@ void cac_mux_io(struct timeval  *ptimeout)
 			CLR_CA_TIME (&timeout);
 		}
 		ca_process_input_queue();
+
     }
+
+	checkConnWatchdogs();
 }
 
 
@@ -2108,28 +2085,27 @@ void cac_mux_io(struct timeval  *ptimeout)
  */
 int caSendMsgPending()
 {
-        int                     pending = FALSE;
-        unsigned long           bytesPending;
-        struct ioc_in_use       *piiu;
-
-        LOCK;
-        for(    piiu = (IIU *) ellFirst(&iiuList);
-                piiu;
-                piiu = (IIU *) ellNext(&piiu->node)){
-
-                if(piiu == piiuCast){
-                        continue;
-                }
-
+	int                     pending = FALSE;
+	unsigned long           bytesPending;
+	struct ioc_in_use       *piiu;
+	
+	LOCK;
+	for (piiu = (IIU *) ellFirst(&iiuList);
+		piiu; piiu = (IIU *) ellNext(&piiu->node)){
+		
+		if(piiu == piiuCast){
+			continue;
+		}
+		
 		if (piiu->state == iiu_connected) {
 			bytesPending = cacRingBufferReadSize(&piiu->send, FALSE);
 			if(bytesPending > 0u){
 				pending = TRUE;
 			}
 		}
-        }
-        UNLOCK;
-
-        return pending;
+	}
+	UNLOCK;
+	
+	return pending;
 }
 

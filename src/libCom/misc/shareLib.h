@@ -28,11 +28,13 @@
  *
  * In the implementation file, however, you write:
  *
- *  #include <other_stuff.h>
+ *  #include <routines_imported.h>
+ *  #include <routines_imported_from_other_dlls.h>
  *  #define epicsExportSharedSymbols
+ *  ! no more includes specifying routines outside this DLLs from here on ! 
  *  #include <shareLib.h>
- *  #include <what_I_implement.h>
- *  ! no more "foreign" includes from here on ! 
+ *  #include <in_this_dll_but_not_implemented_here.h>
+ *  #include <what_I_implement_here.h>
  *
  * The point is: define epicsExportSharedSymbols exacly and only
  * right before you include the prototypes for what you implement!

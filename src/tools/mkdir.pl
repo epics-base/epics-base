@@ -6,7 +6,7 @@
 
 use File::Path;
 use Getopt::Std;
-getopt "";
+getopt('');
 
 foreach $dir ( @ARGV )
 {

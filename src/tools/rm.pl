@@ -6,7 +6,7 @@ use File::Path;
 use File::Find;
 use Getopt::Std;
 
-getopt "";
+getopt('');
 
 foreach $arg ( @ARGV )
 {

@@ -408,6 +408,7 @@ LOCAL void verify_value(chid chan_id, chtype type)
 LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 {
     unsigned	i;
+    char 	tsString[50];
 
     printf("%s\t",dbr_text[type]);
     switch(type){
@@ -464,7 +465,7 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		dbr_long_t *pvalue = (dbr_long_t *)pbuffer;
 		for (i = 0; i < count; i++,pvalue++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
-			printf("0x%x ",*pvalue);
+			printf("%ld ",*pvalue);
 		}
 		break;
 	}
@@ -549,7 +550,7 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,plong++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
-			printf("0x%lx ", (unsigned long) *plong);
+			printf("%ld ",*plong);
 		}
 		break;
 	}
@@ -570,10 +571,10 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 	{
 		struct dbr_time_string *pvalue 
 		  = (struct dbr_time_string *) pbuffer;
+
+		tsStampToText(&pvalue->stamp,TS_TEXT_MMDDYY,tsString);
 		printf("%2d %2d",pvalue->status,pvalue->severity);
-		printf("\tTimeStamp: %lx %lx",
-			(unsigned long) pvalue->stamp.secPastEpoch, 
-			(unsigned long) pvalue->stamp.nsec);
+		printf("\tTimeStamp: %s",tsString);
 		printf("\tValue: ");
 		printf("%s",pvalue->value);
 		break;
@@ -583,10 +584,10 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		struct dbr_time_enum *pvalue
 		  = (struct dbr_time_enum *)pbuffer;
 		dbr_enum_t *pshort = &pvalue->value;
+
+		tsStampToText(&pvalue->stamp,TS_TEXT_MMDDYY,tsString);
 		printf("%2d %2d",pvalue->status,pvalue->severity);
-		printf("\tTimeStamp: %lx %lx",
-			(unsigned long) pvalue->stamp.secPastEpoch, 
-			(unsigned long) pvalue->stamp.nsec);
+		printf("\tTimeStamp: %s",tsString);
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,pshort++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
@@ -599,12 +600,12 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		struct dbr_time_short *pvalue
 		  = (struct dbr_time_short *)pbuffer;
 		dbr_short_t *pshort = &pvalue->value;
+
+		tsStampToText(&pvalue->stamp,TS_TEXT_MMDDYY,tsString);
 		printf("%2d %2d",
 			pvalue->status,
 			pvalue->severity);
-		printf("\tTimeStamp: %lx %lx",
-			(unsigned long) pvalue->stamp.secPastEpoch, 
-			(unsigned long) pvalue->stamp.nsec);
+		printf("\tTimeStamp: %s",tsString);
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,pshort++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
@@ -617,10 +618,10 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		struct dbr_time_float *pvalue
 		  = (struct dbr_time_float *)pbuffer;
 		dbr_float_t *pfloat = &pvalue->value;
+
+		tsStampToText(&pvalue->stamp,TS_TEXT_MMDDYY,tsString);
 		printf("%2d %2d",pvalue->status,pvalue->severity);
-		printf("\tTimeStamp: %lx %lx",
-			(unsigned long) pvalue->stamp.secPastEpoch, 
-			(unsigned long) pvalue->stamp.nsec);
+		printf("\tTimeStamp: %s",tsString);
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,pfloat++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
@@ -633,10 +634,10 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		struct dbr_time_char *pvalue
 		  = (struct dbr_time_char *)pbuffer;
 		dbr_char_t *pchar = &pvalue->value;
+
+		tsStampToText(&pvalue->stamp,TS_TEXT_MMDDYY,tsString);
 		printf("%2d %2d",pvalue->status,pvalue->severity);
-		printf("\tTimeStamp: %lx %lx",
-			(unsigned long) pvalue->stamp.secPastEpoch, 
-			(unsigned long) pvalue->stamp.nsec);
+		printf("\tTimeStamp: %s",tsString);
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,pchar++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
@@ -649,14 +650,14 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		struct dbr_time_long *pvalue
 		  = (struct dbr_time_long *)pbuffer;
 		dbr_long_t *plong = &pvalue->value;
+
+		tsStampToText(&pvalue->stamp,TS_TEXT_MMDDYY,tsString);
 		printf("%2d %2d",pvalue->status,pvalue->severity);
-		printf("\tTimeStamp: %lx %lx",
-			(unsigned long) pvalue->stamp.secPastEpoch, 
-			(unsigned long) pvalue->stamp.nsec);
+		printf("\tTimeStamp: %s",tsString);
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,plong++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
-			printf("0x%lx ", (unsigned long) *plong);
+			printf("%ld ",*plong);
 		}
 		break;
 	}
@@ -665,10 +666,10 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		struct dbr_time_double *pvalue
 		  = (struct dbr_time_double *)pbuffer;
 		dbr_double_t *pdouble = &pvalue->value;
+
+		tsStampToText(&pvalue->stamp,TS_TEXT_MMDDYY,tsString);
 		printf("%2d %2d",pvalue->status,pvalue->severity);
-		printf("\tTimeStamp: %lx %lx",
-			(unsigned long) pvalue->stamp.secPastEpoch, 
-			(unsigned long) pvalue->stamp.nsec);
+		printf("\tTimeStamp: %s",tsString);
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,pdouble++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
@@ -760,7 +761,7 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,plong++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
-			printf("0x%lx ", (unsigned long) *plong);
+			printf("%ld ",*plong);
 		}
 		break;
 	}
@@ -863,7 +864,7 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,plong++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
-			printf("0x%lx ", (unsigned long) *plong);
+			printf("%ld ",*plong);
 		}
 		break;
 	}

@@ -34,7 +34,9 @@ vpath %.cpp $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.C $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.rc $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.h $(USR_VPATH) $(ALL_SRC_DIRS)
-vpath %.skel.static $(USR_VPATH) $(GENERIC_SRC_DIRS)
+vpath %.skel.static $(USR_VPATH) $(ALL_SRC_DIRS)
+vpath %.y $(USR_VPATH) $(ALL_SRC_DIRS)
+vpath %.l $(USR_VPATH) $(ALL_SRC_DIRS)
 
 #---------------------------------------------------------------
 
@@ -218,20 +220,20 @@ $(TESTPRODNAME) $(PRODNAME):%$(EXE): $(PRODUCT_OBJS) $(PROD_RESS) $(PROD_DEPLIBS
 # are creating it
 #
 ifeq ($(findstring -d, $(YACCOPT)),-d)
-%.h %.c: ../%.y
+%.h %.c: %.y
 	$(RM) $*.c y.tab.c
 	$(RM) $*.h y.tab.h
 	$(YACC) $(YACCOPT) $<
 	$(MV) y.tab.c $*.c
 	$(MV) y.tab.h $*.h
 else
-%.c: ../%.y
+%.c: %.y
 	$(RM) $*.c y.tab.c
 	$(YACC) $(YACCOPT) $<
 	$(MV) y.tab.c $*.c
 endif
 
-%.c: ../%.l
+%.c: %.l
 	@$(RM) lex.yy.c
 	$(LEX) $(LEXOPT) $<
 	@$(RM) $@

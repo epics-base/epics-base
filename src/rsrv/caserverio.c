@@ -89,6 +89,10 @@ void cas_send_msg ( struct client *pclient, int lock_needed )
             int anerrno = SOCKERRNO;
             char buf[64];
 
+            if ( anerrno == SOCK_EINTR ) {
+                continue;
+            }
+
             ipAddrToDottedIP ( &pclient->addr, buf, sizeof(buf) );
 
             if(pclient->proto == IPPROTO_TCP) {

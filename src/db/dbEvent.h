@@ -67,7 +67,7 @@ typedef void			EVENTFUNC(
 
 #define EVENTSPERQUE	32
 #define EVENTQUESIZE    (EVENTENTRIES  * EVENTSPERQUE)
-#define EVENTENTRIES    16      /* the number of que entries for each event */
+#define EVENTENTRIES    4      /* the number of que entries for each event */
 #define EVENTQEMPTY     ((struct event_block *)NULL)
 
 

@@ -62,3 +62,7 @@ RANLIB =
 # required by sun's C++ compiler
 AR = $(CCC) -xar -o
 
+#--------------------------------------------------
+# Use C++ constructors to register commands/programs (snc +i option)
+CPPSNCFLAGS += -x c
+TARGET_SNCFLAGS += +i

@@ -35,3 +35,7 @@ ARCH_DEP_CPPFLAGS += -D_X86_ -Dlinux
 
 ARCH_DEP_LDFLAGS =
 ARCH_DEP_LDLIBS = -lpthread -lreadline -lcurses -lrt
+
+# Use C++ constructors to register commands/programs (snc +i option)
+CPPSNCFLAGS += -x c
+TARGET_SNCFLAGS += +i

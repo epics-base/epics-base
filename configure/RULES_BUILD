@@ -227,20 +227,6 @@ endif
 	$(MV) lex.yy.c $@
 
 #state notation language rule
-%.c: ../%.st
-	@echo "preprocessing $*.st"
-	@$(RM) $*.i
-	$(CPP) $(CPPSNCFLAGS) $< > $*.i
-	@echo "converting $*.i"
-	@$(RM) $@
-	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.i -o $@
-
-%.c:	%.stt
-	@echo "converting $<
-	ln -s $< $*.st
-	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.st -o $@
-	@$(RM) $*.st
-
 %.cpp: ../%.st
 	@echo "preprocessing $*.st"
 	@$(RM) $*.i

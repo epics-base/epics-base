@@ -11,4 +11,3 @@
 include $(CONFIG)/os/CONFIG.UnixCommon.Common
 
 WIND_HOST_TYPE = i386-linux2
-

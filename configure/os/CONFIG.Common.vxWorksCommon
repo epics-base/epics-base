@@ -96,6 +96,23 @@ OSITHREAD_USE_DEFAULT_STACK = NO
 LINK.cpp = $(GCC_LD) -o $@ $(LDFLAGS) $(PROD_LD_OBJS) $(PROD_LD_RES) $(LDLIBS)
 
 #--------------------------------------------------
+# Uncomment these lines to, use C to compile SNC output -- all other systems use C++
+##%.c: ../%.st
+##	@echo "preprocessing $*.st"
+##	@$(RM) $*.i
+##	$(CPP) $(CPPSNCFLAGS) $< > $*.i
+##	@echo "converting $*.i"
+##	@$(RM) $@
+##	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.i -o $@
+##
+##%.c:	%.stt
+##	@echo "converting $<
+##	ln -s $< $*.st
+##	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.st -o $@
+##	@$(RM) $*.st
+CPPSNCFLAGS += -x c
+
+#--------------------------------------------------
 # Allow site overrides
 -include $(CONFIG)/os/CONFIG_SITE.Common.vxWorksCommon
 -include $(CONFIG)/os/CONFIG_SITE.$(EPICS_HOST_ARCH).vxWorksCommon

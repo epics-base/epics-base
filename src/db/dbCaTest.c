@@ -38,7 +38,6 @@ of this distribution.
 /*end of conflicting definitions*/
 #include "cadef.h"
 #include "db_access.h"
-#include "dbLock.h"
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "dbCommon.h"
@@ -47,11 +46,13 @@ of this distribution.
 #define DB_CONVERT_GBLSOURCE
 
 #define epicsExportSharedSymbols
+#include "dbLock.h"
 #include "db_access_routines.h"
 #include "db_convert.h"
 #include "dbCaPvt.h"
 #include "dbCa.h"
 #include "dbCaTest.h"
+
 
 long epicsShareAPI dbcar(char	*precordname,int level)
 {

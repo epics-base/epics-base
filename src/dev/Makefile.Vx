@@ -94,6 +94,7 @@ SRCS.c += ../devWfJoergerVtr1.c
 SRCS.c += ../devWfSoft.c
 SRCS.c += ../devWfTestAsyn.c
 SRCS.c += ../devWfXy566Sc.c
+SRCS.c += ../devWfPentek4261.c
 SRCS.c += ../devXy240.c
 
 SRCS.c += ../devAB1771IFE.c
@@ -194,6 +195,7 @@ OBJS += devWfJoergerVtr1.o
 OBJS += devWfSoft.o
 OBJS += devWfTestAsyn.o
 OBJS += devWfXy566Sc.o
+OBJS += devWfPentek4261.o
 OBJS += devXy240.o
 OBJS += devAB1771IFE.o
 OBJS += devAB1771IL.o

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.15  1998/02/05 23:25:19  jhill
+ * workaround vis c++ 5.0 bug
+ *
  * Revision 1.14  1997/08/05 00:53:02  jhill
  * changed some inline func to normal func
  *
@@ -262,41 +265,21 @@ protected:
 //
 resTableIndex uintId::resourceHash(unsigned /* nBitsId */) const
 {
-	//
-	// 0.5 uS Pent 200 MHz
-	//unsigned src = this->id;
-	//resTableIndex hashid;
-	//
-	//hashid = src;
-	//while ( (src >>= nBitsId) ) {
-	//	hashid ^= src;
-	//}
+	resTableIndex hashid = this->id;
 
 	//
-	// 0.32 uS Pent 200 MHz
-	// 
-	// faster because it does not 
-	// check for the hash id size
-	// (assumes worst case hash id
-	// of 1 bit)
+	// This assumes worst case hash table index width of 1 bit.
+	// We will iterate this loop 5 times on a 32 bit architecture.
 	//
-	resTableIndex hashid = this->id;
-#if UINT_MAX >> 128u
-	hashid ^= (hashid>>128u);
-#endif
-#if UINT_MAX >> 64u
-	hashid ^= (hashid>>64u);
-#endif
-#if UINT_MAX >> 32u
-	hashid ^= (hashid>>32u);
-#endif
-#if UINTMAX >> 16u
-	hashid ^= (hashid>>16u);
-#endif
-	hashid ^= (hashid>>8u);
-	hashid ^= (hashid>>4u);
-	hashid ^= (hashid>>2u);
-	hashid ^= (hashid>>1u);
+	// A good optimizer will unroll this loop?
+	// Experiments using the microsoft compiler show that this isnt 
+	// slower than switching on the architecture size and urolling the
+	// loop explicitly (that solution has resulted in portability
+	// problems in the past).
+	//
+	for (unsigned i=(CHAR_BIT*sizeof(unsigned))/2u; i>0u; i >>= 1u) {
+		hashid ^= (hashid>>i);
+	}
 
 	//
 	// the result here is always masked to the
@@ -581,7 +564,6 @@ void resTable<T,ID>::show (unsigned level) const
 	double mean;
 	double stdDev;
 	unsigned maxEntries;
-	unsigned totOccupiedEntries;
 
 	printf("resTable with %d resources installed\n", this->nInUse);
 
@@ -590,7 +572,6 @@ void resTable<T,ID>::show (unsigned level) const
 		X = 0.0;
 		XX = 0.0;
 		maxEntries = 0u;
-		totOccupiedEntries = 0u;
 		while (pList < &this->pTable[this->hashIdMask+1]) {
 			unsigned count;
 			tsSLIter<T> iter(*pList);
@@ -604,7 +585,6 @@ void resTable<T,ID>::show (unsigned level) const
 				count++;
 			}
 			if (count>0u) {
-				totOccupiedEntries++;
 				X += count;
 				XX += count*count;
 				if (count>maxEntries) {
@@ -614,8 +594,8 @@ void resTable<T,ID>::show (unsigned level) const
 			pList++;
 		}
 	 
-		mean = X/totOccupiedEntries;
-		stdDev = sqrt(XX/totOccupiedEntries - mean*mean);
+		mean = X/(this->hashIdMask+1);
+		stdDev = sqrt(XX/(this->hashIdMask+1) - mean*mean);
 		printf( 
 	"entries/occupied table entry - mean = %f std dev = %f max = %d\n",
 			mean, stdDev, maxEntries);

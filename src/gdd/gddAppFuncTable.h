@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  1998/02/05 22:47:46  jhill
+ * workaround vis C++ 5.0 bug
+ *
  * Revision 1.5  1997/06/25 06:17:36  jhill
  * fixed warnings
  *
@@ -97,21 +100,20 @@ public:
 	}
 
 	//
-	// Both cases below are correct C++ syntax.
-	// (compiler quality varies)
+	// Both cases below are correct C++ syntax 
 	//
-#if _MSC_VER == 1100
-	//
-	// required by MS vis c++ 5.0 (but not by 4.0 or 4.2)
-	//
-	typedef gddAppFuncTableStatus (PV::*gddAppFuncTablePMF_t)(gdd &);
-#	define gddAppFuncTablePMF(VAR) gddAppFuncTablePMF_t VAR
-#else
+#if __GNUG__
 	//
 	// required by gnu g++ 2.7.2
 	//
 #	define gddAppFuncTablePMF(VAR) gddAppFuncTableStatus (PV:: * VAR)(gdd &)
-#	define gddAppFuncTablePMF_t ((PV:: *)(gdd &))
+#	define gddAppFuncTablePMF_t (gddAppFuncTableStatus (PV::*)(gdd &))
+#else
+	//
+	// required by MS vis c++ and also sun pro c++ 
+	//
+	typedef gddAppFuncTableStatus (PV::*gddAppFuncTablePMF_t)(gdd &);
+#	define gddAppFuncTablePMF(VAR) gddAppFuncTablePMF_t VAR
 #endif
 
 	//
@@ -253,13 +255,12 @@ void gddAppFuncTable<PV>::newTbl(unsigned newApplTypeMax)
 		return;
 	}
 	maxApp = newApplTypeMax+(1u<<6u);
-#	if _MSC_VER < 1100
+#	if defined(_MSC_VER) && (_MSC_VER<1100)
 		//
-		//      Right now all MS Visual C++ compilers allocate the
+		//      MS Visual C++ 4.0 or lower compilers allocate the
 		//      wrong amount of memory (i.e. too little)
 		//      for member function pointers,
 		//      only explicit calculation via sizeof() works.
-		//      For future versions this may become "if _MSC_VER < ???"...
 		//
 		pMNewFuncTbl = (gddAppFuncTablePMF(*))
 			new char[sizeof(gddAppFuncTablePMF_t) * maxApp];

@@ -60,6 +60,11 @@
  * .09  06-28-94	jrw	Major work on RAC_RESET and NODE_OFFLINE stuff.
  * .10  07-01-94	jrw	Merged PEP and Xycom versions together.
  *				ANSIficated this code
+ * .20  06-30-97        nda     removed alot of "debugging" code now that the
+ *                              PEP board is finally behaving.
+ *                              Added device support for waveforms so the
+ *                              bitbus timeouts per node can be monitored 
+ *                              via EPICS.
  *
  * NOTES:
  * This driver currently needs work on error message generation.
@@ -67,6 +72,8 @@
  */
 
 #include <vxWorks.h>
+#include <sysLib.h>
+#include <intLib.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -92,6 +99,17 @@
 #include <callback.h>
 #include <taskwd.h>
 #include <devLib.h>
+#include <epicsPrint.h>
+#include <menuFtype.h>
+
+
+/* used by device support routines */
+#include        <alarm.h>
+#include        <dbAccess.h>
+#include        <recSup.h>
+#include        <devSup.h>
+#include        <waveformRecord.h>
+#include        <boRecord.h>
 
 #include <drvBitBusInterface.h>
 #include "drvBitBus.h"
@@ -131,6 +149,8 @@ int BBHistDump(int link);
 STATIC int BBDumpXactHistory(XactHistStruct *pXact);
 #endif
 
+long pulseSysMon();
+
 
 /*****************************************************************************
  *
@@ -141,26 +161,30 @@ STATIC int BBDumpXactHistory(XactHistStruct *pXact);
  *
  *****************************************************************************/
 int	XycomMaxOutstandMsgs = XYCOM_BB_MAX_OUTSTAND_MSGS;
-int PepMaxOutstandMsgs = 7;  /* pre-determined magic number */
+int     PepMaxOutstandMsgs = 7;  /* constraint of PEP discovered in 80C152
+                                    source code */
 
 /*****************************************************************************
  *
  * Create an artificial delay to prevent back-to-back message
  * loading of the PEP FIFO, since this has proven to induce protocol
- * errors. If the global PepLinkXDelay variable is 0 or positive,
- * use a software spin loop for the delay. If the PepLinkXDelay
- * variable is negative, wait for the 80C152 "currently transmitting"
- * bit to clear (bit 7 == 0). 
+ * errors. If the global PepLinkDelay variable is non-zero,
+ * use a software spin loop for the delay.  (these values can be set to 0
+ * if a "patched PROM" is used on the PB-BIT board).
  * 
  *****************************************************************************/
-int PepLink0Delay = 450;
-int PepLink1Delay = 450;
-int PepLink2Delay = 450;
-int PepLink3Delay = 450;
-int PepLink0PulseNode = 1;
+int PepLinkLoadDelay = 0;    /* set to 450 if a "non-patched" PB-BIT is used */
 
-short  PepTMOs[4][60];
-short  Pep91s[4][60];
+/* On a bitbus error, if link and node match the following global variables, 
+   write to the System Monitor board to generate a trigger */
+
+int bbErrorTrigNode = 1; /* Set to -1 for all nodes */
+int bbErrorTrigLink = 0;
+
+/* Used to keep track of errors per node */
+#define BB_NUM_NODES  100
+unsigned short  bbNodeTMO[BB_NUM_LINKS][BB_NUM_NODES];
+unsigned short  bbNode91[BB_NUM_LINKS][BB_NUM_NODES];
 
 /*****************************************************************************
  *
@@ -879,6 +903,15 @@ xvmeRxTask(int link)
 	      { /* something bad happened... inject a delay to the */
 		/* requested timeout duration. */
 
+                if ((link == bbErrorTrigLink) &&
+                    ((bbErrorTrigNode < 0) || (bbErrorTrigNode == rxHead[2])))
+                    pulseSysMon();
+
+                /* keep track of timeouts per node */
+                if(rxHead[2] < BB_NUM_NODES) {
+                    bbNode91[link][rxHead[2]]++;
+                }
+
 		if (bbDebug)
 		  printf("xvmeRxTask(%d): 0x91 from node %d, invoking synthetic delay\n", link, rxHead[2]);
 		(pBBLink[link]->syntheticDelay[rxDpvtHead->txMsg.node]) = rxDpvtHead->retire;
@@ -1166,6 +1199,11 @@ xvmeWdTask(int link)
 	  printf("xvmeWdTask(%d): TIMEOUT on bitbus message:\n", link);
 	  drvBitBusDumpMsg(&pnode->txMsg);
 	}
+
+        if(pnode->txMsg.node < BB_NUM_NODES) {
+            bbNodeTMO[link][pnode->txMsg.node]++;
+        }
+
 
 	/* BUG -- do this here or defer until RX gets a response? */
         (pBBLink[link]->deviceStatus[pnode->txMsg.node])--; /* fix device status */
@@ -1967,18 +2005,14 @@ pepRxTask(int link)
 		{ /* something bad happened... inject a delay to the */
 		  /* requested timeout duration. */
 
-		  /* start of saunders patch */
-		  if (link==0 && PepLink0PulseNode == -1) {
-		    pulseSysMon();
-		  } else if (link==0 && PepLink0PulseNode > 0) {
-		    if (rxHead[4] == PepLink0PulseNode) 
-		      pulseSysMon();
-		  }
+                  if ((link == bbErrorTrigLink) &&
+                      ((bbErrorTrigNode < 0) || (bbErrorTrigNode == rxHead[2])))
+                      pulseSysMon();
 
-                  if(rxHead[4] < 60) {
-                      Pep91s[link][rxHead[4]]++;
+                  /* keep track of timeouts per node */
+                  if(rxHead[4] < BB_NUM_NODES) {
+                      bbNode91[link][rxHead[4]]++;
                   }
-		  /* end of saunders patch */
 
 		  if (bbDebug)
 		    printf("pepRxTask(%d): 0x91 from node %d, invoking synthetic delay\n", link, rxHead[4]);
@@ -2260,8 +2294,8 @@ STATIC int pepWdTask(int link)
 	  drvBitBusDumpMsg(&pnode->txMsg);
 	}
 
-        if(pnode->txMsg.node < 60) {
-            PepTMOs[link][pnode->txMsg.node]++;
+        if(pnode->txMsg.node < BB_NUM_NODES) {
+            bbNodeTMO[link][pnode->txMsg.node]++;
         }
 	
 	/* BUG -- do this here or defer until RX gets a response? */
@@ -2470,55 +2504,11 @@ STATIC int pepTxTask(int link)
 	/* Start of unpleasant patch.
 	   Create an artificial delay to prevent back-to-back message
 	   loading of the PEP FIFO, since this has proven to induce protocol
-	   errors. If the global PepLinkXDelay variable is 0 or positive,
-	   use a software spin loop for the delay. If the PepLinkXDelay
-	   variable is negative, wait for the 80C152 "currently transmitting"
-	   bit to clear (bit 7 == 0).
+	   errors. 
 	   */
-	switch (link) {
-	case 0:
-	  if (PepLink0Delay >= 0) {
-	    for (x=0 ; x < PepLink0Delay ; x++);
-	  } else {
-	    stuck = -PepLink0Delay;
-	    while (((pBBLink[link]->l.PepLink.bbRegs->stat_ctl & 0x80) 
-		    == 0x0) && --stuck)
-	      for(x=0;x<100;x++);   	    
+	  if (PepLinkLoadDelay > 0) {
+	    for (x=0 ; x < PepLinkLoadDelay ; x++);
 	  }
-	  break;
-	case 1:
-	  if (PepLink1Delay >= 0) {
-	    for (x=0 ; x < PepLink1Delay ; x++);
-	  } else {
-	    stuck = -PepLink1Delay;
-	    while (((pBBLink[link]->l.PepLink.bbRegs->stat_ctl & 0x80) 
-		    == 0x0) && --stuck)
-	      for(x=0;x<100;x++);   	    
-	  }
-	  break;
-	case 2:
-	  if (PepLink2Delay >= 0) {
-	    for (x=0 ; x < PepLink2Delay ; x++);
-	  } else {
-	    stuck = -PepLink2Delay;
-	    while (((pBBLink[link]->l.PepLink.bbRegs->stat_ctl & 0x80) 
-		    == 0x0) && --stuck)
-	      for(x=0;x<100;x++);   	    
-	  }
-	  break;
-	case 3:
-	  if (PepLink3Delay >= 0) {
-	    for (x=0 ; x < PepLink3Delay ; x++);
-	  } else {
-	    stuck = -PepLink3Delay;
-	    while (((pBBLink[link]->l.PepLink.bbRegs->stat_ctl & 0x80) 
-		    == 0x0) && --stuck)
-	      for(x=0;x<100;x++);   	    
-	  }
-	  break;
-	default:
-	  break;
-	}
 	/* End unpleasant patch */
 
 	if (pnode != NULL) {  /* have an xact to start processing */
@@ -2732,6 +2722,8 @@ long pulseSysMon() {
   }
   pReg = &(SysmonBase->SysmonDio);
   
+  if(bbDebug) printf("Error Trigger\n"); 
+
   probeVal = 0xffff;
   vxMemProbe((char*) pReg, WRITE, 2, (char*)&probeVal);
   for (i=0 ; i < bitbusTriggerWidth ; i++) {
@@ -2745,16 +2737,16 @@ long pulseSysMon() {
 }
 
 
-long pepDump() {
+long bbDump() {
    int i,j;
 
-   for (j=0; j<4 ; j++) { 
+   for (j=0; j<BB_NUM_LINKS ; j++) { 
        printf("Link %d\n", j);
-       for (i=1;i<60; i++) {
+       for (i=1;i<BB_NUM_NODES; i++) {
            /* print error tally if non-zero */
-           if(PepTMOs[j][i] || Pep91s[j][i]) {
-               printf("    Node %d  - TMO %d  91s %d\n",i,PepTMOs[j][i],
-                   Pep91s[j][i]);
+           if(bbNodeTMO[j][i] || bbNode91[j][i]) {
+               printf("    Node %d  - TMO %d  91s %d\n",i,bbNodeTMO[j][i],
+                   bbNode91[j][i]);
            }
        }
    }
@@ -2762,5 +2754,181 @@ long pepDump() {
    return(0);
 }
 
+long bbNodeClear() {
+   int i,j;
 
+   for (j=0; j<BB_NUM_LINKS ; j++) {
+       for (i=1;i<BB_NUM_NODES; i++) {
+           bbNodeTMO[j][i] = 0;
+           bbNode91[j][i]  = 0;
+       }
+   }
+
+   return(0);
+}
+
+
+/**************************************************************************
+*
+* EPICS device support routines to monitor bbNodeTMO[] and bbNode91[] 
+*
+**************************************************************************/
+
+/* Create the dset for devBoBbNodeStat and devWfBbNodeStat */
+static long init_wf_record();
+static long init_bo_record();
+static long read_91s();
+static long read_TMOs();
+static long clear_stats();
+
+struct {
+        long            number;
+        DEVSUPFUN       report;
+        DEVSUPFUN       init;
+        DEVSUPFUN       init_record;
+        DEVSUPFUN       get_ioint_info;
+        DEVSUPFUN       write_bo;
+}devBoBbNodeStatClr={
+        5,
+        NULL,
+        NULL,
+        init_bo_record,
+        NULL,
+        clear_stats};
+
+struct {
+        long            number;
+        DEVSUPFUN       report;
+        DEVSUPFUN       init;
+        DEVSUPFUN       init_record;
+        DEVSUPFUN       get_ioint_info;
+        DEVSUPFUN       read_wf;
+}devWfBbNode91s={
+        5,
+        NULL,
+        NULL,
+        init_wf_record,
+        NULL,
+        read_91s};
+
+struct {
+        long            number;
+        DEVSUPFUN       report;
+        DEVSUPFUN       init;
+        DEVSUPFUN       init_record;
+        DEVSUPFUN       get_ioint_info;
+        DEVSUPFUN       read_wf;
+}devWfBbNodeTMOs={
+        5,
+        NULL,
+        NULL,
+        init_wf_record,
+        NULL,
+        read_TMOs};
+
+
+static long init_wf_record(pwf)
+    struct waveformRecord       *pwf;
+{
+
+
+    /* wf.inp must be a VME_IO type such that Cx indicates the bitbus link
+     * and Sy represents the desired waveform : S0 = 91's, S1 = TMO's 
+    */
+    switch (pwf->inp.type) {
+    case (VME_IO) :
+        if(pwf->inp.value.vmeio.card >= BB_NUM_LINKS) {
+            epicsPrintf("%s.INP >> card number invalid\n", pwf->name);
+            pwf->pact = 1;  /* don't allow processing */
+            return -1;
+        }
+        if(pwf->ftvl != menuFtypeUSHORT) {
+            epicsPrintf("%s.FTVL >> expected USHORT \n", pwf->name);
+            pwf->pact = 1;  /* don't allow processing */
+            return -1;
+        }
+        pwf->nord = 0;
+        break;
+    default :
+        epicsPrintf("%s.INP >> expected VME_IO INP field\n", pwf->name);
+        pwf->pact = 1;  /* don't allow processing */
+        return -1;
+    }
+    return(0);
+}
+
+
+static long read_91s(pwf)
+    struct waveformRecord       *pwf;
+{
+    long nRequest = BB_NUM_NODES;
+
+    if(pwf->nelm < BB_NUM_NODES) nRequest = pwf->nelm; 
+
+    memcpy( pwf->bptr, (void *)&bbNode91[pwf->inp.value.vmeio.card][0],
+            nRequest * 2);
+
+    pwf->nord = nRequest;
+
+    return(0);
+}
+
+static long read_TMOs(pwf)
+    struct waveformRecord       *pwf;
+{
+    long nRequest = BB_NUM_NODES;
+
+    if(pwf->nelm < BB_NUM_NODES) nRequest = pwf->nelm;
+
+    memcpy( pwf->bptr, (void *)&bbNodeTMO[pwf->inp.value.vmeio.card][0],
+            nRequest * 2);
+
+    pwf->nord = nRequest;
+
+    return(0);
+}
+
+
+static long init_bo_record(pbo)
+    struct boRecord       *pbo;
+{
+
+
+    /* bo.out must be a VME_IO type such that Cx indicates the bitbus link
+     * that isdesired to be cleared.
+    */
+    switch (pbo->out.type) {
+    case (VME_IO) :
+        if(pbo->out.value.vmeio.card >= BB_NUM_LINKS) {
+            epicsPrintf("%s.OUT >> card number invalid\n", pbo->name);
+            pbo->pact = 1;  /* don't allow processing */
+            return -1;
+        }
+        break;
+    default :
+        epicsPrintf("%s.OUT >> expected VME_IO type\n", pbo->name);
+        pbo->pact = 1;  /* don't allow processing */
+        return -1;
+    }
+    return(0);
+}
+
+
+static long clear_stats(pbo)
+    struct boRecord       *pbo;
+{
+   int i;
+
+   if(pbo->out.value.vmeio.card < BB_NUM_LINKS) {
+       for (i=1;i<BB_NUM_NODES; i++) {
+           bbNodeTMO[pbo->out.value.vmeio.card][i] = 0;
+           bbNode91[pbo->out.value.vmeio.card][i]  = 0;
+       }
+   }
+   else {
+       epicsPrintf("%s.OUT >> card number invalid\n", pbo->name);
+   }
+
+    return(0);
+}
 

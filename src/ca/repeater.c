@@ -29,7 +29,7 @@
  *	PURPOSE:
  *	Broadcasts fan out over the LAN, but UDP does not allow
  *	two processes on the same machine to get the same broadcast.
- *	This code takes extends the broadcast model from the net to within
+ *	This code extends the broadcast model from the net to within
  *	the OS.
  *
  *	NOTES:
@@ -87,6 +87,7 @@ LOCAL void register_new_client(struct sockaddr_in *pLocal,
 					struct sockaddr_in *pFrom);
 #define PORT_ANY 0
 LOCAL int makeSocket(int port);
+LOCAL void fanOut(struct sockaddr_in *pFrom, const char *pMsg, unsigned msgSize);
 
 
 /*
@@ -103,9 +104,7 @@ void ca_repeater()
 	struct sockaddr_in		from;
   	struct sockaddr_in		local;
   	int				from_size = sizeof from;
-  	struct one_client		*pclient;
 	short				port;
-	ELLLIST 			theClients;
 
 	port = caFetchPortConfig(
 		&EPICS_CA_REPEATER_PORT, 
@@ -115,8 +114,15 @@ void ca_repeater()
 
 	sock = makeSocket(port);
 	if (sock==INVALID_SOCKET) {
-		ca_printf("%s: unable to make recv sock\n",
-					__FILE__);
+		/*
+		 * test for server was already started
+		 */
+		if (MYERRNO==EADDRINUSE) {
+			exit(0);
+		}
+		ca_printf("%s: Unable to create repeater socket because \"%s\"\n",
+			__FILE__,
+			strerror(MYERRNO));
 		exit(0);
 	}
 
@@ -173,50 +179,62 @@ void ca_repeater()
 			continue;
 		}
 
-		ellInit(&theClients);
-		while (pclient=(struct one_client *)ellGet(&client_list)) {
-			ellAdd(&theClients, &pclient->node);
+		fanOut(&from, (char *) pMsg, size);
+	}
+}
 
-			/*
-			 * Dont reflect back to sender
-			 */
-			if(from.sin_port == pclient->from.sin_port &&
-			   from.sin_addr.s_addr ==
-				pclient->from.sin_addr.s_addr){
-				continue;
-			}
+
+/*
+ * fanOut()
+ */
+LOCAL void fanOut(struct sockaddr_in *pFrom, const char *pMsg, unsigned msgSize)
+{
+	ELLLIST			theClients;
+  	struct one_client	*pclient;
+	int			status;
 
-			status = send(
-				pclient->sock,
-				(char *)pMsg,
-				size,
-				0);
-			if (status>=0) {
+	ellInit(&theClients);
+	while (pclient=(struct one_client *)ellGet(&client_list)) {
+		ellAdd(&theClients, &pclient->node);
+
+		/*
+		 * Dont reflect back to sender
+		 */
+		if(pFrom->sin_port == pclient->from.sin_port &&
+		   pFrom->sin_addr.s_addr == pclient->from.sin_addr.s_addr){
+			continue;
+		}
+
+		status = send(
+			pclient->sock,
+			(char *)pMsg,
+			msgSize,
+			0);
+		if (status>=0) {
 #ifdef DEBUG
-				ca_printf("Sent to %d\n", 
+			ca_printf("Sent to %d\n", 
+				pclient->from.sin_port);
+#endif
+		}
+		if(status < 0){
+			if (MYERRNO == ECONNREFUSED) {
+#ifdef DEBUG
+				ca_printf("Deleted client %d\n",
 					pclient->from.sin_port);
 #endif
+				ellDelete(&theClients, 
+					&pclient->node);
+				socket_close(pclient->sock);
+				free(pclient);
 			}
-			if(status < 0){
-				if (MYERRNO == ECONNREFUSED) {
-#ifdef DEBUG
-					ca_printf("Deleted client %d\n",
-						pclient->from.sin_port);
-#endif
-					ellDelete(&theClients, 
-						&pclient->node);
-					socket_close(pclient->sock);
-					free(pclient);
-				}
-				else {
-					ca_printf(
+			else {
+				ca_printf(
 "CA Repeater: fan out err was \"%s\"\n",
-						strerror(MYERRNO));
-				}
+					strerror(MYERRNO));
 			}
 		}
-		ellConcat(&client_list, &theClients);
 	}
+	ellConcat(&client_list, &theClients);
 }
 
 
@@ -253,8 +271,6 @@ LOCAL int makeSocket(int port)
      	bd.sin_port = htons(port);	
       	status = bind(sock, (struct sockaddr *)&bd, sizeof(bd));
      	if(status<0){
-		ca_printf("CA Repeater: unexpected bind fail %s\n", 
-				strerror(MYERRNO));
 		socket_close(sock);
 		return INVALID_SOCKET;
 	}
@@ -273,6 +289,7 @@ struct sockaddr_in 	*pFrom)
   	int			status;
   	struct one_client	*pclient;
 	struct extmsg		confirm;
+	struct extmsg		noop;
 
 	for(	pclient = (struct one_client *) ellFirst(&client_list);
 		pclient;
@@ -294,8 +311,9 @@ struct sockaddr_in 	*pFrom)
 		pclient->sock = makeSocket(PORT_ANY);
 		if (!pclient->sock) {
 			free(pclient);
-			ca_printf("%s: unable to make client sock\n",
-					__FILE__);
+			ca_printf("%s: no client sock because \"%s\"\n",
+					__FILE__,
+					strerror(MYERRNO));
 			return;
 		}
 
@@ -320,7 +338,7 @@ struct sockaddr_in 	*pFrom)
 #endif
 	}
 
-	memset((char *)&confirm, 0, sizeof confirm);
+	memset((char *)&confirm, '\0', sizeof(confirm));
 	confirm.m_cmmd = htons(REPEATER_CONFIRM);
 	confirm.m_available = pLocal->sin_addr.s_addr;
 	status = send(
@@ -344,5 +362,13 @@ struct sockaddr_in 	*pFrom)
 		ca_printf("CA Repeater: confirm err was \"%s\"\n",
 				strerror(MYERRNO));
 	}
+
+	/*
+	 * send a noop message to all other clients so that we dont 
+	 * accumulate sockets when there are no beacons
+	 */
+	memset((char *)&noop, '\0', sizeof(noop));
+	confirm.m_cmmd = htons(IOC_NOOP);
+	fanOut(pFrom, (char *)&noop, sizeof(noop));
 }
 

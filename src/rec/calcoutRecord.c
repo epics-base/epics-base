@@ -602,7 +602,7 @@ static void execOutput(pcalc)
         }
 
         /* Check to see what to do if INVALID */
-        if (pcalc->sevr < INVALID_ALARM ) {
+        if (pcalc->nsev < INVALID_ALARM ) {
             /* Output the value */
             status=dbPutLink(&(pcalc->out), DBR_DOUBLE,&(pcalc->oval),1);
             /* post event if output event != 0 */

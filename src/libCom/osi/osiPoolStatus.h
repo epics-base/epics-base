@@ -20,3 +20,5 @@ epicsShareFunc int epicsShareAPI osiSufficentSpaceInPool ();
 }
 #endif
 
+#include "osdPoolStatus.h"
+

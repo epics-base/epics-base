@@ -70,7 +70,7 @@ TEMPL_INST_CXXFLAG =
 # -w-8012 Comparing signed and unsigned values
 # -w-8060 Possibly incorrect assignment
 # -w-8071 Conversion may lose significant digits
-WARN_CFLAGS_YES = -w -g0 -w-8012 -w-8060 -w-8071
+WARN_CFLAGS_YES = -w -g0 -w-8012 -w-8060 -w-8071	
 # -w- display warnings off
 WARN_CFLAGS_NO =  -w-
 
@@ -108,7 +108,16 @@ endif
 # -w-8012 Comparing signed and unsigned values
 # -w-8060 Possibly incorrect assignment
 # -w-8071 Conversion may lose significant digits
-WARN_CXXFLAGS_YES = -w -g0 -w-8012 -w-8060 -w-8071
+# -w-8008 Condition is always true or always false (compile time 
+#           know template parameters causes this to spew garbage)
+# -w-8027 Functions containing reserved words are not expanded inline 
+#           (Some compilers are better than others with inline)
+# -w-8066 Unreachable code (compile time know template parameters
+#           causes this to spew garbage)
+# -w-8080 'identifier' declared but never used
+#           (instantiating unused static const external parameters is 
+#           anachronistic compiler practice)
+WARN_CXXFLAGS_YES = -w -g0 -w-8012 -w-8060 -w-8071 -w-8008 -w-8027 -w-8066 -w-8080
 # -w- display warnings off
 WARN_CXXFLAGS_NO = -w-
 

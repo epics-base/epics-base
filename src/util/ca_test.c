@@ -27,6 +27,8 @@
  * -----------------
  * .01	07-01-91	joh	initial version
  * .02	08-05-91	mrk	Make more compatible with db_test.c
+ * .03	09-24-91	joh	changed declaration of `outstanding'
+ *				to a long
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -47,7 +49,7 @@
 void 		printit();
 void 		verify();
 
-static char	outstanding;
+static long	outstanding;
 
 #ifndef vxWorks
 main(argc,argv)

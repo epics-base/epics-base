@@ -17,7 +17,7 @@
 # c) Add the runtime path to /etc/ld.so.conf and run ldconfig
 #    to inform the system of the shared library location.
 
-# If readline is installed uncomment the following line
-# to get command-line editing and history support
-#COMMANDLINE_LIBRARY = READLINE
+# If readline is not installed comment the following line
+# to omit command-line editing and history support
+COMMANDLINE_LIBRARY = READLINE
 LDLIBS_READLINE = -lreadline -lncurses

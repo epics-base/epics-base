@@ -15,7 +15,6 @@ main(int argc,char **argv)
 	fprintf(stderr,"usage: caExample pvname\n");
 	exit(1);
     }
-    threadInit();
     SEVCHK(ca_task_initialize(),"ca_task_initialize");
     SEVCHK(ca_search(argv[1],&mychid),"ca_search failure");
     SEVCHK(ca_pend_io(5.0),"ca_pend_io failure");

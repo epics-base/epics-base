@@ -29,6 +29,7 @@ TEMPLATES += top/exampleApp/src/baseLIBOBJS
 TEMPLATES += top/exampleApp/src/devXxxSoft.c
 TEMPLATES += top/exampleApp/src/xxxRecord.c
 TEMPLATES += top/exampleApp/src/caExample.c
+TEMPLATES += top/exampleApp/src/caMonitor.c
 TEMPLATES += top/exampleApp/src/exampleInclude.dbd
 TEMPLATES += top/exampleApp/src/sncExample.st
 TEMPLATES += top/exampleApp/src/xxxRecord.dbd

@@ -24,7 +24,6 @@ of this distribution.
 
 int main(int argc,char *argv[])
 {
-    threadInit();
     ioccrfRegisterCommon();
     registerRecordDeviceDriverRegister();
     if(argc>=2) {    

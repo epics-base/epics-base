@@ -24,6 +24,7 @@
 #	solarisGnu  (GNU compiler)
 #	solaris-x86
 #	sun4
+
 #
 #  HOST_ARCH now an environment variable
 #  HOST_ARCH=$(shell /usr/local/epics/startup/HostArch)
@@ -31,29 +32,18 @@ ifndef HOST_ARCH
 	HOST_ARCH=unsupported
 endif
 
-#  The architectures to build EPICS for
+#  The R3.14 architectures to build EPICS for
 #
 #  Currently Supporting:
-#       frc40
-#       frc5ce
-#       hkbaja47
-#       hkv2f
-#       mv147
-#       mv1604
-#       mv162
-#       mv162lc
-#       mv167
-#       mv177
-#       mv2700
-#       niCpu030
-#       pc486
-#       ppc603
-#       ppc604
-#       ppc603_long (over 32MB)
-#       ppc604_long (over 32MB)
-#       sbs_pc6
-#       vxipc
-#
+#       vxWorks-486
+#       vxWorks-68040
+#       vxWorks-68040lc
+#       vxWorks-68060
+#       vxWorks-ppc603
+#       vxWorks-ppc604
+#       vxWorks-ppc603_long
+#       vxWorks-ppc604_long
+
 CROSS_COMPILER_TARGET_ARCHS=
 
 

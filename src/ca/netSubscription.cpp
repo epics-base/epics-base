@@ -63,7 +63,7 @@ void netSubscription::show ( unsigned level ) const
 
 void netSubscription::completion ()
 {
-    this->chan.getClient().printf ( "subscription update w/o data ?\n" );
+    this->chan.printf ( "subscription update w/o data ?\n" );
 }
 
 void netSubscription::exception ( int status, const char *pContext )

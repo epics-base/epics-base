@@ -341,11 +341,6 @@ void tcpRecvThread::run ()
 
             if ( ! this->iiu.cacRef.preemptiveCallbakIsEnabled() ) {
                 nBytesIn = pComBuf->fillFromWire ( this->iiu );
-                if ( nBytesIn == 0u ) {
-                    // outer loop checks to see if state is connected
-                    // ( properly set by fillFromWire() )
-                    continue;
-                }
             }
 
             if ( this->iiu.state != tcpiiu::iiucs_connected &&
@@ -355,7 +350,7 @@ void tcpRecvThread::run ()
 
             // force the receive watchdog to be reset every 5 frames
             unsigned contiguousFrameCount = 0;
-            while ( true ) {
+            while ( nBytesIn ) {
                 if ( nBytesIn == pComBuf->capacityBytes () ) {
                     if ( this->iiu.contigRecvMsgCount >= 
                         contiguousMsgCountWhichTriggersFlowControl ) {
@@ -390,11 +385,6 @@ void tcpRecvThread::run ()
                 }
 
                 nBytesIn = pComBuf->fillFromWire ( this->iiu );
-                if ( nBytesIn == 0u ) {
-                    // outer loop checks to see if state is connected
-                    // ( properly set by fillFromWire() )
-                    break;
-                }
             }
         }
 
@@ -1363,8 +1353,8 @@ void tcpiiu::blockUntilBytesArePendingInOS ()
         }
     }
 #else
-    char buf;
     while ( this->state == tcpiiu::iiucs_connected ) {
+        char buf;
         int status = ::recv ( this->sock, 
             & buf, 1, MSG_PEEK );
 

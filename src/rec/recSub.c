@@ -100,6 +100,15 @@ void alarm();
 void monitor();
 long do_sub();
 long fetch_values();
+/* Added for Channel Access Links */
+long dbCaAddInlink();
+long dbCaGetLink();
+#define ARG_MAX 12
+ 
+ /* Fldnames should have as many as ARG_MAX */
+ static char Fldnames[ARG_MAX][FLDNAME_SZ] =
+     {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"};
+
 
 static long init_record(psub,pass)
     struct subRecord	*psub;
@@ -114,12 +123,17 @@ static long init_record(psub,pass)
     int i;
     double *pvalue;
 
-    if (pass!=0) return(0);
+    if (pass==0) return(0);
 
     plink = &psub->inpa;
     pvalue = &psub->a;
     for(i=0; i<ARG_MAX; i++, plink++, pvalue++) {
         if(plink->type==CONSTANT) *pvalue = plink->value.value;
+        if (plink->type == PV_LINK)
+        {
+            status = dbCaAddInlink(plink, (void *) psub, Fldnames[i]);
+            if(status) return(status);
+        } /* endif */
     }
 
     /* convert the initialization subroutine name  */
@@ -356,15 +370,28 @@ struct subRecord *psub;
 	long		status;
 
         for(i=0, plink=&psub->inpa, pvalue=&psub->a; i<ARG_MAX; i++, plink++, pvalue++) {
-                if(plink->type!=DB_LINK) continue;
-                options=0;
-                nRequest=1;
-                status=dbGetLink(&plink->value.db_link,(struct dbCommon *)psub,DBR_DOUBLE,
-                        pvalue,&options,&nRequest);
-                if(status!=0) {
-                	recGblSetSevr(psub,LINK_ALARM,VALID_ALARM);
+		if (plink->type==CA_LINK)
+		{
+                    if (dbCaGetLink(plink))
+                    {
+                        recGblSetSevr(psub,LINK_ALARM,VALID_ALARM);
                         return(-1);
-                }
+                    } /* endif */
+		}
+		else
+		{
+		    if(plink->type==DB_LINK) 
+		    {
+			options=0;
+			nRequest=1;
+			status=dbGetLink(&plink->value.db_link,(struct dbCommon *)psub,DBR_DOUBLE,
+				pvalue,&options,&nRequest);
+			if(status!=0) {
+				recGblSetSevr(psub,LINK_ALARM,VALID_ALARM);
+				return(-1);
+			}
+		    } /* endif */
+		} /* endif */
         }
         return(0);
 }

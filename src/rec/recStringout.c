@@ -101,6 +101,10 @@ struct stringoutdset { /* stringout input dset */
 	DEVSUPFUN	write_stringout;/*(-1,0)=>(failure,success)*/
 };
 void monitor();
+/* Added for Channel Access Links */
+long dbCaAddInlink();
+long dbCaGetLink();
+
 
 static long init_record(pstringout,pass)
     struct stringoutRecord	*pstringout;
@@ -109,7 +113,7 @@ static long init_record(pstringout,pass)
     struct stringoutdset *pdset;
     long status=0;
 
-    if (pass!=0) return(0);
+    if (pass==0) return(0);
 
     if(!(pdset = (struct stringoutdset *)(pstringout->dset))) {
 	recGblRecordError(S_dev_noDSET,pstringout,"stringout: init_record");
@@ -127,6 +131,12 @@ static long init_record(pstringout,pass)
 	}
 	pstringout->udf=FALSE;
     }
+    if (pstringout->dol.type == PV_LINK)
+    {
+        status = dbCaAddInlink(&(pstringout->dol), (void *) pstringout, "VAL");
+        if(status) return(status);
+	pstringout->udf=FALSE;
+    } /* endif */
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(pstringout))) return(status);
     }
@@ -159,6 +169,14 @@ static long process(pstringout)
 				recGblSetSevr(pstringout,LINK_ALARM,VALID_ALARM);
 			} else pstringout->udf=FALSE;
 		}
+		if((pstringout->dol.type == CA_LINK) && (pstringout->omsl == CLOSED_LOOP)){
+			pstringout->pact = TRUE;
+			status = dbCaGetLink(&(pstringout->dol));
+			pstringout->pact = FALSE;
+			if(!status==0){
+				recGblSetSevr(pstringout,LINK_ALARM,VALID_ALARM);
+			} else pstringout->udf=FALSE;
+		} /* endif */
 	}
 
 	if(status==0) {

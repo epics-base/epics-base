@@ -103,6 +103,10 @@ struct longoutdset { /* longout input dset */
 void alarm();
 int convert();
 void monitor();
+/* Added for Channel Access Links */
+long dbCaAddInlink();
+long dbCaGetLink();
+
 
 static long init_record(plongout,pass)
     struct longoutRecord	*plongout;
@@ -111,7 +115,7 @@ static long init_record(plongout,pass)
     struct longoutdset *pdset;
     long status=0;
 
-    if (pass!=0) return(0);
+    if (pass==0) return(0);
 
     if(!(pdset = (struct longoutdset *)(plongout->dset))) {
 	recGblRecordError(S_dev_noDSET,plongout,"longout: init_record");
@@ -127,6 +131,12 @@ static long init_record(plongout,pass)
         plongout->val = plongout->dol.value.value;
 	plongout->udf=FALSE;
     }
+    if (plongout->dol.type == PV_LINK)
+    {
+        status = dbCaAddInlink(&(plongout->dol), (void *) plongout, "VAL");
+        if(status) return(status);
+    } /* endif */
+
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(plongout))) return(status);
     }
@@ -153,6 +163,14 @@ static long process(plongout)
 			plongout->pact = TRUE;
 			status = dbGetLink(&plongout->dol.value.db_link,(struct dbCommon *)plongout,
 				DBR_LONG,&plongout->val,&options,&nRequest);
+			plongout->pact = FALSE;
+			if(status!=0){
+				recGblSetSevr(plongout,LINK_ALARM,VALID_ALARM);
+			} else plongout->udf=FALSE;
+		}
+		if((plongout->dol.type == CA_LINK) && (plongout->omsl == CLOSED_LOOP)){
+			plongout->pact = TRUE;
+			status = dbCaGetLink(&(plongout->dol));
 			plongout->pact = FALSE;
 			if(status!=0){
 				recGblSetSevr(plongout,LINK_ALARM,VALID_ALARM);

@@ -111,6 +111,10 @@ struct pcdset { /* pulseCounter input dset */
 #define CTR_SETUP       4
 
 void monitor();
+/* Added for Channel Access Links */
+long dbCaAddInlink();
+long dbCaGetLink();
+
 
 static long init_record(ppc,pass)
     struct pulseCounterRecord	*ppc;
@@ -119,7 +123,7 @@ static long init_record(ppc,pass)
     struct pcdset *pdset;
     long status=0;
 
-    if (pass!=0) return(0);
+    if (pass==0) return(0);
 
     /* must have device support */
     if(!(pdset = (struct pcdset *)(ppc->dset))) {
@@ -130,6 +134,12 @@ static long init_record(ppc,pass)
     if (ppc->sgl.type == CONSTANT && ppc->gsrc == SOFTWARE){
          ppc->sgv = ppc->sgl.value.value;
     }
+
+    if (ppc->sgl.type == PV_LINK && ppc->gsrc == SOFTWARE)
+    {
+        status = dbCaAddInlink(&(ppc->sgl), (void *) ppc, "SGV");
+        if(status) return(status);
+    } /* endif */
 
     /* must have cmd_pc functions defined */
     if( (pdset->number < 5) || (pdset->cmd_pc == NULL) ) {
@@ -167,6 +177,14 @@ static long process(ppc)
               ppc->pact = TRUE;
               status=dbGetLink(&ppc->sgl.value.db_link,(struct dbCommon *)ppc,DBR_SHORT,
                    &ppc->sgv,&options,&nRequest);
+              ppc->pact = FALSE;
+              if(status!=0) {
+                  recGblSetSevr(ppc,LINK_ALARM,VALID_ALARM);
+              }
+         }
+         if (ppc->sgl.type == CA_LINK){
+              ppc->pact = TRUE;
+              status=dbCaGetLink(&(ppc->sgl));
               ppc->pact = FALSE;
               if(status!=0) {
                   recGblSetSevr(ppc,LINK_ALARM,VALID_ALARM);

@@ -113,6 +113,10 @@ struct ptdset { /* pulseTrain input dset */
 #define CTR_SETUP       4
 
 void monitor();
+/* Added for Channel Access Links */
+long dbCaAddInlink();
+long dbCaGetLink();
+
 
 static long init_record(ppt,pass)
     struct pulseTrainRecord	*ppt;
@@ -121,7 +125,7 @@ static long init_record(ppt,pass)
     struct ptdset *pdset;
     long status=0;
 
-    if (pass!=0) return(0);
+    if (pass==0) return(0);
 
     /* must have device support */
     if(!(pdset = (struct ptdset *)(ppt->dset))) {
@@ -132,6 +136,12 @@ static long init_record(ppt,pass)
     if (ppt->sgl.type == CONSTANT ){
          ppt->gate = ppt->sgl.value.value;
     }
+
+    if (ppt->sgl.type == PV_LINK )
+    {
+        status = dbCaAddInlink(&(ppt->sgl), (void *) ppt, "SGV");
+        if(status) return(status);
+    } /* endif */
 
     /* must have write_pt functions defined */
     if( (pdset->number < 5) || (pdset->write_pt == NULL) ) {
@@ -170,6 +180,14 @@ static long process(ppt)
               ppt->pact = TRUE;
               status=dbGetLink(&ppt->sgl.value.db_link,(struct dbCommon *)ppt,DBR_SHORT,
                    &ppt->sgv,&options,&nRequest);
+              ppt->pact = FALSE;
+              if(status!=0) {
+                  recGblSetSevr(ppt,LINK_ALARM,VALID_ALARM);
+              }
+         }
+         if (ppt->sgl.type == CA_LINK){
+              ppt->pact = TRUE;
+              status=dbCaGetLink(&(ppt->sgl));
               ppt->pact = FALSE;
               if(status!=0) {
                   recGblSetSevr(ppt,LINK_ALARM,VALID_ALARM);

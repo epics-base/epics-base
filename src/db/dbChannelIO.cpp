@@ -27,23 +27,10 @@
 #include "db_access_routines.h"
 #include "dbCAC.h"
 #include "dbChannelIOIL.h"
-#include "dbNotifyBlockerIL.h"
-
-#if defined ( _MSC_VER )
-#   pragma warning ( push )
-#   pragma warning ( disable: 4660 )
-#endif
-
-template class tsFreeList < dbChannelIO >;
-
-#if defined ( _MSC_VER )
-#   pragma warning ( pop )
-#endif
+#include "dbPutNotifyBlocker.h"
 
 tsFreeList < dbChannelIO > dbChannelIO::freeList;
-epicsMutex dbChannelIO::freeListMutex;
 unsigned dbChannelIO::nextIdForIO;
-
 
 dbChannelIO::dbChannelIO ( cacChannelNotify &notify, 
     const dbAddr &addrIn, dbServiceIO &serviceIO ) :

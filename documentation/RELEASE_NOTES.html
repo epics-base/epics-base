@@ -12,6 +12,15 @@ dd Month 2004</h1>
 
 <h2 align="center">Changes since 3.14.5</h2>
 
+<h4>Solaris Builds </h4>
+<p>Old solaris 6 specific compiler options have been removed.</p>
+
+<h4>New make targets cvsclean and archclean</h4>
+<p>The new top level Makefile only target, cvsclean, removes cvs .#* files
+in all dirs of the top directory tree.</p>
+<p> The new archclean target is like the clean target except that
+O.Common directories are not removed. </p>
+
 <h4>epicsExport</h4>
 <p>epicsExportAddress(typ,obj) now generates an extern named pvar_typ_obj and
 epicsExportRegistrar(func) an extern named pvar_func_obj. Previously both just named the variable pobj.</p>

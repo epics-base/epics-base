@@ -132,6 +132,7 @@
 #define ECA_ISATTACHED      DEFMSG(CA_K_WARNING,   53)
 #define ECA_NOTINSERVICE    DEFMSG(CA_K_WARNING,   54)
 #define ECA_CHANDESTROY     DEFMSG(CA_K_WARNING,   55)
+#define ECA_BADPRIORITY     DEFMSG(CA_K_ERROR,     56)
 
 #ifndef CA_ERROR_GLBLSOURCE
 epicsShareExtern READONLY char  *ca_message_text[];

@@ -32,6 +32,9 @@
 /************************************************************************/
 
 /* $Log$
+ * Revision 1.69  1998/03/12 20:39:10  jhill
+ * fixed problem where 3.13.beta11 unable to connect to 3.11 with correct native type
+ *
  * Revision 1.68  1998/02/20 21:52:21  evans
  * Added an explicit include of tsDefs.h before cadef.h to avoid the
  * functions in it being declared as export and also to avoid its
@@ -723,8 +726,6 @@ void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV);
 void os_specific_sg_create(CASG *pcasg);
 void os_specific_sg_delete(CASG *pcasg);
 void os_specific_sg_io_complete(CASG *pcasg);
-int cac_os_depen_init(struct CA_STATIC *pcas);
-void cac_os_depen_exit (struct CA_STATIC *pcas);
 void ca_process_exit();
 void ca_spawn_repeater(void);
 void cac_gettimeval(struct timeval  *pt);

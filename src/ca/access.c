@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.101  1998/03/12 20:39:05  jhill
+ * fixed problem where 3.13.beta11 unable to connect to 3.11 with correct native type
+ *
  * Revision 1.100  1998/02/05 21:55:49  jhill
  * detect attempts by user to clear bogus channel
  *
@@ -643,29 +646,6 @@ LOCAL void cac_add_msg (IIU *piiu)
 		sizeof(caHdr) + size); 
 }
 
-
-
-/*
- *	CA_TASK_INITIALIZE
- */
-int epicsShareAPI ca_task_initialize(void)
-{
-	int			status;
-	struct CA_STATIC	*ca_temp;
-
-	if (!ca_static) {
-		ca_temp = (struct CA_STATIC *) 
-			calloc(1, sizeof(*ca_temp));
-		if (!ca_temp) {
-			return ECA_ALLOCMEM;
-		}
-		status = cac_os_depen_init (ca_temp);
-		return status;
-	}
-
-	return ECA_NORMAL;
-}
-
 
 /*
  *	ca_os_independent_init ()
@@ -684,7 +664,6 @@ int ca_os_independent_init (void)
 	/* record a default user name */
 	ca_static->ca_pUserName = localUserName();
 	if(!ca_static->ca_pUserName){
-		free(ca_static);
 		return ECA_ALLOCMEM;
 	}
 
@@ -692,7 +671,6 @@ int ca_os_independent_init (void)
 	ca_static->ca_pHostName = localHostName();
 	if(!ca_static->ca_pHostName){
 		free(ca_static->ca_pUserName);
-		free(ca_static);
 		return ECA_ALLOCMEM;
 	}
 
@@ -859,28 +837,6 @@ int epicsShareAPI ca_modify_user_name(const char *pClientName)
 
 
 /*
- *	CA_TASK_EXIT()
- *
- * 	call this routine if you wish to free resources prior to task
- * 	exit- ca_task_exit() is also executed routinely at task exit.
- */
-int epicsShareAPI ca_task_exit (void)
-{
-	if (!ca_static) {
-		return ECA_NOCACTX;
-	}
-
-	/*
-	 * This indirectly calls ca_process_exit() below
-	 */
-	cac_os_depen_exit(ca_static);
-
-  	return ECA_NORMAL;
-}
-
-
-
-/*
  *
  *	CA_TASK_EXIT_TID() / CA_PROCESS_EXIT()
  *	releases all resources alloc to a channel access client
@@ -891,12 +847,12 @@ int epicsShareAPI ca_task_exit (void)
  */
 void ca_process_exit()
 {
-	chid            	chix;
-	chid            	chixNext;
-	IIU			*piiu;
-	int             	status;
+	chid chix;
+	chid chixNext;
+	IIU *piiu;
+	int status;
 
-	assert(ca_static);
+	assert (ca_static);
 
 	LOCK;
 

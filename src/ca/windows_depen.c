@@ -32,6 +32,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.35  1998/04/10 23:00:57  jhill
+ * link with user32 lib under WIN32
+ *
  * Revision 1.34  1998/03/24 20:55:06  jhill
  * fixed console title/correct repeater spawn/correct winsock II URL
  *
@@ -58,6 +61,9 @@
  *
  * Revision 1.19  1995/11/29  19:15:42  jhill
  * added $Log$
+ * added Revision 1.35  1998/04/10 23:00:57  jhill
+ * added link with user32 lib under WIN32
+ * added
  * added Revision 1.34  1998/03/24 20:55:06  jhill
  * added fixed console title/correct repeater spawn/correct winsock II URL
  * added
@@ -169,13 +175,26 @@ void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV)
 
 
 /*
- * cac_os_depen_init()
+ *	ca_task_initialize()
  */
-int cac_os_depen_init(struct CA_STATIC *pcas)
+int epicsShareAPI ca_task_initialize(void)
 {
-    int status;
+	int status;
 
-	ca_static = pcas;
+	if (ca_static) {
+		return ECA_NORMAL;
+	}
+
+	ca_static = (struct CA_STATIC *) 
+		calloc(1, sizeof(*ca_static));
+	if (!ca_static) {
+		return ECA_ALLOCMEM;
+	}
+
+	status = ca_os_independent_init ();
+	if (status) {
+		return status;
+	}
 
 	/* DllMain does most OS dependent init & cleanup */
 	status = ca_os_independent_init ();
@@ -194,20 +213,26 @@ int cac_os_depen_init(struct CA_STATIC *pcas)
 	if(!ca_static->ca_piiuCast){
 		return ECA_NOCAST;
 	}
+
     return ECA_NORMAL;
 }
 
 
 /*
- * cac_os_depen_exit ()
+ * ca_task_exit ()
+ *
+ * 	call this routine if you wish to free resources prior to task
+ * 	exit- ca_task_exit() is also executed routinely at task exit.
  */
-void cac_os_depen_exit (struct CA_STATIC *pcas)
+int epicsShareAPI ca_task_exit (void)
 {
-	ca_static = pcas;
-        ca_process_exit();
+	if (!ca_static) {
+		return ECA_NOCACTX;
+	}
+	ca_process_exit();
+	free ((char *)ca_static);
 	ca_static = NULL;
-
-	free ((char *)pcas);
+	return ECA_NORMAL;
 }
 
 

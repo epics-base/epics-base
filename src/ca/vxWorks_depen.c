@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.34  1998/02/05 22:39:46  jhill
+ * use inversion safe mutex
+ *
  * Revision 1.33  1997/08/04 23:37:19  jhill
  * added beacon anomaly flag init/allow ip 255.255.255.255
  *
@@ -309,6 +312,11 @@ LOCAL int cac_add_task_variable (struct CA_STATIC *ca_temp)
                 return ECA_INTERNAL;
         }
 
+		/* 
+		 * Care is taken not to set the value of the 
+		 * ca static task variable until after it has been installed
+		 * so that we dont change the value for other tasks.
+		 */
         ca_static = ca_temp;
         ellAdd(&ca_temp->ca_taskVarList, &ptviu->node);
 
@@ -369,38 +377,61 @@ LOCAL void ca_task_exit_tcb(WIND_TCB *ptcb)
 
 
 /*
- * cac_os_depen_init()
+ * ca_task_initialize()
  */
-int cac_os_depen_init(struct CA_STATIC *pcas)
+int ca_task_initialize ()
 {
-	char            name[15];
-	int             status;
+	struct CA_STATIC *pcas;
+	char name[15];
+	int status;
 
-	ellInit(&pcas->ca_local_chidlist);
-	ellInit(&pcas->ca_lcl_buff_list);
-	ellInit(&pcas->ca_taskVarList);
-	ellInit(&pcas->ca_putNotifyQue);
+	pcas = (struct CA_STATIC *)
+			taskVarGet (taskIdSelf(), (int *)&ca_static);
+	if (pcas != (struct CA_STATIC *) ERROR) {
+		return ECA_NORMAL;
+	}
 
-	freeListInitPvt(&pcas->ca_dbMonixFreeList,
-		db_sizeof_event_block()+sizeof(struct pending_event),256);
+	pcas = (struct CA_STATIC *) 
+		calloc(1, sizeof(*pcas));
+	if (!pcas) {
+		return ECA_ALLOCMEM;
+	}
 
-	pcas->ca_tid = taskIdSelf();
-	pcas->ca_client_lock = semMCreate(SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
+	ellInit (&pcas->ca_local_chidlist);
+	ellInit (&pcas->ca_lcl_buff_list);
+	ellInit (&pcas->ca_taskVarList);
+	ellInit (&pcas->ca_putNotifyQue);
+
+	freeListInitPvt (&pcas->ca_dbMonixFreeList,
+		db_sizeof_event_block ()+sizeof(struct pending_event),256);
+
+	pcas->ca_tid = taskIdSelf ();
+	pcas->ca_client_lock = semMCreate (SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
 	assert (pcas->ca_client_lock);
-	pcas->ca_putNotifyLock = semMCreate(SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
+	pcas->ca_putNotifyLock = semMCreate (SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
 	assert (pcas->ca_putNotifyLock);
-	pcas->ca_io_done_sem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
+	pcas->ca_io_done_sem = semBCreate (SEM_Q_PRIORITY, SEM_EMPTY);
 	assert (pcas->ca_io_done_sem);
-	pcas->ca_blockSem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
+	pcas->ca_blockSem = semBCreate (SEM_Q_PRIORITY, SEM_EMPTY);
 	assert (pcas->ca_blockSem);
 
 	status = cac_add_task_variable (pcas);
 	if (status != ECA_NORMAL) {
+		semDelete (pcas->ca_client_lock);
+		semDelete (pcas->ca_putNotifyLock);
+		semDelete (pcas->ca_io_done_sem);
+		semDelete (pcas->ca_blockSem);
 		return status;
 	}
 
 	status = ca_os_independent_init ();
 	if (status != ECA_NORMAL){
+		ca_import_cancel (taskIdSelf());
+		freeListCleanup (pcas->ca_dbMonixFreeList);
+		semDelete (pcas->ca_client_lock);
+		semDelete (pcas->ca_putNotifyLock);
+		semDelete (pcas->ca_io_done_sem);
+		semDelete (pcas->ca_blockSem);
 		return status;
 	}
 
@@ -430,11 +461,19 @@ int cac_os_depen_init(struct CA_STATIC *pcas)
 
 
 /*
- * cac_os_depen_exit ()
+ * ca_task_exit ()
  */
-void cac_os_depen_exit (struct CA_STATIC *pcas)
+int epicsShareAPI ca_task_exit (void)
 {
-	cac_os_depen_exit_tid (pcas, 0);
+	struct CA_STATIC *pcas;
+
+	pcas = (struct CA_STATIC *)
+			taskVarGet (taskIdSelf(), (int *)&ca_static);
+	if (pcas == (struct CA_STATIC *) ERROR) {
+		return ECA_NOCACTX;
+	}
+
+	return cac_os_depen_exit_tid (pcas, 0);
 }
 
 
@@ -450,10 +489,10 @@ LOCAL int cac_os_depen_exit_tid (struct CA_STATIC *pcas, int tid)
 	CALLBACK	*pcb;
 
 
-#       ifdef DEBUG
-                ca_printf("CAC: entering the exit routine %x %x\n", 
-			tid, pcas);
-#       endif
+#	ifdef DEBUG
+	ca_printf("CAC: entering the exit routine %x %x\n", 
+		tid, pcas);
+#	endif
 
 	ca_static = pcas;
 	LOCK;
@@ -510,7 +549,7 @@ LOCAL int cac_os_depen_exit_tid (struct CA_STATIC *pcas, int tid)
 	 * set ca_static for access.c
 	 * (run this before deleting the task variable)
 	 */
-        ca_process_exit();
+	ca_process_exit();
 
 	/*
 	 * cancel task vars for other tasks so this
@@ -698,14 +737,19 @@ int ca_import (int tid)
 		return ECA_ALLOCMEM;
 	}
 
-	ca_static = pcas;
-
 	status = taskVarAdd (VXTHISTASKID, (int *)&ca_static);
 	if (status == ERROR){
 		ca_static = NULL;
 		free (ptviu);
 		return ECA_ALLOCMEM;
 	}
+
+	/* 
+	 * Care is taken not to set the value of the 
+	 * ca static task variable until after it has been installed
+	 * so that we dont change the value for other tasks.
+	 */
+	ca_static = pcas;
 
 	ptviu->tid = taskIdSelf();
 	LOCK;
@@ -914,7 +958,7 @@ void cac_recv_task(int  tid)
         taskwdInsert((int) taskIdCurrent, NULL, NULL);
 
         status = ca_import(tid);
-        SEVCHK(status, NULL);
+        SEVCHK(status, "cac_recv_task()");
 
         /*
          * once started, does not exit until

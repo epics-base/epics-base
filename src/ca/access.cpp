@@ -825,7 +825,7 @@ extern "C" const char * epicsShareAPI ca_host_name ( chid pChan )
 /*
  * ca_v42_ok(chid chan)
  */
-extern "C" int epicsShareAPI ca_v42_ok (chid pChan)
+extern "C" int epicsShareAPI ca_v42_ok ( chid pChan )
 {
     return pChan->ca_v42_ok ();
 }
@@ -834,15 +834,15 @@ extern "C" int epicsShareAPI ca_v42_ok (chid pChan)
  * ca_version()
  * function that returns the CA version string
  */
-extern "C" const char * epicsShareAPI ca_version()
+extern "C" const char * epicsShareAPI ca_version () 
 {
-    return CA_VERSION_STRING; 
+    return CA_VERSION_STRING;
 }
 
 /*
  * ca_replace_printf_handler ()
  */
-extern "C" int epicsShareAPI ca_replace_printf_handler (caPrintfFunc *ca_printf_func)
+extern "C" int epicsShareAPI ca_replace_printf_handler ( caPrintfFunc *ca_printf_func )
 {
     cac *pcac;
     int caStatus = fetchClientContext (&pcac);
@@ -903,7 +903,7 @@ extern "C" short epicsShareAPI ca_field_type ( chid pChan )
 /*
  * ca_element_count ()
  */
-extern "C" unsigned long epicsShareAPI ca_element_count (chid pChan) 
+extern "C" unsigned long epicsShareAPI ca_element_count ( chid pChan ) 
 {
     return pChan->nativeElementCount ();
 }
@@ -911,7 +911,7 @@ extern "C" unsigned long epicsShareAPI ca_element_count (chid pChan)
 /*
  * ca_state ()
  */
-extern "C" epicsShareFunc enum channel_state epicsShareAPI ca_state (chid pChan)
+extern "C" epicsShareFunc enum channel_state epicsShareAPI ca_state ( chid pChan )
 {
     if ( pChan->connected() ) {
         return cs_conn;
@@ -943,7 +943,7 @@ extern "C" epicsShareFunc void * epicsShareAPI ca_puser ( chid pChan )
 /*
  * ca_read_access ()
  */
-extern "C" epicsShareFunc unsigned epicsShareAPI ca_read_access (chid pChan)
+extern "C" epicsShareFunc unsigned epicsShareAPI ca_read_access ( chid pChan )
 {
     return pChan->accessRights().readPermit();
 }
@@ -951,7 +951,7 @@ extern "C" epicsShareFunc unsigned epicsShareAPI ca_read_access (chid pChan)
 /*
  * ca_write_access ()
  */
-extern "C" epicsShareFunc unsigned epicsShareAPI ca_write_access (chid pChan)
+extern "C" epicsShareFunc unsigned epicsShareAPI ca_write_access ( chid pChan )
 {
     return pChan->accessRights().writePermit();
 }
@@ -983,7 +983,7 @@ extern "C" epicsShareFunc double epicsShareAPI ca_beacon_period ( chid pChan )
 extern "C" unsigned epicsShareAPI ca_get_ioc_connection_count () 
 {
     cac *pcac;
-    int caStatus = fetchClientContext (&pcac);
+    int caStatus = fetchClientContext ( &pcac );
     if ( caStatus != ECA_NORMAL ) {
         return caStatus;
     }

@@ -63,8 +63,7 @@ struct {
 	write_stringout
 };
 
-static long init_record(pstringout)
-struct stringoutRecord *pstringout;
+static long init_record(stringoutRecord *pstringout)
 {
     return 0;
 } /* end init_record() */

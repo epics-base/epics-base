@@ -63,8 +63,7 @@ struct {
 	read_longin
 };
 
-static long init_record(plongin)
-    struct longinRecord	*plongin;
+static long init_record(longinRecord *plongin)
 {
 
     /* longin.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
@@ -85,8 +84,7 @@ static long init_record(plongin)
     return(0);
 }
 
-static long read_longin(plongin)
-    struct longinRecord	*plongin;
+static long read_longin(longinRecord *plongin)
 {
     long status;
 

@@ -71,8 +71,7 @@ struct {
 	read_sa};
 
 
-static long init_record(psa)
-    struct subArrayRecord	*psa;
+static long init_record(subArrayRecord *psa)
 {
 
     /* sa.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
@@ -92,8 +91,7 @@ static long init_record(psa)
     return(0);
 }
 
-static long read_sa(psa)
-    struct subArrayRecord	*psa;
+static long read_sa(subArrayRecord *psa)
 {
     long status,ecount,nRequest;
 

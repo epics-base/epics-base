@@ -75,8 +75,7 @@ struct {
 	NULL};
 
 
-static long init_record(pao)
-struct aoRecord *pao;
+static long init_record(aoRecord *pao)
 {
 
     long status=0;
@@ -85,8 +84,7 @@ struct aoRecord *pao;
 
 } /* end init_record() */
 
-static long write_ao(pao)
-    struct aoRecord	*pao;
+static long write_ao(aoRecord *pao)
 {
     long status;
 

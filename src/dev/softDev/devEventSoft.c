@@ -63,8 +63,7 @@ struct {
 	read_event
 };
 
-static long init_record(pevent)
-    struct eventRecord	*pevent;
+static long init_record(eventRecord *pevent)
 {
 
     /* event.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
@@ -85,8 +84,7 @@ static long init_record(pevent)
     return(0);
 }
 
-static long read_event(pevent)
-    struct eventRecord	*pevent;
+static long read_event(eventRecord *pevent)
 {
     long status;
 

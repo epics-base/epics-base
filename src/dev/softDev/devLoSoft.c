@@ -61,14 +61,12 @@ struct {
 	write_longout
 };
 
-static long init_record(plongout)
-struct longoutRecord *plongout;
+static long init_record(longoutRecord *plongout)
 {
     return(0);
 } /* end init_record() */
 
-static long write_longout(plongout)
-    struct longoutRecord	*plongout;
+static long write_longout(longoutRecord	*plongout)
 {
     long status;
 

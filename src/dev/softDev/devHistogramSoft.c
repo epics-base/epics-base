@@ -66,8 +66,7 @@ struct {
 	NULL
 };
 
-static long init_record(phistogram)
-    struct histogramRecord	*phistogram;
+static long init_record(histogramRecord	*phistogram)
 {
     long status = 0;
 
@@ -89,8 +88,7 @@ static long init_record(phistogram)
     return(status);
 }
 
-static long read_histogram(phistogram)
-    struct histogramRecord	*phistogram;
+static long read_histogram(histogramRecord *phistogram)
 {
     long status;
 

@@ -64,8 +64,7 @@ struct {
 	read_stringin
 };
 
-static long init_record(pstringin)
-    struct stringinRecord	*pstringin;
+static long init_record(stringinRecord *pstringin)
 {
 
     /* stringin.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
@@ -86,8 +85,7 @@ static long init_record(pstringin)
     return(0);
 }
 
-static long read_stringin(pstringin)
-    struct stringinRecord	*pstringin;
+static long read_stringin(stringinRecord *pstringin)
 {
     long status;
 

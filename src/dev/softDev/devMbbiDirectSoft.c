@@ -61,8 +61,7 @@ struct {
 	read_mbbi
 };
 
-static long init_record(pmbbi)
-    struct mbbiDirectRecord	*pmbbi;
+static long init_record(mbbiDirectRecord *pmbbi)
 {
 
     /* mbbi.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
@@ -83,8 +82,7 @@ static long init_record(pmbbi)
     return(0);
 }
 
-static long read_mbbi(pmbbi)
-    struct mbbiDirectRecord	*pmbbi;
+static long read_mbbi(mbbiDirectRecord	*pmbbi)
 {
     long status;
 

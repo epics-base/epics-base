@@ -64,8 +64,7 @@ struct {
 	read_bi
 };
 
-static long init_record(pbi)
-    struct biRecord	*pbi;
+static long init_record(biRecord *pbi)
 {
 
     /* bi.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
@@ -85,8 +84,7 @@ static long init_record(pbi)
     return(0);
 }
 
-static long read_bi(pbi)
-    struct biRecord	*pbi;
+static long read_bi(biRecord *pbi)
 {
     long status;
 

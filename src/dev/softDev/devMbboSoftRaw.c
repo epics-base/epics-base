@@ -61,8 +61,7 @@ struct {
 	write_mbbo
 };
 
-static long init_record(pmbbo)
-struct mbboRecord *pmbbo;
+static long init_record(mbboRecord *pmbbo)
 {
  
     long status;
@@ -76,8 +75,7 @@ struct mbboRecord *pmbbo;
  
 } /* end init_record() */
 
-static long write_mbbo(pmbbo)
-    struct mbboRecord	*pmbbo;
+static long write_mbbo(mbboRecord *pmbbo)
 {
     long status;
     unsigned long data;

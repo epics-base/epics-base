@@ -67,8 +67,7 @@ struct {
 	NULL
 };
 
-static long init_record(pai)
-    struct aiRecord	*pai;
+static long init_record(aiRecord *pai)
 {
 
     /* ai.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
@@ -92,8 +91,7 @@ static long init_record(pai)
     return(0);
 }
 
-static long read_ai(pai)
-    struct aiRecord	*pai;
+static long read_ai(aiRecord *pai)
 {
     long status;
 

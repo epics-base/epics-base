@@ -70,8 +70,7 @@ struct {
 
 
 
-static long init_record(pbo)
-struct boRecord *pbo;
+static long init_record(boRecord *pbo)
 {
     long status;
     
@@ -81,8 +80,7 @@ struct boRecord *pbo;
  
 } /* end init_record() */
 
-static long write_bo(pbo)
-    struct boRecord	*pbo;
+static long write_bo(boRecord *pbo)
 {
     long status;
 

@@ -69,8 +69,7 @@ struct {
 	read_wf};
 
 
-static long init_record(pwf)
-    struct waveformRecord	*pwf;
+static long init_record(waveformRecord *pwf)
 {
 
     /* wf.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
@@ -90,8 +89,7 @@ static long init_record(pwf)
     return(0);
 }
 
-static long read_wf(pwf)
-    struct waveformRecord	*pwf;
+static long read_wf(waveformRecord *pwf)
 {
     long status,nRequest;
 

@@ -64,8 +64,7 @@ struct {
 	read_mbbi
 };
 
-static long init_record(pmbbi)
-    struct mbbiRecord	*pmbbi;
+static long init_record(mbbiRecord *pmbbi)
 {
 
     if (pmbbi->inp.type == CONSTANT) {
@@ -77,8 +76,7 @@ static long init_record(pmbbi)
     return(0);
 }
 
-static long read_mbbi(pmbbi)
-    struct mbbiRecord	*pmbbi;
+static long read_mbbi(mbbiRecord *pmbbi)
 {
     long status;
 

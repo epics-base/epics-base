@@ -40,6 +40,7 @@
  * .08  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  * .09  07-21-92        jba     changed alarm limits for non val related fields
  * .10  08-06-92        jba     New algorithm for calculating analog alarms
+ * .11  09-10-92        jba     modified fetch of VAL from STPL to call recGblGetLinkValue
  */
 
 #include	<vxWorks.h>
@@ -369,7 +370,7 @@ static void monitor(ppid)
 static long do_pid(ppid)
 struct pidRecord     *ppid;
 {
-	long		options,nRequest;
+	long		status,options,nRequest;
 	unsigned long	ctp;	/*clock ticks previous	*/
 	unsigned long	ct;	/*clock ticks		*/
 	float		cval;	/*actual value		*/
@@ -398,20 +399,12 @@ struct pidRecord     *ppid;
                 return(0);
         }
         /* fetch the setpoint */
-        if(ppid->stpl.type == DB_LINK && ppid->smsl == CLOSED_LOOP){
+        if(ppid->smsl == CLOSED_LOOP){
         	options=0;
         	nRequest=1;
-        	if(dbGetLink(&(ppid->stpl.value.db_link),(struct dbCommon *)ppid,DBR_FLOAT,
-		&(ppid->val),&options,&nRequest)!=NULL) {
-                        recGblSetSevr(ppid,LINK_ALARM,INVALID_ALARM);
-                        return(0);
-                } else ppid->udf=FALSE;
-        }
-        if(ppid->stpl.type == CA_LINK && ppid->smsl == CLOSED_LOOP){
-                if(dbCaGetLink(&(ppid->stpl))!=NULL) {
-                        recGblSetSevr(ppid,LINK_ALARM,INVALID_ALARM);
-                        return(0);
-                } else ppid->udf=FALSE;
+        	status = recGblGetLinkValue(&(ppid->stpl),(void *)ppid,DBR_FLOAT,
+			&(ppid->val),&options,&nRequest);
+                if (RTN_SUCCESS(status)) ppid->udf=FALSE;
         }
 	val = ppid->val;
 	if (ppid->udf == TRUE ) {

@@ -31,9 +31,6 @@ void netWriteNotifyIO::show ( unsigned level ) const
 {
     ::printf ( "read write notify IO at %p\n", 
         static_cast < const void * > ( this ) );
-    if ( level > 0u ) {
-        this->baseNMIU::show ( level - 1u );
-    }
 }
 
 void netWriteNotifyIO::destroy ( cacRecycle & recycle )
@@ -63,5 +60,10 @@ void netWriteNotifyIO::completion ( unsigned /* type */,
     arrayElementCount /* count */, const void * /* pData */ )
 {
     this->chan.getClient().printf ( "Write response with data ?\n" );
+}
+
+class netSubscription * netWriteNotifyIO::isSubscription ()
+{
+    return 0;
 }
 

@@ -55,9 +55,6 @@ void netSubscription::show ( unsigned level ) const
         static_cast < const void * > ( this ), 
         dbf_type_to_text ( static_cast < int > ( this->type ) ), 
         this->count, this->mask );
-    if ( level > 0u ) {
-        this->baseNMIU::show ( level - 1u );
-    }
 }
 
 void netSubscription::completion ()

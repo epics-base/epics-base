@@ -25,14 +25,5 @@ baseNMIU::~baseNMIU ()
 {
 }
 
-class netSubscription * baseNMIU::isSubscription ()
-{
-    return 0;
-}
 
-void baseNMIU::show ( unsigned /* level */ ) const
-{
-    ::printf ( "CA IO primitive at %p\n", 
-        static_cast <const void *> ( this ) );
-}
 

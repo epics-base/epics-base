@@ -42,8 +42,8 @@ public:
         arrayElementCount count ) = 0;
     virtual void completion ( unsigned type, 
         arrayElementCount count, const void *pData ) = 0;
-    virtual class netSubscription * isSubscription ();
-    virtual void show ( unsigned level ) const;
+    virtual class netSubscription * isSubscription () = 0;
+    virtual void show ( unsigned level ) const = 0;
     ca_uint32_t getID () const;
     nciu & channel () const;
 protected:
@@ -79,7 +79,7 @@ public:
         arrayElementCount count );
 private:
     const arrayElementCount count;
-    cacStateNotify &notify;
+    cacStateNotify & notify;
     const unsigned type;
     const unsigned mask;
     netSubscription ( nciu &chan, unsigned type, arrayElementCount count, 
@@ -123,6 +123,7 @@ private:
         tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > & );
 #   endif
     ~netReadNotifyIO ();
+    class netSubscription * isSubscription ();
     netReadNotifyIO ( const netReadNotifyIO & );
     netReadNotifyIO & operator = ( const netReadNotifyIO & );
 };
@@ -151,6 +152,7 @@ private:
     void operator delete ( void *,
         tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > & );
 #   endif
+    class netSubscription * isSubscription ();
     netWriteNotifyIO ( const netWriteNotifyIO & );
     netWriteNotifyIO & operator = ( const netWriteNotifyIO & );
     ~netWriteNotifyIO ();

@@ -30,7 +30,7 @@ TEMPLATES += top/exampleApp/src/exampleInclude.dbd
 TEMPLATES += top/exampleApp/src/sncExample.stt
 TEMPLATES += top/exampleApp/src/xxxRecord.dbd
 TEMPLATES += top/exampleApp/src/exampleMain.cpp
-TEMPLATES += top/exampleApp/src/dbSubExample.cpp
+TEMPLATES += top/exampleApp/src/dbSubExample.c
 
 TEMPLATES += top/exampleBoot/Makefile
 TEMPLATES += top/exampleBoot/nfsCommands@vxWorks

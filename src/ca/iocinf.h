@@ -32,6 +32,9 @@
 /************************************************************************/
 
 /* $Log$
+ * Revision 1.54  1996/06/20 21:43:15  jhill
+ * restored io_done_sem (removed by cleanup)
+ *
  * Revision 1.53  1996/06/20 21:19:35  jhill
  * fixed posix signal problem with "cc -Xc"
  *
@@ -594,8 +597,6 @@ const struct in_addr	*pnet_addr,	/* only used by TCP connections */
 unsigned short		port,
 int                     net_proto
 );
-
-int ca_check_for_fp(void);
 
 void caSetupBCastAddrList (ELLLIST *pList, SOCKET sock, unsigned port);
 

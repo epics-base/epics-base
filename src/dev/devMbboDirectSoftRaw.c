@@ -73,7 +73,7 @@ struct {
 static long init_record(pmbbo)
 struct mbboDirectRecord *pmbbo;
 {
-    long status;
+    long status = 0;
  
     if (pmbbo->out.type != PV_LINK)
        status = 2;

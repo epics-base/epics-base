@@ -441,7 +441,7 @@ long dbtr(char *pname)
         return(1);
     }
     if(semMutexTakeNoWait(precord->mlok)==semTakeOK) {
-        semBinaryGive(precord->mlok);
+        semMutexGive(precord->mlok);
         printf("record locked\n");
         return(1);
     }

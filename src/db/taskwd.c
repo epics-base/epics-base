@@ -59,9 +59,9 @@ struct task_list {
 
 static ELLLIST list;
 static ELLLIST anylist;
-static semId lock;
-static semId anylock;
-static semId alloclock;
+static semMutexId lock;
+static semMutexId anylock;
+static semMutexId alloclock;
 static threadId taskwdid=0;
 volatile int taskwdOn=TRUE;
 struct freeList{

@@ -43,10 +43,10 @@ epicsShareExtern ASBASE volatile *pasbase;
 LOCAL int firstTime = TRUE;
 LOCAL threadId threadid=0;
 LOCAL int caInitializing=FALSE;
-LOCAL semId asCaTaskLock;		/*lock access to task */
-LOCAL semId asCaTaskWait;		/*Wait for task to respond*/
-LOCAL semId asCaTaskAddChannels;	/*Tell asCaTask to add channels*/
-LOCAL semId asCaTaskClearChannels;	/*Tell asCaTask to clear channels*/
+LOCAL semMutexId asCaTaskLock;		/*lock access to task */
+LOCAL semBinaryId asCaTaskWait;		/*Wait for task to respond*/
+LOCAL semBinaryId asCaTaskAddChannels;	/*Tell asCaTask to add channels*/
+LOCAL semBinaryId asCaTaskClearChannels;/*Tell asCaTask to clear channels*/
 
 typedef struct {
     struct dbr_sts_double rtndata;

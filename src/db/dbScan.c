@@ -75,13 +75,13 @@ extern struct dbBase *pdbbase;
 
 /* SCAN ONCE */
 int onceQueueSize = 1000;
-static semId onceSem;
+static semBinaryId onceSem;
 static ringId onceQ;
 static threadId onceTaskId;
 
 /*all other scan types */
 typedef struct scan_list{
-	semId	lock;
+	semMutexId	lock;
 	ELLLIST		list;
 	short		modified;/*has list been modified?*/
 	double		rate;

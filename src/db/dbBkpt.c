@@ -14,6 +14,9 @@ of this distribution.
 /* Modification Log:
  * -----------------
  *  $Log$
+ *  Revision 1.13  2000/01/24 20:58:12  mrk
+ *  new way to build
+ *
  *  Revision 1.12  2000/01/04 20:26:16  mrk
  *  replace osiClock calls with tsStamp calls
  *
@@ -171,7 +174,7 @@ long lset_stack_not_empty = 0;
  *    operating with this stack.
  */
 static ELLLIST lset_stack;
-static semId bkpt_stack_sem;
+static semMutexId bkpt_stack_sem;
 
 /*
  *  Stores the last lockset continued or stepped from.

@@ -71,7 +71,7 @@ struct event_block{
 struct event_que{
     /* lock writers to the ring buffer only */
     /* readers must never slow up writers */
-    semId                   writelock;
+    semMutexId              writelock;
     db_field_log            valque[EVENTQUESIZE];
     struct event_block      *evque[EVENTQUESIZE];
     struct event_que        *nextque;       /* in case que quota exceeded */
@@ -88,8 +88,8 @@ typedef void EXTRALABORFUNC (void *extralabor_arg);
 struct event_user {
     struct event_que    firstque;       /* the first event que */
     
-    semId               ppendsem;       /* Wait while empty */
-    semId             	pflush_sem;	    /* wait for flush */
+    semBinaryId         ppendsem;       /* Wait while empty */
+    semBinaryId        	pflush_sem;	    /* wait for flush */
     
     OVRFFUNC		*overflow_sub;  /* called when overflow detect */
     void                *overflow_arg;  /* parameter to above   */

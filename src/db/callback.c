@@ -32,7 +32,7 @@ of this distribution.
 #include "dbLock.h"
 
 int callbackQueueSize = 2000;
-static semId callbackSem[NUM_CALLBACK_PRIORITIES];
+static semBinaryId callbackSem[NUM_CALLBACK_PRIORITIES];
 static ringId callbackQ[NUM_CALLBACK_PRIORITIES];
 static threadId callbackTaskId[NUM_CALLBACK_PRIORITIES];
 static int ringOverflow[NUM_CALLBACK_PRIORITIES];

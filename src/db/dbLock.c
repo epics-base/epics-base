@@ -85,14 +85,14 @@ since this will delay all other threads.
 STATIC int	lockListInitialized = FALSE;
 
 STATIC ELLLIST lockList;
-STATIC semId	globalLock;
+STATIC semMutexId globalLock;
 STATIC unsigned long id = 0;
 STATIC volatile int changingLockSets = FALSE;
 
 typedef struct lockSet {
 	ELLNODE		node;
 	ELLLIST		recordList;
-	semId		lock;
+	semMutexId	lock;
 	TS_STAMP	start_time;
 	threadId	thread_id;
 	dbCommon	*precord;

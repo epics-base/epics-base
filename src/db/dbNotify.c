@@ -219,7 +219,7 @@ static void notifyCallback(CALLBACK *pcallback)
 	dbScanUnlock(precord);
 	ppn->restart = FALSE;
 	ppn->callbackState = callbackNotActive;
-	semBinaryGive((semId)ppn->waitForCallback);
+	semBinaryGive((semBinaryId)ppn->waitForCallback);
 	return;
     }
     if(ppn->callbackState==callbackActive) {
@@ -250,11 +250,11 @@ void dbNotifyCancel(PUTNOTIFY *ppn)
 	ppn->waitForCallback = (void *)semBinaryMustCreate(semFull);
 	ppn->callbackState = callbackCanceled;
 	dbScanUnlock(precord);
-	if(semBinaryTakeTimeout((semId)ppn->waitForCallback,10.0)!=semTakeOK) {
+	if(semBinaryTakeTimeout((semBinaryId)ppn->waitForCallback,10.0)!=semTakeOK) {
 	    errlogPrintf("dbNotifyCancel had semTake timeout\n");
 	    ppn->callbackState = callbackNotActive;
 	}
-	semBinaryDestroy((semId)ppn->waitForCallback);
+	semBinaryDestroy((semBinaryId)ppn->waitForCallback);
     } else {
 	dbScanUnlock(precord);
     }

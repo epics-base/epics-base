@@ -117,10 +117,10 @@ struct client{
   ELLNODE			node;
   struct message_buffer		send;
   struct message_buffer		recv;
-  semId				lock;
-  semId				putNotifyLock;
-  semId				addrqLock;
-  semId				eventqLock;
+  semMutexId			lock;
+  semMutexId			putNotifyLock;
+  semMutexId			addrqLock;
+  semMutexId			eventqLock;
   ELLLIST			addrq;
   ELLLIST			putNotifyQue;
   struct sockaddr_in		addr;
@@ -130,7 +130,7 @@ struct client{
   void				*evuser;
   char				*pUserName;
   char				*pHostName;
-  semId				blockSem; /* used whenever the client blocks */
+  semBinaryId			blockSem; /* used whenever the client blocks */
   SOCKET			sock;
   int				proto;
   threadId			tid;
@@ -222,7 +222,7 @@ GLBLTYPE SOCKET			IOC_cast_sock;
 GLBLTYPE unsigned short		ca_server_port;
 GLBLTYPE ELLLIST		clientQ; /* locked by clientQlock */
 GLBLTYPE ELLLIST		beaconAddrList;
-GLBLTYPE semId			clientQlock;
+GLBLTYPE semMutexId		clientQlock;
 GLBLTYPE struct client		*prsrv_cast_client;
 GLBLTYPE BUCKET            	*pCaBucket;
 GLBLTYPE void			*rsrvClientFreeList; 

@@ -49,8 +49,8 @@ void scanOnce(void *precord);
 extern volatile int interruptAccept;
 
 static ELLLIST caList;	/* Work list for dbCaTask */
-static semId caListSem; /*Mutual exclusions semaphores for caList*/
-static semId caWakeupSem; /*wakeup semaphore for dbCaTask*/
+static semMutexId caListSem; /*Mutual exclusions semaphores for caList*/
+static semBinaryId caWakeupSem; /*wakeup semaphore for dbCaTask*/
 void dbCaTask(void); /*The Channel Access Task*/
 
 /* caLink locking

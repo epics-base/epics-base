@@ -74,7 +74,7 @@ struct LS_LIST {
    struct dbCommon *current_ep; /* current entrypoint */
    ELLLIST bp_list;  /* list of records containing breakpoints in a lockset */
    ELLLIST ep_queue; /* queue of entrypoints found so far */
-   semId ex_sem; /* semaphore for execution queue */
+   semBinaryId ex_sem; /* semaphore for execution queue */
    threadId taskid;    /* saved taskid for the task in stepping mode */
    int step;      /* one if currently "stepping," else zero */
    unsigned long l_num;   /* lockset number */

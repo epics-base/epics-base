@@ -35,7 +35,7 @@ of this distribution.
 #include <errMdef.h>
 #include <ellLib.h>
  
-static semId asLock;
+static semMutexId asLock;
 #define LOCK semMutexMustTake(asLock)
 #define UNLOCK semMutexGive(asLock)
 

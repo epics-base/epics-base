@@ -40,5 +40,5 @@ epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProce
     (const char *pProcessName, const char *pBaseExecutableName)
 {
     errlogPrintf("osiSpawnDetachedProcess not implemented on RTEMS\n");
-    return osiSpawnDetachedProcessFail;
+    return osiSpawnDetachedProcessNoSupport;
 }

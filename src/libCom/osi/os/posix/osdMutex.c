@@ -41,105 +41,15 @@ if(status) { \
 #undef _POSIX_THREAD_PROCESS_SHARED
 #undef _POSIX_THREAD_PRIO_INHERIT
 
-/* Three completely different implementations are provided below
- * If support is available for _POSIX_SPIN_LOCK is available
- *      and enabled then pthread_spin is used
+/* Two completely different implementations are provided below
  * If support is available for PTHREAD_MUTEX_RECURSIVE then
  *      only pthread_mutex is used.
  * If support is not available for PTHREAD_MUTEX_RECURSIVE then
  *      a much more complicated solution is required
  */
 
-#if defined ( _POSIX_SPIN_LOCKS ) && ( _POSIX_SPIN_LOCKS ) >= 200112L && EPICS_TEST_SPINLOCKS
-
-/*
- * !!!! the following is not safe on multi processor systems !!!!
- * The problem is that "owner" and "owned" flags must not be accessed
- * on a MP system w/o taking a lock and enforcing a memory barrier.
- */
-
-typedef struct epicsMutexOSD {
-    pthread_spinlock_t lock;
-    pthread_t owner;
-    unsigned recursionCount;
-    char owned;
-} epicsMutexOSD;
-
-epicsMutexOSD * epicsMutexOsdCreate ( void ) {
-    epicsMutexOSD *pmutex;
-    int           status;
-
-    pmutex = callocMustSucceed ( 1, sizeof(*pmutex),"epicsMutexOsdCreate" );
-    status = pthread_spin_init ( &pmutex->lock,PTHREAD_PROCESS_PRIVATE );
-    checkStatusQuit ( status, "pthread_spin_init","epicsMutexOsdCreate" );
-    pmutex->recursionCount = 0u;
-    pmutex->owner = 0;
-    pmutex->owned = 0;
-    return ( pmutex );
-}
-
-void epicsMutexOsdDestroy ( struct epicsMutexOSD * pmutex )
-{
-    int   status;
-
-    status = pthread_spin_destroy ( & pmutex->lock );
-    checkStatus ( status, "pthread_mutex_destroy" );
-    free ( pmutex );
-}
 
-void epicsMutexOsdUnlock ( struct epicsMutexOSD * pmutex )
-{
-    int status;
-
-    pmutex->recursionCount--;
-    pmutex->owner = 0;
-    pmutex->owned = 0;
-    status = pthread_spin_unlock(&pmutex->lock);
-    checkStatusQuit ( status,"pthread_spin_unlock","epicsMutexOsdUnlock" );
-}
-
-epicsMutexLockStatus epicsMutexOsdLock ( struct epicsMutexOSD * pmutex )
-{
-    pthread_t self = pthread_self ();
-    int status;
-
-    if ( ! pmutex ) return ( epicsMutexLockError );
-    if ( ! pmutex->owned || ! pthread_equal ( self, pmutex->owner ) ) {
-        status = pthread_spin_lock ( &pmutex->lock );
-        checkStatusQuit ( status, "pthread_spin_lock", "epicsMutexOsdLock" );
-        pmutex->owned = 1;
-        pmutex->owner = self;
-    }
-    pmutex->recursionCount++;
-    return ( epicsMutexLockOK );
-}
-
-epicsMutexLockStatus epicsMutexOsdTryLock(struct epicsMutexOSD * pmutex)
-{
-    pthread_t self = pthread_self ();
-    epicsMutexLockStatus status;
-    int pthreadStatus;
-
-    if ( ! pmutex ) return(epicsMutexLockError);
-    if ( ! pmutex->owned || ! pthread_equal ( self, pmutex->owner ) ) {
-        pthreadStatus = pthread_spin_trylock ( &pmutex->lock );
-        if ( pthreadStatus != 0 ) {
-           if ( pthreadStatus == EBUSY ) return ( epicsMutexLockTimeout );
-           checkStatusQuit ( pthreadStatus, 
-	       "pthread_spin_trylock", "epicsMutexOsdTryLock" );
-	    }
-        pmutex->owned = 1;
-        pmutex->owner = self;
-    }
-    pmutex->recursionCount++;
-    return ( epicsMutexLockOK );
-}
-
-void epicsMutexOsdShow ( struct epicsMutexOSD * pmutex, unsigned int level )
-{
-}
-
-#elif defined(_XOPEN_SOURCE) && (_XOPEN_SOURCE)>=500
+#if defined(_XOPEN_SOURCE) && (_XOPEN_SOURCE)>=500
 typedef struct epicsMutexOSD {
     pthread_mutexattr_t mutexAttr;
     pthread_mutex_t	lock;

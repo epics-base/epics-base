@@ -406,7 +406,7 @@ private:
 class exAsyncReadIO : public casAsyncReadIO, public epicsTimerNotify {
 public:
     exAsyncReadIO ( const casCtx &ctxIn, exAsyncPV &pvIn, gdd &protoIn );
-    virtaul ~exAsyncReadIO ();
+    virtual ~exAsyncReadIO ();
 private:
     exAsyncPV &pv;
     epicsTimer &timer;
@@ -439,7 +439,7 @@ class exAsyncCreateIO : public casAsyncPVAttachIO, public epicsTimerNotify {
 public:
     exAsyncCreateIO ( pvInfo &pviIn, exServer &casIn, 
         const casCtx &ctxIn, bool scanOnIn );
-    virtaul ~exAsyncCreateIO ();
+    virtual ~exAsyncCreateIO ();
 private:
     pvInfo      &pvi;
     epicsTimer  &timer;

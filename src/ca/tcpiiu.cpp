@@ -299,7 +299,7 @@ void tcpiiu::recvMsg ()
     totalBytes = (unsigned) status;
     
     cacRingBufferWriteCommit (&this->recv, totalBytes);
-    cacRingBufferWriteFlush (&this->recv);
+    // cacRingBufferWriteFlush (&this->recv);
 
     this->rescheduleRecvTimer (); // reschedule connection activity watchdog
 

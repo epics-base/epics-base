@@ -29,6 +29,11 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.41  1999/09/02 21:44:50  jhill
+ * improved the way that socket error numbers are converted to strings,
+ * changed () to (void) in func proto, and fixed missing parameter to
+ * checkConnWatchdogs() bug resulting from this
+ *
  * Revision 1.40  1999/07/16 21:08:02  jhill
  * fixed bug occurring when connection dropped while waiting to send
  *
@@ -948,7 +953,13 @@ void cac_recv_task(int  tid)
 	taskwdInsert((int) taskIdCurrent, NULL, NULL);
 	
 	status = ca_import(tid);
-	SEVCHK(status, "cac_recv_task()");
+    /*
+     * make sure that we stop if ECA_NOCACTX is returned
+     */
+    if (status!=ECA_NORMAL) {
+	    SEVCHK (status, "cac_recv_task()");
+        taskSuspend (taskIdSelf());
+    }
 	
 	/*
 	 * once started, does not exit until

@@ -64,7 +64,7 @@ $(crossDirs) :
 #
 # host/cross action targets
 #
-$(ACTIONS) clean : % : %$(DIVIDER)host %$(DIVIDER)cross 
+$(ACTIONS) : % : %$(DIVIDER)host %$(DIVIDER)cross 
 HostActionTargets = $(foreach x, $(ACTIONS) clean, $(x)$(DIVIDER)host)
 CrossActionTargets = $(foreach x, $(ACTIONS) clean, $(x)$(DIVIDER)cross)
 $(HostActionTargets) : %$(DIVIDER)host : $(addprefix %$(DIVIDER), $(hostArchs))
@@ -80,6 +80,8 @@ cross : $(crossArchs)
 #
 # special clean rule
 #
+clean :
+	$(RMDIR) $(hostDirs) $(crossDirs)
 clean$(DIVIDER)% : 
 	$(RMDIR) O.$*
 

@@ -285,6 +285,15 @@ void scanDelete(struct dbCommon *precord)
 	}
 	return;
 }
+
+double scanPeriod(int scan) {
+    if (scan>=SCAN_1ST_PERIODIC) {
+	int ind = scan - SCAN_1ST_PERIODIC;
+	scan_list *psl = papPeriodic[ind];
+	return (double) psl->ticks / vxTicksPerSecond;
+    }
+    return 0.0;
+}
 
 int scanppl(double rate)	/*print periodic list*/
 {

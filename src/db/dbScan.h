@@ -33,6 +33,7 @@ long scanInit(void);
 void post_event(int event);
 void scanAdd(struct dbCommon *);
 void scanDelete(struct dbCommon *);
+double scanPeriod(int scan);
 void scanOnce(void *precord);
 int scanOnceSetQueueSize(int size);
 int scanppl(double rate);		/*print periodic lists*/

@@ -40,9 +40,9 @@ static char	*sccsId = "@(#) $Id$";
 #include "iocinf.h"
 
 #ifdef DEBUG
-#define ifDepenDebufPrintf(argsInParen) printf argsInParen
+#define ifDepenDebugPrintf(argsInParen) printf argsInParen
 #else
-#define ifDepenDebufPrintf(argsInParen)
+#define ifDepenDebugPrintf(argsInParen)
 #endif
 
 /*
@@ -91,12 +91,13 @@ int local_addr(int s, struct sockaddr_in *plcladdr)
 		ifconf.ifc_len = 0;
 	}
 
-	ifDepenDebufPrintf ( ("local_addr: %ld net intf(s) found\n", 
+	ifDepenDebugPrintf ( ("local_addr: %ld net intf(s) found\n", 
         (unsigned long) (ifconf.ifc_len/sizeof(*pifreq))) );
 
 	for (	pifreq = ifconf.ifc_req;
 	    	((size_t)ifconf.ifc_len) >= sizeof(*pifreq);
 	     	pifreq++, ifconf.ifc_len -= sizeof(*pifreq)) {
+        unsigned flags;
 
 		status = socket_ioctl(s, SIOCGIFFLAGS, pifreq);
 		if (status == ERROR){
@@ -104,31 +105,36 @@ int local_addr(int s, struct sockaddr_in *plcladdr)
 			continue;
 		}
 
-		if (!(pifreq->ifr_flags & IFF_UP)) {
-			ifDepenDebufPrintf ( ("local_addr: net intf %s was down\n", pifreq->ifr_name) );
+        /*
+         * flags are stored in a union now
+         */
+        flags = (unsigned) pifreq->ifr_flags;
+
+		if (!(flags & IFF_UP)) {
+			ifDepenDebugPrintf ( ("local_addr: net intf %s was down\n", pifreq->ifr_name) );
 			continue;
 		}
 		
 		/*
 		 * dont use the loop back interface
 		 */
-		if (pifreq->ifr_flags & IFF_LOOPBACK) {
-			ifDepenDebufPrintf ( ("local_addr: ignoring loopback interface: %s\n", pifreq->ifr_name) );
+		if (flags & IFF_LOOPBACK) {
+			ifDepenDebugPrintf ( ("local_addr: ignoring loopback interface: %s\n", pifreq->ifr_name) );
 			continue;
 		}
 
 		status = socket_ioctl(s, SIOCGIFADDR, pifreq);
 		if (status == ERROR){
-			ifDepenDebufPrintf ( ("local_addr: could not obtain addr for %s\n", pifreq->ifr_name) );
+			ifDepenDebugPrintf ( ("local_addr: could not obtain addr for %s\n", pifreq->ifr_name) );
 			continue;
 		}
 
 		if (pifreq->ifr_addr.sa_family != AF_INET){
-			ifDepenDebufPrintf ( ("local_addr: interface %s was not AF_INET\n", pifreq->ifr_name) );
+			ifDepenDebugPrintf ( ("local_addr: interface %s was not AF_INET\n", pifreq->ifr_name) );
 			continue;
 		}
 
-		ifDepenDebufPrintf ( ("local_addr: net intf %s found\n", pifreq->ifr_name) );
+		ifDepenDebugPrintf ( ("local_addr: net intf %s found\n", pifreq->ifr_name) );
 
 		tmpaddr = (struct sockaddr_in *) &pifreq->ifr_addr;
 
@@ -197,28 +203,35 @@ void epicsShareAPI caDiscoverInterfaces
 	}
 
 	nelem = ifconf.ifc_len/sizeof(struct ifreq);
-	ifDepenDebufPrintf ( ("caDiscoverInterfaces: %ld net intf(s) found\n", nelem) );
+	ifDepenDebugPrintf ( ("caDiscoverInterfaces: %ld net intf(s) found\n", nelem) );
 
-	for (pifreq = pIfreqList; pifreq<(pIfreqList+nelem); pifreq++){
+	for (pifreq = pIfreqList; pifreq<(pIfreqList+nelem); pifreq++) {
+        unsigned flags;
+
 		status = socket_ioctl(socket, SIOCGIFFLAGS, pifreq);
 		if (status) {
             ca_printf ("caDiscoverInterfaces: net intf flags fetch for %s failed\n", pifreq->ifr_name);
 			continue;
 		}
 
+        /*
+         * flags are stored in a union now
+         */
+        flags = (unsigned) pifreq->ifr_flags;
+
 		/*
 		 * dont bother with interfaces that have been disabled
 		 */
-		if (!(pifreq->ifr_flags & IFF_UP)) {
-			ifDepenDebufPrintf ( ("caDiscoverInterfaces: net intf %s was down\n", pifreq->ifr_name) );
+		if (!(flags & IFF_UP)) {
+			ifDepenDebugPrintf ( ("caDiscoverInterfaces: net intf %s was down\n", pifreq->ifr_name) );
 			continue;
 		}
 
 		/*
 		 * dont use the loop back interface
 		 */
-		if (pifreq->ifr_flags & IFF_LOOPBACK) {
-			ifDepenDebufPrintf ( ("caDiscoverInterfaces: ignoring loopback interface: %s\n", pifreq->ifr_name) );
+		if (flags & IFF_LOOPBACK) {
+			ifDepenDebugPrintf ( ("caDiscoverInterfaces: ignoring loopback interface: %s\n", pifreq->ifr_name) );
 			continue;
 		}
 
@@ -227,7 +240,7 @@ void epicsShareAPI caDiscoverInterfaces
 		 */
 		status = socket_ioctl(socket, SIOCGIFADDR, pifreq);
 		if (status){
-			ifDepenDebufPrintf ( ("caDiscoverInterfaces: could not obtain addr for %s\n", pifreq->ifr_name) );
+			ifDepenDebugPrintf ( ("caDiscoverInterfaces: could not obtain addr for %s\n", pifreq->ifr_name) );
 			continue;
 		}
 
@@ -236,7 +249,7 @@ void epicsShareAPI caDiscoverInterfaces
 		 * then dont use it.
 		 */
 		if (pifreq->ifr_addr.sa_family != AF_INET) {
-			ifDepenDebufPrintf ( ("caDiscoverInterfaces: interface %s was not AF_INET\n", pifreq->ifr_name) );
+			ifDepenDebugPrintf ( ("caDiscoverInterfaces: interface %s was not AF_INET\n", pifreq->ifr_name) );
 			continue;
 		}
 
@@ -251,7 +264,7 @@ void epicsShareAPI caDiscoverInterfaces
 		 */
 		if (matchAddr.s_addr != htonl(INADDR_ANY)) {
 			if (pInetAddr->sin_addr.s_addr != matchAddr.s_addr) {
-                ifDepenDebufPrintf ( ("caDiscoverInterfaces: net intf %s didnt match\n", pifreq->ifr_name) );
+                ifDepenDebugPrintf ( ("caDiscoverInterfaces: net intf %s didnt match\n", pifreq->ifr_name) );
 				continue;
 			}
 		}
@@ -266,32 +279,32 @@ void epicsShareAPI caDiscoverInterfaces
 		 * Otherwise CA will not query through the 
 		 * interface.
 		 */
-		if (pifreq->ifr_flags & IFF_BROADCAST) {
+		if (flags & IFF_BROADCAST) {
 			status = socket_ioctl(
 					socket, 
 					SIOCGIFBRDADDR, 
 					pifreq);
 			if (status) {
-                ifDepenDebufPrintf ( ("caDiscoverInterfaces: net intf %s: bcast addr fetch fail\n", pifreq->ifr_name) );
+                ifDepenDebugPrintf ( ("caDiscoverInterfaces: net intf %s: bcast addr fetch fail\n", pifreq->ifr_name) );
 				continue;
 			}
 		}
-		else if(pifreq->ifr_flags & IFF_POINTOPOINT){
+		else if(flags & IFF_POINTOPOINT){
 			status = socket_ioctl(
 					socket, 
 					SIOCGIFDSTADDR, 
 					pifreq);
 			if (status){
-                ifDepenDebufPrintf ( ("caDiscoverInterfaces: net intf %s: pt to pt addr fetch fail\n", pifreq->ifr_name) );
+                ifDepenDebugPrintf ( ("caDiscoverInterfaces: net intf %s: pt to pt addr fetch fail\n", pifreq->ifr_name) );
 				continue;
 			}
 		}
 		else{
-            ifDepenDebufPrintf ( ("caDiscoverInterfaces: net intf %s: not pt to pt or bcast\n", pifreq->ifr_name) );
+            ifDepenDebugPrintf ( ("caDiscoverInterfaces: net intf %s: not pt to pt or bcast\n", pifreq->ifr_name) );
 			continue;
 		}
 
-        ifDepenDebufPrintf ( ("caDiscoverInterfaces: net intf %s found\n", pifreq->ifr_name) );
+        ifDepenDebugPrintf ( ("caDiscoverInterfaces: net intf %s found\n", pifreq->ifr_name) );
 
 		pNode = (caAddrNode *) calloc(1,sizeof(*pNode));
 		if(!pNode){

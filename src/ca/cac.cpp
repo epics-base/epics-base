@@ -221,9 +221,9 @@ cac::~cac ()
     if ( this->pUserName ) {
         delete [] this->pUserName;
     }
-    this->sgTable.traverse ( CASG::destroy );
-    this->beaconTable.traverse ( bhe::destroy );
-    this->chanTable.traverse ( nciu::destroy );
+    this->sgTable.traverse ( &CASG::destroy );
+    this->beaconTable.traverse ( &bhe::destroy );
+    this->chanTable.traverse ( &nciu::destroy );
 
     osiSockRelease ();
 

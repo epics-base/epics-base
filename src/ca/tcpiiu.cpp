@@ -677,7 +677,7 @@ void tcpiiu::disconnect ()
 
     {
         osiAutoMutex autoMutex ( this->mutex );
-        this->ioTable.traverse ( baseNMIU::destroy );
+        this->ioTable.traverse ( &baseNMIU::destroy );
     }
 
     this->cleanShutdown ();

@@ -174,6 +174,7 @@ private:
     bool earlyFlush;
     bool recvProcessPostponedFlush;
     bool discardingPendingData;
+    bool socketHasBeenClosed;
 
     bool processIncoming ( 
         const epicsTime & currentTime, epicsGuard < callbackMutex > & );
@@ -183,7 +184,6 @@ private:
     void connect ();
     const char * pHostName () const;
     void blockUntilBytesArePendingInOS ();
-    void shutdown ( epicsGuard <cacMutex > & ); 
     double receiveWatchdogDelay () const;
 
     // send protocol stubs
@@ -251,22 +251,6 @@ inline void tcpiiu::flushIfRecvProcessRequested ()
 inline unsigned tcpiiu::channelCount ()
 {
     return this->channelList.count ();
-}
-
-inline void tcpRecvThread::interruptSocketRecv ()
-{
-    epicsThreadId threadId = this->thread.getId ();
-    if ( threadId ) {
-        epicsInterruptSystemCall ( threadId );
-    }
-}
-
-inline void tcpSendThread::interruptSocketSend ()
-{
-    epicsThreadId threadId = this->thread.getId ();
-    if ( threadId ) {
-        epicsInterruptSystemCall ( threadId );
-    }
 }
 
 #endif // ifdef virtualCircuith

@@ -1236,12 +1236,16 @@ int		override_err;
 			pollcnt--;
 		}
 		else{
+#ifdef V5_vxWorks
 			status = semTake(
 					pvximdi->syncSem, 
 					VXIMSGSYNCDELAY);
 			if(status < 0){
 				timeout -= VXIMSGSYNCDELAY;
 			}
+#else
+			taskDelay(VXIMSGSYNCDELAY);
+#endif
 		}
 	}
 	while(timeout>0);

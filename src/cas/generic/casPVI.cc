@@ -29,6 +29,7 @@
  */
 
 #include "gddAppTable.h" // EPICS application type table
+#include "dbMapper.h" // EPICS application type table
 
 #include "server.h"
 #include "casPVIIL.h" // casPVI inline func

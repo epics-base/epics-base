@@ -18,7 +18,6 @@ DEPLIBS = ./libDb.a\
 
 SRCS.c = \
 	../dbStaticLib.c \
-	atdb_lex.c \
 	atdb_yacc.c \
 	../dbta.c \
 	../dbl.c \
@@ -29,7 +28,7 @@ LIBOBJS = dbStaticLib.o
 
 LIBNAME = libDb.a
 
-PROD = dbta dbl dbls atdb
+PROD = atdb dbl dbls dbta
 
 include $(EPICS)/config/RULES.Unix
 
@@ -39,7 +38,7 @@ atdb: atdb_yacc.o $(DEPLIBS)
 # Extra rule since atdb_lex.c is included in atdb_yacc.c
 #   In my opinion, these objects should really be built
 #   independently.
-atdb_yacc.o: atdb_lex.c
+atdb_yacc.o: atdb_lex.c ../atdb.c
 
 clean::
 	@$(RM) atdb_lex.c atdb_yacc.c 

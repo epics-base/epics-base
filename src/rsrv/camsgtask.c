@@ -79,6 +79,7 @@ FAST int 		sock;
   	FAST int		status;
 	FAST struct client 	*client;
     	int 			true = TRUE;
+	int			i;
 
 	client = NULL;
 
@@ -127,7 +128,6 @@ FAST int 		sock;
       		return ERROR;
     	}
 
-#ifdef MATCHING_BUFFER_SIZES
 	/* 
 	 * set TCP buffer sizes to be synergistic 
 	 * with CA internal buffering
@@ -137,7 +137,7 @@ FAST int 		sock;
 			sock,
 			SOL_SOCKET,
 			SO_SNDBUF,
-			&i,
+			(char *)&i,
 			sizeof(i));
 	if(status < 0){
 		logMsg("CAS: SO_SNDBUF set failed\n",
@@ -168,7 +168,6 @@ FAST int 		sock;
 		close(sock);
 		return ERROR;
 	}
-#endif
 
 	/*
  	 * performed in two steps purely for 

@@ -52,8 +52,9 @@ typedef struct putNotify{
         /*The following are private to dbNotify */
         short           state;
         short           requestCancel;
-        int		ntimesActive;   /*number of times found pact=true*/
         CALLBACK        callback;
+        ELLLIST         waitList; /*list of records for current putNotify*/
+        epicsEventId    *pcancelEvent;
 }putNotify;
 
 /* dbPutNotify and dbNotifyCancel are the routines called by user*/
@@ -87,7 +88,7 @@ epicsShareFunc int epicsShareAPI dbNotifyDump(void);
  * User code calls dbPutNotify and dbNotifyCancel.
  *
  * After dbPutNotify is called it may not called for the same putNotify
- * until the putCallbacl is complete. The use can call dbNotifyCancel
+ * until the putCallback is complete. The use can call dbNotifyCancel
  * to cancel the operation. 
  *    
  * The user callback is called when the operation is completed.
@@ -124,9 +125,8 @@ epicsShareFunc int epicsShareAPI dbNotifyDump(void);
  *
  * When a putNotify calls dbProcess, each record that is processed 
  * is added to a waitList. The only exception is that if it finds
- * a record already owned by another putNotify, it is not added
- * to the waitList. The reason is that if it did it would be easy
- * to create infinite loops of record processing.
+ * the same record that the putNotify references. The reason is that if it
+ * did it would be easy to create infinite loops of record processing.
  */
 #ifdef __cplusplus
 }

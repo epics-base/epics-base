@@ -45,13 +45,13 @@ of this distribution.
 #include "recGbl.h"
 #include "dbNotify.h"
 #include "epicsTime.h"
-
+#include "cantProceed.h"
+
 #define STATIC static
 /*structure attached to ppnr field of each record*/
 typedef struct putNotifyRecord {
     ellCheckNode  waitNode;
     ELLLIST  restartList; /*list of putNotifys to restart*/
-    ELLLIST  waitList; /*list of records for current putNotify*/
     dbCommon *precord;
 }putNotifyRecord;
 
@@ -68,6 +68,11 @@ typedef enum {
 /* putNotify groups can span locksets if links are dynamically modified*/
 /* Thus a global lock is taken while putNotify fields are accessed     */
 STATIC epicsMutexId notifyLock = 0;
+
+/*Local routines*/
+STATIC void restartCheck(putNotifyRecord *ppnr);
+STATIC void notifyCallback(CALLBACK *pcallback);
+STATIC void putNotifyPvt(putNotify *ppn,dbCommon *precord);
 
 #define ellSafeAdd(list,listnode) \
 { \
@@ -83,16 +88,12 @@ STATIC epicsMutexId notifyLock = 0;
     (listnode)->isOnList=0; \
 }
 
-/*Local routines*/
-STATIC void restartCheck(putNotifyRecord *ppnr);
-STATIC void waitAdd(dbCommon *precord,putNotify *ppn);
-STATIC void notifyCallback(CALLBACK *pcallback);
-
 STATIC void restartCheck(putNotifyRecord *ppnr)
 {
     dbCommon *precord = ppnr->precord;
     putNotify *pfirst;
     
+    assert(precord->ppn);
     pfirst = (putNotify *)ellFirst(&ppnr->restartList);
     if(!pfirst) {
         precord->ppn = 0;
@@ -107,21 +108,54 @@ STATIC void restartCheck(putNotifyRecord *ppnr)
     pfirst->state = putNotifyRestartCallbackRequested;
     callbackRequest(&pfirst->callback);
 }
-
-STATIC void waitAdd(dbCommon *precord,putNotify *ppn)
+
+STATIC void putNotifyPvt(putNotify *ppn,dbCommon *precord)
 {
-    putNotifyRecord *ppnrOwner = ppn->paddr->precord->ppnr;
-    putNotifyRecord *ppnrThis;
+    long	status=0;
+    dbFldDes	*pfldDes=(dbFldDes *)(ppn->paddr->pfldDes);
 
-    if(!precord->ppnr) {/* make sure record has a putNotifyRecord*/
-        precord->ppnr = dbCalloc(1,sizeof(putNotifyRecord));
-        precord->ppnr->precord = precord;
-        ellInit(&precord->ppnr->restartList);
-        ellInit(&precord->ppnr->waitList);
+    if(precord->ppn && ppn->state!=putNotifyRestartCallbackRequested) {
+        /*another putNotify owns the record */
+        ppn->state = putNotifyWaitForRestart; 
+        ellSafeAdd(&precord->ppnr->restartList,&ppn->restartNode);
+        epicsMutexUnlock(notifyLock);
+        dbScanUnlock(precord);
+        return;
+    } else if(precord->ppn){
+        assert(precord->ppn==ppn);
+        assert(ppn->state==putNotifyRestartCallbackRequested);
     }
-    ppnrThis = precord->ppnr;
-    precord->ppn = ppn;
-    ellSafeAdd(&ppnrOwner->waitList,&ppnrThis->waitNode);
+    if(precord->pact) {
+        precord->ppn = ppn;
+        ellSafeAdd(&ppn->waitList,&precord->ppnr->waitNode);
+        ppn->state = putNotifyRestartInProgress; 
+        epicsMutexUnlock(notifyLock);
+        dbScanUnlock(precord);
+        return;
+    }
+    status=dbPut(ppn->paddr,ppn->dbrType,ppn->pbuffer,ppn->nRequest);
+    ppn->status = (status==0) ? putNotifyOK : putNotifyError;
+    /* Check to see if dbProcess should not be called */
+    if(!status /*dont process if dbPut returned error */
+    &&((ppn->paddr->pfield==(void *)&precord->proc) /*If PROC call dbProcess*/
+       || (pfldDes->process_passive && precord->scan==0))) {
+        precord->ppn = ppn;
+        ellSafeAdd(&ppn->waitList,&precord->ppnr->waitNode);
+        ppn->state = putNotifyPutInProgress;
+        epicsMutexUnlock(notifyLock);
+        dbProcess(precord);
+        dbScanUnlock(precord);
+        return;
+    }
+    if(ppn->state==putNotifyRestartCallbackRequested) {
+        restartCheck(precord->ppnr);
+    }
+    ppn->state = putNotifyNotActive;
+    assert(precord->ppn!=ppn);
+    epicsMutexUnlock(notifyLock);
+    dbScanUnlock(precord);
+    (*ppn->userCallback)(ppn);
+    return;
 }
 
 STATIC void notifyCallback(CALLBACK *pcallback)
@@ -134,76 +168,40 @@ STATIC void notifyCallback(CALLBACK *pcallback)
     dbScanLock(precord);
     epicsMutexMustLock(notifyLock);
     assert(precord->ppnr);
-    assert(precord->ppn==ppn);
     assert(ppn->state==putNotifyRestartCallbackRequested
           || ppn->state==putNotifyUserCallbackRequested);
-    assert(ellCount(&precord->ppnr->waitList)==0);
+    assert(ellCount(&ppn->waitList)==0);
     if(ppn->requestCancel) {
         ppn->status = putNotifyCanceled;
-        restartCheck(precord->ppnr);
-        assert(precord->ppn!=ppn);
+        if(ppn->state==putNotifyRestartCallbackRequested) {
+            restartCheck(precord->ppnr);
+        }
         ppn->state = putNotifyNotActive;
         epicsMutexUnlock(notifyLock);
         dbScanUnlock(precord);
+        assert(ppn->pcancelEvent);
+        epicsEventSignal(*ppn->pcancelEvent);
         return;
     }
     if(ppn->state==putNotifyRestartCallbackRequested) {
-        if(++ppn->ntimesActive <= 2) {
-            short dbrType = ppn->dbrType;
-            void *pbuffer = ppn->pbuffer;
-            long nRequest = ppn->nRequest;
-            long status=0;
-            dbFldDes *pfldDes=(dbFldDes *)(ppn->paddr->pfldDes);
-
-            if(precord->pact) {
-                /* a non putNotify processed the record */
-                /* try again when record finishes processing*/
-                waitAdd(precord,ppn);
-                ppn->state = putNotifyRestartInProgress;
-                epicsMutexUnlock(notifyLock);
-                dbScanUnlock(precord);
-                return;
-            }
-            status=dbPut(ppn->paddr,dbrType,pbuffer,nRequest);
-            ppn->status = (status==0) ? putNotifyOK : putNotifyError;
-            /* Check to see if dbProcess should not be called */
-            if(!status /*dont process if dbPut returned error */
-            &&((ppn->paddr->pfield==(void *)&precord->proc)
-               || (pfldDes->process_passive && precord->scan==0))) {
-                waitAdd(precord,ppn);
-                ppn->state = putNotifyPutInProgress;
-                epicsMutexUnlock(notifyLock);
-                dbProcess(precord);
-                dbScanUnlock(precord);
-                return;
-            }
-            /*All done. Just fall through and call userCallback*/
-        } else {
-            /* have already restarted three times. Give up*/
-            ppn->status = putNotifyBlocked;
-        }
+        putNotifyPvt(ppn,precord);
+        return;
     }
     /* All done. Clean up and call userCallback */
-    restartCheck(precord->ppnr);
-    assert(precord->ppn!=ppn);
     ppn->state = putNotifyNotActive;
+    assert(precord->ppn!=ppn);
     epicsMutexUnlock(notifyLock);
     dbScanUnlock(precord);
     (*ppn->userCallback)(ppn);
 }
-
+
 void epicsShareAPI dbPutNotify(putNotify *ppn)
 {
     dbCommon	*precord = ppn->paddr->precord;
     short	dbfType = ppn->paddr->field_type;
     long	status=0;
-    short	dbrType = ppn->dbrType;
-    void	*pbuffer = ppn->pbuffer;
-    long	nRequest = ppn->nRequest;
-    dbFldDes	*pfldDes=(dbFldDes *)(ppn->paddr->pfldDes);
 
     assert(precord);
-    assert(precord->ppn!=ppn);
     /* Must handle DBF_XXXLINKs as special case.
      * Only dbPutField will change link fields. 
      * Also the record is not processed as a result
@@ -219,49 +217,16 @@ void epicsShareAPI dbPutNotify(putNotify *ppn)
     ppn->status = 0;
     ppn->state = putNotifyNotActive;
     ppn->requestCancel = 0;
-    ppn->ntimesActive = 0;
     callbackSetCallback(notifyCallback,&ppn->callback);
     callbackSetUser(ppn,&ppn->callback);
     callbackSetPriority(priorityLow,&ppn->callback);
+    ellInit(&ppn->waitList);
     if(!precord->ppnr) {/* make sure record has a putNotifyRecord*/
         precord->ppnr = dbCalloc(1,sizeof(putNotifyRecord));
         precord->ppnr->precord = precord;
         ellInit(&precord->ppnr->restartList);
-        ellInit(&precord->ppnr->waitList);
     }
-    if(precord->ppn) {
-        assert(precord->ppn!=ppn);
-        /*another putNotify owns the record */
-        ppn->state = putNotifyWaitForRestart; 
-        ellSafeAdd(&precord->ppnr->restartList,&ppn->restartNode);
-        epicsMutexUnlock(notifyLock);
-        dbScanUnlock(precord);
-        return;
-    }
-    if(precord->pact) {
-        waitAdd(precord,ppn);
-        ppn->state = putNotifyRestartInProgress; 
-        epicsMutexUnlock(notifyLock);
-        dbScanUnlock(precord);
-        return;
-    }
-    status=dbPut(ppn->paddr,dbrType,pbuffer,nRequest);
-    ppn->status = (status==0) ? putNotifyOK : putNotifyError;
-    /* Check to see if dbProcess should not be called */
-    if(!status /*dont process if dbPut returned error */
-    &&((ppn->paddr->pfield==(void *)&precord->proc) /*If PROC call dbProcess*/
-       || (pfldDes->process_passive && precord->scan==0))) {
-        waitAdd(precord,ppn);
-        ppn->state = putNotifyPutInProgress;
-        epicsMutexUnlock(notifyLock);
-        dbProcess(precord);
-        dbScanUnlock(precord);
-        return;
-    }
-    epicsMutexUnlock(notifyLock);
-    dbScanUnlock(precord);
-    (*ppn->userCallback)(ppn);
-    return;
+    putNotifyPvt(ppn,precord);
 }
 
 void epicsShareAPI dbPutNotifyInit(void)
@@ -282,14 +247,18 @@ void epicsShareAPI dbNotifyCancel(putNotify *ppn)
     /*If callback is scheduled or active wait for it to complete*/
     if(state==putNotifyUserCallbackRequested
     || state==putNotifyRestartCallbackRequested) {
+        epicsEventId eventId;
+        eventId = epicsEventCreate(epicsEventEmpty);
+        ppn->pcancelEvent = &eventId;
         ppn->requestCancel = 1;
-        while(ppn->state!=putNotifyNotActive) {
-            epicsMutexUnlock(notifyLock);
-            dbScanUnlock(precord);
-            epicsThreadSleep(.1);
-            dbScanLock(precord);
-            epicsMutexMustLock(notifyLock);
-        }
+        epicsMutexUnlock(notifyLock);
+        dbScanUnlock(precord);
+        epicsEventWait(eventId);
+        dbScanLock(precord);
+        epicsMutexMustLock(notifyLock);
+        ppn->pcancelEvent = 0;
+        epicsEventDestroy(eventId);
+        state = ppn->state;
         epicsMutexUnlock(notifyLock);
         dbScanUnlock(precord);
         return;
@@ -306,13 +275,12 @@ void epicsShareAPI dbNotifyCancel(putNotify *ppn)
         { /*Take all records out of wait list */
             putNotifyRecord *ppnrWait;
 
-            assert(precord->ppn==ppn);
-            while((ppnrWait = (putNotifyRecord *)ellFirst(&precord->ppnr->waitList))){
-                ellSafeDelete(&precord->ppnr->waitList,&ppnrWait->waitNode);
-                if(ppnrWait->precord!=precord) restartCheck(ppnrWait);
+            while((ppnrWait = (putNotifyRecord *)ellFirst(&ppn->waitList))){
+                ellSafeDelete(&ppn->waitList,&ppnrWait->waitNode);
+                restartCheck(ppnrWait);
             }
-            restartCheck(precord->ppnr);
         }
+        if(precord->ppn==ppn) restartCheck(precord->ppnr);
         break;
     default:
         printf("dbNotify: illegal state for notifyCallback\n");
@@ -324,41 +292,50 @@ void epicsShareAPI dbNotifyCancel(putNotify *ppn)
 
 void epicsShareAPI dbNotifyCompletion(dbCommon *precord)
 {
-    putNotify	*ppnOwner = precord->ppn;
-    putNotifyRecord *ppnrOwner = ppnOwner->paddr->precord->ppnr;
-    putNotifyRecord *ppnrThis = precord->ppnr;
+    putNotify	*ppn = precord->ppn;
 
     epicsMutexMustLock(notifyLock);
-    assert(ppnOwner);
-    assert(ppnrThis);
-    ellSafeDelete(&ppnrOwner->waitList,&ppnrThis->waitNode);
-    if(precord!=ppnrOwner->precord) restartCheck(ppnrThis);
-    if((ellCount(&ppnrOwner->waitList)==0)) {
-        switch(ppnOwner->state) {
-        case putNotifyPutInProgress:
-            ppnOwner->state = putNotifyUserCallbackRequested;
-            break;
-        case putNotifyRestartInProgress:
-            ppnOwner->state = putNotifyRestartCallbackRequested;
-            break;
-        default:
-            printf("%s dbNotifyCompletion illegal state %d\n",
-                precord->name,ppnOwner->state);
-            return;
-        }
-        callbackRequest(&ppnOwner->callback);
+    assert(ppn);
+    assert(precord->ppnr);
+    if(ppn->state!=putNotifyRestartInProgress
+    && ppn->state!=putNotifyPutInProgress) {
+        epicsMutexUnlock(notifyLock);
+        return;
+    }
+    ellSafeDelete(&ppn->waitList,&precord->ppnr->waitNode);
+    if((ellCount(&ppn->waitList)!=0)) {
+        restartCheck(precord->ppnr);
+    } else if(ppn->state == putNotifyPutInProgress) {
+        ppn->state = putNotifyUserCallbackRequested;
+        restartCheck(precord->ppnr);
+        callbackRequest(&ppn->callback);
+    } else if(ppn->state == putNotifyRestartInProgress) {
+        ppn->state = putNotifyRestartCallbackRequested;
+        callbackRequest(&ppn->callback);
+    } else {
+        cantProceed("dbNotifyCompletion illegal state");
     }
     epicsMutexUnlock(notifyLock);
 }
 
 void epicsShareAPI dbNotifyAdd(dbCommon *pfrom, dbCommon *pto)
 {
+    putNotify *ppn = pfrom->ppn;
+
     if(pto->pact) return; /*if active it will not be processed*/
     epicsMutexMustLock(notifyLock);
-    /* if pto->ppn then either another putNotify owns record or */
-    /* there is an infinite look of record processing. In either*/
-    /* case dont add the record                                 */
-    if(!pto->ppn) waitAdd(pto,pfrom->ppn);
+    if(!pto->ppnr) {/* make sure record has a putNotifyRecord*/
+        pto->ppnr = dbCalloc(1,sizeof(putNotifyRecord));
+        pto->ppnr->precord = pto;
+        ellInit(&pto->ppnr->restartList);
+    }
+    assert(ppn);
+    if(!(pto->ppn) 
+    && (ppn->state==putNotifyPutInProgress)
+    && (pto!=ppn->paddr->precord)) {
+        pto->ppn = pfrom->ppn;
+        ellSafeAdd(&pfrom->ppn->waitList,&pto->ppnr->waitNode);
+    }
     epicsMutexUnlock(notifyLock);
 }
 
@@ -411,8 +388,7 @@ int epicsShareAPI dbNotifyDump(void)
     dbRecordType *pdbRecordType;
     dbRecordNode *pdbRecordNode;
     dbCommon     *precord;
-    putNotify    *ppnOwner;
-    putNotifyRecord *ppnrOwner;
+    putNotify    *ppn;
     putNotify    *ppnRestart;
     putNotifyRecord *ppnrWait;
    
@@ -428,20 +404,19 @@ int epicsShareAPI dbNotifyDump(void)
             if(!precord->ppn) continue;
             if(!precord->ppnr) continue;
             if(precord->ppn->paddr->precord != precord) continue;
-            ppnOwner = precord->ppn;
-            ppnrOwner = precord->ppnr;
-            printf("%s state %d\n  waitList\n",
-                ppnrOwner->precord->name,ppnOwner->state);
-            ppnrWait = (putNotifyRecord *)ellFirst(&ppnrOwner->waitList);
+            ppn = precord->ppn;
+            printf("%s state %d ppn %p\n  waitList\n",
+                precord->name,ppn->state,ppn);
+            ppnrWait = (putNotifyRecord *)ellFirst(&ppn->waitList);
             while(ppnrWait) {
                 printf("    %s pact %d\n",
                     ppnrWait->precord->name,ppnrWait->precord->pact);
                 ppnrWait = (putNotifyRecord *)ellNext(&ppnrWait->waitNode.node);
             }
             printf("  restartList\n");
-            ppnRestart = (putNotify *)ellFirst(&ppnrOwner->restartList);
-            while(ppnrWait) {
-                printf("    %s\n", ppnRestart->paddr->precord->name);
+            ppnRestart = (putNotify *)ellFirst(&precord->ppnr->restartList);
+            while(ppnRestart) {
+                printf("    %p\n", ppnRestart);
                 ppnRestart = (putNotify *)ellNext(&ppnRestart->restartNode.node);
             }
         }

@@ -33,6 +33,9 @@
  * .01 joh 081591	Added epics env config
  * .02 joh 011995	Allow stdio also	
  * $Log$
+ * Revision 1.9  1995/12/20 16:56:47  jhill
+ * dont print no connect msg if it is benign
+ *
  * Revision 1.8  1995/12/19  19:49:20  jhill
  * Use connectWithTimeout() instead of connect()
  *
@@ -64,7 +67,7 @@
 
 LOCAL FILE		*iocLogFile = NULL;
 LOCAL int 		iocLogFD = ERROR;
-LOCAL int 		iocLogDisable = 0;
+      int 		iocLogDisable = 0;
 LOCAL unsigned		iocLogTries = 0U;
 LOCAL unsigned		iocLogConnectCount = 0U;
 

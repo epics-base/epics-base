@@ -335,7 +335,7 @@ main(int argc, char** argv)
 }
 
 /* use sub_collect and db_file_name to do work */
-int sub_it()
+static int sub_it()
 {
 	FILE* fp;
 	char var_buff[500];

@@ -173,11 +173,12 @@ inline void tenQuadRecursiveLockPairsSquared ( epicsMutex & mutex )
 void epicsMutexPerformance ()
 {
     epicsMutex mutex;
+	unsigned i;
 
     // test a single lock pair
     epicsTime begin = epicsTime::getCurrent ();
     static const unsigned N = 1000;
-    for ( unsigned i = 0; i < N; i++ ) {
+    for ( i = 0; i < N; i++ ) {
         tenLockPairsSquared ( mutex );
     }
     double delay = epicsTime::getCurrent () -  begin;
@@ -187,7 +188,7 @@ void epicsMutexPerformance ()
 
     // test a two times recursive lock pair
     begin = epicsTime::getCurrent ();
-    for ( unsigned i = 0; i < N; i++ ) {
+    for ( i = 0; i < N; i++ ) {
         tenDoubleRecursiveLockPairsSquared ( mutex );
     }
     delay = epicsTime::getCurrent () -  begin;
@@ -197,7 +198,7 @@ void epicsMutexPerformance ()
 
     // test a four times recursive lock pair
     begin = epicsTime::getCurrent ();
-    for ( unsigned i = 0; i < N; i++ ) {
+    for ( i = 0; i < N; i++ ) {
         tenQuadRecursiveLockPairsSquared ( mutex );
     }
     delay = epicsTime::getCurrent () -  begin;

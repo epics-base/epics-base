@@ -40,7 +40,7 @@
 #define NELEMENTS(A) (sizeof (A) / sizeof ((A) [0]))
 #endif
 
-#ifdef vxWorks
+#if defined(vxWorks) || defined(VMS)
 #define ITERATION_COUNT 1000
 #else
 #define ITERATION_COUNT 10000

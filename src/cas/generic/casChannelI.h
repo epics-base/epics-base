@@ -28,7 +28,7 @@ class casMonitor;
 class casAsyncIOI;
 
 class casChannelI : public tsDLNode < casChannelI >, 
-    public chronIntIdRes < casChannelI >, public casEvent,
+    public chronIntIdRes < casChannelI >, public casEvent, 
     private casChannelDestroyFromPV {
 public:
     casChannelI ( casCoreClient & clientIn, casChannel & chanIn, 

@@ -1700,7 +1700,7 @@ caStatus casStrmClient::channelDestroyEventNotify (
 
 // casStrmClient::casChannelDestroyFromInterfaceNotify()
 // immediateUninstallNeeded is false when we must avoid 
-// taking the lock insituations where we would compromise 
+// taking the lock in situations where we would compromise 
 // the lock hierarchy
 void casStrmClient::casChannelDestroyFromInterfaceNotify ( 
     casChannelI & chan, bool immediateUninstallNeeded )

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.25  1998/07/08 15:38:08  jhill
+ * fixed lost monitors during flow control problem
+ *
  * Revision 1.24  1998/06/16 03:41:16  jhill
  * fixed prototype
  *
@@ -583,11 +586,11 @@ protected:
 	//
 	// logBadIdWithFileAndLineno()
 	//
-#	define logBadId(MP, DP, CACSTAT) \
-	this->logBadIdWithFileAndLineno(MP, DP, CACSTAT, __FILE__, __LINE__)
+#	define logBadId(MP, DP, CACSTAT, RESID) \
+	this->logBadIdWithFileAndLineno(MP, DP, CACSTAT, __FILE__, __LINE__, RESID)
 	caStatus logBadIdWithFileAndLineno(const caHdr *mp,
 			const void *dp, const int cacStat, const char *pFileName, 
-			const unsigned lineno);
+			const unsigned lineno, const unsigned resId);
 
 private:
 	inBuf &inBufRef;

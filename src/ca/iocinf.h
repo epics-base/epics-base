@@ -32,6 +32,9 @@
 /************************************************************************/
 
 /* $Log$
+ * Revision 1.60  1997/04/10 19:26:24  jhill
+ * asynch connect, faster connect, ...
+ *
  * Revision 1.59  1997/01/22 21:10:26  jhill
  * smaller external sym name for VAXC
  *
@@ -130,8 +133,6 @@ HDRVERSIONID(iocinfh, "$Id$")
 #include <stdarg.h>
 #include <time.h>
 
-#include "shareLib.h"
-
 /*
  * OS dependent includes
  */
@@ -141,12 +142,25 @@ HDRVERSIONID(iocinfh, "$Id$")
 /*
  * EPICS includes
  */
+#if defined(epicsExportSharedSymbols)
+#error suspect that libCom was not imported
+#endif
+
 #include "epicsAssert.h"
-#include "cadef.h"
 #include "bucketLib.h"
 #include "ellLib.h"
 #include "envDefs.h" 
 #include "epicsPrint.h" 
+
+#if defined(epicsExportSharedSymbols)
+#error suspect that libCom was not imported
+#endif
+
+/*
+ * this is defined only after we import from libCom above
+ */
+#define epicsExportSharedSymbols
+#include "cadef.h"
 
 /*
  * CA private includes 

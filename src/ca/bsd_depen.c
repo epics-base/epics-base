@@ -52,6 +52,7 @@ int cac_select_io(struct timeval *ptimeout, int flags)
         unsigned long   freespace;
 	SOCKET		maxfd;
 	caFDInfo	*pfdi;
+	int		ioPending;
 
         LOCK;
 	pfdi = (caFDInfo *) ellGet(&ca_static->fdInfoFreeList);
@@ -70,6 +71,7 @@ int cac_select_io(struct timeval *ptimeout, int flags)
 	FD_ZERO (&pfdi->writeMask);
 
 	maxfd = 0;
+	ioPending = FALSE;
 	for(    piiu = (IIU *) iiuList.node.next;
 		piiu;
 		piiu = (IIU *) piiu->node.next) {
@@ -115,6 +117,7 @@ int cac_select_io(struct timeval *ptimeout, int flags)
 				maxfd = max (maxfd,piiu->sock_chan);
                                 FD_SET (piiu->sock_chan, &pfdi->readMask);
 				piiu->recvPending = TRUE;
+				ioPending = TRUE;
                         }
 			else {
 				piiu->recvPending = FALSE;
@@ -127,6 +130,7 @@ int cac_select_io(struct timeval *ptimeout, int flags)
                 if (flags&CA_DO_SENDS) {
 			if (piiu->state==iiu_connecting) {
 				FD_SET (piiu->sock_chan, &pfdi->writeMask);
+				ioPending = TRUE;
 			}
 			else {
 				if (cacRingBufferReadSize(&piiu->send, FALSE)>0) {
@@ -138,21 +142,37 @@ int cac_select_io(struct timeval *ptimeout, int flags)
         }
 	UNLOCK;
 
-#	if defined(__hpux)
+	/*
+ 	 * win32 requires this (others will
+	 * run faster with this installed)
+	 */
+	if (	!ioPending &&
+		ptimeout->tv_sec==0 &&
+		ptimeout->tv_usec==0 ) {
+		status = 0;
+	}
+	else {
+#		if defined(__hpux)
+#			define HPCAST (int *)
+#		else
+#			define HPCAST
+#		endif
 		status = select(
 				maxfd+1,
-				(int *)&pfdi->readMask,
-				(int *)&pfdi->writeMask,
-				(int *)NULL,
+				HPCAST &pfdi->readMask,
+				HPCAST &pfdi->writeMask,
+				HPCAST NULL,
 				&autoTimeOut);
-#	else
-		status = select(
-				maxfd+1,
-				&pfdi->readMask,
-				&pfdi->writeMask,
-				NULL,
-				&autoTimeOut);
-#	endif
+		if (status<0) {
+			int errnoCpy = SOCKERRNO;
+
+			if (errnoCpy!=EINTR) {
+				ca_printf (
+					"CAC: unexpected select fail: %s\n",
+					strerror(SOCKERRNO));
+			}
+		}
+	}
 
 	/*
 	 * get a new time stamp if we have been waiting
@@ -161,21 +181,6 @@ int cac_select_io(struct timeval *ptimeout, int flags)
 	if (ptimeout->tv_sec || ptimeout->tv_usec) {
 		cac_gettimeval (&ca_static->currentTime);
 	}
-
-        if (status<0) {
-                if (SOCKERRNO == EINTR) {
-                }
-                else if (SOCKERRNO == EWOULDBLOCK) {
-                        ca_printf("CAC: blocked at select ?\n");
-                }                  
-		else if (SOCKERRNO == ESRCH) {
-		}
-                else {
-                        ca_printf (
-                                "CAC: unexpected select fail: %s\n",
-                                strerror(SOCKERRNO));
-                }
-        }
 
 	LOCK;
         if (status>0) {

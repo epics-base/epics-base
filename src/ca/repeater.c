@@ -63,6 +63,9 @@
  *			datagram socket (and watching for ECONNREFUSED)
  *
  * $Log$
+ * Revision 1.38  1996/11/02 00:51:04  jhill
+ * many pc port, const in API, and other changes
+ *
  * Revision 1.37  1996/09/04 20:02:32  jhill
  * fixed gcc warning
  *
@@ -298,7 +301,8 @@ LOCAL void verifyClients()
 		else {
 			if (SOCKERRNO!=EADDRINUSE) {
 				ca_printf(
-	"CA Repeater: bind test err was \"%s\"\n", strerror(SOCKERRNO));
+	"CA Repeater: bind test err was %d=\"%s\"\n", 
+					SOCKERRNO, strerror(SOCKERRNO));
 			}
 		}
 	}

@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.28  1997/04/10 19:26:19  jhill
+ * asynch connect, faster connect, ...
+ *
  * Revision 1.27  1996/11/02 00:51:10  jhill
  * many pc port, const in API, and other changes
  *
@@ -59,6 +62,7 @@
 #include "callback.h"
 #include "iocinf.h"
 #include "remLib.h"
+#include "dbEvent.h"
 
 LOCAL void ca_repeater_task();
 LOCAL void ca_task_exit_tcb(WIND_TCB *ptcb);
@@ -67,6 +71,7 @@ LOCAL int cac_os_depen_exit_tid (struct ca_static *pcas, int tid);
 LOCAL int cac_add_task_variable (struct ca_static *ca_temp);
 LOCAL void deleteCallBack(CALLBACK *pcb);
 LOCAL void ca_check_for_fp();
+LOCAL int event_import(int tid);
 
 /*
  * order of ops is important here
@@ -391,7 +396,7 @@ int cac_os_depen_init(struct ca_static *pcas)
 	assert(evuser);
 
 	status = db_add_extra_labor_event(
-                                        evuser,
+                                        (struct event_user *)evuser,
                                         ca_extra_event_labor,
                                         pcas);
 	assert(status==0);
@@ -401,9 +406,9 @@ int cac_os_depen_init(struct ca_static *pcas)
 		taskName(VXTHISTASKID),
 		sizeof(name) - strlen(name) - 1);
 	status = db_start_events(
-			evuser,
+			(struct event_user *)evuser,
 			name,
-			ca_import,
+			event_import,
 			taskIdSelf(),
 			-1); /* higher priority */
 	assert(status == OK);
@@ -473,7 +478,7 @@ LOCAL int cac_os_depen_exit_tid (struct ca_static *pcas, int tid)
 			 * 	can finish 
 			 */
 			UNLOCK;
-			status = db_cancel_event(monix + 1);
+			status = db_cancel_event((struct event_block *)(monix+1));
 			LOCK;
 			assert(status == OK);
 			free(monix);
@@ -628,6 +633,22 @@ unsigned 		size)
         pBuf[size-1] = '\0';
 
         return;
+}
+
+/*
+ * event_import()
+ */
+LOCAL int event_import(int tid)
+{
+	int status;
+
+	status = ca_import(tid);
+	if (status==ECA_NORMAL) {
+		return OK;	
+	}
+	else {
+		return ERROR;
+	}
 }
 
 

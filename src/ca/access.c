@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.91  1997/04/10 19:26:01  jhill
+ * asynch connect, faster connect, ...
+ *
  * Revision 1.90  1997/01/22 21:06:30  jhill
  * use genLocalExcepWFL for generateLocalExceptionWithFileAndLine
  *
@@ -204,9 +207,11 @@ static char *sccsId = "@(#) $Id$";
 #define CAC_VERSION_GLOBAL
 
 #include 	"iocinf.h"
-#include	"net_convert.h"
-#include	"epicsPrint.h"
 #include	"sigPipeIgnore.h"
+
+#ifdef vxWorks
+#include 	"dbEvent.h"
+#endif
 
 
 /****************************************************************/
@@ -261,10 +266,10 @@ unsigned 	cmmd
 );
 #ifdef vxWorks
 LOCAL void ca_event_handler(
-miu		monix,
+void		*usrArg,
 struct dbAddr	*paddr,
 int		hold,
-void		*pfl
+db_field_log	*pfl
 );
 LOCAL void ca_put_notify_action(PUTNOTIFY *ppn);
 #endif
@@ -2206,7 +2211,7 @@ long		mask
 				ca_event_handler,
 				monix,
 				mask,
-				monix+1);
+				(struct event_block *)(monix+1));
 		if(status == ERROR){
 			UNLOCK;
 			return ECA_DBLCLFAIL; 
@@ -2225,7 +2230,7 @@ long		mask
 		 * return warning msg if they have made the queue to full 
 		 * to force the first (untriggered) event.
 		 */
-		if(db_post_single_event(monix+1)==ERROR){
+		if(db_post_single_event((struct event_block *)(monix+1))==ERROR){
 			UNLOCK;
 			return ECA_OVEVFAIL;
 		}
@@ -2328,12 +2333,13 @@ int ca_request_event(evid monix)
  */
 #ifdef vxWorks
 LOCAL void ca_event_handler(
-miu		monix,
+void		*usrArg,
 struct dbAddr	*paddr,
 int		hold,
-void		*pfl
+db_field_log	*pfl
 )
 {
+	miu			monix = (miu) usrArg;
   	register int 		status;
   	register int		count;
   	register chtype		type = monix->type;
@@ -2519,7 +2525,7 @@ int epicsShareAPI ca_clear_event (evid monix)
 		 */
 		LOCK;
 		ellDelete(&chix->eventq, &pMon->node);
-		status = db_cancel_event(pMon + 1);
+		status = db_cancel_event((struct event_block *)(pMon + 1));
 		ellAdd(&dbfree_ev_list, &pMon->node);
 		UNLOCK;
 
@@ -2629,7 +2635,7 @@ int epicsShareAPI ca_clear_channel (chid chix)
 		 * clear out the events for this channel
 		 */
 		while ( (monix = (miu) ellGet(&pChan->eventq)) ) {
-			status = db_cancel_event(monix + 1);
+			status = db_cancel_event((struct event_block *)(monix + 1));
 			assert (status == OK);
 			ellAdd(&dbfree_ev_list, &monix->node);
 		}
@@ -2746,12 +2752,12 @@ void clearChannelResources(unsigned id)
 	status = bucketRemoveItemUnsignedId (
 			ca_static->ca_pSlowBucket, &chix->cid);
 	assert (status == S_bucket_success);
+	removeFromChanList(chix);
 	free (chix);
 	if (piiu!=piiuCast && ellCount(&piiu->chidlist.count)==0){
 		TAG_CONN_DOWN(piiu);
 	}
-	removeFromChanList(chix);
-
+	
 	UNLOCK;
 }
 
@@ -2773,6 +2779,17 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 
   	INITCHK;
 
+	/*
+	 * select() under WIN32 gives us grief
+	 * if we delay with out interest in at
+	 * least one fd
+	 */
+	if (!ca_static->ca_piiuCast) {
+		create_udp_fd();
+		if(!ca_static->ca_piiuCast){
+			return ECA_NOCAST;
+		}
+	}
 
 	if(EVENTLOCKTEST){
     		return ECA_EVDISALLOW;
@@ -3263,7 +3280,7 @@ void noop_msg(struct ioc_in_use *piiu)
 	hdr.m_available = htons(0);
 	hdr.m_postsize = 0;
 	
-	cac_push_msg_no_block(piiu, &hdr, NULL);
+	status = cac_push_msg_no_block(piiu, &hdr, NULL);
 	if (status == ECA_NORMAL) {
 		piiu->send_needed = TRUE;
 	}

@@ -147,7 +147,7 @@ int catime (char *channelName, enum appendNumberFlag appNF)
   	printf ("free test\n");
 	timeIt (test_free, itemList, 100u);
 
-  	printf ("waiting for the server to reply...");
+  	printf ("waiting for the server to reply to free requests...");
 	fflush (stdout);
 	ca_pend_event(1.0);
   	printf ("hopefully done\n");

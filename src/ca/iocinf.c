@@ -47,6 +47,9 @@
 /*			address in use so that test works on UNIX	*/
 /*			kernels that support multicast			*/
 /* $Log$
+ * Revision 1.68  1997/04/10 19:26:14  jhill
+ * asynch connect, faster connect, ...
+ *
  * Revision 1.67  1997/01/08 22:48:42  jhill
  * improved message
  *
@@ -584,6 +587,8 @@ LOCAL void cac_connect_iiu (struct ioc_in_use *piiu)
 	 * attempt to connect to a CA server
 	 */
 	while (1) {
+		int errnoCpy;
+
 		status = connect(	
 				piiu->sock_chan,
 				&pNode->destAddr.sa,
@@ -592,7 +597,19 @@ LOCAL void cac_connect_iiu (struct ioc_in_use *piiu)
 			break;
 		}
 
-		if (SOCKERRNO==EINPROGRESS) {
+		errnoCpy = SOCKERRNO;
+		if (errnoCpy==EISCONN) {
+			/*
+			 * called connect after we are already connected 
+			 * (this appears to be how they provide 
+			 * connect completion notification)
+			 */
+			break;
+		}
+		else if (
+			errnoCpy==EINPROGRESS ||
+			errnoCpy==EWOULDBLOCK /* for WINSOCK */
+			) {
 			/*
 			 * The  socket  is   non-blocking   and   a
 			 * connection attempt has been initiated,
@@ -600,32 +617,27 @@ LOCAL void cac_connect_iiu (struct ioc_in_use *piiu)
 			 */
 			return;
 		}
-		else if (SOCKERRNO==EISCONN) {
-			/*
-			 * called connect after we are already connected 
-			 * (this appears to be how they provide connect completion
-			 * notification)
-			 */
-			break;
+		else if (
+			errnoCpy==EALREADY ||
+			errnoCpy==EINVAL /* for early WINSOCK */
+			) {
+			ca_printf(
+				"CAC: duplicate connect err %d=\"%s\"\n", 
+				errnoCpy, strerror(errnoCpy));
+			return;	
 		}
-		else if (SOCKERRNO==EALREADY) {
-			/*
-			 * The  socket  is   non-blocking   and   
-			 * we have issued a duplicate connect
-			 * request.
-			 */
-			ca_printf("CAC: duplicate call to connect()???\n");
-			return;
-		}
-		else if (SOCKERRNO==EINTR) {
+		else if(errnoCpy==EINTR) {
 			/*
 			 * restart the system call if interrupted
 			 */
 			continue;
 		}
 		else {	
-			ca_printf("CAC: Unable to connect port %d on \"%s\" because \"%s\"\n", 
-				pNode->destAddr.in.sin_port, piiu->host_name_str, strerror(SOCKERRNO));
+			ca_printf(
+	"CAC: Unable to connect port %d on \"%s\" because %d=\"%s\"\n", 
+				ntohs(pNode->destAddr.in.sin_port), 
+				piiu->host_name_str, errnoCpy, 
+				strerror(errnoCpy));
 			TAG_CONN_DOWN(piiu);
 			return;
 		}

@@ -249,7 +249,7 @@ struct pending_event{
 #else /*CAC_ANSI_FUNC_PROTO*/
   	void		(*usr_func)();
 #endif /*CAC_ANSI_FUNC_PROTO*/
-  	void		*usr_arg;
+  	const void	*usr_arg;
   	chid		chan;
   	chtype		type;	/* requested type for local CA	*/
   	unsigned long	count;	/* requested count for local CA */

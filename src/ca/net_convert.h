@@ -85,7 +85,7 @@ typedef void CACVRTFUNC(void *pSrc, void *pDest, int hton, unsigned long count);
 
 #ifdef CONVERSION_REQUIRED
 /*  cvrt is (array of) (pointer to) (function returning) int */
-extern CACVRTFUNC *cac_dbr_cvrt[];
+extern CACVRTFUNC *cac_dbr_cvrt[LAST_BUFFER_TYPE+1];
 #endif
 
 
@@ -100,11 +100,15 @@ extern CACVRTFUNC *cac_dbr_cvrt[];
 #ifdef CA_LITTLE_ENDIAN 
 #  	ifndef ntohs
 #    		define ntohs(SHORT)\
-   (	((SHORT) & 0x00ff) << 8 | ((SHORT) & 0xff00) >> 8	)
+   (	(dbr_short_t)\
+	(((SHORT) & (dbr_short_t) 0x00ff) << 8 |\
+	((SHORT) & (dbr_short_t) 0xff00) >> 8) )
 #  	endif
 #  	ifndef htons
 #    		define htons(SHORT)\
-   (	((SHORT) & 0x00ff) << 8 | ((SHORT) & 0xff00) >> 8 	)
+   (	(dbr_short_t)\
+	(((SHORT) & (dbr_short_t) 0x00ff) << 8 |\
+	((SHORT) & (dbr_short_t) 0xff00) >> 8) )
 #  	endif
 #else
 #  	ifndef ntohs
@@ -120,19 +124,19 @@ extern CACVRTFUNC *cac_dbr_cvrt[];
 #  	ifndef ntohl
 #  	define ntohl(LONG)\
   	(\
-   		((LONG) & 0xff000000) >> 24 |\
-          	((LONG) & 0x000000ff) << 24 |\
-         	((LONG) & 0x0000ff00) << 8  |\
-         	((LONG) & 0x00ff0000) >> 8\
+   		((LONG) & (dbr_long_t) 0xff000000) >> 24 |\
+          	((LONG) & (dbr_long_t) 0x000000ff) << 24 |\
+         	((LONG) & (dbr_long_t) 0x0000ff00) << 8  |\
+         	((LONG) & (dbr_long_t) 0x00ff0000) >> 8\
   	)
 #  	endif
 #  	ifndef htonl
 #  	define htonl(LONG)\
-  	(\
-          	((LONG) & 0x000000ff) << 24 |\
-   		((LONG) & 0xff000000) >> 24 |\
-         	((LONG) & 0x00ff0000) >> 8  |\
-         	((LONG) & 0x0000ff00) << 8\
+  	( (dbr_long_t) \
+          	(((LONG) & (dbr_long_t) 0x000000ff) << 24 |\
+   		((LONG) & (dbr_long_t) 0xff000000) >> 24 |\
+         	((LONG) & (dbr_long_t) 0x00ff0000) >> 8  |\
+         	((LONG) & (dbr_long_t) 0x0000ff00) << 8 )\
   	)
 #  	endif
 #	else 

@@ -120,18 +120,18 @@ epicsShareFunc void * epicsShareAPI epicsThreadPrivateGet(epicsThreadPrivateId);
 class epicsThreadRunable {
 public:
     epicsShareFunc virtual ~epicsThreadRunable ();
-    virtual void run() = 0;
-    epicsShareFunc virtual void stop();
-    epicsShareFunc virtual void show(unsigned int level) const;
+    virtual void run () = 0;
+    epicsShareFunc virtual void stop ();
+    epicsShareFunc virtual void show ( unsigned int level ) const;
 };
 
 extern "C" void epicsThreadCallEntryPoint ( void * );
 
 class epicsShareClass epicsThread {
 public:
-    epicsThread (epicsThreadRunable &,const char *name, unsigned int stackSize,
-        unsigned int priority=epicsThreadPriorityLow);
-    virtual ~epicsThread ();
+    epicsThread ( epicsThreadRunable &,const char *name, unsigned int stackSize,
+        unsigned int priority=epicsThreadPriorityLow );
+    ~epicsThread ();
     void start();
     void exitWait ();
     bool exitWait ( double delay ); 

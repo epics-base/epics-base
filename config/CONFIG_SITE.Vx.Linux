@@ -7,4 +7,22 @@
 # combinations by creating a CONFIG_SITE.Vx.Linux.<T_A>
 # file with the override definitions.
 
+## ---- jba overrides for cross compiler
+## VX_DIR needed for "export WIND_BASE = $(VX_DIR)"
+#VX_DIR_YES = /home/phoebus/JBA/gnu
+#VX_GNU_YES = $(VX_DIR)
+#VX_INCLUDE_YES = $(VX_GNU)/$(GNU_TARGET)/include
+#
+#CMPLR_PREFIX=  $(GNU_TARGET)-
+#CMPLR_SUFFIX=
+#GCC    = $(GNU_BIN)/$(CMPLR_PREFIX)gcc$(CMPLR_SUFFIX) -B$(GNU_LIB)/gcc-lib/ -nostdinc
+#AR     = $(GNU_BIN)/$(CMPLR_PREFIX)ar$(CMPLR_SUFFIX)
+#CPP    = $(GNU_BIN)/$(CMPLR_PREFIX)cc$(CMPLR_SUFFIX) -B$(GNU_LIB)/gcc-lib/ -nostdinc -x c -E
+#RANLIB = $(GNU_BIN)/$(CMPLR_PREFIX)ranlib$(CMPLR_SUFFIX)
+#LD     = $(GNU_BIN)/$(CMPLR_PREFIX)ld$(CMPLR_SUFFIX) -r
+#G++    = $(GNU_BIN)/$(CMPLR_PREFIX)cc$(CMPLR_SUFFIX) -B$(GNU_LIB)/gcc-lib/ -nostdinc
+#LD_G++ = $(GNU_BIN)/$(CMPLR_PREFIX)ld$(CMPLR_SUFFIX) -r
+#NM     = $(GNU_BIN)/$(CMPLR_PREFIX)nm$(CMPLR_SUFFIX)
+## ---- end jba overrides
+
 -include $(EPICS_BASE)/config/CONFIG_SITE.$(BUILD_TYPE).$(HOST_ARCH).$(T_A)

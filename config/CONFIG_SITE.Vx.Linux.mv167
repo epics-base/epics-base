@@ -2,6 +2,10 @@
 #
 # This file contains overrides for Vx builds
 
+## ---- jba overrides for cross compiler
+#GNU_TARGET=m68k-wrs-vxworks
+## ---- end jba overrides
+
 # ORNL SNS overrides for cross compilers
 #VX_DIR_YES = /opt/tornado20/
 #VX_CONFIG_DIR_YES = $(VX_DIR)/target/config

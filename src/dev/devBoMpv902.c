@@ -83,7 +83,7 @@ static long init_record(pbo)
 	pbo->mask = 1;
 	pbo->mask <<= pvmeio->signal;
         /* read the value via bo driver */
-        status = bo_read(pvmeio->card,pbo->mask,&value,BB902);
+        status = bb902_read(pvmeio->card,pbo->mask,&value);
 	if(status == 0) {
 		pbo->rval = value;
 	} else if(status == -1) {
@@ -115,7 +115,7 @@ static long write_bo(pbo)
 
 	
 	pvmeio = (struct vmeio *)&(pbo->out.value);
-	status = bo_driver(pvmeio->card,pbo->rval,pbo->mask,BB902);
+	status = bb902_driver(pvmeio->card,pbo->rval,pbo->mask);
 	if(status!=0) {
                 recGblSetSevr(pbo,WRITE_ALARM,VALID_ALARM);
 	}

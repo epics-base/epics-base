@@ -100,7 +100,7 @@ static long read_bi(pbi)
 
 	
 	pvmeio = (struct vmeio *)&(pbi->inp.value);
-	status = bi_driver(pvmeio->card,pbi->mask,XY210,&value);
+	status = xy210_driver(pvmeio->card,pbi->mask,&value);
 	if(status==0) {
 		pbi->rval = value;
 		return(0);

@@ -96,9 +96,9 @@ static long init_record(pai)
 
     /* call driver so that it configures card */
     pvmeio = (struct vmeio *)&(pai->inp.value);
-    if(status=ai_driver(pvmeio->card,pvmeio->signal,XY566SE,&value)) {
+    if(status=ai_xy566_driver(pvmeio->card,pvmeio->signal,XY566SE,&value)) {
 	strcpy(message,pai->name);
-	strcat(message,": devAiXy566Se (init_record) ai_driver error");
+	strcat(message,": devAiXy566Se (init_record) ai_xy566_driver error");
 	errMessage(status,message);
 	return(status);
     }
@@ -114,7 +114,7 @@ static long read_ai(pai)
 
 	
 	pvmeio = (struct vmeio *)&(pai->inp.value);
-	status=ai_driver(pvmeio->card,pvmeio->signal,XY566SE,&value);
+	status=ai_xy566_driver(pvmeio->card,pvmeio->signal,XY566SE,&value);
         if(status==-1) {
 		status = 2; /*don't convert*/
                 recGblSetSevr(pai,READ_ALARM,VALID_ALARM);

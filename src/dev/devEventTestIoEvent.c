@@ -67,12 +67,14 @@ struct {
 	read_event,
 	NULL};
 
-IOSCANPVT ioscanpvt;
+static IOSCANPVT ioscanpvt;
 WDOG_ID wd_id=NULL;
 
 
-static long init()
+static long init(after)
+int after;
 {
+    if(after) return(0);
     scanIoInit(&ioscanpvt);
     return(0);
 }

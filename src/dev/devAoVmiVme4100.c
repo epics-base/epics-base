@@ -112,7 +112,7 @@ static long write_ao(pao)
 	
 	pvmeio = (struct vmeio *)&(pao->out.value);
 	value = pao->rval;
-	status = ao_driver(pvmeio->card,pvmeio->signal,VMI4100,&value,&rbvalue);
+	status = vmi4100_driver(pvmeio->card,pvmeio->signal,&value,&rbvalue);
 	if(status==0 || status==-2) pao->rbv = rbvalue;
 	if(status==-1) {
                 recGblSetSevr(pao,WRITE_ALARM,VALID_ALARM);
@@ -142,7 +142,7 @@ struct aoRecord      *pao;
 	struct vmeio    		*pvmeio = &pao->out.value.vmeio;
 
 	/* get the value from the ao driver */
-	ao_read(pvmeio->card,pvmeio->signal,VMI4100,&value);
+	vmi4100_read(pvmeio->card,pvmeio->signal,&value);
 	pao->rbv = pao->rval = value;
 	return;
 }

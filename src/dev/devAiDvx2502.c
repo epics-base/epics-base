@@ -101,9 +101,9 @@ static long init_record(pai)
 
     /* call driver so that it configures card */
     pvmeio = (struct vmeio *)&(pai->inp.value);
-    if(status=ai_driver(pvmeio->card,pvmeio->signal,DVX2502,&value)) {
+    if(status=dvx_driver(pvmeio->card,pvmeio->signal,&value)) {
 	strcpy(message,pai->name);
-	strcat(message,": devAiDvx2502 (init_record) ai_driver error");
+	strcat(message,": devAiDvx2502 (init_record) dvx_driver error");
 	errMessage(status,message);
 	return(status);
     }
@@ -134,7 +134,7 @@ static long read_ai(pai)
 
 	
 	pvmeio = (struct vmeio *)&(pai->inp.value);
-	if(status=ai_driver(pvmeio->card,pvmeio->signal,DVX2502,&value))
+	if(status=dvx_driver(pvmeio->card,pvmeio->signal,&value))
 		return(status);
 	*((unsigned short*)(&pai->rval))=value;
 	if(status==0 || status==-2) pai->rval = value;

@@ -19,18 +19,6 @@
 #include "iocinf.h"
 #include "oldAccess.h"
 
-#ifdef _MSC_VER
-#   pragma warning ( push )
-#   pragma warning ( disable:4660 )
-#endif
-
-template class tsFreeList < getCallback, 1024 >;
-template class epicsSingleton < tsFreeList < getCallback, 1024 > >;
-
-#ifdef _MSC_VER
-#   pragma warning ( pop )
-#endif
-
 epicsSingleton < tsFreeList < class getCallback, 1024 > > getCallback::pFreeList;
 
 getCallback::getCallback ( oldChannelNotify &chanIn, 

@@ -229,14 +229,14 @@ caStatus casStrmClient::processMsg ()
         status = this->sendErr ( guard,
             this->ctx.getMsg(), invalidResID, ECA_ALLOCMEM, 
             "inablility to allocate memory in "
-            "the server disconnected client" );
+            "the CA server - disconnected client" );
         status = S_cas_noMemory;
     }
     catch ( std::exception & except ) {
 		status = this->sendErr ( guard,
             this->ctx.getMsg(), invalidResID, ECA_INTERNAL, 
-            "C++ exception \"%s\" in server "
-            "diconnected client",
+            "C++ exception \"%s\" in server - "
+            "disconnected client",
             except.what () );
         status = S_cas_internal;
     }

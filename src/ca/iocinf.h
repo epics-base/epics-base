@@ -32,6 +32,9 @@
 /************************************************************************/
 
 /* $Log$
+ * Revision 1.58  1996/11/02 00:50:56  jhill
+ * many pc port, const in API, and other changes
+ *
  * Revision 1.57  1996/09/16 16:38:05  jhill
  * local except => except handler
  *
@@ -97,7 +100,7 @@
 #    	define GLBLTYPE extern
 #endif
 
-#ifdef __STDC__
+#if defined(__STDC__) && !defined(VAXC)
 #	define VERSIONID(NAME,VERS) \
        		char *EPICS_CAS_VID_ ## NAME = VERS;
 #else /*__STDC__*/
@@ -670,10 +673,10 @@ void clearChannelResources(unsigned id);
 void caSetDefaultPrintfHandler (void);
 void cacDisconnectChannel(ciu chix, enum channel_state state);
 int caSendMsgPending(void);
-void generateLocalExceptionWithFileAndLine(long stat, char *ctx, 
+void genLocalExcepWFL(long stat, char *ctx, 
 	char *pFile, unsigned line);
 #define genLocalExcep(STAT, PCTX) \
-generateLocalExceptionWithFileAndLine (STAT, PCTX, __FILE__, __LINE__)
+genLocalExcepWFL (STAT, PCTX, __FILE__, __LINE__)
 
 /*
  * !!KLUDGE!!

@@ -35,11 +35,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-int	opterr = 1,		/* if error message should be printed */
-	optind = 1,		/* index into parent argv vector */
-	optopt,			/* character checked for validity */
-	optreset;		/* reset getopt */
-char	*optarg;		/* argument associated with option */
+#define epicsExportSharedSymbols
+#include <getopt.h>
+
+epicsShareDef int opterr = 1;       /* if error message should be printed */ 
+epicsShareDef int optind = 1;       /* index into parent argv vector */
+epicsShareDef int optopt;           /* character checked for validity */
+epicsShareDef int ptreset;          /* reset getopt */
+epicsShareDef char *optarg;         /* argument associated with option */
+epicsShareDef int optreset;
 
 #define	BADCH	(int)'?'
 #define	BADARG	(int)':'
@@ -49,7 +53,7 @@ char	*optarg;		/* argument associated with option */
  * getopt --
  *	Parse argc/argv argument vector.
  */
-int
+int epicsShareAPI
 getopt(int nargc, char * const *nargv, const char *ostr)
 {
 	static char *place = EMSG;		/* option letter processing */

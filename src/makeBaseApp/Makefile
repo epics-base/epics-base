@@ -32,20 +32,24 @@ TEMPLATES += top/exampleApp/src/xxxRecord.dbd
 TEMPLATES += top/exampleApp/src/exampleMain.c
 
 TEMPLATES += top/exampleBoot/Makefile
-TEMPLATES += top/exampleBoot/nfsCommands
-TEMPLATES += top/exampleBoot/ioc/Makefile
-TEMPLATES += top/exampleBoot/ioc/st.cmd
-TEMPLATES += top/exampleBoot/ioc/stcmd.host
-TEMPLATES += top/exampleBoot/ioc/README
+TEMPLATES += top/exampleBoot/nfsCommands@vxWorks
+TEMPLATES += top/exampleBoot/ioc/Makefile@Common
+TEMPLATES += top/exampleBoot/ioc/Makefile@vxWorks
+TEMPLATES += top/exampleBoot/ioc/st.cmd@Common
+TEMPLATES += top/exampleBoot/ioc/st.cmd@vxWorks
+TEMPLATES += top/exampleBoot/ioc/README@Common
+TEMPLATES += top/exampleBoot/ioc/README@vxWorks
 
 TEMPLATES += top/simpleApp/Makefile
 TEMPLATES += top/simpleApp/Db/Makefile
 TEMPLATES += top/simpleApp/src/Makefile
 
 TEMPLATES += top/simpleBoot/Makefile
-TEMPLATES += top/simpleBoot/nfsCommands
-TEMPLATES += top/simpleBoot/ioc/Makefile
-TEMPLATES += top/simpleBoot/ioc/st.cmd
+TEMPLATES += top/simpleBoot/nfsCommands@vxWorks
+TEMPLATES += top/simpleBoot/ioc/Makefile@Common
+TEMPLATES += top/simpleBoot/ioc/Makefile@vxWorks
+TEMPLATES += top/simpleBoot/ioc/st.cmd@Common
+TEMPLATES += top/simpleBoot/ioc/st.cmd@vxWorks
 
 SCRIPTS += makeBaseApp.pl
 

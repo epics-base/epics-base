@@ -27,7 +27,7 @@
 
 class inetAddrID {
 public:
-    inetAddrID ( const struct sockaddr_in &addrIn );
+    inetAddrID ( const struct sockaddr_in & addrIn );
     bool operator == ( const inetAddrID & ) const;
     resTableIndex hash () const;
     void name ( char *pBuf, unsigned bufSize ) const;

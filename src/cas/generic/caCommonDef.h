@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -46,14 +49,6 @@
 
 #ifndef TRUE
 #define TRUE            1
-#endif
-
-#ifndef OK
-#define OK              0
-#endif
-
-#ifndef ERROR
-#define ERROR           (-1)
 #endif
 
 #ifndef NELEMENTS

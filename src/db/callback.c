@@ -217,10 +217,10 @@ void epicsShareAPI callbackRequestDelayed(CALLBACK *pcallback,double seconds)
     osiTimerId timer = (osiTimerId *)pcallback->timer;
 
     if(timer==0) {
-        timer = osiTimerCreate(&jumpTable,(void *)pcallback);
+        timer = osiTimerCreate(&jumpTable,timerQueue,(void *)pcallback);
         pcallback->timer = timer;
     }
-    osiTimerArm(timer,timerQueue,seconds);
+    osiTimerArm(timer,seconds);
 }
 
 void epicsShareAPI callbackRequestProcessCallbackDelayed(CALLBACK *pcallback,

@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.32  2000/10/13 01:17:51  jhill
+// made gdd param to copy const
+//
 // Revision 1.31  2000/03/08 16:24:20  jhill
 // doc
 //
@@ -1667,7 +1670,7 @@ void gdd::setPrimType (aitEnum t)
 			if(destruct)
 				destruct->destroy(dataPointer());
 			else
-				if (data.FString) delete [] data.FString;
+				if (data.FString) delete data.FString;
 		}
 		else if(primitiveType()==aitEnumString)
 		{

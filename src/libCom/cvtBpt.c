@@ -67,13 +67,13 @@ short *plbrk;
      struct arrBrkTable *pcvtTable;
 
      if(linr < 2) return(-1);
-     if(init==TRUE) { /*must find breakpoint table*/
+     if(init==TRUE || *ppbrk == NULL) { /*must find breakpoint table*/
          if( !(pcvtTable=pdbBase->pcvtTable) || (pcvtTable->number < linr)
          ||  (!(pcvtTable->papBrkTable[linr]))) {
                  errMessage(S_db_badField,"Breakpoint Table not Found");
                  return(S_db_badField);
          }
-         *ppbrk = (caddr_t)(pcvtTable->papBrkTable[linr]);
+         *ppbrk = (void *)(pcvtTable->papBrkTable[linr]);
          /* Just start at the beginning */
          *plbrk=0;
      }
@@ -131,13 +131,13 @@ short *plbrk;
 
 
      if(linr < 2) return(-1);
-     if(init==TRUE) { /*must find breakpoint table*/
+     if(init==TRUE || *ppbrk == NULL) { /*must find breakpoint table*/
          if( !(pcvtTable=pdbBase->pcvtTable) || (pcvtTable->number < linr)
          ||  (!(pcvtTable->papBrkTable[linr]))) {
                  errMessage(S_db_badField,"Breakpoint Table not Found");
                  return(S_db_badField);
          }
-         *ppbrk = (caddr_t)(pcvtTable->papBrkTable[linr]);
+         *ppbrk = (void *)(pcvtTable->papBrkTable[linr]);
          /* Just start at the beginning */
          *plbrk=0;
      }

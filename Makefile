@@ -19,7 +19,7 @@
 
 include config.mk
 
-all: build
+all: install
 
 depends:
 	@(for FILE in ${BUILD_ARCHS};					\

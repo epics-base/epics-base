@@ -63,7 +63,6 @@
 
 #include		<iocmsg.h>
 #include		<os_depen.h>
-struct sockaddr_in	*local_addr();
 
 /* 
  *	these can be external since there is only one instance
@@ -81,6 +80,7 @@ static
 char	buf[MAX_UDP]; 
 
 int	ca_repeater();
+int	local_addr();
 
 #define NTRIES 100
 
@@ -163,7 +163,11 @@ ca_repeater()
 		return FALSE;
 	}
 
-	local = *local_addr(sock);
+	status = local_addr(sock, &local);
+	if(status != OK){
+		printf("CA Repeater: no inet interfaces online?\n");
+		return FALSE;
+	}
 
 #ifdef DEBUG
 	printf("CA Repeater: Attached and initialized\n");

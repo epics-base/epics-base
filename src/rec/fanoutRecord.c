@@ -101,34 +101,45 @@ struct rset fanoutRSET={
         put_enum_str,
         get_graphic_double,
         get_control_double,
-        get_alarm_double };
-
-#define SELECT_ALL  0
-#define SELECTED 1
-#define SELECT_MASK 2
-
+        get_alarm_double
+};
 
 static long init_record(pfanout,pass)
     struct fanoutRecord	*pfanout;
     int pass;
 {
-/* Added for Channel Access Links */
     long status;
 
     if (pass==0) return(0);
-
-    /* get link selection if sell is a constant and nonzero*/
-    if (pfanout->sell.type == CONSTANT) {
-	recGblInitConstantLink(&pfanout->sell,DBF_USHORT,&pfanout->seln);
-    }
+    recGblInitConstantLink(&pfanout->sell,DBF_USHORT,&pfanout->seln);
     return(0);
 }
 
+static void scanLink(fanoutRecord *pfanout,struct link *plink)
+{
+    /*This routine pokes into private db stuff */
+    void 		*precord = (void *)pfanout;
+    struct pv_link	*pvlink;
+    short		fwdLinkValue;
+
+    if(plink->type==CONSTANT) return;
+    if(plink->type==DB_LINK) {
+	DBADDR *paddr = (DBADDR *)plink->value.pv_link.pvt;
+	dbScanPassive(precord,paddr->precord);
+	return;
+    }
+    if(plink->type!=CA_LINK) return;
+    pvlink = &plink->value.pv_link;
+    if(!(pvlink->pvlMask & pvlOptFWD)) return;
+    fwdLinkValue = 1;
+    dbCaPutLink(plink,DBR_SHORT,&fwdLinkValue,1);
+    return;
+}
+	
 static long process(pfanout)
     struct fanoutRecord     *pfanout;
 {
     unsigned short   stat,sevr,nsta,nsev;
-
 
     struct link    *plink;
     unsigned short state;
@@ -141,21 +152,15 @@ static long process(pfanout)
     /* fetch link selection  */
     dbGetLink(&(pfanout->sell),DBR_USHORT,&(pfanout->seln),0,0);
     switch (pfanout->selm){
-    case (SELECT_ALL):
-        if (pfanout->lnk1.type!=CONSTANT) 
-		dbScanPassive((void *)pfanout,((struct dbAddr *)pfanout->lnk1.value.pv_link.pvt)->precord);
-        if (pfanout->lnk2.type!=CONSTANT)
-		dbScanPassive((void *)pfanout,((struct dbAddr *)pfanout->lnk2.value.pv_link.pvt)->precord);
-        if (pfanout->lnk3.type!=CONSTANT)
-		dbScanPassive((void *)pfanout,((struct dbAddr *)pfanout->lnk3.value.pv_link.pvt)->precord);
-        if (pfanout->lnk4.type!=CONSTANT)
-		dbScanPassive((void *)pfanout,((struct dbAddr *)pfanout->lnk4.value.pv_link.pvt)->precord);
-        if (pfanout->lnk5.type!=CONSTANT)
-		dbScanPassive((void *)pfanout,((struct dbAddr *)pfanout->lnk5.value.pv_link.pvt)->precord);
-        if (pfanout->lnk6.type!=CONSTANT)
-		dbScanPassive((void *)pfanout,((struct dbAddr *)pfanout->lnk6.value.pv_link.pvt)->precord);
+    case (fanoutSELM_All):
+        if (pfanout->lnk1.type!=CONSTANT) scanLink(pfanout,&pfanout->lnk1);
+        if (pfanout->lnk2.type!=CONSTANT) scanLink(pfanout,&pfanout->lnk2);
+        if (pfanout->lnk3.type!=CONSTANT) scanLink(pfanout,&pfanout->lnk3);
+        if (pfanout->lnk4.type!=CONSTANT) scanLink(pfanout,&pfanout->lnk4);
+        if (pfanout->lnk5.type!=CONSTANT) scanLink(pfanout,&pfanout->lnk5);
+        if (pfanout->lnk6.type!=CONSTANT) scanLink(pfanout,&pfanout->lnk6);
         break;
-    case (SELECTED):
+    case (fanoutSELM_Specified):
         if(pfanout->seln>6) {
 		recGblSetSevr(pfanout,SOFT_ALARM,INVALID_ALARM);
             break;
@@ -165,9 +170,9 @@ static long process(pfanout)
         }
         plink=&(pfanout->lnk1);
         plink += (pfanout->seln-1);
-        dbScanPassive((void *)pfanout,((struct dbAddr *)plink->value.pv_link.pvt)->precord);
+	scanLink(pfanout,plink);
         break;
-    case (SELECT_MASK):
+    case (fanoutSELM_Mask):
         if(pfanout->seln==0) {
             break;
         }
@@ -178,8 +183,7 @@ static long process(pfanout)
         plink=&(pfanout->lnk1);
         state=pfanout->seln;
         for ( i=0; i<6; i++, state>>=1, plink++) {
-            if(state & 1 && plink->type!=CONSTANT)
-			dbScanPassive((void *)pfanout,((struct dbAddr *)plink->value.pv_link.pvt)->precord);
+            if(state & 1 && plink->type!=CONSTANT) scanLink(pfanout,plink);
         }
         break;
     default:
@@ -192,7 +196,6 @@ static long process(pfanout)
     monitor_mask = recGblResetAlarms(pfanout);
     /* process the forward scan link record */
     recGblFwdLink(pfanout);
-
     pfanout->pact=FALSE;
     return(0);
 }

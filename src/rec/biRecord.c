@@ -132,16 +132,8 @@ static long init_record(pbi,pass)
 
     if (pass==0) return(0);
 
-    /* bi.siml must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
-    if (pbi->siml.type == CONSTANT) {
-	recGblInitConstantLink(&pbi->siml,DBF_USHORT,&pbi->simm);
-    }
-
-    /* bi.siol must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
-    if (pbi->siol.type == CONSTANT) {
-	recGblInitConstantLink(&pbi->siol,DBF_USHORT,&pbi->sval);
-    }
-
+    recGblInitConstantLink(&pbi->siml,DBF_USHORT,&pbi->simm);
+    recGblInitConstantLink(&pbi->siol,DBF_USHORT,&pbi->sval);
     if(!(pdset = (struct bidset *)(pbi->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)pbi,"bi: init_record");
 	return(S_dev_noDSET);
@@ -275,7 +267,7 @@ static void alarm(pbi)
 	pbi->lalm = val;
 	return;
 }
-
+
 static void monitor(pbi)
     struct biRecord	*pbi;
 {

@@ -1,7 +1,5 @@
 /* devPtSoft.c */
 /* base/src/dev $Id$ */
-
-/* devPtSoft.c - Device Support Routines for Soft Pulse Generator Output */
 /*
  *      Author:		Janet Anderson
  *      Date:		6-1-91
@@ -34,8 +32,6 @@
  * .03  10-10-92        jba     replaced code with recGblGetLinkValue call
  *      ...
  */
-
-
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
@@ -52,7 +48,6 @@
 /* Create the dset for devPtSoft */
 static long init_record();
 static long write_pt();
-
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -66,7 +61,8 @@ struct {
 	NULL,
 	init_record,
 	NULL,
-	write_pt};
+	write_pt
+};
 
 static long init_record(ppt)
 struct pulseTrainRecord *ppt;

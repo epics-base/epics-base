@@ -1,7 +1,5 @@
 /* devLiSoft.c */
 /* base/src/dev $Id$ */
-
-/* devLiSoft.c - Device Support Routines for Soft Longin Input */
 /*
  *      Author:		Janet Anderson
  *      Date:   	09-23-91
@@ -33,8 +31,6 @@
  * .02	03-13-92	jba	ANSI C changes
  * .03  10-10-92        jba     replaced code with recGblGetLinkValue call
 */
-
-
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
@@ -65,7 +61,8 @@ struct {
 	NULL,
 	init_record,
 	NULL,
-	read_longin};
+	read_longin
+};
 
 static long init_record(plongin)
     struct longinRecord	*plongin;
@@ -75,8 +72,8 @@ static long init_record(plongin)
     /* longin.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (plongin->inp.type) {
     case (CONSTANT) :
-    if(recGblInitConstantLink(&plongin->inp,DBF_LONG,&plongin->val))
-		plongin->udf = FALSE;
+        if(recGblInitConstantLink(&plongin->inp,DBF_LONG,&plongin->val))
+            plongin->udf = FALSE;
 	break;
     case (PV_LINK) :
     case (DB_LINK) :
@@ -89,7 +86,7 @@ static long init_record(plongin)
     }
     return(0);
 }
-
+
 static long read_longin(plongin)
     struct longinRecord	*plongin;
 {

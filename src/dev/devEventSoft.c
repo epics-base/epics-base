@@ -1,7 +1,5 @@
 /* devEventSoft.c */
 /* base/src/dev $Id$ */
-
-/* devEventSoft.c - Device Support Routines for Soft Event Input */
 /*
  *      Author:		Janet Anderson
  *      Date:   	04-21-91
@@ -34,13 +32,10 @@
  * .03  10-10-92        jba     replaced code with recGblGetLinkValue call
  * .04  03-03-94	mrk	Move constant link value to val only if val is zero
 */
-
-
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<string.h>
-
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
@@ -52,7 +47,6 @@
 /* Create the dset for devEventSoft */
 static long init_record();
 static long read_event();
-
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -66,7 +60,8 @@ struct {
 	NULL,
 	init_record,
 	NULL,
-	read_event};
+	read_event
+};
 
 static long init_record(pevent)
     struct eventRecord	*pevent;
@@ -76,8 +71,8 @@ static long init_record(pevent)
     /* event.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pevent->inp.type) {
     case (CONSTANT) :
-    if(recGblInitConstantLink(&pevent->inp,DBF_USHORT,&pevent->val))
-        pevent->udf = FALSE;
+        if(recGblInitConstantLink(&pevent->inp,DBF_USHORT,&pevent->val))
+            pevent->udf = FALSE;
         break;
     case (PV_LINK) :
     case (DB_LINK) :
@@ -90,11 +85,11 @@ static long init_record(pevent)
     }
     return(0);
 }
-
+
 static long read_event(pevent)
     struct eventRecord	*pevent;
 {
-    long status,options=0,nRequest=1;
+    long status;
 
     status = dbGetLink(&pevent->inp,DBR_USHORT,&pevent->val,0,0);
     if(pevent->inp.type!=CONSTANT && RTN_SUCCESS(status)) pevent->udf=FALSE;

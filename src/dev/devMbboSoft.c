@@ -1,7 +1,5 @@
 /* devMbboSoft.c */
 /* base/src/dev $Id$ */
-
-/* devMbboSoft.c - Device Support Routines for  Soft Multibit Binary Output*/
 /*
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer
@@ -36,8 +34,6 @@
  * .04  10-10-92        jba     replaced code with recGblGetLinkValue call
  *      ...
  */
-
-
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
@@ -50,12 +46,9 @@
 #include	<devSup.h>
 #include	<module_types.h>
 #include	<mbboRecord.h>
-
-static long init_record();
-
 /* Create the dset for devMbboSoft */
+static long init_record();
 static long write_mbbo();
-
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -69,9 +62,8 @@ struct {
 	NULL,
 	init_record,
 	NULL,
-	write_mbbo};
-
-
+	write_mbbo
+};
 
 static long init_record(pmbbo)
 struct mbboRecord *pmbbo;

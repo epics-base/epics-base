@@ -68,7 +68,7 @@ unsigned long tickGet();
 static long init_record();
 static long process();
 #define special NULL
-static long get_value();
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -111,20 +111,15 @@ static long init_record(ppid,pass)
         struct pidRecord	*ppid;
         int pass;
 {
-        /* Added for Channel Access Links */
-        long status;
-
         if (pass==0) return(0);
-
         /* initialize the setpoint for constant setpoint */
         if (ppid->stpl.type == CONSTANT){
 	    if(recGblInitConstantLink(&ppid->stpl,DBF_FLOAT,&ppid->val))
                 ppid->udf = FALSE;
 	}
-
 	return(0);
 }
-
+
 static long process(ppid)
 	struct pidRecord	*ppid;
 {
@@ -136,30 +131,12 @@ static long process(ppid)
 		ppid->pact = FALSE;
 		return(0);
 	}
-
 	recGblGetTimeStamp(ppid);
-	/* check for alarms */
 	alarm(ppid);
-
-
-	/* check event list */
 	monitor(ppid);
-
-	/* process the forward scan link record */
 	recGblFwdLink(ppid);
-
 	ppid->pact=FALSE;
 	return(status);
-}
-
-static long get_value(ppid,pvdes)
-    struct pidRecord		*ppid;
-    struct valueDes	*pvdes;
-{
-    pvdes->field_type = DBF_FLOAT;
-    pvdes->no_elements=1;
-    (float *)(pvdes->pvalue) = &ppid->val;
-    return(0);
 }
 
 static long get_units(paddr,units)

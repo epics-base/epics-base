@@ -1,7 +1,5 @@
 /* devAiSoft.c */
 /* base/src/dev $Id$ */
-
-/* devAiSoft.c - Device Support Routines for soft Analog Input Records*/
 /*
  *      Original Author: Bob Dalesio
  *      Current Author: Marty Kraimer
@@ -35,14 +33,10 @@
  * .11  10-10-92        jba     replaced code with recGblGetLinkValue call
  * 	...
  */
-
-
-
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<string.h>
-
 #include	<alarm.h>
 #include	<cvtTable.h>
 #include	<dbDefs.h>
@@ -51,7 +45,6 @@
 #include	<devSup.h>
 #include	<link.h>
 #include	<aiRecord.h>
-
 /* Create the dset for devAiSoft */
 static long init_record();
 static long read_ai();
@@ -70,9 +63,9 @@ struct {
 	init_record,
 	NULL,
 	read_ai,
-	NULL };
+	NULL
+};
 
-
 static long init_record(pai)
     struct aiRecord	*pai;
 {
@@ -81,8 +74,8 @@ static long init_record(pai)
     /* ai.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pai->inp.type) {
     case (CONSTANT) :
-    if(recGblInitConstantLink(&pai->inp,DBF_DOUBLE,&pai->val))
-        pai->udf = FALSE;
+        if(recGblInitConstantLink(&pai->inp,DBF_DOUBLE,&pai->val))
+            pai->udf = FALSE;
 	break;
     case (PV_LINK) :
     case (DB_LINK) :
@@ -98,16 +91,13 @@ static long init_record(pai)
     pai->linr = 0;
     return(0);
 }
-
+
 static long read_ai(pai)
     struct aiRecord	*pai;
 {
     long status;
 
     status = dbGetLink(&(pai->inp),DBR_DOUBLE, &(pai->val),0,0);
-
-    if (pai->inp.type!=CONSTANT && RTN_SUCCESS(status))
-       pai->udf = FALSE;
-
+    if (pai->inp.type!=CONSTANT && RTN_SUCCESS(status)) pai->udf = FALSE;
     return(2); /*don't convert*/
 }

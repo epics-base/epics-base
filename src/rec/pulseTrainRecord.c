@@ -208,7 +208,7 @@ static long process(ppt)
      recGblFwdLink(ppt);
 
      ppt->pact=FALSE;
-     return(status);
+     return(0);
 }
 
 static long get_value(ppt,pvdes)

@@ -1,7 +1,5 @@
 /* devMbboDirectSoft.c */
 /* base/src/dev $Id$ */
-
-/* devMbboDirectSoft.c - Device Support for Soft mbbo Direct */
 /*
  *      Original Author: Bob Dalesio
  *      Current Author:  Matthew Needes
@@ -33,8 +31,6 @@
  *    (log for devMbboSoft applies)
  *  1. 10-08-93   mcn      (created)     dev support for MbboDirect records
  */
-
-
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
@@ -47,12 +43,9 @@
 #include	<devSup.h>
 #include	<module_types.h>
 #include	<mbboDirectRecord.h>
-
-static long init_record();
-
 /* Create the dset for devMbboSoft */
+static long init_record();
 static long write_mbbo();
-
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -66,14 +59,12 @@ struct {
 	NULL,
 	init_record,
 	NULL,
-	write_mbbo};
-
-
+	write_mbbo
+};
 
 static long init_record(pmbbo)
 struct mbboDirectRecord *pmbbo;
 {
- 
     long status = 0;
  
     /* dont convert */
@@ -88,6 +79,5 @@ static long write_mbbo(pmbbo)
     long status;
 
     status = dbPutLink(&pmbbo->out,DBR_USHORT,&pmbbo->val,1);
-
     return(0);
 }

@@ -1,7 +1,5 @@
 /* devMbboSoftRaw.c */
 /* base/src/dev $Id$ */
-
-/* devMbboSoftRaw.c - Device Support Routines for  SoftRaw Multibit Binary Output*/
 /*
  *      Author:		Janet Anderson
  *      Date:		3-28-92
@@ -33,8 +31,6 @@
  * .02  10-10-92        jba     replaced code with recGblGetLinkValue call
  *      ...
  */
-
-
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
@@ -47,12 +43,9 @@
 #include	<devSup.h>
 #include	<module_types.h>
 #include	<mbboRecord.h>
-
-static long init_record();
-
 /* Create the dset for devMbboSoftRaw */
+static long init_record();
 static long write_mbbo();
-
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -66,9 +59,8 @@ struct {
 	NULL,
 	init_record,
 	NULL,
-	write_mbbo};
-
-
+	write_mbbo
+};
 
 static long init_record(pmbbo)
 struct mbboRecord *pmbbo;

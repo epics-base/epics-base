@@ -1,7 +1,5 @@
 /* devEventTestIoEvent.c */
 /* base/src/dev $Id$ */
-
-/* devEventTestIoEvent.c - Device Support Routines for ioEvent*/
 /*
  *      Author:  	Marty Kraimer
  *      Date:           01/09/92
@@ -39,7 +37,6 @@
 #include	<stdioLib.h>
 #include	<wdLib.h>
 #include	<string.h>
-
 #include	<dbDefs.h>
 #include	<dbAccess.h>
 #include	<dbScan.h>
@@ -63,11 +60,11 @@ struct {
 	init,
 	NULL,
 	get_ioint_info,
-	read_event};
+	read_event
+};
 
 static IOSCANPVT ioscanpvt;
 WDOG_ID wd_id=NULL;
-
 
 static long init(after)
 int after;

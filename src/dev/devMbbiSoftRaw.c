@@ -1,7 +1,5 @@
 /* devMbbiSoftRaw.c */
 /* base/src/dev $Id$ */
-
-/* devMbbiSoftRaw.c - Device Support Routines for  Soft Multibit Binary Input*/
 /*
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer
@@ -36,8 +34,6 @@
  * .04  10-10-92        jba     replaced code with recGblGetLinkValue call
  *      ...
  */
-
-
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
@@ -50,11 +46,9 @@
 #include	<devSup.h>
 #include	<module_types.h>
 #include	<mbbiRecord.h>
-
 /* Create the dset for devMbbiSoftRaw */
 static long init_record();
 static long read_mbbi();
-
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -68,9 +62,9 @@ struct {
 	NULL,
 	init_record,
 	NULL,
-	read_mbbi};
+	read_mbbi
+};
 
-
 static long init_record(pmbbi)
     struct mbbiRecord	*pmbbi;
 {
@@ -81,7 +75,7 @@ static long init_record(pmbbi)
     }
     return(0);
 }
-
+
 static long read_mbbi(pmbbi)
     struct mbbiRecord	*pmbbi;
 {

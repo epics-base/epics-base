@@ -1,7 +1,5 @@
 /* devHistogramTestAsyn.c */
 /* base/src/dev $Id$ */
-
-/* devHistogramTestAsyn.c - Device Support Routines for testing asynchronous processing*/
 /*
  *      Author:		Janet Anderson
  *      Date:		07/02/91
@@ -37,14 +35,12 @@
  * .06  04-05-94        mrk	ANSI changes to callback routines
  *      ...
  */
-
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<wdLib.h>
 #include	<memLib.h>
 #include	<string.h>
-
 #include	<alarm.h>
 #include	<callback.h>
 #include	<cvtTable.h>
@@ -55,7 +51,7 @@
 #include	<link.h>
 #include	<dbCommon.h>
 #include	<histogramRecord.h>
-
+
 /* Create the dset for devHistogramTestAsyn */
 static long init_record();
 static long read_histogram();
@@ -107,8 +103,8 @@ static long init_record(phistogram)
 	callbackSetCallback(myCallback,&pcallback->callback);
         pcallback->precord = (struct dbCommon *)phistogram;
 	pcallback->wd_id = wdCreate();
-    if(recGblInitConstantLink(&phistogram->svl,DBF_DOUBLE,&phistogram->sgnl))
-        phistogram->udf = FALSE;
+        if(recGblInitConstantLink(&phistogram->svl,DBF_DOUBLE,&phistogram->sgnl))
+            phistogram->udf = FALSE;
 	break;
     default :
 	recGblRecordError(S_db_badField,(void *)phistogram,

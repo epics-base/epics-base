@@ -188,35 +188,21 @@ static long process(ppd)
 
     }
 
-     if (status==0) status=(*pdset->write_pd)(ppd); /* write the new value */
+    if (status==0) status=(*pdset->write_pd)(ppd); /* write the new value */
 
-     /* reset field causing processing parameter */
-     /* used to be set to zero, use a bit to detect val field change */
-     ppd->pfld&=0x0f00;
+    /* reset field causing processing parameter */
+    /* used to be set to zero, use a bit to detect val field change */
+    ppd->pfld&=0x0f00;
  
-     /* check if device support set pact */
-     if ( !pact && ppd->pact ) return(0);
-     ppd->pact = TRUE;
-
-     ppd->udf=FALSE;
-     recGblGetTimeStamp(ppd);
-
-     /* check event list */
-     monitor(ppd);
-
-     /* process the forward scan link record */
-     recGblFwdLink(ppd);
-
-     ppd->pact=FALSE;
-
-	 if(status)
-	 {
-		recGblSetSevr(ppd,READ_ALARM,INVALID_ALARM);
-	 }
-
-	 return(0);
-     /* return(status); if card missing, causing error on console for
-	 db_get */
+    /* check if device support set pact */
+    if ( !pact && ppd->pact ) return(0);
+    ppd->pact = TRUE;
+    ppd->udf=FALSE;
+    recGblGetTimeStamp(ppd);
+    monitor(ppd);
+    recGblFwdLink(ppd);
+    ppd->pact=FALSE;
+    return(0);
 }
 
 static long get_value(ppd,pvdes)

@@ -93,38 +93,28 @@ static long init_record(pdfanout,pass)
     }
     return(0);
 }
-
+
 static long process(pdfanout)
         struct dfanoutRecord     *pdfanout;
 {
-	long		 status=0;
-	unsigned char    pact=pdfanout->pact;
+    long		 status=0;
+    unsigned char    pact=pdfanout->pact;
 
-        if (!pdfanout->pact && pdfanout->omsl == CLOSED_LOOP){
-		status = dbGetLink(&(pdfanout->dol),
-			 DBR_LONG,&(pdfanout->val),0,0);
-		if(pdfanout->dol.type!=CONSTANT && RTN_SUCCESS(status)) pdfanout->udf=FALSE;
-	}
-
-	pdfanout->pact = TRUE;
-
-	recGblGetTimeStamp(pdfanout);
-
+    if (!pdfanout->pact && pdfanout->omsl == CLOSED_LOOP){
+	status = dbGetLink(&(pdfanout->dol),DBR_LONG,&(pdfanout->val),0,0);
+	if(pdfanout->dol.type!=CONSTANT && RTN_SUCCESS(status)) pdfanout->udf=FALSE;
+    }
+    pdfanout->pact = TRUE;
+    recGblGetTimeStamp(pdfanout);
     /* Push out the data to all the forward links */
-   status = push_values(pdfanout);
-	/* check for alarms */
-	alarm(pdfanout);
-	/* check event list */
-	monitor(pdfanout);
-
-	/* process the forward scan link record */
-	recGblFwdLink(pdfanout);
-
-
-	pdfanout->pact=FALSE;
-	return(status);
+    status = push_values(pdfanout);
+    alarm(pdfanout);
+    monitor(pdfanout);
+    recGblFwdLink(pdfanout);
+    pdfanout->pact=FALSE;
+    return(status);
 }
-
+
 static long get_value(pdfanout,pvdes)
     struct dfanoutRecord             *pdfanout;
     struct valueDes     *pvdes;
@@ -134,7 +124,7 @@ static long get_value(pdfanout,pvdes)
     (long *)(pvdes->pvalue) = &pdfanout->val;
     return(0);
 }
-
+
 static long get_units(paddr,units)
     struct dbAddr *paddr;
     char	  *units;
@@ -204,34 +194,35 @@ static void alarm(pdfanout)
  		recGblSetSevr(pdfanout,UDF_ALARM,INVALID_ALARM);
 		return;
 	}
-	hihi = pdfanout->hihi; lolo = pdfanout->lolo; high = pdfanout->high; low = pdfanout->low;
-	hhsv = pdfanout->hhsv; llsv = pdfanout->llsv; hsv = pdfanout->hsv; lsv = pdfanout->lsv;
+	hihi = pdfanout->hihi; lolo = pdfanout->lolo;
+	high = pdfanout->high; low = pdfanout->low;
+	hhsv = pdfanout->hhsv; llsv = pdfanout->llsv;
+	hsv = pdfanout->hsv; lsv = pdfanout->lsv;
 	val = pdfanout->val; hyst = pdfanout->hyst; lalm = pdfanout->lalm;
-
 	/* alarm condition hihi */
 	if (hhsv && (val >= hihi || ((lalm==hihi) && (val >= hihi-hyst)))){
-	        if (recGblSetSevr(pdfanout,HIHI_ALARM,pdfanout->hhsv)) pdfanout->lalm = hihi;
-		return;
+	    if(recGblSetSevr(pdfanout,HIHI_ALARM,pdfanout->hhsv))
+		pdfanout->lalm = hihi;
+	    return;
 	}
-
 	/* alarm condition lolo */
 	if (llsv && (val <= lolo || ((lalm==lolo) && (val <= lolo+hyst)))){
-	        if (recGblSetSevr(pdfanout,LOLO_ALARM,pdfanout->llsv)) pdfanout->lalm = lolo;
-		return;
+	    if(recGblSetSevr(pdfanout,LOLO_ALARM,pdfanout->llsv))
+		pdfanout->lalm = lolo;
+	    return;
 	}
-
 	/* alarm condition high */
 	if (hsv && (val >= high || ((lalm==high) && (val >= high-hyst)))){
-	        if (recGblSetSevr(pdfanout,HIGH_ALARM,pdfanout->hsv)) pdfanout->lalm = high;
-		return;
+	    if(recGblSetSevr(pdfanout,HIGH_ALARM,pdfanout->hsv))
+		pdfanout->lalm = high;
+	    return;
 	}
-
 	/* alarm condition low */
 	if (lsv && (val <= low || ((lalm==low) && (val <= low+hyst)))){
-	        if (recGblSetSevr(pdfanout,LOW_ALARM,pdfanout->lsv)) pdfanout->lalm = low;
-		return;
+	    if(recGblSetSevr(pdfanout,LOW_ALARM,pdfanout->lsv))
+		pdfanout->lalm = low;
+	    return;
 	}
-
 	/* we get here only if val is out of alarm by at least hyst */
 	pdfanout->lalm = val;
 	return;
@@ -270,7 +261,7 @@ static void monitor(pdfanout)
 	}
 	return;
 }
-
+
 static long push_values(pdfanout)
 struct dfanoutRecord *pdfanout;
 {

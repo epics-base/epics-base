@@ -83,7 +83,7 @@
 static long init_record();
 static long process();
 static long special();
-static long get_value();
+#define get_value NULL
 static long cvt_dbaddr();
 static long get_array_info();
 static long put_array_info();
@@ -114,217 +114,19 @@ struct rset compressRSET={
 	put_enum_str,
 	get_graphic_double,
 	get_control_double,
-	get_alarm_double };
-
-#define compressNTO1LOW	 0
-#define compressNTO1HIGH 1
-#define compressNTO1AVG  2
-#define AVERAGE  3
-#define CIRBUF   4
-
-static void monitor();
-static void put_value();
-static int compress_array();
-static int compress_scalar();
-static int array_average();
-
+	get_alarm_double
+};
 
-static long init_record(pcompress,pass)
-    struct compressRecord	*pcompress;
-    int pass;
+static void reset(compressRecord *pcompress)
 {
-
-    if (pass==0){
-	pcompress->bptr = (double *)calloc(pcompress->nsam,sizeof(double));
-	/* allocate memory for the summing buffer for conversions requiring it */
-	if (pcompress->alg == AVERAGE){
-                pcompress->sptr = (double *)calloc(pcompress->nsam,sizeof(double));
-	}
-        return(0);
-    }
-    if(pcompress->wptr==NULL && pcompress->inp.type==DB_LINK) {
-	 struct dbAddr *pdbAddr =
-		(struct dbAddr *)(pcompress->inp.value.pv_link.pvt);
-
-	 pcompress->wptr = (double *)calloc(pdbAddr->no_elements,sizeof(double));
-    }
-    return(0);
+    pcompress->nuse = 0;
+    pcompress->off= 0;
+    pcompress->inx = 0;
+    pcompress->cvb = 0.0;
+    pcompress->res = 0;
 }
 
-
-static long process(pcompress)
-	struct compressRecord     *pcompress;
-{
-	long		 status=0;
-
-	pcompress->pact = TRUE;
-
-	if (pcompress->inp.type == CONSTANT) {
-		status=0;
-	}else if (pcompress->wptr == NULL) {
-		recGblSetSevr(pcompress,READ_ALARM,INVALID_ALARM);
-		status=0;
-	} else {
-		struct dbAddr	*pdbAddr =
-			(struct dbAddr *)(pcompress->inp.value.pv_link.pvt);
-		long		no_elements=pdbAddr->no_elements;
-		int			alg=pcompress->alg;
-
-		if(dbGetLink(&pcompress->inp,DBF_DOUBLE,
-		pcompress->wptr,0,&no_elements)!=0){
-				recGblSetSevr(pcompress,LINK_ALARM,INVALID_ALARM);
-                        }
-
-		if(alg==AVERAGE) {
-			status = array_average(pcompress,pcompress->wptr,no_elements);
-		} else if(alg==CIRBUF) {
-			(void)put_value(pcompress,pcompress->wptr,no_elements);
-			status = 0;
-		} else if(pdbAddr->no_elements>1) {
-			status = compress_array(pcompress,pcompress->wptr,no_elements);
-		}else if(no_elements==1){
-			status = compress_scalar(pcompress,pcompress->wptr);
-		}else status=1;
-	}
-
-	/* check event list */
-	if(status!=1) {
-		pcompress->udf=FALSE;
-		recGblGetTimeStamp(pcompress);
-		monitor(pcompress);
-		/* process the forward scan link record */
-		recGblFwdLink(pcompress);
-       }
-	pcompress->pact=FALSE;
-	return(0);
-}
-
-
-static long special(paddr,after)
-    struct dbAddr *paddr;
-    int           after;
-{
-    struct compressRecord   *pcompress = (struct compressRecord *)(paddr->precord);
-    int                 special_type = paddr->special;
-
-    if(!after) return(0);
-    switch(special_type) {
-    case(SPC_RESET):
-	pcompress->nuse = 0;
-	pcompress->off= 0;
-	pcompress->inx = 0;
-	pcompress->cvb = 0.0;
-	pcompress->res = 0;
-        return(0);
-    default:
-        recGblDbaddrError(S_db_badChoice,paddr,"compress: special");
-        return(S_db_badChoice);
-    }
-}
-
-static long get_value(pcompress,pvdes)
-    struct compressRecord *pcompress;
-    struct valueDes	*pvdes;
-{
-    pvdes->field_type = DBF_DOUBLE;
-    pvdes->no_elements=pcompress->nuse;
-    (double *)(pvdes->pvalue) = pcompress->bptr;
-    return(0);
-}
-
-static long cvt_dbaddr(paddr)
-    struct dbAddr *paddr;
-{
-    struct compressRecord *pcompress=(struct compressRecord *)paddr->precord;
-
-    paddr->pfield = (void *)(pcompress->bptr);
-    paddr->no_elements = pcompress->nsam;
-    paddr->field_type = DBF_DOUBLE;
-    paddr->field_size = sizeof(double);
-    paddr->dbr_field_type = DBF_DOUBLE;
-    return(0);
-}
-
-static long get_array_info(paddr,no_elements,offset)
-    struct dbAddr *paddr;
-    long	  *no_elements;
-    long	  *offset;
-{
-    struct compressRecord *pcompress=(struct compressRecord *)paddr->precord;
-
-    *no_elements =  pcompress->nuse;
-    if(pcompress->nuse==pcompress->nsam) *offset = pcompress->off;
-    else *offset = 0;
-    return(0);
-}
-
-static long put_array_info(paddr,nNew)
-    struct dbAddr *paddr;
-    long	  nNew;
-{
-    struct compressRecord *pcompress=(struct compressRecord *)paddr->precord;
-
-    pcompress->off = (pcompress->off + nNew) % (pcompress->nsam);
-    pcompress->nuse = (pcompress->nuse + nNew);
-    if(pcompress->nuse > pcompress->nsam) pcompress->nuse = pcompress->nsam;
-    return(0);
-}
-
-static long get_units(paddr,units)
-    struct dbAddr *paddr;
-    char	  *units;
-{
-    struct compressRecord *pcompress=(struct compressRecord *)paddr->precord;
-
-    strncpy(units,pcompress->egu,DB_UNITS_SIZE);
-    return(0);
-}
-
-static long get_precision(paddr,precision)
-    struct dbAddr *paddr;
-    long	  *precision;
-{
-    struct compressRecord	*pcompress=(struct compressRecord *)paddr->precord;
-
-    *precision = pcompress->prec;
-    if(paddr->pfield == (void *)pcompress->bptr) return(0);
-    recGblGetPrec(paddr,precision);
-    return(0);
-}
-
-static long get_graphic_double(paddr,pgd)
-    struct dbAddr *paddr;
-    struct dbr_grDouble *pgd;
-{
-    struct compressRecord *pcompress=(struct compressRecord *)paddr->precord;
-
-    if(paddr->pfield==(void *)pcompress->bptr
-    || paddr->pfield==(void *)&pcompress->ihil
-    || paddr->pfield==(void *)&pcompress->ilil){
-        pgd->upper_disp_limit = pcompress->hopr;
-        pgd->lower_disp_limit = pcompress->lopr;
-    } else recGblGetGraphicDouble(paddr,pgd);
-    return(0);
-}
-
-static long get_control_double(paddr,pcd)
-    struct dbAddr *paddr;
-    struct dbr_ctrlDouble *pcd;
-{
-    struct compressRecord *pcompress=(struct compressRecord *)paddr->precord;
-
-    if(paddr->pfield==(void *)pcompress->bptr
-    || paddr->pfield==(void *)&pcompress->ihil
-    || paddr->pfield==(void *)&pcompress->ilil){
-        pcd->upper_ctrl_limit = pcompress->hopr;
-        pcd->lower_ctrl_limit = pcompress->lopr;
-    } else recGblGetControlDouble(paddr,pcd);
-    return(0);
-}
-
-
-static void monitor(pcompress)
-    struct compressRecord	*pcompress;
+static void monitor(compressRecord *pcompress)
 {
 	unsigned short	monitor_mask;
 
@@ -333,11 +135,8 @@ static void monitor(pcompress)
 	if(monitor_mask) db_post_events(pcompress,pcompress->bptr,monitor_mask);
 	return;
 }
-
-static void put_value(pcompress,psource,n)
-    struct compressRecord       *pcompress;
-    double			*psource;
-    long			n;
+
+static void put_value(compressRecord *pcompress,double *psource, long n)
 {
 /* treat bptr as pointer to a circular buffer*/
 	double *pdest;
@@ -362,10 +161,8 @@ static void put_value(pcompress,psource,n)
 	return;
 }
 
-static int compress_array(pcompress,psource,no_elements)
-struct compressRecord	*pcompress;
-double			*psource;
-long			no_elements;
+static int compress_array(compressRecord *pcompress,
+	double *psource,long no_elements)
 {
 	long		i,j;
 	long		nnew;
@@ -391,7 +188,7 @@ long			no_elements;
 
 	/* compress according to specified algorithm */
 	switch (pcompress->alg){
-	case (compressNTO1LOW):
+	case (compressALG_N_to_1_Low_Value):
 	    /* compress N to 1 keeping the lowest value */
 	    for (i = 0; i < nnew; i++){
 		value = *psource++;
@@ -401,7 +198,7 @@ long			no_elements;
 		put_value(pcompress,&value,1);
 	    }
 	    break;
-	case (compressNTO1HIGH):
+	case (compressALG_N_to_1_High_Value):
 	    /* compress N to 1 keeping the highest value */
 	    for (i = 0; i < nnew; i++){
 		value = *psource++;
@@ -411,7 +208,7 @@ long			no_elements;
 		put_value(pcompress,&value,1);
 	    }
 	    break;
-	case (compressNTO1AVG):
+	case (compressALG_N_to_1_Average):
 	    /* compress N to 1 keeping the average value */
 	    for (i = 0; i < nnew; i++){
 		value = 0;
@@ -425,10 +222,8 @@ long			no_elements;
 	return(0);
 }
 
-static int array_average(pcompress,psource,no_elements)
-struct compressRecord	*pcompress;
-double			*psource;
-long			no_elements;
+static int array_average(compressRecord	*pcompress,
+	double *psource,long	no_elements)
 {
 	long	i;
 	long	nnow;
@@ -436,12 +231,10 @@ long			no_elements;
 	double	*psum;
 	double	multiplier;
 	long	inx=pcompress->inx;
-	struct dbAddr *pdbAddr = (struct dbAddr *)(pcompress->inp.value.pv_link.pvt);
-	long	ninp=pdbAddr->no_elements;
 	long	nuse,n;
 
 	nuse = nsam;
-	if(nuse>ninp) nuse = ninp;
+	if(nuse>no_elements) nuse = no_elements;
 	nnow=nuse;
 	if(nnow>no_elements) nnow=no_elements;
 	psum = (double *)pcompress->sptr;
@@ -475,9 +268,7 @@ long			no_elements;
 	return(0);
 }
 
-static int compress_scalar(pcompress,psource)
-struct	compressRecord	*pcompress;
-double			*psource;
+static int compress_scalar(struct compressRecord *pcompress,double *psource)
 {
 	double	value = *psource;
 	double	*pdest=&pcompress->cvb;
@@ -485,15 +276,15 @@ double			*psource;
 
 	/* compress according to specified algorithm */
 	switch (pcompress->alg){
-	case (compressNTO1LOW):
+	case (compressALG_N_to_1_Low_Value):
 	    if ((value < *pdest) || (inx == 0))
 		*pdest = value;
 	    break;
-	case (compressNTO1HIGH):
+	case (compressALG_N_to_1_High_Value):
 	    if ((value > *pdest) || (inx == 0))
 		*pdest = value;
 	    break;
-	case (compressNTO1AVG):
+	case (compressALG_N_to_1_Average):
 	    if (inx == 0)
 		*pdest = value;
 	    else {
@@ -511,4 +302,176 @@ double			*psource;
 		pcompress->inx = inx;
 		return(1);
 	}
+}
+
+/*Beginning of record support routines*/
+static long init_record(pcompress,pass)
+    compressRecord	*pcompress;
+    int pass;
+{
+    if (pass==0){
+	if(pcompress->nsam<1) pcompress->nsam = 1;
+	pcompress->bptr = (double *)calloc(pcompress->nsam,sizeof(double));
+	/* allocate memory for the summing buffer for conversions requiring it */
+	if (pcompress->alg == compressALG_Average){
+                pcompress->sptr = (double *)calloc(pcompress->nsam,sizeof(double));
+	}
+    }
+    return(0);
+}
+
+static long process(pcompress)
+	compressRecord     *pcompress;
+{
+    long	status=0;
+    long	nelements = 0;
+    int		alg = pcompress->alg;
+
+    pcompress->pact = TRUE;
+    if(!dbIsLinkConnected(&pcompress->inp)
+    || !dbGetNelements(&pcompress->inp,&nelements)
+    || nelements<=0) {
+	recGblSetSevr(pcompress,READ_ALARM,INVALID_ALARM);
+    } else {
+	if(!pcompress->wptr || nelements!=pcompress->inpn) {
+	    free(pcompress->wptr);
+	    pcompress->wptr = (double *)dbCalloc(nelements,sizeof(double));
+	    pcompress->inpn = nelements;
+	    reset(pcompress);
+	}
+	status = dbGetLink(&pcompress->inp,DBF_DOUBLE,pcompress->wptr,0,&nelements);
+	if(status || nelements<=0) {
+            recGblSetSevr(pcompress,LINK_ALARM,INVALID_ALARM);
+	    status = 0;
+	} else {
+	    if(alg==compressALG_Average) {
+		status = array_average(pcompress,pcompress->wptr,nelements);
+	    } else if(alg==compressALG_Circular_Buffer) {
+		(void)put_value(pcompress,pcompress->wptr,nelements);
+		status = 0;
+	    } else if(nelements>1) {
+		status = compress_array(pcompress,pcompress->wptr,nelements);
+	    }else if(nelements==1){
+		status = compress_scalar(pcompress,pcompress->wptr);
+	    }else status=1;
+	}
+    }
+    /* check event list */
+    if(status!=1) {
+		pcompress->udf=FALSE;
+		recGblGetTimeStamp(pcompress);
+		monitor(pcompress);
+		/* process the forward scan link record */
+		recGblFwdLink(pcompress);
+    }
+    pcompress->pact=FALSE;
+    return(0);
+}
+
+static long special(paddr,after)
+    struct dbAddr *paddr;
+    int           after;
+{
+    compressRecord   *pcompress = (compressRecord *)(paddr->precord);
+    int                 special_type = paddr->special;
+
+    if(!after) return(0);
+    switch(special_type) {
+    case(SPC_RESET):
+	reset(pcompress);
+        return(0);
+    default:
+        recGblDbaddrError(S_db_badChoice,paddr,"compress: special");
+        return(S_db_badChoice);
+    }
+}
+
+static long cvt_dbaddr(paddr)
+    struct dbAddr *paddr;
+{
+    compressRecord *pcompress=(compressRecord *)paddr->precord;
+
+    paddr->pfield = (void *)(pcompress->bptr);
+    paddr->no_elements = pcompress->nsam;
+    paddr->field_type = DBF_DOUBLE;
+    paddr->field_size = sizeof(double);
+    paddr->dbr_field_type = DBF_DOUBLE;
+    return(0);
+}
+
+static long get_array_info(paddr,no_elements,offset)
+    struct dbAddr *paddr;
+    long	  *no_elements;
+    long	  *offset;
+{
+    compressRecord *pcompress=(compressRecord *)paddr->precord;
+
+    *no_elements =  pcompress->nuse;
+    if(pcompress->nuse==pcompress->nsam) *offset = pcompress->off;
+    else *offset = 0;
+    return(0);
+}
+
+static long put_array_info(paddr,nNew)
+    struct dbAddr *paddr;
+    long	  nNew;
+{
+    compressRecord *pcompress=(compressRecord *)paddr->precord;
+
+    pcompress->off = (pcompress->off + nNew) % (pcompress->nsam);
+    pcompress->nuse = (pcompress->nuse + nNew);
+    if(pcompress->nuse > pcompress->nsam) pcompress->nuse = pcompress->nsam;
+    return(0);
+}
+
+static long get_units(paddr,units)
+    struct dbAddr *paddr;
+    char	  *units;
+{
+    compressRecord *pcompress=(compressRecord *)paddr->precord;
+
+    strncpy(units,pcompress->egu,DB_UNITS_SIZE);
+    return(0);
+}
+
+static long get_precision(paddr,precision)
+    struct dbAddr *paddr;
+    long	  *precision;
+{
+    compressRecord	*pcompress=(compressRecord *)paddr->precord;
+
+    *precision = pcompress->prec;
+    if(paddr->pfield == (void *)pcompress->bptr) return(0);
+    recGblGetPrec(paddr,precision);
+    return(0);
+}
+
+static long get_graphic_double(paddr,pgd)
+    struct dbAddr *paddr;
+    struct dbr_grDouble *pgd;
+{
+    compressRecord *pcompress=(compressRecord *)paddr->precord;
+
+    if(paddr->pfield==(void *)pcompress->bptr
+    || paddr->pfield==(void *)&pcompress->ihil
+    || paddr->pfield==(void *)&pcompress->ilil){
+        pgd->upper_disp_limit = pcompress->hopr;
+        pgd->lower_disp_limit = pcompress->lopr;
+    } else recGblGetGraphicDouble(paddr,pgd);
+    return(0);
+}
+
+static long get_control_double(paddr,pcd)
+    struct dbAddr *paddr;
+    struct dbr_ctrlDouble *pcd;
+{
+    compressRecord *pcompress=(compressRecord *)paddr->precord;
+
+    if(paddr->pfield==(void *)pcompress->bptr
+    || paddr->pfield==(void *)&pcompress->ihil
+    || paddr->pfield==(void *)&pcompress->ilil){
+        pcd->upper_ctrl_limit = pcompress->hopr;
+        pcd->lower_ctrl_limit = pcompress->lopr;
+    } else recGblGetControlDouble(paddr,pcd);
+    return(0);
 }

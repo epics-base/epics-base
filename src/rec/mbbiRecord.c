@@ -1,7 +1,5 @@
 /* recMbbi.c */
 /* base/src/rec  $Id$ */
-
-/* recMbbi.c - Record Support Routines for multi bit binary Input records */
 /*
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer
@@ -62,7 +60,6 @@
 #include	<stdioLib.h>
 #include	<lstLib.h>
 #include	<string.h>
-
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
@@ -80,7 +77,7 @@
 static long init_record();
 static long process();
 static long  special();
-static long get_value();
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -92,7 +89,6 @@ static long put_enum_str();
 #define get_graphic_double NULL
 #define get_control_double NULL
 #define get_alarm_double NULL
-
 struct rset mbbiRSET={
 	RSETNUMBER,
 	report,
@@ -124,7 +120,6 @@ struct mbbidset { /* multi bit binary input dset */
 static void alarm();
 static void monitor();
 static long readValue();
-
 
 static void init_common(pmbbi)
     struct mbbiRecord	*pmbbi;
@@ -155,16 +150,12 @@ static long init_record(pmbbi,pass)
 
     if (pass==0) return(0);
 
-    /* mbbi.siml must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     if (pmbbi->siml.type == CONSTANT) {
 	recGblInitConstantLink(&pmbbi->siml,DBF_USHORT,&pmbbi->simm);
     }
-
-    /* mbbi.siol must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     if (pmbbi->siol.type == CONSTANT) {
 	recGblInitConstantLink(&pmbbi->siol,DBF_USHORT,&pmbbi->sval);
     }
-
     if(!(pdset = (struct mbbidset *)(pmbbi->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)pmbbi,"mbbi: init_record");
 	return(S_dev_noDSET);
@@ -264,16 +255,6 @@ static long special(paddr,after)
     }
 }
 
-static long get_value(pmbbi,pvdes)
-    struct mbbiRecord		*pmbbi;
-    struct valueDes	*pvdes;
-{
-    pvdes->field_type = DBF_ENUM;
-    pvdes->no_elements=1;
-    (unsigned short *)(pvdes->pvalue) = &pmbbi->val;
-    return(0);
-}
-
 static long get_enum_str(paddr,pstring)
     struct dbAddr *paddr;
     char	  *pstring;
@@ -310,6 +291,7 @@ static long get_enum_strs(paddr,pes)
     pes->no_str=no_str;
     return(0);
 }
+
 static long put_enum_str(paddr,pstring)
     struct dbAddr *paddr;
     char          *pstring;
@@ -331,7 +313,7 @@ static long put_enum_str(paddr,pstring)
         }
 	return(S_db_badChoice);
 }
-
+
 static void alarm(pmbbi)
     struct mbbiRecord	*pmbbi;
 {

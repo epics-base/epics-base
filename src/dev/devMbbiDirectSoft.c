@@ -1,7 +1,5 @@
 /* devMbbiDirectSoft.c */
 /* base/src/dev $Id$ */
-
-/* devMbbiDirectSoft.c - Device Support for Soft Direct Multibit Binary Input*/
 /*
  *      Original Author: Bob Dalesio
  *      Current Author:  Matthew Needes
@@ -33,8 +31,6 @@
  *    (Modification log in devMbbiSoft.c applies)
  *  .01  10-08-93    mcn (created)  support for direct mbbi records
  */
-
-
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
@@ -47,11 +43,9 @@
 #include	<devSup.h>
 #include	<module_types.h>
 #include	<mbbiDirectRecord.h>
-
 /* Create the dset for devMbbiSoft */
 static long init_record();
 static long read_mbbi();
-
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -65,9 +59,9 @@ struct {
 	NULL,
 	init_record,
 	NULL,
-	read_mbbi};
+	read_mbbi
+};
 
-
 static long init_record(pmbbi)
     struct mbbiDirectRecord	*pmbbi;
 {
@@ -76,8 +70,8 @@ static long init_record(pmbbi)
     /* mbbi.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pmbbi->inp.type) {
     case (CONSTANT) :
-    if(recGblInitConstantLink(&pmbbi->inp,DBF_ENUM,&pmbbi->val))
-		pmbbi->udf = FALSE;
+        if(recGblInitConstantLink(&pmbbi->inp,DBF_ENUM,&pmbbi->val))
+            pmbbi->udf = FALSE;
         break;
     case (DB_LINK) :
     case (PV_LINK) :
@@ -90,7 +84,7 @@ static long init_record(pmbbi)
     }
     return(0);
 }
-
+
 static long read_mbbi(pmbbi)
     struct mbbiDirectRecord	*pmbbi;
 {

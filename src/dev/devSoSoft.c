@@ -1,7 +1,5 @@
 /* devSoSoft.c */
 /* base/src/dev $Id$ */
-
-/* devSoSoft.c - Device Support Routines for Soft String Output */
 /*
  *      Author:		Janet Anderson
  *      Date:   	04-21-91
@@ -50,7 +48,6 @@
 /* Create the dset for devSoSoft */
 static long init_record();
 static long write_stringout();
-
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -64,8 +61,8 @@ struct {
 	NULL,
 	init_record,
 	NULL,
-	write_stringout};
- 
+	write_stringout
+};
 
 static long init_record(pstringout)
 struct stringoutRecord *pstringout;
@@ -79,6 +76,5 @@ static long write_stringout(pstringout)
     long status;
 
     status = dbPutLink(&pstringout->out,DBR_STRING,pstringout->val,1);
-
     return(status);
 }

@@ -37,7 +37,7 @@
  * Modification Log:
  * -----------------
  */
-
+
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
@@ -56,7 +56,7 @@
 #define GEN_SIZE_OFFSET
 #include	<aaoRecord.h>
 #undef  GEN_SIZE_OFFSET
-
+
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
@@ -124,12 +124,7 @@ static long init_record(paao,pass)
 	if(paao->nelm<=0) paao->nelm=1;
 	return(0);
     }
-
-    /* aao.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
-    if (paao->siml.type == CONSTANT) {
-	recGblInitConstantLink(&paao->siml,DBF_USHORT,&paao->simm);
-    }
-
+    recGblInitConstantLink(&paao->siml,DBF_USHORT,&paao->simm);
     /* must have dset defined */
     if(!(pdset = (struct aaodset *)(paao->dset))) {
         recGblRecordError(S_dev_noDSET,(void *)paao,"aao: init_record");
@@ -280,7 +275,7 @@ static void monitor(paao)
 	return;
 
 }
-
+
 static long writeValue(paao)
         struct aaoRecord *paao;
 {

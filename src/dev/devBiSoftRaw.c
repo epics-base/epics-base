@@ -1,7 +1,5 @@
 /* devBiSoftRaw.c */
 /* base/src/dev $Id$ */
-
-/* devBiSoftRaw.c - Device Support Routines for  Soft Binary Input*/
 /*
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer
@@ -36,13 +34,10 @@
  * .04  10-10-92        jba     replaced code with recGblGetLinkValue call
  *      ...
  */
-
-
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<string.h>
-
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
@@ -50,11 +45,9 @@
 #include	<devSup.h>
 #include	<module_types.h>
 #include	<biRecord.h>
-
 /* Create the dset for devBiSoftRaw */
 static long init_record();
 static long read_bi();
-
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -68,9 +61,9 @@ struct {
 	NULL,
 	init_record,
 	NULL,
-	read_bi};
+	read_bi
+};
 
-
 static long init_record(pbi)
     struct biRecord	*pbi;
 {
@@ -92,13 +85,12 @@ static long init_record(pbi)
     }
     return(0);
 }
-
+
 static long read_bi(pbi)
     struct biRecord	*pbi;
 {
     long status;
 
     status = dbGetLink(&pbi->inp, DBR_ULONG, &pbi->rval,0,0);
-
     return(0);
 }

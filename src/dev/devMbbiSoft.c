@@ -1,7 +1,5 @@
 /* devMbbiSoft.c */
 /* base/src/dev $Id$ */
-
-/* devMbbiSoft.c - Device Support Routines for  Soft Multibit Binary Input*/
 /*
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer
@@ -35,13 +33,10 @@
  * .03  10-10-92        jba     replaced code with recGblGetLinkValue call
  *      ...
  */
-
-
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<string.h>
-
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
@@ -49,12 +44,9 @@
 #include	<devSup.h>
 #include	<module_types.h>
 #include	<mbbiRecord.h>
-
-
 /* Create the dset for devMbbiSoft */
 static long init_record();
 static long read_mbbi();
-
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -68,21 +60,21 @@ struct {
 	NULL,
 	init_record,
 	NULL,
-	read_mbbi};
+	read_mbbi
+};
 
-
 static long init_record(pmbbi)
     struct mbbiRecord	*pmbbi;
 {
     long status;
 
     if (pmbbi->inp.type == CONSTANT) {
-    if(recGblInitConstantLink(&pmbbi->inp,DBF_ENUM,&pmbbi->val))
-		pmbbi->udf = FALSE;
+        if(recGblInitConstantLink(&pmbbi->inp,DBF_ENUM,&pmbbi->val))
+            pmbbi->udf = FALSE;
     }
     return(0);
 }
-
+
 static long read_mbbi(pmbbi)
     struct mbbiRecord	*pmbbi;
 {

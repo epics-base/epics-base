@@ -1,7 +1,5 @@
 /* recLongout.c */
 /* base/src/rec  $Id$ */
-
-/* recLongout.c - Record Support Routines for Longout records */
 /*
  * Author: 	Janet Anderson
  * Date:	9/23/91
@@ -45,8 +43,6 @@
  * .14  09-18-92        jba     pact now set in recGblGetLinkValue
  * .15  03-29-94        mcn     converted to fast links
  */ 
-
-
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
@@ -71,7 +67,7 @@
 static long init_record();
 static long process();
 #define special NULL
-static long get_value();
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -126,12 +122,9 @@ static long init_record(plongout,pass)
     long status=0;
 
     if (pass==0) return(0);
-
-    /* longout.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
     if (plongout->siml.type == CONSTANT) {
 	recGblInitConstantLink(&plongout->siml,DBF_USHORT,&plongout->simm);
     }
-
     if(!(pdset = (struct longoutdset *)(plongout->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)plongout,"longout: init_record");
 	return(S_dev_noDSET);
@@ -141,12 +134,10 @@ static long init_record(plongout,pass)
 	recGblRecordError(S_dev_missingSup,(void *)plongout,"longout: init_record");
 	return(S_dev_missingSup);
     }
-    /* get the initial value dol is a constant*/
     if (plongout->dol.type == CONSTANT) {
 	if(recGblInitConstantLink(&plongout->dol,DBF_LONG,&plongout->val))
 	    plongout->udf=FALSE;
     }
-
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(plongout))) return(status);
     }
@@ -215,16 +206,6 @@ static long process(plongout)
 	return(status);
 }
 
-static long get_value(plongout,pvdes)
-    struct longoutRecord             *plongout;
-    struct valueDes     *pvdes;
-{
-    pvdes->field_type = DBF_LONG;
-    pvdes->no_elements=1;
-    (long *)(pvdes->pvalue) = &plongout->val;
-    return(0);
-}
-
 static long get_units(paddr,units)
     struct dbAddr *paddr;
     char	  *units;

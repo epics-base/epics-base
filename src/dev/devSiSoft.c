@@ -1,7 +1,5 @@
 /* devSiSoft.c */
 /* base/src/dev $Id$ */
-
-/* devSiSoft.c - Device Support Routines for Soft String Input */
 /*
  *      Author:		Janet Anderson
  *      Date:   	04-21-91
@@ -51,7 +49,6 @@
 /* Create the dset for devSiSoft */
 static long init_record();
 static long read_stringin();
-
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -65,7 +62,8 @@ struct {
 	NULL,
 	init_record,
 	NULL,
-	read_stringin};
+	read_stringin
+};
 
 static long init_record(pstringin)
     struct stringinRecord	*pstringin;
@@ -89,7 +87,7 @@ static long init_record(pstringin)
     }
     return(0);
 }
-
+
 static long read_stringin(pstringin)
     struct stringinRecord	*pstringin;
 {

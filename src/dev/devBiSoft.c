@@ -1,7 +1,5 @@
 /* devBiSoft.c */
 /* base/src/dev $Id$ */
-
-/* devBiSoft.c - Device Support Routines for  Soft Binary Input*/
 /*
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer
@@ -35,13 +33,10 @@
  * .03  10-10-92        jba     replaced code with recGblGetLinkValue call
  *      ...
  */
-
-
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<string.h>
-
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
@@ -49,11 +44,9 @@
 #include	<devSup.h>
 #include	<module_types.h>
 #include	<biRecord.h>
-
 /* Create the dset for devBiSoft */
 static long init_record();
 static long read_bi();
-
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -67,9 +60,9 @@ struct {
 	NULL,
 	init_record,
 	NULL,
-	read_bi};
+	read_bi
+};
 
-
 static long init_record(pbi)
     struct biRecord	*pbi;
 {
@@ -78,8 +71,8 @@ static long init_record(pbi)
     /* bi.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK */
     switch (pbi->inp.type) {
     case (CONSTANT) :
-    if(recGblInitConstantLink(&pbi->inp,DBF_ENUM,&pbi->val))
-        pbi->udf = FALSE;
+        if(recGblInitConstantLink(&pbi->inp,DBF_ENUM,&pbi->val))
+            pbi->udf = FALSE;
         break;
     case (DB_LINK) :
     case (PV_LINK) :
@@ -92,15 +85,13 @@ static long init_record(pbi)
     }
     return(0);
 }
-
+
 static long read_bi(pbi)
     struct biRecord	*pbi;
 {
     long status;
 
     status = dbGetLink(&pbi->inp, DBR_USHORT, &pbi->val,0,0);
-
     if(pbi->inp.type!=CONSTANT && RTN_SUCCESS(status)) pbi->udf=FALSE;
-
     return(2);
 }

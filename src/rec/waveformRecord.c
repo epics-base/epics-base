@@ -78,14 +78,13 @@
 #define GEN_SIZE_OFFSET
 #include	<waveformRecord.h>
 #undef  GEN_SIZE_OFFSET
-
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
 static long init_record();
 static long process();
 #define special NULL
-static long get_value();
+#define get_value NULL
 static long cvt_dbaddr();
 static long get_array_info();
 static long put_array_info();
@@ -97,7 +96,6 @@ static long get_precision();
 static long get_graphic_double();
 static long get_control_double();
 #define get_alarm_double NULL
-
 struct rset waveformRSET={
 	RSETNUMBER,
 	report,
@@ -117,7 +115,6 @@ struct rset waveformRSET={
 	get_graphic_double,
 	get_control_double,
 	get_alarm_double };
-
 struct wfdset { /* waveform dset */
         long            number;
         DEVSUPFUN       dev_report;
@@ -126,18 +123,10 @@ struct wfdset { /* waveform dset */
         DEVSUPFUN       get_ioint_info;
         DEVSUPFUN       read_wf; /*returns: (-1,0)=>(failure,success)*/
 };
-
 /*sizes of field types*/
 static int sizeofTypes[] = {0,1,1,2,2,4,4,4,8,2};
-
 static void monitor();
 static long readValue();
-
-/*Following from timing system          */
-/*
-extern unsigned int     gts_trigger_counter;
-*/
-
 
 static long init_record(pwf,pass)
     struct waveformRecord	*pwf;
@@ -214,17 +203,6 @@ static long process(pwf)
         return(0);
 }
 
-static long get_value(pwf,pvdes)
-    struct waveformRecord		*pwf;
-    struct valueDes	*pvdes;
-{
-
-    pvdes->no_elements=pwf->nord;
-    pvdes->pvalue = pwf->bptr;
-    pvdes->field_type = pwf->ftvl;
-    return(0);
-}
-
 static long cvt_dbaddr(paddr)
     struct dbAddr *paddr;
 {
@@ -238,7 +216,7 @@ static long cvt_dbaddr(paddr)
     paddr->dbr_field_type = pwf->ftvl;
     return(0);
 }
-
+
 static long get_array_info(paddr,no_elements,offset)
     struct dbAddr *paddr;
     long	  *no_elements;
@@ -261,7 +239,7 @@ static long put_array_info(paddr,nNew)
     if(pwf->nord > pwf->nelm) pwf->nord = pwf->nelm;
     return(0);
 }
-
+
 static long get_units(paddr,units)
     struct dbAddr *paddr;
     char	  *units;
@@ -283,7 +261,7 @@ static long get_precision(paddr,precision)
     recGblGetPrec(paddr,precision);
     return(0);
 }
-
+
 static long get_graphic_double(paddr,pgd)
     struct dbAddr *paddr;
     struct dbr_grDouble *pgd;
@@ -308,7 +286,7 @@ static long get_control_double(paddr,pcd)
     } else recGblGetControlDouble(paddr,pcd);
     return(0);
 }
-
+
 static void monitor(pwf)
     struct waveformRecord	*pwf;
 {

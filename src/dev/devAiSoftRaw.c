@@ -1,7 +1,5 @@
 /* devAiSoftRaw.c */
 /* base/src/dev $Id$ */
-
-/* devAiSoftRaw.c - Device Support Routines for soft Analog Input Records*/
 /*
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer
@@ -36,13 +34,10 @@
  * .04  10-10-92        jba     replaced code with recGblGetLinkValue call
  * 	...
  */
-
-
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<string.h>
-
 #include	<alarm.h>
 #include	<cvtTable.h>
 #include	<dbDefs.h>
@@ -51,7 +46,6 @@
 #include	<devSup.h>
 #include	<link.h>
 #include	<aiRecord.h>
-
 /* Create the dset for devAiSoftRaw */
 static long init_record();
 static long read_ai();
@@ -71,9 +65,9 @@ struct {
 	init_record,
 	NULL,
 	read_ai,
-	special_linconv};
+	special_linconv
+};
 
-
 static long init_record(pai)
     struct aiRecord	*pai;
 {
@@ -95,14 +89,13 @@ static long init_record(pai)
     }
     return(0);
 }
-
+
 static long read_ai(pai)
     struct aiRecord	*pai;
 {
     long status;
 
     status = dbGetLink(&(pai->inp),DBR_LONG,&(pai->rval),0,0);
-
     return(0);
 }
 
@@ -110,8 +103,5 @@ static long special_linconv(pai,after)
      struct aiRecord   *pai;
      int after;
 {
-
-	if(!after) return(0);
-
 	return(0);
 }

@@ -107,6 +107,11 @@ recordtype(compress) {
 		size(4)
 		extra("double		*wptr")
 	}
+	field(INPN,DBF_LONG) {
+		prompt("Number of elements in Working Buffer")
+		special(SPC_NOMOD)
+		interest(4)
+	}
 	field(CVB,DBF_DOUBLE) {
 		prompt("Compress Value Buffer")
 		special(SPC_NOMOD)

@@ -1,7 +1,5 @@
 /* devLoSoft.c */
 /* base/src/dev $Id$ */
-
-/* devLoSoft.c - Device Support Routines for Soft Longout Output */
 /*
  *      Author:		Janet Anderson
  *      Date:   	09-23-91
@@ -33,7 +31,6 @@
  * .02	03-13-92	jba	ANSI C changes
  * .03  10-10-92        jba     replaced code with recGblGetLinkValue call
 */
-
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
@@ -46,12 +43,9 @@
 #include	<devSup.h>
 #include	<module_types.h>
 #include	<longoutRecord.h>
-
-static long init_record();
-
 /* Create the dset for devLoSoft */
+static long init_record();
 static long write_longout();
-
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -65,8 +59,8 @@ struct {
 	NULL,
 	init_record,
 	NULL,
-	write_longout};
- 
+	write_longout
+};
 
 static long init_record(plongout)
 struct longoutRecord *plongout;
@@ -80,6 +74,5 @@ static long write_longout(plongout)
     long status;
 
     status = dbPutLink(&plongout->out,DBR_LONG, &plongout->val,1);
-
     return(0);
 }

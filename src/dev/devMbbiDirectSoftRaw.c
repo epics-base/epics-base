@@ -1,7 +1,5 @@
 /* devMbbiDirectSoftRaw.c */
 /* base/src/dev $Id$ */
-
-/* devMbbiDirectSoftRaw.c - Device Support for Direct Soft MBBI */
 /*
  *      Original Author: Bob Dalesio
  *      Current Author:  Matthew Needes
@@ -33,7 +31,6 @@
  *   (modification log of devMbbiDirectSoftRaw applies)
  *  .01  10-08-93   mcn   device support for direct mbbi records.
  */
-
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
@@ -46,11 +43,9 @@
 #include	<devSup.h>
 #include	<module_types.h>
 #include	<mbbiDirectRecord.h>
-
 /* Create the dset for devMbbiDirectSoftRaw */
 static long init_record();
 static long read_mbbi();
-
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -64,9 +59,9 @@ struct {
 	NULL,
 	init_record,
 	NULL,
-	read_mbbi};
+	read_mbbi
+};
 
-
 static long init_record(pmbbi)
     struct mbbiDirectRecord	*pmbbi;
 {
@@ -88,13 +83,12 @@ static long init_record(pmbbi)
     }
     return(0);
 }
-
+
 static long read_mbbi(pmbbi)
     struct mbbiDirectRecord	*pmbbi;
 {
     long status;
 
     status = dbGetLink(&pmbbi->inp,DBR_LONG,&pmbbi->rval,0,0);
-
     return(0);
 }

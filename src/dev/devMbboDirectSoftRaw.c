@@ -1,7 +1,5 @@
 /* devMbboDirectSoftRaw.c */
 /* base/src/dev $Id$ */
-
-/* devMbboDirectSoftRaw.c - Device Support SoftRaw Direct mbbo */
 /*
  *      Author:		Janet Anderson
  *      Current Author: Matthew Needes
@@ -33,8 +31,6 @@
  *    (log for devMbboSoftRaw.c applies)
  * .01  10-08-93  mcn   (created)     device support for devMbboDirect records
  */
-
-
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
@@ -48,11 +44,9 @@
 #include	<module_types.h>
 #include	<mbboDirectRecord.h>
 
-static long init_record();
-
 /* Create the dset for devMbboDirectSoftRaw */
+static long init_record();
 static long write_mbbo();
-
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -66,9 +60,8 @@ struct {
 	NULL,
 	init_record,
 	NULL,
-	write_mbbo};
-
-
+	write_mbbo
+};
 
 static long init_record(pmbbo)
 struct mbboDirectRecord *pmbbo;

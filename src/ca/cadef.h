@@ -574,6 +574,8 @@ epicsShareFunc int epicsShareAPI ca_add_masked_array_event
      long                   mask
 );
 
+epicsShareFunc chid epicsShareAPI ca_evid_to_chid ( evid id );
+
 /************************************************************************/
 /*  Remove a function from a list of those specified to run             */
 /*  whenever significant changes occur to a channel                     */
@@ -952,7 +954,7 @@ epicsShareFunc int epicsShareAPI ca_import_cancel (threadId tid);
 #else /* CAC_ANSI_FUNC_PROTO */
 epicsShareFunc short epicsShareAPI ca_get_field_type ();
 epicsShareFunc unsigned long epicsShareAPI ca_element_count ();
-epicsShareFunc char * epicsShareAPI ca_name (chid chan);
+epicsShareFunc char * epicsShareAPI ca_name ();
 epicsShareFunc enum channel_state epicsShareAPI ca_state ();
 epicsShareFunc void epicsShareAPI ca_set_puser ();
 epicsShareFunc void epicsShareAPI ca_get_puser ();

@@ -422,6 +422,11 @@ int epicsShareAPI ca_clear_event ( evid pMon )
     return ECA_NORMAL;
 }
 
+chid epicsShareAPI ca_evid_to_chid ( evid pMon )
+{
+    return & pMon->channel ();
+}
+
 /*
  *  ca_clear_channel ()
  */

@@ -1261,7 +1261,7 @@ void caTaskExistTest ()
     printf ( "in ca_task_exit() for %f sec\n", delay );
 }
 
-verifyDataTypeMacros ()
+void verifyDataTypeMacros ()
 {
     short type;
 
@@ -1314,6 +1314,7 @@ int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
 
     status = ca_search ( pName, &chan );
     SEVCHK ( status, NULL );
+    assert ( strcmp ( pName, ca_name (chan) ) == 0 );
     status = ca_pend_io ( 100.0 );
     SEVCHK ( status, NULL );
 

@@ -24,6 +24,11 @@ oldSubscription::~oldSubscription ()
 {
 }
 
+oldChannel &oldSubscription::channel ()
+{
+    return this->chan;
+}
+
 void oldSubscription::completionNotify (unsigned type, unsigned long count, const void *pData)
 {
     struct event_handler_args args;

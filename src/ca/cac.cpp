@@ -479,7 +479,7 @@ void cac::beaconNotify ( const inetAddrID &addr )
 
         status = getsockname ( this->pudpiiu->getSock (), (struct sockaddr *) &saddr, &saddr_length );
         if ( status < 0 ) {
-            epicsPrintf ( "CAC: getsockname () error was \"%s\"\n", SOCKERRSTR (SOCKERRNO) );
+            this->printf ( "CAC: getsockname () error was \"%s\"\n", SOCKERRSTR (SOCKERRNO) );
             this->defaultMutex.unlock ();
             return;
         }

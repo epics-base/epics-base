@@ -87,6 +87,7 @@ struct oldSubscription : public cacNotify {
 public:
     oldSubscription  ( oldChannel &chan, caEventCallBackFunc *pFunc, void *pPrivate );
     void destroy ();
+    oldChannel &channel ();
 
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );

@@ -1,6 +1,9 @@
 
 /*
  * $Log$
+ * Revision 1.9  1995/05/22  15:21:39  jbk
+ * updates to allow direct read of time stamps from event systems
+ *
  * Revision 1.8  1995/02/13  03:54:21  jhill
  * drvTS.c - use errMessage () as discussed with jbk
  * iocInit.c - static => LOCAL for debugging and many changes
@@ -83,12 +86,7 @@ LICENSING INQUIRIES MAY BE DIRECTED TO THE INDUSTRIAL TECHNOLOGY
 DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 */
 
-#if 1
-#define NODEBUG
-#define MAKE_DEBUG 0
-#else
 #define MAKE_DEBUG TSdriverDebug
-#endif
 #define TS_DRIVER
 
 #include <vxWorks.h>
@@ -125,13 +123,7 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <drvSup.h>
 #include <drvTS.h>
 
-/* #define FL M_drvSup,__FILE__,__LINE__ */
-#if 0
-#define FL stderr
-#define errPrintf fprintf
-#else
-#define FL M_drvSup,__FILE__,__LINE__ 
-#endif
+#define TSprintf epicsPrintf
 
 #define DEFAULT_TIME	0
 #define NO_EVENT_SYSTEM	1
@@ -179,6 +171,7 @@ static long (*TSforceSync)(int Card);
 static long (*TSgetTime)(struct timespec*);
 static long (*TSsyncEvent)();
 static long (*TSdirectTime)();
+static long (*TSdriverInit)();
 
 /* global functions */
 #ifdef __cplusplus
@@ -239,6 +232,18 @@ static long TSregisterErrorHandlerError(int i, void(*f)())
 static long TSregisterEventHandlerError(int i, void(*f)())
 	{ if(TSdata.has_direct_time==1) return 0; else return -1; }
 
+long TSdriverInitError()
+{
+	struct timespec ts;
+	time_t t;
+
+	clock_gettime(CLOCK_REALTIME,&ts);
+	time(&t);
+	Debug(1,"vxWorks time = %s\n",ctime(&t));
+
+	return 0;
+}
+
 /*-----------------------------------------------------------------------*/
 /*	
 	TSreport() - report information about the state of the time stamp
@@ -248,40 +253,40 @@ long TSreport()
 {
 	switch(TSdata.type)
 	{
-	case TS_direct_master:	printf("Direct timing master\n"); break;
-	case TS_sync_master:	printf("Event timing master\n"); break;
-	case TS_async_master:	printf("Soft timing master\n"); break;
-	case TS_direct_slave:	printf("Direct timing slave\n"); break;
-	case TS_sync_slave:		printf("Event timing slave\n"); break;
-	case TS_async_slave:	printf("Soft timing slave\n"); break;
+	case TS_direct_master:	TSprintf("Direct timing master\n"); break;
+	case TS_sync_master:	TSprintf("Event timing master\n"); break;
+	case TS_async_master:	TSprintf("Soft timing master\n"); break;
+	case TS_direct_slave:	TSprintf("Direct timing slave\n"); break;
+	case TS_sync_slave:		TSprintf("Event timing slave\n"); break;
+	case TS_async_slave:	TSprintf("Soft timing slave\n"); break;
 	default: break;
 	}
 	switch(TSdata.state)
 	{
-	case TS_master_alive:	printf("Master timing IOC alive\n"); break;
-	case TS_master_dead:	printf("Master timing IOC dead\n"); break;
+	case TS_master_alive:	TSprintf("Master timing IOC alive\n"); break;
+	case TS_master_dead:	TSprintf("Master timing IOC dead\n"); break;
 	default: break;
 	}
 	switch(TSdata.async_type)
 	{
-	case TS_async_none:		printf("No clock synchronization\n"); break;
-	case TS_async_private:	printf("Using sync protocol with master\n"); break;
-	case TS_async_ntp:		printf("NTP sync with unix server\n"); break;
-	case TS_async_time:		printf("Time protocol sync with unix\n"); break;
+	case TS_async_none:		TSprintf("No clock synchronization\n"); break;
+	case TS_async_private:	TSprintf("Sync protocol with master\n"); break;
+	case TS_async_ntp:		TSprintf("NTP sync with unix server\n"); break;
+	case TS_async_time:		TSprintf("Time protocol sync with unix\n"); break;
 	default: break;
 	}
-	printf("Clock Rate in Hertz = %lu\n",TSdata.clock_hz);
-	printf("Sync Rate in Seconds = %lu\n",TSdata.sync_rate);
-	printf("Master communications port = %d\n",TSdata.master_port);
-	printf("Slave communications port = %d\n",TSdata.slave_port);
-	printf("Total events supported = %d\n",TSdata.total_events);
-	printf("Request Time Out = %lu milliseconds\n",TSdata.time_out);
+	TSprintf("Clock Rate in Hertz = %lu\n",TSdata.clock_hz);
+	TSprintf("Sync Rate in Seconds = %lu\n",TSdata.sync_rate);
+	TSprintf("Master communications port = %d\n",TSdata.master_port);
+	TSprintf("Slave communications port = %d\n",TSdata.slave_port);
+	TSprintf("Total events supported = %d\n",TSdata.total_events);
+	TSprintf("Request Time Out = %lu milliseconds\n",TSdata.time_out);
 
 	if(TSdata.UserRequestedType)
-		printf("\nForced to not use the event system\n");
+		TSprintf("\nForced to not use the event system\n");
 
 	if(TSdata.has_direct_time)
-		printf("Event system has time directly available\n");
+		TSprintf("Event system has time directly available\n");
 
 	return 0;
 }
@@ -325,9 +330,9 @@ void TSconfigure(int master, int sync_rate_sec, int clock_rate_hz,
 		TSdata.UserRequestedType = type;
 		break;
 	default:
-		printf("Invalid type parameter <%d> must be:\n",type);
-		printf("  0 = default time system\n");
-		printf("  1 = force no event system\n");
+		TSprintf("Invalid type parameter <%d> must be:\n",type);
+		TSprintf("  0 = default time system\n");
+		TSprintf("  1 = force no event system\n");
 		TSdata.UserRequestedType = 0;
 		break;
 	}
@@ -361,36 +366,42 @@ long TSgetTimeStamp(int event_number,struct timespec* sp)
 		break;
 	case TS_sync_slave:
 	case TS_sync_master:
-		if(event_number==0)
+		switch(event_number)
 		{
-#ifdef USE_GOOD_TIME
-			struct timespec ts;
-			unsigned long ticks;
-
-			TSgetTicks(0,&ticks); /* add in the board time */
-			*sp = TSdata.event_table[TSdata.sync_event];
-
-			/* calculate a time stamp from the tick count */
-			ts.tv_sec = ticks / TSdata.clock_hz;
-			ts.tv_nsec=(ticks-(ts.tv_sec*TSdata.clock_hz))*TSdata.clock_conv;
-
-			sp->tv_sec += ts.tv_sec;
-			sp->tv_nsec += ts.tv_nsec;
-
-			/* adjust seconds if needed */
-			if(sp->tv_nsec >= TS_BILLION)
-			{
-				sp->tv_sec++;
-				sp->tv_nsec -= TS_BILLION;
-			}
-#else
+		case 0:
 			*sp = TSdata.event_table[0]; /* one tick watch dog maintains */
-#endif
+			break;
+		case -1:
+			{
+				struct timespec ts;
+				unsigned long ticks;
+
+				TSgetTicks(0,&ticks); /* add in the board time */
+				*sp = TSdata.event_table[TSdata.sync_event];
+
+				/* calculate a time stamp from the tick count */
+				ts.tv_sec = ticks / TSdata.clock_hz;
+				ts.tv_nsec=(ticks-(ts.tv_sec*TSdata.clock_hz))*
+					TSdata.clock_conv;
+
+				sp->tv_sec += ts.tv_sec;
+				sp->tv_nsec += ts.tv_nsec;
+
+				/* adjust seconds if needed */
+				if(sp->tv_nsec >= TS_BILLION)
+				{
+					sp->tv_sec++;
+					sp->tv_nsec -= TS_BILLION;
+				}
+			}
+			break;
+		default:
+			if(TSdata.state==TS_master_dead)
+				TSgetTime(sp);
+			else
+				*sp = TSdata.event_table[event_number];
+			break;
 		}
-		else if(TSdata.state==TS_master_dead)
-			TSgetTime(sp);
-		else
-			*sp = TSdata.event_table[event_number];
 		break;
 	default:
 		if(event_number==0)
@@ -408,6 +419,7 @@ long TSgetTimeStamp(int event_number,struct timespec* sp)
 long TSinit()
 {
 	SYM_TYPE stype;
+	char tz[100],min_west[20];
 
 	Debug(5,"In TSinit()\n",0);
 
@@ -442,6 +454,10 @@ long TSinit()
 						(char**)&TSdirectTime,&stype)==ERROR)
 			TSdirectTime = TSdirectTimeError;
 	
+		if(symFindByName(sysSymTbl,"_ErDriverInit",
+						(char**)&TSdriverInit,&stype)==ERROR)
+			TSdriverInit = TSdriverInitError;
+	
 		if(symFindByName(sysSymTbl,"_ErGetTime",
 						(char**)&TSgetTime,&stype)==ERROR)
 			TSgetTime = TSgetCurrentTime;
@@ -457,7 +473,7 @@ long TSinit()
 	else
 	{
 		/* inhibit probe and use of the event system */
-		printf("WARNING: drvTS event hardware probe inhibited by user\n");
+		TSprintf("WARNING: drvTS event hardware probe inhibited by user\n");
 		TShaveReceiver = TShaveReceiverError;
 		TSgetTicks = TSgetTicksError;
 		TSregisterEventHandler = TSregisterEventHandlerError;
@@ -529,27 +545,30 @@ long TSinit()
 		/* register the event handler function */
 		if(TSregisterEventHandler(0,TSeventHandler)!=0)
 		{
-			errPrintf(FL,"Failed to register event handler\n");
+			TSprintf("Failed to register event handler\n");
 			return -1;
 		}
 
 		/* register the error handler function */
 		if(TSregisterErrorHandler(0,TSerrorHandler)!=0)
 		{
-			errPrintf(FL,"Failed to register error handler\n");
+			TSprintf("Failed to register error handler\n");
 			return -1;
 		}
 	}
-#ifdef USE_GOOD_TIME
+/*
+	old USE_GOOD_TIME code didn't start soft clock if event system present
+
 	else
 	{
 		Debug(5,"TSinit() - starting soft clock\n",0);
 		TSstartSoftClock();
 		Debug(5,"TSinit() - started soft clock\n",0);
 	}
-#else
+*/
+
+	/* always start the soft clock */
 	if(TSdata.has_direct_time==0) TSstartSoftClock();
-#endif
 
 	/* get time from boot server Unix system */
 	if(TSdata.master_timing_IOC)
@@ -560,14 +579,14 @@ long TSinit()
 			/* this is bad, cannot get time - accessing starts ticking */
 			struct timespec tp;
 			clock_gettime(CLOCK_REALTIME,&tp);
-			errPrintf(FL,"Failed to set clock from Unix server\n");
+			TSprintf("Failed to set clock from Unix server\n");
 		}
 		Debug(5,"TSinit() - tried to get clock from unix\n",0);
 
 		/* start the time stamp info server */
 		if(TSstartStampServer()==ERROR)
 		{
-			errPrintf(FL,"Failed to start stamp server\n");
+			TSprintf("Failed to start stamp server\n");
 			return -1;
 		}
 		Debug(5,"TSinit() - stamp server started \n",0);
@@ -580,7 +599,7 @@ long TSinit()
 			/* start the sync udp server */
 			if(TSstartSyncServer()==ERROR)
 			{
-				errPrintf(FL,"Failed to start sync server\n");
+				TSprintf("Failed to start sync server\n");
 				return -1;
 			}
 			Debug(5,"TSinit() - sync server started  \n",0);
@@ -594,13 +613,13 @@ long TSinit()
 			struct timespec tp;
 			clock_gettime(CLOCK_REALTIME,&tp);
 			/* this should work */
-			errPrintf(FL,"Failed to set time from Unix server\n");
+			TSprintf("Failed to set time from Unix server\n");
 		}
 
 		if( TSsetClockFromMaster()<0 )
 		{
 			/* do nothing here */
-			/* errPrintf(FL,"Could not contact a master timing IOC\n"); */
+			/* TSprintf("Could not contact a master timing IOC\n"); */
 		}
 		else
 			TSdata.state = TS_master_alive;
@@ -610,7 +629,7 @@ long TSinit()
 			/* this task syncs with master or unix */
 			if(TSstartAsyncClient()==ERROR)
 			{
-				errPrintf(FL,"Failed to start async client\n");
+				TSprintf("Failed to start async client\n");
 				return -1;
 			}
 			Debug(5,"TSinit() - async client started  \n",0);
@@ -620,12 +639,43 @@ long TSinit()
 			/* this task sync with master */
 			if(TSstartSyncClient()==ERROR)
 			{
-				errPrintf(FL,"Failed to start sync client\n");
+				TSprintf("Failed to start sync client\n");
 				return -1;
 			}
 			Debug(5,"TSinit() - sync client started  \n",0);
 		}
 	}
+
+	/*
+	This section sets up the vxWorks clock for use with the ansiLib
+	functions.  The TIMEZONE environment variable for vxWorks is only
+	overwritten if it has not been set.  It seems as though the day
+	light saving time does not work (at least following the directions
+	in ansiLib).
+
+	The EPICS environment variable EPICS_TS_MIN_WEST holds the minutes
+	west of GMT (UTC) time.  This variable should be preset by the EPICS
+	administrator for your site.
+	*/
+
+	if(getenv("TIMEZONE")==(char*)NULL)
+	{
+		if(envGetConfigParam(&EPICS_TS_MIN_WEST,sizeof(min_west),min_west)==NULL
+		  || strlen(min_west)==0)
+		{
+			TSprintf("TS initialization: No Time Zone Information\n");
+		}
+		else
+		{
+			sprintf(tz,"TIMEZONE=UTC::%s:040102:100102",min_west);
+			if(putenv(tz)==ERROR)
+			{
+				TSprintf("TS initialization: TIMEZONE putenv failed\n");
+			}
+		}
+	}
+
+	TSdriverInit(); /* Call the user's driver initialization if supplied */
 	return 0;
 }
 
@@ -816,7 +866,7 @@ static long TSgetUnixTime(struct timespec* ts)
 	int soc;
 	char host_addr[BOOT_ADDR_LEN];
 
-	Debug(1,"in TSgetUnixTime()\n",0);
+	Debug(2,"in TSgetUnixTime()\n",0);
 
 	if(envGetConfigParam(&EPICS_TS_NTP_INET,BOOT_ADDR_LEN,host_addr)==NULL ||
 		strlen(host_addr)==0)
@@ -878,7 +928,7 @@ static long TSgetUnixTime(struct timespec* ts)
 			if(bit_pat[i]&timeValue) ts->tv_nsec+=ns_val[i];
 
 		if(MAKE_DEBUG>=2)
-			errPrintf(FL,"got the NTP time %9.9lu.%9.9lu\n",
+			TSprintf("got the NTP time %9.9lu.%9.9lu\n",
 				ts->tv_sec,timeValue);
 	}
 	close(soc);
@@ -917,12 +967,12 @@ static long TSgetMasterTime(struct timespec* tsp)
 
 	if(TSgetData((char*)&stran,sizeof(stran),soc,
 		(struct sockaddr*)&sin,&fs,&tran_time)<0)
-		{ Debug(1,"no reply from master server\n",0); close(soc); return -1; }
+		{ Debug(2,"no reply from master server\n",0); close(soc); return -1; }
 
 	/* check the magic number */
 	if(ntohl(stran.magic)!=(TS_MAGIC))
 	{
-		errPrintf(FL,"TSgetMasterTime: invalid packet received\n");
+		TSprintf("TSgetMasterTime: invalid packet received\n");
 		close(soc);
 		return -1;
 	}
@@ -949,9 +999,9 @@ static long TSgetMasterTime(struct timespec* tsp)
 
 	if(MAKE_DEBUG>=6)
 	{
-		errPrintf(FL,"round trip time: %9.9lu.%9.9lu\n",
+		TSprintf("round trip time: %9.9lu.%9.9lu\n",
 			tran_time.tv_sec,tran_time.tv_nsec);
-		errPrintf(FL,"master time: %9.9lu.%9.9lu\n",
+		TSprintf("master time: %9.9lu.%9.9lu\n",
 			stran.master_time.tv_sec,stran.master_time.tv_nsec);
 	}
 
@@ -980,22 +1030,24 @@ static long TSsetClockFromUnix()
 
 	if(TSgetUnixTime(&tp)!=0) return -1;
 
+	tp.tv_sec-=TS_1900_TO_VXWORKS_EPOCH;
+
 	/* set the vxWorks clock to the correct time */
 	if(clock_settime(CLOCK_REALTIME,&tp)<0)
 		{ Debug(1,"clock_settime failed\n",0); }
 
 	/* adjust time to use the EPICS EPOCH of 1990 */
 	/* this is wrong if leap seconds accounted for */
-	tp.tv_sec -= TS_1900_TO_EPICS_EPOCH;
+	tp.tv_sec -= TS_VXWORKS_TO_EPICS_EPOCH;
 
 	if(MAKE_DEBUG>=9)
-		errPrintf(FL,"set time: %9.9lu.%9.9lu\n", tp.tv_sec,tp.tv_nsec);
+		TSprintf("set time: %9.9lu.%9.9lu\n", tp.tv_sec,tp.tv_nsec);
 
 	/* set the EPICS event time table sync entry (current time) */
 	TSdata.event_table[TSdata.sync_event]=tp;
 
 	if(MAKE_DEBUG>=9)
-		errPrintf(FL,"epics time: %9.9lu.%9.9lu\n",
+		TSprintf("epics time: %9.9lu.%9.9lu\n",
 			TSdata.event_table[TSdata.sync_event].tv_sec,
 			TSdata.event_table[TSdata.sync_event].tv_nsec);
 
@@ -1022,7 +1074,7 @@ static long TSsetClockFromMaster()
 
 	/* adjust time to use the Unix EPOCH of 1900 - not to good */
 	/* making this adjustment is not so good */
-	tp.tv_sec += TS_1900_TO_EPICS_EPOCH;
+	tp.tv_sec += TS_VXWORKS_TO_EPICS_EPOCH;
 	clock_settime(CLOCK_REALTIME,&tp);
 
 	return 0;
@@ -1149,12 +1201,10 @@ static long TSsyncTheTime(struct timespec* cts,
 		TSdata.event_table[TSdata.sync_event]=*ts;
 		if(MAKE_DEBUG>=7)
 		{
-			errPrintf(FL,
-				"Slave not in sync: mine=%9.9lu.%9.9lu!=%lu.%lu=other\n",
+			TSprintf("Slave not in sync: mine=%9.9lu.%9.9lu!=%lu.%lu=other\n",
 				cts->tv_sec, cts->tv_nsec,
 				ts->tv_sec, ts->tv_nsec);
-			errPrintf(FL,
-				"slave diff time: %9.9lu.%9.9lu, tolorance=%lu\n",
+			TSprintf("slave diff time: %9.9lu.%9.9lu, tolorance=%lu\n",
 				diff_time.tv_sec, diff_time.tv_nsec,tol);
 		}
 	}
@@ -1184,7 +1234,7 @@ static void TSsyncServer()
 	int soc;
 
 	if( (soc=TSgetBroadcastSocket(0,&sin)) <0)
-		{ Debug(2,"TSgetBroadcastSocket failed\n",0); return; }
+		{ Debug(1,"TSgetBroadcastSocket failed\n",0); return; }
 
 	sin.sin_port = TSdata.slave_port;
 
@@ -1262,7 +1312,7 @@ static long TSasyncClient()
 	unsigned long nsecs;
 	char host_addr[BOOT_ADDR_LEN];
 
-	Debug(1,"in TSasyncClient()\n",0);
+	Debug(2,"in TSasyncClient()\n",0);
 
 	/* could open two sockets here, one to contact unix, one to find master */
 
@@ -1311,7 +1361,7 @@ static long TSasyncClient()
 			    if(TSgetData((char*)&stran,sizeof(stran),soc_master,
         			&TSdata.master,NULL,&diff_time)<0)
         		{
-					Debug(1,"no reply from master server\n",0);
+					Debug(2,"no reply from master server\n",0);
 					TSdata.state=TS_master_dead;
 					close(soc_master);
 				}
@@ -1331,7 +1381,7 @@ static long TSasyncClient()
 					}
 					else
 					{
-						errPrintf(FL,"TSasyncClient: invalid packet recved\n");
+						TSprintf("TSasyncClient: invalid packet recved\n");
 					}
 					taskDelay(sysClkRateGet()*TSdata.sync_rate);
 				}
@@ -1375,7 +1425,7 @@ static long TSasyncClient()
 			 
 					if(TSgetData((char*)&stran,sizeof(stran),soc_bc,
 						(struct sockaddr*)&sin_bc,&TSdata.master,&diff_time)<0)
-						{ Debug(1,"no reply from master server\n",0); }
+						{ Debug(2,"no reply from master server\n",0); }
 					else
 					{
 						TSdata.state=TS_master_alive;
@@ -1401,7 +1451,7 @@ static long TSasyncClient()
 
 				if(TSgetData((char*)&stran,sizeof(stran),soc_bc,
 						(struct sockaddr*)&sin_bc,&TSdata.master,&diff_time)<0)
-					{ Debug(1,"no reply from master server\n",0); }
+					{ Debug(2,"no reply from master server\n",0); }
 				else
 					TSdata.state=TS_master_alive;
 
@@ -1445,7 +1495,7 @@ static void TSsyncClient()
 			taskDelay(sysClkRateGet()*TS_SECS_SYNC_TRY_MASTER);
 
 	if( (soc=TSgetSocket(TSdata.slave_port,&sin)) <0)
-		{ Debug(2,"TSgetSocket failed\n",0); return; }
+		{ Debug(1,"TSgetSocket failed\n",0); return; }
 
 	while(1)
 	{
@@ -1463,7 +1513,7 @@ static void TSsyncClient()
 
 		if(ntohl(stran.magic)!=TS_MAGIC)
 		{
-			errPrintf(FL,"TSsyncClient: invalid packet received\n");
+			TSprintf("TSsyncClient: invalid packet received\n");
 			continue;
 		}
 
@@ -1474,7 +1524,7 @@ static void TSsyncClient()
 		Debug(6,"Received sync request from master\n",0);
 		if(MAKE_DEBUG>=8)
 		{
-			errPrintf(FL,"time received=%9.9lu.%9.9lu\n",
+			TSprintf("time received=%9.9lu.%9.9lu\n",
 				mast_time.tv_sec,mast_time.tv_nsec);
 		}
 
@@ -1482,7 +1532,7 @@ static void TSsyncClient()
 		if( TSdata.event_table[TSdata.sync_event].tv_sec!=mast_time.tv_sec ||
 			TSdata.event_table[TSdata.sync_event].tv_nsec!=mast_time.tv_nsec)
 		{
-			errPrintf(FL,"sync Slave not in sync: %lu,%lu != %lu,%lu\n",
+			TSprintf("sync Slave not in sync: %lu,%lu != %lu,%lu\n",
 				TSdata.event_table[TSdata.sync_event].tv_sec,
 				TSdata.event_table[TSdata.sync_event].tv_nsec,
 				mast_time.tv_sec, mast_time.tv_nsec);
@@ -1532,7 +1582,7 @@ static void TSstampServer()
 
 		if(ntohl(stran.magic)!=TS_MAGIC)
 		{
-			errPrintf(FL,"TSstampServer(): invalid packet received\n");
+			TSprintf("TSstampServer(): invalid packet received\n");
 			continue;
 		}
 
@@ -1783,8 +1833,8 @@ void TSprintRealTime()
 	struct timespec tp;
 
 	TSgetTime(&tp);
-	printf("real time clock = %lu,%lu\n",tp.tv_sec,tp.tv_nsec);
-	printf("EPICS clock = %lu,%lu\n",
+	TSprintf("real time clock = %lu,%lu\n",tp.tv_sec,tp.tv_nsec);
+	TSprintf("EPICS clock = %lu,%lu\n",
 		TSdata.event_table[TSdata.sync_event].tv_sec,
 		TSdata.event_table[TSdata.sync_event].tv_nsec);
 	return;
@@ -1796,7 +1846,7 @@ void TSprintTimeStamp(int num)
 	struct timespec tp;
 
 	TSgetTimeStamp(num,&tp);
-	printf("event %d occurred: %lu.%lu\n",num,tp.tv_sec,tp.tv_nsec);
+	TSprintf("event %d occurred: %lu.%lu\n",num,tp.tv_sec,tp.tv_nsec);
 	return;
 }
 
@@ -1806,9 +1856,9 @@ void TSprintCurrentTime()
 	struct timespec tp;
 
 	TScurrentTimeStamp(&tp);
-	printf("Current Event System time: %lu.%lu\n",tp.tv_sec,tp.tv_nsec);
+	TSprintf("Current Event System time: %lu.%lu\n",tp.tv_sec,tp.tv_nsec);
 	TSaccurateTimeStamp(&tp);
-	printf("Accurate Event System time: %lu.%lu\n",tp.tv_sec,tp.tv_nsec);
+	TSprintf("Accurate Event System time: %lu.%lu\n",tp.tv_sec,tp.tv_nsec);
 	return;
 }
 
@@ -1819,11 +1869,11 @@ void TSprintUnixTime()
 
 	if(TSgetUnixTime(&ts)!=0)
 	{
-		errPrintf(FL,"Could not get Unix time\n");
+		TSprintf("Could not get Unix time\n");
 		return;
 	}
 
-	printf("boot server time clock = %lu, %lu\n",ts.tv_sec,ts.tv_nsec);
+	TSprintf("boot server time clock = %lu, %lu\n",ts.tv_sec,ts.tv_nsec);
 	return;
 }
 
@@ -1834,11 +1884,11 @@ void TSprintMasterTime()
 
 	if(TSgetMasterTime(&ts)!=0)
 	{
-		errPrintf(FL,"Could not get Unix time\n");
+		TSprintf("Could not get Unix time\n");
 		return;
 	}
 
-	printf("master time clock = %lu, %lu\n",ts.tv_sec,ts.tv_nsec);
+	TSprintf("master time clock = %lu, %lu\n",ts.tv_sec,ts.tv_nsec);
 	return;
 }
 

@@ -63,6 +63,7 @@
 #include	<taskLib.h>
 #include	<vxLib.h>
 #include	<tickLib.h>
+#include	<sysLib.h>
 
 #include	<fast_lock.h>
 #include	<alarm.h>
@@ -84,7 +85,6 @@
 #include        <task_params.h>
 
 /* private routines */
-static void remove_lset_from_stack();
 static void dbBkptCont();
 static long FIND_CONT_NODE();
 
@@ -371,7 +371,7 @@ long dbb(char *record_name)
 
 #ifdef BKPT_DIAG
      printf("   BKPT> Spawning task: %s\n", precord->name);
-#endif BKPT_DIAG
+#endif
     /*
      *  Spawn continuation task
      */
@@ -493,7 +493,6 @@ long dbc(char *record_name)
   struct LS_LIST *pnode;
   struct dbCommon *precord = NULL;
   long status = 0;
-  int taskid;
 
   semTake(bkpt_stack_sem, WAIT_FOREVER);
 
@@ -536,7 +535,6 @@ long dbc(char *record_name)
 long dbs(char *record_name)
 {
   struct LS_LIST *pnode;
-  static struct dbAddr addr; 
   struct dbCommon *precord = NULL;
   long status = 0;
 
@@ -676,7 +674,6 @@ int dbBkpt(struct dbCommon *precord)
 {
   struct LS_LIST *pnode;
   struct EP_LIST *pqe;
-  long nRequest = 1, options = 0;
 
  /*
   *  It is crucial that operations in dbBkpt() execute
@@ -737,7 +734,7 @@ int dbBkpt(struct dbCommon *precord)
 
 #ifdef BKPT_DIAG
         printf("   BKPT> Adding entrypoint %s to queue\n", precord->name);
-#endif BKPT_DIAG
+#endif
 
        /*
         *  Take semaphore, wait on continuation task
@@ -784,7 +781,7 @@ int dbBkpt(struct dbCommon *precord)
 
 #ifdef BKPT_DIAG
      printf("   BKPT> Bkpt detected: %s\n", precord->name);
-#endif BKPT_DIAG
+#endif
   }
 
  /*
@@ -864,7 +861,6 @@ long dbp(char *record_name, int interest_level)
 long dbap(char *record_name)
 {
   struct dbAddr addr;
-  struct LS_LIST *pnode;
   struct dbCommon *precord;
   long status;
 
@@ -900,7 +896,6 @@ long dbstat()
   struct BP_LIST *pbl;
   struct EP_LIST *pqe;
   unsigned long time;
-  int i, j;
 
   semTake(bkpt_stack_sem, WAIT_FOREVER);
 
@@ -920,9 +915,9 @@ long dbstat()
        pqe = (struct EP_LIST *) lstFirst(&pnode->ep_queue); 
        while (pqe != NULL) {
           if (time - pqe->time) {
-             printf("             Entrypoint: %-28.28s  #C: %5.5lu  C/S: %7.1lf\n",
+             printf("             Entrypoint: %-28.28s  #C: %5.5lu  C/S: %7.1f\n",
                  pqe->entrypoint->name, pqe->count,
-                 vxTicksPerSecond*pqe->count/((double)(time-pqe->time)));
+                 vxTicksPerSecond * pqe->count/((double)(time-pqe->time)));
           }
           pqe = (struct EP_LIST *) lstNext((NODE *)pqe);
        }
@@ -992,5 +987,5 @@ int dbreset()
   return(0);
 }
 
-#endif BKPT_DIAG
+#endif
 

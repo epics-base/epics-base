@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.18  1997/08/05 00:47:13  jhill
+ * fixed warnings
+ *
  * Revision 1.17  1997/06/30 22:54:28  jhill
  * use %p with pointers
  *
@@ -494,7 +497,7 @@ caStatus casStrmClient::readNotifyResponse (casChannelI *,
 	}
 	else {
 		errMessage(completionStatus, 
-			"for call back asynch completion");
+			"<= get callback failure detail not passed to client");
 		reply->m_cid = ECA_GETFAIL;
 	}
 

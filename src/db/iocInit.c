@@ -147,7 +147,6 @@ int iocInit()
 
    /*  Start up CA server */
     rsrv_init();
-    db_attach_pvAdapter();
 
     errlogPrintf("iocInit: All initialization complete\n");
     initHooks(initHookAtEnd);

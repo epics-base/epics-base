@@ -1036,6 +1036,12 @@ int epicsShareAPI ca_client_status ( unsigned level )
     return ECA_NORMAL;
 }
 
+int epicsShareAPI ca_context_status ( ca_client_context * pcac, unsigned level )
+{
+    pcac->show ( level );
+    return ECA_NORMAL;
+}
+
 /*
  * ca_current_context ()
  *

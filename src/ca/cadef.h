@@ -929,7 +929,8 @@ epicsShareFunc ca_client_context * epicsShareAPI ca_current_context ();
 epicsShareFunc int epicsShareAPI ca_attach_context ( ca_client_context * context );
 
 
-epicsShareFunc int epicsShareAPI ca_client_status (unsigned level);
+epicsShareFunc int epicsShareAPI ca_client_status ( unsigned level );
+epicsShareFunc int epicsShareAPI ca_context_status ( ca_client_context *, unsigned level );
 
 epicsShareFunc void epicsShareAPI ca_self_test ();
 

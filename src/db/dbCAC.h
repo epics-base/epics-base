@@ -125,7 +125,6 @@ private:
 	dbContextPrivateListOfIO & operator = ( const dbContextPrivateListOfIO & );
 };
 
-#pragma message ( "name change reflecting dbContext indicated?" )
 // allow only one thread at a time to use the cache, but do not hold
 // lock when calling the callback
 class dbContextReadNotifyCache  {

@@ -54,7 +54,6 @@ public:
         epicsGuard < callbackMutex > &,
         epicsGuard < epicsMutex > &,
         const epicsTime & currentTime );
-#pragma message ("too low level?")
     void cancel ();
     void show ( unsigned level ) const;
     double delay () const;

@@ -734,7 +734,6 @@ void tcpiiu::unresponsiveCircuitNotify (
         this->echoRequestPending = true;
         this->sendThreadFlushEvent.signal ();
 
-#pragma message ( "cancel is too low level" )
         this->recvDog.cancel ();
         this->sendDog.cancel ();
         if ( this->connectedList.count() ) {

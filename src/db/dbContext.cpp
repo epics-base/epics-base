@@ -23,8 +23,6 @@
  *	505 665 1831
  */
 
-#pragma message ( "file name needs to change" )
-
 #include <limits.h>
 
 #include "epicsMutex.h"

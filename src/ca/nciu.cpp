@@ -93,7 +93,6 @@ void nciu::destructor ( epicsGuard < epicsMutex > & guard )
     this->~nciu ();
 }
 
-#pragma message ("audit all callback mutex locks to verify that they dont occur at inappropriate times in the main thread?" )
 // called virtually
 void nciu::destroy ( epicsGuard < epicsMutex > & guard )
 {

@@ -34,7 +34,8 @@
  *                              referenced little more than National 
  *                              Instruments and Bob Daly (from ANL) in its
  *                              credits.
- * .02 12-03-91		jrw	changed the setup of the ibLink and niLink structs
+ * .02	12-03-91	jrw	changed the setup of the ibLink and niLink structs
+ * .03	01-21-91	jrw	moved task parameters into task_params.h
  *
  ******************************************************************************
  *
@@ -58,6 +59,7 @@
 #define NIGPIB_IVEC_BASE  100	/* Vectored interrupts (2 used for each link) */
 #define NIGPIB_IRQ_LEVEL  5	/* IRQ level */
 /**************** end of stuff that does not belong here **********************/
+
 
 #include <vxWorks.h>
 #include <types.h>
@@ -104,6 +106,7 @@ struct	bbIbLink	*findBBLink();
 int	ibDebug = 0;		/* Turns on debug messages from this driver */
 int	bbibDebug = 0;		/* Turns on ONLY bitbus related messages */
 int	ibSrqDebug = 0;		/* Turns on ONLY srq related debug messages */
+int	niIrqOneShot = 0;	/* Used for a one shot peek at the DMAC */
 
 static	int	defaultTimeout = 60;	/* in 60ths, for GPIB timeouts */
 
@@ -413,6 +416,30 @@ initGpib()
   return(OK);
 }
 
+static int
+niDumpDmac(link)
+int	link;
+{
+    logMsg("ch0: ccr=%02.2X csr=%02.2X cer=%02.2X mtc=%04.4X mar=%08.8X btc=%04.4X bar=%08.8X\n", 
+	pNiLink[link]->ibregs->ch0.ccr & 0xff,
+	pNiLink[link]->ibregs->ch0.csr & 0xff, 
+	pNiLink[link]->ibregs->ch0.cer & 0xff,
+	pNiLink[link]->ibregs->ch0.mtc & 0xffff,
+	niRdLong(&(pNiLink[link]->ibregs->ch0.mar)),
+	pNiLink[link]->ibregs->ch0.btc & 0xffff,
+	niRdLong(&(pNiLink[link]->ibregs->ch0.bar)));
+
+    logMsg("ch1: ccr=%02.2X csr=%02.2X cer=%02.2X mtc=%04.4X mar=%08.8X btc=%04.4X bar=%08.8X\n", 
+	pNiLink[link]->ibregs->ch1.ccr & 0xff,
+	pNiLink[link]->ibregs->ch1.csr & 0xff, 
+	pNiLink[link]->ibregs->ch1.cer & 0xff,
+	pNiLink[link]->ibregs->ch1.mtc & 0xffff,
+	niRdLong(&(pNiLink[link]->ibregs->ch1.mar)),
+	pNiLink[link]->ibregs->ch1.btc & 0xffff,
+	niRdLong(&(pNiLink[link]->ibregs->ch1.bar)));
+
+    return(OK);
+}
 /******************************************************************************
  *
  * Interrupt handler for all normal DMAC interrupts.
@@ -432,12 +459,17 @@ static int
 niIrq(link)
 int	link;
 {
-
   if (ibDebug)
     logMsg("GPIB interrupt from link %d\n", link);
 
   if (NIGPIB_IRQ_LEVEL == 4)          /* gotta ack ourselves on HK boards */
     sysBusIntAck(NIGPIB_IRQ_LEVEL);
+
+  if (niIrqOneShot)
+  {
+    niDumpDmac(link);
+    niIrqOneShot--;
+  }
 
   /* Check the DMA error status bits first */
   if (pNiLink[link]->ibregs->ch0.csr & D_ERR || pNiLink[link]->ibregs->ch1.csr & D_ERR)
@@ -448,9 +480,11 @@ int	link;
     pNiLink[link]->r_isr2 |= pNiLink[link]->ibregs->isr2;
     pNiLink[link]->r_isr1 |= pNiLink[link]->ibregs->isr1;
 
-    logMsg("  ch0.csr = %02.2X, ch1.csr = %02.2X\n", pNiLink[link]->ibregs->ch0.csr, pNiLink[link]->ibregs->ch1.csr);
-    logMsg("  ch0.cer = %02.2X, ch1.cer = %02.2X\n", pNiLink[link]->ibregs->ch0.cer, pNiLink[link]->ibregs->ch1.cer);
-    logMsg("  r_isr1 = %02.2X, r_isr2 = %02.2X\n", pNiLink[link]->r_isr1, pNiLink[link]->r_isr2);
+    niDumpDmac(link);
+
+    logMsg("r_isr1=%02.2X r_isr2=%02.2X\n", 
+		pNiLink[link]->r_isr1 & 0xff, 
+		pNiLink[link]->r_isr2 & 0xff);
 
     pNiLink[link]->ibregs->ch0.csr = ~D_PCLT;	/* Keep srq int status */
     pNiLink[link]->ibregs->ch1.csr = D_CLEAR;
@@ -486,7 +520,6 @@ int	link;
     {
       if (ibDebug) 
 	logMsg("GPIB DMA completion interrupt from link %d\n", link);
-/* BUG -- how to deal with the r_isr values???????????????? */
       /* read the status regs to clear any int status from the TLC */
       /* changed these to = from |= because they never got cleared! */
       pNiLink[link]->r_isr2 = pNiLink[link]->ibregs->isr2;
@@ -520,23 +553,17 @@ int	link;
 /******************************************************************************
  *
  * An interrupt handler that catches the DMAC error interrupts.  These should
- * never occurr.
+ * never occur.
  *
  ******************************************************************************/
 static int
 niIrqError(link)
 int	link;
 {
-  /*errMsg()*/
   logMsg("GPIB error interrupt generated on link %d\n", link);
-  logMsg(" ch0 csr %02.2X cer %02.2X ccr %02.2X\n", 
-	pNiLink[link]->ibregs->ch0.csr & 0xff, 
-	pNiLink[link]->ibregs->ch0.cer & 0xff, 
-	pNiLink[link]->ibregs->ch0.ccr);
-  logMsg("ch1 csr %02.2X cer %02.2X ccr %02.2X\n", 
-	pNiLink[link]->ibregs->ch1.csr & 0xff,
-	pNiLink[link]->ibregs->ch1.cer & 0xff,
-	pNiLink[link]->ibregs->ch1.ccr);
+
+  niDumpDmac(link);
+
   pNiLink[link]->ibregs->ch0.ccr = D_SAB;
   pNiLink[link]->ibregs->ch1.ccr = D_SAB;
   return(0);
@@ -1006,6 +1033,16 @@ int             val;
   *ptr = val >> 16;
   *(ptr + 1) = val & 0xffff;
 }
+ int
+niRdLong(loc)
+unsigned short	*loc;
+{
+  register unsigned short *ptr = loc;
+  int	val;
+
+  val = (unsigned long) (*ptr << 16) + (unsigned long) (*(ptr+1) & 0xffff);
+  return(val);
+}
 
 /******************************************************************************
  *
@@ -1150,7 +1187,7 @@ struct	ibLink *plink;
   }
 
   /* Start a task to manage the link */
-  if (taskSpawn("gpibLink", 46, VX_FP_TASK|VX_STDIO, 2000, ibLinkTask, plink) == ERROR)
+  if (taskSpawn(GPIBLINK_NAME, GPIBLINK_PRI, GPIBLINK_OPT, GPIBLINK_STACK, ibLinkTask, plink) == ERROR)
   {
     printf("ibLinkStart(): failed to start link task for link %d\n", plink->linkId);
     return(ERROR);

@@ -29,10 +29,12 @@
  *
  * Modification Log:
  * -----------------
- * .01  08-29-96	nda    Created from calcoutRecord.c for EPICS R3.13 
- * .02  09-13-96	nda    Original release for EPICS R3.13beta3
- * .03  11-05-98	nda    fixed a tricky bug found by Tim Mooney
- *                             concerning callbacks to check link status
+ * .01  08-29-96  nda  Created from calcoutRecord.c for EPICS R3.13 
+ * .02  09-13-96  nda  Original release for EPICS R3.13beta3
+ * .03  07-14-99  nda  Removed watchdog callback to checkLinksCallback
+ *                     in init_record because if iocInit doesn't
+ *                     finish in time, dbScanLock finds a NULL
+ *                             
  * 
  *
  */
@@ -44,26 +46,28 @@
 #include        <stdarg.h>
 #include        <stdio.h>
 #include        <string.h>
+#include        <math.h>
 
 #include        <tickLib.h>
 #include        <wdLib.h>
 #include        <sysLib.h>
 
-#include	<alarm.h>
-#include	<dbDefs.h>
-#include	<dbAccess.h>
-#include	<dbEvent.h>
-#include	<dbScan.h>
-#include	<errMdef.h>
-#include	<recSup.h>
-#include	<special.h>
-#include        <callback.h>
-#include        <taskwd.h>
+#include	"alarm.h"
+#include	"dbDefs.h"
+#include	"dbAccess.h"
+#include	"dbEvent.h"
+#include	"dbScan.h"
+#include	"errMdef.h"
+#include	"recSup.h"
+#include	"special.h"
+#include        "callback.h"
+#include        "taskwd.h"
+#include        "postfix.h"
 
 #define GEN_SIZE_OFFSET
-#include	<calcoutRecord.h>
+#include	"calcoutRecord.h"
 #undef  GEN_SIZE_OFFSET
-#include        <menuIvoa.h>
+#include        "menuIvoa.h"
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
@@ -173,7 +177,6 @@ static long init_record(pcalc,pass)
             /* Don't InitConstantLink the .OUT link */
             if(i<ARG_MAX) { 
                 recGblInitConstantLink(plink,DBF_DOUBLE,pvalue);
-                db_post_events(pcalc,pvalue,DBE_VALUE);
             }
             *plinkValid = calcoutINAV_CON;
         }
@@ -186,7 +189,6 @@ static long init_record(pcalc,pass)
             *plinkValid = calcoutINAV_EXT_NC;
              prpvt->caLinkStat = CA_LINKS_NOT_OK;
         }
-        db_post_events(pcalc,plinkValid,DBE_VALUE);
     }
 
     pcalc->clcv=postfix(pcalc->calc,pcalc->rpcl,&error_number);
@@ -194,14 +196,12 @@ static long init_record(pcalc,pass)
 		recGblRecordError(S_db_badField,(void *)pcalc,
 			"calcout: init_record: Illegal CALC field");
     }
-    db_post_events(pcalc,&pcalc->clcv,DBE_VALUE);
 
     pcalc->oclv=postfix(pcalc->ocal,pcalc->orpc,&error_number);
     if(pcalc->oclv){
 		recGblRecordError(S_db_badField,(void *)pcalc,
 			"calcout: init_record: Illegal OCAL field");
     }
-    db_post_events(pcalc,&pcalc->oclv,DBE_VALUE);
 
     prpvt = (struct rpvtStruct *)pcalc->rpvt;
     callbackSetCallback(doOutputCallback, &prpvt->doOutCb);
@@ -214,11 +214,15 @@ static long init_record(pcalc,pass)
     prpvt->wd_id_1 = wdCreate();
     prpvt->wd_id_1_LOCK = 0;
 
+/* Can't do this. Sometimes initialization is not done after 1 second
+   and then dbScanLock will complain !!!
+
     if(prpvt->caLinkStat == CA_LINKS_NOT_OK) {
         wdStart(prpvt->wd_id_1, 60, (FUNCPTR)callbackRequest,
                 (int)(&prpvt->checkLinkCb));
         prpvt->wd_id_1_LOCK = 1;
     }
+*/
 
     return(0);
 }
@@ -711,17 +715,10 @@ static void checkLinksCallback(pcallback)
     callbackGetUser(pcalc, pcallback);
     prpvt = (struct rpvtStruct *)pcalc->rpvt;
     
-    if (!interruptAccept) {
-        /* Can't call dbScanLock yet.  Schedule another CALLBACK */
-        prpvt->wd_id_1_LOCK = 1;  /* make sure */
-        wdStart(prpvt->wd_id_1, 30, (FUNCPTR)callbackRequest,
-        (int)(&prpvt->checkLinkCb));
-    } else {
-        dbScanLock((struct dbCommon *)pcalc);
-        prpvt->wd_id_1_LOCK = 0;
-        checkLinks(pcalc);
-        dbScanUnlock((struct dbCommon *)pcalc);
-    }
+    dbScanLock((struct dbCommon *)pcalc);
+    prpvt->wd_id_1_LOCK = 0;
+    checkLinks(pcalc);
+    dbScanUnlock((struct dbCommon *)pcalc);
 
 }
 

@@ -4,19 +4,6 @@ include $(EPICS)/config/CONFIG_BASE
 
 USR_CFLAGS = -fshared-data -fvolatile -mnobitfield -traditional
 
-
-<<<<<<< Makefile.Vx
-SRCS = \
-	../module_types.c ../drvXy010.c ../drvAb.c ../drvBb902.c \
-	../drvBb910.c ../drvCompuSm.c ../drvDvx.c ../drvMz8310.c \
-	../drvOms.c ../drvStc.c ../drvTime.c ../drvVmi4100.c \
-	../drvXy210.c ../drvXy220.c ../drvXy240.c \
-	../drvXy566.c ../drvAt5Vxi.c ../drvHp1404a.c ../drvEpvxi.c \
-	../drvEpvxiMsg.c ../drvBitBus.c ../drvGpib.c \
-	../drvMsg.c ../drvBB232.c ../drvHpe1368a.c ../drvHpe1445a.c \
-	../drvKscV215.c ../drvComet.c ../drvJgvtr1.c ../drvFp.c \
-	../drvMvme162.c ../drvFpm.c ../drvCaenV265.c
-=======
 SRCS.c = \
 	../module_types.c\
 	../drvXy010.c\
@@ -50,19 +37,8 @@ SRCS.c = \
 	../drvFp.c\
 	../drvMvme162.c\
 	../drvFpm.c
->>>>>>> 1.14
 
 OBJS = \
-<<<<<<< Makefile.Vx
-	module_types.o drvXy010.o drvAb.o drvBb902.o \
-	drvBb910.o drvCompuSm.o drvDvx.o drvMz8310.o \
-	drvOms.o drvStc.o drvTime.o drvVmi4100.o \
-	drvXy210.o drvXy220.o drvXy240.o drvXy566.o drvAt5Vxi.o \
-	drvHp1404a.o drvEpvxi.o drvEpvxiMsg.o drvGpib.o \
-	drvMsg.o drvBB232.o drvHpe1368a.o drvHpe1445a.o \
-	drvKscV215.o drvComet.o drvJgvtr1.o drvFp.o \
-	drvMvme162.o drvFpm.o drvCaenV265.o
-=======
 	module_types.o\
 	drvXy010.o\
 	drvAb.o\
@@ -95,7 +71,6 @@ OBJS = \
 	drvFp.o\
 	drvMvme162.o\
 	drvFpm.o
->>>>>>> 1.14
 
 PROD = drvSup
 
@@ -105,3 +80,6 @@ $(PROD): $(OBJS)
 	$(RM) $@
 	$(LINK.c) $@ $(OBJS) $(LDLIBS)
 
+	
+#	../drvCaenV265.c\
+#	drvCaenV265.o\

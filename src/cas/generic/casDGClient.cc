@@ -162,7 +162,7 @@ caStatus casDGClient::searchAction()
         }
     }
 
-	if ( this->getCAS().getDebugLevel() > 2u ) {
+	if ( this->getCAS().getDebugLevel() > 6u ) {
 		char pHostName[64u];
 		this->hostName ( pHostName, sizeof ( pHostName ) );
 		printf ( "\"%s\" is searching for \"%s\"\n", 
@@ -795,7 +795,7 @@ caStatus casDGClient::processMsg ()
 
                 this->ctx.setMsg ( msgTmp, rawMP + hdrSize );
 
-		        if ( this->getCAS().getDebugLevel() > 2u ) {
+		        if ( this->getCAS().getDebugLevel() > 5u ) {
                     char pHostName[64u];
                     this->lastRecvAddr.stringConvert ( pHostName, sizeof ( pHostName ) );
 			        caServerI::dumpMsg ( pHostName, "?", 

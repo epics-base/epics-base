@@ -22,8 +22,7 @@
  * traditional C
  */
 #ifdef __cplusplus
-extern "C" {
-#define CAC_ANSI_FUNC_PROTO
+#   define CAC_ANSI_FUNC_PROTO
 #endif
 
 #ifdef __STDC__ 
@@ -44,6 +43,10 @@ extern "C" {
 #include "caerr.h"
 #include "db_access.h"
 #include "caeventmask.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef void    *chid;
 typedef chid    chanId; /* for when the structures field name is "chid" */

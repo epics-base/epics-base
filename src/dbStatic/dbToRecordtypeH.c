@@ -117,10 +117,6 @@ int main(int argc,char **argv)
 	errPrintf(0,__FILE__,__LINE__,"Error opening %s\n",outFilename);
 	exit(-1);
     }
-    fprintf(outFile,"#ifdef epicsExportSharedSymbols\n");
-    fprintf(outFile,"#   define INCrecH_epicsExportSharedSymbols\n");
-    fprintf(outFile,"#   undef epicsExportSharedSymbols\n");
-    fprintf(outFile,"#endif\n");
 
     fprintf(outFile,"#include \"ellLib.h\"\n");
     fprintf(outFile,"#include \"epicsMutex.h\"\n");
@@ -128,10 +124,6 @@ int main(int argc,char **argv)
     fprintf(outFile,"#include \"epicsTime.h\"\n");
     fprintf(outFile,"#include \"epicsTypes.h\"\n");
 
-    fprintf(outFile,"#ifdef INCrecH_epicsExportSharedSymbols\n");
-    fprintf(outFile,"#   define epicsExportSharedSymbols\n");
-    fprintf(outFile,"#endif\n");
-    fprintf(outFile,"#include \"shareLib.h\"\n");
     pdbMenu = (dbMenu *)ellFirst(&pdbbase->menuList);
     while(pdbMenu) {
 	fprintf(outFile,"\n#ifndef INC%sH\n",pdbMenu->name);
@@ -148,11 +140,8 @@ int main(int argc,char **argv)
     }
     pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
     while(pdbRecordType) {
-	fprintf(outFile,"#ifndef INC%sH\n",pdbRecordType->name);
-	fprintf(outFile,"#define INC%sH\n",pdbRecordType->name);
-    fprintf(outFile,"#ifdef epicsExportSharedSymbols\n");
-    fprintf(outFile,"epicsShareExtern struct rset %sRSET;\n",pdbRecordType->name);
-    fprintf(outFile,"#endif\n");
+        fprintf(outFile,"#ifndef INC%sH\n",pdbRecordType->name);
+        fprintf(outFile,"#define INC%sH\n",pdbRecordType->name);
 	fprintf(outFile,"typedef struct %s",pdbRecordType->name);
 	if(!isdbCommonRecord) fprintf(outFile,"Record");
 	fprintf(outFile," {\n");
@@ -245,9 +234,10 @@ int main(int argc,char **argv)
 	fprintf(outFile,"#ifdef __cplusplus\n");
 	fprintf(outFile,"extern \"C\" {\n");
 	fprintf(outFile,"#endif\n");
+        fprintf(outFile,"#include <epicsExport.h>\n");
 	pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
 	while(pdbRecordType) {
-		fprintf(outFile,"epicsShareFunc int %sRecordSizeOffset(dbRecordType *pdbRecordType)\n{\n",
+		fprintf(outFile,"static int %sRecordSizeOffset(dbRecordType *pdbRecordType)\n{\n",
 		pdbRecordType->name);
 	    fprintf(outFile,"    %sRecord *prec = 0;\n",pdbRecordType->name);
 	    for(i=0; i<pdbRecordType->no_fields; i++) {
@@ -268,6 +258,8 @@ int main(int argc,char **argv)
 	    fprintf(outFile,"    pdbRecordType->rec_size = sizeof(*prec);\n");
 	    fprintf(outFile,"    return(0);\n");
 	    fprintf(outFile,"}\n");
+	    fprintf(outFile,"epicsExportRegistrar(%sRecordSizeOffset);\n",
+		pdbRecordType->name);
 	    pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node);
 	}
 	fprintf(outFile,"#ifdef __cplusplus\n");

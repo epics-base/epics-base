@@ -20,12 +20,12 @@
 
 typedef long (*DRVSUPFUN) ();	/* ptr to driver support function*/
 
-struct drvet {	/* driver entry table */
+typedef struct drvet {	/* driver entry table */
 	long		number;		/*number of support routines*/
 	DRVSUPFUN	report;		/*print report*/
 	DRVSUPFUN	init;		/*init support*/
 	/*other functions are device dependent*/
-	};
+}drvet;
 #define DRVETNUMBER ( (sizeof(struct drvet) -sizeof(long))/sizeof(DRVSUPFUN) )
 
 #define S_drv_noDrvSup   (M_drvSup| 1) /*SDR_DRVSUP: Driver support missing*/

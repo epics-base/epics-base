@@ -42,7 +42,7 @@ typedef struct rset {	/* record support entry table */
 	RECSUPFUN	get_graphic_double;
 	RECSUPFUN	get_control_double;
 	RECSUPFUN	get_alarm_double;
-}rest;
+}rset;
 
 #define RSETNUMBER ( (sizeof(struct rset) - sizeof(long))/sizeof(RECSUPFUN) )
 

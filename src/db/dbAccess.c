@@ -261,64 +261,20 @@ long dbScanPassive(struct dbCommon *pfrom, struct dbCommon *pto)
     long status;
 	
     /* if not passive just return success */
-    if (pto->scan != 0) return(0);
+    if(pto->scan != 0) return(0);
 
-    if (pfrom && pfrom->ppn) {
-	PUTNOTIFY *ppn = pfrom->ppn;
-
-	if (pto->ppn) { /*already being used. Abandon request*/
-	    ppn->status = S_db_Blocked;
-	    dbNotifyCompletion(ppn);
-	} else {
-	    ppn->nwaiting++;
-	    pto->ppn = pfrom->ppn;
-	    /*If already active must redo*/
-	    if(pto->pact) ppn->rescan = TRUE;
-	}
-    }
+    if(pfrom && pfrom->ppn) dbNotifyAdd(pfrom,pto);
     status = dbProcess(pto);
-    if (pfrom && pfrom->ppn) {
-	PUTNOTIFY *ppn = pfrom->ppn;
-
-	if (!pto->pact) {
-	    pto->ppn = NULL;
-	} else { /*add to list of records for which to wait*/
-	    pto->ppnn = ppn->list;
-	    ppn->list = pto;
-	}
-    }
     return(status);
 }
-
+
 /*KLUDGE: Following needed so that dbPutLink to PROC field works correctly*/
 long dbScanLink(struct dbCommon *pfrom, struct dbCommon *pto)
 {
     long status;
 
-    if(pfrom && pfrom->ppn) {
-        PUTNOTIFY *ppn = pfrom->ppn;
-
-        if(pto->ppn) { /*already being used. Abandon request*/
-            ppn->status = S_db_Blocked;
-            dbNotifyCompletion(ppn);
-        } else {
-            ppn->nwaiting++;
-            pto->ppn = pfrom->ppn;
-            /*If already active must redo*/
-            if(pto->pact) ppn->rescan = TRUE;
-        }
-    }
+    if(pfrom && pfrom->ppn) dbNotifyAdd(pfrom,pto);
     status = dbProcess(pto);
-    if(pfrom && pfrom->ppn) {
-        PUTNOTIFY *ppn = pfrom->ppn;
-
-        if(!pto->pact) {
-            pto->ppn = NULL;
-        } else { /*add to list of records for which to wait*/
-            pto->ppnn = ppn->list;
-            ppn->list = pto;
-        }
-    }
     return(status);
 }
 

@@ -109,7 +109,6 @@ void recGblRecordError(long status,void *pdbc,char *pcaller_name)
 		strcat(buffer,"  ");
 	}
 	if(pcaller_name) {
-		strcat(buffer,"error detected in routine: ");
 		strcat(buffer,pcaller_name);
 	}
 	errMessage(status,buffer);

@@ -195,7 +195,7 @@ int main(int argc,char **argv)
 	strcpy(pfilename,recordtypeName);
 	strcat(pfilename,"Record");
     }
-    strcat(pfilename,".ascii");
+    strcat(pfilename,".db");
     fp = fopen(pfilename,"w");
     if(!fp) {
 	fprintf(stderr,"Error opening file %s\n",pfilename);
@@ -248,7 +248,7 @@ gen_rectype:
 	indFldDes=-1;
     } else {
 	fprintf(fp,"recordtype(%s) {\n",recordtypeName);
-	fprintf(fp,"\tinclude \"dbCommon.ascii\" \n");
+	fprintf(fp,"\tinclude \"dbCommon.db\" \n");
 	/*Skip fields in dbCommon*/
 	for(indFldDes=0; indFldDes< precTypDes->no_fields; indFldDes++) {
 	    if(strcmp(precTypDes->papFldDes[indFldDes]->fldname,"FLNK")==0) break;

@@ -1,6 +1,6 @@
 #RULES.Db
 
-include $(CONFIG)/RULES_ARCHS
+include $(CONFIG)/RULES
 ifdef T_A
 
 MAKEBPT		= $(EPICS_BASE_HOST_BIN)/makeBpt$(HOSTEXE)

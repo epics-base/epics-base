@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.10  2001/01/31 13:33:42  mrk
+ * osiTime=>epicsTime
+ *
  * Revision 1.9  2000/10/13 01:17:52  jhill
  * made gdd param to copy const
  *
@@ -98,12 +101,12 @@ inline int gdd::isLocalDataFormat(void) const { return !(flags&GDD_NET_MASK); }
 inline int gdd::isNetworkDataFormat(void) const
 	{ return !isLocalDataFormat() || aitLocalNetworkDataFormatSame; }
 
-inline void gdd::markConstant(void)		{ flags|=GDD_CONSTANT_MASK; }
-inline void gdd::markFlat(void)			{ flags|=GDD_FLAT_MASK; }
-inline void gdd::markManaged(void)		{ flags|=GDD_MANAGED_MASK; }
-inline void gdd::markUnmanaged(void)	{ flags&=~GDD_MANAGED_MASK; }
-inline void gdd::markLocalDataFormat(void)		{ flags&=~GDD_NET_MASK; }
-inline void gdd::markNotLocalDataFormat(void)	{ flags|=GDD_NET_MASK; }
+inline void gdd::markConstant(void)		{ flags|=GDD_CONSTANT_MASK; } // X aCC 818
+inline void gdd::markFlat(void)			{ flags|=GDD_FLAT_MASK; } // X aCC 818
+inline void gdd::markManaged(void)		{ flags|=GDD_MANAGED_MASK; } // X aCC 818
+inline void gdd::markUnmanaged(void)	{ flags&=~GDD_MANAGED_MASK; } // X aCC 818
+inline void gdd::markLocalDataFormat(void)		{ flags&=~GDD_NET_MASK; } // X aCC 818
+inline void gdd::markNotLocalDataFormat(void)	{ flags|=GDD_NET_MASK; } // X aCC 818
 
 inline void gdd::getTimeStamp(struct timespec* const ts) const { time_stamp.get(*ts); }
 inline void gdd::setTimeStamp(const struct timespec* const ts) { time_stamp=*ts; }
@@ -150,7 +153,7 @@ inline gddStatus gdd::noReferencing(void)
 		gddAutoPrint("gdd::noReferencing()",gddErrorNotAllowed);
 		rc=gddErrorNotAllowed;
 	}
-	else			flags|=GDD_NOREF_MASK;
+	else			flags|=GDD_NOREF_MASK; // X aCC 818
 	return rc;
 }
 inline gddStatus gdd::reference(void) const
@@ -162,7 +165,7 @@ inline gddStatus gdd::reference(void) const
 		gddAutoPrint("gdd::reference()",gddErrorNotAllowed);
 		rc=gddErrorNotAllowed;
 	}
-	else			ref_cnt++;
+	else			ref_cnt++; // X aCC 818
 
 	if(ref_cnt>((1u<<(sizeof(ref_cnt)*CHAR_BIT))-2u))
 	{
@@ -183,7 +186,7 @@ inline gddStatus gdd::unreference(void) const
 		gddAutoPrint("gdd::unreference()",gddErrorUnderflow);
 		rc=gddErrorUnderflow;
 	}
-	else if(--ref_cnt<=0u)
+	else if(--ref_cnt<=0u) // X aCC 818
 	{
 		if(isManaged())
 		{
@@ -430,10 +433,10 @@ inline void gdd::get(aitInt8* d) const
 	if(primitiveType()==aitEnumString && dim==0)
 	{
 		aitString* str = (aitString*)dataAddress();
-		strcpy((char*)d,str->string());
+		strcpy((char*)d,str->string()); // X aCC 392
 	}
 	else if(primitiveType()==aitEnumFixedString && dim==0)
-		strcpy((char*)d,data.FString->fixed_string);
+		strcpy((char*)d,data.FString->fixed_string); // X aCC 392
 	else
 		aitConvert(aitEnumInt8,d,primitiveType(),dataPointer(),
 			getDataSizeElements());

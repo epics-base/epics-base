@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.4  1997/05/19 19:23:51  jbk
+ * Fixed bug in new/delete operators for gddBounds1D, 2D, and 3D
+ *
  * Revision 1.3  1997/04/23 17:13:07  jhill
  * fixed export of symbols from WIN32 DLL
  *
@@ -126,7 +129,7 @@ private:
 	gddBounds b[1];
 	gdd_NEWDEL_DATA // required for using generic new/remove
 };
-inline gddBounds* gddBounds1D::boundArray(void) { return (gddBounds*)b; }
+inline gddBounds* gddBounds1D::boundArray(void) { return b; }
 
 class epicsShareClass gddBounds2D
 {
@@ -138,7 +141,7 @@ private:
 	gddBounds b[2];
 	gdd_NEWDEL_DATA // required for using generic new/remove
 };
-inline gddBounds* gddBounds2D::boundArray(void) { return (gddBounds*)b; }
+inline gddBounds* gddBounds2D::boundArray(void) { return b; }
 
 class epicsShareClass gddBounds3D
 {
@@ -150,7 +153,7 @@ private:
 	gddBounds b[3];
 	gdd_NEWDEL_DATA // required for using generic new/remove
 };
-inline gddBounds* gddBounds3D::boundArray(void) { return (gddBounds*)b; }
+inline gddBounds* gddBounds3D::boundArray(void) { return b; }
 
 #endif
 

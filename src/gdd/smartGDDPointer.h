@@ -171,7 +171,7 @@ inline const gdd & smartConstGDDPointer::operator * () const
 	return *this->pConstValue;
 }
 
-inline bool smartConstGDDPointer::operator ! () const
+inline bool smartConstGDDPointer::operator ! () const // X aCC 361
 {
     if (this->pConstValue) {
         return false;
@@ -181,7 +181,7 @@ inline bool smartConstGDDPointer::operator ! () const
     }
 }
 
-inline bool smartConstGDDPointer::valid () const
+inline bool smartConstGDDPointer::valid () const // X aCC 361
 {
     if ( this->pConstValue ) {
         return true;

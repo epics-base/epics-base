@@ -7,6 +7,9 @@
  *
  * $Id$
  * $Log$
+ * Revision 1.2  1997/03/24 12:41:49  jbk
+ * fixed bug in gddDestructor constructor.
+ *
  * Revision 1.1  1997/03/21 01:56:12  jbk
  * *** empty log message ***
  *
@@ -25,7 +28,7 @@ inline aitIndex gddBounds::first(void) const		{ return start; }
 
 inline gddDestructor::gddDestructor(void) { ref_cnt=0; arg=NULL; }
 inline gddDestructor::gddDestructor(void* usr_arg) { ref_cnt=0; arg=usr_arg; }
-inline void gddDestructor::reference(void)      { ref_cnt++; }
+inline void gddDestructor::reference(void)      { ref_cnt++; } // X aCC 818
 inline int gddDestructor::refCount(void) const  { return ref_cnt; }
 
 #endif

@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.15  2001/10/20 00:11:51  jhill
+ * remove use of std lib for now
+ *
  * Revision 1.14  2001/09/05 00:50:36  jhill
  * removed GNU compiler ifdef
  *
@@ -152,15 +155,15 @@ inline void aitFromNetOrder32(aitUint32* dest,aitUint32* src)
 inline void aitToNetOrder64(aitUint64* dest, aitUint64* src)
 {
 	aitUint32 ait_temp_var_;
-	ait_temp_var_=(aitUint32)htonl(src[1]);
-	dest[1]=(aitUint32)htonl(src[0]);
+	ait_temp_var_=(aitUint32)htonl(src[1]); // X aCC 392
+	dest[1]=(aitUint32)htonl(src[0]); // X aCC 392
 	dest[0]=ait_temp_var_;
 }
 inline void aitFromNetOrder64(aitUint64* dest, aitUint64* src)
 {
 	aitUint32 ait_temp_var_;
-	ait_temp_var_=(aitUint32)ntohl(src[1]);
-	dest[1]=(aitUint32)ntohl(src[0]);
+	ait_temp_var_=(aitUint32)ntohl(src[1]); // X aCC 392
+	dest[1]=(aitUint32)ntohl(src[0]); // X aCC 392
 	dest[0]=ait_temp_var_;
 }
 

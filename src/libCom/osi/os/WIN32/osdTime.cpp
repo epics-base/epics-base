@@ -69,7 +69,6 @@ private:
 };
 
 static currentTime * pCurrentTime = 0;
-static bool osdTimeInitSuccess = false;
 static epicsThreadOnceId osdTimeOnceFlag = EPICS_THREAD_ONCE_INIT;
 static const LONGLONG FILE_TIME_TICKS_PER_SEC = 10000000;
 static const LONGLONG EPICS_TIME_TICKS_PER_SEC = 1000000000;
@@ -80,25 +79,29 @@ static const LONGLONG ET_TICKS_PER_FT_TICK =
 //
 static void osdTimeInit ( void * )
 {
-    pCurrentTime = new currentTime ();
+    static bool osdTimeInitSuccess = false;
 
-    // set here to avoid recursion problems
-    osdTimeInitSuccess = true;
+    // avoid recursion problems
+    if ( ! osdTimeInitSuccess ) {
+        osdTimeInitSuccess = true;
 
-    pCurrentTime->startPLL ();
+        pCurrentTime = new currentTime ();
 
-    // self test FILETIME conversion only if
-    // its a debug build
-#   if defined ( _DEBUG )
-    {
-        epicsTime ts0 = epicsTime::getCurrent ();
-        FILETIME ft = ts0;
-        epicsTime ts1 = ft;
-        double diff = fabs ( ts0 - ts1 );
-        // we expect to loose 100 nS of precision when moving to and from win32 filetime
-        assert ( diff <= 100e-9 );
+        pCurrentTime->startPLL ();
+
+        // self test FILETIME conversion only if
+        // its a debug build
+#       if defined ( _DEBUG )
+        {
+            epicsTime ts0 = epicsTime::getCurrent ();
+            FILETIME ft = ts0;
+            epicsTime ts1 = ft;
+            double diff = fabs ( ts0 - ts1 );
+            // we expect to loose 100 nS of precision when moving to and from win32 filetime
+            assert ( diff <= 100e-9 );
+        }
+#       endif
     }
-#   endif
 }
 
 //
@@ -106,12 +109,9 @@ static void osdTimeInit ( void * )
 //
 extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetCurrent ( epicsTimeStamp *pDest )
 {
-    // double test avoids recursion problems
-    if ( ! osdTimeInitSuccess ) {
-        epicsThreadOnce ( & osdTimeOnceFlag, osdTimeInit, 0 );
-        if ( ! ( osdTimeInitSuccess && pCurrentTime ) ) {
-            return epicsTimeERROR;
-        }
+    epicsThreadOnce ( & osdTimeOnceFlag, osdTimeInit, 0 );
+    if ( ! pCurrentTime ) {
+        return epicsTimeERROR;
     }
 
     pCurrentTime->getCurrentTime ( *pDest );

@@ -62,7 +62,7 @@ static char *os_depenhSccsId = "$Id$";
 #if defined(iocCore)
 #  	define POST_IO_EV semBinaryGive(io_done_sem)
 #	define VXTASKIDNONE 0
-#  	define LOCK semMutexTakeAssert(client_lock); 
+#  	define LOCK semMutexMustTake(client_lock); 
 #  	define UNLOCK semMutexGive(client_lock);
 #	define EVENTLOCKTEST (lock_tid==threadGetIdSelf())
 #	define VXTHISTASKID threadGetIdSelf();

@@ -111,7 +111,6 @@ int iocInit()
     }
     initHooks(initHookAtBeginning);
     coreRelease();
-    iocLogInit(); initHooks(initHookAfterLogInit);
     /* After this point, further calls to iocInit() are disallowed.  */
     initialized = TRUE;
 
@@ -265,7 +264,7 @@ LOCAL void initDatabase(void)
 	    if(!(precord->name[0])) continue;
 	    precord->rset = prset;
 	    precord->rdes = pdbRecordType;
-            precord->mlok = semMutexCreate();
+            precord->mlok = semMutexMustCreate();
 	    ellInit(&(precord->mlis));
 
            /* Reset the process active field */

@@ -220,7 +220,7 @@ LOCAL int terminate_one_client(struct client *client)
 	}
 
 	while(TRUE){
-		semMutexTakeAssert(client->addrqLock);
+		semMutexMustTake(client->addrqLock);
 		pciu = (struct channel_in_use *) ellGet(&client->addrq);
 		semMutexGive(client->addrqLock);
 		if(!pciu){
@@ -240,7 +240,7 @@ LOCAL int terminate_one_client(struct client *client)
 			/*
 			 * AS state change could be using this list
 			 */
-			semMutexTakeAssert(client->eventqLock);
+			semMutexMustTake(client->eventqLock);
 			pevext = (struct event_ext *) ellGet(&pciu->eventq);
 			semMutexGive(client->eventqLock);
 			if(!pevext){
@@ -440,7 +440,7 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 		bytes_reserved = 0;
 		bytes_reserved += sizeof(struct client);
 
-		semMutexTakeAssert(client->addrqLock);
+		semMutexMustTake(client->addrqLock);
 		pciu = (struct channel_in_use *) client->addrq.node.next;
 		while (pciu){
 			bytes_reserved += sizeof(struct channel_in_use);
@@ -457,7 +457,7 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 		printf(	"\t%ld bytes allocated\n", bytes_reserved);
 
 
-		semMutexTakeAssert(client->addrqLock);
+		semMutexMustTake(client->addrqLock);
 		pciu = (struct channel_in_use *) client->addrq.node.next;
 		i=0;
 		while (pciu){

@@ -247,7 +247,7 @@ void dbNotifyCancel(PUTNOTIFY *ppn)
     dbScanLock(precord);
     notifyCancel(ppn);
     if(ppn->callbackState == callbackActive) {
-	ppn->waitForCallback = (void *)semBinaryCreate(semFull);
+	ppn->waitForCallback = (void *)semBinaryMustCreate(semFull);
 	ppn->callbackState = callbackCanceled;
 	dbScanUnlock(precord);
 	if(semBinaryTakeTimeout((semId)ppn->waitForCallback,10.0)!=semTakeOK) {

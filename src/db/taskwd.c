@@ -79,9 +79,9 @@ static void freeList(struct task_list *pt);
 
 void taskwdInit()
 {
-    lock = semMutexCreate();
-    anylock = semMutexCreate();
-    alloclock = semMutexCreate();
+    lock = semMutexMustCreate();
+    anylock = semMutexMustCreate();
+    alloclock = semMutexMustCreate();
     ellInit(&list);
     ellInit(&anylist);
     taskwdid = threadCreate(
@@ -93,7 +93,7 @@ void taskwdInsert(threadId tid,TASKWDFUNCPRR callback,void *arg)
 {
     struct task_list *pt;
 
-    semMutexTakeAssert(lock);
+    semMutexMustTake(lock);
     pt = allocList();
     ellAdd(&list,(void *)pt);
     pt->suspended = FALSE;
@@ -107,7 +107,7 @@ void taskwdAnyInsert(void *userpvt,TASKWDANYFUNCPRR callback,void *arg)
 {
     struct task_list *pt;
 
-    semMutexTakeAssert(anylock);
+    semMutexMustTake(anylock);
     pt = allocList();
     ellAdd(&anylist,(void *)pt);
     pt->id.userpvt = userpvt;
@@ -120,7 +120,7 @@ void taskwdRemove(threadId tid)
 {
     struct task_list *pt;
 
-    semMutexTakeAssert(lock);
+    semMutexMustTake(lock);
     pt = (struct task_list *)ellFirst(&list);
     while(pt!=NULL) {
 	if (tid == pt->id.tid) {
@@ -139,7 +139,7 @@ void taskwdAnyRemove(void *userpvt)
 {
     struct task_list *pt;
 
-    semMutexTakeAssert(anylock);
+    semMutexMustTake(anylock);
     pt = (struct task_list *)ellFirst(&anylist);
     while(pt!=NULL) {
 	if (userpvt == pt->id.userpvt) {
@@ -160,7 +160,7 @@ static void taskwdTask(void)
 
     while(TRUE) {
 	if(taskwdOn) {
-	    semMutexTakeAssert(lock);
+	    semMutexMustTake(lock);
 	    pt = (struct task_list *)ellFirst(&list);
 	    while(pt) {
 		next = (struct task_list *)ellNext((void *)pt);
@@ -209,7 +209,7 @@ static struct task_list *allocList(void)
 {
     struct task_list *pt;
 
-    semMutexTakeAssert(alloclock);
+    semMutexMustTake(alloclock);
     if(freeHead) {
 	pt = (struct task_list *)freeHead;
 	freeHead = freeHead->next;
@@ -225,7 +225,7 @@ static struct task_list *allocList(void)
 static void freeList(struct task_list *pt)
 {
     
-    semMutexTakeAssert(alloclock);
+    semMutexMustTake(alloclock);
     ((struct freeList *)pt)->next  = freeHead;
     freeHead = (struct freeList *)pt;
     semMutexGive(alloclock);

@@ -87,7 +87,7 @@ epicsShareFunc void epicsShareAPI
     pfl->head = NULL;
     pfl->mallochead = NULL;
     pfl->nBlocksAvailable = 0u;
-    pfl->lock = semMutexCreate();
+    pfl->lock = semMutexMustCreate();
     *ppvt = (void *)pfl;
     return;
 }
@@ -110,7 +110,7 @@ epicsShareFunc void * epicsShareAPI freeListMalloc(void *pvt)
     allocMem	*pallocmem;
     int		i;
 
-    semMutexTake(pfl->lock);
+    semMutexMustTake(pfl->lock);
     ptemp = pfl->head;
     if(ptemp==0) {
 	ptemp = (void *)malloc(pfl->nmalloc*pfl->size);
@@ -149,7 +149,7 @@ epicsShareFunc void epicsShareAPI freeListFree(void *pvt,void*pmem)
     FREELISTPVT	*pfl = pvt;
     void	**ppnext;
 
-    semMutexTake(pfl->lock);
+    semMutexMustTake(pfl->lock);
     ppnext = pmem;
     *ppnext = pfl->head;
     pfl->head = pmem;

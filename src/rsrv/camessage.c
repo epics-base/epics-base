@@ -782,7 +782,7 @@ struct client  	*client
 		size-1);
 	pMalloc[size-1]='\0';
 
-	semMutexTakeAssert(client->addrqLock);
+	semMutexMustTake(client->addrqLock);
 	pName = client->pHostName;
 	client->pHostName = pMalloc;
 	if(pName){
@@ -866,7 +866,7 @@ struct client  	*client
 		size-1);
 	pMalloc[size-1]='\0';
 
-	semMutexTakeAssert(client->addrqLock);
+	semMutexMustTake(client->addrqLock);
 	pName = client->pUserName;
 	client->pUserName = pMalloc;
 	if(pName){
@@ -967,7 +967,7 @@ unsigned	cid
 		return NULL;
 	}
 
-	semMutexTakeAssert(client->addrqLock);
+	semMutexMustTake(client->addrqLock);
 	ellAdd(&client->addrq, &pchannel->node);
 	semMutexGive(client->addrqLock);
 
@@ -1047,7 +1047,7 @@ LOCAL void casAccessRightsCB(ASCLIENTPVT ascpvt, asClientStatus type)
 		/*
 		 * Update all event call backs 
 		 */
-		semMutexTakeAssert(pclient->eventqLock);
+		semMutexMustTake(pclient->eventqLock);
 		for (pevext = (struct event_ext *) ellFirst(&pciu->eventq);
 		     pevext;
 		     pevext = (struct event_ext *) ellNext(&pevext->node)){
@@ -1124,7 +1124,7 @@ struct client  *client
 		}
 	}
 	else {
-		semMutexTakeAssert(prsrv_cast_client->addrqLock);
+		semMutexMustTake(prsrv_cast_client->addrqLock);
 		/*
 		 * clients which dont claim their 
 		 * channel in use block prior to
@@ -1174,7 +1174,7 @@ struct client  *client
 			&pciu->node);
 		semMutexGive(prsrv_cast_client->addrqLock);
 
-		semMutexTakeAssert(prsrv_cast_client->addrqLock);
+		semMutexMustTake(prsrv_cast_client->addrqLock);
 		pciu->client = client;
 		ellAdd(&client->addrq, &pciu->node);
 		semMutexGive(prsrv_cast_client->addrqLock);
@@ -1287,7 +1287,7 @@ LOCAL void write_notify_call_back(PUTNOTIFY *ppn)
 	 * the database (or indirectly blocking
 	 * one client on another client).
 	 */
-	semMutexTakeAssert(pclient->putNotifyLock);
+	semMutexMustTake(pclient->putNotifyLock);
 	ellAdd(&pclient->putNotifyQue, &pciu->pPutNotify->node);
 	semMutexGive(pclient->putNotifyLock);
 
@@ -1321,7 +1321,7 @@ void write_notify_reply(void *pArg)
 		 * the database (or indirectly blocking
 		 * one client on another client).
 		 */
-		semMutexTakeAssert(pClient->putNotifyLock);
+		semMutexMustTake(pClient->putNotifyLock);
 		ppnb = (RSRVPUTNOTIFY *)ellGet(&pClient->putNotifyQue);
 		semMutexGive(pClient->putNotifyLock);
 		/*
@@ -1567,7 +1567,7 @@ struct client  *client
 	pevext->size = dbr_size_n(mp->m_dataType, mp->m_count);
 	pevext->mask = pmo->m_info.m_mask;
 
-	semMutexTakeAssert(client->eventqLock);
+	semMutexMustTake(client->eventqLock);
 	ellAdd(	&pciu->eventq, &pevext->node);
 	semMutexGive(client->eventqLock);
 
@@ -1670,7 +1670,7 @@ struct client  *client
      }
      
      while (TRUE){
-         semMutexTakeAssert(client->eventqLock);
+         semMutexMustTake(client->eventqLock);
          pevext = (struct event_ext *) ellGet(&pciu->eventq);
          semMutexGive(client->eventqLock);
          
@@ -1712,7 +1712,7 @@ struct client  *client
      END_MSG(client);
      SEND_UNLOCK(client);
      
-     semMutexTakeAssert(client->addrqLock);
+     semMutexMustTake(client->addrqLock);
      ellDelete(&client->addrq, &pciu->node);
      semMutexGive(client->addrqLock);
      
@@ -1772,7 +1772,7 @@ LOCAL int event_cancel_reply(
       * search events on this channel for a match
       * (there are usually very few monitors per channel)
       */
-     semMutexTakeAssert(client->eventqLock);
+     semMutexMustTake(client->eventqLock);
      for (pevext = (struct event_ext *) ellFirst(&pciu->eventq);
             pevext; pevext = (struct event_ext *) ellNext(&pevext->node)){
          

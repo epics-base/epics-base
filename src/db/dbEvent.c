@@ -106,13 +106,13 @@ LOCAL int db_post_single_event_private(struct event_block *event);
 )
 
 #define LOCKEVQUE(EV_QUE)\
-semMutexTakeAssert((EV_QUE)->writelock);
+semMutexMustTake((EV_QUE)->writelock);
 
 #define UNLOCKEVQUE(EV_QUE)\
 semMutexGive((EV_QUE)->writelock);
 
 #define LOCKREC(RECPTR)\
-semMutexTakeAssert((RECPTR)->mlok);
+semMutexMustTake((RECPTR)->mlok);
 
 #define UNLOCKREC(RECPTR)\
 semMutexGive((RECPTR)->mlok);
@@ -120,7 +120,7 @@ semMutexGive((RECPTR)->mlok);
 LOCAL void *dbevEventUserFreeList;
 LOCAL void *dbevEventQueueFreeList;
 
-static char *EVENT_PEND_NAME = "event task";
+static char *EVENT_PEND_NAME = "eventTask";
 
 
 /*
@@ -189,15 +189,27 @@ struct event_user *db_init_events(void)
 			sizeof(struct event_que),8);
 	}
 
-  	evUser = (struct event_user *) 
-		freeListCalloc(dbevEventUserFreeList);
-  	if(!evUser)
-        return NULL;
-
+  	evUser = (struct event_user *) freeListCalloc(dbevEventUserFreeList);
+  	if(!evUser) return NULL;
   	evUser->firstque.evUser = evUser;
         evUser->firstque.writelock = semMutexCreate();
+        if(!evUser->firstque.writelock) {
+            freeListFree(dbevEventUserFreeList, evUser);
+            return NULL;
+        }
         evUser->ppendsem = semBinaryCreate(semEmpty);
+        if(!evUser->ppendsem){
+            semMutexDestroy(evUser->firstque.writelock);
+            freeListFree(dbevEventUserFreeList, evUser);
+            return NULL;
+        }
         evUser->pflush_sem = semBinaryCreate(semEmpty);
+        if(!evUser->pflush_sem){
+            semBinaryDestroy(evUser->ppendsem);
+            semMutexDestroy(evUser->firstque.writelock);
+            freeListFree(dbevEventUserFreeList, evUser);
+            return NULL;
+        }
         evUser->flowCtrlMode = FALSE;
         return evUser;
 }
@@ -761,7 +773,7 @@ void event_task( struct event_user *evUser)
 	taskwdInsert(threadGetIdSelf(),NULL,NULL);
 
   	do{
-		semBinaryTakeAssert(evUser->ppendsem);
+		semBinaryMustTake(evUser->ppendsem);
 
 		/*
 		 * check to see if the caller has offloaded

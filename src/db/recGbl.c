@@ -53,6 +53,7 @@
 #include "dbBase.h"
 #include "dbAccess.h"
 #include "dbEvent.h"
+#include "errlog.h"
 #include "dbConvert.h"
 #include "dbScan.h"
 #include "devSup.h"
@@ -309,14 +310,16 @@ void recGblFwdLink(void *precord)
 void recGblGetTimeStamp(void* prec)
 {
     struct dbCommon* pr = (struct dbCommon*)prec;
+    int status;
  
     if(pr->tsel.type!=CONSTANT)
     {
         dbGetLink(&(pr->tsel), DBR_SHORT,&(pr->tse),0,0);
-        clockGetEventTime((int)pr->tse,&pr->time);
+        status = clockGetEventTime((int)pr->tse,&pr->time);
     }
     else
-        clockGetEventTime((int)pr->tse,&pr->time);
+        status = clockGetEventTime((int)pr->tse,&pr->time);
+    if(status) errlogPrintf("%s recGblGetTimeStamp failed\n",pr->name);
 }
 
 

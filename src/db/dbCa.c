@@ -66,7 +66,7 @@ static void addAction(caLink *pca, short link_action)
 { 
     int callAdd = FALSE;
 
-    semMutexTakeAssert(caListSem);
+    semMutexMustTake(caListSem);
     if(pca->link_action==0) callAdd = TRUE;
     pca->link_action |= link_action;
     if(callAdd) ellAdd(&caList,&pca->node);
@@ -77,8 +77,8 @@ static void addAction(caLink *pca, short link_action)
 void dbCaLinkInit(void)
 {
 	ellInit(&caList);
-	caListSem = semMutexCreate();
-	caWakeupSem = semBinaryCreate(semEmpty);
+	caListSem = semMutexMustCreate();
+	caWakeupSem = semBinaryMustCreate(semEmpty);
 	if(!caListSem || !caWakeupSem) {
 		printf("dbCaLinkInit: semBCreate failed\n");
 		return;
@@ -95,10 +95,7 @@ void dbCaAddLink( struct link *plink)
 	pca->plink = plink;
 	plink->type = CA_LINK;
 	plink->value.pv_link.pvt = pca;
-	if((pca->lock = semMutexCreate()) == 0){
-		printf("dbCaAddLink: semMutexCreate failed\n");
-		threadSuspend(threadGetIdSelf());
-	}
+	pca->lock = semMutexMustCreate();
 	addAction(pca,CA_CONNECT);
 	return;
 }
@@ -108,7 +105,7 @@ void dbCaRemoveLink( struct link *plink)
     caLink	*pca = (caLink *)plink->value.pv_link.pvt;
 
     if(!pca) return;
-    semMutexTakeAssert(pca->lock);
+    semMutexMustTake(pca->lock);
     pca->plink = 0;
     plink->value.pv_link.pvt = 0;
     semMutexGive(pca->lock);
@@ -129,7 +126,7 @@ long dbCaGetLink(struct link *plink,short dbrType, char *pdest,
 		plink->value.pv_link.precord);
 	return(-1);
     }
-    semMutexTakeAssert(pca->lock);
+    semMutexMustTake(pca->lock);
     if(!pca->chid || ca_state(pca->chid) != cs_conn) {
 	pca->sevr = INVALID_ALARM;
 	goto done;
@@ -200,7 +197,7 @@ long dbCaPutLink(struct link *plink,short dbrType,
 	return(-1);
     }
     /* put the new value in */
-    semMutexTakeAssert(pca->lock);
+    semMutexMustTake(pca->lock);
     if(!pca->chid || ca_state(pca->chid) != cs_conn) {
 	semMutexGive(pca->lock);
 	return(-1);
@@ -273,7 +270,7 @@ long dbCaGetAttributes(struct link *plink,
     pcaAttributes = dbCalloc(1,sizeof(caAttributes));
     pcaAttributes->callback = callback;
     pcaAttributes->usrPvt = usrPvt;
-    semMutexTakeAssert(pca->lock);
+    semMutexMustTake(pca->lock);
     pca->pcaAttributes = pcaAttributes;
     link_action |= CA_GET_ATTRIBUTES;
     semMutexGive(pca->lock);
@@ -436,7 +433,7 @@ static void eventCallback(struct event_handler_args arg)
 		epicsPrintf("eventCallback why was arg.usr NULL\n");
 		return;
 	}
-	semMutexTakeAssert(pca->lock);
+	semMutexMustTake(pca->lock);
 	plink = pca->plink;
 	if(!plink) goto done;
 	precord = (dbCommon *)plink->value.pv_link.precord;
@@ -499,7 +496,7 @@ const struct dbr_ctrl_double  *dbr;
 		epicsPrintf("getAttribEventCallback why was arg.usr NULL\n");
 		return;
 	}
-	semMutexTakeAssert(pca->lock);
+	semMutexMustTake(pca->lock);
 	plink = pca->plink;
 	if(!plink) goto done;
 	if(!arg.dbr) {
@@ -526,7 +523,7 @@ static void accessRightsCallback(struct access_rights_handler_args arg)
 		return;
 	}
 	if(ca_state(pca->chid) != cs_conn) return;/*connectionCallback will handle*/
-	semMutexTakeAssert(pca->lock);
+	semMutexMustTake(pca->lock);
 	if(ca_read_access(arg.chid) || ca_write_access(arg.chid)) goto done;
 	plink = pca->plink;
 	if(plink) {
@@ -551,7 +548,7 @@ static void connectionCallback(struct connection_handler_args arg)
 
     pca = ca_puser(arg.chid);
     if(!pca) return;
-    semMutexTakeAssert(pca->lock);
+    semMutexMustTake(pca->lock);
     plink = pca->plink;
     if(!plink) goto done;
     if(ca_state(arg.chid) != cs_conn){
@@ -613,9 +610,9 @@ void dbCaTask()
     while(!interruptAccept) threadSleep(.1);
     /* channel access event loop */
     while (TRUE){
-	semBinaryTakeAssert(caWakeupSem);
+	semBinaryMustTake(caWakeupSem);
 	while(TRUE) { /* process all requests in caList*/
-	    semMutexTakeAssert(caListSem);
+	    semMutexMustTake(caListSem);
 	    if((pca = (caLink *)ellFirst(&caList))){/*Take off list head*/
 		ellDelete(&caList,&pca->node);
 		link_action = pca->link_action;

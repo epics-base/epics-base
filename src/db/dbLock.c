@@ -86,9 +86,8 @@ STATIC int	lockListInitialized = FALSE;
 
 STATIC ELLLIST lockList;
 STATIC semId	globalLock;
-STATIC semId	globalWait;
 STATIC unsigned long id = 0;
-STATIC int changingLockSets = FALSE;
+STATIC volatile int changingLockSets = FALSE;
 
 typedef struct lockSet {
 	ELLNODE		node;
@@ -110,12 +109,7 @@ typedef struct lockRecord {
 STATIC void initLockList(void)
 {
     ellInit(&lockList);
-    if((globalLock = semMutexCreate())==0) {
-        cantProceed("initLockList failed calling semMutexCreate\n");
-    }
-    if((globalWait = semBinaryCreate(semEmpty))==0) {
-        cantProceed("initLockList failed calling semBinaryCreate\n");
-    }
+    globalLock = semMutexMustCreate();
     lockListInitialized = TRUE;
 }
 
@@ -131,9 +125,7 @@ STATIC lockSet * allocLock(lockRecord *plockRecord)
     plockSet->id = id;
     ellAdd(&plockSet->recordList,&plockRecord->node);
     ellAdd(&lockList,&plockSet->node);
-    if((plockSet->lock = semMutexCreate())==0) {
-        cantProceed("allocLock calling semMutexCreate\n");
-    }
+    plockSet->lock = semMutexMustCreate();
     return(plockSet);
 }
 
@@ -147,7 +139,7 @@ STATIC void lockAddRecord(lockSet *plockSet,lockRecord *pnew)
 void dbLockSetGblLock(void)
 {
     if(!lockListInitialized) initLockList();
-    semMutexTakeAssert(globalLock);
+    semMutexMustTake(globalLock);
     changingLockSets = TRUE;
 }
 
@@ -155,7 +147,6 @@ void dbLockSetGblUnlock(void)
 {
     threadLockContextSwitch();
     changingLockSets = FALSE;
-    semBinaryFlush(globalWait);
     threadUnlockContextSwitch();
     semMutexGive(globalLock);
     return;
@@ -205,10 +196,7 @@ void dbScanLock(dbCommon *precord)
 	threadSuspend(threadGetIdSelf());
     }
     while(TRUE) {
-	if(changingLockSets) {
-	    semBinaryTakeAssert(globalWait);
-	    continue;
-	}
+        while(changingLockSets) threadSleep(.05);
 	status = semMutexTake(plockRecord->plockSet->lock);
 	/*semMutexTake fails if semMutexDestroy was called while active*/
 	if(status==semTakeOK) break;

@@ -208,7 +208,7 @@ epicsShareFunc void epicsShareAPI errlogAddListener(
 
     errlogInit(0);
     plistenerNode = pvtCalloc(1,sizeof(listenerNode));
-    semMutexTake(pvtData.listenerLock);
+    semMutexMustTake(pvtData.listenerLock);
     plistenerNode->listener = listener;
     plistenerNode->pPrivate = pPrivate;
     ellAdd(&pvtData.listenerList,&plistenerNode->node);
@@ -221,7 +221,7 @@ epicsShareFunc void epicsShareAPI errlogRemoveListener(
     listenerNode *plistenerNode;
 
     errlogInit(0);
-    semMutexTake(pvtData.listenerLock);
+    semMutexMustTake(pvtData.listenerLock);
     plistenerNode = (listenerNode *)ellFirst(&pvtData.listenerList);
     while(plistenerNode) {
 	if(plistenerNode->listener==listener) {
@@ -304,9 +304,9 @@ epicsShareFunc int epicsShareAPI errlogInit(int bufsize)
     ellInit(&pvtData.listenerList);
     ellInit(&pvtData.msgQueue);
     pvtData.toConsole = TRUE;
-    pvtData.errlogTaskWaitForWork = semBinaryCreate(semEmpty);
-    pvtData.listenerLock = semMutexCreate();
-    pvtData.msgQueueLock = semMutexCreate();
+    pvtData.errlogTaskWaitForWork = semBinaryMustCreate(semEmpty);
+    pvtData.listenerLock = semMutexMustCreate();
+    pvtData.msgQueueLock = semMutexMustCreate();
     /*Allow an extra MAX_MESSAGE_SIZE for extra margain of safety*/
     pbuffer = pvtCalloc(pvtData.buffersize+MAX_MESSAGE_SIZE,sizeof(char));
     pvtData.pbuffer = pbuffer;
@@ -325,9 +325,9 @@ LOCAL void errlogTask(void)
     while(TRUE) {
 	char	*pmessage;
 
-	semBinaryTake(pvtData.errlogTaskWaitForWork);
+	semBinaryMustTake(pvtData.errlogTaskWaitForWork);
 	while((pmessage = msgbufGetSend())) {
-	    semMutexTake(pvtData.listenerLock);
+	    semMutexMustTake(pvtData.listenerLock);
 	    if(pvtData.toConsole) printf("%s",pmessage);
 	    plistenerNode = (listenerNode *)ellFirst(&pvtData.listenerList);
 	    while(plistenerNode) {
@@ -376,7 +376,7 @@ LOCAL char *msgbufGetFree()
 {
     msgNode	*pnextSend;
 
-    semMutexTake(pvtData.msgQueueLock);
+    semMutexMustTake(pvtData.msgQueueLock);
     if((ellCount(&pvtData.msgQueue) == 0) && pvtData.missedMessages) {
 	int	nchar;
 
@@ -434,7 +434,7 @@ LOCAL char * msgbufGetSend()
 {
     msgNode	*pnextSend;
 
-    semMutexTake(pvtData.msgQueueLock);
+    semMutexMustTake(pvtData.msgQueueLock);
     pnextSend = (msgNode *)ellFirst(&pvtData.msgQueue);
     semMutexGive(pvtData.msgQueueLock);
     if(!pnextSend) return(0);
@@ -445,7 +445,7 @@ LOCAL void msgbufFreeSend()
 {
     msgNode	*pnextSend;
 
-    semMutexTake(pvtData.msgQueueLock);
+    semMutexMustTake(pvtData.msgQueueLock);
     pnextSend = (msgNode *)ellFirst(&pvtData.msgQueue);
     if(!pnextSend) {
 	printf("errlog: msgbufFreeSend logic error\n");

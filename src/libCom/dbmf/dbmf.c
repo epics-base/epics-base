@@ -55,7 +55,7 @@ int epicsShareAPI dbmfInit(size_t size, int chunkItems)
     }
     pdbmfPvt = &dbmfPvt;
     ellInit(&pdbmfPvt->chunkList);
-    pdbmfPvt->sem = semMutexCreate();
+    pdbmfPvt->sem = semMutexMustCreate();
     /*allign to at least a double*/
     pdbmfPvt->size = size + size%sizeof(double);
     pdbmfPvt->allocSize = pdbmfPvt->size + sizeof(itemHeader);
@@ -78,7 +78,7 @@ void* epicsShareAPI dbmfMalloc(size_t size)
     itemHeader *pitemHeader;
 
     if(!pdbmfPvt) dbmfInit(DBMF_SIZE,DBMF_INITIAL_ITEMS);
-    semMutexTake(pdbmfPvt->sem);
+    semMutexMustTake(pdbmfPvt->sem);
     pfreeList = &pdbmfPvt->freeList;
     if(*pfreeList == NULL) {
         int         i;
@@ -135,7 +135,7 @@ void epicsShareAPI dbmfFree(void* mem)
 	return;
     }
     pmem -= sizeof(itemHeader);
-    semMutexTake(pdbmfPvt->sem);
+    semMutexMustTake(pdbmfPvt->sem);
     pitemHeader = (itemHeader *)pmem;
     if(!pitemHeader->pchunkNode) {
 	if(dbmfDebug) printf("dbmfGree: mem %p\n",pmem);
@@ -176,7 +176,7 @@ int epicsShareAPI dbmfShow(int level)
     if(level>1) {
 	void **pnextFree;;
 
-        semMutexTake(pdbmfPvt->sem);
+        semMutexMustTake(pdbmfPvt->sem);
 	pnextFree = (void**)pdbmfPvt->freeList;
 	while(pnextFree) {
 	    printf("%p\n",*pnextFree);
@@ -196,7 +196,7 @@ void  epicsShareAPI dbmfFreeChunks(void)
 	printf("dbmfFreeChunks called but dbmfInit never called\n");
 	return;
     }
-    semMutexTake(pdbmfPvt->sem);
+    semMutexMustTake(pdbmfPvt->sem);
     if(pdbmfPvt->nFree
     != (pdbmfPvt->chunkItems * ellCount(&pdbmfPvt->chunkList))) {
 	printf("dbmfFinish: not all free\n");

@@ -95,7 +95,7 @@ static void callbackTask(int *ppriority)
     ringOverflow[priority] = FALSE;
     while(TRUE) {
 	/* wait for somebody to wake us up */
-        semBinaryTakeAssert(callbackSem[priority]);
+        semBinaryMustTake(callbackSem[priority]);
         while(TRUE) {
 	    nget = ringGet(callbackQ[priority],
                 (void *)&pcallback,sizeof(pcallback));
@@ -116,8 +116,7 @@ static void start(int ind)
     unsigned int priority;
     char taskName[20];
 
-    if((callbackSem[ind] = semBinaryCreate(semEmpty))==0)
-	errMessage(0,"semBinaryCreate failed while starting a callback task\n");
+    callbackSem[ind] = semBinaryMustCreate(semEmpty);
     if(ind==0) priority = threadPriorityScanLow - 1;
     else if(ind==1) priority = threadPriorityScanLow +4;
     else if(ind==2) priority = threadPriorityScanHigh + 1;

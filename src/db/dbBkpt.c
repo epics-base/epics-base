@@ -14,6 +14,9 @@ of this distribution.
 /* Modification Log:
  * -----------------
  *  $Log$
+ *  Revision 1.10  1999/09/13 18:26:17  mrk
+ *  changes for 3.14
+ *
  *  Revision 1.9  1998/01/20 16:19:48  mrk
  *  Fix include statements
  *
@@ -302,7 +305,7 @@ long dbb(char *record_name)
     /* initialize list and semaphore */
      bkpt_stack_sem = semMutexCreate();
      if (bkpt_stack_sem == 0) {
-        printf("   BKPT> Out of memory\n");
+        printf("   BKPT> semMutexCreate failed\n");
         dbScanUnlock(precord);
         return(1);
      }
@@ -310,7 +313,7 @@ long dbb(char *record_name)
      lset_stack_not_empty = 1;
   }
 
-  semMutexTakeAssert(bkpt_stack_sem);
+  semMutexMustTake(bkpt_stack_sem);
 
   FIND_LOCKSET(precord, pnode);
 
@@ -332,7 +335,7 @@ long dbb(char *record_name)
      ellInit(&pnode->ep_queue);
 
     /* create execution semaphore */
-     pnode->ex_sem = semBinaryCreate(semEmpty);
+     pnode->ex_sem = semBinaryMustCreate(semEmpty);
      if (pnode->ex_sem == NULL) {
         printf("   BKPT> Out of memory\n");
         dbScanUnlock(precord);
@@ -423,7 +426,7 @@ long dbd(char *record_name)
 
   dbScanLock(precord);
 
-  semMutexTakeAssert(bkpt_stack_sem);
+  semMutexMustTake(bkpt_stack_sem);
 
   FIND_LOCKSET(precord, pnode);
 
@@ -490,7 +493,7 @@ long dbc(char *record_name)
   struct dbCommon *precord = NULL;
   long status = 0;
 
-  semMutexTakeAssert(bkpt_stack_sem);
+  semMutexMustTake(bkpt_stack_sem);
 
   status = FIND_CONT_NODE(record_name, &pnode, &precord);
   if (status) {
@@ -529,7 +532,7 @@ long dbs(char *record_name)
   struct dbCommon *precord = NULL;
   long status = 0;
 
-  semMutexTakeAssert(bkpt_stack_sem);
+  semMutexMustTake(bkpt_stack_sem);
 
   status = FIND_CONT_NODE(record_name, &pnode, &precord);
   if (status) {
@@ -565,7 +568,7 @@ static void dbBkptCont(struct dbCommon *precord)
   *  Reset breakpoint, process record, and
   *    reset bkpt field in record
   */
-  semMutexTakeAssert(bkpt_stack_sem);
+  semMutexMustTake(bkpt_stack_sem);
 
   FIND_LOCKSET(precord, pnode);
 
@@ -584,10 +587,10 @@ static void dbBkptCont(struct dbCommon *precord)
     semMutexGive(bkpt_stack_sem);
 
    /* Wait to run */
-    semBinaryTakeAssert(pnode->ex_sem);
+    semBinaryMustTake(pnode->ex_sem);
 
    /* Bkpt stack must still be stable ! */
-    semMutexTakeAssert(bkpt_stack_sem);
+    semMutexMustTake(bkpt_stack_sem);
 
     pqe = (struct EP_LIST *) ellFirst(&pnode->ep_queue);
 
@@ -673,7 +676,7 @@ int dbBkpt(struct dbCommon *precord)
   *	goodness breakpoint checking is turned off during
   *	normal operation.
   */
-  semMutexTakeAssert(bkpt_stack_sem);
+  semMutexMustTake(bkpt_stack_sem);
   FIND_LOCKSET(precord, pnode);
   semMutexGive(bkpt_stack_sem);
 
@@ -732,7 +735,7 @@ int dbBkpt(struct dbCommon *precord)
        /*
         *  Take semaphore, wait on continuation task
         */
-        semMutexTakeAssert(bkpt_stack_sem);
+        semMutexMustTake(bkpt_stack_sem);
 
        /* Add entry to queue */
         ellAdd(&pnode->ep_queue, (ELLNODE *)pqe);
@@ -803,7 +806,7 @@ int dbBkpt(struct dbCommon *precord)
       dbScanUnlock(precord);
       threadSuspend(pnode->taskid);
       dbScanLock(precord);
-      semMutexTakeAssert(bkpt_stack_sem);
+      semMutexMustTake(bkpt_stack_sem);
    }
    return(0);
 }
@@ -834,7 +837,7 @@ long dbp(char *record_name, int interest_level)
   struct dbCommon *precord;
   int status;
 
-  semMutexTakeAssert(bkpt_stack_sem);
+  semMutexMustTake(bkpt_stack_sem);
 
  /* find pnode and precord pointers */
   status = FIND_CONT_NODE(record_name, &pnode, &precord);
@@ -890,7 +893,7 @@ long dbstat()
   struct EP_LIST *pqe;
   unsigned long time;
 
-  semMutexTakeAssert(bkpt_stack_sem);
+  semMutexMustTake(bkpt_stack_sem);
 
   time = clockGetCurrentTick();
 

@@ -237,7 +237,7 @@ GLBLTYPE void 			*rsrvEventFreeList;
 #define MAX_BLOCK_THRESHOLD 100000
 GLBLTYPE int	casBelowMaxBlockThresh;
 
-#define SEND_LOCK(CLIENT) semMutexTakeAssert((CLIENT)->lock)
+#define SEND_LOCK(CLIENT) semMutexMustTake((CLIENT)->lock)
 #define SEND_UNLOCK(CLIENT) semMutexGive((CLIENT)->lock)
 
 #define EXTMSGPTR(CLIENT)\
@@ -255,7 +255,7 @@ GLBLTYPE int	casBelowMaxBlockThresh;
   (CLIENT)->send.stk += sizeof(caHdr) + EXTMSGPTR(CLIENT)->m_postsize
 
 
-#define LOCK_CLIENTQ	semMutexTakeAssert(clientQlock)
+#define LOCK_CLIENTQ	semMutexMustTake(clientQlock)
 #define UNLOCK_CLIENTQ	semMutexGive(clientQlock)
 
 struct client	*existing_client();

@@ -1527,7 +1527,7 @@ LOCAL void ca_put_notify_action(PUTNOTIFY *ppn)
          * the database (or indirectly blocking
          * one client on another client).
          */
-        semMutexTakeAssert(pcas->ca_putNotifyLock);
+        semMutexMustTake(pcas->ca_putNotifyLock);
         ellAdd(&pcas->ca_putNotifyQue, &pcapn->node);
         semMutexGive(pcas->ca_putNotifyLock);
 
@@ -2677,8 +2677,7 @@ void cac_gettimeval(struct timeval  *pt)
     TS_STAMP ts;
     int status;
 
-    status = clockGetCurrentTime(&ts);
-    assert(status==0);
+    clockGetCurrentTime(&ts);
     pt->tv_sec = ts.secPastEpoch;
     pt->tv_usec = ts.nsec/1000;
 }

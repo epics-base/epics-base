@@ -55,7 +55,7 @@ if(threadNameToId(NAME)!=0)threadDestroy(threadNameToId(NAME));
  */
 int rsrv_init()
 {
-        clientQlock = semMutexCreate();
+        clientQlock = semMutexMustCreate();
 
 	ellInit(&clientQ);
 	freeListInitPvt(&rsrvClientFreeList, sizeof(struct client), 8);

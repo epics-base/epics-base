@@ -298,7 +298,7 @@ LOCAL void clean_addrq()
 
 	current = clockGetRate();
 
-	semMutexTakeAssert(prsrv_cast_client->addrqLock);
+	semMutexMustTake(prsrv_cast_client->addrqLock);
 	pnextciu = (struct channel_in_use *) 
 			prsrv_cast_client->addrq.node.next;
 
@@ -412,10 +412,10 @@ struct client *create_udp_client(SOCKET sock)
 	
 	client->send.maxstk = MAX_UDP;
 	
-	client->lock = semMutexCreate();
-	client->putNotifyLock = semMutexCreate();
-	client->addrqLock = semMutexCreate();
-	client->eventqLock = semMutexCreate();
+	client->lock = semMutexMustCreate();
+	client->putNotifyLock = semMutexMustCreate();
+	client->addrqLock = semMutexMustCreate();
+	client->eventqLock = semMutexMustCreate();
 	
 	client->recv.maxstk = ETHERNET_MAX_UDP;
 	return client;

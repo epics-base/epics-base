@@ -146,7 +146,7 @@ void epicsShareAPI gphInitPvt(void **ppvt,int size)
     pgphPvt->tableSize = tableSize;
     pgphPvt->nShift = nShift;
     pgphPvt->paplist = myCalloc(tableSize, sizeof(ELLLIST *));
-    pgphPvt->lock = semMutexCreate();
+    pgphPvt->lock = semMutexMustCreate();
     *ppvt = (void *)pgphPvt;
     return;
 }
@@ -162,7 +162,7 @@ GPHENTRY * epicsShareAPI gphFind(void *pvt,const char *name,void *pvtid)
     if(pgphPvt==NULL) return(NULL);
     paplist = pgphPvt->paplist;
     hashInd = hash(name,pgphPvt->nShift);
-    semMutexTake(pgphPvt->lock);
+    semMutexMustTake(pgphPvt->lock);
     if ((gphlist=paplist[hashInd]) == NULL) {
 	pgphNode = NULL;
     } else {
@@ -189,7 +189,7 @@ GPHENTRY * epicsShareAPI gphAdd(void *pvt,const char *name,void *pvtid)
     if(pgphPvt==NULL) return(NULL);
     paplist = pgphPvt->paplist;
     hashInd = hash(name,pgphPvt->nShift);
-    semMutexTake(pgphPvt->lock);
+    semMutexMustTake(pgphPvt->lock);
     if(paplist[hashInd] == NULL) {
 	paplist[hashInd] = myCalloc(1, sizeof(ELLLIST));
 	ellInit(paplist[hashInd]);
@@ -223,7 +223,7 @@ void epicsShareAPI gphDelete(void *pvt,const char *name,void *pvtid)
     if(pgphPvt==NULL) return;
     paplist = pgphPvt->paplist;
     hashInd = hash(name,pgphPvt->nShift);
-    semMutexTake(pgphPvt->lock);
+    semMutexMustTake(pgphPvt->lock);
     if(paplist[hashInd] == NULL) {
 	pgphNode = NULL;
     } else {

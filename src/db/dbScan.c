@@ -180,7 +180,7 @@ void scanAdd(struct dbCommon *precord)
 	    if(!pevent_scan_list ) {
 		pevent_scan_list = dbCalloc(1,sizeof(event_scan_list));
 		pevent_list[priority][evnt] = pevent_scan_list;
-                pevent_scan_list->scan_list.lock = semMutexCreate();
+                pevent_scan_list->scan_list.lock = semMutexMustCreate();
 		callbackSetCallback(eventCallback,&pevent_scan_list->callback);
 		callbackSetPriority(priority,&pevent_scan_list->callback);
 		callbackSetUser(pevent_scan_list,&pevent_scan_list->callback);
@@ -422,7 +422,7 @@ void scanIoInit(IOSCANPVT *ppioscanpvt)
 	callbackSetPriority(priority,&piosl->callback);
 	callbackSetUser(piosl,&piosl->callback);
 	ellInit(&piosl->scan_list.list);
-        piosl->scan_list.lock = semMutexCreate();
+        piosl->scan_list.lock = semMutexMustCreate();
 	piosl->next=iosl_head[priority];
 	iosl_head[priority]=piosl;
     }
@@ -490,8 +490,7 @@ static void initOnce(void)
     if((onceQ = ringCreate(sizeof(void *) * onceQueueSize))==NULL){
         cantProceed("dbScan: initOnce failed");
     }
-    if((onceSem=semBinaryCreate(semEmpty))==0)
-	errMessage(0,"semBcreate failed in initOnce");
+    onceSem=semBinaryMustCreate(semEmpty);
     onceTaskId = threadCreate("scanOnce",threadPriorityScanHigh,
         threadGetStackSize(threadStackBig),
         (THREADFUNC)onceTask,0);
@@ -540,7 +539,7 @@ static void initPeriodic()
 	for(i=0; i<nPeriodic; i++) {
 		psl = dbCalloc(1,sizeof(scan_list));
 		papPeriodic[i] = psl;
-                psl->lock = semMutexCreate();
+                psl->lock = semMutexMustCreate();
 		ellInit(&psl->list);
 		sscanf(pmenu->papChoiceValue[i+SCAN_1ST_PERIODIC],"%f",&temp);
 		psl->ticks = temp * clockGetRate();
@@ -588,14 +587,14 @@ static void printList(scan_list *psl,char *message)
 {
     scan_element *pse;
 
-    semMutexTakeAssert(psl->lock);
+    semMutexMustTake(psl->lock);
     pse = (scan_element *)ellFirst(&psl->list);
     semMutexGive(psl->lock);
     if(pse==NULL) return;
     printf("%s\n",message);
     while(pse!=NULL) {
 	printf("    %-28s\n",pse->precord->name);
-	semMutexTakeAssert(psl->lock);
+	semMutexMustTake(psl->lock);
 	if(pse->pscan_list != psl) {
 	    semMutexGive(psl->lock);
 	    printf("Returning because list changed while processing.");
@@ -614,7 +613,7 @@ static void scanList(scan_list *psl)
     scan_element 	*pse,*prev;
     scan_element	*next=0;
 
-    semMutexTakeAssert(psl->lock);
+    semMutexMustTake(psl->lock);
     psl->modified = FALSE;
     pse = (scan_element *)ellFirst(&psl->list);
     prev = NULL;
@@ -626,7 +625,7 @@ static void scanList(scan_list *psl)
 	dbScanLock(precord);
 	dbProcess(precord);
 	dbScanUnlock(precord);
-	semMutexTakeAssert(psl->lock);
+	semMutexMustTake(psl->lock);
 	    if(!psl->modified) {
 		prev = pse;
 		pse = (scan_element *)ellNext((void *)pse);
@@ -684,7 +683,7 @@ static void addToList(struct dbCommon *precord,scan_list *psl)
 {
 	scan_element	*pse,*ptemp;
 
-	semMutexTakeAssert(psl->lock);
+	semMutexMustTake(psl->lock);
 	pse = precord->spvt;
 	if(pse==NULL) {
 		pse = dbCalloc(1,sizeof(scan_element));
@@ -711,7 +710,7 @@ static void deleteFromList(struct dbCommon *precord,scan_list *psl)
 {
 	scan_element	*pse;
 
-	semMutexTakeAssert(psl->lock);
+	semMutexMustTake(psl->lock);
 	if(precord->spvt==NULL) {
 		semMutexGive(psl->lock);
 		return;

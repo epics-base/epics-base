@@ -36,7 +36,7 @@ of this distribution.
 #include <ellLib.h>
  
 static semId asLock;
-#define LOCK semMutexTakeAssert(asLock)
+#define LOCK semMutexMustTake(asLock)
 #define UNLOCK semMutexGive(asLock)
 
 #define epicsExportSharedSymbols
@@ -96,10 +96,7 @@ long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction)
     HAGNAME	*phagname;
 
     if(asLockInit) {
-	asLock  = semMutexCreate();
-	if(!asLock) {
-            cantProceed("asInitialize semMCreate failed\n");
-	}
+	asLock  = semMutexMustCreate();
 	asLockInit = FALSE;
     }
     LOCK;

@@ -43,6 +43,7 @@
 #include <limits.h>
 
 #define epicsExportSharedSymbols
+#include "dbDefs.h"
 #include "osiSem.h"
 #include "osiThread.h"
 #include "osiSock.h"
@@ -142,7 +143,7 @@ void logClientReset (logClient *pClient)
     /*
      * mutex on
      */
-    semMutexTakeAssert (pClient->mutex);
+    semMutexMustTake (pClient->mutex);
     
     /*
      * close any preexisting connection to the log server
@@ -190,7 +191,7 @@ LOCAL void logClientDestroy (logClient *pClient)
     /*
      * mutex on (and left on)
      */
-    semMutexTakeAssert (pClient->mutex);
+    semMutexMustTake (pClient->mutex);
 
     logClientReset (pClient);
 
@@ -213,7 +214,7 @@ LOCAL void logClientShutdown (void)
      */
 #   ifndef vxWorks
         logClient *pClient;
-        semMutexTakeAssert (logClientGlobalMutex);
+        semMutexMustTake (logClientGlobalMutex);
         while ( pClient = (logClient *) ellGet (&logClientList) ) {
             logClientDestroy (pClient);
         }
@@ -236,7 +237,7 @@ LOCAL void logClientSendMessageInternal (logClientId id, const char *message)
     /*
      * mutex on
      */
-    semMutexTakeAssert (pClient->mutex);
+    semMutexMustTake (pClient->mutex);
    
     if (pClient->file) {
         status = fprintf (pClient->file, "%s", message);
@@ -278,7 +279,7 @@ LOCAL void logClientMakeSock (logClient *pClient)
         fprintf (stderr, "log client: creating socket...");
 #   endif
 
-    semMutexTakeAssert (pClient->mutex);
+    semMutexMustTake (pClient->mutex);
    
     /* 
      * allocate a socket 
@@ -457,7 +458,7 @@ LOCAL void logRestart (void *pPrivate)
         semStatus = semBinaryTakeTimeout (logClientGlobalSignal, LOG_RESTART_DELAY);
         assert ( semStatus==semTakeOK || semStatus==semTakeTimeout );
 
-        semMutexTakeAssert (logClientGlobalMutex);
+        semMutexMustTake (logClientGlobalMutex);
         for ( pClient = (logClient *) ellFirst (&logClientList); pClient; 
                 pClient = (logClient *) ellNext(&pClient->node) ) {
 
@@ -505,7 +506,7 @@ void logClientGlobalInit ()
         return;
     }
 
-    semMutexTakeAssert (logClientGlobalMutex);
+    semMutexMustTake (logClientGlobalMutex);
     ellInit (&logClientList);
 
     logClientGlobalSignal = semBinaryCreate (0);
@@ -584,7 +585,7 @@ epicsShareFunc logClientId epicsShareAPI logClientInit ()
     pClient->sock = INVALID_SOCKET;
     pClient->file = NULL;
 
-    semMutexTakeAssert (logClientGlobalMutex);
+    semMutexMustTake (logClientGlobalMutex);
     ellAdd (&logClientList, &pClient->node);
     semMutexGive (logClientGlobalMutex);
 
@@ -601,7 +602,7 @@ epicsShareFunc logClientId epicsShareAPI logClientInit ()
         if (connectTries>=maxConnectTries) {
             char name[64];
         
-            semMutexTakeAssert (logClientGlobalMutex);
+            semMutexMustTake (logClientGlobalMutex);
             ipAddrToA (&pClient->addr, name, sizeof(name));
             semMutexGive (logClientGlobalMutex);
 

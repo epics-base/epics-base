@@ -152,7 +152,7 @@ LOCAL void asCaTask(void)
     SEVCHK(ca_add_exception_event(exceptionCallback,NULL),
         "ca_add_exception_event");
     while(TRUE) { 
-        semBinaryTakeAssert(asCaTaskAddChannels);
+        semBinaryMustTake(asCaTaskAddChannels);
 	caInitializing = TRUE;
 	pasg = (ASG *)ellFirst(&pasbase->asgList);
 	while(pasg) {
@@ -212,14 +212,10 @@ void asCaStart(void)
     if(asCaDebug) printf("asCaStart called\n");
     if(firstTime) {
 	firstTime = FALSE;
-        if((asCaTaskLock=semMutexCreate())==0)
-	    cantProceed("asCa semMutexCreate failure\n");
-        if((asCaTaskWait=semBinaryCreate(semEmpty))==0)
-	    cantProceed("asCa semBinaryCreate failure\n");
-        if((asCaTaskAddChannels=semBinaryCreate(semEmpty))==0)
-	    cantProceed("asCa semBinaryCreate failure\n");
-        if((asCaTaskClearChannels=semBinaryCreate(semEmpty))==0)
-	    cantProceed("asCa semBCreate failure\n");
+        asCaTaskLock=semMutexMustCreate();
+        asCaTaskWait=semBinaryMustCreate(semEmpty);
+        asCaTaskAddChannels=semBinaryMustCreate(semEmpty);
+        asCaTaskClearChannels=semBinaryMustCreate(semEmpty);
         threadid = threadCreate("asCaTask",
             (threadPriorityScanLow - 3),
             threadGetStackSize(threadStackBig),
@@ -228,9 +224,9 @@ void asCaStart(void)
 	    errMessage(0,"asCaStart: taskSpawn Failure\n");
 	}
     }
-    semMutexTakeAssert(asCaTaskLock);
+    semMutexMustTake(asCaTaskLock);
     semBinaryGive(asCaTaskAddChannels);
-    semBinaryTakeAssert(asCaTaskWait);
+    semBinaryMustTake(asCaTaskWait);
     if(asCaDebug) printf("asCaStart done\n");
     semMutexGive(asCaTaskLock);
 }
@@ -239,9 +235,9 @@ void asCaStop(void)
 {
     if(threadid==0) return;
     if(asCaDebug) printf("asCaStop called\n");
-    semMutexTakeAssert(asCaTaskLock);
+    semMutexMustTake(asCaTaskLock);
     semBinaryGive(asCaTaskClearChannels);
-    semBinaryTakeAssert(asCaTaskWait);
+    semBinaryMustTake(asCaTaskWait);
     if(asCaDebug) printf("asCaStop done\n");
     semMutexGive(asCaTaskLock);
 }

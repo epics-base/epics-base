@@ -200,7 +200,7 @@ SOCKET 		sock;
 	}
 	status = db_start_events(
 			client->evuser, 
-			"CA event",
+			"CAevent",
 			NULL, 
 			NULL,
 			1);	/* one priority notch lower */

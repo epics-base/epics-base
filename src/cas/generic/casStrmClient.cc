@@ -662,31 +662,27 @@ caStatus casStrmClient::readNotifyFailureResponse (
 // to be more efficent if it discovers that the source has less data 
 // than the destination)
 //
-bool convertContainerMemberToAtomic ( gdd & dd, 
+caStatus convertContainerMemberToAtomic ( gdd & dd, 
          aitUint32 appType, aitUint32 elemCount )
 {
-    if ( elemCount <= 1 ) {
-        return true;
-    }
-
     gdd * pVal;
     if ( dd.isContainer() ) {
  	    // All DBR types have a value member 
-        aitUint32 valIndex;
+        aitUint32 index;
  	    int gdds = gddApplicationTypeTable::app_table.mapAppToIndex
- 		    ( dd.applicationType(), appType, valIndex );
+ 		    ( dd.applicationType(), appType, index );
  	    if ( gdds ) {
- 		    return false;
+ 		    return S_cas_badType;
  	    }
 
- 	    pVal = dd.getDD ( valIndex );
+ 	    pVal = dd.getDD ( index );
  	    if ( ! pVal ) {
- 		    return false;
+ 		    return S_cas_badType;
  	    }
     }
     else {
         if ( appType != dd.applicationType() ) {
-            return false;
+            return S_cas_badType;
         }
         pVal = & dd;
     }
@@ -694,7 +690,11 @@ bool convertContainerMemberToAtomic ( gdd & dd,
     // we cant changed a managed type that is 
     // already atomic (array)
     if ( ! pVal->isScalar () ) {
-        return false;
+        return S_cas_badType;
+    }
+
+    if ( elemCount <= 1 ) {
+        return S_cas_success;
     }
         
  	// convert to atomic
@@ -702,13 +702,14 @@ bool convertContainerMemberToAtomic ( gdd & dd,
  	bds.setSize ( elemCount );
  	bds.setFirst ( 0u );
  	pVal->setDimension ( 1u, & bds );
-    return true;
+    return S_cas_success;
 }
 
 //
 // createDBRDD ()
 //
-static gdd * createDBRDD ( unsigned dbrType, unsigned elemCount )
+static caStatus createDBRDD ( unsigned dbrType, 
+                             unsigned elemCount, gdd * & pDD )
 {	
 	/*
 	 * DBR type has already been checked, but it is possible
@@ -716,11 +717,11 @@ static gdd * createDBRDD ( unsigned dbrType, unsigned elemCount )
 	 * the DBR_XXXX type system
 	 */
 	if ( dbrType >= NELEMENTS ( gddDbrToAit ) ) {
-		return 0;
+		return S_cas_badType;
 	}
 
 	if ( gddDbrToAit[dbrType].type == aitEnumInvalid ) {
-		return 0;
+		return S_cas_badType;
 	}
 
 	aitUint16 appType = gddDbrToAit[dbrType].app;
@@ -731,28 +732,29 @@ static gdd * createDBRDD ( unsigned dbrType, unsigned elemCount )
 	gdd * pDescRet = 
         gddApplicationTypeTable::app_table.getDD ( appType );
 	if ( ! pDescRet ) {
-		return pDescRet;
+		return S_cas_noMemory;
 	}
 
     // fix the value element count
-    bool success = convertContainerMemberToAtomic ( 
+    caStatus status = convertContainerMemberToAtomic ( 
         *pDescRet, gddAppType_value, elemCount );
-    if ( ! success ) {
- 		return NULL;
+    if ( status != S_cas_success ) {
+ 		return status;
     }
 
     // fix the enum string table element count
     // (this is done here because the application type table in gdd 
     // does not appear to handle this correctly)
     if ( dbrType == DBR_CTRL_ENUM || dbrType == DBR_GR_ENUM ) {
-        bool tmpSuccess = convertContainerMemberToAtomic ( 
+        status = convertContainerMemberToAtomic ( 
             *pDescRet, gddAppType_enums, MAX_ENUM_STATES );
-        if ( ! tmpSuccess ) {
- 		    return NULL;
+        if ( status != S_cas_success ) {
+ 		    return status;
         }
     }
 
-	return pDescRet;
+	pDD = pDescRet;
+    return S_cas_success;
 }
 
 //
@@ -805,9 +807,19 @@ caStatus casStrmClient::monitorResponse (
 
     gdd * pDBRDD = 0;
 	if ( completionStatus == S_cas_success ) {
-	    pDBRDD = createDBRDD ( msg.m_dataType, msg.m_count );
-        if ( ! pDBRDD ) {
-            return monitorFailureResponse ( guard, msg, ECA_ALLOCMEM );
+	    caStatus status = createDBRDD ( msg.m_dataType, msg.m_count, pDBRDD );
+        if ( status != S_cas_success ) {
+            caStatus ecaStatus;
+            if ( status == S_cas_badType ) {
+                ecaStatus = ECA_BADTYPE;
+            }
+            else if ( status == S_cas_noMemory ) {
+                ecaStatus = ECA_ALLOCMEM;
+            }
+            else {
+                ecaStatus = ECA_GETFAIL;
+            }                
+            return monitorFailureResponse ( guard, msg, ecaStatus );
         }
 	    else {
 	        gddStatus gdds = gddApplicationTypeTable::
@@ -822,20 +834,23 @@ caStatus casStrmClient::monitorResponse (
         }
 	}
 	else {
-		errMessage ( completionStatus, "- in monitor response" );
 		if ( completionStatus == S_cas_noRead ) {
             return monitorFailureResponse ( guard, msg, ECA_NORDACCESS );
 		}
 		else if ( completionStatus == S_cas_noMemory ) {
             return monitorFailureResponse ( guard, msg, ECA_ALLOCMEM );
 		}
+		else if ( completionStatus == S_cas_badType ) {
+            return monitorFailureResponse ( guard, msg, ECA_BADTYPE );
+		}
 		else {
+		    errMessage ( completionStatus, "- in monitor response" );
             return monitorFailureResponse ( guard, msg, ECA_GETFAIL );
 		}
 	}
 
-	int mapDBRStatus = gddMapDbr[msg.m_dataType].conv_dbr ( pPayload, msg.m_count, 
-        *pDBRDD, chan.enumStringTable() );
+	int mapDBRStatus = gddMapDbr[msg.m_dataType].conv_dbr ( 
+        pPayload, msg.m_count, *pDBRDD, chan.enumStringTable() );
     if ( mapDBRStatus < 0 ) {
         pDBRDD->unreference ();
         return monitorFailureResponse ( guard, msg, ECA_NOCONVERT );
@@ -913,8 +928,21 @@ caStatus casStrmClient::writeAction ( epicsGuard < casClientMutex > & guard )
 		pChan->getPVI().addItemToIOBLockedList ( *this );
 	}
 	else {
+        caStatus ecaStatus;
+        if ( status == S_cas_noMemory ) {
+            ecaStatus = ECA_ALLOCMEM;
+        }
+        else if ( status == S_cas_noConvert ) {
+            ecaStatus = ECA_NOCONVERT;
+        }
+        else if ( status == S_cas_badType ) {
+            ecaStatus = ECA_BADTYPE;
+        }
+        else {
+            ecaStatus = ECA_PUTFAIL;
+        }
 		status = this->sendErrWithEpicsStatus ( guard, mp, pChan->getCID(),
-                    status, ECA_PUTFAIL );
+                    status, ecaStatus );
 		//
 		// I have assumed that the server tool has deleted the gdd here
 		//
@@ -2095,6 +2123,9 @@ caStatus casStrmClient::writeArrayData()
 	    //
 	    status = this->ctx.getPV()->write ( this->ctx, *pDD );
     }
+    else {
+        status = S_cas_noConvert;
+    }
 
     gddStat = pDD->unreference ();
 	assert ( ! gddStat );
@@ -2110,10 +2141,11 @@ caStatus casStrmClient::read ( const gdd * & pDescRet )
 	const caHdrLargeArray * pHdr = this->ctx.getMsg();
 
     pDescRet = 0;
-
-	gdd * pDD = createDBRDD ( pHdr->m_dataType, pHdr->m_count );
-	if ( ! pDD ) {
-		return S_cas_noMemory;
+    gdd * pDD = 0;
+    caStatus status = createDBRDD ( pHdr->m_dataType, 
+        pHdr->m_count, pDD );
+	if ( status != S_cas_success ) {
+		return status;
 	}
 
 	//
@@ -2124,7 +2156,7 @@ caStatus casStrmClient::read ( const gdd * & pDescRet )
 	//
 	// call the server tool's virtual function
 	//
-	caStatus status = this->ctx.getPV()->read ( this->ctx, * pDD );
+	status = this->ctx.getPV()->read ( this->ctx, * pDD );
 
 	//
 	// prevent problems when they initiate

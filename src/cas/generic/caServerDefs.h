@@ -31,7 +31,4 @@ void serverToolDebugFunc ( const char * pFile,
 #define casVerify(EXP) \
 { if ((EXP)==0) casVerifyFunc(__FILE__, __LINE__, #EXP); } 
 
-bool convertContainerMemberToAtomic ( class gdd & dd, 
-         aitUint32 appType, aitUint32 elemCount );
-
 #endif // caServerDefsh

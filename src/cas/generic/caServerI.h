@@ -26,6 +26,7 @@
 #   include "shareLib.h"
 #endif
 
+#include "casdef.h"
 #include "clientBufMemoryManager.h"
 #include "casEventRegistry.h"
 #include "caServerIO.h"
@@ -38,6 +39,9 @@ class beaconAnomalyGovernor;
 class casIntfOS;
 class casMonitor;
 class casChannelI;
+
+caStatus convertContainerMemberToAtomic ( class gdd & dd, 
+         aitUint32 appType, aitUint32 elemCount );
 
 class caServerI : 
 	public caServerIO, 

@@ -154,7 +154,7 @@ caStatus casPVI::updateEnumStringTable ( casCtx & ctx )
     // create a gdd with the "enum string table" application type
     //
     //	gddArray(int app, aitEnum prim, int dimen, ...);
-    gdd *pTmp = new gddScalar ( gddAppType_enums );
+    gdd * pTmp = new gddScalar ( gddAppType_enums );
     if ( pTmp == NULL ) {
         errMessage ( S_cas_noMemory, 
             "unable to read application type \"enums\" string"
@@ -162,20 +162,20 @@ caStatus casPVI::updateEnumStringTable ( casCtx & ctx )
         return S_cas_noMemory;
     }
 
-    bool success = convertContainerMemberToAtomic ( *pTmp, 
+    caStatus status = convertContainerMemberToAtomic ( *pTmp, 
          gddAppType_enums, MAX_ENUM_STATES );
-    if ( ! success ) {
+    if ( status != S_cas_success ) {
         pTmp->unreference ();
-        errMessage ( S_cas_noMemory, 
+        errMessage ( status, 
             "unable to read application type \"enums\" string"
             " conversion table for enumerated PV");
-        return S_cas_noMemory;
+        return status;
     }
 
     //
     // read the enum string table
     //
-    caStatus status = this->read ( ctx, *pTmp );
+    status = this->read ( ctx, *pTmp );
 	if ( status == S_casApp_asyncCompletion ) {
         return status;
     }

@@ -1,4 +1,4 @@
-/*	$Id$
+/*	@(#)ezsSockSubr.c	1.8		5/17/94
  *	Author:	Roger A. Cole
  *	Date:	11-23-90
  *
@@ -31,6 +31,7 @@
  *  .03 12-08-91 rac	added a comment for ezsFopenToFd
  *  .04 10-09-92 rac	use SO_REUSEADDR with socket
  *  .05 08-11-93 mrk	removed V5_vxWorks
+ *  .06 05-04-94 pg	HPUX port changes.
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -178,6 +179,7 @@ char	*message;	/* O message from server (dimension of 80 assumed) */
     struct hostent *gethostbyname();
 #endif
     int		i;
+    int optval=1;
 
     assert(pServerSock != NULL);
     assert(portNum > 0);
@@ -211,7 +213,7 @@ char	*message;	/* O message from server (dimension of 80 assumed) */
     *pServerSock = socket(AF_INET, SOCK_STREAM, 0);
     if (*pServerSock < 0)
 	return -1;
-    if (setsockopt(*pServerSock, SOL_SOCKET, SO_REUSEADDR, NULL, 0) != 0) {
+    if (setsockopt(*pServerSock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) != 0) {
 	close(*pServerSock);
 	*pServerSock = -1;
 	return -1;

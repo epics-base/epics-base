@@ -1,6 +1,6 @@
 /*
  *
- *	share/src/libCom/$Id$	
+ *	@(#)fdmgr.c	1.9	5/17/94
  *
  *	A file descriptor manager for use with the UNIX system call select
  *
@@ -62,6 +62,7 @@
  *			if we are in fdmgr_pend_event()	
  *	.15 joh	011993	Created fdmgr header file	
  *	.16 joh	011993	Converted to ANSI C
+ *	.17 pg  050494	HPUX cpp changes (elif converted to else & if)
  *
  *	NOTES:
  *
@@ -89,7 +90,7 @@
  *
  */
 
-static char	*pSccsId = "$Id$\t$Date$";
+static char	*pSccsId = "@(#)fdmgr.c	1.9\t05/05/94";
 
 #include <fdmgr.h>
 #ifdef vxWorks
@@ -146,7 +147,8 @@ typedef struct{
 #	define printf	logMsg
 #	define fdmgr_gettimeval		fdmgr_vxWorks_gettimeval
 #       define memset(D,V,N)    bfill(D,N,V)
-#elif defined(UNIX)
+#else 
+#if defined(UNIX)
 #	define LOCK(PFDCTX)
 #	define UNLOCK(PFDCTX)
 #	define LOCK_FDMGR_PEND_EVENT(PFDCTX) \
@@ -166,6 +168,7 @@ typedef struct{
 #	define UNLOCK_FD_HANDLER(PFDCTX)
 #else
 @@@@ dont compile in this case @@@@
+#endif
 #endif
 
 #define USEC_PER_SEC 1000000

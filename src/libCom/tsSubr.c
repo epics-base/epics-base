@@ -1,4 +1,4 @@
-/*	$Id$
+/*	@(#)tsSubr.c	1.12 5/23/94
  *	Author:	Roger A. Cole
  *	Date:	08-09-90
  *
@@ -36,6 +36,7 @@
  *  .08 04-02-92 joh 	fixed number of days in a year uninitialized
  *  .09 02-09-94 jbk 	tsLocalTime() now calls TScurrentTimeStamp() vxWorks
  *			for the EPOCH year
+ *  .10	05-04-94 pg	HPUX cpp changes. (elif to else and if)
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -111,13 +112,15 @@
 #   include <stdioLib.h>
 #   include <strLib.h>
 #   include <ctype.h>
-#elif VMS
+#else
+#if VMS
 #else
 #   include <sys/time.h>
 #   include <stdio.h>
 #   include <string.h>
 #   include <strings.h>
 #   include <ctype.h>
+#endif
 #endif
 
 #ifndef INC_genDefs_h
@@ -596,7 +599,8 @@ TS_STAMP *pStamp;	/* O pointer to time stamp buffer */
 #  else
 	return TScurrentTimeStamp((struct timespec*)pStamp);
 #  endif
-#elif VMS
+#else
+#if VMS
     assert(0);		/* not available on VMS */
     assert(pStamp != NULL);
 #else		/* SunOS */
@@ -609,6 +613,7 @@ TS_STAMP *pStamp;	/* O pointer to time stamp buffer */
 	pStamp->nsec = ( curtime.tv_usec/1000 ) * 1000000;
 	pStamp->secPastEpoch = curtime.tv_sec - TS_EPOCH_SEC_PAST_1970;
     }
+#endif
 #endif
 
     pStamp->nsec = pStamp->nsec - (pStamp->nsec % TS_TRUNC);

@@ -53,26 +53,28 @@ static void ca_init_client_context ( void * )
 /*
  * fetchClientContext ();
  */
-int fetchClientContext (cac **ppcac)
+int fetchClientContext ( cac **ppcac )
 {
     int status;
 
-    threadOnce ( &caClientContextIdOnce, ca_init_client_context, 0 );
-
     if ( caClientContextId == 0 ) {
-        return ECA_ALLOCMEM;
+        threadOnce ( &caClientContextIdOnce, ca_init_client_context, 0 );
+        if ( caClientContextId == 0 ) {
+            return ECA_ALLOCMEM;
+        }
     }
 
-    *ppcac = (cac *) threadPrivateGet ( caClientContextId );
+    *ppcac = ( cac * ) threadPrivateGet ( caClientContextId );
     if ( *ppcac ) {
-        return ECA_NORMAL;
+        status = ECA_NORMAL;
     }
-
-    status = ca_task_initialize ();
-    if ( status == ECA_NORMAL ) {
-        *ppcac = (cac *) threadPrivateGet ( caClientContextId );
-        if ( ! *ppcac ) {
-            status = ECA_INTERNAL;
+    else {
+        status = ca_task_initialize ();
+        if ( status == ECA_NORMAL ) {
+            *ppcac = (cac *) threadPrivateGet ( caClientContextId );
+            if ( ! *ppcac ) {
+                status = ECA_INTERNAL;
+            }
         }
     }
 
@@ -160,7 +162,7 @@ epicsShareFunc int epicsShareAPI ca_register_service ( cacServiceIO *pService )
 //
 // defunct
 //
-int epicsShareAPI ca_modify_host_name (const char *)
+int epicsShareAPI ca_modify_host_name ( const char * )
 {
     return ECA_NORMAL;
 }
@@ -170,15 +172,15 @@ int epicsShareAPI ca_modify_host_name (const char *)
 //
 // defunct
 //
-int epicsShareAPI ca_modify_user_name (const char *)
+int epicsShareAPI ca_modify_user_name ( const char * )
 {
     return ECA_NORMAL;
 }
 
 //
-// ca_context_destroy (void)
+// ca_context_destroy ()
 //
-epicsShareFunc int epicsShareAPI ca_context_destroy (void)
+epicsShareFunc int epicsShareAPI ca_context_destroy ()
 {
     cac   *pcac;
 
@@ -198,7 +200,7 @@ epicsShareFunc int epicsShareAPI ca_context_destroy (void)
  *
  *  releases all resources alloc to a channel access client
  */
-epicsShareFunc int epicsShareAPI ca_task_exit (void)
+epicsShareFunc int epicsShareAPI ca_task_exit ()
 {
     return ca_context_destroy ();
 }
@@ -209,22 +211,22 @@ epicsShareFunc int epicsShareAPI ca_task_exit (void)
  *
  *      backwards compatible entry point to ca_search_and_connect()
  */
-int epicsShareAPI ca_build_and_connect (const char *name_str, chtype get_type,
+int epicsShareAPI ca_build_and_connect ( const char *name_str, chtype get_type,
             unsigned long get_count, chid * chan, void *pvalue, 
-            caCh *conn_func, void *puser)
+            caCh *conn_func, void *puser )
 {
-    if (get_type != TYPENOTCONN && pvalue!=0 && get_count!=0) {
+    if ( get_type != TYPENOTCONN && pvalue != 0 && get_count != 0 ) {
         return ECA_ANACHRONISM;
     }
 
-    return ca_search_and_connect (name_str, chan, conn_func, puser);
+    return ca_search_and_connect ( name_str, chan, conn_func, puser );
 }
 
 /*
  *  ca_search_and_connect() 
  */
-int epicsShareAPI ca_search_and_connect (const char *name_str, chid *chanptr,
-    caCh *conn_func, void *puser)
+int epicsShareAPI ca_search_and_connect ( const char *name_str, chid *chanptr,
+    caCh *conn_func, void *puser )
 {
     oldChannel      *pChan;
     int             caStatus;

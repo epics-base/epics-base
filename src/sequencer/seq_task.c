@@ -18,22 +18,19 @@
 30apr92,ajk	Periodically call ca_pend_event() to detect connection failures.
 21may92,ajk	In sprog_delete() wait for loggin semaphore before suspending tasks.
 		Some minor changes in the way semaphores are deleted.
+18feb92,ajk	Changed to allow sharing of single CA task by all state programs. 
+		Added seqAuxTask() and removed ca_pend_event() from ss_entry().
 ***************************************************************************/
-
+#define		ANSI
 #include	"seq.h"
 
 /* Function declarations */
-#ifdef	ANSI
 LOCAL	VOID ss_task_init(SPROG *, SSCB *);
-long seq_getTimeout(SSCB *);
-#else
-LOCAL	VOID ss_task_init();
-long seq_getTimeout();
-#endif	ANSI
+LOCAL	long seq_getTimeout(SSCB *);
 
 #define		TASK_NAME_SIZE 10
 
-#define	MAX_DELAY	(60*10) /* max delay time pending for events */
+#define	MAX_DELAY	(10000000) /* max delay time pending for events */
 
 /*
  * sequencer() - Sequencer main task entry point.
@@ -48,23 +45,19 @@ char		*ptask_name;	/* Parent task name */
 	int		nss, task_id, i;
 	char		task_name[TASK_NAME_SIZE+10];
 	extern		VOID ss_entry();
+	extern		int seqAuxTaskId;
 
 	pSP->task_id = taskIdSelf(); /* my task id */
 	pSS = pSP->sscb;
 	pSS->task_id = pSP->task_id;
 
-	/* Clear all event flags */
-	for (i = 0; i < NWRDS; i++)
-		pSP->events[i] = 0;
-
 	/* Add the program to the state program list */
 	seqAddProg(pSP);
 
-	/*
-	 * Connect to database channels & initiate monitor requests.
-	 * Returns here immediately if "connect" option is not set (-c),
-	 * otherwise, waits for all channels to connect (+c).
-	 */
+	/* Import Channel Access context from the auxillary seq. task */
+	ca_import(seqAuxTaskId);
+
+	/* Initiate connect &  monitor requests to database channels. */
 	seq_connect(pSP);
 
 	/* Additional state set task names are derived from the first ss */
@@ -84,9 +77,7 @@ char		*ptask_name;	/* Parent task name */
 		  SPAWN_OPTIONS,			/* task options */
 		  stack_size,				/* stack size */
 		  (FUNCPTR)ss_entry,			/* entry point */
-		  (int)pSP,
-		  (int)pSS,				/* pass 2 parameters */
-		  0,0,0,0,0,0,0,0);
+		  (int)pSP, (int)pSS, 0,0,0,0,0,0,0,0);	/* pass 2 parameters */
 
 		seq_log(pSP, "Spawning task %d: \"%s\"\n", task_id, task_name);
 	}
@@ -106,12 +97,14 @@ SSCB	*pSS;
 	STATE		*pST, *pStNext;
 	long		delay;
 	char		*pVar;
+	LOCAL		VOID seq_waitConnect();
 
-	pSS->task_id = taskIdSelf();
-
-	/* Initialize all tasks except the main task */
-	if (pSS->task_id != pSP->task_id)
-		ss_task_init(pSP, pSS);
+	/* Initialize all ss tasks */
+	ss_task_init(pSP, pSS);
+	
+	/* If "+c" option, wait for all channels to connect */
+	if (pSP->options & OPT_CONN)
+		seq_waitConnect(pSP, pSS);
 
 	/* Initilaize state set to enter the first state */
 	pST = pSS->states;
@@ -141,14 +134,8 @@ SSCB	*pSS;
 
 		/*
 		 * Loop until an event is triggered, i.e. when() returns TRUE
-		 * or at least every MAX_DELAY ticks.
-		 * 
 		 */
 		do {
-			/* Allow CA to check for connect/disconnect on channels */
-			if (pSP->task_id == pSS->task_id)
-				ca_pend_event(0.001); /* returns immediately */
-
 			/* Wake up on CA event, event flag, or expired time delay */
 			delay = seq_getTimeout(pSS);
 			if (delay > 0)
@@ -199,16 +186,45 @@ LOCAL VOID ss_task_init(pSP, pSS)
 SPROG	*pSP;
 SSCB	*pSS;
 {
-	/* Import Channel Access context from the main task */
-	ca_import(pSP->task_id);
+	extern	int	seqAuxTaskId;
+
+	/* Get this task's id */
+	pSS->task_id = taskIdSelf();
+
+	/* Import Channel Access context from the auxillary seq. task */
+	if (pSP->task_id != pSS->task_id)
+		ca_import(seqAuxTaskId);
 
 	return;
 }
+
+/* Wait for all channels to connect */
+LOCAL VOID seq_waitConnect(pSP, pSS)
+SPROG	*pSP;
+SSCB	*pSS;
+{
+	STATUS		status;
+	long		delay;
+
+	delay = 600; /* 10, 20, 30, 40, 40,... sec */
+	while (pSP->conn_count < pSP->nchan)
+	{
+		status = semTake(pSS->syncSemId, delay);
+		if ((status != OK) && (pSP-> task_id == pSS->task_id))
+		{
+			logMsg("%d of %d channels connected\n",
+			 pSP->conn_count, pSP->nchan);
+		}
+		if (delay < 2400)
+			delay = delay + 600;
+	}
+}
+
 /*
  * seq_getTimeout() - return time-out for pending on events.
  * Returns number of tics to next expected timeout of a delay() call.
  * Returns MAX_DELAY if no delays pending */
-long seq_getTimeout(pSS)
+LOCAL long seq_getTimeout(pSS)
 SSCB	*pSS;
 {
 	int		ndelay;
@@ -277,20 +293,19 @@ int	delay_id;
 	return FALSE;
 }
 /*
- * Delete the state set tasks and do general clean-up.
+ * Delete all state set tasks and do general clean-up.
  * General procedure is:
  * 1.  Suspend all state set tasks except self.
  * 2.  Call the user program's exit routine.
- * 3.  Delete all state set tasks except self.
- * 4.  Delete semaphores, close log file, and free allocated memory.
- * 5.  Return, causing self to be deleted.
+ * 3.  Disconnect all channels for this state program.
+ * 4.  Cancel the channel access context.
+ * 5.  Delete all state set tasks except self.
+ * 6.  Delete semaphores, close log file, and free allocated memory.
+ * 7.  Return, causing self to be deleted.
  *
  * This task is run whenever ANY task in the system is deleted.
  * Therefore, we have to check the task belongs to a state program.
- * With VxWorks 5.0 we need to change references to the TCBX to handle
- * the Wind kernel.
  */
-#ifdef	V5_vxWorks
 sprog_delete(tid)
 int		tid;
 {
@@ -298,19 +313,9 @@ int		tid;
 	SPROG		*pSP, *seqFindProg();
 	SSCB		*pSS;
 
-#else
-sprog_delete(pTcbX)
-TCBX	*pTcbX;	/* ptr to TCB of task to be deleted */
-{
-	int		tid, nss, tid_ss;
-	SPROG		*pSP, *seqFindProg();
-	SSCB		*pSS;
-
-	tid = pTcbX->taskId;
-#endif
 	pSP = seqFindProg(tid);
 	if (pSP == NULL)
-		return(0); /* not a state program task */
+		return -1; /* not a state program task */
 
 	logMsg("Delete %s: pSP=%d=0x%x, tid=%d\n",
 	 pSP->name, pSP, pSP, tid);
@@ -352,6 +357,15 @@ TCBX	*pTcbX;	/* ptr to TCB of task to be deleted */
 		logMsg("   Call exit function\n");
 #endif	DEBUG
 		pSP->exit_func(pSP, pSP->user_area);
+	}
+
+	/* Disconnect all channels */
+	seq_disconnect(pSP);
+
+	/* Cancel the CA context for each state set task */
+	for (nss = 0, pSS = pSP->sscb; nss < pSP->nss; nss++, pSS++)
+	{
+		ca_import_cancel(pSS->task_id);
 	}
 
 	/* Close the log file */
@@ -400,23 +414,22 @@ TCBX	*pTcbX;	/* ptr to TCB of task to be deleted */
 	
 	return 0;
 }
-/* VxWorks Version 4 only */
-#ifndef	V5_vxWorks
-
-/* seq_semTake - take semaphore:
- * VxWorks semTake() with timeout added. (emulates VxWorks 5.0)
+
+/* 
+ * Sequencer auxillary task -- loops on ca_pend_event().
  */
-VOID seq_semTake(semId, timeout)
-SEM_ID		semId;		/* semaphore id to take */
-long		timeout;	/* timeout in tics */
+seqAuxTask()
 {
-	int		dummy;
+	extern		int seqAuxTaskId;
 
-	if (timeout == WAIT_FOREVER)
-		vrtxPend(&semId->count, 0, &dummy);
-	else if (timeout == NO_WAIT)
-		semClear(semId);
-	else
-		vrtxPend(&semId->count, timeout, &dummy);
+	/* Set up so all state program tasks will use a common CA context */
+	ca_task_initialize();
+	seqAuxTaskId = taskIdSelf(); /* must follow ca_task_initialize() */
+
+	/* This loop allows CA to check for connect/disconnect on channels */
+	for (;;)
+	{
+		ca_pend_event(10.0); /* returns every 10 sec. */
+	}
 }
-#endif	V5_vxWorks
+

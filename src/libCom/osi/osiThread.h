@@ -31,6 +31,8 @@ typedef enum {
     threadStackSmall, threadStackMedium, threadStackBig
 } threadStackSizeClass;
 
+typedef enum {tbsFail, tbsSuccess} threadBoolStatus;
+
 epicsShareFunc unsigned int epicsShareAPI threadGetStackSize(threadStackSizeClass size);
 
 typedef int threadOnceId;
@@ -57,8 +59,13 @@ epicsShareFunc threadId epicsShareAPI threadCreate(const char *name,
 epicsShareFunc void epicsShareAPI threadSuspendSelf(void);
 epicsShareFunc void epicsShareAPI threadResume(threadId id);
 epicsShareFunc unsigned int epicsShareAPI threadGetPriority(threadId id);
+epicsShareFunc unsigned int epicsShareAPI threadGetPrioritySelf();
 epicsShareFunc void epicsShareAPI threadSetPriority(
     threadId id,unsigned int priority);
+epicsShareFunc threadBoolStatus epicsShareAPI threadHighestPriorityLevelBelow 
+        (unsigned int priority, unsigned *pPriorityJustBelow);
+epicsShareFunc threadBoolStatus epicsShareAPI threadLowestPriorityLevelAbove 
+        (unsigned int priority, unsigned *pPriorityJustAbove);
 epicsShareFunc int epicsShareAPI threadIsEqual(threadId id1, threadId id2);
 epicsShareFunc int epicsShareAPI threadIsSuspended(threadId id);
 epicsShareFunc void epicsShareAPI threadSleep(double seconds);

@@ -18,18 +18,35 @@
 <h2>Changes since 3.14.2</h2>
 </center>
 
+<h4>New keyword <code>variable()</code> supported in dbd files</h4>
+
+<p>Database definition (.dbd) files can now contain declarations of simple
+static variables, a facility intended for driver debugging purposes. These
+<code>variable(name)</code> declarations are preserved by dbExpand, and will
+be converted by registerRecordDeviceDriver.pl into code that registers them
+with iocsh. The variables themselves must be defined in some existing C or
+C++ code and marked using the macro <code>epicsExportAddress(type,
+name)</code>. The initial implementation only supports integers, but other
+types will be added soon.</p>
+
 <p><strong>macEnvExpand</strong></p>
-<p>Macro expansion using environment variables as macro definitions</p>
+
+<p>Macro expansion using environment variables as macro definitions.</p>
 
 <p><strong>iocsh var command</strong></p>
+
 <p>For simple applications such as controlling the value of debugging flags.
 Devlopers with more complex expression handling requirements should consider
-use of the <strong>cexp</strong> package.
+use of the <strong>cexp</strong> package. The available variables are defined
+by the new <code>variable</code> dbd file keyword.</p>
 
 <p><strong>iocshArgPersistentString</strong></p>
-<p>Tell iocsh to make a copy of the argument string before passing it to the handler function.</p>
+
+<p>Tell iocsh to make a copy of the argument string before passing it to the
+handler function.</p>
 
 <p><strong>epicsStrDup</strong></p>
+
 <p>Operating-system independent replacement for strdup().</p>
 
 <p><strong>epicsMessageQueue</strong></p>
@@ -43,6 +60,8 @@ buffer. See the Application Developer's Guide (libCom OSI) for details.</p>
 <p>This is an incompatible change.  All R3.14.2 applications which use
 epicsMessageQueue must be modified before they can be compiled and used with
 R3.14.3</p>
+
+<h4>Error Message Logging</h4>
 
 <p>A bug occurring only in Microsoft Windows port of the error message
 logging client was fixed. The symptoms were problems getting a Microsoft
@@ -150,12 +169,12 @@ macParseDefns was not correct.</p>
 <p>dbStaticLib and related programs now accept a new keyword in DBD files:</p>
 <pre>function(name)</pre>
 
-<p>Where '<span style="font-family: courier">name</span>' is the name of a
-function with "C" linkage that is included in the IOC binary. This function
-will be automatically registered with the registry at the same time as the
-record/device/driver tables, and is intended to make using subroutine records
-much easier on non-vxWorks systems.. Prior R3.14 releases required there to
-be a static registration routine for such subroutines.</p>
+<p>Where <code>name</code> is the name of a function with "C" linkage that is
+included in the IOC binary. This function will be automatically registered
+with the registry at the same time as the record/device/driver tables, and is
+intended to make using subroutine records much easier on non-vxWorks
+systems.. Prior R3.14 releases required there to be a static registration
+routine for such subroutines.</p>
 
 <p>dbStaticLib has two additional routines to support this, dbDumpFunction()
 and dbWriteFunctionFP(). dbDumpFunction has been added to the iocsh command
@@ -169,8 +188,8 @@ errors are being reported.</p>
 
 <p><strong>Solaris build requirement</strong></p>
 
-<p><span style="font-family: courier">uname</span> must be defined for builds
-on solaris hosts because it is used to determine the solaris version.</p>
+<p><code>uname</code> must be defined for builds on solaris hosts because it
+is used to determine the solaris version.</p>
 
 <p><strong>Linux build note</strong></p>
 
@@ -182,13 +201,9 @@ such absolute paths to the new make variable SHRLIB_SEARCH_DIRS
 
 <p><strong>RULES.Db</strong></p>
 
-<p>A <span style="font-family: courier">*[</span><span
-style="font-family: courier">nn</span><span
-style="font-family: courier">].</span><span
-style="font-family: courier">db</span> file will be created from an <span
-style="font-family: courier">*.template</span> and a <span
-style="font-family: courier">*[nn].substitutions</span> file ,where <span
-style="font-family: courier">nn</span> has a value between 0 and 99.</p>
+<p>A <code>*[nn].db</code> file will be created from an
+<code>*.template</code> and a <code>*[nn].substitutions</code> file ,where
+<code>nn</code> has a value between 0 and 99.</p>
 
 <p><strong>Support for 64 bit long</strong></p>
 
@@ -426,9 +441,9 @@ value recGblSetSevr(psel,SOFT_ALARM,MAJOR_ALARM) is called.</p>
 <p><strong>cdCommands file</strong></p>
 
 <p>Fixed a bug and revised the use of the IOCS_APPL_TOP setting in an
-application's <top>/configure/CONFIG file (which specifies the path to
-<top>as seen by the IOC) to apply the same modifications to all paths output
-in the cdCommands file.</p>
+application's &lt;top&gt;/configure/CONFIG file (which specifies the path to
+&lt;top&gt; as seen by the IOC) to apply the same modifications to all paths
+output in the cdCommands file.</p>
 
 <p><strong>dbStaticLib</strong></p>
 
@@ -488,130 +503,140 @@ release.</p>
 Build modifications in alpha2 require the following changes to existing R3.14
 applications.
 <ul>
-  <li>&nbsp;Remove the now unused RULES files</li>
-  <li><ul>
-      ./configure/RULES.Db <br>
-      ./configure/RULES.registerRecordDeviceDriver <br>
-      &nbsp;</ul>
+  <li>Remove the now unused RULES files
+
+    <blockquote>
+      ./configure/RULES.Db<br>
+      ./configure/RULES.registerRecordDeviceDriver</blockquote>
   </li>
   <li>Delete the following line in ./configure/RULES
-    <ul>
-      &nbsp; <br>
-      include $(TOP)/configure/RULES.registerRecordDeviceDriver</ul>
-  </li>
-</ul>
-<ul>
-  <li>&nbsp; In &lt;top&gt;/configure/Makefile change 
-    <ul>
-      &nbsp; <br>
-      @$(PERL) $(TOOLS)/makeConfigAppInclude.pl $(T_A) $@ $(TOP)</ul>
-  </li>
-  to
-  <ul>
-    @$(PERL) $(TOOLS)/makeConfigAppInclude.pl $(EPICS_HOST_ARCH) $(T_A) $@
-    $(TOP) <br>
-    &nbsp;</ul>
-  and add the line
-  <ul>
-    &nbsp; <br>
-    depends: install <br>
-    &nbsp;</ul>
-  to the bottom of the Makefile.
-  <ul>
-    &nbsp;</ul>
-</ul>
-<ul>
-  <li>In all *App/*Db/Makefileschange
-    <ul>
-      &nbsp; <br>
-      include $(TOP)/configure/RULES.Db</ul>
-  </li>
-  to
-  <ul>
-    include $(TOP)/configure/RULES</ul>
-  <li>In all *App/src/Makefile files
-    <ul>
-      &nbsp;</ul>
-  </li>
-  change&nbsp;&nbsp;&nbsp; DBDNAME = &lt;name&gt;App&nbsp;&nbsp;&nbsp;
-  to&nbsp;&nbsp;&nbsp; DBD += &lt;name&gt; 
-  <ul>
-    &nbsp;</ul>
-  and remove the line <br>
-  &nbsp; 
-  <ul>
-    DBDEXPAND = &lt;name&gt;Include.dbd <br>
-    &nbsp;</ul>
-  NOTE: If any of your *App/*Db/Makefiles contain "DBDNAME =" lines you
-  should make these same changes in that *Db dirctory. <br>
-  &nbsp; 
-  <ul>
-    <li>In all *App/src/Makefile Makefiles</li>
-  </ul>
-  <ul>
-    &nbsp;</ul>
-  change&nbsp;&nbsp;&nbsp; RECTYPES=&lt;name&gt;.h&nbsp;&nbsp;&nbsp;
-  to&nbsp;&nbsp;&nbsp; DBDINC+=&lt;name&gt; 
-  <ul>
-    &nbsp;</ul>
-  change&nbsp;&nbsp;&nbsp; MENUS=&lt;name&gt;.h&nbsp;&nbsp;&nbsp;
-  to&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DBDINC+=&lt;name&gt;</ul>
-<ul>
-  change&nbsp;&nbsp;&nbsp; BPTS&nbsp;&nbsp;&nbsp;&nbsp;
-  to&nbsp;&nbsp;&nbsp;&nbsp; DBD 
 
-  <p>change&nbsp;&nbsp;&nbsp;&nbsp; INSTALLDB&nbsp;&nbsp;&nbsp;&nbsp;
-  to&nbsp;&nbsp;&nbsp; DB</p>
+    <blockquote>
+      include $(TOP)/configure/RULES.registerRecordDeviceDriver</blockquote>
+  </li>
+  <li>In &lt;top&gt;/configure/Makefile change
 
-  <p>change&nbsp;&nbsp;&nbsp; DBDINSTALL&nbsp;&nbsp;&nbsp;
-  to&nbsp;&nbsp;&nbsp;&nbsp; DBD <br>
-  &nbsp;</p>
+    <blockquote>
+      @$(PERL) $(TOOLS)/makeConfigAppInclude.pl $(T_A) $@ $(TOP)</blockquote>
+    to
+
+    <blockquote>
+      @$(PERL) $(TOOLS)/makeConfigAppInclude.pl $(EPICS_HOST_ARCH) $(T_A) $@
+      $(TOP)</blockquote>
+    and add the line
+
+    <blockquote>
+      depends: install</blockquote>
+    to the bottom of the Makefile.</li>
+  <li>In all *App/*Db/Makefiles change
+
+    <blockquote>
+      include $(TOP)/configure/RULES.Db</blockquote>
+    to
+
+    <blockquote>
+      include $(TOP)/configure/RULES</blockquote>
+  </li>
+  <li>In all *App/src/Makefile files change
+
+    <blockquote>
+      DBDNAME = &lt;name&gt;App</blockquote>
+    to
+
+    <blockquote>
+      DBD += &lt;name&gt;</blockquote>
+    and remove the line<br>
+
+
+    <blockquote>
+      DBDEXPAND = &lt;name&gt;Include.dbd  </blockquote>
+    NOTE: If any of your *App/*Db/Makefiles contain "DBDNAME =" lines you
+    should make these same changes in that *Db dirctory.</li>
+  <li>In all *App/src/Makefile Makefiles change
+
+    <blockquote>
+      RECTYPES=&lt;name&gt;.h  </blockquote>
+    to
+
+    <blockquote>
+      DBDINC+=&lt;name&gt;  </blockquote>
+    change
+
+    <blockquote>
+      MENUS=&lt;name&gt;.h  </blockquote>
+    to
+
+    <blockquote>
+      DBDINC+=&lt;name&gt;  </blockquote>
+    change
+
+    <blockquote>
+      BPTS  </blockquote>
+    to
+
+    <blockquote>
+      DBD  </blockquote>
+    change
+
+    <blockquote>
+      INSTALLDB  </blockquote>
+    to
+
+    <blockquote>
+      DB  </blockquote>
+    change
+
+    <blockquote>
+      DBDINSTALL  </blockquote>
+    to
+
+    <blockquote>
+      DBD  </blockquote>
+  </li>
   <li>In all example *App/src/Makefile files change
-    <ul>
-      &nbsp; <br>
-      example_SRCS_DEFAULT += registerRecordDeviceDriver.c</ul>
+
+    <blockquote>
+      example_SRCS_DEFAULT += registerRecordDeviceDriver.c  </blockquote>
+    to
+
+    <blockquote>
+      example_SRCS_DEFAULT += &lt;name&gt;_registerRecordDeviceDriver.cpp
+     </blockquote>
+    where &lt;name&gt; is the base name of a &lt;name&gt;.dbd file which was
+    created from a &lt;name&gt;Include.dbd file and which will be loaded in a
+    st.cmd or stcmd.host script (e.g. example).</li>
+  <li>In ./iocBoot/ioc&lt;name&gt;/st.cmd files change
+
+    <blockquote>
+      dbLoadDatabase("dbd/exampleApp.dbd")  </blockquote>
+    to
+
+    <blockquote>
+      dbLoadDatabase("dbd/example.dbd")  </blockquote>
   </li>
-  to
-  <ul>
-    example_SRCS_DEFAULT += &lt;name&gt;_registerRecordDeviceDriver.cpp <br>
-    &nbsp;</ul>
-  where &lt;name&gt; is the base name of a &lt;name&gt;.dbd file which was
-  created from a &lt;name&gt;Include.dbd file and which will be loaded in a
-  st.cmd or stcmd.host script (e.g. example). <br>
-  &nbsp; 
-  <ul>
-    <li>In ./iocBoot/ioc&lt;name&gt;/st.cmd files change</li>
-  </ul>
-  <br>
-  &nbsp; 
-  <ul>
-    dbLoadDatabase("dbd/exampleApp.dbd")</ul>
-  to
-  <ul>
-    dbLoadDatabase("dbd/example.dbd") <br>
-    &nbsp;</ul>
   <li>In &lt;top&gt;/iocBoot/ioc&lt;name&gt;/stcmd.host files change
-    <ul>
-      &nbsp; <br>
-      dbLoadDatabase("../../dbd/exampleApp.dbd",0,0)</ul>
+
+    <blockquote>
+      dbLoadDatabase("../../dbd/exampleApp.dbd",0,0)</blockquote>
+    to
+
+    <blockquote>
+      dbLoadDatabase("../../dbd/example.dbd",0,0)</blockquote>
   </li>
-  to
-  <ul>
-    dbLoadDatabase("../../dbd/example.dbd",0,0)</ul>
 </ul>
 
 <h3>EPICS_HOST_ARCH changes</h3>
-GNU compiler builds are now determined by the value of EPICS_HOST_ARCH and
-are no longer specified in CONFIG_SITE.&nbsp; All references to the ANSI
-(ACC/GCC) and CPLUSPLUS (CCC/G++) macros have been removed. <br>
-&nbsp; 
+
+<p>GNU compiler builds are now determined by the value of EPICS_HOST_ARCH and
+are no longer specified in CONFIG_SITE.  All references to the ANSI (ACC/GCC)
+and CPLUSPLUS (CCC/G++) macros have been removed.</p>
 
 <h3>libCom</h3>
-Most of the library routines and files starting with the prefix osi have been
-changed to start with epics. Several also had major changes to their user
-interface. See the latest version of the Application Developer's Guide for
-details. <br>
-&nbsp; 
+
+<p>Most of the library routines and files starting with the prefix osi have
+been changed to start with epics. Several also had major changes to their
+user interface. See the latest version of the Application Developer's Guide
+for details.</p>
 
 <center>
 <h2>EPICS Release base 3.14.0alpha1 Notes</h2>
@@ -625,35 +650,44 @@ iocCore on platforms besides vxWorks.</p>
 
 <p>iocCore is now supported on the following platforms:</p>
 <ul>
-  <li>vxWorks</li>
-  <br>
-  Tornado II is required.
-  <ul>
-    <li>RTEMS</li>
-  </ul>
-  <br>
-  An open source real time operating system. It has been tested on MVME167
-  and MC68360 processors. RTEMS also supports powerPC.
-  <ul>
-    <li>solaris</li>
-  </ul>
-  <br>
-  Has been tested on solaris 2.6 and solaris 8 with Sun workshop 6.0 (C++
-  5.2). Sun workshop 5.0 (C++ 5.0) will not compile this version of EPICS.
-  <ul>
-    <li>Linux</li>
-  </ul>
-  <br>
-  Has been tested on Redhat x86 platforms.
-  <ul>
-    <li>winNT</li>
-  </ul>
-  <br>
-  Testing has been done with visual C++ 6.0.</ul>
-A new version of the Application Developers Guide is available. The following
-gives links to the new Application Developer's Guide and to RTEMS information.
+  <li>vxWorks
 
-<p>http://www.aps.anl.gov/epics/modules/base/R3-14.php</p>
+    <blockquote>
+      Tornado II is required.</blockquote>
+  </li>
+  <li>RTEMS
+
+    <blockquote>
+      An open source real time operating system. It has been tested on
+      MVME167 and MC68360 processors. RTEMS also supports
+    powerPC.</blockquote>
+  </li>
+  <li>solaris
+
+    <blockquote>
+      Has been tested on solaris 2.6 and solaris 8 with Sun workshop 6.0 (C++
+      5.2). Sun workshop 5.0 (C++ 5.0) will not compile this version of
+    EPICS.</blockquote>
+  </li>
+  <li>Linux
+
+    <blockquote>
+      Has been tested on Redhat x86 platforms.</blockquote>
+  </li>
+  <li>winNT
+
+    <blockquote>
+      Testing has been done with visual C++ 6.0.</blockquote>
+  </li>
+</ul>
+
+<p>A new version of the Application Developers Guide is available. The
+following gives links to the new Application Developer's Guide and to RTEMS
+information.</p>
+
+<blockquote>
+  <a
+  href="http://www.aps.anl.gov/epics/modules/base/R3-14.php">http://www.aps.anl.gov/epics/modules/base/R3-14.php</a></blockquote>
 
 <p>Most of the Application Developer's Guide has only minor changes. The
 following are new.</p>
@@ -674,7 +708,8 @@ It must be emphasized that this is an alpha release.</p>
   <li>HPUX - No support currently because we could not find good support for
     multithreading.</li>
 </ul>
-Building Applications
+
+<h4>Building Applications</h4>
 <ul>
   <li>For new applications see Chapters 2 (New Features) and Chapter 4 (Build
     Facility) of the Application Developer's Guide.</li>

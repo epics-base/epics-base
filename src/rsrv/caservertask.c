@@ -592,6 +592,19 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 		FASTUNLOCK(&client->addrqLock);
 		printf("\n");
 	}
+
+	if (level >= 3u) {
+		printf(	"\tSend Lock\n");
+		semShow (client->lock.ppend, 1);
+		printf(	"\tPut Notify Lock\n");
+		semShow (client->putNotifyLock.ppend, 1);
+		printf(	"\tAddress Queue Lock\n");
+		semShow (client->addrqLock.ppend, 1);
+		printf(	"\tEvent Queue Lock\n");
+		semShow (client->eventqLock.ppend, 1);
+		printf(	"\tBlock Semaphore\n");
+		semShow (client->blockSem, 1);
+	}
 }
 
 

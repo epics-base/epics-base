@@ -115,6 +115,7 @@ int		GIDebug = 0;
  int	timingStudy();
 
 static int firstTime = 1;
+static int hexmode = 1;
 static SEM_ID	msgReply;
 
 int
@@ -155,6 +156,8 @@ GI()
     printf("Select a function:\n");     /* main menu */
     printf("  'C' to configure send message content\n");
     printf("  'D' to display transmit & receive messages\n");
+    printf("  'H' enable hex dump listings of message responses\n");
+    printf("  'h' disable hex dump listings of message responses\n");
     printf("  'S' to send & receive a message one time\n");
     printf("  'T' to do timing on messages\n");
     printf("  'R' to turn on the GPIB debugging flag\n");
@@ -168,6 +171,14 @@ GI()
     case 'c':       /* configure message contents */
     case 'C':
       configMsg();
+      break;
+
+    case 'h':	/* disable hex dumping */
+      hexmode = 0;
+      break;
+
+    case 'H':	/* enable hex dumping */
+      hexmode = 1;
       break;
 
     case 's':
@@ -472,10 +483,16 @@ configMsg()
   if (getChar(&inChar) == 1)
     pCmd->type = inChar;
 
-  printf("\nenter string to send (no quotes) [%.80s] > ", pCmd->cmd);
+  if (hexmode)
+  {
+    printf("\nEnter string to send (no quotes)\n");
+    hexDump(pCmd->cmd, 0);
+  }
+  else
+    printf("\nenter string to send (no quotes) [%.80s] > ", pCmd->cmd);
+
   if (getString(inString) == 1)
     strcpy(pCmd->cmd, inString);
-
   pCmd->resp[0]= 0;       /* clear response string */
   
   showGpibMsg(msgNum);
@@ -569,6 +586,7 @@ getString(pString)
 char    *pString;
 {
   char    input[100];
+  char	*in;
 
   gets(input);
 
@@ -576,9 +594,80 @@ char    *pString;
     return (0);
   else
   {
-    strcpy(pString, input);
+    in = input;
+    while(*in != '\0')
+    {
+      switch (*in) {
+      case '\\':	/* meta-character parser */
+	++in;
+	switch (*in) {
+	case 'n':	/* \n = linefeed */
+	case 'l':	/* \l = lenefeed too */
+	  *pString = '\n';
+	  break;
+        case 'r':	/* \r = cariage return */
+	  *pString = '\r';
+	  break;
+	case 't':	/* \t = tab character */
+	  *pString = '\t';
+	  break;
+	default:	/* anything else is just the character after the \ */
+	  *pString = *in;
+	}
+	break;
+      default:
+	*pString = *in;
+      }
+      ++in;
+      ++pString;
+    }
+    *pString = '\0';
     return (1);
   }
+}
+
+/* utility fuinction to print a hex dump */
+static void hexDump(string, indent)
+unsigned char *string;
+int	indent;
+{
+  char ascBuf[17];		/* for the ascii xlation part of the dump */
+  int	strLength;
+  unsigned int	j, x;
+
+  if (!(strLength = strlen(string)))
+  {
+    printf("(null)\n");
+    return;
+  }
+  j = 0;
+
+  while (j < strLength)
+  {
+    if (j)
+    {
+      x = indent;
+      while(x--)
+	printf(" ");
+    }
+    printf("%02.2X: ", j);	/* print relative address */
+    x = 0;
+    while ((x < 16) && (j < strLength))
+    {
+      printf("%02.2X ", string[j]);
+      ascBuf[x] = string[j];
+      if (!((ascBuf[x] >= 0x20) && (ascBuf[x] <= 0x7e)))
+	ascBuf[x] = '.';
+      ++x;
+      ++j;
+    }
+    ascBuf[x] = '\0';
+    while (x++ <= 16)
+      printf("   ");
+
+    printf("  *%s*\n", ascBuf);
+  }
+  return;
 }
 
 /*
@@ -600,7 +689,19 @@ int msgNum;
   printf("\nMessage #%1.1d : ", msgNum);
   printf("LinkType=%d bug=%d Link=%d Adrs=%d Type=%c\n",
         pCmd->linkType, pCmd->bug, pCmd->linkId, pCmd->head.device, pCmd->type);
-  printf("             Command String  : %.40s\n", pCmd->cmd);
-  printf("             Response String : %.40s\n", pCmd->resp);
+
+  if (hexmode)
+  {
+    printf("Cmd: ");
+    hexDump(pCmd->cmd, 5);
+    printf("Res: ");
+    hexDump(pCmd->resp, 5);
+  }
+  else
+  {
+    printf("             Command String  : %.40s\n", pCmd->cmd);
+    printf("             Response String : %.40s\n", pCmd->resp);
+  }
+  return(0);
 }
 

@@ -24,7 +24,7 @@ class tcpiiu;
 
 class tcpRecvWatchdog : private epicsTimerNotify {
 public:
-    tcpRecvWatchdog ( tcpiiu &, double periodIn, epicsTimerQueue & );
+    tcpRecvWatchdog ( cac &, tcpiiu &, double periodIn, epicsTimerQueue & );
     virtual ~tcpRecvWatchdog ();
     void rescheduleRecvTimer ();
     void sendBacklogProgressNotify ();
@@ -37,7 +37,8 @@ public:
 private:
     const double period;
     epicsTimer & timer;
-    tcpiiu &iiu;
+    tcpiiu & iiu;
+    cac & cacRef;
     bool responsePending;
     bool beaconAnomaly;
     expireStatus expire ( const epicsTime & currentTime );

@@ -50,9 +50,15 @@
  * .10  02-10-95  nda     fixed on-the-fly so 1st step is to end position
  * .11  02-21-95  nda     added "Return To Start" flag. If set, positioners
  *                        will be commanded to the start pos after the scan.
+ * .12  03-02-95  nda     added positioner readback arrays (PxRA). These arrays
+ *                        will contain actual readback positions (if RxPV are
+ *                        defined. If not, the desired positions will be loaded
+ *                        into them.
+ * .13  03-02-95  nda     Post .val field when a new point is complete during a
+ *                        scan. This will assist in poin by point plots.
  */
 
-#define VERSION 1.10
+#define VERSION 1.13
 
 
 
@@ -275,6 +281,11 @@ static long init_record(pscan,pass)
       pscan->p2pa = (float *) calloc(pscan->mpts, sizeof(float));
       pscan->p3pa = (float *) calloc(pscan->mpts, sizeof(float));
       pscan->p4pa = (float *) calloc(pscan->mpts, sizeof(float));
+
+      pscan->p1ra = (float *) calloc(pscan->mpts, sizeof(float));
+      pscan->p2ra = (float *) calloc(pscan->mpts, sizeof(float));
+      pscan->p3ra = (float *) calloc(pscan->mpts, sizeof(float));
+      pscan->p4ra = (float *) calloc(pscan->mpts, sizeof(float));
 
       /* First time through, rpvt needs initialized */
       pscan->rpvt = calloc(1, sizeof(struct recPvtStruct));
@@ -502,6 +513,14 @@ static long cvt_dbaddr(paddr)
       paddr->pfield = (void *)(pscan->p3pa);
     } else if (paddr->pfield == &(pscan->p4pa)) {
       paddr->pfield = (void *)(pscan->p4pa);
+    } else if (paddr->pfield == &(pscan->p1ra)) {
+      paddr->pfield = (void *)(pscan->p1ra);
+    } else if (paddr->pfield == &(pscan->p2ra)) {
+      paddr->pfield = (void *)(pscan->p2ra);
+    } else if (paddr->pfield == &(pscan->p3ra)) {
+      paddr->pfield = (void *)(pscan->p3ra);
+    } else if (paddr->pfield == &(pscan->p4ra)) {
+      paddr->pfield = (void *)(pscan->p4ra);
     } else if (paddr->pfield == &(pscan->d1da)) {
       paddr->pfield = (void *)(pscan->d1da);
     } else if (paddr->pfield == &(pscan->d2da)) {
@@ -558,6 +577,18 @@ static long get_array_info(paddr,no_elements,offset)
         *no_elements = pscan->mpts;
         *offset = 0;
     } else if (paddr->pfield == pscan->p4pa) {
+        *no_elements = pscan->mpts;
+        *offset = 0;
+    } else if (paddr->pfield == pscan->p1ra) {
+        *no_elements = pscan->mpts;
+        *offset = 0;
+    } else if (paddr->pfield == pscan->p2ra) {
+        *no_elements = pscan->mpts;
+        *offset = 0;
+    } else if (paddr->pfield == pscan->p3ra) {
+        *no_elements = pscan->mpts;
+        *offset = 0;
+    } else if (paddr->pfield == pscan->p4ra) {
         *no_elements = pscan->mpts;
         *offset = 0;
     } else {
@@ -855,6 +886,11 @@ static void checkMonitors(pscan)
             db_post_events(pscan,&pscan->r4cv, DBE_VALUE);
             pscan->r4lv = pscan->r4cv;
         }
+
+        /* Post a monitor on VAL to indicate new point */
+        if(pscan->exsc) {
+            db_post_events(pscan,&pscan->val, DBE_VALUE);
+        }
     }
 
     if (pscan->pxsc != pscan->exsc) 
@@ -866,6 +902,10 @@ static void checkMonitors(pscan)
         db_post_events(pscan,pscan->p2pa, DBE_VALUE);
         db_post_events(pscan,pscan->p3pa, DBE_VALUE);
         db_post_events(pscan,pscan->p4pa, DBE_VALUE);
+        db_post_events(pscan,pscan->p1ra, DBE_VALUE);
+        db_post_events(pscan,pscan->p2ra, DBE_VALUE);
+        db_post_events(pscan,pscan->p3ra, DBE_VALUE);
+        db_post_events(pscan,pscan->p4ra, DBE_VALUE);
 
         /* For the following arrays that are "double buffered", it is
            currently necessary to post_events on both buffers because
@@ -1005,6 +1045,7 @@ struct scanRecord *pscan;
         if(!pscan->r1nv) {
             status = dbGet(pscan->r1db, DBR_FLOAT, &(pscan->r1cv),
                            &options, &nRequest, NULL);
+            pscan->p1ra[pscan->cpt] = pscan->r1cv;
             if((pscan->r1dl > 0) &&
                (fabs(pscan->p1dv - pscan->r1cv) > pscan->r1dl)) {
                 sprintf(pscan->smsg,"SCAN Aborted: P1 Readback > delta");
@@ -1012,11 +1053,14 @@ struct scanRecord *pscan;
                 precPvt->scanErr = 1;
                 abortScan = 1;
             }
+        } else {  /* no readback PV, stuff with desired value */
+            pscan->p1ra[pscan->cpt] = pscan->p1dv;
         }
         if(!pscan->r2nv) {
             nRequest = 1;
             status = dbGet(pscan->r2db, DBR_FLOAT, &(pscan->r2cv),
                            &options, &nRequest, NULL);
+            pscan->p2ra[pscan->cpt] = pscan->r2cv;
             if((pscan->r2dl > 0) &&
                (fabs(pscan->p2dv - pscan->r2cv) > pscan->r2dl)) {
                 sprintf(pscan->smsg,"SCAN Aborted: P2 Readback > delta");
@@ -1024,11 +1068,14 @@ struct scanRecord *pscan;
                 precPvt->scanErr = 1;
                 abortScan = 1;
             }
+        } else {  /* no readback PV, stuff with desired value */
+            pscan->p2ra[pscan->cpt] = pscan->p2dv;
         }
         if(!pscan->r3nv) {
             nRequest = 1;
             status = dbGet(pscan->r3db, DBR_FLOAT, &(pscan->r3cv),
                            &options, &nRequest, NULL);
+            pscan->p3ra[pscan->cpt] = pscan->r3cv;
             if((pscan->r3dl > 0) &&
                (fabs(pscan->p3dv - pscan->r3cv) > pscan->r3dl)) {
                 sprintf(pscan->smsg,"SCAN Aborted: P3 Readback > delta");
@@ -1036,11 +1083,14 @@ struct scanRecord *pscan;
                 precPvt->scanErr = 1;
                 abortScan = 1;
             }
+        } else {  /* no readback PV, stuff with desired value */
+            pscan->p3ra[pscan->cpt] = pscan->p3dv;
         }
         if(!pscan->r4nv) {
             nRequest = 1;
             status = dbGet(pscan->r4db, DBR_FLOAT, &(pscan->r4cv),
                            &options, &nRequest, NULL);
+            pscan->p4ra[pscan->cpt] = pscan->r4cv;
             if((pscan->r4dl > 0) &&
                (fabs(pscan->p4dv - pscan->r4cv) > pscan->r4dl)) {
                 sprintf(pscan->smsg,"SCAN Aborted: P4 Readback > delta");
@@ -1048,6 +1098,8 @@ struct scanRecord *pscan;
                 precPvt->scanErr = 1;
                 abortScan = 1;
             }
+        } else {  /* no readback PV, stuff with desired value */
+            pscan->p4ra[pscan->cpt] = pscan->p4dv;
         }
 
         if(abortScan) { 
@@ -1203,6 +1255,26 @@ struct scanRecord *pscan;
           pscan->p4pa[counter] = pscan->p4dv;
       }
 
+      if(!pscan->r1nv) 
+          pscan->p1ra[counter] = pscan->r1cv;
+      else
+          pscan->p1ra[counter] = pscan->p1dv;
+
+      if(!pscan->r2nv) 
+          pscan->p2ra[counter] = pscan->r2cv;
+      else
+          pscan->p2ra[counter] = pscan->p2dv;
+
+      if(!pscan->r3nv) 
+          pscan->p3ra[counter] = pscan->r3cv;
+      else
+          pscan->p3ra[counter] = pscan->p3dv;
+
+      if(!pscan->r4nv) 
+          pscan->p4ra[counter] = pscan->r4cv;
+      else
+          pscan->p4ra[counter] = pscan->p4dv;
+      
       counter++;
   }
 

@@ -360,6 +360,15 @@ epicsShareFunc void epicsShareAPI threadGetName (threadId id, char *name, size_t
     *name = '\0';
 }
 
+/*
+ * threadShow ()
+ */
+
+epicsShareFunc void epicsShareAPI threadShow(void)
+{
+    printf("threadShow not implemented\n");
+}
+
 epicsShareFunc threadPrivateId epicsShareAPI threadPrivateCreate ()
 {
     osdThreadPrivate *p = (osdThreadPrivate *) malloc (sizeof (*p));

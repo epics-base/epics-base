@@ -1,0 +1,15 @@
+#  CONFIG.darwin-ppc.darwin-ppc
+#
+# $Id$
+#
+# Definitions for darwin-ppc host - darwin-ppc target builds
+# Sites may override these definitions in CONFIG_SITE.darwin-ppc.darwin-ppc
+#-------------------------------------------------------
+
+# Include common gnu compiler definitions
+include $(CONFIG)/CONFIG.gnuCommon
+
+GNU_DIR = /usr
+
+CC = $(GNU_BIN)/cc -no-cpp-precomp
+CCC = $(GNU_BIN)/c++ -no-cpp-precomp

@@ -1,0 +1,29 @@
+# CONFIG.Common.darwin-ppc
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for darwin-ppc target builds
+# Sites may override these definitions in CONFIG_SITE.Common.darwin-ppc
+#-------------------------------------------------------
+
+# Include definitions common to all Unix targets
+include $(CONFIG)/os/CONFIG.Common.UnixCommon
+
+OS_CLASS = Darwin
+ARCH_CLASS = ppc
+
+#
+# Don't try building shared libraries on Darwin for now
+#
+SHARED_LIBRARIES=NO
+
+#
+# Need to get some fink-installed packages (readline, etc.).
+# If you don't have readline on your system you must remove
+# or comment out these lines and make the appropriate changes
+# to src/libCom/osi/os/Darwin/osdReadline.h
+#
+OP_SYS_CPPFLAGS += -I$(FINK_DIR)/include
+OP_SYS_LDFLAGS += -L$(FINK_DIR)/lib
+OP_SYS_LDLIBS += -lreadline

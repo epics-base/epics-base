@@ -249,7 +249,7 @@ long epicsShareAPI dbCaPutLink(struct link *plink,short dbrType,
     } else {
         if(!pca->pputNative) {
             pca->pputNative = dbCalloc(pca->nelements,
-            dbr_value_size[pca->caFieldType]);
+            dbr_value_size[ca_field_type(pca->chid)]);
             plink->value.pv_link.pvlMask |= pvlOptOutString;
         }
         if(nelements == 1){
@@ -451,7 +451,7 @@ int epicsShareAPI dbCaGetLinkDBFtype(
     if(!pca) return(-1);
     if(!pca->chid) return(-1);
     if(pca->caState == cs_conn) 
-        return(dbDBRoldToDBFnew[pca->caFieldType]);
+        return(dbDBRoldToDBFnew[ca_field_type(pca->chid)]);
     return(-1);
 }
 
@@ -622,8 +622,6 @@ static void connectionCallback(struct connection_handler_args arg)
     epicsMutexMustLock(pca->lock);
     pca->caState = ca_state(arg.chid);
     if(pca->caState==cs_conn) {
-        pca->caFieldType = ca_field_type(arg.chid);
-        pca->caElementCount = ca_element_count(arg.chid);
         pca->hasReadAccess = ca_read_access(arg.chid);
         pca->hasWriteAccess = ca_write_access(arg.chid);
     }
@@ -644,20 +642,19 @@ static void connectionCallback(struct connection_handler_args arg)
     if(pca->gotFirstConnection) {
         if((pca->nelements != ca_element_count(arg.chid))
         || (pca->dbrType != ca_field_type(arg.chid))){
-            struct pv_link *ppv_link = &(plink->value.pv_link);
-            dbCommon	*precord = ppv_link->precord;
             /* field type or nelements changed */
-            /*Only safe thing is to delete old caLink and allocate a new one*/
-            epicsMutexUnlock(pca->lock);
-            dbScanLock(precord);
-            epicsMutexMustLock(pca->lock);
-            pca->plink = 0;
-            plink->value.pv_link.pvt = 0;
-            addAction(pca,CA_CLEAR_CHANNEL);
-            epicsMutexUnlock(pca->lock);
-            dbScanUnlock(precord);
-            dbCaAddLink(plink);
-            return;
+            /* Let next dbCaGetLink and/or dbCaPutLink determine options*/
+            plink->value.pv_link.pvlMask &=
+                ~(pvlOptInpNative|pvlOptInpString|pvlOptOutNative|pvlOptOutString);
+
+            pca->gotInNative = 0;
+            pca->gotOutNative=0;
+            pca->gotInString=0;
+            pca->gotOutString=0;
+            free(pca->pgetNative); pca->pgetNative = 0;
+            free(pca->pgetString); pca->pgetString = 0;
+            free(pca->pputNative); pca->pputNative = 0;
+            free(pca->pputString); pca->pputString = 0;
         }
     }
     pca->gotFirstConnection = TRUE;

@@ -45,6 +45,7 @@
  * .09  11-20-91	jrw	redesigned as a library
  * .10  11-22-91	jrw	removed output formatting for all but GPIBWRITEs
  * .11	01-10-92	jrw	changed return from GPIBSOFT (propagated, was 0)
+ * .12	02-05-92	jba	Changed process parameter from precord->pdba to precord
  *
  * WISH LIST:
  *  It would be nice to read and write directly to/from the val field
@@ -71,6 +72,7 @@
 #include	<dbAccess.h>
 #include	<devSup.h>
 #include	<recSup.h>
+#include	<callback.h>
 #include	<drvSup.h>
 #include	<link.h>
 #include	<module_types.h>
@@ -2221,7 +2223,7 @@ devGpibLib_processCallback(pDpvt)
 struct  gpibDpvt       *pDpvt;
 {
     dbScanLock(pDpvt->precord);
-    (*(struct rset *)(pDpvt->precord->rset)).process(pDpvt->precord->pdba);
+    (*(struct rset *)(pDpvt->precord->rset)).process(pDpvt->precord);
     dbScanUnlock(pDpvt->precord);
 }
 

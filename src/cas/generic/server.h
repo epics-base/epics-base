@@ -181,33 +181,33 @@ public:
 	//
 	// get
 	//
-	const caHdrLargeArray * getMsg() const;
-	void * getData() const;
-	caServerI * getServer() const;
-	casCoreClient * getClient() const;
-	casPVI * getPV() const;
-	casChannelI * getChannel() const;
+	const caHdrLargeArray * getMsg () const;
+	void * getData () const;
+	caServerI * getServer () const;
+	casCoreClient * getClient () const;
+	casPVI * getPV () const;
+	casChannelI * getChannel () const;
 
 	void setMsg ( caHdrLargeArray &, void * pBody );
 
-	void setServer ( caServerI *p );
+	void setServer ( caServerI * p );
 
-	void setClient ( casCoreClient *p );
+	void setClient ( casCoreClient * p );
 
-	void setPV ( casPVI *p );
+	void setPV ( casPVI * p );
 
-	 void setChannel ( casChannelI *p );
+	 void setChannel ( casChannelI * p );
 
 	void show ( unsigned level ) const;
 	
 private:
 	caHdrLargeArray msg;	// ca message header
-	void            *pData; // pointer to data following header
-	caServerI       *pCAS;
-	casCoreClient   *pClient;
-	casChannelI     *pChannel;
-	casPVI          *pPV;
-	unsigned        nAsyncIO; // checks for improper use of async io
+	void * pData; // pointer to data following header
+	caServerI * pCAS;
+	casCoreClient * pClient;
+	casChannelI * pChannel;
+	casPVI * pPV;
+	unsigned nAsyncIO; // checks for improper use of async io
 };
 
 //
@@ -216,18 +216,18 @@ private:
 class inBufCtx {
     friend class inBuf;
 public:
-    enum pushCtxResult {pushCtxNoSpace, pushCtxSuccess};
-    inBufCtx (const inBuf &); // success
+    enum pushCtxResult { pushCtxNoSpace, pushCtxSuccess };
+    inBufCtx ( const inBuf & ); // success
     inBufCtx (); // failure
     
     pushCtxResult pushResult () const;
     
 private:
-    pushCtxResult   stat;
-    char            *pBuf;
-    bufSizeT        bufSize;
-    bufSizeT        bytesInBuffer;
-    bufSizeT        nextReadIndex;
+    pushCtxResult stat;
+    char * pBuf;
+    bufSizeT bufSize;
+    bufSizeT bytesInBuffer;
+    bufSizeT nextReadIndex;
 };
 
 class casBufferFactory {
@@ -280,7 +280,8 @@ public:
     //
     // fill the input buffer with any incoming messages
     //
-    inBufClient::fillCondition fill ( inBufClient::fillParameter parm = inBufClient::fpNone );
+    inBufClient::fillCondition fill ( 
+        inBufClient::fillParameter parm = inBufClient::fpNone );
     
     void show ( unsigned level ) const;
 
@@ -307,14 +308,14 @@ public:
     void expandBuffer ();
 
 private:
-    epicsMutex  mutex;
+    epicsMutex mutex;
     inBufClient & client;
-    char        * pBuf;
-    bufSizeT    bufSize;
-    bufSizeT    bytesInBuffer;
-    bufSizeT    nextReadIndex;
-    bufSizeT    ioMinSize;
-    unsigned    ctxRecursCount;
+    char * pBuf;
+    bufSizeT bufSize;
+    bufSizeT bytesInBuffer;
+    bufSizeT nextReadIndex;
+    bufSizeT ioMinSize;
+    unsigned ctxRecursCount;
 	inBuf ( const inBuf & );
 	inBuf & operator = ( const inBuf & );
 };
@@ -325,17 +326,17 @@ private:
 class outBufCtx {
     friend class outBuf;
 public:
-    enum pushCtxResult {pushCtxNoSpace, pushCtxSuccess};
-    outBufCtx (const outBuf &); // success
+    enum pushCtxResult { pushCtxNoSpace, pushCtxSuccess };
+    outBufCtx ( const outBuf & ); // success
     outBufCtx (); // failure
 
     pushCtxResult pushResult () const;
 
 private:
-    pushCtxResult   stat;
-	char            *pBuf;
-	bufSizeT        bufSize;
-	bufSizeT        stack;
+    pushCtxResult stat;
+	char * pBuf;
+	bufSizeT bufSize;
+	bufSizeT stack;
 };
 
 class outBufClient {

@@ -4,7 +4,7 @@
  *
  *	Experimental Physics and Industrial Control System (EPICS)
  *
- *	Copyright 1991, the Regents of the University of California,
+ *	Copyright 1991-92, the Regents of the University of California,
  *	and the University of Chicago Board of Governors.
  *
  *	This software was produced under  U.S. Government contracts:
@@ -25,17 +25,17 @@
  *
  * Modification Log:
  * -----------------
- * .00	10-24-90	rac	initial version
- * .01	06-18-91	rac	installed in SCCS
- * .02	12-05-91	rac	abandon use of lightweight process library;
- *				cmdRead ignores blank lines and comment
- *				lines; added cmdInitContext
+ *  .00 10-24-90 rac	initial version
+ *  .01 06-18-91 rac	installed in SCCS
+ *  .02 12-05-91 rac	abandon use of lightweight process library;
+ *			cmdRead ignores blank lines and comment
+ *			lines; added cmdInitContext
+ *  .03 09-14-92 rac	discontinue use of special malloc routines
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
  *	-DNDEBUG	don't compile assert() checking
- *      -DDEBUG         compile various debug code, including checks on
- *                      malloc'd memory
+ *      -DDEBUG         compile various debug code
  */
 /*+/mod***********************************************************************
 * TITLE	cmdSubr - routines for implementing keyboard command processing
@@ -228,7 +228,7 @@ CX_CMD	**ppCxCmd;	/* IO ptr to pointer to command context */
 	(void)fclose((*ppCxCmd)->input);
 	assert((*ppCxCmd)->pPrev != NULL);
 	pCxCmd = (*ppCxCmd)->pPrev;
-	GenFree((char *)(*ppCxCmd));
+	free((char *)(*ppCxCmd));
 	*ppCxCmd = pCxCmd;
 	(*ppCxCmd)->line[0] = '\0';
     }
@@ -291,14 +291,14 @@ CX_CMD	**ppCxCmd;	/* IO ptr to pointer to command context.  The
 	(void)printf("you must specify a file name\n");
 	return;
     }
-    if ((pCxCmdNew = (CX_CMD *)GenMalloc(sizeof(CX_CMD))) == NULL) {
+    if ((pCxCmdNew = (CX_CMD *)malloc(sizeof(CX_CMD))) == NULL) {
 	(void)printf("couldn't malloc command structure\n");
 	return;
     }
     *pCxCmdNew = *pCxCmd;	/* inherit useful info from present context */
     if ((pCxCmdNew->input = fopen(pCxCmd->pField, "r")) == NULL) {
 	(void)printf("couldn't open file\n");
-	GenFree((char *)pCxCmdNew);
+	free((char *)pCxCmdNew);
 	return;
     }
     pCxCmdNew->pPrev = pCxCmd;

@@ -27,7 +27,10 @@
 #define	CA_MONITOR_NATIVE		0x10
 #define	CA_MONITOR_STRING		0x20
 #define	CA_GET_ATTRIBUTES		0x40
-
+/* write type */
+#define CA_PUT          0x1
+#define CA_PUT_CALLBACK 0x2
+
 typedef struct caLink
 {
 	ELLNODE		node;
@@ -46,6 +49,10 @@ typedef struct caLink
         char		hasWriteAccess;
         char            isConnected;
 	char		gotFirstConnection;
+        /* The following are for write request */
+        short           putType;
+        dbCaPutCallback putCallback;
+        struct link     *plinkPutCallback;
         /* The following are for access to additional attributes*/
         char            gotAttributes;
         void            (*callback)(void *usrPvt);

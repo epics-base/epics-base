@@ -44,8 +44,8 @@
 #include "dbLock.h"
 #include "db_access_routines.h"
 #include "db_convert.h"
-#include "dbCaPvt.h"
 #include "dbCa.h"
+#include "dbCaPvt.h"
 #include "dbCaTest.h"
 
 

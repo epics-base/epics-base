@@ -18,6 +18,8 @@
 extern "C" {
 #endif
 
+typedef void (*dbCaPutCallback)(struct link *plink);
+
 epicsShareFunc void epicsShareAPI dbCaLinkInit(void);
 epicsShareFunc void epicsShareAPI dbCaAddLink(struct link *plink);
 epicsShareFunc void epicsShareAPI dbCaRemoveLink(struct link *plink);
@@ -26,7 +28,9 @@ epicsShareFunc long epicsShareAPI dbCaGetLink(
     unsigned short *psevr,long *nRequest);
 epicsShareFunc long epicsShareAPI dbCaPutLink(
     struct link *plink,short dbrType,const void *pbuffer,long nRequest);
-
+epicsShareFunc long epicsShareAPI dbCaPutLinkCallback(
+    struct link *plink,short dbrType,const void *pbuffer,long nRequest,
+    dbCaPutCallback callback);
 epicsShareFunc int epicsShareAPI dbCaIsLinkConnected(const struct link *plink);
 /* The following are available after the link is connected*/
 epicsShareFunc long epicsShareAPI dbCaGetNelements(

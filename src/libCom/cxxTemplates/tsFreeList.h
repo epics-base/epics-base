@@ -13,6 +13,8 @@
 #ifndef tsFreeList_h
 #define tsFreeList_h
 
+#include <new>
+
 //
 // To allow your class to be allocated off of a free list
 // using the new operator:
@@ -28,7 +30,11 @@
 // inline void * classXYZ::operator new ( size_t size )
 // {
 //    epicsAutoMutex locker ( classXYZ::freeListMutex );
-//    return classXYZ::freeList.allocate ( size );
+//    void *p = classXYZ::freeList.allocate ( size );
+//    if ( ! p ) {
+//        throw std::bad_alloc ();
+//    }
+//    return p;
 // }
 //
 // inline void classXYZ::operator delete ( void *pCadaver, size_t size )
@@ -122,7 +128,7 @@ inline void * tsFreeList < T, N, DEBUG_LEVEL >::allocate ( size_t size )
     }
 
     if ( size != sizeof ( T ) || N == 0u ) {
-        return ::operator new ( size );
+        return ::operator new ( size, std::nothrow );
     }
 
     p = this->pFreeList;
@@ -145,7 +151,8 @@ tsFreeListItem < T, DEBUG_LEVEL > * tsFreeList < T, N, DEBUG_LEVEL >::allocateFr
     //        sizeof ( tsFreeListChunk < T, N, DEBUG_LEVEL > ) );
     //}
 
-    tsFreeListChunk < T, N, DEBUG_LEVEL > *pChunk = new ( tsFreeListChunk < T, N, DEBUG_LEVEL > );
+    tsFreeListChunk < T, N, DEBUG_LEVEL > *pChunk = 
+        new ( std::nothrow ) ( tsFreeListChunk < T, N, DEBUG_LEVEL > );
     if ( ! pChunk ) {
         return 0;
     }

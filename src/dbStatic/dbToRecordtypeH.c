@@ -36,7 +36,7 @@ int main(int argc,char **argv)
     dbMenu	*pdbMenu;
     dbRecordType	*pdbRecordType;
     dbFldDes	*pdbFldDes;
-    dbCdefText	*pdbCdef;
+    dbText	*pdbCdef;
     int		isdbCommonRecord = FALSE;
     char	*plastSlash;
     int		strip;
@@ -216,10 +216,10 @@ int main(int argc,char **argv)
 		fprintf(outFile,"#define %sRecord%s\t%d\n",
 		    pdbRecordType->name,pdbFldDes->name,pdbFldDes->indRecordType);
 	    }
-	    pdbCdef = (dbCdefText *)ellFirst(&pdbRecordType->cdefList);
+	    pdbCdef = (dbText *)ellFirst(&pdbRecordType->cdefList);
 	    while (pdbCdef) {
 		fprintf(outFile,"%s\n",pdbCdef->text);
-		pdbCdef = (dbCdefText *)ellNext(&pdbCdef->node);
+		pdbCdef = (dbText *)ellNext(&pdbCdef->node);
 	    }
 	}
 	fprintf(outFile,"#endif /*INC%sH*/\n",pdbRecordType->name);

@@ -88,6 +88,7 @@ int main(int argc,char **argv)
     dbWriteRecordTypeFP(pdbbase,stdout,0);
     dbWriteDeviceFP(pdbbase,stdout);
     dbWriteDriverFP(pdbbase,stdout);
+    dbWriteFunctionFP(pdbbase,stdout);
     dbWriteBreaktableFP(pdbbase,stdout);
     dbWriteRecordFP(pdbbase,stdout,0,0);
     free((void *)path);

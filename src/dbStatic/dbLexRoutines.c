@@ -583,7 +583,7 @@ static void dbRecordtypeFieldItem(char *name,char *value)
 }
 
 static void dbRecordtypeCdef(char *text) {
-    dbCdefText		*pdbCdef;
+    dbText		*pdbCdef;
     tempListNode	*ptempListNode;
     dbRecordType	*pdbRecordType;
     
@@ -591,7 +591,7 @@ static void dbRecordtypeCdef(char *text) {
     ptempListNode = (tempListNode *)ellFirst(&tempList);
     pdbRecordType = ptempListNode->item;
     
-    pdbCdef = dbCalloc(1,sizeof(dbCdefText));
+    pdbCdef = dbCalloc(1,sizeof(dbText));
     if (text[0] == ' ') text++;	/* strip leading space if present */
     pdbCdef->text = strduplicate(text);
     ellAdd(&pdbRecordType->cdefList, &pdbCdef->node);
@@ -742,6 +742,25 @@ static void dbDriver(char *name)
     } 
     pgphentry->userPvt = pdrvSup;
     ellAdd(&pdbbase->drvList,&pdrvSup->node);
+}
+
+static void dbFunction(char *name)
+{
+    dbText	*ptext;
+    GPHENTRY	*pgphentry;
+
+    pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->funcList);
+    if(pgphentry) {
+	return;
+    }
+    ptext = dbCalloc(1,sizeof(dbText));
+    ptext->text = strduplicate(name);
+    pgphentry = gphAdd(pdbbase->pgpHash,ptext->text,&pdbbase->funcList);
+    if(!pgphentry) {
+	yyerrorAbort("gphAdd failed");
+    } 
+    pgphentry->userPvt = ptext;
+    ellAdd(&pdbbase->funcList,&ptext->node);
 }
 
 static void dbBreakHead(char *name)

@@ -114,10 +114,10 @@ typedef struct dbRecordAttribute {
 	char		value[MAX_STRING_SIZE];
 }dbRecordAttribute;
 
-typedef struct dbCdefText {
+typedef struct dbText {
 	ELLNODE		node;
 	char		*text;
-}dbCdefText;
+}dbText;
 
 typedef struct dbRecordType {
 	ELLNODE		node;
@@ -144,6 +144,7 @@ typedef struct dbBase {
 	ELLLIST		menuList;
 	ELLLIST		recordTypeList;
 	ELLLIST		drvList;
+	ELLLIST		funcList;
 	ELLLIST		bptList;	/*Break Point Table Head*/
 	void		*pathPvt;
 	void		*ppvd;      /* pointer to process variable directory*/

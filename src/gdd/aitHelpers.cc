@@ -5,6 +5,9 @@
 // $Id$
 //
 // $Log$
+// Revision 1.11  1999/05/10 23:38:33  jhill
+// convert to and from other time stamp formats
+//
 // Revision 1.10  1999/05/03 16:20:51  jhill
 // allow aitTimeStamp to convert to TS_STAMP (without binding to libCom)
 //
@@ -185,6 +188,7 @@ int aitString::init(const char* p, aitStrType typeIn, unsigned strLengthIn, unsi
 // to an EPICS time stamp, but dont force this library
 // to link with libCom
 //
+
 struct TS_STAMP {
 	aitUint32    secPastEpoch;   /* seconds since 0000 Jan 1, 1990 */
 	aitUint32    nsec;           /* nanoseconds within second */
@@ -232,57 +236,6 @@ aitTimeStamp aitTimeStamp::operator = (const struct TS_STAMP &rhs)
 
 //
 // allow this module to include code that can convert
-// to an EPICS time stamp, but dont force this library
-// to link with libCom
-//
-class osiTime {
-public:
-	unsigned long sec; /* seconds since 0000 Jan 1, 1990 */
-	unsigned long nSec; /* nanoseconds within second */
-};
-
-aitTimeStamp::operator osiTime () const
-{
-	osiTime ts;
-
-	if (this->tv_sec>aitTimeStamp::epicsEpochSecPast1970) {
-		ts.sec = this->tv_sec - aitTimeStamp::epicsEpochSecPast1970;
-		ts.nSec = this->tv_nsec;
-	}
-	else {
-		ts.sec = 0;
-		ts.nSec = 0;
-	}
-	return ts;
-}
-
-void aitTimeStamp::get (osiTime &ts) const
-{
-	if (this->tv_sec>aitTimeStamp::epicsEpochSecPast1970) {
-		ts.sec = this->tv_sec - aitTimeStamp::epicsEpochSecPast1970;
-		ts.nSec = this->tv_nsec;
-	}
-	else {
-		ts.sec = 0;
-		ts.nSec = 0;
-	}
-}
-
-aitTimeStamp::aitTimeStamp (const osiTime &ts)
-{
-	this->tv_sec = ts.sec + aitTimeStamp::epicsEpochSecPast1970;
-	this->tv_nsec = ts.nSec;
-}
-
-aitTimeStamp aitTimeStamp::operator = (const osiTime &rhs)
-{
-	this->tv_sec = rhs.sec + aitTimeStamp::epicsEpochSecPast1970;
-	this->tv_nsec = rhs.nSec;
-	return *this;
-}
-
-//
-// allow this module to include code that can convert
 // to and from a POSIX timespec, but allow this library
 // to compile on systems that dont support it
 //
@@ -318,5 +271,3 @@ aitTimeStamp aitTimeStamp::operator = (const struct timespec &rhs)
 	this->tv_nsec = (aitUint32) rhs.tv_nsec;
 	return *this;
 }
-
-

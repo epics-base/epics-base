@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.19  1999/05/10 23:38:33  jhill
+ * convert to and from other time stamp formats
+ *
  * Revision 1.18  1999/05/03 16:20:51  jhill
  * allow aitTimeStamp to convert to TS_STAMP (without binding to libCom)
  *
@@ -92,9 +95,9 @@ inline char* strDup(const char* x)
 	return y;
 }
 
+
 struct timespec;
 struct TS_STAMP;
-class osiTime;
 class gdd;
 
 class epicsShareClass aitTimeStamp {
@@ -125,6 +128,7 @@ public:
 		assert (this->tv_nsec<=LONG_MAX);
 		uSecOut = (long) this->tv_nsec/NSecPerUSec;
 	}
+
 	//
 	// for use when loading struct timeval
 	//
@@ -160,19 +164,12 @@ public:
 	aitTimeStamp (const struct TS_STAMP &ts);
 	aitTimeStamp operator = (const struct TS_STAMP &rhs);
 
-	//
-	// convert to and from EPICS osiTime format
-	//
-	operator osiTime () const;
-	void get (osiTime &) const;
-	aitTimeStamp (const osiTime &ts);
-	aitTimeStamp operator = (const osiTime &rhs);
-
 	static aitTimeStamp getCurrent();
-private:
+
+//private:
 	unsigned long tv_sec;
 	unsigned long tv_nsec;
-
+private:
 	static const unsigned epicsEpochSecPast1970; 
 };
 

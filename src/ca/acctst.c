@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.53  1998/06/16 00:25:31  jhill
+ * cleanup
+ *
  * Revision 1.52  1998/05/05 16:03:10  jhill
  * use epicsAssert.h
  *
@@ -90,7 +93,7 @@ static char *sccsId = "@(#) $Id$";
 /*
  * EPICS
  */
-#include	<epicsAssert.h>
+#include	"epicsAssert.h"
 
 /*
  * CA 

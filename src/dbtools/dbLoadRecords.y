@@ -340,8 +340,7 @@ static void sub_pvname(char* type, char* name)
 			    VAR_MAX_SUB_SIZE-1);
 			if(n<0) fprintf(stderr,"macExpandString failed\n");
 #ifdef vxWorks
-			if( dbCreateRecord(pdbentry,subst_buffer) )
-				fprintf(stderr,"Cannot create record %s\n",subst_buffer);
+			dbCreateRecord(pdbentry,subst_buffer);
 #else
 			printf("record(%s,\"%s\") {",type,subst_buffer);
 #endif
@@ -349,8 +348,7 @@ static void sub_pvname(char* type, char* name)
 		else
 		{
 #ifdef vxWorks
-			if( dbCreateRecord(pdbentry,name) )
-				fprintf(stderr,"Cannot create record %s\n",name);
+			dbCreateRecord(pdbentry,name);
 #else
 			printf("record(%s,\"%s\") {",type,name);
 #endif

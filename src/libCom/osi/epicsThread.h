@@ -105,7 +105,7 @@ epicsShareFunc void * epicsShareAPI epicsThreadPrivateGet(epicsThreadPrivateId);
 #include "epicsEvent.h"
 
 
-class epicsThreadRunable {
+class epicsShareClass epicsThreadRunable {
 public:
     virtual void run() = 0;
     virtual void stop();

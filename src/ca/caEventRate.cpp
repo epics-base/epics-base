@@ -32,16 +32,20 @@ extern "C" void eventCallBack ( struct event_handler_args args )
 void caEventRate ( const char *pName, unsigned count )
 {
     static const double initialSamplePeriod = 1.0;
-    static const double maxSamplePeriod = 60.0 * 60.0;
+    static const double maxSamplePeriod = 60.0 * 5.0;
 
-    printf ( "Connecting to CA Channel \"%s\".", pName );
+    printf ( "Connecting to CA Channel \"%s\" %u times.", 
+                pName, count );
     fflush ( stdout );
 
-    chid chan;
-    int status = ca_search ( pName,  &chan );
-    SEVCHK(status, NULL);
+    chid * pChidTable = new chid [ count ];
+    assert ( pChidTable );
+    for ( unsigned i = 0u; i < count; i++ ) {
+        int status = ca_search ( pName,  & pChidTable[i] );
+        SEVCHK ( status, NULL );
+    }
 
-    status = ca_pend_io ( 10.0 );
+    int status = ca_pend_io ( 10.0 );
     if ( status != ECA_NORMAL ) {
         fprintf ( stderr, " not found.\n" );
         return;
@@ -54,7 +58,8 @@ void caEventRate ( const char *pName, unsigned count )
 
     unsigned eventCount = 0u;
     for ( unsigned i = 0u; i < count; i++ ) {
-        status = ca_add_event ( DBR_FLOAT, chan, eventCallBack, &eventCount, NULL);
+        status = ca_add_event ( DBR_FLOAT, 
+            pChidTable[i], eventCallBack, &eventCount, NULL);
         SEVCHK ( status, __FILE__ );
     }
 

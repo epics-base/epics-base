@@ -197,9 +197,8 @@ LOCAL int req_server (void)
             continue;
         } 
         else {
-            struct client *pClient;
-            unsigned priorityOfClient;
             epicsThreadId id;
+            struct client *pClient;
 
             pClient = create_tcp_client ( clientSock );
             if ( ! pClient ) {
@@ -213,24 +212,7 @@ LOCAL int req_server (void)
             ellAdd ( &clientQ, &pClient->node );
             UNLOCK_CLIENTQ;
 
-
-            /* 
-             * go up two levels in priority so that the event task is above the
-             * task waiting in accept ()
-             */
-            tbs  = epicsThreadLowestPriorityLevelAbove ( priorityOfSelf, &priorityOfClient );
-            if ( tbs != epicsThreadBooleanStatusSuccess ) {
-                priorityOfClient = priorityOfSelf;
-            }
-            else {
-                unsigned belowPriorityOfClient = priorityOfClient;
-                tbs  = epicsThreadLowestPriorityLevelAbove ( belowPriorityOfClient, &priorityOfClient );
-                if ( tbs != epicsThreadBooleanStatusSuccess ) {
-                    priorityOfClient = belowPriorityOfClient;
-                }
-            }
-
-            id = epicsThreadCreate ( "CAS-client", priorityOfClient,
+            id = epicsThreadCreate ( "CAS-client", epicsThreadPriorityCAServerLow,
                     epicsThreadGetStackSize ( epicsThreadStackBig ),
                     ( EPICSTHREADFUNC ) camsgtask, pClient );
             if ( id == 0 ) {
@@ -248,6 +230,8 @@ LOCAL int req_server (void)
  */
 epicsShareFunc int epicsShareAPI rsrv_init (void)
 {
+    epicsThreadBooleanStatus tbs;
+    unsigned priorityOfConnectDaemon;
     epicsThreadId tid;
     long maxBytesAsALong;
     long status;
@@ -289,8 +273,26 @@ epicsShareFunc int epicsShareAPI rsrv_init (void)
     prsrv_cast_client = NULL;
     pCaBucket = NULL;
 
+    /*
+     * go down two levels so that we are below 
+     * the TCP and event threads started on behalf
+     * of individual clients
+     */
+    tbs  = epicsThreadHighestPriorityLevelBelow ( 
+        epicsThreadPriorityCAServerLow, &priorityOfConnectDaemon );
+    if ( tbs == epicsThreadBooleanStatusSuccess ) {
+        tbs  = epicsThreadHighestPriorityLevelBelow ( 
+            priorityOfConnectDaemon, &priorityOfConnectDaemon );
+        if ( tbs != epicsThreadBooleanStatusSuccess ) {
+            priorityOfConnectDaemon = epicsThreadPriorityCAServerLow;
+        }
+    }
+    else {
+        priorityOfConnectDaemon = epicsThreadPriorityCAServerLow;
+    }
+
     tid = epicsThreadCreate ( "CAS-TCP",
-        epicsThreadPriorityChannelAccessServer,
+        priorityOfConnectDaemon,
         epicsThreadGetStackSize(epicsThreadStackMedium),
         (EPICSTHREADFUNC)req_server, 0);
     if ( tid == 0 ) {
@@ -668,6 +670,7 @@ struct client * create_client ( SOCKET sock, int proto )
     client->recv.stk = 0u;
     client->recv.cnt = 0u;
     client->evuser = NULL;
+    client->priority = CA_PROTO_PRIORITY_MIN;
     client->disconnect = FALSE;
     epicsTimeGetCurrent ( &client->time_at_last_send );
     epicsTimeGetCurrent ( &client->time_at_last_recv );
@@ -800,20 +803,19 @@ struct client *create_tcp_client ( SOCKET sock )
     }
 
     {
-        unsigned priorityOfSelf = epicsThreadGetPrioritySelf ();
         epicsThreadBooleanStatus    tbs;
 
-        tbs  = epicsThreadLowestPriorityLevelAbove ( priorityOfSelf, &priorityOfEvents );
+        tbs  = epicsThreadHighestPriorityLevelBelow ( epicsThreadPriorityCAServerLow, &priorityOfEvents );
         if ( tbs != epicsThreadBooleanStatusSuccess ) {
-            priorityOfEvents = priorityOfSelf;
+            priorityOfEvents = epicsThreadPriorityCAServerLow;
         }
     }
 
     status = db_start_events ( client->evuser, "CAS-event", 
                 NULL, NULL, priorityOfEvents ); 
-    if (status != DB_EVENT_OK) {
-        errlogPrintf("CAS: unable to start the event facility\n");
-        destroy_tcp_client (client);
+    if ( status != DB_EVENT_OK ) {
+        errlogPrintf ( "CAS: unable to start the event facility\n" );
+        destroy_tcp_client ( client );
         return NULL;
     }
 

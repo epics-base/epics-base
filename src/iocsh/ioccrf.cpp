@@ -19,7 +19,7 @@ of this distribution.
 #include "errlog.h"
 #include "dbAccess.h"
 #include "osiThread.h"
-#include "osiMutex.h"
+#include "epicsMutex.h"
 #include "registry.h"
 #define epicsExportSharedSymbols
 #include "ioccrf.h"
@@ -35,15 +35,15 @@ struct ioccrfCommand {
 };
 static struct ioccrfCommand *ioccrfCommandHead;
 static char ioccrfID[] = "ioccrf";
-static semMutexId commandTableMutex;
+static epicsMutexId commandTableMutex;
 static threadOnceId commandTableOnceId = OSITHREAD_ONCE_INIT;
 
 /*
  * Set up command table mutex
  */
-static void commandTableOnce (void *arg)
+static void commandTableOnce (void *)
 {
-    commandTableMutex = semMutexMustCreate ();
+    commandTableMutex = epicsMutexMustCreate ();
 }
 
 /*
@@ -53,7 +53,7 @@ static void
 commandTableLock (void)
 {
     threadOnce (&commandTableOnceId, commandTableOnce, NULL);
-    semMutexTake (commandTableMutex);
+    epicsMutexMustLock (commandTableMutex);
 }
 
 /*
@@ -63,7 +63,7 @@ static void
 commandTableUnlock (void)
 {
     threadOnce (&commandTableOnceId, commandTableOnce, NULL);
-    semMutexGive (commandTableMutex);
+    epicsMutexUnlock (commandTableMutex);
 }
 
 /*
@@ -523,14 +523,14 @@ static const ioccrfArg helpArg0 = { "command",ioccrfArgInt};
 static const ioccrfArg *helpArgs[1] = {&helpArg0};
 static const ioccrfFuncDef helpFuncDef =
     {"help",1,helpArgs};
-static void helpCallFunc(const ioccrfArgBuf *args)
+static void helpCallFunc(const ioccrfArgBuf *)
 {
 }
 
 /* exit */
 static const ioccrfFuncDef exitFuncDef =
     {"exit",0,0};
-static void exitCallFunc(const ioccrfArgBuf *args)
+static void exitCallFunc(const ioccrfArgBuf *)
 {
 }
 

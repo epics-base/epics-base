@@ -120,11 +120,10 @@ static const ioccrfFuncDef putenvFuncDef = {"putenv",1,putenvArgs};
 static void putenvCallFunc(const ioccrfArgBuf *args)
 {
     const char *cp = args[0].sval;
-    int putenv(const char *);
 
     if (!cp)
         return;
-    if (putenv (cp))
+    if (putenv ((char *)cp))
         printf ("putenv(%s) failed.\n", cp);
 }
 

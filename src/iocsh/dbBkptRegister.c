@@ -14,7 +14,7 @@ of this distribution.
 
 #include "ellLib.h"
 #include "osiThread.h"
-#include "osiSem.h"
+#include "epicsEvent.h"
 #include "tsStamp.h"
 #include "errlog.h"
 #include "alarm.h"

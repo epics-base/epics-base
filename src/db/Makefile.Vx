@@ -62,9 +62,9 @@ LIBOBJS = \
 	taskwd.o\
 	dbCa.o \
 	dbcar.o \
+	initHooks.o \
 	devLib.o
 
-PROD = initHooks.o
 
 LIBNAME = dbLib
 

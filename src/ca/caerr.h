@@ -147,7 +147,7 @@
 #ifndef CA_ERROR_GLBLSOURCE
 epicsShareExtern READONLY char  *ca_message_text[];
 #else
-READONLY char   *ca_message_text[]
+epicsShareDef READONLY char   *ca_message_text[]
 =
 {
 "Normal successful completion",

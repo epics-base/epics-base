@@ -45,6 +45,10 @@ static void substituteDestruct(void *substitutePvt);
 static void substituteOpen(void **substitutePvt,char *substitutionName);
 static int substituteGetNextSet(void *substitutePvt,char **filename);
 static char *substituteGetReplacements(void *substitutePvt);
+
+/*Exit status*/
+static int exitStatus = 0;
+
 
 int main(int argc,char **argv)
 {
@@ -116,7 +120,7 @@ int main(int argc,char **argv)
     inputDestruct(inputPvt);
     free((void *)templateName);
     free((void *)substitutionName);
-    return(0);
+    return(exitStatus);
 }
 
 void usageExit(void)
@@ -219,10 +223,10 @@ static void makeSubstitutions(void *inputPvt,void *macPvt,char *templateName)
 endif:
 	if(expand) {
 	    n = macExpandString(macPvt,input,buffer,MAX_BUFFER_SIZE-1);
+	    fputs(buffer,stdout);
 	    if(n<0) {
 	        inputErrPrint(inputPvt);
-	    } else {
-	        printf("%s",buffer);
+		exitStatus = 2;
 	    }
 	}
     }

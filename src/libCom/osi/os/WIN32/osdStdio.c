@@ -28,7 +28,7 @@ int epicsShareAPI epicsVsnprintf (
         }
     }
     if ( rtn == -1 ) {
-        str[size-1] = 0;
+        if(size!=0) str[size-1] = 0;
         return (int) size;
     }
     return rtn;

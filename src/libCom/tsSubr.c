@@ -1315,7 +1315,7 @@ char	**pCallerText)	/* IO ptr to ptr to string containing time and date */
 	}
 	if (retStat == S_ts_OK) {
 	    count = nextIntFieldAsInt(pText, &t.year, &delim);
-	    if (count <= 1 || t.year <= 0)
+            if (count <= 1 || t.year < 0 || (count > 3 && t.year < TS_EPOCH_YEAR))
 		retStat = S_ts_inputTextError;
 	    else if (!isspace(delim))
 		retStat = S_ts_inputTextError;
@@ -1365,7 +1365,7 @@ char	**pCallerText)	/* IO ptr to ptr to string containing time and date */
 	}
 	if (retStat == S_ts_OK) {
 	    count = nextIntFieldAsInt(pText, &t.year, &delim);
-	    if (count <= 1 || t.year <= 0)
+            if (count <= 1 || t.year < 0 || (count > 3 && t.year < TS_EPOCH_YEAR))
 		retStat = S_ts_inputTextError;
 	    else if (!isspace(delim))
 		retStat = S_ts_inputTextError;

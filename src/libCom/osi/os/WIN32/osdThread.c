@@ -28,7 +28,7 @@
 #include "errlog.h"
 #include "epicsAssert.h"
 
-typedef struct {
+typedef struct win32ThreadParam {
     HANDLE handle;
     THREADFUNC funptr;
     void *parm;
@@ -490,6 +490,12 @@ epicsShareFunc threadId epicsShareAPI threadGetIdSelf (void)
     win32ThreadParam *pParm = (win32ThreadParam *) TlsGetValue (tlsIndexWIN32);
     return (threadId) pParm;
 }
+
+epicsShareFunc threadId epicsShareAPI threadGetId (const char *name)
+{
+    return 0;
+}
+
 
 /*
  * threadGetNameSelf ()

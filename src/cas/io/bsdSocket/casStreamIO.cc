@@ -18,7 +18,7 @@
 casStreamIO::casStreamIO ( caServerI & cas, clientBufMemoryManager & bufMgr,
                           const ioArgsToNewStreamIO & args ) :
 	casStrmClient ( cas, bufMgr ), sock ( args.sock ), addr (  args.addr), 
-        blockingFlag ( xIsBlocking ), sockHasBeenClosed ( false )
+        blockingFlag ( xIsBlocking ), sockHasBeenShutdown ( false )
  {
 	assert ( sock >= 0 );
 	int yes = true;
@@ -96,9 +96,7 @@ casStreamIO::casStreamIO ( caServerI & cas, clientBufMemoryManager & bufMgr,
 // casStreamIO::~casStreamIO()
 casStreamIO::~casStreamIO()
 {
-	if ( ! this->sockHasBeenClosed ) {
-		epicsSocketDestroy ( this->sock );
-	}
+	epicsSocketDestroy ( this->sock );
 }
 
 // casStreamIO::osdSend()
@@ -183,9 +181,9 @@ casStreamIO::osdRecv ( char * pInBuf, bufSizeT nBytes, // X aCC 361
             myerrno != SOCK_ECONNRESET &&
             myerrno != SOCK_EPIPE &&
             myerrno != SOCK_ETIMEDOUT ) {
-            ipAddrToA (&this->addr, buf, sizeof(buf));
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+            ipAddrToA (&this->addr, buf, sizeof(buf));
             errlogPrintf(
 		"CAS: client %s disconnected because \"%s\"\n",
                 buf, sockErrBuf );
@@ -201,18 +199,19 @@ casStreamIO::osdRecv ( char * pInBuf, bufSizeT nBytes, // X aCC 361
 // casStreamIO::forceDisconnect()
 void casStreamIO::forceDisconnect ()
 {
-	if ( ! this->sockHasBeenClosed ) {
-        this->sockHasBeenClosed = true;
+    // !!!! other OS specific wakeup will be required here when we 
+    // !!!! switch to a threaded implementation
+	if ( ! this->sockHasBeenShutdown ) {
         int status = ::shutdown ( this->sock, SHUT_RDWR );
-        if ( status ) {
+        if ( status == 0 ) {
+            this->sockHasBeenShutdown = true;
+        }
+        else {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
             errlogPrintf ("CAC TCP socket shutdown error was %s\n", 
                 sockErrBuf );
         }
-		epicsSocketDestroy ( this->sock );
-        // other wakeup will be required here when we 
-        // switch to a threaded implementation
 	}
 }
 
@@ -270,10 +269,10 @@ bufSizeT casStreamIO::incomingBytesPresent () const // X aCC 361
             localError != SOCK_EPIPE &&
             localError != SOCK_ETIMEDOUT ) 
         {
-            char buf[64];
-            ipAddrToA ( &this->addr, buf, sizeof(buf) );
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+            char buf[64];
+            ipAddrToA ( &this->addr, buf, sizeof(buf) );
             errlogPrintf ("CAS: FIONREAD for %s failed because \"%s\"\n",
                 buf, sockErrBuf );
         }

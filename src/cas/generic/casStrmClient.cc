@@ -2076,7 +2076,7 @@ outBuf::flushCondition casStrmClient::xSend (char *pBufIn,
             return outBuf::flushProgress;
         }
     }
-    return static_cast <outBuf::flushCondition> (0); // Make compiler happy
+	return outBuf::flushDisconnect; // happy compiler 
 }
 
 //

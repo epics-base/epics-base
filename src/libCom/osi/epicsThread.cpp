@@ -15,9 +15,9 @@ epicsThreadRunable::~epicsThreadRunable () {}
 void epicsThreadRunable::stop() {};
 void epicsThreadRunable::show(unsigned int) const {};
 
-void epicsThreadCallEntryPoint ( void *pPvt )
+static void epicsThreadCallEntryPoint ( void * pPvt )
 {
-    epicsThread *pThread = static_cast <epicsThread *> ( pPvt );
+    epicsThread * pThread = static_cast <epicsThread *> ( pPvt );
     pThread->begin.wait ();
     if ( ! pThread->cancel ) {
         pThread->runable.run ();
@@ -40,8 +40,9 @@ bool epicsThread::exitWait ( double delay )
     return this->terminated;
 }
 
-epicsThread::epicsThread (epicsThreadRunable &r, const char *name, unsigned stackSize, unsigned priority ) :
-    runable(r), cancel (false), terminated ( false )
+epicsThread::epicsThread ( epicsThreadRunable &r, const char *name,
+    unsigned stackSize, unsigned priority ) :
+        runable(r), cancel (false), terminated ( false )
 {
     this->id = epicsThreadCreate ( name, priority, stackSize,
         epicsThreadCallEntryPoint, static_cast <void *> (this) );

@@ -85,6 +85,8 @@
  *
  */
 
+static char *sccsId = "$Id$\t$Date$";
+
 #include "vxWorks.h"
 #include "vme.h"
 #include "taskLib.h"

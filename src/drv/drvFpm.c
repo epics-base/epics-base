@@ -78,6 +78,8 @@
  *
  */
 
+static char *sccsId = "$Id$\t$Date$";
+
 #include "vxWorks.h"
 #include "vme.h"
 #ifdef V5_vxWorks
@@ -249,7 +251,7 @@ void    fpm_reboot()
 {
         int i;
 
-        for (i = 0; i < bi_num_cards[AT8_FP10S_BI]; i++){
+        for (i = 0; i < bi_num_cards[AT8_FP10M_BI]; i++){
 
                 if(!fpm[i].fmptr){
                         continue;

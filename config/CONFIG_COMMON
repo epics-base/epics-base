@@ -30,6 +30,7 @@ INSTALL_MAN                 = $(INSTALL_LOCATION)/man
 INSTALL_TEMPLATES           = $(INSTALL_LOCATION)/templates
 INSTALL_DBD                 = $(INSTALL_LOCATION)/dbd
 INSTALL_CONFIG              = $(INSTALL_LOCATION)/config
+INSTALL_JAVA                = $(INSTALL_LOCATION)/javalib
 
 EPICS_BASE_INCLUDE      = $(EPICS_BASE)/include
 
@@ -53,6 +54,7 @@ PERL=perl
 # install from EPICS
 INSTALL = $(PERL) $(EPICS_BASE_HOST_BIN)/installEpics.pl
 INSTALL_PRODUCT = $(INSTALL)
+INSTALL_LIBRARY = $(INSTALL)
 
 # dbtools from EPICS
 

@@ -429,7 +429,7 @@ PROD_MAKE_COMMAND=$(MAKE) $@\
 	PRODNAME_RCS_$(ARCH_CLASS)="$($(basename $@)_RCS_$(ARCH_CLASS))"\
 	PRODNAME_LIBS="$($(basename $@)_LIBS)"
 
-$(PROD): $(PROD_OBJS) $(PROD_RESS) $(PROD_DEPLIBS) $(COND_PROD_DEPLIBS)
+$(PROD): $(SRCS) $(COND_PROD_SRCS) $(PROD_RESS) $(PROD_DEPLIBS) $(COND_PROD_DEPLIBS)
 	@$(PROD_MAKE_COMMAND)
 
 endif
@@ -440,8 +440,6 @@ endif  #ifdef PROD
 #---------------------------------------------------------------
 #     Java classes and packages
 #
-
-INSTALL_JAVA = $(INSTALL_LOCATION)/javalib
 
 DIRECTORY_TARGETS += $(INSTALL_JAVA)
 ifdef PACKAGE
@@ -669,14 +667,14 @@ $(INSTALL_BIN)/%: ../%
 
 $(INSTALL_LIB)/%.a: %.a
 	@echo "Installing library $@"
-	@$(INSTALL) -d -m 644 $< $(INSTALL_LIB)
+	@$(INSTALL_LIBRARY) -d -m 644 $< $(INSTALL_LIB)
 ifdef RANLIB
 	$(RANLIB) $(RANLIBFLAGS) $@
 endif # RANLIB
 
 $(INSTALL_LIB)/%.lib: %.lib
 	@echo "Installing library $@"
-	@$(INSTALL) -d -m 644 $< $(INSTALL_LIB)
+	@$(INSTALL_LIBRARY) -d -m 644 $< $(INSTALL_LIB)
 
 $(INSTALL_SHRLIB)/lib%: lib%
 	@echo "Installing library $@"

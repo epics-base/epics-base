@@ -98,14 +98,6 @@
 
 #define DB_MAX_CHOICES	30
 
-#define SUPERVISORY 0
-#define CLOSED_LOOP 1
-
-#define NTO1FIRST	0
-#define NTO1LOW		1
-#define NTO1HIGH	2
-#define NTO1AVE		3
-
 #include "errMdef.h"
 #include "epicsTypes.h"
 

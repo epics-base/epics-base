@@ -78,13 +78,14 @@ Com_DIR = $(INSTALL_LIB)
 caRepeater_SRCS = caRepeater.cpp
 PROD += caRepeater
 
-PROD_DEFAULT += catime acctst caConnTest casw
+PROD_DEFAULT += catime acctst caConnTest casw caEventRate
 catime_SRCS = catimeMain.c catime.c 
 acctst_SRCS = acctstMain.c acctst.c 
+caEventRate_SRCS = caEventRateMain.cpp caEventRate.cpp
 casw_SRCS = casw.cpp
 caConnTest_SRCS = caConnTestMain.cpp caConnTest.cpp 
 
-PROD_vxWorks = catime acctst caConnTest
+PROD_vxWorks = catime acctst caConnTest caEventRate
 
 include $(TOP)/configure/RULES
 

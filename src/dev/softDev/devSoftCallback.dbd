@@ -1,0 +1,9 @@
+# $Id$
+
+device(ao,CONSTANT,devAoSoftCallback,"Soft Put Callback")
+device(bo,CONSTANT,devBoSoftCallback,"Soft Put Callback")
+device(longout,CONSTANT,devLoSoftCallback,"Soft Put Callback")
+device(mbbo,CONSTANT,devMbboSoftCallback,"Soft Put Callback")
+device(mbboDirect,CONSTANT,devMbboDirectSoftCallback,"Soft Put Callback")
+device(stringout,CONSTANT,devSoSoftCallback,"Soft Put Callback")
+

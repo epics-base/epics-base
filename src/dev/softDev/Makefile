@@ -12,6 +12,7 @@ TOP=../../..
 include $(TOP)/configure/CONFIG
 
 DBD += devSoft.dbd
+DBD += devSoftCallback.dbd
 
 LIBSRCS += devAiSoft.c
 LIBSRCS += devAiSoftRaw.c
@@ -37,6 +38,13 @@ LIBSRCS += devSASoft.c
 LIBSRCS += devSiSoft.c
 LIBSRCS += devSoSoft.c
 LIBSRCS += devWfSoft.c
+
+LIBSRCS += devAoSoftCallback.c
+LIBSRCS += devBoSoftCallback.c
+LIBSRCS += devLoSoftCallback.c
+LIBSRCS += devMbboSoftCallback.c
+LIBSRCS += devMbboDirectSoftCallback.c
+LIBSRCS += devSoSoftCallback.c
 
 LIBRARY_IOC += softDevIoc
 softDevIoc_LIBS += recIoc asIoc dbIoc registryIoc dbStaticIoc ca Com

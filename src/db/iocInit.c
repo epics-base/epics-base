@@ -308,6 +308,7 @@ static long initDatabase()
 		(struct rset *)(precord->rset) = prset;
 		precord->pdba = (struct dbAddr *)calloc(1,sizeof(struct dbAddr));
 		strncpy(name,precord->name,PVNAME_SZ);
+		name[PVNAME_SZ]=0;
 		strcat(name,".VAL");
 		if(dbNameToAddr(name,precord->pdba)) {
 			status = S_db_notFound;

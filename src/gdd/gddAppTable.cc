@@ -546,8 +546,14 @@ gddStatus gddApplicationTypeTable::smartCopy(gdd* dest, const gdd* src)
 		rc=copyDD_src(*dest,*src);
 	else if(src->isContainer() && src->isManaged())
 		rc=copyDD_dest(*dest,*src);
-	else if(!src->isContainer() && !dest->isContainer())
-		rc=dest->put(src); // both are not containers, let gdd handle it
+    else if(!src->isContainer() && !dest->isContainer()) {
+        if ( src->applicationType() == dest->applicationType() ) {
+		    rc=dest->put(src); // both are not containers, let gdd handle it
+        }
+        else {
+            rc=gddErrorNotDefined;
+        }
+    }
 	else
 		rc=gddErrorNotAllowed;
 

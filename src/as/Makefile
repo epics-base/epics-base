@@ -37,3 +37,5 @@ $(INSTALL_INC)/asLib.h:../asLib.h
 clean::
 	@$(RM) asLib.c asLib_lex.c 
 
+$(INSTALL_INC)/asLib.h:../asLib.h
+

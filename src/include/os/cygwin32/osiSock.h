@@ -26,7 +26,6 @@ extern "C" {
 /*
  * as far as I can tell there is no header file for these
  */
-int gethostname(char *name, int namelen);
 int sethostname(char *name, int namelen);
 
 #ifdef __cplusplus
@@ -53,10 +52,6 @@ typedef int osiSocklen_t;
  
 /* Used by ca/if_depends.c */
 #define    SIOCGIFDSTADDR  _IOWR('i', 15, struct ifreq)    /* get p-p address */
-#define    SIOCGIFADDR     _IOWR('i', 13, struct ifreq)    /* get ifnet address */
-
-/* Used by ca/if_depends.c db/drvTS.c dbtools/BSlib.c */
-#define    SIOCGIFBRDADDR  _IOWR('i', 23, struct ifreq)    /* get broadcast addr */
 
 
 /* Used by ca/if_depends.c ca/ucx.h */

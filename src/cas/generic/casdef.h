@@ -725,8 +725,6 @@ public:
     //
     epicsShareFunc caServer * getCAS () const;
 
-    void serverInitiatedDestroy ();
-
 private:
     class casAsyncReadIOI * pAsyncReadIOI;
     //
@@ -740,6 +738,9 @@ private:
 
     casAsyncReadIO ( const casAsyncReadIO & );
     casAsyncReadIO & operator = ( const casAsyncReadIO & );
+
+    void serverInitiatedDestroy ();
+    friend class casAsyncReadIOI;
 };
 
 //
@@ -781,8 +782,6 @@ public:
     //
     epicsShareFunc caServer * getCAS () const;
 
-    void serverInitiatedDestroy ();
-
 private:
     class casAsyncWriteIOI * pAsyncWriteIOI;
     //
@@ -796,6 +795,9 @@ private:
 
     casAsyncWriteIO ( const casAsyncWriteIO & );
     casAsyncWriteIO & operator = ( const casAsyncWriteIO & );
+
+    void serverInitiatedDestroy ();
+    friend class casAsyncWriteIOI;
 };
 
 //
@@ -828,8 +830,6 @@ public:
     //
     epicsShareFunc caServer * getCAS () const;
 
-   void serverInitiatedDestroy ();
-
 private:
     class casAsyncPVExistIOI * pAsyncPVExistIOI;
 
@@ -844,6 +844,9 @@ private:
  
     casAsyncPVExistIO ( const casAsyncPVExistIO & );
     casAsyncPVExistIO & operator = ( const casAsyncPVExistIO & );
+
+    friend class casAsyncPVExistIOI;
+    void serverInitiatedDestroy ();
 };
 
 //
@@ -874,8 +877,6 @@ public:
     //
     epicsShareFunc caServer * getCAS () const;
 
-   void serverInitiatedDestroy ();
-
 private:
     class casAsyncPVAttachIOI * pAsyncPVAttachIOI;
 
@@ -890,6 +891,9 @@ private:
 
     casAsyncPVAttachIO ( const casAsyncPVAttachIO & );
     casAsyncPVAttachIO & operator = ( const casAsyncPVAttachIO & );
+
+    friend class casAsyncPVAttachIOI;
+    void serverInitiatedDestroy ();
 };
 
 //

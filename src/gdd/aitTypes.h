@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.6  1997/12/18 19:03:18  jba
+ * Linux change.
+ *
  * Revision 1.5  1997/08/05 00:51:08  jhill
  * fixed problems in aitString and the conversion matrix
  *
@@ -82,7 +85,7 @@ typedef	struct {
 #endif
 
 #ifndef vxWorks
-#if (_POSIX_C_SOURCE < 3) && !defined(solaris) && !defined(SOLARIS) && !defined(HP_UX) && !defined(linux)
+#if (_POSIX_C_SOURCE < 3) && !defined(SOLARIS) && !defined(HP_UX) && !defined(linux)
 
 struct timespec
 {

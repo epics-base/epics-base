@@ -13,6 +13,9 @@
 
 /*
  * $Log$
+ * Revision 1.34  2000/02/22 19:07:16  mrk
+ * change osiSockResource.h to osiSock.h
+ *
  * Revision 1.33  2000/02/02 20:06:24  mrk
  * new way to build
  *
@@ -821,7 +824,7 @@ long TSinit(void)
 
 /* following are watch dog routines for soft time support */
 
-static void TSstartSoftClock() /*start the soft clock watch dog*/
+void TSstartSoftClock() /*start the soft clock watch dog*/
 {
     /* simple watch dog to fire off syncs to slaves */
     Debug(5,"start watch dog at rate %ld\n",
@@ -1230,7 +1233,7 @@ static int TSgetBroadcastSocket(int port, struct sockaddr_in* sin)
 TSgetBroadcastAddr() - Determine the broadcast address, this is 
 directly from the Sun Network Programmer's guide.
 */
-static long TSgetBroadcastAddr(int soc, struct sockaddr* sin)
+long TSgetBroadcastAddr(int soc, struct sockaddr* sin)
 {
     struct ifconf ifc;
     struct ifreq* ifr;
@@ -1402,7 +1405,7 @@ while checking for master timing IOC to come up
   - sync with unix if master goes away until master comes back
   - continually check for master if no unix sync available
 */
-static long TSasyncClient()
+long TSasyncClient()
 {
     BOOT_PARAMS bootParms;
     TSstampTrans stran;
@@ -1429,18 +1432,19 @@ static long TSasyncClient()
     }
     
     if( (soc_unix=TSgetSocket(0,&sin_unix)) <0)
-    { Debug0(1,"TSgetSocket failed\n"); return -1; }
+    { printf("TSgetSocket failed\n"); return -1; }
     
     status = aToIPAddr (host_addr, UDP_NTP_PORT, &sin_unix);
     if (status) {
-        Debug0(2,"bad host name or IP address\n");
+        printf("TSasyncClient: bad host name or IP address host %s port %d\n",
+            host_addr,UDP_NTP_PORT);
         close (soc_unix);
         return -1;
     }
     
     /*------socket for finding master----------*/
     if( (soc_bc=TSgetBroadcastSocket(0,&sin_bc)) <0)
-    { Debug0(1,"TSgetBroadcastSocket failed\n"); close(soc_unix); return -1; }
+    { printf("TSgetBroadcastSocket failed\n"); close(soc_unix); return -1; }
     
     sin_bc.sin_port = htons(TSdata.master_port);
     /*-----------------------------------------*/

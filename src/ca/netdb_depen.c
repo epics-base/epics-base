@@ -38,7 +38,7 @@ static char	*sccsId = "@(#) $Id$";
 #include <stdio.h>
 #include <string.h>
 
-#ifdef _WINDOWS
+#ifdef WIN32
 #	include <winsock.h>
 #else
 #	include <sys/types.h>
@@ -54,7 +54,10 @@ static char	*sccsId = "@(#) $Id$";
 /*
  * caHostFromInetAddr() 
  */
-void caHostFromInetAddr(struct in_addr *pnet_addr, char *pBuf, unsigned size)
+void caHostFromInetAddr(
+const struct in_addr 	*pnet_addr, 
+char 			*pBuf, 
+unsigned 		size)
 {
         char            *pString;
         struct hostent  *ent;

@@ -39,11 +39,13 @@
  * .06  08-19-94        nda     added Output data option of VAL or DOL                         
  * .07  09-14-94        nda     corrected bug that caused SCAN_DISABLE to lock up the record forever
  * .08  02-01-95        nda     added VERS and ODLY (output execution delay)
+ * .09  02-15-95        nda     addedd INxP to determine which inputs should cause the record
+ *                              to process when in I/O INTR mode.
  *
  *
  */
 
-#define VERSION 1.08
+#define VERSION 1.09
 
 
 
@@ -74,7 +76,7 @@
 
 #include	<choiceWait.h>
 #include	<waitRecord.h>
-#include	<caMonitor.h>
+#include	<recWaitCa.h>
 
 
 /* Create RSET - Record Support Entry Table*/
@@ -162,7 +164,7 @@ struct cbStruct {
         struct waitRecord *pwait;     /* pointer to wait record which needs work done */
         WDOG_ID            wd_id;     /* Watchdog used for delays */
         IOSCANPVT          ioscanpvt; /* used for IO_EVENT scanning */
-        CAMONITOR          inpMonitor[12];  /* required structures for each input variable */
+        RECWAITCA          inpMonitor[12];  /* required structures for each input variable */
         int                procPending;     /* flag to indicate record processing is pending */
 };
  
@@ -185,9 +187,10 @@ static long init_record(pwait,pass)
     long    status = 0;
     int i;
 
-    char          *ppvn[PVN_SIZE];
-    struct dbAddr **ppdbAddr;   /* ptr to a ptr to dbAddr */
-    long          *paddrValid;
+    char            *ppvn[PVN_SIZE];
+    struct dbAddr   **ppdbAddr;   /* ptr to a ptr to dbAddr */
+    long            *paddrValid;
+    unsigned short  *piointInc;	  /* include for IO_INT ? */
 
     char rpbuf[184];
     short error_number;
@@ -258,12 +261,14 @@ static long init_record(pwait,pass)
 /* MON_ALWAYS  if(pwait->scan == SCAN_IO_EVENT)  {  */
     if(1) {
         paddrValid = &pwait->inav;
+        piointInc  = &pwait->inap;
 
-        for(i=0;i<ARG_MAX; i++, paddrValid++) {
-            if(!(*paddrValid)) {
-                if(waitRecDebug) printf("adding monitor\n");
-                status = caMonitorAdd(&(((struct cbStruct *)pwait->cbst)->inpMonitor[i]));
-                if(status) errMessage(status,"caMonitorAdd error");
+        for(i=0;i<ARG_MAX; i++, paddrValid++, piointInc++) {
+            /* if valid PV AND input include flag is true ... */
+            if(!(*paddrValid) && (*piointInc)) {
+                if(waitRecDebug) printf("adding monitor on input %d\n", i);
+                status = recWaitCaAdd(&(((struct cbStruct *)pwait->cbst)->inpMonitor[i]));
+                if(status) errMessage(status,"recWaitCaAdd error");
             }
         }
     }
@@ -372,43 +377,43 @@ static long special(paddr,after)
     char                *ppvn[PVN_SIZE];
     struct dbAddr       **ppdbAddr;   /* ptr to a ptr to dbAddr */
     long                *paddrValid;
+    unsigned short      *piointInc;   /* include for IO_INT ? */
     int  i;
     long status;
     long odbv  =0;    
     short error_number;
     char rpbuf[184];
 
-    if(waitRecDebug) printf("entering special \n");
-    if(!after) {  /* this is called before ca changes the field */
-        switch(special_type) {
-          case(SPC_SCAN):   /* about to change SCAN mechanism ... */
-              if(pwait->scan == SCAN_IO_EVENT) { 
-                  /* Leaving IO_EVENT, delete monitors */
-                  paddrValid = &pwait->inav;
-                  for(i=0;i<ARG_MAX; i++, paddrValid++) {
-                      if(!(*paddrValid)) {
-                        if(waitRecDebug) printf("deleting monitor\n");
-                        status = caMonitorDelete(&(((struct cbStruct *)pwait->cbst)->inpMonitor[i]));
-                        if(status) errMessage(status,"caMonitorDelete error");
-                      }
-                  }
-              }
-              break;
+    if(waitRecDebug) printf("entering special %d \n",after);
 
-          case(SPC_MOD):     /* check if changing any PV names while monitored */
-/* MON_ALWAYS if(pwait->scan == SCAN_IO_EVENT) { */
-              if(1) {
-                  *ppvn = &pwait->inan[0];
-                  paddrValid = &pwait->inav;
-                  for(i=0;i<ARG_MAX; i++, *ppvn += PVN_SIZE, paddrValid++) {
-                      if((paddr->pfield==*ppvn) && !(*paddrValid)) {
-                          if(waitRecDebug) printf("deleting monitor\n");
-                          status = caMonitorDelete(&(((struct cbStruct *)pwait->cbst)->inpMonitor[i]));
-                          if(status) errMessage(status,"caMonitorDelete error");
-                      }
-                  }
-               }
-               break;
+    if(!after) {  /* this is called before ca changes the field */
+        /* MON_ALWAYS This case doesn't currently happen */
+        if((special_type == SPC_SCAN) && (pwait->scan == SCAN_IO_EVENT)) {
+            /* Leaving IO_EVENT, delete monitors */
+            paddrValid = &pwait->inav;
+            for(i=0;i<ARG_MAX; i++, paddrValid++) {
+                if(!(*paddrValid)) {
+                    if(waitRecDebug) printf("deleting monitor\n");
+                    status = recWaitCaDelete(&(((struct cbStruct *)pwait->cbst)->inpMonitor[i]));
+                    if(status) errMessage(status,"recWaitCaDelete error");
+                }
+            }
+            return(0);
+        }	
+        
+        /* check if changing any Input PV names/flags while monitored */
+        if((special_type >= REC_WAIT_A) && (special_type <= REC_WAIT_L)) {
+            /* MON_ALWAYS if(pwait->scan == SCAN_IO_EVENT)  */
+            /* About to change a PV or flag, delete that particular monitor */
+            i = special_type - REC_WAIT_A; /* index of input */
+            paddrValid = &pwait->inav + i; /* pointer arithmetic */
+            piointInc  = &pwait->inap + i; /* pointer arithmetic */
+            /* If PV name is valid and the INxP flag is true, ... */
+            if(!(*paddrValid) && (*piointInc)) {
+                if(waitRecDebug) printf("deleting monitor on input %d\n",i);
+                status = recWaitCaDelete(&(((struct cbStruct *)pwait->cbst)->inpMonitor[i]));
+                if(status) errMessage(status,"recWaitCaDelete error");
+            }
         }
         return(0);
     }
@@ -416,38 +421,58 @@ static long special(paddr,after)
     /* this is executed after ca changed the field */
     switch(special_type) {
       case(SPC_SCAN):   /* Changed SCAN mechanism, set monitors on input links */
+          /* MON_ALWAYS This case currently doesn't happen */
           if(pwait->scan == SCAN_IO_EVENT) { 
               paddrValid = &pwait->inav;
               for(i=0;i<ARG_MAX; i++, paddrValid++) {
                   if(!(*paddrValid)) {
-                     if(waitRecDebug) printf("adding monitor\n");
-                     status = caMonitorAdd(&(((struct cbStruct *)pwait->cbst)->inpMonitor[i]));
-                     if(status) errMessage(status,"caMonitorAdd error");
+                     if(waitRecDebug) printf("adding monitor on input %d\n", i);
+                     status = recWaitCaAdd(&(((struct cbStruct *)pwait->cbst)->inpMonitor[i]));
+                     if(status) errMessage(status,"recWaitCaAdd error");
                   }
               }
           }
           return(0);
-      case(SPC_MOD):        /* check if changing any PV names */
-        *ppvn = &pwait->inan[0];
-        ppdbAddr = (struct dbAddr **)&pwait->inaa;
-        paddrValid = &pwait->inav;
+          break;
+
+      case(REC_WAIT_A):        /* check if changing any input PV's or flags */
+      case(REC_WAIT_B):
+      case(REC_WAIT_C):
+      case(REC_WAIT_D):
+      case(REC_WAIT_E):
+      case(REC_WAIT_F):
+      case(REC_WAIT_G):
+      case(REC_WAIT_H):
+      case(REC_WAIT_I):
+      case(REC_WAIT_J):
+      case(REC_WAIT_K):
+      case(REC_WAIT_L):
+        
+          i = special_type - REC_WAIT_A; /* index of input */
+          paddrValid = &pwait->inav + i; /* pointer arithmetic */
+          ppdbAddr = (struct dbAddr **)&pwait->inaa + i; /* pointer arithmetic */
+          *ppvn = &pwait->inan[0] + (i*PVN_SIZE); 
       
-        for(i=0;i<ARG_MAX; i++, *ppvn += PVN_SIZE, ppdbAddr++, paddrValid++) {
-            if(paddr->pfield==*ppvn) {
-                odbv = *paddrValid;
-                *paddrValid = dbNameToAddr(*ppvn, *ppdbAddr);
-                if (odbv != *paddrValid) {
-                    db_post_events(pwait,paddrValid,DBE_VALUE);
-                }
-/* MON_ALWAYS   if((pwait->scan == SCAN_IO_EVENT) && !(*paddrValid)) { */
-                if((1) && !(*paddrValid)) {
-                    if(waitRecDebug) printf("adding monitor\n");
-                    status = caMonitorAdd(&(((struct cbStruct *)pwait->cbst)->inpMonitor[i]));
-                    if(status) errMessage(status,"caMonitorAdd error");
-                }
-                return(0);
-            }
-        }
+          /* If the PV Name changing, do dbNameToAddr  */
+          if(paddr->pfield==*ppvn) {
+              odbv = *paddrValid;
+              *paddrValid = dbNameToAddr(*ppvn, *ppdbAddr);
+              if (odbv != *paddrValid) {
+                  db_post_events(pwait,paddrValid,DBE_VALUE);
+              }
+          }
+          /* MON_ALWAYS: Should only do if  SCAN_IO_EVENT), but can't now */
+          /* If the INxP flag is set, add a monitor */
+          piointInc  = &pwait->inap + i;    /* pointer arithmetic */
+          if(!(*paddrValid) && (*piointInc)) {
+              if(waitRecDebug) printf("adding monitor on input %d\n", i);
+              status = recWaitCaAdd(&(((struct cbStruct *)pwait->cbst)->inpMonitor[i]));
+              if(status) errMessage(status,"recWaitCaAdd error");
+          }
+          return(0);
+          break;
+
+      case(SPC_MOD):        /* check if changing any other SPC_MOD fields */
         if(paddr->pfield==pwait->outn) {  /* this is the output link */ 
             odbv = pwait->outv;
             pwait->outv = dbNameToAddr(pwait->outn,(struct dbAddr *)pwait->outa);
@@ -467,6 +492,7 @@ static long special(paddr,after)
         }
 
         return(0);
+        break;
 
       case(SPC_CALC):
         pwait->clcv=postfix(pwait->calc,rpbuf,&error_number);
@@ -481,6 +507,7 @@ static long special(paddr,after)
         db_post_events(pwait,pwait->calc,DBE_VALUE);
         db_post_events(pwait,pwait->clcv,DBE_VALUE);
         return(0);
+        break;
     default:
 	recGblDbaddrError(S_db_badChoice,paddr,"wait: special");
 	return(S_db_badChoice);
@@ -725,7 +752,7 @@ static double oldDold;
 
 
 
-static void inputChanged(struct caMonitor *pcamonitor)
+static void inputChanged(struct recWaitCa *pcamonitor)
 {
 
     struct waitRecord *pwait = (struct waitRecord *)pcamonitor->userPvt;

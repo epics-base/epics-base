@@ -1,11 +1,12 @@
-<!DOCTYPE html public "-//w3c//dtd html 4.0 transitional//en">
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
   <title>EPICS Release baseR3.14 </title>
 </head>
 
-<body>
+<body lang="en">
 
 <center>
 <h1>EPICS Release base 3.14.0beta2</h1>
@@ -15,33 +16,48 @@
 
 <h2>Changes since beta1</h2>
 
+<p><strong>dbCa</strong></p>
+
+<p>Whenever a connection is made, a request to retrieve the control, display,
+and alarm linits and the precision and units is automatically issued.
+Previously this was only done if dbCaGetAttributes was called. This it is no
+longer necessary to call dbCaGetAttributes.</p>
+
+<p><strong>calcPerform</strong></p>
+
+<p>This now returns a non zero value if the result is nan (not a number).</p>
+
 <p><b>Record Name Length</b></p>
-<p>The size of the name field has been expanded from 29 to 61, i.e. record names
-can now have 60 characters.</p>
+
+<p>The size of the name field has been expanded from 29 to 61, i.e. record
+names can now have 60 characters.</p>
 
 <p><b>iocInit</b></p>
-<p>initialProcess is now called before interruptAccept. This means that initial processing will be done before periodically scanned and I/O Inter scanned records start processing.</p>
+
+<p>initialProcess is now called before interruptAccept. This means that
+initial processing will be done before periodically scanned and I/O Inter
+scanned records start processing.</p>
 
 <p><b>ellLib</b></p>
+
 <p>Casts have been removed that suppressed valuable error messages</p>
 
-<p> <b>mbbiRecord</b> </p>
-<p>
-All existing manipulations of UDF in process() are removed and
-udf is set FALSE when the raw value is successfully read.</p>
-<p><b>selRecord</b> </p>
-<p>
-In do_sel udf is not set false at the beginning.
-If selm has an invalid value recGblSetSevr(psel,SOFT_ALARM,MAJOR_ALARM)
-is called.
-</p>
+<p><b>mbbiRecord</b></p>
+
+<p>All existing manipulations of UDF in process() are removed and udf is set
+FALSE when the raw value is successfully read.</p>
+
+<p><b>selRecord</b></p>
+
+<p>In do_sel udf is not set false at the beginning. If selm has an invalid
+value recGblSetSevr(psel,SOFT_ALARM,MAJOR_ALARM) is called.</p>
 
 <p><b>cdCommands file</b></p>
-<p>
-Fixed a bug and revised the use of the IOCS_APPL_TOP setting in an
+
+<p>Fixed a bug and revised the use of the IOCS_APPL_TOP setting in an
 application's <top>/configure/CONFIG file (which specifies the path to
-<top> as seen by the IOC) to apply the same modifications to all paths
-output in the cdCommands file.</p>
+<top>as seen by the IOC) to apply the same modifications to all paths output
+in the cdCommands file.</p>
 
 <h2>Changes since alpha2</h2>
 All changes for release 3.13.5 that also apply to 3.14 have been made.
@@ -149,10 +165,10 @@ applications.
      </ul>
   NOTE: If any of your *App/*Db/Makefiles contain "DBDNAME =" lines you
   should make these same changes in that *Db dirctory. <br>
-    <ul>
+   
+  <ul>
     <li>In all *App/src/Makefile Makefiles</li>
   </ul>
-
   <ul>
      </ul>
   change    RECTYPES=&lt;name&gt;.h    to    DBDINC+=&lt;name&gt;
@@ -178,7 +194,8 @@ applications.
   where &lt;name&gt; is the base name of a &lt;name&gt;.dbd file which was
   created from a &lt;name&gt;Include.dbd file and which will be loaded in a
   st.cmd or stcmd.host script (e.g. example). <br>
-    <ul>
+   
+  <ul>
     <li>In ./iocBoot/ioc&lt;name&gt;/st.cmd files change</li>
   </ul>
   <br>
@@ -226,12 +243,14 @@ iocCore on platforms besides vxWorks.</p>
 <ul>
   <li>vxWorks</li>
   <br>
-  Tornado II is required. <ul>
+  Tornado II is required.
+  <ul>
     <li>RTEMS</li>
   </ul>
   <br>
   An open source real time operating system. It has been tested on MVME167
-  and MC68360 processors. RTEMS also supports powerPC. <ul>
+  and MC68360 processors. RTEMS also supports powerPC.
+  <ul>
     <li>solaris</li>
   </ul>
   <br>
@@ -241,7 +260,8 @@ iocCore on platforms besides vxWorks.</p>
     <li>Linux</li>
   </ul>
   <br>
-  Has been tested on Redhat x86 platforms. <ul>
+  Has been tested on Redhat x86 platforms.
+  <ul>
     <li>winNT</li>
   </ul>
   <br>

@@ -72,7 +72,6 @@ static void exceptionCallback(struct exception_handler_args args)
     int  readAccess;
     int writeAccess;
 
-printf("as exceptionCallback\n");
     channel = (chid ? ca_name(chid) : unknown);
     context = (args.ctx ? args.ctx : unknown);
     nativeType = dbr_type_to_text((chid ? ca_field_type(chid) : -1));
@@ -100,7 +99,6 @@ LOCAL void connectCallback(struct connection_handler_args arg)
     ASGINP		*pasginp = (ASGINP *)ca_puser(chid);
     ASG			*pasg = pasginp->pasg;
 
-printf("as connectCallback %s\n",ca_name(chid));
     if(ca_state(chid)!=cs_conn) {
 	if(!(pasg->inpBad & (1<<pasginp->inpIndex))) {
 	    /*was good so lets make it bad*/
@@ -121,7 +119,6 @@ LOCAL void eventCallback(struct event_handler_args arg)
     CAPVT	*pcapvt;
     READONLY struct dbr_sts_double *pdata;
 
-printf("as eventCallback %s\n",ca_name(chid));
     if(caStatus!=ECA_NORMAL) {
 	if(chid) {
 	    epicsPrintf("asCa: eventCallback error %s channel %s\n",
@@ -199,7 +196,6 @@ LOCAL void asCaTask(void)
 			ca_message(status));
 		}
 		/*Note calls eventCallback immediately  for local Pvs*/
-printf("as ca_add_event %s\n",pasginp->inp);
 		status = ca_add_event(DBR_STS_DOUBLE,pcapvt->chid,
 		    eventCallback,pasginp,0);
 		if(status!=ECA_NORMAL) {
@@ -210,9 +206,7 @@ printf("as ca_add_event %s\n",pasginp->inp);
 	    }
 	    pasg = (ASG *)ellNext((ELLNODE *)pasg);
 	}
-printf("as calling ca_flush_io\n");
         SEVCHK(ca_flush_io(),"asCaTask");
-epicsThreadSleep(2.0);
 	asComputeAllAsg();
 	caInitializing = FALSE;
 	if(asCaDebug) printf("asCaTask initialized\n");

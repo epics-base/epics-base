@@ -16,7 +16,7 @@ ARCH_CLASS = x86
 POSIX_CPPFLAGS_NO =
 POSIX_LDLIBS_YES = libpthread.so
 
-OP_SYS_CPPFLAGS += -D_BSD_SOURCE
+OP_SYS_CPPFLAGS += -D_BSD_SOURCE -D_SVID_SOURCE
 OP_SYS_CPPFLAGS += -Dlinux
 OP_SYS_LDLIBS = libc.so libm.so libdl.so librt.so
 

@@ -52,7 +52,7 @@ CONFORM_CFLAGS_TRAD =
 # -w-8012 Comparing signed and unsigned values
 # -w-8060 Possibly incorrect assignment
 # -w-8071 Conversion may lose significant digits
-WARN_CFLAGS_YES = -w -g0 -w-8012 -w-8060 -w-8071
+WARN_CFLAGS_YES = -w -g0 -w-8012 -w-8060 -w-8071 -w-dup
 # -w- display warnings off
 WARN_CFLAGS_NO =  -w-
 
@@ -173,9 +173,18 @@ SHRLIB_DEPLIBS=	$(foreach lib,$(LIB_LIBS) $(USR_LIBS), \
 		$(addsuffix /$(LIB_PREFIX)$(lib)$(LIB_EXT), \
     		$(firstword $($(lib)_DIR) $(INSTALL_LIB)))))
 
+PROD_SYS_DEPLIBS= 	$(foreach lib,$(PROD_SYS_LIBS), \
+			$(firstword $(wildcard \
+			/lib/$(LIB_PREFIX)$(lib).so \
+			/lib/$(LIB_PREFIX)$(lib).a \
+			/usr/lib/$(LIB_PREFIX)$(lib).so \
+			/usr/lib/$(LIB_PREFIX)$(lib).a) \
+			$(lib)))
+
 PROD_LDLIBS = 	$(addprefix lib, $($*_LDLIBS)) \
 		$(notdir $(PROD_DEPLIBS)) \
-		$(addprefix lib, $($*_SYS_LIBS) $(PROD_SYS_LIBS) $(USR_SYS_LIBS))
+		$(notdir $(PROD_SYS_DEPLIBS)) \
+		$(addprefix lib, $($*_SYS_LIBS) $(USR_SYS_LIBS))
 
 SHRLIB_LDLIBS = $(addprefix lib, $($*_LDLIBS)) \
 		$(notdir $(SHRLIB_DEPLIBS)) \
@@ -204,7 +213,7 @@ SHRLIBDIR_LDFLAGS = -L$(subst $(space),:,$(sort $(SHRLIB_DEPLIB_DIRS) $(BORLAND_
 LDFLAGS += -c -C -Gn -x -w
 LINKLIBS=rtl.a visualclx.a rtle.a libborcrtl.a libborstl.a libborunwind.a
 
-LINK.cpp = $(WINLINK) $(STATIC_LDFLAGS) $(PRODDIR_LDFLAGS) $(LDFLAGS) -Tpe
+LINK.cpp = $(WINLINK) $(STATIC_LDFLAGS) $(PRODDIR_LDFLAGS) $(LDFLAGS) -Tpe -w-dup
 LINK.cpp += $(PROD_LDFLAGS) borinit.o /usr/lib/crt1.o $(PROD_LD_OBJS)
 LINK.cpp += , $@ ,,$(LINKLIBS) $(PROD_LDLIBS)
 

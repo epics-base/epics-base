@@ -61,7 +61,14 @@ print << "END" ;
 #include "registryDriverSupport.h"
 #include "iocsh.h"
 #include "shareLib.h"
+#define GEN_SIZE_OFFSET
 END
+if($numberRecordType>0) {
+    for ($i=0; $i<$numberRecordType; $i++) {
+        print "#include <$recordType[$i]Record.h>\n"
+    }
+}
+print "#undef GEN_SIZE_OFFSET\n";
 
 #definitions for recordtype
 if($numberRecordType>0) {
@@ -70,9 +77,6 @@ if($numberRecordType>0) {
     print "#endif\n";
     for ($i=0; $i<$numberRecordType; $i++) {
         print "epicsShareExtern struct rset $recordType[$i]RSET;\n";
-        print "epicsShareFunc int epicsShareAPI $recordType[$i]RecordSizeOffset(dbRecordType *pdbRecordType);\n";
-    #NOTE the following caused a compiler error on vxWorks
-    #    print "extern computeSizeOffset $recordType[$i]RecordSizeOffset;\n";
     }
     print "#ifdef __cplusplus\n";
     print "}\n";
@@ -155,7 +159,7 @@ if($numberRegistrar>0) {
     print "typedef void(*REGISTRARFUNC)(void);\n";
     print "extern \"C\" {\n";
     for ($i=0; $i<$numberRegistrar; $i++) {
-	print "epicsShareFunc void epicsShareAPI $registrar[$i](void);\n";
+	print "epicsShareFunc void $registrar[$i](void);\n";
     }
     print "}\n\n";
 }

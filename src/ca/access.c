@@ -1881,95 +1881,95 @@ chid		chix,
 const void	*pvalue
 )
 { 
-	int			status;
-	struct ioc_in_use	*piiu;
-	caHdr		hdr;
-  	int  			postcnt;
-  	unsigned		size_of_one;
+	int status;
+	struct ioc_in_use *piiu;
+	caHdr hdr;
+  	int postcnt;
+  	unsigned size_of_one;
 #	ifdef CONVERSION_REQUIRED 
-  	unsigned		i;
-	void			*pCvrtBuf;
-  	void			*pdest;
+  	unsigned i;
+	void *pCvrtBuf;
+  	void *pdest;
 #	endif /*CONVERSION_REQUIRED*/
 
 	piiu = chix->piiu;
 	size_of_one = dbr_size[type];
 	postcnt = dbr_size_n(type,count);
 
-	if(type == DBR_STRING && count == 1){
+	if (type == DBR_STRING && count == 1) {
 		char *pstr = (char *)pvalue;
 
 		postcnt = strlen(pstr)+1;
 	}
 
 #	ifdef CONVERSION_REQUIRED 
-	pCvrtBuf = pdest = malloc_put_convert(postcnt);
-	if(!pdest){
-		return ECA_ALLOCMEM;
-	}
+		pCvrtBuf = pdest = malloc_put_convert(postcnt);
+		if(!pdest){
+			return ECA_ALLOCMEM;
+		}
 
-	/*
-	 * No compound types here because these types are read only
-	 * and therefore only appropriate for gets or monitors
-	 */
-    	for(i=0; i< count; i++){
-      		switch(type){
-      		case	DBR_LONG:
-        		*(long *)pdest = htonl(*(long *)pvalue);
-        		break;
+		/*
+		 * No compound types here because these types are read only
+		 * and therefore only appropriate for gets or monitors
+		 */
+		for (i=0; i< count; i++) {
+			switch (type) {
+			case	DBR_LONG:
+				*(long *)pdest = htonl (*(dbr_long_t *)pvalue);
+				break;
 
-      		case	DBR_CHAR:
-        		*(char *)pdest = *(char *)pvalue;
-        		break;
+			case	DBR_CHAR:
+				*(char *)pdest = *(dbr_char_t *)pvalue;
+				break;
 
-      		case	DBR_ENUM:
-      		case	DBR_SHORT:
-		case	DBR_PUT_ACKT:
-		case	DBR_PUT_ACKS:
-#		if DBR_INT != DBR_SHORT
-      		case	DBR_INT:
-#		endif /*DBR_INT != DBR_SHORT*/
-        		*(short *)pdest = htons(*(short *)pvalue);
-        		break;
+			case	DBR_ENUM:
+			case	DBR_SHORT:
+			case	DBR_PUT_ACKT:
+			case	DBR_PUT_ACKS:
+#			if DBR_INT != DBR_SHORT
+			case	DBR_INT:
+#			endif /*DBR_INT != DBR_SHORT*/
+				*(short *)pdest = htons (*(dbr_short_t *)pvalue);
+				break;
 
-      		case	DBR_FLOAT:
-        		dbr_htonf(pvalue, pdest);
-        		break;
+			case	DBR_FLOAT:
+				dbr_htonf ((dbr_float_t *)pvalue, pdest);
+				break;
 
-      		case	DBR_DOUBLE: 
-        		dbr_htond(pvalue, pdest);
+			case	DBR_DOUBLE: 
+				dbr_htond ((dbr_double_t *)pvalue, pdest);
 			break;
 
-      		case	DBR_STRING:
-			/*
-			 * string size checked above
-			 */
-          		strcpy(pdest,pvalue);
-        		break;
+			case	DBR_STRING:
+				/*
+				 * string size checked above
+				 */
+				strcpy (pdest, pvalue);
+				break;
 
-      		default:
-			UNLOCK;
-        		return ECA_BADTYPE;
-      		}
-      		pdest = ((char *)pdest) + size_of_one;
-      		pvalue = ((char *)pvalue) + size_of_one;
-    	}
+			default:
+				UNLOCK;
+				return ECA_BADTYPE;
+			}
+			pdest = ((char *)pdest) + size_of_one;
+			pvalue = ((char *)pvalue) + size_of_one;
+		}
 
-	pvalue = pCvrtBuf;
+		pvalue = pCvrtBuf;
 
 #	endif /*CONVERSION_REQUIRED*/
 
-    	hdr.m_cmmd 		= htons(cmd);
-   	hdr.m_type		= htons(type);
-    	hdr.m_count 		= htons((ca_uint16_t)count);
-    	hdr.m_cid 		= chix->id.sid;
-    	hdr.m_available 	= id;
-	hdr.m_postsize 		= (ca_uint16_t) postcnt;
+	hdr.m_cmmd = htons(cmd);
+	hdr.m_type = htons(type);
+	hdr.m_count = htons((ca_uint16_t)count);
+	hdr.m_cid = chix->id.sid;
+	hdr.m_available = id;
+	hdr.m_postsize = (ca_uint16_t) postcnt;
 
-	status = cac_push_msg(piiu, &hdr, pvalue);
+	status = cac_push_msg (piiu, &hdr, pvalue);
 
 #	ifdef CONVERSION_REQUIRED
-	free_put_convert(pCvrtBuf);
+		free_put_convert (pCvrtBuf);
 #	endif /*CONVERSION_REQUIRED*/
 
   	return status;
@@ -2378,7 +2378,7 @@ db_field_log	*pfl
 
 			/*
 			 * find a preallocated block which fits
-			 * (stored with lagest block first)
+			 * (stored with largest block first)
 			 */
 			LOCK;
 			pbuf = (struct tmp_buff *)
@@ -2586,15 +2586,20 @@ int epicsShareAPI ca_clear_event (evid monix)
  *	(from this source) after leaving this routine.
  *
  */
-int epicsShareAPI ca_clear_channel (chid chix)
+int epicsShareAPI ca_clear_channel (chid pChan)
 {
-	ciu 			pChan = (ciu) chix; /* remove const */
 	miu			monix;
 	int			status;
-	struct ioc_in_use 	*piiu = chix->piiu;
+	struct ioc_in_use 	*piiu = pChan->piiu;
 	caHdr 			hdr;
 	caCh			*pold_ch;
 	enum channel_state	old_chan_state;
+
+	pChan = bucketLookupItemUnsignedId
+				(ca_static->ca_pSlowBucket, &pChan->cid);
+	if (pChan == NULL) {
+		return ECA_BADCHID;
+	}
 
 	LOOSECHIXCHK(pChan);
 
@@ -2617,13 +2622,13 @@ int epicsShareAPI ca_clear_channel (chid chix)
 	for (monix = (miu) pend_read_list.node.next;
 	     monix;
 	     monix = (miu) monix->node.next)
-		if (monix->chan == chix)
+		if (monix->chan == pChan)
 			monix->usr_func = NULL;
 	/* disable any further put callbacks from this channel */
 	for (monix = (miu) pend_write_list.node.next;
 	     monix;
 	     monix = (miu) monix->node.next)
-		if (monix->chan == chix)
+		if (monix->chan == pChan)
 			monix->usr_func = NULL;
 
 #ifdef vxWorks
@@ -2729,8 +2734,12 @@ void clearChannelResources(unsigned id)
 
 	LOCK;
 
-	chix = bucketLookupItemUnsignedId(ca_static->ca_pSlowBucket, &id);
-	assert ( chix!=NULL );
+	chix = bucketLookupItemUnsignedId (ca_static->ca_pSlowBucket, &id);
+	if (chix==NULL) {
+		UNLOCK;
+		genLocalExcep (ECA_BADCHID,"clearChannelResources()");
+		return;
+	}
 
 	piiu = chix->piiu;
 
@@ -3675,7 +3684,7 @@ int (*ca_printf_func)(const char *pformat, va_list args)
 /*
  *      ca_printf()
  */
-int ca_printf(char *pformat, ...)
+int epicsShareAPI ca_printf(char *pformat, ...)
 {
 	int		(*ca_printf_func)(const char *pformat, va_list args);
 	va_list		theArgs;

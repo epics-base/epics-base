@@ -18,6 +18,7 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
 
 while ($line = <STDIN>)
 {
+	chomp $line;
     next if ($line =~ /__?GLOBAL_.F.+/);
     next if ($line =~ /__?GLOBAL_.I._GLOBAL_.D.+/);
     if ($line =~ /__?GLOBAL_.D.+/) {

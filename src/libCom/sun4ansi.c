@@ -1,7 +1,20 @@
+/* $Id$ */
+/*
+ *  To get strtoul and strerror a sunos system must have
+ *  /usr/lang/SC2.0.1patch installed. See CONFIG_SITE.Unix.sun4.
+ *  Andrew Johnson has created this file named sun4ansi.c containg code
+ *  for strtoul and strerror which is available in the base/libCom
+ *  directory so that any site that needs it can add it to the Makefile.Unix.
+ */
+
+
 #ifdef SUNOS4
 
 /*
  * $Log$
+ * Revision 1.1  1995/02/17  15:09:56  jba
+ * Initial version
+ *
  * Revision 1.1  1995/01/11  10:34:21  anj
  * Added sun4ansi.c for those without sun4 ACC.
  *

@@ -36,20 +36,21 @@
 #define INCtaskwdh 1
 
 #include "osiThread.h"
+#include "shareLib.h"
 
 typedef void (*TASKWDFUNCPRR)(void *parm);
 typedef void (*TASKWDANYFUNCPRR)(void *parm,threadId tid);
 #ifdef __STDC__
-void taskwdInit(void);
-void taskwdInsert(threadId tid, TASKWDFUNCPRR callback,void *arg);
-void taskwdAnyInsert(void *userpvt, TASKWDANYFUNCPRR callback,void *arg);
-void taskwdRemove(threadId tid);
-void taskwdAnyRemove(void *userpvt);
+epicsShareFunc void taskwdInit(void);
+epicsShareFunc void taskwdInsert(threadId tid, TASKWDFUNCPRR callback,void *arg);
+epicsShareFunc void taskwdAnyInsert(void *userpvt, TASKWDANYFUNCPRR callback,void *arg);
+epicsShareFunc void taskwdRemove(threadId tid);
+epicsShareFunc void taskwdAnyRemove(void *userpvt);
 #else
-void taskwdInit();
-void taskwdInsert();
-void taskwdAnyInsert();
-void taskwdRemove();
-void taskwdAnyRemove();
+epicsShareFunc void taskwdInit();
+epicsShareFunc void taskwdInsert();
+epicsShareFunc void taskwdAnyInsert();
+epicsShareFunc void taskwdRemove();
+epicsShareFunc void taskwdAnyRemove();
 #endif /*__STDC__*/
 #endif /*INCtaskwdh*/

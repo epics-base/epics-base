@@ -70,7 +70,6 @@ extern void dbServiceIOInit();
  *   While this is locked no other locks are taken
  *
  * dbScanLock
- *   Nothing in dbNotify does a dbScanLock.
  *   dbCaAddLink and dbCaRemoveLink are only called by dbAccess or iocInit
  *   They are only called by dbAccess when it has a global lock on lock set.
  *   It is assumed that ALL other dbCaxxx calls are made only if dbScanLock
@@ -169,7 +168,7 @@ void epicsShareAPI dbCaRemoveLink( struct link *plink)
 {
     caLink    *pca = (caLink *)plink->value.pv_link.pvt;
 
-    if(!pca) return;
+    assert(pca);
     epicsMutexMustLock(pca->lock);
     pca->plink = 0;
     plink->value.pv_link.pvt = 0;
@@ -185,11 +184,7 @@ long epicsShareAPI dbCaGetLink(struct link *plink,short dbrType, void *pdest,
     long        (*pconvert)();
     short        link_action = 0;
 
-    if(!pca) {
-        errlogPrintf("dbCaGetLink: record %s pv_link.pvt is NULL\n",
-            plink->value.pv_link.precord);
-        return(-1);
-    }
+    assert(pca);
     epicsMutexMustLock(pca->lock);
     if(!pca->isConnected || !pca->hasReadAccess) {
         pca->sevr = INVALID_ALARM; status = -1;
@@ -250,11 +245,7 @@ long epicsShareAPI dbCaPutLink(struct link *plink,short dbrType,
     long    status = 0;
     short    link_action = 0;
 
-    if(!pca) {
-        errlogPrintf("dbCaPutLink: record %s pv_link.pvt is NULL\n",
-            plink->value.pv_link.precord);
-        return(-1);
-    }
+    assert(pca);
     /* put the new value in */
     epicsMutexMustLock(pca->lock);
     if(!pca->isConnected || !pca->hasWriteAccess) {
@@ -311,16 +302,10 @@ long epicsShareAPI dbCaGetAttributes(const struct link *plink,
     short    link_action = 0;
     caAttributes *pcaAttributes;
 
-    if(!plink || (plink->type!=CA_LINK)) {
-        errlogPrintf("dbCaGetAttributes: called for non CA_LINK\n");
-        return(-1);
-    }
+    assert(plink);
+    if(plink->type!=CA_LINK) return(-1);
     pca = (caLink *)plink->value.pv_link.pvt;
-    if(!pca) {
-        errlogPrintf("dbCaGetAttributes: record %s pv_link.pvt is NULL\n",
-            plink->value.pv_link.precord);
-        return(-1);
-    }
+    assert(pca);
     epicsMutexMustLock(pca->lock);
     if(!pca->isConnected || !pca->hasWriteAccess) {
         epicsMutexUnlock(pca->lock);
@@ -328,8 +313,6 @@ long epicsShareAPI dbCaGetAttributes(const struct link *plink,
     }
     if(pca->pcaAttributes) {
         epicsMutexUnlock(pca->lock);
-        errlogPrintf("dbCaGetAttributes: record %s duplicate call\n",
-            plink->value.pv_link.precord);
         return(-1);
     }
     pcaAttributes = dbCalloc(1,sizeof(caAttributes));
@@ -525,10 +508,7 @@ static void eventCallback(struct event_handler_args arg)
     dbCommon *precord = 0;
     struct dbr_time_double *pdbr_time_double;
 
-    if(!pca) {
-        errlogPrintf("eventCallback why was arg.usr NULL\n");
-        return;
-    }
+    assert(pca);
     epicsMutexMustLock(pca->lock);
     plink = pca->plink;
     if(!plink) goto done;
@@ -544,10 +524,7 @@ static void eventCallback(struct event_handler_args arg)
         }
         goto done;
     }
-    if(!arg.dbr) {
-        errlogPrintf("eventCallback why was arg.dbr NULL\n");
-        goto done;
-    }
+    assert(arg.dbr);
     size = arg.count * dbr_value_size[arg.type];
     if((arg.type==DBR_TIME_STRING) && (ca_field_type(pca->chid)==DBR_ENUM)) {
         memcpy(pca->pgetString,dbr_value_ptr(arg.dbr,arg.type),size);
@@ -588,17 +565,11 @@ static void getAttribEventCallback(struct event_handler_args arg)
     const struct dbr_ctrl_double  *dbr;
     caAttributes  *pcaAttributes = NULL;
 
-    if(!pca) {
-        errlogPrintf("getAttribEventCallback why was arg.usr NULL\n");
-        return;
-    }
+    assert(pca);
     epicsMutexMustLock(pca->lock);
     plink = pca->plink;
     if(!plink) goto done;
-    if(!arg.dbr) {
-        errlogPrintf("getAttribEventCallback why was arg.dbr NULL\n");
-        goto done;
-    }
+    assert(arg.dbr);
     dbr = arg.dbr;
     pcaAttributes = pca->pcaAttributes;
     if(!pcaAttributes) goto done;
@@ -608,31 +579,28 @@ static void getAttribEventCallback(struct event_handler_args arg)
 done:
     epicsMutexUnlock(pca->lock);
 }
-
+
 static void accessRightsCallback(struct access_rights_handler_args arg)
 {
     caLink        *pca = (caLink *)ca_puser(arg.chid);
     struct link	*plink;
+    struct pv_link *ppv_link;
+    dbCommon *precord;
 
-    if(!pca) {
-        errlogPrintf("accessRightsCallback why was arg.usr NULL\n");
-        return;
-    }
+    assert(pca);
     if(ca_state(pca->chid) != cs_conn) return;/*connectionCallback will handle*/
     epicsMutexMustLock(pca->lock);
+    plink = pca->plink;
+    if(!plink) goto done;
     pca->hasReadAccess = ca_read_access(arg.chid);
     pca->hasWriteAccess = ca_write_access(arg.chid);
     if(pca->hasReadAccess && pca->hasWriteAccess) goto done;
-    plink = pca->plink;
-    if(plink) {
-        struct pv_link *ppv_link = &(plink->value.pv_link);
-        dbCommon	*precord = ppv_link->precord;
-
-        if(precord) {
+    ppv_link = &(plink->value.pv_link);
+    precord = ppv_link->precord;
+    if(precord) {
         if((ppv_link->pvlMask&pvlOptCP)
         || ((ppv_link->pvlMask&pvlOptCPP)&&(precord->scan==0)))
             scanOnce(precord);
-        }
     }
 done:
     epicsMutexUnlock(pca->lock);
@@ -645,7 +613,7 @@ static void connectionCallback(struct connection_handler_args arg)
     struct link    *plink;
 
     pca = ca_puser(arg.chid);
-    if(!pca) return;
+    assert(pca);
     epicsMutexMustLock(pca->lock);
     pca->isConnected = (ca_state(arg.chid)==cs_conn) ? TRUE : FALSE ;
     if(pca->isConnected) {
@@ -729,26 +697,28 @@ void dbCaTask()
             }
             ellDelete(&workList,&pca->node);
             link_action = pca->link_action;
+            pca->link_action = 0;
+            if(link_action&CA_CLEAR_CHANNEL) --removesOutstanding;
+            epicsMutexUnlock(workListLock); /*Give it back immediately*/
+            epicsMutexMustLock(pca->lock);
             if(link_action&CA_CLEAR_CHANNEL) {/*This must be first*/
-                --removesOutstanding;
-                epicsMutexUnlock(workListLock); /*Give it back immediately*/
                 /*must lock/unlock so that dbCaRemove can unlock*/
-                epicsMutexMustLock(pca->lock);
                 epicsMutexUnlock(pca->lock);
                 if(pca->chid) ca_clear_channel(pca->chid);    
+                epicsMutexMustLock(pca->lock);
                 free(pca->pgetNative);
                 free(pca->pputNative);
                 free(pca->pgetString);
                 free(pca->pputString);
                 free(pca->pcaAttributes);
                 free(pca->pvname);
+                epicsMutexUnlock(pca->lock);
                 epicsMutexDestroy(pca->lock);
                 free(pca);
                 continue; /*No other link_action makes sense*/
             }
-            pca->link_action = 0;
-            epicsMutexUnlock(workListLock); /*Give it back immediately*/
             if(link_action&CA_CONNECT) {
+                epicsMutexUnlock(pca->lock);
                 status = ca_create_channel(
                       pca->pvname,connectionCallback,(void *)pca,
                       CA_PRIORITY_DB_LINKS, &(pca->chid));
@@ -764,14 +734,19 @@ void dbCaTask()
                     ca_message(status));
                 continue; /*Other options must wait until connect*/
             }
-            if(ca_state(pca->chid) != cs_conn) continue;
+            if(ca_state(pca->chid) != cs_conn) {
+                epicsMutexUnlock(pca->lock);
+                continue;
+            }
             if(link_action&CA_WRITE_NATIVE) {
+                epicsMutexUnlock(pca->lock);
                 status = ca_array_put(
                     pca->dbrType,pca->nelements,
                     pca->chid,pca->pputNative);
                 if(status==ECA_NORMAL) pca->newOutNative = FALSE;
             }
             if(link_action&CA_WRITE_STRING) {
+                epicsMutexUnlock(pca->lock);
                 status = ca_array_put(
                     DBR_STRING,1,
                     pca->chid,pca->pputString);
@@ -782,6 +757,7 @@ void dbCaTask()
     
                 element_size = dbr_value_size[ca_field_type(pca->chid)];
                 pca->pgetNative = dbCalloc(pca->nelements,element_size);
+                epicsMutexUnlock(pca->lock);
                 status = ca_add_array_event(
                 ca_field_type(pca->chid)+DBR_TIME_STRING,
                 ca_element_count(pca->chid),
@@ -793,6 +769,7 @@ void dbCaTask()
             }
             if(link_action&CA_MONITOR_STRING) {
                 pca->pgetString = dbCalloc(MAX_STRING_SIZE,sizeof(char));
+                epicsMutexUnlock(pca->lock);
                 status = ca_add_array_event(DBR_TIME_STRING,1,
                     pca->chid, eventCallback,pca,0.0,0.0,0.0,
                     0);
@@ -801,6 +778,7 @@ void dbCaTask()
                     ca_message(status));
             }
             if(link_action&CA_GET_ATTRIBUTES) {
+                epicsMutexUnlock(pca->lock);
                 status = ca_get_callback(DBR_CTRL_DOUBLE,
                     pca->chid,getAttribEventCallback,pca);
                 if(status!=ECA_NORMAL)

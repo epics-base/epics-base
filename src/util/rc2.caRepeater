@@ -3,6 +3,9 @@
 # Solaris rc2 script for the EPICS CA Repeater.
 #
 # $Log$
+# Revision 1.1  1995/03/30 23:17:57  jba
+# Added solaris scripts for starting caRepeater and iocLogServer - anj
+#
 #
 
 INSTALL_BIN=:INSTALL_BIN:
@@ -11,22 +14,23 @@ EPICS=:EPICS:
 # To change the default values for the EPICS Environment parameters,
 # uncomment and modify the relevant lines below.
 
-# export EPICS_CA_ADDR_LIST
-# export EPICS_CA_CONN_TMO
-# export EPICS_CA_BEACON_PERIOD
-# export EPICS_CA_AUTO_ADDR_LIST
-# export EPICS_CA_REPEATER_PORT
-# export EPICS_CA_SERVER_PORT
 # EPICS_CA_ADDR_LIST=""
 # EPICS_CA_CONN_TMO="30.0"
 # EPICS_CA_BEACON_PERIOD="15.0"
 # EPICS_CA_AUTO_ADDR_LIST="YES"
 # EPICS_CA_REPEATER_PORT="5065"
 # EPICS_CA_SERVER_PORT="5064"
+# export EPICS_CA_ADDR_LIST
+# export EPICS_CA_CONN_TMO
+# export EPICS_CA_BEACON_PERIOD
+# export EPICS_CA_AUTO_ADDR_LIST
+# export EPICS_CA_REPEATER_PORT
+# export EPICS_CA_SERVER_PORT
 
 if [ $1 = "start" ]; then
 	if [ -x $INSTALL_BIN/startCArepeater ]; then
 		echo "Starting EPICS CA repeater "
+		PATH=$INSTALL_BIN:$PATH: export PATH
 		$INSTALL_BIN/startCArepeater
         fi
 else

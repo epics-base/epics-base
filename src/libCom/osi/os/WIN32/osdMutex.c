@@ -18,23 +18,17 @@
  *
  */
 
-
-
 #include <stdio.h>
 #include <limits.h>
 
-// visual c++ 6.0 appears to be sensitive to the
-// order of the following
 #define VC_EXTRALEAN
 #define _WIN32_WINNT 0x400
 #include <windows.h>
-#include <winsock2.h>
 
 #define epicsExportSharedSymbols
 #include "shareLib.h"
 #include "epicsMutex.h"
 #include "epicsAssert.h"
-#include "cantProceed.h"
 
 typedef struct epicsWin32CS { 
     CRITICAL_SECTION mutex;

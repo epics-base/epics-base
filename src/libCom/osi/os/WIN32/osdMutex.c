@@ -301,7 +301,7 @@ epicsShareFunc epicsMutexId epicsShareAPI epicsMutexCreate ( void )
 /*
  * epicsMutexMustCreate ()
  */
-epicsShareFunc semBinaryId epicsShareAPI epicsMutexMustCreate () 
+epicsShareFunc epicsMutexId epicsShareAPI epicsMutexMustCreate () 
 {
     epicsMutexId id = epicsMutexCreate ();
     assert ( id );

@@ -88,16 +88,8 @@ struct gpibIntCmd {
   char	busy;			/* used by timing routine */
 };
 
-static struct gpibIntCmd gpibIntCmds[] =
-{
-  {NULL, NULL, gpibWork, 0, 0, NULL, 'R', "", "", 0, 0},
-  {NULL, NULL, gpibWork, 0, 0, NULL, 'R', "", "", 0, 0},
-  {NULL, NULL, gpibWork, 0, 0, NULL, 'R', "", "", 0, 0},
-  {NULL, NULL, gpibWork, 0, 0, NULL, 'R', "", "", 0, 0},
-  {NULL, NULL, gpibWork, 0, 0, NULL, 'R', "", "", 0, 0},
-  {NULL, NULL, gpibWork, 0, 0, NULL, 'R', "", "", 0, 0}
-};
-#define         LIST_SIZE	sizeof(gpibIntCmds)/sizeof(struct gpibIntCmd)
+#define	LIST_SIZE	10
+static struct gpibIntCmd gpibIntCmds[LIST_SIZE];
 
 /* declare other required variables used by more than one routine */
 
@@ -129,6 +121,22 @@ GI()
     firstTime = 0;
     msgReply = semCreate();
 
+   for (cnt=0; cnt < LIST_SIZE; cnt++)
+   {   /* init the elements of the command table */
+
+	gpibIntCmds[cnt].head.header.list.list1 = NULL;
+	gpibIntCmds[cnt].head.header.list.list2 = NULL;
+	gpibIntCmds[cnt].head.workStart = gpibWork;
+	gpibIntCmds[cnt].head.link = 0;
+	gpibIntCmds[cnt].head.device = 0;
+	gpibIntCmds[cnt].head.bitBusDpvt= NULL;	/* not supported yet */
+
+	gpibIntCmds[cnt].type = 'R';
+	gpibIntCmds[cnt].cmd[0] = '\0';
+	gpibIntCmds[cnt].resp[0] = '\0';
+	gpibIntCmds[cnt].count = 0;
+	gpibIntCmds[cnt].busy = 0;
+   }
   }
 
   ans = 0;                /* set loop not to exit */

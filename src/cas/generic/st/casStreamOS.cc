@@ -24,6 +24,7 @@
 #include "server.h"
 #include "inBufIL.h" // inBuf inline func
 #include "outBufIL.h" // outBuf inline func
+#include "casCoreClientIL.h" // casCoreClient in line func
 
 //
 // casStreamReadReg

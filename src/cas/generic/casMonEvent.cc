@@ -21,6 +21,7 @@
 #include "casEventSysIL.h" // casEventSys in line func
 #include "casMonEventIL.h" // casMonEvent in line func
 #include "casCtxIL.h" // casCtx in line func
+#include "casCoreClientIL.h" // casCoreClient in line func
 
 //
 // casMonEvent::cbFunc()

@@ -28,9 +28,12 @@
  *
  * Modification Log:
  * -----------------
- * .01  11-16-91        jba     Added recGblGetGraphicDouble, recGblControlDouble
+ * .01  11-16-91        jba     Added recGblGetGraphicDouble, recGblGetControlDouble
  * .02  02-28-92        jba     ANSI C changes
  * .03	05-19-92	mrk	Changes for internal database structure changes
+ * .04  07-16-92        jba     changes made to remove compile warning msgs
+ * .05  07-21-92        jba     Added recGblGetAlarmDouble
+ * .06  08-07-92        jba     Added recGblGetLinkValue, recGblPutLinkValue
  */
 
 #include	<vxWorks.h>
@@ -50,6 +53,7 @@
 #include	<dbCommon.h>
 
 extern struct dbBase *pdbBase;
+
 
 /***********************************************************************
 * The following are the global record processing rouitines
@@ -78,10 +82,27 @@ extern struct dbBase *pdbBase;
 *     struct dbAddr	  *paddr;
 *     struct dbr_ctrlDouble *pcd;
 *
+*void recGblGetAlarmDouble(paddr,pad)
+*     struct dbAddr	  *paddr;
+*     struct dbr_alDouble *pad;
+*
 *void recGblGetPrec(paddr,pprecision)
 *     struct dbAddr	  *paddr;
 *     long		  *pprecision;
-* {
+*
+*long recGblGetLinkValue(plink,precord,dbrType,pdest,pnRequest)
+*	struct link	*plink;
+*	struct dbCommon	*precord;
+*	short		dbrType;
+*	void		*pdest;
+*	long		*pnRequest;
+*
+*long recGblPutLinkValue(plink,precord,dbrType,psource,pnRequest)
+*	struct link	*plink;
+*	struct dbCommon *precord;
+*	short           dbrType;
+*	void            *psource;
+*	long		*pnRequest;
 **************************************************************************/
 
 
@@ -235,6 +256,18 @@ void recGblGetGraphicDouble(paddr,pgd)
     return;
 }
 
+void recGblGetAlarmDouble(paddr,pad)
+    struct dbAddr *paddr;
+    struct dbr_alDouble *pad;
+{
+    pad->upper_alarm_limit = 0;
+    pad->upper_alarm_limit = 0;
+    pad->lower_warning_limit = 0;
+    pad->lower_warning_limit = 0;
+
+    return;
+}
+
 void recGblGetControlDouble(paddr,pcd)
     struct dbAddr *paddr;
     struct dbr_ctrlDouble *pcd;
@@ -253,6 +286,70 @@ void recGblGetControlDouble(paddr,pcd)
           getMaxRangeValues(pfldDes->field_type,&pcd->upper_ctrl_limit,&pcd->lower_ctrl_limit);
 
     return;
+}
+
+long recGblGetLinkValue(
+	struct link	*plink,
+	struct dbCommon *precord,
+	short           dbrType,
+	void            *pdest,
+	long		*pnRequest
+)
+{
+	long		options=0;
+	long		status=0;
+
+	switch (plink->type){
+		case(CONSTANT):
+			break;
+		case(DB_LINK):
+			status=dbGetLink(&(plink->value.db_link),
+				precord,dbrType,pdest,&options,pnRequest);
+			if(status)
+				recGblSetSevr(precord,LINK_ALARM,INVALID_ALARM);
+			break;
+		case(CA_LINK):
+			status=dbCaGetLink(plink);
+			if(status)
+				recGblSetSevr(precord,LINK_ALARM,INVALID_ALARM);
+			break;
+		default:
+			status=-1;
+			recGblSetSevr(precord,SOFT_ALARM,INVALID_ALARM);
+	}
+	return(status);
+}
+
+long recGblPutLinkValue(
+	struct link	*plink,
+	struct dbCommon *precord,
+	short           dbrType,
+	void            *psource,
+	long		*pnRequest
+)
+{
+	long		options=0;
+	long		status=0;
+
+	switch (plink->type){
+		case(CONSTANT):
+			break;
+		case(DB_LINK):
+			status=dbPutLink(&(plink->value.db_link),
+				precord,dbrType,psource,*pnRequest);
+			if(status)
+				recGblSetSevr(precord,LINK_ALARM,INVALID_ALARM);
+			break;
+		case(CA_LINK):
+			status = dbCaPutLink(plink, &options, pnRequest);
+			if(status)
+				recGblSetSevr(precord,LINK_ALARM,INVALID_ALARM);
+			break;
+		default:
+			status=-1;
+			recGblSetSevr(precord,SOFT_ALARM,INVALID_ALARM);
+	}
+	return(status);
 }
 
 static void getConRangeValue(field_type,range,plimit)
@@ -320,6 +417,7 @@ static void getMaxRangeValues(field_type,pupper_limit,plower_limit)
     }
     return;
 }
+
 static void getVarRangeValue(paddr,fldnum,prangeValue)
 struct dbAddr	*paddr;	
 long 		fldnum;	
@@ -340,11 +438,11 @@ double		*prangeValue;
         recType=paddr->record_type;
 
         if(!(precTypDes=GET_PRECTYPDES(pdbBase->precDes,recType))){
-                recGblRecordError(1,precord,"getVarRangeValue");
+                recGblRecordError(1,(void *)precord,"getVarRangeValue");
                 return;
         }
         if(!(pfldDes=GET_PFLDDES(precTypDes,fldnum))){
-                recGblRecordError(2,precord,"getVarRangeValue");
+                recGblRecordError(2,(void *)precord,"getVarRangeValue");
                 return;
         }
         /* get &dbAddr for range VAR field */
@@ -356,7 +454,7 @@ double		*prangeValue;
 	strncat(name,pfldDes->fldname,FLDNAME_SZ);
 	strcat(name,"\0");
         if (dbNameToAddr(name,&dbAddr)){
-                recGblRecordError(3,precord,"getVarRangeValue");
+                recGblRecordError(3,(void *)precord,"getVarRangeValue");
                 return;
         }
 
@@ -364,7 +462,7 @@ double		*prangeValue;
         options = 0;
         nRequest = 1;
         if(dbGetField(&dbAddr,DBR_DOUBLE,prangeValue,&options,&nRequest,pfl)){
-                recGblRecordError(4,precord,"getvarRangeValue");
+                recGblRecordError(4,(void *)precord,"getvarRangeValue");
                 return;
         }
         return;

@@ -1,6 +1,9 @@
 
 /*
  * $Log$
+ * Revision 1.1  1996/01/29 17:05:58  jbk
+ * Added the simple program to allow loading of C++ object modules.
+ *
  * Revision 1.1.1.1  1994/12/12  16:07:06  hideos
  * Version 2 of hideos.
  *
@@ -22,6 +25,7 @@
 #include <moduleLib.h>
 #include <usrLib.h>
 #include <a_out.h>
+#include <taskLib.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,8 +33,11 @@ extern "C" {
 
 void cpp_main(void);
 MODULE_ID ldpp (int syms, BOOL noAbort, char *name);
-void* __builtin_new(int sz);
-void __builtin_delete (void *ptr);
+void* __builtin_new(size_t);
+void* __builtin_vec_new(size_t);
+void __builtin_delete (void *);
+void __builtin_vec_delete(void *);
+void __pure_virtual(void);
 
 #ifdef __cplusplus
 }
@@ -56,37 +63,41 @@ MODULE_ID ldpp (int syms, BOOL noAbort, char *name)
 void cpp_main(void)
 {
 	SYM_TYPE stype;
-	func_ptr p;
 	func_ptr *ctorlist;
-	int i;
 
 	if( symFindByName(sysSymTbl,"___CTOR_LIST__",
-			(char**)&ctorlist,&stype)==ERROR)
+			(char**)&ctorlist, &stype)==OK)
 	{
-		return;
-	}
-	else
-	{
-		for(i=1;ctorlist[i]; i++)
-		{
-			p=ctorlist[i];
-			(*p)();
+		/* 
+		 * this code was copied from gbl-ctors.h
+		 * DO_GLOBAL_CTORS_BODY
+		 */
+		unsigned long nptrs = (unsigned long) ctorlist[0];
+		unsigned i;
+		if (nptrs == (unsigned long) -1) {
+			for (nptrs = 0; ctorlist[nptrs + 1] != 0; nptrs++);
 		}
-	}
+		for (i = nptrs; i >= 1; i--) {
+			ctorlist[i] ();
+		}
 
-	if(symRemove(sysSymTbl,"___CTOR_LIST__",stype)==ERROR)
-	{
-		printf("ctor list just diappeared! - that sucks.\n");
+		/*
+		 * remove the symbol so that this code isnt run again
+		 */
+		if(symRemove(sysSymTbl,"___CTOR_LIST__",stype)!=OK)
+		{
+			printf("ctor list just diappeared! - that sucks.\n");
+		}
 	}
 
 	return;
 }
 
-void* __builtin_new(int sz)
+void* __builtin_new(size_t sz)
 {
 	void* p;
 
-	if(sz==0) sz=1;
+	if(sz==0u) sz=1u;
 
 	p=(void*)malloc(sz);
 
@@ -96,5 +107,33 @@ void* __builtin_new(int sz)
 void __builtin_delete (void *ptr)
 {
 	if(ptr) free(ptr);
+}
+
+/*
+ * __pure_virtual()
+ * joh - 9-5-96
+ */
+void __pure_virtual(void)
+{
+        printf("A pure virtual function was called\n");
+        taskSuspend(taskIdSelf());
+}
+
+/*
+ * __builtin_vec_delete()
+ * joh - 9-5-96
+ */
+void __builtin_vec_delete(void *ptr)
+{
+	__builtin_delete(ptr);
+}
+
+/*
+ * __builtin_vec_new()
+ * joh - 9-5-96
+ */
+void* __builtin_vec_new(size_t sz)
+{
+	return __builtin_new (sz);
 }
 

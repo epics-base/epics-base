@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.32  1995/11/29  19:17:25  jhill
+ * more tests
+ *
  * Revision 1.31  1995/10/12  01:30:28  jhill
  * improved the test
  *
@@ -682,8 +685,14 @@ void null_event(struct event_handler_args args)
 	int		status;
 
 #if 0
-	status = ca_put (DBR_DOUBLE, args.chid, &fval);
-	SEVCHK (status, NULL);
+	if (ca_state(args.chid)==cs_conn) {
+		status = ca_put(DBR_FLOAT, args.chid, &fval);
+		SEVCHK(status, "put failed in null_event()");
+	}
+	else {
+		printf("null_event() called for disconnected %s\n",
+				ca_name(args.chid));
+	}
 #endif
 
 	if (i++ > 1000) {

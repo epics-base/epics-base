@@ -29,11 +29,16 @@
 /*	.17 121892 joh	added TCP send buf size var			*/
 /*	.18 122192 joh	added outstanding ack var			*/
 /*	.19 012094 joh	added minor version (for each server)		*/
+/************************************************************************/
+
 /* $Log$
+ * Revision 1.48  1995/09/29  21:55:38  jhill
+ * added func proto for cacDisconnectChannel()
+ *
  * Revision 1.47  1995/08/22  00:20:27  jhill
  * added KLUDGE def of S_db_Pending
- *								*/
-/*									*/
+ */
+
 /*_begin								*/
 /************************************************************************/
 /*									*/
@@ -164,8 +169,8 @@ struct putCvrtBuf{
 /*
  * for use with cac_select_io()
  */
-#define CA_DO_SENDS	1
-#define CA_DO_RECVS	2
+#define CA_DO_SENDS	(1<<0)
+#define CA_DO_RECVS	(1<<1)	
 
 struct pending_io_event{
   	ELLNODE			node;
@@ -197,7 +202,7 @@ extern const ca_time CA_CURRENT_TIME;
 #define MAXCONNTRIES 		30	/* N conn retries on unchanged net */
 
 #define SELECT_POLL 		(0.05) 	/* units sec - polls into recast */
-#define CA_RECAST_DELAY 	(0.1)   /* initial delay to next recast (sec) */
+#define CA_RECAST_DELAY 	(0.01)  /* initial delay to next recast (sec) */
 #define CA_RECAST_PORT_MASK	0xff	/* random retry interval off port */
 #define CA_RECAST_PERIOD 	(5.0)	/* ul on retry period long term (sec) */
 
@@ -438,6 +443,7 @@ struct  ca_static{
 	unsigned 	ca_post_msg_active:1; 
 	unsigned 	ca_manage_conn_active:1; 
 	unsigned 	ca_repeater_contacted:1;
+	unsigned 	ca_flush_pending:1;
 #if defined(vxWorks)
 	SEM_ID		ca_io_done_sem;
 	SEM_ID		ca_blockSem;
@@ -541,7 +547,7 @@ int post_msg(
 );
 int alloc_ioc(
 	const struct in_addr	*pnet_addr,
-	int			port,
+	unsigned short		port,
 	struct ioc_in_use	**ppiiu
 );
 unsigned long cacRingBufferWrite(
@@ -575,7 +581,7 @@ char *localHostName(void);
 int create_net_chan(
 struct ioc_in_use       **ppiiu,
 const struct in_addr	*pnet_addr,	/* only used by TCP connections */
-int			port,
+unsigned short		port,
 int                     net_proto
 );
 
@@ -612,8 +618,10 @@ ca_real cac_time_diff(ca_time *pTVA, ca_time *pTVB);
 ca_time cac_time_sum(ca_time *pTVA, ca_time *pTVB);
 void caIOBlockFree(evid pIOBlock);
 void clearChannelResources(unsigned id);
-void caSetDefaultPrintfHandler ();
+void caSetDefaultPrintfHandler (void);
 void cacDisconnectChannel(chid chix, int fullDisconnect);
+int caSendMsgPending(void);
+
 /*
  * !!KLUDGE!!
  *

@@ -18,6 +18,7 @@ INC += memDebugLib.h
 INC += tsDefs.h
 INC += bucketLib.h
 INC += pal.h
+INC += fdMgr.h
 
 SRCS.c += ../bucketLib.c
 SRCS.c += ../calcPerform.c

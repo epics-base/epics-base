@@ -515,9 +515,8 @@ int	link;
 
       if (bbDebug)
         logMsg("xvmeIrqRcmd(%d): invoking the callbackRequest\n", link);
-      /*callbackRequest(pXvmeLink[link]->rxDpvtHead);*/ /* schedule completion processing */
+      callbackRequest(pXvmeLink[link]->rxDpvtHead); /* schedule completion processing */
 
-      (pXvmeLink[link]->rxDpvtHead->list_callback.callBack)(pXvmeLink[link]->rxDpvtHead);
     }
   }
   pXvmeLink[link]->rxDpvtHead = NULL;	/* The watch dog agerizer needs this */

@@ -23,6 +23,7 @@ SRCS += devLib.c
 SRCS += devLibVxWorks.c
 SRCS += veclist.c
 SRCS += epicsDynLink.c
+SRCS += logMsgToErrlog.cpp 
 
 OBJLIB_vxWorks += vxCom
 OBJLIB_SRCS = $(SRCS)

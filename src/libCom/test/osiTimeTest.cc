@@ -6,8 +6,11 @@
 #include "osiThread.h"
 #include "epicsAssert.h"
 
+extern "C" {
+int osiTimeTest (void);
+}
 
-int main ()
+int osiTimeTest (void)
 {
 	unsigned i;
 	osiTime begin = osiTime::getCurrent();

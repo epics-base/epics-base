@@ -23,8 +23,9 @@ OBJS_IOC += threadTest
 #fdmgrTest_SRCS += fdmgrTest.c
 #PROD += fdmgrTest
 
-osiTimeTest_SRCS += osiTimeTest.cc
-PROD += osiTimeTest
+osiTimeTestHost_SRCS += osiTimeTestMain.c osiTimeTest.cc
+PROD += osiTimeTestHost
+OBJS_IOC += osiTimeTest
 
 SYS_PROD_LIBS_solaris += pthread thread posix4
 

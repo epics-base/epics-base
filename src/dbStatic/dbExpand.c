@@ -48,7 +48,7 @@ int main(int argc,char **argv)
 		"-S substitutions -S substitutions"
 		" file1.dbd file2.dbd ...\n");
 	fprintf(stderr,"Specifying path will replace the default '.'\n");
-	exit(0);
+	exit(1);
     }
     while((strncmp(argv[1],"-I",2)==0)||(strncmp(argv[1],"-S",2)==0)) {
 	if(strncmp(argv[1],"-I",2)==0) {
@@ -76,7 +76,7 @@ int main(int argc,char **argv)
 		"-S substitutions -S substitutions"
 		" file1.dbd file2.dbd ...\n");
 	fprintf(stderr,"Specifying path will replace the default '.'\n");
-	exit(0);
+	exit(1);
     }
     for(i=1; i<argc; i++) {
 	status = dbReadDatabase(&pdbbase,argv[i],path,sub);
@@ -92,5 +92,5 @@ int main(int argc,char **argv)
     dbWriteRecordFP(pdbbase,stdout,0,0);
     free((void *)path);
     free((void *)sub);
-    return(0);
+    return (status ? 1 : 0);
 }

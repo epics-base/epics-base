@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.56  1998/10/27 00:47:28  jhill
+ * fixed warnings
+ *
  * Revision 1.55  1998/09/24 21:11:38  jhill
  * verify that conn is dropped when channel count goes to zero
  *
@@ -152,6 +155,8 @@ dbr_float_t 	beginValue,
 dbr_float_t	increment,
 dbr_float_t 	epsilon,
 unsigned 	iterations);
+
+void performGrEnumTest (chid chan);
 
 #ifdef vxWorks
 #include <vxWorks.h>
@@ -448,6 +453,8 @@ int doacctst(char *pname)
 		ca_read_access(chix1),
 		ca_write_access(chix1));
 
+	performGrEnumTest (chix1);
+
 	/*
 	 * ca_pend_io() must block
 	 */
@@ -709,7 +716,6 @@ int doacctst(char *pname)
 					&fval,
 					null_event, 
 					&count);
-		
 			SEVCHK(status, NULL);
 		}
 		SEVCHK(ca_flush_io(), NULL);
@@ -761,7 +767,7 @@ int doacctst(char *pname)
 	{
 		unsigned	count=0u;
 		evid		mid[1000];
-		dbr_float_t	temp;
+		dbr_float_t	temp, getResp;
 
 		for(i=0; i<NELEMENTS(mid); i++){
 			SEVCHK(ca_add_event(DBR_GR_FLOAT, chix4, null_event,
@@ -775,19 +781,46 @@ int doacctst(char *pname)
 		 * server is very busy with monitors the client 
 		 * is still able to punch through with a request.
 		 */
-		SEVCHK(ca_get(DBR_FLOAT,chix4,&temp),NULL);
+		SEVCHK(ca_get(DBR_FLOAT,chix4,&getResp),NULL);
 		SEVCHK(ca_pend_io(1000.0),NULL);
 
+		/*
+		 * without pausing begin deleting the monitors while the
+		 * queue is full
+		 */
 		for(i=0; i<NELEMENTS(mid); i++){
+
+#if 0
+			/*
+			 * attempt to generate heavy event traffic before initiating
+			 * the monitor delete
+			 */
+			for(j=0, temp = 0.0; j<100; j++, temp += 10.0){
+				SEVCHK(ca_put(DBR_FLOAT, chix4, &temp), NULL);
+			}
+			/*
+			 * wait for the above to complete
+			 */
+			SEVCHK(ca_get(DBR_FLOAT,chix4,&getResp),NULL);
+			SEVCHK(ca_pend_io(1000.0),NULL);
+
+			/*
+			 * wait momentarily
+			 */
+			ca_pend_event(0.1);
+#endif
+
+			/*
+			 * delete the event
+			 */
 			status = ca_clear_event(mid[i]);
 			if(status != ECA_NORMAL){
 				printf(
 			"Clear of event %ld %x failed because \"%s\"\n",
-					i,
-					mid[i]->id,
-					ca_message(status));
+					i, mid[i]->id, ca_message(status));
 			}
 			SEVCHK(status,NULL);
+
 		}
 
 		/*
@@ -1293,5 +1326,28 @@ void 	accessSecurity_cb(struct access_rights_handler_args args)
 			ca_read_access(args.chid)?"read":"noread",
 			ca_write_access(args.chid)?"write":"nowrite");
 #	endif
+}
+
+void performGrEnumTest (chid chan)
+{
+	struct dbr_gr_enum ge;
+	unsigned count;
+	int status;
+	unsigned i;
+
+	status = ca_get (DBR_GR_ENUM, chan, &ge);
+	SEVCHK (status, "DBR_GR_ENUM ca_get()");
+
+	status = ca_pend_io (2.0);
+	assert (status == ECA_NORMAL);
+
+	if (count>0) {
+		count = (unsigned) ge.no_str;
+		printf ("Enum state str = ");
+		for (i=0; i<count; i++) {
+			printf ("\"%s\" ", ge.strs[i]);
+		}
+		printf ("\n");
+	}
 }
 

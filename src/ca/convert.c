@@ -34,7 +34,10 @@ static char	*sccsId = "@(#) $Id$";
 
 #include	"iocinf.h"
 #include	"net_convert.h"
-
+#if defined(VMS)
+#include	<cvt$routines.h>
+#include	<cvtdef.h>
+#endif
 /*
  * NOOP if this isnt required
  */
@@ -151,7 +154,6 @@ epicsShareDef CACVRTFUNC *cac_dbr_cvrt[]
 #define dbr_htonl(A)	(htonl(A))
 
 
-
 /*
  *	CVRT_STRING()
  *
@@ -180,7 +182,6 @@ unsigned long	num			/* number of values		*/
 	}
 }
 
-
 /*
  *	CVRT_SHORT()
  *
@@ -209,7 +210,6 @@ unsigned long	num			/* number of values		*/
 	}
 }
 
-
 /*
  *	CVRT_CHAR()
  *
@@ -236,7 +236,6 @@ unsigned long	num			/* number of values		*/
 	}
 }
 
-
 /*
  *	CVRT_LONG()
  *
@@ -265,7 +264,6 @@ unsigned long	num			/* number of values		*/
 	}
 }
 
-
 /*
  *	CVRT_ENUM()
  *
@@ -296,7 +294,6 @@ unsigned long	num			/* number of values		*/
 	}
 }
 
-
 /*
  *	CVRT_FLOAT()
  *
@@ -332,7 +329,6 @@ unsigned long	num			/* number of values		*/
 	}
 }
 
-
 /*
  *	CVRT_DOUBLE()
  *
@@ -369,7 +365,6 @@ unsigned long	num			/* number of values		*/
 
 
 
-
 /****************************************************************************
 **	cvrt_sts_string(s,d)
 **		struct dbr_sts_string *s  	pointer to source struct
@@ -408,7 +403,6 @@ unsigned long	num			/* number of values		*/
 
 }
 
-
 /****************************************************************************
 **	cvrt_sts_short(s,d)
 **		struct dbr_sts_int *s  	pointer to source struct
@@ -443,7 +437,6 @@ unsigned long	num			/* number of values		*/
 		cvrt_short(&pSrc->value, &pDest->value, encode, num);
     	}
 }
-
 /****************************************************************************
 **	cvrt_sts_float(s,d)
 **		struct dbr_sts_float *s  	pointer to source struct
@@ -474,7 +467,6 @@ unsigned long	num			/* number of values		*/
 	cvrt_float(&pSrc->value, &pDest->value, encode, num);
 }
 
-
 /****************************************************************************
 **	cvrt_sts_double(s,d)
 **
@@ -501,7 +493,6 @@ unsigned long	num			/* number of values		*/
 	cvrt_double(&pSrc->value, &pDest->value, encode, num);
 }
 
-
 /****************************************************************************
 **	cvrt_sts_enum(s,d)
 **		struct dbr_sts_enum *s  	pointer to source struct
@@ -534,7 +525,6 @@ unsigned long	num			/* number of values		*/
     	}
 }
 
-
 /****************************************************************************
 **	cvrt_gr_short()
 **
@@ -572,7 +562,6 @@ unsigned long	num			/* number of values		*/
 	}
 }
 
-
 /****************************************************************************
 **	cvrt_gr_char()
 **
@@ -614,7 +603,6 @@ unsigned long	num			/* number of values		*/
 	}
 }
 
-
 /****************************************************************************
 **	cvrt_gr_long()
 **
@@ -652,7 +640,6 @@ unsigned long	num			/* number of values		*/
 	}
 }
 
-
 /****************************************************************************
 **	cvrt_gr_enum(s,d)
 **
@@ -686,7 +673,6 @@ unsigned long	num			/* number of values		*/
 	}
 }
 
-
 /****************************************************************************
 **	cvrt_gr_double(s,d)
 **
@@ -746,7 +732,6 @@ unsigned long	num			/* number of values		*/
 }
 
 
-
 /****************************************************************************
 **	cvrt_gr_float(s,d)
 **		struct dbr_gr_float *d		pointer to destination struct
@@ -808,7 +793,6 @@ unsigned long	num			/* number of values		*/
     	}
 }
 
-
 
 
 /****************************************************************************
@@ -932,7 +916,6 @@ unsigned long	num			/* number of values		*/
     	}
 }
 
-
 /****************************************************************************
 **	cvrt_ctrl_double(s,d)
 **
@@ -997,7 +980,6 @@ unsigned long	num			/* number of values		*/
 
 
 
-
 /****************************************************************************
 **	cvrt_ctrl_float(s,d)
 **
@@ -1061,7 +1043,6 @@ unsigned long	num			/* number of values		*/
 }
 
 
-
 /****************************************************************************
 **	cvrt_ctrl_enum(s,d)
 **
@@ -1095,7 +1076,6 @@ unsigned long	num			/* number of values		*/
 	}
 }
 
-
 /****************************************************************************
 **	cvrt_sts_char(s,d)
 **		struct dbr_sts_int *s  	pointer to source struct
@@ -1131,7 +1111,6 @@ unsigned long	num			/* number of values		*/
     	}
 }
 
-
 /****************************************************************************
 **	cvrt_sts_long(s,d)
 **
@@ -1164,7 +1143,6 @@ unsigned long	num			/* number of values		*/
 }
 
 
-
 /****************************************************************************
 **	cvrt_time_string(s,d)
 **	      
@@ -1197,7 +1175,6 @@ unsigned long	num			/* number of values		*/
 
 }
 
-
 /****************************************************************************
 **	cvrt_time_short(s,d)
 **
@@ -1231,7 +1208,6 @@ unsigned long	num			/* number of values		*/
     	}
 }
 
-
 /****************************************************************************
 **	cvrt_time_float(s,d)
 **
@@ -1260,7 +1236,6 @@ unsigned long	num			/* number of values		*/
 	cvrt_float(&pSrc->value, &pDest->value, encode, num);
 }
 
-
 /****************************************************************************
 **	cvrt_time_double(s,d)
 **
@@ -1291,7 +1266,6 @@ unsigned long	num			/* number of values		*/
 
 
 
-
 /****************************************************************************
 **	cvrt_time_enum(s,d)
 **
@@ -1322,7 +1296,6 @@ unsigned long	num			/* number of values		*/
     	}
 }
 
-
 /****************************************************************************
 **	cvrt_sts_char(s,d)
 **
@@ -1355,7 +1328,6 @@ unsigned long	num			/* number of values		*/
 		memcpy((void *)&pDest->value, (void *)&pSrc->value, num);
     	}
 }
-
 /****************************************************************************
 **	cvrt_time_long(s,d)
 **
@@ -1389,7 +1361,6 @@ unsigned long	num			/* number of values		*/
     	}
 }
 
-
 /*
  *	cvrt_put_ackt()
  *
@@ -1418,7 +1389,6 @@ unsigned long	num			/* number of values		*/
 	}
 }
 
-
 /****************************************************************************
 **	cvrt_stsack_string(s,d)
 **		struct dbr_stsack_string *s  	pointer to source struct
@@ -1459,7 +1429,6 @@ unsigned long	num			/* number of values		*/
 
 }
 
-
 #if defined(CA_FLOAT_MIT) 
 /************************************************************************/
 /*      double convert 				                        */
@@ -1500,11 +1469,22 @@ struct mitdbl {
 #define        DBLEXPMINMIT    -128    /* min MIT exponent             */
 
 /*
- * Converts VAX D floating point to IEEE double precision 
- * (D floating is the VAX C default)
+ * Converts VMS D or G floating point to IEEE double precision 
+ * (D floating is the VAX C default, G floating is the Alpha C default)
  */
 void dbr_htond(dbr_double_t *pHost, dbr_double_t *pNet)
 {
+#if defined(VMS)
+#   if defined(__G_FLOAT) && (__G_FLOAT == 1)
+        cvt$convert_float(pHost, CVT$K_VAX_G ,
+                          pNet , CVT$K_IEEE_T,
+                          CVT$M_BIG_ENDIAN);
+#   else
+        cvt$convert_float(pHost, CVT$K_VAX_D ,
+                          pNet , CVT$K_IEEE_T,
+                          CVT$M_BIG_ENDIAN);
+#   endif
+#else
 	dbr_double_t	copyin;
 	struct mitdbl 	*pMIT;
 	struct ieeedbl 	*pIEEE;
@@ -1540,18 +1520,29 @@ void dbr_htond(dbr_double_t *pHost, dbr_double_t *pNet)
     	tmp = dbr_htonl(ptmp[0]);
     	ptmp[0] = dbr_htonl(ptmp[1]);
     	ptmp[1] = tmp;
+#endif
 }
 
-
 /*
- * Converts IEEE double precision to VAX D floating point
- * (D floating is the VAX default)
+ * Converts IEEE double precision to VMS D or G floating point
+ * (D floating is the VAX C default, G floating is the Alpha C default)
  *
  * sign must be forced to zero if the exponent is zero to prevent a reserved
  * operand fault- joh 9-13-90
  */
 void dbr_ntohd(dbr_double_t *pNet, dbr_double_t *pHost)
 {
+#if defined(VMS)
+#   if defined(__G_FLOAT) && (__G_FLOAT == 1)
+        cvt$convert_float(pNet , CVT$K_IEEE_T,
+                          pHost, CVT$K_VAX_G ,
+                          CVT$M_BIG_ENDIAN);
+#   else
+        cvt$convert_float(pNet , CVT$K_IEEE_T,
+                          pHost, CVT$K_VAX_D ,
+                          CVT$M_BIG_ENDIAN);
+#   endif
+#else
 	struct ieeedbl	copyin;
 	struct mitdbl 	*pMIT;
 	struct ieeedbl 	*pIEEE;
@@ -1600,6 +1591,7 @@ void dbr_ntohd(dbr_double_t *pNet, dbr_double_t *pHost)
       		pMIT->mant3 =  pIEEE->mant2>>13; 
       		pMIT->mant4 =  pIEEE->mant2<<3; 
     	}
+#endif
 } 
 
 /************************************************************************/
@@ -1644,6 +1636,11 @@ struct mitflt{
  */
 void dbr_htonf(dbr_float_t *pHost, dbr_float_t *pNet)
 {
+#if defined(VMS)
+        cvt$convert_float(pHost, CVT$K_VAX_F ,
+                          pNet , CVT$K_IEEE_S,
+                          CVT$M_BIG_ENDIAN);
+#else
 	struct mitflt	*pMIT = (struct mitflt *) pHost;
 	struct ieeeflt	*pIEEE = (struct ieeeflt *) pNet;
     	long  		exp,mant,sign;
@@ -1663,6 +1660,7 @@ void dbr_htonf(dbr_float_t *pHost, dbr_float_t *pNet)
     	pIEEE->exp    = exp;
     	pIEEE->sign   = sign;
     	*(ca_uint32_t *)pIEEE = dbr_htonl(*(ca_uint32_t *)pIEEE);
+#endif
 }
 
 
@@ -1675,6 +1673,11 @@ void dbr_htonf(dbr_float_t *pHost, dbr_float_t *pNet)
  */
 void dbr_ntohf(dbr_float_t *pNet, dbr_float_t *pHost)
 {
+#if defined(VMS)
+        cvt$convert_float(pNet , CVT$K_IEEE_S,
+                          pHost, CVT$K_VAX_F ,
+                          CVT$M_BIG_ENDIAN);
+#else
 	struct mitflt	*pMIT = (struct mitflt *) pHost;
 	struct ieeeflt	*pIEEE = (struct ieeeflt *) pNet;
   	long  		exp,mant2,mant1,sign;
@@ -1702,12 +1705,13 @@ void dbr_ntohf(dbr_float_t *pNet, dbr_float_t *pHost)
     	pMIT->mant2    = mant2;
     	pMIT->mant1    = mant1;
     	pMIT->sign     = sign;
+#endif
 }
 
 
 #endif /*CA_FLOAT_MIT*/
 
-#if defined(CA_FLOAT_IEEE) && 1
+#if defined(CA_FLOAT_IEEE)
 
 /*
  * dbr_htond ()

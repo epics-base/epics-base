@@ -58,7 +58,6 @@
  * .23  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  * .24  08-14-92        jba     Added simulation processing
  * .25  08-19-92        jba     Added code for invalid alarm output action
- * .26  10-01-92        jba     Removed excess call to init_common
  */
 
 #include	<vxWorks.h>
@@ -231,6 +230,7 @@ static long init_record(pmbbo,pass)
 		pmbbo->udf = FALSE;
 	} else if (status==2) status=0;
     }
+    init_common(pmbbo);
     return(0);
 }
 

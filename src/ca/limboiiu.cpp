@@ -119,7 +119,7 @@ osiSockAddr limboiiu::getNetworkAddress () const
 
 void limboiiu::uninstallChan ( epicsGuard < cacMutex > & guard, nciu & chan )
 {
-    return netiiu::uninstallChan( guard, chan );
+    netiiu::uninstallChan( guard, chan );
 }
 
 

@@ -38,6 +38,9 @@
  * joh	00	080791	Created
  */
 
+@@@@@ carefully reexamine file reopen issues.
+
+
 #include	<stdio.h>
 #include	<string.h>
 #include	<sys/types.h>
@@ -64,6 +67,8 @@ void	acceptNewClient();
 void	readFromClient();
 void	logTime();
 int	getConfig();
+int	openLogFile();
+void	reopenLogFile();
 void	failureNoptify();
 
 struct iocLogClient {
@@ -108,13 +113,13 @@ main()
 
 	status = getConfig();
 	if(status<0){
-		printf("iocLogServer: EPICS environment inderspecified\n");
+		printf("iocLogServer: EPICS environment underspecified\n");
 		printf("iocLogServer: failed to initialize\n");
 		exit(ERROR);
 	}
 
 	pserver = (struct ioc_log_server *) 
-			malloc(sizeof *pserver);
+			calloc(1, sizeof *pserver);
 	if(!pserver){
 		abort();
 	}
@@ -143,7 +148,7 @@ main()
 	if (status<0) {
 		printf(	"ioc log server allready installed on port %d?\n", 
 			ioc_log_port);
-		return;
+		exit();
 	}
 
 	/* listen and accept new connections */
@@ -152,11 +157,11 @@ main()
 		abort();
 	}
 
-	pserver->max_file_size = ioc_log_file_limit; 
-	pserver->poutfile = fopen(ioc_log_file_name, "a+");
-	if(!pserver->poutfile){
-		printf("File access problems `%s'\n", ioc_log_file_name);
-		return;
+	status = openLogFile(pserver);
+	if(status<0){
+		printf(	"File access problems `%s'\n", 
+			ioc_log_file_name);
+		exit();
 	}
 
 	fdmgr_add_fd(
@@ -172,6 +177,48 @@ main()
 		fflush(pserver->poutfile);
 	}
 }
+
+
+/*
+ *	openLogFile()
+ *
+ */
+static int
+openLogFile(pserver)
+struct ioc_log_server	*pserver;
+{
+	if(pserver->poutfile){
+		pserver->poutfile = freopen(
+					ioc_log_file_name, 
+					"a+", 
+					pserver->poutfile);
+	}else{
+		pserver->max_file_size = ioc_log_file_limit; 
+		pserver->poutfile = fopen(ioc_log_file_name, "a+");
+	}
+	if(!pserver->poutfile){
+		return ERROR;
+	}
+	return OK;
+}
+
+
+/*
+ *	reopenLogFile()
+ *
+ */
+static void
+reopenLogFile(pserver)
+struct ioc_log_server	*pserver;
+{
+	int status;
+
+	status = openLogFile(pserver);
+	if(status<0){
+		exit();
+	}
+}
+		
 
 
 /*
@@ -231,12 +278,15 @@ struct ioc_log_server	*pserver;
 	pclient->name[sizeof(pclient->name) - 1] = NULL;
 
 	logTime(pclient);
-	fprintf(
+	
+	status = fprintf(
 		pclient->pserver->poutfile,
 		"%s %s ----- Client Connected -----\n",
 		pclient->name,
 		pclient->ascii_time);
-
+	if(status<0){
+		reopenLogFile();
+	}
 
 	fdmgr_add_fd(
 		pserver->pfdctx, 
@@ -274,28 +324,36 @@ readFromClient(pclient)
 		 * flush any leftovers
 		 */
 		if(stacksize){
-			fprintf(
+			status = fprintf(
 				pclient->pserver->poutfile,
 				"%s %s ",
 				pclient->name,
 				pclient->ascii_time);
+			if(status<0){
+				reopenLogFile();
+			}
 			status = fwrite(
 					pclient->recvbuf,
 					stacksize,
 					NITEMS,
 					pclient->pserver->poutfile);
 			if (status != NITEMS) {
-				printf("ioc log server: failed to flush %d\n",
-				       errno);
+				reopenLogFile();
 			}
-			fprintf(pclient->pserver->poutfile,"\n");
+			status = fprintf(pclient->pserver->poutfile,"\n");
+			if(status<0){
+				reopenLogFile();
+			}
 		}
 
-		fprintf(
+		status = fprintf(
 			pclient->pserver->poutfile,
 			"%s %s ----- Client Disconnect -----\n",
 			pclient->name,
 			pclient->ascii_time);
+		if(status<0){
+			reopenLogFile();
+		}
 
 		fdmgr_clear_fd(
 			       pclient->pserver->pfdctx,
@@ -326,11 +384,14 @@ readFromClient(pclient)
 			break;
 		}
 
-		fprintf(
+		status = fprintf(
 			pclient->pserver->poutfile,
 			"%s %s ",
 			pclient->name,
 			pclient->ascii_time);
+		if(status<0){
+			reopenLogFile();
+		}
 
 		status = fwrite(
 				pline,
@@ -338,8 +399,7 @@ readFromClient(pclient)
 				NITEMS,
 				pclient->pserver->poutfile);
 		if (status != NITEMS) {
-			printf("ioc log server: failed to write log %d\n",
-			       errno);
+			reopenLogFile();
 			return;
 		}
 
@@ -414,6 +474,7 @@ getConfig()
 		return ERROR;
 	}
 
+#ifdef FETCH_INET_ADDR
 	status = envGetInetAddrConfigParam(
 			&EPICS_IOC_LOG_INET, 
 			&ioc_log_addr);
@@ -421,6 +482,7 @@ getConfig()
 		failureNoptify(&EPICS_IOC_LOG_INET);
 		return ERROR;
 	}
+#endif
 
 	status = envGetIntegerConfigParam(
 			&EPICS_IOC_LOG_FILE_LIMIT, 
@@ -432,8 +494,8 @@ getConfig()
 
 	pstring = envGetConfigParam(
 			&EPICS_IOC_LOG_FILE_NAME, 
-			ioc_log_file_name,
-			sizeof(ioc_log_file_name));
+			sizeof ioc_log_file_name,
+			ioc_log_file_name);
 	if(pstring == NULL){
 		failureNoptify(&EPICS_IOC_LOG_FILE_NAME);
 		return ERROR;
@@ -453,6 +515,6 @@ static void
 failureNoptify(pparam)
 ENV_PARAM       *pparam;
 {
-	printf(	"IocLogServer: EPICS environment variable `%s' undefined\n",
+	printf(	"iocLogServer: EPICS environment variable `%s' undefined\n",
 		pparam->name);
 }

@@ -27,17 +27,28 @@
 #include "iocinf.h"
 #include "oldAccess.h"
 
-oldSubscription::~oldSubscription ()
+oldSubscription::oldSubscription  (
+    epicsGuard < epicsMutex > & guard, 
+    oldChannelNotify & chanIn, cacChannel & io, 
+    unsigned type, arrayElementCount nElem, unsigned mask,
+    caEventCallBackFunc * pFuncIn, void * pPrivateIn,
+    evid * pEventId ) :
+    chan ( chanIn ), id ( UINT_MAX ), pFunc ( pFuncIn ), 
+        pPrivate ( pPrivateIn )
 {
+    // The users event id *must* be set prior to potentially
+    // calling his callback from within subscribe.
+    if ( pEventId ) {
+        *pEventId = this;
+    }
+    io.subscribe ( guard, type, nElem, mask, *this, &this->id );
+    // Dont touch this pointer after this point because the
+    // 1st update callback might cancel the subscription and
+    // thereby destroy this object.
 }
 
-void oldSubscription::ioCancel ( 
-    epicsGuard < epicsMutex > & cbGuard,
-    epicsGuard < epicsMutex > & guard )
+oldSubscription::~oldSubscription ()
 {
-    if ( this->subscribed ) {
-        this->chan.ioCancel ( cbGuard, guard, this->id );
-    }
 }
 
 void oldSubscription::current ( 

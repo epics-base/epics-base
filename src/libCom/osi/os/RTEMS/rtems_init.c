@@ -195,14 +195,14 @@ rtems_semstat (int level)
 }
 
 static const ioccrfArg netStatArg0 = { "level",ioccrfArgInt};
-static const ioccrfArg *netStatArgs[1] = {&netStatArg0};
+static const ioccrfArg * const netStatArgs[1] = {&netStatArg0};
 static const ioccrfFuncDef netStatFuncDef = {"netstat",1,netStatArgs};
 static void netStatCallFunc(const ioccrfArgBuf *args)
 {
     rtems_netstat(args[0].ival);
 }
 static const ioccrfArg semStatArg0 = { "level",ioccrfArgInt};
-static const ioccrfArg *semStatArgs[1] = {&semStatArg0};
+static const ioccrfArg * const semStatArgs[1] = {&semStatArg0};
 static const ioccrfFuncDef semStatFuncDef = {"semstat",1,semStatArgs};
 static void semStatCallFunc(const ioccrfArgBuf *args)
 {

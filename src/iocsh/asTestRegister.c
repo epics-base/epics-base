@@ -19,7 +19,7 @@ of this distribution.
 
 /* asSetFilename */
 static const ioccrfArg asSetFilenameArg0 = { "ascf",ioccrfArgString};
-static const ioccrfArg *asSetFilenameArgs[1] = {&asSetFilenameArg0};
+static const ioccrfArg * const asSetFilenameArgs[1] = {&asSetFilenameArg0};
 static const ioccrfFuncDef asSetFilenameFuncDef =
     {"asSetFilename",1,asSetFilenameArgs};
 static void asSetFilenameCallFunc(const ioccrfArgBuf *args)
@@ -29,7 +29,7 @@ static void asSetFilenameCallFunc(const ioccrfArgBuf *args)
 
 /* asSetSubstitutions */
 static const ioccrfArg asSetSubstitutionsArg0 = { "substitutions",ioccrfArgString};
-static const ioccrfArg *asSetSubstitutionsArgs[1] = {&asSetSubstitutionsArg0};
+static const ioccrfArg * const asSetSubstitutionsArgs[1] = {&asSetSubstitutionsArg0};
 static const ioccrfFuncDef asSetSubstitutionsFuncDef =
     {"asSetSubstitutions",1,asSetSubstitutionsArgs};
 static void asSetSubstitutionsCallFunc(const ioccrfArgBuf *args)
@@ -53,7 +53,7 @@ static void asdbdumpCallFunc(const ioccrfArgBuf *args)
 
 /* aspuag */
 static const ioccrfArg aspuagArg0 = { "uagname",ioccrfArgString};
-static const ioccrfArg *aspuagArgs[1] = {&aspuagArg0};
+static const ioccrfArg * const aspuagArgs[1] = {&aspuagArg0};
 static const ioccrfFuncDef aspuagFuncDef = {"aspuag",1,aspuagArgs};
 static void aspuagCallFunc(const ioccrfArgBuf *args)
 {
@@ -62,7 +62,7 @@ static void aspuagCallFunc(const ioccrfArgBuf *args)
 
 /* asphag */
 static const ioccrfArg asphagArg0 = { "hagname",ioccrfArgString};
-static const ioccrfArg *asphagArgs[1] = {&asphagArg0};
+static const ioccrfArg * const asphagArgs[1] = {&asphagArg0};
 static const ioccrfFuncDef asphagFuncDef = {"asphag",1,asphagArgs};
 static void asphagCallFunc(const ioccrfArgBuf *args)
 {
@@ -71,7 +71,7 @@ static void asphagCallFunc(const ioccrfArgBuf *args)
 
 /* asprules */
 static const ioccrfArg asprulesArg0 = { "asgname",ioccrfArgString};
-static const ioccrfArg *asprulesArgs[1] = {&asprulesArg0};
+static const ioccrfArg * const asprulesArgs[1] = {&asprulesArg0};
 static const ioccrfFuncDef asprulesFuncDef = {"asprules",1,asprulesArgs};
 static void asprulesCallFunc(const ioccrfArgBuf *args)
 {
@@ -81,7 +81,7 @@ static void asprulesCallFunc(const ioccrfArgBuf *args)
 /* aspmem */
 static const ioccrfArg aspmemArg0 = { "asgname",ioccrfArgString};
 static const ioccrfArg aspmemArg1 = { "clients",ioccrfArgInt};
-static const ioccrfArg *aspmemArgs[2] = {&aspmemArg0,&aspmemArg1};
+static const ioccrfArg * const aspmemArgs[2] = {&aspmemArg0,&aspmemArg1};
 static const ioccrfFuncDef aspmemFuncDef = {"aspmem",2,aspmemArgs};
 static void aspmemCallFunc(const ioccrfArgBuf *args)
 {
@@ -92,7 +92,7 @@ static void aspmemCallFunc(const ioccrfArgBuf *args)
 static const ioccrfArg astacArg0 = { "recordname",ioccrfArgString};
 static const ioccrfArg astacArg1 = { "user",ioccrfArgString};
 static const ioccrfArg astacArg2 = { "location",ioccrfArgString};
-static const ioccrfArg *astacArgs[3] = {&astacArg0,&astacArg1,&astacArg2};
+static const ioccrfArg * const astacArgs[3] = {&astacArg0,&astacArg1,&astacArg2};
 static const ioccrfFuncDef astacFuncDef = {"astac",3,astacArgs};
 static void astacCallFunc(const ioccrfArgBuf *args)
 {

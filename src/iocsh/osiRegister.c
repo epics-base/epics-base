@@ -20,7 +20,7 @@ of this distribution.
 
 /* threadShowAll */
 static const ioccrfArg threadShowAllArg0 = { "level",ioccrfArgInt};
-static const ioccrfArg *threadShowAllArgs[1] = {&threadShowAllArg0};
+static const ioccrfArg * const threadShowAllArgs[1] = {&threadShowAllArg0};
 static const ioccrfFuncDef threadShowAllFuncDef =
     {"threadShowAll",1,threadShowAllArgs};
 static void threadShowAllCallFunc(const ioccrfArgBuf *args)
@@ -30,7 +30,7 @@ static void threadShowAllCallFunc(const ioccrfArgBuf *args)
 
 /* threadSleep */
 static const ioccrfArg threadSleepArg0 = { "seconds",ioccrfArgDouble};
-static const ioccrfArg *threadSleepArgs[1] = {&threadSleepArg0};
+static const ioccrfArg * const threadSleepArgs[1] = {&threadSleepArg0};
 static const ioccrfFuncDef threadSleepFuncDef =
     {"threadSleep",1,threadSleepArgs};
 static void threadSleepCallFunc(const ioccrfArgBuf *args)

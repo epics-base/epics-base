@@ -25,7 +25,7 @@ of this distribution.
 static const ioccrfArg dbLoadDatabaseArg0 = { "file name",ioccrfArgString};
 static const ioccrfArg dbLoadDatabaseArg1 = { "path",ioccrfArgString};
 static const ioccrfArg dbLoadDatabaseArg2 = { "substitutions",ioccrfArgString};
-static const ioccrfArg *dbLoadDatabaseArgs[3] =
+static const ioccrfArg * const dbLoadDatabaseArgs[3] =
 {
     &dbLoadDatabaseArg0,&dbLoadDatabaseArg1,&dbLoadDatabaseArg2
 };
@@ -39,7 +39,7 @@ static void dbLoadDatabaseCallFunc(const ioccrfArgBuf *args)
 /* dbLoadRecords */
 static const ioccrfArg dbLoadRecordsArg0 = { "file name",ioccrfArgString};
 static const ioccrfArg dbLoadRecordsArg1 = { "substitutions",ioccrfArgString};
-static const ioccrfArg *dbLoadRecordsArgs[2] = {&dbLoadRecordsArg0,&dbLoadRecordsArg1};
+static const ioccrfArg * const dbLoadRecordsArgs[2] = {&dbLoadRecordsArg0,&dbLoadRecordsArg1};
 static const ioccrfFuncDef dbLoadRecordsFuncDef = {"dbLoadRecords",2,dbLoadRecordsArgs};
 static void dbLoadRecordsCallFunc(const ioccrfArgBuf *args)
 {
@@ -48,7 +48,7 @@ static void dbLoadRecordsCallFunc(const ioccrfArgBuf *args)
 
 /* dbLoadTemplate */
 static const ioccrfArg dbLoadTemplateArg0 = { "file name",ioccrfArgString};
-static const ioccrfArg *dbLoadTemplateArgs[1] = {&dbLoadTemplateArg0};
+static const ioccrfArg * const dbLoadTemplateArgs[1] = {&dbLoadTemplateArg0};
 static const ioccrfFuncDef dbLoadTemplateFuncDef =
     {"dbLoadTemplate",1,dbLoadTemplateArgs};
 static void dbLoadTemplateCallFunc(const ioccrfArgBuf *args)

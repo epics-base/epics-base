@@ -8,7 +8,9 @@ This software was developed under a United States Government license
 described on the COPYRIGHT_UniversityOfChicago file included as part
 of this distribution.
 ****************************************************************************/
+#include <string>
 #include <map>
+using namespace std;
 
 #include <stddef.h>
 #include <string.h>
@@ -456,6 +458,7 @@ ioccrf (const char *pathname)
  * so they show up in the help display
  */
 
+extern "C" {
 /* help */
 static const ioccrfArg helpArg0 = { "command",ioccrfArgInt};
 static const ioccrfArg *helpArgs[1] = {&helpArg0};
@@ -477,6 +480,8 @@ static void localRegister (void)
     ioccrfRegister(&helpFuncDef,helpCallFunc);
     ioccrfRegister(&exitFuncDef,exitCallFunc);
 }
+
+} /* extern "C" */
 
 /*
  * Register commands on application startup

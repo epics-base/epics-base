@@ -29,25 +29,25 @@ of this distribution.
 
 /* dbb */
 static const ioccrfArg dbbArg0 = { "record name",ioccrfArgString};
-static const ioccrfArg *dbbArgs[1] = {&dbbArg0};
+static const ioccrfArg * const dbbArgs[1] = {&dbbArg0};
 static const ioccrfFuncDef dbbFuncDef = {"dbb",1,dbbArgs};
 static void dbbCallFunc(const ioccrfArgBuf *args) { dbb(args[0].sval);}
 
 /* dbd */
 static const ioccrfArg dbdArg0 = { "record name",ioccrfArgString};
-static const ioccrfArg *dbdArgs[1] = {&dbdArg0};
+static const ioccrfArg * const dbdArgs[1] = {&dbdArg0};
 static const ioccrfFuncDef dbdFuncDef = {"dbd",1,dbdArgs};
 static void dbdCallFunc(const ioccrfArgBuf *args) { dbd(args[0].sval);}
 
 /* dbc */
 static const ioccrfArg dbcArg0 = { "record name",ioccrfArgString};
-static const ioccrfArg *dbcArgs[1] = {&dbcArg0};
+static const ioccrfArg * const dbcArgs[1] = {&dbcArg0};
 static const ioccrfFuncDef dbcFuncDef = {"dbc",1,dbcArgs};
 static void dbcCallFunc(const ioccrfArgBuf *args) { dbc(args[0].sval);}
 
 /* dbs */
 static const ioccrfArg dbsArg0 = { "record name",ioccrfArgString};
-static const ioccrfArg *dbsArgs[1] = {&dbsArg0};
+static const ioccrfArg * const dbsArgs[1] = {&dbsArg0};
 static const ioccrfFuncDef dbsFuncDef = {"dbs",1,dbsArgs};
 static void dbsCallFunc(const ioccrfArgBuf *args) { dbs(args[0].sval);}
 
@@ -57,14 +57,14 @@ static void dbstatCallFunc(const ioccrfArgBuf *args) { dbstat();}
 /* dbp */
 static const ioccrfArg dbpArg0 = { "record name",ioccrfArgString};
 static const ioccrfArg dbpArg1 = { "interest_level",ioccrfArgInt};
-static const ioccrfArg *dbpArgs[2] = {&dbpArg0,&dbpArg1};
+static const ioccrfArg * const dbpArgs[2] = {&dbpArg0,&dbpArg1};
 static const ioccrfFuncDef dbpFuncDef = {"dbp",2,dbpArgs};
 static void dbpCallFunc(const ioccrfArgBuf *args)
 { dbp(args[0].sval,args[1].ival);}
 
 /* dbap */
 static const ioccrfArg dbapArg0 = { "record name",ioccrfArgString};
-static const ioccrfArg *dbapArgs[1] = {&dbapArg0};
+static const ioccrfArg * const dbapArgs[1] = {&dbapArg0};
 static const ioccrfFuncDef dbapFuncDef = {"dbap",1,dbapArgs};
 static void dbapCallFunc(const ioccrfArgBuf *args) { dbap(args[0].sval);}
 

@@ -20,7 +20,7 @@ of this distribution.
 /* dbcar */
 static const ioccrfArg dbcarArg0 = { "record name",ioccrfArgString};
 static const ioccrfArg dbcarArg1 = { "level",ioccrfArgInt};
-static const ioccrfArg *dbcarArgs[2] = {&dbcarArg0,&dbcarArg1};
+static const ioccrfArg * const dbcarArgs[2] = {&dbcarArg0,&dbcarArg1};
 static const ioccrfFuncDef dbcarFuncDef = {"dbcar",2,dbcarArgs};
 static void dbcarCallFunc(const ioccrfArgBuf *args)
 {

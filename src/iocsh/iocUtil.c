@@ -17,7 +17,7 @@
 
 /* < (runScript) command */
 static const ioccrfArg runScriptArg0 = { "file name",ioccrfArgString};
-static const ioccrfArg *runScriptArgs[1] = {&runScriptArg0};
+static const ioccrfArg * const runScriptArgs[1] = {&runScriptArg0};
 static const ioccrfFuncDef runScriptFuncDef = {"<",1,runScriptArgs};
 static void runScriptCallFunc(const ioccrfArgBuf *args)
 {
@@ -26,7 +26,7 @@ static void runScriptCallFunc(const ioccrfArgBuf *args)
 
 /* chdir */
 static const ioccrfArg chdirArg0 = { "current directory name",ioccrfArgString};
-static const ioccrfArg *chdirArgs[1] = {&chdirArg0};
+static const ioccrfArg * const chdirArgs[1] = {&chdirArg0};
 static const ioccrfFuncDef chdirFuncDef = {"cd",1,chdirArgs};
 static void chdirCallFunc(const ioccrfArgBuf *args)
 {
@@ -59,7 +59,7 @@ static const ioccrfArg showArg6 = { "task",ioccrfArgString};
 static const ioccrfArg showArg7 = { "task",ioccrfArgString};
 static const ioccrfArg showArg8 = { "task",ioccrfArgString};
 static const ioccrfArg showArg9 = { "task",ioccrfArgString};
-static const ioccrfArg *showArgs[10] = {
+static const ioccrfArg * const showArgs[10] = {
     &showArg0,&showArg1,&showArg2,&showArg3,&showArg4,
     &showArg5,&showArg6,&showArg7,&showArg8,&showArg9,
 };
@@ -115,7 +115,7 @@ static void threadInitCallFunc(const ioccrfArgBuf *args)
 
 /* putenv */
 static const ioccrfArg putenvArg0 = { "environment_variable=name",ioccrfArgString};
-static const ioccrfArg *putenvArgs[1] = {&putenvArg0};
+static const ioccrfArg * const putenvArgs[1] = {&putenvArg0};
 static const ioccrfFuncDef putenvFuncDef = {"putenv",1,putenvArgs};
 static void putenvCallFunc(const ioccrfArgBuf *args)
 {

@@ -20,7 +20,7 @@ of this distribution.
 
 /* casr */
 static const ioccrfArg casrArg0 = { "level",ioccrfArgInt};
-static const ioccrfArg *casrArgs[1] = {&casrArg0};
+static const ioccrfArg * const casrArgs[1] = {&casrArg0};
 static const ioccrfFuncDef casrFuncDef = {"casr",1,casrArgs};
 static void casrCallFunc(const ioccrfArgBuf *args)
 {
@@ -30,7 +30,7 @@ static void casrCallFunc(const ioccrfArgBuf *args)
 /* dbel */
 static const ioccrfArg dbelArg0 = { "record name",ioccrfArgString};
 static const ioccrfArg dbelArg1 = { "level",ioccrfArgInt};
-static const ioccrfArg *dbelArgs[2] = {&dbelArg0,&dbelArg1};
+static const ioccrfArg * const dbelArgs[2] = {&dbelArg0,&dbelArg1};
 static const ioccrfFuncDef dbelFuncDef = {"dbel",2,dbelArgs};
 static void dbelCallFunc(const ioccrfArgBuf *args)
 {

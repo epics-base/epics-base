@@ -26,10 +26,6 @@
 #include "iocinf.h"
 #include "oldAccess.h"
 
-const caHdr cacnullmsg = {
-    0,0,0,0,0,0
-};
-
 threadPrivateId caClientContextId;
 
 threadPrivateId cacRecursionLock;
@@ -72,7 +68,7 @@ int fetchClientContext (cac **ppcac)
 
     status = ca_task_initialize ();
     if ( status == ECA_NORMAL ) {
-        *ppcac = (cac *) threadPrivateGet (caClientContextId);
+        *ppcac = (cac *) threadPrivateGet ( caClientContextId );
         if ( ! *ppcac ) {
             status = ECA_INTERNAL;
         }
@@ -84,18 +80,18 @@ int fetchClientContext (cac **ppcac)
 /*
  *  Default Exception Handler
  */
-void ca_default_exception_handler (struct exception_handler_args args)
+void ca_default_exception_handler ( struct exception_handler_args args )
 {
-    if (args.chid && args.op != CA_OP_OTHER) {
+    if ( args.chid && args.op != CA_OP_OTHER ) {
         ca_signal_formated (
             args.stat, 
             args.pFile, 
             args.lineNo, 
             "%s - with request chan=%s op=%ld data type=%s count=%ld",
             args.ctx,
-            ca_name (args.chid),
+            ca_name ( args.chid ),
             args.op,
-            dbr_type_to_text(args.type),
+            dbr_type_to_text ( args.type ),
             args.count);
     }
     else {
@@ -110,7 +106,7 @@ void ca_default_exception_handler (struct exception_handler_args args)
 /*
  *  ca_task_initialize ()
  */
-int epicsShareAPI ca_task_initialize (void)
+int epicsShareAPI ca_task_initialize ( void )
 {
     return ca_context_create ( false );
 }
@@ -300,9 +296,10 @@ int epicsShareAPI ca_array_put_callback (chtype type, unsigned long count,
 /*
  *  ca_array_put ()
  */
-int epicsShareAPI ca_array_put (chtype type, unsigned long count, chid pChan, const void *pvalue)
+int epicsShareAPI ca_array_put ( chtype type, unsigned long count, 
+                                chid pChan, const void *pvalue )
 {
-     return pChan->write ( type, count, pvalue);
+     return pChan->write ( type, count, pvalue );
 }
 
 /*
@@ -310,21 +307,21 @@ int epicsShareAPI ca_array_put (chtype type, unsigned long count, chid pChan, co
  */
 int epicsShareAPI ca_change_connection_event (chid pChan, caCh *pfunc)
 {
-    return pChan->changeConnCallBack (pfunc);
+    return pChan->changeConnCallBack ( pfunc );
 }
 
 /*
  * ca_replace_access_rights_event
  */
-int epicsShareAPI ca_replace_access_rights_event (chid pChan, caArh *pfunc)
+int epicsShareAPI ca_replace_access_rights_event ( chid pChan, caArh *pfunc )
 {
-    return pChan->replaceAccessRightsEvent (pfunc);
+    return pChan->replaceAccessRightsEvent ( pfunc );
 }
 
 /*
  *  Specify an event subroutine to be run for asynch exceptions
  */
-int epicsShareAPI ca_add_exception_event (caExceptionHandler *pfunc, void *arg)
+int epicsShareAPI ca_add_exception_event ( caExceptionHandler *pfunc, void *arg )
 {
     cac *pcac;
     int caStatus;
@@ -342,10 +339,10 @@ int epicsShareAPI ca_add_exception_event (caExceptionHandler *pfunc, void *arg)
 /*
  *  ca_add_masked_array_event
  */
-int epicsShareAPI ca_add_masked_array_event (chtype type, unsigned long count, chid pChan, 
+int epicsShareAPI ca_add_masked_array_event ( chtype type, unsigned long count, chid pChan, 
         caEventCallBackFunc *pCallBack, void *pCallBackArg, 
         ca_real, ca_real, ca_real, 
-        evid *monixptr, long mask)
+        evid *monixptr, long mask )
 {
     static const long maskMask = USHRT_MAX;
     oldSubscription *pSubsr;
@@ -359,7 +356,7 @@ int epicsShareAPI ca_add_masked_array_event (chtype type, unsigned long count, c
         return ECA_BADFUNCPTR;
     }
 
-    if ( (mask & maskMask) == 0) {
+    if ( ( mask & maskMask ) == 0) {
         return ECA_BADMASK;
     }
 
@@ -468,7 +465,7 @@ int epicsShareAPI ca_test_io ()
     int caStatus;
     cac *pcac;
 
-    caStatus = fetchClientContext (&pcac);
+    caStatus = fetchClientContext ( &pcac );
     if ( caStatus != ECA_NORMAL ) {
         return caStatus;
     }
@@ -484,9 +481,9 @@ int epicsShareAPI ca_test_io ()
 /*
  *  CA_SIGNAL()
  */
-void epicsShareAPI ca_signal (long ca_status, const char *message)
+void epicsShareAPI ca_signal ( long ca_status, const char *message )
 {
-    ca_signal_with_file_and_lineno (ca_status, message, NULL, 0);
+    ca_signal_with_file_and_lineno ( ca_status, message, NULL, 0 );
 }
 
 /*
@@ -513,17 +510,17 @@ const char * epicsShareAPI ca_message (long ca_status)
 /*
  * ca_signal_with_file_and_lineno()
  */
-void epicsShareAPI ca_signal_with_file_and_lineno (long ca_status, 
-            const char *message, const char *pfilenm, int lineno)
+void epicsShareAPI ca_signal_with_file_and_lineno ( long ca_status, 
+            const char *message, const char *pfilenm, int lineno )
 {
-    ca_signal_formated (ca_status, pfilenm, lineno, message);
+    ca_signal_formated ( ca_status, pfilenm, lineno, message );
 }
 
 /*
  * ca_signal_formated()
  */
-void epicsShareAPI ca_signal_formated (long ca_status, const char *pfilenm, 
-                                       int lineno, const char *pFormat, ...)
+void epicsShareAPI ca_signal_formated ( long ca_status, const char *pfilenm, 
+                                       int lineno, const char *pFormat, ... )
 {
     cac           *pcac;
     va_list             theArgs;
@@ -539,43 +536,43 @@ void epicsShareAPI ca_signal_formated (long ca_status, const char *pfilenm,
         "Fatal"
     };
 
-    if (caClientContextId) {
+    if ( caClientContextId ) {
         pcac = (cac *) threadPrivateGet ( caClientContextId );
     }
     else {
         pcac = NULL;
     }
     
-    va_start (theArgs, pFormat);  
+    va_start ( theArgs, pFormat );  
     
-    ca_printf ("CA.Client.Diagnostic..............................................\n");
+    ca_printf ( "CA.Client.Diagnostic..............................................\n" );
     
-    ca_printf ("    %s: \"%s\"\n", 
+    ca_printf ( "    %s: \"%s\"\n", 
         severity[CA_EXTRACT_SEVERITY(ca_status)], 
-        ca_message (ca_status));
+        ca_message (ca_status) );
 
     if  (pFormat) {
-        ca_printf ("    Context: \"");
-        ca_vPrintf (pFormat, theArgs);
-        ca_printf ("\"\n");
+        ca_printf ( "    Context: \"" );
+        ca_vPrintf ( pFormat, theArgs );
+        ca_printf ( "\"\n" );
     }
         
     if (pfilenm) {
-        ca_printf ("    Source File: %s Line Number: %d\n",
-            pfilenm, lineno);    
+        ca_printf ( "    Source File: %s Line Number: %d\n",
+            pfilenm, lineno );    
     }
     
     /*
      *  Terminate execution if unsuccessful
      */
-    if( !(ca_status & CA_M_SUCCESS) && 
-        CA_EXTRACT_SEVERITY(ca_status) != CA_K_WARNING ){
+    if( ! ( ca_status & CA_M_SUCCESS ) && 
+        CA_EXTRACT_SEVERITY (ca_status) != CA_K_WARNING ){
         abort();
     }
     
-    ca_printf ("..................................................................\n");
+    ca_printf ( "..................................................................\n" );
     
-    va_end (theArgs);
+    va_end ( theArgs );
 }
 
 /*
@@ -606,7 +603,7 @@ int epicsShareAPI ca_add_fd_registration (CAFDHANDLER *func, void *arg)
  *
  *  what is called by vacated entries in the VMS share image jump table
  */
-int ca_defunct()
+int ca_defunct ()
 {
     SEVCHK ( ECA_DEFUNCT, NULL );
     return ECA_DEFUNCT;
@@ -625,9 +622,7 @@ void epicsShareAPI ca_get_host_name ( chid pChan, char *pBuf, unsigned bufLength
  */
 const char * epicsShareAPI ca_host_name ( chid pChan )
 {
-    static char hostNameBuf [256];
-    pChan->hostName ( hostNameBuf, sizeof ( hostNameBuf ) );
-    return hostNameBuf;
+    return pChan->pHostName ();
 }
 
 /*
@@ -660,14 +655,7 @@ int epicsShareAPI ca_replace_printf_handler (caPrintfFunc *ca_printf_func)
         return caStatus;
     }
 
-    pcac->lock ();
-    if (ca_printf_func) {
-        pcac->ca_printf_func = ca_printf_func;
-    }
-    else {
-        pcac->ca_printf_func = epicsVprintf;
-    }
-    pcac->unlock ();
+    pcac->replaceErrLogHandler ( ca_printf_func );
 
     return ECA_NORMAL;
 }
@@ -806,7 +794,7 @@ void netiiu::show ( unsigned /* level */ ) const
     this->pcas->lock ();
 
     tsDLIterConstBD <nciu> pChan ( this->chidList.first () );
-	while ( pChan != pChan.eol () ) {
+	while ( pChan.valid () ) {
         char hostName [256];
 		printf(	"%s native type=%d ", 
 			pChan->pName (), pChan->nativeType () );

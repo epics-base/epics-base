@@ -204,7 +204,7 @@ $(LIBNAME): $(LIBOBJS)
 $(LIBNAME_CXX): $(LIBOBJS_CXX)
 	@echo Building CXX library $@
 	@$(RM) $@
-	$(LINK.cc) $@ $(LIBOBJS_CXX) $(LDLIBS)
+	$(LINK.cc) $@ $(LIBOBJS_CXX) $(CXXLDLIBS)
 
 $(INSTALL_BIN)/%: % 
 	@echo "Installing $@"

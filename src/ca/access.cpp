@@ -41,7 +41,6 @@
 #define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "oldAccess.h"
-#include "autoPtrDestroy.h"
 #include "cac.h"
 
 epicsThreadPrivateId caClientContextId;
@@ -187,7 +186,7 @@ int epicsShareAPI ca_context_create (
     ca_client_context *pcac;
 
     try {
-        epicsThreadOnce ( &caClientContextIdOnce, ca_init_client_context, 0);
+        epicsThreadOnce ( & caClientContextIdOnce, ca_init_client_context, 0);
         if ( caClientContextId == 0 ) {
             return ECA_ALLOCMEM;
         }
@@ -212,22 +211,6 @@ int epicsShareAPI ca_context_create (
     }
     catch ( ... ) {
         return ECA_ALLOCMEM;
-    }
-    return ECA_NORMAL;
-}
-
-//
-// ca_register_service ()
-//
-int epicsShareAPI ca_register_service ( cacService *pService )
-{
-    ca_client_context *pcac;
-    int caStatus = fetchClientContext (&pcac);
-    if ( caStatus != ECA_NORMAL ) {
-        return caStatus;
-    }
-    if ( pService ) {
-        pcac->registerService ( *pService );
     }
     return ECA_NORMAL;
 }
@@ -328,8 +311,8 @@ int epicsShareAPI ca_create_channel (
         CAFDHANDLER * pFunc = 0;
         void * pArg = 0;
         {
-            epicsGuard < ca_client_context_mutex > 
-                autoMutex ( pcac->mutex );
+            epicsGuard < epicsMutex > 
+                guard ( pcac->mutex );
             if ( pcac->fdRegFuncNeedsToBeCalled ) {
                 pFunc = pcac->fdRegFunc;
                 pArg = pcac->fdRegArg;
@@ -342,14 +325,18 @@ int epicsShareAPI ca_create_channel (
     }
 
     try {
+        epicsGuard < epicsMutex > guard ( pcac->mutex );
         oldChannelNotify * pChanNotify = 
             new ( pcac->oldChannelNotifyFreeList ) 
-                oldChannelNotify ( *pcac, name_str, 
+                oldChannelNotify ( guard, *pcac, name_str, 
                     conn_func, puser, priority );
         // make sure that their chan pointer is set prior to
         // calling connection call backs
         *chanptr = pChanNotify;
-        pChanNotify->initiateConnect ();
+        pChanNotify->initiateConnect ( guard );
+        // no need to worry about a connect preempting here because
+        // the connect sequence will not start untill initiateConnect()
+        // is called
     }
     catch ( cacChannel::badString & ) {
         return ECA_BADSTR;
@@ -359,6 +346,9 @@ int epicsShareAPI ca_create_channel (
     }
     catch ( cacChannel::badPriority & ) {
         return ECA_BADPRIORITY;
+    }
+    catch ( cacChannel::unsupportedByService & ) {
+        return ECA_UNAVAILINSERV;
     }
     catch ( ... ) {
         return ECA_INTERNAL;
@@ -392,12 +382,13 @@ int epicsShareAPI ca_array_get ( chtype type,
             return ECA_BADTYPE;
         }
         unsigned tmpType = static_cast < unsigned > ( type );
-        autoPtrFreeList < getCopy > pNotify 
+        epicsGuard < epicsMutex > guard ( pChan->getClientCtx().mutex );
+        autoPtrFreeList < getCopy, 0x400, epicsMutexNOOP > pNotify 
             ( pChan->getClientCtx().getCopyFreeList,
                 new ( pChan->getClientCtx().getCopyFreeList ) 
-                    getCopy ( pChan->getClientCtx(), *pChan, 
+                    getCopy ( guard, pChan->getClientCtx(), *pChan, 
                                 tmpType, count, pValue ) );
-        pChan->read ( type, count, *pNotify );
+        pChan->read ( guard, type, count, *pNotify );
         pNotify.release ();
         caStatus = ECA_NORMAL;
     }
@@ -458,11 +449,12 @@ int epicsShareAPI ca_array_get_callback ( chtype type,
         }
         unsigned tmpType = static_cast < unsigned > ( type );
 
-        autoPtrFreeList < getCallback > pNotify 
+        epicsGuard < epicsMutex > guard ( pChan->getClientCtx().mutex );
+        autoPtrFreeList < getCallback, 0x400, epicsMutexNOOP > pNotify 
             ( pChan->getClientCtx().getCallbackFreeList,
             new ( pChan->getClientCtx().getCallbackFreeList )
                 getCallback ( *pChan, pfunc, arg ) );
-        pChan->read ( tmpType, count, *pNotify );
+        pChan->read ( guard, tmpType, count, *pNotify );
         pNotify.release ();
         caStatus = ECA_NORMAL;
     }
@@ -520,12 +512,13 @@ int epicsShareAPI ca_array_put_callback ( chtype type, arrayElementCount count,
         if ( type < 0 ) {
             return ECA_BADTYPE;
         }
+        epicsGuard < epicsMutex > guard ( pChan->getClientCtx().mutex );
         unsigned tmpType = static_cast < unsigned > ( type );
-        autoPtrFreeList < putCallback > pNotify
+        autoPtrFreeList < putCallback, 0x400, epicsMutexNOOP > pNotify
                 ( pChan->getClientCtx().putCallbackFreeList,
                     new ( pChan->getClientCtx().putCallbackFreeList )
                         putCallback ( *pChan, pfunc, usrarg ) );
-        pChan->write ( tmpType, count, pValue, *pNotify );
+        pChan->write ( guard, tmpType, count, pValue, *pNotify );
         pNotify.release ();
         caStatus = ECA_NORMAL;
     }
@@ -573,7 +566,7 @@ int epicsShareAPI ca_array_put_callback ( chtype type, arrayElementCount count,
  */
 // extern "C"
 int epicsShareAPI ca_array_put ( chtype type, arrayElementCount count, 
-                                chid pChan, const void *pValue )
+                                chid pChan, const void * pValue )
 {
     if ( type < 0 ) {
         return ECA_BADTYPE;
@@ -582,7 +575,8 @@ int epicsShareAPI ca_array_put ( chtype type, arrayElementCount count,
 
     int caStatus;
     try {
-        pChan->write ( tmpType, count, pValue );
+        epicsGuard < epicsMutex > guard ( pChan->getClientCtx().mutex );
+        pChan->write ( guard, tmpType, count, pValue );
         caStatus = ECA_NORMAL;
     }
     catch ( cacChannel::badString & )
@@ -687,7 +681,8 @@ int epicsShareAPI ca_create_subscription (
     }
 
     try {
-        autoPtrFreeList < oldSubscription > pSubsr
+        epicsGuard < epicsMutex > guard ( pChan->getClientCtx().mutex );
+        autoPtrFreeList < oldSubscription, 0x400, epicsMutexNOOP > pSubsr
             ( pChan->getClientCtx().subscriptionFreeList,
                 new ( pChan->getClientCtx().subscriptionFreeList )
                     oldSubscription  ( *pChan, 
@@ -696,7 +691,7 @@ int epicsShareAPI ca_create_subscription (
         if ( monixptr ) {
             *monixptr = pTmp;
         }
-        pTmp->begin ( tmpType, count, mask );
+        pTmp->begin ( guard, tmpType, count, mask );
         // dont touch pTmp after this because
         // the first callback might have canceled it
         return ECA_NORMAL;
@@ -751,8 +746,8 @@ epicsShareFunc int epicsShareAPI ca_clear_subscription ( evid pMon )
 {
     oldChannelNotify & chan = pMon->channel ();
     ca_client_context & cac = chan.getClientCtx ();
-    pMon->ioCancel ();
-    cac.destroySubscription ( *pMon );
+    epicsGuard < epicsMutex > guard ( cac.mutex );
+    pMon->ioCancel ( guard );
     return ECA_NORMAL;
 }
 
@@ -837,16 +832,16 @@ int epicsShareAPI ca_pend_io ( ca_real timeout )
 /*
  *  ca_flush_io ()
  */ 
-// extern "C"
 int epicsShareAPI ca_flush_io ()
 {
-    ca_client_context *pcac;
+    ca_client_context * pcac;
     int caStatus = fetchClientContext (&pcac);
     if ( caStatus != ECA_NORMAL ) {
         return caStatus;
     }
 
-    pcac->flushRequest ();
+    epicsGuard < epicsMutex > guard ( pcac->mutex );
+    pcac->flush ( guard );
 
     return ECA_NORMAL;
 }
@@ -854,7 +849,6 @@ int epicsShareAPI ca_flush_io ()
 /*
  *  CA_TEST_IO ()
  */
-// extern "C"
 int epicsShareAPI ca_test_io () // X aCC 361
 {
     ca_client_context *pcac;
@@ -934,9 +928,11 @@ void epicsShareAPI ca_signal_formated ( long ca_status, const char *pfilenm,
         pcac->vSignal ( ca_status, pfilenm, lineno, pFormat, theArgs );
     }
     else {
-        fprintf ( stderr, "file=%s line=%d: CA exception delivered to a thread w/o ca context\n", 
-            pfilenm, lineno );
-        vfprintf ( stderr, pFormat, theArgs );
+        fprintf ( stderr, "CA exception in thread w/o CA ctx: status=%s file=%s line=%d: \n", 
+            ca_message ( ca_status ), pfilenm, lineno );
+        if ( pFormat ) {
+            vfprintf ( stderr, pFormat, theArgs );
+        }
     }
     va_end ( theArgs );
 }
@@ -1109,7 +1105,6 @@ double epicsShareAPI ca_beacon_period ( chid pChan )
     return pChan->beaconPeriod ();
 }
 
-// extern "C"
 double epicsShareAPI ca_receive_watchdog_delay ( chid pChan )
 {
     return pChan->receiveWatchdogDelay ();
@@ -1130,7 +1125,7 @@ unsigned epicsShareAPI ca_get_ioc_connection_count ()
         return 0u;
     }
 
-    return pcac->connectionCount ();
+    return pcac->circuitCount ();
 }
 
 unsigned epicsShareAPI ca_beacon_anomaly_count ()

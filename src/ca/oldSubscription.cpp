@@ -29,44 +29,53 @@ oldSubscription::~oldSubscription ()
 {
 }
 
-void oldSubscription::ioCancel ()
+void oldSubscription::ioCancel ( epicsGuard < epicsMutex > & guard )
 {
     if ( this->subscribed ) {
-        this->chan.ioCancel ( this->id );
+        this->chan.ioCancel ( guard, this->id );
     }
 }
 
-void oldSubscription::current (  
+void oldSubscription::current ( 
+    epicsGuard < epicsMutex > & guard,
     unsigned type, arrayElementCount count, const void * pData )
 {
     struct event_handler_args args;
-
     args.usr = this->pPrivate;
     args.chid = & this->chan;
     args.type = static_cast < long > ( type );
     args.count = static_cast < long > ( count );
     args.status = ECA_NORMAL;
     args.dbr = pData;
-    ( *this->pFunc ) ( args );
+    caEventCallBackFunc * pFuncTmp = this->pFunc;
+    {
+        epicsGuardRelease < epicsMutex > unguard ( guard );
+        ( *pFuncTmp ) ( args );
+    }
 }
     
 void oldSubscription::exception (
+    epicsGuard < epicsMutex > & guard,
     int status, const char * /* pContext */, 
     unsigned type, arrayElementCount count )
 {
     if ( status == ECA_CHANDESTROY ) {
         ca_client_context & cac = this->chan.getClientCtx ();
-        cac.destroySubscription ( *this );
+        cac.destroySubscription ( guard, *this );
     }
     else if ( status != ECA_DISCONN ) {
         struct event_handler_args args;
         args.usr = this->pPrivate;
-        args.chid = &this->chan;
+        args.chid = & this->chan;
         args.type = type;
         args.count = count;
         args.status = status;
         args.dbr = 0;
-        ( *this->pFunc ) ( args );
+        caEventCallBackFunc * pFuncTmp = this->pFunc;
+        {
+            epicsGuardRelease < epicsMutex > unguard ( guard );
+            ( *pFuncTmp ) ( args );
+        }
     }
 }
 

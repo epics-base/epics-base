@@ -31,8 +31,9 @@
 #include "iocinf.h"
 #include "oldAccess.h"
 
-putCallback::putCallback ( oldChannelNotify &chanIn, 
-                                 caEventCallBackFunc *pFuncIn, void *pPrivateIn ) :
+putCallback::putCallback ( 
+    oldChannelNotify & chanIn, caEventCallBackFunc * pFuncIn, 
+        void * pPrivateIn ) :
     chan ( chanIn ), pFunc ( pFuncIn ), pPrivate ( pPrivateIn )
 {
 }
@@ -41,7 +42,7 @@ putCallback::~putCallback ()
 {
 }
 
-void putCallback::completion ()
+void putCallback::completion ( epicsGuard < epicsMutex > & guard  )
 {
     struct event_handler_args args;
 
@@ -51,11 +52,16 @@ void putCallback::completion ()
     args.count = 0;
     args.status = ECA_NORMAL;
     args.dbr = 0;
-    ( *this->pFunc ) (args);
-    this->chan.getClientCtx().destroyPutCallback ( *this );
+    caEventCallBackFunc * pFuncTmp = this->pFunc;
+    {
+        epicsGuardRelease < epicsMutex > unguard ( guard );
+        ( *pFuncTmp ) ( args );
+    }
+    this->chan.getClientCtx().destroyPutCallback ( guard, *this );
 }
 
 void putCallback::exception (  
+    epicsGuard < epicsMutex > & guard,
     int status, const char * /* pContext */, 
     unsigned type, arrayElementCount count )
 {
@@ -67,9 +73,13 @@ void putCallback::exception (
         args.count = count;
         args.status = status;
         args.dbr = 0;
-        ( *this->pFunc ) (args);
+        caEventCallBackFunc * pFuncTmp = this->pFunc;
+        {
+            epicsGuardRelease < epicsMutex > unguard ( guard );
+            ( *pFuncTmp ) (args);
+        }
     }
-    this->chan.getClientCtx().destroyPutCallback ( *this );
+    this->chan.getClientCtx().destroyPutCallback ( guard, *this );
 }
 
 void * putCallback::operator new ( size_t ) // X aCC 361

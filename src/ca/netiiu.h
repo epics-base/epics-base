@@ -33,7 +33,6 @@
 class netWriteNotifyIO;
 class netReadNotifyIO;
 class netSubscription;
-class cacMutex;
 union osiSockAddr;
 
 class cac;
@@ -46,28 +45,29 @@ public:
     virtual const char * pHostName () const = 0; // deprecated - please do not use
     virtual bool ca_v41_ok () const = 0;
     virtual bool ca_v42_ok () const = 0;
-    virtual void writeRequest ( epicsGuard < cacMutex > &, nciu &, 
-                    unsigned type, unsigned nElem, const void *pValue ) = 0;
-    virtual void writeNotifyRequest ( epicsGuard < cacMutex > &, 
-                    nciu &, netWriteNotifyIO &, 
-                    unsigned type, unsigned nElem, const void *pValue ) = 0;
-    virtual void readNotifyRequest ( epicsGuard < cacMutex > &, nciu &, 
-                    netReadNotifyIO &, unsigned type, unsigned nElem ) = 0;
-    virtual void clearChannelRequest ( epicsGuard < cacMutex > &, 
-                    ca_uint32_t sid, ca_uint32_t cid ) = 0;
-    virtual void subscriptionRequest ( epicsGuard < cacMutex > &, 
-                    nciu &, netSubscription &subscr ) = 0;
-    virtual void subscriptionCancelRequest ( epicsGuard < cacMutex > &, 
-                    nciu & chan, netSubscription & subscr ) = 0;
-    virtual void flushRequest () = 0;
-    virtual bool flushBlockThreshold ( epicsGuard < cacMutex > & ) const = 0;
-    virtual void flushRequestIfAboveEarlyThreshold ( epicsGuard < cacMutex > & ) = 0;
+    virtual void writeRequest ( epicsGuard < epicsMutex > &, nciu &, 
+        unsigned type, arrayElementCount nElem, const void *pValue ) = 0;
+    virtual void writeNotifyRequest ( epicsGuard < epicsMutex > &, 
+        nciu &, netWriteNotifyIO &, 
+        unsigned type, arrayElementCount nElem, const void *pValue ) = 0;
+    virtual void readNotifyRequest ( epicsGuard < epicsMutex > &, nciu &, 
+        netReadNotifyIO &, unsigned type, arrayElementCount nElem ) = 0;
+    virtual void clearChannelRequest ( epicsGuard < epicsMutex > &, 
+        ca_uint32_t sid, ca_uint32_t cid ) = 0;
+    virtual void subscriptionRequest ( epicsGuard < epicsMutex > &, 
+        nciu &, netSubscription & ) = 0;
+    virtual void subscriptionUpdateRequest ( 
+        epicsGuard < epicsMutex > &, nciu &, netSubscription & ) = 0;
+    virtual void subscriptionCancelRequest ( epicsGuard < epicsMutex > &, 
+        nciu & chan, netSubscription & subscr ) = 0;
+    virtual void flushRequest ( epicsGuard < epicsMutex > & ) = 0;
+    virtual bool flushBlockThreshold ( epicsGuard < epicsMutex > & ) const = 0;
+    virtual void flushRequestIfAboveEarlyThreshold ( epicsGuard < epicsMutex > & ) = 0;
     virtual void blockUntilSendBacklogIsReasonable 
-        ( cacNotify &, epicsGuard < cacMutex > & ) = 0;
+        ( cacContextNotify &, epicsGuard < epicsMutex > & ) = 0;
     virtual void requestRecvProcessPostponedFlush () = 0;
     virtual osiSockAddr getNetworkAddress () const = 0;
-    virtual void uninstallChan ( epicsGuard < callbackMutex > &, 
-        epicsGuard < cacMutex > &, nciu & ) = 0;
+    virtual void uninstallChan ( epicsGuard < epicsMutex > &, nciu & ) = 0;
     virtual double receiveWatchdogDelay () const = 0;
 };
 

@@ -34,12 +34,15 @@
 #include "oldAccess.h"
 #include "cac.h"
 
-getCopy::getCopy ( ca_client_context &cacCtxIn, oldChannelNotify &chanIn, 
-                  unsigned typeIn, arrayElementCount countIn, void *pValueIn ) :
+getCopy::getCopy ( 
+    epicsGuard < epicsMutex > & guard, ca_client_context & cacCtxIn, 
+    oldChannelNotify & chanIn, unsigned typeIn, 
+    arrayElementCount countIn, void * pValueIn ) :
     count ( countIn ), cacCtx ( cacCtxIn ), chan ( chanIn ), pValue ( pValueIn ), 
-        ioSeqNo ( cacCtxIn.sequenceNumberOfOutstandingIO () ), type ( typeIn )
+        ioSeqNo ( 0 ), type ( typeIn )
 {
-    cacCtxIn.incrementOutstandingIO ( cacCtxIn.sequenceNumberOfOutstandingIO () );
+    this->ioSeqNo = cacCtxIn.sequenceNumberOfOutstandingIO ( guard );
+    cacCtxIn.incrementOutstandingIO ( guard, this->ioSeqNo );
 }
 
 getCopy::~getCopy () 
@@ -48,34 +51,37 @@ getCopy::~getCopy ()
 
 void getCopy::cancel ()
 {
-    this->cacCtx.decrementOutstandingIO ( this->ioSeqNo );
+    epicsGuard < epicsMutex > guard ( this->cacCtx.mutexRef () );
+    this->cacCtx.decrementOutstandingIO ( guard, this->ioSeqNo );
 }
 
-void getCopy::completion ( unsigned typeIn, 
+void getCopy::completion ( 
+    epicsGuard < epicsMutex > & guard, unsigned typeIn, 
     arrayElementCount countIn, const void *pDataIn )
 {
     if ( this->type == typeIn ) {
         unsigned size = dbr_size_n ( typeIn, countIn );
         memcpy ( this->pValue, pDataIn, size );
-        this->cacCtx.decrementOutstandingIO ( this->ioSeqNo );
+        this->cacCtx.decrementOutstandingIO ( guard, this->ioSeqNo );
     }
     else {
-        this->exception ( ECA_INTERNAL, 
+        this->exception ( guard, ECA_INTERNAL, 
             "bad data type match in get copy back response",
             typeIn, countIn);
     }
-    this->cacCtx.destroyGetCopy ( *this );
+    this->cacCtx.destroyGetCopy ( guard, *this );
 }
 
 void getCopy::exception (
+    epicsGuard < epicsMutex > & guard,
     int status, const char *pContext, unsigned /* typeIn */, arrayElementCount /* countIn */ )
 {
     if ( status != ECA_CHANDESTROY ) {
-        this->cacCtx.exception ( status, pContext, 
+        this->cacCtx.exception ( guard, status, pContext, 
             __FILE__, __LINE__, this->chan, this->type, 
             this->count, CA_OP_GET );
     }
-    this->cacCtx.destroyGetCopy ( *this );
+    this->cacCtx.destroyGetCopy ( guard, *this );
 }
 
 void getCopy::show ( unsigned level ) const

@@ -31,7 +31,7 @@
 #include "iocinf.h"
 #include "oldAccess.h"
 
-getCallback::getCallback ( oldChannelNotify &chanIn, 
+getCallback::getCallback ( oldChannelNotify & chanIn, 
     caEventCallBackFunc *pFuncIn, void *pPrivateIn ) :
         chan ( chanIn ), pFunc ( pFuncIn ), pPrivate ( pPrivateIn )
 {
@@ -42,34 +42,44 @@ getCallback::~getCallback ()
 }
 
 void getCallback::completion (
+    epicsGuard < epicsMutex > & guard,
     unsigned type, arrayElementCount count, const void *pData )
 {
     struct event_handler_args args;
     args.usr = this->pPrivate;
-    args.chid = &this->chan;
+    args.chid = & this->chan;
     args.type = type;
     args.count = count;
     args.status = ECA_NORMAL;
     args.dbr = pData;
-    ( *this->pFunc ) ( args );
-    this->chan.getClientCtx().destroyGetCallback ( *this );
+    caEventCallBackFunc * pFuncTmp = this->pFunc;
+    {
+        epicsGuardRelease < epicsMutex > unguard ( guard );
+        ( *pFuncTmp ) ( args );
+    }
+    this->chan.getClientCtx().destroyGetCallback ( guard, *this );
 }
 
 void getCallback::exception (
+    epicsGuard < epicsMutex > & guard,
     int status, const char * /* pContext */, 
     unsigned type, arrayElementCount count )
 {
     if ( status != ECA_CHANDESTROY ) {
         struct event_handler_args args;
         args.usr = this->pPrivate;
-        args.chid = &this->chan;
+        args.chid = & this->chan;
         args.type = type;
         args.count = count;
         args.status = status;
         args.dbr = 0;
-        ( *this->pFunc ) ( args );
+        caEventCallBackFunc * pFuncTmp = this->pFunc;
+        {
+            epicsGuardRelease < epicsMutex > unguard ( guard );
+            ( *pFuncTmp ) ( args );
+        }
     }
-    this->chan.getClientCtx().destroyGetCallback ( *this );
+    this->chan.getClientCtx().destroyGetCallback ( guard, *this );
 }
 
 void * getCallback::operator new ( size_t ) // X aCC 361

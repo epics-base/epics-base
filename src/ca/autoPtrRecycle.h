@@ -30,27 +30,29 @@
 template < class T >
 class autoPtrRecycle {
 public:
-    autoPtrRecycle ( chronIntIdResTable < baseNMIU > &,
-        tsDLList < class baseNMIU > &, cacRecycle &, T * );
+    autoPtrRecycle ( 
+        epicsGuard < epicsMutex > &, chronIntIdResTable < baseNMIU > &,
+        cacRecycle &, T * );
     ~autoPtrRecycle ();
     T & operator * () const;
     T * operator -> () const;
     T * get () const;
     T * release ();
 private:
-    T *p;
-    cacRecycle &r;
-    tsDLList < class baseNMIU > &eventq;
-    chronIntIdResTable < baseNMIU > &ioTable;
+    T * p;
+    cacRecycle & r;
+    chronIntIdResTable < baseNMIU > & ioTable;
+    epicsGuard < epicsMutex > & guard;
     // not implemented
 	autoPtrRecycle ( const autoPtrRecycle & );
 	autoPtrRecycle & operator = ( const autoPtrRecycle & );
 };
 
 template < class T >
-inline autoPtrRecycle<T>::autoPtrRecycle ( chronIntIdResTable < baseNMIU > &tbl,
-        tsDLList < class baseNMIU > &list, cacRecycle &rIn, T *pIn ) :
-    p ( pIn ), r ( rIn ), eventq ( list ), ioTable ( tbl ) {}
+inline autoPtrRecycle<T>::autoPtrRecycle ( 
+    epicsGuard < epicsMutex > & guardIn, chronIntIdResTable < baseNMIU > & tbl,
+        cacRecycle & rIn, T * pIn ) :
+    p ( pIn ), r ( rIn ), ioTable ( tbl ), guard ( guardIn ) {}
 
 template < class T >
 inline autoPtrRecycle<T>::~autoPtrRecycle ()
@@ -58,8 +60,7 @@ inline autoPtrRecycle<T>::~autoPtrRecycle ()
     if ( this->p ) {
         baseNMIU *pb = this->p;
         this->ioTable.remove ( *pb );
-        this->eventq.remove ( *pb );
-        pb->destroy ( this->r );
+        pb->destroy ( this->guard, this->r );
     }
 }
 

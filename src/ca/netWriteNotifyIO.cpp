@@ -28,8 +28,9 @@
 #include "nciu.h"
 #include "cac.h"
 
-netWriteNotifyIO::netWriteNotifyIO ( nciu & chanIn, cacWriteNotify & notifyIn ) :
-    notify ( notifyIn ), chan ( chanIn )
+netWriteNotifyIO::netWriteNotifyIO ( 
+    privateInterfaceForIO & ioComplIntf, cacWriteNotify & notifyIn ) :
+    notify ( notifyIn ), privateChanForIO ( ioComplIntf )
 {
 }
 
@@ -43,33 +44,59 @@ void netWriteNotifyIO::show ( unsigned /* level */ ) const
         static_cast < const void * > ( this ) );
 }
 
-void netWriteNotifyIO::destroy ( cacRecycle & recycle )
+void netWriteNotifyIO::destroy ( 
+    epicsGuard < epicsMutex > & guard, 
+    cacRecycle & recycle )
 {
     this->~netWriteNotifyIO ();
-    recycle.recycleWriteNotifyIO ( *this );
+    recycle.recycleWriteNotifyIO ( guard, *this );
 }
 
-void netWriteNotifyIO::completion ()
+void netWriteNotifyIO::completion (
+    epicsGuard < epicsMutex > & guard,
+    cacRecycle & recycle )
 {
-    this->notify.completion ();
+    this->notify.completion ( guard );
+    this->privateChanForIO.ioCompletionNotify ( guard, *this );
+    this->~netWriteNotifyIO ();
+    recycle.recycleWriteNotifyIO ( guard, *this );
 }
 
-void netWriteNotifyIO::exception ( int status, const char *pContext )
+void netWriteNotifyIO::completion ( 
+    epicsGuard < epicsMutex > & guard, 
+    cacRecycle & recycle,
+    unsigned /* type */, arrayElementCount /* count */, 
+    const void * /* pData */ )
 {
-    this->notify.exception ( status, pContext, UINT_MAX, 0u );
+    //this->chan.getClient().printf ( "Write response with data ?\n" );
+    this->privateChanForIO.ioCompletionNotify ( guard, *this );
+    this->~netWriteNotifyIO ();
+    recycle.recycleWriteNotifyIO ( guard, *this );
 }
 
-void netWriteNotifyIO::exception ( int status, const char *pContext, 
-                                  unsigned type, arrayElementCount count )
+void netWriteNotifyIO::exception ( 
+    epicsGuard < epicsMutex > & guard,
+    cacRecycle & recycle,
+    int status, const char * pContext )
 {
-    this->notify.exception ( status, pContext, type, count );
+    this->notify.exception ( 
+        guard, status, pContext, UINT_MAX, 0u );
+    this->privateChanForIO.ioCompletionNotify ( guard, *this );
+    this->~netWriteNotifyIO ();
+    recycle.recycleWriteNotifyIO ( guard, *this );
 }
 
-
-void netWriteNotifyIO::completion ( unsigned /* type */, 
-    arrayElementCount /* count */, const void * /* pData */ )
+void netWriteNotifyIO::exception ( 
+    epicsGuard < epicsMutex > & guard, 
+    cacRecycle & recycle,
+    int status, const char *pContext, 
+    unsigned type, arrayElementCount count )
 {
-    this->chan.getClient().printf ( "Write response with data ?\n" );
+    this->notify.exception ( 
+        guard, status, pContext, type, count );
+    this->privateChanForIO.ioCompletionNotify ( guard, *this );
+    this->~netWriteNotifyIO ();
+    recycle.recycleWriteNotifyIO ( guard, *this );
 }
 
 class netSubscription * netWriteNotifyIO::isSubscription ()
@@ -77,16 +104,12 @@ class netSubscription * netWriteNotifyIO::isSubscription ()
     return 0;
 }
 
-nciu & netWriteNotifyIO::channel () const
-{
-    return this->chan;
-}
-
 void * netWriteNotifyIO::operator new ( size_t ) // X aCC 361
 {
     // The HPUX compiler seems to require this even though no code
     // calls it directly
-    throw std::logic_error ( "why is the compiler calling private operator new" );
+    throw std::logic_error ( 
+        "why is the compiler calling private operator new" );
 }
 
 void netWriteNotifyIO::operator delete ( void * )

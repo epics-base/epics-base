@@ -41,56 +41,70 @@ extern "C" void cacNoopAccesRightsHandler ( struct access_rights_handler_args )
 {
 }
 
-oldChannelNotify::oldChannelNotify ( ca_client_context & cacIn, const char *pName, 
-        caCh * pConnCallBackIn, void * pPrivateIn, capri priority ) :
+oldChannelNotify::oldChannelNotify ( 
+        epicsGuard < epicsMutex > & guard, ca_client_context & cacIn, 
+        const char *pName, caCh * pConnCallBackIn, 
+        void * pPrivateIn, capri priority ) :
     cacCtx ( cacIn ), 
-    io ( cacIn.createChannel ( pName, *this, priority ) ), 
+    io ( cacIn.createChannel ( guard, pName, *this, priority ) ), 
     pConnCallBack ( pConnCallBackIn ), 
     pPrivate ( pPrivateIn ), pAccessRightsFunc ( cacNoopAccesRightsHandler ),
-    ioSeqNo ( cacIn.sequenceNumberOfOutstandingIO () ),
-    currentlyConnected ( false ), prevConnected ( false )
+    ioSeqNo ( 0 ), currentlyConnected ( false ), prevConnected ( false )
 {
-    // no need to worry about a connect preempting here because
-    // the connect sequence will not start untill initiateConnect()
-    // is called
+    guard.assertIdenticalMutex ( cacIn.mutexRef () );
+    this->ioSeqNo = cacIn.sequenceNumberOfOutstandingIO ( guard );
     if ( pConnCallBackIn == 0 ) {
-        this->cacCtx.incrementOutstandingIO ( cacIn.sequenceNumberOfOutstandingIO () );
+        cacIn.incrementOutstandingIO ( guard, this->ioSeqNo );
     }
 }
 
 oldChannelNotify::~oldChannelNotify ()
 {
-    this->io.destroy ();
+}
 
+void  oldChannelNotify::destructor (
+    epicsGuard < epicsMutex > & guard )
+{
+    guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
+    this->io.destroy ( guard );
     // no need to worry about a connect preempting here because
     // the io (the nciu) has been destroyed above
     if ( this->pConnCallBack == 0 && ! this->currentlyConnected ) {
-        this->cacCtx.decrementOutstandingIO ( this->ioSeqNo );
+        this->cacCtx.decrementOutstandingIO ( guard, this->ioSeqNo );
     }
+    this->~oldChannelNotify ();
 }
 
 void oldChannelNotify::setPrivatePointer ( void *pPrivateIn )
 {
+    epicsGuard < epicsMutex > guard ( this->cacCtx.mutexRef () );
     this->pPrivate = pPrivateIn;
 }
 
 void * oldChannelNotify::privatePointer () const
 {
+    epicsGuard < epicsMutex > guard ( this->cacCtx.mutexRef () );
     return this->pPrivate;
 }
 
 int oldChannelNotify::replaceAccessRightsEvent ( caArh *pfunc )
 {
-    // The order of the following is significant to guarantee that the
-    // access rights handler is always gets called even if the channel connects
-    // while this is running. There is some very small chance that the
-    // handler could be called twice here with the same access rights state, but 
-    // that will not upset the application.
-    this->pAccessRightsFunc = pfunc ? pfunc : cacNoopAccesRightsHandler;
-    if ( this->currentlyConnected ) {
+    bool isConnected;
+    caAccessRights tmp;
+    {
+        epicsGuard < epicsMutex > guard ( this->cacCtx.mutexRef () );
+        // The order of the following is significant to guarantee that the
+        // access rights handler is always gets called even if the channel connects
+        // while this is running. There is some very small chance that the
+        // handler could be called twice here with the same access rights state, but 
+        // that will not upset the application.
+        this->pAccessRightsFunc = pfunc ? pfunc : cacNoopAccesRightsHandler;
+        isConnected = this->currentlyConnected;
+        tmp = this->io.accessRights ();
+    }
+    if ( isConnected ) {
         struct access_rights_handler_args args;
         args.chid = this;
-        caAccessRights tmp = this->io.accessRights ();
         args.ar.read_access = tmp.readPermit ();
         args.ar.write_access = tmp.writePermit ();
         ( *pfunc ) ( args );
@@ -98,7 +112,8 @@ int oldChannelNotify::replaceAccessRightsEvent ( caArh *pfunc )
     return ECA_NORMAL;
 }
 
-void oldChannelNotify::connectNotify ()
+void oldChannelNotify::connectNotify ( 
+    epicsGuard < epicsMutex > & guard )
 {
     this->currentlyConnected = true;
     this->prevConnected = true;
@@ -106,26 +121,34 @@ void oldChannelNotify::connectNotify ()
         struct connection_handler_args  args;
         args.chid = this;
         args.op = CA_OP_CONN_UP;
-        ( *this->pConnCallBack ) ( args );
-        
+        caCh * pFunc = this->pConnCallBack;
+        {
+            epicsGuardRelease < epicsMutex > unguard ( guard );
+            ( *pFunc ) ( args );
+        }
     }
     else {
-        this->cacCtx.decrementOutstandingIO ( this->ioSeqNo );
+        this->cacCtx.decrementOutstandingIO ( guard, this->ioSeqNo );
     }
-
 }
 
-void oldChannelNotify::disconnectNotify ()
+void oldChannelNotify::disconnectNotify ( 
+    epicsGuard < epicsMutex > & guard )
 {
     this->currentlyConnected = false;
     if ( this->pConnCallBack ) {
         struct connection_handler_args args;
         args.chid = this;
         args.op = CA_OP_CONN_DOWN;
-        ( *this->pConnCallBack ) ( args );
+        caCh * pFunc = this->pConnCallBack;
+        {
+            epicsGuardRelease < epicsMutex > unguard ( guard );
+            ( *pFunc ) ( args );
+        }
     }
     else {
-        this->cacCtx.incrementOutstandingIO ( this->ioSeqNo );
+        this->cacCtx.incrementOutstandingIO ( 
+            guard, this->ioSeqNo );
     }
 }
 
@@ -134,31 +157,39 @@ void oldChannelNotify::serviceShutdownNotify ()
     this->cacCtx.destroyChannel ( *this );
 }
 
-void oldChannelNotify::accessRightsNotify ( const caAccessRights &ar )
+void oldChannelNotify::accessRightsNotify ( 
+    epicsGuard < epicsMutex > & guard, const caAccessRights & ar )
 {
     struct access_rights_handler_args args;
     args.chid = this;
     args.ar.read_access = ar.readPermit();
     args.ar.write_access = ar.writePermit();
-    ( *this->pAccessRightsFunc ) ( args );
+    caArh * pFunc = this->pAccessRightsFunc;
+    {
+        epicsGuardRelease < epicsMutex > unguard ( guard );
+        ( *pFunc ) ( args );
+    }
 }
 
-void oldChannelNotify::exception ( int status, const char *pContext )
+void oldChannelNotify::exception ( 
+    epicsGuard < epicsMutex > & guard, int status, const char * pContext )
 {
-    this->cacCtx.exception ( status, pContext, __FILE__, __LINE__ );
+    this->cacCtx.exception ( guard, status, pContext, __FILE__, __LINE__ );
 }
 
-void oldChannelNotify::readException ( int status, const char *pContext,
+void oldChannelNotify::readException ( 
+    epicsGuard < epicsMutex > & guard, int status, const char *pContext,
     unsigned type, arrayElementCount count, void * /* pValue */ )
 {
-    this->cacCtx.exception ( status, pContext, 
+    this->cacCtx.exception ( guard, status, pContext, 
         __FILE__, __LINE__, *this, type, count, CA_OP_GET );
 }
 
-void oldChannelNotify::writeException ( int status, const char *pContext,
+void oldChannelNotify::writeException ( 
+    epicsGuard < epicsMutex > & guard, int status, const char *pContext,
     unsigned type, arrayElementCount count )
 {
-    this->cacCtx.exception ( status, pContext, 
+    this->cacCtx.exception ( guard, status, pContext, 
         __FILE__, __LINE__, *this, type, count, CA_OP_PUT );
 }
 
@@ -179,4 +210,35 @@ void oldChannelNotify::operator delete ( void * )
     errlogPrintf ( "%s:%d this compiler is confused about placement delete - memory was probably leaked",
         __FILE__, __LINE__ );
 }
+
+void oldChannelNotify::read ( 
+    epicsGuard < epicsMutex > & guard,
+    unsigned type, arrayElementCount count, 
+    cacReadNotify & notify, cacChannel::ioid * pId )
+{
+    this->io.read ( guard, type, count, notify, pId );
+}
+
+void oldChannelNotify::write ( 
+    epicsGuard < epicsMutex > & guard,
+    unsigned type, arrayElementCount count, const void * pValue )
+{
+    this->io.write ( guard, type, count, pValue );
+}
+
+void oldChannelNotify::write ( 
+    epicsGuard < epicsMutex > & guard, unsigned type, arrayElementCount count, 
+    const void * pValue, cacWriteNotify & notify, cacChannel::ioid * pId )
+{
+    this->io.write ( guard, type, count, pValue, notify, pId );
+}
+
+void oldChannelNotify::subscribe ( 
+    epicsGuard < epicsMutex > & guard, unsigned type, 
+    arrayElementCount count, unsigned mask, cacStateNotify & notify,
+    cacChannel::ioid & idOut)
+{
+    this->io.subscribe ( guard, type, count, mask, notify, &idOut );
+}
+
 

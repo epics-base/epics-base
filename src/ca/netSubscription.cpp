@@ -29,12 +29,15 @@
 #include "nciu.h"
 #include "cac.h"
 #include "db_access.h" // for dbf_type_to_text
+#include "caerr.h"
 
-netSubscription::netSubscription ( nciu & chanIn, 
+netSubscription::netSubscription ( 
+        privateInterfaceForIO & chanIn, 
         unsigned typeIn, arrayElementCount countIn, 
-        unsigned maskIn, cacStateNotify &notifyIn ) :
-    count ( countIn ), chan ( chanIn ),
-    notify ( notifyIn ), type ( typeIn ), mask ( maskIn )
+        unsigned maskIn, cacStateNotify & notifyIn ) :
+    count ( countIn ), privateChanForIO ( chanIn ),
+    notify ( notifyIn ), type ( typeIn ), mask ( maskIn ),
+    updateWhileDisconnected ( false )
 {
     if ( ! dbr_type_is_valid ( typeIn ) ) {
         throw cacChannel::badType ();
@@ -48,10 +51,11 @@ netSubscription::~netSubscription ()
 {
 }
 
-void netSubscription::destroy ( cacRecycle &recycle )
+void netSubscription::destroy ( 
+    epicsGuard < epicsMutex > & guard, cacRecycle & recycle )
 {
     this->~netSubscription ();
-    recycle.recycleSubscription ( *this );
+    recycle.recycleSubscription ( guard, *this );
 }
 
 class netSubscription * netSubscription::isSubscription ()
@@ -67,31 +71,91 @@ void netSubscription::show ( unsigned /* level */ ) const
         this->count, this->mask );
 }
 
-void netSubscription::completion ()
+void netSubscription::completion ( 
+    epicsGuard < epicsMutex > & guard, cacRecycle & )
 {
-    this->chan.printf ( "subscription update w/o data ?\n" );
+    if ( this->privateChanForIO.connected ( guard )  ) {
+        this->updateWhileDisconnected = false;
+    }
+    else {
+        this->updateWhileDisconnected = true;
+    }
+    this->privateChanForIO.printf ( "subscription update w/o data ?\n" );
 }
 
-void netSubscription::exception ( int status, const char *pContext )
+void netSubscription::exception ( 
+    epicsGuard < epicsMutex > & guard, cacRecycle & recycle, 
+    int status, const char * pContext )
 {
-    this->notify.exception ( status, pContext, UINT_MAX, 0 );
+    if ( status == ECA_CHANDESTROY ) {
+        this->notify.exception ( 
+            guard, status, pContext, UINT_MAX, 0 );
+        this->privateChanForIO.ioCompletionNotify ( guard, *this );
+        this->~netSubscription ();
+        recycle.recycleSubscription ( guard, *this );
+    }
+    else {
+        // guard.assertIdenticalMutex ( this->mutex );
+        if ( this->privateChanForIO.connected ( guard )  ) {
+            this->updateWhileDisconnected = false;
+            this->notify.exception ( 
+                guard, status, pContext, UINT_MAX, 0 );
+        }
+        else {
+            this->updateWhileDisconnected = true;
+        }
+    }
 }
 
-void netSubscription::exception ( int status, const char *pContext, 
-                                 unsigned typeIn, arrayElementCount countIn )
+void netSubscription::exception ( 
+    epicsGuard < epicsMutex > & guard, 
+    cacRecycle & recycle, int status, const char * pContext, 
+    unsigned typeIn, arrayElementCount countIn )
 {
-    this->notify.exception ( status, pContext, typeIn, countIn );
+    if ( status == ECA_CHANDESTROY ) {
+        this->notify.exception ( 
+            guard, status, pContext, UINT_MAX, 0 );
+        this->privateChanForIO.ioCompletionNotify ( guard, *this );
+        this->~netSubscription ();
+        recycle.recycleSubscription ( guard, *this );
+    }
+    else {
+        //guard.assertIdenticalMutex ( this->mutex );
+        if ( this->privateChanForIO.connected ( guard ) ) {
+            this->updateWhileDisconnected = false;
+            this->notify.exception ( 
+                guard, status, pContext, typeIn, countIn );
+        }
+        else {
+            this->updateWhileDisconnected = true;
+        }
+    }
 }
 
-void netSubscription::completion ( unsigned typeIn, 
-    arrayElementCount countIn, const void *pDataIn )
+void netSubscription::completion ( 
+    epicsGuard < epicsMutex > & guard, cacRecycle &,
+    unsigned typeIn, arrayElementCount countIn, 
+    const void * pDataIn )
 {
-    this->notify.current ( typeIn, countIn, pDataIn );
+    // guard.assertIdenticalMutex ( this->mutex );
+    if ( this->privateChanForIO.connected ( guard )  ) {
+        this->updateWhileDisconnected = false;
+        this->notify.current ( 
+            guard, typeIn, countIn, pDataIn );
+    }
+    else {
+        this->updateWhileDisconnected = true;
+    }
 }
 
-nciu & netSubscription::channel () const
+void netSubscription::subscriptionUpdateIfRequired (
+    epicsGuard < epicsMutex > & guard, nciu & chan )
 {
-    return this->chan;
+    if ( this->updateWhileDisconnected ) {
+        chan.getPIIU()->subscriptionUpdateRequest ( 
+            guard, chan, *this );
+        this->updateWhileDisconnected = false;
+    }
 }
 
 void * netSubscription::operator new ( size_t ) // X aCC 361

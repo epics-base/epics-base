@@ -55,18 +55,20 @@ public:
 
 class bhe : public tsSLNode < bhe >, public inetAddrID {
 public:
-    epicsShareFunc bhe ( const epicsTime & initialTimeStamp, 
+    epicsShareFunc bhe ( 
+        epicsMutex &, const epicsTime & initialTimeStamp, 
         unsigned initialBeaconNumber, const inetAddrID & addr );
     epicsShareFunc ~bhe (); 
     epicsShareFunc bool updatePeriod ( 
+        epicsGuard < epicsMutex > &,
         const epicsTime & programBeginTime, 
         const epicsTime & currentTime, ca_uint32_t beaconNumber, 
         unsigned protocolRevision );
-    epicsShareFunc double period () const;
-    epicsShareFunc epicsTime updateTime () const;
-    epicsShareFunc void show ( unsigned level) const;
-    epicsShareFunc void registerIIU ( tcpiiu & );
-    epicsShareFunc void unregisterIIU ( tcpiiu & );
+    epicsShareFunc double period ( epicsGuard < epicsMutex > & ) const;
+    epicsShareFunc epicsTime updateTime ( epicsGuard < epicsMutex > & ) const;
+    epicsShareFunc void show ( unsigned level ) const;
+    epicsShareFunc void registerIIU ( epicsGuard < epicsMutex > &, tcpiiu & );
+    epicsShareFunc void unregisterIIU ( epicsGuard < epicsMutex > &, tcpiiu & );
     epicsShareFunc void * operator new ( size_t size, bheMemoryManager & );
 #ifdef CXX_PLACEMENT_DELETE
     epicsShareFunc void operator delete ( void *, bheMemoryManager & );
@@ -74,9 +76,10 @@ public:
 private:
     epicsTime timeStamp;
     double averagePeriod;
+    epicsMutex & mutex;
     tcpiiu * pIIU;
     ca_uint32_t lastBeaconNumber;
-    void beaconAnomalyNotify ();
+    void beaconAnomalyNotify ( epicsGuard < epicsMutex > & );
     void logBeacon ( const char * pDiagnostic, 
                      const double & currentPeriod,
                      const epicsTime & currentTime );

@@ -41,6 +41,11 @@ repeaterSubscribeTimer::~repeaterSubscribeTimer ()
     this->timer.destroy ();
 }
 
+void repeaterSubscribeTimer::shutdown ()
+{
+    this->timer.cancel ();
+}
+
 epicsTimerNotify::expireStatus repeaterSubscribeTimer::
     expire ( const epicsTime & /* currentTime */ )  // X aCC 361
 {

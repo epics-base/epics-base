@@ -40,46 +40,59 @@
 #include "dbChannelIO.h"
 #include "dbPutNotifyBlocker.h"
 
-dbChannelIO::dbChannelIO ( cacChannelNotify & notify, 
-    const dbAddr & addrIn, dbServiceIO & serviceIO ) :
-    cacChannel ( notify ), serviceIO ( serviceIO ), 
+dbChannelIO::dbChannelIO ( 
+    epicsMutex & mutexIn, cacChannelNotify & notify, 
+    const dbAddr & addrIn, dbContext & serviceIO ) :
+    mutex ( mutexIn ), cacChannel ( notify ), serviceIO ( serviceIO ), 
     addr ( addrIn )
 {
 }
 
-void dbChannelIO::initiateConnect ()
+void dbChannelIO::initiateConnect ( epicsGuard < epicsMutex > & guard )
 {
-    this->notify ().connectNotify ();
+    guard.assertIdenticalMutex ( this->mutex );
+    this->notify().connectNotify ( guard );
 }
 
-dbChannelIO::~dbChannelIO ()
+dbChannelIO::~dbChannelIO () 
 {
-    this->serviceIO.destroyAllIO ( *this );
 }
 
-void dbChannelIO::destroy () 
+void dbChannelIO::destructor ( epicsGuard < epicsMutex > & guard )
 {
-    this->serviceIO.destroyChannel ( *this );
+    guard.assertIdenticalMutex ( this->mutex );
+    this->serviceIO.destroyAllIO ( guard, *this );
+    this->~dbChannelIO ();
+}
+
+void dbChannelIO::destroy ( epicsGuard < epicsMutex > & guard ) 
+{
+    guard.assertIdenticalMutex ( this->mutex );
+    this->serviceIO.destroyChannel ( guard, *this );
     // dont access this pointer after above call because
     // object nolonger exists
 }
 
 
-cacChannel::ioStatus dbChannelIO::read ( unsigned type, 
-     unsigned long count, cacReadNotify &notify, ioid * ) 
+cacChannel::ioStatus dbChannelIO::read ( 
+     epicsGuard < epicsMutex > & guard, unsigned type, 
+     unsigned long count, cacReadNotify & notify, ioid * ) 
 {
-    this->serviceIO.callReadNotify ( this->addr, 
+    guard.assertIdenticalMutex ( this->mutex );
+    this->serviceIO.callReadNotify ( guard, this->addr, 
         type, count, notify );
     return iosSynch;
 }
 
-void dbChannelIO::write ( unsigned type, unsigned long count, const void *pValue )
+void dbChannelIO::write ( 
+    epicsGuard < epicsMutex > & guard, unsigned type, 
+    unsigned long count, const void *pValue )
 {
-    int status;
+    epicsGuardRelease < epicsMutex > unguard ( guard );
     if ( count > LONG_MAX ) {
         throw outOfBounds();
     }
-    status = db_put_field ( &this->addr, type, pValue, 
+    int status = db_put_field ( &this->addr, type, pValue, 
         static_cast <long> (count) );
     if ( status ) {
         throw std::logic_error ( 
@@ -87,33 +100,46 @@ void dbChannelIO::write ( unsigned type, unsigned long count, const void *pValue
     }
 }
 
-cacChannel::ioStatus dbChannelIO::write ( unsigned type, unsigned long count, 
-                        const void *pValue, cacWriteNotify &notify, ioid *pId ) 
+cacChannel::ioStatus dbChannelIO::write ( 
+    epicsGuard < epicsMutex > & guard, unsigned type, 
+    unsigned long count, const void * pValue, 
+    cacWriteNotify & notify, ioid * pId ) 
 {
+    guard.assertIdenticalMutex ( this->mutex );
+
     if ( count > LONG_MAX ) {
         throw outOfBounds();
     }
 
-    this->serviceIO.initiatePutNotify ( *this, this->addr, type, count, pValue, notify, pId );
+    this->serviceIO.initiatePutNotify ( 
+        guard, *this, this->addr, 
+        type, count, pValue, notify, pId );
 
     return iosAsynch;
 }
 
-void dbChannelIO::subscribe ( unsigned type, unsigned long count, 
+void dbChannelIO::subscribe ( 
+    epicsGuard < epicsMutex > & guard, unsigned type, unsigned long count, 
     unsigned mask, cacStateNotify & notify, ioid * pId ) 
 {   
-    this->serviceIO.subscribe ( this->addr, *this,
+    guard.assertIdenticalMutex ( this->mutex );
+    this->serviceIO.subscribe ( 
+        guard, this->addr, *this,
         type, count, mask, notify, pId );
 }
 
-void dbChannelIO::ioCancel ( const ioid & id )
+void dbChannelIO::ioCancel ( 
+    epicsGuard < epicsMutex > & guard, const ioid & id )
 {
-    this->serviceIO.ioCancel ( *this, id );
+    guard.assertIdenticalMutex ( this->mutex );
+    this->serviceIO.ioCancel ( guard, *this, id );
 }
 
-void dbChannelIO::ioShow ( const ioid &id, unsigned level ) const
+void dbChannelIO::ioShow ( 
+    const ioid & id, unsigned level ) const
 {
-    this->serviceIO.ioShow ( id, level );
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    this->serviceIO.ioShow ( guard, id, level );
 }
 
 void dbChannelIO::show ( unsigned level ) const
@@ -133,7 +159,7 @@ void dbChannelIO::show ( unsigned level ) const
 }
 
 void * dbChannelIO::operator new ( size_t size, 
-    tsFreeList < dbChannelIO > & freeList )
+    tsFreeList < dbChannelIO, 256, epicsMutexNOOP > & freeList )
 {
     return freeList.allocate ( size );
 }
@@ -147,7 +173,7 @@ void * dbChannelIO::operator new ( size_t ) // X aCC 361
 
 #ifdef CXX_PLACEMENT_DELETE
 void dbChannelIO::operator delete ( void *pCadaver, 
-    tsFreeList < dbChannelIO > & freeList )
+    tsFreeList < dbChannelIO, 256, epicsMutexNOOP > & freeList )
 {
     freeList.release ( pCadaver );
 }

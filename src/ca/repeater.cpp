@@ -87,11 +87,11 @@
 #include "envDefs.h"
 #include "tsFreeList.h"
 #include "osiWireFormat.h"
+#include "taskwd.h"
 
 #define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "caProto.h"
-#include "taskwd.h"
 #include "udpiiu.h"
 #include "repeaterClient.h"
 

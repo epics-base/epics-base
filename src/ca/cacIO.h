@@ -55,6 +55,7 @@
 
 #include "tsDLList.h"
 #include "epicsMutex.h"
+#include "epicsGuard.h"
 #include "epicsSingleton.h"
 
 #ifdef cacIOh_restore_epicsExportSharedSymbols
@@ -72,9 +73,11 @@ typedef unsigned long arrayElementCount;
 class epicsShareClass cacWriteNotify { // X aCC 655
 public:
     virtual ~cacWriteNotify () = 0;
-    virtual void completion () = 0;
+    virtual void completion ( epicsGuard < epicsMutex > & ) = 0;
 // we should probably have a different vf for each type of exception ????
-    virtual void exception ( int status, const char *pContext, 
+    virtual void exception ( 
+        epicsGuard < epicsMutex > &,
+        int status, const char * pContext, 
         unsigned type, arrayElementCount count ) = 0;
 };
 
@@ -83,11 +86,14 @@ public:
 class epicsShareClass cacReadNotify { // X aCC 655
 public:
     virtual ~cacReadNotify () = 0;
-    virtual void completion ( unsigned type, 
-        arrayElementCount count, const void *pData ) = 0;
+    virtual void completion ( 
+        epicsGuard < epicsMutex > &, unsigned type, 
+        arrayElementCount count, const void * pData ) = 0;
 // we should probably have a different vf for each type of exception ????
-    virtual void exception ( int status, 
-        const char *pContext, unsigned type, arrayElementCount count ) = 0;
+    virtual void exception ( 
+        epicsGuard < epicsMutex > &, int status, 
+        const char * pContext, unsigned type, 
+        arrayElementCount count ) = 0;
 };
 
 // 1) this should not be passing caerr.h status to the exception callback
@@ -95,11 +101,14 @@ public:
 class epicsShareClass cacStateNotify { // X aCC 655
 public:
     virtual ~cacStateNotify () = 0;
-    virtual void current ( unsigned type, 
-        arrayElementCount count, const void *pData ) = 0;
+    virtual void current ( 
+        epicsGuard < epicsMutex > &, unsigned type, 
+        arrayElementCount count, const void * pData ) = 0;
 // we should probably have a different vf for each type of exception ????
-    virtual void exception ( int status, 
-        const char *pContext, unsigned type, arrayElementCount count ) = 0;
+    virtual void exception ( 
+        epicsGuard < epicsMutex > &, int status, 
+        const char *pContext, unsigned type, 
+        arrayElementCount count ) = 0;
 };
 
 class caAccessRights {
@@ -126,16 +135,20 @@ private:
 class epicsShareClass cacChannelNotify { // X aCC 655
 public:
     virtual ~cacChannelNotify () = 0;
-    virtual void connectNotify () = 0;
-    virtual void disconnectNotify () = 0;
+    virtual void connectNotify ( epicsGuard < epicsMutex > & ) = 0;
+    virtual void disconnectNotify ( epicsGuard < epicsMutex > & ) = 0;
     virtual void serviceShutdownNotify () = 0;
-    virtual void accessRightsNotify ( const caAccessRights & ) = 0;
-    virtual void exception ( int status, const char *pContext ) = 0;
+    virtual void accessRightsNotify ( 
+        epicsGuard < epicsMutex > &, const caAccessRights & ) = 0;
+    virtual void exception ( 
+        epicsGuard < epicsMutex > &, int status, const char *pContext ) = 0;
 // we should probably have a different vf for each type of exception ????
-    virtual void readException ( int status, const char *pContext,
+    virtual void readException ( 
+        epicsGuard < epicsMutex > &, int status, const char *pContext,
         unsigned type, arrayElementCount count, void *pValue ) = 0;
 // we should probably have a different vf for each type of exception ????
-    virtual void writeException ( int status, const char *pContext,
+    virtual void writeException ( 
+        epicsGuard < epicsMutex > &, int status, const char * pContext,
         unsigned type, arrayElementCount count ) = 0;
 };
 
@@ -161,20 +174,33 @@ public:
 
     cacChannel ( cacChannelNotify & );
     cacChannelNotify & notify () const;
-    virtual void destroy () = 0;
+    virtual void destroy (
+        epicsGuard < epicsMutex > & ) = 0;
     virtual const char * pName () const = 0; // not thread safe
-    virtual void show ( unsigned level ) const = 0;
-    virtual void initiateConnect () = 0;
-    virtual ioStatus read ( unsigned type, arrayElementCount count, 
+    virtual void show ( 
+        unsigned level ) const = 0;
+    virtual void initiateConnect (
+        epicsGuard < epicsMutex > & ) = 0;
+    virtual ioStatus read ( 
+        epicsGuard < epicsMutex > &,
+        unsigned type, arrayElementCount count, 
         cacReadNotify &, ioid * = 0 ) = 0;
-    virtual void write ( unsigned type, arrayElementCount count, 
+    virtual void write ( 
+        epicsGuard < epicsMutex > &,
+        unsigned type, arrayElementCount count, 
         const void *pValue ) = 0;
-    virtual ioStatus write ( unsigned type, arrayElementCount count, 
+    virtual ioStatus write ( 
+        epicsGuard < epicsMutex > &,
+        unsigned type, arrayElementCount count, 
         const void *pValue, cacWriteNotify &, ioid * = 0 ) = 0;
-    virtual void subscribe ( unsigned type, arrayElementCount count, 
-        unsigned mask, cacStateNotify &, ioid * = 0 ) = 0;
-    virtual void ioCancel ( const ioid & ) = 0;
-    virtual void ioShow ( const ioid &, unsigned level ) const = 0;
+    virtual void subscribe ( 
+        epicsGuard < epicsMutex > &, unsigned type, 
+        arrayElementCount count, unsigned mask, cacStateNotify &, 
+        ioid * = 0 ) = 0;
+    virtual void ioCancel ( 
+        epicsGuard < epicsMutex > &, const ioid & ) = 0;
+    virtual void ioShow ( 
+        const ioid &, unsigned level ) const = 0;
     virtual short nativeType () const = 0;
     virtual arrayElementCount nativeElementCount () const = 0;
     virtual caAccessRights accessRights () const; // defaults to unrestricted access
@@ -211,15 +237,36 @@ private:
     void operator delete ( void * );
 };
 
-class cacNotify { // X aCC 655
+class epicsShareClass cacContext { // X aCC 655
 public:
-    virtual ~cacNotify () = 0;
+    virtual ~cacContext ();
+    virtual cacChannel & createChannel ( 
+        epicsGuard < epicsMutex > &,
+        const char * pChannelName, cacChannelNotify &, 
+        cacChannel::priLev = cacChannel::priorityDefault ) = 0;
+    virtual void flush ( 
+        epicsGuard < epicsMutex > & ) = 0;
+    virtual unsigned circuitCount (
+        epicsGuard < epicsMutex > & ) const = 0;
+    virtual void selfTest (
+        epicsGuard < epicsMutex > & ) const = 0;
+    virtual unsigned beaconAnomaliesSinceProgramStart (
+        epicsGuard < epicsMutex > & ) const = 0;
+    virtual void show ( 
+        epicsGuard < epicsMutex > &, unsigned level ) const = 0;
+};
+
+class epicsShareClass cacContextNotify { // X aCC 655
+public:
+    virtual ~cacContextNotify () = 0;
+    virtual cacContext & createNetworkContext ( epicsMutex & ) = 0;
 // we should probably have a different vf for each type of exception ????
-    virtual void exception ( int status, const char * pContext, 
+    virtual void exception ( 
+        epicsGuard < epicsMutex > &, int status, const char * pContext, 
         const char * pFileName, unsigned lineNo ) = 0;
 // perhaps this should be phased out in deference to the exception mechanism
-    virtual int vPrintf ( const char *pformat, va_list args ) const = 0;
-// backwards compatibility
+    virtual int vPrintf ( const char * pformat, va_list args ) const = 0;
+// backwards compatibility (from here down)
     virtual void attachToClientCtx () = 0;
     virtual void blockForEventAndEnableCallbacks ( 
         class epicsEvent & event, const double & timeout ) = 0;
@@ -227,34 +274,14 @@ public:
     virtual void callbackUnlock () = 0;
 };
 
-class cacService : public tsDLNode < cacService > { // X aCC 655
+class epicsShareClass cacService {
 public:
-    virtual cacChannel * createChannel ( 
-        const char *pName, cacChannelNotify &, 
-        cacChannel::priLev = cacChannel::priorityDefault ) = 0;
-    virtual void show ( unsigned level ) const = 0;
+    virtual ~cacService () = 0;
+    virtual cacContext & contextCreate ( 
+        epicsMutex &, cacContextNotify & ) = 0;
 };
 
-class cacServiceList {
-public:
-	epicsShareFunc cacServiceList ();
-    epicsShareFunc void registerService ( cacService &service );
-    epicsShareFunc cacChannel * createChannel ( 
-        const char *pName, cacChannelNotify &, 
-        cacChannel::priLev = cacChannel::priorityDefault );
-    epicsShareFunc void show ( unsigned level ) const;
-private:
-    tsDLList < cacService > services;
-    mutable epicsMutex mutex;
-	cacServiceList ( const cacServiceList & );
-	cacServiceList & operator = ( const cacServiceList & );
-};
-
-template < class T > class epicsSingleton;
-
-epicsShareExtern epicsSingleton < cacServiceList > globalServiceListCAC;
-
-epicsShareFunc int epicsShareAPI ca_register_service ( cacService *pService );
+epicsShareFunc void epicsShareAPI caInstallDefaultService ( cacService & service );
 
 inline cacChannel::cacChannel ( cacChannelNotify & notify ) :
     callback ( notify )

@@ -33,27 +33,40 @@ class tcpiiu;
 
 class tcpRecvWatchdog : private epicsTimerNotify {
 public:
-    tcpRecvWatchdog ( cac &, tcpiiu &, 
+    tcpRecvWatchdog ( callbackMutex &, 
+        epicsMutex &, tcpiiu &, 
         double periodIn, epicsTimerQueue & );
     virtual ~tcpRecvWatchdog ();
     void sendBacklogProgressNotify (
+        epicsGuard < epicsMutex > &,
         const epicsTime & currentTime );
     void messageArrivalNotify (
         const epicsTime & currentTime );
-    void beaconArrivalNotify ( 
+    void probeResponseNotify ( 
+        epicsGuard < callbackMutex > &,
         const epicsTime & currentTime );
-    void beaconAnomalyNotify ();
+    void beaconArrivalNotify ( 
+        epicsGuard < epicsMutex > &,
+        const epicsTime & currentTime );
+    void beaconAnomalyNotify ( epicsGuard < epicsMutex > & );
     void connectNotify ();
+    void sendTimeoutNotify (
+        epicsGuard < callbackMutex > &,
+        epicsGuard < epicsMutex > &,
+        const epicsTime & currentTime );
+#pragma message ("too low level?")
     void cancel ();
     void show ( unsigned level ) const;
     double delay () const;
 private:
     const double period;
     epicsTimer & timer;
+    callbackMutex & cbMutex;
+    epicsMutex & mutex;
     tcpiiu & iiu;
-    cac & cacRef;
-    bool responsePending;
+    bool probeResponsePending;
     bool beaconAnomaly;
+    bool probeTimeoutDetected;
     expireStatus expire ( const epicsTime & currentTime );
 	tcpRecvWatchdog ( const tcpRecvWatchdog & );
 	tcpRecvWatchdog & operator = ( const tcpRecvWatchdog & );

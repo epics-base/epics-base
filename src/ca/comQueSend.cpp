@@ -321,10 +321,13 @@ void comQueSend::insertRequestHeader (
 }
 
 void comQueSend::insertRequestWithPayLoad (
-    ca_uint16_t request, unsigned dataType, ca_uint32_t nElem, 
+    ca_uint16_t request, unsigned dataType, arrayElementCount nElem, 
     ca_uint32_t cid, ca_uint32_t requestDependent, 
     const void * pPayload, bool v49Ok ) 
 {
+    if ( INVALID_DB_REQ ( dataType ) ) {
+        throw cacChannel::badType ();
+    }
     if ( dataType >= comQueSendCopyDispatchSize ) {
         throw cacChannel::badType();
     }
@@ -353,24 +356,28 @@ void comQueSend::insertRequestWithPayLoad (
         }
     }
     else {
-        unsigned maxBytes;
+        arrayElementCount maxBytes;
         if ( v49Ok ) {
             maxBytes = 0xffffffff;
         }
         else {
             maxBytes = MAX_TCP - sizeof ( caHdr ); 
         }
-        unsigned maxElem = 
+        arrayElementCount maxElem = 
             ( maxBytes - sizeof (dbr_double_t) - dbr_size[dataType] ) / 
                 dbr_value_size[dataType];
         if ( nElem >= maxElem ) {
             throw cacChannel::outOfBounds();
         }
-        size = dbr_size_n ( dataType, nElem );
+        // the above checks verify that the total size
+        // is lest that 0xffffffff
+        size = static_cast < ca_uint32_t > 
+            ( dbr_size_n ( dataType, nElem ) );
         payloadSize = CA_MESSAGE_ALIGN ( size );
         this->insertRequestHeader ( request, payloadSize, 
             static_cast <ca_uint16_t> ( dataType ), 
-            nElem, cid, requestDependent, v49Ok );
+            static_cast < ca_uint32_t > ( nElem ), 
+            cid, requestDependent, v49Ok );
         ( this->*dbrCopyVector [dataType] ) ( pPayload, nElem );
     }
     // set pad bytes to nill

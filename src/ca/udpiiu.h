@@ -85,7 +85,7 @@ public:
     udpiiu ( class epicsTimerQueueActive &, callbackMutex &, class cac & );
     virtual ~udpiiu ();
     void installNewChannel ( const epicsTime & currentTime, nciu & );
-    void installDisconnectedChannel ( const epicsTime & currentTime, nciu & );
+    void installDisconnectedChannel ( nciu & );
     void repeaterRegistrationMessage ( unsigned attemptNumber );
     bool searchMsg ( epicsGuard < udpMutex > &, unsigned & retryNoForThisChannel );
     void datagramFlush ( epicsGuard < udpMutex > &, const epicsTime & currentTime );
@@ -94,10 +94,10 @@ public:
     bool wakeupMsg ();
     void repeaterConfirmNotify ();
     void beaconAnomalyNotify ( const epicsTime & currentTime );
+    void govExpireNotify ( const epicsTime & currentTime );
     int printf ( const char *pformat, ... );
-    unsigned channelCount ( epicsGuard < udpMutex > & ) const;
-    void uninstallChan ( 
-        epicsGuard < callbackMutex > &, epicsGuard < cacMutex > &, nciu & );
+    unsigned unresolvedChannelCount ( epicsGuard < udpMutex > & ) const;
+    void uninstallChan ( epicsGuard < epicsMutex > &, nciu & );
     bool pushDatagramMsg ( const caHdr & hdr, 
         const void * pExt, ca_uint16_t extsize);
     void shutdown ();
@@ -111,7 +111,9 @@ private:
     char recvBuf [MAX_UDP_RECV];
     mutable udpMutex mutex;
     udpRecvThread recvThread;
-    tsDLList < nciu > channelList;
+    // nciu state field tells us which list
+    tsDLList < nciu > disconnGovernor;
+    tsDLList < nciu > serverAddrRes;
     ELLLIST dest;
     epicsTime rtteTimeStamp;
     double rtteMean;
@@ -121,6 +123,7 @@ private:
     ca_uint32_t rtteSequenceNumber;
     ca_uint32_t lastReceivedSeqNo;
     SOCKET sock;
+    epics_auto_ptr < class disconnectGovernorTimer > pGovTmr;
     epics_auto_ptr < class searchTimer > pSearchTmr;
     epics_auto_ptr < class repeaterSubscribeTimer > pRepeaterSubscribeTmr;
     ca_uint16_t repeaterPort;
@@ -165,28 +168,29 @@ private:
     const char * pHostName () const; // deprecated - please do not use
     bool ca_v42_ok () const;
     bool ca_v41_ok () const;
-    void writeRequest ( epicsGuard < cacMutex > &, nciu &, unsigned type, 
-                    unsigned nElem, const void *pValue );
-    void writeNotifyRequest ( epicsGuard < cacMutex > &, nciu &, netWriteNotifyIO &, 
-                    unsigned type, unsigned nElem, const void *pValue );
-    void readNotifyRequest ( epicsGuard < cacMutex > &, nciu &, netReadNotifyIO &, 
-                    unsigned type, unsigned nElem );
-    void clearChannelRequest ( epicsGuard < cacMutex > &, 
+    void writeRequest ( epicsGuard < epicsMutex > &, nciu &, unsigned type, 
+                    arrayElementCount nElem, const void *pValue );
+    void writeNotifyRequest ( epicsGuard < epicsMutex > &, nciu &, netWriteNotifyIO &, 
+                    unsigned type, arrayElementCount nElem, const void *pValue );
+    void readNotifyRequest ( epicsGuard < epicsMutex > &, nciu &, netReadNotifyIO &, 
+                    unsigned type, arrayElementCount nElem );
+    void clearChannelRequest ( epicsGuard < epicsMutex > &, 
                     ca_uint32_t sid, ca_uint32_t cid );
-    void subscriptionRequest ( epicsGuard < cacMutex > &, nciu &, 
-                    netSubscription &subscr );
+    void subscriptionRequest ( epicsGuard < epicsMutex > &, nciu &, 
+                    netSubscription & );
+    void subscriptionUpdateRequest ( epicsGuard < epicsMutex > &, nciu &, 
+                    netSubscription & );
     bool pushVersionMsg ();
-    void subscriptionCancelRequest ( epicsGuard < cacMutex > &, 
+    void subscriptionCancelRequest ( epicsGuard < epicsMutex > &, 
                     nciu & chan, netSubscription & subscr );
-    void flushRequest ();
-    bool flushBlockThreshold ( epicsGuard < cacMutex > & ) const;
-    void flushRequestIfAboveEarlyThreshold ( epicsGuard < cacMutex > & );
+    void flushRequest ( epicsGuard < epicsMutex > & );
+    bool flushBlockThreshold ( epicsGuard < epicsMutex > & ) const;
+    void flushRequestIfAboveEarlyThreshold ( epicsGuard < epicsMutex > & );
     void blockUntilSendBacklogIsReasonable 
-        ( cacNotify &, epicsGuard < cacMutex > & );
+        ( cacContextNotify &, epicsGuard < epicsMutex > & );
     void requestRecvProcessPostponedFlush ();
     osiSockAddr getNetworkAddress () const;
     double receiveWatchdogDelay () const;
-    void installChannel ( const epicsTime & currentTime, nciu &, unsigned minRetryNo );
 
 	udpiiu ( const udpiiu & );
 	udpiiu & operator = ( const udpiiu & );
@@ -215,10 +219,10 @@ inline void udpMutex::show ( unsigned level ) const
     this->mutex.show ( level );
 }
 
-inline unsigned udpiiu::channelCount (
+inline unsigned udpiiu::unresolvedChannelCount (
     epicsGuard < udpMutex > & ) const
 {
-    return this->channelList.count ();
+    return this->serverAddrRes.count ();
 }
 
 inline ca_uint32_t udpiiu::datagramSeqNumber (
@@ -231,16 +235,6 @@ inline double udpiiu::roundTripDelayEstimate (
     epicsGuard < udpMutex > & ) const
 {
     return this->rtteMean;
-}
-
-inline void udpiiu::installNewChannel ( const epicsTime & currentTime, nciu & chan )
-{
-    this->installChannel ( currentTime, chan, 0 );
-}
-
-inline void udpiiu::installDisconnectedChannel ( const epicsTime & currentTime, nciu & chan )
-{
-    this->installChannel ( currentTime, chan, disconnectRetrySetpoint );
 }
 
 #endif // udpiiuh

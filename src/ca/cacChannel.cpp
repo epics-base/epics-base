@@ -104,5 +104,8 @@ void cacChannel::operator delete ( void * )
         __FILE__, __LINE__ );
 }
 
+cacContext::~cacContext () {}
+
+cacService::~cacService () {}
 
 

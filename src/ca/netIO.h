@@ -41,24 +41,28 @@
 #   define NETIO_VIRTUAL_DESTRUCTOR virtual
 #endif
 
+class privateInterfaceForIO;
+
 class baseNMIU : public tsDLNode < baseNMIU >, // X aCC 655
         public chronIntIdRes < baseNMIU > {
 public:
-    virtual void destroy ( class cacRecycle & ) = 0; // only called by cac
-    virtual void completion () = 0;
-    virtual void exception ( int status, 
-        const char * pContext ) = 0;
-    virtual void exception ( int status, 
-        const char * pContext, unsigned type, 
+    virtual void destroy ( 
+        epicsGuard < epicsMutex > &, class cacRecycle & ) = 0; // only called by cac
+    virtual void completion ( 
+        epicsGuard < epicsMutex > &, cacRecycle & ) = 0;
+    virtual void exception ( 
+        epicsGuard < epicsMutex > &, cacRecycle &, 
+        int status, const char * pContext ) = 0;
+    virtual void exception ( 
+        epicsGuard < epicsMutex > &, cacRecycle &,
+        int status, const char * pContext, unsigned type, 
         arrayElementCount count ) = 0;
-    virtual void completion ( unsigned type, 
-        arrayElementCount count, const void * pData ) = 0;
+    virtual void completion ( 
+        epicsGuard < epicsMutex > &, cacRecycle &,
+        unsigned type, arrayElementCount count, 
+        const void * pData ) = 0;
     virtual class netSubscription * isSubscription () = 0;
     virtual void show ( unsigned level ) const = 0;
-//
-// not fond of the vf overhead to fetch this
-//
-    virtual nciu & channel () const = 0;
 protected:
     NETIO_VIRTUAL_DESTRUCTOR ~baseNMIU (); 
 };
@@ -67,20 +71,26 @@ class netSubscription : public baseNMIU  {
 public:
     static netSubscription * factory ( 
         tsFreeList < class netSubscription, 1024, epicsMutexNOOP > &, 
-        nciu & chan, unsigned type, arrayElementCount count, 
-        unsigned mask, cacStateNotify &notify );
+        class privateInterfaceForIO &, unsigned type, arrayElementCount count, 
+        unsigned mask, cacStateNotify & );
     void show ( unsigned level ) const;
-    arrayElementCount getCount () const;
+    arrayElementCount getCount (
+        epicsGuard < epicsMutex > & ) const;
     unsigned getType () const;
     unsigned getMask () const;
+    void subscriptionUpdateIfRequired (
+        epicsGuard < epicsMutex > &, nciu & );
 private:
     const arrayElementCount count;
-    nciu & chan;
+    class privateInterfaceForIO & privateChanForIO;
     cacStateNotify & notify;
     const unsigned type;
     const unsigned mask;
-    netSubscription ( nciu & chan, unsigned type, arrayElementCount count, 
-        unsigned mask, cacStateNotify &notify );
+    bool updateWhileDisconnected;
+    netSubscription ( 
+        class privateInterfaceForIO &, unsigned type, 
+        arrayElementCount count, 
+        unsigned mask, cacStateNotify & );
     class netSubscription * isSubscription ();
     void * operator new ( size_t );
     void operator delete ( void * );
@@ -88,16 +98,20 @@ private:
         tsFreeList < class netSubscription, 1024, epicsMutexNOOP > & );
     epicsPlacementDeleteOperator (( void *, 
         tsFreeList < class netSubscription, 1024, epicsMutexNOOP > & ))
-    void destroy ( class cacRecycle & );
-    void completion ();
-    void exception ( int status, 
-        const char *pContext );
-    void completion ( unsigned type, 
-        arrayElementCount count, const void *pData );
-    void exception ( int status, 
-        const char *pContext, unsigned type, 
+    void destroy ( 
+        epicsGuard < epicsMutex > &, class cacRecycle & );
+    void completion (
+        epicsGuard < epicsMutex > &, cacRecycle & );
+    void exception ( 
+        epicsGuard < epicsMutex > &, cacRecycle &,
+        int status, const char * pContext );
+    void completion ( 
+        epicsGuard < epicsMutex > &, cacRecycle &,
+        unsigned type, arrayElementCount count, const void * pData );
+    void exception ( 
+        epicsGuard < epicsMutex > &, cacRecycle &,
+        int status, const char * pContext, unsigned type, 
         arrayElementCount count );
-    nciu & channel () const;
     netSubscription ( const netSubscription & );
     netSubscription & operator = ( const netSubscription & );
     ~netSubscription ();
@@ -107,26 +121,33 @@ class netReadNotifyIO : public baseNMIU {
 public:
     static netReadNotifyIO * factory ( 
         tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > &, 
-        nciu &chan, cacReadNotify &notify );
+        privateInterfaceForIO &, cacReadNotify & );
     void show ( unsigned level ) const;
 private:
     cacReadNotify & notify;
-    nciu & chan;
-    netReadNotifyIO ( nciu & chan, cacReadNotify & notify );
+    class privateInterfaceForIO & privateChanForIO;
+    netReadNotifyIO ( privateInterfaceForIO &, cacReadNotify & );
     void * operator new ( size_t );
     void operator delete ( void * );
     void * operator new ( size_t, 
         tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > & );
     epicsPlacementDeleteOperator (( void *, 
         tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > & ))
-    void destroy ( class cacRecycle & );
-    void completion ();
-    void exception ( int status, const char *pContext );
-    void completion ( unsigned type, 
-        arrayElementCount count, const void *pData );
-    void exception ( int status, const char *pContext, 
+    void destroy ( 
+        epicsGuard < epicsMutex > &, class cacRecycle & );
+    void completion (
+        epicsGuard < epicsMutex > &, cacRecycle & );
+    void exception ( 
+        epicsGuard < epicsMutex > &, cacRecycle &,
+        int status, const char * pContext );
+    void completion ( 
+        epicsGuard < epicsMutex > &, cacRecycle &,
+        unsigned type, arrayElementCount count,
+        const void * pData );
+    void exception ( 
+        epicsGuard < epicsMutex > &, cacRecycle &,
+        int status, const char * pContext, 
         unsigned type, arrayElementCount count );
-    nciu & channel () const;
     ~netReadNotifyIO ();
     class netSubscription * isSubscription ();
     netReadNotifyIO ( const netReadNotifyIO & );
@@ -137,12 +158,12 @@ class netWriteNotifyIO : public baseNMIU {
 public:
     static netWriteNotifyIO * factory ( 
         tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > &, 
-        nciu &chan, cacWriteNotify &notify );
+        privateInterfaceForIO &, cacWriteNotify & );
     void show ( unsigned level ) const;
 private:
     cacWriteNotify & notify;
-    nciu & chan;
-    netWriteNotifyIO ( nciu &chan, cacWriteNotify &notify );
+    privateInterfaceForIO & privateChanForIO;
+    netWriteNotifyIO ( privateInterfaceForIO &, cacWriteNotify & );
     void * operator new ( size_t );
     void operator delete ( void * );
     void * operator new ( size_t, 
@@ -150,14 +171,21 @@ private:
     epicsPlacementDeleteOperator (( void *,
         tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > & ))
     class netSubscription * isSubscription ();
-    void destroy ( class cacRecycle & );
-    void completion ();
-    void exception ( int status, const char *pContext );
-    void completion ( unsigned type, 
-        arrayElementCount count, const void *pData );
-    void exception ( int status, const char *pContext, 
-        unsigned type, arrayElementCount count );
-    nciu & channel () const;
+    void destroy ( 
+        epicsGuard < epicsMutex > &, class cacRecycle & );
+    void completion (
+        epicsGuard < epicsMutex > &, cacRecycle & );
+    void exception ( 
+        epicsGuard < epicsMutex > &, cacRecycle &,
+        int status, const char * pContext );
+    void completion ( 
+        epicsGuard < epicsMutex > &, cacRecycle &,
+        unsigned type, arrayElementCount count,
+        const void * pData );
+    void exception ( 
+        epicsGuard < epicsMutex > &, cacRecycle &,
+        int status, const char * pContext, unsigned type, 
+        arrayElementCount count );
     netWriteNotifyIO ( const netWriteNotifyIO & );
     netWriteNotifyIO & operator = ( const netWriteNotifyIO & );
     ~netWriteNotifyIO ();
@@ -178,17 +206,19 @@ inline void * netSubscription::operator new ( size_t size,
 #endif
 
 inline netSubscription * netSubscription::factory ( 
-    tsFreeList < class netSubscription, 1024, epicsMutexNOOP > &freeList, 
-    nciu &chan, unsigned type, arrayElementCount count, 
+    tsFreeList < class netSubscription, 1024, epicsMutexNOOP > & freeList, 
+    class privateInterfaceForIO & chan, unsigned type, arrayElementCount count, 
     unsigned mask, cacStateNotify &notify )
 {
     return new ( freeList ) netSubscription ( chan, type, // X aCC 930
                                 count, mask, notify );
 }
 
-inline arrayElementCount netSubscription::getCount () const // X aCC 361
+inline arrayElementCount netSubscription::getCount (
+    epicsGuard < epicsMutex > & guard ) const // X aCC 361
 {
-    arrayElementCount nativeCount = this->chan.nativeElementCount ();
+    //guard.assertIdenticalMutex ( this->mutex );
+    arrayElementCount nativeCount = this->privateChanForIO.nativeElementCount ( guard );
     if ( this->count == 0u || this->count > nativeCount ) {
         return nativeCount;
     }
@@ -208,42 +238,42 @@ inline unsigned netSubscription::getMask () const
 }
 
 inline netReadNotifyIO * netReadNotifyIO::factory ( 
-    tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > &freeList, 
-    nciu &chan, cacReadNotify &notify )
+    tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > & freeList, 
+    privateInterfaceForIO & ioComplNotifIntf, cacReadNotify & notify )
 {
-    return new ( freeList ) netReadNotifyIO ( chan, notify ); // X aCC 930
+    return new ( freeList ) netReadNotifyIO ( ioComplNotifIntf, notify ); // X aCC 930
 }
 
 inline void * netReadNotifyIO::operator new ( size_t size, 
-    tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > &freeList )
+    tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > & freeList )
 {
     return freeList.allocate ( size );
 }
 
 #if defined ( CXX_PLACEMENT_DELETE )
     inline void netReadNotifyIO::operator delete ( void *pCadaver, 
-        tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > &freeList ) 
+        tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > & freeList ) 
     {
         freeList.release ( pCadaver );
     }
 #endif
 
 inline netWriteNotifyIO * netWriteNotifyIO::factory ( 
-    tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > &freeList, 
-    nciu &chan, cacWriteNotify &notify )
+    tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > & freeList, 
+    privateInterfaceForIO & ioComplNotifyIntf, cacWriteNotify & notify )
 {
-    return new ( freeList ) netWriteNotifyIO ( chan, notify ); // X aCC 930
+    return new ( freeList ) netWriteNotifyIO ( ioComplNotifyIntf, notify ); // X aCC 930
 }
 
 inline void * netWriteNotifyIO::operator new ( size_t size, 
-        tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > &freeList )
+        tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > & freeList )
 { 
     return freeList.allocate ( size );
 }
 
 #if defined ( CXX_PLACEMENT_DELETE )
     inline void netWriteNotifyIO::operator delete ( void *pCadaver, 
-        tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > &freeList ) 
+        tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > & freeList ) 
     {
         freeList.release ( pCadaver );
     }

@@ -35,6 +35,7 @@ class repeaterSubscribeTimer : private epicsTimerNotify {
 public:
     repeaterSubscribeTimer ( udpiiu &, epicsTimerQueue & );
     virtual ~repeaterSubscribeTimer ();
+    void shutdown ();
     void confirmNotify ();
 	void show ( unsigned level ) const;
 private:

@@ -41,7 +41,7 @@
 #include "compilerDependencies.h"
 
 // a modified ca header with capacity for large arrays
-struct  caHdrLargeArray {
+struct caHdrLargeArray {
     ca_uint32_t m_postsize;     // size of message extension 
     ca_uint32_t m_count;        // operation data count 
     ca_uint32_t m_cid;          // channel identifier 
@@ -97,29 +97,34 @@ public:
         const cacChannel::priLev & priorityIn );
     ~tcpiiu ();
     void start ();
-    void initiateCleanShutdown ( epicsGuard < cacMutex > & );
+    void initiateCleanShutdown ( epicsGuard < epicsMutex > & );
     void initiateAbortShutdown ( epicsGuard < callbackMutex > &, 
-                                    epicsGuard < cacMutex > & ); 
-    void unresponsiveCircuitNotify ( epicsGuard < callbackMutex > &, 
-                                    epicsGuard < cacMutex > &  );
-    void tcpiiu::responsiveCircuitNotify ( 
-        epicsGuard < callbackMutex > & cbGuard, 
-        epicsGuard < cacMutex > & guard );
-    void disconnectNotify ( epicsGuard < cacMutex > & );
-    void beaconAnomalyNotify ();
+                                    epicsGuard < epicsMutex > & ); 
+    void responsiveCircuitNotify ( 
+        epicsGuard < callbackMutex > & cbGuard,
+        epicsGuard < epicsMutex > & guard );
+    void sendTimeoutNotify ( const epicsTime & currentTime,
+        epicsGuard < callbackMutex > & cbGuard );
+    void tcpiiu::receiveTimeoutNotify( 
+        epicsGuard < callbackMutex > & cbGuard,
+        epicsGuard < epicsMutex > & );
+    void beaconAnomalyNotify ( epicsGuard < epicsMutex > & );
     void beaconArrivalNotify ( 
+        epicsGuard < epicsMutex > &,
+        const epicsTime & currentTime );
+    void probeResponseNotify ( 
+        epicsGuard < callbackMutex > &,
         const epicsTime & currentTime );
 
-    void flushRequest ();
-    bool flushBlockThreshold ( epicsGuard < cacMutex > & ) const;
-    void flushRequestIfAboveEarlyThreshold ( epicsGuard < cacMutex > & );
+    void flushRequest ( epicsGuard < epicsMutex > & );
+    bool flushBlockThreshold ( epicsGuard < epicsMutex > & ) const;
+    void flushRequestIfAboveEarlyThreshold ( epicsGuard < epicsMutex > & );
     void blockUntilSendBacklogIsReasonable 
-        ( cacNotify &, epicsGuard < cacMutex > & );
+        ( cacContextNotify &, epicsGuard < epicsMutex > & );
     virtual void show ( unsigned level ) const;
-    bool setEchoRequestPending ();
-    void createChannelRequest ( nciu &, epicsGuard < cacMutex > & );
+    bool setEchoRequestPending ( epicsGuard < epicsMutex > & );
     void requestRecvProcessPostponedFlush ();
-    void clearChannelRequest ( epicsGuard < cacMutex > &, 
+    void clearChannelRequest ( epicsGuard < epicsMutex > &, 
         ca_uint32_t sid, ca_uint32_t cid );
 
     bool ca_v41_ok () const;
@@ -135,13 +140,13 @@ public:
     unsigned channelCount ( epicsGuard < callbackMutex > & );
     void removeAllChannels (
         epicsGuard < callbackMutex > & cbGuard, 
-        epicsGuard < cacMutex > & guard,
-        class cacDisconnectChannelPrivate & );
+        epicsGuard < epicsMutex > & guard, udpiiu & );
     void installChannel ( epicsGuard < callbackMutex > &,
-        epicsGuard < cacMutex > &, nciu & chan, 
+        epicsGuard < epicsMutex > &, nciu & chan, 
         unsigned sidIn, ca_uint16_t typeIn, arrayElementCount countIn );
-    void uninstallChan ( epicsGuard < callbackMutex > &,
-        epicsGuard < cacMutex > &, nciu & chan );
+    void uninstallChan ( epicsGuard < epicsMutex > &, nciu & chan );
+    void connectNotify ( epicsGuard < epicsMutex > &, nciu & chan );
+    void nameResolutionMsgEndNotify ();
 
     bool bytesArePendingInOS () const;
 
@@ -158,7 +163,14 @@ private:
     tcpSendWatchdog sendDog;
     comQueSend sendQue;
     comQueRecv recvQue;
-    tsDLList < nciu > channelList;
+    // nciu state field tells us which list
+    // protected by the callback mutex
+    tsDLList < nciu > createReqPend;
+    tsDLList < nciu > createRespPend;
+    tsDLList < nciu > subscripReqPend;
+    tsDLList < nciu > connectedList;
+    tsDLList < nciu > unrespCircuit;
+    tsDLList < nciu > subscripUpdateReqPend;
     caHdrLargeArray curMsg;
     arrayElementCount curDataMax;
     arrayElementCount curDataBytes;
@@ -180,6 +192,7 @@ private:
     unsigned blockingForFlush;
     unsigned socketLibrarySendBufferSize;
     unsigned unacknowledgedSendBytes;
+    unsigned channelCountTot;
     bool busyStateDetected; // only modified by the recv thread
     bool flowControlActive; // only modified by the send process thread
     bool echoRequestPending; 
@@ -189,7 +202,7 @@ private:
     bool recvProcessPostponedFlush;
     bool discardingPendingData;
     bool socketHasBeenClosed;
-    bool softDisconnect;
+    bool unresponsiveCircuit;
 
     bool processIncoming ( 
         const epicsTime & currentTime, epicsGuard < callbackMutex > & );
@@ -200,21 +213,34 @@ private:
     const char * pHostName () const;
     void blockUntilBytesArePendingInOS ();
     double receiveWatchdogDelay () const;
+    void unresponsiveCircuitNotify ( 
+        epicsGuard < callbackMutex > & cbGuard, 
+        epicsGuard < epicsMutex > & guard );
+    void disconnectNotify ();
 
     // send protocol stubs
-    void echoRequest ( epicsGuard < cacMutex > & );
-    void versionMessage ( epicsGuard < cacMutex > &, const cacChannel::priLev & priority );
-    void disableFlowControlRequest (epicsGuard < cacMutex > & );
-    void enableFlowControlRequest (epicsGuard < cacMutex > & );
-    void hostNameSetRequest ( epicsGuard < cacMutex > & );
-    void userNameSetRequest ( epicsGuard < cacMutex > & );
-    void writeRequest ( epicsGuard < cacMutex > &, nciu &, unsigned type, unsigned nElem, const void *pValue );
-    void writeNotifyRequest ( epicsGuard < cacMutex > &, nciu &, netWriteNotifyIO &, unsigned type, unsigned nElem, const void *pValue );
-    void readNotifyRequest ( epicsGuard < cacMutex > &, nciu &, netReadNotifyIO &, unsigned type, unsigned nElem );
-    void subscriptionRequest ( epicsGuard < cacMutex > &, nciu &, netSubscription & subscr );
-    void subscriptionCancelRequest ( epicsGuard < cacMutex > &, nciu & chan, netSubscription & subscr );
+    void echoRequest ( epicsGuard < epicsMutex > & );
+    void versionMessage ( epicsGuard < epicsMutex > &, const cacChannel::priLev & priority );
+    void disableFlowControlRequest (epicsGuard < epicsMutex > & );
+    void enableFlowControlRequest (epicsGuard < epicsMutex > & );
+    void hostNameSetRequest ( epicsGuard < epicsMutex > & );
+    void userNameSetRequest ( epicsGuard < epicsMutex > & );
+    void createChannelRequest ( nciu &, epicsGuard < epicsMutex > & );
+    void writeRequest ( epicsGuard < epicsMutex > &, nciu &, 
+        unsigned type, arrayElementCount nElem, const void *pValue );
+    void writeNotifyRequest ( epicsGuard < epicsMutex > &, nciu &, 
+        netWriteNotifyIO &, unsigned type, 
+        arrayElementCount nElem, const void *pValue );
+    void readNotifyRequest ( epicsGuard < epicsMutex > &, nciu &, 
+        netReadNotifyIO &, unsigned type, arrayElementCount nElem );
+    void subscriptionRequest ( epicsGuard < epicsMutex > &, 
+        nciu &, netSubscription & subscr );
+    void subscriptionUpdateRequest ( epicsGuard < epicsMutex > &, 
+        nciu & chan, netSubscription & subscr );
+    void subscriptionCancelRequest ( epicsGuard < epicsMutex > &, 
+        nciu & chan, netSubscription & subscr );
     void flushIfRecvProcessRequested ();
-    bool flush (); // only to be called by the send thread
+    bool flush ( epicsGuard < epicsMutex > & ); // only to be called by the send thread
 
     friend void tcpRecvThread::run ();
     friend void tcpSendThread::run ();
@@ -265,29 +291,24 @@ inline bool tcpiiu::connecting () const
     return ( this->state == iiucs_connecting );
 }
 
-inline void tcpiiu::beaconAnomalyNotify ()
+inline void tcpiiu::beaconAnomalyNotify ( epicsGuard < epicsMutex > & guard )
 {
-    this->recvDog.beaconAnomalyNotify ();
+    //guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+    this->recvDog.beaconAnomalyNotify ( guard );
 }
 
 inline void tcpiiu::beaconArrivalNotify (
+    epicsGuard < epicsMutex > & guard, const epicsTime & currentTime )
+{
+    //guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+    this->recvDog.beaconArrivalNotify ( guard, currentTime );
+}
+
+inline void tcpiiu::probeResponseNotify (
+    epicsGuard < callbackMutex > & cbGuard,
     const epicsTime & currentTime )
 {
-    this->recvDog.beaconArrivalNotify ( currentTime );
-}
-
-inline void tcpiiu::flushIfRecvProcessRequested ()
-{
-    if ( this->recvProcessPostponedFlush ) {
-        this->flushRequest ();
-        this->recvProcessPostponedFlush = false;
-    }
-}
-
-inline unsigned tcpiiu::channelCount ( epicsGuard < callbackMutex > & )
-{
-    // protected by callback lock
-    return this->channelList.count ();
+    this->recvDog.probeResponseNotify ( cbGuard, currentTime );
 }
 
 #endif // ifdef virtualCircuith

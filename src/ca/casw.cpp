@@ -53,6 +53,8 @@ void bheFreeStoreMgr::release ( void * pCadaver )
 
 int main ( int argc, char ** argv )
 {
+    epicsMutex mutex;
+    epicsGuard < epicsMutex > guard ( mutex );
     bheFreeStoreMgr bheFreeList;
     epicsTime programBeginTime = epicsTime::getCurrent ();
     bool validCommandLine = false;
@@ -241,8 +243,9 @@ int main ( int argc, char ** argv )
                  */
                 bhe *pBHE = beaconTable.lookup ( ina );
                 if ( pBHE ) {
-                    epicsTime previousTime = pBHE->updateTime ();
-                    bool anomaly = pBHE->updatePeriod ( programBeginTime, 
+                    epicsTime previousTime = pBHE->updateTime ( guard );
+                    bool anomaly = pBHE->updatePeriod ( 
+                        guard, programBeginTime, 
                         currentTime, beaconNumber, protocolRevision );
                     if ( anomaly ) {
                         char date[64];
@@ -254,7 +257,8 @@ int main ( int argc, char ** argv )
                             host, date );
                         if ( interest > 0 ) {
                             printf ( "\testimate=%f current=%f\n", 
-                                pBHE->period (), currentTime - previousTime );
+                                pBHE->period ( guard ), 
+                                currentTime - previousTime );
                         }
                         fflush(stdout);
                     }
@@ -268,7 +272,7 @@ int main ( int argc, char ** argv )
                      * shortly after the program started up)
                      */
                     pBHE = new ( bheFreeList ) 
-                        bhe ( currentTime, beaconNumber, ina );
+                        bhe ( mutex, currentTime, beaconNumber, ina );
                     if ( pBHE ) {
                         if ( beaconTable.add ( *pBHE ) < 0 ) {
                             pBHE->~bhe ();

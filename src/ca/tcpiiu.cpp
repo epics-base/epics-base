@@ -38,6 +38,7 @@
 #include "bhe.h"
 #include "epicsSignal.h"
 #include "caerr.h"
+#include "udpiiu.h"
 
 const unsigned mSecPerSec = 1000u;
 const unsigned uSecPerSec = 1000u * mSecPerSec;
@@ -67,53 +68,91 @@ void tcpSendThread::exitWait ()
 void tcpSendThread::run ()
 {
     try {
+        epicsGuard < epicsMutex > guard ( this->iiu.cacRef.mutexRef() );
+
+        bool laborPending = false;
 
         while ( true ) {
-            bool flowControlLaborNeeded;
-            bool echoLaborNeeded;
 
-            this->iiu.sendThreadFlushEvent.wait ();
+            // dont wait if there is still labor to be done below
+            if ( ! laborPending ) {
+                epicsGuardRelease < epicsMutex > unguard ( guard );
+                this->iiu.sendThreadFlushEvent.wait ();
+            }
 
             if ( this->iiu.state != tcpiiu::iiucs_connected ) {
                 break;
             }
 
-            {
-                epicsGuard < cacMutex > guard ( this->iiu.cacRef.mutexRef() );
-                flowControlLaborNeeded = 
-                    this->iiu.busyStateDetected != this->iiu.flowControlActive;
-                echoLaborNeeded = this->iiu.echoRequestPending;
-                this->iiu.echoRequestPending = false;
- 
-                if ( flowControlLaborNeeded ) {
-                    if ( this->iiu.flowControlActive ) {
-                        this->iiu.disableFlowControlRequest ( guard );
-                        this->iiu.flowControlActive = false;
-                        debugPrintf ( ( "fc off\n" ) );
-                    }
-                    else {
-                        this->iiu.enableFlowControlRequest ( guard );
-                        this->iiu.flowControlActive = true;
-                        debugPrintf ( ( "fc on\n" ) );
-                    }
-                }
+            laborPending = false;
+            bool flowControlLaborNeeded = 
+                this->iiu.busyStateDetected != this->iiu.flowControlActive;
+            bool echoLaborNeeded = this->iiu.echoRequestPending;
+            this->iiu.echoRequestPending = false;
 
-                if ( echoLaborNeeded ) {
-                    if ( CA_V43 ( this->iiu.minorProtocolVersion ) ) {
-                        this->iiu.echoRequest ( guard );
-                    }
-                    else {
-                        this->iiu.versionMessage ( guard, this->iiu.priority() );
-                    }
+            if ( flowControlLaborNeeded ) {
+                if ( this->iiu.flowControlActive ) {
+                    this->iiu.disableFlowControlRequest ( guard );
+                    this->iiu.flowControlActive = false;
+                    debugPrintf ( ( "fc off\n" ) );
+                }
+                else {
+                    this->iiu.enableFlowControlRequest ( guard );
+                    this->iiu.flowControlActive = true;
+                    debugPrintf ( ( "fc on\n" ) );
                 }
             }
 
-            if ( ! this->iiu.flush () ) {
+            if ( echoLaborNeeded ) {
+                if ( CA_V43 ( this->iiu.minorProtocolVersion ) ) {
+                    this->iiu.echoRequest ( guard );
+                }
+                else {
+                    this->iiu.versionMessage ( guard, this->iiu.priority() );
+                }
+            }
+
+            while ( nciu * pChan = this->iiu.createReqPend.get () ) {
+                this->iiu.createChannelRequest ( *pChan, guard );
+                this->iiu.createRespPend.add ( *pChan );
+                pChan->channelNode::listMember = 
+                    channelNode::cs_createRespPend;
+                if ( this->iiu.sendQue.flushBlockThreshold ( 0u ) ) {
+                    laborPending = true;
+                    break;
+                }
+            }
+
+            while ( nciu * pChan = this->iiu.subscripReqPend.get () ) {
+                // this installs any subscriptions as needed
+                pChan->resubscribe ( guard );
+                this->iiu.connectedList.add ( *pChan );
+                pChan->channelNode::listMember = 
+                    channelNode::cs_connected;
+                if ( this->iiu.sendQue.flushBlockThreshold ( 0u ) ) {
+                    laborPending = true;
+                    break;
+                }
+            }
+
+            while ( nciu * pChan = this->iiu.subscripUpdateReqPend.get () ) {
+                // this updates any subscriptions as needed
+                pChan->sendSubscriptionUpdateRequests ( guard );
+                this->iiu.connectedList.add ( *pChan );
+                pChan->channelNode::listMember = 
+                    channelNode::cs_connected;
+                if ( this->iiu.sendQue.flushBlockThreshold ( 0u ) ) {
+                    laborPending = true;
+                    break;
+                }
+            }
+
+            if ( ! this->iiu.flush ( guard ) ) {
                 break;
             }
         }
         if ( this->iiu.state == tcpiiu::iiucs_clean_shutdown ) {
-            this->iiu.flush ();
+            this->iiu.flush ( guard );
             // this should cause the server to disconnect from 
             // the client
             int status = ::shutdown ( this->iiu.sock, SHUT_WR );
@@ -180,7 +219,7 @@ unsigned tcpiiu::sendBytes ( const void *pBuf,
 
             // winsock indicates disconnect by returning zero here
             if ( status == 0 ) {
-                this->cacRef.disconnectNotify ( *this );
+                this->disconnectNotify ();
                 break;
             }
 
@@ -201,7 +240,7 @@ unsigned tcpiiu::sendBytes ( const void *pBuf,
                     sockErrBuf );
             }
 
-            this->cacRef.disconnectNotify ( *this );
+            this->disconnectNotify ();
             break;
         }
     }
@@ -232,7 +271,7 @@ unsigned tcpiiu::recvBytes ( void * pBuf, unsigned nBytesInBuf )
             int localErrno = SOCKERRNO;
 
             if ( status == 0 ) {
-                this->cacRef.disconnectNotify ( *this );
+                this->disconnectNotify ();
                 return 0u;
             }
 
@@ -244,7 +283,7 @@ unsigned tcpiiu::recvBytes ( void * pBuf, unsigned nBytesInBuf )
             } 
 
             if ( localErrno == SOCK_SHUTDOWN ) {
-                this->cacRef.disconnectNotify ( *this );
+                this->disconnectNotify ();
                 return 0u;
             }
 
@@ -253,12 +292,12 @@ unsigned tcpiiu::recvBytes ( void * pBuf, unsigned nBytesInBuf )
             }
             
             if ( localErrno == SOCK_ECONNABORTED ) {
-                this->cacRef.disconnectNotify ( *this );
+                this->disconnectNotify ();
                 return 0u;
             }
 
             if ( localErrno == SOCK_ECONNRESET ) {
-                this->cacRef.disconnectNotify ( *this );
+                this->disconnectNotify ();
                 return 0u;
             }
 
@@ -313,13 +352,28 @@ void tcpRecvThread::run ()
         this->iiu.sendThread.start ();
 
         if ( this->iiu.state != tcpiiu::iiucs_connected ) {
-            this->iiu.cacRef.disconnectNotify ( this->iiu );
+            this->iiu.disconnectNotify ();
             return;
         }
 
         comBuf * pComBuf = new ( this->iiu.comBufMemMgr ) comBuf;
         while ( this->iiu.state == tcpiiu::iiucs_connected ||
                 this->iiu.state == tcpiiu::iiucs_clean_shutdown ) {
+            //
+            // if this thread has connected channels with subscriptions
+            // that need to be sent then wakeup the send thread
+            {
+                bool wakeupNeeded = false;
+                {
+                    epicsGuard < epicsMutex > cacGuard ( this->iiu.cacRef.mutexRef() );
+                    if ( this->iiu.subscripReqPend.count() ) {
+                        wakeupNeeded = true;
+                    }
+                }
+                if ( wakeupNeeded ) {
+                    this->iiu.sendThreadFlushEvent.signal ();
+                }
+            }
 
             //
             // We leave the bytes pending and fetch them after
@@ -336,21 +390,12 @@ void tcpRecvThread::run ()
             epicsTime currentTime = epicsTime::getCurrent ();
 
             // reschedule connection activity watchdog
-            // but dont hold the lock for fear of deadlocking 
-            // because cancel is blocking for the completion
-            // of the recvDog expire which takes the lock
-            // - it take also the callback lock
             this->iiu.recvDog.messageArrivalNotify ( currentTime ); 
 
             // only one recv thread at a time may call callbacks
             // - pendEvent() blocks until threads waiting for
             // this lock get a chance to run
             epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
-
-            if ( this->iiu.softDisconnect ) {
-                epicsGuard < cacMutex > cacGuard ( this->iiu.cacRef.mutexRef() );
-                this->iiu.responsiveCircuitNotify ( cbGuard, cacGuard );
-            }
 
             // force the receive watchdog to be reset every 5 frames
             unsigned contiguousFrameCount = 0;
@@ -429,10 +474,9 @@ tcpiiu::tcpiiu ( cac & cac, callbackMutex & cbMutex, double connectionTimeout,
     sendThread ( *this, cbMutex, "CAC-TCP-send",
         epicsThreadGetStackSize ( epicsThreadStackMedium ),
         cac::lowestPriorityLevelAbove (
-            cac::lowestPriorityLevelAbove (
-                cac.getInitializingThreadsPriority() ) ) ),
-    recvDog ( cac, *this, connectionTimeout, timerQueue ),
-    sendDog ( cac, *this, connectionTimeout, timerQueue ),
+            cac.getInitializingThreadsPriority() ) ),
+    recvDog ( cbMutex, cac.mutexRef (), *this, connectionTimeout, timerQueue ),
+    sendDog ( cbMutex, *this, connectionTimeout, timerQueue ),
     sendQue ( *this, comBufMemMgrIn ),
     recvQue ( comBufMemMgrIn ),
     curDataMax ( MAX_TCP ),
@@ -447,6 +491,7 @@ tcpiiu::tcpiiu ( cac & cac, callbackMutex & cbMutex, double connectionTimeout,
     blockingForFlush ( 0u ),
     socketLibrarySendBufferSize ( 0x1000 ),
     unacknowledgedSendBytes ( 0u ),
+    channelCountTot ( 0u ),
     busyStateDetected ( false ),
     flowControlActive ( false ),
     echoRequestPending ( false ),
@@ -456,7 +501,7 @@ tcpiiu::tcpiiu ( cac & cac, callbackMutex & cbMutex, double connectionTimeout,
     recvProcessPostponedFlush ( false ),
     discardingPendingData ( false ),
     socketHasBeenClosed ( false ),
-    softDisconnect ( false )
+    unresponsiveCircuit ( false )
 {
     this->sock = epicsSocketCreate ( AF_INET, SOCK_STREAM, IPPROTO_TCP );
     if ( this->sock == INVALID_SOCKET ) {
@@ -494,7 +539,7 @@ tcpiiu::tcpiiu ( cac & cac, callbackMutex & cbMutex, double connectionTimeout,
     // load message queue with messages informing server 
     // of version, user, and host name of client
     {
-        epicsGuard < cacMutex > guard ( this->cacRef.mutexRef() );
+        epicsGuard < epicsMutex > guard ( this->cacRef.mutexRef() );
         this->versionMessage ( guard, this->priority() );
         this->userNameSetRequest ( guard );
         this->hostNameSetRequest ( guard );
@@ -584,27 +629,26 @@ void tcpiiu::start ()
  */
 void tcpiiu::connect ()
 {
-    /* 
-     * attempt to connect to a CA server
-     */
-    this->sendDog.start ( epicsTime::getCurrent() );
-
+    // attempt to connect to a CA server
     while ( this->state == iiucs_connecting ) {
         osiSockAddr tmp = this->address ();
         int status = ::connect ( this->sock, 
                         &tmp.sa, sizeof ( tmp.sa ) );
         if ( status == 0 ) {
+            bool enteredConnectedState = false;
+            {
+                epicsGuard < epicsMutex > autoMutex ( this->cacRef.mutexRef() );
 
-            epicsGuard < cacMutex > autoMutex ( this->cacRef.mutexRef() );
-
-            if ( this->state == iiucs_connecting ) {
-                // put the iiu into the connected state
-                this->state = iiucs_connected;
-
+                if ( this->state == iiucs_connecting ) {
+                    // put the iiu into the connected state
+                    this->state = iiucs_connected;
+                    enteredConnectedState = true;
+                }
+            }
+            if ( enteredConnectedState ) {
                 // start connection activity watchdog
                 this->recvDog.connectNotify (); 
             }
-
             break;
         }
 
@@ -622,77 +666,105 @@ void tcpiiu::connect ()
                 sockErrBuf, sizeof ( sockErrBuf ) );
             this->printf ( "Unable to connect because \"%s\"\n", 
                 sockErrBuf );
-            this->cacRef.disconnectNotify ( *this );
+            this->disconnectNotify ();
             break;
         }
     }
-    this->sendDog.cancel ();
     return;
 }
 
-void tcpiiu::initiateCleanShutdown ( epicsGuard < cacMutex > & )
+void tcpiiu::initiateCleanShutdown ( epicsGuard < epicsMutex > & guard )
 {
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
     if ( this->state == iiucs_connected ) {
         this->state = iiucs_clean_shutdown;
         this->sendThreadFlushEvent.signal ();
     }
 }
 
-void tcpiiu::disconnectNotify ( epicsGuard < cacMutex > & )
+void tcpiiu::disconnectNotify ()
 {
-    this->state = iiucs_disconnected;
+    {
+        epicsGuard < epicsMutex > guard ( this->cacRef.mutexRef () );
+        this->state = iiucs_disconnected;
+    }
     this->sendThreadFlushEvent.signal ();
 }
 
 void tcpiiu::responsiveCircuitNotify ( 
-    epicsGuard < callbackMutex > & cbGuard, 
-    epicsGuard < cacMutex > & guard )
+    epicsGuard < callbackMutex > & cbGuard,
+    epicsGuard < epicsMutex > & guard )
 {
-    this->softDisconnect = false;
-    tsDLIter < nciu > pChan = this->channelList.firstIter ();
-    while ( pChan.valid() ) {
-        // The cac lock is released herein so there is concern that
-        // the list could be changed while we are traversing it.
-        // However, this occurs only if a circuit disconnects,
-        // a user deletes a channel, or a server disconnects a
-        // channel. The callback lock must be taken in all of
-        // these situations so this code is protected.
-        pChan->responsiveCircuitNotify ( cbGuard, guard );
-        pChan++;
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+    while ( nciu * pChan = this->unrespCircuit.get() ) {
+        this->subscripUpdateReqPend.add ( *pChan );
+        pChan->channelNode::listMember = 
+            channelNode::cs_subscripUpdateReqPend;
+        pChan->connect ( cbGuard, guard );
     }
+    this->sendThreadFlushEvent.signal ();
+}
+
+void tcpiiu::sendTimeoutNotify ( 
+    const epicsTime & currentTime,
+    epicsGuard < callbackMutex > & cbGuard )
+{
+    epicsGuard < epicsMutex > guard ( this->cacRef.mutexRef() );
+    this->unresponsiveCircuitNotify ( cbGuard, guard );
+    // setup circuit probe sequence
+    this->recvDog.sendTimeoutNotify ( cbGuard, guard, currentTime );
+}
+
+void tcpiiu::receiveTimeoutNotify ( 
+    epicsGuard < callbackMutex > & cbGuard,
+    epicsGuard < epicsMutex > & guard )
+{
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+    this->unresponsiveCircuitNotify ( cbGuard, guard );
 }
 
 void tcpiiu::unresponsiveCircuitNotify ( 
     epicsGuard < callbackMutex > & cbGuard, 
-    epicsGuard < cacMutex > & guard )
+    epicsGuard < epicsMutex > & guard )
 {
-    this->recvDog.cancel();
-    this->sendDog.cancel();
-    this->softDisconnect = true;
-    if ( this->channelList.count() ) {
-        char hostNameTmp[128];
-        this->hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
-        {
-            epicsGuardRelease < cacMutex > guardRelease ( guard );
-            genLocalExcep ( cbGuard, this->cacRef, ECA_UNRESPTMO, hostNameTmp );
-        }
-        tsDLIter < nciu > pChan = this->channelList.firstIter ();
-        while ( pChan.valid() ) {
-            // The cac lock is released herein so there is concern that
-            // the list could be changed while we are traversing it.
-            // However, this occurs only if a circuit disconnects,
-            // a user deletes a channel, or a server disconnects a
-            // channel. The callback lock must be taken in all of
-            // these situations so this code is protected.
-            pChan->unresponsiveCircuitNotify ( cbGuard, guard );
-            pChan++;
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+
+    if ( ! this->unresponsiveCircuit ) {
+        this->unresponsiveCircuit = true;
+        this->echoRequestPending = true;
+        this->sendThreadFlushEvent.signal ();
+
+#pragma message ( "cancel is too low level" )
+        this->recvDog.cancel ();
+        this->sendDog.cancel ();
+        if ( this->connectedList.count() ) {
+            char hostNameTmp[128];
+            this->hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
+            {
+                epicsGuardRelease < epicsMutex > guardRelease ( guard );
+                genLocalExcep ( cbGuard, this->cacRef, ECA_UNRESPTMO, hostNameTmp );
+            }
+            while ( nciu * pChan = this->connectedList.get () ) {
+                // The cac lock is released herein so there is concern that
+                // the list could be changed while we are traversing it.
+                // However, this occurs only if a circuit disconnects,
+                // a user deletes a channel, or a server disconnects a
+                // channel. The callback lock must be taken in all of
+                // these situations so this code is protected.
+                this->unrespCircuit.add ( *pChan );
+                pChan->channelNode::listMember = 
+                    channelNode::cs_unrespCircuit;
+                pChan->unresponsiveCircuitNotify ( cbGuard, guard );
+            }
         }
     }
 }
 
 void tcpiiu::initiateAbortShutdown ( epicsGuard < callbackMutex > &,
-                                     epicsGuard < cacMutex > & guard )
+                                     epicsGuard < epicsMutex > & guard )
 {
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+
     if ( ! this->discardingPendingData ) {
         // force abortive shutdown sequence 
         // (discard outstanding sends and receives)
@@ -744,7 +816,6 @@ void tcpiiu::initiateAbortShutdown ( epicsGuard < callbackMutex > &,
             this->recvThread.interruptSocketRecv ();
             this->sendThread.interruptSocketSend ();
             break;
-        case esscimqi_shuechanismImplemenedHerein:
         default:
             break;
         };
@@ -781,7 +852,7 @@ tcpiiu::~tcpiiu ()
 
 void tcpiiu::show ( unsigned level ) const
 {
-    epicsGuard < cacMutex > locker ( this->cacRef.mutexRef() );
+    epicsGuard < epicsMutex > locker ( this->cacRef.mutexRef() );
     char buf[256];
     this->hostNameCacheInstance.hostName ( buf, sizeof ( buf ) );
     ::printf ( "Virtual circuit to \"%s\" at version V%u.%u state %u\n", 
@@ -804,20 +875,54 @@ void tcpiiu::show ( unsigned level ) const
         ::printf ("\techo pending bool = %u\n", this->echoRequestPending );
         ::printf ( "IO identifier hash table:\n" );
 
-        tsDLIterConst < nciu > pChan = this->channelList.firstIter ();
-	    while ( pChan.valid () ) {
-            pChan->show ( level - 2u );
-            pChan++;
+        if ( this->createReqPend.count () ) {
+            ::printf ( "Create request pending channels\n" );
+            tsDLIterConst < nciu > pChan = this->createReqPend.firstIter ();
+	        while ( pChan.valid () ) {
+                pChan->show ( level - 2u );
+                pChan++;
+            }
+        }
+        if ( this->createRespPend.count () ) {
+            ::printf ( "Create response pending channels\n" );
+            tsDLIterConst < nciu > pChan = this->createRespPend.firstIter ();
+	        while ( pChan.valid () ) {
+                pChan->show ( level - 2u );
+                pChan++;
+            }
+        }
+        if ( this->subscripReqPend.count () ) {
+            ::printf ( "Subscription request pending channels\n" );
+            tsDLIterConst < nciu > pChan = this->subscripReqPend.firstIter ();
+	        while ( pChan.valid () ) {
+                pChan->show ( level - 2u );
+                pChan++;
+            }
+        }
+        if ( this->connectedList.count () ) {
+            ::printf ( "Connected channels\n" );
+            tsDLIterConst < nciu > pChan = this->connectedList.firstIter ();
+	        while ( pChan.valid () ) {
+                pChan->show ( level - 2u );
+                pChan++;
+            }
+        }
+        if ( this->unrespCircuit.count () ) {
+            ::printf ( "Unresponsive circuit channels\n" );
+            tsDLIterConst < nciu > pChan = this->unrespCircuit.firstIter ();
+	        while ( pChan.valid () ) {
+                pChan->show ( level - 2u );
+                pChan++;
+            }
         }
     }
 }
 
-bool tcpiiu::setEchoRequestPending () // X aCC 361
+bool tcpiiu::setEchoRequestPending ( epicsGuard < epicsMutex > & guard ) // X aCC 361
 {
-    {
-        epicsGuard < cacMutex > locker ( this->cacRef.mutexRef() );
-        this->echoRequestPending = true;
-    }
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+
+    this->echoRequestPending = true;
     this->sendThreadFlushEvent.signal ();
     if ( CA_V43 ( this->minorProtocolVersion ) ) {
         // we send an echo
@@ -829,9 +934,15 @@ bool tcpiiu::setEchoRequestPending () // X aCC 361
     }
 }
 
-//
-// tcpiiu::processIncoming()
-//
+void tcpiiu::flushIfRecvProcessRequested ()
+{
+    epicsGuard < epicsMutex > guard ( this->cacRef.mutexRef () );
+    if ( this->recvProcessPostponedFlush ) {
+        this->flushRequest ( guard );
+        this->recvProcessPostponedFlush = false;
+    }
+}
+
 bool tcpiiu::processIncoming ( 
     const epicsTime & currentTime, epicsGuard < callbackMutex > & guard )
 {
@@ -933,11 +1044,10 @@ bool tcpiiu::processIncoming (
 #   endif
 }
 
-/*
- * tcpiiu::hostNameSetRequest ()
- */
-void tcpiiu::hostNameSetRequest ( epicsGuard < cacMutex > & locker ) // X aCC 431
+void tcpiiu::hostNameSetRequest ( epicsGuard < epicsMutex > & guard ) // X aCC 431
 {
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+
     if ( ! CA_V41 ( this->minorProtocolVersion ) ) {
         return;
     }
@@ -950,10 +1060,10 @@ void tcpiiu::hostNameSetRequest ( epicsGuard < cacMutex > & locker ) // X aCC 43
     assert ( postSize < 0xffff );
 
     if ( this->sendQue.flushEarlyThreshold ( postSize + 16u ) ) {
-        this->flushRequest ();
+        this->flushRequest ( guard );
     }
 
-    comQueSendMsgMinder minder ( this->sendQue, locker );
+    comQueSendMsgMinder minder ( this->sendQue, guard );
     this->sendQue.insertRequestHeader ( 
         CA_PROTO_HOST_NAME, postSize, 
         0u, 0u, 0u, 0u, 
@@ -966,8 +1076,10 @@ void tcpiiu::hostNameSetRequest ( epicsGuard < cacMutex > & locker ) // X aCC 43
 /*
  * tcpiiu::userNameSetRequest ()
  */
-void tcpiiu::userNameSetRequest ( epicsGuard < cacMutex > & locker ) // X aCC 431
+void tcpiiu::userNameSetRequest ( epicsGuard < epicsMutex > & guard ) // X aCC 431
 {
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+
     if ( ! CA_V41 ( this->minorProtocolVersion ) ) {
         return;
     }
@@ -978,10 +1090,10 @@ void tcpiiu::userNameSetRequest ( epicsGuard < cacMutex > & locker ) // X aCC 43
     assert ( postSize < 0xffff );
 
     if ( this->sendQue.flushEarlyThreshold ( postSize + 16u ) ) {
-        this->flushRequest ();
+        this->flushRequest ( guard );
     }
 
-    comQueSendMsgMinder minder ( this->sendQue, locker );
+    comQueSendMsgMinder minder ( this->sendQue, guard );
     this->sendQue.insertRequestHeader ( 
         CA_PROTO_CLIENT_NAME, postSize, 
         0u, 0u, 0u, 0u, 
@@ -991,12 +1103,15 @@ void tcpiiu::userNameSetRequest ( epicsGuard < cacMutex > & locker ) // X aCC 43
     minder.commit ();
 }
 
-void tcpiiu::disableFlowControlRequest ( epicsGuard < cacMutex > & locker ) // X aCC 431
+void tcpiiu::disableFlowControlRequest ( 
+    epicsGuard < epicsMutex > & guard ) // X aCC 431
 {
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+
     if ( this->sendQue.flushEarlyThreshold ( 16u ) ) {
-        this->flushRequest ();
+        this->flushRequest ( guard );
     }
-    comQueSendMsgMinder minder ( this->sendQue, locker );
+    comQueSendMsgMinder minder ( this->sendQue, guard );
     this->sendQue.insertRequestHeader ( 
         CA_PROTO_EVENTS_ON, 0u, 
         0u, 0u, 0u, 0u, 
@@ -1004,12 +1119,15 @@ void tcpiiu::disableFlowControlRequest ( epicsGuard < cacMutex > & locker ) // X
     minder.commit ();
 }
 
-void tcpiiu::enableFlowControlRequest ( epicsGuard < cacMutex > & locker ) // X aCC 431
+void tcpiiu::enableFlowControlRequest ( 
+    epicsGuard < epicsMutex > & guard ) // X aCC 431
 {
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+
     if ( this->sendQue.flushEarlyThreshold ( 16u ) ) {
-        this->flushRequest ();
+        this->flushRequest ( guard );
     }
-    comQueSendMsgMinder minder ( this->sendQue, locker );
+    comQueSendMsgMinder minder ( this->sendQue, guard );
     this->sendQue.insertRequestHeader ( 
         CA_PROTO_EVENTS_OFF, 0u, 
         0u, 0u, 0u, 0u, 
@@ -1017,16 +1135,18 @@ void tcpiiu::enableFlowControlRequest ( epicsGuard < cacMutex > & locker ) // X 
     minder.commit ();
 }
 
-void tcpiiu::versionMessage ( epicsGuard < cacMutex > & locker, // X aCC 431
+void tcpiiu::versionMessage ( epicsGuard < epicsMutex > & guard, // X aCC 431
                              const cacChannel::priLev & priority )
 {
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+
     assert ( priority <= 0xffff );
 
     if ( this->sendQue.flushEarlyThreshold ( 16u ) ) {
-        this->flushRequest ();
+        this->flushRequest ( guard );
     }
 
-    comQueSendMsgMinder minder ( this->sendQue, locker );
+    comQueSendMsgMinder minder ( this->sendQue, guard );
     this->sendQue.insertRequestHeader ( 
         CA_PROTO_VERSION, 0u, 
         priority, CA_MINOR_PROTOCOL_REVISION, 0u, 0u, 
@@ -1034,12 +1154,14 @@ void tcpiiu::versionMessage ( epicsGuard < cacMutex > & locker, // X aCC 431
     minder.commit ();
 }
 
-void tcpiiu::echoRequest ( epicsGuard < cacMutex > & locker ) // X aCC 431
+void tcpiiu::echoRequest ( epicsGuard < epicsMutex > & guard ) // X aCC 431
 {
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+
     if ( this->sendQue.flushEarlyThreshold ( 16u ) ) {
-        this->flushRequest ();
+        this->flushRequest ( guard );
     }
-    comQueSendMsgMinder minder ( this->sendQue, locker );
+    comQueSendMsgMinder minder ( this->sendQue, guard );
     this->sendQue.insertRequestHeader ( 
         CA_PROTO_ECHO, 0u, 
         0u, 0u, 0u, 0u, 
@@ -1047,12 +1169,11 @@ void tcpiiu::echoRequest ( epicsGuard < cacMutex > & locker ) // X aCC 431
     minder.commit ();
 }
 
-void tcpiiu::writeRequest ( epicsGuard < cacMutex > & guard, // X aCC 431
-                nciu &chan, unsigned type, unsigned nElem, const void *pValue )
+void tcpiiu::writeRequest ( epicsGuard < epicsMutex > & guard, // X aCC 431
+    nciu &chan, unsigned type, arrayElementCount nElem, const void *pValue )
 {
-    if ( ! chan.connected () ) {
-        throw cacChannel::notConnected();
-    }
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+
     comQueSendMsgMinder minder ( this->sendQue, guard );
     this->sendQue.insertRequestWithPayLoad ( CA_PROTO_WRITE,  
         type, nElem, chan.getSID(), chan.getCID(), pValue,
@@ -1061,13 +1182,12 @@ void tcpiiu::writeRequest ( epicsGuard < cacMutex > & guard, // X aCC 431
 }
 
 
-void tcpiiu::writeNotifyRequest ( epicsGuard < cacMutex > & guard, // X aCC 431
+void tcpiiu::writeNotifyRequest ( epicsGuard < epicsMutex > & guard, // X aCC 431
                                  nciu &chan, netWriteNotifyIO &io, unsigned type,  
-                                unsigned nElem, const void *pValue )
+                                arrayElementCount nElem, const void *pValue )
 {
-    if ( ! chan.connected () ) {
-        throw cacChannel::notConnected();
-    }
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+
     if ( ! this->ca_v41_ok () ) {
         throw cacChannel::unsupportedByService();
     }
@@ -1078,42 +1198,42 @@ void tcpiiu::writeNotifyRequest ( epicsGuard < cacMutex > & guard, // X aCC 431
     minder.commit ();
 }
 
-void tcpiiu::readNotifyRequest ( epicsGuard < cacMutex > & locker, // X aCC 431
+void tcpiiu::readNotifyRequest ( epicsGuard < epicsMutex > & guard, // X aCC 431
                                nciu & chan, netReadNotifyIO & io, 
-                               unsigned dataType, unsigned nElem )
+                               unsigned dataType, arrayElementCount nElem )
 {
-    if ( ! chan.connected () ) {
-        throw cacChannel::notConnected ();
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+
+    if ( INVALID_DB_REQ ( dataType ) ) {
+        throw cacChannel::badType ();
     }
-    if ( ! dbr_type_is_valid ( dataType ) ) {
-        throw cacChannel::badType();
-    }
-    if ( nElem > chan.nativeElementCount() ) {
-        throw cacChannel::outOfBounds ();
-    }
-    unsigned maxBytes;
+    arrayElementCount maxBytes;
     if ( CA_V49 ( this->minorProtocolVersion ) ) {
         maxBytes = this->cacRef.largeBufferSizeTCP ();
     }
     else {
         maxBytes = MAX_TCP;
     }
-    unsigned maxElem = ( maxBytes - dbr_size[dataType] ) / dbr_value_size[dataType];
+    arrayElementCount maxElem = 
+        ( maxBytes - dbr_size[dataType] ) / dbr_value_size[dataType];
     if ( nElem > maxElem ) {
         throw cacChannel::msgBodyCacheTooSmall ();
     }
-    comQueSendMsgMinder minder ( this->sendQue, locker );
+    comQueSendMsgMinder minder ( this->sendQue, guard );
     this->sendQue.insertRequestHeader ( 
         CA_PROTO_READ_NOTIFY, 0u, 
         static_cast < ca_uint16_t > ( dataType ), 
-        nElem, chan.getSID(), io.getId(), 
+        static_cast < ca_uint32_t > ( nElem ), 
+        chan.getSID(), io.getId(), 
         CA_V49 ( this->minorProtocolVersion ) );
     minder.commit ();
 }
 
 void tcpiiu::createChannelRequest ( 
-    nciu & chan, epicsGuard < cacMutex > & guard ) // X aCC 431
+    nciu & chan, epicsGuard < epicsMutex > & guard ) // X aCC 431
 {
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+
     const char *pName;
     unsigned nameLength;
     ca_uint32_t identity;
@@ -1153,10 +1273,12 @@ void tcpiiu::createChannelRequest (
     minder.commit ();
 }
 
-void tcpiiu::clearChannelRequest ( epicsGuard < cacMutex > & locker, // X aCC 431
+void tcpiiu::clearChannelRequest ( epicsGuard < epicsMutex > & guard, // X aCC 431
                                   ca_uint32_t sid, ca_uint32_t cid )
 {
-    comQueSendMsgMinder minder ( this->sendQue, locker );
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+
+    comQueSendMsgMinder minder ( this->sendQue, guard );
     this->sendQue.insertRequestHeader ( 
         CA_PROTO_CLEAR_CHANNEL, 0u, 
         0u, 0u, sid, cid, 
@@ -1168,10 +1290,12 @@ void tcpiiu::clearChannelRequest ( epicsGuard < cacMutex > & locker, // X aCC 43
 // this routine return void because if this internally fails the best response
 // is to try again the next time that we reconnect
 //
-void tcpiiu::subscriptionRequest ( epicsGuard < cacMutex > & locker, // X aCC 431
+void tcpiiu::subscriptionRequest ( epicsGuard < epicsMutex > & guard, // X aCC 431
                                   nciu &chan, netSubscription & subscr )
 {
-    if ( ! chan.connected() ) {
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+
+    if ( ! chan.isConnected ( guard ) ) {
         return;
     }
     unsigned mask = subscr.getMask();
@@ -1179,8 +1303,8 @@ void tcpiiu::subscriptionRequest ( epicsGuard < cacMutex > & locker, // X aCC 43
         mask &= 0xffff;
         this->cacRef.printf ( "CAC: subscriptionRequest() truncated unusual event select mask\n" );
     }
-    arrayElementCount nElem = subscr.getCount ();
-    unsigned maxBytes;
+    arrayElementCount nElem = subscr.getCount ( guard );
+    arrayElementCount maxBytes;
     if ( CA_V49 ( this->minorProtocolVersion ) ) {
         maxBytes = this->cacRef.largeBufferSizeTCP ();
     }
@@ -1188,15 +1312,18 @@ void tcpiiu::subscriptionRequest ( epicsGuard < cacMutex > & locker, // X aCC 43
         maxBytes = MAX_TCP;
     }
     unsigned dataType = subscr.getType ();
-    unsigned maxElem = ( maxBytes - dbr_size[dataType] ) / dbr_value_size[dataType];
+    // data type bounds checked when sunscription created
+    arrayElementCount maxElem = ( maxBytes - dbr_size[dataType] ) / dbr_value_size[dataType];
     if ( nElem > maxElem ) {
         throw cacChannel::msgBodyCacheTooSmall ();
     }
-    comQueSendMsgMinder minder ( this->sendQue, locker );
+    comQueSendMsgMinder minder ( this->sendQue, guard );
+    // nElement bounds checked above
     this->sendQue.insertRequestHeader ( 
         CA_PROTO_EVENT_ADD, 16u, 
         static_cast < ca_uint16_t > ( dataType ), 
-        nElem, chan.getSID(), subscr.getId(), 
+        static_cast < ca_uint32_t > ( nElem ), 
+        chan.getSID(), subscr.getId(), 
         CA_V49 ( this->minorProtocolVersion ) );
 
     // extension
@@ -1208,85 +1335,112 @@ void tcpiiu::subscriptionRequest ( epicsGuard < cacMutex > & locker, // X aCC 43
     minder.commit ();
 }
 
-void tcpiiu::subscriptionCancelRequest ( epicsGuard < cacMutex > & locker, // X aCC 431
+//
+// this routine return void because if this internally fails the best response
+// is to try again the next time that we reconnect
+//
+void tcpiiu::subscriptionUpdateRequest ( epicsGuard < epicsMutex > & guard, // X aCC 431
+                                  nciu & chan, netSubscription & subscr )
+{
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+
+    if ( ! chan.isConnected ( guard ) ) {
+        return;
+    }
+    arrayElementCount nElem = subscr.getCount ( guard );
+    arrayElementCount maxBytes;
+    if ( CA_V49 ( this->minorProtocolVersion ) ) {
+        maxBytes = this->cacRef.largeBufferSizeTCP ();
+    }
+    else {
+        maxBytes = MAX_TCP;
+    }
+    unsigned dataType = subscr.getType ();
+    // data type bounds checked when subscription constructed
+    arrayElementCount maxElem = ( maxBytes - dbr_size[dataType] ) / dbr_value_size[dataType];
+    if ( nElem > maxElem ) {
+        throw cacChannel::msgBodyCacheTooSmall ();
+    }
+    comQueSendMsgMinder minder ( this->sendQue, guard );
+    // nElem boounds checked above
+    this->sendQue.insertRequestHeader ( 
+        CA_PROTO_READ_NOTIFY, 0u, 
+        static_cast < ca_uint16_t > ( dataType ), 
+        static_cast < ca_uint32_t > ( nElem ), 
+        chan.getSID (), subscr.getId (), 
+        CA_V49 ( this->minorProtocolVersion ) );
+    minder.commit ();
+}
+
+void tcpiiu::subscriptionCancelRequest ( epicsGuard < epicsMutex > & guard, // X aCC 431
                              nciu & chan, netSubscription & subscr )
 {
-    comQueSendMsgMinder minder ( this->sendQue, locker );
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+
+    comQueSendMsgMinder minder ( this->sendQue, guard );
     this->sendQue.insertRequestHeader ( 
         CA_PROTO_EVENT_CANCEL, 0u, 
-        static_cast < ca_uint16_t > ( subscr.getType() ), 
-        static_cast < ca_uint16_t > ( subscr.getCount() ), 
+        static_cast < ca_uint16_t > ( subscr.getType () ), 
+        static_cast < ca_uint16_t > ( subscr.getCount ( guard ) ), 
         chan.getSID(), subscr.getId(), 
         CA_V49 ( this->minorProtocolVersion ) );
     minder.commit ();
 }
 
-bool tcpiiu::flush ()
+bool tcpiiu::flush ( epicsGuard < epicsMutex > & guard )
 {
-    if ( this->sendQue.occupiedBytes() == 0 ) {
-        return true;
-    }
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef() );
 
-    bool success = true;
-    unsigned bytesToBeSent = 0u;
-    epicsTime current = epicsTime::getCurrent ();
-    while ( true ) {
-        comBuf * pBuf;
-        {
-            epicsGuard < cacMutex > autoMutex ( this->cacRef.mutexRef() );
-            // set it here with this odd order because we must have 
-            // the lock and we miust have already sent the bytes
-            if ( bytesToBeSent ) {
-                this->unacknowledgedSendBytes += bytesToBeSent;
-            }
-            pBuf = this->sendQue.popNextComBufToSend ();
-            if ( ! pBuf ) {
-                break;
-            }
-            bytesToBeSent = pBuf->occupiedBytes ();
-        }
+    if ( this->sendQue.occupiedBytes() > 0 ) {
+        while ( comBuf * pBuf = this->sendQue.popNextComBufToSend () ) {
+            epicsTime current = epicsTime::getCurrent ();
 
-        success = pBuf->flushToWire ( *this, current );
-        pBuf->~comBuf ();
-        this->comBufMemMgr.release ( pBuf );
-
-        if ( ! success ) {
-            epicsGuard < cacMutex > autoMutex ( this->cacRef.mutexRef() );
-            while ( ( pBuf = this->sendQue.popNextComBufToSend () ) ) {
+            unsigned bytesToBeSent = pBuf->occupiedBytes ();
+            bool success = false;
+            {
+                // no lock while blocking to send
+                epicsGuardRelease < epicsMutex > unguard ( guard );
+                success = pBuf->flushToWire ( *this, current );
                 pBuf->~comBuf ();
                 this->comBufMemMgr.release ( pBuf );
             }
-            break;
-        }
 
-        current = epicsTime::getCurrent ();
+            if ( ! success ) {
+                while ( ( pBuf = this->sendQue.popNextComBufToSend () ) ) {
+                    pBuf->~comBuf ();
+                    this->comBufMemMgr.release ( pBuf );
+                }
+                return false;
+            }
 
-        //
-        // we avoid calling this with the lock applied because
-        // it restarts the recv wd timer, this might block
-        // until a recv wd timer expire callback completes, and 
-        // this callback takes the lock
-        //
-        if ( this->unacknowledgedSendBytes > 
-            this->socketLibrarySendBufferSize ) {
-            this->recvDog.sendBacklogProgressNotify ( current );
+            // set it here with this odd order because we must have 
+            // the lock and we must have already sent the bytes
+            this->unacknowledgedSendBytes += bytesToBeSent;
+            if ( this->unacknowledgedSendBytes > 
+                this->socketLibrarySendBufferSize ) {
+                this->recvDog.sendBacklogProgressNotify ( guard, current );
+            }
         }
     }
+
+    this->earlyFlush = false;
     if ( this->blockingForFlush ) {
         this->flushBlockEvent.signal ();
     }
-    this->earlyFlush = false;
-    return success;
+
+    return true;
 }
 
 // ~tcpiiu() will not return while this->blockingForFlush is greater than zero
 void tcpiiu::blockUntilSendBacklogIsReasonable ( 
-          cacNotify & notify, epicsGuard < cacMutex > & primaryLocker )
+          cacContextNotify & notify, epicsGuard < epicsMutex > & guard )
 {
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+
     assert ( this->blockingForFlush < UINT_MAX );
     this->blockingForFlush++;
     while ( this->sendQue.flushBlockThreshold(0u) && this->state == iiucs_connected ) {
-        epicsGuardRelease < cacMutex > autoRelease ( primaryLocker );
+        epicsGuardRelease < epicsMutex > autoRelease ( guard );
         notify.blockForEventAndEnableCallbacks ( this->flushBlockEvent, 30.0 );
     }
     assert ( this->blockingForFlush > 0u );
@@ -1296,16 +1450,22 @@ void tcpiiu::blockUntilSendBacklogIsReasonable (
     }
 }
 
-void tcpiiu::flushRequestIfAboveEarlyThreshold ( epicsGuard < cacMutex > & )
+void tcpiiu::flushRequestIfAboveEarlyThreshold ( 
+    epicsGuard < epicsMutex > & guard )
 {
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+
     if ( ! this->earlyFlush && this->sendQue.flushEarlyThreshold(0u) ) {
         this->earlyFlush = true;
         this->sendThreadFlushEvent.signal ();
     }
 }
 
-bool tcpiiu::flushBlockThreshold ( epicsGuard < cacMutex > & ) const
+bool tcpiiu::flushBlockThreshold ( 
+    epicsGuard < epicsMutex > & guard ) const
 {
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+
     return this->sendQue.flushBlockThreshold ( 0u );
 }
 
@@ -1340,39 +1500,121 @@ const char * tcpiiu::pHostName () const
 
 void tcpiiu::removeAllChannels ( 
     epicsGuard < callbackMutex > & cbGuard, 
-    epicsGuard < cacMutex > & guard,
-    cacDisconnectChannelPrivate & dcp )
+    epicsGuard < epicsMutex > & guard,
+    udpiiu & discIIU )
 {
-    epicsTime currentTime = epicsTime::getCurrent ();
-    while ( nciu *pChan = this->channelList.first() ) {
-        // if the claim reply has not returned then we will issue
-        // the clear channel request to the server when the claim reply
-        // arrives and there is no matching nciu in the client
-        if ( pChan->connected() ) {
-            this->clearChannelRequest ( guard, pChan->getSID(), pChan->getCID() );
-        }
-        dcp.disconnectChannel ( currentTime, cbGuard, guard, *pChan );
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+
+    while ( nciu * pChan = this->createReqPend.get () ) {
+        discIIU.installDisconnectedChannel ( *pChan );
+        pChan->setServerAddressUnknown ( discIIU, guard );
     }
+
+    while ( nciu * pChan = this->createRespPend.get () ) {
+        this->clearChannelRequest ( guard, pChan->getSID(), pChan->getCID() );
+        discIIU.installDisconnectedChannel ( *pChan );
+        pChan->setServerAddressUnknown ( discIIU, guard );
+    }
+
+    while ( nciu * pChan = this->subscripReqPend.get () ) {
+        pChan->disconnectAllIO ( cbGuard, guard );
+        discIIU.installDisconnectedChannel ( *pChan );
+        pChan->setServerAddressUnknown ( discIIU, guard );
+        pChan->unresponsiveCircuitNotify ( cbGuard, guard );
+    }
+
+    while ( nciu * pChan = this->connectedList.get () ) {
+        pChan->disconnectAllIO ( cbGuard, guard );
+        discIIU.installDisconnectedChannel ( *pChan );
+        pChan->setServerAddressUnknown ( discIIU, guard );
+        pChan->unresponsiveCircuitNotify ( cbGuard, guard );
+    }
+
+    while ( nciu * pChan = this->unrespCircuit.get () ) {
+        pChan->disconnectAllIO ( cbGuard, guard );
+        discIIU.installDisconnectedChannel ( *pChan );
+        pChan->setServerAddressUnknown ( discIIU, guard );
+    }
+
+    this->channelCountTot = 0u;
+
+    this->initiateCleanShutdown ( guard );
 }
 
 void tcpiiu::installChannel ( 
     epicsGuard < callbackMutex > &,
-    epicsGuard < cacMutex > & guard, 
+    epicsGuard < epicsMutex > & guard, 
     nciu & chan, unsigned sidIn, 
     ca_uint16_t typeIn, arrayElementCount countIn )
 {
-    this->channelList.add ( chan );
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+
+    this->createReqPend.add ( chan );
+    this->channelCountTot++;
+    chan.channelNode::listMember = channelNode::cs_createReqPend;
     chan.searchReplySetUp ( *this, sidIn, typeIn, countIn, guard );
-    chan.createChannelRequest ( *this, guard );
-    this->flushRequest ();
+    // The tcp send thread runs at apriority below the udp thread 
+    // so that this will not send small packets
+    this->sendThreadFlushEvent.signal ();
+}
+
+void tcpiiu::nameResolutionMsgEndNotify ()
+{
+    bool wakeupNeeded = false;
+    {
+        epicsGuard < epicsMutex > autoMutex ( this->cacRef.mutexRef() );
+        if ( this->createReqPend.count () ) {
+            wakeupNeeded = true;
+        }
+    }
+    if ( wakeupNeeded ) {
+        this->sendThreadFlushEvent.signal ();
+    }
+}
+
+void tcpiiu::connectNotify ( 
+    epicsGuard < epicsMutex > & guard, nciu & chan )
+{
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+
+    this->createRespPend.remove ( chan );
+    this->subscripReqPend.add ( chan );
+    chan.channelNode::listMember = channelNode::cs_subscripReqPend;
+    // the TCP send thread is awakened by its receive thread whenever the receive thread
+    // is about to block if this->subscripReqPend has items in it
 }
 
 void tcpiiu::uninstallChan ( 
-    epicsGuard < callbackMutex > &, 
-    epicsGuard < cacMutex > & guard, nciu & chan )
+    epicsGuard < epicsMutex > & guard, nciu & chan )
 {
-    this->channelList.remove ( chan );
-    if ( channelList.count() == 0 ) {
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+
+    switch ( chan.channelNode::listMember ) {
+    case channelNode::cs_createReqPend:
+        this->createReqPend.remove ( chan );
+        break;
+    case channelNode::cs_createRespPend:
+        this->createRespPend.remove ( chan );
+        break;
+    case channelNode::cs_subscripReqPend:
+        this->subscripReqPend.remove ( chan );
+        break;
+    case channelNode::cs_connected:
+        this->connectedList.remove ( chan );
+        break;
+    case channelNode::cs_unrespCircuit:
+        this->unrespCircuit.remove ( chan );
+        break;
+    case channelNode::cs_subscripUpdateReqPend:
+        this->subscripUpdateReqPend.remove ( chan );
+        break;
+    default:
+        this->cacRef.printf ( 
+            "cac: attempt to uninstall channel from tcp iiu, but it inst installed there?" );
+    }
+    chan.channelNode::listMember = channelNode::cs_none;
+    this->channelCountTot--;
+    if ( this->channelCountTot == 0 ) {
         this->initiateCleanShutdown ( guard );
     }
 }
@@ -1392,9 +1634,9 @@ int tcpiiu::printf ( const char *pformat, ... )
 }
 
 // this is called virtually
-void tcpiiu::flushRequest ()
+void tcpiiu::flushRequest ( epicsGuard < epicsMutex > & )
 {
-    if ( this->sendQue.occupiedBytes() > 0 ) {
+    if ( this->sendQue.occupiedBytes () > 0 ) {
         this->sendThreadFlushEvent.signal ();
     }
 }
@@ -1442,14 +1684,14 @@ void tcpiiu::blockUntilBytesArePendingInOS ()
             break;
         }
         else if ( status == 0 ) {
-            this->cacRef.disconnectNotify ( *this );
+            this->disconnectNotify ();
             return;
         }
         else {
             int localErrno = SOCKERRNO;
 
             if ( localErrno == SOCK_SHUTDOWN ) {
-                this->cacRef.disconnectNotify ( *this );
+                this->disconnectNotify ();
                 return;
             }
 
@@ -1458,12 +1700,12 @@ void tcpiiu::blockUntilBytesArePendingInOS ()
             }
             
             if ( localErrno == SOCK_ECONNABORTED ) {
-                this->cacRef.disconnectNotify ( *this );
+                this->disconnectNotify ();
                 return;
             }
 
             if ( localErrno == SOCK_ECONNRESET ) {
-                this->cacRef.disconnectNotify ( *this );
+                this->disconnectNotify ();
                 return;
             }
 
@@ -1551,6 +1793,11 @@ void tcpiiu::operator delete ( void * /* pCadaver */ )
         __FILE__, __LINE__ );
 }
 
+// protected by callback lock
+unsigned tcpiiu::channelCount ( epicsGuard < callbackMutex > & )
+{
+    return this->channelCountTot;
+}
 
 
 

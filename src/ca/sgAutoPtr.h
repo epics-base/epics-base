@@ -30,7 +30,7 @@
 template < class T >
 class sgAutoPtr {
 public:
-    sgAutoPtr ( struct CASG & );
+    sgAutoPtr ( epicsGuard < epicsMutex > &, struct CASG & );
     ~sgAutoPtr ();
     sgAutoPtr < T > & operator = ( T * );
     T * operator -> ();
@@ -40,25 +40,27 @@ public:
 private:
     T * pNotify;
     struct CASG & sg;
+    epicsGuard < epicsMutex > & guard;
 };
 
 template < class T >
-inline sgAutoPtr < T > :: sgAutoPtr ( struct CASG & sgIn  ) : 
-    pNotify ( 0 ), sg ( sgIn )
+inline sgAutoPtr < T > :: sgAutoPtr ( 
+        epicsGuard < epicsMutex > & guardIn, struct CASG & sgIn  ) : 
+    pNotify ( 0 ), sg ( sgIn ), guard ( guardIn )
 {
 }
 
 template < class T >
 inline sgAutoPtr < T > :: ~sgAutoPtr () 
 {
-    this->sg.destroyPendingIO ( this->pNotify );
+    this->sg.destroyPendingIO ( this->guard, this->pNotify );
 }
 
 template < class T >
 inline sgAutoPtr < T > & sgAutoPtr < T > :: operator = ( T * pNotifyIn )
 {
     if ( this->pNotify ) {
-        this->sg.destroyPendingIO ( this->pNotify );
+        this->sg.destroyPendingIO ( this->guard, this->pNotify );
     }
     this->pNotify = pNotifyIn;
     return *this;

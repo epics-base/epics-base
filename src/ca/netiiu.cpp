@@ -42,35 +42,41 @@ bool netiiu::ca_v41_ok () const
     return false;
 }
 
-void netiiu::writeRequest ( epicsGuard < cacMutex > &, nciu &, 
-                           unsigned, unsigned, const void * )
+void netiiu::writeRequest ( epicsGuard < epicsMutex > &, nciu &, 
+                           unsigned, arrayElementCount, const void * )
 {
     throw cacChannel::notConnected();
 }
 
-void netiiu::writeNotifyRequest ( epicsGuard < cacMutex > &, 
-               nciu &, netWriteNotifyIO &, unsigned, unsigned, const void * )
+void netiiu::writeNotifyRequest ( epicsGuard < epicsMutex > &, 
+    nciu &, netWriteNotifyIO &, unsigned, arrayElementCount, const void * )
 {
     throw cacChannel::notConnected();
 }
 
-void netiiu::readNotifyRequest ( epicsGuard < cacMutex > &, 
-                                nciu &, netReadNotifyIO &, unsigned, unsigned )
+void netiiu::readNotifyRequest ( epicsGuard < epicsMutex > &, 
+    nciu &, netReadNotifyIO &, unsigned, arrayElementCount )
 {
     throw cacChannel::notConnected();
 }
 
-void netiiu::clearChannelRequest ( epicsGuard < cacMutex > &, ca_uint32_t, ca_uint32_t )
+void netiiu::clearChannelRequest ( 
+    epicsGuard < epicsMutex > &, ca_uint32_t, ca_uint32_t )
 {
 }
 
-void netiiu::subscriptionRequest ( epicsGuard < cacMutex > &, 
-                                  nciu &, netSubscription & )
+void netiiu::subscriptionRequest ( 
+    epicsGuard < epicsMutex > &, nciu &, netSubscription & )
 {
 }
 
-void netiiu::subscriptionCancelRequest ( epicsGuard < cacMutex > &, 
-                                        nciu &, netSubscription & )
+void netiiu::subscriptionCancelRequest ( 
+    epicsGuard < epicsMutex > &, nciu &, netSubscription & )
+{
+}
+
+void netiiu::subscriptionUpdateRequest ( 
+    epicsGuard < epicsMutex > &, nciu &, netSubscription & )
 {
 }
 
@@ -94,21 +100,21 @@ osiSockAddr netiiu::getNetworkAddress () const
     return addr;
 }
 
-void netiiu::flushRequest ()
+void netiiu::flushRequest ( epicsGuard < epicsMutex > & )
 {
 }
 
-bool netiiu::flushBlockThreshold ( epicsGuard < cacMutex > & ) const
+bool netiiu::flushBlockThreshold ( epicsGuard < epicsMutex > & ) const
 {
     return false;
 }
 
-void netiiu::flushRequestIfAboveEarlyThreshold ( epicsGuard < cacMutex > & )
+void netiiu::flushRequestIfAboveEarlyThreshold ( epicsGuard < epicsMutex > & )
 {
 }
 
 void netiiu::blockUntilSendBacklogIsReasonable 
-    ( cacNotify &, epicsGuard < cacMutex > & )
+    ( cacContextNotify &, epicsGuard < epicsMutex > & )
 {
 }
 
@@ -117,8 +123,7 @@ void netiiu::requestRecvProcessPostponedFlush ()
     return;
 }
 
-void netiiu::uninstallChan ( 
-    epicsGuard < callbackMutex > &, epicsGuard < cacMutex > &, nciu & )
+void netiiu::uninstallChan ( epicsGuard < epicsMutex > &, nciu & )
 {
     throw cacChannel::notConnected();
 }

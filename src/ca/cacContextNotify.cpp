@@ -27,15 +27,15 @@
 #include "cacIO.h"
 #undef epicsExportSharedSymbols
 
-cacNotify::~cacNotify ()
+cacContextNotify::~cacContextNotify ()
 {
 }
 
-void cacNotify::callbackLock () 
+void cacContextNotify::callbackLock () 
 {
 }
 
-void cacNotify::callbackUnlock () 
+void cacContextNotify::callbackUnlock () 
 {
 }
 

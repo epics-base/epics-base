@@ -22,24 +22,14 @@
 #include "syncGroup.h"
 #include "oldAccess.h"
 
-syncGroupNotify::syncGroupNotify ( CASG &sgIn, chid chanIn ) :
-    chan ( chanIn ), sg ( sgIn ), 
-        magic ( CASG_MAGIC ), id ( 0u ), idIsValid ( false )
+syncGroupNotify::syncGroupNotify () 
 {
 }
 
 syncGroupNotify::~syncGroupNotify ()
 {
-    if ( this->idIsValid ) {
-        this->chan->ioCancel ( this->id );
-    }
 }
 
-void syncGroupNotify::show ( unsigned /* level */ ) const
-{
-    ::printf ( "pending sg op: chan=%s magic=%u sg=%p\n",
-         this->chan->pName(), this->magic, 
-         static_cast <void *> ( &this->sg ) );
-}
+
 
 

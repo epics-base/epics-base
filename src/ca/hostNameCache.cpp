@@ -27,9 +27,6 @@
 
 #include <string.h>
 
-#if 0
-#include "iocinf.h"
-#endif
 #include "hostNameCache.h"
 #include "epicsGuard.h"
 

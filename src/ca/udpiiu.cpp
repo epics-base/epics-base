@@ -36,8 +36,9 @@
 #include "iocinf.h"
 #include "inetAddrID.h"
 #include "cac.h"
-#include "repeaterSubscribeTimer.h"
 #include "searchTimer.h"
+#include "repeaterSubscribeTimer.h"
+#include "disconnectGovernorTimer.h"
 
 // UDP protocol dispatch table
 const udpiiu::pProtoStubUDP udpiiu::udpJumpTableCAC [] = 
@@ -69,8 +70,9 @@ udpiiu::udpiiu ( epicsTimerQueueActive & timerQueue, callbackMutex & cbMutex, ca
     recvThread ( *this, cbMutex,
         "CAC-UDP", 
         epicsThreadGetStackSize ( epicsThreadStackMedium ),
-        cac::lowestPriorityLevelAbove 
-            ( cac.getInitializingThreadsPriority () ) ),
+        cac::lowestPriorityLevelAbove (
+            cac::lowestPriorityLevelAbove (
+                cac.getInitializingThreadsPriority () ) ) ),
     rtteMean ( 5.0e-3 ), // seconds
     cacRef ( cac ),
     nBytesInXmitBuf ( 0 ),
@@ -78,6 +80,7 @@ udpiiu::udpiiu ( epicsTimerQueueActive & timerQueue, callbackMutex & cbMutex, ca
     rtteSequenceNumber ( 0 ),
     lastReceivedSeqNo ( 0 ),
     sock ( 0 ),
+    pGovTmr ( new disconnectGovernorTimer ( *this, timerQueue ) ),
     // The udpiiu and the search timer share the same lock because
     // this is much more efficent with recursive locks. Also, access
     // to the udp's netiiu base list is protected.
@@ -203,7 +206,14 @@ udpiiu::~udpiiu ()
 
     // no need to own CAC lock here because the CA context 
     // is being decomissioned
-    tsDLIter < nciu > chan = this->channelList.firstIter ();
+    tsDLIter < nciu > chan = this->disconnGovernor.firstIter ();
+    while ( chan.valid () ) {
+        tsDLIter < nciu > next = chan;
+        next++;
+        chan->serviceShutdownNotify ();
+        chan = next;
+    }
+    chan = this->serverAddrRes.firstIter ();
     while ( chan.valid () ) {
         tsDLIter < nciu > next = chan;
         next++;
@@ -226,6 +236,11 @@ udpiiu::~udpiiu ()
 
 void udpiiu::shutdown ()
 {
+    // stop all of the timers
+    this->pGovTmr->shutdown ();
+    this->pSearchTmr->shutdown ();
+    this->pRepeaterSubscribeTmr->shutdown ();
+
     if ( ! this->recvThread.exitWait ( 0.0 ) ) {
         unsigned tries = 0u;
 
@@ -353,8 +368,8 @@ void udpiiu::repeaterRegistrationMessage ( unsigned attemptNumber )
 void epicsShareAPI caRepeaterRegistrationMessage ( 
            SOCKET sock, unsigned repeaterPort, unsigned attemptNumber )
 {
-    caHdr msg;
     osiSockAddr saddr;
+    caHdr msg;
     int status;
     int len;
 
@@ -943,11 +958,18 @@ void udpiiu::show ( unsigned level ) const
         ::printf ("\tshut down command bool %u\n", this->shutdownCmd );
         ::printf ( "\trecv thread exit signal:\n" );
         this->recvThread.show ( level - 2u );
-        ::printf ( "search message timer:\n" );
-        this->pSearchTmr->show ( level - 2u );
         ::printf ( "repeater subscribee timer:\n" );
         this->pRepeaterSubscribeTmr->show ( level - 2u );
-        tsDLIterConst < nciu > pChan = this->channelList.firstIter ();
+        ::printf ( "disconnect governor subscribee timer:\n" );
+        this->pGovTmr->show ( level - 2u );
+        tsDLIterConst < nciu > pChan = this->disconnGovernor.firstIter ();
+	    while ( pChan.valid () ) {
+            pChan->show ( level - 2u );
+            pChan++;
+        }
+        ::printf ( "search message timer:\n" );
+        this->pSearchTmr->show ( level - 2u );
+        pChan = this->serverAddrRes.firstIter ();
 	    while ( pChan.valid () ) {
             pChan->show ( level - 2u );
             pChan++;
@@ -990,7 +1012,7 @@ void udpiiu::beaconAnomalyNotify ( const epicsTime & currentTime )
 {
     epicsGuard <udpMutex> guard ( this->mutex );
 
-    tsDLIter < nciu > chan = this->channelList.firstIter ();
+    tsDLIter < nciu > chan = this->serverAddrRes.firstIter ();
     while ( chan.valid () ) {
         chan->beaconAnomalyNotify ();
         chan++;
@@ -1022,13 +1044,13 @@ bool udpiiu::searchMsg ( epicsGuard < udpMutex > & /* guard */,
 {
     bool success;
 
-    if ( nciu *pChan = this->channelList.get () ) {
+    if ( nciu *pChan = this->serverAddrRes.get () ) {
         success = pChan->searchMsg ( *this, retryNoForThisChannel );
         if ( success ) {
-            this->channelList.add ( *pChan );
+            this->serverAddrRes.add ( *pChan );
         }
         else {
-            this->channelList.push ( *pChan );
+            this->serverAddrRes.push ( *pChan );
         }
     }
     else {
@@ -1038,23 +1060,55 @@ bool udpiiu::searchMsg ( epicsGuard < udpMutex > & /* guard */,
     return success;
 }
 
-void udpiiu::installChannel ( const epicsTime & currentTime, 
-                     nciu & chan, unsigned minRetryNo )
+void udpiiu::installNewChannel ( const epicsTime & currentTime, nciu & chan )
 {
     bool firstChannel = false;
-
     epicsGuard < udpMutex > guard ( this->mutex );
-    // add it to the front of the list so that 
+    if ( this->serverAddrRes.count() == 0 ) {
+        firstChannel = true;
+    }
+    // push them to the front of the list so that 
     // a search request is sent immediately, and 
     // so that the new channel's retry count is 
     // seen when calculating the minimum retry 
     // which is used to compute the search interval
-    this->channelList.push ( chan );
-    if ( this->channelList.count() == 1 ) {
-        firstChannel = true;
-    }
+    this->serverAddrRes.push ( chan );
+    chan.channelNode::listMember = 
+        channelNode::cs_serverAddrResPend;
+
     this->pSearchTmr->newChannelNotify ( guard, currentTime, 
-        firstChannel, minRetryNo );
+        firstChannel, 0 );
+}
+
+void udpiiu::installDisconnectedChannel ( nciu & chan )
+{
+    epicsGuard < udpMutex > guard ( this->mutex );
+    this->disconnGovernor.add ( chan );
+    chan.channelNode::listMember = 
+        channelNode::cs_disconnGov;
+}
+
+void udpiiu::govExpireNotify ( const epicsTime & currentTime )
+{
+    epicsGuard < udpMutex > guard ( this->mutex );
+    if ( this->disconnGovernor.count () ) {
+        bool firstChannel = false;
+        if ( this->serverAddrRes.count() == 0 ) {
+            firstChannel = true;
+        }
+        // push them to the front of the list so that 
+        // a search request is sent immediately, and 
+        // so that the new channel's retry count is 
+        // seen when calculating the minimum retry 
+        // which is used to compute the search interval
+        while ( nciu * pChan = this->disconnGovernor.get () ) {
+            this->serverAddrRes.push ( *pChan );
+            pChan->channelNode::listMember = 
+                channelNode::cs_serverAddrResPend;
+        }
+        this->pSearchTmr->newChannelNotify ( guard, currentTime, 
+            firstChannel, disconnectRetrySetpoint );
+    }
 }
 
 int udpiiu::printf ( const char *pformat, ... )
@@ -1071,12 +1125,23 @@ int udpiiu::printf ( const char *pformat, ... )
     return status;
 }
 
-void udpiiu::uninstallChan ( 
-    epicsGuard < callbackMutex > &,
-    epicsGuard < cacMutex > &, nciu & chan )
+void udpiiu::uninstallChan (
+    epicsGuard < epicsMutex > & guardIn, nciu & chan )
 {
+    guardIn.assertIdenticalMutex ( this->cacRef.mutexRef () );
+
     epicsGuard < udpMutex > guard ( this->mutex );
-    this->channelList.remove ( chan );
+    if ( chan.channelNode::listMember == channelNode::cs_disconnGov ) {
+        this->disconnGovernor.remove ( chan );
+    }
+    else if ( chan.channelNode::listMember == channelNode::cs_serverAddrResPend ) {
+        this->serverAddrRes.remove ( chan );
+    }
+    else {
+        this->cacRef.printf ( 
+            "cac: attempt to uninstall channel from udp iiu, but it inst installed there?" );
+    }
+    chan.channelNode::listMember = channelNode::cs_none;
 }
 
 void udpiiu::hostName ( char *pBuf, unsigned bufLength ) const
@@ -1099,60 +1164,74 @@ bool udpiiu::ca_v41_ok () const
     return netiiu::ca_v41_ok ();
 }
 
-void udpiiu::writeRequest ( epicsGuard < cacMutex > & guard, nciu & chan, unsigned type, 
-                unsigned nElem, const void * pValue )
+void udpiiu::writeRequest ( epicsGuard < epicsMutex > & guard, 
+    nciu & chan, unsigned type, arrayElementCount nElem, const void * pValue )
 {
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
     netiiu::writeRequest ( guard, chan, type, nElem, pValue );
 }
 
-void udpiiu::writeNotifyRequest ( epicsGuard < cacMutex > & guard, nciu & chan, 
-                netWriteNotifyIO & io, unsigned type, unsigned nElem, const void *pValue )
+void udpiiu::writeNotifyRequest ( epicsGuard < epicsMutex > & guard, nciu & chan, 
+                netWriteNotifyIO & io, unsigned type, arrayElementCount nElem, const void *pValue )
 {
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
     netiiu::writeNotifyRequest ( guard, chan, io, type, nElem, pValue );
 }
 
-void udpiiu::readNotifyRequest ( epicsGuard < cacMutex > & guard, nciu & chan, 
-                netReadNotifyIO & io, unsigned type, unsigned nElem )
+void udpiiu::readNotifyRequest ( epicsGuard < epicsMutex > & guard, nciu & chan, 
+                netReadNotifyIO & io, unsigned type, arrayElementCount nElem )
 {
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
     netiiu::readNotifyRequest ( guard, chan, io, type, nElem );
 }
 
-void udpiiu::clearChannelRequest ( epicsGuard < cacMutex > & guard, 
+void udpiiu::clearChannelRequest ( epicsGuard < epicsMutex > & guard, 
                 ca_uint32_t sid, ca_uint32_t cid )
 {
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
     netiiu::clearChannelRequest ( guard, sid, cid );
 }
 
-void udpiiu::subscriptionRequest ( epicsGuard < cacMutex > & guard, nciu & chan, 
+void udpiiu::subscriptionRequest ( epicsGuard < epicsMutex > & guard, nciu & chan, 
                 netSubscription & subscr )
 {
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
     netiiu::subscriptionRequest ( guard, chan, subscr );
 }
 
-void udpiiu::subscriptionCancelRequest ( epicsGuard < cacMutex > & guard, 
+void udpiiu::subscriptionUpdateRequest ( epicsGuard < epicsMutex > &, nciu &, 
+                netSubscription & )
+{
+}
+
+void udpiiu::subscriptionCancelRequest ( epicsGuard < epicsMutex > & guard, 
                 nciu & chan, netSubscription & subscr )
 {
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
     netiiu::subscriptionCancelRequest ( guard, chan, subscr );
 }
 
-void udpiiu::flushRequest ()
+void udpiiu::flushRequest ( epicsGuard < epicsMutex > & guard )
 {
-    netiiu::flushRequest ();
+    netiiu::flushRequest ( guard );
 }
 
-bool udpiiu::flushBlockThreshold ( epicsGuard < cacMutex > & guard ) const
+bool udpiiu::flushBlockThreshold ( epicsGuard < epicsMutex > & guard ) const
 {
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
     return netiiu::flushBlockThreshold ( guard );
 }
 
-void udpiiu::flushRequestIfAboveEarlyThreshold ( epicsGuard < cacMutex > & guard )
+void udpiiu::flushRequestIfAboveEarlyThreshold ( epicsGuard < epicsMutex > & guard )
 {
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
     netiiu::flushRequestIfAboveEarlyThreshold ( guard );
 }
 
 void udpiiu::blockUntilSendBacklogIsReasonable 
-    ( cacNotify & notify, epicsGuard < cacMutex > & guard )
+    ( cacContextNotify & notify, epicsGuard < epicsMutex > & guard )
 {
+    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
     netiiu::blockUntilSendBacklogIsReasonable ( notify, guard );
 }
 

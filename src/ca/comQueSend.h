@@ -41,7 +41,7 @@ template < class T > class epicsGuard;
 class comQueSendMsgMinder {
 public:
     comQueSendMsgMinder ( 
-        class comQueSend &, epicsGuard < cacMutex > & );
+        class comQueSend &, epicsGuard < epicsMutex > & );
     ~comQueSendMsgMinder ();
     void commit ();
 private:
@@ -69,7 +69,7 @@ public:
         ca_uint16_t dataType, ca_uint32_t nElem, ca_uint32_t cid, 
         ca_uint32_t requestDependent, bool v49Ok );
     void insertRequestWithPayLoad (
-        ca_uint16_t request, unsigned dataType, ca_uint32_t nElem, 
+        ca_uint16_t request, unsigned dataType, arrayElementCount nElem, 
         ca_uint32_t cid, ca_uint32_t requestDependent, 
         const void * pPayload, bool v49Ok );
     comBuf * popNextComBufToSend ();
@@ -157,7 +157,7 @@ private:
 extern const char cacNillBytes[];
 
 inline comQueSendMsgMinder::comQueSendMsgMinder ( 
-    class comQueSend & sendQueIn, epicsGuard < cacMutex > & ) : 
+    class comQueSend & sendQueIn, epicsGuard < epicsMutex > & ) : 
         pSendQue ( & sendQueIn )
 {
     sendQueIn.beginMsg ();

@@ -28,8 +28,10 @@
 #include "nciu.h"
 #include "cac.h"
 
-netReadNotifyIO::netReadNotifyIO ( nciu & chanIn, cacReadNotify & notify ) :
-    notify ( notify ), chan ( chanIn )
+netReadNotifyIO::netReadNotifyIO ( 
+    privateInterfaceForIO & ioComplIntfIn, 
+        cacReadNotify & notify ) :
+    notify ( notify ), privateChanForIO ( ioComplIntfIn )
 {
 }
 
@@ -43,42 +45,66 @@ void netReadNotifyIO::show ( unsigned /* level */ ) const
         static_cast < const void * > ( this ) );
 }
 
-void netReadNotifyIO::destroy ( cacRecycle & recycle )
+void netReadNotifyIO::destroy ( 
+    epicsGuard < epicsMutex > & guard, cacRecycle & recycle )
 {
-    this->~netReadNotifyIO();
-    recycle.recycleReadNotifyIO ( *this );
+    this->~netReadNotifyIO ();
+    recycle.recycleReadNotifyIO ( guard, *this );
 }
 
-void netReadNotifyIO::completion ()
+void netReadNotifyIO::completion ( 
+    epicsGuard < epicsMutex > & guard, 
+    cacRecycle & recycle, unsigned type, 
+    arrayElementCount count, const void * pData )
 {
-    this->chan.getClient().printf ( "Read response w/o data ?\n" );
+    //guard.assertIdenticalMutex ( this->mutex );
+    this->notify.completion ( guard, type, count, pData );
+    this->privateChanForIO.ioCompletionNotify ( guard, *this );
+    this->~netReadNotifyIO ();
+    recycle.recycleReadNotifyIO ( guard, *this );
 }
 
-void netReadNotifyIO::exception ( int status, const char *pContext )
+void netReadNotifyIO::completion (
+    epicsGuard < epicsMutex > & guard,
+    cacRecycle & recycle )
 {
-    this->notify.exception ( status, pContext, UINT_MAX, 0u );
+    //guard.assertIdenticalMutex ( this->mutex );
+    //this->chan.getClient().printf ( "Read response w/o data ?\n" );
+    this->privateChanForIO.ioCompletionNotify ( guard, *this );
+    this->~netReadNotifyIO ();
+    recycle.recycleReadNotifyIO ( guard, *this );
 }
 
-void netReadNotifyIO::exception ( int status, const char *pContext, 
-                                 unsigned type, arrayElementCount count )
+void netReadNotifyIO::exception ( 
+    epicsGuard < epicsMutex > & guard, 
+    cacRecycle & recycle,
+    int status, const char *pContext )
 {
-    this->notify.exception ( status, pContext, type, count );
+    //guard.assertIdenticalMutex ( this->mutex );
+    this->notify.exception ( 
+        guard, status, pContext, UINT_MAX, 0u );
+    this->privateChanForIO.ioCompletionNotify ( guard, *this );
+    this->~netReadNotifyIO ();
+    recycle.recycleReadNotifyIO ( guard, *this );
 }
 
-void netReadNotifyIO::completion ( unsigned type, 
-    arrayElementCount count, const void *pData )
+void netReadNotifyIO::exception ( 
+    epicsGuard < epicsMutex > & guard, 
+    cacRecycle & recycle,
+    int status, const char *pContext, 
+    unsigned type, arrayElementCount count )
 {
-    this->notify.completion ( type, count, pData );
+    //guard.assertIdenticalMutex ( this->mutex )
+    this->notify.exception ( 
+        guard, status, pContext, type, count );
+    this->privateChanForIO.ioCompletionNotify ( guard, *this );
+    this->~netReadNotifyIO ();
+    recycle.recycleReadNotifyIO ( guard, *this );
 }
 
 class netSubscription * netReadNotifyIO::isSubscription ()
 {
     return 0;
-}
-
-nciu & netReadNotifyIO::channel () const
-{
-    return this->chan;
 }
 
 void * netReadNotifyIO::operator new ( size_t ) // X aCC 361

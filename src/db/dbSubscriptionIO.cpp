@@ -41,37 +41,57 @@
 #include "dbChannelIO.h"
 #include "db_access_routines.h"
 
-dbSubscriptionIO::dbSubscriptionIO ( dbServiceIO & /* serviceIO */, dbChannelIO & chanIO, 
-    dbAddr & addr, cacStateNotify & notifyIn, unsigned typeIn, unsigned long countIn, 
-    unsigned maskIn, dbEventCtx ctx ) :
-    notify ( notifyIn ), chan ( chanIO ), es ( 0 ), 
-        type ( typeIn ), count ( countIn ), id ( 0u )
+dbSubscriptionIO::dbSubscriptionIO ( 
+    epicsGuard < epicsMutex > & guard, epicsMutex & mutexIn,
+    dbContext &, dbChannelIO & chanIO, 
+    dbAddr & addr, cacStateNotify & notifyIn, unsigned typeIn, 
+    unsigned long countIn, unsigned maskIn, dbEventCtx ctx ) :
+    mutex ( mutexIn ), count ( countIn ), notify ( notifyIn ), 
+    chan ( chanIO ), es ( 0 ), type ( typeIn ), id ( 0u )
 {
-    this->es = db_add_event ( ctx, & addr,
-        dbSubscriptionEventCallback, (void *) this, maskIn );
-    if ( this->es == 0 ) {
-        throw std::bad_alloc();
+    guard.assertIdenticalMutex ( this->mutex );
+    {
+        epicsGuardRelease < epicsMutex > unguard ( guard );
+        this->es = db_add_event ( ctx, & addr,
+            dbSubscriptionEventCallback, (void *) this, maskIn );
+        if ( this->es == 0 ) {
+            throw std::bad_alloc();
+        }
+        db_post_single_event ( this->es );
+        db_event_enable ( this->es );
     }
-    db_post_single_event ( this->es );
-    db_event_enable ( this->es );
 }
 
-dbSubscriptionIO::~dbSubscriptionIO ()
+dbSubscriptionIO::~dbSubscriptionIO () 
 {
-    this->unsubscribe ();
 }
 
-void dbSubscriptionIO::unsubscribe ()
+void dbSubscriptionIO::destructor ( epicsGuard < epicsMutex > & guard )
 {
+    guard.assertIdenticalMutex ( this->mutex );
+    this->unsubscribe ( guard );
+    this->~dbSubscriptionIO ();
+}
+
+void dbSubscriptionIO::unsubscribe ( 
+    epicsGuard < epicsMutex > & guard )
+{
+    guard.assertIdenticalMutex ( this->mutex );
     if ( this->es ) {
-        db_cancel_event ( this->es );
+        dbEventSubscription tmp = this->es;
         this->es = 0;
+        {
+            epicsGuardRelease < epicsMutex > unguard ( guard );
+            db_cancel_event ( tmp );
+        }
     }
 }
 
-void dbSubscriptionIO::channelDeleteException ()
+void dbSubscriptionIO::channelDeleteException ( 
+    epicsGuard < epicsMutex > & guard )
 {
-    this->notify.exception ( ECA_CHANDESTROY, 
+    guard.assertIdenticalMutex ( this->mutex );
+    this->notify.exception ( guard, ECA_CHANDESTROY, 
         this->chan.pName(), this->type, this->count );
 }
 
@@ -94,14 +114,14 @@ void dbSubscriptionIO::operator delete ( void * )
 }
 
 void * dbSubscriptionIO::operator new ( size_t size, 
-        tsFreeList < dbSubscriptionIO > & freeList )
+        tsFreeList < dbSubscriptionIO, 256, epicsMutexNOOP > & freeList )
 {
     return freeList.allocate ( size );
 }
 
 #ifdef CXX_PLACEMENT_DELETE
 void dbSubscriptionIO::operator delete ( void * pCadaver, 
-        tsFreeList < dbSubscriptionIO > & freeList )
+        tsFreeList < dbSubscriptionIO, 256, epicsMutexNOOP > & freeList )
 {
     freeList.release ( pCadaver );
 }
@@ -110,12 +130,21 @@ void dbSubscriptionIO::operator delete ( void * pCadaver,
 extern "C" void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr * /* paddr */,
 	int /* eventsRemaining */, struct db_field_log *pfl )
 {
-    dbSubscriptionIO *pIO = static_cast < dbSubscriptionIO * > ( pPrivate );
+    dbSubscriptionIO * pIO = static_cast < dbSubscriptionIO * > ( pPrivate );
     pIO->chan.callStateNotify ( pIO->type, pIO->count, pfl, pIO->notify );
 }
 
 void dbSubscriptionIO::show ( unsigned level ) const
 {
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    this->show ( guard, level );
+}
+
+void dbSubscriptionIO::show ( 
+    epicsGuard < epicsMutex > & guard, unsigned level ) const
+{
+    guard.assertIdenticalMutex ( this->mutex );
+
     printf ( "Data base subscription IO at %p\n", 
         static_cast <const void *> ( this ) );
     if ( level > 0u ) {

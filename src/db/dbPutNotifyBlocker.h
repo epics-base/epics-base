@@ -41,17 +41,18 @@
 
 class dbPutNotifyBlocker : public dbBaseIO {
 public:
-    dbPutNotifyBlocker ();
-    virtual ~dbPutNotifyBlocker ();
-    void initiatePutNotify ( epicsGuard < epicsMutex > & locker, 
-            cacWriteNotify & notify, struct dbAddr & addr, 
+    dbPutNotifyBlocker ( epicsMutex & );
+    void destructor ( epicsGuard < epicsMutex > & );
+    void initiatePutNotify ( epicsGuard < epicsMutex > &, 
+            cacWriteNotify &, struct dbAddr &, 
             unsigned type, unsigned long count, const void * pValue );
-    void cancel ();
+    void cancel ( epicsGuard < epicsMutex > & );
+    void show ( epicsGuard < epicsMutex > &, unsigned level ) const;
     void show ( unsigned level ) const;
     void * operator new ( size_t size, 
-        tsFreeList < dbPutNotifyBlocker > & );
+        tsFreeList < dbPutNotifyBlocker, 64, epicsMutexNOOP > & );
     epicsPlacementDeleteOperator (( void *, 
-        tsFreeList < dbPutNotifyBlocker > & ))
+        tsFreeList < dbPutNotifyBlocker, 64, epicsMutexNOOP > & ))
 private:
     putNotify pn;
     //
@@ -71,13 +72,16 @@ private:
         dbr_double_t doubleval;
     } dbrScalarValue;
     epicsEvent block;
+    epicsMutex & mutex;
     cacWriteNotify * pNotify;
     unsigned long maxValueSize;
     dbSubscriptionIO * isSubscription ();
-    void expandValueBuf ( unsigned long newSize );
-    friend void putNotifyCompletion ( putNotify *ppn );
+    void expandValueBuf ( 
+        epicsGuard < epicsMutex > &, unsigned long newSize );
+    friend void putNotifyCompletion ( putNotify * ppn );
 	dbPutNotifyBlocker ( const dbPutNotifyBlocker & );
 	dbPutNotifyBlocker & operator = ( const dbPutNotifyBlocker & );
+    virtual ~dbPutNotifyBlocker ();
     void * operator new ( size_t size );
     void operator delete ( void * );
 };

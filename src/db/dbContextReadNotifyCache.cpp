@@ -24,18 +24,21 @@
 #include "db_access_routines.h"
 #include "dbCAC.h"
 
-dbServiceIOReadNotifyCache::dbServiceIOReadNotifyCache () :
-	readNotifyCacheSize ( 0 ), pReadNotifyCache ( 0 )
+dbContextReadNotifyCache::dbContextReadNotifyCache ( epicsMutex & mutexIn ) :
+    readNotifyCacheSize ( 0 ), mutex ( mutexIn ), pReadNotifyCache ( 0 )
 {
 }
 
-dbServiceIOReadNotifyCache::~dbServiceIOReadNotifyCache ()
+dbContextReadNotifyCache::~dbContextReadNotifyCache ()
 {
 	delete this->pReadNotifyCache;
 }
 
-void dbServiceIOReadNotifyCache::show ( unsigned level ) const
+void dbContextReadNotifyCache::show ( 
+    epicsGuard < epicsMutex > & guard, unsigned level ) const
 {
+    guard.assertIdenticalMutex ( this->mutex );
+
     if ( level > 0 ) {
         printf ( "\tget call back cache location %p, and its size %lu\n", 
             static_cast <void *> ( this->pReadNotifyCache ), 
@@ -44,23 +47,24 @@ void dbServiceIOReadNotifyCache::show ( unsigned level ) const
 }
 
 // extra effort taken here to not hold the lock when caslling the callback
-void dbServiceIOReadNotifyCache::callReadNotify ( struct dbAddr &addr, 
-	unsigned type, unsigned long count, cacReadNotify &notify )
+void dbContextReadNotifyCache::callReadNotify ( 
+    epicsGuard < epicsMutex > & guard, struct dbAddr & addr, 
+	unsigned type, unsigned long count, cacReadNotify & notify )
 {
-    epicsGuard < epicsMutex > locker ( this->mutex );
+    guard.assertIdenticalMutex ( this->mutex );
 
     unsigned long size = dbr_size_n ( type, count );
 
     if ( type > INT_MAX ) {
-        notify.exception ( ECA_BADTYPE, 
+        notify.exception ( guard, ECA_BADTYPE, 
             "type code out of range (high side)", 
             type, count );
         return;
     }
 
-    if ( count > static_cast<unsigned>(INT_MAX) || 
-		count > static_cast<unsigned>(addr.no_elements) ) {
-        notify.exception ( ECA_BADCOUNT, 
+    if ( count > static_cast < unsigned > ( INT_MAX ) || 
+		count > static_cast < unsigned > ( addr.no_elements ) ) {
+        notify.exception ( guard, ECA_BADCOUNT, 
             "element count out of range (high side)",
             type, count);
         return;
@@ -69,7 +73,7 @@ void dbServiceIOReadNotifyCache::callReadNotify ( struct dbAddr &addr,
     if ( this->readNotifyCacheSize < size) {
         char * pTmp = new char [size];
         if ( ! pTmp ) {
-            notify.exception ( ECA_ALLOCMEM, 
+            notify.exception ( guard, ECA_ALLOCMEM, 
                 "unable to allocate callback cache",
                 type, count );
             return;
@@ -78,14 +82,18 @@ void dbServiceIOReadNotifyCache::callReadNotify ( struct dbAddr &addr,
         this->pReadNotifyCache = pTmp;
         this->readNotifyCacheSize = size;
     }
-    int status = db_get_field ( &addr, static_cast <int> ( type ), 
+    int status;
+    {
+        epicsGuardRelease < epicsMutex > unguard ( guard );
+        status = db_get_field ( &addr, static_cast <int> ( type ), 
                     this->pReadNotifyCache, static_cast <int> ( count ), 0 );
+    }
     if ( status ) {
-        notify.exception ( ECA_GETFAIL, 
+        notify.exception ( guard, ECA_GETFAIL, 
             "db_get_field() completed unsuccessfuly",
             type, count);
     }
     else { 
-        notify.completion ( type, count, this->pReadNotifyCache );
+        notify.completion ( guard, type, count, this->pReadNotifyCache );
     }
 }

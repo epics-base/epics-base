@@ -25,43 +25,50 @@
 #include "syncGroup.h"
 #include "oldAccess.h"
 
-syncGroupReadNotify::syncGroupReadNotify ( CASG &sgIn, chid pChan, void *pValueIn ) :
-    syncGroupNotify ( sgIn, pChan ), pValue ( pValueIn )
+syncGroupReadNotify::syncGroupReadNotify ( 
+    CASG & sgIn, chid pChan, void * pValueIn ) :
+    chan ( pChan ), sg ( sgIn ), magic ( CASG_MAGIC ), 
+        id ( 0u ), idIsValid ( false ), pValue ( pValueIn )
 {
 }
 
-void syncGroupReadNotify::begin ( unsigned type, arrayElementCount count )
+void syncGroupReadNotify::begin ( 
+    epicsGuard < epicsMutex > & guard, 
+    unsigned type, arrayElementCount count )
 {
-    this->chan->read ( type, count, *this, &this->id );
+    this->chan->read ( guard, type, count, *this, &this->id );
     this->idIsValid = true;
 }
 
 syncGroupReadNotify * syncGroupReadNotify::factory ( 
-    tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > &freeList, 
-    struct CASG &sg, chid chan, void *pValueIn )
+    tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > & freeList, 
+    struct CASG & sg, chid chan, void * pValueIn )
 {
     return new ( freeList ) // X aCC 930
         syncGroupReadNotify ( sg, chan, pValueIn );
 }
 
-void syncGroupReadNotify::destroy ( casgRecycle &recycle )
+void syncGroupReadNotify::destroy ( 
+    epicsGuard < epicsMutex > & guard, casgRecycle & recycle )
 {
+    if ( this->idIsValid ) {
+        this->chan->ioCancel ( guard, this->id );
+    }
     this->~syncGroupReadNotify ();
-    recycle.recycleSyncGroupReadNotify ( * this );
+    recycle.recycleSyncGroupReadNotify ( guard, *this );
 }
 
 syncGroupReadNotify::~syncGroupReadNotify ()
 {
-    if ( this->idIsValid ) {
-        this->chan->ioCancel ( this-> id );
-    }
 }
 
 void syncGroupReadNotify::completion (
-    unsigned type, arrayElementCount count, const void *pData )
+    epicsGuard < epicsMutex > & guard, unsigned type, 
+    arrayElementCount count, const void * pData )
 {
     if ( this->magic != CASG_MAGIC ) {
-        this->sg.printf ( "cac: sync group io_complete(): bad sync grp op magic number?\n" );
+        this->sg.printf ( 
+            "cac: sync group io_complete(): bad sync grp op magic number?\n" );
         return;
     }
 
@@ -70,13 +77,15 @@ void syncGroupReadNotify::completion (
         memcpy ( this->pValue, pData, size );
     }
     this->idIsValid = false;
-    this->sg.completionNotify ( *this );
+    this->sg.completionNotify ( guard, *this );
 }
 
 void syncGroupReadNotify::exception (
-    int status, const char *pContext, unsigned type, arrayElementCount count )
+    epicsGuard < epicsMutex > & guard, int status, const char * pContext, 
+    unsigned type, arrayElementCount count )
 {
-   this->sg.exception ( status, pContext, 
+    this->idIsValid = false;
+    this->sg.exception ( guard, status, pContext, 
         __FILE__, __LINE__, *this->chan, type, count, CA_OP_GET );
     //
     // This notify is left installed at this point as a place holder indicating that
@@ -85,11 +94,14 @@ void syncGroupReadNotify::exception (
     //
 }
 
-void syncGroupReadNotify::show ( unsigned level ) const
+void syncGroupReadNotify::show ( 
+    epicsGuard < epicsMutex > & guard, unsigned level ) const
 {
     ::printf ( "pending sg read op: pVal=%p\n", this->pValue );
     if ( level > 0u ) {
-        this->syncGroupNotify::show ( level - 1u );
+        ::printf ( "pending sg op: chan=%s magic=%u sg=%p\n",
+            this->chan->pName(), this->magic, 
+            static_cast < void * > ( & this->sg ) );
     }
 }
 

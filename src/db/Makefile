@@ -71,7 +71,7 @@ LIBSRCS += dbServiceIO.cpp
 LIBSRCS += dbChannelIO.cpp
 LIBSRCS += dbSubscriptionIO.cpp
 LIBSRCS += dbPutNotifyBlocker.cpp
-LIBSRCS += dbServiceIOReadNotifyCache.cpp
+LIBSRCS += dbContextReadNotifyCache.cpp
 LIBSRCS += templateInstances.cpp
 
 LIBRARY_IOC = dbIoc

@@ -50,44 +50,71 @@
 class cac;
 class netiiu;
 class callbackMutex;
-class cacMutex;
 
-class cacPrivateListOfIO {
+// The node and the state which tracks the list membership
+// are in the channel, but belong to the circuit.
+// Protected by the callback mutex
+class channelNode : public tsDLNode < class nciu >
+{
 public:
-	cacPrivateListOfIO ();
+    channelNode ();
+    bool isConnected ( epicsGuard < epicsMutex > & ) const;
 private:
-    tsDLList < class baseNMIU > eventq;
-    friend class cac;
-	cacPrivateListOfIO ( const cacPrivateListOfIO & );
-	cacPrivateListOfIO & operator = ( const cacPrivateListOfIO & );
+    enum channelState {
+        cs_none,
+        cs_disconnGov,
+        cs_serverAddrResPend,
+        cs_createReqPend,
+        cs_createRespPend,
+        cs_subscripReqPend,
+        cs_connected,
+        cs_unrespCircuit,
+        cs_subscripUpdateReqPend
+    } listMember;
+    friend class tcpiiu;
+    friend class tcpSendThread;
+    friend class udpiiu;
 };
 
-class nciu : public cacChannel, public tsDLNode < nciu >,
-    public chronIntIdRes < nciu >, public cacPrivateListOfIO {
+class privateInterfaceForIO {
+public:
+    virtual void ioCompletionNotify ( 
+        epicsGuard < epicsMutex > &, class baseNMIU & ) = 0;
+    virtual arrayElementCount nativeElementCount ( 
+        epicsGuard < epicsMutex > & ) const = 0;
+    virtual int printf ( const char *pFormat, ... ) = 0;
+    virtual bool connected ( epicsGuard < epicsMutex > & ) const = 0;
+};
+
+class nciu : 
+    public cacChannel,
+    public chronIntIdRes < nciu >, 
+    public channelNode,
+    private privateInterfaceForIO {
 public:
     nciu ( cac &, netiiu &, cacChannelNotify &, 
-        const char *pNameIn, cacChannel::priLev );
-    ~nciu ();
-    void destroy ();
+        const char * pNameIn, cacChannel::priLev );
+    void destructor ( 
+        epicsGuard < epicsMutex > & );
     void connect ( unsigned nativeType, 
         unsigned nativeCount, unsigned sid, 
         epicsGuard < callbackMutex > & cbGuard, 
-        epicsGuard < cacMutex > & guard );
+        epicsGuard < epicsMutex > & guard );
     void connect ( epicsGuard < callbackMutex > & cbGuard, 
-                epicsGuard < cacMutex > & guard );
-    void responsiveCircuitNotify ( 
+        epicsGuard < epicsMutex > & guard );
+    void unresponsiveCircuitNotify ( 
         epicsGuard < callbackMutex > & cbGuard, 
-        epicsGuard < cacMutex > & guard );
-    void unresponsiveCircuitNotify ( epicsGuard < callbackMutex > & cbGuard, 
-                epicsGuard < cacMutex > & guard );
+        epicsGuard < epicsMutex > & guard );
     void circuitHangupNotify ( class udpiiu &, 
-        epicsGuard < callbackMutex > & cbGuard, epicsGuard < cacMutex > & guard );
+        epicsGuard < callbackMutex > & cbGuard, 
+        epicsGuard < epicsMutex > & guard );
+    void setServerAddressUnknown ( 
+        udpiiu & newiiu, epicsGuard < epicsMutex > & guard );
     bool searchMsg ( class udpiiu & iiu, unsigned & retryNoForThisChannel );
-    void createChannelRequest ( class tcpiiu & iiu, epicsGuard < cacMutex > & );
     void beaconAnomalyNotify ();
     void serviceShutdownNotify ();
     void accessRightsStateChange ( const caAccessRights &, 
-        epicsGuard < callbackMutex > &, epicsGuard < cacMutex > & );
+        epicsGuard < callbackMutex > &, epicsGuard < epicsMutex > & );
     ca_uint32_t getSID () const;
     ca_uint32_t getCID () const;
     netiiu * getPIIU ();
@@ -96,19 +123,28 @@ public:
     int printf ( const char *pFormat, ... );
     void searchReplySetUp ( netiiu &iiu, unsigned sidIn, 
         ca_uint16_t typeIn, arrayElementCount countIn,
-        epicsGuard < cacMutex > & );
+        epicsGuard < epicsMutex > & );
     void show ( unsigned level ) const;
-    const char *pName () const;
+    const char * pName () const;
     unsigned nameLen () const;
     const char * pHostName () const; // deprecated - please do not use
-    arrayElementCount nativeElementCount () const;
-    bool connected () const;
-    void writeException ( epicsGuard < callbackMutex > &,
+    void writeException ( 
+        epicsGuard < callbackMutex > &, epicsGuard < epicsMutex > &,
         int status, const char *pContext, unsigned type, arrayElementCount count );
     cacChannel::priLev getPriority () const;
-    void * operator new ( size_t size, tsFreeList < class nciu, 1024 > & );
-    epicsPlacementDeleteOperator (( void *, tsFreeList < class nciu, 1024 > & ))
+    void * operator new ( 
+        size_t size, tsFreeList < class nciu, 1024, epicsMutexNOOP > & );
+    epicsPlacementDeleteOperator (
+        ( void *, tsFreeList < class nciu, 1024, epicsMutexNOOP > & ))
+    arrayElementCount nativeElementCount ( epicsGuard < epicsMutex > & ) const;
+    void resubscribe ( epicsGuard < epicsMutex > & );
+    void sendSubscriptionUpdateRequests ( epicsGuard < epicsMutex > & );
+    void disconnectAllIO ( 
+        epicsGuard < callbackMutex > &, epicsGuard < epicsMutex > & );
+    bool connected ( epicsGuard < epicsMutex > & ) const;
+
 private:
+    tsDLList < class baseNMIU > eventq;
     caAccessRights accessRightState;
     cac & cacCtx;
     char * pNameStr;
@@ -119,20 +155,31 @@ private:
     unsigned short nameLength; // channel name length
     ca_uint16_t typeCode;
     ca_uint8_t priority; 
-    bool f_connected:1;
-    bool f_createChanReqSent:1;
-    bool f_createChanRespReceived:1;
-    void initiateConnect ();
-    ioStatus read ( unsigned type, arrayElementCount count, 
+    ~nciu ();
+    void destroy ( 
+        epicsGuard < epicsMutex > & );
+    void initiateConnect (
+        epicsGuard < epicsMutex > & );
+    ioStatus read ( 
+        epicsGuard < epicsMutex > &,
+        unsigned type, arrayElementCount count, 
         cacReadNotify &, ioid * );
-    void write ( unsigned type, arrayElementCount count, 
+    void write ( 
+        epicsGuard < epicsMutex > &,
+        unsigned type, arrayElementCount count, 
         const void *pValue );
-    ioStatus write ( unsigned type, arrayElementCount count, 
+    ioStatus write ( 
+        epicsGuard < epicsMutex > &,
+        unsigned type, arrayElementCount count, 
         const void *pValue, cacWriteNotify &, ioid * );
-    void subscribe ( unsigned type, arrayElementCount nElem, 
+    void subscribe ( 
+        epicsGuard < epicsMutex > & guard, 
+        unsigned type, arrayElementCount nElem, 
         unsigned mask, cacStateNotify &notify, ioid * );
-    void ioCancel ( const ioid & );
-    void ioShow ( const ioid &, unsigned level ) const;
+    void ioCancel ( 
+        epicsGuard < epicsMutex > &, const ioid & );
+    void ioShow ( 
+        const ioid &, unsigned level ) const;
     short nativeType () const;
     caAccessRights accessRights () const;
     unsigned searchAttempts () const;
@@ -140,7 +187,10 @@ private:
     double receiveWatchdogDelay () const;
     bool ca_v42_ok () const;
     void hostName ( char *pBuf, unsigned bufLength ) const;
+    arrayElementCount nativeElementCount () const;
     static void stringVerify ( const char *pStr, const unsigned count );
+    virtual void ioCompletionNotify ( 
+        epicsGuard < epicsMutex > &, class baseNMIU & );
 	nciu ( const nciu & );
 	nciu & operator = ( const nciu & );
     void * operator new ( size_t );
@@ -148,14 +198,14 @@ private:
 };
 
 inline void * nciu::operator new ( size_t size, 
-    tsFreeList < class nciu, 1024 > & freeList )
+    tsFreeList < class nciu, 1024, epicsMutexNOOP > & freeList )
 { 
     return freeList.allocate ( size );
 }
 
 #ifdef CXX_PLACEMENT_DELETE
 inline void nciu::operator delete ( void * pCadaver,
-    tsFreeList < class nciu, 1024 > & freeList )
+    tsFreeList < class nciu, 1024, epicsMutexNOOP > & freeList )
 { 
     freeList.release ( pCadaver, sizeof ( nciu ) );
 }
@@ -173,7 +223,7 @@ inline ca_uint32_t nciu::getCID () const
 
 // this is to only be used by early protocol revisions
 inline void nciu::connect ( epicsGuard < callbackMutex > & cbGuard, 
-                epicsGuard < cacMutex > & guard )
+                epicsGuard < epicsMutex > & guard )
 {
     this->connect ( this->typeCode, this->count, 
         this->sid, cbGuard, guard );
@@ -181,7 +231,7 @@ inline void nciu::connect ( epicsGuard < callbackMutex > & cbGuard,
 
 inline void nciu::searchReplySetUp ( netiiu &iiu, unsigned sidIn, 
     ca_uint16_t typeIn, arrayElementCount countIn,
-    epicsGuard < cacMutex > & )
+    epicsGuard < epicsMutex > & )
 {
     this->piiu = & iiu;
     this->typeCode = typeIn;      
@@ -189,20 +239,19 @@ inline void nciu::searchReplySetUp ( netiiu &iiu, unsigned sidIn,
     this->sid = sidIn;
 }
 
-inline bool nciu::connected () const
-{
-    return this->f_connected;
-}
-
 inline netiiu * nciu::getPIIU ()
 {
     return this->piiu;
 }
 
-inline void nciu::writeException ( epicsGuard < callbackMutex > &, int status,
-    const char *pContext, unsigned typeIn, arrayElementCount countIn )
+inline void nciu::writeException ( 
+    epicsGuard < callbackMutex > & cbGuard, 
+    epicsGuard < epicsMutex > & guard, 
+    int status, const char * pContext, 
+    unsigned typeIn, arrayElementCount countIn )
 {
-    this->notify().writeException ( status, pContext, typeIn, countIn );
+    this->notify().writeException ( guard, 
+        status, pContext, typeIn, countIn );
 }
 
 inline const netiiu * nciu::getConstPIIU () const
@@ -225,8 +274,17 @@ inline cacChannel::priLev nciu::getPriority () const
     return this->priority;
 }
 
-inline cacPrivateListOfIO::cacPrivateListOfIO () 
+inline channelNode::channelNode () :
+    listMember ( cs_none )
 {
+}
+
+inline bool channelNode::isConnected ( epicsGuard < epicsMutex > & ) const
+{
+    return 
+        this->listMember == cs_connected || 
+        this->listMember == cs_subscripReqPend ||
+        this->listMember == cs_subscripUpdateReqPend;
 }
 
 #endif // ifdef nciuh

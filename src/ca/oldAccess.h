@@ -49,32 +49,42 @@
 
 struct oldChannelNotify : public cacChannelNotify {
 public:
-    oldChannelNotify ( struct ca_client_context &, const char * pName, 
-        caCh * pConnCallBackIn, void * pPrivateIn, capri priority );
-    ~oldChannelNotify ();
+    oldChannelNotify ( 
+        epicsGuard < epicsMutex > &, struct ca_client_context &, 
+        const char * pName, caCh * pConnCallBackIn, 
+        void * pPrivateIn, capri priority );
+    void destructor ( 
+        epicsGuard < epicsMutex > & );
     void setPrivatePointer ( void * );
     void * privatePointer () const;
     int changeConnCallBack ( caCh *pfunc );
     int replaceAccessRightsEvent ( caArh *pfunc );
     const char *pName () const;
     void show ( unsigned level ) const;
-    void initiateConnect ();
+    void initiateConnect (
+        epicsGuard < epicsMutex > & );
     void read ( 
+        epicsGuard < epicsMutex > &,
         unsigned type, arrayElementCount count, 
         cacReadNotify &notify, cacChannel::ioid *pId = 0 );
     void read ( 
+        epicsGuard < epicsMutex > &,
         unsigned type, arrayElementCount count, 
         void *pValue );
     void write ( 
+        epicsGuard < epicsMutex > &,
         unsigned type, arrayElementCount count, 
         const void *pValue );
     void write ( 
+        epicsGuard < epicsMutex > &,
         unsigned type, arrayElementCount count, const void *pValue, 
         cacWriteNotify &, cacChannel::ioid *pId = 0 );
     void subscribe ( 
+        epicsGuard < epicsMutex > &,
         unsigned type, arrayElementCount count, unsigned mask, 
         cacStateNotify &, cacChannel::ioid & );
-    void ioCancel ( const cacChannel::ioid & );
+    void ioCancel ( 
+        epicsGuard < epicsMutex > &, const cacChannel::ioid & );
     void ioShow ( const cacChannel::ioid &, unsigned level ) const;
     short nativeType () const;
     arrayElementCount nativeElementCount () const;
@@ -89,9 +99,9 @@ public:
     const char * pHostName () const; // deprecated - please do not use
     ca_client_context & getClientCtx ();
     void * operator new ( size_t size, 
-        tsFreeList < struct oldChannelNotify, 1024 > & );
+        tsFreeList < struct oldChannelNotify, 1024, epicsMutexNOOP > & );
     epicsPlacementDeleteOperator (( void * , 
-        tsFreeList < struct oldChannelNotify, 1024 > & ))
+        tsFreeList < struct oldChannelNotify, 1024, epicsMutexNOOP > & ))
 private:
     ca_client_context & cacCtx;
     cacChannel & io;
@@ -101,14 +111,19 @@ private:
     unsigned ioSeqNo;
     bool currentlyConnected;
     bool prevConnected;
-    void connectNotify ();
-    void disconnectNotify ();
+    ~oldChannelNotify ();
+    void connectNotify ( epicsGuard < epicsMutex > & );
+    void disconnectNotify ( epicsGuard < epicsMutex > & );
     void serviceShutdownNotify ();
-    void accessRightsNotify ( const caAccessRights & );
-    void exception ( int status, const char *pContext );
-    void readException ( int status, const char *pContext,
+    void accessRightsNotify (  
+        epicsGuard < epicsMutex > &, const caAccessRights & );
+    void exception ( epicsGuard < epicsMutex > &,
+        int status, const char * pContext );
+    void readException ( epicsGuard < epicsMutex > &,
+        int status, const char * pContext,
         unsigned type, arrayElementCount count, void *pValue );
-    void writeException ( int status, const char *pContext,
+    void writeException ( epicsGuard < epicsMutex > &,
+        int status, const char * pContext,
         unsigned type, arrayElementCount count );
 	oldChannelNotify ( const oldChannelNotify & );
 	oldChannelNotify & operator = ( const oldChannelNotify & );
@@ -118,25 +133,30 @@ private:
 
 class getCopy : public cacReadNotify {
 public:
-    getCopy ( ca_client_context &cacCtx, oldChannelNotify &, unsigned type, 
+    getCopy ( 
+        epicsGuard < epicsMutex > & guard, 
+        ca_client_context & cacCtx, 
+        oldChannelNotify &, unsigned type, 
         arrayElementCount count, void *pValue );
     ~getCopy ();
     void show ( unsigned level ) const;
     void cancel ();
     void * operator new ( size_t size, 
-        tsFreeList < class getCopy, 1024 > & );
+        tsFreeList < class getCopy, 1024, epicsMutexNOOP > & );
     epicsPlacementDeleteOperator (( void *, 
-        tsFreeList < class getCopy, 1024 > & ))
+        tsFreeList < class getCopy, 1024, epicsMutexNOOP > & ))
 private:
     arrayElementCount count;
-    ca_client_context &cacCtx;
-    oldChannelNotify &chan;
+    ca_client_context & cacCtx;
+    oldChannelNotify & chan;
     void *pValue;
     unsigned ioSeqNo;
     unsigned type;
     void completion (
-        unsigned type, arrayElementCount count, const void *pData);
-    void exception ( int status, 
+        epicsGuard < epicsMutex > &, unsigned type, 
+        arrayElementCount count, const void *pData );
+    void exception ( 
+        epicsGuard < epicsMutex > &, int status, 
         const char *pContext, unsigned type, arrayElementCount count );
 	getCopy ( const getCopy & );
 	getCopy & operator = ( const getCopy & );
@@ -146,21 +166,24 @@ private:
 
 class getCallback : public cacReadNotify {
 public:
-    getCallback ( oldChannelNotify &chanIn, 
+    getCallback ( 
+        oldChannelNotify & chanIn, 
         caEventCallBackFunc *pFunc, void *pPrivate );
     ~getCallback (); 
     void * operator new ( size_t size, 
-        tsFreeList < class getCallback, 1024 > & );
+        tsFreeList < class getCallback, 1024, epicsMutexNOOP > & );
     epicsPlacementDeleteOperator (( void *, 
-        tsFreeList < class getCallback, 1024 > & ))
+        tsFreeList < class getCallback, 1024, epicsMutexNOOP > & ))
 private:
     oldChannelNotify & chan;
     caEventCallBackFunc * pFunc;
     void * pPrivate;
     void completion (
-        unsigned type, arrayElementCount count, const void *pData);
-    void exception ( int status, 
-        const char *pContext, unsigned type, arrayElementCount count );
+        epicsGuard < epicsMutex > &, unsigned type, 
+        arrayElementCount count, const void *pData);
+    void exception ( 
+        epicsGuard < epicsMutex > &, int status, 
+        const char * pContext, unsigned type, arrayElementCount count );
 	getCallback ( const getCallback & );
 	getCallback & operator = ( const getCallback & );
     void * operator new ( size_t size );
@@ -169,19 +192,21 @@ private:
 
 class putCallback : public cacWriteNotify {
 public:
-    putCallback ( oldChannelNotify &, 
+    putCallback ( 
+        oldChannelNotify &, 
         caEventCallBackFunc *pFunc, void *pPrivate );
     ~putCallback ();
     void * operator new ( size_t size, 
-        tsFreeList < class putCallback, 1024 > & );
+        tsFreeList < class putCallback, 1024, epicsMutexNOOP > & );
     epicsPlacementDeleteOperator (( void *, 
-        tsFreeList < class putCallback, 1024 > & ))
+        tsFreeList < class putCallback, 1024, epicsMutexNOOP > & ))
 private:
     oldChannelNotify & chan;
     caEventCallBackFunc * pFunc;
     void *pPrivate;
-    void completion ();
-    void exception ( int status, const char *pContext, 
+    void completion ( epicsGuard < epicsMutex > & );
+    void exception ( 
+        epicsGuard < epicsMutex > &, int status, const char *pContext, 
         unsigned type, arrayElementCount count );
 	putCallback ( const putCallback & );
 	putCallback & operator = ( const putCallback & );
@@ -194,13 +219,14 @@ public:
     oldSubscription ( 
         oldChannelNotify &, caEventCallBackFunc *pFunc, void *pPrivate );
     ~oldSubscription ();
-    void begin ( unsigned type, arrayElementCount nElem, unsigned mask );
+    void begin ( epicsGuard < epicsMutex > & guard, unsigned type, 
+        arrayElementCount nElem, unsigned mask );
     oldChannelNotify & channel () const;
     void * operator new ( size_t size, 
-        tsFreeList < struct oldSubscription, 1024 > & );
+        tsFreeList < struct oldSubscription, 1024, epicsMutexNOOP > & );
     epicsPlacementDeleteOperator (( void *, 
-        tsFreeList < struct oldSubscription, 1024 > & ))
-    void ioCancel ();
+        tsFreeList < struct oldSubscription, 1024, epicsMutexNOOP > & ))
+    void ioCancel ( epicsGuard < epicsMutex > & );
 private:
     oldChannelNotify & chan;
     cacChannel::ioid id;
@@ -208,8 +234,10 @@ private:
     void * pPrivate;
     bool subscribed;
     void current (
-        unsigned type, arrayElementCount count, const void *pData );
-    void exception ( int status, 
+        epicsGuard < epicsMutex > &, unsigned type, 
+        arrayElementCount count, const void *pData );
+    void exception ( 
+        epicsGuard < epicsMutex > &, int status, 
         const char *pContext, unsigned type, arrayElementCount count );
 	oldSubscription ( const oldSubscription & );
 	oldSubscription & operator = ( const oldSubscription & );
@@ -217,16 +245,7 @@ private:
     void operator delete ( void * );
 };
 
-class ca_client_context_mutex {
-public:
-    void lock ();
-    void unlock ();
-    void show ( unsigned level ) const;
-private:
-    epicsMutex mutex;
-};
-
-struct ca_client_context : public cacNotify
+struct ca_client_context : public cacContextNotify
 {
 public:
     ca_client_context ( bool enablePreemptiveCallback = false );
@@ -234,59 +253,68 @@ public:
     void changeExceptionEvent ( caExceptionHandler * pfunc, void * arg );
     void registerForFileDescriptorCallBack ( CAFDHANDLER * pFunc, void * pArg );
     void replaceErrLogHandler ( caPrintfFunc * ca_printf_func );
-    void registerService ( cacService & service );
-    cacChannel & createChannel ( const char * name_str, 
-        oldChannelNotify & chan, cacChannel::priLev pri );
-    void flushRequest ();
+    cacChannel & createChannel ( 
+        epicsGuard < epicsMutex > &, const char * pChannelName, 
+        oldChannelNotify &, cacChannel::priLev pri );
+    void flush ( epicsGuard < epicsMutex > & );
     int pendIO ( const double & timeout );
     int pendEvent ( const double & timeout );
     bool ioComplete () const;
     void show ( unsigned level ) const;
-    unsigned connectionCount () const;
-    unsigned sequenceNumberOfOutstandingIO () const;
+    unsigned circuitCount () const;
+    unsigned sequenceNumberOfOutstandingIO (
+        epicsGuard < epicsMutex > & ) const;
     unsigned beaconAnomaliesSinceProgramStart () const;
-    void incrementOutstandingIO ( unsigned ioSeqNo );
-    void decrementOutstandingIO ( unsigned ioSeqNo );
-    void exception ( int status, const char *pContext, 
-        const char *pFileName, unsigned lineNo );
-    void exception ( int status, const char *pContext,
-        const char *pFileName, unsigned lineNo, oldChannelNotify &chan, 
+    void incrementOutstandingIO ( 
+        epicsGuard < epicsMutex > &, unsigned ioSeqNo );
+    void decrementOutstandingIO ( 
+        epicsGuard < epicsMutex > &, unsigned ioSeqNo );
+    void exception ( 
+        epicsGuard < epicsMutex > &, int status, const char * pContext, 
+        const char * pFileName, unsigned lineNo );
+    void exception ( 
+        epicsGuard < epicsMutex > &, int status, const char * pContext,
+        const char * pFileName, unsigned lineNo, oldChannelNotify & chan, 
         unsigned type, arrayElementCount count, unsigned op );
     void blockForEventAndEnableCallbacks ( 
         epicsEvent & event, const double & timeout );
-    CASG * lookupCASG ( unsigned id );
-    void installCASG ( CASG & );
-    void uninstallCASG ( CASG & );
-    void selfTest ();
+    CASG * lookupCASG ( epicsGuard < epicsMutex > &, unsigned id );
+    void installCASG ( epicsGuard < epicsMutex > &, CASG & );
+    void uninstallCASG ( epicsGuard < epicsMutex > &, CASG & );
+    void selfTest () const;
 // perhaps these should be eliminated in deference to the exception mechanism
-    int printf ( const char *pformat, ... ) const;
-    int vPrintf ( const char *pformat, va_list args ) const;
-    void vSignal ( int ca_status, const char *pfilenm, 
-                     int lineno, const char *pFormat, va_list args );
+    int printf ( const char * pformat, ... ) const;
+    int vPrintf ( const char * pformat, va_list args ) const;
+    void signal ( int ca_status, const char * pfilenm, 
+                     int lineno, const char * pFormat, ... );
+    void vSignal ( int ca_status, const char * pfilenm, 
+                     int lineno, const char  *pFormat, va_list args );
     bool preemptiveCallbakIsEnabled () const;
     void destroyChannel ( oldChannelNotify & chan );
-    void destroyGetCopy ( getCopy & );
-    void destroyGetCallback ( getCallback & );
-    void destroyPutCallback ( putCallback & );
-    void destroySubscription ( oldSubscription & );
+    void destroyGetCopy ( epicsGuard < epicsMutex > &, getCopy & );
+    void destroyGetCallback ( epicsGuard < epicsMutex > &, getCallback & );
+    void destroyPutCallback ( epicsGuard < epicsMutex > &, putCallback & );
+    void destroySubscription ( epicsGuard < epicsMutex > &, oldSubscription & );
     void changeConnCallBack ( caCh * pfunc, caCh * & pConnCallBack, 
         const bool & currentlyConnected );
+    epicsMutex & mutexRef () const;
 
     // exceptions
     class noSocket {};
 private:
-    tsFreeList < struct oldChannelNotify, 1024 > oldChannelNotifyFreeList;
-    tsFreeList < class getCopy, 1024 > getCopyFreeList;
-    tsFreeList < class getCallback, 1024 > getCallbackFreeList;
-    tsFreeList < class putCallback, 1024 > putCallbackFreeList;
-    tsFreeList < struct oldSubscription, 1024 > subscriptionFreeList;
-    tsFreeList < struct CASG, 128 > casgFreeList;
-    mutable ca_client_context_mutex mutex; 
+    chronIntIdResTable < CASG > sgTable;
+    tsFreeList < struct oldChannelNotify, 1024, epicsMutexNOOP > oldChannelNotifyFreeList;
+    tsFreeList < class getCopy, 1024, epicsMutexNOOP > getCopyFreeList;
+    tsFreeList < class getCallback, 1024, epicsMutexNOOP > getCallbackFreeList;
+    tsFreeList < class putCallback, 1024, epicsMutexNOOP > putCallbackFreeList;
+    tsFreeList < struct oldSubscription, 1024, epicsMutexNOOP > subscriptionFreeList;
+    tsFreeList < struct CASG, 128, epicsMutexNOOP > casgFreeList;
+    mutable epicsMutex mutex;
     epicsMutex callbackMutex; 
     epicsEvent ioDone;
     epicsEvent callbackThreadActivityComplete;
-    epics_auto_ptr < class cac > pClientCtx;
     epics_auto_ptr < epicsGuard < epicsMutex > > pCallbackGuard;
+    epics_auto_ptr < cacContext > pServiceContext;
     caExceptionHandler * ca_exception_func;
     void * ca_exception_arg;
     caPrintfFunc * pVPrintfFunc;
@@ -303,29 +331,38 @@ private:
     void callbackLock ();
     void callbackUnlock ();
     void attachToClientCtx ();
+    cacContext & createNetworkContext ( epicsMutex & mutex );
 	ca_client_context ( const ca_client_context & );
 	ca_client_context & operator = ( const ca_client_context & );
+
+    static cacService * pDefaultService;
+    static epicsMutex defaultServiceInstallMutex;
 
     friend int epicsShareAPI ca_create_channel (
         const char * name_str, caCh * conn_func, void * puser,
         capri priority, chid * chanptr );
     friend int epicsShareAPI ca_array_get ( chtype type, 
-            arrayElementCount count, chid pChan, void *pValue );
+        arrayElementCount count, chid pChan, void * pValue );
     friend int epicsShareAPI ca_array_get_callback ( chtype type, 
-            arrayElementCount count, chid pChan,
-            caEventCallBackFunc *pfunc, void *arg );
+        arrayElementCount count, chid pChan,
+        caEventCallBackFunc *pfunc, void *arg );
+    friend int epicsShareAPI ca_array_put ( chtype type, 
+        arrayElementCount count, chid pChan, const void * pValue );
     friend int epicsShareAPI ca_array_put_callback ( chtype type, 
-            arrayElementCount count, chid pChan, const void *pValue, 
-            caEventCallBackFunc *pfunc, void *usrarg );
+        arrayElementCount count, chid pChan, const void * pValue, 
+        caEventCallBackFunc *pfunc, void *usrarg );
     friend int epicsShareAPI ca_create_subscription ( 
-            chtype type, arrayElementCount count, chid pChan, 
-            long mask, caEventCallBackFunc *pCallBack, void *pCallBackArg, 
-            evid *monixptr );
+        chtype type, arrayElementCount count, chid pChan, 
+        long mask, caEventCallBackFunc * pCallBack, void * pCallBackArg, 
+        evid *monixptr );
+    friend int epicsShareAPI ca_clear_subscription ( evid pMon );
+    friend int epicsShareAPI ca_flush_io ();
     friend int epicsShareAPI ca_sg_create ( CA_SYNC_GID * pgid );
     friend int epicsShareAPI ca_sg_delete ( const CA_SYNC_GID gid );
+    friend void epicsShareAPI caInstallDefaultService ( cacService & );
 };
 
-int fetchClientContext ( ca_client_context **ppcac );
+int fetchClientContext ( ca_client_context * * ppcac );
 
 inline ca_client_context & oldChannelNotify::getClientCtx ()
 {
@@ -342,42 +379,20 @@ inline void oldChannelNotify::show ( unsigned level ) const
     this->io.show ( level );
 }
 
-inline void oldChannelNotify::initiateConnect ()
+inline void oldChannelNotify::initiateConnect (
+    epicsGuard < epicsMutex > & guard )
 {
-    this->io.initiateConnect ();
+    this->io.initiateConnect ( guard );
 }
 
-inline void oldChannelNotify::read ( unsigned type, arrayElementCount count, 
-                        cacReadNotify &notify, cacChannel::ioid * pId )
+inline void oldChannelNotify::ioCancel ( 
+    epicsGuard < epicsMutex > & guard, const cacChannel::ioid & id )
 {
-    this->io.read ( type, count, notify, pId );
+    this->io.ioCancel ( guard, id );
 }
 
-inline void oldChannelNotify::write ( unsigned type, 
-    arrayElementCount count, const void * pValue )
-{
-    this->io.write ( type, count, pValue );
-}
-
-inline void oldChannelNotify::write ( unsigned type, arrayElementCount count, 
-                 const void * pValue, cacWriteNotify & notify, cacChannel::ioid * pId )
-{
-    this->io.write ( type, count, pValue, notify, pId );
-}
-
-inline void oldChannelNotify::subscribe ( unsigned type, 
-    arrayElementCount count, unsigned mask, cacStateNotify & notify,
-    cacChannel::ioid & idOut)
-{
-    this->io.subscribe ( type, count, mask, notify, &idOut );
-}
-
-inline void oldChannelNotify::ioCancel ( const cacChannel::ioid &id )
-{
-    this->io.ioCancel ( id );
-}
-
-inline void oldChannelNotify::ioShow ( const cacChannel::ioid &id, unsigned level ) const
+inline void oldChannelNotify::ioShow ( 
+    const cacChannel::ioid & id, unsigned level ) const
 {
     this->io.ioShow ( id, level );
 }
@@ -438,45 +453,46 @@ inline const char * oldChannelNotify::pHostName () const
 }
 
 inline void * oldChannelNotify::operator new ( size_t size, 
-    tsFreeList < struct oldChannelNotify, 1024 > & freeList )
+    tsFreeList < struct oldChannelNotify, 1024, epicsMutexNOOP > & freeList )
 {
     return freeList.allocate ( size );
 }
 
 #ifdef CXX_PLACEMENT_DELETE
 inline void oldChannelNotify::operator delete ( void *pCadaver, 
-    tsFreeList < struct oldChannelNotify, 1024 > & freeList ) 
+    tsFreeList < struct oldChannelNotify, 1024, epicsMutexNOOP > & freeList ) 
 {
     freeList.release ( pCadaver );
 }
 #endif
 
 inline oldSubscription::oldSubscription  (
-        oldChannelNotify & chanIn, 
-        caEventCallBackFunc * pFuncIn, void * pPrivateIn ) :
+    oldChannelNotify & chanIn, caEventCallBackFunc * pFuncIn, 
+        void * pPrivateIn ) :
     chan ( chanIn ), id ( UINT_MAX ), pFunc ( pFuncIn ), 
         pPrivate ( pPrivateIn ), subscribed ( false )
 {
 }
 
-inline void oldSubscription::begin  ( unsigned type, 
-              arrayElementCount nElem, unsigned mask )
+inline void oldSubscription::begin (
+    epicsGuard < epicsMutex > & guard, unsigned type, 
+    arrayElementCount nElem, unsigned mask )
 {
     this->subscribed = true;
-    this->chan.subscribe ( type, nElem, mask, *this, this->id );
+    this->chan.subscribe ( guard, type, nElem, mask, *this, this->id );
     // dont touch this pointer after this point because the
     // 1st update callback might cancel the subscription
 }
 
 inline void * oldSubscription::operator new ( size_t size, 
-    tsFreeList < struct oldSubscription, 1024 > & freeList )
+    tsFreeList < struct oldSubscription, 1024, epicsMutexNOOP > & freeList )
 {
     return freeList.allocate ( size );
 }
 
 #ifdef CXX_PLACEMENT_DELETE
 inline void oldSubscription::operator delete ( void *pCadaver, 
-    tsFreeList < struct oldSubscription, 1024 > & freeList ) 
+    tsFreeList < struct oldSubscription, 1024, epicsMutexNOOP > & freeList ) 
 {
     freeList.release ( pCadaver );
 }
@@ -489,49 +505,48 @@ inline oldChannelNotify & oldSubscription::channel () const
 
 inline int oldChannelNotify::changeConnCallBack ( caCh * pfunc )
 {
-    // operation protected by call back lock in ca_client_context
     this->cacCtx.changeConnCallBack ( pfunc, 
         this->pConnCallBack, this->currentlyConnected );
     return ECA_NORMAL;
 }
 
 inline void * getCopy::operator new ( size_t size, 
-    tsFreeList < class getCopy, 1024 > & freeList )
+    tsFreeList < class getCopy, 1024, epicsMutexNOOP > & freeList )
 {
     return freeList.allocate ( size );
 }
 
 #ifdef CXX_PLACEMENT_DELETE
 inline void getCopy::operator delete ( void *pCadaver, 
-    tsFreeList < class getCopy, 1024 > & freeList ) 
+    tsFreeList < class getCopy, 1024, epicsMutexNOOP > & freeList ) 
 {
     freeList.release ( pCadaver );
 }
 #endif
 
 inline void * putCallback::operator new ( size_t size, 
-    tsFreeList < class putCallback, 1024 > & freeList )
+    tsFreeList < class putCallback, 1024, epicsMutexNOOP > & freeList )
 {
     return freeList.allocate ( size );
 }
 
 #ifdef CXX_PLACEMENT_DELETE
 inline void putCallback::operator delete ( void * pCadaver, 
-    tsFreeList < class putCallback, 1024 > & freeList ) 
+    tsFreeList < class putCallback, 1024, epicsMutexNOOP > & freeList ) 
 {
     freeList.release ( pCadaver );
 }
 #endif
 
 inline void * getCallback::operator new ( size_t size, 
-    tsFreeList < class getCallback, 1024 > & freeList )
+    tsFreeList < class getCallback, 1024, epicsMutexNOOP > & freeList )
 {
     return freeList.allocate ( size );
 }
 
 #ifdef CXX_PLACEMENT_DELETE
-inline void getCallback::operator delete ( void *pCadaver, 
-    tsFreeList < class getCallback, 1024 > & freeList ) 
+inline void getCallback::operator delete ( void * pCadaver, 
+    tsFreeList < class getCallback, 1024, epicsMutexNOOP > & freeList ) 
 {
     freeList.release ( pCadaver );
 }
@@ -547,25 +562,11 @@ inline bool ca_client_context::ioComplete () const
     return ( this->pndRecvCnt == 0u );
 }
 
-inline unsigned ca_client_context::sequenceNumberOfOutstandingIO () const
+inline unsigned ca_client_context::sequenceNumberOfOutstandingIO (
+    epicsGuard < epicsMutex > & ) const
 {
     // perhaps on SMP systems THERE should be lock/unlock around this
     return this->ioSeqNo;
-}
-
-inline void ca_client_context_mutex::lock ()
-{
-    this->mutex.lock ();
-}
-
-inline void ca_client_context_mutex::unlock ()
-{
-    this->mutex.unlock ();
-}
-
-inline void ca_client_context_mutex::show ( unsigned level ) const
-{
-    this->mutex.show ( level );
 }
 
 #endif // ifndef oldAccessh

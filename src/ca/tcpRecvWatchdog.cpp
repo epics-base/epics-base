@@ -29,10 +29,12 @@
 // the recv watchdog timer is active when this object is created
 //
 tcpRecvWatchdog::tcpRecvWatchdog 
-    ( cac & cacIn, tcpiiu & iiuIn, double periodIn, epicsTimerQueue & queueIn ) :
+    ( callbackMutex & cbMutexIn, epicsMutex & mutexIn, tcpiiu & iiuIn, 
+            double periodIn, epicsTimerQueue & queueIn ) :
         period ( periodIn ), timer ( queueIn.createTimer () ),
-        iiu ( iiuIn ), cacRef ( cacIn ), responsePending ( false ),
-        beaconAnomaly ( true )
+        iiu ( iiuIn ), cbMutex ( cbMutexIn ), mutex ( mutexIn ), 
+        probeResponsePending ( false ), beaconAnomaly ( true ), 
+        probeTimeoutDetected ( false )
 {
 }
 
@@ -44,21 +46,20 @@ tcpRecvWatchdog::~tcpRecvWatchdog ()
 epicsTimerNotify::expireStatus
 tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ ) // X aCC 361
 {
-    if ( this->responsePending ) {
+    if ( this->probeResponsePending ) {
         if ( this->iiu.bytesArePendingInOS() ) {
-            this->cacRef.printf ( 
+            this->iiu.printf ( 
     "The CA client library's server inactivity timer initiated server disconnect\n" );
-            this->cacRef.printf ( 
+            this->iiu.printf ( 
     "despite the fact that messages from this server are pending for processing in\n" );
-            this->cacRef.printf ( 
+            this->iiu.printf ( 
     "the client library. Here are some possible causes of the unnecessary disconnect:\n" );
-            this->cacRef.printf ( 
+            this->iiu.printf ( 
     "o ca_pend_event() or ca_poll() have not been called for %f seconds\n", 
                 this->period  );
-            this->cacRef.printf ( 
+            this->iiu.printf ( 
     "o application is blocked in a callback from the client library\n" );
         }
-        this->cancel ();
 #       ifdef DEBUG
             char hostName[128];
             this->iiu.hostName ( hostName, sizeof (hostName) );
@@ -66,19 +67,31 @@ tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ ) // X aCC 361
                             "- disconnecting.\n", 
                 hostName, this->period ) );
 #       endif
-        this->cacRef.unresponsiveCircuitNotify ( this->iiu );
+        {
+            epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
+            epicsGuard < epicsMutex > guard ( this->mutex );
+            this->iiu.receiveTimeoutNotify ( cbGuard, guard );
+            this->probeTimeoutDetected = true;
+        }
         return noRestart;
     }
     else {
-        this->responsePending = this->iiu.setEchoRequestPending ();
+        {
+            epicsGuard < epicsMutex > guard ( this->mutex );
+            this->probeTimeoutDetected = false;
+            this->probeResponsePending = this->iiu.setEchoRequestPending ( guard );
+        }
         debugPrintf ( ("TCP connection timed out - sending echo request\n") );
         return expireStatus ( restart, CA_ECHO_TIMEOUT );
     }
 }
 
-void tcpRecvWatchdog::beaconArrivalNotify ( const epicsTime & currentTime )
+void tcpRecvWatchdog::beaconArrivalNotify ( 
+    epicsGuard < epicsMutex > & guard, const epicsTime & currentTime )
 {
-    if ( ! this->beaconAnomaly && ! this->responsePending ) {
+    guard.assertIdenticalMutex ( this->mutex );
+    if ( ! this->beaconAnomaly && ! this->probeResponsePending ) {
+        epicsGuardRelease < epicsMutex > unguard ( guard );
         this->timer.start ( *this, currentTime + this->period );
         debugPrintf ( ("Saw a normal beacon - reseting TCP recv watchdog\n") );
     }
@@ -91,18 +104,65 @@ void tcpRecvWatchdog::beaconArrivalNotify ( const epicsTime & currentTime )
 // faster when the server is rebooted twice in rapid 
 // succession before a 1st or 2nd beacon has been received)
 //
-void tcpRecvWatchdog::beaconAnomalyNotify ()
+void tcpRecvWatchdog::beaconAnomalyNotify ( 
+    epicsGuard < epicsMutex > & guard )
 {
+    guard.assertIdenticalMutex ( this->mutex );
     this->beaconAnomaly = true;
     debugPrintf ( ("Saw an abnormal beacon\n") );
 }
 
-void tcpRecvWatchdog::messageArrivalNotify ( const epicsTime & currentTime )
+void tcpRecvWatchdog::messageArrivalNotify ( 
+    const epicsTime & currentTime )
 {
-    this->beaconAnomaly = false;
-    this->responsePending = false;
-    this->timer.start ( *this, currentTime + this->period );
-    debugPrintf ( ("received a message - reseting TCP recv watchdog\n") );
+    bool restartNeeded = false;
+    {
+        epicsGuard < epicsMutex > guard ( this->mutex );
+        if ( ! this->probeResponsePending ) {
+            this->beaconAnomaly = false;
+            restartNeeded = true;
+        }
+    }
+    // dont hold the lock for fear of deadlocking 
+    // because cancel is blocking for the completion
+    // of the recvDog expire which takes the lock
+    // - it take also the callback lock
+    if ( restartNeeded ) {
+        this->timer.start ( *this, currentTime + this->period );
+        debugPrintf ( ("received a message - reseting TCP recv watchdog\n") );
+    }
+}
+
+void tcpRecvWatchdog::probeResponseNotify ( 
+    epicsGuard < callbackMutex > & cbGuard, 
+    const epicsTime & currentTime )
+{
+    bool restartNeeded = false;
+    double restartDelay = DBL_MAX;
+    {
+        epicsGuard < epicsMutex > guard ( this->mutex );
+        if ( this->probeResponsePending ) {
+            restartNeeded = true;
+            if ( this->probeTimeoutDetected ) {
+                this->probeTimeoutDetected = false;
+                this->probeResponsePending = this->iiu.setEchoRequestPending ( guard );
+                restartDelay = CA_ECHO_TIMEOUT;
+                debugPrintf ( ("late probe response - sending another probe request\n") );
+            }
+            else {
+                this->probeResponsePending = false;
+                restartDelay = this->period;
+                this->iiu.responsiveCircuitNotify ( cbGuard, guard );
+                debugPrintf ( ("probe response on time - setting circuit to reponsive state\n") );
+            }
+        }
+    }
+    if ( restartNeeded ) {
+        // timer callback takes the callback mutex and the cac mutex
+        epicsGuardRelease < callbackMutex > cbGuardRelease ( cbGuard );
+        epicsTime expireTime = currentTime + restartDelay;
+        this->timer.start ( *this, expireTime );
+    }
 }
 
 //
@@ -119,21 +179,53 @@ void tcpRecvWatchdog::messageArrivalNotify ( const epicsTime & currentTime )
 // The send watchdog will be responsible for detecting 
 // dead connections in this case.
 //
-void tcpRecvWatchdog::sendBacklogProgressNotify ( const epicsTime & currentTime )
+void tcpRecvWatchdog::sendBacklogProgressNotify ( 
+    epicsGuard < epicsMutex > & guard,
+    const epicsTime & currentTime )
 {
+    guard.assertIdenticalMutex ( this->mutex );
+
     // We dont set "beaconAnomaly" to be false here because, after we see a
     // beacon anomaly (which could be transiently detecting a reboot) we will 
     // not trust the beacon as an indicator of a healthy server until we 
     // receive at least one message from the server.
-    this->responsePending = false;
-    this->timer.start ( *this, currentTime + this->period );
-    debugPrintf ( ("saw heavy send backlog - reseting TCP recv watchdog\n") );
+    if ( this->probeResponsePending ) {
+        // we avoid calling this with the lock applied because
+        // it restarts the recv wd timer, this might block
+        // until a recv wd timer expire callback completes, and 
+        // this callback takes the lock
+        epicsGuardRelease < epicsMutex > unguard ( guard );
+        this->timer.start ( *this, currentTime + CA_ECHO_TIMEOUT );
+        debugPrintf ( ("saw heavy send backlog - reseting TCP recv watchdog\n") );
+    }
 }
 
 void tcpRecvWatchdog::connectNotify ()
 {
     this->timer.start ( *this, this->period );
     debugPrintf ( ("connected to the server - reseting TCP recv watchdog\n") );
+}
+
+void tcpRecvWatchdog::sendTimeoutNotify ( 
+    epicsGuard < callbackMutex > & cbGuard,
+    epicsGuard < epicsMutex > & guard,
+    const epicsTime & currentTime )
+{
+    guard.assertIdenticalMutex ( this->mutex );
+
+    bool restartNeeded = false;
+    if ( ! this->probeResponsePending ) {
+        this->probeResponsePending = this->iiu.setEchoRequestPending ( guard );
+        restartNeeded = true;
+    }
+    if ( restartNeeded ) {
+        epicsGuardRelease < epicsMutex > unguard ( guard );
+        {
+            epicsGuardRelease < callbackMutex > cbUnguard ( cbGuard );
+            this->timer.start ( *this, currentTime + CA_ECHO_TIMEOUT );
+        }
+    }
+    debugPrintf ( ("TCP send timed out - sending echo request\n") );
 }
 
 void tcpRecvWatchdog::cancel ()
@@ -149,10 +241,15 @@ double tcpRecvWatchdog::delay () const
 
 void tcpRecvWatchdog::show ( unsigned level ) const
 {
+    epicsGuard < epicsMutex > guard ( this->mutex );
+
     ::printf ( "Receive virtual circuit watchdog at %p, period %f\n",
         static_cast <const void *> ( this ), this->period );
     if ( level > 0u ) {
-        ::printf ( "\tresponse pending boolean %u, beacon anomaly boolean %u\n",
-            this->responsePending, this->beaconAnomaly );
+        ::printf ( "\t%s %s %s\n",
+            this->probeResponsePending ? "probe-response-pending" : "", 
+            this->beaconAnomaly ? "beacon-anomaly-detected" : "",
+            this->probeTimeoutDetected ? "probe-response-timeout" : "" );
     }
 }
+

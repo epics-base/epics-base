@@ -57,14 +57,15 @@ public:
         unsigned minRetryNo );
     void beaconAnomalyNotify ( epicsGuard < udpMutex > &,
         const epicsTime & currentTime, const double & delay );
+    void shutdown ();
     void show ( unsigned level ) const;
 private:
     double period; /* period between tries */
     epicsTimer & timer;
     class udpiiu & iiu;
     udpMutex & mutex;
-    unsigned framesPerTry; /* # of UDP frames per search try */
-    unsigned framesPerTryCongestThresh; /* one half N tries w congest */
+    double framesPerTry; /* # of UDP frames per search try */
+    double framesPerTryCongestThresh; /* one half N tries w congest */
     unsigned minRetry; /* min retry number so far */
     unsigned minRetryThisPass;
     unsigned searchAttempts; /* num search tries within this timer experation */
@@ -73,6 +74,7 @@ private:
     unsigned searchResponsesThisPass; /* num search resp within this pass */
     ca_uint32_t dgSeqNoAtTimerExpireBegin; 
     ca_uint32_t dgSeqNoAtTimerExpireEnd;
+    bool stopped;
     expireStatus expire ( const epicsTime & currentTime );
     void recomputeTimerPeriod ( epicsGuard < udpMutex > &, unsigned minRetryNew );
     void recomputeTimerPeriodAndStartTimer ( epicsGuard < udpMutex > &,

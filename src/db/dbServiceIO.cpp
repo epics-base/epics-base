@@ -23,6 +23,8 @@
  *	505 665 1831
  */
 
+#pragma message ( "file name needs to change" )
+
 #include <limits.h>
 
 #include "epicsMutex.h"
@@ -41,37 +43,35 @@
 #include "dbChannelIO.h"
 #include "dbPutNotifyBlocker.h"
 
-class dbServiceIOLoadTimeInit {
+class dbService : public cacService {
 public:
-    dbServiceIOLoadTimeInit ();
-private:
-    dbServiceIO dbio;
-	dbServiceIOLoadTimeInit ( const dbServiceIOLoadTimeInit & );
-	dbServiceIOLoadTimeInit & operator = ( const dbServiceIOLoadTimeInit & );
+    cacContext & contextCreate ( 
+        epicsMutex &, cacContextNotify & );
 };
 
-// The following is just to force lti to be constructed
-extern "C" void dbServiceIOInit()
+static dbService dbs;
+
+cacContext & dbService::contextCreate ( 
+    epicsMutex & mutex, cacContextNotify & notify )
 {
-    static dbServiceIOLoadTimeInit lti;
+    return * new dbContext ( mutex, notify );
+}
+
+extern "C" void dbServiceIOInit ()
+{
+    caInstallDefaultService ( dbs );
 }
 
 dbBaseIO::dbBaseIO () {}
 
-dbServiceIOLoadTimeInit::dbServiceIOLoadTimeInit ()
-{
-    epicsSingleton < cacServiceList > :: reference 
-        ref ( globalServiceListCAC.getReference () );
-    ref->registerService ( this->dbio );
-}
-
-dbServiceIO::dbServiceIO () :
-    ctx ( 0 ), stateNotifyCacheSize ( 0 ),
-        pStateNotifyCache ( 0 )
+dbContext::dbContext ( epicsMutex & mutexIn, cacContextNotify & notifyIn ) :
+    readNotifyCache ( mutexIn ), ctx ( 0 ), 
+    stateNotifyCacheSize ( 0 ), mutex ( mutexIn ),
+    notify ( notifyIn ), pNetContext ( 0 ), pStateNotifyCache ( 0 )
 {
 }
 
-dbServiceIO::~dbServiceIO ()
+dbContext::~dbContext ()
 {
     delete [] this->pStateNotifyCache;
     if ( this->ctx ) {
@@ -79,35 +79,49 @@ dbServiceIO::~dbServiceIO ()
     }
 }
 
-cacChannel *dbServiceIO::createChannel ( // X aCC 361
-            const char * pName, cacChannelNotify & notify, 
-            cacChannel::priLev )
+cacChannel & dbContext::createChannel ( // X aCC 361
+    epicsGuard < epicsMutex > & guard, const char * pName, 
+    cacChannelNotify & notifyIn, cacChannel::priLev priority )
 {
-    struct dbAddr addr;
+    guard.assertIdenticalMutex ( this->mutex );
 
-    int status = db_name_to_addr ( pName, & addr );
-    if ( status ) {
-        return 0;
+    struct dbAddr addr;
+    int status;
+    {
+        // dont know if the database might call a put callback 
+        // while holding its lock ...
+        epicsGuardRelease < epicsMutex > unguard ( guard );
+        status = db_name_to_addr ( pName, & addr );
     }
-    else if ( ! ca_preemtive_callback_is_enabled () ) {
-        errlogPrintf ( 
-            "dbServiceIO: preemptive callback required for direct in\n"
-            "memory interfacing of CA channels to the DB.\n" );
-        return 0;
+    if ( status ) {
+        if ( ! this->pNetContext.get() ) {
+            this->pNetContext.reset (
+                & this->notify.createNetworkContext ( this->mutex ) );
+        }
+        return this->pNetContext->createChannel (
+                    guard, pName, notifyIn, priority );
+    }
+    else if ( ca_preemtive_callback_is_enabled () ) {
+        return * new ( this->dbChannelIOFreeList )
+            dbChannelIO ( this->mutex, notifyIn, addr, *this ); 
     }
     else {
-        return new ( this->dbChannelIOFreeList )
-            dbChannelIO ( notify, addr, *this ); 
+        errlogPrintf ( 
+            "dbContext: preemptive callback required for direct in\n"
+            "memory interfacing of CA channels to the DB.\n" );
+        throw cacChannel::unsupportedByService ();
     }
 }
 
-void dbServiceIO::destroyChannel ( dbChannelIO & chan )
+void dbContext::destroyChannel ( 
+    epicsGuard < epicsMutex > & guard, dbChannelIO & chan )
 {
-    chan.~dbChannelIO ();
+    guard.assertIdenticalMutex ( this->mutex );
+    chan.destructor ( guard );
     this->dbChannelIOFreeList.release ( & chan );
 }
 
-void dbServiceIO::callStateNotify ( struct dbAddr & addr, 
+void dbContext::callStateNotify ( struct dbAddr & addr, 
         unsigned type, unsigned long count, 
         const struct db_field_log * pfl, 
         cacStateNotify & notify )
@@ -115,14 +129,16 @@ void dbServiceIO::callStateNotify ( struct dbAddr & addr,
     unsigned long size = dbr_size_n ( type, count );
 
     if ( type > INT_MAX ) {
-        notify.exception ( ECA_BADTYPE, 
+        epicsGuard < epicsMutex > guard ( this->mutex );
+        notify.exception ( guard, ECA_BADTYPE, 
             "type code out of range (high side)", 
             type, count );
         return;
     }
 
     if ( count > INT_MAX ) {
-        notify.exception ( ECA_BADCOUNT, 
+        epicsGuard < epicsMutex > guard ( this->mutex );
+        notify.exception ( guard, ECA_BADCOUNT, 
             "element count out of range (high side)",
             type, count);
         return;
@@ -140,11 +156,13 @@ void dbServiceIO::callStateNotify ( struct dbAddr & addr,
     int status = db_get_field ( &addr, static_cast <int> ( type ), 
                     this->pStateNotifyCache, static_cast <int> ( count ), pvfl );
     if ( status ) {
-        notify.exception ( ECA_GETFAIL, 
+        epicsGuard < epicsMutex > guard ( this->mutex );
+        notify.exception ( guard, ECA_GETFAIL, 
             "db_get_field() completed unsuccessfuly", type, count );
     }
     else { 
-        notify.current ( type, count, this->pStateNotifyCache );
+        epicsGuard < epicsMutex > guard ( this->mutex );
+        notify.current ( guard, type, count, this->pStateNotifyCache );
     }
 }
 
@@ -154,11 +172,14 @@ extern "C" void cacAttachClientCtx ( void * pPrivate )
     assert ( status == ECA_NORMAL );
 }
 
-void dbServiceIO::subscribe ( 
+void dbContext::subscribe ( 
+    epicsGuard < epicsMutex > & guard,
     struct dbAddr & addr, dbChannelIO & chan,
     unsigned type, unsigned long count, unsigned mask, 
     cacStateNotify & notify, cacChannel::ioid * pId )
 {
+    guard.assertIdenticalMutex ( this->mutex );
+
     /*
      * the database uses type "int" to store these parameters
      */
@@ -169,14 +190,15 @@ void dbServiceIO::subscribe (
         throw cacChannel::outOfBounds();
     }
 
-    {
-        epicsGuard < epicsMutex > locker ( this->mutex );
-        if ( ! this->ctx ) {
-            this->ctx = db_init_events ();
-            if ( ! this->ctx ) {
+    if ( ! this->ctx ) {
+        dbEventCtx tmpctx = 0;
+        {
+            epicsGuardRelease < epicsMutex > unguard ( guard );
+            tmpctx = db_init_events ();
+            if ( ! tmpctx ) {
                 throw std::bad_alloc ();
             }
-   
+
             unsigned selfPriority = epicsThreadGetPrioritySelf ();
             unsigned above;
             epicsThreadBooleanStatus tbs = 
@@ -184,136 +206,178 @@ void dbServiceIO::subscribe (
             if ( tbs != epicsThreadBooleanStatusSuccess ) {
                 above = selfPriority;
             }
-            int status = db_start_events ( this->ctx, "CAC-event", 
+            int status = db_start_events ( tmpctx, "CAC-event", 
                 cacAttachClientCtx, ca_current_context (), above );
             if ( status ) {
-                db_close_events ( this->ctx );
-                this->ctx = 0;
+                db_close_events ( tmpctx );
                 throw std::bad_alloc ();
             }
+        }
+        if ( this->ctx ) {
+            // another thread tried to simultaneously setup 
+            // the event system
+            db_close_events ( tmpctx );
+        }
+        else {
+            this->ctx = tmpctx;
         }
     }
 
     dbSubscriptionIO & subscr =
         * new ( this->dbSubscriptionIOFreeList ) 
-        dbSubscriptionIO ( *this, chan, 
+        dbSubscriptionIO ( guard, this->mutex, *this, chan, 
             addr, notify, type, count, mask, this->ctx );
-    {
-        epicsGuard < epicsMutex > locker ( this->mutex );
-        chan.dbServicePrivateListOfIO::eventq.add ( subscr );
-        this->ioTable.add ( subscr );
-    }
+    chan.dbContextPrivateListOfIO::eventq.add ( subscr );
+    this->ioTable.add ( subscr );
 
     if ( pId ) {
         *pId = subscr.getId ();
     }
 }
 
-void dbServiceIO::initiatePutNotify ( 
+void dbContext::initiatePutNotify ( 
+    epicsGuard < epicsMutex > & guard,
     dbChannelIO & chan, struct dbAddr & addr, 
     unsigned type, unsigned long count, const void * pValue, 
     cacWriteNotify & notify, cacChannel::ioid * pId )
 {
-    epicsGuard < epicsMutex > locker ( this->mutex );
-    if ( ! chan.dbServicePrivateListOfIO::pBlocker ) {
-        chan.dbServicePrivateListOfIO::pBlocker = 
+    guard.assertIdenticalMutex ( this->mutex );
+    if ( ! chan.dbContextPrivateListOfIO::pBlocker ) {
+        chan.dbContextPrivateListOfIO::pBlocker = 
             new ( this->dbPutNotifyBlockerFreeList ) 
-                dbPutNotifyBlocker ();
-        this->ioTable.add ( *chan.dbServicePrivateListOfIO::pBlocker );
+                dbPutNotifyBlocker ( this->mutex );
+        this->ioTable.add ( *chan.dbContextPrivateListOfIO::pBlocker );
     }
-    chan.dbServicePrivateListOfIO::pBlocker->initiatePutNotify ( 
-        locker, notify, addr, type, count, pValue );
+    chan.dbContextPrivateListOfIO::pBlocker->initiatePutNotify ( 
+        guard, notify, addr, type, count, pValue );
     if ( pId ) {
-        *pId = chan.dbServicePrivateListOfIO::pBlocker->getId ();
+        *pId = chan.dbContextPrivateListOfIO::pBlocker->getId ();
     }
 }
 
-void dbServiceIO::destroyAllIO ( dbChannelIO & chan )
+void dbContext::destroyAllIO ( 
+    epicsGuard < epicsMutex > & guard, dbChannelIO & chan )
 {
-    dbSubscriptionIO *pIO;
+    guard.assertIdenticalMutex ( this->mutex );
+    dbSubscriptionIO * pIO;
     tsDLList < dbSubscriptionIO > tmp;
-    {
-        epicsGuard < epicsMutex > locker ( this->mutex );
-        while ( ( pIO = chan.dbServicePrivateListOfIO::eventq.get() ) ) {
-            this->ioTable.remove ( *pIO );
-            tmp.add ( *pIO );
-        }
-        if ( chan.dbServicePrivateListOfIO::pBlocker ) {
-            this->ioTable.remove ( *chan.dbServicePrivateListOfIO::pBlocker );
-        }
+
+    while ( ( pIO = chan.dbContextPrivateListOfIO::eventq.get() ) ) {
+        this->ioTable.remove ( *pIO );
+        tmp.add ( *pIO );
     }
+    if ( chan.dbContextPrivateListOfIO::pBlocker ) {
+        this->ioTable.remove ( *chan.dbContextPrivateListOfIO::pBlocker );
+    }
+
     while ( ( pIO = tmp.get() ) ) {
         // This prevents a db event callback from coming 
         // through after the notify IO is deleted
-        pIO->unsubscribe ();
+        pIO->unsubscribe ( guard );
         // If they call ioCancel() here it will be ignored
         // because the IO has been unregistered above.
-        pIO->channelDeleteException ();
-        pIO->~dbSubscriptionIO ();
+        pIO->channelDeleteException ( guard );
+        pIO->destructor ( guard );
         this->dbSubscriptionIOFreeList.release ( pIO );
     }
-    if ( chan.dbServicePrivateListOfIO::pBlocker ) {
-        chan.dbServicePrivateListOfIO::pBlocker->~dbPutNotifyBlocker ();
-        this->dbPutNotifyBlockerFreeList.release ( chan.dbServicePrivateListOfIO::pBlocker );
-        chan.dbServicePrivateListOfIO::pBlocker = 0;
+
+    if ( chan.dbContextPrivateListOfIO::pBlocker ) {
+        chan.dbContextPrivateListOfIO::pBlocker->destructor ( guard );
+        this->dbPutNotifyBlockerFreeList.release ( chan.dbContextPrivateListOfIO::pBlocker );
+        chan.dbContextPrivateListOfIO::pBlocker = 0;
     }
 }
 
-void dbServiceIO::ioCancel ( dbChannelIO & chan, const cacChannel::ioid &id )
+void dbContext::ioCancel ( 
+    epicsGuard < epicsMutex > & guard, dbChannelIO & chan, 
+    const cacChannel::ioid &id )
 {
-    epicsGuard < epicsMutex > locker ( this->mutex );
+    guard.assertIdenticalMutex ( this->mutex );
     dbBaseIO * pIO = this->ioTable.remove ( id );
     if ( pIO ) {
         dbSubscriptionIO *pSIO = pIO->isSubscription ();
         if ( pSIO ) {
-            chan.dbServicePrivateListOfIO::eventq.remove ( *pSIO );
-            pSIO->~dbSubscriptionIO ();
+            chan.dbContextPrivateListOfIO::eventq.remove ( *pSIO );
+            pSIO->destructor ( guard );
             this->dbSubscriptionIOFreeList.release ( pSIO );
         }
-        else if ( pIO == chan.dbServicePrivateListOfIO::pBlocker ) {
-            chan.dbServicePrivateListOfIO::pBlocker->cancel ();
+        else if ( pIO == chan.dbContextPrivateListOfIO::pBlocker ) {
+            chan.dbContextPrivateListOfIO::pBlocker->cancel ( guard );
         }
         else {
-            errlogPrintf ( "dbServiceIO::ioCancel() unrecognized IO was probably leaked or not canceled\n" );
+            errlogPrintf ( "dbContext::ioCancel() unrecognized IO was probably leaked or not canceled\n" );
         }
     }
 }
 
-void dbServiceIO::ioShow ( const cacChannel::ioid &id, unsigned level ) const
+void dbContext::ioShow ( 
+    epicsGuard < epicsMutex > & guard, const cacChannel::ioid &id, 
+    unsigned level ) const
 {
-    epicsGuard < epicsMutex > locker ( this->mutex );
-    const dbBaseIO *pIO = this->ioTable.lookup ( id );
+    guard.assertIdenticalMutex ( this->mutex );
+    const dbBaseIO * pIO = this->ioTable.lookup ( id );
     if ( pIO ) {
-        pIO->show ( level );
+        pIO->show ( guard, level );
     }
 }
 
-void dbServiceIO::showAllIO ( const dbChannelIO &chan, unsigned level ) const
+void dbContext::showAllIO ( const dbChannelIO & chan, unsigned level ) const
 {
-    epicsGuard < epicsMutex > locker ( this->mutex );
+    epicsGuard < epicsMutex > guard ( this->mutex );
     tsDLIterConst < dbSubscriptionIO > pItem = 
-        chan.dbServicePrivateListOfIO::eventq.firstIter ();
+        chan.dbContextPrivateListOfIO::eventq.firstIter ();
     while ( pItem.valid () ) {
-        pItem->show ( level );
+        pItem->show ( guard, level );
         pItem++;
     }
-    if ( chan.dbServicePrivateListOfIO::pBlocker ) {
-        chan.dbServicePrivateListOfIO::pBlocker->show ( level );
+    if ( chan.dbContextPrivateListOfIO::pBlocker ) {
+        chan.dbContextPrivateListOfIO::pBlocker->show ( guard, level );
     }
 }
 
-void dbServiceIO::show ( unsigned level ) const
+void dbContext::show ( unsigned level ) const
 {
-    epicsGuard < epicsMutex > locker ( this->mutex );
-    printf ( "dbServiceIO at %p\n", 
+    epicsGuard < epicsMutex > guard ( this->mutex );
+}
+
+void dbContext::show ( 
+    epicsGuard < epicsMutex > & guard, unsigned level ) const
+{
+    guard.assertIdenticalMutex ( this->mutex );
+    printf ( "dbContext at %p\n", 
         static_cast <const void *> ( this ) );
     if ( level > 0u ) {
         printf ( "\tevent call back cache location %p, and its size %lu\n", 
             static_cast <void *> ( this->pStateNotifyCache ), this->stateNotifyCacheSize );
-        this->readNotifyCache.show ( level - 1 );
+        this->readNotifyCache.show ( guard, level - 1 );
     }
     if ( level > 1u ) {
         this->mutex.show ( level - 2u );
     }
 }
+
+void dbContext::flush ( 
+    epicsGuard < epicsMutex > & )
+{
+}
+
+unsigned dbContext::circuitCount (
+    epicsGuard < epicsMutex > & ) const
+{
+    return 0u;
+}
+
+void dbContext::selfTest (
+    epicsGuard < epicsMutex > & guard ) const
+{
+    guard.assertIdenticalMutex ( this->mutex );
+    this->ioTable.verify ();
+}
+
+unsigned dbContext::beaconAnomaliesSinceProgramStart (
+    epicsGuard < epicsMutex > & ) const
+{
+    return 0u;
+}
+
 

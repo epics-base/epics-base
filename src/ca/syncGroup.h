@@ -52,24 +52,22 @@ static const unsigned CASG_MAGIC = 0xFAB4CAFE;
 // is applied
 class casgRecycle {             // X aCC 655
 public:
-    virtual void recycleSyncGroupWriteNotify ( class syncGroupWriteNotify & io ) = 0;
-    virtual void recycleSyncGroupReadNotify ( class syncGroupReadNotify & io ) = 0;
+    virtual void recycleSyncGroupWriteNotify ( 
+        epicsGuard < epicsMutex > &, class syncGroupWriteNotify & io ) = 0;
+    virtual void recycleSyncGroupReadNotify ( 
+        epicsGuard < epicsMutex > &, class syncGroupReadNotify & io ) = 0;
 protected:
     virtual ~casgRecycle ();
 };
 
 class syncGroupNotify : public tsDLNode < syncGroupNotify > {
 public:
-    syncGroupNotify  ( struct CASG &sgIn, chid );
-    virtual void destroy ( casgRecycle & ) = 0;
-    void show ( unsigned level ) const;
-    bool ioInitiated () const;
+    syncGroupNotify ();
+    virtual void destroy (  
+        epicsGuard < epicsMutex > &, casgRecycle & ) = 0;
+    virtual void show ( 
+         epicsGuard < epicsMutex > &, unsigned level ) const = 0;
 protected:
-    chid chan;
-    struct CASG & sg;
-    const unsigned magic;
-    cacChannel::ioid id;
-    bool idIsValid;
     virtual ~syncGroupNotify (); 
 	syncGroupNotify ( const syncGroupNotify & );
 	syncGroupNotify & operator = ( const syncGroupNotify & );
@@ -80,14 +78,20 @@ public:
     static syncGroupReadNotify * factory ( 
         tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > &, 
         struct CASG &, chid, void *pValueIn );
-    void begin ( unsigned type, arrayElementCount count );
-    void destroy ( casgRecycle & );
-    void show ( unsigned level ) const;
+    void begin (  epicsGuard < epicsMutex > &, 
+        unsigned type, arrayElementCount count );
+    void destroy (  epicsGuard < epicsMutex > &, casgRecycle & );
+    void show (  epicsGuard < epicsMutex > &, unsigned level ) const;
 protected:
     virtual ~syncGroupReadNotify ();
 private:
-    void *pValue;
-    syncGroupReadNotify ( struct CASG &sgIn, chid, void *pValueIn );
+    chid chan;
+    struct CASG & sg;
+    const unsigned magic;
+    cacChannel::ioid id;
+    bool idIsValid;
+    void * pValue;
+    syncGroupReadNotify ( struct CASG & sgIn, chid, void * pValueIn );
     void * operator new ( size_t );
     void operator delete ( void * );
     void * operator new ( size_t, 
@@ -95,9 +99,11 @@ private:
     epicsPlacementDeleteOperator (( void *, 
         tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > & ))
     void completion (
-        unsigned type, arrayElementCount count, const void *pData );
+        epicsGuard < epicsMutex > &, unsigned type, 
+        arrayElementCount count, const void * pData );
     void exception (
-        int status, const char *pContext, unsigned type, arrayElementCount count );
+        epicsGuard < epicsMutex > &, int status, 
+        const char * pContext, unsigned type, arrayElementCount count );
 	syncGroupReadNotify ( const syncGroupReadNotify & );
 	syncGroupReadNotify & operator = ( const syncGroupReadNotify & );
 };
@@ -107,14 +113,18 @@ public:
     static syncGroupWriteNotify * factory ( 
         tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > &, 
         struct CASG &, chid );
-    void begin ( unsigned type, 
-                      arrayElementCount count, const void * pValueIn );
-    void destroy ( casgRecycle & );
-    void show ( unsigned level ) const;
+    void begin (  epicsGuard < epicsMutex > &, unsigned type, 
+        arrayElementCount count, const void * pValueIn );
+    void destroy (  epicsGuard < epicsMutex > &, casgRecycle & );
+    void show (  epicsGuard < epicsMutex > &, unsigned level ) const;
 protected:
     virtual ~syncGroupWriteNotify (); // allocate only from pool
 private:
-    void *pValue;
+    chid chan;
+    struct CASG & sg;
+    const unsigned magic;
+    cacChannel::ioid id;
+    bool idIsValid;
     syncGroupWriteNotify  ( struct CASG &, chid );
     void * operator new ( size_t );
     void operator delete ( void * );
@@ -122,8 +132,9 @@ private:
         tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > & );
     epicsPlacementDeleteOperator (( void *, 
         tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > & ))
-    void completion ();
-    void exception ( int status, const char *pContext, 
+    void completion ( epicsGuard < epicsMutex > & );
+    void exception ( 
+        epicsGuard < epicsMutex > &, int status, const char *pContext, 
 		unsigned type, arrayElementCount count );
 	syncGroupWriteNotify ( const syncGroupWriteNotify & );
 	syncGroupWriteNotify & operator = ( const syncGroupWriteNotify & );
@@ -131,52 +142,52 @@ private:
 
 struct ca_client_context;
 
-class casgMutex {
-public:
-    void lock ();
-    void unlock ();
-    void show ( unsigned level ) const;
-private:
-    epicsMutex mutex;
-};
-
 template < class T > class sgAutoPtr;
 
 struct CASG : public chronIntIdRes < CASG >, private casgRecycle {
 public:
-    CASG ( ca_client_context & cacIn );
-    ~CASG ();
-    bool ioComplete ();
-    bool verify () const;
-    int block ( double timeout );
-    void reset ();
+    CASG ( epicsGuard < epicsMutex > &, ca_client_context & cacIn );
+    void destructor ( epicsGuard < epicsMutex > & );
+    bool ioComplete (  epicsGuard < epicsMutex > & );
+    bool verify ( epicsGuard < epicsMutex > & ) const;
+    int block ( epicsGuard < epicsMutex > &, double timeout );
+    void reset ( epicsGuard < epicsMutex > & );
+    void show ( epicsGuard < epicsMutex > &, unsigned level ) const;
     void show ( unsigned level ) const;
-    void get ( chid pChan, unsigned type, arrayElementCount count, void * pValue );
-    void put ( chid pChan, unsigned type, arrayElementCount count, const void * pValue );
-    void completionNotify ( syncGroupNotify & );
+    void get ( epicsGuard < epicsMutex > &, chid pChan, 
+        unsigned type, arrayElementCount count, void * pValue );
+    void put ( epicsGuard < epicsMutex > &, chid pChan, 
+        unsigned type, arrayElementCount count, const void * pValue );
+    void completionNotify ( 
+        epicsGuard < epicsMutex > &, syncGroupNotify & );
     int printf ( const char * pFormat, ... );
-    void exception ( int status, const char *pContext, 
-        const char *pFileName, unsigned lineNo );
-    void exception ( int status, const char *pContext,
-        const char *pFileName, unsigned lineNo, oldChannelNotify &chan, 
+    void exception ( 
+         epicsGuard < epicsMutex > &, int status, const char * pContext, 
+        const char * pFileName, unsigned lineNo );
+    void exception ( 
+         epicsGuard < epicsMutex > &, int status, const char * pContext,
+        const char * pFileName, unsigned lineNo, oldChannelNotify & chan, 
         unsigned type, arrayElementCount count, unsigned op );
-    void * operator new ( size_t size, tsFreeList < struct CASG, 128 > & );
-    epicsPlacementDeleteOperator (( void *, tsFreeList < struct CASG, 128 > & ))
+    void * operator new ( size_t size, 
+        tsFreeList < struct CASG, 128, epicsMutexNOOP  > & );
+    epicsPlacementDeleteOperator (( void *, 
+        tsFreeList < struct CASG, 128, epicsMutexNOOP > & ))
 private:
     tsDLList < syncGroupNotify > ioPendingList;
     tsDLList < syncGroupNotify > ioCompletedList;
-    casgMutex mutable mutex;
     epicsEvent sem;
     ca_client_context & client;
     unsigned magic;
     tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > freeListReadOP;
     tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > freeListWriteOP;
-    void recycleSyncGroupWriteNotify ( syncGroupWriteNotify &io );
-    void recycleSyncGroupReadNotify ( syncGroupReadNotify &io );
+    void recycleSyncGroupWriteNotify (  
+        epicsGuard < epicsMutex > &, syncGroupWriteNotify & io );
+    void recycleSyncGroupReadNotify (  
+        epicsGuard < epicsMutex > &, syncGroupReadNotify & io );
 
-    void destroyPendingIO ( syncGroupNotify * );
-    void destroyCompletedIO ();
-    void destroyPendingIO ();
+    void destroyPendingIO ( epicsGuard < epicsMutex > &, syncGroupNotify * );
+    void destroyCompletedIO ( epicsGuard < epicsMutex > & );
+    void destroyPendingIO ( epicsGuard < epicsMutex > & );
 
 	CASG ( const CASG & );
 	CASG & operator = ( const CASG & );
@@ -184,42 +195,24 @@ private:
     void * operator new ( size_t size );
     void operator delete ( void * );
 
+    ~CASG ();
+
     friend class sgAutoPtr < syncGroupWriteNotify >;
     friend class sgAutoPtr < syncGroupReadNotify >;
 };
 
 inline void * CASG::operator new ( size_t size, 
-    tsFreeList < struct CASG, 128 > & freeList )
+    tsFreeList < struct CASG, 128, epicsMutexNOOP > & freeList )
 {
     return freeList.allocate ( size );
 }
 
 #   if defined ( CXX_PLACEMENT_DELETE )
 inline void CASG::operator delete ( void * pCadaver, 
-    tsFreeList < struct CASG, 128 > & freeList ) 
+    tsFreeList < struct CASG, 128, epicsMutexNOOP > & freeList ) 
 {
     freeList.release ( pCadaver );
 }
 #endif
-
-inline bool syncGroupNotify::ioInitiated () const
-{
-    return this->idIsValid;
-}
-
-inline void casgMutex::lock ()
-{
-    this->mutex.lock ();
-}
-
-inline void casgMutex::unlock ()
-{
-    this->mutex.unlock ();
-}
-
-inline void casgMutex::show ( unsigned level ) const
-{
-    this->mutex.show ( level );
-}
 
 #endif // ifdef syncGrouph

@@ -26,52 +26,60 @@
 #include "oldAccess.h"
 
 syncGroupWriteNotify::syncGroupWriteNotify ( CASG & sgIn, chid pChan ) :
-    syncGroupNotify ( sgIn, pChan )
+    chan ( pChan ), sg ( sgIn ), magic ( CASG_MAGIC ), 
+        id ( 0u ), idIsValid ( false )
 {
 }
 
-void syncGroupWriteNotify::begin ( unsigned type, 
-                      arrayElementCount count, const void * pValueIn )
+void syncGroupWriteNotify::begin ( 
+    epicsGuard < epicsMutex > & guard, unsigned type, 
+    arrayElementCount count, const void * pValueIn )
 {
-    this->chan->write ( type, count, pValueIn, *this, &this->id );
+    this->chan->write ( guard, type, count, 
+        pValueIn, *this, &this->id );
     this->idIsValid = true;
 }
 
 syncGroupWriteNotify * syncGroupWriteNotify::factory ( 
     tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > &freeList, 
-    struct CASG &sg, chid chan )
+    struct CASG & sg, chid chan )
 {
     return new ( freeList ) syncGroupWriteNotify ( sg, chan );
 }
 
-void syncGroupWriteNotify::destroy ( casgRecycle & recycle )
+void syncGroupWriteNotify::destroy ( 
+    epicsGuard < epicsMutex > & guard, casgRecycle & recycle )
 {
+    if ( this->idIsValid ) {
+        this->chan->ioCancel ( guard, this->id );
+    }
     this->~syncGroupWriteNotify ();
-    recycle.recycleSyncGroupWriteNotify ( * this );
+    recycle.recycleSyncGroupWriteNotify ( guard, *this );
 }
 
 syncGroupWriteNotify::~syncGroupWriteNotify ()
 {
-    if ( this->idIsValid ) {
-        this->chan->ioCancel ( this->id );
-    }
 }
 
-void syncGroupWriteNotify::completion ()
+void syncGroupWriteNotify::completion ( 
+    epicsGuard < epicsMutex > & guard )
 {
     if ( this->magic != CASG_MAGIC ) {
         this->sg.printf ( "cac: sync group io_complete(): bad sync grp op magic number?\n" );
         return;
     }
     this->idIsValid = false;
-    this->sg.completionNotify ( *this );
+    this->sg.completionNotify ( guard, *this );
 }
 
 void syncGroupWriteNotify::exception (
+    epicsGuard < epicsMutex > & guard, 
     int status, const char *pContext, unsigned type, arrayElementCount count )
 {
-   this->sg.exception ( status, pContext, 
+   this->sg.exception ( guard, status, pContext, 
         __FILE__, __LINE__, *this->chan, type, count, CA_OP_PUT );
+   this->idIsValid = false;
+
     //
     // This notify is left installed at this point as a place holder indicating that
     // all requests have not been completed. This notify is not uninstalled until
@@ -79,11 +87,14 @@ void syncGroupWriteNotify::exception (
     //
 }
 
-void syncGroupWriteNotify::show ( unsigned level ) const
+void syncGroupWriteNotify::show ( 
+    epicsGuard < epicsMutex > & guard, unsigned level ) const
 {
     ::printf ( "pending write sg op\n" );
     if ( level > 0u ) {
-        this->syncGroupNotify::show ( level - 1u );
+        ::printf ( "pending sg op: chan=%s magic=%u sg=%p\n",
+            this->chan->pName(), this->magic, 
+            static_cast < void * > ( &this->sg ) );
     }
 }
 

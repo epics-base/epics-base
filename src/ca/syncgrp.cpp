@@ -26,9 +26,9 @@
  */
 extern "C" int epicsShareAPI ca_sg_create ( CA_SYNC_GID * pgid ) // X aCC 361
 {
-    ca_client_context *pcac;
+    ca_client_context * pcac;
     int caStatus;
-    CASG *pcasg;
+    CASG * pcasg;
 
     caStatus = fetchClientContext ( &pcac );
     if ( caStatus != ECA_NORMAL ) {
@@ -36,7 +36,8 @@ extern "C" int epicsShareAPI ca_sg_create ( CA_SYNC_GID * pgid ) // X aCC 361
     }
 
     try {
-        pcasg = new ( pcac->casgFreeList ) CASG ( *pcac );
+        epicsGuard < epicsMutex > guard ( pcac->mutexRef() );
+        pcasg = new ( pcac->casgFreeList ) CASG ( guard, *pcac );
         *pgid = pcasg->getId ();
         return ECA_NORMAL;
     }
@@ -59,12 +60,14 @@ extern "C" int epicsShareAPI ca_sg_delete ( const CA_SYNC_GID gid )
         return caStatus;
     }
 
-    CASG * pcasg = pcac->lookupCASG ( gid );
+    epicsGuard < epicsMutex > guard ( pcac->mutexRef() );
+
+    CASG * pcasg = pcac->lookupCASG ( guard, gid );
     if ( ! pcasg ) {
         return ECA_BADSYNCGRP;
     }
 
-    pcasg->~CASG ();
+    pcasg->destructor ( guard );
     pcac->casgFreeList.release ( pcasg );
 
     return ECA_NORMAL;
@@ -84,12 +87,14 @@ extern "C" int epicsShareAPI ca_sg_block ( const CA_SYNC_GID gid, ca_real timeou
         return status;
     }
 
-    pcasg = pcac->lookupCASG ( gid );
+    epicsGuard < epicsMutex > guard ( pcac->mutexRef() );
+
+    pcasg = pcac->lookupCASG ( guard, gid );
     if ( ! pcasg ) {
         status = ECA_BADSYNCGRP;
     }
     else {
-        status = pcasg->block ( timeout );
+        status = pcasg->block ( guard, timeout );
     }
 
     return status;
@@ -109,13 +114,15 @@ extern "C" int epicsShareAPI ca_sg_reset ( const CA_SYNC_GID gid )
         return caStatus;
     }
 
-    pcasg = pcac->lookupCASG ( gid );
+    epicsGuard < epicsMutex > guard ( pcac->mutexRef() );
+
+    pcasg = pcac->lookupCASG ( guard, gid );
     if ( ! pcasg ) {
         caStatus = ECA_BADSYNCGRP;
     }
     else {
         caStatus = ECA_NORMAL;
-        pcasg->reset ();
+        pcasg->reset ( guard );
     }
 
     return caStatus;
@@ -126,21 +133,20 @@ extern "C" int epicsShareAPI ca_sg_reset ( const CA_SYNC_GID gid )
  */
 extern "C" int epicsShareAPI ca_sg_stat ( const CA_SYNC_GID gid )
 {
-    ca_client_context *pcac;
-    CASG *pcasg;
-
-    int caStatus = fetchClientContext (&pcac);
+    ca_client_context * pcac;
+    int caStatus = fetchClientContext ( &pcac );
     if ( caStatus != ECA_NORMAL ) {
         return caStatus;
     }
 
-    pcasg = pcac->lookupCASG ( gid );
+    epicsGuard < epicsMutex > guard ( pcac->mutexRef() );
+
+    CASG * pcasg = pcac->lookupCASG ( guard, gid );
     if ( ! pcasg ) {
         ::printf ( "Bad Sync Group Id\n");
         return ECA_BADSYNCGRP;
     }
-
-    pcasg->show ( 1000u );
+    pcasg->show ( guard, 1000u );
 
     return ECA_NORMAL;
 }
@@ -159,12 +165,13 @@ extern "C" int epicsShareAPI ca_sg_test ( const CA_SYNC_GID gid ) // X aCC 361
         return caStatus;
     }
 
-    pcasg = pcac->lookupCASG ( gid );
+    epicsGuard < epicsMutex > guard ( pcac->mutexRef() );
+
+    pcasg = pcac->lookupCASG ( guard, gid );
     if ( ! pcasg ) {
         return ECA_BADSYNCGRP;
     }
-
-    if ( pcasg->ioComplete () ) {
+    if ( pcasg->ioComplete ( guard ) ) {
         return ECA_IODONE;
     }
     else{
@@ -187,13 +194,15 @@ extern "C" int epicsShareAPI ca_sg_array_put ( const CA_SYNC_GID gid, chtype typ
         return caStatus;
     }
 
-    pcasg = pcac->lookupCASG ( gid );
+    epicsGuard < epicsMutex > guard ( pcac->mutexRef() );
+
+    pcasg = pcac->lookupCASG ( guard, gid );
     if ( ! pcasg ) {
         return ECA_BADSYNCGRP;
     }
 
     try {
-        pcasg->put ( pChan, type, 
+        pcasg->put ( guard, pChan, type, 
             static_cast < unsigned > ( count ), pValue );
         return ECA_NORMAL;
     }
@@ -250,13 +259,15 @@ extern "C" int epicsShareAPI ca_sg_array_get ( const CA_SYNC_GID gid, chtype typ
         return caStatus;
     }
 
-    pcasg = pcac->lookupCASG ( gid );
+    epicsGuard < epicsMutex > guard ( pcac->mutexRef() );
+
+    pcasg = pcac->lookupCASG ( guard, gid );
     if ( ! pcasg ) {
         return ECA_BADSYNCGRP;
     }
 
     try {
-        pcasg->get ( pChan, type, 
+        pcasg->get ( guard, pChan, type, 
             static_cast < unsigned > ( count ), pValue );
         return ECA_NORMAL;
     }

@@ -39,6 +39,7 @@
 #include "resourceLib.h"
 #include "cacIO.h"
 #include "compilerDependencies.h"
+#include "epicsMemory.h"
 
 #ifdef dbCACh_restore_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols
@@ -56,7 +57,7 @@
 
 extern "C" void putNotifyCompletion ( putNotify *ppn );
 
-class dbServiceIO;
+class dbContext;
 class dbChannelIO;
 class dbPutNotifyBlocker;
 class dbSubscriptionIO;
@@ -65,6 +66,7 @@ class dbBaseIO                  //  X aCC 655
     : public chronIntIdRes < dbBaseIO > {
 public:
     virtual dbSubscriptionIO * isSubscription () = 0;
+    virtual void show ( epicsGuard < epicsMutex > &, unsigned level ) const = 0;
     virtual void show ( unsigned level ) const = 0;
 	dbBaseIO ();
 	dbBaseIO ( const dbBaseIO & );
@@ -74,109 +76,144 @@ public:
 extern "C" void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr *paddr,
 	int eventsRemaining, struct db_field_log *pfl );
 
-class dbSubscriptionIO : public tsDLNode <dbSubscriptionIO>, public dbBaseIO {
+class dbSubscriptionIO : 
+    public tsDLNode < dbSubscriptionIO >, 
+    public dbBaseIO {
 public:
-    dbSubscriptionIO ( dbServiceIO &, dbChannelIO &, struct dbAddr &, cacStateNotify &, 
+    dbSubscriptionIO ( 
+        epicsGuard < epicsMutex > &, epicsMutex &,
+        dbContext &, dbChannelIO &, struct dbAddr &, cacStateNotify &, 
         unsigned type, unsigned long count, unsigned mask, dbEventCtx );
-    virtual ~dbSubscriptionIO ();
-    void unsubscribe ();
-    void channelDeleteException ();
+    void destructor ( epicsGuard < epicsMutex > & );
+    void unsubscribe ( epicsGuard < epicsMutex > & );
+    void channelDeleteException ( epicsGuard < epicsMutex > & );
+    void show ( epicsGuard < epicsMutex > &, unsigned level ) const;
     void show ( unsigned level ) const;
-    void * operator new ( size_t size, tsFreeList < dbSubscriptionIO > & );
-    epicsPlacementDeleteOperator (( void *, tsFreeList < dbSubscriptionIO > & ))
+    void * operator new ( size_t size, 
+        tsFreeList < dbSubscriptionIO, 256, epicsMutexNOOP > & );
+    epicsPlacementDeleteOperator (( void *, 
+        tsFreeList < dbSubscriptionIO, 256, epicsMutexNOOP > & ))
 private:
+    epicsMutex & mutex;
+    unsigned long count;
     cacStateNotify & notify;
     dbChannelIO & chan;
     dbEventSubscription es;
     unsigned type;
-    unsigned long count;
     unsigned id;
     dbSubscriptionIO * isSubscription ();
-    friend void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr *paddr,
-	    int eventsRemaining, struct db_field_log *pfl );
+    friend void dbSubscriptionEventCallback ( 
+        void * pPrivate, struct dbAddr * paddr,
+	    int eventsRemaining, struct db_field_log * pfl );
 	dbSubscriptionIO ( const dbSubscriptionIO & );
 	dbSubscriptionIO & operator = ( const dbSubscriptionIO & );
+    virtual ~dbSubscriptionIO ();
     void * operator new ( size_t size );
     void operator delete ( void * );
 };
 
-class dbServiceIO;
+class dbContext;
 
-class dbServicePrivateListOfIO {
+class dbContextPrivateListOfIO {
 public:
-    dbServicePrivateListOfIO ();
+    dbContextPrivateListOfIO ();
 private:
     tsDLList < dbSubscriptionIO > eventq;
     dbPutNotifyBlocker * pBlocker;
-    friend class dbServiceIO;
-	dbServicePrivateListOfIO ( const dbServicePrivateListOfIO & );
-	dbServicePrivateListOfIO & operator = ( const dbServicePrivateListOfIO & );
+    friend class dbContext;
+	dbContextPrivateListOfIO ( const dbContextPrivateListOfIO & );
+	dbContextPrivateListOfIO & operator = ( const dbContextPrivateListOfIO & );
 };
 
+#pragma message ( "name change reflecting dbContext indicated?" )
 // allow only one thread at a time to use the cache, but do not hold
 // lock when calling the callback
-class dbServiceIOReadNotifyCache  {
+class dbContextReadNotifyCache  {
 public:
-    dbServiceIOReadNotifyCache ();
-    ~dbServiceIOReadNotifyCache ();
-    void callReadNotify ( struct dbAddr &addr, unsigned type, unsigned long count, 
-            cacReadNotify &notify );
-    void show ( unsigned level ) const;
+    dbContextReadNotifyCache ( epicsMutex & );
+    ~dbContextReadNotifyCache ();
+    void callReadNotify ( epicsGuard < epicsMutex > &, 
+        struct dbAddr & addr, unsigned type, unsigned long count, 
+            cacReadNotify & notify );
+    void show ( epicsGuard < epicsMutex > &, unsigned level ) const;
 private:
-    epicsMutex mutex;
     unsigned long readNotifyCacheSize;
-    char *pReadNotifyCache;
-	dbServiceIOReadNotifyCache ( const dbServiceIOReadNotifyCache & );
-	dbServiceIOReadNotifyCache & operator = ( const dbServiceIOReadNotifyCache & );
+    epicsMutex & mutex;
+    char * pReadNotifyCache;
+	dbContextReadNotifyCache ( const dbContextReadNotifyCache & );
+	dbContextReadNotifyCache & operator = ( const dbContextReadNotifyCache & );
 };
 
-class dbServiceIO : public cacService {
+class dbContext : public cacContext {
 public:
-    dbServiceIO ();
-    virtual ~dbServiceIO ();
-    cacChannel * createChannel ( const char *pName, 
-            cacChannelNotify &, cacChannel::priLev );
-    void destroyChannel ( dbChannelIO & );
-    void callReadNotify ( struct dbAddr &addr, unsigned type, unsigned long count, 
-            cacReadNotify &notify );
+    dbContext ( epicsMutex & mutex, cacContextNotify & notify );
+    virtual ~dbContext ();
+    void destroyChannel ( epicsGuard < epicsMutex > &, dbChannelIO & );
+    void callReadNotify ( epicsGuard < epicsMutex > &, 
+            struct dbAddr & addr, unsigned type, unsigned long count, 
+            cacReadNotify & notify );
     void callStateNotify ( struct dbAddr &addr, unsigned type, unsigned long count, 
             const struct db_field_log * pfl, cacStateNotify & notify );
     void subscribe ( 
+            epicsGuard < epicsMutex > &,
             struct dbAddr & addr, dbChannelIO & chan,
             unsigned type, unsigned long count, unsigned mask, 
             cacStateNotify & notify, cacChannel::ioid * pId );
-    void initiatePutNotify ( dbChannelIO &, struct dbAddr &, unsigned type, 
-            unsigned long count, const void *pValue, cacWriteNotify &notify, 
-            cacChannel::ioid * pId ); 
+    void initiatePutNotify ( 
+            epicsGuard < epicsMutex > &, dbChannelIO &, struct dbAddr &, 
+            unsigned type, unsigned long count, const void * pValue, 
+            cacWriteNotify & notify, cacChannel::ioid * pId ); 
     void show ( unsigned level ) const;
-    void showAllIO ( const dbChannelIO &chan, unsigned level ) const;
-    void destroyAllIO ( dbChannelIO & chan );
-    void ioCancel ( dbChannelIO & chan, const cacChannel::ioid &id );
-    void ioShow ( const cacChannel::ioid &id, unsigned level ) const;
+    void showAllIO ( const dbChannelIO & chan, unsigned level ) const;
+    void destroyAllIO ( 
+        epicsGuard < epicsMutex > &, dbChannelIO & chan );
+    void ioCancel ( epicsGuard < epicsMutex > &, 
+        dbChannelIO & chan, const cacChannel::ioid &id );
+    void ioShow ( epicsGuard < epicsMutex > &,
+        const cacChannel::ioid & id, unsigned level ) const;
 private:
-    mutable epicsMutex mutex;
-    tsFreeList < dbPutNotifyBlocker > dbPutNotifyBlockerFreeList;
-    tsFreeList < dbSubscriptionIO > dbSubscriptionIOFreeList;
-    tsFreeList < dbChannelIO > dbChannelIOFreeList;
+    tsFreeList < dbPutNotifyBlocker, 64, epicsMutexNOOP > dbPutNotifyBlockerFreeList;
+    tsFreeList < dbSubscriptionIO, 256, epicsMutexNOOP > dbSubscriptionIOFreeList;
+    tsFreeList < dbChannelIO, 256, epicsMutexNOOP > dbChannelIOFreeList;
     chronIntIdResTable < dbBaseIO > ioTable;
-    dbServiceIOReadNotifyCache readNotifyCache;
+    dbContextReadNotifyCache readNotifyCache;
     dbEventCtx ctx;
     unsigned long stateNotifyCacheSize;
-    char *pStateNotifyCache;
-	dbServiceIO ( const dbServiceIO & );
-	dbServiceIO & operator = ( const dbServiceIO & );
+    mutable epicsMutex & mutex;
+    cacContextNotify & notify;
+    epics_auto_ptr < cacContext > pNetContext;
+    char * pStateNotifyCache;
+
+    cacChannel & createChannel ( 
+        epicsGuard < epicsMutex > &,
+        const char * pChannelName, cacChannelNotify &, 
+        cacChannel::priLev );
+    void flush ( 
+        epicsGuard < epicsMutex > & );
+    unsigned circuitCount (
+        epicsGuard < epicsMutex > & ) const;
+    void selfTest (
+        epicsGuard < epicsMutex > & ) const;
+    unsigned beaconAnomaliesSinceProgramStart (
+        epicsGuard < epicsMutex > & ) const;
+    void show ( 
+        epicsGuard < epicsMutex > &, unsigned level ) const;
+
+	dbContext ( const dbContext & );
+	dbContext & operator = ( const dbContext & );
 };
 
-inline dbServicePrivateListOfIO::dbServicePrivateListOfIO () :
+inline dbContextPrivateListOfIO::dbContextPrivateListOfIO () :
     pBlocker ( 0 )
 {
 }
 
-inline void dbServiceIO::callReadNotify ( struct dbAddr &addr, 
-        unsigned type, unsigned long count, 
-        cacReadNotify &notify )
+inline void dbContext::callReadNotify ( 
+    epicsGuard < epicsMutex > & guard, struct dbAddr &addr, 
+    unsigned type, unsigned long count, cacReadNotify & notify )
 {
-    this->readNotifyCache.callReadNotify ( addr, type, count, notify );
+    guard.assertIdenticalMutex ( this-> mutex );
+    this->readNotifyCache.callReadNotify ( guard, addr, type, count, notify );
 }
 
 #endif // dbCACh

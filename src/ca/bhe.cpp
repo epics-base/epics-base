@@ -24,11 +24,6 @@
 #include <limits.h>
 #include <float.h>
 
-#if 0
-#define DEBUG
-#define DEBUG_ALL 0
-#endif
-
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #define epicsExportSharedSymbols
@@ -50,10 +45,10 @@
  * zero (so we can correctly compute the period
  * between the 1st and 2nd beacons)
  */
-bhe::bhe ( const epicsTime & initialTimeStamp, 
+bhe::bhe ( epicsMutex & mutexIn, const epicsTime & initialTimeStamp, 
           unsigned initialBeaconNumber, const inetAddrID & addr ) :
     inetAddrID ( addr ), timeStamp ( initialTimeStamp ), averagePeriod ( - DBL_MAX ),
-    pIIU ( 0 ), lastBeaconNumber ( initialBeaconNumber )
+    mutex ( mutexIn ), pIIU ( 0 ), lastBeaconNumber ( initialBeaconNumber )
 {
 #   ifdef DEBUG
     {
@@ -68,10 +63,11 @@ bhe::~bhe ()
 {
 }
 
-void bhe::beaconAnomalyNotify ()
+void bhe::beaconAnomalyNotify ( epicsGuard < epicsMutex > & guard )
 {
+    guard.assertIdenticalMutex ( this->mutex );
     if ( this->pIIU ) {
-        this->pIIU->beaconAnomalyNotify ();
+        this->pIIU->beaconAnomalyNotify ( guard );
     }
 }
 
@@ -125,10 +121,13 @@ void bhe::logBeaconDiscard ( unsigned /* beaconAdvance */,
  *
  * updates beacon period, and looks for beacon anomalies
  */
-bool bhe::updatePeriod ( const epicsTime & programBeginTime, 
+bool bhe::updatePeriod ( 
+    epicsGuard < epicsMutex > & guard, const epicsTime & programBeginTime, 
     const epicsTime & currentTime, ca_uint32_t beaconNumber, 
     unsigned protocolRevision )
 {
+    guard.assertIdenticalMutex ( this->mutex );
+
     //
     // this block is enetered if the beacon was created as a side effect of
     // creating a connection and so we dont yet know the first beacon time 
@@ -139,7 +138,7 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
             this->lastBeaconNumber = beaconNumber;
         }
 
-        this->beaconAnomalyNotify ();
+        this->beaconAnomalyNotify ( guard );
 
         /* 
          * this is the 1st beacon seen - the beacon time stamp
@@ -189,7 +188,7 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
     if ( this->averagePeriod < 0.0 ) {
         double totalRunningTime;
 
-        this->beaconAnomalyNotify ();
+        this->beaconAnomalyNotify ( guard );
 
         /*
          * this is the 2nd beacon seen. We cant tell about
@@ -229,7 +228,7 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
              * trigger on any missing beacon 
              * if connected to this server
              */    
-            this->beaconAnomalyNotify ();
+            this->beaconAnomalyNotify ( guard );
 
             if ( currentPeriod >= this->averagePeriod * 3.25 ) {
                 /* 
@@ -253,14 +252,14 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
          * that the server is available
          */
         else if ( currentPeriod <= this->averagePeriod * 0.80 ) {
-            this->beaconAnomalyNotify ();
+            this->beaconAnomalyNotify ( guard );
             netChange = true;
             logBeacon ( "bal", currentPeriod, currentTime );
         }
         else if ( this->pIIU ) {
             // update state of health for active virtual circuits 
             // if the beacon looks ok
-            this->pIIU->beaconArrivalNotify ( currentTime );
+            this->pIIU->beaconArrivalNotify ( guard, currentTime );
             logBeacon ( "vb", currentPeriod, currentTime );
         }
 
@@ -276,27 +275,34 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
 
 void bhe::show ( unsigned /* level */ ) const
 {
+    epicsGuard < epicsMutex > guard ( this->mutex );
     ::printf ( "CA beacon hash entry at %p with average period %f\n", 
         static_cast <const void *> ( this ), this->averagePeriod );
 }
 
-double bhe::period () const 
+double bhe::period ( epicsGuard < epicsMutex > & guard ) const 
 {
+    guard.assertIdenticalMutex ( this->mutex );
     return this->averagePeriod;
 }
 
-epicsTime bhe::updateTime () const
+epicsTime bhe::updateTime ( epicsGuard < epicsMutex > & guard ) const
 {
+    guard.assertIdenticalMutex ( this->mutex );
     return this->timeStamp;
 }
 
-void bhe::registerIIU ( tcpiiu & iiu )
+void bhe::registerIIU ( 
+    epicsGuard < epicsMutex > & guard, tcpiiu & iiu )
 {
+    guard.assertIdenticalMutex ( this->mutex );
     this->pIIU = & iiu;
 }
 
-void bhe::unregisterIIU ( tcpiiu & iiu )
+void bhe::unregisterIIU ( 
+    epicsGuard < epicsMutex > & guard, tcpiiu & iiu )
 {
+    guard.assertIdenticalMutex ( this->mutex );
     if ( this->pIIU == & iiu ) {
         this->pIIU = 0;
         this->timeStamp = epicsTime();

@@ -58,17 +58,16 @@ template class tsFreeList < CASG, 128 >;
 template class tsFreeList < syncGroupReadNotify, 128, epicsMutexNOOP >;
 template class tsFreeList < syncGroupWriteNotify, 128, epicsMutexNOOP >;
 template class tsFreeList < comBuf, 0x20 >;
-template class tsFreeList < getCallback, 1024 >;
-template class tsFreeList < getCopy, 1024 >;
+template class tsFreeList < getCallback, 1024, epicsMutexNOOP >;
+template class tsFreeList < getCopy, 1024, epicsMutexNOOP >;
 template class tsFreeList < hostNameCache, 16 >;
 template class tsFreeList < msgForMultiplyDefinedPV, 16 >;
 template class tsFreeList < nciu, 1024 >;
 template class tsFreeList < oldChannelNotify, 1024 >;
-template class tsFreeList < oldSubscription, 1024 >;
-template class tsFreeList < putCallback, 1024 >;
+template class tsFreeList < oldSubscription, 1024, epicsMutexNOOP >;
+template class tsFreeList < putCallback, 1024, epicsMutexNOOP >;
 template class tsFreeList < repeaterClient, 0x20 >;
-template class epicsSingleton <cacServiceList>;
-template class epicsSingleton <localHostName>;
+template class epicsSingleton < localHostName >;
 
 #ifdef _MSC_VER
 #   pragma warning ( pop )

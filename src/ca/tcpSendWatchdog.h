@@ -31,14 +31,15 @@
 
 class tcpSendWatchdog : private epicsTimerNotify {
 public:
-    tcpSendWatchdog ( cac &, tcpiiu &, double periodIn, epicsTimerQueue & queueIn );
+    tcpSendWatchdog ( callbackMutex &, tcpiiu &, 
+        double periodIn, epicsTimerQueue & queueIn );
     virtual ~tcpSendWatchdog ();
     void start ( const epicsTime & );
     void cancel ();
 private:
     const double period;
     epicsTimer & timer;
-    cac & cacRef;
+    callbackMutex & cbMutex;
     tcpiiu & iiu;
     expireStatus expire ( const epicsTime & currentTime );
 	tcpSendWatchdog ( const tcpSendWatchdog & );

@@ -24,3 +24,4 @@ inline bool udpiiu::isCurrentThread () const
 }
 
 #endif // udpiiu_ILh
+

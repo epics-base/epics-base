@@ -24,3 +24,4 @@ inline bool recvProcessThread::isCurrentThread () const
 }
 
 #endif // recvProcessThread_ILh
+

@@ -7,17 +7,20 @@ DEPLIBS = $(INSTALL_LIB)/libca.a $(INSTALL_LIB)/libCom.a
 SRCS.c = \
 	../ca_test.c \
 	../iocLogServer.c \
+	../chglimits.c \
 	../startCArepeater.c
 
 OBJS = \
 	ca_test.o \
 	iocLogServer.o \
+	chglimits.o \
 	startCArepeater.o
 
 
 PROD = \
 	ca_test \
 	iocLogServer \
+	chglimits \
 	startCArepeater
 
 ifeq ($(T_A),solaris)

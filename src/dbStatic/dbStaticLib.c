@@ -2453,8 +2453,8 @@ int dbAllocForm(DBENTRY *psave)
     int		nbytes,i;
 
     if(psave->formpvt) {
-	epicsPrintf("dbAllocForm called but form already exists\n");
-	return(0);
+	status = dbFreeForm(psave);
+	if(status) return(status);
     }
     dbCopyEntryContents(psave,pdbentry);
     pflddes = pdbentry->pflddes;
@@ -2470,11 +2470,13 @@ int dbAllocForm(DBENTRY *psave)
 	    epicsPrintf("dbAllocForm called but not DBF_DEVICE or DBF_xxxLINK\n");
 	    goto done;
 	}
-    }
-    status = setLinkType(pdbentry);
-    if(status) {
-	errMessage(status,"in dbAllocForm from setLinkType");
-	return(0);
+        if(strcmp(pflddes->name,"INP")==0 || strcmp(pflddes->name,"OUT")==0){
+            status = setLinkType(pdbentry);
+            if(status) {
+	        errMessage(status,"in dbAllocForm from setLinkType");
+	        return(0);
+            }
+        }
     }
     plink = (DBLINK *)(pdbentry->pfield);
     if(plink->type==MACRO_LINK) goto done;

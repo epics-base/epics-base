@@ -217,104 +217,123 @@ LOCAL int cac_push_udp_msg (udpiiu *piiu, const caHdr *pMsg, const void *pExt, c
 /*
  *  Default Exception Handler
  */
-extern "C" {
-    LOCAL void ca_default_exception_handler (struct exception_handler_args args)
-    {
-        if (args.chid && args.op != CA_OP_OTHER) {
-            ca_signal_formated (
-                args.stat, 
-                args.pFile, 
-                args.lineNo, 
-                "%s - with request chan=%s op=%ld data type=%s count=%ld",
-                args.ctx,
-                ca_name (args.chid),
-                args.op,
-                dbr_type_to_text(args.type),
-                args.count);
-        }
-        else {
-            ca_signal_formated (
-                args.stat, 
-                args.pFile, 
-                args.lineNo, 
-                args.ctx);
-        }
+extern "C" void ca_default_exception_handler (struct exception_handler_args args)
+{
+    if (args.chid && args.op != CA_OP_OTHER) {
+        ca_signal_formated (
+            args.stat, 
+            args.pFile, 
+            args.lineNo, 
+            "%s - with request chan=%s op=%ld data type=%s count=%ld",
+            args.ctx,
+            ca_name (args.chid),
+            args.op,
+            dbr_type_to_text(args.type),
+            args.count);
+    }
+    else {
+        ca_signal_formated (
+            args.stat, 
+            args.pFile, 
+            args.lineNo, 
+            args.ctx);
     }
 }
+
+extern "C" pvId pvNameToIdNoop (const char *);
+extern "C" int pvPutFieldNoop (pvId, int, const void *, int);
+extern "C" int pvGetFieldNoop (pvId, int, void *, int, void *);
+extern "C" long pvPutNotifyInitiateNoop (pvId, 
+    unsigned, unsigned long, const void *, 
+    void (*)(void *), void *, putNotifyId *);
+extern "C" void pvPutNotifyDestroyNoop (putNotifyId);
+extern "C" const char * pvNameNoop (pvId);
+extern "C" unsigned long pvNoElementsNoop (pvId);
+extern "C" short pvTypeNoop (pvId);
+extern "C" dbEventCtx pvEventQueueInitNoop ();
+extern "C" int pvEventQueueStartNoop (dbEventCtx, const char *, 
+        void (*)(void *), void *, int);
+extern "C" void pvEventQueueCloseNoop (dbEventCtx);
+extern "C" dbEventSubscription pvEventQueueAddEventNoop (dbEventCtx, pvId,
+        void (*)(void *, pvId, int, struct db_field_log *), 
+        void *, unsigned);
+extern "C" int pvEventQueuePostSingleEventNoop (dbEventSubscription);
+extern "C" void pvEventQueueCancelEventNoop (dbEventSubscription);
+extern "C" int pvEventQueueAddExtraLaborEventNoop (dbEventCtx, 
+            void (*)(void *), void *);
+extern "C" int pvEventQueuePostExtraLaborNoop (dbEventCtx);
+extern "C" void event_import (void *pParam);
 
 /*
  * default local pv interface entry points that always fail
  */
-extern "C" {
-    static pvId pvNameToIdNoop (const char *) 
-    {
-        return 0;
-    }
-    static int pvPutFieldNoop (pvId, int, 
-                             const void *, int)
-    {
-        return -1;
-    }
-    static int pvGetFieldNoop (pvId, int,
-                        void *, int, void *)
-    {
-        return -1;
-    }
-    static long pvPutNotifyInitiateNoop (pvId, 
-        unsigned, unsigned long, const void *, 
-        void (*)(void *), void *, putNotifyId *)
-    {
-        return -1;
-    }
-    static void pvPutNotifyDestroyNoop (putNotifyId)
-    {
-    }
-    static const char * pvNameNoop (pvId)
-    {
-        return "";
-    }
-    static unsigned long pvNoElementsNoop (pvId)
-    {
-        return 0u;
-    }
-    static short pvTypeNoop (pvId)
-    {
-        return -1;
-    }
-    static dbEventCtx pvEventQueueInitNoop ()
-    {
-        return NULL;
-    }
-    static int pvEventQueueStartNoop (dbEventCtx, const char *, 
-            void (*)(void *), void *, int)
-    {
-        return -1;
-    }
-    static void pvEventQueueCloseNoop (dbEventCtx)
-    {
-    }
-    static dbEventSubscription pvEventQueueAddEventNoop (dbEventCtx, pvId,
-            void (*)(void *, pvId, int, struct db_field_log *), 
-            void *, unsigned)
-    {
-        return NULL;
-    }
-    static int pvEventQueuePostSingleEventNoop (dbEventSubscription)
-    {
-        return -1;
-    }
-    static void pvEventQueueCancelEventNoop (dbEventSubscription)
-    {
-    }
-    static int pvEventQueueAddExtraLaborEventNoop (dbEventCtx, 
-            void (*)(void *), void *)
-    {
-        return -1;
-    }
-    static int pvEventQueuePostExtraLaborNoop (dbEventCtx)
-    {
-        return -1;
-    }
+static pvId pvNameToIdNoop (const char *) 
+{
+    return 0;
+}
+static int pvPutFieldNoop (pvId, int, 
+                         const void *, int)
+{
+    return -1;
+}
+static int pvGetFieldNoop (pvId, int, void *, int, void *)
+{
+    return -1;
+}
+static long pvPutNotifyInitiateNoop (pvId, 
+    unsigned, unsigned long, const void *, 
+    void (*)(void *), void *, putNotifyId *)
+{
+    return -1;
+}
+static void pvPutNotifyDestroyNoop (putNotifyId)
+{
+}
+static const char * pvNameNoop (pvId)
+{
+    return "";
+}
+static unsigned long pvNoElementsNoop (pvId)
+{
+    return 0u;
+}
+static short pvTypeNoop (pvId)
+{
+    return -1;
+}
+static dbEventCtx pvEventQueueInitNoop ()
+{
+    return NULL;
+}
+static int pvEventQueueStartNoop (dbEventCtx, const char *, 
+        void (*)(void *), void *, int)
+{
+    return -1;
+}
+static void pvEventQueueCloseNoop (dbEventCtx)
+{
+}
+static dbEventSubscription pvEventQueueAddEventNoop (dbEventCtx, pvId,
+        void (*)(void *, pvId, int, struct db_field_log *), 
+        void *, unsigned)
+{
+    return NULL;
+}
+static int pvEventQueuePostSingleEventNoop (dbEventSubscription)
+{
+    return -1;
+}
+static void pvEventQueueCancelEventNoop (dbEventSubscription)
+{
+}
+static int pvEventQueueAddExtraLaborEventNoop (dbEventCtx, 
+        void (*)(void *), void *)
+{
+    return -1;
+}
+static int pvEventQueuePostExtraLaborNoop (dbEventCtx)
+{
+    return -1;
 }
 
 LOCAL const pvAdapter pvAdapterNOOP =
@@ -340,11 +359,9 @@ LOCAL const pvAdapter pvAdapterNOOP =
 /*
  * event_import()
  */
-extern "C" {
-    static void event_import (void *pParam)
-    {
-        threadPrivateSet (caClientContextId, pParam);
-    }
+static void event_import (void *pParam)
+{
+    threadPrivateSet (caClientContextId, pParam);
 }
 
 /*

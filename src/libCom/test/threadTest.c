@@ -66,7 +66,8 @@ void threadTest(int ntasks,int verbose)
         if(i==0)errlogPrintf("startPriority %d minPriority %d maxPriority %d\n",
             startPriority,minPriority,maxPriority);
     }
-    
+    threadSleep(.1);
+    threadShow();
     threadSleep(5.0);
     errlogPrintf("threadTest terminating\n");
     errVerbose = errVerboseSave;

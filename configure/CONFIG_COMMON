@@ -73,6 +73,9 @@ INSTALL_SHRLIB              = $(INSTALL_LOCATION_LIB)/$(T_A)
 INSTALL_TCLLIB              = $(INSTALL_LOCATION_LIB)/$(T_A)
 INSTALL_BIN                 = $(INSTALL_LOCATION_BIN)/$(T_A)
 
+#Directories for libraries
+SHRLIB_SEARCH_DIRS          = $(INSTALL_LIB)
+
 #-------------------------------------------------------
 # Ext, app, and module configure dir targets
 CONFIG_TARGETS += CONFIG_APP_INCLUDE RULES_INCLUDE

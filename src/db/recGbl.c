@@ -52,6 +52,7 @@
 #include	<dbBase.h>
 #include	<dbRecType.h>
 #include	<dbRecDes.h>
+#include	<dbEvent.h>
 #include	<dbAccess.h>
 #include	<dbScan.h>
 #include	<devSup.h>

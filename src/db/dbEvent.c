@@ -622,14 +622,16 @@ int db_post_single_event(struct event_block	*pevent)
  *
  */
 int db_post_events(
-struct dbCommon		*precord,
-union native_value	*pvalue,
-unsigned int		select
+void		*prec,
+void		*pval,
+unsigned int	select
 )
 {  
-  	 struct event_block	*event;
-  	 struct event_que	*ev_que;
- 	 unsigned int		putix;
+	struct dbCommon		*precord = (struct dbCommon *)prec;
+	union native_value	*pvalue = (union native_value *)pval;
+	struct event_block	*event;
+  	struct event_que	*ev_que;
+ 	unsigned int		putix;
 
 	if (precord->mlis.count == 0) return OK;		/* no monitors set */
 

@@ -51,6 +51,7 @@
 #include 	<ellLib.h>
 #include 	<vxLib.h>
 #include 	<tickLib.h>
+#include 	<sysLib.h>
 
 #include	<dbDefs.h>
 #include	<dbAccess.h>

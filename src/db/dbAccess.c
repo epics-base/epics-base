@@ -90,6 +90,7 @@
 #include	<dbFldTypes.h>
 #include 	<dbRecDes.h>
 #include 	<dbRecType.h>
+#include	<dbEvent.h>
 #include	<db_field_log.h>
 #include	<errMdef.h>
 #include	<recSup.h>

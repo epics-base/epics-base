@@ -96,6 +96,7 @@
 #include	<stdlib.h>
 #include	<string.h>
 #include	<stdio.h>
+#include	<timexLib.h>
 
 #include        <ellLib.h>
 #include	<fast_lock.h>
@@ -112,6 +113,7 @@
 #include	<special.h>
 #include	<dbRecDes.h>
 #include	<dbStaticLib.h>
+#include	<dbEvent.h>
 #include	<ellLib.h>
 #include 	<callback.h>
 
@@ -170,18 +172,6 @@ long dba(char*pname)
     if(status) return(1); else return(0);
 }
 
-/*Following definition is from dbEvent.c*/
-struct event_block{
-  	ELLNODE			node;
-  	struct dbAddr		*paddr;
-  	void			(*user_sub)();
-  	void			*user_arg;
-  	struct event_que	*ev_que;
-  	unsigned char		select;
-  	char			valque;
-  	unsigned short		npend;	/* n times this event is on the que */
-};
-
 long dbel(char*pname)
 {
     struct dbAddr 	addr;
@@ -200,7 +190,7 @@ long dbel(char*pname)
 	return(0);
     }
     while(peb) {
-	pfldDes = peb->paddr->pfldDes;
+	pfldDes = ((struct dbAddr *)peb->paddr)->pfldDes;
 	printf("%4.4s",&pfldDes->fldname[0]);
 	if(peb->select&&DBE_VALUE) printf(" VALUE");
 	if(peb->select&&DBE_LOG) printf(" LOG");
@@ -1756,7 +1746,8 @@ char *record_name;
   *  Time the record
   */
   dbScanLock(precord);
-  timexN(timing_routine, precord);
+  timexN((FUNCPTR)timing_routine, (int)precord,
+	0,0,0,0,0,0,0);
   dbScanUnlock(precord);
  
   return(0);

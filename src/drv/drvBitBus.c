@@ -30,6 +30,7 @@
  * Modification Log:
  * -----------------
  * .01  09-30-91        jrw     Completely redesigned and rewritten
+ * .02	12-02-91	jrw	Changed priority info to arrays
  *
  * NOTES:
  * This driver currently needs work on error message generation.
@@ -211,19 +212,19 @@ initBB()
       pBbLink[i]->linkId = i;           /* link number */
       FASTLOCKINIT(&(pBbLink[i]->linkEventSem));
 
-      lstInit(&(pBbLink[i]->hiPriList)); /* init the high priority list */
-      FASTLOCKINIT(&(pBbLink[i]->hiPriSem));
-      FASTUNLOCK(&(pBbLink[i]->hiPriSem));
-
-      lstInit(&(pBbLink[i]->loPriList)); /* init the lo priority list */
-      FASTLOCKINIT(&(pBbLink[i]->loPriSem));
-      FASTUNLOCK(&(pBbLink[i]->loPriSem));
+      /* init all the prioritized queue lists */
+      for (j=0; j<BB_NUM_PRIO; j++)
+      {
+        lstInit(&(pBbLink[i]->queue[j].list));
+        FASTLOCKINIT(&(pBbLink[i]->queue[j].sem));
+        FASTUNLOCK(&(pBbLink[i]->queue[j].sem));
+      }
 
       lstInit(&(pBbLink[i]->busyList));	/* init the busy message list */
 
       for (j=0; j<BB_APERLINK; j++)
       {
-	pBbLink[i]->deviceStatus[j] = IDLE;	/* Assume all nodes are IDLE */
+	pBbLink[i]->deviceStatus[j] = BB_IDLE;	/* Assume all nodes are IDLE */
       }
 
       if ((pXvmeLink[i] = (struct xvmeLink *) malloc(sizeof(struct xvmeLink))) == NULL)
@@ -510,8 +511,8 @@ int	link;
 
     if (pXvmeLink[link]->rxDpvtHead->finishProc != NULL)
     {
-      pXvmeLink[link]->rxDpvtHead->list_callback.callBack = pXvmeLink[link]->rxDpvtHead->finishProc;
-      pXvmeLink[link]->rxDpvtHead->list_proirity.priority = pXvmeLink[link]->rxDpvtHead->priority;
+      pXvmeLink[link]->rxDpvtHead->header.callback.callback = pXvmeLink[link]->rxDpvtHead->finishProc;
+      pXvmeLink[link]->rxDpvtHead->header.callback.priority = pXvmeLink[link]->rxDpvtHead->priority;
 
       if (bbDebug)
         logMsg("xvmeIrqRcmd(%d): invoking the callbackRequest\n", link);
@@ -595,6 +596,7 @@ int	link;
   struct dpvtBitBusHead  *pnode;
   struct dpvtBitBusHead  *npnode;
   unsigned char	intMask;
+  int			prio;
 
   if (bbDebug)
     logMsg("xvmeLinkTask started for link %d\n", link);
@@ -645,10 +647,11 @@ int	link;
 	    (plink->deviceStatus[pnode->txMsg->node])--; /* fix node status */
 	    if(pnode->finishProc != NULL)
 	    { /* make the callbackRequest to inform message sender */
-	      pnode->list_callback.callBack = pnode->finishProc;
-	      pnode->list_proirity.priority = pnode->priority;
+	      pnode->header.callback.callback = pnode->finishProc;
+	      pnode->header.callback.priority = pnode->priority;
+/* BUG -- undoc the callback request call here & nuke the manual call */
 	      /* callbackRequest(pnode); */ /* schedule completion processing */
-	      (pnode->list_callback.callBack)(pnode);
+	      (pnode->header.callback.callback)(pnode);
 	    }
 	  }
 	  pnode = npnode;	/* Because I deleted the current one */
@@ -683,89 +686,50 @@ int	link;
     if (!(pXvmeLink[link]->bbRegs->stat_ctl & XVME_TX_INT))
     { /* If we are here, the transmitter is idle and the TX ints are disabled */
 
-      /* see if the Hi priority queue has anything in it */
-      FASTLOCK(&(plink->hiPriSem));
-      /* disable XVME RX ints for the link while accessing the busy list! */
-      intMask = pXvmeLink[link]->bbRegs->stat_ctl & (XVME_RX_INT | XVME_ENABLE_INT);
-      pXvmeLink[link]->bbRegs->stat_ctl = XVME_NO_INT; /* stop the receiver */
-  
-      if ((pnode = (struct dpvtBitBusHead *)lstFirst(&(plink->hiPriList))) != NULL)
+      for (prio = 0; prio < BB_NUM_PRIO; prio++)
       {
-        while (plink->deviceStatus[pnode->txMsg->node] == BUSY)
-          if ((pnode = (struct dpvtBitBusHead *)lstNext(&(plink->hiPriList))) == NULL)
-            break;
-      }
-      if (pnode != NULL)
-      {
-        lstDelete(&(plink->hiPriList), pnode);
-  
-        if (bbDebug)
-          logMsg("xvmeLinkTask(%d): got Hi Pri xact, pnode= 0x%08.8X\n", link, pnode);
-  
-        /* Count the outstanding messages */
-        (plink->deviceStatus[pnode->txMsg->node])++;
-  
-        /* ready the structures for the TX int handler */
-        pXvmeLink[link]->txDpvtHead = pnode;	
-        pXvmeLink[link]->txCount = pnode->txMsg->length - 2;
-        pXvmeLink[link]->txMsg = &(pnode->txMsg->length);
-  
-        intMask |= XVME_ENABLE_INT | XVME_TX_INT;
-  
-        if (!lstCount(&(plink->busyList))) /* if list empty, start watch dog */
-          wdStart(pXvmeLink[link]->watchDogId, BB_WD_INTERVAL, xvmeTmoHandler, link);
-        lstAdd(&(plink->busyList), pnode);	/* put request on busy list */
-        pXvmeLink[link]->bbRegs->stat_ctl = intMask; /* need before use xmtr */
-        intMask = 0;				/* I already set the int mask */
-        xvmeIrqTbmt(link);			/* force first byte out */
-      }
-      if (intMask)
-        pXvmeLink[link]->bbRegs->stat_ctl = intMask; /* Restore rcvr ints */
-  
-      FASTUNLOCK(&(plink->hiPriSem));
-  
-      /* only continue if nothing was found in the high priority list */
-      if (pnode == NULL)
-      {
-        FASTLOCK(&(plink->loPriSem));
+        /* see if the queue has anything in it */
+        FASTLOCK(&(plink->queue[prio].sem));
         /* disable XVME RX ints for the link while accessing the busy list! */
         intMask = pXvmeLink[link]->bbRegs->stat_ctl & (XVME_RX_INT | XVME_ENABLE_INT);
         pXvmeLink[link]->bbRegs->stat_ctl = XVME_NO_INT; /* stop the receiver */
-  
-        if ((pnode = (struct dpvtBitBusHead *)lstFirst(&(plink->loPriList))) != NULL)
+    
+        if ((pnode = (struct dpvtBitBusHead *)lstFirst(&(plink->queue[prio].list))) != NULL)
         {
-          while (plink->deviceStatus[pnode->txMsg->node] == BUSY)
-            if ((pnode = (struct dpvtBitBusHead *)lstNext(&(plink->loPriList))) == NULL)
+          while (plink->deviceStatus[pnode->txMsg->node] == BB_BUSY)
+            if ((pnode = (struct dpvtBitBusHead *)lstNext(&(plink->queue[prio].list))) == NULL)
               break;
         }
         if (pnode != NULL)
-        {
-          lstDelete(&(plink->loPriList), pnode);
-  
-          if(bbDebug)
-            logMsg("xvmeLinkTask(%d): got Lo Pri xact, pnode= 0x%08.8X\n", link, pnode);
-  
+        { /* have an xact to start processing */
+          lstDelete(&(plink->queue[prio].list), pnode);
+	  FASTUNLOCK(&(plink->queue[prio].sem));
+    
+          if (bbDebug)
+            logMsg("xvmeLinkTask(%d): got xact, pnode= 0x%08.8X\n", link, pnode);
+    
           /* Count the outstanding messages */
           (plink->deviceStatus[pnode->txMsg->node])++;
-  
-	  /* ready the structures for the TX int handler */
+    
+          /* ready the structures for the TX int handler */
           pXvmeLink[link]->txDpvtHead = pnode;	
           pXvmeLink[link]->txCount = pnode->txMsg->length - 2;
           pXvmeLink[link]->txMsg = &(pnode->txMsg->length);
-  
+    
           intMask |= XVME_ENABLE_INT | XVME_TX_INT;
-  
-          if (!lstCount(&(plink->busyList))) /* Start watch dog if list empty */
+    
+          if (!lstCount(&(plink->busyList))) /* if list empty, start watch dog */
             wdStart(pXvmeLink[link]->watchDogId, BB_WD_INTERVAL, xvmeTmoHandler, link);
-          lstAdd(&(plink->busyList), pnode);	/* put on busy list */
-          pXvmeLink[link]->bbRegs->stat_ctl = intMask; /* need before xmit */
-	  intMask = 0;				/* I already set them */
+          lstAdd(&(plink->busyList), pnode);	/* put request on busy list */
+          pXvmeLink[link]->bbRegs->stat_ctl = intMask; /* need before use xmtr */
           xvmeIrqTbmt(link);			/* force first byte out */
         }
-        if (intMask)
-          pXvmeLink[link]->bbRegs->stat_ctl = intMask; /* restore rcvr ints */
-  
-        FASTUNLOCK(&(plink->loPriSem));
+	else
+	{ /* we have no xacts that can be processed at this time */
+          pXvmeLink[link]->bbRegs->stat_ctl = intMask; /* Restore rcvr ints */
+    
+          FASTUNLOCK(&(plink->queue[prio].sem));
+	}
       }
     }
   }
@@ -785,23 +749,19 @@ int     link;
 struct  dpvtBitBusHead *pdpvt;
 int     prio;
 {
-  switch (prio) {
-  case 1:               /* low priority transaction request */
-    FASTLOCK(&(pBbLink[link]->loPriSem));
-    lstAdd(&(pBbLink[link]->loPriList), pdpvt);
-    FASTUNLOCK(&(pBbLink[link]->loPriSem));
-    FASTUNLOCK(&(pBbLink[link]->linkEventSem));
-    break;
-  case 2:               /* high priority transaction request */
-    FASTLOCK(&(pBbLink[link]->hiPriSem));
-    lstAdd(&(pBbLink[link]->hiPriList), pdpvt);
-    FASTUNLOCK(&(pBbLink[link]->hiPriSem));
-    FASTUNLOCK(&(pBbLink[link]->linkEventSem));
-    break;
-  default:              /* invalid priority */
-    logMsg("invalid priority requested in call to qbbreq(%d, %08.8X, %d)\n", link, pdpvt, prio);
-    return(ERROR);
+  char	message[100];
+
+  if (prio < 0 || prio >= BB_NUM_PRIO)
+  {
+    sprintf(message, "invalid priority requested in call to qbbreq(%d, %08.8X, %d)\n", link, pdpvt, prio);
+    errMessage(S_BB_badPrio, message);
   }
+
+  FASTLOCK(&(pBbLink[link]->queue[prio].sem));
+  lstAdd(&(pBbLink[link]->queue[prio].list), pdpvt);
+  FASTUNLOCK(&(pBbLink[link]->queue[prio].sem));
+  FASTUNLOCK(&(pBbLink[link]->linkEventSem));
+
   if (bbDebug)
     logMsg("qbbreq(%d, 0x%08.8X, %d): transaction queued\n", link, pdpvt, prio);
 

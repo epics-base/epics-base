@@ -156,9 +156,14 @@ struct xvmeRegs {
  *
  ******************************************************************************/
 
-#define BUSY 1		/* deviceStatus value if device is currently busy */
-#define IDLE 0		/* deviceStatus value if device is currently idle */
+#define BB_BUSY 1	/* deviceStatus value if device is currently busy */
+#define BB_IDLE 0	/* deviceStatus value if device is currently idle */
 
+struct        bbPrioList {
+  LIST        list;   /* list header for the queue */
+  FAST_LOCK   sem;    /* semaphore for the queue list */
+};
+#define       BB_NUM_PRIO     2       /* number of priorities supported 0 = lowest */
 /******************************************************************************
  *
  * The bbLink structure holds all the required link-specific queueing 
@@ -171,10 +176,7 @@ struct	bbLink {
 
   FAST_LOCK	linkEventSem;	/* given when this link requires service */
 
-  LIST		hiPriList;	/* list head for high priority queue */
-  FAST_LOCK	hiPriSem;	/* semaphore for high priority queue */
-  LIST		loPriList;	/* list head for low priority queue */
-  FAST_LOCK	loPriSem;	/* semaphore for low priority queue */
+  struct bbPrioList queue[BB_NUM_PRIO];	/* prioritized request queues */
 
   LIST		busyList;	/* messages waiting on a response */
 

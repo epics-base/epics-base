@@ -1,0 +1,27 @@
+# CONFIG.Host.solarisGnu
+#
+#  This file is maintained by the EPICS community.
+#  Sites may override these definitions in CONFIG_SITE.Host.solarisGnu
+
+ARCH_CLASS = solaris
+
+# Include definitions common to all Unix archs
+include $(EPICS_BASE)/config/CONFIG.Host.UnixCommon
+
+AR = ar
+_AR = $(AR) $(ARFLAGS)
+G++_AR = $(_AR)
+CCC_AR = $(CCC) -xar -o
+ARCMD = $($(CPLUSPLUS)_AR) $@
+RANLIB =
+
+#==========================
+# These are overrides of ANSI and CPLUSPLUS values in CONFIG_SITE
+ANSI=GCC
+CPLUSPLUS=G++
+#==========================
+
+ARCH_DEP_CFLAGS = -DSOLARIS 
+# socket and nsl needed by libca.a
+ARCH_DEP_LDLIBS = -lsocket -lnsl
+

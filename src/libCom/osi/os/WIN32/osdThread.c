@@ -524,9 +524,11 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate (const char *pName,
     pParmWIN32->parm = pParm;
     pParmWIN32->epicsPriority = priority;
 
-    pParmWIN32->handle = (HANDLE) _beginthreadex ( 0, 
-        stackSize, epicsWin32ThreadEntry, 
-        pParmWIN32, CREATE_SUSPENDED, &pParmWIN32->id );
+    pParmWIN32->handle = (HANDLE) _beginthreadex ( 
+        0, stackSize, epicsWin32ThreadEntry, 
+        pParmWIN32, 
+        CREATE_SUSPENDED | STACK_SIZE_PARAM_IS_A_RESERVATION, 
+        & pParmWIN32->id );
     if ( pParmWIN32->handle == 0 ) {
         free ( pParmWIN32 );
         return NULL;

@@ -107,4 +107,4 @@ G++_CONFORM_CFLAGS_STRICT =
 	@$(RM) $*.c
 	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.i
 	@$(RM) $@
-	$(COMPILE.cpp) -Wno-deprecated $*.c
+	$(COMPILE.cpp) -x c++ -Wno-deprecated $*.c

@@ -176,6 +176,7 @@
  *				the drvSup structure          
  * .49	06-29-92	joh	removed FILE pointer argument to io report
  * .50	06-29-92	joh	moved ab reset here
+ * .51	07-10-92	lrd	mode interrupt on change of state to scan once on initialization
  */
 
 /*
@@ -1092,6 +1093,7 @@ abDoneTask(){
  *
  * simulate a change of state interrupt from the Allen-Bradley
  */
+extern short	wakeup_init;	/* flags that the database scan initialization is complete */
 unsigned char		ab_old_binary_ins[AB_MAX_LINKS*AB_MAX_ADAPTERS*AB_MAX_CARDS];
 ab_bi_cos_simulator()
 {
@@ -1100,8 +1102,13 @@ ab_bi_cos_simulator()
 	register unsigned short		*pcard;
 	unsigned short			*ps_input,*ps_oldval;
 	short				adapter,card,inpinx;
+	short				first_scan,first_scan_complete;
 
+	first_scan_complete = first_scan = 0;
 	for(;;){
+		/* flag first scan */
+		if (wakeup_init && !first_scan_complete) first_scan = 1;
+
 		/* check each link */
 		link = 0;
 		for (link = 0; link < AB_MAX_LINKS; link++){
@@ -1119,7 +1126,7 @@ ab_bi_cos_simulator()
 					if (card_inx & 0x1)	continue;
 					ps_input = (unsigned short *)&(p6008->iit[card_inx]);
 					ps_oldval = (unsigned short *)&(ab_old_binary_ins[card_inx]);
-					if (*ps_input != *ps_oldval){
+					if ((*ps_input != *ps_oldval) || first_scan){
 						adapter = card_inx / AB_MAX_CARDS;
 						card = card_inx - (adapter * AB_MAX_CARDS);
 						io_event_scanner_wakeup(IO_BI,ABBI_16_BIT,card,link,adapter);
@@ -1131,7 +1138,7 @@ ab_bi_cos_simulator()
 					inpinx = card_inx;
 					if (inpinx & 0x1)	inpinx--;	/* shuffle those bytes */
 					else inpinx++;
-					if (p6008->iit[inpinx] != ab_old_binary_ins[inpinx]){
+					if ((p6008->iit[inpinx] != ab_old_binary_ins[inpinx]) || first_scan){
 						adapter = card_inx / AB_MAX_CARDS;
 						card = card_inx - (adapter * AB_MAX_CARDS);
 						io_event_scanner_wakeup(IO_BI,ABBI_08_BIT,card,link,adapter);
@@ -1139,6 +1146,12 @@ ab_bi_cos_simulator()
 					}
 				}
 			}
+		}
+
+		/* turn off first scan */
+		if (first_scan){
+			first_scan_complete = 1;
+			first_scan = 0;
 		}
 
 		/* check for changes at about 15 Hertz */

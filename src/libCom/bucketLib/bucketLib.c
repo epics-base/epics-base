@@ -51,11 +51,6 @@
 #define BUCKET_IX_N		(1<<BUCKET_IX_WIDTH)
 #define BUCKET_IX_MASK		(BUCKET_IX_N-1)	
 
-typedef union itemPtr{
-	void	*pItem;
-	BUCKET	*pBucket;
-}ITEMPTR;
-
 #ifdef DEBUG
 main()
 {
@@ -141,7 +136,12 @@ main()
 /*
  * bucketCreate()
  */
+#ifdef __STDC__
 BUCKET	*bucketCreate(unsigned indexWidth)
+#else 
+BUCKET	*bucketCreate(indexWidth)
+unsigned indexWidth;
+#endif
 {
 	BUCKET		*pb;
 	unsigned	nentries;
@@ -179,7 +179,14 @@ BUCKET	*bucketCreate(unsigned indexWidth)
 /*
  * bucketAddItem()
  */
+#ifdef __STDC__
 int	bucketAddItem(BUCKET *prb, BUCKETID id, void *pItem)
+#else
+int	bucketAddItem(prb, id, pItem)
+BUCKET  *prb;
+BUCKETID id;
+void *pItem;
+#endif
 {
 	ITEMPTR	*pi;
 
@@ -226,7 +233,14 @@ int	bucketAddItem(BUCKET *prb, BUCKETID id, void *pItem)
 /*
  * bucketRemoveItem()
  */
-int	bucketRemoveItem(BUCKET *prb, BUCKETID id, void *pItem)
+#ifdef __STDC__
+int	bucketRemoveItem (BUCKET *prb, BUCKETID id, void *pItem)
+#else
+int	bucketRemoveItem (prb, id, pItem)
+BUCKET *prb; 
+BUCKETID id; 
+void *pItem;
+#endif
 {
 	ITEMPTR	*ppi;
 
@@ -280,7 +294,13 @@ int	bucketRemoveItem(BUCKET *prb, BUCKETID id, void *pItem)
 /*
  * bucketLookupItem()
  */
+#ifdef __STDC__
 void	*bucketLookupItem(BUCKET *pb, BUCKETID id)
+#else
+void	*bucketLookupItem(pb, id)
+BUCKET *pb; 
+BUCKETID id;
+#endif
 {
 	unsigned shift;
 
@@ -311,7 +331,12 @@ void	*bucketLookupItem(BUCKET *pb, BUCKETID id)
 /*
  * bucketShow()
  */
+#ifdef __STDC__
 int	bucketShow(BUCKET *pb)
+#else
+int	bucketShow(pb)
+BUCKET *pb;
+#endif
 {
 	ITEMPTR	*pi;
 

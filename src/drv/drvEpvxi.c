@@ -155,8 +155,11 @@ static char *sccsId = "$Id$\t$Date$";
 #include <intLib.h>
 #include <tickLib.h>
 #include <stdioLib.h>
+#if 0
 #include <string.h>
+#endif
 
+#include <devLib.h>
 #define SRCepvxiLib	/* allocate externals here */
 #include <drvEpvxi.h>
 #include <drvHp1404a.h>
@@ -830,7 +833,9 @@ enum laPass	pass
 		 * This makes the MXI/VXI configure correctly after
 		 * a control x (soft) reboot.
 		 */
-		vxi_unmap_mxi_devices();
+		if(pass == laPassSC){
+			vxi_unmap_mxi_devices();
+		}
 
 		/*
 		 * for each MXI found that we have not seen before
@@ -1021,6 +1026,17 @@ enum laPass	pass
 		pmxi_new->dir.w.dd.mxi.la_window =
 			1 | (1<<NVXIADDRBITS);
 
+/*
+ * Makes NI MXI hardware bug go away?
+ */
+#if 0
+{
+	int16_t		tmp;
+
+	tmp = pmxi_new->dir.w.dd.mxi.la_window;
+	tmp = pmxi_new->dir.w.dd.mxi.control; 
+}
+#endif
 		mxi_map(pnewvxie, pass);	
 		
 		/*
@@ -1129,7 +1145,7 @@ unsigned	la
 				sizeof(id),
 				(char *)&id);
   	if(status<0){
-		return S_epvxi_internal;
+		return S_dev_noDevice;
 	}
 
 	status = verify_valid_window(pvxie, la);
@@ -1189,6 +1205,10 @@ unsigned	la
 			open_slot0_device(pvxie, la);
 		}
 	}
+
+#	ifdef DEBUG
+		printf("Found LA=0X%X extender LA=0X%X\n", la, pvxie->la);
+#	endif
 
 	return VXI_SUCCESS;
 }
@@ -1325,6 +1345,12 @@ LOCAL void vxi_record_topology(void)
 			}
 		}
 		else{
+			errPrintf(
+				status,
+				__FILE__,
+				__LINE__,
+				"LA=0X%X",
+				la);
 			(*pplac)->slot = UKN_SLOT;
 			(*pplac)->slot_zero_la = UKN_LA;
 			(*pplac)->extender_la = UKN_LA;
@@ -1956,8 +1982,14 @@ VXISZ			**ppvxisz
 	EPVXISTAT	status;
 	unsigned char	slot;
 
-	status = S_epvxi_internal;
+	/*
+	 * RULE C.2.7
+	 */
+	if(VXIMODIDSTATUS(pcsr->dir.r.status)){
+		return S_epvxi_noMODID;
+	}
 
+	status = S_epvxi_slotNotFound;
 	pvxisz = (VXISZ *) crateList.node.next;
 	while(pvxisz){
 

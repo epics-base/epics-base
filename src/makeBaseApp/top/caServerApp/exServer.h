@@ -94,7 +94,6 @@ private:
     const unsigned elementCount;
     exPV * pPV;
     pvInfo & operator = ( const pvInfo & );
-    pvInfo ( const pvInfo & );
 };
 
 //
@@ -268,7 +267,7 @@ public:
 private:
     caStatus updateValue ( const gdd & );
     exVectorPV & operator = ( const exVectorPV & );
-    exVectorPV ( const exVectorPV & )
+    exVectorPV ( const exVectorPV & );
 };
 
 //
@@ -302,7 +301,7 @@ private:
         const char * pPVName );
 
     exServer & operator = ( const exServer & );
-    exServer ( const exServer & )
+    exServer ( const exServer & );
 
     //
     // list of pre-created PVs
@@ -333,7 +332,7 @@ public:
 private:
     unsigned simultAsychIOCount;
     exAsyncPV & operator = ( const exAsyncPV & );
-    exAsyncPV ( const exAsyncPV & )
+    exAsyncPV ( const exAsyncPV & );
 };
 
 //
@@ -348,7 +347,7 @@ public:
     bool writeAccess () const;
 private:
     exChannel & operator = ( const exChannel & );
-    exChannel ( const exChannel & )
+    exChannel ( const exChannel & );
 };
 
 //
@@ -364,7 +363,7 @@ private:
     smartConstGDDPointer pValue;
     expireStatus expire ( const epicsTime & currentTime );
     exAsyncWriteIO & operator = ( const exAsyncWriteIO & );
-    exAsyncWriteIO ( const exAsyncWriteIO & )
+    exAsyncWriteIO ( const exAsyncWriteIO & );
 };
 
 //
@@ -380,7 +379,7 @@ private:
     smartGDDPointer pProto;
     expireStatus expire ( const epicsTime & currentTime );
     exAsyncReadIO & operator = ( const exAsyncReadIO & );
-    exAsyncReadIO ( const exAsyncReadIO & )
+    exAsyncReadIO ( const exAsyncReadIO & );
 };
 
 //
@@ -398,7 +397,7 @@ private:
     exServer & cas;
     expireStatus expire ( const epicsTime & currentTime );
     exAsyncExistIO & operator = ( const exAsyncExistIO & );
-    exAsyncExistIO ( const exAsyncExistIO & )
+    exAsyncExistIO ( const exAsyncExistIO & );
 };
 
  
@@ -418,7 +417,7 @@ private:
     bool scanOn;
     expireStatus expire ( const epicsTime & currentTime );
     exAsyncCreateIO & operator = ( const exAsyncCreateIO & );
-    exAsyncCreateIO ( const exAsyncCreateIO & )
+    exAsyncCreateIO ( const exAsyncCreateIO & );
 };
 
 inline pvInfo::pvInfo ( double scanPeriodIn, const char *pNameIn, 

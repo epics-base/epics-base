@@ -37,7 +37,7 @@ typedef struct mutexNode {
     int lineno;
 }mutexNode;
 
-STATIC epicsMutexId lock;
+STATIC epicsMutexId epicsMutexGlobalLock;
 
 epicsMutexId epicsShareAPI epicsMutexOsiCreate(
     const char *pFileName,int lineno)
@@ -49,9 +49,9 @@ epicsMutexId epicsShareAPI epicsMutexOsiCreate(
         firstTime=0;
         ellInit(&mutexList);
         ellInit(&freeList);
-        lock = epicsMutexOsdCreate();
+        epicsMutexGlobalLock = epicsMutexOsdCreate();
     }
-    epicsMutexMustLock(lock);
+    epicsMutexMustLock(epicsMutexGlobalLock);
     id = epicsMutexOsdCreate();
     if(id) {
         pmutexNode = (mutexNode *)ellFirst(&freeList);
@@ -65,7 +65,7 @@ epicsMutexId epicsShareAPI epicsMutexOsiCreate(
         pmutexNode->lineno = lineno;
         ellAdd(&mutexList,&pmutexNode->node);
     }
-    epicsMutexUnlock(lock);
+    epicsMutexUnlock(epicsMutexGlobalLock);
     return(id);
 }
 
@@ -81,19 +81,19 @@ void epicsShareAPI epicsMutexDestroy(epicsMutexId id)
 {
     mutexNode *pmutexNode;
 
-    epicsMutexMustLock(lock);
+    epicsMutexMustLock(epicsMutexGlobalLock);
     pmutexNode = (mutexNode *)ellLast(&mutexList);
     while(pmutexNode) {
         if(id==pmutexNode->id) {
             ellDelete(&mutexList,&pmutexNode->node);
             ellAdd(&freeList,&pmutexNode->node);
             epicsMutexOsdDestroy(pmutexNode->id);
-            epicsMutexUnlock(lock);
+            epicsMutexUnlock(epicsMutexGlobalLock);
             return;
         }
         pmutexNode = (mutexNode *)ellPrevious(&pmutexNode->node);
     }
-    epicsMutexUnlock(lock);
+    epicsMutexUnlock(epicsMutexGlobalLock);
     errlogPrintf("epicsMutexDestroy Did not find epicsMutexId\n");
 }
 
@@ -104,7 +104,7 @@ void epicsShareAPI epicsMutexShowAll(int onlyLocked,unsigned  int level)
     if(firstTime) return;
     printf("ellCount(&mutexList) %d ellCount(&freeList) %d\n",
         ellCount(&mutexList),ellCount(&freeList));
-    epicsMutexMustLock(lock);
+    epicsMutexMustLock(epicsMutexGlobalLock);
     pmutexNode = (mutexNode *)ellFirst(&mutexList);
     while(pmutexNode) {
         if(onlyLocked) {
@@ -121,11 +121,11 @@ void epicsShareAPI epicsMutexShowAll(int onlyLocked,unsigned  int level)
         epicsMutexShow(pmutexNode->id,level);
         pmutexNode = (mutexNode *)ellNext(&pmutexNode->node);
     }
-    epicsMutexUnlock(lock);
+    epicsMutexUnlock(epicsMutexGlobalLock);
 }
 
 
-epicsMutex :: epicsMutex () :
+epicsMutex :: epicsMutex () throw ( std::bad_alloc ) :
     id ( epicsMutexCreate () )
 {
     if ( this->id == 0 ) {
@@ -133,17 +133,20 @@ epicsMutex :: epicsMutex () :
     }
 }
 
-epicsMutex ::~epicsMutex ()
+epicsMutex ::~epicsMutex () 
+    throw ()
 {
     epicsMutexDestroy ( this->id );
 }
 
-void epicsMutex :: show ( unsigned level ) const
+void epicsMutex :: show ( unsigned level ) const 
+    throw ()
 {
     epicsMutexShow ( this->id, level );
 }
 
 void epicsMutex :: throwInvalidSemaphore ()
+    throw ( epicsMutex::invalidSemaphore )
 {
     throw invalidSemaphore ();
 }

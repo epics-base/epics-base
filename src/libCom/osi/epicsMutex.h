@@ -21,20 +21,29 @@ typedef enum {
 
 #ifdef __cplusplus
 
+#include <stdexcept>
+
 class epicsMutex {
 public:
-    epicsShareFunc epicsMutex ();
-    epicsShareFunc ~epicsMutex ();
-    epicsShareFunc void show ( unsigned level ) const;
-    void lock (); /* blocks until success */
-    void unlock ();
-    bool lock ( double timeOut ); /* true if successful */
-    bool tryLock (); /* true if successful */
-
     class invalidSemaphore {}; // exception
+    epicsShareFunc epicsMutex ()
+        throw ( std::bad_alloc );
+    epicsShareFunc ~epicsMutex ()
+        throw ();
+    epicsShareFunc void show ( unsigned level ) const 
+        throw ();
+    void lock () /* blocks until success */
+        throw ( invalidSemaphore ); 
+    void unlock () 
+        throw ();
+    bool lock ( double timeOut ) /* true if successful */
+        throw ( invalidSemaphore ); 
+    bool tryLock () /* true if successful */
+        throw ( invalidSemaphore );
 private:
     epicsMutexId id;
-    epicsShareFunc static void throwInvalidSemaphore ();
+    epicsShareFunc static void throwInvalidSemaphore ()
+        throw ( invalidSemaphore );
     epicsMutex ( const epicsMutex & );
     epicsMutex & operator = ( const epicsMutex & );
 };
@@ -82,6 +91,7 @@ epicsShareFunc void epicsShareAPI epicsMutexShowAll(
 #ifdef __cplusplus
 
 inline void epicsMutex::lock ()
+    throw ( epicsMutex::invalidSemaphore )
 {
     epicsMutexLockStatus status = epicsMutexLock ( this->id );
     if ( status != epicsMutexLockOK ) {
@@ -90,6 +100,7 @@ inline void epicsMutex::lock ()
 }
 
 inline bool epicsMutex::lock ( double timeOut ) // X aCC 361
+    throw ( epicsMutex::invalidSemaphore )
 {
     epicsMutexLockStatus status = epicsMutexLockWithTimeout ( this->id, timeOut );
     if ( status == epicsMutexLockOK ) {
@@ -105,6 +116,7 @@ inline bool epicsMutex::lock ( double timeOut ) // X aCC 361
 }
 
 inline bool epicsMutex::tryLock () // X aCC 361
+    throw ( epicsMutex::invalidSemaphore )
 {
     epicsMutexLockStatus status = epicsMutexTryLock ( this->id );
     if ( status == epicsMutexLockOK ) {
@@ -120,6 +132,7 @@ inline bool epicsMutex::tryLock () // X aCC 361
 }
 
 inline void epicsMutex::unlock ()
+    throw ()
 {
     epicsMutexUnlock ( this->id );
 }

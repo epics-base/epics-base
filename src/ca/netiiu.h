@@ -68,35 +68,4 @@ public:
     virtual void uninstallChan ( epicsGuard < cacMutex > &, nciu & ) = 0;
 };
 
-class limboiiu : public netiiu { // X aCC 655
-public:
-    limboiiu ();
-private:
-    void hostName ( char *pBuf, unsigned bufLength ) const;
-    const char * pHostName () const; // deprecated - please do not use
-    bool ca_v42_ok () const;
-    void writeRequest ( epicsGuard < cacMutex > &, nciu &, 
-                    unsigned type, unsigned nElem, const void *pValue );
-    void writeNotifyRequest ( epicsGuard < cacMutex > &, nciu &, netWriteNotifyIO &, 
-                    unsigned type, unsigned nElem, const void *pValue );
-    void readNotifyRequest ( epicsGuard < cacMutex > &, nciu &, netReadNotifyIO &, 
-                    unsigned type, unsigned nElem );
-    void clearChannelRequest ( epicsGuard < cacMutex > &, 
-                    ca_uint32_t sid, ca_uint32_t cid );
-    void subscriptionRequest ( epicsGuard < cacMutex > &, nciu &, 
-                    netSubscription &subscr );
-    void subscriptionCancelRequest ( epicsGuard < cacMutex > &, 
-                    nciu & chan, netSubscription & subscr );
-    void flushRequest ();
-    bool flushBlockThreshold ( epicsGuard < cacMutex > & ) const;
-    void flushRequestIfAboveEarlyThreshold ( epicsGuard < cacMutex > & );
-    void blockUntilSendBacklogIsReasonable 
-        ( cacNotify &, epicsGuard < cacMutex > & );
-    void requestRecvProcessPostponedFlush ();
-    osiSockAddr getNetworkAddress () const;
-    void uninstallChan ( epicsGuard < cacMutex > &, nciu & );
-	limboiiu ( const limboiiu & );
-	limboiiu & operator = ( const limboiiu & );
-};
-
 #endif // netiiuh

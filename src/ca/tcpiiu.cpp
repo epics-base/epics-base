@@ -650,11 +650,6 @@ void tcpiiu::initiateAbortShutdown ( epicsGuard < callbackMutex > & cbGuard,
 //
 tcpiiu::~tcpiiu ()
 {
-    {
-        epicsGuard < cacMutex > guard ( this->cacRef.mutexRef() );
-        this->initiateCleanShutdown ( guard );
-    }
-
     this->sendThread.exitWait ();
     this->recvThread.exitWait ();
 
@@ -1247,7 +1242,6 @@ void tcpiiu::removeAllChannels ( epicsGuard < callbackMutex > & cbGuard,
                                 epicsGuard < cacMutex > & guard,
                                 cacDisconnectChannelPrivate & dcp )
 {
-    // we are protected here because channel delete takes the callback mutex
     while ( nciu *pChan = this->channelList.first() ) {
         // if the claim reply has not returned then we will issue
         // the clear channel request to the server when the claim reply

@@ -243,10 +243,12 @@ cac::~cac ()
     // shutdown all tcp circuits
     //
     {
+        epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
         epicsGuard < cacMutex > guard ( this->mutex );
         resTableIter < tcpiiu, caServerID > iter = this->serverTable.firstIter ();
         while ( iter.valid() ) {
-            iter->initiateCleanShutdown (  guard );
+            // this causes a clean shutdown to occur
+            iter->removeAllChannels ( cbGuard, guard, *this );
             iter++;
         }
     }

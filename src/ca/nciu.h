@@ -79,6 +79,7 @@ public:
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
     void beaconAnomalyNotify ();
+    void serviceShutdownNotify ();
     void accessRightsStateChange ( const caAccessRights & );
     ca_uint32_t getSID () const;
     ca_uint32_t getCID () const;
@@ -100,7 +101,7 @@ public:
 private:
     caAccessRights accessRightState;
     cac & cacCtx;
-    char * pNameStr;
+    const char * pNameStr;
     netiiu * piiu;
     ca_uint32_t sid; // server id
     unsigned count;
@@ -212,6 +213,11 @@ inline void nciu::connectStateNotify ( epicsGuard < callbackMutex > & ) const
 inline const netiiu * nciu::getConstPIIU () const
 {
     return this->piiu;
+}
+
+inline void nciu::serviceShutdownNotify ()
+{
+    this->notify().serviceShutdownNotify ();
 }
 
 inline cac & nciu::getClient ()

@@ -126,6 +126,7 @@ public:
     virtual ~cacChannelNotify () = 0;
     virtual void connectNotify () = 0;
     virtual void disconnectNotify () = 0;
+    virtual void serviceShutdownNotify () = 0;
     virtual void accessRightsNotify ( const caAccessRights & ) = 0;
     virtual void exception ( int status, const char *pContext ) = 0;
 // we should probably have a different vf for each type of exception ????

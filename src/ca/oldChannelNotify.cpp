@@ -150,6 +150,11 @@ void oldChannelNotify::disconnectNotify ()
     }
 }
 
+void oldChannelNotify::serviceShutdownNotify ()
+{
+    delete this;
+}
+
 void oldChannelNotify::accessRightsNotify ( const caAccessRights &ar )
 {
     struct access_rights_handler_args args;

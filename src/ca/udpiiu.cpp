@@ -189,10 +189,14 @@ udpiiu::~udpiiu ()
 {
     this->shutdown ();
 
-    static limboiiu limboIIU;
-    while ( nciu * pChan = this->channelList.get () ) {
-        // no need to own CAC lock here because the channel is being decomissioned
-        pChan->disconnect ( limboIIU );
+    // no need to own CAC lock here because the CA context 
+    // is being decomissioned
+    tsDLIter < nciu > chan = this->channelList.firstIter ();
+    while ( chan.valid () ) {
+        tsDLIter < nciu > next = chan;
+        next++;
+        chan->serviceShutdownNotify ();
+        chan = next;
     }
 
     // avoid use of ellFree because problems on windows occur if the

@@ -99,6 +99,7 @@ private:
     bool prevConnected;
     void connectNotify ();
     void disconnectNotify ();
+    void serviceShutdownNotify ();
     void accessRightsNotify ( const caAccessRights & );
     void exception ( int status, const char *pContext );
     void readException ( int status, const char *pContext,

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/06/26 21:18:52  jhill
+ * now matches gdd api revisions
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
  * ca server installation
  *
@@ -288,5 +291,58 @@ void casDGClient::ioBlockedSignal()
 	// then we discard the current request 
 	// (the client will resend later)
 	//
+}
+
+//
+// casDGClient::process()
+//
+void casDGClient::process()
+{
+        caStatus                status;
+        casFlushCondition       flushCond;
+        casFillCondition        fillCond;
+ 
+        //
+        // force all replies to be sent to the client
+        // that made the request
+        //
+        this->clear();
+ 
+        //
+        // read in new input
+        //
+        fillCond = this->fill();
+        if (fillCond == casFillDisconnect) {
+                casVerify(0);
+                return;
+        }
+        //
+        // verify that we have a message to process
+        //
+        if (this->inBuf::bytesPresent()>0u) {
+                //
+                // process the message
+                //
+                status = this->processMsg();
+                if (status) {
+                        errMessage (status,
+                "unexpected error processing stateless protocol");
+                        //
+                        // clear the input buffer so this will
+                        // not effect future input
+                        //
+                        this->clear();
+                }
+                else {
+                        //
+                        // force all replies to go to the sender
+                        //
+                        flushCond = this->flush();
+                        if (flushCond!=casFlushCompleted) {
+                                this->clear();
+                                casVerify(0);
+                        }
+                }
+        }
 }
 

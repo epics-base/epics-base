@@ -229,9 +229,9 @@ epicsShareFunc int epicsShareAPI epicsTimeLessThan (
 epicsShareFunc int epicsShareAPI epicsTimeLessThanEqual (
     const epicsTimeStamp * pLeft, const epicsTimeStamp * pRight); /*true if left <= right) */
 epicsShareFunc int epicsShareAPI epicsTimeGreaterThan (
-    const epicsTimeStamp * pLeft, const epicsTimeStamp * pRight); /*true if left < right */
+    const epicsTimeStamp * pLeft, const epicsTimeStamp * pRight); /*true if left > right */
 epicsShareFunc int epicsShareAPI epicsTimeGreaterThanEqual (
-    const epicsTimeStamp * pLeft, const epicsTimeStamp * pRight); /*true if left < right */
+    const epicsTimeStamp * pLeft, const epicsTimeStamp * pRight); /*true if left >= right */
 
 /*convert to ASCII string */
 epicsShareFunc size_t epicsShareAPI epicsTimeToStrftime (

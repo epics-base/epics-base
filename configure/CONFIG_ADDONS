@@ -20,6 +20,7 @@
 #	USR_CPPFLAGS	c preprocesser flags
 #	INC		include-files to install
 #	LIBSRCS		source files for building library
+#	LIB_SRCS	source files for building library
 #	SHRLIB_LIBS	libs needed by shared LIBRARY
 #	PROD_LIBS	libs needed by PROD and TESTPROD
 #	USR_LIBS	libs needed by PROD and TESTPROD
@@ -97,6 +98,14 @@ LIBSRCS+=$(LIBSRCS_DEFAULT)
 endif
 endif
 
+ifneq ($(strip $(LIB_SRCS_$(OS_CLASS))),)
+LIB_SRCS += $(subst -nil-,,$(LIB_SRCS_$(OS_CLASS)))
+else
+ifdef LIB_SRCS_DEFAULT
+LIB_SRCS+=$(LIB_SRCS_DEFAULT)
+endif
+endif
+
 ifneq ($(strip $(SRCS_$(OS_CLASS))),)
 SRCS += $(subst -nil-,,$(SRCS_$(OS_CLASS)))
 else
@@ -118,6 +127,14 @@ BIN_INSTALLS+=$(subst -nil-,,$(BIN_INSTALLS_$(OS_CLASS)))
 else
 ifdef BIN_INSTALLS_DEFAULT
 BIN_INSTALLS+=$(BIN_INSTALLS_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(PROD_OBJS_$(OS_CLASS))),)
+PROD_OBJS+=$(subst -nil-,,$(PROD_OBJS_$(OS_CLASS)))
+else
+ifneq (,$(strip $(PROD_OBJS_DEFAULT)))
+PROD_OBJS+=$(PROD_OBJS_DEFAULT)
 endif
 endif
 
@@ -150,6 +167,14 @@ LIBOBJS+=$(subst -nil-,,$(LIBOBJS_$(OS_CLASS)))
 else
 ifneq (,$(strip $(LIBOBJS_DEFAULT)))
 LIBOBJS+=$(LIBOBJS_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(LIB_OBJS_$(OS_CLASS))),)
+LIB_OBJS+=$(subst -nil-,,$(LIB_OBJS_$(OS_CLASS)))
+else
+ifneq (,$(strip $(LIB_OBJS_DEFAULT)))
+LIB_OBJS+=$(LIB_OBJS_DEFAULT)
 endif
 endif
 

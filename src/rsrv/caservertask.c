@@ -44,7 +44,7 @@
  *	.12 joh 020494	identifies the client in client_stat
  */
 
-static char *sccsId = "$Id$";
+static char *sccsId = "@(#)caservertask.c	1.22 5/6/94";
 #include <stdio.h>
 #include <assert.h>
 #include <unistd.h>

@@ -43,7 +43,7 @@
 #ifndef INCLserverh
 #define INCLserverh
 
-static char *serverhSccsId = "$Id$";
+static char *serverhSccsId = "@(#)server.h	1.19 5/6/94";
 
 #include <vxLib.h>
 #include <ellLib.h>

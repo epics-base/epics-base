@@ -56,7 +56,7 @@
  * 	pend which could lock up the cast server.
  */
 
-static char	*sccsId = "$Id$";
+static char	*sccsId = "@(#)cast_server.c	1.24 5/6/94";
 
 #include <assert.h>
 #include <string.h>

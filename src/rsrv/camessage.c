@@ -46,10 +46,11 @@
  *	.12 joh 090893	converted pointer to server id	
  *	.13 joh 091493	made events on action a subroutine for debugging
  *	.14 joh 020194	New command added for CAV4.1 - client name
+ *	.15 joh 052594  Removed IOC_BUILD cmd 	
  */
 
 
-static char *sccsId = "$Id$";
+static char *sccsId = "%W% %G%";
 
 #include <assert.h>
 #include <string.h>
@@ -93,7 +94,7 @@ struct extmsg *mp,
 struct client  *client
 );
 
-LOCAL void build_reply(
+LOCAL void search_reply(
 struct extmsg *mp,
 struct client  *client
 );
@@ -304,8 +305,7 @@ struct message_buffer *recv
 			break;
 		}
 		case IOC_SEARCH:
-		case IOC_BUILD:
-			build_reply(mp, client);
+			search_reply(mp, client);
 			break;
 
 		case IOC_WRITE_NOTIFY:
@@ -1326,8 +1326,7 @@ db_field_log		*pfl
 	 */
 	v41 = CA_V41(CA_PROTOCOL_VERSION,client->minor_version_number);
 	if(!asCheckGet(pciu->asClientPVT)){
-		if(reply->m_cmmd==IOC_READ||
-			reply->m_cmmd==IOC_READ_BUILD){
+		if(reply->m_cmmd==IOC_READ){
 			if(v41){
 				status = ECA_NORDACCESS;
 			}
@@ -1362,9 +1361,9 @@ db_field_log		*pfl
 		/*
 		 * I cant wait to redesign this protocol from scratch!
 		 */
-		if(!v41||reply->m_cmmd==IOC_READ||reply->m_cmmd==IOC_READ_BUILD){
+		if(!v41||reply->m_cmmd==IOC_READ){
 			/*
-			 * old client & plain get & search/get
+			 * old client & plain get 
 			 * continue to return an exception
 			 * on failure
 			 */
@@ -1398,12 +1397,10 @@ db_field_log		*pfl
 		 * The m_cid field in the protocol
 		 * header is abused to carry the status
 		 *
-		 * get &search/get calls still use the
+		 * get calls still use the
 		 * m_cid field to identify the channel.
 		 */
-		if(	v41&&
-			reply->m_cmmd!=IOC_READ&&
-			reply->m_cmmd!=IOC_READ_BUILD ){
+		if(	v41 && reply->m_cmmd!=IOC_READ){
 			reply->m_cid = ECA_NORMAL;
 		}
 		
@@ -1527,11 +1524,11 @@ struct client  *client
 
 /*
  *
- *	build_reply()
+ *	search_reply()
  *
  *
  */
-LOCAL void build_reply(
+LOCAL void search_reply(
 struct extmsg *mp,
 struct client  *client
 )
@@ -1557,7 +1554,7 @@ struct client  *client
 
 	/* Exit quickly if channel not on this node */
 	status = db_name_to_addr(
-			mp->m_cmmd == IOC_BUILD ? mp + 2 : mp + 1, 
+			mp + 1, 
 			&tmp_addr);
 	if (status < 0) {
 		if (CASDEBUG > 2)
@@ -1595,27 +1592,6 @@ struct client  *client
 	pchannel->cid = mp->m_cid;
 
 	/*
-	 * Existing build() interface to the client does not provide mechanism
-	 * to inform them that the channel connected but the value
-	 * couldnt be fetched so search/get combined op
-	 * to no read access channel not allowed.
-	 */
-#if 0
-	if (mp->m_cmmd == IOC_BUILD && !asCheckGet(pchannel->asClientPVT)) {
-#else
-	if (mp->m_cmmd == IOC_BUILD) {
-printf("Build access security bypassed\n");
-#endif
-		SEND_LOCK(client);
-		send_err(mp, ECA_NORDACCESS, client, RECORD_NAME(&tmp_addr));
-		SEND_UNLOCK(client);
-		FASTLOCK(&rsrv_free_addrq_lck);
-		ellAdd(&rsrv_free_addrq, &pchannel->node);
-		FASTUNLOCK(&rsrv_free_addrq_lck);
-		return;
-	}
-
-	/*
 	 * allocate a server id and enter the channel pointer
 	 * in the table
 	 */
@@ -1634,67 +1610,8 @@ printf("Build access security bypassed\n");
 		return;
 	}
 
-	/*
-	 * UDP reliability schemes rely on both msgs in same reply Therefore
-	 * the send buffer locked while both messages are placed
-	 */
 	SEND_LOCK(client);
 
-
-	if (mp->m_cmmd == IOC_BUILD) {
-		short      type = (mp + 1)->m_type;
-		unsigned int count = (mp + 1)->m_count;
-		unsigned int size;
-
-		/*
-		 * must be large enough to hold both the search and the build-get
-		 * reply in one UDP message. Hence the extra sizeof(*mp) added 
-		 * in below.
-		 */
-		size = 	sizeof(*mp) + 		/* search reply hdr size 	*/
-			sizeof(*pMinorVersion) +/* version id after search hdr	*/
-			sizeof(*mp) +		/* build get reply hdr size 	*/
-			+ dbr_size_n(type, count);/* size of the structure fetched */
-
-		get_reply = (struct extmsg *) ALLOC_MSG(client, size);
-		if (!get_reply) {
-			/* tell them that their request is to large */
-			send_err(mp, ECA_TOLARGE, client, RECORD_NAME(&tmp_addr));
-			SEND_UNLOCK(client);
-			FASTLOCK(&rsrv_free_addrq_lck);
-			bucketRemoveItem(
-					pCaBucket, 
-					pchannel->sid, 
-					pchannel);
-			ellAdd(&rsrv_free_addrq, &pchannel->node);
-			FASTUNLOCK(&rsrv_free_addrq_lck);
-			return;
-		} else {
-			struct event_ext evext;
-
-			evext.pciu = pchannel;
-			evext.msg = *(mp+1);
-			/*
-			 * this allows extra build replies 
-			 * to be dicarded
-			 */
-			evext.msg.m_cmmd = IOC_READ_BUILD;
-			evext.msg.m_cid = sid;
-			evext.send_lock = FALSE;
-			evext.size = dbr_size_n(type, count);
-			evext.pdbev = NULL;
-			evext.get = TRUE;
-
-			/*
-			 * Arguments to this routine organized in favor of
-			 * the standard	db event calling mechanism-
-			 * routine(userarg, paddr). See events added above.
-			 * Hold argument set true so the send message buffer
-			 * is not flushed once each call.
-			 */
-			read_reply(&evext, &tmp_addr, TRUE, NULL);
-		}
-	}
 	search_reply = (struct extmsg *) 
 		ALLOC_MSG(client, sizeof(*pMinorVersion));
 	if (!search_reply)
@@ -1723,7 +1640,6 @@ printf("Build access security bypassed\n");
 	FASTLOCK(&client->addrqLock);
 	ellAdd(&client->addrq, &pchannel->node);
 	FASTUNLOCK(&client->addrqLock);
-
 
 	return;
 }
@@ -1822,7 +1738,6 @@ char           *pformat,
 	case IOC_READ:
 	case IOC_READ_NOTIFY:
 	case IOC_SEARCH:
-	case IOC_BUILD:
 	case IOC_WRITE:
 	case IOC_WRITE_NOTIFY:
 	        /*

@@ -33,7 +33,7 @@
  *      .00 joh 021192  better diagnostics
  */
 
-static char *sccsId = "$Id$\t$Date$";
+static char *sccsId = "@(#)online_notify.c	1.14\t5/6/94";
 
 /*
  * ansi includes

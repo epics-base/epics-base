@@ -34,8 +34,8 @@ public:
     virtual void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
 private:
     cacNotifyIO *pIO;
-    virtual lock ();
-    virtual unlock ();
+    virtual void lock ();
+    virtual void unlock ();
     static osiMutex defaultMutex;
     friend class cacNotifyIO;
 };

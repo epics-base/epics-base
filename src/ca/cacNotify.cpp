@@ -27,12 +27,12 @@ cacNotify::~cacNotify ()
     }
 }
 
-cacNotify::lock ()
+void cacNotify::lock ()
 {
     this->defaultMutex.lock ();
 }
 
-cacNotify::unlock ()
+void cacNotify::unlock ()
 {
     this->defaultMutex.unlock ();
 }

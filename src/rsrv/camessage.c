@@ -50,6 +50,7 @@
 #include <server.h>
 #include <caerr.h>
 
+#define LOCAL
 
 static struct extmsg nill_msg;
 
@@ -339,17 +340,37 @@ camessage(client, recv)
  *
  *
  */
-static void
+LOCAL void
 clear_channel_reply(mp, client)
 FAST struct extmsg *mp;
 struct client  *client;
 {
-	FAST struct extmsg *reply;
-	FAST struct event_ext *pevext;
-	FAST int        status;
-	struct channel_in_use *pciu = (struct channel_in_use *) mp->m_pciu;
-	LIST           *peventq = &pciu->eventq;
+        FAST struct extmsg *reply;
+        FAST struct event_ext *pevext;
+        FAST int        status;
+        struct channel_in_use *pciu;
+        struct channel_in_use *ptmpciu;
+        LIST           *peventq;
 
+        /*
+         *
+         * Verify the channel
+         *
+         */
+        pciu = (struct channel_in_use *) mp->m_pciu;
+        ptmpciu = (struct channel_in_use *) client->addrq.node.next;
+        while (ptmpciu){
+                if(ptmpciu == pciu){
+                        break;
+                }
+                ptmpciu = (struct channel_in_use *) ptmpciu->node.next;
+        }
+        if(!ptmpciu){
+                logMsg("CAS: Attempt to delete nonexistent channel ignored\n");
+                return;
+        }
+
+        peventq = &pciu->eventq;
 	for (pevext = (struct event_ext *) peventq->node.next;
 	     pevext;
 	     pevext = (struct event_ext *) pevext->node.next) {
@@ -396,7 +417,7 @@ struct client  *client;
  * Much more efficient now since the event blocks hang off the channel in use
  * blocks not all together off the client block.
  */
-static void
+LOCAL void
 event_cancel_reply(mp, client)
 	FAST struct extmsg *mp;
 	struct client  *client;
@@ -456,7 +477,7 @@ event_cancel_reply(mp, client)
  *
  *
  */
-static void
+LOCAL void
 read_reply(pevext, paddr, hold, pfl)
 FAST struct event_ext *pevext;
 FAST struct db_addr *paddr;
@@ -532,7 +553,7 @@ void		*pfl;
  *
  *
  */
-static void
+LOCAL void
 read_sync_reply(mp, client)
 	FAST struct extmsg *mp;
 	struct client  *client;
@@ -560,7 +581,7 @@ read_sync_reply(mp, client)
  *
  *
  */
-static void
+LOCAL void
 build_reply(mp, client)
 	FAST struct extmsg *mp;
 	struct client  *client;
@@ -686,7 +707,7 @@ build_reply(mp, client)
  *
  *
  */
-static void
+LOCAL void
 search_fail_reply(mp, client)
 	FAST struct extmsg *mp;
 	struct client  *client;
@@ -715,7 +736,7 @@ search_fail_reply(mp, client)
  *	send buffer lock must be on while in this routine
  *
  */
-static void
+LOCAL void
 send_err(curp, status, client, footnote)
 	struct extmsg  *curp;
 	int             status;
@@ -775,7 +796,7 @@ send_err(curp, status, client, footnote)
  *	Debug aid - print the header part of a message.
  *
  */
-static void
+LOCAL void
 log_header (mp, mnum)
 FAST struct extmsg *mp;
 {

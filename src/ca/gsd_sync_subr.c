@@ -84,7 +84,7 @@
 static char *sccsId = "@(#)gsd_sync_subr.c	1.8\t11/5/92";
 
 #if defined(UNIX)
-#	include	<types.h>
+#	include	<sys/types.h>
 #	include	<stdio.h>
 #	include	<sys/time.h>
 #	include	<time.h>

@@ -62,6 +62,8 @@
 /************************************************************************/
 /*_end									*/
 
+static char *sccsId = "$Id$\t$Date$";
+
 #if defined(VMS)
 #	include		<sys/types.h>
 #	include		<stsdef.h>

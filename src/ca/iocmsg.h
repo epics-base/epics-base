@@ -15,6 +15,8 @@
 
 #define __IOCMSG__
 
+static char	*iocmsghSccsId = "$Id$\t$Date$";
+
 /* TCP/UDP port number (bumped each protocol change) */
 #define CA_PROTOCOL_VERSION	4
 #define	CA_PORT_BASE		IPPORT_USERRESERVED + 56

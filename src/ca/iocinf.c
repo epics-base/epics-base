@@ -61,6 +61,8 @@
 /************************************************************************/
 /*_end									*/
 
+static char *sccsId = "$Id$\t$Date$";
+
 
 /*	Allocate storage for global variables in this module		*/
 #define			CA_GLBLSOURCE
@@ -372,6 +374,21 @@ struct ioc_in_use		*piiu;
 				&true);
 #endif
 
+		/*
+		 * Save the Host name for efficient access in the
+		 * future.
+		 */
+		{
+			char 	*ptmpstr;
+			int	len;
+	
+			ptmpstr = host_from_addr(&piiu->sock_addr.sin_addr);
+			strncpy(
+				piiu->host_name_str, 
+				ptmpstr, 
+				sizeof(piiu->host_name_str)-1);
+		}
+
       		break;
 
     	case	IPPROTO_UDP:
@@ -421,10 +438,25 @@ struct ioc_in_use		*piiu;
 
       		piiu->max_msg = MAX_UDP - sizeof(piiu->send->stk);
 
+		/*
+		 * Save the Host name for efficient access in the
+		 * future.
+		 */
+		{
+			char 	*ptmpstr;
+			int	len;
+	
+			ptmpstr = host_from_addr(&piiu->sock_addr.sin_addr);
+			strncpy(
+				piiu->host_name_str, 
+				"<<unknown host>>", 
+				sizeof(piiu->host_name_str)-1);
+		}
+
       		break;
 
-    		default:
-      			ca_signal(ECA_INTERNAL,"alloc_ioc: ukn protocol\n");
+	default:
+      		ca_signal(ECA_INTERNAL,"alloc_ioc: ukn protocol\n");
   	}
   	/* 	setup cac_send_msg(), recv_msg() buffers	*/
   	if(!piiu->send){
@@ -449,21 +481,6 @@ struct ioc_in_use		*piiu;
 			}
       			return ECA_ALLOCMEM;
     		}
-	}
-
-	/*
-	 * Save the Host name for efficient access in the
-	 * future.
-	 */
-	{
-		char 	*ptmpstr;
-		int	len;
-	
-		ptmpstr = host_from_addr(&piiu->sock_addr.sin_addr);
-		strncpy(
-			piiu->host_name_str, 
-			ptmpstr, 
-			sizeof(piiu->host_name_str)-1);
 	}
 
   	piiu->recv->stk = 0;

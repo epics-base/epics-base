@@ -57,6 +57,8 @@
  *
  */
 
+static char *sccsId = "$Id$\t$Date$";
+
 #if defined(VMS)
 #	include		<stsdef.h>
 #	include		<errno.h>

@@ -14,6 +14,8 @@
  *
  */
 
+static char *sccsId = "$Id$\t$Date$";
+
 /*	System includes		*/
 
 #include 		<cadef.h>

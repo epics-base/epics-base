@@ -1,3 +1,5 @@
+static char *sccsId = "$Id$\t$Date$";
+
 #if defined(UNIX) || defined(VMS)
 #	include <stdio.h>
 #elif defined(vxWorks)

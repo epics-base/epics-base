@@ -47,6 +47,8 @@
 #ifndef INCiocinfh  
 #define INCiocinfh
 
+static char	*iocinfhSccsId = "$Id$\t$Date$";
+
 #define	DONT_COMPILE	@@@@ dont compile in this case @@@@
 
 #if defined(UNIX)

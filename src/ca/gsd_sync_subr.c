@@ -81,6 +81,8 @@
 ***************************************************
 */
 
+static char *sccsId = "$Id$\t$Date$";
+
 #if defined(UNIX)
 #	include	<types.h>
 #	include	<stdio.h>

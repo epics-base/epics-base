@@ -30,6 +30,9 @@
 /*									*/
 /************************************************************************/
 /*_end									*/
+
+static char 	*sccsId = "$Id$\t$Date$";
+
 #if defined(UNIX)
 #	include		<stdio.h>
 #elif defined(VMS)

@@ -24,6 +24,8 @@
 #ifndef INCos_depenh
 #define INCos_depenh
 
+static char *os_depenhSccsId = "$Id$\t$Date$";
+
 #if defined(UNIX)
 #	ifndef _sys_time_h
 #		include <sys/time.h>

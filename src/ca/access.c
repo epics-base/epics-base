@@ -73,6 +73,7 @@
 /*			send_needed flag				*/
 /*	060392	joh	added ca_host_name()				*/
 /*	072792	joh	better messages					*/
+/*	072792	joh	wrote ca_test_io()				*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -96,6 +97,8 @@
 /*									*/
 /************************************************************************/
 /*_end									*/
+
+static char *sccsId = "$Id$\t$Date$";
 
 /*
  * allocate error message string array 
@@ -2284,6 +2287,21 @@ ca_flush_io
   return ECA_NORMAL;
 }
 
+
+/*
+ *	CA_TEST_IO ()
+ *
+ *
+ */
+int ca_test_io()
+{
+    	if(pndrecvcnt<1){
+        	return ECA_IODONE;
+	}
+	else{
+		return ECA_IOINPROGRESS;
+	}
+}
 
 
 /*

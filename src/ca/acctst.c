@@ -1,3 +1,5 @@
+static char *sccsId = "$Id$\t$Date$";
+
 /*
  * CA test/debug routine
  */
@@ -10,8 +12,8 @@
 #define CA_TEST_CHNL	"ts2:ai0"
 #define CA_TEST_CHNL4	"ts2:ai0"
 #else
-#define CA_TEST_CHNL	"q0_ao"
-#define CA_TEST_CHNL4	"q0_ao"
+#define CA_TEST_CHNL	"mv16z:ai1"
+#define CA_TEST_CHNL4	"mv16z:ai1"
 #endif
 #endif
 
@@ -123,8 +125,21 @@ main()
 					    NULL,
 					    CONN_ROUTINE,
 					    NULL), NULL);
+
+		printf("IO status is: %s\n",ca_message(ca_test_io()));
+
+		printf("chix1 is on %s\n", ca_host_name(chix1));
+		printf("chix2 is on %s\n", ca_host_name(chix2));
+		printf("chix4 is on %s\n", ca_host_name(chix4));
+
 		status = ca_pend_io(10.0);
 		SEVCHK(status, NULL);
+
+		printf("IO status is: %s\n",ca_message(ca_test_io()));
+
+		printf("chix1 is on %s\n", ca_host_name(chix1));
+		printf("chix2 is on %s\n", ca_host_name(chix2));
+		printf("chix4 is on %s\n", ca_host_name(chix4));
 
 		SEVCHK(ca_clear_channel(chix4), NULL);
 		SEVCHK(ca_clear_channel(chix2), NULL);

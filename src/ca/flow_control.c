@@ -33,6 +33,7 @@
 /************************************************************************/
 /*_end									*/
 
+static char	*sccsId = "$Id$\t$Date$";
 
 #if defined(vxWorks)
 #	include		<vxWorks.h>

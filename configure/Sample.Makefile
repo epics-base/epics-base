@@ -7,11 +7,10 @@
 
 TOP = ../../..
 include $(TOP)/configure/CONFIG
-CMPLR = STRICT
 
 #	Add-on CFLAGS that are needed by this Makefile.
 #	(If possible, all system specific flags should be
-#	 defined in CONFIG.Host.$(OS_CLASS))
+#	 defined in configure/os/CONFIG.<host>.<target>
 #
 #       These CFLAGS rules also apply to these Makefile-variables:
 #		CXXFLAGS    C++ flags
@@ -81,6 +80,17 @@ INC         = file.h
 #	./os/generic
 #	.
 #	So usually only LIBSRCS should be sufficient!
+
+#   SRCS files will be used for both LIBRARY and PROD
+SRCS            = file_for_lib.c another_file.cpp
+SRCS_DEFAULT    = posix.c
+SRCS_WIN32      = win32_special.c
+SRCS_BSD        = -nil-
+#
+<libname>_SRCS            = file_for_lib.c another_file.cpp
+<libname>_SRCS_DEFAULT    = posix.c
+<libname>_SRCS_WIN32      = win32_special.c
+<libname>_SRCS_BSD        = -nil-
 #
 LIBSRCS         = file_for_lib.c another_file.cpp
 LIBSRCS_DEFAULT = posix.c
@@ -90,9 +100,12 @@ LIBSRCS_BSD     = -nil-
 #	Library to build:
 #	lib$(LIBRARY).a  or   ..dll/..exp/..lib
 #
-#	Currently you can build only one (1) lib per Makefile.Host!
-#	
 LIBRARY=libname
+#
+#	Host or Ioc platform specific library to build:
+#
+LIBRARY_IOC=libname
+LIBRARY_HOST=libname
 
 # if SHARED_LIBRARIES is YES then shared and archive libraries will
 #	both be built 
@@ -180,4 +193,4 @@ SCRIPTS         = script
 
 include $(TOP)/configure/RULES
 
-#	EOF Makefile.Host
+#	EOF Makefile

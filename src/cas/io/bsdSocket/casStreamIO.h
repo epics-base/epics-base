@@ -36,7 +36,8 @@ private:
 	SOCKET sock;
 	struct sockaddr_in addr;
 	xBlockingStatus blockingFlag;
-    bool sockHasBeenClosed;
+
+    bool sockHasBeenShutdown;
 	xBlockingStatus blockingState() const;
 	bufSizeT incomingBytesPresent() const;
 	static bufSizeT optimumBufferSize ();

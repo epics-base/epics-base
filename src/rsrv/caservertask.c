@@ -140,6 +140,7 @@ struct client *create_client (SOCKET sock)
     struct client           *client;
     int                     true = TRUE;
     int                     addrSize;
+    unsigned                priorityOfEvents;
 
     /*
      * see TCP(4P) this seems to make unsolicited single events much
@@ -227,14 +228,24 @@ struct client *create_client (SOCKET sock)
         return NULL;
     }
 
+    {
+        unsigned priorityOfSelf = threadGetPrioritySelf ();
+        threadBoolStatus    tbs;
+
+        tbs  = threadLowestPriorityLevelAbove ( priorityOfSelf, &priorityOfEvents );
+        if ( tbs != tbsSuccess ) {
+            priorityOfEvents = priorityOfSelf;
+        }
+    }
+
     status = db_start_events ( client->evuser, "CAS-event", 
-                NULL, NULL, threadPriorityChannelAccessServer-1 ); 
+                NULL, NULL, priorityOfEvents ); 
     if (status != DB_EVENT_OK) {
         errlogPrintf("CAS: unable to start the event facility\n");
         destroy_client (client);
         return NULL;
     }
-    
+
     client->recv.cnt = 0ul;
 
     if (CASDEBUG>0) {
@@ -263,12 +274,16 @@ struct client *create_client (SOCKET sock)
  */
 LOCAL int req_server (void)
 {
+    unsigned priorityOfSelf = threadGetPrioritySelf ();
+    unsigned priorityOfUDP;
+    threadBoolStatus tbs;
     struct sockaddr_in serverAddr;  /* server's address */
     int status;
     SOCKET clientSock;
     int flag;
+    threadId tid;
 
-    taskwdInsert (threadGetIdSelf(), NULL, NULL);
+    taskwdInsert ( threadGetIdSelf (), NULL, NULL );
 
     ca_server_port = envGetInetPortConfigParam (&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
 
@@ -280,20 +295,20 @@ LOCAL int req_server (void)
      * Open the socket. Use ARPA Internet address format and stream
      * sockets. Format described in <sys/socket.h>.
      */
-    if ((IOC_sock = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
+    if ( ( IOC_sock = socket(AF_INET, SOCK_STREAM, 0) ) == INVALID_SOCKET ) {
         errlogPrintf ("CAS: Socket creation error\n");
         threadSuspendSelf ();
     }
 
     /* Zero the sock_addr structure */
-    memset ((void *)&serverAddr, 0, sizeof(serverAddr));
+    memset ( (void *) &serverAddr, 0, sizeof ( serverAddr ) );
     serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons (ca_server_port);
+    serverAddr.sin_port = htons ( ca_server_port );
 
     /* get server's Internet address */
-    if (bind(IOC_sock, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0) {
+    if ( bind ( IOC_sock, (struct sockaddr *) &serverAddr, sizeof ( serverAddr ) ) < 0 ) {
         errlogPrintf ( "CAS: TCP server port bind error was \"%s\"\n", SOCKERRSTR ( SOCKERRNO ) );
-        socket_close (IOC_sock);
+        socket_close ( IOC_sock );
         threadSuspendSelf ();
     }
 
@@ -308,40 +323,70 @@ LOCAL int req_server (void)
     }
 
     /* listen and accept new connections */
-    if (listen(IOC_sock, 10) < 0) {
+    if ( listen ( IOC_sock, 10 ) < 0 ) {
         errlogPrintf ("CAS: Listen error\n");
         socket_close (IOC_sock);
         threadSuspendSelf ();
+    }
+
+    tbs  = threadHighestPriorityLevelBelow ( priorityOfSelf, &priorityOfUDP );
+    if ( tbs != tbsSuccess ) {
+        priorityOfUDP = priorityOfSelf;
+    }
+
+    tid = threadCreate ( "CAS-UDP", priorityOfUDP,
+        threadGetStackSize (threadStackMedium),
+        (THREADFUNC) cast_server, 0 );
+    if ( tid == 0 ) {
+        epicsPrintf ( "CAS: unable to start connection request thread\n" );
     }
 
     while (TRUE) {
         struct sockaddr     sockAddr;
         int                 addLen = sizeof(sockAddr);
 
-        if ((clientSock = accept(IOC_sock, &sockAddr, &addLen)) == INVALID_SOCKET) {
+        if ( ( clientSock = accept ( IOC_sock, &sockAddr, &addLen ) ) == INVALID_SOCKET ) {
             errlogPrintf("CAS: Client accept error was \"%s\"\n",
                 (int) SOCKERRSTR(SOCKERRNO));
             threadSleep(15.0);
             continue;
-        } else {
+        } 
+        else {
+            unsigned priorityOfClient;
             threadId id;
             struct client *pClient;
 
             pClient = create_client (clientSock);
             if (!pClient) {
-                errlogPrintf("CAS: unable to create new client because \"%s\"\n",
-                    strerror(errno));
+                errlogPrintf ( "CAS: unable to create new client because \"%s\"\n",
+                    strerror (errno) );
                 threadSleep(15.0);
                 continue;
             }
-            id = threadCreate ("CAS-client", threadPriorityChannelAccessServer,
+
+            /* 
+             * go up two levels in priority so that the event task is above the
+             * task waiting in accept ()
+             */
+            tbs  = threadLowestPriorityLevelAbove ( priorityOfSelf, &priorityOfClient );
+            if ( tbs != tbsSuccess ) {
+                priorityOfClient = priorityOfSelf;
+            }
+            else {
+                unsigned belowPriorityOfClient = priorityOfClient;
+                tbs  = threadLowestPriorityLevelAbove ( belowPriorityOfClient, &priorityOfClient );
+                if ( tbs != tbsSuccess ) {
+                    priorityOfClient = belowPriorityOfClient;
+                }
+            }
+
+            id = threadCreate ( "CAS-client", priorityOfClient,
                     threadGetStackSize (threadStackBig),
-                    (THREADFUNC)camsgtask, (void *)pClient);
+                    (THREADFUNC)camsgtask, (void *)pClient );
             if (id==0) {
-                destroy_client (pClient);
-                errlogPrintf("CAS: task creation for new client failed because \"%s\"\n",
-                    strerror(errno));
-                threadSleep(15.0);
+                destroy_client ( pClient );
+                errlogPrintf ( "CAS: task creation for new client failed\n" );
+                threadSleep ( 15.0 );
                 continue;
             }
         }
@@ -353,6 +398,8 @@ LOCAL int req_server (void)
  */
 epicsShareFunc int epicsShareAPI rsrv_init (void)
 {
+    threadId tid;
+
     clientQlock = semMutexMustCreate();
 
     ellInit (&clientQ);
@@ -363,15 +410,13 @@ epicsShareFunc int epicsShareAPI rsrv_init (void)
     prsrv_cast_client = NULL;
     pCaBucket = NULL;
 
-    threadCreate ("CAS-TCP",
-        threadPriorityChannelAccessServer-2,
+    tid = threadCreate ("CAS-TCP",
+        threadPriorityChannelAccessServer,
         threadGetStackSize(threadStackMedium),
         (THREADFUNC)req_server,0);
-
-    threadCreate ("CAS-UDP",
-        threadPriorityChannelAccessServer-3,
-        threadGetStackSize(threadStackMedium),
-        (THREADFUNC)cast_server,0);
+    if ( tid == 0 ) {
+        epicsPrintf ( "CAS: unable to start connection request thread\n" );
+    }
 
     return RSRV_OK;
 }

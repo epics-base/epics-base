@@ -120,6 +120,9 @@ LOCAL void clean_addrq()
  */
 int cast_server(void)
 {
+    unsigned            priorityOfSelf = threadGetPrioritySelf ();
+    unsigned            priorityOfBeacon;
+    threadBoolStatus    tbs;
     struct sockaddr_in  sin;    
     int                 status;
     int                 count=0;
@@ -200,15 +203,17 @@ int cast_server(void)
                 __FILE__, SOCKERRSTR (errnoCpy) );
     }
     
-    /* tell clients we are on line again */
-    tid = threadCreate("CAS-beacon",threadPriorityChannelAccessClient-3,
-    threadGetStackSize(threadStackSmall),
-    (THREADFUNC)rsrv_online_notify_task,0);
-    if(tid == 0) {
-        epicsPrintf ("CAS: couldnt start up online notify task because \"%s\"\n",
-            strerror(errno));
+    tbs  = threadHighestPriorityLevelBelow ( priorityOfSelf, &priorityOfBeacon );
+    if ( tbs != tbsSuccess ) {
+        priorityOfBeacon = priorityOfSelf;
     }
-    
+
+    tid = threadCreate ( "CAS-beacon", priorityOfBeacon,
+        threadGetStackSize (threadStackSmall),
+        (THREADFUNC) rsrv_online_notify_task, 0 );
+    if ( tid == 0 ) {
+        epicsPrintf ( "CAS: unable to start beacon thread\n" );
+    }
  
     /*
      * setup new client structure but reuse old structure if

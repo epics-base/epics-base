@@ -438,7 +438,6 @@ struct client *create_udp_client(unsigned sock)
 	FASTLOCKINIT(&client->eventqLock);
 	
 	client->recv.maxstk = ETHERNET_MAX_UDP;
-	client->udpNoBuffCount = 0u;
 	return client;
 }
 

@@ -137,7 +137,6 @@ struct client{
   int				proto;
   int				tid;
   unsigned			minor_version_number;
-  unsigned			udpNoBuffCount;
   char				disconnect;	/* disconnect detected */
 };
 

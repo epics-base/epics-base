@@ -172,11 +172,7 @@ int		lock_needed;
 					pclient->disconnect = TRUE;
 				}
 				else if (pclient->proto == IPPROTO_UDP) {
-					if (anerrno==ENOBUFS) {
-						pclient->udpNoBuffCount++;
-					}
-					else {
-						logMsg(
+					logMsg(
 			"CAS: UDP send to \"%s\" failed because \"%s\"\n",
 							(int)buf,
 							(int)strerror(anerrno),
@@ -184,7 +180,6 @@ int		lock_needed;
 							NULL,
 							NULL,
 							NULL);	
-					}
 				}
 				else {
 					assert (0);

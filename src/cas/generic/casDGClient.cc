@@ -258,13 +258,13 @@ caStatus casDGClient::searchResponse(const caHdr &msg,
             }
         }
         search_reply->m_cid = ntohl (ina.sin_addr.s_addr);
-        search_reply->m_type = ntohs (ina.sin_port);
+        search_reply->m_dataType = ntohs (ina.sin_port);
     }
     else {
         caNetAddr addr = this->serverAddress ();
         struct sockaddr_in ina = addr.getSockIP();
         search_reply->m_cid = ~0U;
-        search_reply->m_type = ntohs (ina.sin_port);
+        search_reply->m_dataType = ntohs (ina.sin_port);
     }
     
     search_reply->m_count = 0ul;
@@ -322,11 +322,12 @@ void casDGClient::sendBeacon ()
 	//
 	memset(&buf, 0, sizeof(msg));
 	msg.m_cmmd = htons(CA_PROTO_RSRV_IS_UP);
+    msg.m_available = htonl (INADDR_ANY);
 
 	//
 	// send it to all addresses on the beacon list
 	//
-	this->sendBeaconIO(buf, sizeof(msg), msg.m_available, msg.m_count);
+	this->sendBeaconIO (buf, sizeof(msg), msg.m_count);
 }
 
 //

@@ -31,7 +31,6 @@
 #include "dbPutNotifyBlocker.h"
 
 epicsSingleton < tsFreeList < dbChannelIO > > dbChannelIO::pFreeList;
-unsigned dbChannelIO::nextIdForIO;
 
 dbChannelIO::dbChannelIO ( cacChannelNotify &notify, 
     const dbAddr &addrIn, dbServiceIO &serviceIO ) :

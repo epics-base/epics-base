@@ -118,7 +118,6 @@ private:
     short nativeType () const;
     unsigned long nativeElementCount () const;
     static epicsSingleton < tsFreeList < dbChannelIO > > pFreeList;
-    static unsigned nextIdForIO;
 	dbChannelIO ( const dbChannelIO & );
 	dbChannelIO & operator = ( const dbChannelIO & );
 };

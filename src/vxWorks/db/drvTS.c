@@ -1,6 +1,9 @@
 
 /*
  * $Log$
+ * Revision 1.13  1995/08/18  13:19:31  mrk
+ * Made changes for ansi c
+ *
  * Revision 1.12  1995/08/17  20:35:09  jbk
  * fixed all the -pendantic errors (pain)
  *
@@ -99,7 +102,8 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 */
 
 #define MAKE_DEBUG TSdriverDebug
-#define TS_DRIVER
+#define TS_DRIVER 1
+#define TS_ALLOW_FORCE 1
 
 #include <vxWorks.h>
 #include <vme.h>
@@ -212,6 +216,9 @@ TSinfo TSdata = { TS_master_dead, TS_async_slave, TS_async_none,
 					NULL, NULL, NULL };
 
 extern char* sysBootLine;
+
+int TSdirectTimeVar = 0; /* aother way to indicate direct time */
+int TSgoodTimeStamps = 0; /* a way to force use of accurate time stamps */
 
 static WDOG_ID wd;
 static long correction_factor = 0;
@@ -383,8 +390,13 @@ long TSgetTimeStamp(int event_number,struct timespec* sp)
 		switch(event_number)
 		{
 		case 0:
-			*sp = TSdata.event_table[0]; /* one tick watch dog maintains */
-			break;
+#ifdef TS_ALLOW_FORCE
+			if(TSgoodTimeStamps==0)
+#endif
+			{
+				*sp = TSdata.event_table[0]; /* one tick watch dog maintains */
+				break;
+			}
 		case -1:
 			{
 				struct timespec ts;
@@ -518,7 +530,7 @@ long TSinit(void)
 	else
 		TSdata.has_event_system = 1;
 
-	if(TSdirectTime()>0) TSdata.has_direct_time=1;
+	if(TSdirectTime()>0 || TSdirectTimeVar>0) TSdata.has_direct_time=1;
 
 	/* allocate the event table */
 	TSdata.event_table=(struct timespec*)malloc(

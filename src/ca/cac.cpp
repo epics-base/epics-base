@@ -749,7 +749,6 @@ bool cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
              const epicsTime & currentTime )
 {
     tcpiiu * pnewiiu = 0;
-    unsigned short retrySeqNumber;
 
     if ( addr.sa.sa_family != AF_INET ) {
         return false;
@@ -768,7 +767,7 @@ bool cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
             return true;
         }
 
-        retrySeqNumber = chan->getRetrySeqNo ();
+        unsigned short retrySeqNumber = chan->getRetrySeqNo ();
 
         /*
          * Ignore duplicate search replies
@@ -980,7 +979,7 @@ void cac::writeRequest ( nciu &chan, unsigned type, unsigned nElem, const void *
     chan.getPIIU()->writeRequest ( chan, type, nElem, pValue );
 }
 
-cacChannel::ioid
+cacChannel::ioid 
 cac::writeNotifyRequest ( nciu &chan, unsigned type, unsigned nElem, // X aCC 361
                           const void *pValue, cacWriteNotify &notifyIn )
 {

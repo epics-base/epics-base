@@ -104,7 +104,7 @@ int main ( int, char ** )
     }
 
     resTable < bhe, inetAddrID > beaconTable;
-    while ( 1 ) {
+    while ( true ) {
 
         addrSize = ( osiSocklen_t ) sizeof ( addr );
         status = recvfrom ( sock, buf, sizeof ( buf ), 0,

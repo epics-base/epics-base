@@ -81,7 +81,7 @@
 long	init_dev_sup(), report();
 int	srqHandler();
 int	aiGpibSrq(), liGpibSrq(), biGpibSrq(), mbbiGpibSrq(), stringinGpibSrq();
-struct  devGpibParmBlock devSupParms;
+static	struct  devGpibParmBlock devSupParms;
 
 /******************************************************************************
  *
@@ -674,7 +674,7 @@ static struct gpibCmd gpibCmds[] =
  * when an unsolicited SRQ is detected.
  *
  ******************************************************************************/
-struct  devGpibParmBlock devSupParms = {
+static struct  devGpibParmBlock devSupParms = {
   &Dg535Debug,          /* debugging flag pointer */
   -1,                   /* set to -1 if the device does NOT respond to writes */
   TIME_WINDOW,          /* # of clock ticks to skip after a device times out */

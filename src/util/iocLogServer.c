@@ -47,6 +47,9 @@
  * .09 050494 pg        HPUX port changes.
  * .10 021694 joh	ANSI C	
  * $Log$
+ * Revision 1.27  1997/08/05 00:43:19  jhill
+ * fixed warning
+ *
  * Revision 1.26  1997/06/25 05:59:23  jhill
  * ported log server to win32
  *
@@ -202,7 +205,7 @@ int main()
 	 */
 	pserver->sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (pserver->sock==INVALID_SOCKET) {
-		fprintf(stderr, "iocLogServer: %d=%s\n", SOCKERRNO, strerror(SOCKERRNO));
+		fprintf(stderr, "iocLogServer: %d=%s\n", SOCKERRNO, SOCKERRSTR);
 		return IOCLS_ERROR;
 	}
 	
@@ -213,7 +216,7 @@ int main()
                                 (char *) &optval,
                                 sizeof(optval));
         if(status<0){
-		fprintf(stderr, "iocLogServer: %d=%s\n", SOCKERRNO, strerror(SOCKERRNO));
+		fprintf(stderr, "iocLogServer: %d=%s\n", SOCKERRNO, SOCKERRSTR);
 		return IOCLS_ERROR;
         }
 
@@ -230,14 +233,14 @@ int main()
 		fprintf(stderr,
 			"iocLogServer: a server is already installed on port %u?\n", 
 			(unsigned)ioc_log_port);
-		fprintf(stderr, "iocLogServer: %d=%s\n", SOCKERRNO, strerror(SOCKERRNO));
+		fprintf(stderr, "iocLogServer: %d=%s\n", SOCKERRNO, SOCKERRSTR);
 		return IOCLS_ERROR;
 	}
 
 	/* listen and accept new connections */
 	status = listen(pserver->sock, 10);
 	if (status<0) {
-		fprintf(stderr, "iocLogServer: %d=%s\n", SOCKERRNO, strerror(SOCKERRNO));
+		fprintf(stderr, "iocLogServer: %d=%s\n", SOCKERRNO, SOCKERRSTR);
 		return IOCLS_ERROR;
 	}
 
@@ -251,7 +254,7 @@ int main()
                         FIONBIO,
                         &optval);
         if(status<0){
-		fprintf(stderr, "iocLogServer: %d=%s\n", SOCKERRNO, strerror(SOCKERRNO));
+		fprintf(stderr, "iocLogServer: %d=%s\n", SOCKERRNO, SOCKERRSTR);
 		return IOCLS_ERROR;
         }
 
@@ -317,7 +320,7 @@ static int openLogFile (struct ioc_log_server *pserver)
 		fclose (pserver->poutfile);
 		pserver->poutfile = NULL;
 		ret = truncateFile (ioc_log_file_name, ioc_log_file_limit);
-		if (ret==TF_OK) {
+		if (ret==TF_ERROR) {
 			return IOCLS_ERROR;
 		}
 		pserver->poutfile = fopen(ioc_log_file_name, "r+");
@@ -390,7 +393,7 @@ static void acceptNewClient(void *pParam)
 	pclient->insock = accept(pserver->sock, (struct sockaddr *)&addr, &size);
 	if (pclient->insock<0 || size<sizeof(addr)) {
 		free(pclient);
-		if (SOCKERRNO!=EWOULDBLOCK) {
+		if (SOCKERRNO!=SOCK_EWOULDBLOCK) {
 			fprintf(stderr, "Accept Error %d\n", SOCKERRNO);
 		}
 		return;
@@ -408,7 +411,8 @@ static void acceptNewClient(void *pParam)
         if(status<0){
 		socket_close(pclient->insock);
 		free(pclient);
-		fprintf(stderr, "%s:%d %s\n", __FILE__, __LINE__, strerror(SOCKERRNO));
+		fprintf(stderr, "%s:%d %s\n", 
+			__FILE__, __LINE__, SOCKERRSTR);
 		return;
         }
 
@@ -472,7 +476,7 @@ static void acceptNewClient(void *pParam)
 		socket_close(pclient->insock);
 		free(pclient);
                 printf("%s:%d %s\n", __FILE__, __LINE__,
-                        strerror(SOCKERRNO));
+                        SOCKERRSTR);
                 return;
         }
 
@@ -514,18 +518,18 @@ static void readFromClient(void *pParam)
 		      0);
 	if (recvLength <= 0) {
 		if (recvLength<0) {
-			if (SOCKERRNO==EWOULDBLOCK || SOCKERRNO==EINTR) {
+			if (SOCKERRNO==SOCK_EWOULDBLOCK || SOCKERRNO==SOCK_EINTR) {
 				return;
 			}
-			if (	SOCKERRNO != ECONNRESET &&
-				SOCKERRNO != ECONNABORTED &&
-				SOCKERRNO != EPIPE &&
-				SOCKERRNO != ETIMEDOUT
+			if (	SOCKERRNO != SOCK_ECONNRESET &&
+				SOCKERRNO != SOCK_ECONNABORTED &&
+				SOCKERRNO != SOCK_EPIPE &&
+				SOCKERRNO != SOCK_ETIMEDOUT
 				) {
 				fprintf(stderr, 
 		"%s:%d socket=%d size=%d read error=%s errno=%d\n",
 					__FILE__, __LINE__, pclient->insock, 
-					size, strerror(SOCKERRNO), SOCKERRNO);
+					size, SOCKERRSTR, SOCKERRNO);
 			}
 		}
 		/*

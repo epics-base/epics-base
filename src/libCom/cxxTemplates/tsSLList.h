@@ -56,7 +56,7 @@ template <class T>
 class tsSLNode {
 public:
     tsSLNode ();
-    const tsSLNode < T > & operator = ( const tsSLNode < T > & ) const;
+    tsSLNode < T > & operator = ( const tsSLNode < T > & ) const;
 private:
     void removeNextItem (); // removes the item after this node
     T *pNext;
@@ -97,9 +97,11 @@ private:
 template < class T >
 class tsSLIterConst {
 public:
+    tsSLIterConst ();
     bool valid () const;
     bool operator == (const tsSLIterConst<T> &rhs) const;
     bool operator != (const tsSLIterConst<T> &rhs) const;
+    tsSLIterConst<T> & operator = (const tsSLIterConst<T> &);
     const T & operator * () const;
     const T * operator -> () const;
     tsSLIterConst<T> & operator ++ ();
@@ -117,9 +119,11 @@ protected:
 template < class T >
 class tsSLIter {
 public:
+    tsSLIter ();
     bool valid () const;
     bool operator == (const tsSLIter<T> &rhs) const;
     bool operator != (const tsSLIter<T> &rhs) const;
+    tsSLIter<T> & operator = (const tsSLIter<T> &);
     T & operator * () const;
     T * operator -> () const;
     tsSLIter <T> & operator ++ ();
@@ -159,7 +163,7 @@ inline tsSLNode < T > :: tsSLNode ( const tsSLNode < T > & )
 // do _not_ change the node pointers
 //
 template < class T >
-inline const tsSLNode < T > &  tsSLNode < T >::operator = 
+inline tsSLNode < T > &  tsSLNode < T >::operator = 
     ( const tsSLNode < T > & ) const 
 {
     return *this;
@@ -311,6 +315,12 @@ inline tsSLIterConst<T>::tsSLIterConst ( const T *pInitialEntry ) :
 }
 
 template < class T >
+inline tsSLIterConst<T>::tsSLIterConst () : 
+    pEntry ( 0 )
+{
+}
+
+template < class T >
 inline bool tsSLIterConst<T>::valid () const
 {
     return this->pEntry != 0;
@@ -326,6 +336,13 @@ template < class T >
 inline bool tsSLIterConst<T>::operator != (const tsSLIterConst<T> &rhs) const
 {
     return this->pEntry != rhs.pConstEntry;
+}
+
+template < class T >
+inline tsSLIterConst<T> & tsSLIterConst<T>::operator = ( const tsSLIterConst<T> & rhs ) 
+{
+    this->pEntry = rhs.pEntry;
+    return *this;
 }
 
 template < class T >
@@ -376,6 +393,12 @@ inline tsSLIter<T>::tsSLIter ( T *pInitialEntry ) :
 }
 
 template < class T >
+inline tsSLIter<T>::tsSLIter () : 
+    pEntry ( 0 )
+{
+}
+
+template < class T >
 inline bool tsSLIter<T>::valid () const
 {
     return this->pEntry != 0;
@@ -391,6 +414,13 @@ template < class T >
 inline bool tsSLIter<T>::operator != ( const tsSLIter<T> &rhs ) const
 {
     return this->pEntry != rhs.pEntry;
+}
+
+template < class T >
+inline tsSLIter<T> & tsSLIter<T>::operator = ( const tsSLIter<T> & rhs ) 
+{
+    this->pEntry = rhs.pEntry;
+    return *this;
 }
 
 template < class T >

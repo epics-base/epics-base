@@ -1,6 +1,8 @@
 EPICS = ../../..
 include $(EPICS)/config/CONFIG
 
+T_ARCH = sun4
+OBDIR = O.$(T_ARCH)
 
 USR_LDFLAGS = -lm
 USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
@@ -17,14 +19,19 @@ SRCS = \
 
 
 OBJS = \
-	arAccessLib.o arCSCheck.o arChanIO.o bfSubr.o bucketLib.o \
-        calcPerform.o cmdSubr.o cvtFast.o cvtNumbers.o ellLib.o \
-        envSubr.o errMtst.o errSymLib.o errSymTbl.o ezsSockSubr.o fdmgr.o \
-        freeListLib.o genSubr.o genTaskSubr.o gpHashLib.o helpSubr.o \
-        memDebugLib.o nextFieldSubr.o postfix.o sydSubr.o sydSubrCA.o \
-        sydSubrCF.o sydSubrSSF.o tsSubr.o
+	$(OBDIR)/arAccessLib.o $(OBDIR)/arCSCheck.o $(OBDIR)/arChanIO.o \
+	$(OBDIR)/bfSubr.o $(OBDIR)/bucketLib.o \
+        $(OBDIR)/calcPerform.o $(OBDIR)/cmdSubr.o $(OBDIR)/cvtFast.o \
+	$(OBDIR)/cvtNumbers.o $(OBDIR)/ellLib.o \
+        $(OBDIR)/envSubr.o $(OBDIR)/errMtst.o $(OBDIR)/errSymLib.o \
+	$(OBDIR)/errSymTbl.o $(OBDIR)/ezsSockSubr.o $(OBDIR)/fdmgr.o \
+        $(OBDIR)/freeListLib.o $(OBDIR)/genSubr.o $(OBDIR)/genTaskSubr.o \
+	$(OBDIR)/gpHashLib.o $(OBDIR)/helpSubr.o \
+        $(OBDIR)/memDebugLib.o $(OBDIR)/nextFieldSubr.o \
+	$(OBDIR)/postfix.o $(OBDIR)/sydSubr.o $(OBDIR)/sydSubrCA.o \
+        $(OBDIR)/sydSubrCF.o $(OBDIR)/sydSubrSSF.o $(OBDIR)/tsSubr.o
 
-LIBNAME = libCom.a
+LIBNAME = $(OBDIR)/libCom.a
 
 PROD =
 
@@ -33,12 +40,20 @@ all :: bld_errSym $(LIBNAME) $(PROD)
 bld_errSym:
 	$(EPICS_BASE)/tools/blderrSymTbl
 
+$(OBDIR)/%.o: %.c
+	$(COMPILE.c) -o $@ $<
+
+$(OBDIR)/%.a: $(OBJS)
+	$(LINK.c) -o $@ $<
+	$(AR) $(ARFLAGS) $@ $%
+	$(RM) $%
+
 install :: install_inc 
 
-install_inc : $(EPICS)/libCom.a
+install_inc : $(EPICS_BASE_LIB)/$(T_ARCH)/libCom.a
 
-$(BASE_LIB)/libCom.a : libCom.a
-	install -m 644 libCom.a $@
+$(EPICS_BASE_LIB)/$(T_ARCH)/libCom.a : $(OBDIR)/libCom.a
+	install -m 644 $(OBDIR)/libCom.a $@
 	ranlib -t $@
 
 include $(EPICS)/config/RULES

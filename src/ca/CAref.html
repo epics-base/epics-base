@@ -536,9 +536,9 @@ beacons are received by the client.</p>
 <h3><a name="Repeater">The CA Repeater</a></h3>
 
 <p>When several client processes run on the same host it is not possible for
-all of them to all directly receive a copy of the server beacon messages when
-the beacon messages are sent to unicast addresses, or when legacy IP kernels
-are still in use. To avoid confusion over these restrictions a special UDP
+all of them to directly receive a copy of the server beacon messages when the
+beacon messages are sent to unicast addresses, or when legacy IP kernels are
+still in use. To avoid confusion over these restrictions a special UDP
 server, the CA Repeater, is automatically spawned by the CA client library
 when it is not found to be running. This program listens for server beacons
 sent to the UDP port specified in the EPICS_CA_REPEATER_PORT parameter and

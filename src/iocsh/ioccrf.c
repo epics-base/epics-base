@@ -46,12 +46,8 @@ static int cvtArg(char **pnextchar,argvalue *pargvalue,ioccrfArg *pioccrfArg)
     char *endp;
     /*skip leading whitespace */
     while(*p && (isspace(*p))) ++p;
-    if(!*p) {
-        printf("insufficient number of arguments\n");
-        return(0);
-    }
-    /* look for , or ) */
     argend = p;
+    /* look for , or ) */
     while(*argend && (*argend!=',') && (*argend!=')') ) {
         /* If quote then look for matching quote */
         if(*argend == '\"') {
@@ -64,34 +60,45 @@ static int cvtArg(char **pnextchar,argvalue *pargvalue,ioccrfArg *pioccrfArg)
         }
         ++argend;
     }
-    if(!*argend) {
-        printf("Illegal input starting: %s\n",p);
-        return(0);
+    if(*argend) {
+        *argend = 0;
+        *pnextchar = argend + 1;
     }
-    *argend = 0;
-    *pnextchar = argend + 1;
     /*remove trailing spaces*/
-    while(isspace(p[strlen(p)-1])) p[strlen(p)-1] = 0;
+    while(*p && isspace(p[strlen(p)-1])) p[strlen(p)-1] = 0;
     switch(pioccrfArg->type) {
     case ioccrfArgInt:
-        pargvalue->type.ival = strtol(p,&endp,0);
-        if(*endp) {
-            printf("Illegal integer %s\n",p);
-            return(0);
+        if(*p) {
+            pargvalue->type.ival = strtol(p,&endp,0);
+            if(*endp) {
+                printf("Illegal integer %s\n",p);
+                return(0);
+            }
+        } else {
+            pargvalue->type.ival = 0;
         }
         pioccrfArg->value = &pargvalue->type.ival;
         break;
     case ioccrfArgDouble:
-        pargvalue->type.dval = strtod(p,&endp);
-        if(*endp) {
-            printf("Illegal double %s\n",p);
-            return(0);
+        if(*p) {
+            pargvalue->type.dval = strtod(p,&endp);;
+            if(*endp) {
+                printf("Illegal double %s\n",p);
+                return(0);
+            }
+        } else {
+            pargvalue->type.ival = 0.0;
         }
         pioccrfArg->value = &pargvalue->type.dval;
         break;
     case ioccrfArgString:
+        /*if argument is missing just assume null*/
+        if(!*p) {
+            pioccrfArg->value = 0;
+            break;
+        }
         /*first and last char should be quote */
-        if(*p != '\"' || p[strlen(p)-1] != '\"') {
+        if( (*p != '\"') || (p[strlen(p)-1] != '\"') ) {
             /*if just character 0 accept it*/
             if(strcmp(p,"0")==0) {
                 pioccrfArg->value = 0;
@@ -105,13 +112,13 @@ static int cvtArg(char **pnextchar,argvalue *pargvalue,ioccrfArg *pioccrfArg)
         pioccrfArg->value = p+1;
         break;
     case ioccrfArgPdbbase:
-        /*filed must be pdbbase */
-        if(strcmp(p,"pdbbase")!=0) {
-            printf("Expecting pdbbase; got %s\n",p);
-            return(0);
+        /*field must missing or 0 or pdbbase*/
+        if( !*p || (*p == '0') || (strcmp(p,"pdbbase")==0) ) {
+            pioccrfArg->value = pdbbase;
+            break;
         }
-        pioccrfArg->value = pdbbase;
-        break;
+        printf("Expecting pdbbase; got %s\n",p);
+        return(0);
     default:
         printf("Illegal argument type\n");
         return(0);
@@ -156,17 +163,16 @@ void epicsShareAPI ioccrf(FILE *fp)
         command = p;
         /*look for ( and replace with null*/
         while(*p && (*p != '(') ) ++p;
-        if(!*p) goto badline;
-        *p++ = 0;
+        if(*p) *p++ = 0;
         /*remove trailing spaces from command*/
         while(isspace(command[strlen(command)-1]))
             command[strlen(command)-1]=0;
         pioccrfFunc = (ioccrfFunc *)registryFind(ioccrfID,command);
-        pioccrfFuncDef = pioccrfFunc->pioccrfFuncDef;
-        if(!pioccrfFuncDef) {
-            printf("%s: Cant find this command\n",command);
+        if(!pioccrfFunc) {
+            printf("command %s not found\n",command);
             continue;
         }
+        pioccrfFuncDef = pioccrfFunc->pioccrfFuncDef;
         pargvalue = argvalueHead;
         prevArgvalue = 0;
         for(arg=0;arg<pioccrfFuncDef->nargs; arg++) {

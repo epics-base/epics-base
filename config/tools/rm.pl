@@ -22,6 +22,10 @@ foreach $arg ( @ARGV )
 		{
 			rmdir ($arg) or die "Cannot delete $arg";
 		}
+        if (-d $arg)
+        {
+            die "Failed to delete $arg";
+        }
 	}
 	else
 	{

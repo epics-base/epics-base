@@ -664,7 +664,7 @@ static void tpnCallback(PUTNOTIFY *ppn)
     if(status==0)
 	printf("tpnCallback: success record=%s\n",pname);
     else
-	recGblRecordError(status,pname,"tpnCallback");
+        errPrintf(status,__FILE__,__LINE__,"%s tpnCallback\n",pname);
     free((void *)pdbaddr);
     free(ppn);
 }

@@ -56,13 +56,13 @@
 #include "tsStamp.h"
 #include "dbStaticLib.h"
 #include "dbBase.h"
-#include "dbAddr.h"
-#include "dbNotify.h"
 #include "dbCommon.h"
 #include "errMdef.h"
 #include "recSup.h"
 #include "alarm.h"
 #define epicsExportSharedSymbols
+#include "dbAddr.h"
+#include "dbNotify.h"
 #include "dbAccess.h"
 
 #ifndef NULL

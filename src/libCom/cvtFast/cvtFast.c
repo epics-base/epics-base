@@ -157,7 +157,8 @@ int epicsShareAPI cvtDoubleToString(
 		    sprintf(pstr_value,"%*.*e",precision+7,precision,
 			flt_value);
 		} else {
-		    sprintf(pstr_value,"%.0f",flt_value);
+		    if(precision>3) precision=3;
+		    sprintf(pstr_value,"%.*f",precision,flt_value);
 		}
 		return((int)strlen(pstr_value));
 	}

@@ -37,7 +37,6 @@ SRCS += cvtFast.c
 
 # From cppStd
 SRC_DIRS += $(LIBCOM)/cppStd
-INC += epicsCppStd.h
 INC += epicsExcept.h
 INC += epicsList.h
 INC += epicsListBase.h

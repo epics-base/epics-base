@@ -83,11 +83,13 @@ div.Section1
 </head>
 <body lang="EN-US" style="tab-interval:.5in">
 
+<center>
 <h2>
-Building EPICS R3.13 applications with R3.14.0alpha2 base</h2>
-This document describes how to convert a R3.13 vxWorks application so that
-it builds with release R3.14.0alpha2.&nbsp; It describes an easy way to
-convert applications subject to the following restrictions:
+Building EPICS R3.13 applications with R3.14.0alpha3 base</h2></center>
+
+<p><br>This document describes how to convert a R3.13 vxWorks application
+so that it builds with release R3.14.0alpha3.&nbsp; It describes an easy
+way to convert applications subject to the following restrictions:
 <ul>
 <li>
 The application still uses config rules rather than the configure rules
@@ -105,21 +107,26 @@ Ultimately applications should be converted to use the new configure rules
 so that the OSI features are available.
 <h3>
 <b>Gnumake clean uninstall</b></h3>
-At the top of the application execute:
+
+<blockquote>At the top of the application execute:
 <pre>"<tt>gnumake clean uninstall</tt>"</pre>
-to remove all files and directories created by earlier builds.
+to remove all files and directories created by earlier builds.</blockquote>
+
 <h3>
 Update RELEASE</h3>
-Change&nbsp; the EPICS_BASE definition to point to the R3.14 base release.
-In addition all hardware support and some soft support is now unbundled.
-For example the sequencer is unbundled. You must obtain and build all required
-unbundled products before you can build the application. The location of
-each unbundled product must be described in &lt;top>/config/RELEASE.
+
+<blockquote>Change&nbsp; the <tt>EPICS_BASE</tt> definition to point to
+the R3.14 base release. All hardware support and some soft support is now
+unbundled. For example the sequencer is unbundled. You must obtain and
+build all required unbundled products before you can build the application.
+The location of each unbundled product must be specified in &lt;top>/config/RELEASE.</blockquote>
+
 <h3>
 Update target arch definitions</h3>
-Change any target arch specification in config/CONFIG to new base R3.14
-target arch specification. Look in the R3.14 base/bin to see the target
-arch names.
+
+<blockquote>Change any target arch specification in config/CONFIG to new
+R3.14 target arch specification. Look in the R3.14 base/bin directory to
+see the target arch names.
 <p>For example, in config/CONFIG change
 <pre>CROSS_COMPILER_TARGET_ARCHS = mv167</pre>
 to
@@ -129,28 +136,43 @@ In the iocBoot/*/Makefile files, change
 to
 <pre>ARCH=&lt;new arch name></pre>
 and do a "<tt>gnumake"</tt> in the iocBoot directory to update the cdCommands
-files.
+files.</blockquote>
+
 <h3>
-SNC changes</h3>
-snc is no longer in base. If snc is used in your application, you must
-download and build the seq module with baseR3.14.0alpha2 or later. See
-the Application Developer's Guide to see how to build sequence programs.
+State Notation Language changes</h3>
+
+<blockquote>snc is no longer in base. If snc is used in your application,
+you must download and build the seq module with baseR3.14.0alpha3. See
+the Application Developer's Guide to see how to build sequence programs.</blockquote>
+
+<blockquote>Change
+<pre>INSTALLS=seq</pre>
+to
+<pre>LIBOBJS = $(SEQ_BIN)/seqLibrary.o</pre>
+
+<p><br>in application src/Makefile.Vx files to link seq library into your
+application library, and add
+<pre>SEQ=&lt;full path to seq module directory></pre>
+to config/RELEASE.</blockquote>
+
 <h3>
 iocCore changes</h3>
-iocCore has been renamed to iocCoreLibrary.o.
+
+<blockquote>iocCore has been renamed to iocCoreLibrary.o.
 <br>Change
 <pre>INSTALLS=iocCore</pre>
 to
 <pre>LIBOBJS = $(EPICS_BASE_BIN)/iocCoreLibrary.o</pre>
-in your application src/Makefile.Vx files to link iocCore into your application
-library.
+in your application src/Makefile.Vx files .
 <br>Also remove
 <pre>ld &lt; iocCore</pre>
-from the st.cmd files in the iocBoot subdirectories.
+from the st.cmd files in the iocBoot subdirectories.</blockquote>
+
 <h3>
 Library db changes</h3>
-The Db library name was changed to dbStaticHost for host builds and dbStaticIoc
-for ioc builds.
+
+<blockquote>The Db library name was changed to dbStaticHost for host builds
+and dbStaticIoc for ioc builds.
 <br>Change
 <pre>PROD_LIBS+=Db</pre>
 to
@@ -159,30 +181,37 @@ and
 <pre>Db_DIR=$(EPICS_BASE_LIB)</pre>
 to
 <pre>dbStaticHost_DIR=$(EPICS_BASE_LIB)</pre>
-in your application src/Makefile.Host files.
+in your application src/Makefile.Host files.</blockquote>
+
 <h3>
 VxWorks C++ munched libraries and object files</h3>
-Since R3.14 contains C++ code, the build rules were changed to create a
-corresponding munched file for every vx object file built. The objects
-files can be combined to form libraries but the munched files must be loaded
-into vxWorks. In all st.cmd files add the suffix ".munch" to the ld lines
-where object files were previously loaded. For example change
+
+<blockquote>Since R3.14 contains C++ code, the build rules were changed
+to create a corresponding munched file for every vx object file built.
+The objects files can be combined to form libraries but the munched files
+must be loaded into vxWorks. In all st.cmd files add the suffix "<tt>.munch</tt>"
+to the ld lines where object files were previously loaded. For example
+change
 <pre>ld &lt; exampleLib</pre>
 to
 <pre>ld &lt; exampleLibrary.munch</pre>
+</blockquote>
 
 <h3>
 recGbl calls</h3>
-You may need to add the line&nbsp; "<tt>#include "recGbl.h</tt>" to any
-source files that have recGbl* calls so that the file will compile without
-errors.
+
+<blockquote>You may need to add the line&nbsp; "<tt>#include "recGbl.h</tt>"
+to any source files that have recGbl* calls so that the file will compile
+without errors.</blockquote>
+
 <h3>
 Record support changes</h3>
-The steppermotor, scan, and pid records are no longer in base. If your
-application does not use these record types, comment out or remove references
-to them in base.dbd and baseLIBOBJS. If these record types are used by
-your application you must download and build the modules with R3.14 base,
-add appropriate module definitions to your application's config/RELEASE
+
+<blockquote>The steppermotor, scan, and pid records are no longer in base.
+If your application does not use these record types, comment out or remove
+references to them in base.dbd and baseLIBOBJS. If these record types are
+used by your application you must download and build the modules with R3.14
+base, add appropriate module definitions to your application's config/RELEASE
 fileand change the <tt>LIBOBJS</tt> definitions. For example
 <br>add
 <pre>PID=&lt;full path to modules directory>/pid</pre>
@@ -196,17 +225,22 @@ to your application src/Makefile.
 <p>You should consider changing any existing old steppermotor records to
 the new EPICS&nbsp; <a href="http://www.aps.anl.gov/upd/people/sluiter/epics/modules/mechanism/motor/index.html">motor
 record</a>&nbsp; module supported by Beamline Controls and Data Acquisition
-at APS.
+at APS.</blockquote>
+
 <h3>
 RecDynLink.o and devPtSoft changes</h3>
-recDynLink.o and devPtSoft.o are no longer in base. Remove references to
-them in base.dbd and baseLIBOBJS if they are not used in application.
+
+<blockquote>recDynLink.o and devPtSoft.o are no longer in base. Remove
+references to them in base.dbd and baseLIBOBJS if they are not used in
+application.</blockquote>
+
 <h3>
 Hardware support changes</h3>
-All hardware support (dev, drv and dbd files) has been unbundled from base
-R3.14. This support includes the files symb.dbd, drvHp1404a.o, drvEpvxiMsg.o,
-and drvEpvxi.o.&nbsp; If they are not used in your application, comment
-out references to these files in base.dbd and baseLIBOBJS.
+
+<blockquote>All hardware support (dev, drv and dbd files) has been unbundled
+from base R3.14. This support includes the files <tt>symb.dbd, drvHp1404a.o,
+drvEpvxiMsg.o, and drvEpvxi.o</tt>.&nbsp; If they are not used in your
+application, comment out references to these files in base.dbd and baseLIBOBJS.
 <p>Hardware support files now exist as separate modules available for download
 from the <a href="http://www.aps.anl.gov/epics/">EPICS www home page at
 ANL</a>. You must now download all the hardware support modules needed
@@ -222,20 +256,22 @@ from baseLIBOBJS and add
 to your application src/Makefile,
 <br>and add the line
 <pre>SYMB=&lt;full path definition for the built module SYMB></pre>
-&nbsp;into your application config/RELEASE file .
+into your application config/RELEASE file .
 <p>After a gnumake in the symb module followed by a gnumake in the application
 config directory, the definitions <tt>SYMB_BIN</tt> and <tt>SYMB_LIB</tt>
 will be created,&nbsp; the directory $(SYMB)/include will be added to the
-include directories on the compiler command lines&nbsp; (in the INSTALL_INCLUDES
+include directories on the compiler command lines&nbsp; (in the <tt>INSTALL_INCLUDES</tt>
 definition)&nbsp; and the directory $(SYMB)/dbd will be added to the dbd
-search directories on the dbExpand command lines (in the INSTALL_DBDFLAGS
-definition).
+search directories on the dbExpand command lines (in the <tt>INSTALL_DBDFLAGS</tt>
+definition).</blockquote>
+
 <h3>
 dbLoadtemplate tool changes</h3>
-The host tool dbLoadTemplate has been replace by a new extension, msi.
-dbLoadTemplate is still supported on iocs. Build the msi extension with
-base R3.14 and change definitions the following definitions in your application
-files.
+
+<blockquote>The host tool dbLoadTemplate has been replace by a new extension,
+msi. dbLoadTemplate is still supported on iocs. Build the msi extension
+with base R3.14 and change definitions the following definitions in your
+application files.
 <p>In config/RULES.Db replace the line
 <pre>DBLOADTEMPLATE=$(EPICS_BASE_HOST_BIN)/dbLoadTemplate$(EXE)</pre>
 with
@@ -246,7 +282,12 @@ and change line:
 to
 <pre>@$(MSI) $&lt; > $@</pre>
 Also add the definition
+<blockquote>
 <pre>EPICS_EXTENSIONS=&lt;full path name to epics extensions directory></pre>
-to your application config/RELEASE file.
+</blockquote>
+to your application config/RELEASE file.</blockquote>
+depends changes
+<p>&nbsp;&nbsp;&nbsp;&nbsp; Remove any SRCS.c and SRCS.cc definitions.
+Depends no longer uses these definitions.
 </body>
 </html>

@@ -17,7 +17,7 @@ EPICS base</h2></center>
 
 <center>
 <h2>
-Release 3.14.0alpha2</h2></center>
+Release 3.14.0alpha3</h2></center>
 
 <h3>
 What is EPICS base?</h3>
@@ -166,15 +166,19 @@ Directory Structure</h3>
 
 <blockquote>Distribution directory structure:</blockquote>
 <tt>&nbsp;&nbsp;&nbsp;&nbsp; base&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-Root directory of the base distribution</tt>
+Root directory of the base istribution</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/config&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+R3.13 compatibility build configuration files</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/config/tools&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Perl and shell scripts used in the R3.13 build</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/configure&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 Operating system independent build config files</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/configure/os&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 Operating system dependent build config files</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/configure/tools&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 Perl and shell scripts used in the build</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/config&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-R3.13 compatibility build configuration files</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/copyright&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Text files describing software copyrights</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/src&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 All epics base source code in subdirectories</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/src/as&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -187,12 +191,14 @@ Channel access</tt>
 Channel access server</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/src/db&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 Database access</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/src/db/test&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Database access tests</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/src/dbStatic&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 Static database access</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/src/dbtools&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 Database dbLoadTemplate tools</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/src/dev&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-Device support</tt>
+Device support (softDev and testDev)</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/src/gdd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 General data descriptor</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/src/iocsh&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -205,7 +211,8 @@ Hash bucket</tt>
 Algebraic expression interpreter</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/cvtFast&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 Fast number to string conversion</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/cxxTemplates C++ templates</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/cxxTemplates C++ templates
+and templates tests</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/dbmf&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 Memory management for frequent alloc/free</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/ellLib&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -230,16 +237,20 @@ Miscellaneous utilities</tt>
 Operating system independent code</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/osi/os&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 Operating system dependant code in subdirectories</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/taskwd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Task watchdog</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/test&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 Test tools (timer, semBinary, semMutex,fdmgr, ?)</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/timer&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 Timer</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/taskwd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-Task watchdog</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCompat&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-EPICS base R3.13 compatibility code</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/tsDefs&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+R3.13 time stamp definitions and routines</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/ring&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ringPointer: First in first out circular buffers</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/cppStd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+epicsList: Lists of pointers to objects</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/src/makeBaseApp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-Perl tool+templates to create app dvl tree</tt>
+Perl tool+templates to create ioc app dvl tree</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/src/makeBaseExt&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 Perl tool+templates to create extension dvl tree</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/src/misc&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -258,8 +269,9 @@ Utilities (ca_test, iocLogServer, startCArepeater)</tt>
 R3.13 compatibility code specific to vxWorks</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/startup&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 Scripts for setting up path and environment</tt>
-<p><tt>&nbsp;&nbsp;&nbsp;&nbsp; Install directories created by the build</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/bin&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<p><tt>&nbsp;&nbsp;&nbsp;&nbsp; </tt>Install directories created by the
+build:
+<p><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/bin&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 Installed scripts and executables in subdirs</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; base/lib&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 Installed libraries in arch subdirectories</tt>
@@ -309,6 +321,8 @@ WIN32 bat file to set path and env variables</tt>
 base/configure&nbsp; directory - contains build definitions and rules</li>
 
 <br><tt>CONFIG.CrossCommon&nbsp;&nbsp;&nbsp; Cross build definitions</tt>
+<br><tt>CONFIG.gnuCommon&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Gnu compiler build
+definitions for all archs</tt>
 <br><tt>CONFIG_ADDONS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Definitions
 for &lt;osclass> and DEFAULT options</tt>
 <br><tt>CONFIG_BASE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -341,7 +355,9 @@ Definitions and rules for building subdirectories</tt>
 Definitions and rules for java jars and classes</tt>
 <br><tt>RULES_TOP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 Rules specific to a &lt;top> dir (uninstall and tar)</tt>
-<br>&nbsp;
+<br><tt>Sample.Makefile&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Sample makefile
+with comments</tt>
+<br><tt></tt>&nbsp;
 <li>
 base/configure/os directory - contains os-arch specific definitions</li>
 
@@ -357,6 +373,11 @@ hosts and all target</tt>
 vx targets</tt>
 <br><tt>CONFIG_COMPAT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 R3.13 arch compatibility definitions</tt>
+<br><tt>CONFIG_SITE.&lt;host>.&lt;target> Site specific host-target definitions</tt>
+<br><tt>CONFIG_SITE.Common.&lt;target> Site specific target defs for all
+hosts</tt>
+<br><tt>CONFIG_SITE.&lt;host>.Common&nbsp;&nbsp; Site specific host defs
+for all targets</tt>
 <br>&nbsp;
 <li>
 base/configure/tools directory - contains Perl scripts used for the build</li>
@@ -403,25 +424,24 @@ PERLLIB be set to &lt;perl directory location>.</blockquote>
 you may need C and C++ compilers in your search path. For building base
 you also must have echo in your search path. For Unix host builds you also
 need touch, cpp, cp, rm, mv, and mkdir in your search path and /bin/chmod
-must exist. On some Unix systems you may also need ar and ranlib in you
+must exist. On some Unix systems you may also need ar and ranlib in your
 path, and the c compiler may require ld in your path.
 <p>If you plan to build EPICS base shared libraries instead of archive
 libraries, on Unix systems you will need to add&nbsp; fullpathname to $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH)
-to your LD_LIBRARY_PATH&nbsp;environment variable. On WIN32 systems, building
+to your LD_LIBRARY_PATH environment variable. On WIN32 systems, building
 shared libraries is the default setting and you will need to add&nbsp;
 fullpathname to $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH) to your path.
-Building shared libraries is determined by the value of the macro SHARED_LIBRARIES&nbsp;in
-CONFIG_SITE (YES or NO).</blockquote>
+Building shared libraries is determined by the value of the macro SHARED_LIBRARIES
+in CONFIG_SITE (either YES or NO).</blockquote>
 <b>Do site-specific build configuration</b>
 <blockquote><b>Site configuration</b>
 <br>To configure EPICS, you may want to modify the default definitions
 in the following files:
-<blockquote><tt>configure/CONFIG_SITE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </tt>-
-Build choices. Specify your target archs.
-<br><tt>configure/CONFIG_SITE_ENV&nbsp; </tt>- Set your environment variable
-definitions
-<br><tt>configure/RELEASE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </tt>-
-TORNADO 2 full path location</blockquote>
+<blockquote><tt>configure/CONFIG_SITE&nbsp;&nbsp;&nbsp;&nbsp; </tt>Build
+choices. Specify target archs.
+<br><tt>configure/CONFIG_SITE_ENV </tt>Environment variable&nbsp; defaults
+<br><tt>configure/RELEASE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</tt>TORNADO 2 full path location</blockquote>
 
 <p><br><b>Host configuration</b>
 <br>To configure each host system, you may override the default definitions
@@ -443,7 +463,7 @@ except with CONFIG in the name replaced by CONFIG_SITE.
 settings</blockquote>
 <b>R3.13 compatibility configuration</b>
 <br>To configure EPICS base for building with R3.13 extensions and ioc
-applications , you will want to modify the default definitions in the base/config/CONFIG_SITE*&nbsp;
+applications , you must modify the default definitions in the base/config/CONFIG_SITE*&nbsp;
 files to agree with the definitions in your base/configure files.</blockquote>
 
 <h4>
@@ -481,7 +501,7 @@ files and the base/configure/os directory must have the appropriate configure
 files.</blockquote>
 
 <h3>
-Examples</h3>
+Example application and extension</h3>
 
 <blockquote>A perl tool, makeBaseApp.pl is included in the distribution
 file. This script will create a sample application that then can be built
@@ -491,12 +511,9 @@ create a sample extension that can be built and executed. The makeBaseApp.pl
 and makeBaseExt.pl scripts are installed into the install location bin/&lt;hostarch>
 directory during the base build.</blockquote>
 
-<h3>
-Example base application</h3>
-
-<blockquote>Instructions for building and executing a 3.14 example application
+<blockquote>Instructions for building and executing the 3.14 example application
 can be found in the section "Example Application" of Chapter 2, "New Features
-for 3.14", in the&nbsp; "IOC Application Developer's Guide R3.14.0alpha2"
+for 3.14", in the&nbsp; "IOC Application Developer's Guide R3.14.0alpha3"
 . The "Example Application"&nbsp; section briefly explains how to create
 and build an example application in a user created &lt;top> directory.
 It also explains how to run the example application on a vxWorks ioc or

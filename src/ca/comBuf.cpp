@@ -26,8 +26,11 @@
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
+#if 0
 #include "iocinf.h"
+#endif
 #include "comBuf.h"
+#include "errlog.h"
 
 bool comBuf::flushToWire ( wireSendAdapter & wire ) throw ()
 {

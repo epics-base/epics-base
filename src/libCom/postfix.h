@@ -115,6 +115,7 @@
 #define		CONST_D2R	74
 #define		CONST_R2D	75
 #define		NINT		76
+#define		ATAN2		77
 #define		END_STACK	127
 
 #endif /* INCpostfixh */

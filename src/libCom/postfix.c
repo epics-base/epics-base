@@ -163,6 +163,7 @@ static struct expression_element	elements[] = {
 "LOG",		7,	8,	UNARY_OPERATOR,	LOG_10,    /* log 10 */
 "ACOS",		7,	8,	UNARY_OPERATOR,	ACOS,      /* arc cosine */
 "ASIN",		7,	8,	UNARY_OPERATOR,	ASIN,      /* arc sine */
+"ATAN2",	7,	8,	UNARY_OPERATOR,	ATAN2,     /* arc tangent */
 "ATAN",		7,	8,	UNARY_OPERATOR,	ATAN,      /* arc tangent */
 "MAX",		7,	8,	UNARY_OPERATOR,	MAX,       /* maximum of 2 args */
 "MIN",		7,	8,	UNARY_OPERATOR,	MIN,       /* minimum of 2 args */

@@ -439,6 +439,11 @@ printf ("*FINISHED*\n");
 			*pstacktop = atan(*pstacktop);
 			break;
 
+		case ATAN2:
+			--pstacktop;
+			*pstacktop = atan2(*(pstacktop+1), *pstacktop);
+			break;
+
 		case COS:
 			*pstacktop = cos(*pstacktop);
 			break;

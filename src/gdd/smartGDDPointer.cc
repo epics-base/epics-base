@@ -7,7 +7,7 @@
 //
 
 #define epicsExportSharedSymbols
-#include <smartGddPointer.h>
+#include "smartGDDPointer.h"
 
 //
 // smartGDDPointer::set()

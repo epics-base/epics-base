@@ -536,6 +536,9 @@ epicsShareFunc int epicsShareAPI ca_array_put_callback
 	 READONLY void *pArg
 );
 
+#define ca_put_callback(type, chan, pValue, pFunc, pArg) \
+	ca_array_put_callback(type, 1u, chan, pValue, pFunc, pArg)
+
 /************************************************************************/
 /*	Read a value from a channel					*/
 /************************************************************************/
@@ -977,6 +980,9 @@ epicsShareFunc int epicsShareAPI ca_sg_array_get
 	void *pValue  
 );
 
+#define ca_sg_get(gid, type, chan, pValue) \
+ca_sg_array_get(gid, type, 1u, chan, pValue)
+
 /*
  * ca_sg_array_put()
  *
@@ -997,6 +1003,9 @@ epicsShareFunc int epicsShareAPI ca_sg_array_put
 	chid chan,
 	READONLY void *pValue  
 );
+
+#define ca_sg_put(gid, type, chan, pValue) \
+ca_sg_array_put(gid, type, 1u, chan, pValue)
 
 /*
  * ca_sg_stat()
@@ -1131,6 +1140,8 @@ epicsShareFunc char * epicsShareAPI ca_version();
 	ca_array_get_callback(DBR_FLOAT, 1, chan, pFunc, pArg)
 #define ca_get_callback(type, chan, pFunc, pArg)\
 	ca_array_get_callback(type, 1, chan, pFunc, pArg)
+#define ca_put_callback(type, chan, pValue, pFunc, pArg) \
+	ca_array_put_callback(type, 1u, chan, pValue, pFunc, pArg)
 #define ca_add_event(type,chan,pFunc,pArg,pEventID)\
 	ca_add_array_event(type,1,chan,pFunc,pArg,0.0,0.0,0.0,pEventID)
 #define ca_add_delta_event(TYPE,CHID,ENTRY,ARG,DELTA,EVID)\
@@ -1142,6 +1153,10 @@ ca_add_masked_array_event(TYPE,COUNT,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID, DBE
 #define ca_poll() ca_pend((1e-12), 0/*FALSE*/)
 #define ca_pend_event(TIMEOUT) ca_pend((TIMEOUT), 0/*FALSE*/)
 #define ca_pend_io(TIMEOUT) ca_pend((TIMEOUT), 1/*TRUE*/)
+#define ca_sg_get(gid, type, chan, pValue) \
+ca_sg_array_get(gid, type, 1u, chan, pValue)
+#define ca_sg_put(gid, type, chan, pValue) \
+ca_sg_array_put(gid, type, 1u, chan, pValue)
 
 #ifdef vxWorks
 	epicsShareFunc int epicsShareAPI ca_channel_status()

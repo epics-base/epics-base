@@ -16,7 +16,9 @@ of this distribution.
 #include <ctype.h>
 
 #include "epicsThread.h"
+extern "C" {
 void ringPointerTest(void);
+}
 
 
 int main()

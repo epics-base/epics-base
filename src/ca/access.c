@@ -249,12 +249,14 @@ void			*pext
 	unsigned 	bytesAvailable;
 	unsigned 	actualextsize;
 	unsigned 	extsize;
+	unsigned	msgsize;
 	unsigned 	bytesSent;
 
 	msg = *pmsg;
 	actualextsize = pmsg->m_postsize;
 	extsize = CA_MESSAGE_ALIGN(pmsg->m_postsize);
 	msg.m_postsize = htons((ca_uint16_t)extsize);
+	msgsize = extsize+sizeof(msg);
 
 
 	LOCK;
@@ -271,13 +273,13 @@ void			*pext
 	 * o	Does not allow for messages larger than the
 	 *	ring buffer size.
 	 */
-	if(extsize+sizeof(msg)>piiu->send.max_msg){
+	if(msgsize>piiu->send.max_msg){
 		return ECA_TOLARGE;
 	}
 
 	bytesAvailable = cacRingBufferWriteSize(&piiu->send, FALSE);
 
-	if (bytesAvailable<extsize+sizeof(msg)) {
+	if (bytesAvailable<msgsize) {
 		/*
 		 * try to send first so that we avoid the
 		 * overhead of select() in high throughput
@@ -287,7 +289,7 @@ void			*pext
 		bytesAvailable = 
 			cacRingBufferWriteSize(&piiu->send, FALSE);
 
-		while(bytesAvailable<extsize+sizeof(msg)){
+		while(TRUE){
 			struct timeval	itimeout;
 
 			/*
@@ -302,15 +304,34 @@ void			*pext
 			UNLOCK;
 
 			LD_CA_TIME (SELECT_POLL, &itimeout);
-			cac_mux_io(&itimeout);
+			cac_mux_io (&itimeout);
 
 			LOCK;
 
 			bytesAvailable = cacRingBufferWriteSize(
 						&piiu->send, 
 						FALSE);
-			if(bytesAvailable>=extsize+sizeof(msg)){
+			/*
+			 * record the time if we end up blocking so that
+			 * we can time out
+			 */
+			if (bytesAvailable>=extsize+sizeof(msg)) {
+#				if DEBUG
+					If (piiu->sendPending) {
+						printf ("-Unblocked-\n");
+					}
+#				endif /* DEBUG */
+				piiu->sendPending = FALSE;
 				break;
+			}
+			else {
+				if (!piiu->sendPending) {
+#					if DEBUG
+						printf ("-Blocked-\n");
+#					endif /* DEBUG */
+					piiu->timeAtSendBlock = ca_static->currentTime;
+					piiu->sendPending = TRUE;
+				}
 			}
 		}
 	}
@@ -405,79 +426,6 @@ struct extmsg		**ppMsg
 
 
 /*
- *
- * 	cac_alloc_msg()
- *
- *	return a pointer to reserved message buffer space or
- *	nill if the message will not fit
- *
- *	LOCK should be on
- *
- */ 
-#if 0
-LOCAL int cac_alloc_msg(
-struct ioc_in_use 	*piiu,
-unsigned		extsize,
-struct extmsg		**ppMsg
-)
-{
-	unsigned 	msgsize;
-	unsigned long	bytesAvailable;
-	struct extmsg	*pmsg;
-
-	msgsize = sizeof(struct extmsg)+extsize;
-
-	/*
-	 * fail if max message size exceeded
-	 */
-	if(msgsize>=piiu->send.max_msg){
-		return ECA_TOLARGE;
-	}
-
-	bytesAvailable = cacRingBufferWriteSize(&piiu->send, TRUE);
-  	if (bytesAvailable<msgsize) {
-		/*
-		 * try to send first so that we avoid the
-		 * overhead of select() in high throughput
-		 * situations
-		 */
-		(*piiu->sendBytes)(piiu);
-		bytesAvailable = cacRingBufferWriteSize(
-					&piiu->send, 
-					TRUE);
-
-  		while (bytesAvailable<msgsize) {
-			struct timeval	itimeout;
-
-			/*
-			 * if connection drops request
-			 * cant be completed
-			 */
-			if(!piiu->conn_up){
-				return ECA_BADCHID;
-			}
-
-			UNLOCK;
-			LD_CA_TIME (SELECT_POLL, &itimeout);
-			cac_mux_io(&itimeout);
-			LOCK;
-
-			bytesAvailable = cacRingBufferWriteSize(
-						&piiu->send, 
-						TRUE);
-		}
-	}
-
-	pmsg = (struct extmsg *) &piiu->send.buf[piiu->send.wtix];
-	pmsg->m_postsize = extsize;
-	*ppMsg = pmsg;
-
-	return ECA_NORMAL;
-}
-#endif
-
-
-/*
  * cac_add_msg ()
  */
 LOCAL void cac_add_msg (IIU *piiu)
@@ -548,6 +496,8 @@ int ca_os_independent_init (void)
 		free(ca_static);
 		return ECA_ALLOCMEM;
 	}
+
+	cac_gettimeval (&ca_static->currentTime);
 
 	/* init sync group facility */
 	ca_sg_init();
@@ -2231,6 +2181,7 @@ int ca_request_event(evid monix)
 	htonf(&n_delta, &msg.m_info.m_lval);
 	htonf(&tmo, &msg.m_info.m_toval);
 	msg.m_info.m_mask = htons(monix->mask);
+	msg.m_info.m_pad = 0; /* allow future use */	
 
 	status = cac_push_msg(piiu, &msg.m_header, &msg.m_info);
 
@@ -2671,7 +2622,6 @@ void clearChannelResources(unsigned id)
 int APIENTRY ca_pend(ca_real timeout, int early)
 {
 	struct timeval	beg_time;
-	struct timeval	cur_time;
 	ca_real		delay;
 
   	INITCHK;
@@ -2690,28 +2640,32 @@ int APIENTRY ca_pend(ca_real timeout, int early)
 	 * Also takes care of outstanding recvs
 	 * for single threaded clients 
 	 */
+#if 0
 	ca_flush_io();
+#endif
 
     	if(pndrecvcnt<1 && early){
         	return ECA_NORMAL;
 	}
 
-	cac_gettimeval(&beg_time);
-
+	/*
+	 * the current time set iderectly within ca_flush_io()
+	 * above.
+	 */
+	beg_time = ca_static->currentTime;
+	delay = 0.0;
   	while(TRUE){
 		ca_real 	remaining;
 		struct timeval	tmo;
 
-    		if(pndrecvcnt<1 && early)
+    		if (pndrecvcnt<1 && early) {
         		return ECA_NORMAL;
+		}
 
     		if(timeout == 0.0){
 			remaining = SELECT_POLL;
 		}
 		else{
-
-			cac_gettimeval (&cur_time);
-			delay = cac_time_diff (&cur_time, &beg_time);
 			remaining = timeout-delay;
       			if(remaining<=0.0){
 				if(early){
@@ -2729,6 +2683,14 @@ int APIENTRY ca_pend(ca_real timeout, int early)
 		tmo.tv_sec = (long) remaining;
 		tmo.tv_usec = (long) ((remaining-tmo.tv_sec)*USEC_PER_SEC);
 		cac_block_for_io_completion(&tmo);
+
+		/*
+		 * the current time set within cac_block_for_io_completion()
+		 * above.
+		 */
+		if (timeout != 0.0) {
+			delay = cac_time_diff (&ca_static->currentTime, &beg_time);
+		}
 	}
 }
 
@@ -2740,13 +2702,13 @@ ca_real cac_time_diff (ca_time *pTVA, ca_time *pTVB)
 {
 	ca_real 	delay;
 
-	delay = pTVA->tv_sec - pTVB->tv_sec;
 	if(pTVA->tv_usec>pTVB->tv_usec){
+		delay = pTVA->tv_sec - pTVB->tv_sec;
 		delay += (pTVA->tv_usec - pTVB->tv_usec) /
 				(ca_real)(USEC_PER_SEC);
 	}
 	else{
-		delay -= 1.0;
+		delay = pTVA->tv_sec - pTVB->tv_sec - 1L;
 		delay += (USEC_PER_SEC - pTVB->tv_usec + pTVA->tv_usec) /
 				(ca_real)(USEC_PER_SEC);
 	}

@@ -157,6 +157,113 @@ struct ieeeflt{
 #endif
 
 #ifdef VAX
+#ifdef __STDC__
+int cvrt_short(
+short           *s,                     /* source                       */
+short           *d,                     /* destination                  */
+int             encode,                 /* cvrt VAX to IEEE if T        */
+int             num                     /* number of values             */
+);
+
+int cvrt_char(
+char            *s;                     /* source                       */
+char            *d;                     /* destination                  */
+int             encode;                 /* cvrt VAX to IEEE if T        */
+int             num;                    /* number of values             */
+);
+
+int cvrt_long(
+long            *s,                     /* source                       */
+long            *d,                     /* destination                  */
+int             encode,                 /* cvrt VAX to IEEE if T        */
+int             num                     /* number of values             */
+);
+
+int cvrt_enum(
+short           *s,                     /* source                       */
+short           *d,                     /* destination                  */
+int             encode,                 /* cvrt VAX to IEEE if T        */
+int             num                     /* number of values             */
+);
+
+int cvrt_float(
+float		*s,                     /* source               	*/
+float		*d,                     /* destination          	*/
+int		encode,                 /* cvrt VAX to IEEE if T	*/
+int		num                     /* number of values     	*/
+);
+
+int cvrt_double(
+double          *s,                     /* source                       */
+double          *d,                     /* destination                  */
+int             encode,                 /* cvrt VAX to IEEE if T        */
+int             num                     /* number of values             */
+);
+
+int cvrt_string(
+char            *s,                     /* source                       */
+char            *d,                     /* destination                  */
+int             encode,                 /* cvrt VAX to IEEE if T        */
+int             num                     /* number of values             */
+);
+
+int cvrt_sts_string(
+struct dbr_sts_string   *s,                     /* source               */
+struct dbr_sts_string   *d,                     /* destination          */
+int encode,                                     /* do VAX to IEEE       */
+int                     num                    /* number of values     */
+);
+
+int cvrt_sts_short(
+struct dbr_sts_int      *s,                     /* source               */
+struct dbr_sts_int      *d,                     /* destination          */
+int                     encode,                 /* if true; vax to ieee */
+int                     num                    /* number of values     */
+);
+
+int cvrt_sts_float(
+struct dbr_sts_float    *s,                     /* source               */
+struct dbr_sts_float    *d,                     /* destination          */
+int                     encode,                 /* it true, vax to ieee */
+int                     num                    /* number of values     */
+);
+
+int cvrt_gr_short(
+struct dbr_gr_int       *s,                     /* source               */
+struct dbr_gr_int       *d,                     /* destination          */
+int                     encode,                 /* if true, vax to ieee */
+int                     num                    /* number of values     */
+);
+
+int cvrt_gr_float(
+struct dbr_gr_float     *s,                     /* source               */
+struct dbr_gr_float     *d,                     /* destination          */
+int                     encode,                 /* if true, vax to ieee */
+int                     num                     /* number of values     */
+);
+
+int cvrt_ctrl_short(
+struct dbr_ctrl_int     *s,                     /* source               */
+struct dbr_ctrl_int     *d,                     /* destination          */
+int                     encode,                 /* if true, vax to ieee */
+int                     num                     /* number of values     */
+);
+
+int cvrt_ctrl_float(
+struct dbr_ctrl_float   *s,                     /* source               */
+struct dbr_ctrl_float   *d,                     /* destination          */
+int                     encode,                 /* if true, vax to ieee */
+int                     num                     /* number of values     */
+);
+
+int cvrt_ctrl_enum(
+struct dbr_ctrl_enum    *s,                     /* source               */
+struct dbr_ctrl_enum    *d,                     /* destination          */
+int                     encode,                 /* if true, vax to ieee */
+int                     num                     /* number of values     */
+);
+
+#else
 int	cvrt_string();
 int	cvrt_short();
 int	cvrt_float();
@@ -197,6 +304,7 @@ int	cvrt_ctrl_enum();
 int	cvrt_ctrl_char();
 int	cvrt_ctrl_long();
 int	cvrt_ctrl_double();
+#endif
 
 /*  cvrt is (array of) (pointer to) (function returning) int */
 static

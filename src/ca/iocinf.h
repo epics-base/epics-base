@@ -52,7 +52,7 @@
 #ifndef INCiocinfh  
 #define INCiocinfh
 
-static char	*iocinfhSccsId = "@(#)iocinf.h	1.15\t6/2/93";
+static char	*iocinfhSccsId = "$Id$";
 
 #define	DONT_COMPILE	@@@@ dont compile in this case @@@@
 
@@ -89,7 +89,6 @@ static char	*iocinfhSccsId = "@(#)iocinf.h	1.15\t6/2/93";
 #define VALID_BUILD(CHID)\
 (CHID->build_count && CHID->build_type != TYPENOTCONN && CHID->build_value) 
 
-
 #define SETPENDRECV		{pndrecvcnt++;}
 #define CLRPENDRECV(LOCK)	{if(--pndrecvcnt<1){cac_io_done(LOCK); POST_IO_EV;}}
 
@@ -104,10 +103,11 @@ struct buffer{
 
 
 /* 	indexs into the ioc in use table	*/ 
-#define	MAXIIU		25
+#if 0
 #define INVALID_IIU	(MAXIIU+1)
 #define LOCAL_IIU	(MAXIIU+100)
 #define BROADCAST_IIU	0
+#endif
 
 struct pending_io_event{
   ELLNODE			node;
@@ -116,6 +116,7 @@ struct pending_io_event{
 };
 
 typedef unsigned long ca_time;
+#define MAXCONNTRIES 30
 #define CA_RETRY_PERIOD	5	/* int sec to next keepalive */
 #define CA_RECAST_DELAY	1	/* initial int sec to next recast */
 #define CA_RECAST_PORT_MASK	0xf	/* random retry interval off port */
@@ -131,7 +132,8 @@ typedef unsigned long ca_time;
 
 #define SEND_RETRY_COUNT_INIT	100
 
-#define iiu 		(ca_static->ca_iiu)
+#define iiuList 	(ca_static->ca_iiuList)
+#define piiuCast 	(ca_static->ca_piiuCast)
 #define pndrecvcnt	(ca_static->ca_pndrecvcnt)
 #define chidlist_pend	(ca_static->ca_chidlist_pend)
 #define chidlist_conn	(ca_static->ca_chidlist_conn)
@@ -150,10 +152,13 @@ typedef unsigned long ca_time;
 #define pBucket		(ca_static->ca_pBucket)
 #define nextBucketId	(ca_static->ca_nextBucketId)
 
-#if defined(UNIX)
+#if defined(UNIX) || defined(vxWorks)
 #	define readch		(ca_static->ca_readch)
 #	define writech		(ca_static->ca_writech)
 #	define excepch		(ca_static->ca_excepch)
+#endif
+
+#if defined(UNIX)
 #else
 #  if defined(vxWorks)
 #	define io_done_sem	(ca_static->ca_io_done_sem)
@@ -175,91 +180,100 @@ typedef unsigned long ca_time;
 #  endif
 #endif
 
+/*
+ * one for each task that does a ca import
+ */
+typedef struct task_var_list{
+	ELLNODE			node;
+	int			tid;
+}TVIU;
+
+/*
+ * One per IOC
+ */
+typedef struct ioc_in_use{
+	ELLNODE			node;
+	unsigned		outstanding_ack_count;
+	unsigned		bytes_pushing_an_ack;
+	unsigned		contiguous_msg_count;
+	unsigned		client_busy;
+	char			active;
+	int			sock_proto;
+	struct sockaddr_in	sock_addr;
+	int			sock_chan;
+	int			max_msg;
+	int			tcp_send_buff_size;
+	struct buffer		*send;
+	struct buffer		*recv;
+	unsigned		read_seq;
+	unsigned 		cur_read_seq;
+	ELLLIST			chidlist;	/* chans on this connection */
+	short			conn_up;	/* boolean: T-conn /F-disconn */
+	short			send_needed;	/* CA needs a send */
+	char			host_name_str[32];
+	unsigned		nconn_tries;
+	unsigned		send_retry_count;
+	ca_time			next_retry;
+	ca_time			retry_delay;
+#if defined(VMS)	/* for qio ASTs */
+    	struct sockaddr_in	recvfrom;
+    	struct iosb		iosb;
+#else
+#if defined(UNIX)
+#else
+#if defined(vxWorks)
+#else
+    DONT_COMPILE
+#endif
+#endif
+#endif
+}IIU;
+
 
 struct  ca_static{
-  unsigned short	ca_nxtiiu;
-  long			ca_pndrecvcnt;
-  ELLLIST			ca_ioeventlist;
-  void			(*ca_exception_func)();
-  void			*ca_exception_arg;
-  void			(*ca_connection_func)();
-  void			*ca_connection_arg;
-  void			(*ca_fd_register_func)();
-  void			*ca_fd_register_arg;
-  short			ca_exit_in_progress;  
-  unsigned short	ca_post_msg_active; 
-  ELLLIST			ca_free_event_list;
-  ELLLIST			ca_pend_read_list;
-  short			ca_repeater_contacted;
-  unsigned short	ca_send_msg_active;
-  short			ca_cast_available;
-  struct in_addr	ca_castaddr;
-  char			ca_sprintf_buf[128];
-  BUCKET		*ca_pBucket;
-  unsigned long		ca_nextBucketId;
-#if defined(UNIX)
-  fd_set                ca_readch;  
-  fd_set                ca_excepch;  
-#else
-#  if defined(VMS)
-  int			ca_io_done_flag;
-  char			ca_peek_ast_buf;
-  long			ca_ast_lock_count;
-#  else
-#    if defined(vxWorks)
-  SEM_ID		ca_io_done_sem;
-  void			*ca_evuser;
-  FAST_LOCK		ca_client_lock; 
-  FAST_LOCK		ca_event_lock; /* dont allow events to preempt */
-  int			ca_tid;
-  ELLLIST			ca_local_chidlist;
-  ELLLIST			ca_dbfree_ev_list;
-  ELLLIST			ca_lcl_buff_list;
-  int			ca_event_tid;
-  unsigned		ca_local_ticks;
-#    else
-  DONT_COMPILE
-#    endif
-#  endif
+	IIU		*ca_piiuCast;
+	ELLLIST		ca_iiuList;
+	long		ca_pndrecvcnt;
+	ELLLIST		ca_ioeventlist;
+	void		(*ca_exception_func)();
+	void		*ca_exception_arg;
+	void		(*ca_connection_func)();
+	void		*ca_connection_arg;
+	void		(*ca_fd_register_func)();
+	void		*ca_fd_register_arg;
+	short		ca_exit_in_progress;  
+	unsigned short	ca_post_msg_active; 
+	ELLLIST		ca_free_event_list;
+	ELLLIST		ca_pend_read_list;
+	short		ca_repeater_contacted;
+	unsigned short	ca_send_msg_active;
+	struct in_addr	ca_castaddr;
+	char		ca_sprintf_buf[128];
+	BUCKET		*ca_pBucket;
+	unsigned long	ca_nextBucketId;
+#if defined(UNIX) || defined(vxWorks)
+	fd_set          ca_readch;  
+	fd_set          ca_excepch;  
 #endif
-  struct ioc_in_use{
-    unsigned		outstanding_ack_count;
-    unsigned		bytes_pushing_an_ack;
-    unsigned		contiguous_msg_count;
-    unsigned		client_busy;
-    char		active;
-    int			sock_proto;
-    struct sockaddr_in	sock_addr;
-    int			sock_chan;
-    int			max_msg;
-    int			tcp_send_buff_size;
-    struct buffer	*send;
-    struct buffer	*recv;
-    unsigned		read_seq;
-    unsigned 		cur_read_seq;
-    ELLLIST		chidlist;		/* chans on this connection */
-    short		conn_up;		/* boolean: T-conn /F-disconn */
-    short		send_needed;		/* CA needs a send */
-    char		host_name_str[32];
-    unsigned		nconn_tries;
-    unsigned		send_retry_count;
-    ca_time		next_retry;
-    ca_time		retry_delay;
-#define MAXCONNTRIES 30
-#if defined(VMS)	/* for qio ASTs */
-    struct sockaddr_in	recvfrom;
-    struct iosb		iosb;
-#else
-#  if defined(vxWorks)
-    int			recv_tid;
-#  else
-#    if defined(UNIX)
-#    else
-    DONT_COMPILE
-#    endif
-#  endif
+#if defined(VMS)
+	int		ca_io_done_flag;
+	char		ca_peek_ast_buf;
+	long		ca_ast_lock_count;
 #endif
-  }			ca_iiu[MAXIIU];
+#if defined(vxWorks)
+	SEM_ID		ca_io_done_sem;
+	void		*ca_evuser;
+	FAST_LOCK	ca_client_lock; 
+	FAST_LOCK	ca_event_lock; /* dont allow events to preempt */
+	int		ca_tid;
+	ELLLIST		ca_local_chidlist;
+	ELLLIST		ca_dbfree_ev_list;
+	ELLLIST		ca_lcl_buff_list;
+	int		ca_event_tid;
+	unsigned	ca_local_ticks;
+    	int		recv_tid;
+	ELLLIST		ca_taskVarList;
+#endif
 };
 
 /*
@@ -287,6 +301,47 @@ struct ca_static *ca_static;
  * CA internal functions
  *
  */
+#ifdef __STDC__
+
+void 		cac_send_msg();
+void 		recv_msg_select(struct timeval *ptimeout);
+void            close_ioc(struct ioc_in_use *piiu);
+int		repeater_installed();
+void 		build_msg(chid chix, int reply_type);
+void 		ca_request_event(evid monix);
+int alloc_ioc(
+struct in_addr                  *pnet_addr,
+int                             net_proto,
+struct ioc_in_use               **ppiiu
+);
+void 		ca_busy_message(struct ioc_in_use *piiu);
+void		ca_ready_message(struct ioc_in_use *piiu);
+void		noop_msg(struct ioc_in_use *piiu);
+void 		issue_claim_channel(struct ioc_in_use *piiu, chid pchan);
+void 		ca_default_exception_handler(struct exception_handler_args args);
+int		ca_defunct(void);
+int 		ca_printf(char *pformat, ...);
+void 		manage_conn(int silent);
+void 		mark_server_available(struct in_addr *pnet_addr);
+void		flow_control(struct ioc_in_use *piiu);
+int		broadcast_addr(struct in_addr *pcastaddr);
+int		local_addr(int s, struct sockaddr_in *plcladdr);
+char		*host_from_addr(struct in_addr *pnet_addr);
+int		ca_repeater_task();
+void 		cac_recv_task(int tid);
+int post_msg(
+struct extmsg           *hdrptr,
+long                    *pbufcnt,
+struct in_addr          *pnet_addr,
+struct ioc_in_use       *piiu
+);
+void 		cac_io_done(int lock);
+
+#else
+
+int		ca_defunct();
+void 		ca_default_exception_handler();
+int		repeater_installed();
 void 		cac_send_msg();
 void 		build_msg();
 int		broadcast_addr();
@@ -305,5 +360,10 @@ void		issue_claim_channel();
 void		ca_request_event();
 void		cac_io_done();
 int		post_msg();
+int		alloc_ioc();
+int 		ca_printf();
+void 		cac_recv_task();
+
+#endif
 
 #endif /* this must be the last line in this file */

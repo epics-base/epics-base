@@ -49,6 +49,9 @@ static char *os_depenhSccsId = "@(#)os_depen.h	1.12\t2/19/93";
 #	ifndef INCtaskLibh
 #		include <taskLib.h>
 #	endif
+#	ifndef INCsystimeh
+#		include <systime.h>
+#	endif
 #  else
 #    if defined(VMS)
 #    else
@@ -58,28 +61,32 @@ static char *os_depenhSccsId = "@(#)os_depen.h	1.12\t2/19/93";
 #endif
 
 
-#if     !defined(NULL) || (NULL!=0)
+#ifndef NULL
 #define NULL            0
 #endif  
 
-#if     !defined(FALSE) || (FALSE!=0)
+#ifndef FALSE
 #define FALSE           0
 #endif  
 
-#if     !defined(TRUE) || (TRUE!=1)
+#ifndef TRUE
 #define TRUE            1
 #endif  
 
-#if     !defined(OK) || (OK!=0)
+#ifndef OK
 #define OK            0
 #endif  
 
-#if     !defined(ERROR) || (ERROR!=(-1))
+#ifndef ERROR
 #define ERROR            (-1)
 #endif  
 
 #ifndef NELEMENTS
 #define NELEMENTS(array)    (sizeof(array)/sizeof((array)[0]))
+#endif
+
+#ifndef LOCAL 
+#define LOCAL static
 #endif
 
 /************************************************************************/
@@ -117,8 +124,8 @@ static char *os_depenhSccsId = "@(#)os_depen.h	1.12\t2/19/93";
 #  	define	UNLOCK  	FASTUNLOCK(&client_lock);
 #  	define	LOCKEVENTS 	{FASTLOCK(&event_lock); event_tid=(int)taskIdCurrent;}
 #  	define	UNLOCKEVENTS	{event_tid=VXTASKIDNONE; FASTUNLOCK(&event_lock);}
-#	define	EVENTLOCKTEST	(FASTLOCKTEST(&event_lock)&&taskIdCurrent==event_tid)
-#	define  RECV_ACTIVE(PIIU) (piiu->recv_tid == taskIdCurrent)
+#	define	EVENTLOCKTEST	(FASTLOCKTEST(&event_lock)&&((int)taskIdCurrent)==event_tid)
+#	define  RECV_ACTIVE(PIIU) (ca_static->recv_tid == (int)taskIdCurrent)
 #  else
 #    if defined(UNIX)
 #  	define	LOCK

@@ -28,3 +28,5 @@ dbLoadTemplate$(OBJ): dbLoadTemplate_lex.c ../dbLoadTemplate.h
 clean::
 	@$(RM) dbLoadTemplate_lex.c dbLoadTemplate.c 
 
+depends: dbLoadTemplate_lex.c
+

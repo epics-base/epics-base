@@ -17,3 +17,5 @@ PROD += makeBpt
 include $(TOP)/configure/RULES
 
 inc: $(INSTALL_PROD)
+
+depends: $(INSTALL_PROD)

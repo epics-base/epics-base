@@ -42,4 +42,6 @@ dbYacc$(OBJ): dbLex.c ../dbLexRoutines.c
 clean::
 	@$(RM) dbLex.c dbYacc.c 
 
+depends : $(INSTALL_LIBS) $(INSTALL_PROD)
+
 #	EOF Makefile.Host for base/src/dbStatic

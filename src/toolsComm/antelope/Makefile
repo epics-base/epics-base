@@ -20,3 +20,4 @@ PROD = antelope
 
 include $(TOP)/configure/RULES
 
+depends: $(INSTALL_PROD)

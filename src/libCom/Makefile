@@ -19,7 +19,7 @@ INC += epicsRingBytes.h
 INC += epicsReadline.h
 INC += osdReadline.h
 SRCS += epicsRingPointer.cpp
-SRCS += epicsRingBytes.cpp
+SRCS += epicsRingBytes.c
 SRCS += epicsReadline.c
 
 SRC_DIRS += $(LIBCOM)/calc
@@ -234,4 +234,6 @@ $(COMMON_DIR)/epicsVersion.h: $(TOP)/configure/CONFIG_BASE_VERSION
 
 clean::
 	@$(RM) errSymTbl.c envData.c
+
+depends: $(INSTALL_LIBS)
 

@@ -77,6 +77,7 @@ LIBSRCS += aToIPAddr.c
 LIBSRCS += adjustment.c
 LIBSRCS += bsdSockResource.c
 LIBSRCS += osiSleep.c
+LIBSRCS += bsdSockResCom.c
 
 #
 # if CPLUSPLUS isnt empty then include C++ src codes
@@ -84,14 +85,15 @@ LIBSRCS += osiSleep.c
 #	e.g. the C++ stuff,
 #	please check Com.def!
 #
-LIBSRCS += $(patsubst %,fdManager.cc,$(strip $(CPLUSPLUS)))
-LIBSRCS += $(patsubst %,osiTimer.cc,$(strip $(CPLUSPLUS)))
 LIBSRCS += $(patsubst %,osiTime.cc,$(strip $(CPLUSPLUS)))
 LIBSRCS += $(patsubst %,osdTime.cc,$(strip $(CPLUSPLUS)))
+LIBSRCS += $(patsubst %,osiTimer.cc,$(strip $(CPLUSPLUS)))
+LIBSRCS += $(patsubst %,fdManager.cc,$(strip $(CPLUSPLUS)))
 
 #	WIN32 has no getopt, we add it to the Com lib,
 #	special initialisation is done in winmain.c
-LIBSRCS_WIN32 := getopt.c dllmain.cc getLastWSAErrorAsString.c
+LIBSRCS_WIN32 := getopt.c getLastWSAErrorAsString.c
+LIBSRCS_WIN32 += $(patsubst %,dllmain.cc,$(strip $(CPLUSPLUS))) 
 
 #       Library to build:
 #       lib$(LIBRARY).a  or   ..dll/..exp/..lib

@@ -171,14 +171,14 @@ inline void epicsTime::addNanoSec (long nSecAdj)
 //
 epicsTime::epicsTime ( const time_t_wrapper & ansiTimeTicks )
 {
-    static double uLongMax = static_cast<double> (ULONG_MAX);
-
     //
     // try to directly map time_t into an unsigned long integer because this is 
     // faster on systems w/o hardware floating point and a simple integer type time_t.
     //
     if ( lti.useDiffTimeOptimization ) {
-       if ( ansiTimeTicks.ts > 0 && ansiTimeTicks.ts <= ULONG_MAX ) {
+        // LONG_MAX is used here and not ULONG_MAX because some systems (linux) 
+        // still store time_t as a long.
+        if ( ansiTimeTicks.ts > 0 && ansiTimeTicks.ts <= LONG_MAX ) {
             unsigned long ticks = static_cast < unsigned long > ( ansiTimeTicks.ts );
             if ( ticks >= lti.epicsEpochOffsetAsAnUnsignedLong ) {
                 this->secPastEpoch = ticks - lti.epicsEpochOffsetAsAnUnsignedLong;
@@ -200,6 +200,7 @@ epicsTime::epicsTime ( const time_t_wrapper & ansiTimeTicks )
     //
     // map into the the EPICS time stamp range (which allows rollover)
     //
+    static double uLongMax = static_cast<double> (ULONG_MAX);
     if ( sec < 0.0 ) {
         if ( sec < -uLongMax ) {
             sec = sec + static_cast<unsigned long> ( -sec / uLongMax ) * uLongMax;

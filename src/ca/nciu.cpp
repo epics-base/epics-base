@@ -61,6 +61,8 @@ nciu::nciu (cac *pcac, cacChannel &chan, const char *pNameIn) :
 
     this->f_fullyConstructed = true;
 
+    chan.attachIO (*this);
+
     UNLOCK (pcac);
 }
 

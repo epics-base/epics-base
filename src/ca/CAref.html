@@ -117,7 +117,7 @@ height="31" width="88"></a></p>
   completed</a></li>
   <li><a href="#L3249">process CA client library background
   activities</a></li>
-  <li><a href="#L3251">flush outstanding requests to the server</a></li>
+  <li><a href="#ca_flush_io">flush outstanding requests to the server</a></li>
   <li><a href="#ca_add_exception_event">replace the default exception
     handler</a></li>
 </ul>
@@ -136,7 +136,7 @@ height="31" width="88"></a></p>
   <li><a href="#ca_current_context">ca_current_context</a></li>
   <li><a href="#ca_element_count">ca_element_count</a></li>
   <li><a href="#L6925">ca_field_type</a></li>
-  <li><a href="#L3251">ca_flush_io</a></li>
+  <li><a href="#ca_flush_io">ca_flush_io</a></li>
   <li><a href="#ca_get">ca_get</a></li>
   <li><a href="#L6927">ca_host_name</a></li>
   <li><a href="#L6929">ca_message</a></li>
@@ -162,7 +162,7 @@ height="31" width="88"></a></p>
   <li><a href="#ca_test_event">ca_test_event</a></li>
   <li><a href="#ca_test_io">ca_test_io</a></li>
   <li><a href="#L6941">ca_write_access</a></li>
-  <li><a href="#L6746">channel_state</a></li>
+  <li><a href="#ca_state">channel_state</a></li>
   <li><a href="#dbr_size[]">dbr_size[]</a></li>
   <li><a href="#L6946">dbr_size_n</a></li>
   <li><a href="#dbr_value_size">dbr_value_size[]</a></li>
@@ -1115,7 +1115,7 @@ int main ( int argc, char ** argv )
     return 0;
 }</code></pre>
 
-<h3 id="User">User Supplied Callback Functions</h3>
+<h3><a name="User">User Supplied Callback Functions</a></h3>
 
 <p>Certain CA client initiated requests asynchronously execute an application
 supplied call back in the client process when a response arrives. The
@@ -1970,7 +1970,7 @@ returns ECA_NORMAL.</p>
 <p>ECA_EVDISALLOW - Function inappropriate for use within a call back
 handler</p>
 
-<h3><code><a name="L3251">ca_flush_io()</a></code></h3>
+<h3><code><a name="ca_flush_io">ca_flush_io()</a></code></h3>
 <pre>#include &lt;cadef.h&gt;
 int ca_flush_io();</pre>
 
@@ -2509,7 +2509,7 @@ dbr type.</p>
     <dd>The const string corresponding to the DBR_XXX type.</dd>
 </dl>
 
-<h3><code><a name="ca_test_event1">ca_test_event()</a></code></h3>
+<h3><code><a name="ca_test_event">ca_test_event()</a></code></h3>
 <pre>#include &lt;cadef.h&gt;</pre>
 
 <h4>Description</h4>
@@ -2840,7 +2840,7 @@ reissued.</p>
 
 <p><a href="#ca_flush_io">ca_flush_io</a>()</p>
 
-<p><a href="#ca_get_callback">ca_get_callback</a>()</p>
+<p><a href="#ca_get">ca_get_callback</a>()</p>
 
 <h3><code><a name="ca_client_status">ca_client_status()</a></code></h3>
 <pre>int ca_client_status ( unsigned level );

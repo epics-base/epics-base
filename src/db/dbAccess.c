@@ -226,6 +226,7 @@ long dbProcess(struct dbCommon *precord)
 		/* raise scan alarm after MAX_LOCK times */
 		if(precord->stat==SCAN_ALARM) goto all_done;
 		if(precord->lcnt++ !=MAX_LOCK) goto all_done;
+		if(precord->sevr>=MAJOR_ALARM) all_done;
 		precord->sevr = MAJOR_ALARM;
 		precord->stat = SCAN_ALARM;
 		precord->nsev = 0;

@@ -89,7 +89,7 @@ recordtype(scan) {
 		special(118)
 		interest(1)
 		menu(scanFPTS)
-		initial("1")
+		initial("Freeze")
 	}
 	field(FFO,DBF_MENU) {
 		prompt("Freeze Flag Override")

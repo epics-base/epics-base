@@ -49,6 +49,7 @@
 #include <wdLib.h>
 #include <tickLib.h>
 #include <vme.h>
+#include <vxLib.h>
 
 #include <task_params.h>
 #include <module_types.h>
@@ -68,6 +69,7 @@
 STATIC long	reportBB(), initBB(), qBBReq();
 STATIC int	xvmeTmoHandler(), xvmeRxTask(), xvmeTxTask(), xvmeWdTask();
 STATIC int	xvmeIrqRdav(), xvmeIrqRcmd();
+       int	bbKill(int link);
 
 int	bbDebug = 0;	/* set to 1 from the shell to print debugging info */
 
@@ -125,6 +127,24 @@ reportBB()
 }
 
 /******************************************************************
+ *
+ * Reset hook function... takes down ALL the bitbus links and leaves
+ * them down.
+ *
+ ******************************************************************/
+STATIC void BBrebootFunc(void)
+{
+  int i;
+
+  for (i=0; i<BB_NUM_LINKS; i++) 
+  {
+    if (checkLink(i) == OK)
+      bbKill(i);
+  }
+  taskDelay(sysClkRateGet());	/* Give it a second in case prints something */
+  return;
+}
+/******************************************************************
  * FUNCTION:    initBB()
  * PURPOSE :    Called by iocInit processing. Initializes PB-BIT
  *              hardware for each board present on bus. Although
@@ -150,6 +170,7 @@ initBB()
     printf("initBB(): BB devices already initialized!\n");
     return(ERROR);
   }
+  rebootHookAdd(BBrebootFunc);
 
   /* Figure out where the short io address space is */
   sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO , 0, &short_base);
@@ -553,7 +574,8 @@ int	link;
 	    /* see if node's match */
 	    if (rxDpvtHead->txMsg.node == rxHead[4]) {
 	      /* see if the tasks match */
-	      if (rxDpvtHead->txMsg.tasks == rxHead[5]) {
+	      /* if (rxDpvtHead->txMsg.tasks == rxHead[5]) */
+	      {
 		/* They match, finish putting response into the rxMsg buffer */
 		if (bbDebug>4)
 		  printf("xvmeRxTask(%d): reply to 0x%08.8X\n", 
@@ -703,6 +725,24 @@ int	link;
   if (checkLink(link) != ERROR)
   {
     pXvmeLink[link]->pbbLink->nukeEm = 1;
+    semGive(pXvmeLink[link]->watchDogSem);
+  }
+  else
+    printf("Link %d not installed.\n", link);
+
+  return(0);
+}
+
+/*******************************************************************
+ *
+ * Same as bbReset() but it takes the link down and leaves it down.
+ *
+ *******************************************************************/
+int bbKill(int link)
+{
+  if (checkLink(link) != ERROR)
+  {
+    pXvmeLink[link]->pbbLink->nukeEm = 2;
     semGive(pXvmeLink[link]->watchDogSem);
   }
   else
@@ -882,6 +922,28 @@ int	link;
       }
       pnode = npnode;
     }
+    
+    /* Finish the link reboot if necessary */
+    if (plink->nukeEm != 0) 
+    {
+      /* shut down the bitbus card. */
+      xvmeReset(pXvmeLink[link]->bbRegs, link);
+
+      if (plink->nukeEm == 2)
+      {
+	/* 
+	 * Stop the watchdog task so the link stays dead.
+	 * Since the busy list is locked and the nukeEm flag is still set,
+	 * this link can not do any more work.
+	 */
+	exit();
+      }
+
+      /* clear the abort_flag */
+      pXvmeLink[link]->abortFlag = 0;
+      
+      plink->nukeEm = 0;
+    }
 
     if (plink->busyList.head != NULL) {
       /* Restart the dog timer */
@@ -893,16 +955,6 @@ int	link;
     }
 
     semGive(plink->busyList.sem);
-    
-    /* Finish the link reboot if necessary */
-    if (plink->nukeEm != 0) {
-      xvmeReset(pXvmeLink[link]->bbRegs, link);
-
-      /* clear the abort_flag */
-      pXvmeLink[link]->abortFlag = 0;
-      
-      plink->nukeEm = 0;
-    }
   }
 }
 
@@ -1034,8 +1086,8 @@ int	link;
 	  if (pXvmeLink[link]->abortFlag == 0) {
 
 	    /* don't add to busy list if was a RAC_RESET_SLAVE */
-	    if (pnode->txMsg.cmd != RAC_RESET_SLAVE) {
-	      
+	    if ((pnode->txMsg.cmd != RAC_RESET_SLAVE) && (pnode->txMsg.tasks != 0))
+	    {
 	      /* Lock the busy list */
 	      semTake(plink->busyList.sem, WAIT_FOREVER);
 	      
@@ -1236,13 +1288,3 @@ int dumpStat(link)
   printf("stat_ctl reg: %02x\n",stat_ctl);
   return(OK);
 }
-
-
-
-
-
-
-
-
-
-

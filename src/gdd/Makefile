@@ -26,7 +26,7 @@ INC += smartGDDPointer.h
 
 ###### NEEDS WORK ??????   ############################
 ifeq ($(HOST_ARCH),$(T_A))
-INC = gddApps.h
+INC += gddApps.h
 endif
 #######################################################
 
@@ -39,9 +39,8 @@ LIBSRCS := gdd.cc gddTest.cc gddAppTable.cc gddNewDel.cc \
 	gddArray.cc gddContainer.cc gddErrorCodes.cc gddUtils.cc \
 	smartGDDPointer.cc
 
-LIBRARY := gdd
-
-LIBTYPE := SHARED
+LIBRARY_DEFAULT = gdd
+LIBRARY_vxWorks = -nil-
 
 include $(TOP)/configure/RULES_BUILD
 
@@ -55,7 +54,7 @@ aitConvert$(OBJ): ../aitConvert.cc aitConvertGenerated.cc\
 		../aitConvert.h ../aitTypes.h
 
 
-dbMapper.cc:	../gdd.h ../gddI.h ../gddContainer.h ../gddContainerI.h \
+dbMapper.o:	../gdd.h ../gddI.h ../gddContainer.h ../gddContainerI.h \
 		../gddArray.h ../gddScalar.h ../gddAppTable.h ../dbMapper.h \
 		gddApps.h ../aitTypes.h  ../gddUtils.h ../gddUtilsI.h
 

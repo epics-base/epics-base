@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.3  1997/04/23 17:13:07  jhill
+ * fixed export of symbols from WIN32 DLL
+ *
  * Revision 1.2  1997/03/21 01:56:11  jbk
  * *** empty log message ***
  *
@@ -118,7 +121,7 @@ class epicsShareClass gddBounds1D
 public:
 	gddBounds1D(void) { }
 	gddBounds* boundArray(void);
-	gdd_NEWDEL_FUNC(b); // required for using generic new and remove
+	gdd_NEWDEL_FUNC(b[0]); // required for using generic new and remove
 private:
 	gddBounds b[1];
 	gdd_NEWDEL_DATA // required for using generic new/remove
@@ -130,7 +133,7 @@ class epicsShareClass gddBounds2D
 public:
 	gddBounds2D(void) { }
 	gddBounds* boundArray(void);
-	gdd_NEWDEL_FUNC(b); // required for using generic new and remove
+	gdd_NEWDEL_FUNC(b[0]); // required for using generic new and remove
 private:
 	gddBounds b[2];
 	gdd_NEWDEL_DATA // required for using generic new/remove
@@ -142,7 +145,7 @@ class epicsShareClass gddBounds3D
 public:
 	gddBounds3D(void) { }
 	gddBounds* boundArray(void);
-	gdd_NEWDEL_FUNC(b); // for using generic new and remove
+	gdd_NEWDEL_FUNC(b[0]); // for using generic new and remove
 private:
 	gddBounds b[3];
 	gdd_NEWDEL_DATA // required for using generic new/remove

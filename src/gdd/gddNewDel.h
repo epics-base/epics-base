@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.2  1997/03/21 01:56:09  jbk
+ * *** empty log message ***
+ *
  * Revision 1.1  1996/06/25 19:11:47  jbk
  * new in EPICS base
  *
@@ -26,7 +29,6 @@
 
 // Avoid using templates at the cost of very poor readability.
 // This forces the user to have a static data member named "gddNewDel_freelist"
-// This also forces the user to have a data member named "gddNewDel_next"
 
 // To use this stuff:
 //
@@ -34,7 +36,7 @@
 //	class myClass
 //	{
 //	public:
-//		gdd_NEWDEL_FUNC(myClass)
+//		gdd_NEWDEL_FUNC(address_to_be_used_for_freelist_next_pointer)
 //	private:
 //		gdd_NEWDEL_DATA(myClass)
 //	};
@@ -53,11 +55,12 @@
 	static gddSemaphore newdel_lock;
 
 // public interface for the new/delete stuff
+// user gives this macro the address they want to use for the next pointer
 #define gdd_NEWDEL_FUNC(fld) \
 	void* operator new(size_t); \
 	void operator delete(void*); \
-	char* newdel_next(void) { return (char*)fld; } \
-	void newdel_setNext(char* n) { char** x=(char**)&fld; *x=n; }
+	char* newdel_next(void) { char** x=(char**)&(fld); return *x; } \
+	void newdel_setNext(char* n) { char** x=(char**)&(fld); *x=n; }
 
 // declaration of the static variable for the free list
 #define gdd_NEWDEL_STAT(clas) \

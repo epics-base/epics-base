@@ -108,7 +108,7 @@ inline casStreamWriteReg::~casStreamWriteReg ()
 // casStreamEvWakeup()
 //
 casStreamEvWakeup::casStreamEvWakeup () : 
-		timer ( fileDescriptorManager.createTimer() ), pOS ( 0 ) 
+    timer ( fileDescriptorManager.createTimer() ), pOS ( 0 ) 
 {
 }
 
@@ -117,7 +117,7 @@ casStreamEvWakeup::casStreamEvWakeup () :
 //
 casStreamEvWakeup::~casStreamEvWakeup()
 {
-    delete & this->timer;
+    fileDescriptorManager.destroyTimer ( this->timer );
 }
 
 //
@@ -185,13 +185,13 @@ casStreamIOWakeup::casStreamIOWakeup () :
 //
 casStreamIOWakeup::~casStreamIOWakeup()
 {
-    delete & this->timer;
+    fileDescriptorManager.destroyTimer ( this->timer );
 }
 
 //
 // casStreamIOWakeup::show()
 //
-void casStreamIOWakeup::show(unsigned level) const
+void casStreamIOWakeup::show ( unsigned level ) const
 {
 	printf ( "casStreamIOWakeup at %p {\n", 
         static_cast <const void *> ( this ) );

@@ -186,8 +186,8 @@ private:
 	caResId const clientId;
 	unsigned char const dbrType;
 	unsigned char nPend;
-	unsigned ovf:1;
-	unsigned enabled:1;
+	bool ovf;
+	bool enabled;
 
 	void enable();
 	void disable();

@@ -5,6 +5,9 @@
 //
 //
 // $Log$
+// Revision 1.21  2001/02/16 03:13:27  jhill
+// fixed gnu warnings
+//
 // Revision 1.20  2000/04/28 02:23:34  jhill
 // many, many changes
 //
@@ -281,7 +284,7 @@ xBlockingStatus casStreamIO::blockingState() const
 bufSizeT casStreamIO::incommingBytesPresent() const
 {
     int status;
-    osiSockIoctl_t nchars;
+    osiSockIoctl_t nchars = 0;
     
     status = socket_ioctl(this->sock, FIONREAD, &nchars);
     if (status<0) {

@@ -328,8 +328,8 @@ exAsyncExistIO::exAsyncExistIO ( const pvInfo &pviIn, const casCtx &ctxIn,
 //
 exAsyncExistIO::~exAsyncExistIO()
 {
-    this->cas.removeIO();
-    delete & this->timer;
+    this->cas.removeIO ();
+    this->cas.destroyTimer ( this->timer );
 }
 
 //
@@ -364,7 +364,7 @@ exAsyncCreateIO::exAsyncCreateIO ( pvInfo &pviIn, exServer &casIn,
 exAsyncCreateIO::~exAsyncCreateIO()
 {
     this->cas.removeIO ();
-    delete & this->timer;
+    this->cas.destroyTimer ( this->timer );
 }
 
 //

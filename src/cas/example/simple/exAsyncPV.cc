@@ -67,7 +67,9 @@ exAsyncWriteIO::exAsyncWriteIO ( const casCtx &ctxIn, exAsyncPV &pvIn,
 exAsyncWriteIO::~exAsyncWriteIO()
 {
 	this->pv.removeIO();
-    delete & this->timer;
+    if ( this->pv.getCAS() ) {
+        this->pv.getCAS()->destroyTimer ( this->timer );
+    }
 }
 
 //
@@ -99,7 +101,9 @@ exAsyncReadIO::exAsyncReadIO ( const casCtx &ctxIn, exAsyncPV &pvIn,
 exAsyncReadIO::~exAsyncReadIO()
 {
 	this->pv.removeIO ();
-    delete & this->timer;
+    if ( this->pv.getCAS() ) {
+        this->pv.getCAS()->destroyTimer ( this->timer );
+    }
 }
 
 

@@ -374,6 +374,7 @@ public:
 #endif
 
     epicsShareFunc class epicsTimer & createTimer ();
+    epicsShareFunc void destroyTimer ( class epicsTimer & );
 
 	//caStatus enableClients ();
 	//caStatus disableClients ();

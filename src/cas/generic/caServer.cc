@@ -208,9 +208,14 @@ epicsShareFunc casEventMask caServer::alarmEventMask () const
 //
 // caServer::alarmEventMask ()
 //
-class epicsTimer & caServer::createTimer()
+class epicsTimer & caServer::createTimer ()
 {
-    return fileDescriptorManager.createTimer();
+    return fileDescriptorManager.createTimer ();
+}
+
+void caServer::destroyTimer ( class epicsTimer & tmr )
+{
+    fileDescriptorManager.destroyTimer ( tmr );
 }
 
 //

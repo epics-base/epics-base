@@ -91,7 +91,7 @@ casDGIntfOS::~casDGIntfOS()
 // casDGEvWakeup::casDGEvWakeup()
 //
 casDGEvWakeup::casDGEvWakeup () : 
-		timer ( fileDescriptorManager.createTimer() ), pOS ( 0 ) 
+    timer ( fileDescriptorManager.createTimer() ), pOS ( 0 ) 
 {
 }
 
@@ -100,7 +100,7 @@ casDGEvWakeup::casDGEvWakeup () :
 //
 casDGEvWakeup::~casDGEvWakeup()
 {
-    delete & this->timer;
+    fileDescriptorManager.destroyTimer ( this->timer );
 }
 
 void casDGEvWakeup::start ( casDGIntfOS &os )
@@ -148,7 +148,7 @@ casDGIOWakeup::casDGIOWakeup () :
 //
 casDGIOWakeup::~casDGIOWakeup()
 {
-    delete & this->timer;
+    fileDescriptorManager.destroyTimer ( this->timer );
 }
 
 //

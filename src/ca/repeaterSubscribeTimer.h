@@ -24,11 +24,12 @@ class udpiiu;
 
 class repeaterSubscribeTimer : private epicsTimerNotify {
 public:
-    repeaterSubscribeTimer ( udpiiu &iiu, epicsTimerQueue &queue );
+    repeaterSubscribeTimer ( udpiiu &, epicsTimerQueue & );
     virtual ~repeaterSubscribeTimer ();
     void confirmNotify ();
-	void show (unsigned level) const;
+	void show ( unsigned level ) const;
 private:
+    epicsTimerQueue &queue;
     epicsTimer &timer;
     udpiiu &iiu;
     unsigned attempts;

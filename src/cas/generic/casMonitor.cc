@@ -51,8 +51,8 @@ casMonitor::casMonitor(caResId clientIdIn, casChannelI &chan,
 	clientId(clientIdIn),
 	dbrType(dbrTypeIn),
 	nPend(0u),
-	ovf(FALSE),
-	enabled(FALSE)
+	ovf(false),
+	enabled(false)
 {
 	//
 	// If these are nill it is a programmer error
@@ -96,7 +96,7 @@ void casMonitor::enable()
 	
 	this->mutex.lock();
 	if (!this->enabled && this->ciu.readAccess()) {
-		this->enabled = TRUE;
+		this->enabled = true;
 		status = this->ciu.getPVI().registerEvent();
 		if (status) {
 			errMessage(status,
@@ -113,7 +113,7 @@ void casMonitor::disable()
 {
 	this->mutex.lock();
 	if (this->enabled) {
-		this->enabled = FALSE;
+		this->enabled = false;
 		this->ciu.getPVI().unregisterEvent();
 	}
 	this->mutex.unlock();
@@ -176,7 +176,7 @@ void casMonitor::push (const smartConstGDDPointer &pNewValue)
 		// no log block
 		// => use the over flow block in the event structure
 		//
-		this->ovf = TRUE;
+		this->ovf = true;
 		this->overFlowEvent.assign (*this, pNewValue);
 		this->nPend++;
 		pLog = &this->overFlowEvent;
@@ -222,8 +222,8 @@ caStatus casMonitor::executeEvent(casMonEvent *pEV)
 	// saved in the call back object
 	//
 	if (pEV == &this->overFlowEvent) {
-		assert (this->ovf==TRUE);
-		this->ovf = FALSE;
+		assert (this->ovf);
+		this->ovf = false;
 		pEV->clear();
 	}
 	else {
@@ -241,10 +241,10 @@ caStatus casMonitor::executeEvent(casMonEvent *pEV)
 void casMonitor::show(unsigned level) const
 {
         if (level>1u) {
-                printf(
+            printf(
 "\tmonitor type=%u count=%lu client id=%u enabled=%u OVF=%u nPend=%u\n",
                         dbrType, nElem, clientId, enabled, ovf, nPend);
-		this->mask.show(level);
+		    this->mask.show(level);
         }
 }
 

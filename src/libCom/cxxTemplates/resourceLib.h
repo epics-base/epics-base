@@ -158,7 +158,7 @@ public:
     // no parameters that returns void
     //
     void traverse ( pSetMFArg(pCB) );
-    void constTraverse ( pSetMFArgConst(pCB) ) const;
+    void traverseConst ( pSetMFArgConst(pCB) ) const;
 
 private:
     tsSLList<T>     *pTable;
@@ -426,7 +426,7 @@ void resTable<T,ID>::show (unsigned level) const
 // resTable<T,ID>::traverse
 //
 template <class T, class ID>
-void resTable<T,ID>::traverse (pSetMFArg(pCB)) const
+void resTable<T,ID>::traverse (pSetMFArg(pCB)) 
 {
     tsSLList<T> *pList;
 
@@ -443,18 +443,18 @@ void resTable<T,ID>::traverse (pSetMFArg(pCB)) const
 }
 
 //
-// resTable<T,ID>::constTraverse
+// resTable<T,ID>::traverseConst
 //
 template <class T, class ID>
-void resTable<T,ID>::consTraverse (pSetMFArgConst(pCB)) const
+void resTable<T,ID>::traverseConst (pSetMFArgConst(pCB)) const
 {
-    tsSLList<T> *pList;
+    const tsSLList<T> *pList;
 
     pList = this->pTable;
     while ( pList < &this->pTable[this->hashIdMask+1] ) {
-        tsSLIter<T> pItem ( pList->first () );
+        tsSLIterConst<T> pItem ( pList->first () );
         while ( pItem.valid () ) {
-            T * p = & ( *pItem );
+            const T * p = & ( *pItem );
             (p->*pCB) ();
             pItem = pItem.itemAfter ();
         }

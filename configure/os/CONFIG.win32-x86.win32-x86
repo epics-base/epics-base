@@ -151,6 +151,8 @@ STATIC_CXXFLAGS_NO= /MD$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
 
 STATIC_LDLIBS_YES=ws2_32.lib advapi32.lib user32.lib kernel32.lib winmm.lib
 STATIC_LDLIBS_NO=
+STATIC_LDFLAGS=
+RANLIB=
 
 # add /profile here to run the ms profiler
 # /LTCG - whole program optimization

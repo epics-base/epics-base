@@ -80,7 +80,7 @@ inline void epicsMutex::lock ()
     }
 }
 
-inline bool epicsMutex::lock ( double timeOut )
+inline bool epicsMutex::lock ( double timeOut ) // X aCC 361
 {
     epicsMutexLockStatus status = epicsMutexLockWithTimeout ( this->id, timeOut );
     if ( status == epicsMutexLockOK ) {
@@ -95,7 +95,7 @@ inline bool epicsMutex::lock ( double timeOut )
     }
 }
 
-inline bool epicsMutex::tryLock ()
+inline bool epicsMutex::tryLock () // X aCC 361
 {
     epicsMutexLockStatus status = epicsMutexTryLock ( this->id );
     if ( status == epicsMutexLockOK ) {

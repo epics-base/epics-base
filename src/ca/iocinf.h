@@ -26,7 +26,7 @@
 
 /*
  * ANSI C includes
- * !!!!! MULTINET/VMS breaks if we include ANSI time.h here !!!!!
+ * ---- MULTINET/VMS breaks if we include ANSI time.h here ----
  */
 #include <ctype.h>
 #include <stdio.h>

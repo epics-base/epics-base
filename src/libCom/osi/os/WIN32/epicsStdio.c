@@ -19,30 +19,35 @@ extern "C" {
 #define epicsExportSharedSymbols
 #include "epicsStdio.h"
 
-int epicsShareAPI epicsVsnprintf(
-    char *str, size_t size, const char *format, va_list ap)
+int epicsShareAPI epicsVsnprintf (
+    char * str, size_t size, const char *format, va_list ap )
 {
     int rtn;
 
-    rtn = _vsnprintf(str,size,format,ap);
-    if(rtn>=0 && rtn<size) return(rtn);
-    if(rtn==-1) {
-        str[size-1] = 0;
-        return(size);
+    rtn = _vsnprintf ( str, size, format, ap );
+    if ( rtn >= 0 ) {
+        size_t sizeReturned = (size_t) rtn;
+        if ( sizeReturned < size ) {
+            return rtn;
+        }
     }
-    return(rtn);
+    if ( rtn == -1 ) {
+        str[size-1] = 0;
+        return (int) size;
+    }
+    return rtn;
 }
 
-int epicsShareAPI epicsSnprintf(
-    char *str, size_t size, const char *format, ...)
+int epicsShareAPI epicsSnprintf (
+    char *str, size_t size, const char *pFormat, ... )
 {
     int rtn;
     va_list pvar;
 
-    va_start(pvar, pFormat);
-    rtn = epicsVsnprintf(str,size,format,pvar);
-    va_end(pvar)
-    return(rtn);
+    va_start ( pvar, pFormat );
+    rtn = epicsVsnprintf ( str, size, pFormat, pvar );
+    va_end ( pvar );
+    return ( rtn );
 }
 
 #ifdef  __cplusplus

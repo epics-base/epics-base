@@ -120,7 +120,7 @@ void testAccuracy ()
     while ( expireCount != 0u ) {
         expireEvent.wait ();
     }
-    double averageMeasuredError;
+    double averageMeasuredError = 0.0;
     for ( i = 0u; i < nTimers; i++ ) {
         averageMeasuredError += pTimers[i]->checkError ();
     }

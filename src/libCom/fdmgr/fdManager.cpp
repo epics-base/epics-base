@@ -19,7 +19,6 @@
 //
 // NOTES: 
 // 1) This library is not thread safe
-// 2) The maximum number of file desriptiors is currently set to 4096
 //
 
 #define FD_SETSIZE 4096
@@ -50,16 +49,16 @@ const unsigned uSecPerSec = 1000u * mSecPerSec;
 // will have the same sleep quantum 
 //
 epicsShareFunc fdManager::fdManager () : 
-    sleepQuantum ( epicsThreadSleepQuantum () ), pTimerQueue ( 0 ), 
-        maxFD ( 0 ), processInProg ( false ), pCBReg ( 0 )
+    sleepQuantum ( epicsThreadSleepQuantum () ), 
+        fdSetsPtr ( new fd_set [fdrNEnums+1] ),
+        pTimerQueue ( 0 ), maxFD ( 0 ), processInProg ( false ), 
+        pCBReg ( 0 )
 {
     int status = osiSockAttach ();
     assert (status);
 
-    for ( size_t i = 0u; 
-        i < sizeof (this->fdSets) / sizeof ( this->fdSets[0u] ); 
-        i++ ) {
-        FD_ZERO ( &this->fdSets[i] ); // X aCC 392
+    for ( size_t i = 0u; i <= fdrNEnums; i++ ) {
+        FD_ZERO ( &fdSetsPtr[i] ); // X aCC 392
     }
 }
 
@@ -79,6 +78,7 @@ epicsShareFunc fdManager::~fdManager()
         pReg->destroy();
     }
     delete this->pTimerQueue;
+    delete [] this->fdSetsPtr;
     osiSockRelease();
 }
 
@@ -113,7 +113,7 @@ epicsShareFunc void fdManager::process (double delay)
     bool ioPending = false;
     tsDLIter < fdReg > iter = this->regList.firstIter ();
     while ( iter.valid () ) {
-        FD_SET(iter->getFD(), &this->fdSets[iter->getType()]); 
+        FD_SET(iter->getFD(), &this->fdSetsPtr[iter->getType()]); 
         ioPending = true;
         ++iter;
     }
@@ -123,8 +123,8 @@ epicsShareFunc void fdManager::process (double delay)
         tv.tv_sec = static_cast<long> ( minDelay );
         tv.tv_usec = static_cast<long> ( (minDelay-tv.tv_sec) * uSecPerSec );
 
-        int status = select (this->maxFD, &this->fdSets[fdrRead], 
-            &this->fdSets[fdrWrite], &this->fdSets[fdrException], &tv);
+        int status = select (this->maxFD, &this->fdSetsPtr[fdrRead], 
+            &this->fdSetsPtr[fdrWrite], &this->fdSetsPtr[fdrException], &tv);
 
         this->pTimerQueue->process(epicsTime::getCurrent());
 
@@ -137,8 +137,8 @@ epicsShareFunc void fdManager::process (double delay)
             while ( iter.valid () ) {
                 tsDLIter<fdReg> tmp = iter;
                 tmp++;
-                if (FD_ISSET(iter->getFD(), &this->fdSets[iter->getType()])) {
-                    FD_CLR(iter->getFD(), &this->fdSets[iter->getType()]);
+                if (FD_ISSET(iter->getFD(), &this->fdSetsPtr[iter->getType()])) {
+                    FD_CLR(iter->getFD(), &this->fdSetsPtr[iter->getType()]);
                     this->regList.remove(*iter);
                     this->activeList.add(*iter);
                     iter->state = fdReg::active;
@@ -309,7 +309,7 @@ void fdManager::removeReg (fdReg &regIn)
     }
     regIn.state = fdReg::limbo;
 
-    FD_CLR(regIn.getFD(), &this->fdSets[regIn.getType()]);
+    FD_CLR(regIn.getFD(), &this->fdSetsPtr[regIn.getType()]);
 }
 
 //

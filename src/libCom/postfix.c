@@ -302,6 +302,8 @@ short		*perror;
 	new_expression = TRUE;
 	*ppostfix = END_STACK;
 	*perror = 0;
+	if (* pinfix == 0 )
+		return(0);
 	pstacktop = &stack[0];
 	while (get_element(pinfix,&pelement,&no_bytes) != END){
 	    pinfix += no_bytes;
@@ -491,9 +493,6 @@ short		*perror;
 		*perror = 8;
 		return(-1);
 	    }
-	}
-	if (*ppostfix == END_STACK){
-		return(0);
 	}
 	if (operand_needed){
 		*perror = 4;

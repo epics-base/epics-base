@@ -43,17 +43,18 @@
 #include <string.h>
 #include <math.h>
 
-#include <errMdef.h>
-#include <ellLib.h>
-#include <dbDefs.h>
-#include <sdrHeader.h>
-#include <cvtFast.h>
-#include <dbStaticLib.h>
-#include <devSup.h>
-#include <drvSup.h>
-#include <cvtTable.h>
-#include <choice.h>
-#include <special.h>
+#include "errMdef.h"
+#include "ellLib.h"
+#include "dbDefs.h"
+#include "sdrHeader.h"
+#include "cvtFast.h"
+#include "dbStaticLib.h"
+#include "devSup.h"
+#include "drvSup.h"
+#include "cvtTable.h"
+#include "choice.h"
+#include "special.h"
+#include "postfix.h"
 
 #define messagesize	100
 #define RPCL_LEN 184

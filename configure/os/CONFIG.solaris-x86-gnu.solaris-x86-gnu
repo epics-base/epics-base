@@ -18,8 +18,8 @@ AR = ar -rc
 RANLIB=
 LD = ld -r
 
-SHRLIB_LDFLAGS = -z defs -G -h $@
-LOADABLE_SHRLIB_LDFLAGS += -G -h $@
+SHRLIB_LDFLAGS += -shared -fPIC -h $@  -z defs
+LOADABLE_SHRLIB_LDFLAGS += -shared -fPIC -h $@
 
 OP_SYS_LDFLAGS += -z ignore -z combreloc -z lazyload
 

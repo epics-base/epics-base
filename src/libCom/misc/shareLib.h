@@ -161,7 +161,7 @@
 #define INLINE_defs_EPICS
 #   ifndef __cplusplus
 #       if defined (__GNUC__)
-#	        define INLINE extern __inline__
+#	        define INLINE static __inline__
 #       elif defined (_MSC_VER)
 #	        define INLINE __inline
 #       elif defined (_SUNPRO_C)

@@ -40,7 +40,7 @@ char *st_cptr;
 {
     register char *s;
 
-    if (st_line == 0) return;
+    if (st_line == 0) return(0);
     for (s = st_line; *s != '\n'; ++s)
     {
 	if (isprint(*s) || *s == '\t')
@@ -58,6 +58,7 @@ char *st_cptr;
     }
     putc('^', stderr);
     putc('\n', stderr);
+	return(0);
 }
 
 

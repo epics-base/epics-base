@@ -377,7 +377,7 @@ int default_state;
 	if (to_state[i] != default_state)
 	    ++count;
     }
-    if (count == 0) return;
+    if (count == 0) return(0);
 
     symno = symbol_value[symbol] + 2*nstates;
 
@@ -395,6 +395,7 @@ int default_state;
 
     tally[symno] = count;
     width[symno] = sp1[-1] - sp[0] + 1;
+	return(0);
 }
 
 sort_actions()
@@ -836,7 +837,7 @@ output_stored_text()
 	open_error(text_file_name);
     in = text_file;
     if ((c = getc(in)) == EOF)
-	return;
+	return(0);
     out = code_file;
     if (c ==  '\n')
 	++outline;
@@ -849,6 +850,8 @@ output_stored_text()
     }
     if (!lflag)
 	fprintf(out, line_format, ++outline + 1, code_file_name);
+
+	return(0);
 }
 
 
@@ -1082,7 +1085,7 @@ output_trailing_text()
     register FILE *in, *out;
 
     if (line == 0)
-	return;
+	return(0);
 
     in = input_file;
     out = code_file;
@@ -1091,7 +1094,7 @@ output_trailing_text()
     {
 	++lineno;
 	if ((c = getc(in)) == EOF)
-	    return;
+	    return(0);
 	if (!lflag)
 	{
 	    ++outline;
@@ -1130,6 +1133,8 @@ output_trailing_text()
     }
     if (!lflag)
 	fprintf(out, line_format, ++outline + 1, code_file_name);
+
+	return(0);
 }
 
 
@@ -1144,7 +1149,7 @@ output_semantic_actions()
 	open_error(action_file_name);
 
     if ((c = getc(action_file)) == EOF)
-	return;
+	return(0);
 
     out = code_file;
     last = c;
@@ -1167,6 +1172,8 @@ output_semantic_actions()
 
     if (!lflag)
 	fprintf(out, line_format, ++outline + 1, code_file_name);
+
+	return(0);
 }
 
 

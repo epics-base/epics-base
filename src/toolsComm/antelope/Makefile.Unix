@@ -3,6 +3,7 @@ include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
 CMPLR = OLD
+#CMPLR = STRICT
 USR_LDLIBS = -lm -s
 USR_CFLAGS = -D_NO_PROTO
 

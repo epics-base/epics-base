@@ -8,7 +8,7 @@ verbose()
 {
     register int i;
 
-    if (!vflag) return;
+    if (!vflag) return(0);
 
     null_rules = (short *) MALLOC(nrules*sizeof(short));
     if (null_rules == 0) no_space();
@@ -22,9 +22,10 @@ verbose()
     if (SRtotal || RRtotal)
 	log_conflicts();
 
-    fprintf(verbose_file, "\n\n%d terminals, %d nonterminals\n", ntokens,
-	    nvars);
+    fprintf(verbose_file, "\n\n%d terminals, %d nonterminals\n", ntokens, nvars);
     fprintf(verbose_file, "%d grammar rules, %d states\n", nrules - 2, nstates);
+
+	return(0);
 }
 
 

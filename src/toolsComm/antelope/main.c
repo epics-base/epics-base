@@ -71,7 +71,7 @@ int k;
 }
 
 
-onintr()
+void onintr(int StupidInconsistantSignalTypes)
 {
     done(1);
 }
@@ -118,7 +118,7 @@ char *argv[];
 	case '\0':
 	    input_file = stdin;
 	    if (i + 1 < argc) usage();
-	    return;
+	    return(0);
 
 	case '-':
 	    ++i;
@@ -203,6 +203,8 @@ end_of_option:;
 no_more_options:;
     if (i + 1 != argc) usage();
     input_file_name = argv[i];
+
+	return(0);
 }
 
 

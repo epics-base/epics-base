@@ -43,6 +43,7 @@ epicsShareFunc void * epicsShareAPI mallocMustSucceed(size_t size, const char *e
 
 epicsShareFunc void epicsShareAPI cantProceed(const char *errorMessage)
 {
-    errlogPrintf("fatal error: %s\n",errorMessage);
+    if(errorMessage) errlogPrintf("fatal error: %s\n",errorMessage);
+    else errlogPrintf("fatal error\n");
     threadSuspend(threadGetIdSelf());
 }

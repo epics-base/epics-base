@@ -14,7 +14,7 @@ Com_DIR = $(EPICS_BASE_LIB)
 
 #PROD = 
 
-include $(TOP)/configure/RULES_BUILD
+include $(TOP)/configure/RULES
 #----------------------------------------
 #  ADD RULES AFTER THIS LINE
 

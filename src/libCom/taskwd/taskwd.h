@@ -32,11 +32,13 @@ typedef void (*TASKWDANYFUNCPRR)(void *parm,threadId tid);
 extern "C" {
 #endif
 
-epicsShareFunc void taskwdInit(void);
-epicsShareFunc void taskwdInsert(threadId tid, TASKWDFUNCPRR callback,void *arg);
-epicsShareFunc void taskwdAnyInsert(void *userpvt, TASKWDANYFUNCPRR callback,void *arg);
-epicsShareFunc void taskwdRemove(threadId tid);
-epicsShareFunc void taskwdAnyRemove(void *userpvt);
+epicsShareFunc void epicsShareAPI taskwdInit(void);
+epicsShareFunc void epicsShareAPI taskwdInsert(
+    threadId tid, TASKWDFUNCPRR callback,void *arg);
+epicsShareFunc void epicsShareAPI taskwdAnyInsert(
+    void *userpvt, TASKWDANYFUNCPRR callback,void *arg);
+epicsShareFunc void epicsShareAPI taskwdRemove(threadId tid);
+epicsShareFunc void epicsShareAPI taskwdAnyRemove(void *userpvt);
 
 #ifdef __cplusplus
 }

@@ -75,14 +75,14 @@ static void taskwdInitPvt(void *arg)
         "taskwd",threadPriorityLow,threadGetStackSize(threadStackSmall),
         (THREADFUNC)taskwdTask,0);
 }
-void taskwdInit()
+void epicsShareAPI taskwdInit()
 {
     static threadOnceId taskwdOnceFlag = OSITHREAD_ONCE_INIT;
     void *arg = 0;
     threadOnce(&taskwdOnceFlag,taskwdInitPvt,arg);
 }
 
-void taskwdInsert(threadId tid,TASKWDFUNCPRR callback,void *arg)
+void epicsShareAPI taskwdInsert(threadId tid,TASKWDFUNCPRR callback,void *arg)
 {
     struct task_list *pt;
 
@@ -97,7 +97,7 @@ void taskwdInsert(threadId tid,TASKWDFUNCPRR callback,void *arg)
     semMutexGive(lock);
 }
 
-void taskwdAnyInsert(void *userpvt,TASKWDANYFUNCPRR callback,void *arg)
+void epicsShareAPI taskwdAnyInsert(void *userpvt,TASKWDANYFUNCPRR callback,void *arg)
 {
     struct task_list *pt;
 
@@ -111,7 +111,7 @@ void taskwdAnyInsert(void *userpvt,TASKWDANYFUNCPRR callback,void *arg)
     semMutexGive(anylock);
 }
 
-void taskwdRemove(threadId tid)
+void epicsShareAPI taskwdRemove(threadId tid)
 {
     struct task_list *pt;
 
@@ -131,7 +131,7 @@ void taskwdRemove(threadId tid)
     errMessage(-1,"taskwdRemove failed");
 }
 
-void taskwdAnyRemove(void *userpvt)
+void epicsShareAPI taskwdAnyRemove(void *userpvt)
 {
     struct task_list *pt;
 

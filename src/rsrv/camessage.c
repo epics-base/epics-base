@@ -1854,7 +1854,7 @@ LOCAL int search_reply(
         log_header ("empty PV name in UDP search request?", client, mp, 0);
         return RSRV_OK;
     }
-    if (pName+mp->m_postsize-1 != '\0') {
+    if (pName[mp->m_postsize-1] != '\0') {
         log_header ("unterminated PV name in UDP search request?", client, mp, 0);
         return RSRV_OK;
     }

@@ -134,6 +134,7 @@ int  dbGetNFields(DBENTRY *pdbentry,int dctonly);
 char *dbGetFieldName(DBENTRY *pdbentry);
 char *dbGetDefault(DBENTRY *pdbentry);
 char *dbGetString(DBENTRY *pdbentry);
+char *dbGetPrompt(DBENTRY *pdbentry);
 int dbGetPromptGroup(DBENTRY *pdbentry);
 
 long dbFindField(DBENTRY *pdbentry,char *pfieldName);

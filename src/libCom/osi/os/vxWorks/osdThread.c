@@ -120,8 +120,8 @@ static void createFunction(EPICSTHREADFUNC func, void *parm)
     /*Make sure that papTSD is still 0 after that call to taskVarAdd*/
     papTSD = 0;
     (*func)(parm);
-    taskVarDelete(tid,(int *)&papTSD);
     free(papTSD);
+    taskVarDelete(tid,(int *)&papTSD);
 }
 
 epicsThreadId epicsThreadCreate(const char *name,

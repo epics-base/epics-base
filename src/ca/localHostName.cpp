@@ -19,13 +19,11 @@
  *  Author: Jeff Hill
  */
 
-#include <string.h>
-
 #include "osiSock.h"
 
 #include "localHostName.h"
 
-epicsSingleton < localHostName > pLocalHostNameAtLoadTime;
+epicsSingleton < localHostName > localHostNameAtLoadTime;
 
 localHostName::localHostName ()
 {

@@ -31,6 +31,7 @@
  * .04	01-11-95	joh	use getenv()/putenv() to fetch/write env 
  *				vars under vxWorks	
  * .05  04-20-95	anj	changes to use CONFIG_ENV
+ * .06  05-24-95	joh	added return stmnt to epicsPrtEnvParams()	
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -67,7 +68,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef _WINDOWS
+#ifdef WIN32 
 #	include <winsock.h>
 #else
 #	include <sys/types.h>
@@ -82,6 +83,11 @@
 
 #include <envDefs.h>
 #include <errMdef.h>
+
+/*
+ * for VMS
+ */
+unsigned long	inet_addr (char *);
 
 
 /*+/subr**********************************************************************
@@ -242,7 +248,7 @@ struct in_addr *pAddr;	/* O pointer to struct to receive inet addr */
 
     ptext = envGetConfigParam(pParam, sizeof text, text);
     if (ptext) {
-	status = inet_addr(text);
+	status = inet_addr (text);
 	if (status != -1) {
 	    pAddr->s_addr = status;
 	    return 0;
@@ -453,5 +459,7 @@ epicsPrtEnvParams()
      
     while (*ppParam != NULL)
 	envPrtConfigParam(*(ppParam++));
+
+    return 0;
 }
 

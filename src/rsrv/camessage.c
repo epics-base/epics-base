@@ -714,6 +714,7 @@ struct client  	*client
 		return OK;
 	}
 
+#ifdef CONVERSION_REQUIRED		
 	if (mp->m_type >= NELEMENTS(cac_dbr_cvrt)) {
         SEND_LOCK(client);
 		send_err(
@@ -725,7 +726,6 @@ struct client  	*client
 		return ERROR;
 	}
 
-#ifdef CONVERSION_REQUIRED		
 	/* use type as index into conversion jumptable */
 	(* cac_dbr_cvrt[mp->m_type])
 		( mp + 1,

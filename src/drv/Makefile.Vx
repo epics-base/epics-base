@@ -44,7 +44,7 @@ PROD1 = $(OBDIR)/drvSup.o
 
 PROD2 = $(OBDIR)/drvSupPEP.o
 
-build:: $(PROD1) $(PROD2)
+build: $(PROD1) $(PROD2)
 
 $(OBDIR)/drvSup.o: $(OBJS) $(OBJS1)
 	$(LINK.c) $@ $? $(LDLIBS)

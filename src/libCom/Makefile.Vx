@@ -34,7 +34,7 @@ LIBNAME1 = libCom1.o
 
 LIBNAME2 = libCom2.o
 
-build_libs:: $(OBDIR)/$(LIBNAME1) $(OBDIR)/$(LIBNAME2)
+build_libs: $(OBDIR)/$(LIBNAME) $(OBDIR)/$(LIBNAME1) $(OBDIR)/$(LIBNAME2)
 
 $(OBDIR)/$(LIBNAME1): $(LIBOBJS1)
 	$(LD) $(LDFLAGS) $@ $?
@@ -42,8 +42,9 @@ $(OBDIR)/$(LIBNAME1): $(LIBOBJS1)
 $(OBDIR)/$(LIBNAME2): $(LIBOBJS2)
 	$(LD) $(LDFLAGS) $@ $?
 
-install_libs:: $(EPICS_BASE_LIB)/$(T_A)/$(LIBNAME1) \
-	       $(EPICS_BASE_LIB)/$(T_A)/$(LIBNAME2)
+install_libs: $(EPICS_BASE_LIB)/$(T_A)/$(LIBNAME) \
+	      $(EPICS_BASE_LIB)/$(T_A)/$(LIBNAME1) \
+	      $(EPICS_BASE_LIB)/$(T_A)/$(LIBNAME2)
 
 $(EPICS_BASE_LIB)/$(T_A)/$(LIBNAME1): $(OBDIR)/$(LIBNAME1)
 	install -m 644 $? $@

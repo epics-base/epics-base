@@ -50,7 +50,7 @@ CCC_OPT_YES = -O
 CCC_OPT_NO = -g
 CCC_STATIC_LDFLAGS_YES= -Bstatic
 CCC_STATIC_LDLIBS_YES= -lw -lintl -Bdynamic -ldl -lposix4 -lpthread -lthread -Bstatic -lXext -lX
-CCC_STATIC_LDLIBS_NO=
+CCC_STATIC_LDLIBS_NO= -lposix4 -lpthread -lthread
 CCC_SHRLIB_LDFLAGS_YES =  -G -h $@
 CCC_DEPENDS_FLAG = -xM1
 CCC_POSIX_CPPFLAGS = -D_POSIX_C_SOURCE=199506L -D__EXTENSIONS_
@@ -70,7 +70,6 @@ RANLIB =
 AR = $(CCC) -xar -o
 
 ARCH_DEP_CPPFLAGS = -DSOLARIS
-ARCH_DEP_LDLIBS = -lposix4 -lpthread -lthread
 # socket and nsl needed by libca.a
 ARCH_DEP_LDLIBS += -lsocket -lnsl
 

@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.1  1996/06/25 19:11:38  jbk
+ * new in EPICS base
+ *
  *
  * *Revision 1.4  1996/06/24 03:15:33  jbk
  * *name changes and fixes for aitString and fixed string functions
@@ -30,6 +33,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 #include <sys/types.h>
 #ifndef vxWorks
 #include <stdlib.h>
@@ -653,9 +657,9 @@ inline gddStatus gdd::reference(void)
 	if(isNoRef())	rc=gddErrorNotAllowed;
 	else			ref_cnt++;
 
-	if(ref_cnt>((1<<sizeof(ref_cnt))-2))
+	if(ref_cnt>((1u<<(sizeof(ref_cnt)*CHAR_BIT))-2u))
 	{
-		fprintf(stderr,"gdd reference count underflow!!\n");
+		fprintf(stderr,"gdd reference count overflow!!\n");
 		rc=gddErrorOverflow;
 	}
 	return rc;
@@ -665,13 +669,13 @@ inline gddStatus gdd::unreference(void)
 {
 	int rc=0;
 
-	if(ref_cnt==0)
+	if(ref_cnt==0u)
 	{
 		fprintf(stderr,"gdd reference count underflow!!\n");
 		return gddErrorUnderflow;
 	}
 
-	if(--ref_cnt<=0)
+	if(--ref_cnt<=0u)
 	{
 		if(isManaged())
 		{

@@ -41,7 +41,7 @@ include $(CONFIG)/CONFIG_SITE
 #
 include $(CONFIG)/os/CONFIG.$(EPICS_HOST_ARCH).Common
 -include $(CONFIG)/os/CONFIG_SITE.$(EPICS_HOST_ARCH).Common
-
+-include $(CONFIG)/O.$(T_A)/CONFIG_APP_INCLUDE
 
 ifdef T_A
 

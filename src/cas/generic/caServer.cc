@@ -18,7 +18,6 @@
 #include "dbMapper.h"		// ait to dbr types 
 #include "gddAppTable.h"	// EPICS application type table
 
-#define epicsExportSharedSymbols
 #include "server.h"
 #include "caServerIIL.h"	// caServerI in line func
 

@@ -26,6 +26,10 @@ epicsMathTestHost_SRCS += epicsMathTestMain.cpp epicsMathTest.c
 PROD_HOST += epicsMathTestHost
 OBJS_IOC += epicsMathTest
 
+epicsStdioTestHost_SRCS += epicsStdioTestMain.cpp epicsStdioTest.c
+PROD_HOST += epicsStdioTestHost
+OBJS_IOC += epicsStdioTest
+
 epicsTimeTestHost_SRCS += epicsTimeTestMain.cpp epicsTimeTest.cpp
 PROD_HOST += epicsTimeTestHost
 OBJS_IOC += epicsTimeTest

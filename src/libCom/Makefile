@@ -166,6 +166,7 @@ INC += osiUnistd.h
 INC += osiWireFormat.h
 INC += epicsReadline.h
 INC += epicsMessageQueue.h
+INC += epicsStdio.h
 
 SRCS += epicsThread.cpp
 SRCS += epicsMutex.cpp
@@ -218,10 +219,12 @@ INC_WIN32 := getopt.h
 SRCS_WIN32 := getopt.c
 SRCS_WIN32 += dllmain.cpp
 SRCS_WIN32 += forceBadAllocException.cpp
+SRCS_WIN32 += epicsStdio.c
 
 # For vxWorks a clock
 INC_vxWorks += iocClock.h
 SRCS_vxWorks += iocClock.c
+SRCS_vxWorks += epicsStdio.c
 
 #       Library to build:
 #       lib$(LIBRARY).a  or   ..dll/..exp/..lib

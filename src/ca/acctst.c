@@ -2215,7 +2215,7 @@ void verifyReasonableBeaconPeriod ( chid chan )
         unsigned attempts = 0u;
 
         long status = envGetDoubleConfigParam ( 
-            &EPICS_CA_BEACON_PERIOD, &expectedBeaconPeriod );
+            &EPICS_CAS_BEACON_PERIOD, &expectedBeaconPeriod );
         assert ( status >=0 );
     
         while ( 1 ) {

@@ -74,7 +74,6 @@
 #define CA_INSERT_SUCCESS(code)\
 (   ((code)<< CA_V_SUCCESS) & CA_M_SUCCESS  )
 
-
 #define DEFMSG(SEVERITY,NUMBER)\
 (CA_INSERT_MSG_NO(NUMBER) | CA_INSERT_SEVERITY(SEVERITY))
 
@@ -84,16 +83,16 @@
  * servers on earlier releases that communicate with current clients 
  * might still generate exceptions with these error constants
  */
-#define ECA_NORMAL          DEFMSG(CA_K_SUCCESS,    0)
+#define ECA_NORMAL          DEFMSG(CA_K_SUCCESS,    0) /* success */
 #define ECA_MAXIOC          DEFMSG(CA_K_ERROR,      1) /* defunct */
 #define ECA_UKNHOST         DEFMSG(CA_K_ERROR,      2) /* defunct */
 #define ECA_UKNSERV         DEFMSG(CA_K_ERROR,      3) /* defunct */
 #define ECA_SOCK            DEFMSG(CA_K_ERROR,      4) /* defunct */
 #define ECA_CONN            DEFMSG(CA_K_WARNING,    5) /* defunct */
-#define ECA_ALLOCMEM        DEFMSG(CA_K_WARNING,    6)
+#define ECA_ALLOCMEM        DEFMSG(CA_K_WARNING,    6) 
 #define ECA_UKNCHAN         DEFMSG(CA_K_WARNING,    7) /* defunct */
 #define ECA_UKNFIELD        DEFMSG(CA_K_WARNING,    8) /* defunct */
-#define ECA_TOLARGE         DEFMSG(CA_K_WARNING,    9)
+#define ECA_TOLARGE         DEFMSG(CA_K_WARNING,    9) 
 #define ECA_TIMEOUT         DEFMSG(CA_K_WARNING,   10)
 #define ECA_NOSUPPORT       DEFMSG(CA_K_WARNING,   11) /* defunct */
 #define ECA_STRTOBIG        DEFMSG(CA_K_WARNING,   12) /* defunct */
@@ -138,90 +137,11 @@
 #define ECA_BADCHID         DEFMSG(CA_K_ERROR,     51)
 #define ECA_BADFUNCPTR      DEFMSG(CA_K_ERROR,     52)
 #define ECA_ISATTACHED      DEFMSG(CA_K_WARNING,   53)
-#define ECA_NOTINSERVICE    DEFMSG(CA_K_WARNING,   54)
+#define ECA_UNAVAILINSERV   DEFMSG(CA_K_WARNING,   54)
 #define ECA_CHANDESTROY     DEFMSG(CA_K_WARNING,   55)
 #define ECA_BADPRIORITY     DEFMSG(CA_K_ERROR,     56)
 #define ECA_NOTTHREADED     DEFMSG(CA_K_ERROR,     57)
-#define ECA_OLDCLIENT       DEFMSG(CA_K_WARNING,   58)
-
-#ifndef CA_ERROR_GLBLSOURCE
-epicsShareExtern READONLY char  *ca_message_text[];
-#else
-epicsShareDef READONLY char   *ca_message_text[]
-=
-{
-"Normal successful completion",
-"Maximum simultaneous IOC connections exceeded",
-"Unknown internet host",
-"Unknown internet service",
-"Unable to allocate a new socket",
-
-"Unable to connect to internet host or service",
-"Unable to allocate additional dynamic memory",
-"Unknown IO channel",
-"Record field specified inappropriate for channel specified",
-"The requested data transfer is greater than available memory or EPICS_CA_MAX_ARRAY_BYTES",
-
-"User specified timeout on IO operation expired",
-"Sorry, that feature is planned but not supported at this time",
-"The supplied string is unusually large",
-"The request was ignored because the specified channel is disconnected",
-"The data type specifed is invalid",
-
-"Remote Channel not found",
-"Unable to locate all user specified channels",
-"Channel Access Internal Failure",
-"The requested local DB operation failed",
-"Could not perform a database value get for that channel",
-
-"Could not perform a database value put for that channel",
-"Could not perform a database event add for that channel",
-"Count requested inappropriate for that channel",
-"The supplied string has improper format",
-"Virtual circuit disconnect",
-
-"Identical process variable name on multiple servers",
-"The CA routine called is inappropriate for use within an event handler",
-"Database value get for that channel failed during channel search",
-"Unable to initialize without the vxWorks VX_FP_TASK task option set",
-"Event queue overflow has prevented first pass event after event add",
-
-"Bad event subscription identifier",
-"Remote channel has new network address",
-"New or resumed network connection",
-"Specified task isnt a member of a CA context",
-"Attempt to use defunct CA feature failed",
-
-"The supplied string is empty",
-"Unable to spawn the CA repeater thread- auto reconnect will fail",
-"No channel id match for search reply- search reply ignored",
-"Reseting dead connection- will try to reconnect",
-"Server (IOC) has fallen behind or is not responding- still waiting",
-
-"No internet interface with broadcast available",
-"The event selection mask supplied is empty or inappropriate",
-"IO operations have completed",
-"IO operations are in progress",
-"Invalid synchronous group identifier",
-
-"Put callback timed out",
-"Read access denied",
-"Write access denied",
-"Sorry, that anachronistic feature of CA is no longer supported",
-"The PV search request address list was empty after initialization",
-
-"Data conversion between client's type and the server's type failed",
-"Invalid channel identifier",
-"Invalid function pointer",
-"Thread is already attached to a client context",
-"No support in service",
-
-"User destroyed channel",
-"Priority out of range",
-"Preemptive callback not enabled - additional threads may not join",
-"Client's protocol revision does not support transfers exceeding 16k bytes"
-};
-#endif
+#define ECA_16KARRAYCLIENT  DEFMSG(CA_K_WARNING,   58)
 
 #ifdef __STDC__ 
 #define CAERR_USE_FUNC_PROTO
@@ -239,6 +159,8 @@ epicsShareFunc READONLY char * epicsShareAPI ca_message(long ca_status);
 #else /* CAERR_USE_FUNC_PROTO */
 READONLY char *ca_message();
 #endif
+
+epicsShareExtern READONLY char * ca_message_text [];
 
 #ifdef __cplusplus
 }

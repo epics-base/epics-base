@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/08/13 22:52:31  jhill
+ * changes for MVC++
+ *
  * Revision 1.2  1996/07/01 19:56:09  jhill
  * one last update prior to first release
  *
@@ -60,10 +63,10 @@ casChannel::~casChannel()
 
 casPV *casChannel::getPV()
 {
-	casPVI pvi = this->casChannelI::getPVI();
+	casPVI *pPVI = &this->casChannelI::getPVI();
 
-	if (&pvi!=NULL) {
-		return pvi.intefaceObjectPointer();
+	if (pPVI!=NULL) {
+		return pPVI->interfaceObjectPointer();
 	}
 	else {
 		return NULL;

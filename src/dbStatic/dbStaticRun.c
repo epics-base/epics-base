@@ -281,7 +281,7 @@ char *dbRecordName(DBENTRY *pdbentry)
 
 int dbIsMacroOk(DBENTRY *pdbentry) { return(FALSE); }
 
-int  dbIsDefaultValue(DBENTRY *pdbentry)
+int epicsShareAPI dbIsDefaultValue(DBENTRY *pdbentry)
 {
     dbFldDes  	*pflddes = pdbentry->pflddes;
     void        *pfield = pdbentry->pfield;
@@ -598,7 +598,7 @@ long dbPutStringNum(DBENTRY *pdbentry,char *pstring)
     return(status);
 }
 
-int dbGetMenuIndex(DBENTRY *pdbentry)
+int epicsShareAPI dbGetMenuIndex(DBENTRY *pdbentry)
 {
     dbFldDes  	*pflddes = pdbentry->pflddes;
     void	*pfield = pdbentry->pfield;
@@ -615,7 +615,7 @@ int dbGetMenuIndex(DBENTRY *pdbentry)
     return(-1);
 }
 
-long dbPutMenuIndex(DBENTRY *pdbentry,int index)
+long epicsShareAPI dbPutMenuIndex(DBENTRY *pdbentry,int index)
 {
     dbFldDes  		*pflddes = pdbentry->pflddes;
     unsigned short	*pfield = pdbentry->pfield;

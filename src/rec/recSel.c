@@ -158,7 +158,7 @@ static long process(psel)
 
 	psel->pact = TRUE;
 	if ( RTN_SUCCESS(fetch_values(psel)) ) {
-		if( RTN_SUCCESS(do_sel(psel)) ) {
+		if( !RTN_SUCCESS(do_sel(psel)) ) {
 			recGblSetSevr(psel,CALC_ALARM,INVALID_ALARM);
 		}
 	}

@@ -412,7 +412,7 @@ static long writeValue(plongout)
 
 	status=recGblGetLinkValue(&(plongout->siml),
 		(void *)plongout,DBR_ENUM,&(plongout->simm),&options,&nRequest);
-	if (RTN_SUCCESS(status))
+	if (!RTN_SUCCESS(status))
 		return(status);
 
 	if (plongout->simm == NO){

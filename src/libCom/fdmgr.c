@@ -1,6 +1,6 @@
 /*
  *
- *	$Id$
+ *	share/src/libCom/%W%	%G%	
  *
  *	A file descriptor manager for use with the UNIX system call select
  *
@@ -62,7 +62,6 @@
  *			if we are in fdmgr_pend_event()	
  *	.15 joh	011993	Created fdmgr header file	
  *	.16 joh	011993	Converted to ANSI C
- *	.17 pg  050494  HPUX cpp changes (elif converted to else & if)
  *
  *	NOTES:
  *
@@ -90,12 +89,26 @@
  *
  */
 
-static char	*pSccsId = "$Id$";
+static char	*pSccsId = "%W%\t%G%";
+
+/*
+ * ANSI
+ */
+#include <stdio.h>
+#include <assert.h>
+#include <string.h>
+#include <stdarg.h>
+
+#ifdef vxWorks
+#include <vxWorks.h>
+#include <taskLib.h>
+#include <sysLib.h>
+#include <tickLib.h>
+#include <logLib.h>
+#include <selectLib.h>
+#endif
 
 #include <fdmgr.h>
-#ifdef vxWorks
-#include <taskLib.h>
-#endif
 
 #ifndef TRUE
 #define TRUE 1
@@ -111,6 +124,10 @@ static char	*pSccsId = "$Id$";
 #endif
 #ifndef NULL
 #define NULL 0
+#endif
+
+#ifndef LOCAL
+#define LOCAL static
 #endif
 
 #ifndef max
@@ -130,9 +147,6 @@ typedef struct{
 #if defined(vxWorks)
 #	define LOCK(PFDCTX)	FASTLOCK(&(PFDCTX)->lock)
 #	define UNLOCK(PFDCTX)	FASTUNLOCK(&(PFDCTX)->lock)
-#	define LOCK_FDMGR_PEND_EVENT(PFDCTX) \
-		FASTLOCK(&(PFDCTX)->fdmgr_pend_event_lock) \
-		(PFDCTX)->fdmgr_pend_event_tid = taskIdCurrent
 #	define UNLOCK_FDMGR_PEND_EVENT(PFDCTX) \
 		FASTUNLOCK(&(PFDCTX)->fdmgr_pend_event_lock) \
 		(PFDCTX)->fdmgr_pend_event_tid = NULL;
@@ -144,109 +158,55 @@ typedef struct{
 		FASTLOCK(&(PFDCTX)->fd_handler_lock)
 #	define UNLOCK_FD_HANDLER(PFDCTX) \
 		FASTUNLOCK(&(PFDCTX)->fd_handler_lock)	
-#	define printf	logMsg
-#	define fdmgr_gettimeval		fdmgr_vxWorks_gettimeval
-#       define memset(D,V,N)    bfill(D,N,V)
-#else
-#if defined(UNIX)
+#elif defined(UNIX) || defined(VMS) || defined(_WIN32)
 #	define LOCK(PFDCTX)
 #	define UNLOCK(PFDCTX)
-#	define LOCK_FDMGR_PEND_EVENT(PFDCTX) \
-	{ \
-		if((PFDCTX)->fdmgr_pend_event_in_use){ \
-			printf("Double invocation of fdmgr_pend_event()\n"); \
-			abort(); \
-		} \
-		(PFDCTX)->fdmgr_pend_event_in_use++; \
-	}
 #	define UNLOCK_FDMGR_PEND_EVENT(PFDCTX) \
 		{(PFDCTX)->fdmgr_pend_event_in_use--;}
-#	define fdmgr_gettimeval		fdmgr_UNIX_gettimeval
 #	define LOCK_EXPIRED(PFDCTX)
 #	define UNLOCK_EXPIRED(PFDCTX)
 #	define LOCK_FD_HANDLER(PFDCTX)
 #	define UNLOCK_FD_HANDLER(PFDCTX)
 #else
-#if defined(VMS)
-#	define LOCK(PFDCTX)
-#	define UNLOCK(PFDCTX)
-#	define LOCK_FDMGR_PEND_EVENT(PFDCTX) \
-	{ \
-		if((PFDCTX)->fdmgr_pend_event_in_use){ \
-			printf("Double invocation of fdmgr_pend_event()\n"); \
-			abort(); \
-		} \
-		(PFDCTX)->fdmgr_pend_event_in_use++; \
-	}
-#	define UNLOCK_FDMGR_PEND_EVENT(PFDCTX) \
-		{(PFDCTX)->fdmgr_pend_event_in_use--;}
-#	define fdmgr_gettimeval		fdmgr_VMS_gettimeval
-#	define LOCK_EXPIRED(PFDCTX)
-#	define UNLOCK_EXPIRED(PFDCTX)
-#	define LOCK_FD_HANDLER(PFDCTX)
-#	define UNLOCK_FD_HANDLER(PFDCTX)
-#else
-@@@@ dont compile in this case @@@@
+#error Please define the host OS type
 #endif
-#endif
-#endif
+
 
 #define USEC_PER_SEC 1000000
 
-#ifdef __STDC__
+#define printf @@@@ Please dont use printf in this source @@@@
+LOCAL int fdmgrPrintf(char *pformat, ...);
 
-static int fdmgr_vxWorks_gettimeval(
+LOCAL int fdmgr_gettimeval(
 fdctx           *pfdctx,
 struct timeval  *pt
 );
 
-static int fdmgr_UNIX_gettimeval(
-fdctx           *pfdctx,
-struct timeval  *pt
-);
-
-static void select_alarm(
+LOCAL void select_alarm(
 fdctx   *pfdctx
 );
 
-
-static int fdmgr_select(
+LOCAL int fdmgr_select(
 fdctx		*pfdctx,
 struct timeval	*ptimeout
 );
 
-static void fdmgr_finish_off_fdentry(
+LOCAL void fdmgr_finish_off_fdentry(
 fdctx                   *pfdctx,
 register fdentry        *pfdentry
 );
 
-#else
-
-static int fdmgr_vxWorks_gettimeval();
-static int fdmgr_UNIX_gettimeval();
-static void select_alarm();
-static int fdmgr_select();
-static void fdmgr_finish_off_fdentry();
-
-#endif
-
-#if defined(vxWorks)
-#	define abort(A)	taskSuspend(taskIdSelf())
-#endif
+LOCAL void lockFDMGRPendEvent (fdctx *pfdctx);
 
 /*
  * This routine is to be only called from fdmgr_pend_event()
  * If other uses are needed then locking issues must be
  * reinvestigated
  */
-#ifdef __STDC__
-	static void process_alarm_queue(
-		fdctx           *pfdctx,
-		struct timeval  *poffset
-	);
-#else
-	static void process_alarm_queue();
-#endif
+LOCAL void process_alarm_queue(
+	fdctx           *pfdctx,
+	struct timeval  *poffset
+);
 
 
 /*
@@ -254,11 +214,7 @@ static void fdmgr_finish_off_fdentry();
  *	fdmgr_init()
  *
  */
-#ifdef __STDC__
 fdctx *fdmgr_init(void)
-#else
-fdctx *fdmgr_init()
-#endif
 {
 	fdctx 		*pfdctx;
 
@@ -284,29 +240,41 @@ fdctx *fdmgr_init()
 	return pfdctx;
 }
 
+
+/*
+ *
+ *	fdmgr_delete()
+ *
+ */
+int fdmgr_delete(fdctx *pfdctx)
+{
+	if(!pfdctx){
+		return ERROR;
+	}
 
+#	if defined(vxWorks)
+		FASTLOCKFREE(&pfdctx->lock);
+		FASTLOCKFREE(&pfdctx->fdmgr_pend_event_lock);
+		FASTLOCKFREE(&pfdctx->expired_alarm_lock);
+		FASTLOCKFREE(&pfdctx->fd_handler_lock);
+#	endif
+
+	return OK;
+}
 
 
 /*
  * 	fdmgr_add_timeout()
  */
-#ifdef __STDC__
-alarm *fdmgr_add_timeout(
+fdmgrAlarm *fdmgr_add_timeout(
 fdctx 		*pfdctx,
 struct timeval 	*ptimeout,
 void		(*func)(),
 void		*param
 )
-#else
-alarm *fdmgr_add_timeout(pfdctx,ptimeout,func,param)
-fdctx 		*pfdctx;
-struct timeval 	*ptimeout;
-void		(*func)();
-void		*param;
-#endif
 {
-	alarm		*palarm=NULL;
-	alarm		*pa;
+	fdmgrAlarm		*palarm=NULL;
+	fdmgrAlarm		*pa;
 	struct timeval	t;
 	int		status;
 
@@ -320,10 +288,10 @@ void		*param;
 		return NULL;
 
 	LOCK(pfdctx);
-	palarm = (alarm *) ellGet(&pfdctx->free_alarm_list);
+	palarm = (fdmgrAlarm *) ellGet(&pfdctx->free_alarm_list);
 	UNLOCK(pfdctx);
 	if(!palarm){
-		palarm = (alarm *) malloc(sizeof(alarm));
+		palarm = (fdmgrAlarm *) malloc(sizeof(fdmgrAlarm));
 		if(!palarm){
 			return NULL;
 		}
@@ -332,7 +300,7 @@ void		*param;
 	/*
 	 * force all fields to a known state
 	 */
-	memset(palarm, 0, sizeof(*palarm));
+	memset((char *)palarm, 0, sizeof(*palarm));
 
 	ptimeout->tv_sec += ptimeout->tv_usec/USEC_PER_SEC;
 	ptimeout->tv_usec = ptimeout->tv_usec%USEC_PER_SEC;
@@ -347,9 +315,9 @@ void		*param;
 	palarm->t.tv_usec = (t.tv_usec + ptimeout->tv_usec)%USEC_PER_SEC;
 
 	LOCK(pfdctx);
-	for(	pa=(alarm *)pfdctx->alarm_list.node.next; 
+	for(	pa=(fdmgrAlarm *)pfdctx->alarm_list.node.next; 
 		pa; 
-		pa=(alarm *)pa->node.next){
+		pa=(fdmgrAlarm *)pa->node.next){
 		if(pa->t.tv_sec > palarm->t.tv_sec){
 			break;
 		}
@@ -379,16 +347,10 @@ void		*param;
  *	fdmgr_clear_timeout()
  *
  */
-#ifdef __STDC__
 int fdmgr_clear_timeout(
 fdctx 		*pfdctx,
-alarm		*palarm
+fdmgrAlarm		*palarm
 )
-#else
-int fdmgr_clear_timeout(pfdctx, palarm)
-fdctx 		*pfdctx;
-alarm		*palarm;
-#endif
 {
 	int 			status;
 	enum alarm_list_type	alt;
@@ -458,20 +420,12 @@ alarm		*palarm;
  *	this rouitine is supplied solely for compatibility	
  *	with earlier versions of this software
  */
-#if __STDC__
 int fdmgr_add_fd(
 fdctx 	*pfdctx,
 int	fd,
 void	(*pfunc)(),
 void	*param
 )
-#else
-int fdmgr_add_fd(pfdctx,fd,pfunc,param)
-fdctx 	*pfdctx;
-int	fd;
-void	(*pfunc)();
-void	*param;
-#endif
 {
 	int status;
 
@@ -491,7 +445,6 @@ void	*param;
  *	fdmgr_add_fd_callback()
  *
  */
-#ifdef __STDC__
 int fdmgr_add_callback(
 fdctx 		*pfdctx,
 int		fd,
@@ -499,14 +452,6 @@ enum fdi_type	fdi,
 void		(*pfunc)(),
 void		*param
 )
-#else
-int fdmgr_add_callback(pfdctx,fd,fdi,pfunc,param)
-fdctx 		*pfdctx;
-int		fd;
-enum fdi_type	fdi;
-void		(*pfunc)();
-void		*param;
-#endif
 {
 	fdentry		*pfdentry;
 	fd_set		*pfds;
@@ -540,7 +485,7 @@ void		*param;
 	/*
 	 * force all fields to a known state
 	 */
-	memset(pfdentry, 0, sizeof(*pfdentry));
+	memset((char *)pfdentry, 0, sizeof(*pfdentry));
 
 	pfdentry->fd = fd;
 	pfdentry->fdi = fdi;
@@ -564,16 +509,10 @@ void		*param;
  *	included solely for compatibility with previous release
  *
  */
-#ifdef __STDC__
 int fdmgr_clear_fd(
 fdctx 	*pfdctx,
 int	fd 
 )
-#else
-int fdmgr_clear_fd(pfdctx,fd)
-fdctx   *pfdctx;
-int     fd;
-#endif
 {
 	return fdmgr_clear_callback(pfdctx, fd, fdi_read);
 }
@@ -584,18 +523,11 @@ int     fd;
  *	fdmgr_clear_callback()
  *
  */
-#ifdef __STDC__
 int fdmgr_clear_callback(
 fdctx 		*pfdctx,
 int		fd,
 enum fdi_type	fdi
 )
-#else
-int fdmgr_clear_callback(pfdctx,fd,fdi)
-fdctx 		*pfdctx;
-int		fd;
-enum fdi_type	fdi;
-#endif
 {
 	register fdentry	*pfdentry;
 	int			status;
@@ -641,6 +573,7 @@ enum fdi_type	fdi;
 	 */
 #	ifdef vxWorks
 		if(delete_pending == TRUE){
+@@@@ review all of this delete pending stuff
 			LOCK_FD_HANDLER(pfdctx);
 			UNLOCK_FD_HANDLER(pfdctx);
 		}
@@ -650,7 +583,7 @@ enum fdi_type	fdi;
 	 * If it is an ukn fd its a problem worth printing out
 	 */
 	if(status != OK){
-		printf("fdmg: delete of ukn fd failed\n");
+		fdmgrPrintf("fdmg: delete of ukn fd failed\n");
 	}
 
 	return status;
@@ -664,16 +597,10 @@ enum fdi_type	fdi;
  *	!! LOCK(pfdctx) must be applied !!
  *
  */
-#ifdef __STDC__
-static void fdmgr_finish_off_fdentry(
+LOCAL void fdmgr_finish_off_fdentry(
 fdctx 			*pfdctx,
 register fdentry	*pfdentry
 )
-#else
-static void fdmgr_finish_off_fdentry(pfdctx,pfdentry)
-fdctx 			*pfdctx;
-register fdentry	*pfdentry;
-#endif
 {
      	FD_CLR(pfdentry->fd, pfdentry->pfds);
 	ellAdd(&pfdctx->fdentry_free_list, (ELLNODE*)pfdentry);
@@ -685,24 +612,18 @@ register fdentry	*pfdentry;
  *	fdmgr_pend_event()
  *
  */
-#ifdef __STDC__
 int fdmgr_pend_event(
 fdctx 				*pfdctx,
 struct timeval 			*ptimeout 
 )
-#else
-int fdmgr_pend_event(pfdctx,ptimeout)
-fdctx 				*pfdctx;
-struct timeval 			*ptimeout;
-#endif
 {
 	int			status;
 	extern			errno;
 	struct timeval		t;
-	alarm			*palarm;
+	fdmgrAlarm			*palarm;
 
 
-	LOCK_FDMGR_PEND_EVENT(pfdctx);
+	lockFDMGRPendEvent(pfdctx);
 
 	/*
 	 * If its a poll dont add a timeout
@@ -757,21 +678,14 @@ struct timeval 			*ptimeout;
  *	returns TRUE if any labor was performed, otherwise FALSE
  *
  */
-#ifdef __STDC__
-static int fdmgr_select(
+LOCAL int fdmgr_select(
 fdctx 				*pfdctx,
 struct timeval 			*ptimeout
 )
-#else
-static int fdmgr_select(pfdctx,ptimeout)
-fdctx 				*pfdctx;
-struct timeval 			*ptimeout;
-#endif
 {
 	register fdentry	*pfdentry;
 	int			labor_performed;
 	int			status;
-	int			s;
 
 	labor_performed = FALSE;
 
@@ -790,8 +704,8 @@ struct timeval 			*ptimeout;
 	 * it is in select() so I am turning
 	 * on task delete disable to be safe
 	 */
-#	ifdef vxWorks
-		TASK_SAFE();
+#	ifdef vxWorks 
+		taskSafe();
 #	endif
   	status = select(
 			pfdctx->maxfd,
@@ -799,8 +713,8 @@ struct timeval 			*ptimeout;
 			&pfdctx->writech,
 			&pfdctx->excpch,
 			ptimeout);
-#	ifdef vxWorks
-		TASK_UNSAFE();
+#	ifdef vxWorks 
+		taskUnsafe();
 #	endif
 	if(status == 0){
 		return labor_performed;
@@ -809,12 +723,14 @@ struct timeval 			*ptimeout;
 		if(errno == EINTR)
 			;
 		else if(errno == EINVAL)
-			printf(	"fdmgr: bad select args ? %d %d %d\n",
+			fdmgrPrintf(	
+				"fdmgr: bad select args ? %d %d %d\n",
 				pfdctx->maxfd,
 				ptimeout->tv_sec,
 				ptimeout->tv_usec);
 		else
-			printf(	"fdmgr: error from select %d\n",
+			fdmgrPrintf(	
+				"fdmgr: error from select %d\n",
 				errno);
 
 		return labor_performed;
@@ -822,7 +738,6 @@ struct timeval 			*ptimeout;
 
 	pfdentry = (fdentry *) &pfdctx->fdentry_list.node;
 	while(TRUE){
-		void		*pfunc;
 
 		LOCK(pfdctx)
 		pfdentry = (fdentry *) pfdentry->node.next;
@@ -896,36 +811,28 @@ struct timeval 			*ptimeout;
  *	only to be called by fdmgr_pend_event(). If other uses
  *	come up then the locking must be revisited
  */
-#ifdef __STDC__
-static void process_alarm_queue(
+LOCAL void process_alarm_queue(
 fdctx 		*pfdctx,
 struct timeval	*poffset
 )
-#else
-static void process_alarm_queue(pfdctx,poffset)
-fdctx 		*pfdctx;
-struct timeval	*poffset;
-#endif
 {
 	struct timeval	t;
 	int		status;
-	alarm		*pa;
-	alarm		*nextpa;
+	fdmgrAlarm		*pa;
+	fdmgrAlarm		*nextpa;
 
 	status = fdmgr_gettimeval(pfdctx, &t);
-	if(status < 0){
-		abort();
-	}
+	assert (status >= 0);
 
 	LOCK(pfdctx);
-	for(pa = (alarm*)pfdctx->alarm_list.node.next; pa; pa = nextpa){
+	for(pa = (fdmgrAlarm*)pfdctx->alarm_list.node.next; pa; pa = nextpa){
 		if(pa->t.tv_sec > t.tv_sec)
 			break;
 		else if(pa->t.tv_sec == t.tv_sec)
 			if(pa->t.tv_usec > t.tv_usec)
 				break;
 
-		nextpa = (alarm*)pa->node.next;
+		nextpa = (fdmgrAlarm*)pa->node.next;
 		ellDelete(&pfdctx->alarm_list, (ELLNODE*)pa);
 		ellAdd(&pfdctx->expired_alarm_list, (ELLNODE*)pa);
 		pa->alt = alt_expired;
@@ -954,7 +861,7 @@ struct timeval	*poffset;
 	 * on multithreaded OS
 	 */
 	LOCK_EXPIRED(pfdctx);
-	pa = (alarm*) pfdctx->expired_alarm_list.node.next;
+	pa = (fdmgrAlarm*) pfdctx->expired_alarm_list.node.next;
 	while(pa){
 		void	(*pfunc)();
 
@@ -966,7 +873,7 @@ struct timeval	*poffset;
 		if(pfunc){
 			(*pfunc)(pa->param);
 		}
-		pa = (alarm*)pa->node.next;
+		pa = (fdmgrAlarm*)pa->node.next;
 	}
 	UNLOCK_EXPIRED(pfdctx);
 
@@ -976,14 +883,14 @@ struct timeval	*poffset;
 	 * expired list onto the free list
 	 */
 	LOCK(pfdctx);
-	pa = (alarm*) pfdctx->expired_alarm_list.node.next;
+	pa = (fdmgrAlarm*) pfdctx->expired_alarm_list.node.next;
 	while(pa){
 		pa->alt = alt_free;
-		pa = (alarm *) pa->node.next;
+		pa = (fdmgrAlarm *) pa->node.next;
 	}
 	ellConcat(&pfdctx->free_alarm_list, &pfdctx->expired_alarm_list);
 
-	pa = (alarm *)pfdctx->alarm_list.node.next;
+	pa = (fdmgrAlarm *)pfdctx->alarm_list.node.next;
 	if(pa){
 		if(pa->t.tv_usec >= t.tv_usec){
 			poffset->tv_sec = pa->t.tv_sec - t.tv_sec;
@@ -1007,14 +914,9 @@ struct timeval	*poffset;
  *	select_alarm()
  *
  */
-#ifdef __STDC__
-static void select_alarm(
+LOCAL void select_alarm(
 fdctx 	*pfdctx
 )
-#else
-static void select_alarm(pfdctx)
-fdctx 	*pfdctx;
-#endif
 {
 	pfdctx->select_tmo = TRUE;
 }
@@ -1024,21 +926,15 @@ fdctx 	*pfdctx;
 
 /*
  *
- * fdmgr_UNIX_gettimeval
- *
+ * UNIX & VMS
+ * fdmgr_gettimeval
  *
  */
-#ifdef UNIX
-#ifdef __STDC__
-static int fdmgr_UNIX_gettimeval(
+#if defined(UNIX) || defined(VMS)
+LOCAL int fdmgr_gettimeval(
 fdctx 		*pfdctx,
 struct timeval	*pt 
 )
-#else
-static int fdmgr_UNIX_gettimeval(pfdctx,pt)
-fdctx 		*pfdctx;
-struct timeval	*pt;
-#endif
 {
 	struct timezone		tz;
 
@@ -1049,46 +945,38 @@ struct timeval	*pt;
 
 /*
  *
- * fdmgr_VMS_gettimeval
+ * WIN32
+ * fdmgr_gettimeval
  *
  *
  */
-#ifdef VMS 
-#ifdef __STDC__
-static int fdmgr_VMS_gettimeval(
-fdctx 		*pfdctx,
-struct timeval	*pt 
+#ifdef _WIN32
+LOCAL int fdmgr_gettimeval(
+fdctx           *pfdctx,
+struct timeval  *pt
 )
-#else
-static int fdmgr_VMS_gettimeval(pfdctx,pt)
-fdctx 		*pfdctx;
-struct timeval	*pt;
-#endif
 {
-	struct timezone		tz;
+        SYSTEMTIME st;
+        GetSystemTime(&st);
+        pt->tv_sec = (long)st.wSecond + (long)st.wMinute*60 + (long)st.wHour*360
+0;
+        pt->tv_usec = st.wMilliseconds*1000;
 
-	return gettimeofday(pt, &tz);
+        return 0;
 }
 #endif
 
 
 /*
- *
- * fdmgr_vxWorks_gettimeval
- *
+ * vxWorks
+ * fdmgr_gettimeval
  *
  */
 #ifdef vxWorks
-#ifdef __STDC__
-static int fdmgr_vxWorks_gettimeval(
+LOCAL int fdmgr_gettimeval(
 fdctx 		*pfdctx,
 struct timeval	*pt
 )
-#else
-static int fdmgr_vxWorks_gettimeval(pfdctx,pt)
-fdctx 		*pfdctx;
-struct timeval	*pt;
-#endif
 {
 	unsigned long		current;
 
@@ -1108,3 +996,66 @@ struct timeval	*pt;
 	return OK;
 }
 #endif
+
+
+/*
+ * lockFDMGRPendEvent()
+ */
+LOCAL void lockFDMGRPendEvent (fdctx *pfdctx)
+{
+#	if defined(vxWorks)
+		FASTLOCK(&pfdctx->fdmgr_pend_event_lock); 
+		pfdctx->fdmgr_pend_event_tid = taskIdCurrent;
+#	else
+		assert (pfdctx->fdmgr_pend_event_in_use==0); 
+		pfdctx->fdmgr_pend_event_in_use++; 
+#	endif
+}
+
+
+/*
+ *
+ *
+ *      fdmgrPrintf()
+ *
+ *      Dump error messages to the appropriate place
+ *
+ */
+LOCAL int fdmgrPrintf(char *pformat, ...)
+{
+        va_list         args;
+        int             status;
+
+        va_start(args, pformat);
+
+#ifndef vxWorks
+        status = vfprintf(
+                        stderr,
+                        pformat,
+                        args);
+#else /*vxWorks*/
+        {
+                int     logMsgArgs[6];
+                int     i;
+
+                for(i=0; i< NELEMENTS(logMsgArgs); i++){
+                        logMsgArgs[i] = va_arg(args, int);
+                }
+
+                status = logMsg(
+                                pformat,
+                                logMsgArgs[0],
+                                logMsgArgs[1],
+                                logMsgArgs[2],
+                                logMsgArgs[3],
+                                logMsgArgs[4],
+                                logMsgArgs[5]);
+
+        }
+#endif /*vxWorks*/
+
+        va_end(args);
+
+        return status;
+}
+

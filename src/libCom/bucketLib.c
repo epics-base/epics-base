@@ -29,12 +29,17 @@
  *      -----------------
  * 	.01 091493 joh	fixed overzealous parameter check
  *	.02 121693 joh	added bucketFree()
+ *
+ * 	NOTES:
+ * 	.01 Storage for identifier must persist until an item is deleted	
  */
 
 
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <math.h>
+#include <time.h>
 
 #include <bucketLib.h>
 
@@ -48,87 +53,119 @@
 #ifndef FALSE
 #define FALSE 0
 #endif /* FALSE */
+#ifndef LOCAL
+#define LOCAL static
+#endif /* LOCAL */
+#ifndef max
+#define max(A,B) ((A)>(B)?(A):(B))
+#endif /* max */
 
-#define BUCKET_IX_WIDTH		12
-#define BUCKET_IX_N		(1<<BUCKET_IX_WIDTH)
-#define BUCKET_IX_MASK		(BUCKET_IX_N-1)	
+/*
+ * these data type dependent routines are
+ * provided in the bucketLib.c
+ */
+typedef BUCKETID bucketHash(BUCKET *pb, const void *pId);
+typedef ITEM **bucketCompare(ITEM **ppi, const void *pId);
+
+LOCAL bucketCompare   bucketUnsignedCompare;
+LOCAL bucketCompare   bucketPointerCompare;
+LOCAL bucketCompare   bucketStringCompare;
+LOCAL bucketHash      bucketUnsignedHash;
+LOCAL bucketHash      bucketPointerHash;
+LOCAL bucketHash      bucketStringHash;
+
+typedef struct {
+        bucketHash      *pHash;
+        bucketCompare   *pCompare;
+	buckTypeOfId	type;
+}bucketSET;
+
+LOCAL bucketSET BSET[] = {
+	{bucketUnsignedHash, bucketUnsignedCompare, bidtUnsigned},
+	{bucketPointerHash, bucketPointerCompare, bidtPointer},
+	{bucketStringHash, bucketStringCompare, bidtString}
+};
+
+LOCAL int bucketAddItem(BUCKET *prb, bucketSET *pBSET, const void *pId, void *pApp);
+LOCAL int bucketRemoveItem (BUCKET *prb, bucketSET *pBSET, const void *pId);
+LOCAL void *bucketLookupItem(BUCKET *pb, bucketSET *pBSET, const void *pId);
+
+
+
+/*
+ * bucket id bit width
+ */
+#define BUCKETID_BIT_WIDTH 	(sizeof(BUCKETID)*NBBY)
+
+/*
+ * Maximum bucket size
+ */
+#define BUCKET_MAX_WIDTH	12	
 
 #ifdef DEBUG
+#error This is out of date
 main()
 {
-	BUCKETID	id;
+	BUCKETID	id1;
+	BUCKETID	id2;
+	char		*pValSave1;
+	char		*pValSave2;
 	int		s;
 	BUCKET		*pb;
-	char		*pValSave;
 	char		*pVal;
 	unsigned	i;
+	clock_t		start, finish;
+	double 		duration;
+	const int	LOOPS = 500000;
 
-	pb = bucketCreate(NBBY*sizeof(BUCKETID));
+	pb = bucketCreate(8);
 	if(!pb){
 		return BUCKET_FAILURE;
 	}
 
-	id = 444;
-	pValSave = "fred";
-	s = bucketAddItem(pb, id, pValSave);
-	if(s != BUCKET_SUCCESS){
-		return BUCKET_FAILURE;
-	}
+	id1 = 0x1000a432;
+	pValSave1 = "fred";
+	s = bucketAddItemUnsignedId(pb, &id1, pValSave1);
+	assert(s == BUCKET_SUCCESS);
 
-	printf("Begin\n");
-	for(i=0; i<500000; i++){
-		pVal = bucketLookupItem(pb, id);
-		if(pVal != pValSave){
-			printf("failure\n");
-			break;
-		}
-		pVal = bucketLookupItem(pb, id);
-		if(pVal != pValSave){
-			printf("failure\n");
-			break;
-		}
-		pVal = bucketLookupItem(pb, id);
-		if(pVal != pValSave){
-			printf("failure\n");
-			break;
-		}
-		pVal = bucketLookupItem(pb, id);
-		if(pVal != pValSave){
-			printf("failure\n");
-			break;
-		}
-		pVal = bucketLookupItem(pb, id);
-		if(pVal != pValSave){
-			printf("failure\n");
-			break;
-		}
-		pVal = bucketLookupItem(pb, id);
-		if(pVal != pValSave){
-			printf("failure\n");
-			break;
-		}
-		pVal = bucketLookupItem(pb, id);
-		if(pVal != pValSave){
-			printf("failure\n");
-			break;
-		}
-		pVal = bucketLookupItem(pb, id);
-		if(pVal != pValSave){
-			printf("failure\n");
-			break;
-		}
-		pVal = bucketLookupItem(pb, id);
-		if(pVal != pValSave){
-			printf("failure\n");
-			break;
-		}
-		pVal = bucketLookupItem(pb, id);
-		if(pVal != pValSave){
-			printf("failure\n");
-			break;
-		}
+	pValSave2 = "jane";
+	s = bucketAddItemStringId(pb, pValSave2, pValSave2);
+	assert(s == BUCKET_SUCCESS);
+
+	start = clock();
+	for(i=0; i<LOOPS; i++){
+		pVal = bucketLookupItem(pb, id1);
+		assert(pVal == pValSave1);
+		pVal = bucketLookupItem(pb, id1);
+		assert(pVal == pValSave1);
+		pVal = bucketLookupItem(pb, id1);
+		assert(pVal == pValSave1);
+		pVal = bucketLookupItem(pb, id1);
+		assert(pVal == pValSave1);
+		pVal = bucketLookupItem(pb, id1);
+		assert(pVal == pValSave1);
+		pVal = bucketLookupItem(pb, id1);
+		assert(pVal == pValSave1);
+		pVal = bucketLookupItem(pb, id1);
+		assert(pVal == pValSave1);
+		pVal = bucketLookupItem(pb, id1);
+		assert(pVal == pValSave1);
+		pVal = bucketLookupItem(pb, id1);
+		assert(pVal == pValSave1);
+		pVal = bucketLookupItem(pb, id2);
+		assert(pVal == pValSave2);
 	}
-	printf("End\n");
+	finish = clock();
+
+	duration = finish-start;
+	duration = duration/CLOCKS_PER_SEC;
+	printf("It took %15.10f total sec\n", duration);
+	duration = duration/LOOPS;
+	duration = duration/10;
+	duration = duration * 1e6;
+	printf("It took %15.10f u sec per hash lookup\n", duration);
+
+	bucketShow(pb);
 
 	return BUCKET_SUCCESS;
 }
@@ -136,54 +173,192 @@ main()
 
 
 /*
+ * bucketUnsignedCompare()
+ */
+LOCAL ITEM **bucketUnsignedCompare (ITEM **ppi, const void *pId)
+{
+	unsigned	id;	
+	unsigned	*pItemId;
+	ITEM		*pi;
+
+	id = * (unsigned *) pId;
+	while (pi = *ppi) {
+		if (bidtUnsigned == pi->type) {
+			pItemId = (unsigned *) pi->pId;
+			if (id == *pItemId) {
+				return ppi;
+			}
+		}
+		ppi = &pi->pItem;
+	}
+	return NULL;
+}
+
+
+/*
+ * bucketPointerCompare()
+ */
+ITEM **bucketPointerCompare (ITEM **ppi, const void *pId)
+{
+	void		*ptr;	
+	void		**pItemId;
+	ITEM		*pi;
+
+	ptr = * (void **) pId;
+	while (pi = *ppi) {
+		if (bidtPointer == pi->type ) {
+			pItemId = (void **) pi->pId;
+			if (ptr == *pItemId) {
+				return ppi;
+			}
+		}
+		ppi = &pi->pItem;
+	}
+	return NULL;
+}
+
+
+/*
+ * bucketStringCompare ()
+ */
+ITEM **bucketStringCompare (ITEM **ppi, const void *pId)
+{
+	const char	*pStr = pId;	
+	ITEM		*pi;
+	int		status;
+
+	while (pi = *ppi) {
+		if (bidtString == pi->type) {
+			status = strcmp (pStr, (char *)pi->pId);
+			if (status == '\0') {
+				return ppi;
+			}
+		}
+		ppi = &pi->pItem;
+	}
+	return NULL;
+}
+
+
+/*
+ * bucketUnsignedHash ()
+ */
+BUCKETID bucketUnsignedHash (BUCKET *pb, const void *pId)
+{
+	const unsigned	*pUId = pId;	
+	unsigned 	src;
+	BUCKETID	hashid;
+
+	src = *pUId;
+	hashid = src;
+	src = src >> pb->hashIdNBits;
+	while (src) {
+		hashid = hashid ^ src;
+		src = src >> pb->hashIdNBits;
+	}
+	hashid = hashid & pb->hashIdMask;
+
+	return hashid;
+}
+
+
+/*
+ * bucketPointerHash ()
+ *
+ */
+BUCKETID bucketPointerHash (BUCKET *pb, const void *pId)
+{
+	void * const	*ppId = pId;	
+	unsigned long	src;
+	BUCKETID	hashid;
+
+	/*
+	 * This makes the assumption that
+	 * a pointer will fit inside of a long
+	 * (this assumption may not port to all
+	 * CPU architectures)
+	 */
+	src = (unsigned long) *ppId; 
+	hashid = src;
+	src = src >> pb->hashIdNBits;
+	while(src){
+		hashid = hashid ^ src;
+		src = src >> pb->hashIdNBits;
+	}
+	hashid = hashid & pb->hashIdMask;
+
+	return hashid; 
+}
+
+
+/*
+ * bucketStringHash ()
+ */
+BUCKETID bucketStringHash (BUCKET *pb, const void *pId)
+{
+	const char	*pStr = pId;	
+	BUCKETID	hashid;
+	unsigned	i;
+
+	hashid = 0;
+	i = 1;
+	while(*pStr){
+		hashid += *pStr * i;
+		pStr++;
+		i++;
+	}
+
+	hashid = hashid % (pb->hashIdMask+1);
+
+	return hashid; 
+}
+
+
+
+/*
  * bucketCreate()
  */
-#ifdef __STDC__
-BUCKET	*bucketCreate(unsigned indexWidth)
-#else 
-BUCKET	*bucketCreate(indexWidth)
-unsigned indexWidth;
-#endif
+BUCKET  *bucketCreate (unsigned nHashTableEntries)
 {
+	BUCKETID	mask;
+	unsigned	nbits;
 	BUCKET		*pb;
 
+	if (nHashTableEntries==0) {
+		return NULL;
+	}
+
+	/*
+	 * count the number of bits in the bucket id
+	 */
+	for (nbits=0; nbits<BUCKETID_BIT_WIDTH; nbits++) {
+		mask = (1<<nbits) - 1;
+		if ( ((nHashTableEntries-1) & ~mask) == 0){
+			break;
+		}
+	}
 	/*
 	 * indexWidth must be specified at least one
 	 * bit less than the bit size of type BUCKETID
 	 */
-	if(indexWidth>sizeof(BUCKETID)*NBBY){
-		printf("%s at %d: Requested index width=%d is to large. max=%d\n" ,
+	if (nbits>=BUCKETID_BIT_WIDTH) {
+		printf("%s at %d: Requested index width=%d to large. max=%d\n",
 			__FILE__,
 			__LINE__,
-			indexWidth,
-			sizeof(BUCKETID)*NBBY-1);
+			nbits,
+			BUCKETID_BIT_WIDTH-1);
 		return NULL;
 	}
 
 	pb = (BUCKET *) calloc(1, sizeof(*pb));
-	if(!pb){
+	if (!pb) {
 		return pb;
 	}
 
-	if(indexWidth>BUCKET_IX_WIDTH){
-		pb->indexShift = indexWidth - BUCKET_IX_WIDTH;
-	}
-	else{
-		pb->indexShift = 0;
-	}
-	pb->nextIndexMask = (1<<pb->indexShift)-1;
-	pb->nEntries = 1<<(indexWidth-pb->indexShift);
-	if(indexWidth == sizeof(BUCKETID)*NBBY){
-		pb->indexMask = 0; 
-		pb->indexMask = ~pb->indexMask;
-	}
-	else{
-		pb->indexMask = (1<<indexWidth)-1; 
-	}
+	pb->hashIdMask = mask;
+	pb->hashIdNBits = nbits;
 
-	pb->pTable = (ITEMPTR *) calloc(
-			pb->nEntries, 
-			sizeof(ITEMPTR));
+	pb->pTable = (ITEM **) calloc (mask+1, sizeof(*pb->pTable));
 	if(!pb->pTable){
 		free(pb);
 		return NULL;
@@ -202,14 +377,24 @@ int	bucketFree(prb)
 BUCKET	*prb;
 #endif
 {
+	ITEM *pi;
+	ITEM *pni;
+
 	/*
 	 * deleting a bucket with entries in use
 	 * will cause memory leaks and is not allowed
 	 */
-	if(prb->nInUse){
-		return BUCKET_FAILURE;
-	}
+	assert(prb->nInUse==0);
 
+	/*
+	 * free the free list
+	 */
+	pi = prb->pFreeItems;
+	while (pi) {
+		pni = pi->pItem;
+		free (pi);
+		pi = pni;
+	}
 	free(prb->pTable);
 	free(prb);
 
@@ -220,69 +405,49 @@ BUCKET	*prb;
 /*
  * bucketAddItem()
  */
-#ifdef __STDC__
-int	bucketAddItem(BUCKET *prb, BUCKETID id, void *pItem)
-#else
-int	bucketAddItem(prb, id, pItem)
-BUCKET  *prb;
-BUCKETID id;
-void *pItem;
-#endif
+int	bucketAddItemUnsignedId(BUCKET *prb, const unsigned *pId, void *pApp)
 {
-	int	s;
-	ITEMPTR	*pi;
+	return bucketAddItem(prb, &BSET[bidtUnsigned], pId, pApp);
+}
+int	bucketAddItemPointerId(BUCKET *prb, void * const *pId, void *pApp)
+{
+	return bucketAddItem(prb, &BSET[bidtPointer], pId, pApp);
+}
+int	bucketAddItemStringId(BUCKET *prb, const char *pId, void *pApp)
+{
+	return bucketAddItem(prb, &BSET[bidtString], pId, pApp);
+}
+LOCAL int bucketAddItem(BUCKET *prb, bucketSET *pBSET, const void *pId, void *pApp)
+{
+	BUCKETID	hashid;
+	ITEM		*pi;
 
 	/*
-	 * is the id to big ?
+	 * try to get it off the free list first. If
+	 * that fails then malloc()
 	 */
-	if(id&~prb->indexMask){
-		return BUCKET_FAILURE;
+	pi = prb->pFreeItems;
+	if (pi) {
+		prb->pFreeItems = pi->pItem;
 	}
-
-	if(prb->indexShift){
-		int	new;
-		BUCKET	*pb;
-
-		pi = &prb->pTable[id>>prb->indexShift];
-		pb = pi->pBucket;
-
-		if(!pb){
-			pb = bucketCreate(prb->indexShift);
-			if(!pb){
-				return BUCKET_FAILURE;
-			}
-			pi->pBucket = pb;
-			prb->nInUse++;
-			new = TRUE;
-		}	
-		else{
-			new = FALSE;
+	else {
+		pi = (ITEM *) malloc(sizeof(ITEM));
+		if(!pi){
+			return BUCKET_FAILURE;
 		}
-
-		s = bucketAddItem(
-			pb, 
-			id&prb->nextIndexMask, 
-			pItem);
-		/*
-		 * if memory cant be allocated at a lower
-		 * level dont leak everything allocated for this new
-		 * item so far
-		 */
-		if(s != BUCKET_SUCCESS && new){
-			s = bucketFree(pb);
-			assert(s == BUCKET_SUCCESS);
-			pi->pBucket = NULL;
-			prb->nInUse--;
-		}
-		return s;
-	}
-	
-	pi = &prb->pTable[id];
-	if(pi->pItem){
-		return BUCKET_FAILURE;
 	}
 
-	pi->pItem = pItem;
+	/*
+	 * create the hash index 
+	 */
+	hashid = (*pBSET->pHash) (prb, pId);
+
+	pi->pApp = pApp;
+	pi->pId = pId;
+	pi->type = pBSET->type;
+	assert((hashid & ~prb->hashIdMask) == 0);
+	pi->pItem = prb->pTable[hashid];
+	prb->pTable[hashid] = pi;
 	prb->nInUse++;
 
 	return BUCKET_SUCCESS;
@@ -292,97 +457,85 @@ void *pItem;
 /*
  * bucketRemoveItem()
  */
-#ifdef __STDC__
-int	bucketRemoveItem (BUCKET *prb, BUCKETID id, void *pItem)
-#else
-int	bucketRemoveItem (prb, id, pItem)
-BUCKET *prb; 
-BUCKETID id; 
-void *pItem;
-#endif
+int	bucketRemoveItemUnsignedId (BUCKET *prb, const unsigned *pId)
 {
-	ITEMPTR	*ppi;
+	return bucketRemoveItem(prb, &BSET[bidtUnsigned], pId);
+}
+int	bucketRemoveItemPointerId (BUCKET *prb, void * const *pId)
+{
+	return bucketRemoveItem(prb, &BSET[bidtPointer], pId);
+}
+int	bucketRemoveItemStringId (BUCKET *prb, const char *pId)
+{
+	return bucketRemoveItem(prb, &BSET[bidtString], pId);
+}
+LOCAL int bucketRemoveItem (BUCKET *prb, bucketSET *pBSET, const void *pId)
+{
+	BUCKETID	hashid;
+	ITEM		**ppi;
+	ITEM		*pi;
 
 	/*
-	 * is the id to big ?
+	 * create the hash index
 	 */
-	if(id&~prb->indexMask){
+	hashid = (*pBSET->pHash) (prb, pId);
+
+	assert((hashid & ~prb->hashIdMask) == 0);
+	ppi = &prb->pTable[hashid];
+	ppi = (*pBSET->pCompare) (ppi, pId);
+	if(!ppi){
 		return BUCKET_FAILURE;
 	}
-
-	if(prb->indexShift){
-		BUCKET	*pb;
-		int	s;
-
-		ppi = &prb->pTable[id>>prb->indexShift];
-		pb = ppi->pBucket;
-
-		if(!pb){
-			return BUCKET_FAILURE;
-		}	
-
-		s = bucketRemoveItem(
-			pb, 
-			id&prb->nextIndexMask, 
-			pItem);
-		if(s!=BUCKET_SUCCESS){
-			return s;
-		}
-
-		if(pb->nInUse==0){
-			free(pb->pTable);
-			free(pb);
-			ppi->pBucket = NULL;
-			prb->nInUse--;
-		}
-		return s;
-	}
-
-	ppi = &prb->pTable[id];
-	if(ppi->pItem != pItem){
-		return BUCKET_FAILURE;
-	}
-
 	prb->nInUse--;
-	ppi->pItem = NULL;
+	pi = *ppi;
+	*ppi = pi->pItem;
+
+	/*
+	 * stuff it on the free list
+	 */
+	pi->pItem = prb->pFreeItems;
+	prb->pFreeItems = pi;
 
 	return BUCKET_SUCCESS;
 }
+
 
 
 /*
  * bucketLookupItem()
  */
-#ifdef __STDC__
-void	*bucketLookupItem(BUCKET *pb, BUCKETID id)
-#else
-void	*bucketLookupItem(pb, id)
-BUCKET *pb; 
-BUCKETID id;
-#endif
+void 	*bucketLookupItemUnsignedId (BUCKET *prb, const unsigned *pId)
 {
-	unsigned shift;
+	return bucketLookupItem(prb, &BSET[bidtUnsigned], pId);
+}
+void	*bucketLookupItemPointerId (BUCKET *prb, void * const *pId)
+{
+	return bucketLookupItem(prb, &BSET[bidtPointer], pId);
+}
+void	*bucketLookupItemStringId (BUCKET *prb, const char *pId)
+{
+	return bucketLookupItem(prb, &BSET[bidtString], pId);
+}
+LOCAL void *bucketLookupItem(BUCKET *pb, bucketSET *pBSET, const void *pId)
+{
+	BUCKETID	hashid;
+	ITEM		**ppi;
 
 	/*
-	 * is the id to big ?
+	 * create the hash index
 	 */
-	if(id&~pb->indexMask){
-		return NULL;
+	hashid = (*pBSET->pHash) (pb, pId);
+	assert((hashid & ~pb->hashIdMask) == 0);
+
+	/*
+	 * at the bottom level just
+	 * linear search for it.
+	 */
+	ppi = (*pBSET->pCompare) (&pb->pTable[hashid], pId);
+	if(ppi){
+		return (*ppi)->pApp;
 	}
-
-	while(shift = pb->indexShift){
-		BUCKETID nextId;
-
-		nextId = id & pb->nextIndexMask;
-
-		pb = pb->pTable[id>>shift].pBucket;
-		if(!pb){
-			return pb;
-		}	
-		id = nextId;	
-	}
-
-	return pb->pTable[id].pItem;
+	return NULL;
 }
 
 
@@ -397,24 +550,62 @@ int	bucketShow(pb)
 BUCKET *pb;
 #endif
 {
-	ITEMPTR	*pi;
+	ITEM 		**ppi;
+	ITEM 		*pi;
+	ITEM 		*pni;
+	unsigned	nElem;
+	double		X;
+	double		XX;
+	double		mean;
+	double		stdDev;
+	unsigned	count;
+	unsigned	maxEntries;
+	unsigned	freeListCount;
 
-	pi = pb->pTable;
-
-	printf(	"Bucket: mask=%x entries in use=%d bytes in use=%d\n",
-		(pb->nEntries-1)<<pb->indexShift,
-		pb->nInUse,
-		sizeof(*pb)+pb->nEntries*sizeof(*pi));
-
-	if(pb->indexShift){
-		for(	pi = pb->pTable;
-			pi<&pb->pTable[pb->nEntries];
-			pi++){
-			if(pi->pBucket){
-				bucketShow(pi->pBucket);
-			}
-		}
+	/*
+	 * count bytes on the free list
+	 */
+	pi = pb->pFreeItems;
+	freeListCount = 0;
+	while (pi) {
+		freeListCount++;
+		pni = pi->pItem;
+		pi = pni;
 	}
+
+	printf(	"Bucket entries in use = %d bytes in use = %d\n",
+		pb->nInUse,
+		sizeof(*pb)+(pb->hashIdMask+1)*
+			sizeof(ITEM *)+pb->nInUse*sizeof(ITEM));
+
+	printf(	"Free list bytes in use = %d\n",
+		freeListCount*sizeof(ITEM));
+
+	ppi = pb->pTable;
+	nElem = pb->hashIdMask+1;
+	X = 0.0;
+	XX = 0.0;
+	maxEntries = 0;
+	while (ppi < &pb->pTable[nElem]) {
+		pi = *ppi;
+		count = 0;
+		while (pi) {
+			count++;
+			pi = pi->pItem;
+		}
+		X += count;
+		XX += count*count;
+		maxEntries = max (count, maxEntries);
+		ppi++;
+	}
+
+	mean = X/nElem;
+	stdDev = sqrt(XX/nElem - mean*mean);
+	printf( "Bucket entries/hash id - mean = %f std dev = %f max = %d\n",
+		mean,
+		stdDev,
+		maxEntries);
+
 	return BUCKET_SUCCESS;
 }
 

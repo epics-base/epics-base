@@ -1,4 +1,4 @@
-/* ioccrf.c */
+/* ioccrf.cpp */
 /* Author:  Marty Kraimer Date: 27APR2000 */
 /* Heavily modified by Eric Norum   Date: 03MAY2000 */
 /* Adapted to C++ by Eric Norum   Date: 18DEC2000 */
@@ -8,9 +8,6 @@ This software was developed under a United States Government license
 described on the COPYRIGHT_UniversityOfChicago file included as part
 of this distribution.
 ****************************************************************************/
-#include <string>
-#include <map>
-using namespace std;
 
 #include <stddef.h>
 #include <string.h>
@@ -21,40 +18,92 @@ using namespace std;
 
 #include "errlog.h"
 #include "dbAccess.h"
+#include "osiThread.h"
+#include "osiMutex.h"
+#include "registry.h"
 #define epicsExportSharedSymbols
 #include "ioccrf.h"
 #include "epicsReadline.h"
 
-class IoccrfFunc {
-  public:
-    ioccrfFuncDef const *pFuncDef;
-    ioccrfCallFunc func;
-    IoccrfFunc(): pFuncDef(NULL), func(NULL) { }
-    IoccrfFunc(const ioccrfFuncDef *d, ioccrfCallFunc f): pFuncDef(d), func(f){}
-    IoccrfFunc& operator=(const IoccrfFunc& rhs) { pFuncDef=rhs.pFuncDef;
-                                                   func=rhs.func;
-                                                   return *this; }
-    ~IoccrfFunc() { }
+/*
+ * File-local information
+ */
+struct ioccrfCommand {
+    ioccrfFuncDef const     *pFuncDef;
+    ioccrfCallFunc          func;
+    struct ioccrfCommand    *next;
 };
+static struct ioccrfCommand *ioccrfCommandHead;
+static char ioccrfID[] = "ioccrf";
+static semMutexId commandTableMutex;
+static threadOnceId commandTableOnceId = OSITHREAD_ONCE_INIT;
 
 /*
- * We don't want the overhead of C++ strings, so use C strings
+ * Set up command table mutex
  */
-struct Cstring_cmp {
-    bool operator()(const char *p, const char *q) const {return strcmp(p,q)<0;}
-};
+static void commandTableOnce (void *arg)
+{
+    commandTableMutex = semMutexMustCreate ();
+}
 
 /*
- * The table of commands
+ * Lock command table mutex
  */
-namespace {  map<const char *,IoccrfFunc,Cstring_cmp> commands; }
+static void
+commandTableLock (void)
+{
+    threadOnce (&commandTableOnceId, commandTableOnce, NULL);
+    semMutexTake (commandTableMutex);
+}
+
+/*
+ * Unlock the command table mutex
+ */
+static void
+commandTableUnlock (void)
+{
+    threadOnce (&commandTableOnceId, commandTableOnce, NULL);
+    semMutexGive (commandTableMutex);
+}
 
 /*
  * Register a command
  */
 void epicsShareAPI ioccrfRegister (const ioccrfFuncDef *pioccrfFuncDef, ioccrfCallFunc func)
 {
-    commands[pioccrfFuncDef->name] = IoccrfFunc(pioccrfFuncDef, func);
+    struct ioccrfCommand *l, *p, *n;
+    int i;
+
+    commandTableLock ();
+    for (l = NULL, p = ioccrfCommandHead ; p != NULL ; l = p, p = p->next) {
+        i = strcmp (pioccrfFuncDef->name, p->pFuncDef->name);
+        if (i == 0) {
+            p->pFuncDef = pioccrfFuncDef;
+            p->func = func;
+            commandTableUnlock ();
+            return;
+        }
+        if (i < 0)
+            break;
+    }
+    n = (struct ioccrfCommand *)callocMustSucceed (1, sizeof *n, "ioccrfRegister");
+    if (!registryAdd(ioccrfID, pioccrfFuncDef->name, (void *)n)) {
+        free (n);
+        commandTableUnlock ();
+        errlogPrintf ("ioccrfRegister failed to add %s\n", pioccrfFuncDef->name);
+        return;
+    }
+    if (l == NULL) {
+        n->next = ioccrfCommandHead;
+        ioccrfCommandHead = n;
+    }
+    else {
+        n->next = l->next;
+        l->next = n;
+    }
+    n->pFuncDef = pioccrfFuncDef;
+    n->func = func;
+    commandTableUnlock ();
 }
 
 /*
@@ -62,7 +111,15 @@ void epicsShareAPI ioccrfRegister (const ioccrfFuncDef *pioccrfFuncDef, ioccrfCa
  */
 void epicsShareAPI ioccrfFree(void) 
 {
-    commands.clear();
+    struct ioccrfCommand *p, *n;
+
+    commandTableLock ();
+    for (p = ioccrfCommandHead ; p != NULL ; ) {
+        n = p->next;
+        free (p);
+        p = n;
+    }
+    commandTableUnlock ();
 }
 
 /*
@@ -200,8 +257,8 @@ ioccrf (const char *pathname)
     const char *ifs = " \t(),";
     ioccrfArgBuf *argBuf = NULL;
     int argBufCapacity = 0;
-    ioccrfFuncDef const *pioccrfFuncDef;
-    map<const char *,IoccrfFunc>::iterator cmdIter;
+    struct ioccrfCommand *found;
+    struct ioccrfFuncDef const *pioccrfFuncDef;
     
     /*
      * See if command interpreter is interactive
@@ -356,8 +413,9 @@ ioccrf (const char *pathname)
                     int l, col = 0;
 
                     printf ("Type `help command_name' to get more information about a particular command.\n");
-                    for (cmdIter = commands.begin() ; cmdIter != commands.end() ; cmdIter++) {
-                        pioccrfFuncDef = cmdIter->second.pFuncDef;
+                    commandTableLock ();
+                    for (found = ioccrfCommandHead ; found != NULL ; found = found->next) {
+                        pioccrfFuncDef = found->pFuncDef;
                         l = strlen (pioccrfFuncDef->name);
                         if ((l + col) >= 79) {
                             putchar ('\n');
@@ -378,15 +436,16 @@ ioccrf (const char *pathname)
                     }
                     if (col)
                         putchar ('\n');
+                    commandTableUnlock ();
                 }
                 else {
                     for (int i = 1 ; i < argc ; i++) {
-                        cmdIter = commands.find(argv[i]);
-                        if (cmdIter == commands.end()) {
+                        found = (ioccrfCommand *)registryFind (ioccrfID, argv[i]);
+                        if (found == NULL) {
                             printf ("%s -- no such command.\n", argv[i]);
                         }
                         else {
-                            pioccrfFuncDef = cmdIter->second.pFuncDef;
+                            pioccrfFuncDef = found->pFuncDef;
                             fputs (pioccrfFuncDef->name, stdout);
                             for (int a = 0 ; a < pioccrfFuncDef->nargs ; a++) {
                                 const char *cp = pioccrfFuncDef->arg[a]->name;
@@ -409,12 +468,12 @@ ioccrf (const char *pathname)
             /*
              * Look up command
              */
-            cmdIter = commands.find(argv[0]);
-            if (cmdIter == commands.end()) {
+            found = (ioccrfCommand *)registryFind (ioccrfID, argv[0]);
+            if (!found) {
                 showError (filename, lineno, "Command %s not found.", argv[0]);
                 continue;
             }
-            pioccrfFuncDef = cmdIter->second.pFuncDef;
+            pioccrfFuncDef = found->pFuncDef;
 
             /*
              * Process arguments
@@ -425,7 +484,7 @@ ioccrf (const char *pathname)
                 char *p = (arg < argc) ? argv[arg+1] : NULL;
 
                 if (arg == pioccrfFuncDef->nargs) {
-                    (*cmdIter->second.func)(argBuf);
+                    (*found->func)(argBuf);
                     break;
                 }
                 if (arg >= argBufCapacity) {

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/07/01 19:56:11  jhill
+ * one last update prior to first release
+ *
  * Revision 1.2  1996/06/26 21:18:56  jhill
  * now matches gdd api revisions
  *
@@ -177,7 +180,7 @@ void casMonitor::push(gdd &newValue)
                         pLog->assign(*this, pValue);
                         gddStatus = pValue->unreference();
                         assert(!gddStatus);
-                        client.insertEventQueue(*pLog, &this->overFlowEvent);
+                        client.insertEventQueue(*pLog, this->overFlowEvent);
                 }
                 else {
                         //

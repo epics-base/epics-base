@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1996/07/09 22:51:14  jhill
+ * store copy of msg in ctx
+ *
  * Revision 1.3  1996/06/26 21:19:04  jhill
  * now matches gdd api revisions
  *
@@ -212,7 +215,9 @@ public:
 
 	void removeFromEventQueue(casEvent &);
 	inline void addToEventQueue(casEvent &);
-	void insertEventQueue(casEvent &insert, casEvent *pPrev=NULL);
+
+	void insertEventQueue(casEvent &insert, casEvent &prevEvent);
+	void pushOnToEventQueue(casEvent &event);
 
 	aitBool full();
 
@@ -249,10 +254,20 @@ private:
 //
 // casEventSys::insertEventQueue()
 //
-inline void casEventSys::insertEventQueue(casEvent &insert, casEvent *pPrevEvent)
+inline void casEventSys::insertEventQueue(casEvent &insert, casEvent &prevEvent)
 {
 	this->mutex.lock();
-	this->eventLogQue.insert(insert, pPrevEvent);
+	this->eventLogQue.insertAfter(insert, prevEvent);
+	this->mutex.unlock();
+}
+
+//
+// casEventSys::pushOnToEventQueue()
+//
+inline void casEventSys::pushOnToEventQueue(casEvent &event)
+{
+	this->mutex.lock();
+	this->eventLogQue.push(event);
 	this->mutex.unlock();
 }
 
@@ -894,11 +909,6 @@ public:
 	void installClient(casStrmClient *pClient);
 
 	void removeClient(casStrmClient *pClient);
-
-        casStrmClient *firstClient() const 
-	{
-		return clientList.first();
-	}
 
         unsigned getMaxSimultaneousIO() const {return this->maxSimultaneousIO;}
 

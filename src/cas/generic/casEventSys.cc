@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -140,7 +143,7 @@ casProcCond casEventSys::process()
 			 * not accepted so return to the head of the list
 			 * (we will try again later)
 			 */
-			this->insertEventQueue(*pEvent);
+			this->pushOnToEventQueue(*pEvent);
 			cond = casProcOk;
 			break;
 		}

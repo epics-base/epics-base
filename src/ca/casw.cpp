@@ -62,7 +62,7 @@ int main ( int, char ** )
     }
 
     osiSockIoctl_t yes = true;
-    status = socket_ioctl ( sock, FIONBIO, &yes );
+    status = socket_ioctl ( sock, FIONBIO, &yes ); // X aCC 392
     if ( status < 0 ) {
         socket_close ( sock );
         errlogPrintf ("casw: unable to set socket to nonblocking state because \"%s\"\n",
@@ -93,7 +93,7 @@ int main ( int, char ** )
     }
 
     osiSockIoctl_t no = false;
-    status = socket_ioctl ( sock, FIONBIO, &no );
+    status = socket_ioctl ( sock, FIONBIO, &no ); // X aCC 392
     if ( status < 0 ) {
         socket_close ( sock );
         errlogPrintf ("casw: unable to set socket to blocking state because \"%s\"\n",

@@ -1,5 +1,5 @@
-
-/*  $Id$
+/*
+ *  $Id$
  *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
@@ -105,7 +105,7 @@ udpiiu::udpiiu ( cac &cac ) :
     memset ( (char *)&addr, 0 , sizeof (addr) );
     addr.ia.sin_family = AF_INET;
     addr.ia.sin_addr.s_addr = htonl (INADDR_ANY); 
-    addr.ia.sin_port = htons (PORT_ANY);   
+    addr.ia.sin_port = htons (PORT_ANY); // X aCC 818
     status = bind (this->sock, &addr.sa, sizeof (addr) );
     if ( status < 0 ) {
         socket_close (this->sock);
@@ -143,9 +143,9 @@ udpiiu::udpiiu ( cac &cac ) :
      * load user and auto configured
      * broadcast address list
      */
-    ellInit ( &this->dest );
+    ellInit ( &this->dest );    // X aCC 392
     configureChannelAccessAddressList ( &this->dest, this->sock, this->serverPort );
-    if ( ellCount ( &this->dest ) == 0 ) {
+    if ( ellCount ( &this->dest ) == 0 ) { // X aCC 392
         // no need to lock callbacks here because
         // 1) this is called while in a CA client function
         // 2) no auxiliary threads are running at this point
@@ -336,20 +336,20 @@ void epicsShareAPI caRepeaterRegistrationMessage (
              */
             saddr.ia.sin_family = AF_INET;
             saddr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
-            saddr.ia.sin_port = htons ( repeaterPort );   
+            saddr.ia.sin_port = static_cast <unsigned short> ( htons ( repeaterPort ) );
         }
         else {
-            saddr.ia.sin_port = htons ( repeaterPort );   
+            saddr.ia.sin_port = static_cast <unsigned short> ( htons ( repeaterPort ) );
         }
     }
     else {
         saddr.ia.sin_family = AF_INET;
         saddr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
-        saddr.ia.sin_port = htons ( repeaterPort );   
+        saddr.ia.sin_port = static_cast <unsigned short> ( htons ( repeaterPort ) );
     }
 
     memset ( (char *) &msg, 0, sizeof (msg) );
-    msg.m_cmmd = htons ( REPEATER_REGISTER );
+    msg.m_cmmd = static_cast <unsigned short> ( htons ( REPEATER_REGISTER ) );
     msg.m_available = saddr.ia.sin_addr.s_addr;
 
     /*
@@ -365,8 +365,9 @@ void epicsShareAPI caRepeaterRegistrationMessage (
         len = 0;
 #   endif 
 
-    status = sendto ( sock, (char *) &msg, len,  
-                0, (struct sockaddr *) &saddr, sizeof ( saddr ) );
+    status = sendto ( sock, (char *) &msg, len, 0,
+                      reinterpret_cast <struct sockaddr*> (&saddr),
+                      sizeof ( saddr ) );
     if ( status < 0 ) {
         int errnoCpy = SOCKERRNO;
         /*
@@ -430,7 +431,9 @@ void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
         bd.sin_family = AF_INET;
         bd.sin_addr.s_addr = htonl ( INADDR_ANY ); 
         bd.sin_port = htons ( port );   
-        status = bind ( tmpSock, (struct sockaddr *) &bd, sizeof ( bd ) );
+        status = bind ( tmpSock,
+                        reinterpret_cast <struct sockaddr *> (&bd),
+                        sizeof ( bd ) );
         if ( status < 0 ) {
             if ( SOCKERRNO == SOCK_EADDRINUSE ) {
                 installed = true;
@@ -510,8 +513,8 @@ bool udpiiu::noopAction ( const caHdr &, const osiSockAddr &, const epicsTime & 
     return true;
 }
 
-bool udpiiu::searchRespAction ( const caHdr &msg, 
-    const osiSockAddr &addr, const epicsTime &currentTime )
+bool udpiiu::searchRespAction ( const caHdr &msg, // X aCC 361
+                                const osiSockAddr &addr, const epicsTime &currentTime )
 {
     osiSockAddr serverAddr;
     unsigned minorVersion;
@@ -734,7 +737,7 @@ bool udpiiu::pushDatagramMsg ( const caHdr &msg, const void *pExt, ca_uint16_t e
     ca_uint16_t         allignedExtSize;
     caHdr               *pbufmsg;
 
-    allignedExtSize = CA_MESSAGE_ALIGN ( extsize );
+    allignedExtSize = static_cast <ca_uint16_t> (CA_MESSAGE_ALIGN ( extsize ));
     msgsize = sizeof ( caHdr ) + allignedExtSize;
 
 
@@ -768,7 +771,7 @@ void udpiiu::datagramFlush ()
         return;
     }
 
-    pNode = (osiSockAddrNode *) ellFirst ( &this->dest );
+    pNode = (osiSockAddrNode *) ellFirst ( &this->dest ); // X aCC 749
     while ( pNode ) {
         int status;
 
@@ -813,7 +816,7 @@ void udpiiu::datagramFlush ()
                 }
             }
         }
-        pNode = (osiSockAddrNode *) ellNext ( &pNode->node );
+        pNode = (osiSockAddrNode *) ellNext ( &pNode->node ); // X aCC 749
     }
 
     this->nBytesInXmitBuf = 0u;

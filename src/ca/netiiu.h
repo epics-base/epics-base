@@ -1,4 +1,3 @@
-
 /*  
  *  $Id$
  *
@@ -68,7 +67,7 @@ private:
     virtual void lastChannelDetachNotify ();
 };
 
-class limboiiu : public netiiu {
+class limboiiu : public netiiu { // X aCC 655
 public:
     limboiiu ();
 };

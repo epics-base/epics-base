@@ -79,7 +79,7 @@ int oldCAC::printf ( const char *pformat, ... ) const
     return status;
 }
 
-int oldCAC::vPrintf ( const char *pformat, va_list args ) const
+int oldCAC::vPrintf ( const char *pformat, va_list args ) const // X aCC 361
 {
     caPrintfFunc *pFunc;
     {

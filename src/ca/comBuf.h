@@ -29,13 +29,13 @@
 
 static const unsigned comBufSize = 0x4000;
 
-class wireSendAdapter {
+class wireSendAdapter {         // X aCC 655
 public:
     virtual unsigned sendBytes ( const void *pBuf, 
         unsigned nBytesInBuf ) = 0;
 };
 
-class wireRecvAdapter {
+class wireRecvAdapter {         // X aCC 655
 public:
     virtual unsigned recvBytes ( void *pBuf, 
         unsigned nBytesInBuf ) = 0;
@@ -347,8 +347,8 @@ inline comBuf::statusPopUInt16 comBuf::popUInt16 ()
 {
     statusPopUInt16 tmp;
     if ( this->occupiedBytes () >= 2u ) {
-        tmp.val  = static_cast < epicsUInt16 > ( this->buf[ this->nextReadIndex++ ] << 8u );
-        tmp.val |= static_cast < epicsUInt16 > ( this->buf[ this->nextReadIndex++ ] << 0u );
+        tmp.val  = static_cast < epicsUInt16 > (   this->buf[ this->nextReadIndex++ ] << 8u
+                                                 | this->buf[ this->nextReadIndex++ ] << 0u );
         tmp.success = true;
     }
     else {

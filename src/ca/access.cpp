@@ -666,7 +666,7 @@ chid epicsShareAPI ca_evid_to_chid ( evid pMon )
 }
 
 // extern "C"
-int epicsShareAPI ca_pend ( ca_real timeout, int early )
+int epicsShareAPI ca_pend ( ca_real timeout, int early ) // X aCC 361
 {
     if ( early ) {
         return ca_pend_io ( timeout );
@@ -750,7 +750,7 @@ int epicsShareAPI ca_flush_io ()
  *  CA_TEST_IO ()
  */
 // extern "C"
-int epicsShareAPI ca_test_io ()
+int epicsShareAPI ca_test_io () // X aCC 361
 {
     oldCAC *pcac;
     int caStatus = fetchClientContext ( &pcac );
@@ -934,7 +934,7 @@ arrayElementCount epicsShareAPI ca_element_count ( chid pChan )
  * ca_state ()
  */
 // extern "C"
-enum channel_state epicsShareAPI ca_state ( chid pChan )
+enum channel_state epicsShareAPI ca_state ( chid pChan ) // X aCC 361
 {
     if ( pChan->connected() ) {
         return cs_conn;

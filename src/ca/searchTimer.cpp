@@ -1,5 +1,5 @@
-
-/* * $Id$
+/* 
+ * $Id$
  *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
@@ -195,7 +195,7 @@ void searchTimer::notifySearchResponse ( unsigned short retrySeqNoIn,
 //
 // searchTimer::expire ()
 //
-epicsTimerNotify::expireStatus searchTimer::expire ( const epicsTime & currentTime )
+epicsTimerNotify::expireStatus searchTimer::expire ( const epicsTime & currentTime ) // X aCC 361
 {
     epicsAutoMutex locker ( this->mutex );
     unsigned nFrameSent = 0u;
@@ -218,7 +218,7 @@ epicsTimerNotify::expireStatus searchTimer::expire ( const epicsTime & currentTi
     /*
      * increment the retry sequence number
      */
-    this->retrySeqNo++; /* allowed to roll over */
+    this->retrySeqNo++; /* allowed to roll over */  // X aCC 818
     this->timeAtLastRetry = currentTime;
 
     /*
@@ -296,7 +296,7 @@ epicsTimerNotify::expireStatus searchTimer::expire ( const epicsTime & currentTi
     this->searchAttempts = 0;
     this->searchResponses = 0;
 
-    while ( 1 ) {
+    while ( true ) {
             
         /*
          * clear counter when we reach the end of the list
@@ -320,7 +320,7 @@ epicsTimerNotify::expireStatus searchTimer::expire ( const epicsTime & currentTi
              * we are handling a response from an old
              * search message)
              */
-            this->retrySeqNo++; /* allowed to roll over */
+            this->retrySeqNo++; /* allowed to roll over */  // X aCC 818
         
             /*
              * so that old search tries will not update the counters

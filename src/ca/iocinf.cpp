@@ -51,12 +51,8 @@ static char *getToken ( const char **ppString, char *pBuf, unsigned bufSIze )
 
     *ppString = &pToken[i];
 
-    if(*pToken){
-        return pBuf;
-    }
-    else{
-        return NULL;
-    }
+    if ( *pToken ) return pBuf;
+    return NULL;
 }
 
 /*
@@ -118,7 +114,7 @@ extern "C" void epicsShareAPI removeDuplicatesAddresses
 
         if ( pNode->addr.sa.sa_family == AF_INET ) {
 
-            pTmpNode = (osiSockAddrNode *) ellFirst (pDestList);
+            pTmpNode = (osiSockAddrNode *) ellFirst (pDestList);    // X aCC 749
             while ( pTmpNode ) {
                 if (pTmpNode->addr.sa.sa_family == AF_INET) {
                     unsigned netMask = pNode->netMask.ia.sin_addr.s_addr | 
@@ -134,7 +130,7 @@ extern "C" void epicsShareAPI removeDuplicatesAddresses
                         break;
                     }
                 }
-                pTmpNode = (osiSockAddrNode *) ellNext (&pTmpNode->node);
+                pTmpNode = (osiSockAddrNode *) ellNext (&pTmpNode->node); // X aCC 749
             }
             if (pNode) {
                 ellAdd (pDestList, &pNode->node);
@@ -153,12 +149,12 @@ static void  forcePort ( ELLLIST *pList, unsigned short port )
 {
     osiSockAddrNode *pNode;
 
-    pNode  = ( osiSockAddrNode * ) ellFirst ( pList );
+    pNode  = ( osiSockAddrNode * ) ellFirst ( pList );          // X aCC 749
     while ( pNode ) {
         if ( pNode->addr.sa.sa_family == AF_INET ) {
             pNode->addr.ia.sin_port = htons (port);
         }
-        pNode = ( osiSockAddrNode * ) ellNext ( &pNode->node );
+        pNode = ( osiSockAddrNode * ) ellNext ( &pNode->node ); // X aCC 749
     }
 }
 
@@ -177,9 +173,9 @@ extern "C" void epicsShareAPI configureChannelAccessAddressList
     /*
      * dont load the list twice
      */
-    assert ( ellCount (pList) == 0 );
+    assert ( ellCount (pList) == 0 ); // X aCC 392
 
-    ellInit ( &tmpList );
+    ellInit ( &tmpList );             // X aCC 392
 
     /*
      * Check to see if the user has disabled
@@ -203,7 +199,7 @@ extern "C" void epicsShareAPI configureChannelAccessAddressList
         osiSockAddr addr;
         addr.ia.sin_family = AF_UNSPEC;
         osiSockDiscoverBroadcastAddresses ( &tmpList, sock, &addr );
-        if ( ellCount ( &tmpList ) == 0 ) {
+        if ( ellCount ( &tmpList ) == 0 ) { // X aCC 392
             osiSockAddrNode *pNewNode;
             pNewNode = (osiSockAddrNode *) calloc ( 1, sizeof (*pNewNode) );
             if ( pNewNode ) {
@@ -239,11 +235,11 @@ extern "C" void epicsShareAPI printChannelAccessAddressList ( const ELLLIST *pLi
     osiSockAddrNode *pNode;
 
     ::printf ( "Channel Access Address List\n" );
-    pNode = (osiSockAddrNode *) ellFirst ( pList );
+    pNode = (osiSockAddrNode *) ellFirst ( pList );           // X aCC 749
     while (pNode) {
         char buf[64];
         ipAddrToA ( &pNode->addr.ia, buf, sizeof ( buf ) );
         ::printf ( "%s\n", buf );
-        pNode = (osiSockAddrNode *) ellNext ( &pNode->node );
+        pNode = (osiSockAddrNode *) ellNext ( &pNode->node ); // X aCC 749
     }
 }

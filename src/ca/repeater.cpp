@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * REPEATER.C
+ * REPEATER.cpp
  *
  * CA broadcast repeater
  *
@@ -89,7 +89,7 @@ protected:
 private:
     osiSockAddr from;
     SOCKET sock;
-    unsigned port () const;
+    unsigned short port () const;
     static tsFreeList < class repeaterClient, 0x20 > freeList;
     static epicsMutex freeListMutex;
 };
@@ -150,7 +150,9 @@ LOCAL makeSocketReturn makeSocket ( unsigned short port, bool reuseAddr )
         bd.sin_family = AF_INET;
         bd.sin_addr.s_addr = htonl (INADDR_ANY); 
         bd.sin_port = htons (port);  
-        status = bind (msr.sock, (struct sockaddr *)&bd, (int)sizeof(bd));
+        status = bind (msr.sock,
+                       reinterpret_cast <struct sockaddr *> (&bd),
+                       (int)sizeof(bd));
         if ( status < 0 ) {
             msr.errNumber = SOCKERRNO;
             msr.pErrStr = SOCKERRSTR ( msr.errNumber );
@@ -207,7 +209,7 @@ bool repeaterClient::connect ()
     return true;
 }
 
-bool repeaterClient::sendConfirm ()
+bool repeaterClient::sendConfirm () // X aCC 361
 {
     int status;
 
@@ -231,7 +233,7 @@ bool repeaterClient::sendConfirm ()
     }
 }
 
-bool repeaterClient::sendMessage ( const void *pBuf, unsigned bufSize )
+bool repeaterClient::sendMessage ( const void *pBuf, unsigned bufSize ) // X aCC 361
 {
     int status;
 
@@ -278,7 +280,7 @@ inline void repeaterClient::destroy ()
     delete this;
 }
 
-inline unsigned repeaterClient::port () const
+inline unsigned short repeaterClient::port () const
 {
     return ntohs ( this->from.ia.sin_port );
 }
@@ -305,7 +307,7 @@ inline bool repeaterClient::identicalPort ( const osiSockAddr &fromIn )
     return false;
 }
 
-bool repeaterClient::verify ()
+bool repeaterClient::verify ()  // X aCC 361
 {
     makeSocketReturn msr;
     msr = makeSocket ( this->port (), false );

@@ -1,5 +1,5 @@
-
-/* * $Id$
+/*
+ *  $Id$
  *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
@@ -31,14 +31,16 @@ tcpRecvWatchdog::~tcpRecvWatchdog ()
     this->timer.destroy ();
 }
 
-epicsTimerNotify::expireStatus tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ )
+epicsTimerNotify::expireStatus
+tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ ) // X aCC 361
 {
     if ( this->responsePending ) {
         this->cancel ();
 #       ifdef DEBUG
             char hostName[128];
             this->iiu.hostName ( hostName, sizeof (hostName) );
-            debugPrintf ( ( "CA server \"%s\" unresponsive after %g inactive sec - disconnecting.\n", 
+            debugPrintf ( ( "CA server \"%s\" unresponsive after %g inactive sec"
+                            "- disconnecting.\n", 
                 hostName, this->period ) );
 #       endif
         this->iiu.forcedShutdown ();

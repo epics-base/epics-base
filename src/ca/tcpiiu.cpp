@@ -329,7 +329,8 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
             {
                 int status;
                 osiSockIoctl_t bytesPending = 0;
-                status = socket_ioctl ( piiu->sock, FIONREAD, & bytesPending );
+                status = socket_ioctl ( piiu->sock, // X aCC 392
+                                        FIONREAD, & bytesPending );
                 if ( status || bytesPending == 0u ) {
                     break;
                 }
@@ -757,7 +758,7 @@ void tcpiiu::show ( unsigned level ) const
     }
 }
 
-bool tcpiiu::setEchoRequestPending ()
+bool tcpiiu::setEchoRequestPending () // X aCC 361
 {
     {
         epicsAutoMutex locker ( this->pCAC()->mutexRef() );
@@ -878,6 +879,7 @@ bool tcpiiu::processIncoming ()
         this->msgHeaderAvailable = false;
         this->curDataBytes = 0u;
     }
+    return false;               // to make compiler happy...
 }
 
 inline void insertRequestHeader (
@@ -962,7 +964,7 @@ void tcpiiu::userNameSetRequest ()
     epicsAutoMutex locker (  this->pCAC()->mutexRef()  );
     this->sendQue.beginMsg ();
     this->sendQue.pushUInt16 ( CA_PROTO_CLIENT_NAME ); // cmd
-    this->sendQue.pushUInt16 ( postSize ); // postsize
+    this->sendQue.pushUInt16 ( static_cast <epicsUInt16> ( postSize ) ); // postsize
     this->sendQue.pushUInt16 ( 0u ); // dataType
     this->sendQue.pushUInt16 ( 0u ); // count
     this->sendQue.pushUInt32 ( 0u ); // cid
@@ -1171,7 +1173,7 @@ void tcpiiu::createChannelRequest ( nciu &chan )
 
     this->sendQue.beginMsg ();
     this->sendQue.pushUInt16 ( CA_PROTO_CLAIM_CIU ); // cmd
-    this->sendQue.pushUInt16 ( postCnt ); // postsize
+    this->sendQue.pushUInt16 ( static_cast < epicsUInt16 > ( postCnt ) ); // postsize
     this->sendQue.pushUInt16 ( 0u ); // dataType
     this->sendQue.pushUInt16 ( 0u ); // count
     this->sendQue.pushUInt32 ( identity ); // cid
@@ -1310,6 +1312,7 @@ bool tcpiiu::flush ()
             return false;
         }
     }
+    return false;               // to make compiler happy...
 }
 
 // ~tcpiiu() will not return while this->blockingForFlush is greater than zero

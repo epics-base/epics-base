@@ -49,7 +49,7 @@ typedef unsigned long arrayElementCount;
 
 // 1) this should not be passing caerr.h status to the exception callback
 // 2) needless-to-say the data should be passed here using the new data access API
-class epicsShareClass cacWriteNotify {
+class epicsShareClass cacWriteNotify { // X aCC 655
 public:
     virtual ~cacWriteNotify () = 0;
     virtual void completion () = 0;
@@ -59,7 +59,7 @@ public:
 
 // 1) this should not be passing caerr.h status to the exception callback
 // 2) needless-to-say the data should be passed here using the new data access API
-class epicsShareClass cacReadNotify {
+class epicsShareClass cacReadNotify { // X aCC 655
 public:
     virtual ~cacReadNotify () = 0;
     virtual void completion ( unsigned type, 
@@ -70,7 +70,7 @@ public:
 
 // 1) this should not be passing caerr.h status to the exception callback
 // 2) needless-to-say the data should be passed here using the new data access API
-class epicsShareClass cacStateNotify {
+class epicsShareClass cacStateNotify { // X aCC 655
 public:
     virtual ~cacStateNotify () = 0;
     virtual void current ( unsigned type, 
@@ -119,12 +119,12 @@ public:
 // Notes
 // 1) This interface assumes that when a channel is deleted then all
 // attached IO is deleted. This is left over from the old interface,
-// but perhaps is a bad practce that should be eliminated? If so,
+// but perhaps is a bad practice that should be eliminated? If so,
 // then the IO should not store or use a pointer to the channel.
 //
 class epicsShareClass cacChannel {
 public:
-    typedef unsigned priLev;
+    typedef unsigned char priLev;
     static const priLev priorityMax;
     static const priLev priorityMin;
     static const priLev priorityDefault;
@@ -159,7 +159,8 @@ public:
     virtual bool ca_v42_ok () const; // defaults to true
     virtual bool connected () const; // defaults to true
     virtual bool previouslyConnected () const; // defaults to true
-    virtual void hostName ( char *pBuf, unsigned bufLength ) const; // defaults to local host name
+    virtual void hostName (
+        char *pBuf, unsigned bufLength ) const; // defaults to local host name
 
     virtual const char * pHostName () const; 
     virtual void notifyStateChangeFirstConnectInCountOfOutstandingIO ();
@@ -181,7 +182,7 @@ private:
     cacChannelNotify & callback;
 };
 
-class cacNotify {
+class cacNotify { // X aCC 655
 public:
     virtual ~cacNotify () = 0;
     virtual void exception ( int status, const char *pContext, 
@@ -195,7 +196,7 @@ public:
     virtual void attachToClientCtx () = 0;
 };
 
-struct cacService : public tsDLNode < cacService > {
+class cacService : public tsDLNode < cacService > { // X aCC 655
 public:
     virtual cacChannel * createChannel ( 
         const char *pName, cacChannelNotify &, 

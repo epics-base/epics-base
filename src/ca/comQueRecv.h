@@ -54,16 +54,14 @@ inline epicsInt8 comQueRecv::popInt8 ()
 
 inline epicsInt16 comQueRecv::popInt16 ()
 {
-    epicsInt16 tmp;
-    tmp  = static_cast < epicsInt16 > ( this->popInt8() << 8u );
-    tmp |= static_cast < epicsInt16 > ( this->popInt8() << 0u );
-    return tmp;
+    return static_cast < epicsInt16 > (  this->popInt8() << 8u
+                                       | this->popInt8() << 0u );
 }
 
 inline epicsInt32 comQueRecv::popInt32 ()
 {
     epicsInt32 tmp ;
-    tmp |= this->popInt8() << 24u;
+    tmp  = this->popInt8() << 24u;
     tmp |= this->popInt8() << 16u;
     tmp |= this->popInt8() << 8u;
     tmp |= this->popInt8() << 0u;

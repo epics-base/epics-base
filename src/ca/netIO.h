@@ -174,7 +174,7 @@ inline netSubscription * netSubscription::factory (
                                 count, mask, notify );
 }
 
-inline arrayElementCount netSubscription::getCount () const
+inline arrayElementCount netSubscription::getCount () const // X aCC 361
 {
     arrayElementCount nativeCount = this->chan.nativeElementCount ();
     if ( this->count == 0u || this->count > nativeCount ) {

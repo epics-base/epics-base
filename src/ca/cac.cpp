@@ -1,5 +1,5 @@
-
-/*  $Id$
+/*  
+ *  $Id$
  *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
@@ -749,7 +749,7 @@ bool cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
              const epicsTime & currentTime )
 {
     tcpiiu * pnewiiu = 0;
-    unsigned  retrySeqNumber;
+    unsigned short retrySeqNumber;
 
     if ( addr.sa.sa_family != AF_INET ) {
         return false;
@@ -980,8 +980,9 @@ void cac::writeRequest ( nciu &chan, unsigned type, unsigned nElem, const void *
     chan.getPIIU()->writeRequest ( chan, type, nElem, pValue );
 }
 
-cacChannel::ioid cac::writeNotifyRequest ( nciu &chan, unsigned type, unsigned nElem, 
-                                    const void *pValue, cacWriteNotify &notifyIn )
+cacChannel::ioid
+cac::writeNotifyRequest ( nciu &chan, unsigned type, unsigned nElem, // X aCC 361
+                          const void *pValue, cacWriteNotify &notifyIn )
 {
     epicsAutoMutex autoMutex ( this->mutex );
     autoPtrRecycle  < netWriteNotifyIO > pIO ( this->ioTable, chan.cacPrivateListOfIO::eventq,
@@ -999,11 +1000,13 @@ cacChannel::ioid cac::writeNotifyRequest ( nciu &chan, unsigned type, unsigned n
     }
 }
 
-cacChannel::ioid cac::readNotifyRequest ( nciu &chan, unsigned type, 
-                                         unsigned nElem, cacReadNotify &notifyIn )
+cacChannel::ioid
+cac::readNotifyRequest ( nciu &chan, unsigned type, // X aCC 361
+                         unsigned nElem, cacReadNotify &notifyIn )
 {
     epicsAutoMutex autoMutex ( this->mutex );
-    autoPtrRecycle  < netReadNotifyIO > pIO ( this->ioTable, chan.cacPrivateListOfIO::eventq, *this,
+    autoPtrRecycle  < netReadNotifyIO > pIO ( this->ioTable,
+        chan.cacPrivateListOfIO::eventq, *this,
         netReadNotifyIO::factory ( this->freeListReadNotifyIO, chan, notifyIn ) );
     if ( pIO.get() ) {
         this->ioTable.add ( *pIO );
@@ -1293,12 +1296,16 @@ void cac::recycleSubscription ( netSubscription &io )
     this->freeListSubscription.release ( &io, sizeof ( io ) );
 }
 
-cacChannel::ioid cac::subscriptionRequest ( nciu &chan, unsigned type, 
-    arrayElementCount nElem, unsigned mask, cacStateNotify &notifyIn )
+cacChannel::ioid
+cac::subscriptionRequest ( nciu &chan, unsigned type, // X aCC 361
+                           arrayElementCount nElem, unsigned mask,
+                           cacStateNotify &notifyIn )
 {
     epicsAutoMutex autoMutex ( this->mutex );
-    autoPtrRecycle  < netSubscription > pIO ( this->ioTable, chan.cacPrivateListOfIO::eventq, *this, 
-        netSubscription::factory ( this->freeListSubscription, chan, type, nElem, mask, notifyIn ) );
+    autoPtrRecycle  < netSubscription > pIO ( this->ioTable,
+        chan.cacPrivateListOfIO::eventq, *this, 
+        netSubscription::factory ( this->freeListSubscription,
+                                   chan, type, nElem, mask, notifyIn ) );
     if ( pIO.get() ) {
         this->ioTable.add ( *pIO );
         chan.cacPrivateListOfIO::eventq.add ( *pIO );

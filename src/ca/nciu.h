@@ -1,4 +1,3 @@
-
 /*  
  *  $Id$
  *
@@ -57,7 +56,7 @@ public:
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
     void resetRetryCount ();
-    unsigned getRetrySeqNo () const;
+    unsigned short getRetrySeqNo () const;
     void accessRightsStateChange ( const caAccessRights & );
     ca_uint32_t getSID () const;
     ca_uint32_t getCID () const;
@@ -84,18 +83,18 @@ private:
     cac & cacCtx;
     char * pNameStr;
     netiiu * piiu;
-    ca_uint32_t sid; // server id
+    ca_uint32_t sid;        // server id
     unsigned count;
-    unsigned retry; // search retry number
+    unsigned retry;         // search retry number
     ca_uint16_t retrySeqNo; // search retry seq number
     ca_uint16_t nameLength; // channel name length
     ca_uint16_t typeCode;
     ca_uint8_t priority; 
-    unsigned f_connected:1;
-    unsigned f_previousConn:1; // T if connected in the past
-    unsigned f_claimSent:1;
-    unsigned f_firstConnectDecrementsOutstandingIO:1;
-    unsigned f_connectTimeOutSeen:1;
+    bool f_connected:1;
+    bool f_previousConn:1;  // T if connected in the past
+    bool f_claimSent:1;
+    bool f_firstConnectDecrementsOutstandingIO:1;
+    bool f_connectTimeOutSeen:1;
     void initiateConnect ();
     ioStatus read ( unsigned type, arrayElementCount count, 
         cacReadNotify &, ioid * );
@@ -156,7 +155,7 @@ inline ca_uint32_t nciu::getCID () const
     return this->id;
 }
 
-inline unsigned nciu::getRetrySeqNo () const
+inline unsigned short nciu::getRetrySeqNo () const
 {
     return this->retrySeqNo;
 }

@@ -19,7 +19,7 @@
 
 class caServerID {
 public:
-    caServerID ( const struct sockaddr_in & addrIn, unsigned priority );
+    caServerID ( const struct sockaddr_in & addrIn, unsigned char priority );
     bool operator == ( const caServerID & ) const;
     resTableIndex hash () const;
     static unsigned maxIndexBitWidth ();
@@ -38,7 +38,7 @@ static const unsigned caServerMinIndexBitWidth = 2u;
 static const unsigned caServerMaxIndexBitWidth = 32u;
 
 inline caServerID::caServerID ( 
-    const struct sockaddr_in & addrIn, unsigned priorityIn ) :
+    const struct sockaddr_in & addrIn, unsigned char priorityIn ) :
     addr ( addrIn ), pri ( priorityIn )
 {
     assert ( priorityIn <= 0xff );

@@ -1,4 +1,3 @@
-
 /*  
  *  $Id$
  *
@@ -162,7 +161,7 @@ inline bool tcpiiu::ca_v49_ok () const
     return CA_V49 ( this->minorProtocolVersion );
 }
 
-inline bool tcpiiu::alive () const
+inline bool tcpiiu::alive () const // X aCC 361
 {
     if ( this->state == iiu_connecting || 
         this->state == iiu_connected ) {

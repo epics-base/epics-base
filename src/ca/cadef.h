@@ -242,7 +242,7 @@ epicsShareFunc int epicsShareAPI ca_search_and_connect
 /*  End of anachronistic entry points                                   */
 /************************************************************************/
 
-typedef unsigned capri; 
+typedef unsigned char capri; 
 #define CA_PRIORITY_MAX 99
 #define CA_PRIORITY_MIN 0
 #define CA_PRIORITY_DEFAULT CA_PRIORITY_MIN

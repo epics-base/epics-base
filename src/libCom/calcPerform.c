@@ -66,6 +66,7 @@
  * .30  05-01-92        jba     flt pt constant string replaced with double in postfix
  * .31  08-21-92        jba     ANSI c changes
  * .32  12-11-92	mrk	Removed include for stdioLib.h
+ * .33  08-04-93	mgb	Removed V5/V4 and EPICS_V2 conditionals
 >
  */
 
@@ -105,7 +106,8 @@
 #include	<dbDefs.h>
 #include	<post.h>
 #include	<math.h>
-double	random();
+
+static double	random();
 
 #define	NOT_SET		0
 #define	TRUE_COND	1
@@ -167,7 +169,6 @@ char   *post;
 			*pstacktop = parg[5];
 			break;
 
-#ifndef EPICS_V2
 		case FETCH_G:
 			++pstacktop;
 			*pstacktop = parg[6];
@@ -197,8 +198,6 @@ char   *post;
 			++pstacktop;
 			*pstacktop = parg[11];
 			break;
-#endif
-
 
 		case ADD:
 			--pstacktop;

@@ -12,7 +12,7 @@ vpath %.edf $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 
 # dbExpand
 INSTALL_DBDFLAGS += -I $(INSTALL_LOCATION)/dbd
-DBDFLAGS = $(USR_DBDFLAGS) -I . -I .. $(INSTALL_DBDFLAGS)
+DBDFLAGS = $(USR_DBDFLAGS) -I . -I .. $(INSTALL_DBDFLAGS) $(RELEASE_DBDFLAGS)
 
 #####################################################  Targets
 

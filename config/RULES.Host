@@ -29,6 +29,7 @@
 vpath %.h $(USER_VPATH)   
 vpath %.c $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
 vpath %.cc $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
+vpath %.cpp $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
 vpath %.rc $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
 
 #	check for add-on CFLAGS and CXXFLAGS

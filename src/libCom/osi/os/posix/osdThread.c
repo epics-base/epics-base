@@ -340,7 +340,7 @@ void epicsThreadSuspendSelf(void)
     epicsEventMustWait(pthreadInfo->suspendEvent);
 }
 
-void epicsThreadResume(pthreadInfo id)
+void epicsThreadResume(epicsThreadOSD *pthreadInfo)
 {
     pthreadInfo->isSuspended = 0;
     epicsEventSignal(pthreadInfo->suspendEvent);
@@ -487,7 +487,7 @@ void epicsThreadShowAll(unsigned int level)
 
 void epicsThreadShow(epicsThreadId pthreadInfo,unsigned int level)
 {
-    if(!id) {
+    if(!pthreadInfo) {
 	printf ("            NAME       ID   OSIPRI   OSSPRI    STATE\n");
     }
     else {

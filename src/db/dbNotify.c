@@ -114,6 +114,14 @@ long dbPutNotify(PUTNOTIFY *ppn)
     dbCommon	*precord = (dbCommon *)paddr->precord;
     short	dbfType = paddr->field_type;
 
+    /*check for putField disabled*/
+    if(precord->disp) {
+        if((void *)(&precord->disp) != ppn->paddr->pfield) {
+           ppn->status = S_db_putDisabled;
+           (*ppn->userCallback)(ppn);
+           return(0);
+        }
+    }
     if(dbfType>=DBF_INLINK && dbfType<=DBF_FWDLINK) {
 	/*Initialize everything in PUTNOTIFY except restart list and node*/
 	callbackSetCallback(notifyCallback,&ppn->callback);

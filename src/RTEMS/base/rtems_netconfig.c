@@ -54,17 +54,15 @@ static struct rtems_bsdnet_ifconfig e3c509_driver_config = {
 #else
 
 # if defined(__PPC)
- /*
-  * FIXME: This really belongs in the BSP
-  */
-#  if defined(mpc750)
-#   ifndef RTEMS_BSP_NETWORK_DRIVER_NAME
-#    define RTEMS_BSP_NETWORK_DRIVER_NAME "dc1"
-#   endif
-#   ifndef RTEMS_BSP_NETWORK_DRIVER_ATTACH
-#    define RTEMS_BSP_NETWORK_DRIVER_ATTACH rtems_dec21140_driver_attach
-     extern int rtems_dec21140_driver_attach();
-#   endif
+  /*
+   * FIXME: This really belongs in the BSP
+   */
+#  ifndef RTEMS_BSP_NETWORK_DRIVER_NAME
+#   define RTEMS_BSP_NETWORK_DRIVER_NAME "dc1"
+#  endif
+#  ifndef RTEMS_BSP_NETWORK_DRIVER_ATTACH
+#   define RTEMS_BSP_NETWORK_DRIVER_ATTACH rtems_dec21140_driver_attach
+    extern int rtems_dec21140_driver_attach();
 #  endif
 # endif
 

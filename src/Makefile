@@ -30,7 +30,7 @@
 #  	...
 #
 
-all: bld_errSym dlsource eddsource seqsource  devtestsource
+all: bld_errSym dlsource eddsource seqsource  devtestsource camathsource
 
 bld_errSym:
 	cd libUnix; 	sh blderrSymTbl
@@ -47,4 +47,7 @@ seqsource:
 
 devtestsource:
 	cd toolsComm/devtest ; /bin/sh build.it
+
+camathsource:
+	cd toolsComm/math; /bin/sh build.it
 

@@ -95,10 +95,10 @@ extern "C" {
 
 #include <stddef.h>
 
-#include <epicsTypes.h>
-#include <tsDefs.h>
-#include <callback.h>
-#include <ellLib.h>
+#include "epicsTypes.h"
+#include "osiTime.h"
+#include "callback.h"
+#include "ellLib.h"
 #include "dbAddr.h"
 
 #define MAX_UNITS_SIZE		8	
@@ -213,8 +213,6 @@ epicsShareExtern READONLY int epicsTypeToDBR_XXXX [lastEpicsType+1];
 #define newDBF_DEVICE 11
 #define newDBR_ENUM    9
 #ifdef __STDC__
-void *dbCalloc(size_t nobj,size_t size);
-void *dbMalloc(size_t size);
 extern long (*dbGetConvertRoutine[newDBF_DEVICE+1][newDBR_ENUM+1])
     (struct dbAddr *paddr, void *pbuffer,long nRequest,
         long no_elements, long offset);
@@ -228,8 +226,6 @@ extern long (*dbGetConvertRoutine[newDBF_DEVICE+1][newDBR_ENUM+1]) ();
 extern long (*dbPutConvertRoutine[newDBR_ENUM+1][newDBF_DEVICE+1]) ();
 extern long (*dbFastGetConvertRoutine[newDBF_DEVICE+1][newDBR_ENUM+1])();
 extern long (*dbFastPutConvertRoutine[newDBR_ENUM+1][newDBF_DEVICE+1])();
-void *dbCalloc();
-void *dbMalloc();
 #endif /*__STDC__*/
 
 /*Conversion between old and new DBR types*/

@@ -603,18 +603,16 @@ static void readFromClient(void *pParam)
  */
 static void writeMessagesToLog (struct iocLogClient *pclient)
 {
-	struct ioc_log_server	*pserver = pclient->pserver;
-	int             	status;
-	char			*pcr;
-	char			*pline;
+	int status;
+    size_t lineIndex = 0;
 	
-	pline = pclient->recvbuf;
 	while (TRUE) {
 		size_t nchar;
 		size_t nTotChar;
+        size_t crIndex;
 		int ntci;
 
-		if (pline >= &pclient->recvbuf[pclient->nChar]) {
+		if ( lineIndex >= pclient->nChar ) {
 			pclient->nChar = 0u;
 			break;
 		}
@@ -629,16 +627,22 @@ static void writeMessagesToLog (struct iocLogClient *pclient)
 		 * is no carrage return then force the message out and 
 		 * insert an artificial carrage return.
 		 */
-		pcr = strchr(pline, '\n');
-		if (pcr) {
-			nchar = pcr-pline;
-		}
-		else {
-			nchar = pclient->nChar - (pline - pclient->recvbuf);
-			if (nchar<sizeof(pclient->recvbuf)) {
-				if (pline != pclient->recvbuf) {
+		nchar = pclient->nChar - lineIndex;
+        for ( crIndex = lineIndex; crIndex < pclient->nChar; crIndex++ ) {
+            if ( pclient->recvbuf[crIndex] == '\n' ) {
+                break;
+            }
+        }
+		if ( crIndex < pclient->nChar ) {
+			nchar = crIndex - lineIndex;
+        }
+        else {
+		    nchar = pclient->nChar - lineIndex;
+			if ( nchar < sizeof ( pclient->recvbuf ) ) {
+				if ( lineIndex != 0 ) {
 					pclient->nChar = nchar;
-					memmove (pclient->recvbuf, pline, nchar);
+					memmove ( pclient->recvbuf, 
+                        & pclient->recvbuf[lineIndex], nchar);
 				}
 				break;
 			}
@@ -651,28 +655,28 @@ static void writeMessagesToLog (struct iocLogClient *pclient)
 				strlen(pclient->ascii_time) + nchar + 3u;
 		assert (nTotChar <= INT_MAX);
 		ntci = (int) nTotChar;
-		if (pserver->filePos+ntci >= pserver->max_file_size) {
-			if (pserver->max_file_size>=pserver->filePos) {
+		if ( pclient->pserver->filePos+ntci >= pclient->pserver->max_file_size ) {
+			if ( pclient->pserver->max_file_size >= pclient->pserver->filePos ) {
 				unsigned nPadChar;
 				/*
 				 * this gets rid of leftover junk at the end of the file
 				 */
-				nPadChar = pserver->max_file_size - pserver->filePos;
+				nPadChar = pclient->pserver->max_file_size - pclient->pserver->filePos;
 				while (nPadChar--) {
-					status = putc(' ', pserver->poutfile);
-					if (status == EOF) {
+					status = putc ( ' ', pclient->pserver->poutfile );
+					if ( status == EOF ) {
 						handleLogFileError();
 					}
 				}
 			}
 
 #			ifdef DEBUG
-				fprintf(stderr,
-					"ioc log server: resetting the file pointer\n");
+				fprintf ( stderr,
+					"ioc log server: resetting the file pointer\n" );
 #			endif
-			fflush (pserver->poutfile);
-			rewind (pserver->poutfile);
-			pserver->filePos = ftell(pserver->poutfile);
+			fflush ( pclient->pserver->poutfile );
+			rewind ( pclient->pserver->poutfile );
+			pclient->pserver->filePos = ftell ( pclient->pserver->poutfile );
 		}
 	
 		/*
@@ -681,12 +685,12 @@ static void writeMessagesToLog (struct iocLogClient *pclient)
 		 */
 		assert (nchar<INT_MAX);
 		status = fprintf(
-			pserver->poutfile,
+			pclient->pserver->poutfile,
 			"%s %s %.*s\n",
 			pclient->name,
 			pclient->ascii_time,
 			(int) nchar,
-			pline);
+			&pclient->recvbuf[lineIndex]);
 		if (status<0) {
 			handleLogFileError();
 		}
@@ -694,9 +698,9 @@ static void writeMessagesToLog (struct iocLogClient *pclient)
 		    if (status != ntci) {
 			    fprintf(stderr, "iocLogServer: didnt calculate number of characters correctly?\n");
 		    }
-		    pserver->filePos += status;
+		    pclient->pserver->filePos += status;
         }
-		pline += nchar+1u;
+		lineIndex += nchar+1u;
 	}
 }
 

@@ -481,8 +481,18 @@ epicsShareFunc int epicsShareAPI epicsThreadIsSuspended (epicsThreadId id)
 epicsShareFunc void epicsShareAPI epicsThreadSleep (double seconds)
 {
     static const double mSecPerSec = 1000;
-    DWORD milliSecDelay = (DWORD) ( (seconds * mSecPerSec) + 0.5 );
-    Sleep (milliSecDelay);
+    DWORD milliSecDelay;
+
+    if ( seconds >= INFINITE / mSecPerSec ) {
+        milliSecDelay = INFINITE - 1;
+    }
+    else if ( seconds < 0.0 ) {
+        milliSecDelay = 0u;
+    }
+    else {
+        milliSecDelay = ( DWORD ) ( ( seconds * mSecPerSec ) + 0.5 );
+    }
+    Sleep ( milliSecDelay );
 }
 
 /*

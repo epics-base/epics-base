@@ -17,6 +17,8 @@
 #ifndef osdTimeh
 #define osdTimeh
 
+#include <winsock2.h>
+
 struct timespec {
 	time_t tv_sec; /* seconds since some epoch */
 	long tv_nsec; /* nanoseconds within the second */

@@ -86,26 +86,26 @@ public:
     class formatProblemWithStructTM {};
 
     epicsTime ();
-    epicsTime (const epicsTime &t);
+    epicsTime ( const epicsTime & t );
 
-    static epicsTime getEvent (const epicsTimeEvent &event);
+    static epicsTime getEvent ( const epicsTimeEvent & );
     static epicsTime getCurrent ();
 
     // convert to and from EPICS epicsTimeStamp format
     operator epicsTimeStamp () const;
-    epicsTime (const epicsTimeStamp &ts);
-    epicsTime operator = (const epicsTimeStamp &rhs);
+    epicsTime ( const epicsTimeStamp & ts );
+    epicsTime & operator = ( const epicsTimeStamp & );
 
     // convert to and from ANSI time_t 
     operator time_t_wrapper () const;
-    epicsTime (const time_t_wrapper &tv);
-    epicsTime operator = (const time_t_wrapper &rhs);
+    epicsTime ( const time_t_wrapper & );
+    epicsTime & operator = ( const time_t_wrapper & );
 
     // convert to and from ANSI Cs "struct tm" (with nano seconds)
     // adjusted for the local time zone
     operator local_tm_nano_sec () const;
-    epicsTime (const local_tm_nano_sec &ts);
-    epicsTime operator = (const local_tm_nano_sec &rhs);
+    epicsTime ( const local_tm_nano_sec & );
+    epicsTime & operator = ( const local_tm_nano_sec & );
 
     // convert to ANSI Cs "struct tm" (with nano seconds)
     // adjusted for GM time (UTC)
@@ -113,44 +113,49 @@ public:
 
     // convert to and from POSIX RTs "struct timespec"
     operator struct timespec () const;
-    epicsTime (const struct timespec &ts);
-    epicsTime operator = (const struct timespec &rhs);
+    epicsTime ( const struct timespec & );
+    epicsTime & operator = ( const struct timespec & );
 
     // convert to and from BSDs "struct timeval"
     operator struct timeval () const;
-    epicsTime (const struct timeval &ts);
-    epicsTime operator = (const struct timeval &rhs);
+    epicsTime ( const struct timeval & );
+    epicsTime & operator = ( const struct timeval & );
 
     // convert to and from NTP timestamp format
     operator ntpTimeStamp () const;
-    epicsTime (const ntpTimeStamp &ts);
-    epicsTime operator = (const ntpTimeStamp &rhs);
+    epicsTime ( const ntpTimeStamp & );
+    epicsTime & operator = ( const ntpTimeStamp & );
 
     // convert to and from GDDs aitTimeStamp format
     operator aitTimeStamp () const;
-    epicsTime (const aitTimeStamp &ts);
-    epicsTime operator = (const aitTimeStamp &rhs);
+    epicsTime ( const aitTimeStamp & );
+    epicsTime & operator = ( const aitTimeStamp & );
+
+    // convert to and from WIN32s FILETIME
+    operator struct _FILETIME () const;
+    epicsTime ( const struct _FILETIME & );
+    epicsTime & operator = ( const struct _FILETIME & );
 
     // arithmetic operators
-    double operator- (const epicsTime &rhs) const; // returns seconds
-    epicsTime operator+ (const double &rhs) const; // add rhs seconds
-    epicsTime operator- (const double &rhs) const; // subtract rhs seconds
-    epicsTime operator+= (const double &rhs); // add rhs seconds
-    epicsTime operator-= (const double &rhs); // subtract rhs seconds
+    double operator- ( const epicsTime & ) const; // returns seconds
+    epicsTime operator+ ( const double & ) const; // add rhs seconds
+    epicsTime operator- ( const double & ) const; // subtract rhs seconds
+    epicsTime operator+= ( const double & ); // add rhs seconds
+    epicsTime operator-= ( const double & ); // subtract rhs seconds
 
     // comparison operators
-    bool operator == (const epicsTime &rhs) const;
-    bool operator != (const epicsTime &rhs) const;
-    bool operator <= (const epicsTime &rhs) const;
-    bool operator < (const epicsTime &rhs) const;
-    bool operator >= (const epicsTime &rhs) const;
-    bool operator > (const epicsTime &rhs) const;
+    bool operator == ( const epicsTime & ) const;
+    bool operator != ( const epicsTime & ) const;
+    bool operator <= ( const epicsTime & ) const;
+    bool operator < ( const epicsTime & ) const;
+    bool operator >= ( const epicsTime & ) const;
+    bool operator > ( const epicsTime & ) const;
 
     // convert current state to user-specified string
-    size_t strftime (char *pBuff, size_t bufLength, const char *pFormat) const;
+    size_t strftime ( char * pBuff, size_t bufLength, const char * pFormat ) const;
 
     // dump current state to standard out
-    void show (unsigned interestLevel) const;
+    void show ( unsigned interestLevel ) const;
 
     // useful public constants
     static const unsigned secPerMin;
@@ -159,8 +164,6 @@ public:
     static const unsigned nSecPerSec;
     static const unsigned nSecPerUSec;
 
-    // depricated
-    static void synchronize ();
 private:
     // private because:
     // a) application does not break when EPICS epoch is changed
@@ -169,11 +172,14 @@ private:
     // c) it would be easy to forget which argument is nanoseconds
     // and which argument is seconds (no help from compiler)
     //
-    epicsTime (const unsigned long secPastEpoch, const unsigned long nSec);
-    void addNanoSec (long nanoSecAdjust);
+    epicsTime ( const unsigned long secPastEpoch, const unsigned long nSec );
+    void addNanoSec ( long nanoSecAdjust );
 
     unsigned long secPastEpoch; // seconds since O000 Jan 1, 1990 
     unsigned long nSec; // nanoseconds within second 
+
+public:
+    static void synchronize (); // depricated
 };
 
 extern "C" {
@@ -189,68 +195,68 @@ extern "C" {
 #define epicsTimeEventDeviceTime -2
 
 /* convert to and from ANSI C's "time_t" */
-epicsShareFunc int epicsShareAPI epicsTimeGetCurrent (epicsTimeStamp *pDest);
+epicsShareFunc int epicsShareAPI epicsTimeGetCurrent ( epicsTimeStamp * pDest );
 epicsShareFunc int epicsShareAPI epicsTimeGetEvent (
     epicsTimeStamp *pDest, int eventNumber);
 
 /* convert to and from ANSI C's "struct tm" with nano second */
 epicsShareFunc int epicsShareAPI epicsTimeToTime_t (
-    time_t *pDest, const epicsTimeStamp *pSrc);
+    time_t * pDest, const epicsTimeStamp * pSrc );
 epicsShareFunc int epicsShareAPI epicsTimeFromTime_t (
-    epicsTimeStamp *pDest, time_t src);
+    epicsTimeStamp * pDest, time_t src );
 
 /*convert to and from ANSI C's "struct tm" with nano seconds */
 epicsShareFunc int epicsShareAPI epicsTimeToTM (
-    struct tm *pDest, unsigned long *pNSecDest, const epicsTimeStamp *pSrc);
+    struct tm * pDest, unsigned long * pNSecDest, const epicsTimeStamp * pSrc );
 epicsShareFunc int epicsShareAPI epicsTimeToGMTM (
-    struct tm *pDest, unsigned long *pNSecDest, const epicsTimeStamp *pSrc);
+    struct tm * pDest, unsigned long * pNSecDest, const epicsTimeStamp * pSrc );
 epicsShareFunc int epicsShareAPI epicsTimeFromTM (
-    epicsTimeStamp *pDest, const struct tm *pSrc, unsigned long nSecSrc);
+    epicsTimeStamp * pDest, const struct tm * pSrc, unsigned long nSecSrc );
 
 /* convert to and from POSIX RT's "struct timespec" */
 epicsShareFunc int epicsShareAPI epicsTimeToTimespec (
-    struct timespec *pDest, const epicsTimeStamp *pSrc);
+    struct timespec * pDest, const epicsTimeStamp * pSrc );
 epicsShareFunc int epicsShareAPI epicsTimeFromTimespec (
-    epicsTimeStamp *pDest, const struct timespec *pSrc);
+    epicsTimeStamp * pDest, const struct timespec * pSrc );
 
 /* convert to and from BSD's "struct timeval" */
 epicsShareFunc int epicsShareAPI epicsTimeToTimeval (
-    struct timeval *pDest, const epicsTimeStamp *pSrc);
+    struct timeval * pDest, const epicsTimeStamp * pSrc );
 epicsShareFunc int epicsShareAPI epicsTimeFromTimeval (
-    epicsTimeStamp *pDest, const struct timeval *pSrc);
+    epicsTimeStamp * pDest, const struct timeval * pSrc );
 
 /*arithmetic operations */
 epicsShareFunc double epicsShareAPI epicsTimeDiffInSeconds (
-    const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight);/* left - right */
+    const epicsTimeStamp * pLeft, const epicsTimeStamp * pRight );/* left - right */
 epicsShareFunc void epicsShareAPI epicsTimeAddSeconds (
-    epicsTimeStamp *pDest, double secondsToAdd); /* adds seconds to *pDest */
+    epicsTimeStamp * pDest, double secondsToAdd ); /* adds seconds to *pDest */
 
 /*comparison operations: returns (0,1) if (false,true) */
 epicsShareFunc int epicsShareAPI epicsTimeEqual (
-    const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight);
+    const epicsTimeStamp * pLeft, const epicsTimeStamp * pRight);
 epicsShareFunc int epicsShareAPI epicsTimeNotEqual (
-    const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight);
+    const epicsTimeStamp * pLeft, const epicsTimeStamp * pRight);
 epicsShareFunc int epicsShareAPI epicsTimeLessThan (
-    const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight); /*true if left < right */
+    const epicsTimeStamp * pLeft, const epicsTimeStamp * pRight); /*true if left < right */
 epicsShareFunc int epicsShareAPI epicsTimeLessThanEqual (
-    const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight); /*true if left <= right) */
+    const epicsTimeStamp * pLeft, const epicsTimeStamp * pRight); /*true if left <= right) */
 epicsShareFunc int epicsShareAPI epicsTimeGreaterThan (
-    const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight); /*true if left < right */
+    const epicsTimeStamp * pLeft, const epicsTimeStamp * pRight); /*true if left < right */
 epicsShareFunc int epicsShareAPI epicsTimeGreaterThanEqual (
-    const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight); /*true if left < right */
+    const epicsTimeStamp * pLeft, const epicsTimeStamp * pRight); /*true if left < right */
 
 /*convert to ASCII string */
 epicsShareFunc size_t epicsShareAPI epicsTimeToStrftime (
-    char *pBuff, size_t bufLength, const char *pFormat, const epicsTimeStamp *pTS);
+    char * pBuff, size_t bufLength, const char * pFormat, const epicsTimeStamp * pTS );
 
 /* dump current state to standard out */
 epicsShareFunc void epicsShareAPI epicsTimeShow (
-    const epicsTimeStamp *, unsigned interestLevel);
+    const epicsTimeStamp *, unsigned interestLevel );
 
 /* OS dependent reentrant versions of the ANSI C interface because */
 /* vxWorks gmtime_r interface does not match POSIX standards */
-int epicsTime_localtime ( const time_t *clock, struct tm *result );
-int epicsTime_gmtime ( const time_t *clock, struct tm *result );
+int epicsTime_localtime ( const time_t * clock, struct tm * result );
+int epicsTime_gmtime ( const time_t * clock, struct tm * result );
 
 #ifdef __cplusplus
 }
@@ -259,66 +265,66 @@ int epicsTime_gmtime ( const time_t *clock, struct tm *result );
 /* epicsTime inline member functions ,*/
 #ifdef __cplusplus
 
-inline epicsTime epicsTime::operator - (const double &rhs) const
+inline epicsTime epicsTime::operator - ( const double & rhs ) const
 {
-    return epicsTime::operator + (-rhs);
+    return epicsTime::operator + ( -rhs );
 }
 
-inline epicsTime epicsTime::operator += (const double &rhs)
+inline epicsTime epicsTime::operator += ( const double & rhs )
 {
-    *this = epicsTime::operator + (rhs);
+    *this = epicsTime::operator + ( rhs );
     return *this;
 }
 
-inline epicsTime epicsTime::operator -= (const double &rhs)
+inline epicsTime epicsTime::operator -= ( const double & rhs )
 {
-    *this = epicsTime::operator + (-rhs);
+    *this = epicsTime::operator + ( -rhs );
     return *this;
 }
 
-inline bool epicsTime::operator == (const epicsTime &rhs) const
+inline bool epicsTime::operator == ( const epicsTime & rhs ) const
 {
-    if (this->secPastEpoch == rhs.secPastEpoch && this->nSec == rhs.nSec) {
+    if ( this->secPastEpoch == rhs.secPastEpoch && this->nSec == rhs.nSec ) {
     	return true;
     }
     return false;
 }
 
-inline bool epicsTime::operator != (const epicsTime &rhs) const
+inline bool epicsTime::operator != ( const epicsTime & rhs ) const
 {
-    return !epicsTime::operator == (rhs);
+    return !epicsTime::operator == ( rhs );
 }
 
-inline bool epicsTime::operator >= (const epicsTime &rhs) const
+inline bool epicsTime::operator >= ( const epicsTime & rhs ) const
 {
     return ! ( *this < rhs );
 }
 
-inline bool epicsTime::operator > (const epicsTime &rhs) const
+inline bool epicsTime::operator > ( const epicsTime & rhs ) const
 {
     return ! ( *this <= rhs );
 }
 
-inline epicsTime epicsTime::operator = (const local_tm_nano_sec &rhs)
+inline epicsTime & epicsTime::operator = ( const local_tm_nano_sec & rhs )
 {
-    return *this = epicsTime (rhs);
+    return *this = epicsTime ( rhs );
 }
 
-inline epicsTime epicsTime::operator = (const struct timespec &rhs)
+inline epicsTime & epicsTime::operator = ( const struct timespec & rhs )
 {
-    *this = epicsTime (rhs);
+    *this = epicsTime ( rhs );
     return *this;
 }
 
-inline epicsTime epicsTime::operator = (const aitTimeStamp &rhs)
+inline epicsTime & epicsTime::operator = ( const aitTimeStamp & rhs )
 {
-    *this = epicsTime (rhs);
+    *this = epicsTime ( rhs );
     return *this;
 }
 
-inline epicsTime epicsTime::operator = (const epicsTimeStamp &rhs)
+inline epicsTime & epicsTime::operator = ( const epicsTimeStamp & rhs )
 {
-    *this = epicsTime (rhs);
+    *this = epicsTime ( rhs );
     return *this;
 }
 
@@ -331,16 +337,16 @@ inline epicsTime::operator epicsTimeStamp () const
 }
 
 #ifdef NTP_SUPPORT
-inline epicsTime epicsTime::operator = (const ntpTimeStamp &rhs)
+inline epicsTime epicsTime::operator = ( const ntpTimeStamp & rhs )
 {
     *this = epicsTime (rhs);
     return *this;
 }
 #endif
 
-inline epicsTime epicsTime::operator = (const time_t_wrapper &rhs)
+inline epicsTime & epicsTime::operator = ( const time_t_wrapper & rhs )
 {
-    *this = epicsTime (rhs);
+    *this = epicsTime ( rhs );
     return *this;
 }
 #endif /* __cplusplus */

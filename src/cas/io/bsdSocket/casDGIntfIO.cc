@@ -362,7 +362,7 @@ void casDGIntfIO::sendBeaconIO (char &msg, unsigned length, aitUint16 &portField
         else {
             osiSockAddr addr;
 
-            int size = sizeof (addr.sa);
+            osiSocklen_t size = ( osiSocklen_t ) sizeof (addr.sa);
             status = getsockname (this->beaconSock, &addr.sa, &size);
             if (status<0) {
                 errlogPrintf ( "%s: CA beacon routing (getsockname) error was \"%s\"\n",

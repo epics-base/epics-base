@@ -98,9 +98,8 @@ epicsShareFunc void epicsShareAPI osiSockRelease (void);
 /*
  * convert socket error number to a string
  */
-epicsShareFunc void epicsShareAPI convertSocketErrorToString ( 
+epicsShareFunc void epicsSocketConvertErrnoToString ( 
         char * pBuf, unsigned bufSize );
-
 
 #ifdef __cplusplus
 }
@@ -168,16 +167,20 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
  */
 epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket);
 
-
 /*
- * Certain os, such as HPUX, do not unblock a socket system call 
- * when another thread asynchronously calls both shutdown() and 
- * close(). To solve this problem we need to employ OS specific
- * mechanisms.
+ * Fortunately, on most systems the combination of a shutdown of both
+ * directions and or a signal is sufficent to interrupt a blocking send,
+ * receive, or connect call. For odd ball systems this is stubbed out in the
+ * osi area.
  */
-epicsShareFunc void epicsShareAPI epicsEnableInterruptedSystemCall ();
-struct epicsThreadOSD;
-epicsShareFunc void epicsShareAPI epicsInterruptSystemCall ( struct epicsThreadOSD * );
+enum epicsSocketSystemCallInterruptMechanismQueryInfo { 
+    esscimqi_socketCloseRequired, 
+    esscimqi_socketBothShutdownRequired,
+    esscimqi_socketSigurgRequired,
+    esscimqi_shuechanismImplemenedHerein
+};
+epicsShareFunc enum epicsSocketSystemCallInterruptMechanismQueryInfo 
+        epicsSocketSystemCallInterruptMechanismQuery ();
 
 #ifdef __cplusplus
 }

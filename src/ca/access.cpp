@@ -294,57 +294,48 @@ int epicsShareAPI ca_array_get ( chtype type,
     try {
         pChan->read ( type, count, *pNotify );
         pNotify.release ();
-        return ECA_NORMAL;
+        caStatus = ECA_NORMAL;
     }
     catch ( cacChannel::badString & )
     {
-        pNotify->cancel ();
-        return ECA_BADSTR;
+        caStatus = ECA_BADSTR;
     }
     catch ( cacChannel::badType & )
     {
-        pNotify->cancel ();
-        return ECA_BADTYPE;
+        caStatus = ECA_BADTYPE;
     }
     catch ( cacChannel::outOfBounds & )
     {
-        pNotify->cancel ();
-        return ECA_BADCOUNT;
+        caStatus = ECA_BADCOUNT;
     }
     catch ( cacChannel::noReadAccess & )
     {
-        pNotify->cancel ();
-        return ECA_NORDACCESS;
+        caStatus = ECA_NORDACCESS;
     }
     catch ( cacChannel::notConnected & )
     {
-        pNotify->cancel ();
-        return ECA_DISCONN;
+        caStatus = ECA_DISCONN;
     }
     catch ( cacChannel::unsupportedByService & )
     {
-        pNotify->cancel ();
-        return ECA_NOTINSERVICE;
+        caStatus = ECA_NOTINSERVICE;
     }
     catch ( cacChannel::requestTimedOut & )
     {
-        pNotify->cancel ();
-        return ECA_TIMEOUT;
+        caStatus = ECA_TIMEOUT;
     }
     catch ( std::bad_alloc & )
     {
-        pNotify->cancel ();
-        return ECA_ALLOCMEM;
+        caStatus = ECA_ALLOCMEM;
     }
     catch ( cacChannel::msgBodyCacheTooSmall & ) {
-        pNotify->cancel ();
-        return ECA_TOLARGE;
+        caStatus = ECA_TOLARGE;
     }
     catch ( ... )
     {
-        pNotify->cancel ();
-        return ECA_GETFAIL;
+        caStatus = ECA_GETFAIL;
     }
+    return caStatus;
 }
 
 /*
@@ -366,50 +357,52 @@ int epicsShareAPI ca_array_get_callback ( chtype type,
         return ECA_ALLOCMEM;
     }
 
+    int caStatus;
     try {
         pChan->read ( tmpType, count, *pNotify );
         pNotify.release ();
-        return ECA_NORMAL;
+        caStatus = ECA_NORMAL;
     }
     catch ( cacChannel::badString & )
     {
-        return ECA_BADSTR;
+        caStatus = ECA_BADSTR;
     }
     catch ( cacChannel::badType & )
     {
-        return ECA_BADTYPE;
+        caStatus = ECA_BADTYPE;
     }
     catch ( cacChannel::outOfBounds & )
     {
-        return ECA_BADCOUNT;
+        caStatus = ECA_BADCOUNT;
     }
     catch ( cacChannel::noReadAccess & )
     {
-        return ECA_NORDACCESS;
+        caStatus = ECA_NORDACCESS;
     }
     catch ( cacChannel::notConnected & )
     {
-        return ECA_DISCONN;
+        caStatus = ECA_DISCONN;
     }
     catch ( cacChannel::unsupportedByService & )
     {
-        return ECA_NOTINSERVICE;
+        caStatus = ECA_NOTINSERVICE;
     }
     catch ( cacChannel::requestTimedOut & )
     {
-        return ECA_TIMEOUT;
+        caStatus = ECA_TIMEOUT;
     }
     catch ( std::bad_alloc & )
     {
-        return ECA_ALLOCMEM;
+        caStatus = ECA_ALLOCMEM;
     }
     catch ( cacChannel::msgBodyCacheTooSmall ) {
-        return ECA_TOLARGE;
+        caStatus = ECA_TOLARGE;
     }
     catch ( ... )
     {
-        return ECA_GETFAIL;
+        caStatus = ECA_GETFAIL;
     }
+    return caStatus;
 }
 
 /*
@@ -430,47 +423,49 @@ int epicsShareAPI ca_array_put_callback ( chtype type, arrayElementCount count,
         return ECA_ALLOCMEM;
     }
 
+    int caStatus;
     try {
         pChan->write ( tmpType, count, pValue, *pNotify );
         pNotify.release ();
-        return ECA_NORMAL;
+        caStatus = ECA_NORMAL;
     }
     catch ( cacChannel::badString & )
     {
-        return ECA_BADSTR;
+        caStatus = ECA_BADSTR;
     }
     catch ( cacChannel::badType & )
     {
-        return ECA_BADTYPE;
+        caStatus = ECA_BADTYPE;
     }
     catch ( cacChannel::outOfBounds & )
     {
-        return ECA_BADCOUNT;
+        caStatus = ECA_BADCOUNT;
     }
     catch ( cacChannel::noWriteAccess & )
     {
-        return ECA_NOWTACCESS;
+        caStatus = ECA_NOWTACCESS;
     }
     catch ( cacChannel::notConnected & )
     {
-        return ECA_DISCONN;
+        caStatus = ECA_DISCONN;
     }
     catch ( cacChannel::unsupportedByService & )
     {
-        return ECA_NOTINSERVICE;
+        caStatus = ECA_NOTINSERVICE;
     }
     catch ( cacChannel::requestTimedOut & )
     {
-        return ECA_TIMEOUT;
+        caStatus = ECA_TIMEOUT;
     }
     catch ( std::bad_alloc & )
     {
-        return ECA_ALLOCMEM;
+        caStatus = ECA_ALLOCMEM;
     }
     catch ( ... )
     {
-        return ECA_PUTFAIL;
+        caStatus = ECA_PUTFAIL;
     }
+    return caStatus;
 }
 
 /*
@@ -485,46 +480,48 @@ int epicsShareAPI ca_array_put ( chtype type, arrayElementCount count,
     }
     unsigned tmpType = static_cast < unsigned > ( type );
 
+    int caStatus;
     try {
         pChan->write ( tmpType, count, pValue );
-        return ECA_NORMAL;
+        caStatus = ECA_NORMAL;
     }
     catch ( cacChannel::badString & )
     {
-        return ECA_BADSTR;
+        caStatus = ECA_BADSTR;
     }
     catch ( cacChannel::badType & )
     {
-        return ECA_BADTYPE;
+        caStatus = ECA_BADTYPE;
     }
     catch ( cacChannel::outOfBounds & )
     {
-        return ECA_BADCOUNT;
+        caStatus = ECA_BADCOUNT;
     }
     catch ( cacChannel::noWriteAccess & )
     {
-        return ECA_NOWTACCESS;
+        caStatus = ECA_NOWTACCESS;
     }
     catch ( cacChannel::notConnected & )
     {
-        return ECA_DISCONN;
+        caStatus = ECA_DISCONN;
     }
     catch ( cacChannel::unsupportedByService & )
     {
-        return ECA_NOTINSERVICE;
+        caStatus = ECA_NOTINSERVICE;
     }
     catch ( cacChannel::requestTimedOut & )
     {
-        return ECA_TIMEOUT;
+        caStatus = ECA_TIMEOUT;
     }
     catch ( std::bad_alloc & )
     {
-        return ECA_ALLOCMEM;
+        caStatus = ECA_ALLOCMEM;
     }
     catch ( ... )
     {
-        return ECA_PUTFAIL;
+        caStatus = ECA_PUTFAIL;
     }
+    return caStatus;
 }
 
 /*

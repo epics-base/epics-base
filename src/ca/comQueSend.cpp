@@ -199,7 +199,7 @@ const comQueSend::copyFunc_t comQueSend::dbrCopyVector [39] = {
 };
 
 comBuf * comQueSend::popNextComBufToSend () 
-    epicsThrows (( std::bad_alloc ))
+    epicsThrows (( ))
 {
     comBuf *pBuf = this->bufs.get ();
     if ( pBuf ) {

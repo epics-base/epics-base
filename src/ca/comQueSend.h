@@ -39,30 +39,42 @@
 //
 class comQueSend {
 public:
-    comQueSend ( wireSendAdapter &, comBufMemoryManager & ) epicsThrows (());
-    ~comQueSend () epicsThrows (());
-    void clear () epicsThrows (());
-    void beginMsg () epicsThrows (());
-    void commitMsg () epicsThrows (());
-    unsigned occupiedBytes () const epicsThrows (());
-    bool flushEarlyThreshold ( unsigned nBytesThisMsg ) const epicsThrows (());
-    bool flushBlockThreshold ( unsigned nBytesThisMsg ) const epicsThrows (());
+    comQueSend ( wireSendAdapter &, comBufMemoryManager & ) 
+        epicsThrows (());
+    ~comQueSend () 
+        epicsThrows (());
+    void clear () 
+        epicsThrows (());
+    void beginMsg () 
+        epicsThrows (());
+    void commitMsg () 
+        epicsThrows (());
+    unsigned occupiedBytes () const 
+        epicsThrows (());
+    bool flushEarlyThreshold ( unsigned nBytesThisMsg ) const 
+        epicsThrows (());
+    bool flushBlockThreshold ( unsigned nBytesThisMsg ) const 
+        epicsThrows (());
     bool dbr_type_ok ( unsigned type ) epicsThrows (());
-    void pushUInt16 ( const ca_uint16_t value ) epicsThrows (());
-    void pushUInt32 ( const ca_uint32_t value ) epicsThrows (());
-    void pushFloat32 ( const ca_float32_t value ) epicsThrows (());
-    void pushString ( const char *pVal, unsigned nChar ) epicsThrows (());
+    void pushUInt16 ( const ca_uint16_t value ) 
+        epicsThrows (( std::bad_alloc ));
+    void pushUInt32 ( const ca_uint32_t value ) 
+        epicsThrows (( std::bad_alloc ));
+    void pushFloat32 ( const ca_float32_t value ) 
+        epicsThrows (( std::bad_alloc ));
+    void pushString ( const char *pVal, unsigned nChar ) 
+        epicsThrows (( std::bad_alloc ));
     void insertRequestHeader (
         ca_uint16_t request, ca_uint32_t payloadSize, 
         ca_uint16_t dataType, ca_uint32_t nElem, ca_uint32_t cid, 
         ca_uint32_t requestDependent, bool v49Ok ) 
-            epicsThrows (( cacChannel::outOfBounds ));
+        epicsThrows (( cacChannel::outOfBounds, std::bad_alloc ));
     void insertRequestWithPayLoad (
         ca_uint16_t request, unsigned dataType, ca_uint32_t nElem, 
         ca_uint32_t cid, ca_uint32_t requestDependent, 
         const void * pPayload, bool v49Ok ) 
-            epicsThrows (( cacChannel::outOfBounds, cacChannel::badType ));
-    void push_dbr_type ( unsigned type, const void *pVal, unsigned nElem ) epicsThrows (());
+        epicsThrows (( cacChannel::outOfBounds, 
+            cacChannel::badType, std::bad_alloc ));
     comBuf * popNextComBufToSend () epicsThrows (());
 private:
     comBufMemoryManager & comBufMemMgr;
@@ -70,12 +82,18 @@ private:
     tsDLIter < comBuf > pFirstUncommited;
     wireSendAdapter & wire;
     unsigned nBytesPending;
-    void copy_dbr_string ( const void *pValue, unsigned nElem ) epicsThrows (());
-    void copy_dbr_short ( const void *pValue, unsigned nElem ) epicsThrows (());
-    void copy_dbr_float ( const void *pValue, unsigned nElem ) epicsThrows (());
-    void copy_dbr_char ( const void *pValue, unsigned nElem ) epicsThrows (());
-    void copy_dbr_long ( const void *pValue, unsigned nElem ) epicsThrows (());
-    void copy_dbr_double ( const void *pValue, unsigned nElem ) epicsThrows (());
+    void copy_dbr_string ( const void *pValue, unsigned nElem ) 
+        epicsThrows (( std::bad_alloc ));
+    void copy_dbr_short ( const void *pValue, unsigned nElem ) 
+        epicsThrows (( std::bad_alloc ));
+    void copy_dbr_float ( const void *pValue, unsigned nElem ) 
+        epicsThrows (( std::bad_alloc ));
+    void copy_dbr_char ( const void *pValue, unsigned nElem ) 
+        epicsThrows (( std::bad_alloc ));
+    void copy_dbr_long ( const void *pValue, unsigned nElem ) 
+        epicsThrows (( std::bad_alloc ));
+    void copy_dbr_double ( const void *pValue, unsigned nElem ) 
+        epicsThrows (( std::bad_alloc ));
     void pushComBuf ( comBuf & ) epicsThrows (());
     typedef void ( comQueSend::*copyFunc_t ) (  
         const void *pValue, unsigned nElem );
@@ -88,7 +106,8 @@ private:
     // class member template function definition
     //
     template < class T >
-    inline void push ( const T *pVal, const unsigned nElem ) epicsThrows (())
+    inline void push ( const T *pVal, const unsigned nElem ) 
+        epicsThrows (( std::bad_alloc ))
     {
         comBuf * pLastBuf = this->bufs.last ();
         unsigned nCopied;
@@ -112,7 +131,8 @@ private:
     // class member template function definition
     //
     template < class T >
-    inline void push ( const T & val ) epicsThrows (())
+    inline void push ( const T & val ) 
+        epicsThrows (( std::bad_alloc ))
     {
         comBuf * pComBuf = this->bufs.last ();
         if ( pComBuf && pComBuf->push ( val ) ) {
@@ -140,31 +160,28 @@ inline bool comQueSend::dbr_type_ok ( unsigned type ) epicsThrows (())
     return true;
 }
 
-inline void comQueSend::pushUInt16 ( const ca_uint16_t value ) epicsThrows (())
+inline void comQueSend::pushUInt16 ( const ca_uint16_t value ) 
+    epicsThrows (( std::bad_alloc ))
 {
     this->push ( value );
 }
 
-inline void comQueSend::pushUInt32 ( const ca_uint32_t value ) epicsThrows (())
+inline void comQueSend::pushUInt32 ( const ca_uint32_t value ) 
+    epicsThrows (( std::bad_alloc ))
 {
     this->push ( value );
 }
 
-inline void comQueSend::pushFloat32 ( const ca_float32_t value ) epicsThrows (())
+inline void comQueSend::pushFloat32 ( const ca_float32_t value ) 
+    epicsThrows (( std::bad_alloc ))
 {
     this->push ( value );
 }
 
-inline void comQueSend::pushString ( const char *pVal, unsigned nChar ) epicsThrows (())
+inline void comQueSend::pushString ( const char *pVal, unsigned nChar ) 
+    epicsThrows (( std::bad_alloc ))
 {
     this->push ( pVal, nChar );
-}
-
-// it is assumed that dbr_type_ok() was called prior to calling this routine
-// to check the type code
-inline void comQueSend::push_dbr_type ( unsigned type, const void *pVal, unsigned nElem ) epicsThrows (())
-{
-    ( this->*dbrCopyVector [type] ) ( pVal, nElem );
 }
 
 inline void comQueSend::pushComBuf ( comBuf & cb ) epicsThrows (())
@@ -180,12 +197,14 @@ inline unsigned comQueSend::occupiedBytes () const epicsThrows (())
     return this->nBytesPending;
 }
 
-inline bool comQueSend::flushBlockThreshold ( unsigned nBytesThisMsg ) const epicsThrows (())
+inline bool comQueSend::flushBlockThreshold ( unsigned nBytesThisMsg ) 
+    const epicsThrows (())
 {
     return ( this->nBytesPending + nBytesThisMsg > 16 * comBuf::capacityBytes () );
 }
 
-inline bool comQueSend::flushEarlyThreshold ( unsigned nBytesThisMsg ) const epicsThrows (())
+inline bool comQueSend::flushEarlyThreshold ( unsigned nBytesThisMsg ) 
+    const epicsThrows (())
 {
     return ( this->nBytesPending + nBytesThisMsg > 4 * comBuf::capacityBytes () );
 }

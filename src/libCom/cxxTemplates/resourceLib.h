@@ -435,8 +435,8 @@ void resTable<T,ID>::traverse (pSetMFArg(pCB))
         tsSLIter<T> pItem ( pList->first () );
         while ( pItem.valid () ) {
             T * p = & ( *pItem );
-            (p->*pCB) ();
             pItem = pItem.itemAfter ();
+            (p->*pCB) ();
         }
         pList++;
     }
@@ -455,8 +455,8 @@ void resTable<T,ID>::traverseConst (pSetMFArgConst(pCB)) const
         tsSLIterConst<T> pItem ( pList->first () );
         while ( pItem.valid () ) {
             const T * p = & ( *pItem );
-            (p->*pCB) ();
             pItem = pItem.itemAfter ();
+            (p->*pCB) ();
         }
         pList++;
     }

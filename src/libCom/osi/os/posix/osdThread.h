@@ -10,4 +10,8 @@
 #ifndef osdThreadh
 #define osdThreadh
 
+#include <pthread.h>
+
+pthread_t epicsThreadGetPthreadIdSelf ( epicsThreadPrivateId id );
+
 #endif /* osdThreadh */

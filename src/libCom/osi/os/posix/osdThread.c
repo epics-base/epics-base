@@ -469,6 +469,11 @@ epicsThreadId epicsThreadGetIdSelf(void) {
     return(pthreadInfo);
 }
 
+pthread_t epicsThreadGetPThreadIdSelf ( epicsThreadPrivateId id )
+{
+    return ( pthreadInfo->tid );
+}
+
 epicsThreadId epicsThreadGetId(const char *name) {
     epicsThreadOSD *pthreadInfo;
     if(!epicsThreadInitCalled) epicsThreadInit();
@@ -580,3 +585,4 @@ void *epicsThreadPrivateGet(epicsThreadPrivateId id)
         errlogPrintf("epicsThreadPrivateGet: pthread_getspecific returned 0\n");
     return(value);
 }
+

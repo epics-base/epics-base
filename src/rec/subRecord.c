@@ -87,7 +87,7 @@ static long do_sub();
 static long fetch_values();
 static void monitor();
 
-#define ARG_MAX 12
+#define INP_ARG_MAX 12
 typedef long (*SUBFUNCPTR)();
 
 static long init_record(psub,pass)
@@ -104,7 +104,7 @@ static long init_record(psub,pass)
 
     plink = &psub->inpa;
     pvalue = &psub->a;
-    for(i=0; i<ARG_MAX; i++, plink++, pvalue++) {
+    for(i=0; i<INP_ARG_MAX; i++, plink++, pvalue++) {
         if (plink->type==CONSTANT) {
 	    recGblInitConstantLink(plink,DBF_DOUBLE,pvalue);
         }
@@ -338,7 +338,7 @@ static void monitor(psub)
                 db_post_events(psub,&psub->val,monitor_mask);
         }
 	/* check all input fields for changes*/
-	for(i=0, pnew=&psub->a, pprev=&psub->la; i<ARG_MAX; i++, pnew++, pprev++) {
+	for(i=0, pnew=&psub->a, pprev=&psub->la; i<INP_ARG_MAX; i++, pnew++, pprev++) {
 		if(*pnew != *pprev) {
 			db_post_events(psub,pnew,monitor_mask|DBE_VALUE|DBE_LOG);
 			*pprev = *pnew;
@@ -355,7 +355,7 @@ struct subRecord *psub;
         int             i;
 	long		status;
 
-        for(i=0, plink=&psub->inpa, pvalue=&psub->a; i<ARG_MAX; i++, plink++, pvalue++) {
+        for(i=0, plink=&psub->inpa, pvalue=&psub->a; i<INP_ARG_MAX; i++, plink++, pvalue++) {
 		status=dbGetLink(plink,DBR_DOUBLE, pvalue,0,0);
 		if (!RTN_SUCCESS(status)) return(-1);
         }

@@ -27,6 +27,7 @@
  * -----------------
  * .00	10-10-90	rac	initial version
  * .01	06-18-91	rac	installed in SCCS
+ * .02  06-25-91	rac	changed nextNonSpaceField to handle quotes
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -67,6 +68,13 @@
 *	to the first character of the field or as a value returned through
 *	a pointer.
 *
+*	For nextNonSpaceField, the field is defined as either:
+*	1)  from the next non-white-space character up to the following
+*	    white-space character, or
+*	2)  from a " through a matching ", with the "s not being included
+*	    in the characters returned to the caller.  The delimeter will
+*	    be the character following the closing ".
+*
 *	In the input string, a '\0' is stored in place of the delimiter,
 *	so that standard string handling tools can be used for text fields.
 *
@@ -89,9 +97,13 @@
 * RETURNS
 *	count of characters in field, including the delimiter.  A special
 *	case exists when only '\0' is encountered; in this case 0 is returned.
+*	(For quoted alpha strings, the count will include the " characters.)
 *
 * BUGS
 * o	use of type checking macros isn't protected by isascii()
+* o	for nextANField, with string in quotes: embedded " isn't handled;
+*	if " isn't encountered before end of line, no error message is
+*	generated.
 *
 * SEE ALSO
 *	tsTextToStamp()
@@ -126,6 +138,11 @@
 #   include <ctype.h>
 #endif
 
+/*-----------------------------------------------------------------------------
+*    the preamble skips over leading white space, stopping either at
+*    end of string or at a non-white-space character.  If EOS is encountered,
+*    then the appropriate return conditions are set up and a return 0 is done.
+*----------------------------------------------------------------------------*/
 #define NEXT_PREAMBLE \
     char	*pDlm;		/* pointer to field delimiter */ \
     int		count;		/* count of characters (plus delim) */ \
@@ -148,6 +165,13 @@
 	return 0; \
     } \
     count = 1;			/* include delimiter in count */
+/*-----------------------------------------------------------------------------
+*    the postamble is called for each character in the field.  It moves
+*    the pointers and increments the count.  If the loop terminates, then
+*    the caller is informed of the delimiter and the source character
+*    string has '\0' inserted in place of the delimiter, so that the field
+*    is now a proper '\0' terminated string.
+*----------------------------------------------------------------------------*/
 #define NEXT_POSTAMBLE \
 	pDlm++; \
 	count++; \
@@ -166,8 +190,8 @@ char	**ppField;	/* O pointer to pointer to field */
 char	*pDelim;	/* O pointer to return field's delimiter */
 {
     NEXT_PREAMBLE
-    while (isalpha(*pDlm) || *pDlm == '_') {
-	NEXT_POSTAMBLE
+	while (isalpha(*pDlm) || *pDlm == '_') {
+	    NEXT_POSTAMBLE
     return count;
 }
 int
@@ -309,7 +333,27 @@ char	**ppField;	/* O pointer to pointer to field */
 char	*pDelim;	/* O pointer to return field's delimiter */
 {
     NEXT_PREAMBLE
-    while (!isspace(*pDlm)) {
-	NEXT_POSTAMBLE
+    if (**ppField == '"') {
+	(*ppField)++;		/* skip over leading double quote */
+	count++;
+	pDlm++;
+	while (*pDlm != '"') {	/* scan until find another " */
+	    NEXT_POSTAMBLE
+	if (*pDelim == '"') {
+	    pDlm++;
+	    while (isspace(*pDlm))
+		pDlm++;		/* skip trailing white space */
+	    if (*pDlm == '"')
+		pDlm--;
+	    *pDelim = *pDlm;	/* give caller the delim and set */
+	    *ppText = pDlm;	/*     for scanning the next field */
+	    if (*pDlm != '\0')
+		(*ppText)++;
+	}
+    }
+    else {
+	while (!isspace(*pDlm)) {
+	    NEXT_POSTAMBLE
+    }
     return count;
 }

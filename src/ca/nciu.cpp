@@ -35,8 +35,8 @@
 tsFreeList < class nciu, 1024 > nciu::freeList;
 epicsMutex nciu::freeListMutex;
 
-nciu::nciu ( cac &cacIn, netiiu &iiuIn, cacChannelNotify &chanIn, 
-            const char *pNameIn ) :
+nciu::nciu ( cac & cacIn, netiiu & iiuIn, cacChannelNotify & chanIn, 
+            const char *pNameIn, cacChannel::priLev pri ) :
     cacChannel ( chanIn ), 
     cacCtx ( cacIn ),
     piiu ( &iiuIn ),
@@ -46,6 +46,7 @@ nciu::nciu ( cac &cacIn, netiiu &iiuIn, cacChannelNotify &chanIn,
     retrySeqNo ( 0u ),
     nameLength ( strlen ( pNameIn ) + 1 ),
     typeCode ( USHRT_MAX ),
+    priority ( pri ),
     f_connected ( false ),
     f_previousConn ( false ),
     f_claimSent ( false ),
@@ -54,7 +55,7 @@ nciu::nciu ( cac &cacIn, netiiu &iiuIn, cacChannelNotify &chanIn,
 {
     // second constraint is imposed by size field in protocol header
     if ( this->nameLength > MAX_UDP_SEND - sizeof ( caHdr ) || this->nameLength > 0xffff ) {
-        throwWithLocation ( caErrorCode ( ECA_BADSTR ) );
+        throw cacChannel::badString ();
     }
 
     this->pNameStr = new char [ this->nameLength ];
@@ -368,8 +369,7 @@ unsigned nciu::searchAttempts () const
 
 double nciu::beaconPeriod () const
 {
-    epicsAutoMutex locker ( this->cacCtx.mutexRef() );
-    return this->piiu->beaconPeriod ();
+    return this->cacCtx.beaconPeriod ( *this );
 }
 
 void nciu::notifyStateChangeFirstConnectInCountOfOutstandingIO ()
@@ -440,9 +440,4 @@ int nciu::printf ( const char *pFormat, ... )
     
     return status;
 }
-
-
-
-
-
 

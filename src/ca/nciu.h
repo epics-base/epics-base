@@ -42,8 +42,8 @@ private:
 class nciu : public cacChannel, public tsDLNode < nciu >,
     public chronIntIdRes < nciu >, public cacPrivateListOfIO {
 public:
-    nciu ( cac &, netiiu &, 
-        cacChannelNotify &, const char *pNameIn );
+    nciu ( cac &, netiiu &, cacChannelNotify &, 
+        const char *pNameIn, cacChannel::priLev );
     void connect ( unsigned nativeType, 
         unsigned nativeCount, unsigned sid, bool v41Ok );
     void connect ();
@@ -62,6 +62,7 @@ public:
     ca_uint32_t getSID () const;
     ca_uint32_t getCID () const;
     netiiu * getPIIU ();
+    const netiiu * getConstPIIU () const;
     cac & getClient ();
     int printf ( const char *pFormat, ... );
     void searchReplySetUp ( netiiu &iiu, unsigned sidIn, 
@@ -75,6 +76,7 @@ public:
     bool connected () const;
     bool previouslyConnected () const;
     void writeException ( int status, const char *pContext, unsigned type, arrayElementCount count );
+    cacChannel::priLev getPriority () const;
 protected:
     ~nciu (); // force pool allocation
 private:
@@ -88,6 +90,7 @@ private:
     ca_uint16_t retrySeqNo; // search retry seq number
     ca_uint16_t nameLength; // channel name length
     ca_uint16_t typeCode;
+    ca_uint8_t priority; 
     unsigned f_connected:1;
     unsigned f_previousConn:1; // T if connected in the past
     unsigned f_claimSent:1;
@@ -188,6 +191,11 @@ inline netiiu * nciu::getPIIU ()
     return this->piiu;
 }
 
+inline const netiiu * nciu::getConstPIIU () const
+{
+    return this->piiu;
+}
+
 inline cac & nciu::getClient ()
 {
     return this->cacCtx;
@@ -217,6 +225,11 @@ inline void nciu::connectStateNotify () const
 inline void nciu::accessRightsNotify () const
 {
     this->notify().accessRightsNotify ( this->accessRightState );
+}
+
+inline cacChannel::priLev nciu::getPriority () const
+{
+    return this->priority;
 }
 
 #endif // ifdef nciuh

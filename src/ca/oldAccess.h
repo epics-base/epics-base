@@ -29,9 +29,9 @@
 
 struct oldChannelNotify : public cacChannelNotify {
 public:
-    oldChannelNotify ( class oldCAC &, const char *pName, caCh *pConnCallBackIn, void *pPrivateIn );
+    oldChannelNotify ( class oldCAC &, const char *pName, 
+        caCh *pConnCallBackIn, void *pPrivateIn, capri priority );
     void destroy ();
-    bool ioAttachOK ();
     void setPrivatePointer ( void * );
     void * privatePointer () const;
     int changeConnCallBack ( caCh *pfunc );
@@ -73,11 +73,11 @@ public:
 protected:
     ~oldChannelNotify (); // must allocate from pool
 private:
-    cacChannel &io;
-    oldCAC &cacCtx;
-    caCh *pConnCallBack;
-    void *pPrivate;
-    caArh *pAccessRightsFunc;
+    cacChannel & io;
+    oldCAC & cacCtx;
+    caCh * pConnCallBack;
+    void * pPrivate;
+    caArh * pAccessRightsFunc;
     void connectNotify ();
     void disconnectNotify ();
     void accessRightsNotify ( const caAccessRights & );
@@ -127,9 +127,9 @@ public:
 protected:
     ~getCallback (); // allocate only out of pool
 private:
-    oldChannelNotify &chan;
-    caEventCallBackFunc *pFunc;
-    void *pPrivate;
+    oldChannelNotify & chan;
+    caEventCallBackFunc * pFunc;
+    void * pPrivate;
     void completion (
         unsigned type, arrayElementCount count, const void *pData);
     void exception ( int status, 
@@ -164,18 +164,17 @@ public:
         oldChannelNotify &,
         unsigned type, arrayElementCount nElem, unsigned mask, 
         caEventCallBackFunc *pFunc, void *pPrivate );
-    bool ioAttachOK ();
     void destroy ();
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
-    oldChannelNotify &channel () const;
+    oldChannelNotify & channel () const;
 protected:
     ~oldSubscription (); // must allocate from pool
 private:
-    oldChannelNotify &chan;
+    oldChannelNotify & chan;
     cacChannel::ioid id;
-    caEventCallBackFunc *pFunc;
-    void *pPrivate;
+    caEventCallBackFunc * pFunc;
+    void * pPrivate;
     bool subscribed;
     void current (
         unsigned type, arrayElementCount count, const void *pData );
@@ -194,7 +193,8 @@ public:
     void registerForFileDescriptorCallBack ( CAFDHANDLER *pFunc, void *pArg );
     void replaceErrLogHandler ( caPrintfFunc *ca_printf_func );
     void registerService ( cacService &service );
-    cacChannel & createChannel ( const char *name_str, oldChannelNotify &chan );
+    cacChannel & createChannel ( const char * name_str, 
+        oldChannelNotify & chan, cacChannel::priLev pri );
     void flushRequest ();
     int pendIO ( const double &timeout );
     int pendEvent ( const double &timeout );
@@ -234,11 +234,6 @@ private:
 };
 
 int fetchClientContext ( oldCAC **ppcac );
-
-inline bool oldChannelNotify::ioAttachOK ()
-{
-    return &this->io ? true : false;
-}
 
 inline void oldChannelNotify::destroy ()
 {
@@ -432,9 +427,10 @@ inline void oldCAC::registerService ( cacService &service )
     this->clientCtx.registerService ( service );
 }
 
-inline cacChannel & oldCAC::createChannel ( const char *name_str, oldChannelNotify &chan )
+inline cacChannel & oldCAC::createChannel ( const char * name_str, 
+             oldChannelNotify & chan, cacChannel::priLev pri )
 {
-    return this->clientCtx.createChannel ( name_str, chan );
+    return this->clientCtx.createChannel ( name_str, chan, pri );
 }
 
 inline int oldCAC::pendIO ( const double &timeout )

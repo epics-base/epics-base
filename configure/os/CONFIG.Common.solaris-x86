@@ -15,21 +15,27 @@ ARCH_CLASS = x86
 
 CODE_CPPFLAGS = -D__EXTENSIONS__
 
-# This is the only combination of posix threads flags that works on solaris-sparc with solaris 6
-#POSIX_CPPFLAGS_YES = -D_REENTRANT -D_POSIX_C_SOURCE=199506L
-#POSIX_LDLIBS_YES += -lposix4 -lpthread -lthread
+SOLARIS_VERSION = $(subst 5.,,$(shell uname -r))
 
-# This set of flags is recommended by sun for posix threads and works with solaris 8
-POSIX_CPPFLAGS_YES = -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=500
-POSIX_LDLIBS_YES += -lposix4 -lpthread
+# Flags for solaris 6
+POSIX_CPPFLAGS_YES_6 += -D_REENTRANT
+POSIX_LDLIBS_YES_6 += -lthread
 
-POSIX_CPPFLAGS_NO =
+POSIX_CPPFLAGS_YES += -D_POSIX_C_SOURCE=199506L $(POSIX_CPPFLAGS_YES_$(SOLARIS_VERSION))
+POSIX_CPPFLAGS_YES += -D_XOPEN_SOURCE=500
+POSIX_LDLIBS_YES += -lposix4 -lpthread $(POSIX_LDLIBS_YES_$(SOLARIS_VERSION))
+
+POSIX_CPPFLAGS_NO +=
 POSIX_LDLIBS_NO +=
 
-OP_SYS_CPPFLAGS = -DSOLARIS=$(subst 5.,,$(shell uname -r))
+OP_SYS_CPPFLAGS += -DSOLARIS=$(SOLARIS_VERSION)
 ARCH_DEP_CPPFLAGS = -D_X86_
 # socket and nsl needed by libca.a
 OP_SYS_LDLIBS += -lsocket -lnsl
+
+#  -R does not work unless full path names are specified
+# use loader's -R option
+#PROD_LDFLAGS += $(sort $(DEPLIB_DIRS:%=-R%))
 
 ifdef CROSS
    GNU_TARGET=x86-sun-solaris2
@@ -37,6 +43,9 @@ ifdef CROSS
    CMPLR_PREFIX=$(addsuffix -,$(GNU_TARGET))
 endif
 
+# Lib for solaris 8
+SYS_SHRLIB_LIBS_8 += Crun
+
 #Allow R3.13 built extensions to load R3.14 shared libs
-SYS_SHRLIB_LIBS += posix4 pthread Crun
+SYS_SHRLIB_LIBS += posix4 pthread $(SYS_SHRLIB_LIBS_$(SOLARIS_VERSION))
 

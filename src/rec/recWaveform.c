@@ -54,6 +54,7 @@
  * .14  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
  * .15  02-28-92	jba	ANSI C changes
  * .16  04-10-92        jba     pact now used to test for asyn processing, not status
+ * .17  04-18-92        jba     removed process from dev init_record parms
  */
 
 #include	<vxWorks.h>
@@ -157,7 +158,7 @@ static long init_record(pwf)
 	    return(S_dev_missingSup);
 	}
 	if( pdset->init_record ) {
-	    if((status=(*pdset->init_record)(pwf,process))) return(status);
+	    if((status=(*pdset->init_record)(pwf))) return(status);
 	}
     }
     return(0);

@@ -56,6 +56,7 @@
  * .23  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
  * .24  02-28-92	jba	ANSI C changes
  * .25  04-10-92        jba     pact now used to test for asyn processing, not status
+ * .26  04-18-92        jba     removed process from dev init_record parms
  */
 
 #include	<vxWorks.h>
@@ -159,7 +160,7 @@ static long init_record(pao)
     pao->init = TRUE;
 
     if( pdset->init_record ) {
-        status=(*pdset->init_record)(pao,process);
+        status=(*pdset->init_record)(pao);
         switch(status){
         case(0): /* convert */
             if (pao->linr == 0){

@@ -83,6 +83,7 @@
 				Make STOP stop even if retry>0
 				Make motor move whenever VAL field accessed
  * .27  04-08-92	mrk	break out device support
+ * .28  04-18-92        jba     removed process from dev init_record parms
  */
 
 #include	<vxWorks.h>
@@ -188,7 +189,7 @@ static long init_record(psm)
         return(S_dev_missingSup);
     }
     if( pdset->init_record ) {
-        if((status=(*pdset->init_record)(psm,process))) return(status);
+        if((status=(*pdset->init_record)(psm))) return(status);
     }
 
     /* get the initial value if dol is a constant*/

@@ -53,6 +53,7 @@
  * .18  02-05-92	jba	Changed function arguments from paddr to precord 
  * .19  02-28-92	jba	ANSI C changes
  * .20  04-10-92        jba     pact now used to test for asyn processing, not status
+ * .21  04-18-92        jba     removed process from dev init_record parms
  */
 
 #include	<vxWorks.h>
@@ -171,7 +172,7 @@ static long init_record(pmbbo)
     if( pdset->init_record ) {
 	unsigned long rval;
 
-	status=(*pdset->init_record)(pmbbo,process);
+	status=(*pdset->init_record)(pmbbo);
         /* init_record might set status */
         init_common(pmbbo);
 	if(status==0){

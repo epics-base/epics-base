@@ -57,6 +57,7 @@
  * .21  02-28-92	jba	ANSI C changes
  * .22  03-03-92	jba	Changed callback handling
  * .23  04-10-92        jba     pact now used to test for asyn processing, not status
+ * .24  04-18-92        jba     removed process from dev init_record parms
  */
 
 #include	<vxWorks.h>
@@ -181,7 +182,7 @@ static long init_record(pbo)
     pcallback->precord = (struct dbCommon *)pbo;
 
     if( pdset->init_record ) {
-	status=(*pdset->init_record)(pbo,process);
+	status=(*pdset->init_record)(pbo);
 	if(status==0) {
 		if(pbo->rval==0) pbo->val = 0;
 		else pbo->val = 1;

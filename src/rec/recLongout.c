@@ -33,6 +33,7 @@
  * .02  02-05-92	jba	Changed function arguments from paddr to precord 
  * .03  02-28-92	jba	ANSI C changes
  * .04  04-10-92        jba     pact now used to test for asyn processing, not status
+ * .05  04-18-92        jba     removed process from dev init_record parms
  */ 
 
 
@@ -124,7 +125,7 @@ static long init_record(plongout)
 	plongout->udf=FALSE;
     }
     if( pdset->init_record ) {
-	if((status=(*pdset->init_record)(plongout,process))) return(status);
+	if((status=(*pdset->init_record)(plongout))) return(status);
     }
     return(0);
 }

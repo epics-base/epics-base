@@ -32,6 +32,7 @@
  4 .00  12-13-91        jba     Initial definition
  * .01  02-28-92	jba	ANSI C changes
  * .02  04-10-92        jba     pact now used to test for asyn processing, not status
+ * .03  04-18-92        jba     removed process from dev init_record parms
  */
 
 #include	<vxWorks.h>
@@ -105,7 +106,7 @@ static long init_record(pevent)
     long status=0;
 
     if( (pdset=(struct eventdset *)(pevent->dset)) && (pdset->init_record) ) 
-		status=(*pdset->init_record)(pevent,process);
+		status=(*pdset->init_record)(pevent);
     return(status);
 }
 

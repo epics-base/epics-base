@@ -142,6 +142,10 @@ char *dbGetRecordName(DBENTRY *pdbentry);
 long dbRenameRecord(DBENTRY *pdbentry,char *newName);
 long dbCopyRecord(DBENTRY *pdbentry,char *newRecordName,int overWriteOK);
 
+long dbVisibleRecord(DBENTRY *pdbentry);
+long dbInvisibleRecord(DBENTRY *pdbentry);
+int dbIsVisibleRecord(DBENTRY *pdbentry);
+
 long dbFindField(DBENTRY *pdbentry,char *pfieldName);
 int dbFoundField(DBENTRY *pdbentry);
 char *dbGetString(DBENTRY *pdbentry);

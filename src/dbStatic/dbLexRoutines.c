@@ -68,7 +68,7 @@ static void dbBreakHead(char *name);
 static void dbBreakItem(char *value);
 static void dbBreakBody(void);
 
-static void dbRecordHead(char *recordType,char*name);
+static void dbRecordHead(char *recordType,char*name,int visible);
 static void dbRecordField(char *name,char *value);
 static void dbRecordBody(void);
 
@@ -835,7 +835,7 @@ static void dbBreakBody(void)
     if(!pbrkTable) ellAdd(&pdbbase->bptList,&pnewbrkTable->node);
 }
 
-static void dbRecordHead(char *recordType,char *name)
+static void dbRecordHead(char *recordType,char *name, int visible)
 {
     DBENTRY		*pdbentry;
     long		status;
@@ -852,6 +852,7 @@ static void dbRecordHead(char *recordType,char *name)
     }
     /*Duplicate records ok. Thus dont check return status.*/
     dbCreateRecord(pdbentry,name);
+    if(visible) dbVisibleRecord(pdbentry);
     free((void *)recordType);
     free((void *)name);
 }

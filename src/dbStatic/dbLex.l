@@ -26,6 +26,7 @@ static int yyreset(void)
 "driver"	{return(tokenDRIVER);}
 "breaktable"	{return(tokenBREAKTABLE);}
 "record"	{return(tokenRECORD);}
+"grecord"	{return(tokenGRECORD);}
 
 [0-9]+ { /*integer number*/
 	yylval.Str = (char *)malloc(strlen(yytext)+1);

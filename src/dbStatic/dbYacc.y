@@ -13,7 +13,7 @@ static char *menuString = "menu";
 %token tokenINCLUDE tokenPATH tokenADDPATH
 %token tokenMENU tokenCHOICE tokenRECORDTYPE tokenFIELD
 %token tokenDEVICE tokenDRIVER tokenBREAKTABLE
-%token tokenRECORD
+%token tokenRECORD tokenGRECORD
 %token <Str> tokenSTRING
 
 %union
@@ -34,6 +34,7 @@ database_item:	include
 	|	driver
 	|	tokenBREAKTABLE	break_head break_body
 	|	tokenRECORD record_head record_body
+	|	tokenGRECORD grecord_head record_body
 	;
 
 include:	tokenINCLUDE tokenSTRING
@@ -157,10 +158,16 @@ break_item: tokenSTRING
 };
 
 
+grecord_head: '(' tokenSTRING ',' tokenSTRING ')'
+{
+	if(dbStaticDebug>2) printf("grecord_head %s %s\n",$2,$4);
+	dbRecordHead($2,$4,1);
+};
+
 record_head: '(' tokenSTRING ',' tokenSTRING ')'
 {
 	if(dbStaticDebug>2) printf("record_head %s %s\n",$2,$4);
-	dbRecordHead($2,$4);
+	dbRecordHead($2,$4,0);
 };
 
 record_body: /*Null*/

@@ -777,8 +777,12 @@ long dbWriteRecordFP(DBBASE *pdbbase,FILE *fp,char *precordTypename,int level)
     while(!status) {
 	status = dbFirstRecord(pdbentry);
 	while(!status) {
-	    fprintf(fp,"record(%s,\"%s\") {\n",
-		dbGetRecordTypeName(pdbentry),dbGetRecordName(pdbentry));
+		if(dbIsVisibleRecord(pdbentry))
+	    	fprintf(fp,"grecord(%s,\"%s\") {\n",
+				dbGetRecordTypeName(pdbentry),dbGetRecordName(pdbentry));
+	    else
+	    	fprintf(fp,"record(%s,\"%s\") {\n",
+				dbGetRecordTypeName(pdbentry),dbGetRecordName(pdbentry));
 	    status = dbFirstField(pdbentry,dctonly);
 	    while(!status) {
 		if(!dbIsDefaultValue(pdbentry) || level>0) {
@@ -1406,6 +1410,29 @@ long dbRenameRecord(DBENTRY *pdbentry,char *newName)
     else
 	ellAdd(preclist,&precnode->node);
     return(0);
+}
+
+long dbVisibleRecord(DBENTRY *pdbentry)
+{
+    dbRecordNode	*precnode = pdbentry->precnode;
+    if(!precnode) return(S_dbLib_recNotFound);
+	precnode->visible=1;
+	return 0;
+}
+
+long dbInvisibleRecord(DBENTRY *pdbentry)
+{
+    dbRecordNode	*precnode = pdbentry->precnode;
+    if(!precnode) return(S_dbLib_recNotFound);
+	precnode->visible=0;
+	return 0;
+}
+
+int dbIsVisibleRecord(DBENTRY *pdbentry)
+{
+    dbRecordNode	*precnode = pdbentry->precnode;
+    if(!precnode) return 0;
+	return precnode->visible?1:0;
 }
 
 long dbCopyRecord(DBENTRY *pdbentry,char *newRecordName,int overWriteOK)

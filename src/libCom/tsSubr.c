@@ -39,7 +39,11 @@
  *  .10	05-04-94 pg	HPUX cpp changes. (elif to else and if)
  *  .11	01-09-95 joh	fixed ts min west out of range test	
  *  .12	02-24-95 joh	fixed TScurrentTimeStamp() => tsLocalTime ()
- *			return status mapping prob introduced by .09 above	
+ *			return status mapping prob introduced by .09 above
+ *  .13	05-26-95 joh 	TsAddDouble() macro isnt portable so it becomes 
+ * 			a subroutine - oops - discovered tsAddDouble()
+ *			so I left TsAddDouble() code - which works - 
+ *			at the end of the file but commented it out
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -115,19 +119,18 @@
 #include <ctype.h>
 #include <string.h>
 
-#ifdef vxWorks
+
+#if defined(vxWorks)
 #   include <vxWorks.h>
 #   include <stdioLib.h>
 #   include <strLib.h>
-#else
-#if VMS
+#elif defined(VMS)
 #   include <sys/time.h>
+#elif defined(WIN32)
+#   include <windows.h>
+#   include <time.h>
 #else
 #   include <sys/time.h>
-#if 0
-#   include <strings.h>
-#endif
-#endif
 #endif
 
 #include <epicsAssert.h>
@@ -597,7 +600,9 @@ TS_STAMP *pStamp;	/* O pointer to time stamp buffer */
 {
     	long	retStat=S_ts_OK;/* return status to caller */
 
-#ifdef vxWorks
+	assert(pStamp != NULL);
+
+#if defined(vxWorks)
 	retStat = TScurrentTimeStamp((struct timespec*)pStamp);
 	if (retStat == 0) {
 		return S_ts_OK;
@@ -605,6 +610,12 @@ TS_STAMP *pStamp;	/* O pointer to time stamp buffer */
 	else {
 		return S_ts_sysTimeError;
 	}
+#elif defined(WIN32)
+	SYSTEMTIME st;	 /* utc */
+
+	pStamp->secPastEpoch = time(NULL) - TS_EPOCH_SEC_PAST_1970;
+	GetSystemTime(&st);
+	pStamp->nsec = st.wMilliseconds * 1000000;
 #else
     	struct timeval curtime;
 
@@ -1465,3 +1476,4 @@ char	**pText;	/* IO ptr to ptr to string containing time and date */
     *pStamp = stamp;
     return retStat;
 }
+

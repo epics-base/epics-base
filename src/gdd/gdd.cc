@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.33  2002/01/08 01:17:29  jhill
+// use proper form of delete
+//
 // Revision 1.32  2000/10/13 01:17:51  jhill
 // made gdd param to copy const
 //
@@ -280,7 +283,7 @@ void gdd::freeBounds(void)
 		case 1: { gddBounds1D* d1=(gddBounds1D*)bounds; delete d1; } break;
 		case 2: { gddBounds2D* d2=(gddBounds2D*)bounds; delete d2; } break;
 		case 3: { gddBounds3D* d3=(gddBounds3D*)bounds; delete d3; } break;
-		default: delete bounds; break;
+		default: delete [] bounds; break;
 		}
 		bounds=NULL;
 	}
@@ -295,6 +298,13 @@ void gdd::setDimension(int d, const gddBounds* bnds)
 	if(dim!=d)
 	{
 		freeBounds();
+        //
+        // joh 05-28-02
+        // added code to set a nill data pointer if gdd changes from scalar to vector
+        //
+        if ( dim == 0 ) {
+            this->data.Pointer = 0;
+        }
 		dim=(aitUint8)d;
 		switch(dim)
 		{
@@ -439,7 +449,6 @@ gddStatus gdd::getBound(unsigned index_dim, aitIndex& first, aitIndex& count) co
 // should the copy functions in gdd use the flatten technique?
 gddStatus gdd::copyStuff(const gdd* dd,int ctype)
 {
-	unsigned i;
 	gddStatus rc=0;
 	gddContainer* cdd;
 	gdd *pdd,*ndd;
@@ -455,10 +464,9 @@ gddStatus gdd::copyStuff(const gdd* dd,int ctype)
 
 	if(dd->isContainer())
 	{
-		changeType(dd->applicationType(),dd->primitiveType());
+    	init (dd->appl_type, aitEnumContainer, 1);	  
 		cdd=(gddContainer*)dd;
 		gddCursor cur=cdd->getCursor();
-
 		for(ndd=cur.first();ndd;ndd=cur.next())
 		{
 			pdd=new gdd(ndd->applicationType(),
@@ -495,7 +503,7 @@ gddStatus gdd::copyStuff(const gdd* dd,int ctype)
 		else // atomic
 		{
 			const gddBounds* bnds = dd->getBounds();
-			for(i=0;i<dd->dimension();i++) bounds[i]=bnds[i];
+			for(unsigned i=0;i<dd->dimension();i++) bounds[i]=bnds[i];
 	
 			switch(ctype)
 			{

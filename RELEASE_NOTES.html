@@ -21,6 +21,15 @@ which allows any device type to be used with manual settings of
 the EOFF and ESLO fields.  With this setting, the device support's
 special_linconv() routine is only called when LINR=LINEAR.
 </p>
+<p>
+The RTEMS TFTP remote filesystem driver now supports a limited form of
+the chdir() system call.  One restriction is that all pathnames passed
+to chdir() must end in a / character, so IOC shell commands to change
+directories must be given as
+</p>
+<p>
+cd ../db
+</p>
 <center>
 <h1>
 EPICS Release base 3.14.0alpha2</h1></center>

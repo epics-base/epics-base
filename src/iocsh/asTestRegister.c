@@ -114,7 +114,7 @@ static void ascarCallFunc(const iocshArgBuf *args)
 }
 
 static struct iocshVarDef vardefs[] = {
-    {"asCaDebug", iocshArgInt,(void *)&asCaDebug},
+    {"asCaDebug", iocshArgInt,(void * const )&asCaDebug},
     {0,iocshArgInt,0}
 };
 

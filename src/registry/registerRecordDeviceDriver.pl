@@ -154,7 +154,7 @@ if (@variables) {
         $argType = $iocshTypes{$varType{$var}};
         die "Unknown variable type $varType{$var} for variable $var"
             unless $argType;
-        print "\t{\"$var\", $argType, (void *)p$var},\n";
+        print "\t{\"$var\", $argType, (void * const)p$var},\n";
     }
     print "\t{NULL, iocshArgInt, NULL}\n};\n\n";
 }

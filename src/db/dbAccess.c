@@ -3469,7 +3469,7 @@ long		no_elements;
 long		offset;
 {
     unsigned char  *pdest=(unsigned char *)paddr->pfield;
-    unsigned short  value;
+    unsigned long  value;
 
     if(nRequest==1 && offset==0) {
 	if(sscanf(pbuffer,"%hu",&value) == 1) {
@@ -3607,10 +3607,10 @@ long		no_elements;
 long		offset;
 {
     unsigned short  *pdest=( unsigned short *)paddr->pfield;
-    short           value;
+    unsigned short  value;
 
     if(nRequest==1 && offset==0) {
-        if(sscanf(pbuffer,"%u",&value) == 1) {
+        if(sscanf(pbuffer,"%hu",&value) == 1) {
                 *pdest = value;
                 return(0);
         }

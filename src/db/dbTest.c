@@ -83,8 +83,8 @@
 #define MAX(x,y)        ((x > y)?x:y)
 
 /* Local Routines */
-printDbAddr();
-printBuffer();
+void printDbAddr();
+void printBuffer();
 
 long dbl(ptypeName)	/* list process variables for specified record type*/
 	char	*ptypeName;
@@ -164,15 +164,17 @@ long dbpf(pname,pvalue)	/* put field value*/
     long	  options,no_elements;
 
     status=dbNameToAddr(pname,&addr);
-    printDbAddr(status,&addr);
-    if(status) return(1);
+    if(status) {
+         errMessage(status,"dbNameToAddr error");
+         return(1);
+    }
     status=dbPutField(&addr,DBR_STRING,pvalue,1L);
+    if(status) {
+         errMessage(status,"dbPutField error");
+         return(1);
+    }
     if(status!=0) errPrint(status);
-    no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/addr.field_size));
-    options=0;
-    status=dbGetField(&addr,addr.dbr_field_type,pbuffer,&options,&no_elements);
-    printBuffer(status,addr.dbr_field_type,pbuffer,0L,0L,no_elements);
-    return(0);
+    else return(dbgf(pname));
 }
 
 long dbpr(pname)	/* print record */
@@ -452,13 +454,13 @@ long dbtpf(pname,pvalue)/* test all options for dbPutField */
     return(0);
 }
 
-long printDbAddr(status,paddr)
+static void printDbAddr(status,paddr)
     long	  status;
     struct dbAddr *paddr;
 {
 
     if(status!=0) {
-	errPrint(status);
+	errMessage(status,"dbNameToAddr error");
     }
     printf("Record Address: 0x%x",paddr->precord);
     printf(" Field Address: 0x%x",paddr->pfield);
@@ -472,7 +474,7 @@ long printDbAddr(status,paddr)
     printf("DBR Field Type: %d\n",paddr->dbr_field_type);
 }
 
-long printBuffer(status,dbr_type,pbuffer,reqOptions,retOptions,no_elements)
+static void printBuffer(status,dbr_type,pbuffer,reqOptions,retOptions,no_elements)
     long	  status;
     short	  dbr_type;
     char	  *pbuffer;
@@ -491,6 +493,9 @@ long printBuffer(status,dbr_type,pbuffer,reqOptions,retOptions,no_elements)
     unsigned short usvalue;
     int		   i;
 
+    if(status) {
+        errMessage(status,"dbGetField error");
+    }
     if(reqOptions&DBR_STATUS) {
 	if(retOptions&DBR_STATUS) {
 	    stat = *((unsigned short*)pbuffer);
@@ -743,7 +748,7 @@ long printBuffer(status,dbr_type,pbuffer,reqOptions,retOptions,no_elements)
 		break;
     }
     printf("\n");
-    return(0);
+    return;
 }
 
 long dbior(pdrvName)

@@ -91,19 +91,12 @@ public:
 
 	static const pvInfo *findPV(const char *pName);
 
-	static const osiTime &getCurrentTime() 
-	{	
-		return exServer::currentTime;
-	}
-	static void updateCurrentTime();
-
 	static gddAppFuncTableStatus read(exPV &pv, gdd &value) 
 	{
 		return exServer::ft.read(pv, value);
 	}
 private:
 	static const pvInfo pvList[];
-	static osiTime currentTime;
 	static gddAppFuncTable<exPV> ft;
 };
 
@@ -190,13 +183,12 @@ public:
 		return this->info.getScanRate();
 	}
 protected:
-	//
-	// private data 
-	//
 	gdd			*pValue;
 	exScanTimer		*pScanTimer;
 	const pvInfo & 		info; 
 	aitBool			interest;
+private:
+	static osiTime		currentTime;
 };
 
 //

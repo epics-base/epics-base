@@ -7,6 +7,8 @@
 
 const double myPI = 3.14159265358979323846;
 
+osiTime exPV::currentTime;
+
 //
 // exPV::exPV()
 //
@@ -54,7 +56,15 @@ void exPV::scanPV()
 		return;
 	}
 
-	pDD = new gddAtomic (gddAppType_value, aitEnumFloat32);
+	//
+	// update current time (so we are not required to do
+	// this every time that we write the PV which impacts
+	// throughput under sunos4 because gettimeofday() is
+	// slow)
+	//
+	this->currentTime = osiTime::getCurrent();
+
+	pDD = new gddScaler (gddAppType_value, aitEnumFloat32);
 	if (!pDD) {
 		return;
 	}
@@ -72,6 +82,8 @@ void exPV::scanPV()
 	limit = (float) this->info.getLopr();
 	newValue = max (newValue, limit);
 	*pDD = newValue;
+	pDD->setStat (epicsAlarmNone);
+	pDD->setSevr (epicsSevNone);
 	status = this->update (*pDD);
 	if (status) {
 		errMessage (status, "scan update failed\n");
@@ -111,39 +123,50 @@ caStatus exPV::update(gdd &valueIn)
 {
 	gdd *pNewValue;
 	caServer *pCAS = this->getCAS();
-	osiTime cur (osiTime::getCurrent());
+	//
+	// gettimeofday() is very slow under sunos4
+	//
+	osiTime cur (this->currentTime);
 	struct timespec t;
 	gddStatus gdds;
+
 
 	if (!pCAS) {
 		return S_casApp_noSupport; 
 	}
 
-	//
-	// this does not modify the current value 
-	// (because it may be referenced in the event queue)
-	//
-	pNewValue = new gdd (gddAppType_value, aitEnumFloat32);
-	if (!pNewValue) {
-		return S_casApp_noMemory;
-	}
-
 #	if DEBUG
-		printf("%s = %f\n", this->info.getName().string, valueIn);
+		printf("%s = %f\n", 
+			this->info.getName().string, valueIn);
 #	endif
 
-	gdds = gddApplicationTypeTable::
-		app_table.smartCopy(pNewValue, &valueIn);
-	if (gdds) {
-		pNewValue->unreference();
-		return S_cas_noConvert;
+	if (valueIn.isScaler()) {
+		pNewValue = &valueIn;
+		pNewValue->reference();
+	}
+	else {
+		//
+		// this does not modify the current value 
+		// (because it may be referenced in the event queue)
+		//
+		pNewValue = new gddScaler (gddAppType_value, aitEnumFloat32);
+		if (!pNewValue) {
+			return S_casApp_noMemory;
+		}
+
+		gdds = gddApplicationTypeTable::
+			app_table.smartCopy(pNewValue, &valueIn);
+		if (gdds) {
+			pNewValue->unreference();
+			return S_cas_noConvert;
+		}
+
+		pNewValue->setStat (epicsAlarmNone);
+		pNewValue->setSevr (epicsSevNone);
 	}
 
 	cur.get (t.tv_sec, t.tv_nsec);
 	pNewValue->setTimeStamp(&t);
-
-	pNewValue->setStat (epicsAlarmNone);
-	pNewValue->setSevr (epicsSevNone);
 
 	//
 	// release old value and replace it
@@ -323,7 +346,7 @@ caStatus exPV::getLowLimit(gdd &value)
 caStatus exPV::getUnits(gdd &units)
 {
 	static aitString str("@#$%");
-	units.putRef(str);
+	units.put(str);
 	return S_cas_success;
 }
 
@@ -347,7 +370,7 @@ caStatus exPV::getValue(gdd &value)
 		}
 	}
 	else {
-		status = S_cas_noMemory;
+		status = S_casApp_undefined;
 	}
 	return status;
 }

@@ -1202,7 +1202,7 @@ immediately searched for, and after successful search responses arrived then
 attempts were made to build a new circuit. This behavior could result in
 undesirable resource consumption resulting from periodic circuit setup and
 teardown overhead (thrashing) during periods of CPU / network / IP kernel
-buffer congestion. </p>
+buffer congestion.</p>
 
 <h3><a name="Problems">ENOBUFS Messages</a></h3>
 
@@ -1492,7 +1492,9 @@ the IOC. If the status field isn't set to ECA_NORMAL or data isn't normally
 returned from the operation (i.e. put call back) then you should expect that
 the <code>dbr </code>field  will be set to a nill pointer (zero). The fields
 <code>usr</code>, <code>chid</code>, and <code>type</code> are set to the
-values specified when the request was made by the application.</p>
+values specified when the request was made by the application. The "dbr"
+pointer, and any data that it points to, are valid only when executing within
+the user's callback function.</p>
 <pre><code>typedef struct event_handler_args {
     void            *usr;   /* user argument supplied with request */
     chanId          chid;   /* channel id */

@@ -10,3 +10,10 @@
 # Include definitions common to all solaris-x86  target archs
 include $(CONFIG)/os/CONFIG.Common.solaris-x86
 
+COMPILER_CPPFLAGS =
+
+OP_SYS_LDLIBS_8 = -lc
+OP_SYS_LDLIBS_9 = -lc
+
+OP_SYS_LDFLAGS += -R$(GNU_LIB) -L$(GNU_LIB)
+

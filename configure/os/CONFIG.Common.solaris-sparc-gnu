@@ -11,9 +11,10 @@
 include $(CONFIG)/os/CONFIG.Common.solaris-sparc
 # CONFIG.Common.solaris-sparc
 
-CODE_CPPFLAGS = -D__EXTENSIONS__
+COMPILER_CPPFLAGS = 
 
 OP_SYS_LDLIBS_8 = -lc
 OP_SYS_LDLIBS_9 = -lc
 
 OP_SYS_LDFLAGS += -R$(GNU_LIB) -L$(GNU_LIB)
+

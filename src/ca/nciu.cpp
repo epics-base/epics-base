@@ -67,8 +67,7 @@ nciu::nciu ( cac &cacIn, netiiu &iiuIn, cacChannelNotify &chanIn,
 
 void nciu::destroy ()
 {
-    // this occurs here so that it happens when
-    // a lock is not applied
+    // care is taken so that a lock is not applied during this phase
     unsigned i = 0u;
     while ( ! this->piiu->destroyAllIO ( *this ) ) {
         if ( i++ > 1000u ) {
@@ -155,14 +154,10 @@ LOCAL int check_a_dbr_string ( const char *pStr, const unsigned count )
 
     for ( i = 0; i < count; i++ ) {
         unsigned int strsize = 0;
-        while ( 1 ) {
-            if (strsize >= MAX_STRING_SIZE ) {
+        while ( pStr[strsize++] != '\0' ) {
+            if ( strsize >= MAX_STRING_SIZE ) {
                 return ECA_STRTOBIG;
             }
-            if ( pStr[strsize] == '\0' ) {
-                break;
-            }
-            strsize++;
         }
         pStr += MAX_STRING_SIZE;
     }

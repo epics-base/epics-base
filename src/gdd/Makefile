@@ -71,11 +71,11 @@ dbMapper.o:	../gdd.h ../gddI.h ../gddContainer.h ../gddContainerI.h \
 
 # Rules for generated files
 #
-aitConvertGenerated.cc: $(EPICS_BASE_HOST_BIN)/aitGen$(HOSTEXE) aitTypes.h
-	$(EPICS_BASE_HOST_BIN)/aitGen$(HOSTEXE)
+aitConvertGenerated.cc: $(INSTALL_HOST_BIN)/aitGen$(HOSTEXE) aitTypes.h
+	$(INSTALL_HOST_BIN)/aitGen$(HOSTEXE)
 
-$(COMMON_DIR)/gddApps.h : $(EPICS_BASE_HOST_BIN)/genApps$(HOSTEXE)
-	$(EPICS_BASE_HOST_BIN)/genApps$(HOSTEXE) $@
+$(COMMON_DIR)/gddApps.h : $(INSTALL_HOST_BIN)/genApps$(HOSTEXE)
+	$(INSTALL_HOST_BIN)/genApps$(HOSTEXE) $@
 
 clean::
 	$(RM) aitConvertGenerated.cc gddApps.h

@@ -179,9 +179,12 @@ STATIC void notifyCallback(CALLBACK *pcallback)
     ppn->state = putNotifyUserCallbackActive;
     epicsMutexUnlock(notifyLock);
     dbScanUnlock(precord);
+epicsMutexMustLock(notifyLock);
     (*ppn->userCallback)(ppn);
     /*This ppn no longer owns record. No need to dbScanLock*/
+#ifdef 0
     epicsMutexMustLock(notifyLock);
+#endif
     ppn->state = putNotifyNotActive;
     epicsMutexUnlock(notifyLock);
 }
@@ -208,14 +211,14 @@ long epicsShareAPI dbPutNotify(putNotify *ppn)
         (*ppn->userCallback)(ppn);
         return(S_db_Pending);
     }
+    dbScanLock(precord);
+    epicsMutexMustLock(notifyLock);
     ppn->status = 0;
     ppn->state = putNotifyNotActive;
     ppn->ntimesActive = 0;
     callbackSetCallback(notifyCallback,&ppn->callback);
     callbackSetUser(ppn,&ppn->callback);
     callbackSetPriority(priorityLow,&ppn->callback);
-    dbScanLock(precord);
-    epicsMutexMustLock(notifyLock);
     if(!precord->ppnr) {/* make sure record has a putNotifyRecord*/
         precord->ppnr = dbCalloc(1,sizeof(putNotifyRecord));
         precord->ppnr->precord = precord;

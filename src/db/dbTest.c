@@ -40,6 +40,7 @@
  * .09  09-24-93        jbk 	adjusted dbpr to print vxi links correctly
  * .10  02-02-94	mrk	added dbtpn (test dbPutNotify)
  * .11	03-18-94	mcn	added dbgrep and timing routines.
+ * .12  08-14-95	mrk	Moved dbtpn to dbNotify
  */
 
 /* Global Database Test Routines - All can be invoked via vxWorks shell
@@ -73,10 +74,6 @@
  *	char	*pname;
  *
  * dbtpf(pname,pvalue)		test put field
- *	char	*pname;
- *	char	*pvalue
- *
- * dbtpn(pname,pvalue)		test put notify
  *	char	*pname;
  *	char	*pvalue
  *
@@ -292,8 +289,6 @@ long dbgrep(char *pmask)
     int                 rectype, beg, end;
     struct recLoc       *precLoc;
     struct dbCommon     *precord;
-    char                *pstr;
-    char                name[PVNAME_SZ+1];
     struct recType      *precType;
     struct recHeader    *precHeader;
     RECNODE             *precNode;
@@ -699,59 +694,6 @@ long dbtpf(char	*pname,char *pvalue)
     return(0);
 }
 
-static void dbtpnCallback(PUTNOTIFY *ppn)
-{
-    DBADDR	*pdbaddr = ppn->paddr;
-    long	status = ppn->status;
-
-    if(status==S_db_Blocked)
-	printf("dbtpnCallback: blocked record=%s\n",ppn->paddr->precord);
-    else if(status==0)
-	printf("dbtpnCallback: success record=%s\n",ppn->paddr->precord);
-    else
-	recGblRecordError(status,pdbaddr->precord,"dbtpnCallback");
-    free((void *)pdbaddr);
-    free(ppn);
-}
-
-long dbtpn(char	*pname,char *pvalue)
-{
-    long	status;
-    DBADDR	*pdbaddr=NULL;
-    PUTNOTIFY	*ppn=NULL;
-    char	*psavevalue;
-    int		len;
-
-    len = strlen(pvalue);
-    /*allocate space for value immediately following DBADDR*/
-    pdbaddr = dbCalloc(1,sizeof(DBADDR) + len+1);
-    psavevalue = (char *)(pdbaddr + 1);
-    strcpy(psavevalue,pvalue);
-    status = dbNameToAddr(pname,pdbaddr);
-    if(status) {
-	errMessage(status, "dbtpn: dbNameToAddr");
-	free((void *)pdbaddr);
-	return(-1);
-    }
-    ppn = dbCalloc(1,sizeof(PUTNOTIFY));
-    ppn->paddr = pdbaddr;
-    ppn->pbuffer = psavevalue;
-    ppn->nRequest = 1;
-    ppn->dbrType = DBR_STRING;
-    ppn->userCallback = dbtpnCallback;
-    status = dbPutNotify(ppn);
-    if(status==S_db_Pending) {
-	printf("dbtpn: Pending nwaiting=%d\n",ppn->nwaiting);
-	return(0);
-    }
-    if(status==S_db_Blocked) {
-	printf("dbtpn: blocked record=%s\n",pname);
-    } else if(status) {
-    	errMessage(status, "dbtpn");
-    }
-    return(0);
-}
-
 long dbior(char	*pdrvName,int type)
 {
     int		 	i,j;
@@ -914,7 +856,7 @@ static void printBuffer(
 		pdbr_status->status, pdbr_status->severity);
 	} else
 	    printf("status and severity not returned\n");
-	pbuffer += dbr_status_size;
+	pbuffer = (char *)pbuffer + dbr_status_size;
     }
     if (reqOptions & DBR_UNITS) {
 	if (retOptions & DBR_UNITS) {
@@ -924,7 +866,7 @@ static void printBuffer(
 	}else{
 	    printf("units not returned\n");
 	}
-	pbuffer += dbr_units_size;
+	pbuffer = (char *)pbuffer + dbr_units_size;
     }
     if (reqOptions & DBR_PRECISION) {
 	precision = *((long *) pbuffer);
@@ -935,7 +877,7 @@ static void printBuffer(
 	}else{
 	    printf("precision not returned\n");
 	}
-	pbuffer += dbr_precision_size;
+	pbuffer = (char *)pbuffer + dbr_precision_size;
     }
     if (reqOptions & DBR_TIME) {
 	if (retOptions & DBR_TIME) {
@@ -946,7 +888,7 @@ static void printBuffer(
 	}else{
 	    printf("time not returned\n");
 	}
-	pbuffer += dbr_time_size;
+	pbuffer = (char *)pbuffer + dbr_time_size;
     }
     if (reqOptions & DBR_ENUM_STRS) {
 	if (retOptions & DBR_ENUM_STRS) {
@@ -957,7 +899,7 @@ static void printBuffer(
 		printf("%s\n",&pdbr_enumStrs->strs[i][0]);
 	} else
 	    printf("enum strings not returned\n");
-	pbuffer += dbr_enumStrs_size;
+	pbuffer = (char *)pbuffer + dbr_enumStrs_size;
     }
     if (reqOptions & DBR_GR_LONG) {
 	if (retOptions & DBR_GR_LONG) {
@@ -968,7 +910,7 @@ static void printBuffer(
 	}else{
 	    printf("DBRgrLong not returned\n");
 	}
-	pbuffer += dbr_grLong_size;
+	pbuffer = (char *)pbuffer + dbr_grLong_size;
     }
     if (reqOptions & DBR_GR_DOUBLE) {
 	if (retOptions & DBR_GR_DOUBLE) {
@@ -979,7 +921,7 @@ static void printBuffer(
 	}else{
 	    printf("DBRgrDouble not returned\n");
 	}
-	pbuffer += dbr_grDouble_size;
+	pbuffer = (char *)pbuffer + dbr_grDouble_size;
     }
     if (reqOptions & DBR_CTRL_LONG) {
 	if (retOptions & DBR_CTRL_LONG){
@@ -990,7 +932,7 @@ static void printBuffer(
 	}else{
 	    printf("DBRctrlLong not returned\n");
 	}
-	pbuffer += dbr_ctrlLong_size;
+	pbuffer = (char *)pbuffer + dbr_ctrlLong_size;
     }
     if (reqOptions & DBR_CTRL_DOUBLE) {
 	if (retOptions & DBR_CTRL_DOUBLE) {
@@ -1001,7 +943,7 @@ static void printBuffer(
 	}else{
 	    printf("DBRctrlDouble not returned\n");
 	}
-	pbuffer += dbr_ctrlDouble_size;
+	pbuffer = (char *)pbuffer + dbr_ctrlDouble_size;
     }
     if (reqOptions & DBR_AL_LONG) {
 	if (retOptions & DBR_AL_LONG) {
@@ -1013,7 +955,7 @@ static void printBuffer(
 	}else{
 	    printf("DBRalLong not returned\n");
 	}
-	pbuffer += dbr_alLong_size;
+	pbuffer = (char *)pbuffer + dbr_alLong_size;
     }
     if (reqOptions & DBR_AL_DOUBLE) {
 	if (retOptions & DBR_AL_DOUBLE) {
@@ -1025,7 +967,7 @@ static void printBuffer(
 	}else{
 	    printf("DBRalDouble not returned\n");
 	}
-	pbuffer += dbr_alDouble_size;
+	pbuffer = (char *)pbuffer + dbr_alDouble_size;
     }
     /* Now print values */
     if (no_elements == 0) return;
@@ -1044,7 +986,7 @@ static void printBuffer(
 		sprintf(pmsg, " %s", (char *)pbuffer);
 		dbpr_msgOut(pMsgBuff, tab_size);
 	    }
-	    pbuffer += MAX_STRING_SIZE;
+	    pbuffer = (char *)pbuffer + MAX_STRING_SIZE;
 	}
 	break;
     case (DBR_CHAR):
@@ -1059,7 +1001,7 @@ static void printBuffer(
 	    svalue = *(char *) pbuffer;
 	    sprintf(pmsg, "%-9d 0x%-9x", svalue,svalue);
 	    dbpr_msgOut(pMsgBuff, tab_size);
-	    pbuffer += 1;
+	    pbuffer = (char *)pbuffer + 1;
 	}
 	break;
     case (DBR_UCHAR):
@@ -1074,7 +1016,7 @@ static void printBuffer(
 	    usvalue = *(unsigned char *) pbuffer;
 	    sprintf(pmsg, "%-9d 0x%-9x", usvalue,usvalue);
 	    dbpr_msgOut(pMsgBuff, tab_size);
-	    pbuffer += 1;
+	    pbuffer = (char *)pbuffer + 1;
 	}
 	break;
     case (DBR_SHORT):
@@ -1088,7 +1030,7 @@ static void printBuffer(
 	for (i = 0; i < no_elements; i++) {
 	    sprintf(pmsg, "%-9d 0x%-9x", *((short *) pbuffer), *((short *) pbuffer));
 	    dbpr_msgOut(pMsgBuff, tab_size);
-	    pbuffer += 2;
+	    pbuffer = (char *)pbuffer + sizeof(short);
 	}
 	break;
     case (DBR_USHORT):
@@ -1102,7 +1044,7 @@ static void printBuffer(
 	for (i = 0; i < no_elements; i++) {
 	    sprintf(pmsg, "%-9u 0x%-9x",*((unsigned short *) pbuffer),*((unsigned short *) pbuffer));
 	    dbpr_msgOut(pMsgBuff, tab_size);
-	    pbuffer += 2;
+	    pbuffer = (char *)pbuffer + sizeof(unsigned short);
 	}
 	break;
     case (DBR_LONG):
@@ -1116,7 +1058,7 @@ static void printBuffer(
 	for (i = 0; i < no_elements; i++) {
 	    sprintf(pmsg, "%-9ld 0x%-9lx", *((long *) pbuffer), *((long *) pbuffer));
 	    dbpr_msgOut(pMsgBuff, tab_size);
-	    pbuffer += 4;
+	    pbuffer = (char *)pbuffer + sizeof(long);
 	}
 	break;
     case (DBR_ULONG):
@@ -1130,7 +1072,7 @@ static void printBuffer(
 	for (i = 0; i < no_elements; i++) {
 	    sprintf(pmsg, "%-9ld 0x%-9lx",*((unsigned long *) pbuffer),*((unsigned long *) pbuffer));
 	    dbpr_msgOut(pMsgBuff, tab_size);
-	    pbuffer += 4;
+	    pbuffer = (char *)pbuffer + sizeof(unsigned long);
 	}
 	break;
     case (DBR_FLOAT):
@@ -1144,7 +1086,7 @@ static void printBuffer(
 	for (i = 0; i < no_elements; i++) {
 	    sprintf(pmsg, "%-13.6g", *((float *) pbuffer));
 	    dbpr_msgOut(pMsgBuff, tab_size);
-	    pbuffer += 4;
+	    pbuffer = (char *)pbuffer + sizeof(float);
 	}
 	break;
     case (DBR_DOUBLE):
@@ -1158,7 +1100,7 @@ static void printBuffer(
 	for (i = 0; i < no_elements; i++) {
 	    sprintf(pmsg, "%-13.6g", *((double *) pbuffer));
 	    dbpr_msgOut(pMsgBuff, tab_size);
-	    pbuffer += 8;
+	    pbuffer = (char *)pbuffer + sizeof(double);
 	}
 	break;
     case (DBR_ENUM):
@@ -1172,7 +1114,7 @@ static void printBuffer(
 	for (i = 0; i < no_elements; i++) {
 	    sprintf(pmsg, "%-9u", *((unsigned short *) pbuffer));
 	    dbpr_msgOut(pMsgBuff, tab_size);
-	    pbuffer += 2;
+	    pbuffer = (char *)pbuffer + sizeof(unsigned short);
 	}
 	break;
     default:

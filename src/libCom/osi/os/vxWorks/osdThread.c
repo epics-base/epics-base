@@ -25,6 +25,16 @@ of this distribution.
 #include "cantProceed.h"
 #include "epicsAssert.h"
 
+#if CPU_FAMILY == MC680X0
+#define ARCH_STACK_FACTOR 1
+#elif CPU_FAMILY == SPARC
+#define ARCH_STACK_FACTOR 2
+#else
+#define ARCH_STACK_FACTOR 2
+#endif
+static const unsigned stackSizeTable[threadStackBig+1] = 
+   {4000*ARCH_STACK_FACTOR, 6000*ARCH_STACK_FACTOR, 11000*ARCH_STACK_FACTOR};
+
 /* definitions for implementation of threadPrivate */ 
 typedef struct threadPrivateInfo {
     int nthreadPrivate;
@@ -33,7 +43,6 @@ typedef struct threadPrivateInfo {
 
 static threadPrivateInfo *pthreadPrivateInfo = 0;
 static int npthreadPrivate = 0;
-static void threadPrivateInit(int tid);
 
 /* Just map osi 0 to 99 into vx 100 to 199 */
 /* remember that for vxWorks lower number means higher priority */
@@ -51,21 +60,8 @@ static int getOssPriorityValue(unsigned int osiPriority)
 }
 
 
-#if CPU_FAMILY == MC680X0
-#define ARCH_STACK_FACTOR 1
-#elif CPU_FAMILY == SPARC
-#define ARCH_STACK_FACTOR 2
-#else
-#define ARCH_STACK_FACTOR 2
-#endif
-
-/*
- * threadGetStackSize ()
- */
 epicsShareFunc unsigned int epicsShareAPI threadGetStackSize (threadStackSizeClass stackSizeClass) 
 {
-    static const unsigned stackSizeTable[threadStackBig+1] = 
-        {4000*ARCH_STACK_FACTOR, 6000*ARCH_STACK_FACTOR, 11000*ARCH_STACK_FACTOR};
 
     if (stackSizeClass<threadStackSmall) {
         errlogPrintf("threadGetStackSize illegal argument (too small)");
@@ -80,6 +76,22 @@ epicsShareFunc unsigned int epicsShareAPI threadGetStackSize (threadStackSizeCla
     return stackSizeTable[stackSizeClass];
 }
 
+static void createFunction(THREADFUNC func, void *parm)
+{
+    int tid = taskIdSelf();
+
+    taskVarAdd(tid,(int *)&pthreadPrivateInfo);
+    pthreadPrivateInfo = callocMustSucceed(
+            1,sizeof(threadPrivateInfo),"threadPrivateSet");
+    pthreadPrivateInfo->nthreadPrivate = 1;
+    pthreadPrivateInfo->papTSD = callocMustSucceed(
+        pthreadPrivateInfo->nthreadPrivate,
+        sizeof(void *),"threadPrivateAlloc");
+    (*func)(parm);
+    taskVarDelete(tid,(int *)&pthreadPrivateInfo);
+    free(pthreadPrivateInfo->papTSD);
+    free(pthreadPrivateInfo);
+}
 
 threadId threadCreate(const char *name,
     unsigned int priority, unsigned int stackSize,
@@ -91,12 +103,13 @@ threadId threadCreate(const char *name,
         return(0);
     }
     tid = taskSpawn((char *)name,getOssPriorityValue(priority),
-        VX_FP_TASK, stackSize, (FUNCPTR)funptr,(int)parm,0,0,0,0,0,0,0,0,0);
+        VX_FP_TASK, stackSize,
+        (FUNCPTR)createFunction,(int)funptr,(int)parm,
+        0,0,0,0,0,0,0,0);
     if(tid==0) {
         errlogPrintf("threadCreate taskSpawn failure for %s\n",name);
         return(0);
     }
-    threadPrivateInit(tid);
     return((threadId)tid);
 }
 
@@ -116,7 +129,7 @@ void threadResume(threadId id)
     status = taskResume(tid);
     if(status) errlogPrintf("threadResume failed\n");
 }
-
+
 unsigned int threadGetPriority(threadId id)
 {
     int tid = (int)id;
@@ -184,18 +197,6 @@ void threadPrivateDelete(threadVarId id)
     /*not safe to delete anything*/
     return;
 }
-
-static void threadPrivateInit(int tid)
-{
-    taskVarAdd(tid,(int *)&pthreadPrivateInfo);
-    pthreadPrivateInfo = callocMustSucceed(
-            1,sizeof(threadPrivateInfo),"threadPrivateSet");
-    pthreadPrivateInfo->nthreadPrivate = 1;
-    pthreadPrivateInfo->papTSD = callocMustSucceed(
-        pthreadPrivateInfo->nthreadPrivate,
-        sizeof(void *),"threadPrivateInit");
-    taskVarSet(tid,(int *)&pthreadPrivateInfo,(int)pthreadPrivateInfo);
-}
 
 /*
  *note that it is not necessary to have mutex for following
@@ -205,6 +206,7 @@ void threadPrivateSet (threadVarId id, void *pvt)
 {
     int indpthreadPrivate = (int)id;
 
+    assert(pthreadPrivateInfo);
     if(pthreadPrivateInfo->nthreadPrivate <= indpthreadPrivate) {
         pthreadPrivateInfo->papTSD = realloc(pthreadPrivateInfo->papTSD,
             (indpthreadPrivate+1)*sizeof(void *));
@@ -218,7 +220,6 @@ void threadPrivateSet (threadVarId id, void *pvt)
 
 void *threadPrivateGet(threadVarId id)
 {
-    int indpthreadPrivate = (int)id;
     assert(pthreadPrivateInfo);
-    return(pthreadPrivateInfo->papTSD[indpthreadPrivate]);
+    return(pthreadPrivateInfo->papTSD[(int)id]);
 }

@@ -85,8 +85,8 @@ static char	buf[MAX_UDP];
 
 LOCAL void register_new_client(struct sockaddr_in *pLocal, 
 					struct sockaddr_in *pFrom);
-#define PORT_ANY 0
-LOCAL int makeSocket(int port);
+#define PORT_ANY 0U
+LOCAL SOCKET makeSocket(unsigned short port);
 LOCAL void fanOut(struct sockaddr_in *pFrom, const char *pMsg, unsigned msgSize);
 
 
@@ -104,7 +104,7 @@ void ca_repeater()
 	struct sockaddr_in		from;
   	struct sockaddr_in		local;
   	int				from_size = sizeof from;
-	short				port;
+	unsigned short			port;
 
 	port = caFetchPortConfig(
 		&EPICS_CA_REPEATER_PORT, 
@@ -241,11 +241,11 @@ LOCAL void fanOut(struct sockaddr_in *pFrom, const char *pMsg, unsigned msgSize)
 /*
  * makeSocket()
  */
-LOCAL int makeSocket(int port)
+LOCAL SOCKET makeSocket(unsigned short port)
 {
 	int			status;
   	struct sockaddr_in 	bd;
-	int 			sock;
+	SOCKET			sock;
 	int			true = 1;
 
       	sock = socket(	AF_INET,	/* domain	*/

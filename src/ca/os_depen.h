@@ -307,12 +307,13 @@ static char *os_depenhSccsId = "$Id$";
 #  	define UNLOCKEVENTS
 #	define EVENTLOCKTEST		(post_msg_active)
 #	define MAXHOSTNAMELEN 		75
-#	define IPPORT_USERRESERVED	5000
+#	define IPPORT_USERRESERVED	5000U
 #	define EWOULDBLOCK		WSAEWOULDBLOCK
 #	define ENOBUFS			WSAENOBUFS
 #	define ECONNRESET		WSAECONNRESET
 #	define ETIMEDOUT		WSAETIMEDOUT
 #	define EADDRINUSE		WSAEADDRINUSE
+#	define ECONNREFUSED		WSAECONNREFUSED
 #	define socket_close(S) 		closesocket(S)
 #	define socket_ioctl(A,B,C)	ioctlsocket(A,B,C)
 #	define MYERRNO			WSAGetLastError()

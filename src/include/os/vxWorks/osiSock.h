@@ -15,6 +15,7 @@ extern "C" {
 #include <sys/times.h>
 #include <sys/socket.h>
 #include <sockLib.h>
+#include <ioLib.h>
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>

@@ -37,7 +37,7 @@
 
 #include <stdio.h>
 #include <typeinfo>
-#include "osiMutex.h"
+#include "epicsMutex.h"
 
 // these versions of the microsoft compiler incorrectly
 // warn about a missing delete operator if only the
@@ -60,7 +60,7 @@ struct tsFreeListChunk {
 };
 
 template < class T, unsigned N = 0x400, unsigned DEBUG_LEVEL = 0u >
-class tsFreeList : private osiMutex {
+class tsFreeList : private epicsMutex {
 public:
     tsFreeList ();
     ~tsFreeList ();

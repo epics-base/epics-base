@@ -558,7 +558,7 @@ void cac::installCASG ( CASG &sg )
     this->sgTable.add ( sg );
 }
 
-void cac::uninstallCASG ( CASG &sg )
+void cac::uninstallCASG ( CASG & sg )
 {
     epicsGuard < cacMutex > guard ( this->mutex );
     this->sgTable.remove ( sg );
@@ -628,8 +628,9 @@ bool cac::lookupChannelAndTransferToTCP (
              unsigned minorVersionNumber, const osiSockAddr & addr,
              const epicsTime & currentTime )
 {
-    tcpiiu * pnewiiu = 0;
+    bool newIIU = false;
     unsigned short retrySeqNumber = 0u;
+    tcpiiu * piiu = 0;
 
     if ( addr.sa.sa_family != AF_INET ) {
         return false;
@@ -671,7 +672,7 @@ bool cac::lookupChannelAndTransferToTCP (
          * look for an existing virtual circuit
          */
         caServerID servID ( addr.ia, pChan->getPriority() );
-        tcpiiu * piiu = this->serverTable.lookup ( servID );
+        piiu = this->serverTable.lookup ( servID );
         if ( piiu ) {
             if ( ! piiu->alive () ) {
                 return true;
@@ -679,28 +680,32 @@ bool cac::lookupChannelAndTransferToTCP (
         }
         else {
             try {
-                pnewiiu = piiu = new tcpiiu ( 
+                epics_auto_ptr < tcpiiu > pnewiiu ( new tcpiiu ( 
                             *this, this->cbMutex, this->connTMO, this->timerQueue,
                             addr, minorVersionNumber, this->ipToAEngine,
-                            pChan->getPriority() );
-                if ( ! piiu ) {
+                            pChan->getPriority() ) );
+                if ( pnewiiu.get() == 0 ) {
                     return true;
                 }
-                this->serverTable.add ( *piiu );
-                bhe * pBHE = this->beaconTable.lookup ( addr.ia );
+                bhe * pBHE ( this->beaconTable.lookup ( addr.ia ) );
                 if ( ! pBHE ) {
-                    pBHE = new bhe ( epicsTime (), addr.ia );
-                    if ( pBHE ) {
-                        if ( this->beaconTable.add ( *pBHE ) < 0 ) {
-                            pBHE->destroy ();
+                    epics_auto_ptr < bhe > pNewBHE ( new bhe ( epicsTime (), addr.ia ) );
+                    if ( pNewBHE.get () ) {
+                        if ( this->beaconTable.add ( *pNewBHE ) >= 0 ) {
+                            pBHE = pNewBHE.release ();
+                        }
+                        else {
                             return true;
                         }
-                    }
+                    } 
                     else {
                         return true;
                     }
                 }
-                pBHE->registerIIU ( *piiu );
+                this->serverTable.add ( *pnewiiu );
+                pBHE->registerIIU ( *pnewiiu );
+                piiu = pnewiiu.release ();
+                newIIU = true;
             }
             catch ( ... ) {
                 this->printf ( "CAC: Exception during virtual circuit creation\n" );
@@ -744,8 +749,8 @@ bool cac::lookupChannelAndTransferToTCP (
         }
     }
 
-    if ( pnewiiu ) {
-        pnewiiu->start ( cbGuard );
+    if ( newIIU ) {
+        piiu->start ( cbGuard );
     }
 
     if ( this->pudpiiu ) {
@@ -1156,6 +1161,7 @@ void cac::ioExceptionNotifyAndDestroy ( unsigned id, int status,
 }
 
 // resubscribe for monitors from this channel
+// (always called from a udp thread)
 void cac::connectAllIO ( epicsGuard < cacMutex > & guard, nciu & chan )
 {
     tsDLIterBD < baseNMIU > pNetIO = 

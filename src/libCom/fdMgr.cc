@@ -5,6 +5,9 @@
 // File descriptor management C++ class library
 //
 // $Log$
+// Revision 1.2  1996/07/09 23:02:05  jhill
+// mark fd entry in limbo during delete
+//
 // Revision 1.1  1996/06/21 01:08:53  jhill
 // add fdMgr.h fdMgr.cc
 //
@@ -77,11 +80,11 @@ fdMgr::~fdMgr()
 //
 void fdMgr::process (const osiTime &delay)
 {
-	tsDLIter<fdReg> iter(this->regList);
+	tsDLIter<fdReg> regIter(this->regList);
+	tsDLIter<fdReg> actIter(this->activeList);
 	osiTime minDelay;
 	osiTime zeroDelay;
 	fdReg *pReg;
-	fdReg *pNextReg;
 	struct timeval tv;
 	int status;
 
@@ -93,7 +96,7 @@ void fdMgr::process (const osiTime &delay)
 	}
 	this->processInProg = 1;
 
-	while ( (pReg=iter()) ) {
+	while ( (pReg=regIter()) ) {
 		FD_SET(pReg->fd, &pReg->fdSet); 
 	}
 
@@ -137,37 +140,43 @@ void fdMgr::process (const osiTime &delay)
 	//
 	// Look for activity
 	//
-	iter.reset();
-	pNextReg = iter();
-	while ( (pReg=pNextReg) ) {
-		pNextReg = iter();
+	regIter.reset();
+	while ( (pReg=regIter()) ) {
 		if (FD_ISSET(pReg->fd, &pReg->fdSet)) {
 			FD_CLR(pReg->fd, &pReg->fdSet);
-			this->regList.remove(*pReg);
+			regIter.remove();
 			this->activeList.add(*pReg);
 			pReg->state = fdrActive;
 		}
 	}
 
 	//
-	// prevent problems if they access the
+	// I am careful to prevent problems if they access the
 	// above list while in a "callBack()" routine
 	//
-	while ( (pReg = this->activeList.first()) ) {
+	while ( (pReg = actIter()) ) {
 
 		pReg->callBack();
 
 		//
 		// Verify that the current item wasnt deleted
-		// in "callBack()"
+		// in their "callBack()"
 		//
-		if (pReg == this->activeList.first()) {
-			this->activeList.get();
-			pReg->state = fdrLimbo;
+                // this should be relatively quick even 
+                // though it is a linear search because
+                // if present the item will be the first
+                // item on the list
+                //
+		// they cant add to the active list without being 
+		// in this routine and I prevent recursive calls
+		// to this routine
+		//
+		if (this->activeList.find(*pReg)>=0) {
 			if (pReg->onceOnly) {
 				pReg->destroy();
 			}
 			else {
+				actIter.remove();
 				this->regList.add(*pReg);
 				pReg->state = fdrPending;
 			}

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/07/09 23:00:06  jhill
+ * force timer into limbo state during delete
+ *
  * Revision 1.1  1996/06/26 22:14:13  jhill
  * added new src files
  *
@@ -99,8 +102,7 @@ void osiTimer::arm (const osiTime * const pInitialDelay)
                 }
         }
 	if (pTmr) {
-		pTmr = pTmr->getPrev ();
-        	staticTimerQueue.pending.insert (*this, pTmr);
+        	staticTimerQueue.pending.insertBefore (*this, *pTmr);
 	}
 	else {
         	staticTimerQueue.pending.add (*this);
@@ -189,9 +191,10 @@ osiTime osiTimerQueue::delayToFirstExpire()
 {
 	osiTimer *pTmr;
 	osiTime cur(osiTime::getCurrent());
+	tsDLIter<osiTimer> iter(this->pending);
 	osiTime delay;
 
-	pTmr = pending.first();
+	pTmr = iter();
 	if (pTmr) {
 		if (pTmr->exp>=cur) {
 			delay = pTmr->exp - cur;
@@ -217,9 +220,9 @@ osiTime osiTimerQueue::delayToFirstExpire()
 //
 void osiTimerQueue::process()
 {
-	tsDLIter<osiTimer> iter (this->pending);
+	tsDLIter<osiTimer> pendIter (this->pending);
+	tsDLIter<osiTimer> expirIter (this->expired);
 	osiTimer *pTmr;
-	osiTimer *pNextTmr;
 	osiTime cur(osiTime::getCurrent());
 
 	// no recursion
@@ -228,34 +231,42 @@ void osiTimerQueue::process()
 	}
 	this->inProcess = osiTrue;
 
-	pNextTmr = iter();
-	while ( (pTmr = pNextTmr) ) {	
+	while ( (pTmr = pendIter()) ) {	
 		if (pTmr->exp >= cur) {
 			break;
 		}
-		pNextTmr = iter();
-		this->pending.remove(*pTmr);
+		pendIter.remove();
 		pTmr->state = ositExpired;
 		this->expired.add(*pTmr);
 	}
 
 	//
-	// prevent problems if they access the
+	// I am careful to prevent problems if they access the
 	// above list while in an "expire()" call back
 	//
-	while ( (pTmr = this->expired.first()) ) {	
+	while ( (pTmr = expirIter()) ) {
 #ifdef DEBUG
 		double diff = cur-pTmr->exp;
 		printf ("expired %x for \"%s\" with error %lf\n", 
 			pTmr, pTmr->name(), diff);
 #endif
 		pTmr->expire();
+
 		//
 		// verify that the current timer 
 		// wasnt deleted in "expire()"
 		//
-		if (pTmr == this->expired.first()) {
-			this->expired.get();
+		// this should be relatively quick even 
+		// though it is a linear search because
+		// if present the item will be the first
+		// item on the list
+		//
+                // they cant add to the expired list without being
+                // in this routine and I prevent recursive calls
+                // to this routine
+                //
+		if (this->expired.find(*pTmr)>=0) {
+			expirIter.remove();
 			pTmr->state = ositLimbo;
 			if (pTmr->again()) {
 				pTmr->arm();

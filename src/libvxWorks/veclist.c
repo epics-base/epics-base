@@ -12,6 +12,9 @@
  *		   identification as MACRO ISR problem. 
  *	.02 022195 Compiler warnings fixed
  *	$Log$
+ *	Revision 1.15  1998/03/16 17:01:27  mrk
+ *	include string.h
+ *
  *	Revision 1.14  1996/09/04 22:08:50  jhill
  *	fixed gcc warnings
  *
@@ -149,9 +152,11 @@ int	cISRTest(FUNCPTR proutine, FUNCPTR *ppisr, void **pparam)
 	int		found_param;
 
 	if(handler == NULL){
+#if CPU_FAMILY != PPC
 		handler = (FUNCPTR) intHandlerCreate(
 				(FUNCPTR) ISR_PATTERN, 
 				PARAM_PATTERN);
+#endif
 		if(handler == NULL){
 			return ERROR;
 		}

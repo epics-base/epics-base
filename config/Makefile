@@ -15,7 +15,7 @@ TOP=..
 
 include $(TOP)/configure/CONFIG
 
-ifeq ($(strip $(COMPAT_313)),YES)
+ifeq ($(findstring YES,$(COMPAT_313) $(COMPAT_TOOLS_313)),YES)
 INSTALL_CONFIG = $(INSTALL_LOCATION)/config
 
 CONFIGS += $(subst ../,,$(wildcard ../CONFIG*))

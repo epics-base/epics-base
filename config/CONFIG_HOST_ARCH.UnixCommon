@@ -10,5 +10,5 @@ MKDIR = mkdir
 RMDIR = rm -rf
 CHMOD = "/bin/chmod"
 
-PERL = /usr/local/bin/perl 
+PERL = /usr/bin/perl 
 

@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.84  1996/07/10 23:30:09  jhill
+ * fixed GNU warnings
+ *
  * Revision 1.83  1996/07/09 22:43:29  jhill
  * silence gcc warnings and default CLOCKS_PER_SEC if it isnt defined (for sunos4 and gcc)
  *
@@ -1544,14 +1547,16 @@ void				*usrarg
 
 	piiu = chix->piiu;
 
-	if(!CA_V41(CA_PROTOCOL_VERSION, piiu->minor_version_number)){
-		return ECA_NOSUPPORT;
+	if (piiu) {
+		if(!CA_V41(CA_PROTOCOL_VERSION, piiu->minor_version_number)){
+			return ECA_NOSUPPORT;
+		}
 	}
 
 #ifdef vxWorks
 	if (!piiu) {
 		CACLIENTPUTNOTIFY	*ppn;
-		int 			size;
+		unsigned		size;
 
 		size = dbr_size_n(type,count);
 		LOCK;

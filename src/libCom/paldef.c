@@ -7,8 +7,10 @@
  *	routine parses the file and loads the information in
  *	the PAL definition structure.
  *
+ * 	.01 09-11-96 joh fixed warningsi and protoized
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "pal.h"
 
@@ -50,10 +52,7 @@ char temp[80];
  * getkey - look for keyword
  *
  */
-getkey(file,list,num)
-	FILE *file;
-	char *list[];
-	int num;
+int getkey(FILE *file, char **list, int num)
 {
 	int key;
 
@@ -65,8 +64,7 @@ getkey(file,list,num)
 	return key;
 }	
 
-paldef(defpal)
-	struct pal *defpal;
+int paldef(struct pal *defpal)
 {
 	FILE *datfile;
 	char filenam[80];
@@ -169,10 +167,7 @@ paldef(defpal)
  * readblk - read PAL logic block
  *
  */
-readblk(datfile,curblk,blkelm)
-	FILE *datfile;
-	struct blk *curblk;
-	int blkelm;
+int readblk(FILE *datfile, struct blk *curblk, int blkelm)
 {
 	int key;
 	char inchar;
@@ -213,9 +208,7 @@ readblk(datfile,curblk,blkelm)
  * readinp - read PAL input info
  *
  */
-readinp(datfile,curinp)
-	FILE *datfile;
-	struct thresh *curinp;
+int readinp(FILE *datfile, struct thresh *curinp)
 {
 	int key;
 	char inchar;

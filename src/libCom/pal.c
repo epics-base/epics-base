@@ -4,9 +4,11 @@
  * pal emulator
  * AT-8 hardware design
  *
+ * .01 09-11-96 joh fixed warnings and protoized
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "pal.h"
 
@@ -18,8 +20,7 @@
 /*
  * getbit - get an ascii bit (0 or 1) from a JEDEC file
  */
-getbit(datfile)
-	FILE *datfile;
+int getbit(FILE *datfile)
 {
 	char inchar;
 	char temp[80];
@@ -46,10 +47,7 @@ getbit(datfile)
  *	an intrinsic part of the EPICS record in the future.
  *
  */
-struct pal * palinit(file,recname,thresh)
-	char *file;
-	char *recname;
-	double thresh[];
+struct pal * palinit(char *file, char *recname, double *thresh)
 {
 	FILE *datfile;
 	char temp[80], jedfile[80], inchar;
@@ -103,9 +101,9 @@ struct pal * palinit(file,recname,thresh)
 			if (temp[i] == '/')
 			break;
 		if (i)
-			temp[i+1] = NULL;
+			temp[i+1] = '\0';
 		else
-			temp[0] = NULL;
+			temp[0] = '\0';
 		curpal->iptr->path = (char *)malloc(strlen(temp)+1);
 		strcpy(curpal->iptr->path,temp);
 		}
@@ -268,12 +266,9 @@ struct pal * palinit(file,recname,thresh)
  * read in device specific configuration information
  *
  */
-palconfig(datfile, curpal, fusenum)
-	FILE *datfile;
-	struct pal *curpal;
-	int fusenum;
+int palconfig(FILE *datfile, struct pal *curpal, int fusenum)
 {
-	int i, j, k, l, m;
+	int i, j, k;
 	struct thresh *tptr;
 	struct blk *fptr;
 	char inchar;
@@ -435,13 +430,9 @@ palconfig(datfile, curpal, fusenum)
  * pal - PAL emulator
  *
  */
-pal(pptr,in,inum,result)
-	struct pal *pptr;
-	double in[];
-	int inum;
-	unsigned int *result;
+int pal(struct pal *pptr, double *in, int inum, unsigned int *result)
 {
-	int i, j;
+	int i;
 	struct thresh *tptr;
 	struct blk *lptr;
 	unsigned int inarray[2];
@@ -486,10 +477,7 @@ pal(pptr,in,inum,result)
  * inbitload - load bits in input array
  *
  */
-inbitload(tptr,inarray,val)
-	struct thresh *tptr;
-	unsigned int inarray[2];
-	unsigned int val;
+int inbitload(struct thresh *tptr, unsigned int *inarray, unsigned int val)
 {
 	int i;
 
@@ -513,10 +501,7 @@ inbitload(tptr,inarray,val)
  * outbitload - load feedback bits in input array
  *
  */
-outbitload(lptr,inarray,val)
-	struct blk *lptr;
-	unsigned int inarray[2];
-	unsigned int val;
+int outbitload(struct blk *lptr, unsigned int *inarray, unsigned int val)
 {
 	int i;
 
@@ -552,10 +537,7 @@ outbitload(lptr,inarray,val)
  * eval - evaluate logic block
  *
  */
-eval(lptr,inarray,blkelm)
-	struct blk *lptr;
-	unsigned int inarray[2];
-	int blkelm;
+int eval(struct blk *lptr, unsigned int *inarray, int blkelm)
 {
 	int i, j;
 	unsigned int *eptr;

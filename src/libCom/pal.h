@@ -6,6 +6,7 @@
  * PAL emulator header file
  * AT-8 hardware design
  *
+ * .01 09-11-96 joh fixed warnings and protoized
  */
 
 /*
@@ -79,4 +80,17 @@ struct pal
 	int inp;		/* number of inputs */
 	int blktyp;		/* macrocell type */
 	};
+
+int getkey(FILE *file, char **list, int num);
+int paldef(struct pal *defpal);
+int readblk(FILE *datfile, struct blk *curblk, int blkelm);
+int readinp(FILE *datfile, struct thresh *curinp);
+int getbit(FILE *datfile);
+struct pal * palinit(char *file, char *recname, double *thresh);
+int palconfig(FILE *datfile, struct pal *curpal, int fusenum);
+int pal(struct pal *pptr, double *in, int inum, unsigned int *result);
+int inbitload(struct thresh *tptr, unsigned int *inarray, unsigned int val);
+int outbitload(struct blk *lptr, unsigned int *inarray, unsigned int val);
+int eval(struct blk *lptr, unsigned int *inarray, int blkelm);
+
 

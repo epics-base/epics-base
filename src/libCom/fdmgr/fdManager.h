@@ -104,7 +104,7 @@ public:
     // returns NULL if the fd is unknown
     epicsShareFunc class fdReg *lookUpFD (const SOCKET fd, const fdRegType type);
 
-    epicsTimerQueue & timerQueueRef ();
+    epicsTimer & createTimer ();
 
 private:
     tsDLList<fdReg> regList;
@@ -204,10 +204,10 @@ inline void fdManager::lazyInitTimerQueue ()
     }
 }
 
-inline epicsTimerQueue & fdManager::timerQueueRef () 
+inline epicsTimer & fdManager::createTimer () 
 {
     this->lazyInitTimerQueue ();
-    return * this->pTimerQueue;
+    return this->pTimerQueue->createTimer ();
 }
 
 #endif // fdManagerH_included

@@ -439,7 +439,6 @@ DBBASE *pdbbase;
     ELLLIST           *preclist;
     int             recType;
     if (!pdbbase || !ppvd || !precType) return;
-    dbPvdFreeMem(pdbbase);
     /* loop thru the recLocs - removing lists then recLoc only */
     for (recType = 0; recType < precType->number; recType++) {
 	if (!(precLoc = GET_PRECLOC(precHeader, recType))) continue;
@@ -461,6 +460,7 @@ DBBASE *pdbbase;
 	free((void *) precLoc);
     }
     /* free the rest of the memory allocations */
+    dbPvdFreeMem(pdbbase);
     if (pdbbase->pchoiceCvt)
 	free((void *) pdbbase->pchoiceCvt);
     if (pdbbase->pchoiceDev)
@@ -4316,7 +4316,8 @@ RECNODE *precnode;
     ppvdlist=ppvd[hashInd];
     ppvdNode = (PVDENTRY *) ellFirst(ppvdlist);
     while(ppvdNode) {
-	if(strcmp(name,(char *)ppvdNode->precnode->precord) == 0) {
+	if(ppvdNode->precnode && ppvdNode->precnode->precord
+	&& strcmp(name,(char *)ppvdNode->precnode->precord) == 0) {
 	    ellDelete(ppvdlist, (ELLNODE*)ppvdNode);
 	    free((void *)ppvdNode);
 	    return;

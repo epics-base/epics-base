@@ -5,6 +5,9 @@
 //
 //
 // $Log$
+// Revision 1.16  1998/06/16 02:35:52  jhill
+// use aToIPAddr and auto attach to winsock if its a static build
+//
 // Revision 1.15  1998/05/29 20:08:21  jhill
 // use new sock ioctl() typedef
 //
@@ -114,7 +117,13 @@ caStatus casStreamIO::init()
 		return S_cas_internal;
 	}
 
-
+	/*
+	 * some concern that vxWorks will run out of mBuf's
+	 * if this change is made
+	 *
+	 * joh 11-10-98
+	 */
+#if 0
 	/*
 	 * set TCP buffer sizes to be synergistic
 	 * with CA internal buffering
@@ -141,6 +150,7 @@ caStatus casStreamIO::init()
 			ca_printf("CAS: SO_RCVBUF set failed\n");
 	return S_cas_internal;
 	}
+#endif
 
 	this->sockState = casOnLine;
 

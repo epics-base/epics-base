@@ -129,6 +129,13 @@ FAST int 		sock;
       		return ERROR;
     	}
 
+	/*
+	 * some concern that vxWorks will run out of mBuf's
+	 * if this change is made
+	 *
+	 * joh 11-10-98
+	 */
+#if 0
 	/* 
 	 * set TCP buffer sizes to be synergistic 
 	 * with CA internal buffering
@@ -169,6 +176,7 @@ FAST int 		sock;
 		close(sock);
 		return ERROR;
 	}
+#endif
 
 	/*
  	 * performed in two steps purely for 

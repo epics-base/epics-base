@@ -138,32 +138,31 @@ int cast_server(void)
     		taskSuspend(taskIdSelf());
   	}
 
-        {
-                /*
-                 *
-                 * this allows for faster connects by queuing
-                 * additional incomming UDP search frames
-                 *
-                 * this allocates a 32k buffer
-                 * (uses a power of two)
-                 */
-                int size = 1u<<15u;
-                status = setsockopt(
-				IOC_cast_sock,
-                                SOL_SOCKET,
-                                SO_RCVBUF,
-                                (char *)&size,
-                                sizeof(size));
-                if (status<0) {
+	/*
+	 * some concern that vxWorks will run out of mBuf's
+	 * if this change is made
+	 *
+	 * joh 11-10-98
+	 */
+#if 0
+	{
+		/*
+		 *
+		 * this allows for faster connects by queuing
+		 * additional incomming UDP search frames
+		 *
+		 * this allocates a 32k buffer
+		 * (uses a power of two)
+		 */
+		int size = 1u<<15u;
+		status = setsockopt (IOC_cast_sock, SOL_SOCKET,
+						SO_RCVBUF, (char *)&size, sizeof(size));
+		if (status<0) {
 			logMsg("CAS: unable to set cast socket size\n",
-				NULL,
-				NULL,
-				NULL,
-				NULL,
-				NULL,
-				NULL);
-                }
-        }
+				NULL, NULL, NULL, NULL, NULL, NULL);
+		}
+	}
+#endif
 
   	/*  Zero the sock_addr structure */
   	bfill((char *)&sin, sizeof(sin), 0);

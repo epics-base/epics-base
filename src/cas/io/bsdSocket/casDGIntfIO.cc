@@ -95,6 +95,13 @@ caStatus casDGIntfIO::init(const caNetAddr &addr, unsigned connectWithThisPortIn
 			return S_cas_internal;
 	}
 
+	/*
+	 * some concern that vxWorks will run out of mBuf's
+	 * if this change is made
+	 *
+	 * joh 11-10-98
+	 */
+#if 0
 	{
 		/*
 		 *
@@ -116,6 +123,7 @@ caStatus casDGIntfIO::init(const caNetAddr &addr, unsigned connectWithThisPortIn
 				"CAS: unable to set cast socket size\n");
 		}
 	}
+#endif
 
 	/*
 	 * release the port in case we exit early. Also if

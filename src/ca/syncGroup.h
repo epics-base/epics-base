@@ -45,19 +45,13 @@
 #include "cadef.h"
 #include "cacIO.h"
 
-// does the local compiler support placement delete
-#if defined (_MSC_VER) 
-#   if _MSC_VER >= 1200
-#	    define CASG_PLACEMENT_DELETE
-#   endif
-#elif defined ( __HP_aCC )
-#   if _HP_aCC > 033300
-#       define CASG_PLACEMENT_DELETE
-#   endif
-#elif defined ( __BORLANDC__ )
-#   if __BORLANDC__ > 0x550
-#       define CASG_PLACEMENT_DELETE
-#   endif
+// does the compiler support placement delete
+#if defined (_MSC_VER) && ( _MSC_VER >= 1200 )
+#   define CASG_PLACEMENT_DELETE
+#elif defined ( __HP_aCC ) && ( _HP_aCC > 033300 )
+#   define CASG_PLACEMENT_DELETE
+#elif defined ( __BORLANDC__ ) && ( __BORLANDC__ > 0x550 )
+#   define CASG_PLACEMENT_DELETE
 #else
 #	define CASG_PLACEMENT_DELETE
 #endif

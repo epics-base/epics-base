@@ -1,7 +1,7 @@
 #ifndef osiSemh
 #define osiSemh
 
-#include <epicsAssert.h>
+#include "epicsAssert.h"
 
 #ifdef __cplusplus
 extern "C" {

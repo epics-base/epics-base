@@ -147,7 +147,7 @@ private:
 
 #ifdef __cplusplus
 
-#include <epicsAssert.h>
+#include "epicsAssert.h"
 
 inline void osiThread::resume ()
 {

@@ -35,8 +35,8 @@
 #include <string.h>
 
 #define epicsExportSharedSymbols
-#include <epicsAssert.h>
-#include <osiSock.h>
+#include "epicsAssert.h"
+#include "osiSock.h"
 
 #define nDigitsDottedIP 4u
 #define maxChunkDigit 3u

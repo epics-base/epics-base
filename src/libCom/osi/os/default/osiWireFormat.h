@@ -127,4 +127,46 @@ inline void osiConvertFromWireFormat ( epicsFloat64 &value, const epicsUInt8 *pW
     value = wireFloat64.ftmp;
 }
 
+inline epicsUInt16 epicsHTON16 ( epicsUInt16 in )
+{
+	unsigned tmp = in; // avoid unary conversions to int
+
+	union {
+		epicsUInt8 bytes[2];
+		epicsUInt16 word;
+	} result;
+
+	result.bytes[0] = static_cast <epicsUInt8> ( tmp >> 8 );
+	result.bytes[1] = static_cast <epicsUInt8> ( tmp );
+
+	return result.word;
+}
+
+inline epicsUInt16 epicsNTOH16 ( epicsUInt16 in )
+{
+	return epicsHTON16 ( in );
+}
+
+inline epicsUInt32 epicsHTON32 ( epicsUInt32 in )
+{
+	unsigned tmp = in; // avoid unary conversions to int
+
+	union {
+		epicsUInt8 bytes[4];
+		epicsUInt32 longWord;
+	} result;
+
+	result.bytes[0] = static_cast <epicsUInt8> ( tmp >> 24 );
+	result.bytes[1] = static_cast <epicsUInt8> ( tmp >> 16 );
+	result.bytes[2] = static_cast <epicsUInt8> ( tmp >> 8 );
+	result.bytes[3] = static_cast <epicsUInt8> ( tmp >> 0 );
+
+	return result.longWord;
+}
+
+inline epicsUInt32 epicsNTOH32 ( epicsUInt32 in )
+{
+	return epicsHTON32 ( in );
+}
+
 #endif // osiWireFormat

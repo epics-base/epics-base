@@ -1,0 +1,1 @@
+/* for a pure posix implementation no osdSem.h definitions are needed*/

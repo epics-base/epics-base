@@ -135,11 +135,12 @@ epicsShareFunc int epicsShareAPI hostToIPAddr
  */
 epicsShareFunc enum osiSockShutdownReturn epicsShareAPI osiSocketShutdown ( SOCKET sock )
 {
-    status = shutdown ( this->sock, SD_BOTH );
+    int status;
+    status = shutdown ( sock, SD_BOTH );
     if ( status ) {
         errlogPrintf ( "TCP socket shutdown error (for shutdown purposes) was %s\n", 
             SOCKERRSTR (SOCKERRNO) );
-        status = socket_close ( this->sock );
+        status = socket_close ( sock );
         if ( status ) {
             errlogPrintf ("TCP socket close error (for shutdown purposes) was %s\n", 
                 SOCKERRSTR (SOCKERRNO) );

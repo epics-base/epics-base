@@ -256,33 +256,10 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 				FALSE, 
 				t_count);
 #else
-			/* 
-			 * in line is a little faster 
-			 */
-			switch(size){
-			case sizeof(char):
-				*(char *) t_available = 
-						*(char *) (hdrptr + 1);
-				break;
-			case sizeof(short):
-				*(short *) t_available = 
-						*(short *) (hdrptr + 1);
-				break;
-			case sizeof(long):
-				*(long *) t_available = 
-						*(long *) (hdrptr + 1);
-				break;
-			case sizeof(double):
-				*(double *) t_available = 
-						*(double *) (hdrptr + 1);
-				break;
-			default:
-				memcpy(
+			memcpy(
 				       t_available,
 				       hdrptr + 1,
 				       size);
-				break;
-			}
 #endif
 
 			/*

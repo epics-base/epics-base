@@ -403,7 +403,7 @@ static void epicsThreadInit ( void )
         }
 
         /* 
-         * not supported on W95 but supported on Borland 551
+         * not supported on W95 but supported by Borland 551
          */
         if ( InterlockedCompareExchangePointer ( &win32ThreadGlobalMutex, 
             win32ThreadGlobalMutexTmp, 0 ) != 0) {

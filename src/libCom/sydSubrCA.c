@@ -29,6 +29,7 @@
  * .01	06-18-91	rac	installed in SCCS
  * .02  06-19-91	rac	replace <fields.h> with <alarm.h>
  * .03	08-15-91	rac	use new call for sydOpen
+ * .04	09-23-91	rac	allow async completion of ca_search
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -41,9 +42,6 @@
 *
 * DESCRIPTION
 *	
-* BUGS
-* o	doesn't support asynchronous `search' for the initial connection
-*	to a channel
 *-***************************************************************************/
 #include <genDefs.h>
 #define SYD_PRIVATE
@@ -63,11 +61,11 @@
 long sydCAFunc();
 void sydCAFuncConnHandler();
 void sydCAFuncMonHandler();
-#define sydCA_searchNOW 1	/* NOTE!!! sydChanOpen presently needs the
-				search to complete before returning to it */
-#if !sydCA_searchNOW
+long sydFuncCA_finishConn();
+
+#define sydCA_searchNOW	/* force immediate completion of connection */
+#undef sydCA_searchNOW	/* asynchronous completion of connection */
 void sydCAFuncGetGR(), sydCAFuncInitGR();
-#endif	/* sydCA_searchNOW */
 
 long
 sydOpenCA(ppSspec, pHandle)
@@ -145,6 +143,22 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
 	pSspec->pHandle = (void *)NULL;
     }
     else if (funcCode ==				SYD_FC_OPEN) {
+/*-----------------------------------------------------------------------------
+*    Initiate a connection to Channel Access for this channel.  The action
+*    depends on whether searches are to be completed _now_, or asynchronously.
+*
+*    If searches are to be completed now, then a ca_pend_io is done.  If
+*    the search isn't successful, an error return is given.
+*
+*    If searches are to be asynchronous, the connection handler is allowed
+*    to do the required connection processing.
+*----------------------------------------------------------------------------*/
+	pSChan->dbrType = TYPENOTCONN;
+	pSChan->elCount = 0;
+	pSChan->evid = NULL;
+	pSChan->gotGr = 0;
+	pSChan->restart = 1;
+	sydCAFuncInitGR(pSChan);
 #ifdef sydCA_searchNOW
 	stat = ca_search(pSChan->name, &pCh);
 #else
@@ -157,6 +171,7 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
 			pSChan->name, ca_message(stat));
 	    return retStat;
 	}
+	pSChan->pHandle = (void *)pCh;
 #ifdef sydCA_searchNOW
         stat = ca_pend_io(2.);
 	if (stat != ECA_NORMAL) {
@@ -165,6 +180,9 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
 	    return retStat;
 	}
 	ca_puser(pCh) = pSChan;
+	retStat = sydFuncCA_finishConn(pSChan, pCh);
+	if (retStat != S_syd_OK)
+	    return retStat;
 	stat = ca_change_connection_event(pCh, sydCAFuncConnHandler);
 	if (stat != ECA_NORMAL) {
 	    retStat = S_syd_ERROR;
@@ -173,44 +191,9 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
 	    ca_clear_channel(pCh);
 	    return retStat;
 	}
-	pSChan->dbfType = ca_field_type(pCh);
-	pSChan->dbrType = dbf_type_to_DBR_TIME(pSChan->dbfType);
-	pSChan->elCount = ca_element_count(pCh);
-	pSChan->dbrGrType = dbf_type_to_DBR_GR(pSChan->dbfType);
-	stat = ca_get(pSChan->dbrGrType, pCh, &pSChan->grBuf);
-	if (stat != ECA_NORMAL) {
-	    retStat = S_syd_ERROR;
-	    (void)printf("sydCAFunc: error on ca_get(GR) for %s :\n%s\n",
-			pSChan->name, ca_message(stat));
-	    ca_clear_channel(pCh);
-	    return retStat;
-	}
-        stat = ca_pend_io(2.);
-	if (stat != ECA_NORMAL) {
-	    retStat = S_syd_ERROR;
-	    (void)printf("sydCAFunc: error on ca_get(GR) for %s :\n%s\n",
-			pSChan->name, ca_message(stat));
-	    ca_clear_channel(pCh);
-	    return retStat;
-	}
-	pSChan->gotGr = 1;
-	stat = ca_add_array_event(pSChan->dbrType, pSChan->elCount, pCh,
-			sydCAFuncMonHandler, NULL, 0., 0., 0., &pSChan->evid);
-	if (stat != ECA_NORMAL) {
-	    retStat = S_syd_ERROR;
-	    (void)printf("sydCAFunc: error on ca_get(GR) for %s :\n%s\n",
-			pSChan->name, ca_message(stat));
-	    ca_clear_channel(pCh);
-	    return retStat;
-	}
 #else
-	pSChan->dbrType = TYPENOTCONN;
-	pSChan->elCount = 0;
-	pSChan->evid = NULL;
-	pSChan->gotGr = 0;
+	retStat = S_syd_chanNotConn;
 #endif
-	pSChan->restart = 1;
-	pSChan->pHandle = (void *)pCh;
     }
     else if (funcCode ==				SYD_FC_READ) {
 	;
@@ -232,6 +215,49 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
 	;
     }
 
+    return retStat;
+}
+
+/*/subhead sydFuncCA_finishConn------------------------------------------------
+*
+*----------------------------------------------------------------------------*/
+static long
+sydFuncCA_finishConn(pSChan, pCh)
+SYD_CHAN *pSChan;	/* pointer to syncSet channel descriptor */
+chid	pCh;		/* channel pointer */
+{
+    long	retStat=S_syd_OK;
+    long	stat;
+
+    pSChan->dbfType = ca_field_type(pCh);
+    pSChan->dbrType = dbf_type_to_DBR_TIME(pSChan->dbfType);
+    pSChan->elCount = ca_element_count(pCh);
+    pSChan->dbrGrType = dbf_type_to_DBR_GR(pSChan->dbfType);
+    stat = ca_array_get_callback(pSChan->dbrGrType, 1, pCh,
+		sydCAFuncMonHandler, NULL);
+    if (stat != ECA_NORMAL) {
+	retStat = S_syd_ERROR;
+	(void)printf(
+		"sydCAFunc: error on ca_array_get_callback(GR) for %s :\n%s\n",
+		pSChan->name, ca_message(stat));
+	ca_clear_channel(pCh);
+	return retStat;
+    }
+    if (pSChan->evid == NULL) {
+	stat = ca_add_array_event(pSChan->dbrType, pSChan->elCount, pCh,
+			sydCAFuncMonHandler, NULL, 0., 0., 0., &pSChan->evid);
+	if (stat != ECA_NORMAL) {
+	    retStat = S_syd_ERROR;
+	    (void)printf(
+		"sydCAFunc: error on ca_add_array_event(GR) for %s :\n%s\n",
+		pSChan->name, ca_message(stat));
+	    ca_clear_channel(pCh);
+	    return retStat;
+	}
+    }
+    pSChan->conn = 1;
+    pSChan->discon = 0;
+    retStat = sydChanOpen1(pSChan->pSspec, pSChan);
     return retStat;
 }
 
@@ -263,27 +289,16 @@ struct connection_handler_args arg;
     pCh = arg.chid;
     pSChan = (SYD_CHAN *)ca_puser(pCh);
     if (arg.op == CA_OP_CONN_UP) {
-	pSChan->dbrType = dbf_type_to_DBR_TIME(ca_field_type(pCh));
-	pSChan->restart = 1;
-	if (pSChan->evid == NULL) {
-	    pSChan->elCount = ca_element_count(pCh);
-	    stat = ca_add_array_event(pSChan->dbrType, pSChan->elCount, pCh,
-			sydCAFuncMonHandler, NULL, 0., 0., 0., &pSChan->evid);
-	    if (stat != ECA_NORMAL) {
-		assertAlways(0);
+	if (pSChan->conn == 0)
+	    retStat = sydFuncCA_finishConn(pSChan, pCh);
+	    if (retStat != S_syd_OK) {
+		(void)printf(
+"sydCAFuncConnHandler: error finishing connection for %s\n", ca_name(pCh));
 	    }
-	}
-#if !sydCA_searchNOW
-	if (pSChan->gotGr == 0) {
-	    sydCAFuncInitGr(pSChan);
-	    pSChan->dbrGrType = dbf_type_to_DBR_GR(ca_field_type(pCh));
-	    stat = ca_array_get_callback(pSChan->dbrGrType, 1, pCh,
-			sydCAFuncMonHandler, NULL);
-	}
-#endif	/* sydCA_searchNOW */
+	pSChan->restart = 1;
     }
     else {
-	pSChan->dbrType = TYPENOTCONN;
+	pSChan->discon = 1;
     }
 }
 
@@ -342,13 +357,12 @@ struct event_handler_args arg;
     pSChan = (SYD_CHAN *)ca_puser(pCh);
     pSspec = pSChan->pSspec;
 
-#if !sydCA_searchNOW
     if (dbr_type_is_GR(arg.type)) {
 	pSChan->gotGr = 1;
 	sydCAFuncGetGR(pSChan, (union db_access_val *)arg.dbr);
+	stat = sydChanOpenGR(pSChan);
 	return;
     }
-#endif
     if (!dbr_type_is_TIME(arg.type))
 	return;
 
@@ -452,27 +466,27 @@ struct event_handler_args arg;
 /*/subhead sydCAFuncGetGR-----------------------------------------------------
 *
 *----------------------------------------------------------------------------*/
-#if !sydCA_searchNOW
-
 static void
 sydCAFuncGetGR(pSChan, pGrBuf)
 SYD_CHAN *pSChan;	/* pointer to syncSet channel descriptor */
 union db_access_val *pGrBuf;/* pointer to buffer with graphics info */
 {
-    if (pSChan->dbrType == DBR_GR_FLOAT)
+    if (pSChan->dbrGrType == DBR_GR_FLOAT)
 	pSChan->grBuf.gfltval = pGrBuf->gfltval;
-    else if (pSChan->dbrType == DBR_GR_SHORT)
+    else if (pSChan->dbrGrType == DBR_GR_SHORT)
 	pSChan->grBuf.gshrtval = pGrBuf->gshrtval;
-    else if (pSChan->dbrType == DBR_GR_DOUBLE)
+    else if (pSChan->dbrGrType == DBR_GR_DOUBLE)
 	pSChan->grBuf.gdblval = pGrBuf->gdblval;
-    else if (pSChan->dbrType == DBR_GR_LONG)
+    else if (pSChan->dbrGrType == DBR_GR_LONG)
 	pSChan->grBuf.glngval = pGrBuf->glngval;
-    else if (pSChan->dbrType == DBR_GR_STRING)
+    else if (pSChan->dbrGrType == DBR_GR_STRING)
 	pSChan->grBuf.gstrval = pGrBuf->gstrval;
-    else if (pSChan->dbrType == DBR_GR_ENUM)
+    else if (pSChan->dbrGrType == DBR_GR_ENUM)
 	pSChan->grBuf.genmval = pGrBuf->genmval;
-    else if (pSChan->dbrType == DBR_GR_CHAR)
+    else if (pSChan->dbrGrType == DBR_GR_CHAR)
 	pSChan->grBuf.gchrval = pGrBuf->gchrval;
+    else
+	assertAlways(0);
 }
 
 /*/subhead sydCAFuncInitGR-----------------------------------------------------
@@ -556,4 +570,3 @@ SYD_CHAN *pSChan;	/* pointer to syncSet channel descriptor */
 	CHR_DEST.lower_warning_limit = 0;
     }
 }
-#endif	/* sydCA_searchNOW */

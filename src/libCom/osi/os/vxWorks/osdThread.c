@@ -311,8 +311,13 @@ void threadPrivateSet (threadPrivateId id, void *pvt)
 
 void *threadPrivateGet(threadPrivateId id)
 {
+    int indpthreadPrivate = (int)id;
     void *data;
-    assert(papTSD);
+    if(!papTSD) {
+        papTSD = callocMustSucceed(indpthreadPrivate + 1,sizeof(void *),
+            "threadPrivateSet");
+        papTSD[0] = (void *)(indpthreadPrivate);
+    }
     assert((int)id <= (int)papTSD[0]);
     data = papTSD[(int)id];
     return(data);

@@ -58,6 +58,7 @@ public:
     void add ( T & item ); // add item to end of list
     void add ( tsDLList<T> & addList ); // add to end of list - addList left empty
     void push ( T & item ); // add item to beginning of list
+    void push ( tsDLList<T> & pushList ); // add to beg of list - addList left empty
     void remove ( T & item ); // remove item from list
     void removeAll ( tsDLList <T> & destination );
     T * get (); // removes first item on list
@@ -385,6 +386,31 @@ inline void tsDLList<T>::insertBefore (T &item, T &itemAfter)
 
 //
 // tsDLList<T>::push ()
+// 
+// adds addList to the end of the list
+// (and removes all items from addList)
+//
+template <class T>
+inline void tsDLList<T>::push ( tsDLList<T> & pushList )
+{
+    if ( pushList.itemCount != 0u ) {
+        if ( this->itemCount ) {
+            tsDLNode<T> * pFirstNode = this->pFirst;
+            tsDLNode<T> * pAddListLastNode = addList.pLast;
+            pFirstNode->pPrev = addList.pLast;
+            pAddListLastNode->pNext = this->pFirst;
+        }
+        else {
+            this->pLast = addList.pLast;
+        }
+        this->pFirst = pushList.pFirst;
+        this->itemCount += addList.itemCount;
+        addList.clear();
+    }
+}
+
+//
+// tsDLList<T>::push ()
 //
 // add an item at the beginning of the list
 //
@@ -395,12 +421,12 @@ inline void tsDLList<T>::push (T &item)
     theNode.pPrev = 0;
     theNode.pNext = this->pFirst;
 
-    if (this->itemCount) {
+    if ( this->itemCount ) {
         tsDLNode<T> *pFirstNode = this->pFirst;
-        pFirstNode->pPrev = &item;
+        pFirstNode->pPrev = & item;
     }
     else {
-        this->pLast = &item;
+        this->pLast = & item;
     }
 
     this->pFirst = &item;

@@ -201,7 +201,11 @@ epicsShareAPI macInstallMacros(
 				/* argument implies no macros */
 );
 
-/* $Log$
+/*
+ * $Log$
+ * Revision 1.6.4.1  1999/12/15 21:13:32  jba
+ * Fixed cvs comments.
+ *
  * Revision 1.6  1998/02/27 01:34:13  jhill
  * cleaned up the DLL symbol export
  *

@@ -269,7 +269,11 @@ epicsShareAPI macInstallMacros(
     return n;
 }
 
-/* $Log$
+/*
+ * $Log$
+ * Revision 1.3.8.1  1999/12/15 21:13:32  jba
+ * Fixed cvs comments.
+ *
  * Revision 1.3  1997/05/01 19:57:35  jhill
  * updated dll keywords
  *

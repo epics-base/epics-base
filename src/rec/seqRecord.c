@@ -301,7 +301,6 @@ int processNextLink(pseq)
 seqRecord *pseq;
 {
   callbackSeq   *pcb = (callbackSeq *) (pseq->dpvt);
-  int			wdDelay;
 
   if (seqRecDebug > 5)
     printf("processNextLink(%s) looking for work to do, index = %d\n", pseq->name, pcb->index);

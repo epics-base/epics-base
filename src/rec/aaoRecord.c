@@ -303,13 +303,9 @@ static long writeValue(paao)
 		/* Call dev support */
                 status=(*pdset->write_aao)(paao);
                 return(status);
-        } else {
-                status=-1;
-                recGblSetSevr(paao,SOFT_ALARM,INVALID_ALARM);
-                return(status);
         }
-        recGblSetSevr(paao,SIMM_ALARM,paao->sims);
-
+        status=-1;
+        recGblSetSevr(paao,SIMM_ALARM,INVALID_ALARM);
         return(status);
 }
 

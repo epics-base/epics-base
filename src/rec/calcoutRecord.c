@@ -223,7 +223,6 @@ static long process(pcalc)
     struct calcoutRecord     *pcalc;
 {
     struct rpvtStruct   *prpvt = (struct rpvtStruct *)pcalc->rpvt;
-    int      wdDelay;
     short    doOutput = 0;
 
   

@@ -48,8 +48,8 @@
 #include "epicsPrint.h"
 
 #include "alarm.h"
+#include "tsStamp.h"
 #include "dbAccess.h"
-#include "dbFldTypes.h"
 #include "dbScan.h"
 #include "dbEvent.h"
 #include "devSup.h"
@@ -308,13 +308,9 @@ static long readValue(paai)
 		/* Call dev support */
                 status=(*pdset->read_aai)(paai);
                 return(status);
-        } else {
-                status=-1;
-                recGblSetSevr(paai,SOFT_ALARM,INVALID_ALARM);
-                return(status);
         }
-        recGblSetSevr(paai,SIMM_ALARM,paai->sims);
-
+        status=-1;
+        recGblSetSevr(paai,SIMM_ALARM,INVALID_ALARM);
         return(status);
 }
 

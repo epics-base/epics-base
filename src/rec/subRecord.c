@@ -57,6 +57,8 @@
 #include "epicsPrint.h"
 #include "registry.h"
 #include "alarm.h"
+#include "callback.h"
+#include "cantProceed.h"
 #include "dbAccess.h"
 #include "epicsPrint.h"
 #include "dbEvent.h"

@@ -233,7 +233,6 @@ static long process(pbo)
 {
 	struct bodset	*pdset = (struct bodset *)(pbo->dset);
 	long		 status=0;
-	int		wait_time;
 	unsigned char    pact=pbo->pact;
 
 	if( (pdset==NULL) || (pdset->write_bo==NULL) ) {

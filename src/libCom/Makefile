@@ -63,9 +63,11 @@ INC += tsFreeList.h
 INC += epicsSingleton.h
 INC += epicsGuard.h
 INC += epicsOnce.h
+INC += epicsThrowTrace.h
 SRCS += resourceLib.cpp
 SRCS += epicsOnce.cpp
 SRCS += epicsSingletonMutex.cpp
+SRCS += epicsThrowTrace.cpp
 
 SRC_DIRS += $(LIBCOM)/dbmf
 INC += dbmf.h
@@ -113,6 +115,7 @@ SRCS += logClient.c
 SRC_DIRS += $(LIBCOM)/macLib
 INC += macLib.h
 SRCS += macCore.c
+SRCS += macEnv.c
 SRCS += macUtil.c
 
 SRC_DIRS += $(LIBCOM)/misc
@@ -157,6 +160,8 @@ INC += osiPoolStatus.h
 INC += osdPoolStatus.h
 INC += osdThread.h
 
+osdThread_CFLAGS_AIX = -U_ALL_SOURCE
+
 INC += epicsThread.h
 INC += epicsTime.h
 INC += osdTime.h
@@ -195,6 +200,7 @@ SRCS += osdTime.cpp
 SRCS += osdProcess.c
 SRCS += osdNetIntf.c
 SRCS += osdMessageQueue.c
+
 
 SRC_DIRS += $(LIBCOM)/taskwd
 INC += taskwd.h

@@ -74,6 +74,10 @@ epicsMessageQueueTestHost_SRCS += epicsMessageQueueTestMain.cpp epicsMessageQueu
 PROD_HOST += epicsMessageQueueTestHost
 OBJS_IOC += epicsMessageQueueTest
 
+macEnvExpandTestHost_SRCS += macEnvExpandTestMain.cpp macEnvExpandTest.c
+PROD_HOST += macEnvExpandTestHost
+OBJS_IOC += macEnvExpandTest
+
 #fdmgrTest_SRCS += fdmgrTest.c
 #PROD_HOST += fdmgrTest
 

@@ -486,7 +486,7 @@ got_record:
 		recGblDbaddrError(status,&dbAddr,"initPeriodic");
 		exit(1);
 	}
-	papPeriodic = dbCalloc(nPeriodic,sizeof(struct scan_list));
+	papPeriodic = dbCalloc(nPeriodic,sizeof(struct scan_list*));
 	periodicTaskId = dbCalloc(nPeriodic,sizeof(int));
 	for(i=0; i<nPeriodic; i++) {
 		psl = dbCalloc(1,sizeof(struct scan_list));

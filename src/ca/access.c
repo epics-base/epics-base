@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.85  1996/09/04 20:02:00  jhill
+ * test for non-nill piiu under vxWorks
+ *
  * Revision 1.84  1996/07/10 23:30:09  jhill
  * fixed GNU warnings
  *
@@ -638,7 +641,7 @@ LOCAL void create_udp_fd()
 
 		status = taskPriorityGet(VXTASKIDSELF, &pri);
 		if(status<0)
-			ca_signal(ECA_INTERNAL,NULL);
+			genLocalExcep (ECA_INTERNAL,NULL);
 
 		strcpy(name,"RD ");
 		strncat(
@@ -663,7 +666,7 @@ LOCAL void create_udp_fd()
 					0,
 					0);
 		if (status<0) {
-			ca_signal(ECA_INTERNAL,NULL);
+			genLocalExcep (ECA_INTERNAL,NULL);
 		}
 
 		ca_static->recv_tid = status;
@@ -836,8 +839,7 @@ void ca_process_exit()
 				FALSE);
 		}
 		if (socket_close(piiu->sock_chan) < 0){
-			ca_signal(
-				ECA_INTERNAL, 
+			genLocalExcep ( ECA_INTERNAL, 
 				"Corrupt iiu list- at close");
 		}
 		piiu = (struct ioc_in_use *) piiu->node.next;
@@ -2966,9 +2968,39 @@ int epicsShareAPI ca_test_io()
 
 
 /*
+ * generateLocalExceptionWithFileAndLine ()
+ */
+void generateLocalExceptionWithFileAndLine (long stat, char *ctx, 
+		char *pFile, unsigned lineNo)
+{
+        struct exception_handler_args args;
+ 
+        /*
+         * NOOP if they disable exceptions
+         */
+        if (!ca_static->ca_exception_func) {
+                return;
+        }
+ 
+        args.usr = ca_static->ca_exception_arg;
+        args.chid = NULL;
+        args.type = -1;
+        args.count = 0u;
+        args.addr = NULL;
+        args.stat = stat;
+        args.op = CA_OP_OTHER;
+        args.ctx = ctx;
+	args.pFile = pFile;
+	args.lineNo = lineNo;
+ 
+        LOCKEVENTS;
+        (*ca_static->ca_exception_func) (args);
+        UNLOCKEVENTS;
+}
+
+
+/*
  *	CA_SIGNAL()
- *
- *
  */
 void epicsShareAPI ca_signal(long ca_status,char *message)
 {
@@ -2985,7 +3017,7 @@ void epicsShareAPI ca_signal(long ca_status,char *message)
  * of this routine is calling this routine
  * (if they call this routine again).
  */
-const char *ca_message(long ca_status)
+READONLY char * epicsShareAPI ca_message (long ca_status)
 {
 	unsigned msgNo = CA_EXTRACT_MSG_NO(ca_status);
 
@@ -3328,27 +3360,26 @@ void issue_claim_channel(struct ioc_in_use *piiu, chid pchan)
  */
 LOCAL void ca_default_exception_handler(struct exception_handler_args args)
 {
-	char *pName;
-
-	if(args.chid){
-		pName = ca_name(args.chid);
-	}
-	else{
-		pName = "?";
-	}
+	char *pCtx;
 
 	/*
 	 * LOCK around use of sprintf buffer
 	 */
 	LOCK;
-	sprintf(sprintf_buf, 
-		"%s - with request chan=%s op=%ld data type=%s count=%ld", 
-		args.ctx,
-		pName,
-		args.op,
-		dbr_type_to_text(args.type),
-		args.count);	 
-      	ca_signal(args.stat, sprintf_buf);
+	if (args.chid && args.op != CA_OP_OTHER) {
+		sprintf(sprintf_buf, 
+			"%s - with request chan=%s op=%ld data type=%s count=%ld", 
+			args.ctx,
+			ca_name(args.chid),
+			args.op,
+			dbr_type_to_text(args.type),
+			args.count);	 
+		pCtx = sprintf_buf;
+	}
+	else {
+		pCtx = args.ctx;
+	}
+	ca_signal_with_file_and_lineno(args.stat, pCtx, args.pFile, args.lineNo);
 	UNLOCK;
 }
 
@@ -3421,6 +3452,16 @@ int epicsShareAPI ca_v42_ok(chid chan)
 		piiu->minor_version_number);
 
 	return v42;
+}
+
+
+/*
+ * ca_version()
+ * function that returns the CA version string
+ */
+READONLY char * epicsShareAPI ca_version()
+{
+	return CA_VERSION_STRING; 
 }
 
 

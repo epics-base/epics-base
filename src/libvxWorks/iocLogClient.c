@@ -1,4 +1,4 @@
-/*
+/* $Id$
  *      archive logMsg() from several IOC's to a common rotating file   
  *
  *
@@ -132,10 +132,10 @@ static int
 getConfig()
 {
 	char	inet_address_string[64];
-	int	status;
+	long	status;
 	char	*pstring;
 
-	status = envGetIntegerConfigParam(
+	status = envGetLongConfigParam(
 			&EPICS_IOC_LOG_PORT, 
 			&ioc_log_port);
 	if(status<0){

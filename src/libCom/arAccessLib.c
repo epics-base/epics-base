@@ -26,7 +26,7 @@
  * Modification Log:
  * -----------------
  * .01	03-09-90	rac	initial version
- * .02	mm-dd-yy	rac	version 2.0, installed in SCCS
+ * .02	07-31-91	rac	installed in SCCS
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks

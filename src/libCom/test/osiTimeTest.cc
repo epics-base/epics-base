@@ -53,7 +53,7 @@ int main ()
 	tsStampToText (&stamp, TS_TEXT_MMDDYY, stampText);
 	printf ("TS_STAMP = %s\n", stampText);
 	printf ("struct tm = %s %f\n", asctime(&ansiDate.ansi_tm), 
-		ansiDate.nsec/(double)osiTime::nSecPerSec);
+		ansiDate.nSec/(double)osiTime::nSecPerSec);
 	tmAnsi = *localtime (&ts.tv_sec);
 	printf ("struct timespec = %s %f\n", asctime(&ansiDate.ansi_tm), 
 		ts.tv_nsec/(double)osiTime::nSecPerSec);

@@ -44,7 +44,7 @@ private:
 
 class getCopy : public cacNotify {
 public:
-    getCopy ( cac &cacCtx, chtype type, 
+    getCopy ( cac &cacCtx, unsigned type, 
         unsigned long count, void *pValue );
     void release ();
     void * operator new ( size_t size );
@@ -57,7 +57,7 @@ private:
     cac &cacCtx;
     void *pValue;
     unsigned readSeq;
-    chtype type;
+    unsigned type;
     void completionNotify ( cacChannelIO & );
     void completionNotify ( cacChannelIO &, 
         unsigned type, unsigned long count, const void *pData);

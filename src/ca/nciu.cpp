@@ -489,8 +489,9 @@ void nciu::show ( unsigned level ) const
         printf ( "Channel \"%s\", connected to server %s", 
             this->pNameStr, hostNameTmp );
         if ( level > 1u ) {
+            int tmpTypeCode = static_cast < int > ( this->typeCode );
             printf ( ", native type %s, native element count %u",
-                dbf_type_to_text ( this->typeCode ), this->count );
+                dbf_type_to_text ( tmpTypeCode ), this->count );
             printf ( ", %sread access, %swrite access", 
                 this->accessRightState.read_access ? "" : "no ", 
                 this->accessRightState.write_access ? "" : "no ");
@@ -505,8 +506,8 @@ void nciu::show ( unsigned level ) const
     }
 
     if ( level > 2u ) {
-        printf ( "\tnetwork IO pointer=%p\n", 
-            this->piiu );
+        printf ( "\tnetwork IO pointer = %p\n", 
+            static_cast <void *> ( this->piiu ) );
         printf ( "\tserver identifier %u\n", this->sid );
         printf ( "\tsearch retry number=%u, search retry sequence number=%u\n", 
             this->retry, this->retrySeqNo );

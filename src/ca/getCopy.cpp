@@ -22,7 +22,7 @@
 tsFreeList < class getCopy, 1024 > getCopy::freeList;
 epicsMutex getCopy::freeListMutex;
 
-getCopy::getCopy ( cac &cacCtxIn, chtype typeIn, 
+getCopy::getCopy ( cac &cacCtxIn, unsigned typeIn, 
         unsigned long countIn, void *pValueIn ) :
     count ( countIn ), cacCtx ( cacCtxIn ), pValue ( pValueIn ), 
         readSeq ( cacCtxIn.sequenceNumberOfOutstandingIO () ), type ( typeIn )

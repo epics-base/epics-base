@@ -142,7 +142,7 @@ void recvProcessThread::show ( unsigned level ) const
         printf ( "blocking for completion count %u\n", this->blockingForCompletion );
     }
     if ( level > 1u ) {
-        printf ( "\tCA client at %p\n", this->pcac );
+        printf ( "\tCA client at %p\n", static_cast < void * > ( this->pcac ) );
         printf ( "\tshutdown command boolean %u\n", this->shutDown );
     }
     if ( level > 2u ) {

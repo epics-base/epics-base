@@ -268,7 +268,12 @@ extern "C" int epicsShareAPI ca_array_get ( chtype type,
         return caStatus;
     }
 
-    getCopy *pNotify = new getCopy ( *pcac, type, count, pValue );
+    if ( type < 0 ) {
+        return ECA_BADTYPE;
+    }
+    unsigned tmpType = static_cast < unsigned > ( type );
+
+    getCopy *pNotify = new getCopy ( *pcac, tmpType, count, pValue );
     if ( ! pNotify ) {
         return ECA_ALLOCMEM;
     }

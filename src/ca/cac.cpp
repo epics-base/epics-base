@@ -40,7 +40,6 @@ cac::cac ( bool enablePreemptiveCallbackIn ) :
     enablePreemptiveCallback ( enablePreemptiveCallbackIn )
 {
 	long status;
-    static epicsThreadOnceId once = EPICS_THREAD_ONCE_INIT;
     unsigned abovePriority;
 
 	if ( ! osiSockAttach () ) {

@@ -99,6 +99,10 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.107.2.3  2000/06/28 15:41:15  jhill
+ * changed "m_type" to "m_dataType" in order to avoid collision
+ * with MACRO supplied by WRS's Tornado II product
+ *
  * Revision 1.107.2.2  1999/09/02 21:16:40  jhill
  * fixed missing paramter to checkConnWatchDogs() func
  *
@@ -816,7 +820,7 @@ void cac_create_udp_fd()
 		if(status<0)
 			genLocalExcep (ECA_INTERNAL,NULL);
 
-		strcpy(name,"RD ");
+		strcpy(name,"RD_");
 		strncat(
 			name,
 			taskName(VXTHISTASKID),

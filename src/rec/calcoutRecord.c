@@ -31,40 +31,39 @@
  * -----------------
  * .01  08-29-96	nda    Created from calcoutRecord.c for EPICS R3.13 
  * .02  09-13-96	nda    Original release for EPICS R3.13beta3
+ * .03  11-05-98	nda    fixed a tricky bug found by Tim Mooney
+ *                             concerning callbacks to check link status
  * 
  *
  */
 
 
 
-#include <vxWorks.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
+#include	<vxWorks.h>
+#include        <stdlib.h>
+#include        <stdarg.h>
+#include        <stdio.h>
+#include        <string.h>
 
-#include <tickLib.h>
-#include <wdLib.h>
-#include <sysLib.h>
+#include        <tickLib.h>
+#include        <wdLib.h>
+#include        <sysLib.h>
 
-#include "dbDefs.h"
-#include "epicsPrint.h"
-#include "alarm.h"
-#include "dbAccess.h"
-#include "dbEvent.h"
-#include "dbScan.h"
-#include "errMdef.h"
-#include "recSup.h"
-#include "special.h"
-#include "callback.h"
-#include "taskwd.h"
-#include "postfix.h"
+#include	<alarm.h>
+#include	<dbDefs.h>
+#include	<dbAccess.h>
+#include	<dbEvent.h>
+#include	<dbScan.h>
+#include	<errMdef.h>
+#include	<recSup.h>
+#include	<special.h>
+#include        <callback.h>
+#include        <taskwd.h>
 
 #define GEN_SIZE_OFFSET
-#include "calcoutRecord.h"
+#include	<calcoutRecord.h>
 #undef  GEN_SIZE_OFFSET
-#include "menuIvoa.h"
+#include        <menuIvoa.h>
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
@@ -712,10 +711,17 @@ static void checkLinksCallback(pcallback)
     callbackGetUser(pcalc, pcallback);
     prpvt = (struct rpvtStruct *)pcalc->rpvt;
     
-    dbScanLock((struct dbCommon *)pcalc);
-    prpvt->wd_id_1_LOCK = 0;
-    checkLinks(pcalc);
-    dbScanUnlock((struct dbCommon *)pcalc);
+    if (!interruptAccept) {
+        /* Can't call dbScanLock yet.  Schedule another CALLBACK */
+        prpvt->wd_id_1_LOCK = 1;  /* make sure */
+        wdStart(prpvt->wd_id_1, 30, (FUNCPTR)callbackRequest,
+        (int)(&prpvt->checkLinkCb));
+    } else {
+        dbScanLock((struct dbCommon *)pcalc);
+        prpvt->wd_id_1_LOCK = 0;
+        checkLinks(pcalc);
+        dbScanUnlock((struct dbCommon *)pcalc);
+    }
 
 }
 

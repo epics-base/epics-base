@@ -77,7 +77,6 @@ static void addAction(caLink *pca, short link_action)
 { 
     int callAdd = FALSE;
 
-    epicsMutexMustLock(caListSem);
     if(pca->link_action==0) callAdd = TRUE;
     if((pca->link_action&CA_DELETE)!=0) {
         errlogPrintf("dbCa:addAction %d but CA_DELETE already requested\n",
@@ -85,7 +84,6 @@ static void addAction(caLink *pca, short link_action)
         callAdd = FALSE;
         link_action=0;
     }
-    assert((pca->link_action&CA_DELETE)==0);
     if(link_action&CA_DELETE) {
         if(++removesOutstanding>=removesOutstandingWarning) {
             printf("dbCa: Warning removesOutstanding %d\n",removesOutstanding);
@@ -93,7 +91,6 @@ static void addAction(caLink *pca, short link_action)
     }
     pca->link_action |= link_action;
     if(callAdd) ellAdd(&caList,&pca->node);
-    epicsMutexUnlock(caListSem);
     if(callAdd) epicsEventSignal(caWakeupSem);
 }
 
@@ -122,8 +119,8 @@ void epicsShareAPI dbCaAddLink( struct link *plink)
     strcpy(pca->pvname,pvname);
     plink->type = CA_LINK;
     plink->value.pv_link.pvt = pca;
-    epicsMutexUnlock(pca->lock);
     addAction(pca,CA_CONNECT);
+    epicsMutexUnlock(pca->lock);
     return;
 }
 
@@ -135,8 +132,8 @@ void epicsShareAPI dbCaRemoveLink( struct link *plink)
     epicsMutexMustLock(pca->lock);
     pca->plink = 0;
     plink->value.pv_link.pvt = 0;
-    epicsMutexUnlock(pca->lock);
     addAction(pca,CA_DELETE);
+    epicsMutexUnlock(pca->lock);
 }
 
 
@@ -200,8 +197,8 @@ long epicsShareAPI dbCaGetLink(struct link *plink,short dbrType, void *pdest,
     }
 done:
     if(psevr) *psevr = pca->sevr;
-    epicsMutexUnlock(pca->lock);
     if(link_action) addAction(pca,link_action);
+    epicsMutexUnlock(pca->lock);
     return(status);
 }
 
@@ -261,8 +258,8 @@ long epicsShareAPI dbCaPutLink(struct link *plink,short dbrType,
         if(pca->newOutNative) pca->nNoWrite++;
         pca->newOutNative = TRUE;
     }
-    epicsMutexUnlock(pca->lock);
     addAction(pca,link_action);
+    epicsMutexUnlock(pca->lock);
     return(status);
 }
 
@@ -300,8 +297,8 @@ long epicsShareAPI dbCaGetAttributes(const struct link *plink,
     pcaAttributes->usrPvt = usrPvt;
     pca->pcaAttributes = pcaAttributes;
     link_action |= CA_GET_ATTRIBUTES;
-    epicsMutexUnlock(pca->lock);
     addAction(pca,link_action);
+    epicsMutexUnlock(pca->lock);
     return(status);
 }
 
@@ -643,9 +640,9 @@ static void connectionCallback(struct connection_handler_args arg)
             epicsMutexMustLock(pca->lock);
             pca->plink = 0;
             plink->value.pv_link.pvt = 0;
+            addAction(pca,CA_DELETE);
             epicsMutexUnlock(pca->lock);
             dbScanUnlock(precord);
-            addAction(pca,CA_DELETE);
             dbCaAddLink(plink);
             return;
         }
@@ -667,8 +664,8 @@ static void connectionCallback(struct connection_handler_args arg)
     }
     if(pca->pcaAttributes) link_action |= CA_GET_ATTRIBUTES;
 done:
-    epicsMutexUnlock(pca->lock);
     if(link_action) addAction(pca,link_action);
+    epicsMutexUnlock(pca->lock);
 }
 
 void dbCaTask()

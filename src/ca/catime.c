@@ -513,7 +513,7 @@ int catime ( char *channelName, unsigned channelCount, enum appendNumberFlag app
         }
         pItemList[i].name[strsize]= '\0';
         pItemList[i].count = 1;
-        nBytes += OCT_ROUND ( strlen ( pItemList[i].name ) ) + 2 * sizeof (caHdr);
+        nBytes += 2 * ( OCT_ROUND ( strlen ( pItemList[i].name ) ) + 2 * sizeof (caHdr) );
     }
 
     printf ("search test\n");

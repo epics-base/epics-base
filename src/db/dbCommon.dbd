@@ -41,6 +41,7 @@
 	}
 	field(TSE,DBF_SHORT) {
 		prompt("Time Stamp Event")
+		promptgroup(GUI_SCAN)
 		interest(1)
 	}
 	field(TSEL,DBF_INLINK) {

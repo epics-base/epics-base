@@ -14,7 +14,6 @@ SRCS += bucketLib.c
 
 SRC_DIRS += $(LIBCOM)/ring
 #following needed for locating epicsRingPointer.h and epicsRingBytes.h
-USR_CFLAGS += -I$(LIBCOM)/ring
 INC += epicsRingPointer.h
 INC += epicsRingBytes.h
 INC += epicsReadline.h
@@ -25,7 +24,6 @@ SRCS += epicsReadline.c
 
 SRC_DIRS += $(LIBCOM)/calc
 #following needed for locating postfixPvt.h and sCalcPostfixPvt.h
-USR_CFLAGS += -I$(LIBCOM)/calc
 INC += postfix.h
 INC += sCalcPostfix.h
 SRCS += postfix.c

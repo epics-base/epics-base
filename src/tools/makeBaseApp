@@ -862,7 +862,7 @@ do
 	END
     else
 	sed -e "s/USER/${USER}/" \
-	-e "s/APPNAME/${APPNAME}/" >> src/st.cmd <<-\END
+	-e "s/APPNAME/${APPNAME}/" >> st.cmd <<-\END
 		#dbLoadRecords("APPNAMEApp/Db/xxx.db","user=USER")
 		iocInit
 		#start sequence programs

@@ -450,11 +450,11 @@ void threadShow(threadId id,unsigned int level)
     threadInfo *pthreadInfo = (threadInfo *)id;
 
     if(!id) {
-	errlogPrintf ("            NAME       ID      PRI    STATE     WAIT\n");
+	printf ("            NAME       ID      PRI    STATE     WAIT\n");
     }
     else {
-	errlogPrintf("%16.16s %8x %8d %8.8s\n", pthreadInfo->name,(threadId)
-		     pthreadInfo,pthreadInfo->osiPriority,pthreadInfo->
+	printf("%16.16s %8x %8d %8.8s\n", pthreadInfo->name,(threadId)
+	       pthreadInfo,pthreadInfo->osiPriority,pthreadInfo->
 		     isSuspended?"SUSPEND":"OK");
 	if(level>0)
 	    ; /* more info */

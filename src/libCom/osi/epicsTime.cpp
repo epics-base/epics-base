@@ -68,6 +68,8 @@ public:
     double ntpEpochOffset; // seconds
 #endif
     double time_tSecPerTick; // seconds (both NTP and EPICS use int sec)
+    unsigned long epicsEpochOffsetAsAnUnsignedLong;
+    bool useDiffTimeOptimization;
 };
 
 static const epicsTimeLoadTimeInit lti;
@@ -115,6 +117,16 @@ epicsTimeLoadTimeInit::epicsTimeLoadTimeInit ()
         this->epicsEpochOffset = difftime (epicsEpoch, ansiEpoch) - secWest;
     }
 
+    if ( this->time_tSecPerTick == 1.0 && this->epicsEpochOffset <= ULONG_MAX &&
+           this->epicsEpochOffset >= 0 ) {
+        this->useDiffTimeOptimization = true;
+        this->epicsEpochOffsetAsAnUnsignedLong = static_cast < unsigned long > ( this->epicsEpochOffset );
+    }
+    else {
+        this->useDiffTimeOptimization = false;
+        this->epicsEpochOffsetAsAnUnsignedLong = 0;
+    }
+
 #ifdef NTP_SUPPORT
     /* unfortunately, on NT mktime cant calculate a time_t for a date before 1970 */
     {
@@ -151,31 +163,49 @@ inline void epicsTime::addNanoSec (long nSecAdj)
 //
 // epicsTime (const time_t_wrapper &tv)
 //
-epicsTime::epicsTime (const time_t_wrapper &ansiTimeTicks)
+epicsTime::epicsTime ( const time_t_wrapper & ansiTimeTicks )
 {
     static double uLongMax = static_cast<double> (ULONG_MAX);
-    double sec;
 
     //
-    // map time_t, which ansi C defines as some arithmetic type, into type double 
+    // try to directly map time_t into an unsigned long integer because this is 
+    // faster on systems w/o hardware floating point and a simple integer type time_t.
     //
-    sec = ansiTimeTicks.ts * lti.time_tSecPerTick - lti.epicsEpochOffset;
+    if ( lti.useDiffTimeOptimization ) {
+       if ( ansiTimeTicks.ts > 0 && ansiTimeTicks.ts <= ULONG_MAX ) {
+            unsigned long ticks = static_cast < unsigned long > ( ansiTimeTicks.ts );
+            if ( ticks >= lti.epicsEpochOffsetAsAnUnsignedLong ) {
+                this->secPastEpoch = ticks - lti.epicsEpochOffsetAsAnUnsignedLong;
+            }
+            else {
+                this->secPastEpoch = ( ULONG_MAX - lti.epicsEpochOffsetAsAnUnsignedLong ) + ticks;
+            }
+            this->nSec = 0;
+            return;
+        }
+    }
+
+    //
+    // otherwise map time_t, which ANSI C and POSIX define as any arithmetic type, 
+    // into type double 
+    //
+    double sec = ansiTimeTicks.ts * lti.time_tSecPerTick - lti.epicsEpochOffset;
 
     //
     // map into the the EPICS time stamp range (which allows rollover)
     //
-    if (sec < 0.0) {
-        if (sec < -uLongMax) {
-            sec = sec + static_cast<unsigned long>(-sec/uLongMax)*uLongMax;
+    if ( sec < 0.0 ) {
+        if ( sec < -uLongMax ) {
+            sec = sec + static_cast<unsigned long> ( -sec / uLongMax ) * uLongMax;
         }
         sec += uLongMax;
     }
-    else if (sec > uLongMax) {
-        sec = sec - static_cast<unsigned long>(sec/uLongMax)*uLongMax;
+    else if ( sec > uLongMax ) {
+        sec = sec - static_cast<unsigned long> ( sec / uLongMax ) * uLongMax;
     }
 
-    this->secPastEpoch = static_cast <unsigned long> (sec);
-    this->nSec = static_cast <unsigned long> ( (sec-this->secPastEpoch) * nSecPerSec );
+    this->secPastEpoch = static_cast <unsigned long> ( sec );
+    this->nSec = static_cast <unsigned long> ( ( sec-this->secPastEpoch ) * nSecPerSec );
 }
 
 epicsTime::epicsTime (const epicsTimeStamp &ts) 
@@ -222,16 +252,22 @@ void epicsTime::synchronize () {} // depricated
 //
 epicsTime::operator time_t_wrapper () const
 {
-    double tmp;
     time_t_wrapper wrap;
 
-    tmp = (this->secPastEpoch + lti.epicsEpochOffset) / lti.time_tSecPerTick;
-    tmp += (this->nSec / lti.time_tSecPerTick) / nSecPerSec;
-
+    if ( lti.useDiffTimeOptimization ) {
+       if ( this->secPastEpoch < ULONG_MAX - lti.epicsEpochOffset ) {
+           wrap.ts = static_cast <time_t> ( this->secPastEpoch + lti.epicsEpochOffset );
+           return wrap;
+       }
+    }
+    
     //
     // map type double into time_t which ansi C defines as some arithmetic type
     //
-    wrap.ts = static_cast <time_t> (tmp);
+    double tmp = (this->secPastEpoch + lti.epicsEpochOffset) / lti.time_tSecPerTick;
+    tmp += (this->nSec / lti.time_tSecPerTick) / nSecPerSec;
+
+    wrap.ts = static_cast <time_t> ( tmp );
 
     return wrap;
 }

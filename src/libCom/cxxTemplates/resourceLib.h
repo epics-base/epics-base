@@ -108,9 +108,9 @@ public:
     // Call " void T::show (unsigned level)" for each entry
     void show (unsigned level) const;
     void verify () const;
-    int add (T &res); // returns -1 (id exists in table), 0 (success)
-    T *remove (const ID &idIn); // remove entry
-    T *lookup (const ID &idIn) const; // locate entry
+    int add ( T & res ); // returns -1 (id exists in table), 0 (success)
+    T * remove (const ID &idIn); // remove entry
+    T * lookup (const ID &idIn) const; // locate entry
     // Call (pT->*pCB) () for each entry
     void traverse ( void (T::*pCB)() );
     void traverseConst ( void (T::*pCB)() const ) const;
@@ -121,14 +121,14 @@ public:
     class epicsShareClass dynamicMemoryAllocationFailed {};
     class epicsShareClass sizeExceedsMaxIndexWidth {};
 private:
-    tsSLList < T > *pTable;
+    tsSLList < T > * pTable;
     unsigned nextSplitIndex;
     unsigned hashIxMask;
     unsigned hashIxSplitMask;
     unsigned nInUse;
     resTableIndex hash ( const ID & idIn ) const;
-    T *find ( tsSLList<T> &list, const ID &idIn ) const;
-    T *findDelete ( tsSLList<T> &list, const ID &idIn );
+    T * find ( tsSLList<T> & list, const ID & idIn ) const;
+    T * findDelete ( tsSLList<T> & list, const ID & idIn );
     void splitBucket ();
     unsigned tableSize () const;
     resTable ( const resTable & );
@@ -327,9 +327,22 @@ inline resTableIndex resTable<T,ID>::hash ( const ID & idIn ) const
 template <class T, class ID>
 void resTable<T,ID>::show ( unsigned level ) const
 {
+    tsSLList<T> * pList = this->pTable;
     unsigned N = this->tableSize ();
-    printf ( "resTable with %u buckets and %u resources installed\n", 
-        N, this->nInUse );
+
+    printf ( "%u bucket hash table with %u items of type %s installed\n", 
+        N, this->nInUse, typeid(T).name() );
+
+    while ( pList < &this->pTable[N] ) {
+        tsSLIter<T> pItem = pList->firstIter ();
+        while ( pItem.valid () ) {
+            tsSLIter<T> pNext = pItem;
+            pNext++;
+            pItem.pointer()->show ( level );
+            pItem = pNext;
+        }
+        pList++;
+    }
 
     if ( level >=1u ) {
         tsSLList <T> *pList = this->pTable;
@@ -393,9 +406,7 @@ void resTable<T,ID>::verify () const
 template <class T, class ID>
 void resTable<T,ID>::traverse ( void (T::*pCB)() ) 
 {
-    tsSLList<T> *pList;
-
-    pList = this->pTable;
+    tsSLList<T> * pList = this->pTable;
     unsigned N = this->tableSize ();
     while ( pList < &this->pTable[N] ) {
         tsSLIter<T> pItem = pList->firstIter ();

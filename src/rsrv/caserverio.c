@@ -31,6 +31,7 @@
  *	.01 joh 071591	log time of last io in the client structure
  *	.02 joh 091691	use greater than on the DEBUG level test
  *	.03 joh	110491	improved diagnostics
+ *	.04 joh	021292	improved diagnostics
  */
 
 #include <vxWorks.h>
@@ -40,6 +41,7 @@
 #include <ioLib.h>
 #include <in.h>
 #include <tcp.h>
+#include <errno.h>
 #include <server.h>
 
 
@@ -56,13 +58,13 @@ int		lock_needed;
 	int	status;
 
   	if(CASDEBUG>2){
-		logMsg(	"Sending a message of %d bytes\n",
+		logMsg(	"CAS: Sending a message of %d bytes\n",
 			pclient->send.cnt);
 	}
 
 	if(pclient->disconnect){
   		if(CASDEBUG>2){
-			logMsg(	"msg Discard for sock %d addr %x\n",
+			logMsg(	"CAS: msg Discard for sock %d addr %x\n",
 				pclient->sock,
 				pclient->addr.sin_addr.s_addr);
 		}
@@ -84,9 +86,19 @@ int		lock_needed;
 			&pclient->addr,
 			sizeof(pclient->addr));
 		if(status < 0){
-			logMsg("caserver: client unreachable\n");
-			logMsg("caserver: msg from vxWorks follows\n");
-			printErrno(errnoGet(taskIdSelf()));
+			int	anerrno;
+
+			anerrno = errnoGet(taskIdSelf());
+
+			if(     (anerrno!=ECONNABORTED&&
+				anerrno!=ECONNRESET&&
+				anerrno!=ETIMEDOUT)||
+				CASDEBUG>2){
+
+				logMsg(
+					"CAS: client unreachable (errno=%d)\n",
+					anerrno);	
+			}
 			pclient->disconnect = TRUE;
 			if(pclient==prsrv_cast_client){
 				taskSuspend(taskIdSelf());

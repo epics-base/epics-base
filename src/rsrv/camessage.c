@@ -38,6 +38,7 @@
  *			to avoid deadlock condition between the client
  *			and the server.
  *	.06 joh	110491	lock added for IOC_CLAIM_CIU command
+ *	.07 joh	021292	Better diagnostics
  */
 
 #include <vxWorks.h>
@@ -84,7 +85,7 @@ camessage(client, recv)
 
 
 	if (CASDEBUG > 2)
-		logMsg("Parsing %d(decimal) bytes\n", recv->cnt);
+		logMsg("CAS: Parsing %d(decimal) bytes\n", recv->cnt);
 
 	bytes_left = recv->cnt;
 	while (bytes_left) {
@@ -308,7 +309,7 @@ camessage(client, recv)
 			UNLOCK_CLIENT(prsrv_cast_client);
 			if(status < 0){
        				free_client(client);
-				logMsg("cas: client timeout disconnect\n");
+				logMsg("CAS: client timeout disconnect\n");
 				exit();
 			}
 			LOCK_CLIENT(client);
@@ -579,7 +580,7 @@ build_reply(mp, client)
 			&tmp_addr);
 	if (status < 0) {
 		if (CASDEBUG > 2)
-			logMsg(	"Lookup for channel \"%s\" failed\n", 
+			logMsg(	"CAS: Lookup for channel \"%s\" failed\n", 
 				mp + 1);
 		if (mp->m_type == DOREPLY)
 			search_fail_reply(mp, client);
@@ -778,7 +779,7 @@ static void
 log_header (mp, mnum)
 FAST struct extmsg *mp;
 {
-	logMsg(	"N=%d cmd=%d type=%d pstsize=%d paddr=%x avail=%x\n",
+	logMsg(	"CAS: N=%d cmd=%d type=%d pstsize=%d paddr=%x avail=%x\n",
 	  	mnum, 
 	  	mp->m_cmmd,
 	  	mp->m_type,
@@ -786,5 +787,5 @@ FAST struct extmsg *mp;
 	  	MPTOPADDR(mp),
 	  	mp->m_available);
   	if(mp->m_cmmd==IOC_WRITE && mp->m_type==DBF_STRING)
-    		logMsg("The string written: %s \n",mp+1);
+    		logMsg("CAS: The string written: %s \n",mp+1);
 }

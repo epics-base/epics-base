@@ -36,6 +36,7 @@
  *			by rebooted clients
  *	.05 joh	110691	print nil recv disconnect message only
  *			if debug is on
+ *	.06 joh 021192  better diagnostics
  */
 
 #include <vxWorks.h>
@@ -78,7 +79,7 @@ FAST int 		sock;
 				&true,
 				sizeof true);
     	if(status == ERROR){
-      		logMsg("camsgtask: TCP_NODELAY option set failed\n");
+      		logMsg("CAS: TCP_NODELAY option set failed\n");
       		close(sock);
       		return;
     	}
@@ -95,7 +96,7 @@ FAST int 		sock;
 		    	&true, 
 			sizeof true);
     	if(status == ERROR){
-      		logMsg("camsgtask: SO_KEEPALIVE option set failed\n");
+      		logMsg("CAS: SO_KEEPALIVE option set failed\n");
       		close(sock);
       		return;
     	}
@@ -107,7 +108,7 @@ FAST int 		sock;
 	 */
 	client = (struct client *) create_udp_client(NULL);
 	if (!client) {
-		logMsg("camsgtask: client init failed\n");
+		logMsg("CAS: client init failed\n");
 		close(sock);
 		return;
 	}
@@ -119,14 +120,14 @@ FAST int 		sock;
  			&client->addr, 
 			&i); 
     	if(status == ERROR){
-      		logMsg("camsgtask: peer address fetch failed\n");
+      		logMsg("CAS: peer address fetch failed\n");
 		free_client(client);
       		return;
     	}
 				
   	if(CASDEBUG>0){
-    		logMsg(	"camsgtask: Recieved connection request\n");
-   		logMsg("from addr %x, port %x \n", 
+    		logMsg(	"CAS: Recieved connection request\n");
+   		logMsg(	"from addr %x, port %x \n", 
 			client->addr.sin_addr, 
 			client->addr.sin_port);
   	}
@@ -137,7 +138,7 @@ FAST int 		sock;
 
 	client->evuser = (struct event_user *) db_init_events();
 	if (!client->evuser) {
-		logMsg("camsgtask: unable to init the event facility\n");
+		logMsg("CAS: unable to init the event facility\n");
 		free_client(client);
 		return;
 	}
@@ -147,7 +148,7 @@ FAST int 		sock;
 			NULL, 
 			NULL);
 	if (status == ERROR) {
-		logMsg("camsgtask: unable to start the event facility\n");
+		logMsg("CAS: unable to start the event facility\n");
 		free_client(client);
 		return;
 	}
@@ -163,7 +164,7 @@ FAST int 		sock;
 				0);
 		if (nchars==0){
   			if(CASDEBUG>0){
-				logMsg("camsgtask: nill message disconnect\n");
+				logMsg("CAS: nill message disconnect\n");
 			}
 			break;
 		}
@@ -175,14 +176,15 @@ FAST int 		sock;
 			/*
 			 * normal conn lost conditions
 			 */
-			if(CASDEBUG==0){
-				if(anerrno==ECONNABORTED||anerrno==ECONNRESET){
-					break;
-				}
-			}
+                        if(     (anerrno!=ECONNABORTED&&
+                                anerrno!=ECONNRESET&&
+                                anerrno!=ETIMEDOUT)||
+                                CASDEBUG>2){
 
-			logMsg("camsgtask: Exiting after msg recv error\n");
-			printErrno(anerrno);
+                                logMsg(
+                                	"CAS: client disconnect(errno=%d)\n",
+                                	anerrno);
+                        }
 
 			break;
 		}
@@ -225,8 +227,9 @@ FAST int 		sock;
 		 * allow message to batch up if more are comming
 		 */
 		status = ioctl(sock, FIONREAD, &nchars);
-		if (status == ERROR) {
-			printErrno(errnoGet(taskIdSelf()));
+		if (status < 0) {
+			logMsg("CAS: io ctl err %d\n",
+				errnoGet(taskIdSelf()));
 			cas_send_msg(client, TRUE);
 		}
 		else if (nchars == 0){

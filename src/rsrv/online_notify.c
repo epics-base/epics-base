@@ -32,6 +32,7 @@
  *		Argonne National Laboratory
  *
  *	History
+ *      .00 joh 021192  better diagnostics
  */
 
 /*
@@ -83,14 +84,13 @@ void rsrv_online_notify_task()
   	 *  Format described in <sys/socket.h>.
    	 */
   	if((sock = socket (AF_INET, SOCK_DGRAM, 0)) == ERROR){
-    		logMsg("Socket creation error\n");
-    		printErrno (errnoGet ());
+    		logMsg("CAS: online socket creation error\n");
     		abort(0);
   	}
 
 	status = local_addr(sock, &lcl);
 	if(status<0){
-		logMsg("online notify: Network interface unavailable\n");
+		logMsg("CAS: online notify: Network interface unavailable\n");
 		abort();
 	}
 
@@ -100,7 +100,6 @@ void rsrv_online_notify_task()
 				&true,
 				sizeof(true));
       	if(status<0){
-    		printErrno (errnoGet ());
     		abort(0);
       	}
 
@@ -122,7 +121,7 @@ void rsrv_online_notify_task()
   	send_addr.sin_port 	= htons(CA_CLIENT_PORT);
 	status = broadcast_addr(&send_addr.sin_addr);
 	if(status<0){
-		logMsg("online notify: no interface to broadcast on\n");
+		logMsg("CAS: online notify - no interface to broadcast on\n");
 		abort(0);
 	}
 

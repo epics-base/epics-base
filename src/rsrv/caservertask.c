@@ -71,15 +71,14 @@ req_server()
 
 	if (IOC_sock != 0 && IOC_sock != ERROR)
 		if ((status = close(IOC_sock)) == ERROR)
-			logMsg("Unable to close open master socket\n");
+			logMsg("CAS: Unable to close open master socket\n");
 
 	/*
 	 * Open the socket. Use ARPA Internet address format and stream
 	 * sockets. Format described in <sys/socket.h>.
 	 */
 	if ((IOC_sock = socket(AF_INET, SOCK_STREAM, 0)) == ERROR) {
-		logMsg("Socket creation error\n");
-		printErrno(errnoGet());
+		logMsg("CAS: Socket creation error\n");
 		taskSuspend(0);
 	}
 	
@@ -90,24 +89,21 @@ req_server()
 
 	/* get server's Internet address */
 	if (bind(IOC_sock, &serverAddr, sizeof(serverAddr)) == ERROR) {
-		logMsg("Bind error\n");
-		printErrno(errnoGet());
+		logMsg("CAS: Bind error\n");
 		close(IOC_sock);
 		taskSuspend(0);
 	}
 
 	/* listen and accept new connections */
 	if (listen(IOC_sock, 10) == ERROR) {
-		logMsg("Listen error\n");
-		printErrno(errnoGet());
+		logMsg("CAS: Listen error\n");
 		close(IOC_sock);
 		taskSuspend(0);
 	}
 
 	while (TRUE) {
 		if ((i = accept(IOC_sock, NULL, 0)) == ERROR) {
-			logMsg("Accept error\n");
-			printErrno(errnoGet());
+			logMsg("CAS: Accept error\n");
 			taskSuspend(0);
 		} else {
 			status = taskSpawn(CA_CLIENT_NAME,
@@ -117,7 +113,8 @@ req_server()
 					   camsgtask,
 					   i);
 			if (status == ERROR) {
-				logMsg("Unable to spawn network server\n");
+				logMsg("CAS: task creation failed\n");
+				logMsg("CAS: (client ignored)\n");
 				printErrno(errnoGet());
 				close(i);
 			}
@@ -183,7 +180,7 @@ register struct client *client;
 	if (client->proto == IPPROTO_TCP) {
 
 		if(CASDEBUG>0){
-			logMsg("CA Connection %d Terminated\n", tmpsock);
+			logMsg("CAS: Connection %d Terminated\n", tmpsock);
 		}
 
 		/*
@@ -216,7 +213,7 @@ register struct client *client;
 		}
 		if (tmpsock != NONE)
 			if ((status = close(tmpsock)) == ERROR)	/* close socket	 */
-				logMsg("Unable to close open TCP client socket\n");
+				logMsg("CAS: Unable to close socket\n");
 	}
 
 	/* free dbaddr str */
@@ -227,7 +224,7 @@ register struct client *client;
 	FASTUNLOCK(&rsrv_free_addrq_lck);
 
 	if(FASTLOCKFREE(&client->lock)<0){
-		logMsg("cas: couldnt free sem\n");
+		logMsg("CAS: couldnt free sem\n");
 	}
 
 	return OK;

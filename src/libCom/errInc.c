@@ -4,9 +4,6 @@
 
 /* common to epics Unix and vxWorks */
 #include "sdrHeader.h"
-
-#ifdef VXLIST
-/* epics vxWorks  only*/
 #include "dbAccess.h"
 #include "dbRecType.h"
 #include "dbRecords.h"
@@ -16,4 +13,6 @@
 #include "../src/ar/arAccessLib.h"
 #include "../src/cau/tsDefs.h"
 #include "../src/util/sydDefs.h"
+#ifdef VXLIST
+/* epics vxWorks  only*/
 #endif VXLIST

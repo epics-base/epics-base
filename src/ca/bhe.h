@@ -77,6 +77,11 @@ private:
     tcpiiu * pIIU;
     ca_uint32_t lastBeaconNumber;
     void beaconAnomalyNotify ();
+    void logBeacon ( const char * pDiagnostic, 
+                     const double & currentPeriod,
+                     const epicsTime & currentTime );
+    void logBeaconDiscard ( unsigned beaconAdvance,
+                     const epicsTime & currentTime );
 	bhe ( const bhe & );
 	bhe & operator = ( const bhe & );
     void * operator new ( size_t size );

@@ -23,6 +23,11 @@
 #include <limits.h>
 #include <float.h>
 
+#if 0
+#define DEBUG
+#define DEBUG_ALL 0
+#endif
+
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #define epicsExportSharedSymbols
@@ -69,6 +74,51 @@ void bhe::beaconAnomalyNotify ()
     }
 }
 
+#ifdef DEBUG
+void bhe::logBeacon ( const char * pDiagnostic, 
+                     const double & currentPeriod,
+                     const epicsTime & currentTime )
+{
+    if ( this->pIIU || DEBUG_ALL ) {
+        char name[64];
+        this->name ( name, sizeof ( name ) );
+        char date[64];
+        currentTime.strftime ( date, sizeof ( date ), 
+            "%a %b %d %Y %H:%M:%S.%f");
+        ::printf ( "%s cp=%g ap=%g %s %s\n",
+            pDiagnostic, currentPeriod, 
+            this->averagePeriod, name, date );
+    }
+}
+#else
+inline void bhe::logBeacon ( const char * /* pDiagnostic */,
+    const double & /* currentPeriod */,
+    const epicsTime & /* currentTime */ )
+{
+}
+#endif
+
+#ifdef DEBUG
+void bhe::logBeaconDiscard ( unsigned beaconAdvance,
+                     const epicsTime & currentTime )
+{
+    if ( this->pIIU || DEBUG_ALL ) {
+        char name[64];
+        this->name ( name, sizeof ( name ) );
+        char date[64];
+        currentTime.strftime ( date, sizeof ( date ), 
+            "%a %b %d %Y %H:%M:%S.%f");
+        ::printf ( "bb %u %s %s\n",
+            beaconAdvance, name, date );
+    }
+}
+#else
+void bhe::logBeaconDiscard ( unsigned /* beaconAdvance */,
+                     const epicsTime & /* currentTime */ )
+{
+}
+#endif
+
 /*
  * update beacon period
  *
@@ -98,13 +148,7 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
          */
         this->timeStamp = currentTime;
 
-#ifdef DEBUG
-        {
-            char name[64];
-            this->name ( name, sizeof ( name ) );
-            ::printf ( "fb %s\n", name );
-        }
-#endif
+        logBeacon ( "fb", - DBL_MAX, currentTime );
 
         return false;
     }
@@ -113,7 +157,7 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
     // 2) detect lost beacons due to input queue overrun or damage
     if ( CA_V410 ( protocolRevision ) ) {
         unsigned beaconSeqAdvance;
-        if ( beaconNumber > this->lastBeaconNumber ) {
+        if ( beaconNumber >= this->lastBeaconNumber ) {
             beaconSeqAdvance = beaconNumber - this->lastBeaconNumber;
         }
         else {
@@ -124,6 +168,7 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
         // throw out sequence numbers just prior to, or the same as, the last one received 
         // (this situation is probably caused by a temporary duplicate route )
         if ( beaconSeqAdvance == 0 ||  beaconSeqAdvance > ca_uint32_max - 256 ) {
+            logBeaconDiscard ( beaconSeqAdvance, currentTime );
             return false;
         }
 
@@ -131,6 +176,7 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
         // (this situation is probably caused by a duplicate route 
         // or a beacon due to input queue overun)
         if ( beaconSeqAdvance > 1 &&  beaconSeqAdvance < 4 ) {
+            logBeaconDiscard ( beaconSeqAdvance, currentTime );
             return false;
         }
     }
@@ -151,14 +197,8 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
          */
         this->averagePeriod = currentPeriod;
 
-#ifdef DEBUG
-        {
-            char name[64];
-            this->name ( name, sizeof ( name ) );
-            ::printf ( "fp=%g %s\n",
-                this->averagePeriod, name );
-        }
-#endif
+        logBeacon ( "fp", currentPeriod, currentTime );
+
 
         /*
          * ignore beacons seen for the first time shortly after
@@ -197,6 +237,7 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
                  */
                 netChange = true;
             }
+            logBeacon ( "bah", currentPeriod, currentTime );
         }
 
         /*
@@ -213,22 +254,14 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
         else if ( currentPeriod <= this->averagePeriod * 0.80 ) {
             this->beaconAnomalyNotify ();
             netChange = true;
+            logBeacon ( "bal", currentPeriod, currentTime );
         }
         else if ( this->pIIU ) {
             // update state of health for active virtual circuits 
             // if the beacon looks ok
             this->pIIU->beaconArrivalNotify ( currentTime );
+            logBeacon ( "vb", currentPeriod, currentTime );
         }
-
-#ifdef DEBUG
-        {
-            char name[64];
-            this->name ( name, sizeof ( name ) );
-            ::printf ( "cp=%g ap=%g %s\n",
-                currentPeriod, this->averagePeriod,
-                name );
-        }
-#endif
 
         // update a running average period
         this->averagePeriod = currentPeriod * 0.125 + 

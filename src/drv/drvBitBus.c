@@ -63,6 +63,7 @@
 
 #include <fast_lock.h>
 
+#include <task_params.h>
 #include <drvSup.h>
 #include <dbDefs.h>
 #include <link.h>

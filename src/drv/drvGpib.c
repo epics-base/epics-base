@@ -73,6 +73,7 @@
 #include <vme.h>
 #include <sysLib.h>
 
+#include <task_params.h>
 #include <drvSup.h>
 #include <dbDefs.h>
 #include <link.h>

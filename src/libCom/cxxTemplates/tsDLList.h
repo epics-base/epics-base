@@ -93,6 +93,8 @@ public:
     tsDLIterBD <T> firstIter ();
     tsDLIterConstBD <T> lastIter () const;
     tsDLIterBD <T> lastIter ();
+    static tsDLIterConstBD <T> invalidConstIter ();
+    static tsDLIterBD <T> invalidIter ();
 private:
     T * pFirst;
     T * pLast;
@@ -455,6 +457,18 @@ template < class T >
 inline tsDLIterBD <T> tsDLList < T > :: lastIter ()
 {
     return tsDLIterBD < T > ( this->pLast );
+}
+
+template < class T >
+inline tsDLIterConstBD <T> tsDLList < T > :: invalidConstIter ()
+{
+    return tsDLIterConstBD < T > ( 0 );
+}
+
+template < class T >
+inline tsDLIterBD <T> tsDLList < T > :: invalidIter ()
+{
+    return tsDLIterBD < T > ( 0 );
 }
 
 //////////////////////////////////////////

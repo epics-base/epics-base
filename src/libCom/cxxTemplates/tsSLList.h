@@ -85,6 +85,8 @@ public:
     void remove ( T &itemBefore );
     tsSLIterConst <T> firstIter () const;
     tsSLIter <T> firstIter ();
+    static tsSLIterConst <T> invalidConstIter ();
+    static tsSLIter <T> invalidIter ();
 private:
     const tsSLList < T > & operator = ( const tsSLList < T > & );
 };
@@ -282,6 +284,18 @@ inline tsSLIter <T> tsSLList < T > :: firstIter ()
 {
     tsSLNode < T > *pThisNode = this;
     return tsSLIter <T> ( pThisNode->pNext );
+}
+
+template <class T>
+inline tsSLIterConst <T> tsSLList < T > :: invalidConstIter ()
+{
+    return tsSLIterConst <T> ( 0 );
+}
+
+template <class T>
+inline tsSLIter <T> tsSLList < T > :: invalidIter ()
+{
+    return tsSLIter <T> ( 0 );
 }
 
 //////////////////////////////////////////

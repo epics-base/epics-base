@@ -1,5 +1,4 @@
 /* xy220_driver.c */
-static char SccsId[] = "@(#)xy220_driver.c $Id$ ";
 /* share/src/drv $Id$ */
 /*
  * subroutines that are used to interface to the binary output cards
@@ -36,7 +35,10 @@ static char SccsId[] = "@(#)xy220_driver.c $Id$ ";
  *                              Added sysBusToLocalAdrs.
  * .02	02-03-92	bg	Gave xy220_io_report the ability to 
  *				read raw values from card if level > 1.
+ * .03	08-10-92	joh	merged potions of bo_driver.h
  */
+
+static char SccsId[] = "$Id$\t$Date$";
 
 /*
  * Code Portions:
@@ -48,14 +50,26 @@ static char SccsId[] = "@(#)xy220_driver.c $Id$ ";
 #include <vxWorks.h>
 #include <vme.h>
 #include "module_types.h"
-#include "bo_driver.h"
-#include "drvsubs.h"
 
+#define XY_LED          0x3     /* set the Xycom status LEDs to OK */
+#define XY_SOFTRESET    0x10    /* reset the IO card */
 
-static char *xy220_addr;
+/* maximum number of VME binary output cards per IOC */
+#define MAX_XY220_BO_CARDS 	bo_num_cards[XY220]
+
+/* Xycom 220 binary output memory structure */
+struct bo_xy220{
+        char    begin_pad[0x80];        /* nothing until 0x80 */
+        short   csr;                    /* control status register */
+        unsigned short low_value;       /* low order 16 bits value */
+        unsigned short high_value;      /* high order 16 bits value */
+        char    end_pad[0x400-0x80-6];  /* pad until next card */
+};
+
 
 /* pointers to the binary output cards */
-struct bo_xy220	*pbo_xy220s[MAX_XY220_BO_CARDS];	/* Xycom 220s */
+struct bo_xy220	**pbo_xy220s;	/* Xycom 220s */
+
 
 /*
  * XY220_DRIVER_INIT
@@ -68,15 +82,25 @@ int xy220_driver_init(){
 	register short	i;
 	struct bo_xy220	*pbo_xy220;
 
+	pbo_xy220s = (struct bo_xy220 **)
+		calloc(MAX_XY220_BO_CARDS, sizeof(*pbo_xy220s));
+	if(!pbo_xy220s){
+		return ERROR;
+	}
+
 	/* initialize the Xycom 220 binary output cards */
 	/* base address of the xycom 220 binary output cards */
-        if ((status = sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO,bo_addrs[XY220],&xy220_addr)) != OK){
-           printf("Addressing error in xy220 driver\n");
+	status = sysBusToLocalAdrs(
+			VME_AM_SUP_SHORT_IO,
+			bo_addrs[XY220],
+			&pbo_xy220);
+        if (status != OK){
+           printf("%s: xy220 A16 base map failure\n", __FILE__);
            return ERROR;
         }
-	pbo_xy220 = (struct bo_xy220 *)xy220_addr;
+
 	/* determine which cards are present */
-	for (i = 0; i < bo_num_cards[XY220]; i++,pbo_xy220++){
+	for (i = 0; i < MAX_XY220_BO_CARDS; i++,pbo_xy220++){
 	    if (vxMemProbe(pbo_xy220,READ,sizeof(short),&bomode) == OK){
 		pbo_xy220s[i] = pbo_xy220;
 		pbo_xy220s[i]->csr = XY_SOFTRESET;
@@ -156,7 +180,7 @@ void xy220_io_report(level)
    int jval,kval,lval,mval;
    extern masks[];
 
-   for (i = 0; i < bo_num_cards[XY220]; i++){
+   for (i = 0; i < MAX_XY220_BO_CARDS; i++){
 	if (pbo_xy220s[i]){
            printf("BO: XY220:      card %d\n",i);
            if (level == 1){

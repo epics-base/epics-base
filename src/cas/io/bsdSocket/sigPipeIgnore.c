@@ -17,6 +17,14 @@ typedef void (*pSigFunc) ();
 
 static pSigFunc pReplacedFunc;
 
+#ifdef WIN32
+ 
+void installSigPipeIgnore (void)
+{
+}
+ 
+#else // WIN32
+
 /*
  * ignoreSigPipe ()
  */
@@ -47,5 +55,5 @@ void installSigPipeIgnore (void)
 	init = 1;
 }
 
-
+#endif // WIN32
 

@@ -1,9 +1,8 @@
 Compiling EPICS on cygwin32 (Windows95/NT)
 ------------------------------------------
 
-Right now this port of EPICS to cygwin32 it is possible to
-compile the EPICS base for the cygwin32 Host using Cygnus' beta19
-release of the GNU-win32 tools.
+Right now this port of EPICS base to cygwin32 R1.3.3 fails
+because cygwin does not yet support point-to-point interfaces.
  
 To build EPICS on Win95 or NT using cygwin32, we need
 
@@ -11,7 +10,6 @@ To build EPICS on Win95 or NT using cygwin32, we need
            from http://aps.anl.gov/...
         Cygnus's latest gnu-win32 distribution, available from 
            http://sources.redhat.com/cygwin
-
 
 BUILD INSTRUCTIONS
 ------------------

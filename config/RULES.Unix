@@ -19,19 +19,19 @@ INSTALL_TCLLIBS=$(TCLLIBNAME:%=$(INSTALL_TCLLIB)/%)
 INSTALL_TCLINDEX=$(TCLINDEX:%=$(INSTALL_TCLLIB)/%)
 INSTALL_CONFIGS=$(CONFIGS:%=$(INSTALL_CONFIG)/%)
 
-all: install
+all: inc install
 
 pre_build:
 
 build: pre_build $(LIBNAME) $(TARGETS) $(PROD)
 
-install: build $(INSTALL_INC) $(INSTALL_LIBS) $(TARGETS) $(INSTALL_PROD) \
-	$(INSTALL_MANS) $(INSTALL_DOCS) $(INSTALL_SCRIPTS) $(INSTALL_TEMPLATE) \
+inc: $(INSTALL_BIN)/installEpics $(INSTALL_INC)
+
+install: build $(INSTALL_LIBS) $(TARGETS) $(INSTALL_SCRIPTS) $(INSTALL_PROD) \
+	$(INSTALL_MANS) $(INSTALL_DOCS) $(INSTALL_TEMPLATE) \
 	$(INSTALL_TCLLIBS) $(INSTALL_TCLINDEX) $(INSTALL_CONFIGS)
 
 depends: $(SRCS.c) $(SRCS.cc)
-	rm -f .DEPENDS
-	touch .DEPENDS
 ifdef SRCS
 	echo you have a SRCS in your Makefile
 	exit 2
@@ -196,5 +196,8 @@ $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: %
 
 .PRECIOUS: %.o %.c
 
-include .DEPENDS
+#
+# "-include" ignores this request if .DEPENDS does not exist
+#
+-include .DEPENDS
 

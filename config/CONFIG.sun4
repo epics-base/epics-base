@@ -21,13 +21,17 @@ YACC = $(EYACC)
 LEX = $(ELEX)
 G++ = g++
 CCC = /usr/lang/CC
+RMDIR = rm -rf
+MKDIR = mkdir
 
-ACC_ANSI_INVOKE_W_NO = $(ACC) -w
+ACC_ANSI_INVOKE_W_NO = $(ACC) -Xa -w
 ACC_ANSI_INVOKE_W_YES = $(ACC) -Xa
 ACC_TRAD_INVOKE_W_NO = $(ACC) -Xs -w
 ACC_TRAD_INVOKE_W_YES = $(ACC) -Xs
 ACC_STRICT_INVOKE_W_NO = $(ACC) -Xc -w
 ACC_STRICT_INVOKE_W_YES = $(ACC) -Xc -vc
+ACC_LD_FLAGS = -L$(SPECIAL_LANG)
+ACC_LD_LIBS = 
 SUNCC_TRAD_INVOKE_W_NO = $(SUNCC) -w
 SUNCC_TRAD_INVOKE_W_YES = $(SUNCC)
 GCC_ANSI_INVOKE_W_NO = $(GCC) -ansi -w -D__USE_FIXED_PROTOTYPES__
@@ -36,11 +40,41 @@ GCC_STRICT_INVOKE_W_NO = $(GCC) -ansi -pedantic -D__USE_FIXED_PROTOTYPES__
 GCC_STRICT_INVOKE_W_YES = $(GCC) -ansi -Wall -pedantic -D__USE_FIXED_PROTOTYPES__
 GCC_TRAD_INVOKE_W_NO = $(GCC) -traditional -w
 GCC_TRAD_INVOKE_W_YES = $(GCC) -traditional
+GCC_LD_LIBS = -liberty
+GCC_LD_FLAGS = 
  
 C_OLD = $($(STANDARD)_TRAD_INVOKE_W_$(UNIX_WARN))
 C_ANSI = $($(ANSI)_ANSI_INVOKE_W_$(UNIX_WARN))
 C_STRICT = $($(ANSI)_STRICT_INVOKE_W_YES)
 CC = $(C_$(CMPLR))
+
+LD_LIBS_OLD = $($(STANDARD)_LD_LIBS)
+LD_LIBS_ANSI = $($(ANSI)_LD_LIBS)
+LD_LIBS_STRICT = $($(ANSI)_LD_LIBS)
+CCOMPILER_LDLIBS = $(LD_LIBS_$(CMPLR))
+LD_FLAGS_OLD = $($(STANDARD)_LD_FLAGS)
+LD_FLAGS_ANSI = $($(ANSI)_LD_FLAGS)
+LD_FLAGS_STRICT = $($(ANSI)_LD_FLAGS)
+CCOMPILER_LDFLAGS = $(LD_FLAGS_$(CMPLR))
+
+CCC_NORMAL_INVOKE_W_NO = $(CCC) +p
+CCC_NORMAL_INVOKE_W_YES = $(CCC) +p +w 
+CCC_STRICT_INVOKE_W_YES = $(CCC) +p +w 
+CCC_LD_FLAGS = -L$(SPECIAL_LANG)
+CCC_LD_LIBS = 
+G++_NORMAL_INVOKE_W_NO = $(G++) -ansi -pedantic -w
+G++_NORMAL_INVOKE_W_YES = $(G++) -ansi -pedantic -Wall 
+G++_STRICT_INVOKE_W_YES = $(G++) -ansi -pedantic -Wtraditional -Wall \
+      -Wmissing-prototypes -Woverloaded-virtual \
+      -Wwrite-strings -Wconversion -Wstrict-prototypes\
+      -Wpointer-arith -Winline
+
+CXX_NORMAL = $($(CPLUSPLUS)_NORMAL_INVOKE_W_$(UNIX_WARN))
+CXX_STRICT = $($(CPLUSPLUS)_STRICT_INVOKE_W_YES)
+
+# GNU make likes CXX instead of CCC
+CXX = $(CXX_$(CXXCMPLR))
+
 
 # Static Build options
 ACC_SFLAGS_YES= -Bstatic
@@ -67,21 +101,9 @@ UNIX_INCLUDES = -I. -I.. -I$(EPICS_BASE_INCLUDE)
 OP_SYS_FLAGS = -DUNIX
  
 
-UNIX_LDFLAGS = -L$(EPICS_BASE_LIB)
+UNIX_LDFLAGS = -L$(EPICS_BASE_LIB) $(CCOMPILER_LDFLAGS)
 
-#
-# The three nested if stmnts here document the fact that current
-# organization here requires that we must use gcc for
-# all compilation or not at all (no mixed compiler compilation)
-#
-UNIX_LDLIBS = -lm
-#ifeq ($(ANSI), GCC)
-#ifeq ($(STANDARD), GCC)
-#ifeq ($(CPLUSPLUS), G++)
-UNIX_LDLIBS += -liberty
-#endif
-#endif
-#endif
+UNIX_LDLIBS = -lm $(CCOMPILER_LDLIBS)
 
 ARCH_DEP_CFLAGS = -DSUNOS4
 ARCH_DEP_CCFLAGS = $(ARCH_DEP_CFLAGS)
@@ -103,7 +125,6 @@ CPPFLAGS += $(TARGET_CPPFLAGS) $(USR_CPPFLAGS)
 
 # GNU make likes CXX instead of CCC
 CXXFLAGS = $(CCFLAGS)
-CXX =$($(CPLUSPLUS))
 
 LDFLAGS = $(SPECIAL_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS) $(ARCH_DEP_LDFLAGS) $(UNIX_LDFLAGS)
 LDLIBS = $(TARGET_LDLIBS) $(USR_LDLIBS) $(ARCH_DEP_LDLIBS) $(UNIX_LDLIBS)
@@ -114,5 +135,5 @@ COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c
 LINK.c = $(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
 LINK.cc = $(CXX) $(CCFLAGS) $(CPPFLAGS) $(LDFLAGS)
 
-DEPENDS_RULE.c = -$(COMPILE.c) -M $(SRCS.c) >> .DEPENDS
+DEPENDS_RULE.c = -$(COMPILE.c) -M $(SRCS.c) > .DEPENDS
 DEPENDS_RULE.cc = @echo no DEPENDS_RULE.cc defined in CONFIG.Unix.sun4

@@ -2,51 +2,34 @@
 #  $Id$
 #
 
-# the order of following lists are important
+# the order of following list is important
 
-DIRS_Vx= \
-	src/libCom\
-	src/libvxWorks\
-	src/bpt\
-	src/util\
-	src/sequencer\
-	src/misc\
-	src/db\
-	src/ca\
-	src/rsrv\
-	src/dbStatic\
-	src/dbtools\
-	src/rec\
-	src/as\
-	src/drv/ansi\
-	src/drv/old\
-	src/dev\
-	src/devOpt\
-	src/iocCore
-	
-DIRS_Unix= \
+DIRS = \
 	src/tools \
 	src/include \
 	src/cxxTemplates \
 	src/db \
-	src/toolsComm/antelope \
-	src/toolsComm/flex \
+	src/toolsComm\
 	src/libCom \
+	src/libvxWorks\
 	src/cvtDctsdr \
 	src/dbStatic \
 	src/bpt \
 	src/ca \
 	src/gdd \
-	src/cas/generic \
-	src/cas/build/singleThread \
-	src/cas/example \
-	src/as \
+	src/cas \
 	src/util \
+	src/misc \
 	src/sequencer \
 	src/dbtools \
+	src/rsrv\
+	src/rec\
+	src/as \
+	src/drv\
+	src/dev\
+	src/devOpt\
+	src/iocCore\
 	config
-
-DIRS = $(DIRS_$(BUILD_TYPE))
 
 EPICS_BASE = $(TOP)
 

@@ -36,6 +36,7 @@ EPICS_BASE_DBD          = $(EPICS_BASE)/dbd
 EPICS_EXTENSIONS_INCLUDE      = $(EPICS_EXTENSIONS)/include
 EPICS_EXTENSIONS_TEMPLATES    = $(EPICS_EXTENSIONS)/templates
 
+DIVIDER = .
 
 # private versions of lex/yacc from EPICS
 EYACC = $(EPICS_BASE)/bin/$(HOST_ARCH)/antelope

@@ -12,3 +12,10 @@
 #   OLD    -  Standard C - Not appropriate here.
 CMPLR=ANSI
 
+# Default SUN C++ compiler, individual Makefiles will override
+#  if they are coded to a higher standard.
+#   STRICT -  ANSI C++ force strict warning flags
+#   NORMAL -  ANSI C++ optional warning flags
+CXXCMPLR=NORMAL
+#CXXCMPLR=STRICT
+

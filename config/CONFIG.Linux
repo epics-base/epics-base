@@ -22,8 +22,10 @@ YACC = $(EYACC)
 LEX = $(ELEX)
 G++ = g++
 CCC = CC
+RMDIR = rm -rf
+MKDIR = mkdir
 
-ACC_ANSI_INVOKE_W_NO = $(ACC) -w
+ACC_ANSI_INVOKE_W_NO = $(ACC) -Xa -w
 ACC_ANSI_INVOKE_W_YES = $(ACC) -Xa
 ACC_TRAD_INVOKE_W_NO = $(ACC) -Xs -w
 ACC_TRAD_INVOKE_W_YES = $(ACC) -Xs
@@ -42,6 +44,24 @@ C_OLD = $($(STANDARD)_TRAD_INVOKE_W_$(UNIX_WARN))
 C_ANSI = $($(ANSI)_ANSI_INVOKE_W_$(UNIX_WARN))
 C_STRICT = $($(ANSI)_STRICT_INVOKE_W_YES)
 CC = $(C_$(CMPLR))
+
+CCC_NORMAL_INVOKE_W_NO = $(CCC) +p
+CCC_NORMAL_INVOKE_W_YES = $(CCC) +p +w 
+CCC_STRICT_INVOKE_W_YES = $(CCC) +p +w 
+CCC_LD_FLAGS = -L$(SPECIAL_LANG)
+CCC_LD_LIBS = 
+G++_NORMAL_INVOKE_W_NO = $(G++) -ansi -pedantic -w
+G++_NORMAL_INVOKE_W_YES = $(G++) -ansi -pedantic -Wall 
+G++_STRICT_INVOKE_W_YES = $(G++) -ansi -pedantic -Wtraditional -Wall \
+      -Wmissing-prototypes -Woverloaded-virtual \
+      -Wwrite-strings -Wconversion -Wstrict-prototypes\
+      -Wpointer-arith -Winline
+
+CXX_NORMAL = $($(CPLUSPLUS)_NORMAL_INVOKE_W_$(UNIX_WARN))
+CXX_STRICT = $($(CPLUSPLUS)_STRICT_INVOKE_W_YES)
+
+# GNU make likes CXX instead of CCC
+CXX = $(CXX_$(CXXCMPLR))
 
 # Static Build options
 ACC_SFLAGS_YES= -Bstatic
@@ -91,7 +111,6 @@ CPPFLAGS += $(TARGET_CPPFLAGS) $(USR_CPPFLAGS)
 
 # GNU make likes CXX instead of CCC
 CXXFLAGS = $(CCFLAGS)
-CXX =$($(CPLUSPLUS))
 
 LDFLAGS = $(SPECIAL_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS) $(ARCH_DEP_LDFLAGS) $(UNIX_LDFLAGS)
 LDLIBS = $(TARGET_LDLIBS) $(USR_LDLIBS) $(ARCH_DEP_LDLIBS) $(UNIX_LDLIBS)
@@ -102,5 +121,5 @@ COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c
 LINK.c = $(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
 LINK.cc = $(CXX) $(CCFLAGS) $(CPPFLAGS) $(LDFLAGS)
 
-DEPENDS_RULE.c = -$(COMPILE.c) -M $(SRCS.c) >> .DEPENDS
+DEPENDS_RULE.c = -$(COMPILE.c) -M $(SRCS.c) > .DEPENDS
 DEPENDS_RULE.cc = @echo no DEPENDS_RULE.cc defined in CONFIG.Unix.Linux

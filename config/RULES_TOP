@@ -2,82 +2,65 @@
 #  $Id$
 #
 
-all:: install
+all:: inc install
+ 
+$(DIRS) ::
+	$(MAKE) -C $@
 
-dirs::
-	@for DIR in ${DIRS}; do	 \
-		echo "$@: $$DIR"; 	\
- 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
-	done
+DO_X += inc
+DO_X += install
+DO_X += build
 
-depends::
-	@for DIR in ${DIRS}; do	 \
-		echo "$@: $$DIR"; 	\
- 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
-	done
+dirPart = $(word 1, $(subst $(DIVIDER), ,$@))
+actionPart = $(word 2, $(subst $(DIVIDER), ,$@))
+buildPart = $(word 3, $(subst $(DIVIDER), ,$@))
 
-build::
-	@for DIR in ${DIRS}; do	 \
-		echo "$@: $$DIR"; 	\
- 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
-	done
+hostDirTargets = $(foreach x, $(DO_X),\
+                $(foreach dir, $(DIRS), $(dir)$(DIVIDER)$(x)$(DIVIDER)host))
+crossDirTargets += $(foreach x, $(DO_X),\
+                $(foreach dir, $(DIRS), $(dir)$(DIVIDER)$(x)$(DIVIDER)cross))
+ 
+host :: $(hostDirTargets)
+ 
+cross :: $(crossDirTargets)
+ 
+$(hostDirTargets) $(crossDirTargets) ::
+	$(MAKE) -C $(dirPart) $(actionPart)$(DIVIDER)$(buildPart)
 
-install::
-	@for DIR in ${DIRS}; do	 \
-		echo "$@: $$DIR"; 	\
- 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
-	done
+fakeHost =  $(foreach dir, $(DIRS), $(dir)$(DIVIDER)<fake>$(DIVIDER)host)
+fakeCross =  $(foreach dir, $(DIRS), $(dir)$(DIVIDER)<fake>$(DIVIDER)cross)
+ 
+inc:: inc$(DIVIDER)host inc$(DIVIDER)cross
+inc$(DIVIDER)host :: $(subst <fake>,inc,$(fakeHost))
+inc$(DIVIDER)cross :: $(subst <fake>,inc,$(fakeCross))
+ 
+install :: install$(DIVIDER)host install$(DIVIDER)cross
+install$(DIVIDER)host :: $(subst <fake>,install,$(fakeHost))
+install$(DIVIDER)cross :: $(subst <fake>,install,$(fakeCross))
+ 
+build :: build$(DIVIDER)host build$(DIVIDER)cross
+build$(DIVIDER)host :: $(subst <fake>,build,$(fakeHost))
+build$(DIVIDER)cross :: $(subst <fake>,build,$(fakeCross))
+ 
+clean :: $(addsuffix $(DIVIDER)clean, $(DIRS))
+#
+#        @echo "TOP: Cleaning
+#        @for DIR in ${DIRS}; do  \
+#        find $$DIR/src -type d -name "O.*" -prune -exec rm -rf {} \; ; \
+#        done
+#
+%$(DIVIDER)clean :
+	$(MAKE) -C $* clean
 
-clean::
-	@echo "TOP: Cleaning
-	@for DIR in ${DIRS}; do	 \
-	find $$DIR/src -type d -name "O.*" -prune -exec rm -rf {} \; ; \
-	done
+depends :: $(foreach dir, $(DIRS), $(dir)$(DIVIDER)depends)
+%$(DIVIDER)depends :
+	$(MAKE) -C $* depends
 
-uninstall::
-	@(for ARCH in ${BUILD_ARCHS}; do    \
-		${MAKE} $@.$${ARCH}; \
-	done)
-
-
-
-dirs.%::
-	@for DIR in ${DIRS}; do	 \
-		echo "$@: $$DIR"; 	\
- 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
-	done
-
-depends.%::
-	@for DIR in ${DIRS}; do	 \
-		echo "$@: $$DIR"; 	\
- 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
-	done
-
-build.%::
-	@for DIR in ${DIRS}; do	 \
-		echo "$@: $$DIR"; 	\
- 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
-	done
-
-install.%::
-	@for DIR in ${DIRS}; do	 \
-		echo "$@: $$DIR"; 	\
- 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
-	done
-
-clean.%::
-	@for DIR in ${DIRS}; do	 \
-		echo "$@: $$DIR"; 	\
- 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
-	done
-
-uninstall.%::
+uninstall:: $(addprefix uninstall$(DIVIDER), $(BUILDARCHS))
+uninstall$(DIVIDER)%::
 	@echo "TOP: Uninstalling $* "
 	@rm -rf ./bin/$* ./lib/$* dbd include man
 	@rm -rf  rec.bak rec
-
-
-DIRNAME=$(notdir $(shell pwd))
 
 tar:
 	@echo "TOP: Creating $(DIRNAME).Tar file..."
@@ -93,4 +76,12 @@ tar:
 		| grep -v "/O\..*$$" | xargs tar vrf ${DIRNAME}.Tar; \
 	done
 
+
+.PHONY : $(DIRS)
+.PHONY : host cross
+.PHONY : $(hostDirTargets) $(crossDirTargets)
+.PHONY : $(DO_X)
+.PHONY : all clean depends
+.PHONY : uninstall 
+.PHONY : tar
 

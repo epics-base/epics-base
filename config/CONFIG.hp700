@@ -20,6 +20,8 @@ YACC = $(EYACC)
 LEX = $(ELEX)
 G++ = g++
 CCC = CC
+RMDIR = rm -rf
+MKDIR = mkdir
 
 ACC_ANSI_INVOKE_W_NO = $(ACC) -w
 ACC_ANSI_INVOKE_W_YES = $(ACC)
@@ -39,7 +41,25 @@ GCC_ANSI_INVOKE_W_YES = $(GCC) -ansi
 GCC_STRICT_INVOKE_W_YES = $(GCC) -ansi -Wall -pedantic
 GCC_TRAD_INVOKE_W_NO = $(GCC) -traditional -w
 GCC_TRAD_INVOKE_W_YES = $(GCC) -traditional
- 
+
+CCC_NORMAL_INVOKE_W_NO = $(CCC) +p
+CCC_NORMAL_INVOKE_W_YES = $(CCC) +p +w 
+CCC_STRICT_INVOKE_W_YES = $(CCC) +p +w 
+CCC_LD_FLAGS = -L$(SPECIAL_LANG)
+CCC_LD_LIBS = 
+G++_NORMAL_INVOKE_W_NO = $(G++) -ansi -pedantic -w
+G++_NORMAL_INVOKE_W_YES = $(G++) -ansi -pedantic -Wall 
+G++_STRICT_INVOKE_W_YES = $(G++) -ansi -pedantic -Wtraditional -Wall \
+      -Wmissing-prototypes -Woverloaded-virtual \
+      -Wwrite-strings -Wconversion -Wstrict-prototypes\
+      -Wpointer-arith -Winline
+
+CXX_NORMAL = $($(CPLUSPLUS)_NORMAL_INVOKE_W_$(UNIX_WARN))
+CXX_STRICT = $($(CPLUSPLUS)_STRICT_INVOKE_W_YES)
+
+# GNU make likes CXX instead of CCC
+CXX = $(CXX_$(CXXCMPLR))
+
 C_OLD = $($(STANDARD)_TRAD_INVOKE_W_$(UNIX_WARN))
 C_ANSI = $($(ANSI)_ANSI_INVOKE_W_$(UNIX_WARN))
 C_STRICT = $($(ANSI)_STRICT_INVOKE_W_YES)
@@ -91,7 +111,6 @@ CFLAGS = $(UNIX_OPT_FLAGS) $(TARGET_CFLAGS) $(USR_CFLAGS) $(ARCH_DEP_CFLAGS) $(U
 CCFLAGS = $(UNIX_OPT_FLAGS) $(TARGET_CCFLAGS) $(USR_CCFLAGS) $(ARCH_DEP_CCFLAGS) $(UNIX_CCFLAGS)
 CPPFLAGS += $(TARGET_CPPFLAGS) $(USR_CPPFLAGS)
 CXXFLAGS = $(CCFLAGS)
-CXX =$($(CPLUSPLUS))
 
 ARFLAGS = rv
 

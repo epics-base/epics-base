@@ -1,9 +1,10 @@
 # $Id$
 
-INC +=$(RECTYPES) $(MENUS)
+INCREC +=$(RECTYPES) $(MENUS)
 INSTALL_PROD=$(PROD:%=$(INSTALL_BIN)/%)
 INSTALL_LIBS=$(LIBNAME:%=$(INSTALL_BIN)/%)
 INSTALL_INC=$(INC:%=$(INSTALL_INCLUDE)/%)
+INSTALL_INCREC=$(INCREC:%=$(INSTALL_INCLUDE)/%)
 INSTALL_MANS+=$(MAN1:%=$(INSTALL_MAN)/man1/%)
 INSTALL_MANS+=$(MAN2:%=$(INSTALL_MAN)/man2/%)
 INSTALL_MANS+=$(MAN3:%=$(INSTALL_MAN)/man3/%)
@@ -23,14 +24,16 @@ INSTALL_DBS=$(DBDINSTALL:%=$(INSTALL_DBD)/%)\
               $(MENUS:%.h=$(INSTALL_DBD)/%.dbd)
 
 INSTALL_DBDEXPAND=$(DBDEXPAND:%=$(INSTALL_DBD)/%)
-all: install
+all: inc install
 
 pre_build: 
 
 build: pre_build $(MENUS) $(RECTYPES) $(BPTS)\
          $(LIBNAME) $(TARGETS) $(PROD) $(DBDEXPAND)
 
-install: build $(INSTALL_INC)\
+inc: $(INSTALL_INC) 
+
+install: build $(INSTALL_INCREC)\
          $(INSTALL_LIBS) $(TARGETS) $(INSTALL_PROD) $(INSTALL_MANS)\
          $(INSTALL_DOCS) $(INSTALL_SCRIPTS)\
          $(INSTALL_INSTALLS) $(INSTALL_DBS)\
@@ -38,8 +41,6 @@ install: build $(INSTALL_INC)\
          $(INSTALL_DBDEXPAND)
 
 depends: $(SRCS.c) $(SRCS.cc)
-	rm -f .DEPENDS
-	touch .DEPENDS
 ifdef SRCS
 	echo you have a SRCS in your Makefile
 	exit 2
@@ -195,5 +196,8 @@ $(INSTALL_DOC)/%: ../%
 
 .PRECIOUS: %.o %.c
 
-include .DEPENDS
+#
+# "-include" ignores this request if .DEPENDS does not exist
+#
+-include .DEPENDS
 

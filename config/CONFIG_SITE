@@ -34,7 +34,7 @@ endif
 #       mv162lc
 #       mv147
 #       hkv2f
-#       niCpu030
+#	niCpu030
 #
 CROSS_COMPILER_TARGET_ARCHS=mv167
 

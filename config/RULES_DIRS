@@ -3,68 +3,63 @@
 #
 # Top level rules For Subdirectory Recursions
 #
-
-all:: install
-
-dirs::
-	@for DIR in ${DIRS}; do	 \
-		echo "$@: $$DIR"; 	\
- 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
-	done
-
-depends::
-	@for DIR in ${DIRS}; do	 \
-		echo "$@: $$DIR"; 	\
- 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
-	done
-
-build::
-	@for DIR in ${DIRS}; do	 \
-		echo "$@: $$DIR"; 	\
- 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
-	done
-
-install::
-	@for DIR in ${DIRS}; do	 \
-		echo "$@: $$DIR"; 	\
- 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
-	done
-
-clean::
-	@for DIR in ${DIRS}; do	 \
-		echo "$@: $$DIR"; 	\
-		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
-	done
+# $Log$
+#
 
 
+all:: inc install
 
-dirs.%::
-	@for DIR in ${DIRS}; do	 \
-		echo "$@: $$DIR"; 	\
- 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
-	done
+rebuild:: clean uninstall all 
 
-depends.%::
-	@for DIR in ${DIRS}; do	 \
-		echo "$@: $$DIR"; 	\
- 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
-	done
+$(DIRS) ::
+	$(MAKE) -C $@ 
 
-build.%::
-	@for DIR in ${DIRS}; do	 \
-		echo "$@: $$DIR"; 	\
- 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
-	done
+DO_X += inc
+DO_X += install
+DO_X += build 
 
-install.%::
-	@for DIR in ${DIRS}; do	 \
-		echo "$@: $$DIR"; 	\
- 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
-	done
+dirPart = $(word 1, $(subst $(DIVIDER), ,$@))
+actionPart = $(word 2, $(subst $(DIVIDER), ,$@))
+buildPart = $(word 3, $(subst $(DIVIDER), ,$@))
+ 
+hostDirTargets = $(foreach x, $(DO_X),\
+	 	$(foreach dir, $(DIRS), $(dir)$(DIVIDER)$(x)$(DIVIDER)host))
+crossDirTargets += $(foreach x, $(DO_X),\
+		$(foreach dir, $(DIRS), $(dir)$(DIVIDER)$(x)$(DIVIDER)cross))
 
-clean.%::
-	@for DIR in ${DIRS}; do	 \
-		echo "$@: $$DIR"; 	\
- 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
-	done
+host :: $(hostDirTargets)
+
+cross :: $(crossDirTargets)
+
+$(hostDirTargets) $(crossDirTargets) ::
+	$(MAKE) -C $(dirPart) $(actionPart)$(DIVIDER)$(buildPart)
+
+fakeHost =  $(foreach dir, $(DIRS), $(dir)$(DIVIDER)<fake>$(DIVIDER)host)
+fakeCross =  $(foreach dir, $(DIRS), $(dir)$(DIVIDER)<fake>$(DIVIDER)cross)
+
+inc:: inc$(DIVIDER)host inc$(DIVIDER)cross
+inc$(DIVIDER)host :: $(subst <fake>,inc,$(fakeHost)) 
+inc$(DIVIDER)cross :: $(subst <fake>,inc,$(fakeCross)) 
+
+install :: install$(DIVIDER)host install$(DIVIDER)cross
+install$(DIVIDER)host :: $(subst <fake>,install,$(fakeHost)) 
+install$(DIVIDER)cross :: $(subst <fake>,install,$(fakeCross)) 
+
+build :: build$(DIVIDER)host build$(DIVIDER)cross
+build$(DIVIDER)host :: $(subst <fake>,build,$(fakeHost)) 
+build$(DIVIDER)cross :: $(subst <fake>,build,$(fakeCross)) 
+
+clean :: $(addsuffix $(DIVIDER)clean, $(DIRS)) 
+%$(DIVIDER)clean:
+	$(MAKE) -C $* clean 
+
+depends :: $(foreach dir, $(DIRS), $(dir)$(DIVIDER)depends)
+%$(DIVIDER)depends :
+	$(MAKE) -C $* depends
+
+.PHONY : $(DIRS)
+.PHONY : host cross
+.PHONY : $(hostDirTargets) $(crossDirTargets)
+.PHONY : $(DO_X)
+.PHONY : all clean depends
 

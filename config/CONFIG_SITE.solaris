@@ -11,10 +11,16 @@
 #   OLD    -  Standard C - Not appropriate here.
 CMPLR=ANSI
 
+# Default SUN C++ compiler, individual Makefiles will override
+#  if they are coded to a higher standard.
+#   STRICT -  ANSI C++ force strict warning flags
+#   NORMAL -  ANSI C++ optional warning flags
+CXXCMPLR=NORMAL
+#CXXCMPLR=STRICT
+
 # Unbundled C compiler stuff
 SPARCWORKS = /opt/SUNWspro
 #SPECIAL_LANG = $(SPARCWORKS)/SC3.0/lib
 #SPECIAL_LANG = .
-#SPECIAL_LDFLAGS = -L$(SPECIAL_LANG)
 
 

@@ -31,6 +31,10 @@ epicsTimerTestHost_SRCS += epicsTimerTestMain.cpp epicsTimerTest.cpp
 PROD_HOST += epicsTimerTestHost
 OBJS_IOC += epicsTimerTest
 
+epicsTimerExampleHost_SRCS += epicsTimerExampleMain.cpp epicsTimerExample.cpp
+PROD_HOST += epicsTimerExampleHost
+OBJS_IOC += epicsTimerExample
+
 ringPointerTestHost_SRCS += ringPointerTestMain.cpp ringPointerTest.c
 PROD_HOST += ringPointerTestHost
 OBJS_IOC += ringPointerTest

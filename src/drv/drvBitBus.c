@@ -809,20 +809,22 @@ int	link;
         (plink->deviceStatus[pnode->txMsg.node])--; /* fix device status */
 	pnode->status = BB_TIMEOUT;
 
-	/* Release a completion lock if one was spec'd */
-	if (pnode->psyncSem != NULL)
-	  semGive(*(pnode->psyncSem));
-	
+	/* Do now in case we need it later */
+	resetNodeData = pnode->txMsg.node;  /* mark the node number */
+
 	/* Make the callbackRequest if one was spec'd */
 	if(pnode->finishProc != NULL)
 	  callbackRequest(pnode);     /* schedule completion processing */
+
+	/* Release a completion lock if one was spec'd */
+	if (pnode->psyncSem != NULL)
+	  semGive(*(pnode->psyncSem));
 
         /* If we are not going to reboot the link... */
         if (plink->nukeEm == 0)
 	{ /* Send out a RAC_NODE_OFFLINE to the controller */
 	  semGive(plink->busyList.sem);
 
-	  resetNodeData = pnode->txMsg.node;  /* mark the node number */
 printf("issuing a node offline for link %d node %d\n", link, resetNodeData);
 
 	  semTake(plink->queue[BB_Q_HIGH].sem, WAIT_FOREVER);

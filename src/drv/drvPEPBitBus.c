@@ -823,13 +823,23 @@ int	link;
         (plink->deviceStatus[pnode->txMsg.node])--; /* fix device status */
 	pnode->status = BB_TIMEOUT;
 	
+	/* Gotta do this now in case we need the info after the completion */
+	resetNode.txMsg.node = pnode->txMsg.node;
+	offlnNodeData = pnode->txMsg.node;  /* mark the node number */
+
+	/* Make the callbackRequest if one was spec'd */
+	if(pnode->finishProc != NULL)
+	{
+	    if (bbDebug>2)
+	    {
+	      printf("xvmeWdTask(%d): invoking the callbackRequest %8.8x %d\n", link, pnode->finishProc, pnode->priority);
+	    }
+	  callbackRequest(pnode);     /* schedule completion processing */
+	}
+
 	/* Release a completion lock if one was spec'd */
 	if (pnode->psyncSem != NULL && plink->nukeEm == 0)
 	  semGive(*(pnode->psyncSem));
-	
-	/* Make the callbackRequest if one was spec'd */
-	if(pnode->finishProc != NULL)
-	  callbackRequest(pnode);     /* schedule completion processing */
 	
         /* If we are not going to reboot the link... */
         if ( plink->nukeEm == 0 ) {
@@ -838,11 +848,9 @@ int	link;
 
 	  /* Configure message for a RAC_RESET */
 	  resetNode.txMsg.cmd = 0x00;
-	  resetNode.txMsg.node = pnode->txMsg.node;
 
 	  /* Configure message for a RAC_OFFLINE */
 	  offlnNode.txMsg.cmd = RAC_OFFLINE;
-	  offlnNodeData = pnode->txMsg.node;  /* mark the node number */
 	  offlnNode.txMsg.node = 0xff;
 
 	  /* Queue the messages (high priority, reset first) */

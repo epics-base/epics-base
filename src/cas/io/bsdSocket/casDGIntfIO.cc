@@ -115,9 +115,8 @@ casDGIntfIO::casDGIntfIO (caServerI &serverIn, const caNetAddr &addr,
         char buf[64];
         int errnoCpy = SOCKERRNO;
         ipAddrToA (&serverAddr, buf, sizeof(buf));
-        errPrintf (S_cas_bindFail, __FILE__, __LINE__,
-            ("- bind UDP IP addr=%s failed because %s", 
-            buf, SOCKERRSTR(errnoCpy)) );
+        errPrintf (S_cas_bindFail, __FILE__, __LINE__, 
+            "- bind UDP IP addr=%s failed because %s", buf, SOCKERRSTR(errnoCpy) );
         socket_close (this->sock);
         throw S_cas_bindFail;
     }

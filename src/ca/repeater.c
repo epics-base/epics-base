@@ -49,6 +49,11 @@
  *	.02 042892 joh	No longer checking the status from free
  *			since it varies from OS to OS
  *	.03 042892 joh	made local routines static
+ *	.04 072392 joh	set reuse addr socket option so that
+ *			the repeater will restart if it gets killed
+ *	.05 072392 joh	no longer needs to loop waiting for the timeout
+ *			to expire because of the change introduced 
+ *			in .04
  *
  */
 
@@ -114,6 +119,7 @@ main()
 ca_repeater_task()
 #endif
 {
+#if REPEATER_RETRY
 	unsigned i,j;
 
 	/*
@@ -127,12 +133,20 @@ ca_repeater_task()
 		ca_repeater();
 		for(j=0; j<100; j++)
 			TCPDELAY;
-#ifdef DEBUG
-		printf("CA: retiring the repeater\n");
-#endif
-	}
 
-	printf("CA: Only one CA repeater thread per host\n");
+#		ifdef DEBUG
+			ca_printf("CA: retiring the repeater\n");
+#		endif
+	}
+#endif
+
+	ca_repeater();
+
+#define DEBUG
+#	ifdef DEBUG
+		ca_printf("CA: Only one CA repeater thread per host\n");
+#	endif
+#undef DEBUG
 
 	return ERROR;
 }
@@ -157,7 +171,6 @@ ca_repeater()
   	struct one_client		*pclient;
   	struct one_client		*pnxtclient;
 
-
 	lstInit(&client_list);
 
      	/* 	allocate a socket			*/
@@ -167,6 +180,16 @@ ca_repeater()
       	if(sock == ERROR)
         	return FALSE;
 
+	status = setsockopt(	sock,	
+				SOL_SOCKET,
+				SO_REUSEADDR,
+				NULL,
+				0);
+	if(status<0){
+		ca_printf(	"%s: set socket option failed\n", 
+				__FILE__);
+	}
+
       	memset(&bd,0,sizeof bd);
       	bd.sin_family = AF_INET;
       	bd.sin_addr.s_addr = htonl(INADDR_ANY);	
@@ -174,7 +197,7 @@ ca_repeater()
       	status = bind(sock, &bd, sizeof bd);
      	if(status<0){
 		if(MYERRNO != EADDRINUSE){
-			printf("CA REepeater: unexpected bind fail %d\n", 
+			ca_printf("CA Repeater: unexpected bind fail %d\n", 
 				MYERRNO);
 		}
 		socket_close(sock);
@@ -183,12 +206,12 @@ ca_repeater()
 
 	status = local_addr(sock, &local);
 	if(status != OK){
-		printf("CA Repeater: no inet interfaces online?\n");
+		ca_printf("CA Repeater: no inet interfaces online?\n");
 		return FALSE;
 	}
 
 #ifdef DEBUG
-	printf("CA Repeater: Attached and initialized\n");
+	ca_printf("CA Repeater: Attached and initialized\n");
 #endif
 
 	while(TRUE){
@@ -217,11 +240,11 @@ ca_repeater()
             	                    		&pclient->from, 
                	                 		sizeof pclient->from);
    					if(status < 0){
-						printf("CA Repeater: fanout err %d\n",
+						ca_printf("CA Repeater: fanout err %d\n",
 							MYERRNO);
 					}
 #ifdef DEBUG
-					printf("Sent\n");
+					ca_printf("Sent\n");
 #endif
 				}
 		}
@@ -248,7 +271,7 @@ ca_repeater()
 					pclient->from = from;
 					lstAdd(&client_list, pclient);
 #ifdef DEBUG
-					printf("Added %x %d\n", from.sin_port, size);
+					ca_printf("Added %x %d\n", from.sin_port, size);
 #endif
 				}
 			}
@@ -264,12 +287,12 @@ ca_repeater()
        				&from, /* reflect back to sender */
 				sizeof from);
       			if(status != sizeof confirm){
-				printf("CA Repeater: confirm err %d\n",
+				ca_printf("CA Repeater: confirm err %d\n",
 					MYERRNO);
 			}
 		}
 		else{
-			printf("CA Repeater: recv err %d\n",
+			ca_printf("CA Repeater: recv err %d\n",
 				MYERRNO);
 		}
 
@@ -307,7 +330,7 @@ struct one_client		*pclient;
 			SOCK_DGRAM,	/* type		*/
 			0);		/* deflt proto	*/
       	if(sock == ERROR){
-		printf("CA Repeater: no socket err %d\n",
+		ca_printf("CA Repeater: no socket err %d\n",
 			MYERRNO);
 		return ERROR;
 	}
@@ -321,7 +344,7 @@ struct one_client		*pclient;
 		if(MYERRNO == EADDRINUSE)
 			present = TRUE;
 		else{
-			printf("CA Repeater: client cleanup err %d\n",
+			ca_printf("CA Repeater: client cleanup err %d\n",
 				MYERRNO);
 		}
 	}
@@ -331,7 +354,7 @@ struct one_client		*pclient;
 		lstDelete(&client_list, pclient);
 		free(pclient);
 #ifdef DEBUG
-		printf("Deleted\n");
+		ca_printf("Deleted\n");
 #endif
 	}
 

@@ -33,13 +33,6 @@ unsigned long semStat[6];
 #define SEMSTAT(i) 
 #endif
 
-#ifdef RTEMS_FAST_MUTEX
-struct semMutex {
-    rtems_id            id;
-    Semaphore_Control   *the_semaphore;
-};
-#endif
-
 /*
  * Create a simple binary semaphore
  */
@@ -246,16 +239,13 @@ semMutexCreate(void)
     rtems_interrupt_enable (level);
 #ifdef RTEMS_FAST_MUTEX
     {
-      struct semMutex *smid = mallocMustSucceed(sizeof *smid, "semMutexCreate");
-      register Semaphore_Control *the_semaphore;
-      Objects_Locations           location;
+      Semaphore_Control *the_semaphore;
+      Objects_Locations  location;
 
       the_semaphore = _Semaphore_Get( sid, &location );
       _Thread_Enable_dispatch();  
 
-      smid->id = sid;
-      smid->the_semaphore = the_semaphore;
-      return smid;
+      return the_semaphore;
     }
 #endif
     return (semMutexId)sid;
@@ -271,40 +261,30 @@ semMutexId semMutexMustCreate(void)
 void semMutexDestroy(semMutexId id)
 {
     rtems_status_code sc;
+    rtems_id sid;
 #ifdef RTEMS_FAST_MUTEX
-    struct semMutex *sid = (struct semMutex *)id;
-
-    sc = rtems_semaphore_delete (sid->id);
+    Semaphore_Control *the_semaphore = (Semaphore_Control *)id;
+    sid = the_semaphore->Object.id;
 #else
-    rtems_id sid = (rtems_id)id;
-
-    sc = rtems_semaphore_delete (sid);
+    sid = (rtems_id)id;
 #endif
-    
+    sc = rtems_semaphore_delete (sid);
     if (sc == RTEMS_RESOURCE_IN_USE) {
-#ifdef RTEMS_FAST_MUTEX
-        rtems_semaphore_release (sid->id);
-        sc = rtems_semaphore_delete (sid->id);
-#else
         rtems_semaphore_release (sid);
         sc = rtems_semaphore_delete (sid);
-#endif
     }
     if (sc != RTEMS_SUCCESSFUL)
         errlogPrintf ("Can't destroy semaphore: %s\n", rtems_status_text (sc));
-#ifdef RTEMS_FAST_MUTEX
-    free (sid);
-#endif
 }
 
 void semMutexGive(semMutexId id)
 {
 #ifdef RTEMS_FAST_MUTEX
-    struct semMutex *sid = (struct semMutex *)id;
+    Semaphore_Control *the_semaphore = (Semaphore_Control *)id;
     _Thread_Disable_dispatch();
 	_CORE_mutex_Surrender (
-        &sid->the_semaphore->Core_control.mutex,
-        sid->id,
+        &the_semaphore->Core_control.mutex,
+        the_semaphore->Object.id,
         NULL
         );
     _Thread_Enable_dispatch();
@@ -317,16 +297,17 @@ void semMutexGive(semMutexId id)
 semTakeStatus semMutexTake(semMutexId id)
 {
 #ifdef RTEMS_FAST_MUTEX
-    struct semMutex *sid = (struct semMutex *)id;
+    Semaphore_Control *the_semaphore = (Semaphore_Control *)id;
+    ISR_Level level;
     SEMSTAT(3)
-    _Thread_Disable_dispatch();
+    _ISR_Disable( level );
     _CORE_mutex_Seize(
-        &sid->the_semaphore->Core_control.mutex,
-        sid->id,
+        &the_semaphore->Core_control.mutex,
+        the_semaphore->Object.id,
         1,   /* TRUE or FALSE */
-        0 /* same as passed to obtain -- ticks */
+        0, /* same as passed to obtain -- ticks */
+        level
     );
-    _Thread_Enable_dispatch();
     if (_Thread_Executing->Wait.return_code == 0)
         return semTakeOK;
     else
@@ -341,7 +322,8 @@ semTakeStatus semMutexTakeTimeout(
     semMutexId id, double timeOut)
 {
 #ifdef RTEMS_FAST_MUTEX
-    struct semMutex *sid = (struct semMutex *)id;
+    Semaphore_Control *the_semaphore = (Semaphore_Control *)id;
+    ISR_Level level;
     rtems_interval delay;
     extern double rtemsTicksPerSecond_double;
 
@@ -349,14 +331,14 @@ semTakeStatus semMutexTakeTimeout(
     delay = timeOut * rtemsTicksPerSecond_double;
     if (delay == 0)
         delay = 1;
-    _Thread_Disable_dispatch();
+    _ISR_Disable( level );
     _CORE_mutex_Seize(
-        &sid->the_semaphore->Core_control.mutex,
-        sid->id,
+        &the_semaphore->Core_control.mutex,
+        the_semaphore->Object.id,
         1,   /* TRUE or FALSE */
-        delay /* same as passed to obtain -- ticks */
+        delay, /* same as passed to obtain -- ticks */
+        level
     );
-    _Thread_Enable_dispatch();
     if (_Thread_Executing->Wait.return_code == 0)
         return semTakeOK;
     else
@@ -370,16 +352,17 @@ semTakeStatus semMutexTakeTimeout(
 semTakeStatus semMutexTakeNoWait(semMutexId id)
 {
 #ifdef RTEMS_FAST_MUTEX
-    struct semMutex *sid = (struct semMutex *)id;
+    Semaphore_Control *the_semaphore = (Semaphore_Control *)id;
+    ISR_Level level;
     SEMSTAT(5)
-    _Thread_Disable_dispatch();
+    _ISR_Disable( level );
     _CORE_mutex_Seize(
-        &sid->the_semaphore->Core_control.mutex,
-        sid->id,
+        &the_semaphore->Core_control.mutex,
+        the_semaphore->Object.id,
         0,   /* TRUE or FALSE */
-        0 /* same as passed to obtain -- ticks */
+        0, /* same as passed to obtain -- ticks */
+        level
     );
-    _Thread_Enable_dispatch();
     if (_Thread_Executing->Wait.return_code == 0)
         return semTakeOK;
     else
@@ -392,5 +375,9 @@ semTakeStatus semMutexTakeNoWait(semMutexId id)
 
 epicsShareFunc void semMutexShow(semMutexId id,unsigned int level)
 {
+#ifdef RTEMS_FAST_MUTEX
+    Semaphore_Control *the_semaphore = (Semaphore_Control *)id;
+    id = (semMutexId)the_semaphore->Object.id;
+#endif
 	semBinaryShow (id,level);
 }

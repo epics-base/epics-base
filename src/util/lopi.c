@@ -34,6 +34,7 @@
                                 with arrow keys if a screen has no controls.
  * .04	09-12-91	 bg	Added semDelete for both keyboard and monitor
                                 semaphores.
+ * .05	10-2-91		 bg	Fixed bug in display_monitors.               
  * 	...
  */
 
@@ -108,13 +109,13 @@ static char key_buff[BUFF_SIZE],*rd_ptr,*wr_ptr;  /* Buffer which will accumulat
                               next available spot is for reading and for writing. */
 static char val_in[MAX_STRING_SIZE]; /* Global buffer for user input value to be written to data base. */
 static short q_num;        /* Number of items waiting to be output from input queue. */  
-static short cur_mv;       /* Flag to indicate that arrow keys are being struck */
 static int status; 
 
 static int err_fd;         /* Fd to which logMsg will write during the course of this
                      subroutine. */ 
 static int lopi_fd;          /* File descriptor for serial port. */
 struct except_node *except_ptr;
+static int num_times = 0;;
 extern shellTaskId;
 
 VOID lopi() 
@@ -127,6 +128,7 @@ VOID lopi()
   key_sem = semCreate();
   semGive(mon_sem);
   semGive(key_sem); 
+  data_flg = NO_NEW_DATA;;
   except_ptr  = except_alloc();
 
   /* Initialize buffer for keyboard input. */
@@ -327,15 +329,15 @@ static VOID lopi_init(screen,que_num,pdata_flg,k_buff,val_in)
     close(err_fd);
     new_fd = ioGlobalStdGet(0,STD_ERR); 
     logFdSet(new_fd); 
-    semTake(mon_sem);
+    semTake(key_sem);
     taskDelete(tid2); 
     taskDelete(tid1); 
     ca_task_exit(); 
-    semGive(mon_sem);
+    semGive(key_sem);
     taskDelay(100);
     free_mem(wind_array,d_menu,n_lines);  
-    semDelete(mon_sem);
     semDelete(key_sem);
+    semDelete(mon_sem);
     close(lopi_fd); 
    
    }  /* End lopi. */
@@ -745,12 +747,12 @@ static VOID mv_cursor(mrow,mcol,str)
 
     /* Send command to the terminal. */
 
-    semTake(key_sem);
+    semTake(mon_sem);
 
     fdprintf(lopi_fd,"%c",ESC); 
     fdprintf(lopi_fd,"%s",command);
 
-    semGive(key_sem);
+    semGive(mon_sem);
   }
 
 
@@ -1477,7 +1479,7 @@ static display_text(disp_array,selected)
 /*                                                                                     */
 /***************************************************************************************/
 
-static display_file(disp_array,selected,screen_up,data_num,pdata_flg,k_buff,val_in,cur_mv)
+static display_file(disp_array,selected,screen_up,data_num,pdata_flg,k_buff,val_in)
    struct window_node *disp_array[MAX_DISP_NUM];
    short selected;
    short *screen_up;
@@ -1486,7 +1488,6 @@ static display_file(disp_array,selected,screen_up,data_num,pdata_flg,k_buff,val_
    short *pdata_flg; /* Flag indicating that a monitor has brought in new data. */
    char k_buff[BUFF_SIZE]; /* Buffer for characters entered. */
    char val_in[MAX_STRING_SIZE];
-   short cur_mv;       /* Flag to indicate that arrow keys are being struck */
    {
     char *w_ptr; /* Pointer to next available space for writing. */
     struct mon_node *c_ptr = NULL; 
@@ -1503,11 +1504,11 @@ static display_file(disp_array,selected,screen_up,data_num,pdata_flg,k_buff,val_
 
     /* Initialize buffers into which channel names and values are
        written for a put. */
-
+    pdata_flg = OFF;
     k_buff[BUFF_SIZE - 1] = NULL;
     w_ptr = k_buff;
     *data_num = 0;
-
+    num_times = 0;
     krow = 0; /*Krow and kcol store cursor position. */
     kcol = 0;
 
@@ -1557,9 +1558,7 @@ static display_file(disp_array,selected,screen_up,data_num,pdata_flg,k_buff,val_
            init = ON;
            if ((m_ptr != NULL) || (c_ptr != NULL))
              {
-              semTake(mon_sem); 
-              display_monitors(disp_array,selected,screen_up,pdata_flg,&init,&cur_mv,except_ptr);
-              semGive(mon_sem); 
+              display_monitors(disp_array,selected,screen_up,pdata_flg,&init,except_ptr);
              }
            init = OFF;
     
@@ -1674,28 +1673,28 @@ static display_file(disp_array,selected,screen_up,data_num,pdata_flg,k_buff,val_
     
       if (*pdata_flg)
         {
-         semTake(mon_sem); 
-         display_monitors(disp_array,selected,screen_up,pdata_flg,&init,&cur_mv,except_ptr); 
-         semGive(mon_sem); 
+         display_monitors(disp_array,selected,screen_up,pdata_flg,&init,except_ptr); 
+         taskDelay(5);
          mv_cursor(&krow,&kcol,NO_CMD);
         } 
+   
 
   } /*  end while screen up. */
 
   if (disp_array[selected]  != NULL) 
    {
-        stop_monitors(disp_array,selected); 
+       stop_monitors(disp_array,selected); 
    } 
+ 
 
 }
 
-static VOID display_monitors(disp_array,m_select,screen,pdata_flg,init,cur_mv,except_ptr)
+static VOID display_monitors(disp_array,m_select,screen,pdata_flg,init,except_ptr)
    struct window_node *disp_array[MAX_DISP_NUM];
    short m_select; /* Pointer to number of screen selected. */
    short *screen;  /* Pointer to variable which tells when to begin desplay. */
    short *pdata_flg; /* Flag to indicate that new data had been received. */
    short *init;  /* Flag to indicate that monitors need to be initialized. */
-   short *cur_mv; /*Flag to indicate movement of the cursor. */
    struct except_node *except_ptr;
    {
     short mon_row,mon_col; /* Local variable used to move cursor to position where update is
@@ -1795,6 +1794,7 @@ static VOID display_monitors(disp_array,m_select,screen,pdata_flg,init,cur_mv,ex
 
 
         if ((type = (ca_field_type(mon_ptr->chan_id))) !=  TYPENOTCONN)
+ 
 
         /*  If channel is connected display error message if it is down.  
             Print data if it is up. */ 
@@ -1832,11 +1832,13 @@ static VOID display_monitors(disp_array,m_select,screen,pdata_flg,init,cur_mv,ex
           }
    
        mon_ptr = mon_ptr->next;
-      }  
+
+      }   
+ 
 
         if((ctl_ptr != NULL) && (disp_array[m_select]->c_head->next->l_crn_row != LIST_END))
           {  
-           ctl_ptr = disp_array[m_select]->c_head->next;
+           ctl_ptr = disp_array[m_select]->c_head->next;  
 
            while (ctl_ptr->l_crn_row  != LIST_END)
             { 
@@ -1847,11 +1849,11 @@ static VOID display_monitors(disp_array,m_select,screen,pdata_flg,init,cur_mv,ex
              if (DEBUG)
                logMsg("Added event for %s,status = %d,type = %d\n",ctl_ptr->chan,status,type);  
 
-             /* If channel is connected, display data if channel is up.  Display error message if
+         /* If channel is connected, display data if channel is up.  Display error message if
                 channel is down. */
 
 
-             if ((type = (ca_field_type(ctl_ptr->chan_id))) !=  TYPENOTCONN)
+          if ((type = (ca_field_type(ctl_ptr->chan_id))) !=  TYPENOTCONN)
                {
                 if (ctl_ptr->conn_flg == CA_OP_CONN_UP)
                  {
@@ -1883,15 +1885,16 @@ static VOID display_monitors(disp_array,m_select,screen,pdata_flg,init,cur_mv,ex
                   ESCAPE
                   ATR_OFF
                  }
-             } /* If type is not TYPENOTCONN. */
+          }  /* If type is not TYPENOTCONN. */
       
             /* If channel was never connected, display appropriate message. */ 
 
 
-             ctl_ptr = ctl_ptr->next;
-            } /* End while ctl_ptr not equal to LIST END*/    
+           ctl_ptr = ctl_ptr->next;
+            }  /* End while ctl_ptr not equal to LIST END */    
 
-       } /* End if ctl_ptr != NULL etc. */
+    } /* End if ctl_ptr != NULL etc. */
+
 
          status = ca_flush_io(); 
          SEVCHK(status,NULL);
@@ -1942,9 +1945,8 @@ static VOID display_monitors(disp_array,m_select,screen,pdata_flg,init,cur_mv,ex
            else
              mon_ptr = mon_ptr->next;
     
-          } 
-
-
+          }   
+        ctl_ptr =  disp_array[m_select]->c_head;
 
         if ((ctl_ptr != NULL) && (disp_array[m_select]->c_head->next->l_crn_row != LIST_END))
           {
@@ -1952,20 +1954,7 @@ static VOID display_monitors(disp_array,m_select,screen,pdata_flg,init,cur_mv,ex
 
            while (ctl_ptr->l_crn_row != LIST_END)
              { 
-              if (*cur_mv == ON)
-               {
-                mon_row = ctl_ptr->l_crn_row; 
-                mon_col = ctl_ptr->l_crn_col;
-                if (ctl_ptr->prev_size > (strlen(ctl_ptr->ev_ptr->str))) 
-                 {
-                  blank_fill(txt_str,ctl_ptr->prev_size);
-                  mv_cursor(&mon_row,&mon_col,txt_str); 
-                 }  
-                 mon_ptr->prev_size = strlen(ctl_ptr->ev_ptr->str);
-                 mv_cursor(&mon_row,&mon_col,ctl_ptr->ev_ptr->str);
-                 ctl_ptr = ctl_ptr->next;
-               } 
-             else  if ((ctl_ptr->ev_ptr->data_flg) && (ctl_ptr->conn_flg == CA_OP_CONN_UP))
+             if ((ctl_ptr->ev_ptr->data_flg) && (ctl_ptr->conn_flg == CA_OP_CONN_UP))
                {
                 mon_row = ctl_ptr->l_crn_row; 
                 mon_col = ctl_ptr->l_crn_col;
@@ -1993,13 +1982,13 @@ static VOID display_monitors(disp_array,m_select,screen,pdata_flg,init,cur_mv,ex
                 ctl_ptr = ctl_ptr->next;
                }
              else
-               ctl_ptr = ctl_ptr->next;
-            } /* End while ctl_ptr != LIST_END. */
-          } /* End if ctl_ptr != NULL etc. */
-          
+               ctl_ptr = ctl_ptr->next; 
+              }  /* End while ctl_ptr != LIST_END. */
+           }  /* End if ctl_ptr != NULL etc. */
 
-        *cur_mv  = OFF;
-        *pdata_flg = NO_NEW_DATA ; 
+      semTake(mon_sem);
+      *pdata_flg = NO_NEW_DATA ;  
+      semGive(mon_sem); 
 
       if  (except_ptr->flg)
         {
@@ -2010,7 +1999,7 @@ static VOID display_monitors(disp_array,m_select,screen,pdata_flg,init,cur_mv,ex
          else
             logMsg("Normal status:%d\n",ca_message_text[CA_EXTRACT_MSG_NO(status)]);
          except_ptr->flg = NO_NEW_DATA; 
-        } 
+        }  
 
       } /* End else */
    }
@@ -2122,7 +2111,7 @@ VOID lopi_ev_handler(lopi_arg)
       {
         strncpy(ev_ptr->str, sts_str_ptr->value,12); 
         ev_ptr->str[12] = NULL;
-        ev_ptr->data_flg = NEW_DATA;  
+        ev_ptr->data_flg = NEW_DATA;   
       } 
    semGive(mon_sem);
    }

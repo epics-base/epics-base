@@ -7,72 +7,70 @@
 #include "epicsThread.h"
 #include "epicsAssert.h"
 
+static epicsThreadPrivate < bool > priv;
+
 static bool doneFlag = false;
-extern "C" void epicsThreadPrivateTestThread ( void *pParm )
+
+extern "C" void epicsThreadPrivateTestThread ( void * )
 {
-    epicsThreadPrivateId id = static_cast < epicsThreadPrivateId > ( pParm );
-    assert ( 0 == epicsThreadPrivateGet ( id ) );
+    assert ( 0 == priv.get () );
     static bool var;
-    epicsThreadPrivateSet ( id, &var );
-    assert ( &var == epicsThreadPrivateGet ( id ) );
+    priv.set ( &var );
+    assert ( &var == priv.get () );
     doneFlag = true;
 }
 
-inline void callItTenTimes ( const epicsThreadPrivateId &id )
+inline void callItTenTimes ()
 {
-    void *pParm;
-    pParm = epicsThreadPrivateGet ( id );
-    pParm = epicsThreadPrivateGet ( id );
-    pParm = epicsThreadPrivateGet ( id );
-    pParm = epicsThreadPrivateGet ( id );
-    pParm = epicsThreadPrivateGet ( id );
-    pParm = epicsThreadPrivateGet ( id );
-    pParm = epicsThreadPrivateGet ( id );
-    pParm = epicsThreadPrivateGet ( id );
-    pParm = epicsThreadPrivateGet ( id );
-    pParm = epicsThreadPrivateGet ( id );
+    bool *pFlag;
+    pFlag = priv.get ();
+    pFlag = priv.get ();
+    pFlag = priv.get ();
+    pFlag = priv.get ();
+    pFlag = priv.get ();
+    pFlag = priv.get ();
+    pFlag = priv.get ();
+    pFlag = priv.get ();
+    pFlag = priv.get ();
+    pFlag = priv.get ();
 }
 
-inline void callItTenTimesSquared ( const epicsThreadPrivateId &id )
+inline void callItTenTimesSquared ()
 {
-    callItTenTimes ( id );
-    callItTenTimes ( id );
-    callItTenTimes ( id );
-    callItTenTimes ( id );
-    callItTenTimes ( id );
-    callItTenTimes ( id );
-    callItTenTimes ( id );
-    callItTenTimes ( id );
-    callItTenTimes ( id );
-    callItTenTimes ( id );
+    callItTenTimes ();
+    callItTenTimes ();
+    callItTenTimes ();
+    callItTenTimes ();
+    callItTenTimes ();
+    callItTenTimes ();
+    callItTenTimes ();
+    callItTenTimes ();
+    callItTenTimes ();
+    callItTenTimes ();
 }
 
 void epicsThreadPrivateTest ()
 {
-    epicsThreadPrivateId id = epicsThreadPrivateCreate ();
-    assert ( id );
     static bool var;
-    epicsThreadPrivateSet ( id, &var );
-    assert ( &var == epicsThreadPrivateGet ( id ) );
+    priv.set ( &var );
+    assert ( &var == priv.get() );
     epicsThreadCreate ( "epicsThreadPrivateTest", epicsThreadPriorityMax, 
-        epicsThreadStackSmall, epicsThreadPrivateTestThread, id );
+        epicsThreadStackSmall, epicsThreadPrivateTestThread, 0 );
     while ( ! doneFlag ) {
         epicsThreadSleep ( 0.01 );
     }
-    assert ( &var == epicsThreadPrivateGet ( id ) );
-    epicsThreadPrivateSet ( id, 0 );
-    assert ( 0 == epicsThreadPrivateGet ( id ) );
+    assert ( &var == priv.get() );
+    priv.set ( 0 );
+    assert ( 0 == priv.get() );
 
     epicsTime begin = epicsTime::getCurrent ();
     static const unsigned N = 100000u;
     for ( unsigned i = 0u; i < N; i++ ) {
-        callItTenTimesSquared ( id );
+        callItTenTimesSquared ();
     }
     double delay = epicsTime::getCurrent() - begin;
     delay /= N * 100u; // convert to sec per call
     delay *= 1e6; // convert to micro sec
     printf ( "It takes %f micro sec to call epicsThreadPrivateGet()\n", delay );
-
-    epicsThreadPrivateDelete ( id );
 }
 

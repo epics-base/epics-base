@@ -1,0 +1,28 @@
+ifdef T_A
+ifeq ($(findstring Host,$(VALID_BUILDS)),Host)
+
+INSTALL_IDL                = $(INSTALL_LOCATION)/idllib
+DIRECTORY_TARGETS += $(INSTALL_IDL)
+
+ifneq ($(strip $(IDLS_$(ARCH_CLASS))),)
+IDLS += $(subst -nil-,,$(IDLS_$(ARCH_CLASS)))
+else
+ifdef IDLS_DEFAULT
+IDLS += $(IDLS_DEFAULT)
+endif
+endif
+
+INSTALL_IDLS =$(IDLS:%=$(INSTALL_IDL)/%)
+
+buildInstall : $(INSTALL_IDLS)
+
+$(INSTALL_IDL)/%: %
+	@echo "Installing idl program $@"
+	@$(INSTALL_IDLFILE) -d -m 644 $< $(INSTALL_IDL)
+
+$(INSTALL_IDL)/%: ../%
+	@echo "Installing idl program $@"
+	@$(INSTALL_IDLFILE) -d -m 644 $< $(INSTALL_IDL)
+
+endif
+endif

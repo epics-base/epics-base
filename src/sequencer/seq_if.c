@@ -32,6 +32,8 @@
  * -----------------
  */
 
+#include 	<string.h>
+
 #define		ANSI
 #include	"seq.h"
 #include	"tickLib.h"

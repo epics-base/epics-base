@@ -149,14 +149,16 @@ casStreamOS *casIntfIO::newStreamClient(caServerI &cas) const
     SOCKET          newSock;
     osiSocklen_t    length;
     casStreamOS	*pOS;
+    bool oneMsgFlag = false;
     
     length = ( osiSocklen_t ) sizeof(newAddr);
     newSock = accept(this->sock, &newAddr, &length);
-    if (newSock==INVALID_SOCKET) {
+    if ( newSock == INVALID_SOCKET ) {
         int errnoCpy = SOCKERRNO;
-        if (errnoCpy!=SOCK_EWOULDBLOCK) {
-            errlogPrintf ("CAS: %s accept error %s\n",
+        if ( errnoCpy!=SOCK_EWOULDBLOCK && ! oneMsgFlag ) {
+            errlogPrintf ("CAS: %s accept error \"%s\"\n",
                 __FILE__,SOCKERRSTR(errnoCpy));
+            oneMsgFlag = true;
         }
         return NULL;
     }
@@ -165,7 +167,7 @@ casStreamOS *casIntfIO::newStreamClient(caServerI &cas) const
         errlogPrintf("CAS: accept returned bad address len?\n");
         return NULL;
     }
-    
+    oneMsgFlag = false;
     ioArgsToNewStreamIO args;
     args.addr = newAddr;
     args.sock = newSock;

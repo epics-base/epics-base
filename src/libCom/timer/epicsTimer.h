@@ -16,74 +16,82 @@ of this distribution.
 #include "epicsTime.h"
 #include "epicsThread.h"
 
-typedef enum {
-    epicsTimerPriorityLow,epicsTimerPriorityMedium,epicsTimerPriorityHigh
-}epicsTimerSharedPriority;
-
 #ifdef __cplusplus
+
+class epicsTimerExpireStatus{
+public:
+    bool again; // Is this a periodic timer? That is reschedule
+    double delay; //If again is true the delay until expire is called again
+    epicsTimerExpireStatus() : again(false), delay(0.0) {}
+    epicsTimerExpireStatus(bool a,double d) : again(a), delay(d) {}
+};
 
 // code using a timer must implement epicsTimerNotify
 class epicsTimerNotify {
 public:
-    virtual void expire() = 0;
+    virtual epicsTimerExpireStatus expire() = 0;
+    virtual void show(unsigned int level);
 };
 
-class epicsTimerQueue;
+class epicsShareClass epicsTimerQueue {
+public:
+    static epicsTimerQueue &createNonThreaded();	
+    static epicsTimerQueue &createThreaded(
+        bool okToShare, int threadPriority = threadPriorityMin+10);
+    static destroy(epicsTimerQueue &);
+    virtual void process() = 0;
+    virtual epicsTime getExpireTime() const = 0;
+    virtual void show(unsigned int level) const = 0;
+};
 
 class epicsShareClass epicsTimer {
 public:
-    epicsTimer(epicsTimerNotify &,epicsTimerQueue&);
-    epicsTimer(epicsTimerNotify &,
-        epicsTimerSharedPriority priority = epicsTimerPriorityLow);
-    virtual ~epicsTimer();
-    void start(epicsTime &);
-    void start(double delaySeconds);
-    virtual void cancel();
-    epicsTime getExpireTime() const;
-    double getExpireSeconds() const;
-    bool isExpired() const;
-    epicsTimerNotify &getNotify() const;
-    epicsTimerQueue &getQueue() const;
-    virtual void show(unsigned int level) const;
-    static epicsTimerQueue &createTimerQueue(
-        unsigned int threadPriority = epicsThreadPriorityMin);
-    static void deleteTimerQueue(epicsTimerQueue &);
-protected:
-    class impl& timerPvt;
-private: //copy constructor and operator= not allowed
-    epicsTimer(const epicsTimer&);
-    epicsTimer& operator=(const epicsTimer&);
+    static epicsTimer& create(epicsTimerNotify &,epicsTimerQueue&);
+    static destroy(epicsTimer&);
+    virtual void start(epicsTime &) = 0;
+    virtual void start(double delaySeconds) = 0;
+    virtual virtual void cancel() = 0;
+    virtual epicsTime getExpireTime() const = 0;
+    virtual bool isExpired() const = 0;
+    virtual void show(unsigned int level) const = 0;
 };
 
 extern "C" {
 #endif /*__cplusplus */
 
-typedef void *epicsTimerId;
 typedef void *epicsTimerQueueId;
 
+epicsShareFunc epicsTimerQueueId* epicsShareAPI
+    epicsTimerQueueCreateNonThreaded();
+epicsShareFunc epicsTimerQueueId* epicsShareAPI
+    epicsTimerQueueCreateThreaded(unsigned int threadPriority,int okToShare);
+epicsShareFunc void epicsShareAPI epicsTimerQueueDelete(epicsTimerQueueId);
+
+epicsShareFunc void epicsShareAPI epicsTimerQueueProcess(epicsTimerQueueId);
+epicsShareFunc int epicsShareAPI epicsTimerQueueGetExpireTime(
+    epicsTimerQueueId, epicsTimeStamp *time);
+epicsShareFunc void  epicsShareAPI epicsTimerQueueShow(
+    epicsTimerQueueId id, unsigned int level);
+
+typedef void *epicsTimerId;
 typedef void (*epicsTimerCallback)(void *);
 
 epicsShareFunc epicsTimerId epicsShareAPI epicsTimerCreate(
     epicsTimerQueueId queueid,epicsTimerCallback callback, void *arg);
-epicsShareFunc epicsTimerId epicsShareAPI epicsTimerCreateShared(
-    epicsTimerSharedPriority priority,epicsTimerCallback callback, void *arg);
-epicsShareFunc void  epicsShareAPI epicsTimerDestroy(epicsTimerQueueId id);
+epicsShareFunc void  epicsShareAPI epicsTimerDestroy(epicsTimerId id);
+
 epicsShareFunc void  epicsShareAPI epicsTimerStartTime(
-    epicsTimerQueueId id,epicsTimeStamp *time);
+    epicsTimerId id,epicsTimeStamp *time);
 epicsShareFunc void  epicsShareAPI epicsTimerStartDelay(
-    epicsTimerQueueId id,double delaySeconds);
-epicsShareFunc void  epicsShareAPI epicsTimerCancel(epicsTimerQueueId id);
+    epicsTimerId id,double delaySeconds);
+epicsShareFunc void  epicsShareAPI epicsTimerCancel(epicsTimerId id);
 /* GetExpireTime returns (0,1) if time (is not, is) given a value*/
 epicsShareFunc int  epicsShareAPI epicsTimerGetExpireTime(
-    epicsTimerQueueId id, epicsTimeStamp *time);
-epicsShareFunc int  epicsShareAPI epicsTimerIsExpired(epicsTimerQueueId id);
+    epicsTimerId id, epicsTimeStamp *time);
+/* epicsTimerIsExpired returns (0,1) if timer (is not, is) expired*/
+epicsShareFunc int  epicsShareAPI epicsTimerIsExpired(epicsTimerId id);
 epicsShareFunc void  epicsShareAPI epicsTimerShow(
-    epicsTimerQueueId id, unsigned int level);
-
-epicsShareFunc epicsTimerQueueId epicsShareAPI
-epicsTimerQueueCreate(unsigned int threadPriority);
-
-epicsShareFunc void epicsShareAPI epicsTimerQueueDelete(epicsTimerQueueId);
+    epicsTimerId id, unsigned int level);
 
 #ifdef __cplusplus
 }

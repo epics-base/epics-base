@@ -38,6 +38,7 @@
 
 #include <vxWorks.h>
 #include <taskLib.h>
+#include <errnoLib.h>
 #include <intLib.h>
 #include <types.h>
 #include <symLib.h>
@@ -54,8 +55,8 @@
 #define LOCAL static
 #endif /* LOCAL */
 
-static int mprintf (char *pFormat, ...);
-static int vmprintf (char *pFormat, va_list pvar);
+static int mprintf (const char *pFormat, ...);
+static int vmprintf (const char *pFormat, va_list pvar);
 
 extern FILE *iocLogFile;
 
@@ -69,14 +70,15 @@ LOCAL void errPrintfPVT(void);
 typedef enum{cmdErrPrintf,cmdEpicsPrint} cmdType;
 
 LOCAL struct {
-	cmdType	cmd;
-	int	taskid;
-	long	status;
-	char	*pFileName;
-	int	lineno;
-	char	*pformat;
-	va_list	pvar;
-	int	oldtaskid;
+	cmdType		cmd;
+	int		taskid;
+	long		status;
+	const char	*pFileName;
+	int		lineno;
+	const char	*pformat;
+	va_list		pvar;
+	int		oldtaskid;
+	int		printfStatus;
 }pvtData;
 
 void errInit(void)
@@ -107,7 +109,7 @@ LOCAL void epicsPrintTask(void)
 		errPrintfPVT();
 		break;
 	case (cmdEpicsPrint) :
-		vmprintf(pvtData.pformat,pvtData.pvar);
+		pvtData.printfStatus = vmprintf(pvtData.pformat,pvtData.pvar);
 		break;
 	}
 	semGive(clientWaitForCompletion);
@@ -115,7 +117,8 @@ LOCAL void epicsPrintTask(void)
 }
 	
 
-void errPrintf(long status, char *pFileName, int lineno, char *pformat, ...)
+void errPrintf(long status, const char *pFileName, 
+	int lineno, const char *pformat, ...)
 {
     va_list	pvar;
 
@@ -127,7 +130,7 @@ void errPrintf(long status, char *pFileName, int lineno, char *pformat, ...)
 	for (i=0; i<NELEMENTS(logMsgArgs); i++) {
 	    logMsgArgs[i] = va_arg(pvar, int);
 	}
-	logMsg (pformat,logMsgArgs[0],logMsgArgs[1],
+	logMsg ((char *)pformat,logMsgArgs[0],logMsgArgs[1],
 		logMsgArgs[2],logMsgArgs[3],logMsgArgs[4],
 		logMsgArgs[5]);
 	va_end (pvar);
@@ -156,9 +159,9 @@ void errPrintf(long status, char *pFileName, int lineno, char *pformat, ...)
 LOCAL void errPrintfPVT(void)
 {
     long	status		= pvtData.status;
-    char	*pFileName	= pvtData.pFileName;
+    const char	*pFileName	= pvtData.pFileName;
     int		lineno		= pvtData.lineno;
-    char	*pformat	= pvtData.pformat;
+    const char	*pformat	= pvtData.pformat;
     va_list	pvar		= pvtData.pvar;
 
 
@@ -190,16 +193,17 @@ LOCAL void errPrintfPVT(void)
     return;
 }
 
-void epicsPrintf(char *pformat, ...)
+int epicsPrintf(const char *pformat, ...)
 {
     va_list	pvar;
 
     va_start(pvar, pformat);
-    epicsVprintf(pformat,pvar);
+    return epicsVprintf(pformat,pvar);
 }
 
-void epicsVprintf(char *pformat, va_list pvar)
+int epicsVprintf(const char *pformat, va_list pvar)
 {
+    int status;
 
     if(INT_CONTEXT()) {
 	int	logMsgArgs[6];
@@ -208,11 +212,11 @@ void epicsVprintf(char *pformat, va_list pvar)
 	for (i=0; i<NELEMENTS(logMsgArgs); i++) {
 	    logMsgArgs[i] = va_arg(pvar, int);
 	}
-	logMsg (pformat,logMsgArgs[0],logMsgArgs[1],
+	status = logMsg ((char *)pformat,logMsgArgs[0],logMsgArgs[1],
 		logMsgArgs[2],logMsgArgs[3],logMsgArgs[4],
 		logMsgArgs[5]);
 	va_end (pvar);
-	return;
+	return status;
     }
     if(semTake(clientWaitForTask,WAIT_FOREVER)!=OK) {
 	logMsg("epicsPrint: semTake returned error\n",0,0,0,0,0,0);
@@ -226,10 +230,13 @@ void epicsVprintf(char *pformat, va_list pvar)
 	logMsg("epicsPrint: semTake returned error\n",0,0,0,0,0,0);
 	taskSuspend(taskIdSelf());
     }
+    status = pvtData.printfStatus;
     semGive(clientWaitForTask);
+
+    return status;
 }
 
-LOCAL int mprintf (char *pFormat, ...)
+LOCAL int mprintf (const char *pFormat, ...)
 {
 	va_list		pvar;
 
@@ -239,17 +246,19 @@ LOCAL int mprintf (char *pFormat, ...)
 }
 
 
-LOCAL int vmprintf (char *pFormat, va_list pvar)
+LOCAL int vmprintf (const char *pFormat, va_list pvar)
 {
-	int	status;
-	FILE	***pppFile;
+	int	s0;
+	int	s1;
 
-
-	vfprintf(stdout,pFormat,pvar);
+	s0 = vfprintf(stdout,pFormat,pvar);
 	fflush(stdout);
-	vfprintf(iocLogFile,pFormat,pvar);
+	s1 = vfprintf(iocLogFile,pFormat,pvar);
 	fflush(iocLogFile);
 	va_end(pvar);
-	return 0;
+	if (s1<0) {
+		return s1;
+	}
+	return s0;
 }
 

@@ -13,6 +13,8 @@
 #include "tsDefs.h"
 #include "arAccessLib.h"
 #include "sydDefs.h"
+#include "drvGpibErr.h"
+#include "drvBitBusErr.h"
 #ifdef VXLIST
 /* epics vxWorks  only*/
 #endif VXLIST

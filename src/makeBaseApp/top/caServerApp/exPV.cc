@@ -97,7 +97,7 @@ caStatus exPV::update ( const gdd & valueIn )
     caServer * pCAS = this->getCAS();
     if ( this->interest == true && pCAS != NULL ) {
         casEventMask select ( pCAS->valueEventMask() | pCAS->logEventMask() );
-        this->postEvent ( select, valueIn );
+        this->postEvent ( select, *this->pValue );
     }
 
     return S_casApp_success;

@@ -138,7 +138,15 @@ pvExistReturn directoryServer::pvExistTest
 
 	return pvExistReturn (caNetAddr(pPVE->getInfo().getAddr()));
 }
-
+//
+// Override fallback for pvExistTest()
+//
+pvExistReturn directoryServer::pvExistTest
+	( const casCtx & ctx, const char * pPVName )
+{
+	caNetAddr addr;
+	return pvExistTest (ctx, addr, pPVName);
+}
 
 //
 // directoryServer::show() 

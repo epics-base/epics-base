@@ -112,6 +112,8 @@ private:
     resTable < pvEntry, stringId > stringResTbl;
 
     pvExistReturn pvExistTest ( const casCtx&, 
+        const char *pPVName );
+    pvExistReturn pvExistTest ( const casCtx&, 
         const caNetAddr &, const char *pPVName );
 };
 

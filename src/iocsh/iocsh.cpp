@@ -382,6 +382,7 @@ iocsh (const char *pathname)
     struct iocshCommand *found;
     struct iocshFuncDef const *piocshFuncDef;
     void *readlineContext;
+    int wasOkToBlock;
     
     /*
      * See if command interpreter is interactive
@@ -417,6 +418,8 @@ iocsh (const char *pathname)
      * Read commands till EOF or exit
      */
     argc = 0;
+    wasOkToBlock = epicsThreadIsOkToBlock(epicsThreadGetIdSelf());
+    epicsThreadSetOkToBlock(epicsThreadGetIdSelf(), 1);
     while ((raw = epicsReadline(prompt, readlineContext)) != NULL) {
         lineno++;
 
@@ -721,6 +724,7 @@ iocsh (const char *pathname)
     free (argBuf);
     errlogFlush();
     epicsReadlineEnd(readlineContext);
+    epicsThreadSetOkToBlock(epicsThreadGetIdSelf(), wasOkToBlock);
     return 0;
 }
 

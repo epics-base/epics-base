@@ -6,14 +6,14 @@
 #include	<stdio.h>
 #include	<string.h>
 
-#include	<alarm.h>
-#include	<cvtTable.h>
-#include	<dbDefs.h>
-#include	<dbAccess.h>
-#include        <recSup.h>
-#include	<devSup.h>
-#include	<link.h>
-#include	<xxxRecord.h>
+#include	"alarm.h"
+#include	"cvtTable.h"
+#include	"dbDefs.h"
+#include	"dbAccess.h"
+#include	"recSup.h"
+#include	"devSup.h"
+#include	"link.h"
+#include	"xxxRecord.h"
 
 /*Create the dset for devXxxSoft */
 static long init_record();

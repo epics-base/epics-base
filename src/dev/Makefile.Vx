@@ -25,8 +25,8 @@ SRCS = \
 	devMbboDirectMpv902.c devMbboDirectSoft.c \
 	devMbboDirectSoftRaw.c devMbboDirectXVme220.c \
 	devPtSoft.c devSmCompumotor1830.c devSmOms6Axis.c \
-	devSASoft.c devSiSoft.c devSiSymb.c \
-	devSiTestAsyn.c devSoSoft.c devSoSymb.c \
+	devSiSoft.c devSiSymb.c  devSiTestAsyn.c devSoSoft.c \
+        devSoSymb.c \
 	devSoTestAsyn.c devWfSoft.c devWfTestAsyn.c \
 	devWfXy566Sc.c devAllenBradley.c devAt5Vxi.c \
 	devMz8310.c devTimerMz8310.c \
@@ -62,7 +62,7 @@ OBJS = \
 	$(OBDIR)/devMbboDirectMpv902.o $(OBDIR)/devMbboDirectSoft.o \
 	$(OBDIR)/devMbboDirectSoftRaw.o $(OBDIR)/devMbboDirectXVme220.o \
 	$(OBDIR)/devPtSoft.o $(OBDIR)/devSmCompumotor1830.o \
-	$(OBDIR)/devSmOms6Axis.o $(OBDIR)/devSASoft.o \
+	$(OBDIR)/devSmOms6Axis.o \
 	$(OBDIR)/devSiSoft.o $(OBDIR)/devSiSymb.o \
 	$(OBDIR)/devSiTestAsyn.o $(OBDIR)/devSoSoft.o \
 	$(OBDIR)/devSoSymb.o $(OBDIR)/devSoTestAsyn.o \

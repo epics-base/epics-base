@@ -81,7 +81,7 @@ GCC_TRAD = $(GCC) -traditional
 GCC_DEP_CFLAGS = -fPIC -D_REENTRANT
 GCC_WARN_YES = -Wall
 GCC_WARN_NO = -w
-GCC_OPT_YES = -O
+GCC_OPT_YES = -O3
 GCC_OPT_NO = -g
 GCC_SFLAGS_YES = -static
 GCC_SFLAGS_NO =
@@ -100,7 +100,7 @@ G++_WARN_YES = -Wall \
       -Wwrite-strings -Wconversion -Wstrict-prototypes\
       -Wpointer-arith -Winline
 G++_WARN_NO = -w
-G++_OPT_YES = -O
+G++_OPT_YES = -O3
 G++_OPT_NO = -g
 G++_SFLAGS_YES = -static
 G++_SFLAGS_NO =

@@ -233,7 +233,8 @@ sub rulesInclude {
     foreach $app (@includes) {
 	$path = $macros{$app};
 	next unless (-r "$path/configure/RULES_BUILD");
-	print OUT "-include \$(strip \$($app))/configure/RULES_BUILD\n";
+	print OUT "RULES_TOP:=\$($app)\n";
+	print OUT "-include \$(strip \$(RULES_TOP))/configure/RULES_BUILD\n";
     }
     close OUT;
 }

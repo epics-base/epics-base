@@ -101,6 +101,7 @@ LIBTARGETS += $(LIBNAME) $(INSTALL_LIBS) \
 
 #---------------------------------------------------------------
 ifneq ($(CONFIG),$(TOP)/configure)
+RULES_TOP:=$(INSTALL_LOCATION)
 -include $(TOP)/configure/RULES_BUILD
 endif
 -include $(TOP)/configure/O.$(T_A)/RULES_INCLUDE

@@ -56,7 +56,7 @@ main ()
 	list.add(* new fred("C"));
 	list.add(* new fred("D"));
 
-	while (pFredBack = iter()) {
+	while ( (pFredBack = iter()) ) {
 		pFredBack->show();
 	}
 
@@ -65,15 +65,15 @@ main ()
 	pJane = new jane("JB");
 	janeList.add(*pJane);	
 
-	while (pJane = janeIter()) {
+	while ( (pJane = janeIter()) ) {
 		pJane->show();
 	}
 
-	while (pFredBack = iter()) {
+	while ( (pFredBack = iter()) ) {
 		pFredBack->show();
 	}
 
-	while (pFredBack = iter()) {
+	while ( (pFredBack = iter()) ) {
 		iter.remove();
 	}
 

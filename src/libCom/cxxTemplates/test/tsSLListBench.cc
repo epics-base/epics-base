@@ -6,6 +6,13 @@
 #include <stdio.h>
 #include <time.h>
 
+/*
+ * gnuc does not provide this under sunos4
+ */
+#if !defined(CLOCKS_PER_SEC) && defined(SUNOS4)
+#	define CLOCKS_PER_SEC 1000000
+#endif
+
 class fred : public tsSLNode<fred> {
 public:
 	fred() : count(0) {}
@@ -39,14 +46,14 @@ main ()
 
 	clk = clock();
 	iter = list;
-	while (pFred = iter()) {
+	while ( (pFred = iter()) ) {
 		pFred->inc();
 	}
 	diff = clock() - clk;
 	delay = diff;
 	delay = delay/CLOCKS_PER_SEC;
 	delay = delay/LOOPCOUNT;
-	printf("delay = %15.10lf\n", delay);
+	printf("delay = %15.10f\n", delay);
 
 	pFred = new fred();
 	clk = clock();
@@ -58,6 +65,6 @@ main ()
 	delay = diff;
 	delay = delay/CLOCKS_PER_SEC;
 	delay = delay/LOOPCOUNT;
-	printf("delay = %15.10lf\n", delay);
+	printf("delay = %15.10f\n", delay);
 }
 

@@ -3,7 +3,9 @@
 #include <assert.h>
 #include <time.h>
 #include <stdio.h>
-#include <resourceLib.h>
+
+#include "resourceLib.h"
+#include "resourceLib.cc"
 
 #ifdef SUNOS4
 #ifndef CLOCKS_PER_SEC
@@ -11,7 +13,7 @@
 #endif
 #endif
 
-class fred : public uintId, tsSLNode<fred> {
+class fred : public uintId, public tsSLNode<fred> {
 public:
 	fred (const char *pNameIn, unsigned idIn) : 
 			pName(pNameIn), uintId(idIn) {}
@@ -23,10 +25,25 @@ private:
 	const char * const pName;
 };
 
-class jane : public stringId, tsSLNode<jane> {
+class jane : public stringId, public tsSLNode<jane> {
 public:
 	jane (const char *pNameIn) : stringId(pNameIn) {}
 };
+
+//
+// Sun C++ 4.1 still appears to be lacking support in this area
+//
+#if !defined(__SUNPRO_CC)
+        //
+        // From Stroustrups's "The C++ Programming Language"
+        // Appendix A: r.14.9
+        //
+        // This explicitly instantiates the template class's member
+        // functions into "templInst.o"
+        //
+	template class resTable<fred,uintId>;	
+	template class resTable<jane,stringId>;	
+#endif
 
 main()
 {

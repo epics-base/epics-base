@@ -41,14 +41,14 @@ main ()
 
 	clk = clock();
 	iter = list;
-	while (pFred = iter()) {
+	while ( (pFred = iter()) ) {
 		pFred->inc();
 	}
 	diff = clock() - clk;
 	delay = diff;
 	delay = delay/CLOCKS_PER_SEC;
 	delay = delay/LOOPCOUNT;
-	printf("delay = %15.10lf\n", delay);
+	printf("delay = %15.10f\n", delay);
 
 	pFred = new fred();
 	clk = clock();
@@ -60,6 +60,6 @@ main ()
 	delay = diff;
 	delay = delay/CLOCKS_PER_SEC;
 	delay = delay/LOOPCOUNT;
-	printf("delay = %15.10lf\n", delay);
+	printf("delay = %15.10f\n", delay);
 }
 

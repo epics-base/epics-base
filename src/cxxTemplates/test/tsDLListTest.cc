@@ -53,7 +53,7 @@ main ()
 	list.add(* new fred("D"));
 
 	iter.reset();
-	while (pFredBack = iter()) {
+	while ( (pFredBack = iter()) ) {
 		pFredBack->show();
 	}
 
@@ -62,27 +62,27 @@ main ()
 	pJane = new jane("JB");
 	janeList.add(*pJane);	
 
-	while (pJane = janeFwdIter()) {
+	while ( (pJane = janeFwdIter()) ) {
 		pJane->show();
 	}
 
-	while (pJane = janeBwdIter()) {
+	while ( (pJane = janeBwdIter()) ) {
 		pJane->show();
 	}
 
 	iter = list;
-	while (pFredBack = iter()) {
+	while ( (pFredBack = iter()) ) {
 		pFredBack->show();
 	}
 
 	iter = list;
-	while (pFredBack = iter()) {
+	while ( (pFredBack = iter()) ) {
 		iter.remove();
 	}
 	assert(list.count()==0);
 
 	janeFwdIter = janeList;
-	while (pFredBack = janeFwdIter()) {
+	while ( (pFredBack = janeFwdIter()) ) {
 		janeFwdIter.remove();
 	}
 	assert(janeList.count()==0);
@@ -92,7 +92,7 @@ main ()
 	pJane = new jane("JB");
 	janeList.add(*pJane);	
 	janeBwdIter = janeList;
-	while (pFredBack = janeBwdIter()) {
+	while ( (pFredBack = janeBwdIter()) ) {
 		janeBwdIter.remove();
 	}
 	assert(janeList.count()==0);

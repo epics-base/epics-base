@@ -28,6 +28,9 @@
  * Modification Log:
  * -----------------
  *  $Log$
+ *  Revision 1.7  1996/04/22 14:30:38  mrk
+ *  Changes for dynamic link modification
+ *
  *  Revision 1.6  1995/11/29 14:23:28  mrk
  *  Changes for replacing default.dctsdr by all ascii files
  *
@@ -507,7 +510,7 @@ long dbc(char *record_name)
      return(status);
   }
 
-  if (record_name == NULL && last_lset != pnode->l_num);
+  if (record_name == NULL && last_lset != pnode->l_num)
       printf("   BKPT> Continuing:  %s\n", pnode->precord->name);
 
   last_lset = pnode->l_num;

@@ -90,7 +90,6 @@ SRCS.c += ../devSmAB1746HSTP1.c
 SRCS.c += ../devSoSoft.c
 SRCS.c += ../devSoSymb.c
 SRCS.c += ../devSoTestAsyn.c
-SRCS.c += ../devSysmon.c
 SRCS.c += ../devTimerMz8310.c
 SRCS.c += ../devVxiTDM.c
 #	SRCS.c += ../devWfCamac.c

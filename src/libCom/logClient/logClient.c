@@ -50,7 +50,6 @@
 #include "epicsAssert.h"
 #include "errlog.h"
 #include "envDefs.h"
-#include "osiSockResource.h"
 #include "ellLib.h"
 
 #include "logClient.h"

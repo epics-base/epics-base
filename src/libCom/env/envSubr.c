@@ -79,7 +79,6 @@
 #include "errMdef.h"
 #include "envDefs.h"
 #include "epicsAssert.h"
-#include "osiSockResource.h"
 
 
 /*+/subr**********************************************************************

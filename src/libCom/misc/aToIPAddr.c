@@ -9,7 +9,6 @@
 #include <string.h>
 
 #define epicsExportSharedSymbols
-#include "osiSockResource.h"
 
 #ifndef LOCAL
 #define LOCAL static

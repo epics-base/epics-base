@@ -28,6 +28,7 @@ INC += asDbLib.h
 
 INC += osiFileName.h
 INC += osiSock.h
+INC += osdSock.h
 
 INC += osiInterrupt.h
 INC += osdInterrupt.h
@@ -35,8 +36,6 @@ INC += osiRing.h
 INC += osdRing.h
 INC += osiSem.h
 INC += osdSem.h
-INC += osiSockResource.h
-INC += osdSockResource.h
 INC += epicsAssert.h
 INC += osiFindGlobalSymbol.h
 INC += osdFindGlobalSymbol.h
@@ -49,9 +48,11 @@ INC += osdTime.h
 INC += osiSigPipeIgnore.h
 INC += osdSigPipeIgnore.h
 INC += tsStamp.h
+INC += osiMutex.h
+INC += osiEvent.h
 
-SRCS += osdSockResource.c
-SRCS += osiSockResource.c
+SRCS += osdSock.c
+SRCS += osiSock.c
 SRCS += osdAssert.c
 SRCS += osdFindGlobalSymbol.c
 SRCS += osdInterrupt.c
@@ -109,8 +110,8 @@ SRCS += errSymTbl.c
 SRC_DIRS += $(LIBCOM)/fdmgr
 INC += fdManager.h
 INC += fdmgr.h
-#SRCS += fdmgr.cpp
-#SRCS += fdManager.cpp
+SRCS += fdmgr.cpp
+SRCS += fdManager.cpp
 
 SRC_DIRS += $(LIBCOM)/freeList
 INC += freeList.h

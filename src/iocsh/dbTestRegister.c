@@ -149,6 +149,14 @@ static const iocshFuncDef dblsrFuncDef = {"dblsr",2,dblsrArgs};
 static void dblsrCallFunc(const iocshArgBuf *args)
 { dblsr(args[0].sval,args[1].ival);}
 
+/* dbLockShowLocked */
+static const iocshArg dbLockShowLockedArg0 = { "interest level",iocshArgInt};
+static const iocshArg * const dbLockShowLockedArgs[1] = {&dbLockShowLockedArg0};
+static const iocshFuncDef dbLockShowLockedFuncDef =
+    {"dbLockShowLocked",1,dbLockShowLockedArgs};
+static void dbLockShowLockedCallFunc(const iocshArgBuf *args)
+{ dbLockShowLocked(args[0].sval);}
+
 /* scanppl */
 static const iocshArg scanpplArg0 = { "rate",iocshArgDouble};
 static const iocshArg * const scanpplArgs[1] = {&scanpplArg0};
@@ -186,6 +194,7 @@ void epicsShareAPI dbTestRegister(void)
     iocshRegister(&dbtpnFuncDef,dbtpnCallFunc);
     iocshRegister(&tpnFuncDef,tpnCallFunc);
     iocshRegister(&dblsrFuncDef,dblsrCallFunc);
+    iocshRegister(&dbLockShowLockedFuncDef,dbLockShowLockedCallFunc);
     iocshRegister(&scanpplFuncDef,scanpplCallFunc);
     iocshRegister(&scanpelFuncDef,scanpelCallFunc);
     iocshRegister(&scanpiolFuncDef,scanpiolCallFunc);

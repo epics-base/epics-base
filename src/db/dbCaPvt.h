@@ -27,7 +27,7 @@ of this distribution.
 #define INCdbCaPvth 1
 
 /* link_action mask */
-#define	CA_DELETE			0x1
+#define	CA_CLEAR_CHANNEL		0x1
 #define	CA_CONNECT			0x2
 #define	CA_WRITE_NATIVE			0x4
 #define	CA_WRITE_STRING			0x8
@@ -61,6 +61,7 @@ typedef struct caLink
         short		hasReadAccess;
         short		hasWriteAccess;
 	epicsMutexId	lock;
+	epicsEventId	channelCleared;
 	unsigned long	nDisconnect;
 	unsigned long	nNoWrite;
 	short		dbrType;

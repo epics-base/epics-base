@@ -41,6 +41,7 @@ of this distribution.
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "dbCommon.h"
+#include "epicsEvent.h"
 
 /*define DB_CONVERT_GBLSOURCE because db_access.c does not include db_access.h*/
 #define DB_CONVERT_GBLSOURCE

@@ -1,5 +1,7 @@
 # $Id$
 
+VPATH += .:..
+
 INCREC +=$(RECTYPES) $(MENUS)
 INSTALL_PROD=$(PROD:%=$(INSTALL_BIN)/%)
 INSTALL_LIBS=$(LIBNAME:%=$(INSTALL_BIN)/%)
@@ -24,23 +26,23 @@ INSTALL_DBS=$(DBDINSTALL:%=$(INSTALL_DBD)/%)\
               $(MENUS:%.h=$(INSTALL_DBD)/%.dbd)
 
 INSTALL_DBDEXPAND=$(DBDEXPAND:%=$(INSTALL_DBD)/%)
-all: inc install
 
-pre_build: 
+all:: install
 
-build: pre_build $(MENUS) $(RECTYPES) $(BPTS)\
+pre_build:: 
+
+build:: pre_build $(MENUS) $(RECTYPES) $(BPTS)\
          $(LIBNAME) $(TARGETS) $(PROD) $(DBDEXPAND)
 
-inc: $(INSTALL_INC) 
+inc:: $(INSTALL_INC) 
 
-install: build $(INSTALL_INCREC)\
+install:: inc build $(INSTALL_INCREC)\
          $(INSTALL_LIBS) $(TARGETS) $(INSTALL_PROD) $(INSTALL_MANS)\
          $(INSTALL_DOCS) $(INSTALL_SCRIPTS)\
-         $(INSTALL_INSTALLS) $(INSTALL_DBS)\
-         $(INSTALL_MENUS) $(INSTALL_RECTYPES) $(INSTALL_BPTS)\
+         $(INSTALL_INSTALLS) $(INSTALL_DBS) $(INSTALL_BPTS)\
          $(INSTALL_DBDEXPAND)
 
-depends: $(SRCS.c) $(SRCS.cc)
+depends:: $(SRCS.c) $(SRCS.cc)
 ifdef SRCS
 	echo you have a SRCS in your Makefile
 	exit 2
@@ -73,19 +75,11 @@ clean::
 	$(RM) $@
 	$(COMPILE.c) $<
 
-%.o: ../%.c
-	$(RM) $@
-	$(COMPILE.c) $<
-
 %.o: %.cc
 	$(RM) $@
 	$(COMPILE.cc) $<
 
-%.o: ../%.cc
-	$(RM) $@
-	$(COMPILE.cc) $<
-
-%.c: ../%.y
+%.c: %.y
 	$(RM) y.tab.c y.tab.h
 	$(YACC) $(YACCOPT) $<
 	@if [ -f y.tab.c ]; \
@@ -99,14 +93,14 @@ clean::
 			/bin/mv y.tab.h $*.h; \
 	fi
 
-%.c: ../%.l
+%.c: %.l
 	$(RM) lex.yy.c
 	$(LEX) $(LEXOPT) $<
 	$(RM) $@
 	/bin/mv lex.yy.c $@
 
 #state notation language rule
-%.c: ../%.st
+%.c: %.st
 	@echo "preprocessing $*.st"
 	@$(RM) $*.i
 	$(CPP) $(CPPFLAGS) $< $*.i
@@ -119,21 +113,16 @@ $(INSTALL_DBD)/%: %
 	@test -d $(INSTALL_DBD) || mkdir $(INSTALL_DBD)
 	@$(INSTALL) -m 644 $< $(INSTALL_DBD)
 
-$(INSTALL_DBD)/%: ../%
-	@echo "Installing $@"
-	@test -d $(INSTALL_DBD) || mkdir $(INSTALL_DBD)
-	@$(INSTALL) -m 644 $< $(INSTALL_DBD)
-
-%Record.h: ../%Record.dbd
+%Record.h: %Record.dbd
 	$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH \
 		$(USER_DBDFLAGS)  $<
 
-menu%.h: ../menu%.dbd
+menu%.h: menu%.dbd
 	$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToMenuH $<
 
-bpt%.dbd: ../bpt%.data
+bpt%.dbd: bpt%.data
 	$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt $<
 
@@ -142,18 +131,19 @@ bpt%.dbd: ../bpt%.data
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand\
 		$(USER_DBDFLAGS) $< > $(<F)
 
+%.1:%
+	$(RM) $(<F)
+	$(RM) $(<F).nr
+	ln -s $<
+	$(MANGEN) -s $(<F)
+	mv $(<F).nr $(<F).1
+
 $(LIBNAME): $(LIBOBJS)
 	@echo Building library $@
 	@$(RM) $@
 	$(LINK.c) $@ $(LIBOBJS)
 
 $(INSTALL_BIN)/%: %
-	@echo "Installing $@"
-	@test -d $(INSTALL_LOCATION_BIN) || mkdir $(INSTALL_LOCATION_BIN)
-	@test -d $(INSTALL_BIN) || mkdir $(INSTALL_BIN)
-	@$(INSTALL) -m 555 $< $(INSTALL_BIN)
-
-$(INSTALL_BIN)/%: ../%
 	@echo "Installing $@"
 	@test -d $(INSTALL_LOCATION_BIN) || mkdir $(INSTALL_LOCATION_BIN)
 	@test -d $(INSTALL_BIN) || mkdir $(INSTALL_BIN)
@@ -173,7 +163,7 @@ $(INSTALL_MAN)/man5/% \
 $(INSTALL_MAN)/man4/% \
 $(INSTALL_MAN)/man3/% \
 $(INSTALL_MAN)/man2/% \
-$(INSTALL_MAN)/man1/%: ../%
+$(INSTALL_MAN)/man1/%: %
 	@echo "Installing $@"
 	@test -d $(INSTALL_MAN) || mkdir $(INSTALL_MAN)
 	@test -d $(@D) || mkdir $(@D)
@@ -184,20 +174,14 @@ $(INSTALL_INCLUDE)/%: %
 	@test -d $(INSTALL_INCLUDE) || mkdir $(INSTALL_INCLUDE)
 	@$(INSTALL) -m 644 $< $(INSTALL_INCLUDE)
 
-$(INSTALL_INCLUDE)/%: ../%
-	@echo "Installing $@"
-	@test -d $(INSTALL_INCLUDE) || mkdir $(INSTALL_INCLUDE)
-	@$(INSTALL) -m 644 $< $(INSTALL_INCLUDE)
-
-$(INSTALL_DOC)/%: ../%
+$(INSTALL_DOC)/%: %
 	@echo "Installing $@"
 	@test -d $(INSTALL_DOC) || mkdir $(INSTALL_DOC)
 	@$(INSTALL) -m 644 $< $(INSTALL_DOC)
 
 .PRECIOUS: %.o %.c
 
-#
-# "-include" ignores this request if .DEPENDS does not exist
-#
+.PHONY: all inc depends build install pre-build clean
+
 -include .DEPENDS
 

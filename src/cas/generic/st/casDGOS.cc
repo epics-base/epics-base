@@ -6,6 +6,12 @@
  *
  *
  * $Log$
+ * Revision 1.6  1998/10/23 00:27:14  jhill
+ * fixed problem where send was not always rearmed if this
+ * was indirectly necessary in the send callback because
+ * in this callback the code considered sends to be still armed
+ * until the send callback completed
+ *
  * Revision 1.5  1998/07/08 15:38:10  jhill
  * fixed lost monitors during flow control problem
  *
@@ -40,8 +46,8 @@
 
 class casDGEvWakeup : public osiTimer {
 public:
-	casDGEvWakeup(casDGOS &osIn) :
-	osiTimer(osiTime(0.0)), os(osIn) {}
+	casDGEvWakeup (casDGOS &osIn) :
+	osiTimer (0.0), os(osIn) {}
 	~casDGEvWakeup();
 	void expire();
 	void show (unsigned level) const;

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  1997/04/10 19:34:28  jhill
+ * API changes
+ *
  * Revision 1.1  1996/11/02 01:01:27  jhill
  * installed
  *
@@ -29,11 +32,11 @@
 //
 class casBeaconTimer : public osiTimer {
 public:
-        casBeaconTimer (const osiTime &delay, caServerOS &osIn) :
+        casBeaconTimer (double delay, caServerOS &osIn) :
                 osiTimer(delay), os (osIn) {}
         void expire();
-        const osiTime delay() const;
-        osiBool again() const;
+        double delay() const;
+        bool again() const;
         const char *name() const;
 private:
         caServerOS      &os;
@@ -59,15 +62,15 @@ void casBeaconTimer::expire()
 //
 // casBeaconTimer::again()
 //
-osiBool casBeaconTimer::again()	const
+bool casBeaconTimer::again()	const
 {
-	return osiTrue; 
+	return true; 
 }
 
 //
 // casBeaconTimer::delay()
 //
-const osiTime casBeaconTimer::delay() const
+double casBeaconTimer::delay() const
 {
 	return os->getBeaconPeriod();
 }
@@ -80,7 +83,6 @@ const char *casBeaconTimer::name() const
 	return "casBeaconTimer";
 }
 
-
 //
 // caServerOS::init()
 //
@@ -88,14 +90,13 @@ caStatus caServerOS::init()
 {
 	this->pBTmr = new casBeaconTimer((*this)->getBeaconPeriod(), *this);
 	if (!this->pBTmr) {
-                ca_printf("CAS: Unable to start server beacon\n");
+		ca_printf("CAS: Unable to start server beacon\n");
 		return S_cas_noMemory;
-        }
-
+	}
+	
 	return S_cas_success;
 }
 
-
 //
 // caServerOS::~caServerOS()
 //

@@ -3,45 +3,6 @@
 // $Id$
 //
 //
-// $Log$
-// Revision 1.10  1998/10/23 00:27:15  jhill
-// fixed problem where send was not always rearmed if this
-// was indirectly necessary in the send callback because
-// in this callback the code considered sends to be still armed
-// until the send callback completed
-//
-// Revision 1.9  1998/09/24 20:50:50  jhill
-// subtle changes which relate to not flushing the output buffer if there are bytes
-// pending in the input queue (improves performance)
-//
-// Revision 1.8  1998/05/05 16:29:58  jhill
-// fixed warnings
-//
-// Revision 1.7  1997/08/05 00:47:21  jhill
-// fixed warnings
-//
-// Revision 1.6  1997/06/30 22:54:34  jhill
-// use %p with pointers
-//
-// Revision 1.5  1997/04/10 19:34:32  jhill
-// API changes
-//
-// Revision 1.4  1996/12/12 21:24:17  jhill
-// moved casStreamOS *pStrmOS decl down
-//
-// Revision 1.3  1996/12/12 19:02:36  jhill
-// fixed send does not get armed after complete flush bug
-//
-// Revision 1.2  1996/12/11 00:55:14  jhill
-// better message
-//
-// Revision 1.1  1996/11/02 01:01:33  jhill
-// installed
-//
-// Revision 1.1.1.1  1996/06/20 00:28:06  jhill
-// ca server installation
-//
-//
 //
 // TO DO:
 // o armRecv() and armSend() should return bad status when
@@ -148,8 +109,10 @@ inline casStreamWriteReg::~casStreamWriteReg ()
 //
 class casStreamEvWakeup : public osiTimer {
 public:
+
 	casStreamEvWakeup(casStreamOS &osIn) : 
-		osiTimer(osiTime()), os(osIn) {}
+		osiTimer(0.0), os(osIn) {}
+
 	~casStreamEvWakeup();
 
 	void expire();
@@ -157,6 +120,7 @@ public:
 	void show(unsigned level) const;
 
 	const char *name() const;
+
 private:
 	casStreamOS	&os;
 };
@@ -219,7 +183,7 @@ void casStreamEvWakeup::expire()
 class casStreamIOWakeup : public osiTimer {
 public:
 	casStreamIOWakeup(casStreamOS &osIn) : 
-		osiTimer(osiTime(0.0)), os(osIn) {}
+		osiTimer (0.0), os(osIn) {}
 	~casStreamIOWakeup();
 
 	void expire();

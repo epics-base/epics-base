@@ -74,16 +74,11 @@ int	bbDebug = 0;	/* set to 1 from the shell to print debugging info */
  * This structure contains a list of the outside-callable functions.
  *
  ******************************************************************************/
-struct {
-        long            number;
-        DRVSUPFUN       report;	/* Report on the status of the Bit Bus links */
-        DRVSUPFUN       init;	/* Init the xvme card */
-	DRVSUPFUN	qReq;	/* Queue a transaction request */
-} drvBitBus={
-        3,
-        reportBB,
-        initBB,
-	qBBReq
+struct drvBitBusEt drvBitBus = {
+  3,
+  reportBB,
+  initBB,
+  qBBReq
 };
 
 static	char	init_called = 0;	/* to insure that init is done first */
@@ -1108,5 +1103,48 @@ int     prio;
   if (bbDebug>5)
     printf("qbbreq(0x%08.8X, %d): transaction queued\n", pdpvt, prio);
 
+  return(OK);
+}
+
+/******************************************************************************
+ *
+ * This is used for debugging purposes.
+ *
+ ******************************************************************************/
+int
+drvBitBusDumpMsg(pbbMsg)
+struct bitBusMsg *pbbMsg;
+{
+   char	ascBuf[15];	/* for ascii xlation part of the dump */
+   int	x;
+   int	y;
+   int	z;
+
+   printf("Link 0x%04.4X, length 0x%02.2X, route 0x%02.2X, node 0x%02.2X, tasks 0x%02.2X, cmd %02.2X\n", pbbMsg->link, pbbMsg->length, pbbMsg->route, pbbMsg->node, pbbMsg->tasks, pbbMsg->cmd);
+
+  x = BB_MSG_HEADER_SIZE;
+  y = pbbMsg->length;
+  z = 0;
+
+  while (x < y)
+  {
+    printf("%02.2X ", pbbMsg->data[z]);
+    ascBuf[z] = pbbMsg->data[z];
+
+    if (!((ascBuf[z] >= 0x20) && (ascBuf[z] <= 0x7e)))
+      ascBuf[z] = '.';
+
+    x++;
+    z++;
+  }
+
+  while (x < BB_MAX_MSG_LENGTH)
+  {
+    printf("   ");
+    x++;
+  }
+
+  ascBuf[z] = '\0';
+  printf("   *%s*\n", ascBuf);
   return(OK);
 }

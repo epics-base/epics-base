@@ -57,7 +57,8 @@ dbPutNotifyBlocker::~dbPutNotifyBlocker ()
 {
     this->cancel ();
     if ( this->maxValueSize > sizeof ( this->dbrScalarValue ) ) {
-        delete [] this->pn.pbuffer;
+        char * pBuf = static_cast < char * > ( this->pn.pbuffer );
+        delete [] pBuf;
     }
 }
 
@@ -79,7 +80,8 @@ void dbPutNotifyBlocker::expandValueBuf ( unsigned long newSize )
 {
     if ( this->maxValueSize < newSize ) {
         if ( this->maxValueSize > sizeof ( this->dbrScalarValue ) ) {
-            delete [] this->pn.pbuffer;
+            char * pBuf = static_cast < char * > ( this->pn.pbuffer );
+            delete [] pBuf;
             this->maxValueSize = sizeof ( this->dbrScalarValue );
             this->pn.pbuffer = & this->dbrScalarValue;
         }

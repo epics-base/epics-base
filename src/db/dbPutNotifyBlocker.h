@@ -78,7 +78,7 @@ private:
     cacWriteNotify * pNotify;
     unsigned long maxValueSize;
     dbSubscriptionIO * isSubscription ();
-    void dbPutNotifyBlocker::expandValueBuf ( unsigned long newSize );
+    void expandValueBuf ( unsigned long newSize );
     static epicsSingleton < tsFreeList < dbPutNotifyBlocker > > pFreeList;
     friend void putNotifyCompletion ( putNotify *ppn );
 	dbPutNotifyBlocker ( const dbPutNotifyBlocker & );

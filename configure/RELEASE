@@ -13,3 +13,5 @@
 
 #  Tornado directory
 VX_DIR = /usr/local/vw/tornado202
+# Is Tornado version  >= 2.2 ?   must be either YES or NO
+TORNADO_VERSION_2_2 = NO

@@ -27,6 +27,7 @@
  * -----------------
  * .01	mm-dd-yy	iii	Comment
  * .02	07-29-92	rcz	Put under sccs in site directory
+ * .03	09-14-92	jba	Changed EPICS_TS_MIN_WEST to 300
  * 	...
  */
 #include <envDefs.h>
@@ -34,7 +35,7 @@
 epicsSetEnvParams()
 {
     printf("setting EPICS environment parameters\n");
-    envSetConfigParam(&EPICS_TS_MIN_WEST, "360");
+    envSetConfigParam(&EPICS_TS_MIN_WEST, "300");
     envSetConfigParam(&EPICS_SYSCLK_INET, "130.202.241.16");
     envSetConfigParam(&EPICS_IOCMCLK_INET, "130.202.241.124");
     envSetConfigParam(&EPICS_SYSCLK_PORT, "2200");

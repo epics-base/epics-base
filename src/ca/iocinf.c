@@ -29,6 +29,7 @@
 /*			problem once it is detected)			*/
 /*	120991	joh	better quit when unable to broadcast		*/
 /*	022692	joh	better prefix on messages			*/
+/*	031892	joh	initial rebroadcast delay is now a #define	*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -256,7 +257,7 @@ struct ioc_in_use		*piiu;
 	 */
 	piiu->next_retry = CA_CURRENT_TIME;
 	piiu->nconn_tries = 0;
-	piiu->retry_delay = 1;
+	piiu->retry_delay = CA_RECAST_DELAY;
 
   	switch(piiu->sock_proto)
   	{
@@ -1222,7 +1223,7 @@ struct ioc_in_use	*piiu;
 	 */
 	piiu->next_retry = CA_CURRENT_TIME;
 	piiu->nconn_tries = 0;
-	piiu->retry_delay = 1;
+	piiu->retry_delay = CA_RECAST_DELAY;
 
 # 	ifdef UNIX
   	/* clear unused select bit */

@@ -22,6 +22,7 @@ of this distribution.
 #include <string.h>
 
 #include "dbDefs.h"
+#include "osiThread.h"
 #include "epicsPrint.h"
 #include "errMdef.h"
 #include "dbStaticLib.h"
@@ -47,6 +48,7 @@ int main(int argc,char **argv)
     static char *pathSep = OSI_PATH_LIST_SEPARATOR;
     static char *subSep = ",";
 
+    threadInit();
     /*Look for options*/
     if(argc<2) {
 	fprintf(stderr,

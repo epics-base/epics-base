@@ -72,6 +72,10 @@
 #define NONE            (-1)    /* for times when NULL won't do */
 #endif
 
+#ifndef LOCAL 
+#define LOCAL static
+#endif
+
 #ifndef NELEMENTS
 #define NELEMENTS(array)                /* number of elements in an array */ \
                 (sizeof (array) / sizeof ((array) [0]))

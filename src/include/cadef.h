@@ -215,9 +215,9 @@ struct channel_in_use{
 	unsigned 		cid;	/* client id */
 	unsigned		retry;	/* search retry number */
 	void			*piiu;	/* private ioc in use block */
-#ifdef vxWorks
+#ifdef iocCore
 	void			*ppn;  /* ptr to optional put notify blk */
-#endif /* vxWorks */
+#endif /* iocCore */
 	unsigned		claimPending:1; /* claim msg was sent if T */
 	/*
 	 * channel name stored directly after this structure in a 
@@ -894,32 +894,6 @@ epicsShareFunc int epicsShareAPI ca_add_fd_registration
 	 READONLY void    	*pArg
 );
 
-/*
- * ca_channel_status()
- *
- * tid		R	task id
- */
-#ifdef vxWorks
-epicsShareFunc int epicsShareAPI ca_channel_status( int tid);
-#endif
-
-/*
- * ca_import ()
- *
- * tid		R	task id
- */
-#ifdef vxWorks
-int ca_import(int tid);
-#endif /* vxWorks */
-
-/*
- * ca_import_cancel ()
- *
- * tid		R	task id
- */
-#ifdef vxWorks
-int ca_import_cancel(int tid);
-#endif /* vxWorks */
 
 /*
  * CA synch groups
@@ -1177,12 +1151,6 @@ ca_add_masked_array_event(TYPE,COUNT,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID, DBE
 ca_sg_array_get(gid, type, 1u, chan, pValue)
 #define ca_sg_put(gid, type, chan, pValue) \
 ca_sg_array_put(gid, type, 1u, chan, pValue)
-
-#ifdef vxWorks
-	epicsShareFunc int epicsShareAPI ca_channel_status()
-	epicsShareFunc int epicsShareAPI ca_import();
-	epicsShareFunc int epicsShareAPI ca_import_cancel();
-#endif
 
 #endif /* CAC_ANSI_FUNC_PROTO */
 

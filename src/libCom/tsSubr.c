@@ -602,31 +602,34 @@ TS_STAMP *pStamp;	/* O pointer to time stamp buffer */
 
 	assert(pStamp != NULL);
 
-#if defined(vxWorks)
-	retStat = TScurrentTimeStamp((struct timespec*)pStamp);
-	if (retStat == 0) {
-		return S_ts_OK;
-	}
-	else {
-		return S_ts_sysTimeError;
-	}
-#elif defined(WIN32)
-	SYSTEMTIME st;	 /* utc */
+	{
+#	if defined(vxWorks)
+		retStat = TScurrentTimeStamp((struct timespec*)pStamp);
+		if (retStat == 0) {
+			return S_ts_OK;
+		}
+		else {
+			return S_ts_sysTimeError;
+		}
+#	elif defined(WIN32)
+		SYSTEMTIME st;	 /* utc */
 
-	pStamp->secPastEpoch = time(NULL) - TS_EPOCH_SEC_PAST_1970;
-	GetSystemTime(&st);
-	pStamp->nsec = st.wMilliseconds * 1000000;
-#else
-    	struct timeval curtime;
+		pStamp->secPastEpoch = time(NULL) - TS_EPOCH_SEC_PAST_1970;
+		GetSystemTime(&st);
+		pStamp->nsec = st.wMilliseconds * 1000000;
+#	else
+		struct timeval curtime;
 
-    	assert(pStamp != NULL);
-    	if (gettimeofday(&curtime, (struct timezone *)NULL) == -1)
-		retStat = S_ts_sysTimeError;
-    	else {
-		pStamp->nsec = ( curtime.tv_usec/1000 ) * 1000000;
-		pStamp->secPastEpoch = curtime.tv_sec - TS_EPOCH_SEC_PAST_1970;
-    	}
-#endif
+		assert(pStamp != NULL);
+		if (gettimeofday(&curtime, (struct timezone *)NULL) == -1)
+			retStat = S_ts_sysTimeError;
+		else {
+			pStamp->nsec = ( curtime.tv_usec/1000 ) * 1000000;
+			pStamp->secPastEpoch = curtime.tv_sec - 
+					TS_EPOCH_SEC_PAST_1970;
+		}
+#	endif
+	}
 
     	pStamp->nsec = pStamp->nsec - (pStamp->nsec % TS_TRUNC);
     	return retStat;

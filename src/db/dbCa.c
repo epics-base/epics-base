@@ -62,15 +62,56 @@ static int removesOutstandingWarning = 10000;
 
 void dbCaTask(void); /*The Channel Access Task*/
 extern void dbServiceIOInit();
-
+
 /* caLink locking
- * 1) dbCaTask never locks because ca_xxx calls can block
- * 2) Everything else locks.
- * The above means that everything MUST be ok while dbCaTask is executing
- * Key to making things work is as follows
- * 1) pcaLink->link_action only read/changed while caListSem held
- * 2) If any void *p fields in caLink need to be changed free entire caLink
- *    and allocate a brand new one.
+ *
+ * caListSem
+ *   This is only used to put request into and take them out of caList.
+ *   While this is locked no other locks are taken
+ *
+ * dbScanLock
+ *   Nothing in dbNotify does a dbScanLock.
+ *   dbCaAddLink and dbCaRemoveLink are only called by dbAccess or iocInit
+ *   They are only called by dbAccess when it has a global lock on lock set.
+ *   It is assumed that ALL other dbCaxxx calls are made only if dbScanLock
+ *   is already active. These routines are intended for use by record/device
+ *   support.
+ *
+ * caLink.lock
+ *   Any code that use a caLink takes this lock and releases it when done
+ *
+ * dbCaTask and the channel access callbacks NEVER access anything in the 
+ *   records except after locking caLink.lock and checking that caLink.plink
+ *   is not null. They NEVER call dbScanLock.
+ *
+ * The above is necessary to prevent deadlocks and attempts to use a caLink
+ *   that has been deleted.
+ *
+ * Just a few words about handling dbCaRemoveLink because this is when
+ *   it is essential that nothing trys to use a caLink that has been freed.
+ *
+ *   dbCaRemoveLink is called when links are being modified. This is only
+ *   done with the dbScan mechanism guranteeing that nothing from
+ *   database access trys to access the record containing the caLink.
+ *
+ *   Thus the problem is to make sure that nothing from channel access
+ *   accesses a caLink that is deleted. This is done as follows.
+ *
+ *   dbCaRemoveLink does the following:
+ *      epicsMutexMustLock(pca->lock);
+ *      pca->plink = 0;
+ *      plink->value.pv_link.pvt = 0;
+ *      addAction(pca,CA_CLEAR_CHANNEL);
+ *      epicsMutexUnlock(pca->lock);
+ *      epicsEventMustWait(pca->channelCleared)
+ *
+ *   It waits until dbCaTask has done a ca_clear_channel and then
+ *   frees the caLink.
+ *
+ *   If any channel access callback gets called before the ca_clear_channel
+ *   it finds pca->plink=0 and does nothing. Once ca_clear_channel
+ *   is called no other callback for this caLink will be called.
+ *  
 */
 
 static void addAction(caLink *pca, short link_action)

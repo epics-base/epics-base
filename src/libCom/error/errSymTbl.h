@@ -15,7 +15,7 @@ typedef struct		/* ERRSYMBOL - entry in symbol table */
     } ERRSYMBOL;
 typedef struct		/* ERRSYMTAB - symbol table */
     {
-    short nsymbols;	/* current number of symbols in table */
+    int nsymbols;	/* current number of symbols in table */
     ERRSYMBOL *symbols;	/* ptr to array of symbol entries */
     } ERRSYMTAB;
 typedef ERRSYMTAB *ERRSYMTAB_ID;

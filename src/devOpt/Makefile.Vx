@@ -15,16 +15,7 @@ SRCS.c += ../devXxDc5009Gpib.c
 SRCS.c += ../devXxK263Gpib.c
 SRCS.c += ../devXxSkeletonGpib.c
 
-LIBOBJS += devAnalytekGpib.o
-LIBOBJS += devXxDg535Gpib.o
-LIBOBJS += devBBInteract.o
-LIBOBJS += devGpibInteract.o
-LIBOBJS += devXxSr620Gpib.o
-LIBOBJS += devK486Gpib.o
-LIBOBJS += devXxK196Gpib.o
-LIBOBJS += devXxDc5009Gpib.o
-LIBOBJS += devXxK263Gpib.o
-LIBOBJS += devXxSkeletonGpib.o
+LIBOBJS = $(SRCS.c:../%.c=%.o)
 
 LIBNAME = devLibOpt
 

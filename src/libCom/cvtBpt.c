@@ -37,7 +37,6 @@
 #include     <vxWorks.h>
 #include     <types.h>
 #include     <stdioLib.h>
-#include     <lstLib.h>
 
 #include     <cvtTable.h>
 #include     <dbAccess.h>

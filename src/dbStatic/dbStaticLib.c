@@ -335,15 +335,16 @@ void dbInitDeviceMenu(DBENTRY *pdbentry)
     dbDeviceMenu *pdbDeviceMenu;
     devSup	*pdevSup;
     int		ind;
+    int		nChoice;
 
     if(!precdes) return;
     if(!pflddes) return;
+    nChoice = ellCount(&precdes->devList);
+    if(nChoice <= 0) return;
     pdbDeviceMenu = dbCalloc(1,sizeof(dbDeviceMenu));
+    pdbDeviceMenu->nChoice = nChoice;
     pflddes->ftPvt = pdbDeviceMenu;
-    pdbDeviceMenu->nChoice = ellCount(&precdes->devList);
-    if(pdbDeviceMenu->nChoice > 0)
-        pdbDeviceMenu->papChoice =
-	    dbCalloc(pdbDeviceMenu->nChoice,sizeof(char *));
+    pdbDeviceMenu->papChoice = dbCalloc(pdbDeviceMenu->nChoice,sizeof(char *));
     pdevSup = (devSup *)ellFirst(&precdes->devList);
     ind = 0;
     while(pdevSup) {
@@ -1221,15 +1222,19 @@ long dbNextFielddes(DBENTRY *pdbentry,int dctonly)
 	}
 	pflddes = precdes->papFldDes[indfield];
 	if(!dctonly || pflddes->promptgroup) {
-	    pdbentry->indfield = indfield;
-	    pdbentry->pflddes = pflddes;
-	    pdbentry->indfield = indfield;
-	    if(precnode) {
-		status = dbGetFieldAddress(pdbentry);
-	    }else {
-		pdbentry->pfield = NULL;
+	    /*Skip field if dctonly and no device support*/
+	    if(!dctonly || (pflddes->field_type!=DBF_DEVICE)
+	    || (ellCount(&precdes->devList)>0)) {
+		pdbentry->indfield = indfield;
+		pdbentry->pflddes = pflddes;
+		pdbentry->indfield = indfield;
+		if(precnode) {
+		    status = dbGetFieldAddress(pdbentry);
+		}else {
+		    pdbentry->pfield = NULL;
+		}
+		return(0);
 	    }
-	    return(0);
 	}
 	indfield++;
     }
@@ -2076,7 +2081,7 @@ int dbGetNMenuChoices(DBENTRY *pdbentry)
     case DBF_MENU: {
 	    dbMenu	*pdbMenu = (dbMenu *)pflddes->ftPvt;
 
-	    if(!pdbMenu) return(NULL);
+	    if(!pdbMenu) return(0);
 	    return(pdbMenu->nChoice);
 	}
     case DBF_DEVICE: {
@@ -2084,7 +2089,7 @@ int dbGetNMenuChoices(DBENTRY *pdbentry)
 
 	    if(!pflddes->ftPvt) dbInitDeviceMenu(pdbentry);
 	    pdbDeviceMenu = (dbDeviceMenu *)pflddes->ftPvt;
-	    if(!pdbDeviceMenu) return(NULL);
+	    if(!pdbDeviceMenu) return(0);
 	    return(pdbDeviceMenu->nChoice);
 	}
     default:

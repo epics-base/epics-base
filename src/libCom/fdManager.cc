@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.1  1996/08/13 22:48:23  jhill
+// dfMgr =>fdManager
+//
 //
 
 //
@@ -44,12 +47,20 @@ inline int selectErrno()
 //
 fdManager::fdManager()
 {
-	FD_ZERO (&this->read);
-	FD_ZERO (&this->write);
-	FD_ZERO (&this->exception);
+	size_t	i;
+
+	for (i=0u; i<sizeof(this->fdSets)/sizeof(this->fdSets[0u]); i++) {
+		FD_ZERO(&this->fdSets[i]);
+	}
 	this->maxFD = 0;
-	this->processInProg = 0;
+	this->processInProg = 0u;
 	this->pCBReg = 0;
+	//
+	// should throw an exception here 
+	// when most compilers are implementing
+	// exceptions
+	//
+	assert (this->fdTbl.init(0x100)>=0);
 }
 
 //
@@ -90,7 +101,7 @@ void fdManager::process (const osiTime &delay)
 	this->processInProg = 1;
 
 	while ( (pReg=regIter()) ) {
-		FD_SET(pReg->fd, &pReg->fdSet); 
+		FD_SET(pReg->getFD(), &this->fdSets[pReg->getType()]); 
 	}
 
 	//
@@ -111,8 +122,8 @@ void fdManager::process (const osiTime &delay)
 		minDelay = delay;
 	}
 	minDelay.getTV (tv.tv_sec, tv.tv_usec);
-	status = select (this->maxFD, &this->read, 
-			&this->write, &this->exception, &tv);
+	status = select (this->maxFD, &this->fdSets[fdrRead], 
+		&this->fdSets[fdrWrite], &this->fdSets[fdrExcp], &tv);
 	staticTimerQueue.process();
 	if (status==0) {
 		this->processInProg = 0;
@@ -135,8 +146,8 @@ void fdManager::process (const osiTime &delay)
 	//
 	regIter.reset();
 	while ( (pReg=regIter()) ) {
-		if (FD_ISSET(pReg->fd, &pReg->fdSet)) {
-			FD_CLR(pReg->fd, &pReg->fdSet);
+		if (FD_ISSET(pReg->getFD(), &this->fdSets[pReg->getType()])) {
+			FD_CLR(pReg->getFD(), &this->fdSets[pReg->getType()]);
 			regIter.remove();
 			this->activeList.add(*pReg);
 			pReg->state = fdrActive;
@@ -201,9 +212,21 @@ void fdReg::show(unsigned level)
 {
 	printf ("fdReg at %x\n", (unsigned) this);
 	if (level>1u) {
-		printf ("\tfd = %d, fdSet at %x, state = %d, onceOnly = %d\n",
-			this->fd, (unsigned)&this->fdSet, 
+		printf ("\tstate = %d, onceOnly = %d\n",
 			this->state, this->onceOnly);
+	}
+	this->fdRegId::show(level);
+}
+
+//
+// fdRegId::show()
+//
+void fdRegId::show(unsigned level)
+{
+	printf ("fdRegId at %x\n", (unsigned) this);
+	if (level>1u) {
+		printf ("\tfd = %d, type = %d\n",
+			this->fd, this->type);
 	}
 }
 

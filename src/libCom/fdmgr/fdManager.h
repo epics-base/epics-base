@@ -32,6 +32,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1  1996/08/13 22:48:21  jhill
+ * dfMgr =>fdManager
+ *
  *
  */
 
@@ -39,6 +42,7 @@
 #define fdManagerH_included
 
 #include <tsDLList.h>
+#include <resourceLib.h>
 #include <osiTime.h>
 
 #ifdef WIN32
@@ -52,14 +56,62 @@ extern "C" {
 
 #include <stdio.h>
 
-enum fdRegType {fdrRead, fdrWrite, fdrExcp};
+enum fdRegType {fdrRead, fdrWrite, fdrExcp, fdRegTypeNElem};
 enum fdRegState {fdrActive, fdrPending, fdrLimbo};
+
+class fdRegId  
+{
+public:
+	fdRegId (const int fdIn, const fdRegType typeIn) :
+		fd(fdIn), type(typeIn) {}
+
+	int getFD()
+	{
+		return this->fd;
+	}
+
+	fdRegType getType()
+	{
+		return this->type;
+	}
+
+        int operator == (const fdRegId &idIn)
+        {
+                return this->fd == idIn.fd && this->type==idIn.type;
+        }
+
+        resTableIndex resourceHash(unsigned nBitsId) const
+        {
+                unsigned        src = (unsigned) this->fd;
+                resTableIndex   hashid;
+ 
+                hashid = src;
+                src = src >> nBitsId;
+                while (src) {
+                        hashid = hashid ^ src;
+                        src = src >> nBitsId;
+                }
+		hashid = hashid ^ this->type;
+
+                //
+                // the result here is always masked to the
+                // proper size after it is returned to the resource class
+                //
+                return hashid;
+        }
+
+	virtual void show(unsigned level);
+private:
+        const int	fd;
+	const fdRegType	type;
+};
 
 //
 // fdReg
 // file descriptor registration
 //
-class fdReg : public tsDLNode<fdReg> {
+class fdReg : public tsDLNode<fdReg>, public fdRegId,
+	public tsSLNode<fdReg> {
         friend class fdManager;
 public:
 	fdReg (const int fdIn, const fdRegType typ, 
@@ -89,8 +141,6 @@ private:
 	//
 	virtual void destroy ();
 
-        const int	fd;
-	fd_set		&fdSet;
 	unsigned char 	state; // fdRegState goes here
 	unsigned char	onceOnly;
 };
@@ -101,12 +151,15 @@ public:
         fdManager();
         ~fdManager();
         void process (const osiTime &delay);
+
+	//
+	// returns NULL if the fd is unknown
+	//
+	fdReg *lookUpFD(const int fd, const fdRegType type);
 private:
         tsDLList<fdReg>	regList;
         tsDLList<fdReg>	activeList;
-	fd_set		read;
-	fd_set		write;
-	fd_set		exception;
+	fd_set		fdSets[fdRegTypeNElem];
         int             maxFD;
 	unsigned	processInProg;
 	//
@@ -117,11 +170,22 @@ private:
 
 	void installReg (fdReg &reg);
         void removeReg (fdReg &reg);
-	fd_set *pFDSet (fdRegType typIn);
+	resTable<fdReg,fdRegId> fdTbl;
 };
 
 extern fdManager fileDescriptorManager;
 
+//
+// lookUpFD()
+//
+inline fdReg *fdManager::lookUpFD(const int fd, const fdRegType type)
+{
+	if (fd<0) {
+		return NULL;
+	}
+	fdRegId id (fd,type);
+	return this->fdTbl.lookup(id); 
+}
 
 //
 // fdManagerMaxInt ()
@@ -137,36 +201,22 @@ inline int fdManagerMaxInt (int a, int b)
 }
 
 //
-// fdManager::pFDSet()
-//
-inline fd_set *fdManager::pFDSet (fdRegType typIn)
-{
-	fd_set *pSet;
-
-	switch (typIn) {
-	case fdrRead:
-		pSet = &this->read;
-		break;
-	case fdrWrite:
-		pSet = &this->write;
-		break;
-	case fdrExcp:
-		pSet = &this->exception;
-		break;
-	default:
-		assert(0);
-	}
-	return pSet;
-}
-
-//
 // fdManager::installReg()
 //
 inline void fdManager::installReg (fdReg &reg)
 {
-       	this->maxFD = fdManagerMaxInt(this->maxFD, reg.fd+1);
+	int status;
+
+       	this->maxFD = fdManagerMaxInt(this->maxFD, reg.getFD()+1);
        	this->regList.add(reg);
 	reg.state = fdrPending;
+	status = this->fdTbl.add(reg);
+	if (status) {
+		fprintf (stderr, 
+			"**** Warning - duplicate fdReg object\n");
+		fprintf (stderr, 
+			"**** will not be seen by fdManager::lookUpFD()\n");
+	}
 }
  
 //
@@ -174,6 +224,8 @@ inline void fdManager::installReg (fdReg &reg)
 //
 inline void fdManager::removeReg(fdReg &reg)
 {
+	fdReg *pItemFound;
+
         //
         // signal fdManager that the fdReg was deleted
         // during the call back
@@ -181,21 +233,22 @@ inline void fdManager::removeReg(fdReg &reg)
         if (this->pCBReg == &reg) {
                 this->pCBReg = 0;
         }
-        FD_CLR(reg.fd, &reg.fdSet);
+        FD_CLR(reg.getFD(), &this->fdSets[reg.getType()]);
+	pItemFound = this->fdTbl.remove(reg);
+	assert (pItemFound==&reg);
 	switch (reg.state) {
 	case fdrActive:
         	this->activeList.remove(reg);
-		reg.state = fdrLimbo;
 		break;
 	case fdrPending:
         	this->regList.remove(reg);
-		reg.state = fdrLimbo;
 		break;
 	case fdrLimbo:
 		break;
 	default:
 		assert(0);
 	}
+	reg.state = fdrLimbo;
 }
 
 //
@@ -203,11 +256,10 @@ inline void fdManager::removeReg(fdReg &reg)
 //
 inline fdReg::fdReg (const int fdIn, const fdRegType typIn, 
 		const unsigned onceOnlyIn) : 
-	fd(fdIn), fdSet(*fileDescriptorManager.pFDSet(typIn)),
-	state(fdrLimbo), onceOnly(onceOnlyIn)
+	fdRegId(fdIn,typIn), state(fdrLimbo), onceOnly(onceOnlyIn)
 {
-	assert (this->fd>=0);
-        if (this->fd>FD_SETSIZE) {
+	assert (fdIn>=0);
+        if (fdIn>FD_SETSIZE) {
 		fprintf (stderr, "%s: fd > FD_SETSIZE ignored\n", 
 			__FILE__);
 		return;

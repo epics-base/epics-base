@@ -7,14 +7,23 @@
  *
  * $Id$
  * $Log$
+ * Revision 1.2  1997/06/25 06:17:38  jhill
+ * fixed warnings
+ *
  * Revision 1.1  1997/03/21 01:56:10  jbk
  * *** empty log message ***
  *
  *
  */
 
+#ifdef vxWorks
+#include <semLib.h>
+#include <sysLib.h>
+#endif
+
 #include "aitTypes.h"
 #include "shareLib.h"
+
 
 // ------------------------- semaphores ---------------------------
 

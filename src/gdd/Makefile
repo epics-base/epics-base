@@ -21,14 +21,8 @@ INC += aitHelpers.h
 INC += dbMapper.h
 INC += gddAppTable.h
 INC += gddAppFuncTable.h
-#INC += gddApps.h
-INC += smartGDDPointer.h
-
-###### NEEDS WORK ??????   ############################
-ifeq ($(HOST_ARCH),$(T_A))
 INC += gddApps.h
-endif
-#######################################################
+INC += smartGDDPointer.h
 
 AITGENSRCS := gdd.cc gddTest.cc gddAppTable.cc gddNewDel.cc \
 	gddAppDefs.cc aitTypes.c aitConvert.cc aitHelpers.cc  \
@@ -40,7 +34,6 @@ LIBSRCS := gdd.cc gddTest.cc gddAppTable.cc gddNewDel.cc \
 	smartGDDPointer.cc
 
 LIBRARY_DEFAULT = gdd
-LIBRARY_vxWorks = -nil-
 
 include $(TOP)/configure/RULES_BUILD
 
@@ -60,11 +53,11 @@ dbMapper.o:	../gdd.h ../gddI.h ../gddContainer.h ../gddContainerI.h \
 
 # Rules for generated files
 #
-aitConvertGenerated.cc: aitGen$(EXE) ../aitTypes.h
-	./aitGen$(EXE)
+aitConvertGenerated.cc: ../O.$(HOST_ARCH)/aitGen$(HOSTEXE) ../aitTypes.h
+	../O.$(HOST_ARCH)/aitGen$(HOSTEXE)
 
-gddApps.h : genApps$(EXE)
-	./genApps$(EXE) $@
+gddApps.h : ../O.$(HOST_ARCH)/genApps$(HOSTEXE)
+	../O.$(HOST_ARCH)/genApps$(HOSTEXE) $@
 
 # unfortunately there is only one TESTPROD/TESTPROD_SRCS allowed
 # right now
@@ -74,11 +67,15 @@ gddApps.h : genApps$(EXE)
 # )
 #
 # This rule, however, should be system-independent:
+ifeq ($(HOST_ARCH),$(T_A))
+
 aitGen$(EXE): aitGen$(OBJ) aitTypes$(OBJ)
 	$(LINK.c) $^ 
 
 genApps$(EXE): genApps$(OBJ) $(addsuffix $(OBJ), $(basename $(AITGENSRCS)))
 	$(LINK.cc) $^ 
+
+endif
 
 clean::
 	$(RM) aitConvertGenerated.cc aitGen$(EXE) genApps$(EXE)

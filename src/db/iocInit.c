@@ -45,6 +45,7 @@
  * .15	05-17-92	rcz	moved sdrSum stuff to dbReadWrite.c
  * .16	05-19-92	mrk	Changes for internal database structure changes
  * .17	06-16-92	jba	Added prset test to call of init_record second time loop
+ * .18	07-31-92	rcz	moved database loading to function dbLoad
  *
  */
 
@@ -107,8 +108,7 @@ long addToSet();
 long initialProcess();
 long getResources();
 
-int iocInit(pfilename,pResourceFilename)
-char * pfilename;
+int iocInit(pResourceFilename)
 char * pResourceFilename;
 {
     long status;
@@ -123,12 +123,11 @@ char * pResourceFilename;
     }
     coreRelease();
     epicsSetEnvParams();
-    status=dbRead(&pdbBase, pfilename);
-    if(status!=0) {
-	logMsg("iocInit aborting because dbRead failed\n");
+
+    if (!pdbBase) {
+	logMsg("iocInit aborting because No database loaded by dbLoad\n");
 	return(-1);
     }
-
     status=getResources(pResourceFilename);
     if(status!=0) {
 	logMsg("iocInit aborting because getResources failed\n");
@@ -801,5 +800,17 @@ CLEAR:	memset(buff, '\0',  MAX);
 	memset(s3, '\0', MAX);
     }
     fclose(fp);
+    return (0);
+}
+
+long dbLoad(pfilename)
+char * pfilename;
+{
+    long status;
+    status=dbRead(&pdbBase, pfilename);
+    if(status!=0) {
+	logMsg("dbLoad aborting because dbRead failed\n");
+	return(-1);
+    }
     return (0);
 }

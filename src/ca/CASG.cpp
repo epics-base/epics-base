@@ -95,7 +95,7 @@ int CASG::block ( double timeout )
     delay = 0.0;
 
     while ( 1 ) {
-        if ( this->ioList.count() == 0u ) {
+        if ( this->ioPendingList.count() == 0u ) {
             status = ECA_NORMAL;
             break;
         }
@@ -107,13 +107,12 @@ int CASG::block ( double timeout )
              * recv backlog at least once
              */
             status = ECA_TIMEOUT;
-            this->reset ();
             break;
         }
 
         status = this->client.blockForEventAndEnableCallbacks ( this->sem, remaining );
         if ( status != ECA_NORMAL ) {
-            return status;
+            break;
         }
 
         /*
@@ -124,142 +123,224 @@ int CASG::block ( double timeout )
         delay = cur_time - beg_time;
     }
 
+    this->reset ();
+
     return status;
 }
 
 void CASG::reset ()
 {
     epicsAutoMutex locker ( this->mutex );
+    this->destroyCompletedIO ();
+    this->destroyPendingIO ();
+}
+
+// lock must be applied
+void CASG::destroyCompletedIO ()
+{
+    tsDLList < syncGroupNotify > userStillRequestingList;
     syncGroupNotify *pNotify;
-    while ( ( pNotify = this->ioList.get () ) ) {
-        pNotify->destroy ( * this );
+    while ( ( pNotify = this->ioCompletedList.get () ) ) {
+        if ( pNotify->ioInitiated() ) {
+            pNotify->destroy ( * this );
+        }
+        else {
+            userStillRequestingList.add ( *pNotify );
+        }
     }
+    this->ioCompletedList.add ( userStillRequestingList );
+}
+
+// lock must be applied
+void CASG::destroyPendingIO ()
+{
+    tsDLList < syncGroupNotify > userStillRequestingList;
+    syncGroupNotify *pNotify;
+    while ( ( pNotify = this->ioPendingList.get () ) ) {
+        if ( pNotify->ioInitiated() ) {
+            pNotify->destroy ( * this );
+        }
+        else {
+            userStillRequestingList.add ( *pNotify );
+        }
+    }
+    this->ioPendingList.add ( userStillRequestingList );
 }
 
 void CASG::show ( unsigned level ) const
 {
     ::printf ( "Sync Group: id=%u, magic=%u, opPend=%u\n",
-        this->getId (), this->magic, this->ioList.count () );
+        this->getId (), this->magic, this->ioPendingList.count () );
     if ( level ) {
         epicsAutoMutex locker ( this->mutex );
-        tsDLIterConstBD < syncGroupNotify > notify = this->ioList.firstIter ();
-        while ( notify.valid () ) {
-            notify->show ( level - 1u );
-            notify++;
+        ::printf ( "\tPending" );
+        tsDLIterConstBD < syncGroupNotify > notifyPending = this->ioPendingList.firstIter ();
+        while ( notifyPending.valid () ) {
+            notifyPending->show ( level - 1u );
+            notifyPending++;
+        }
+        ::printf ( "\tCompleted" );
+        tsDLIterConstBD < syncGroupNotify > notifyCompleted = this->ioCompletedList.firstIter ();
+        while ( notifyCompleted.valid () ) {
+            notifyCompleted->show ( level - 1u );
+            notifyCompleted++;
         }
     }
 }
 
-bool CASG::ioComplete () const
+bool CASG::ioComplete ()
 {
-    return ( this->ioList.count () == 0u );
+    bool isCompleted;
+    {
+        epicsAutoMutex locker ( this->mutex );
+        this->destroyCompletedIO ();
+        isCompleted = ( this->ioPendingList.count () == 0u );
+    }
+    return isCompleted;
 }
 
 int CASG::put ( chid pChan, unsigned type, arrayElementCount count, const void *pValue )
 {
+    syncGroupWriteNotify * pNotify = 0;
     try {
-        epicsAutoMutex locker ( this->mutex );
-        syncGroupNotify *pNotify = syncGroupWriteNotify::factory ( 
-            this->freeListWriteOP, *this, pChan, type, count, pValue );
-        if ( pNotify ) {
-            this->ioList.add ( *pNotify );
-            return ECA_NORMAL;
+        {
+            epicsAutoMutex locker ( this->mutex );
+            pNotify = syncGroupWriteNotify::factory ( 
+                this->freeListWriteOP, *this, pChan );
+            if ( pNotify ) {
+                this->ioPendingList.add ( *pNotify );
+            }
+            else {
+                return ECA_ALLOCMEM;
+            }
         }
-        else {
-            return ECA_ALLOCMEM;
-        }
+        pNotify->begin ( type, count, pValue );
+        return ECA_NORMAL;
     }
     catch ( cacChannel::badString & )
     {
+        destroyPendingIO ( pNotify );
         return ECA_BADSTR;
     }
     catch ( cacChannel::badType & )
     {
+        destroyPendingIO ( pNotify );
         return ECA_BADTYPE;
     }
     catch ( cacChannel::outOfBounds & )
     {
+        destroyPendingIO ( pNotify );
         return ECA_BADCOUNT;
     }
     catch ( cacChannel::noWriteAccess & )
     {
+        destroyPendingIO ( pNotify );
         return ECA_NOWTACCESS;
     }
     catch ( cacChannel::notConnected & )
     {
+        destroyPendingIO ( pNotify );
         return ECA_DISCONN;
     }
     catch ( cacChannel::unsupportedByService & )
     {
+        destroyPendingIO ( pNotify );
         return ECA_NOTINSERVICE;
+    }
+    catch ( cacChannel::requestTimedOut & )
+    {
+        destroyPendingIO ( pNotify );
+        return ECA_TIMEOUT;
     }
     catch ( std::bad_alloc & )
     {
+        destroyPendingIO ( pNotify );
         return ECA_ALLOCMEM;
     }
     catch ( ... )
     {
+        destroyPendingIO ( pNotify );
         return ECA_INTERNAL;
     }
 }
 
 int CASG::get ( chid pChan, unsigned type, arrayElementCount count, void *pValue )
 {
-
+    syncGroupReadNotify * pNotify = 0;
     try {
-        epicsAutoMutex locker ( this->mutex );
-        syncGroupNotify * pNotify = syncGroupReadNotify::factory ( 
-            this->freeListReadOP, *this, pChan, type, count, pValue );
-        if ( pNotify ) {
-            this->ioList.add ( *pNotify );
-            return ECA_NORMAL;
+        {
+            epicsAutoMutex locker ( this->mutex );
+            pNotify = syncGroupReadNotify::factory ( 
+                this->freeListReadOP, *this, pChan, pValue );
+            if ( pNotify ) {
+                this->ioPendingList.add ( *pNotify );
+            }
+            else {
+                return ECA_ALLOCMEM;
+            }
         }
-        else {
-            return ECA_ALLOCMEM;
-        }
+        pNotify->begin ( type, count );
+        return ECA_NORMAL;
     }
     catch ( cacChannel::badString & )
     {
+        destroyPendingIO ( pNotify );
         return ECA_BADSTR;
     }
     catch ( cacChannel::badType & )
     {
+        destroyPendingIO ( pNotify );
         return ECA_BADTYPE;
     }
     catch ( cacChannel::outOfBounds & )
     {
+        destroyPendingIO ( pNotify );
         return ECA_BADCOUNT;
     }
     catch ( cacChannel::noReadAccess & )
     {
+        destroyPendingIO ( pNotify );
         return ECA_NORDACCESS;
     }
     catch ( cacChannel::notConnected & )
     {
+        destroyPendingIO ( pNotify );
         return ECA_DISCONN;
     }
     catch ( cacChannel::unsupportedByService & )
     {
+        destroyPendingIO ( pNotify );
         return ECA_NOTINSERVICE;
     }
     catch ( std::bad_alloc & )
     {
+        destroyPendingIO ( pNotify );
         return ECA_ALLOCMEM;
     }
     catch ( ... )
     {
+        destroyPendingIO ( pNotify );
         return ECA_INTERNAL;
     }
 }
 
-void CASG::destroyIO ( syncGroupNotify &notify )
+void CASG::destroyPendingIO ( syncGroupNotify * pNotify )
+{
+    epicsAutoMutex locker ( this->mutex );
+    if ( pNotify ) {
+        this->ioPendingList.remove ( *pNotify );
+        pNotify->destroy ( *this );
+    }
+}
+
+void CASG::completionNotify ( syncGroupNotify & notify )
 {
     unsigned requestsIncomplete;
     {
         epicsAutoMutex locker ( this->mutex );
-        this->ioList.remove ( notify );
-        requestsIncomplete = this->ioList.count ();
-        notify.destroy ( *this );
+        this->ioPendingList.remove ( notify );
+        this->ioCompletedList.add ( notify );
+        requestsIncomplete = this->ioPendingList.count ();
     }
     if ( requestsIncomplete == 0u ) {
         this->sem.signal ();

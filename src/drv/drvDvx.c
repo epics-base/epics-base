@@ -1,5 +1,6 @@
 
 /* drvDvx.c */
+/* drvDvx.c -  Driver Support Routines for Dvx */
 /* share/src/drv $Id$ */
 #include	<vxWorks.h>
 #include	<stdioLib.h>
@@ -83,9 +84,9 @@
  *              ai_addrs[DVX2502]in module_types.h.  Also moved DVX_IVECO
  *              to module_types.h.
  * BG 6/23/92   combined dvx_driver.c and drvDvx.c 
+ * BG 6/26/92   added level to dvx_io_report in drvDvx structure.
  */
 
-/* drvDvx.c -  Driver Support Routines for Dvx */
 
 
 /* If any of the following does not exist replace it with #define <> NULL */
@@ -106,7 +107,7 @@ static long report(fp)
 {
     register int i;
 
-    dvx_io_report();
+    dvx_io_report(level);
 }
 
 static long init()

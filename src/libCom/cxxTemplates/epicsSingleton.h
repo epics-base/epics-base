@@ -102,7 +102,7 @@ inline epicsSingleton<TYPE>::~epicsSingleton ()
 
 epicsShareFunc epicsMutex & epicsSingletonPrivateMutex ();
 
-// borland 5.5 is unable to build this function optimized it it is inline
+// borland 5.5 is unable to build this function optimized if it is inline
 template < class TYPE >
 typename epicsSingleton<TYPE>::reference epicsSingleton<TYPE>::getReference ()
 {

@@ -2,21 +2,6 @@ LIBRARY Com
 
 EXPORTS
 
-EPICS_AR_PORT
-EPICS_CA_ADDR_LIST
-EPICS_CA_AUTO_ADDR_LIST
-EPICS_CA_BEACON_PERIOD 
-EPICS_CA_CONN_TMO
-EPICS_CA_REPEATER_PORT
-EPICS_CA_SERVER_PORT
-EPICS_CMD_PROTO_PORT
-EPICS_IOC_LOG_FILE_COMMAND
-EPICS_IOC_LOG_FILE_LIMIT
-EPICS_IOC_LOG_FILE_NAME
-EPICS_IOC_LOG_INET
-EPICS_IOC_LOG_PORT
-EPICS_TS_MIN_WEST
-EPICS_TS_NTP_INET
 bucketAddItemUnsignedId
 bucketCreate
 bucketFree
@@ -37,6 +22,7 @@ ellFree
 ellGet
 ellInsert
 ellNth
+envGetConfigParamPtr
 envGetConfigParam
 envGetDoubleConfigParam
 envGetInetAddrConfigParam
@@ -44,7 +30,6 @@ envGetLongConfigParam
 envPrtConfigParam
 envSetConfigParam
 env_param_list
-envParamIsEmpty
 epicsAssert
 errPrintf
 errSymFind
@@ -95,3 +80,7 @@ impOpenFile
 impCloseFile
 impGetLine
 ipAddrToA
+installSigPipeIgnore
+dbmfInit
+dbmfFree
+dbmfMalloc

@@ -102,7 +102,7 @@ bool netiiu::pushDatagramMsg ( const caHdr &, const void *, ca_uint16_t )
     return false;
 }
 
-bool netiiu::isVirtaulCircuit ( const char *, const osiSockAddr & ) const
+bool netiiu::isVirtualCircuit ( const char *, const osiSockAddr & ) const
 {
     return false;
 }

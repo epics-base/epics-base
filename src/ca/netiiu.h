@@ -44,7 +44,7 @@ public:
     int printf ( const char *pformat, ... );
     virtual void hostName (char *pBuf, unsigned bufLength) const;
     virtual const char * pHostName () const; // deprecated - please do not use
-    virtual bool isVirtaulCircuit ( const char *pChannelName, const osiSockAddr &addr ) const;
+    virtual bool isVirtualCircuit ( const char *pChannelName, const osiSockAddr &addr ) const;
     virtual bool ca_v42_ok () const;
     virtual bool pushDatagramMsg ( const caHdr &hdr, const void *pExt, ca_uint16_t extsize);
     virtual void writeRequest ( nciu &, unsigned type, unsigned nElem, const void *pValue );

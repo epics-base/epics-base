@@ -688,7 +688,7 @@ tcpiiu::~tcpiiu ()
     }
 }
 
-bool tcpiiu::isVirtaulCircuit ( const char *pChannelName, const osiSockAddr &addrIn ) const
+bool tcpiiu::isVirtualCircuit ( const char *pChannelName, const osiSockAddr &addrIn ) const
 {
     osiSockAddr addrTmp = this->address ();
 

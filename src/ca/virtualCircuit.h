@@ -81,7 +81,7 @@ public:
 
     void hostName ( char *pBuf, unsigned bufLength ) const;
     const char * pHostName () const; // deprecated - please do not use
-    bool isVirtaulCircuit ( const char *pChannelName, const osiSockAddr &addr ) const;
+    bool isVirtualCircuit ( const char *pChannelName, const osiSockAddr &addr ) const;
     bool alive () const;
     osiSockAddr getNetworkAddress () const;
 

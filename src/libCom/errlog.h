@@ -41,7 +41,11 @@ extern "C" {
 #define epicsPrintf errlogPrintf
 #define epicsVprintf errlogVprintf
 
+#ifdef __STDC__
 typedef void(*errlogListener) (const char *message);
+#else
+typedef void(*errlogListener) ();
+#endif
 typedef enum {errlogInfo,errlogMinor,errlogMajor,errlogFatal} errlogSevEnum;
 
 #ifdef ERRLOG_INIT

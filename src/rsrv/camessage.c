@@ -182,6 +182,12 @@ LOCAL void access_rights_reply(
 struct channel_in_use *pciu
 );
 
+LOCAL struct channel_in_use *casCreateChannel (
+struct client  	*client,
+struct db_addr 	*pAddr,
+unsigned	cid
+);
+
 LOCAL unsigned 		bucketID;
 
 
@@ -537,53 +543,80 @@ struct client  *client
 	int			status;
 	struct channel_in_use 	*pciu;
 
-
-	FASTLOCK(&prsrv_cast_client->addrqLock);
-
 	/*
-	 * clients which dont claim their 
-	 * channel in use block prior to
-	 * timeout must reconnect
+	 * The available field is used (abused)
+	 * here to communicate the miner version number
+	 * starting with CA 4.1. The field was set to zero
+	 * prior to 4.1
 	 */
-	pciu = MPTOPCIU(mp);
-	if(!pciu){
-		logMsg("CAS: client timeout disconnect id=%d\n",
-			mp->m_cid,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
+	client->minor_version_number = mp->m_available;
+
+	if (CA_V44(CA_PROTOCOL_VERSION,client->minor_version_number)) {
+		struct db_addr  tmp_addr;
+
+		status = db_name_to_addr(
+				mp + 1, 
+				&tmp_addr);
+		if (status < 0) {
+			return;
+		}
+		pciu = casCreateChannel (
+				client, 
+				&tmp_addr, 
+				mp->m_cid);
+		if (!pciu) {
+			SEND_LOCK(client);
+			send_err(mp, 
+				ECA_ALLOCMEM, 
+				client, 
+				RECORD_NAME(&tmp_addr));
+			SEND_UNLOCK(client);
+			return;
+		}
+	}
+	else {
+		FASTLOCK(&prsrv_cast_client->addrqLock);
+		/*
+		 * clients which dont claim their 
+		 * channel in use block prior to
+		 * timeout must reconnect
+		 */
+		pciu = MPTOPCIU(mp);
+		if(!pciu){
+			logMsg("CAS: client timeout disconnect id=%d\n",
+				mp->m_cid,
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL);
+			FASTUNLOCK(&prsrv_cast_client->addrqLock);
+			free_client(client);
+			exit(0);
+		}
+
+		/*
+		 * remove channel in use block from
+		 * the UDP client where it could time
+		 * out and place it on the client
+		 * who is claiming it
+		 */
+		ellDelete(
+			&prsrv_cast_client->addrq, 
+			&pciu->node);
 		FASTUNLOCK(&prsrv_cast_client->addrqLock);
-       		free_client(client);
-		exit(0);
+
+		/* 
+		 * Any other client attachment is a severe error
+		 */
+		assert (pciu->client==prsrv_cast_client);
+
+		FASTLOCK(&prsrv_cast_client->addrqLock);
+		pciu->client = client;
+		ellAdd(&client->addrq, &pciu->node);
+		FASTUNLOCK(&prsrv_cast_client->addrqLock);
 	}
 
-	/*
-	 * remove channel in use block from
-	 * the UDP client where it could time
-	 * out and place it on the client
-	 * who is claiming it
-	 */
-	ellDelete(
-		&prsrv_cast_client->addrq, 
-		&pciu->node);
-	FASTUNLOCK(&prsrv_cast_client->addrqLock);
-
-	/* 
-	 * Any other client attachment is a severe error
-	 */
-	if(pciu->client!=prsrv_cast_client){
-		logMsg("CAS: bad channel claim disconnect %d %x %x\n",
-			mp->m_cid,
-			(int)pciu,
-			(int)pciu->client,
-			NULL,
-			NULL,
-			NULL);
-       		free_client(client);
-		exit(0);
-	}
 
 	/*
 	 * set up access security for this channel
@@ -608,19 +641,6 @@ struct client  *client
 	 */
 	asPutClientPvt(pciu->asClientPVT, pciu);
 
-	FASTLOCK(&prsrv_cast_client->addrqLock);
-	pciu->client = client;
-	ellAdd(&client->addrq, &pciu->node);
-	FASTUNLOCK(&prsrv_cast_client->addrqLock);
-
-	/*
-	 * The available field is used (abused)
-	 * here to communicate the miner version number
-	 * starting with CA 4.1. The field was set to zero
-	 * prior to 4.1
-	 */
-	pciu->client->minor_version_number = mp->m_available;
-
 	v42 = CA_V42(
 		CA_PROTOCOL_VERSION,
 		client->minor_version_number);
@@ -631,7 +651,9 @@ struct client  *client
 	 * the correct client, and the clients version is
 	 * known)
 	 */
-	status = asRegisterClientCallback(pciu->asClientPVT, casAccessRightsCB);
+	status = asRegisterClientCallback(
+			pciu->asClientPVT, 
+			casAccessRightsCB);
 	if(status == S_asLib_asNotActive){
 		/*
 		 * force the initial update
@@ -654,6 +676,7 @@ struct client  *client
 		claim_reply->m_type = pciu->addr.field_type;
 		claim_reply->m_count = pciu->addr.no_elements;
 		claim_reply->m_cid = pciu->cid;
+		claim_reply->m_available = pciu->sid;
 		END_MSG(client);
 		SEND_UNLOCK(client);
 	}
@@ -1543,15 +1566,24 @@ struct extmsg *mp,
 struct client  *client
 )
 {
+	struct db_addr  	tmp_addr;
 	struct extmsg 		*search_reply;
 	unsigned short		*pMinorVersion;
 	int        		status;
-	struct db_addr  	tmp_addr;
-	struct channel_in_use 	*pchannel;
-	unsigned 		sid;
-	unsigned		*pCID;
+	unsigned		sid;
 
-
+	/*
+	 * set true if max memory block drops below MAX_BLOCK_THRESHOLD
+	 */
+	if(casDontAllowSearchReplies){
+		SEND_LOCK(client);
+		send_err(mp, 
+			ECA_ALLOCMEM, 
+			client, 
+			"Server memory exhausted");
+		SEND_UNLOCK(client);
+		return;
+	}
 
 	/* Exit quickly if channel not on this node */
 	status = db_name_to_addr(
@@ -1572,25 +1604,22 @@ struct client  *client
 	}
 
 	/*
-	 * set true if max memory block drops below MAX_BLOCK_THRESHOLD
+	 * starting with V4.4 the count field is used (abused)
+	 * to store the minor version number of the client.
+	 *
+	 * New versions dont alloc the channel in response
+	 * to a search request.
 	 */
-	if(casDontAllowSearchReplies){
-		SEND_LOCK(client);
-		send_err(mp, 
-			ECA_ALLOCMEM, 
-			client, 
-			"Server memory exhausted");
-		SEND_UNLOCK(client);
-		return;
+	if (CA_V44(CA_PROTOCOL_VERSION,htons(mp->m_count))) {
+		sid = ~0U;
 	}
+	else {
+		struct channel_in_use 	*pchannel;
 
-
-	/* get block off free list if possible */
-	FASTLOCK(&rsrv_free_addrq_lck);
-	pchannel = (struct channel_in_use *) ellGet(&rsrv_free_addrq);
-	FASTUNLOCK(&rsrv_free_addrq_lck);
-	if (!pchannel) {
-		pchannel = (struct channel_in_use *) malloc(sizeof(*pchannel));
+		pchannel = casCreateChannel (
+				client, 
+				&tmp_addr, 
+				ntohs(mp->m_cid));
 		if (!pchannel) {
 			SEND_LOCK(client);
 			send_err(mp, 
@@ -1600,47 +1629,14 @@ struct client  *client
 			SEND_UNLOCK(client);
 			return;
 		}
-	}
-	memset((char *)pchannel, 0, sizeof(*pchannel));
-	ellInit(&pchannel->eventq);
-	pchannel->ticks_at_creation = tickGet();
-	pchannel->addr = tmp_addr;
-	pchannel->client = client;
-	/*
-	 * bypass read only warning
-	 */
-	pCID = (unsigned *) &pchannel->cid;
-	*pCID = mp->m_cid;
-
-	/*
-	 * allocate a server id and enter the channel pointer
-	 * in the table
-	 */
-	FASTLOCK(&rsrv_free_addrq_lck);
-	sid = bucketID++;
-	/*
-	 * bypass read only warning
-	 */
-	pCID = (unsigned *) &pchannel->sid;
-	*pCID = sid;
-	status = bucketAddItemUnsignedId (pCaBucket, &pchannel->sid, pchannel);
-	FASTUNLOCK(&rsrv_free_addrq_lck);
-	if(status!=BUCKET_SUCCESS){
-		SEND_LOCK(client);
-		send_err(mp, ECA_ALLOCMEM, client, "No room for hash table");
-		SEND_UNLOCK(client);
-		FASTLOCK(&rsrv_free_addrq_lck);
-		ellAdd(&rsrv_free_addrq, &pchannel->node);
-		FASTUNLOCK(&rsrv_free_addrq_lck);
-		return;
+		sid = pchannel->sid;
 	}
 
 	SEND_LOCK(client);
 
 	search_reply = (struct extmsg *) 
 		ALLOC_MSG(client, sizeof(*pMinorVersion));
-	if (!search_reply)
-		taskSuspend(0);
+	assert (search_reply);
 
 	*search_reply = *mp;
 	search_reply->m_postsize = sizeof(*pMinorVersion);
@@ -1661,12 +1657,75 @@ struct client  *client
 	END_MSG(client);
 	SEND_UNLOCK(client);
 
-	/* store the addr block on the cast queue until it is claimed */
+
+	return;
+}
+
+
+/*
+ * casCreateChannel ()
+ */
+LOCAL struct channel_in_use *casCreateChannel (
+struct client  	*client,
+struct db_addr 	*pAddr,
+unsigned	cid
+)
+{
+	unsigned		*pCID;
+	struct channel_in_use 	*pchannel;
+	unsigned 		sid;
+	int			status;
+
+	/* get block off free list if possible */
+	FASTLOCK(&rsrv_free_addrq_lck);
+	pchannel = (struct channel_in_use *) ellGet(&rsrv_free_addrq);
+	FASTUNLOCK(&rsrv_free_addrq_lck);
+	if (!pchannel) {
+		pchannel = (struct channel_in_use *) 
+			malloc(sizeof(*pchannel));
+		if (!pchannel) {
+			return NULL;
+		}
+	}
+	memset((char *)pchannel, 0, sizeof(*pchannel));
+	ellInit(&pchannel->eventq);
+	pchannel->ticks_at_creation = tickGet();
+	pchannel->addr = *pAddr;
+	pchannel->client = client;
+	/*
+	 * bypass read only warning
+	 */
+	pCID = (unsigned *) &pchannel->cid;
+	*pCID = cid;
+
+	/*
+	 * allocate a server id and enter the channel pointer
+	 * in the table
+	 */
+	FASTLOCK(&rsrv_free_addrq_lck);
+	sid = bucketID++;
+	/*
+	 * bypass read only warning
+	 */
+	pCID = (unsigned *) &pchannel->sid;
+	*pCID = sid;
+	status = bucketAddItemUnsignedId (
+			pCaBucket, 
+			&pchannel->sid, 
+			pchannel);
+	FASTUNLOCK(&rsrv_free_addrq_lck);
+	if(status!=BUCKET_SUCCESS){
+		FASTLOCK(&rsrv_free_addrq_lck);
+		ellAdd(&rsrv_free_addrq, &pchannel->node);
+		FASTUNLOCK(&rsrv_free_addrq_lck);
+		return NULL;
+	}
+
 	FASTLOCK(&client->addrqLock);
 	ellAdd(&client->addrq, &pchannel->node);
 	FASTUNLOCK(&client->addrqLock);
 
-	return;
+	return pchannel;
 }
 
 

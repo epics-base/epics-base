@@ -67,8 +67,8 @@ long epicsShareAPI dbcar(char	*precordname,int level)
     caLink		*pca;
     int			j;
 
-
-    if(precordname && *precordname==0) precordname=0;
+    if (precordname && ((*precordname == '\0') || !strcmp(precordname,"*")))
+        precordname = NULL;
     dbInitEntry(pdbbase,pdbentry);
     status = dbFirstRecordType(pdbentry);
     while(!status) {

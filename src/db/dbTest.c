@@ -100,6 +100,9 @@ long epicsShareAPI dbl(
     char	*fieldnames = 0;
     char 	**papfields = 0;
 
+    if(precordTypename
+    && ((*precordTypename == '\0') || !strcmp(precordTypename,"*")))
+        precordTypename = NULL;
     if (fields && (*fields == '\0'))
         fields = NULL;
     if(fields) {
@@ -673,6 +676,8 @@ long epicsShareAPI dbior(const char *pdrvName,int interest_level)
         fprintf(stderr,"no database has been loaded\n");
         return(0);
     }
+    if(pdrvName && ((*pdrvName == '\0') || !strcmp(pdrvName,"*")))
+        pdrvName = NULL;
     for(pdrvSup = (drvSup *)ellFirst(&pdbbase->drvList); pdrvSup;
     pdrvSup = (drvSup *)ellNext(&pdrvSup->node)) {
 	pname = pdrvSup->name;

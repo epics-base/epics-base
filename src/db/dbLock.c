@@ -486,6 +486,8 @@ long epicsShareAPI dblsr(char *recordname,int level)
 
     printf("globalLock %p\n",globalLock);
     printf("lockSetModifyLock %p\n",lockSetModifyLock);
+    if (recordname && ((*recordname == '\0') || !strcmp(recordname,"*")))
+        recordname = NULL;
     if(recordname) {
         dbInitEntry(pdbbase,pdbentry);
         status = dbFindRecord(pdbentry,recordname);

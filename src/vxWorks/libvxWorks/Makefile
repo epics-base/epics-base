@@ -7,8 +7,6 @@ INC += epicsDynLink.h
 SRCS += veclist.c
 SRCS += epicsDynLink.c
 
-LIBRARY_vxWorks += vxCom
-
 OBJLIB_vxWorks += vxCom
 OBJLIB_SRCS += $(SRCS)
 

@@ -12,6 +12,8 @@ PROD_HOST_WIN32   = ca_test iocLogServer
 SYS_PROD_LIBS_WIN32 = ws2_32 advapi32 user32
 
 ca_test_SRCS = ca_test_main.c ca_test.c
+iocLogServer_SRCS = iocLogServer.c
+startCArepeater_SRCS = startCArepeater.c
 
 OBJS = ca_test
 

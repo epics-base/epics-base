@@ -4,15 +4,17 @@ SRC := $(CAS)/generic
 CA := $(CAS)/../ca
 IOSRC := $(CAS)/io/bsdSocket
 STSRC := $(SRC)/st
-USR_VPATH := $(SRC) $(STSRC) $(IOSRC)
 
 include $(TOP)/configure/CONFIG
 
-SRC_DIRS += $(CAS)/generic 
+SRC_DIRS += $(SRC)
+SRC_DIRS += $(IOSRC)
+SRC_DIRS += $(STSRC)
+SRC_DIRS += $(CA)
 
 # sometimes it's good to have different C/C++ flags, not now:
-USR_CFLAGS = -I$(SRC) -I$(IOSRC) -I$(STSRC) -I$(CA) -DcaNetAddrSock
-USR_CXXFLAGS = $(USR_CFLAGS)
+USR_CPPFLAGS = -DcaNetAddrSock
+#USR_CXXFLAGS = $(USR_CFLAGS)
 
 INC += casdef.h
 INC += casEventMask.h
@@ -60,8 +62,8 @@ LIBRARY = cas
 DLL_LIBS = ca gdd Com
 SYS_DLL_LIBS = ws2_32
 
-PROD_LIBS := cas ca gdd Com 
-SYS_PROD_LIBS_WIN32 := ws2_32
+#PROD_LIBS := cas ca gdd Com 
+#SYS_PROD_LIBS_WIN32 := ws2_32
 
 include $(TOP)/configure/RULES
 

@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.30  2000/04/28 01:40:08  jhill
+// many changes
+//
 // Revision 1.29  2000/03/09 20:32:03  lange
 // Length fix for ControlEnum mapping (analogous to GraphicEnum fixes) as suggested by S. Allison
 //
@@ -122,7 +125,7 @@
 // hardcoded in same order as aitConvert.h
 // no way to detect a string type!!!!!!!
 
-epicsShareDef const int gddAitToDbr[aitConvertLast+1] = { 
+extern epicsShareDef const int gddAitToDbr[aitConvertLast+1] = { 
 	DBR_STRING,
 	DBR_CHAR,
 	DBR_CHAR,
@@ -137,7 +140,7 @@ epicsShareDef const int gddAitToDbr[aitConvertLast+1] = {
 	DBR_STRING
 };
 
-epicsShareDef const unsigned gddDbrToAitNElem = 
+extern epicsShareDef const unsigned gddDbrToAitNElem = 
         sizeof(gddAitToDbr)/sizeof(gddAitToDbr[0]);
 
 /*
@@ -200,7 +203,7 @@ epicsShareDef gddDbrToAitTable gddDbrToAit[DBM_N_DBR_TYPES] = {
 static gddApplicationTypeTable* type_table = NULL;
 static aitDataFormat local_data_format=aitLocalDataFormat;
 
-epicsShareDef const unsigned gddAitToDbrNElem = 
+extern epicsShareDef const unsigned gddAitToDbrNElem = 
         sizeof(gddDbrToAit)/sizeof(gddDbrToAit[0]);
 
 //
@@ -1817,7 +1820,7 @@ void dbMapperFixedStringDestructor::run (void *pUntyped)
 // C++ will not make a const decl external linkage unless
 // we explicitly specify extern
 //
-epicsShareDef const gddDbrMapFuncTable gddMapDbr[DBM_N_DBR_TYPES] = {
+extern epicsShareDef const gddDbrMapFuncTable gddMapDbr[DBM_N_DBR_TYPES] = {
     { mapStringToGdd,       mapGddToString },           // DBR_STRING
     { mapShortToGdd,        mapGddToShort },            // DBR_SHORT
     { mapFloatToGdd,        mapGddToFloat },            // DBR_FLOAT
@@ -1863,6 +1866,6 @@ epicsShareDef const gddDbrMapFuncTable gddMapDbr[DBM_N_DBR_TYPES] = {
 #error db mapper is out of sync with db_access.h
 #endif
 
-epicsShareDef const unsigned gddMapDbrNElem = 
+extern epicsShareDef const unsigned gddMapDbrNElem = 
         sizeof(gddMapDbr)/sizeof(gddDbrToAit[0]);
 

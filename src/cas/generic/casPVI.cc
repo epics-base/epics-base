@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  1996/12/06 22:35:06  jhill
+ * added destroyInProgress flag
+ *
  * Revision 1.5  1996/11/02 00:54:22  jhill
  * many improvements
  *
@@ -107,6 +110,12 @@ casPVI::~casPVI()
 	// when we destroyed the channels
 	//
 	casVerify (this->nIOAttached==0u);
+
+	//
+	// all monitors should have been deleted
+	// when we destroyed the channels
+	//
+	casVerify (this->nMonAttached==0u);
 }
 
 
@@ -148,10 +157,16 @@ caStatus casPVI::registerEvent ()
 //
 void casPVI::unregisterEvent()
 {
+	this->lock();
 	this->nMonAttached--;
-	if (this->nMonAttached==0u) {
+	//
+	// Dont call casPV::interestDelete() when we are in 
+	// casPVI::~casPVI() (and casPV no longr exists)
+	//
+	if (this->nMonAttached==0u && !this->destroyInProgress) {
 		(*this)->interestDelete();
 	}
+	this->unlock();
 }
 
 //

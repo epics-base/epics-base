@@ -106,7 +106,7 @@ unsigned long	count,
 chid		chix,
 const void	*pvalue
 );
-LOCAL void ca_default_exception_handler(struct exception_handler_args args);
+LOCAL void ca_default_exception_handler (struct exception_handler_args args);
 
 LOCAL int cac_push_msg(
 struct ioc_in_use 	*piiu,
@@ -978,7 +978,7 @@ int	reply_type
 
 	mptr->m_cmmd = htons (CA_PROTO_SEARCH);
 	mptr->m_available = chix->cid;
-	mptr->m_type = reply_type;
+	mptr->m_dataType = reply_type;
 	mptr->m_count = htons (CA_MINOR_VERSION);
 	mptr->m_cid = chix->cid;
 
@@ -1301,7 +1301,7 @@ LOCAL int issue_get_callback(evid monix, ca_uint16_t cmmd)
 	
 	/* msg header only on db read notify req	 */
 	hdr.m_cmmd = htons (cmmd);
-	hdr.m_type = htons ((ca_uint16_t)monix->type);
+	hdr.m_dataType = htons ((ca_uint16_t)monix->type);
 	hdr.m_count = htons (count);
 	hdr.m_available = monix->id;
 	hdr.m_postsize = 0;
@@ -1723,7 +1723,7 @@ const void	*pvalue
 #	endif /*CONVERSION_REQUIRED*/
 
 	hdr.m_cmmd = htons(cmd);
-	hdr.m_type = htons(((ca_uint16_t)type));
+	hdr.m_dataType = htons(((ca_uint16_t)type));
 	hdr.m_count = htons(((ca_uint16_t)count));
 	hdr.m_cid = chix->id.sid;
 	hdr.m_available = id;
@@ -2066,7 +2066,7 @@ int ca_request_event(evid monix)
 	/* msg header	 */
 	msg.m_header.m_cmmd = htons(CA_PROTO_EVENT_ADD);
 	msg.m_header.m_available = monix->id;
-	msg.m_header.m_type = htons((ca_uint16_t)monix->type);
+	msg.m_header.m_dataType = htons((ca_uint16_t)monix->type);
 	msg.m_header.m_count = htons(count);
 	msg.m_header.m_cid = chix->id.sid;
 	msg.m_header.m_postsize = sizeof(msg.m_info);
@@ -2304,7 +2304,7 @@ int epicsShareAPI ca_clear_event (evid monix)
 		/* msg header	 */
 		hdr.m_cmmd = htons(CA_PROTO_EVENT_CANCEL);
 		hdr.m_available = pMon->id;
-		hdr.m_type = htons(chix->privType);
+		hdr.m_dataType = htons(chix->privType);
 		hdr.m_count = htons(chix->privCount);
 		hdr.m_cid = chix->id.sid;
 		hdr.m_postsize = 0;
@@ -2456,7 +2456,7 @@ int epicsShareAPI ca_clear_channel (chid pChan)
 	hdr.m_cmmd = htons(CA_PROTO_CLEAR_CHANNEL);
 	hdr.m_available = pChan->cid;
 	hdr.m_cid = pChan->id.sid;
-	hdr.m_type = htons(0);
+	hdr.m_dataType = htons(0);
 	hdr.m_count = htons(0);
 	hdr.m_postsize = 0;
 
@@ -2820,13 +2820,6 @@ void genLocalExcepWFL (long stat, char *ctx, char *pFile, unsigned lineNo)
 {
 	struct exception_handler_args args;
 
-	/*
-	* NOOP if they disable exceptions
-	*/
-	if (!ca_static->ca_exception_func) {
-	    return;
-	}
- 
 	args.usr = (void *) ca_static->ca_exception_arg;
 	args.chid = NULL;
 	args.type = -1;
@@ -2837,10 +2830,21 @@ void genLocalExcepWFL (long stat, char *ctx, char *pFile, unsigned lineNo)
 	args.ctx = ctx;
 	args.pFile = pFile;
 	args.lineNo = lineNo;
- 
-	LOCK;
-	(*ca_static->ca_exception_func) (args);
-	UNLOCK;
+
+    /*
+     * dont lock if there is no CA context
+     */
+    if (ca_static==NULL) {
+        ca_default_exception_handler (args);
+    }
+ 	/*
+	 * NOOP if they disable exceptions
+	 */
+    else if (ca_static->ca_exception_func!=NULL) {
+	    LOCK;
+	    (*ca_static->ca_exception_func) (args);
+	    UNLOCK;
+    }
 }
 
 /*
@@ -2867,12 +2871,9 @@ READONLY char * epicsShareAPI ca_message (long ca_status)
   	if( msgNo < NELEMENTS(ca_message_text) ){
 		return ca_message_text[msgNo];
 	}
-	else {
-		sprintf(ca_static->ca_new_err_code_msg_buf, 
-	"new CA message number %u known only by server - see caerr.h", 
-			msgNo);
-		return ca_static->ca_new_err_code_msg_buf; 
-	}
+    else {
+        return "new CA message number known only by server - see caerr.h";
+    }
 }
 
 /*
@@ -2884,56 +2885,63 @@ const char	*message,
 const char	*pfilenm, 
 int		lineno)
 {
-  static const char  *severity[] = 
-		{
-		"Warning",
-		"Success",
-		"Error",
-		"Info",
-		"Fatal",
-		"Fatal",
-		"Fatal",
-		"Fatal"
-		};
+    ca_signal_formated (ca_status, pfilenm, lineno, message);
+}
 
-  ca_printf(
-"CA.Client.Diagnostic..............................................\n");
+/*
+ * ca_signal_formated()
+ */
+void epicsShareAPI ca_signal_formated (long ca_status, const char *pfilenm, 
+                                       int lineno, const char *pFormat, ...)
+{
+    va_list             theArgs;
+    static const char   *severity[] = 
+    {
+        "Warning",
+        "Success",
+        "Error",
+        "Info",
+        "Fatal",
+        "Fatal",
+        "Fatal",
+        "Fatal"
+    };
+    
+    va_start (theArgs, pFormat);  
+    
+    ca_printf (
+        "CA.Client.Diagnostic..............................................\n");
+    
+    ca_printf (
+        "    %s: \"%s\"\n", 
+        severity[CA_EXTRACT_SEVERITY(ca_status)], 
+        ca_message (ca_status));
 
-  ca_printf(
-"    Message: \"%s\"\n", ca_message(ca_status));
-
-  if(message)
+    if  (pFormat) {
+        ca_printf ("    Context: \"");
+        ca_vPrintf (pFormat, theArgs);
+        ca_printf ("\"\n");
+    }
+        
+    if (pfilenm) {
+        ca_printf(
+            "    Source File: %s Line Number: %d\n",
+            pfilenm,
+            lineno);	
+    }
+    
+    /*
+     *	Terminate execution if unsuccessful
+     */
+    if( !(ca_status & CA_M_SUCCESS) && 
+        CA_EXTRACT_SEVERITY(ca_status) != CA_K_WARNING ){
+        abort();
+    }
+    
     ca_printf(
-"    Severity: \"%s\" Context: \"%s\"\n", 
-	severity[CA_EXTRACT_SEVERITY(ca_status)],
-	message);
-  else
-    ca_printf(
-"    Severity: %s\n", severity[CA_EXTRACT_SEVERITY(ca_status)]);
-
-  if(pfilenm){
-	ca_printf(
-"    Source File: %s Line Number: %d\n",
-		pfilenm,
-		lineno);	
-  }
-
-  /*
-   *
-   *
-   *	Terminate execution if unsuccessful
-   *
-   *
-   */
-  if( !(ca_status & CA_M_SUCCESS) && 
-		CA_EXTRACT_SEVERITY(ca_status) != CA_K_WARNING ){
-      abort();
-  }
-
-  ca_printf(
-"..................................................................\n");
-
-
+        "..................................................................\n");
+    
+    va_end (theArgs);
 }
 
 
@@ -3008,7 +3016,7 @@ int echo_request(struct ioc_in_use *piiu, ca_time *pCurrentTime)
 	int 		status;
 
 	hdr.m_cmmd = htons(CA_PROTO_ECHO);
-	hdr.m_type = htons(0);
+	hdr.m_dataType = htons(0);
 	hdr.m_count = htons(0);
 	hdr.m_cid = htons(0);
 	hdr.m_available = htons(0);
@@ -3041,7 +3049,7 @@ void noop_msg(struct ioc_in_use *piiu)
 	int 	status;
 
 	hdr.m_cmmd = htons(CA_PROTO_NOOP);
-	hdr.m_type = htons(0);
+	hdr.m_dataType = htons(0);
 	hdr.m_count = htons(0);
 	hdr.m_cid = htons(0);
 	hdr.m_available = htons(0);
@@ -3240,29 +3248,27 @@ int issue_claim_channel (chid pchan)
  *
  *
  */
-LOCAL void ca_default_exception_handler(struct exception_handler_args args)
+LOCAL void ca_default_exception_handler (struct exception_handler_args args)
 {
-	const char *pCtx;
-
-	/*
-	 * LOCK around use of sprintf buffer
-	 */
-	LOCK;
 	if (args.chid && args.op != CA_OP_OTHER) {
-		sprintf(sprintf_buf, 
-			"%s - with request chan=%s op=%ld data type=%s count=%ld", 
-			args.ctx,
-			ca_name(args.chid),
-			args.op,
-			dbr_type_to_text(args.type),
-			args.count);	 
-		pCtx = sprintf_buf;
+        ca_signal_formated (
+            args.stat, 
+            args.pFile, 
+            args.lineNo, 
+            "%s - with request chan=%s op=%ld data type=%s count=%ld",
+		    args.ctx,
+		    ca_name (args.chid),
+		    args.op,
+		    dbr_type_to_text(args.type),
+		    args.count);
 	}
 	else {
-		pCtx = args.ctx;
+        ca_signal_formated (
+            args.stat, 
+            args.pFile, 
+            args.lineNo, 
+            args.ctx);
 	}
-	ca_signal_with_file_and_lineno(args.stat, pCtx, args.pFile, args.lineNo);
-	UNLOCK;
 }
 
 /*
@@ -3424,27 +3430,42 @@ int (*ca_printf_func)(const char *pformat, va_list args)
 /*
  *      ca_printf()
  */
-int epicsShareAPI ca_printf(char *pformat, ...)
+int epicsShareAPI ca_printf (const char *pformat, ...)
 {
-	int		(*ca_printf_func)(const char *pformat, va_list args);
-	va_list		theArgs;
-	int		status;
-
-	va_start(theArgs, pformat);
-
-	ca_printf_func = epicsVprintf;
-	if (ca_static) {
-		if (ca_static->ca_printf_func) {
-			ca_printf_func = ca_static->ca_printf_func;
-		}
-	}
-
-	status = (*ca_printf_func) (pformat, theArgs);
-
-	va_end(theArgs);
-
-	return status;
+    va_list theArgs;
+    int     status;
+    
+    va_start (theArgs, pformat);
+    
+    status = ca_vPrintf (pformat, theArgs);
+    
+    va_end (theArgs);
+    
+    return status;
 }
+
+/*
+ *      ca_vPrintf()
+ */
+int epicsShareAPI ca_vPrintf (const char *pformat, va_list args)
+{
+    int		(*ca_printf_func)(const char *pformat, va_list args);
+    
+    if (ca_static) {
+        if (ca_static->ca_printf_func) {
+            ca_printf_func = ca_static->ca_printf_func;
+        }
+        else {
+            ca_printf_func = epicsVprintf;
+        }
+    }
+    else {
+        ca_printf_func = epicsVprintf;
+    }
+    
+    return (*ca_printf_func) (pformat, args);
+}
+
 
 /*
  * ca_get_field_type()

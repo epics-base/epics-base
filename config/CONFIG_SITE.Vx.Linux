@@ -17,10 +17,10 @@
 #CMPLR_SUFFIX=
 #GCC    = $(GNU_BIN)/$(CMPLR_PREFIX)gcc$(CMPLR_SUFFIX) -B$(GNU_LIB)/gcc-lib/ -nostdinc
 #AR     = $(GNU_BIN)/$(CMPLR_PREFIX)ar$(CMPLR_SUFFIX)
-#CPP    = $(GNU_BIN)/$(CMPLR_PREFIX)cc$(CMPLR_SUFFIX) -B$(GNU_LIB)/gcc-lib/ -nostdinc -x c -E
+#CPP    = $(GNU_BIN)/$(CMPLR_PREFIX)gcc$(CMPLR_SUFFIX) -B$(GNU_LIB)/gcc-lib/ -nostdinc -x c -E
 #RANLIB = $(GNU_BIN)/$(CMPLR_PREFIX)ranlib$(CMPLR_SUFFIX)
 #LD     = $(GNU_BIN)/$(CMPLR_PREFIX)ld$(CMPLR_SUFFIX) -r
-#G++    = $(GNU_BIN)/$(CMPLR_PREFIX)cc$(CMPLR_SUFFIX) -B$(GNU_LIB)/gcc-lib/ -nostdinc
+#G++    = $(GNU_BIN)/$(CMPLR_PREFIX)g++$(CMPLR_SUFFIX) -B$(GNU_LIB)/gcc-lib/ -nostdinc
 #LD_G++ = $(GNU_BIN)/$(CMPLR_PREFIX)ld$(CMPLR_SUFFIX) -r
 #NM     = $(GNU_BIN)/$(CMPLR_PREFIX)nm$(CMPLR_SUFFIX)
 ## ---- end jba overrides

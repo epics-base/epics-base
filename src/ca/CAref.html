@@ -982,7 +982,10 @@ resulting from the initiating write operation complete. If unsuccessful the
 call back function is invoked indicating bad status. If the channel
 disconnects before a put callback request can be completed, then the client's
 call back function is called with bad status, but this does not gaurantee
-that the server did not receive and process the request before it
+that the server did not receive and process the request before the
+disconnect.</p>
+
+<p>All of these functions return ECA_DISCONN if the channel is currently
 disconnected.</p>
 
 <p>All put requests are accumulated (buffered) and not forwarded to the IOC
@@ -1043,6 +1046,8 @@ This allows several requests to be efficiently combined into one message.</p>
 
 <p>ECA_ALLOCMEM - Unable to allocate memory</p>
 
+<p>ECA_DISCONN - Channel is disconnected</p>
+
 <h4>See Also</h4>
 ca_flush_io()
 
@@ -1075,6 +1080,9 @@ the retrieved value. Note that ca_pend_io will not block for the delivery of
 values requested by ca_get_callback. If the channel disconnects before a get
 callback request can be completed, then the clients call back function is
 called with bad status.
+
+<p>All of these functions return ECA_DISCONN if the channel is currently
+disconnected.</p>
 
 <p>All get requests are accumulated (buffered) and not forwarded to the IOC
 until one of ca_flush_io, ca_pend_io, ca_pend_event, or ca_sg_pend are
@@ -1135,6 +1143,8 @@ in one message.</p>
 
 <p>ECA_ALLOCMEM - Unable to allocate memory</p>
 
+<p>ECA_DISCONN - Channel is disconnected</p>
+
 <h4>See Also</h4>
 ca_pend_io()
 
@@ -1166,13 +1176,18 @@ be invoked whenever the process variable undergoes significant state changes.
 A significant change can be a change in the process variable's value, alarm
 status, or alarm severity. In the process control function block database the
 deadband field determines the magnitude of a significant change for for the
-process variable's value.</p>
+process variable's value. Each call to this function consumes resources in
+the client library and potentially a CA server until one of ca_clear_channel
+or ca_clear_event is called.</p>
 
 <p>Subscriptions may be installed or canceled against both connected and
-disconnected channels. The specified USERFUNC is always called once
-immediately after establishing each new connection with the process variable
-or immediately from within ca_add_event() if the client and server share the
-same address space.</p>
+disconnected channels. The specified USERFUNC is called once immediately
+after the subscription is installed with the process variable's current state
+if the process variable is connected. Otherwise, the specified USERFUNC is
+called immediately after establishing a connection (or reconnection) with the
+process variable. The specified USERFUNC is called immediately with the
+process variable's current state from within ca_add_event() if the client and
+the process variable share the same address space.</p>
 
 <p>If a subscription is installed on a channel in a disconnected state then
 the requested count will be set to the native maximum element count of the

@@ -774,6 +774,9 @@ STATIC int ErResetAll(ApsErStruct *pParm)
  *
  * Receive a hardware IRQ from an ER board.
  *
+ * BUG -- should add errMessage calls for problem events & include storm
+ *        control on them.
+ *
  ******************************************************************************/
 STATIC void ErIrqHandler(ErLinkStruct *pLink)
 {

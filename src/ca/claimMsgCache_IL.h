@@ -23,7 +23,7 @@ inline claimMsgCache::~claimMsgCache ()
     }
 }
 
-inline int claimMsgCache::deliverMsg ( tcpiiu &iiu )
+inline int claimMsgCache::deliverMsg ( netiiu &iiu )
 {
     if ( v44 ) {
         return iiu.createChannelRequest ( this->clientId, this->pStr, this->currentStrLen );
@@ -33,7 +33,7 @@ inline int claimMsgCache::deliverMsg ( tcpiiu &iiu )
     }
 }
 
-inline bool claimMsgCache::channelMatches ( class nciu &chan )
+inline void claimMsgCache::connectChannel ( cac & cacRef )
 {
-    return chan.id == this->clientId;
+    cacRef.connectChannel ( this->clientId );
 }

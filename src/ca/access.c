@@ -99,6 +99,10 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.105  1998/09/24 21:10:38  jhill
+ * o test routine added
+ * o allow large PV names
+ *
  * Revision 1.104  1998/06/16 00:24:26  jhill
  * avoid purify warning
  *
@@ -297,7 +301,7 @@ caHdr		**ppMsg
 );
 LOCAL int	issue_get_callback(
 evid 		monix, 
-unsigned 	cmmd
+ca_uint16_t 	cmmd
 );
 #ifdef vxWorks
 LOCAL void ca_event_handler(
@@ -310,9 +314,9 @@ LOCAL void ca_put_notify_action(PUTNOTIFY *ppn);
 #endif
 LOCAL void 	ca_pend_io_cleanup();
 
-static int issue_ca_array_put
+LOCAL int issue_ca_array_put
 (
-unsigned	cmd,
+ca_uint16_t	cmd,
 unsigned	id,
 chtype		type,
 unsigned long	count,
@@ -1488,11 +1492,11 @@ int 	status)
  *	ISSUE_GET_CALLBACK()
  *	(lock must be on)
  */
-LOCAL int issue_get_callback(evid monix, unsigned cmmd)
+LOCAL int issue_get_callback(evid monix, ca_uint16_t cmmd)
 {
 	int			status;
 	chid   			chix = monix->chan;
-	unsigned        	count;
+	ca_uint16_t        	count;
 	caHdr		hdr;
 	struct ioc_in_use	*piiu;
 
@@ -1513,12 +1517,12 @@ LOCAL int issue_get_callback(evid monix, unsigned cmmd)
 		count = chix->privCount;
 	}
 	else{
-		count = monix->count;
+		count = (ca_uint16_t) monix->count;
 	}
 	
 	/* msg header only on db read notify req	 */
 	hdr.m_cmmd = htons (cmmd);
-	hdr.m_type = htons (monix->type);
+	hdr.m_type = htons ((ca_uint16_t)monix->type);
 	hdr.m_count = htons (count);
 	hdr.m_available = monix->id;
 	hdr.m_postsize = 0;
@@ -1849,7 +1853,7 @@ LOCAL int check_a_dbr_string(const char *pStr, const unsigned count)
  */
 LOCAL int issue_ca_array_put
 (
-unsigned	cmd,
+ca_uint16_t	cmd,
 unsigned	id,
 chtype		type,
 unsigned long	count,
@@ -1946,7 +1950,7 @@ const void	*pvalue
 #	endif /*CONVERSION_REQUIRED*/
 
 	hdr.m_cmmd = htons(cmd);
-	hdr.m_type = htons(type);
+	hdr.m_type = htons((ca_uint16_t)type);
 	hdr.m_count = htons((ca_uint16_t)count);
 	hdr.m_cid = chix->id.sid;
 	hdr.m_available = id;
@@ -2265,7 +2269,7 @@ int ca_request_event(evid monix)
 {
 	int			status;
 	chid   			chix = monix->chan;
-	unsigned        	count;
+	ca_uint16_t        	count;
 	struct monops		msg;
 	struct ioc_in_use	*piiu;
 	ca_float32_t		p_delta;
@@ -2290,13 +2294,13 @@ int ca_request_event(evid monix)
 		count = chix->privCount;
 	}
 	else{
-		count = monix->count;
+		count = (ca_uint16_t) monix->count;
 	}
 
 	/* msg header	 */
 	msg.m_header.m_cmmd = htons(CA_PROTO_EVENT_ADD);
 	msg.m_header.m_available = monix->id;
-	msg.m_header.m_type = htons(monix->type);
+	msg.m_header.m_type = htons((ca_uint16_t)monix->type);
 	msg.m_header.m_count = htons(count);
 	msg.m_header.m_cid = chix->id.sid;
 	msg.m_header.m_postsize = sizeof(msg.m_info);

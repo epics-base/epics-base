@@ -39,8 +39,9 @@ int init_osi_time ()
 		fprintf(stderr,"timer setup failed\n");
 		return 2;
 	}
-	offset_secs = (long)time(NULL) - (long)timeGetTime()/1000;
 	prev_time =  timeGetTime();
+	offset_secs = (long)time(NULL) - (long)prev_time/1000;
+
 
 	return 0;
 }
@@ -74,7 +75,6 @@ osiTime osiTime::getCurrent ()
 	prev_time = now;
 
 	// compute secs and nanosecs from millisecs:
-        return osiTime (now / 1000ul + offset_secs, (now % 1000ul) * 1000000ul);
+	return osiTime (now / 1000ul + offset_secs, (now % 1000ul) * 1000000ul);
 }
-
 

@@ -72,7 +72,7 @@ vpath %.h $(USER_VPATH)
 #	If you use INC_$(ARCH_CLASS), you need the special include
 #	only for the specified ARCH_CLASS!
 #
-ifneq (x$(USR_CFLAGS_$(ARCH_CLASS)),x)
+ifneq ($(strip $(USR_CFLAGS_$(ARCH_CLASS))),)
 USR_CFLAGS+=$(subst -nil-,,$(USR_CFLAGS_$(ARCH_CLASS)))
 else
 ifdef USR_CFLAGS_DEFAULT
@@ -80,7 +80,7 @@ USR_CFLAGS+=$(USR_CFLAGS_DEFAULT)
 endif
 endif
 
-ifneq (x$(USR_CXXFLAGS_$(ARCH_CLASS)),x)
+ifneq ($(strip $(USR_CXXFLAGS_$(ARCH_CLASS))),)
 USR_CXXFLAGS+=$(subst -nil-,,$(USR_CXXFLAGS_$(ARCH_CLASS)))
 else
 ifdef USR_CXXFLAGS_DEFAULT
@@ -88,7 +88,7 @@ USR_CXXFLAGS+=$(USR_CXXFLAGS_DEFAULT)
 endif
 endif
 
-ifneq (x$(USR_LDFLAGS_$(ARCH_CLASS)),x)
+ifneq ($(strip $(USR_LDFLAGS_$(ARCH_CLASS))),)
 USR_LDFLAGS+=$(subst -nil-,,$(USR_LDFLAGS_$(ARCH_CLASS)))
 else
 ifdef USR_LDFLAGS_DEFAULT
@@ -98,7 +98,7 @@ endif
 
 #	check for special includes:
 #
-ifneq (x$(INC_$(ARCH_CLASS)),x)
+ifneq ($(strip $(INC_$(ARCH_CLASS))),)
 #	os-specific includes go to the include/os-directory:
 OSINC += $(subst -nil-,,$(INC_$(ARCH_CLASS)))
 else
@@ -109,7 +109,7 @@ endif
 
 #	concat specific library contents (if defined) to LIBCONTENS
 #
-ifneq (x$(LIBSRCS_$(ARCH_CLASS)),x)
+ifneq ($(strip $(LIBSRCS_$(ARCH_CLASS))),)
 LIBSRCS += $(subst -nil-,,$(LIBSRCS_$(ARCH_CLASS)))
 else
 
@@ -128,7 +128,7 @@ endif
 #
 #	concat specific library contents (if defined) to PROD_LIBS
 #
-ifneq (x$(PROD_LIBS_$(ARCH_CLASS)),x)
+ifneq ($(strip $(PROD_LIBS_$(ARCH_CLASS))),)
 PROD_LIBS += $(subst -nil-,,$(PROD_LIBS_$(ARCH_CLASS)))
 
 else
@@ -142,7 +142,7 @@ endif
 #
 #	concat specific library contents (if defined) to USR_LIBS
 #
-ifneq (x$(USR_LIBS_$(ARCH_CLASS)),x)
+ifneq ($(strip $(USR_LIBS_$(ARCH_CLASS))),)
 USR_LIBS += $(subst -nil-,,$(USR_LIBS_$(ARCH_CLASS)))
 
 else
@@ -156,7 +156,7 @@ endif
 #
 #	concat specific library contents (if defined) to SYS_PROD_LIBS
 #
-ifneq (x$(SYS_PROD_LIBS_$(ARCH_CLASS)),x)
+ifneq ($(strip $(SYS_PROD_LIBS_$(ARCH_CLASS))),)
 SYS_PROD_LIBS += $(subst -nil-,,$(SYS_PROD_LIBS_$(ARCH_CLASS)))
 
 else
@@ -170,7 +170,7 @@ endif
 #
 #	concat specific products
 #
-ifneq (x$(PROD_$(ARCH_CLASS)),x)
+ifneq ($(strip $(PROD_$(ARCH_CLASS))),)
 PROD += $(subst -nil-,,$(PROD_$(ARCH_CLASS)))
 
 else
@@ -184,7 +184,7 @@ endif
 #
 #	concat specific scripts
 #
-ifneq (x$(SCRIPTS_$(ARCH_CLASS)),x)
+ifneq ($(strip $(SCRIPTS_$(ARCH_CLASS))),)
 SCRIPTS += $(subst -nil-,,$(SCRIPTS_$(ARCH_CLASS)))
 
 else
@@ -198,7 +198,7 @@ endif
 #
 #	concat specific resource files
 #
-ifneq (x$(RCS_$(ARCH_CLASS)),x)
+ifneq ($(strip $(RCS_$(ARCH_CLASS))),)
 RCS += $(subst -nil-,,$(RCS_$(ARCH_CLASS)))
 else
 ifdef RCS_DEFAULT
@@ -271,7 +271,7 @@ INSTALL_DBDNAME = $(DBDNAME:%= $(INSTALL_DBD)/%)
 MAN_DIRECTORY_TARGETS = $(foreach n, $(MANLIST),$(INSTALL_MAN)/man$(n))
 
 #---------------------------------------------------------------
-ifneq (x$(SHARED_LIBRARIES_$(ARCH_CLASS)),x)
+ifneq ($(strip $(SHARED_LIBRARIES_$(ARCH_CLASS))),)
 SHARED_LIBRARIES+=$(subst -nil-,,$(SHARED_LIBRARIES_$(ARCH_CLASS)))
 else
 ifdef SHARED_LIBRARIES_DEFAULT
@@ -359,21 +359,16 @@ clean::
 #---------------------------------------------------------------
 #	Products
 #
+
 ifdef PROD
 
 COND_PROD_SRCS=$(foreach prod, $(basename $(PROD)), $($(prod)_SRCS))
 COND_PROD_RCS=$(foreach prod, $(basename $(PROD)), $($(prod)_RCS) $($(prod)_RCS_$(ARCH_CLASS)))
 COND_PROD_LIBS=$(foreach prod, $(basename $(PROD)), $($(prod)_LIBS))
 
-ifeq ($(COND_PROD_SRCS) $(COND_PROD_RCS) $(COND_PROD_LIBS)x,x)
-PRODNAME=$(PROD)
-PRODNAME_SRCS=$(SRCS)
-PRODNAME_RCS=$(RCS)
-endif
-
 ifdef PRODNAME
 
-ifneq (x$(PRODNAME_SRCS_$(ARCH_CLASS)),x)
+ifneq ($(strip $(PRODNAME_SRCS_$(ARCH_CLASS))),)
 PRODNAME_SRCS += $(subst -nil-,,$(PRODNAME_SRCS_$(ARCH_CLASS)))
 else
 ifdef PRODNAME_SRCS_DEFAULT
@@ -381,7 +376,7 @@ PRODNAME_SRCS += $(PRODNAME_SRCS_DEFAULT)
 endif
 endif
 
-ifneq (x$(PRODNAME_RCS_$(ARCH_CLASS)),x)
+ifneq ($(strip $(PRODNAME_RCS_$(ARCH_CLASS))),)
 PRODNAME_RCS += $(subst -nil-,,$(PRODNAME_RCS_$(ARCH_CLASS)))
 else
 ifdef PRODNAME_RCS_DEFAULT
@@ -413,7 +408,12 @@ else # PRODNAME not defined
 # We have to use the product's true dependancies and
 # call make again to determine if product should be rebuilt
 
+ifeq ($(strip $(SRCS) $(COND_PROD_SRCS)),)
+PROD_OBJS=$(addsuffix $(OBJ), $(basename $(PROD)))
+else
 PROD_OBJS=$(addsuffix $(OBJ), $(basename $(SRCS) $(COND_PROD_SRCS)))
+endif
+
 PROD_RESS=$(addsuffix $(RES), $(basename $(RCS)  $(COND_PROD_RCS)))
 
 PROD_MAKE_COMMAND=$(MAKE) $@\

@@ -1,6 +1,6 @@
 # $Id$
 
-ifneq (x$(LIBOBJS_$(ARCH_CLASS)),x)
+ifneq ($(strip $(LIBOBJS_$(ARCH_CLASS))),)
 LIBOBJS+=$(subst -nil-,,$(LIBOBJS_$(ARCH_CLASS)))
 else
 ifdef LIBOBJS_DEFAULT

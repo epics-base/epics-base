@@ -122,12 +122,8 @@ static double	local_random();
 #define PI 3.141592654
 #endif
 
-<<<<<<< calcPerform.c
 epicsShareFunc long epicsShareAPI 
 	calcPerform(double *parg, double *presult, char *post)
-=======
-long calcPerform( double *parg, double *presult, char  *post)
->>>>>>> 1.23
 {
 	double *pstacktop;	/* stack of values	*/
 	double		stack[80];

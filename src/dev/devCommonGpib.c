@@ -3,6 +3,9 @@
 
 /*
  * $Log$
+ * Revision 1.32  1997/04/09 19:35:56  mrk
+ * makesure GPIBFASTO has val in range
+ *
  * Revision 1.31  1997/04/09 18:33:49  mrk
  * Restore original
  *
@@ -93,8 +96,10 @@
 
 #include	<vxWorks.h>
 #include	<taskLib.h>
+#include	<tickLib.h>
 #include	<rngLib.h>
 #include	<types.h>
+#include	<string.h>
 #include	<stdioLib.h>
 #include	<stdlib.h>
 
@@ -636,7 +641,6 @@ struct stringinRecord	*psi;
 void 			(*process)();
 {
   long 	result;
-  struct gpibDpvt *dpvt;	/* pointer to gpibDpvt, not yet assigned */
   char		message[100];
   struct devGpibParmBlock *parmBlock;
 
@@ -674,7 +678,6 @@ struct stringoutRecord	*pso;
 void 			(*process)();
 {
   long		result;
-  struct gpibDpvt *dpvt;	/* pointer to gpibDpvt, not yet assigned */
   char		message[100];
   struct devGpibParmBlock *parmBlock;
 
@@ -787,7 +790,7 @@ struct link	*plink;
     while ((pdpvt->phwpvt != NULL) && !foundIt)
     {
       if (*parmBlock->debugFlag > 5)
-	printf("%s: Checking hwpvt 0x%08.8X, type %d, link %d, device %d\n",
+	printf("%s: Checking hwpvt %p, type %d, link %d, device %d\n",
 	    parmBlock->name, pdpvt->phwpvt, pdpvt->phwpvt->linkType, 
 	    pdpvt->phwpvt->link, pdpvt->phwpvt->device);
 
@@ -844,7 +847,7 @@ struct link	*plink;
     (*(drvGpib.ioctl))(pdpvt->phwpvt->linkType, pdpvt->phwpvt->link, pdpvt->phwpvt->bug, IBGETLINK, -1, &(pdpvt->head.pibLink));
 
     if (*parmBlock->debugFlag)
-      printf("ioctl-IBGETLINK returned 0x%08.8X\n", pdpvt->head.pibLink);
+      printf("ioctl-IBGETLINK returned %p\n", pdpvt->head.pibLink);
 
     if (*parmBlock->debugFlag > 5)
       printf("initXx checking GPIB address for record >%s< device >%s<\n", prec->name, parmBlock->name);
@@ -1380,7 +1383,7 @@ int		srqStatus;
     parmBlock = (struct devGpibParmBlock *)(((gDset*)(pai->dset))->funPtr[pai->dset->number]);
 
     if (*parmBlock->debugFlag || ibSrqDebug)
-        printf("devGpibLib_aiGpibSrq(0x%08.8X, 0x%02.2X): processing srq\n", pdpvt, srqStatus);
+        printf("devGpibLib_aiGpibSrq(%p, 0x%2.2X): processing srq\n", pdpvt, srqStatus);
 
     pdpvt->phwpvt->srqCallback = NULL;	/* unmark the handler */
     pdpvt->phwpvt->parm = (caddr_t)NULL;
@@ -1541,7 +1544,7 @@ int		srqStatus;
     parmBlock = (struct devGpibParmBlock *)(((gDset*)(pli->dset))->funPtr[pli->dset->number]);
 
     if (*parmBlock->debugFlag || ibSrqDebug)
-        printf("devGpibLib_liGpibSrq(0x%08.8X, 0x%02.2X): processing srq\n", pdpvt, srqStatus);
+        printf("devGpibLib_liGpibSrq(%p, 0x%2.2X): processing srq\n", pdpvt, srqStatus);
 
     pdpvt->phwpvt->srqCallback = NULL;	/* unmark the handler */
     pdpvt->phwpvt->parm = (caddr_t)NULL;
@@ -1699,7 +1702,7 @@ int             srqStatus;
     parmBlock = (struct devGpibParmBlock *)(((gDset*)(pbi->dset))->funPtr[pbi->dset->number]);
 
     if (*parmBlock->debugFlag || ibSrqDebug)
-        printf("devGpibLib_biGpibSrq(0x%08.8X, 0x%02.2X): processing srq\n", pdpvt, srqStatus);
+        printf("devGpibLib_biGpibSrq(%p, 0x%2.2X): processing srq\n", pdpvt, srqStatus);
 
     pdpvt->phwpvt->srqCallback = NULL;   /* unmark the handler */
     pdpvt->phwpvt->parm = (caddr_t)NULL;   /* unmark the handler */
@@ -1772,7 +1775,6 @@ devGpibLib_boGpibWork(pdpvt)
 struct gpibDpvt *pdpvt;
 {
     int	cnvrtStat = OK;
-    int	strStat = OK;
     struct boRecord *pbo= ((struct boRecord *)(pdpvt->precord));
     struct gpibCmd      *pCmd;
     struct devGpibParmBlock *parmBlock;
@@ -1859,7 +1861,7 @@ int             srqStatus;
     parmBlock = (struct devGpibParmBlock *)(((gDset*)(pmbbi->dset))->funPtr[pmbbi->dset->number]);
 
     if (*parmBlock->debugFlag || ibSrqDebug)
-        printf("devGpibLib_mbbiGpibSrq(0x%08.8X, 0x%02.2X): processing srq\n", pdpvt, srqStatus);
+        printf("devGpibLib_mbbiGpibSrq(%p, 0x%2.2X): processing srq\n", pdpvt, srqStatus);
 
     /* do actual SRQ processing in here */
 
@@ -1934,7 +1936,6 @@ devGpibLib_mbboGpibWork(pdpvt)
 struct gpibDpvt *pdpvt;
 {
     int	cnvrtStat = OK;
-    int	strStat = OK;
     struct mbboRecord *pmbbo= ((struct mbboRecord *)(pdpvt->precord));
     struct gpibCmd      *pCmd;
     struct devGpibParmBlock *parmBlock;
@@ -2025,7 +2026,7 @@ int             srqStatus;
     parmBlock = (struct devGpibParmBlock *)(((gDset*)(psi->dset))->funPtr[psi->dset->number]);
 
     if (*parmBlock->debugFlag || ibSrqDebug)
-        printf("devGpibLib_stringinGpibSrq(0x%08.8X, 0x%02.2X): processing srq\n", pdpvt, srqStatus);
+        printf("devGpibLib_stringinGpibSrq(%p, 0x%2.2X): processing srq\n", pdpvt, srqStatus);
 
     /* do actual SRQ processing in here */
 
@@ -2262,7 +2263,7 @@ unsigned short	val;	/* used for EFAST operations only */
 	    /*Check that val in bounds*/
             if(val>15) return(ERROR);
             for(i=0; i<=val; i++ ) {
-              if(P3[i]==NULL) return(ERROR);
+              if(pCmd->P3[i]==NULL) return(ERROR);
             }
 	}
         if (pCmd->P3[val] != NULL)
@@ -2339,6 +2340,7 @@ short             status;
         pPv->nsta = status;
         pPv->nsev = severity;
     }
+    return(0);
 }
 
 /******************************************************************************
@@ -2574,7 +2576,7 @@ int		srqStatus;
     parmBlock = (struct devGpibParmBlock *)(((gDset*)(pwf->dset))->funPtr[pwf->dset->number]);
 
     if (*parmBlock->debugFlag || ibSrqDebug)
-        printf("devGpibLib_wfGpibSrq(0x%08.8X, 0x%02.2X): processing srq\n", pdpvt, srqStatus);
+        printf("devGpibLib_wfGpibSrq(%p, 0x%2.2X): processing srq\n", pdpvt, srqStatus);
 
     pdpvt->phwpvt->srqCallback = NULL;	/* unmark the handler */
     pdpvt->phwpvt->parm = (caddr_t)NULL;
@@ -2601,7 +2603,6 @@ int
 devGpibLib_wfGpibFinish(pdpvt)
 struct gpibDpvt *pdpvt;
 {
-	double	value;
 	struct waveformRecord *pwf = ((struct waveformRecord *)(pdpvt->precord));
 	struct devGpibParmBlock *parmBlock;
 	struct gpibCmd      *pCmd;

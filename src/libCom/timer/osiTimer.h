@@ -58,99 +58,99 @@ public:
      * create an active timer that will expire delay secods after it is created
      * or create an inactive timer respectively
      */
-	epicsShareFunc osiTimer (double delay, osiTimerQueue & queueIn);
-	epicsShareFunc osiTimer (double delay);
+    epicsShareFunc osiTimer (double delay, osiTimerQueue & queueIn);
+    epicsShareFunc osiTimer (double delay);
     epicsShareFunc osiTimer (osiTimerQueue & queueIn);
-	epicsShareFunc osiTimer ();
+    epicsShareFunc osiTimer ();
 
-	/*
-	 * change the timers expiration to newDelay
-	 * seconds after when reschedule() is called
-	 */	
+    /*
+     * change the timers expiration to newDelay
+     * seconds after when reschedule() is called
+     */ 
     epicsShareFunc void reschedule (double newDelay);
 
-	/*
-	 * change the timers expiration to this->delay()
-	 * seconds after when reschedule() is called
-	 */	
-	epicsShareFunc void reschedule ();
+    /*
+     * change the timers expiration to this->delay()
+     * seconds after when reschedule() is called
+     */ 
+    epicsShareFunc void reschedule ();
 
     /*
      * inactivate the timer and call the virtual destroy()
      * member function
      */
-	epicsShareFunc void cancel ();
+    epicsShareFunc void cancel ();
 
-	/*
-	 * return the number of seconds remaining before
-	 * this osiTimer will expire or the expiration date
+    /*
+     * return the number of seconds remaining before
+     * this osiTimer will expire or the expiration date
      * respectively
-	 */
-	epicsShareFunc double timeRemaining () const; /* returns seconds, but inefficent */
+     */
+    epicsShareFunc double timeRemaining () const; /* returns seconds, but inefficent */
     epicsShareFunc osiTime expirationDate () const; /* efficent */
 
-	/*
-	 * called when the osiTimer expires
-	 */
-	epicsShareFunc virtual void expire () = 0;
+    /*
+     * called when the osiTimer expires
+     */
+    epicsShareFunc virtual void expire () = 0;
 
-	/*
-	 * called if 
-	 * 1) osiTimer exists and the osiTimerQueue is deleted
-	 * 2) when the osiTimer expires and again() returns false
-	 *
-	 * osiTimer::destroy() does a "delete this"
+    /*
+     * called if 
+     * 1) osiTimer exists and the osiTimerQueue is deleted
+     * 2) when the osiTimer expires and again() returns false
+     *
+     * osiTimer::destroy() does a "delete this"
      *
      * if the derived class replaces this function then it
      * is taking responsibility for freeing (deleting)
      * timer resources when they are nolonger needed.
-	 */
-	epicsShareFunc virtual void destroy ();
+     */
+    epicsShareFunc virtual void destroy ();
 
-	/*
-	 * returning true indicates that the
-	 * osiTimer should be rearmed with delay
-	 * "delay()" when it expires
+    /*
+     * returning true indicates that the
+     * osiTimer should be rearmed with delay
+     * "delay()" when it expires
      *
-	 * the defaut osiTimer::again() returns false
-	 * (run the osiTimer once only)
-	 */
-	epicsShareFunc virtual bool again () const;
+     * the defaut osiTimer::again() returns false
+     * (run the osiTimer once only)
+     */
+    epicsShareFunc virtual bool again () const;
 
-	/*
-	 * returns the delay prior to expire
-	 * for subsequent iterations (if "again()"
-	 * returns true)
-	 *
-	 * the default osiTimer::delay() throws the 
+    /*
+     * returns the delay prior to expire
+     * for subsequent iterations (if "again()"
+     * returns true)
+     *
+     * the default osiTimer::delay() throws the 
      * exception type noDelaySpecified, but it will 
      * not be called unless the again() virtual 
      * function returns true.
-	 */
-	epicsShareFunc virtual double delay () const;
+     */
+    epicsShareFunc virtual double delay () const;
 
-	epicsShareFunc virtual void show (unsigned level) const;
+    epicsShareFunc virtual void show (unsigned level) const;
 
-	/*
-	 * for diagnostics
-	 */
-	epicsShareFunc virtual const char *name () const;
+    /*
+     * for diagnostics
+     */
+    epicsShareFunc virtual const char *name () const;
 
-	epicsShareFunc virtual ~osiTimer ();
+    epicsShareFunc virtual ~osiTimer ();
 
 private:
     friend class osiTimerQueue;
-	enum state {statePending, stateExpired, stateIdle, 
+    enum state {statePending, stateExpired, stateIdle, 
         numberOfTimerLists, stateLimbo};
 
-	osiTime exp; /* experation time */
-	state curState; /* current state */
-	osiTimerQueue &queue; /* pointer to current timer queue */
+    osiTime exp; /* experation time */
+    state curState; /* current state */
+    osiTimerQueue &queue; /* pointer to current timer queue */
 
-	/*
-	 * place osiTimer in the pending queue
-	 */
-	void arm (double initialDelay);
+    /*
+     * place osiTimer in the pending queue
+     */
+    void arm (double initialDelay);
 };
 
 /*
@@ -160,24 +160,24 @@ class osiTimerQueue {
 friend class osiTimer;
 friend class osiTimerThread;
 public:
-	epicsShareFunc osiTimerQueue (unsigned managerThreadPriority = threadPriorityMin);
-	epicsShareFunc virtual ~osiTimerQueue();
-	epicsShareFunc double delayToFirstExpire () const; /* returns seconds */
-	epicsShareFunc void process ();
-	epicsShareFunc void show (unsigned level) const;
+    epicsShareFunc osiTimerQueue (unsigned managerThreadPriority = threadPriorityMin);
+    epicsShareFunc virtual ~osiTimerQueue();
+    epicsShareFunc double delayToFirstExpire () const; /* returns seconds */
+    epicsShareFunc void process ();
+    epicsShareFunc void show (unsigned level) const;
 private:
     osiMutex mutex;
     osiEvent rescheduleEvent;
     osiEvent exitEvent;
     tsDLList <osiTimer> timerLists [osiTimer::numberOfTimerLists];
-	osiTimer *pExpireTmr;
+    osiTimer *pExpireTmr;
     class osiTimerThread *pMgrThread;
     unsigned mgrThreadPriority;
-	bool inProcess;
+    bool inProcess;
     bool terminateFlag;
     bool exitFlag;
 
-	void install (osiTimer &tmr, double delay);
+    void install (osiTimer &tmr, double delay);
 };
 
 inline osiTime osiTimer::expirationDate () const

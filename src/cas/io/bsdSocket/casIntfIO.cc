@@ -173,6 +173,7 @@ casStreamOS *casIntfIO::newStreamClient(caServerI &cas) const
     args.sock = newSock;
     pOS = new casStreamOS(cas, args);
     if (!pOS) {
+        errMessage(S_cas_noMemory, "unable to create data structures for a new client");
         socket_close(newSock);
     }
     else {

@@ -148,17 +148,7 @@ void caServerI::removeClient (casStrmClient *pClient)
 //
 void caServerI::connectCB (casIntfOS &intf)
 {
-    casStreamOS *pNewClient;
-    
-    try {
-        pNewClient = intf.newStreamClient (*this);
-        if (!pNewClient) {
-            throw S_cas_noMemory;
-        }
-    }
-    catch (...) {
-        epicsPrintf ("Attempt to create entry for new client failed (C++ exception)\n");
-    }
+    intf.newStreamClient (*this);
 }
 
 //

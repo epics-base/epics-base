@@ -13,6 +13,9 @@
 
 /*
  * $Log$
+ * Revision 1.2  2001/09/06 19:09:27  mrk
+ * use EPICS_TIMEZONE instead of EPICS_TS_MIN_WEST
+ *
  * Revision 1.1  2001/08/01 14:33:12  mrk
  * get rid of dev/drv support; use OBJ library only
  *
@@ -659,6 +662,7 @@ long TSinit(void)
         TSgetTime = TSgetCurrentTime;
         TSdriverInit = TSdriverInitError;
         TSdirectTime = TSdirectTimeError;
+        TSuserGet = TSuserGetJunk;
         TSdata.sync_event=ER_EVENT_RESET_TICK;
     }
     

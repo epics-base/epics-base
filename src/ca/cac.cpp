@@ -146,11 +146,11 @@ cac::~cac ()
     //
     {
         epicsAutoMutex autoMutex ( this->defaultMutex );
-        tsDLIterBD < cacLocalChannelIO > iter ( this->localChanList.first () );
-        while ( iter.valid () ) {
-            tsDLIterBD < cacLocalChannelIO > pnext = iter.itemAfter ();
-            iter->destroy ();
-            iter = pnext;
+        tsDLIterBD < cacLocalChannelIO > lclChan ( this->localChanList.first () );
+        while ( lclChan.valid () ) {
+            tsDLIterBD < cacLocalChannelIO > pnext = lclChan.itemAfter ();
+            lclChan->destroy ();
+            lclChan = pnext;
         }
     }
 

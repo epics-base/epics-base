@@ -23,9 +23,9 @@ cacChannel::cacChannel () : pChannelIO (0)
 
 cacChannel::~cacChannel ()
 {
-    cacChannelIO *pIO = this->pChannelIO;
-    if ( pIO ) {
-        pIO->destroy ();
+    cacChannelIO *pChanIO = this->pChannelIO;
+    if ( pChanIO ) {
+        pChanIO->destroy ();
     }
 }
 

@@ -30,6 +30,7 @@
  * Modification Log:
  * -----------------
  * .01	06-25-91 joh	inserted the RISC aligned db_access.h structures
+ * .02	08-06-91 mrk	Make extra values 0
  */
 
 
@@ -572,7 +573,7 @@ db_name_to_addr(pname,paddr)
             return(-1);
 }
 
-/* DB_GET_FIELD get a field and convert it to the desired type */
+typedef char DBSTRING[MAX_STRING_SIZE];
 
 db_get_field(paddr,buffer_type,pbuffer,no_elements)
 struct dbAddr	*paddr;
@@ -585,44 +586,80 @@ unsigned short	no_elements;
     long nRequest;
     long precision;
     short severity;
+    long i;
 
 
     switch(buffer_type) {
     case(oldDBR_STRING):
-	options=0;
-	nRequest=no_elements;
-	status = dbGetField(paddr,DBR_STRING,pbuffer,&options,&nRequest);
+	{
+		DBSTRING *pvalue = (DBSTRING *)pbuffer;
+
+		options=0;
+		nRequest=no_elements;
+		status = dbGetField(paddr,DBR_STRING,pbuffer,&options,&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i][0] = 0;
+	}
 	break;
 /*  case(oldDBR_INT): */
     case(oldDBR_SHORT):
-	options=0;
-	nRequest=no_elements;
-	status = dbGetField(paddr,DBR_SHORT,pbuffer,&options,&nRequest);
+	{
+		short *pvalue = (short *)pbuffer;
+
+		options=0;
+		nRequest=no_elements;
+		status = dbGetField(paddr,DBR_SHORT,pbuffer,&options,&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
+	}
 	break;
     case(oldDBR_FLOAT):
-	options=0;
-	nRequest=no_elements;
-	status = dbGetField(paddr,DBR_FLOAT,pbuffer,&options,&nRequest);
+	{
+		float *pvalue = (float *)pbuffer;
+
+		options=0;
+		nRequest=no_elements;
+		status = dbGetField(paddr,DBR_FLOAT,pbuffer,&options,&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
+	}
 	break;
     case(oldDBR_ENUM):
-	options=0;
-	nRequest=no_elements;
-	status = dbGetField(paddr,DBR_ENUM,pbuffer,&options,&nRequest);
+	{
+		short *pvalue = (short *)pbuffer;
+
+		options=0;
+		nRequest=no_elements;
+		status = dbGetField(paddr,DBR_ENUM,pbuffer,&options,&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
+	}
 	break;
     case(oldDBR_CHAR):
-	options=0;
-	nRequest=no_elements;
-	status = dbGetField(paddr,DBR_CHAR,pbuffer,&options,&nRequest);
+	{
+		char *pvalue = (char *)pbuffer;
+
+		options=0;
+		nRequest=no_elements;
+		status = dbGetField(paddr,DBR_CHAR,pbuffer,&options,&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
+	}
 	break;
     case(oldDBR_LONG):
-	options=0;
-	nRequest=no_elements;
-	status = dbGetField(paddr,DBR_LONG,pbuffer,&options,&nRequest);
+	{
+		long *pvalue = (long *)pbuffer;
+
+		options=0;
+		nRequest=no_elements;
+		status = dbGetField(paddr,DBR_LONG,pbuffer,&options,&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
+	}
 	break;
     case(oldDBR_DOUBLE):
-	options=0;
-	nRequest=no_elements;
-	status = dbGetField(paddr,DBR_DOUBLE,pbuffer,&options,&nRequest);
+	{
+		double *pvalue = (double *)pbuffer;
+
+		options=0;
+		nRequest=no_elements;
+		status = dbGetField(paddr,DBR_DOUBLE,pbuffer,&options,&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
+	}
 	break;
     case(oldDBR_STS_STRING):
     case(oldDBR_GR_STRING):
@@ -632,6 +669,7 @@ unsigned short	no_elements;
 		struct {
 			DBRstatus
 		} new;
+		DBSTRING *pvalue = (DBSTRING *)(pold->value);
 
 		options=DBR_STATUS;
 		nRequest=0;
@@ -642,6 +680,7 @@ unsigned short	no_elements;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_STRING,&(pold->value[0]),
 			&options,&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i][0] = 0;
 	}
 	break;
 /*  case(oldDBR_STS_INT): */
@@ -651,6 +690,7 @@ unsigned short	no_elements;
 		struct {
 			DBRstatus
 		} new;
+		short *pvalue = &pold->value;
 
 		options=DBR_STATUS;
 		nRequest=0;
@@ -661,6 +701,7 @@ unsigned short	no_elements;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_SHORT,&(pold->value),&options,
 			&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
     case(oldDBR_STS_FLOAT):
@@ -669,6 +710,7 @@ unsigned short	no_elements;
 		struct {
 			DBRstatus
 		} new;
+		float *pvalue = &pold->value;
 
 		options=DBR_STATUS;
 		nRequest=0;
@@ -679,6 +721,7 @@ unsigned short	no_elements;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_FLOAT,&(pold->value),&options,
 			&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
     case(oldDBR_STS_ENUM):
@@ -687,6 +730,7 @@ unsigned short	no_elements;
 		struct {
 			DBRstatus
 		} new;
+		short *pvalue = &pold->value;
 
 		options=DBR_STATUS;
 		nRequest=0;
@@ -697,6 +741,7 @@ unsigned short	no_elements;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_ENUM,&(pold->value),&options,
 			&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
     case(oldDBR_STS_CHAR):
@@ -705,6 +750,7 @@ unsigned short	no_elements;
 		struct {
 			DBRstatus
 		} new;
+		unsigned char *pvalue = &pold->value;
 
 		options=DBR_STATUS;
 		nRequest=0;
@@ -715,6 +761,7 @@ unsigned short	no_elements;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_UCHAR,&(pold->value),&options,
 			&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
     case(oldDBR_STS_LONG):
@@ -723,6 +770,7 @@ unsigned short	no_elements;
 		struct {
 			DBRstatus
 		} new;
+		long *pvalue = &pold->value;
 
 		options=DBR_STATUS;
 		nRequest=0;
@@ -733,6 +781,7 @@ unsigned short	no_elements;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_LONG,&(pold->value),&options,
 			&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
     case(oldDBR_STS_DOUBLE):
@@ -741,6 +790,7 @@ unsigned short	no_elements;
 		struct {
 			DBRstatus
 		} new;
+		double *pvalue = &pold->value;
 
 		options=DBR_STATUS;
 		nRequest=0;
@@ -751,6 +801,7 @@ unsigned short	no_elements;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_DOUBLE,&(pold->value),&options,
 			&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
     case(oldDBR_TIME_STRING):
@@ -760,6 +811,7 @@ unsigned short	no_elements;
 			DBRstatus
 			DBRtime
 		} new;
+		DBSTRING *pvalue = (DBSTRING *)(pold->value);
 
 		options=DBR_STATUS | DBR_TIME;
 		nRequest=0;
@@ -771,6 +823,7 @@ unsigned short	no_elements;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_STRING,pold->value,&options,
 			&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i][0] = 0;
 	}
 	break;
 /*  case(oldDBR_TIME_INT): */
@@ -781,6 +834,7 @@ unsigned short	no_elements;
 			DBRstatus
 			DBRtime
 		} new;
+		short *pvalue = &pold->value;
 
 		options=DBR_STATUS | DBR_TIME;
 		nRequest=0;
@@ -792,6 +846,7 @@ unsigned short	no_elements;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_SHORT,&(pold->value),&options,
 			&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
     case(oldDBR_TIME_FLOAT):
@@ -801,6 +856,7 @@ unsigned short	no_elements;
 			DBRstatus
 			DBRtime
 		} new;
+		float *pvalue = &pold->value;
 
 		options=DBR_STATUS | DBR_TIME;
 		nRequest=0;
@@ -812,6 +868,7 @@ unsigned short	no_elements;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_FLOAT,&(pold->value),&options,
 			&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
     case(oldDBR_TIME_ENUM):
@@ -821,6 +878,7 @@ unsigned short	no_elements;
 			DBRstatus
 			DBRtime
 		} new;
+		short *pvalue = &pold->value;
 
 		options=DBR_STATUS | DBR_TIME;
 		nRequest=0;
@@ -832,6 +890,7 @@ unsigned short	no_elements;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_ENUM,&(pold->value),&options,
 			&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
     case(oldDBR_TIME_CHAR):
@@ -841,6 +900,7 @@ unsigned short	no_elements;
 			DBRstatus
 			DBRtime
 		} new;
+		unsigned char *pvalue = &pold->value;
 
 		options=DBR_STATUS | DBR_TIME;
 		nRequest=0;
@@ -852,6 +912,7 @@ unsigned short	no_elements;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_CHAR,&(pold->value),&options,
 			&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
     case(oldDBR_TIME_LONG):
@@ -861,6 +922,7 @@ unsigned short	no_elements;
 			DBRstatus
 			DBRtime
 		} new;
+		long *pvalue = &pold->value;
 
 		options=DBR_STATUS | DBR_TIME;
 		nRequest=0;
@@ -872,6 +934,7 @@ unsigned short	no_elements;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_LONG,&(pold->value),&options,
 			&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
     case(oldDBR_TIME_DOUBLE):
@@ -881,6 +944,7 @@ unsigned short	no_elements;
 			DBRstatus
 			DBRtime
 		} new;
+		double *pvalue = &pold->value;
 
 		options=DBR_STATUS | DBR_TIME;
 		nRequest=0;
@@ -892,6 +956,7 @@ unsigned short	no_elements;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_DOUBLE,&(pold->value),&options,
 			&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
 /*  case(oldDBR_GR_STRING): NOT IMPLEMENTED - use DBR_STS_STRING */
@@ -905,6 +970,7 @@ unsigned short	no_elements;
 			DBRgrLong
 			DBRalLong
 		} new;
+		short *pvalue = &pold->value;
 
 		options=DBR_STATUS|DBR_UNITS|DBR_GR_LONG|DBR_AL_LONG;
 		nRequest=0;
@@ -922,6 +988,7 @@ unsigned short	no_elements;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_SHORT,&(pold->value),&options,
 			&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
     case(oldDBR_GR_FLOAT):
@@ -934,6 +1001,7 @@ unsigned short	no_elements;
 			DBRgrDouble
 			DBRalDouble
 		} new;
+		float *pvalue = &pold->value;
 
 		options=DBR_STATUS|DBR_UNITS|DBR_PRECISION|DBR_GR_DOUBLE
 			|DBR_AL_DOUBLE;
@@ -953,6 +1021,7 @@ unsigned short	no_elements;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_FLOAT,&(pold->value),&options,
 			&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
 /*  case(oldDBR_GR_ENUM): see oldDBR_CTRL_ENUM */
@@ -965,6 +1034,7 @@ unsigned short	no_elements;
 			DBRgrLong
 			DBRalLong
 		} new;
+		unsigned char *pvalue = &pold->value;
 
 		options=DBR_STATUS|DBR_UNITS|DBR_GR_LONG|DBR_AL_LONG;
 		nRequest=0;
@@ -982,6 +1052,7 @@ unsigned short	no_elements;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_UCHAR,&(pold->value),&options,
 			&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
     case(oldDBR_GR_LONG):
@@ -993,6 +1064,7 @@ unsigned short	no_elements;
 			DBRgrLong
 			DBRalLong
 		} new;
+		long *pvalue = &pold->value;
 
 		options=DBR_STATUS|DBR_UNITS|DBR_GR_LONG|DBR_AL_LONG;
 		nRequest=0;
@@ -1010,6 +1082,7 @@ unsigned short	no_elements;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_LONG,&(pold->value),&options,
 			&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
     case(oldDBR_GR_DOUBLE):
@@ -1022,6 +1095,7 @@ unsigned short	no_elements;
 			DBRgrDouble
 			DBRalDouble
 		} new;
+		double *pvalue = &pold->value;
 
 		options=DBR_STATUS|DBR_UNITS|DBR_PRECISION|DBR_GR_DOUBLE
 			|DBR_AL_DOUBLE;
@@ -1041,6 +1115,7 @@ unsigned short	no_elements;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_DOUBLE,&(pold->value),&options,
 			&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
 /*  case(oldDBR_CTRL_INT): */
@@ -1054,6 +1129,7 @@ unsigned short	no_elements;
 			DBRctrlLong
 			DBRalLong
 		} new;
+		short *pvalue = &pold->value;
 
 		options=DBR_STATUS|DBR_UNITS|DBR_GR_LONG|DBR_CTRL_LONG
 			|DBR_AL_LONG;
@@ -1074,6 +1150,7 @@ unsigned short	no_elements;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_SHORT,&(pold->value),&options,
 			&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
     case(oldDBR_CTRL_FLOAT):
@@ -1087,6 +1164,7 @@ unsigned short	no_elements;
 			DBRctrlDouble
 			DBRalDouble
 		} new;
+		float *pvalue = &pold->value;
 
 		options=DBR_STATUS|DBR_UNITS|DBR_PRECISION|DBR_GR_DOUBLE
 			|DBR_CTRL_DOUBLE|DBR_AL_DOUBLE;
@@ -1108,6 +1186,7 @@ unsigned short	no_elements;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_FLOAT,&(pold->value),&options,
 			&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
     case(oldDBR_GR_ENUM):
@@ -1118,7 +1197,8 @@ unsigned short	no_elements;
 			DBRstatus
 			DBRenumStrs
 		} new;
-		short no_str,i;
+		short no_str;
+		short *pvalue = &pold->value;
 
 		bzero(pold,sizeof(struct dbr_ctrl_enum));
 		/* first get status and severity */
@@ -1138,6 +1218,7 @@ unsigned short	no_elements;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_ENUM,&(pold->value),&options,
 			&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
     case(oldDBR_CTRL_CHAR):
@@ -1150,6 +1231,7 @@ unsigned short	no_elements;
 			DBRctrlLong
 			DBRalLong
 		} new;
+		unsigned char *pvalue = &pold->value;
 
 		options=DBR_STATUS|DBR_UNITS|DBR_GR_LONG|DBR_CTRL_LONG
 			|DBR_AL_LONG;
@@ -1170,6 +1252,7 @@ unsigned short	no_elements;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_UCHAR,&(pold->value),&options,
 			&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
     case(oldDBR_CTRL_LONG):
@@ -1182,6 +1265,7 @@ unsigned short	no_elements;
 			DBRctrlLong
 			DBRalLong
 		} new;
+		long *pvalue = &pold->value;
 
 		options=DBR_STATUS|DBR_UNITS|DBR_GR_LONG|DBR_CTRL_LONG
 			|DBR_AL_LONG;
@@ -1202,6 +1286,7 @@ unsigned short	no_elements;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_LONG,&(pold->value),&options,
 			&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
     case(oldDBR_CTRL_DOUBLE):
@@ -1215,6 +1300,7 @@ unsigned short	no_elements;
 			DBRctrlDouble
 			DBRalDouble
 		} new;
+		double *pvalue = &pold->value;
 
 		options=DBR_STATUS|DBR_UNITS|DBR_PRECISION|DBR_GR_DOUBLE
 			|DBR_CTRL_DOUBLE|DBR_AL_DOUBLE;
@@ -1236,6 +1322,7 @@ unsigned short	no_elements;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_DOUBLE,&(pold->value),&options,
 			&nRequest);
+		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
 

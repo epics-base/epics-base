@@ -1,4 +1,3 @@
-
 /*	@(#)ca_test.c	$Id$
  *	Author:	Jeff Hill
  *	Date:	07-01-91
@@ -27,16 +26,24 @@
  * Modification Log:
  * -----------------
  * .01	07-01-91	joh	initial version
+ * .02	08-05-91	mrk	Make more compatible with db_test.c
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
  */
 
+#ifdef vxWorks
+#include <vxWorks.h>
+#endif
+#ifndef ERROR
+#define ERROR -1
+#endif
+#ifndef OK
+#define OK 0
+#endif
+
 #include        <cadef.h>
 #include        <string.h>
-#define ERROR -1
-#define OK 0
-
 void 		printit();
 void 		verify();
 
@@ -49,7 +56,12 @@ char    **argv;
 {
 
 	if(argc < 2  || argc > 3){
-		printf("usage: cagft <channel name>\n");
+		printf("usage: ca_test channel_name <\"put value\">\n");
+		printf("the following arguments were received\n");
+		while(argc>0) {
+			printf("%s\n",argv[0]);
+			argv++; argc--;
+		}
 		return ERROR;
 	}
 
@@ -210,6 +222,8 @@ char		*pvalue;
 	SEVCHK(status, NULL);
 	verify(chan_id, DBR_STRING);
 
+	if(ca_field_type(chan_id)==0)goto skip_rest;
+
 	if(sscanf(pvalue,"%hd",&shortvalue)==1) {
 		status = ca_put(
 				DBR_SHORT, 
@@ -255,6 +269,8 @@ char		*pvalue;
 		SEVCHK(status, NULL);
 		verify(chan_id, DBR_DOUBLE);
 	}
+
+skip_rest:
 
 	while(ntries){
 		ca_pend_event(1.0);
@@ -308,7 +324,11 @@ static print_returned(type,pbuffer,count)
     printf("%s\t",dbr_text[type]);
     switch(type){
 	case (DBR_STRING):
-		printf("%s\t",pbuffer);
+		for(i=0; i<count && *pbuffer!=0; i++) {
+			if(count!=1 && (i%5 == 0)) printf("\n");
+			printf("%s ",pbuffer);
+			pbuffer += MAX_STRING_SIZE;
+		}
 		break;
 	case (DBR_SHORT):
 	case (DBR_ENUM):
@@ -743,3 +763,4 @@ static print_returned(type,pbuffer,count)
     }
     printf("\n");
 }
+

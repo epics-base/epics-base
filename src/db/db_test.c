@@ -29,6 +29,7 @@
  * Modification Log:
  * -----------------
  * .01  07-26-91	mrk	Major cleanup
+ * .02  08-06-91	mrk	More cleanup
  */
 
 #include        <db_access.h>
@@ -197,7 +198,11 @@ static print_returned(type,pbuffer,count)
     printf("%s\t",dbr_text[type]);
     switch(type){
 	case (DBR_STRING):
-		printf("%s\t",pbuffer);
+		for(i=0; i<count && *pbuffer!=0; i++) {
+			if(count!=1 && (i%5 == 0)) printf("\n");
+			printf("%s ",pbuffer);
+			pbuffer += MAX_STRING_SIZE;
+		}
 		break;
 	case (DBR_SHORT):
 	case (DBR_ENUM):

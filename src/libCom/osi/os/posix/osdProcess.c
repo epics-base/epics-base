@@ -10,6 +10,7 @@
 
 #include <string.h>
 #include <errno.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h> /* OPEN_MAX defined here */
@@ -27,24 +28,22 @@ epicsShareFunc osiGetUserNameReturn epicsShareAPI osiGetUserName (char *pBuf, un
     struct passwd *p;
 
     p = getpwuid ( getuid () );
-    if ( p ) {
-        if ( p->pw_name ) {
-            size_t len = strlen ( p->pw_name );
-            unsigned uiLength;
+    if ( p && p->pw_name ) {
+        size_t len = strlen ( p->pw_name );
+        unsigned uiLength;
 
-            if ( len > UINT_MAX || len <= 0 ) {
-                return osiGetUserNameFail;
-            }
-            uiLength = (unsigned) len;
-
-            if ( uiLength + 1 >= bufSizeIn ) {
-                return osiGetUserNameFail;
-            }
-
-            strncpy ( pBuf, p->pw_name, (size_t) bufSizeIn );
-
-            return osiGetUserNameSuccess;
+        if ( len > UINT_MAX || len <= 0 ) {
+            return osiGetUserNameFail;
         }
+        uiLength = (unsigned) len;
+
+        if ( uiLength + 1 >= bufSizeIn ) {
+            return osiGetUserNameFail;
+        }
+
+        strncpy ( pBuf, p->pw_name, (size_t) bufSizeIn );
+
+        return osiGetUserNameSuccess;
     }
     else {
         return osiGetUserNameFail;
@@ -120,7 +119,7 @@ epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProce
      */
     status = execlp (pBaseExecutableName, pBaseExecutableName, NULL);
     if ( status < 0 ) { 
-        fprintf ( stderr, "**** The executable \"%s\" couldnt be located\n", pBaseExecutableName );
+        fprintf ( stderr, "**** The executable \"%s\" couldn't be located\n", pBaseExecutableName );
         fprintf ( stderr, "**** because of errno = \"%s\".\n", strerror (errno) );
         fprintf ( stderr, "**** You may need to modify your PATH environment variable.\n" );
         fprintf ( stderr, "**** Unable to start \"%s\" process.\n", pProcessName);

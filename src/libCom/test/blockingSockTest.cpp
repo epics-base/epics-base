@@ -126,8 +126,9 @@ void socketRecvTest ( void * pParm )
 clientCircuit::clientCircuit ( const address & addrIn ) :
     circuit ( epicsSocketCreate ( AF_INET, SOCK_STREAM, IPPROTO_TCP ) )
 {
+    address tmpAddr = addrIn;
     int status = ::connect ( 
-        this->sock, & addrIn.sa, sizeof ( addrIn ) );
+        this->sock, & tmpAddr.sa, sizeof ( tmpAddr ) );
     assert ( status == 0 );
 
     circuit * pCir = this;
@@ -156,8 +157,9 @@ server::server ( const address & addrIn ) :
     assert ( this->sock != INVALID_SOCKET );
 
     // setup server side
+    address tmpAddr = addrIn;
     int status = bind ( this->sock, 
-        & addrIn.sa, sizeof ( addrIn ) );
+        & tmpAddr.sa, sizeof ( tmpAddr ) );
     assert ( status == 0 );
     status = listen ( this->sock, 10 );
     assert ( status == 0 );

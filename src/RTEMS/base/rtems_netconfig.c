@@ -51,22 +51,24 @@ static struct rtems_bsdnet_ifconfig e3c509_driver_config = {
     &fxp_driver_config,                 /* link to next interface */
 };
 #define FIRST_DRIVER_CONFIG &e3c509_driver_config
+#else
 
-#elif defined(__PPC)
+# if defined(__PPC)
  /*
   * FIXME: This really belongs in the BSP
   */
-# if defined(mpc750)
-#  ifndef RTEMS_BSP_NETWORK_DRIVER_NAME
-#   define RTEMS_BSP_NETWORK_DRIVER_NAME "dc1"
+#  if defined(mpc750)
+#   ifndef RTEMS_BSP_NETWORK_DRIVER_NAME
+#    define RTEMS_BSP_NETWORK_DRIVER_NAME "dc1"
+#   endif
+#   ifndef RTEMS_BSP_NETWORK_DRIVER_ATTACH
+#    define RTEMS_BSP_NETWORK_DRIVER_ATTACH rtems_dec21140_driver_attach
+     extern int rtems_dec21140_driver_attach();
+#   endif
 #  endif
-#  ifndef RTEMS_BSP_NETWORK_DRIVER_ATTACH
-#   define RTEMS_BSP_NETWORK_DRIVER_ATTACH rtems_dec21140_driver_attach
-    extern int rtems_dec21140_driver_attach();
+#  if defined(HAVE_PPCBUG)
+#   define MY_DO_BOOTP NULL
 #  endif
-# endif
-# if defined(HAVE_PPCBUG)
-#  define MY_DO_BOOTP NULL
 # endif
 
 static struct rtems_bsdnet_ifconfig bsp_driver_config = {

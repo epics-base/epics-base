@@ -78,10 +78,13 @@ if (-r "$top/$apptypename/Replace.pl") {
 }
 
 #
-# Copy <top>/Makefile and config files if not present
+# Copy files from <top> (non-App & non-Boot) if not present
 #
-CopyFile("$top/Makefile") unless (-f 'Makefile');
-find(\&FCopyTree, "$top/config") unless (-d 'config');
+opendir TOPDIR, "$top" or die "Can't open $top: $!";
+foreach $f ( grep !/^\.\.?$|^[^\/]*(App|Boot)/, readdir TOPDIR ) {
+    find(\&FCopyTree, "$top/$f") unless (-e "$f");
+}
+closedir TOPDIR;
 
 #
 # Create ioc directories
@@ -112,7 +115,7 @@ foreach $app ( @ARGV ) {
     }
     print "Creating template structure "
 	. "for $appname (of type $apptypename)\n" if $Debug; 
-    find(\&FCopyTree, "$top/$apptypename");
+    find(\&FCopyTree, "$top/$apptypename/");
 }
 
 exit 0;				# END OF SCRIPT
@@ -201,11 +204,8 @@ sub get_commandline_opts { #no args
     }
 
 # Valid $apptypename?
-    while (-l "$top/$apptypename") {
-	($apptypename = readlink "$top/$apptypename") =~ s/^$top//;
-    }
     unless (-r "$top/$apptypename") {
-	print "Application type does not exist. ";
+	print "Template for application type '$apptype' is unreadable or does not exist.\n";
 	&ListAppTypes;
 	exit 1;
     }
@@ -227,13 +227,13 @@ sub ListAppTypes { # no args
     foreach $name (<$top/*App>) {
 	$name =~ s|$top/||;
 	$name =~ s|App||;
-	printf "\t$name\n";
+	printf "\t$name\n" if ($name && -r "$top/$name" . "App");
     }
     print "Valid iocBoot types are:\n";
     foreach $name (<$top/*Boot>) {
 	$name =~ s|$top/||;
 	$name =~ s|Boot||;
-	printf "\t$name\n";
+	printf "\t$name\n" if ($name && -r "$top/$name" . "Boot");;
     }
 }
 

@@ -276,7 +276,10 @@ xSendStatus casDGIO::osdSend(const char *pBuf, bufSizeT size,
                 return xSendOK;
         }
 
-        status = sendto(this->sock, pBuf, size, 0,
+	//
+	// (char *) cast below is for brain dead wrs prototype
+	//
+        status = sendto(this->sock, (char *) pBuf, size, 0,
                         &this->lastRecvAddr.sa,
                         sizeof(this->lastRecvAddr.sa));
 	if (status>0) {

@@ -2521,7 +2521,7 @@ void fdManagerVerify ( const char * pName, unsigned interestLevel )
     showProgressEnd ( interestLevel );
 }
 
-verifyConnectWithDisconnectedChannels ( 
+void verifyConnectWithDisconnectedChannels ( 
     const char *pName, unsigned interestLevel )
 {
     int status;

@@ -45,6 +45,26 @@
 #endif
     
 /*
+ * Move to the next ifreq structure
+ * Made difficult by the fact that addresses larger than the structure
+ * size may be returned from the kernel.
+ */
+static struct ifreq *
+ifreqNext (struct ifreq *pifreq)
+{
+    unsigned int size;
+
+#if ((defined(BSD) && (BSD > 44)) || defined(SOCKADDR_HAS_LEN))
+    size = pifreq->ifr_addr.sa_len + sizeof(pifreq->ifr_name);
+    if (size < sizeof(*pifreq))
+	size = sizeof(*pifreq);
+#else
+    size = sizeof(*pifreq);
+#endif
+    return (struct ifreq *)(size + (char *)pifreq);
+}
+
+/*
  * osiSockDiscoverBroadcastAddresses ()
  */
 epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
@@ -57,7 +77,6 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
     struct ifreq                    *pIfreqListEnd;
     struct ifreq                    *pifreq;
     struct ifreq                    *pnextifreq;
-    unsigned                        size;
     osiSockAddrNode                 *pNewNode;
      
     /*
@@ -88,16 +107,10 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
         unsigned flags;
         struct sockaddr dest;
 
-#       if BSD >= 44
-            size = pifreq->ifr_addr.sa_len + sizeof(pifreq->ifr_name);
-            if ( size < sizeof(*pifreq)) {
-                size = sizeof(*pifreq);
-            }
-#       else
-            size = sizeof(*pifreq);
-#       endif
-
-        pnextifreq = (struct ifreq *) (size + (char *) pifreq);
+	/*
+	 * find the next if req
+	 */
+        pnextifreq = ifreqNext(pifreq);
 
         /*
          * If its not an internet inteface then dont use it 
@@ -242,7 +255,6 @@ epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket)
     struct ifreq            *pifreq;
     struct ifreq            *pIfreqListEnd;
     struct ifreq            *pnextifreq;
-    unsigned                size;
 
     if (init) {
         return addr;
@@ -275,18 +287,9 @@ epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket)
         unsigned flags;
 
         /*
-         * compute the size of the current if req
+         * find the next if req
          */
-#       if BSD >= 44
-            size = pifreq->ifr_addr.sa_len + sizeof(pifreq->ifr_name);
-            if ( size < sizeof (*pifreq) ) {
-                size = sizeof (*pifreq);
-            }
-#       else
-            size = sizeof (*pifreq);
-#       endif
-
-        pnextifreq = (struct ifreq *) (size + (char *) pifreq);
+        pnextifreq = ifreqNext(pifreq);
 
         if (pifreq->ifr_addr.sa_family != AF_INET){
             ifDepenDebugPrintf ( ("local_addr: interface %s was not AF_INET\n", pifreq->ifr_name) );

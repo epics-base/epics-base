@@ -79,5 +79,6 @@ void threadTest(int ntasks,int verbose)
     threadShowAll(0);
     threadSleep(5.0);
     errlogPrintf("threadTest terminating\n");
+    threadSleep(.5);
     errVerbose = errVerboseSave;
 }

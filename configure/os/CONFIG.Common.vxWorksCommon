@@ -52,8 +52,7 @@ GCC_RANLIB =
 #--------------------------------------------------
 # C++ host processing
 NM = $(GNU_BIN)/$(CMPLR_PREFIX)nm$(CMPLR_SUFFIX)$(HOSTEXE)
-ifeq ($(wildcard $(GNU_BIN)/munch.tcl),$(wildcard $(GNU_BIN)/munch.tcl))
-##ifeq ($(wildcard $(GNU_BIN)/$(CMPLR_PREFIX)munch$(HOSTEXE)),)
+ifeq ($(wildcard $(GNU_BIN)/munch.tcl),$(GNU_BIN)/munch.tcl)
 #tornado2
 export WIND_BASE = $(VX_DIR)
 export WIND_HOST_TYPE

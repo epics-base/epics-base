@@ -31,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.11  1998/05/05 18:06:58  jhill
+ * rearranged to allow compilation by g++ 2.8.1
+ *
  * Revision 1.10  1998/02/18 22:53:13  jhill
  * fixed gnu warning
  *
@@ -63,6 +66,10 @@
  *
  *
  */
+
+#ifndef assert // allow use of epicsAssert.h
+#include <assert.h>
+#endif
 
 //
 // the hp compiler complains about parameterized friend
@@ -131,11 +138,10 @@ public:
 	//
 	void remove (tsSLNode<T> &itemBefore)
 	{
-		tsSLNode<T> &nodeBefore = itemBefore;
-		T *pItem = nodeBefore.pNext;
+		T *pItem = itemBefore.pNext;
 		if (pItem) {
 			tsSLNode<T> *pNode = pItem;
-			nodeBefore.pNext = pNode->pNext;
+			itemBefore.pNext = pNode->pNext;
 		}
 	}
 
@@ -164,34 +170,34 @@ public:
 //
 // tsSLIter<T>
 //
-// A simple fast single link linked list iterator
-// (which must not be called again after it returns NULL)
-//
-// Notes:
-// 1) No direct access to pCurrent is provided since
-//      this might allow for confusion when an item
-//      is removed (and pCurrent ends up pointing at
-//      an item that has been seen before)
-//
 template <class T>
 class tsSLIter {
 public:
-	tsSLIter(const tsSLList<T> &listIn) : 
-		pCurrent(&listIn) {}
+	tsSLIter(const tsSLList<T> &listIn) :
+	  pCurrent(0), list(listIn) {};
 
 	//
 	// move iterator forward
 	//
-	// **** NOTE ****
-	// This may be called continuously until it returns
-	// NULL. Attempts to call this again after it has
-	// returned NULL will fail 
+	// NULL test here is inefficient, but it appears that some architectures
+	// (intel) dont like to cast a NULL pointer from a tsSLNode<T> to a T even if
+	// tsSLNode<T> is always a base class of a T.
 	//
 	T * next () 
 	{
-		T *pNewCur;
-		this->pCurrent = pNewCur = this->pCurrent->pNext;
-		return pNewCur;
+		if (this->pCurrent!=0) {
+			tsSLNode<T> *pCurNode = this->pCurrent;
+			this->pCurrent = pCurNode->pNext;
+		}
+		else {
+			const tsSLNode<T> &first = this->list;
+			//
+			// assume that we are starting (or restarting) at the 
+			// beginning of the list
+			//
+			this->pCurrent = first.pNext;
+		}
+		return this->pCurrent;
 	}
 
 	//
@@ -203,7 +209,8 @@ public:
 	}
 
 private:
-	const tsSLNode<T> *pCurrent;
+	T *pCurrent;
+	const tsSLList<T> &list;
 };
 
 //
@@ -228,23 +235,33 @@ private:
 template <class T>
 class tsSLIterRm {
 public:
-	tsSLIterRm(tsSLList<T> &listIn) :  
-		pPrevious(0), pCurrent(&listIn) {}
+	tsSLIterRm(tsSLList<T> &listIn) :
+	  pPrevious(0), pCurrent(0), list(listIn) {};
 
 	//
 	// move iterator forward
 	//
-	// **** NOTE ****
-	// This may be called continuously until it returns
-	// NULL. Attempts to call this again after it has
-	// returned NULL will fail 
+	// NULL test here is inefficient, but it appears that some architectures
+	// (intel) dont like to cast a NULL pointer from a tsSLNode<T> to a T even if
+	// tsSLNode<T> is always a base class of a T.
 	//
 	T * next () 
 	{
-		T *pNewCur;
-		this->pPrevious = this->pCurrent;
-		this->pCurrent = pNewCur = this->pCurrent->pNext;
-		return pNewCur;
+		if (this->pCurrent!=0) {
+			tsSLNode<T> *pCurNode = this->pCurrent;
+			this->pPrevious = this->pCurrent;
+			this->pCurrent = pCurNode->pNext;
+		}
+		else {
+			const tsSLNode<T> &first = this->list;
+			//
+			// assume that we are starting (or restarting) at the 
+			// beginning of the list
+			//
+			this->pCurrent = first.pNext;
+			this->pPrevious = 0;
+		}
+		return this->pCurrent;
 	}
 
 	//
@@ -263,21 +280,37 @@ public:
 	// will be accessed sequentially even if an item
 	// is removed)
 	//
-	// **** NOTE ****
-	// This may be called once for each cycle of the 
-	// iterator. Attempts to call this twice without
-	// moving the iterator forward inbetween the two
-	// calls will fail
+	// This cant be called twice in a row without moving 
+	// the iterator to the next item. If there is 
+	// no current item this function assert fails.
 	//
 	void remove ()
 	{
-		this->pPrevious->pNext = this->pCurrent->pNext;
+		assert (this->pCurrent!=0);
+
+		tsSLNode<T> *pPrevNode;
+		tsSLNode<T> *pCurNode = this->pCurrent;
+
+		if (this->pPrevious==0) {
+			pPrevNode = &this->list;
+			//
+			// this assert fails if it is an attempt to 
+			// delete twice without moving the iterator
+			//
+			assert (pPrevNode->pNext == this->pCurrent);
+		}
+		else {
+			pPrevNode = this->pPrevious;
+		}
+
+		pPrevNode->pNext = pCurNode->pNext;
 		this->pCurrent = this->pPrevious;
 		this->pPrevious = 0; 
 	}
 
 private:
-	tsSLNode<T> *pPrevious;
-	tsSLNode<T> *pCurrent;
+	T *pPrevious;
+	T *pCurrent;
+	tsSLList<T> &list;
 };
 

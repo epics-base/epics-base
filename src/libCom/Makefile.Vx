@@ -2,21 +2,40 @@ EPICS = ../../../..
 include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
-SRCS.c = \
-	../calcPerform.c ../cvtBpt.c ../cvtFast.c \
-	../gpHashLib.c ../freeListLib.c ../ellLib.c \
-	../envSubr.c ../errSymLib.c \
-	../nextFieldSubr.c ../postfix.c \
-	../bucketLib.c ../memDebugLib.c ../tsSubr.c ../pal.c \
-	../paldef.c  errSymTbl.c ../errPrintfVX.c
+SRCS.c += ../calcPerform.c
+SRCS.c += ../cvtBpt.c
+SRCS.c += ../cvtFast.c
+SRCS.c += ../gpHashLib.c
+SRCS.c += ../freeListLib.c
+SRCS.c += ../ellLib.c
+SRCS.c += ../envSubr.c
+SRCS.c += ../errSymLib.c
+SRCS.c += ../nextFieldSubr.c
+SRCS.c += ../postfix.c 
+SRCS.c += ../bucketLib.c
+SRCS.c += ../memDebugLib.c
+SRCS.c += ../tsSubr.c
+SRCS.c += ../pal.c 
+SRCS.c += ../paldef.c
+SRCS.c += errSymTbl.c
+SRCS.c += ../errPrintfVX.c
 
-
-OBJS = \
-	calcPerform.o cvtBpt.o cvtFast.o ellLib.o envSubr.o errSymLib.o \
-	errSymTbl.o nextFieldSubr.o postfix.o \
-	bucketLib.o tsSubr.o gpHashLib.o freeListLib.o pal.o paldef.o \
-	errPrintfVX.o
-
+OBJS += calcPerform.o
+OBJS += cvtBpt.o
+OBJS += cvtFast.o
+OBJS += ellLib.o
+OBJS += envSubr.o
+OBJS += errSymLib.o
+OBJS += errSymTbl.o
+OBJS += nextFieldSubr.o
+OBJS += postfix.o
+OBJS += bucketLib.o
+OBJS += tsSubr.o
+OBJS += gpHashLib.o
+OBJS += freeListLib.o
+OBJS += pal.o
+OBJS += paldef.o
+OBJS += errPrintfVX.o
 
 PROD = libCom
 

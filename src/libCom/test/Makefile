@@ -4,6 +4,10 @@ include $(TOP)/configure/CONFIG
 
 PROD_LIBS += Com
 
+timerTestHost_SRCS += timerTestMain.c timerTest.c
+PROD += timerTestHost
+OBJS_IOC += timerTest
+
 semBinaryTestHost_SRCS += semBinaryTestMain.c semBinaryTest.c
 PROD += semBinaryTestHost
 OBJS_IOC += semBinaryTest

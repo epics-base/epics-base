@@ -219,12 +219,12 @@ private:
 //
 template <class ITEM>
 class chronIntIdRes : public chronIntId, public tsSLNode<ITEM> {
-    friend class chronIntIdResTable<ITEM>;
 public:
     chronIntIdRes ();
 private:
     void setId (unsigned newId);
 	chronIntIdRes (const chronIntIdRes & );
+    friend class chronIntIdResTable<ITEM>;
 };
 
 //

@@ -17,6 +17,8 @@
 		semMCreate().  Modified semTake() second param. to WAIT_FOREVER.
 		These provide VX5.0 compatability.  
 16aug91,ajk	Improved "magic number" error message.
+25oct91,ajk	Code to create semaphores "ss_ptr->getSemId" was left out.
+		Added this code to init_sscb().
 ***************************************************************************/
 /*#define	DEBUG	1*/
 
@@ -348,6 +350,12 @@ SPROG	*sp_ptr;
 		ss_ptr->task_id = 0;
 		/* Create a binary semaphore for synchronizing events in a SS */
 		ss_ptr->syncSemId = semBCreate(SEM_Q_PRIORITY | SEM_DELETE_SAFE);
+
+		/* Create a binary semaphore for pvGet() synconizing */
+		if (!sp_ptr->async_flag)
+			ss_ptr->getSemId =
+			 semBCreate(SEM_Q_PRIORITY | SEM_DELETE_SAFE);
+
 		ss_ptr->current_state = 0; /* initial state */
 		ss_ptr->next_state = 0;
 		ss_ptr->action_complete = TRUE;

@@ -33,7 +33,7 @@ endif
 #  Currently Supporting:
 #       vxWorks-68040 (alias mv147, mv162, mv167)
 #       vxWorks-68040lc (alias mv162lc)
-#       vxWorks-ppc604
+#       vxWorks-ppc604 (alias ppc604)
 #
 #       hkv2f
 #	niCpu030
@@ -69,7 +69,7 @@ CPLUSPLUS=CCC
 #  if they cannot support ANSI compilation.
 #   STRICT -  ANSI C - force warning flags
 #   ANSI   -  ANSI C
-#   OLD    -  Standard C - Not appropriate here.
+#   TRAD   -  Standard C - Not appropriate here.
 CMPLR=STRICT
 
 # Default C++ compiler ANSI level

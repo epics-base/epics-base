@@ -35,6 +35,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 
 #include "dbDefs.h"
 #include "osiSem.h"
@@ -396,7 +397,6 @@ long dbtpn(char	*pname,char *pvalue)
     return(0);
 }
 
-#if 0
 /*
  * dbCreatePutNotify()
  */
@@ -438,7 +438,7 @@ epicsShareFunc long epicsShareAPI dbPutNotifyInitiate (
     if (dbStatus==S_db_Pending) {
         *pID = (dbPutNotifyID) ppn;
     }
-    else if (dbStatus==S_db_Blocked || status==0) {
+    else if (dbStatus==S_db_Blocked || dbStatus==0) {
         free (ppn);
         *pID = 0;
     }
@@ -455,9 +455,6 @@ epicsShareFunc void epicsShareAPI dbPutNotifyDestroy (dbPutNotifyID idIn)
     else {
         PUTNOTIFY *ppn = (PUTNOTIFY *) idIn;
         dbNotifyCancel (ppn);
-        freeListFree (putNotifyFreeList, ppn)
+        freeListFree (putNotifyFreeList, ppn);
     }
 }
-
-#endif
-

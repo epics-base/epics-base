@@ -27,6 +27,8 @@ dbStatic_SRCS += dbStaticRun.c
 LIBRARY_HOST += Db
 LIBRARY_IOC += dbStatic
 
+DLL_LIBS = Com
+
 #       Products to build:
 #
 PROD = dbReadTest dbExpand dbToMenuH dbToRecordtypeH

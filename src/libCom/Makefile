@@ -158,6 +158,8 @@ USR_CFLAGS = -D_NO_PROTO
 #       lib$(LIBRARY).a  or   ..dll/..exp/..lib
 #
 LIBRARY=Com
+SYS_DLL_LIBS := ws2_32 advapi32
+
 
 #   only for WIN32:
 #   build LIBRARY as a DLL, use the specified def file

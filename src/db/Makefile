@@ -57,6 +57,7 @@ SRCS += dbcar.c
 
 
 LIBRARY = dbLib
+DLL_LIBS = Db Com
 
 include $(TOP)/configure/RULES
 

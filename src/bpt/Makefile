@@ -11,6 +11,7 @@ MENUS += menuConvert.h
 bptLibrary_SRCS += cvtBpt.c
 
 LIBRARY_IOC = bptLibrary
+DLL_LIBS = Db Com
 
 BPTS += bptTypeJdegC.dbd
 BPTS += bptTypeJdegF.dbd

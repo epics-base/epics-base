@@ -7,6 +7,7 @@ asLibrary_SRCS += asCa.c
 
 LIBRARY_HOST = As
 LIBRARY_IOC = asLibrary
+DLL_LIBS  = Db Com
 
 #	All systems link the libs As, Com, Db (and again Com ??),
 #	generic Unix needs also lib m:

@@ -15,8 +15,8 @@ main(int argc,char **argv)
 	fprintf(stderr,"usage: caExample pvname\n");
 	exit(1);
     }
-    SEVCHK(ca_task_initialize(),"ca_task_initialize");
-    SEVCHK(ca_search(argv[1],&mychid),"ca_search failure");
+    SEVCHK(ca_context_create(ca_disable_preemptive_callback),"ca_context_create");
+    SEVCHK(ca_create_channel(argv[1],NULL,NULL,10,&mychid),"ca_create_channel failure");
     SEVCHK(ca_pend_io(5.0),"ca_pend_io failure");
     SEVCHK(ca_get(DBR_DOUBLE,mychid,(void *)&data),"ca_get failure");
     SEVCHK(ca_pend_io(5.0),"ca_pend_io failure");

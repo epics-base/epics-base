@@ -18,12 +18,9 @@ POSIX_CPPFLAGS_NO =
 POSIX_LDLIBS_YES +=
 POSIX_LDLIBS_NO +=
 
-######################################################
-# +DAportable causes portable object code to be created for execution
-# on different PA-Risc machines
 OP_SYS_CPPFLAGS = -D_HPUX_SOURCE -DHP_UX
-OP_SYS_CFLAGS = +DAportable +z
-OP_SYS_CXXFLAGS = +DAportable +z
+OP_SYS_CFLAGS = +z
+OP_SYS_CXXFLAGS = +z
 OP_SYS_LDLIBS +=
 
 SHRLIB_SUFFIX = .sl

@@ -18,7 +18,10 @@ LD = ld -r
 CONFORM_CFLAGS_ANSI = -Aa
 CONFORM_CFLAGS_STRICT = -Aa
 CONFORM_CFLAGS_TRAD = -Ac
-CODE_CFLAGS = 
+######################################################
+# +DAportable causes portable object code to be created for execution
+# on different PA-Risc machines
+CODE_CFLAGS = +DAportable
 WARN_CFLAGS_YES =
 WARN_CFLAGS_NO = -w
 OPT_CFLAGS_YES = -O
@@ -30,7 +33,10 @@ CXXCMPLR=NORMAL
 # Configure OS vendor C++ compiler
 CONFORM_CXXFLAGS_NORMAL = +W302 +W829 +W818 +W392 +W469 +W495 +W749 +W667 +W392 +W684
 CONFORM_CXXFLAGS_STRICT = +p
-CODE_CXXFLAGS = 
+######################################################
+# +DAportable causes portable object code to be created for execution
+# on different PA-Risc machines
+CODE_CXXFLAGS = +DAportable
 TEMPL_INST_CXXFLAG =
 WARN_CXXFLAGS_YES = +w
 WARN_CXXFLAGS_NO =

@@ -70,8 +70,8 @@ void nUpdatesTester ( struct event_handler_args args )
     unsigned *pCtr = (unsigned *) args.usr;
     ( *pCtr ) ++;
     if ( args.status != ECA_NORMAL ) {
-	        printf("subscription update failed for \"%s\" because \"%s\"", 
-                ca_name ( args.chid ), ca_message ( args.status ) );
+        printf ( "subscription update failed for \"%s\" because \"%s\"", 
+            ca_name ( args.chid ), ca_message ( args.status ) );
     }
 }
 
@@ -151,7 +151,7 @@ void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan )
     status = ca_search ( pName, &chan2 );
     SEVCHK ( status, 0 );
     status = ca_add_event ( DBR_FLOAT, chan2, 
-		nUpdatesTester, &eventCount, 0 );
+                nUpdatesTester, &eventCount, 0 );
     SEVCHK ( status, 0 );
     status = ca_pend_io ( 20.0 );
     SEVCHK (status, 0);
@@ -207,8 +207,8 @@ void ioTesterGet ( struct event_handler_args args )
 {
     unsigned *pCtr = (unsigned *) args.usr;
     if ( args.status != ECA_NORMAL ) {
-	        printf("get call back failed for \"%s\" because \"%s\"", 
-                ca_name ( args.chid ), ca_message ( args.status ) );
+        printf("get call back failed for \"%s\" because \"%s\"", 
+            ca_name ( args.chid ), ca_message ( args.status ) );
     }
     ( *pCtr ) ++;
 }
@@ -217,8 +217,8 @@ void ioTesterEvent ( struct event_handler_args args )
 {
     int status;
     if ( args.status != ECA_NORMAL ) {
-	        printf("subscription update failed for \"%s\" because \"%s\"", 
-                ca_name ( args.chid ), ca_message ( args.status ) );
+        printf ( "subscription update failed for \"%s\" because \"%s\"", 
+            ca_name ( args.chid ), ca_message ( args.status ) );
     }
     status = ca_get_callback ( DBR_STS_STRING, args.chid, ioTesterGet, args.usr );
     SEVCHK ( status, 0 );
@@ -257,7 +257,7 @@ void verifyMonitorSubscriptionFlushIO ( chid chan )
 
 void accessRightsStateChange ( struct access_rights_handler_args args )
 {
-    appChan	*pChan = (appChan *) ca_puser ( args.chid );
+    appChan *pChan = (appChan *) ca_puser ( args.chid );
 
     assert ( pChan->channel == args.chid );
     assert ( args.ar.read_access == ca_read_access ( args.chid ) );
@@ -268,7 +268,7 @@ void accessRightsStateChange ( struct access_rights_handler_args args )
 
 void getCallbackStateChange ( struct event_handler_args args )
 {
-    appChan	*pChan = (appChan *) args.usr;
+    appChan *pChan = (appChan *) args.usr;
 
     assert ( pChan->channel == args.chid );
     assert ( pChan->connected );
@@ -282,7 +282,7 @@ void connectionStateChange ( struct connection_handler_args args )
 {
     int status;
 
-    appChan	*pChan = (appChan *) ca_puser ( args.chid );
+    appChan *pChan = (appChan *) ca_puser ( args.chid );
 
     assert ( pChan->channel == args.chid );
 
@@ -310,7 +310,7 @@ void connectionStateChange ( struct connection_handler_args args )
 
 void subscriptionStateChange ( struct event_handler_args args )
 {
-    appChan	*pChan = (appChan *) args.usr;
+    appChan *pChan = (appChan *) args.usr;
 
     assert ( pChan->channel == args.chid );
     assert ( pChan->connected );
@@ -319,8 +319,8 @@ void subscriptionStateChange ( struct event_handler_args args )
     subscriptionUpdateCount++;
 
     if ( args.status != ECA_NORMAL ) {
-	        printf("subscription update failed for \"%s\" because \"%s\"", 
-                ca_name ( args.chid ), ca_message ( args.status ) );
+        printf("subscription update failed for \"%s\" because \"%s\"", 
+            ca_name ( args.chid ), ca_message ( args.status ) );
     }
     else {
         struct dbr_sts_string * pdbrgs = ( struct dbr_sts_string * ) args.dbr;
@@ -374,8 +374,8 @@ void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount, unsig
             pChans[j].getCallbackCount = 0u;
             pChans[j].connected = 0u;
 
-	        status = ca_search_and_connect ( pChans[j].name,
-                &pChans[j].channel, connectionStateChange, &pChans[j]);
+            status = ca_search_and_connect ( pChans[j].name,
+                &pChans[j].channel, connectionStateChange, &pChans[j] );
             SEVCHK ( status, NULL );
 
             status = ca_replace_access_rights_event (
@@ -1922,10 +1922,10 @@ void performMonitorUpdateTest ( chid chan )
             epicsThreadSleep ( 0.1 );
             ca_poll (); /* emulate typical GUI */
             for ( j = 0; j < NELEMENTS ( test ); j++ ) {
-		        /*
+                /*
                  * we shouldnt see old monitors because 
                  * we resubscribed
-		         */
+                 */
                 assert ( test[j].count <= i + 2 );
                 if ( test[j].lastValue == temp ) {
                     if ( test[j].count < i + 1 ) {

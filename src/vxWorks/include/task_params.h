@@ -51,6 +51,12 @@
  *				to 60 sec
  * .17	03-18-94	mcn	added entries for breakpoint tasks
  * $Log$
+ * Revision 1.1  1996/11/22 20:49:43  jhill
+ * installed
+ *
+ * Revision 1.1  1996/06/24 13:32:35  mrk
+ * added task_params.h
+ *
  * Revision 1.3  1996/06/19 20:48:44  jhill
  * dounled ca stack for each ca cleint in the server
  *
@@ -62,6 +68,12 @@
  *
  * Revision 1.27  1995/11/29 19:27:59  jhill
  * added $Log$
+ * added Revision 1.1  1996/11/22 20:49:43  jhill
+ * added installed
+ * added
+ * added Revision 1.1  1996/06/24 13:32:35  mrk
+ * added added task_params.h
+ * added
  * added Revision 1.3  1996/06/19 20:48:44  jhill
  * added dounled ca stack for each ca cleint in the server
  * added
@@ -111,11 +123,10 @@
 #define	BBTXLINK_NAME		"bbTx"
 #define	BBRXLINK_NAME		"bbRx"
 #define	BBWDTASK_NAME		"bbwd"
-#define EPICSPRINT_NAME		"epicsPrint"
+#define ERRLOG_NAME		"errlog"
 #define LOG_RESTART_NAME	"logRestart"
 
 /* Task priorities */
-#define	EPICSPRINT_PRI 	70      
 #define	SCANONCE_PRI 	65      /* scan one time */
 /*DO NOT RUN ANY RECORD PROCESSING TASKS AT HIGHER PRIORITY THAN _netTask=50*/
 #define	CALLBACK_PRI_LOW 65      /* callback task - generall callback task */
@@ -144,6 +155,7 @@
 #define	REQ_SRVR_PRI	181	/* Channel Access TCP request server*/
 #define CA_CLIENT_PRI	180	/* Channel Access clients */
 #define CA_REPEATER_PRI	181	/* Channel Access repeater */
+#define	ERRLOG_PRI 	CA_REPEATER_PRI /*error logger task*/      
 #define CAST_SRVR_PRI	182	/* Channel Access broadcast server */
 #define CA_ONLINE_PRI	183	/* Channel Access server online notify */
 #define TASKWD_PRI      200     /* Watchdog Scan Task - runs every 6 seconds */
@@ -162,7 +174,7 @@
 #define LOG_RESTART_DELAY (sysClkRateGet()*30) 
 
 /* Task creation options */
-#define EPICSPRINT_OPT	VX_FP_TASK
+#define ERRLOG_OPT	VX_FP_TASK
 #define IOEVENTSCAN_OPT	VX_FP_TASK
 #define EVENTSCAN_OPT	VX_FP_TASK
 #define SCANONCE_OPT	VX_FP_TASK
@@ -198,39 +210,53 @@
 #define LOG_RESTART_OPT  (VX_FP_TASK)		
 
 
-/* Task stack sizes */
-#define EPICSPRINT_STACK	4000
-#define EVENTSCAN_STACK		10000
-#define SCANONCE_STACK		10000
-#define CALLBACK_STACK		10000
-#define SMCMD_STACK		3000
-#define SMRESP_STACK		3000
-#define ABCOS_STACK		3000
-#define ABDONE_STACK		3000
-#define ABSCAN_STACK		3000
-#define MOMENTARY_STACK		2000
-#define PERIODSCAN_STACK	10000
-#define WFDONE_STACK		9000
-#define SEQUENCER_STACK		5096
-#define BKPT_CONT_STACK         10000
-#define SCANNER_STACK		3048
-#define RSP_SRVR_STACK		5096
-#define REQ_SRVR_STACK		5096
-#define CAST_SRVR_STACK		5096
-#define CA_CLIENT_STACK		10000	
-#define CA_REPEATER_STACK	5096
-#define CA_ONLINE_STACK		3048
-#define TASKWD_STACK		2000	/* moved up by 1000 for v5 vxWorks */
-#define SMIOTEST_STACK    	2000
-#define SMROTTEST_STACK   	2000
-#define EVENT_PEND_STACK   	5096
-#define	TIMESTAMP_STACK		4000
-#define	GPIBLINK_STACK		5000
-#define	BBLINK_STACK		5000
-#define	BBRXLINK_STACK		5000
-#define	BBTXLINK_STACK		5000
-#define	BBWDTASK_STACK		5000
-#define DB_CA_STACK 		10000
-#define XY_240_STACK            4096
-#define LOG_RESTART_STACK	0x1000		
+/* 
+ * Task stack sizes 
+ *
+ * (original stack sizes are appropriate for the 68k)
+ * ARCH_STACK_FACTOR allows scaling the stacks on particular
+ * processor architectures 
+ */
+#if CPU_FAMILY == MC680X0 
+#define ARCH_STACK_FACTOR 1
+#elif CPU_FAMILY == SPARC
+#define ARCH_STACK_FACTOR 2
+#else
+#define ARCH_STACK_FACTOR 2
+#endif
+
+#define ERRLOG_STACK		(4000*ARCH_STACK_FACTOR)
+#define EVENTSCAN_STACK		(11000*ARCH_STACK_FACTOR)
+#define SCANONCE_STACK		(11000*ARCH_STACK_FACTOR)
+#define CALLBACK_STACK		(11000*ARCH_STACK_FACTOR)
+#define SMCMD_STACK		(3000*ARCH_STACK_FACTOR)
+#define SMRESP_STACK		(3000*ARCH_STACK_FACTOR)
+#define ABCOS_STACK		(3000*ARCH_STACK_FACTOR)
+#define ABDONE_STACK		(3000*ARCH_STACK_FACTOR)
+#define ABSCAN_STACK		(3000*ARCH_STACK_FACTOR)
+#define MOMENTARY_STACK		(2000*ARCH_STACK_FACTOR)
+#define PERIODSCAN_STACK	(11000*ARCH_STACK_FACTOR)
+#define WFDONE_STACK		(9000*ARCH_STACK_FACTOR)
+#define SEQUENCER_STACK		(5500*ARCH_STACK_FACTOR)
+#define BKPT_CONT_STACK         (11000*ARCH_STACK_FACTOR)
+#define SCANNER_STACK		(3048*ARCH_STACK_FACTOR)
+#define RSP_SRVR_STACK		(5096*ARCH_STACK_FACTOR)
+#define REQ_SRVR_STACK		(5096*ARCH_STACK_FACTOR)
+#define CAST_SRVR_STACK		(5096*ARCH_STACK_FACTOR)
+#define CA_CLIENT_STACK		(11000*ARCH_STACK_FACTOR)
+#define CA_REPEATER_STACK	(5096*ARCH_STACK_FACTOR)
+#define CA_ONLINE_STACK		(3048*ARCH_STACK_FACTOR)
+#define TASKWD_STACK		(2000*ARCH_STACK_FACTOR)
+#define SMIOTEST_STACK    	(2000*ARCH_STACK_FACTOR)
+#define SMROTTEST_STACK   	(2000*ARCH_STACK_FACTOR)
+#define EVENT_PEND_STACK   	(5096*ARCH_STACK_FACTOR)
+#define	TIMESTAMP_STACK		(4000*ARCH_STACK_FACTOR)
+#define	GPIBLINK_STACK		(5000*ARCH_STACK_FACTOR)
+#define	BBLINK_STACK		(5000*ARCH_STACK_FACTOR)
+#define	BBRXLINK_STACK		(5000*ARCH_STACK_FACTOR)
+#define	BBTXLINK_STACK		(5000*ARCH_STACK_FACTOR)
+#define	BBWDTASK_STACK		(5000*ARCH_STACK_FACTOR)
+#define DB_CA_STACK 		(11000*ARCH_STACK_FACTOR)
+#define XY_240_STACK            (4096*ARCH_STACK_FACTOR)
+#define LOG_RESTART_STACK	(0x1000*ARCH_STACK_FACTOR)
 

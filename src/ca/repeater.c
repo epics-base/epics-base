@@ -57,29 +57,36 @@
  *	.06 120492 joh	removed unnecessary includes
  *	.07 120992 joh	now uses dll list routines
  *	.08 102993 joh	toggle set sock opt to set
- *
+ *	.09 070195 joh  discover client has vanished by connecting its
+ *			datagram socket (and watching for ECONNREFUSED)
  */
 
 static char *sccsId = "@(#)$Id$";
 
 #include	"iocinf.h"
 
+/*
+ * one socket per client so we will get the ECONNREFUSED
+ * error code (and then delete the client)
+ */
+struct one_client{
+	ELLNODE			node;
+	struct sockaddr_in 	from;
+	SOCKET			sock;
+};
+
 /* 
  *	these can be external since there is only one instance
  *	per machine so we dont care about reentrancy
  */
-struct one_client{
-	ELLNODE			node;
-  	struct sockaddr_in	from;
-};
-
 static ELLLIST	client_list;
 
 static char	buf[MAX_UDP]; 
 
-LOCAL int 	clean_client(struct one_client *pclient);
-LOCAL void 	register_new_client(SOCKET sock, struct sockaddr_in *pLocal, 
+LOCAL void register_new_client(struct sockaddr_in *pLocal, 
 					struct sockaddr_in *pFrom);
+#define PORT_ANY 0
+LOCAL int makeSocket(int port);
 
 
 /*
@@ -93,14 +100,12 @@ void ca_repeater()
   	int				status;
   	int				size;
   	SOCKET				sock;
-	int				true = 1;
 	struct sockaddr_in		from;
-  	struct sockaddr_in		bd;
   	struct sockaddr_in		local;
   	int				from_size = sizeof from;
   	struct one_client		*pclient;
-  	struct one_client		*pnxtclient;
 	short				port;
+	ELLLIST 			theClients;
 
 	port = caFetchPortConfig(
 		&EPICS_CA_REPEATER_PORT, 
@@ -108,35 +113,11 @@ void ca_repeater()
 
 	ellInit(&client_list);
 
-     	/* 	allocate a socket			*/
-      	sock = socket(	AF_INET,	/* domain	*/
-			SOCK_DGRAM,	/* type		*/
-			0);		/* deflt proto	*/
-      	assert(sock != INVALID_SOCKET);
-
-
-      	memset((char *)&bd, 0, sizeof(bd));
-      	bd.sin_family = AF_INET;
-      	bd.sin_addr.s_addr = INADDR_ANY;	
-     	bd.sin_port = htons(port);	
-      	status = bind(sock, (struct sockaddr *)&bd, sizeof(bd));
-     	if(status<0){
-		if(MYERRNO != EADDRINUSE){
-			ca_printf("CA Repeater: unexpected bind fail %s\n", 
-				strerror(MYERRNO));
-		}
-		socket_close(sock);
+	sock = makeSocket(port);
+	if (sock==INVALID_SOCKET) {
+		ca_printf("%s: unable to make recv sock\n",
+					__FILE__);
 		exit(0);
-	}
-
-	status = setsockopt(	sock,	
-				SOL_SOCKET,
-				SO_REUSEADDR,
-				(char *)&true,
-				sizeof(true));
-	if(status<0){
-		ca_printf(	"%s: set socket option failed\n", 
-				__FILE__);
 	}
 
 	status = local_addr(sock, &local);
@@ -164,78 +145,121 @@ void ca_repeater()
    	 	if(size < 0){
 			ca_printf("CA Repeater: recv err %s\n",
 				strerror(MYERRNO));
+			continue;
 		}
 
 		pMsg = (struct extmsg *) buf;
 
 		/*
-		 * both zero leng message and a registartion message
+		 * both zero length message and a registration message
 		 * will register a new client
 		 */
 		if(size >= sizeof(*pMsg)){
 			if(ntohs(pMsg->m_cmmd) == REPEATER_REGISTER){
-				register_new_client(sock, &local, &from);
+				register_new_client(&local, &from);
 
 				/*
 				 * strip register client message
 				 */
 				pMsg++;
 				size -= sizeof(*pMsg);
+				if (size==0) {
+					continue;
+				}
 			}
 		}
 		else if(size == 0){
-			register_new_client(sock, &local, &from);
+			register_new_client(&local, &from);
+			continue;
 		}
 
-		/*
-		 * size may have been adjusted above
-		 */
-		if(size){
-			for(	pclient = (struct one_client *) 
-					client_list.node.next;
-				pclient;
-				pclient = (struct one_client *) 
-						pclient->node.next){
+		ellInit(&theClients);
+		while (pclient=(struct one_client *)ellGet(&client_list)) {
+			ellAdd(&theClients, &pclient->node);
 
-				/*
-				 * Dont reflect back to sender
-				 */
-				if(from.sin_port == pclient->from.sin_port &&
-				   from.sin_addr.s_addr ==
-					pclient->from.sin_addr.s_addr){
-					continue;
-				}
+			/*
+			 * Dont reflect back to sender
+			 */
+			if(from.sin_port == pclient->from.sin_port &&
+			   from.sin_addr.s_addr ==
+				pclient->from.sin_addr.s_addr){
+				continue;
+			}
 
-    				status = sendto(
-					sock,
-                               		(char *)pMsg,
-               				size,
-          	                   	0,
-            	                    	(struct sockaddr *)&pclient->from, 
-               	                 	sizeof pclient->from);
-   				if(status < 0){
-					ca_printf("CA Repeater: fanout err %s\n",
-						strerror(MYERRNO));
-				}
+			status = send(
+				pclient->sock,
+				(char *)pMsg,
+				size,
+				0);
+			if (status>=0) {
 #ifdef DEBUG
-				ca_printf("Sent\n");
+				ca_printf("Sent to %d\n", 
+					pclient->from.sin_port);
 #endif
 			}
+			if(status < 0){
+				if (MYERRNO == ECONNREFUSED) {
+#ifdef DEBUG
+					ca_printf("Deleted client %d\n",
+						pclient->from.sin_port);
+#endif
+					ellDelete(&theClients, 
+						&pclient->node);
+					socket_close(pclient->sock);
+					free(pclient);
+				}
+				else {
+					ca_printf(
+"CA Repeater: fan out err was \"%s\"\n",
+						strerror(MYERRNO));
+				}
+			}
 		}
-
-		/* 
-		 * remove any dead wood prior to pending 
-		 */
-		for(	pclient = (struct one_client *) 
-				client_list.node.next;
-			pclient;
-			pclient = pnxtclient){
-			/* do it now in case item deleted */
-			pnxtclient = (struct one_client *) 
-						pclient->node.next;	
-			clean_client(pclient);
-		}
+		ellConcat(&client_list, &theClients);
 	}
+}
+
+
+/*
+ * makeSocket()
+ */
+LOCAL int makeSocket(int port)
+{
+	int			status;
+  	struct sockaddr_in 	bd;
+	int 			sock;
+	int			true = 1;
+
+      	sock = socket(	AF_INET,	/* domain	*/
+			SOCK_DGRAM,	/* type		*/
+			0);		/* deflt proto	*/
+	if (sock == INVALID_SOCKET) {
+		return sock;
+	}
+
+	status = setsockopt(	sock,	
+				SOL_SOCKET,
+				SO_REUSEADDR,
+				(char *)&true,
+				sizeof(true));
+	if(status<0){
+		ca_printf(	"%s: set socket option failed\n", 
+				__FILE__);
+	}
+
+      	memset((char *)&bd, 0, sizeof(bd));
+      	bd.sin_family = AF_INET;
+      	bd.sin_addr.s_addr = INADDR_ANY;	
+     	bd.sin_port = htons(port);	
+      	status = bind(sock, (struct sockaddr *)&bd, sizeof(bd));
+     	if(status<0){
+		ca_printf("CA Repeater: unexpected bind fail %s\n", 
+				strerror(MYERRNO));
+		socket_close(sock);
+		return INVALID_SOCKET;
+	}
+
+	return sock;
 }
 
 
@@ -243,7 +267,6 @@ void ca_repeater()
  * register_new_client()
  */
 LOCAL void register_new_client(
-SOCKET			sock, 
 struct sockaddr_in 	*pLocal, 
 struct sockaddr_in 	*pFrom)
 {
@@ -251,9 +274,9 @@ struct sockaddr_in 	*pFrom)
   	struct one_client	*pclient;
 	struct extmsg		confirm;
 
-	for(	pclient = (struct one_client *) client_list.node.next;
+	for(	pclient = (struct one_client *) ellFirst(&client_list);
 		pclient;
-		pclient = (struct one_client *) pclient->node.next){
+		pclient = (struct one_client *) ellNext(&pclient->node)){
 
 		if(	pFrom->sin_port == pclient->from.sin_port &&
 			pFrom->sin_addr.s_addr ==  pclient->from.sin_addr.s_addr)
@@ -262,101 +285,64 @@ struct sockaddr_in 	*pFrom)
 
 	if(!pclient){
 		pclient = (struct one_client *)calloc (1, sizeof(*pclient));
-		if(pclient){
-			pclient->from = *pFrom;
-			ellAdd (&client_list, &pclient->node);
-#ifdef DEBUG
-			ca_printf (
-				"Added %d\n", 
-				pFrom->sin_port);
-#endif
+		if(!pclient){
+			ca_printf("%s: no memory for new client\n",
+					__FILE__);
+			return;
 		}
+
+		pclient->sock = makeSocket(PORT_ANY);
+		if (!pclient->sock) {
+			free(pclient);
+			ca_printf("%s: unable to make client sock\n",
+					__FILE__);
+			return;
+		}
+
+		status = connect(pclient->sock, 
+				(struct sockaddr *)pFrom, 
+				sizeof(*pFrom));
+		if (status<0) {
+			socket_close(pclient->sock);
+			free(pclient);
+			ca_printf("%s: unable to connect client sock\n",
+					__FILE__);
+			return;
+		}
+
+		pclient->from = *pFrom;
+
+		ellAdd (&client_list, &pclient->node);
+#ifdef DEBUG
+		ca_printf (
+			"Added %d\n", 
+			pFrom->sin_port);
+#endif
 	}
 
 	memset((char *)&confirm, 0, sizeof confirm);
 	confirm.m_cmmd = htons(REPEATER_CONFIRM);
 	confirm.m_available = pLocal->sin_addr.s_addr;
-	status = sendto(
-		sock,
+	status = send(
+		pclient->sock,
 		(char *)&confirm,
 		sizeof(confirm),
-		0,
-		(struct sockaddr *)pFrom, /* back to sender */
-		sizeof(*pFrom));
-	if(status != sizeof(confirm)){
-		ca_printf("CA Repeater: confirm err %s\n",
-				strerror(MYERRNO));
+		0);
+	if(status >= 0){
+		assert(status == sizeof(confirm));
 	}
-}
-
-
-/*
- *
- *	check to see if this client is still around
- *
- *	NOTE:
- *	This closes the socket only whenever we are 
- *	able to bind so that we free the port.
- */
-LOCAL int clean_client(struct one_client *pclient)
-{
-	static int		sockExists;
-  	static SOCKET		sock;
-	int			port = pclient->from.sin_port;
-  	struct sockaddr_in	bd;
-	int			status;
-	int			present = FALSE;
-
-     	/* 	
-	 * allocate a socket			
-	 * (no lock required because this is implemented with
-	 * a single thread)
-	 */
-	if(!sockExists){
-      		sock = socket(	
-				AF_INET,	/* domain	*/
-				SOCK_DGRAM,	/* type		*/
-				0);		/* deflt proto	*/
-		if(sock != INVALID_SOCKET){
-			sockExists = TRUE;
-		}
-		else{
-			ca_printf("CA Repeater: no bind test sock err %s\n",
-				strerror(MYERRNO));
-			return OK;
-		}
-	}
-
-      	memset((char *)&bd, 0, sizeof(bd));
-      	bd.sin_family = AF_INET;
-      	bd.sin_addr.s_addr = INADDR_ANY;	
-     	bd.sin_port = port;	
-      	status = bind(sock, (struct sockaddr *)&bd, sizeof(bd));
-     	if(status>=0){
-		socket_close (sock);
-		sockExists = FALSE;
-	}
-	else{
-		if(MYERRNO == EADDRINUSE){
-			present = TRUE;
-		}
-		else{
-			ca_printf("CA Repeater: client cleanup err %s\n",
-				strerror(MYERRNO));
-			ca_printf("CA Repeater: sock=%d family=%d addr=%x port=%d\n",
-				sock, bd.sin_family, bd.sin_addr.s_addr,
-				bd.sin_port);
-		}
-	}
-
-
-	if(!present){
+	else if (MYERRNO == ECONNREFUSED){
 #ifdef DEBUG
-		ca_printf("Deleted %d\n", pclient->from.sin_port);
+		ca_printf("Deleted repeater client=%d sending ack\n",
+				pFrom->sin_port);
 #endif
 		ellDelete(&client_list, &pclient->node);
+		socket_close(pclient->sock);
 		free(pclient);
 	}
-
-	return OK;
+	else {
+		ca_printf("CA Repeater: confirm err was \"%s\"\n",
+				strerror(MYERRNO));
+	}
 }
+

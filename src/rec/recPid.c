@@ -108,13 +108,7 @@ static long process(paddr)
 	long		 status;
 
 	ppid->pact = TRUE;
-	if(ppid->val>0.0 && ppid->val<udfFtest) {
-		if (ppid->nsev<VALID_ALARM) {
-			ppid->nsta = SOFT_ALARM;
-			ppid->nsev = VALID_ALARM;
-                }
-		status = 0;
-	} else status=do_pid(ppid);
+	status=do_pid(ppid);
 	if(status==1) {
 		ppid->pact = FALSE;
 		return(0);
@@ -393,6 +387,13 @@ struct pidRecord     *ppid;
                 }
         }
 	val = ppid->val;
+	if(ppid->val>0.0 && ppid->val<udfFtest) {
+		if (ppid->nsev<VALID_ALARM) {
+			ppid->nsta = SOFT_ALARM;
+			ppid->nsev = VALID_ALARM;
+                }
+		return(0);
+	}
 
 	/* compute time difference and make sure it is large enough*/
 	ctp = ppid->ct;

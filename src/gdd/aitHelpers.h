@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.9  1996/11/02 01:24:42  jhill
+ * strcpy => styrcpy (shuts up purify)
+ *
  * Revision 1.8  1996/10/17 12:41:06  jbk
  * network byte order stuff / added strDup function to Helpers
  *
@@ -45,12 +48,10 @@
 #include <assert.h> 
 #endif
 
-<<<<<<< aitHelpers.h
 #define NSecPerSec 1000000000u
 #define NSecPerUSec 1000u
 #define SecPerMin 60u
 
-=======
 inline char* strDup(const char* x)
 {
 	char* y = new char[strlen(x)+1];
@@ -58,11 +59,6 @@ inline char* strDup(const char* x)
 	return y;
 }
 
-const unsigned NSecPerSec = 1000000000u;
-const unsigned NSecPerUSec = 1000u;
-const unsigned SecPerMin = 60u;
-
->>>>>>> 1.8
 class aitTimeStamp {
 	friend aitTimeStamp operator+ (const aitTimeStamp &lhs, const aitTimeStamp &rhs);
 	friend aitTimeStamp operator- (const aitTimeStamp &lhs, const aitTimeStamp &rhs);

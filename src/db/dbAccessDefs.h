@@ -259,8 +259,6 @@ epicsShareFunc long epicsShareAPI dbGetPrecision(
     struct link *plink,short *precision);
 epicsShareFunc long epicsShareAPI dbGetUnits(
     struct link *plink,char *units,int unitsSize);
-epicsShareFunc long epicsShareAPI dbGetNelements(
-    struct link *plink,long *nelements);
 epicsShareFunc long epicsShareAPI dbGetSevr(
     struct link *plink,short *severity);
 epicsShareFunc long epicsShareAPI dbGetTimeStamp(

@@ -15,23 +15,16 @@
  *
  *
  * V5VW = /.../vx/v502b
- * V4VW = /.../vx/v402
  *
  * veclist.o:
- *	cc68k -c -DV5_vxWorks -DCPU_FAMILY=MC680X0 -I$(V5VW)/h veclist.c
+ *	cc68k -c -DCPU_FAMILY=MC680X0 -I$(V5VW)/h veclist.c
  * 
- * veclistV4.o: veclist.c
- *	cc68k -c -DV4_vxWorks -I$(V4VW)/h veclist.c -o veclistV4.o
  *
  */
 
 #include "vxWorks.h"
 #include "a_out.h"
-#ifdef	V5_vxWorks
 #include "iv.h"
-#else
-#include "iv68k.h"
-#endif
 #include "ctype.h"
 #include "sysSymTbl.h"
 
@@ -61,13 +54,7 @@ veclist(int all)
 {
   	int		vec;
 	int		value;
-#if defined(V4_vxWorks)
-	UTINY		type;
-#elif defined(V5_vxWorks)
 	SYM_TYPE	type;
-#else
-	UTINY		type;
-#endif
 	char		name[MAX_SYS_SYM_LEN];
 	char		function_type[10];
 	void		(*proutine)();

@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.35  2001/07/03 00:58:18  jhill
+// changed interface so that unreferenced table will not optimize away
+//
 // Revision 1.34  2000/09/27 19:43:52  jhill
 // cosmetic
 //
@@ -264,7 +267,7 @@ static smartGDDPointer mapStringToGdd(void* v,aitIndex count) {
 }
 
 static int mapGddToString(void* vd, aitIndex count, 
-    const gdd & dd, const std::vector< std::string > &enumStringTable) {
+    const gdd & dd, const gddEnumStringTable &enumStringTable) {
 	aitFixedString* db = (aitFixedString*)vd;
 	aitIndex sz = dd.getDataSizeElements();
 	const void* v = dd.dataVoid();
@@ -312,7 +315,7 @@ static smartGDDPointer mapShortToGdd(void* v,aitIndex count) {
 }
 
 static int mapGddToShort(void* vd, aitIndex count, const gdd &dd, 
-                         const std::vector< std::string > &enumStringTable) {
+                         const gddEnumStringTable &enumStringTable) {
 	dbr_short_t* sv = (dbr_short_t*)vd;
     aitIndex sz = dd.getDataSizeElements();
 	const void * v=dd.dataVoid();
@@ -360,7 +363,7 @@ static smartGDDPointer mapFloatToGdd(void* v,aitIndex count) {
 }
 
 static int mapGddToFloat(void* vd, aitIndex count, 
-     const gdd & dd, const std::vector< std::string > &enumStringTable) {
+     const gdd & dd, const gddEnumStringTable &enumStringTable) {
 	dbr_float_t* sv = (dbr_float_t*)vd;
     aitIndex sz=dd.getDataSizeElements();
 	const void * v = dd.dataVoid();
@@ -408,7 +411,7 @@ static smartGDDPointer mapEnumToGdd(void* v,aitIndex count) {
 }
 
 static int mapGddToEnum(void* vd, aitIndex count, const gdd & dd, 
-                        const std::vector< std::string > &enumStringTable) {
+                        const gddEnumStringTable &enumStringTable) {
 	dbr_enum_t* sv = (dbr_enum_t*)vd;
     aitIndex sz=dd.getDataSizeElements();
 	const void* v = dd.dataVoid();
@@ -456,7 +459,7 @@ static smartGDDPointer mapCharToGdd(void* v,aitIndex count) {
 }
 
 static int mapGddToChar(void* vd, aitIndex count, 
-     const gdd & dd, const std::vector< std::string > &enumStringTable) {
+     const gdd & dd, const gddEnumStringTable &enumStringTable) {
 	dbr_char_t* sv = (dbr_char_t*)vd;
     aitIndex sz=dd.getDataSizeElements();
 	const void* v = dd.dataVoid();
@@ -504,7 +507,7 @@ static smartGDDPointer mapLongToGdd(void* v,aitIndex count) {
 }
 
 static int mapGddToLong(void* vd, aitIndex count, const gdd & dd, 
-                      const std::vector< std::string > &enumStringTable) {
+                      const gddEnumStringTable &enumStringTable) {
 	dbr_long_t* sv = (dbr_long_t*)vd;
     aitIndex sz=dd.getDataSizeElements();
 	const void* v = dd.dataVoid();
@@ -552,7 +555,7 @@ static smartGDDPointer mapDoubleToGdd(void* v,aitIndex count) {
 }
 
 static int mapGddToDouble(void* vd, aitIndex count, const gdd & dd, 
-                          const std::vector< std::string > &enumStringTable) {
+                          const gddEnumStringTable &enumStringTable) {
 	dbr_double_t* sv = (dbr_double_t*)vd;
     aitIndex sz=dd.getDataSizeElements();
 	const void* v = dd.dataVoid();
@@ -611,7 +614,7 @@ static smartGDDPointer mapStsStringToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapStsGddToString(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
+static int mapStsGddToString(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
 {
 	dbr_sts_string* db = (dbr_sts_string*)v;
 	aitFixedString* dbv = (aitFixedString*)db->value;
@@ -628,7 +631,7 @@ static smartGDDPointer mapStsShortToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapStsGddToShort(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
+static int mapStsGddToShort(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
 {
 	dbr_sts_short* dbv = (dbr_sts_short*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
@@ -643,7 +646,7 @@ static smartGDDPointer mapStsFloatToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapStsGddToFloat(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
+static int mapStsGddToFloat(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
 {
 	dbr_sts_float* dbv = (dbr_sts_float*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
@@ -658,7 +661,7 @@ static smartGDDPointer mapStsEnumToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapStsGddToEnum(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
+static int mapStsGddToEnum(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
 {
 	dbr_sts_enum* dbv = (dbr_sts_enum*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
@@ -673,7 +676,7 @@ static smartGDDPointer mapStsCharToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapStsGddToChar(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
+static int mapStsGddToChar(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
 {
 	dbr_sts_char* dbv = (dbr_sts_char*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
@@ -689,7 +692,7 @@ static smartGDDPointer mapStsLongToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapStsGddToLong(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
+static int mapStsGddToLong(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
 {
 	dbr_sts_long* dbv = (dbr_sts_long*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
@@ -704,7 +707,7 @@ static smartGDDPointer mapStsDoubleToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapStsGddToDouble(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
+static int mapStsGddToDouble(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
 {
 	dbr_sts_double* dbv = (dbr_sts_double*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
@@ -744,7 +747,7 @@ static smartGDDPointer mapTimeStringToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapTimeGddToString(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
+static int mapTimeGddToString(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
 {
 	dbr_time_string* db = (dbr_time_string*)v;
 	aitFixedString* dbv = (aitFixedString*)db->value;
@@ -763,7 +766,7 @@ static smartGDDPointer mapTimeShortToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapTimeGddToShort(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
+static int mapTimeGddToShort(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
 {
 	dbr_time_short* dbv = (dbr_time_short*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
@@ -781,7 +784,7 @@ static smartGDDPointer mapTimeFloatToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapTimeGddToFloat(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
+static int mapTimeGddToFloat(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
 {
 	dbr_time_float* dbv = (dbr_time_float*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
@@ -798,7 +801,7 @@ static smartGDDPointer mapTimeEnumToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapTimeGddToEnum(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
+static int mapTimeGddToEnum(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
 {
 	dbr_time_enum* dbv = (dbr_time_enum*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
@@ -816,7 +819,7 @@ static smartGDDPointer mapTimeCharToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapTimeGddToChar(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
+static int mapTimeGddToChar(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
 {
 	dbr_time_char* dbv = (dbr_time_char*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
@@ -835,7 +838,7 @@ static smartGDDPointer mapTimeLongToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapTimeGddToLong(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
+static int mapTimeGddToLong(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
 {
 	dbr_time_long* dbv = (dbr_time_long*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
@@ -852,7 +855,7 @@ static smartGDDPointer mapTimeDoubleToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapTimeGddToDouble(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
+static int mapTimeGddToDouble(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
 {
 	dbr_time_double* dbv = (dbr_time_double*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
@@ -938,7 +941,7 @@ static smartGDDPointer mapControlShortToGdd(void* v, aitIndex count)
 	return dd;
 }
 
-static int mapGraphicGddToShort(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
+static int mapGraphicGddToShort(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
 {
 	const aitString* str;
 	dbr_gr_short* db = (dbr_gr_short*)v;
@@ -961,7 +964,7 @@ static int mapGraphicGddToShort(void* v, aitIndex count, const gdd & dd, const s
 	return mapGddToShort(&db->value,count,vdd, enumStringTable);
 }
 
-static int mapControlGddToShort(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
+static int mapControlGddToShort(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
 {
 	const aitString* str;
 	dbr_ctrl_short* db = (dbr_ctrl_short*)v;
@@ -1061,7 +1064,7 @@ static smartGDDPointer mapControlFloatToGdd(void* v, aitIndex count)
 	return dd;
 }
 
-static int mapGraphicGddToFloat(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
+static int mapGraphicGddToFloat(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
 {
 	const aitString* str;
 	dbr_gr_float* db = (dbr_gr_float*)v;
@@ -1086,7 +1089,7 @@ static int mapGraphicGddToFloat(void* v, aitIndex count, const gdd & dd, const s
 	return mapGddToFloat(&db->value,count,vdd, enumStringTable);
 }
 
-static int mapControlGddToFloat(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
+static int mapControlGddToFloat(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
 {
 	const aitString* str;
 	dbr_ctrl_float* db = (dbr_ctrl_float*)v;
@@ -1198,7 +1201,7 @@ static smartGDDPointer mapControlEnumToGdd(void* v, aitIndex /*count*/)
 	return dd;
 }
 
-static int mapGraphicGddToEnum(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
+static int mapGraphicGddToEnum(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
 {
 	dbr_gr_enum* db = (dbr_gr_enum*)v;
 	const gdd& menu = dd[gddAppTypeIndex_dbr_gr_enum_enums];
@@ -1221,7 +1224,7 @@ static int mapGraphicGddToEnum(void* v, aitIndex count, const gdd & dd, const st
 	return mapGddToEnum(&db->value, count, vdd, enumStringTable);
 }
 
-static int mapControlGddToEnum(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
+static int mapControlGddToEnum(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
 {
 	dbr_ctrl_enum* db = (dbr_ctrl_enum*)v;
 	const gdd& menu = dd[gddAppTypeIndex_dbr_ctrl_enum_enums];
@@ -1317,7 +1320,7 @@ static smartGDDPointer mapControlCharToGdd(void* v, aitIndex count)
 	return dd;
 }
 
-static int mapGraphicGddToChar(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
+static int mapGraphicGddToChar(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
 {
 	const aitString* str;
 	dbr_gr_char* db = (dbr_gr_char*)v;
@@ -1341,7 +1344,7 @@ static int mapGraphicGddToChar(void* v, aitIndex count, const gdd & dd, const st
 	return mapGddToChar(&db->value,count,vdd, enumStringTable);
 }
 
-static int mapControlGddToChar(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
+static int mapControlGddToChar(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
 {
 	const aitString* str;
 	dbr_ctrl_char* db = (dbr_ctrl_char*)v;
@@ -1440,7 +1443,7 @@ static smartGDDPointer mapControlLongToGdd(void* v, aitIndex count)
 	return dd;
 }
 
-static int mapGraphicGddToLong(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
+static int mapGraphicGddToLong(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
 {
 	const aitString* str;
 	dbr_gr_long* db = (dbr_gr_long*)v;
@@ -1463,7 +1466,7 @@ static int mapGraphicGddToLong(void* v, aitIndex count, const gdd & dd, const st
 	return mapGddToLong(&db->value,count,vdd, enumStringTable);
 }
 
-static int mapControlGddToLong(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
+static int mapControlGddToLong(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
 {
 	const aitString* str;
 	dbr_ctrl_long* db = (dbr_ctrl_long*)v;
@@ -1563,7 +1566,7 @@ static smartGDDPointer mapControlDoubleToGdd(void* v, aitIndex count)
 	return dd;
 }
 
-static int mapGraphicGddToDouble(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
+static int mapGraphicGddToDouble(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
 {
 	const aitString* str;
 	dbr_gr_double* db = (dbr_gr_double*)v;
@@ -1588,7 +1591,7 @@ static int mapGraphicGddToDouble(void* v, aitIndex count, const gdd & dd, const 
 	return mapGddToDouble(&db->value,count,vdd, enumStringTable);
 }
 
-static int mapControlGddToDouble(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
+static int mapControlGddToDouble(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
 {
 	const aitString* str;
 	dbr_ctrl_double* db = (dbr_ctrl_double*)v;
@@ -1645,7 +1648,7 @@ static smartGDDPointer mapStsAckStringToGdd(void* v, aitIndex count)
 }
 
 static int mapStsAckGddToString(void* v, aitIndex count, const gdd &dd, 
-                                const std::vector< std::string > &enumStringTable)
+                                const gddEnumStringTable &enumStringTable)
 {
     dbr_stsack_string* db = (dbr_stsack_string*)v;
     const gdd& vdd = dd[gddAppTypeIndex_dbr_stsack_string_value];
@@ -1685,7 +1688,7 @@ static smartGDDPointer mapAcktToGdd(void* v,aitIndex count) {
 }
 
 static int mapGddToAckt(void* vd, aitIndex count, const gdd & dd, 
-                        const std::vector< std::string > &enumStringTable) {
+                        const gddEnumStringTable &enumStringTable) {
     dbr_put_ackt_t* sv = (dbr_put_ackt_t*)vd;
     aitIndex sz = dd.getDataSizeElements();
     const void* v=dd.dataVoid();
@@ -1737,7 +1740,7 @@ static smartGDDPointer mapAcksToGdd(void* v,aitIndex count) {
 }
 
 static int mapGddToAcks(void* vd, aitIndex count, const gdd &dd, 
-                        const std::vector< std::string > &enumStringTable) {
+                        const gddEnumStringTable &enumStringTable) {
     dbr_put_acks_t* sv = (dbr_put_acks_t*)vd;
     aitIndex sz = dd.getDataSizeElements();
     const void* v=dd.dataVoid();
@@ -1795,7 +1798,7 @@ static smartGDDPointer mapClassNameToGdd(void* v,aitIndex count) {
 }
 
 static int mapGddToClassName(void* vd, aitIndex count, const gdd & dd, 
-                             const std::vector< std::string > &enumStringTable) {
+                             const gddEnumStringTable &enumStringTable) {
     aitFixedString* db = (aitFixedString*)vd;
     aitIndex sz = dd.getDataSizeElements();
     const void* v = dd.dataVoid();

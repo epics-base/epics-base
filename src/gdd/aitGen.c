@@ -5,6 +5,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.11  2001/07/03 00:58:18  jhill
+ * changed interface so that unreferenced table will not optimize away
+ *
  * Revision 1.10  2000/10/12 21:52:48  jhill
  * changes to support compilation by borland
  *
@@ -234,7 +237,7 @@ void MakeStringFuncFrom(int i,int j,int k)
 	/* assumes that void* d in an array of char pointers of length c */
 	/* takes numeric data from source j and convert it to string in dest i */
 
-	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const std::vector<std::string> *)\n",
+	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const gddEnumStringTable *)\n",
 		table_type[k],&(aitName[i])[3],&(aitName[j])[3]);
 	pr(dfd,"{\n");
 	pr(dfd,"\taitIndex i;\n");
@@ -264,7 +267,7 @@ void MakeStringFuncTo(int i,int j,int k)
 	/* assumes that void* d in an array of char pointers of length c */
 	/* takes string data from source j and convert it to numeric in dest i */
 
-	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const std::vector<std::string> *)\n",
+	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const gddEnumStringTable *)\n",
 		table_type[k],&(aitName[i])[3],&(aitName[j])[3]);
 	pr(dfd,"{\n");
 	pr(dfd,"\taitIndex i;\n");
@@ -312,7 +315,7 @@ void MakeFStringFuncFrom(int i,int j,int k)
 	/* assumes that void* d in an array of char pointers of length c */
 	/* takes numeric data from source j and convert it to string in dest i */
 
-	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const std::vector<std::string> *)\n",
+	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const gddEnumStringTable *)\n",
 		table_type[k],&(aitName[i])[3],&(aitName[j])[3]);
 	pr(dfd,"{\n");
 	pr(dfd,"\taitIndex i;\n");
@@ -349,7 +352,7 @@ void MakeFStringFuncTo(int i,int j,int k)
 {
 	/* assumes that void* d in an array of char pointers of length c */
 	/* takes string data from source j and convert it to numeric in dest i */
-	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const std::vector<std::string> *)\n",
+	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const gddEnumStringTable *)\n",
 		table_type[k],&(aitName[i])[3],&(aitName[j])[3]);
 	pr(dfd,"{\n");
 	pr(dfd,"\taitIndex i;\n");
@@ -395,7 +398,7 @@ void GenName(int i,int j,int k)
 	const char* i_name = &((aitName[i])[3]);
 	const char* j_name = &((aitName[j])[3]);
 
-	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const std::vector<std::string> *)\n",
+	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const gddEnumStringTable *)\n",
 			table_type[k],i_name,j_name);
 }
 

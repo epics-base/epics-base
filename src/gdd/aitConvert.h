@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.14  2001/09/05 00:50:36  jhill
+ * removed GNU compiler ifdef
+ *
  * Revision 1.13  2001/07/03 00:58:18  jhill
  * changed interface so that unreferenced table will not optimize away
  *
@@ -56,16 +59,15 @@
 #include <sys/types.h>
 
 #if defined(_MSC_VER) && _MSC_VER < 1200
-#pragma warning (disable:4786)
+#   pragma warning ( push )
+#   pragma warning ( disable:4786 )
 #endif
-#include <vector>
-#include <string>
-
 
 #include "shareLib.h"
 #include "osiSock.h"
 
 #include "aitTypes.h"
+#include "gddEnumStringTable.h"
 
 #if defined(__i386) || defined(i386)
 #define AIT_NEED_BYTE_SWAP 1
@@ -80,7 +82,7 @@
 typedef enum { aitLocalDataFormat=0, aitNetworkDataFormat } aitDataFormat;
 
 /* all conversion functions have this prototype */
-typedef int (*aitFunc)(void* dest,const void* src,aitIndex count,const std::vector< std::string > *pEnumStringTable);
+typedef int (*aitFunc)(void* dest,const void* src,aitIndex count,const gddEnumStringTable *pEnumStringTable);
 
 #ifdef __cplusplus
 extern "C" {
@@ -107,17 +109,17 @@ epicsShareExtern aitFunc aitConvertFromNetTable[aitTotal][aitTotal];
 
 inline int aitConvert(aitEnum desttype, void* dest,
  aitEnum srctype, const void* src, aitIndex count, 
- const std::vector<std::string> *pEnumStringTable = 0 )
+ const gddEnumStringTable *pEnumStringTable = 0 )
   { return (*aitConvertTable[desttype][srctype])(dest,src,count,pEnumStringTable); }
 
 inline int aitConvertToNet(aitEnum desttype, void* dest,
  aitEnum srctype, const void* src, aitIndex count, 
- const std::vector<std::string> *pEnumStringTable = 0 )
+ const gddEnumStringTable *pEnumStringTable = 0 )
   { return (*aitConvertToNetTable[desttype][srctype])(dest,src,count,pEnumStringTable); }
 
 inline int aitConvertFromNet(aitEnum desttype, void* dest,
  aitEnum srctype, const void* src, aitIndex count, 
- const std::vector<std::string> *pEnumStringTable = 0 )
+ const gddEnumStringTable *pEnumStringTable = 0 )
   { return (*aitConvertFromNetTable[desttype][srctype])(dest,src,count,pEnumStringTable); }
 
 #else
@@ -192,6 +194,10 @@ inline void aitFromNetOrder64(aitUint64* dest, aitUint64* src)
 #define aitToNetFloat32 aitToNetOrder32
 #define aitFromNetFloat64 aitFromNetOrder64
 #define aitFromNetFloat32 aitFromNetOrder32
+
+#if defined ( _MSC_VER ) && _MSC_VER < 1200
+#   pragma warning ( pop )
+#endif
 
 #endif
 

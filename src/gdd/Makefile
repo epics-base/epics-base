@@ -24,6 +24,7 @@ INC += gddAppTable.h
 INC += gddAppFuncTable.h
 INC += smartGDDPointer.h
 INC += gddApps.h
+INC += gddEnumStringTable.h
 
 HTMLS += gdd.html
 HTMLS += gddref.html
@@ -31,12 +32,13 @@ HTMLS += gddref2.html
 
 AITGENSRCS := gdd.cc gddTest.cc gddAppTable.cc gddNewDel.cc \
 	gddAppDefs.cc aitTypes.c aitConvert.cc aitHelpers.cc  \
-	gddArray.cc gddContainer.cc gddErrorCodes.cc gddUtils.cc
+	gddArray.cc gddContainer.cc gddErrorCodes.cc gddUtils.cc \
+    gddEnumStringTable.cc
 
 gdd_SRCS := gdd.cc gddTest.cc gddAppTable.cc gddNewDel.cc \
 	gddAppDefs.cc aitTypes.c aitConvert.cc aitHelpers.cc dbMapper.cc \
 	gddArray.cc gddContainer.cc gddErrorCodes.cc gddUtils.cc \
-	smartGDDPointer.cc
+	smartGDDPointer.cc gddEnumStringTable.cc
 
 LIBRARY = gdd
 

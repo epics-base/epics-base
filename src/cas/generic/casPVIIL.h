@@ -158,7 +158,7 @@ inline aitIndex casPVI::nativeCount ()
 //
 // casPVI::enumStringTable ()
 //
-inline const std::vector< std::string >& casPVI::enumStringTable () const
+inline const gddEnumStringTable & casPVI::enumStringTable () const
 {
     return this->enumStrTbl;
 }

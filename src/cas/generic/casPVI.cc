@@ -254,11 +254,15 @@ void casPVI::updateEnumStringTable ()
     if (pTmp->dimension()==0) {
         if (pTmp->primitiveType()==aitEnumString) {
             aitString *pStr = (aitString *) pTmp->dataVoid ();
-            this->enumStrTbl[0].assign (pStr->string());
+            if ( ! this->enumStrTbl.setString ( 0, pStr->string() ) ) {
+                errMessage ( S_cas_noMemory, "no memory to set enumerated PV string cache" );
+            }
         }
         else if (pTmp->primitiveType()==aitEnumFixedString) {
             aitFixedString *pStr = (aitFixedString *) pTmp->dataVoid ();
-            this->enumStrTbl[0].assign (pStr->fixed_string);
+            if ( ! this->enumStrTbl.setString ( 0, pStr->fixed_string ) ) {
+                errMessage ( S_cas_noMemory, "no memory to set enumerated PV string cache" );
+            }
         }
         else {
             errMessage (S_cas_badType, "application type \"enums\" string conversion table for enumerated PV isnt a string type?");
@@ -274,18 +278,22 @@ void casPVI::updateEnumStringTable ()
         //
         // preallocate the correct amount
         //
-        this->enumStrTbl.reserve (count);
+        this->enumStrTbl.reserve ( count );
 
         if (pTmp->primitiveType()==aitEnumString) {
             aitString *pStr = (aitString *) pTmp->dataVoid ();
-            for (index = 0; index<count; index++) {
-                this->enumStrTbl[index].assign (pStr[index].string());
+            for ( index = 0; index<count; index++ ) {
+                if ( ! this->enumStrTbl.setString ( index, pStr[index].string() ) ) {
+                    errMessage ( S_cas_noMemory, "no memory to set enumerated PV string cache" );
+                }
             }
         }
         else if (pTmp->primitiveType()==aitEnumFixedString) {
             aitFixedString *pStr = (aitFixedString *) pTmp->dataVoid ();
-            for (index = 0; index<count; index++) {
-                this->enumStrTbl[index].assign (pStr[index].fixed_string);
+            for ( index = 0; index<count; index++ ) {
+                if ( ! this->enumStrTbl.setString ( index, pStr[index].fixed_string ) ) {
+                    errMessage ( S_cas_noMemory, "no memory to set enumerated PV string cache" );
+                }
             }
         }
         else {

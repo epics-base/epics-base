@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.13  2000/10/12 21:52:49  jhill
+ * changes to support compilation by borland
+ *
  * Revision 1.12  2000/10/12 16:10:53  jhill
  * changing include order fixes GNU warning
  *
@@ -71,7 +74,7 @@ typedef smartGDDPointer (*to_gdd)(void* db_struct, aitIndex element_count);
 // gdd points to an array or -1 if the number of elements in the value
 // field is not identical to element_count available in db_struct.
 typedef int (*to_dbr)(void* db_struct, aitIndex element_count, 
-                      const gdd &, const std::vector< std::string > &enumStringTable);
+                      const gdd &, const gddEnumStringTable &enumStringTable);
 
 struct gddDbrMapFuncTable {
 	to_gdd	conv_gdd;

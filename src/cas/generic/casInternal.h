@@ -345,7 +345,7 @@ public:
 
 	void postAccessRightsEvent ();
 
-    const std::vector< std::string >& enumStringTable () const;
+    const gddEnumStringTable & enumStringTable () const;
 
     //
     // virtual functions
@@ -448,7 +448,7 @@ public:
        
     epicsShareFunc virtual casResType resourceType () const;
 
-    const std::vector< std::string >& enumStringTable () const;
+    const gddEnumStringTable & enumStringTable () const;
     void updateEnumStringTable ();
 
     //
@@ -471,7 +471,7 @@ public:
 
 private:
     tsDLList<casPVListChan>     chanList;
-    std::vector< std::string >  enumStrTbl;
+    gddEnumStringTable          enumStrTbl;
     caServerI                   *pCAS;
     unsigned                    nMonAttached;
     unsigned                    nIOAttached;

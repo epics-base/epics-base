@@ -45,7 +45,6 @@
 #include "ellLib.h"
 #include "bucketLib.h"
 #include "osiSock.h"
-#include "osiSem.h"
 #include "osiThread.h"
 #include "shareLib.h"
 

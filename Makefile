@@ -1,9 +1,4 @@
 #
-<<<<<<< Makefile
-# $Id$
-=======
-# $Id$
->>>>>>> 1.20
 #
 # Top Level EPICS Makefile
 #        by Matthew Needes and Mike Bordua
@@ -17,18 +12,9 @@
 #         install because the release.% syntax is illegal.
 #
 # $Log$
-<<<<<<< Makefile
 # Revision 1.1.1.1  1994/11/09  01:08:53  epics
 # Import of R3.12.0Beta
 #
-=======
-# Revision 1.20  1994/11/01  11:57:58  jba
-# Removed install dependancy from release rule
-#
-# Revision 1.19  1994/10/31  21:47:02  jba
-# Removed depends dependancy in release and built_release rules
-#
->>>>>>> 1.20
 # Revision 1.18  1994/10/13  19:44:34  mda
 # Introduce temporary symbol (ARCH_TYPE=$$ARCH) and use in later targets/rules
 # to avoid problem with $* symbol resolution in some versions of gnumake.
@@ -85,11 +71,7 @@ depends:
 			${MAKE} ${MFLAGS} $@.$$ARCH;			\
 		done)
 
-<<<<<<< Makefile
 release: 
-=======
-release:
->>>>>>> 1.20
 	@echo TOP: Creating Release...
 	@tools/MakeRelease
 
@@ -102,8 +84,8 @@ clean:
 	@tools/Clean
 
 uninstall:
-	@rm -rf bin/* lib/* rec.bak
-	@rm -f rec/default.dctsdr rec/default.sdrSum rec/*.h
+	rm -rf bin/* lib/* rec.bak
+	rm -f rec/default.dctsdr rec/default.sdrSum rec/*.h
 
 #  Notes for single architecture build rules:
 #    CheckArch only has to be run for dirs.% .  That

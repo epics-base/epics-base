@@ -60,10 +60,10 @@
 #include <iocinf.h>
 #include <comBuf_IL.h>
 
-tsFreeList < class comBuf, 0x20, true > comBuf::freeList;
+tsFreeList < class comBuf, 0x20, 1u > comBuf::freeList;
 
 // nill message pad bytes
-static const char nillBytes[] = 
+static const char nillBytes [] = 
 { 
     0, 0, 0, 0,
     0, 0, 0, 0

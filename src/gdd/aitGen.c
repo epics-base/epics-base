@@ -5,6 +5,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.1  1996/06/25 19:11:30  jbk
+ * new in EPICS base
+ *
  * Revision 1.3  1996/06/17 15:24:05  jbk
  * many mods, string class corrections.
  * gdd operator= protection.
@@ -178,7 +181,7 @@ void MakeStringFuncFrom(int i,int j,int k)
 	else
 		pr(dfd,"\t\tsprintf(temp,aitStringType[%d],in[i]);\n",j);
 
-	pr(dfd,"\t\tout[i].copy(temp);\n");
+	pr(dfd,"\t\tout[i].installString(temp);\n");
 	pr(dfd,"\t}\n");
 	pr(dfd,"}\n");
 }

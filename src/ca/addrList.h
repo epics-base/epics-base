@@ -14,14 +14,14 @@ void caPrintAddrList(ELLLIST *pList);
 void caDiscoverInterfaces(
         ELLLIST *pList,
         SOCKET socket,
-        int port,
+        unsigned short port,
 	struct in_addr matchAddr);
 
 void caAddConfiguredAddr(
         ELLLIST *pList,
         const ENV_PARAM *pEnv,
         SOCKET socket,
-        int port);
+        unsigned short port);
 
 int local_addr(SOCKET socket, struct sockaddr_in *plcladdr);
 unsigned short caFetchPortConfig(const ENV_PARAM *pEnv, 

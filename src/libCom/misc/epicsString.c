@@ -141,7 +141,8 @@ epicsShareFunc int epicsShareAPI epicsStrPrintEscaped(
        case '\t':  nout += fprintf(fp, "\\t");  break;
        case '\v':  nout += fprintf(fp, "\\v");  break;
        case '\\':  nout += fprintf(fp, "\\\\"); break;
-       case '\?':  nout += fprintf(fp, "\\?");  break;
+       /*? does not follow C convention because trigraphs no longer important*/
+       case '\?':  nout += fprintf(fp, "?");  break;
        case '\'':  nout += fprintf(fp, "\\'");  break;
        case '\"':  nout += fprintf(fp, "\\\"");  break;
        default:

@@ -64,7 +64,7 @@ set VIM=/usr/share/vim/vim61
 
 REM    --------------- cygwin cvs  ------------------------
 REM HOME needed by cvs for .cvsrc file (set in vim above)
-set CVSROOT=:ext:%USERNAME%@venus.aps.anl.gov:/net/phoebus/epicsmgr/cvsroot
+set CVSROOT=:ext:%USERNAME%@venus.aps.anl.gov:/usr/local/epicsmgr/cvsroot
 set CVS_RSH=/bin/ssh.exe
 
 REM    --------------- JAVA ------------------------------

@@ -33,8 +33,9 @@
 tsFreeList < struct CASG, 128 > CASG::freeList;
 epicsMutex CASG::freeListMutex;
 
-CASG::CASG (cac &cacIn) :
-    client (cacIn), opPendCount (0u), magic (CASG_MAGIC), seqNo (0u)
+CASG::CASG ( cac &cacIn ) :
+    opPendCount ( 0u ),  seqNo ( 0u ), 
+	client ( cacIn ), magic ( CASG_MAGIC )
 {
     client.installCASG ( *this );
 }

@@ -913,12 +913,11 @@ LOCAL void event_task (void *pParm)
     epicsMutexDestroy(evUser->firstque.writelock);
 
     {
-            struct event_que    *nextque;
+        struct event_que    *nextque;
 
         ev_que = evUser->firstque.nextque;
-            while(ev_que){ 
-
-                nextque = ev_que->nextque;
+        while(ev_que){ 
+            nextque = ev_que->nextque;
             epicsMutexDestroy(ev_que->writelock);
             freeListFree(dbevEventQueueFreeList, ev_que);
             ev_que = nextque;

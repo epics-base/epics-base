@@ -43,5 +43,3 @@ $(PROD1): $(OBJS) $(OBJS1)
 $(PROD2): $(OBJS) $(OBJS2)
 	$(LINK.c) $@ $(OBJS) $(OBJS2) $(LDLIBS)
 
-clean::
-	@rm drvSup drvSupPEP

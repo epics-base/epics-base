@@ -13,6 +13,9 @@
 #         install because the release.% syntax is illegal.
 #
 # $Log$
+# Revision 1.13  1994/09/07  19:15:17  jba
+# Modified to eork with extensions and do depends
+#
 # Revision 1.12  1994/08/21  00:55:51  mcn
 # New stuff.
 #
@@ -127,7 +130,6 @@ built_release: depends install
 #     basis.
 
 dirs.%:
-	@echo ------------------CheckArch $*
 	@tools/CheckArch $*
 	@echo $*: Creating Directories
 	@tools/MakeDirs $*
@@ -175,7 +177,7 @@ depends.%: dirs.%
 	@${MAKE} ${MFLAGS} ARCH=$* -f Makefile.subdirs depends
 
 clean.%: dirs.%
-	@echo $*: Performing Make Depends
+	@echo $*: Cleaning
 	@${MAKE} ${MFLAGS} ARCH=$* -f Makefile.subdirs clean
 
 # Illegal Syntax

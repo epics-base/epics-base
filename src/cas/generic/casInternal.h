@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -37,7 +40,7 @@
 //
 #include <tsDLList.h>
 #include <resourceLib.h>
-#include <caProto.h>
+#include <../src/ca/caProto.h>
 
 typedef aitUint32 caResId;
 

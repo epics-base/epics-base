@@ -469,7 +469,6 @@ void resTable<T,ID>::splitBucket ()
         // Run the destructors explicitly. Currently this destructor is a noop.
         // The Tornado II compiler and RedHat 6.2 will not compile ~tsSLList<T>() but 
         // since its a NOOP we can find an ugly workaround :-(
-        //
 #       if ! defined (__GNUC__) || __GNUC__ > 2 || ( __GNUC__ == 2 && __GNUC_MINOR__ >= 92 )
             for ( i = 0; i < oldTableSize; i++ ) {
                 this->pTable[i].~tsSLList<T>();

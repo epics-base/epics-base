@@ -32,6 +32,9 @@
 /************************************************************************/
 
 /* $Log$
+ * Revision 1.70  1998/04/13 19:14:34  jhill
+ * fixed task variable problem
+ *
  * Revision 1.69  1998/03/12 20:39:10  jhill
  * fixed problem where 3.13.beta11 unable to connect to 3.11 with correct native type
  *
@@ -403,6 +406,7 @@ typedef struct caclient_put_notify{
 #	define local_chidlist	(ca_static->ca_local_chidlist)
 #	define lcl_buff_list	(ca_static->ca_lcl_buff_list)
 #	define lock_tid	(ca_static->ca_lock_tid)
+#	define lock_count (ca_static->ca_lock_count)
 #endif
 
 /*
@@ -583,9 +587,10 @@ struct  CA_STATIC {
 	ELLLIST		ca_taskVarList;
 	void		*ca_evuser;
 	void		*ca_dbMonixFreeList;
-	int		ca_lock_tid;
-	int		ca_tid;
-    	int		recv_tid;
+	int			ca_lock_tid;
+	unsigned	ca_lock_count;
+	int			ca_tid;
+	int			recv_tid;
 #endif
 };
 

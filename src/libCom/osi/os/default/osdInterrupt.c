@@ -27,7 +27,10 @@ static int firstTime = 1;
 
 epicsShareFunc int epicsShareAPI interruptLock()
 {
-    if(firstTime) globalLock = semMutexMustCreate();
+    if(firstTime) {
+        globalLock = semMutexMustCreate();
+        firstTime = 0;
+    }
     semMutexMustTake(globalLock);
     return(0);
 }

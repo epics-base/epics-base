@@ -16,12 +16,12 @@ of this distribution.
 
 #include "osiSem.h"
 
-semBinaryId semBinaryCreate(int initialState)
+semBinaryId semBinaryCreate(semInitialState initialState)
 {
   return((semBinaryId)semBCreate(SEM_Q_FIFO,(semEmpty ? SEM_EMPTY : SEM_FULL)));
 }
 
-semBinaryId semBinaryMustCreate(int initialState)
+semBinaryId semBinaryMustCreate(semInitialState initialState)
 {
     semBinaryId id = semBinaryCreate (initialState);
     assert (id);

@@ -13,9 +13,10 @@ typedef void *semBinaryId;
 typedef enum {semTakeOK,semTakeTimeout,semTakeError} semTakeStatus;
 typedef enum {semEmpty,semFull} semInitialState;
 
-epicsShareFunc semBinaryId epicsShareAPI semBinaryCreate(int initialState);
+epicsShareFunc semBinaryId epicsShareAPI semBinaryCreate(
+    semInitialState initialState);
 epicsShareFunc semBinaryId epicsShareAPI semBinaryMustCreate (
-    int initialState);
+    semInitialState initialState);
 epicsShareFunc void epicsShareAPI semBinaryDestroy(semBinaryId id);
 epicsShareFunc void epicsShareAPI semBinaryGive(semBinaryId id);
 epicsShareFunc semTakeStatus epicsShareAPI semBinaryTake(semBinaryId id);

@@ -26,6 +26,7 @@ of this distribution.
 typedef struct binary {
     pthread_mutex_t	mutex;
     pthread_cond_t	cond;
+    int                 isFull;
 }binary;
 
 typedef struct mutex {
@@ -64,7 +65,7 @@ static void convertDoubleToWakeTime(double timeout,struct timespec *wakeTime)
     }
 }
 
-semBinaryId semBinaryCreate(int initialState)
+semBinaryId semBinaryCreate(semInitialState initialState)
 {
     binary *pbinary;
     int   status;
@@ -74,11 +75,11 @@ semBinaryId semBinaryCreate(int initialState)
     checkStatusQuit(status,"pthread_mutex_init","semBinaryCreate");
     status = pthread_cond_init(&pbinary->cond,0);
     checkStatusQuit(status,"pthread_cond_init","semBinaryCreate");
-    if(initialState==semFull) semBinaryGive((semBinaryId)pbinary);
+    if(initialState==semFull) pbinary->isFull = 1;
     return((semBinaryId)pbinary);
 }
 
-semBinaryId semBinaryMustCreate(int initialState)
+semBinaryId semBinaryMustCreate(semInitialState initialState)
 {
     semBinaryId id = semBinaryCreate (initialState);
     assert (id);
@@ -102,8 +103,15 @@ void semBinaryGive(semBinaryId id)
     binary *pbinary = (binary *)id;
     int   status;
 
-    status = pthread_cond_signal(&pbinary->cond);
-    checkStatus(status,"pthread_cond_signal");
+    status = pthread_mutex_lock(&pbinary->mutex);
+    checkStatusQuit(status,"pthread_mutex_lock","semBinaryTake");
+    if(!pbinary->isFull) {
+        pbinary->isFull = 1;
+        status = pthread_cond_signal(&pbinary->cond);
+        checkStatus(status,"pthread_cond_signal");
+    }
+    status = pthread_mutex_unlock(&pbinary->mutex);
+    checkStatusQuit(status,"pthread_mutex_unlock","semBinaryTake");
 }
 
 semTakeStatus semBinaryTake(semBinaryId id)
@@ -113,8 +121,11 @@ semTakeStatus semBinaryTake(semBinaryId id)
 
     status = pthread_mutex_lock(&pbinary->mutex);
     checkStatusQuit(status,"pthread_mutex_lock","semBinaryTake");
-    status = pthread_cond_wait(&pbinary->cond,&pbinary->mutex);
-    checkStatusQuit(status,"pthread_cond_wait","semBinaryTake");
+    if(!pbinary->isFull) {
+        status = pthread_cond_wait(&pbinary->cond,&pbinary->mutex);
+        checkStatusQuit(status,"pthread_cond_wait","semBinaryTake");
+    }
+    pbinary->isFull = 0;
     status = pthread_mutex_unlock(&pbinary->mutex);
     checkStatusQuit(status,"pthread_mutex_unlock","semBinaryTake");
     return(semTakeOK);
@@ -124,12 +135,17 @@ semTakeStatus semBinaryTakeTimeout(semBinaryId id, double timeout)
 {
     binary *pbinary = (binary *)id;
     struct timespec wakeTime;
-    int   status,unlockStatus;
+    int   status = 0;
+    int   unlockStatus;
 
-    convertDoubleToWakeTime(timeout,&wakeTime);
     status = pthread_mutex_lock(&pbinary->mutex);
     checkStatusQuit(status,"pthread_mutex_lock","semBinaryTakeTimeout");
-    status = pthread_cond_timedwait(&pbinary->cond,&pbinary->mutex,&wakeTime);
+    if(!pbinary->isFull) {
+        convertDoubleToWakeTime(timeout,&wakeTime);
+        status = pthread_cond_timedwait(
+            &pbinary->cond,&pbinary->mutex,&wakeTime);
+    }
+    if(status==0) pbinary->isFull = 0;
     unlockStatus = pthread_mutex_unlock(&pbinary->mutex);
     checkStatusQuit(unlockStatus,"pthread_mutex_unlock","semBinaryTakeTimeout");
     if(status==0) return(semTakeOK);

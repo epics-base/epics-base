@@ -17,7 +17,7 @@
  * Create a simple binary semaphore
  */
 semBinaryId
-semBinaryCreate(int initialState) 
+semBinaryCreate(semInitialState initialState) 
 {
     rtems_status_code sc;
     rtems_id sid;
@@ -50,7 +50,7 @@ semBinaryCreate(int initialState)
     return (semBinaryId)sid;
 }
 
-semBinaryId semBinaryMustCreate(int initialState)
+semBinaryId semBinaryMustCreate(semInitialState initialState)
 {
     semBinaryId id = semBinaryCreate (initialState);
     assert (id);

@@ -52,7 +52,7 @@ void camsgtask (struct client *client)
 {
     int             nchars;
     int             status;
-        
+
     client->tid = threadGetIdSelf ();
 
     taskwdInsert (threadGetIdSelf(), NULL, NULL);

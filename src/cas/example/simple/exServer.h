@@ -29,10 +29,10 @@
 //
 // EPICS
 //
+#include "gddAppFuncTable.h"
 #include "epicsTimer.h"
 #include "casdef.h"
 #include "epicsAssert.h"
-#include "gddAppFuncTable.h"
 #include "resourceLib.h"
 #include "tsMinMax.h"
 

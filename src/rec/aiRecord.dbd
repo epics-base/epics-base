@@ -2,6 +2,7 @@ recordtype(ai) {
 	include "dbCommon.dbd" 
 	field(VAL,DBF_DOUBLE) {
 		prompt("Current EGU Value")
+		promptgroup(GUI_INPUTS)
 		asl(ASL0)
 		pp(TRUE)
 	}

@@ -2,6 +2,7 @@ recordtype(bo) {
 	include "dbCommon.dbd" 
 	field(VAL,DBF_ENUM) {
 		prompt("Current Value")
+                promptgroup(GUI_OUTPUT)
 		asl(ASL0)
 		pp(TRUE)
 	}

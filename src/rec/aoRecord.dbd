@@ -6,6 +6,7 @@ recordtype(ao) {
 	include "dbCommon.dbd" 
 	field(VAL,DBF_DOUBLE) {
 		prompt("Desired Output")
+                promptgroup(GUI_OUTPUT)
 		asl(ASL0)
 		pp(TRUE)
 	}

@@ -2,6 +2,7 @@ recordtype(mbbo) {
 	include "dbCommon.dbd" 
 	field(VAL,DBF_ENUM) {
 		prompt("Desired Value")
+                promptgroup(GUI_OUTPUT)
 		asl(ASL0)
 		pp(TRUE)
 	}

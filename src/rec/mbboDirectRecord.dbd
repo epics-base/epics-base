@@ -2,6 +2,7 @@ recordtype(mbboDirect) {
 	include "dbCommon.dbd" 
 	field(VAL,DBF_USHORT) {
 		prompt("Word")
+                promptgroup(GUI_OUTPUT)
 		asl(ASL0)
 		pp(TRUE)
 	}

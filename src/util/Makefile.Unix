@@ -2,11 +2,9 @@ EPICS = ../../..
 
 include $(EPICS)/config/CONFIG
 
-T_ARCH = sun4
-
 USR_LDLIBS = -lm -s
 
-USR_CFLAGS = -UvxWorks
+USR_CFLAGS = -DXWINDOWS -UvxWorks -I$(OPENWIN)/include
 
 CC = $(oldCC)
 
@@ -24,7 +22,10 @@ OBJS = \
 	$(OBDIR)/recListProg.o $(OBDIR)/recordTest.o \
 	$(OBDIR)/startCArepeater.o $(OBDIR)/sydPlot.o
 
-LIBOBJS =
+LIBOBJS = \
+	$(OBDIR)/guiSubr.o $(OBDIR)/pprPlot.o $(OBDIR)/sydPlot.o
+
+LIBNAME = libppr.a
 
 TARGETS = \
 	$(OBDIR)/apCreateShadow $(OBDIR)/apStatusSync $(OBDIR)/bfRing \
@@ -32,7 +33,5 @@ TARGETS = \
 	$(OBDIR)/cmdClient $(OBDIR)/extrDoc $(OBDIR)/iocLogServer \
 	$(OBDIR)/racPrint $(OBDIR)/recListProg $(OBDIR)/recordTest \
 	$(OBDIR)/startCArepeater
-
-#all :: $(PROD)
 
 include $(EPICS)/config/RULES.Unix

@@ -202,6 +202,7 @@ static void get_graphics(DBADDR *paddr,void **ppbuffer,
 	struct			dbr_grDouble grd;
 	int			got_data=FALSE;
 
+        grd.upper_disp_limit = grd.lower_disp_limit = 0.0;
 	if( prset && prset->get_graphic_double ) {
 		(*prset->get_graphic_double)(paddr,&grd);
 		got_data=TRUE;
@@ -241,6 +242,7 @@ static void get_control(DBADDR *paddr,void **ppbuffer,
 	struct dbr_ctrlDouble	ctrld;
 	int			got_data=FALSE;
 
+        ctrld.upper_ctrl_limit = ctrld.lower_ctrl_limit = 0.0;
 	if( prset && prset->get_control_double ) {
 		(*prset->get_control_double)(paddr,&ctrld);
 		got_data=TRUE;
@@ -280,6 +282,8 @@ static void get_alarm(DBADDR *paddr,void	**ppbuffer,
 	struct			dbr_alDouble ald;
 	int			got_data=FALSE;
 
+        ald.upper_alarm_limit = ald.upper_warning_limit = 0.0;
+        ald.lower_warning_limit = ald.lower_alarm_limit = 0.0;
 	if( prset && prset->get_alarm_double ) {
 		(*prset->get_alarm_double)(paddr,&ald);
 		got_data=TRUE;

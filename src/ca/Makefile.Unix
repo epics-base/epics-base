@@ -2,7 +2,6 @@ EPICS = ../../../..
 include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
-USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
 USR_LDLIBS = -lca -lCom -lm
 USR_LDFLAGS = -L.
 
@@ -32,12 +31,14 @@ PROD = caRepeater
 
 include $(EPICS)/config/RULES.Unix
 
-acctst: acctst.o $(DEPLIBS_BASE)/libCom.a libca.a
+acctst: acctst.o $(LIBOBJS) $(DEPLIBS_BASE)/libCom.a
+	$(LINK.c) -o $@ $< $(LIBOBJS) $(DEPLIBS_BASE)/libCom.a 
 
 acctst.o: ../acctst.c
 	$(COMPILE.c) $<
 
-catime: catime.o $(DEPLIBS_BASE)/libCom.a libca.a
+catime: catime.o $(LIBOBJS) $(DEPLIBS_BASE)/libCom.a 
+	$(LINK.c) -o $@ $< $(LIBOBJS) $(DEPLIBS_BASE)/libCom.a 
 
 catime.o: ../catime.c
 	$(COMPILE.c) $<

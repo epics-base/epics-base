@@ -2,12 +2,11 @@ EPICS = ../../../..
 include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
-USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
-
 SRCS.c = \
 	../iocinf.c ../access.c ../test_event.c ../service.c \
 	../flow_control.c ../repeater.c ../conn.c ../syncgrp.c \
-	../if_depen.c ../bsd_depen.c ../vxWorks_depen.c ../acctst.c
+	../if_depen.c ../bsd_depen.c ../vxWorks_depen.c ../acctst.c \
+	../catime.c
 
 OBJS = \
 	iocinf.o access.o test_event.o service.o flow_control.o \
@@ -20,3 +19,10 @@ include $(EPICS)/config/RULES.Vx
 caLib: $(OBJS)
 	$(RM) $@
 	$(LINK.c) $@ $(OBJS) $(LDLIBS)
+
+acctst.o: ../acctst.c
+	$(COMPILE.c) $<
+
+catime.o: ../catime.c
+	$(COMPILE.c) $<
+

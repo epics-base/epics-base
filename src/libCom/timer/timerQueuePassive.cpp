@@ -28,11 +28,16 @@
  *
  */
 
+//
+// Note, a free list for this class is not currently used because of 
+// entanglements between the file scope free list destructor and a
+// file scope fdManager destructor which is trying to call a 
+// destructor for a passive timer queue which is no longer valid
+// in pool.
+// 
+
 #define epicsExportSharedSymbols
 #include "timerPrivate.h"
-
-tsFreeList < class timerQueuePassive, 0x8 > timerQueuePassive::freeList;
-epicsMutex timerQueuePassive::freeListMutex;
 
 epicsTimerQueuePassive::~epicsTimerQueuePassive () {}
 

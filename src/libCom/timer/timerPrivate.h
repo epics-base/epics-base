@@ -152,14 +152,10 @@ public:
     void show ( unsigned int level ) const;
     void release ();
     timerQueue & getTimerQueue ();
-    void * operator new ( size_t size );
-    void operator delete ( void *pCadaver, size_t size );
 protected:
     ~timerQueuePassive ();
 private:
     timerQueue queue;
-    static tsFreeList < class timerQueuePassive, 0x8 > freeList;
-    static epicsMutex freeListMutex;
 };
 
 inline void * timer::operator new ( size_t size )
@@ -187,18 +183,6 @@ inline int timerQueueActive::threadPriority () const
 inline timerQueue & timerQueueActive::getTimerQueue ()
 {
     return this->queue;
-}
-
-inline void * timerQueuePassive::operator new ( size_t size )
-{
-    epicsAutoMutex locker ( timerQueuePassive::freeListMutex );
-    return timerQueuePassive::freeList.allocate ( size );
-}
-
-inline void timerQueuePassive::operator delete ( void *pCadaver, size_t size )
-{
-    epicsAutoMutex locker ( timerQueuePassive::freeListMutex );
-    timerQueuePassive::freeList.release ( pCadaver, size );
 }
 
 inline timerQueue & timerQueuePassive::getTimerQueue ()

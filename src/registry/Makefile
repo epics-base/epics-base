@@ -32,7 +32,7 @@ registryIoc_DLL_LIBS  = Com
 
 registryIoc_RCS_WIN32 = registryIoc.rc
 
-OBJS_IOC = registerRecordDeviceDriver
+OBJS_vxWorks = registerRecordDeviceDriver
 
 include $(TOP)/configure/RULES
 

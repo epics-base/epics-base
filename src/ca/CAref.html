@@ -4,6 +4,10 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
   <title>EPICS R3.14 Channel Access Reference Manual</title>
+  <link href="CommandTools">
+  <link href="#CommandTools">
+  <style type="text/css">
+  </style>
 </head>
 
 <body lang="en" bgcolor="#FFFFFF">
@@ -56,7 +60,7 @@ height="31" width="88"></a></p>
   <li><a href="#Configurin2">Configuring a CA server</a></li>
 </ul>
 
-<h3><a href="#Command">Command Line Utilities</a></h3>
+<h3><a href="#CommandUtils">Command Line Utilities</a></h3>
 <ul>
   <li><a href="#acctst">acctst - CA client library regression test</a></li>
   <li><a href="#caEventRat">caEventRate - PV event rate logging</a></li>
@@ -64,6 +68,20 @@ height="31" width="88"></a></p>
   <li><a href="#catime">catime - CA client library performance test</a></li>
   <li><a href="#ca_test">ca_test - dump the value of a PV in each external
     data type to the console</a></li>
+</ul>
+
+<h3 style=""><a href="#CommandTools">Command Line Tools <span
+style="color: #FF5F00">(under development)</span></a></h3>
+<ul style="">
+  <li><a href="#caget">caget - Get and print value for PVs</a></li>
+  <li><a href="#camonitor">camonitor - Set up monitor and continuously print
+    incoming values for PVs <span style="color: #FF5F00">(not implemented
+    yet)</span></a></li>
+  <li><a href="#caput">caput - Put value to a PV <span
+    style="color: #FF5F00">(not implemented yet)</span></a></li>
+  <li><a href="#cainfo">cainfo - Print all available channel status and
+    information for a PV <span style="color: #FF5F00">(not implemented
+    yet)</span></a></li>
 </ul>
 
 <h3><a href="#Troublesho">Troubleshooting</a></h3>
@@ -735,7 +753,7 @@ implemet this feature.</em></p>
 <p>See also <a href="#Routing">Routing Restrictions on vxWorks
 Systems</a>.</p>
 
-<h2><a name="Command">Command Line Utilities</a></h2>
+<h2><a name="CommandUtils">Command Line Utilities</a></h2>
 
 <h3><a name="acctst">acctst</a></h3>
 <pre>acctst &lt;PV name&gt; [progress logging level] [channel duplication count] 
@@ -809,6 +827,262 @@ in Hertz to standard out.</p>
 of the PV is converted to each of the many external data type that can be
 specified at the CA client library interface, and each of these is formated
 and then output to the console.</p>
+
+<h2><a name="CommandTools">Command Line Tools <span
+style="color: #FF5F00">(under development)</span></a></h2>
+
+<p><span style="color: #FF5F00">Note: The CA Command Line Tools are currently
+under development. Thus only the first of the tools is included in EPICS Base
+R3.14.5, while the others are still being worked on. These tools have not yet
+proven to be stable and reliable. The user interface might still change, so
+please be careful relying on these early versions in scripts and other
+crucial places. Please report any bugs or unexpected behaviour to the author:
+Ralph.Lange@bessy.de</span></p>
+
+<h3><a name="caget">caget</a></h3>
+<pre>caget [options] &lt;PV name&gt; ...</pre>
+
+<h4>Description</h4>
+
+<p>Get and print value for PV(s).</p>
+
+<p>The values for one or multiple PVs are read and printed to stdout. The
+DBR_... format in which the data is read, the output format, and a number of
+details of how integer and float values are represented can be controlled
+using command line options.</p>
+
+<table border="1">
+  <caption></caption>
+  <thead>
+    <tr>
+      <th>Option</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><p>-h</p>
+      </td>
+      <td>Print usage information</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>-w &lt;sec&gt;</td>
+      <td>Wait time, specifies longer CA timeout, default is 1.0 second</td>
+    </tr>
+    <tr>
+      <td>-c</td>
+      <td>Asynchronous get (use ca_get_callback instead of ca_get)</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>Format options:</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>Default output format is "name value"</td>
+    </tr>
+    <tr>
+      <td>-t</td>
+      <td>Terse mode - print only value, without name</td>
+    </tr>
+    <tr>
+      <td>-a</td>
+      <td>Wide mode "name timestamp value stat sevr" (read PVs as
+        DBR_TIME_xxx)</td>
+    </tr>
+    <tr>
+      <td>-n</td>
+      <td>Print DBF_ENUM values as number (default are enum string
+      values)</td>
+    </tr>
+    <tr>
+      <td>-d &lt;type&gt;</td>
+      <td>Request specific dbr type; use string (DBR_ prefix may be omitted)
+
+        <p>or number of one of the following types:</p>
+
+        <table border="1">
+          <tbody>
+            <tr>
+              <td>DBR_STRING</td>
+              <td>0</td>
+              <td>DBR_STS_FLOAT</td>
+              <td>9</td>
+              <td>DBR_TIME_LONG</td>
+              <td>19</td>
+              <td>DBR_CTRL_SHORT</td>
+              <td>29</td>
+            </tr>
+            <tr>
+              <td>DBR_INT</td>
+              <td>1</td>
+              <td>DBR_STS_ENUM</td>
+              <td>10</td>
+              <td>DBR_TIME_DOUBLE</td>
+              <td>20</td>
+              <td>DBR_CTRL_INT</td>
+              <td>29</td>
+            </tr>
+            <tr>
+              <td>DBR_SHORT</td>
+              <td>1</td>
+              <td>DBR_STS_CHAR</td>
+              <td>11</td>
+              <td>DBR_GR_STRING</td>
+              <td>21</td>
+              <td>DBR_CTRL_FLOAT</td>
+              <td>30</td>
+            </tr>
+            <tr>
+              <td>DBR_FLOAT</td>
+              <td>2</td>
+              <td>DBR_STS_LONG</td>
+              <td>12</td>
+              <td>DBR_GR_SHORT</td>
+              <td>22</td>
+              <td>DBR_CTRL_ENUM</td>
+              <td>31</td>
+            </tr>
+            <tr>
+              <td>DBR_ENUM</td>
+              <td>3</td>
+              <td>DBR_STS_DOUBLE</td>
+              <td>13</td>
+              <td>DBR_GR_INT</td>
+              <td>22</td>
+              <td>DBR_CTRL_CHAR</td>
+              <td>32</td>
+            </tr>
+            <tr>
+              <td>DBR_CHAR</td>
+              <td>4</td>
+              <td>DBR_TIME_STRING</td>
+              <td>14</td>
+              <td>DBR_GR_FLOAT</td>
+              <td>23</td>
+              <td>DBR_CTRL_LONG</td>
+              <td>33</td>
+            </tr>
+            <tr>
+              <td>DBR_LONG</td>
+              <td>5</td>
+              <td>DBR_TIME_INT</td>
+              <td>15</td>
+              <td>DBR_GR_ENUM</td>
+              <td>24</td>
+              <td>DBR_CTRL_DOUBLE</td>
+              <td>34</td>
+            </tr>
+            <tr>
+              <td>DBR_DOUBLE</td>
+              <td>6</td>
+              <td>DBR_TIME_SHORT</td>
+              <td>15</td>
+              <td>DBR_GR_CHAR</td>
+              <td>25</td>
+              <td>DBR_STSACK_STRING</td>
+              <td>37</td>
+            </tr>
+            <tr>
+              <td>DBR_STS_STRING</td>
+              <td>7</td>
+              <td>DBR_TIME_FLOAT</td>
+              <td>16</td>
+              <td>DBR_GR_LONG</td>
+              <td>26</td>
+              <td>DBR_CLASS_NAME</td>
+              <td>38</td>
+            </tr>
+            <tr>
+              <td>DBR_STS_SHORT</td>
+              <td>8</td>
+              <td>DBR_TIME_ENUM</td>
+              <td>17</td>
+              <td>DBR_GR_DOUBLE</td>
+              <td>27</td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>DBR_STS_INT</td>
+              <td>8</td>
+              <td>DBR_TIME_CHAR</td>
+              <td>18</td>
+              <td>DBR_CTRL_STRING</td>
+              <td>28</td>
+              <td></td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>Arrays:</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>Value format: Print number of requested values, then list of
+      values</td>
+    </tr>
+    <tr>
+      <td>Default:</td>
+      <td>Print all values</td>
+    </tr>
+    <tr>
+      <td>-# &lt;count&gt;</td>
+      <td>Print first &lt;count&gt; elements of an array</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>Floating point type format:</td>
+    </tr>
+    <tr>
+      <td>Default:</td>
+      <td>Use %g format</td>
+    </tr>
+    <tr>
+      <td>-f &lt;nr&gt;</td>
+      <td>Use %f format, with &lt;nr&gt; digits after the decimal point</td>
+    </tr>
+    <tr>
+      <td>-e &lt;nr&gt;</td>
+      <td>Use e format, with &lt;nr&gt; digits after the decimal point</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>Integer number format:</td>
+    </tr>
+    <tr>
+      <td>Default:</td>
+      <td>Print as decimal number</td>
+    </tr>
+    <tr>
+      <td>-0x</td>
+      <td>Print as hex number</td>
+    </tr>
+    <tr>
+      <td>-0o</td>
+      <td>Print as octal number</td>
+    </tr>
+    <tr>
+      <td>-0b</td>
+      <td>Print as binary number</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3><a name="camonitor">camonitor</a></h3>
+<pre>camonitor [options] &lt;PV name&gt; ...</pre>
+
+<h4>Description</h4>
+
+<p><span style="color: #FF5F00">Not implemented.</span></p>
 
 <h2><a name="Troublesho">Troubleshooting</a></h2>
 
@@ -3054,6 +3328,7 @@ void * PDBR );</code></p>
       bytes</dd>
 </dl>
 
-<p><small>$Id$</small></p>
+<p><small>$Id: CAref.html,v 1.58.2.1 2003/09/03 22:31:48 jhill Exp
+$</small></p>
 </body>
 </html>

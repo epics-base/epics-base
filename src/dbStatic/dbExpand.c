@@ -21,13 +21,14 @@ of this distribution.
 #include <stdio.h>
 #include <string.h>
 
-#include "dbDefs.h"
 #include "epicsPrint.h"
 #include "errMdef.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
 #include "dbBase.h"
 #include "gpHash.h"
+#include "osiFileName.h"
+#include "dbDefs.h"
 
 DBBASE *pdbbase = NULL;
 
@@ -43,7 +44,7 @@ int main(int argc,char **argv)
     char	*psep;
     int		*len;
     long	status;
-    static char *pathSep = ":";
+    static char *pathSep = OSI_PATH_LIST_SEPARATOR;
     static char *subSep = ",";
 
     /*Look for options*/
@@ -77,7 +78,7 @@ int main(int argc,char **argv)
     }
     if(argc<2 || (strncmp(argv[1],"-",1)==0)) {
 	fprintf(stderr,
-	    "usage:\ndbExpand -Idir -Idir "
+	    "usage:\ndbExpand -Idir -Idir"
 		"-S substitutions -S substitutions"
 		" file1.dbd file2.dbd ...\n");
 	fprintf(stderr,"Specifying path will replace the default '.'\n");

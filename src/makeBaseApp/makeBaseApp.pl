@@ -294,6 +294,7 @@ where
  app  Application name (the created directory will have \"App\" appended to name)
  ioc  IOC name (the created directory will have \"ioc\" prepended to name)
 
+ -i       Specifies that ioc boot directories will be generated
  -t type  Set the application type (-l for a list of valid types)
           If not specified, type is taken from environment
           If not found in environment, \"default\" is used

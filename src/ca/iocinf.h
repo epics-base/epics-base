@@ -241,7 +241,6 @@ class netiiu;
 class nciuPrivate {
 private:
     epicsMutex mutex;
-    epicsEvent ptrLockReleaseWakeup;
 
     friend class nciu;
 };

@@ -52,6 +52,23 @@
 #include "server.h"
 
 /*
+ * forcePort ()
+ */
+static void  forcePort (ELLLIST *pList, unsigned short port)
+{
+    osiSockAddrNode *pNode;
+
+    pNode  = (osiSockAddrNode *) ellFirst ( pList );
+    while ( pNode ) {
+        if ( pNode->addr.sa.sa_family == AF_INET ) {
+            pNode->addr.ia.sin_port = htons (port);
+        }
+        pNode = (osiSockAddrNode *) ellNext ( &pNode->node );
+    }
+}
+
+
+/*
  *  RSRV_ONLINE_NOTIFY_TASK
  */
 int rsrv_online_notify_task()
@@ -129,6 +146,9 @@ int rsrv_online_notify_task()
     configureChannelAccessAddressList (&beaconAddrList, sock, port);
     if ( ellCount ( &beaconAddrList ) == 0 ) {
         errlogPrintf ("The CA server's beacon address list was empty after initialization?\n");
+    }
+    else {
+        forcePort ( &beaconAddrList, port );
     }
   
 #   ifdef DEBUG

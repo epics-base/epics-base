@@ -92,8 +92,8 @@ cacChannel *dbServiceIO::createChannel (
     }
 	else if ( ! ca_preemtive_callback_is_enabled () ) {
 		errlogPrintf ( 
-			"dbServiceIO: preemptive callback required for\n"
-                        " memory interfacing of CA channels to the DB\n" );
+			"dbServiceIO: preemptive callback required for direct in\n"
+			"memory interfacing of CA channels to the DB.\n" );
 		return 0;
 	}
     else {

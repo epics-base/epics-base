@@ -20,12 +20,14 @@ of this distribution.
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-#include <epicsPrint.h>
-#include <errMdef.h>
-#include <dbStaticLib.h>
-#include <dbStaticPvt.h>
-#include <dbBase.h>
-#include <gpHash.h>
+
+#include "dbDefs.h"
+#include "epicsPrint.h"
+#include "errMdef.h"
+#include "dbStaticLib.h"
+#include "dbStaticPvt.h"
+#include "dbBase.h"
+#include "gpHash.h"
 
 DBBASE *pdbbase = NULL;
 
@@ -47,9 +49,10 @@ int main(int argc,char **argv)
     /*Look for options*/
     if(argc<2) {
 	fprintf(stderr,
-	    "usage: dbExpand -Idir -Idir "
+	    "usage:\ndbExpand -Ipath -Ipath "
 		"-S substitutions -S substitutions"
 		" file1.dbd file2.dbd ...\n");
+	fprintf(stderr,"Specifying path will replace the default '.'\n");
 	exit(0);
     }
     while((strncmp(argv[1],"-I",2)==0)||(strncmp(argv[1],"-S",2)==0)) {
@@ -74,9 +77,10 @@ int main(int argc,char **argv)
     }
     if(argc<2 || (strncmp(argv[1],"-",1)==0)) {
 	fprintf(stderr,
-	    "usage: dbExpand -Idir -Idir "
+	    "usage:\ndbExpand -Idir -Idir "
 		"-S substitutions -S substitutions"
 		" file1.dbd file2.dbd ...\n");
+	fprintf(stderr,"Specifying path will replace the default '.'\n");
 	exit(0);
     }
     for(i=1; i<argc; i++) {

@@ -18,7 +18,7 @@ of this distribution.
 #include <stdio.h>
 
 #include "dbDefs.h"
-#include "osiSem.h"
+#include "epicsEvent.h"
 #include "osiThread.h"
 #include "osiInterrupt.h"
 #include "osiTimer.h"
@@ -40,7 +40,7 @@ of this distribution.
 #include "callback.h"
 
 int callbackQueueSize = 2000;
-static semBinaryId callbackSem[NUM_CALLBACK_PRIORITIES];
+static epicsEventId callbackSem[NUM_CALLBACK_PRIORITIES];
 static epicsRingPointerId callbackQ[NUM_CALLBACK_PRIORITIES];
 static threadId callbackTaskId[NUM_CALLBACK_PRIORITIES];
 static int ringOverflow[NUM_CALLBACK_PRIORITIES];
@@ -107,7 +107,7 @@ void epicsShareAPI callbackRequest(CALLBACK *pcallback)
 	epicsPrintf("callbackRequest ring buffer full\n");
 	ringOverflow[priority] = TRUE;
     }
-    semBinaryGive(callbackSem[priority]);
+    epicsEventSignal(callbackSem[priority]);
     return;
 }
 
@@ -120,7 +120,7 @@ static void callbackTask(int *ppriority)
     ringOverflow[priority] = FALSE;
     while(TRUE) {
 	/* wait for somebody to wake us up */
-        semBinaryMustTake(callbackSem[priority]);
+        epicsEventMustWait(callbackSem[priority]);
         while(TRUE) {
             if(!(pcallback = (CALLBACK *)
                 epicsRingPointerPop(callbackQ[priority]))) break;
@@ -136,7 +136,7 @@ static void start(int ind)
     unsigned int priority;
     char taskName[20];
 
-    callbackSem[ind] = semBinaryMustCreate(semEmpty);
+    callbackSem[ind] = epicsEventMustCreate(epicsEventEmpty);
     if(ind==0) priority = threadPriorityScanLow - 1;
     else if(ind==1) priority = threadPriorityScanLow +4;
     else if(ind==2) priority = threadPriorityScanHigh + 1;
@@ -163,7 +163,7 @@ static void wdCallback(void *pind)
     int ind = *(int *)pind;
     taskwdRemove(callbackTaskId[ind]);
     if(!callbackRestart)return;
-    semBinaryDestroy(callbackSem[ind]);
+    epicsEventDestroy(callbackSem[ind]);
     epicsRingPointerDelete(callbackQ[ind]);
     start(ind);
 }

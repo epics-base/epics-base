@@ -52,7 +52,8 @@
 #include "dbDefs.h"
 #include "ellLib.h"
 #include "taskwd.h"
-#include "osiSem.h"
+#include "epicsMutex.h"
+#include "epicsEvent.h"
 #include "osiInterrupt.h"
 #include "osiThread.h"
 #include "tsStamp.h"
@@ -76,13 +77,13 @@
 
 /* SCAN ONCE */
 int onceQueueSize = 1000;
-static semBinaryId onceSem;
+static epicsEventId onceSem;
 static epicsRingPointerId onceQ;
 static threadId onceTaskId;
 
 /*all other scan types */
 typedef struct scan_list{
-	semMutexId	lock;
+	epicsMutexId	lock;
 	ELLLIST		list;
 	short		modified;/*has list been modified?*/
 	double		rate;
@@ -453,7 +454,7 @@ void epicsShareAPI scanOnce(void *precord)
     }else {
 	newOverflow = TRUE;
     }
-    semBinaryGive(onceSem);
+    epicsEventSignal(onceSem);
 }
 
 static void onceTask(void)
@@ -461,8 +462,8 @@ static void onceTask(void)
     void *precord=NULL;
 
     while(TRUE) {
-	if(semBinaryTake(onceSem)!=semTakeOK)
-	    errlogPrintf("dbScan: semBinaryTake returned error in onceTask");
+	if(epicsEventWait(onceSem)!=epicsEventWaitOK)
+	    errlogPrintf("dbScan: epicsEventWait returned error in onceTask");
         while(TRUE) {
             if(!(precord = epicsRingPointerPop(onceQ))) break;
 	    dbScanLock(precord);
@@ -483,7 +484,7 @@ static void initOnce(void)
     if((onceQ = epicsRingPointerCreate(onceQueueSize))==NULL){
         cantProceed("dbScan: initOnce failed");
     }
-    onceSem=semBinaryMustCreate(semEmpty);
+    onceSem=epicsEventMustCreate(epicsEventEmpty);
     onceTaskId = threadCreate("scanOnce",threadPriorityScanHigh,
         threadGetStackSize(threadStackBig),
         (THREADFUNC)onceTask,0);
@@ -569,21 +570,21 @@ static void printList(scan_list *psl,char *message)
 {
     scan_element *pse;
 
-    semMutexMustTake(psl->lock);
+    epicsMutexMustLock(psl->lock);
     pse = (scan_element *)ellFirst(&psl->list);
-    semMutexGive(psl->lock);
+    epicsMutexUnlock(psl->lock);
     if(pse==NULL) return;
     printf("%s\n",message);
     while(pse!=NULL) {
 	printf("    %-28s\n",pse->precord->name);
-	semMutexMustTake(psl->lock);
+	epicsMutexMustLock(psl->lock);
 	if(pse->pscan_list != psl) {
-	    semMutexGive(psl->lock);
+	    epicsMutexUnlock(psl->lock);
 	    printf("Returning because list changed while processing.");
 	    return;
 	}
 	pse = (scan_element *)ellNext((void *)pse);
-	semMutexGive(psl->lock);
+	epicsMutexUnlock(psl->lock);
     }
 }
 
@@ -595,19 +596,19 @@ static void scanList(scan_list *psl)
     scan_element 	*pse,*prev;
     scan_element	*next=0;
 
-    semMutexMustTake(psl->lock);
+    epicsMutexMustLock(psl->lock);
     psl->modified = FALSE;
     pse = (scan_element *)ellFirst(&psl->list);
     prev = NULL;
     if(pse) next = (scan_element *)ellNext((void *)pse);
-    semMutexGive(psl->lock);
+    epicsMutexUnlock(psl->lock);
     while(pse) {
 	struct dbCommon *precord = pse->precord;
 
 	dbScanLock(precord);
 	dbProcess(precord);
 	dbScanUnlock(precord);
-	semMutexMustTake(psl->lock);
+	epicsMutexMustLock(psl->lock);
 	    if(!psl->modified) {
 		prev = pse;
 		pse = (scan_element *)ellNext((void *)pse);
@@ -634,10 +635,10 @@ static void scanList(scan_list *psl)
 		psl->modified = FALSE;
 	    } else {
 		/*Too many changes. Just wait till next period*/
-		semMutexGive(psl->lock);
+		epicsMutexUnlock(psl->lock);
 		return;
 	    }
-	semMutexGive(psl->lock);
+	epicsMutexUnlock(psl->lock);
     }
 }
 
@@ -665,7 +666,7 @@ static void addToList(struct dbCommon *precord,scan_list *psl)
 {
 	scan_element	*pse,*ptemp;
 
-	semMutexMustTake(psl->lock);
+	epicsMutexMustLock(psl->lock);
 	pse = precord->spvt;
 	if(pse==NULL) {
 		pse = dbCalloc(1,sizeof(scan_element));
@@ -684,7 +685,7 @@ static void addToList(struct dbCommon *precord,scan_list *psl)
 	}
 	if(ptemp==NULL) ellAdd(&psl->list,(void *)pse);
 	psl->modified = TRUE;
-	semMutexGive(psl->lock);
+	epicsMutexUnlock(psl->lock);
 	return;
 }
 
@@ -692,20 +693,20 @@ static void deleteFromList(struct dbCommon *precord,scan_list *psl)
 {
 	scan_element	*pse;
 
-	semMutexMustTake(psl->lock);
+	epicsMutexMustLock(psl->lock);
 	if(precord->spvt==NULL) {
-		semMutexGive(psl->lock);
+		epicsMutexUnlock(psl->lock);
 		return;
 	}
 	pse = precord->spvt;
 	if(pse==NULL || pse->pscan_list!=psl) {
-	    semMutexGive(psl->lock);
+	    epicsMutexUnlock(psl->lock);
 	    errMessage(-1,"deleteFromList failed");
 	    return;
 	}
 	pse->pscan_list = NULL;
 	ellDelete(&psl->list,(void *)pse);
 	psl->modified = TRUE;
-	semMutexGive(psl->lock);
+	epicsMutexUnlock(psl->lock);
 	return;
 }

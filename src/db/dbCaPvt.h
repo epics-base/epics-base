@@ -54,7 +54,7 @@ typedef struct caLink
 	char		*pputString;
 	caAttributes	*pcaAttributes;
 	long		nelements;
-	semMutexId	lock;
+	epicsMutexId	lock;
 	unsigned long	nDisconnect;
 	unsigned long	nNoWrite;
 	short		dbrType;

@@ -27,7 +27,8 @@ of this distribution.
 #include "dbDefs.h"
 #include "ellLib.h"
 #include "osiThread.h"
-#include "osiSem.h"
+#include "epicsMutex.h"
+#include "epicsEvent.h"
 #include "cantProceed.h"
 #include "errlog.h"
 #include "taskwd.h"
@@ -47,10 +48,10 @@ epicsShareDef int asCaDebug = 0;
 LOCAL int firstTime = TRUE;
 LOCAL threadId threadid=0;
 LOCAL int caInitializing=FALSE;
-LOCAL semMutexId asCaTaskLock;		/*lock access to task */
-LOCAL semBinaryId asCaTaskWait;		/*Wait for task to respond*/
-LOCAL semBinaryId asCaTaskAddChannels;	/*Tell asCaTask to add channels*/
-LOCAL semBinaryId asCaTaskClearChannels;/*Tell asCaTask to clear channels*/
+LOCAL epicsMutexId asCaTaskLock;		/*lock access to task */
+LOCAL epicsEventId asCaTaskWait;		/*Wait for task to respond*/
+LOCAL epicsEventId asCaTaskAddChannels;	/*Tell asCaTask to add channels*/
+LOCAL epicsEventId asCaTaskClearChannels;/*Tell asCaTask to clear channels*/
 
 typedef struct {
     struct dbr_sts_double rtndata;
@@ -177,7 +178,7 @@ LOCAL void asCaTask(void)
     SEVCHK(ca_add_exception_event(exceptionCallback,NULL),
         "ca_add_exception_event");
     while(TRUE) { 
-        semBinaryMustTake(asCaTaskAddChannels);
+        epicsEventMustWait(asCaTaskAddChannels);
 	caInitializing = TRUE;
 	pasg = (ASG *)ellFirst(&pasbase->asgList);
 	while(pasg) {
@@ -206,9 +207,9 @@ LOCAL void asCaTask(void)
 	asComputeAllAsg();
 	caInitializing = FALSE;
 	if(asCaDebug) printf("asCaTask initialized\n");
-	semBinaryGive(asCaTaskWait);
+	epicsEventSignal(asCaTaskWait);
 	while(TRUE) {
-	    if(semBinaryTakeNoWait(asCaTaskClearChannels)==semTakeOK) break;
+	    if(epicsEventTryWait(asCaTaskClearChannels)==epicsEventWaitOK) break;
 	    ca_pend_event(2.0);
 	}
 	pasg = (ASG *)ellFirst(&pasbase->asgList);
@@ -228,7 +229,7 @@ LOCAL void asCaTask(void)
 	    pasg = (ASG *)ellNext((ELLNODE *)pasg);
 	}
 	if(asCaDebug) printf("asCaTask has cleared all channels\n");
-	semBinaryGive(asCaTaskWait);
+	epicsEventSignal(asCaTaskWait);
     }
 }
     
@@ -237,10 +238,10 @@ void epicsShareAPI asCaStart(void)
     if(asCaDebug) printf("asCaStart called\n");
     if(firstTime) {
 	firstTime = FALSE;
-        asCaTaskLock=semMutexMustCreate();
-        asCaTaskWait=semBinaryMustCreate(semEmpty);
-        asCaTaskAddChannels=semBinaryMustCreate(semEmpty);
-        asCaTaskClearChannels=semBinaryMustCreate(semEmpty);
+        asCaTaskLock=epicsMutexMustCreate();
+        asCaTaskWait=epicsEventMustCreate(epicsEventEmpty);
+        asCaTaskAddChannels=epicsEventMustCreate(epicsEventEmpty);
+        asCaTaskClearChannels=epicsEventMustCreate(epicsEventEmpty);
         threadid = threadCreate("asCaTask",
             (threadPriorityScanLow - 3),
             threadGetStackSize(threadStackBig),
@@ -249,20 +250,20 @@ void epicsShareAPI asCaStart(void)
 	    errMessage(0,"asCaStart: taskSpawn Failure\n");
 	}
     }
-    semMutexMustTake(asCaTaskLock);
-    semBinaryGive(asCaTaskAddChannels);
-    semBinaryMustTake(asCaTaskWait);
+    epicsMutexMustLock(asCaTaskLock);
+    epicsEventSignal(asCaTaskAddChannels);
+    epicsEventMustWait(asCaTaskWait);
     if(asCaDebug) printf("asCaStart done\n");
-    semMutexGive(asCaTaskLock);
+    epicsMutexUnlock(asCaTaskLock);
 }
 
 void epicsShareAPI asCaStop(void)
 {
     if(threadid==0) return;
     if(asCaDebug) printf("asCaStop called\n");
-    semMutexMustTake(asCaTaskLock);
-    semBinaryGive(asCaTaskClearChannels);
-    semBinaryMustTake(asCaTaskWait);
+    epicsMutexMustLock(asCaTaskLock);
+    epicsEventSignal(asCaTaskClearChannels);
+    epicsEventMustWait(asCaTaskWait);
     if(asCaDebug) printf("asCaStop done\n");
-    semMutexGive(asCaTaskLock);
+    epicsMutexUnlock(asCaTaskLock);
 }

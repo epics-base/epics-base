@@ -72,6 +72,7 @@ of this distribution.
 #include "dbEvent.h"
 #include "dbConvert.h"
 #include "dbConvertFast.h"
+#include "epicsEvent.h"
 #include "dbCa.h"
 #include "dbBkpt.h"
 #include "dbNotify.h"

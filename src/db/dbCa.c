@@ -31,7 +31,8 @@ of this distribution.
 #include <errno.h>
 
 #include "dbDefs.h"
-#include "osiSem.h"
+#include "epicsMutex.h"
+#include "epicsEvent.h"
 #include "osiThread.h"
 #include "tsStamp.h"
 #include "errlog.h"
@@ -51,8 +52,8 @@ epicsShareFunc void * epicsShareAPI dbCalloc(size_t nobj,size_t size);
 #include "dbCaPvt.h"
 
 static ELLLIST caList;	/* Work list for dbCaTask */
-static semMutexId caListSem; /*Mutual exclusions semaphores for caList*/
-static semBinaryId caWakeupSem; /*wakeup semaphore for dbCaTask*/
+static epicsMutexId caListSem; /*Mutual exclusions semaphores for caList*/
+static epicsEventId caWakeupSem; /*wakeup semaphore for dbCaTask*/
 void dbCaTask(void); /*The Channel Access Task*/
 
 /* caLink locking
@@ -69,24 +70,20 @@ static void addAction(caLink *pca, short link_action)
 { 
     int callAdd = FALSE;
 
-    semMutexMustTake(caListSem);
+    epicsMutexMustLock(caListSem);
     if(pca->link_action==0) callAdd = TRUE;
     pca->link_action |= link_action;
     if(callAdd) ellAdd(&caList,&pca->node);
-    semMutexGive(caListSem);
-    if(callAdd) semBinaryGive(caWakeupSem);
+    epicsMutexUnlock(caListSem);
+    if(callAdd) epicsEventSignal(caWakeupSem);
 }
 
 void epicsShareAPI dbCaLinkInit(void)
 {
         dbServiceIOInit();
 	ellInit(&caList);
-	caListSem = semMutexMustCreate();
-	caWakeupSem = semBinaryMustCreate(semEmpty);
-	if(!caListSem || !caWakeupSem) {
-		printf("dbCaLinkInit: semBCreate failed\n");
-		return;
-	}
+	caListSem = epicsMutexMustCreate();
+	caWakeupSem = epicsEventMustCreate(epicsEventEmpty);
 	threadCreate("dbCaLink", threadPriorityMedium,
 	    threadGetStackSize(threadStackBig), (THREADFUNC) dbCaTask,0);
 }
@@ -99,7 +96,7 @@ void epicsShareAPI dbCaAddLink( struct link *plink)
 	pca->plink = plink;
 	plink->type = CA_LINK;
 	plink->value.pv_link.pvt = pca;
-	pca->lock = semMutexMustCreate();
+	pca->lock = epicsMutexMustCreate();
 	addAction(pca,CA_CONNECT);
 	return;
 }
@@ -109,10 +106,10 @@ void epicsShareAPI dbCaRemoveLink( struct link *plink)
     caLink	*pca = (caLink *)plink->value.pv_link.pvt;
 
     if(!pca) return;
-    semMutexMustTake(pca->lock);
+    epicsMutexMustLock(pca->lock);
     pca->plink = 0;
     plink->value.pv_link.pvt = 0;
-    semMutexGive(pca->lock);
+    epicsMutexUnlock(pca->lock);
     addAction(pca,CA_DELETE);
 }
 
@@ -130,7 +127,7 @@ long epicsShareAPI dbCaGetLink(struct link *plink,short dbrType, void *pdest,
 		plink->value.pv_link.precord);
 	return(-1);
     }
-    semMutexMustTake(pca->lock);
+    epicsMutexMustLock(pca->lock);
     if(!pca->chid || ca_state(pca->chid) != cs_conn) {
 	pca->sevr = INVALID_ALARM;
 	goto done;
@@ -182,7 +179,7 @@ long epicsShareAPI dbCaGetLink(struct link *plink,short dbrType, void *pdest,
     }
 done:
     if(psevr) *psevr = pca->sevr;
-    semMutexGive(pca->lock);
+    epicsMutexUnlock(pca->lock);
     if(link_action) addAction(pca,link_action);
     return(status);
 }
@@ -201,9 +198,9 @@ long epicsShareAPI dbCaPutLink(struct link *plink,short dbrType,
 	return(-1);
     }
     /* put the new value in */
-    semMutexMustTake(pca->lock);
+    epicsMutexMustLock(pca->lock);
     if(!pca->chid || ca_state(pca->chid) != cs_conn) {
-	semMutexGive(pca->lock);
+	epicsMutexUnlock(pca->lock);
 	return(-1);
     }
     if((pca->dbrType == DBR_ENUM) && (dbDBRnewToDBRold[dbrType] == DBR_STRING)){
@@ -243,7 +240,7 @@ long epicsShareAPI dbCaPutLink(struct link *plink,short dbrType,
 	if(pca->newOutNative) pca->nNoWrite++;
 	pca->newOutNative = TRUE;
     }
-    semMutexGive(pca->lock);
+    epicsMutexUnlock(pca->lock);
     addAction(pca,link_action);
     return(status);
 }
@@ -274,10 +271,10 @@ long epicsShareAPI dbCaGetAttributes(struct link *plink,
     pcaAttributes = dbCalloc(1,sizeof(caAttributes));
     pcaAttributes->callback = callback;
     pcaAttributes->usrPvt = usrPvt;
-    semMutexMustTake(pca->lock);
+    epicsMutexMustLock(pca->lock);
     pca->pcaAttributes = pcaAttributes;
     link_action |= CA_GET_ATTRIBUTES;
-    semMutexGive(pca->lock);
+    epicsMutexUnlock(pca->lock);
     addAction(pca,link_action);
     return(status);
 }
@@ -458,7 +455,7 @@ static void eventCallback(struct event_handler_args arg)
 		epicsPrintf("eventCallback why was arg.usr NULL\n");
 		return;
 	}
-	semMutexMustTake(pca->lock);
+	epicsMutexMustLock(pca->lock);
 	plink = pca->plink;
 	if(!plink) goto done;
 	precord = (dbCommon *)plink->value.pv_link.precord;
@@ -507,7 +504,7 @@ static void eventCallback(struct event_handler_args arg)
 		scanOnce(precord);
 	}
 done:
-	semMutexGive(pca->lock);
+	epicsMutexUnlock(pca->lock);
 }
 
 static void getAttribEventCallback(struct event_handler_args arg)
@@ -521,7 +518,7 @@ const struct dbr_ctrl_double  *dbr;
 		epicsPrintf("getAttribEventCallback why was arg.usr NULL\n");
 		return;
 	}
-	semMutexMustTake(pca->lock);
+	epicsMutexMustLock(pca->lock);
 	plink = pca->plink;
 	if(!plink) goto done;
 	if(!arg.dbr) {
@@ -535,7 +532,7 @@ const struct dbr_ctrl_double  *dbr;
 	pcaAttributes->gotData = TRUE;
 	(pcaAttributes->callback)(pcaAttributes->usrPvt);
 done:
-	semMutexGive(pca->lock);
+	epicsMutexUnlock(pca->lock);
 }
 
 static void accessRightsCallback(struct access_rights_handler_args arg)
@@ -548,7 +545,7 @@ static void accessRightsCallback(struct access_rights_handler_args arg)
 		return;
 	}
 	if(ca_state(pca->chid) != cs_conn) return;/*connectionCallback will handle*/
-	semMutexMustTake(pca->lock);
+	epicsMutexMustLock(pca->lock);
 	if(ca_read_access(arg.chid) || ca_write_access(arg.chid)) goto done;
 	plink = pca->plink;
 	if(plink) {
@@ -562,7 +559,7 @@ static void accessRightsCallback(struct access_rights_handler_args arg)
 	    }
 	}
 done:
-	semMutexGive(pca->lock);
+	epicsMutexUnlock(pca->lock);
 }
 
 static void connectionCallback(struct connection_handler_args arg)
@@ -573,7 +570,7 @@ static void connectionCallback(struct connection_handler_args arg)
 
     pca = ca_puser(arg.chid);
     if(!pca) return;
-    semMutexMustTake(pca->lock);
+    epicsMutexMustLock(pca->lock);
     plink = pca->plink;
     if(!plink) goto done;
     if(ca_state(arg.chid) != cs_conn){
@@ -595,7 +592,7 @@ static void connectionCallback(struct connection_handler_args arg)
 	    /*Only safe thing is to delete old caLink and allocate a new one*/
 	    pca->plink = 0;
 	    plink->value.pv_link.pvt = 0;
-	    semMutexGive(pca->lock);
+	    epicsMutexUnlock(pca->lock);
 	    addAction(pca,CA_DELETE);
 	    dbCaAddLink(plink);
 	    return;
@@ -618,7 +615,7 @@ static void connectionCallback(struct connection_handler_args arg)
     }
     if(pca->pcaAttributes) link_action |= CA_GET_ATTRIBUTES;
 done:
-    semMutexGive(pca->lock);
+    epicsMutexUnlock(pca->lock);
     if(link_action) addAction(pca,link_action);
 }
 
@@ -636,14 +633,14 @@ void dbCaTask()
     while(!interruptAccept) threadSleep(.1);
     /* channel access event loop */
     while (TRUE){
-	semBinaryMustTake(caWakeupSem);
+	epicsEventMustWait(caWakeupSem);
 	while(TRUE) { /* process all requests in caList*/
-	    semMutexMustTake(caListSem);
+	    epicsMutexMustLock(caListSem);
 	    if((pca = (caLink *)ellFirst(&caList))){/*Take off list head*/
 		ellDelete(&caList,&pca->node);
 		link_action = pca->link_action;
 		pca->link_action = 0;
-		semMutexGive(caListSem); /*Give it back immediately*/
+		epicsMutexUnlock(caListSem); /*Give it back immediately*/
 		if(link_action&CA_DELETE) {/*This must be first*/
 		    if(pca->chid) ca_clear_channel(pca->chid);	
 		    free(pca->pgetNative);
@@ -651,7 +648,7 @@ void dbCaTask()
 		    free(pca->pgetString);
 		    free(pca->pputString);
 		    free(pca->pcaAttributes);
-		    semMutexDestroy(pca->lock);
+		    epicsMutexDestroy(pca->lock);
 		    free(pca);
 		    continue; /*No other link_action makes sense*/
 		}
@@ -716,7 +713,7 @@ void dbCaTask()
 				ca_message(status));
 		}
 	    } else { /* caList was empty */
-		semMutexGive(caListSem);
+		epicsMutexUnlock(caListSem);
 		break; /*caList is empty*/
 	    }
 	}

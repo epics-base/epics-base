@@ -14,6 +14,9 @@ of this distribution.
 /* Modification Log:
  * -----------------
  *  $Log$
+ *  Revision 1.23  2000/04/28 18:29:48  mrk
+ *  add dbior; add support for c++
+ *
  *  Revision 1.22  2000/02/29 19:33:33  mrk
  *  more changes for win32 build
  *
@@ -39,7 +42,7 @@ of this distribution.
  *  Remove task argument to threadSuspend().
  *
  *  Revision 1.14  2000/01/27 19:46:40  mrk
- *  semId => semBinaryId and semMutexId
+ *  semId => semBinaryId and epicsMutexId
  *
  *  Revision 1.13  2000/01/24 20:58:12  mrk
  *  new way to build
@@ -102,7 +105,8 @@ of this distribution.
 
 #include "dbDefs.h"
 #include "osiThread.h"
-#include "osiSem.h"
+#include "epicsMutex.h"
+#include "epicsEvent.h"
 #include "tsStamp.h"
 #include "ellLib.h"
 #include "errlog.h"
@@ -209,7 +213,7 @@ long lset_stack_not_empty = 0;
  *    operating with this stack.
  */
 static ELLLIST lset_stack;
-static semMutexId bkpt_stack_sem;
+static epicsMutexId bkpt_stack_sem;
 
 /*
  *  Stores the last lockset continued or stepped from.
@@ -347,9 +351,9 @@ long epicsShareAPI dbb(const char *record_name)
   */
   if (! lset_stack_not_empty) {
     /* initialize list and semaphore */
-     bkpt_stack_sem = semMutexCreate();
+     bkpt_stack_sem = epicsMutexCreate();
      if (bkpt_stack_sem == 0) {
-        printf("   BKPT> semMutexCreate failed\n");
+        printf("   BKPT> epicsMutexCreate failed\n");
         dbScanUnlock(precord);
         return(1);
      }
@@ -357,7 +361,7 @@ long epicsShareAPI dbb(const char *record_name)
      lset_stack_not_empty = 1;
   }
 
-  semMutexMustTake(bkpt_stack_sem);
+  epicsMutexMustLock(bkpt_stack_sem);
 
   FIND_LOCKSET(precord, pnode);
 
@@ -367,7 +371,7 @@ long epicsShareAPI dbb(const char *record_name)
      if (pnode == NULL) {
         printf("   BKPT> Out of memory\n");
         dbScanUnlock(precord);
-        semMutexGive(bkpt_stack_sem);
+        epicsMutexUnlock(bkpt_stack_sem);
         return(1);
      }
      pnode->precord = NULL;
@@ -379,11 +383,11 @@ long epicsShareAPI dbb(const char *record_name)
      ellInit(&pnode->ep_queue);
 
     /* create execution semaphore */
-     pnode->ex_sem = semBinaryMustCreate(semEmpty);
+     pnode->ex_sem = epicsEventCreate(epicsEventEmpty);
      if (pnode->ex_sem == NULL) {
         printf("   BKPT> Out of memory\n");
         dbScanUnlock(precord);
-        semMutexGive(bkpt_stack_sem);
+        epicsMutexUnlock(bkpt_stack_sem);
         return(1);
      }
 
@@ -400,7 +404,7 @@ long epicsShareAPI dbb(const char *record_name)
   if (pbl == NULL) {
      printf("  BKPT> Out of memory\n");
      dbScanUnlock(precord);
-     semMutexGive(bkpt_stack_sem);
+     epicsMutexUnlock(bkpt_stack_sem);
      return(1);
   }
   pbl->precord = precord; 
@@ -426,12 +430,12 @@ long epicsShareAPI dbb(const char *record_name)
         printf("   BKPT> Cannot spawn task to process record\n");
         pnode->taskid = 0;
         dbScanUnlock(precord);
-        semMutexGive(bkpt_stack_sem);
+        epicsMutexUnlock(bkpt_stack_sem);
         return(1);
      }
   }
 
-  semMutexGive(bkpt_stack_sem);
+  epicsMutexUnlock(bkpt_stack_sem);
   dbScanUnlock(precord);
   return(0);
 }
@@ -470,7 +474,7 @@ long epicsShareAPI dbd(const char *record_name)
 
   dbScanLock(precord);
 
-  semMutexMustTake(bkpt_stack_sem);
+  epicsMutexMustLock(bkpt_stack_sem);
 
   FIND_LOCKSET(precord, pnode);
 
@@ -479,7 +483,7 @@ long epicsShareAPI dbd(const char *record_name)
      printf("   BKPT> Logic Error in dbd()\n");
      precord->bkpt &= BKPT_OFF_MASK;
 
-     semMutexGive(bkpt_stack_sem);
+     epicsMutexUnlock(bkpt_stack_sem);
      dbScanUnlock(precord);
      return(S_db_bkptLogic);
   }
@@ -502,7 +506,7 @@ long epicsShareAPI dbd(const char *record_name)
   if (pbl == NULL) {
      printf("   BKPT> Logic Error in dbd()\n"); 
      precord->bkpt &= BKPT_OFF_MASK;
-     semMutexGive(bkpt_stack_sem);
+     epicsMutexUnlock(bkpt_stack_sem);
      dbScanUnlock(precord);
      return(S_db_bkptLogic);
   }
@@ -517,9 +521,9 @@ long epicsShareAPI dbd(const char *record_name)
   *    to cause the bkptCont task to quit.
   */
   if (ellCount(&pnode->bp_list) == 0)
-     semBinaryGive(pnode->ex_sem);
+     epicsEventSignal(pnode->ex_sem);
 
-  semMutexGive(bkpt_stack_sem);
+  epicsMutexUnlock(bkpt_stack_sem);
 
   dbScanUnlock(precord);
   return(0);
@@ -537,11 +541,11 @@ long epicsShareAPI dbc(const char *record_name)
   struct dbCommon *precord = NULL;
   long status = 0;
 
-  semMutexMustTake(bkpt_stack_sem);
+  epicsMutexMustLock(bkpt_stack_sem);
 
   status = FIND_CONT_NODE(record_name, &pnode, &precord);
   if (status) {
-     semMutexGive(bkpt_stack_sem);
+     epicsMutexUnlock(bkpt_stack_sem);
      return(status);
   }
 
@@ -561,7 +565,7 @@ long epicsShareAPI dbc(const char *record_name)
   *    because stepping mode has been switched off.
   */
   threadResume(pnode->taskid);
-  semMutexGive(bkpt_stack_sem);
+  epicsMutexUnlock(bkpt_stack_sem);
   return(0);
 }
 
@@ -576,11 +580,11 @@ long epicsShareAPI dbs(const char *record_name)
   struct dbCommon *precord = NULL;
   long status = 0;
 
-  semMutexMustTake(bkpt_stack_sem);
+  epicsMutexMustLock(bkpt_stack_sem);
 
   status = FIND_CONT_NODE(record_name, &pnode, &precord);
   if (status) {
-     semMutexGive(bkpt_stack_sem);
+     epicsMutexUnlock(bkpt_stack_sem);
      return(status);
   }
 
@@ -590,7 +594,7 @@ long epicsShareAPI dbs(const char *record_name)
   last_lset = pnode->l_num;
 
   threadResume(pnode->taskid);
-  semMutexGive(bkpt_stack_sem);
+  epicsMutexUnlock(bkpt_stack_sem);
   return(0);
 }
 
@@ -612,7 +616,7 @@ static void dbBkptCont(dbCommon *precord)
   *  Reset breakpoint, process record, and
   *    reset bkpt field in record
   */
-  semMutexMustTake(bkpt_stack_sem);
+  epicsMutexMustLock(bkpt_stack_sem);
 
   FIND_LOCKSET(precord, pnode);
 
@@ -628,13 +632,13 @@ static void dbBkptCont(dbCommon *precord)
   */
   do {
    /* Give up semaphore before waiting to run ... */
-    semMutexGive(bkpt_stack_sem);
+    epicsMutexUnlock(bkpt_stack_sem);
 
    /* Wait to run */
-    semBinaryMustTake(pnode->ex_sem);
+    epicsEventMustWait(pnode->ex_sem);
 
    /* Bkpt stack must still be stable ! */
-    semMutexMustTake(bkpt_stack_sem);
+    epicsMutexMustLock(bkpt_stack_sem);
 
     pqe = (struct EP_LIST *) ellFirst(&pnode->ep_queue);
 
@@ -669,7 +673,7 @@ static void dbBkptCont(dbCommon *precord)
   ellFree(&pnode->ep_queue);
 
  /* remove execution semaphore */
-  semBinaryDestroy(pnode->ex_sem);
+  epicsEventDestroy(pnode->ex_sem);
 
   printf("\n   BKPT> End debug of lockset %lu\n-> ", pnode->l_num);
 
@@ -684,7 +688,7 @@ static void dbBkptCont(dbCommon *precord)
   }
 
   if (lset_stack_not_empty)
-     semMutexGive(bkpt_stack_sem);
+     epicsMutexUnlock(bkpt_stack_sem);
 }
 
 /*
@@ -720,9 +724,9 @@ int epicsShareAPI dbBkpt(dbCommon *precord)
   *	goodness breakpoint checking is turned off during
   *	normal operation.
   */
-  semMutexMustTake(bkpt_stack_sem);
+  epicsMutexMustLock(bkpt_stack_sem);
   FIND_LOCKSET(precord, pnode);
-  semMutexGive(bkpt_stack_sem);
+  epicsMutexUnlock(bkpt_stack_sem);
 
   if (pnode == NULL) {
     /* no breakpoints in precord's lockset */
@@ -779,12 +783,12 @@ int epicsShareAPI dbBkpt(dbCommon *precord)
        /*
         *  Take semaphore, wait on continuation task
         */
-        semMutexMustTake(bkpt_stack_sem);
+        epicsMutexMustLock(bkpt_stack_sem);
 
        /* Add entry to queue */
         ellAdd(&pnode->ep_queue, (ELLNODE *)pqe);
 
-        semMutexGive(bkpt_stack_sem);
+        epicsMutexUnlock(bkpt_stack_sem);
      }
      else {
         if (pqe->count < MAX_EP_COUNT)
@@ -800,7 +804,7 @@ int epicsShareAPI dbBkpt(dbCommon *precord)
         *  Release the semaphore, letting the continuation
         *     task begin execution of the new entrypoint.
         */ 
-        semBinaryGive(pnode->ex_sem);
+        epicsEventSignal(pnode->ex_sem);
      }
      return(1);
   }
@@ -846,11 +850,11 @@ int epicsShareAPI dbBkpt(dbCommon *precord)
       *   continue to be processed.  Cross your fingers, this
       *   might actually work !
       */
-      semMutexGive(bkpt_stack_sem);
+      epicsMutexUnlock(bkpt_stack_sem);
       dbScanUnlock(precord);
       threadSuspendSelf();
       dbScanLock(precord);
-      semMutexMustTake(bkpt_stack_sem);
+      epicsMutexMustLock(bkpt_stack_sem);
    }
    return(0);
 }
@@ -881,19 +885,19 @@ long epicsShareAPI dbp(const char *record_name, int interest_level)
   struct dbCommon *precord;
   int status;
 
-  semMutexMustTake(bkpt_stack_sem);
+  epicsMutexMustLock(bkpt_stack_sem);
 
  /* find pnode and precord pointers */
   status = FIND_CONT_NODE(record_name, &pnode, &precord);
   if (status) {
-     semMutexGive(bkpt_stack_sem);
+     epicsMutexUnlock(bkpt_stack_sem);
      return(status);
   }
 
  /* print out record's fields */
   dbpr(precord->name, (interest_level == 0) ? 2 : interest_level);
 
-  semMutexGive(bkpt_stack_sem);
+  epicsMutexUnlock(bkpt_stack_sem);
   return(0);
 }
 
@@ -937,7 +941,7 @@ long epicsShareAPI dbstat(void)
   struct EP_LIST *pqe;
   TS_STAMP time;
 
-  semMutexMustTake(bkpt_stack_sem);
+  epicsMutexMustLock(bkpt_stack_sem);
 
   tsStampGetCurrent(&time);
 
@@ -986,7 +990,7 @@ long epicsShareAPI dbstat(void)
     pnode = (struct LS_LIST *) ellNext((ELLNODE *)pnode);
   }
 
-  semMutexGive(bkpt_stack_sem);
+  epicsMutexUnlock(bkpt_stack_sem);
   return(0);
 }
 
@@ -1022,7 +1026,7 @@ long epicsShareAPI dbprc(char *record_name)
 /* Reset breakpoints */
 int dbreset()
 {
-  semMutexGive(bkpt_stack_sem);
+  epicsMutexUnlock(bkpt_stack_sem);
 
   return(0);
 }

@@ -50,6 +50,7 @@
 #include <errno.h>
 
 #include "osiSock.h"
+#include "epicsMutex.h"
 #include "dbDefs.h"
 #include "errlog.h"
 #include "taskwd.h"
@@ -77,7 +78,7 @@ LOCAL void clean_addrq()
 
     tsStampGetCurrent(&current);
 
-    semMutexMustTake(prsrv_cast_client->addrqLock);
+    epicsMutexMustLock(prsrv_cast_client->addrqLock);
     pnextciu = (struct channel_in_use *) 
             prsrv_cast_client->addrq.node.next;
 
@@ -101,7 +102,7 @@ LOCAL void clean_addrq()
             if(delay>maxdelay) maxdelay = delay;
         }
     }
-    semMutexGive(prsrv_cast_client->addrqLock);
+    epicsMutexUnlock(prsrv_cast_client->addrqLock);
 
 #   ifdef DEBUG
     if(ndelete){

@@ -66,7 +66,7 @@ since this will delay all other threads.
 
 #include "dbDefs.h"
 #include "dbBase.h"
-#include "osiSem.h"
+#include "epicsMutex.h"
 #include "tsStamp.h"
 #include "osiThread.h"
 #include "cantProceed.h"
@@ -88,14 +88,14 @@ since this will delay all other threads.
 STATIC int	lockListInitialized = FALSE;
 
 STATIC ELLLIST lockList;
-STATIC semMutexId globalLock;
+STATIC epicsMutexId globalLock;
 STATIC unsigned long id = 0;
 STATIC volatile int changingLockSets = FALSE;
 
 typedef struct lockSet {
 	ELLNODE		node;
 	ELLLIST		recordList;
-	semMutexId	lock;
+	epicsMutexId	lock;
 	threadId	thread_id;
 	dbCommon	*precord;
 	unsigned long	id;
@@ -111,7 +111,7 @@ typedef struct lockRecord {
 STATIC void initLockList(void)
 {
     ellInit(&lockList);
-    globalLock = semMutexMustCreate();
+    globalLock = epicsMutexMustCreate();
     lockListInitialized = TRUE;
 }
 
@@ -127,7 +127,7 @@ STATIC lockSet * allocLock(lockRecord *plockRecord)
     plockSet->id = id;
     ellAdd(&plockSet->recordList,&plockRecord->node);
     ellAdd(&lockList,&plockSet->node);
-    plockSet->lock = semMutexMustCreate();
+    plockSet->lock = epicsMutexMustCreate();
     return(plockSet);
 }
 
@@ -141,14 +141,14 @@ STATIC void lockAddRecord(lockSet *plockSet,lockRecord *pnew)
 void epicsShareAPI dbLockSetGblLock(void)
 {
     if(!lockListInitialized) initLockList();
-    semMutexMustTake(globalLock);
+    epicsMutexMustLock(globalLock);
     changingLockSets = TRUE;
 }
 
 void epicsShareAPI dbLockSetGblUnlock(void)
 {
     changingLockSets = FALSE;
-    semMutexGive(globalLock);
+    epicsMutexUnlock(globalLock);
     return;
 }
 
@@ -156,7 +156,7 @@ void epicsShareAPI dbLockSetRecordLock(dbCommon *precord)
 {
     lockRecord	*plockRecord = precord->lset;
     lockSet	*plockSet;
-    semTakeStatus status;
+    epicsMutexLockStatus status;
 
     /*Make sure that dbLockSetGblLock was called*/
     if(!changingLockSets) {
@@ -168,12 +168,12 @@ void epicsShareAPI dbLockSetRecordLock(dbCommon *precord)
     if(!plockSet) return;
     if(plockSet->thread_id==threadGetIdSelf()) return;
     /*Wait for up to 1 minute*/
-    status = semMutexTakeTimeout(plockRecord->plockSet->lock,60.0);
-    if(status==semTakeOK) {
+    status = epicsMutexLockWithTimeout(plockRecord->plockSet->lock,60.0);
+    if(status==epicsMutexLockOK) {
 	plockSet->thread_id = threadGetIdSelf();
 	plockSet->precord = (void *)precord;
 	/*give it back in case it will not be changed*/
-	semMutexGive(plockRecord->plockSet->lock);
+	epicsMutexUnlock(plockRecord->plockSet->lock);
 	return;
     }
     /*Should never reach this point*/
@@ -187,7 +187,7 @@ void epicsShareAPI dbScanLock(dbCommon *precord)
 {
     lockRecord	*plockRecord;
     lockSet	*plockSet;
-    semTakeStatus status;
+    epicsMutexLockStatus status;
 
     if(!(plockRecord= precord->lset)) {
 	epicsPrintf("dbScanLock plockRecord is NULL record %s\n",
@@ -196,9 +196,9 @@ void epicsShareAPI dbScanLock(dbCommon *precord)
     }
     while(TRUE) {
         while(changingLockSets) threadSleep(.05);
-	status = semMutexTake(plockRecord->plockSet->lock);
-	/*semMutexTake fails if semMutexDestroy was called while active*/
-	if(status==semTakeOK) break;
+	status = epicsMutexLock(plockRecord->plockSet->lock);
+	/*epicsMutexLock fails if epicsMutexDestroy was called while active*/
+	if(status==epicsMutexLockOK) break;
     }
     plockSet = plockRecord->plockSet;
     plockSet->thread_id = threadGetIdSelf();
@@ -214,7 +214,7 @@ void epicsShareAPI dbScanUnlock(dbCommon *precord)
 	epicsPrintf("dbScanUnlock plockRecord or plockRecord->plockSet NULL\n");
 	return;
     }
-    semMutexGive(plockRecord->plockSet->lock);
+    epicsMutexUnlock(plockRecord->plockSet->lock);
     return;
 }
 
@@ -320,7 +320,7 @@ void epicsShareAPI dbLockSetMerge(dbCommon *pfirst,dbCommon *psecond)
 	p2lockRecord = (lockRecord *)ellNext(&p2lockRecord->node);
     }
     ellConcat(&p1lockSet->recordList,&p2lockSet->recordList);
-    semMutexDestroy(p2lockSet->lock);
+    epicsMutexDestroy(p2lockSet->lock);
     ellDelete(&lockList,&p2lockSet->node);
     free((void *)p2lockSet);
     return;
@@ -379,7 +379,7 @@ void epicsShareAPI dbLockSetSplit(dbCommon *psource)
 	}
 	if(!plockRecord->plockSet) allocLock(plockRecord);
     }
-    semMutexDestroy(plockSet->lock);
+    epicsMutexDestroy(plockSet->lock);
     ellDelete(&lockList,&plockSet->node);
     free((void *)plockSet);
     free((void *)paprecord);
@@ -418,11 +418,10 @@ long epicsShareAPI dblsr(char *recordname,int level)
 
 	printf("Lock Set %lu %d members",
 	    plockSet->id,ellCount(&plockSet->recordList));
-	if(semMutexTakeNoWait(plockSet->lock)==semTakeOK) {
-	    semMutexGive(plockSet->lock);
+	if(epicsMutexTryLock(plockSet->lock)==epicsMutexLockOK) {
+	    epicsMutexUnlock(plockSet->lock);
 	    printf(" Not Locked\n");
 	} else {
-            TS_STAMP currentTime;
 	    printf(" Locked by thread %p",plockSet->thread_id);
 	    if(! plockSet->precord || !plockSet->precord->name)
 		printf(" NULL record or record name\n");

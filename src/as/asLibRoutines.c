@@ -28,7 +28,7 @@ of this distribution.
 #include "osiThread.h"
 #include "ellLib.h"
 #include "cantProceed.h"
-#include "osiSem.h"
+#include "epicsMutex.h"
 #include "epicsPrint.h"
 #include "gpHash.h"
 #include "freeList.h"
@@ -37,9 +37,9 @@ of this distribution.
 #include "errlog.h"
 #include "ellLib.h"
  
-static semMutexId asLock;
-#define LOCK semMutexMustTake(asLock)
-#define UNLOCK semMutexGive(asLock)
+static epicsMutexId asLock;
+#define LOCK epicsMutexMustLock(asLock)
+#define UNLOCK epicsMutexUnlock(asLock)
 
 #define epicsExportSharedSymbols
 #include "asLib.h"
@@ -88,7 +88,7 @@ static long asAsgRuleCalc(ASGRULE *pasgrule,char *calc);
 */
 static void asInitializeOnce(void *arg)
 {
-    asLock  = semMutexMustCreate();
+    asLock  = epicsMutexMustCreate();
 }
 long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction)
 {

@@ -37,6 +37,8 @@
 #include <errno.h>
 
 #include "osiSock.h"
+#include "epicsEvent.h"
+#include "epicsMutex.h"
 #include "tsStamp.h"
 #include "errlog.h"
 #include "taskwd.h"
@@ -75,7 +77,7 @@ struct client *create_base_client ()
      * memset(client, 0, sizeof(*client));
      */
     
-    client->blockSem = semBinaryCreate(semEmpty);
+    client->blockSem = epicsEventCreate(epicsEventEmpty);
     if(!client->blockSem){
         freeListFree(rsrvClientFreeList, client);
         return NULL;
@@ -86,7 +88,7 @@ struct client *create_base_client ()
      */
     client->pUserName = malloc(1); 
     if(!client->pUserName){
-        semBinaryDestroy(client->blockSem);
+        epicsEventDestroy(client->blockSem);
         freeListFree(rsrvClientFreeList, client);
         return NULL;
     }
@@ -97,7 +99,7 @@ struct client *create_base_client ()
      */
     client->pHostName = malloc(1); 
     if(!client->pHostName){
-        semBinaryDestroy(client->blockSem);
+        epicsEventDestroy(client->blockSem);
         free(client->pUserName);
         freeListFree(rsrvClientFreeList, client);
         return NULL;
@@ -122,10 +124,10 @@ struct client *create_base_client ()
     
     client->send.maxstk = MAX_UDP_SEND;
     
-    client->lock = semMutexMustCreate();
-    client->putNotifyLock = semMutexMustCreate();
-    client->addrqLock = semMutexMustCreate();
-    client->eventqLock = semMutexMustCreate();
+    client->lock = epicsMutexMustCreate();
+    client->putNotifyLock = epicsMutexMustCreate();
+    client->addrqLock = epicsMutexMustCreate();
+    client->eventqLock = epicsMutexMustCreate();
     
     client->recv.maxstk = MAX_UDP_RECV;
     return client;
@@ -450,7 +452,7 @@ epicsShareFunc int epicsShareAPI rsrv_init (void)
 {
     threadId tid;
 
-    clientQlock = semMutexMustCreate();
+    clientQlock = epicsMutexMustCreate();
 
     ellInit (&clientQ);
     freeListInitPvt (&rsrvClientFreeList, sizeof(struct client), 8);
@@ -526,7 +528,7 @@ LOCAL void log_one_client (struct client *client, unsigned level)
         bytes_reserved = 0;
         bytes_reserved += sizeof(struct client);
 
-        semMutexMustTake(client->addrqLock);
+        epicsMutexMustLock(client->addrqLock);
         pciu = (struct channel_in_use *) client->addrq.node.next;
         while (pciu){
             bytes_reserved += sizeof(struct channel_in_use);
@@ -537,11 +539,11 @@ LOCAL void log_one_client (struct client *client, unsigned level)
             }
             pciu = (struct channel_in_use *) ellNext(&pciu->node);
         }
-        semMutexGive(client->addrqLock);
+        epicsMutexUnlock(client->addrqLock);
         printf( "\t%ld bytes allocated\n", bytes_reserved);
 
 
-        semMutexMustTake(client->addrqLock);
+        epicsMutexMustLock(client->addrqLock);
         pciu = (struct channel_in_use *) client->addrq.node.next;
         i=0;
         while (pciu){
@@ -555,21 +557,21 @@ LOCAL void log_one_client (struct client *client, unsigned level)
                 printf("\n");
             }
         }
-        semMutexGive(client->addrqLock);
+        epicsMutexUnlock(client->addrqLock);
         printf("\n");
     }
 
     if (level >= 3u) {
         printf( "\tSend Lock\n");
-        semMutexShow(client->lock,1);
+        epicsMutexShow(client->lock,1);
         printf( "\tPut Notify Lock\n");
-        semMutexShow (client->putNotifyLock,1);
+        epicsMutexShow (client->putNotifyLock,1);
         printf( "\tAddress Queue Lock\n");
-        semMutexShow (client->addrqLock,1);
+        epicsMutexShow (client->addrqLock,1);
         printf( "\tEvent Queue Lock\n");
-        semMutexShow (client->eventqLock,1);
+        epicsMutexShow (client->eventqLock,1);
         printf( "\tBlock Semaphore\n");
-        semBinaryShow (client->blockSem,1);
+        epicsEventShow (client->blockSem,1);
     }
 }
 
@@ -671,9 +673,9 @@ void destroy_client (struct client *client)
     }
 
     while(TRUE){
-        semMutexMustTake (client->addrqLock);
+        epicsMutexMustLock (client->addrqLock);
         pciu = (struct channel_in_use *) ellGet(&client->addrq);
-        semMutexGive (client->addrqLock);
+        epicsMutexUnlock (client->addrqLock);
         if (!pciu) {
             break;
         }
@@ -691,10 +693,10 @@ void destroy_client (struct client *client)
             /*
              * AS state change could be using this list
              */
-            semMutexMustTake (client->eventqLock);
+            epicsMutexMustLock (client->eventqLock);
 
             pevext = (struct event_ext *) ellGet(&pciu->eventq);
-            semMutexGive (client->eventqLock);
+            epicsMutexUnlock (client->eventqLock);
             if(!pevext){
                 break;
             }
@@ -745,15 +747,15 @@ void destroy_client (struct client *client)
         }
     }
 
-    semMutexDestroy (client->eventqLock);
+    epicsMutexDestroy (client->eventqLock);
 
-    semMutexDestroy (client->addrqLock);
+    epicsMutexDestroy (client->addrqLock);
 
-    semMutexDestroy (client->putNotifyLock);
+    epicsMutexDestroy (client->putNotifyLock);
 
-    semMutexDestroy (client->lock);
+    epicsMutexDestroy (client->lock);
 
-    semBinaryDestroy (client->blockSem);
+    epicsEventDestroy (client->blockSem);
 
     if (client->pUserName) {
         free (client->pUserName);

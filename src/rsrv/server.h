@@ -35,6 +35,8 @@
 #endif /* ifdef epicsExportSharedSymbols */
 
 #include "osiThread.h"
+#include "epicsMutex.h"
+#include "epicsEvent.h"
 #include "bucketLib.h"
 #include "asLib.h"
 #include "dbAddr.h"
@@ -92,10 +94,10 @@ struct client {
   ELLNODE               node;
   struct message_buffer send;
   struct message_buffer recv;
-  semMutexId            lock;
-  semMutexId            putNotifyLock;
-  semMutexId            addrqLock;
-  semMutexId            eventqLock;
+  epicsMutexId          lock;
+  epicsMutexId          putNotifyLock;
+  epicsMutexId          addrqLock;
+  epicsMutexId          eventqLock;
   ELLLIST               addrq;
   ELLLIST               putNotifyQue;
   struct sockaddr_in    addr;
@@ -104,7 +106,7 @@ struct client {
   void                  *evuser;
   char                  *pUserName;
   char                  *pHostName;
-  semBinaryId           blockSem; /* used whenever the client blocks */
+  epicsEventId           blockSem; /* used whenever the client blocks */
   SOCKET                sock;
   int                   proto;
   threadId              tid;
@@ -185,7 +187,7 @@ GLBLTYPE SOCKET             IOC_cast_sock;
 GLBLTYPE unsigned short     ca_server_port;
 GLBLTYPE ELLLIST            clientQ; /* locked by clientQlock */
 GLBLTYPE ELLLIST            beaconAddrList;
-GLBLTYPE semMutexId         clientQlock;
+GLBLTYPE epicsMutexId       clientQlock;
 GLBLTYPE struct client      *prsrv_cast_client;
 GLBLTYPE BUCKET             *pCaBucket;
 GLBLTYPE void               *rsrvClientFreeList; 
@@ -196,8 +198,8 @@ GLBLTYPE void               *rsrvEventFreeList;
 
 GLBLTYPE int casSufficentSpaceInPool;
 
-#define SEND_LOCK(CLIENT) semMutexMustTake((CLIENT)->lock)
-#define SEND_UNLOCK(CLIENT) semMutexGive((CLIENT)->lock)
+#define SEND_LOCK(CLIENT) epicsMutexMustLock((CLIENT)->lock)
+#define SEND_UNLOCK(CLIENT) epicsMutexUnlock((CLIENT)->lock)
 
 #define EXTMSGPTR(CLIENT)\
  ((caHdr *) &(CLIENT)->send.buf[(CLIENT)->send.stk])
@@ -213,8 +215,8 @@ GLBLTYPE int casSufficentSpaceInPool;
   EXTMSGPTR(CLIENT)->m_postsize = CA_MESSAGE_ALIGN(EXTMSGPTR(CLIENT)->m_postsize),\
   (CLIENT)->send.stk += sizeof(caHdr) + EXTMSGPTR(CLIENT)->m_postsize
 
-#define LOCK_CLIENTQ    semMutexMustTake (clientQlock);
-#define UNLOCK_CLIENTQ  semMutexGive (clientQlock);
+#define LOCK_CLIENTQ    epicsMutexMustLock (clientQlock);
+#define UNLOCK_CLIENTQ  epicsMutexUnlock (clientQlock);
 
 void camsgtask (struct client *client);
 void cas_send_msg (struct client *pclient, int lock_needed);

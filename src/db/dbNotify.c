@@ -38,7 +38,7 @@
 #include <limits.h>
 
 #include "dbDefs.h"
-#include "osiSem.h"
+#include "epicsEvent.h"
 #include "errlog.h"
 #include "errMdef.h"
 #include "ellLib.h"
@@ -56,9 +56,6 @@
 #include "dbAccessDefs.h"
 #include "recGbl.h"
 #include "dbNotify.h"
-#include "freeList.h"
-
-static void *putNotifyFreeList;
 
 /*NODE structure attached to ppnn field of each record in list*/
 typedef struct pnWaitNode {
@@ -230,10 +227,11 @@ static void notifyCallback(CALLBACK *pcallback)
     precord = ppn->paddr->precord;
     dbScanLock(precord);
     if(ppn->callbackState==callbackCanceled) {
-	dbScanUnlock(precord);
 	ppn->restart = FALSE;
 	ppn->callbackState = callbackNotActive;
-	semBinaryGive((semBinaryId)ppn->waitForCallback);
+        if(ppn->waitForCallback)
+	    epicsEventSignal((epicsEventId)ppn->waitForCallback);
+	dbScanUnlock(precord);
 	return;
     }
     if(ppn->callbackState==callbackActive) {
@@ -244,6 +242,8 @@ static void notifyCallback(CALLBACK *pcallback)
 	    dbScanUnlock(precord);
 	    (ppn->userCallback)(ppn);
 	}
+    } else {
+        dbScanUnlock(precord);
     }
 }
 
@@ -261,14 +261,18 @@ void epicsShareAPI dbNotifyCancel(PUTNOTIFY *ppn)
     dbScanLock(precord);
     notifyCancel(ppn);
     if(ppn->callbackState == callbackActive) {
-	ppn->waitForCallback = (void *)semBinaryMustCreate(semFull);
+	ppn->waitForCallback = (void *)epicsEventMustCreate(epicsEventEmpty);
 	ppn->callbackState = callbackCanceled;
 	dbScanUnlock(precord);
-	if(semBinaryTakeTimeout((semBinaryId)ppn->waitForCallback,10.0)!=semTakeOK) {
+	if(epicsEventWaitWithTimeout(
+        (epicsEventId)ppn->waitForCallback,10.0)!=epicsEventWaitOK) {
 	    errlogPrintf("dbNotifyCancel had semTake timeout\n");
 	    ppn->callbackState = callbackNotActive;
 	}
-	semBinaryDestroy((semBinaryId)ppn->waitForCallback);
+        dbScanLock(precord);
+	epicsEventDestroy((epicsEventId)ppn->waitForCallback);
+        ppn->waitForCallback = 0;
+	dbScanUnlock(precord);
     } else {
 	dbScanUnlock(precord);
     }

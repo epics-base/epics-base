@@ -24,7 +24,7 @@ of this distribution.
 #include "ellLib.h"
 #include "freeList.h"
 #include "cantProceed.h"
-#include "osiSem.h"
+#include "epicsMutex.h"
 #include "ellLib.h"
 #define epicsExportSharedSymbols
 #include "asLib.h"
@@ -54,7 +54,7 @@ typedef struct asTrapWritePvt
     ELLLIST writeMessageList;
     void *freeListWriteMessage;
     void *freeListListenerPvt;
-    semMutexId lock;
+    epicsMutexId lock;
 }asTrapWritePvt;
 
 static asTrapWritePvt *pasTrapWritePvt = 0;
@@ -68,7 +68,7 @@ static void asTrapWriteInit(void)
         &pasTrapWritePvt->freeListWriteMessage,sizeof(writeMessage),20);
     freeListInitPvt(
         &pasTrapWritePvt->freeListListenerPvt,sizeof(listenerPvt),20);
-    pasTrapWritePvt->lock = semMutexMustCreate();
+    pasTrapWritePvt->lock = epicsMutexMustCreate();
 }
 
 asTrapWriteId epicsShareAPI asTrapWriteRegisterListener(
@@ -78,9 +78,9 @@ asTrapWriteId epicsShareAPI asTrapWriteRegisterListener(
     if(pasTrapWritePvt==0) asTrapWriteInit();
     plistener = callocMustSucceed(1,sizeof(listener),"asTrapWriteRegisterListener");
     plistener->func = func; 
-    semMutexMustTake(pasTrapWritePvt->lock);
+    epicsMutexMustLock(pasTrapWritePvt->lock);
     ellAdd(&pasTrapWritePvt->listenerList,&plistener->node);
-    semMutexGive(pasTrapWritePvt->lock);
+    epicsMutexUnlock(pasTrapWritePvt->lock);
     return((asTrapWriteId)plistener);
 }
 
@@ -90,7 +90,7 @@ void epicsShareAPI asTrapWriteUnregisterListener(asTrapWriteId id)
     writeMessage *pwriteMessage;
 
     if(pasTrapWritePvt==0) return;
-    semMutexMustTake(pasTrapWritePvt->lock);
+    epicsMutexMustLock(pasTrapWritePvt->lock);
     pwriteMessage = (writeMessage *)ellFirst(&pasTrapWritePvt->writeMessageList);
     while(pwriteMessage) {
         listenerPvt *plistenerPvt
@@ -108,7 +108,7 @@ void epicsShareAPI asTrapWriteUnregisterListener(asTrapWriteId id)
     }
     ellDelete(&pasTrapWritePvt->listenerList,&plistener->node);
     free((void *)plistener);
-    semMutexGive(pasTrapWritePvt->lock);
+    epicsMutexUnlock(pasTrapWritePvt->lock);
 }
 
 void * epicsShareAPI asTrapWriteBeforeWrite(
@@ -126,7 +126,7 @@ void * epicsShareAPI asTrapWriteBeforeWrite(
     pwriteMessage->message.hostid = hostid;
     pwriteMessage->message.serverSpecific = addr;
     ellInit(&pwriteMessage->listenerPvtList);
-    semMutexMustTake(pasTrapWritePvt->lock);
+    epicsMutexMustLock(pasTrapWritePvt->lock);
     ellAdd(&pasTrapWritePvt->writeMessageList,&pwriteMessage->node);
     plistener = (listener *)ellFirst(&pasTrapWritePvt->listenerList);
     while(plistener) {
@@ -139,7 +139,7 @@ void * epicsShareAPI asTrapWriteBeforeWrite(
         ellAdd(&pwriteMessage->listenerPvtList,&plistenerPvt->node);
         plistener = (listener *)ellNext(&plistener->node);
     }
-    semMutexGive(pasTrapWritePvt->lock);
+    epicsMutexUnlock(pasTrapWritePvt->lock);
     return((void *)pwriteMessage);
 }
 
@@ -149,7 +149,7 @@ void epicsShareAPI asTrapWriteAfterWrite(void *pvt)
     listenerPvt *plistenerPvt;
 
     if(pwriteMessage==0 || pasTrapWritePvt==0) return;
-    semMutexMustTake(pasTrapWritePvt->lock);
+    epicsMutexMustLock(pasTrapWritePvt->lock);
     plistenerPvt = (listenerPvt *)ellFirst(&pwriteMessage->listenerPvtList);
     while(plistenerPvt) {
         listenerPvt *pnext = (listenerPvt *)ellNext(&plistenerPvt->node);
@@ -163,5 +163,5 @@ void epicsShareAPI asTrapWriteAfterWrite(void *pvt)
     }
     ellDelete(&pasTrapWritePvt->writeMessageList,&pwriteMessage->node);
     freeListFree(pasTrapWritePvt->freeListWriteMessage,(void *)pwriteMessage);
-    semMutexGive(pasTrapWritePvt->lock);
+    epicsMutexUnlock(pasTrapWritePvt->lock);
 }

@@ -27,7 +27,8 @@ of this distribution.
 #include "epicsAssert.h"
 #include "cantProceed.h"
 #include "dbDefs.h"
-#include "osiSem.h"
+#include "epicsMutex.h"
+#include "epicsEvent.h"
 #include "osiThread.h"
 #include "errlog.h"
 #include "taskwd.h"
@@ -73,7 +74,7 @@ struct evSubscrip {
 struct event_que {
     /* lock writers to the ring buffer only */
     /* readers must never slow up writers */
-    semMutexId              writelock;
+    epicsMutexId            writelock;
     db_field_log            valque[EVENTQUESIZE];
     struct evSubscrip       *evque[EVENTQUESIZE];
     struct event_que        *nextque;       /* in case que quota exceeded */
@@ -87,8 +88,8 @@ struct event_que {
 struct event_user {
     struct event_que    firstque;       /* the first event que */
     
-    semBinaryId         ppendsem;       /* Wait while empty */
-    semBinaryId         pflush_sem;     /* wait for flush */
+    epicsEventId         ppendsem;       /* Wait while empty */
+    epicsEventId         pflush_sem;     /* wait for flush */
     
     OVRFFUNC            *overflow_sub;  /* called when overflow detect */
     void                *overflow_arg;  /* parameter to above   */
@@ -131,16 +132,16 @@ struct event_user {
 )
 
 #define LOCKEVQUE(EV_QUE)\
-semMutexMustTake((EV_QUE)->writelock);
+epicsMutexMustLock((EV_QUE)->writelock);
 
 #define UNLOCKEVQUE(EV_QUE)\
-semMutexGive((EV_QUE)->writelock);
+epicsMutexUnlock((EV_QUE)->writelock);
 
 #define LOCKREC(RECPTR)\
-semMutexMustTake((RECPTR)->mlok);
+epicsMutexMustLock((RECPTR)->mlok);
 
 #define UNLOCKREC(RECPTR)\
-semMutexGive((RECPTR)->mlok);
+epicsMutexUnlock((RECPTR)->mlok);
 
 LOCAL void *dbevEventUserFreeList;
 LOCAL void *dbevEventQueueFreeList;
@@ -267,20 +268,20 @@ dbEventCtx epicsShareAPI db_init_events (void)
     }
     
     evUser->firstque.evUser = evUser;
-    evUser->firstque.writelock = semMutexCreate();
+    evUser->firstque.writelock = epicsMutexCreate();
     if (!evUser->firstque.writelock) {
         return NULL;
     }
 
-    evUser->ppendsem = semBinaryCreate(semEmpty);
+    evUser->ppendsem = epicsEventCreate(epicsEventEmpty);
     if (!evUser->ppendsem) {
-        semMutexDestroy (evUser->firstque.writelock);
+        epicsMutexDestroy (evUser->firstque.writelock);
         return NULL;
     }    
-    evUser->pflush_sem = semBinaryCreate(semEmpty);
+    evUser->pflush_sem = epicsEventCreate(epicsEventEmpty);
     if (!evUser->pflush_sem) {
-        semMutexDestroy (evUser->firstque.writelock);
-        semBinaryDestroy (evUser->ppendsem);
+        epicsMutexDestroy (evUser->firstque.writelock);
+        epicsEventDestroy (evUser->ppendsem);
         return NULL;
     }
     evUser->flowCtrlMode = FALSE;
@@ -311,7 +312,7 @@ void epicsShareAPI db_close_events (dbEventCtx ctx)
     evUser->pendexit = TRUE;
 
     /* notify the waiting task */
-    semBinaryGive(evUser->ppendsem);
+    epicsEventSignal(evUser->ppendsem);
 }
 
 /*
@@ -356,7 +357,7 @@ dbEventSubscription epicsShareAPI db_add_event (
                 return NULL;
             }
             tmp_que->evUser = evUser;
-            tmp_que->writelock = semMutexCreate();
+            tmp_que->writelock = epicsMutexCreate();
             if (!tmp_que->writelock) {
                 freeListFree (dbevEventBlockFreeList, pevent);
                 freeListFree (dbevEventQueueFreeList, tmp_que);
@@ -485,7 +486,7 @@ void epicsShareAPI db_cancel_event (dbEventSubscription es)
     pevent->user_sub = NULL;
     while (pevent->npend || pevent->callBackInProgress) {
         UNLOCKEVQUE(pevent->ev_que)
-        semBinaryTakeTimeout(pevent->ev_que->evUser->pflush_sem, 1.0);
+        epicsEventWaitWithTimeout(pevent->ev_que->evUser->pflush_sem, 1.0);
         LOCKEVQUE(pevent->ev_que)
     }
     UNLOCKEVQUE (pevent->ev_que)
@@ -560,7 +561,7 @@ int epicsShareAPI db_post_extra_labor (dbEventCtx ctx)
 
     /* notify the event handler of extra labor */
     evUser->extra_labor = TRUE;
-    semBinaryGive(evUser->ppendsem);
+    epicsEventSignal(evUser->ppendsem);
     return DB_EVENT_OK;
 }
 
@@ -683,7 +684,7 @@ LOCAL void db_post_single_event_private (struct evSubscrip *event)
         /* 
          * notify the event handler 
          */
-        semBinaryGive(ev_que->evUser->ppendsem);
+        epicsEventSignal(ev_que->evUser->ppendsem);
     }
 } 
 
@@ -857,7 +858,7 @@ LOCAL int event_read (struct event_que *ev_que)
          * queue
          */
         if (event->user_sub==NULL && event->npend==0u) {
-            semBinaryGive (ev_que->evUser->pflush_sem);
+            epicsEventSignal (ev_que->evUser->pflush_sem);
         }
     }
 
@@ -882,7 +883,7 @@ LOCAL void event_task (void *pParm)
     taskwdInsert ( threadGetIdSelf(), NULL, NULL );
 
     do{
-        semBinaryMustTake(evUser->ppendsem);
+        epicsEventMustWait(evUser->ppendsem);
 
         /*
          * check to see if the caller has offloaded
@@ -915,7 +916,7 @@ LOCAL void event_task (void *pParm)
         }
     }while(!evUser->pendexit);
 
-    semMutexDestroy(evUser->firstque.writelock);
+    epicsMutexDestroy(evUser->firstque.writelock);
 
     {
             struct event_que    *nextque;
@@ -924,14 +925,14 @@ LOCAL void event_task (void *pParm)
             while(ev_que){ 
 
                 nextque = ev_que->nextque;
-            semMutexDestroy(ev_que->writelock);
+            epicsMutexDestroy(ev_que->writelock);
             freeListFree(dbevEventQueueFreeList, ev_que);
             ev_que = nextque;
         }
     }
 
-    semBinaryDestroy(evUser->ppendsem);
-    semBinaryDestroy(evUser->pflush_sem);
+    epicsEventDestroy(evUser->ppendsem);
+    epicsEventDestroy(evUser->pflush_sem);
 
     freeListFree(dbevEventUserFreeList, evUser);
 
@@ -949,14 +950,14 @@ int epicsShareAPI db_start_events (
 {
      struct event_user *evUser = (struct event_user *) ctx;
      
-     semMutexMustTake (evUser->firstque.writelock);
+     epicsMutexMustLock (evUser->firstque.writelock);
 
      /* 
       * only one ca_pend_event thread may be 
       * started for each evUser
       */
      if (evUser->taskid) {
-         semMutexGive (evUser->firstque.writelock);
+         epicsMutexUnlock (evUser->firstque.writelock);
          return DB_EVENT_OK;
      }
 
@@ -970,10 +971,10 @@ int epicsShareAPI db_start_events (
          taskname, osiPriority, threadGetStackSize(threadStackMedium),
          event_task, (void *)evUser);
      if (!evUser->taskid) {
-         semMutexGive (evUser->firstque.writelock);
+         epicsMutexUnlock (evUser->firstque.writelock);
          return DB_EVENT_ERROR;
      }
-     semMutexGive (evUser->firstque.writelock);
+     epicsMutexUnlock (evUser->firstque.writelock);
      return DB_EVENT_OK;
 }
 
@@ -988,7 +989,7 @@ void epicsShareAPI db_event_flow_ctrl_mode_on (dbEventCtx ctx)
     /* 
      * notify the event handler task
      */
-    semBinaryGive(evUser->ppendsem);
+    epicsEventSignal(evUser->ppendsem);
 #ifdef DEBUG
     printf("fc on %lu\n", tickGet());
 #endif
@@ -1005,7 +1006,7 @@ void epicsShareAPI db_event_flow_ctrl_mode_off (dbEventCtx ctx)
     /* 
      * notify the event handler task
      */
-    semBinaryGive (evUser->ppendsem);
+    epicsEventSignal (evUser->ppendsem);
 #ifdef DEBUG
     printf("fc off %lu\n", tickGet());
 #endif

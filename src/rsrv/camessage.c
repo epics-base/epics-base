@@ -33,6 +33,8 @@
 #include <stdarg.h>
 
 #include "osiSock.h"
+#include "epicsEvent.h"
+#include "epicsMutex.h"
 #include "tsStamp.h"
 #include "errlog.h"
 #include "db_access_routines.h"
@@ -769,7 +771,7 @@ struct client   *client
         size-1);
     pMalloc[size-1]='\0';
 
-    semMutexMustTake(client->addrqLock);
+    epicsMutexMustLock(client->addrqLock);
     pName = client->pHostName;
     client->pHostName = pMalloc;
     if(pName){
@@ -784,7 +786,7 @@ struct client   *client
                 client->pUserName,
                 client->pHostName); 
         if(status != 0 && status != S_asLib_asNotActive){
-            semMutexGive(client->addrqLock);
+            epicsMutexUnlock(client->addrqLock);
             log_header ("unable to install new host name into access security", client, mp, 0);
             SEND_LOCK(client);
             send_err(
@@ -797,7 +799,7 @@ struct client   *client
         }
         pciu = (struct channel_in_use *) pciu->node.next;
     }
-    semMutexGive(client->addrqLock);
+    epicsMutexUnlock(client->addrqLock);
 
     DLOG(2, "CAS: host_name_action for \"%s\"\n", 
             (int) client->pHostName,
@@ -856,7 +858,7 @@ struct client   *client
         size-1);
     pMalloc[size-1]='\0';
 
-    semMutexMustTake(client->addrqLock);
+    epicsMutexMustLock(client->addrqLock);
     pName = client->pUserName;
     client->pUserName = pMalloc;
     if(pName){
@@ -871,7 +873,7 @@ struct client   *client
                 client->pUserName,
                 client->pHostName); 
         if(status != 0 && status != S_asLib_asNotActive){
-            semMutexGive(client->addrqLock);
+            epicsMutexUnlock(client->addrqLock);
             log_header ("unable to install new user name into access security", client, mp, 0);
             SEND_LOCK(client);
             send_err(
@@ -884,7 +886,7 @@ struct client   *client
         }
         pciu = (struct channel_in_use *) pciu->node.next;
     }
-    semMutexGive(client->addrqLock);
+    epicsMutexUnlock(client->addrqLock);
 
     DLOG (2, "CAS: client_name_action for \"%s\"\n", 
             (int) client->pUserName,
@@ -958,9 +960,9 @@ unsigned    cid
         return NULL;
     }
 
-    semMutexMustTake(client->addrqLock);
+    epicsMutexMustLock(client->addrqLock);
     ellAdd(&client->addrq, &pchannel->node);
-    semMutexGive(client->addrqLock);
+    epicsMutexUnlock(client->addrqLock);
 
     return pchannel;
 }
@@ -1038,7 +1040,7 @@ LOCAL void casAccessRightsCB(ASCLIENTPVT ascpvt, asClientStatus type)
         /*
          * Update all event call backs 
          */
-        semMutexMustTake(pclient->eventqLock);
+        epicsMutexMustLock(pclient->eventqLock);
         for (pevext = (struct event_ext *) ellFirst(&pciu->eventq);
              pevext;
              pevext = (struct event_ext *) ellNext(&pevext->node)){
@@ -1055,7 +1057,7 @@ LOCAL void casAccessRightsCB(ASCLIENTPVT ascpvt, asClientStatus type)
                 db_post_single_event(pevext->pdbev);
             }
         }
-        semMutexGive(pclient->eventqLock);
+        epicsMutexUnlock(pclient->eventqLock);
 
         break;
 
@@ -1124,7 +1126,7 @@ struct client  *client
         }
     }
     else {
-        semMutexMustTake(prsrv_cast_client->addrqLock);
+        epicsMutexMustLock(prsrv_cast_client->addrqLock);
         /*
          * clients which dont claim their 
          * channel in use block prior to
@@ -1134,7 +1136,7 @@ struct client  *client
         if(!pciu){
             errlogPrintf("CAS: client timeout disconnect id=%d\n",
                 mp->m_cid);
-            semMutexGive(prsrv_cast_client->addrqLock);
+            epicsMutexUnlock(prsrv_cast_client->addrqLock);
             SEND_LOCK(client);
             send_err(
                 mp,
@@ -1152,7 +1154,7 @@ struct client  *client
         if (pciu->client!=prsrv_cast_client) {
             errlogPrintf("CAS: duplicate claim disconnect id=%d\n",
                 mp->m_cid);
-            semMutexGive(prsrv_cast_client->addrqLock);
+            epicsMutexUnlock(prsrv_cast_client->addrqLock);
             SEND_LOCK(client);
             send_err(
                 mp,
@@ -1172,12 +1174,12 @@ struct client  *client
         ellDelete(
             &prsrv_cast_client->addrq, 
             &pciu->node);
-        semMutexGive(prsrv_cast_client->addrqLock);
+        epicsMutexUnlock(prsrv_cast_client->addrqLock);
 
-        semMutexMustTake(prsrv_cast_client->addrqLock);
+        epicsMutexMustLock(prsrv_cast_client->addrqLock);
         pciu->client = client;
         ellAdd(&client->addrq, &pciu->node);
-        semMutexGive(prsrv_cast_client->addrqLock);
+        epicsMutexUnlock(prsrv_cast_client->addrqLock);
     }
 
     /*
@@ -1296,9 +1298,9 @@ LOCAL void write_notify_call_back(PUTNOTIFY *ppn)
      * the database (or indirectly blocking
      * one client on another client).
      */
-    semMutexMustTake(pclient->putNotifyLock);
+    epicsMutexMustLock(pclient->putNotifyLock);
     ellAdd(&pclient->putNotifyQue, &pciu->pPutNotify->node);
-    semMutexGive(pclient->putNotifyLock);
+    epicsMutexUnlock(pclient->putNotifyLock);
 
     /*
      * offload the labor for this to the
@@ -1330,9 +1332,9 @@ void write_notify_reply(void *pArg)
          * the database (or indirectly blocking
          * one client on another client).
          */
-        semMutexMustTake(pClient->putNotifyLock);
+        epicsMutexMustLock(pClient->putNotifyLock);
         ppnb = (RSRVPUTNOTIFY *)ellGet(&pClient->putNotifyQue);
-        semMutexGive(pClient->putNotifyLock);
+        epicsMutexUnlock(pClient->putNotifyLock);
         /*
          * break to loop exit
          */
@@ -1384,7 +1386,7 @@ void write_notify_reply(void *pArg)
     /*
      * wakeup the TCP thread if it is waiting for a cb to complete
      */
-        semBinaryGive(pClient->blockSem);
+        epicsEventSignal(pClient->blockSem);
 }
 
 /*
@@ -1449,8 +1451,8 @@ struct client  *client
          * serialize concurrent put notifies 
          */
         while(pciu->pPutNotify->busy){
-            status = semBinaryTakeTimeout(client->blockSem,60.0);
-            if(status != semTakeOK && pciu->pPutNotify->busy){
+            status = epicsEventWaitWithTimeout(client->blockSem,60.0);
+            if(status != epicsEventWaitOK && pciu->pPutNotify->busy){
                 log_header("put call back time out", client, mp,0);
                 dbNotifyCancel(&pciu->pPutNotify->dbPutNotify);
                 pciu->pPutNotify->busy = FALSE;
@@ -1568,9 +1570,9 @@ LOCAL int event_add_action (caHdr *mp, struct client *client)
     pevext->size = dbr_size_n(mp->m_dataType, mp->m_count);
     pevext->mask = pmo->m_info.m_mask;
 
-    semMutexMustTake(client->eventqLock);
+    epicsMutexMustLock(client->eventqLock);
     ellAdd( &pciu->eventq, &pevext->node);
-    semMutexGive(client->eventqLock);
+    epicsMutexUnlock(client->eventqLock);
 
     pevext->pdbev = db_add_event (client->evuser, &pciu->addr,
                 read_reply, pevext, pevext->mask);
@@ -1660,9 +1662,9 @@ LOCAL int event_add_action (caHdr *mp, struct client *client)
      }
      
      while (TRUE){
-         semMutexMustTake(client->eventqLock);
+         epicsMutexMustLock(client->eventqLock);
          pevext = (struct event_ext *) ellGet(&pciu->eventq);
-         semMutexGive(client->eventqLock);
+         epicsMutexUnlock(client->eventqLock);
          
          if(!pevext){
              break;
@@ -1701,9 +1703,9 @@ LOCAL int event_add_action (caHdr *mp, struct client *client)
      END_MSG(client);
      SEND_UNLOCK(client);
      
-     semMutexMustTake(client->addrqLock);
+     epicsMutexMustLock(client->addrqLock);
      ellDelete(&client->addrq, &pciu->node);
-     semMutexGive(client->addrqLock);
+     epicsMutexUnlock(client->addrqLock);
      
      /*
       * remove from access control list
@@ -1757,7 +1759,7 @@ LOCAL int event_cancel_reply (caHdr *mp, struct client  *client)
       * search events on this channel for a match
       * (there are usually very few monitors per channel)
       */
-     semMutexMustTake(client->eventqLock);
+     epicsMutexMustLock(client->eventqLock);
      for (pevext = (struct event_ext *) ellFirst(&pciu->eventq);
             pevext; pevext = (struct event_ext *) ellNext(&pevext->node)){
          
@@ -1766,7 +1768,7 @@ LOCAL int event_cancel_reply (caHdr *mp, struct client  *client)
              break;
          }
      }
-     semMutexGive(client->eventqLock);
+     epicsMutexUnlock(client->eventqLock);
      
      /*
       * Not Found- return an exception event 

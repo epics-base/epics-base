@@ -21,7 +21,7 @@ of this distribution.
 #include "dbDefs.h"
 #include "errlog.h"
 #include "ellLib.h"
-#include "osiSem.h"
+#include "epicsMutex.h"
 #include "tsStamp.h"
 #include "ellLib.h"
 #include "dbBase.h"
@@ -383,12 +383,12 @@ long epicsShareAPI dbtr(char *pname)
         printf("record active\n");
         return(1);
     }
-    if(semMutexTakeNoWait(precord->mlok)!=semTakeOK) {
+    if(epicsMutexTryLock(precord->mlok)!=epicsMutexLockOK) {
         printf("record locked\n");
         return(1);
     }
     status=dbProcess(precord);
-    semMutexGive(precord->mlok);
+    epicsMutexUnlock(precord->mlok);
     if(status)
         recGblRecordError(status,precord,"dbtr(dbProcess)");
     dbpr(pname,3);

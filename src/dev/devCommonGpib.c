@@ -95,6 +95,10 @@
 #include	<drvGpibInterface.h>
 #include	<devCommonGpib.h>
 
+#ifndef VALID_ALARM
+#define	VALID_ALARM INVALID_ALARM
+#endif
+
 /*
  * This external structure contains the entry points to the GPIB drver.
  */
@@ -1512,7 +1516,7 @@ int
 devGpibLib_liGpibFinish(pdpvt)
 struct gpibDpvt *pdpvt;
 {
-    double	value;
+    unsigned long	value;
     struct longinRecord *pli = ((struct longinRecord *)(pdpvt->precord));
     struct gpibCmd      *pCmd;
     struct devGpibParmBlock *parmBlock;

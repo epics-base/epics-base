@@ -1,5 +1,5 @@
 
-/* devAiStats.c - Device Support Routines for vxWorks statistics */
+/* devVX.c - Device Support Routines for vxWorks statistics */
 /*
  *      Author: Jim Kowalkowski
  *      Date:  2/1/96
@@ -29,6 +29,9 @@
  * -----------------
  *
  * 	$Log$
+ * 	Revision 1.2  1997/04/30 18:57:33  mrk
+ * 	Fixed most compiler warning messages
+ *
  * 	Revision 1.1  1996/10/21 15:30:37  jbk
  * 	Added ai/ao device support for vxWorks statics (memory/load/TCP con)
  *
@@ -37,8 +40,8 @@
 /*
 	add the following to devSup.ascii:
 
-	"ai"  VME_IO    "devAiStats"   "VX stats"
-	"ao"  VME_IO    "devAoStats"   "VX stats"
+	"ai"  VME_IO    "devAiVXStats"   "VX stats"
+	"ao"  VME_IO    "devAoVXStats"   "VX stats"
 
 	--------------------------------------------------------------------
 	Add TCP and CA connection information before release.
@@ -300,8 +303,8 @@ static validPutParms statsPutParms[]={
 	{ NULL,NULL,0 }
 };
 
-aStats devAiStats={ 6,NULL,ai_init,ai_init_record,ai_ioint_info,ai_read,NULL };
-aStats devAoStats={ 6,NULL,NULL,ao_init_record,NULL,ao_write,NULL };
+aStats devAiVXStats={ 6,NULL,ai_init,ai_init_record,ai_ioint_info,ai_read,NULL };
+aStats devAoVXStats={ 6,NULL,NULL,ao_init_record,NULL,ao_write,NULL };
 
 static glob_vars globs[3];
 static spy_info spyinfo;

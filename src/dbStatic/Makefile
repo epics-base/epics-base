@@ -36,7 +36,7 @@ PROD = dbReadTest dbExpand dbToMenuH dbToRecordtypeH
 #       libs needed by PROD:
 #
 PROD_LIBS := dbStaticHost Com
-Db_DIR=.
+dbStaticHost_DIR=.
 
 include $(TOP)/configure/RULES
 

@@ -36,7 +36,7 @@ typedef struct pvAdapter {
     int (*p_pvEventQueueStart) (void *, const char *taskname, 
         eventQueueInit, void *init_func_arg, int priority_offset);
     void (*p_pvEventQueueClose) (void *);
-    int (*p_pvEventQueuePostSingleEvent) (void *es);
+    void (*p_pvEventQueuePostSingleEvent) (void *es);
     void * (*p_pvEventQueueAddEvent) (void *ctx, pvId id,
         eventQueueEventUser, void *user_arg, unsigned select);
     void (*p_pvEventQueueCancelEvent) (void *es);

@@ -941,7 +941,9 @@ static long cvt_d_f(
      struct dbAddr *paddr)
 {
     double abs = fabs(*from);
-    if(abs>=FLT_MAX) {
+    if(*from==0.0) {
+        *to = 0.0;
+    } else if(abs>=FLT_MAX) {
         if(*from>0.0) *to = FLT_MAX; else *to = -FLT_MAX;
     } else if(abs<=FLT_MIN) {
         if(*from>0.0) *to = FLT_MIN; else *to = -FLT_MIN;

@@ -169,7 +169,7 @@ static void taskwdTask(void)
                         struct task_list *ptany;
 
                         pt->suspended = TRUE;
-                        sprintf(message,"task %p suspended",pt->id.tid);
+                        sprintf(message,"task %p suspended",(void *)pt->id.tid);
                         errMessage(-1,message);
                         ptany = (struct task_list *)ellFirst(&anylist);
                         while(ptany) {

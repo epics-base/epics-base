@@ -602,8 +602,11 @@ STATIC long ErEpicsEventInit(struct eventRecord *pRec)
  ******************************************************************************/
 STATIC long ErEpicsEventGetIoScan(int cmd, struct eventRecord *pRec, IOSCANPVT *pPvt)
 {
-  *pPvt = *((IOSCANPVT*)(pRec->dpvt));
-  return(0);
+  if (pRec->dpvt) {
+      *pPvt = *((IOSCANPVT*)(pRec->dpvt));
+      return(0);
+  }
+  return TRUE; /* No hardware */
 }
 ErDsetStruct devErEpicsEvent={5, NULL, NULL, ErEpicsEventInit, ErEpicsEventGetIoScan, NULL};
 

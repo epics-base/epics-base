@@ -154,7 +154,7 @@ void searchTimer::setRetryInterval ( unsigned retryNo )
 void searchTimer::notifySearchResponse ( unsigned short retrySeqNoIn, 
                                         const epicsTime & currentTime )
 {
-    bool reschedualNeeded;
+    bool reschedualNeeded = false;
 
     {
         epicsGuard < udpMutex > locker ( this->mutex );
@@ -167,23 +167,22 @@ void searchTimer::notifySearchResponse ( unsigned short retrySeqNoIn,
 
         if ( retrySeqNoIn == this->retrySeqNo && ! this->noDelay ) {
             double curRTT = currentTime - this->timeAtLastRetry;
-            this->roundTripDelayEstimate = 
-                ( this->roundTripDelayEstimate + curRTT ) / 2.0;
-            this->period = this->roundTripDelayEstimate * 2.0;
-            this->period = tsMin ( maxSearchPeriod, this->period );
-            this->period = tsMax ( minSearchPeriod, this->period );
-            reschedualNeeded = true;
-            this->active = true;
-            this->noDelay = true;
+            if ( curRTT >= 10.0e-6 ) {
+                this->roundTripDelayEstimate = 
+                    ( this->roundTripDelayEstimate + curRTT ) / 2.0;
+                this->period = this->roundTripDelayEstimate * 2.0;
+                this->period = tsMin ( maxSearchPeriod, this->period );
+                this->period = tsMax ( minSearchPeriod, this->period );
+                reschedualNeeded = true;
+                this->active = true;
+                this->noDelay = true;
+            }
         }
 
         if ( this->searchResponses == this->searchAttempts ) {
             reschedualNeeded = true;
             this->active = true;
             this->noDelay = true;
-        }
-        else {
-            reschedualNeeded = false;
         }
     }
 

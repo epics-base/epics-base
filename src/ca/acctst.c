@@ -1668,6 +1668,18 @@ void verifyReasonableBeaconPeriod ( chid chan )
     }
 }
 
+void verifyOldPend ()
+{
+    int status;
+    /*
+     * at least verify that the old ca_pend() is in the symbol table
+     */
+    status = ca_pend ( 100000.0, TRUE );
+    assert ( status = ECA_NORMAL );
+    status = ca_pend ( 1e-12, FALSE );
+    assert ( status = ECA_TIMEOUT );
+}
+
 int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
 {
     chid chan;
@@ -1697,6 +1709,7 @@ int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
         printf ( "testing with a local channel\n" );
     }
 
+    verifyOldPend ();
     arrayTest ( chan ); 
     verifyMonitorSubscriptionFlushIO ( chan );
     monitorSubscriptionFirstUpdateTest ( chan );

@@ -595,6 +595,16 @@ extern "C" chid epicsShareAPI ca_evid_to_chid ( evid pMon )
     return & pMon->channel (); 
 }
 
+extern "C" int epicsShareAPI ca_pend ( ca_real timeout, int early )
+{
+    if ( early ) {
+        return ca_pend_io ( timeout );
+    }
+    else {
+        return ca_pend_event ( timeout );
+    }
+}
+
 /*
  * ca_pend_event ()
  */

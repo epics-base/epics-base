@@ -637,7 +637,7 @@ epicsShareFunc int epicsShareAPI ca_clear_event
 /************************************************************************/
 
 /************************************************************************/
-/*  This routine pends waiting for channel events and calls the         */
+/*  These routines wait for channel subscription events and call the    */
 /*  functions specified with add_event when events occur. If the        */
 /*  timeout is specified as 0 an infinite timeout is assumed.           */
 /*  ca_flush_io() is called by this routine. If ca_pend_io ()           */
@@ -661,6 +661,9 @@ epicsShareFunc int epicsShareAPI ca_pend_event (ca_real timeOut);
  *              connection handler pointer have completed)
  */
 epicsShareFunc int epicsShareAPI ca_pend_io (ca_real timeOut);
+
+/* calls ca_pend_io() if early is true otherwise ca_pend_event() is called */
+epicsShareFunc int epicsShareAPI ca_pend (ca_real timeout, int early);
 
 /*
  * ca_test_io()

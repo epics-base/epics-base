@@ -276,9 +276,11 @@ sub_pat: WORD EQUALS WORD
  
 #include "dbLoadTemplate_lex.c"
  
-static int yyerror(str)
-char  *str;
-{ fprintf(stderr,"templ file parse, Error line %d : %s\n",line_num, yytext); }
+static int yyerror(char* str)
+{
+	fprintf(stderr,"Substitution file parse error\n");
+	fprintf(stderr,"line %d:%s\n",line_num,yytext);
+}
 
 static int is_not_inited = 1;
  

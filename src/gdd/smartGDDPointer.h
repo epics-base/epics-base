@@ -124,18 +124,18 @@ inline smartConstGDDPointer::smartConstGDDPointer () :
 inline smartConstGDDPointer::smartConstGDDPointer (const gdd &valueIn) :
 	pConstValue (&valueIn)
 {
-	int gddStatus;
-	gddStatus = this->pConstValue->reference ();
-	assert (!gddStatus);
+	gddStatus status;
+	status = this->pConstValue->reference ();
+	assert (!status);
 }
 
 inline smartConstGDDPointer::smartConstGDDPointer (const gdd *pValueIn) :
 	pConstValue (pValueIn)
 {
 	if ( this->pConstValue != NULL ) {
-		int gddStatus;
-		gddStatus = this->pConstValue->reference ();
-		assert (!gddStatus);
+		gddStatus status;
+		status = this->pConstValue->reference ();
+		assert (!status);
 	}
 }
 
@@ -143,18 +143,18 @@ inline smartConstGDDPointer::smartConstGDDPointer (const smartConstGDDPointer &p
 	pConstValue (ptrIn.pConstValue)
 {
 	if ( this->pConstValue != NULL ) {
-		int gddStatus;
-		gddStatus = this->pConstValue->reference();
-		assert(!gddStatus);
+		gddStatus status;
+		status = this->pConstValue->reference();
+		assert(!status);
 	}
 }
 
 inline smartConstGDDPointer::~smartConstGDDPointer ()
 {
 	if ( this->pConstValue != NULL ) {
-		int gddStatus;
-		gddStatus = this->pConstValue->unreference();
-		assert (!gddStatus);
+		gddStatus status;
+		status = this->pConstValue->unreference();
+		assert (!status);
 	}
 }
 
@@ -243,32 +243,32 @@ inline smartConstGDDReference::smartConstGDDReference (const gdd *pValueIn) :
 	pConstValue (pValueIn)
 {
     assert (this->pConstValue);
-	int gddStatus;
-	gddStatus = this->pConstValue->reference ();
-	assert (!gddStatus);
+	gddStatus status;
+	status = this->pConstValue->reference ();
+	assert (!status);
 }
 
 inline smartConstGDDReference::smartConstGDDReference (const gdd &valueIn) :
 	pConstValue (&valueIn)
 {
-	int gddStatus;
-	gddStatus = this->pConstValue->reference ();
-	assert (!gddStatus);
+	gddStatus status;
+	status = this->pConstValue->reference ();
+	assert (!status);
 }
 
 inline smartConstGDDReference::smartConstGDDReference (const smartConstGDDReference &refIn) :
 	pConstValue (refIn.pConstValue)
 {
-	int gddStatus;
-	gddStatus = this->pConstValue->reference();
-	assert (!gddStatus);
+	gddStatus status;
+	status = this->pConstValue->reference();
+	assert (!status);
 }
 
 inline smartConstGDDReference::~smartConstGDDReference ()
 {
-	int gddStatus;
-	gddStatus = this->pConstValue->unreference();
-	assert (!gddStatus);
+	gddStatus status;
+	status = this->pConstValue->unreference();
+	assert (!status);
 }
 
 inline const gdd *smartConstGDDReference::operator -> () const

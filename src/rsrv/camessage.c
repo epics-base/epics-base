@@ -1413,7 +1413,9 @@ void write_notify_reply(void *pArg)
          */
         epicsMutexMustLock(pClient->putNotifyLock);
         ppnb = (RSRVPUTNOTIFY *)ellGet(&pClient->putNotifyQue);
-        ppnb->onExtraLaborQueue = FALSE;
+        if ( ppnb ) {
+            ppnb->onExtraLaborQueue = FALSE;
+        }
         epicsMutexUnlock(pClient->putNotifyLock);
         /*
          * break to loop exit

@@ -30,6 +30,9 @@
  * 	Modification Log:
  * 	-----------------
  * 	$Log$
+ * 	Revision 1.4  1996/07/01 19:56:15  jhill
+ * 	one last update prior to first release
+ *
  * 	Revision 1.3  1996/06/26 23:08:55  jhill
  * 	took path out of casInternal.h include
  *
@@ -477,6 +480,10 @@ public:
 	casChannel(const casCtx &ctx);
         virtual ~casChannel();
 
+	//
+	// Called when the user name and the host name are changed
+	// for a live connection.
+	//
 	virtual void setOwner(const char * const pUserName, 
 			const char * const pHostName);
 

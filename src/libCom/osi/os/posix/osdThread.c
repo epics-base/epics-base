@@ -24,8 +24,14 @@ of this distribution.
 #include "cantProceed.h"
 #include "errlog.h"
 
-static int firstTime = 1;
-static pthread_key_t getpthreadInfo;
+typedef struct commonAttr{
+    pthread_attr_t     attr;
+    struct sched_param schedParam;
+    int                maxPriority;
+    int                minPriority;
+    int                schedPolicy;
+} commonAttr;
+
 
 typedef struct threadInfo {
     pthread_t          tid;
@@ -35,12 +41,53 @@ typedef struct threadInfo {
     void	       *createArg;
     semBinaryId        suspendSem;
     int		       isSuspended;
-    int                maxPriority;
-    int                minPriority;
     unsigned int       osiPriority;
-    int                schedPolicy;
 } threadInfo;
+
+static pthread_key_t getpthreadInfo;
+static commonAttr *pcommonAttr = 0;
 
+static void once(void)
+{
+    int status;
+
+    pthread_key_create(&getpthreadInfo,0);
+    pcommonAttr = callocMustSucceed(1,sizeof(commonAttr),"osdThread:once");
+    status = pthread_attr_init(&pcommonAttr->attr);
+    if(status) {
+         errlogPrintf("pthread_attr_init failed: error %s\n",strerror(status));
+         cantProceed("threadCreate::once");
+    }
+    status = pthread_attr_setdetachstate(
+        &pcommonAttr->attr, PTHREAD_CREATE_DETACHED);
+    if(status) {
+         errlogPrintf("pthread_attr_setdetachstate1 failed: error %s\n",
+             strerror(status));
+    }
+    status = pthread_attr_setscope(&pcommonAttr->attr,PTHREAD_SCOPE_PROCESS);
+    if(status) {
+         errlogPrintf("pthread_attr_setscope failed: error %s\n",
+             strerror(status));
+    }
+    status = pthread_attr_getschedparam(
+        &pcommonAttr->attr,&pcommonAttr->schedParam);
+    if(status) {
+         errlogPrintf("pthread_attr_getschedparam failed %s\n",
+             strerror(status));
+    }
+    status = pthread_attr_getschedpolicy(
+        &pcommonAttr->attr,&pcommonAttr->schedPolicy);
+    if(status) {
+         errlogPrintf("pthread_attr_getschedparam failed %s\n",
+             strerror(status));
+    }
+    pcommonAttr->maxPriority = sched_get_priority_max(pcommonAttr->schedPolicy);
+    pcommonAttr->minPriority = sched_get_priority_min(pcommonAttr->schedPolicy);
+printf("schedPolicy %d maxPriority %d minPriority %d\n",
+pcommonAttr->schedPolicy,
+pcommonAttr->maxPriority,pcommonAttr->minPriority);
+}
+
 static void * start_routine(void *arg)
 {
     threadInfo *pthreadInfo = (threadInfo *)arg;
@@ -51,20 +98,21 @@ static void * start_routine(void *arg)
     free(pthreadInfo);
     return(0);
 }
-
+
 static int getOssPriorityValue(threadInfo *pthreadInfo)
 {
-    int maxPriority = pthreadInfo->maxPriority;
-    int minPriority = pthreadInfo->minPriority;
-    double slope,oss;
-    int ossInteger;
+    double maxPriority,minPriority,slope,oss;
 
-    if(maxPriority==minPriority) return(maxPriority);
-    slope = (double)(maxPriority - minPriority)/100.0;
-    oss = (double)pthreadInfo->osiPriority * slope;
-    if(minPriority<maxPriority) oss = minPriority +(double)(oss + .5);
-    else oss = maxPriority - (oss - .5);
-    return(oss);
+    if(pcommonAttr->maxPriority==pcommonAttr->minPriority)
+        return(pcommonAttr->maxPriority);
+    maxPriority = (double)pcommonAttr->maxPriority;
+    minPriority = (double)pcommonAttr->minPriority;
+    slope = (maxPriority - minPriority)/100.0;
+    oss = (double)pthreadInfo->osiPriority * slope + minPriority;
+printf("osiPriority %d osdPriority %f %d\n",
+pthreadInfo->osiPriority,oss,(int)oss);
+oss = pthreadInfo->osiPriority;
+    return((int)oss);
 }
 
 
@@ -100,14 +148,12 @@ threadId threadCreate(const char *name,
     unsigned int priority, unsigned int stackSize,
     THREADFUNC funptr,void *parm)
 {
+    static pthread_once_t once_control = PTHREAD_ONCE_INIT;
     threadInfo *pthreadInfo;
     pthread_t *ptid;
     int status;
 
-    if(firstTime) {
-        firstTime = 0;
-        pthread_key_create(&getpthreadInfo,0);
-    }
+    status = pthread_once(&once_control,once);
     pthreadInfo = callocMustSucceed(1,sizeof(threadInfo),"threadCreate");
     pthreadInfo->createFunc = funptr;
     pthreadInfo->createArg = parm;
@@ -133,21 +179,20 @@ threadId threadCreate(const char *name,
          errlogPrintf("pthread_attr_setscope failed: error %s\n",
              strerror(status));
     }
-    pthreadInfo->schedPolicy = SCHED_FIFO;
-    pthreadInfo->maxPriority = sched_get_priority_max(pthreadInfo->schedPolicy);
-    pthreadInfo->minPriority = sched_get_priority_min(pthreadInfo->schedPolicy);
     pthreadInfo->osiPriority = priority;
-    status = pthread_attr_setschedpolicy(
-        &pthreadInfo->attr,pthreadInfo->schedPolicy);
+    status = pthread_attr_getschedparam(
+        &pthreadInfo->attr,&pthreadInfo->schedParam);
     if(status) {
-         errlogPrintf("pthread_attr_setschedpolicy failed: error %s\n",
+         errlogPrintf("threadCreate: pthread_attr_getschedparam failed %s\n",
              strerror(status));
     }
+printf("sched_priority %d\n",pthreadInfo->schedParam.sched_priority);
     pthreadInfo->schedParam.sched_priority = getOssPriorityValue(pthreadInfo);
+pthreadInfo->schedParam.sched_priority = 10;
     status = pthread_attr_setschedparam(
         &pthreadInfo->attr,&pthreadInfo->schedParam);
     if(status) {
-         errlogPrintf("pthread_attr_setschedparam failed: error %s\n",
+         errlogPrintf("threadCreate: pthread_attr_setschedparam failed %s\n",
              strerror(status));
     }
     pthreadInfo->suspendSem = semBinaryMustCreate(semFull);
@@ -194,6 +239,12 @@ void threadSetPriority(threadId id,unsigned int priority)
         &pthreadInfo->attr,&pthreadInfo->schedParam);
     if(status) {
          errlogPrintf("threadSetPriority: pthread_attr_setschedparam failed %s\n",
+             strerror(status));
+    }
+    status = pthread_setschedparam(
+        pthreadInfo->tid,pcommonAttr->schedPolicy,&pthreadInfo->schedParam);
+    if(status) {
+         errlogPrintf("threadSetPriority: pthread_setschedparam failed %s\n",
              strerror(status));
     }
 }

@@ -38,67 +38,6 @@
  *	to all CA client processes that have subscribed.
  *
  *
-<<<<<<< repeater.c
-=======
- * 	Modification Log:
- * 	-----------------
- *	.01 060691 joh	Took out 4 byte count at message begin to 
- *			in preparation for SPARC alignment
- *	.02 042892 joh	No longer checking the status from free
- *			since it varies from OS to OS
- *	.03 042892 joh	made local routines static
- *	.04 072392 joh	set reuse addr socket option so that
- *			the repeater will restart if it gets killed
- *	.05 072392 joh	no longer needs to loop waiting for the timeout
- *			to expire because of the change introduced 
- *			in .04
- *	.06 120492 joh	removed unnecessary includes
- *	.07 120992 joh	now uses dll list routines
- *	.08 102993 joh	toggle set sock opt to set
- *	.09 070195 joh  discover client has vanished by connecting its
- *			datagram socket (and watching for ECONNREFUSED)
- *
- * $Log$
- * Revision 1.47  1998/09/29 20:50:37  jhill
- * more robust in situations wherelocal IP cant be determined
- *
- * Revision 1.46  1998/09/24 21:22:54  jhill
- * conn.c
- *
- * Revision 1.45  1998/06/16 00:58:12  jhill
- * attach to winsock when its a static build
- *
- * Revision 1.44  1998/05/29 00:03:20  jhill
- * allow CA to run systems w/o local interface query capabilities (ie cygwin32)
- *
- * Revision 1.43  1998/04/15 21:58:29  jhill
- * fixed the doc
- *
- * Revision 1.42  1998/02/27 01:04:03  jhill
- * fixed benign WIN32 message from overwritten errno
- *
- * Revision 1.41  1998/02/05 22:34:33  jhill
- * dont delete client if send returns ECONNREFUSED
- *
- * Revision 1.40  1997/08/04 23:37:15  jhill
- * added beacon anomaly flag init/allow ip 255.255.255.255
- *
- * Revision 1.39  1997/04/23 17:05:09  jhill
- * pc port changes
- *
- * Revision 1.38  1996/11/02 00:51:04  jhill
- * many pc port, const in API, and other changes
- *
- * Revision 1.37  1996/09/04 20:02:32  jhill
- * fixed gcc warning
- *
- * Revision 1.36  1996/07/12 00:40:48  jhill
- * fixed client disconnect problem under solaris
- *
- * Revision 1.32.6.1  1996/07/12 00:39:59  jhill
- * fixed client disconnect problem under solaris
->>>>>>> 1.50
- *
  */
 
 /*
@@ -255,6 +194,11 @@ void epicsShareAPI ca_repeater()
 					continue;
 				}
 			}
+            else if(ntohs(pMsg->m_cmmd) == CA_PROTO_RSRV_IS_UP){
+                if ( pMsg->m_available == 0u ) {
+                    pMsg->m_available = from.sin_addr.s_addr;
+                }
+            }
 		}
 		else if(size == 0){
 			register_new_client(&local, &from);

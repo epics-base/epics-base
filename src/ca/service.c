@@ -730,12 +730,7 @@ const struct sockaddr_in  	*pnet_addr
 			 * field is set to the server's IP address).
 			 */
 			ina.sin_family = AF_INET;
-			if (piiu->curMsg.m_available != htonl(INADDR_ANY)) {
-				ina.sin_addr.s_addr = piiu->curMsg.m_available;
-			}
-			else {
-				ina.sin_addr = pnet_addr->sin_addr;
-			}
+			ina.sin_addr.s_addr = piiu->curMsg.m_available;
 			if (piiu->curMsg.m_count != 0) {
 				ina.sin_port = htons (piiu->curMsg.m_count);
 			}

@@ -83,8 +83,7 @@ private:
     wireSendAdapter & wire;
     unsigned nBytesPending;
     typedef void ( comQueSend::*copyFunc_t ) (  
-        const void *pValue, unsigned nElem )
-        epicsThrows (( std::bad_alloc ));
+        const void *pValue, unsigned nElem );
     static const copyFunc_t dbrCopyVector [39];
 
     void copy_dbr_string ( const void *pValue, unsigned nElem ) 

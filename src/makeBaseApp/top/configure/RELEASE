@@ -1,6 +1,6 @@
 #RELEASE Location of external products
 # Run "gnumake clean uninstall install" in the application
-# top directory each time this file is changed and 
+# top directory each time this file is changed.
 #
 # NOTE: The build does not check dependancies on files
 # external to this application. Thus you should run

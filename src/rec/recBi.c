@@ -235,12 +235,15 @@ static long get_enum_strs(paddr,pes)
 {
     struct biRecord	*pbi=(struct biRecord *)paddr->precord;
 
-    pes->no_str = 2;
+    pes->no_str = 0;
     memset(pes->strs,'\0',sizeof(pes->strs));
     strncpy(pes->strs[0],pbi->znam,sizeof(pbi->znam));
+    if(*pbi->znam!=0) pes->no_str=1;
     strncpy(pes->strs[1],pbi->onam,sizeof(pbi->onam));
+    if(*pbi->onam!=0) pes->no_str=2;
     return(0);
 }
+
 static long put_enum_str(paddr,pstring)
     struct dbAddr *paddr;
     char          *pstring;

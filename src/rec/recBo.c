@@ -368,10 +368,12 @@ static long get_enum_strs(paddr,pes)
 {
     struct boRecord	*pbo=(struct boRecord *)paddr->precord;
 
-    pes->no_str = 2;
+    pes->no_str = 0;
     memset(pes->strs,'\0',sizeof(pes->strs));
     strncpy(pes->strs[0],pbo->znam,sizeof(pbo->znam));
+    if(*pbo->znam!=0) pes->no_str=1;
     strncpy(pes->strs[1],pbo->onam,sizeof(pbo->onam));
+    if(*pbo->onam!=0) pes->no_str=2;
     return(0);
 }
 static long put_enum_str(paddr,pstring)

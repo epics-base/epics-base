@@ -220,7 +220,7 @@ static long init_record(pao,pass)
         break;
         }
     }
-    pao->pval = pao->val;
+    pao->oval = pao->pval = pao->val;
     return(0);
 }
 

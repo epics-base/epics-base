@@ -424,3 +424,19 @@ RCS += $(RCS_DEFAULT)
 endif
 endif
 
+ifneq ($(strip $(PROD_RCS_$(OS_CLASS))),)
+PROD_RCS += $(subst -nil-,,$(PROD_RCS_$(OS_CLASS)))
+else
+ifdef PROD_RCS_DEFAULT
+PROD_RCS+=$(PROD_RCS_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(LIB_RCS_$(OS_CLASS))),)
+LIB_RCS += $(subst -nil-,,$(LIB_RCS_$(OS_CLASS)))
+else
+ifdef LIB_RCS_DEFAULT
+LIB_RCS+=$(LIB_RCS_DEFAULT)
+endif
+endif
+

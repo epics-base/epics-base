@@ -89,6 +89,7 @@ int gethostname (char *name, int namelen);
 typedef int                     SOCKET;
 #define INVALID_SOCKET		(-1)
 #define SOCKERRNO               errno
+#define SOCKERRSTR		  (strerror(errno))
 #define socket_close(S)         close(S)
 #define socket_ioctl(A,B,C)     ioctl(A,B,C)
 
@@ -98,6 +99,20 @@ typedef int                     SOCKET;
 #endif
 
 #define FD_IN_FDSET(FD) ((FD)<FD_SETSIZE&&(FD)>=0)
+
+#define SOCK_EWOULDBLOCK EWOULDBLOCK
+#define SOCK_ENOBUFS ENOBUFS
+#define SOCK_ECONNRESET ECONNRESET
+#define SOCK_ETIMEDOUT ETIMEDOUT
+#define SOCK_EADDRINUSE EADDRINUSE
+#define SOCK_ECONNREFUSED ECONNREFUSED
+#define SOCK_ECONNABORTED ECONNABORTED
+#define SOCK_EINPROGRESS EINPROGRESS
+#define SOCK_EISCONN EISCONN
+#define SOCK_EALREADY EALREADY
+#define SOCK_EINVAL EINVAL
+#define SOCK_EINTR EINTR
+#define SOCK_EPIPE EPIPE
 
 #endif /*osiSockH*/
 

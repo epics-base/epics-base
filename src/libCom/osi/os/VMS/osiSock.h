@@ -13,33 +13,42 @@ extern "C" {
 #if defined(MULTINET) && defined(__cplusplus)
 	struct iovec;
 #endif
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #if defined(UCX) /* GeG 09-DEC-1992 */
 #	include <errno>
-#       include <sys/ucx$inetdef.h>
-#       include <ucx.h>
+#	include <sys/ucx$inetdef.h>
+#	include <ucx.h>
 #	include <netdb.h>
-#else
-#       include <tcp/errno.h>
-#	include <sys/time.h>
-#	include <sys/ioctl.h>
-#	if defined(MULTINET) && defined(__cplusplus)
+#elif defined(MULTINET) 
+#	if defined(__DECCXX)
+#		define __DECC 1
+#		define __DECC_VER 999999999 
+#		include <tcp/errno.h>
+#		include <sys/time.h>
+#		undef __DECC
+#		undef __DECC_VER
+#	else
+#		include <tcp/errno.h>
+#		include <sys/time.h>
+#	endif
+#	if defined(__cplusplus)
 		struct ifaddr;
 		struct mbuf;
 #	endif
-#       include <net/if.h>
-#       include <vms/inetiodef.h>
-#       include <sys/ioctl.h>
+#	include <sys/ioctl.h>
+#	include <net/if.h>
+#	include <vms/inetiodef.h>
+#	include <sys/ioctl.h>
 #	include <tcp/netdb.h>
 #endif
 
 /*
  * MULTINET defines none of these (if not using C++)
  */
-#ifndef __cplusplus
-#if 0
+#if defined(MULTINET) && defined(MULTINET_NO_PROTOTYPES)
 int gettimeofday (struct timeval *tp, struct timezone *tzp);
 int gethostname (char *name, int namelen); 
 int accept (int socket, struct sockaddr *addr, int *addrlen);
@@ -60,18 +69,20 @@ int getsockopt (int socket, int level, int optname,
 int recvfrom (int socket, char *buf, int len,
 		int flags, struct sockaddr *from, int *fromlen);
 int getsockname (int socket, struct sockaddr *name, int *namelen);
-
-#endif /* if 0 */
-
 int listen (int socket, int backlog);
 int shutdown (int socket, int how);
 int socket (int domain, int type, int protocol);
 
-#endif /* __cplusplus */
+#endif /* defined(MULTINET) && defined(MULTINET_NO_PROTOTYPES) */
 
 void bzero (char *b, int length);
-char * inet_ntoa (struct in_addr in);
-unsigned long inet_addr (char *);
+#ifdef MULTINET
+#	include <arpa/inet.h>
+	int gettimeofday (struct timeval *tp, ...);
+#else
+	char * inet_ntoa (struct in_addr in);
+	unsigned long inet_addr (const char *);
+#endif
 
 #if 0
 struct  hostent {
@@ -103,21 +114,47 @@ typedef int                     SOCKET;
 #	define socket_ioctl(A,B,C) ioctl(A,B,C)
 #endif
 
-
-#ifdef WINTCP /* Wallangong */
-	extern int      uerrno;
+#if defined(WINTCP) /* Wallangong */
+	extern int uerrno;
 #	define SOCKERRNO  uerrno
+#elif defined(MULTINET)
+#	define SOCKERRNO socket_errno
 #else
-#	ifdef UCX
-#		define SOCKERRNO errno
-#	else
-#		define SOCKERRNO  socket_errno
-#	endif
+#	define SOCKERRNO errno /* UCX and others? */
 #endif
+
+/*
+ * !! this is no doubt incorrect !!
+ * (error messages will be confusing until
+ * this is fixed)
+ */
+#define SOCKERRSTR (strerror(SOCKERRNO))
 
 #define MAXHOSTNAMELEN 75
 
-#define FD_IN_FDSET(FD) ((FD)<FD_SETSIZE&&(FD)>=0)
+#define SOCK_EWOULDBLOCK EWOULDBLOCK
+#define SOCK_ENOBUFS ENOBUFS
+#define SOCK_ECONNRESET ECONNRESET
+#define SOCK_ETIMEDOUT ETIMEDOUT
+#define SOCK_EADDRINUSE EADDRINUSE
+#define SOCK_ECONNREFUSED ECONNREFUSED
+#define SOCK_ECONNABORTED ECONNABORTED
+#define SOCK_EINPROGRESS EINPROGRESS
+#define SOCK_EISCONN EISCONN
+#define SOCK_EALREADY EALREADY
+#define SOCK_EINVAL EINVAL
+#define SOCK_EINTR EINTR
+#define SOCK_EPIPE EPIPE
+
+/*
+ * Under MULTINET FD_SETSIZE does not apply
+ * (can only guess about the others)
+ */
+#ifdef MULTINET
+#	define FD_IN_FDSET(FD) (1)
+#else
+#	define FD_IN_FDSET(FD) ((FD)<FD_SETSIZE&&(FD)>=0)
+#endif
 
 #endif /*osiSockH*/
 

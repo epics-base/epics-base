@@ -15,21 +15,31 @@ extern "C" {
 #endif
 
 #define SOCKERRNO			WSAGetLastError()
+/*
+ * I dont think that this works, but winsock does
+ * not appear to provide equivalent functionality
+ * here
+ */
+#define SOCKERRSTR (strerror(SOCKERRNO))
 #define socket_close(S)		closesocket(S)
 #define socket_ioctl(A,B,C)	ioctlsocket(A,B,(unsigned long *) C)
 
 #define MAXHOSTNAMELEN		75
 #define IPPORT_USERRESERVED	5000U
-#define EWOULDBLOCK		WSAEWOULDBLOCK
-#define ENOBUFS			WSAENOBUFS
-#define ECONNRESET		WSAECONNRESET
-#define ETIMEDOUT			WSAETIMEDOUT
-#define EADDRINUSE		WSAEADDRINUSE
-#define ECONNREFUSED		WSAECONNREFUSED
-#define ECONNABORTED		WSAECONNABORTED
-#define EINPROGRESS		WSAEINPROGRESS
-#define EISCONN			WSAEISCONN
-#define EALREADY			WSAEALREADY
+
+#define SOCK_EWOULDBLOCK WSAEWOULDBLOCK
+#define SOCK_ENOBUFS WSAENOBUFS
+#define SOCK_ECONNRESET WSAECONNRESET
+#define SOCK_ETIMEDOUT WSAETIMEDOUT
+#define SOCK_EADDRINUSE WSAEADDRINUSE
+#define SOCK_ECONNREFUSED WSAECONNREFUSED
+#define SOCK_ECONNABORTED WSAECONNABORTED
+#define SOCK_EINPROGRESS WSAEINPROGRESS
+#define SOCK_EISCONN WSAEISCONN
+#define SOCK_EALREADY WSAEALREADY
+#define SOCK_EINVAL WSAEINVAL
+#define SOCK_EINTR WSAEINTR
+#define SOCK_EPIPE EPIPE
 
 /*
  *	Under WIN32, FD_SETSIZE is the max. number of sockets,

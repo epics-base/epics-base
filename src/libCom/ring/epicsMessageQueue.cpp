@@ -24,10 +24,11 @@
  * mutex locks to ensure correct operation.  I decided to always use the
  * mutex rather having two versions of this code.
  */
-#include "epicsMessageQueue.h"
-#include <epicsAssert.h>
 #include <stdexcept>
-# include <string.h>
+#include <string.h>
+#define epicsExportSharedSymbols
+#include <epicsAssert.h>
+#include "epicsMessageQueue.h"
 
 epicsMessageQueue::epicsMessageQueue(unsigned int aCapacity,
                                      unsigned int aMaxMessageSize) 

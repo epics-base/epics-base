@@ -15,7 +15,9 @@ of this distribution.
 #include <stdio.h>
 
 #include "osiThread.h"
+#include "errlog.h"
 #include "callback.h"
+#include "taskwd.h"
 #include "tsStamp.h"
 
 typedef struct myPvt {
@@ -45,6 +47,10 @@ void callbackTest(void)
     TS_STAMP start;
     int i;
 
+    taskwdInit();
+    errlogInit(4096);
+    errVerbose=1;
+    callbackInit();
     for(i=0; i<ncallbacks ; i++) {
         nowait[i] = calloc(1,sizeof(myPvt));
         callbackSetCallback(myCallback,&nowait[i]->callback);
@@ -58,6 +64,7 @@ void callbackTest(void)
         callbackSetCallback(myCallback,&wait[i]->callback);
         callbackSetUser(wait[i],&wait[i]->callback);
         callbackSetPriority(i%3,&wait[i]->callback);
+        tsStampGetCurrent(&start);
         wait[i]->start = start;
         wait[i]->requestedDiff = (double)i;
         callbackRequest(&wait[i]->callback);

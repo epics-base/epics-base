@@ -140,32 +140,14 @@ static long init_record(pmbbiDirect,pass)
 
     if (pass==0) return(0);
 
-    /* mbbi.siml must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
-    switch (pmbbiDirect->siml.type) {
-    case (CONSTANT) :
+    /* siml must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
+    if (pmbbiDirect->siml.type == CONSTANT) {
 	recGblInitConstantLink(&pmbbiDirect->siml,DBF_USHORT,&pmbbiDirect->simm);
-        break;
-    case (PV_LINK) :
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)pmbbiDirect,
-                "mbbiDirect: init_record Illegal SIML field");
-        return(S_db_badField);
     }
 
-    /* mbbi.siol must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
-    switch (pmbbiDirect->siol.type) {
-    case (CONSTANT) :
+    /* siol must be a CONSTANT or a PV_LINK or a DB_LINK */
+    if (pmbbiDirect->siol.type == CONSTANT) {
 	recGblInitConstantLink(&pmbbiDirect->siol,DBF_USHORT,&pmbbiDirect->sval);
-        break;
-    case (PV_LINK) :
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)pmbbiDirect,
-                "mbbiDirect: init_record Illegal SIOL field");
-        return(S_db_badField);
     }
 
     if(!(pdset = (struct mbbidset *)(pmbbiDirect->dset))) {
@@ -215,6 +197,7 @@ static long process(pmbbiDirect)
 
 		if(pmbbiDirect->shft>0) rval >>= pmbbiDirect->shft;
 		pmbbiDirect->val =  (unsigned short)rval;
+		pmbbiDirect->udf=FALSE;
 
 	}
 	else if(status == 2) status = 0;

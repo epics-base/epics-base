@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.27  1999/05/11 20:09:58  jhill
+ * close all open files when spawning the repeater
+ *
  * Revision 1.26  1999/05/11 19:42:44  jhill
  * close all open files when spawning the repeater
  *
@@ -222,7 +225,7 @@ int max_unix_fd( )
 	static const int bestGuess = 1024;
 
 #	if defined(OPEN_MAX)
-		max = OPEN_MAX;
+		max = OPEN_MAX; /* posix */
 #	elif defined(_SC_OPEN_MAX)
 		max = sysconf (_SC_OPEN_MAX);
 		if (max<0) {
@@ -243,7 +246,8 @@ void ca_spawn_repeater()
 {
 	int     status;
 	char	*pImageName;
-	int		fd;
+	int	fd;
+	int	maxfd;
 
 	/*
 	 * create a duplicate process
@@ -266,7 +270,8 @@ void ca_spawn_repeater()
 	 * close all open files except for STDIO so they will not
 	 * be inherited by the repeater task
 	 */
-	for (fd = 0; fd<=OPEN_MAX; fd++) {
+	maxfd = max_unix_fd (); 
+	for (fd = 0; fd<=maxfd; fd++) {
 		if (fd==STDIN_FILENO) continue;
 		if (fd==STDOUT_FILENO) continue;
 		if (fd==STDERR_FILENO) continue;

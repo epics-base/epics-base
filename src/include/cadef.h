@@ -136,7 +136,7 @@ HDRVERSIONID(cadefh, "@(#) $Id$")
 #define ca_name(CHID)           	((READONLY char *)((CHID)+1))
 /*
  * the odd cast here removes const (and allows past practice
- * of using ca_puser(CHID) as an lvalue.
+ * of using ca_puser(CHID) as an lvalue).
  */
 #define ca_puser(CHID)           	(*(void **)&((CHID)->puser))
 /*

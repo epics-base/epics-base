@@ -12,6 +12,13 @@ gddAppFuncTable<exPV> exPV::ft;
 osiTime exPV::currentTime;
 
 //
+// special gddDestructor guarantees same form of new and delete
+//
+class exFixedStringDestructor: public gddDestructor {
+	virtual void run (void *);
+};
+
+//
 // exPV::exPV()
 //
 exPV::exPV (pvInfo &setup, aitBool preCreateFlag, aitBool scanOnIn) : 
@@ -352,7 +359,7 @@ caStatus exPV::getEnums (gdd &enums)
 {
 	unsigned nStr = 2;
 	aitFixedString *str;
-	gddDestructor *pDes;
+	exFixedStringDestructor *pDes;
 
 	enums.setDimension(1);
 	str = new aitFixedString[nStr];
@@ -360,7 +367,7 @@ caStatus exPV::getEnums (gdd &enums)
 		return S_casApp_noMemory;
 	}
 
-	pDes = new gddDestructor;
+	pDes = new exFixedStringDestructor;
 	if (!pDes) {
 		delete [] str;
 		return S_casApp_noMemory;
@@ -430,4 +437,14 @@ casChannel *exPV::createChannel (const casCtx &ctx,
 	return new exChannel (ctx);
 }
 
+//
+// exFixedStringDestructor::run()
+//
+// special gddDestructor guarantees same form of new and delete
+//
+void exFixedStringDestructor::run (void *pUntyped)
+{
+	aitFixedString *ps = (aitFixedString *) pUntyped;
+	delete [] ps;
+}
 

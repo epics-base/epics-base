@@ -18,6 +18,9 @@
 #endif
 #endif
 
+//
+// special gddDestructor guarantees same form of new and delete
+//
 class exVecDestructor: public gddDestructor {
 	virtual void run (void *);
 };
@@ -262,6 +265,8 @@ caStatus exVectorPV::updateValue(gdd &valueIn)
 
 //
 // exVecDestructor::run()
+//
+// special gddDestructor guarantees same form of new and delete
 //
 void exVecDestructor::run (void *pUntyped)
 {

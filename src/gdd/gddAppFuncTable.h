@@ -196,7 +196,8 @@ void gddAppFuncTable<PV>::newTbl(unsigned newApplTypeMax)
         pMNewFuncTbl = (gddAppFuncTableStatus (PV::**)(gdd &))
             new char[sizeof( gddAppFuncTableStatus (PV::*)(gdd &) ) * maxApp];
 #   else
-        pMNewFuncTbl = new gddAppFuncTableStatus (PV::*)(gdd &) [maxApp];
+	typedef gddAppFuncTableStatus (PV::*pMF_t)(gdd &);
+        pMNewFuncTbl = new pMF_t [maxApp];
 #   endif
     if (pMNewFuncTbl) {
         for (i=0u; i<maxApp; i++) {

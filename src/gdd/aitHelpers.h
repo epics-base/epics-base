@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.4  1996/08/09 02:28:09  jbk
+ * rewrite of aitString class - more intuitive now, I think
+ *
  * Revision 1.3  1996/08/06 19:14:09  jbk
  * Fixes to the string class.
  * Changes units field to a aitString instead of aitInt8.
@@ -159,6 +162,7 @@ public:
 	operator aitInt32(void) const		{ return (aitInt32)len; }
 	operator const char*(void) const	{ return str; }
 	operator char*(void) const			{ return str; }
+	int isConstant(void) const			{ return (getType()==aitStrConst)?1:0; }
 
 	aitUint32 length(void) const	{ return (aitUint32)len; }
 	const char* string(void) const	{ return str; }
@@ -178,6 +182,7 @@ public:
 	int copy(const aitString* p);
 	int copy(const aitString& p);
 	int copy(const char* p);
+	void installString(char* p) { copy(p); }
 
 	// set data in the aitString and retrieve data from the aitString
 	void replaceData(const char* p);
@@ -189,6 +194,7 @@ public:
 	void force(char* x)				{ str=x; }
 	void force(unsigned char* x)	{ str=(char*)x; }
 	void force(unsigned long x)		{ str=(char*)x; }
+	void init(void);
 
 	// take the aitString array, and put it and all the string into buf,
 	// return the total length the data copied
@@ -204,10 +210,10 @@ private:
 	aitUint16 len;
 	aitUint16 type;	// aitStrType goes here
 
-	void init(void);
 	void mallocFailure(void);
 	int set(const char* p, aitUint32 len);
 	int cset(const char* p, aitUint32 len);
+	aitStrType getType(void) const { return (aitStrType)type; }
 };
 
 inline void aitString::clear(void)

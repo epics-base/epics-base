@@ -58,7 +58,7 @@
 #include <drvMsg.h>
 #include <drvRs232.h>
 
-int	drv232Debug = 1;
+int	drv232Debug = 0;
 
 static	void	callbackAbortSerial();
 static	void	dogAbortSerial();
@@ -88,7 +88,9 @@ static long
 init(pparms)
 msgDrvIniParm	*pparms;
 {
-  printf("Init for RS-232 driver\n");
+  if (drv232Debug)
+    printf("Init for RS-232 driver\n");
+
   return(OK);
 }
 
@@ -108,13 +110,16 @@ msgDrvGenXParm	*p;
   char		message[100];
   dev232Link	*pdev232Link;
 
-printf("RS-232 genXact entered for link %d, addr %d, parm %s\n", p->plink->value.gpibio.link, p->plink->value.gpibio.addr, p->plink->value.gpibio.parm);
+  if (drv232Debug)
+    printf("RS-232 genXact entered for link %d, addr %d, parm %s\n", p->plink->value.gpibio.link, p->plink->value.gpibio.addr, p->plink->value.gpibio.parm);
 
   p->pmsgXact->phwpvt = p->pmsgXact->pparmBlock->pmsgHwpvt;
-  pdev232Link = (dev232Link *)(p->pmsgXact->phwpvt->pmsgLink->p);
+
 
   while ((p->pmsgXact->phwpvt != NULL) && (stat == -1))
   {
+    pdev232Link = (dev232Link *)(p->pmsgXact->phwpvt->pmsgLink->p);
+
     if ((pdev232Link->link == p->plink->value.gpibio.link)
        && (pdev232Link->port == p->plink->value.gpibio.addr))
     {
@@ -161,7 +166,9 @@ genHwpvt(p)
 msgDrvGenHParm	*p;
 {
   int stat = ERROR;
-printf("rs232-genHwpvt entered\n");
+
+  if (drv232Debug)
+    printf("rs232-genHwpvt entered\n");
 
   p->pmsgHwpvt->pmsgLink = drv232Block.pmsgLink;
   while ((p->pmsgHwpvt->pmsgLink != NULL) && (stat == ERROR))
@@ -194,7 +201,8 @@ msgDrvGenLParm	*p;
   char	message[100];
   dev232Link	*pdev232Link;
 
-printf("In RS-232's genLink, link = %d, addr = %d\n", p->plink->value.gpibio.link,p->plink->value.gpibio.addr);
+  if (drv232Debug)
+    printf("In RS-232's genLink, link = %d, addr = %d\n", p->plink->value.gpibio.link,p->plink->value.gpibio.addr);
 
   switch (p->op) {
   case MSG_GENLINK_CREATE:
@@ -216,11 +224,15 @@ printf("In RS-232's genLink, link = %d, addr = %d\n", p->plink->value.gpibio.lin
     }
 
     sprintf(name, "/tyCo/%d", p->plink->value.gpibio.addr);
-printf ("in genlink opening >%s<, baud %d\n", name, ((dev232ParmBlock *)(p->pparmBlock->p))->baud);
+
+    if (drv232Debug)
+      printf ("in genlink opening >%s<, baud %d\n", name, ((dev232ParmBlock *)(p->pparmBlock->p))->baud);
 
     if ((((dev232Link *)(p->pmsgLink->p))->ttyFd = open(name, O_RDWR, 0)) != -1)
     {
-printf("Successful open w/fd=%d\n", pdev232Link->ttyFd);
+      if (drv232Debug)
+        printf("Successful open w/fd=%d\n", pdev232Link->ttyFd);
+
       /* set baud rate and unbuffered mode */
       (void) ioctl (pdev232Link->ttyFd, FIOBAUDRATE, ((dev232ParmBlock *)(p->pparmBlock->p))->baud);
       (void) ioctl (pdev232Link->ttyFd, FIOSETOPTIONS, ((dev232ParmBlock *)(p->pparmBlock->p))->ttyOptions);
@@ -239,10 +251,12 @@ printf("Successful open w/fd=%d\n", pdev232Link->ttyFd);
     }
 
   case MSG_GENLINK_ABORT:
-printf("RS-232 genLink called with abort status\n");
-      pdev232Link = (dev232Link *)(p->pmsgLink->p);
-      /* free(p->pmsgLink->p);  Don't forget to take it out of the list */
-      return(OK);
+    if (drv232Debug)
+      printf("RS-232 genLink called with abort status\n");
+
+    pdev232Link = (dev232Link *)(p->pmsgLink->p);
+    /* free(p->pmsgLink->p);  Don't forget to take it out of the list */
+    return(OK);
   }
   return(ERROR);
 }

@@ -118,7 +118,6 @@ static void createLockSets(void);
 static short makeSameSet(struct dbAddr *paddr,short set);
 static long initialProcess(void);
 static long getResources(char  *fname);
-void setMasterTimeToSelf(void);
 
 /*
  *  Initialize EPICS on the IOC.
@@ -1064,6 +1063,7 @@ static long getResources(char  *fname)
     long            n_long;
     float           n_float;
     double          n_double;
+
     if (!fname) return (0);
     if ((fp = fopen(fname, "r")) == 0) {
 	errMessage(-1L, "getResources: No such Resource file");
@@ -1147,8 +1147,8 @@ static long getResources(char  *fname)
 	    }
             if ( epicsFlag ) {
                 sprintf(message,
-                       "getResources: EPICS_ type DBF_SHORT not supported - line =%d",
-                        lineNum);
+                       "getResources: %s is of type DBF_STRING - line =%d",
+			name,lineNum);
                 errMessage(-1L, message);
             }
             else
@@ -1164,8 +1164,8 @@ static long getResources(char  *fname)
 	    }
             if ( epicsFlag ) {
                 sprintf(message,
-                       "getResources: EPICS_ type DBF_LONG not supported - line= %d",
-                        lineNum);
+                       "getResources: %s is of type DBF_STRING - line =%d",
+			name,lineNum);
                 errMessage(-1L, message);
             }
             else
@@ -1180,8 +1180,8 @@ static long getResources(char  *fname)
 	    }
             if ( epicsFlag ) {
                 sprintf(message,
-                       "getResources: EPICS_ type DBF_FLOAT not supported - line =%d",
-                        lineNum);
+                       "getResources: %s is of type DBF_STRING - line =%d",
+			name,lineNum);
                 errMessage(-1L, message);
             }
             else
@@ -1197,8 +1197,8 @@ static long getResources(char  *fname)
 	    }
             if ( epicsFlag ) {
                 sprintf(message,
-                       "getResources: EPICS_ type DBF_DOUBLE not supported - line=%d",
-                        lineNum);
+                       "getResources: %s is of type DBF_STRING - line =%d",
+			name,lineNum);
                 errMessage(-1L, message);
             }
             else

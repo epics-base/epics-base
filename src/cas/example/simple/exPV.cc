@@ -428,3 +428,15 @@ caStatus exPV::read (const casCtx &, gdd &protoIn)
 	return this->ft.read (*this, protoIn);
 }
 
+//
+// exPV::createChannel()
+//
+// for access control - optional
+//
+casChannel *exPV::createChannel (const casCtx &ctx,
+		const char * const pUserName, const char * const pHostName)
+{
+	return new exChannel (ctx);
+}
+
+

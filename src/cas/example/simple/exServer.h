@@ -14,6 +14,9 @@
 //	|
 //	exAsyncPV
 //
+//  casChannel
+//	|
+//	exChannel
 //
 
 
@@ -236,6 +239,12 @@ public:
 
 	static void initFT();
 
+	//
+	// for access control - optional
+	//
+	casChannel *createChannel (const casCtx &ctx,
+		const char * const pUserName, const char * const pHostName);
+
 protected:
 	smartGDDPointer	pValue;
 	exScanTimer		*pScanTimer;
@@ -385,29 +394,13 @@ private:
 //
 class exChannel : public casChannel{
 public:
-        exChannel(const casCtx &ctxIn) : casChannel(ctxIn) {}
+	exChannel(const casCtx &ctxIn) : casChannel(ctxIn) {}
 
-	//void setOwner(const char *pUserName, const char *pHostName){};
+	virtual void setOwner(const char * const pUserName, 
+		const char * const pHostName);
 
-	//
-	// called when the first client begins to monitor the PV
-	//
-	caStatus interestRegister () 
-	{	
-	return S_cas_success;
-	}
-
-	//
-	// called when the last client stops monitoring the PV
-	//
-	void interestDelete () {}
-
-	//
-	// the following are encouraged to change during an channel's
-	// lifetime
-	//
-	aitBool readAccess () const {return aitTrue;};
-	aitBool writeAccess () const {return aitTrue;};
+	virtual aitBool readAccess () const;
+	virtual aitBool writeAccess () const;
 
 private:
 };

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.17  1998/10/23 00:28:20  jhill
+ * fixed HP-UX warnings
+ *
  * Revision 1.16  1998/07/08 15:38:05  jhill
  * fixed lost monitors during flow control problem
  *
@@ -472,7 +475,7 @@ public:
 
 	inline void postEvent (const casEventMask &select, gdd &event);
 
-	virtual casResType resourceType() const;
+	epicsShareFunc virtual casResType resourceType() const;
 
 	virtual void show (unsigned level) const;
 
@@ -490,7 +493,7 @@ public:
 	//
 	// access rights event call back
 	//
-	caStatus cbFunc(casEventSys &);
+	epicsShareFunc caStatus cbFunc(casEventSys &);
 
 	inline void postAccessRightsEvent();
 protected:

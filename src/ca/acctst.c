@@ -6,97 +6,6 @@
 static char *sccsId = "@(#) $Id$";
 
 /*
- * $Log$
- * Revision 1.58  1999/02/12 00:26:31  jhill
- * added dbr_long_t readback test
- *
- * Revision 1.57  1999/01/28 21:12:16  jhill
- * improved VAX floating point
- *
- * Revision 1.56  1998/10/27 00:47:28  jhill
- * fixed warnings
- *
- * Revision 1.55  1998/09/24 21:11:38  jhill
- * verify that conn is dropped when channel count goes to zero
- *
- * Revision 1.54  1998/06/16 00:42:21  jhill
- * fixed include
- *
- * Revision 1.53  1998/06/16 00:25:31  jhill
- * cleanup
- *
- * Revision 1.52  1998/05/05 16:03:10  jhill
- * use epicsAssert.h
- *
- * Revision 1.51  1998/04/15 21:50:26  jhill
- * added array as string test
- *
- * Revision 1.50  1998/03/12 20:39:07  jhill
- * fixed problem where 3.13.beta11 unable to connect to 3.11 with correct native type
- *
- * Revision 1.49  1998/02/05 21:56:46  jhill
- * added no pend event in event call back test
- *
- * Revision 1.48  1997/07/10 19:33:11  jhill
- * improved CPU consumption by select() under vxWorks
- *
- * Revision 1.47  1997/06/25 06:12:13  jhill
- * fixed warnings
- *
- * Revision 1.46  1997/06/13 09:14:09  jhill
- * connect/search proto changes
- *
- * Revision 1.45  1997/04/29 06:07:16  jhill
- * local host connect compatible
- *
- * Revision 1.44  1997/04/10 19:26:05  jhill
- * asynch connect, faster connect, ...
- *
- * Revision 1.43  1997/01/22 21:07:27  jhill
- * fixed array test
- *
- * Revision 1.42  1996/12/12 18:51:41  jhill
- * doc
- *
- * Revision 1.41  1996/12/11 01:10:33  jhill
- * added additional vector tests
- *
- * Revision 1.40  1996/11/22 19:07:01  jhill
- * included string.h
- *
- * Revision 1.39  1996/11/02 00:50:36  jhill
- * many pc port, const in API, and other changes
- *
- * Revision 1.37  1996/09/16 16:31:01  jhill
- * fixed NT warnings
- *
- * Revision 1.36  1996/07/24 21:55:33  jhill
- * fixed gnu warnings
- *
- * Revision 1.35  1996/07/01 19:49:15  jhill
- * turned on analog value wrap-around test
- *
- * Revision 1.34  1996/06/19 17:59:02  jhill
- * many 3.13 beta changes
- *
- * Revision 1.33  1995/12/19  19:29:04  jhill
- * changed put test
- *
- * Revision 1.32  1995/11/29  19:17:25  jhill
- * more tests
- *
- * Revision 1.31  1995/10/12  01:30:28  jhill
- * improved the test
- *
- * Revision 1.30  1995/09/29  21:47:58  jhill
- * MS windows changes
- *
- * Revision 1.29  1995/08/22  00:16:34  jhill
- * Added test of the duration of ca_pend_event()
- *
- */
-
-/*
  * ANSI
  */
 #include	<stdio.h>
@@ -381,6 +290,9 @@ int doacctst(char *pname)
 	assert (INVALID_DB_REQ(ca_field_type(chix3)) == FALSE);
 	assert (INVALID_DB_REQ(ca_field_type(chix4)) == FALSE);
 
+	printf("%s Read Access=%d Write Access=%d\n", 
+		ca_name(chix1), ca_read_access(chix1), ca_write_access(chix1));
+
 	/*
 	 * clear chans before starting another test 
 	 */
@@ -451,10 +363,6 @@ int doacctst(char *pname)
 		ca_pend_event(0.1);
 	}
 	printf("done\n");
-
-	printf("Read Access=%d Write Access=%d\n", 
-		ca_read_access(chix1),
-		ca_write_access(chix1));
 
 	performGrEnumTest (chix1);
 

@@ -497,7 +497,7 @@ static win32ThreadParam * epicsThreadImplicitCreate ( void )
     if ( ! success ) {
         return 0;
     }
-    sprintf ( name, "Implicit id=%x", id );
+    sprintf ( name, "win%x", id );
     pParm = epicsThreadParmCreate ( name );
     if ( pParm ) {
         int win32ThreadPriority;
@@ -831,6 +831,66 @@ epicsShareFunc void epicsShareAPI epicsThreadGetName ( epicsThreadId id, char *p
 }
 
 /*
+ * epics_GetThreadPriorityAsString ()
+ */
+static const char * epics_GetThreadPriorityAsString ( HANDLE thr )
+{
+    const char * pPriName = "?????";
+    switch ( GetThreadPriority ( thr ) ) {
+    case THREAD_PRIORITY_TIME_CRITICAL:
+        pPriName = "tm-crit";
+        break;
+    case THREAD_PRIORITY_HIGHEST:
+        pPriName = "high";
+        break;
+    case THREAD_PRIORITY_ABOVE_NORMAL:
+        pPriName = "normal+";
+        break;
+    case THREAD_PRIORITY_NORMAL:
+        pPriName = "normal";
+        break;
+    case THREAD_PRIORITY_BELOW_NORMAL:
+        pPriName = "normal-";
+        break;
+    case THREAD_PRIORITY_LOWEST:
+        pPriName = "low";
+        break;
+    case THREAD_PRIORITY_IDLE:
+        pPriName = "idle";
+        break;
+    }
+    return pPriName;
+}
+
+/*
+ * epicsThreadShowPrivate ()
+ */
+static void epicsThreadShowPrivate ( epicsThreadId id, unsigned level )
+{
+    win32ThreadParam *pParm = (win32ThreadParam *) id;
+
+    if ( pParm ) {
+        printf ( "%-15s %-8p %-8x %-9u %-9s %-5s", pParm->pName, 
+            (void *) pParm, pParm->id, pParm->epicsPriority,
+            epics_GetThreadPriorityAsString ( pParm->handle ),
+            pParm->isSuspended ? "susp" : "ok" );
+        if ( level ) {
+            printf ( " %-8p %-8p %-8p ",
+                (void *) pParm->handle, (void *) pParm->funptr, 
+                (void *) pParm->parm );
+        }
+    }
+    else {
+        printf ( 
+            "NAME            EPICS-ID WIN32-ID EPICS-PRI WIN32-PRI STATE" );
+        if ( level ) {
+            printf ( " HANDLE   FUNCTION PARAMETER" );
+        }
+    }
+    printf ("\n" );
+}
+
+/*
  * epicsThreadShowAll ()
  */
 epicsShareFunc void epicsShareAPI epicsThreadShowAll ( unsigned level )
@@ -842,10 +902,11 @@ epicsShareFunc void epicsShareAPI epicsThreadShowAll ( unsigned level )
     stat = WaitForSingleObject ( win32ThreadGlobalMutex, INFINITE );
     assert ( stat == WAIT_OBJECT_0 );
     
-    printf ( "EPICS WIN32 Thread List\n" );
+    printf ( "EPICS Thread List\n" );
+    epicsThreadShowPrivate ( 0, level );
     for ( pParm = ( win32ThreadParam * ) ellFirst ( & threadList ); 
             pParm; pParm = ( win32ThreadParam * ) ellNext ( & pParm->node ) ) {
-        epicsThreadShow ( ( epicsThreadId ) pParm, level );
+        epicsThreadShowPrivate ( ( epicsThreadId ) pParm, level );
     }
 
     success = ReleaseMutex ( win32ThreadGlobalMutex );
@@ -857,14 +918,8 @@ epicsShareFunc void epicsShareAPI epicsThreadShowAll ( unsigned level )
  */
 epicsShareFunc void epicsShareAPI epicsThreadShow ( epicsThreadId id, unsigned level )
 {
-    win32ThreadParam *pParm = (win32ThreadParam *) id;
-
-    printf ( "\"%s\" %s", pParm->pName, pParm->isSuspended?"suspended":"running");
-    if ( level ) {
-        printf ( " HANDLE=%p func=%p parm=%p id=%d ",
-            pParm->handle, pParm->funptr, pParm->parm, pParm->id );
-    }
-    printf ("\n" );
+    epicsThreadShowPrivate ( 0, level );
+    epicsThreadShowPrivate ( id, level );
 }
 
 /*

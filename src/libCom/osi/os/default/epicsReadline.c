@@ -244,12 +244,16 @@ epicsReadline (const char *prompt, void *context)
         i = ledRead(readlineContext->ledId, readlineContext->line, LEDLIB_LINESIZE-1); 
         if (i < 0)
             return NULL;
-        readlineContext->line[i] = '\0';
     }
     else {
         if (fgets(readlineContext->line, LEDLIB_LINESIZE, readlineContext->in) == NULL)
             return NULL;
+        i = strlen(readlineContext->line);
     }
+    if ((i >= 1) && (readlineContext->line[i-1] == '\n'))
+        readlineContext->line[i-1] = '\0';
+    else
+        readlineContext->line[i] = '\0';
     return readlineContext->line;
 }
 

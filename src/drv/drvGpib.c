@@ -74,8 +74,10 @@
 #include <drvSup.h>
 #include <dbDefs.h>
 #include <link.h>
+#include <fast_lock.h>
 
 #include <drvGpibInterface.h>
+#include <drvBitBusInterface.h>
 #include "drvGpib.h"
 
 long	reportGpib();
@@ -97,6 +99,7 @@ int	srqPollInhibit();
 int	ibLinkInit();
 int	ibLinkStart();
 int	ibLinkTask();
+struct	bbIbLink	*findBBLink();
 
 int	ibDebug = 0;		/* Turns on debug messages from this driver */
 int	bbibDebug = 0;		/* Turns on ONLY bitbus related messages */
@@ -112,8 +115,7 @@ static int timeoutSquelch = 0;	/* Used to quiet timeout msgs during polling */
 
 /******************************************************************************
  *
- * Generic driver block.  Epics uses it to call the init routine
- * when an iocInit() is done.
+ * GPIB driver block.  
  *
  ******************************************************************************/
 struct drvGpibSet drvGpib={
@@ -128,6 +130,18 @@ struct drvGpibSet drvGpib={
   ioctlIb,
   srqPollInhibit
 };
+
+/******************************************************************************
+ *
+ * Reference to the bitbus driver block.
+ *
+ ******************************************************************************/
+extern struct {
+  long number;
+  DRVSUPFUN     report;
+  DRVSUPFUN     init;
+  DRVSUPFUN     qReq;
+} drvBitBus;
 
 /******************************************************************************
  *
@@ -150,6 +164,8 @@ struct    cc_ary
  *
  ******************************************************************************/
 struct	niLink {
+  struct ibLink	ibLink;
+
   char		tmoFlag;	/* timeout has occurred */
   int		tmoLimit;	/* how long to wait before issuing timeout */
   SEM_ID	ioSem;		/* DMA I/O operation complete or WD timeout */
@@ -162,8 +178,6 @@ struct	niLink {
   char		r_isr1;
   char		r_isr2;
   int		first_read;
-
-  struct ibLink	ibLink;
 };
 
 static	struct	niLink	*pNiLink[NIGPIB_NUM_LINKS];	/* NULL if link not present */
@@ -184,13 +198,14 @@ static	int	pollInhibit[NIGPIB_NUM_LINKS][IBAPERLINK];
  * all but the first request.
  *
  ******************************************************************************/
-struct  bbLink {
-  struct bbLink	*next;		/* Next BitBus link structure in list */
+struct  bbIbLink {
+  struct ibLink		ibLink;		/* associated ibLink structure */
 
-  struct ibLink	ibLink;		/* associated ibLink structure */
+  FAST_LOCK		syncLock;	/* used for syncronous I/O calls */
+  struct bbIbLink	*next;		/* Next BitBus link structure in list */
 };
 
-static	struct	bbLink	*rootBBLink = NULL; /* Head of bitbus structures */
+static	struct	bbIbLink	*rootBBLink = NULL; /* Head of bitbus structures */
 
 /******************************************************************************
  *
@@ -248,8 +263,9 @@ initGpib()
 
   if (init_called)
   {
-    printf("initGpib(): Gpib devices already initialized!\n");
-    return(ERROR);
+    if (ibDebug)
+      printf("initGpib(): WARNING, Gpib driver already initialized!\n");
+    return(OK);
   }
 
   /* figure out where the short address space is */
@@ -261,11 +277,11 @@ initGpib()
 
   if (ibDebug)
   {
-    logMsg("Gpib driver package initializing\n");
-    logMsg("short_base            0x%08.8X\n", short_base);
-    logMsg("ram_base              0x%08.8X\n", ram_base);
-    logMsg("NIGPIB_SHORT_OFF        0x%08.8X\n", NIGPIB_SHORT_OFF);
-    logMsg("NIGPIB_NUM_LINKS        0x%08.8X\n", NIGPIB_NUM_LINKS);
+    printf("Gpib driver package initializing\n");
+    printf("short_base            0x%08.8X\n", short_base);
+    printf("ram_base              0x%08.8X\n", ram_base);
+    printf("NIGPIB_SHORT_OFF        0x%08.8X\n", NIGPIB_SHORT_OFF);
+    printf("NIGPIB_NUM_LINKS        0x%08.8X\n", NIGPIB_NUM_LINKS);
   }
 
   /* When probing, send out a reset signal to reset the DMAC and the TLC */
@@ -280,13 +296,13 @@ initGpib()
       pNiLink[i] = (struct niLink *) NULL;
 
       if (ibDebug)
-	logMsg("Probing of address 0x%08.8X failed\n", pibregs);
+	printf("Probing of address 0x%08.8X failed\n", pibregs);
 
     }
     else
     { /* GPIB board found... reserve space for structures & reset the thing */
       if (ibDebug)
-	logMsg("GPIB card found at address 0x%08.8X\n", pibregs);
+	printf("GPIB card found at address 0x%08.8X\n", pibregs);
 
       if ((pNiLink[i] = (struct niLink *) malloc(sizeof(struct niLink))) == NULL)
       { /* This better never happen! */
@@ -513,53 +529,17 @@ int	link;
 {
   /*errMsg()*/
   logMsg("GPIB error interrupt generated on link %d\n", link);
-  logMsg(" ch0 status = %02.2X %02.2X %02.2X\n", 
+  logMsg(" ch0 csr %02.2X cer %02.2X ccr %02.2X\n", 
 	pNiLink[link]->ibregs->ch0.csr & 0xff, 
 	pNiLink[link]->ibregs->ch0.cer & 0xff, 
 	pNiLink[link]->ibregs->ch0.ccr);
-  logMsg("ch1 status = %02.2X %02.2X %02.2X\n", 
+  logMsg("ch1 csr %02.2X cer %02.2X ccr %02.2X\n", 
 	pNiLink[link]->ibregs->ch1.csr & 0xff,
 	pNiLink[link]->ibregs->ch1.cer & 0xff,
 	pNiLink[link]->ibregs->ch1.ccr);
   pNiLink[link]->ibregs->ch0.ccr = D_SAB;
   pNiLink[link]->ibregs->ch1.ccr = D_SAB;
   return(0);
-}
-
-
-/******************************************************************************
- *
- * This function is used to queue an I/O transaction requests for the Ni-based
- * links.
- *
- ******************************************************************************/
-static int
-niQGpibReq(link, pdpvt, prio)
-int	link;
-struct	dpvtGpibHead *pdpvt;
-int	prio;
-{
-  switch (prio) {
-  case IB_Q_LOW:		/* low priority transaction request */
-    semTake(pNiLink[link]->ibLink.loPriSem);
-    lstAdd(&(pNiLink[link]->ibLink.loPriList), pdpvt);
-    semGive(pNiLink[link]->ibLink.loPriSem);
-    semGive(pNiLink[link]->ibLink.linkEventSem);
-    break;
-  case IB_Q_HIGH:		/* high priority transaction request */
-    semTake(pNiLink[link]->ibLink.hiPriSem);
-    lstAdd(&(pNiLink[link]->ibLink.hiPriList), pdpvt);
-    semGive(pNiLink[link]->ibLink.hiPriSem);
-    semGive(pNiLink[link]->ibLink.linkEventSem);
-    break;
-  default:		/* invalid priority */
-    printf("invalid priority requested in call to qgpibreq(%d, %08.8X, %d)\n", link, pdpvt, prio);
-    return(ERROR);
-  }
-  if (ibDebug)
-    logMsg("qgpibreq(%d, 0x%08.8X, %d): transaction queued\n", link, pdpvt, prio);
-
-  return(OK);
 }
 
 /******************************************************************************
@@ -588,7 +568,7 @@ int     length;
   lenCtr = length;
 
   if (ibDebug)
-    logMsg("niGpibCmd(%d, 0x%08.8X, %d): command string >%s<\n", link, buffer, length, buffer);
+    printf("niGpibCmd(%d, 0x%08.8X, %d): command string >%s<\n", link, buffer, length, buffer);
 
   tooLong = 60;		/* limit to wait for ctrlr's command buffer */
   pNiLink[link]->ibregs->auxmr = AUX_TCA;	/* take control of the bus */
@@ -656,7 +636,7 @@ int	length;
   int	err;
 
   if(ibDebug)
-    logMsg("niGpibRead(%d, 0x%08.8X, %d)\n",link, buffer, length);
+    printf("niGpibRead(%d, 0x%08.8X, %d)\n",link, buffer, length);
 
   if (niCheckLink(link) == ERROR)
   {
@@ -685,7 +665,7 @@ int	length;
   int	err;
 
   if(ibDebug)
-    logMsg("niGpibWrite(%d, 0x%08.8X, %d)\n",link, buffer, length);
+    printf("niGpibWrite(%d, 0x%08.8X, %d)\n",link, buffer, length);
 
   if (niCheckLink(link) == ERROR)
   {
@@ -748,15 +728,16 @@ int	link;
  *
  ******************************************************************************/
 static int
-niGpibIoctl(link, cmd, v)
+niGpibIoctl(link, cmd, v, p)
 int	link;
 int	cmd;
 int	v;
+caddr_t	p;
 {
   int stat = OK;
 
   if(ibDebug)
-    logMsg("niGpibIoctl(%d, %d, %d)\n",link, cmd, v);
+    printf("niGpibIoctl(%d, %d, %d, %08.8X)\n",link, cmd, v, p);
 
   if (cmd != IBGENLINK && niCheckLink(link) == ERROR)
   {
@@ -788,6 +769,9 @@ int	v;
     break;
   case IBGENLINK:	/* request the creation of a link */
     break;		/* this is automatic for NI based links */
+  case IBGETLINK:	/* return pointer to ibLink structure */
+    *(struct ibLink **)p = &(pNiLink[link]->ibLink);
+    break;
   default:
     return(ERROR);
   }
@@ -907,14 +891,14 @@ int	length;		/* number of bytes to transfer */
   if (cnt)
   {
     if (ibDebug == 1)
-      logMsg("Link %d waiting for DMA int or WD timeout.\n", link);
-    semTake(pNiLink[link]->ioSem);		/* timeout or DMA finish */
+      printf("Link %d waiting for DMA int or WD timeout.\n", link);
+    semTake(pNiLink[link]->ioSem, WAIT_FOREVER); /* timeout or DMA finish */
   }
   else 
     if (b->ch0.mtc)
     {
       if (ibDebug == 1)
-	logMsg("wd cnt =0 wait\n");
+	printf("wd cnt =0 wait\n");
       tmoTmp = 0;
       while (b->ch0.mtc)
       {
@@ -1036,7 +1020,7 @@ int	link;
   int   lockKey;
 
   if(ibDebug || ibSrqDebug)
-    logMsg("niSrqIntEnable(%d): ch0.csr = 0x%02.2X, gsr=0x%02.2X\n", link, pNiLink[link]->ibregs->ch0.csr, pNiLink[link]->ibregs->gsr);
+    printf("niSrqIntEnable(%d): ch0.csr = 0x%02.2X, gsr=0x%02.2X\n", link, pNiLink[link]->ibregs->ch0.csr, pNiLink[link]->ibregs->gsr);
 
   lockKey = intLock();  /* lock out ints because the DMAC likes to glitch */
 
@@ -1046,7 +1030,7 @@ int	link;
     semGive(pNiLink[link]->ibLink.linkEventSem);
 
     if(ibDebug || ibSrqDebug)
-      logMsg("niSrqIntEnable(%d): found SRQ active, setting srqIntFlag\n", link);
+      printf("niSrqIntEnable(%d): found SRQ active, setting srqIntFlag\n", link);
 
     /* Clear the PCLT status if is already set to prevent unneeded int later */
     pNiLink[link]->ibregs->ch0.csr = D_PCLT;
@@ -1055,7 +1039,7 @@ int	link;
     pNiLink[link]->ibregs->ch0.ccr = D_EINT;    /* Allow SRQ ints */
 
   intUnlock(lockKey);
-  return(0);
+  return(OK);
 }
 
 
@@ -1072,15 +1056,26 @@ int	link;
   int	lockKey;
 
   if(ibDebug || ibSrqDebug)
-    logMsg("niSrqIntDisable(%d): ch0.csr = 0x%02.2X, gsr=0x%02.2X\n", link, pNiLink[link]->ibregs->ch0.csr, pNiLink[link]->ibregs->gsr);
+    printf("niSrqIntDisable(%d): ch0.csr = 0x%02.2X, gsr=0x%02.2X\n", link, pNiLink[link]->ibregs->ch0.csr, pNiLink[link]->ibregs->gsr);
 
   lockKey = intLock();  /* lock out ints because the DMAC likes to glitch */
   pNiLink[link]->ibregs->ch0.ccr = 0;           /* Don't allow SRQ ints */
   intUnlock(lockKey);
 
-  return(0);
+  return(OK);
 }
 
+/******************************************************************************
+ *
+ * The following section of GPIB driver is written such that it can operate
+ * in a device independant fashon.  It does this by simply not making
+ * references to any architecture-specific data areas.
+ *
+ * When the architecture-specific information is needed, processing
+ * is sent to the architecture-specific routines.
+ *
+ ******************************************************************************/
+
 /******************************************************************************
  *
  * Routine used to initialize the values of the fields in an ibLink structure.
@@ -1093,7 +1088,7 @@ struct ibLink *plink;
   int	j;
 
   if(ibDebug || bbibDebug)
-    logMsg("ibLinkInit(%08.8X): entered, type %d, link %d, bug %d\n", plink, plink->linkType, plink->linkId, plink->bug);
+    printf("ibLinkInit(%08.8X): entered, type %d, link %d, bug %d\n", plink, plink->linkType, plink->linkId, plink->bug);
 
   plink->srqIntFlag = 0;	/* no srq ints set now */
   plink->linkEventSem = semCreate();
@@ -1115,14 +1110,10 @@ struct ibLink *plink;
   }
   return(OK);
 }
+
 /******************************************************************************
- *
- * The following section of GPIB driver is written such that it can operate
- * in a device independant fashon.  It does this by simply not making
- * references to any architecture-specific data areas.
- *
- * When the architecture-specific information is needed, processing
- * is sent to the architecture-specific routines.
+ * 
+ * Init and start an ibLinkTask
  *
  ******************************************************************************/
 static int
@@ -1132,19 +1123,14 @@ struct	ibLink *plink;
   int	j;
 
   if (ibDebug || bbibDebug)
-    logMsg("ibLinkStart(%08.8X): entered for link %d\n", plink, plink->linkId);
+    printf("ibLinkStart(%08.8X): entered for linkType %d, link %d\n", plink, plink->linkType, plink->linkId);
 
-  ioctlIb(plink->linkType, plink->linkId, plink->bug, IBIFC);/* fire out an interface clear */
-  ioctlIb(plink->linkType, plink->linkId, plink->bug, IBREN, 1);/* turn on the REN line */
-
-  if (writeIbCmd(plink->linkType, plink->linkId, plink->bug, "?_", 2) == ERROR)/* send out a UNL and UNT */
-  {
-    logMsg("ibLinkStart(%08.08X): init failed for link %d\n", plink, plink->linkId);
-    return(ERROR);
-  }
+  ioctlIb(plink->linkType, plink->linkId, plink->bug, IBIFC, -1, NULL);/* fire out an interface clear */
+  ioctlIb(plink->linkType, plink->linkId, plink->bug, IBREN, 1, NULL);/* turn on the REN line */
 
 /* BUG -- why not just forget this & only poll registered devices? */
 /* BUG -- the pollinhibit array stuff has to be fixed! */
+
 
   if (plink->linkType == GPIB_IO)
   {
@@ -1154,7 +1140,7 @@ struct	ibLink *plink;
     {
       if (pollInhibit[plink->linkId][j] != 1);/* if user did not block it out */
       {
-        ioctlIb(plink->linkType, plink->linkId, plink->bug, IBTMO, 4);
+        ioctlIb(plink->linkType, plink->linkId, plink->bug, IBTMO, 4, NULL);
         if (pollIb(plink, j, 0) == ERROR)
           pollInhibit[plink->linkId][j] = 2;	/* address is not pollable */
       }
@@ -1164,11 +1150,12 @@ struct	ibLink *plink;
   }
 
   /* Start a task to manage the link */
-  if (taskSpawn("gpibLink", 46, VX_FP_TASK|VX_STDIO, 2000, ibLinkTask, plink, plink->linkId) == ERROR)
+  if (taskSpawn("gpibLink", 46, VX_FP_TASK|VX_STDIO, 2000, ibLinkTask, plink) == ERROR)
   {
     printf("ibLinkStart(): failed to start link task for link %d\n", plink->linkId);
     return(ERROR);
   }
+  taskDelay(10);			/* give it a chance to start running */
   return(OK);
 }
 
@@ -1187,9 +1174,8 @@ struct	ibLink *plink;
  *
  ******************************************************************************/
 static int 
-ibLinkTask(plink, link)
+ibLinkTask(plink)
 struct  ibLink	*plink; 	/* a reference to the link structures covered */
-int		link;
 {
   struct dpvtGpibHead	*pnode;
   struct srqStatus	ringData;
@@ -1197,12 +1183,15 @@ int		link;
   int			pollActive;
   int			working;
 
-  /* if (ibDebug) */
-    logMsg("ibLinkTask started for link type %d, link %d\n", plink->linkType, link);
+  /*if (ibDebug)*/
+    printf("ibLinkTask started for link type %d, link %d\n", plink->linkType, plink->linkId);
 
-  printf("ibLinkTask (%08.8X, %d): started\n", plink, link);
-  taskDelay(30);
-
+  /* send out a UNL and UNT to test-drive the link */
+  if (writeIbCmd(plink, "?_", 2) == ERROR)
+  {
+    printf("ibLinkTask(%08.08X): init failed for link type %d, link %d\n", plink->linkType, plink, plink->linkId);
+    return(ERROR);
+  }
 
   working = 1;	/* check queues for work the first time */
   while (1)
@@ -1210,15 +1199,15 @@ int		link;
     if (!working)
     {
       /* Enable SRQ interrupts */
-      srqIntEnable(plink->linkType, link);
-      semTake(plink->linkEventSem);
+      srqIntEnable(plink->linkType, plink->linkId, plink->bug);
+      semTake(plink->linkEventSem, WAIT_FOREVER);
   
       /* Disable SRQ interrupts */
-      srqIntDisable(plink->linkType, link);
+      srqIntDisable(plink->linkType, plink->linkId, plink->bug);
 
       if (ibDebug)
       {
-        logMsg("ibLinkTask(%d, %d): got an event\n", plink->linkType, link);
+        printf("ibLinkTask(%d, %d): got an event\n", plink->linkType, plink->linkId);
       }
     }
     working = 0;	/* Assume will do nothing */
@@ -1232,7 +1221,7 @@ int		link;
     if (plink->srqIntFlag)
     {
       if (ibDebug || ibSrqDebug)
-	logMsg("ibLinkTask(%d, %d): srqIntFlag set.\n", plink->linkType, link);
+	printf("ibLinkTask(%d, %d): srqIntFlag set.\n", plink->linkType, plink->linkId);
 
       plink->srqIntFlag = 0;
       pollActive = 0;
@@ -1240,7 +1229,7 @@ int		link;
       pollAddress = 1;          /* skip 0 and 31, poll 1-30 */
       while (pollAddress < 31)
       {
-        if (!(pollInhibit[link][pollAddress])) /* zero if allowed */
+        if (!(pollInhibit[plink->linkId][pollAddress])) /* zero if allowed */
         {
           if (!pollActive)
           { /* set the serial poll enable mode if not done so yet */
@@ -1248,19 +1237,19 @@ int		link;
             speIb(plink);
           }
 	  if (ibDebug || ibSrqDebug)
-            logMsg("ibLinkTask(%d, %d): poling device %d\n", plink->linkType, link, pollAddress);
+            printf("ibLinkTask(%d, %d): poling device %d\n", plink->linkType, plink->linkId, pollAddress);
           if ((ringData.status = pollIb(plink, pollAddress, 1)) & 0x40)
           {
             ringData.device = pollAddress;
 	    if (ibDebug || ibSrqDebug)
-	      logMsg("ibLinkTask(%d, %d): device %d srq status = 0x%02.2X\n", plink->linkType, link, pollAddress, ringData.status);
+	      printf("ibLinkTask(%d, %d): device %d srq status = 0x%02.2X\n", plink->linkType, plink->linkId, pollAddress, ringData.status);
             if (plink->srqHandler[ringData.device] != NULL)
             { /* there is a registered SRQ handler for this device */
               rngBufPut(plink->srqRing, &ringData, sizeof(ringData));
             }
 	    else
 	      if (ibDebug || ibSrqDebug)
-		logMsg("ibLinkTask(%d, %d): got an srq from device %d... ignored\n", plink->linkType, link, pollAddress);
+		printf("ibLinkTask(%d, %d): got an srq from device %d... ignored\n", plink->linkType, plink->linkId, pollAddress);
           }
         }
 	pollAddress++;
@@ -1272,11 +1261,12 @@ int		link;
       }
       else
       {
-	printf("ibLinkTask(%d, %d): got an SRQ, but have no pollable devices!\n", plink->linkType, link);
+	printf("ibLinkTask(%d, %d): got an SRQ, but have no pollable devices!\n", plink->linkType, plink->linkId);
       }
-      /* The srqIntFlag should still be set if the SRQ line is again/still */
-      /* active, otherwise we have a possible srq interrupt processing */
-      /* deadlock! */
+      /*
+       * If the SRQ link is again/still active, it will be seen on the next
+       * call to srqIntEnable above.
+       */
     }
 
     /* See if there is a need to process an SRQ solicited transaction. */
@@ -1284,13 +1274,13 @@ int		link;
     while (rngBufGet(plink->srqRing, &ringData, sizeof(ringData)))
     {
       if (ibDebug || ibSrqDebug)
-	logMsg("ibLinkTask(%d, %d): dispatching srq handler for device %d\n", plink->linkType, link, ringData.device);
+	printf("ibLinkTask(%d, %d): dispatching srq handler for device %d\n", plink->linkType, plink->linkId, ringData.device);
       plink->deviceStatus[ringData.device] = (*(plink->srqHandler)[ringData.device])(plink->srqParm[ringData.device], ringData.status);
       working=1;
     }
 
     /* see if the Hi priority queue has anything in it */
-    semTake(plink->hiPriSem);
+    semTake(plink->hiPriSem, WAIT_FOREVER);
 
     if ((pnode = (struct dpvtGpibHead *)lstFirst(&(plink->hiPriList))) != NULL)
     {
@@ -1306,14 +1296,14 @@ int		link;
     if (pnode != NULL)
     {
       if (ibDebug)
-        logMsg("ibLinkTask(%d, %d): got Hi Pri xact, pnode= 0x%08.8X\n", plink->linkType, link, pnode);
+        printf("ibLinkTask(%d, %d): got Hi Pri xact, pnode= 0x%08.8X\n", plink->linkType, plink->linkId, pnode);
 
       plink->deviceStatus[pnode->device] = (*(pnode->workStart))(pnode);
       working=1;
     }
     else
     {
-      semTake(plink->loPriSem);
+      semTake(plink->loPriSem, WAIT_FOREVER);
       if ((pnode = (struct dpvtGpibHead *)lstFirst(&(plink->loPriList))) != NULL)
       {
         while (plink->deviceStatus[pnode->device] == BUSY)
@@ -1328,7 +1318,7 @@ int		link;
       if (pnode != NULL)
       {
         if(ibDebug)
-          logMsg("ibLinkTask(%d, %d): got Lo Pri xact, pnode= 0x%08.8X\n", plink->linkType, link, pnode);
+          printf("ibLinkTask(%d, %d): got Lo Pri xact, pnode= 0x%08.8X\n", plink->linkType, plink->linkId, pnode);
         plink->deviceStatus[pnode->device] = (*(pnode->workStart))(pnode);
         working=1;
       }
@@ -1360,13 +1350,13 @@ int		verbose;	/* set to 1 if should log any errors */
   int	tsSave;
 
   if(verbose && (ibDebug || ibSrqDebug))
-    logMsg("pollIb(0x%08.8X, %d, %d)\n", plink, gpibAddr, verbose);
+    printf("pollIb(0x%08.8X, %d, %d)\n", plink, gpibAddr, verbose);
 
   tsSave = timeoutSquelch;
   timeoutSquelch = !verbose;	/* keep the I/O routines quiet if desired */
 
   /* raw-read back the response from the instrument */
-  if (readIb(plink->linkType, plink->linkId, plink->bug, gpibAddr, pollResult, sizeof(pollResult)) == ERROR)
+  if (readIb(plink, gpibAddr, pollResult, sizeof(pollResult)) == ERROR)
   {
     if(verbose)
       printf("pollIb(%d, %d): data read error\n", plink->linkId, gpibAddr);
@@ -1377,7 +1367,7 @@ int		verbose;	/* set to 1 if should log any errors */
     status = pollResult[0];
     if (ibDebug || ibSrqDebug)
     {
-      logMsg("pollIb(%d, %d): poll status = 0x%02.2X\n", plink->linkId, gpibAddr, status);
+      printf("pollIb(%d, %d): poll status = 0x%02.2X\n", plink->linkId, gpibAddr, status);
     }
   }
 
@@ -1396,7 +1386,7 @@ speIb(plink)
 struct ibLink     *plink;
 {
   /* write out the Serial Poll Enable command */
-  writeIbCmd(plink->linkType, plink->linkId, plink->bug, "\030", 1);
+  writeIbCmd(plink, "\030", 1);
 
   return(0);
 }
@@ -1413,7 +1403,7 @@ spdIb(plink)
 struct ibLink     *plink;
 {
   /* write out the Serial Poll Disable command */
-  writeIbCmd(plink->linkType, plink->linkId, plink->bug, "\031", 1);
+  writeIbCmd(plink, "\031", 1);
 
   return(0);
 }
@@ -1430,7 +1420,7 @@ struct ibLink     *plink;
  *
  ******************************************************************************/
 static int
-srqIntEnable(linkType, link)
+srqIntEnable(linkType, link, bug)
 int	linkType;
 int	link;
 {
@@ -1438,13 +1428,13 @@ int	link;
     return(niSrqIntEnable(link));
 
   if (linkType == BBGPIB_IO)
-    return(0);		/* Bit Bus does not use interrupts for SRQ handeling */
+    return(OK);		/* Bit Bus does not use interrupts for SRQ handeling */
 
   return(ERROR);	/* Invalid link type specified on the call */
 }
 
 static int
-srqIntDisable(linkType, link)
+srqIntDisable(linkType, link, bug)
 int	linkType;
 int	link;
 {
@@ -1457,6 +1447,12 @@ int	link;
   return(ERROR);	/* Invlaid link type specified on the call */
 }
 
+/******************************************************************************
+ *
+ * Check the link number and bug number (if is a BBGPIB_IO link) to see if they
+ * are valid.
+ *
+ ******************************************************************************/
 static int
 checkLink(linkType, link, bug)
 int	linkType;
@@ -1491,7 +1487,7 @@ int	bug;
  *
  * BUG --
  * This could change if we decide to poll them during the second call to init()
- * when epics 3.2 is available.
+ * when epics 3.3 is available.
  *
  ******************************************************************************/
 /* static */ int 
@@ -1502,7 +1498,7 @@ int     bug;            /* the bug node address if on a bitbus link */
 int     gpibAddr;       /* the device address the handler is for */
 {
   if (ibDebug || ibSrqDebug)
-    logMsg("srqPollInhibit(%d, %d, %d, %d): called\n", linkType, link, bug, gpibAddr);
+    printf("srqPollInhibit(%d, %d, %d, %d): called\n", linkType, link, bug, gpibAddr);
 
   if (linkType == GPIB_IO)
   {
@@ -1528,37 +1524,18 @@ int     gpibAddr;       /* the device address the handler is for */
  *
  ******************************************************************************/
 static int 
-registerSrqCallback(linkType, linkId, bug, gpibAddr, handler, parm)
-int     linkType;       /* link type (defined in link.h) */
-int     linkId;         /* the link number the handler is related to */
-int	bug;		/* the bug node address if on a bitbus link */
-int     gpibAddr;       /* the device address the handler is for */
+registerSrqCallback(pibLink, device, handler, parm)
+struct	ibLink	*pibLink;
+int	device;
 int     (*handler)();   /* handler function to invoke upon SRQ detection */
 caddr_t	parm;		/* so caller can have a parm passed back */
 {
-  if(ibDebug || ibSrqDebug)
-    logMsg("registerSrqCallback(%d, %d, %d, %d, 0x%08.8X, %d)\n", linkType, linkId, bug, gpibAddr, handler, parm);
+  /*if(ibDebug || ibSrqDebug)*/
+    printf("registerSrqCallback(%08.8X, %d, 0x%08.8X, %08.8X)\n", pibLink, device, handler, parm);
 
-  if (linkType == GPIB_IO)
-  {
-    if (checkLink(linkType, linkId, bug) == ERROR)
-    {
-      printf("drvGpib: registerSrqCallback(): invalid link number specified\n");
-      return(ERROR);
-    }
-    (pNiLink[linkId]->ibLink.srqHandler)[gpibAddr] = handler;
-    (pNiLink[linkId]->ibLink.srqParm)[gpibAddr] = parm;
-
-    return(OK);
-  }
-
-  if (linkType == BBGPIB_IO)
-  {
-    return(bbRegisterSrqCallback(linkId, bug, gpibAddr, handler, parm));
-  }
-
-  printf("drvGpib: registerSrqCallback(%d, %d, %d, %d, 0x%08.8X, %d): invalid link type specified\n", linkType, linkId, bug, gpibAddr, handler, parm);
-  return(ERROR);
+  pibLink->srqHandler[device] = handler;
+  pibLink->srqParm[device] = parm;
+  return(OK);
 }
 
 /******************************************************************************
@@ -1569,23 +1546,24 @@ caddr_t	parm;		/* so caller can have a parm passed back */
  *
  ******************************************************************************/
 static int
-ioctlIb(linkType, link, bug, cmd, v)
-int     linkType;       /* link type (defined in link.h) */
-int     link;           /* the link number to use */
+ioctlIb(linkType, link, bug, cmd, v, p)
+int     linkType;	/* link type (defined in link.h) */
+int     link;		/* the link number to use */
 int	bug;		/* node number if is a bitbus -> gpib link */
 int	cmd;
 int	v;
+caddr_t	p;
 {
   int	stat;
 
   if (linkType == GPIB_IO)
-    return(niGpibIoctl(link, cmd, v));	/* link number checked in niGpibIoctl */
+    return(niGpibIoctl(link, cmd, v, p));/* link checked in niGpibIoctl */
 
   if (linkType == BBGPIB_IO)
-    return(bbGpibIoctl(link, bug, cmd, v));	/* link number checked in bbGpibIoctl */
+    return(bbGpibIoctl(link, bug, cmd, v, p));/* link checked in bbGpibIoctl */
   
   if (ibDebug || bbibDebug)
-    logMsg("ioctlIb(%d, %d, %d, %d, %08.8X): invalid link type\n", linkType, link, bug, cmd, v);
+    printf("ioctlIb(%d, %d, %d, %d, %08.8X, %08.8X): invalid link type\n", linkType, link, bug, cmd, v, p);
 
   return(ERROR);
 }
@@ -1605,19 +1583,37 @@ int	v;
  *
  ******************************************************************************/
 static int
-qGpibReq(linkType, link, pdpvt, prio)
-int	linkType;	/* link type (defined in link.h) */
-int	link;		/* the link number to use */
+qGpibReq(pdpvt, prio)
 struct	dpvtGpibHead *pdpvt; /* pointer to the device private structure */
-int	prio;		/* 1 for high priority or 2 for low */
+int	prio;
 {
-  if (linkType == GPIB_IO)
-    return(niQGpibReq(link, pdpvt, prio));
 
-  if (linkType == BBGPIB_IO)
-    return(bbQGpibReq(link, pdpvt, prio));
+  if (pdpvt->pibLink == NULL)
+  {
+    printf("qGpibReq(%08.8X, %d): dpvt->pibLink == NULL!\n", pdpvt, prio);
+    return(ERROR);
+  }
 
-  return(ERROR);
+  switch (prio) {
+  case IB_Q_LOW:                /* low priority transaction request */
+    semTake(pdpvt->pibLink->loPriSem, WAIT_FOREVER);
+    lstAdd(&(pdpvt->pibLink->loPriList), pdpvt);
+    semGive(pdpvt->pibLink->loPriSem);
+    semGive(pdpvt->pibLink->linkEventSem);
+    break;
+  case IB_Q_HIGH:               /* high priority transaction request */
+    semTake(pdpvt->pibLink->hiPriSem, WAIT_FOREVER);
+    lstAdd(&(pdpvt->pibLink->hiPriList), pdpvt);
+    semGive(pdpvt->pibLink->hiPriSem);
+    semGive(pdpvt->pibLink->linkEventSem);
+    break;
+  default:              /* invalid priority */
+    printf("invalid priority requested in call to qgpibreq(%08.8X, %d)\n", pdpvt, prio);
+    return(ERROR);
+  }
+  if (ibDebug)
+    printf("qgpibreq(%d, 0x%08.8X, %d): transaction queued\n", pdpvt, prio);
+  return(OK);
 }
 
 /******************************************************************************
@@ -1634,9 +1630,8 @@ int	prio;		/* 1 for high priority or 2 for low */
  *
  ******************************************************************************/
 static int
-writeIb(linkType, linkId, bug, gpibAddr, data, length)
-int	linkType;	/* link type (defined in link.h) */
-int	linkId;		/* the link number to use */
+writeIb(pibLink, gpibAddr, data, length)
+struct	ibLink	*pibLink;
 int	gpibAddr;	/* the device number to write the data to */
 char	*data;		/* the data buffer to write out */
 int	length;		/* number of bytes to write out from the data buffer */
@@ -1644,27 +1639,32 @@ int	length;		/* number of bytes to write out from the data buffer */
   char	attnCmd[5];
   int	stat;
 
-  attnCmd[0] = '?';			/* global unlisten */
-  attnCmd[1] = '_';			/* global untalk */
-  attnCmd[2] = gpibAddr+LADBASE;	/* lad = gpibAddr */
-  attnCmd[3] = 0+TADBASE;		/* mta = 0 */
-  attnCmd[4] = '\0';			/* in case debugging prints it */
+  if(ibDebug || (bbibDebug & (pibLink->linkType == BBGPIB_IO)))
+    printf("writeIb(%08.8X, %d, 0x%08.8X, %d)\n", pibLink, gpibAddr, data, length);
 
-  if(ibDebug)
-    logMsg("writeIb(%d, %d, %d, %d, 0x%08.8X, %d)\n", linkType, linkId, bug, gpibAddr, data, length);
+  if (pibLink->linkType == GPIB_IO)
+  {
+    attnCmd[0] = '?';			/* global unlisten */
+    attnCmd[1] = '_';			/* global untalk */
+    attnCmd[2] = gpibAddr+LADBASE;	/* lad = gpibAddr */
+    attnCmd[3] = 0+TADBASE;		/* mta = 0 */
+    attnCmd[4] = '\0';			/* in case debugging prints it */
 
-  if (writeIbCmd(linkType, linkId, bug, attnCmd, 4) != 4)
+    if (writeIbCmd(pibLink, attnCmd, 4) != 4)
+      return(ERROR);
+    stat = niGpibWrite(pibLink->linkId, data, length);
+
+    if (writeIbCmd(pibLink, attnCmd, 2) != 2)
+      return(ERROR);
+  }
+  else if (pibLink->linkType == BBGPIB_IO)
+  {
+    stat = bbGpibWrite(pibLink, gpibAddr, data, length);
+  }
+  else
+  {
     return(ERROR);
-
-  if (linkType == GPIB_IO)
-    stat = niGpibWrite(linkId, data, length);
-  else	/* link type checked in writeIbCmd()... must be BBGPIB_IO */
-    stat = bbGpibWrite(linkId, bug, data, length);
-
-  if (writeIbCmd(linkType, linkId, bug, attnCmd, 2) != 2)
-    return(ERROR);
-
-
+  }
   return(stat);
 }
 
@@ -1677,9 +1677,8 @@ int	length;		/* number of bytes to write out from the data buffer */
  *
  ******************************************************************************/
 static int
-readIb(linkType, linkId, bug, gpibAddr, data, length)
-int	linkType;	/* link type (defined in link.h) */
-int	linkId;		/* the link number to use */
+readIb(pibLink, gpibAddr, data, length)
+struct	ibLink	*pibLink;
 int	gpibAddr;	/* the device number to read the data from */
 char	*data;		/* the buffer to place the data into */
 int	length;		/* max number of bytes to place into the buffer */
@@ -1687,26 +1686,33 @@ int	length;		/* max number of bytes to place into the buffer */
   char  attnCmd[5];
   int   stat;
 
-  if(ibDebug)
-    logMsg("readIb(%d, %d, %d, %d, 0x%08.8X, %d)\n", linkType, linkId, bug, gpibAddr, data, length);
+  if(ibDebug || (bbibDebug & (pibLink->linkType == BBGPIB_IO)))
+    printf("readIb(%08.8X, %d, 0x%08.8X, %d)\n", pibLink, gpibAddr, data, length);
 
-  attnCmd[0] = '_';                     /* global untalk */
-  attnCmd[1] = '?';                     /* global unlisten */
-  attnCmd[2] = gpibAddr+TADBASE;        /* tad = gpibAddr */
-  attnCmd[3] = 0+LADBASE;		/* mta = 0 */
-  attnCmd[4] = '\0';
+  if (pibLink->linkType == GPIB_IO)
+  {
+    attnCmd[0] = '_';                     /* global untalk */
+    attnCmd[1] = '?';                     /* global unlisten */
+    attnCmd[2] = gpibAddr+TADBASE;        /* tad = gpibAddr */
+    attnCmd[3] = 0+LADBASE;		/* mta = 0 */
+    attnCmd[4] = '\0';
+  
+    if (writeIbCmd(pibLink, attnCmd, 4) != 4)
+      return(ERROR);
 
-  if (writeIbCmd(linkType, linkId, bug, attnCmd, 4) != 4)
+    stat = niGpibRead(pibLink->linkId, data, length);
+
+    if (writeIbCmd(pibLink, attnCmd, 2) != 2)
+      return(ERROR);
+  }
+  else if (pibLink->linkType == BBGPIB_IO)
+  {
+    stat = bbGpibRead(pibLink, gpibAddr, data, length);
+  }
+  else
+  { /* incorrect link type specified! */
     return(ERROR);
-
-  if (linkType == GPIB_IO)
-    stat = niGpibRead(linkId, data, length);
-  else /* linkType checked in writeIbCmd()... must be BBGPIB_IO */
-    stat = bbGpibRead(linkId, bug, data, length);
-
-  if (writeIbCmd(linkType, linkId, bug, attnCmd, 2) != 2)
-    return(ERROR);
-
+  }
   return(stat);
 }
 
@@ -1720,25 +1726,24 @@ int	length;		/* max number of bytes to place into the buffer */
  *
  ******************************************************************************/
 static int
-writeIbCmd(linkType, linkId, bug, data, length)
-int	linkType;	/* link type (defined in link.h) */
-int     linkId;   	/* the link number to use */
+writeIbCmd(pibLink, data, length)
+struct	ibLink	*pibLink;
 char    *data;  	/* the data buffer to write out */
 int     length; 	/* number of bytes to write out from the data buffer */
 {
 
-  if(ibDebug)
-    logMsg("writeIbCmd(%d, %d, %d, 0x%08.8X, %d)\n", linkType, linkId, bug, data, length);
+  if(ibDebug || (bbibDebug & (pibLink->linkType == BBGPIB_IO)))
+    printf("writeIbCmd(%08.8X, %08.8X, %d)\n", pibLink, data, length);
 
-  if (linkType == GPIB_IO)
+  if (pibLink->linkType == GPIB_IO)
   {
     /* raw-write the data */
-    return(niGpibCmd(linkId, data, length));
+    return(niGpibCmd(pibLink->linkId, data, length));
   }
-  if (linkType == BBGPIB_IO)
+  if (pibLink->linkType == BBGPIB_IO)
   {
     /* raw-write the data */
-    return(bbGpibCmd(linkId, bug, data, length));
+    return(bbGpibCmd(pibLink, data, length));
   }
   return(ERROR);
 }
@@ -1749,33 +1754,178 @@ int     length; 	/* number of bytes to write out from the data buffer */
  *
  ******************************************************************************/
 static int
-bbGpibRead(link, buffer, length)
-int     link;
+bbGpibRead(pibLink, device, buffer, length)
+struct	ibLink	*pibLink;
+int	device;
 char    *buffer;
 int     length;
 {
-  printf("Read attempted to a bitbus->gpib link\n");
-  return(ERROR);
+  struct bbIbLink       *pbbIbLink = (struct bbIbLink *) pibLink;
+  struct dpvtBitBusHead bbdpvt;
+  int                   bytesRead;
+
+  if (ibDebug || bbibDebug)
+    printf("bbGpibRead(%08.8X, %d, %08.8X, %d): entered\n", pibLink, device, buffer, length);
+
+  bytesRead = 0;
+
+  bbdpvt.finishProc = NULL;             /* no callback, synchronous I/O mode */
+  bbdpvt.syncLock = &(pbbIbLink->syncLock);
+  bbdpvt.link = pibLink->linkId;
+
+  bbdpvt.rxMsg.data = (unsigned char *) buffer;
+
+  bbdpvt.txMsg.route = BB_STANDARD_TX_ROUTE;
+  bbdpvt.txMsg.node = pibLink->bug;
+  bbdpvt.txMsg.tasks = BB_GPIB_TASK;
+  bbdpvt.txMsg.cmd = BB_IBCMD_READ_XACT | device;
+  bbdpvt.txMsg.length = 7;		/* send header only */
+
+  bbdpvt.rxMsg.cmd = 0;			/* init for the while loop */
+
+  while (length && !(bbdpvt.rxMsg.cmd & (BB_IBSTAT_EOI|BB_IBSTAT_TMO)))
+  {
+    bbdpvt.rxMaxLen = length > BB_MAX_DAT_LEN ? BB_MAX_DAT_LEN+7 : length+7;
+    bbdpvt.ageLimit = 10;
+    (*(drvBitBus.qReq))(&bbdpvt, BB_Q_LOW);
+    FASTLOCK(bbdpvt.syncLock);                  /* wait for response */
+
+    if (ibDebug || bbibDebug)
+    {
+      printf("bbGpibRead(): reading %02.2X >%.13s<\n", bbdpvt.rxMsg.cmd, bbdpvt.rxMsg.data);
+    }
+    bbdpvt.txMsg.cmd = BB_IBCMD_READ;	/* in case have more reading to do */
+    bbdpvt.rxMsg.data += bbdpvt.rxMsg.length - 7;
+    length -= bbdpvt.rxMsg.length - 7;
+    bytesRead += bbdpvt.rxMsg.length - 7;
+  }
+  if (bbdpvt.rxMsg.cmd & BB_IBSTAT_TMO)
+    return(ERROR);
+  else
+    return(bytesRead);
 }
 
 static int
-bbGpibWrite(link, buffer, length)
-int     link;
+bbGpibWrite(pibLink, device, buffer, length)
+struct	ibLink	*pibLink;
+int	device;
 char    *buffer;
 int     length;
 {
-  printf("Write attempted to a bitbus->gpib link\n");
-  return(ERROR);
+  struct bbIbLink       *pbbIbLink = (struct bbIbLink *) pibLink;
+  struct dpvtBitBusHead	bbdpvt;
+  unsigned char		dbugBuf[BB_MAX_DAT_LEN + 1];
+  unsigned char		more2GoCommand;
+  unsigned char		lastCommand;
+  int			bytesSent;
+
+  if (ibDebug || bbibDebug)
+    printf("bbGpibWrite(%08.8X, %d, %08.8X, %d): entered\n", pibLink, device, buffer, length);
+
+  bytesSent = length;	/* we either get an error or send them all */
+
+  bbdpvt.finishProc = NULL;             /* no callback, synchronous I/O mode */
+  bbdpvt.syncLock = &(pbbIbLink->syncLock);
+  bbdpvt.link = pibLink->linkId;
+  bbdpvt.rxMaxLen = 7;                  /* only get the header back */
+
+  bbdpvt.txMsg.route = BB_STANDARD_TX_ROUTE;
+  bbdpvt.txMsg.node = pibLink->bug;
+  bbdpvt.txMsg.tasks = BB_GPIB_TASK;
+
+  bbdpvt.txMsg.data = (unsigned char *) buffer;
+
+  bbdpvt.rxMsg.cmd = 0;			/* Init for error checking */
+
+ /* if more than BB_MAX_DAT_LEN bytes */
+  more2GoCommand = BB_IBCMD_ADDR_WRITE | device;
+
+  /* if less than BB_MAX_DAT_LEN+1 bytes */
+  lastCommand = BB_IBCMD_WRITE_XACT | device;	
+
+  while (length && !(bbdpvt.rxMsg.cmd & BB_IBSTAT_TMO))
+  {
+    if (length > BB_MAX_DAT_LEN)
+    {
+      bbdpvt.txMsg.length = BB_MAX_DAT_LEN+7;
+      bbdpvt.txMsg.cmd = more2GoCommand;	/* Write to device */
+      length -= BB_MAX_DAT_LEN;                 /* Ready for next chunk */
+
+      more2GoCommand = BB_IBCMD_WRITE;
+      lastCommand = BB_IBCMD_WRITE_EOI;
+    }
+    else
+    {
+      bbdpvt.txMsg.length = length+7;
+      bbdpvt.txMsg.cmd = lastCommand;
+      length = 0;				/* This is the last one */
+    }
+    if (ibDebug || bbibDebug)
+    {
+      bcopy(bbdpvt.txMsg.data, dbugBuf, bbdpvt.txMsg.length-7);
+      dbugBuf[bbdpvt.txMsg.length-7] = '\0';
+      printf("bbGpibWrite():sending %02.2X >%s<\n", bbdpvt.txMsg.cmd, dbugBuf);
+    }
+
+    bbdpvt.ageLimit = 10;
+    (*(drvBitBus.qReq))(&bbdpvt, BB_Q_HIGH);
+    FASTLOCK(bbdpvt.syncLock);                  /* wait for response */
+
+    bbdpvt.txMsg.data += BB_MAX_DAT_LEN;	/* in case there is more */
+  }
+
+  /* All done, check to see if we died due to an error */
+
+  if (bbdpvt.rxMsg.cmd & BB_IBSTAT_TMO)
+    return(ERROR);
+  else
+    return(bytesSent);
 }
 
 static int
-bbGpibCmd(link, buffer, length)
-int     link;
+bbGpibCmd(pibLink, buffer, length)
+struct	ibLink	*pibLink;
 char    *buffer;
 int     length;
 {
-  printf("Command write sent to a bitbus->gpib link\n");
-  return(ERROR);
+  struct bbIbLink	*pbbIbLink = (struct bbIbLink *) pibLink;
+  struct dpvtBitBusHead	bbdpvt;
+  int			bytesSent;
+
+  if (ibDebug || bbibDebug)
+    printf("bbGpibCmd(%08.8X, %08.8X, %d): entered\n", pibLink, buffer, length);
+
+  bytesSent = length;
+
+  bbdpvt.finishProc = NULL;		/* no callback, synchronous I/O mode */
+  bbdpvt.syncLock = &(pbbIbLink->syncLock);
+  bbdpvt.link = pibLink->linkId;
+  bbdpvt.rxMaxLen = 7;			/* only get the header back */
+
+  bbdpvt.txMsg.route = BB_STANDARD_TX_ROUTE;
+  bbdpvt.txMsg.node = pibLink->bug;
+  bbdpvt.txMsg.tasks = BB_GPIB_TASK;
+  bbdpvt.txMsg.cmd = BB_IBCMD_WRITE_CMD;
+  bbdpvt.txMsg.data = (unsigned char *) buffer;
+
+  while (length > BB_MAX_DAT_LEN)
+  {
+    bbdpvt.txMsg.length = BB_MAX_DAT_LEN+7;	/* send a chunk */
+    bbdpvt.ageLimit = 10;
+    (*(drvBitBus.qReq))(&bbdpvt, BB_Q_HIGH);
+    FASTLOCK(bbdpvt.syncLock);			/* wait for response */
+/* BUG -- check bitbus response */
+
+    length -= BB_MAX_DAT_LEN;			/* ready for next chunk */
+    bbdpvt.txMsg.data += BB_MAX_DAT_LEN;
+  }
+  bbdpvt.txMsg.length = length+7;		/* send the last chunk */
+  bbdpvt.ageLimit = 10;
+  (*(drvBitBus.qReq))(&bbdpvt, BB_Q_HIGH);
+  FASTLOCK(bbdpvt.syncLock);			/* wait for response */
+/* BUG -- check bitbus response */
+
+  return(bytesSent);
 }
 
 static int
@@ -1783,8 +1933,10 @@ bbCheckLink(link, bug)
 int	link;
 int	bug;
 {
-  printf("bbCheckLink called for link %d, bug %d\n", link, bug);
-  return(ERROR);
+  if (findBBLink(link, bug) != NULL)
+    return(OK);
+  else
+    return(ERROR);
 }
 
 static int
@@ -1797,20 +1949,6 @@ int	gpibAddr;
   return(ERROR);
 }
 
-static int
-bbRegisterSrqCallback(link, bug, gpibAddr, handler, parm)
-int	link;
-int	bug;
-int	gpibAddr;
-int     (*handler)();
-caddr_t	parm;
-{
-  printf("bbRegisterSrqCallback called for link %d, bug %d, device %d\n", 
-		link, bug, gpibAddr);
-  return(ERROR);
-}
-
-
 /******************************************************************************
  *
  * Initialize all required structures and start an ibLinkTask() for use with
@@ -1822,46 +1960,45 @@ bbGenLink(link, bug)
 int	link;
 int	bug;
 {
-  struct bbLink	*bbLink;
+  struct bbIbLink	*bbIbLink;
 
   if (ibDebug || bbibDebug)
-    logMsg("bbGenLink(%d, %d): entered\n", link, bug);
+    printf("bbGenLink(%d, %d): entered\n", link, bug);
 
   /* First check to see if there is already a link set up */
-  bbLink = rootBBLink;
-  while (bbLink != NULL)
-  {
-    if ((bbLink->ibLink.linkId == link) && (bbLink->ibLink.bug == bug))
-      break;
-    else
-      bbLink = bbLink->next;
-  }
+  bbIbLink = findBBLink(link, bug);
 
-  if (bbLink != NULL)
+  if (bbIbLink != NULL)
   { /* Already have initialized the link for this guy...  */
     if (bbibDebug || ibDebug)
-      logMsg("bbGenLink(%d, %d): link already initialized\n", link, bug);
+      printf("bbGenLink(%d, %d): link already initialized\n", link, bug);
 
     return(OK);
   }
 
   /* This link is not started yet, initialize all the required stuff */
 
-  if ((bbLink = (struct bbLink *) malloc(sizeof(struct bbLink))) == NULL)
+  if ((bbIbLink = (struct bbIbLink *) malloc(sizeof(struct bbIbLink))) == NULL)
   {
     printf("bbGenLink(%d, %d): can't malloc memory for link structure\n", link, bug);
     return(ERROR);
   }
 
-  bbLink->next = rootBBLink;
-  rootBBLink = bbLink;		/* link the new one into the list */
+/* Need to lock the rootBBLink list!!  */
 
-  bbLink->ibLink.linkType = BBGPIB_IO;
-  bbLink->ibLink.linkId = link;
-  bbLink->ibLink.bug = bug;
+  bbIbLink->next = rootBBLink;
+  rootBBLink = bbIbLink;		/* link the new one into the list */
 
-  ibLinkInit(&(bbLink->ibLink));
-  return(ibLinkStart(&(bbLink->ibLink)));
+  bbIbLink->ibLink.linkType = BBGPIB_IO;
+  bbIbLink->ibLink.linkId = link;
+  bbIbLink->ibLink.bug = bug;
+
+  FASTLOCKINIT(&(bbIbLink->syncLock));
+  FASTUNLOCK(&(bbIbLink->syncLock));	/* make sure it is locked at start */
+  FASTLOCK(&(bbIbLink->syncLock));
+
+  ibLinkInit(&(bbIbLink->ibLink));
+  return(ibLinkStart(&(bbIbLink->ibLink)));
 /* BUG -- I should free up the stuff if the init failed for some reason */
 }
 
@@ -1871,56 +2008,119 @@ int	bug;
  *
  ******************************************************************************/
 static int
-bbGpibIoctl(link, bug, cmd, v)
+bbGpibIoctl(link, bug, cmd, v, p)
 int     link;
 int     cmd;
-int     v;
+int	v;
+caddr_t	p;
 {
-  int stat = ERROR;
+  int 			stat = ERROR;
+  struct bbIbLink	*pbbIbLink;
+  struct dpvtBitBusHead bbDpvt;
+  unsigned char		buf[BB_MAX_DAT_LEN];
 
   if (ibDebug || bbibDebug)
-    logMsg("bbGpibIoctl(%d, %d, %d, %08.8X): called\n", link, bug, cmd, v);
+    printf("bbGpibIoctl(%d, %d, %d, %08.8X, %08.8X): called\n", link, bug, cmd, v, p);
 
-  if (cmd != IBGENLINK && bbCheckLink(link, -1) == ERROR)
-  {
-    printf("bbGpibIoctl(%d, %d, %d, %08.8X): invalid link specified\n", link, bug, cmd, v);
-    return(ERROR);
-  }
+/* No checkLink() is done, because findBBLink() is done when needed */
 
   switch (cmd) {
   case IBTMO:		/* set timeout time for next transaction only */
+    /* find the ibLink structure for the requested link & bug */
+    if ((pbbIbLink = (struct bbIbLink *)&(findBBLink(link, bug)->ibLink)) != NULL)
+    {
+      /* build a TMO message to send to the bug */
+      bbDpvt.txMsg.length = 7;
+      bbDpvt.txMsg.route = BB_STANDARD_TX_ROUTE;
+      bbDpvt.txMsg.node = bug;
+      bbDpvt.txMsg.tasks = BB_GPIB_TASK;
+      bbDpvt.txMsg.cmd = BB_IBCMD_SET_TMO;
+      bbDpvt.txMsg.data = buf;
+  
+      buf[0] = v;
+  
+      bbDpvt.rxMsg.route = 0;
+      bbDpvt.rxMaxLen = 7;	/* will only get header back anyway */
+      bbDpvt.finishProc = NULL;	/* no callback when receive reply */
+      bbDpvt.syncLock = &(pbbIbLink->syncLock);
+      bbDpvt.link = link;
+      bbDpvt.ageLimit = 10;
+  
+      /* send it to the bug */
+      (*(drvBitBus.qReq))(&bbDpvt, BB_Q_HIGH);
+      FASTLOCK(bbDpvt.syncLock);		/* wait for finish */
+/* BUG -- check bitbus response */
+
+      stat = OK;
+    }
     break;
+
   case IBIFC:		/* send an Interface Clear pulse */
+    /* find the ibLink structure for the requested link & bug */
+    if ((pbbIbLink = (struct bbIbLink *)&(findBBLink(link, bug)->ibLink)) != NULL)
+    {
+      /* build an IFC message to send to the bug */
+      bbDpvt.txMsg.length = 7;
+      bbDpvt.txMsg.route = BB_STANDARD_TX_ROUTE;
+      bbDpvt.txMsg.node = bug;
+      bbDpvt.txMsg.tasks = BB_GPIB_TASK;
+      bbDpvt.txMsg.cmd = BB_IBCMD_IFC;
+  
+      bbDpvt.rxMsg.route = 0;
+      bbDpvt.rxMaxLen = 7;	/* will only get header back */
+      bbDpvt.finishProc = NULL;	/* no callback when get reply */
+      bbDpvt.syncLock = &(pbbIbLink->syncLock);
+      bbDpvt.priority = 0;
+      bbDpvt.link = link;
+      bbDpvt.ageLimit = 10;
+  
+      /* send it to the bug */
+      (*(drvBitBus.qReq))(&bbDpvt, BB_Q_HIGH);
+      FASTLOCK(bbDpvt.syncLock);             /* wait for finish */
+/* BUG -- check bitbus response */
+
+      stat = OK;
+    }
     break;
   case IBREN:		/* turn the Remote Enable line on or off */
-    break;
   case IBGTS:		/* go to standby (ATN off etc... ) */
-    break;
   case IBGTA:		/* go to active (ATN on etc... ) */
+    stat = OK;
     break;
   case IBGENLINK:	/* request the initialization of a link */
     stat = bbGenLink(link, bug);
     break;
+  case IBGETLINK:	/* request the address of the ibLink structure */
+    *(struct ibLink **)p = &(findBBLink(link, bug)->ibLink);
+    break;
   default:
-    printf("bbGpibIoctl(%d, %d, %d, %08.8X): invalid command requested\n", link, bug, cmd, v);
+    printf("bbGpibIoctl(%d, %d, %d, %08.8X, %08.8X): invalid command requested\n", link, bug, cmd, v, p);
   }
-
   return(stat);
 }
+
 /******************************************************************************
  *
- * Queue a request for the ibLinkTask associated with the proper BitBus link
- * and node.  If there is no ibLinkTask started for that specific link and
- * node, then start one first.  The time used to start the task will only
- * happen the first time that I/O is done to the link & node so the overhead
- * probably not worth worrying about.
+ * Find a bbIbLink structure given a link number and a bug number.
  *
  ******************************************************************************/
-static bbQGpibReq(link, pdpvt, prio)
+struct	bbIbLink *
+findBBLink(link, bug)
 int	link;
-struct	dpvtGpibHead *pdpvt;
-int	prio;
+int	bug;
 {
-  printf("bbQGpibReq called for a bitbug->gpib link\n");
-  return(ERROR);
+  struct  bbIbLink *bbIbLink;
+
+  bbIbLink = rootBBLink;
+  while (bbIbLink != NULL)
+  {
+    if ((bbIbLink->ibLink.linkId == link) && (bbIbLink->ibLink.bug == bug))
+      break;
+    else
+      bbIbLink = bbIbLink->next;
+  }
+  if (ibDebug || bbibDebug)
+    printf("findBBLink(%d, %d): returning %08.8X\n", link, bug, bbIbLink);
+
+  return(bbIbLink);
 }

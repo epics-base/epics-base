@@ -643,8 +643,8 @@ void tcpiiu::disconnectNotify ( epicsGuard < cacMutex > & )
     this->sendThreadFlushEvent.signal ();
 }
 
-void tcpiiu::initiateAbortShutdown ( epicsGuard < callbackMutex > & cbGuard, // X aCC 431
-                                    epicsGuard < cacMutex > & guard )
+void tcpiiu::initiateAbortShutdown ( epicsGuard < callbackMutex > &,
+                                     epicsGuard < cacMutex > & )
 {
     if ( ! this->discardingPendingData ) {
         // force abortive shutdown sequence 

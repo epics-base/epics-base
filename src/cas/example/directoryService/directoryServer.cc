@@ -6,6 +6,9 @@
 #include "directoryServer.h"
 #include "tsMinMax.h"
 
+template class tsSLNode<pvEntry>;
+template class resTable<pvEntry, stringId>;
+
 const pvInfo *pvInfo::pFirst;
 
 //

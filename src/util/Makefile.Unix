@@ -21,5 +21,15 @@ PROD = \
 	iocLogServer \
 	startCArepeater
 
+ifeq ($(T_A),solaris)
+PROD += S99logServer
+PROD += S99caRepeater
+endif
+
 include $(EPICS)/config/RULES.Unix
+ 
+S99%: ../rc2.%
+	@/usr/bin/sed -e s%:EPICS:%`chdir $(EPICS); /usr/bin/pwd`% \
+		-e s%:INSTALL_BIN:%`chdir $(INSTALL_BIN); /usr/bin/pwd`% \
+		$< >$@
 

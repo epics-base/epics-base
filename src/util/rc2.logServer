@@ -1,0 +1,35 @@
+#!/bin/sh
+#
+# Solaris rc2 script for EPICS IOC Log Server process.
+#
+# $Log$
+#
+
+INSTALL_BIN=:INSTALL_BIN:
+EPICS=:EPICS:
+
+# To change the default values for the EPICS Environment parameters,
+# uncomment and modify the relevant lines below.
+
+# export EPICS_IOC_LOG_PORT 
+# export EPICS_IOC_LOG_FILE_NAME
+# export EPICS_IOC_LOG_FILE_LIMIT
+# EPICS_IOC_LOG_PORT="6500"
+# EPICS_IOC_LOG_FILE_NAME="$EPICS/logs/iocLog"
+# EPICS_IOC_LOG_FILE_LIMIT="1000000"
+
+if [ $1 = "start" ]; then
+        if [ -x $INSTALL_BIN/iocLogServer ]; then
+                echo "Starting EPICS Log Server "
+                $INSTALL_BIN/iocLogServer &
+        fi
+else
+        if [ $1 = "stop" ]; then
+                pid=`/usr/bin/ps -e | /usr/bin/grep iocLogSe | /usr/bin/sed -e 's/^  *//' -e 's/ .*//'`   
+                if [ "${pid}" != "" ]; then
+                        echo "Stopping EPICS Log Server "
+                        /usr/bin/kill ${pid}
+                fi     
+        fi
+fi
+

@@ -31,6 +31,8 @@
 typedef unsigned long arrayElementCount;
 
 #include "net_convert.h"
+
+#define epicsExportSharedSymbols
 #include "server.h"
 
 /*

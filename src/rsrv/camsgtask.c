@@ -29,6 +29,8 @@
 #include "db_access.h"
 #include "caerr.h"
 
+#define epicsExportSharedSymbols
+#include "rsrv.h"
 #include "server.h"
 
 /*

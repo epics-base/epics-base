@@ -39,9 +39,10 @@
 #include "dbEvent.h"
 #include "dbCommon.h"
 
+#define epicsExportSharedSymbols
+#include "rsrv.h"
 #define GLBLSOURCE
 #include "server.h"
-#include "rsrv.h"
 
 #define DELETE_TASK(NAME)\
 if(threadNameToId(NAME)!=0)threadDestroy(threadNameToId(NAME));

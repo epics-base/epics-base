@@ -43,6 +43,9 @@
 typedef unsigned long arrayElementCount;
 
 #include "net_convert.h"
+
+#define epicsExportSharedSymbols
+#include "rsrv.h"
 #include "server.h"
 
 #define RECORD_NAME(PADDR) ((PADDR)->precord->name)

@@ -18,7 +18,8 @@
 #define INCLserverh
 
 #ifdef epicsExportSharedSymbols
-#   error suspect that libCom is being exported from rsrv?
+#   define rsrvRestore_epicsExportSharedSymbols
+#   undef epicsExportSharedSymbols
 #endif /* ifdef epicsExportSharedSymbols */
 
 #include "epicsThread.h"
@@ -34,8 +35,9 @@
 #include "epicsTime.h"
 #include "epicsAssert.h"
 
+#ifdef rsrvRestore_epicsExportSharedSymbols
 #define epicsExportSharedSymbols
-#include "rsrv.h"
+#endif
 
 #define LOCAL static
 
@@ -69,6 +71,8 @@ struct message_buffer {
   unsigned                  cnt;    
   enum messageBufferType    type;
 };
+
+extern epicsThreadPrivateId rsrvCurrentClient;
 
 typedef struct client {
   ELLNODE               node;

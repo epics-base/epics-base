@@ -35,6 +35,7 @@
 #include "addrList.h"
 #include "taskwd.h"
 
+#define epicsExportSharedSymbols
 #include "server.h"
 
 /*

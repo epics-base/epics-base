@@ -46,7 +46,9 @@
 #include "envDefs.h"
 #include "freeList.h"
 
+#define epicsExportSharedSymbols
 #include "server.h"
+#include "rsrv.h"
     
 #define TIMEOUT 60.0 /* sec */
 

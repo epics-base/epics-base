@@ -43,6 +43,10 @@ of this distribution.
 #include "dbStaticPvt.h"
 
 
+
+/*global declarations*/
+epicsShareDef char *makeDbdDepends=0;
+
 /*private routines */
 static void yyerrorAbort(char *str);
 static void allocTemp(void *pvoid);
@@ -155,6 +159,7 @@ static char *dbOpenFile(DBBASE *pdbbase,const char *filename,FILE **fp)
     if(!ppathList || (ellCount(ppathList)==0) 
     || strchr(filename,'/') || strchr(filename,'\\')){
 	*fp = fopen(filename,"r");
+if (*fp && makeDbdDepends) fprintf(stdout,"%s:%s \n",makeDbdDepends,filename);
 	return(0);
     }
     pdbPathNode = (dbPathNode *)ellFirst(ppathList);
@@ -165,6 +170,7 @@ static char *dbOpenFile(DBBASE *pdbbase,const char *filename,FILE **fp)
 	strcat(fullfilename,"/");
 	strcat(fullfilename,filename);
 	*fp = fopen(fullfilename,"r");
+if (*fp && makeDbdDepends) fprintf(stdout,"%s:%s \n",makeDbdDepends,fullfilename);
 	free((void *)fullfilename);
 	if(*fp) return(pdbPathNode->directory);
 	pdbPathNode = (dbPathNode *)ellNext(&pdbPathNode->node);

@@ -12,8 +12,8 @@ SRCS=	closure.c error.c lalr.c lr0.c main.c \
 	symtab.c verbose.c warshall.c
 
 #	genric Unix needs libm.a, WIN32 not:
-PROD_LIBS_DEFAULT:=m
-PROD_LIBS_WIN32:=-nil-
+SYS_PROD_LIBS_DEFAULT:=m
+SYS_PROD_LIBS_WIN32:=-nil-
 
 PROD=antelope
 

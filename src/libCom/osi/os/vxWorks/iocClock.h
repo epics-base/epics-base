@@ -11,7 +11,7 @@ of this distribution.
 #include "epicsTime.h"
 
 typedef int (*pepicsTimeGetCurrent)(epicsTimeStamp *pDest);
-typedef int (*pepicsTimeGetEvent)(epicsTimeStamp *pDest,unsigned eventNumber);
+typedef int (*pepicsTimeGetEvent)(epicsTimeStamp *pDest,int eventNumber);
 
 void iocClockInit(void);
 void iocClockRegister(pepicsTimeGetCurrent getCurrent,pepicsTimeGetEvent getEvent);

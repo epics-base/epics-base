@@ -28,6 +28,7 @@ typedef struct epicsTimeStamp {
 /*TS_STAMP is deprecated */
 #define TS_STAMP epicsTimeStamp
 
+
 struct timespec; /* POSIX real time */
 struct timeval; /* BSD */
 
@@ -70,7 +71,7 @@ class epicsShareClass epicsTimeEvent
 public:
     epicsTimeEvent (const int &eventName);
 private:
-    unsigned eventNumber;
+    int eventNumber;
 };
 
 class epicsShareClass epicsTime
@@ -178,12 +179,15 @@ extern "C" {
 #define epicsTimeOK 0
 #define epicsTimeERROR (-1)
 
+/*Some special values for eventNumber*/
 #define epicsTimeEventCurrentTime 0
+#define epicsTimeEventBestTime -1
+#define epicsTimeEventDeviceTime -2
 
 /* convert to and from ANSI C's "time_t" */
 epicsShareFunc int epicsShareAPI epicsTimeGetCurrent (epicsTimeStamp *pDest);
 epicsShareFunc int epicsShareAPI epicsTimeGetEvent (
-    epicsTimeStamp *pDest, unsigned eventNumber);
+    epicsTimeStamp *pDest, int eventNumber);
 
 /* convert to and from ANSI C's "struct tm" with nano second */
 epicsShareFunc int epicsShareAPI epicsTimeToTime_t (

@@ -70,7 +70,7 @@ int epicsTimeGetCurrent (epicsTimeStamp *pDest)
 /*
  * epicsTimeGetEvent ()
  */
-int epicsTimeGetEvent (epicsTimeStamp *pDest, unsigned eventNumber)
+int epicsTimeGetEvent (epicsTimeStamp *pDest, int eventNumber)
 {
     if (eventNumber==epicsTimeEventCurrentTime) {
         return epicsTimeGetCurrent (pDest);

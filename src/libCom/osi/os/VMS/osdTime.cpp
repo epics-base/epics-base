@@ -39,7 +39,7 @@ extern "C" epicsShareFunc int epicsTimeGetCurrent (epicsTimeStamp *pDest)
 //
 // epicsTimeGetEvent ()
 //
-extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetEvent (epicsTimeStamp *pDest, unsigned eventNumber)
+extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetEvent (epicsTimeStamp *pDest, int eventNumber)
 {
     if (eventNumber==epicsTimeEventCurrentTime) {
         return epicsTimeGetCurrent (pDest);

@@ -34,7 +34,7 @@ of this distribution.
 #define iocClockSyncRate 10.0
 
 static int iocClockGetCurrent(epicsTimeStamp *pDest);
-static int iocClockGetEvent(epicsTimeStamp *pDest, unsigned eventNumber);
+static int iocClockGetEvent(epicsTimeStamp *pDest, int eventNumber);
 
 typedef struct iocClockPvt {
     epicsMutexId  lock;
@@ -182,7 +182,7 @@ int iocClockGetCurrent(epicsTimeStamp *pDest)
     return(0);
 }
 
-int iocClockGetEvent(epicsTimeStamp *pDest, unsigned eventNumber)
+int iocClockGetEvent(epicsTimeStamp *pDest, int eventNumber)
 {
      if (eventNumber==epicsTimeEventCurrentTime) {
          *pDest = piocClockPvt->clock;
@@ -202,7 +202,7 @@ int epicsTimeGetCurrent (epicsTimeStamp *pDest)
     return(epicsTimeERROR);
 }
 
-int epicsTimeGetEvent (epicsTimeStamp *pDest, unsigned eventNumber)
+int epicsTimeGetEvent (epicsTimeStamp *pDest, int eventNumber)
 {
     if(!piocClockPvt) {
         iocClockInit();

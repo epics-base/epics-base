@@ -261,9 +261,16 @@ int epicsShareAPI ca_sg_block(CA_SYNC_GID gid, ca_real timeout)
 
 		/*
 		 * Exit if the timeout has expired
+		 * (dont wait forever for an itsy bitsy
+		 * delay which will no be updated if
+		 * select is called with no delay)
+		 *
+		 * current time is only updated by
+		 * cac_select_io() if we specify
+		 * at least 1 usec to wait
 		 */
 		remaining = timeout-delay;
-		if (remaining<=0.0) {
+		if (remaining<=(1.0/USEC_PER_SEC)) {
 			/*
 			 * Make sure that we take care of
 			 * recv backlog at least once
@@ -287,10 +294,6 @@ int epicsShareAPI ca_sg_block(CA_SYNC_GID gid, ca_real timeout)
 		tmo.tv_usec = (long) ((remaining-tmo.tv_sec)*USEC_PER_SEC);
 		cac_block_for_sg_completion (pcasg, &tmo);
 
-                /*
-                 * the current time set within cac_block_for_sg_completion()
-                 * above.
-                 */
 		delay = cac_time_diff (&ca_static->currentTime, &beg_time);
 	}
 	pcasg->opPendCount = 0;

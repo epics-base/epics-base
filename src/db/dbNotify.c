@@ -260,7 +260,8 @@ static void issueCallback(PUTNOTIFY *ppn)
 
 void epicsShareAPI dbNotifyCancel(PUTNOTIFY *ppn)
 {
-    struct dbCommon *precord = ppn->paddr->precord;;
+    struct dbCommon *precord = ppn->paddr->precord;
+    epicsEventWaitStatus status;
 
     dbScanLock(precord);
     notifyCancel(ppn);
@@ -268,10 +269,11 @@ void epicsShareAPI dbNotifyCancel(PUTNOTIFY *ppn)
 	ppn->waitForCallback = (void *)epicsEventMustCreate(epicsEventEmpty);
 	ppn->callbackState = callbackCanceled;
 	dbScanUnlock(precord);
-	if(epicsEventWaitWithTimeout(
-        (epicsEventId)ppn->waitForCallback,10.0)!=epicsEventWaitOK) {
-	    errlogPrintf("dbNotifyCancel had semTake timeout\n");
-	    ppn->callbackState = callbackNotActive;
+        while(1) {
+            status = epicsEventWaitWithTimeout(
+                (epicsEventId)ppn->waitForCallback,10.0);
+            if(status==epicsEventWaitOK) break;
+	    errlogPrintf("dbNotifyCancel: epicsEventWaitWithTimeout timeout\n");
 	}
         dbScanLock(precord);
 	epicsEventDestroy((epicsEventId)ppn->waitForCallback);

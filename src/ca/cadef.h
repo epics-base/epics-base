@@ -676,7 +676,7 @@ epicsShareFunc void epicsShareAPI ca_signal_formated (long ca_status, const char
  */
 epicsShareFunc const char * epicsShareAPI ca_host_name (chid channel);
 /* thread safe version */
-epicsShareFunc void epicsShareAPI ca_get_host_name ( chid pChan, 
+epicsShareFunc unsigned epicsShareAPI ca_get_host_name ( chid pChan, 
     char *pBuf, unsigned bufLength );
 
 /*

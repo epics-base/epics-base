@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.17  1996/11/02 01:24:49  jhill
+ * strcpy => styrcpy (shuts up purify)
+ *
  * Revision 1.16  1996/10/17 12:39:14  jbk
  * removed strdup definition, fixed up the local/network byte order functions
  *
@@ -163,6 +166,7 @@ public:
 	// gddBounds(aitIndex f, aitIndex c);
 
 	void setSize(aitIndex c);
+	void setFirst(aitIndex c);
 	void set(aitIndex f, aitIndex c);
 	void get(aitIndex& f, aitIndex& c);
 	aitIndex size(void) const;
@@ -177,6 +181,7 @@ private:
 // inline gddBounds::gddBounds(aitIndex f, aitIndex c) { start=f; count=c; }
 
 inline void gddBounds::setSize(aitIndex c)			{ count=c; }
+inline void gddBounds::setFirst(aitIndex f)			{ start=f; }
 inline void gddBounds::set(aitIndex f, aitIndex c)	{ start=f; count=c; }
 inline void gddBounds::get(aitIndex& f, aitIndex& c){ f=start; c=count; }
 inline aitIndex gddBounds::size(void) const			{ return count; }

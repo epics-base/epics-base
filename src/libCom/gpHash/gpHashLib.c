@@ -84,7 +84,13 @@ static unsigned char T0[256] = {
 134, 68, 93,183,241, 81,196, 49,192, 65,212, 94,203, 10,200, 47 
 };
 
+#ifdef __STDC__
 static void *myCalloc(size_t nobj,size_t size)
+#else
+static void *myCalloc()
+  size_t nobj;
+  size_t size;
+#endif
 {
     void *p;
 
@@ -98,7 +104,12 @@ static void *myCalloc(size_t nobj,size_t size)
     return(NULL);
 }
 
+#ifdef __STDC__
 static unsigned char hash( char *pname)
+#else
+static unsigned char hash()
+ char *pname;
+#endif
 {
     unsigned char  h=0;
 
@@ -109,7 +120,12 @@ static unsigned char hash( char *pname)
     return(h);
 }
 
+#ifdef __STDC__
 void gphInitPvt(void **pgphPvt)
+#else
+void gphInitPvt()
+  void **pgphPvt;
+#endif
 {
     ELLLIST        **pgph;
     pgph = myCalloc(HASH_NO, sizeof(ELLLIST *));
@@ -117,7 +133,14 @@ void gphInitPvt(void **pgphPvt)
     return;
 }
 	
+#ifdef __STDC__
 GPHENTRY *gphFind(void *gphPvt,char *name,void *pvtid)
+#else
+GPHENTRY *gphFind()
+void *gphPvt;
+char *name;
+void *pvtid;
+#endif
 {
     unsigned short	hashInd;
     ELLLIST		**pgph = (ELLLIST **) gphPvt;
@@ -136,7 +159,14 @@ GPHENTRY *gphFind(void *gphPvt,char *name,void *pvtid)
     return (NULL);
 }
 
+#ifdef __STDC__
 GPHENTRY *gphAdd(void *gphPvt,char *name,void *pvtid)
+#else
+GPHENTRY *gphAdd()
+void *gphPvt;
+char *name;
+void *pvtid;
+#endif
 {
     unsigned short	hashInd;
     ELLLIST		**pgph = (ELLLIST **) gphPvt;
@@ -162,7 +192,13 @@ GPHENTRY *gphAdd(void *gphPvt,char *name,void *pvtid)
     return (pgphNode);
 }
 
+#ifdef __STDC__
 void gphDelete(void *gphPvt,char *name,void *pvtid)
+#else
+void *gphPvt;
+char *name;
+void *pvtid;
+#endif
 {
     unsigned short	hashInd;
     ELLLIST		**pgph = (ELLLIST **) gphPvt;
@@ -185,7 +221,12 @@ void gphDelete(void *gphPvt,char *name,void *pvtid)
     return;
 }
 
+#ifdef __STDC__
 void gphFreeMem(void * gphPvt)
+#else
+void gphFreeMem()
+void * gphPvt;
+#endif
 {
     unsigned short	hashInd;
     ELLLIST		**pgph = (ELLLIST **) gphPvt;
@@ -209,7 +250,12 @@ void gphFreeMem(void * gphPvt)
     free((void *)pgph);
 }
 
+#ifdef __STDC__
 void gphDump(void * gphPvt)
+#else
+void gphDump()
+void * gphPvt;
+#endif
 {
     unsigned short	hashInd;
     ELLLIST		**pgph = (ELLLIST **) gphPvt;

@@ -34,7 +34,6 @@
  * 	.01 Storage for identifier must persist until an item is deleted	
  */
 
-
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -324,7 +323,11 @@ BUCKET  *bucketCreate (unsigned nHashTableEntries)
 	unsigned	nbits;
 	BUCKET		*pb;
 
-	if (nHashTableEntries==0) {
+	/*
+	 * no absurd sized buckets
+	 */
+	if (nHashTableEntries<=1) {
+		fprintf (stderr, "Tiny bucket create failed\n");
 		return NULL;
 	}
 
@@ -337,12 +340,15 @@ BUCKET  *bucketCreate (unsigned nHashTableEntries)
 			break;
 		}
 	}
+
 	/*
 	 * indexWidth must be specified at least one
 	 * bit less than the bit size of type BUCKETID
 	 */
 	if (nbits>=BUCKETID_BIT_WIDTH) {
-		printf("%s at %d: Requested index width=%d to large. max=%d\n",
+		fprintf (
+			stderr,
+		"%s at %d: Requested index width=%d to large. max=%d\n",
 			__FILE__,
 			__LINE__,
 			nbits,

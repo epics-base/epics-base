@@ -15,7 +15,7 @@ SRCS.c = \
 OBJS = \
         calcPerform.o cvtBpt.o cvtFast.o ellLib.o envSubr.o errSymLib.o \
 	errSymTbl.o genSubr.o genTaskSubr.o nextFieldSubr.o postfix.o \
-	bucketLib.o tsSubr.o gpHashLib.o freeListLib.o pal.o paldef.o
+	bucketLib.o tsSubr.o gpHashLib.o freeListLib.o pal.o paldef.o 
 
 OBJS1 = \
 	cmdSubr.o cvtNumbers.o cvtFast.o ezsSockSubr.o helpSubr.o

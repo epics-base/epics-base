@@ -61,7 +61,22 @@
  *	char		*pname
  *	struct dbAddr	*paddr;	pointer to database address structure
  *
- * dbGetLink(paddr,dbrType,pbuffer,options,nRequest)
+ * dbGetLink(pdblink,pdest,dbrType,pbuffer,options,nRequest)
+ *	struct db_link	*pdblink;
+ *      struct dbCommon *pdest;
+ *	short		dbrType;	DBR_xxx
+ *	caddr_t		pbuffer;	addr of returned data
+ *	long		*options;	addr of options
+ *	long		*nRequest;	addr of number of elements
+ *
+ * dbPutLink(pdblink,pdest,dbrType,pbuffer,nRequest)
+ *	struct db_link	*pdblink;
+ *      struct dbCommon *pdest;
+ *	short		dbrType;	DBR_xxx
+ *	caddr_t		pbuffer;	addr of input data
+ *	long		nRequest;
+ *
+ * dbGetField(paddr,dbrType,pbuffer,options,nRequest)
  *	struct dbAddr	*paddr;	
  *	short		dbrType;	DBR_xxx
  *	caddr_t		pbuffer;	addr of returned data
@@ -79,19 +94,6 @@
  *	long	options;
  *	long	no_elements;
  * returns: number of bytes as a long
- *
- * dbGetField(paddr,dbrType,pbuffer,options,nRequest)
- *	struct dbAddr	*paddr;	
- *	short		dbrType;	DBR_xxx
- *	caddr_t		pbuffer;	addr of returned data
- *	long		*options;	addr of options
- *	long		*nRequest;	addr of number of elements
- *
- * dbPutLink(paddr,dbrType,pbuffer,nRequest)
- *	struct dbAddr	*paddr;	
- *	short		dbrType;	DBR_xxx
- *	caddr_t		pbuffer;	addr of input data
- *	long		nRequest;
  */
 
 #include	<vxWorks.h>
@@ -212,7 +214,7 @@ long dbProcess(paddr)
 
 	/* get the scan disable link if defined*/
 	if(precord->sdis.type == DB_LINK) {
-	    (status = dbGetLink(precord->sdis.value.db_link,
+	    (status = dbGetLink(precord->sdis.value.db_link,precord,
 		DBR_SHORT,(caddr_t)(&(precord->disa)),&options,&nRequest));
 	    if(!RTN_SUCCESS(status)) {
 		recGblDbaddrError(status,paddr,"dbProcess");
@@ -223,8 +225,8 @@ long dbProcess(paddr)
 	if(precord->disa) return(0);
 
 	/* locate record processing routine */
-	precord->pact=1;
 	if(!(prset=GET_PRSET(paddr->record_type)) || !(prset->process)) {
+	    precord->pact=1;/*set pact TRUE so error is issued only once*/
 	    recGblRecSupError(S_db_noRSET,paddr,"dbProcess","process");
 	    return(S_db_noRSET);
 	}
@@ -309,8 +311,9 @@ struct dbAddr	*paddr;
 	return(status);
 }
 
-long dbGetLink(pdblink,dbrType,pbuffer,options,nRequest)
+long dbGetLink(pdblink,pdest,dbrType,pbuffer,options,nRequest)
 	struct db_link	*pdblink;
+	struct dbCommon *pdest;
 	short		dbrType;
 	caddr_t		pbuffer;
 	long		*options;
@@ -323,11 +326,21 @@ long dbGetLink(pdblink,dbrType,pbuffer,options,nRequest)
 		status=dbScanPassive(paddr);
 		if(!RTN_SUCCESS(status)) return(status);
 	}
+	if(pdblink->maximize_sevr) {
+		struct dbCommon *pfrom=(struct dbCommon*)(paddr->precord);
+
+		if(pfrom->sevr>pdest->sevr && pdest->stat!=LINK_ALARM) {
+			pdest->sevr = pfrom->sevr;
+			pdest->stat = LINK_ALARM;
+			pdest->achn = TRUE;
+		}
+	}
 	return(dbGetField(paddr,dbrType,pbuffer,options,nRequest));
 }
 
-long dbPutLink(pdblink,dbrType,pbuffer,options,nRequest)
+long dbPutLink(pdblink,pdest,dbrType,pbuffer,options,nRequest)
 	struct db_link	*pdblink;
+	struct dbCommon *pdest;
 	short		dbrType;
 	caddr_t		pbuffer;
 	long		*options;
@@ -337,11 +350,20 @@ long dbPutLink(pdblink,dbrType,pbuffer,options,nRequest)
 	long	status;
 
 	status=dbPut(paddr,dbrType,pbuffer,nRequest);
+	if(pdblink->maximize_sevr) {
+		struct dbCommon *pfrom=(struct dbCommon*)(paddr->precord);
+
+		if(pfrom->sevr>pdest->sevr && pdest->stat!=LINK_ALARM) {
+			pdest->sevr = pfrom->sevr;
+			pdest->stat = LINK_ALARM;
+			pdest->achn = TRUE;
+		}
+	}
 	if(!RTN_SUCCESS(status)) return(status);
 	if(pdblink->process_passive) status=dbScanPassive(paddr);
 	return(status);
 }
-
+
 long dbPutField(paddr,dbrType,pbuffer,nRequest)
 	struct dbAddr	*paddr;
 	short		dbrType;
@@ -3590,7 +3612,7 @@ long		offset;
     unsigned short	i;
 
     if(no_elements!=1){
-        recGblDbaddrError(S_db_onlyOne,paddr,"dbPutLink(putStringGchoice)");
+        recGblDbaddrError(S_db_onlyOne,paddr,"dbPut(putStringGchoice)");
         return(S_db_onlyOne);
     }
     if(pchoiceSet=GET_PCHOICE_SET(choiceGbl,choice_set)) {
@@ -3602,7 +3624,7 @@ long		offset;
 	    }
 	}
     }
-    recGblDbaddrError(S_db_badChoice,paddr,"dbPutLink(putStringGchoice)");
+    recGblDbaddrError(S_db_badChoice,paddr,"dbPut(putStringGchoice)");
     return(S_db_badChoice);
 }
 
@@ -3619,7 +3641,7 @@ long		offset;
     unsigned short	i;
 
     if(no_elements!=1){
-        recGblDbaddrError(S_db_onlyOne,paddr,"dbPutLink(putStringCchoice)");
+        recGblDbaddrError(S_db_onlyOne,paddr,"dbPut(putStringCchoice)");
         return(S_db_onlyOne);
     }
     if(pchoiceSet=choiceCvt) {
@@ -3631,7 +3653,7 @@ long		offset;
 	    }
 	}
     }
-    recGblDbaddrError(S_db_badChoice,paddr,"dbPutLink(putStringCchoice)");
+    recGblDbaddrError(S_db_badChoice,paddr,"dbPut(putStringCchoice)");
     return(S_db_badChoice);
 }
 
@@ -3650,7 +3672,7 @@ long		offset;
     unsigned short	i;
 
     if(no_elements!=1){
-        recGblDbaddrError(S_db_onlyOne,paddr,"dbPutLink(putStringRchoice)");
+        recGblDbaddrError(S_db_onlyOne,paddr,"dbPut(putStringRchoice)");
         return(S_db_onlyOne);
     }
     if((parrChoiceSet=GET_PARR_CHOICE_SET(choiceRec,(paddr->record_type)))
@@ -3663,7 +3685,7 @@ long		offset;
 	    }
 	}
     }
-    recGblDbaddrError(S_db_badChoice,paddr,"dbPutLink(putStringRchoice)");
+    recGblDbaddrError(S_db_badChoice,paddr,"dbPut(putStringRchoice)");
     return(S_db_badChoice);
 }
 
@@ -3680,7 +3702,7 @@ long		offset;
     unsigned short	i;
 
     if(no_elements!=1){
-        recGblDbaddrError(S_db_onlyOne,paddr,"dbPutLink(putStringDchoice)");
+        recGblDbaddrError(S_db_onlyOne,paddr,"dbPut(putStringDchoice)");
         return(S_db_onlyOne);
     }
     if(pdevChoiceSet=GET_PDEV_CHOICE_SET(choiceDev,paddr->record_type)) {
@@ -3692,7 +3714,7 @@ long		offset;
 	    }
 	}
     }
-    recGblDbaddrError(S_db_badChoice,paddr,"dbPutLink(putStringDchoice)");
+    recGblDbaddrError(S_db_badChoice,paddr,"dbPut(putStringDchoice)");
     return(S_db_badChoice);
 }
 
@@ -5858,7 +5880,7 @@ long		nRequest;
 		    status=(*pspecial)(paddr,0);
 		    if(!RTN_SUCCESS(status)) goto all_done;
 		} else {
-		    recGblRecSupError(S_db_noSupport,paddr,"dbPutLink",
+		    recGblRecSupError(S_db_noSupport,paddr,"dbPut",
 			"special");
 		    return(S_db_noSupport);
 		}

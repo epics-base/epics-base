@@ -9,10 +9,6 @@ include $(TOP)/configure/CONFIG
 #DB_OPT = YES
 
 #----------------------------------------------------
-#  Creation of <name>.dbd file from <name>Include.dbd
-#DBDNAME += _APPNAME_.dbd
-
-#----------------------------------------------------
 # Add databases, templates, substitutions like this
 #DB += _APPNAME_.db
 

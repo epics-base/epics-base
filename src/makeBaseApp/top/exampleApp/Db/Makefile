@@ -8,11 +8,6 @@ include $(TOP)/configure/CONFIG
 #DB_OPT = YES
 
 #----------------------------------------------------
-# Create and install (or just install) dbd files
-# <name>.dbd will be created from <name>Include.dbd
-#DBD += example.dbd
-
-#----------------------------------------------------
 # Create and install (or just install)
 # databases, templates, substitutions like this
 DB += dbExample1.db

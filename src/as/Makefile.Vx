@@ -3,8 +3,8 @@ include $(TOP)/config/CONFIG_BASE
 
 USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
 
-SRCS.c = ../asDbLib.c ../asCa.c asLib.c
-LIBOBJS = asDbLib.o asCa.o asLib.o
+SRCS.c = ../asDbLib.c ../asCa.c ../asTrapWrite.c asLib.c
+LIBOBJS = asDbLib.o asCa.o asTrapWrite.o asLib.o
 LIBNAME = asLibrary
 
 include $(TOP)/config/RULES.Vx

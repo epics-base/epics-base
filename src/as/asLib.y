@@ -132,7 +132,9 @@ inp_body:	tokenNAME
 rule_config:	tokenRULE rule_head rule_body
 	|	tokenRULE rule_head
 
-rule_head:	'(' tokenINTEGER ',' tokenNAME ')'
+rule_head: rule_head_manditory rule_head_options
+
+rule_head_manditory:	'(' tokenINTEGER ',' tokenNAME 
 	{
 		asAccessRights	rights;
 
@@ -151,6 +153,21 @@ rule_head:	'(' tokenINTEGER ',' tokenNAME ')'
 	}
 	;
 
+rule_head_options: ')'
+        |          rule_log_options
+
+rule_log_options:  ',' tokenNAME ')'
+        {
+                if((strcmp($2,"TRAPWRITE")==0)) {
+                        long status;
+                        status = asAsgAddRuleOptions(yyAsgRule,AS_TRAP_WRITE);
+                        if(status) yyerror("");
+                } else if((strcmp($2,"NOTRAPWRITE")!=0)) {
+                        yyerror("Illegal access type");
+                }
+                free((void *)$2);
+        }
+        ;
 
 rule_body:	'{' rule_list '}'
 	;
@@ -225,7 +242,7 @@ static int myParse(ASINPUTFUNCPTR inputfunction)
     if (!FirstFlag) {
 	line_num=1;
 	yyFailed = FALSE;
-	yyreset(NULL);
+	yyreset();
 	yyrestart(NULL);
     }
     FirstFlag = 0;

@@ -13,19 +13,34 @@
 #include "iocinf.h"
 #include "nciu_IL.h"
 
-baseNMIU::baseNMIU ( nciu &chanIn ) : chan ( chanIn )
+osiMutex baseNMIU::mutex;
+
+baseNMIU::baseNMIU ( nciu &chanIn ) : 
+    chan ( chanIn ), attachedToChannel ( true )
 {
     chanIn.ioInstall ( *this );
 }
 
 baseNMIU::~baseNMIU ()
 {
-    // private NOOP forces pool allocation
+    this->uninstallFromChannel ();
+}
+
+void baseNMIU::uninstallFromChannel ()
+{
+    this->mutex.lock ();
+    bool attached = this->attachedToChannel;
+    this->attachedToChannel = false;
+    this->mutex.unlock ();
+
+    if ( attached ) {
+        this->chan.ioUninstall ( *this );
+    }
 }
 
 void baseNMIU::destroy ()
 {
-    this->chan.ioDestroy ( this->getId () );
+    delete this;
 }
 
 int baseNMIU::subscriptionMsg ()
@@ -35,5 +50,6 @@ int baseNMIU::subscriptionMsg ()
 
 void baseNMIU::show ( unsigned /* level */ ) const
 {
-    printf ( "CA IO primitive at %p for channel %s\n", this, chan.pName () );
+    printf ( "CA IO primitive at %p for channel %s\n", 
+        this, this->chan.pName () );
 }

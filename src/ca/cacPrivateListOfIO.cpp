@@ -22,6 +22,20 @@ cacPrivateListOfIO::cacPrivateListOfIO ( cac &cacIn ) :
 {
 }
 
+void cacPrivateListOfIO::addIO ( baseNMIU &io )
+{
+    this->cacCtx.cacPrivateListOfIOPrivate::mutex.lock ();
+    this->eventq.add ( io );
+    this->cacCtx.cacPrivateListOfIOPrivate::mutex.unlock ();
+}
+
+void cacPrivateListOfIO::removeIO ( baseNMIU &io )
+{
+    this->cacCtx.cacPrivateListOfIOPrivate::mutex.lock ();
+    this->eventq.remove ( io );
+    this->cacCtx.cacPrivateListOfIOPrivate::mutex.unlock ();
+}
+
 // Destroy all IO blocks attached.
 // Care is taken here not to hold the lock while 
 // sending a subscription delete message (which

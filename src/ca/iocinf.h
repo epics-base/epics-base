@@ -241,6 +241,7 @@ private:
 };
 
 class cac;
+class baseNMIU;
 
 class cacPrivateListOfIO {
 public:
@@ -248,15 +249,16 @@ public:
     void destroyAllIO ();
     void subscribeAllIO ();
     void disconnectAllIO ( const char *pHostName );
+    void addIO ( baseNMIU &io );
+    void removeIO ( baseNMIU &io );
 protected:
     cac &cacCtx;
 private:
     tsDLList < class baseNMIU > eventq;
-    friend class cac;
 };
 
 class nciu : public cacChannelIO, public tsDLNode < nciu >,
-    public chronIntIdRes < nciu >, public cacPrivateListOfIO {
+    public chronIntIdRes < nciu >, private cacPrivateListOfIO {
 public:
     nciu ( class cac &cac, cacChannel &chan, const char *pNameIn );
     void destroy ();
@@ -301,7 +303,7 @@ public:
     void attachChanToIIU ( netiiu &iiu );
     void detachChanFromIIU ();
     void ioInstall ( class baseNMIU & );
-    void ioDestroy ( unsigned id );
+    void ioUninstall ( class baseNMIU & );
     bool setClaimMsgCache ( class claimMsgCache & );
     void show ( unsigned level ) const;
 
@@ -346,10 +348,12 @@ public:
     virtual void show ( unsigned level ) const;
     virtual int subscriptionMsg ();
     void destroy ();
+    void uninstallFromChannel ();
 protected:
     virtual ~baseNMIU (); // must be allocated from pool
     nciu &chan;
-    friend class cac;
+    bool attachedToChannel;
+    static osiMutex mutex;
 };
 
 class netSubscription : private cacNotifyIO, private baseNMIU  {
@@ -1009,8 +1013,9 @@ public:
 
     // IO management routines
     bool ioComplete () const;
+    void ioInstall ( baseNMIU &io );
+    void ioUninstall ( unsigned id );
     void ioDestroy ( unsigned id );
-    void ioInstall ( nciu &chan, baseNMIU &io );
     void ioCompletionNotify ( unsigned id );
     void ioCompletionNotify ( unsigned id, unsigned type, 
         unsigned long count, const void *pData );

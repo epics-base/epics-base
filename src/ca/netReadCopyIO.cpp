@@ -51,7 +51,7 @@ void netReadCopyIO::completionNotify ( unsigned typeIn,
             memcpy ( this->pValue, pDataIn, 
                  dbr_size_n ( typeIn, countIn ) );
 #       endif
-        this->chan.decrementOutstandingIO (this->seqNumber);
+        this->chan.decrementOutstandingIO ( this->seqNumber );
     }
     else {
         this->exceptionNotify ( ECA_INTERNAL, "bad data type in message" );

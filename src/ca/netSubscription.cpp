@@ -31,7 +31,7 @@ netSubscription::~netSubscription ()
 
 void netSubscription::destroy()
 {
-    this->baseNMIU::destroy ();
+    delete this;
 }
 
 int netSubscription::subscriptionMsg ()

@@ -161,11 +161,13 @@ inline bool nciu::connectionInProgress ( const osiSockAddr &addrIn )
 
 inline void nciu::ioInstall ( class baseNMIU &nmiu )
 {
-    this->cacCtx.ioInstall ( *this, nmiu );
+    this->addIO ( nmiu );
+    this->cacCtx.ioInstall ( nmiu );
 }
 
-inline void nciu::ioDestroy ( unsigned idIn )
+inline void nciu::ioUninstall ( class baseNMIU &nmiu )
 {
-    this->cacCtx.ioDestroy ( idIn );
+    this->cacCtx.ioUninstall ( nmiu.getId () );
+    this->removeIO ( nmiu );
 }
 

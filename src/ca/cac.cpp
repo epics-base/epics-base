@@ -630,11 +630,17 @@ bool cac::ioComplete () const
     }
 }
 
-void cac::ioInstall ( nciu &chan, baseNMIU &io )
+void cac::ioInstall ( baseNMIU &io )
 {
     this->defaultMutex.lock ();
     this->ioTable.add ( io );
-    chan.cacPrivateListOfIO::eventq.add ( io );
+    this->defaultMutex.unlock ();
+}
+
+void cac::ioUninstall ( unsigned id )
+{
+    this->defaultMutex.lock ();
+    this->ioTable.remove ( id );
     this->defaultMutex.unlock ();
 }
 
@@ -643,7 +649,7 @@ void cac::ioDestroy ( unsigned id )
     this->defaultMutex.lock ();
     baseNMIU * pmiu = this->ioTable.remove ( id );
     if ( pmiu ) {
-        pmiu->chan.cacPrivateListOfIO::eventq.remove ( *pmiu );
+        pmiu->uninstallFromChannel ();
     }
     this->defaultMutex.unlock ();
     // care is taken to not destroy with the cac lock
@@ -703,7 +709,7 @@ void cac::ioCompletionNotifyAndDestroy ( unsigned id )
     this->defaultMutex.lock ();
     baseNMIU * pmiu = this->ioTable.remove ( id );
     if ( pmiu ) {
-        pmiu->chan.cacPrivateListOfIO::eventq.remove ( *pmiu );
+        pmiu->uninstallFromChannel ();
     }
     this->defaultMutex.unlock ();
     // care is taken to not destroy with the cac lock
@@ -723,7 +729,7 @@ void cac::ioCompletionNotifyAndDestroy ( unsigned id,
     this->defaultMutex.lock ();
     baseNMIU * pmiu = this->ioTable.remove ( id );
     if ( pmiu ) {
-        pmiu->chan.cacPrivateListOfIO::eventq.remove ( *pmiu );
+        pmiu->uninstallFromChannel ();
     }
     this->defaultMutex.unlock ();
     // care is taken to not destroy with the cac lock
@@ -742,7 +748,7 @@ void cac::ioExceptionNotifyAndDestroy ( unsigned id, int status, const char *pCo
     this->defaultMutex.lock ();
     baseNMIU * pmiu = this->ioTable.remove ( id );
     if ( pmiu ) {
-        pmiu->chan.cacPrivateListOfIO::eventq.remove ( *pmiu );
+        pmiu->uninstallFromChannel ();
     }
     this->defaultMutex.unlock ();
     // care is taken to not destroy with the cac lock
@@ -762,7 +768,7 @@ void cac::ioExceptionNotifyAndDestroy ( unsigned id, int status,
     this->defaultMutex.lock ();
     baseNMIU * pmiu = this->ioTable.remove ( id );
     if ( pmiu ) {
-        pmiu->chan.cacPrivateListOfIO::eventq.remove ( *pmiu );
+        pmiu->uninstallFromChannel ();
     }
     this->defaultMutex.unlock ();
     // care is taken to not destroy with the cac lock

@@ -270,6 +270,9 @@ epicsShareAPI macInstallMacros(
 }
 
 /* $Log$
+ * Revision 1.3  1997/05/01 19:57:35  jhill
+ * updated dll keywords
+ *
  * Revision 1.2  1996/09/16 21:07:11  jhill
  * fixed warnings
  *

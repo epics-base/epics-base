@@ -202,6 +202,9 @@ epicsShareAPI macInstallMacros(
 );
 
 /* $Log$
+ * Revision 1.6  1998/02/27 01:34:13  jhill
+ * cleaned up the DLL symbol export
+ *
  * Revision 1.5  1998/02/20 21:45:17  evans
  * Made a large number of changes to epicsShareThings in libCom routines
  * to get imports and exports straight on WIN32.  Not everything is fixed

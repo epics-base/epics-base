@@ -293,7 +293,7 @@ void comQueSend::insertRequestHeader (
 
     if ( payloadSize < 0xffff && nElem < 0xffff ) {
         comBuf * pComBuf = this->bufs.last ();
-        if ( !pComBuf || pComBuf->unoccupiedBytes() < 16u ) {
+        if ( ! pComBuf || pComBuf->unoccupiedBytes() < 16u ) {
             pComBuf = newComBuf ();
             this->pushComBuf ( *pComBuf );
         }
@@ -306,14 +306,14 @@ void comQueSend::insertRequestHeader (
     }
     else if ( v49Ok ) {
         comBuf * pComBuf = this->bufs.last ();
-        if ( !pComBuf || pComBuf->unoccupiedBytes() < 24u ) {
+        if ( ! pComBuf || pComBuf->unoccupiedBytes() < 24u ) {
             pComBuf = newComBuf ();
             this->pushComBuf ( *pComBuf );
         }
         pComBuf->push ( request ); 
-        pComBuf->push ( 0xffff ); 
+        pComBuf->push ( static_cast < ca_uint16_t > ( 0xffff ) ); 
         pComBuf->push ( dataType ); 
-        pComBuf->push ( 0u ); 
+        pComBuf->push ( static_cast < ca_uint16_t > ( 0u ) ); 
         pComBuf->push ( cid ); 
         pComBuf->push ( requestDependent );  
         pComBuf->push ( payloadSize ); 

@@ -56,6 +56,14 @@
 #include     <recSup.h>
 #include     <pulseDelayRecord.h>
 
+/* defines used in special routine */
+
+#define DLY_FIELD	0x0001
+#define WIDE_FIELD	0x0002
+#define STV_FIELD	0x0004
+#define GATE_FIELD	0x0008
+#define HTS_FIELD	0x0010
+ 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
@@ -144,7 +152,8 @@ static long init_record(ppd,pass)
     /* get the soft gate value if glnk is a constant*/
     if(ppd->glnk.type==CONSTANT)
     {
-	if(ppd->stl.value.value!=0)
+	/* changed by jbk */
+	if(ppd->glnk.value.value!=0)
             ppd->gate=ppd->glnk.value.value;
     }
  
@@ -158,6 +167,14 @@ static long init_record(ppd,pass)
     if( pdset->init_record ) {
          if((status=(*pdset->init_record)(ppd))) return(status);
     }
+
+    ppd->pfld=0; /* clear the pfld */
+
+	if(ppd->val)
+		ppd->pfld|=0x0f00;
+	else
+		ppd->pfld&=0x00ff;
+
     return(0);
 }
 
@@ -195,7 +212,8 @@ static long process(ppd)
      if (status==0) status=(*pdset->write_pd)(ppd); /* write the new value */
 
      /* reset field causing processing parameter */
-     ppd->pfld=0;
+     /* used to be set to zero, use a bit to detect val field change */
+     ppd->pfld&=0x0f00;
  
      /* check if device support set pact */
      if ( !pact && ppd->pact ) return(0);
@@ -211,7 +229,15 @@ static long process(ppd)
      recGblFwdLink(ppd);
 
      ppd->pact=FALSE;
-     return(status);
+
+	 if(status)
+	 {
+		recGblSetSevr(ppd,READ_ALARM,INVALID_ALARM);
+	 }
+
+	 return(0);
+     /* return(status); if card missing, causing error on console for
+	 db_get */
 }
 
 static long get_value(ppd,pvdes)
@@ -240,12 +266,6 @@ static long get_precision(paddr,precision)
         the field causing the processing is dly, hts, or stv.
 -----------------------------------------------------------------------*/
 
-#define DLY_FIELD	0x0001
-#define WIDE_FIELD	0x0002
-#define STV_FIELD	0x0004
-#define GATE_FIELD	0x0008
-#define HTS_FIELD	0x0010
- 
 static long special(paddr,after)
         struct dbAddr *paddr;
         int after;
@@ -383,7 +403,20 @@ static void monitor(ppd)
     }
 
     monitor_mask |= (DBE_VALUE | DBE_LOG);
-    db_post_events(ppd,&ppd->val,monitor_mask);
+
+	/* temp change, keep old val value in pfld so ascii files do not
+	need to be changed, keep in 0x0f00 position */
+
+    if( ( (ppd->pfld & 0x0f00) && !(ppd->val) )
+		|| ( !(ppd->pfld & 0x0f00) && (ppd->val) ) )
+    {
+    	db_post_events(ppd,&ppd->val,monitor_mask);
+		if(ppd->val)
+        	ppd->pfld|=0x0f00;
+		else
+        	ppd->pfld&=0x00ff;
+    }
+
     if(ppd->odly != ppd->dly){
          db_post_events(ppd,&ppd->dly,monitor_mask);
          ppd->odly=ppd->dly;

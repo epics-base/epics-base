@@ -40,16 +40,22 @@
 
 class hostNameCache : public ipAddrToAsciiCallBack {
 public:
-    hostNameCache ( const osiSockAddr &addr, ipAddrToAsciiEngine &engine );
+    hostNameCache ( const osiSockAddr & addr, ipAddrToAsciiEngine & engine );
     ~hostNameCache ();
     void destroy ();
     void transactionComplete ( const char * pHostName );
-    void hostName ( char *pBuf, unsigned bufLength ) const;
+    unsigned getName ( char *pBuf, unsigned bufLength ) const;
+    const char * pointer () const;
 private:
     char hostNameBuf [128];
     mutable epicsMutex mutex;
     ipAddrToAsciiTransaction & dnsTransaction;
-    bool ioComplete;
+    unsigned nameLength;
 };
+
+inline const char * hostNameCache::pointer () const
+{
+    return this->hostNameBuf;
+}
 
 #endif // #ifndef hostNameCacheh

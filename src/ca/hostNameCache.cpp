@@ -29,8 +29,9 @@
 #include "hostNameCache.h"
 #include "epicsGuard.h"
 
-hostNameCache::hostNameCache ( const osiSockAddr & addr, ipAddrToAsciiEngine & engine ) :
-    dnsTransaction ( engine.createTransaction() ), ioComplete ( false )
+hostNameCache::hostNameCache ( 
+    const osiSockAddr & addr, ipAddrToAsciiEngine & engine ) :
+    dnsTransaction ( engine.createTransaction() ), nameLength ( 0 )
 {
     this->dnsTransaction.ipAddrToAscii ( addr, *this );
 }
@@ -45,26 +46,38 @@ hostNameCache::~hostNameCache ()
     this->dnsTransaction.release ();
 }
 
-void hostNameCache::transactionComplete ( const char *pHostNameIn )
+void hostNameCache::transactionComplete ( const char * pHostNameIn )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
-    if ( ! this->ioComplete ) {
-        this->ioComplete = true;
+    if ( this->nameLength == 0u ) {
         strncpy ( this->hostNameBuf, pHostNameIn, sizeof ( this->hostNameBuf ) );
         this->hostNameBuf[ sizeof ( this->hostNameBuf ) - 1 ] = '\0';
+        this->nameLength = strlen ( this->hostNameBuf );
     }
 }
 
-void hostNameCache::hostName ( char *pBuf, unsigned bufSize ) const
+unsigned hostNameCache::getName ( 
+    char * pBuf, unsigned bufSize ) const
 {
+    if ( bufSize == 0u ) {
+        return 0u;
+    }
     epicsGuard < epicsMutex > guard ( this->mutex );
-    if ( this->ioComplete ) {
-        strncpy ( pBuf, this->hostNameBuf, bufSize);
-        pBuf [ bufSize - 1u ] = '\0';
+    if ( this->nameLength > 0u ) {
+        if ( this->nameLength < bufSize ) {
+            strcpy ( pBuf, this->hostNameBuf );
+            return this->nameLength;
+        }
+        else {
+            unsigned reducedSize = bufSize - 1u;
+            strncpy ( pBuf, this->hostNameBuf, reducedSize );
+            pBuf [ reducedSize ] = '\0';
+            return reducedSize;
+        }
     }
     else {
         osiSockAddr tmpAddr = this->dnsTransaction.address ();
-        sockAddrToDottedIP ( &tmpAddr.sa, pBuf, bufSize );
+        return sockAddrToDottedIP ( &tmpAddr.sa, pBuf, bufSize );
     }
 }
 

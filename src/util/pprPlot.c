@@ -26,7 +26,7 @@
  * Modification Log:
  * -----------------
  * .01	12-04-90	rac	initial version
- * .02	mm-dd-yy	rac	version 1.0, installed in SCCS
+ * .02	07-20-91	rac	installed in SCCS; finalized "how to access"
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -108,6 +108,7 @@
 *     void  pprWinReplot(    pWin,    drawFn,   pDrawArg                  )
 *     long  pprWinSetAttr(   pWin,    code,     pAttr                     )
 *               code: PPR_ATTR_{COLORNUM,GC,KEYNUM,LINE_THICK,PATT_ARRAY}
+*   double  pprYFracToXFrac( pWin,    yFrac                               )
 *   
 * DESCRIPTION (continued)
 *	Plotting is done within "plot areas" which are defined within
@@ -144,10 +145,6 @@
 *
 * BUGS
 * o	Only linear axes are presently supported
-* o	There is presently no mechanism to allow a calling program to
-*	do other work while a plot is on the screen.  It would be nice
-*	for a program to be able to periodically check with this package
-*	to see if resize or expose events need to be serviced.
 * o	The SunView version of this package won't run properly with
 *	programs which use the SunOs LightWeight Process library.
 * o	The SunView version of this package doesn't handle color.
@@ -162,32 +159,11 @@
 *	window was closed.  (The plot window can be closed using the `quit'
 *	item on the window's title bar menu (but not under X!!).)
 *
-*	The program is compiled and linked for SunView with the following
-*	command.  (It will be necessary to find where pprPlot.o and
-*	pprPlotDefs.h are located and possibly `fix up' the command.)
+*	The program is compiled and linked for X11 with the following
+*	command.  (If making to run on sun3, use lib.sun3 in the command.)
 *
-*            cc plotTest.c pprPlot.o -lsuntool -lsunwindow -lpixrect -lm
-*
-*	The program is compiled and linked for X with the following
-*	command.  (It will be necessary to find where pprPlot.o and
-*	pprPlotDefs.h are located and possibly `fix up' the command.)
-*
-*            cc plotTest.c pprPlot.o -lX11 -lm
-*
-*	(As of Feb 6, 1991, plotTest.c is available on the AT-division
-*	open network in ~gta/ar/plotTest.c.  It should be copied into
-*	the user's working directory before using it.)
-*
-*	(As of Feb 6, 1991, pprPlot is available on the AT-division
-*	open network in ~gta.  Until access to this software has been
-*	formalized, use the following for Sun3/SunView:
-*	  cc plotTest.c -I/home/obiwan/gtacs/h /home/obiwan/gtacs/ar/pprPlotS.o
-*            				-lsuntool -lsunwindow -lpixrect -lm
-*	(For Sun3/X, use the following:
-*	  cc plotTest.c -I/home/obiwan/gtacs/h /home/obiwan/gtacs/ar/pprPlotX.o
-*					-lX11 -lm
-*	(For Sun4 builds, use "/ar/ar4/" in place of "/ar/" in the above
-*	commands.)
+*          % cc -I~epics/epicsH plotTest.c \
+*			-L~epics/share/bin/lib.sun4 -lppr -lX11 -lm
 *
 *   #include <stdio.h>
 *   #include <pprPlotDefs.h>
@@ -248,7 +224,8 @@
 *    is necessary to replot the data.  This will happen immediately after
 *    pprWinLoop is called, and also any time the plot window is resized
 *    or re-exposed after being fully or partially covered.  pprWinLoop
-*    doesn't return until a "click right" (or a window menu quit) is done.
+*    doesn't return until a "click right" over the plot (or a window menu
+*    quit) is done.
 *
 *    After pprWinLoop returns, pprWinInfo is called to get the most
 *    recent size and position of the window.  If this program were going
@@ -4122,9 +4099,9 @@ PPR_WIN	*pWin;		/* I pointer to plot window structure */
 *	o   when the window actually appears, calls the caller's draw function
 *	o   for all subsequent resize and expose events, calls the caller's
 *	    draw function
-*	o   when the right mouse button is clicked, closes the window and
-*	    returns to the caller.  The current position and size of the
-*	    window are stored (and can be retrieved with pprWinInfo).
+*	o   when the right mouse button is clicked on the plot, closes the
+*	    window and returns to the caller.  The current position and size
+*	    of the window are stored (and can be retrieved with pprWinInfo).
 *
 *	PPR_WIN_POSTSCRIPT
 *	o   calls the caller's draw function

@@ -167,7 +167,6 @@ processFile(name)
     createLink();
 }
 
-
 /****************************************************************************
 INIT_SETUP
 ****************************************************************************/
@@ -179,20 +178,20 @@ init_setup(argc, argv)
     char           *ptr;
     int             len;
     FILE           *origin_fp;
+    char            Xdest_base[MAXPATHLEN];
+    char            Xsrc_base[MAXPATHLEN];
     ptr = (char *) strrchr(argv[0], '/');
     if (ptr == 0) {
 	strcpy(progName, argv[0]);
     } else {
-	strcpy(progName, ptr+1);
+	strcpy(progName, ptr + 1);
     }
-if ( argc != 2 ) {
+    if (argc != 2) {
 	printf("####################################################\n");
 	Usage();
 	printf("####################################################\n");
-	exit(1); 
-}
-
-
+	exit(1);
+    }
     if (*argv[1] != '/') {
 	printf("####################################################\n");
 	printf("%s: ERROR - arg#1 must be a full pathname\n", progName);
@@ -200,7 +199,6 @@ if ( argc != 2 ) {
 	printf("####################################################\n");
 	exit(1);
     }
-
 /* check to see if path points to app system area - file .topAppl exists*/
     /* application base is argv[1] */
     len = strlen(argv[1]);
@@ -223,7 +221,11 @@ if ( argc != 2 ) {
     }
     strcpy(src_base, sys_top);
     /* if dest_base is substring of src_base - recursion occurs */
-    if ((strstr(dest_base, src_base)) != NULL) { /* error */
+    strcpy(Xdest_base, dest_base);
+    strcat(Xdest_base, "/");
+    strcpy(Xsrc_base, src_base);
+    strcat(Xsrc_base, "/");
+    if ((strstr(Xdest_base, Xsrc_base)) != NULL) {	/* error */
 	fprintf(stderr, "####################################################\n");
 	fprintf(stderr, "%s: You can't run this tool in an application system area!\n", progName);
 	fprintf(stderr, "####################################################\n");
@@ -260,17 +262,17 @@ if ( argc != 2 ) {
 	}
 	/* compare sys_top with buffer */
 	while ((fgets(buffer, sizeof(buffer) + 2, origin_fp)) != NULL) {
-	len = strlen(buffer);
-	/* remove the N/L from input line */
-	if (buffer[len - 1] == '\n') {
-	    buffer[len - 1] = 0;
-	}
+	    len = strlen(buffer);
+	    /* remove the N/L from input line */
+	    if (buffer[len - 1] == '\n') {
+		buffer[len - 1] = 0;
+	    }
 	    if ((strcmp(buffer, sys_top)) != SAME) {
-fprintf(stderr, "%s: FATAL ERROR - Illegal invocation\n", progName);
+		fprintf(stderr, "%s: FATAL ERROR - Illegal invocation\n", progName);
 		fprintf(stderr,
-"Your last system area was %s\n", buffer);
+			"Your last system area was %s\n", buffer);
 		fprintf(stderr,
-"Your new (arg1) system area is %s\n",sys_top);
+			"Your new (arg1) system area is %s\n", sys_top);
 		exit(1);
 	    }
 	}

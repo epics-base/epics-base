@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1996/11/02 00:54:04  jhill
+ * many improvements
+ *
  * Revision 1.4  1996/09/04 20:19:02  jhill
  * include db_access.h
  *
@@ -513,6 +516,10 @@ const unsigned	lineno
 {
 	int status;
 
+	if (pFileName) {
+		ca_printf("Bad client request detected in \"%s\" at line %d\n",
+			pFileName, lineno);
+	}
 	this->dumpMsg(mp, dp);
 
 	status = this->sendErr(
@@ -546,6 +553,9 @@ void casClient::dumpMsg(const caHdr *mp, const void *dp)
 
 	if (pciu) {
 		strncpy(pPVName, pciu->getPVI().resourceName(), sizeof(pPVName));
+		if (&pciu->getClient()!=this) {
+			strncat(pPVName, "!Bad Client!", sizeof(pPVName));
+		}
 		pPVName[sizeof(pPVName)-1]='\0';
 	}
 	else {

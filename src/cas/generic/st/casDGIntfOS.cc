@@ -222,7 +222,7 @@ void casDGIOWakeup::show(unsigned level) const
 //
 // casDGIntfOS::armRecv ()
 //
-inline void casDGIntfOS::armRecv()
+void casDGIntfOS::armRecv()
 {
 	if (!this->inBuf::full()) {
 	    if (!this->pRdReg) {
@@ -245,7 +245,7 @@ inline void casDGIntfOS::armRecv()
 //
 // casDGIntfOS::disarmRecv()
 //
-inline void casDGIntfOS::disarmRecv()
+void casDGIntfOS::disarmRecv()
 {
 	if (this->pRdReg) {
 		delete this->pRdReg;
@@ -258,7 +258,7 @@ inline void casDGIntfOS::disarmRecv()
 //
 // casDGIntfOS::armSend()
 //
-inline void casDGIntfOS::armSend()
+void casDGIntfOS::armSend()
 {
 	if (this->outBuf::bytesPresent()==0u) {
 		return;
@@ -276,7 +276,7 @@ inline void casDGIntfOS::armSend()
 //
 // casDGIntfOS::disarmSend()
 //
-inline void casDGIntfOS::disarmSend ()
+void casDGIntfOS::disarmSend ()
 {
 	if (this->pWtReg) {
 		delete this->pWtReg;

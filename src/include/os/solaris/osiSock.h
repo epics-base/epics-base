@@ -23,9 +23,16 @@ extern "C" {
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <unistd.h> /* close() and others */
  
 void ipAddrToA(const struct sockaddr_in *pInetAddr, 
 		char *pBuf, const unsigned bufSize);
+
+/*
+ * as far as I can tell there is no header file for these
+ */
+int gethostname(char *name, int namelen);
+int sethostname(char *name, int namelen);
 
 #ifdef __cplusplus
 }

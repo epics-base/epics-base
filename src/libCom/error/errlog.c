@@ -8,7 +8,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
- *      Author:          Marty Kraimer and Jeff Hill
+ *      Author:          Marty Kraimer 
  *      Date:            07JAN1998
  *	NOTE: Original version is adaptation of old version of errPrintfVX.c
 */

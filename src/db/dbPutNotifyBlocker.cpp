@@ -107,7 +107,7 @@ extern "C" void putNotifyCompletion ( putNotify *ppn )
     pBlocker->block.signal ();
 }
 
-void dbPutNotifyBlocker::initiatePutNotify ( epicsAutoMutex &locker, cacWriteNotify & notify, 
+void dbPutNotifyBlocker::initiatePutNotify ( epicsAutoMutex & locker, cacWriteNotify & notify, 
         struct dbAddr & addr, unsigned type, unsigned long count, const void * pValue )
 {
     int status;

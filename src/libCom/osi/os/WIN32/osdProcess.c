@@ -104,7 +104,7 @@ epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProce
 				"%1 \"%2\". %3 %4 %5 \"%6\"",
 				0,
 				MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
-					(LPTSTR) &complteMsgBuf,
+				(LPTSTR) &complteMsgBuf,
 				0,
 				pFmtArgs 
 			);

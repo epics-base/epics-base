@@ -93,6 +93,7 @@ HOST_OPT=YES
 CROSS_OPT=YES
 HOST_WARN=YES
 CROSS_WARN=YES
+GNU=NO
 
 #-------------------------------------------------------
 # Prefix and suffix

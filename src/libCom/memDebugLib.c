@@ -49,17 +49,14 @@
 
 unsigned memDebugLevel = 1;
 
-#define debugMallocMagic  0xaaaaaaaa
-
-typedef struct debugMallocFooter{
-        unsigned long   magic;
-}DMF;
+#define debugMallocMagic  	0xaaaaaaaa
+#define debugMallocFooter	"Dont Tread On Me"
 
 typedef struct debugMallocHeader{
         ELLNODE         node;
         char            *pFile;
         char            *pUser;
-        DMF             *pFoot;
+        char		*pFoot;
         unsigned long   line;
         unsigned long   size;
         unsigned long   tick;
@@ -99,14 +96,16 @@ unsigned long 	line;
 unsigned long 	size;
 #endif /*__STDC__*/
 {
-	DMH	*pHdr;
+	DMH		*pHdr;
+	unsigned long	totSize;
 
-	pHdr = (DMH *)calloc(1,sizeof(DMH)+sizeof(DMF)+size);
+	totSize = sizeof(DMH)+strlen(debugMallocFooter)+1+size;
+	pHdr = (DMH *)calloc(1, totSize);
 	if(!pHdr){
 		return NULL;
 	}
 	pHdr->pUser = (char *) (pHdr+1);
-	pHdr->pFoot = (DMF *) (pHdr->pUser+size);
+	pHdr->pFoot = (char *) (pHdr->pUser+size);
 	pHdr->pFile = pFile;
 	pHdr->line = line;
 	pHdr->size = size;
@@ -114,9 +113,9 @@ unsigned long 	size;
 #ifdef vxWorks
 	pHdr->tick = tickGet();
 #else /*vxWorks*/
-	pHdr->tick = 0;
+	pHdr->tick = clock();
 #endif /*vxWorks*/
-	pHdr->pFoot->magic = debugMallocMagic;
+	strcpy (pHdr->pFoot, debugMallocFooter);
 
 #ifdef LOCKS_REQUIRED
 	if(!memDebugInit){
@@ -217,7 +216,10 @@ DMH *pHdr;
 		return 1;
 	}
 
-	if(pHdr->magic != debugMallocMagic || pHdr->pFoot->magic != debugMallocMagic){
+	strcpy (pHdr->pFoot, debugMallocFooter);
+	if(pHdr->magic != debugMallocMagic || 
+		strcmp(pHdr->pFoot, debugMallocFooter)){
+
 		fprintf(stderr, "block overwritten %x\n", 
 			(unsigned)pHdr->pUser);
 		fprintf(stderr, "malloc occured at %s.%d\n", 
@@ -261,17 +263,17 @@ unsigned long ignoreBeforeThisTick;
 
 	FASTLOCK(&memDebugLock);
 	pHdr = (DMH *) ellFirst(&memDebugList);
-	while(pHdr = (DMH *) ellNext(pHdr)){
-		if(pHdr->tick<ignoreBeforeThisTick){
-			continue;
+	while(pHdr){
+		if(pHdr->tick>=ignoreBeforeThisTick){
+			fprintf(stderr, 
+				"%8x = malloc(%d) at %s.%d tick=%d\n", 
+				(unsigned) pHdr->pUser,
+				pHdr->size,
+				pHdr->pFile,
+				pHdr->line,
+				pHdr->tick);
 		}
-		fprintf(stderr, 
-			"%8x = malloc(%d) at %s.%d tick=%d\n", 
-			(unsigned) pHdr->pUser,
-			pHdr->size,
-			pHdr->pFile,
-			pHdr->line,
-			pHdr->tick);
+		pHdr = (DMH *) ellNext(pHdr);
 	}
 	FASTUNLOCK(&memDebugLock);
 	return 0;

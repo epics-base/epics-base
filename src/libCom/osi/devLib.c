@@ -280,7 +280,7 @@ LOCAL long devInstallAddr (
                 size, &pPhysicalAddress);
     if (status) {
         errPrintf (status, __FILE__, __LINE__, "%s base=0X%X size = 0X%X",
-            epicsAddressTypeName[addrType], base, size);
+            epicsAddressTypeName[addrType], (unsigned int)base, (unsigned int)size);
         return status;
     }
 

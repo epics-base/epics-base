@@ -16,16 +16,18 @@
 
 #include <epicsStdio.h>
 #include <epicsExit.h>
-
-#if defined(__PPC__) /* && defined(mpc750) */
-
 #include <rtems.h>
 #include <bsp.h>
-#include <bsp/VME.h>
-#include <bsp/bspExt.h>
-
 #include "devLib.h"
 #include <epicsInterrupt.h>
+
+#if defined(__PPC__) || defined(__mcf528x__)
+
+#if defined(__PPC__)
+#include <bsp/VME.h>
+#include <bsp/bspExt.h>
+#endif
+
 
 typedef void    myISR (void *pParam);
 
@@ -335,10 +337,4 @@ bcopyLongs(char *source, char *destination, int nlongs)
     long *d = (long *)destination;
     while(nlongs--)
         *d++ = *s++;
-}
-
-void
-rebootHookAdd(void (*funptr)())
-{
-    epicsAtExit(funptr,NULL);
 }

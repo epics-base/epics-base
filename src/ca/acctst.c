@@ -2081,8 +2081,9 @@ void verifyChannelPriorities ( const char *pName )
             priority, &chanArray[i] );
         SEVCHK ( status, "prioritized channel create failed" );
     }
-    status = ca_pend_io ( 10.0 );
+    status = ca_pend_io ( 100.0 );
     SEVCHK ( status, "prioritized channel connect failed" );
+    assert ( status == ECA_NORMAL );
 
     for ( i = 0u; i < nPrio; i++ ) {
         value = i;

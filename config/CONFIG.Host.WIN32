@@ -158,7 +158,7 @@ OP_SYS_CFLAGS =
 #
 # WIN32 specific include files
 #
-OP_SYS_INCLUDES = -I$(EPICS_BASE_INCLUDE)\\os\\WIN32
+#OP_SYS_INCLUDES = -I$(EPICS_BASE_INCLUDE)\\os\\WIN32
 
 #
 # These are now added to the individual makefiles that use them in order to

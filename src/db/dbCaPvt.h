@@ -47,6 +47,7 @@ typedef struct caLink
 {
 	ELLNODE		node;
 	struct link	*plink;
+        char		*pvname;
 	chid 		chid;
 	void 		*pgetNative;
 	void		*pputNative;

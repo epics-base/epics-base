@@ -95,11 +95,15 @@ void epicsShareAPI dbCaLinkInit(void)
 void epicsShareAPI dbCaAddLink( struct link *plink)
 {
     caLink *pca;
+    char *pvname;
 
     pca = (caLink*)dbCalloc(1,sizeof(caLink));
     pca->lock = epicsMutexMustCreate();
     epicsMutexMustLock(pca->lock);
     pca->plink = plink;
+    pvname = plink->value.pv_link.pvname;
+    pca->pvname = dbCalloc(1,strlen(pvname) +1);
+    strcpy(pca->pvname,pvname);
     plink->type = CA_LINK;
     plink->value.pv_link.pvt = pca;
     epicsMutexUnlock(pca->lock);
@@ -671,13 +675,14 @@ void dbCaTask()
                 free(pca->pgetString);
                 free(pca->pputString);
                 free(pca->pcaAttributes);
+                free(pca->pvname);
                 epicsMutexDestroy(pca->lock);
                 free(pca);
                 continue; /*No other link_action makes sense*/
             }
             if(link_action&CA_CONNECT) {
                 status = ca_search_and_connect(
-                      pca->plink->value.pv_link.pvname,
+                      pca->pvname,
                       &(pca->chid),
                       connectionCallback,(void *)pca);
                 if(status!=ECA_NORMAL) {

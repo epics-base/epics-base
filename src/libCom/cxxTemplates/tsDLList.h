@@ -238,7 +238,7 @@ inline tsDLNode<T>::tsDLNode() : pNext(0), pPrev(0) {}
 // do _not_ change the node pointers
 //
 template <class T>
-inline tsDLNode<T> tsDLNode<T>::operator = (const tsDLNode<T> &) const { return tsDLNode<T>() }
+inline tsDLNode<T> tsDLNode<T>::operator = (const tsDLNode<T> &) const { return tsDLNode<T>(); }
 
 //template <class T>
 //T * tsDLNode<T>::getNext (void) const

@@ -275,9 +275,9 @@ long dbProcess(paddr)
 	}
 
 	/* process record */
-	status = (*prset->process)(paddr);
 	if(trace && trace_lset==lset)
-		printf("processed: %s\n",precord->name);
+		printf("process:   %s\n",precord->name);
+	status = (*prset->process)(paddr);
 
 all_done:
 	if(set_trace) {

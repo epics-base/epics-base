@@ -31,8 +31,8 @@ endif
 #  The architectures to build  for
 #
 #  Currently Supporting:
-#       vxWorks_68040 (alias mv147, mv162, mv167)
-#       vxWorks_68040lc (alias mv162lc)
+#       vxWorks-68040 (alias mv147, mv162, mv167)
+#       vxWorks-68040lc (alias mv162lc)
 #       vxWorks-ppc604
 #
 #       hkv2f
@@ -41,7 +41,7 @@ endif
 #	frc5ce
 #	hkbaja47
 #
-#CROSS_COMPILER_TARGET_ARCHS= vxWorks_68040
+#CROSS_COMPILER_TARGET_ARCHS= vxWorks-68040
 CROSS_COMPILER_TARGET_ARCHS= mv167 ppc604
 
 

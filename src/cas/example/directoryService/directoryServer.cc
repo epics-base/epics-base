@@ -70,6 +70,14 @@ directoryServer::directoryServer(const char * const pvPrefix, unsigned pvCount, 
 	}
 }
 
+
+//
+// directoryServer::~directoryServer()
+//
+directoryServer::~directoryServer()
+{
+}
+
 //
 // directoryServer::installAliasName()
 //

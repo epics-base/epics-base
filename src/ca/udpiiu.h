@@ -36,7 +36,7 @@ extern "C" void cacRecvThreadUDP ( void *pParam );
 
 epicsShareFunc void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repeaterPort );
 epicsShareFunc void epicsShareAPI caRepeaterRegistrationMessage ( SOCKET sock, unsigned repeaterPort, unsigned attemptNumber );
-epicsShareFunc void caRepeaterThread ( void *pDummy );
+extern "C" epicsShareFunc void caRepeaterThread ( void *pDummy );
 epicsShareFunc void ca_repeater ( void );
 
 class udpiiu : public netiiu {

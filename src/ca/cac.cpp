@@ -831,11 +831,11 @@ void cac::writeRequest ( nciu &chan, unsigned type, unsigned nElem, const void *
 }
 
 cacChannel::ioid cac::writeNotifyRequest ( nciu &chan, unsigned type, unsigned nElem, 
-                                    const void *pValue, cacWriteNotify &notify )
+                                    const void *pValue, cacWriteNotify &notifyIn )
 {
     epicsAutoMutex autoMutex ( this->mutex );
     autoPtrRecycle  < netWriteNotifyIO > pIO ( *this, netWriteNotifyIO::factory ( 
-                this->freeListWriteNotifyIO, chan, notify ) );
+                this->freeListWriteNotifyIO, chan, notifyIn ) );
     if ( pIO.get() ) {
         this->ioTable.add ( *pIO );
         chan.cacPrivateListOfIO::eventq.add ( *pIO );
@@ -849,11 +849,11 @@ cacChannel::ioid cac::writeNotifyRequest ( nciu &chan, unsigned type, unsigned n
     }
 }
 
-cacChannel::ioid cac::readNotifyRequest ( nciu &chan, unsigned type, unsigned nElem, cacReadNotify &notify )
+cacChannel::ioid cac::readNotifyRequest ( nciu &chan, unsigned type, unsigned nElem, cacReadNotify &notifyIn )
 {
     epicsAutoMutex autoMutex ( this->mutex );
     autoPtrRecycle  < netReadNotifyIO > pIO ( *this, netReadNotifyIO::factory ( 
-                this->freeListReadNotifyIO, chan, notify ) );
+                this->freeListReadNotifyIO, chan, notifyIn ) );
     if ( pIO.get() ) {
         this->flushIfRequired ( chan );
         this->ioTable.add ( *pIO );
@@ -1153,11 +1153,11 @@ void cac::recycleSubscription ( netSubscription &io )
 }
 
 cacChannel::ioid cac::subscriptionRequest ( nciu &chan, unsigned type, 
-    unsigned long nElem, unsigned mask, cacStateNotify &notify )
+    unsigned long nElem, unsigned mask, cacStateNotify &notifyIn )
 {
     epicsAutoMutex autoMutex ( this->mutex );
     autoPtrRecycle  < netSubscription > pIO ( *this, netSubscription::factory ( 
-                this->freeListSubscription, chan, type, nElem, mask, notify ) );
+                this->freeListSubscription, chan, type, nElem, mask, notifyIn ) );
     if ( pIO.get() ) {
         chan.cacPrivateListOfIO::eventq.add ( *pIO );
         this->ioTable.add ( *pIO );

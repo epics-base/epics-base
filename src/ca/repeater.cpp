@@ -569,7 +569,7 @@ void ca_repeater ()
 /*
  * caRepeaterThread ()
  */
-void caRepeaterThread ( void * /* pDummy */ )
+extern "C" void caRepeaterThread ( void * /* pDummy */ )
 {
     taskwdInsert ( epicsThreadGetIdSelf(), NULL, NULL );
     ca_repeater ();

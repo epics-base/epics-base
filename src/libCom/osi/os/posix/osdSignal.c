@@ -30,12 +30,12 @@ static pSigFunc pReplacedSigUrgFunc;
  * allow error to be returned to sendto()
  * instead of handling disconnect at interrupt
  */
-static void localInstallSigIgnore ( int signal, pSigFunc pNewFunc,
+static void localInstallSigIgnore ( int signalIn, pSigFunc pNewFunc,
                                    pSigFunc * pReplacedFunc )
 {
 	pSigFunc sigRet;
 
-	sigRet = signal ( signal, pNewFunc );
+	sigRet = signal ( signalIn, pNewFunc );
 	if ( sigRet == SIG_ERR ) {
 		fprintf (stderr, "%s replace of SIGPIPE failed beacuse %s\n", 
 			__FILE__, strerror(errno));

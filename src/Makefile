@@ -44,8 +44,8 @@ ifneq (,$(findstring RTEMS,$(BUILD_ARCHS)))
 DIRS += RTEMS
 endif
 DIRS += libCom/test
-#DIRS += gdd
-#DIRS += cas
+DIRS += gdd
+DIRS += cas
 
 include $(TOP)/configure/RULES_DIRS
 

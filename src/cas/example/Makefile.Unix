@@ -16,12 +16,14 @@ DEPLIBSWOCAS = $(DEPLIBS_BASE)/libca.a $(DEPLIBS_BASE)/libCom.a \
 	$(DEPLIBS_BASE)/libgdd.a
 DEPLIBS = $(DEPLIBS_BASE)/libcas.a $(DEPLIBSWOCAS)
 
+SRCS.cc += ../main.cc 
 SRCS.cc += ../exServer.cc 
 SRCS.cc += ../exPV.cc 
 SRCS.cc += ../exSyncPV.cc 
 SRCS.cc += ../exAsyncPV.cc 
 SRCS.cc += ../exChannel.cc 
 
+OBJS += main.o
 OBJS += exServer.o
 OBJS += exPV.o
 OBJS += exSyncPV.o
@@ -69,16 +71,21 @@ excas: $(OBJS) $(DEPLIBS)
 	$(LINK.cc) -o $@ $(OBJS) $(LDFLAGS) $(LDLIBS)
 
 #
-# fast link (without library build)
+# fast link (without waiting for library build)
 #
-#PURIFY = /remote/lear_local/pure/purify-3.0a-sunos4/purify
 nolib:  $(OBJS) $(GLOMBOBJ) $(DEPLIBSWOCAS)
-	$(PURIFY) $(LINK.cc) -o $@ $(OBJS) $(GLOMBOBJ) $(DEPLIBSWOCAS) 
+	$(LINK.cc) -o $@ $(OBJS) $(GLOMBOBJ) $(DEPLIBSWOCAS) 
+
+#
+# build with purify 
+#
+purify: $(OBJS) $(GLOMBOBJ) $(DEPLIBSWOCAS)
+	$(PURIFY) -best-effort $(LINK.cc) -o $@ $(OBJS) $(GLOMBOBJ) $(DEPLIBSWOCAS) 
 
 clean::
 	@$(RM) excas 
 	@$(RM) nolib
+	@$(RM) purify
 	@$(RM) -rf Templates.DB
-
-
+	@$(RM) core 
 

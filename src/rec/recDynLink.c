@@ -7,6 +7,7 @@
 #include <rngLib.h>
 #include <vxLib.h>
 #include <semLib.h>
+#include <sysLib.h>
 
 #include <dbDefs.h>
 #include <taskwd.h>
@@ -58,12 +59,15 @@ extern int interruptAccept;
 
 int   recDynLinkQsize = 256;
 
-LOCAL int	taskid=0;
-LOCAL RING_ID	ringQ;;
-LOCAL FAST_LOCK	lock;
+LOCAL int	inpTaskId=0;
+LOCAL int	outTaskId=0;
+LOCAL RING_ID	inpRingQ;;
+LOCAL RING_ID	outRingQ;;
 LOCAL SEM_ID	wakeUpSem;
 
-typedef enum{cmdSearch,cmdClear,cmdAddInput,cmdPut} cmdType;
+typedef enum{cmdSearch,cmdClear,cmdPut} cmdType;
+typedef enum{ioInput,ioOutput}ioType;
+typedef enum{stateStarting,stateSearching,stateGetting,stateConnected}stateType;
 
 typedef struct dynLinkPvt{
     FAST_LOCK		lock;
@@ -78,76 +82,126 @@ typedef struct dynLinkPvt{
     void		*pbuffer;
     size_t		nRequest;
     short		dbrType;
-    short		getCompleted;
     double		graphicLow,graphHigh;
     double		controlLow,controlHigh;
     char		units[MAX_UNITS_SIZE];
     short		precision;
+    ioType		io;
+    stateType		state;
+    short		scalar;
 } dynLinkPvt;
 
+/*For cmdClear data is chid. For all other commands precDynLink*/
 typedef struct {
-    recDynLink	*precDynLink;
+    union {
+	recDynLink	*precDynLink;
+	dynLinkPvt	*pdynLinkPvt;
+    }data;
     cmdType	cmd;
 }ringBufCmd;
 
-LOCAL void recDynLinkStart(void);
+LOCAL void recDynLinkStartInput(void);
+LOCAL void recDynLinkStartOutput(void);
 LOCAL void connectCallback(struct connection_handler_args cha);
 LOCAL void getCallback(struct event_handler_args eha);
 LOCAL void monitorCallback(struct event_handler_args eha);
-LOCAL void recDynLinkTask(void);
+LOCAL void recDynLinkInp(void);
+LOCAL void recDynLinkOut(void);
 
-long recDynLinkSearch(recDynLink *precDynLink,char *pvname,
-	recDynCallback searchCallback,int dbOnly)
+long recDynLinkAddInput(recDynLink *precDynLink,char *pvname,
+	short dbrType,int options,
+	recDynCallback searchCallback,recDynCallback monitorCallback)
 {
     dynLinkPvt		*pdynLinkPvt;
     struct db_addr	dbaddr;
     ringBufCmd		cmd;
     
 
-    if(dbOnly && db_name_to_addr(pvname,&dbaddr)) return(-1);
-    if(!taskid) recDynLinkStart();
-    FASTLOCK(&lock);
+    if(options&rdlDBONLY  && db_name_to_addr(pvname,&dbaddr))return(-1);
+    if(!inpTaskId) recDynLinkStartInput();
     pdynLinkPvt = precDynLink->pdynLinkPvt;
     if(!pdynLinkPvt) {
 	pdynLinkPvt = (dynLinkPvt *)calloc(1,sizeof(dynLinkPvt));
 	if(!pdynLinkPvt) {
-	    printf("recDynLinkSearch can't allocate storage");
+	    printf("recDynLinkAddInput can't allocate storage");
 	    taskSuspend(0);
 	}
 	FASTLOCKINIT(&pdynLinkPvt->lock);
 	precDynLink->pdynLinkPvt = pdynLinkPvt;
     }
     pdynLinkPvt->pvname = pvname;
+    pdynLinkPvt->dbrType = dbrType;
     pdynLinkPvt->searchCallback = searchCallback;
-    cmd.precDynLink = precDynLink;
+    pdynLinkPvt->monitorCallback = monitorCallback;
+    pdynLinkPvt->io = ioInput;
+    pdynLinkPvt->scalar = (options&rdlSCALAR) ? TRUE : FALSE;
+    pdynLinkPvt->state = stateStarting;
+    cmd.data.precDynLink = precDynLink;
     cmd.cmd = cmdSearch;
-    if(rngBufPut(ringQ,(void *)&cmd,sizeof(cmd)) != sizeof(cmd))
-	errMessage(0,"recDynLinkSearch: rngBufPut error");
-    semGive(wakeUpSem);
-    FASTUNLOCK(&lock);
+    if(rngBufPut(inpRingQ,(void *)&cmd,sizeof(cmd)) != sizeof(cmd))
+	errMessage(0,"recDynLinkAddInput: rngBufPut error");
     return(0);
 }
+
+long recDynLinkAddOutput(recDynLink *precDynLink,char *pvname,
+	short dbrType,int options,
+	recDynCallback searchCallback)
+{
+    dynLinkPvt		*pdynLinkPvt;
+    struct db_addr	dbaddr;
+    ringBufCmd		cmd;
+    
 
+    if(options&rdlDBONLY  && db_name_to_addr(pvname,&dbaddr))return(-1);
+    if(!outTaskId) recDynLinkStartOutput();
+    pdynLinkPvt = precDynLink->pdynLinkPvt;
+    if(!pdynLinkPvt) {
+	pdynLinkPvt = (dynLinkPvt *)calloc(1,sizeof(dynLinkPvt));
+	if(!pdynLinkPvt) {
+	    printf("recDynLinkAddInput can't allocate storage");
+	    taskSuspend(0);
+	}
+	FASTLOCKINIT(&pdynLinkPvt->lock);
+	precDynLink->pdynLinkPvt = pdynLinkPvt;
+    }
+    pdynLinkPvt->pvname = pvname;
+    pdynLinkPvt->dbrType = dbrType;
+    pdynLinkPvt->searchCallback = searchCallback;
+    pdynLinkPvt->io = ioOutput;
+    pdynLinkPvt->scalar = (options&rdlSCALAR) ? TRUE : FALSE;
+    pdynLinkPvt->state = stateStarting;
+    cmd.data.precDynLink = precDynLink;
+    cmd.cmd = cmdSearch;
+    if(rngBufPut(outRingQ,(void *)&cmd,sizeof(cmd)) != sizeof(cmd))
+	errMessage(0,"recDynLinkAddInput: rngBufPut error");
+    semGive(wakeUpSem);
+    return(0);
+}
+
 long recDynLinkClear(recDynLink *precDynLink)
 {
     dynLinkPvt	*pdynLinkPvt;
     ringBufCmd	cmd;
 
-    FASTLOCK(&lock);
     pdynLinkPvt = precDynLink->pdynLinkPvt;
     if(!pdynLinkPvt) {
 	printf("recDynLinkClear. recDynLinkSearch was never called\n");
 	taskSuspend(0);
     }
-    cmd.precDynLink = precDynLink;
+    if(pdynLinkPvt->chid) ca_puser(pdynLinkPvt->chid) = NULL;
+    cmd.data.pdynLinkPvt = pdynLinkPvt;
     cmd.cmd = cmdClear;
-    if(rngBufPut(ringQ,(void *)&cmd,sizeof(cmd)) != sizeof(cmd))
-	errMessage(0,"recDynLinkClear: rngBufPut error");
-    semGive(wakeUpSem);
-    FASTUNLOCK(&lock);
+    if(pdynLinkPvt->io==ioInput) {
+	if(rngBufPut(inpRingQ,(void *)&cmd,sizeof(cmd)) != sizeof(cmd))
+	    errMessage(0,"recDynLinkClear: rngBufPut error");
+    } else {
+	if(rngBufPut(outRingQ,(void *)&cmd,sizeof(cmd)) != sizeof(cmd))
+	    errMessage(0,"recDynLinkClear: rngBufPut error");
+    }
+    precDynLink->pdynLinkPvt = NULL;
     return(0);
 }
-
+
 long recDynLinkConnectionStatus(recDynLink *precDynLink)
 {
     dynLinkPvt  *pdynLinkPvt;
@@ -157,7 +211,7 @@ long recDynLinkConnectionStatus(recDynLink *precDynLink)
     status = (ca_state(pdynLinkPvt->chid)==cs_conn) ? 0 : -1;
     return(status);
 }
-
+
 long recDynLinkGetNelem(recDynLink *precDynLink,size_t *nelem)
 {
     dynLinkPvt  *pdynLinkPvt;
@@ -174,7 +228,7 @@ long recDynLinkGetControlLimits(recDynLink *precDynLink,
     dynLinkPvt  *pdynLinkPvt;
 
     pdynLinkPvt = precDynLink->pdynLinkPvt;
-    if(!pdynLinkPvt->getCompleted) return(-1);
+    if(pdynLinkPvt->state!=stateConnected) return(-1);
     if(low) *low = pdynLinkPvt->controlLow;
     if(high) *high = pdynLinkPvt->controlHigh;
     return(0);
@@ -186,18 +240,18 @@ long recDynLinkGetGraphicLimits(recDynLink *precDynLink,
     dynLinkPvt  *pdynLinkPvt;
 
     pdynLinkPvt = precDynLink->pdynLinkPvt;
-    if(!pdynLinkPvt->getCompleted) return(-1);
+    if(pdynLinkPvt->state!=stateConnected) return(-1);
     if(low) *low = pdynLinkPvt->graphicLow;
     if(high) *high = pdynLinkPvt->graphHigh;
     return(0);
 }
-
+
 long recDynLinkGetPrecision(recDynLink *precDynLink,int *prec)
 {
     dynLinkPvt  *pdynLinkPvt;
 
     pdynLinkPvt = precDynLink->pdynLinkPvt;
-    if(!pdynLinkPvt->getCompleted) return(-1);
+    if(pdynLinkPvt->state!=stateConnected) return(-1);
     if(prec) *prec = pdynLinkPvt->precision;
     return(0);
 }
@@ -208,37 +262,11 @@ long recDynLinkGetUnits(recDynLink *precDynLink,char *units,int maxlen)
     int		maxToCopy;
 
     pdynLinkPvt = precDynLink->pdynLinkPvt;
-    if(!pdynLinkPvt->getCompleted) return(-1);
+    if(pdynLinkPvt->state!=stateConnected) return(-1);
     maxToCopy = MAX_UNITS_SIZE;
     if(maxlen<maxToCopy) maxToCopy = maxlen;
     strncpy(units,pdynLinkPvt->units,maxToCopy);
     if(maxToCopy<maxlen) units[maxToCopy] = '\0';
-    return(0);
-}
-
-long recDynLinkAddInput(recDynLink *precDynLink,
-	recDynCallback monitorCallback,short dbrType,size_t nRequest)
-{
-    dynLinkPvt	*pdynLinkPvt;
-    ringBufCmd	cmd;
-
-    FASTLOCK(&lock);
-    pdynLinkPvt = precDynLink->pdynLinkPvt;
-    if(!pdynLinkPvt) {
-	printf("recDynLinkAddInput. recDynLinkSearch was never called\n");
-	taskSuspend(0);
-    }
-    pdynLinkPvt->monitorCallback = monitorCallback;
-    pdynLinkPvt->dbrType = dbrType;
-    pdynLinkPvt->nRequest = nRequest;
-    if(nRequest>0)
-	pdynLinkPvt->pbuffer = calloc(nRequest,dbr_size[dbrType]);
-    cmd.precDynLink = precDynLink;
-    cmd.cmd = cmdAddInput;
-    if(rngBufPut(ringQ,(void *)&cmd,sizeof(cmd)) != sizeof(cmd))
-		errMessage(0,"recDynLinkAddMonitor: rngBufPut error");
-    semGive(wakeUpSem);
-    FASTUNLOCK(&lock);
     return(0);
 }
 
@@ -249,67 +277,78 @@ long recDynLinkGet(recDynLink *precDynLink,void *pbuffer,size_t *nRequest,
     long	caStatus;
 
     pdynLinkPvt = precDynLink->pdynLinkPvt;
-    FASTLOCK(&pdynLinkPvt->lock);
     caStatus = (ca_state(pdynLinkPvt->chid)==cs_conn) ? 0 : -1;
     if(caStatus) goto all_done;
     if(*nRequest > pdynLinkPvt->nRequest) {
 	*nRequest = pdynLinkPvt->nRequest;
     }
+    FASTLOCK(&pdynLinkPvt->lock);
     memcpy(pbuffer,pdynLinkPvt->pbuffer,
 	(*nRequest * dbr_size[mapNewToOld[pdynLinkPvt->dbrType]]));
     if(timestamp) *timestamp = pdynLinkPvt->timestamp; /*array copy*/
     if(status) *status = pdynLinkPvt->status;
     if(severity) *severity = pdynLinkPvt->severity;
-all_done:
     FASTUNLOCK(&pdynLinkPvt->lock);
+all_done:
     return(caStatus);
 }
 
-long recDynLinkPut(recDynLink *precDynLink,
-	short dbrType,void *pbuffer,size_t nRequest)
+long recDynLinkPut(recDynLink *precDynLink,void *pbuffer,size_t nRequest)
 {
     dynLinkPvt	*pdynLinkPvt;
     long	status;
     ringBufCmd	cmd;
 
-    FASTLOCK(&lock);
     pdynLinkPvt = precDynLink->pdynLinkPvt;
-    status = (ca_state(pdynLinkPvt->chid)==cs_conn) ? 0 : -1;
-    if(status) goto all_done;
-    if(nRequest!=pdynLinkPvt->nRequest
-    || dbrType!=pdynLinkPvt->dbrType) {
-	free(pdynLinkPvt->pbuffer);
-	pdynLinkPvt->pbuffer = calloc(nRequest,dbr_size[mapNewToOld[dbrType]]);
-	pdynLinkPvt->dbrType = dbrType;
-	pdynLinkPvt->nRequest = nRequest;
+    if(pdynLinkPvt->io!=ioOutput || pdynLinkPvt->state!=stateConnected) {
+	status = -1;
+    } else {
+	status = (ca_state(pdynLinkPvt->chid)==cs_conn) ? 0 : -1;
     }
+    if(status) goto all_done;
+    if(pdynLinkPvt->scalar) nRequest = 1;
+    if(nRequest>ca_element_count(pdynLinkPvt->chid))
+	nRequest = ca_element_count(pdynLinkPvt->chid);
+    pdynLinkPvt->nRequest = nRequest;
     memcpy(pdynLinkPvt->pbuffer,pbuffer,
-	(nRequest * dbr_size[mapNewToOld[dbrType]]));
-    cmd.precDynLink = precDynLink;
+	(nRequest * dbr_size[mapNewToOld[pdynLinkPvt->dbrType]]));
+    cmd.data.precDynLink = precDynLink;
     cmd.cmd = cmdPut;
-    if(rngBufPut(ringQ,(void *)&cmd,sizeof(cmd)) != sizeof(cmd))
-	errMessage(0,"recDynLinkPut: rngBufPut error");
+    if(rngBufPut(outRingQ,(void *)&cmd,sizeof(cmd)) != sizeof(cmd))
+	    errMessage(0,"recDynLinkPut: rngBufPut error");
     semGive(wakeUpSem);
 all_done:
-    FASTUNLOCK(&lock);
+    return(status);
 }
 
-LOCAL void recDynLinkStart(void)
+LOCAL void recDynLinkStartInput(void)
 {
-    FASTLOCKINIT(&lock);
-    if((wakeUpSem=semBCreate(SEM_Q_FIFO,SEM_EMPTY))==NULL)
-	errMessage(0,"semBcreate failed in recDynLinkStart");
-    if((ringQ = rngCreate(sizeof(ringBufCmd) * recDynLinkQsize)) == NULL) {
+    if((inpRingQ = rngCreate(sizeof(ringBufCmd) * recDynLinkQsize)) == NULL) {
 	errMessage(0,"recDynLinkStart failed");
 	exit(1);
     }
-    taskid = taskSpawn("recDynLink",CA_CLIENT_PRI-1,VX_FP_TASK,
-	CA_CLIENT_STACK,(FUNCPTR)recDynLinkTask,0,0,0,0,0,0,0,0,0,0);
-    if(taskid==ERROR) {
-	errMessage(0,"recDynLinkStart: taskSpawn Failure\n");
+    inpTaskId = taskSpawn("recDynINP",CA_CLIENT_PRI-1,VX_FP_TASK,
+	CA_CLIENT_STACK,(FUNCPTR)recDynLinkInp,0,0,0,0,0,0,0,0,0,0);
+    if(inpTaskId==ERROR) {
+	errMessage(0,"recDynLinkStartInput: taskSpawn Failure\n");
     }
 }
 
+LOCAL void recDynLinkStartOutput(void)
+{
+    if((wakeUpSem=semBCreate(SEM_Q_FIFO,SEM_EMPTY))==NULL)
+	errMessage(0,"semBcreate failed in recDynLinkStart");
+    if((outRingQ = rngCreate(sizeof(ringBufCmd) * recDynLinkQsize)) == NULL) {
+	errMessage(0,"recDynLinkStartOutput failed");
+	exit(1);
+    }
+    outTaskId = taskSpawn("recDynOUT",CA_CLIENT_PRI-1,VX_FP_TASK,
+	CA_CLIENT_STACK,(FUNCPTR)recDynLinkOut,0,0,0,0,0,0,0,0,0,0);
+    if(outTaskId==ERROR) {
+	errMessage(0,"recDynLinkStart: taskSpawn Failure\n");
+    }
+}
+
 LOCAL void connectCallback(struct connection_handler_args cha)
 {
     chid	chid = cha.chid;
@@ -319,12 +358,12 @@ LOCAL void connectCallback(struct connection_handler_args cha)
     precDynLink = (recDynLink *)ca_puser(cha.chid);
     pdynLinkPvt = precDynLink->pdynLinkPvt;
     if(ca_state(chid)==cs_conn) {
+	pdynLinkPvt->state = stateGetting;
 	SEVCHK(ca_get_callback(DBR_CTRL_DOUBLE,chid,getCallback,precDynLink),
 		"ca_get_callback");
     } else {
 	if(pdynLinkPvt->searchCallback)
 		(pdynLinkPvt->searchCallback)(precDynLink);
-	pdynLinkPvt->getCompleted=FALSE;
     }
 }
 
@@ -333,16 +372,32 @@ LOCAL void getCallback(struct event_handler_args eha)
     struct dbr_ctrl_double	*pdata = (struct dbr_ctrl_double *)eha.dbr;
     recDynLink			*precDynLink;
     dynLinkPvt			*pdynLinkPvt;
+    size_t			nRequest;
     
-    precDynLink = (recDynLink *)eha.usr;
+    precDynLink = (recDynLink *)ca_puser(eha.chid);
     pdynLinkPvt = precDynLink->pdynLinkPvt;
+    pdynLinkPvt->state = stateConnected;
     pdynLinkPvt -> graphicLow = pdata->lower_disp_limit;
     pdynLinkPvt -> graphHigh = pdata->upper_disp_limit;
     pdynLinkPvt -> controlLow = pdata->lower_ctrl_limit;
     pdynLinkPvt -> controlHigh = pdata->upper_ctrl_limit;
     pdynLinkPvt -> precision = pdata->precision;
     strncpy(pdynLinkPvt->units,pdata->units,MAX_UNITS_SIZE);
-    pdynLinkPvt->getCompleted = TRUE;
+    if(pdynLinkPvt->scalar) {
+	pdynLinkPvt->nRequest = 1;
+    } else {
+	pdynLinkPvt->nRequest = ca_element_count(pdynLinkPvt->chid);
+    }
+    nRequest = pdynLinkPvt->nRequest;
+    pdynLinkPvt->pbuffer = calloc(nRequest,dbr_size[pdynLinkPvt->dbrType]);
+    if(pdynLinkPvt->io==ioInput) {
+	SEVCHK(ca_add_array_event(
+	    dbf_type_to_DBR_TIME(mapNewToOld[pdynLinkPvt->dbrType]),
+	    pdynLinkPvt->nRequest,
+	    pdynLinkPvt->chid,monitorCallback,precDynLink,
+	    0.0,0.0,0.0,
+	    &pdynLinkPvt->evid),"ca_add_array_event");
+    }
     if(pdynLinkPvt->searchCallback) (pdynLinkPvt->searchCallback)(precDynLink);
 }
 
@@ -356,7 +411,7 @@ LOCAL void monitorCallback(struct event_handler_args eha)
     void	*pdata;
     short	timeType;
     
-    precDynLink = (recDynLink *)eha.usr;
+    precDynLink = (recDynLink *)ca_puser(eha.chid);
     pdynLinkPvt = precDynLink->pdynLinkPvt;
     if(pdynLinkPvt->pbuffer) {
 	FASTLOCK(&pdynLinkPvt->lock);
@@ -376,7 +431,7 @@ LOCAL void monitorCallback(struct event_handler_args eha)
 	(*pdynLinkPvt->monitorCallback)(precDynLink);
 }
     
-LOCAL void recDynLinkTask(void)
+LOCAL void recDynLinkInp(void)
 {
     int		status;
     recDynLink	*precDynLink;
@@ -387,37 +442,73 @@ LOCAL void recDynLinkTask(void)
     taskwdInsert(taskIdSelf(),NULL,NULL);
     SEVCHK(ca_task_initialize(),"ca_task_initialize");
     while(TRUE) {
-	semTake(wakeUpSem,sysClkRateGet()/10);
-	while (rngNBytes(ringQ)>=sizeof(cmd) && interruptAccept){
-	    if(rngBufGet(ringQ,(void *)&cmd,sizeof(cmd))
+	while (rngNBytes(inpRingQ)>=sizeof(cmd) && interruptAccept){
+	    if(rngBufGet(inpRingQ,(void *)&cmd,sizeof(cmd))
 	    !=sizeof(cmd)) {
 		errMessage(0,"recDynLinkTask: rngBufGet error");
 		continue;
 	    }
-    	    FASTLOCK(&lock);
-	    precDynLink = cmd.precDynLink;
-	    pdynLinkPvt = precDynLink->pdynLinkPvt;
-	    FASTUNLOCK(&lock);
-	    switch(cmd.cmd) {
-	    case(cmdSearch) :
-		SEVCHK(ca_build_and_connect(pdynLinkPvt->pvname,
-		    TYPENOTCONN,0,&pdynLinkPvt->chid,
-		    NULL,connectCallback,precDynLink),
-		    "ca_build_and_connect");
-		break;
-	    case(cmdClear):
-		SEVCHK(ca_clear_channel(pdynLinkPvt->chid),
+	    if(cmd.cmd==cmdClear) {
+		pdynLinkPvt = cmd.data.pdynLinkPvt;
+		if(pdynLinkPvt->chid)
+		    SEVCHK(ca_clear_channel(pdynLinkPvt->chid),
 			"ca_clear_channel");
 		free(pdynLinkPvt->pbuffer);
+		free((void *)pdynLinkPvt);
+		continue;
+	    }
+	    precDynLink = cmd.data.precDynLink;
+	    pdynLinkPvt = precDynLink->pdynLinkPvt;
+	    switch(cmd.cmd) {
+	    case(cmdSearch) :
+		SEVCHK(ca_search_and_connect(pdynLinkPvt->pvname,
+		    &pdynLinkPvt->chid, connectCallback,precDynLink),
+		    "ca_search_and_connect");
+		break;
+	    default:
+		epicsPrintf("Logic error statement in recDynLinkTask\n");
+	    }
+	}
+	status = ca_pend_event(.1);
+	if(status!=ECA_NORMAL && status!=ECA_TIMEOUT)
+	    SEVCHK(status,"ca_pend_event");
+    }
+}
+
+LOCAL void recDynLinkOut(void)
+{
+    int		status;
+    recDynLink	*precDynLink;
+    dynLinkPvt	*pdynLinkPvt;
+    ringBufCmd	cmd;
+    int		caStatus;
+
+    taskwdInsert(taskIdSelf(),NULL,NULL);
+    SEVCHK(ca_task_initialize(),"ca_task_initialize");
+    while(TRUE) {
+	semTake(wakeUpSem,sysClkRateGet()/10);
+	while (rngNBytes(outRingQ)>=sizeof(cmd) && interruptAccept){
+	    if(rngBufGet(outRingQ,(void *)&cmd,sizeof(cmd))
+	    !=sizeof(cmd)) {
+		errMessage(0,"recDynLinkTask: rngBufGet error");
+		continue;
+	    }
+	    if(cmd.cmd==cmdClear) {
+		pdynLinkPvt = cmd.data.pdynLinkPvt;
+		if(pdynLinkPvt->chid)
+		    SEVCHK(ca_clear_channel(pdynLinkPvt->chid),
+			"ca_clear_channel");
 		free(pdynLinkPvt->pbuffer);
 		free((void *)pdynLinkPvt);
-		precDynLink->pdynLinkPvt = NULL;
-		break;
-	    case(cmdAddInput) :
-		SEVCHK(ca_add_event(
-		    dbf_type_to_DBR_TIME(mapNewToOld[pdynLinkPvt->dbrType]),
-		    pdynLinkPvt->chid,monitorCallback,precDynLink,
-		    &pdynLinkPvt->evid),"ca_add_event");
+		continue;
+	    }
+	    precDynLink = cmd.data.precDynLink;
+	    pdynLinkPvt = precDynLink->pdynLinkPvt;
+	    switch(cmd.cmd) {
+	    case(cmdSearch) :
+		SEVCHK(ca_search_and_connect(pdynLinkPvt->pvname,
+		    &pdynLinkPvt->chid, connectCallback,precDynLink),
+		    "ca_search_and_connect");
 		break;
 	    case(cmdPut) :
 		caStatus = ca_array_put(
@@ -437,154 +528,4 @@ LOCAL void recDynLinkTask(void)
 	if(status!=ECA_NORMAL && status!=ECA_TIMEOUT)
 	    SEVCHK(status,"ca_pend_event");
     }
-}
-
-/*The remainder of this source module is test code */
-typedef struct userPvt {
-    int		testingInput;
-    char	*pvname;
-    double	*pbuffer;
-    size_t	nRequest;
-}userPvt;
-
-LOCAL void mymonitorCallback(recDynLink *precDynLink)
-{
-    userPvt	*puserPvt;
-    long	status;
-    size_t	nRequest;
-    TS_STAMP	timestamp;
-    short	AlarmStatus,AlarmSeverity;
-    int		i;
-    char	timeStr[40];
-
-    puserPvt = (userPvt *)precDynLink->puserPvt;
-    printf("mymonitorCallback: %s\n",puserPvt->pvname);
-    if(recDynLinkConnectionStatus(precDynLink)!=0) {
-	printf(" not connected\n");
-	return;
-    }
-    nRequest = puserPvt->nRequest;
-    status = recDynLinkGet(precDynLink,puserPvt->pbuffer,&nRequest,
-	&timestamp,&AlarmStatus,&AlarmSeverity);
-    if(status) {
-	printf("recDynLinkGet returned illegal status\n");
-	return;
-    }
-    tsStampToText(&timestamp,TS_TEXT_MMDDYY,timeStr);
-    printf("date %s status %hd severity %hd ",
-	timeStr,AlarmStatus,AlarmSeverity);
-    for(i=0; i<puserPvt->nRequest; i++) {
-	printf(" %f",puserPvt->pbuffer[i]);
-    }
-    printf("\n");
-}
-
-LOCAL void mysearchCallback(recDynLink *precDynLink)
-{
-    userPvt	*puserPvt;
-    size_t	nelem;
-    double	controlLow,controlHigh;
-    double	graphicLow,graphicHigh;
-    int		prec;
-    char	units[20];
-    long	status;
-
-    puserPvt = (userPvt *)precDynLink->puserPvt;
-    printf("mysearchCallback: %s ",puserPvt->pvname);
-    if(recDynLinkConnectionStatus(precDynLink)==0) {
-	printf("connected\n");
-	status = recDynLinkGetNelem(precDynLink,&nelem);
-	if(status) {
-	    printf("recDynLinkGetNelem failed\n");
-	}else{
-	    printf("nelem = %u\n",nelem);
-	}
-	status=recDynLinkGetControlLimits(precDynLink,&controlLow,&controlHigh);
-	if(status) {
-	    printf("recDynLinkGetControlLimits failed\n");
-	}else{
-	    printf("controlLow %f controlHigh %f\n",controlLow,controlHigh);
-	}
-	status=recDynLinkGetGraphicLimits(precDynLink,&graphicLow,&graphicHigh);
-	if(status) {
-	    printf("recDynLinkGetGraphicLimits failed\n");
-	}else{
-	    printf("graphicLow %f graphicHigh %f\n",graphicLow,graphicHigh);
-	}
-	status = recDynLinkGetPrecision(precDynLink,&prec);
-	if(status) {
-	    printf("recDynLinkGetPrecision failed\n");
-	}else{
-	    printf("prec = %d\n",prec);
-	}
-	status = recDynLinkGetUnits(precDynLink,units,20);
-	if(status) {
-	    printf("recDynLinkGetUnits failed\n");
-	}else{
-	    printf("units = %s\n",units);
-	}
-	if(puserPvt->testingInput) {
-	    status = recDynLinkAddInput(precDynLink,mymonitorCallback,
-		newDBR_DOUBLE, puserPvt->nRequest);
-	    if(status) printf("recDynLinkAddInput failed\n");
-	}
-    } else {
-	printf(" not connected\n");
-    }
-}
-
-LOCAL recDynLink getDynlink = {NULL,NULL};
-LOCAL recDynLink putDynlink = {NULL,NULL};
-
-int recDynTestInput(char *pvname,int nRequest)
-{
-    userPvt	*puserPvt= getDynlink.puserPvt;
-    long	status;
-
-    if(puserPvt) {
-	free(puserPvt->pbuffer);
-	free(getDynlink.puserPvt);
-	getDynlink.puserPvt = NULL;
-	recDynLinkClear(&getDynlink);
-    }
-    getDynlink.puserPvt = puserPvt = (userPvt *)calloc(1,sizeof(userPvt));
-    puserPvt->pbuffer = calloc(nRequest,sizeof(double));
-    puserPvt->nRequest = nRequest;
-    puserPvt->pvname = pvname;
-    puserPvt->testingInput = TRUE;
-    status = recDynLinkSearch(&getDynlink,pvname,mysearchCallback,FALSE);
-    if(status) return(status);
-    return(status);
-}
-
-int recDynTestNewOutput(char *pvname,int nRequest)
-{
-    userPvt	*puserPvt= putDynlink.puserPvt;
-    long	status;
-
-    if(puserPvt) {
-	free(puserPvt->pbuffer);
-	free(putDynlink.puserPvt);
-	putDynlink.puserPvt = NULL;
-	recDynLinkClear(&putDynlink);
-    }
-    putDynlink.puserPvt = puserPvt = (userPvt *)calloc(1,sizeof(userPvt));
-    puserPvt->pbuffer = calloc(nRequest,sizeof(double));
-    puserPvt->nRequest = nRequest;
-    puserPvt->pvname = pvname;
-    puserPvt->testingInput = FALSE;
-    status = recDynLinkSearch(&putDynlink,pvname,mysearchCallback,FALSE);
-    return(status);
-}
-
-int recDynTestOutput(int startValue)
-{
-    userPvt	*puserPvt= putDynlink.puserPvt;
-    long	status;
-    int		i;
-
-    for(i=0; i<puserPvt->nRequest; i++) puserPvt->pbuffer[i] = startValue + i;
-    status = recDynLinkPut(&putDynlink,newDBR_DOUBLE,puserPvt->pbuffer,
-	puserPvt->nRequest);
-    return(status);
 }

@@ -46,6 +46,7 @@ SRCS.c += ../recTimer.c
 SRCS.c += ../recWait.c
 SRCS.c += ../recWaitCa.c
 SRCS.c += ../recDynLink.c
+SRCS.c += ../recDynLinkTest.c
 SRCS.c += ../recWaveform.c
 
 #	LIBOBJS += recAai.o
@@ -90,6 +91,7 @@ LIBOBJS += recTimer.o
 LIBOBJS += recWait.o
 LIBOBJS += recWaitCa.o
 LIBOBJS += recDynLink.o
+LIBOBJS += recDynLinkTest.o
 LIBOBJS += recWaveform.o
 
 LIBNAME = recSup

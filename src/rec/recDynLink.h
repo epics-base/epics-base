@@ -8,8 +8,15 @@ typedef struct recDynLink{
 } recDynLink;
 typedef void (*recDynCallback)(recDynLink *);
 
-long recDynLinkSearch(recDynLink *precDynLink,char *pvname,
-	recDynCallback searchCallback,int dbOnly);
+#define rdlDBONLY	0x1
+#define rdlSCALAR	0x2
+
+long recDynLinkAddInput(recDynLink *precDynLink,char *pvname,
+	short dbrType,int options,
+	recDynCallback searchCallback,recDynCallback monitorCallback);
+long recDynLinkAddOutput(recDynLink *precDynLink,char *pvname,
+	short dbrType,int options,
+	recDynCallback searchCallback);
 long recDynLinkClear(recDynLink *precDynLink);
 /*The following routine returns (0,-1) for (connected,not connected)*/
 long recDynLinkConnectionStatus(recDynLink *precDynLink);
@@ -24,14 +31,10 @@ long recDynLinkGetGraphicLimits(recDynLink *precDynLink,
 long recDynLinkGetPrecision(recDynLink *precDynLink,int *prec);
 long recDynLinkGetUnits(recDynLink *precDynLink,char *units,int maxlen);
 
-/*Each recDynLink allows either recDynLinkAddInput or recDynLinkPut NOT BOTH*/
-long recDynLinkAddInput(recDynLink *precDynLink,
-	recDynCallback monitorCallback,short dbrType,size_t nRequest);
-/*recDynLinkAddInput MUST be called before recDynLinkGet works*/
+/*get only valid mfor rdlINPUT. put only valid for rdlOUTPUT*/
 long recDynLinkGet(recDynLink *precDynLink,
 	void *pbuffer, size_t *nRequest,
 	TS_STAMP *timestamp,short *status,short *severity);
-long recDynLinkPut(recDynLink *precDynLink,
-	short dbrType,void *pbuffer,size_t nRequest);
+long recDynLinkPut(recDynLink *precDynLink,void *pbuffer,size_t nRequest);
 
 #endif /*INCrecDynLinkh*/

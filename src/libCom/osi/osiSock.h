@@ -34,6 +34,7 @@
 #define osiSockh
 
 #include "shareLib.h"
+#include "ellLib.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -100,14 +101,59 @@ epicsShareFunc void epicsShareAPI bsdSockRelease(void);
  */
 epicsShareFunc const char * epicsShareAPI convertSocketErrorToString (int errnoIn);
 
-#ifdef _WIN32
-epicsShareFunc unsigned epicsShareAPI wsaMajorVersion(void);
-#endif
-
 #ifdef __cplusplus
 }
 #endif
 
 #include "osdSock.h"
+
+typedef union osiSockAddr {
+    struct sockaddr_in  ia;
+    struct sockaddr     sa;
+} osiSockAddr;
+
+typedef struct osiSockAddrNode {
+    ELLNODE node;
+    osiSockAddr addr;
+} osiSockAddrNode;
+
+/*
+ *  osiSockDiscoverBroadcastAddresses ()
+ *  Returns the broadcast addresses of each network interface found.
+ *
+ *	This routine is provided with the address of an ELLLIST, a socket,
+ * 	a destination port number, and a match address. When the 
+ * 	routine returns there will be one additional entry 
+ *	(an osiSockAddrNode) in the list for each network interface found that 
+ *	is up and isnt a loop back interface (match addr is INADDR_ANY),
+ *	or only the interfaces that match the specified addresses (match addr 
+ *  is other than INADDR_ANY). If the interface supports broadcasting 
+ *  then add its broadcast address to the list. If the interface is a 
+ *  point to point link then add the destination address of the point to
+ *	point link to the list. 
+ *
+ * 	Any mutex locking required to protect pList is applied externally.
+ *
+ */
+epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
+     (ELLLIST *pList, SOCKET socket, const osiSockAddr *pMatchAddr);
+
+/*
+ * osiLocalAddr ()
+ * Returns the osiSockAddr of the first non-loopback interface found
+ * that is operational (up flag is set). If no valid address can be 
+ * located then return an osiSockAddr with the address family set to 
+ * unspecified (AF_UNSPEC).
+ *
+ * Unfortunately in EPICS 3.13 beta 11 and before the CA
+ * repeater would not always allow the loopback address
+ * as a local client address so current clients alternate
+ * between the address of the first non-loopback interface
+ * found and the loopback addresss when subscribing with 
+ * the CA repeater until all CA repeaters have been updated
+ * to current code. After all CA repeaters have been restarted 
+ * this osi interface can be eliminated.
+ */
+epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket);
 
 #endif /* ifndef osiSockh */

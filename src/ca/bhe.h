@@ -39,6 +39,7 @@ class tcpiiu;
 class bhe : public tsSLNode < bhe >, public inetAddrID {
 public:
     epicsShareFunc bhe ( const epicsTime &initialTimeStamp, const inetAddrID &addr );
+    epicsShareFunc ~bhe (); 
     epicsShareFunc void destroy ();
     epicsShareFunc bool updatePeriod ( const epicsTime & programBeginTime, 
                         const epicsTime & currentTime, unsigned beaconNumber, 
@@ -49,8 +50,6 @@ public:
     epicsShareFunc void unregisterIIU ( tcpiiu & );
     epicsShareFunc void * operator new ( size_t size );
     epicsShareFunc void operator delete ( void *pCadaver, size_t size );
-protected:
-    epicsShareFunc ~bhe (); // force allocation from freeList
 private:
     tsDLList < tcpiiu > iiuList;
     epicsTime timeStamp;

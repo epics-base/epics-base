@@ -30,8 +30,8 @@
 // and therefore be executed only at compile time
 union endianTest {
 public:
-        endianTest () : uint ( true ) {}
-        bool littleEndian () const { return uchar[0]; }
+        endianTest () : uint ( 1 ) {}
+        bool littleEndian () const { return ( uchar[0] == 1 ); }
         bool bigEndian () const { return ! littleEndian(); }
 private:
         unsigned uint;

@@ -163,6 +163,10 @@ static void monitor(pstringin)
 	monitor_mask |= DBE_VALUE|DBE_LOG;
 	strncpy(pstringin->oval,pstringin->val,sizeof(pstringin->val));
     }
+    if (pstringin->mpst == stringinPOST_Always)
+	monitor_mask |= DBE_VALUE;
+    if (pstringin->apst == stringinPOST_Always)
+	monitor_mask |= DBE_LOG;
     if(monitor_mask)
 	db_post_events(pstringin,&(pstringin->val[0]),monitor_mask);
     return;

@@ -225,7 +225,7 @@ public:
 
 class cacServiceList {
 public:
-	cacServiceList ();
+	epicsShareFunc cacServiceList ();
     epicsShareFunc void registerService ( cacService &service );
     epicsShareFunc cacChannel * createChannel ( 
         const char *pName, cacChannelNotify &, 

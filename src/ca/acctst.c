@@ -662,9 +662,9 @@ void verifyClear ( appChan *pChans )
 }
 
 /*
- * performGrEnumTest
+ * grEnumTest
  */
-void performGrEnumTest ( chid chan )
+void grEnumTest ( chid chan )
 {
     struct dbr_gr_enum ge;
     unsigned count;
@@ -694,9 +694,9 @@ void performGrEnumTest ( chid chan )
 }
 
 /*
- * performCtrlDoubleTest
+ * ctrlDoubleTest
  */
-void performCtrlDoubleTest (chid chan)
+void ctrlDoubleTest (chid chan)
 {
     struct dbr_ctrl_double *pCtrlDbl;
     dbr_double_t *pDbl;
@@ -736,7 +736,7 @@ void performCtrlDoubleTest (chid chan)
     status = ca_array_put (DBR_DOUBLE,
                     ca_element_count(chan),
                     chan, pDbl);
-    SEVCHK (status, "performCtrlDoubleTest, ca_array_put");
+    SEVCHK (status, "ctrlDoubleTest, ca_array_put");
 
     size = dbr_size_n(DBR_CTRL_DOUBLE, ca_element_count(chan));
     pCtrlDbl = (struct dbr_ctrl_double *) malloc (size); 
@@ -748,7 +748,7 @@ void performCtrlDoubleTest (chid chan)
     status = ca_array_get (DBR_CTRL_DOUBLE,
                     ca_element_count(chan),
                     chan, pCtrlDbl);
-    SEVCHK (status, "performCtrlDoubleTest, ca_array_get");
+    SEVCHK (status, "ctrlDoubleTest, ca_array_get");
     status = ca_pend_io (30.0);
     assert (status==ECA_NORMAL);
 
@@ -2367,8 +2367,8 @@ int acctst ( char *pName, unsigned channelCount,
     arrayTest ( chan, maxArrayBytes ); 
     verifyMonitorSubscriptionFlushIO ( chan );
     monitorSubscriptionFirstUpdateTest ( pName, chan );
-    performGrEnumTest ( chan );
-    performCtrlDoubleTest ( chan );
+    grEnumTest ( chan );
+    ctrlDoubleTest ( chan );
     verifyBlockInPendIO ( chan );
     verifyAnalogIO ( chan, DBR_FLOAT, FLT_MIN, FLT_MAX, 
                FLT_MIN_EXP, FLT_MAX_EXP, FLT_EPSILON );

@@ -3,8 +3,8 @@
 #
 
 #
-# If you're not using BOOTP/DHCP to pick up your IOC network configuration
-# you may need to specify your Internet Domain Name here
+# If you're using neither BOOTP/DHCP nor FLASH to pick up your IOC
+# network configuration you must specify your Internet Domain Name here
 #
 OP_SYS_CFLAGS += -DRTEMS_NETWORK_CONFIG_DNS_DOMAINNAME=aps.anl.gov
 

@@ -1,4 +1,6 @@
-
+#
+# base $Id$
+#
 # "Diabolical" EPICS Makefile For Top-Level Subdirectory Recursions
 #    by Matthew Needes and Mike Bordua
 #
@@ -11,37 +13,39 @@ depends:
 	@echo "${T_ARCH}: DEPENDS"
 	@(for DIR in ${DIRS};					\
 		do						\
-			echo "${T_ARCH}: --$$DIR"; cd $$DIR;	\
-			${MAKE} ${MFLAGS};			\
+			(echo "${T_ARCH}: --$$DIR"; cd $$DIR;	\
+			${MAKE} ${MFLAGS} $@);			\
 		done)
 
 build_libs:
 	@echo "${T_ARCH}: BUILD LIBS"
 	@(for DIR in ${DIRS};					\
 		do						\
-			echo "${T_ARCH}: --$$DIR"; cd $$DIR;	\
-			${MAKE} ${MFLAGS};			\
+			(echo "${T_ARCH}: --$$DIR"; cd $$DIR;	\
+			${MAKE} ${MFLAGS} $@);			\
 		done)
 
 install_libs:
 	@echo "${T_ARCH}: INSTALL LIBS"
 	@(for DIR in ${DIRS};					\
 		do						\
-			echo "${T_ARCH}: --$$DIR"; cd $$DIR;	\
-			${MAKE} ${MFLAGS};			\
+			(echo "${T_ARCH}: --$$DIR"; cd $$DIR;	\
+			${MAKE} ${MFLAGS} $@);			\
 		done)
 
 build:
+	@echo "${T_ARCH}: BUILDING"
 	@(for DIR in ${DIRS};					\
 		do						\
-			echo "${T_ARCH}: --$$DIR"; cd $$DIR;	\
-			${MAKE} ${MFLAGS};			\
+			(echo "${T_ARCH}: --$$DIR"; cd $$DIR;	\
+			${MAKE} ${MFLAGS} $@);			\
 		done)
 
 install:
+	@echo "${T_ARCH}: INSTALLING"
 	@(for DIR in ${DIRS};					\
 		do						\
-			echo "${T_ARCH}: --$$DIR"; cd $$DIR;	\
-			${MAKE} ${MFLAGS};			\
+			(echo "${T_ARCH}: --$$DIR"; cd $$DIR;	\
+			${MAKE} ${MFLAGS} $@);			\
 		done)
 

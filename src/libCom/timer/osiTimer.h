@@ -44,23 +44,24 @@
 
 class osiTimerQueue;
 
-epicsShareExtern osiTimerQueue osiDefaultTimerQueue;
-
 /*
  * osiTimer
  */
-class osiTimer : public tsDLNode<osiTimer> {
+class osiTimer : public tsDLNode <osiTimer> {
 public:
     class noDelaySpecified {}; /* exception */
     class noMemory {}; /* exception */
 
     /*
-     * create an active timer that will expire delay seconds after it is created
-     * or create an inactive timer respectively
+     * Create an active timer that will expire delay seconds after it is created
+     * or create an inactive timer respectively. 
+     *
+     * ** Warning ** default timer queue has no manager thread and is typically
+     * processed by the file descriptor manager
      */
-    epicsShareFunc osiTimer (double delay, osiTimerQueue & queueIn);
-    epicsShareFunc osiTimer (double delay);
-    epicsShareFunc osiTimer (osiTimerQueue & queueIn);
+    epicsShareFunc osiTimer ( double delay, osiTimerQueue & queueIn );
+    epicsShareFunc osiTimer ( double delay);
+    epicsShareFunc osiTimer ( osiTimerQueue & queueIn );
     epicsShareFunc osiTimer ();
 
     /*
@@ -170,7 +171,12 @@ class osiTimerQueue {
 friend class osiTimer;
 friend class osiTimerThread;
 public:
-    epicsShareFunc osiTimerQueue (unsigned managerThreadPriority = threadPriorityMin);
+    enum managerThreadSelect { 
+        mtsNoManagerThread, // you must call the process method (or the fdManager) to expire timers
+        mtsCreateManagerThread // manager thread expires timers asnychronously
+    };
+    epicsShareFunc osiTimerQueue ( managerThreadSelect mts, 
+        unsigned managerThreadPriority = threadPriorityMin );
     epicsShareFunc virtual ~osiTimerQueue();
     epicsShareFunc double delayToFirstExpire () const; /* returns seconds */
     epicsShareFunc void process ();
@@ -188,7 +194,16 @@ private:
     bool exitFlag;
 
     void install (osiTimer &tmr, double delay);
+    void privateProcess ();
+    void terminateManagerThread ();
 };
+
+/*
+ * ** Warning ** 
+ * the default timer queue has no manager thread and is typically
+ * processed by the file descriptor manager
+ */
+epicsShareExtern osiTimerQueue osiDefaultTimerQueue;
 
 inline osiTime osiTimer::expirationDate () const
 {

@@ -49,7 +49,7 @@ private:
 //
 // default global timer queue
 //
-osiTimerQueue osiDefaultTimerQueue;
+osiTimerQueue osiDefaultTimerQueue ( osiTimerQueue::mtsNoManagerThread );
 
 //
 // osiTimer::osiTimer ()
@@ -244,7 +244,7 @@ void osiTimer::arm (double initialDelay)
     // create manager thread on demand so we dont have threads hanging
     // around that are not used
     //
-    if ( this->queue.pMgrThread == NULL ) {
+    if ( ! this->queue.terminateFlag && this->queue.pMgrThread == NULL ) {
         this->queue.pMgrThread = new osiTimerThread (this->queue, this->queue.mgrThreadPriority);
         if ( this->queue.pMgrThread == NULL ) {
             this->queue.mutex.unlock ();
@@ -410,10 +410,12 @@ double osiTimer::timeRemaining () const
 //
 // osiTimerQueue::osiTimerQueue ()
 //
-osiTimerQueue::osiTimerQueue (unsigned managerThreadPriority) :
-    pExpireTmr (0), pMgrThread(0), mgrThreadPriority(managerThreadPriority), 
-    inProcess (false), terminateFlag (false), exitFlag (false)
+epicsShareFunc osiTimerQueue::osiTimerQueue ( managerThreadSelect mts, 
+                              unsigned managerThreadPriority ) :
+    pExpireTmr (0), pMgrThread (0), mgrThreadPriority (managerThreadPriority), 
+    inProcess (false), exitFlag (false)
 {
+    this->terminateFlag = ( mts != mtsCreateManagerThread );
 }
 
 //
@@ -423,25 +425,7 @@ osiTimerQueue::~osiTimerQueue()
 {
 	osiTimer *pTmr;
 
-    if (this->pMgrThread) {
-        this->terminateFlag = true;
-        this->rescheduleEvent.signal ();
-        this->exitEvent.wait (0.1);
-        if ( ! this->exitFlag && ! this->pMgrThread->isSuspended () ) {
-            static const unsigned maxCount = 25;
-            static const double delay = 0.25;
-            unsigned count = 0;
-            printf ("waiting %f seconds for timer queue to shut down", 
-                delay * maxCount);
-            while ( ! this->exitFlag && ! this->pMgrThread->isSuspended () && count < 10) {
-                this->exitEvent.wait (delay);
-                printf (".");
-                count++;
-            }
-            printf ("\n");
-        }
-        delete this->pMgrThread;
-    }
+    this->terminateManagerThread ();
 
     this->mutex.lock ();
 
@@ -463,6 +447,34 @@ osiTimerQueue::~osiTimerQueue()
 }
 
 //
+// osiTimerQueue::terminateManagerThread ()
+//
+void osiTimerQueue::terminateManagerThread ()
+{
+    // stop current thread if started and
+    // prevent launching of thread in the future
+    this->terminateFlag = true;
+    if ( this->pMgrThread ) {
+        
+        this->rescheduleEvent.signal ();
+
+        while ( ! this->exitFlag && ! this->pMgrThread->isSuspended () ) {
+            this->exitEvent.wait ( 1.0 );
+        }
+
+        this->mutex.lock ();
+        if ( this->pMgrThread ) {
+            delete this->pMgrThread;
+            this->pMgrThread = 0;
+        }
+        this->mutex.unlock ();
+
+        // in case other threads are waiting here also
+        this->exitEvent.signal ();
+    }
+}
+
+//
 // osiTimerThread::osiTimerThread ()
 //
 osiTimerThread::osiTimerThread (osiTimerQueue &queueIn, unsigned priority) :
@@ -479,7 +491,7 @@ void osiTimerThread::entryPoint ()
 {
     queue.exitFlag = false;
     while ( ! queue.terminateFlag ) {
-        queue.process ();
+        queue.privateProcess ();
         double delay = queue.delayToFirstExpire ();
         queue.rescheduleEvent.wait ( delay );
     }
@@ -520,6 +532,13 @@ double osiTimerQueue::delayToFirstExpire () const
 // osiTimerQueue::process()
 //
 void osiTimerQueue::process ()
+{
+    if ( this->terminateFlag ) {
+        this->privateProcess ();
+    }
+}
+
+void osiTimerQueue::privateProcess ()
 {
 	osiTime cur ( osiTime::getCurrent () );
 	osiTimer *pTmr;
@@ -616,9 +635,9 @@ void osiTimerQueue::show(unsigned level) const
     this->mutex.unlock();
 }
 
-extern "C" epicsShareFunc osiTimerQueueId epicsShareAPI osiTimerQueueCreate (unsigned managerThreadPriority)
+extern "C" epicsShareFunc osiTimerQueueId epicsShareAPI osiTimerQueueCreate ( unsigned managerThreadPriority )
 {
-    return (osiTimerQueueId) new osiTimerQueue (managerThreadPriority);
+    return (osiTimerQueueId) new osiTimerQueue ( osiTimerQueue::mtsCreateManagerThread, managerThreadPriority );
 }
 
 class osiTimerForC : public osiTimer {

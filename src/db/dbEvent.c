@@ -159,79 +159,95 @@ int epicsShareAPI db_event_list (const char *pname, unsigned level)
 /*
  * dbel ()
  */
-int epicsShareAPI dbel (const char *pname, unsigned level)
+int epicsShareAPI dbel ( const char *pname, unsigned level )
 {
     DBADDR              addr;
     long                status;
     struct evSubscrip   *pevent;
     dbFldDes 		    *pdbFldDes;
 
-    status = dbNameToAddr (pname, &addr);
-    if (status!=0) {
-	    errMessage (status, " dbNameToAddr failed");
+    status = dbNameToAddr ( pname, &addr );
+    if ( status != 0 ) {
+	    errMessage ( status, " dbNameToAddr failed" );
         return DB_EVENT_ERROR;
     }
 
-    LOCKREC (addr.precord);
+    LOCKREC ( addr.precord );
 
-    pevent = (struct evSubscrip *) ellFirst (&addr.precord->mlis);
+    pevent = (struct evSubscrip *) ellFirst ( &addr.precord->mlis );
 
-    if (!pevent) {
-	    printf ("\"%s\": No monitor event subscriptions.\n", pname);
+    if ( ! pevent ) {
+	    printf ( "\"%s\": No PV event subscriptions ( monitors ).\n", pname );
         UNLOCKREC (addr.precord);
         return DB_EVENT_OK;
     }
 
-    printf ("Monitor Event Subscriptions\n");
+    printf ( "%u PV Event Subscriptions ( monitors ).\n",
+        ellCount ( &addr.precord->mlis ) );
 
-    while (pevent) {
+    while ( pevent ) {
 	    pdbFldDes = pevent->paddr->pfldDes;
 
-	    printf ("%4.4s", pdbFldDes->name);
+        if ( level > 0 ) {
+	        printf ( "%4.4s", pdbFldDes->name );
 
-        /* they should never see this one */
-        if (pevent->ev_que->evUser->queovr) {
-            printf (" !! joint event discard count=%d !!", 
-                pevent->ev_que->evUser->queovr);
-        }
-
-	    if (pevent->select & DBE_VALUE) printf(" VALUE");
-	    if (pevent->select & DBE_LOG) printf(" LOG");
-	    if (pevent->select & DBE_ALARM) printf(" ALARM");
-
-        if (level>0) {
-            if (pevent->npend) {
-                printf (" undelivered=%ld\n", pevent->npend);
+            /* they should never see this one */
+            if ( pevent->ev_que->evUser->queovr ) {
+                printf ( " !! joint event discard count=%d !!", 
+                    pevent->ev_que->evUser->queovr );
             }
 
-            if (pevent->nreplace) {
-                printf (" discarded by replacement=%ld\n", pevent->nreplace);
+	        printf ( " { " );
+	        if ( pevent->select & DBE_VALUE ) printf( "VALUE " );
+	        if ( pevent->select & DBE_LOG ) printf( "LOG " );
+	        if ( pevent->select & DBE_ALARM ) printf( "ALARM " );
+	        printf ( "}" );
+
+            if ( pevent->npend ) {
+                printf ( " undelivered=%ld", pevent->npend );
             }
-        }
 
-        if (level>1) {
-            printf (" task id=%p unused entries avail=%u", 
-                pevent->ev_que->evUser->taskid, RNGSPACE (pevent->ev_que));
-            if (!pevent->valque) {
-                printf (" queueing disabled");
+            if ( level > 1 ) {
+                unsigned nEntriesFree = RNGSPACE ( pevent->ev_que );
+                if ( nEntriesFree == 0u ) {
+                    printf ( " thread=%p queue full", 
+                        pevent->ev_que->evUser->taskid );
+                }
+                else if ( nEntriesFree == EVENTQUESIZE ) {
+                    printf ( " thread=%p queue empty", 
+                        pevent->ev_que->evUser->taskid );
+                }
+                else {
+                    printf ( " thread=%p unused entries=%u", 
+                        pevent->ev_que->evUser->taskid, nEntriesFree );
+                }
             }
-            printf (" joint duplicate count =%u\n", 
-                pevent->ev_que->nDuplicates);
+
+            if ( level > 2 ) {
+                if ( pevent->nreplace ) {
+                    printf (" discarded by replacement=%ld", pevent->nreplace);
+                }
+                if ( ! pevent->valque ) {
+                    printf (" queueing disabled" );
+                }
+                printf (" joint duplicate count =%u\n", 
+                    pevent->ev_que->nDuplicates );
+            }
+
+            if ( level > 3 ) {
+                printf ( " ev %p ev que %p ev user %p", 
+                    ( void * ) pevent, 
+                    ( void * ) pevent->ev_que, 
+                    ( void * ) pevent->ev_que->evUser );
+            }
+
+	        printf( "\n" );
         }
 
-        if (level>3) {
-            printf (" ev %p ev que %p ev user %p\n", 
-                ( void * )pevent, 
-                ( void * ) pevent->ev_que, 
-                ( void * ) pevent->ev_que->evUser );
-        }
-
-	    printf("\n");
-
-	    pevent = (struct evSubscrip *) ellNext (&pevent->node);
+	    pevent = (struct evSubscrip *) ellNext ( &pevent->node );
     }
 
-    UNLOCKREC (addr.precord);
+    UNLOCKREC ( addr.precord );
 
     return DB_EVENT_OK;
 }
@@ -728,24 +744,22 @@ LOCAL int event_read (struct event_que *ev_que)
     db_field_log *pfl;
     void (*user_sub) (void *user_arg, struct dbAddr *paddr, 
             int eventsRemaining, db_field_log *pfl);
-
-
     
     /*
      * evUser ring buffer must be locked for the multiple
      * threads writing/reading it
      */
-        LOCKEVQUE(ev_que)
+    LOCKEVQUE(ev_que)
         
     /*
      * if in flow control mode drain duplicates and then
      * suspend processing events until flow control
      * mode is over
      */
-        if (ev_que->evUser->flowCtrlMode && ev_que->nDuplicates==0u) {
+    if (ev_que->evUser->flowCtrlMode && ev_que->nDuplicates==0u) {
         UNLOCKEVQUE(ev_que);
             return DB_EVENT_OK;
-        }
+    }
     
     /*
      * Fetch fast register copy
@@ -873,9 +887,8 @@ LOCAL void event_task (void *pParm)
             (*evUser->extralabor_sub)(evUser->extralabor_arg);
         }
 
-        for(    ev_que= &evUser->firstque; 
-            ev_que; 
-            ev_que = ev_que->nextque){
+        for ( ev_que = &evUser->firstque; ev_que; 
+                ev_que = ev_que->nextque) {
             event_read (ev_que);
         }
 

@@ -18,23 +18,27 @@
 #ifndef searchTimerh  
 #define searchTimerh
 
+#include "epicsMutex.h"
 #include "epicsTimer.h"
 
 class udpiiu;
 
+class searchTimerMutex : public epicsMutex {
+};
+
 class searchTimer : private epicsTimerNotify {
 public:
-    searchTimer ( udpiiu &, epicsTimerQueue &, class udpMutex & );
+    searchTimer ( udpiiu &, epicsTimerQueue & );
     virtual ~searchTimer ();
     void notifySearchResponse ( unsigned short retrySeqNo, const epicsTime & currentTime );
     void resetPeriod ( double delayToNextTry );
     void show ( unsigned level ) const;
 private:
+    class searchTimerMutex mutex;
     epicsTime timeAtLastRetry;
     double period; /* period between tries */
     double roundTripDelayEstimate;
     epicsTimer & timer;
-    class udpMutex & mutex;
     udpiiu & iiu;
     unsigned framesPerTry; /* # of UDP frames per search try */
     unsigned framesPerTryCongestThresh; /* one half N tries w congest */

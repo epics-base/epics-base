@@ -68,7 +68,7 @@ udpiiu::udpiiu ( epicsTimerQueueActive & timerQueue, callbackMutex & cbMutex, ca
     // The udpiiu and the search timer share the same lock because
     // this is much more efficent with recursive locks. Also, access
     // to the udp's netiiu base list is protected.
-    pSearchTmr ( new searchTimer ( *this, timerQueue, this->mutex ) ),
+    pSearchTmr ( new searchTimer ( *this, timerQueue ) ),
     pRepeaterSubscribeTmr ( new repeaterSubscribeTimer ( *this, timerQueue ) ),
     repeaterPort ( 0 ),
     serverPort ( 0 ),
@@ -965,6 +965,8 @@ void udpiiu::beaconAnomalyNotify ()
 bool udpiiu::searchMsg ( unsigned short retrySeqNumber, unsigned & retryNoForThisChannel )
 {
     bool success;
+
+    epicsGuard < udpMutex> guard ( this->mutex );
 
     if ( nciu *pChan = this->channelList.get () ) {
         success = pChan->searchMsg ( *this, retrySeqNumber, retryNoForThisChannel );

@@ -2,5 +2,7 @@
 TOP = .
 include $(TOP)/config/CONFIG_APP
 DIRS += $(wildcard *App)
-DIRS += iocBoot
+DIRS += $(wildcard *app)
+DIRS += $(wildcard iocBoot)
+DIRS += $(wildcard iocboot)
 include $(TOP)/config/RULES_TOP

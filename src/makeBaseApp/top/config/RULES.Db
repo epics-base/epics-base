@@ -9,17 +9,9 @@ actionArchTargets = $(foreach action, $(ACTIONS) install,\
  
 all install :: inc buildInstall
 
-buildInstall: .DEPENDS dbd $(DBFROMSCH) $(DBFROMTEMPLATE) $(INDDBFROMTEMPLATE) $(PROD)
+buildInstall: .DEPENDS $(DBFROMSCH) $(DBFROMTEMPLATE) $(INDDBFROMTEMPLATE) $(PROD)
 
 inc build depends:
-
-$(TOP)/dbd:
-	$(MKDIR) $(TOP)/dbd
-
-dbd:	$(TOP)/dbd
-ifndef WIN32
-	ln -s $(TOP)/dbd dbd
-endif
 
 #### The following section is added to
 #### allow optimized databases to be built

@@ -2,10 +2,3 @@
 DIRS += $(wildcard ioc*)
 DIRS += $(wildcard as*)
 include $(EPICS_BASE)/config/RULES_DIRS
-buildInstall:: nfs.cmd
-
-nfs.cmd: nfsCommands
-	$(PERL) $(TOP)/config/makeNfsCommands.pl
-
-clean::
-	@$(RM) nfs.cmd

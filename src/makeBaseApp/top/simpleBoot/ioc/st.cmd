@@ -4,6 +4,8 @@
 
 < cdcmds
  
+#< nfsCommands
+
 cd appbin
 ld < iocCore
 ld < seq

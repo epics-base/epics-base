@@ -57,7 +57,9 @@ caServerI::caServerI (caServer &tool, unsigned nPV) :
     //
     beaconPeriod (CAServerMinBeaconPeriod),
     adapter (tool),
-    debugLevel (0u)
+    debugLevel (0u),
+    nEventsProcessed (0u),
+    nEventsPosted (0u)
 {
 	caStatus status;
 	double maxPeriod;

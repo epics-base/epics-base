@@ -169,6 +169,8 @@ INC += epicsReadline.h
 INC += epicsMessageQueue.h
 INC += epicsStdio.h
 
+INC += devLib.h
+
 SRCS += epicsThread.cpp
 SRCS += epicsMutex.cpp
 SRCS += epicsEvent.cpp
@@ -199,6 +201,11 @@ SRCS += osdProcess.c
 SRCS += osdNetIntf.c
 SRCS += osdMessageQueue.c
 
+SRCS_vxWorks += devLib.c
+SRCS_vxWorks += devLibOSD.c
+SRCS_RTEMS += devLib.c
+SRCS_RTEMS += devLibOSD.c
+
 SRC_DIRS += $(LIBCOM)/taskwd
 INC += taskwd.h
 SRCS += taskwd.c
@@ -228,6 +235,19 @@ SRCS_WIN32 += forceBadAllocException.cpp
 # For vxWorks a clock
 INC_vxWorks += iocClock.h
 SRCS_vxWorks += iocClock.c
+#For old vxWorks applications
+INC_vxWorks += camacLib.h
+INC_vxWorks += drvTS.h
+INC_vxWorks += epicsDynLink.h
+INC_vxWorks += module_types.h
+INC_vxWorks += task_params.h
+SRCS_vxWorks += drvTS.c
+SRCS_vxWorks += epicsDynLink.c
+SRCS_vxWorks += veclist.c
+SRCS_vxWorks += logMsgToErrlog.cpp
+
+#This forces the vxWorks compatibility stuff to be loaded
+OBJS_vxWorks = vxComLibrary
 
 #       Library to build:
 #       lib$(LIBRARY).a  or   ..dll/..exp/..lib
@@ -254,6 +274,7 @@ PROD_SYS_LIBS_WIN32 = ws2_32 advapi32
 
 #	for bldErrSymTbl:
 #
+ERR_S_FILES += $(TOP)/src/libCom/osi/devLib.h
 ERR_S_FILES += $(TOP)/src/as/asLib.h
 ERR_S_FILES += $(TOP)/src/db/dbAccessDefs.h
 ERR_S_FILES += $(TOP)/src/dbStatic/devSup.h

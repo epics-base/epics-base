@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.8  1996/08/05 23:22:57  jhill
+ * gddScaler => gddScalar
+ *
  * Revision 1.7  1996/08/05 19:26:51  jhill
  * doc
  *
@@ -116,8 +119,7 @@ inline caStatus casStrmClient::createChannel (const char *pName)
 	int		gddStatus;
 	gdd		*pCanonicalName;
 
-// set correct appl type here !!!!
-	pCanonicalName = new gddAtomic(0u, aitEnumString, 1u);
+	pCanonicalName = new gddScalar(gddAppType_name, aitEnumString);
 	if (!pCanonicalName) {
 		return S_cas_noMemory;
 	}
@@ -1058,6 +1060,11 @@ caStatus casStrmClient::eventAddAction ()
 		return S_cas_success;
 	}
 
+	//
+	// place monitor mask in correct byte order
+	//
+	pMonInfo->m_mask = ntohs (pMonInfo->m_mask);
+
 	if (pMonInfo->m_mask&DBE_VALUE) {
 		mask |= this->getCAS().getAdapter()->valueEventMask;
 	}
@@ -1566,15 +1573,15 @@ caStatus createDBRDD (unsigned dbrType, aitIndex dbrCount, gdd *&pDescRet)
 			pVal = pCont->getDD(valIndex);
 			assert (pVal);
 			gddStatus = pVal->setBound (0, 0u, dbrCount);
-			assert (gddStatus==0)
+			assert (gddStatus==0);
 		}
 		else if (pDescRet->isAtomic()) {
 			gddAtomic *pAtomic = (gddAtomic *) pDescRet;
 			gddStatus = pAtomic->setBound(0, 0u, dbrCount);
-			assert (gddStatus==0)
+			assert (gddStatus==0);
 		}
 		else {
-			assert(dbrCount==1u);
+			assert (dbrCount==1u);
 		}
 	}
 
@@ -1683,6 +1690,7 @@ casPVI *caServerI::createPV (gdd &name)
 {
         casPVI          *pPVI;
         caStatus        status;
+	aitString	*pNameStr;
 
 	//
 	// dont proceed unless its a valid PV name
@@ -1700,15 +1708,15 @@ casPVI *caServerI::createPV (gdd &name)
 	// way currently to test) it will prove fatal
 	// to the server
 	//
-	aitString aitStr(name);
-	stringId id (aitStr.string());
+	name.getRef(pNameStr);
+	stringId id (pNameStr->string());
 
         this->lock ();
 
         pPVI = this->stringResTbl.lookup (id);
 	if (!pPVI) {
         	casPV	*pPV;
-		pPV = (*this)->createPV (this->ctx, aitStr.string());
+		pPV = (*this)->createPV (this->ctx, pNameStr->string());
 		if (pPV) {
 			pPVI = (casPVI *) pPV;
 		}

@@ -310,7 +310,7 @@ void cac::show ( unsigned level ) const
 {
     ::printf ( "Channel Access Client Context at %p for user %s\n", 
         this, this->pUserName );
-    if (level > 0u ) {
+    if ( level > 0u ) {
         {
             osiAutoMutex autoMutex ( this->iiuListMutex );
 

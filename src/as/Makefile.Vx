@@ -5,8 +5,8 @@ include $(EPICS)/config/CONFIG_BASE
 USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
 
 SRCS.c = ../asDbLib.c ../asCa.c asLib.c
-OBJS = asDbLib.o asCa.o asLib.o
-PROD = asLibrary
+LIBOBJS = asDbLib.o asCa.o asLib.o
+LIBNAME = asLibrary
 
 include $(EPICS)/config/RULES.Vx
 
@@ -18,7 +18,4 @@ asLib.o: asLib_lex.c ../asLibRoutines.c
 clean::
 	@$(RM) asLib_lex.c asLib.c
 
-asLibrary : $(OBJS)
-	$(RM) $@
-	$(LINK.c) $@ $(OBJS) $(LDLIBS)
 

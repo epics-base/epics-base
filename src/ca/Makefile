@@ -70,7 +70,7 @@ LIBSRCS += comQueSend.cpp
 LIBSRCS += comBuf.cpp
 LIBSRCS += hostNameCache.cpp
 LIBSRCS += msgForMultiplyDefinedPV.cpp
-LIBSRCS += templateInstances.cpp
+LIBSRCS_vxWorks += templateInstances.cpp
 
 LIBRARY=ca
 

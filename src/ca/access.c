@@ -98,6 +98,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.74  1995/08/22  00:12:07  jhill
+ * *** empty log message ***
+ *
  * Revision 1.73  1995/08/14  19:26:10  jhill
  * epicsAPI => epicsShareAPI
  *
@@ -2727,6 +2730,7 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 		 * current time is only updated by
 		 * cac_select_io() if we specify
 		 * at least 1 usec to wait
+		 *
 		 */
 		if (remaining <= (1.0/USEC_PER_SEC)) {
 			if(early){

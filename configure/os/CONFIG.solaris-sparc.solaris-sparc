@@ -20,7 +20,7 @@ CPP = gcc -x c -E
 RANLIB =
 
 #Prepare the object code for profiling with prof. (YES or NO)
-PROFILE=YES
+PROFILE=NO
 
 # Configure OS vendor C compiler
 CONFORM_CFLAGS_ANSI = -Xa -v

@@ -213,7 +213,7 @@ static	int	pollInhibit[NIGPIB_NUM_LINKS][IBAPERLINK];
 struct  bbIbLink {
   struct ibLink		ibLink;		/* associated ibLink structure */
 
-  FAST_LOCK		syncLock;	/* used for syncronous I/O calls */
+  SEM_ID		syncSem;	/* used for syncronous I/O calls */
   struct bbIbLink	*next;		/* Next BitBus link structure in list */
 };
 
@@ -336,7 +336,7 @@ initGpib()
       pibregs->cfg2 = D_SFL | D_SC;	/* put board in operating mode */
 
       pNiLink[i]->ibregs = pibregs;
-      pNiLink[i]->ioSem = semCreate();
+      pNiLink[i]->ioSem = semBCreate(SEM_EMPTY, SEM_Q_PRIORITY);
       pNiLink[i]->watchDogId = wdCreate();
       pNiLink[i]->tmoLimit = defaultTimeout;
       pNiLink[i]->tmoFlag = 0;
@@ -1157,15 +1157,13 @@ struct ibLink *plink;
     printf("ibLinkInit(%08.8X): entered, type %d, link %d, bug %d\n", plink, plink->linkType, plink->linkId, plink->bug);
 
   plink->srqIntFlag = 0;	/* no srq ints set now */
-  plink->linkEventSem = semCreate();
+  plink->linkEventSem = semBCreate(SEM_EMPTY, SEM_Q_PRIORITY);
 
   lstInit(&(plink->hiPriList));		/* init the list as empty */
-  plink->hiPriSem = semCreate();
-  semGive(plink->hiPriSem);
+  plink->hiPriSem = semBCreate(SEM_FULL, SEM_Q_PRIORITY);
 
   lstInit(&(plink->loPriList));		/* init the list as empty */
-  plink->loPriSem = semCreate();
-  semGive(plink->loPriSem);
+  plink->loPriSem = semBCreate(SEM_FULL, SEM_Q_PRIORITY);
 
   plink->srqRing = rngCreate(SRQRINGSIZE * sizeof(struct srqStatus));
 
@@ -1853,7 +1851,7 @@ int     length;
   bytesRead = 0;
 
   bbdpvt.finishProc = NULL;             /* no callback, synchronous I/O mode */
-  bbdpvt.syncLock = &(pbbIbLink->syncLock);
+  bbdpvt.psyncSem = &(pbbIbLink->syncSem);
   bbdpvt.link = pibLink->linkId;
 
   bbdpvt.rxMsg.data = (unsigned char *) buffer;
@@ -1865,24 +1863,25 @@ int     length;
   bbdpvt.txMsg.length = 7;		/* send header only */
 
   bbdpvt.rxMsg.cmd = 0;			/* init for the while loop */
+  bbdpvt.status = BB_OK;
 
-  while (length && !(bbdpvt.rxMsg.cmd & (BB_IBSTAT_EOI|BB_IBSTAT_TMO)))
+  while (length && (bbdpvt.status == BB_OK) && (!(bbdpvt.rxMsg.cmd & (BB_IBSTAT_EOI|BB_IBSTAT_TMO))))
   {
     bbdpvt.rxMaxLen = length > BB_MAX_DAT_LEN ? BB_MAX_DAT_LEN+7 : length+7;
     bbdpvt.ageLimit = 10;
     (*(drvBitBus.qReq))(&bbdpvt, BB_Q_LOW);
-    FASTLOCK(bbdpvt.syncLock);                  /* wait for response */
+    semTake(*(bbdpvt.psyncSem), WAIT_FOREVER);	/* wait for response */
 
     if (ibDebug || bbibDebug)
     {
-      printf("bbGpibRead(): reading %02.2X >%.13s<\n", bbdpvt.rxMsg.cmd, bbdpvt.rxMsg.data);
+      printf("bbGpibRead(): %02.2X >%.13s< driver status 0x%02.2X\n", bbdpvt.rxMsg.cmd, bbdpvt.rxMsg.data, bbdpvt.status);
     }
     bbdpvt.txMsg.cmd = BB_IBCMD_READ;	/* in case have more reading to do */
     bbdpvt.rxMsg.data += bbdpvt.rxMsg.length - 7;
     length -= bbdpvt.rxMsg.length - 7;
     bytesRead += bbdpvt.rxMsg.length - 7;
   }
-  if (bbdpvt.rxMsg.cmd & BB_IBSTAT_TMO)
+  if ((bbdpvt.rxMsg.cmd & BB_IBSTAT_TMO) || (bbdpvt.status != BB_OK))
     return(ERROR);
   else
     return(bytesRead);
@@ -1913,7 +1912,7 @@ int     length;
   bytesSent = length;	/* we either get an error or send them all */
 
   bbdpvt.finishProc = NULL;             /* no callback, synchronous I/O mode */
-  bbdpvt.syncLock = &(pbbIbLink->syncLock);
+  bbdpvt.psyncSem = &(pbbIbLink->syncSem);
   bbdpvt.link = pibLink->linkId;
   bbdpvt.rxMaxLen = 7;                  /* only get the header back */
 
@@ -1924,6 +1923,7 @@ int     length;
   bbdpvt.txMsg.data = (unsigned char *) buffer;
 
   bbdpvt.rxMsg.cmd = 0;			/* Init for error checking */
+  bbdpvt.status = BB_OK;
 
  /* if more than BB_MAX_DAT_LEN bytes */
   more2GoCommand = BB_IBCMD_ADDR_WRITE | device;
@@ -1931,7 +1931,7 @@ int     length;
   /* if less than BB_MAX_DAT_LEN+1 bytes */
   lastCommand = BB_IBCMD_WRITE_XACT | device;	
 
-  while (length && !(bbdpvt.rxMsg.cmd & BB_IBSTAT_TMO))
+  while (length && (bbdpvt.status == BB_OK) && (!(bbdpvt.rxMsg.cmd & BB_IBSTAT_TMO)))
   {
     if (length > BB_MAX_DAT_LEN)
     {
@@ -1952,19 +1952,22 @@ int     length;
     {
       bcopy(bbdpvt.txMsg.data, dbugBuf, bbdpvt.txMsg.length-7);
       dbugBuf[bbdpvt.txMsg.length-7] = '\0';
-      printf("bbGpibWrite():sending %02.2X >%s<\n", bbdpvt.txMsg.cmd, dbugBuf);
+      printf("bbGpibWrite():sending %02.2X >%s<", bbdpvt.txMsg.cmd, dbugBuf);
     }
 
     bbdpvt.ageLimit = 10;
     (*(drvBitBus.qReq))(&bbdpvt, BB_Q_HIGH);
-    FASTLOCK(bbdpvt.syncLock);                  /* wait for response */
+    semTake(*(bbdpvt.psyncSem), WAIT_FOREVER);	/* wait for response */
+
+    if (ibDebug || bbibDebug)
+      printf(" RAC status = 0x%02.2X driver status = 0x%02.2X\n", bbdpvt.rxMsg.cmd, bbdpvt.status);
 
     bbdpvt.txMsg.data += BB_MAX_DAT_LEN;	/* in case there is more */
   }
 
   /* All done, check to see if we died due to an error */
 
-  if (bbdpvt.rxMsg.cmd & BB_IBSTAT_TMO)
+  if ((bbdpvt.rxMsg.cmd & BB_IBSTAT_TMO) || (bbdpvt.status != BB_OK))
     return(ERROR);
   else
     return(bytesSent);
@@ -1986,9 +1989,12 @@ int     length;
   bytesSent = length;
 
   bbdpvt.finishProc = NULL;		/* no callback, synchronous I/O mode */
-  bbdpvt.syncLock = &(pbbIbLink->syncLock);
+  bbdpvt.psyncSem = &(pbbIbLink->syncSem);
   bbdpvt.link = pibLink->linkId;
   bbdpvt.rxMaxLen = 7;			/* only get the header back */
+
+  bbdpvt.status = BB_OK;	/* prime these for the while loop */
+  bbdpvt.rxMsg.cmd = 0;
 
   bbdpvt.txMsg.route = BB_STANDARD_TX_ROUTE;
   bbdpvt.txMsg.node = pibLink->bug;
@@ -1996,23 +2002,24 @@ int     length;
   bbdpvt.txMsg.cmd = BB_IBCMD_WRITE_CMD;
   bbdpvt.txMsg.data = (unsigned char *) buffer;
 
-  while (length > BB_MAX_DAT_LEN)
+  while ((length > BB_MAX_DAT_LEN) && (bbdpvt.status == BB_OK) && (!(bbdpvt.rxMsg.cmd & BB_IBSTAT_TMO)))
   {
     bbdpvt.txMsg.length = BB_MAX_DAT_LEN+7;	/* send a chunk */
     bbdpvt.ageLimit = 10;
     (*(drvBitBus.qReq))(&bbdpvt, BB_Q_HIGH);
-    FASTLOCK(bbdpvt.syncLock);			/* wait for response */
-/* BUG -- check bitbus response */
+    semTake(*(bbdpvt.psyncSem), WAIT_FOREVER);	/* wait for response */
 
     length -= BB_MAX_DAT_LEN;			/* ready for next chunk */
     bbdpvt.txMsg.data += BB_MAX_DAT_LEN;
   }
-  bbdpvt.txMsg.length = length+7;		/* send the last chunk */
-  bbdpvt.ageLimit = 10;
-  (*(drvBitBus.qReq))(&bbdpvt, BB_Q_HIGH);
-  FASTLOCK(bbdpvt.syncLock);			/* wait for response */
+  if ((bbdpvt.status == BB_OK) && (!(bbdpvt.rxMsg.cmd & BB_IBSTAT_TMO)))
+  {
+    bbdpvt.txMsg.length = length+7;		/* send the last chunk */
+    bbdpvt.ageLimit = 10;
+    (*(drvBitBus.qReq))(&bbdpvt, BB_Q_HIGH);
+    semTake(*(bbdpvt.psyncSem), WAIT_FOREVER);	/* wait for response */
 /* BUG -- check bitbus response */
-
+  }
   return(bytesSent);
 }
 
@@ -2082,9 +2089,7 @@ int	bug;
   bbIbLink->ibLink.linkId = link;
   bbIbLink->ibLink.bug = bug;
 
-  FASTLOCKINIT(&(bbIbLink->syncLock));
-  FASTUNLOCK(&(bbIbLink->syncLock));	/* make sure it is locked at start */
-  FASTLOCK(&(bbIbLink->syncLock));
+  bbIbLink->syncSem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
 
   ibLinkInit(&(bbIbLink->ibLink));
   return(ibLinkStart(&(bbIbLink->ibLink)));
@@ -2131,16 +2136,17 @@ caddr_t	p;
       bbDpvt.rxMsg.route = 0;
       bbDpvt.rxMaxLen = 7;	/* will only get header back anyway */
       bbDpvt.finishProc = NULL;	/* no callback when receive reply */
-      bbDpvt.syncLock = &(pbbIbLink->syncLock);
+      bbDpvt.psyncSem = &(pbbIbLink->syncSem);
       bbDpvt.link = link;
       bbDpvt.ageLimit = 10;
   
       /* send it to the bug */
       (*(drvBitBus.qReq))(&bbDpvt, BB_Q_HIGH);
-      FASTLOCK(bbDpvt.syncLock);		/* wait for finish */
-/* BUG -- check bitbus response */
-
-      stat = OK;
+      semTake(*(bbDpvt.psyncSem), WAIT_FOREVER);	/* wait for finish */
+      if ((bbDpvt.status == BB_OK) && (!(bbDpvt.rxMsg.cmd & BB_IBSTAT_TMO)))
+        stat = OK;
+      else
+	stat = ERROR;
     }
     break;
 
@@ -2158,17 +2164,18 @@ caddr_t	p;
       bbDpvt.rxMsg.route = 0;
       bbDpvt.rxMaxLen = 7;	/* will only get header back */
       bbDpvt.finishProc = NULL;	/* no callback when get reply */
-      bbDpvt.syncLock = &(pbbIbLink->syncLock);
+      bbDpvt.psyncSem = &(pbbIbLink->syncSem);
       bbDpvt.priority = 0;
       bbDpvt.link = link;
       bbDpvt.ageLimit = 10;
   
       /* send it to the bug */
       (*(drvBitBus.qReq))(&bbDpvt, BB_Q_HIGH);
-      FASTLOCK(bbDpvt.syncLock);             /* wait for finish */
-/* BUG -- check bitbus response */
-
-      stat = OK;
+      semTake(*(bbDpvt.psyncSem), WAIT_FOREVER);	/* wait for finish */
+      if ((bbDpvt.status == BB_OK) && (!(bbDpvt.rxMsg.cmd & BB_IBSTAT_TMO)))
+        stat = OK;
+      else
+	stat = ERROR;
     }
     break;
   case IBREN:		/* turn the Remote Enable line on or off */

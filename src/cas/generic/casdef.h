@@ -30,6 +30,9 @@
  * 	Modification Log:
  * 	-----------------
  * 	$Log$
+ * 	Revision 1.8  1996/11/22 19:22:53  jhill
+ * 	doc
+ *
  * 	Revision 1.7  1996/11/02 00:54:26  jhill
  * 	many improvements
  *
@@ -78,7 +81,7 @@
  * 	class destruction (or prevent problems if they are).
  *	Possible solutions
  *	1) in the derived classes destructor set a variable which
- * 	inhibits use of the derived classes virtual fnction.
+ * 	inhibits use of the derived classes virtual function.
  *	Each virtual function must check this inhibit bit and return 
  *	an error if it is set
  *	2) call a method on the base which prevents further use
@@ -196,7 +199,7 @@ private:
 	//
 	// this private data member appears first so that
 	// initialization of the constant event masks below
-	// uses this member only after it has been intialized
+	// uses this member only after it has been initialized
 	//
 	// We do not use private inheritance here in order
 	// to avoid os/io dependent -I during server tool compile
@@ -225,7 +228,7 @@ public:
 	//
         // The server tool is encouraged to accept multiple PV name
         // aliases for the same PV here. However, one unique canonical name
-	// must be selected by the srever tool and returned to the 
+	// must be selected by the server tool and returned to the 
 	// server lib for each PV. The server will use this canonical 
 	// name to prevent internal duplication of data structures for 
 	// process variables that have multiple aliases.
@@ -244,7 +247,7 @@ public:
 	//
 	// 	const char *pConstName = "myPVName";
 	// 	char pName[9] = "myPVName";
-	// 	return pvExistReturn(S_casApp_success, pConstName); // efficent
+	// 	return pvExistReturn(S_casApp_success, pConstName); // efficient 
 	// 	return pvExistReturn(S_casApp_asyncCompletion); // not now
 	// }
 	//
@@ -318,10 +321,10 @@ public:
 
         //
         // called by the server library immediately before initiating
-        // a tranaction (PV state must not be modified during a
+        // a transaction (PV state must not be modified during a
         // transaction)
         //
-	// HINT: their may be many read/write operatins performed within
+	// HINT: their may be many read/write operations performed within
 	// a single transaction if a large array is being transferred
 	//
         virtual caStatus beginTransaction ();
@@ -336,7 +339,7 @@ public:
 	//
 	// read
 	//
-	// this is allowed to complete asychronously
+	// asychronous completion iis allowed
 	//
 	// RULE: if this completes asynchronously and the server tool references
 	// its data into the prototype descriptor passed in the args to read() 
@@ -348,7 +351,7 @@ public:
 	//
 	// write 
 	//
-	// this is allowed to complete asychronously
+	// asychronous completion iis allowed
 	// (ie the server tool is allowed to cache the data and actually
 	// complete the write operation at some time in the future)
 	//
@@ -492,7 +495,7 @@ public:
 //
 // The following virtual functions allow for asynchronous completion:
 //
-//	Vitrtual Function		Asynchronous IO Class
+//	Virtual Function		Asynchronous IO Class
 //	-----------------		---------------------
 // 	caServer::pvExistTest()		casAsyncPVExistIO
 // 	casPV::read()			casAsyncReadIO
@@ -518,10 +521,10 @@ public:
 // o Avoid deleting the casAsyncIO immediately after calling
 // postIOCompletion(). Instead proper operation requires that
 // the server tool wait for the server lib to call destroy after 
-// the response is succesfully queued to the client
+// the response is successfully queued to the client
 // o If for any reason the server tool needs to cancel an IO
 // operation then it should post io completion with status
-// S_casApp_canceledAsyncIO. Deleting the asyncronous io
+// S_casApp_canceledAsyncIO. Deleting the asynchronous io
 // object prior to its being allowed to forward an IO termination 
 // message to the client will result in NO IO CALL BACK TO THE
 // CLIENT PROGRAM (in this situation a warning message will be printed by 

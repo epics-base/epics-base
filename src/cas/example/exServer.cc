@@ -11,8 +11,6 @@
 #include <exServer.h>
 #include <fdMgr.h>
 
-osiTime exServer::currentTime;
-
 const pvInfo exServer::pvList[] = {
 	pvInfo (1.0e-1, "jane", 10.0f, 0.0f, excasIoSync),
 	pvInfo (2.0, "fred", 10.0f, -10.0f, excasIoSync),
@@ -31,32 +29,55 @@ gddAppFuncTable<exPV> exServer::ft;
 //
 int main (int argc, const char **argv)
 {
-	osiTime		delay(1u,0u);
+	osiTime		begin(osiTime::getCurrent());
 	exServer	*pCAS;
+	unsigned 	debugLevel = 0u;
+	float		executionTime;
+	aitBool		forever = aitTrue;
+	int		i;
 
 	pCAS = new exServer(32u,5u,500u);
 	if (!pCAS) {
-		exit(-1);
+		return (-1);
 	}
 
-	if (argc > 1) {
-		if (strcmp(argv[1],"-d")) {
-			pCAS->setDebugLevel(10u);
+	for (i=1; i<argc; i++) {
+		if (sscanf(argv[i], "-d %u", &debugLevel)==1) {
+			continue;
+		}
+		if (sscanf(argv[i],"-t %f", &executionTime)==1) {
+			forever = aitFalse;
+			continue;
+		}
+		printf ("usage: %s -d<debug level> -t<execution time>\n", 
+			argv[0]);
+		return (1);
+	}
+
+	pCAS->setDebugLevel(debugLevel);
+
+	if (forever) {
+		osiTime	delay(1000u,0u);
+		//
+		// loop here forever
+		//
+		while (aitTrue) {
+			fileDescriptorManager.process(delay);
 		}
 	}
-
-	while (aitTrue) {
+	else {
+		osiTime total(executionTime);
+		osiTime delay(osiTime::getCurrent() - begin);
 		//
+		// loop here untime the specified execution time
+		// expires
 		//
-		//
-		fileDescriptorManager.process(delay);
-		exServer::updateCurrentTime();
+		while (delay < total) {
+			fileDescriptorManager.process(delay);
+			delay = osiTime::getCurrent() - begin;
+		}
 	}
-}
-
-void exServer::updateCurrentTime()
-{
-	exServer::currentTime = osiTime::getCurrent();
+	return (0);
 }
 
 //
@@ -66,7 +87,6 @@ exServer::exServer(unsigned pvMaxNameLength, unsigned pvCountEstimate,
 	unsigned maxSimultaneousIO) :
 	caServer(pvMaxNameLength, pvCountEstimate, maxSimultaneousIO)
 {
-	exServer::updateCurrentTime();
 	ft.installReadFunc("status",exPV::getStatus);
 	ft.installReadFunc("severity",exPV::getSeverity);
 	ft.installReadFunc("seconds",exPV::getSeconds);

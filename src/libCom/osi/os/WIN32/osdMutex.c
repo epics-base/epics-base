@@ -26,14 +26,17 @@
 /* 
  * Defining this allows the *much* faster critical
  * section mutex primitive to be used. Unfortunately,
- * using certain of these functions drops support for W95 
+ * using certain of these functions drops support for W95\W98\WME 
  * unless we specify "delay loading" when we link with the 
  * DLL so that DLL entry points are not resolved until they 
  * are used. The code does have run time switches so
  * that the more advanced calls are not called unless 
  * they are available in the windows OS, but this feature
  * isnt going to be very useful unless we specify "delay 
- * loading" when we link with the DLL
+ * loading" when we link with the DLL.
+ *
+ * It appears that the only entry point used here that causes
+ * portability problems with W95\W98\WME is TryEnterCriticalSection.
  */
 #define _WIN32_WINNT 0x0400 
 #include <windows.h>
@@ -43,16 +46,10 @@
 #include "epicsMutex.h"
 #include "epicsAssert.h"
 
-typedef struct epicsWin32CS { 
-    CRITICAL_SECTION mutex;
-    HANDLE unlockSignal;
-    LONG waitingCount;
-} epicsWin32CS;
-
 typedef struct epicsMutexOSD { 
     union {
         HANDLE mutex;
-        epicsWin32CS cs;
+        CRITICAL_SECTION criticalSection;
     } os;
 } epicsMutexOSD;
 
@@ -79,15 +76,7 @@ epicsShareFunc epicsMutexId epicsShareAPI
     pSem = malloc ( sizeof (*pSem) );
     if ( pSem ) {
         if ( thisIsNT ) {
-            pSem->os.cs.unlockSignal = CreateEvent ( NULL, FALSE, FALSE, NULL );
-            if ( pSem->os.cs.unlockSignal == 0 ) {
-                free ( pSem );
-                pSem = 0;
-            }
-            else {
-                InitializeCriticalSection ( &pSem->os.cs.mutex );
-                pSem->os.cs.waitingCount = 0u;
-            }
+            InitializeCriticalSection ( &pSem->os.criticalSection );
         }
         else {
             pSem->os.mutex = CreateMutex ( NULL, FALSE, NULL );
@@ -107,9 +96,7 @@ epicsShareFunc void epicsShareAPI
     epicsMutexOsdDestroy ( epicsMutexId pSem ) 
 {    
     if ( thisIsNT ) {
-        assert ( pSem->os.cs.waitingCount == 0 );
-        DeleteCriticalSection  ( &pSem->os.cs.mutex );
-        CloseHandle ( pSem->os.cs.unlockSignal );
+        DeleteCriticalSection  ( &pSem->os.criticalSection );
     }
     else {
         CloseHandle ( pSem->os.mutex );
@@ -124,11 +111,7 @@ epicsShareFunc void epicsShareAPI
     epicsMutexUnlock ( epicsMutexId pSem ) 
 {
     if ( thisIsNT ) {
-        LeaveCriticalSection ( &pSem->os.cs.mutex );
-        if ( pSem->os.cs.waitingCount ) {
-            DWORD status = SetEvent ( pSem->os.cs.unlockSignal );
-            assert ( status ); 
-        }
+        LeaveCriticalSection ( &pSem->os.criticalSection );
     }
     else {
         BOOL success = ReleaseMutex ( pSem->os.mutex );
@@ -143,7 +126,7 @@ epicsShareFunc epicsMutexLockStatus epicsShareAPI
     epicsMutexLock ( epicsMutexId pSem ) 
 {
     if ( thisIsNT ) {
-        EnterCriticalSection ( &pSem->os.cs.mutex );
+        EnterCriticalSection ( &pSem->os.criticalSection );
     }
     else {
         DWORD status = WaitForSingleObject ( pSem->os.mutex, INFINITE );
@@ -160,7 +143,7 @@ epicsShareFunc epicsMutexLockStatus epicsShareAPI
 epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexTryLock ( epicsMutexId pSem ) 
 { 
     if ( thisIsNT ) {
-        if ( TryEnterCriticalSection ( &pSem->os.cs.mutex ) ) {
+        if ( TryEnterCriticalSection ( &pSem->os.criticalSection ) ) {
             return epicsMutexLockOK;
         }
         else {
@@ -188,7 +171,7 @@ epicsShareFunc void epicsShareAPI epicsMutexShow ( epicsMutexId pSem, unsigned l
 { 
     if ( thisIsNT ) {
         printf ("epicsMutex: win32 critical section at %p\n",
-            (void * ) & pSem->os.cs.mutex );
+            (void * ) & pSem->os.criticalSection );
     }
     else {
         printf ( "epicsMutex: win32 mutex at %p\n", 

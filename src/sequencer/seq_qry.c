@@ -3,8 +3,10 @@
 	Copyright, 1990, The Regents of the University of California.
 		         Los Alamos National Laboratory
 
-	@(#)seq_qry.c	1.4	4/17/91
-	DESCRIPTION: Task querry & debug routines for run-time sequencer
+	$Id$
+	DESCRIPTION: Task querry & debug routines for run-time sequencer:
+	seqShow - prints state set info.
+	seqChanShow - printf channel (pv) info.
 
 	ENVIRONMENT: VxWorks
 ***************************************************************************/
@@ -45,14 +47,26 @@ int	tid;
 
 	/* Print info about state program */
 	printf("State Program: \"%s\"\n", sp_ptr->name);
-	printf("  sp_ptr=%d=0x%x\n", sp_ptr, sp_ptr);
+	printf("  Memory layout:\n");
+	printf("\tsp_ptr=%d=0x%x\n", sp_ptr, sp_ptr);
+	printf("\tdyn_ptr=%d=0x%x\n", sp_ptr->dyn_ptr, sp_ptr->dyn_ptr);
+	printf("\tsscb=%d=0x%x\n", sp_ptr->sscb, sp_ptr->sscb);
+	printf("\tstates=%d=0x%x\n", sp_ptr->states, sp_ptr->states);
+	printf("\tuser_area=%d=0x%x\n", sp_ptr->user_area, sp_ptr->user_area);
+	printf("\tuser_size=%d=0x%x\n", sp_ptr->user_size, sp_ptr->user_size);
+	printf("\tmac_ptr=%d=0x%x\n", sp_ptr->mac_ptr, sp_ptr->mac_ptr);
+	printf("\tscr_ptr=%d=0x%x\n", sp_ptr->scr_ptr, sp_ptr->scr_ptr);
+	printf("\tscr_nleft=%d=0x%x\n\n", sp_ptr->scr_nleft, sp_ptr->scr_nleft);
 	printf("  initial task id=%d=0x%x\n", sp_ptr->task_id, sp_ptr->task_id);
 	printf("  task priority=%d\n", sp_ptr->task_priority);
 	printf("  number of state sets=%d\n", sp_ptr->nss);
 	printf("  number of channels=%d\n", sp_ptr->nchan);
+	printf("  number of channels connected=%d\n", sp_ptr->conn_count);
 	printf("  async flag=%d, debug flag=%d, reent flag=%d, conn flag=%d\n",
-	 sp_ptr->async_flag, sp_ptr->debug_flag, sp_ptr->reent_flag, sp_ptr->conn_flag);
+	 sp_ptr->async_flag, sp_ptr->debug_flag, sp_ptr->reent_flag,
+	 sp_ptr->conn_flag);
 
+	printf("\n");
 	ss_ptr = sp_ptr->sscb;
 	for (nss = 0; nss < sp_ptr->nss; nss++, ss_ptr++)
 	{
@@ -96,7 +110,8 @@ int	tid;
 		return 0;
 	}
 
-	sp_ptr = (SPROG *)taskVarGet(tid, &seq_task_ptr); /* seq_task_ptr is task variable */
+	/* seq_task_ptr is a task variable */
+	sp_ptr = (SPROG *)taskVarGet(tid, &seq_task_ptr);
 
 	if (sp_ptr->magic != MAGIC)
 	{
@@ -115,6 +130,9 @@ int	tid;
 		printf("  Variable=%d=0x%x\n", db_ptr->var, db_ptr->var);
 		printf("  Size=%d bytes\n", db_ptr->size);
 		printf("  Count=%d\n", db_ptr->count);
+		printType(db_ptr->put_type);
+		printValue(db_ptr->var, db_ptr->size, db_ptr->count,
+			   db_ptr->put_type);
 		printf("  DB get request type=%d\n", db_ptr->get_type);
 		printf("  DB put request type=%d\n", db_ptr->put_type);
 		printf("  monitor flag=%d\n", db_ptr->mon_flag);
@@ -132,7 +150,7 @@ int	tid;
 		if(db_ptr->get_complete)
 			printf("  Last get completed\n");
 		else
-			printf("  Get not completed\n");
+			printf("  Get not completed or no get issued\n");
 
 		printf("  Status=%d\n", db_ptr->status);
 		printf("  Severity=%d\n", db_ptr->severity);
@@ -154,3 +172,93 @@ wait_rtn()
 		read(STD_IN, &bfr, 1);
 	} while (bfr != '\n');
 }
+
+struct	dbr_union {
+	union {
+		char	c;
+		short	s;
+		long	l;
+		float	f;
+		double	d;
+	} u;
+};
+
+static printValue(pvar, size, count, type)
+void		*pvar;
+int		size, count, type;
+{
+	struct dbr_union	*pv = pvar;
+
+	if (count > 5)
+		count = 5;
+
+	printf("  Value =");
+	while (count-- > 0)
+	{
+		switch (type)
+		{
+		    case DBR_STRING:
+			printf(" %s", pv->u.c);
+			break;
+
+	  	    case DBR_CHAR:
+			printf(" %d", pv->u.c);
+			break;
+
+		    case DBR_SHORT:
+			printf(" %d", pv->u.s);
+			break;
+
+		    case DBR_LONG:
+			printf(" %d", pv->u.l);
+			break;
+
+		    case DBR_FLOAT:
+			printf(" %g", pv->u.f);
+			break;
+
+		    case DBR_DOUBLE:
+			printf(" %lg", pv->u.d);
+			break;
+		}
+
+		pv = (struct dbr_union *)((char *)pv + size);
+	}
+
+	printf("\n");
+}
+
+static printType(type)
+int		type;
+{
+	char		*type_str;
+
+	switch (type)
+	{
+	    case DBR_STRING:
+		type_str = "string";
+		break;
+
+	    case DBR_CHAR:
+		type_str = "char";
+		break;
+
+	    case DBR_SHORT:
+		type_str = "short";
+		break;
+
+	    case DBR_LONG:
+		type_str = "long";
+		break;
+
+	    case DBR_FLOAT:
+		type_str = "float";
+		break;
+
+	    case DBR_DOUBLE:
+		type_str = "double";
+		break;
+	}
+	printf("  Type = %s\n", type_str);
+}
+

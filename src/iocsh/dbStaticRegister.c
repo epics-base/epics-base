@@ -97,6 +97,15 @@ static void dbDumpDriverCallFunc(const iocshArgBuf *args)
     dbDumpDriver(pdbbase);
 }
 
+/* dbDumpFunction */
+static const iocshArg dbDumpFunctionArg0 = { "pdbbase",iocshArgPdbbase};
+static const iocshArg * const dbDumpFunctionArgs[1] = {&dbDumpFunctionArg0};
+static const iocshFuncDef dbDumpFunctionFuncDef = {"dbDumpFunction",1,dbDumpFunctionArgs};
+static void dbDumpFunctionCallFunc(const iocshArgBuf *args)
+{
+    dbDumpFunction(pdbbase);
+}
+
 /* dbDumpBreaktable */
 static const iocshArg dbDumpBreaktableArg0 = { "pdbbase",iocshArgPdbbase};
 static const iocshArg dbDumpBreaktableArg1 = { "tableName",iocshArgString};
@@ -128,6 +137,7 @@ void epicsShareAPI dbStaticRegister(void)
     iocshRegister(&dbDumpFieldFuncDef,dbDumpFieldCallFunc);
     iocshRegister(&dbDumpDeviceFuncDef,dbDumpDeviceCallFunc);
     iocshRegister(&dbDumpDriverFuncDef,dbDumpDriverCallFunc);
+    iocshRegister(&dbDumpFunctionFuncDef,dbDumpFunctionCallFunc);
     iocshRegister(&dbDumpBreaktableFuncDef,dbDumpBreaktableCallFunc);
     iocshRegister(&dbPvdDumpFuncDef,dbPvdDumpCallFunc);
 }

@@ -159,7 +159,7 @@ endif
 clean::
 	@echo "Cleaning"
 	@$(RM) *.i *$(OBJ) *.a $(TESTPRODNAME) $(LIBNAME) $(SHRLIBNAME)\
-	$(INC) *$(RES) $(TARGETS) \
+	$(INC) *$(RES) $(TARGETS) $(DLL_LINK_LIBNAME) $(TDS) \
 	*.out MakefileInclude \
 	$(COMMON_INC) $(HDEPENDS_FILES) $(PRODTARGETS)
 ifdef BAF

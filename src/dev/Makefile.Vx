@@ -32,7 +32,11 @@ SRCS = \
 	../devMz8310.c ../devTimerMz8310.c \
 	../devVxiTDM.c ../devAiKscV215.c ../devXy240.c \
 	../devHpe1368a.c ../devAt8Fp.c ../devWfComet.c \
-	../devWfDvx2502.c ../devWfJoergerVtr1.c
+	../devWfDvx2502.c ../devWfJoergerVtr1.c \
+	../devAiCamac.c ../devAaiCamac.c ../devBiCamac.c ../devLiCamac.c \
+	../devMbbiCamac.c ../devMbbiDirectCamac.c ../devWfCamac.c \
+	../devAoCamac.c ../devAaoCamac.c ../devBoCamac.c ../devLoCamac.c \
+	../devMbboCamac.c ../devMbboDirectCamac.c 
 
 OBJS = \
 	devAiDvx2502.o devAiSoft.o devAiSoftRaw.o devAiSymb.o \
@@ -54,7 +58,11 @@ OBJS = \
 	devWfSoft.o devWfTestAsyn.o devWfXy566Sc.o devAllenBradley.o \
 	devAt5Vxi.o devMz8310.o devTimerMz8310.o devVxiTDM.o devAiKscV215.o \
 	devXy240.o devHpe1368a.o devAt8Fp.o devWfComet.o \
-	devWfDvx2502.o devWfJoergerVtr1.o
+	devWfDvx2502.o devWfJoergerVtr1.o \
+	devAiCamac.o devAaiCamac.o devBiCamac.o devLiCamac.o \
+	devMbbiCamac.o devMbbiDirectCamac.o devWfCamac.o \
+	devAoCamac.o devAaoCamac.o devBoCamac.o devLoCamac.o \
+	devMbboCamac.o devMbboDirectCamac.o 
 
 PROD = devSup
 

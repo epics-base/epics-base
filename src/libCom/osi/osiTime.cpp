@@ -28,8 +28,10 @@
  *
  */
 
+#include <ctype.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <string.h>
 #include <limits.h>
 
 #define epicsExportSharedSymbols
@@ -68,6 +70,11 @@ static const unsigned tmStructEpochYear = 1900;
 static const unsigned epicsEpochYear = 1990;
 static const unsigned epicsEpocMonth = 0; // January
 static const unsigned epicsEpocDayOfTheMonth = 1; // the 1st day of the month
+
+//
+// forward declarations for utility routines
+//
+static char *fracFormat (const char *pFormat, unsigned long *width);
 
 //
 // osiTime (const unsigned long secIn, const unsigned long nSecIn)
@@ -395,19 +402,57 @@ osiTime::osiTime (const ntpTimeStamp &ts)
 #endif
 
 //
+// size_t osiTime::strftime (char *pBuff, size_t bufLength, const char *pFormat)
+//
+size_t osiTime::strftime (char *pBuff, size_t bufLength, const char *pFormat) const
+{
+    // copy format (needs to be writable)
+    char format[256];
+    strcpy (format, pFormat);
+
+    // look for "%0<n>f" at the end (used for fractional second formatting)
+    unsigned long fracWid;
+    char *fracPtr = fracFormat (format, &fracWid);
+
+    // if found, hide from strftime
+    if (fracPtr != NULL) *fracPtr = '\0';
+
+    // format all but fractional seconds
+    tm_nano_sec tmns = *this;
+    size_t numChar = ::strftime (pBuff, bufLength, format, &tmns.ansi_tm);
+    if (numChar == 0 || fracPtr == NULL) return numChar;
+
+    // check there are enough chars for the fractional seconds
+    if (numChar + fracWid < bufLength)
+    {
+	// divisors for fraction (see below)
+	const int div[9+1] = {(int)1e9,(int)1e8,(int)1e7,(int)1e6,(int)1e5,
+			      (int)1e4,(int)1e3,(int)1e2,(int)1e1,(int)1e0};
+
+	// round and convert nanosecs to integer of correct range
+	int ndp = fracWid <= 9 ? fracWid : 9;
+	int frac = ((tmns.nSec + div[ndp]/2) % ((int)1e9)) / div[ndp];
+
+	// restore fractional format and format fraction
+	*fracPtr = '%';
+	*(format + strlen (format) - 1) = 'u';
+	sprintf (pBuff+numChar, fracPtr, frac);
+    }
+    return numChar + fracWid;
+}
+
+//
 // osiTime::show (unsigned)
 //
 void osiTime::show (unsigned) const
 {
-	int status;
-	char bigBuffer[256];
-	tm_nano_sec tmns = *this;
+    char bigBuffer[256];
 
-	status = strftime (bigBuffer, sizeof(bigBuffer), "%a %b %d %H:%M:%S %Y", &tmns.ansi_tm);
-	if (status>0) {
-		printf ("osiTime: %s %g\n", bigBuffer, 
-			static_cast <double> (tmns.nSec) / nSecPerSec);
-	}
+    size_t numChar = strftime (bigBuffer, sizeof(bigBuffer),
+					"%a %b %d %Y %H:%M:%S.%09f");
+    if (numChar>0) {
+	printf ("osiTime: %s\n", bigBuffer);
+    }
 }
 
 //
@@ -758,8 +803,42 @@ extern "C" {
     {
         return osiTime (*pLeft) >= osiTime (*pRight);
     }
+    epicsShareFunc size_t epicsShareAPI tsStrftime (char *pBuff, size_t bufLength, const char *pFormat, const TS_STAMP *pTS)
+    {
+	return osiTime(*pTS).strftime (pBuff, bufLength, pFormat);
+    }
     epicsShareFunc void epicsShareAPI tsStampShow (const TS_STAMP *pTS, unsigned interestLevel)
     {
         osiTime(*pTS).show (interestLevel);
     }
+}
+
+//
+// utility routines
+//
+
+// return pointer to trailing "%0<n>f" (<n> is a number) in a format string,
+// NULL if none; also return <n> and a pointer to the "f"
+static char *fracFormat (const char *pFormat, unsigned long *width)
+{
+    // initialize returned field width
+    *width = 0;
+
+    // point at char past format string
+    const char *ptr = pFormat + strlen (pFormat);
+
+    // if (last) char not 'f', no match
+    if (*(--ptr) != 'f') return NULL;
+
+    // skip digits, extracting <n> (must start with 0)
+    while (isdigit (*(--ptr))); // NB, empty loop body
+    ++ptr; // points to first digit, if any
+    if (*ptr != '0') return NULL;
+    if (sscanf (ptr, "%lu", width) != 1) return NULL;
+
+    // if (prev) char not '%', no match
+    if (*(--ptr) != '%') return NULL;
+
+    // return pointer to '%'
+    return (char *) ptr;
 }

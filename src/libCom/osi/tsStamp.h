@@ -80,6 +80,11 @@ epicsShareFunc int epicsShareAPI tsStampGreaterThan (const TS_STAMP *pLeft, cons
 epicsShareFunc int epicsShareAPI tsStampGreaterThanEqual (const TS_STAMP *pLeft, const TS_STAMP *pRight); /* returns boolean result (true if *pLeft >= *pRight) */
 
 /*
+ * convert to ASCII string
+ */
+epicsShareFunc size_t epicsShareAPI tsStrftime (char *pBuff, size_t bufLength, const char *pFormat, const TS_STAMP *pTS);
+
+/*
  * dump current state to standard out
  */
 epicsShareFunc void epicsShareAPI tsStampShow (const TS_STAMP *, unsigned interestLevel);

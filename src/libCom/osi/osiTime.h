@@ -206,6 +206,11 @@ public:
 	bool operator > (const osiTime &rhs) const;
 
 	//
+	// convert current state to user-specified string
+	//
+	size_t strftime (char *pBuff, size_t bufLength, const char *pFormat) const;
+
+	//
 	// dump current state to standard out
 	//
 	void show (unsigned interestLevel) const;

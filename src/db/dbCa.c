@@ -417,12 +417,33 @@ static void exceptionCallback(struct exception_handler_args args)
     chid	chid = args.chid;
     long        stat = args.stat; /* Channel access status code*/
     const char	*channel;
-    static char *noname = "unknown";
+    const char  *context;
+    static char *unknown = "unknown";
+    const char *nativeType;
+    const char *requestType;
+    long nativeCount;
+    long requestCount;
+    int  readAccess;
+    int writeAccess;
 
-    channel = (chid ? ca_name(chid) : noname);
+    channel = (chid ? ca_name(chid) : unknown);
+    context = (args.ctx ? args.ctx : unknown);
+    nativeType = dbr_type_to_text((chid ? ca_field_type(chid) : -1));
+    requestType = dbr_type_to_text(args.type);
+    nativeCount = (chid ? ca_element_count(chid) : 0);
+    requestCount = args.count;
+    readAccess = (chid ? ca_read_access(chid) : 0);
+    writeAccess = (chid ? ca_write_access(chid) : 0);
 
-    errlogPrintf("dbCa:exceptionCallback stat %s channel %s\n",
-        ca_message(stat),channel);
+    errlogPrintf("dbCa:exceptionCallback stat \"%s\" channel \"%s\""
+        " context \"%s\"\n"
+        " nativeType %s requestType %s"
+        " nativeCount %ld requestCount %ld %s %s\n",
+        ca_message(stat),channel,context,
+        nativeType,requestType,
+        nativeCount,requestCount,
+        (readAccess ? "readAccess" : "noReadAccess"),
+        (writeAccess ? "writeAccess" : "noWriteAccess"));
 }
 
 static void eventCallback(struct event_handler_args arg)

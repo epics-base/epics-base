@@ -316,20 +316,13 @@ void			*pext
 			 * we can time out
 			 */
 			if (bytesAvailable>=extsize+sizeof(msg)) {
-#				if DEBUG
-					If (piiu->sendPending) {
-						printf ("-Unblocked-\n");
-					}
-#				endif /* DEBUG */
 				piiu->sendPending = FALSE;
 				break;
 			}
 			else {
 				if (!piiu->sendPending) {
-#					if DEBUG
-						printf ("-Blocked-\n");
-#					endif /* DEBUG */
-					piiu->timeAtSendBlock = ca_static->currentTime;
+					piiu->timeAtSendBlock = 
+						ca_static->currentTime;
 					piiu->sendPending = TRUE;
 				}
 			}
@@ -506,6 +499,7 @@ int ca_os_independent_init (void)
 	 * init broadcasted search counters
 	 */
 	ca_static->ca_search_retry = 0;
+	ca_static->ca_search_responses = 0;
 	ca_static->ca_conn_next_retry = CA_CURRENT_TIME;
 	sec = (unsigned) CA_RECAST_DELAY;
 	ca_static->ca_conn_retry_delay.tv_sec = sec;
@@ -823,20 +817,10 @@ void ca_process_exit()
 	}
 
 	/* remove any pending read blocks */
-	monix = (evid) ellFirst(&ca_static->ca_pend_read_list);
-	while (monix) {
-		monixNext = (evid) ellNext (&monix->node);
-		caIOBlockFree (monix);
-		monix = monixNext;
-	}
+	caIOBlockListFree (&ca_static->ca_pend_read_list, NULL, FALSE, ECA_INTERNAL);
 
 	/* remove any pending write blocks */
-	monix = (evid) ellFirst(&ca_static->ca_pend_write_list);
-	while (monix) {
-		monixNext = (evid) ellNext (&monix->node);
-		caIOBlockFree (monix);
-		monix = monixNext;
-	}
+	caIOBlockListFree (&ca_static->ca_pend_write_list, NULL, FALSE, ECA_INTERNAL);
 
 	/* remove any pending io event blocks */
 	ellFree(&ca_static->ca_ioeventlist);
@@ -1359,6 +1343,46 @@ void caIOBlockFree(evid pIOBlock)
 
 
 /*
+ * Free all io blocks on the list attached to the specified channel
+ */
+void caIOBlockListFree(
+ELLLIST *pList, 
+chid 	chan, 
+int 	cbRequired, 
+int 	status)
+{
+	evid				monix;
+	evid				next;
+	struct event_handler_args	args;
+
+	for (monix = (evid) ellFirst (pList);
+	     monix;
+	     monix = next) {
+
+		next = (evid) ellNext (&monix->node);
+
+		if (chan == NULL || monix->chan == chan) {
+
+			ellDelete (pList, &monix->node);
+
+			args.usr = 	monix->usr_arg;
+			args.chid = 	monix->chan;
+			args.type = 	monix->type;
+			args.count = 	monix->count;
+			args.status = 	status;
+			args.dbr = 	NULL;
+
+			caIOBlockFree (monix);
+
+			if (cbRequired) {
+				(*monix->usr_func) (args);
+			}
+		}
+	}
+}
+
+
+/*
  *
  *	ISSUE_GET_CALLBACK()
  *	(lock must be on)
@@ -1755,11 +1779,11 @@ void				*pvalue
         		break;
 
       		case	DBR_FLOAT:
-        		htonf(pvalue, pdest);
+        		dbr_htonf(pvalue, pdest);
         		break;
 
       		case	DBR_DOUBLE: 
-        		htond(pvalue, pdest);
+        		dbr_htond(pvalue, pdest);
 			break;
 
       		case	DBR_STRING:
@@ -2177,9 +2201,9 @@ int ca_request_event(evid monix)
 	p_delta = (ca_float32_t) monix->p_delta;
 	n_delta = (ca_float32_t) monix->n_delta;
 	tmo = (ca_float32_t) monix->timeout;
-	htonf(&p_delta, &msg.m_info.m_hval);
-	htonf(&n_delta, &msg.m_info.m_lval);
-	htonf(&tmo, &msg.m_info.m_toval);
+	dbr_htonf(&p_delta, &msg.m_info.m_hval);
+	dbr_htonf(&n_delta, &msg.m_info.m_lval);
+	dbr_htonf(&tmo, &msg.m_info.m_toval);
 	msg.m_info.m_mask = htons(monix->mask);
 	msg.m_info.m_pad = 0; /* allow future use */	
 
@@ -2565,8 +2589,6 @@ void clearChannelResources(unsigned id)
 {
 	struct ioc_in_use       *piiu;
 	chid			chix;
-	evid			monix;
-	evid			next;
 	int			status;
 
 	LOCK;
@@ -2577,27 +2599,20 @@ void clearChannelResources(unsigned id)
 	piiu = chix->piiu;
 
 	/*
-	 * remove any orphaned get callbacks for this
-	 * channel
+	 * remove any orphaned get callbacks for this channel
 	 */
-	for (monix = (evid) ellFirst (&ca_static->ca_pend_read_list);
-	     monix;
-	     monix = next) {
-		next = (evid) ellNext (&monix->node);
-		if (monix->chan == chix) {
-			ellDelete (
-				&ca_static->ca_pend_read_list,
-				&monix->node);
-			caIOBlockFree (monix);
-		}
-	}
-	for (monix = (evid) ellFirst (&chix->eventq);
-	     monix;
-	     monix = next){
-		assert (monix->chan == chix);
-		next = (evid) ellNext (&monix->node);
-		caIOBlockFree(monix);
-	}
+	caIOBlockListFree (&ca_static->ca_pend_read_list, chix, FALSE, ECA_INTERNAL);
+
+	/*
+	 * remove any orphaned put callbacks for this channel
+	 */
+	caIOBlockListFree (&ca_static->ca_pend_write_list, chix, FALSE, ECA_INTERNAL);
+
+	/*
+	 * remove any monitors still attached to this channel
+	 */
+	caIOBlockListFree (&chix->eventq, NULL, FALSE, ECA_INTERNAL);
+
 	ellDelete (&piiu->chidlist, &chix->node);
 	status = bucketRemoveItemUnsignedId (
 			ca_static->ca_pSlowBucket, &chix->cid);
@@ -2609,6 +2624,7 @@ void clearChannelResources(unsigned id)
 
 	UNLOCK;
 }
+
 
 
 /************************************************************************/
@@ -2636,13 +2652,13 @@ int APIENTRY ca_pend(ca_real timeout, int early)
 
   	/*	
 	 * Flush the send buffers
+	 * (guarantees that we wait for all send buffer to be 
+	 * flushed even if this requires blocking)
 	 *
 	 * Also takes care of outstanding recvs
 	 * for single threaded clients 
 	 */
-#if 0
 	ca_flush_io();
-#endif
 
     	if(pndrecvcnt<1 && early){
         	return ECA_NORMAL;

@@ -184,8 +184,9 @@ static long asInitCommon(void)
 int asInit(void)
 {
 
-    asInitCommon();
-    return(0);
+    /*If no access configuration file defined return success*/
+    if(!pacf) return(0);
+    return(asInitCommon());
 }
 
 static void wdCallback(ASDBCALLBACK *pcallback)

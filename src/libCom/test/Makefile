@@ -16,67 +16,67 @@ PROD_LIBS += Com
 #epicsListTest_SRCS += epicsListTest.cpp
 PROD_HOST += epicsListTest
 #epicsListTest build fails for vxWorks-ppc604 on win32-x86 host 
-#OBJS_IOC += epicsListTest
+#OBJS_IOC_vxWorks += epicsListTest
 
 epicsAlgorithmTest_SRCS += epicsAlgorithmTest.cpp
 PROD_HOST += epicsAlgorithmTest
-OBJS_IOC += epicsAlgorithmTest
+OBJS_IOC_vxWorks += epicsAlgorithmTest
 
 epicsMathTestHost_SRCS += epicsMathTestMain.cpp epicsMathTest.c
 PROD_HOST += epicsMathTestHost
-OBJS_IOC += epicsMathTest
+OBJS_IOC_vxWorks += epicsMathTest
 
 epicsStdioTestHost_SRCS += epicsStdioTestMain.cpp epicsStdioTest.c
 PROD_HOST += epicsStdioTestHost
-OBJS_IOC += epicsStdioTest
+OBJS_IOC_vxWorks += epicsStdioTest
 
 epicsStringTestHost_SRCS += epicsStringTestMain.cpp epicsStringTest.c
 PROD_HOST += epicsStringTestHost
-OBJS_IOC += epicsStringTest
+OBJS_IOC_vxWorks += epicsStringTest
 
 epicsTimeTestHost_SRCS += epicsTimeTestMain.cpp epicsTimeTest.cpp
 PROD_HOST += epicsTimeTestHost
-OBJS_IOC += epicsTimeTest
+OBJS_IOC_vxWorks += epicsTimeTest
 
 epicsThreadTestHost_SRCS += epicsThreadTestMain.cpp epicsThreadTest.cpp
 PROD_HOST += epicsThreadTestHost
-OBJS_IOC += epicsThreadTest
+OBJS_IOC_vxWorks += epicsThreadTest
 
 epicsThreadPrivateTestHost_SRCS += epicsThreadPrivateTestMain.cpp epicsThreadPrivateTest.cpp
 PROD_HOST += epicsThreadPrivateTestHost
-OBJS_IOC += epicsThreadPrivateTest
+OBJS_IOC_vxWorks += epicsThreadPrivateTest
 
 epicsTimerTestHost_SRCS += epicsTimerTestMain.cpp epicsTimerTest.cpp
 PROD_HOST += epicsTimerTestHost
-OBJS_IOC += epicsTimerTest
+OBJS_IOC_vxWorks += epicsTimerTest
 
 epicsTimerExampleHost_SRCS += epicsTimerExampleMain.cpp epicsTimerExample.cpp
 PROD_HOST += epicsTimerExampleHost
-OBJS_IOC += epicsTimerExample
+OBJS_IOC_vxWorks += epicsTimerExample
 
 ringPointerTestHost_SRCS += ringPointerTestMain.cpp ringPointerTest.c
 PROD_HOST += ringPointerTestHost
-OBJS_IOC += ringPointerTest
+OBJS_IOC_vxWorks += ringPointerTest
 
 epicsEventTestHost_SRCS += epicsEventTestMain.cpp epicsEventTest.cpp
 PROD_HOST += epicsEventTestHost
-OBJS_IOC += epicsEventTest
+OBJS_IOC_vxWorks += epicsEventTest
 
 epicsMutexTestHost_SRCS += epicsMutexTestMain.cpp epicsMutexTest.cpp
 PROD_HOST += epicsMutexTestHost
-OBJS_IOC += epicsMutexTest
+OBJS_IOC_vxWorks += epicsMutexTest
 
 epicsExceptionTestHost_SRCS += epicsExceptionTestMain.cpp epicsExceptionTest.cpp
 PROD_HOST += epicsExceptionTestHost
-OBJS_IOC += epicsExceptionTest
+OBJS_IOC_vxWorks += epicsExceptionTest
 
 epicsMessageQueueTestHost_SRCS += epicsMessageQueueTestMain.cpp epicsMessageQueueTest.cpp
 PROD_HOST += epicsMessageQueueTestHost
-OBJS_IOC += epicsMessageQueueTest
+OBJS_IOC_vxWorks += epicsMessageQueueTest
 
 macEnvExpandTestHost_SRCS += macEnvExpandTestMain.cpp macEnvExpandTest.c
 PROD_HOST += macEnvExpandTestHost
-OBJS_IOC += macEnvExpandTest
+OBJS_IOC_vxWorks += macEnvExpandTest
 
 #fdmgrTest_SRCS += fdmgrTest.c
 #PROD_HOST += fdmgrTest

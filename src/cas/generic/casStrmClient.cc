@@ -29,6 +29,11 @@
  *
  * History
  * $Log$
+ * Revision 1.25  1998/09/24 20:40:07  jhill
+ * o block if unable to get buffer space for the exception message
+ * o subtle changes related to properly dealing with situations where
+ * both the server tool and the client tool delete the same PV simultaneously
+ *
  * Revision 1.24  1998/07/08 15:38:07  jhill
  * fixed lost monitors during flow control problem
  *
@@ -130,24 +135,24 @@ caStatus casStrmClient::verifyRequest (casChannelI *&pChan)
 	//
 	pChan = this->resIdToChannel(mp->m_cid);
 	if (!pChan) {
-		return this->sendErr(mp, ECA_BADCHID, NULL);
+		return ECA_BADCHID;
 	}
 
 	//
 	// data type out of range ?
 	//
 	if (mp->m_type>((unsigned)LAST_BUFFER_TYPE)) {
-		return this->sendErr(mp, ECA_BADTYPE, NULL);
+		return ECA_BADTYPE;
 	}
 
 	//
 	// element count out of range ?
 	//
 	if (mp->m_count > pChan->getPVI().nativeCount() || mp->m_count==0u) {
-		return this->sendErr(mp, ECA_BADCOUNT, NULL);
+		return ECA_BADCOUNT;
 	}
 
-	return S_cas_validRequest;
+	return ECA_NORMAL;
 }
 
 
@@ -285,8 +290,8 @@ caStatus casStrmClient::readAction ()
 	smartGDDPointer pDesc;
 
 	status = this->verifyRequest (pChan);
-	if (status != S_cas_validRequest) {
-		return status;
+	if (status != ECA_NORMAL) {
+		return this->sendErr(mp, status, "get request");
 	}
 
 	/*
@@ -411,16 +416,20 @@ caStatus casStrmClient::readNotifyAction ()
 	smartGDDPointer pDesc;
 
 	status = this->verifyRequest (pChan);
-	if (status != S_cas_validRequest) {
-		return casStrmClient::readNotifyResponse(NULL, *mp, NULL,
-				S_cas_badRequest);
+	if (status != ECA_NORMAL) {
+		return this->readNotifyResponseECA_XXX (NULL, *mp, NULL, status);
 	}
 
 	//
 	// verify read access
 	// 
 	if ((*pChan)->readAccess()!=aitTrue) {
-		return this->readNotifyResponse(pChan, *mp, NULL, S_cas_noRead);
+		if (CA_V41(CA_PROTOCOL_VERSION, this->minor_version_number)) {
+			return this->readNotifyResponseECA_XXX (NULL, *mp, NULL, ECA_NORDACCESS);
+		}
+		else {
+			return this->readNotifyResponse (NULL, *mp, NULL, S_cas_noRead);
+		}
 	}
 
 	status = this->read(pDesc); 
@@ -440,13 +449,30 @@ caStatus casStrmClient::readNotifyAction ()
 	return status;
 }
 
-
-
 //
 // casStrmClient::readNotifyResponse()
 //
 caStatus casStrmClient::readNotifyResponse (casChannelI *pChan, 
 		const caHdr &msg, gdd *pDesc, const caStatus completionStatus)
+{
+	caStatus ecaStatus;
+
+	if (completionStatus!=S_cas_success) {
+		errMessage(completionStatus, 
+			"<= get callback failure detail not passed to client");
+		ecaStatus = ECA_GETFAIL;
+	}
+	else {
+		ecaStatus = ECA_NORMAL;
+	}
+	return this->readNotifyResponseECA_XXX(pChan, msg, pDesc, ecaStatus);
+}
+
+//
+// casStrmClient::readNotifyResponseECA_XXX ()
+//
+caStatus casStrmClient::readNotifyResponseECA_XXX (casChannelI *pChan, 
+		const caHdr &msg, gdd *pDesc, const caStatus ecaStatus)
 {
 	caHdr 		*reply;
 	unsigned	size;
@@ -476,7 +502,7 @@ caStatus casStrmClient::readNotifyResponse (casChannelI *pChan,
 	//
 	// cid field abused to store the status here
 	//
-	if (completionStatus == S_cas_success) {
+	if (ecaStatus == ECA_NORMAL) {
 		if (pDesc) {
 			int mapDBRStatus;
 			//
@@ -500,14 +526,8 @@ caStatus casStrmClient::readNotifyResponse (casChannelI *pChan,
 			reply->m_cid = ECA_GETFAIL;
 		}
 	}
-	else if (completionStatus==S_cas_noRead &&
-		CA_V41(CA_PROTOCOL_VERSION,this->minor_version_number)) {
-		reply->m_cid = ECA_NORDACCESS;
-	}
 	else {
-		errMessage(completionStatus, 
-			"<= get callback failure detail not passed to client");
-		reply->m_cid = ECA_GETFAIL;
+		reply->m_cid = ecaStatus;
 	}
 
 	//
@@ -520,15 +540,18 @@ caStatus casStrmClient::readNotifyResponse (casChannelI *pChan,
 		//
 		memset ((char *)(reply+1), '\0', size);
 	}
-
 #ifdef CONVERSION_REQUIRED
-	/* use type as index into conversion jumptable */
-	(* cac_dbr_cvrt[msg.m_type])
-		( reply + 1,
-		  reply + 1,
-		  TRUE,       /* host -> net format */
-		  msg.m_count);
+	else {
+
+		/* use type as index into conversion jumptable */
+		(* cac_dbr_cvrt[msg.m_type])
+			( reply + 1,
+			  reply + 1,
+			  TRUE,       /* host -> net format */
+			  msg.m_count);
+	}
 #endif
+
 	//
 	// force string message size to be the true size rounded to even
 	// boundary
@@ -680,8 +703,8 @@ caStatus casStrmClient::writeAction()
 	casChannelI	*pChan;
 
 	status = this->verifyRequest (pChan);
-	if (status != S_cas_validRequest) {
-		return status;
+	if (status != ECA_NORMAL) {
+		return this->sendErr(mp, status, "put request");
 	}
 
 	//
@@ -730,7 +753,7 @@ caStatus casStrmClient::writeAction()
 //
 // casStrmClient::writeResponse()
 //
-caStatus casStrmClient::writeResponse (casChannelI *, 
+caStatus casStrmClient::writeResponse ( 
 		const caHdr &msg, const caStatus completionStatus)
 {
 	caStatus status;
@@ -747,28 +770,32 @@ caStatus casStrmClient::writeResponse (casChannelI *,
 	return status;
 }
 
-
 /*
  * casStrmClient::writeNotifyAction()
  */
 caStatus casStrmClient::writeNotifyAction()
-{	
+{
 	const caHdr 	*mp = this->ctx.getMsg();
 	int		status;
 	casChannelI	*pChan;
 
 	status = this->verifyRequest (pChan);
-	if (status != S_cas_validRequest) {
-		return casStrmClient::writeNotifyResponse(NULL, *mp,
-				S_cas_badRequest);
+	if (status != ECA_NORMAL) {
+		return casStrmClient::writeNotifyResponseECA_XXX(*mp, status);
 	}
 
 	//
 	// verify write access
 	// 
 	if ((*pChan)->writeAccess()!=aitTrue) {
-		return casStrmClient::writeNotifyResponse(pChan, *mp,
-				S_cas_noWrite);
+		if (CA_V41(CA_PROTOCOL_VERSION,this->minor_version_number)) {
+			return this->casStrmClient::writeNotifyResponseECA_XXX(
+					*mp, ECA_NOWTACCESS);
+		}
+		else {
+			return this->casStrmClient::writeNotifyResponse(
+					*mp, S_cas_noWrite);
+		}
 	}
 
 	//
@@ -782,19 +809,36 @@ caStatus casStrmClient::writeNotifyAction()
 		pChan->getPVI().addItemToIOBLockedList(*this);
 	}
 	else {
-		status = casStrmClient::writeNotifyResponse(pChan, *mp,
-				status);
+		status = casStrmClient::writeNotifyResponse(*mp, status);
 	}
 
 	return status;
 }
 
-
 /* 
  * casStrmClient::writeNotifyResponse()
  */
-caStatus casStrmClient::writeNotifyResponse(casChannelI *, 
+caStatus casStrmClient::writeNotifyResponse(
 		const caHdr &msg, const caStatus completionStatus)
+{
+	caStatus ecaStatus;
+
+	if (completionStatus==S_cas_success) {
+		ecaStatus = ECA_NORMAL;
+	}
+	else {
+		errMessage (completionStatus, "<= put callback failure detail not passed to client");
+		ecaStatus = ECA_PUTFAIL;	
+	}
+
+	return this->casStrmClient::writeNotifyResponseECA_XXX(msg, ecaStatus);
+}
+
+/* 
+ * casStrmClient::writeNotifyResponseECA_XXX()
+ */
+caStatus casStrmClient::writeNotifyResponseECA_XXX(
+		const caHdr &msg, const caStatus ecaStatus)
 {
 	caHdr		*preply;
 	caStatus	opStatus;
@@ -806,17 +850,7 @@ caStatus casStrmClient::writeNotifyResponse(casChannelI *,
 
 	*preply = msg;
 	preply->m_postsize = 0u;
-	if (completionStatus==S_cas_success) {
-		preply->m_cid = ECA_NORMAL;
-	}
-	else if (completionStatus==S_cas_noWrite &&
-		CA_V41(CA_PROTOCOL_VERSION,this->minor_version_number)) {
-		preply->m_cid = ECA_NOWTACCESS;
-	}
-	else {
-		errMessage(completionStatus, NULL);
-		preply->m_cid = ECA_PUTFAIL;	
-	}
+	preply->m_cid = ecaStatus;
 
 	/* commit the message */
 	this->commitMsg();
@@ -824,7 +858,6 @@ caStatus casStrmClient::writeNotifyResponse(casChannelI *,
 	return S_cas_success;
 }
 
-
 /*
  * casStrmClient::hostNameAction()
  */
@@ -1242,8 +1275,8 @@ caStatus casStrmClient::eventAddAction ()
 	unsigned short caProtoMask;
 
 	status = casStrmClient::verifyRequest (pciu);
-	if (status != S_cas_validRequest) {
-		return status;
+	if (status != ECA_NORMAL) {
+		return this->sendErr(mp, status, NULL);
 	}
 
 	//

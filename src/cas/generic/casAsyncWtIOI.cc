@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1997/08/05 00:47:02  jhill
+ * fixed warnings
+ *
  * Revision 1.3  1997/04/10 19:33:57  jhill
  * API changes
  *
@@ -92,19 +95,19 @@ caStatus casAsyncWtIOI::cbFuncAsyncIO()
 
         switch (this->msg.m_cmmd) {
         case CA_PROTO_WRITE:
-		status = client.writeResponse(&this->chan, this->msg,
-				this->completionStatus);
-                break;
+			status = client.writeResponse(this->msg,
+					this->completionStatus);
+					break;
  
         case CA_PROTO_WRITE_NOTIFY:
-		status = client.writeNotifyResponse(&this->chan, 
-				this->msg, this->completionStatus);
-                break;
+			status = client.writeNotifyResponse(
+					this->msg, this->completionStatus);
+					break;
  
         default:
-                this->reportInvalidAsynchIO(this->msg.m_cmmd);
-                status = S_cas_internal;
-                break;
+			this->reportInvalidAsynchIO(this->msg.m_cmmd);
+			status = S_cas_internal;
+			break;
         }
 
 	return status;

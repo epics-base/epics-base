@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.28  1998/10/27 18:28:20  jhill
+ * fixed warnings
+ *
  * Revision 1.27  1998/10/23 00:28:21  jhill
  * fixed HP-UX warnings
  *
@@ -516,20 +519,18 @@ public:
 	// asynchronous completion
 	//
 	virtual caStatus asyncSearchResponse(
-	casDGIntfIO &outMsgIO, const caNetAddr &outAddr, 
-	const caHdr &, const pvExistReturn &);
+		casDGIntfIO &outMsgIO, const caNetAddr &outAddr, 
+		const caHdr &, const pvExistReturn &);
 	virtual caStatus createChanResponse(
-	const caHdr &, const pvCreateReturn &);
+		const caHdr &, const pvCreateReturn &);
 	virtual caStatus readResponse(
-	casChannelI *, const caHdr &,
-			gdd *, const caStatus); 
+		casChannelI *, const caHdr &, gdd *, const caStatus); 
 	virtual caStatus readNotifyResponse(
-	casChannelI *, const caHdr &, 
-	gdd *, const caStatus);
+		casChannelI *, const caHdr &, gdd *, const caStatus);
 	virtual caStatus writeResponse(
-	casChannelI *, const caHdr &, const caStatus);
+		const caHdr &, const caStatus);
 	virtual caStatus writeNotifyResponse(
-	casChannelI *, const caHdr &, const caStatus);
+		const caHdr &, const caStatus);
 
 	//
 	// The following are only used with async IO for
@@ -676,10 +677,9 @@ public:
 			gdd *pDesc, const caStatus status);
 	caStatus readNotifyResponse(casChannelI *pChan, const caHdr &msg,
 			gdd *pDesc, const caStatus status);
-	caStatus writeResponse(casChannelI *pChan, const caHdr &msg,
+	caStatus writeResponse(const caHdr &msg,
 			const caStatus status);
-	caStatus writeNotifyResponse(casChannelI *pChan, const caHdr &msg,
-			const caStatus status);
+	caStatus writeNotifyResponse(const caHdr &msg, const caStatus status);
 	caStatus monitorResponse(casChannelI &chan, const caHdr &msg, 
 		gdd *pDesc, const caStatus status);
 
@@ -761,6 +761,11 @@ private:
 			bufSizeT &nBytesActual) = 0;
 	virtual xRecvStatus osdRecv (char *pBuf, bufSizeT nBytesReq,
 			bufSizeT &nBytesActual) = 0;
+
+	caStatus readNotifyResponseECA_XXX (casChannelI *pChan, 
+		const caHdr &msg, gdd *pDesc, const caStatus ecaStatus);
+	caStatus writeNotifyResponseECA_XXX(const caHdr &msg,
+			const caStatus status);
 };
 
 class casDGIntfIO;

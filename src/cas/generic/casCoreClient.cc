@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.9  1998/07/08 15:38:04  jhill
+ * fixed lost monitors during flow control problem
+ *
  * Revision 1.8  1998/06/16 02:25:05  jhill
  * cosmetic
  *
@@ -164,12 +167,12 @@ caStatus casCoreClient::readNotifyResponse(casChannelI *, const caHdr &,
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::writeResponse(casChannelI *, const caHdr &, 
+caStatus casCoreClient::writeResponse(const caHdr &, 
 	const caStatus)
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::writeNotifyResponse(casChannelI *, const caHdr &, 
+caStatus casCoreClient::writeNotifyResponse(const caHdr &, 
 	const caStatus)
 {
 	return S_casApp_noSupport;

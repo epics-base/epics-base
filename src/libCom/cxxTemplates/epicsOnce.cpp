@@ -37,12 +37,13 @@ public:
     void * operator new ( size_t size );
     void operator delete ( void * pCadaver, size_t size );
 private:
+    epicsSingleton < epicsMutex > :: reference mutexRef;
     epicsOnceNotify & notify;
     bool onceFlag;
     void destroy ();
     void once ();
-	static epicsSingleton < epicsMutex > pMutex;
-    static epicsSingleton < tsFreeList < class epicsOnceImpl, 16 > > pFreeList;
+	static epicsSingleton < epicsMutex > mutex;
+    static epicsSingleton < tsFreeList < class epicsOnceImpl, 16 > > freeList;
 };
 
 #ifdef _MSC_VER
@@ -58,32 +59,34 @@ template class epicsSingleton < tsFreeList < class epicsOnceImpl, 16 > >;
 #   pragma warning ( pop )
 #endif
 
-epicsSingleton < epicsMutex > epicsOnceImpl::pMutex;
-epicsSingleton < tsFreeList < class epicsOnceImpl, 16 > > epicsOnceImpl::pFreeList;
+epicsSingleton < epicsMutex > epicsOnceImpl::mutex;
+epicsSingleton < tsFreeList < class epicsOnceImpl, 16 > > epicsOnceImpl::freeList;
 
 inline void * epicsOnceImpl::operator new ( size_t size )
 { 
-    return epicsOnceImpl::pFreeList->allocate ( size );
+    epicsSingleton < tsFreeList < class epicsOnceImpl, 16 > > :: reference ref = 
+                epicsOnceImpl::freeList;
+    return ref->allocate ( size );
 }
 
 inline void epicsOnceImpl::operator delete ( void *pCadaver, size_t size )
 { 
-    epicsOnceImpl::pFreeList->release ( pCadaver, size );
+    epicsSingleton < tsFreeList < class epicsOnceImpl, 16 > > :: reference ref = 
+                epicsOnceImpl::freeList;
+    ref->release ( pCadaver, size );
 }
 
 inline epicsOnceImpl::epicsOnceImpl ( epicsOnceNotify & notifyIn ) : 
-    notify ( notifyIn ), onceFlag ( false )
+mutexRef ( epicsOnceImpl::mutex ), notify ( notifyIn ), onceFlag ( false )
 {
 }
 
 void epicsOnceImpl::once ()
 {
+    epicsGuard < epicsMutex > guard ( *this->mutexRef );
     if ( ! this->onceFlag ) {
-        epicsGuard < epicsMutex > guard ( *this->pMutex );
-        if ( ! this->onceFlag ) {
-            this->notify.initialize ();
-            this->onceFlag = true;
-        }
+        this->notify.initialize ();
+        this->onceFlag = true;
     }
 }
 

@@ -41,6 +41,9 @@ exPV::exPV (pvInfo &setup, bool preCreateFlag, bool scanOnIn) :
 		this->pScanTimer = 
 			new exScanTimer (this->getScanPeriod(), *this);
 	}
+    else {
+        this->pScanTimer = 0;
+    }
 }
 
 //

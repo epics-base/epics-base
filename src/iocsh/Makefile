@@ -25,6 +25,6 @@ LIBSRCS += dbAccessRegister
 LIBSRCS += ioccrfRegister
 
 LIBRARY_IOC = iocsh
-ioctest_DLL_LIBS  = miscIoc dbIoc registryIoc Com
+iocsh_DLL_LIBS  = miscIoc dbIoc registryIoc Com
 
 include $(TOP)/configure/RULES

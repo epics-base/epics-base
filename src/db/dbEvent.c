@@ -224,6 +224,8 @@ struct event_user *db_init_events(void)
 		freeListFree(dbevEventUserFreeList, evUser);
 		return NULL;
 	}
+	evUser->flowCtrlMode = FALSE;
+	evUser->nDuplicates = 0u;
 
   	return evUser;
 }
@@ -648,7 +650,8 @@ LOCAL int db_post_single_event_private(struct event_block *event)
 {  
   	struct event_que	*ev_que;
 	db_field_log 		*pLog;
-	int 			updateFlag;
+	int 			firstEventFlag;
+	unsigned		rngSpace;
 
 	ev_que = event->ev_que;
 
@@ -659,27 +662,51 @@ LOCAL int db_post_single_event_private(struct event_block *event)
 
 	LOCKEVQUE(ev_que)
 
-	/* add to task local event que */
-	if ( 	ev_que->evque[ev_que->putix] == EVENTQEMPTY &&
-		(RNGSPACE(ev_que)>EVENTSPERQUE || event->pLastLog==NULL) ) {
-		
-		pLog = &ev_que->valque[ev_que->putix];
-		ev_que->evque[ev_que->putix] = event;
-		event->npend++;
-		ev_que->putix = RNGINC(ev_que->putix);
-		updateFlag = 1;
-	}
-	else if (event->pLastLog) {
+	/* 
+	 * add to task local event que 
+	 */
+
+	/*
+	 * if an event is on the queue and one of
+	 * {flowCtrlMode, not room for one more of each monitor attached}
+	 * then replace the last event on the queue (for this monitor)
+	 */
+	rngSpace = RNGSPACE(ev_que);
+	if ( event->pLastLog && 
+		(ev_que->evUser->flowCtrlMode || rngSpace<=EVENTSPERQUE) ) {
 		/*
 		 * replace last event if no space is left
 		 */
 		pLog = event->pLastLog;
 		/*
 		 * the event task has already been notified about 
-		 * this (and isnt allowed to consume it while the
-		 * lock is on) so we dont need to post the semaphore
+		 * this so we dont need to post the semaphore
 		 */
-		updateFlag = 0;
+		firstEventFlag = 0;
+	}
+	/*
+	 * otherwise if the current entry is available then
+	 * fill it in and advance the ring buffer 
+	 */
+	else if ( ev_que->evque[ev_que->putix] == EVENTQEMPTY ) {
+		
+		pLog = &ev_que->valque[ev_que->putix];
+		ev_que->evque[ev_que->putix] = event;
+		event->npend++;
+		if (event->pLastLog!=NULL) {
+			ev_que->evUser->nDuplicates++;
+		}
+		/* 
+		 * if the ring buffer was empty before 
+		 * adding this event 
+		 */
+		if (rngSpace==EVENTQUESIZE) {
+			firstEventFlag = 1;
+		}
+		else {
+			firstEventFlag = 0;
+		}
+		ev_que->putix = RNGINC(ev_que->putix);
 	}
 	else {
 		/*
@@ -687,7 +714,7 @@ LOCAL int db_post_single_event_private(struct event_block *event)
 		 */
 		ev_que->evUser->queovr++;
 		pLog = NULL;
-		updateFlag = 0;
+		firstEventFlag = 0;
 	}
 
 	if (pLog && event->valque) {
@@ -716,7 +743,7 @@ LOCAL int db_post_single_event_private(struct event_block *event)
 	 * is off in case it runs at a higher priority
 	 * than the caller here.
 	 */
-	if (updateFlag) {
+	if (firstEventFlag) {
 		/* 
 		 * notify the event handler 
 		 */
@@ -825,32 +852,40 @@ int			init_func_arg
 			(*evUser->extralabor_sub)(evUser->extralabor_arg);
 		}
 
-    		for(	ev_que= &evUser->firstque; 
-			ev_que; 
-			ev_que = ev_que->nextque){
-
-      			event_read(ev_que);
-		}
-
 		/*
-		 * The following do not introduce event latency since they
-		 * are not between notification and posting events.
+		 * if in flow control mode drain duplicates and then
+		 * suspend processing events until flow control
+		 * mode is over
 		 */
-    		if(evUser->queovr){
-      			if(evUser->overflow_sub)
-        			(*evUser->overflow_sub)(
-					evUser->overflow_arg, 
-					evUser->queovr);
-      			else
-				logMsg("Events lost, discard count was %d\n",
-					evUser->queovr,
-					NULL,
-					NULL,
-					NULL,
-					NULL,
-					NULL);
-      			evUser->queovr = 0;
-    		}
+		if (evUser->flowCtrlMode!=TRUE || evUser->nDuplicates>0u) {
+
+			for(	ev_que= &evUser->firstque; 
+				ev_que; 
+				ev_que = ev_que->nextque){
+
+				event_read(ev_que);
+			}
+
+			/*
+			 * The following do not introduce event latency since they
+			 * are not between notification and posting events.
+			 */
+			if(evUser->queovr){
+				if(evUser->overflow_sub)
+					(*evUser->overflow_sub)(
+						evUser->overflow_arg, 
+						evUser->queovr);
+				else
+					logMsg("Events lost, discard count was %d\n",
+						evUser->queovr,
+						NULL,
+						NULL,
+						NULL,
+						NULL,
+						NULL);
+				evUser->queovr = 0;
+			}
+		}
 
   	}while(!evUser->pendexit);
 
@@ -919,7 +954,7 @@ int			init_func_arg
  * EVENT_READ()
  *
  */
-LOCAL int event_read(struct event_que       *ev_que)
+LOCAL int event_read (struct event_que *ev_que)
 {
   	struct event_block	*event;
   	unsigned int		nextgetix;
@@ -938,6 +973,8 @@ LOCAL int event_read(struct event_que       *ev_que)
      		(event) != EVENTQEMPTY;
      		ev_que->getix = nextgetix, event = ev_que->evque[nextgetix]){
 
+		db_field_log	*pqfl=&ev_que->valque[ev_que->getix];
+
 		/*
 		 * So I can tell em if more are comming
 		 */
@@ -950,10 +987,12 @@ LOCAL int event_read(struct event_que       *ev_que)
 		 * communication. (for other types they get whatever happens
 		 * to be there upon wakeup)
 		 */
-		if(event->valque)
-			pfl = &ev_que->valque[ev_que->getix];
-		else
+		if (event->valque) {
+			pfl = pqfl;
+		}
+		else {
 			pfl = NULL;
+		}
 
 		/*
 		 * Next event pointer can be used by event tasks to determine
@@ -977,15 +1016,50 @@ LOCAL int event_read(struct event_que       *ev_que)
 		/*
 		 * remove event from the queue
 		 */
-		if (event->npend<=1ul) {
+		if (event->pLastLog==pqfl) {
+			assert (event->npend<=1u);
 			event->pLastLog = NULL;
 		}
+		else {
+			assert (ev_que->evUser->nDuplicates>=1u);
+			ev_que->evUser->nDuplicates--;
+		}
     		event->npend--;
-
   	}
 
       	UNLOCKEVQUE(ev_que)
 
   	return OK;
 }
+
+/*
+ * db_event_flow_ctrl_mode_on()
+ */
+void db_event_flow_ctrl_mode_on (struct event_user *evUser)
+{
+	evUser->flowCtrlMode = TRUE;
+	/* 
+	 * notify the event handler task
+	 */
+	semGive (evUser->ppendsem);
+#ifdef DEBUG
+	printf("fc on %lu\n", tickGet());
+#endif
+}
+
+/*
+ * db_event_flow_ctrl_mode_off()
+ */
+void db_event_flow_ctrl_mode_off (struct event_user *evUser)
+{
+	evUser->flowCtrlMode = FALSE;
+	/* 
+	 * notify the event handler task
+	 */
+	semGive (evUser->ppendsem);
+#ifdef DEBUG
+	printf("fc off %lu\n", tickGet());
+#endif
+}
+
 

@@ -102,10 +102,12 @@ struct event_user{
 	void			*extralabor_arg;/* parameter to above */
 
         int                     taskid;         /* event handler task id */
-        unsigned short  	queovr;		/* event que overflow count */
+        unsigned 		queovr;		/* event que overflow count */
+	unsigned		nDuplicates;	/* events duplicated on q */ 
         char                    pendlck;        /* Only one task can pend */
         unsigned char           pendexit;       /* exit pend task */
 	unsigned char		extra_labor;	/* if set call extra labor func */
+	unsigned char		flowCtrlMode;	/* replace existing monitor */
 };
 
 typedef void 		OVRFFUNC(void *overflow_arg, unsigned count);
@@ -168,6 +170,9 @@ int                     init_func_arg
 
 int db_event_enable(struct event_block      *pevent);
 int db_event_disable(struct event_block      *pevent);
+
+void db_event_flow_ctrl_mode_on(struct event_user *evUser);
+void db_event_flow_ctrl_mode_off(struct event_user *evUser);
 
 #endif /*INCLdbEventh*/
 

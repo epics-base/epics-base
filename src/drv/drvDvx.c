@@ -1217,9 +1217,8 @@ int 	dvx_dma_stat(int card, int chan)
  *	dvx_reset
  *	joh 072591
  *
- * (JRW this should run thru the chain ok init'd boards, not do a probe)
- *
  */
+#if 0	/* This is hideous... should reset only those we started! */
 LOCAL void
 dvx_reset(void)
 {
@@ -1274,4 +1273,35 @@ dvx_reset(void)
 		printf("done\n");
 	}
 }
+#else
+LOCAL void
+dvx_reset(void)
+{
+  int	i;
+  int	CardFound = 0;
 
+  /* 
+   * search for cards 
+   */
+  for (i = 0; i < ai_num_cards[DVX2502]; i++)
+  {
+    if (dvx[i].pdvx2502 != NULL)
+    {
+      dvx_dma_reset(dvx[i].pdvx2502);
+      dvx[i].pdvx2502->csr = CSR_RESET;
+      CardFound = 1;
+    }
+  }
+  /*
+   * wait long enough for the current DMA to end
+   *
+   *	1 sec
+   */
+  if(CardFound)
+  {
+    printf("Waiting for DVX 2502 DMA to complete...");
+    taskDelay(sysClkRateGet());
+    printf("done\n");
+  }
+}
+#endif

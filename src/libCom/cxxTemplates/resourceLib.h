@@ -359,7 +359,7 @@ template <class T, class ID>
 inline T * resTable<T,ID>::remove (const ID &idIn)
 {
 	tsSLList<T> &list = this->pTable[this->hash(idIn)];
-	return this->findDelete(list, idIn);
+	return this->findDelete (list, idIn);
 }
 
 //
@@ -371,7 +371,7 @@ template <class T, class ID>
 inline T * resTable<T,ID>::lookup (const ID &idIn) const
 {
 	tsSLList<T> &list = this->pTable[this->hash(idIn)];
-	return this->find(list, idIn);
+	return this->find (list, idIn);
 }
 
 //

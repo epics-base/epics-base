@@ -130,11 +130,11 @@ inline void * tsFreeList < T, N, DEBUG_LEVEL >::allocate ( size_t size )
 template < class T, unsigned N, unsigned DEBUG_LEVEL >
 tsFreeListItem < T, DEBUG_LEVEL > * tsFreeList < T, N, DEBUG_LEVEL >::allocateFromNewChunk ()
 {
-    if ( DEBUG_LEVEL > 0 ) {
-        fprintf ( stderr, "allocating a %s of size %u\n", 
-            typeid ( tsFreeListChunk < T, N, DEBUG_LEVEL > ).name (), 
-            sizeof ( tsFreeListChunk < T, N, DEBUG_LEVEL > ) );
-    }
+    //if ( DEBUG_LEVEL > 0 ) {
+    //    fprintf ( stderr, "allocating a %s of size %u\n", 
+    //        typeid ( tsFreeListChunk < T, N, DEBUG_LEVEL > ).name (), 
+    //        sizeof ( tsFreeListChunk < T, N, DEBUG_LEVEL > ) );
+    //}
 
     tsFreeListChunk < T, N, DEBUG_LEVEL > *pChunk = new ( tsFreeListChunk < T, N, DEBUG_LEVEL > );
     if ( ! pChunk) {

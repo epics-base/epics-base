@@ -1,4 +1,3 @@
-SHELL=knts
 
 # BUILD_TYPE
 #   Currently either Vx or Unix

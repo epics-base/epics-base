@@ -13,8 +13,6 @@
 #	Jeff eliminated many shell-lines in Makefile.*.
 #
 
-#	Set this to the UNIX-like shell that you have:
-SHELL=knts
 
 # 	Use std path variables from ms
 HOME = $(HOMEDRIVE)$(HOMEPATH)

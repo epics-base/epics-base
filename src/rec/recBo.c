@@ -286,7 +286,7 @@ static long process(pbo)
                     default :
                         status=-1;
                         recGblRecordError(S_db_badField,(void *)pbo,
-                                "ao:process Illegal IVOA field");
+                                "bo:process Illegal IVOA field");
                 }
         }
 

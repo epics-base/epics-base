@@ -21,8 +21,12 @@
 #include "nciu.h"
 
 // does the local compiler support placement delete
-#if defined (_MSC_VER)
+#if defined (_MSC_VER) 
 #   if _MSC_VER >= 1200
+#       define NETIO_PLACEMENT_DELETE
+#   endif
+#elif defined ( __HP_aCC )
+#   if _HP_aCC > 033300
 #       define NETIO_PLACEMENT_DELETE
 #   endif
 #else
@@ -33,7 +37,6 @@ class baseNMIU : public tsDLNode < baseNMIU >,
         public chronIntIdRes < baseNMIU > {
 public:
     baseNMIU ( nciu &chan );
-    /*virtual*/ ~baseNMIU ();
     virtual void destroy ( class cacRecycle & ) = 0; // only called by cac
     virtual void completion () = 0;
     virtual void exception ( int status, 
@@ -48,6 +51,9 @@ public:
     ca_uint32_t getID () const;
     nciu & channel () const;
 protected:
+    // SUN PRO multiply defines if this is virtual
+    // therefore this is protected to avoid most use of it
+    /*virtual*/ ~baseNMIU (); 
 //
 // perhaps we should not store the channel here and instead fetch it out of the 
 // notify 

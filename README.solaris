@@ -1,29 +1,22 @@
 ----------------------------------------------------------------------------
-EPICS R3.12 Notes for Solaris 2.3
+EPICS R3.12.2 Notes for Solaris
 	- By Andrew Johnson
 ----------------------------------------------------------------------------
 
 Notes:
 
-1. In order to build and use EPICS under Solaris 2, you must include
-various directories in your path in the order given below, in addition
-to those named in base/README. Some of these directories may already be
-included in your path from your .login script or .cshrc file, so be
-careful that the ordering is correct.
+1. In order to build EPICS under Solaris 2, you must ensure that the
+solaris directory /usr/ccs/bin is in your search path, in addition to
+the EPICS directories named in base/README.
 
-	setenv PATH /usr/ucb:/usr/bin:/usr/ccs/bin:$PATH
+2. It is not possible to compile EPICS under Solaris 2 using only the
+GNU gcc compiler -- you must have the Sun SPARCworks ANSI C compiler.
 
-2. It is not possible to compile the whole of EPICS under Solaris 2
-using only the GNU gcc compiler - some routines which are needed (for
-example quiet_nan()) have been unbundled by Sun and are provided with
-their ANSI C compiler.  The path to the Sun compiler is explicitly set
-using the SPARCWORKS definition in the file CONFIG_SITE.Unix.solaris
-
-3. EPICS must be compiled and linked using the UCB compatability
-libraries.  The definitions UCB_LIB and UCB_INCLUDE are used here to
-refer to these libraries and their header files, and the tools provided
-within /usr/ucb must be used in preference to the System V ones, hence
-the above path ordering.
+3. EPICS under Solaris 2 no longer uses the UCB compatability
+libraries.  It does require the /usr/ucb/install program however.  In
+order to ensure that the /usr/ucblib files are not inherited, you
+should ensure that your LD_LIBRARY_PATH environment variable does not
+include /usr/ucblib when you build any of the host tools.
 
 --
-anj@mail.ast.cam.ac.uk
+anj@ast.cam.ac.uk

@@ -30,9 +30,9 @@ extern epicsThreadPrivateId caClientContextId;
 
 oldCAC::oldCAC ( bool enablePreemptiveCallback ) :
     clientCtx ( * new cac ( *this, enablePreemptiveCallback ) ),
-    ca_exception_func ( 0 ), ca_exception_arg ( 0 ), 
+    pCallbackGuard ( 0 ), ca_exception_func ( 0 ), ca_exception_arg ( 0 ), 
     pVPrintfFunc ( errlogVprintf ), fdRegFunc ( 0 ), fdRegArg ( 0 ),
-    pCallbackGuard ( 0 ), pndRecvCnt ( 0u ), ioSeqNo ( 0u )
+    pndRecvCnt ( 0u ), ioSeqNo ( 0u )
 {
     if ( enablePreemptiveCallback ) {
         this->pCallbackGuard = new epicsGuard < callbackMutex > 

@@ -128,7 +128,7 @@ junko:	WORD
 yyerror(str)
 char  *str;
 {
-    sprintf(message,"Error line %d : %s\n",line_num, yytext);
+    sprintf(message,"Error line %d : %s %s\n",line_num, yytext,str);
     errMessage(-1,message);
 }
 

@@ -136,10 +136,6 @@ LOCAL struct channel_in_use *MPTOPCIU(
 caHdr *mp
 );
 
-LOCAL void events_on_action(
-struct client  *client
-);
-
 LOCAL void write_notify_call_back(PUTNOTIFY *ppn);
 
 LOCAL void write_notify_action(
@@ -311,7 +307,6 @@ struct message_buffer *recv
 			evext.msg = *mp;
 			evext.pciu = pciu;
 			evext.send_lock = TRUE;
-			evext.get = TRUE;
 			evext.pdbev = NULL;
 			evext.size = dbr_size_n(mp->m_type, mp->m_count);
 
@@ -397,11 +392,11 @@ struct message_buffer *recv
 			break;
 
 		case CA_PROTO_EVENTS_ON:
-			events_on_action(client);
+			db_event_flow_ctrl_mode_off(client->evuser);
 			break;
 
 		case CA_PROTO_EVENTS_OFF:
-			client->eventsoff = TRUE;
+			db_event_flow_ctrl_mode_on(client->evuser);
 			break;
 
 		case CA_PROTO_READ_SYNC:
@@ -1054,53 +1049,6 @@ LOCAL void putNotifyErrorReply(struct client *client, caHdr *mp, int statusCA)
 
 /*
  *
- * events_on_action()
- *
- */
-LOCAL void events_on_action(
-struct client  *client
-)
-{
-	struct channel_in_use 	*pciu;
-	struct event_ext *pevext;
-	struct event_ext evext;
-
-	client->eventsoff = FALSE;
-
-	FASTLOCK(&client->addrqLock);
-	pciu = (struct channel_in_use *) 
-		client->addrq.node.next;
-	while (pciu) {
-		FASTLOCK(&client->eventqLock);
-		pevext = (struct event_ext *) 
-			pciu->eventq.node.next;
-		while (pevext){
-
-			if (pevext->modified) {
-				evext = *pevext;
-				evext.send_lock = TRUE;
-				evext.get = TRUE;
-				read_reply(
-					&evext, 
-					&pciu->addr, 
-					TRUE, 
-					NULL);
-				pevext->modified = FALSE;
-			}
-			pevext = (struct event_ext *)
-				pevext->node.next;
-		}
-		FASTUNLOCK(&client->eventqLock);
-
-		pciu = (struct channel_in_use *)
-			pciu->node.next;
-	}
-	FASTUNLOCK(&client->addrqLock);
-}
-
-
-/*
- *
  * event_add_action()
  *
  */
@@ -1156,7 +1104,6 @@ struct client  *client
 	pevext->send_lock = TRUE;
 	pevext->size = dbr_size_n(mp->m_type, mp->m_count);
 	pevext->mask = pmo->m_info.m_mask;
-	pevext->get = FALSE;
 
 	FASTLOCK(&client->eventqLock);
 	ellAdd(	&pciu->eventq, &pevext->node);
@@ -1435,14 +1382,6 @@ db_field_log		*pfl
 	int        strcnt;
 	int		v41;
 
-	/*
-	 * If flow control is on set modified and send for later
- 	 * (only if this is not a get)
-	 */
-	if (client->eventsoff && !pevext->get) {
-		pevext->modified = TRUE;
-		return;
-	}
 	if (pevext->send_lock)
 		SEND_LOCK(client);
 

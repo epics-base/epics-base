@@ -71,7 +71,11 @@ epicsShareFunc void epicsShareAPI epicsExitCallAtExits(void)
 epicsShareFunc void epicsShareAPI epicsExit(int status)
 {
     epicsExitCallAtExits();
+    epicsThreadSleep(1.0);
+    /* for vxWorks exit only terminates calling thread*/
+#ifndef vxWorks
     exit(status);
+#endif
 }
 
 epicsShareFunc int epicsShareAPI epicsAtExit(epicsExitFunc func, void *arg)

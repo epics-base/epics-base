@@ -294,7 +294,7 @@ LOCAL int req_server (void)
 
     /* get server's Internet address */
     if (bind(IOC_sock, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0) {
-        errlogPrintf ( "CAS: TCP server port bind error was %s\n", SOCKERRSTR ( SOCKERRNO ) );
+        errlogPrintf ( "CAS: TCP server port bind error was \"%s\"\n", SOCKERRSTR ( SOCKERRNO ) );
         socket_close (IOC_sock);
         threadSuspendSelf ();
     }

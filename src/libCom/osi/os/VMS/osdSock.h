@@ -115,6 +115,7 @@ typedef int                     SOCKET;
 #	define socket_ioctl(A,B,C) ioctl(A,B,C)
 #endif
 typedef int osiSockIoctl_t;
+typedef int osiSocklen_t;
 
 #if defined(WINTCP) /* Wallangong */
 	extern int uerrno;

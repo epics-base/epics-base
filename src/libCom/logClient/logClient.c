@@ -213,7 +213,7 @@ LOCAL void logClientShutdown (void)
 #   ifndef vxWorks
         logClient *pClient;
         semMutexMustTake (logClientGlobalMutex);
-        while ( pClient = (logClient *) ellGet (&logClientList) ) {
+        while ( ( pClient = (logClient *) ellGet (&logClientList) ) ) {
             logClientDestroy (pClient);
         }
         semMutexGive (logClientGlobalMutex);

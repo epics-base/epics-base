@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.8  1998/07/23 16:48:15  jhill
+ * eventsOff is no longere a private member
+ *
  * Revision 1.7  1998/07/08 15:38:04  jhill
  * fixed lost monitors during flow control problem
  *
@@ -179,7 +182,7 @@ casProcCond casEventSys::process()
 			break;
 		}
 		else {
-			errMessage(status, "unexpect error processing event");
+			errMessage(status, "- unexpected error processing event");
 			cond = casProcDisconnect;
 			break;
 		}

@@ -7,4 +7,4 @@
  
 #INSTALL_LOCATION = /home/phoebus/JBA/testBaseNew
 
-#CROSS_COMPILER_TARGET_ARCHS += vxWorks-ppc604 vxWorks-ppc603 vxWorks-68040
+CROSS_COMPILER_TARGET_ARCHS += vxWorks-ppc604 vxWorks-ppc603 vxWorks-68040

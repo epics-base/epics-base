@@ -1,0 +1,21 @@
+EPICS = ../../../..
+include Target.include
+include $(EPICS)/config/CONFIG_BASE
+
+SRCS.c += ../bdt.c
+SRCS.c += ../bdtServ.c
+SRCS.c += ../bdtServName.c
+SRCS.c += ../bdtServPv.c
+
+OBJS += bdt.o
+OBJS += bdtServ.o
+OBJS += bdtServName.o
+OBJS += bdtServPv.o
+
+PROD = bdt
+
+include $(EPICS)/config/RULES.Vx
+
+$(PROD): $(OBJS)
+	$(RM) $@
+	$(LINK.c) $@ $(OBJS) $(LDLIBS)

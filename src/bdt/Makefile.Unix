@@ -1,0 +1,10 @@
+EPICS = ../../../..
+include Target.include
+include $(EPICS)/config/CONFIG_BASE
+
+
+LIBOBJS += bdt.o
+
+LIBNAME = libBdt.a
+
+include $(EPICS)/config/RULES.Unix

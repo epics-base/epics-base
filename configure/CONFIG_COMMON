@@ -167,12 +167,16 @@ CONFORM_CFLAGS = $(CONFORM_CFLAGS_$(CMPLR))
 CONFORM_CXXFLAGS = $(CONFORM_CXXFLAGS_$(CMPLR))
 
 # Warnings flags
-WARN_CFLAGS = $(WARN_CFLAGS_$($(BUILD_CLASS)_WARN))
-WARN_CXXFLAGS = $(WARN_CXXFLAGS_$($(BUILD_CLASS)_WARN))
+WARN_CFLAGS = $(WARN_CFLAGS_$(firstword $($(basename $@)_WARN_$(OS_CLASS)) \
+ $($(basename $@)_WARN) $($(BUILD_CLASS)_WARN)))
+WARN_CXXFLAGS = $(WARN_CXXFLAGS_$(firstword $($(basename $@)_WARN_$(OS_CLASS)) \
+$($(basename $@)_WARN) $($(BUILD_CLASS)_WARN)))
 
 # Optimization flags
-OPT_CFLAGS = $(OPT_CFLAGS_$($(BUILD_CLASS)_OPT))
-OPT_CXXFLAGS = $(OPT_CXXFLAGS_$($(BUILD_CLASS)_OPT))
+OPT_CFLAGS = $(OPT_CFLAGS_$(firstword $($(basename $@)_OPT_$(OS_CLASS)) \
+ $($(basename $@)_OPT) $($(BUILD_CLASS)_OPT)))
+OPT_CXXFLAGS = $(OPT_CXXFLAGS_$(firstword $($(basename $@)_OPT_$(OS_CLASS)) \
+ $($(basename $@)_OPT) $($(BUILD_CLASS)_OPT)))
 
 # Posix flags
 POSIX=YES

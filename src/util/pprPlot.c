@@ -1,4 +1,4 @@
-/*	$Id$
+/*	@(#)pprPlot.c	1.5 8/24/92
  *	Author:	Roger A. Cole
  *	Date:	12-04-90
  *
@@ -34,6 +34,8 @@
  *			functions
  *  .05 05-15-92 rac	add pprErrorBar; add line caps as special marks for
  *			pprMark
+ *  .06 09-07-92 rac	handle sub-intervals; change pixel coordinates to
+ *			short integers
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -991,19 +993,25 @@ void	(*fnTick)();
 void	(*fnLine)();
 void	(*fnText)();
 {
-    double	tickHalf, tick1, tick2;
-    int		i;
-    double	x, xInterval, y;
+    double	tickHalf, tick1, tick2, tick1S, tick2S;
+    int		i, j;
+    double	x, x1, xInterval, xSubint, y;
     double	xVal, xValInterval;
-    char	text[80];
+    char	*pText, text[80];
     int		nCol=6;		/* number of columns for annotation label */
     int		sigDigits;	/* sig digits to print */
     double	maxVal;		/* maximum of the end values for axis */
+    PPR_TXT_JUST just;		/* justification code for annotations */
     
-    if (drawLine) {
-	tickHalf = pArea->tickHt / pArea->yScale;
-	tick1 = pArea->yBot - tickHalf;
-	tick2 = pArea->yBot + tickHalf;
+    tickHalf = pArea->tickHt / pArea->yScale;
+    tick1S = pArea->yBot;
+    tick2S = tick1S - tickHalf;
+    tick1 = tick1S - tickHalf;
+    tick2 = tick1S + tickHalf;
+    if (drawLine == 0 && pArea->xNsubint > 0) {
+	drawLine = 1;
+	tick1 = tick1S;
+	tick2 = tick1S - 2.*tickHalf;
     }
     maxVal = PprMax(PprAbs(xLeft),PprAbs(xRight));
     if (maxVal >= 100.)		sigDigits = 0;
@@ -1013,39 +1021,32 @@ void	(*fnText)();
 
     x = pArea->xLeft;
     xInterval = (pArea->xRight - pArea->xLeft) / xNint;
+    if (pArea->xNsubint > 0)
+	xSubint = xInterval / pArea->xNsubint;
     xVal = xLeft;
     xValInterval = (xRight - xLeft) / xNint;
     y = pArea->yBot - 2. * pArea->charHt / pArea->yScale;
-    if (drawLine)
-	fnTick(pArea, x, tick1, x, tick2);
-    if (xAnnot == NULL) {
-	pprCvtDblToTxt(text, nCol, xVal, sigDigits);
-	fnText(pArea, x, y, text, PPR_TXT_LJ, 0., angle);
-    }
-    else
-	fnText(pArea, x, y, xAnnot[0], PPR_TXT_LJ, 0., angle);
-    for (i=1; i<xNint; i++) {
+    for (i=0; i<=xNint; i++) {
+	if (i == xNint) x = pArea->xRight, xVal = xRight;
+	if (drawLine) fnTick(pArea, x, tick1, x, tick2);
+
+	if (pArea->xNsubint > 0 && i != xNint) {
+	    for (j=1, x1=x+xSubint; j<pArea->xNsubint; j++, x1+=xSubint)
+		fnTick(pArea, x1, tick1S, x1, tick2S);
+	}
+
+	if (i == 0) just = PPR_TXT_LJ;
+	else if (i == xNint) just = PPR_TXT_RJ;
+	else just = PPR_TXT_CEN;
+	if (xAnnot == NULL) 
+	    pprCvtDblToTxt(text, nCol, xVal, sigDigits), pText = text;
+	else
+	    pText = xAnnot[i];
+	fnText(pArea, x, y, pText, just, 0., angle);
+
 	x += xInterval;
 	xVal += xValInterval;
-	if (drawLine)
-	    fnTick(pArea, x, tick1, x, tick2);
-	if (xAnnot == NULL) {
-	    pprCvtDblToTxt(text, nCol, xVal, sigDigits);
-	    fnText(pArea, x, y, text, PPR_TXT_CEN, 0., angle);
-	}
-	else
-	    fnText(pArea, x, y, xAnnot[i], PPR_TXT_CEN, 0., angle);
     }
-    x = pArea->xRight;
-    if (drawLine) {
-	fnTick(pArea, x, tick1, x, tick2);
-    }
-    if (xAnnot == NULL) {
-	pprCvtDblToTxt(text, nCol, xRight, sigDigits);
-	fnText(pArea, x, y, text, PPR_TXT_RJ, 0., angle);
-    }
-    else
-	fnText(pArea, x, y, xAnnot[xNint], PPR_TXT_RJ, 0., angle);
     if (xLabel != NULL) {
 	x = (pArea->xLeft + pArea->xRight) / 2.;
 	y = pArea->yBot - 4. * pArea->charHt / pArea->yScale;
@@ -1419,8 +1420,8 @@ double	yDblTop;	/* I y data value at top edge of area */
 
     if (pArea->pWin->winType != PPR_WIN_SCREEN)
 	return;
-    x1 = pArea->xPixLeft + (xDblLeft - pArea->xLeft) * pArea->xScale;
-    x2 = pArea->xPixLeft + (xDblRight - pArea->xLeft) * pArea->xScale;
+    x1 = pArea->xPixLeft + nint((xDblLeft - pArea->xLeft) * pArea->xScale);
+    x2 = pArea->xPixLeft + nint((xDblRight - pArea->xLeft) * pArea->xScale);
     if (x1 < x2) {
 	x = x1;
 	width = x2 - x1;
@@ -1429,8 +1430,8 @@ double	yDblTop;	/* I y data value at top edge of area */
 	x = x2;
 	width = x1 - x2;
     }
-    y1 = pArea->yPixBot + (yDblBot - pArea->yBot) * pArea->yScale;
-    y2 = pArea->yPixBot + (yDblTop - pArea->yBot) * pArea->yScale;
+    y1 = pArea->yPixBot + nint((yDblBot - pArea->yBot) * pArea->yScale);
+    y2 = pArea->yPixBot + nint((yDblTop - pArea->yBot) * pArea->yScale);
     if (y1 < y2) {
 	y = y1;
 	height = y2 - y1;
@@ -1554,12 +1555,14 @@ double	charHt;		/* I value to use as default for character size, as
     if (xNint <= 0)
 	pprAutoInterval(xLeft, xRight, &xNint);
     pArea->xNint = xNint;
+    pArea->xNsubint = 0;
 
     pArea->yFracBot = wfracYbot;
     pArea->yFracTop = wfracYtop;
     if (yNint <= 0)
 	pprAutoInterval(yBot, yTop, &yNint);
     pArea->yNint = yNint;
+    pArea->yNsubint = 0;
 
     pArea->charHt = charHt * pWin->height;
     pArea->oldWinHt = pWin->height;
@@ -1690,15 +1693,15 @@ double	yTop;		/* I y data value at top side of data area */
 	(void)printf("pprAreaRescale: y bottom and top are equal\n");
 	return;
     }
-    pArea->xPixLeft = ((double)pWin->width)*pArea->xFracLeft;
-    pArea->xPixRight = ((double)pWin->width)*pArea->xFracRight;
+    pArea->xPixLeft = nint(((double)pWin->width)*pArea->xFracLeft);
+    pArea->xPixRight = nint(((double)pWin->width)*pArea->xFracRight);
     pArea->xLeft = xLeft;
     pArea->xRight = xRight;
     pArea->xInterval = (xRight - xLeft) / pArea->xNint;
     pArea->xScale = ((double)pWin->width) *
 		(pArea->xFracRight - pArea->xFracLeft) / (xRight - xLeft);
-    pArea->yPixBot = ((double)pWin->height)*pArea->yFracBot;
-    pArea->yPixTop = ((double)pWin->height)*pArea->yFracTop;
+    pArea->yPixBot = nint(((double)pWin->height)*pArea->yFracBot);
+    pArea->yPixTop = nint(((double)pWin->height)*pArea->yFracTop);
     pArea->yBot = yBot;
     pArea->yTop = yTop;
     pArea->yInterval = (yTop - yBot) / pArea->yNint;
@@ -2291,8 +2294,8 @@ double	angle;		/* I orientation angle of character, ccw degrees */
         height = pArea->charHt;
     else
         height *= pArea->pWin->height;
-    xWin = pArea->xPixLeft + (x - pArea->xLeft) * pArea->xScale;
-    yWin = pArea->yPixBot + (y - pArea->yBot) * pArea->yScale;
+    xWin = pArea->xPixLeft + nint((x - pArea->xLeft) * pArea->xScale);
+    yWin = pArea->yPixBot + nint((y - pArea->yBot) * pArea->yScale);
 
     if (pArea->pWin->winType == PPR_WIN_SCREEN) {
 	if (angle == 0.)	cosT = 1., sinT = 0.;
@@ -2997,12 +3000,12 @@ short	*pPatt;		/* I pointer to pattern array */
     double	segLen, endLen, dashLen, xbeg, xend, ybeg, yend;
     int		pen=0, sub=-1, rem=0;
 
-    xbeg = xp0 = pArea->xPixLeft + (x0 - pArea->xLeft) * pArea->xScale;
-    ybeg = yp0 = pArea->yPixBot + (y0 - pArea->yBot) * pArea->yScale;
+    xbeg = xp0 = pArea->xPixLeft + nint((x0 - pArea->xLeft) * pArea->xScale);
+    ybeg = yp0 = pArea->yPixBot + nint((y0 - pArea->yBot) * pArea->yScale);
     if (pArea->pWin->winType == PPR_WIN_SCREEN)
 	ybeg = yp0 = pArea->pWin->height - yp0;
-    xp1 = pArea->xPixLeft + (x1 - pArea->xLeft) * pArea->xScale;
-    yp1 = pArea->yPixBot + (y1 - pArea->yBot) * pArea->yScale;
+    xp1 = pArea->xPixLeft + nint((x1 - pArea->xLeft) * pArea->xScale);
+    yp1 = pArea->yPixBot + nint((y1 - pArea->yBot) * pArea->yScale);
     if (pArea->pWin->winType == PPR_WIN_SCREEN)
 	yp1 = pArea->pWin->height - yp1;
     pprLineThick(pArea, pArea->pWin->attr.lineThick);
@@ -3176,7 +3179,7 @@ int	markNum;	/* I mark number--0 to PPR_NMARKS-1, inclusive */
 void	(*drawFn)();	/* I function to draw lines, using pixel coordinates */
 {
     short	*pMark;
-    double	xp0, xp1, yp0, yp1;
+    int		xp0, xp1, yp0, yp1;
     int		pen;
 
     pprLineThick(pArea, pArea->attr.lineThick);
@@ -3188,8 +3191,8 @@ void	(*drawFn)();	/* I function to draw lines, using pixel coordinates */
 	pMark = glPprMarkS_hCap;
     else if (markNum == -2)
 	pMark = glPprMarkS_vCap;
-    xp0 = pArea->xPixLeft + (x - pArea->xLeft) * pArea->xScale;
-    yp0 = pArea->yPixBot + (y - pArea->yBot) * pArea->yScale;
+    xp0 = pArea->xPixLeft + nint((x - pArea->xLeft) * pArea->xScale);
+    yp0 = pArea->yPixBot + nint((y - pArea->yBot) * pArea->yScale);
     if (pArea->attr.clip) {
 	if (xp0 < PprMin(pArea->xPixLeft, pArea->xPixRight) ||
 	    xp0 > PprMax(pArea->xPixLeft, pArea->xPixRight) ||
@@ -3206,7 +3209,7 @@ void	(*drawFn)();	/* I function to draw lines, using pixel coordinates */
 	else						yp1 = yp0 + *pMark++;
 	pen = *pMark++;
 	if (pen) {
-	    drawFn(pArea, xp0, yp0, xp1, yp1);
+	    drawFn(pArea, (double)xp0, (double)yp0, (double)xp1, (double)yp1);
 	    if (pen == 2)
 		break;
 	}
@@ -3295,13 +3298,15 @@ double	y;		/* I y data coordinate of new point */
 int	pen;		/* I pen indicator--non-zero draws a line */
 void	(*drawFn)();	/* I pointer to function to use in drawing */
 {
-    double	xp0, xp1, yp0, yp1;
+    int		xp0, xp1, yp0, yp1;
     double	segLen, endLen, dashLen, xbeg, xend, ybeg, yend;
 
     xp0 = pArea->xPix[0];
     yp0 = pArea->yPix[0];
-    xp1 = pArea->xPix[1] = pArea->xPixLeft + (x - pArea->xLeft)* pArea->xScale;
-    yp1 = pArea->yPix[1] = pArea->yPixBot + (y - pArea->yBot) * pArea->yScale;
+    xp1 = pArea->xPixLeft + nint((x - pArea->xLeft)* pArea->xScale);
+    pArea->xPix[1] = xp1;
+    yp1 = pArea->yPixBot + nint((y - pArea->yBot) * pArea->yScale);
+    pArea->yPix[1] = yp1;
     if (pArea->pWin->winType == PPR_WIN_SCREEN)
 	yp1 = pArea->yPix[1] = pArea->pWin->height - pArea->yPix[1];
     pArea->xPix[0] = xp1;
@@ -3309,11 +3314,11 @@ void	(*drawFn)();	/* I pointer to function to use in drawing */
     if (pen) {
 	pprLineThick(pArea, pArea->attr.lineThick);
 	if (pArea->attr.clip) {
-	    double xpl=pArea->xPixLeft, xpr=pArea->xPixRight;
-	    double ypb=pArea->yPixBot, ypt=pArea->yPixTop;
-	    double ypeb, ypet;	/* "logical" top and bottom pix values */
-	    double xpmin=PprMin(xp0,xp1), xpmax=PprMax(xp0,xp1);
-	    double ypmin=PprMin(yp0,yp1), ypmax=PprMax(yp0,yp1);
+	    int xpl=pArea->xPixLeft, xpr=pArea->xPixRight;
+	    int ypb=pArea->yPixBot, ypt=pArea->yPixTop;
+	    int ypeb, ypet;	/* "logical" top and bottom pix values */
+	    int xpmin=PprMin(xp0,xp1), xpmax=PprMax(xp0,xp1);
+	    int ypmin=PprMin(yp0,yp1), ypmax=PprMax(yp0,yp1);
 	    if (pArea->pWin->winType == PPR_WIN_SCREEN) {
 		ypb = pArea->pWin->height - ypb;
 		ypt = pArea->pWin->height - ypt;
@@ -3339,18 +3344,26 @@ void	(*drawFn)();	/* I pointer to function to use in drawing */
 		}
 		else {
 		    double S;		/* slope of line to draw */
-		    double XP0=xp0, XP1=xp1, YP0=yp0, YP1=yp1;
-		    S = (yp1 - yp0) / (xp1 - xp0);
-		    if (XP0 < xpl)        XP0 = xpl, YP0 = yp0 + (xpl-xp0) * S;
-		    else if (XP0 > xpr)   XP0 = xpr, YP0 = yp0 + (xpr-xp0) * S;
-		    if (YP0 < ypeb)       YP0 = ypeb, XP0 = xp0 + (ypeb-yp0)/S;
-		    else if (YP0 > ypet)  YP0 = ypet, XP0 = xp0 + (ypet-yp0)/S;
+		    int XP0=xp0, XP1=xp1, YP0=yp0, YP1=yp1;
+		    S = (double)(yp1 - yp0) / (double)(xp1 - xp0);
+		    if (XP0 < xpl)
+			XP0 = xpl, YP0 = yp0 + nint((double)(xpl-xp0) * S);
+		    else if (XP0 > xpr)
+			XP0 = xpr, YP0 = yp0 + nint((double)(xpr-xp0) * S);
+		    if (YP0 < ypeb)
+			YP0 = ypeb, XP0 = xp0 + nint((double)(ypeb-yp0)/S);
+		    else if (YP0 > ypet)
+			YP0 = ypet, XP0 = xp0 + nint((double)(ypet-yp0)/S);
 		    if (XP0 < xpl || XP0 > xpr)
 			return;		/* no intersection */
-		    if (XP1 < xpl)        XP1 = xpl, YP1 = yp0 + (xpl-xp0) * S;
-		    else if (XP1 > xpr)   XP1 = xpr, YP1 = yp0 + (xpr-xp0) * S;
-		    if (YP1 < ypeb)       YP1 = ypeb, XP1 = xp0 + (ypeb-yp0)/S;
-		    else if (YP1 > ypet)  YP1 = ypet, XP1 = xp0 + (ypet-yp0)/S;
+		    if (XP1 < xpl)
+			XP1 = xpl, YP1 = yp0 + nint((double)(xpl-xp0) * S);
+		    else if (XP1 > xpr)
+			XP1 = xpr, YP1 = yp0 + nint((double)(xpr-xp0) * S);
+		    if (YP1 < ypeb)
+			YP1 = ypeb, XP1 = xp0 + nint((double)(ypeb-yp0)/S);
+		    else if (YP1 > ypet)
+			YP1 = ypet, XP1 = xp0 + nint((double)(ypet-yp0)/S);
 		    if (XP1 < xpl || XP1 > xpr)
 			return;		/* no intersection */
 		    xp0 = XP0, xp1 = XP1, yp0 = YP0, yp1 = YP1;
@@ -3358,12 +3371,12 @@ void	(*drawFn)();	/* I pointer to function to use in drawing */
 	    }
 	}
 	if (pArea->attr.pPatt == NULL)
-	    drawFn(pArea, xp0, yp0, xp1, yp1);
+	    drawFn(pArea, (double)xp0, (double)yp0, (double)xp1, (double)yp1);
 	else {
 /*-----------------------------------------------------------------------------
 * draw a dashed line pattern
 *----------------------------------------------------------------------------*/
-	    segLen = sqrt((xp1-xp0)*(xp1-xp0) + (yp1-yp0)*(yp1-yp0));
+	    segLen = sqrt((double)((xp1-xp0)*(xp1-xp0) + (yp1-yp0)*(yp1-yp0)));
 	    endLen = 0.;
 	    xbeg = xp0;
 	    ybeg = yp0;
@@ -3400,14 +3413,14 @@ double	x;		/* I x data coordinate of new point */
 double	y;		/* I y data coordinate of new point */
 int	pen;		/* I pen indicator--1 draws a line */
 {
-    pArea->xPix[1] = pArea->xPixLeft + (x - pArea->xLeft) * pArea->xScale;
-    pArea->yPix[1] = pArea->yPixBot + (y - pArea->yBot) * pArea->yScale;
+    pArea->xPix[1] = pArea->xPixLeft + nint((x - pArea->xLeft) * pArea->xScale);
+    pArea->yPix[1] = pArea->yPixBot + nint((y - pArea->yBot) * pArea->yScale);
     if (pArea->pWin->winType == PPR_WIN_SCREEN)
 	pArea->yPix[1] = pArea->pWin->height - pArea->yPix[1];
     if (pen) {
 	pprLineThick(pArea, pArea->pWin->attr.lineThick);
-	pprLineSegPixD_ac(pArea, pArea->xPix[0], pArea->yPix[0],
-			pArea->xPix[1], pArea->yPix[1]);
+	pprLineSegPixD_ac(pArea, (double)pArea->xPix[0], (double)pArea->yPix[0],
+			(double)pArea->xPix[1], (double)pArea->yPix[1]);
     }
     pArea->xPix[0] = pArea->xPix[1];
     pArea->yPix[0] = pArea->yPix[1];
@@ -3419,14 +3432,14 @@ double	x;		/* I x data coordinate of new point */
 double	y;		/* I y data coordinate of new point */
 int	pen;		/* I pen indicator--1 draws a line */
 {
-    pArea->xPix[1] = pArea->xPixLeft + (x - pArea->xLeft) * pArea->xScale;
-    pArea->yPix[1] = pArea->yPixBot + (y - pArea->yBot) * pArea->yScale;
+    pArea->xPix[1] = pArea->xPixLeft + nint((x - pArea->xLeft) * pArea->xScale);
+    pArea->yPix[1] = pArea->yPixBot + nint((y - pArea->yBot) * pArea->yScale);
     if (pArea->pWin->winType == PPR_WIN_SCREEN)
 	pArea->yPix[1] = pArea->pWin->height - pArea->yPix[1];
     if (pen) {
 	pprLineThick(pArea, pArea->pWin->attr.lineThick);
-	pprLineSegPixD_wc(pArea, pArea->xPix[0], pArea->yPix[0],
-			pArea->xPix[1], pArea->yPix[1]);
+	pprLineSegPixD_wc(pArea, (double)pArea->xPix[0], (double)pArea->yPix[0],
+			(double)pArea->xPix[1], (double)pArea->yPix[1]);
     }
     pArea->xPix[0] = pArea->xPix[1];
     pArea->yPix[0] = pArea->yPix[1];
@@ -3632,8 +3645,8 @@ double	y;		/* I y data coordinate */
     double	xPix, yPix;
     double	xp0,yp0,xp1;
 
-    xPix = pArea->xPixLeft + (x - pArea->xLeft) * pArea->xScale;
-    yPix = pArea->yPixBot + (y - pArea->yBot) * pArea->yScale;
+    xPix = pArea->xPixLeft + nint((x - pArea->xLeft) * pArea->xScale);
+    yPix = pArea->yPixBot + nint((y - pArea->yBot) * pArea->yScale);
     pprLineThick(pArea, pArea->attr.lineThick);
     if (pArea->pWin->winType == PPR_WIN_SCREEN) {
 	yPix = pArea->pWin->height - yPix;
@@ -3683,8 +3696,8 @@ double	y;		/* I y data coordinate */
 
     if (pArea->pWin->winType != PPR_WIN_SCREEN)
 	return;
-    xPix = pArea->xPixLeft + (x - pArea->xLeft) * pArea->xScale;
-    yPix = pArea->yPixBot + (y - pArea->yBot) * pArea->yScale;
+    xPix = pArea->xPixLeft + nint((x - pArea->xLeft) * pArea->xScale);
+    yPix = pArea->yPixBot + nint((y - pArea->yBot) * pArea->yScale);
     pprLineThick(pArea, pArea->attr.lineThick);
     yPix = pArea->pWin->height - yPix;
 #ifdef SUNVIEW
@@ -3848,8 +3861,8 @@ double	wfracYtop;	/* I y win frac of top edge of area (see Note 1) */
 	wfracYbot<0. || wfracYbot>1. || wfracYtop<0. || wfracYtop>1.) {
 	x = pArea->xPixLeft + wfracXleft;
 	y = pArea->yPixBot + wfracYbot;
-	width = pArea->xPixRight + wfracXright - x + 1.;
-	height = pArea->yPixTop + wfracYtop - y + 1.;
+	width = pArea->xPixRight + wfracXright - x + 1;
+	height = pArea->yPixTop + wfracYtop - y + 1;
     }
     else {
 	x = wfracXleft * pArea->pWin->width;
@@ -4149,8 +4162,8 @@ void	(*fn)();
         height = pArea->charHt;
     else
         height *= pArea->pWin->height;
-    xWin = pArea->xPixLeft + (x - pArea->xLeft) * pArea->xScale;
-    yWin = pArea->yPixBot + (y - pArea->yBot) * pArea->yScale;
+    xWin = pArea->xPixLeft + nint((x - pArea->xLeft) * pArea->xScale);
+    yWin = pArea->yPixBot + nint((y - pArea->yBot) * pArea->yScale);
 
     if (pArea->pWin->winType == PPR_WIN_SCREEN) {
 	if (angle == 0.)	cosT = 1., sinT = 0.;

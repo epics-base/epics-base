@@ -4,7 +4,7 @@ README.1st
 
                            EPICS base
 
-                         Release 3.14.4
+                         Release 3.14.*
 
 What is EPICS base?
 
@@ -51,25 +51,26 @@ Supported platforms
          hpux-parisc
          hpux-parisc-gnu
          linux-x86
-         win32-x86-borland
-         linux-x86-debug
+         linux-x86-borland
          solaris-sparc
-         solaris-sparc-debug
          solaris-sparc-gnu
          solaris-x86
          solaris-x86-gnu
          win32-x86
          win32-x86-borland
-         win32-x86-debug
 
+     Debugging builds
+        linux-x86-debug       (GNU compiler with -g option for host builds)
+        solaris-sparc-debug   (sun compiler with -g option for host builds)
+        win32-x86-debug       (MS Visual C++ with debug option for host builds)
 
      Cross compile target platforms (operating system - architecture)
 
-         linux-386 
-         linux-486 
-         linux-586 
-         linux-686 
-         linux-athlon 
+         linux-386 (linux-x86 host)
+         linux-486 (linux-x86 host)
+         linux-586 (linux-x86 host)
+         linux-686 (linux-x86 host)
+         linux-athlon (linux-x86 host)
          vxWorks-486 
          vxWorks-68040 
          vxWorks-68040-debug
@@ -122,14 +123,10 @@ Software requirements
      more board support packages. Consult the vxWorks documentation for
      details. 
 
-     Optional GNU compiler requirement for solaris-sparc and win32-x86 hosts
-     If you have state notation language source files (*.st files) which require
-     c preprocessing before conversion to c source, gcc must be in your path.
-
 Host system storage requirements
 
      The GNU zipped tar file is approximately 1.4 MB in size. The unzipped
-     untarred distribution source tree is approximately 6 MB. The build
+     untarred distribution source tree is approximately 7.3 MB. The build
      created files for each host take approximately 40 MB and the build
      created files for each target take approximately 10 MB.
 
@@ -252,7 +249,9 @@ Build related components
      Site.profile        bourne shell script to set path and env variables 
      Site.cshrc          c shell script to set path and env variables 
      borland.bat         WIN32 bat file to set path and env variables 
+     cygwin.bat          cygwin-x86 bat file to set path and env variables 
      win32.bat           WIN32 bat file to set path and env variables 
+     win32-debug.bat     WIN32 debug build bat file path and env variables 
        
      base/configure  directory - contains build definitions and rules 
      CONFIG                Includes configure files and allows variable overrides 
@@ -292,8 +291,12 @@ Build related components
      base/configure/tools directory - contains Perl scripts used for the build 
      convertRelease.pl       Performs consistancy checks on RELEASE files
      cp.pl                   This Perl script copies an existing file 
+     cvsclean.pl             Remove all .#* files in directory tree
+     dos2unix.pl             Converts text file from DOS CR/LF to unix ISO
      filterWarnings.pl       Filters warning messages during HP builds.
+     fullpathName.pl         Returns fullpath name of directory arg.
      installEpics.pl         Installs built files into install directories. 
+     makeIncludeDbd.pl       Creates *Include.dbd file from filename args 
      makeMakefile.pl         Creates a Makefile in O.<arch> dirs 
      makeMakefileInclude.pl  Creates file to be included by Makefile 
      mkdir.pl                Creates a directory (like Unix mkdir) 

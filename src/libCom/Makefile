@@ -53,6 +53,11 @@ INC += tsSLList.h
 INC += tsMinMax.h
 INC += tsBTree.h
 INC += tsFreeList.h
+INC += epicsSingleton.h
+INC += epicsGuard.h
+INC += epicsOnce.h
+SRCS += epicsSingletonBase.cpp
+SRCS += epicsOnce.cpp
 
 SRC_DIRS += $(LIBCOM)/dbmf
 INC += dbmf.h
@@ -152,7 +157,8 @@ INC += osiUnistd.h
 INC += osiWireFormat.h
 
 SRCS += epicsThread.cpp
-SRCS += epicsMutex.c
+SRCS += epicsMutex.cpp
+SRCS += epicsEvent.cpp
 SRCS += epicsTime.cpp
 
 SRCS += osdSock.c

@@ -28,15 +28,6 @@
  *
  */
 
-//
-// NOTES:
-// 1) this should use a binary tree to speed up inserts?
-// 2)  when making this safe for multi threading consider the possibility of
-// object delete just after finding an active fdRegI on
-// the list but before callBack().
-//
-//
-
 #include <assert.h>
 #include <stdio.h>
 #include <float.h>

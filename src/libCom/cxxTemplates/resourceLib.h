@@ -405,7 +405,7 @@ void resTable<T,ID>::show ( unsigned level ) const
         }
     }
 
-    if ( level >=1u ) {
+    if ( level >=1u && N ) {
         double X = 0.0;
         double XX = 0.0;
         unsigned maxEntries = 0u;

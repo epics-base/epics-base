@@ -319,7 +319,7 @@ static void	dvx_reset();
 static void  	dvx_int();
 static int 	muxtst();
 static int 	sramld();
-static int 	dvx_driver();
+int 	dvx_driver();
 int	dvx_dread();
 int 	dvx_dump();
 int 	dvx_chan_print();

@@ -76,7 +76,7 @@ exAsyncWriteIO::~exAsyncWriteIO()
 // exAsyncWriteIO::expire()
 // (a virtual function that runs when the base timer expires)
 //
-epicsTimerNotify::expireStatus exAsyncWriteIO::expire ( const epicsTime & currentTime ) 
+epicsTimerNotify::expireStatus exAsyncWriteIO::expire ( const epicsTime & /* currentTime */ ) 
 {
 	caStatus status;
 	status = this->pv.update ( this->pValue );
@@ -111,7 +111,7 @@ exAsyncReadIO::~exAsyncReadIO()
 // exAsyncReadIO::expire()
 // (a virtual function that runs when the base timer expires)
 //
-epicsTimerNotify::expireStatus exAsyncReadIO::expire ( const epicsTime & currentTime )
+epicsTimerNotify::expireStatus exAsyncReadIO::expire ( const epicsTime & /* currentTime */ )
 {
 	caStatus status;
 

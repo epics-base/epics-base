@@ -82,12 +82,14 @@ long cvtRawToEngBpt(pval,linr,init,ppbrk,plbrk)
          pInt = pbrkTable->papBrkInt[lbrk];
          if( lbrk >= number-1) {
                 status=1;
+                break;
          }
          pnxtInt = pbrkTable->papBrkInt[lbrk+1];
      }
      while( (pInt->raw) > val) {
          if(lbrk==0) {
                 status=1;
+                break;
             }
          lbrk--;
          pInt = pbrkTable->papBrkInt[lbrk];
@@ -138,12 +140,14 @@ long cvtEngToRawBpt(pval,linr,init,ppbrk,plbrk)
          pInt = pbrkTable->papBrkInt[lbrk];
          if( lbrk >= number-1) {
                 status=1;
+                break;
          }
          pnxtInt = pbrkTable->papBrkInt[lbrk+1];
      }
      while( (pInt->eng) > val) {
          if(lbrk==0) {
                 status=1;
+                break;
             }
          lbrk--;
          pInt = pbrkTable->papBrkInt[lbrk];

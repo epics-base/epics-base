@@ -83,8 +83,56 @@ cacChannel *dbServiceIO::createChannel (
 
 void dbServiceIO::callReadNotify ( struct dbAddr &addr, 
         unsigned type, unsigned long count, 
+        cacReadNotify &notify )
+{
+    unsigned long size = dbr_size_n ( type, count );
+
+    if ( type > INT_MAX ) {
+        notify.exception ( ECA_BADTYPE, 
+            "type code out of range (high side)", 
+            type, count );
+        return;
+    }
+
+    if ( count > INT_MAX ) {
+        notify.exception ( ECA_BADCOUNT, 
+            "element count out of range (high side)",
+            type, count);
+        return;
+    }
+
+    epicsAutoMutex locker ( this->mutex );
+
+    if ( this->eventCallbackCacheSize < size) {
+        if ( this->pEventCallbackCache ) {
+            delete [] this->pEventCallbackCache;
+        }
+        this->pEventCallbackCache = new char [size];
+        if ( ! this->pEventCallbackCache ) {
+            this->eventCallbackCacheSize = 0ul;
+            notify.exception ( ECA_ALLOCMEM, 
+                "unable to allocate callback cache",
+                type, count );
+            return;
+        }
+        this->eventCallbackCacheSize = size;
+    }
+    int status = db_get_field ( &addr, static_cast <int> ( type ), 
+                    this->pEventCallbackCache, static_cast <int> ( count ), 0 );
+    if ( status ) {
+        notify.exception ( ECA_GETFAIL, 
+            "db_get_field() completed unsuccessfuly",
+            type, count);
+    }
+    else { 
+        notify.completion ( type, count, this->pEventCallbackCache );
+    }
+}
+
+void dbServiceIO::callStateNotify ( struct dbAddr &addr, 
+        unsigned type, unsigned long count, 
         const struct db_field_log *pfl, 
-        cacDataNotify &notify )
+        cacStateNotify &notify )
 {
     unsigned long size = dbr_size_n ( type, count );
 
@@ -127,7 +175,7 @@ void dbServiceIO::callReadNotify ( struct dbAddr &addr,
             type, count);
     }
     else { 
-        notify.completion ( type, count, this->pEventCallbackCache );
+        notify.current ( type, count, this->pEventCallbackCache );
     }
 }
 
@@ -198,7 +246,7 @@ dbEventSubscription dbServiceIO::subscribe ( struct dbAddr &addr, dbChannelIO &c
 
 void dbServiceIO::initiatePutNotify ( dbChannelIO &chan, struct dbAddr &addr, 
     unsigned type, unsigned long count, const void *pValue, 
-    cacNotify &notify, cacChannel::ioid *pId )
+    cacWriteNotify &notify, cacChannel::ioid *pId )
 {
     epicsAutoMutex locker ( this->mutex );
     if ( ! chan.dbServicePrivateListOfIO::pBlocker ) {

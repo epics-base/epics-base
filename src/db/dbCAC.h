@@ -44,7 +44,7 @@ public:
 class dbPutNotifyBlocker : public dbBaseIO {
 public:
     dbPutNotifyBlocker ( dbChannelIO &chanIn );
-    void initiatePutNotify ( epicsMutex &mutex, cacNotify &notify, struct dbAddr &addr, 
+    void initiatePutNotify ( epicsMutex &mutex, cacWriteNotify &notify, struct dbAddr &addr, 
             unsigned type, unsigned long count, const void *pValue );
     void cancel ();
     void completion ();
@@ -58,7 +58,7 @@ private:
     putNotify pn;
     epicsEvent block;
     dbChannelIO &chan;
-    cacNotify *pNotify;
+    cacWriteNotify *pNotify;
     dbSubscriptionIO * isSubscription ();
     static tsFreeList < dbPutNotifyBlocker > freeList;
     static epicsMutex freeListMutex;
@@ -70,7 +70,7 @@ extern "C" void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr *pad
 
 class dbSubscriptionIO : public tsDLNode <dbSubscriptionIO>, public dbBaseIO {
 public:
-    dbSubscriptionIO ( dbServiceIO &, dbChannelIO &, struct dbAddr &, cacDataNotify &, 
+    dbSubscriptionIO ( dbServiceIO &, dbChannelIO &, struct dbAddr &, cacStateNotify &, 
         unsigned type, unsigned long count, unsigned mask, cacChannel::ioid * );
     void destroy ();
     void show ( unsigned level ) const;
@@ -80,7 +80,7 @@ public:
 protected:
     virtual ~dbSubscriptionIO ();
 private:
-    cacDataNotify &notify;
+    cacStateNotify &notify;
     dbChannelIO &chan;
     dbEventSubscription es;
     unsigned type;
@@ -108,7 +108,9 @@ public:
         const dbAddr &addr, dbServiceIO &serviceIO );
     void destroy ();
     void callReadNotify ( unsigned type, unsigned long count, 
-            const struct db_field_log *pfl, cacDataNotify &notify );
+            cacReadNotify &notify );
+    void callStateNotify ( unsigned type, unsigned long count, 
+            const struct db_field_log *pfl, cacStateNotify &notify );
     void putNotifyCompletion ( dbPutNotifyBlocker & ); 
     void show ( unsigned level ) const;
     void * operator new ( size_t size);
@@ -121,13 +123,13 @@ private:
     const char *pName () const;
     void initiateConnect ();
     ioStatus read ( unsigned type, unsigned long count, 
-        cacDataNotify &, ioid * );
+        cacReadNotify &, ioid * );
     void write ( unsigned type, unsigned long count, 
         const void *pvalue );
     ioStatus write ( unsigned type, unsigned long count, 
-        const void *pvalue, cacNotify &, ioid * );
+        const void *pvalue, cacWriteNotify &, ioid * );
     void subscribe ( unsigned type, unsigned long count, 
-        unsigned mask, cacDataNotify &notify, ioid * );
+        unsigned mask, cacStateNotify &notify, ioid * );
     void ioCancel ( const ioid & );
     void ioShow ( const ioid &, unsigned level ) const;
     short nativeType () const;
@@ -143,11 +145,13 @@ public:
     virtual ~dbServiceIO ();
     cacChannel *createChannel ( const char *pName, cacChannelNotify & );
     void callReadNotify ( struct dbAddr &addr, unsigned type, unsigned long count, 
-            const struct db_field_log *pfl, cacDataNotify &notify );
+            cacReadNotify &notify );
+    void callStateNotify ( struct dbAddr &addr, unsigned type, unsigned long count, 
+            const struct db_field_log *pfl, cacStateNotify &notify );
     dbEventSubscription subscribe ( struct dbAddr &addr, dbChannelIO &chan,
         dbSubscriptionIO &subscr, unsigned mask, cacChannel::ioid * );
     void initiatePutNotify ( dbChannelIO &, struct dbAddr &, unsigned type, 
-        unsigned long count, const void *pValue, cacNotify &notify, 
+        unsigned long count, const void *pValue, cacWriteNotify &notify, 
         cacChannel::ioid *pId ); 
     void putNotifyCompletion ( dbPutNotifyBlocker & ); 
     void show ( unsigned level ) const;

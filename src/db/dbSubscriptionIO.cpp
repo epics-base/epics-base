@@ -33,7 +33,7 @@ tsFreeList < dbSubscriptionIO > dbSubscriptionIO::freeList;
 epicsMutex dbSubscriptionIO::freeListMutex;
 
 dbSubscriptionIO::dbSubscriptionIO ( dbServiceIO &serviceIO, dbChannelIO &chanIO, 
-    dbAddr &addr, cacDataNotify &notifyIn, 
+    dbAddr &addr, cacStateNotify &notifyIn, 
     unsigned typeIn, unsigned long countIn, unsigned maskIn,
     cacChannel::ioid * pId ) :
     notify ( notifyIn ), chan ( chanIO ), es ( 0 ), 
@@ -73,7 +73,7 @@ extern "C" void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr * /*
 	int /* eventsRemaining */, struct db_field_log *pfl )
 {
     dbSubscriptionIO *pIO = static_cast < dbSubscriptionIO * > ( pPrivate );
-    pIO->chan.callReadNotify ( pIO->type, pIO->count, pfl, pIO->notify );
+    pIO->chan.callStateNotify ( pIO->type, pIO->count, pfl, pIO->notify );
 }
 
 void dbSubscriptionIO::show ( unsigned level ) const

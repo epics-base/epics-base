@@ -55,7 +55,14 @@ inline short dbChannelIO::nativeType () const
 }
 
 inline void dbChannelIO::callReadNotify ( unsigned type, unsigned long count, 
-        const struct db_field_log *pfl, cacDataNotify &notify )
+        cacReadNotify &notify )
 {
-    this->serviceIO.callReadNotify ( this->addr, type, count, pfl, notify );
+    this->serviceIO.callReadNotify ( this->addr, type, count, notify );
 }
+
+inline void dbChannelIO::callStateNotify ( unsigned type, unsigned long count, 
+        const struct db_field_log *pfl, cacStateNotify &notify )
+{
+    this->serviceIO.callStateNotify ( this->addr, type, count, pfl, notify );
+}
+

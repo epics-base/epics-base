@@ -99,7 +99,7 @@ void dbPutNotifyBlocker::completion ()
     this->block.signal ();
 }
 
-void dbPutNotifyBlocker::initiatePutNotify ( epicsMutex &mutex, cacNotify &notify, 
+void dbPutNotifyBlocker::initiatePutNotify ( epicsMutex &mutex, cacWriteNotify &notify, 
         struct dbAddr &addr, unsigned type, unsigned long count, 
         const void *pValue )
 {

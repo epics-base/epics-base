@@ -43,7 +43,7 @@ dbChannelIO::dbChannelIO ( cacChannelNotify &notify,
 
 void dbChannelIO::initiateConnect ()
 {
-    this->notify ().connectNotify ( *this );
+    this->notify ().connectNotify ();
 }
 
 dbChannelIO::~dbChannelIO ()
@@ -52,10 +52,10 @@ dbChannelIO::~dbChannelIO ()
 }
 
 cacChannel::ioStatus dbChannelIO::read ( unsigned type, 
-     unsigned long count, cacDataNotify &notify, ioid * ) 
+     unsigned long count, cacReadNotify &notify, ioid * ) 
 {
     this->serviceIO.callReadNotify ( this->addr, 
-        type, count, 0, notify );
+        type, count, notify );
     return iosSynch;
 }
 
@@ -72,7 +72,7 @@ void dbChannelIO::write ( unsigned type, unsigned long count, const void *pValue
 }
 
 cacChannel::ioStatus dbChannelIO::write ( unsigned type, unsigned long count, 
-                        const void *pValue, cacNotify &notify, ioid *pId ) 
+                        const void *pValue, cacWriteNotify &notify, ioid *pId ) 
 {
     if ( count > LONG_MAX ) {
         throw outOfBounds();
@@ -89,7 +89,7 @@ void dbChannelIO::putNotifyCompletion ( dbPutNotifyBlocker &blocker )
 }
 
 void dbChannelIO::subscribe ( unsigned type, unsigned long count, 
-    unsigned mask, cacDataNotify &notify, ioid *pId ) 
+    unsigned mask, cacStateNotify &notify, ioid *pId ) 
 {   
     if ( type > INT_MAX ) {
         throw cacChannel::badType();

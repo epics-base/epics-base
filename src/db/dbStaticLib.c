@@ -1659,22 +1659,30 @@ char *pstring;
 		}
 		break;
 	    case BITBUS_IO: {
+		    /* jbk - the bbgpib struct uses unsigned char's instead
+		    of short, so read values into short and then convert */
+
 	    	    char	*end;
+		    short	tmp_val;
 
 		    if(!(end = strchr(pstr,'#'))) return (S_dbLib_badField);
 		    pstr = end + 1;
 		    if(!(end = strchr(pstr,'L'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.bitbusio.link);
+		    sscanf(pstr,"%hd",&tmp_val);
+		    plink->value.bitbusio.link=(unsigned char)tmp_val;
 		    if(!(end = strchr(pstr,'N'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.bitbusio.node);
+		    sscanf(pstr,"%hd",&tmp_val);
+		    plink->value.bitbusio.node=(unsigned char)tmp_val;
 		    if(!(end = strchr(pstr,'P'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.bitbusio.port);
+		    sscanf(pstr,"%hd",&tmp_val);
+		    plink->value.bitbusio.port=(unsigned char)tmp_val;
 		    if(!(end = strchr(pstr,'S'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.bitbusio.signal);
+		    sscanf(pstr,"%hd",&tmp_val);
+		    plink->value.bitbusio.signal=(unsigned char)tmp_val;
 		    plink->value.bitbusio.parm[0] = 0;
 		    if(end = strchr(pstr,'@')) {
 		        pstr = end + 1;
@@ -1683,19 +1691,26 @@ char *pstring;
 		}
 		break;
 	    case BBGPIB_IO: {
+		    /* jbk - the bbgpib struct uses unsigned char's instead
+		    of short, so read values into short and then convert */
+
 	    	    char	*end;
+		    short	tmp_val;
 
 		    if(!(end = strchr(pstr,'#'))) return (S_dbLib_badField);
 		    pstr = end + 1;
 		    if(!(end = strchr(pstr,'L'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.bbgpibio.link);
+		    sscanf(pstr,"%hd",&tmp_val);
+		    plink->value.bbgpibio.link=(unsigned char)tmp_val;
 		    if(!(end = strchr(pstr,'B'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.bbgpibio.bbaddr);
+		    sscanf(pstr,"%hd",&tmp_val);
+		    plink->value.bbgpibio.bbaddr=(unsigned char)tmp_val;
 		    if(!(end = strchr(pstr,'G'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.bbgpibio.gpibaddr);
+		    sscanf(pstr,"%hd",&tmp_val);
+		    plink->value.bbgpibio.gpibaddr=tmp_val;
 		    plink->value.bbgpibio.parm[0] = 0;
 		    if(end = strchr(pstr,'@')) {
 		        pstr = end + 1;

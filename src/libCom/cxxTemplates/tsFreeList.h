@@ -69,12 +69,11 @@
 #include "epicsMutex.h"
 #include "epicsGuard.h"
 
-// these versions of the microsoft compiler incorrectly
+// ms visual studio 6.0 and before incorrectly
 // warn about a missing delete operator if only the
 // newly preferred delete operator with a size argument 
-// is present - I expect that they will fix this in the
-// next version
-#if defined ( _MSC_VER ) && _MSC_VER <= 1200
+// is present 
+#if defined ( _MSC_VER ) && _MSC_VER <= 1200 
 #   pragma warning ( disable : 4291 )  
 #endif
 
@@ -85,15 +84,22 @@ template < class T, unsigned N = 0x400,
     class MUTEX = epicsMutex >
 class tsFreeList {
 public:
-    tsFreeList ();
-    ~tsFreeList ();
-    void * allocate ( size_t size );
-    void release ( void * p, size_t size );
+    tsFreeList () 
+        throw ();
+    ~tsFreeList () 
+        throw ();
+    void * allocate ( size_t size ) 
+        throw ( std::bad_alloc );
+    void release ( void * p )
+        throw ();
+    void release ( void * p, size_t size )
+        throw ();
 private:
     MUTEX mutex;
     tsFreeListItem < T > * pFreeList;
     tsFreeListChunk < T, N > * pChunkList;
-    void * allocateFromNewChunk ();
+    void * allocateFromNewChunk () 
+        throw ( std::bad_alloc );
 };
 
 template < class T >
@@ -110,11 +116,11 @@ struct tsFreeListChunk {
 };
 
 template < class T, unsigned N, class MUTEX >
-inline tsFreeList < T, N, MUTEX > :: tsFreeList () : 
-    pFreeList ( 0 ), pChunkList ( 0 ) {}
+inline tsFreeList < T, N, MUTEX > :: tsFreeList () 
+    throw () : pFreeList ( 0 ), pChunkList ( 0 ) {}
 
 template < class T, unsigned N, class MUTEX >
-tsFreeList < T, N, MUTEX > :: ~tsFreeList ()
+tsFreeList < T, N, MUTEX > :: ~tsFreeList () throw ()
 {
     while ( tsFreeListChunk < T, N > *pChunk = this->pChunkList ) {
         this->pChunkList = this->pChunkList->pNext;
@@ -123,7 +129,8 @@ tsFreeList < T, N, MUTEX > :: ~tsFreeList ()
 }
 
 template < class T, unsigned N, class MUTEX >
-void * tsFreeList < T, N, MUTEX >::allocate ( size_t size )
+void * tsFreeList < T, N, MUTEX >::allocate ( size_t size ) 
+    throw ( std::bad_alloc )
 {
     if ( size != sizeof ( T ) || N == 0u || tsFreeListDebugBypass ) {
         void * p = ::operator new ( size );
@@ -142,7 +149,8 @@ void * tsFreeList < T, N, MUTEX >::allocate ( size_t size )
 }
 
 template < class T, unsigned N, class MUTEX >
-void * tsFreeList < T, N, MUTEX >::allocateFromNewChunk ()
+void * tsFreeList < T, N, MUTEX >::allocateFromNewChunk () 
+    throw ( std::bad_alloc )
 {
     tsFreeListChunk < T, N > * pChunk = 
         new tsFreeListChunk < T, N >;
@@ -161,10 +169,24 @@ void * tsFreeList < T, N, MUTEX >::allocateFromNewChunk ()
 }
 
 template < class T, unsigned N, class MUTEX >
-void tsFreeList < T, N, MUTEX >::release ( void * pCadaver, size_t size )
+void tsFreeList < T, N, MUTEX >::release ( void * pCadaver, size_t size ) 
+    throw ()
 {
-    if ( size != sizeof ( T ) || N == 0u || tsFreeListDebugBypass ) {
+    if ( size != sizeof ( T ) ) {
         tsFreeListMemSetDelete ( pCadaver, size );
+        ::operator delete ( pCadaver );
+    }
+    else {
+        this->release ( pCadaver );
+    }
+}
+
+template < class T, unsigned N, class MUTEX >
+void tsFreeList < T, N, MUTEX >::release ( void * pCadaver )
+    throw ()
+{
+    if ( N == 0u || tsFreeListDebugBypass ) {
+        tsFreeListMemSetDelete ( pCadaver, sizeof ( T ) );
         ::operator delete ( pCadaver );
     }
     else if ( pCadaver ) {

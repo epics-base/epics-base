@@ -1587,10 +1587,14 @@ char *dbGetString(DBENTRY *pdbentry)
 		else if(pvlMask&pvlOptCP) ppind=3;
 		else if(pvlMask&pvlOptCPP) ppind=4;
 		else ppind=0;
-	        sprintf(message,"%s %s %s",
-		    plink->value.pv_link.pvname,
-		    ppstring[ppind],
-		    msstring[pvlMask&pvlOptMS]);
+		if(plink->value.pv_link.pvname)
+		    strcpy(message,plink->value.pv_link.pvname);
+		else
+		    strcpy(message,"");
+		strcat(message," ");
+		strcat(message,ppstring[ppind]);
+		strcat(message," ");
+		strcat(message,msstring[pvlMask&pvlOptMS]);
 		break;
 	    }
 	    case VME_IO:
@@ -2165,22 +2169,21 @@ char *dbGetRange(DBENTRY *pdbentry)
     *message = 0;
     if(!pflddes) {strcpy(message,"fldDes not found"); return(message);}
     switch (pflddes->field_type) {
-    case DBF_STRING: {strcpy(message,"string"); return(message);}
-    case DBF_CHAR : {strcpy(message,"-128 to 127"); return(message);}
-    case DBF_SHORT : {strcpy(message,"-32768 to 32767");return(message);}
-    case DBF_LONG: {strcpy(message,"long"); return(message);}
-    case DBF_UCHAR: {strcpy(message,"0 to 255");return(message);}
-    case DBF_USHORT:{strcpy(message,"0 to 65535");return(message);}
-    case DBF_ULONG:{strcpy(message,"unsigned long");return(message);}
-    case DBF_ENUM: return(NULL);
-    case DBF_FLOAT:
-    case DBF_DOUBLE: {strcpy(message,"float");return(message);}
-    case (DBF_MENU):
-    case (DBF_DEVICE):
-		{strcpy(message,"menu");return(message);}
-    case DBF_INLINK: {strcpy(message,"inlink");return(message);}
-    case DBF_OUTLINK: {strcpy(message,"outlink");return(message);}
-    case DBF_FWDLINK: {strcpy(message,"fwdlink");return(message);}
+    case DBF_STRING: {strcpy(message,"STRING"); return(message);}
+    case DBF_CHAR : {strcpy(message,"CHAR"); return(message);}
+    case DBF_SHORT : {strcpy(message,"SHORT");return(message);}
+    case DBF_LONG: {strcpy(message,"LONG"); return(message);}
+    case DBF_UCHAR: {strcpy(message,"UCHAR");return(message);}
+    case DBF_USHORT:{strcpy(message,"USHORT");return(message);}
+    case DBF_ULONG:{strcpy(message,"ULONG:");return(message);}
+    case DBF_ENUM: {strcpy(message,"ENUM");return(message);}
+    case DBF_FLOAT: {strcpy(message,"FLOAT");return(message);}
+    case DBF_DOUBLE: {strcpy(message,"DOUBLE");return(message);}
+    case DBF_MENU: {strcpy(message,"MENU");return(message);}
+    case DBF_DEVICE: {strcpy(message,"DEVICE");return(message);}
+    case DBF_INLINK: {strcpy(message,"INLINK");return(message);}
+    case DBF_OUTLINK: {strcpy(message,"OUTLINK");return(message);}
+    case DBF_FWDLINK: {strcpy(message,"FWDLINK");return(message);}
     default:
 	errPrintf(-1,__FILE__, __LINE__,"Logic Error\n");
     }
@@ -2328,15 +2331,15 @@ int dbAllocForm(DBENTRY *psave)
         status = dbFindField(pdbentry,"INP");
         if(status) status = dbFindField(pdbentry,"OUT");
 	if(status) goto done;
-	plinkentry = pdbentry;
     } else {
 	if((pflddes->field_type!=DBF_INLINK)
 	&& (pflddes->field_type!=DBF_OUTLINK)
 	&& (pflddes->field_type!=DBF_FWDLINK)) {
+	    epicsPrintf("dbAllocForm called but not DBF_DEVICE or DBF_xxxLINK\n");
 	    goto done;
 	}
-	plinkentry = psave;
     }
+    plinkentry = pdbentry;
     plinkflddes = plinkentry->pflddes;
     plink = (DBLINK *)(plinkentry->pfield);
     status = mapLINKTtoFORMT(plink,plinkflddes,&linkType);
@@ -2925,7 +2928,7 @@ char *dbGetRelatedField(DBENTRY *psave)
     char	*rtnval = NULL;
     long	status;
 
-    pflddes = pdbentry->pflddes;
+    pflddes = psave->pflddes;
     if(pflddes->field_type !=DBF_DEVICE) return(NULL);
     copyEntry(psave,pdbentry);
     pflddes = pdbentry->pflddes;
@@ -3014,7 +3017,7 @@ long dbCvtLinkToConstant(DBENTRY *pdbentry)
 	}
 	return(0);
     default:
-	errPrintf(-1,__FILE__, __LINE__,"Logic Error\n");
+	epicsPrintf("dbCvtLinkToConstant called for non link field\n");
     }
     return(S_dbLib_badLink);
 }
@@ -3044,7 +3047,7 @@ long dbCvtLinkToPvlink(DBENTRY *pdbentry)
 	plink->value.pv_link.precord = pdbentry->precnode->precord;
 	return(0);
     default:
-	errPrintf(-1,__FILE__, __LINE__,"Logic Error\n");
+	epicsPrintf("dbCvtLinkToPvlink called for non link field\n");
     }
     return(S_dbLib_badLink);
 }

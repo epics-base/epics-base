@@ -190,8 +190,8 @@ void dbScanLock(struct dbCommon *precord)
 
        /* Move range check to iocInit */
 	if(lset < 0 || lset >= dbScanPvt.nset) {
-		errMessage(S_db_badLset, "Lock Set out of range");
-		exit(1);
+		errMessage(S_db_badLset, "Lock Set out of range:dbScanLock");
+		taskSuspend(taskIdSelf());
 	}
 	pscanLock = dbScanPvt.pscanLock + lset;
 	FASTLOCK(&pscanLock->lock);
@@ -212,10 +212,9 @@ void dbScanUnlock(struct dbCommon *precord)
 
        /* Put check in iocInit() */
 	if(lset<0 || lset>=dbScanPvt.nset) {
-		errMessage(S_db_badLset,"Lock Set out of range");
-		return;
+		errMessage(S_db_badLset,"Lock Set out of range:dbScanUnlock");
+		taskSuspend(taskIdSelf());
 	}
-
 	pscanLock = dbScanPvt.pscanLock + lset;
 	pscanLock->precord = NULL;
 	FASTUNLOCK(&pscanLock->lock);

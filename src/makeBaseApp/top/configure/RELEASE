@@ -1,4 +1,9 @@
 #RELEASE Location of external products
+#Macro substitution is not allowed in the location defintions
+
+# You should do a "gnumake clean uninstall install" in the application
+# top directory each time changes are made to this file
+
 EPICS_BASE=_EPICS_BASE_
 TEMPLATE_TOP=_TEMPLATE_TOP_
 MSI=/home/epics/CLS/epics/extensions/bin/$(EPICS_HOST_ARCH)/msi

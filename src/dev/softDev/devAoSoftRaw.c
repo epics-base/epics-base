@@ -36,23 +36,25 @@
  *      ...
  */
 
-#include	<stdlib.h>
-#include	<stdio.h>
-#include	<string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
-#include	"alarm.h"
-#include	"dbDefs.h"
-#include	"dbAccess.h"
-#include	"recGbl.h"
-#include        "recSup.h"
-#include	"devSup.h"
-#include	"link.h"
-#include	"special.h"
-#include	"aoRecord.h"
+#include "alarm.h"
+#include "dbDefs.h"
+#include "dbAccess.h"
+#include "dbEvent.h"
+#include "recGbl.h"
+#include "recSup.h"
+#include "devSup.h"
+#include "link.h"
+#include "special.h"
+#include "aoRecord.h"
 
 static long init_record();
 
 /* Create the dset for devAoSoftRaw */
+static long init_record();
 static long write_ao();
 static long special_linconv();
 struct {
@@ -72,14 +74,13 @@ struct {
 	write_ao,
 	special_linconv};
 
-static long init_record(pao)
-struct aoRecord *pao;
+static long init_record(aoRecord *pao)
 {
+    special_linconv(pao,1);
     return 0;
 } /* end init_record() */
 
-static long write_ao(pao)
-    struct aoRecord	*pao;
+static long write_ao(aoRecord *pao)
 {
     long status;
 
@@ -88,13 +89,30 @@ static long write_ao(pao)
     return(status);
 }
 
-static long special_linconv(pao,after)
-    struct aoRecord	*pao;
-    int after;
+static long special_linconv(aoRecord *pao, int after)
 {
+    double eguf,egul,rawf,rawl;
+    double eslo,eoff;
 
     if(!after) return(0);
-
+    if(pao->rawf == pao->rawl) {
+        errlogPrintf("%s devAoSoftRaw RAWF == RAWL\n",pao->name);
+        return(0);
+    }
+    eguf = pao->eguf;
+    egul = pao->egul;
+    rawf = (double)pao->rawf;
+    rawl = (double)pao->rawl;
+    eslo = (eguf - egul)/(rawf - rawl);
+    eoff = (rawf*egul - rawl*eguf)/(rawf - rawl);
+    if(pao->eslo != eslo) {
+        pao->eslo = eslo;
+        db_post_events(pao,&pao->eslo,DBE_VALUE|DBE_LOG);
+    }
+    if(pao->eoff != eoff) {
+        pao->eoff = eoff;
+        db_post_events(pao,&pao->eoff,DBE_VALUE|DBE_LOG);
+    }
     return(0);
 }
 

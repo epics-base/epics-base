@@ -34,19 +34,20 @@
  * .04  10-10-92        jba     replaced code with recGblGetLinkValue call
  * 	...
  */
-#include	<stdlib.h>
-#include	<stdio.h>
-#include	<string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
-#include	"alarm.h"
-#include	"cvtTable.h"
-#include	"dbDefs.h"
-#include	"dbAccess.h"
-#include	"recGbl.h"
-#include        "recSup.h"
-#include	"devSup.h"
-#include	"link.h"
-#include	"aiRecord.h"
+#include "alarm.h"
+#include "cvtTable.h"
+#include "dbDefs.h"
+#include "dbAccess.h"
+#include "dbEvent.h"
+#include "recGbl.h"
+#include "recSup.h"
+#include "devSup.h"
+#include "link.h"
+#include "aiRecord.h"
 /* Create the dset for devAiSoftRaw */
 static long init_record();
 static long read_ai();
@@ -69,10 +70,9 @@ struct {
 	special_linconv
 };
 
-static long init_record(pai)
-    struct aiRecord	*pai;
+static long init_record(aiRecord *pai)
 {
-
+    special_linconv(pai,1);
     /* ai.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pai->inp.type) {
     case (CONSTANT) :
@@ -87,11 +87,11 @@ static long init_record(pai)
 		"devAiSoftRaw (init_record) Illegal INP field");
 	return(S_db_badField);
     }
+    special_linconv(pai,1);
     return(0);
 }
 
-static long read_ai(pai)
-    struct aiRecord	*pai;
+static long read_ai( aiRecord *pai)
 {
     long status;
 
@@ -99,9 +99,29 @@ static long read_ai(pai)
     return(0);
 }
 
-static long special_linconv(pai,after)
-     struct aiRecord   *pai;
-     int after;
+static long special_linconv(aiRecord *pai,int after)
 {
-	return(0);
+    double eguf,egul,rawf,rawl;
+    double eslo,eoff;
+
+    if(!after) return(0);
+    if(pai->rawf == pai->rawl) {
+        errlogPrintf("%s devAiSoftRaw RAWF == RAWL\n",pai->name);
+        return(0);
+    }
+    eguf = pai->eguf;
+    egul = pai->egul;
+    rawf = (double)pai->rawf;
+    rawl = (double)pai->rawl;
+    eslo = (eguf - egul)/(rawf - rawl);
+    eoff = (rawf*egul - rawl*eguf)/(rawf - rawl);
+    if(pai->eslo != eslo) {
+        pai->eslo = eslo;
+        db_post_events(pai,&pai->eslo,DBE_VALUE|DBE_LOG);
+    }
+    if(pai->eoff != eoff) {
+        pai->eoff = eoff;
+        db_post_events(pai,&pai->eoff,DBE_VALUE|DBE_LOG);
+    }
+    return(0);
 }

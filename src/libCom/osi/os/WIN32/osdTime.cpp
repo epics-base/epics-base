@@ -103,8 +103,8 @@ static void osdTimeInit ()
 	LARGE_INTEGER parm;
 	BOOL success;
     int unixStyleStatus;
+    HANDLE osdTimeThread;
     unsigned threadAddr;
-    unsigned long handle;                
 	FILETIME epicsEpochFT;
     DWORD status;
 
@@ -173,10 +173,13 @@ static void osdTimeInit ()
     //
     // spawn off a thread which periodically resynchronizes the offset
     //
-    handle = _beginthreadex ( NULL, 4096, osdTimeSynchThreadEntry, 
+    osdTimeThread = (HANDLE) _beginthreadex ( NULL, 4096, osdTimeSynchThreadEntry, 
                 0, 0, &threadAddr );
-    if ( handle == NULL ) {
+    if ( osdTimeThread == NULL ) {
         errlogPrintf ( "osdTimeInit(): unable to start time synch thread\n" );
+    }
+    else {
+        assert ( CloseHandle ( osdTimeThread ) );
     }
 
     atexit ( osdTimeExit );

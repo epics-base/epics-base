@@ -40,6 +40,8 @@
  * .09  03-06-92        jba     added multiple conditional expressions ?
  * .10  04-01-92        jba     allowed floating pt constants in expression
  * .11  05-01-92        jba     flt pt constant string replaced with double in postfix
+ * .12  08-21-92        jba     ANSI c changes
+ * .13  08-21-92        jba     initialized *ppostfix: needed when calc expr not defined
 */
 
 /* 
@@ -84,9 +86,10 @@
  */
 
 #ifdef vxWorks
-#   include <stdioLib.h>
+#include <stdioLib.h>
+#include <fioLib.h>
 #else
-#   include <stdio.h>
+#include <stdio.h>
 #endif
 
 #include	<string.h>
@@ -297,12 +300,10 @@ short		*perror;
 	/* place the expression elements into postfix */
 	operand_needed = TRUE;
 	new_expression = TRUE;
+	*ppostfix = END_STACK;
+	*perror = 0;
 	pstacktop = &stack[0];
 	while (get_element(pinfix,&pelement,&no_bytes) != END){
-/*
-printf ("postfix pinfix=%s \n",pinfix);
-*/
-
 	    pinfix += no_bytes;
 	    switch (pelement->type){
 
@@ -490,6 +491,9 @@ printf ("postfix pinfix=%s \n",pinfix);
 		*perror = 8;
 		return(-1);
 	    }
+	}
+	if (*ppostfix == END_STACK){
+		return(0);
 	}
 	if (operand_needed){
 		*perror = 4;

@@ -151,7 +151,6 @@ static long init_record(pcalc,pass)
     double *pvalue;
     unsigned short *plinkValid;
     short error_number;
-    char rpbuf[184];
 
     struct dbAddr       dbAddr;
     struct dbAddr       *pAddr = &dbAddr;
@@ -188,25 +187,17 @@ static long init_record(pcalc,pass)
         db_post_events(pcalc,plinkValid,DBE_VALUE);
     }
 
-    pcalc->clcv=postfix(pcalc->calc,rpbuf,&error_number);
+    pcalc->clcv=postfix(pcalc->calc,pcalc->rpcl,&error_number);
     if(pcalc->clcv){
 		recGblRecordError(S_db_badField,(void *)pcalc,
 			"calcout: init_record: Illegal CALC field");
-		return(S_db_badField);
-    }
-    else {
-        memcpy(pcalc->rpcl,rpbuf,sizeof(pcalc->rpcl));
     }
     db_post_events(pcalc,&pcalc->clcv,DBE_VALUE);
 
-    pcalc->oclv=postfix(pcalc->ocal,rpbuf,&error_number);
+    pcalc->oclv=postfix(pcalc->ocal,pcalc->orpc,&error_number);
     if(pcalc->oclv){
 		recGblRecordError(S_db_badField,(void *)pcalc,
 			"calcout: init_record: Illegal OCAL field");
-		return(S_db_badField);
-    }
-    else {
-        memcpy(pcalc->orpc,rpbuf,sizeof(pcalc->orpc));
     }
     db_post_events(pcalc,&pcalc->oclv,DBE_VALUE);
 
@@ -247,9 +238,7 @@ static long process(pcalc)
         }
 
 	if(fetch_values(pcalc)==0) {
-	    if((pcalc->clcv) ||
-              (pcalc->clcv) ||
-                calcPerform(&pcalc->a,&pcalc->val,pcalc->rpcl)) {
+	    if(calcPerform(&pcalc->a,&pcalc->val,pcalc->rpcl)) {
 		recGblSetSevr(pcalc,CALC_ALARM,INVALID_ALARM);
 	    } else pcalc->udf = FALSE;
 	}
@@ -339,7 +328,6 @@ static long special(paddr,after)
     struct dbAddr       dbAddr;
     struct dbAddr       *pAddr = &dbAddr;
     short error_number;
-    char rpbuf[184];
     int                 fieldIndex = dbGetFieldIndex(paddr);
     int                 lnkIndex;
     struct link         *plink;
@@ -349,26 +337,20 @@ static long special(paddr,after)
     if(!after) return(0);
     switch(fieldIndex) {
       case(calcoutRecordCALC):
-        pcalc->clcv=postfix(pcalc->calc,rpbuf,&error_number);
+        pcalc->clcv=postfix(pcalc->calc,pcalc->rpcl,&error_number);
         if(pcalc->clcv){
               recGblRecordError(S_db_badField,(void *)pcalc,
                         "calcout: special(): Illegal CALC field");
-        }
-        else {
-            memcpy(pcalc->rpcl,rpbuf,sizeof(pcalc->rpcl));
         }
         db_post_events(pcalc,&pcalc->clcv,DBE_VALUE);
         return(0);
         break;
 
       case(calcoutRecordOCAL):
-        pcalc->oclv=postfix(pcalc->ocal,rpbuf,&error_number);
+        pcalc->oclv=postfix(pcalc->ocal,pcalc->orpc,&error_number);
         if(pcalc->oclv){
                 recGblRecordError(S_db_badField,(void *)pcalc,
                         "calcout: special(): Illegal OCAL field");
-        }
-        else {
-            memcpy(pcalc->orpc,rpbuf,sizeof(pcalc->orpc));
         }
         db_post_events(pcalc,&pcalc->oclv,DBE_VALUE);
 
@@ -605,13 +587,9 @@ static void execOutput(pcalc)
               pcalc->oval = pcalc->val;
             break; 
           case(calcoutDOPT_Use_OVAL):
-              if(!pcalc->oclv) {
-                  if(calcPerform(&pcalc->a,&pcalc->oval,pcalc->orpc)) {
-                        recGblSetSevr(pcalc,CALC_ALARM,INVALID_ALARM);
-                  }
-              }
-              else 
+              if(calcPerform(&pcalc->a,&pcalc->oval,pcalc->orpc)) {
                   recGblSetSevr(pcalc,CALC_ALARM,INVALID_ALARM);
+              }
           break;
         }
 

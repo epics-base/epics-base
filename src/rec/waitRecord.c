@@ -240,7 +240,6 @@ static long init_record(pwait,pass)
 
     recDynLinkPvt   *puserPvt;
 
-    char rpbuf[184];
     short error_number;
 
     if (pass==0) {
@@ -267,13 +266,10 @@ static long init_record(pwait,pass)
 
     pcbst = (struct cbStruct *)pwait->cbst;
 
-    pwait->clcv=postfix(pwait->calc,rpbuf,&error_number);
+    pwait->clcv=postfix(pwait->calc,pwait->rpcl,&error_number);
     if(pwait->clcv){
         recGblRecordError(S_db_badField,(void *)pwait,
                           "wait: init_record: Illegal CALC field");
-    }
-    else {
-        memcpy(pwait->rpcl,rpbuf,sizeof(pwait->rpcl));
     }
     db_post_events(pwait,&pwait->clcv,DBE_VALUE);
 
@@ -421,7 +417,6 @@ static long special(paddr,after)
     unsigned short       oldStat;
     int  index;
     short error_number;
-    char rpbuf[184];
 
     if(recWaitDebug) printf("entering special %d \n",after);
 
@@ -468,15 +463,12 @@ static long special(paddr,after)
         return(0);
     }
     else if(special_type == SPC_CALC) {
-        pwait->clcv=postfix(pwait->calc,rpbuf,&error_number);
+        pwait->clcv=postfix(pwait->calc,pwait->rpcl,&error_number);
         if(pwait->clcv){
                 recGblRecordError(S_db_badField,(void *)pwait,
                         "wait: init_record: Illegal CALC field");
-                db_post_events(pwait,&pwait->clcv,DBE_VALUE);
-                return(S_db_badField);
         }
         db_post_events(pwait,&pwait->clcv,DBE_VALUE);
-        memcpy(pwait->rpcl,rpbuf,sizeof(pwait->rpcl));
         db_post_events(pwait,pwait->calc,DBE_VALUE);
         db_post_events(pwait,&pwait->clcv,DBE_VALUE);
         return(0);

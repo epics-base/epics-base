@@ -145,7 +145,6 @@ static long init_record(pcalc,pass)
     int i;
     double *pvalue;
     short error_number;
-    char rpbuf[200];
 
     if (pass==0) return(0);
 
@@ -156,13 +155,9 @@ static long init_record(pcalc,pass)
 	    recGblInitConstantLink(plink,DBF_DOUBLE,pvalue);
         }
     }
-    status=postfix(pcalc->calc,rpbuf,&error_number);
-    if(status){
-		recGblRecordError(S_db_badField,(void *)pcalc,
-			"calc: init_record: Illegal CALC field");
-		return(S_db_badField);
-	}
-    memcpy(pcalc->rpcl,rpbuf,sizeof(pcalc->rpcl));
+    status=postfix(pcalc->calc,pcalc->rpcl,&error_number);
+    if(status) recGblRecordError(S_db_badField,(void *)pcalc,
+	           "calc: init_record: Illegal CALC field");
     return(0);
 }
 
@@ -191,22 +186,17 @@ static long special(paddr,after)
     struct dbAddr *paddr;
     int	   	  after;
 {
-    long		status;
-    struct calcRecord  	*pcalc = (struct calcRecord *)(paddr->precord);
-    int           	special_type = paddr->special;
-    short error_number;
-    char rpbuf[200];
+    long	status;
+    calcRecord  *pcalc = (struct calcRecord *)(paddr->precord);
+    int         special_type = paddr->special;
+    short       error_number;
 
     if(!after) return(0);
     switch(special_type) {
     case(SPC_CALC):
-	status=postfix(pcalc->calc,rpbuf,&error_number);
-    if(status){
-		recGblRecordError(S_db_badField,(void *)pcalc,
-			"calc: init_record: Illegal CALC field");
-		return(S_db_badField);
-	}
-	memcpy(pcalc->rpcl,rpbuf,sizeof(pcalc->rpcl));
+	status=postfix(pcalc->calc,pcalc->rpcl,&error_number);
+        if(status) recGblRecordError(S_db_badField,(void *)pcalc,
+			"calc: special: Illegal CALC field");
 	db_post_events(pcalc,pcalc->calc,DBE_VALUE|DBE_LOG);
 	return(0);
     default:

@@ -645,6 +645,8 @@ short record_type;
     struct fldDes  	*pflddes;
     int             	i;
     char           	*ptr;
+    struct fldDes 	*pdtypdes = NULL;
+    struct link 	*pinpoutlink = NULL;
 
     if ((precTypDes = GET_PRECTYPDES(precDes, record_type)) == NULL) return;
 
@@ -686,14 +688,23 @@ short record_type;
 	case (DBF_ENUM):
 	    *(unsigned short *) ptr =
 		pflddes->initial.enum_value;
+	    if(pflddes->field_type==DBF_DEVCHOICE) pdtypdes = pflddes;
 	    break;
 	case (DBF_INLINK):
 	case (DBF_OUTLINK):
 	case (DBF_FWDLINK):
 	    ((struct link *) ptr)->type = CONSTANT;
 	    ((struct link *) ptr)->value.value = 0.0;
+	    if((strcmp(pflddes->fldname,"INP ")==0)
+	    || (strcmp(pflddes->fldname,"OUT ")==0)) pinpoutlink = (void *)ptr;
 	    break;
 	}
+    }
+    if(pdtypdes && pinpoutlink) {
+	struct devChoiceSet	*pdevChoiceSet;
+
+	if(pdevChoiceSet=GET_PDEV_CHOICE_SET(pdbbase->pchoiceDev,record_type))
+	    pinpoutlink->type = pdevChoiceSet->papDevChoice[0]->link_type;
     }
     return;
 }

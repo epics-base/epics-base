@@ -31,14 +31,14 @@
 #include "iocinf.h"
 
 tsFreeList < class syncGroupNotify, 1024 > syncGroupNotify::freeList;
+epicsMutex syncGroupNotify::freeListMutex;
 
 syncGroupNotify::syncGroupNotify ( CASG &sgIn, void *pValueIn ) :
     sg (sgIn), magic (CASG_MAGIC), pValue (pValueIn), seqNo ( sgIn.seqNo )
 {
-    this->sg.mutex.lock ();
+    epicsAutoMutex locker ( this->sg.mutex );
     this->sg.ioList.add (*this);
     this->sg.opPendCount++;
-    this->sg.mutex.unlock ();
 }
 
 void syncGroupNotify::release ()
@@ -48,9 +48,8 @@ void syncGroupNotify::release ()
 
 syncGroupNotify::~syncGroupNotify ()
 {
-    this->sg.mutex.lock ();
+    epicsAutoMutex locker ( this->sg.mutex );
     this->sg.ioList.remove (*this);
-    this->sg.mutex.unlock ();
 }
 
 void syncGroupNotify::completionNotify ( cacChannelIO & )
@@ -62,16 +61,17 @@ void syncGroupNotify::completionNotify ( cacChannelIO & )
         return;
     }
 
-    this->sg.mutex.lock ();
-    if ( this->seqNo == this->sg.seqNo ) {
-        assert ( this->sg.opPendCount > 0u );
-        this->sg.opPendCount--;
-        done = this->sg.opPendCount == 0;
+    {
+        epicsAutoMutex locker ( this->sg.mutex );
+        if ( this->seqNo == this->sg.seqNo ) {
+            assert ( this->sg.opPendCount > 0u );
+            this->sg.opPendCount--;
+            done = this->sg.opPendCount == 0;
+        }
+        else {
+            done = true;
+        }
     }
-    else {
-        done = true;
-    }
-    this->sg.mutex.unlock ();
 
     if ( done ) {
         this->sg.sem.signal ();
@@ -88,23 +88,24 @@ void syncGroupNotify::completionNotify ( cacChannelIO &,
 
     bool complete;
 
-    this->sg.mutex.lock ();
-    if ( this->seqNo == this->sg.seqNo ) {
-        /*
-         * Update the user's variable
-         */
-        if ( this->pValue ) {
-            size_t size = dbr_size_n ( type, count );
-            memcpy ( this->pValue, pData, size );
+    {
+        epicsAutoMutex locker ( this->sg.mutex );
+        if ( this->seqNo == this->sg.seqNo ) {
+            /*
+             * Update the user's variable
+             */
+            if ( this->pValue ) {
+                size_t size = dbr_size_n ( type, count );
+                memcpy ( this->pValue, pData, size );
+            }
+            assert ( this->sg.opPendCount > 0u );
+            this->sg.opPendCount--;
+            complete = this->sg.opPendCount == 0;
         }
-        assert ( this->sg.opPendCount > 0u );
-        this->sg.opPendCount--;
-        complete = this->sg.opPendCount == 0;
+        else {
+            complete = true;
+        }
     }
-    else {
-        complete = true;
-    }
-    this->sg.mutex.unlock ();
 
     if ( complete ) {
         this->sg.sem.signal ();

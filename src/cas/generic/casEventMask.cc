@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.8  1998/05/05 16:26:31  jhill
+ * fixed warnings
+ *
  * Revision 1.7  1997/08/05 00:47:07  jhill
  * fixed warnings
  *
@@ -102,9 +105,9 @@ main ()
 #endif
 
 //
-// casEventRegistry::init()
+// casEventRegistry::initRegistry()
 //
-int casEventRegistry::init()  
+int casEventRegistry::initRegistry()  
 {
 	if (!this->hasBeenInitialized) {
 		int status;

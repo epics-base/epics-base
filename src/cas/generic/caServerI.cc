@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.12  1998/10/23 00:28:19  jhill
+ * fixed HP-UX warnings
+ *
  * Revision 1.11  1998/05/29 20:13:42  jhill
  * made assert() call portable to 64 bit arch
  *
@@ -169,7 +172,7 @@ haveBeenInitialized (FALSE)
 		return;
 	}
 	
-	status = casEventRegistry::init ();
+	status = casEventRegistry::initRegistry ();
 	if (status) {
 		errMessage (status, "CA server event registry init");
 		return;

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.27  1998/10/23 00:28:21  jhill
+ * fixed HP-UX warnings
+ *
  * Revision 1.26  1998/09/24 20:41:49  jhill
  * supply resource id to logBadIdWithFileAndLineno()
  *
@@ -855,7 +858,7 @@ public:
 	casEventRegistry(osiMutex &mutexIn) : 
 		mutex(mutexIn), allocator(0), hasBeenInitialized(0) {}
 
-	int init();
+	int initRegistry();
 
 	virtual ~casEventRegistry();
 

@@ -175,10 +175,12 @@ void nciu::connect ( unsigned nativeType,
 }
 
 void nciu::unresponsiveCircuitNotify ( 
-    epicsGuard < epicsMutex > & /* cbGuard */, 
+    epicsGuard < epicsMutex > & cbGuard, 
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
+    this->cacCtx.disconnectAllIO ( cbGuard, guard, 
+        *this, this->eventq );
     this->notify().disconnectNotify ( guard );
     caAccessRights noRights;
     this->notify().accessRightsNotify ( guard, noRights );

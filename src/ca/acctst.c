@@ -2060,6 +2060,82 @@ dbr_float_t monitorUpdateTestPattern ( unsigned iter )
     return ( (float) iter ) * 10.12345f + 10.7f;
 }
 
+void getCallbackClearsChannel ( struct event_handler_args args )
+{
+    int status;
+    status = ca_clear_channel ( args.chid );
+    SEVCHK ( status, "clearChannelInGetCallbackTest clear channel" );
+}
+
+void clearChannelInGetCallbackTest ( const char *pName, unsigned level )
+{
+    chid chan;
+    int status;
+    
+    showProgressBegin ( "clearChannelInGetCallbackTest", level );
+
+    status = ca_create_channel ( pName, 0, 0, 0, & chan );
+    SEVCHK ( status, "clearChannelInGetCallbackTest create channel" );
+
+    status = ca_pend_io ( 10.0 );
+    SEVCHK ( status, "clearChannelInGetCallbackTest connect channel" );
+    
+    status = ca_get_callback ( DBR_DOUBLE, chan, getCallbackClearsChannel, 0 );
+    SEVCHK ( status, "clearChannelInGetCallbackTest get callback" );
+    
+    status = ca_flush_io ();
+    SEVCHK ( status, "clearChannelInGetCallbackTest flush" );
+    
+    showProgressEnd ( level );
+}
+
+void monitorAddConnectionCallback ( struct connection_handler_args args ) 
+{
+    int status;
+    status = ca_create_subscription ( DBR_DOUBLE, 1, 
+        args.chid, DBE_VALUE, nUpdatesTester, ca_puser ( args.chid ), 0 );
+    SEVCHK ( status, "monitorAddConnectionCallback create subscription" );
+}
+
+/*
+ * monitorAddConnectionCallbackTest
+ * 1) subscription add from within connection callback needs to work
+ * 2) check for problems where subscription is installed twice if
+ * its installed within the connection callback handler
+ */
+void monitorAddConnectionCallbackTest ( const char *pName, unsigned interestLevel )
+{
+    chid chan;
+    int status;
+    unsigned eventCount = 0u;
+    unsigned getCallbackCount = 0u;
+    
+    showProgressBegin ( "monitorAddConnectionCallbackTest", interestLevel );
+
+    status = ca_create_channel ( pName, 
+        monitorAddConnectionCallback, &eventCount, 0, & chan );
+    SEVCHK ( status, "monitorAddConnectionCallbackTest create channel" );
+
+    while ( eventCount == 0 ) {
+        ca_pend_event ( 0.1 );
+    }
+    assert ( eventCount == 1u );
+    
+    status = ca_get_callback ( DBR_DOUBLE, chan, nUpdatesTester, &getCallbackCount );
+    SEVCHK ( status, "monitorAddConnectionCallback get callback" );
+    while ( getCallbackCount == 0 ) {
+        status = ca_pend_event ( 0.1 );
+        SEVCHK ( status, "monitorAddConnectionCallbackTest pend event" );
+    }
+    assert ( eventCount == 1u );
+    assert ( getCallbackCount == 1u );
+
+    status = ca_clear_channel ( chan );
+    SEVCHK ( status, "monitorAddConnectionCallbackTest clear channel" );
+    
+    showProgressEnd ( interestLevel );
+}
+
 
 /*
  * monitorUpdateTest
@@ -2665,6 +2741,8 @@ int acctst ( char *pName, unsigned interestLevel, unsigned channelCount,
         printf ( "testing with a local channel\n" );
     }
 
+    clearChannelInGetCallbackTest ( pName, interestLevel );
+    monitorAddConnectionCallbackTest ( pName, interestLevel );
     verifyConnectWithDisconnectedChannels ( pName, interestLevel );
     grEnumTest ( chan, interestLevel );
     test_sync_groups ( chan, interestLevel );

@@ -87,18 +87,19 @@ public:
     epicsTimer & createTimer ();
 
 private:
-    tsDLList<fdReg> regList;
-    tsDLList<fdReg> activeList;
-    resTable<fdReg, fdRegId> fdTbl;
+    tsDLList < fdReg > regList;
+    tsDLList < fdReg > activeList;
+    resTable < fdReg, fdRegId > fdTbl;
     fd_set fdSets[fdrNEnums];
-    epicsTimerQueuePassive *pTimerQueue;
+    double sleepQuantum;
+    epicsTimerQueuePassive * pTimerQueue;
     SOCKET maxFD;
     bool processInProg;
     //
     // Set to fdreg when in call back
     // and nill otherwise
     //
-    fdReg *pCBReg; 
+    fdReg * pCBReg; 
     void reschedule ();
     double quantum ();
     epicsShareFunc void installReg (fdReg &reg);

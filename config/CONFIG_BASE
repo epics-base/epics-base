@@ -54,7 +54,7 @@ EPICS_BASE = $(INSTALL_LOCATION)
 # for EPICS Makefiles (which are not created from other files)
 .PHONY:: $(TOP)/config/CONFIG
 .PHONY:: $(TOP)/config/CONFIG.* $(TOP)/config/CONFIG_* 
-.PHONY:: $(TOP)/config/RULES.* $(TOP)/config/RULES_* .DEPENDS
+.PHONY:: $(TOP)/config/RULES.* $(TOP)/config/RULES_* DEPENDS
 .PHONY:: $(HOME)/EPICS_CONFIG $(HOME)/EPICS_CONFIG.$(HOST_ARCH)
 .PHONY:: ../Makefile.Vx ../Makefile.Unix ../Makefile.Host Makefile
 

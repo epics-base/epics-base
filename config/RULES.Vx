@@ -68,8 +68,8 @@ buildInstall :: binInstalls
 endif
 
 depends:: $(SRCS.c) $(SRCS.cc)
-	$(RM) .DEPENDS
-	touch .DEPENDS
+	$(RM) DEPENDS
+	touch DEPENDS
 	$(DEPENDS_RULE)
 
 clean::
@@ -280,7 +280,7 @@ $(INSTALL_HTML)/$(HTMLS_DIR)/%: ../%
 
 .PHONY:: all inc depends build install pre_build clean rebuild buildInstall binInstalls
 
--include .DEPENDS
+-include DEPENDS
 
 ifneq (,$(wildcard ../baseLIBOBJS))
 $(LIBNAME): ../baseLIBOBJS

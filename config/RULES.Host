@@ -348,8 +348,8 @@ buildInstall :: build $(TARGETS) \
 	$(INSTALL_TCLLIBS) $(INSTALL_TCLINDEX)
 
 depends:: $(LIBSRCS) $(SRCS) 
-	$(RM) .DEPENDS
-	touch .DEPENDS
+	$(RM) DEPENDS
+	touch DEPENDS
 	$(DEPENDS_RULE)
 
 clean::
@@ -729,7 +729,7 @@ $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: %
 
 .PRECIOUS: %.o %.c
 
--include .DEPENDS
+-include DEPENDS
 
 .PHONY:: all inc depends build install clean rebuild buildInstall
 

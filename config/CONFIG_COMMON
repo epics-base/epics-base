@@ -47,7 +47,7 @@ YACC  = $(EYACC)
 LEX   = $(ELEX)
 
 # Default for perl if it's on the PATH,
-# otherwise override this in CONFIG_SITE or CONFIG_SITE.<host_arch>
+# otherwise override this in CONFIG_SITE_HOST_ARCH.<host_arch>
 PERL=perl
 
 # install from EPICS
@@ -188,7 +188,7 @@ ARCMD = $(AR) $(ARFLAGS) $@
  
 #--------------------------------------------------
 # depends definition 
-DEPENDS_RULE = -$(COMPILE.cc) $(DEPENDS_FLAG) $^ > .DEPENDS
+DEPENDS_RULE = -$(COMPILE.cc) $(DEPENDS_FLAG) $^ > DEPENDS
 
 #--------------------------------------------------
 

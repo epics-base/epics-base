@@ -32,6 +32,7 @@ SRCS.c += ../os/vxWorks/sigPipeIgnore.c
 SRCS.c += ../impLib.c
 SRCS.c += ../dbmf.c
 SRCS.c += ../epicsString.c
+SRCS.c += ../aToIPAddr.c
 
 LIBOBJS += calcPerform.o
 LIBOBJS += cvtFast.o
@@ -59,6 +60,7 @@ LIBOBJS += sigPipeIgnore.o
 LIBOBJS += impLib.o
 LIBOBJS += dbmf.o
 LIBOBJS += epicsString.o
+LIBOBJS += aToIPAddr.o
 
 LIBNAME = libCom
 

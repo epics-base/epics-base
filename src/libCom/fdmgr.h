@@ -66,7 +66,7 @@ typedef struct{
         fd_set          excpch;
 	BUCKET		*pAlarmBucket;
 	unsigned	nextAlarmId;
-        int		maxfd;
+        SOCKET		maxfd;
 	int		select_tmo;
 #       if defined (vxWorks)
         SEM_ID		lock;
@@ -157,11 +157,11 @@ fdmgrAlarmId	id		/* alarm to delete                      */
  * 
  */
 epicsShareFunc int epicsShareAPI fdmgr_add_callback(
-fdctx           *pfdctx,	/* fd mgr ctx from fdmgr_init() 	*/
-int             fd,		/* file descriptor			*/
-enum fdi_type   fdi,		/* file descriptor interest type	*/	
-void    (*pfunc)(void *pParam),	/* function (handler) to call			*/
-void            *param		/* first parameter passed to the func   */
+fdctx *pfdctx,			/* fd mgr ctx from fdmgr_init() 	*/
+SOCKET fd,				/* file descriptor			*/
+enum fdi_type fdi,		/* file descriptor interest type	*/	
+void (*pfunc)(void *pParam),	/* function (handler) to call			*/
+void *param				/* first parameter passed to the func   */
 );
 
 /*
@@ -170,9 +170,9 @@ void            *param		/* first parameter passed to the func   */
  *
  */ 
 epicsShareFunc int epicsShareAPI fdmgr_clear_callback(
-fdctx           *pfdctx,	/* fd mgr ctx from fdmgr_init() 	*/
-int             fd,		/* file descriptor                      */
-enum fdi_type   fdi		/* file descriptor interest type        */
+fdctx			*pfdctx,	/* fd mgr ctx from fdmgr_init() 	*/
+SOCKET		fd,		/* file descriptor                      */
+enum fdi_type	fdi		/* file descriptor interest type        */
 );
 
 /*
@@ -194,8 +194,8 @@ struct timeval	*ptimeout
  * obsolete interface
  */
 epicsShareFunc int epicsShareAPI fdmgr_clear_fd(
-fdctx   *pfdctx,		/* fd mgr ctx from fdmgr_init() */
-int     fd
+fdctx		*pfdctx,		/* fd mgr ctx from fdmgr_init() */
+SOCKET	fd
 );
 
 /*
@@ -203,7 +203,7 @@ int     fd
  */
 epicsShareFunc int epicsShareAPI fdmgr_add_fd(
 fdctx   *pfdctx,		/* fd mgr ctx from fdmgr_init() */
-int     fd,
+SOCKET  fd,
 void    (*pfunc)(void *pParam),
 void    *param
 );

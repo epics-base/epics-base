@@ -71,6 +71,9 @@
  *			we eliminate delete ambiguity (chance of the same
  *			being reused).
  * $Log$
+ * Revision 1.25  1997/06/25 05:45:51  jhill
+ * cleaned up pc port
+ *
  * Revision 1.24  1997/05/01 19:57:25  jhill
  * updated dll keywords
  *
@@ -154,12 +157,12 @@ static char	*pSccsId = "@(#) $Id$";
 
 typedef struct{
 	ELLNODE		node;
-	int			fd;
+	SOCKET		fd;
 	enum fdi_type	fdi;		/* the type of fd interest */
 	fd_set		*pfds;
-	void		(*pfunc)(void *);
-	void		*param;
-	int		delete_pending;
+	void			(*pfunc)(void *);
+	void			*param;
+	int			delete_pending;
 }fdentry;
 
 typedef struct{
@@ -189,7 +192,7 @@ typedef struct{
 #	define UNLOCK_FD_HANDLER(PFDCTX) \
 		assert(semGive((PFDCTX)->fd_handler_lock)==FDMGR_OK);
 
-#elif defined(UNIX) || defined(VMS) || defined(WIN32)
+#elif defined(UNIX) || defined(VMS) || defined(_WIN32)
 #	define LOCK(PFDCTX)
 #	define UNLOCK(PFDCTX)
 #	define UNLOCK_FDMGR_PEND_EVENT(PFDCTX) \
@@ -531,7 +534,7 @@ fdmgrAlarmId	id
  */
 epicsShareFunc int epicsShareAPI fdmgr_add_fd(
 fdctx 	*pfdctx,
-int	fd,
+SOCKET	fd,
 void	(*pfunc)(void *),
 void	*param
 )
@@ -556,10 +559,10 @@ void	*param
  */
 epicsShareFunc int epicsShareAPI fdmgr_add_callback(
 fdctx 		*pfdctx,
-int		fd,
+SOCKET		fd,
 enum fdi_type	fdi,
-void		(*pfunc)(void *),
-void		*param
+void			(*pfunc)(void *),
+void			*param
 )
 {
 	fdentry		*pfdentry;
@@ -626,7 +629,7 @@ void		*param
  */
 epicsShareFunc int epicsShareAPI fdmgr_clear_fd(
 fdctx 	*pfdctx,
-int	fd 
+SOCKET	fd 
 )
 {
 	return fdmgr_clear_callback(pfdctx, fd, fdi_read);
@@ -640,7 +643,7 @@ int	fd
  */
 epicsShareFunc int epicsShareAPI fdmgr_clear_callback(
 fdctx 		*pfdctx,
-int		fd,
+SOCKET		fd,
 enum fdi_type	fdi
 )
 {
@@ -825,21 +828,14 @@ struct timeval 			*ptimeout
 #	ifdef vxWorks 
 		taskSafe();
 #	endif
-#	if defined (__hpux)
-  	status = select (
-			pfdctx->maxfd,
-			(int *)&pfdctx->readch,
-			(int *)&pfdctx->writech,
-			(int *)&pfdctx->excpch,
-			ptimeout);
-#	else
+
   	status = select(
 			pfdctx->maxfd,
 			&pfdctx->readch,
 			&pfdctx->writech,
 			&pfdctx->excpch,
 			ptimeout);
-#	endif
+
 #	ifdef vxWorks 
 		taskUnsafe();
 #	endif
@@ -1079,7 +1075,7 @@ struct timeval	*pt
  *
  *
  */
-#ifdef WIN32
+#ifdef _WIN32
 LOCAL int fdmgr_gettimeval(
 fdctx           *pfdctx,
 struct timeval  *pt

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.8  1997/06/25 05:45:54  jhill
+ * cleaned up pc port
+ *
  * Revision 1.7  1997/04/10 19:45:34  jhill
  * API changes and include with  not <>
  *
@@ -76,7 +79,7 @@ static const tsDLIterBD<osiTimer> eol; // end of list
 //
 // osiTimer::arm()
 //
-void osiTimer::arm (const osiTime * const pInitialDelay)
+epicsShareFunc void osiTimer::arm (const osiTime * const pInitialDelay)
 {
 	tsDLIterBD<osiTimer> iter;
 #	ifdef DEBUG

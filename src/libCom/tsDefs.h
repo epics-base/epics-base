@@ -206,9 +206,9 @@ struct tsDetail {
 *		TsAddStamps(pS1, pS1, pS2);
 *		TsDiffAsStamp(pS2, pS1, pS2);
 *----------------------------------------------------------------------------*/
-#if WIN32 /* the microsoft compiler will not compile the TsAddDouble() macro */ 
+#if _WIN32 /* the microsoft compiler will not compile the TsAddDouble() macro */ 
 #define TsAddDouble(pSum, pS1, dbl) tsAddDouble(pSum, pS1, dbl)
-#else /*WIN32*/
+#else /*_WIN32*/
 #define TsAddDouble(pSum, pS1, dbl) \
   (void)( \
     dbl >= 0. \
@@ -228,7 +228,7 @@ struct tsDetail {
 			(unsigned long)(1000000000.* \
 			((-dbl) - (double)((unsigned long)(-dbl)))), \
 	     (*pSum).secPastEpoch -= 1) )  )
-#endif /*WIN32*/
+#endif /*_WIN32*/
 #define TsAddStamps(pSum, pS1, pS2) \
     (void)( \
 	((*pSum).secPastEpoch = (*pS1).secPastEpoch + (*pS2).secPastEpoch) , \

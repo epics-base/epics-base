@@ -32,6 +32,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  1997/06/25 05:45:50  jhill
+ * cleaned up pc port
+ *
  * Revision 1.5  1997/04/23 17:22:58  jhill
  * fixed WIN32 DLL symbol exports
  *
@@ -55,6 +58,7 @@
 
 #include <stdio.h>
 
+#include "shareLib.h" // reset share lib defines
 #include "tsDLList.h"
 #include "resourceLib.h"
 #include "osiTime.h"
@@ -79,34 +83,34 @@ public:
 		return this->type;
 	}
 
-        int operator == (const fdRegId &idIn)
-        {
-                return this->fd == idIn.fd && this->type==idIn.type;
-        }
+	int operator == (const fdRegId &idIn)
+	{
+	    return this->fd == idIn.fd && this->type==idIn.type;
+	}
 
-        resTableIndex resourceHash (unsigned nBitsId) const
-        {
-                unsigned        src = (unsigned) this->fd;
-                resTableIndex   hashid;
- 
-                hashid = src;
-                src = src >> nBitsId;
-                while (src) {
-                        hashid = hashid ^ src;
-                        src = src >> nBitsId;
-                }
+	resTableIndex resourceHash (unsigned nBitsId) const
+	{
+		unsigned        src = (unsigned) this->fd;
+		resTableIndex   hashid;
+
+		hashid = src;
+		src = src >> nBitsId;
+		while (src) {
+			hashid = hashid ^ src;
+			src = src >> nBitsId;
+		}
 		hashid = hashid ^ this->type;
 
-                //
-                // the result here is always masked to the
-                // proper size after it is returned to the resource class
-                //
-                return hashid;
-        }
+		//
+		// the result here is always masked to the
+		// proper size after it is returned to the resource class
+		//
+		return hashid;
+	}
 
 	virtual void show (unsigned level) const;
 private:
-        const SOCKET	fd;
+      const SOCKET	fd;
 	const fdRegType	type;
 };
 
@@ -136,14 +140,14 @@ public:
 	epicsShareFunc virtual void destroy ();
 private:
 
-        //
-        // called when there is activity on the fd
+	//
+	// called when there is activity on the fd
 	// NOTES
 	// 1) the fdManager will call this only once during the
 	// lifetime of a fdReg object if the constructor
 	// specified "onceOnly"
-        //
-        epicsShareFunc virtual void callBack ()=0;
+	//
+	epicsShareFunc virtual void callBack ()=0;
 
 	unsigned char 	state; // fdRegState goes here
 	unsigned char	onceOnly;
@@ -156,21 +160,21 @@ private:
 class fdManager {
 friend class fdReg;
 public:
-        epicsShareFunc fdManager();
-        epicsShareFunc ~fdManager();
-        epicsShareFunc void process (const osiTime &delay);
+	epicsShareFunc fdManager();
+	epicsShareFunc ~fdManager();
+	epicsShareFunc void process (const osiTime &delay);
 
 	//
 	// returns NULL if the fd is unknown
 	//
-	epicsShareFunc fdReg *lookUpFD(const int fd, const fdRegType type);
+	epicsShareFunc fdReg *lookUpFD(const SOCKET fd, const fdRegType type);
 private:
-        tsDLList<fdReg>	regList;
-        tsDLList<fdReg>	activeList;
+	tsDLList<fdReg>	regList;
+	tsDLList<fdReg>	activeList;
 	resTable<fdReg,fdRegId> fdTbl;
 	fd_set		fdSets[fdRegTypeNElem];
 
-        int             maxFD;
+	int             maxFD;
 	unsigned	processInProg;
 	//
 	// Set to fdreg when in call back
@@ -178,8 +182,8 @@ private:
 	//
 	fdReg		*pCBReg; 
 
-	void installReg (fdReg &reg);
-        void removeReg (fdReg &reg);
+	epicsShareFunc void installReg (fdReg &reg);
+	void removeReg (fdReg &reg);
 };
 
 epicsShareExtern fdManager fileDescriptorManager;
@@ -204,8 +208,7 @@ inline fdReg::fdReg (const SOCKET fdIn, const fdRegType typIn,
 		const unsigned onceOnlyIn) : 
 	fdRegId(fdIn,typIn), state(fdrLimbo), onceOnly(onceOnlyIn)
 {
-	assert (fdIn>=0);
-        if (!FD_IN_FDSET(fdIn)) {
+	if (!FD_IN_FDSET(fdIn)) {
 		fprintf (stderr, "%s: fd > FD_SETSIZE ignored\n", 
 			__FILE__);
 		return;

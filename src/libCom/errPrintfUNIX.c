@@ -69,8 +69,8 @@ void epicsShareAPI errPrintf(long status, const char *pFileName,
 	char	name[256];
 
 	rtnval = errSymFind(status,name);
-	modnum = status >> 16;
-	errnum = status & 0xffff;
+	modnum = (unsigned short) (status >> 16);
+	errnum = (unsigned short) (status & 0xffff);
 	if(rtnval) {
 	    fprintf(stderr, "Error status (module %hu, number %hu) not in symbol table",
 		modnum, errnum);

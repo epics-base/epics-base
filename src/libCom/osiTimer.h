@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1997/06/25 05:45:55  jhill
+ * cleaned up pc port
+ *
  * Revision 1.4  1997/04/10 19:45:42  jhill
  * API changes and include with  not <>
  *
@@ -51,6 +54,7 @@
 #ifndef osiTimerHInclude
 #define osiTimerHInclude
 
+#include "shareLib.h" // reset share lib defines
 #include "tsDLList.h"
 #include "osiTime.h"
 
@@ -127,7 +131,7 @@ private:
 	// arm()
 	// place timer in the pending queue
 	//
-	void arm (const osiTime * const pInitialDelay=0);
+	epicsShareFunc void arm (const osiTime * const pInitialDelay=0);
 };
 
 

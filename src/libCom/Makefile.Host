@@ -70,6 +70,7 @@ LIBSRCS += dbmf.c
 LIBSRCS += ipAddrToA.c
 LIBSRCS += epicsString.c
 LIBSRCS += truncateFile.c
+LIBSRCS += aToIPAddr.c
 
 #
 # if CPLUSPLUS isnt empty then include C++ src codes
@@ -95,14 +96,14 @@ LIBRARY:=Com
 LIBTYPE:=SHARED
 
 #	libs needed for PROD and TESTPRODUCT
-PROD_LIBS=Com 
+PROD_LIBS = Com 
 
 #	tsTest does not use the default tsTest.c:
 #TESTPROD_SRCS=tsSubr.c
 #TESTPROD=tsTest 
 #TESTPROD=envtest
 #TESTPROD=osiTimeTest fdManagerTest
-PROD := impExpand
+PROD = impExpand
 
 MAN3 = gpHash.3 freeList.3
 
@@ -128,7 +129,7 @@ include $(TOP)/config/RULES.Host
 #	The real dependecies seem to confuse GNUmake:
 #	envData.c is rebuild every time...
 #envData.c: ../envDefs.h $(TOP)/config/CONFIG_ENV $(TOP)/config/CONFIG_SITE_ENV
-envData.c: ../envDefs.h
+envData.c: ../envDefs.h ../bldEnvData.pl
 	$(PERL) ../bldEnvData.pl $(TOP)/config
 
 errSymTbl.c: $(ERR_S_FILES)

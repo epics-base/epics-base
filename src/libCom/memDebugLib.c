@@ -223,8 +223,8 @@ DMH *pHdr;
 	if(pHdr->magic != debugMallocMagic || 
 		strcmp(pHdr->pFoot, debugMallocFooter)){
 
-		fprintf(stderr, "block overwritten %x\n", 
-			(unsigned)pHdr->pUser);
+		fprintf(stderr, "block overwritten %p\n", 
+			pHdr->pUser);
 		fprintf(stderr, "malloc occured at %s.%ld\n", 
 			pHdr->pFile, pHdr->line);
 		return 1;

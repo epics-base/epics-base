@@ -128,7 +128,7 @@
 #   include <sys/types.h>
 #   include <sys/time.h>
 #   include <sys/socket.h>
-#elif defined(WIN32)
+#elif defined(_WIN32)
 #   include <windows.h>
 #   include <time.h>
 #   include <mmsystem.h>
@@ -612,7 +612,7 @@ long epicsShareAPI tsLocalTime(TS_STAMP *pStamp)
 		else {
 			return S_ts_sysTimeError;
 		}
-#	elif defined(WIN32)
+#	elif defined(_WIN32)
 		DWORD win_sys_time_ms;		/* time (ms) since windows started */
                 static DWORD prev_time_ms;      /* time (ms) of previous call */
                 static long start_time_s=0;     /* time (sec) from 1990 when windows started */

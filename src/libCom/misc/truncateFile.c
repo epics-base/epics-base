@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <limits.h>
 
 #define epicsExportSharedSymbols
 #include "truncateFile.h"
@@ -25,6 +26,13 @@ epicsShareFunc enum TF_RETURN  epicsShareAPI truncateFile (const char *pFileName
 	int status;
 	int c;
 	unsigned charNo;
+
+	/*
+	 * see cast of size to long below
+	 */
+	if (size>LONG_MAX) {
+		return TF_ERROR;
+	}
 	
 	pFile = fopen(pFileName, "r");
 	if (!pFile) {
@@ -46,7 +54,7 @@ epicsShareFunc enum TF_RETURN  epicsShareAPI truncateFile (const char *pFileName
 	}
 
 	filePos = ftell(pFile);
-	if (filePos <= size) {
+	if (filePos <= (long) size) {
 		fclose (pFile);
 		return TF_OK;
 	}

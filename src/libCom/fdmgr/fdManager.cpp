@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.10  1997/06/25 05:45:49  jhill
+// cleaned up pc port
+//
 // Revision 1.9  1997/06/13 09:39:09  jhill
 // fixed warnings
 //
@@ -73,7 +76,7 @@
         template class resTable <fdReg, fdRegId>;
 #endif
 
-fdManager fileDescriptorManager;
+epicsShareDef fdManager fileDescriptorManager;
 
 inline int selectErrno()
 {
@@ -162,13 +165,8 @@ epicsShareFunc void fdManager::process (const osiTime &delay)
 	}
 	tv.tv_sec = minDelay.getSecTruncToLong ();
 	tv.tv_usec = minDelay.getUSecTruncToLong ();
-#ifdef __hpux
-	status = select (this->maxFD, (int *)&this->fdSets[fdrRead], 
-		(int *)&this->fdSets[fdrWrite], (int *)&this->fdSets[fdrExcp], &tv);
-#else
-	status = select (this->maxFD, (fd_set *)&this->fdSets[fdrRead], 
-		(fd_set *)&this->fdSets[fdrWrite], (fd_set *)&this->fdSets[fdrExcp], &tv);
-#endif
+	status = select (this->maxFD, &this->fdSets[fdrRead], 
+		&this->fdSets[fdrWrite], &this->fdSets[fdrExcp], &tv);
 	staticTimerQueue.process();
 	if (status==0) {
 		this->processInProg = 0;
@@ -271,7 +269,7 @@ epicsShareFunc void fdReg::show(unsigned level) const
 //
 void fdRegId::show(unsigned level) const
 {
-	printf ("fdRegId at %x\n", (unsigned) this);
+	printf ("fdRegId at %p\n", this);
 	if (level>1u) {
 		printf ("\tfd = %d, type = %d\n",
 			this->fd, this->type);
@@ -281,7 +279,7 @@ void fdRegId::show(unsigned level) const
 //
 // fdManager::installReg()
 //
-void fdManager::installReg (fdReg &reg)
+epicsShareFunc void fdManager::installReg (fdReg &reg)
 {
 	int status;
 
@@ -304,14 +302,14 @@ void fdManager::removeReg(fdReg &reg)
 {
 	fdReg *pItemFound;
 
-        //
-        // signal fdManager that the fdReg was deleted
-        // during the call back
-        //
-        if (this->pCBReg == &reg) {
-                this->pCBReg = 0;
-        }
-        FD_CLR(reg.getFD(), &this->fdSets[reg.getType()]);
+	//
+	// signal fdManager that the fdReg was deleted
+	// during the call back
+	//
+	if (this->pCBReg == &reg) {
+		this->pCBReg = 0;
+	}
+	FD_CLR(reg.getFD(), &this->fdSets[reg.getType()]);
 	pItemFound = this->fdTbl.remove(reg);
 	assert (pItemFound==&reg);
 	switch (reg.state) {
@@ -332,7 +330,7 @@ void fdManager::removeReg(fdReg &reg)
 //
 // lookUpFD()
 //
-epicsShareFunc fdReg *fdManager::lookUpFD(const int fd, const fdRegType type)
+epicsShareFunc fdReg *fdManager::lookUpFD(const SOCKET fd, const fdRegType type)
 {
 	if (fd<0) {
 		return NULL;

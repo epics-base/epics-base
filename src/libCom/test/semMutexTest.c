@@ -22,9 +22,9 @@ of this distribution.
 
 
 typedef struct info {
-    int threadnum;
-    semId mutex;
-    int quit;
+    int        threadnum;
+    semMutexId mutex;
+    int        quit;
 }info;
 
 static void mutexThread(void *arg)
@@ -61,7 +61,7 @@ void semMutexTest(int nthreads)
     char **name;
     void **arg;
     info **pinfo;
-    semId mutex;
+    semMutexId mutex;
     int status;
     time_t tp;
 

@@ -22,9 +22,9 @@ of this distribution.
 
 
 typedef struct info {
-    int threadnum;
-    semId binary;
-    int quit;
+    int         threadnum;
+    semBinaryId binary;
+    int         quit;
 }info;
 
 static void binaryThread(void *arg)
@@ -61,7 +61,7 @@ void semBinaryTest(int nthreads)
     char **name;
     void **arg;
     info **pinfo;
-    semId binary;
+    semBinaryId binary;
     int status;
     time_t tp;
 

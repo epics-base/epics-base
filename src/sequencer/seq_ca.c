@@ -55,7 +55,7 @@ LOCAL VOID proc_db_events(union db_access_val *, CHAN *, int);
 #ifdef		DEBUG
 #undef		LOCAL
 #define		LOCAL
-#endif		DEBUG
+#endif		/* DEBUG */
 /*
  * seq_connect() - Connect to all database channels through channel access.
  */
@@ -79,7 +79,7 @@ SPROG		*pSP;
 #ifdef	DEBUG
 		logMsg("seq_connect: connect %s to %s\n",
 		 pDB->pVarName, pDB->dbName);
-#endif	DEBUG
+#endif	/* DEBUG */
 		/* Connect to it */
 		status = ca_build_and_connect(
 			pDB->dbName,		/* DB channel name */
@@ -154,7 +154,7 @@ int			complete_type;
 
 #ifdef	DEBUG
 	logMsg("proc_db_events: var=%s, pv=%s\n", pDB->VarName, pDB->dbName);
-#endif	DEBUG
+#endif	/* DEBUG */
 
 	/* Copy value returned into user variable */
 	pVal = (void *)pAccess + pDB->dbOffset; /* ptr to data in CA structure */
@@ -220,7 +220,7 @@ SPROG		*pSP;
 		logMsg("seq_disconnect: disconnect %s from %s\n",
 		 pDB->pVarName, pDB->dbName);
 		taskDelay(30);
-#endif	DEBUG
+#endif	/* DEBUG */
 		/* Disconnect this channel */
 		status = ca_clear_channel(pDB->chid);
 
@@ -274,7 +274,7 @@ struct connection_handler_args	args;
 		pDB->monitored = FALSE;
 #ifdef	DEBUG
 		logMsg("%s disconnected from %s\n", pDB->VarName, pDB->dbName);
-#endif	DEBUG
+#endif	/* DEBUG */
 	}
 	else	/* PV connected */
 	{
@@ -284,7 +284,7 @@ struct connection_handler_args	args;
 			pDB->monitored = TRUE;
 #ifdef	DEBUG
 		logMsg("%s connected to %s\n", pDB->VarName, pDB->dbName);
-#endif	DEBUG
+#endif	/* DEBUG */
 		pDB->dbCount = ca_element_count(args.chid);
 		if (pDB->dbCount > pDB->count)
 			pDB->dbCount = pDB->count;

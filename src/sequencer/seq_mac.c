@@ -119,7 +119,7 @@ char		*pName;
 
 #ifdef	DEBUG
 	logMsg("seqMacValGet: name=%s", pName);
-#endif	DEBUG
+#endif	/* DEBUG */
 	for (i = 0 ; i < MAX_MACROS; i++, pMac++)
 	{
 		if (pMac->pName != NULL)
@@ -128,14 +128,14 @@ char		*pName;
 			{
 #ifdef	DEBUG
 				logMsg(", value=%s\n", pMac->pValue);
-#endif	DEBUG
+#endif	/* DEBUG */
 				return pMac->pValue;
 			}
 		}
 	}
 #ifdef	DEBUG
 	logMsg(", no value\n");
-#endif	DEBUG
+#endif	/* DEBUG */
 	return NULL;
 }
 /*

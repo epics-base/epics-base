@@ -30,7 +30,7 @@
 #ifndef	TRUE
 #define	TRUE	1
 #define	FALSE	0
-#endif	TRUE
+#endif	/* TRUE */
 
 int	debug_print_opt = 0;	/* Debug level (set by source file) */
 
@@ -187,7 +187,7 @@ char	*db_name;	/* ptr to db name */
 
 #ifdef	DEBUG
 	fprintf(stderr, "assign %s to \"%s\";\n", name, db_name);
-#endif	DEBUG
+#endif	/* DEBUG */
 	/* Find the variable */
 	vp = (Var *)findVar(name);
 	if (vp == 0)
@@ -230,7 +230,7 @@ char	*db_name;	/* ptr to db name */
 
 #ifdef	DEBUG
 	fprintf(stderr, "assign %s[%s] to \"%s\";\n", name, subscript, db_name);
-#endif	DEBUG
+#endif	/* DEBUG */
 	/* Find the variable */
 	vp = (Var *)findVar(name);
 	if (vp == 0)
@@ -303,7 +303,7 @@ Expr	*db_name_list;	/* ptr to db name list */
 
 #ifdef	DEBUG
 	fprintf(stderr, "assign %s to {", name);
-#endif	DEBUG
+#endif	/* DEBUG */
 	/* Find the variable */
 	vp = (Var *)findVar(name);
 	if (vp == 0)
@@ -342,7 +342,7 @@ Expr	*db_name_list;	/* ptr to db name list */
 
 #ifdef	DEBUG
 		fprintf(stderr, "\"%s\", ", db_name_list->value);
-#endif	DEBUG
+#endif	/* DEBUG */
 		cp->db_name_list[elem_num] = db_name_list->value; /* DB name */
 		cp->count = vp->length2;
  
@@ -350,7 +350,7 @@ Expr	*db_name_list;	/* ptr to db name list */
 	}
 #ifdef	DEBUG
 		fprintf(stderr, "};\n");
-#endif	DEBUG
+#endif	/* DEBUG */
 
 	return;
 }
@@ -418,7 +418,7 @@ char		*subscript;	/* element number or NULL */
 
 #ifdef	DEBUG
 	fprintf(stderr, "monitor_stmt: name=%s[%s]\n", name, subscript);
-#endif	DEBUG
+#endif	/* DEBUG */
 
 	/* Find the variable */
 	vp = (Var *)findVar(name);
@@ -488,7 +488,7 @@ char		*ef_name;
 #ifdef	DEBUG
 	fprintf(stderr, "sync_stmt: name=%s, subNum=%s, ef_name=%s\n",
 	 name, subscript, ef_name);
-#endif	DEBUG
+#endif	/* DEBUG */
 
 	vp = (Var *)findVar(name);
 	if (vp == 0)
@@ -625,7 +625,7 @@ Expr		*prog_list;
 	ss_list = prog_list;
 #ifdef	DEBUG
 	fprintf(stderr, "----Phase2---\n");
-#endif	DEBUG
+#endif	/* DEBUG */
 	phase2(ss_list);
 
 	exit(0);
@@ -701,7 +701,7 @@ Expr		*ep2;	/* beginning 2-nd (append it to 1-st) */
 			break;
 	}
 	fprintf(stderr, ")\n");	
-#endif	DEBUG
+#endif	/* DEBUG */
 	return ep1;
 }
 

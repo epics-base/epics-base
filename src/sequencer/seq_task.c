@@ -360,7 +360,7 @@ SEM_ID		cleanupSem; /* indicate cleanup is finished */
 	/* Remove tasks' watchdog & suspend all state set tasks except self */
 #ifdef	DEBUG
 	logMsg("   Suspending state set tasks:\n");
-#endif	DEBUG
+#endif	/* DEBUG */
 	pSS = pSP->pSS;
 	for (nss = 0; nss < pSP->numSS; nss++, pSS++)
 	{
@@ -373,7 +373,7 @@ SEM_ID		cleanupSem; /* indicate cleanup is finished */
 		{
 #ifdef	DEBUG
 			logMsg("    suspend task: tid=%d\n", tid_ss);
-#endif	DEBUG
+#endif	/* DEBUG */
 			taskSuspend(tid_ss);
 		}
 	}
@@ -386,7 +386,7 @@ SEM_ID		cleanupSem; /* indicate cleanup is finished */
 	{
 #ifdef	DEBUG
 		logMsg("   Call exit function\n");
-#endif	DEBUG
+#endif	/* DEBUG */
 		pSP->exitFunc( (SS_ID)pSP->pSS, pSP->pVar);
 	}
 
@@ -404,7 +404,7 @@ SEM_ID		cleanupSem; /* indicate cleanup is finished */
 	{
 #ifdef	DEBUG
 		logMsg("Closing log fd=%d\n", pSP->logFd);
-#endif	DEBUG
+#endif	/* DEBUG */
 		close(pSP->logFd);
 		pSP->logFd = ioGlobalStdGet(1);
 	}
@@ -421,7 +421,7 @@ SEM_ID		cleanupSem; /* indicate cleanup is finished */
 		{
 #ifdef	DEBUG
 			logMsg("   delete ss task: tid=%d\n", tid_ss);
-#endif	DEBUG
+#endif	/* DEBUG */
 			taskDelete(tid_ss);
 		}
 

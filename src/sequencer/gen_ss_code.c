@@ -108,7 +108,7 @@ Expr		*sp;
 
 #ifdef	DEBUG
 	fprintf("stderr, "eval_delay: type=%s\n", stype[ep->type]);
-#endif	DEBUG
+#endif	/* DEBUG */
 
 	/* Generate 1-st part of function w/ 1-st 2 parameters */
 	delay_id = (int)ep->right; /* delay id was previously assigned */
@@ -322,7 +322,7 @@ int		level;		/* indentation level */
 	case E_VAR:
 #ifdef	DEBUG
 		fprintf(stderr, "E_VAR: %s\n", ep->value);
-#endif	DEBUG
+#endif	/* DEBUG */
 		if(reent_opt)
 		{	/* Make variables point to allocated structure */
 			Var		*vp;
@@ -349,7 +349,7 @@ int		level;		/* indentation level */
 	case E_FUNC:
 #ifdef	DEBUG
 		fprintf(stderr, "E_FUNC: %s\n", ep->value);
-#endif	DEBUG
+#endif	/* DEBUG */
 		if (special_func(stmt_type, ep, sp))
 			break;
 		printf("%s(", ep->value);
@@ -469,7 +469,7 @@ Expr		*sp;		/* current State struct */
 
 #ifdef	DEBUG
 	fprintf(stderr, "special_func: func_code=%d\n", func_code);
-#endif	DEBUG
+#endif	/* DEBUG */
 	switch (func_code)
 	{
 	    case F_DELAY:
@@ -620,7 +620,7 @@ char		*fname;		/* function name */
 	{
 #ifdef	DEBUG
 	fprintf(stderr, "gen_pv_func: var=%s\n", ep1->value);
-#endif	DEBUG
+#endif	/* DEBUG */
 		cp = vp->chan;
 		index = cp->index;
 	}

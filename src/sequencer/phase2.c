@@ -144,7 +144,7 @@ reconcile_variables()
 	{
 #ifdef	DEBUG
 		fprintf(stderr, "reconcile_variables: ss=%s\n", ssp->value);
-#endif	DEBUG
+#endif	/* DEBUG */
 		traverseExprTree(ssp, E_VAR, 0, connect_variable, 0);
 	}
 
@@ -432,7 +432,7 @@ assign_delay_ids()
 
 #ifdef	DEBUG
 	fprintf(stderr, "assign_delay_ids:\n");
-#endif	DEBUG
+#endif	/* DEBUG */
 	for (ssp = ss_list; ssp != 0; ssp = ssp->next)
 	{
 		for (sp = ssp->left; sp != 0; sp = sp->next)

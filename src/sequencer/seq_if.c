@@ -151,7 +151,7 @@ int		pvId;
 	pDB = pSP->pChan + pvId;
 #ifdef	DEBUG
 	logMsg("seq_pvPut: pv name=%s, pVar=0x%x\n", pDB->dbName, pDB->pVar);
-#endif	DEBUG
+#endif	/* DEBUG */
 
 	if (!pDB->connected)
 		return ECA_DISCONN;
@@ -167,7 +167,7 @@ int		pvId;
 		seq_log(pSP, "  putType=%d\n", pDB->putType);
 		seq_log(pSP, "  size=%d, count=%d\n", pDB->size, pDB->count);
 	}
-#endif	DEBUG
+#endif	/* DEBUG */
 
 	return status;
 }
@@ -190,7 +190,7 @@ char		*pvName;
 
 #ifdef	DEBUG
 	printf("Assign %s to \"%s\"\n", pDB->pVarName, pvName);
-#endif	DEBUG
+#endif	/* DEBUG */
 	if (pDB->assigned)
 	{	/* Disconnect this channel */
 		status = ca_clear_channel(pDB->chid);
@@ -258,7 +258,7 @@ int		pvId;
 
 #ifdef	DEBUG
 	printf("monitor \"%s\"\n", pDB->dbName);
-#endif	DEBUG
+#endif	/* DEBUG */
 
 	if (pDB->monitored || !pDB->assigned)
 		return ECA_NORMAL;
@@ -477,7 +477,7 @@ int		ev_flag;	/* event flag */
 #ifdef	DEBUG
 	logMsg("seq_efSet: pSP=0x%x, pSS=0x%x, ev_flag=0x%x\n", pSP, pSS, ev_flag);
 	taskDelay(10);
-#endif	DEBUG
+#endif	/* DEBUG */
 
 	/* Set this bit (apply resource lock) */
 	semTake(pSP->caSemId, WAIT_FOREVER);
@@ -507,7 +507,7 @@ int		ev_flag;	/* event flag */
 #ifdef	DEBUG
 	logMsg("seq_efTest: ev_flag=%d, event=0x%x, isSet=%d\n",
 	 ev_flag, pSP->pEvents[0], isSet);
-#endif	DEBUG
+#endif	/* DEBUG */
 	return isSet;
 }
 

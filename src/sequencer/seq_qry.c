@@ -111,7 +111,7 @@ int	tid;
 				printf(" - expired");
 			printf("\n");
 		}
-#endif	DEBUG
+#endif	/* DEBUG */
 		printf("\n");
 	}
 

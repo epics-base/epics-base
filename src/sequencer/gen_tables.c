@@ -75,7 +75,7 @@ gen_db_blocks()
 #ifdef	DEBUG
 		fprintf(stderr, "gen_db_blocks: index=%d, num_elem=%d\n",
 			cp->index, cp->num_elem);
-#endif	DEBUG
+#endif	/* DEBUG */
 
 		if (cp->num_elem == 0)
 		{	/* Variable assigned to single pv */
@@ -415,7 +415,7 @@ int		numEventWords;
 	for (n = 0; n < numEventWords; n++)
 		fprintf(stderr, " 0x%x", pEventWords[n]);
 	fprintf(stderr, "\n");
-#endif	DEBUG
+#endif	/* DEBUG */
 }
 
 /* Evaluate the event mask for a given transition (when() statement). 

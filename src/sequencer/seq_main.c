@@ -52,7 +52,7 @@
 #ifdef		DEBUG
 #undef		LOCAL
 #define		LOCAL
-#endif		DEBUG
+#endif		/* DEBUG */
 
 /* ANSI functional prototypes for local routines */
 LOCAL	SPROG *seqInitTables(struct seqProgram *);
@@ -111,7 +111,7 @@ int			stack_size;	/* optional stack size (bytes) */
 			taskDelay(5); /* wait for task to init. ch'l access */
 #ifdef	DEBUG
 	logMsg("task seqAux spawned, tid=0x%x\n", seqAuxTaskId);
-#endif	DEBUG
+#endif	/* DEBUG */
 	}
 
 	/* Specify a routine to run at task delete */
@@ -244,7 +244,7 @@ SPROG			*pSP;
 #ifdef	DEBUG
 	logMsg("init_sprog: num SS=%d, num Chans=%d, num Events=%d, Prog Name=%s, var Size=%d\n",
 	 pSP->numSS, pSP->numChans, pSP->numEvents, pSP->pProgName, pSP->varSize);
-#endif	DEBUG
+#endif	/* DEBUG */
 
 	/* Create a semaphore for resource locking on CA events */
 	pSP->caSemId = semBCreate(SEM_Q_FIFO, SEM_FULL);
@@ -302,7 +302,7 @@ SPROG			*pSP;
 #ifdef	DEBUG
 		logMsg("init_sscb: SS Name=%s, num States=%d, pSS=0x%x\n",
 		 pSS->pSSName, pSS->numStates, pSS);
-#endif	DEBUG
+#endif	/* DEBUG */
 		/* Create a binary semaphore for synchronizing events in a SS */
 		pSS->syncSemId = semBCreate(SEM_Q_FIFO, SEM_FULL);
 		if (pSS->syncSemId == NULL)
@@ -339,13 +339,13 @@ SPROG			*pSP;
 #ifdef	DEBUG
 		logMsg("init_sscb: State Name=%s, Event Mask=0x%x\n",
 		 pState->pStateName, *pState->pEventMask);
-#endif	DEBUG
+#endif	/* DEBUG */
 		}
 	}
 
 #ifdef	DEBUG
 	logMsg("init_sscb: numSS=%d\n", pSP->numSS);
-#endif	DEBUG
+#endif	/* DEBUG */
 	return;
 }
 
@@ -369,7 +369,7 @@ SPROG			*pSP;
 	{
 #ifdef	DEBUG
 		logMsg("init_chan: pDB=0x%x\n", pDB);
-#endif	DEBUG
+#endif	/* DEBUG */
 		pDB->sprog = pSP;
 		pDB->dbAsName = pSeqChan->dbAsName;
 		pDB->pVarName = pSeqChan->pVarName;
@@ -394,7 +394,7 @@ SPROG			*pSP;
 		logMsg("   size=%d, dbOffset=%d\n", pDB->size, pDB->dbOffset);
 		logMsg("   efId=%d, monFlag=%d, eventNum=%d\n",
 		 pDB->efId, pDB->monFlag, pDB->eventNum);
-#endif	DEBUG
+#endif	/* DEBUG */
 	}
 }
 
@@ -436,7 +436,7 @@ SPROG		*pSP;
 #ifdef	DEBUG
 		logMsg("seqChanNameEval: \"%s\" evaluated to \"%s\"\n",
 		  pDB->dbAsName, pDB->dbName);
-#endif	DEBUG
+#endif	/* DEBUG */
 	}
 }
 /*

@@ -16,6 +16,7 @@ INC += alarmString.h
 INC += dbBase.h
 INC += dbFldTypes.h
 INC += dbStaticLib.h
+INC += dbStaticPvt.h
 INC += link.h
 INC += special.h
 INC += guigroup.h

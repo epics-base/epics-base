@@ -63,6 +63,9 @@
  *			datagram socket (and watching for ECONNREFUSED)
  *
  * $Log$
+ * Revision 1.40  1997/08/04 23:37:15  jhill
+ * added beacon anomaly flag init/allow ip 255.255.255.255
+ *
  * Revision 1.39  1997/04/23 17:05:09  jhill
  * pc port changes
  *
@@ -109,7 +112,7 @@ struct one_client{
  */
 static ELLLIST	client_list;
 
-static char	buf[MAX_UDP]; 
+static char	buf[ETHERNET_MAX_UDP]; 
 
 LOCAL void register_new_client(struct sockaddr_in *pLocal, 
 					struct sockaddr_in *pFrom);
@@ -125,7 +128,7 @@ LOCAL void fanOut(struct sockaddr_in *pFrom, const char *pMsg, unsigned msgSize)
  *
  *
  */
-void ca_repeater()
+void epicsShareAPI ca_repeater()
 {
   	int status;
   	int size;
@@ -146,12 +149,12 @@ void ca_repeater()
 		/*
 		 * test for server was already started
 		 */
-		if (SOCKERRNO==EADDRINUSE) {
+		if (SOCKERRNO==SOCK_EADDRINUSE) {
 			exit(0);
 		}
 		ca_printf("%s: Unable to create repeater socket because \"%s\"\n",
 			__FILE__,
-			strerror(SOCKERRNO));
+			SOCKERRSTR);
 		exit(0);
 	}
 
@@ -183,12 +186,12 @@ void ca_repeater()
 				 * Avoid spurious ECONNREFUSED bug
 				 * in linux
 				 */
-				if (SOCKERRNO==ECONNREFUSED) {
+				if (SOCKERRNO==SOCK_ECONNREFUSED) {
 					continue;
 				}
 #			endif
 			ca_printf("CA Repeater: recv err %s\n",
-				strerror(SOCKERRNO));
+				SOCKERRSTR);
 			continue;
 		}
 
@@ -227,9 +230,10 @@ void ca_repeater()
  */
 LOCAL void fanOut(struct sockaddr_in *pFrom, const char *pMsg, unsigned msgSize)
 {
-	ELLLIST			theClients;
-  	struct one_client	*pclient;
-	int			status;
+	ELLLIST theClients;
+  	struct one_client *pclient;
+	int status;
+	int verify = FALSE;
 
 	ellInit(&theClients);
 	while ( (pclient=(struct one_client *)ellGet(&client_list)) ) {
@@ -255,24 +259,25 @@ LOCAL void fanOut(struct sockaddr_in *pFrom, const char *pMsg, unsigned msgSize)
 #endif
 		}
 		if(status < 0){
-			if (SOCKERRNO == ECONNREFUSED) {
+			if (SOCKERRNO == SOCK_ECONNREFUSED) {
 #ifdef DEBUG
 				ca_printf("Deleted client %d\n",
 					ntohs( pclient->from.sin_port));
 #endif
-				ellDelete(&theClients, 
-					&pclient->node);
-				socket_close(pclient->sock);
-				free(pclient);
+				verify = TRUE;
 			}
 			else {
 				ca_printf(
 "CA Repeater: fan out err was \"%s\"\n",
-					strerror(SOCKERRNO));
+					SOCKERRSTR);
 			}
 		}
 	}
 	ellConcat(&client_list, &theClients);
+
+	if (verify) {
+		verifyClients ();
+	}
 }
 
 
@@ -302,10 +307,10 @@ LOCAL void verifyClients()
 			free(pclient);
 		}
 		else {
-			if (SOCKERRNO!=EADDRINUSE) {
+			if (SOCKERRNO!=SOCK_EADDRINUSE) {
 				ca_printf(
 	"CA Repeater: bind test err was %d=\"%s\"\n", 
-					SOCKERRNO, strerror(SOCKERRNO));
+					SOCKERRNO, SOCKERRSTR);
 			}
 		}
 	}
@@ -353,7 +358,7 @@ LOCAL SOCKET makeSocket(unsigned short port, int reuseAddr)
 			if (status<0) {
 				ca_printf(
 			"%s: set socket option failed because \"%s\"\n", 
-						__FILE__, strerror(SOCKERRNO));
+						__FILE__, SOCKERRSTR);
 			}
 		}
 	}
@@ -408,7 +413,7 @@ struct sockaddr_in 	*pFrom)
 			free(pclient);
 			ca_printf("%s: no client sock because \"%s\"\n",
 					__FILE__,
-					strerror(SOCKERRNO));
+					SOCKERRSTR);
 			return;
 		}
 
@@ -420,7 +425,7 @@ struct sockaddr_in 	*pFrom)
 			free(pclient);
 			ca_printf(
 			"%s: unable to connect client sock because \"%s\"\n",
-				__FILE__, strerror(errno));
+				__FILE__, SOCKERRSTR);
 			return;
 		}
 
@@ -446,7 +451,7 @@ struct sockaddr_in 	*pFrom)
 	if (status >= 0) {
 		assert(status == sizeof(confirm));
 	}
-	else if (SOCKERRNO == ECONNREFUSED){
+	else if (SOCKERRNO == SOCK_ECONNREFUSED){
 #ifdef DEBUG
 		ca_printf("Deleted repeater client=%d sending ack\n",
 				pFrom->sin_port);
@@ -457,7 +462,7 @@ struct sockaddr_in 	*pFrom)
 	}
 	else {
 		ca_printf("CA Repeater: confirm err was \"%s\"\n",
-				strerror(SOCKERRNO));
+				SOCKERRSTR);
 	}
 
 	/*

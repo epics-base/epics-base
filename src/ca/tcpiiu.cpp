@@ -1440,12 +1440,10 @@ int tcpiiu::writeRequest ( nciu &chan, unsigned type, unsigned nElem, const void
 
     epicsAutoMutex autoMutex ( this->mutex );
 
-    int status = this->sendQue.reserveSpace ( postcnt + 16u );
-    if ( status == ECA_NORMAL ) {
-        if ( ! chan.verifyConnected ( *this ) ) {
-            status = ECA_DISCONNCHID;
-        }
-        else {
+    int status;
+    if ( chan.verifyConnected ( *this ) ) {
+        status = this->sendQue.reserveSpace ( postcnt + 16u );
+        if ( status == ECA_NORMAL ) {
             this->sendQue.pushUInt16 ( CA_PROTO_WRITE ); // cmd
             this->sendQue.pushUInt16 ( postcnt ); // postsize
             this->sendQue.pushUInt16 ( type ); // dataType
@@ -1460,6 +1458,9 @@ int tcpiiu::writeRequest ( nciu &chan, unsigned type, unsigned nElem, const void
             }
             this->sendQue.pushString ( nillBytes, postcnt - size );
         }
+    }
+    else {
+        status = ECA_DISCONNCHID;
     }
 
     return status;
@@ -1503,17 +1504,12 @@ int tcpiiu::writeNotifyRequest ( nciu &chan, cacNotify &notify, unsigned type,
 
     epicsAutoMutex autoMutex ( this->mutex );
 
-    int status = this->sendQue.reserveSpace ( postcnt + 16u );
-    if ( status == ECA_NORMAL ) {
-        if ( ! chan.verifyConnected ( *this ) ) {
-            status = ECA_DISCONNCHID;
-        }
-        else {
-            netWriteNotifyIO * pIO = new netWriteNotifyIO ( chan, notify );
-            if ( ! pIO ) {
-                status = ECA_ALLOCMEM;
-            }
-            else {
+    int status;
+    if ( chan.verifyConnected ( *this ) ) {
+        netWriteNotifyIO * pIO = new netWriteNotifyIO ( chan, notify );
+        if ( pIO ) {
+            status = this->sendQue.reserveSpace ( postcnt + 16u );
+            if ( status == ECA_NORMAL ) {
                 this->ioTable.add ( *pIO );
                 chan.tcpiiuPrivateListOfIO::eventq.add ( *pIO );
                 this->sendQue.pushUInt16 ( CA_PROTO_WRITE_NOTIFY ); // cmd
@@ -1530,7 +1526,16 @@ int tcpiiu::writeNotifyRequest ( nciu &chan, cacNotify &notify, unsigned type,
                 }
                 this->sendQue.pushString ( nillBytes, postcnt - size );
             }
+            else {
+                pIO->destroy ();
+            }
         }
+        else {
+            status = ECA_ALLOCMEM;
+        }
+    }
+    else {
+        status = ECA_DISCONNCHID;
     }
 
     return status;
@@ -1551,19 +1556,14 @@ int tcpiiu::readCopyRequest ( nciu &chan, unsigned type, unsigned nElem, void *p
 
     epicsAutoMutex autoMutex ( this->mutex );
 
-    int status = this->sendQue.reserveSpace ( 16u );
-    if ( status == ECA_NORMAL ) {
-        if ( ! chan.verifyConnected ( *this ) ) {
-            status = ECA_DISCONNCHID;
-        }
-        else {
-            unsigned seqNo = this->pCAC ()->readSequenceOfOutstandingIO ();
-            netReadCopyIO *pIO = new netReadCopyIO ( chan, type, 
-                nElem, pValue, seqNo );
-            if ( ! pIO ) {
-                status = ECA_ALLOCMEM;
-            }
-            else {
+    int status;
+    if ( chan.verifyConnected ( *this ) ) {
+        unsigned seqNo = this->pCAC ()->readSequenceOfOutstandingIO ();
+        netReadCopyIO *pIO = new netReadCopyIO ( chan, type, 
+                                            nElem, pValue, seqNo );
+        if ( pIO ) {
+            status = this->sendQue.reserveSpace ( 16u );
+            if ( status == ECA_NORMAL ) {
                 this->ioTable.add ( *pIO );
                 chan.tcpiiuPrivateListOfIO::eventq.add ( *pIO );
                 this->sendQue.pushUInt16 ( CA_PROTO_READ ); // cmd
@@ -1573,7 +1573,16 @@ int tcpiiu::readCopyRequest ( nciu &chan, unsigned type, unsigned nElem, void *p
                 this->sendQue.pushUInt32 ( chan.getSID () ); // cid
                 this->sendQue.pushUInt32 ( pIO->getID () ); // available 
             }
+            else {
+                pIO->destroy ();
+            }
         }
+        else {
+            status = ECA_ALLOCMEM;
+        }
+    }
+    else {
+        status = ECA_DISCONNCHID;
     }
 
     return status;
@@ -1595,17 +1604,12 @@ int tcpiiu::readNotifyRequest ( nciu &chan, cacNotify &notify,
 
     epicsAutoMutex autoMutex ( this->mutex );
 
-    int status = this->sendQue.reserveSpace ( 16u );
-    if ( status == ECA_NORMAL ) {
-        if ( ! chan.verifyConnected ( *this ) ) {
-            status = ECA_DISCONNCHID;
-        }
-        else {
-            netReadNotifyIO *pIO = new netReadNotifyIO ( chan, notify );
-            if ( ! pIO ) {
-                status = ECA_ALLOCMEM;
-            }
-            else {
+    int status;
+    if ( chan.verifyConnected ( *this ) ) {
+        netReadNotifyIO *pIO = new netReadNotifyIO ( chan, notify );
+        if ( pIO ) {
+            status = this->sendQue.reserveSpace ( 16u );
+            if ( status == ECA_NORMAL ) {
                 this->ioTable.add ( *pIO );
                 chan.tcpiiuPrivateListOfIO::eventq.add ( *pIO );
                 this->sendQue.pushUInt16 ( CA_PROTO_READ_NOTIFY ); // cmd
@@ -1615,7 +1619,16 @@ int tcpiiu::readNotifyRequest ( nciu &chan, cacNotify &notify,
                 this->sendQue.pushUInt32 ( chan.getSID () ); // cid
                 this->sendQue.pushUInt32 ( pIO->getID () ); // available 
             }
+            else {
+                pIO->destroy ();
+            }
         }
+        else {
+            status = ECA_ALLOCMEM;
+        }
+    }
+    else {
+        status = ECA_DISCONNCHID;
     }
 
     return status;

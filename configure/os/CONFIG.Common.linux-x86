@@ -36,3 +36,5 @@ ifdef CROSS
    CMPLR_PREFIX=$(addsuffix -,$(GNU_TARGET))
 endif
 
+# Java
+JAVA_DIR=/usr/java/j2sdk1.4.1_01

@@ -55,3 +55,6 @@ LDLIBS_READLINE = -lreadline
 # line in CONFIG_SITE.darwin-ppc.Common to use GNU readline
 # command-line editing:
 #COMMANDLINE_LIBRARY=READLINE
+
+# Java
+JAVA_DIR=/System/Library/Frameworks/JavaVM.framework/Home

@@ -13,6 +13,7 @@
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
+#include "localHostName.h"
 #include "iocinf.h"
 #include "virtualCircuit.h"
 #include "inetAddrID.h"
@@ -20,7 +21,6 @@
 #include "netiiu.h"
 #include "netIO.h"
 #include "msgForMultiplyDefinedPV.h"
-#include "localHostName.h"
 
 #define epicsExportSharedSymbols
 #include "net_convert.h"

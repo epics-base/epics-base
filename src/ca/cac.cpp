@@ -15,7 +15,7 @@
 #include "epicsMemory.h"
 #include "osiProcess.h"
 #include "osiSigPipeIgnore.h"
-#include "envdefs.h"
+#include "envDefs.h"
 
 #include "iocinf.h"
 #include "cac.h"

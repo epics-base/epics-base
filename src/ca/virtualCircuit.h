@@ -496,3 +496,4 @@ inline SOCKET tcpiiu::getSock () const
 }
 
 #endif // ifdef virtualCircuith
+

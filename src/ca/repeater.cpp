@@ -57,7 +57,7 @@
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #include "tsDLList.h"
-#include "envdefs.h"
+#include "envDefs.h"
 #include "tsFreeList.h"
 
 #include "iocinf.h"

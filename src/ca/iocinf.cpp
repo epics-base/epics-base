@@ -12,7 +12,10 @@
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
-#include "envdefs.h"
+#include <ctype.h>
+#include <string.h>
+
+#include "envDefs.h"
 #include "epicsAssert.h"
 #include "locationException.h"
 

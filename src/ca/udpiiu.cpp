@@ -12,7 +12,7 @@
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
-#include "envdefs.h"
+#include "envDefs.h"
 #include "osiProcess.h"
 
 #define epicsExportSharedSymbols

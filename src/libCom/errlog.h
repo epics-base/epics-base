@@ -74,8 +74,8 @@ epicsShareFunc void epicsShareAPI errlogAddListener(
 epicsShareFunc void epicsShareAPI errlogRemoveListener(
     errlogListener listener);
 
-epicsShareFunc void epicsShareAPI eltc(int yesno);
-epicsShareFunc void epicsShareAPI errlogInit(int bufsize);
+epicsShareFunc int epicsShareAPI eltc(int yesno);
+epicsShareFunc int epicsShareAPI errlogInit(int bufsize);
 
 /*other routines that write to log file*/
 epicsShareFunc void epicsShareAPIV errPrintf(long status, const char *pFileName,

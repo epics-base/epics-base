@@ -232,10 +232,11 @@ epicsShareFunc void epicsShareAPI errlogRemoveListener(
     if(!plistenerNode) printf("errlogRemoveListener did not find listener\n");
 }
 
-epicsShareFunc void epicsShareAPI eltc(int yesno)
+epicsShareFunc int epicsShareAPI eltc(int yesno)
 {
     errlogInit(0);
     pvtData.toConsole = yesno;
+    return(0);
 }
 
 epicsShareFunc void epicsShareAPIV errPrintf(long status, const char *pFileName, 
@@ -288,12 +289,12 @@ epicsShareFunc void epicsShareAPIV errPrintf(long status, const char *pFileName,
 }
 
 #define optionsSemM SEM_Q_PRIORITY|SEM_DELETE_SAFE|SEM_INVERSION_SAFE
-epicsShareFunc void epicsShareAPI errlogInit(int bufsize)
+epicsShareFunc int epicsShareAPI errlogInit(int bufsize)
 {
     static int errlogInitFlag=0;
     void	*pbuffer;;
 
-    if(!vxTas(&errlogInitFlag)) return;
+    if(!vxTas(&errlogInitFlag)) return(0);
     if(bufsize<BUFFER_SIZE) bufsize = BUFFER_SIZE;
     pvtData.buffersize = bufsize;
     ellInit(&pvtData.listenerList);
@@ -319,6 +320,7 @@ epicsShareFunc void epicsShareAPI errlogInit(int bufsize)
 	0,0,0,0,0,0,0,0,0,0);
     /*For now make sure iocLogInit is called*/
     iocLogInit();
+    return(0);
 }
 
 LOCAL void errlogTask(void)

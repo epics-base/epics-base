@@ -243,12 +243,12 @@ epicsShareFunc int epicsShareAPI ca_search_and_connect
 /************************************************************************/
 
 typedef unsigned capri; 
-#define CA_PRIORITY_MAX 100
+#define CA_PRIORITY_MAX 99
 #define CA_PRIORITY_MIN 0
 #define CA_PRIORITY_DEFAULT CA_PRIORITY_MIN
 
-#define CA_PRIORITY_DB_LINKS CA_PRIORITY_MAX
-#define CA_PRIORITY_ARCHIVE ( ( CA_PRIORITY_MAX - CA_PRIORITY_MIN ) / 2 )
+#define CA_PRIORITY_DB_LINKS 80
+#define CA_PRIORITY_ARCHIVE 20
 #define CA_PRIORITY_OPI 0
 
 /*

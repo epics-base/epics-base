@@ -123,7 +123,7 @@ BI()
       adpvt[cnt].txMsg.route = 0x40;
       adpvt[cnt].rxMsg.data = (unsigned char *)malloc(BB_MAX_DAT_LEN);
       adpvt[cnt].rxMsg.length = 7;
-      adpvt[cnt].syncLock = NULL;
+      adpvt[cnt].psyncSem = NULL;
       adpvt[cnt].rxMaxLen = BB_MAX_MSG_LENGTH;
     }
   }

@@ -268,7 +268,6 @@ private:
     unsigned blockingForFlush;
     unsigned socketLibrarySendBufferSize;
     unsigned unacknowledgedSendBytes;
-    int recvFlag;
     bool busyStateDetected; // only modified by the recv thread
     bool flowControlActive; // only modified by the send process thread
     bool echoRequestPending; 

@@ -427,11 +427,10 @@ long dbPutField(paddr,dbrType,pbuffer,nRequest)
 {
 	long	status;
 	struct fldDes *pfldDes=(struct fldDes *)(paddr->pfldDes);
+	struct dbCommon *precord = (struct dbCommon *)(paddr->precord);
 
 	/*check for putField disabled*/
 	if(precord->disp) {
-		struct dbCommon *precord = (struct dbCommon *)(paddr->precord);
-
 		if((caddr_t)(&precord->disp) != paddr->pfield) return(0);
 	}
 	dbScanLock(paddr->precord);

@@ -40,6 +40,7 @@
  *	.05 joh 071592	modified A16 & A32 base addr to match AT8 
  *			address standard
  *
+ *	.06  bg 071792	moved addresses to module_types.h 
  */
 
 /*
@@ -115,9 +116,7 @@ struct comet_cr{
 
 
 
-/* values that will end up in module_types.h */
-#define		COMET_SHORT_BASE_ADDR	0xbc00
-#define		COMET_EXT_BASE_ADDR	0xe0000000
+
 #define		FLAG_EOC		0x10
 
 /* comet configuration data */
@@ -214,11 +213,11 @@ comet_init()
 	}
 
 	/* get the standard and short address locations */
-        if ((status = sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO,COMET_SHORT_BASE_ADDR,&pcomet_cr)) != OK){
+        if ((status = sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO,wf_addrs[COMET],&pcomet_cr)) != OK){
 		logMsg("\nCOMET: failed to map VME A16 base address\n");
 		return;
         } 
-        if ((status = sysBusToLocalAdrs(VME_AM_EXT_SUP_DATA,COMET_EXT_BASE_ADDR,&extaddr)) != OK){
+        if ((status = sysBusToLocalAdrs(VME_AM_EXT_SUP_DATA,wf_memaddrs[COMET],&extaddr)) != OK){
 		logMsg("\nCOMET: failed to map VME A32 base address\n");
 		return;
         }

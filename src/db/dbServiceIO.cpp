@@ -60,7 +60,8 @@ dbBaseIO::dbBaseIO () {}
 
 dbServiceIOLoadTimeInit::dbServiceIOLoadTimeInit ()
 {
-    epicsSingleton < cacServiceList > :: reference ref ( globalServiceListCAC );
+    epicsSingleton < cacServiceList > :: reference 
+        ref ( globalServiceListCAC.getReference () );
     ref->registerService ( this->dbio );
 }
 

@@ -137,7 +137,7 @@ cac::cac ( cacNotify & notifyIn, bool enablePreemptiveCallbackIn ) :
     programBeginTime ( epicsTime::getCurrent() ),
     connTMO ( CA_CONN_VERIFY_PERIOD ),
     cbMutex ( ! enablePreemptiveCallbackIn ),
-    globalServiceList ( globalServiceListCAC ),
+    globalServiceList ( globalServiceListCAC.getReference () ),
     timerQueue ( epicsTimerQueueActive::allocate ( false, 
         lowestPriorityLevelAbove(epicsThreadGetPrioritySelf()) ) ),
     pUserName ( 0 ),

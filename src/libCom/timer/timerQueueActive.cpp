@@ -36,7 +36,7 @@ epicsTimerQueueActive::~epicsTimerQueueActive () {}
 epicsTimerQueueActive & epicsTimerQueueActive::allocate ( bool okToShare, unsigned threadPriority )
 {
     epicsSingleton < timerQueueActiveMgr >::reference pMgr = 
-        timerQueueMgrEPICS;
+        timerQueueMgrEPICS.getReference ();
     return pMgr->allocate ( okToShare, threadPriority );
 }
 

@@ -65,19 +65,19 @@ epicsSingleton < tsFreeList < class epicsOnceImpl, 16 > > epicsOnceImpl::freeLis
 inline void * epicsOnceImpl::operator new ( size_t size )
 { 
     epicsSingleton < tsFreeList < class epicsOnceImpl, 16 > > :: reference ref = 
-                epicsOnceImpl::freeList;
+                epicsOnceImpl::freeList.getReference ();
     return ref->allocate ( size );
 }
 
 inline void epicsOnceImpl::operator delete ( void *pCadaver, size_t size )
 { 
     epicsSingleton < tsFreeList < class epicsOnceImpl, 16 > > :: reference ref = 
-                epicsOnceImpl::freeList;
+                epicsOnceImpl::freeList.getReference ();
     ref->release ( pCadaver, size );
 }
 
 inline epicsOnceImpl::epicsOnceImpl ( epicsOnceNotify & notifyIn ) : 
-mutexRef ( epicsOnceImpl::mutex ), notify ( notifyIn ), onceFlag ( false )
+mutexRef ( epicsOnceImpl::mutex.getReference() ), notify ( notifyIn ), onceFlag ( false )
 {
 }
 

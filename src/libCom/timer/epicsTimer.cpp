@@ -73,7 +73,7 @@ epicsTimerQueueActiveForC::~epicsTimerQueueActiveForC ()
 void epicsTimerQueueActiveForC::release () epicsThrows (())
 {
     epicsSingleton < timerQueueActiveMgr >::reference pMgr = 
-        timerQueueMgrEPICS;
+        timerQueueMgrEPICS.getReference ();
     pMgr->release ( *this );
 }
 
@@ -179,7 +179,8 @@ extern "C" epicsTimerQueueId epicsShareAPI
     epicsTimerQueueAllocate ( int okToShare, unsigned int threadPriority )
 {
     try {
-        epicsSingleton < timerQueueActiveMgr >::reference ref = timerQueueMgrEPICS;
+        epicsSingleton < timerQueueActiveMgr >::reference ref = 
+            timerQueueMgrEPICS.getReference ();
         epicsTimerQueueActiveForC & tmr = 
             ref->allocate ( okToShare ? true : false, threadPriority );
         return &tmr;

@@ -894,7 +894,7 @@ void tcpiiu::hostNameSetRequest ( epicsGuard < cacMutex > & )
     }
 
     epicsSingleton < localHostName >::reference 
-            ref ( localHostNameAtLoadTime );
+            ref ( localHostNameAtLoadTime.getReference () );
     const char * pName = ref->pointer ();
     unsigned size = strlen ( pName ) + 1u;
     unsigned postSize = CA_MESSAGE_ALIGN ( size );

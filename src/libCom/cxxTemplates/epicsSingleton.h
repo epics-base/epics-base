@@ -78,8 +78,8 @@ public:
     };
 
     // lock overhead every time these are called
-    operator typename epicsSingleton<TYPE>::reference ();
-    operator const typename epicsSingleton<TYPE>::reference () const;
+    typename epicsSingleton<TYPE>::reference getReference ();
+    const typename epicsSingleton<TYPE>::reference getReference () const;
 
 private:
     TYPE * pSingleton;
@@ -103,21 +103,23 @@ inline epicsSingleton<TYPE>::~epicsSingleton ()
 epicsShareFunc epicsMutex & epicsSingletonPrivateMutex ();
 
 template < class TYPE >
-epicsSingleton<TYPE>::operator typename epicsSingleton<TYPE>::reference ()
+inline typename epicsSingleton<TYPE>::reference epicsSingleton<TYPE>::getReference ()
 {
-    epicsGuard < epicsMutex > guard ( epicsSingletonPrivateMutex() );
-    if ( ! this->pSingleton ) {
-        this->pSingleton = new TYPE;
+    {
+        epicsGuard < epicsMutex > guard ( epicsSingletonPrivateMutex() );
+        if ( ! this->pSingleton ) {
+            this->pSingleton = new TYPE;
+        }
     }
     return reference ( * this->pSingleton );
 }
 
 template < class TYPE >
-epicsSingleton<TYPE>::operator const typename epicsSingleton<TYPE>::reference () const
+inline const typename epicsSingleton<TYPE>::reference epicsSingleton<TYPE>::getReference () const
 {
     epicsSingleton < TYPE > * pConstCastAway = 
         const_cast < epicsSingleton < TYPE > * > ( this );
-    return *pConstCastAway;
+    return pConstCastAway->getReference ();
 }
 
 #endif // epicsSingleton_h

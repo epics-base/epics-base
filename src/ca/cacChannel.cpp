@@ -74,7 +74,7 @@ void cacChannel::hostName ( char *pBuf, unsigned bufLength ) const
 {
     if ( bufLength ) {
         epicsSingleton < localHostName >::reference 
-                ref ( localHostNameAtLoadTime );
+                ref ( localHostNameAtLoadTime.getReference () );
         ref->copy ( pBuf, bufLength );
     }
 }
@@ -84,7 +84,7 @@ void cacChannel::hostName ( char *pBuf, unsigned bufLength ) const
 const char * cacChannel::pHostName () const
 {
     epicsSingleton < localHostName >::reference 
-            ref ( localHostNameAtLoadTime );
+            ref ( localHostNameAtLoadTime.getReference () );
     return ref->pointer ();
 }
 

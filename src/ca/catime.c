@@ -80,6 +80,8 @@ LOCAL tf	test_put;
 LOCAL tf	test_wait;
 LOCAL tf	test_get;
 
+LOCAL void measure_get_latency (ti *pItems, unsigned iterations);
+
 void timeIt(
 	tf		*pfunc,
 	ti		*pItem,
@@ -166,6 +168,13 @@ int catime (char *channelName, enum appendNumberFlag appNF)
   	test (itemList, NELEMENTS(itemList));
 
   	for (i=0; i<NELEMENTS(itemList); i++) {
+		itemList[i].val.fltval = 0.0f;
+		itemList[i].type = DBR_DOUBLE; 
+  	}
+	printf ("double test\n");
+  	test (itemList, NELEMENTS(itemList));
+
+  	for (i=0; i<NELEMENTS(itemList); i++) {
 		strcpy(itemList[i].val.strval, "0.0");
 		itemList[i].type = DBR_STRING; 
 	}
@@ -178,6 +187,13 @@ int catime (char *channelName, enum appendNumberFlag appNF)
 	}
 	printf ("integer test\n");
   	test (itemList, NELEMENTS(itemList));
+
+	printf ("round trip jitter test\n");
+ 	for (i=0; i<NELEMENTS(itemList); i++) {
+		itemList[i].val.fltval = 0.0f;
+		itemList[i].type = DBR_DOUBLE; 
+  	}	
+	measure_get_latency (itemList, NELEMENTS(itemList));
 
   	printf ("free test\n");
 	timeIt (test_free, itemList, NELEMENTS(itemList));
@@ -587,5 +603,52 @@ unsigned	*pInlineIter
   	}
 
 	*pInlineIter = 1;
+}
+
+/*
+ * measure_get_latency
+ */
+LOCAL void measure_get_latency (ti *pItems, unsigned iterations)
+{
+	TS_STAMP end_time;
+	TS_STAMP start_time;
+	double delay;
+	double X = 0u;
+	double XX = 0u; 
+	double max = DBL_MIN; 
+	double min = DBL_MAX; 
+	double mean;
+	double stdDev;
+	ti *pi;
+	int status;
+
+	for (pi=pItems; pi<&pItems[iterations]; pi++) {
+		tsLocalTime (&start_time);
+		status = ca_array_get (pi->type, pi->count, 
+						pi->chix, &pi->val);
+    	SEVCHK (status, NULL);
+		status = ca_pend_io (100.0);
+		SEVCHK (status, NULL);
+
+		tsLocalTime(&end_time);
+
+		TsDiffAsDouble(&delay,&end_time,&start_time);
+
+		X += delay;
+		XX += delay*delay;
+
+		if (delay>max) {
+			max = delay;
+		}
+
+		if (delay<min) {
+			min = delay;
+		}
+	}
+
+	mean = X/iterations;
+	stdDev = sqrt (XX/iterations - mean*mean);
+	printf ("Round trip get delays - mean=%f std dev=%f min=%f max=%f\n",
+		mean, stdDev, min, max);
 }
 

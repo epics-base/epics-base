@@ -27,6 +27,7 @@
  * -----------------
  * .00	02-08-91	rac	initial version
  * .01	07-30-91	rac	installed in SCCS
+ * .02	08-14-91	rac	add guiNoticeName; add more documentation
  *
  * make options
  *	-DXWINDOWS	to use xview/X Window System
@@ -57,12 +58,13 @@
 *       Menu guiMenu(proc, key1, val1, key2, val2)
 *  Menu_item guiMenuItem(label, menu, proc, inact, dflt, key1,val1,key2,val2)
 * Panel_item guiMessage(label, panel, pX, pY, pHt)
-*       void guiNotice(pCtx, msg)
-*       void guiNoticeFile(pCtx, msg, fName)
+*       void guiNotice(pGuiCtx, msg)
+*       void guiNoticeFile(pGuiCtx, msg, fName)
+*       void guiNoticeName(pGuiCtx, msg, name)
 * Panel_item guiTextField(lab,pan,pX,pY,pHt,proc,nStr,nDsp,key1,val1,key2,val2)
 *
 * USAGE
-*	In the synopsis for each routine, the `pCtx' is intended to be
+*	In the synopsis for each routine, the `pGuiCtx' is intended to be
 *	&guiContext, (or whatever name is chosen for the GUI_CTX in the
 *	program).
 *
@@ -555,12 +557,25 @@ int	*pHt;		/* O ptr to height of message, in pixels, or NULL */
     return item;
 }
 
-/*+/subr**********************************************************************
+/*+/macro*********************************************************************
 * NAME	guiNotice - display a pop-up notice
 *
 * DESCRIPTION
-*	guiNoticeFile(pCtx, msg, fileName) displays the message, along
-*			with the file name and the message from perror()
+*	Display a pop-up notice with a "continue" button.  Several different
+*	routines are available:
+*
+*	guiNotice(pGuiCtx, message)   simply displays the message
+*
+*	guiNoticeFile(pGuiCtx, message, filePath)   calls "perror()" to print
+*			the Unix error message and file name to stdout, then
+*			displays the message and file path in the pop-up
+*
+*	guiNoticeName(pGuiCtx, message, name)   displays the message and the
+*			name (usually for a channel or file) in the pop-up
+*
+*	In each case, the first argument is a GUI_CTX * pointing to a
+*	gui context block.  The other arguments are char * pointing to
+*	text strings.
 *
 * RETURNS
 *	void
@@ -584,6 +599,24 @@ char	*fName;
     perror(fName);
     notice_prompt(pCtx->baseFrame, NULL,
 	    NOTICE_MESSAGE_STRINGS, msg, fName, NULL,
+	    NOTICE_BUTTON_YES,	"Continue", NULL);
+    return;
+}
+void
+guiNoticeName(pCtx, msg, name)
+GUI_CTX	*pCtx;
+char	*msg;
+char	*name;
+{
+    char	myName[120], *pName;
+    if (strlen(name) < 117){
+	sprintf(myName, "\"%s\"", name);
+	pName = myName;
+    }
+    else
+	pName = name;
+    notice_prompt(pCtx->baseFrame, NULL,
+	    NOTICE_MESSAGE_STRINGS, msg, pName, NULL,
 	    NOTICE_BUTTON_YES,	"Continue", NULL);
     return;
 }

@@ -76,18 +76,20 @@ void callbackRequest(CALLBACK *pcallback)
     static int status;
 
     if(priority<0 || priority>=(NUM_CALLBACK_PRIORITIES)) {
-	logMsg("callbackRequest called with invalid priority");
+	char msg[80];
+
+	sprintf(msg,"callbackRequest called with invalid priority=%d",priority);
+	errMessage(-1,msg);
 	return;
     }
     lockKey = intLock();
     nput = rngBufPut(callbackQ[priority],(void *)&pcallback,sizeof(pcallback));
     intUnlock(lockKey);
-    if(nput!=sizeof(pcallback)) logMsg("callbackRequest ring buffer full");
+    if(nput!=sizeof(pcallback)) errMessage(-1,"callbackRequest ring buffer full");
     if((status=semGive(callbackSem[priority]))!=OK) {
 /*semGive randomly returns garbage value*/
 /*
-		logMsg("semGive returned error in callbackRequest\n");
-logMsg("status=%d\n",status);
+		errMessage(-1,"semGive returned error in callbackRequest\n");
 */
     }
     return;

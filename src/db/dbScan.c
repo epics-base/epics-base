@@ -138,18 +138,18 @@ void post_event(int event)
 
 	if (!interruptAccept) return;     /* not awake yet */
 	if(event<0 || event>=MAX_EVENTS) {
-		logMsg("illegal event passed to post_event\n");
+		errMessage(-1,"illegal event passed to post_event");
 		return;
 	}
 	evnt = (unsigned)event;
 	/*multiple writers can exist. Thus if evnt is ever changed to use*/
 	/*something bigger than a character interrupts will have to be blocked*/
 	if(rngBufPut(eventQ,(void *)&evnt,sizeof(unsigned char))!=sizeof(unsigned char))
-	    logMsg("rngBufPut overflow in post_event\n");
+	    errMessage(0,"rngBufPut overflow in post_event");
 	if((status=semGive(eventSem))!=OK){
 /*semGive randomly returns garbage value*/
 /*
-   		 logMsg("semGive returned error in post_event status= %d\n",status);
+   		 errMessage(0,"semGive returned error in post_event");
 */
         }
 }
@@ -428,18 +428,18 @@ got_record:
 	nPeriodic = scanChoices.no_str - SCAN_1ST_PERIODIC;
 	papPeriodic = calloc(nPeriodic,sizeof(struct scan_list));
 	if(papPeriodic==NULL) {
-		errMessage(-1,"initPeriodic calloc failure");
+		errMessage(0,"initPeriodic calloc failure");
 		exit(1);
 	}
 	periodicTaskId = calloc(nPeriodic,sizeof(int));
 	if(periodicTaskId==NULL) {
-		errMessage(-1,"initPeriodic calloc failure");
+		errMessage(0,"initPeriodic calloc failure");
 		exit(1);
 	}
 	for(i=0; i<nPeriodic; i++) {
 		psl = calloc(1,sizeof(struct scan_list));
 		if(psl==NULL) {
-			errMessage(-1,"initPeriodic calloc failure");
+			errMessage(0,"initPeriodic calloc failure");
 			exit(1);
 		}
 		papPeriodic[i] = psl;
@@ -479,10 +479,10 @@ static void eventTask()
 
     while(TRUE) {
         if(semTake(eventSem,WAIT_FOREVER)!=OK)
-	    logMsg("semTake returned error in eventTask\n");
+	    errMessage(0,"semTake returned error in eventTask");
         while (rngNBytes(eventQ)>=sizeof(unsigned char)){
 	    if(rngBufGet(eventQ,(void *)&event,sizeof(unsigned char))!=sizeof(unsigned char))
-		logMsg("rngBufGet returned error in eventTask\n");
+		errMessage(0,"rngBufGet returned error in eventTask");
 	    if(event<0 || event>MAX_EVENTS-1) {
 		errMessage(-1,"eventTask received an illegal event");
 		continue;
@@ -505,7 +505,7 @@ static void initEvent()
 		exit(1);
 	}
 	if((eventSem=semBCreate(SEM_Q_FIFO,SEM_EMPTY))==NULL)
-		logMsg("semBcreate failed in initEvent\n");
+		errMessage(0,"semBcreate failed in initEvent");
 }
 
 static void spawnEvent()
@@ -524,7 +524,7 @@ static void wdEvent()
     taskwdRemove(eventTaskId);
     if(!scanRestart) return;
     if(semFlush(eventSem)!=OK)
-	logMsg("semFlush failed while restarting eventTask\n");
+	errMessage(0,"semFlush failed while restarting eventTask");
     rngFlush(eventQ);
     for (i=0; i<MAX_EVENTS; i++) {
 	psl = papEvent[i];

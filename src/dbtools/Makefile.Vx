@@ -14,7 +14,7 @@ LIBOBJS = \
 
 LIBNAME = dbSubs
 
-depends: $(OBDIR)/dbLoadTemplate.c $(OBDIR)/dbLoadRecords.c
+pre_build: $(OBDIR)/dbLoadTemplate.c $(OBDIR)/dbLoadRecords.c
 
 $(OBDIR)/dbLoadRecords.c: $(OBDIR)/dbLoadRecords_lex.c dbLoadRecords.y
 	/bin/rm -f $@

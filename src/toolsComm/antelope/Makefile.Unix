@@ -22,6 +22,6 @@ OBJS = \
 
 PROD = $(OBDIR)/antelope
 
-depends: install
+pre_build: install
 
 include $(EPICS)/config/RULES.Unix

@@ -17,7 +17,7 @@ LIBOBJS =
 
 PROD = $(OBDIR)/seq
 
-depends: $(OBDIR)/seqVersion.c
+pre_build: $(OBDIR)/seqVersion.c
 
 $(OBDIR)/seqVersion.c: Version
 	/bin/rm -f $(OBDIR)/seqVersion.c

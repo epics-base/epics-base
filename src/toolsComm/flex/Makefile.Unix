@@ -27,7 +27,7 @@ PROD = $(OBDIR)/e_flex
 
 all :: parse.h parse.c $(PROD)
 
-depends: install
+pre_build: install
 
 parse.h parse.c : parse.y
 	rm -f parse.h parse.c

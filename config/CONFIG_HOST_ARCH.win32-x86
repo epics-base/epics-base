@@ -1,0 +1,4 @@
+# $Id$
+
+# win32-x86 is the new name for WIN32
+-include $(EPICS_BASE)/config/CONFIG_HOST_ARCH.WIN32

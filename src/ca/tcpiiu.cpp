@@ -598,7 +598,7 @@ void tcpiiu::shutdown ( bool discardPendingMessages )
             }
         }
         // linux threads in recv() dont wakeup unless we also
-        // call shutdown ( close by itself is not enough )
+        // call shutdown ( close() by itself is not enough )
         int status = ::shutdown ( this->sock, SD_BOTH );
         if ( status ) {
             errlogPrintf ("CAC TCP socket shutdown error was %s\n", 
@@ -606,7 +606,7 @@ void tcpiiu::shutdown ( bool discardPendingMessages )
         }
         //
         // on winsock and probably vxWorks shutdown() does not
-        // unblock a thread in recv() so we use close and introduce
+        // unblock a thread in recv() so we use close() and introduce
         // some complexity because we must unregister the fd early
         //
         status = socket_close ( this->sock );

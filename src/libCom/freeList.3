@@ -15,6 +15,7 @@ freeListFree	- Free an element,i.e. put on free list
 void freeListInitPvt(void **ppvt,int size,int nmalloc);
 void *freeListCalloc(void *pvt); 
 void *freeListMalloc(void *pvt);
+size_t freeListItemsAvail(void *pvt);
 void freeListFree(void *pvt,void*pmem);
 
 where :

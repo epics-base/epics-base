@@ -50,6 +50,7 @@
 class cac;
 class netiiu;
 class callbackMutex;
+class cacMutex;
 
 class cacPrivateListOfIO {
 public:
@@ -75,7 +76,7 @@ public:
     void accessRightsNotify ( epicsGuard < callbackMutex > & ) const;
     void disconnect ( netiiu & newiiu );
     bool searchMsg ( class udpiiu & iiu, unsigned & retryNoForThisChannel );
-    void createChannelRequest ( class tcpiiu & iiu );
+    void createChannelRequest ( class tcpiiu & iiu, epicsGuard < cacMutex > & );
     bool identifierEquivelence ( unsigned idToMatch );
     void beaconAnomalyNotify ();
     void serviceShutdownNotify ();

@@ -111,7 +111,7 @@ public:
         ( cacNotify &, epicsGuard < cacMutex > & );
     virtual void show ( unsigned level ) const;
     bool setEchoRequestPending ();
-    void createChannelRequest ( nciu & );
+    void createChannelRequest ( nciu &, epicsGuard < cacMutex > & );
     void requestRecvProcessPostponedFlush ();
     void clearChannelRequest ( epicsGuard < cacMutex > &, 
         ca_uint32_t sid, ca_uint32_t cid );

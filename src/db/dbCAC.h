@@ -38,8 +38,8 @@ public:
         unsigned long count, const void *pValue);
     void completion ();
     void destroy ();
-    static void * operator new ( size_t size );
-    static void operator delete ( void *pCadaver, size_t size );
+    void * operator new ( size_t size );
+    void operator delete ( void *pCadaver, size_t size );
 private:
     putNotify pn;
     dbPutNotifyBlocker &blocker;
@@ -56,8 +56,8 @@ public:
     int begin ( struct dbAddr &addr, unsigned mask );
     void destroy ();
     void show ( unsigned level ) const;
-    static void * operator new ( size_t size );
-    static void operator delete ( void *pCadaver, size_t size );
+    void * operator new ( size_t size );
+    void operator delete ( void *pCadaver, size_t size );
 private:
     dbChannelIO &chan;
     dbEventSubscription es;
@@ -79,8 +79,8 @@ public:
             unsigned type, unsigned long count, const void *pValue);
     void putNotifyDestroyNotify ();
     void show ( unsigned level ) const;
-    static void * operator new ( size_t size );
-    static void operator delete ( void *pCadaver, size_t size );
+    void * operator new ( size_t size );
+    void operator delete ( void *pCadaver, size_t size );
 private:
     osiEvent block;
     dbPutNotifyIO *pPN;
@@ -95,14 +95,14 @@ private:
 
 class dbChannelIO : public cacLocalChannelIO {
 public:
-    dbChannelIO (  cacChannel &chan, const dbAddr &addr, dbServiceIO &serviceIO );
+    dbChannelIO ( cac &, cacChannel &chan, const dbAddr &addr, dbServiceIO &serviceIO );
     void destroy ();
     void subscriptionUpdate ( unsigned type, unsigned long count, 
             const struct db_field_log *pfl, cacNotifyIO &notify );
     dbEventSubscription subscribe ( dbSubscriptionIO &subscr, unsigned mask );
     void show ( unsigned level ) const;
-    static void * operator new ( size_t size);
-    static void operator delete ( void *pCadaver, size_t size );
+    void * operator new ( size_t size);
+    void operator delete ( void *pCadaver, size_t size );
 
 private:
     dbServiceIO &serviceIO;
@@ -141,7 +141,7 @@ class dbServiceIO : public cacServiceIO {
 public:
     dbServiceIO ();
     virtual ~dbServiceIO ();
-    cacLocalChannelIO *createChannelIO ( cacChannel &chan, const char *pName );
+    cacLocalChannelIO *createChannelIO ( const char *pName, cac &, cacChannel & );
     void subscriptionUpdate ( struct dbAddr &addr, unsigned type, unsigned long count, 
             const struct db_field_log *pfl, cacNotifyIO &notify );
     dbEventSubscription subscribe ( struct dbAddr &addr, dbSubscriptionIO &subscr, unsigned mask );

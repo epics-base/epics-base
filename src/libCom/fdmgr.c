@@ -62,6 +62,10 @@
  *			if we are in fdmgr_pend_event()	
  *	.15 joh	011993	Created fdmgr header file	
  *	.16 joh	011993	Converted to ANSI C
+ *	.17 joh	030895	More ANSI C changes and fixed lost send callback
+ *			problem (send call back discarded when fdmgr pend
+ *			event time out expires even if the send call back
+ *			has not been called at least once).
  *
  *	NOTES:
  *
@@ -98,6 +102,7 @@ static char	*pSccsId = "@(#) $Id$";
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <errno.h>
 
 #ifdef vxWorks
 #include <vxWorks.h>
@@ -183,9 +188,7 @@ fdctx           *pfdctx,
 struct timeval  *pt
 );
 
-LOCAL void select_alarm(
-fdctx   *pfdctx
-);
+LOCAL void select_alarm(void *pParam);
 
 LOCAL int fdmgr_select(
 fdctx		*pfdctx,
@@ -270,7 +273,7 @@ int fdmgr_delete(fdctx *pfdctx)
 fdmgrAlarm *fdmgr_add_timeout(
 fdctx 		*pfdctx,
 struct timeval 	*ptimeout,
-void		(*func)(),
+void		(*func)(void *),
 void		*param
 )
 {
@@ -331,10 +334,10 @@ void		*param
 		}
 	}
 	if(pa){
-	ellInsert(&pfdctx->alarm_list, pa->node.previous, (ELLNODE*)palarm);
+	ellInsert(&pfdctx->alarm_list, pa->node.previous, &palarm->node);
 	}
 	else{
-		ellAdd(&pfdctx->alarm_list,(ELLNODE*) palarm);
+		ellAdd(&pfdctx->alarm_list, &palarm->node);
 	}
 	palarm->alt = alt_alarm;
 	UNLOCK(pfdctx);
@@ -361,8 +364,8 @@ fdmgrAlarm		*palarm
 	LOCK(pfdctx);
 	alt = palarm->alt;
 	if(alt == alt_alarm){
-		ellDelete(&pfdctx->alarm_list, (ELLNODE*)palarm);
-		ellAdd(&pfdctx->free_alarm_list, (ELLNODE*)palarm);
+		ellDelete(&pfdctx->alarm_list, &palarm->node);
+		ellAdd(&pfdctx->free_alarm_list, &palarm->node);
 		palarm->alt = alt_free;
 		status = OK;
 	}
@@ -424,7 +427,7 @@ fdmgrAlarm		*palarm
 int fdmgr_add_fd(
 fdctx 	*pfdctx,
 int	fd,
-void	(*pfunc)(),
+void	(*pfunc)(void *),
 void	*param
 )
 {
@@ -450,7 +453,7 @@ int fdmgr_add_callback(
 fdctx 		*pfdctx,
 int		fd,
 enum fdi_type	fdi,
-void		(*pfunc)(),
+void		(*pfunc)(void *),
 void		*param
 )
 {
@@ -496,7 +499,7 @@ void		*param
 	pfdentry->delete_pending = FALSE;
 
 	LOCK(pfdctx);
-	ellAdd(&pfdctx->fdentry_list, (ELLNODE*)pfdentry);
+	ellAdd(&pfdctx->fdentry_list, &pfdentry->node);
 	UNLOCK(pfdctx);
 
 	return OK;
@@ -543,7 +546,7 @@ enum fdi_type	fdi
 		pfdentry = (fdentry *) pfdentry->node.next){
 
 		if(pfdentry->fd == fd && pfdentry->fdi == fdi){
-			ellDelete(&pfdctx->fdentry_list, (ELLNODE*)pfdentry);
+			ellDelete(&pfdctx->fdentry_list, &pfdentry->node);
 			fdmgr_finish_off_fdentry(pfdctx, pfdentry);
 			status = OK;
 			break;
@@ -604,7 +607,7 @@ register fdentry	*pfdentry
 )
 {
      	FD_CLR(pfdentry->fd, pfdentry->pfds);
-	ellAdd(&pfdctx->fdentry_free_list, (ELLNODE*)pfdentry);
+	ellAdd(&pfdctx->fdentry_free_list, &pfdentry->node);
 }
 
 
@@ -619,9 +622,8 @@ struct timeval 			*ptimeout
 )
 {
 	int			status;
-	extern			errno;
 	struct timeval		t;
-	fdmgrAlarm			*palarm;
+	fdmgrAlarm		*palarm;
 
 
 	lockFDMGRPendEvent(pfdctx);
@@ -740,8 +742,8 @@ struct timeval 			*ptimeout
 				ptimeout->tv_usec);
 		else
 			fdmgrPrintf(	
-				"fdmgr: error from select %d\n",
-				errno);
+				"fdmgr: error from select %s\n",
+				strerror(errno));
 
 		return labor_performed;
 	}
@@ -752,14 +754,14 @@ struct timeval 			*ptimeout
 		LOCK(pfdctx)
 		pfdentry = (fdentry *) pfdentry->node.next;
 		if(pfdentry){
-			ellDelete(&pfdctx->fdentry_list, (ELLNODE*)pfdentry);
+			ellDelete(&pfdctx->fdentry_list, &pfdentry->node);
 			/*
 			 *
 			 * holding place where it can be marked 
 			 * pending delete but not deleted
  			 *
 			 */
-			ellAdd(&pfdctx->fdentry_in_use_list, (ELLNODE*)pfdentry);
+			ellAdd(&pfdctx->fdentry_in_use_list, &pfdentry->node);
 		}
 		UNLOCK(pfdctx)
 	
@@ -784,26 +786,29 @@ struct timeval 			*ptimeout
 			 */
 			if(!pfdentry->delete_pending){
      				(*pfdentry->pfunc)(pfdentry->param);
+				/*
+				 * writes are one shots
+				 */
+				if (pfdentry->fdi==fdi_write) {
+					pfdentry->delete_pending = TRUE;
+				}
 				labor_performed = TRUE;
 			}
 			UNLOCK_FD_HANDLER(pfdctx);
 		}
 
 		LOCK(pfdctx)
-		ellDelete(&pfdctx->fdentry_in_use_list, (ELLNODE*)pfdentry);
+		ellDelete(&pfdctx->fdentry_in_use_list, &pfdentry->node);
 
 		/*
 		 * if it is marked pending delete
 		 * reset it and place it on the free list	
-		 *
-		 * write fd interest is treated as a one shot
-		 * so remove them after each action
 		 */
-		if(pfdentry->delete_pending || pfdentry->fdi==fdi_write){
+		if(pfdentry->delete_pending){
 			fdmgr_finish_off_fdentry(pfdctx, pfdentry);
 		}
 		else{
-			ellAdd(&pfdctx->fdentry_list, (ELLNODE*)pfdentry);
+			ellAdd(&pfdctx->fdentry_list, &pfdentry->node);
 		}
 		UNLOCK(pfdctx)
 
@@ -828,8 +833,8 @@ struct timeval	*poffset
 {
 	struct timeval	t;
 	int		status;
-	fdmgrAlarm		*pa;
-	fdmgrAlarm		*nextpa;
+	fdmgrAlarm	*pa;
+	fdmgrAlarm	*nextpa;
 
 	status = fdmgr_gettimeval(pfdctx, &t);
 	assert (status >= 0);
@@ -842,9 +847,9 @@ struct timeval	*poffset
 			if(pa->t.tv_usec > t.tv_usec)
 				break;
 
-		nextpa = (fdmgrAlarm*)pa->node.next;
-		ellDelete(&pfdctx->alarm_list, (ELLNODE*)pa);
-		ellAdd(&pfdctx->expired_alarm_list, (ELLNODE*)pa);
+		nextpa = (fdmgrAlarm*) pa->node.next;
+		ellDelete(&pfdctx->alarm_list, &pa->node);
+		ellAdd(&pfdctx->expired_alarm_list, &pa->node);
 		pa->alt = alt_expired;
 	}
 	UNLOCK(pfdctx);
@@ -924,10 +929,10 @@ struct timeval	*poffset
  *	select_alarm()
  *
  */
-LOCAL void select_alarm(
-fdctx 	*pfdctx
-)
+LOCAL void select_alarm(void	*pParam)
 {
+	fdctx 	*pfdctx = pParam;
+
 	pfdctx->select_tmo = TRUE;
 }
 

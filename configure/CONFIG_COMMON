@@ -115,7 +115,7 @@ G++_WARN_YES = -Wall \
       -Wwrite-strings -Wconversion -Wstrict-prototypes\
       -Wpointer-arith -Winline
 G++_WARN_NO = -w
-G++_OPT_YES = -O3
+G++_OPT_YES = -O3 -g
 G++_OPT_NO = -g
 G++_SFLAGS_YES = -static
 G++_SFLAGS_NO =

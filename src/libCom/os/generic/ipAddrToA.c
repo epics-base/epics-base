@@ -40,7 +40,8 @@
 #include <osiSock.h>
 
 /*
- * inetAddrToHostName()
+ * ipAddrToA()
+ * (convert IP address to ASCII host name)
  */
 void ipAddrToA (const struct sockaddr_in *pInetAddr, char *pBuf, 
 		const unsigned bufSize)

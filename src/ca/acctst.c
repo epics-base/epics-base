@@ -2214,8 +2214,15 @@ void verifyReasonableBeaconPeriod ( chid chan )
         double beaconPeriod, expectedBeaconPeriod, error, percentError;
         unsigned attempts = 0u;
 
-        long status = envGetDoubleConfigParam ( 
-            &EPICS_CAS_BEACON_PERIOD, &expectedBeaconPeriod );
+        int status;
+        if ( envGetConfigParamPtr ( & EPICS_CAS_BEACON_PERIOD ) ) {
+            status = envGetDoubleConfigParam ( & EPICS_CAS_BEACON_PERIOD, 
+                & expectedBeaconPeriod );
+        }
+        else {
+            status = envGetDoubleConfigParam ( & EPICS_CA_BEACON_PERIOD, 
+                & expectedBeaconPeriod );
+        }
         assert ( status >=0 );
     
         while ( 1 ) {

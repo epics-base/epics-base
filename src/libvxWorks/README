@@ -1,0 +1,15 @@
+
+bus_error_recovery.c: code written for Frank to recover from bus error
+ when he uses bus extenders.  Frank's bus error code.  I checked this
+ into base/src/libvxWorks as bus_error_recovery.c.  This is the
+ program I wrote for Frank to catch bus errors and retry them.  He was
+ getting random bus error through the MXI/VXI bus extenders and this
+ could recover from those problems.
+
+
+timerLib.[ch] : A library to manipulate and use the hardware tick timers
+ available on the mv16x processor boards.  Ned is currently
+ using this!!!!  It is not currently built.  This library gives the
+ user general access to hardware tick timer available on the board.  The
+ mv167 has 2 available and the mv162 has 4.
+

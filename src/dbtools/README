@@ -1,0 +1,13 @@
+
+Get rid of PVS server stuff in the IOC.  Replace it with RPC/XDR.
+
+The PVS server is a simple TCP server that runs on the IOC, it is
+used to retreive information from the IOC such as: list of records
+in the IOC, CA client stat information, memory usage.  The code for
+this system is in base/src/dbtools, the files that have the code for the
+IOC (vxWorks) portion are PVSserver.c PVSvx.c vx_stats.c and client_stats.c.
+The workstation client programs are rdbls.c rdbapplist.c ioc_stats.c.
+The files BSlib.c and BSlib.h are used to do the networking calls for the
+above programs.  This entire system should be ripped out and replaced by
+a simple RPC/XDR program.
+

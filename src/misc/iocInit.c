@@ -53,7 +53,6 @@ of this distribution.
 
 #include "dbDefs.h"
 #include "osiThread.h"
-#include "osiSem.h"
 #include "epicsPrint.h"
 #include "tsStamp.h"
 #include "ellLib.h"

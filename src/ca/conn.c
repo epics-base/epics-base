@@ -66,7 +66,6 @@ LOCAL void retrySearchRequest(int silent);
 void manage_conn(int silent)
 {
 	IIU		*piiu;
-	ca_time		current;
 	ca_real		delay;
 	long		idelay;
 
@@ -78,8 +77,6 @@ void manage_conn(int silent)
 	}
 
 	ca_static->ca_manage_conn_active = TRUE;
-
-	cac_gettimeval(&current);
 
         /*
          * issue connection heartbeat
@@ -100,7 +97,7 @@ void manage_conn(int silent)
 		 */
 		if (piiu->sendPending) {
 			delay = cac_time_diff (
-					&current, 
+					&ca_static->currentTime, 
 					&piiu->timeAtSendBlock); 
 			if (delay>ca_static->ca_connectTMO) {
 				TAG_CONN_DOWN(piiu);
@@ -117,15 +114,15 @@ void manage_conn(int silent)
 			int 	rtmo;
 
 			delay = cac_time_diff (
-					&current,
+					&ca_static->currentTime,
 					&piiu->timeAtEchoRequest);
 			stmo = delay > CA_RETRY_PERIOD;
 			delay = cac_time_diff (
-					&current,
+					&ca_static->currentTime,
 					&piiu->timeAtLastRecv);
 			rtmo = delay > CA_RETRY_PERIOD;
 			if(stmo && rtmo && !piiu->sendPending){
-				piiu->timeAtEchoRequest = current;
+				piiu->timeAtEchoRequest = ca_static->currentTime;
 				noop_msg(piiu);
 			}
 			continue;
@@ -133,7 +130,7 @@ void manage_conn(int silent)
 
 		if(piiu->echoPending){
 			delay = cac_time_diff (
-					&current,
+					&ca_static->currentTime,
 					&piiu->timeAtEchoRequest);
 			if (delay > CA_ECHO_TIMEOUT) {
 				/* 
@@ -144,10 +141,10 @@ void manage_conn(int silent)
 		}
 		else{
 			delay = cac_time_diff (
-					&current,
+					&ca_static->currentTime,
 					&piiu->timeAtLastRecv);
 			if (delay>ca_static->ca_connectTMO) {
-				echo_request(piiu, &current);
+				echo_request(piiu, &ca_static->currentTime);
 			}
 		}
 
@@ -159,10 +156,10 @@ void manage_conn(int silent)
 	 */
 	if (!ca_static->ca_repeater_contacted) {
 		delay = cac_time_diff (
-				&current,
+				&ca_static->currentTime,
 				&ca_static->ca_last_repeater_try);
 		if (delay > REPEATER_TRY_PERIOD) {
-			ca_static->ca_last_repeater_try = current;
+			ca_static->ca_last_repeater_try = ca_static->currentTime;
 			notify_ca_repeater();
 		}
 	}
@@ -181,13 +178,13 @@ void manage_conn(int silent)
 
 	if(ca_static->ca_conn_next_retry.tv_sec == CA_CURRENT_TIME.tv_sec &&
 	   ca_static->ca_conn_next_retry.tv_usec == CA_CURRENT_TIME.tv_usec){
-		ca_static->ca_conn_next_retry = current;
+		ca_static->ca_conn_next_retry = ca_static->currentTime;
 		LOGRETRYINTERVAL 
 	}
 
 	delay = cac_time_diff (
 			&ca_static->ca_conn_next_retry,
-			&current);
+			&ca_static->currentTime);
 
 	if (delay > 0.0) {
 		ca_static->ca_manage_conn_active = FALSE;
@@ -220,7 +217,7 @@ void manage_conn(int silent)
 		(long) ((delay-idelay)*USEC_PER_SEC);
 	ca_static->ca_conn_next_retry = 
 		cac_time_sum (
-			&current,
+			&ca_static->currentTime,
 			&ca_static->ca_conn_retry_delay);
 	LOGRETRYINTERVAL 
 
@@ -353,7 +350,6 @@ void mark_server_available(struct in_addr *pnet_addr)
 {
 	chid		chan;
 	ca_real		currentPeriod;
-	ca_time		currentTime;
 	bhe		*pBHE;
 	unsigned	port;	
 	int 		netChange = FALSE;
@@ -367,8 +363,6 @@ void mark_server_available(struct in_addr *pnet_addr)
 	if(!piiuCast){
 		return;
 	}
-
-	cac_gettimeval(&currentTime);
 
 	LOCK;
 	/*
@@ -386,14 +380,14 @@ void mark_server_available(struct in_addr *pnet_addr)
 		 * update time stamp and average period
 		 */
 		currentPeriod = cac_time_diff (
-					&currentTime, 
+					&ca_static->currentTime, 
 					&pBHE->timeStamp); 
 		/*
 		 * update the average
 		 */
 		pBHE->averagePeriod += currentPeriod;
 		pBHE->averagePeriod /= 2.0;
-		pBHE->timeStamp = currentTime;
+		pBHE->timeStamp = ca_static->currentTime;
 	
 		if ((currentPeriod/4.0)>=pBHE->averagePeriod) {
 #ifdef 	DEBUG
@@ -417,7 +411,7 @@ void mark_server_available(struct in_addr *pnet_addr)
 			netChange = TRUE;
 		}
 		if(pBHE->piiu){
-			pBHE->piiu->timeAtLastRecv = currentTime;
+			pBHE->piiu->timeAtLastRecv = ca_static->currentTime;
 		}
 		if(!netChange){
 			UNLOCK;
@@ -470,7 +464,7 @@ void mark_server_available(struct in_addr *pnet_addr)
 		idelay = (long) delay;
 		ca_delay.tv_sec = idelay;
 		ca_delay.tv_usec = (long) ((delay-idelay) * USEC_PER_SEC); 
-		next = cac_time_sum(&currentTime, &ca_delay);
+		next = cac_time_sum(&ca_static->currentTime, &ca_delay);
 
 		diff = cac_time_diff(
 				&ca_static->ca_conn_next_retry,

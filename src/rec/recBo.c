@@ -207,7 +207,7 @@ static long init_record(pbo,pass)
 	pbo->udf = FALSE;
     }
     pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
-    pbo->dpvt = (void *)pcallback;
+    pbo->rpvt = (void *)pcallback;
     callbackSetCallback(myCallback,pcallback);
     pcallback->precord = (struct dbCommon *)pbo;
 
@@ -298,7 +298,7 @@ static long process(pbo)
 	wait_time = (int)((pbo->high) * vxTicksPerSecond); /* seconds to ticks */
 	if(pbo->val==1 && wait_time>0) {
 		struct callback *pcallback;
-		pcallback = (struct callback *)(pbo->dpvt);
+		pcallback = (struct callback *)(pbo->rpvt);
         	if(pcallback->wd_id==NULL) pcallback->wd_id = wdCreate();
                 callbackSetPriority(pbo->prio,pcallback);
                	wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);

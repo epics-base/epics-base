@@ -140,7 +140,7 @@ epicsShareFunc int errlogVprintf(
     if(!pbuffer) return(0);
     nchar = tvsnPrint(pbuffer,MAX_MESSAGE_SIZE,pFormat?pFormat:"",pvar);
     msgbufSetSize(nchar);
-    if(isOkToBlock) printf("%s",pbuffer);
+    if(isOkToBlock && pvtData.toConsole) printf("%s",pbuffer);
     return nchar;
 }
 
@@ -233,7 +233,7 @@ epicsShareFunc int errlogSevVprintf(
         totalChar++;
     }
     msgbufSetSize(totalChar);
-    if(isOkToBlock) printf("%s",pmessage);
+    if(isOkToBlock && pvtData.toConsole) printf("%s",pmessage);
     return(nchar);
 }
 
@@ -342,7 +342,7 @@ epicsShareFunc void errPrintf(long status, const char *pFileName,
     strcpy(pnext,"\n");
     totalChar++ ; /*include the \n */
     msgbufSetSize(totalChar);
-    if(isOkToBlock) printf("%s",pmessage);
+    if(isOkToBlock && pvtData.toConsole) printf("%s",pmessage);
 }
 
 static void errlogInitPvt(void *arg)

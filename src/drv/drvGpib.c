@@ -1237,7 +1237,7 @@ struct  ibLink	*plink; 	/* a reference to the link structures covered */
   int			pollActive;
   int			working;
 
-  /*if (ibDebug)*/
+  if (ibDebug)
     printf("ibLinkTask started for link type %d, link %d\n", plink->linkType, plink->linkId);
 
   /* send out a UNL and UNT to test-drive the link */

@@ -1,5 +1,5 @@
 /* devBoSoftRaw.c */
-/* share/src/dev @(#)devBoSoftRaw.c	1.11     3/17/92 */
+/* share/src/dev $Id$ */
 
 /* devBoSoftRaw.c - Device Support Routines for  SoftRaw Binary Output*/
 /*
@@ -80,7 +80,7 @@ static long write_bo(pbo)
     case (CONSTANT) :
         break;
     case (DB_LINK) :
-        status = dbPutLink(&pbo->out.value.db_link,(struct dbCommon *)pbo,DBR_USHORT,
+        status = dbPutLink(&pbo->out.value.db_link,(struct dbCommon *)pbo,DBR_ULONG,
                 &pbo->rval,1L);
         if(status!=0) {
                 recGblSetSevr(pbo,LINK_ALARM,VALID_ALARM);

@@ -36,7 +36,7 @@ PROD_LIBS = asHost dbStaticHost Com
 
 # For R3.13 compatibility only
 OBJLIB_vxWorks=asIoc
-OBJLIB_SRCS = $(LIBSRCS) $(asIoc_SRCS)
+OBJLIB_SRCS += $(LIB_SRCS) $(asIoc_SRCS)
 
 include $(TOP)/configure/RULES
 

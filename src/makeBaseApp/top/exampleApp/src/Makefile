@@ -36,8 +36,8 @@ example_SRCS += example_registerRecordDeviceDriver.cpp
 example_SRCS_DEFAULT += exampleMain.cpp
 example_SRCS_vxWorks += -nil-
 
-#The following adds drvTS support for vxWorks
-#example_OBJS_vxWorks += $(EPICS_BASE_BIN)/drvTS
+#The following adds support from base/src/vxWorks
+example_OBJS_vxWorks += $(EPICS_BASE_BIN)/vxComLibrary
 
 #NOTES:
 #      1)It is not possible to build sncExample both as a component of example

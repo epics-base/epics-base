@@ -506,11 +506,11 @@ static smartGDDPointer createDBRDD ( unsigned dbrType, unsigned elemCount )
 
     // fix the enum string table element count
     // (this is done here because the application type table in gdd 
-    // does not appera to handle this correctly)
+    // does not appear to handle this correctly)
     if ( dbrType == DBR_CTRL_ENUM || dbrType == DBR_GR_ENUM ) {
-        bool success = convertContainerMemberToAtomic ( 
+        bool tmpSuccess = convertContainerMemberToAtomic ( 
             *pDescRet, gddAppType_enums, MAX_ENUM_STATES );
-        if ( ! success ) {
+        if ( ! tmpSuccess ) {
  		    return NULL;
         }
     }

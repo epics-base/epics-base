@@ -147,7 +147,7 @@ void testAccuracy ()
 
 class cancelVerify : public epicsTimerNotify {
 public:
-    cancelVerify ( double expectedDelay, epicsTimerQueueThreaded & );
+    cancelVerify ( epicsTimerQueueThreaded & );
     expireStatus expire ();
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
@@ -161,7 +161,7 @@ private:
     static tsFreeList < class cancelVerify, 0x20 > freeList;
 };
 
-cancelVerify::cancelVerify ( double expectedDelayIn, epicsTimerQueueThreaded &queue ) :
+cancelVerify::cancelVerify ( epicsTimerQueueThreaded &queue ) :
     timer ( queue.createTimer ( *this ) ), failOutIfExpireIsCalled ( false )
 {
 }
@@ -215,7 +215,7 @@ void testCancel ()
     epicsTimerQueueThreaded &queue = epicsTimerQueueThreaded::create ( true, epicsThreadPriorityMin );
 
     for ( i = 0u; i < nTimers; i++ ) {
-        pTimers[i] = new cancelVerify ( ( nTimers - i ) * 0.1, queue );
+        pTimers[i] = new cancelVerify ( queue );
         assert ( pTimers[i] );
     }
     epicsTime cur = epicsTime::getCurrent ();
@@ -232,7 +232,7 @@ void testCancel ()
 
 class periodicVerify : public epicsTimerNotify {
 public:
-    periodicVerify ( double expectedDelay, epicsTimerQueueThreaded & );
+    periodicVerify ( epicsTimerQueueThreaded & );
     expireStatus expire ();
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
@@ -248,7 +248,7 @@ private:
     static tsFreeList < class periodicVerify, 0x20 > freeList;
 };
 
-periodicVerify::periodicVerify ( double expectedDelayIn, epicsTimerQueueThreaded &queue ) :
+periodicVerify::periodicVerify ( epicsTimerQueueThreaded &queue ) :
     nExpire ( 0u ), timer ( queue.createTimer ( *this ) ), failOutIfExpireIsCalled ( false )
         
 {
@@ -312,7 +312,7 @@ void testPeriodic ()
     epicsTimerQueueThreaded &queue = epicsTimerQueueThreaded::create ( true, epicsThreadPriorityMin );
 
     for ( i = 0u; i < nTimers; i++ ) {
-        pTimers[i] = new periodicVerify ( ( nTimers - i ) * 0.1, queue );
+        pTimers[i] = new periodicVerify ( queue );
         assert ( pTimers[i] );
     }
     epicsTime cur = epicsTime::getCurrent ();

@@ -157,6 +157,7 @@ const inBufCtx inBuf::pushCtx (bufSizeT headerSize, bufSizeT bodySize)
 bufSizeT inBuf::popCtx (const inBufCtx &ctx)
 {
     if (ctx.stat==inBufCtx::pushCtxSuccess) {
+        this->mutex.lock();
         bufSizeT bytesRemoved = this->nextReadIndex;
         this->pBuf = ctx.pBuf;
         this->bufSize = ctx.bufSize;

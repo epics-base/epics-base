@@ -613,6 +613,7 @@ extern "C" void epicsShareAPI ca_signal_formated ( long ca_status, const char *p
      */
     if( ! ( ca_status & CA_M_SUCCESS ) && 
         CA_EXTRACT_SEVERITY ( ca_status ) != CA_K_WARNING ){
+        errlogFlush();
         abort();
     }
     

@@ -28,6 +28,7 @@ WINLINK = $(BORLAND_BIN)/ilink -q
 CCLINKOPT = -q -a8
 CC = $(BORLAND_BIN)/bc++ $(CCLINKOPT)
 LD = $(BORLAND_BIN)/bc++ -r
+RANLIB = 
 
 #
 # __STDC__=0 works but not as cleanly as with

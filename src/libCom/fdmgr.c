@@ -70,6 +70,7 @@
  *			routines in a backwards compatible way so that
  *			we eliminate delete ambiguity (chance of the same
  *			being reused).
+ * $Log$
  *
  *	NOTES:
  *

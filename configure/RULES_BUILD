@@ -354,7 +354,7 @@ $(LIBNAME): $(LIB_PREFIX)%$(LIB_SUFFIX): $(LIBRARY_OBJS)
 	@$(RM) $@
 	$(ARCMD) $(LIBRARY_LD_OBJS)
 ifneq ($(strip $(RANLIB)),)
-	$(RANLIB) $@;
+	$(RANLIB) $@
 endif # RANLIB
 
 $(DLL_LINK_LIBNAME):$(LIB_PREFIX)%.lib: $(LIBRARY_OBJS)

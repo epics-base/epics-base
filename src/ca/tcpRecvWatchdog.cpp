@@ -19,6 +19,7 @@
  *  Author: Jeff Hill
  */
 
+#define DEBUG
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #include "iocinf.h"
@@ -155,7 +156,7 @@ void tcpRecvWatchdog::probeResponseNotify (
                 this->probeResponsePending = false;
                 restartDelay = this->period;
                 this->iiu.responsiveCircuitNotify ( cbGuard, guard );
-                debugPrintf ( ("probe response on time - circuit will be tagged reponsive if unresponsive\n") );
+                debugPrintf ( ("probe response on time - circuit was tagged reponsive if unresponsive\n") );
             }
         }
     }
@@ -164,6 +165,7 @@ void tcpRecvWatchdog::probeResponseNotify (
         epicsGuardRelease < epicsMutex > cbGuardRelease ( cbGuard );
         epicsTime expireTime = currentTime + restartDelay;
         this->timer.start ( *this, expireTime );
+        debugPrintf ( ("recv wd restarted with delay %f\n", restartDelay) );
     }
 }
 

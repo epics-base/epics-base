@@ -1016,7 +1016,8 @@ static long TSsyncTheTime(struct timespec* cts,
 /*-----------------------------------------------------------------------*/
 long TSstartSyncServer()
 {
-	return taskSpawn("ts_syncS",10,VX_FP_TASK|VX_STDIO,5000,
+	/* run at priority just above CA */
+	return taskSpawn("ts_syncS",TS_SYNC_SERVER_PRI,VX_FP_TASK|VX_STDIO,5000,
 		(FUNCPTR)TSsyncServer,0,0,0,0,0,0,0,0,0,0);
 }
 /*-----------------------------------------------------------------------*/
@@ -1082,7 +1083,8 @@ static void TSsyncServer()
 /*-----------------------------------------------------------------------*/
 long TSstartAsyncClient()
 {
-	return taskSpawn("ts_Casync",10,VX_FP_TASK|VX_STDIO,5000,
+	/* run at priority just above CA */
+	return taskSpawn("ts_Casync",TS_ASYNC_CLIENT_PRI,VX_FP_TASK|VX_STDIO,5000,
 		(FUNCPTR)TSasyncClient,0,0,0,0,0,0,0,0,0,0);
 }
 
@@ -1254,7 +1256,7 @@ static long TSasyncClient()
 /*-----------------------------------------------------------------------*/
 static long TSstartSyncClient()
 {
-	return taskSpawn("ts_syncC",10,VX_FP_TASK|VX_STDIO,5000,
+	return taskSpawn("ts_syncC",TS_SYNC_CLIENT_PRI,VX_FP_TASK|VX_STDIO,5000,
 		(FUNCPTR)TSsyncClient,0,0,0,0,0,0,0,0,0,0);
 }
 /*-----------------------------------------------------------------------*/
@@ -1340,7 +1342,7 @@ static void TSsyncClient()
 /*-----------------------------------------------------------------------*/
 static long TSstartStampServer()
 {
-	return taskSpawn("ts_stamp",10,VX_FP_TASK|VX_STDIO,5000,
+	return taskSpawn("ts_stamp",TS_STAMP_SERVER_PRI,VX_FP_TASK|VX_STDIO,5000,
 		(FUNCPTR)TSstampServer,0,0,0,0,0,0,0,0,0,0);
 }
 /*-----------------------------------------------------------------------*/

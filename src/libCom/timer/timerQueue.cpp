@@ -100,15 +100,11 @@ double timerQueue::process ( const epicsTime & currentTime )
             expStat = pTmpNotify->expire ( currentTime );
         }
 
-        this->pExpireTmr->curState = timer::stateLimbo;
-
         //
         // only restart if they didnt cancel() the timer
         // while the call back was running
         //
         if ( this->cancelPending ) {
-            this->pExpireTmr->pNotify = 0;
-
             // 1) if another thread is canceling then cancel() waits for 
             // the event below
             // 2) if this thread is canceling in the timer callback then
@@ -118,16 +114,17 @@ double timerQueue::process ( const epicsTime & currentTime )
             this->cancelPending = false;
             this->cancelBlockingEvent.signal ();
         }
-        else if ( this->pExpireTmr->pNotify ) {
-            // pNotify was cleared above so if it is valid now we know that
-            // someone has started the timer from another thread and that 
-            // predominates over the restart parameters from expire.
-            this->pExpireTmr->privateStart ( 
-                *this->pExpireTmr->pNotify, this->pExpireTmr->exp );
-        }
         else {
-            // restart as nec
-            if ( expStat.restart() ) {
+            this->pExpireTmr->curState = timer::stateLimbo;
+            if ( this->pExpireTmr->pNotify ) {
+                // pNotify was cleared above so if it is valid now we know that
+                // someone has started the timer from another thread and that 
+                // predominates over the restart parameters from expire.
+                this->pExpireTmr->privateStart ( 
+                    *this->pExpireTmr->pNotify, this->pExpireTmr->exp );
+            }
+            else if ( expStat.restart() ) {
+                // restart as nec
                 this->pExpireTmr->privateStart ( 
                     *pTmpNotify, currentTime + expStat.expirationDelay() );
             }

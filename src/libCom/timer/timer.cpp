@@ -151,6 +151,7 @@ void timer::cancel ()
             }
             else if ( this->curState == stateActive ) {
                 this->queue.cancelPending = true;
+                this->curState = timer::stateLimbo;
                 if ( this->queue.processThread != epicsThreadGetIdSelf() ) {
                     // make certain timer expire() does not run after cancel () returns,
                     // but dont require that lock is applied while calling expire()

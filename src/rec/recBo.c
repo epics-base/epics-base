@@ -155,7 +155,7 @@ static void myCallback(pcallback)
 
     dbScanLock((struct dbCommon *)pbo);
     pbo->val = 0;
-    (*prset->process)(pbo);
+    dbProcess((struct dbCommon *)pbo);
     dbScanUnlock((struct dbCommon *)pbo);
 }
 

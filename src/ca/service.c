@@ -705,6 +705,9 @@ const struct sockaddr_in  	*pnet_addr
 
 	switch (piiu->curMsg.m_cmmd) {
 
+	case CA_PROTO_NOOP:
+		break;
+
 	case CA_PROTO_SEARCH:
 		perform_claim_channel(piiu, pnet_addr);
 		break;

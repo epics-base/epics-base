@@ -141,7 +141,7 @@ long    devConnectInterrupt(
 /*
  *
  * The parameter pFunction should be set to the C function pointer that 
- * was connected. It is used as a key to prevent a driver from accidentally
+ * was connected. It is used as a key to prevent a driver from inadvertently
  * removing an interrupt handler that it didn't install 
  */
 long    devDisconnectInterrupt(

@@ -832,12 +832,16 @@ const struct in_addr	*pnet_addr
 	ina.sin_family = AF_INET;
 	if (CA_V48 (CA_PROTOCOL_VERSION,minorVersion)) {
 		if (piiu->curMsg.m_cid != INADDR_BROADCAST) {
-			ina.sin_addr.s_addr = htonl(piiu->curMsg.m_cid);
+			/*
+			 * Leave address in network byte order (m_cid has not been 
+			 * converted to the local byte order)
+			 */
+			ina.sin_addr.s_addr = piiu->curMsg.m_cid;
 		}
 		else {
 			ina.sin_addr = *pnet_addr;
 		}
-		ina.sin_port = htons(piiu->curMsg.m_type);
+		ina.sin_port = htons (piiu->curMsg.m_type);
 	}
 	else if (CA_V45 (CA_PROTOCOL_VERSION,minorVersion)) {
 		ina.sin_port = htons(piiu->curMsg.m_type);

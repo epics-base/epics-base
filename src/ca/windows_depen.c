@@ -32,6 +32,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.34  1998/03/24 20:55:06  jhill
+ * fixed console title/correct repeater spawn/correct winsock II URL
+ *
  * Revision 1.33  1998/03/12 20:39:11  jhill
  * fixed problem where 3.13.beta11 unable to connect to 3.11 with correct native type
  *
@@ -55,6 +58,9 @@
  *
  * Revision 1.19  1995/11/29  19:15:42  jhill
  * added $Log$
+ * added Revision 1.34  1998/03/24 20:55:06  jhill
+ * added fixed console title/correct repeater spawn/correct winsock II URL
+ * added
  * added Revision 1.33  1998/03/12 20:39:11  jhill
  * added fixed problem where 3.13.beta11 unable to connect to 3.11 with correct native type
  * added
@@ -277,10 +283,57 @@ void ca_spawn_repeater()
 		&processInfo // pointer to PROCESS_INFORMATION 
 	); 
 	if (!status) {
-		ca_printf ("!!WARNING!!\n");
-		ca_printf ("Unable to locate the EPICS executable \"%s\".\n",
-			pImageName);
-		ca_printf ("You may need to modify your environment.\n");
+		DWORD W32status;
+		LPVOID errStrMsgBuf;
+		LPVOID complteMsgBuf;
+
+		W32status = FormatMessage( 
+			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+			NULL,
+			GetLastError (),
+			MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
+				(LPTSTR) &errStrMsgBuf,
+			0,
+			NULL 
+		);
+
+		if (W32status) {
+			char *pFmtArgs[] = {
+					"Failed to start the EPICS CA Repeater -",
+					pImageName, 
+					errStrMsgBuf,
+					"Changes may be required in your \"path\" environement variable."};
+
+			W32status = FormatMessage( 
+				FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_STRING | 
+					FORMAT_MESSAGE_ARGUMENT_ARRAY | 80,
+				"%1 \"%2\". %3 %4",
+				0,
+				MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
+					(LPTSTR) &complteMsgBuf,
+				0,
+				pFmtArgs 
+			);
+			if (W32status) {
+				// Display the string.
+				MessageBox (NULL, complteMsgBuf, "EPICS Channel Access Configuration Problem", 
+					MB_OK|MB_ICONINFORMATION);
+				LocalFree (complteMsgBuf);
+			}
+			else {
+				// Display the string.
+				MessageBox (NULL, errStrMsgBuf, "Failed to start EPICS caRepeater.exe", 
+					MB_OK|MB_ICONINFORMATION);
+			}
+
+			// Free the buffer.
+			LocalFree (errStrMsgBuf);
+		}
+		else {
+			ca_printf ("!!WARNING!!\n");
+			ca_printf ("Unable to locate the EPICS executable \"%s\".\n", pImageName);
+			ca_printf ("You may need to modify your environment.\n");
+		}
 	}
 
 	//

@@ -510,15 +510,8 @@ caStatus casClient::sendErr ( const caHdrLargeArray *curp, const int reportedSta
 caStatus casClient::sendErrWithEpicsStatus ( const caHdrLargeArray * pMsg, 
 	caStatus epicsStatus, caStatus clientStatus )
 {
-	long	status;
-	char	buf[0x1ff];
-
-	status = errSymFind ( epicsStatus, buf );
-	if (status) {
-		sprintf ( buf, "UKN error code = 0X%u\n",
-			epicsStatus );
-	}
-	
+	char buf[0x1ff];
+	errSymLookup ( epicsStatus, buf, sizeof(buf) );
 	return this->sendErr ( pMsg, clientStatus, buf );
 }
 

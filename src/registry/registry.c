@@ -14,7 +14,7 @@ of this distribution.
 
 #include "dbDefs.h"
 #include "cantProceed.h"
-#include "osiFindGlobalSymbol.h"
+#include "epicsFindSymbol.h"
 #include "gpHash.h"
 #define epicsExportSharedSymbols
 #include "registry.h"
@@ -55,7 +55,7 @@ epicsShareFunc void * epicsShareAPI registryFind(
 {
     GPHENTRY *pentry;
     if(name==0) return(0);
-    if(registryID==0) return(osiFindGlobalSymbol(name));
+    if(registryID==0) return(epicsFindSymbol(name));
     if(!gphPvt) registryInit(0);
     pentry = gphFind(gphPvt,(char *)name,registryID);
     if(!pentry) return(0);

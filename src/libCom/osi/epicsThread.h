@@ -188,7 +188,7 @@ class epicsThreadPrivate :
     private epicsThreadPrivateBase {
 public:
     epicsThreadPrivate ();
-    ~epicsThreadPrivate ();
+    ~epicsThreadPrivate () throw ();
     T * get () const throw ();
     void set (T *) throw ();
 private:
@@ -211,19 +211,19 @@ inline epicsThreadPrivate<T>::epicsThreadPrivate ()
 }
 
 template <class T>
-inline epicsThreadPrivate<T>::~epicsThreadPrivate ()
+inline epicsThreadPrivate<T>::~epicsThreadPrivate () throw ()
 {
     epicsThreadPrivateDelete ( this->id );
 }
 
 template <class T>
-inline T *epicsThreadPrivate<T>::get () const
+inline T *epicsThreadPrivate<T>::get () const throw ()
 {
     return static_cast<T *> ( epicsThreadPrivateGet (this->id) );
 }
 
 template <class T>
-inline void epicsThreadPrivate<T>::set (T *pIn)
+inline void epicsThreadPrivate<T>::set (T *pIn) throw ()
 {
     epicsThreadPrivateSet ( this->id, static_cast<void *> (pIn) );
 }

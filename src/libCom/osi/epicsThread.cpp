@@ -241,12 +241,12 @@ bool epicsThread::operator == (const epicsThread &rhs) const throw ()
     return (this->id == rhs.id);
 }
 
-void epicsThread::suspendSelf ()
+void epicsThread::suspendSelf () throw ()
 {
     epicsThreadSuspendSelf ();
 }
 
-void epicsThread::sleep (double seconds)
+void epicsThread::sleep (double seconds) throw ()
 {
     epicsThreadSleep (seconds);
 }

@@ -36,14 +36,24 @@
  *			client uses the same port number
  *	.04 joh 080591	changed printf() to a logMsg()
  *	.05 joh 082091	tick stamp init in create_udp_client()
+ *	.06 joh 112291	dont change the address until after the flush
+ *	.07 joh 112291	fixed the comments
  *
  *	Improvements
  *	------------
+ *	.01
  *	Dont send channel found message unless there is memory, a task slot,
  *	and a TCP socket available. Send a diagnostic instead. 
  *	Or ... make the timeout shorter? This is only a problem if
  *	they persist in trying to make a connection after getting no
  *	response.
+ *
+ *	Notes:
+ *	------
+ *	.01
+ * 	Replies to broadcasts are not returned over
+ * 	an existing TCP connection to avoid a TCP
+ * 	pend which could lock up the cast server.
  */
 
 #include <vxWorks.h>
@@ -74,12 +84,11 @@ cast_server()
   	struct sockaddr_in		sin;	
   	FAST int			status;
   	int				count;
-  	FAST struct client		*client = NULL;
-  	struct sockaddr_in		last_recv_addr;
+	struct sockaddr_in		new_recv_addr;
   	int  				recv_addr_size;
   	unsigned			nchars;
 
-  	recv_addr_size = sizeof(prsrv_cast_client->addr);
+  	recv_addr_size = sizeof(new_recv_addr);
 
   	if( IOC_cast_sock!=0 && IOC_cast_sock!=ERROR )
     		if( (status = close(IOC_cast_sock)) == ERROR )
@@ -142,14 +151,12 @@ cast_server()
 
   	while(TRUE){
 
-  		last_recv_addr = prsrv_cast_client->addr;
-
     		status = recvfrom(
 			IOC_cast_sock,
 			prsrv_cast_client->recv.buf,
 			sizeof(prsrv_cast_client->recv.buf),
 			NULL,
-			&prsrv_cast_client->addr, 
+			&new_recv_addr, 
 			&recv_addr_size);
     		if(status<0){
       			logMsg("Cast_server: UDP recv error\n");
@@ -159,6 +166,32 @@ cast_server()
 
 		prsrv_cast_client->recv.cnt = status;
 		prsrv_cast_client->recv.stk = 0;
+		prsrv_cast_client->ticks_at_last_io = tickGet();
+/*
+ *
+ *	keeping an eye on the socket library
+ *
+ */
+if(sizeof(prsrv_cast_client->addr) != recv_addr_size){
+	printf("cast server: addr size has changed?\n");
+}
+
+		/*
+		 * If we are talking to a new client flush the old one 
+		 * in case it is holding UDP messages waiting to 
+		 * see if the next message is for this same client.
+		 */
+		status = bcmp(
+				&prsrv_cast_client->addr, 
+				&new_recv_addr, 
+				recv_addr_size);
+		if(status){ 	
+			/* 
+			 * if the address is different 
+			 */
+			cas_send_msg(prsrv_cast_client, TRUE);
+  			prsrv_cast_client->addr = new_recv_addr;
+		}
 
     		if(CASDEBUG>1){
        			logMsg(	"cast_server(): msg of %d bytes\n", 
@@ -168,34 +201,9 @@ cast_server()
 				prsrv_cast_client->addr.sin_port);
     		}
 
-		prsrv_cast_client->ticks_at_last_io = tickGet();
-
-		/*
-		 * If we are talking to a new client flush the old one 
-		 * in case it is holding UDP messages for a 
-		 * TCP connected client - waiting to see if the
-		 * next message is for this same client.
-		 * (replies to broadcasts are not returned over
-		 * an existing TCP connection to avoid a TCP
-		 * pend which could lock up the cast server).
-		 */
-		status = bcmp(
-				&prsrv_cast_client->addr, 
-				&last_recv_addr, 
-				recv_addr_size);
-		if(status){
-			cas_send_msg(prsrv_cast_client, TRUE);
-		}
-
-
     		if(CASDEBUG>2)
       			count = prsrv_cast_client->addrq.count;
 
-		/*
-		 * check for existing client occurs after
-		 * message process so that this thread never
-		 * blocks sending TCP
-		 */
     		status = camessage(
 				prsrv_cast_client, 
 				&prsrv_cast_client->recv);

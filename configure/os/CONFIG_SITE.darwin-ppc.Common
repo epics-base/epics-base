@@ -12,6 +12,11 @@
 FINK_DIR=/sw
 
 #
+# Shared libraries work fine on Darwin
+#
+SHARED_LIBRARIES=YES
+
+#
 # Other local options
 #
 #OP_SYS_CFLAGS += -g

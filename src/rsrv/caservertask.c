@@ -705,6 +705,8 @@ struct client * create_client ( SOCKET sock, int proto )
 
 void casAttachThreadToClient ( struct client *pClient )
 {
+    epicsSignalInstallSigAlarmIgnore ();
+    epicsSignalInstallSigPipeIgnore ();
     pClient->tid = epicsThreadGetIdSelf ();
     taskwdInsert ( pClient->tid, NULL, NULL );
 }

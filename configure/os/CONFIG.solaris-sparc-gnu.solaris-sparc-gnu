@@ -7,9 +7,6 @@
 # Sites may override these definitions in CONFIG_SITE.solaris-sparc-gnu.solaris-sparc-gnu
 #-------------------------------------------------------
 
-# Include definitions common to all Unix target archs
-include $(CONFIG)/os/CONFIG.Common.UnixCommon
-
 # Include common gnu compiler definitions
 include $(CONFIG)/CONFIG.gnuCommon
 

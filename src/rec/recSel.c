@@ -43,6 +43,8 @@
  * .10  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  * .11  07-21-92        jba     changed alarm limits for non val related fields
  * .12  08-06-92        jba     New algorithm for calculating analog alarms
+ * .13  09-10-92        jba     Changed algorithms to use all a-l which are defined
+ * .14  10-10-92        jba     replaced code with recGblGetLinkValue call
  */
 
 #include	<vxWorks.h>
@@ -138,7 +140,8 @@ static long init_record(psel,pass)
     plink = &psel->inpa;
     pvalue = &psel->a;
     for(i=0; i<SEL_MAX; i++, plink++, pvalue++) {
-	if(plink->type==CONSTANT) 
+        *pvalue = 1e+30;
+	if(plink->type==CONSTANT && plink->value.value != 0.) 
 	    *pvalue = plink->value.value;
         if (plink->type == PV_LINK)
         {
@@ -154,8 +157,8 @@ static long process(psel)
 {
 
 	psel->pact = TRUE;
-	if(fetch_values(psel)==0) {
-		if(do_sel(psel)!=0) {
+	if ( RTN_SUCCESS(fetch_values(psel)) ) {
+		if( RTN_SUCCESS(do_sel(psel)) ) {
 			recGblSetSevr(psel,CALC_ALARM,INVALID_ALARM);
 		}
 	}
@@ -404,25 +407,27 @@ struct selRecord *psel;  /* pointer to selection record  */
 	double		order[SEL_MAX];
 	unsigned short	order_inx;
 	unsigned short	i,j;
+	double		val;
 
 	/* selection mechanism */
+	psel->udf = TRUE;
 	pvalue = &psel->a;
 	switch (psel->selm){
 	case (SELECTED):
-		psel->val = *(pvalue+psel->seln);
+		val = *(pvalue+psel->seln);
 		break;
 	case (SELECT_HIGH):
-		psel->val = *pvalue;
+		val = -1e+30;
 		for (i = 0; i < SEL_MAX; i++,pvalue++){
-			if (psel->val < *pvalue)
-				psel->val = *pvalue;
+			if (val < *pvalue && *pvalue != 1e+30)
+				val = *pvalue;
 		}
 		break;
 	case (SELECT_LOW):
-		psel->val = *pvalue;
+		val = 1e+30;
 		for (i = 0; i < SEL_MAX; i++,pvalue++){
-			if (psel->val > *pvalue)
-				psel->val = *pvalue;
+			if (val > *pvalue && *pvalue != 1e+30)
+				val = *pvalue;
 		}
 		break;
 	case (SELECT_MEDIAN):
@@ -430,7 +435,7 @@ struct selRecord *psel;  /* pointer to selection record  */
 		plink = &psel->inpa;
 		order_inx = 0;
 		for (i = 0; i < SEL_MAX; i++,pvalue++,plink++){
-			if (plink->type == DB_LINK){
+			if (*pvalue != 1e+30){
 				j = order_inx;
 				while ((order[j-1] > *pvalue) && (j > 0)){
 					order[j] = order[j-1];
@@ -440,12 +445,15 @@ struct selRecord *psel;  /* pointer to selection record  */
 				order_inx++;
 			}
 		}
-		psel->val = order[order_inx/2];
+		val = order[order_inx/2];
 		break;
 	default:
 		return(-1);
 	}
-	psel->udf=FALSE;
+	if (val != 1e+30 && val != -1e+30 ){
+		psel->val=val;
+		psel->udf=FALSE;
+	}
 	/* initialize flag  */
 	return(0);
 }
@@ -458,7 +466,7 @@ struct selRecord *psel;  /* pointer to selection record  */
 static int fetch_values(psel)
 struct selRecord *psel;
 {
-	long		nRequest;
+	long		nRequest=1;
 	long		options=0;
 	struct link	*plink;
 	double		*pvalue;
@@ -470,61 +478,23 @@ struct selRecord *psel;
 	/* If select mechanism is SELECTED only get selected input*/
 	if(psel->selm == SELECTED) {
 	        /* fetch the select index */
-	        if(psel->nvl.type == DB_LINK ){
-			options=0;
-			nRequest=1;
-			if(dbGetLink(&(psel->nvl.value.db_link),(struct dbCommon *)psel,DBR_USHORT,
-				&(psel->seln),&options,&nRequest)!=NULL) {
-		                recGblSetSevr(psel,LINK_ALARM,INVALID_ALARM);
-				return(-1);
-			}
-		}
-                if(psel->nvl.type == CA_LINK ){
-                        if(dbCaGetLink(&(psel->nvl)) !=NULL) {
-                                recGblSetSevr(psel,LINK_ALARM,INVALID_ALARM);
-                                return(-1);
-                        }
-                }
+		status=recGblGetLinkValue(&(psel->nvl),(void *)psel,DBR_USHORT,
+			&(psel->seln),&options,&nRequest);
+		if (!RTN_SUCCESS(status)) return(status);
+
 		plink += psel->seln;
 		pvalue += psel->seln;
-                if (plink->type == CA_LINK)
-                {
-                    if (dbCaGetLink(plink))
-                    {
-                        recGblSetSevr(psel,LINK_ALARM,INVALID_ALARM);
-                        return(-1);
-                    } /* endif */
-                } /* endif */
-                if(plink->type==DB_LINK) {
-		        nRequest=1;
-		        status=dbGetLink(&plink->value.db_link,(struct dbCommon *)psel,DBR_DOUBLE,
-				pvalue,&options,&nRequest);
-			if(status!=0) {
-		                recGblSetSevr(psel,LINK_ALARM,INVALID_ALARM);
-				return(-1);
-			}
-                }
-		return(0);
+
+		status=recGblGetLinkValue(plink,(void *)psel,DBR_DOUBLE,
+			pvalue,&options,&nRequest);
+		return(status);
 	}
 	/* fetch all inputs*/
 	for(i=0; i<SEL_MAX; i++, plink++, pvalue++) {
-                if (plink->type == CA_LINK)
-                {
-                    if (dbCaGetLink(plink))
-                    {
-                        recGblSetSevr(psel,LINK_ALARM,INVALID_ALARM);
-                        return(-1);
-                    } /* endif */
-                } /* endif */
-		if(plink->type==DB_LINK) {
-			nRequest=1;
-			status = dbGetLink(&plink->value.db_link,(struct dbCommon *)psel,DBR_DOUBLE,
-				pvalue,&options,&nRequest);
-			if(status!=0) {
-		                recGblSetSevr(psel,LINK_ALARM,INVALID_ALARM);
-				return(-1);
-			}
-		}
+		options=0;
+		nRequest=1;
+		status=recGblGetLinkValue(plink,(void *)psel,DBR_DOUBLE,
+			pvalue,&options,&nRequest);
 	}
-	return(0);
+	return(status);
 }

@@ -6,4 +6,4 @@
 #
 # All RTEMS targets use the same Makefile fragment
 #
-include $(CONFIG)/os/CONFIG.Target.RTEMS
+include $(CONFIG)/os/CONFIG.Common.RTEMS

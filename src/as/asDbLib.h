@@ -32,11 +32,16 @@ epicsShareFunc int epicsShareAPI asInit(void);
 epicsShareFunc int epicsShareAPI asInitAsyn(ASDBCALLBACK *pcallback);
 epicsShareFunc int epicsShareAPI asDbGetAsl( void *paddr);
 epicsShareFunc void *  epicsShareAPI asDbGetMemberPvt( void *paddr);
-epicsShareFunc int epicsShareAPI asdbdump( void);
+epicsShareFunc int epicsShareAPI asdbdump(void);
+epicsShareFunc int epicsShareAPI asdbdumpFP(FILE *fp);
 epicsShareFunc int epicsShareAPI aspuag(char *uagname);
+epicsShareFunc int epicsShareAPI aspuagFP(FILE *fp,char *uagname);
 epicsShareFunc int epicsShareAPI asphag(char *hagname);
+epicsShareFunc int epicsShareAPI asphagFP(FILE *fp,char *hagname);
 epicsShareFunc int epicsShareAPI asprules(char *asgname);
+epicsShareFunc int epicsShareAPI asprulesFP(FILE *fp,char *asgname);
 epicsShareFunc int epicsShareAPI aspmem(char *asgname,int clients);
+epicsShareFunc int epicsShareAPI aspmemFP(FILE *fp,char *asgname,int clients);
 epicsShareFunc int epicsShareAPI astac(
     char *recordname,char *user,char *location);
 

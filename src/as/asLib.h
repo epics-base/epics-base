@@ -74,11 +74,18 @@ epicsShareFunc long epicsShareAPI asComputeAsg(ASG *pasg);
 epicsShareFunc long epicsShareAPI asCompute(ASCLIENTPVT asClientPvt);
 epicsShareFunc int epicsShareAPI asDump(void (*memcallback)(ASMEMBERPVT),
     void (*clientcallback)(ASCLIENTPVT),int verbose);
+epicsShareFunc int epicsShareAPI asDumpFP(FILE *fp,void (*memcallback)(ASMEMBERPVT),
+    void (*clientcallback)(ASCLIENTPVT),int verbose);
 epicsShareFunc int epicsShareAPI asDumpUag(char *uagname);
+epicsShareFunc int epicsShareAPI asDumpUagFP(FILE *fp,char *uagname);
 epicsShareFunc int epicsShareAPI asDumpHag(char *hagname);
+epicsShareFunc int epicsShareAPI asDumpHagFP(FILE *fp,char *hagname);
 epicsShareFunc int epicsShareAPI asDumpRules(char *asgname);
+epicsShareFunc int epicsShareAPI asDumpRulesFP(FILE *fp,char *asgname);
 epicsShareFunc int epicsShareAPI asDumpMem(char *asgname,void (*memcallback)(ASMEMBERPVT),int clients);
+epicsShareFunc int epicsShareAPI asDumpMemFP(FILE *fp,char *asgname,void (*memcallback)(ASMEMBERPVT),int clients);
 epicsShareFunc int epicsShareAPI asDumpHash(void);
+epicsShareFunc int epicsShareAPI asDumpHashFP(FILE *fp);
 
 epicsShareFunc void * epicsShareAPI asTrapWriteBeforeWrite(
     const char *userid,const char *hostid,void *addr);

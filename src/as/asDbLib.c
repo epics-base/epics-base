@@ -269,31 +269,62 @@ static void myMemberCallback(ASMEMBERPVT memPvt)
 
 int epicsShareAPI asdbdump(void)
 {
-    asDump(myMemberCallback,NULL,1);
+    asDumpFP(stdout,myMemberCallback,NULL,1);
+    return(0);
+}
+
+int epicsShareAPI asdbdumpFP(FILE *fp)
+{
+    asDumpFP(fp,myMemberCallback,NULL,1);
     return(0);
 }
 
 int epicsShareAPI aspuag(char *uagname)
 {
 
-    asDumpUag(uagname);
+    asDumpUagFP(stdout,uagname);
+    return(0);
+}
+
+int epicsShareAPI aspuagFP(FILE *fp,char *uagname)
+{
+
+    asDumpUagFP(fp,uagname);
     return(0);
 }
 
 int epicsShareAPI asphag(char *hagname)
 {
-    asDumpHag(hagname);
+    asDumpHagFP(stdout,hagname);
+    return(0);
+}
+
+int epicsShareAPI asphagFP(FILE *fp,char *hagname)
+{
+    asDumpHagFP(fp,hagname);
     return(0);
 }
 
 int epicsShareAPI asprules(char *asgname)
 {
-    asDumpRules(asgname);
+    asDumpRulesFP(stdout,asgname);
+    return(0);
+}
+
+int epicsShareAPI asprulesFP(FILE *fp,char *asgname)
+{
+    asDumpRulesFP(fp,asgname);
     return(0);
 }
 
 int epicsShareAPI aspmem(char *asgname,int clients)
 {
-    asDumpMem(asgname,myMemberCallback,clients);
+    asDumpMemFP(stdout,asgname,myMemberCallback,clients);
+    return(0);
+}
+
+int epicsShareAPI aspmemFP(FILE *fp,char *asgname,int clients)
+{
+    asDumpMemFP(fp,asgname,myMemberCallback,clients);
     return(0);
 }

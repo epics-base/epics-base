@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.55  1998/09/24 21:11:38  jhill
+ * verify that conn is dropped when channel count goes to zero
+ *
  * Revision 1.54  1998/06/16 00:42:21  jhill
  * fixed include
  *
@@ -841,42 +844,42 @@ int doacctst(char *pname)
 	}
 
 	pfloat = (dbr_float_t *) calloc(sizeof(*pfloat),NUM);
+	assert (pfloat);
 	pdouble = (dbr_double_t *) calloc(sizeof(*pdouble),NUM);
+	assert (pdouble);
 	pgrfloat = (struct dbr_gr_float *) calloc(sizeof(*pgrfloat),NUM);
+	assert (pgrfloat);
 
-	if (VALID_DB_REQ(ca_field_type(chix1)))
-		if (pfloat)
-			for (i = 0; i < NUM; i++) {
-				for (j = 0; j < NUM; j++)
-					sprintf(&pstring[j][0], "%ld", j + 100l);
-				SEVCHK(ca_array_put(
-						DBR_STRING, 
-						NUM, 
-						chix1, 
-						pstring), 
-						NULL)
-				SEVCHK(ca_array_get(
-						DBR_FLOAT, 
-						NUM, 
-						chix1, 
-						pfloat), 
-						NULL)
-				SEVCHK(ca_array_get(
-						DBR_DOUBLE, 
-						NUM, 
-						chix1, 
-						pdouble), 
-						NULL)
-				SEVCHK(ca_array_get(
-						DBR_GR_FLOAT, 
-						NUM, 
-						chix1, 
-						pgrfloat), 
-						NULL)
-			}
-		else
-			assert(0);
-
+	if (VALID_DB_REQ(ca_field_type(chix1))) {
+		for (i = 0; i < NUM; i++) {
+			for (j = 0; j < NUM; j++)
+				sprintf(&pstring[j][0], "%ld", j + 100l);
+			SEVCHK(ca_array_put(
+					DBR_STRING, 
+					NUM, 
+					chix1, 
+					pstring), 
+					NULL)
+			SEVCHK(ca_array_get(
+					DBR_FLOAT, 
+					NUM, 
+					chix1, 
+					pfloat), 
+					NULL)
+			SEVCHK(ca_array_get(
+					DBR_DOUBLE, 
+					NUM, 
+					chix1, 
+				pdouble), 
+					NULL)
+			SEVCHK(ca_array_get(
+					DBR_GR_FLOAT, 
+					NUM, 
+					chix1, 
+					pgrfloat), 
+					NULL)
+		}
+	}
 	SEVCHK(ca_pend_io(4000.0), NULL);
 
 	/*

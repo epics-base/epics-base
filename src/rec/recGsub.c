@@ -201,7 +201,7 @@ static long get_units(paddr,units)
 {
     struct gsubRecord	*psub=(struct gsubRecord *)paddr->precord;
 
-    strncpy(units,psub->egu,sizeof(psub->egu));
+    strncpy(units,psub->egu,DB_UNITS_SIZE);
     return(0);
 }
 

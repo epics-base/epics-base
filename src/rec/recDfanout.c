@@ -161,7 +161,7 @@ static long get_units(paddr,units)
 {
     struct dfanoutRecord	*pdfanout=(struct dfanoutRecord *)paddr->precord;
 
-    strncpy(units,pdfanout->egu,sizeof(pdfanout->egu));
+    strncpy(units,pdfanout->egu,DB_UNITS_SIZE);
     return(0);
 }
 

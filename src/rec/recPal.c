@@ -173,7 +173,7 @@ static long get_units(paddr,units)
 {
     struct palRecord	*ppal=(struct palRecord *)paddr->precord;
 
-    strncpy(units,ppal->egu,sizeof(ppal->egu));
+    strncpy(units,ppal->egu,DB_UNITS_SIZE);
     return(0);
 }
 

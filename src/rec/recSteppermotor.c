@@ -295,7 +295,7 @@ static long get_units(paddr,units)
 {
     struct steppermotorRecord	*psm=(struct steppermotorRecord *)paddr->precord;
 
-    strncpy(units,psm->egu,sizeof(psm->egu));
+    strncpy(units,psm->egu,DB_UNITS_SIZE);
     return(0);
 }
 

@@ -280,7 +280,7 @@ static long get_units(paddr,units)
 {
     struct aiRecord	*pai=(struct aiRecord *)paddr->precord;
 
-    strncpy(units,pai->egu,sizeof(pai->egu));
+    strncpy(units,pai->egu,DB_UNITS_SIZE);
     return(0);
 }
 

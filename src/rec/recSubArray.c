@@ -248,7 +248,7 @@ static long get_units(paddr,units)
 {
     struct subArrayRecord	*psa=(struct subArrayRecord *)paddr->precord;
 
-    strncpy(units,psa->egu,sizeof(psa->egu));
+    strncpy(units,psa->egu,DB_UNITS_SIZE);
     return(0);
 }
 

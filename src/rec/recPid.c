@@ -177,7 +177,7 @@ static long get_units(paddr,units)
 {
     struct pidRecord	*ppid=(struct pidRecord *)paddr->precord;
 
-    strncpy(units,ppid->egu,sizeof(ppid->egu));
+    strncpy(units,ppid->egu,DB_UNITS_SIZE);
     return(0);
 }
 

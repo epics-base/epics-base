@@ -203,7 +203,7 @@ static long get_units(paddr,units)
 {
     struct longinRecord	*plongin=(struct longinRecord *)paddr->precord;
 
-    strncpy(units,plongin->egu,sizeof(plongin->egu));
+    strncpy(units,plongin->egu,DB_UNITS_SIZE);
     return(0);
 }
 

@@ -274,7 +274,7 @@ static long get_units(paddr,units)
 {
     struct compressRecord *pcompress=(struct compressRecord *)paddr->precord;
 
-    strncpy(units,pcompress->egu,sizeof(pcompress->egu));
+    strncpy(units,pcompress->egu,DB_UNITS_SIZE);
     return(0);
 }
 

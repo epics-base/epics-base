@@ -199,7 +199,7 @@ static long get_units(paddr,units)
 {
     struct selRecord	*psel=(struct selRecord *)paddr->precord;
 
-    strncpy(units,psel->egu,sizeof(psel->egu));
+    strncpy(units,psel->egu,DB_UNITS_SIZE);
     return(0);
 }
 

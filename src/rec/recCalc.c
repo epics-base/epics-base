@@ -237,7 +237,7 @@ static long get_units(paddr,units)
 {
     struct calcRecord	*pcalc=(struct calcRecord *)paddr->precord;
 
-    strncpy(units,pcalc->egu,sizeof(pcalc->egu));
+    strncpy(units,pcalc->egu,DB_UNITS_SIZE);
     return(0);
 }
 

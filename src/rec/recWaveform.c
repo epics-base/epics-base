@@ -303,7 +303,7 @@ static long get_units(paddr,units)
 {
     struct waveformRecord	*pwf=(struct waveformRecord *)paddr->precord;
 
-    strncpy(units,pwf->egu,sizeof(pwf->egu));
+    strncpy(units,pwf->egu,DB_UNITS_SIZE);
     return(0);
 }
 

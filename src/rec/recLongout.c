@@ -241,7 +241,7 @@ static long get_units(paddr,units)
 {
     struct longoutRecord	*plongout=(struct longoutRecord *)paddr->precord;
 
-    strncpy(units,plongout->egu,sizeof(plongout->egu));
+    strncpy(units,plongout->egu,DB_UNITS_SIZE);
     return(0);
 }
 

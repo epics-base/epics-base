@@ -145,7 +145,7 @@ static int formlines[OUTLINK+1];
 /*Following are obsolete. Will go away next release*/
 long dbRead(DBBASE *pdbbase,FILE *fp)
 {
-    return(dbReadDatabaseFP(&pdbbase,fp,0));
+    return(dbReadDatabaseFP(&pdbbase,fp,0,0));
 }
 long dbWrite(DBBASE *pdbbase,FILE *fpdctsdr,FILE *fp)
 {
@@ -253,6 +253,34 @@ void dbFreePath(DBBASE *pdbbase)
     free((void *)ppathList);
     pdbbase->pathPvt = 0;
     return;
+}
+
+#define INC_SIZE	256
+void dbCatString(char **string,int *stringLength,char *new,
+	char *separator)
+{
+    if((*string==NULL)
+    || ((strlen(*string)+strlen(new)+2) > (size_t)*stringLength)) {
+	char	*newString;
+	int	size;
+
+	size = strlen(new);
+	if(*string) size += strlen(*string);
+	/*Make size multiple of INC_SIZE*/
+	size = ((size + 2 + INC_SIZE)/INC_SIZE) * INC_SIZE;
+	newString = dbCalloc(1,(size_t)size);
+	if(*string) {
+	    strcpy(newString,*string);
+	    free((void *)(*string));
+	}
+	*string = newString;
+    }
+    if(*stringLength>0) {
+	strcat(*string,separator);
+	*stringLength += strlen(separator);
+    }
+    strcat(*string,new);
+    *stringLength += strlen(new);
 }
 
 static void initForms(void)

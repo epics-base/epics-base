@@ -39,6 +39,7 @@ of this distribution.
 #include <guigroup.h>
 #include <special.h>
 #include <link.h>
+#include <macLib.h>
 
 /*private routines */
 static void yyerrorAbort(char *str);
@@ -74,7 +75,9 @@ static void dbRecordBody(void);
 /*private declarations*/
 #define MY_BUFFER_SIZE 1024
 static char *my_buffer=NULL;
+static char *mac_input_buffer=NULL;
 static char *my_buffer_ptr=NULL;
+static MAC_HANDLE *macHandle = NULL;
 typedef struct inputFile{
 	ELLNODE		node;
 	char		*path;
@@ -174,11 +177,12 @@ static void freeInputFileList(void)
 }
 
 static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
-	const char *path)
+	const char *path,const char *substitutions)
 {
     long	status;
     inputFile	*pinputFile;
     char	*penv;
+    char	**pairs;
     
     if(*ppdbbase == 0) *ppdbbase = dbAllocBase();
     pdbbase = *ppdbbase;
@@ -193,6 +197,22 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
 	}
     }
     my_buffer = dbCalloc(MY_BUFFER_SIZE,sizeof(char));
+    macHandle = NULL;
+    if(substitutions) {
+	if(macCreateHandle(&macHandle,NULL)) {
+	    epicsPrintf("macCreateHandle error\n");
+	    return(-1);
+	}
+	macParseDefns(macHandle,(char *)substitutions,&pairs);
+	if(pairs ==NULL) {
+	    macDeleteHandle(macHandle);
+	    macHandle = NULL;
+	} else {
+	    macInstallMacros(macHandle,pairs);
+	    free((void *)pairs);
+	    mac_input_buffer = dbCalloc(MY_BUFFER_SIZE,sizeof(char));
+	}
+    }
     ellInit(&inputFileList);
     ellInit(&tempList);
     freeListInitPvt(&freeListPvt,sizeof(tempListNode),5);
@@ -226,6 +246,11 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     if(status) {
 	fprintf(stderr,"db_parse returned %d\n",status);
     }
+    if(macHandle) {
+	macDeleteHandle(macHandle);
+	macHandle = NULL;
+	free((void *)mac_input_buffer);
+    }
     freeListCleanup(freeListPvt);
     free((void *)my_buffer);
     freeInputFileList();
@@ -233,19 +258,38 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     return(status);
 }
 
-long dbReadDatabase(DBBASE **ppdbbase,const char *filename,const char *path)
-{return (dbReadCOM(ppdbbase,filename,0,path));}
+long dbReadDatabase(DBBASE **ppdbbase,const char *filename,
+	const char *path,const char *substitutions)
+{return (dbReadCOM(ppdbbase,filename,0,path,substitutions));}
 
-long dbReadDatabaseFP(DBBASE **ppdbbase,FILE *fp,const char *path)
-{return (dbReadCOM(ppdbbase,0,fp,path));}
+long dbReadDatabaseFP(DBBASE **ppdbbase,FILE *fp,
+	const char *path,const char *substitutions)
+{return (dbReadCOM(ppdbbase,0,fp,path,substitutions));}
 
 static int db_yyinput(char *buf, int max_size)
 {
-    int	l,n;
+    int		l,n;
+    char	*fgetsRtn;
     
     if(yyAbort) return(0);
     if(*my_buffer_ptr==0) {
-	while(fgets(my_buffer,MY_BUFFER_SIZE,pinputFileNow->fp)==NULL) {
+	while(TRUE) { /*until we get some input*/
+	    if(macHandle) {
+		fgetsRtn = fgets(mac_input_buffer,MY_BUFFER_SIZE,
+			pinputFileNow->fp);
+		if(fgetsRtn) {
+		    n = macExpandString(macHandle,mac_input_buffer,
+			my_buffer,MY_BUFFER_SIZE-1);
+		    if(n<0) {
+			errPrintf(0,__FILE__, __LINE__,
+			"macExpandString failed for file %s",
+			pinputFileNow->filename);
+		    }
+		}
+	    } else {
+		fgetsRtn = fgets(my_buffer,MY_BUFFER_SIZE,pinputFileNow->fp);
+	    }
+	    if(fgetsRtn) break;
 	    if(fclose(pinputFileNow->fp)) 
 		errPrintf(0,__FILE__, __LINE__,
 			"Closing file %s",pinputFileNow->filename);

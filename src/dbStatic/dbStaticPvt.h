@@ -36,6 +36,7 @@
 void dbInitDeviceMenu(DBENTRY *pdbentry);
 void dbFreeParmString(char **pparm);
 void dbFreePath(DBBASE *pdbbase);
+void dbCatString(char **string,int *stringLength,char *new,char *separator);
 
 /*The following routines have different versions for run-time no-run-time*/
 long dbAllocRecord(DBENTRY *pdbentry,char *precordName);

@@ -530,9 +530,9 @@ LOCAL long initialProcess(void)
 
 
 
-int dbLoadDatabase(char *filename,char *path)
+int dbLoadDatabase(char *filename,char *path,char *substitutions)
 {
-    return(dbReadDatabase(&pdbbase,filename,path));
+    return(dbReadDatabase(&pdbbase,filename,path,substitutions));
 }
 
 /*Remaining code supplied by Bob Zieman*/

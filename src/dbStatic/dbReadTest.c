@@ -27,45 +27,49 @@ of this distribution.
 #include <gpHash.h>
 
 DBBASE *pdbbase = NULL;
-#define MAX_PATH_LENGTH 256
 
-static void addPath(char *path,char *newdir)
-{
-    if((strlen(path)+strlen(newdir)+2) > (size_t)MAX_PATH_LENGTH) {
-        fprintf(stderr,"path > 256 characters\n");
-        exit(-1);
-    }
-    if(strlen(path) > (size_t)0) strcat(path,":");
-    strcat(path,newdir);
-}
- 
-
 int main(int argc,char **argv)
 {
-    long        status;
-    int         strip;
-    char        path[MAX_PATH_LENGTH];
     int         i;
+    int		strip;
+    char	*path = NULL;
+    char	*sub = NULL;
+    int		pathLength = 0;
+    int		subLength = 0;
+    char	**pstr;
+    char	*psep;
+    int		*len;
+    long	status;
+    static char *pathSep = ":";
+    static char *subSep = ",";
 
-    /*Look for path, i.e. -I dir or -Idir*/
-    path[0] = 0;
-    while(strncmp(argv[1],"-I",2)==0) {
-        if(strlen(argv[1])==2) {
-            addPath(path,argv[2]);
-            strip = 2;
-        } else {
-            addPath(path,argv[1]+2);
-            strip = 1;
-        }
-        argc -= strip;
-        for(i=1; i<argc; i++) argv[i] = argv[i + strip];
+    /*Look for options*/
+    while((strncmp(argv[1],"-I",2)==0)||(strncmp(argv[1],"-S",2)==0)) {
+	if(strncmp(argv[1],"-I",2)==0) {
+	    pstr = &path;
+	    psep = pathSep;
+	    len = &pathLength;
+	} else {
+	    pstr = &sub;
+	    psep = subSep;
+	    len = &subLength;
+	}
+	if(strlen(argv[1])==2) {
+	    dbCatString(pstr,len,argv[2],psep);
+	    strip = 2;
+	} else {
+	    dbCatString(pstr,len,argv[1]+2,psep);
+	    strip = 1;
+	}
+	argc -= strip;
+	for(i=1; i<argc; i++) argv[i] = argv[i + strip];
     }
     if(argc<2 || (strncmp(argv[1],"-",1)==0)) {
 	printf("usage: dbReadTest -Idir -Idir file.dbd file.dbd \n");
 	exit(0);
     }
     for(i=1; i<argc; i++) {
-	status = dbReadDatabase(&pdbbase,argv[i],path);
+	status = dbReadDatabase(&pdbbase,argv[i],path,sub);
 	if(!status) continue;
 	fprintf(stderr,"For input file %s",argv[i]);
 	errMessage(status,"from dbReadDatabase");

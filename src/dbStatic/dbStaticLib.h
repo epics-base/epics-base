@@ -84,8 +84,10 @@ void dbInitEntry(DBBASE *pdbbase,DBENTRY *pdbentry);
 void dbFinishEntry(DBENTRY *pdbentry);
 DBENTRY *dbCopyEntry(DBENTRY *pdbentry);
 
-long dbReadDatabase(DBBASE **ppdbbase,const char *filename,const char *path);
-long dbReadDatabaseFP(DBBASE **ppdbbase,FILE *fp,const char *path);
+long dbReadDatabase(DBBASE **ppdbbase,const char *filename,
+	const char *path,const char *substitutions);
+long dbReadDatabaseFP(DBBASE **ppdbbase,FILE *fp,
+	const char *path,const char *substitutions);
 long dbPath(DBBASE *pdbbase,const char *path);
 long dbAddPath(DBBASE *pdbbase,const char *path);
 long dbWriteRecord(DBBASE *ppdbbase,const char *filename,

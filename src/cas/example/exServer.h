@@ -202,14 +202,10 @@ public:
         //
         // read
         //
-        // this is allowed to complete asychronously
-        //
         caStatus read(const casCtx &ctxIn, gdd &value);
 
         //
         // write
-        //
-        // this is allowed to complete asychronously
         //
         caStatus write(const casCtx &ctxIn, gdd &value);
 private:
@@ -217,6 +213,7 @@ private:
 
 //
 // exAsyncPV
+// (asychronous PV)
 //
 class exAsyncPV : public exPV {
 public:
@@ -229,14 +226,10 @@ public:
         //
         // read
         //
-        // this is allowed to complete asychronously
-        //
         caStatus read(const casCtx &ctxIn, gdd &value);
 
         //
         // write
-        //
-        // this is allowed to complete asychronously
         //
         caStatus write(const casCtx &ctxIn, gdd &value);
 

@@ -1,7 +1,6 @@
 
-WORK IN PROGRESS
 
-this directory contains the posix RT os dependent source for 
+this directory contains the posix real time os dependent source for 
 the EPICS ca server
 
 

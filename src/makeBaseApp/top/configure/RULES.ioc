@@ -1,6 +1,14 @@
 #RULES.ioc
 include $(EPICS_BASE)/configure/RULES_DIRS
 
+all:    install
+
+buildInstall : build
+
+install: buildInstall
+
+rebuild: clean install
+
 cdCommands: Makefile $(TOOLS)/makeIocCdCommands.pl $(TOP)/configure/CONFIG \
                      $(TOP)/configure/RELEASE
 	$(PERL) $(TOOLS)/makeIocCdCommands.pl $(ARCH) $(IOCS_APPL_TOP)

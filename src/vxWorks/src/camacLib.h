@@ -4,6 +4,9 @@
  * 10/11/93
  *
  * $Log$
+ * Revision 1.1  1996/01/25 21:38:38  mrk
+ * moved files from /base/include
+ *
  * Revision 1.1  1994/10/20  20:16:16  tang
  * Commit adding of Camac Driver h file.
  *

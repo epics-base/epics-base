@@ -6,9 +6,7 @@ TOP = ../..
 
 include $(TOP)/configure/CONFIG
 
-DIRS += include 
-DIRS += libvxWorks
-DIRS += db
+DIRS += src
 DIRS += iocCore
 
 include $(TOP)/configure/RULES_DIRS

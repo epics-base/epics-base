@@ -3,6 +3,9 @@
 
 /*
  * $Log$
+ * Revision 1.8  2001/01/31 13:34:02  mrk
+ * osiTime=>epicsTime
+ *
  * Revision 1.7  2000/02/02 20:06:25  mrk
  * new way to build
  *

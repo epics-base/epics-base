@@ -56,7 +56,7 @@ if(threadNameToId(NAME)!=0)threadDestroy(threadNameToId(NAME));
  *  handle each of them
  *
  */
-LOCAL void req_server (void)
+LOCAL void req_server (void *pParm)
 {
     unsigned priorityOfSelf = epicsThreadGetPrioritySelf ();
     unsigned priorityOfUDP;
@@ -179,7 +179,7 @@ LOCAL void req_server (void)
 
     tid = epicsThreadCreate ( "CAS-UDP", priorityOfUDP,
         epicsThreadGetStackSize (epicsThreadStackMedium),
-        (EPICSTHREADFUNC) cast_server, 0 );
+        cast_server, 0 );
     if ( tid == 0 ) {
         epicsPrintf ( "CAS: unable to start connection request thread\n" );
     }
@@ -210,7 +210,7 @@ LOCAL void req_server (void)
 
             id = epicsThreadCreate ( "CAS-client", epicsThreadPriorityCAServerLow,
                     epicsThreadGetStackSize ( epicsThreadStackBig ),
-                    ( EPICSTHREADFUNC ) camsgtask, pClient );
+                    camsgtask, pClient );
             if ( id == 0 ) {
                 destroy_tcp_client ( pClient );
                 errlogPrintf ( "CAS: task creation for new client failed\n" );

@@ -172,11 +172,11 @@ GLBLTYPE void               *rsrvPutNotifyFreeList;
 #define LOCK_CLIENTQ    epicsMutexMustLock (clientQlock);
 #define UNLOCK_CLIENTQ  epicsMutexUnlock (clientQlock);
 
-void camsgtask (struct client *client);
+void camsgtask (void *client);
 void cas_send_bs_msg ( struct client *pclient, int lock_needed );
 void cas_send_dg_msg ( struct client *pclient );
-void rsrv_online_notify_task (void);
-int cast_server (void);
+void rsrv_online_notify_task (void *);
+void cast_server (void);
 struct client *create_client ( SOCKET sock, int proto );
 void destroy_client ( struct client * );
 struct client *create_tcp_client ( SOCKET sock );

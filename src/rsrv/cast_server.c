@@ -107,7 +107,7 @@ LOCAL void clean_addrq()
  * service UDP messages
  * 
  */
-int cast_server(void)
+void cast_server(void *pParm)
 {
     unsigned            priorityOfSelf = epicsThreadGetPrioritySelf ();
     unsigned            priorityOfBeacon;

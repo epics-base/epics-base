@@ -36,8 +36,9 @@
  *
  *  CA server TCP client task (one spawned for each client)
  */
-void camsgtask ( struct client *client )
+void camsgtask ( void *pParm )
 {
+    struct client *client = (struct client *) pParm;
     int nchars;
     int status;
 

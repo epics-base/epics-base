@@ -15,7 +15,7 @@
 char *banner[] =
 {
     "#ifndef lint",
-    "static char yysccsid[] = \"@(#)yaccpar	1.9 (Berkeley) 02/21/93\";",
+    "static char yysccsid[] = \"@(#)yaccpar (JRW version from 1.9 (Berkeley) 02/21/93)\";",
     "#endif",
     "#define YYBYACC 1",
     "#define YYMAJOR 1",
@@ -23,24 +23,29 @@ char *banner[] =
     "#define yyclearin (yychar=(-1))",
     "#define yyerrok (yyerrflag=0)",
     "#define YYRECOVERING (yyerrflag!=0)",
+    "#ifdef __STDC__",		/* JRW */
+    "static int yyparse(void);",/* JRW */
+    "#else",			/* JRW */
+    "static int yyparse();",	/* JRW */
+    "#endif",			/* JRW */
     0
 };
 
 
 char *tables[] =
 {
-    "extern short yylhs[];",
-    "extern short yylen[];",
-    "extern short yydefred[];",
-    "extern short yydgoto[];",
-    "extern short yysindex[];",
-    "extern short yyrindex[];",
-    "extern short yygindex[];",
-    "extern short yytable[];",
-    "extern short yycheck[];",
+    "static short yylhs[];",	/* JRW */
+    "static short yylen[];",	/* JRW */
+    "static short yydefred[];",	/* JRW */
+    "static short yydgoto[];",	/* JRW */
+    "static short yysindex[];",	/* JRW */
+    "static short yyrindex[];",	/* JRW */
+    "static short yygindex[];",	/* JRW */
+    "static short yytable[];",	/* JRW */
+    "static short yycheck[];",	/* JRW */
     "#if YYDEBUG",
-    "extern char *yyname[];",
-    "extern char *yyrule[];",
+    "static char *yyname[];",	/* JRW */
+    "static char *yyrule[];",	/* JRW */
     "#endif",
     0
 };
@@ -59,16 +64,16 @@ char *header[] =
     "#define YYMAXDEPTH 500",
     "#endif",
     "#endif",
-    "int yydebug;",
-    "int yynerrs;",
-    "int yyerrflag;",
-    "int yychar;",
-    "short *yyssp;",
-    "YYSTYPE *yyvsp;",
-    "YYSTYPE yyval;",
-    "YYSTYPE yylval;",
-    "short yyss[YYSTACKSIZE];",
-    "YYSTYPE yyvs[YYSTACKSIZE];",
+    "static int yydebug;",			/* JRW */
+    "static int yynerrs;",			/* JRW */
+    "static int yyerrflag;",			/* JRW */
+    "static int yychar;",			/* JRW */
+    "static short *yyssp;",			/* JRW */
+    "static YYSTYPE *yyvsp;",			/* JRW */
+    "static YYSTYPE yyval;",			/* JRW */
+    "static YYSTYPE yylval;",			/* JRW */
+    "static short yyss[YYSTACKSIZE];",		/* JRW */
+    "static YYSTYPE yyvs[YYSTACKSIZE];",	/* JRW */
     "#define yystacksize YYSTACKSIZE",
     0
 };
@@ -80,8 +85,13 @@ char *body[] =
     "#define YYREJECT goto yyabort",
     "#define YYACCEPT goto yyaccept",
     "#define YYERROR goto yyerrlab",
-    "int",
-    "yyparse()",
+    "#ifdef __STDC__",		/* JRW */
+    "static int",		/* JRW */
+    "yyparse(void)",		/* JRW */
+    "#else",			/* JRW */
+    "static int",		/* JRW */
+    "yyparse()",		/* JRW */
+    "#endif",			/* JRW */
     "{",
     "    register int yym, yyn, yystate;",
     "#if YYDEBUG",

@@ -14,6 +14,8 @@
 /*	.02 031892 joh	initial broadcast retry delay is now a #define	*/
 /*	.03 031992 joh	reset the iiu delay if the current time 	*/
 /*			is specified					*/
+/*	.04 043092 joh	check to see if the conn is up when setting	*/
+/*			for CA_CUURRENT_TIME to be safe			*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -69,7 +71,14 @@ char			silent;
   		int	search_type;
 
 		if(iiu[i].next_retry == CA_CURRENT_TIME){
-			iiu[i].next_retry = current + iiu[i].retry_delay;
+			if(iiu[i].conn_up){
+				iiu[i].next_retry = 
+					current + CA_RETRY_PERIOD;
+			}
+			else{
+				iiu[i].next_retry = 
+					current + iiu[i].retry_delay;
+			}
 			continue;
 		}
 
@@ -113,7 +122,7 @@ char			silent;
   	}
 
   	if(retry_cnt){
-    		printf("<Trying> ");
+    		ca_printf("<Trying> ");
 #ifdef UNIX
     		fflush(stdout);
 #endif
@@ -156,7 +165,7 @@ struct in_addr  *pnet_addr;
 	manage_conn(TRUE);
 
 #ifdef DEBUG
-	printf("<%s> ",host_from_addr(pnet_addr));
+	ca_printf("<%s> ",host_from_addr(pnet_addr));
 #ifdef UNIX
     	fflush(stdout);
 #endif
@@ -230,7 +239,7 @@ struct in_addr  *pnet_addr;
 	iiu[BROADCAST_IIU].next_retry = 
 		time(NULL) + iiu[BROADCAST_IIU].retry_delay;
 #ifdef DEBUG
-	printf("<Trying ukn online after pseudo random delay=%d sec> ",
+	ca_printf("<Trying ukn online after pseudo random delay=%d sec> ",
 		iiu[BROADCAST_IIU].retry_delay);
 #ifdef UNIX
     	fflush(stdout);

@@ -2,9 +2,18 @@
  * CA test/debug routine
  */
 
+#if 0
 #define CA_TEST_CHNL	"ca:ai_2000"
-#define CA_TEST_CHNL4	"ca:bo_000"
-
+#define CA_TEST_CHNL4	"ca:ai_2000"
+#else
+#if 0
+#define CA_TEST_CHNL	"ts2:ai0"
+#define CA_TEST_CHNL4	"ts2:ai0"
+#else
+#define CA_TEST_CHNL	"q0_ao"
+#define CA_TEST_CHNL4	"q0_ao"
+#endif
+#endif
 
 /* System includes		 */
 #if defined(UNIX)
@@ -71,7 +80,7 @@ main()
 
 	SEVCHK(ca_task_initialize(), "Unable to initialize");
 
-	printf("begin\n");
+	ca_printf("begin\n");
 #ifdef VMS
 	lib$init_timer();
 #endif
@@ -80,7 +89,7 @@ main()
 		malloc(dbr_size[DBR_GR_FLOAT] + 
 			dbr_value_size[DBR_GR_FLOAT] * (NUM - 1));
 
-	for (i = 0; i < 0; i++) {
+	for (i = 0; i < 10; i++) {
 
 		status = ca_array_build(CA_TEST_CHNL,	/* channel ASCII name	 */
 					DBR_GR_FLOAT,	/* fetch external type	 */
@@ -122,9 +131,7 @@ main()
 		SEVCHK(ca_clear_channel(chix3), NULL);
 		SEVCHK(ca_clear_channel(chix1), NULL);
 
-		free(ptr);
 	}
-
 
 	status = ca_array_build(
 				CA_TEST_CHNL,	/* channel ASCII name	 */
@@ -164,13 +171,13 @@ main()
 	SEVCHK(status, NULL);
 
 	if (INVALID_DB_REQ(chix1->type))
-		printf("Failed to locate %s\n", CA_TEST_CHNL);
+		ca_printf("Failed to locate %s\n", CA_TEST_CHNL);
 	if (INVALID_DB_REQ(chix2->type))
-		printf("Failed to locate %s\n", CA_TEST_CHNL);
+		ca_printf("Failed to locate %s\n", CA_TEST_CHNL);
 	if (INVALID_DB_REQ(chix3->type))
-		printf("Failed to locate %s\n", CA_TEST_CHNL);
+		ca_printf("Failed to locate %s\n", CA_TEST_CHNL);
 	if (INVALID_DB_REQ(chix4->type))
-		printf("Failed to locate %s\n", CA_TEST_CHNL4);
+		ca_printf("Failed to locate %s\n", CA_TEST_CHNL4);
 	/*
 	 * SEVCHK(status,NULL); if(status == ECA_TIMEOUT) exit();
 	 */
@@ -181,7 +188,7 @@ main()
 
 	pfloat = &ptr->value;
 	for (i = 0; i < NUM; i++)
-		printf("Value Returned from build %f\n", pfloat[i]);
+		ca_printf("Value Returned from build %f\n", pfloat[i]);
 
 #ifdef VMS
 	lib$init_timer();
@@ -191,7 +198,7 @@ main()
 	 * verify we dont jam up on many uninterrupted
 	 * solicitations
 	 */
-	printf("Performing multiple get test...");
+	ca_printf("Performing multiple get test...");
 #ifdef UNIX
 	fflush(stdout);
 #endif
@@ -203,12 +210,12 @@ main()
 		}
 		SEVCHK(ca_pend_io(200.0), NULL);
 	}
-	printf("done.\n");
+	ca_printf("done.\n");
 
 	/*
 	 * verify we can add many monitors at once
 	 */
-	printf("Performing multiple monitor test...");
+	ca_printf("Performing multiple monitor test...");
 #ifdef UNIX
 	fflush(stdout);
 #endif
@@ -238,7 +245,7 @@ main()
 		SEVCHK(ca_get(DBR_FLOAT,chix4,&temp),NULL);
 		SEVCHK(ca_pend_io(100.0),NULL);
 	}
-	printf("done.\n");
+	ca_printf("done.\n");
 	
 	if (VALID_DB_REQ(chix4->type)) {
 		status = ca_add_event(DBR_FLOAT, chix4, EVENT_ROUTINE, 0xaaaaaaaa, &monix);
@@ -282,15 +289,15 @@ main()
 	lib$show_timer();
 #endif
 	for (i = 0; i < NUM; i++) {
-		printf("Float value Returned from put/get %f\n", pfloat[i]);
-		printf("Double value Returned from put/get %f\n", pdouble[i]);
-		printf("GR Float value Returned from put/get %f\n", pgrfloat[i].value);
+		ca_printf("Float value Returned from put/get %f\n", pfloat[i]);
+		ca_printf("Double value Returned from put/get %f\n", pdouble[i]);
+		ca_printf("GR Float value Returned from put/get %f\n", pgrfloat[i].value);
 	}
 
 	for (i = 0; i < 10; i++)
 		ca_get_callback(DBR_GR_FLOAT, chix1, ca_test_event, NULL);
 
-	printf("-- Put/Gets done- waiting for Events --\n");
+	ca_printf("-- Put/Gets done- waiting for Events --\n");
 	status = ca_pend_event(60.0);
 	if (status == ECA_TIMEOUT) {
 
@@ -314,7 +321,7 @@ null_event()
 	static int      i;
 
 	if (i++ > 1000) {
-		printf("1000 occured\n");
+		ca_printf("1000 occured\n");
 		i = 0;
 	}
 }
@@ -342,9 +349,9 @@ conn(args)
 {
 
 	if (args.op == CA_OP_CONN_UP)
-		printf("Channel On Line [%s]\n", ca_name(args.chid));
+		ca_printf("Channel On Line [%s]\n", ca_name(args.chid));
 	else if (args.op == CA_OP_CONN_DOWN)
-		printf("Channel Off Line [%s]\n", ca_name(args.chid));
+		ca_printf("Channel Off Line [%s]\n", ca_name(args.chid));
 	else
-		printf("Ukn conn ev\n");
+		ca_printf("Ukn conn ev\n");
 }

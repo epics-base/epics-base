@@ -17,6 +17,7 @@
  *	.06 joh 111991	added EVENTLOCKTEST
  *	.07 joh 120291	added declaration of taskIdCurrent for
  *			compiling with V4 vxWorks 
+ *	.08 joh	062692	took out printf to logMsg MACRO
  *
  */
 
@@ -108,7 +109,6 @@
 #	define abort(A) 	taskSuspend(VXTHISTASKID)
 #  	define memcpy(D,S,N)	bcopy(S,D,N)
 #  	define memset(D,V,N) 	bfill(D,N,V)
-#  	define printf		logMsg
 #endif
 
 

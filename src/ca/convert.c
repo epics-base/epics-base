@@ -45,7 +45,7 @@
  */
 no_cvrt()
 {
-	printf("Sorry, conversion for that type currently not implemented\n");
+	ca_printf("Sorry, conversion for that type currently not implemented\n");
 	exit();
 }
 cvrt_sts_char()		{no_cvrt();}
@@ -213,8 +213,8 @@ int			num;			/* number of values		*/
 {
       	unsigned int	i;
 
-	printf("CA: sorry no code for conversions of doubles\n");
-	printf("CA: setting your variable to nill\n");
+	ca_printf("CA: sorry no code for conversions of doubles\n");
+	ca_printf("CA: setting your variable to nill\n");
       	for(i=0; i<num; i++){
 	  	*d++ = 0.0;
 	}

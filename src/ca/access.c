@@ -69,6 +69,9 @@
 /*			cs_closed					*/
 /*	042892	joh	no longer checks the status from free() as	*/
 /*			this varies from OS to OS			*/
+/*	050492	joh	batch up flow control messages by setting a	*/
+/*			send_needed flag				*/
+/*	060392	joh	added ca_host_name()				*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -478,7 +481,7 @@ ca_add_task_variable()
 	int             status;
 
 #	if DEBUG
-		printf("adding task variable\n");
+		ca_printf("adding task variable\n");
 #	endif
 
 	/*
@@ -498,7 +501,7 @@ ca_add_task_variable()
 		 * in a task exit handler.
 		 */
 #		if DEBUG
-			printf("adding the CA delete hook\n");
+			ca_printf("adding the CA delete hook\n");
 #		endif
 
 #		ifdef V5_vxWorks
@@ -558,7 +561,7 @@ ca_task_exit_tcb(ptcb)
 WIND_TCB 	*ptcb;
 {
 #	if DEBUG
-		printf("entering the exit handler %x\n", ptcb);
+		ca_printf("entering the exit handler %x\n", ptcb);
 #	endif
 
 	/*
@@ -608,7 +611,7 @@ ca_process_exit()
 #endif
 
 #	ifdef DEBUG
-		printf("entering the exit handler 2 %x\n", tid);
+		ca_printf("entering the exit handler 2 %x\n", tid);
 #	endif
 
 #	if defined(vxWorks)
@@ -623,12 +626,12 @@ ca_process_exit()
 
 		if (ca_temp == (struct ca_static *) ERROR){
 #			if DEBUG
-				printf("task variable lookup failed\n");
+				ca_printf("task variable lookup failed\n");
 #			endif
 			return;
 		}
 #		if DEBUG
-			printf(	"exit handler with ca_static = %x\n", 
+			ca_printf(	"exit handler with ca_static = %x\n", 
 				ca_static);
 #		endif
 #	else
@@ -992,6 +995,9 @@ void build_msg(chix, reply_type)
 	register int    	size;
 	register int    	cmd;
 	register struct extmsg	*mptr;
+	struct ioc_in_use	*piiu;
+
+	piiu = &iiu[chix->iocix];
 
 	if (VALID_BUILD(chix)) {
 		size = chix->name_length + sizeof(struct extmsg);
@@ -1001,7 +1007,7 @@ void build_msg(chix, reply_type)
 		cmd = IOC_SEARCH;
 	}
 
-	mptr = CAC_ALLOC_MSG(&iiu[chix->iocix], size);
+	mptr = CAC_ALLOC_MSG(piiu, size);
 
 	mptr->m_cmmd = htons(cmd);
 	mptr->m_available = (int) chix;
@@ -1026,7 +1032,9 @@ void build_msg(chix, reply_type)
 	mptr++;
 	strncpy(mptr, chix + 1, chix->name_length);
 
-	CAC_ADD_MSG(&iiu[chix->iocix]);
+	CAC_ADD_MSG(piiu);
+
+	piiu->send_needed = TRUE;
 }
 
 
@@ -1193,6 +1201,9 @@ issue_get_callback(monix)
 	unsigned		size = 0;
 	unsigned        	count;
 	register struct extmsg	*mptr;
+	struct ioc_in_use	*piiu;
+
+	piiu = &iiu[chix->iocix];
 
   	/* 
 	 * dont send the message if the conn is down 
@@ -1212,7 +1223,7 @@ issue_get_callback(monix)
 		count = monix->count;
 	}
 	
-	mptr = CAC_ALLOC_MSG(&iiu[chix->iocix], size);
+	mptr = CAC_ALLOC_MSG(piiu, size);
 
 	/* msg header only on db read notify req	 */
 	mptr->m_cmmd = htons(IOC_READ_NOTIFY);
@@ -1221,7 +1232,9 @@ issue_get_callback(monix)
 	mptr->m_count = htons(count);
 	mptr->m_pciu = chix->paddr;
 
-	CAC_ADD_MSG(&iiu[chix->iocix]);
+	CAC_ADD_MSG(piiu);
+
+	piiu->send_needed = TRUE;
 }
 
 
@@ -1659,6 +1672,9 @@ ca_request_event(monix)
 	unsigned		size = sizeof(struct mon_info);
 	unsigned        	count;
 	register struct monops	*mptr;
+	struct ioc_in_use	*piiu;
+
+	piiu = &iiu[chix->iocix];
 
   	/* 
 	 * dont send the message if the conn is down 
@@ -1679,7 +1695,7 @@ ca_request_event(monix)
 		count = monix->count;
 	}
 
-	mptr = (struct monops *) CAC_ALLOC_MSG(&iiu[chix->iocix], size);
+	mptr = (struct monops *) CAC_ALLOC_MSG(piiu, size);
 
 	/* msg header	 */
 	mptr->m_header.m_cmmd = htons(IOC_EVENT_ADD);
@@ -1694,7 +1710,9 @@ ca_request_event(monix)
 	htonf(&monix->timeout, &mptr->m_info.m_toval);
 	mptr->m_info.m_mask = htons(monix->mask);
 
-	CAC_ADD_MSG(&iiu[chix->iocix]);
+	CAC_ADD_MSG(piiu);
+
+	piiu->send_needed = TRUE;
 }
 
 
@@ -2293,19 +2311,19 @@ char		*message;
     ca_status = ECA_INTERNAL;
   }
 
-  printf(
+  ca_printf(
 "CA.Diagnostic.....................................................\n");
 
-  printf(
+  ca_printf(
 "    Message: [%s]\n", ca_message_text[CA_EXTRACT_MSG_NO(ca_status)]);
 
   if(message)
-    printf(
+    ca_printf(
 "    Severity: [%s] Context: [%s]\n", 
 	severity[CA_EXTRACT_SEVERITY(ca_status)],
 	message);
   else
-    printf(
+    ca_printf(
 "    Severity: [%s]\n", severity[CA_EXTRACT_SEVERITY(ca_status)]);
 
   /*
@@ -2327,7 +2345,7 @@ char		*message;
     abort();
   }
 
-  printf(
+  ca_printf(
 "..................................................................\n");
 
 
@@ -2358,7 +2376,7 @@ ca_busy_message(piiu)
 	*mptr = nullmsg;
 	mptr->m_cmmd = htons(IOC_EVENTS_OFF);
 	CAC_ADD_MSG(piiu);
-	cac_send_msg();
+	piiu->send_needed = TRUE;
 	UNLOCK;
 }
 
@@ -2384,7 +2402,7 @@ ca_ready_message(piiu)
 	*mptr = nullmsg;
 	mptr->m_cmmd = htons(IOC_EVENTS_ON);
 	CAC_ADD_MSG(piiu);
-	cac_send_msg();
+	piiu->send_needed = TRUE;
 	UNLOCK;
 
 }
@@ -2404,6 +2422,7 @@ noop_msg(piiu)
 	*mptr = nullmsg;
 	mptr->m_cmmd = htons(IOC_NOOP);
 	CAC_ADD_MSG(piiu);
+	piiu->send_needed = TRUE;
 }
 
 
@@ -2429,6 +2448,7 @@ chid 			pchan;
 	mptr->m_cmmd = htons(IOC_CLAIM_CIU);
 	mptr->m_pciu = pchan->paddr;
 	CAC_ADD_MSG(piiu);
+	piiu->send_needed = TRUE;
 }
 
 
@@ -2488,4 +2508,18 @@ ca_defunct()
 #endif
 }
 
-
+
+/*
+ *	CA_HOST_NAME_FUNCTION()	
+ *
+ * 	returns a pointer to the channel's host name
+ *
+ *	currently implemented as a function 
+ *	(may be implemented as a MACRO in the future)
+ */
+char
+*ca_host_name_function(chix)
+chid	chix;
+{
+	return iiu[chix->iocix].host_name_str;
+}

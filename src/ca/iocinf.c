@@ -31,6 +31,11 @@
 /*	022692	joh	better prefix on messages			*/
 /*	031892	joh	initial rebroadcast delay is now a #define	*/
 /*	042892	joh	made local routines static			*/
+/*      050492 	joh  	dont call cac_send_msg() until all messages     */
+/*                      have been processed to support batching         */
+/*	050492	joh	added new fd array to select			*/
+/*	072392	joh	use SO_REUSEADDR when testing to see		*/
+/*			if the repeater has been started		*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -180,7 +185,9 @@ unsigned short			*iocix;
         		status = create_net_chan(&iiu[i]);
         		if(status != ECA_NORMAL)
           			return status;
-        		ca_signal(ECA_NEWCONN,host_from_addr(pnet_addr));
+        		ca_signal(
+				ECA_NEWCONN,
+				iiu[i].host_name_str);
       		}
 
       		*iocix = i;
@@ -299,7 +306,7 @@ struct ioc_in_use		*piiu;
       			if(status < 0){
 				abort();
       			}
-			printf(	"CAC: linger was on:%d linger:%d\n", 
+			ca_printf(	"CAC: linger was on:%d linger:%d\n", 
 				linger.l_onoff, 
 				linger.l_linger);
 		}
@@ -344,7 +351,7 @@ struct ioc_in_use		*piiu;
 				&piiu->sock_addr,
 				sizeof(piiu->sock_addr));
       		if(status < 0){
-			printf("CAC: no conn errno %d\n", MYERRNO);
+			ca_printf("CAC: no conn errno %d\n", MYERRNO);
         		status = socket_close(sock);
 			if(status<0){
 				SEVCHK(ECA_INTERNAL,NULL);
@@ -363,6 +370,7 @@ struct ioc_in_use		*piiu;
 				FIONBIO,
 				&true);
 #endif
+
       		break;
 
     	case	IPPROTO_UDP:
@@ -386,7 +394,7 @@ struct ioc_in_use		*piiu;
 				&true,
 				sizeof(true));
       		if(status<0){
-        		printf("CAC: sso (errno=%d)\n",MYERRNO);
+        		ca_printf("CAC: sso (errno=%d)\n",MYERRNO);
         		status = socket_close(sock);
 			if(status < 0){
 				SEVCHK(ECA_INTERNAL,NULL);
@@ -406,7 +414,7 @@ struct ioc_in_use		*piiu;
 				(struct sockaddr *) &saddr, 
 				sizeof(saddr));
       		if(status<0){
-        		printf("CAC: bind (errno=%d)\n",MYERRNO);
+        		ca_printf("CAC: bind (errno=%d)\n",MYERRNO);
 			ca_signal(ECA_INTERNAL,"bind failed");
       		}
 
@@ -440,6 +448,21 @@ struct ioc_in_use		*piiu;
 			}
       			return ECA_ALLOCMEM;
     		}
+	}
+
+	/*
+	 * Save the Host name for efficient access in the
+	 * future.
+	 */
+	{
+		char 	*ptmpstr;
+		int	len;
+	
+		ptmpstr = host_from_addr(&piiu->sock_addr.sin_addr);
+		strncpy(
+			piiu->host_name_str, 
+			ptmpstr, 
+			sizeof(piiu->host_name_str)-1);
 	}
 
   	piiu->recv->stk = 0;
@@ -543,7 +566,7 @@ notify_ca_repeater()
        			&saddr, 
 			sizeof saddr);
       		if(status < 0){
-			printf("CAC: notify_ca_repeater: send to lcl addr failed\n");
+			ca_printf("CAC: notify_ca_repeater: send to lcl addr failed\n");
 			abort();
 		}
 	}
@@ -635,7 +658,7 @@ void cac_send_msg()
   			for(piiu=iiu; piiu<&iiu[nxtiiu]; piiu++){
     				if(piiu->send->stk){
 					inaddr = &piiu->sock_addr.sin_addr;
-					iocname = host_from_addr(inaddr);
+					iocname = piiu->host_name_str;
 #ifdef CLOSE_ON_EXPIRED			
 					ca_signal(ECA_DLCKREST, iocname);
 					close_ioc(piiu);
@@ -712,7 +735,7 @@ register struct ioc_in_use 	*piiu;
 		if(status == cnt){
 			break;
 		}
-		else if(status>=0){
+		else if(status>0){
 			if(status>cnt){
 				ca_signal(
 					ECA_INTERNAL,
@@ -721,6 +744,10 @@ register struct ioc_in_use 	*piiu;
 
 			cnt = cnt-status;
 			pmsg = (void *) (status+(char *)pmsg);
+		}
+		else if(status == 0){
+ca_printf("sent zero\n");
+			TCPDELAY;
 		}
 #ifdef UNIX
 		else if(MYERRNO == EWOULDBLOCK){
@@ -742,7 +769,7 @@ register struct ioc_in_use 	*piiu;
 			if(	MYERRNO != EPIPE && 
 				MYERRNO != ECONNRESET &&
 				MYERRNO != ETIMEDOUT){
-				printf(	
+				ca_printf(	
 					"CAC: error on socket send() %d\n",
 					MYERRNO);
 			}
@@ -750,14 +777,12 @@ register struct ioc_in_use 	*piiu;
 			return OK;
 		}
 
-		if(status == 0){
-			TCPDELAY;
-		}
 
 	}
 
       	/* reset send stack */
       	piiu->send->stk = 0;
+        piiu->send_needed = FALSE;
 
 	/*
 	 * reset the delay to the next keepalive
@@ -794,13 +819,14 @@ struct timeval 	*ptimeout;
     		for(piiu=iiu;piiu<&iiu[nxtiiu];piiu++)
       			if(piiu->conn_up){
         			FD_SET(piiu->sock_chan,&readch);
+        			FD_SET(piiu->sock_chan,&excepch);
       			}
 
     		status = select(
 				sizeof(fd_set)*NBBY,
 				&readch,
 				NULL,
-				NULL,
+				&excepch,
 				ptmptimeout);
 
   		if(status<=0){  
@@ -808,12 +834,12 @@ struct timeval 	*ptimeout;
 				return;
                                              
     			if(MYERRNO == EINTR){
-				printf("cac: select was interrupted\n");
+				ca_printf("cac: select was interrupted\n");
 				TCPDELAY;
 				continue;
 			}
     			else if(MYERRNO == EWOULDBLOCK){
-				printf("CAC: blocked at select ?\n");
+				ca_printf("CAC: blocked at select ?\n");
 				return;
     			}                                           
     			else{                                                  					char text[255];                                         
@@ -823,10 +849,14 @@ struct timeval 	*ptimeout;
 					MYERRNO); 
       				ca_signal(ECA_INTERNAL,text);                       			}                                                         		}                                                         
 
-    		for(piiu=iiu;piiu<&iiu[nxtiiu];piiu++)
-      			if(piiu->conn_up)
-      				if(FD_ISSET(piiu->sock_chan,&readch) )
+    		for(piiu=iiu;piiu<&iiu[nxtiiu];piiu++){
+      			if(piiu->conn_up){
+      				if(FD_ISSET(piiu->sock_chan,&readch) ||
+					FD_ISSET(piiu->sock_chan,&excepch)){
           				recv_msg(piiu);
+				}
+			}
+		}
 
   		/*
    		 * double check to make sure that nothing is left pending
@@ -862,9 +892,13 @@ struct ioc_in_use	*piiu;
     		break;
 
   	default:
-    		printf("CAC: cac_send_msg: ukn protocol\n");
+    		ca_printf("CAC: cac_send_msg: ukn protocol\n");
     		abort();
   	}  
+
+        if(piiu->send_needed){
+                cac_send_msg_piiu(piiu);
+        }
 
   	return;
 }
@@ -909,7 +943,7 @@ struct ioc_in_use	*piiu;
        	 	if(	MYERRNO != EPIPE && 
 			MYERRNO != ECONNRESET &&
 			MYERRNO != ETIMEDOUT){
-	  		printf(	"CAC: unexpected recv error (errno=%d)\n",
+	  		ca_printf(	"CAC: unexpected recv error (errno=%d)\n",
 				MYERRNO);
 		}
 		LOCK;
@@ -921,7 +955,7 @@ struct ioc_in_use	*piiu;
 
   	byte_cnt = (long) status;
   	if(byte_cnt>MAX_MSG_SIZE){
-    		printf(	"CAC: recv_msg(): message overflow %l\n",
+    		ca_printf(	"CAC: recv_msg(): message overflow %l\n",
 			byte_cnt-MAX_MSG_SIZE);
 		LOCK;
 		close_ioc(piiu);
@@ -953,7 +987,7 @@ struct ioc_in_use	*piiu;
 			rcvb->buf + rcvb->stk - byte_cnt, 
 			byte_cnt);
 #ifdef DEBUG
-		printf(	"CAC: realigned message of %d bytes\n", 
+		ca_printf(	"CAC: realigned message of %d bytes\n", 
 			byte_cnt);
 #endif
 	}
@@ -1026,7 +1060,7 @@ struct ioc_in_use	*piiu;
 		rcvb->stk += status;
 		pmsglog->nbytes = (long) status;
 #ifdef DEBUG
-      		printf("CAC: recieved a udp reply of %d bytes\n",byte_cnt);
+      		ca_printf("CAC: recieved a udp reply of %d bytes\n",byte_cnt);
 #endif
 		
 
@@ -1058,7 +1092,7 @@ struct ioc_in_use	*piiu;
 				&pmsglog->addr.sin_addr,
 				piiu);
 		if(status != OK || msgcount != 0){
-			printf(	"CAC: UDP alignment problem %d\n",
+			ca_printf(	"CAC: UDP alignment problem %d\n",
 				msgcount);
 		}
 
@@ -1251,11 +1285,11 @@ struct ioc_in_use	*piiu;
 		SEVCHK(ECA_INTERNAL,NULL);
 	}
   	piiu->sock_chan = -1;
-  	if(piiu->chidlist.count)
+  	if(piiu->chidlist.count){
     		ca_signal(
 			ECA_DISCONN, 
-			host_from_addr(&piiu->sock_addr.sin_addr));
-
+			piiu->host_name_str);
+	}
 }
 
 
@@ -1267,7 +1301,7 @@ struct ioc_in_use	*piiu;
  *
  *	NOTE: potential race condition here can result
  *	in two copies of the repeater being spawned
- *	however the repeater detectes this prints a message
+ *	however the repeater detectes this, prints a message,
  *	and lets the other task start the repeater.
  *
  *	QUESTION: is there a better way to test for a port in use? 
@@ -1282,6 +1316,7 @@ struct ioc_in_use	*piiu;
  *	Attempting to bind the open socket to another port
  *	also does not work.
  *
+ * 	072392 - problem solved by using SO_REUSEADDR
  */
 repeater_installed()
 {
@@ -1295,8 +1330,19 @@ repeater_installed()
       	sock = socket(	AF_INET,	/* domain	*/
 			SOCK_DGRAM,	/* type		*/
 			0);		/* deflt proto	*/
-      	if(sock == ERROR)
+      	if(sock == ERROR){
         	abort();
+	}
+
+	status = setsockopt(	sock,
+				SOL_SOCKET,
+				SO_REUSEADDR,
+				NULL,
+				0);
+	if(status<0){
+		ca_printf(      "%s: set socket option failed\n",
+				__FILE__);
+	}
 
       	memset(&bd,0,sizeof bd);
       	bd.sin_family = AF_INET;
@@ -1316,5 +1362,6 @@ repeater_installed()
 		SEVCHK(ECA_INTERNAL,NULL);
 	}
 		
+
 	return installed;
 }

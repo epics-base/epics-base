@@ -38,6 +38,7 @@
 /*			connect tests wont fail				*/
 /*	042892	joh	No longer checking the status from free() 	*/
 /*			since it varies from os to os			*/
+/*	040592	joh	took out extra cac_send_msg() calls		*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -88,7 +89,7 @@ void 		reconnect_channel();
 void		ca_request_event();
 int		client_channel_exists();
 
-#define BUFSTAT 	printf("expected %d left %d\n",msgcnt,*pbufcnt);
+#define BUFSTAT 	ca_printf("expected %d left %d\n",msgcnt,*pbufcnt);
 
 
 
@@ -121,7 +122,7 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 
 	while (*pbufcnt >= sizeof(*hdrptr)) {
 #ifdef DEBUG
-		printf("bytes left %d, pending msgcnt %d\n",
+		ca_printf("bytes left %d, pending msgcnt %d\n",
 		       *pbufcnt,
 		       pndrecvcnt);
 #endif
@@ -134,7 +135,7 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 		t_count = ntohs(hdrptr->m_count);
 
 #ifdef DEBUG
-		printf("MSG: cmd:%d type:%d cnt:%d npost:%d avail:%x\n",
+		ca_printf("MSG: cmd:%d type:%d cnt:%d npost:%d avail:%x\n",
 		       t_cmmd,
 		       t_type,
 		       t_count,
@@ -347,7 +348,7 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 
 				if (chpiiu->sock_addr.sin_addr.s_addr == 
 						pnet_addr->s_addr) {
-					printf("<Extra> ");
+					ca_printf("<Extra> ");
 #					ifdef UNIX
 						fflush(stdout);
 #					endif
@@ -357,8 +358,7 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 
 					sprintf(acc, 
 						"%s",
-						host_from_addr(
-						&chpiiu->sock_addr.sin_addr));
+						chpiiu->host_name_str);
 					sprintf(rej, 
 						"%s", 
 						host_from_addr(pnet_addr));
@@ -410,7 +410,7 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 		case REPEATER_CONFIRM:
 			ca_static->ca_repeater_contacted = TRUE;
 #ifdef DEBUG
-			printf("repeater confirmation recv\n");
+			ca_printf("repeater confirmation recv\n");
 #endif
 			break;
 
@@ -540,7 +540,7 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			break;
 		}
 		default:
-			printf("post_msg(): Corrupt cmd in msg %x\n", 
+			ca_printf("post_msg(): Corrupt cmd in msg %x\n", 
 				t_cmmd);
 
 			*pbufcnt = 0;
@@ -584,9 +584,9 @@ struct in_addr			*pnet_addr;
 				&newiocix
 				);
 	if(status != ECA_NORMAL){
-	  	printf("... %s ...\n", ca_message(status));
-	 	printf("for %s on %s\n", chan+1, host_from_addr(pnet_addr));
-	 	printf("ignored search reply- proceeding\n");
+	  	ca_printf("... %s ...\n", ca_message(status));
+	 	ca_printf("for %s on %s\n", chan+1, host_from_addr(pnet_addr));
+	 	ca_printf("ignored search reply- proceeding\n");
 	  	return;
 	}
 
@@ -638,7 +638,6 @@ struct in_addr			*pnet_addr;
 	      			issue_get_callback(pevent);
 	    		}
 		}
-      		cac_send_msg();
         }
 #endif
 
@@ -648,7 +647,6 @@ struct in_addr			*pnet_addr;
 			pevent; 
 			pevent = (evid)pevent->node.next)
 	    		ca_request_event(pevent);
-	 	cac_send_msg();
  	}
 
       	UNLOCK;

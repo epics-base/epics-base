@@ -10,12 +10,12 @@
 <body>
 
 <center>
-<h2>Converting an EPICS R3.13 application to R3.14.1</h2>
+<h2>Converting an EPICS R3.13 application to R3.14.2</h2>
 </center>
 
 <p><br>
 This document describes how to convert a R3.13 vxWorks application so that it
-builds with release R3.14.1.  It describes procedures such that:</p>
+builds with release R3.14.2.  It describes procedures such that:</p>
 <ul>
   <li>The application uses the configure rules which are new to R3.14.</li>
 </ul>
@@ -31,10 +31,11 @@ builds with release R3.14.1.  It describes procedures such that:</p>
 remove all files created by earlier builds.</p>
 
 <h3>Create a new R3.14 application</h3>
+<p>We will remove junkApp later.</p>
 <pre>mkdir &lt;top&gt;
 cd &lt;top&gt;
 &lt;full path to 3.14 base&gt;/bin/&lt;host_arch&gt;/makeBaseApp.pl -t example junk
-/bin/rm -fr junkApp</pre>
+</pre>
 
 <h3>Copy all *App and iocBoot directories and files to the new &lt;top&gt;
 directory</h3>
@@ -49,7 +50,7 @@ If sequence programs (*.st or *.stt files) exist in your application, add the
 SNCSEQ location definition for the R3.14 seq external module</p>
 
 <p><tt>SNCSEQ =&lt;full path to seq module top&gt;</tt></p>
-The R3.14 seq module must exist and be built with EPICS base R3.14.1
+The R3.14 seq module must exist and be built with EPICS base R3.14.2
 
 <h3>Modify the Makefiles in &lt;top&gt;/*App directories.</h3>
 
@@ -82,9 +83,12 @@ $(TOP)/configure/RULES"</tt></p>
 <p>This is the hardest step. The definitions in Makefile.Host and Makefile.Vx
 must be manually converted to the new configure definitions.</p>
 
-<p>First replace Makefile with a template Makefile from base.</p>
+<p>First replace Makefile with the Makefile from junkApp/src.</p>
 <pre>rm Makefile
-cp &lt;base&gt;/templates/makeBaseApp/top/exampleApp/src/Makefile .</pre>
+cp ../../junkApp/src/Makefile .</pre>
+
+<p>We can remove the junkApp now.</p>
+<pre>/bin/rm -fr ../../junkApp</pre>
 
 <p>This new Make file  has comments explaining how to build the various host
 and ioc products. Lets consider some examples</p>
@@ -93,12 +97,15 @@ and ioc products. Lets consider some examples</p>
     <p>Makefile.Host contains definitions like:</p>
     <pre>PROD += caExample
 caExample_SRCS += caExample.c
+PROD_LIBS +=  ca Db Com
+ca_DIR  = $(EPICS_BASE_LIB)
+Db_DIR  = $(EPICS_BASE_LIB)
+Com_DIR = $(EPICS_BASE_LIB)
       </pre>
     <p>In Makefile these are:</p>
     <pre>PROD_HOST += caExample
 caExample_SRCS += caExample.c
-caExample_LIBS += ca
-caExample_LIBS += Com
+caExample_LIBS += $(EPICS_BASE_HOST_LIBS)
       </pre>
   </li>
   <li>Record Support - generate xxxRecord.h file
@@ -135,32 +142,24 @@ LIBNAME = exampleLib
 INSTALLS += iocCore seq
       </pre>
     <p>In Makefile these become:</p>
-    <pre>PROD_IOC_vxWorks = example
-example_SRCS += xxxRecord.c
-example_SRCS += devXxxSoft.c
-example_SRSC += sncExample.stt
+<pre>
+LIBRARY_vxWorks += exampleIoc
+exampleIoc_SRCS += xxxRecord.c
+exampleIoc_SRCS += devXxxSoft.c
+exampleIoc_LIBS += $(EPICS_BASE_IOC_LIBS)
+
+PROD_IOC_vxWorks = example
+example_SRCS += sncExample.stt
+example_LIBS += exampleIoc
+example_LIBS += seq pv
+example_LIBS += $(EPICS_BASE_IOC_LIBS)
+
+# example_registerRecordDeviceDriver.cpp will be created from example.dbd
 example_SRCS += example_registerRecordDeviceDriver.cpp
+
+#The following adds support from base/src/vxWorks
 example_OBJS_vxWorks += $(EPICS_BASE_BIN)/vxComLibrary
 
-#The following are for sequence programs
-example_LIBS += seq
-example_LIBS += pv
-seq_DIR = $(SNCSEQ_LIB)
-pv_DIR = $(SNCSEQ_LIB)
-
-example_LIBS += recIoc
-example_LIBS += softDevIoc
-example_LIBS += testDevIoc
-example_LIBS += iocsh
-example_LIBS += miscIoc
-example_LIBS += rsrvIoc
-example_LIBS += dbtoolsIoc
-example_LIBS += asIoc
-example_LIBS += dbIoc
-example_LIBS += registryIoc
-example_LIBS += dbStaticIoc
-example_LIBS += ca
-example_LIBS += Com
       </pre>
   </li>
 </ul>

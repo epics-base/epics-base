@@ -37,7 +37,7 @@ netSubscription::netSubscription (
         unsigned maskIn, cacStateNotify & notifyIn ) :
     count ( countIn ), privateChanForIO ( chanIn ),
     notify ( notifyIn ), type ( typeIn ), mask ( maskIn ),
-    updateWhileDisconnected ( false ), subscribed ( false )
+    subscribed ( false )
 {
     if ( ! dbr_type_is_valid ( typeIn ) ) {
         throw cacChannel::badType ();
@@ -80,12 +80,6 @@ void netSubscription::show (
 void netSubscription::completion ( 
     epicsGuard < epicsMutex > & guard, cacRecycle & )
 {
-    if ( this->privateChanForIO.connected ( guard )  ) {
-        this->updateWhileDisconnected = false;
-    }
-    else {
-        this->updateWhileDisconnected = true;
-    }
     errlogPrintf ( "subscription update w/o data ?\n" );
 }
 
@@ -106,12 +100,8 @@ void netSubscription::exception (
     else {
         // guard.assertIdenticalMutex ( this->mutex );
         if ( this->privateChanForIO.connected ( guard )  ) {
-            this->updateWhileDisconnected = false;
             this->notify.exception ( 
                 guard, status, pContext, UINT_MAX, 0 );
-        }
-        else {
-            this->updateWhileDisconnected = true;
         }
     }
 }
@@ -134,12 +124,8 @@ void netSubscription::exception (
     else {
         //guard.assertIdenticalMutex ( this->mutex );
         if ( this->privateChanForIO.connected ( guard ) ) {
-            this->updateWhileDisconnected = false;
             this->notify.exception ( 
                 guard, status, pContext, typeIn, countIn );
-        }
-        else {
-            this->updateWhileDisconnected = true;
         }
     }
 }
@@ -151,12 +137,8 @@ void netSubscription::completion (
 {
     // guard.assertIdenticalMutex ( this->mutex );
     if ( this->privateChanForIO.connected ( guard )  ) {
-        this->updateWhileDisconnected = false;
         this->notify.current ( 
             guard, typeIn, countIn, pDataIn );
-    }
-    else {
-        this->updateWhileDisconnected = true;
     }
 }
 
@@ -180,14 +162,11 @@ void netSubscription::unsubscribeIfRequired (
     }
 }
 
-void netSubscription::subscriptionUpdateIfRequired (
+void netSubscription::forceSubscriptionUpdate (
     epicsGuard < epicsMutex > & guard, nciu & chan )
 {
-    if ( this->updateWhileDisconnected ) {
-        chan.getPIIU(guard)->subscriptionUpdateRequest ( 
-            guard, chan, *this );
-        this->updateWhileDisconnected = false;
-    }
+    chan.getPIIU(guard)->subscriptionUpdateRequest ( 
+        guard, chan, *this );
 }
 
 void * netSubscription::operator new ( size_t ) // X aCC 361

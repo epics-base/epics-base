@@ -111,6 +111,11 @@ class netSubscription * netWriteNotifyIO::isSubscription ()
     return 0;
 }
 
+void netWriteNotifyIO::forceSubscriptionUpdate (
+    epicsGuard < epicsMutex > &, nciu & )
+{
+}
+
 void * netWriteNotifyIO::operator new ( size_t ) // X aCC 361
 {
     // The HPUX compiler seems to require this even though no code

@@ -61,6 +61,8 @@ public:
         epicsGuard < epicsMutex > &, cacRecycle &,
         unsigned type, arrayElementCount count, 
         const void * pData ) = 0;
+    virtual void forceSubscriptionUpdate (
+        epicsGuard < epicsMutex > & guard, nciu & chan ) = 0;
     virtual class netSubscription * isSubscription () = 0;
     virtual void show ( 
         unsigned level ) const = 0;
@@ -91,8 +93,6 @@ public:
         epicsGuard < epicsMutex > & guard, nciu & chan );
     void unsubscribeIfRequired ( 
         epicsGuard < epicsMutex > & guard, nciu & chan );
-    void subscriptionUpdateIfRequired (
-        epicsGuard < epicsMutex > &, nciu & );
 protected:
     netSubscription ( 
         class privateInterfaceForIO &, unsigned type, 
@@ -105,7 +105,6 @@ private:
     cacStateNotify & notify;
     const unsigned type;
     const unsigned mask;
-    bool updateWhileDisconnected;
     bool subscribed;
     class netSubscription * isSubscription ();
     void * operator new ( size_t );
@@ -128,6 +127,8 @@ private:
         epicsGuard < epicsMutex > &, cacRecycle &,
         int status, const char * pContext, unsigned type, 
         arrayElementCount count );
+    void forceSubscriptionUpdate (
+        epicsGuard < epicsMutex > & guard, nciu & chan );
     netSubscription ( const netSubscription & );
     netSubscription & operator = ( const netSubscription & );
 };
@@ -169,6 +170,8 @@ private:
         int status, const char * pContext, 
         unsigned type, arrayElementCount count );
     class netSubscription * isSubscription ();
+    void forceSubscriptionUpdate (
+        epicsGuard < epicsMutex > & guard, nciu & chan );
     netReadNotifyIO ( const netReadNotifyIO & );
     netReadNotifyIO & operator = ( const netReadNotifyIO & );
 };
@@ -210,6 +213,8 @@ private:
         epicsGuard < epicsMutex > &, cacRecycle &,
         int status, const char * pContext, unsigned type, 
         arrayElementCount count );
+    void forceSubscriptionUpdate (
+        epicsGuard < epicsMutex > & guard, nciu & chan );
     netWriteNotifyIO ( const netWriteNotifyIO & );
     netWriteNotifyIO & operator = ( const netWriteNotifyIO & );
 };

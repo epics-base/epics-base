@@ -29,5 +29,11 @@ baseNMIU::~baseNMIU ()
 {
 }
 
+void baseNMIU::forceSubscriptionUpdate (
+        epicsGuard < epicsMutex > & guard, nciu & chan )
+{
+}
+
+
 
 

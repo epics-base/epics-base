@@ -33,6 +33,9 @@
  * .01 joh 081591	Added epics env config
  * .02 joh 011995	Allow stdio also	
  * $Log$
+ * Revision 1.17  1998/01/20 21:29:13  mrk
+ * Change for new errlog implementation
+ *
  * Revision 1.16  1997/06/25 06:12:49  jhill
  * added diagnostic
  *
@@ -52,7 +55,6 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdio.h>
-#include <assert.h>
 
 #include <socket.h>
 #include <in.h>

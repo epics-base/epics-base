@@ -1,238 +1,16 @@
 /* $Id$	*/
-/************************************************************************/
-/*									*/
-/*	        	      L O S  A L A M O S			*/
-/*		        Los Alamos National Laboratory			*/
-/*		         Los Alamos, New Mexico 87545			*/
-/*									*/
-/*	Copyright, 1986, The Regents of the University of California.	*/
-/*									*/
-/*	Author: Jeffrey O. Hill						*/
-/*									*/
-/*	History								*/
-/*	-------								*/
-/*									*/
-/*	Date	Person	Comments					*/
-/*	----	------	--------					*/
-/*	8/87	joh	Init Release					*/
-/*	1/90	joh	switched order in task exit			*/
-/*			so events are deleted first then closed		*/
-/*	3/90	joh	Changed error message strings			*/
-/*			to allocate in this module only			*/
-/*			& further improved vx task exit			*/
-/*	021291 	joh 	fixed potential problem with strncpy and 	*/
-/*			the vxWorks task name.				*/
-/*	022291 	joh	read sync not incremented when conn is down	*/
-/*	030791	joh	vx lcl event buf free prior to first alloc fix	*/
-/*	030791	joh	made lcl buffer safe in ca_event_handler()	*/
-/*	031291	joh	added DBR_LONG to ca_put, made UNIX and vxWorks	*/
-/*			ca_put less sensitive to future data type 	*/
-/*			additions, added better string bounds checking	*/
-/*	060591	joh	delinting					*/
-/*	061391	joh	RISC alignment in outgoing messages		*/
-/*	070191	joh	always use memcpy in ca_put			*/
-/*	071291	joh	added CLAIM_CIU message				*/
-/*	072391	joh	added event locking for vxWorks			*/
-/*	072591	joh	quick POLL in ca_pend_io() should return 	*/
-/*			ECA_NORMAL not ECA_TIMEOUT if pend count == 0	*/
-/*	082391	joh	check for connection down when reissuing	*/
-/*			monitors					*/
-/*	090991	joh	converted to v5 vxWorks				*/
-/*	092691	joh	check for connection down when inserting msg	*/
-/*	111891	joh	better test for ca_pend during an event routine	*/
-/*			under vxWorks					*/
-/*	111991	joh	dont decr the pend recv count if connected 	*/
-/*			before and they are adding a connection handler */
-/*			prior to connecting				*/
-/* 	111991	joh	selective activation of LOCK with CLRPENDRECV	*/
-/*			prevents double LOCK under vxWorks		*/
-/*	020392	joh	added calls to taskVarGetPatch to bypass	*/
-/*			v5 vxWorks bug.					*/
-/*	021392 	joh	dont zero ca_static in the exit handler under	*/
-/*			vxWorks since vxWorks may run the exit handler	*/
-/*			in the context of another task which has a	*/
-/*			valid ca_static of its own.			*/
-/*	022692	joh	Use channel state enum to determine if I need	*/
-/*			to send channel clear message to the IOC 	*/
-/*			instead of the IOC in use conn up flag		*/
-/*	031292 	joh	clear pend recv cnt even if its a poll in	*/
-/*			ca_pend_io()					*/
-/*	031892 	joh	initial broadcast retry delay is now a #define	*/
-/*	032092	joh	dont allow them to add an event which does not	*/
-/*			select anything (has a nill mask)		*/
-/*	041492	joh	Use channel state enum to determine if I need	*/
-/*			to send monitor clear message to the IOC 	*/
-/*			instead of the IOC in use conn up flag		*/
-/*			(did the same thing to the tests in 		*/
-/*			issue_get_callback() & request_event())		*/
-/*	041492	joh	fixed bug introduced by 022692 when the chan	*/
-/*			state enum was used after it was set to		*/
-/*			cs_closed					*/
-/*	042892	joh	no longer checks the status from free() as	*/
-/*			this varies from OS to OS			*/
-/*	050492	joh	batch up flow control messages by setting a	*/
-/*			send_needed flag				*/
-/*	060392	joh	added ca_host_name()				*/
-/*	072792	joh	better messages					*/
-/*	072792	joh	wrote ca_test_io()				*/
-/*	102992	joh	I notice that the vxWorks FP task option cant 	*/
-/*			be modified after task creation so CA now wont	*/
-/*			init if the task does not have the FP opt set	*/ 
-/*	111892	joh	handle the case where no broadcast interface	*/
-/*			is available better				*/
-/*	111992	joh	added new arg to db_start_events() call		*/
-/*	120992	joh	switched to dll list routines			*/
-/*	122192	joh	increment outstanding ack count			*/
-/*	050593	joh	dont enable deadlock prevention if we are in	*/
-/*			post message					*/
-/*	070293	joh	set ca_static to nill at the end of		*/
-/*			ca_process_exit() under all os and not just	*/
-/*			vxWorks						*/
-/*	120293	joh	flush in ca_pend_io() if no IO oustanding	*/
-/*	121693	joh	fixed bucketLib level memory leak		*/
-/*	011394	joh	fixed bucketLib level memory leak (vxWorks)	*/
-/*	020494	joh	Added user name protocol			*/
-/*      022294  joh     fixed recv task id verify at exit (vxWorks)     */
-/*      072895  joh     fixed problem resulting from unsigned long 	*/
-/*			tv_sec var in struct timeval in sys/time.h	*/
-/*			under HPUX					*/
-/************************************************************************/
 /*
- * $Log$
- * Revision 1.108  1999/02/11 23:44:15  jhill
- * fixed ca_put() for 64 bit machines
  *
- * Revision 1.107  1998/10/27 00:43:27  jhill
- * eliminated warning
+ *	        	      L O S  A L A M O S
+ *		        Los Alamos National Laboratory
+ *		         Los Alamos, New Mexico 87545
  *
- * Revision 1.106  1998/09/25 00:20:56  jhill
- * fixed warnings
+ *	Copyright, 1986, The Regents of the University of California.
  *
- * Revision 1.105  1998/09/24 21:10:38  jhill
- * o test routine added
- * o allow large PV names
- *
- * Revision 1.104  1998/06/16 00:24:26  jhill
- * avoid purify warning
- *
- * Revision 1.103  1998/04/23 01:04:05  jhill
- * fixed overzelous chan check in ca_clear_channel() - when the PV is local under vxWorks
- *
- * Revision 1.102  1998/04/13 19:14:33  jhill
- * fixed task variable problem
- *
- * Revision 1.101  1998/03/12 20:39:05  jhill
- * fixed problem where 3.13.beta11 unable to connect to 3.11 with correct native type
- *
- * Revision 1.100  1998/02/05 21:55:49  jhill
- * detect attempts by user to clear bogus channel
- *
- * Revision 1.98  1997/08/04 22:54:28  jhill
- * mutex clean up
- *
- * Revision 1.96  1997/06/13 16:57:38  jhill
- * fixed warning
- *
- * Revision 1.95  1997/06/13 09:14:06  jhill
- * connect/search proto changes
- *
- * Revision 1.94  1997/05/05 04:40:29  jhill
- * send_needed replaced by pushPending flag
- *
- * Revision 1.93  1997/04/29 06:05:57  jhill
- * use free list
- *
- * Revision 1.92  1997/04/23 17:04:57  jhill
- * pc port changes
- *
- * Revision 1.91  1997/04/10 19:26:01  jhill
- * asynch connect, faster connect, ...
- *
- * Revision 1.90  1997/01/22 21:06:30  jhill
- * use genLocalExcepWFL for generateLocalExceptionWithFileAndLine
- *
- * Revision 1.89  1997/01/10 21:02:10  jhill
- * host/user name set is now a NOOP
- *
- * Revision 1.88  1996/11/22 19:05:48  jhill
- * added const to build and connect API
- *
- * Revision 1.87  1996/11/02 00:50:30  jhill
- * many pc port, const in API, and other changes
- *
- * Revision 1.86  1996/09/16 16:41:47  jhill
- * local except => except handler & ca vers str routine
- *
- * Revision 1.85  1996/09/04 20:02:00  jhill
- * test for non-nill piiu under vxWorks
- *
- * Revision 1.84  1996/07/10 23:30:09  jhill
- * fixed GNU warnings
- *
- * Revision 1.83  1996/07/09 22:43:29  jhill
- * silence gcc warnings and default CLOCKS_PER_SEC if it isnt defined (for sunos4 and gcc)
- *
- * Revision 1.82  1996/06/19 17:58:59  jhill
- * many 3.13 beta changes
- *
- * Revision 1.81  1995/12/19  19:28:11  jhill
- * Dont check the array element count when they add the event (just clip it)
- *
- * Revision 1.80  1995/10/18  16:49:23  jhill
- * recv task is now running at a lower priority than the send task under vxWorks
- *
- * Revision 1.79  1995/10/12  01:30:10  jhill
- * new ca_flush_io() mechanism prevents deadlock when they call
- * ca_flush_io() from within an event routine. Also forces early
- * transmission of leading search UDP frames.
- *
- * Revision 1.78  1995/09/29  21:47:33  jhill
- * alignment fix for SPARC IOC client and changes to prevent running of
- * access rights or connection handlers when the connection is lost just
- * after deleting a channel
- *
- * Revision 1.77  1995/09/01  14:31:32  mrk
- * Fixed bug causing memory problem
- *
- * Revision 1.76  1995/08/23  00:34:06  jhill
- * fixed vxWorks specific SPARC data alignment problem
- *
- * Revision 1.75  1995/08/22  00:15:19  jhill
- * Use 1.0/USEC_PER_SEC and not 1.0e-6
- * Check for S_db_Pending when calling dbPutNotify()
- *
- * Revision 1.74  1995/08/22  00:12:07  jhill
- * *** empty log message ***
- *
- * Revision 1.73  1995/08/14  19:26:10  jhill
- * epicsAPI => epicsShareAPI
- *
- * Revision 1.72  1995/08/12  00:23:32  jhill
- * check for res id in use, epicsEntry, dont wait for itsy bitsy delay
- * in ca_pend_event(), better clean up when monitor is deleted and
- * we are disconnected
+ *	Author: Jeffrey O. Hill
  *
  */
-/*_begin								*/
-/************************************************************************/
-/*									*/
-/*	Title:	IOC high level access routines				*/
-/*	File:	access.c						*/
-/*									*/
-/*									*/
-/*	Purpose								*/
-/*	-------								*/
-/*									*/
-/*	ioc high level access routines					*/
-/*									*/
-/*									*/
-/*	Special comments						*/
-/*	------- --------						*/
-/*	Things that could be done to improve this code			*/
-/*	1)	Allow them to recv channel A when channel B changes	*/
-/*									*/
-/************************************************************************/
-/*_end									*/
+
 
 static char *sccsId = "@(#) $Id$";
 
@@ -261,16 +39,12 @@ static char *sccsId = "@(#) $Id$";
 #include 	"dbEvent.h"
 #endif
 
-
 /****************************************************************/
 /*	Macros for syncing message insertion into send buffer	*/
 /****************************************************************/
 #define EXTMSGPTR(PIIU)\
  	((caHdr *) &(PIIU)->send.buf[(PIIU)->send.wtix])
 
-
-
-
 /****************************************************************/
 /*	Macros for error checking				*/
 /****************************************************************/
@@ -357,7 +131,6 @@ LOCAL miu caIOBlockCreate(void);
 
 LOCAL int check_a_dbr_string(const char *pStr, const unsigned count);
 
-
 /*
  *
  * 	cac_push_msg()
@@ -446,7 +219,7 @@ const void		*pext
 			}
 
 			LD_CA_TIME (cac_fetch_poll_period(), &itimeout);
-			cac_mux_io (&itimeout);
+			cac_mux_io (&itimeout, FALSE);
 
 			LOCK;
 
@@ -504,7 +277,6 @@ const void		*pext
 	return ECA_NORMAL;
 }
 
-
 /*
  *
  * 	cac_push_msg_no_block()
@@ -603,7 +375,6 @@ const void		*pext)
 	return ECA_NORMAL;
 }
 
-
 /*
  *
  * 	cac_alloc_msg_no_flush()
@@ -653,7 +424,6 @@ caHdr			**ppMsg
 	return ECA_NORMAL;
 }
 
-
 /*
  * cac_add_msg ()
  */
@@ -674,7 +444,6 @@ LOCAL void cac_add_msg (IIU *piiu)
 		sizeof(caHdr) + size); 
 }
 
-
 /*
  *	ca_os_independent_init ()
  */
@@ -712,11 +481,12 @@ int ca_os_independent_init (void)
 	 * init broadcasted search counters
 	 * (current time must be initialized before calling this)
 	 */
+    ca_static->ca_search_tries_congest_thresh = UINT_MAX;
 	ca_static->ca_search_responses = 0u;
 	ca_static->ca_search_tries = 0u;
 	ca_static->ca_search_retry_seq_no = 0u;
 	ca_static->ca_seq_no_at_list_begin = 0u;
-	ca_static->ca_frames_per_try = TRIESPERFRAME;
+	ca_static->ca_frames_per_try = INITIALTRIESPERFRAME;
 	ca_static->ca_conn_next_retry = ca_static->currentTime;
 	cacSetRetryInterval (0u);
 
@@ -771,7 +541,6 @@ int ca_os_independent_init (void)
 	return ECA_NORMAL;
 }
 
-
 /*
  * create_udp_fd
  */
@@ -833,7 +602,6 @@ void cac_create_udp_fd()
 #endif
 }
 
-
 /*
  * CA_MODIFY_HOST_NAME()
  *
@@ -847,8 +615,6 @@ int epicsShareAPI ca_modify_host_name(const char *pHostName)
 	return ECA_NORMAL;
 }
 
-
-
 /*
  * CA_MODIFY_USER_NAME()
  *
@@ -863,7 +629,6 @@ int epicsShareAPI ca_modify_user_name(const char *pClientName)
 }
 
 
-
 /*
  *
  *	CA_TASK_EXIT_TID() / CA_PROCESS_EXIT()
@@ -992,7 +757,6 @@ void ca_process_exit()
 	UNLOCK;
 }
 
-
 /*
  *
  *      CA_BUILD_AND_CONNECT
@@ -1017,8 +781,6 @@ void *puser
         return ca_search_and_connect(name_str,chixptr,conn_func,puser);
 }
  
-
-
 /*
  *	ca_search_and_connect()	
  */
@@ -1175,7 +937,6 @@ int epicsShareAPI ca_search_and_connect
 	return ECA_NORMAL;
 }
 
-
 /*
  * SEARCH_MSG()
  */
@@ -1242,8 +1003,6 @@ int	reply_type
 	return ECA_NORMAL;
 }
 
-
-
 /*
  * CA_ARRAY_GET()
  * 
@@ -1328,8 +1087,6 @@ void 		*pvalue
 	return status;
 }
 
-
-
 /*
  * CA_ARRAY_GET_CALLBACK()
  */
@@ -1410,7 +1167,6 @@ const void *arg
 	return status;
 }
 
-
 /*
  * caIOBlockCreate()
  */
@@ -1443,7 +1199,6 @@ LOCAL miu caIOBlockCreate(void)
 	return pIOBlock;
 }
 
-
 /*
  * caIOBlockFree()
  */
@@ -1461,7 +1216,6 @@ void caIOBlockFree(miu pIOBlock)
 	UNLOCK;
 }
 
-
 /*
  * Free all io blocks on the list attached to the specified channel
  */
@@ -1501,7 +1255,6 @@ int 	status)
 	}
 }
 
-
 /*
  *
  *	ISSUE_GET_CALLBACK()
@@ -1548,7 +1301,6 @@ LOCAL int issue_get_callback(evid monix, ca_uint16_t cmmd)
 	return status;
 }
 
-
 /*
  *	CA_ARRAY_PUT_CALLBACK()
  *
@@ -1725,7 +1477,6 @@ const void			*usrarg
   	return status;
 }
 
-
 /*
  * 	CA_PUT_NOTIFY_ACTION
  */
@@ -1773,8 +1524,6 @@ LOCAL void ca_put_notify_action(PUTNOTIFY *ppn)
 }
 #endif /*vxWorks*/
 
-
-
 /*
  *	CA_ARRAY_PUT()
  *
@@ -1861,8 +1610,6 @@ LOCAL int check_a_dbr_string(const char *pStr, const unsigned count)
 	return ECA_NORMAL;
 }
 
-
-
 /*
  * issue_ca_array_put()
  */
@@ -1980,7 +1727,6 @@ const void	*pvalue
   	return status;
 }
 
-
 /*
  * malloc_put_convert()
  */
@@ -2016,7 +1762,6 @@ LOCAL void *malloc_put_convert(unsigned long size)
 }
 #endif /* CONVERSION_REQUIRED */
 
-
 /*
  * free_put_convert()
  */
@@ -2037,7 +1782,6 @@ LOCAL void free_put_convert(void *pBuf)
 }
 #endif /* CONVERSION_REQUIRED */
 
-
 /*
  *	Specify an event subroutine to be run for connection events
  *
@@ -2071,7 +1815,6 @@ void 		(*pfunc)(struct connection_handler_args)
   	return ECA_NORMAL;
 }
 
-
 /*
  * ca_replace_access_rights_event
  */
@@ -2099,7 +1842,6 @@ void    (*pfunc)(struct access_rights_handler_args))
   	return ECA_NORMAL;
 }
 
-
 /*
  *	Specify an event subroutine to be run for asynch exceptions
  *
@@ -2126,7 +1868,6 @@ int epicsShareAPI ca_add_exception_event
   	return ECA_NORMAL;
 }
 
-
 /*
  *	CA_ADD_MASKED_ARRAY_EVENT
  *
@@ -2276,7 +2017,6 @@ long		mask
 	}
 }
 
-
 /*
  *	CA_REQUEST_EVENT()
  */
@@ -2335,7 +2075,6 @@ int ca_request_event(evid monix)
 	return status;
 }
 
-
 /*
  *
  *	CA_EVENT_HANDLER()
@@ -2478,8 +2217,6 @@ db_field_log	*pfl
 }
 #endif
 
-
-
 /*
  *
  *	CA_CLEAR_EVENT(MONIX)
@@ -2579,7 +2316,6 @@ int epicsShareAPI ca_clear_event (evid monix)
 	return status;
 }
 
-
 /*
  *
  *	CA_CLEAR_CHANNEL(CHID)
@@ -2725,7 +2461,6 @@ int epicsShareAPI ca_clear_channel (chid pChan)
 	return status;
 }
 
-
 /*
  * ca_cidToChid()
  */
@@ -2734,7 +2469,6 @@ chid epicsShareAPI ca_cidToChid(unsigned id)
 	return (chid) bucketLookupItemUnsignedId(ca_static->ca_pSlowBucket, &id);
 }
 
-
 /*
  * clearChannelResources()
  */
@@ -2780,7 +2514,6 @@ void clearChannelResources(unsigned id)
 }
 
 
-
 /************************************************************************/
 /*	This routine pends waiting for channel events and calls the 	*/
 /*	timeout is specified as 0 infinite timeout is assumed.		*/
@@ -2815,7 +2548,7 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 		 * force the flush
 		 */
 		CLR_CA_TIME (&tmo);
-		cac_mux_io(&tmo);
+		cac_mux_io(&tmo, TRUE);
         	return ECA_NORMAL;
 	}
 
@@ -2824,7 +2557,7 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 		 * force the flush
 		 */
 		CLR_CA_TIME (&tmo);
-		cac_mux_io(&tmo);
+		cac_mux_io(&tmo, TRUE);
 		return ECA_TIMEOUT;
 	}
 
@@ -2838,7 +2571,7 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 			 * force the flush
 			 */
 			CLR_CA_TIME (&tmo);
-			cac_mux_io(&tmo);
+			cac_mux_io(&tmo, TRUE);
         	return ECA_NORMAL;
 		}
     	if(timeout == 0.0){
@@ -2917,7 +2650,6 @@ double cac_fetch_poll_period(void)
 	}
 }
 
-
 /*
  * cac_time_diff()
  */
@@ -2961,7 +2693,6 @@ ca_real cac_time_diff (ca_time *pTVA, ca_time *pTVB)
 	return delay;
 }
 
-
 /*
  * cac_time_sum()
  */
@@ -3034,8 +2765,6 @@ LOCAL void ca_pend_io_cleanup()
 	pndrecvcnt = 0u;
 }
 
-
-
 /*
  *	CA_FLUSH_IO()
  * 	reprocess connection state and
@@ -3053,12 +2782,11 @@ int epicsShareAPI ca_flush_io()
 	 */
 	ca_static->ca_flush_pending = TRUE;
 	CLR_CA_TIME (&timeout);
-	cac_mux_io (&timeout);
+	cac_mux_io (&timeout, TRUE);
 
   	return ECA_NORMAL;
 }
 
-
 /*
  *	CA_TEST_IO ()
  *
@@ -3073,7 +2801,6 @@ int epicsShareAPI ca_test_io()
 	}
 }
 
-
 /*
  * genLocalExcepWFL ()
  * (generate local exception with file and line number)
@@ -3105,7 +2832,6 @@ void genLocalExcepWFL (long stat, char *ctx, char *pFile, unsigned lineNo)
 	UNLOCK;
 }
 
-
 /*
  *	CA_SIGNAL()
  */
@@ -3114,7 +2840,6 @@ void epicsShareAPI ca_signal(long ca_status, const char *message)
 	ca_signal_with_file_and_lineno(ca_status, message, NULL, 0);
 }
 
-
 /*
  * ca_message (long ca_status)
  *
@@ -3139,7 +2864,6 @@ READONLY char * epicsShareAPI ca_message (long ca_status)
 	}
 }
 
-
 /*
  * ca_signal_with_file_and_lineno()
  */
@@ -3202,9 +2926,6 @@ int		lineno)
 }
 
 
-
-
-
 /*
  *	CA_BUSY_MSG()
  *
@@ -3235,7 +2956,6 @@ int ca_busy_message(struct ioc_in_use *piiu)
 	return status;
 }
 
-
 /*
  * CA_READY_MSG()
  * 
@@ -3266,7 +2986,6 @@ int ca_ready_message(struct ioc_in_use *piiu)
 	return status;
 }
 
-
 /*
  *
  * echo_request (lock must be on)
@@ -3300,7 +3019,6 @@ int echo_request(struct ioc_in_use *piiu, ca_time *pCurrentTime)
 	return status;
 }
 
-
 /*
  *
  * NOOP_MSG (lock must be on)
@@ -3324,7 +3042,6 @@ void noop_msg(struct ioc_in_use *piiu)
 	}
 }
 
-
 /*
  * ISSUE_IOC_HOST_NAME
  * (lock must be on)
@@ -3370,7 +3087,6 @@ void issue_client_host_name(struct ioc_in_use *piiu)
 	return;
 }
 
-
 /*
  * ISSUE_IDENTIFY_CLIENT (lock must be on)
  * 
@@ -3415,7 +3131,6 @@ void issue_identify_client(struct ioc_in_use *piiu)
 	return;
 }
 
-
 /*
  * ISSUE_CLAIM_CHANNEL 
  */
@@ -3508,7 +3223,6 @@ int issue_claim_channel (chid pchan)
 	return status;
 }
 
-
 /*
  *
  *	Default Exception Handler
@@ -3540,8 +3254,6 @@ LOCAL void ca_default_exception_handler(struct exception_handler_args args)
 	UNLOCK;
 }
 
-
-
 /*
  *	CA_ADD_FD_REGISTRATION
  *
@@ -3554,18 +3266,12 @@ int epicsShareAPI ca_add_fd_registration(CAFDHANDLER *func, const void *arg)
 {
 	INITCHK;
 
-	/*
-	 * external API is currently not allowed to know
-	 * about the abstract socket type
-	 */
-	fd_register_func = (void (*)(void *, SOCKET,int)) func;
+	fd_register_func = func;
 	fd_register_arg = arg;
 
   	return ECA_NORMAL;
 }
 
-
-
 /*
  *	CA_DEFUNCT
  *
@@ -3578,7 +3284,6 @@ int ca_defunct()
 	return ECA_DEFUNCT;
 }
 
-
 /*
  *	CA_HOST_NAME_FUNCTION()	
  *
@@ -3599,7 +3304,6 @@ READONLY char * epicsShareAPI ca_host_name_function(chid chix)
 	return piiu->host_name_str;
 }
 
-
 /*
  * ca_v42_ok(chid chan)
  */
@@ -3617,7 +3321,6 @@ int epicsShareAPI ca_v42_ok(chid chan)
 	return v42;
 }
 
-
 /*
  * ca_version()
  * function that returns the CA version string
@@ -3627,7 +3330,6 @@ READONLY char * epicsShareAPI ca_version()
 	return CA_VERSION_STRING; 
 }
 
-
 /*
  *
  * 	CA_CHANNEL_STATUS
@@ -3686,7 +3388,6 @@ int ca_channel_status(int tid)
 }
 #endif /*vxWorks*/
 
-
 /*
  * ca_replace_printf_handler ()
  */
@@ -3709,7 +3410,6 @@ int (*ca_printf_func)(const char *pformat, va_list args)
 	return ECA_NORMAL;
 }
 
-
 /*
  *      ca_printf()
  */

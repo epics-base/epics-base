@@ -9,13 +9,15 @@ include $(TOP)/configure/CONFIG
 #DB_OPT = YES
 
 #----------------------------------------------------
-# Add databases, templates, substitutions like this
+# Create and install (or just install)
+# databases, templates, substitutions like this
 #DB += _APPNAME_.db
 
 #----------------------------------------------------
-# Declare template files which do not show up in DB
-#USES_TEMPLATE += _APPNAME_.template
+# If <anyname>.db template is not named <anyname>*.template add
+# <anyname>_template = <templatename>
 
 include $(TOP)/configure/RULES
 #----------------------------------------
 #  ADD RULES AFTER THIS LINE
+

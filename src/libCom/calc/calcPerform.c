@@ -68,7 +68,10 @@
  * .32  12-11-92	mrk	Removed include for stdioLib.h
  * .33  08-04-93	mgb	Removed V5/V4 and EPICS_V2 conditionals
  * .34  05-11-94	jba	Added support for CONST_PI, CONST_D2R, and CONST_R2D
->
+ * .34  08-18-94	jba	Must skip over constant when looking for COND_END,COND_ELSE
+
+  $Log%
+
  */
 
 /* This module contains the code for processing the arithmetic
@@ -136,6 +139,15 @@ char   *post;
 	/* initialize flag  */
 	cond_flag = NOT_SET;
 	pstacktop = &stack[0];
+
+/* DEBUG print statements
+for (i=0;i<184;i++){
+printf ("%d_",post[i]);
+if ( post[i] == -1 ) break;
+if ( post[i] == 71 ) i=i+8;
+}
+printf ("*FINISHED*\n");
+*/
 
 	/* set post to postfix expression in calc structure */
 	top = pstacktop;
@@ -246,8 +258,9 @@ char   *post;
 			if (*pstacktop == 0.0) {
 				/* skip to matching COND_ELSE */
 				for (got_if=1; got_if>0 && *(post+1) != END_STACK; ++post) {
-					if (*(post+1) == COND_IF  ) got_if++;
-					if (*(post+1) == COND_ELSE) got_if--;
+					if (*(post+1) == CONSTANT  ) post+=8;
+					else if (*(post+1) == COND_IF  ) got_if++;
+					else if (*(post+1) == COND_ELSE) got_if--;
 				}
 			}
 			/* remove condition from stack top */
@@ -258,8 +271,9 @@ char   *post;
 			/* result, true condition is on stack so skip false condition  */
 			/* skip to matching COND_END */
 			for (got_if=1; got_if>0 && *(post+1) != END_STACK; ++post) {
-				if (*(post+1) == COND_IF ) got_if++;
-				if (*(post+1) == COND_END) got_if--;
+				if (*(post+1) == CONSTANT  ) post+=8;
+				else if (*(post+1) == COND_IF ) got_if++;
+				else if (*(post+1) == COND_END) got_if--;
 			}
 			break;
 

@@ -50,7 +50,7 @@ epicsTimerForC::~epicsTimerForC ()
 
 void epicsTimerForC::destroy ()
 {
-    timerQueue & queueTmp ( this->queue );
+    timerQueue & queueTmp = this->queue;
     this->~epicsTimerForC ();
     queueTmp.timerForCFreeList.release ( this );
 }

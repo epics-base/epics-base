@@ -47,7 +47,7 @@ timer::~timer ()
 
 void timer::destroy () 
 {
-    timerQueue & queueTmp ( this->queue );
+    timerQueue & queueTmp = this->queue;
     this->~timer ();
     queueTmp.timerFreeList.release ( this );
 }

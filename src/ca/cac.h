@@ -189,7 +189,7 @@ public:
     static unsigned highestPriorityLevelBelow ( unsigned priority );
     void initiateAbortShutdown ( tcpiiu & );
     void disconnectNotify ( tcpiiu & );
-    void uninstallIIU ( epicsGuard < callbackMutex > &, tcpiiu & iiu ); 
+    void destroyIIU ( tcpiiu & iiu ); 
 
 private:
     localHostName hostNameCache;
@@ -213,6 +213,9 @@ private:
     resTable < bhe, inetAddrID > beaconTable;
     resTable < tcpiiu, caServerID > serverTable;
     tsDLList < tcpiiu > serverList;
+    tsFreeList 
+        < class tcpiiu, 32, epicsMutexNOOP > 
+            freeListVirtualCircuit;
     tsFreeList 
         < class netReadNotifyIO, 1024, epicsMutexNOOP > 
             freeListReadNotifyIO;

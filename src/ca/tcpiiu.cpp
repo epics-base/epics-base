@@ -151,15 +151,9 @@ void tcpSendThread::run ()
     }
 
     this->iiu.recvThread.exitWait ();
-
     this->thread.exitWaitRelease ();
 
-    {
-        epicsGuard < callbackMutex > guard ( this->cbMutex );
-        this->iiu.cacRef.uninstallIIU ( guard, this->iiu );
-    }
-
-    delete & this->iiu;
+    this->iiu.cacRef.destroyIIU ( this->iiu );
 }
 
 unsigned tcpiiu::sendBytes ( const void *pBuf, 
@@ -1487,5 +1481,20 @@ void tcpSendThread::interruptSocketSend ()
         epicsSignalRaiseSigAlarm ( threadId );
     }
 }
+
+void tcpiiu::operator delete ( void * pCadaver )
+{
+    // Visual C++ .net appears to require operator delete if
+    // placement operator delete is defined? I smell a ms rat
+    // because if I declare placement new and delete, but
+    // comment out the placement delete definition there are
+    // no undefined symbols.
+    errlogPrintf ( "%s:%d this compiler is confused about "
+        "placement delete - memory was probably leaked",
+        __FILE__, __LINE__ );
+}
+
+
+
 
 

@@ -43,6 +43,7 @@
 #include "bhe.h"
 #include "net_convert.h"
 #include "autoPtrDestroy.h"
+#include "autoPtrFreeList.h"
 
 static const char *pVersionCAC = 
     "@(#) " EPICS_VERSION_STRING 
@@ -269,9 +270,14 @@ cac::~cac ()
     // this will block for oustanding sends to go out so dont 
     // hold a lock while waiting
     //
-    while ( this->serverList.count() ) {
-        this->iiuUninstall.wait ();
+    {
+        epicsGuard < cacMutex > guard ( this->mutex );
+        while ( this->serverList.count() ) {
+            epicsGuardRelease < cacMutex > unguard ( guard );
+            this->iiuUninstall.wait ();
+        }
     }
+
 
     if ( this->pudpiiu ) {
         delete this->pudpiiu;
@@ -566,7 +572,9 @@ bool cac::transferChanToVirtCircuit (
         }
         else {
             try {
-                epics_auto_ptr < tcpiiu > pnewiiu ( new tcpiiu ( 
+                autoPtrFreeList < tcpiiu, 32, epicsMutexNOOP > pnewiiu (
+                            this->freeListVirtualCircuit,
+                            new ( this->freeListVirtualCircuit ) tcpiiu ( 
                             *this, this->cbMutex, this->connTMO, this->timerQueue,
                             addr, this->comBufMemMgr, minorVersionNumber, 
                             this->ipToAEngine, pChan->getPriority() ) );
@@ -1528,8 +1536,9 @@ void cac::initiateAbortShutdown ( tcpiiu & iiu )
     iiu.removeAllChannels ( cbGuard, guard, *this );
 }
 
-void cac::uninstallIIU ( epicsGuard < callbackMutex > & cbGuard, tcpiiu & iiu )
+void cac::destroyIIU ( tcpiiu & iiu )
 {
+    epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
     epicsGuard < cacMutex > guard ( this->mutex );
     if ( iiu.channelCount() ) {
         char hostNameTmp[64];
@@ -1550,6 +1559,8 @@ void cac::uninstallIIU ( epicsGuard < callbackMutex > & cbGuard, tcpiiu & iiu )
 
     this->serverTable.remove ( iiu );
     this->serverList.remove ( iiu );
+    iiu.~tcpiiu ();
+    this->freeListVirtualCircuit.release ( & iiu );
 
     // signal iiu uninstal event so that cac can properly shut down
     this->iiuUninstall.signal();

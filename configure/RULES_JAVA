@@ -28,8 +28,10 @@ JARCMD   = $(subst \,/,$(JAVA_BIN)/jar$(EXE) $(JAR_OPTIONS) $@ $(JARINPUT) $(JAR
 vpath %.java .. 
 vpath %.jar .. $(COMMON_DIR)
 
-CLASSPATH=$(addprefix -classpath ,$(USR_PRECLASSPATH) $(INSTALL_JAVA) $(USR_CLASSPATH))
-SOURCEPATH=-sourcepath .:..:../..
+empty:=
+space:= $(empty) $(empty)
+CLASSPATH = -classpath $(subst $(space),:,$(strip $(USR_PRECLASSPATH) $(INSTALL_JAVA) $(USR_CLASSPATH)))
+SOURCEPATH = -sourcepath .:..:../..
 
 #-------------------------------------------------------
 # Java directory

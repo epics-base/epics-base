@@ -54,7 +54,6 @@ LIBOBJS += $(EPICS_BASE_BIN)/devMbboDirectSoftRaw.o
 LIBOBJS += $(EPICS_BASE_BIN)/devMbboSoft.o
 LIBOBJS += $(EPICS_BASE_BIN)/devMbboSoftRaw.o
 LIBOBJS += $(EPICS_BASE_BIN)/devMbboTestAsyn.o
-LIBOBJS += $(EPICS_BASE_BIN)/devPtSoft.o
 LIBOBJS += $(EPICS_BASE_BIN)/devSASoft.o
 LIBOBJS += $(EPICS_BASE_BIN)/devSiSoft.o
 LIBOBJS += $(EPICS_BASE_BIN)/devSiTestAsyn.o

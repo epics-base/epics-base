@@ -46,9 +46,6 @@ const unsigned osiTime::nSecPerSec = 1000u*osiTime::uSecPerSec;
 const unsigned osiTime::nSecPerUSec = 1000u;
 const unsigned osiTime::secPerMin = 60u;
 
-struct tm *gmtime_r (const time_t *, struct tm *);
-struct tm *localtime_r (const time_t *, struct tm *);
-
 static const unsigned ntpEpochYear = 1900;
 static const unsigned ntpEpocMonth = 0; // January
 static const unsigned ntpEpocDayOfTheMonth = 1; // the 1st day of the month

@@ -84,7 +84,50 @@ private:
     const fdRegType type;
 };
 
-class fdManager;
+class osiTimerQueue;
+
+//
+// fdManager
+//
+// file descriptor manager
+//
+class fdManager {
+friend class fdReg;
+public:
+    //
+    // exceptions
+    //
+    class fdInterestSubscriptionAlreadyExits {};
+
+	epicsShareFunc fdManager (osiTimerQueue &timerQueue = osiDefaultTimerQueue);
+	epicsShareFunc ~fdManager ();
+	epicsShareFunc void process (double delay); // delay parameter is in seconds
+
+	//
+	// returns NULL if the fd is unknown
+	//
+    epicsShareFunc fdReg *lookUpFD (const SOCKET fd, const fdRegType type);
+
+    osiTimerQueue & timerQueueRef () const;
+
+private:
+	tsDLList<fdReg> regList;
+	tsDLList<fdReg> activeList;
+	resTable<fdReg, fdRegId> fdTbl;
+	fd_set fdSets[fdrNEnums];
+    osiTimerQueue &timerQueue;
+
+	SOCKET maxFD;
+	unsigned processInProg;
+	//
+	// Set to fdreg when in call back
+	// and nill otherwise
+	//
+	fdReg *pCBReg; 
+
+	epicsShareFunc void installReg (fdReg &reg);
+	epicsShareFunc void removeReg (fdReg &reg);
+};
 
 //
 // default file descriptor manager
@@ -133,51 +176,6 @@ private:
 	unsigned char state; // state enums go here
 	unsigned char onceOnly;
 	fdManager &manager;
-};
-
-class osiTimerQueue;
-
-//
-// fdManager
-//
-// file descriptor manager
-//
-class fdManager {
-friend class fdReg;
-public:
-    //
-    // exceptions
-    //
-    class fdInterestSubscriptionAlreadyExits {};
-
-	epicsShareFunc fdManager (osiTimerQueue &timerQueue = osiDefaultTimerQueue);
-	epicsShareFunc ~fdManager ();
-	epicsShareFunc void process (double delay); // delay parameter is in seconds
-
-	//
-	// returns NULL if the fd is unknown
-	//
-    epicsShareFunc fdReg *lookUpFD (const SOCKET fd, const fdRegType type);
-
-    osiTimerQueue & timerQueueRef () const;
-
-private:
-	tsDLList<fdReg> regList;
-	tsDLList<fdReg> activeList;
-	resTable<fdReg, fdRegId> fdTbl;
-	fd_set fdSets[fdrNEnums];
-    osiTimerQueue &timerQueue;
-
-	SOCKET maxFD;
-	unsigned processInProg;
-	//
-	// Set to fdreg when in call back
-	// and nill otherwise
-	//
-	fdReg *pCBReg; 
-
-	epicsShareFunc void installReg (fdReg &reg);
-	epicsShareFunc void removeReg (fdReg &reg);
 };
 
 //

@@ -161,7 +161,9 @@ void inBuf::expandBuffer ()
     bufSizeT max = this->memMgr.maxSize();
     if ( this->bufSize <  max ) {
         casBufferParm bufParm = this->memMgr.allocate ( max );
-        memcpy ( bufParm.pBuf, &this->pBuf[this->nextReadIndex], this->bytesPresent () );
+        bufSizeT unprocessedBytes = this->bytesPresent ();
+        memcpy ( bufParm.pBuf, &this->pBuf[this->nextReadIndex], unprocessedBytes );
+        this->bytesInBuffer = unprocessedBytes;
         this->nextReadIndex = 0u;
         this->memMgr.release ( this->pBuf, this->bufSize );
         this->pBuf = bufParm.pBuf;

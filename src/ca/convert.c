@@ -117,17 +117,17 @@ int		num;			/* number of values		*/
  */
 #ifdef __STDC__
 int cvrt_char(
-char		*s;			/* source			*/
-char		*d;			/* destination			*/
-int 		encode;			/* cvrt VAX to IEEE if T	*/
-int		num;			/* number of values		*/
-)
-#else
-int cvrt_char(
 char		*s,			/* source			*/
 char		*d,			/* destination			*/
 int 		encode,			/* cvrt VAX to IEEE if T	*/
 int		num			/* number of values		*/
+)
+#else
+int cvrt_char(
+char		*s;			/* source			*/
+char		*d;			/* destination			*/
+int 		encode;			/* cvrt VAX to IEEE if T	*/
+int		num;			/* number of values		*/
 #endif
 {
       	unsigned int	i;

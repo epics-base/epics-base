@@ -1036,7 +1036,12 @@ void cac::ioCancel ( nciu &chan, const cacChannel::ioid &id )
             if ( pSubscr ) {
                 chan.getPIIU()->subscriptionCancelRequest ( chan, *pSubscr );
             }
-            signalNeeded = this->blockForIOCallbackCompletion ( id );
+            if ( pRecvProcessThread->isCurrentThread() ) {
+                signalNeeded = false;
+            }
+            else {
+                signalNeeded = this->blockForIOCallbackCompletion ( id );
+            }
             pmiu->destroy ( *this );
         }
     }

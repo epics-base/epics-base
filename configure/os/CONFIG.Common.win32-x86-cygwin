@@ -19,7 +19,14 @@ EXE=.exe
 # _POSIX_SOURCE eliminates select()
 POSIX_CPPFLAGS_YES = -D_POSIX_THREADS -D_POSIX_TIMERS
 #POSIX_LDLIBS_YES += -lpthread
+POSIX_LDLIBS_YES += -lpthread
 
 ARCH_DEP_CPPFLAGS += -D_X86_
 
 OP_SYS_CPPFLAGS += -DCYGWIN32 -U_WIN32
+
+# Set runtime path for shared libraries
+RUNTIME_LDFLAGS = $(SHRLIB_SEARCH_DIRS:%=-Wl,-rpath,%)
+
+LDLIBS_READLINE = -lcygreadline5 -lcygcurses7
+

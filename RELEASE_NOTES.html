@@ -396,6 +396,63 @@ The source file has comments showing a sample database.
 devSymb</H3>
 This has been drastically changed. Look at &lt;base>/src/dev/symbDev/README
 for details.
+
+<H3>
+CA Client Library</H3>
+Problems where 3.13.beta11 clients were unable to connect to 3.11 and receive the correct 
+native type have been fixed.
+The CPU is now consumed more efficently by CA tasks waiting in select() under vxWorks.
+The client lib now detects an IOC reboot when that reboot is faster that EPICS_CA_CONN_TMO.
+CA now runs better on systems without local interface query capabilities (currently
+only cygwin32).
+
+<H3>
+C++ Channel Access Server - CAS</H3>
+The constructor for class casPV no longer requires a reference to the
+server. For backward compatibility a reference to the server may still be 
+supplied, but it will not be used. The C++ Portable Channel Access Server Library now builds
+on VMS. A really bad bug was fixed in the example directory server when clients use PV names 
+with ".xxxx" (a field name) in them. 
+
+<H3>
+Global Data Descriptor Class - GDD (only used by the C++ CA server)</H3>
+A bug occurring when the primitive type was changed to/from aitSting and the 
+constructor/destructor member functions for class aitString were not run has 
+been fixed.
+A bug occurring when class GDD changed the bounds on the destination GDD has 
+been fixed.
+A smart pointer class for GDD was added. This class automatically
+maintains the GDD's reference count so that the GDD will not be deleted
+until the last smart pointer class pointing to it is deleted. Moving this
+responsibility to a class will greatly reduce the probability of making
+a mistake in application code.
+
+<H3>
+WIN32 (PC) Port of EPICS</H3>
+Winsock II is now required. This allows CA to properly execute EPICS_CA_ADDR_LIST=YES.
+Windows NT 4.0 comes with Winsock II. A properly functioning
+Winsock II for Windows 95 can be obtained form http://www.microsoft.com/windows95/info/ws2.htm.
+Beware of buggy versions of Win95 Winsock II that are sometimes installed by 3rd party products.
+A static (no EPICS DLLs) build of EPICS on WIN32 is now supported. The EPICS CA repeater is now
+automatically started under WIN32 if it isnt running. At Ken Evans' request GUI programs will this release
+_not_ allocate a console for messages from EPICS libraries unless base is compiled with
+host optimisation turned off (HOST_OPT=NO). If you would like to see messages from EPICS base
+libraries when using an optimised build, then start GUI programs from a DOS window.
+
+<H3>
+EPICS Environment Variables that Include Host IP Addresses</H3>
+It is now possible to use DNS host names in addition to dotted IP addresses in EPICS environment
+variables. All operating systems that have a DNS client implementation
+should allow this. Currently only vxWorks does not, and so if you would like to use real host names
+instead of dotted IP addresses on vxWorks you must use the "hostAdd()" function to add host
+name / IP address pairs from your system start-up script. For Example:
+hostAdd ("mercury_dirigible","100.20.30.40")
+putenv ("EPICS_IOC_LOG_INET=mercury_dirigible")
+
+<H3>
+GCC 2.8</H3>
+The host portions of EPICS now build correctly with GCC 2.8
+
 <H2>
 Changes between beta4 and beta11</H2>
 

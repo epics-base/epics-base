@@ -245,6 +245,7 @@ static long put_enum_str(paddr,pstring)
     if(strncmp(pstring,pbi->znam,sizeof(pbi->znam))==0) pbi->val = 0;
     else  if(strncmp(pstring,pbi->onam,sizeof(pbi->onam))==0) pbi->val = 1;
     else return(S_db_badChoice);
+    pbi->udf=FALSE;
     return(0);
 }
 

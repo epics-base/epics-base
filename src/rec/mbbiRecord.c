@@ -323,6 +323,7 @@ static long put_enum_str(paddr,pstring)
                 for (i = 0; i < 16; i++){
                         if(strncmp(pstate_name,pstring,sizeof(pmbbi->zrst))==0){
         			pmbbi->val = i;
+					pmbbi->udf =  FALSE;
                                 return(0);
                         }
                 	pstate_name += sizeof(pmbbi->zrst);

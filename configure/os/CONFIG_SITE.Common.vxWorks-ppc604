@@ -6,5 +6,5 @@
 # Only the local epics system manager should modify this file
 
 # APS override
-VX_DIR = /usr/local/vw/tornado101ppc
+#VX_DIR = /usr/local/vw/tornado101ppc
 

@@ -39,6 +39,7 @@
  * .07  12-11-92	mrk	scanDelete crashed if no get_ioint_info existed.
  * .08  02-02-94	mrk	added scanOnce
  * .09  02-03-94	mrk	If scanAdd fails set precord->scan=SCAN_PASSIVE
+ * .10  02-22-94	mrk	Make init work if 1st record has 28 char name
  */
 
 #include	<vxWorks.h>

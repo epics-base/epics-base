@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <title>No title</title>
+  <meta name="GENERATOR" content="amaya 5.1" />
+</head>
+
+<body>
+<h1>EPICS base R3.13.0beta1: Known Problems</h1>
+
+<h2>vxWorks TIMEZONE pentium</h2>
+
+<p>If the name of the timezone has more than a few characters a crash can
+occur on pentium vxWorks iocs. See ansiTime in the vxWorks reference manual
+for details about TIMEZONE. </p>
+
+<h2>RTEMS appDevGuide Documentation</h2>
+
+<p>In the Application Developer's Guide the example for the RTEMS TFTP
+filesystem chdir command isn't quite right.  The note says that all pathnames
+passed to chdir must end in a / character, but the example doesn't show this.
+ The example should be changed as shown below. </p>
+<hr />
+
+<p>The RTEMS TFTP remote filesystem driver now supports a limited form of the
+chdir() system call. One restriction is that all pathnames passed to chdir()
+must end in a / character, so IOC shell commands to change directories must
+be given as </p>
+
+<p><code>cd ../db/ </code></p>
+
+</body>
+</html>

@@ -50,6 +50,7 @@ template class chronIntIdResTable < CASG >;
 template class resTable < bhe, inetAddrID >;
 template class resTable < tcpiiu, caServerID >;
 template class tsFreeList < bhe, 0x100 >;
+template class tsFreeList < tcpiiu, 32, epicsMutexNOOP >;
 template class tsFreeList < netReadNotifyIO, 1024, epicsMutexNOOP >;
 template class tsFreeList < netWriteNotifyIO, 1024, epicsMutexNOOP >;
 template class tsFreeList < netSubscription, 1024, epicsMutexNOOP >;

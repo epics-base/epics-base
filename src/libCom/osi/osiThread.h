@@ -16,13 +16,13 @@ static const unsigned threadPriorityMax = 99;
 static const unsigned threadPriorityMin = 0;
 
 /* some generic values */
-static const unsigned threadPriorityLow = 10;
+static const unsigned threadPriorityLow = 25;
 static const unsigned threadPriorityMedium = 50;
-static const unsigned threadPriorityHigh = 90;
+static const unsigned threadPriorityHigh = 75;
 
 /* some iocCore specific values */
-static const unsigned threadPriorityChannelAccessClient = 10;
-static const unsigned threadPriorityChannelAccessServer = 20;
+static const unsigned threadPriorityChannelAccessClient = 20;
+static const unsigned threadPriorityChannelAccessServer = 10;
 static const unsigned threadPriorityScanLow = 60;
 static const unsigned threadPriorityScanHigh = 70;
 

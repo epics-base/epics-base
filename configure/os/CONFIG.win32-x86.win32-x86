@@ -13,9 +13,6 @@ VALID_BUILDS = Host Ioc
 
 #-------------------------------------------------------
 
-# 	Use std path variables from ms
-HOME = $(HOMEDRIVE)$(HOMEPATH)
-
 #
 # "\ " forces gnu make to keep this as one token
 #

@@ -17,10 +17,6 @@ BORLAND_INC = $(BORLAND)\\include
 BORLAND_LIB = $(BORLAND)\\lib
 BORLAND_BIN = $(BORLAND)\\bin
 
-# 	Use std path variables from ms
-HOME = $(HOMEDRIVE)$(HOMEPATH)
-
-
 #
 # "\ " forces gnu make to keep this as one token
 #

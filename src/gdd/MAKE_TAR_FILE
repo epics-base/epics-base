@@ -1,0 +1,11 @@
+# $Id$
+# $Log$
+#
+# *Revision 1.2  1996/06/24 03:15:25  jbk
+# *name changes and fixes for aitString and fixed string functions
+# *Revision 1.1  1996/05/31 13:15:12  jbk
+# *add new stuff
+#
+
+tar zcvf /tmp/gdd.tar.gz *.c *.cc *.h *.MRI Makefile* MAKE* README
+

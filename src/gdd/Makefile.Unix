@@ -1,0 +1,76 @@
+#
+# Author: Jim Kowalkowski
+# Date: 2/96
+#
+# $Id$
+#
+# $Log$
+#
+# *Revision 1.4  1996/06/25 18:58:56  jbk
+# *more fixes for the aitString management functions and mapping menus
+# *Revision 1.3  1996/06/24 03:15:26  jbk
+# *name changes and fixes for aitString and fixed string functions
+# *Revision 1.2  1996/06/11 01:55:18  jbk
+# *completed ful build
+# *Revision 1.1  1996/05/31 13:15:14  jbk
+# *add new stuff
+
+VPATH=.:..
+
+EPICS = ../../../..
+# EPICS = /usr/local/epics/R3.12.2
+
+include Target.include
+include $(EPICS)/config/CONFIG_EXTENSIONS
+
+OPTIM_YES=-g
+ifeq ($(HOST_ARCH),sun4)
+CCC=purify CC
+CC=purify acc
+endif
+
+DEPENDS_RULE.cc = -$(COMPILE.cc) -xM $(SRCS.cc) >> .DEPENDS
+
+USR_LDFLAGS = -L$(EPICS_EXTENSIONS_LIB) -L.
+USR_CFLAGS = -L$(EPICS_EXTENSIONS_LIB) -L.
+
+SRCS.cc = ../aitGen.c ../aitTypes.c ../aitHelpers.cc \
+          ../gdd.cc ../gddAppDefs.cc ../gddAppTable.cc ../gddNewDel.cc \
+          ../gddTest.cc ../genApps.cc
+		  # ../dbMapper.cc
+
+LIBOBJS = gdd.o gddTest.o gddAppTable.o gddNewDel.o gddAppDefs.o \
+		  aitTypes.o aitConvert.o aitHelpers.o
+		  # dbMapper.o
+
+LIBNAME = libgdd.a
+
+TARGETS = dbMapper.o
+
+# cannot generate dependencies for aitConvert automatically
+
+aitConvert.o: aitConvert.cc aitConvert.h aitConvertGenerated.cc aitTypes.h
+
+aitConvertGenerated.cc: aitGen aitTypes.h
+	aitGen
+
+aitGen: aitGen.o aitTypes.o
+	$(LINK.c) -o $@ $^ $(LDLIBS)
+
+# cannot generate dependencies for dbMapper.o automatically
+
+dbMapper.o: ../dbMapper.cc gdd.h gddAppTable.h dbMapper.h gddApps.h aitTypes.h
+	$(COMPILE.cc) $<
+	$(AR) r $(LIBNAME) $@
+
+gddApps.h: genApps
+	genApps $@
+
+genApps: genApps.o $(LIBOBJS)
+	$(LINK.cc) -o $@ $^ $(LDLIBS)
+
+clean::
+	/bin/rm -f aitConvertGenerated.cc aitGen genApps
+
+include $(EPICS)/config/RULES.Unix
+

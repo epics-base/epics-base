@@ -1,0 +1,251 @@
+#
+# Author: Jim Kowalkowski
+# Date: 2/96
+#
+# $Id$
+#
+# $Log$
+#
+
+# Simple build system for all the platforms I've tested on
+
+VPATH=.:..
+
+# ifdef IN_OBJ_DIR
+# ifeq ($(VX_BUILD),vw)
+# CCTYPE = $(VX_BUILD)
+# else
+# CCTYPE = $(HOST_ARCH)
+# endif
+# 
+# else
+ifdef HOST_ARCH
+CCTYPE = $(HOST_ARCH)
+else
+# CCTYPE = solaris
+# CCTYPE = sun4
+# CCTYPE = linux
+# CCTYPE = hp700
+# CCTYPE = vw
+# VX_BUILD = vw
+endif
+# endif
+
+ifeq ($(CCTYPE),vw)
+
+GNU_DIR = /home/phoebus/HIDEOS/gnu_install
+# GNU_DIR = /home/hideos/gnu_install
+GNU_BIN = $(GNU_DIR)/bin
+VERBOSE = -Wall -Winline
+OPTIM = -O # -DNO_DUMP_TEST -g
+VX_DIR = /usr/local/vw/vxV52/vw
+VX_INCLUDE = $(VX_DIR)/h
+
+ifeq ($(CCTYPE),sun4)
+CC_NORMAL = acc
+else
+CC_NORMAL = cc
+endif
+
+CC = $(GNU_BIN)/sun3-gcc
+CCC = $(GNU_BIN)/sun3-g++
+LD = $(GNU_BIN)/sun3-ld
+AR = $(GNU_BIN)/sun3-ar
+RANLIB = $(GNU_BIN)/sun3-ranlib
+
+LIB_FLAGS =
+LDFLAGS = -L. -r -N -T../vxldscript.MRI
+CCFLAGS = -B$(GNU_DIR)/lib/gcc-lib/ $(OPTIM) -W \
+  $(VERBOSE) -nostdinc --no-builtin -m68040 -Wa,"-m68040" \
+  -DCPU_FAMILY=MC680X0 -DCPU=MC68040 -DvxWorks -DV5_vxWorks \
+  -I. -I.. -I$(VX_INCLUDE)
+
+else
+
+ifeq ($(CCTYPE),solaris)
+VERBOSE = +w -D__EXTENSIONS__
+CC = cc
+CCC = CC
+CC_NORMAL = $(CC)
+LIB_FLAGS = # -lposix4
+POSIX_LEVEL = 2 # 4
+EPICS = /home/phoebus/JBK/test3.12/include
+RANLIB = echo
+endif
+
+ifeq ($(CCTYPE),sun4)
+VERBOSE =
+CC=purify acc
+CCC=purify CC
+# CCC = CC
+# CC = acc
+CC_NORMAL = acc
+LIB_FLAGS =
+POSIX_LEVEL = 2
+EPICS = /home/phoebus/JBK/test3.12/include
+RANLIB = ranlib
+endif
+
+ifeq ($(CCTYPE),linux)
+VERBOSE = -Wall -Winline
+CC = gcc
+CCC = g++
+CC_NORMAL = $(CC)
+LIB_FLAGS =
+POSIX_LEVEL = 2
+EPICS = /home/jbk/include
+RANLIB = ranlib
+endif
+
+ifeq ($(CCTYPE),hp700)
+VERBOSE =
+CC = c89 -Aa
+CCC = CC +a1
+CC_NORMAL = $(CC)
+LIB_FLAGS =
+POSIX_LEVEL = 2
+RANLIB = ranlib
+endif
+
+LD = ld
+AR = ar
+
+# -p is for profiling
+OPTIM = -g # -O -p
+COMP_FLAGS = -D_POSIX_C_SOURCE=$(POSIX_LEVEL) -D$(CCTYPE)
+BOTH_FLAGS = -I. -I.. $(VERBOSE) $(OPTIM) -I$(EPICS) $(COMP_FLAGS)
+LDFLAGS = $(BOTH_FLAGS) -L.
+CCFLAGS = $(BOTH_FLAGS)
+
+endif
+
+CXXFLAGS = $(CCFLAGS)
+CFLAGS = $(CXXFLAGS)
+CXX = $(CCC)
+
+DEPLIB = libgdd_t.a
+DEST_DEPLIB = libgdd.a
+LIBFLAGS = -lgdd $(LIB_FLAGS)
+LIBFLAGS_T = -lgdd_t $(LIB_FLAGS)
+
+# modules that go into the library
+SRCS = gdd.cc gddTest.cc aitConvert.cc gddAppTable.cc gddNewDel.cc \
+       gddAppDefs.cc aitTypes.c
+OBJS = gdd.o gddTest.o aitConvert.o gddAppTable.o gddNewDel.o \
+       gddAppDefs.o aitTypes.o
+INCS = gdd.h aitConvert.h aitTypes.h gddNewDel.h gddUtils.h
+
+# -----------------------------
+ifndef HOST_ARCH
+problem:
+	@echo "you must set the HOST_ARCH environment variable"
+	@echo "set VX_BUILD=vw to build for vxWorks"
+endif
+
+# -----------------------------
+ifndef IN_OBJ_DIR
+ifdef VX_BUILD
+first_rule: $(HOST_ARCH)/Makefile $(VX_BUILD)/Makefile
+else
+first_rule: $(HOST_ARCH)/Makefile
+endif
+	(cd $(HOST_ARCH); gnumake all)
+ifdef VX_BUILD
+	(HOST_ARCH=$(VX_BUILD); cd $(VX_BUILD); gnumake HOST_ARCH=$(VX_BUILD))
+	# (HOST_ARCH=$(VX_BUILD); gnumake HOST_ARCH=$(VX_BUILD))
+endif
+
+$(HOST_ARCH)/Makefile: Makefile
+	if [ ! -d "$(HOST_ARCH)" ]; \
+	then \
+		mkdir $(HOST_ARCH); \
+	fi
+	echo "IN_OBJ_DIR=1" > $@
+	cat $< >> $@
+
+ifdef VX_BUILD
+$(VX_BUILD)/Makefile: Makefile
+	if [ ! -d "$(VX_BUILD)" ]; \
+	then \
+		mkdir $(VX_BUILD); \
+	fi
+	echo "IN_OBJ_DIR=1" > $@
+	cat $< >> $@
+endif
+endif
+
+# -----------------------------
+all: aitGen gddApps.h $(DEPLIB) dbMapper.o $(DEST_DEPLIB)
+
+check_arch:
+	@echo "architecture=$(CCTYPE)"
+
+$(DEST_DEPLIB): $(DEPLIB)
+	cp $^ $@
+
+# -----------------------------
+$(DEPLIB): $(OBJS)
+	/bin/rm -f $@
+	$(AR) r $@ $^
+	cp $@ $(DEST_DEPLIB)
+ifeq ($(CCTYPE),sun4)
+	$(RANLIB) $@
+	$(RANLIB) $(DEST_DEPLIB)
+endif
+ifeq ($(CCTYPE),vw)
+	$(RANLIB) $@
+	$(RANLIB) $(DEST_DEPLIB)
+endif
+
+# -----------------------------
+ifneq ($(CCTYPE),vw)
+genApps: genApps.o $(OBJS) $(DEPLIB)
+	$(CCC) $(LDFLAGS) -o $@ $< $(LIBFLAGS_T)
+
+gddApps.h: genApps
+	$< gddApps.h
+	cp gddApps.h ..
+
+genApps.o: genApps.cc gddAppTable.h aitTypes.h $(INCS)
+
+else
+genApps:
+	@echo "Not going to build $@ for vw"
+endif
+
+aitGen: aitGen.o aitTypes.o
+	$(CC_NORMAL) -O -o $@ $^
+
+aitGen.o: aitGen.c aitTypes.h
+	$(CC_NORMAL) -D$(CCTYPE) -O -c -I. $<
+
+aitConvertGenerated.cc: aitGen aitTypes.h aitConvert.h aitConvert.cc aitTypes.c
+	aitGen
+
+# -----------------------------
+gdd.o: gdd.cc $(INCS)
+gddTest.o: gddTest.cc $(INCS)
+gddNewDel.o: gddNewDel.cc gddNewDel.h gddUtils.h
+gddAppTable.o: gddAppTable.cc gddAppTable.h $(INCS)
+gddAppDefs.o: gddAppDefs.cc gddAppTable.h $(INCS)
+aitTypes.o: aitTypes.c aitTypes.h
+aitConvert.o: aitConvert.cc aitConvertGenerated.cc aitConvert.h aitTypes.h
+
+dbMapper.o: dbMapper.cc dbMapper.h gddApps.h
+	$(CCC) $(CCFLAGS) -c $<
+ifeq ($(CCTYPE),solaris)
+	# $(CCC) -xar -o $(DEST_DEPLIB) $(CCFLAGS) $<
+	# $(CCC) -xar -o $(DEST_DEPLIB) $(CCFLAGS) $@
+endif
+	$(AR) r $(DEST_DEPLIB) $@
+	$(RANLIB) $(DEST_DEPLIB)
+
+ifdef IN_OBJ_DIR
+clean: 
+	/bin/rm -f *.o *.a aitGen genApps
+	/bin/rm -f *pure* p.out mon.out
+	/bin/rm -rf Templates.DB ptrepository
+else
+clean:
+	/bin/rm -rf $(HOST_ARCH) $(VX_BUILD) gddApps.h
+endif

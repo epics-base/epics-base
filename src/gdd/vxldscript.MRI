@@ -1,0 +1,21 @@
+OUTPUT_FORMAT("a.out-sunos-big")
+OUTPUT_ARCH(m68k)
+__DYNAMIC  =  0;
+SECTIONS
+{
+  .text 0x00:
+  {
+    CREATE_OBJECT_SYMBOLS
+    *(.text)
+  }
+  .data  SIZEOF(.text) + ADDR(.text) :
+  {
+    *(.data)
+    CONSTRUCTORS
+  }
+  .bss SIZEOF(.data) + ADDR(.data) :
+  {
+   *(.bss)
+   *(COMMON)
+  }
+}

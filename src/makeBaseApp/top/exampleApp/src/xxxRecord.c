@@ -1,22 +1,21 @@
 /* xxxRecord.c */
 /* Example record support module */
   
-#include <vxWorks.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <stdio.h>
-#include <lstLib.h>
 #include <string.h>
 
-#include <alarm.h>
-#include <dbEvent.h>
-#include <dbDefs.h>
-#include <dbAccess.h>
-#include <devSup.h>
-#include <errMdef.h>
-#include <recSup.h>
-#include <special.h>
+#include "alarm.h"
+#include "dbEvent.h"
+#include "dbDefs.h"
+#include "dbAccess.h"
+#include "devSup.h"
+#include "errMdef.h"
+#include "recSup.h"
+#include "special.h"
 #define GEN_SIZE_OFFSET
-#include <xxxRecord.h>
+#include "xxxRecord.h"
 #undef  GEN_SIZE_OFFSET
 
 /* Create RSET - Record Support Entry Table */

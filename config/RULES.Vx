@@ -39,7 +39,7 @@ MAN_DIRECTORY_TARGETS = $(foreach n, $(MANLIST),$(INSTALL_MAN)/man$(n))
 #	(convenience for extensions and applications)
 ifneq ($(EPICS_BASE),$(TOP))
 ifneq ($(EPICS_BASE),$(INSTALL_LOCATION))
-EPICS_INCLUDES += -I$(EPICS_BASE_INCLUDE) -I$(EPICS_BASE_INCLUDE)/os/$(OS_CLASS)
+EPICS_INCLUDES += -I$(EPICS_BASE_INCLUDE)/os/$(OS_CLASS) -I$(EPICS_BASE_INCLUDE)
 EPICS_DBDFLAGS += -I $(EPICS_BASE)/dbd
 endif
 endif

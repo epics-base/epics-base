@@ -57,13 +57,17 @@ dbSubscriptionIO::~dbSubscriptionIO ()
     if ( this->es ) {
         db_cancel_event ( this->es );
     }
-    this->notify.exception ( ECA_CHANDESTROY,
-        this->chan.pName(), this->type, this->count );
 }
 
 void dbSubscriptionIO::destroy ()
 {
     delete this;
+}
+
+void dbSubscriptionIO::channelDestroyException ()
+{
+    this->notify.exception ( ECA_CHANDESTROY, 
+        this->chan.pName(), this->type, this->count );
 }
 
 void * dbSubscriptionIO::operator new ( size_t size )

@@ -263,6 +263,9 @@ void dbServiceIO::destroyAllIO ( dbChannelIO & chan )
         }
     }
     while ( ( pIO = tmp.get() ) ) {
+        // If they call ioCancel() here it will be ignored
+        // because the IO has been unregistered above
+        pIO->channelDestroyException ();
         pIO->destroy ();
     }
     if ( chan.dbServicePrivateListOfIO::pBlocker ) {

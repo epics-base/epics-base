@@ -738,7 +738,7 @@ typedef void CAFDHANDLER (void *parg, int fd, int opened);
 epicsShareFunc int epicsShareAPI ca_add_fd_registration
 (
      CAFDHANDLER    *pHandler,
-     const void     *pArg
+     void           *pArg
 );
 
 

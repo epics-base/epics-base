@@ -53,8 +53,6 @@
 #include <server.h>
 #include <caerr.h>
 
-#define LOCAL
-
 static struct extmsg nill_msg;
 
 #define MPTOPADDR(MP) (&((struct channel_in_use *)(MP)->m_pciu)->addr)
@@ -144,9 +142,6 @@ camessage(client, recv)
 				* dbr_value_size[mp->m_type] +
 				dbr_size[mp->m_type];
 
-			lstAdd(	&((struct channel_in_use *) mp->m_pciu)->eventq, 
-				pevext);
-
 			status = db_add_event(client->evuser,
 					      MPTOPADDR(mp),
 					      read_reply,
@@ -161,7 +156,21 @@ camessage(client, recv)
 					client, 
 					RECORD_NAME(MPTOPADDR(mp)));
 				UNLOCK_CLIENT(client);
+				FASTLOCK(&rsrv_free_eventq_lck);
+				lstAdd(&rsrv_free_eventq, pevext);
+				FASTUNLOCK(&rsrv_free_eventq_lck);
+				break;
 			}
+
+			/*
+			 * Only add to the list if we can get enough
+			 * memory. If not, attempts to delete it 
+			 * from the client will cause a warning message
+			 * to be printed since it will not be found on
+			 * the list.
+			 */
+			lstAdd(	&((struct channel_in_use *)mp->m_pciu)->eventq, 
+				pevext);
 
 			/*
 			 * allways send it once at event add

@@ -90,6 +90,7 @@ struct event_que {
 struct event_user {
     struct event_que    firstque;       /* the first event que */
     
+    epicsMutexId        lock;
     epicsEventId        ppendsem;       /* Wait while empty */
     epicsEventId        pflush_sem;     /* wait for flush */
     
@@ -104,6 +105,7 @@ struct event_user {
     unsigned char       pendexit;       /* exit pend task */
     unsigned char       extra_labor;    /* if set call extra labor func */
     unsigned char       flowCtrlMode;   /* replace existing monitor */
+    unsigned char       extraLaborBusy;
     void                (*init_func)();
     epicsThreadId       init_func_arg;
 };
@@ -309,7 +311,16 @@ dbEventCtx epicsShareAPI db_init_events (void)
         epicsEventDestroy (evUser->ppendsem);
         return NULL;
     }
+    evUser->lock = epicsMutexCreate();
+    if (!evUser->lock) {
+        epicsMutexDestroy (evUser->firstque.writelock);
+        epicsEventDestroy (evUser->pflush_sem);
+        epicsEventDestroy (evUser->ppendsem);
+        return NULL;
+    }
+
     evUser->flowCtrlMode = FALSE;
+    evUser->extraLaborBusy = FALSE;
     return (dbEventCtx) evUser;
 }
 
@@ -573,7 +584,7 @@ int epicsShareAPI db_flush_extra_labor_event (dbEventCtx ctx)
 {
     struct event_user *evUser = (struct event_user *) ctx;
 
-    while(evUser->extra_labor){
+    while(evUser->extraLaborBusy){
         epicsThreadSleep(1.0);
     }
 
@@ -592,8 +603,10 @@ int epicsShareAPI db_add_extra_labor_event (
 {
     struct event_user *evUser = (struct event_user *) ctx;
 
+    epicsMutexMustLock ( evUser->lock );
     evUser->extralabor_sub = func;
     evUser->extralabor_arg = arg;
+    epicsMutexUnlock ( evUser->lock );
 
     return DB_EVENT_OK;
 }
@@ -604,10 +617,23 @@ int epicsShareAPI db_add_extra_labor_event (
 int epicsShareAPI db_post_extra_labor (dbEventCtx ctx)
 {
     struct event_user *evUser = (struct event_user *) ctx;
+    int doit;
 
-    /* notify the event handler of extra labor */
-    evUser->extra_labor = TRUE;
-    epicsEventSignal(evUser->ppendsem);
+    if ( ! evUser->extra_labor ) {
+        epicsMutexMustLock ( evUser->lock );
+        if ( ! evUser->extra_labor ) {
+            evUser->extra_labor = TRUE;
+            doit = TRUE;
+        }
+        else {
+            doit = FALSE;
+        }
+        epicsMutexUnlock ( evUser->lock );
+        if ( doit ) {
+            epicsEventSignal(evUser->ppendsem);
+        }
+    }
+
     return DB_EVENT_OK;
 }
 
@@ -903,12 +929,33 @@ LOCAL void event_task (void *pParm)
     taskwdInsert ( epicsThreadGetIdSelf(), NULL, NULL );
 
     do{
+        void (*pExtraLaborSub) (void *);
+        void *pExtraLaborArg;
         epicsEventMustWait(evUser->ppendsem);
 
         /*
          * check to see if the caller has offloaded
          * labor to this task
          */
+        evUser->extraLaborBusy = TRUE;
+        if(evUser->extra_labor && evUser->extralabor_sub){
+            epicsMutexMustLock ( evUser->lock );
+            if(evUser->extra_labor && evUser->extralabor_sub){
+                evUser->extra_labor = FALSE;
+                pExtraLaborSub = evUser->extralabor_sub;
+                pExtraLaborArg = evUser->extralabor_arg;
+            }
+            else {
+                pExtraLaborSub = NULL;
+                pExtraLaborArg = NULL;
+            }
+            epicsMutexUnlock ( evUser->lock );
+            if(pExtraLaborSub){
+                (*pExtraLaborSub)(pExtraLaborArg);
+            }
+        }
+        evUser->extraLaborBusy = FALSE;
+
         if(evUser->extra_labor && evUser->extralabor_sub){
             evUser->extra_labor = FALSE;
             (*evUser->extralabor_sub)(evUser->extralabor_arg);
@@ -951,6 +998,7 @@ LOCAL void event_task (void *pParm)
 
     epicsEventDestroy(evUser->ppendsem);
     epicsEventDestroy(evUser->pflush_sem);
+    epicsMutexDestroy(evUser->lock);
 
     freeListFree(dbevEventUserFreeList, evUser);
 

@@ -33,20 +33,17 @@ typedef enum {
 
 epicsShareFunc unsigned int epicsShareAPI threadGetStackSize(threadStackSizeClass size);
 
-/* threadOnce is a macro for efficiency (calls threadOnceOsd) */
 typedef int threadOnceId;
-
 #define OSITHREAD_ONCE_INIT 0
 
+/* void threadOnce(threadOnceId *id, void (*func)(void *), void *arg); */
+/* threadOnce is implemented as a macro */
+/*threadOnceOsd should not be called by user code*/
 epicsShareFunc void epicsShareAPI threadOnceOsd(
     threadOnceId *id, void (*func)(void *), void *arg);
 
 #define threadOnce(id,func,arg) \
-    do { \
-	threadOnceId *idCopy =(id); \
-	if(*idCopy <= 0) \
-	    threadOnceOsd(idCopy,func,arg); \
-    } while(0)
+if(*(id)==0) threadOnceOsd((id),(func),(arg))
 
 typedef void *threadId;
 epicsShareFunc threadId epicsShareAPI threadCreate(const char *name,
@@ -58,7 +55,6 @@ epicsShareFunc unsigned int epicsShareAPI threadGetPriority(threadId id);
 epicsShareFunc void epicsShareAPI threadSetPriority(
     threadId id,unsigned int priority);
 epicsShareFunc int epicsShareAPI threadIsEqual(threadId id1, threadId id2);
-epicsShareFunc int epicsShareAPI threadIsReady(threadId id);
 epicsShareFunc int epicsShareAPI threadIsSuspended(threadId id);
 epicsShareFunc void epicsShareAPI threadSleep(double seconds);
 epicsShareFunc threadId epicsShareAPI threadGetIdSelf(void);
@@ -99,7 +95,6 @@ public:
     unsigned getPriority () const;
     void setPriority (unsigned);
     bool priorityIsEqual (const osiThread &otherThread) const;
-    bool isReady () const;
     bool isSuspended () const;
 
     bool operator == (const osiThread &rhs) const;
@@ -156,16 +151,6 @@ inline void osiThread::setPriority (unsigned priority)
 inline bool osiThread::priorityIsEqual (const osiThread &otherThread) const
 {
     if ( threadIsEqual (this->id, otherThread.id) ) {
-        return true;
-    }
-    else {
-        return false;
-    }
-}
-
-inline bool osiThread::isReady () const
-{
-    if ( threadIsReady (this->id) ) {
         return true;
     }
     else {

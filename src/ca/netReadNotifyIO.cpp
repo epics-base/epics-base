@@ -14,7 +14,6 @@
 
 #include "iocinf.h"
 #include "nciu.h"
-#include "netIO.h"
 #include "cac.h"
 
 netReadNotifyIO::netReadNotifyIO ( nciu &chan, cacReadNotify &notify ) :

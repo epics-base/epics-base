@@ -28,6 +28,7 @@
 #define epicsExportSharedSymbols
 #include "bhe.h"
 #include "cacIO.h"
+#include "netIO.h"
 #undef epicsExportSharedSymbols
 
 class netWriteNotifyIO;

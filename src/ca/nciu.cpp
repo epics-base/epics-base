@@ -24,7 +24,6 @@
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #include "iocinf.h"
-#include "netIO.h"
 #include "cac.h"
 
 #define epicsExportSharedSymbols

@@ -226,8 +226,8 @@ unsigned    *pInlineIter
     }
 #ifdef WAIT_FOR_ACK
     status = ca_array_get (DBR_INT, 1, pItems[0].chix, &val);
-        SEVCHK (status, NULL);
-    status = ca_pend_io(100.0);
+    SEVCHK (status, NULL);
+    ca_pend_io(100.0);
 #endif
     status = ca_array_put(
             pItems[0].type,

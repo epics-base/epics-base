@@ -18,7 +18,6 @@
 #include "inetAddrID.h"
 #include "cac.h"
 #include "netiiu.h"
-#include "netIO.h"
 #include "msgForMultiplyDefinedPV.h"
 
 #define epicsExportSharedSymbols

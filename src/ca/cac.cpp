@@ -21,7 +21,6 @@
 #include "cac.h"
 #include "inetAddrID.h"
 #include "virtualCircuit.h"
-#include "netIO.h"
 #include "syncGroup.h"
 #include "nciu.h"
 #include "autoPtrRecycle.h"
@@ -1508,7 +1507,7 @@ bool cac::claimCIURespAction ( tcpiiu &iiu,
     return true; 
 }
 
-bool cac::verifyAndDisconnectChan ( tcpiiu & iiu, 
+bool cac::verifyAndDisconnectChan ( tcpiiu & /* iiu */, 
               const caHdrLargeArray & hdr, void * /* pMsgBdy */ )
 {
     nciu * pChan;

@@ -18,7 +18,6 @@
 #include "iocinf.h"
 #include "cac.h"
 #include "netiiu.h"
-#include "netIO.h"
 
 netiiu::netiiu ( cac *pClientCtxIn ) : pClientCtx ( pClientCtxIn )
 {

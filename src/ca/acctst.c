@@ -988,8 +988,8 @@ void verifyLongIO ( chid chan )
         for ( iter = cl.lower_ctrl_limit; 
             iter <= cl.upper_ctrl_limit; iter+=incr ) {
 
-            status = ca_put ( DBR_LONG, chan, &iter );
-            status = ca_get ( DBR_LONG, chan, &rdbk );
+            ca_put ( DBR_LONG, chan, &iter );
+            ca_get ( DBR_LONG, chan, &rdbk );
             status = ca_pend_io ( 10.0 );
             SEVCHK ( status, "get pend failed\n" );
             assert ( iter == rdbk );
@@ -1032,8 +1032,8 @@ void verifyShortIO ( chid chan )
         for ( iter = (dbr_short_t) cl.lower_ctrl_limit; 
             iter <= (dbr_short_t) cl.upper_ctrl_limit; iter += incr ) {
 
-            status = ca_put ( DBR_SHORT, chan, &iter );
-            status = ca_get ( DBR_SHORT, chan, &rdbk );
+            ca_put ( DBR_SHORT, chan, &iter );
+            ca_get ( DBR_SHORT, chan, &rdbk );
             status = ca_pend_io ( 10.0 );
             SEVCHK ( status, "get pend failed\n" );
             assert ( iter == rdbk );

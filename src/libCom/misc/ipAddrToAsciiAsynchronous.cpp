@@ -180,6 +180,12 @@ ipAddrToAsciiAsynchronous::~ipAddrToAsciiAsynchronous ()
     }
 }
 
+// for situations where the derived destructor is running, but the
+// ipAddrToAsciiAsynchronous destructor has not run yet
+void ipAddrToAsciiAsynchronous::ioCompletionNotify ( const char * )
+{
+}
+
 epicsShareFunc void ipAddrToAsciiAsynchronous::ioInitiate ( ipAddrToAsciiEngine & engine )
 {
     bool success;

@@ -44,6 +44,8 @@ of this distribution.
 #include "epicsPrint.h"
 #include "dbCommon.h"
 #include "dbCa.h"
+/*Following is because we cant include dbAccess.h*/
+void *dbCalloc(size_t nobj,size_t size);
 /*Following is because dbScan.h causes include for dbAccess.h*/
 void scanOnce(void *precord);
 extern volatile int interruptAccept;

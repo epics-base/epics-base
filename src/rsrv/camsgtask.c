@@ -356,7 +356,7 @@ FAST int 		sock;
 	}
 	
 	LOCK_CLIENTQ;
-	ellRemove(&clientQ, &client->node);
+	ellDelete(&clientQ, &client->node);
 	UNLOCK_CLIENTQ;
 	
 	free_client(client);

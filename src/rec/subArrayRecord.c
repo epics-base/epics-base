@@ -61,7 +61,7 @@
 static long init_record();
 static long process();
 #define special NULL
-static long get_value();
+#define special get_value
 static long cvt_dbaddr();
 static long get_array_info();
 static long put_array_info();
@@ -175,19 +175,6 @@ static long process(psa)
         psa->pact=FALSE;
         return(0);
 }
-
-static long get_value(psa,pvdes)
-    struct subArrayRecord		*psa;
-    struct valueDes	*pvdes;
-{
-    pvdes->pvalue = psa->bptr;
-    if (!psa->udf && psa->nelm > psa->nord)
-       pvdes->no_elements=psa->nord;
-    else
-       pvdes->no_elements=psa->nelm;
-    pvdes->field_type = psa->ftvl;
-    return(0);
-}
 
 static long cvt_dbaddr(paddr)
     struct dbAddr *paddr;
@@ -248,10 +235,10 @@ static long get_precision(paddr,precision)
     long	  *precision;
 {
     struct subArrayRecord	*psa=(struct subArrayRecord *)paddr->precord;
+    int				fieldIndex = dbGetFieldIndex(paddr);
 
     *precision = psa->prec;
-    if(paddr->pfield==psa->bptr) 
-        return(0);
+    if(fieldIndex == subArrayRecordVAL) return(0);
     recGblGetPrec(paddr,precision);
     return(0);
 }
@@ -261,18 +248,19 @@ static long get_graphic_double(paddr,pgd)
     struct dbr_grDouble *pgd;
 {
     struct subArrayRecord     *psa=(struct subArrayRecord *)paddr->precord;
+    int				fieldIndex = dbGetFieldIndex(paddr);
 
-    if(paddr->pfield==psa->bptr) {
+    if(fieldIndex == subArrayRecordVAL) {
         pgd->upper_disp_limit = psa->hopr;
         pgd->lower_disp_limit = psa->lopr;
         return(0);
     } 
-    if(paddr->pfield==(void *)&psa->indx) {
+    if(fieldIndex == subArrayRecordINDX) {
         pgd->upper_disp_limit = psa->malm - 1;
         pgd->lower_disp_limit = 0;
         return(0);
     } 
-    if(paddr->pfield==(void *)&psa->nelm) {
+    if(fieldIndex == subArrayRecordNELM) {
         pgd->upper_disp_limit = psa->malm;
         pgd->lower_disp_limit = 1;
         return(0);
@@ -285,18 +273,19 @@ static long get_control_double(paddr,pcd)
     struct dbr_ctrlDouble *pcd;
 {
     struct subArrayRecord     *psa=(struct subArrayRecord *)paddr->precord;
+    int				fieldIndex = dbGetFieldIndex(paddr);
 
-    if(paddr->pfield==psa->bptr) {
+    if(fieldIndex == subArrayRecordVAL) {
         pcd->upper_ctrl_limit = psa->hopr;
         pcd->lower_ctrl_limit = psa->lopr;
         return(0);
     } 
-    if(paddr->pfield==psa->bptr) {
+    if(fieldIndex == subArrayRecordINDX) {
         pcd->upper_ctrl_limit = psa->malm - 1;
         pcd->lower_ctrl_limit = 0;
         return(0);
     } 
-    if(paddr->pfield==psa->bptr) {
+    if(fieldIndex == subArrayRecordNELM) {
         pcd->upper_ctrl_limit = psa->malm;
         pcd->lower_ctrl_limit = 1;
         return(0);

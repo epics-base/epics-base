@@ -20,13 +20,18 @@
 #  Default environment settings
 
 # Channel Access:
-# EPICS_CA_ADDR_LIST augment beacon/search dest ip addr list
+# EPICS_CA_ADDR_LIST 
+#	Augment beacon/search dest ip addr list
 #	from white space separated ip addresses in this
 #	environment variable. "Quote" if more than one addr.
-# EPICS_CA_AUTO_ADDR_LIST YES = augment beacon/search dest ip
+# EPICS_CA_AUTO_ADDR_LIST 
+#	YES = augment beacon/search dest ip
 #	addr list from network interfaces found; NO = only use
 #	EPICS_CA_ADDR_LIST to create this list.
-# EPICS_CA_CONN_TMO sec before sending echo request from client.
+# EPICS_CA_CONN_TMO 
+#	after not seeing a server beacon for this number
+#	of seconds the clients will send an echo request over
+#	tcp/ip to verify the connection.
 # EPICS_CA_REPEATER_PORT CA repeater port number.
 # EPICS_CA_SERVER_PORT CA server port number.
 
@@ -39,22 +44,40 @@ EPICS_CA_SERVER_PORT=5064
 #
 # These parameters are only used by the CA server library
 #
-# EPICS_CA_BEACON_PERIOD quiescent sec between server beacons.
+# EPICS_CA_BEACON_PERIOD 
+#	quiescent sec between server beacons.
 # EPICS_CAS_INTF_ADDR_LIST - list of IP addresses identifying
-#	a limited set of interfaces that the server should bind to.
-#	If this parameter is empty then connections are accepted
-#	from any interface. Beacons are sent only to the broadcast
-#	address of each interface in this list (or the destination 
-#	address of point to point interfaces) if EPICS_CA_AUTO_ADDR_LIST
-#	is YES. Type "ifconfig -a" in order to determine which 
-# 	interfaces are available.
+#	a limited set of network interfaces for server communication. 
+#	Specifically, this parameter specifies the interfaces from
+#	which the server will accept TCP/IP connections. It also 
+#	specifies that UDP search messages addressed to both
+#	the IP addresses in EPICS_CAS_INTF_ADDR_LIST and also
+#	the broadcast addresses (or the destination addresses of 
+#	point to point interfaces) of the corresponding interfaces
+#	will be accepted by the server. If this parameter is empty 
+#	then TCP/IP connections are accepted from any interface
+#	(and any search messages addresed to the host are accepted). 
+#	Beacons are sent only to the broadcast address of each interface 
+#	in this list (or the destination address of point to point 
+#	interfaces) if EPICS_CA_AUTO_ADDR_LIST is YES. 
+#	Type "ifconfig -a" in order to determine which interfaces 
+#	are available.
 # EPICS_CAS_BEACON_ADDR_LIST - If this parameter is specified
 #	or if EPICS_CAS_INTF_ADDR_LIST isnt empty then this parameter
 #	is used instead of EPICS_CA_ADDR_LIST by the server library 
 # 	to augment the list of addresses to send beacons to.
 # EPICS_CAS_SERVER_PORT - If this parameter is specified then it
 #	and not EPICS_CA_SERVER_PORT is used to determine the server's
-# 	port number.
+# 	port number. It is possible to have multiple servers on the
+#	same host on the same EPICS_CAS_SERVER_PORT port if the IP
+#	kernel is modern (if it has multicast enhancements). In this
+#	situation all servers will share the same user specified 
+#	UDP port number and will be assigned unique TCP port numbers. 
+#	The fact that the servers may not be using the user specified
+#	port number for TCP will be completely transparent to EPICS 
+#	3.13 or higher clients that will be locating the servers
+#	using the user specified UDP port number, but will be connecting to
+#	the servers using whatever TCP port has been assigned.
 #
 EPICS_CA_BEACON_PERIOD=15.0
 EPICS_CAS_INTF_ADDR_LIST=""

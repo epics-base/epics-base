@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.8  1997/08/05 00:46:56  jhill
+ * fixed warnings
+ *
  * Revision 1.7  1997/06/25 05:09:00  jhill
  * removed templInst.cc
  *
@@ -85,11 +88,11 @@ epicsShareFunc caServer::caServer(unsigned pvCountEstimateIn) :
 		logEventMask(this->registerEvent("log")),
 		alarmEventMask(this->registerEvent("alarm"))
 {
-	static		init;
+	static bool init = false;
 
 	if (!init) {
 		gddMakeMapDBR(gddApplicationTypeTable::app_table);
-		init = TRUE;
+		init = true;
 	}
 
 	if (!this->pCAS) {

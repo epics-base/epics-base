@@ -22,7 +22,7 @@
 #include <limits.h>
 
 #define epicsMessageQueueCreate(c,s) ((epicsMessageQueueId)msgQCreate((c),(s),MSG_Q_FIFO))
-#define epicsMessageQueueDestroy(q) (msgQDestroy((MSG_Q_ID)(q)))
+#define epicsMessageQueueDestroy(q) (msgQDelete((MSG_Q_ID)(q)))
 
 #define epicsMessageQueueTrySend(q,m,l) (msgQSend((MSG_Q_ID)(q), (char*)(m), (l), NO_WAIT, MSG_PRI_NORMAL))
 #define epicsMessageQueueSend(q,m,l) (msgQSend((MSG_Q_ID)(q), (char*)(m), (l), WAIT_FOREVER, MSG_PRI_NORMAL))

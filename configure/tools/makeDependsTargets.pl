@@ -25,7 +25,7 @@ use File::Path;
 use File::Copy;
 
 $depfile = $ARGV[0];
-$tempfile = $ARGV[0].temp;
+$tempfile = "$ARGV[0].temp";
 
 if (-f $depfile) {
     unlink("$tempfile");

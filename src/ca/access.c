@@ -700,13 +700,13 @@ int ca_os_independent_init (void)
 	 * init broadcasted search counters
 	 * (current time must be initialized before calling this)
 	 */
-        ca_static->ca_search_responses = 0u;
-        ca_static->ca_search_tries = 0u;
+	ca_static->ca_search_responses = 0u;
+	ca_static->ca_search_tries = 0u;
 	ca_static->ca_search_retry_seq_no = 0u;
 	ca_static->ca_seq_no_at_list_begin = 0u;
-        ca_static->ca_frames_per_try = TRIESPERFRAME;
-        ca_static->ca_conn_next_retry = ca_static->currentTime;
-        cacSetRetryInterval (0u);
+	ca_static->ca_frames_per_try = TRIESPERFRAME;
+	ca_static->ca_conn_next_retry = ca_static->currentTime;
+	cacSetRetryInterval (0u);
 
 	ellInit(&ca_static->ca_iiuList);
 	ellInit(&ca_static->ca_ioeventlist);
@@ -860,6 +860,10 @@ int epicsShareAPI ca_modify_user_name(const char *pClientName)
  */
 int epicsShareAPI ca_task_exit (void)
 {
+	if (!ca_static) {
+		return ECA_NOCACTX;
+	}
+
 	/*
 	 * This indirectly calls ca_process_exit() below
 	 */
@@ -1095,9 +1099,7 @@ int epicsShareAPI ca_search_and_connect
 
 			LOCK;
 			ellAdd(&local_chidlist, &chix->node);
-			UNLOCK;
 
-			LOCKEVENTS;
 			if (chix->pConnFunc) {
 				struct connection_handler_args 	args;
 
@@ -1112,7 +1114,7 @@ int epicsShareAPI ca_search_and_connect
 				args.ar = chix->ar;
 				(*chix->pAccessRightsFunc) (args);
 			}
-			UNLOCKEVENTS;
+			UNLOCK;
 			return ECA_NORMAL;
 		}
 	}
@@ -1168,9 +1170,8 @@ int epicsShareAPI ca_search_and_connect
 	/*
 	 * reset broadcasted search counters
 	 */
-        ca_static->ca_conn_next_retry = ca_static->currentTime;
-        cacSetRetryInterval (0u);
-	UNLOCK;
+	ca_static->ca_conn_next_retry = ca_static->currentTime;
+	cacSetRetryInterval (0u);
 
 	/*
 	 * Connection Management takes care 
@@ -1179,9 +1180,9 @@ int epicsShareAPI ca_search_and_connect
 	if (!chix->pConnFunc) {
 		SETPENDRECV;
 	}
+	UNLOCK;
 
 	return ECA_NORMAL;
-
 }
 
 
@@ -1317,7 +1318,6 @@ void 		*pvalue
 
 		ellAdd(&pend_read_list, &monix->node);
 	}
-	UNLOCK;
 
 	if (monix) {
 		status = issue_get_callback(monix, CA_PROTO_READ);
@@ -1325,18 +1325,16 @@ void 		*pvalue
 			SETPENDRECV;
 		}
 		else {
-			LOCK;
 			if (ca_state(chix)==cs_conn) {
 				ellDelete (&pend_read_list, &monix->node);
 				caIOBlockFree (monix);
 			}
-			UNLOCK;
 		}
 	} 
 	else {
 		status = ECA_ALLOCMEM;
 	}
-
+	UNLOCK;
 	return status;
 }
 
@@ -1400,22 +1398,20 @@ const void *arg
 
 		ellAdd(&pend_read_list, &monix->node);
 	}
-	UNLOCK;
 
 	if (monix) {
 		status = issue_get_callback (monix, CA_PROTO_READ_NOTIFY);
 		if (status != ECA_NORMAL) {
-			LOCK;
 			if (ca_state(chix)==cs_conn) {
 				ellDelete (&pend_read_list, &monix->node);
 				caIOBlockFree (monix);
 			}
-			UNLOCK;
 		}
 	} 
 	else {
 		status = ECA_ALLOCMEM;
 	}
+	UNLOCK;
 
 	return status;
 }
@@ -2342,18 +2338,17 @@ int		hold,
 db_field_log	*pfl
 )
 {
-	miu			monix = (miu) usrArg;
-  	register int 		status;
-  	register int		count;
-  	register chtype		type = monix->type;
-  	union db_access_val	valbuf;
-  	void			*pval;
-  	register unsigned	size;
+	miu monix = (miu) usrArg;
+  	int status;
+  	int count;
+  	union db_access_val valbuf;
+  	void *pval;
+  	unsigned size;
 	struct tmp_buff{
-		ELLNODE		node;
-		unsigned	size;
+		ELLNODE node;
+		unsigned size;
 	};
-	struct tmp_buff		*pbuf = NULL;
+	struct tmp_buff *pbuf = NULL;
 
   	/*
   	 * clip to the native count
@@ -2366,12 +2361,12 @@ db_field_log	*pfl
 		count = monix->count;
 	}
 
-  	if(type == paddr->dbr_field_type){
+  	if(monix->type == paddr->dbr_field_type){
     		pval = paddr->pfield;
     		status = OK;
   	}
   	else{
-		size = dbr_size_n(type,count);
+		size = dbr_size_n(monix->type,count);
 
     		if( size <= sizeof(valbuf) ){
       			pval = (void *) &valbuf;
@@ -2413,7 +2408,7 @@ db_field_log	*pfl
 
 
    	status = db_get_field(	paddr,
-				type,
+				monix->type,
 				pval,
 				count,
 				pfl);
@@ -2421,13 +2416,13 @@ db_field_log	*pfl
   	/*
 	 * Call user's callback
    	 */
-	LOCKEVENTS;
+	LOCK;
 	if (monix->usr_func) {
 		struct event_handler_args args;
 		
 		args.usr = (void *) monix->usr_arg;
 		args.chid = monix->chan;
-		args.type = type;
+		args.type = monix->type;
 		args.count = count;
 		args.dbr = pval;
 
@@ -2440,7 +2435,6 @@ db_field_log	*pfl
 
    	 	(*monix->usr_func)(args);
 	}
-	UNLOCKEVENTS;
 
 	/*
 	 *
@@ -2449,7 +2443,7 @@ db_field_log	*pfl
 	 */
 	if(pbuf){
 		struct tmp_buff		*ptbuf;
-		LOCK;
+
 		for(	ptbuf = (struct tmp_buff *) lcl_buff_list.node.next;
 			ptbuf;
 			ptbuf = (struct tmp_buff *) pbuf->node.next){
@@ -2465,8 +2459,8 @@ db_field_log	*pfl
 			&lcl_buff_list,
 			&ptbuf->node,
 			&pbuf->node);
-		UNLOCK;
 	}
+	UNLOCK;
 
   	return;
 }
@@ -3049,29 +3043,29 @@ int epicsShareAPI ca_test_io()
  */
 void genLocalExcepWFL (long stat, char *ctx, char *pFile, unsigned lineNo)
 {
-        struct exception_handler_args args;
+	struct exception_handler_args args;
+
+	/*
+	* NOOP if they disable exceptions
+	*/
+	if (!ca_static->ca_exception_func) {
+	    return;
+	}
  
-        /*
-         * NOOP if they disable exceptions
-         */
-        if (!ca_static->ca_exception_func) {
-                return;
-        }
- 
-        args.usr = (void *) ca_static->ca_exception_arg;
-        args.chid = NULL;
-        args.type = -1;
-        args.count = 0u;
-        args.addr = NULL;
-        args.stat = stat;
-        args.op = CA_OP_OTHER;
-        args.ctx = ctx;
+	args.usr = (void *) ca_static->ca_exception_arg;
+	args.chid = NULL;
+	args.type = -1;
+	args.count = 0u;
+	args.addr = NULL;
+	args.stat = stat;
+	args.op = CA_OP_OTHER;
+	args.ctx = ctx;
 	args.pFile = pFile;
 	args.lineNo = lineNo;
  
-        LOCKEVENTS;
-        (*ca_static->ca_exception_func) (args);
-        UNLOCKEVENTS;
+	LOCK;
+	(*ca_static->ca_exception_func) (args);
+	UNLOCK;
 }
 
 
@@ -3387,8 +3381,6 @@ void issue_identify_client(struct ioc_in_use *piiu)
 
 /*
  * ISSUE_CLAIM_CHANNEL 
- *
- * lock must _not_ be on
  */
 int issue_claim_channel (chid pchan)
 {
@@ -3458,8 +3450,6 @@ int issue_claim_channel (chid pchan)
 	 */
 	status = cac_push_msg_no_block(piiu, &hdr, pStr); 
 	
-	UNLOCK;
-	
 	if (status == ECA_NORMAL) {
 
 		/*
@@ -3470,15 +3460,13 @@ int issue_claim_channel (chid pchan)
 		ellAdd (&piiu->chidlist, &pchan->node);
 
 		if (!CA_V42(CA_PROTOCOL_VERSION, piiu->minor_version_number)) {
-			/* 
- 			 * lock must _not_ be applied when calling this
-			 */
-			cac_reconnect_channel(pchan);
+			cac_reconnect_channel(pchan->cid);
 		}
 	}
 	else {
 		piiu->claimsPending = TRUE;
 	}
+	UNLOCK;
 
 	return status;
 }
@@ -3527,6 +3515,8 @@ LOCAL void ca_default_exception_handler(struct exception_handler_args args)
  */
 int epicsShareAPI ca_add_fd_registration(CAFDHANDLER *func, const void *arg)
 {
+	INITCHK;
+
 	fd_register_func = func;
 	fd_register_arg = arg;
 

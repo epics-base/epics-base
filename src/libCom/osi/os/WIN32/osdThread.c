@@ -438,20 +438,25 @@ static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
 {
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParm = ( win32ThreadParam * ) lpParameter;
+    unsigned retStat = 0u;
     BOOL success;
 
-    if ( ! pGbl )  {
-        fprintf ( stderr, "epicsWin32ThreadEntry: unable to find ctx\n" );
-        return 0;
+    if ( pGbl )  {
+        SetThreadName ( pParm->id, pParm->pName );
+
+        success = TlsSetValue ( pGbl->tlsIndexThreadLibraryEPICS, pParm );
+        if ( success ) {
+            /* printf ( "starting thread %d\n", pParm->id ); */
+            ( *pParm->funptr ) ( pParm->parm );
+            /* printf ( "terminating thread %d\n", pParm->id ); */
+            retStat = 1;
+        }
+        else {
+            fprintf ( stderr, "epicsWin32ThreadEntry: unable to set private\n" );
+        }
     }
-
-    SetThreadName ( pParm->id, pParm->pName );
-
-    success = TlsSetValue ( pGbl->tlsIndexThreadLibraryEPICS, pParm );
-    if ( success ) {
-        /* printf ( "starting thread %d\n", pParm->id ); */
-        ( *pParm->funptr ) ( pParm->parm );
-        /* printf ( "terminating thread %d\n", pParm->id ); */
+    else {
+        fprintf ( stderr, "epicsWin32ThreadEntry: unable to find ctx\n" );
     }
 
     /*
@@ -459,7 +464,7 @@ static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
      */
     epicsParmCleanupWIN32 ( pParm );
 
-    return ( ( unsigned ) success ); /* this indirectly closes the thread handle */
+    return retStat; /* this indirectly closes the thread handle */
 }
 
 static win32ThreadParam * epicsThreadParmCreate ( const char *pName )

@@ -90,9 +90,6 @@ example_LIBS += dbStaticIoc
 example_LIBS += ca
 example_LIBS += Com
 
--include ../baseLIBOBJS
-example_OBJS += $(LIBOBJS)
-
 #===========================
 
 include $(TOP)/configure/RULES

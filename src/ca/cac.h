@@ -136,6 +136,7 @@ public:
     void notifyNewFD ( SOCKET ) const;
     void notifyDestroyFD ( SOCKET ) const;
     void uninstallIIU ( tcpiiu &iiu ); 
+    bool preemptiveCallbackEnable () const;
 
 private:
     ipAddrToAsciiEngine     ipToAEngine;
@@ -175,7 +176,7 @@ private:
                             *pRepeaterSubscribeTmr;
     void                    *tcpSmallRecvBufFreeList;
     void                    *tcpLargeRecvBufFreeList;
-    cacNotify               &notify;
+    cacNotify               & notify;
     unsigned                initializingThreadsPriority;
     unsigned                maxRecvBytesTCP;
     unsigned                pndRecvCnt;
@@ -338,6 +339,11 @@ inline void cac::releaseLargeBufferTCP ( char *pBuf )
 inline bool cac::ioComplete () const
 {
     return ( this->pndRecvCnt == 0u );
+}
+
+inline bool cac::preemptiveCallbackEnable () const
+{
+    return this->enablePreemptiveCallback;
 }
 
 #endif // ifdef cach

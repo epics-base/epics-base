@@ -38,6 +38,7 @@
 #include <stdio.h>
 #endif /* vxWorks */
 
+#include <assert.h>
 #include <stdlib.h>
 
 #include <bucketLib.h>
@@ -48,6 +49,12 @@
 #ifndef NBBY
 #define NBBY 8
 #endif /* NBBY */
+#ifndef TRUE
+#define TRUE 1
+#endif /* TRUE */
+#ifndef FALSE
+#define FALSE 0
+#endif /* FALSE */
 
 #define BUCKET_IX_WIDTH		12
 #define BUCKET_IX_N		(1<<BUCKET_IX_WIDTH)
@@ -147,7 +154,16 @@ unsigned indexWidth;
 {
 	BUCKET		*pb;
 
+	/*
+	 * indexWidth must be specified at least one
+	 * bit less than the bit size of type BUCKETID
+	 */
 	if(indexWidth>sizeof(BUCKETID)*NBBY){
+		printf("%s at %d: Requested index width=%d is to large. max=%d\n" ,
+			__FILE__,
+			__LINE__,
+			indexWidth,
+			sizeof(BUCKETID)*NBBY-1);
 		return NULL;
 	}
 
@@ -164,7 +180,13 @@ unsigned indexWidth;
 	}
 	pb->nextIndexMask = (1<<pb->indexShift)-1;
 	pb->nEntries = 1<<(indexWidth-pb->indexShift);
-	pb->indexMask = (1<<indexWidth)-1; 
+	if(indexWidth == sizeof(BUCKETID)*NBBY){
+		pb->indexMask = 0; 
+		pb->indexMask = ~pb->indexMask;
+	}
+	else{
+		pb->indexMask = (1<<indexWidth)-1; 
+	}
 
 	pb->pTable = (ITEMPTR *) calloc(
 			pb->nEntries, 
@@ -214,6 +236,7 @@ BUCKETID id;
 void *pItem;
 #endif
 {
+	int	s;
 	ITEMPTR	*pi;
 
 	/*
@@ -224,6 +247,7 @@ void *pItem;
 	}
 
 	if(prb->indexShift){
+		int	new;
 		BUCKET	*pb;
 
 		pi = &prb->pTable[id>>prb->indexShift];
@@ -236,12 +260,28 @@ void *pItem;
 			}
 			pi->pBucket = pb;
 			prb->nInUse++;
+			new = TRUE;
 		}	
+		else{
+			new = FALSE;
+		}
 
-		return bucketAddItem(
+		s = bucketAddItem(
 			pb, 
 			id&prb->nextIndexMask, 
 			pItem);
+		/*
+		 * if memory cant be allocated at a lower
+		 * level dont leak everything allocated for this new
+		 * item so far
+		 */
+		if(s != BUCKET_SUCCESS && new){
+			s = bucketFree(pb);
+			assert(s == BUCKET_SUCCESS);
+			pi->pBucket = NULL;
+			prb->nInUse--;
+		}
+		return s;
 	}
 	
 	pi = &prb->pTable[id];

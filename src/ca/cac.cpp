@@ -688,7 +688,7 @@ bool cac::lookupChannelAndTransferToTCP (
                 if ( pnewiiu.get() == 0 ) {
                     return true;
                 }
-                bhe * pBHE ( this->beaconTable.lookup ( addr.ia ) );
+                bhe * pBHE = this->beaconTable.lookup ( addr.ia );
                 if ( ! pBHE ) {
                     epics_auto_ptr < bhe > pNewBHE ( new bhe ( epicsTime (), addr.ia ) );
                     if ( pNewBHE.get () ) {

@@ -9,6 +9,8 @@ dbSubs_SRCS += dbLoadTemplate.c
 
 LIBRARY = dbSubs
 
+HTMLS += dbLoadTemplate.html
+
 include $(TOP)/configure/RULES
  
 #

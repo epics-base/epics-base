@@ -15,8 +15,6 @@ of this distribution.
 #include <stdio.h>
 #include <errno.h>
 #include <time.h>
-#include <pthread.h>
-#include <sched.h>
 
 #include "osiThread.h"
 #include "osiSem.h"

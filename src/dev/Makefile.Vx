@@ -106,6 +106,15 @@ SRCS.c += ../devABBINARY.c
 SRCS.c += ../devABStatus.c
 SRCS.c += ../devMpc.c
 
+#	SRCS.c += ../devAiCan.c
+#	SRCS.c += ../devAoCan.c
+#	SRCS.c += ../devBiCan.c
+#	SRCS.c += ../devBoCan.c
+#	SRCS.c += ../devMbbiCan.c
+#	SRCS.c += ../devMbboCan.c
+#	SRCS.c += ../devMbbiDirectCan.c
+#	SRCS.c += ../devMbboDirectCan.c
+
 LIBOBJS = $(SRCS.c:../%.c=%.o)
 
 LIBNAME = devSup

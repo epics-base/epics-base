@@ -545,7 +545,8 @@ void nciu::resubscribe ( epicsGuard < epicsMutex > & guard )
                 this->getPIIU(guard)->subscriptionRequest ( guard, *this, *pSubscr );
             }
             catch ( ... ) {
-                errlogPrintf ( "CAC: failed to send subscription request during channel connect\n" );
+                errlogPrintf ( "CAC: failed to send subscription request "
+                               "during channel connect\n" );
             }
         }
         pNetIO = next;
@@ -567,7 +568,8 @@ void nciu::sendSubscriptionUpdateRequests ( epicsGuard < epicsMutex > & guard )
                 pSubscr->subscriptionUpdateIfRequired ( guard, *this );
             }
             catch ( ... ) {
-                errlogPrintf ( "CAC: failed to send subscription request during channel connect\n" );
+                errlogPrintf ( "CAC: failed to send subscription update request "
+                               "during channel connect\n" );
             }
         }
         pNetIO = next;

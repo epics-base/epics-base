@@ -116,21 +116,19 @@ endif
 
 # C++ munching
 %.out : %.o
-	@ $(RM) ctct.o ctdt.c
-	$(NM) $< | $(MUNCH) > ctdt.c
-	$(COMPILE.c) -traditional ctdt.c
-	$(LINK.c) $@ $< ctdt.o
-	@ $(RM) ctdt.c ctdt.o
-
-# C++ munching
-$(MUNCHNAME):%.munch : %
 	@ $(RM) ctct.o ctdt.c nm.out
 	$(NM) $<  > nm.out
-	$(MUNCH) < nm.out > ctdt.c
+	$(PERL) $(EPICS_BASE)/bin/$(HOST_ARCH)/munch.pl < nm.out > ctdt.c
 	$(COMPILE.c) -traditional ctdt.c
 	$(LINK.cc) $@ $< ctdt.o
 
-
+# C++ munching for VxWorks
+$(MUNCHNAME):%.munch : %
+	@ $(RM) ctct.o ctdt.c nm.out
+	$(NM) $<  > nm.out
+	$(PERL) $(EPICS_BASE)/bin/$(HOST_ARCH)/munch.pl < nm.out > ctdt.c
+	$(COMPILE.c) -traditional ctdt.c
+	$(LINK.cc) $@ $(LDFLAGS) $< ctdt.o
 
 #
 # rename the y.tab.h file only if we

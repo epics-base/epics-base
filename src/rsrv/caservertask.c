@@ -487,7 +487,6 @@ void destroy_client ( struct client *client )
         taskwdRemove ( client->tid );
     }
 
-
     if ( client->sock != INVALID_SOCKET ) {
         epicsSocketDestroy ( client->sock );
     }
@@ -527,15 +526,25 @@ void destroy_client ( struct client *client )
         }
     }
 
-    epicsMutexDestroy ( client->eventqLock );
+    if ( client->eventqLock ) {
+        epicsMutexDestroy ( client->eventqLock );
+    }
 
-    epicsMutexDestroy ( client->addrqLock );
+    if ( client->addrqLock ) {
+        epicsMutexDestroy ( client->addrqLock );
+    }
 
-    epicsMutexDestroy ( client->putNotifyLock );
+    if ( client->putNotifyLock ) {
+        epicsMutexDestroy ( client->putNotifyLock );
+    }
 
-    epicsMutexDestroy ( client->lock );
+    if ( client->lock ) {
+        epicsMutexDestroy ( client->lock );
+    }
 
-    epicsEventDestroy ( client->blockSem );
+    if ( client->blockSem ) {
+        epicsEventDestroy ( client->blockSem );
+    }
 
     if ( client->pUserName ) {
         free ( client->pUserName );
@@ -558,65 +567,69 @@ void destroy_tcp_client ( struct client *client )
         errlogPrintf ( "CAS: Connection %d Terminated\n", client->sock );
     }
 
-    /*
-     * turn off extra labor callbacks from the event thread
-     */
-    status = db_add_extra_labor_event ( client->evuser, NULL, NULL );
-    assert ( ! status );
+    if ( client->evuser ) {
+        /*
+        * turn off extra labor callbacks from the event thread
+        */
+        status = db_add_extra_labor_event ( client->evuser, NULL, NULL );
+        assert ( ! status );
 
-    /*
-     * wait for extra labor in progress to comple
-     */
-    status = db_flush_extra_labor_event ( client->evuser );
-    assert ( ! status );
+        /*
+        * wait for extra labor in progress to comple
+        */
+        status = db_flush_extra_labor_event ( client->evuser );
+        assert ( ! status );
 
-    /*
-     * wait for any put notify in progress to comple
-     */
-    status = db_flush_extra_labor_event(client->evuser);
-    assert ( ! status );
+        /*
+        * wait for any put notify in progress to comple
+        */
+        status = db_flush_extra_labor_event(client->evuser);
+        assert ( ! status );
+    }
 
-    while ( TRUE ) {
-        epicsMutexMustLock ( client->addrqLock );
-        pciu = (struct channel_in_use *) ellGet ( & client->addrq );
-        epicsMutexUnlock ( client->addrqLock );
-
-        if ( ! pciu ) {
-            break;
-        }
-
+    if ( client->addrqLock && client->eventqLock ) {
         while ( TRUE ) {
-            /*
-             * AS state change could be using this list
-             */
-            epicsMutexMustLock ( client->eventqLock );
+            epicsMutexMustLock ( client->addrqLock );
+            pciu = (struct channel_in_use *) ellGet ( & client->addrq );
+            epicsMutexUnlock ( client->addrqLock );
 
-            pevext = (struct event_ext *) ellGet ( &pciu->eventq );
-            epicsMutexUnlock ( client->eventqLock );
-            if ( ! pevext ) {
+            if ( ! pciu ) {
                 break;
             }
 
-            if ( pevext->pdbev ) {
-                db_cancel_event (pevext->pdbev);
-            }
-            freeListFree (rsrvEventFreeList, pevext);
-        }
-        rsrvFreePutNotify ( client, pciu->pPutNotify );
-        LOCK_CLIENTQ;
-        status = bucketRemoveItemUnsignedId ( pCaBucket, &pciu->sid);
-        UNLOCK_CLIENTQ;
-        if ( status != S_bucket_success ) {
-            errPrintf ( status, __FILE__, __LINE__, 
-                "Bad id=%d at close", pciu->sid);
-        }
-        status = asRemoveClient(&pciu->asClientPVT);
-        if ( status && status != S_asLib_asNotActive ) {
-            printf ( "bad asRemoveClient() status was %x \n", status );
-            errPrintf ( status, __FILE__, __LINE__, "asRemoveClient" );
-        }
+            while ( TRUE ) {
+                /*
+                * AS state change could be using this list
+                */
+                epicsMutexMustLock ( client->eventqLock );
 
-        freeListFree ( rsrvChanFreeList, pciu );
+                pevext = (struct event_ext *) ellGet ( &pciu->eventq );
+                epicsMutexUnlock ( client->eventqLock );
+                if ( ! pevext ) {
+                    break;
+                }
+
+                if ( pevext->pdbev ) {
+                    db_cancel_event (pevext->pdbev);
+                }
+                freeListFree (rsrvEventFreeList, pevext);
+            }
+            rsrvFreePutNotify ( client, pciu->pPutNotify );
+            LOCK_CLIENTQ;
+            status = bucketRemoveItemUnsignedId ( pCaBucket, &pciu->sid);
+            UNLOCK_CLIENTQ;
+            if ( status != S_bucket_success ) {
+                errPrintf ( status, __FILE__, __LINE__, 
+                    "Bad id=%d at close", pciu->sid);
+            }
+            status = asRemoveClient(&pciu->asClientPVT);
+            if ( status && status != S_asLib_asNotActive ) {
+                printf ( "bad asRemoveClient() status was %x \n", status );
+                errPrintf ( status, __FILE__, __LINE__, "asRemoveClient" );
+            }
+
+            freeListFree ( rsrvChanFreeList, pciu );
+        }
     }
 
     if ( client->evuser ) {

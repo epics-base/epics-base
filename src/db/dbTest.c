@@ -56,7 +56,7 @@ long dbtr(char *pname);		/*test record*/
 long dbtgf(char *pname);	/*test get field*/
 long dbtpf(char	*pname,char *pvalue); /*test put field*/
 long dbior(char	*pdrvName,int type); /*I/O report */
-int dbhcr(void);		/*Hardware Configuration Report*/
+int dbhcr(char *filename);		/*Hardware Configuration Report*/
 
 #include <vxWorks.h>
 #include <stdlib.h>
@@ -120,7 +120,7 @@ long dba(char*pname)
 
     status=dbNameToAddr(pname,&addr);
     printDbAddr(status,&addr);
-    if(status) return(1); else return(0);
+    return(status);
 }
 
 long dbel(char*pname)
@@ -132,8 +132,8 @@ long dbel(char*pname)
 
     status=dbNameToAddr(pname,&addr);
     if(status) {
-	printf("record not found\n");
-	return(0);
+	errMessage(status," dbNameToAddr failed");
+	return(status);
     }
     peb = (struct event_block *)ellFirst(&addr.precord->mlis);
     if(!peb) {
@@ -306,8 +306,8 @@ long dbgf(char	*pname)
 
     status=dbNameToAddr(pname,&addr);
     if(status) {
-	printf("dbNameToAddr failed\n");
-	return(1);
+	errMessage(status," dbNameToAddr failed");
+	return(status);
     }
     no_elements=MIN(addr.no_elements,((sizeof(buffer))/addr.field_size));
     options=0;
@@ -341,7 +341,7 @@ long dbpf(char	*pname,char *pvalue)
     status=dbNameToAddr(pname,&addr);
     if(status) {
          errMessage(status,"dbNameToAddr error");
-         return(1);
+         return(status);
     }
     /* For enumerated types must allow for ENUM rather than string*/
     /* If entire field is digits then use DBR_ENUM else DBR_STRING*/
@@ -356,7 +356,7 @@ long dbpf(char	*pname,char *pvalue)
     }
     if(status) {
          errMessage(status,"dbPutField error");
-         return(1);
+         return(status);
     }
     status=dbgf(pname);
     return(status);
@@ -376,8 +376,8 @@ long dbpr(char *pname,int interest_level)
 
     status = dbNameToAddr(pname, &addr);
     if(status) {
-	printf("dbNameToAddr failed\n");
-	return(1);
+	errMessage(status," dbNameToAddr failed");
+	return(status);
     }
     if (dbpr_report(pname, &addr, interest_level, pMsgBuff, tab_size))
 	return (1);
@@ -394,8 +394,8 @@ long dbtr(char *pname)
 
     status=dbNameToAddr(pname,&addr);
     if(status) {
-	printf("dbNameToAddr failed\n");
-	return(1);
+	errMessage(status," dbNameToAddr failed");
+	return(status);
     }
     precord=(struct dbCommon*)(addr.precord);
     if (precord->pact) {
@@ -431,8 +431,8 @@ long dbtgf(char *pname)
 
     status=dbNameToAddr(pname,&addr);
     if(status) {
-	printf("dbNameToAddr failed\n");
-	return(1);
+	errMessage(status," dbNameToAddr failed");
+	return(status);
     }
     /* try all options first */
     req_options=0xffffffff;
@@ -514,8 +514,8 @@ long dbtpf(char	*pname,char *pvalue)
 
     status=dbNameToAddr(pname,&addr);
     if(status) {
-	printf("dbNameToAddr failed\n");
-	return(1);
+	errMessage(status," dbNameToAddr failed");
+	return(status);
     }
     /* DBR_STRING */
     status=dbPutField(&addr,DBR_STRING,pvalue,1L);
@@ -696,15 +696,39 @@ long dbior(char	*pdrvName,int type)
     return(0);
 }
 
-int dbhcr(void)
+int dbhcr(char *filename)
 {
+    FILE	*stream = NULL;
+    int		isStdout = TRUE;
 
     if(!pdbbase) {
 	printf("No database\n");
 	return(0);
     }
-    dbReportDeviceConfig(pdbbase,stdout);
-    fflush(stdout);
+    if(filename && strlen(filename)) {
+        int fd;
+
+        fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0644 );
+        if(fd<0) {
+            fprintf(stderr,"%s could not be created\n",filename);
+            return(0);
+        }
+        stream = fdopen(fd,"w+");
+        if(stream==NULL) {
+            fprintf(stderr,"%s could not be opened for output\n",filename);
+            return(0);
+        }
+	isStdout = FALSE;
+    } else {
+	stream = stdout;
+    }
+
+    dbReportDeviceConfig(pdbbase,stream);
+    if(isStdout) {
+	fflush(stream);
+    } else {
+        fclose(stream);
+    }
     return(0);
 }
 
@@ -1259,8 +1283,8 @@ char *record_name;
   status = dbNameToAddr(record_name, &address);
  
   if (status != 0) {
-       printf("Cannot locate %s.\n", record_name);
-       return(status);
+	errMessage(status," dbNameToAddr failed");
+	return(status);
   }
  
   precord = address.precord;

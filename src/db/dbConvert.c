@@ -45,9 +45,8 @@
 #include	<recSup.h>
 #include	<recGbl.h>
 
-
 /* DATABASE ACCESS GET CONVERSION SUPPORT */
-
+
 static long getStringString (
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
@@ -90,15 +89,21 @@ static long getStringChar(
 	if(sscanf(psrc,"%hd",&value) == 1) {
 		*pbuffer = (char)value;
 		return(0);
+	} else if(strlen(psrc) == 0) {
+		*pbuffer = '0';
+		return(0);
+	} else {
+		return(-1);
 	}
-	else return(-1);
     }
     psrc += MAX_STRING_SIZE*offset;
     while (nRequest) {
 	if(sscanf(psrc,"%hd",&value) == 1) {
 	    *pbuffer = (char)value;
+	} else if(strlen(psrc) == 0) {
+		*pbuffer = '0';
 	} else {
-	    return(-1);
+		return(-1);
 	}
 	pbuffer++;
 	if(++offset==no_elements)
@@ -121,15 +126,21 @@ static long getStringUchar(
 	if(sscanf(psrc,"%hu",&value) == 1) {
 		*pbuffer = (unsigned char)value;
 		return(0);
+	} else if(strlen(psrc) == 0) {
+		*pbuffer = '0';
+		return(0);
+	} else {
+		return(-1);
 	}
-	else return(-1);
     }
     psrc += MAX_STRING_SIZE*offset;
     while (nRequest) {
 	if(sscanf(psrc,"%hu",&value) == 1) {
 	    *pbuffer = (unsigned char)value;
+	} else if(strlen(psrc) == 0) {
+		*pbuffer = '0';
 	} else {
-	    return(-1);
+		return(-1);
 	}
 	pbuffer++;
 	if(++offset==no_elements)
@@ -152,15 +163,21 @@ static long getStringShort(
 	if(sscanf(psrc,"%hd",&value) == 1) {
 		*pbuffer = value;
 		return(0);
+	} else if(strlen(psrc) == 0) {
+		*pbuffer = 0;
+		return(0);
+	} else {
+		return(-1);
 	}
-	else return(-1);
     }
     psrc += MAX_STRING_SIZE*offset;
     while (nRequest) {
 	if(sscanf(psrc,"%hd",&value) == 1) {
 	    *pbuffer = value;
+	} else if(strlen(psrc) == 0) {
+		*pbuffer = 0;
 	} else {
-	    return(-1);
+		return(-1);
 	}
 	pbuffer++;
 	if(++offset==no_elements)
@@ -183,15 +200,21 @@ static long getStringUshort(
 	if(sscanf(psrc,"%hu",&value) == 1) {
 		*pbuffer = value;
 		return(0);
+	} else if(strlen(psrc) == 0) {
+		*pbuffer = 0;
+		return(0);
+	} else {
+		return(-1);
 	}
-	else return(-1);
     }
     psrc += MAX_STRING_SIZE*offset;
     while (nRequest) {
 	if(sscanf(psrc,"%hu",&value) == 1) {
 	    *pbuffer = value;
+	} else if(strlen(psrc) == 0) {
+		*pbuffer = 0;
 	} else {
-	    return(-1);
+		return(-1);
 	}
 	pbuffer++;
 	if(++offset==no_elements)
@@ -214,15 +237,21 @@ static long getStringLong(
 	if(sscanf(psrc,"%ld",&value) == 1) {
 		*pbuffer = value;
 		return(0);
+	} else if(strlen(psrc) == 0) {
+		*pbuffer = 0;
+		return(0);
+	} else {
+		return(-1);
 	}
-	else return(-1);
     }
     psrc += MAX_STRING_SIZE*offset;
     while (nRequest) {
 	if(sscanf(psrc,"%ld",&value) == 1) {
 	    *pbuffer = value;
+	} else if(strlen(psrc) == 0) {
+		*pbuffer = 0;
 	} else {
-	    return(-1);
+		return(-1);
 	}
 	pbuffer++;
 	if(++offset==no_elements)
@@ -239,21 +268,29 @@ static long getStringUlong(
 {
     unsigned long	*pbuffer = (unsigned long *)pto;
     char   		*psrc=(char *)paddr->pfield;
-    unsigned long  	value;
+    double  		value;
 
+    /*Convert to double first so that numbers like 1.0e3 convert properly*/
+    /*Problem was old database access said to get unsigned long as double*/
     if(nRequest==1 && offset==0) {
-	if(sscanf(psrc,"%lu",&value) == 1) {
-		*pbuffer = value;
+	if(sscanf(psrc,"%lf",&value) == 1) {
+		*pbuffer = (unsigned long)value;
 		return(0);
+	} else if(strlen(psrc) == 0) {
+		*pbuffer = 0;
+		return(0);
+	} else {
+		return(-1);
 	}
-	else return(-1);
     }
     psrc += MAX_STRING_SIZE*offset;
     while (nRequest) {
-	if(sscanf(psrc,"%lu",&value) == 1) {
-	    *pbuffer = value;
+	if(sscanf(psrc,"%lf",&value) == 1) {
+	    *pbuffer = (unsigned long)value;
+	} else if(strlen(psrc) == 0) {
+		*pbuffer = 0;
 	} else {
-	    return(-1);
+		return(-1);
 	}
 	pbuffer++;
 	if(++offset==no_elements)
@@ -276,16 +313,21 @@ static long getStringFloat(
 	if(sscanf(psrc,"%f",&value) == 1) {
 		*pbuffer = value;
 		return(0);
+	} else if(strlen(psrc) == 0) {
+		*pbuffer = 0.0;
+		return(0);
 	} else {
-	    return(-1);
+		return(-1);
 	}
     }
     psrc += MAX_STRING_SIZE*offset;
     while (nRequest) {
 	if(sscanf(psrc,"%f",&value) == 1) {
 	    *pbuffer = value;
+	} else if(strlen(psrc) == 0) {
+		*pbuffer = 0.0;
 	} else {
-	    return(-1);
+		return(-1);
 	}
 	pbuffer++;
 	if(++offset==no_elements)
@@ -308,16 +350,21 @@ static long getStringDouble(
 	if(sscanf(psrc,"%lf",&value) == 1) {
 		*pbuffer = value;
 		return(0);
+	} else if(strlen(psrc) == 0) {
+		*pbuffer = 0.0;
+		return(0);
 	} else {
-	    return(-1);
+		return(-1);
 	}
     }
     psrc += MAX_STRING_SIZE*offset;
     while (nRequest) {
 	if(sscanf(psrc,"%lf",&value) == 1) {
 	    *pbuffer = value;
+	} else if(strlen(psrc) == 0) {
+		*pbuffer = 0.0;
 	} else {
-	    return(-1);
+		return(-1);
 	}
 	pbuffer++;
 	if(++offset==no_elements)
@@ -1504,9 +1551,10 @@ static long getFloatString(
     float	*psrc=(float *)(paddr->pfield);
     long	status = 0;
     int		precision = 0;
-    struct rset	*prset;
+    struct rset	*prset = 0;
 
-    if((prset=dbGetRset(paddr)) && (prset->get_precision))
+    if(paddr) prset = dbGetRset(paddr);
+    if(prset && (prset->get_precision))
 	status = (*prset->get_precision)(paddr,&precision);
     else
 	status=S_db_precision;
@@ -1627,17 +1675,14 @@ static long getFloatUlong(
 {
     unsigned long *pbuffer = (unsigned long *)pto;
     float *psrc=(float *)(paddr->pfield);
-    long  ltemp;	/*vxWorks does not support float to unsigned long*/
 
     if(nRequest==1 && offset==0) {
-	ltemp = *psrc;
-	*pbuffer = ltemp;
+	*pbuffer = *psrc;
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	ltemp = *psrc++;
-	*pbuffer++ = ltemp;
+	*pbuffer++ = *psrc++;
 	if(++offset==no_elements) psrc=(float *)paddr->pfield;
 	nRequest--;
     }
@@ -1708,9 +1753,10 @@ static long getDoubleString(
     double *psrc=(double *)(paddr->pfield);
     long	status = 0;
     int		precision = 0;
-    struct rset	*prset;
+    struct rset	*prset = 0;
 
-    if((prset=dbGetRset(paddr)) && (prset->get_precision))
+    if(paddr) prset = dbGetRset(paddr);
+    if(prset && (prset->get_precision))
 	status = (*prset->get_precision)(paddr,&precision);
     else
 	status=S_db_precision;
@@ -1831,17 +1877,14 @@ static long getDoubleUlong(
 {
     unsigned long *pbuffer = (unsigned long *)pto;
     double *psrc=(double *)(paddr->pfield);
-    long   ltemp; /*vxWorks does not support double to unsigned long*/
 
     if(nRequest==1 && offset==0) {
-	ltemp = *psrc;
-	*pbuffer = ltemp;
+	*pbuffer = *psrc;
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	ltemp = *psrc++;
-	*pbuffer++ = ltemp;
+	*pbuffer++ = *psrc++;
 	if(++offset==no_elements) psrc=(double *)paddr->pfield;
 	nRequest--;
     }
@@ -2268,21 +2311,19 @@ static long putStringUshort(
 {
     char *pbuffer = (char *)pfrom;
     unsigned short  *pdest=(unsigned short *)paddr->pfield;
-    float 	value;
+    unsigned short  value;
 
-    /*Convert to float first so that numbers like 1.0e3 convert properly*/
-    /*Problem was old database access said to get unsigned short as float*/
     if(nRequest==1 && offset==0) {
-	if(sscanf(pbuffer,"%f",&value) == 1) {
-		*pdest = (unsigned short)value;
+	if(sscanf(pbuffer,"%hu",&value) == 1) {
+		*pdest = value;
 		return(0);
 	}
 	else return(-1);
     }
     pdest += offset;
     while (nRequest) {
-	if(sscanf(pbuffer,"%f",&value) == 1) {
-	    *pdest = (unsigned short)value;
+	if(sscanf(pbuffer,"%hu",&value) == 1) {
+	    *pdest = value;
 	} else {
 	    return(-1);
 	}
@@ -3721,10 +3762,11 @@ static long putFloatString(
     char	*pdest=(char *)(paddr->pfield);
     long	status = 0;
     int		precision = 0;
-    struct rset	*prset;
+    struct rset	*prset = 0;
     short size=paddr->field_size;
 
-    if((prset=dbGetRset(paddr)) && (prset->get_precision))
+    if(paddr) prset = dbGetRset(paddr);
+    if(prset && (prset->get_precision))
 	status = (*prset->get_precision)(paddr,&precision);
     else
 	status=S_db_precision;
@@ -3846,17 +3888,14 @@ static long putFloatUlong(
 {
     float *pbuffer = (float *)pfrom;
     unsigned long  *pdest=(unsigned long *)(paddr->pfield);
-    long	   ltemp;/*vxWorks does not support float to unsigned long*/
 
     if(nRequest==1 && offset==0) {
-	ltemp = *pbuffer;
-	*pdest = ltemp;
+	*pdest = *pbuffer;
 	return(0);
     }
     pdest += offset;
     while (nRequest) {
-	ltemp = *pbuffer++;
-	*pdest++ = ltemp;
+	*pdest++ = *pbuffer++;
 	if(++offset==no_elements) pdest=(unsigned long *)paddr->pfield;
 	nRequest--;
     }
@@ -3927,10 +3966,11 @@ static long putDoubleString(
     char	*pdest=(char *)(paddr->pfield);
     long	status = 0;
     int		precision = 0;
-    struct rset	*prset;
+    struct rset	*prset = 0;
     short size=paddr->field_size;
 
-    if((prset=dbGetRset(paddr)) && (prset->get_precision))
+    if(paddr) prset = dbGetRset(paddr);
+    if(prset && (prset->get_precision))
 	status = (*prset->get_precision)(paddr,&precision);
     else
 	status=S_db_precision;
@@ -4052,17 +4092,14 @@ static long putDoubleUlong(
 {
     double *pbuffer = (double *)pfrom;
     unsigned long  *pdest=(unsigned long *)(paddr->pfield);
-    long	   ltemp;/*vxWorks does not support double to unsigned long*/
 
     if(nRequest==1 && offset==0) {
-	ltemp = *pbuffer;
-	*pdest = ltemp;
+	*pdest = *pbuffer;
 	return(0);
     }
     pdest += offset;
     while (nRequest) {
-	ltemp = *pbuffer++;
-	*pdest++ = ltemp;
+	*pdest++ = *pbuffer++;
 	if(++offset==no_elements) pdest=(unsigned long *)paddr->pfield;
 	nRequest--;
     }

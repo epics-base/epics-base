@@ -115,7 +115,10 @@ static long cvt_st_c(
       *to = (char) value;
       return(0);
    }
-
+   if(strlen(from) == 0) {
+      *to = '0';
+      return(0);
+   }
    return(-1);       /* Change to SYMBOL */
  }
 
@@ -125,10 +128,14 @@ static long cvt_st_uc(
      unsigned char *to,
      struct dbAddr *paddr)
  {
-   short value;
+   unsigned short value;
 
    if (sscanf(from, "%hu", &value) == 1) {
-      *to = (unsigned char) value;
+      *to = value;
+      return(0);
+   }
+   if(strlen(from) == 0) {
+      *to = '0';
       return(0);
    }
 
@@ -147,6 +154,10 @@ static long cvt_st_s(
       *to = value;
       return(0);
    }
+   if(strlen(from) == 0) {
+      *to = 0;
+      return(0);
+   }
   
    return(-1);      /* Change to SYMBOL */
  }
@@ -157,11 +168,15 @@ static long cvt_st_us(
      unsigned short *to,
      struct dbAddr *paddr)
  {
-   short value;
+   unsigned short value;
 
    if (sscanf(from, "%hu", &value) == 1) {
-     *to = (unsigned short) value;
+     *to = value;
      return(0);
+   }
+   if(strlen(from) == 0) {
+      *to = 0;
+      return(0);
    }
 
    return(-1);      /* Change to SYMBOL */
@@ -179,6 +194,10 @@ static long cvt_st_l(
       *to = value;
       return(0);
    }
+   if(strlen(from) == 0) {
+      *to = 0;
+      return(0);
+   }
 
    return(-1);      /* Change to SYMBOL */
  }
@@ -189,10 +208,16 @@ static long cvt_st_ul(
      unsigned long *to,
      struct dbAddr *paddr)
  {
-   unsigned long value;
+   double value;
 
-   if (sscanf(from, "%lu", &value) == 1) {
-      *to = value;
+   /*Convert to double first so that numbers like 1.0e3 convert properly*/
+   /*Problem was old database access said to get unsigned long as double*/
+   if (sscanf(from, "%lf", &value) == 1) {
+      *to = (unsigned long)value;
+      return(0);
+   }
+   if(strlen(from) == 0) {
+      *to = 0;
       return(0);
    }
 
@@ -211,6 +236,10 @@ static long cvt_st_f(
       *to = value;
       return(0);
    }
+   if(strlen(from) == 0) {
+      *to = 0.0;
+      return(0);
+   }
 
    return(-1);      /* Change to SYMBOL */
  }
@@ -225,6 +254,10 @@ static long cvt_st_d(
 
    if (sscanf(from, "%lf", &value) == 1) {
       *to = value;
+      return(0);
+   }
+   if(strlen(from) == 0) {
+      *to = 0.0;
       return(0);
    }
 

@@ -1,5 +1,4 @@
 /* dbScan.c */
-/* base/src/db  $Id$ */
 /* tasks and subroutines to scan the database */
 /*
  *      Original Author:        Bob Dalesio
@@ -40,6 +39,7 @@
  * .09  02-03-94	mrk	If scanAdd fails set precord->scan=SCAN_PASSIVE
  * .10  02-22-94	mrk	Make init work if 1st record has 28 char name
  * .11  05-04-94	mrk	Call taskwdRemove only if spawing again
+ * .12  05-02-96	mrk	Allow multiple priority event scan 
  */
 
 #include	<vxWorks.h>
@@ -73,66 +73,65 @@
 extern struct dbBase *pdbbase;
 
 /* SCAN ONCE */
-int onceQueueSize = 256;
+int onceQueueSize = 1000;
 static SEM_ID onceSem;
 static RING_ID onceQ;
 static int onceTaskId;
 
 /*all other scan types */
-struct scan_list{
+typedef struct scan_list{
 	FAST_LOCK	lock;
 	ELLLIST		list;
 	short		modified;/*has list been modified?*/
 	long		ticks;	/*ticks per period for periodic*/
-};
+}scan_list;
 /*scan_elements are allocated and the address stored in dbCommon.spvt*/
-struct scan_element{
+typedef struct scan_element{
 	ELLNODE			node;
-	struct scan_list	*pscan_list;
+	scan_list		*pscan_list;
 	struct dbCommon		*precord;
-};
+}scan_element;
 
 int volatile scanRestart=FALSE;
-
-/* PERIODIC SCANNER */
-static int nPeriodic=0;
-static struct scan_list **papPeriodic; /* pointer to array of pointers*/
-static int *periodicTaskId;		/*array of integers after allocation*/
+static char *priorityName[NUM_CALLBACK_PRIORITIES] = {
+	"Low","Medium","High"};
 
 /* EVENT */
 #define MAX_EVENTS 256
-#define EVENT_QUEUE_SIZE 1000
-static struct scan_list *papEvent[MAX_EVENTS];/*array of pointers*/
-static SEM_ID eventSem;
-static RING_ID eventQ;
-static int eventTaskId;
+typedef struct event_scan_list {
+	CALLBACK	callback;
+	scan_list	scan_list;
+}event_scan_list;
+static event_scan_list *pevent_list[NUM_CALLBACK_PRIORITIES][MAX_EVENTS];
 
 /* IO_EVENT*/
-struct io_scan_list {
+typedef struct io_scan_list {
 	CALLBACK		callback;
-	struct scan_list	scan_list;
+	scan_list		scan_list;
 	struct io_scan_list	*next;
-};
+}io_scan_list;
+static io_scan_list *iosl_head[NUM_CALLBACK_PRIORITIES]={NULL,NULL,NULL};
 
-static struct io_scan_list *iosl_head[NUM_CALLBACK_PRIORITIES]={NULL,NULL,NULL};
+/* PERIODIC SCANNER */
+static int nPeriodic=0;
+static scan_list **papPeriodic; /* pointer to array of pointers*/
+static int *periodicTaskId;		/*array of integers after allocation*/
 
 /* Private routines */
 static void onceTask(void);
 static void initOnce(void);
-static void periodicTask(struct scan_list *psl);
+static void periodicTask(scan_list *psl);
 static void initPeriodic(void);
 static void spawnPeriodic(int ind);
 static void wdPeriodic(long ind);
-static void eventTask(void);
 static void initEvent(void);
-static void spawnEvent(void);
-static void wdEvent(void);
-static void ioeventCallback(struct io_scan_list *piosl);
-static void printList(struct scan_list *psl,char *message);
-static void scanList(struct scan_list *psl);
+static void eventCallback(event_scan_list *pevent_scan_list);
+static void ioeventCallback(io_scan_list *piosl);
+static void printList(scan_list *psl,char *message);
+static void scanList(scan_list *psl);
 static void buildScanLists(void);
-static void addToList(struct dbCommon *precord,struct scan_list *psl);
-static void deleteFromList(struct dbCommon *precord,struct scan_list *psl);
+static void addToList(struct dbCommon *precord,scan_list *psl);
+static void deleteFromList(struct dbCommon *precord,scan_list *psl);
 
 long scanInit()
 {
@@ -143,38 +142,13 @@ long scanInit()
 	initEvent();
 	buildScanLists();
 	for (i=0;i<nPeriodic; i++) spawnPeriodic(i);
-	spawnEvent();
 	return(0);
 }
 
-void post_event(int event)
-{
-	unsigned char evnt;
-	static int newOverflow=TRUE;
-
-	if (!interruptAccept) return;     /* not awake yet */
-	if(event<0 || event>=MAX_EVENTS) {
-		errMessage(-1,"illegal event passed to post_event");
-		return;
-	}
-	evnt = (unsigned)event;
-	/*multiple writers can exist. Thus if evnt is ever changed to use*/
-	/*something bigger than a character interrupts will have to be blocked*/
-	if(rngBufPut(eventQ,(void *)&evnt,sizeof(unsigned char))
-	!=sizeof(unsigned char)) {
-	    if(newOverflow) errMessage(0,"rngBufPut overflow in post_event");
-	    newOverflow = FALSE;
-	} else {
-	    newOverflow = TRUE;
-	}
-	semGive(eventSem);
-}
-
-
 void scanAdd(struct dbCommon *precord)
 {
 	short		scan;
-	struct scan_list *psl;
+	scan_list *psl;
 
 	/* get the list on which this record belongs */
 	scan = precord->scan;
@@ -183,7 +157,9 @@ void scanAdd(struct dbCommon *precord)
 	    recGblRecordError(-1,(void *)precord,
 		"scanAdd detected illegal SCAN value");
 	}else if(scan==SCAN_EVENT) {
-	    unsigned char evnt;
+	    unsigned char 	evnt;
+	    int		  	priority;
+	    event_scan_list	*pevent_scan_list;
 
 	    if(precord->evnt<0 || precord->evnt>=MAX_EVENTS) {
 		recGblRecordError(S_db_badField,(void *)precord,
@@ -192,16 +168,25 @@ void scanAdd(struct dbCommon *precord)
 		return;
 	    }
 	    evnt = (signed)precord->evnt;
-	    psl = papEvent[evnt];
-	    if(psl==NULL) {
-		psl = dbCalloc(1,sizeof(struct scan_list));
-		papEvent[precord->evnt] = psl;
-		FASTLOCKINIT(&psl->lock);
-		ellInit(&psl->list);
+	    priority = precord->prio;
+	    if(priority<0 || priority>=NUM_CALLBACK_PRIORITIES) {
+		recGblRecordError(-1,(void *)precord,
+		    "scanAdd: illegal prio field");
+		precord->scan = SCAN_PASSIVE;
+		return;
 	    }
+	    pevent_scan_list = pevent_list[priority][evnt];
+	    if(!pevent_scan_list ) {
+		pevent_scan_list = dbCalloc(1,sizeof(event_scan_list));
+		pevent_list[priority][evnt] = pevent_scan_list;
+		pevent_scan_list->callback.callback = eventCallback;
+		pevent_scan_list->callback.priority = priority;
+		ellInit(&pevent_scan_list->scan_list.list);
+	    }
+	    psl = &pevent_scan_list->scan_list;
 	    addToList(precord,psl);
 	} else if(scan==SCAN_IO_EVENT) {
-	    struct io_scan_list *piosl=NULL;
+	    io_scan_list *piosl=NULL;
 	    int			priority;
 	    DEVSUPFUN get_ioint_info;
 
@@ -250,7 +235,7 @@ void scanAdd(struct dbCommon *precord)
 void scanDelete(struct dbCommon *precord)
 {
 	short		scan;
-	struct scan_list *psl;
+	scan_list *psl;
 
 	/* get the list on which this record belongs */
 	scan = precord->scan;
@@ -259,22 +244,33 @@ void scanDelete(struct dbCommon *precord)
 	   recGblRecordError(-1,(void *)precord,
 		"scanDelete detected illegal SCAN value");
 	}else if(scan==SCAN_EVENT) {
-	    unsigned char evnt;
+	    unsigned char 	evnt;
+	    int		  	priority;
+	    event_scan_list	*pevent_scan_list;
 
 	    if(precord->evnt<0 || precord->evnt>=MAX_EVENTS) {
 		recGblRecordError(S_db_badField,(void *)precord,
-		    "scanDelete detected illegal EVNT value");
+		    "scanAdd detected illegal EVNT value");
+		precord->scan = SCAN_PASSIVE;
 		return;
 	    }
 	    evnt = (signed)precord->evnt;
-	    psl = papEvent[evnt];
-	    if(psl==NULL) 
+	    priority = precord->prio;
+	    if(priority<0 || priority>=NUM_CALLBACK_PRIORITIES) {
+		recGblRecordError(-1,(void *)precord,
+		    "scanAdd: illegal prio field");
+		precord->scan = SCAN_PASSIVE;
+		return;
+	    }
+	    pevent_scan_list = pevent_list[priority][evnt];
+	    if(pevent_scan_list) psl = &pevent_scan_list->scan_list;
+	    if(!pevent_scan_list || !psl) 
 		 recGblRecordError(-1,(void *)precord,
 		    "scanDelete for bad evnt");
-	    else
+	    else 
 		deleteFromList(precord,psl);
 	} else if(scan==SCAN_IO_EVENT) {
-	    struct io_scan_list *piosl=NULL;
+	    io_scan_list *piosl=NULL;
 	    int			priority;
 	    DEVSUPFUN get_ioint_info;
 
@@ -315,7 +311,7 @@ void scanDelete(struct dbCommon *precord)
 
 int scanppl()	/*print periodic list*/
 {
-    struct scan_list	*psl;
+    scan_list	*psl;
     char	message[80];
     double	period;
     int		i;
@@ -325,7 +321,7 @@ int scanppl()	/*print periodic list*/
 	if(psl==NULL) continue;
 	period = psl->ticks;
 	period /= vxTicksPerSecond;
-	sprintf(message,"Scan Period= %f seconds\n",period);
+	sprintf(message,"Scan Period= %f seconds ",period);
 	printList(psl,message);
     }
     return(0);
@@ -333,22 +329,25 @@ int scanppl()	/*print periodic list*/
 
 int scanpel()  /*print event list */
 {
-    struct scan_list	*psl;
-    char	message[80];
-    int		i;
+    char		message[80];
+    int			priority,evnt;
+    event_scan_list	*pevent_scan_list;
 
-    for (i=0; i<MAX_EVENTS; i++) {
-	psl = papEvent[i];
-	if(psl==NULL) continue;
-	sprintf(message,"Event %d\n",i);
-	printList(psl,message);
+    for(evnt=0; evnt<MAX_EVENTS; evnt++) {
+	for(priority=0; priority<NUM_CALLBACK_PRIORITIES; priority++) {
+	    pevent_scan_list = pevent_list[priority][evnt];
+	    if(!pevent_scan_list) continue;
+	    if(ellCount(&pevent_scan_list->scan_list) ==0) continue;
+	    sprintf(message,"Event %d Priority %s",evnt,priorityName[priority]);
+	    printList(&pevent_scan_list->scan_list,message);
+	}
     }
     return(0);
 }
 
 int scanpiol()  /* print io_event list */
 {
-    struct io_scan_list *piosl;
+    io_scan_list *piosl;
     int			priority;
     char		message[80];
 
@@ -364,14 +363,50 @@ int scanpiol()  /* print io_event list */
     return(0);
 }
 
+static void eventCallback(event_scan_list *pevent_scan_list)
+{
+    scanList(&pevent_scan_list->scan_list);
+}
+
+static void initEvent(void)
+{
+    int			evnt,priority;
+
+    for(priority=0; priority<NUM_CALLBACK_PRIORITIES; priority++) {
+	for(evnt=0; evnt<MAX_EVENTS; evnt++) {
+	    pevent_list[priority][evnt] = NULL;
+	}
+    }
+}
+
+void post_event(int event)
+{
+	unsigned char	evnt;
+	int		priority;
+	event_scan_list *pevent_scan_list;
+
+	if (!interruptAccept) return;     /* not awake yet */
+	if(event<0 || event>=MAX_EVENTS) {
+		errMessage(-1,"illegal event passed to post_event");
+		return;
+	}
+	evnt = (unsigned)event;
+	for(priority=0; priority<NUM_CALLBACK_PRIORITIES; priority++) {
+		pevent_scan_list = pevent_list[priority][evnt];
+		if(!pevent_scan_list) continue;
+		if(ellCount(&pevent_scan_list->scan_list) >0)
+			callbackRequest((void *)pevent_scan_list);
+	}
+}
+
 void scanIoInit(IOSCANPVT *ppioscanpvt)
 {
-    struct io_scan_list *piosl;
+    io_scan_list *piosl;
     int priority;
 
     /* allocate an array of io_scan_lists. One for each priority	*/
     /* IOSCANPVT will hold the address of this array of structures	*/
-    *ppioscanpvt=dbCalloc(NUM_CALLBACK_PRIORITIES,sizeof(struct io_scan_list));
+    *ppioscanpvt=dbCalloc(NUM_CALLBACK_PRIORITIES,sizeof(io_scan_list));
     for(priority=0, piosl=*ppioscanpvt;
     priority<NUM_CALLBACK_PRIORITIES; priority++, piosl++){
 	piosl->callback.callback = ioeventCallback;
@@ -387,7 +422,7 @@ void scanIoInit(IOSCANPVT *ppioscanpvt)
 
 void scanIoRequest(IOSCANPVT pioscanpvt)
 {
-    struct io_scan_list *piosl;
+    io_scan_list *piosl;
     int priority;
 
     if(!interruptAccept) return;
@@ -447,7 +482,7 @@ static void initOnce(void)
     taskwdInsert(onceTaskId,NULL,0L);
 }
 
-static void periodicTask(struct scan_list *psl)
+static void periodicTask(scan_list *psl)
 {
 
     unsigned long	start_time,end_time;
@@ -468,7 +503,7 @@ static void periodicTask(struct scan_list *psl)
 static void initPeriodic()
 {
 	dbMenu			*pmenu;
-	struct scan_list 	*psl;
+	scan_list 	*psl;
 	float			temp;
 	int			i;
 
@@ -478,10 +513,10 @@ static void initPeriodic()
 	    return;
 	}
 	nPeriodic = pmenu->nChoice - SCAN_1ST_PERIODIC;
-	papPeriodic = dbCalloc(nPeriodic,sizeof(struct scan_list*));
+	papPeriodic = dbCalloc(nPeriodic,sizeof(scan_list*));
 	periodicTaskId = dbCalloc(nPeriodic,sizeof(int));
 	for(i=0; i<nPeriodic; i++) {
-		psl = dbCalloc(1,sizeof(struct scan_list));
+		psl = dbCalloc(1,sizeof(scan_list));
 		papPeriodic[i] = psl;
 		FASTLOCKINIT(&psl->lock);
 		ellInit(&psl->list);
@@ -492,7 +527,7 @@ static void initPeriodic()
 
 static void spawnPeriodic(int ind)
 {
-    struct scan_list 	*psl;
+    scan_list 	*psl;
     char		taskName[20];
 
     psl = papPeriodic[ind];
@@ -506,7 +541,7 @@ static void spawnPeriodic(int ind)
 
 static void wdPeriodic(long ind)
 {
-    struct scan_list *psl;
+    scan_list *psl;
 
     if(!scanRestart)return;
     psl = papPeriodic[ind];
@@ -516,83 +551,20 @@ static void wdPeriodic(long ind)
     spawnPeriodic(ind);
 }
 
-static void eventTask(void)
+static void ioeventCallback(io_scan_list *piosl)
 {
-    unsigned char	event;
-    struct scan_list *psl;
-
-    while(TRUE) {
-        if(semTake(eventSem,WAIT_FOREVER)!=OK)
-	    errMessage(0,"semTake returned error in eventTask");
-        while (rngNBytes(eventQ)>=sizeof(unsigned char)){
-	    if(rngBufGet(eventQ,(void *)&event,sizeof(unsigned char))!=sizeof(unsigned char))
-		errMessage(0,"rngBufGet returned error in eventTask");
-	    if(event>MAX_EVENTS-1) {
-		errMessage(-1,"eventTask received an illegal event");
-		continue;
-	    }
-	    if(papEvent[event]==NULL) continue;
-	    psl = papEvent[event];
-	    if(psl) scanList(psl);
-	}
-    }
-}
-
-static void initEvent(void)
-{
-	int i;
-
-	for(i=0; i<MAX_EVENTS; i++) papEvent[i] = 0;
-	eventQ = rngCreate(sizeof(unsigned char) * EVENT_QUEUE_SIZE);
-	if(eventQ==NULL) {
-		errMessage(0,"initEvent failed");
-		exit(1);
-	}
-	if((eventSem=semBCreate(SEM_Q_FIFO,SEM_EMPTY))==NULL)
-		errMessage(0,"semBcreate failed in initEvent");
-}
-
-static void spawnEvent(void)
-{
-
-    eventTaskId = taskSpawn(EVENTSCAN_NAME,EVENTSCAN_PRI,EVENTSCAN_OPT,
-			EVENTSCAN_STACK,(FUNCPTR)eventTask,
-			0,0,0,0,0,0,0,0,0,0);
-    taskwdInsert(eventTaskId,wdEvent,0L);
-}
-
-static void wdEvent(void)
-{
-    int i;
-    struct scan_list *psl;
-
-    if(!scanRestart) return;
-    taskwdRemove(eventTaskId);
-    if(semFlush(eventSem)!=OK)
-	errMessage(0,"semFlush failed while restarting eventTask");
-    rngFlush(eventQ);
-    for (i=0; i<MAX_EVENTS; i++) {
-	psl = papEvent[i];
-	if(psl==NULL) continue;
-	FASTUNLOCK(&psl->lock);
-    }
-    spawnEvent();
-}
-
-static void ioeventCallback(struct io_scan_list *piosl)
-{
-    struct scan_list *psl=&piosl->scan_list;
+    scan_list *psl=&piosl->scan_list;
 
     scanList(psl);
 }
 
 
-static void printList(struct scan_list *psl,char *message)
+static void printList(scan_list *psl,char *message)
 {
-    struct scan_element *pse;
+    scan_element *pse;
 
     FASTLOCK(&psl->lock);
-    pse = (struct scan_element *)ellFirst(&psl->list);
+    pse = (scan_element *)ellFirst(&psl->list);
     FASTUNLOCK(&psl->lock);
     if(pse==NULL) return;
     printf("%s\n",message);
@@ -604,23 +576,23 @@ static void printList(struct scan_list *psl,char *message)
 	    printf("Returning because list changed while processing.");
 	    return;
 	}
-	pse = (struct scan_element *)ellNext((void *)pse);
+	pse = (scan_element *)ellNext((void *)pse);
 	FASTUNLOCK(&psl->lock);
     }
 }
 
-static void scanList(struct scan_list *psl)
+static void scanList(scan_list *psl)
 {
     /*In reading this code remember that the call to dbProcess can result*/
     /*in the SCAN field being changed in an arbitrary number of records  */
 
-    struct scan_element *pse,*prev,*next;
+    scan_element *pse,*prev,*next;
 
     FASTLOCK(&psl->lock);
 	psl->modified = FALSE;
-	pse = (struct scan_element *)ellFirst(&psl->list);
+	pse = (scan_element *)ellFirst(&psl->list);
 	prev = NULL;
-	next = (struct scan_element *)ellNext((void *)pse);
+	next = (scan_element *)ellNext((void *)pse);
     FASTUNLOCK(&psl->lock);
     while(pse!=NULL) {
 	struct dbCommon *precord = pse->precord;
@@ -631,27 +603,27 @@ static void scanList(struct scan_list *psl)
 	FASTLOCK(&psl->lock);
 	    if(!psl->modified) {
 		prev = pse;
-		pse = (struct scan_element *)ellNext((void *)pse);
-		if(pse!=NULL)next = (struct scan_element *)ellNext((void *)pse);
+		pse = (scan_element *)ellNext((void *)pse);
+		if(pse!=NULL)next = (scan_element *)ellNext((void *)pse);
 	    } else if (pse->pscan_list==psl) {
 		/*This scan element is still in same scan list*/
 		prev = pse;
-		pse = (struct scan_element *)ellNext((void *)pse);
-		if(pse!=NULL)next = (struct scan_element *)ellNext((void *)pse);
+		pse = (scan_element *)ellNext((void *)pse);
+		if(pse!=NULL)next = (scan_element *)ellNext((void *)pse);
 		psl->modified = FALSE;
 	    } else if (prev!=NULL && prev->pscan_list==psl) {
 		/*Previous scan element is still in same scan list*/
-		pse = (struct scan_element *)ellNext((void *)prev);
+		pse = (scan_element *)ellNext((void *)prev);
 		if(pse!=NULL) {
-		    prev = (struct scan_element *)ellPrevious((void *)pse);
-		    next = (struct scan_element *)ellNext((void *)pse);
+		    prev = (scan_element *)ellPrevious((void *)pse);
+		    next = (scan_element *)ellNext((void *)pse);
 		}
 		psl->modified = FALSE;
 	    } else if (next!=NULL && next->pscan_list==psl) {
 		/*Next scan element is still in same scan list*/
 		pse = next;
-		prev = (struct scan_element *)ellPrevious((void *)pse);
-		next = (struct scan_element *)ellNext((void *)pse);
+		prev = (scan_element *)ellPrevious((void *)pse);
+		next = (scan_element *)ellNext((void *)pse);
 		psl->modified = FALSE;
 	    } else {
 		/*Too many changes. Just wait till next period*/
@@ -681,26 +653,26 @@ static void buildScanLists(void)
 	}
 }
 
-static void addToList(struct dbCommon *precord,struct scan_list *psl)
+static void addToList(struct dbCommon *precord,scan_list *psl)
 {
-	struct scan_element	*pse,*ptemp;
+	scan_element	*pse,*ptemp;
 
 	FASTLOCK(&psl->lock);
-	pse = (struct scan_element *)(precord->spvt);
+	pse = (scan_element *)(precord->spvt);
 	if(pse==NULL) {
-		pse = dbCalloc(1,sizeof(struct scan_element));
+		pse = dbCalloc(1,sizeof(scan_element));
 		precord->spvt = (void *)pse;
 		pse->precord = precord;
 	}
 	pse ->pscan_list = psl;
-	ptemp = (struct scan_element *)ellFirst(&psl->list);
+	ptemp = (scan_element *)ellFirst(&psl->list);
 	while(ptemp!=NULL) {
 		if(ptemp->precord->phas>precord->phas) {
 			ellInsert(&psl->list,
 				ellPrevious((void *)ptemp),(void *)pse);
 			break;
 		}
-		ptemp = (struct scan_element *)ellNext((void *)ptemp);
+		ptemp = (scan_element *)ellNext((void *)ptemp);
 	}
 	if(ptemp==NULL) ellAdd(&psl->list,(void *)pse);
 	psl->modified = TRUE;
@@ -708,16 +680,16 @@ static void addToList(struct dbCommon *precord,struct scan_list *psl)
 	return;
 }
 
-static void deleteFromList(struct dbCommon *precord,struct scan_list *psl)
+static void deleteFromList(struct dbCommon *precord,scan_list *psl)
 {
-	struct scan_element	*pse;
+	scan_element	*pse;
 
 	FASTLOCK(&psl->lock);
 	if(precord->spvt==NULL) {
 		FASTUNLOCK(&psl->lock);
 		return;
 	}
-	pse = (struct scan_element *)(precord->spvt);
+	pse = (scan_element *)(precord->spvt);
 	if(pse==NULL || pse->pscan_list!=psl) {
 	    FASTUNLOCK(&psl->lock);
 	    errMessage(-1,"deleteFromList failed");

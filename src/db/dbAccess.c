@@ -385,7 +385,10 @@ static void getOptions(DBADDR *paddr,void **poriginal,long *options,void *pflin)
 
 struct rset *dbGetRset(struct dbAddr *paddr)
 {
-     return(((struct dbFldDes *)paddr->pfldDes)->pdbRecDes->prset);
+	struct dbFldDes *pfldDes = (struct dbFldDes *)paddr->pfldDes;
+
+	if(!pfldDes) return(0);
+	return(pfldDes->pdbRecDes->prset);
 }
 
 int dbIsValueField(struct dbFldDes *pdbFldDes)
@@ -422,10 +425,14 @@ long dbScanPassive(dbCommon *pfrom, dbCommon *pto)
 /*KLUDGE: Following needed so that dbPutLink to PROC field works correctly*/
 long dbScanLink(dbCommon *pfrom, dbCommon *pto)
 {
-    long status;
+    long		status;
+    unsigned char	pact;
 
     if(pfrom && pfrom->ppn) dbNotifyAdd(pfrom,pto);
+    pact = pfrom->pact;
+    pfrom->pact = TRUE;
     status = dbProcess(pto);
+    pfrom->pact = pact;
     return(status);
 }
 
@@ -846,7 +853,7 @@ long dbGet(DBADDR *paddr,short dbrType,void *pbuffer,long *options,
 
 		if(nRequest) {
 			if(no_elements<(*nRequest)) *nRequest = no_elements;
-			n = no_elements;
+			n = *nRequest;
 		} else {
 			n = 1;
 		}
@@ -858,7 +865,9 @@ long dbGet(DBADDR *paddr,short dbrType,void *pbuffer,long *options,
 			return(S_db_badDbrtype);
 		}
 		/* convert database field  and place it in the buffer */
-		if(pfl!=NULL) {
+		if(n<=0) {
+			;/*do nothing*/
+		} else if(pfl!=NULL) {
 		    DBADDR	localAddr;
 	
 		    localAddr = *paddr; /*Structure copy*/
@@ -1069,7 +1078,7 @@ long dbPut(DBADDR *paddr,short dbrType,void *pbuffer,long nRequest)
 	    status = putSpecial(paddr,0);
 	    if(status) return(status);
 	}
-	if(no_elements<=1) {
+	if((no_elements<=1) && (!prset || !(prset->put_array_info))) {
 		status = (*dbFastPutConvertRoutine[dbrType][field_type])
 			(pbuffer,paddr->pfield, paddr);
 	} else {

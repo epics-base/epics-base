@@ -644,7 +644,7 @@ static void tpnCallback(putNotify *ppn)
     if(status==0)
 	printf("tpnCallback: success record=%s\n",pname);
     else
-        errlogPrintf("%s tpnCallback status = %d\n",status);
+        errlogPrintf("%s tpnCallback status = %d\n",pname,status);
     free((void *)pdbaddr);
     free(ppn);
 }

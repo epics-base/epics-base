@@ -353,7 +353,7 @@ STATIC void dbtpnCallback(putNotify *ppn)
     if(status==0)
 	printf("dbtpnCallback: success record=%s\n",ppn->paddr->precord->name);
     else
-        errlogPrintf("%s dbtpnCallback putNotify.status %d\n",(int)status);
+        errlogPrintf("%s dbtpnCallback putNotify.status %d\n",ppn->paddr->precord->name,(int)status);
     free((void *)ppn->paddr);
     free(ppn);
 }

@@ -7,6 +7,9 @@
 // Some BSD calls have crept in here
 //
 // $Log$
+// Revision 1.2  1996/08/13 22:58:15  jhill
+// fdMgr.h => fdmanager.h
+//
 // Revision 1.1.1.1  1996/06/20 00:28:06  jhill
 // ca server installation
 //
@@ -24,7 +27,14 @@ extern "C" {
 // for htons() etc  
 //
 #	include <netinet/in.h>
+
+//
+// g++ 2.7.2 does not fix this file under sunos4 so I
+// have provided the prototype elsewhere (in osiSock.h for now)
+//
+#if !(defined(SUNOS4) && defined(__GNUC__))
 #	include <netdb.h>
+#endif
 } // extern "C"
 
 #include <osiMutex.h>

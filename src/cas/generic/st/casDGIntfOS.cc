@@ -417,16 +417,12 @@ void casDGIntfOS::sendCB()
 	// attempt to flush the output buffer 
 	//
 	flushCond = this->out.flush();
-	if ( flushCond == flushProgress ) {
-		if (this->sendBlocked) {
-			this->sendBlocked = false;
-		}
-        //
-        // this reenables receipt of incoming frames once
-        // the output has been flushed when the incoming
-        // address is different
-        //
-        this->armRecv ();
+	if ( flushCond != flushProgress ) {
+        return;
+	}
+
+	if (this->sendBlocked) {
+		this->sendBlocked = false;
 	}
 
 #	if defined(DEBUG)
@@ -450,6 +446,12 @@ void casDGIntfOS::sendCB()
 	// blocked.
 	//
 	this->processInput ();
+
+    //
+    // this reenables receipt of incoming frames once
+    // the output has been flushed 
+    //
+    this->armRecv ();
 }
 
 //

@@ -21,7 +21,8 @@ include $(EPICS_BASE)/config/CONFIG.Host.UnixCommon
 
 SHRLIB_SUFFIX = .sl
 
-AR = ar -rc
+AR = ar
+ARFLAGS = -rc
 
 # Configure OS vendor C compiler
 ACC = cc

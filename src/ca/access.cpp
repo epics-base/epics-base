@@ -32,7 +32,7 @@
 #include "oldAccess.h"
 #include "autoPtrDestroy.h"
 
-static epicsThreadPrivateId caClientContextId;
+epicsThreadPrivateId caClientContextId;
 
 static epicsThreadOnceId caClientContextIdOnce = EPICS_THREAD_ONCE_INIT;
 
@@ -999,11 +999,11 @@ extern "C" int epicsShareAPI ca_client_status ( unsigned level )
  * used when an auxillary thread needs to join a CA client context started
  * by another thread
  */
-extern "C" struct ca_client_context * epicsShareAPI ca_current_context ()
+extern "C" struct oldCAC * epicsShareAPI ca_current_context ()
 {
-    struct ca_client_context *pCtx;
+    struct oldCAC *pCtx;
     if ( caClientContextId ) {
-        pCtx = ( struct ca_client_context * ) 
+        pCtx = ( struct oldCAC * ) 
             epicsThreadPrivateGet ( caClientContextId );
     }
     else {
@@ -1018,11 +1018,14 @@ extern "C" struct ca_client_context * epicsShareAPI ca_current_context ()
  * used when an auxillary thread needs to join a CA client context started
  * by another thread
  */
-extern "C" int epicsShareAPI ca_attach_context ( struct ca_client_context *pCtx )
+extern "C" int epicsShareAPI ca_attach_context ( struct oldCAC * pCtx )
 {
     oldCAC *pcac = (oldCAC *) epicsThreadPrivateGet ( caClientContextId );
     if ( pcac && pCtx != 0 ) {
         return ECA_ISATTACHED;
+    }
+    if ( ! pCtx->preemptiveCallbakIsEnabled() ) {
+        return ECA_NOTTHREADED;
     }
     epicsThreadPrivateSet ( caClientContextId, pCtx );
     return ECA_NORMAL;

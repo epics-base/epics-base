@@ -12,6 +12,9 @@
 #         install because the release.% syntax is illegal.
 #
 # $Log$
+# Revision 1.22  1994/11/14  23:12:17  tang
+# Replace ARCH_TYPE with .
+#
 # Revision 1.1.1.1  1994/11/09  01:08:53  epics
 # Import of R3.12.0Beta
 #
@@ -46,7 +49,7 @@
 #
 
 EPICS=..
-include $(EPICS)/config/CONFIG_SITE
+include $(EPICS)/config/CONFIG
 
 all: install
 

@@ -78,7 +78,7 @@ int local_addr(int s, struct sockaddr_in *plcladdr)
 	if (status < 0 || ifconf.ifc_len == 0) {
 		ca_printf(
 			"CAC: ioctl failed because \"%s\"\n", 
-			strerror(SOCKERRNO));
+			SOCKERRSTR);
 		ifconf.ifc_len = 0;
 	}
 
@@ -184,8 +184,8 @@ int local_addr (int s, struct sockaddr_in *plcladdr)
  * 	LOCK should be applied here for (pList)
  * 	(this is also called from the server)
  */
-void caDiscoverInterfaces(ELLLIST *pList, int socket, unsigned short port,
-	struct in_addr matchAddr)
+void epicsShareAPI caDiscoverInterfaces
+	(ELLLIST *pList, int socket, unsigned short port, struct in_addr matchAddr)
 {
 	struct sockaddr_in 	localAddr;
 	struct sockaddr_in 	*pInetAddr;

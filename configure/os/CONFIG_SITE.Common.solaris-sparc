@@ -9,3 +9,6 @@
 # to include command-line editing and history support
 #
 #COMMANDLINE_LIBRARY = READLINE
+
+# APS site override
+GNU_DIR = /opt/gnu

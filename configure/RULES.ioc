@@ -24,6 +24,6 @@ else
 	$(PERL) $(TOOLS)/convertRelease.pl -a $(ARCH) -t $(IOCS_APPL_TOP) $@
 endif
 
-clean:
-	@$(RM) cdCommands envPaths
+realclean clean:
+	$(RM) cdCommands envPaths
 

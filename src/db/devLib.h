@@ -86,6 +86,22 @@ long	devAddressMap(void); /* print an address map */
 long	devReadProbe (unsigned wordSize, volatile const void *ptr, void *pValueRead);
 
 /*
+ * devNoResponseProbe()
+ *
+ * Verifies that no devices respond at naturally aligned words
+ * within the specified address range. Return success if no devices
+ * respond. Returns an error if a device does respond or if
+ * a physical address for a naturally aligned word cant be mapped.
+ * Checks all naturally aligned word sizes between char and long for
+ * the entire specified range of bytes.
+ */
+long devNoResponseProbe(
+			epicsAddressType addrType,
+			size_t base,
+			size_t size
+);
+
+/*
  * devWriteProbe
  *
  * a bus error safe "wordSize" write at the specified address which returns 
@@ -415,5 +431,13 @@ long devEnableInterruptLevel(epicsInterruptType intType, unsigned level);
  */
 long devDisableInterruptLevel (epicsInterruptType intType, unsigned level);
 
+/*
+ * NOTE: this routine has been deprecated. It exits
+ * for backwards compatibility purposes only.
+ *
+ * Please use devNoResponseProbe(). locationProbe() will be removed 
+ * in a future release.
+ */
+long locationProbe (epicsAddressType addrType, char *pLocation);
 
 #endif  /* devLib.h*/

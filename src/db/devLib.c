@@ -162,12 +162,6 @@ LOCAL long devInstallAddr(
 			size_t size,
 			volatile void **ppPhysicalAddress);
 
-LOCAL long blockProbe(
-			epicsAddressType addrType,
-			size_t base,
-			size_t size
-);
-
 LOCAL struct devLibVirtualOS *pVirtOS;
 
 #define SUCCESS 0
@@ -790,7 +784,7 @@ LOCAL long blockFind (
 	/* base address found */
 	size_t *pBase)
 {
-	int s;
+	int s = SUCCESS;
 	size_t bb;
 	size_t mask;
 	size_t newBase;
@@ -825,7 +819,7 @@ LOCAL long blockFind (
 
 	bb = pRange->begin;
 	while (bb <= (pRange->end + 1) - newSize) {
-		s = blockProbe (addrType, bb, newSize);
+		s = devNoResponseProbe (addrType, bb, newSize);
 		if (s==SUCCESS) {
 			*pBase = bb;
 			return SUCCESS;
@@ -837,16 +831,14 @@ LOCAL long blockFind (
 }
 
 /*
- * blockProbe()
+ * devNoResponseProbe()
  */
-LOCAL long blockProbe(
-	epicsAddressType addrType,
-	size_t base,
-	size_t size
-)
+long devNoResponseProbe (epicsAddressType addrType,
+	size_t base, size_t size)
 {
 	volatile void *pPhysical;
 	size_t probe;
+	size_t byteNo;
 	unsigned wordSize;
 	union {
 		char charWord;
@@ -856,8 +848,17 @@ LOCAL long blockProbe(
 	}allWordSizes;
 	long s;
 
-	probe = base;
-	while (probe - base < size) {
+	if (!devLibInitFlag) {
+		s = devLibInit();
+		if (s) {
+			return s;
+		}
+	}
+
+	byteNo = 0;
+	while (byteNo < size) {
+
+		probe = base + byteNo;
 
 		/*
 		 * for all word sizes
@@ -866,7 +867,11 @@ LOCAL long blockProbe(
 			/*
 			 * only check naturally aligned words
 			 */
-			if ( (probe&(wordSize-1)) == 0 ) {
+			if ( (probe&(wordSize-1)) != 0 ) {
+				break;
+			}
+
+			if (byteNo+wordSize>size) {
 				break;
 			}
 
@@ -887,7 +892,7 @@ LOCAL long blockProbe(
 				return S_dev_addressOverlap;
 			}
 		}
-		probe++;
+		byteNo++;
 	}
 	return SUCCESS;
 }
@@ -903,6 +908,15 @@ unsigned                vectorNumber,
 void                    (*pFunction)(),
 void                    *parameter)
 {
+	long status;
+
+	if (!devLibInitFlag) {
+		status = devLibInit();
+		if (status) {
+			return status;
+		}
+	}
+
 	switch(intType){
 	case intVME:
 	case intVXI:
@@ -925,6 +939,15 @@ unsigned                vectorNumber,
 void			(*pFunction)() 
 )
 {
+	long status;
+
+	if (!devLibInitFlag) {
+		status = devLibInit();
+		if (status) {
+			return status;
+		}
+	}
+
 	switch(intType){
 	case intVME:
 	case intVXI:
@@ -945,6 +968,15 @@ long devEnableInterruptLevel(
 epicsInterruptType      intType,
 unsigned                level)
 {
+	long status;
+
+	if (!devLibInitFlag) {
+		status = devLibInit();
+		if (status) {
+			return status;
+		}
+	}
+
 	switch(intType){
 	case intVME:
 	case intVXI:
@@ -963,6 +995,15 @@ long    devDisableInterruptLevel (
 epicsInterruptType      intType,
 unsigned                level)
 {
+	long status;
+
+	if (!devLibInitFlag) {
+		status = devLibInit();
+		if (status) {
+			return status;
+		}
+	}
+
 	switch(intType){
 	case intVME:
 	case intVXI:
@@ -970,6 +1011,16 @@ unsigned                level)
 	default:
 		return S_dev_uknIntType;
 	}
+}
+
+/*
+ * locationProbe
+ *
+ * !! DEPRECATED !!
+ */
+long locationProbe (epicsAddressType addrType, char *pLocation)
+{
+	return devNoResponseProbe (addrType, (size_t) pLocation, sizeof(long));
 }
 
 /******************************************************************************

@@ -1579,6 +1579,8 @@ struct client  *client
 	unsigned short		*pMinorVersion;
 	int        		status;
 	unsigned		sid;
+	unsigned long		count;
+	int			type;
 
 	/*
 	 * set true if max memory block drops below MAX_BLOCK_THRESHOLD
@@ -1620,6 +1622,8 @@ struct client  *client
 	 */
 	if (CA_V44(CA_PROTOCOL_VERSION,htons(mp->m_count))) {
 		sid = ~0U;
+		count = 0;
+		type = -1;
 	}
 	else {
 		struct channel_in_use 	*pchannel;
@@ -1638,6 +1642,8 @@ struct client  *client
 			return;
 		}
 		sid = pchannel->sid;
+		count =  tmp_addr.no_elements;
+		type = tmp_addr.field_type;
 	}
 
 	SEND_LOCK(client);
@@ -1650,8 +1656,8 @@ struct client  *client
 	search_reply->m_postsize = sizeof(*pMinorVersion);
 
 	/* this field for rmt machines where paddr invalid */
-	search_reply->m_type = tmp_addr.field_type;
-	search_reply->m_count = tmp_addr.no_elements;
+	search_reply->m_type = type;
+	search_reply->m_count = count;
 	search_reply->m_cid = sid;
 
 	/*

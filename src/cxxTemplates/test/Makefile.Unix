@@ -1,0 +1,36 @@
+
+TOP = ../../../..
+include $(TOP)/config/CONFIG_BASE
+
+SRCS.c += ../resourceLibTest.cc
+SRCS.c += ../tsDLListBench.cc
+SRCS.c += ../tsDLListTest.cc
+SRCS.c += ../tsSLListBench.cc
+SRCS.c += ../tsSLListTest.cc
+
+TARGETS += resourceLibTest
+TARGETS += tsDLListBench
+TARGETS += tsDLListTest
+TARGETS += tsSLListTest
+
+include $(TOP)/config/RULES.Unix
+
+ifdef fred
+all: resourceLibTest tsDLListBench tsDLListTest tsSLListBench tsSLListTest
+
+resourceLibTest: resourceLibTest.o
+	$(LINK.cc) -o $@ $<
+
+tsDLListBench: tsDLListBench.o
+	$(LINK.cc) -o $@ $<
+
+tsDLListTest: tsDLListTest.o
+	$(LINK.cc) -o $@ $<
+
+tsSLListBench: tsSLListBench.o
+	$(LINK.cc) -o $@ $<
+
+tsSLListTest: tsSLListTest.o
+	$(LINK.cc) -o $@ $<
+endif
+

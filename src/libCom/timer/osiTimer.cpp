@@ -267,7 +267,7 @@ void osiTimer::arm (double initialDelay)
 	//
 	tsDLIterBD<osiTimer> iter = this->queue.timerLists[statePending].last ();
 	while (1) {
-		if ( iter == tsDLIterBD<osiTimer>::eol () ) {
+		if ( ! iter.valid () ) {
 			//
 			// add to the beginning of the list
 			//
@@ -520,7 +520,7 @@ double osiTimerQueue::delayToFirstExpire () const
 //
 void osiTimerQueue::process ()
 {
-	osiTime cur (osiTime::getCurrent());
+	osiTime cur ( osiTime::getCurrent () );
 	osiTimer *pTmr;
 	
     this->mutex.lock ();
@@ -533,12 +533,12 @@ void osiTimerQueue::process ()
 	this->inProcess = true;
 	
 
-	tsDLIterBD<osiTimer> iter = this->timerLists[osiTimer::statePending].first ();
-	while ( iter != tsDLIterBD<osiTimer>::eol () ) {	
-		if (iter->exp >= cur) {
+	tsDLIterBD <osiTimer> iter = this->timerLists[osiTimer::statePending].first ();
+	while ( iter.valid () ) {	
+		if ( iter->exp > cur ) {
 			break;
 		}
-		tsDLIterBD<osiTimer> tmp = iter;
+		tsDLIterBD <osiTimer> tmp = iter;
 		++tmp;
 		this->timerLists[osiTimer::statePending].remove(*iter);
 		iter->curState = osiTimer::stateExpired;
@@ -608,7 +608,7 @@ void osiTimerQueue::show(unsigned level) const
 		this->timerLists[osiTimer::statePending].count(), 
         this->timerLists[osiTimer::stateExpired].count());
     tsDLIterBD<osiTimer> iter(this->timerLists[osiTimer::statePending].first());
-	while ( iter!=tsDLIterBD<osiTimer>::eol() ) {	
+	while ( iter.valid () ) {	
 		iter->show(level);
 		++iter;
 	}

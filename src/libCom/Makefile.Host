@@ -46,9 +46,7 @@ INC += postfix.h
 INC += sCalcPostfix.h
 INC += osiSleep.h
 INC += bsdSocketResource.h
-
-#	For WIN32 we supply getopt as part of libCom:
-INC_WIN32 := getopt.h
+INC_WIN32 += getopt.h
 
 #       general contents of library on all platforms
 #

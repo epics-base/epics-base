@@ -128,7 +128,7 @@ int oldChannelNotify::replaceAccessRightsEvent (
         args.ar.read_access = tmp.readPermit ();
         args.ar.write_access = tmp.writePermit ();
         epicsGuardRelease < epicsMutex > unguard ( guard );
-        ( *pfunc ) ( args );
+        ( *this->pAccessRightsFunc ) ( args );
     }
     return ECA_NORMAL;
 }

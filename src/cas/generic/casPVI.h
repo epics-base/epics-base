@@ -107,5 +107,10 @@ inline const gddEnumStringTable & casPVI::enumStringTable () const
     return this->enumStrTbl;
 }
 
+inline casPV * casPVI::apiPointer ()
+{
+    return this->pPV;
+}
+
 #endif // casPVIh
 

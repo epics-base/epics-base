@@ -257,5 +257,6 @@ $(INSTALL_DOC)/%: ../%
 ifneq (,$(wildcard ../baseLIBOBJS))
 $(LIBNAME): ../baseLIBOBJS
 endif
+$(LIBNAME): ../Makefile.Vx
 $(DBDNAME): ../base.dbd $(RECTYPES:%.h=../%.dbd)
 

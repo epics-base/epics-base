@@ -77,14 +77,14 @@ GENERIC_SRC_INCLUDES = $(addprefix -I, $(GENERIC_SRC_DIRS))
 #--------------------------------------------------
 # GNU compiler defaults
 
-GCC = $(GNU_BIN)/cc$(CMPLR_SUFFIX)
-GCC_AR = $(GNU_BIN)/ar$(CMPLR_SUFFIX)
-GCC_CPP = $(GNU_BIN)/cc$(CMPLR_SUFFIX) -x c -E
-GCC_RANLIB = $(GNU_BIN)/ranlib$(CMPLR_SUFFIX)
-GCC_LD = $(GNU_BIN)/ld$(CMPLR_SUFFIX) -r
+GCC = $(GNU_BIN)/$(GNU_TARGET_PREFIX)cc$(CMPLR_SUFFIX)
 
-NM = $(GNU_BIN)/nm$(CMPLR_SUFFIX)
-MUNCH = $(GNU_BIN)/munch
+GCC_AR = $(GNU_BIN)/$(GNU_TARGET_PREFIX)ar$(CMPLR_SUFFIX)
+GCC_CPP = $(GCC) -x c -E
+GCC_RANLIB = $(GNU_BIN)/$(GNU_TARGET_PREFIX)ranlib$(CMPLR_SUFFIX)
+
+NM = $(GNU_BIN)/$(GNU_TARGET_PREFIX)nm$(CMPLR_SUFFIX)
+MUNCH = $(GNU_BIN)/$(GNU_TARGET_PREFIX)munch
 
 GCC_ANSI = $(GCC) -ansi 
 GCC_STRICT = $(GCC) -ansi -pedantic
@@ -100,11 +100,9 @@ GCC_SLIBS_NO =
 GCC_CFLAGS_CROSS = -B$(GNU_LIB)/gcc-lib/ -nostdinc
 GCC_CPPFLAGS_CROSS = -nostdinc
 GCC_SHRLIB_CFLAGS_YES =  -fPIC -D_REENTRANT
-
 GCC_SHRLIB_LDFLAGS_YES =  -shared
 
-G++ = $(GNU_BIN)/cc$(CMPLR_SUFFIX)
-G++_LD = $(GNU_BIN)/ld$(CMPLR_SUFFIX) -r
+G++ = $(GNU_BIN)/$(GNU_TARGET_PREFIX)cc$(CMPLR_SUFFIX)
 
 G++_NORMAL = $(G++) -ansi -pedantic
 G++_STRICT = $(G++) -ansi -pedantic -Wtraditional
@@ -123,7 +121,6 @@ G++_SLIBS_YES =
 G++_SLIBS_NO =
 G++_DEPENDS_FLAG = -MM
 G++_SHRLIB_CFLAGS_YES =  -fPIC -D_REENTRANT
-
 G++_SHRLIB_LDFLAGS_YES =  -shared
 
 #--------------------------------------------------
@@ -132,12 +129,10 @@ CC = $($(ANSI)_$(CMPLR)) $(GCC_CFLAGS_$(BUILD_CLASS))
 AR = $($(ANSI)_AR)
 CPP =  $($(ANSI)_CPP) $(GCC_CPPFLAGS_$(BUILD_CLASS))
 RANLIB =  $($(ANSI)_RANLIB)
-LD = $($(ANSI)_LD)
 
 #--------------------------------------------------
 # C++ compiler
 CXX = $($(CPLUSPLUS)_$(CXXCMPLR)) $(GCC_CFLAGS_$(BUILD_CLASS))
-CXX_LD = $($(CPLUSPLUS)_LD)
 
 #---------------------------------------------------------------
 # Vendor compiler dependent options
@@ -289,8 +284,8 @@ DBDFLAGS = $(USR_DBDFLAGS) -I . -I .. $(INSTALL_DBDFLAGS)
 #--------------------------------------------------
 # Build compile line here
 
-COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c $(SOURCE_FLAG)
-COMPILE.cpp = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $(SOURCE_CXXFLAG)
+COMPILE.c = $(CC) $(CPPFLAGS) $(CFLAGS) -c $(SOURCE_FLAG)
+COMPILE.cpp = $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(SOURCE_CXXFLAG)
 
 
 #---------------------------------------------------------------

@@ -426,7 +426,7 @@ void cac::beaconNotify ( const inetAddrID & addr, const epicsTime & currentTime,
 
     this->beaconAnomalyCount++;
 
-    this->pudpiiu->beaconAnomalyNotify ( currentTime );
+    this->pudpiiu->beaconAnomalyNotify ( guard, currentTime );
 
 #   if DEBUG
     {
@@ -482,86 +482,84 @@ bool cac::transferChanToVirtCircuit (
         return false;
     }
 
-    {
-        epicsGuard < epicsMutex > guard ( this->mutex );
+    epicsGuard < epicsMutex > guard ( this->mutex );
 
-        /*
-         * ignore search replies for deleted channels
-         */
-        nciu * pChan = this->chanTable.lookup ( cid );
-        if ( ! pChan ) {
+    /*
+     * ignore search replies for deleted channels
+     */
+    nciu * pChan = this->chanTable.lookup ( cid );
+    if ( ! pChan ) {
+        return false;
+    }
+
+    /*
+        * Ignore duplicate search replies
+        */
+    osiSockAddr chanAddr = pChan->getPIIU(guard)->getNetworkAddress (guard);
+    if ( chanAddr.sa.sa_family != AF_UNSPEC ) {
+        if ( ! sockAddrAreIdentical ( &addr, &chanAddr ) ) {
+            char acc[64];
+            pChan->getPIIU(guard)->hostName ( guard, acc, sizeof ( acc ) );
+            msgForMultiplyDefinedPV * pMsg = new ( this->mdpvFreeList )
+                msgForMultiplyDefinedPV ( this->ipToAEngine, 
+                    *this, pChan->pName ( guard ), acc );
+            pMsg->ioInitiate ( addr );
+        }
+        return false;
+    }
+
+    /*
+     * look for an existing virtual circuit
+     */
+    caServerID servID ( addr.ia, pChan->getPriority(guard) );
+    piiu = this->serverTable.lookup ( servID );
+    if ( piiu ) {
+        if ( ! piiu->alive ( guard ) ) {
             return false;
         }
-
-        /*
-         * Ignore duplicate search replies
-         */
-        osiSockAddr chanAddr = pChan->getPIIU()->getNetworkAddress ();
-        if ( chanAddr.sa.sa_family != AF_UNSPEC ) {
-            if ( ! sockAddrAreIdentical ( &addr, &chanAddr ) ) {
-                char acc[64];
-                pChan->getPIIU()->hostName ( acc, sizeof ( acc ) );
-                msgForMultiplyDefinedPV * pMsg = new ( this->mdpvFreeList )
-                    msgForMultiplyDefinedPV ( this->ipToAEngine, 
-                        *this, pChan->pName (), acc );
-                pMsg->ioInitiate ( addr );
-            }
-            return false;
-        }
-
-        /*
-         * look for an existing virtual circuit
-         */
-        caServerID servID ( addr.ia, pChan->getPriority() );
-        piiu = this->serverTable.lookup ( servID );
-        if ( piiu ) {
-            if ( ! piiu->alive () ) {
-                return false;
-            }
-        }
-        else {
-            try {
-                autoPtrFreeList < tcpiiu, 32, epicsMutexNOOP > pnewiiu (
-                        this->freeListVirtualCircuit,
-                        new ( this->freeListVirtualCircuit ) tcpiiu ( 
-                            *this, this->mutex, this->cbMutex, this->notify, this->connTMO, 
-                            this->timerQueue, addr, this->comBufMemMgr, minorVersionNumber, 
-                            this->ipToAEngine, pChan->getPriority() ) );
-                bhe * pBHE = this->beaconTable.lookup ( addr.ia );
-                if ( ! pBHE ) {
-                    pBHE = new ( this->bheFreeList ) 
-                                        bhe ( this->mutex, epicsTime (), 0u, addr.ia );
-                    if ( this->beaconTable.add ( *pBHE ) < 0 ) {
-                        return false;
-                    }
+    }
+    else {
+        try {
+            autoPtrFreeList < tcpiiu, 32, epicsMutexNOOP > pnewiiu (
+                    this->freeListVirtualCircuit,
+                    new ( this->freeListVirtualCircuit ) tcpiiu ( 
+                        *this, this->mutex, this->cbMutex, this->notify, this->connTMO, 
+                        this->timerQueue, addr, this->comBufMemMgr, minorVersionNumber, 
+                        this->ipToAEngine, pChan->getPriority(guard) ) );
+            bhe * pBHE = this->beaconTable.lookup ( addr.ia );
+            if ( ! pBHE ) {
+                pBHE = new ( this->bheFreeList ) 
+                                    bhe ( this->mutex, epicsTime (), 0u, addr.ia );
+                if ( this->beaconTable.add ( *pBHE ) < 0 ) {
+                    return false;
                 }
-                this->serverTable.add ( *pnewiiu );
-                this->serverList.add ( *pnewiiu );
-                pBHE->registerIIU ( guard, *pnewiiu );
-                piiu = pnewiiu.release ();
-                newIIU = true;
             }
-            catch ( std::bad_alloc & ) {
-                return false;
-            }
-            catch ( ... ) {
-                errlogPrintf ( 
-                    "CAC: Unexpected exception during virtual circuit creation\n" );
-                return false;
-            }
+            this->serverTable.add ( *pnewiiu );
+            this->serverList.add ( *pnewiiu );
+            pBHE->registerIIU ( guard, *pnewiiu );
+            piiu = pnewiiu.release ();
+            newIIU = true;
         }
-
-        this->pudpiiu->uninstallChan ( cbGuard, guard, *pChan );
-        piiu->installChannel ( cbGuard, guard, *pChan, sid, typeCode, count );
-
-        if ( ! piiu->ca_v42_ok () ) {
-            // connect to old server with lock applied
-            pChan->connect ( cbGuard, guard );
+        catch ( std::bad_alloc & ) {
+            return false;
+        }
+        catch ( ... ) {
+            errlogPrintf ( 
+                "CAC: Unexpected exception during virtual circuit creation\n" );
+            return false;
         }
     }
 
+    this->pudpiiu->uninstallChan ( cbGuard, guard, *pChan );
+    piiu->installChannel ( cbGuard, guard, *pChan, sid, typeCode, count );
+
+    if ( ! piiu->ca_v42_ok ( guard ) ) {
+        // connect to old server with lock applied
+        pChan->connect ( cbGuard, guard );
+    }
+
     if ( newIIU ) {
-        piiu->start ();
+        piiu->start ( guard );
     }
 
     return true;
@@ -581,7 +579,7 @@ void cac::destroyChannel (
         throw std::logic_error ( "Invalid channel identifier" );
     }
 
-    chan.getPIIU()->uninstallChan ( cbGuard, guard, chan );
+    chan.getPIIU(guard)->uninstallChan ( cbGuard, guard, chan );
   
     chan.destructor ( cbGuard, guard );
 
@@ -597,7 +595,7 @@ void cac::disconnectAllIO (
     guard.assertIdenticalMutex ( this->mutex );
 
     char buf[128];
-    sprintf ( buf, "host = %.100s", chan.pHostName() );
+    sprintf ( buf, "host = %.100s", chan.pHostName ( guard ) );
 
     tsDLIter < baseNMIU > pNetIO = ioList.firstIter();
     while ( pNetIO.valid () ) {
@@ -650,8 +648,8 @@ void cac::writeRequest (
     arrayElementCount nElem, const void * pValue )
 {
     guard.assertIdenticalMutex ( this->mutex );
-    this->flushIfRequired ( guard, *chan.getPIIU() );
-    chan.getPIIU()->writeRequest ( guard, chan, type, nElem, pValue );
+    this->flushIfRequired ( guard, *chan.getPIIU(guard) );
+    chan.getPIIU(guard)->writeRequest ( guard, chan, type, nElem, pValue );
 }
 
 netWriteNotifyIO & cac::writeNotifyRequest ( 
@@ -663,8 +661,8 @@ netWriteNotifyIO & cac::writeNotifyRequest (
         guard, this->ioTable, *this, 
         netWriteNotifyIO::factory ( this->freeListWriteNotifyIO, icni, notifyIn ) );
     this->ioTable.add ( *pIO );
-    this->flushIfRequired ( guard, *chan.getPIIU() );
-    chan.getPIIU()->writeNotifyRequest ( 
+    this->flushIfRequired ( guard, *chan.getPIIU(guard) );
+    chan.getPIIU(guard)->writeNotifyRequest ( 
         guard, chan, *pIO, type, nElem, pValue );
     return *pIO.release();
 }
@@ -678,8 +676,8 @@ netReadNotifyIO & cac::readNotifyRequest (
         guard, this->ioTable, *this,
         netReadNotifyIO::factory ( this->freeListReadNotifyIO, icni, notifyIn ) );
     this->ioTable.add ( *pIO );
-    this->flushIfRequired ( guard, *chan.getPIIU() );
-    chan.getPIIU()->readNotifyRequest ( guard, chan, *pIO, type, nElem );
+    this->flushIfRequired ( guard, *chan.getPIIU(guard) );
+    chan.getPIIU(guard)->readNotifyRequest ( guard, chan, *pIO, type, nElem );
     return *pIO.release();
 }
 
@@ -698,23 +696,24 @@ baseNMIU * cac::destroyIO (
     if ( pIO ) {
         class netSubscription * pSubscr = pIO->isSubscription ();
         if ( pSubscr && chan.connected ( guard ) ) {
-            chan.getPIIU()->subscriptionCancelRequest ( 
+            chan.getPIIU(guard)->subscriptionCancelRequest ( 
                 guard, chan, *pSubscr );  
         }
 
         // this uninstalls from the list and destroys the IO
         pIO->exception ( guard, *this,
-            ECA_CHANDESTROY, chan.pName() );
+            ECA_CHANDESTROY, chan.pName ( guard ) );
     }       
     return pIO;
 }
 
-void cac::ioShow ( const cacChannel::ioid & idIn, unsigned level ) const
+void cac::ioShow ( 
+    epicsGuard < epicsMutex > & guard,
+    const cacChannel::ioid & idIn, unsigned level ) const
 {
-    epicsGuard < epicsMutex > autoMutex ( this->mutex );
     baseNMIU * pmiu = this->ioTable.lookup ( idIn );
     if ( pmiu ) {
-        pmiu->show ( level );
+        pmiu->show ( guard, level );
     }
 }
 
@@ -775,8 +774,8 @@ netSubscription & cac::subscriptionRequest (
                                    privChan, type, nElem, mask, notifyIn ) );
     this->ioTable.add ( *pIO );
     if ( chan.connected ( guard ) ) {
-        this->flushIfRequired ( guard, *chan.getPIIU() );
-        chan.getPIIU()->subscriptionRequest ( guard, chan, *pIO );
+        this->flushIfRequired ( guard, *chan.getPIIU(guard) );
+        chan.getPIIU(guard)->subscriptionRequest ( guard, chan, *pIO );
     }
     return *pIO.release ();
 }
@@ -816,12 +815,14 @@ bool cac::writeNotifyRespAction (
 bool cac::readNotifyRespAction ( callbackManager &, tcpiiu & iiu, 
     const epicsTime &, const caHdrLargeArray & hdr, void * pMsgBdy )
 {
+    epicsGuard < epicsMutex > guard ( this->mutex );
+
     /*
      * the channel id field is abused for
      * read notify status starting with CA V4.1
      */
     int caStatus;
-    if ( iiu.ca_v41_ok() ) {
+    if ( iiu.ca_v41_ok ( guard ) ) {
         caStatus = hdr.m_cid;
     }
     else {
@@ -842,7 +843,6 @@ bool cac::readNotifyRespAction ( callbackManager &, tcpiiu & iiu,
         }
 #   endif
 
-    epicsGuard < epicsMutex > guard ( this->mutex );
     baseNMIU * pmiu = this->ioTable.remove ( hdr.m_available );
     //
     // The IO destroy routines take the call back mutex 
@@ -883,11 +883,13 @@ bool cac::eventRespAction ( callbackManager &, tcpiiu &iiu,
         return true;
     }
 
+    epicsGuard < epicsMutex > guard ( this->mutex );
+
     /*
      * the channel id field is abused for
      * read notify status starting with CA V4.1
      */
-    if ( iiu.ca_v41_ok() ) {
+    if ( iiu.ca_v41_ok ( guard ) ) {
         caStatus = hdr.m_cid;
     }
     else {
@@ -913,7 +915,6 @@ bool cac::eventRespAction ( callbackManager &, tcpiiu &iiu,
     // no need to worry here about the baseNMIU being deleted while
     // it is in use here.
     //
-    epicsGuard < epicsMutex > guard ( this->mutex );
     baseNMIU * pmiu = this->ioTable.lookup ( hdr.m_available );
     if ( pmiu ) {
         if ( caStatus == ECA_NORMAL ) {
@@ -957,14 +958,12 @@ bool cac::defaultExcep (
     callbackManager &, tcpiiu & iiu, 
     const caHdrLargeArray &, const char * pCtx, unsigned status )
 {
+    epicsGuard < epicsMutex > guard ( this->mutex );
     char buf[512];
     char hostName[64];
-    iiu.hostName ( hostName, sizeof ( hostName ) );
+    iiu.hostName ( guard, hostName, sizeof ( hostName ) );
     sprintf ( buf, "host=%s ctx=%.400s", hostName, pCtx );
-    {
-        epicsGuard < epicsMutex > guard ( this->mutex );
-        this->notify.exception ( guard, status, buf, 0, 0u );
-    }
+    this->notify.exception ( guard, status, buf, 0, 0u );
     return true;
 }
 
@@ -1095,17 +1094,17 @@ bool cac::createChannelRespAction (
     nciu * pChan = this->chanTable.lookup ( hdr.m_cid );
     if ( pChan ) {
         unsigned sidTmp;
-        if ( iiu.ca_v44_ok() ) {
+        if ( iiu.ca_v44_ok ( guard ) ) {
             sidTmp = hdr.m_available;
         }
         else {
-            sidTmp = pChan->getSID ();
+            sidTmp = pChan->getSID (guard);
         }
         iiu.connectNotify ( guard, *pChan );
         pChan->connect ( hdr.m_dataType, hdr.m_count, sidTmp, 
             mgr.cbGuard, guard );
     }
-    else if ( iiu.ca_v44_ok() ) {
+    else if ( iiu.ca_v44_ok ( guard ) ) {
         // this indicates a claim response for a resource that does
         // not exist in the client - so just remove it from the server
         iiu.clearChannelRequest ( guard, hdr.m_available, hdr.m_cid );
@@ -1135,7 +1134,7 @@ void cac::disconnectChannel (
     guard.assertIdenticalMutex ( this->mutex );
     assert ( this->pudpiiu );
     chan.disconnectAllIO ( cbGuard, guard );
-    chan.getPIIU()->uninstallChan ( cbGuard, guard, chan );
+    chan.getPIIU(guard)->uninstallChan ( cbGuard, guard, chan );
     this->pudpiiu->installDisconnectedChannel ( chan );
     chan.setServerAddressUnknown ( *this->pudpiiu, guard );
     chan.unresponsiveCircuitNotify ( cbGuard, guard );
@@ -1144,8 +1143,9 @@ void cac::disconnectChannel (
 bool cac::badTCPRespAction ( callbackManager &, tcpiiu & iiu, 
     const epicsTime &, const caHdrLargeArray & hdr, void * /* pMsgBdy */ )
 {
+    epicsGuard < epicsMutex > guard ( this->mutex );
     char hostName[64];
-    iiu.hostName ( hostName, sizeof ( hostName ) );
+    iiu.hostName ( guard, hostName, sizeof ( hostName ) );
     errlogPrintf ( "CAC: Undecipherable TCP message ( bad response type %u ) from %s\n", 
         hdr.m_cmmd, hostName );
     return false;
@@ -1181,10 +1181,10 @@ void cac::destroyIIU ( tcpiiu & iiu )
         epicsGuard < epicsMutex > guard ( this->mutex );
         if ( iiu.channelCount ( guard ) ) {
             char hostNameTmp[64];
-            iiu.hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
+            iiu.hostName ( guard, hostNameTmp, sizeof ( hostNameTmp ) );
             genLocalExcep ( cbGuard, guard, *this, ECA_DISCONN, hostNameTmp );
         }
-        osiSockAddr addr = iiu.getNetworkAddress();
+        osiSockAddr addr = iiu.getNetworkAddress ( guard );
         if ( addr.sa.sa_family == AF_INET ) {
             inetAddrID tmp ( addr.ia );
             bhe * pBHE = this->beaconTable.lookup ( tmp );
@@ -1216,12 +1216,13 @@ void cac::destroyIIU ( tcpiiu & iiu )
     }
 }
 
-double cac::beaconPeriod ( const nciu & chan ) const
+double cac::beaconPeriod ( 
+    epicsGuard < epicsMutex > & guard, 
+    const nciu & chan ) const
 {
-    epicsGuard < epicsMutex > guard ( this->mutex );
-    const netiiu * pIIU = chan.getConstPIIU ();
+    const netiiu * pIIU = chan.getConstPIIU ( guard );
     if ( pIIU ) {
-        osiSockAddr addr = pIIU->getNetworkAddress ();
+        osiSockAddr addr = pIIU->getNetworkAddress ( guard );
         if ( addr.sa.sa_family == AF_INET ) {
             inetAddrID tmp ( addr.ia );
             bhe *pBHE = this->beaconTable.lookup ( tmp );

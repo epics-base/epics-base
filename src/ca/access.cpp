@@ -623,7 +623,8 @@ int epicsShareAPI ca_array_put ( chtype type, arrayElementCount count,
 // extern "C"
 int epicsShareAPI ca_change_connection_event ( chid pChan, caCh *pfunc )
 {
-    return pChan->changeConnCallBack ( pfunc );
+    epicsGuard < epicsMutex > guard ( pChan->getClientCtx().mutex );
+    return pChan->changeConnCallBack ( guard, pfunc );
 }
 
 /*
@@ -632,7 +633,8 @@ int epicsShareAPI ca_change_connection_event ( chid pChan, caCh *pfunc )
 // extern "C"
 int epicsShareAPI ca_replace_access_rights_event ( chid pChan, caArh *pfunc )
 {
-    return pChan->replaceAccessRightsEvent ( pfunc );
+    epicsGuard < epicsMutex > guard ( pChan->getClientCtx().mutex );
+    return pChan->replaceAccessRightsEvent ( guard, pfunc );
 }
 
 /*
@@ -971,16 +973,21 @@ int epicsShareAPI ca_add_fd_registration ( CAFDHANDLER * func, void * arg )
 // extern "C"
 void epicsShareAPI ca_get_host_name ( chid pChan, char *pBuf, unsigned bufLength )
 {
-    pChan->hostName ( pBuf, bufLength );
+    epicsGuard < epicsMutex > guard ( pChan->getClientCtx().mutex );
+    pChan->hostName ( guard, pBuf, bufLength );
 }
 
 /*
  * ca_host_name ()
+ *
+ * !!!! not thread safe !!!!
+ *
  */
 // extern "C"
 const char * epicsShareAPI ca_host_name ( chid pChan )
 {
-    return pChan->pHostName ();
+    epicsGuard < epicsMutex > guard ( pChan->getClientCtx().mutex );
+    return pChan->pHostName ( guard );
 }
 
 /*
@@ -989,7 +996,8 @@ const char * epicsShareAPI ca_host_name ( chid pChan )
 // extern "C"
 int epicsShareAPI ca_v42_ok ( chid pChan )
 {
-    return pChan->ca_v42_ok ();
+    epicsGuard < epicsMutex > guard ( pChan->getClientCtx().mutex );
+    return pChan->ca_v42_ok ( guard );
 }
 
 /*
@@ -1025,7 +1033,8 @@ int epicsShareAPI ca_replace_printf_handler ( caPrintfFunc *ca_printf_func )
 // extern "C"
 short epicsShareAPI ca_field_type ( chid pChan ) 
 {
-    return pChan->nativeType ();
+    epicsGuard < epicsMutex > guard ( pChan->getClientCtx().mutex );
+    return pChan->nativeType ( guard );
 }
 
 /*
@@ -1034,7 +1043,8 @@ short epicsShareAPI ca_field_type ( chid pChan )
 // extern "C"
 arrayElementCount epicsShareAPI ca_element_count ( chid pChan ) 
 {
-    return pChan->nativeElementCount ();
+    epicsGuard < epicsMutex > guard ( pChan->getClientCtx().mutex );
+    return pChan->nativeElementCount ( guard );
 }
 
 /*
@@ -1043,10 +1053,11 @@ arrayElementCount epicsShareAPI ca_element_count ( chid pChan )
 // extern "C"
 enum channel_state epicsShareAPI ca_state ( chid pChan ) // X aCC 361
 {
-    if ( pChan->connected() ) {
+    epicsGuard < epicsMutex > guard ( pChan->getClientCtx().mutex );
+    if ( pChan->connected ( guard ) ) {
         return cs_conn;
     }
-    else if ( pChan->previouslyConnected() ){
+    else if ( pChan->previouslyConnected ( guard ) ){
         return cs_prev_conn;
     }
     else {
@@ -1060,7 +1071,8 @@ enum channel_state epicsShareAPI ca_state ( chid pChan ) // X aCC 361
 // extern "C"
 void epicsShareAPI ca_set_puser ( chid pChan, void *puser )
 {
-    pChan->setPrivatePointer ( puser );
+    epicsGuard < epicsMutex > guard ( pChan->getClientCtx().mutex );
+    pChan->setPrivatePointer ( guard, puser );
 }
 
 /*
@@ -1069,7 +1081,8 @@ void epicsShareAPI ca_set_puser ( chid pChan, void *puser )
 // extern "C"
 void * epicsShareAPI ca_puser ( chid pChan )
 {
-    return pChan->privatePointer ();
+    epicsGuard < epicsMutex > guard ( pChan->getClientCtx().mutex );
+    return pChan->privatePointer ( guard );
 }
 
 /*
@@ -1078,7 +1091,8 @@ void * epicsShareAPI ca_puser ( chid pChan )
 // extern "C"
 unsigned epicsShareAPI ca_read_access ( chid pChan )
 {
-    return pChan->accessRights().readPermit();
+    epicsGuard < epicsMutex > guard ( pChan->getClientCtx().mutex );
+    return pChan->accessRights(guard).readPermit();
 }
 
 /*
@@ -1087,7 +1101,8 @@ unsigned epicsShareAPI ca_read_access ( chid pChan )
 // extern "C"
 unsigned epicsShareAPI ca_write_access ( chid pChan )
 {
-    return pChan->accessRights().writePermit();
+    epicsGuard < epicsMutex > guard ( pChan->getClientCtx().mutex );
+    return pChan->accessRights(guard).writePermit();
 }
 
 /*
@@ -1096,24 +1111,28 @@ unsigned epicsShareAPI ca_write_access ( chid pChan )
 // extern "C"
 const char * epicsShareAPI ca_name ( chid pChan )
 {
-    return pChan->pName ();
+    epicsGuard < epicsMutex > guard ( pChan->getClientCtx().mutex );
+    return pChan->pName ( guard );
 }
 
 // extern "C"
 unsigned epicsShareAPI ca_search_attempts ( chid pChan )
 {
-    return pChan->searchAttempts ();
+    epicsGuard < epicsMutex > guard ( pChan->getClientCtx().mutex ); 
+    return pChan->searchAttempts ( guard );
 }
 
 // extern "C"
 double epicsShareAPI ca_beacon_period ( chid pChan )
 {
-    return pChan->beaconPeriod ();
+    epicsGuard < epicsMutex > guard ( pChan->getClientCtx().mutex );
+    return pChan->beaconPeriod ( guard );
 }
 
 double epicsShareAPI ca_receive_watchdog_delay ( chid pChan )
 {
-    return pChan->receiveWatchdogDelay ();
+    epicsGuard < epicsMutex > guard ( pChan->getClientCtx().mutex );
+    return pChan->receiveWatchdogDelay ( guard );
 }
 
 /*

@@ -100,7 +100,8 @@ public:
     void show ( unsigned level ) const;
     bool wakeupMsg ();
     void repeaterConfirmNotify ();
-    void beaconAnomalyNotify ( const epicsTime & currentTime );
+    void beaconAnomalyNotify ( 
+        epicsGuard < epicsMutex > & guard, const epicsTime & currentTime );
     void govExpireNotify ( const epicsTime & currentTime );
     unsigned unresolvedChannelCount ( epicsGuard < udpMutex > & ) const;
     void uninstallChan ( 
@@ -158,50 +159,75 @@ private:
     static const pProtoStubUDP udpJumpTableCAC[];
 
     // UDP protocol stubs
-    bool versionAction ( epicsGuard < epicsMutex > &, const caHdr &, 
+    bool versionAction ( 
+        epicsGuard < epicsMutex > &, const caHdr &, 
         const osiSockAddr &, const epicsTime & );
-    bool badUDPRespAction ( epicsGuard < epicsMutex > &, const caHdr &msg, 
+    bool badUDPRespAction ( 
+        epicsGuard < epicsMutex > &, const caHdr &msg, 
         const osiSockAddr &netAddr, const epicsTime & );
-    bool searchRespAction ( epicsGuard < epicsMutex > &, const caHdr &msg, 
+    bool searchRespAction ( 
+        epicsGuard < epicsMutex > &, const caHdr &msg, 
         const osiSockAddr &net_addr, const epicsTime & );
-    bool exceptionRespAction ( epicsGuard < epicsMutex > &, const caHdr &msg, 
+    bool exceptionRespAction ( 
+        epicsGuard < epicsMutex > &, const caHdr &msg, 
         const osiSockAddr &net_addr, const epicsTime & );
-    bool beaconAction ( epicsGuard < epicsMutex > &, const caHdr &msg, 
+    bool beaconAction ( 
+        epicsGuard < epicsMutex > &, const caHdr &msg, 
         const osiSockAddr &net_addr, const epicsTime & );
-    bool notHereRespAction ( epicsGuard < epicsMutex > &, const caHdr &msg, 
+    bool notHereRespAction ( 
+        epicsGuard < epicsMutex > &, const caHdr &msg, 
         const osiSockAddr &net_addr, const epicsTime & );
-    bool repeaterAckAction ( epicsGuard < epicsMutex > &, const caHdr &msg, 
+    bool repeaterAckAction ( 
+        epicsGuard < epicsMutex > &, const caHdr &msg, 
         const osiSockAddr &net_addr, const epicsTime & );
 
     friend void udpRecvThread::run ();
 
-    void hostName ( char *pBuf, unsigned bufLength ) const;
-    const char * pHostName () const; // deprecated - please do not use
-    bool ca_v42_ok () const;
-    bool ca_v41_ok () const;
-    void writeRequest ( epicsGuard < epicsMutex > &, nciu &, unsigned type, 
-                    arrayElementCount nElem, const void *pValue );
-    void writeNotifyRequest ( epicsGuard < epicsMutex > &, nciu &, netWriteNotifyIO &, 
-                    unsigned type, arrayElementCount nElem, const void *pValue );
-    void readNotifyRequest ( epicsGuard < epicsMutex > &, nciu &, netReadNotifyIO &, 
-                    unsigned type, arrayElementCount nElem );
-    void clearChannelRequest ( epicsGuard < epicsMutex > &, 
-                    ca_uint32_t sid, ca_uint32_t cid );
-    void subscriptionRequest ( epicsGuard < epicsMutex > &, nciu &, 
-                    netSubscription & );
-    void subscriptionUpdateRequest ( epicsGuard < epicsMutex > &, nciu &, 
-                    netSubscription & );
+    void hostName ( 
+        epicsGuard < epicsMutex > &,
+        char *pBuf, unsigned bufLength ) const;
+    const char * pHostName (
+        epicsGuard < epicsMutex > & ) const; 
+    bool ca_v42_ok (
+        epicsGuard < epicsMutex > & ) const;
+    bool ca_v41_ok (
+        epicsGuard < epicsMutex > & ) const;
+    void writeRequest (
+        epicsGuard < epicsMutex > &, nciu &, unsigned type, 
+        arrayElementCount nElem, const void *pValue );
+    void writeNotifyRequest ( 
+        epicsGuard < epicsMutex > &, nciu &, netWriteNotifyIO &, 
+        unsigned type, arrayElementCount nElem, const void *pValue );
+    void readNotifyRequest ( 
+        epicsGuard < epicsMutex > &, nciu &, netReadNotifyIO &, 
+        unsigned type, arrayElementCount nElem );
+    void clearChannelRequest ( 
+        epicsGuard < epicsMutex > &, 
+        ca_uint32_t sid, ca_uint32_t cid );
+    void subscriptionRequest (
+        epicsGuard < epicsMutex > &, nciu &, 
+        netSubscription & );
+    void subscriptionUpdateRequest ( 
+        epicsGuard < epicsMutex > &, nciu &, 
+        netSubscription & );
     bool pushVersionMsg ();
-    void subscriptionCancelRequest ( epicsGuard < epicsMutex > &, 
-                    nciu & chan, netSubscription & subscr );
-    void flushRequest ( epicsGuard < epicsMutex > & );
-    bool flushBlockThreshold ( epicsGuard < epicsMutex > & ) const;
-    void flushRequestIfAboveEarlyThreshold ( epicsGuard < epicsMutex > & );
+    void subscriptionCancelRequest ( 
+        epicsGuard < epicsMutex > &, 
+        nciu & chan, netSubscription & subscr );
+    void flushRequest ( 
+        epicsGuard < epicsMutex > & );
+    bool flushBlockThreshold ( 
+        epicsGuard < epicsMutex > & ) const;
+    void flushRequestIfAboveEarlyThreshold ( 
+        epicsGuard < epicsMutex > & );
     void blockUntilSendBacklogIsReasonable 
         ( cacContextNotify &, epicsGuard < epicsMutex > & );
-    void requestRecvProcessPostponedFlush ();
-    osiSockAddr getNetworkAddress () const;
-    double receiveWatchdogDelay () const;
+    void requestRecvProcessPostponedFlush (
+        epicsGuard < epicsMutex > & );
+    osiSockAddr getNetworkAddress (
+        epicsGuard < epicsMutex > & ) const;
+    double receiveWatchdogDelay (
+        epicsGuard < epicsMutex > & ) const;
 
 	udpiiu ( const udpiiu & );
 	udpiiu & operator = ( const udpiiu & );

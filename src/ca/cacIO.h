@@ -176,9 +176,11 @@ public:
     virtual void destroy (
         epicsGuard < epicsMutex > & callbackControlGuard, 
         epicsGuard < epicsMutex > & mutualExclusionGuard ) = 0;
-    cacChannelNotify & notify () const;
-    virtual const char * pName () const = 0; // not thread safe
+    cacChannelNotify & notify () const; // required ?????
+    virtual const char * pName (
+        epicsGuard < epicsMutex > & ) const = 0;
     virtual void show ( 
+        epicsGuard < epicsMutex > &,
         unsigned level ) const = 0;
     virtual void initiateConnect (
         epicsGuard < epicsMutex > & ) = 0;
@@ -203,18 +205,29 @@ public:
         epicsGuard < epicsMutex > & mutualExclusionGuard,
         const ioid & ) = 0;
     virtual void ioShow ( 
+        epicsGuard < epicsMutex > &,
         const ioid &, unsigned level ) const = 0;
-    virtual short nativeType () const = 0;
-    virtual arrayElementCount nativeElementCount () const = 0;
-    virtual caAccessRights accessRights () const; // defaults to unrestricted access
-    virtual unsigned searchAttempts () const; // defaults to zero
-    virtual double beaconPeriod () const; // defaults to negative DBL_MAX
-    virtual double receiveWatchdogDelay () const; // defaults to negative DBL_MAX
-    virtual bool ca_v42_ok () const; // defaults to true
-    virtual bool connected () const; // defaults to true
+    virtual short nativeType (
+        epicsGuard < epicsMutex > & ) const = 0;
+    virtual arrayElementCount nativeElementCount (
+        epicsGuard < epicsMutex > & ) const = 0;
+    virtual caAccessRights accessRights (
+        epicsGuard < epicsMutex > & ) const;
+    virtual unsigned searchAttempts (
+        epicsGuard < epicsMutex > & ) const;
+    virtual double beaconPeriod (
+        epicsGuard < epicsMutex > & ) const; // negative DBL_MAX if UKN
+    virtual double receiveWatchdogDelay (
+        epicsGuard < epicsMutex > & ) const; // negative DBL_MAX if UKN
+    virtual bool ca_v42_ok (
+        epicsGuard < epicsMutex > & ) const; 
+    virtual bool connected (
+        epicsGuard < epicsMutex > & ) const; 
     virtual void hostName (
-        char * pBuf, unsigned bufLength ) const; // defaults to local host name
-    virtual const char * pHostName () const; 
+        epicsGuard < epicsMutex > &,
+        char * pBuf, unsigned bufLength ) const;
+    virtual const char * pHostName (
+        epicsGuard < epicsMutex > & ) const; 
 
     // exceptions
     class badString {};

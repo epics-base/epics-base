@@ -44,6 +44,13 @@ void netWriteNotifyIO::show ( unsigned /* level */ ) const
         static_cast < const void * > ( this ) );
 }
 
+void netWriteNotifyIO::show ( 
+    epicsGuard < epicsMutex > &,  
+    unsigned level ) const
+{
+    this->show ( level );
+}
+
 void netWriteNotifyIO::destroy ( 
     epicsGuard < epicsMutex > & guard, 
     cacRecycle & recycle )

@@ -656,25 +656,6 @@ void ca_client_context::callbackProcessingCompleteNotify ()
     }
 }
 
-void ca_client_context::changeConnCallBack ( 
-    caCh * pfunc, caCh * & pConnCallBack, const bool & currentlyConnected )
-{
-    epicsGuard < epicsMutex > guard ( this->mutex );
-    if ( ! currentlyConnected ) {
-         if ( pfunc ) { 
-            if ( ! pConnCallBack ) {
-                this->decrementOutstandingIO ( guard, this->ioSeqNo );
-            }
-        }
-        else {
-            if ( pConnCallBack ) {
-                this->incrementOutstandingIO ( guard, this->ioSeqNo );
-            }
-        }
-    }
-    pConnCallBack = pfunc;
-}
-
 cacChannel & ca_client_context::createChannel ( 
     epicsGuard < epicsMutex > & guard, const char * pChannelName, 
     oldChannelNotify & chan, cacChannel::priLev pri )

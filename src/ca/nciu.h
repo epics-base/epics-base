@@ -110,32 +110,45 @@ public:
     void setServerAddressUnknown ( 
         udpiiu & newiiu, epicsGuard < epicsMutex > & guard );
     bool searchMsg ( class udpiiu & iiu, unsigned & retryNoForThisChannel );
-    void beaconAnomalyNotify ();
+    void beaconAnomalyNotify (
+        epicsGuard < epicsMutex > & );
     void serviceShutdownNotify ();
     void accessRightsStateChange ( const caAccessRights &, 
         epicsGuard < epicsMutex > & cbGuard, 
         epicsGuard < epicsMutex > & guard );
-    ca_uint32_t getSID () const;
-    ca_uint32_t getCID () const;
-    netiiu * getPIIU ();
-    const netiiu * getConstPIIU () const;
+    ca_uint32_t getSID (
+        epicsGuard < epicsMutex > & ) const;
+    ca_uint32_t getCID (
+        epicsGuard < epicsMutex > & ) const;
+    netiiu * getPIIU (
+        epicsGuard < epicsMutex > & );
+    const netiiu * getConstPIIU (
+        epicsGuard < epicsMutex > & ) const;
     cac & getClient ();
     void searchReplySetUp ( netiiu &iiu, unsigned sidIn, 
         ca_uint16_t typeIn, arrayElementCount countIn,
         epicsGuard < epicsMutex > & );
-    void show ( unsigned level ) const;
-    const char * pName () const;
-    unsigned nameLen () const;
-    const char * pHostName () const; // deprecated - please do not use
+    void show ( 
+        unsigned level ) const;
+    void show ( 
+        epicsGuard < epicsMutex > &,
+        unsigned level ) const;
+    const char * pName (
+        epicsGuard < epicsMutex > & ) const;
+    unsigned nameLen (
+        epicsGuard < epicsMutex > & ) const;
+    const char * pHostName (
+        epicsGuard < epicsMutex > & ) const; // deprecated - please do not use
     void writeException ( 
         epicsGuard < epicsMutex > &, epicsGuard < epicsMutex > &,
         int status, const char *pContext, unsigned type, arrayElementCount count );
-    cacChannel::priLev getPriority () const;
+    cacChannel::priLev getPriority (
+        epicsGuard < epicsMutex > & ) const;
     void * operator new ( 
         size_t size, tsFreeList < class nciu, 1024, epicsMutexNOOP > & );
     epicsPlacementDeleteOperator (
         ( void *, tsFreeList < class nciu, 1024, epicsMutexNOOP > & ))
-    arrayElementCount nativeElementCount ( epicsGuard < epicsMutex > & ) const;
+    //arrayElementCount nativeElementCount ( epicsGuard < epicsMutex > & ) const;
     void resubscribe ( epicsGuard < epicsMutex > & );
     void sendSubscriptionUpdateRequests ( epicsGuard < epicsMutex > & );
     void disconnectAllIO ( 
@@ -183,15 +196,25 @@ private:
         epicsGuard < epicsMutex > & mutualExclusionGuard,
         const ioid & );
     void ioShow ( 
+        epicsGuard < epicsMutex > &,
         const ioid &, unsigned level ) const;
-    short nativeType () const;
-    caAccessRights accessRights () const;
-    unsigned searchAttempts () const;
-    double beaconPeriod () const;
-    double receiveWatchdogDelay () const;
-    bool ca_v42_ok () const;
-    void hostName ( char *pBuf, unsigned bufLength ) const;
-    arrayElementCount nativeElementCount () const;
+    short nativeType ( 
+        epicsGuard < epicsMutex > & ) const;
+    caAccessRights accessRights (
+        epicsGuard < epicsMutex > & ) const;
+    unsigned searchAttempts (
+        epicsGuard < epicsMutex > & ) const;
+    double beaconPeriod (
+        epicsGuard < epicsMutex > & ) const;
+    double receiveWatchdogDelay (
+        epicsGuard < epicsMutex > & ) const;
+    bool ca_v42_ok (
+        epicsGuard < epicsMutex > & ) const;
+    void hostName ( 
+        epicsGuard < epicsMutex > &,
+        char *pBuf, unsigned bufLength ) const;
+    arrayElementCount nativeElementCount (
+        epicsGuard < epicsMutex > & ) const;
     static void stringVerify ( const char *pStr, const unsigned count );
     virtual void ioCompletionNotify ( 
         epicsGuard < epicsMutex > &, class baseNMIU & );
@@ -215,12 +238,14 @@ inline void nciu::operator delete ( void * pCadaver,
 }
 #endif
 
-inline ca_uint32_t nciu::getSID () const
+inline ca_uint32_t nciu::getSID (
+    epicsGuard < epicsMutex > & ) const
 {
     return this->sid;
 }
 
-inline ca_uint32_t nciu::getCID () const
+inline ca_uint32_t nciu::getCID (
+    epicsGuard < epicsMutex > & ) const
 {
     return this->id;
 }
@@ -243,7 +268,8 @@ inline void nciu::searchReplySetUp ( netiiu &iiu, unsigned sidIn,
     this->sid = sidIn;
 }
 
-inline netiiu * nciu::getPIIU ()
+inline netiiu * nciu::getPIIU (
+    epicsGuard < epicsMutex > & )
 {
     return this->piiu;
 }
@@ -258,7 +284,8 @@ inline void nciu::writeException (
         status, pContext, typeIn, countIn );
 }
 
-inline const netiiu * nciu::getConstPIIU () const
+inline const netiiu * nciu::getConstPIIU (
+    epicsGuard < epicsMutex > & ) const
 {
     return this->piiu;
 }
@@ -273,7 +300,8 @@ inline cac & nciu::getClient ()
     return this->cacCtx;
 }
 
-inline cacChannel::priLev nciu::getPriority () const
+inline cacChannel::priLev nciu::getPriority (
+    epicsGuard < epicsMutex > & ) const
 {
     return this->priority;
 }

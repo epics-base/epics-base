@@ -41,8 +41,14 @@ netReadNotifyIO::~netReadNotifyIO ()
 
 void netReadNotifyIO::show ( unsigned /* level */ ) const
 {
-    ::printf ( "read notify IO at %p\n", 
+    ::printf ( "netReadNotifyIO at %p\n", 
         static_cast < const void * > ( this ) );
+}
+
+void netReadNotifyIO::show ( 
+    epicsGuard < epicsMutex > &, unsigned level ) const
+{
+    this->show ( level );
 }
 
 void netReadNotifyIO::destroy ( 

@@ -40,36 +40,57 @@ class cac;
 class netiiu {
 public:
     virtual ~netiiu ();
-    virtual void hostName ( char *pBuf, unsigned bufLength ) const = 0;
-    virtual const char * pHostName () const = 0; // deprecated - please do not use
-    virtual bool ca_v41_ok () const = 0;
-    virtual bool ca_v42_ok () const = 0;
-    virtual void writeRequest ( epicsGuard < epicsMutex > &, nciu &, 
-        unsigned type, arrayElementCount nElem, const void *pValue ) = 0;
-    virtual void writeNotifyRequest ( epicsGuard < epicsMutex > &, 
+    virtual void hostName ( 
+        epicsGuard < epicsMutex > &, char * pBuf, 
+        unsigned bufLength ) const = 0;
+    virtual const char * pHostName (
+        epicsGuard < epicsMutex > & ) const = 0; 
+    virtual bool ca_v41_ok (
+        epicsGuard < epicsMutex > & ) const = 0;
+    virtual bool ca_v42_ok (
+        epicsGuard < epicsMutex > & ) const = 0;
+    virtual void writeRequest ( 
+        epicsGuard < epicsMutex > &, nciu &, 
+        unsigned type, arrayElementCount nElem, 
+        const void *pValue ) = 0;
+    virtual void writeNotifyRequest ( 
+        epicsGuard < epicsMutex > &, 
         nciu &, netWriteNotifyIO &, 
-        unsigned type, arrayElementCount nElem, const void *pValue ) = 0;
-    virtual void readNotifyRequest ( epicsGuard < epicsMutex > &, nciu &, 
-        netReadNotifyIO &, unsigned type, arrayElementCount nElem ) = 0;
-    virtual void clearChannelRequest ( epicsGuard < epicsMutex > &, 
+        unsigned type, arrayElementCount nElem, 
+        const void *pValue ) = 0;
+    virtual void readNotifyRequest ( 
+        epicsGuard < epicsMutex > &, nciu &, 
+        netReadNotifyIO &, unsigned type, 
+        arrayElementCount nElem ) = 0;
+    virtual void clearChannelRequest ( 
+        epicsGuard < epicsMutex > &, 
         ca_uint32_t sid, ca_uint32_t cid ) = 0;
-    virtual void subscriptionRequest ( epicsGuard < epicsMutex > &, 
+    virtual void subscriptionRequest ( 
+        epicsGuard < epicsMutex > &, 
         nciu &, netSubscription & ) = 0;
     virtual void subscriptionUpdateRequest ( 
-        epicsGuard < epicsMutex > &, nciu &, netSubscription & ) = 0;
-    virtual void subscriptionCancelRequest ( epicsGuard < epicsMutex > &, 
+        epicsGuard < epicsMutex > &, 
+        nciu &, netSubscription & ) = 0;
+    virtual void subscriptionCancelRequest ( 
+        epicsGuard < epicsMutex > &, 
         nciu & chan, netSubscription & subscr ) = 0;
-    virtual void flushRequest ( epicsGuard < epicsMutex > & ) = 0;
-    virtual bool flushBlockThreshold ( epicsGuard < epicsMutex > & ) const = 0;
-    virtual void flushRequestIfAboveEarlyThreshold ( epicsGuard < epicsMutex > & ) = 0;
+    virtual void flushRequest ( 
+        epicsGuard < epicsMutex > & ) = 0;
+    virtual bool flushBlockThreshold ( 
+        epicsGuard < epicsMutex > & ) const = 0;
+    virtual void flushRequestIfAboveEarlyThreshold ( 
+        epicsGuard < epicsMutex > & ) = 0;
     virtual void blockUntilSendBacklogIsReasonable 
         ( cacContextNotify &, epicsGuard < epicsMutex > & ) = 0;
-    virtual void requestRecvProcessPostponedFlush () = 0;
-    virtual osiSockAddr getNetworkAddress () const = 0;
+    virtual void requestRecvProcessPostponedFlush (
+        epicsGuard < epicsMutex > & ) = 0;
+    virtual osiSockAddr getNetworkAddress (
+        epicsGuard < epicsMutex > & ) const = 0;
     virtual void uninstallChan ( 
         epicsGuard < epicsMutex > & cbMutex, 
         epicsGuard < epicsMutex > & mutex, nciu & ) = 0;
-    virtual double receiveWatchdogDelay () const = 0;
+    virtual double receiveWatchdogDelay (
+        epicsGuard < epicsMutex > & ) const = 0;
 };
 
 #endif // netiiuh

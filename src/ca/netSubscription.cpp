@@ -71,6 +71,12 @@ void netSubscription::show ( unsigned /* level */ ) const
         this->count, this->mask );
 }
 
+void netSubscription::show ( 
+    epicsGuard < epicsMutex > &, unsigned level ) const
+{
+    this->show ( level );
+}
+
 void netSubscription::completion ( 
     epicsGuard < epicsMutex > & guard, cacRecycle & )
 {
@@ -152,7 +158,7 @@ void netSubscription::subscriptionUpdateIfRequired (
     epicsGuard < epicsMutex > & guard, nciu & chan )
 {
     if ( this->updateWhileDisconnected ) {
-        chan.getPIIU()->subscriptionUpdateRequest ( 
+        chan.getPIIU(guard)->subscriptionUpdateRequest ( 
             guard, chan, *this );
         this->updateWhileDisconnected = false;
     }

@@ -1005,13 +1005,14 @@ void udpiiu::repeaterConfirmNotify ()
     this->pRepeaterSubscribeTmr->confirmNotify ();
 }
 
-void udpiiu::beaconAnomalyNotify ( const epicsTime & currentTime ) 
+void udpiiu::beaconAnomalyNotify ( 
+    epicsGuard < epicsMutex > & cacGuard, const epicsTime & currentTime ) 
 {
     epicsGuard <udpMutex> guard ( this->mutex );
 
     tsDLIter < nciu > chan = this->serverAddrRes.firstIter ();
     while ( chan.valid () ) {
-        chan->beaconAnomalyNotify ();
+        chan->beaconAnomalyNotify ( cacGuard );
         chan++;
     }
 
@@ -1145,108 +1146,128 @@ void udpiiu::uninstallChan (
     chan.channelNode::listMember = channelNode::cs_none;
 }
 
-void udpiiu::hostName ( char *pBuf, unsigned bufLength ) const
+void udpiiu::hostName ( 
+    epicsGuard < epicsMutex > & cacGuard,
+    char *pBuf, unsigned bufLength ) const
 {
-    netiiu::hostName ( pBuf, bufLength );
+    netiiu::hostName ( cacGuard, pBuf, bufLength );
 }
 
-const char * udpiiu::pHostName () const
+const char * udpiiu::pHostName (
+    epicsGuard < epicsMutex > & cacGuard ) const
 {
-    return netiiu::pHostName ();
+    return netiiu::pHostName ( cacGuard );
 }
 
-bool udpiiu::ca_v42_ok () const
+bool udpiiu::ca_v42_ok (
+    epicsGuard < epicsMutex > & cacGuard ) const
 {
-    return netiiu::ca_v42_ok ();
+    return netiiu::ca_v42_ok ( cacGuard );
 }
 
-bool udpiiu::ca_v41_ok () const
+bool udpiiu::ca_v41_ok (
+    epicsGuard < epicsMutex > & cacGuard ) const
 {
-    return netiiu::ca_v41_ok ();
+    return netiiu::ca_v41_ok ( cacGuard );
 }
 
-void udpiiu::writeRequest ( epicsGuard < epicsMutex > & guard, 
-    nciu & chan, unsigned type, arrayElementCount nElem, const void * pValue )
+void udpiiu::writeRequest ( 
+    epicsGuard < epicsMutex > & guard, 
+    nciu & chan, unsigned type, 
+    arrayElementCount nElem, const void * pValue )
 {
     guard.assertIdenticalMutex ( this->cacMutex );
     netiiu::writeRequest ( guard, chan, type, nElem, pValue );
 }
 
-void udpiiu::writeNotifyRequest ( epicsGuard < epicsMutex > & guard, nciu & chan, 
-                netWriteNotifyIO & io, unsigned type, arrayElementCount nElem, const void *pValue )
+void udpiiu::writeNotifyRequest ( 
+    epicsGuard < epicsMutex > & guard, nciu & chan, 
+    netWriteNotifyIO & io, unsigned type, 
+    arrayElementCount nElem, const void *pValue )
 {
     guard.assertIdenticalMutex ( this->cacMutex );
     netiiu::writeNotifyRequest ( guard, chan, io, type, nElem, pValue );
 }
 
-void udpiiu::readNotifyRequest ( epicsGuard < epicsMutex > & guard, nciu & chan, 
-                netReadNotifyIO & io, unsigned type, arrayElementCount nElem )
+void udpiiu::readNotifyRequest ( 
+    epicsGuard < epicsMutex > & guard, nciu & chan, 
+    netReadNotifyIO & io, unsigned type, arrayElementCount nElem )
 {
     guard.assertIdenticalMutex ( this->cacMutex );
     netiiu::readNotifyRequest ( guard, chan, io, type, nElem );
 }
 
-void udpiiu::clearChannelRequest ( epicsGuard < epicsMutex > & guard, 
-                ca_uint32_t sid, ca_uint32_t cid )
+void udpiiu::clearChannelRequest ( 
+    epicsGuard < epicsMutex > & guard, 
+    ca_uint32_t sid, ca_uint32_t cid )
 {
     guard.assertIdenticalMutex ( this->cacMutex );
     netiiu::clearChannelRequest ( guard, sid, cid );
 }
 
-void udpiiu::subscriptionRequest ( epicsGuard < epicsMutex > & guard, nciu & chan, 
-                netSubscription & subscr )
+void udpiiu::subscriptionRequest ( 
+    epicsGuard < epicsMutex > & guard, nciu & chan, 
+    netSubscription & subscr )
 {
     guard.assertIdenticalMutex ( this->cacMutex );
     netiiu::subscriptionRequest ( guard, chan, subscr );
 }
 
-void udpiiu::subscriptionUpdateRequest ( epicsGuard < epicsMutex > &, nciu &, 
-                netSubscription & )
+void udpiiu::subscriptionUpdateRequest ( 
+    epicsGuard < epicsMutex > &, nciu &, 
+    netSubscription & )
 {
 }
 
-void udpiiu::subscriptionCancelRequest ( epicsGuard < epicsMutex > & guard, 
-                nciu & chan, netSubscription & subscr )
+void udpiiu::subscriptionCancelRequest ( 
+    epicsGuard < epicsMutex > & guard, 
+    nciu & chan, netSubscription & subscr )
 {
     guard.assertIdenticalMutex ( this->cacMutex );
     netiiu::subscriptionCancelRequest ( guard, chan, subscr );
 }
 
-void udpiiu::flushRequest ( epicsGuard < epicsMutex > & guard )
+void udpiiu::flushRequest ( 
+    epicsGuard < epicsMutex > & guard )
 {
     netiiu::flushRequest ( guard );
 }
 
-bool udpiiu::flushBlockThreshold ( epicsGuard < epicsMutex > & guard ) const
+bool udpiiu::flushBlockThreshold ( 
+    epicsGuard < epicsMutex > & guard ) const
 {
     guard.assertIdenticalMutex ( this->cacMutex );
     return netiiu::flushBlockThreshold ( guard );
 }
 
-void udpiiu::flushRequestIfAboveEarlyThreshold ( epicsGuard < epicsMutex > & guard )
+void udpiiu::flushRequestIfAboveEarlyThreshold ( 
+    epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->cacMutex );
     netiiu::flushRequestIfAboveEarlyThreshold ( guard );
 }
 
-void udpiiu::blockUntilSendBacklogIsReasonable 
-    ( cacContextNotify & notify, epicsGuard < epicsMutex > & guard )
+void udpiiu::blockUntilSendBacklogIsReasonable ( 
+    cacContextNotify & notify, epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->cacMutex );
     netiiu::blockUntilSendBacklogIsReasonable ( notify, guard );
 }
 
-void udpiiu::requestRecvProcessPostponedFlush ()
+void udpiiu::requestRecvProcessPostponedFlush (
+    epicsGuard < epicsMutex > & guard )
 {
-    netiiu::requestRecvProcessPostponedFlush ();
+    netiiu::requestRecvProcessPostponedFlush ( guard );
 }
 
-osiSockAddr udpiiu::getNetworkAddress () const
+osiSockAddr udpiiu::getNetworkAddress (
+    epicsGuard < epicsMutex > & guard ) const
 {
-    return netiiu::getNetworkAddress ();
+    return netiiu::getNetworkAddress ( guard );
 }
 
-double udpiiu::receiveWatchdogDelay () const
+double udpiiu::receiveWatchdogDelay (
+    epicsGuard < epicsMutex > & guard ) const
 {
     return - DBL_MAX;
 }

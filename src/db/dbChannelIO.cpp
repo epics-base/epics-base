@@ -139,14 +139,18 @@ void dbChannelIO::ioCancel (
 }
 
 void dbChannelIO::ioShow ( 
+    epicsGuard < epicsMutex > & guard,
     const ioid & id, unsigned level ) const
 {
-    epicsGuard < epicsMutex > guard ( this->mutex );
+    guard.assertIdenticalMutex ( this->mutex );
     this->serviceIO.ioShow ( guard, id, level );
 }
 
-void dbChannelIO::show ( unsigned level ) const
+void dbChannelIO::show ( 
+    epicsGuard < epicsMutex > & guard, unsigned level ) const
 {
+    guard.assertIdenticalMutex ( this->mutex );
+
     printf ("channel at %p attached to local database record %s\n", 
         static_cast <const void *> ( this ), this->addr.precord->name );
 
@@ -159,6 +163,30 @@ void dbChannelIO::show ( unsigned level ) const
         this->serviceIO.show ( level - 2u );
         this->serviceIO.showAllIO ( *this, level - 2u );
     }
+}
+
+unsigned long dbChannelIO::nativeElementCount (
+    epicsGuard < epicsMutex > & guard ) const 
+{
+    guard.assertIdenticalMutex ( this->mutex );
+    if ( this->addr.no_elements >= 0u ) {
+        return static_cast < unsigned long > ( this->addr.no_elements );
+    }
+    return 0u;
+}
+
+const char *dbChannelIO::pName (
+    epicsGuard < epicsMutex > & guard ) const 
+{
+    guard.assertIdenticalMutex ( this->mutex );
+    return addr.precord->name;
+}
+
+short dbChannelIO::nativeType (
+    epicsGuard < epicsMutex > & guard ) const 
+{
+    guard.assertIdenticalMutex ( this->mutex );
+    return this->addr.dbr_field_type;
 }
 
 void * dbChannelIO::operator new ( size_t size, 

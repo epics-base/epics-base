@@ -62,7 +62,11 @@ public:
         unsigned type, arrayElementCount count, 
         const void * pData ) = 0;
     virtual class netSubscription * isSubscription () = 0;
-    virtual void show ( unsigned level ) const = 0;
+    virtual void show ( 
+        unsigned level ) const = 0;
+    virtual void show ( 
+        epicsGuard < epicsMutex > &, 
+        unsigned level ) const = 0;
 protected:
     NETIO_VIRTUAL_DESTRUCTOR ~baseNMIU (); 
 };
@@ -73,11 +77,16 @@ public:
         tsFreeList < class netSubscription, 1024, epicsMutexNOOP > &, 
         class privateInterfaceForIO &, unsigned type, arrayElementCount count, 
         unsigned mask, cacStateNotify & );
-    void show ( unsigned level ) const;
+    void show ( 
+        unsigned level ) const;
+    void show ( 
+        epicsGuard < epicsMutex > &, unsigned level ) const;
     arrayElementCount getCount (
         epicsGuard < epicsMutex > & ) const;
-    unsigned getType () const;
-    unsigned getMask () const;
+    unsigned getType (
+        epicsGuard < epicsMutex > & ) const;
+    unsigned getMask (
+        epicsGuard < epicsMutex > & ) const;
     void subscriptionUpdateIfRequired (
         epicsGuard < epicsMutex > &, nciu & );
 protected:
@@ -123,7 +132,10 @@ public:
     static netReadNotifyIO * factory ( 
         tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > &, 
         privateInterfaceForIO &, cacReadNotify & );
-    void show ( unsigned level ) const;
+    void show ( 
+        unsigned level ) const;
+    void show ( 
+        epicsGuard < epicsMutex > &, unsigned level ) const;
 protected:
     ~netReadNotifyIO ();
 private:
@@ -161,7 +173,10 @@ public:
     static netWriteNotifyIO * factory ( 
         tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > &, 
         privateInterfaceForIO &, cacWriteNotify & );
-    void show ( unsigned level ) const;
+    void show ( 
+        unsigned level ) const;
+    void show ( 
+        epicsGuard < epicsMutex > &, unsigned level ) const;
 protected:
     ~netWriteNotifyIO ();
 private:
@@ -230,12 +245,12 @@ inline arrayElementCount netSubscription::getCount (
     }
 }
 
-inline unsigned netSubscription::getType () const
+inline unsigned netSubscription::getType ( epicsGuard < epicsMutex > & ) const
 {
     return this->type;
 }
 
-inline unsigned netSubscription::getMask () const
+inline unsigned netSubscription::getMask ( epicsGuard < epicsMutex > & ) const
 {
     return this->mask;
 }

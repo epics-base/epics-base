@@ -99,7 +99,8 @@ public:
         const osiSockAddr & addrIn, comBufMemoryManager &, unsigned minorVersion, 
         ipAddrToAsciiEngine & engineIn, const cacChannel::priLev & priorityIn );
     ~tcpiiu ();
-    void start ();
+    void start (
+        epicsGuard < epicsMutex > & );
     void initiateCleanShutdown ( 
         epicsGuard < epicsMutex > & );
     void initiateAbortShutdown ( 
@@ -114,7 +115,8 @@ public:
     void receiveTimeoutNotify( 
         callbackManager &,
         epicsGuard < epicsMutex > & );
-    void beaconAnomalyNotify ( epicsGuard < epicsMutex > & );
+    void beaconAnomalyNotify ( 
+        epicsGuard < epicsMutex > & );
     void beaconArrivalNotify ( 
         epicsGuard < epicsMutex > &,
         const epicsTime & currentTime );
@@ -122,29 +124,46 @@ public:
         epicsGuard < epicsMutex > &,
         const epicsTime & currentTime );
 
-    void flushRequest ( epicsGuard < epicsMutex > & );
-    bool flushBlockThreshold ( epicsGuard < epicsMutex > & ) const;
-    void flushRequestIfAboveEarlyThreshold ( epicsGuard < epicsMutex > & );
+    void flushRequest ( 
+        epicsGuard < epicsMutex > & );
+    bool flushBlockThreshold ( 
+        epicsGuard < epicsMutex > & ) const;
+    void flushRequestIfAboveEarlyThreshold ( 
+        epicsGuard < epicsMutex > & );
     void blockUntilSendBacklogIsReasonable 
         ( cacContextNotify &, epicsGuard < epicsMutex > & );
     virtual void show ( unsigned level ) const;
-    bool setEchoRequestPending ( epicsGuard < epicsMutex > & );
-    void requestRecvProcessPostponedFlush ();
-    void clearChannelRequest ( epicsGuard < epicsMutex > &, 
+    bool setEchoRequestPending ( 
+        epicsGuard < epicsMutex > & );
+    void requestRecvProcessPostponedFlush (
+        epicsGuard < epicsMutex > & );
+    void clearChannelRequest ( 
+        epicsGuard < epicsMutex > &, 
         ca_uint32_t sid, ca_uint32_t cid );
 
-    bool ca_v41_ok () const;
-    bool ca_v42_ok () const;
-    bool ca_v44_ok () const;
-    bool ca_v49_ok () const;
+    bool ca_v41_ok (
+        epicsGuard < epicsMutex > & ) const;
+    bool ca_v42_ok (
+        epicsGuard < epicsMutex > & ) const;
+    bool ca_v44_ok (
+        epicsGuard < epicsMutex > & ) const;
+    bool ca_v49_ok (
+        epicsGuard < epicsMutex > & ) const;
 
-    void hostName ( char *pBuf, unsigned bufLength ) const;
-    bool alive () const;
-    bool connecting () const;
-    osiSockAddr getNetworkAddress () const;
-    int printf ( epicsGuard < epicsMutex > & cbGuard, 
+    void hostName ( 
+        epicsGuard < epicsMutex > &,
+        char *pBuf, unsigned bufLength ) const;
+    bool alive (
+        epicsGuard < epicsMutex > & ) const;
+    bool connecting (
+        epicsGuard < epicsMutex > & ) const;
+    osiSockAddr getNetworkAddress (
+        epicsGuard < epicsMutex > & ) const;
+    int printf ( 
+        epicsGuard < epicsMutex > & cbGuard, 
         const char *pformat, ... );
-    unsigned channelCount ( epicsGuard < epicsMutex > & );
+    unsigned channelCount ( 
+        epicsGuard < epicsMutex > & );
     void removeAllChannels (
         epicsGuard < epicsMutex > & cbGuard, 
         epicsGuard < epicsMutex > & guard, udpiiu & );
@@ -153,7 +172,8 @@ public:
         unsigned sidIn, ca_uint16_t typeIn, arrayElementCount countIn );
     void uninstallChan ( epicsGuard < epicsMutex > & cbGuard, 
         epicsGuard < epicsMutex > & guard, nciu & chan );
-    void connectNotify ( epicsGuard < epicsMutex > &, nciu & chan );
+    void connectNotify ( 
+        epicsGuard < epicsMutex > &, nciu & chan );
     void nameResolutionMsgEndNotify ();
 
     bool bytesArePendingInOS () const;
@@ -220,36 +240,54 @@ private:
         unsigned nBytesInBuf, const epicsTime & currentTime );
     void recvBytes ( 
         void * pBuf, unsigned nBytesInBuf, statusWireIO & );
-    const char * pHostName () const;
-    double receiveWatchdogDelay () const;
+    const char * pHostName (
+        epicsGuard < epicsMutex > & ) const;
+    double receiveWatchdogDelay (
+        epicsGuard < epicsMutex > & ) const;
     void unresponsiveCircuitNotify ( 
         epicsGuard < epicsMutex > & cbGuard, 
         epicsGuard < epicsMutex > & guard );
     void disconnectNotify ();
 
     // send protocol stubs
-    void echoRequest ( epicsGuard < epicsMutex > & );
-    void versionMessage ( epicsGuard < epicsMutex > &, const cacChannel::priLev & priority );
-    void disableFlowControlRequest (epicsGuard < epicsMutex > & );
-    void enableFlowControlRequest (epicsGuard < epicsMutex > & );
-    void hostNameSetRequest ( epicsGuard < epicsMutex > & );
-    void userNameSetRequest ( epicsGuard < epicsMutex > & );
-    void createChannelRequest ( nciu &, epicsGuard < epicsMutex > & );
-    void writeRequest ( epicsGuard < epicsMutex > &, nciu &, 
+    void echoRequest ( 
+        epicsGuard < epicsMutex > & );
+    void versionMessage ( 
+        epicsGuard < epicsMutex > &, const cacChannel::priLev & priority );
+    void disableFlowControlRequest (
+        epicsGuard < epicsMutex > & );
+    void enableFlowControlRequest (
+        epicsGuard < epicsMutex > & );
+    void hostNameSetRequest ( 
+        epicsGuard < epicsMutex > & );
+    void userNameSetRequest ( 
+        epicsGuard < epicsMutex > & );
+    void createChannelRequest ( 
+        nciu &, epicsGuard < epicsMutex > & );
+    void writeRequest ( 
+        epicsGuard < epicsMutex > &, nciu &, 
         unsigned type, arrayElementCount nElem, const void *pValue );
-    void writeNotifyRequest ( epicsGuard < epicsMutex > &, nciu &, 
+    void writeNotifyRequest ( 
+        epicsGuard < epicsMutex > &, nciu &, 
         netWriteNotifyIO &, unsigned type, 
         arrayElementCount nElem, const void *pValue );
-    void readNotifyRequest ( epicsGuard < epicsMutex > &, nciu &, 
-        netReadNotifyIO &, unsigned type, arrayElementCount nElem );
-    void subscriptionRequest ( epicsGuard < epicsMutex > &, 
+    void readNotifyRequest ( 
+        epicsGuard < epicsMutex > &, nciu &, 
+        netReadNotifyIO &, unsigned type, 
+        arrayElementCount nElem );
+    void subscriptionRequest ( 
+        epicsGuard < epicsMutex > &, 
         nciu &, netSubscription & subscr );
-    void subscriptionUpdateRequest ( epicsGuard < epicsMutex > &, 
+    void subscriptionUpdateRequest ( 
+        epicsGuard < epicsMutex > &, 
         nciu & chan, netSubscription & subscr );
-    void subscriptionCancelRequest ( epicsGuard < epicsMutex > &, 
+    void subscriptionCancelRequest ( 
+        epicsGuard < epicsMutex > &, 
         nciu & chan, netSubscription & subscr );
-    void flushIfRecvProcessRequested ();
-    bool flush ( epicsGuard < epicsMutex > & ); // only to be called by the send thread
+    void flushIfRecvProcessRequested (
+        epicsGuard < epicsMutex > & );
+    bool flush ( 
+        epicsGuard < epicsMutex > & ); // only to be called by the send thread
 
     friend void tcpRecvThread::run ();
     friend void tcpRecvThread::connect ();
@@ -275,33 +313,39 @@ inline void tcpiiu::operator delete ( void * pCadaver,
 }
 #endif
 
-inline bool tcpiiu::ca_v41_ok () const
+inline bool tcpiiu::ca_v41_ok (
+    epicsGuard < epicsMutex > & ) const
 {
     return CA_V41 ( this->minorProtocolVersion );
 }
 
-inline bool tcpiiu::ca_v44_ok () const
+inline bool tcpiiu::ca_v44_ok (
+    epicsGuard < epicsMutex > & ) const
 {
     return CA_V44 ( this->minorProtocolVersion );
 }
 
-inline bool tcpiiu::ca_v49_ok () const
+inline bool tcpiiu::ca_v49_ok (
+    epicsGuard < epicsMutex > & ) const
 {
     return CA_V49 ( this->minorProtocolVersion );
 }
 
-inline bool tcpiiu::alive () const // X aCC 361
+inline bool tcpiiu::alive (
+    epicsGuard < epicsMutex > & ) const // X aCC 361
 {
     return ( this->state == iiucs_connecting || 
         this->state == iiucs_connected );
 }
 
-inline bool tcpiiu::connecting () const
+inline bool tcpiiu::connecting (
+    epicsGuard < epicsMutex > & ) const
 {
     return ( this->state == iiucs_connecting );
 }
 
-inline void tcpiiu::beaconAnomalyNotify ( epicsGuard < epicsMutex > & guard )
+inline void tcpiiu::beaconAnomalyNotify ( 
+    epicsGuard < epicsMutex > & guard )
 {
     //guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
     this->recvDog.beaconAnomalyNotify ( guard );

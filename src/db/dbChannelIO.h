@@ -43,19 +43,25 @@
 
 class dbChannelIO : public cacChannel, public dbContextPrivateListOfIO {
 public:
-    dbChannelIO ( epicsMutex &, cacChannelNotify &, 
+    dbChannelIO ( 
+        epicsMutex &, cacChannelNotify &, 
         const dbAddr &, dbContext & );
-    void destructor ( epicsGuard < epicsMutex > & );
+    void destructor ( 
+        epicsGuard < epicsMutex > & );
     void destroy (
         epicsGuard < epicsMutex > & callbackControlGuard, 
         epicsGuard < epicsMutex > & mutualExclusionGuard );
-    void callReadNotify ( epicsGuard < epicsMutex > &, 
-            unsigned type, unsigned long count, 
-            cacReadNotify & notify );
-    void callStateNotify ( unsigned type, unsigned long count, 
-            const struct db_field_log * pfl, cacStateNotify & notify );
-    void show ( unsigned level ) const;
-    const char * pName () const;
+    void callReadNotify ( 
+        epicsGuard < epicsMutex > &, 
+        unsigned type, unsigned long count, 
+        cacReadNotify & notify );
+    void callStateNotify ( 
+        unsigned type, unsigned long count, 
+        const struct db_field_log * pfl, cacStateNotify & notify );
+    void show ( 
+        epicsGuard < epicsMutex > &, unsigned level ) const;
+    const char * pName (
+        epicsGuard < epicsMutex > & ) const;
     void * operator new ( size_t size, 
         tsFreeList < dbChannelIO, 256, epicsMutexNOOP > & );
     epicsPlacementDeleteOperator (( void *, 
@@ -68,16 +74,20 @@ private:
     dbAddr addr;
     void initiateConnect (
         epicsGuard < epicsMutex > & );
-    ioStatus read ( epicsGuard < epicsMutex > &,
+    ioStatus read ( 
+        epicsGuard < epicsMutex > &,
         unsigned type, unsigned long count, 
         cacReadNotify &, ioid * );
-    void write ( epicsGuard < epicsMutex > &,
+    void write ( 
+        epicsGuard < epicsMutex > &,
         unsigned type, unsigned long count, 
-        const void *pvalue );
-    ioStatus write ( epicsGuard < epicsMutex > &,
+        const void * pvalue );
+    ioStatus write ( 
+        epicsGuard < epicsMutex > &,
         unsigned type, unsigned long count, 
-        const void *pvalue, cacWriteNotify &, ioid * );
-    void subscribe ( epicsGuard < epicsMutex > &,
+        const void * pvalue, cacWriteNotify &, ioid * );
+    void subscribe ( 
+        epicsGuard < epicsMutex > &,
         unsigned type, unsigned long count, 
         unsigned mask, cacStateNotify &notify, ioid * );
     void ioCancel ( 
@@ -85,33 +95,17 @@ private:
         epicsGuard < epicsMutex > & mutualExclusionGuard,
         const ioid & );
     void ioShow ( 
+        epicsGuard < epicsMutex > &,
         const ioid &, unsigned level ) const;
-    short nativeType () const;
-    unsigned long nativeElementCount () const;
+    short nativeType (
+        epicsGuard < epicsMutex > & ) const;
+    unsigned long nativeElementCount (
+        epicsGuard < epicsMutex > & ) const;
 	dbChannelIO ( const dbChannelIO & );
 	dbChannelIO & operator = ( const dbChannelIO & );
     void * operator new ( size_t size );
     void operator delete ( void * );
 };
-
-
-inline unsigned long dbChannelIO::nativeElementCount () const 
-{
-    if ( this->addr.no_elements >= 0u ) {
-        return static_cast < unsigned long > ( this->addr.no_elements );
-    }
-    return 0u;
-}
-
-inline const char *dbChannelIO::pName () const 
-{
-    return addr.precord->name;
-}
-
-inline short dbChannelIO::nativeType () const 
-{
-    return this->addr.dbr_field_type;
-}
 
 inline void dbChannelIO::callReadNotify ( 
     epicsGuard < epicsMutex > & guard, unsigned type, unsigned long count, 

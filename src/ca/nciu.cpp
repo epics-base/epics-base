@@ -105,7 +105,7 @@ void nciu::destructor (
     // the clear channel request to the server when the claim reply
     // arrives and there is no matching nciu in the client
     if ( this->connected ( guard ) ) {
-        this->getPIIU()->clearChannelRequest ( 
+        this->getPIIU(guard)->clearChannelRequest ( 
             guard, this->sid, this->id );
     }
 
@@ -155,7 +155,7 @@ void nciu::connect ( unsigned nativeType,
      * if less than v4.1 then the server will never
      * send access rights and there will always be access 
      */
-    bool v41Ok = this->piiu->ca_v41_ok ();
+    bool v41Ok = this->piiu->ca_v41_ok ( guard );
     if ( ! v41Ok ) {
         this->accessRightState.setReadPermit();
         this->accessRightState.setWritePermit();
@@ -253,14 +253,17 @@ bool nciu::searchMsg ( udpiiu & iiu, unsigned & retryNoForThisChannel )
     return success;
 }
 
-
-const char *nciu::pName () const
+const char *nciu::pName (
+    epicsGuard < epicsMutex > & guard ) const
 {
+    guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
     return this->pNameStr;
 }
 
-unsigned nciu::nameLen () const
+unsigned nciu::nameLen (
+    epicsGuard < epicsMutex > & guard ) const
 {
+    guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
     return this->nameLength;
 }
 
@@ -269,6 +272,8 @@ cacChannel::ioStatus nciu::read (
     unsigned type, arrayElementCount countIn, 
     cacReadNotify &notify, ioid *pId )
 {
+    guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
+
     if ( ! this->isConnected ( guard ) ) {
         throw cacChannel::notConnected ();
     }
@@ -315,6 +320,8 @@ void nciu::write (
     epicsGuard < epicsMutex > & guard,
     unsigned type, arrayElementCount countIn, const void * pValue )
 {
+    guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
+
     // make sure that they get this and not "no write access"
     // if disconnected
     if ( ! this->connected ( guard ) ) {
@@ -381,32 +388,37 @@ void nciu::ioCancel (
     this->cacCtx.destroyIO ( cbGuard, guard, idIn, *this );
 }
 
-void nciu::ioShow ( const ioid &idIn, unsigned level ) const
+void nciu::ioShow ( 
+    epicsGuard < epicsMutex > & guard, 
+    const ioid &idIn, unsigned level ) const
 {
-    this->cacCtx.ioShow ( idIn, level );
+    this->cacCtx.ioShow ( guard, idIn, level );
 }
 
-void nciu::hostName ( char *pBuf, unsigned bufLength ) const
+void nciu::hostName ( 
+    epicsGuard < epicsMutex > & guard,
+    char *pBuf, unsigned bufLength ) const
 {   
-    epicsGuard < epicsMutex > locker ( this->cacCtx.mutexRef() );
-    this->piiu->hostName ( pBuf, bufLength );
+    this->piiu->hostName ( 
+        guard, pBuf, bufLength );
 }
 
 // deprecated - please do not use, this is _not_ thread safe
-const char * nciu::pHostName () const
+const char * nciu::pHostName (
+    epicsGuard < epicsMutex > & guard ) const
 {
-    return this->piiu->pHostName (); // ouch !
+    return this->piiu->pHostName ( guard );
 }
 
-bool nciu::ca_v42_ok () const
+bool nciu::ca_v42_ok (
+    epicsGuard < epicsMutex > & guard ) const
 {
-    epicsGuard < epicsMutex > locker ( this->cacCtx.mutexRef() );
-    return this->piiu->ca_v42_ok ();
+    return this->piiu->ca_v42_ok ( guard );
 }
 
-short nciu::nativeType () const
+short nciu::nativeType (
+    epicsGuard < epicsMutex > & guard ) const
 {
-    epicsGuard < epicsMutex > guard ( this->cacCtx.mutexRef() );
     short type;
     if ( this->channelNode::isConnected ( guard ) ) {
         if ( this->typeCode < SHRT_MAX ) {
@@ -422,34 +434,41 @@ short nciu::nativeType () const
     return type;
 }
 
-arrayElementCount nciu::nativeElementCount () const
+arrayElementCount nciu::nativeElementCount ( 
+    epicsGuard < epicsMutex > & guard ) const
 {
-    epicsGuard < epicsMutex > guard ( this->cacCtx.mutexRef() );
-    return this->nativeElementCount ( guard );
+    arrayElementCount countOut;
+    if ( this->channelNode::isConnected ( guard ) ) {
+        countOut = this->count;
+    }
+    else {
+        countOut = 0ul;
+    }
+    return countOut;
 }
 
-caAccessRights nciu::accessRights () const
+caAccessRights nciu::accessRights (
+    epicsGuard < epicsMutex > & guard ) const
 {
-    epicsGuard < epicsMutex > locker ( this->cacCtx.mutexRef() );
-    caAccessRights tmp = this->accessRightState;
-    return tmp;
+    return this->accessRightState;
 }
 
-unsigned nciu::searchAttempts () const
+unsigned nciu::searchAttempts (
+    epicsGuard < epicsMutex > & guard ) const
 {
-    epicsGuard < epicsMutex > locker ( this->cacCtx.mutexRef() );
     return this->retry;
 }
 
-double nciu::beaconPeriod () const
+double nciu::beaconPeriod (
+    epicsGuard < epicsMutex > & guard ) const
 {
-    return this->cacCtx.beaconPeriod ( *this );
+    return this->cacCtx.beaconPeriod ( guard, *this );
 }
 
-double nciu::receiveWatchdogDelay () const
+double nciu::receiveWatchdogDelay (
+    epicsGuard < epicsMutex > & guard ) const
 {
-    epicsGuard < epicsMutex > locker ( this->cacCtx.mutexRef() );
-    return this->piiu->receiveWatchdogDelay ();
+    return this->piiu->receiveWatchdogDelay ( guard );
 }
 
 bool nciu::connected ( epicsGuard < epicsMutex > & guard ) const
@@ -461,9 +480,15 @@ bool nciu::connected ( epicsGuard < epicsMutex > & guard ) const
 void nciu::show ( unsigned level ) const
 {
     epicsGuard < epicsMutex > guard ( this->cacCtx.mutexRef() );
+    this->show ( guard, level );
+}
+
+void nciu::show ( 
+    epicsGuard < epicsMutex > & guard, unsigned level ) const
+{
     if ( this->channelNode::isConnected ( guard ) ) {
         char hostNameTmp [256];
-        this->hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
+        this->hostName ( guard, hostNameTmp, sizeof ( hostNameTmp ) );
         ::printf ( "Channel \"%s\", connected to server %s", 
             this->pNameStr, hostNameTmp );
         if ( level > 1u ) {
@@ -489,7 +514,8 @@ void nciu::show ( unsigned level ) const
     }
 }
 
-void nciu::beaconAnomalyNotify () 
+void nciu::beaconAnomalyNotify (
+    epicsGuard < epicsMutex > & guard ) 
 {
     if ( this->retry > beaconAnomalyRetrySetpoint ) {
         this->retry = beaconAnomalyRetrySetpoint;
@@ -515,7 +541,7 @@ void nciu::resubscribe ( epicsGuard < epicsMutex > & guard )
         // them here.
         if ( pSubscr ) {
             try {
-                this->getPIIU()->subscriptionRequest ( guard, *this, *pSubscr );
+                this->getPIIU(guard)->subscriptionRequest ( guard, *this, *pSubscr );
             }
             catch ( ... ) {
                 errlogPrintf ( "CAC: failed to send subscription request during channel connect\n" );
@@ -551,18 +577,5 @@ void nciu::disconnectAllIO (
 {
     this->cacCtx.disconnectAllIO ( cbGuard, guard, 
         *this, this->eventq );
-}
-
-arrayElementCount nciu::nativeElementCount ( 
-    epicsGuard < epicsMutex > & guard ) const
-{
-    arrayElementCount countOut;
-    if ( this->channelNode::isConnected ( guard ) ) {
-        countOut = this->count;
-    }
-    else {
-        countOut = 0ul;
-    }
-    return countOut;
 }
 

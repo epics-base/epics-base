@@ -43,39 +43,47 @@ cacChannel::~cacChannel ()
 {
 }
 
-caAccessRights cacChannel::accessRights () const 
+caAccessRights cacChannel::accessRights ( 
+    epicsGuard < epicsMutex > & ) const 
 {
     static caAccessRights ar ( true, true );
     return ar;
 }
 
-unsigned cacChannel::searchAttempts () const 
+unsigned cacChannel::searchAttempts ( 
+    epicsGuard < epicsMutex > & ) const 
 {
     return 0u;
 }
 
-double cacChannel::beaconPeriod () const 
+double cacChannel::beaconPeriod ( 
+    epicsGuard < epicsMutex > & ) const 
 {
     return - DBL_MAX;
 }
 
-double cacChannel::receiveWatchdogDelay () const
+double cacChannel::receiveWatchdogDelay ( 
+    epicsGuard < epicsMutex > & ) const
 {
     return - DBL_MAX;
 }
 
-bool cacChannel::ca_v42_ok () const 
+bool cacChannel::ca_v42_ok (
+    epicsGuard < epicsMutex > & ) const 
 {
     return true;
 }
 
-bool cacChannel::connected () const 
+bool cacChannel::connected (
+    epicsGuard < epicsMutex > & ) const 
 {
     return true;
 }
 
 // the default is to assume that it is a locally hosted channel
-void cacChannel::hostName ( char *pBuf, unsigned bufLength ) const 
+void cacChannel::hostName ( 
+    epicsGuard < epicsMutex > &,
+    char *pBuf, unsigned bufLength ) const 
 {
     if ( bufLength ) {
         epicsSingleton < localHostName >::reference 
@@ -86,7 +94,8 @@ void cacChannel::hostName ( char *pBuf, unsigned bufLength ) const
 
 // deprecated - please do not use
 // the default is to assume that it is a locally hosted channel
-const char * cacChannel::pHostName () const
+const char * cacChannel::pHostName (
+    epicsGuard < epicsMutex > & ) const
 {
     epicsSingleton < localHostName >::reference 
             ref ( localHostNameAtLoadTime.getReference () );

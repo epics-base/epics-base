@@ -56,12 +56,19 @@ public:
     void destructor ( 
         epicsGuard < epicsMutex > & cbGuard,
         epicsGuard < epicsMutex > & guard );
-    void setPrivatePointer ( void * );
-    void * privatePointer () const;
-    int changeConnCallBack ( caCh *pfunc );
-    int replaceAccessRightsEvent ( caArh *pfunc );
-    const char *pName () const;
-    void show ( unsigned level ) const;
+    void setPrivatePointer ( 
+        epicsGuard < epicsMutex > &, void * );
+    void * privatePointer (
+        epicsGuard < epicsMutex > & ) const;
+    int changeConnCallBack ( 
+        epicsGuard < epicsMutex > &, caCh *pfunc );
+    int replaceAccessRightsEvent ( 
+        epicsGuard < epicsMutex > &, caArh *pfunc );
+    const char * pName (
+        epicsGuard < epicsMutex > & ) const;
+    void show ( 
+        epicsGuard < epicsMutex > &,
+        unsigned level ) const;
     void initiateConnect (
         epicsGuard < epicsMutex > & );
     void read ( 
@@ -88,18 +95,32 @@ public:
         epicsGuard < epicsMutex > & callbackControl, 
         epicsGuard < epicsMutex > & mutualExclusionGuard, 
         const cacChannel::ioid & );
-    void ioShow ( const cacChannel::ioid &, unsigned level ) const;
-    short nativeType () const;
-    arrayElementCount nativeElementCount () const;
-    caAccessRights accessRights () const; // defaults to unrestricted access
-    unsigned searchAttempts () const; // defaults to zero
-    double beaconPeriod () const; // defaults to negative DBL_MAX
-    double receiveWatchdogDelay () const; // defaults to negative DBL_MAX
-    bool ca_v42_ok () const; 
-    bool connected () const; 
-    bool previouslyConnected () const;
-    void hostName ( char *pBuf, unsigned bufLength ) const; // defaults to local host name
-    const char * pHostName () const; // deprecated - please do not use
+    void ioShow ( 
+        epicsGuard < epicsMutex > & guard,
+        const cacChannel::ioid &, unsigned level ) const;
+    short nativeType (
+        epicsGuard < epicsMutex > & ) const;
+    arrayElementCount nativeElementCount (
+        epicsGuard < epicsMutex > & ) const;
+    caAccessRights accessRights (
+        epicsGuard < epicsMutex > & ) const;
+    unsigned searchAttempts (
+        epicsGuard < epicsMutex > & ) const; 
+    double beaconPeriod (
+        epicsGuard < epicsMutex > & ) const; 
+    double receiveWatchdogDelay (
+        epicsGuard < epicsMutex > & ) const; 
+    bool ca_v42_ok (
+        epicsGuard < epicsMutex > & ) const; 
+    bool connected (
+        epicsGuard < epicsMutex > & ) const; 
+    bool previouslyConnected (
+        epicsGuard < epicsMutex > & ) const;
+    void hostName ( 
+        epicsGuard < epicsMutex > &,
+        char *pBuf, unsigned bufLength ) const; // defaults to local host name
+    const char * pHostName (
+        epicsGuard < epicsMutex > & ) const; // deprecated - please do not use
     ca_client_context & getClientCtx ();
     void * operator new ( size_t size, 
         tsFreeList < struct oldChannelNotify, 1024, epicsMutexNOOP > & );
@@ -255,8 +276,10 @@ struct ca_client_context : public cacContextNotify
 public:
     ca_client_context ( bool enablePreemptiveCallback = false );
     virtual ~ca_client_context ();
-    void changeExceptionEvent ( caExceptionHandler * pfunc, void * arg );
-    void registerForFileDescriptorCallBack ( CAFDHANDLER * pFunc, void * pArg );
+    void changeExceptionEvent ( 
+        caExceptionHandler * pfunc, void * arg );
+    void registerForFileDescriptorCallBack ( 
+        CAFDHANDLER * pFunc, void * pArg );
     void replaceErrLogHandler ( caPrintfFunc * ca_printf_func );
     cacChannel & createChannel ( 
         epicsGuard < epicsMutex > &, const char * pChannelName, 
@@ -300,8 +323,6 @@ public:
     void destroyGetCallback ( epicsGuard < epicsMutex > &, getCallback & );
     void destroyPutCallback ( epicsGuard < epicsMutex > &, putCallback & );
     void destroySubscription ( epicsGuard < epicsMutex > &, oldSubscription & );
-    void changeConnCallBack ( caCh * pfunc, caCh * & pConnCallBack, 
-        const bool & currentlyConnected );
     epicsMutex & mutexRef () const;
 
     // exceptions
@@ -369,6 +390,23 @@ private:
     friend int epicsShareAPI ca_sg_reset ( const CA_SYNC_GID gid );
     friend int epicsShareAPI ca_sg_test ( const CA_SYNC_GID gid );
     friend void epicsShareAPI caInstallDefaultService ( cacService & );
+    friend int epicsShareAPI ca_change_connection_event ( chid pChan, caCh *pfunc );
+    friend int epicsShareAPI ca_replace_access_rights_event ( chid pChan, caArh *pfunc );
+    friend void epicsShareAPI ca_get_host_name ( chid pChan, char *pBuf, unsigned bufLength );
+    friend const char * epicsShareAPI ca_host_name ( chid pChan );
+    friend int epicsShareAPI ca_v42_ok ( chid pChan );
+    friend short epicsShareAPI ca_field_type ( chid pChan );
+    friend arrayElementCount epicsShareAPI ca_element_count ( chid pChan );
+    friend enum channel_state epicsShareAPI ca_state ( chid pChan );
+    friend void epicsShareAPI ca_set_puser ( chid pChan, void *puser );
+    friend void * epicsShareAPI ca_puser ( chid pChan );
+    friend void * epicsShareAPI ca_puser ( chid pChan );
+    friend unsigned epicsShareAPI ca_read_access ( chid pChan );
+    friend unsigned epicsShareAPI ca_write_access ( chid pChan );
+    friend unsigned epicsShareAPI ca_search_attempts ( chid pChan );
+    friend double epicsShareAPI ca_beacon_period ( chid pChan );
+    friend double epicsShareAPI ca_receive_watchdog_delay ( chid pChan );
+    friend const char * epicsShareAPI ca_name ( chid pChan );
 };
 
 int fetchClientContext ( ca_client_context * * ppcac );
@@ -378,14 +416,17 @@ inline ca_client_context & oldChannelNotify::getClientCtx ()
     return this->cacCtx;
 }
 
-inline const char * oldChannelNotify::pName () const 
+inline const char * oldChannelNotify::pName (
+    epicsGuard < epicsMutex > & guard ) const 
 {
-    return this->io.pName ();
+    return this->io.pName ( guard );
 }
 
-inline void oldChannelNotify::show ( unsigned level ) const
+inline void oldChannelNotify::show ( 
+    epicsGuard < epicsMutex > & guard,
+    unsigned level ) const
 {
-    this->io.show ( level );
+    this->io.show ( guard, level );
 }
 
 inline void oldChannelNotify::initiateConnect (
@@ -403,64 +444,79 @@ inline void oldChannelNotify::ioCancel (
 }
 
 inline void oldChannelNotify::ioShow ( 
+    epicsGuard < epicsMutex > & guard,
     const cacChannel::ioid & id, unsigned level ) const
 {
-    this->io.ioShow ( id, level );
+    this->io.ioShow ( guard, id, level );
 }
 
-inline short oldChannelNotify::nativeType () const
+inline short oldChannelNotify::nativeType (
+    epicsGuard < epicsMutex > & guard ) const
 {
-    return this->io.nativeType ();
+    return this->io.nativeType ( guard );
 }
 
-inline arrayElementCount oldChannelNotify::nativeElementCount () const
+inline arrayElementCount oldChannelNotify::nativeElementCount (
+    epicsGuard < epicsMutex > & guard ) const
 {
-    return this->io.nativeElementCount ();
+    return this->io.nativeElementCount ( guard );
 }
 
-inline caAccessRights oldChannelNotify::accessRights () const
+inline caAccessRights oldChannelNotify::accessRights (
+    epicsGuard < epicsMutex > & guard ) const
 {
-    return this->io.accessRights ();
+    return this->io.accessRights ( guard );
 }
 
-inline unsigned oldChannelNotify::searchAttempts () const
+inline unsigned oldChannelNotify::searchAttempts (
+    epicsGuard < epicsMutex > & guard ) const
 {
-    return this->io.searchAttempts ();
+    return this->io.searchAttempts ( guard );
 }
 
-inline double oldChannelNotify::beaconPeriod () const
+inline double oldChannelNotify::beaconPeriod (
+    epicsGuard < epicsMutex > & guard ) const
 {
-    return this->io.beaconPeriod ();
+    return this->io.beaconPeriod ( guard );
 }
 
-inline double oldChannelNotify::receiveWatchdogDelay () const
+inline double oldChannelNotify::receiveWatchdogDelay (
+    epicsGuard < epicsMutex > & guard ) const
 {
-    return this->io.receiveWatchdogDelay ();
+    return this->io.receiveWatchdogDelay ( guard );
 }
 
-inline bool oldChannelNotify::ca_v42_ok () const
+inline bool oldChannelNotify::ca_v42_ok (
+    epicsGuard < epicsMutex > & guard ) const
 {
-    return this->io.ca_v42_ok ();
+    return this->io.ca_v42_ok ( guard );
 }
 
-inline bool oldChannelNotify::connected () const
+inline bool oldChannelNotify::connected (
+    epicsGuard < epicsMutex > & guard ) const
 {
+    guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
     return this->currentlyConnected;
 }
 
-inline bool oldChannelNotify::previouslyConnected () const
+inline bool oldChannelNotify::previouslyConnected (
+    epicsGuard < epicsMutex > & guard ) const
 {
+    guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
     return this->prevConnected;
 }
 
-inline void oldChannelNotify::hostName ( char *pBuf, unsigned bufLength ) const
+inline void oldChannelNotify::hostName ( 
+    epicsGuard < epicsMutex > & guard,
+    char *pBuf, unsigned bufLength ) const
 {
-    this->io.hostName ( pBuf, bufLength );
+    this->io.hostName ( guard, pBuf, bufLength );
 }
 
-inline const char * oldChannelNotify::pHostName () const
+inline const char * oldChannelNotify::pHostName (
+    epicsGuard < epicsMutex > & guard ) const
 {
-    return this->io.pHostName ();
+    return this->io.pHostName ( guard );
 }
 
 inline void * oldChannelNotify::operator new ( size_t size, 
@@ -512,13 +568,6 @@ inline void oldSubscription::operator delete ( void *pCadaver,
 inline oldChannelNotify & oldSubscription::channel () const
 {
     return this->chan;
-}
-
-inline int oldChannelNotify::changeConnCallBack ( caCh * pfunc )
-{
-    this->cacCtx.changeConnCallBack ( pfunc, 
-        this->pConnCallBack, this->currentlyConnected );
-    return ECA_NORMAL;
 }
 
 inline void * getCopy::operator new ( size_t size, 

@@ -93,15 +93,15 @@ void epicsThread::exitWait ()
 bool epicsThread::exitWait ( double delay )
 {
     {
-        epicsTime begin = epicsTime::getCurrent ();
+        epicsTime exitWaitBegin = epicsTime::getCurrent ();
         epicsGuard < epicsMutex > guard ( this->mutex );
         double elapsed = 0.0;
         while ( ! this->terminated ) {
             epicsGuardRelease < epicsMutex > unguard ( guard );
             this->event.wait ( delay - elapsed );
             epicsTime current = epicsTime::getCurrent ();
-            double elapsed = current - begin;
-            if ( elapsed >= delay ) {
+            double exitWaitElapsed = current - exitWaitBegin;
+            if ( exitWaitElapsed >= delay ) {
                 break;
             }
         }

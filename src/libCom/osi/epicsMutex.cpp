@@ -240,7 +240,8 @@ static epicsThreadPrivate < epicsDeadlockDetectMutex >
 
 static epicsThreadOnceId epicsDeadlockDetectMutexInit = EPICS_THREAD_ONCE_INIT;
 
-static void epicsDeadlockDetectMutexInitFunc ( void * ) 
+extern "C"
+void epicsDeadlockDetectMutexInitFunc ( void * ) 
 {
     pCurrentMutexLevel = new epicsThreadPrivate < epicsDeadlockDetectMutex > ();
 }

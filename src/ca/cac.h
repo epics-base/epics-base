@@ -176,7 +176,9 @@ public:
         epicsGuard < epicsMutex > & guard, 
         nciu &, tsDLList < baseNMIU > & ioList );
 
-    void ioShow ( const cacChannel::ioid &id, unsigned level ) const;
+    void ioShow ( 
+        epicsGuard < epicsMutex > & guard,
+        const cacChannel::ioid &id, unsigned level ) const;
 
     // sync group routines
     CASG * lookupCASG ( epicsGuard < epicsMutex > &, unsigned id );
@@ -210,8 +212,11 @@ public:
     unsigned getInitializingThreadsPriority () const;
     epicsMutex & mutexRef ();
     void attachToClientCtx ();
-    void selfTest ( epicsGuard < epicsMutex > & ) const;
-    double beaconPeriod ( const nciu & chan ) const;
+    void selfTest ( 
+        epicsGuard < epicsMutex > & ) const;
+    double beaconPeriod ( 
+        epicsGuard < epicsMutex > &,
+        const nciu & chan ) const;
     static unsigned lowestPriorityLevelAbove ( unsigned priority );
     static unsigned highestPriorityLevelBelow ( unsigned priority );
     void destroyIIU ( tcpiiu & iiu ); 

@@ -91,7 +91,7 @@ void dbSubscriptionIO::channelDeleteException (
 {
     guard.assertIdenticalMutex ( this->mutex );
     this->notify.exception ( guard, ECA_CHANDESTROY, 
-        this->chan.pName(), this->type, this->count );
+        this->chan.pName(guard), this->type, this->count );
 }
 
 void * dbSubscriptionIO::operator new ( size_t ) // X aCC 361

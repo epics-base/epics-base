@@ -76,38 +76,56 @@ void  oldChannelNotify::destructor (
     this->~oldChannelNotify ();
 }
 
-void oldChannelNotify::setPrivatePointer ( void *pPrivateIn )
+int oldChannelNotify::changeConnCallBack ( 
+    epicsGuard < epicsMutex > & guard, caCh * pfunc )
 {
-    epicsGuard < epicsMutex > guard ( this->cacCtx.mutexRef () );
+    guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
+    if ( ! this->currentlyConnected ) {
+         if ( pfunc ) { 
+            if ( ! this->pConnCallBack ) {
+                this->cacCtx.decrementOutstandingIO ( guard, this->ioSeqNo );
+            }
+        }
+        else {
+            if ( this->pConnCallBack ) {
+                this->cacCtx.incrementOutstandingIO ( guard, this->ioSeqNo );
+            }
+        }
+    }
+    pConnCallBack = pfunc;
+
+    return ECA_NORMAL;
+}
+
+void oldChannelNotify::setPrivatePointer ( 
+    epicsGuard < epicsMutex > & guard, void *pPrivateIn )
+{
     this->pPrivate = pPrivateIn;
 }
 
-void * oldChannelNotify::privatePointer () const
+void * oldChannelNotify::privatePointer (
+    epicsGuard < epicsMutex > & guard ) const
 {
-    epicsGuard < epicsMutex > guard ( this->cacCtx.mutexRef () );
     return this->pPrivate;
 }
 
-int oldChannelNotify::replaceAccessRightsEvent ( caArh *pfunc )
+int oldChannelNotify::replaceAccessRightsEvent ( 
+    epicsGuard < epicsMutex > & guard, caArh * pfunc )
 {
-    bool isConnected;
-    caAccessRights tmp;
-    {
-        epicsGuard < epicsMutex > guard ( this->cacCtx.mutexRef () );
-        // The order of the following is significant to guarantee that the
-        // access rights handler is always gets called even if the channel connects
-        // while this is running. There is some very small chance that the
-        // handler could be called twice here with the same access rights state, but 
-        // that will not upset the application.
-        this->pAccessRightsFunc = pfunc ? pfunc : cacNoopAccesRightsHandler;
-        isConnected = this->currentlyConnected;
-        tmp = this->io.accessRights ();
-    }
-    if ( isConnected ) {
+    // The order of the following is significant to guarantee that the
+    // access rights handler is always gets called even if the channel connects
+    // while this is running. There is some very small chance that the
+    // handler could be called twice here with the same access rights state, but 
+    // that will not upset the application.
+    this->pAccessRightsFunc = pfunc ? pfunc : cacNoopAccesRightsHandler;
+    caAccessRights tmp = this->io.accessRights ( guard );
+      
+    if ( this->currentlyConnected ) {
         struct access_rights_handler_args args;
         args.chid = this;
         args.ar.read_access = tmp.readPermit ();
         args.ar.write_access = tmp.writePermit ();
+        epicsGuardRelease < epicsMutex > unguard ( guard );
         ( *pfunc ) ( args );
     }
     return ECA_NORMAL;

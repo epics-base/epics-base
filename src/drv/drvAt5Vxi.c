@@ -54,7 +54,8 @@
  *	.17 joh 081992	function name change	
  *	.18 joh 082792	converted to ansi C
  *	.19 joh	111392	removed shifts on analog IO
- *	.20 joh	071593	fixwd comment	
+ *	.20 joh	071593	fixed comment	
+ *	.21 joh	081193	took out EPICS_V2 compile switches
  *
  *	Notes:
  *	------
@@ -70,11 +71,6 @@
 
 /*
  *	Improvements:
- *
- *	change the pconfig pointer to be after the channel number 
- *	indexing in some cases?
- *
- *	use dev255 to switch between static and dynamic addressing?
  *
  *	Dont allow them to connect an interrupt if another device is
  *	installed there ! Perhaps intConnectSafe() should be written?
@@ -109,9 +105,7 @@
 #include <fast_lock.h>
 #include <drvSup.h>
 #include <dbDefs.h>
-#ifndef EPICS_V2
 #include <dbScan.h>
-#endif
 #include <drvEpvxi.h>
 
 static char SccsId[] = "$Id$\t$Date$";
@@ -425,10 +419,7 @@ struct at5vxi_config{
 	char			mdt;		/* modified data tag	*/
 	struct vxi_csr		*pcsr;		/* vxi device hdr ptr 	*/
 	struct at5vxi_dd	*pdd;		/* at5 device dep ptr	*/
-#ifndef EPICS_V2
        	IOSCANPVT 		ioscanpvt;
-#endif
-
 };
 
 LOCAL unsigned long at5vxiDriverID;
@@ -609,9 +600,8 @@ void 	at5vxi_init_card(
 	pc->pdd = (struct at5vxi_dd *) &pc->pcsr->dir.r.dd;
 
 	FASTLOCKINIT(&pc->lock);
-#ifndef EPICS_V2
+
         scanIoInit(&pc->ioscanpvt);
-#endif
 
 
 	/*
@@ -776,14 +766,7 @@ void 	at5vxi_int_service(
 	/*
 	 * wake up the I/O event scanner
 	 */
-	{
-#ifdef EPICS_V2
-		io_scanner_wakeup(IO_AI, VXI_AT5_AI, addr);
-		io_scanner_wakeup(IO_BI, VXI_AT5_BI, addr);
-#else
-                scanIoRequest(pconfig->ioscanpvt);
-#endif
-	}
+	scanIoRequest(pconfig->ioscanpvt);
 
 	/*
 	 * Update outputs while it is safe to do so
@@ -1438,7 +1421,6 @@ int	at5vxi_bo_driver(
 }
 
 
-#ifndef EPICS_V2
 /*
  *
  * at5vxi_getioscanpvt()
@@ -1455,5 +1437,4 @@ IOSCANPVT *scanpvt;
         if(pconfig) *scanpvt = pconfig->ioscanpvt;
         return(0);
 }
-#endif
 

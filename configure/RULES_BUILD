@@ -231,22 +231,6 @@ endif
 	@$(RM) $@
 	$(MV) lex.yy.c $@
 
-#state notation language rule
-%.cpp: %.i
-	@echo "converting $<"
-	@$(RM) $@
-	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $< -o $@
-
-%.i: ../%.st
-	@echo "preprocessing $<"
-	@$(RM) $@
-	$(CPP) $(CPPSNCFLAGS) $(INCLUDES) $< > $@
-
-%.cpp:	../%.stt
-	@echo "converting $< "
-	@$(RM) $@
-	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $< -o $@
-
 # Adl2dl rule
 %.dl : ../%.adl
 	-$(ADL2DL) $< $@
@@ -301,6 +285,16 @@ $(SHRLIBNAME):$(LIB_PREFIX)%$(SHRLIB_SUFFIX): $(LIBRARY_OBJS) $(LIBRARY_RESS)
 $(MUNCHNAME):%.munch : %_ctdt$(OBJ)
 	@$(RM) $@
 	$(LD) -o $@ $(LDFLAGS) $*.o $<
+
+
+# Ext, app and module rules
+CONFIG_APP_INCLUDE: $(wildcard $(TOP)/configure/RELEASE*)
+	@$(RM) $@
+	@$(PERL) $(TOOLS)/makeConfigAppInclude.pl $(EPICS_HOST_ARCH) $(T_A) $@ $(TOP)
+
+RULES_INCLUDE: $(wildcard $(TOP)/configure/RELEASE*)
+	@$(RM) $@
+	@$(PERL) $(TOOLS)/makeRulesInclude.pl $(EPICS_HOST_ARCH) $(T_A) $@ $(TOP)
 
 
 binInstalls:  $(BIN_INSTALLS)
@@ -392,7 +386,7 @@ $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: %
 	@echo "Installing $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
-.PRECIOUS: %.o %.c  %.nm %_ctdt.c %.i
+.PRECIOUS: %.o %.c %.nm %.cpp
 .PRECIOUS: $(COMMON_INC)
 
 -include $(CONFIG)/RULES.Db

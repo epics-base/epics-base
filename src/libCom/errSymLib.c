@@ -256,6 +256,7 @@ int epicsShareAPI UnixSymFind(status, pname, pvalue)
     long           *pvalue;
 #endif /* __STDC__ */
 {
+    if(!initialized) errSymBld();
     if (status >= sys_nerr || status < 1) {
 	*pvalue = -1;
 	return(0);
@@ -285,6 +286,7 @@ int epicsShareAPI ModSymFind(status, pname, pvalue)
     ERRNUMNODE *pNextNode;
     ERRNUMNODE **phashnode = NULL;
 
+    if(!initialized) errSymBld();
     modNum = (unsigned short) (status >> 16);
     if (modNum < 501) {
 	*pvalue = -1;
@@ -325,9 +327,7 @@ int epicsShareAPI errSymFind(status, name)
 #endif
     unsigned short  modnum;
 
-    if (!initialized) {
-	errSymBld();
-    }
+    if (!initialized) errSymBld();
 
     modnum = (unsigned short) (status >> 16);
     if (modnum <= 500)
@@ -338,6 +338,7 @@ int epicsShareAPI errSymFind(status, name)
 		const char *pStr = strerror(status);
 		if (pStr) {
 			strcpy(name,strerror(status));
+			value = status;
 		}
 		else {
 			sprintf(name,"err = %ld", status);
@@ -370,8 +371,7 @@ int errnum;
 int msgcount;
 int firstTime;
 
-	if (!initialized)
-	    errSymBld();
+	if (!initialized) errSymBld();
 
 	msgcount = 0;
 	printf("errSymDump: number of hash slots=%d\n", NHASH);		
@@ -411,8 +411,7 @@ long errNum;
     unsigned short modnum;
     unsigned short errnum;
 
-    if (!initialized)
-	errSymBld();
+    if (!initialized) errSymBld();
 
     message[0] = '\0';
     modnum = (unsigned short) (errNum >> 16);
@@ -443,6 +442,8 @@ unsigned short endErrNum;
 {
     long            errNum;
     unsigned short  errnum;
+
+    if(!initialized) errSymBld();
     if (modnum < 501)
 	return;
 

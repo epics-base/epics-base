@@ -10,6 +10,7 @@
 #ifndef osiEventh
 #define osiEventh
 
+#include "locationException.h"
 #include "osiSem.h"
 #include "shareLib.h"
 
@@ -33,11 +34,7 @@ inline osiEvent::osiEvent ()
 {
     this->id = semBinaryCreate (semEmpty);
     if (this->id==0) {
-#       ifdef noExceptionsFromCXX
-            assert (0);
-#       else            
-            throw noMemory ();
-#       endif
+        throwWithLocation ( noMemory () );
     }
 }
 
@@ -56,11 +53,7 @@ inline void osiEvent::wait ()
     semTakeStatus status;
     status = semBinaryTake (this->id);
     if (status!=semTakeOK) {
-#       ifdef noExceptionsFromCXX
-            assert (0);
-#       else            
-            throw invalidSemaphore ();
-#       endif
+        throwWithLocation ( invalidSemaphore () );
     }
 }
 
@@ -75,12 +68,8 @@ inline bool osiEvent::wait (double timeOut)
         return false;
     }
     else {
-#       ifdef noExceptionsFromCXX
-            assert (0);
-            return false;
-#       else            
-            throw invalidSemaphore ();
-#       endif
+        throwWithLocation ( invalidSemaphore () );
+        return false;
     }
 }
 
@@ -95,12 +84,8 @@ inline bool osiEvent::tryWait ()
         return false;
     }
     else {
-#       ifdef noExceptionsFromCXX
-            assert (0);
-            return false;
-#       else            
-            throw invalidSemaphore ();
-#       endif
+        throwWithLocation ( invalidSemaphore () );
+        return false;
     }
 }
 

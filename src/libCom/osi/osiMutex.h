@@ -10,6 +10,7 @@
 #ifndef osiMutexh
 #define osiMutexh
 
+#include "locationException.h"
 #include "osiSem.h"
 #include "shareLib.h"
 
@@ -33,11 +34,7 @@ inline osiMutex::osiMutex ()
 {
     this->id = semMutexCreate ();
     if (this->id==0) {
-#       ifdef noExceptionsFromCXX
-            assert (0);
-#       else            
-            throw noMemory ();
-#       endif
+        throwWithLocation ( noMemory () );
     }
 }
 
@@ -51,11 +48,7 @@ inline void osiMutex::lock () const
     semTakeStatus status;
     status = semMutexTake (this->id);
     if (status!=semTakeOK) {
-#       ifdef noExceptionsFromCXX
-            assert (0);
-#       else            
-            throw invalidSemaphore ();
-#       endif
+        throwWithLocation ( invalidSemaphore () );
     }
 }
 
@@ -70,12 +63,8 @@ inline bool osiMutex::lock (double timeOut) const
         return false;
     }
     else {
-#       ifdef noExceptionsFromCXX
-            assert (0);
-            return false;
-#       else            
-            throw invalidSemaphore ();
-#       endif
+        throwWithLocation ( invalidSemaphore () );
+        return false; // never here, compiler is happy
     }
 }
 
@@ -90,12 +79,8 @@ inline bool osiMutex::tryLock () const
         return false;
     }
     else {
-#       ifdef noExceptionsFromCXX
-            assert (0);
-            return false;
-#       else            
-            throw invalidSemaphore ();
-#       endif
+        throwWithLocation ( invalidSemaphore () );
+        return false; // never here, but compiler is happy
     }
 }
 

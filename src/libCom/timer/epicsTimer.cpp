@@ -15,6 +15,8 @@
  *              505 665 1831
  */
 
+#include <stdexcept>
+
 #define epicsExportSharedSymbols
 #include "epicsTimer.h"
 #include "epicsGuard.h"
@@ -101,6 +103,44 @@ void epicsTimerQueuePassiveForC::reschedule ()
 void epicsTimerQueuePassiveForC::destroy ()
 {
     delete this;
+}
+
+epicsTimerNotify::expireStatus::expireStatus ( restart_t restart ) : 
+    delay ( - DBL_MAX )
+{
+    if ( restart != noRestart ) {
+        throw std::logic_error 
+            ( "timer restart was requested without specifying a delay?" );
+    }
+}
+
+epicsTimerNotify::expireStatus::expireStatus 
+    ( restart_t, const double & expireDelaySec ) :
+    delay ( expireDelaySec )
+{
+    assert ( this->delay >= 0.0 );
+    if ( restart != restart ) {
+        throw std::logic_error 
+            ( "no timer restart was requested, but a delay was specified?" );
+    }
+    if ( this->delay < 0.0 ) {
+        throw std::logic_error 
+            ( "timer restart was requested, but a negative delay was specified?" );
+    }
+}
+
+bool epicsTimerNotify::expireStatus::restart () const
+{
+    return this->delay >= 0.0;
+}
+
+double epicsTimerNotify::expireStatus::expirationDelay () const
+{
+    if ( this->delay < 0.0 ) {
+        throw std::logic_error 
+            ( "no timer restart was requested, but you are asking for a restart delay?" );
+    }
+    return this->delay;
 }
 
 extern "C" epicsTimerQueuePassiveId epicsShareAPI

@@ -34,14 +34,14 @@ public:
     enum restart_t { noRestart, restart };
     class expireStatus {
     public:
-        expireStatus ( restart_t );
-        expireStatus ( restart_t, const double &expireDelaySec );
-        bool restart () const;
-        double expirationDelay () const;
+        epicsShareFunc expireStatus ( restart_t );
+        epicsShareFunc expireStatus ( restart_t, const double & expireDelaySec );
+        epicsShareFunc bool restart () const;
+        epicsShareFunc double expirationDelay () const;
     private:
-        bool again;
         double delay;
     };
+
     epicsShareFunc virtual ~epicsTimerNotify ();
     // return "noRestart" or "expireStatus ( restart, 30.0 /* sec */ )"
     virtual expireStatus expire ( const epicsTime & currentTime ) = 0;
@@ -99,30 +99,6 @@ public:
     virtual ~epicsTimerQueuePassive () = 0;
     virtual double process ( const epicsTime & currentTime ) = 0; // returns delay to next expire
 };
-
-inline epicsTimerNotify::expireStatus::expireStatus ( restart_t restart ) : 
-    again ( false ), delay ( - DBL_MAX )
-{
-    assert ( restart == noRestart );
-}
-
-inline epicsTimerNotify::expireStatus::expireStatus 
-    ( restart_t, const double &expireDelaySec ) :
-    again ( true ), delay ( expireDelaySec )
-{
-    assert ( this->delay >= 0.0 );
-}
-    
-inline bool epicsTimerNotify::expireStatus::restart () const
-{
-    return this->again;
-}
-
-inline double epicsTimerNotify::expireStatus::expirationDelay () const
-{
-    assert ( this->again );
-    return this->delay;
-}
 
 inline epicsTimer::expireInfo::expireInfo ( bool activeIn, 
     const epicsTime & expireTimeIn ) :

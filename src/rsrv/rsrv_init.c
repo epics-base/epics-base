@@ -66,15 +66,15 @@ int rsrv_init()
 	prsrv_cast_client = NULL;
 	pCaBucket = NULL;
 
-	DELETE_TASK("CAUDP");
-	DELETE_TASK("CATCP");
+	DELETE_TASK("CAudp");
+	DELETE_TASK("CAtcp");
 	DELETE_TASK("CAonline");
 
-	threadCreate("CATCP",
+	threadCreate("CAtcp",
 	    threadPriorityChannelAccessServer,
 	    threadGetStackSize(threadStackMedium),
 	    (THREADFUNC)req_server,0);
-	threadCreate("CAUDP",
+	threadCreate("CAudp",
 	    threadPriorityChannelAccessServer-1,
 	    threadGetStackSize(threadStackMedium),
 	    (THREADFUNC)cast_server,0);

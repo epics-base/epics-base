@@ -73,14 +73,12 @@ epicsShareExtern READONLY ENV_PARAM EPICS_IOC_LOG_FILE_NAME;
 epicsShareExtern READONLY ENV_PARAM EPICS_IOC_LOG_FILE_COMMAND;
 epicsShareExtern READONLY ENV_PARAM EPICS_CMD_PROTO_PORT;
 epicsShareExtern READONLY ENV_PARAM EPICS_AR_PORT;
-#define EPICS_ENV_VARIABLE_COUNT 23
 
 /*
  * bldEnvData looks for "epicsShareExtern ENV_PARAM" so
  * this always needs to be divided into two lines
  */
-epicsShareExtern READONLY ENV_PARAM
-	*env_param_list[EPICS_ENV_VARIABLE_COUNT+1];
+epicsShareExtern READONLY ENV_PARAM *env_param_list[];
 
 struct in_addr;
 

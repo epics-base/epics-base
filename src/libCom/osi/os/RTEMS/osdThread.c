@@ -124,12 +124,11 @@ threadMustCreate (const char *name,
 }
 
 void
-threadSuspend (threadId id)
+threadSuspend (void)
 {
-    rtems_id tid = (rtems_id)id;
     rtems_status_code sc;
 
-    sc = rtems_task_suspend (tid);
+    sc = rtems_task_suspend (RTEMS_SELF);
     if(sc != RTEMS_SUCCESSFUL)
         errlogPrintf("threadSuspend failed: %s\n", rtems_status_text (sc));
 }
@@ -226,7 +225,7 @@ threadVarId threadPrivateCreate ()
 {
 	return NULL;
 }
-void threadPrivateDelete ()
+void threadPrivateDelete (threadVarId id)
 {
 }
 void threadPrivateSet (threadVarId id, void *ptr)

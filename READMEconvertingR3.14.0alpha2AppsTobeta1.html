@@ -117,8 +117,25 @@ registerRecordDeviceDriver changes</h3>
 <blockquote>The created file registerRecordDeviceDriver.cpp is now used
 for all target architectures. Thus in your application src Makefiles
 <blockquote>change <tt>example_SRCS_DEFAULT += example_registerRecordDeviceDriver.cpp</tt>
-<br>to&nbsp; <tt>example_SRCS += example_registerRecordDeviceDriver.cpp</tt></blockquote>
+<br>to&nbsp; <tt>example_SRCS += example_registerRecordDeviceDriver.cpp</tt>
+<br><tt></tt>&nbsp;</blockquote>
 </blockquote>
+
+<h3>
+RTEMS-specific pathname changes</h3>
+
+<blockquote>1. The RTEMS TFTP remote filesystem no longer ignores leading
+`../' components in path names.&nbsp; All st.cmd file lines with path names
+of the form <tt>dbLoadRecords("../../db/dbExample1.db","user=norume")</tt>
+<br>must be changed to
+<br><tt>dbLoadRecords("db/dbExample1.db","user=norume")</tt><tt></tt>
+<p>The makeBaseApp.pl script distributed with R3.14-beta1 creates st.cmd
+scripts with the proper path names.
+<p>2. The RTEMS TFTP remote filesystem supports a limited set of chdir
+operations.
+<br>All paths passed to chdir (or to the IOC shell `cd' command) must end
+in a `/'
+<br>character.</blockquote>
 
 <blockquote>
 <blockquote>&nbsp;</blockquote>

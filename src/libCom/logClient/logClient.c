@@ -47,7 +47,6 @@
 #include "osiSem.h"
 #include "osiThread.h"
 #include "osiSock.h"
-#include "osiSleep.h"
 #include "epicsAssert.h"
 #include "errlog.h"
 #include "envDefs.h"
@@ -416,10 +415,8 @@ LOCAL void logClientConnect (logClient *pClient)
     pClient->connectCount++;
     pClient->file = fdopen (pClient->sock, "a");
     if (!pClient->file) {
-        static const unsigned microSecDelay = 0;
-        static const unsigned secDelay = 10;
         logClientReset (pClient);
-        osiSleep (secDelay, microSecDelay);
+        threadSleep (10.0);
     }
 
     pClient->connectReset = 0u;
@@ -548,8 +545,6 @@ void logClientGlobalInit ()
 epicsShareFunc logClientId epicsShareAPI logClientInit ()
 {
     static const unsigned maxConnectTries = 40u;
-    static const unsigned microSecDelay = 50000u;
-    static const unsigned secDelay = 0u;
     unsigned connectTries = 0;
     logClient *pClient;
     logClientId id;
@@ -596,7 +591,7 @@ epicsShareFunc logClientId epicsShareAPI logClientInit ()
 
         semMutexGive (logClientGlobalSignal);
 
-        osiSleep (secDelay, microSecDelay);
+        threadSleep (50e-3);
 
         connectTries++;
         if (connectTries>=maxConnectTries) {

@@ -1,6 +1,11 @@
 # $Id$
 
+# If you don't want to install into $(TOP) dir then
+# define INSTALL_LOCATION_EXTENSIONS here
+#INSTALL_LOCATION_EXTENSIONS=<fullpathname>
+
 # Location of external products
 EPICS_BASE=_EPICS_BASE_
 TEMPLATE_TOP=_TEMPLATE_TOP_
 EPICS_EXTENSIONS = $(EPICS_BASE)/../extensions
+

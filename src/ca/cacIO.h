@@ -127,8 +127,6 @@ public:
 // we should probably have a different vf for each type of exception ????
     virtual void writeException ( int status, const char *pContext,
         unsigned type, arrayElementCount count ) = 0;
-    // not for public consumption -- can we get rid of this ????
-    virtual bool includeFirstConnectInCountOfOutstandingIO () const;
 };
 
 //
@@ -174,12 +172,10 @@ public:
     virtual double beaconPeriod () const; // defaults to negative DBL_MAX
     virtual bool ca_v42_ok () const; // defaults to true
     virtual bool connected () const; // defaults to true
-    virtual bool previouslyConnected () const; // defaults to true
     virtual void hostName (
         char *pBuf, unsigned bufLength ) const; // defaults to local host name
 
     virtual const char * pHostName () const; 
-    virtual void notifyStateChangeFirstConnectInCountOfOutstandingIO ();
 
     // exceptions
     class badString {};
@@ -213,6 +209,7 @@ public:
     virtual void fdWasDestroyed ( int fd ) = 0;
 // backwards compatibility
     virtual void attachToClientCtx () = 0;
+    virtual void blockForEventAndEnableCallbacks ( class epicsEvent & event, double timeout ) = 0;
 };
 
 class cacService : public tsDLNode < cacService > { // X aCC 655

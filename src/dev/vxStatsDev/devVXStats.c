@@ -54,9 +54,9 @@ of this distribution.
 		cpu             - % CPU usage by tasks
 		fd	 	- % of file descripters used
 	ao:
-		memoryScanRate   - Set memory scan rate
-		cpuScanRate      - Set cpu scan rate
-		fdScanRate       - Set fd scan rate
+		memoryScanPeriod   - Set memory scan period
+		cpuScanPeriod      - Set cpu scan period
+		fdScanPeriod       - Set fd scan period
 
 
 	# sample database using all the different types of statistics
@@ -93,20 +93,20 @@ of this distribution.
 		field(HHSV, "MAJOR")
 		field(HSV, "MINOR")
 	}
-	record(ao,"$(IOC):memoryScanRate")
+	record(ao,"$(IOC):memoryScanPeriod")
 	{
 		field(DTYP,"VX stats")
-		field(OUT,"@memoryScanRate")
+		field(OUT,"@memoryScanPeriod")
 	}
-	record(ao,"$(IOC):fdScanRate")
+	record(ao,"$(IOC):fdScanPeriod")
 	{
 		field(DTYP,"VX stats")
-		field(OUT,"@fdScanRate")
+		field(OUT,"@fdScanPeriod")
 	}
-	record(ao,"$(IOC):cpuScanRate")
+	record(ao,"$(IOC):cpuScanPeriod")
 	{
 		field(DTYP,"VX stats")
-		field(OUT,"@cpuScanRate")
+		field(OUT,"@cpuScanPeriod")
 	}
 */
 
@@ -122,7 +122,7 @@ static int default_scan_rate[] = { 10,50,10 };
 
 static char *aiparmValue[TOTAL_TYPES] = {"memory","cpu","fd"};
 static char *aoparmValue[TOTAL_TYPES] = {
-	"memoryScanRate","cpuScanRate","fdScanRate"};
+	"memoryScanPeriod","cpuScanPeriod","fdScanPeriod"};
 
 typedef struct devPvt
 {
@@ -360,7 +360,7 @@ static void cpuUsageTask()
 static double getCpu()
 {
     if(pcpuUsage->didNotComplete && pcpuUsage->nBurnNow==0) {
-	pcpuUsage->usage = 100.0;
+	pcpuUsage->usage = 0.0;
     } else {
 	double temp;
 	double ticksNow,nBurnNow;

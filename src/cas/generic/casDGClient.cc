@@ -185,7 +185,7 @@ caStatus casDGClient::searchAction()
 	//
 	this->userStartedAsyncIO = false;
 	pvExistReturn pver = 
-		this->getCAS()->pvExistTest ( this->ctx, pChanName );
+		this->getCAS()->pvExistTest ( this->ctx, this->lastRecvAddr, pChanName );
 
 	//
 	// prevent problems when they initiate

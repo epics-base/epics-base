@@ -179,7 +179,7 @@ public:
 	// in the future.
 	//
 	epicsShareFunc virtual pvExistReturn pvExistTest ( const casCtx & ctx, 
-		const char * pPVAliasName );
+		const caNetAddr & clientAddress, const char * pPVAliasName );
 
 	//
 	// pvAttach() 
@@ -276,7 +276,9 @@ private:
 
 	// deprecated interfaces (will be deleted in a future release)
 	epicsShareFunc virtual class pvCreateReturn createPV ( const casCtx & ctx,
-		const char *pPVAliasName );
+		const char * pPVAliasName );
+	epicsShareFunc virtual pvExistReturn pvExistTest ( const casCtx & ctx, 
+		const char * pPVAliasName );
 };
 
 //
@@ -409,7 +411,7 @@ public:
     // (or a derived class) each time that this routine is called
     //
     epicsShareFunc virtual casChannel * createChannel ( const casCtx &ctx,
-        const char * const pUserName, const char * const pHostName);
+        const char * const pUserName, const char * const pHostName );
     
     //
     // tbe best type for clients to use when accessing the

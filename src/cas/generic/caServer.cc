@@ -43,12 +43,18 @@ caServer::~caServer()
 	}
 }
 
-pvExistReturn caServer::pvExistTest (const casCtx &, const char *)
+pvExistReturn caServer::pvExistTest ( const casCtx & ctx, 
+	const caNetAddr & /* clientAddress */, const char * pPVAliasName )
+{
+    return this->pvExistTest ( ctx, pPVAliasName );
+}
+
+pvExistReturn caServer::pvExistTest ( const casCtx &, const char * )
 {
 	return pverDoesNotExistHere;
 }
 
-pvCreateReturn caServer::createPV (const casCtx &, const char *)
+pvCreateReturn caServer::createPV ( const casCtx &, const char * )
 {
 	return S_casApp_pvNotFound;
 }

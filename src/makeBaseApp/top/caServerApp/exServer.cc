@@ -152,7 +152,7 @@ void exServer::installAliasName(pvInfo &info, const char *pAliasName)
 // exServer::pvExistTest()
 //
 pvExistReturn exServer::pvExistTest // X aCC 361
-    ( const casCtx& ctxIn, const char * pPVName )
+    ( const casCtx& ctxIn, const caNetAddr &, const char * pPVName )
 {
     //
     // lifetime of id is shorter than lifetime of pName

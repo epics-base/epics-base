@@ -649,7 +649,7 @@ void verifyClear ( appChan *pChans, unsigned interestLevel )
 {
     int status;
 
-    showProgressBegin ( "verofyClear", interestLevel );
+    showProgressBegin ( "verifyClear", interestLevel );
 
     /*
      * verify channel clear before connect

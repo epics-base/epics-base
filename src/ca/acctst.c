@@ -105,6 +105,9 @@ void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan )
     }
     assert ( eventCount > 0 );
 
+    /* clear any knowledge of old gets */
+    ca_pend_io ( 1e-5 );
+
     /* verify that a ca_put() produces an update, but */
     /* this may fail if there is an unusual deadband */
     status = ca_get ( DBR_CTRL_DOUBLE, chan, &currentVal );
@@ -1448,7 +1451,9 @@ void exceptionTest ( chid chan )
         arrayEventExceptionNotifyComplete = 0u;
         status = ca_array_get_callback ( DBR_PUT_ACKT, 
             ca_element_count (chan), chan, arrayEventExceptionNotify, 0 ); 
-        SEVCHK  ( status, "array read request failed" );
+        if ( status != ECA_NORMAL ) {
+            arrayEventExceptionNotifyComplete = 1;
+        }
         ca_flush_io ();
         epicsThreadSleep ( 0.1 );
         ca_poll ();
@@ -1469,7 +1474,9 @@ void exceptionTest ( chid chan )
         arrayEventExceptionNotifyComplete = 0u;
         status = ca_add_array_event ( DBR_PUT_ACKT, ca_element_count ( chan ), 
                         chan, arrayEventExceptionNotify, 0, 0.0, 0.0, 0.0, &id ); 
-        SEVCHK ( status, "array subscription notify install failed" );
+        if ( status != ECA_NORMAL ) {
+            arrayEventExceptionNotifyComplete = 1;
+        }
         ca_flush_io ();
         epicsThreadSleep ( 0.1 );
         ca_poll ();
@@ -1501,7 +1508,9 @@ void exceptionTest ( chid chan )
         }
         status = ca_array_put ( DBR_STRING, 
             ca_element_count (chan), chan, pWS ); 
-        SEVCHK  ( status, "array put request failed" );
+        if ( status != ECA_NORMAL ) {
+            acctstExceptionCount++; /* local PV case */
+        }
         ca_flush_io ();
         epicsThreadSleep ( 0.1 );
         ca_poll ();
@@ -1532,7 +1541,9 @@ void exceptionTest ( chid chan )
         status = ca_array_put_callback ( DBR_STRING, 
             ca_element_count (chan), chan, pWS,
             arrayEventExceptionNotify, 0); 
-        SEVCHK  ( status, "array put callback request failed" );
+        if ( status != ECA_NORMAL ) {
+            arrayEventExceptionNotifyComplete = 1;
+        }
         ca_flush_io ();
         epicsThreadSleep ( 0.1 );
         ca_poll ();
@@ -1643,7 +1654,7 @@ void arrayTest ( chid chan )
         pWF[i] =  rand ();
         pRF[i] = - pWF[i];
     }
-    status = ca_array_put_callback ( DBR_DOUBLE, ca_element_count ( chan ), 
+    status = ca_array_put_callback ( DBR_DOUBLE, ca_element_count (chan), 
                     chan, pWF, arrayWriteNotify, 0 ); 
     SEVCHK ( status, "array write notify request failed" );
     status = ca_array_get_callback ( DBR_DOUBLE, ca_element_count (chan), 
@@ -1678,13 +1689,29 @@ void arrayTest ( chid chan )
     SEVCHK ( status, "clear event request failed" );
 
     /*
-     * a get request should fail when the array size is
-     * too large
+     * a get request should fail or fill with zeros
+     * when the array size is too large
      */
     {
+        acctstExceptionCount = 0u;
+        status = ca_add_exception_event ( acctstExceptionNotify, 0 );
+        SEVCHK ( status, "exception notify install failed" );
         status = ca_array_get ( DBR_DOUBLE, 
             ca_element_count (chan)+1, chan, pRF ); 
-        assert ( status == ECA_BADCOUNT );
+        if ( status == ECA_NORMAL ) {
+            ca_poll ();
+            while ( acctstExceptionCount < 1u ) {
+                printf ( "N" );
+                fflush ( stdout );
+                epicsThreadSleep ( 0.1 );
+                ca_poll (); /* emulate typical GUI */
+            }
+        }
+        else {
+            assert ( status == ECA_BADCOUNT );
+        }
+        status = ca_add_exception_event ( 0, 0 );
+        SEVCHK ( status, "exception notify install failed" );
     }
 
     free ( pRF );

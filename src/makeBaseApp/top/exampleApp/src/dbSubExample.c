@@ -26,7 +26,7 @@ static registryFunctionRef mySubRef[] = {
     {"mySubProcess",(REGISTRYFUNCTION)mySubProcess}
 };
 
-void mySub(void)
+static void mySub(void)
 {
     registryFunctionRefAdd(mySubRef,NELEMENTS(mySubRef));
 }

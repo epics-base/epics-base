@@ -1,4 +1,0 @@
-# $Id$
-
-tar zcvf /tmp/gdd.tar.gz *.c *.cc *.h *.MRI Makefile* MAKE* README *.html *.gif
-

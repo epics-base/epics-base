@@ -41,7 +41,6 @@ extern "C" {
 #endif
 
 #include "shareLib.h"
-#include "osiSock.h"
 
 typedef struct envParam {
     char	*name;		/* text name of the parameter */
@@ -82,6 +81,8 @@ epicsShareExtern READONLY ENV_PARAM EPICS_AR_PORT;
  */
 epicsShareExtern READONLY ENV_PARAM
 	*env_param_list[EPICS_ENV_VARIABLE_COUNT+1];
+
+struct in_addr;
 
 epicsShareFunc char * epicsShareAPI 
 	envGetConfigParam(const ENV_PARAM *pParam, int bufDim, char *pBuf);

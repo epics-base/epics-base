@@ -119,6 +119,19 @@ static void threadInitCallFunc(ioccrfArg **args)
     threadInit();
 }
 
+/* putenv */
+static ioccrfArg putenvArg0 = { "environment_variable=name",ioccrfArgString,0};
+static ioccrfArg *putenvArgs[1] = {&putenvArg0};
+static ioccrfFuncDef putenvFuncDef = {"putenv",1,putenvArgs};
+static void putenvCallFunc(ioccrfArg **args)
+{
+    const char *cp = (char *)args[0]->value;
+
+    if (!cp)
+        return;
+    if (putenv (cp))
+        printf ("putenv(%s) failed.\n", cp);
+}
 
 void epicsShareAPI iocUtilRegister(void)
 {
@@ -127,4 +140,5 @@ void epicsShareAPI iocUtilRegister(void)
     ioccrfRegister(&pwdFuncDef,pwdCallFunc);
     ioccrfRegister(&showFuncDef,showCallFunc);
     ioccrfRegister(&threadInitFuncDef,threadInitCallFunc);
+    ioccrfRegister(&putenvFuncDef,putenvCallFunc);
 }

@@ -47,7 +47,7 @@ typedef struct dset {	/* device support entry table */
 #define S_dev_noDeviceFound (M_devSup|23) /*No device found at specified address*/
 
 #ifdef __cplusplus
-} // extern "C"
+} /* extern "C" */
 #endif
 
 #endif

@@ -183,7 +183,7 @@ void oldChannelNotify::writeException ( int status, const char *pContext,
         __FILE__, __LINE__, *this, type, count, CA_OP_PUT );
 }
 
-void * oldChannelNotify::operator new ( size_t )
+void * oldChannelNotify::operator new ( size_t ) // X aCC 361
 {
     // The HPUX compiler seems to require this even though no code
     // calls it directly

@@ -776,7 +776,7 @@ void epicsShareAPI ca_signal ( long ca_status, const char *message )
  * (if they call this routine again).
  */
 // extern "C"
-const char * epicsShareAPI ca_message ( long ca_status )
+const char * epicsShareAPI ca_message ( long ca_status ) // X aCC 361
 {
     unsigned msgNo = CA_EXTRACT_MSG_NO ( ca_status );
 

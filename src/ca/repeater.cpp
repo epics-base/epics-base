@@ -249,7 +249,7 @@ repeaterClient::~repeaterClient ()
     debugPrintf ( ( "Deleted client %u\n", epicsNTOH16 ( this->from.ia.sin_port ) ) );
 }
 
-void * repeaterClient::operator new ( size_t )
+void * repeaterClient::operator new ( size_t ) // X aCC 361
 {
     // The HPUX compiler seems to require this even though no code
     // calls it directly

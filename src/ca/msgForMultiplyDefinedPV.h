@@ -31,7 +31,7 @@
 #include "tsFreeList.h"
 #include "cxxCompilerDependencies.h"
 
-class callbackForMultiplyDefinedPV {
+class callbackForMultiplyDefinedPV { // X aCC 655
 public:
     virtual ~callbackForMultiplyDefinedPV () = 0;
     virtual void pvMultiplyDefinedNotify ( 

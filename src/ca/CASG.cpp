@@ -278,7 +278,7 @@ void CASG::exception ( int status, const char *pContext,
         lineNo, chan, type, count, op );
 }
 
-void * CASG::operator new ( size_t )
+void * CASG::operator new ( size_t ) // X aCC 361
 {
     // The HPUX compiler seems to require this even though no code
     // calls it directly

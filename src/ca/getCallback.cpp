@@ -71,7 +71,7 @@ void getCallback::exception (
     this->chan.getClientCtx().destroyGetCallback ( *this );
 }
 
-void * getCallback::operator new ( size_t )
+void * getCallback::operator new ( size_t ) // X aCC 361
 {
     // The HPUX compiler seems to require this even though no code
     // calls it directly

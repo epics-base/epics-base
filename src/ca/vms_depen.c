@@ -72,6 +72,11 @@ void cac_mux_io(struct timeval  *ptimeout)
 
         cac_clean_iiu_list();
 
+	/*
+	 * manage search timers and detect disconnects
+	 */
+	manage_conn(TRUE);
+
         timeout = *ptimeout;
         do{
 		count = cac_select_io(
@@ -79,11 +84,6 @@ void cac_mux_io(struct timeval  *ptimeout)
 				CA_DO_RECVS | CA_DO_SENDS);
 
                 ca_process_input_queue();
-
-		/*
-		 * manage search timers and detect disconnects
-		 */
-		manage_conn(TRUE);
 
 		timeout.tv_sec = 0;
 		timeout.tv_usec = 0;

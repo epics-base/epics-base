@@ -52,7 +52,11 @@ void epicsTimerForC::destroy ()
 {
     timerQueue & queueTmp ( this->queue );
     this->~epicsTimerForC ();
-    epicsTimerForC::operator delete ( this, queueTmp.timerForCFreeList );
+#   ifdef CXX_PLACEMENT_DELETE
+        epicsTimerForC::operator delete ( this, queueTmp.timerForCFreeList );
+#   else
+        queueTmp.timerForCFreeList.release ( this );
+#   endif
 }
 
 epicsTimerNotify::expireStatus epicsTimerForC::expire ( const epicsTime & )

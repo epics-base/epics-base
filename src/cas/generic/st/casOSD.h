@@ -18,11 +18,15 @@
 #ifndef includeCASOSDH 
 #define includeCASOSDH 
 
-#undef epicsExportSharedSymbols
+#ifdef epicsExportSharedSymbols
+#   define epicsExportSharedSymbols_includeCASOSDH
+#   undef epicsExportSharedSymbols
+#endif
 #include "fdManager.h"
-
-#define epicsExportSharedSymbols
-#include "shareLib.h" // redefine share lib defines
+#ifdef epicsExportSharedSymbols_includeCASOSDH
+#   define epicsExportSharedSymbols
+#   include "shareLib.h"
+#endif
 
 class caServerI;
 class caServerOS;

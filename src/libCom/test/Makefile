@@ -6,8 +6,13 @@ PROD_LIBS += Com
 
 USR_LIBS_hpux += cma
 
+epicsListTest_SRCS += epicsListTest.cpp
 PROD += epicsListTest
 OBJS_IOC += epicsListTest
+
+epicsAlgorithmTest_SRCS += epicsAlgorithmTest.cpp
+PROD += epicsAlgorithmTest
+OBJS_IOC += epicsAlgorithmTest
 
 epicsTimeTestHost_SRCS += epicsTimeTestMain.cpp epicsTimeTest.cpp
 PROD += epicsTimeTestHost

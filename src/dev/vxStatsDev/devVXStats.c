@@ -21,6 +21,7 @@ of this distribution.
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include <taskLib.h>
 #include <wdLib.h>
 #include <tickLib.h>
@@ -261,6 +262,7 @@ static long ao_write(aoRecord* pr)
     devPvt* pvt=(devPvt*)pr->dpvt;
 
     if(!pvt) return(0);
+    if(pr->val<=1.0) pr->val=1.0;
     scan[pvt->type].rate_tick = (int)pr->val * sysClkRateGet();
     return 0;
 }

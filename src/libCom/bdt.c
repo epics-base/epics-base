@@ -121,7 +121,7 @@ BDT* BdtPvOpen(char* name)
 /* --------------------------------------------------------------- */
 /* open a bulk data socket to a server given the server IP address */
 /* --------------------------------------------------------------- */
-BDT* BdtIpOpen(char* address)
+BDT* BdtIpOpen(char* address, int Port)
 {
 	struct sockaddr_in tsin;
 	unsigned long addr;
@@ -147,7 +147,7 @@ BDT* BdtIpOpen(char* address)
 		return (BDT*)NULL;
 	}
 
-	tsin.sin_port=htons(BDT_TCP_PORT);
+	tsin.sin_port=htons(Port);
 	memcpy((char*)&tsin.sin_addr,(char*)&addr,sizeof(addr));
 
 	if(connect(osoc,(struct sockaddr*)&tsin,sizeof(tsin))<0)
@@ -214,7 +214,12 @@ int BdtSendHeader(BDT* bdt,unsigned short verb,int size)
 	buf.verb=htons(verb);
 	buf.size=htonl((unsigned long)size);
 
-	if(BdtWrite(bdt->soc,&buf,sizeof(buf))<0)
+	if(BdtWrite(bdt->soc,&buf.verb, sizeof(buf.verb))<0)
+	{
+		fprintf(stderr,"BdtSendHeader: write to remote failed");
+		return -1;
+	}
+	if(BdtWrite(bdt->soc,&buf.size, sizeof(buf.size))<0)
 	{
 		fprintf(stderr,"BdtSendHeader: write to remote failed");
 		return -1;
@@ -335,7 +340,12 @@ int BdtReceiveHeader(BDT* bdt,int* verb,int* size)
 		return -1;
 	}
 
-	if(BdtRead(bdt->soc,&buf,sizeof(buf))<0)
+	if(BdtRead(bdt->soc,&buf.verb,sizeof(buf.verb))<0)
+	{
+		fprintf(stderr,"BdtReceiveHeader: Read failed\n");
+		return -1;
+	}
+	if(BdtRead(bdt->soc,&buf.size,sizeof(buf.size))<0)
 	{
 		fprintf(stderr,"BdtReceiveHeader: Read failed\n");
 		return -1;

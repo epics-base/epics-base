@@ -16,6 +16,8 @@
 <p>epicsStdlib.h declares epicsStrtod() which provides a version of
 strtod which handles NAN/INF on all architectures.  All uses of strtod() in
 base have been converted to use epicsStrtod().</p>
+<p>epicsStdlib.h also declares epicsScanFloat() and epicsScanDouble() which
+replace calls to sscanf with routines which handle NAN/INF on all architectures.</p>
 
 <h4>epicsThreadCreate Stacksize Posix</h4>
 <p>The posix implementation of epicsThreadCreate now makes pthread

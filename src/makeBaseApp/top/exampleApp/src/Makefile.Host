@@ -4,7 +4,7 @@ include $(TOP)/config/CONFIG_APP
 #----------------------------------------
 #  ADD MACRO DEFINITIONS AFTER THIS LINE
 
-USER_DBDFLAGS += -I .. -I $(EPICS_BASE)/dbd
+#USER_DBDFLAGS += 
 RECTYPES += xxxRecord.h
 DBDEXPAND = exampleInclude.dbd
 DBDNAME = exampleApp.dbd

@@ -1,0 +1,19 @@
+#
+# $Id$
+#
+
+TOP=../..
+include $(TOP)/config/CONFIG_APP
+
+TARGETS = CONFIG_APP_INCLUDE
+
+include $(TOP)/config/RULES.Vx
+
+ifeq ($(wildcard $(TOP)/config/RELEASE.$(HOST_ARCH)),$(TOP)/config/RELEASE.$(HOST_ARCH))
+CONFIG_APP_INCLUDE: $(TOP)/config/RELEASE.$(HOST_ARCH)
+endif
+
+CONFIG_APP_INCLUDE: $(TOP)/config/RELEASE $(TOP)/config/CONFIG_APP
+	$(RM) $@
+	@$(PERL) $(TOP)/config/makeConfigAppInclude.pl $(T_A) $@ $(TOP)
+

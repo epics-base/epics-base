@@ -60,7 +60,7 @@ TEMPLATE2=$(patsubst %0,%,$(patsubst %1,%,$(patsubst %2,%,$(patsubst %3,%,$(pats
           $(patsubst %5,%,$(patsubst %6,%,$(patsubst %7,%,$(patsubst %8,%,$(patsubst %9,%, \
           $(TEMPLATE1)))))))))))
 TEMPLATE3=$(addsuffix .template,$(addprefix ../,$(TEMPLATE2)))
-TEMPLATE_FILENAME=$(firstword $(wildcard $(addprefix ../,$($*_TEMPLATE)) ../$*.template $(TEMPLATE3) $(TEMPLATE3)))
+TEMPLATE_FILENAME=$(firstword $(wildcard $(addprefix ../,$($*_TEMPLATE)) ../$*.template $(TEMPLATE3) $(TEMPLATE3) ../template))
 
 # dbst based database optimization
 ifeq '$(DB_OPT)' 'YES'

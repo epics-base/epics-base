@@ -5,7 +5,7 @@ APPDIR := $(shell grep '.*".*App/' st.* | sed -e 's/.*"\(.*App\).*/\1/' | sort -
 endif
 
 ASCF = $(TOP)/../ascf
-TARGETBIN = $(TOP)/bin/$(ARCH)
+TARGETBIN = $(TOP)/bin/$(strip $(ARCH))
 ARCHS = $(BUILD_ARCHS) host cross
 ACTIONS += clean inc depends buildInstall build
 actionArchTargets = $(foreach action, $(ACTIONS) install,\

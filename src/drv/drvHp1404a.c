@@ -34,6 +34,7 @@
  * .01 joh 073092	Added msg device support & interrupt shutdown for
  *			soft reboots
  * .02 joh 082792	converted to ANSI C
+ * .03 mgb 080493	Removed V5/V4 and EPICS_V2 conditionals
  *
  *
  *
@@ -42,11 +43,7 @@
 static char	*sccsId = "@(#)drvHp1404a.c	1.4\t8/27/92";
 
 #include <vxWorks.h>
-#ifdef V5_vxWorks
-#	include <iv.h>
-#else
-#	include <iv68k.h>
-#endif
+#include <iv.h>
 #include <drvEpvxi.h>
 
 LOCAL unsigned long	hpE1404DriverID;

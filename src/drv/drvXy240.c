@@ -51,6 +51,7 @@
  * .14	09-17-92	joh	io report now tabs over detailed info
  * .15	09-18-92	joh	documentation
  * .16	08-02-93	mrk	Added call to taskwdInsert
+ * .17	08-04-93	mgb	Removed V5/V4 and EPICS_V2 conditionals
  */
 
 #include "vxWorks.h"
@@ -59,15 +60,9 @@
 #include "module_types.h"
 #include "task_params.h"
 #include <drvSup.h>
-#ifndef EPICS_V2
 #include <dbDefs.h>
 #include <dbScan.h>
 #include <taskwd.h>
-#else
-extern short    wakeup_init;    /* flags that the database scan initialization i
-s complete */
-#define interruptAccept wakeup_init
-#endif
 
 #define XY240_ADDR0	(bi_addrs[XY240_BI])
 #define XY240_MAX_CARDS	(bi_num_cards[XY240_BI])
@@ -97,9 +92,7 @@ struct dio_rec
         short mode;                             /*operating mode*/
         unsigned short sport0_1;                /*saved inputs*/
         unsigned short sport2_3;                /*saved inputs*/
-#ifndef EPICS_V2
         IOSCANPVT ioscanpvt;
-#endif
         /*short dio_vec;*/                      /*interrupt vector*/
         /*unsigned int intr_num;*/              /*interrupt count*/
         };
@@ -178,11 +171,7 @@ dio_scan()
 		|| first_scan)
       {
 	 /* printf("io_scanner_wakeup for card no %d\n",i); */
-#ifdef EPICS_V2
-	  io_scanner_wakeup(IO_BI,XY240_BI,i);	  
-#else
           scanIoRequest(dio[i].ioscanpvt);
-#endif
 	  dio[i].sport0_1 = dio[i].dptr->port0_1;
 	  dio[i].sport2_3 = dio[i].dptr->port2_3;	  
 	  }
@@ -241,9 +230,7 @@ xy240_init()
 		dio[i].sport2_3 = pdio_xy240->port2_3;	/*read and save high values*/
                 dio[i].dptr = pdio_xy240;
 		at_least_one_present = TRUE;
-#ifndef EPICS_V2
                 scanIoInit(&dio[i].ioscanpvt);
-#endif
 	}
 				
  	if (at_least_one_present) 
@@ -271,7 +258,6 @@ xy240_init()
 
 } 	
 
-#ifndef EPICS_V2
 xy240_getioscanpvt(card,scanpvt)
 short 		card;
 IOSCANPVT 	*scanpvt;
@@ -280,7 +266,6 @@ IOSCANPVT 	*scanpvt;
         *scanpvt = dio[card].ioscanpvt;
         return(0);
 }
-#endif
 
 
 /*

@@ -52,6 +52,7 @@
  *			report by bg
  *	082792	joh	added ANSI C function prototypes
  *	080293	mrk	added call to taskwdInsert
+ *	080493	mgb	Removed V5/V4 and EPICS_V2 conditionals
  */
 
 static char *sccsID = "@(#)drvJgvtr1.c	1.9\t8/27/92";
@@ -81,11 +82,7 @@ static char *sccsID = "@(#)drvJgvtr1.c	1.9\t8/27/92";
 #include	<types.h>
 #include	<vme.h>
 
-#	ifdef V5_vxWorks
-#		include <iv.h>
-#	else
-#		include <iv68k.h>
-#	endif
+#include	<iv.h>
 
 
 static long 	jgvtr1_io_report(

@@ -182,6 +182,7 @@
  * .59  07-27-93	mrk	Included changes made by Jeff Hill to stop warning messages
  * .60  07-27-93	mrk	Made changes for vxWorks 5.x semLib
  * .61  08-02-93	mrk	Added call to taskwdInsert
+ * .62  08-04-93	mgb	Removed V5/V4 and EPICS_V2 conditionals
  */
 
 /*
@@ -463,13 +464,8 @@ short	ab_op_stat[AB_MAX_LINKS];
 		   before we actually receive it for a given card.  Keeps
 		   us from asking for data faster than card can supply it */
 unsigned short	ab_btq_cnt[AB_MAX_LINKS][AB_MAX_ADAPTERS][AB_MAX_CARDS];
-#ifndef EPICS_V2
 #include <dbScan.h>
 static IOSCANPVT ioscanpvt[AB_MAX_LINKS][AB_MAX_ADAPTERS][AB_MAX_CARDS];
-#else
-extern short	wakeup_init;	/* flags that the database scan initialization is complete */
-#define interruptAccept wakeup_init
-#endif
 
 /*
  * flags a communication error on a link status
@@ -1161,11 +1157,7 @@ ab_bi_cos_simulator()
 					ps_input = (unsigned short *)&(p6008->iit[inpinx]);
 					ps_oldval = (unsigned short *)&(ab_old_binary_ins[inpinx]);
 					if ((*ps_input != *ps_oldval) || first_scan || adapter_status_change){
-#ifdef EPICS_V2
-						io_event_scanner_wakeup(IO_BI,ABBI_16_BIT,card,link,adapter);
-#else
 						scanIoRequest(ioscanpvt[link][adapter][card]);
-#endif
 						*ps_oldval = *ps_input;
 					}
 				}else{
@@ -1174,11 +1166,7 @@ ab_bi_cos_simulator()
 					if (inpinx & 0x1)	inpinx--;	/* shuffle those bytes */
 					else inpinx++;
 					if ((p6008->iit[inpinx] != ab_old_binary_ins[inpinx]) || first_scan || adapter_status_change){
-#ifdef EPICS_V2
-						io_event_scanner_wakeup(IO_BI,ABBI_08_BIT,card,link,adapter);
-#else
 						scanIoRequest(ioscanpvt[link][adapter][card]);
-#endif
 						ab_old_binary_ins[inpinx] = p6008->iit[inpinx];
 					}
 				}
@@ -1197,7 +1185,6 @@ ab_bi_cos_simulator()
 	}
 }
 
-#ifndef EPICS_V2
 int ab_bi_getioscanpvt(link,adapter,card,scanpvt)
 unsigned short link;
 unsigned short adapter;
@@ -1207,7 +1194,6 @@ IOSCANPVT *scanpvt;
 	*scanpvt = ioscanpvt[link][adapter][card];	
 	return(0);
 }
-#endif
 
 /*
  * ALLEN-BRADLEY DRIVER INITIALIZATION CODE
@@ -1273,14 +1259,12 @@ ab_driver_init()
 		}else{
 			p6008s[link] = 0;
 		}
-#ifndef EPICS_V2
 		if(p6008s[link]) {
 			int adapter,card;
 			for(adapter=0; adapter<AB_MAX_ADAPTERS; adapter++)
 		   	for(card=0; card<AB_MAX_CARDS; card++)
 				scanIoInit(&ioscanpvt[link][adapter][card]);
 		}
-#endif
 	}
 
 	if (got_one){ 

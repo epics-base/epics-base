@@ -78,14 +78,13 @@
  *				status	
  * .22  08-27-92	joh	fixed nonexsistant EPICS init 
  * .23  08-02-93	mrk	Added call to taskwdInsert
+ * .24  08-04-93	mgb	Removed V5/V4 and EPICS_V2 conditionals
  */
 
 #include	<vxWorks.h>
 #include	<vme.h>
 #include	<dbDefs.h>
-#ifndef EPICS_V2
-#include <dbScan.h>
-#endif
+#include	<dbScan.h>
 #include	<drvSup.h>
 #include	<module_types.h>
 #include 	<task_params.h>
@@ -191,9 +190,7 @@ struct ai566	**pai_xy566dil;
 unsigned short	**pai_xy566se_mem;
 unsigned short	**pai_xy566di_mem;
 unsigned short	**pai_xy566dil_mem;
-#ifndef EPICS_V2
 static IOSCANPVT *paioscanpvt;
-#endif
 
 
 /* reset the counter interrupt                              0x8000 */
@@ -292,12 +289,7 @@ short	i;
 
 	ap = pai_xy566dil[i];
 
-#	ifdef EPICS_V2
-		/* wake up the I/O event scanner */
-		io_scanner_wakeup(IO_AI,XY566DIL,ap->card_number);
-#	else
-		scanIoRequest(paioscanpvt[i]);
-#	endif
+	scanIoRequest(paioscanpvt[i]);
 
 	/* reset the CSR - needed to allow next interrupt */
 	senw(&ap->a566_csr,XY566L_CSR);
@@ -494,7 +486,6 @@ register short		***pppmem_present;
 	return ERROR;
     }
 
-#ifndef EPICS_V2
     paioscanpvt = (IOSCANPVT *)calloc(num_cards, sizeof(*paioscanpvt));
     if(!paioscanpvt) {
         return ERROR;
@@ -506,7 +497,6 @@ register short		***pppmem_present;
                 scanIoInit(&paioscanpvt[i]);
         }
     }
-#endif
 
     *pppmem_present = (short **)
 	calloc(num_cards, sizeof(**pppmem_present));
@@ -630,7 +620,6 @@ register short		***pppmem_present;
     return OK;
 }
 
-#ifndef EPICS_V2
 ai_xy566_getioscanpvt(card,scanpvt)
 unsigned short        card;
 IOSCANPVT *scanpvt;
@@ -638,7 +627,6 @@ IOSCANPVT *scanpvt;
       if((card<=(unsigned short)MAX_DIL_CARDS) && paioscanpvt[card]) *scanpvt = paioscanpvt[card];
       return(0);
 }
-#endif
 
 ai_xy566_driver(card,chan,type,prval)
 register short		card;

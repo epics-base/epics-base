@@ -101,6 +101,7 @@
  * 		needed	
  * JRW 01/18/92 Replaced init code to allow user to select the interrupt
  *              level value and to select the ports that are to be read.
+ * MGB 08/04/93 Removed V5/V4 and EPICS_V2 conditionals
  *
  *
  * NOTE (JRW 11-18-92):
@@ -123,14 +124,8 @@ static char *SccsId = "$Id$";
 #include	<dbDefs.h>
 #include	<drvSup.h>
 #include	<module_types.h>
-#ifdef V5_vxWorks
 #include	<iv.h>
-#else
-#include	<iv68k.h>
-#endif
-#ifndef EPICS_V2
-#include <dbScan.h>
-#endif
+#include	<dbScan.h>
 
 /* general constants */
 #define DVX_ID		0xCFF5		/* analogic ID code */
@@ -208,9 +203,7 @@ struct dvx_rec
 	unsigned int numChan;		/* total number of ports to read */
 	unsigned long	pgmMask[8];	/* ports to be read by seq-program */
 
-#ifndef EPICS_V2
 	IOSCANPVT *pioscanpvt;
-#endif
 };
 
 /* dma chain table size */
@@ -276,7 +269,7 @@ struct dvx_rec
 
 /* If any of the following does not exist replace it with #define <> NULL */
 long 	dvx_io_report(int level);
-long 	dvx_driver_init(void);
+static long 	dvx_driver_init(void);
 
 struct {
 	long	number;
@@ -289,24 +282,16 @@ struct {
 
 static struct dvx_rec dvx[MAX_DVX_CARDS] = {
 { NULL, NULL, NULL, -1, -1, -1, -1, -1, 128, 0, {0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff}
-#ifndef EPICS_V2
 , NULL
-#endif
 },
 { NULL, NULL, NULL, -1, -1, -1, -1, -1, 128, 0, {0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff}
-#ifndef EPICS_V2
 , NULL
-#endif
 },
 { NULL, NULL, NULL, -1, -1, -1, -1, -1, 128, 0, {0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff}
-#ifndef EPICS_V2
 , NULL
-#endif
 },
 { NULL, NULL, NULL, -1, -1, -1, -1, -1, 128, 0, {0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff}
-#ifndef EPICS_V2
 , NULL
-#endif
 }
 };
 
@@ -315,32 +300,32 @@ static int dvxOnline = 0;		/* 1 after init invoked */
 
 #ifdef __STDC__
 int	lclToA24(void *pLocal, void **ppA24);
-void	dvx_reset(void);
-void  	dvx_int(struct dvx_rec *dvxptr);
-int 	muxtst(int card);
-int 	sramld(int card);
-int 	dvx_driver( int	card, int chan, short *pval);
+static void	dvx_reset(void);
+static void  	dvx_int(struct dvx_rec *dvxptr);
+static int 	muxtst(int card);
+static int 	sramld(int card);
+static int 	dvx_driver( int	card, int chan, short *pval);
 int	dvx_dread(int card,int chan);
 int 	dvx_dump(int card,int firstchan,int lastchan);
 int 	dvx_chan_print(int dvx_card, int firstchan, int lastchan);
-int 	dvx_fempty(int card);
-int	dvx_dma_init(struct dvx_rec *ptr);
-int	dvx_dma_reset(struct dvx_rec *ptr);
+static int 	dvx_fempty(int card);
+static int	dvx_dma_init(struct dvx_rec *ptr);
+static int	dvx_dma_reset(struct dvx_rec *ptr);
 int 	dvx_dma_stat(int card, int chan);
 #else /* __STDC__ */
 
 int	lclToA24();
-void	dvx_reset();
-void  	dvx_int();
-int 	muxtst();
-int 	sramld();
-int 	dvx_driver();
+static void	dvx_reset();
+static void  	dvx_int();
+static int 	muxtst();
+static int 	sramld();
+static int 	dvx_driver();
 int	dvx_dread();
 int 	dvx_dump();
 int 	dvx_chan_print();
-int 	dvx_fempty();
-int	dvx_dma_init();
-int	dvx_dma_reset();
+static int 	dvx_fempty();
+static int	dvx_dma_init();
+static int	dvx_dma_reset();
 int 	dvx_dma_stat();
 
 
@@ -399,11 +384,7 @@ dvx_int(struct dvx_rec *dvxptr)
 		cptr->dma_point = DMA_CSR;
 		cptr->dma_data = CMR_SC | M_CIE | M_CH2;	/* enable int channel #2 */
 		cptr->dma_data = CMR_START | M_CH2;		/* start channel #2 */
-#ifdef EPICS_V2
-		io_scanner_wakeup(IO_AI,DVX2502,dvxptr->cnum);	 /*update database records */
-#else
 		scanIoRequest(*(dvxptr->pioscanpvt));
-#endif
 		break;
 	}
 	cptr->csr = dvxptr->csr_shadow;
@@ -508,10 +489,8 @@ LOCAL long dvx_driver_init(void)
 		}
 
 		
-#ifndef EPICS_V2
 		if ((dvx[i].pioscanpvt = (IOSCANPVT *) malloc(sizeof(IOSCANPVT))) == NULL)
 			return(-1);
-#endif
 		if (dvx[i].dmaSize == 0)
 		{
 		  logMsg("%s: No channels selected on card %d, init aborted\n", i);
@@ -601,9 +580,7 @@ LOCAL long dvx_driver_init(void)
 		dvx[i].csr_shadow |= CSR_M_ESTART;	/* enable ext start (shadow csr) */
 		pDvxA16->csr = dvx[i].csr_shadow;	/* enable external start */
 		dvx[i].mode = RUN_MODE;			/* ready to aquire data */
-#ifndef EPICS_V2
 		scanIoInit(dvx[i].pioscanpvt);
-#endif
 	}
 
 	return 0;	/* return 0 to database */
@@ -977,7 +954,6 @@ int dvx_dump(int card,int firstchan,int lastchan)
   return 0;
 }
 
-#ifndef EPICS_V2
 dvx_getioscanpvt(int card, IOSCANPVT *scanpvt)
 {
 	if ((card >= ai_num_cards[DVX2502]) || (card < 0))return(0);
@@ -985,7 +961,6 @@ dvx_getioscanpvt(int card, IOSCANPVT *scanpvt)
 	*scanpvt = *(dvx[card].pioscanpvt);
 	return(0);
 }
-#endif
 
 /*
  *

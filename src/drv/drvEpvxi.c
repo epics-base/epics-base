@@ -69,6 +69,7 @@
  *	.22 joh 05-24-93	Fixed over-zealous parameter checks in
  *				TTL trigger route
  *      .23 joh 06-03-93        Fixed incorect MXI BP TTL trigger enable
+ *      .24 mgb 08-04-93        Removed V5/V4 and EPICS_V2 conditionals
  *
  * To do
  * -----
@@ -147,11 +148,7 @@ static char *sccsId = "$Id$\t$Date$";
 
 #include <vxWorks.h>
 #include <vme.h>
-#ifdef V5_vxWorks
-#	include <iv.h>
-#else
-#	include <iv68k.h>
-#endif
+#include <iv.h>
 #include <sysSymTbl.h>
 #include <memLib.h>
 
@@ -1839,11 +1836,7 @@ LOCAL int
 vxi_self_test(void)
 {
 	unsigned 		la;
-#ifdef V5_vxWorks
 	UINT16			wd;
-#else
-	unsigned short		wd;
-#endif
 	int			status;
 	struct vxi_csr		*pcsr;
 	VXIDI			**ppvxidi;
@@ -2527,11 +2520,7 @@ int epvxiDeviceVerify(unsigned la)
 	int		status;
 	VXICSR		*pcsr;
 	VXIDI		*pvxidi;
-#	ifdef V5_vxWorks
 	UINT16		device_status;
-#	else
-	unsigned short	device_status;
-#	endif
 
 	if(la > NELEMENTS(epvxiLibDeviceList)){
 		return VXI_BAD_LA;
@@ -3406,7 +3395,6 @@ LOCAL int
 epvxiSymbolTableInit(void)
 {
 
-#	ifdef V5_vxWorks
    		epvxiSymbolTable = symTblCreate(
 					EPVXI_MAX_SYMBOLS_LOG2,
 					FALSE,
@@ -3414,28 +3402,6 @@ epvxiSymbolTableInit(void)
 		if(!epvxiSymbolTable){
 			return ERROR;
 		}
-#	else
-	{
-		int	status;
-
-   		epvxiSymbolTable = symTblCreate(
-					EPVXI_MAX_SYMBOLS,
-					EPVXI_MAX_SYMBOL_LENGTH);
-		if(!epvxiSymbolTable){
-			return ERROR;
-		}
-  	 	status = symTblInit(
-				epvxiSymbolTable,
-				EPVXI_MAX_SYMBOLS,
-				EPVXI_MAX_SYMBOL_LENGTH);
-		if(status<0){
-			epvxiSymbolTable = NULL;
-			logMsg("epvxi: cant delete the symbol table under V4- memory lost\n");
-			return ERROR;
-		}
-	}
-#	endif
-
 	return OK;
 }
 

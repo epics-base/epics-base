@@ -52,6 +52,7 @@
  * .10 joh 071092	moved ivec allocation to module_types.h
  * .11 joh 072792       added soft reboot int disable
  * .12 mrk 090292	added DRVET
+ * .13 mgb 080493	Removed V5/V4 and EPICS_V2 conditionals
  *
  *
  * Routines:
@@ -84,12 +85,7 @@ static char *sccsId = "$Id$\t$Date$";
 
 #include "vxWorks.h"
 #include "vme.h"
-#ifdef V5_vxWorks
-#       include <iv.h> /* in h/68k if this is compiling for a 68xxx */
-#else
-#       include <iv68k.h>
-#endif
-
+#include <iv.h> /* in h/68k if this is compiling for a 68xxx */
 #include "module_types.h"
 #include <dbDefs.h>
 #include <drvSup.h>

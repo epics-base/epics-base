@@ -47,6 +47,7 @@
  *  bg	06-25-92	combined drvMz8310.c and mz8310_driver.c
  *  bg	06-26-92	Added level to mz8310_io_report.
  * joh  08-05-92	callable interface now conforms with epics standard
+ * mgb  08-04-93	Removed V5/V4 and EPICS_V2 conditionals
  */
 
 /* drvMz8310.c -  Driver Support Routines for Mz8310 */
@@ -59,11 +60,7 @@
 #include	<module_types.h>
 #include 	<fast_lock.h>
 
-#ifdef V5_vxWorks
-#	include <iv.h>
-#else
-#	include <iv68k.h>
-#endif
+#include	<iv.h>
 
 
 /* If any of the following does not exist replace it with #define <> NULL */

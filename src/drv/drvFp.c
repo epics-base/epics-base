@@ -51,6 +51,7 @@
  * .13 joh 082792	converted to V5 vxorks
  * .14 mrk 090192	support epics I/O event scan, and added DRVET
  * .15 mrk 080293	Add call to taskwdInsert
+ * .16 mgb 080493	Removed V5/V4 and EPICS_V2 conditionals
  */
 
 
@@ -92,19 +93,13 @@ static char *sccsId = "@(#)drvFp.c	1.12\t6/4/93";
 #include "vxWorks.h"
 #include "vme.h"
 #include "taskLib.h"
-#ifdef V5_vxWorks
-#       include <iv.h> /* in h/68k if this is compiling for a 68xxx */
-#else
-#       include <iv68k.h>
-#endif
+#include <iv.h> /* in h/68k if this is compiling for a 68xxx */
 
 #include "module_types.h"
 #include <dbDefs.h>
 #include <drvSup.h>
 #include <taskwd.h>
-#ifndef EPICS_V2
 #include <dbScan.h>
-#endif
 
 static long report();
 static long init();
@@ -188,9 +183,7 @@ struct fp_rec
 	short fp_vector;		/* interrupt vector */
 	short mode;			/* operating mode */
 	unsigned int int_num;		/* interrupt number */
-#ifndef EPICS_V2
         IOSCANPVT ioscanpvt;
-#endif
 	};
 
 static struct fp_rec *fp;			/* fast protect control structure */
@@ -237,11 +230,7 @@ unsigned card;
    /*
     * wakeup the interrupt driven scanner
     */
-#ifdef EPICS_V2
-   io_scanner_wakeup(IO_BI, AT8_FP10S_BI, card);
-#else
           scanIoRequest(fp[card].ioscanpvt);
-#endif
    break;
  }
  ptr->int_num++;				/* log interrupt */
@@ -320,18 +309,12 @@ unsigned int addr;
 		/* start up module */
 		fp[i].fptr->csr |= CSR_IEN;	/* enable interrupts */
 		fp[i].mode = FP_RUN;		/* normal run mode */
-#ifndef EPICS_V2
 		scanIoInit(&fp[i].ioscanpvt);
-#endif
 	}
 	fp_num = i - 1;				/* record max card # */
 
 	/* create the semaphore */
-#ifndef V5_vxWorks
-	fp_semid = semCreate();
-#else
 	fp_semid = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
-#endif
 	if ((int)fp_semid == 0)		/* abort if can't create semaphore */
 		return(-3);
 
@@ -506,11 +489,7 @@ fp_dump()
  */
 fp_mon()
 {
-#ifdef V5_vxWorks
  for(semTake(fp_semid,WAIT_FOREVER);fp_dump() != 0;semTake(fp_semid,WAIT_FOREVER));
-#else
- for(semTake(fp_semid);fp_dump() != 0;semTake(fp_semid));
-#endif
 }
 fp_monitor()
 {
@@ -537,7 +516,6 @@ int level;
         }
 } 
 
-#ifndef EPICS_V2
 fp_getioscanpvt(card,scanpvt)
 short 		card;
 IOSCANPVT 	*scanpvt;
@@ -546,4 +524,3 @@ IOSCANPVT 	*scanpvt;
         *scanpvt = fp[card].ioscanpvt;
         return(0);
 }
-#endif

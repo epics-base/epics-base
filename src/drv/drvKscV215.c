@@ -34,27 +34,22 @@
  *	.01 071792 joh	Added model name registration
  *	.02 081992 joh	vxiUniqueDriverID -> epvxiUniqueDriverID	
  *	.03 082692 mrk	Added support for new I/O event scanning and DRVET
- *	.03 012893 joh	include file name change	
+ *	.04 012893 joh	include file name change	
+ *	.05 080493 mgb	Removed V5/V4 and EPICS_V2 conditionals
  *
  */
 
 
 #include <vxWorks.h>
 #include <dbDefs.h>
-#ifdef V5_vxWorks
-#       include <iv.h>
-#else
-#       include <iv68k.h>
-#endif
+#include <iv.h>
 #include <types.h>
 #include <module_types.h>
 #include <task_params.h>
 #include <fast_lock.h>
 #include <drvEpvxi.h>
 #include <drvSup.h>
-#ifndef EPICS_V2
 #include <dbScan.h>
-#endif
 
 static long init();
 
@@ -88,9 +83,7 @@ epvxiPConfig((LA), KscV215DriverId, struct KscV215_config *)
 
 struct KscV215_config{
 	FAST_LOCK	lock;		/* mutual exclusion */
-#ifndef EPICS_V2
         IOSCANPVT ioscanpvt;
-#endif
 };
 
 #define KSCV215_INT_LEVEL	1	
@@ -245,9 +238,7 @@ unsigned la;
 	}
 
 	FASTLOCKINIT(&pc->lock);
-#ifndef EPICS_V2
         scanIoInit(&pc->ioscanpvt);
-#endif
 
 #ifdef INTERRUPTS
         status = intConnect(
@@ -336,11 +327,7 @@ unsigned	la;
 	/*
 	 * tell them that the switches have settled
 	 */
-#ifdef EPICS_V2
-	io_scanner_wakeup(IO_AI, KSCV215_BI, la);
-#else
         scanIoRequest(pc->ioscanpvt);
-#endif
 }
 #endif
 
@@ -456,7 +443,6 @@ register unsigned short *prval;
 	return ERROR;
 }
 
-#ifndef EPICS_V2
 KscV215_getioscanpvt(la,scanpvt)
 unsigned short	la;
 IOSCANPVT *scanpvt;
@@ -467,4 +453,3 @@ IOSCANPVT *scanpvt;
         if(pc != NULL) *scanpvt = pc->ioscanpvt;
 	return(0);
 }
-#endif

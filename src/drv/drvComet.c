@@ -53,6 +53,7 @@
  *			signal number checking now based on the array element
  *			count.
  *	.13 mrk 080293	Added call to taskwdInsert
+ *	.14 mgb 080493	Removed V5/V4 and EPICS_V2 conditionals
  */
 
 static char *sccsID = "@(#)drvComet.c	1.11\t9/16/92";
@@ -68,11 +69,7 @@ static char *sccsID = "@(#)drvComet.c	1.11\t9/16/92";
  *
  */
 #include <vxWorks.h>
-#	ifdef V5_vxWorks
-#		include <iv.h>
-#	else
-#		include <iv68k.h>
-#	endif
+#include <iv.h>
 #include <types.h>
 #include <module_types.h>
 #include <task_params.h>

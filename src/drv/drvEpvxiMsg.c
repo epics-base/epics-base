@@ -35,6 +35,7 @@
  *	.03 joh 060292	Added debug mode
  *	.04 joh	072992	added signal register for the HP1404
  * 	.05 joh 082592	added arg to epvxiRead() and epvxiWrite()
+ * 	.06 mgb 080493	Removed V5/V4 and EPICS_V2 conditionals
  *
  *	Improvements
  *	------------
@@ -50,11 +51,7 @@ static char	*sccsId = "$Id$\t$Date$";
 #include <semLib.h>
 #include <drvEpvxi.h>
 #include <fast_lock.h>
-#ifdef V5_vxWorks
-#	include	<iv.h>
-#else
-#	include	<iv68k.h>
-#endif
+#include <iv.h>
 
 enum msgDeviceSyncType {
 	syncInt, 
@@ -944,11 +941,7 @@ int 	vxiMsgOpen(
 
 	vxiMsgSignalSetup();
 
-#	ifdef V5_vxWorks
 		pvximdi->syncSem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
-#	else
-		pvximdi->syncSem = semCreate();
-#	endif
 	if(!pvximdi->syncSem){
 		return VXI_NO_MEMORY;
 	}
@@ -1352,17 +1345,12 @@ int 	vxiMsgSync(
 			pollcnt--;
 		}
 		else{
-#ifdef V5_vxWorks
 			status = semTake(
 					pvximdi->syncSem, 
 					VXIMSGSYNCDELAY);
 			if(status < 0){
 				timeout -= VXIMSGSYNCDELAY;
 			}
-#else
-			taskDelay(VXIMSGSYNCDELAY);
-			timeout -= VXIMSGSYNCDELAY;
-#endif
 		}
 	}
 	while(timeout>0);

@@ -55,6 +55,7 @@
  *	.18 joh 082792	converted to ansi C
  *	.19 joh	111392	removed shifts on analog IO
  *	.20 joh	071593	fixwd comment	
+ *	.21 mgb	080493	Removed V5/V4 and EPICS_V2 conditionals
  *
  *	Notes:
  *	------
@@ -102,20 +103,14 @@
  */
 
 #include <vxWorks.h>
-#ifdef V5_vxWorks
-#	include <iv.h>
-#else
-#	include <iv68k.h>
-#endif
+#include <iv.h>
 #include <types.h>
 #include <module_types.h>
 #include <task_params.h>
 #include <fast_lock.h>
 #include <drvSup.h>
 #include <dbDefs.h>
-#ifndef EPICS_V2
 #include <dbScan.h>
-#endif
 #include <drvEpvxi.h>
 
 static char SccsId[] = "$Id$\t$Date$";
@@ -429,9 +424,7 @@ struct at5vxi_config{
 	char			mdt;		/* modified data tag	*/
 	struct vxi_csr		*pcsr;		/* vxi device hdr ptr 	*/
 	struct at5vxi_dd	*pdd;		/* at5 device dep ptr	*/
-#ifndef EPICS_V2
        	IOSCANPVT 		ioscanpvt;
-#endif
 
 };
 
@@ -613,9 +606,7 @@ void 	at5vxi_init_card(
 	pc->pdd = (struct at5vxi_dd *) &pc->pcsr->dir.r.dd;
 
 	FASTLOCKINIT(&pc->lock);
-#ifndef EPICS_V2
         scanIoInit(&pc->ioscanpvt);
-#endif
 
 
 	/*
@@ -720,9 +711,9 @@ void 	at5vxi_init_card(
 
 #	ifndef CONTINUOUS_OPERATION
   		r0 = intConnect(
-			(unsigned char) INUM_TO_IVEC(addr), 
+			INUM_TO_IVEC(addr), 
 			at5vxi_int_service, 
-			(void *) addr);
+			(int) addr);
   		if(r0 == ERROR)
     			return;
 
@@ -781,12 +772,7 @@ void 	at5vxi_int_service(
 	 * wake up the I/O event scanner
 	 */
 	{
-#ifdef EPICS_V2
-		io_scanner_wakeup(IO_AI, VXI_AT5_AI, addr);
-		io_scanner_wakeup(IO_BI, VXI_AT5_BI, addr);
-#else
                 scanIoRequest(pconfig->ioscanpvt);
-#endif
 	}
 
 	/*
@@ -1442,7 +1428,6 @@ int	at5vxi_bo_driver(
 }
 
 
-#ifndef EPICS_V2
 /*
  *
  * at5vxi_getioscanpvt()
@@ -1459,5 +1444,4 @@ IOSCANPVT *scanpvt;
         if(pconfig) *scanpvt = pconfig->ioscanpvt;
         return(0);
 }
-#endif
 

@@ -125,6 +125,9 @@ typedef int osiSockIoctl_t;
 #	define SOCKERRNO errno /* UCX and others? */
 #endif
 
+/*
+ * This appears to work even on Multinet
+ */
 #define SOCKERRSTR(ERRNO_IN) (strerror(ERRNO_IN))
     
 #define MAXHOSTNAMELEN 75
@@ -142,6 +145,7 @@ typedef int osiSockIoctl_t;
 #define SOCK_EINVAL EINVAL
 #define SOCK_EINTR EINTR
 #define SOCK_EPIPE EPIPE
+#define SOCK_EMFILE EMFILE
 
 /*
  * Under MULTINET FD_SETSIZE does not apply

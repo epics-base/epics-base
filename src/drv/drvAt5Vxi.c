@@ -53,6 +53,7 @@
  *	.14 joh 071792	added model name registration
  *	.15 joh 072992	print more raw values in io report
  *	.16 joh 081092	merged at5vxi_models.h into this source
+ *	.17 joh 081992	function name change	
  *
  *	Notes:
  *	------
@@ -415,7 +416,7 @@ at5vxi_init()
 		return ERROR;
 	}
 
-	at5vxiDriverID = vxiUniqueDriverID();
+	at5vxiDriverID = epvxiUniqueDriverID();
 
 	{
 		epvxiDeviceSearchPattern  dsp;
@@ -643,6 +644,12 @@ unsigned addr;
 			logMsg("%s: failed to register model at init: %x\n",
 				__FILE__,
 				model);
+		}
+
+		r0 = epvxiRegisterMakeName(VXI_MAKE_AT5, "LANL AT5");
+		if(r0<0){
+			logMsg(	"%s: unable reg make\n",
+				__FILE__);
 		}
 	}
 

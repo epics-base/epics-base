@@ -316,9 +316,32 @@ caStatus exPV::getUnits(gdd &units)
 //
 // exPV::getEnums()
 //
-caStatus exPV::getEnums(gdd &)
+// returns the eneumerated state strings
+// for a discrete channel
+//
+// The PVs in this example are purely analog,
+// and therefore this isnt appropriate in an
+// analog context ...
+//
+caStatus exPV::getEnums (gdd &enums)
 {
-	return S_cas_noConvert;
+	unsigned nStr = 2;
+	aitFixedString *str;
+
+	enums.setDimension(1);
+	str = new aitFixedString[nStr];
+	if (!str) {
+		return S_casApp_noMemory;
+	}
+
+	enums.putRef (str,new gddDestructor);
+
+	strncpy (str[0].fixed_string, "off", sizeof(str[0].fixed_string));
+	strncpy (str[1].fixed_string, "on", sizeof(str[1].fixed_string));
+
+	enums.setBound (0,0,nStr);
+
+	return S_cas_success;
 }
 
 //

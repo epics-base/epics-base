@@ -24,12 +24,15 @@ of this distribution.
 extern "C" {
 #endif
 
+struct dbCommon;
+struct dbBase;
+
 epicsShareFunc void epicsShareAPI dbScanLock(struct dbCommon *precord);
 epicsShareFunc void epicsShareAPI dbScanUnlock(struct dbCommon *precord);
 epicsShareFunc unsigned long epicsShareAPI dbLockGetLockId(
     struct dbCommon *precord);
 
-epicsShareFunc void epicsShareAPI dbLockInitRecords(dbBase *pdbbase);
+epicsShareFunc void epicsShareAPI dbLockInitRecords(struct dbBase *pdbbase);
 epicsShareFunc void epicsShareAPI dbLockSetMerge(
     struct dbCommon *pfirst,struct dbCommon *psecond);
 epicsShareFunc void epicsShareAPI dbLockSetSplit(struct dbCommon *psource);

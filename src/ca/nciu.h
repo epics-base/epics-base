@@ -55,7 +55,7 @@ class netiiu;
 // Protected by the callback mutex
 class channelNode : public tsDLNode < class nciu >
 {
-public:
+protected:
     channelNode ();
     bool isConnected ( epicsGuard < epicsMutex > & ) const;
     bool isInstalledInServer ( epicsGuard < epicsMutex > & ) const;

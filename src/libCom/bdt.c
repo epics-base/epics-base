@@ -7,9 +7,18 @@
 #endif
 #include <sys/types.h>
 #include <sys/socket.h>
+
+#ifdef vxWorks
+#include <vxWorks.h>
+#include <in.h>
+#include <inetLib.h>
+#include <taskLib.h>
+#else
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#endif
+
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -316,7 +325,10 @@ int BdtReceiveHeader(BDT* bdt,int* verb,int* size)
 	BdtMsgHead buf;
 
 	/* can only receive header when in the idle state */
-	if(bdt->state!=BdtIdle)
+	if (bdt->state == BdtEof)
+		return -1;
+
+	if(bdt->state != BdtIdle)
 	{
 		fprintf(stderr,"BdtReceiveHeader: Interface not idle\n");
 		bdt->state=BdtBad;
@@ -334,10 +346,9 @@ int BdtReceiveHeader(BDT* bdt,int* verb,int* size)
 	*size=ntohl(buf.size);
 
 	if(*size)
-	{
 		bdt->state=BdtRData;
-		bdt->remaining_recv=*size;
-	}
+
+	bdt->remaining_recv=*size;
 
 	return 0;
 }
@@ -361,14 +372,14 @@ int BdtReceiveData(BDT* bdt,void* buffer,int size)
 		break;
 	}
 
-	/* wait for a chunk of data */
-	if((rc=recv(bdt->soc,(char*)buffer,size,0))<0)
+	if(BdtRead(bdt->soc,buffer,size)<0)
 	{
-		perror("BdtReceiveData: Receive message data chunk failed");
+		fprintf(stderr,"BdtReceiveData: Read failed\n");
+		bdt->state = BdtEof;
 		return -1;
 	}
 
-	bdt->remaining_recv-=rc;
+	bdt->remaining_recv-=size;
 
 	if(bdt->remaining_recv<0)
 	{
@@ -379,7 +390,7 @@ int BdtReceiveData(BDT* bdt,void* buffer,int size)
 	if(bdt->remaining_recv==0)
 		bdt->state=BdtIdle;
 
-	return rc;
+	return size;
 }
 
 /* ------------------------------------------------------ */
@@ -492,12 +503,12 @@ int BdtClose(BDT* bdt)
 /* --------------------------------------- */
 /* make a listener socket for UDP - simple */
 /* --------------------------------------- */
-int BdtOpenListenerUDP()
+int BdtOpenListenerUDP(int Port)
 {
 	int nsoc;
 	struct sockaddr_in tsin;
 
-	tsin.sin_port=htons(BDT_UDP_PORT);
+	tsin.sin_port=htons(Port);
 	tsin.sin_family=AF_INET;
 	tsin.sin_addr.s_addr=htonl(INADDR_ANY);
 
@@ -520,13 +531,14 @@ int BdtOpenListenerUDP()
 /* --------------------------------------- */
 /* make a listener socket for TCP - simple */
 /* --------------------------------------- */
-int BdtOpenListenerTCP()
+int BdtOpenListenerTCP(int Port)
 {
 	int nsoc;
 	struct sockaddr_in tsin;
 
-	tsin.sin_port=htons(BDT_TCP_PORT);
-	tsin.sin_family=AF_INET;
+	memset (&tsin, 0, sizeof(struct  sockaddr_in));
+	tsin.sin_port=htons(Port);
+	tsin.sin_family=htons(AF_INET);
 	tsin.sin_addr.s_addr=htonl(INADDR_ANY);
 
 	if((nsoc=socket(AF_INET,SOCK_STREAM,BDT_TCP))<0)

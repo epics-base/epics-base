@@ -28,6 +28,9 @@
  * Modification Log:
  * -----------------
  *  $Log$
+ *  Revision 1.9  1998/01/20 16:19:48  mrk
+ *  Fix include statements
+ *
  *  Revision 1.8  1996/08/05 19:33:40  jhill
  *  removed ; from if
  *
@@ -315,7 +318,8 @@ long dbb(char *record_name)
   */
   if (! lset_stack_not_empty) {
     /* initialize list and semaphore */
-     bkpt_stack_sem = semBCreate(SEM_Q_FIFO, SEM_FULL);
+     bkpt_stack_sem = semMCreate(
+        SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
      if (bkpt_stack_sem == NULL) {
         printf("   BKPT> Out of memory\n");
         dbScanUnlock(precord);

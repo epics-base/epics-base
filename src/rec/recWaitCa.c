@@ -108,14 +108,21 @@ void recWaitCaTask(void)
 	    }
     	    FASTLOCK(&lock);
 	    pcamonitor = pcapvt->pcamonitor;
-	    if(pcapvt->cmd==cmdAdd && !pcapvt->hasMonitor) {
-		SEVCHK(ca_build_and_connect(pcamonitor->channame,TYPENOTCONN,0,
-		    &pcapvt->chid,0,NULL,pcapvt),
+	    if(pcapvt->cmd==cmdAdd) {
+		if(pcapvt->hasMonitor
+		&& (strcmp(pcamonitor->channame,ca_name(pcapvt->chid))!=0)) {
+		    SEVCHK(ca_clear_channel(pcapvt->chid),"ca_clear_channel");
+		    pcapvt->hasMonitor = FALSE;
+		}
+		if(!pcapvt->hasMonitor) {
+		    SEVCHK(ca_build_and_connect(pcamonitor->channame,
+			TYPENOTCONN,0,&pcapvt->chid,0,NULL,pcapvt),
 		    "ca_build_and_connect");
-		SEVCHK(ca_add_event(DBR_STS_DOUBLE,pcapvt->chid,
-		    eventCallback,pcapvt,&pcapvt->evid),
-		    "ca_add_event");
-		pcapvt->hasMonitor = TRUE;
+		    SEVCHK(ca_add_event(DBR_STS_DOUBLE,pcapvt->chid,
+		    	eventCallback,pcapvt,&pcapvt->evid),
+		    	"ca_add_event");
+		    pcapvt->hasMonitor = TRUE;
+		}
 	    } else if (pcapvt->cmd==cmdRemove && pcapvt->hasMonitor) {
 		SEVCHK(ca_clear_channel(pcapvt->chid),"ca_clear_channel");
 		pcapvt->hasMonitor = FALSE;
@@ -130,27 +137,35 @@ void recWaitCaTask(void)
 
 static void myCallback(struct recWaitCa *pcamonitor, char inputIndex, double monData)
 {
-    printf("myCallback: %s\n",pcamonitor->channame);
+    printf("myCallback: %s index=%d\n",pcamonitor->channame,
+	pcamonitor->inputIndex);
 }
 
-int testCaMonitor(char *name,int delay)
+int testCaMonitor(char *name,char *name2,int delay)
 {
     RECWAITCA	*pcamonitor;
     long	status;
 
     pcamonitor = calloc(1,sizeof(RECWAITCA));
-    pcamonitor->channame = calloc(1,strlen(name)+1);
+    pcamonitor->channame = calloc(1,100);
     pcamonitor->callback = myCallback;
     strcpy(pcamonitor->channame,name);
     status = recWaitCaAdd(pcamonitor);
     if(status) errMessage(status,"testCaMonitor error");
-    if(delay>0) taskDelay(delay);
+    taskDelay(10);
     status = recWaitCaDelete(pcamonitor);
     if(status) errMessage(status,"testCaMonitor error");
     if(delay>0) taskDelay(delay);
     status = recWaitCaAdd(pcamonitor);
     if(status) errMessage(status,"testCaMonitor error");
+    taskDelay(10);
+    status = recWaitCaDelete(pcamonitor);
+    if(status) errMessage(status,"testCaMonitor error");
     if(delay>0) taskDelay(delay);
+    if(name2) strcpy(pcamonitor->channame,name2);
+    status = recWaitCaAdd(pcamonitor);
+    if(status) errMessage(status,"testCaMonitor error");
+    taskDelay(10);
     status = recWaitCaDelete(pcamonitor);
     if(status) errMessage(status,"testCaMonitor error");
     if(delay>0) taskDelay(delay);

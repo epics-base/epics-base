@@ -57,7 +57,7 @@
 #include <dbScan.h>
 #endif
 
-long init();
+static long init();
 
 struct {
         long    number;
@@ -98,13 +98,12 @@ struct KscV215_config{
 #define KscV215Handshake	(0x0040)
 #define KscV215csrInit		(0x9000)
 
-LOCAL
-int KscV215DriverId;
+static int KscV215DriverId;
 
-void KscV215_int_service();
-void KscV215_init_card();
-void KscV215_stat();
-int KscV215WriteSync();
+static void KscV215_int_service();
+static void KscV215_init_card();
+static void KscV215_stat();
+static int KscV215WriteSync();
 
 
 struct KscV215_A24{

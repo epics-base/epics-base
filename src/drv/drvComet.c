@@ -400,7 +400,8 @@ static long init()
  *
  */
 comet_driver(card, signal, pcbroutine, parg, nelements)
-register unsigned short	card,signal;
+register short		card;
+register unsigned short	signal;
 unsigned int		*pcbroutine;
 unsigned int		*parg;	/* pointer to the waveform record */
 unsigned long nelements;
@@ -565,7 +566,8 @@ unsigned	n;
  *
  */
 comet_mode(card,mode,arg,val)
- unsigned short card, mode, arg, val;
+short		 card;
+unsigned short	mode, arg, val;
 {
  unsigned char *cptr;
  int i;

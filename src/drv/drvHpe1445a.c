@@ -40,6 +40,7 @@ static char	*sccsId = "$Id$\t$Date$";
 
 #include <vxWorks.h>
 #include <stdioLib.h>
+#include <taskLib.h>
 #include <module_types.h>
 #include <fast_lock.h>
 #include <drvEpvxi.h>
@@ -94,16 +95,16 @@ void 	hpe1445aLogErrorsWithLineno(unsigned la, int lineno);
  * For Driver Internal Use
  *
  */
-void 	hpe1445aInitCard(unsigned la);
-long	hpe1445aReset(unsigned la);
-long	logEntireError(unsigned la, int lineno);
-long	hpe1445aActivateWaveformLocked(unsigned la, char *pWaveformName,
+static void 	hpe1445aInitCard(unsigned la);
+static long	hpe1445aReset(unsigned la);
+static long	logEntireError(unsigned la, int lineno);
+static long	hpe1445aActivateWaveformLocked(unsigned la, char *pWaveformName,
 		 struct hpe1445aConfig	*pc);
-long	hpe1445aSetupFunction(unsigned la);
-long	hpe1445aSetupOutput(unsigned la);
-long	hpe1445aArm(unsigned la);
-long	hpe1445aUnloadWaveformLocked(unsigned la, char *pWaveformName);
-long 	hpe1445aLoadWaveformLocked(unsigned la, struct hpe1445aConfig *pc, 
+static long	hpe1445aSetupFunction(unsigned la);
+static long	hpe1445aSetupOutput(unsigned la);
+static long	hpe1445aArm(unsigned la);
+static long	hpe1445aUnloadWaveformLocked(unsigned la, char *pWaveformName);
+static long 	hpe1445aLoadWaveformLocked(unsigned la, struct hpe1445aConfig *pc, 
 		char *pWaveformName, double *pdata, unsigned long npoints);
 
 
@@ -898,7 +899,7 @@ unsigned long	npoints
  */
 LOCAL long 
 hpe1445aLoadWaveformLocked(
-unsigned short 		la,
+unsigned 		la,
 struct hpe1445aConfig	*pc,
 char			*pWaveformName,
 double			*pdata,

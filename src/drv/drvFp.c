@@ -104,8 +104,8 @@ static char *sccsId = "$Id$\t$Date$";
 #include <dbScan.h>
 #endif
 
-long report();
-long init();
+static long report();
+static long init();
 struct {
         long    number;
         DRVSUPFUN       report;
@@ -191,14 +191,11 @@ struct fp_rec
 #endif
 	};
 
-LOCAL
-struct fp_rec *fp;			/* fast protect control structure */
-LOCAL
-int fp_num;				/* # of fast protect cards found -1 */
-LOCAL
-SEM_ID fp_semid;			/* semaphore for monitor task */
+static struct fp_rec *fp;			/* fast protect control structure */
+static int fp_num;				/* # of fast protect cards found -1 */
+static SEM_ID fp_semid;			/* semaphore for monitor task */
 
-void	fp_reboot();
+static void	fp_reboot();
 
 /*
  * fp_int
@@ -333,7 +330,8 @@ fp_init(addr)
 #endif
   }
  fp_num = i - 1;			/* record max card # */
- if (!(fp_semid = semCreate()))		/* abort if can't create semaphore */
+ fp_semid = semCreate();		/* abort if can't create semaphore */
+ if ((int)fp_semid == 0)		/* abort if can't create semaphore */
   return -3;
  return i;				/* return # found */
 }
@@ -408,10 +406,10 @@ fp_mode(card,mode)
  *
  */
 fp_srd(card,option)
- short card;
+ short	card;
+ short	option;
 {
- if (card < 0 || (card > fp_num))
-  return -1;
+ if (card > fp_num) return -1;
  if (!option)
   printf("local inputs = %x enable switches = %x\n",fp[card].fptr->srd & 0xff,
           fp[card].fptr->srd>>8);
@@ -456,8 +454,7 @@ fp_driver(card,mask,prval)
 {
  register unsigned int temp;
 
- if (card < 0 || (card > fp_num))
-  return -1;
+ if (card > fp_num) return -1;
  temp = fp[card].drvstat & 0xffff0000;		/* latched status info */
  temp |= fp[card].fptr->srd;			/* current switches & inputs */
  *prval = temp & mask;
@@ -538,8 +535,8 @@ int level;
 
 #ifndef EPICS_V2
 fp_getioscanpvt(card,scanpvt)
-unsigned short card;
-IOSCANPVT *scanpvt;
+short 		card;
+IOSCANPVT 	*scanpvt;
 {
         if ((card >= bi_num_cards[AT8_FP10S_BI])) return(0);
         *scanpvt = fp[card].ioscanpvt;

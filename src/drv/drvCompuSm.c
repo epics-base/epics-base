@@ -568,7 +568,7 @@ compu_driver_init(){
     status = sysBusToLocalAdrs(
 		VME_AM_SUP_SHORT_IO,
 		(char *)sm_addrs[CM57_83E], 
-		(char **)&compu_addr);
+		(int **)&compu_addr);
     if (status != OK){ 
       printf("%s: failed to map A16 base\n", __FILE__); 
       return ERROR;
@@ -657,7 +657,7 @@ register int	arg2;
 
 	case (SM_MOVE):
 		if (compu_motor_array[card].mode == VELOCITY_MODE)
-			return;
+			return(0);
 i = 0;
 switch (trigger){
 case (0):
@@ -829,7 +829,7 @@ printf("%x ",compu_msg[j]);
 
 	case (SM_SET_HOME):
 		if (compu_motor_array[card].mode == VELOCITY_MODE)
-			return;
+			return(OK);
 
 		/* set the motor and encoder position to zero */
 		compu_msg[0] = SM_DEF_ABS_ZERO;

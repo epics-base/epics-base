@@ -51,10 +51,10 @@ static char	*sccsID = "$Id$\t$Date$";
  *	as the drivers become more autonomous
  */
 
-long 	xy010_id_check(char *);
-long 	xy010_io_report(int);
-long	xy010_init(void);
-long	xy010_map(void);
+static long 	xy010_id_check(char *);
+static long 	xy010_io_report(int);
+static long	xy010_init(void);
+static long	xy010_map(void);
 
 struct {
         long    	number;

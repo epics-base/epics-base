@@ -269,8 +269,8 @@ xy240_init()
 
 #ifndef EPICS_V2
 xy240_getioscanpvt(card,scanpvt)
-unsigned short card;
-IOSCANPVT *scanpvt;
+short 		card;
+IOSCANPVT 	*scanpvt;
 {
         if ((card >= XY240_MAX_CARDS) || (!dio[card].dptr)) return(0);
         *scanpvt = dio[card].ioscanpvt;
@@ -286,18 +286,19 @@ IOSCANPVT *scanpvt;
  */
 
 xy240_bi_driver(card,mask,prval)
-    register unsigned short card;
-	unsigned int			mask;
-	register unsigned int	*prval;
+register short 		card;
+unsigned int		mask;
+register unsigned int	*prval;
 {
 	register unsigned int	work;
- 		if ((card >= XY240_MAX_CARDS) || (!dio[card].dptr)) 
-		 return -1;
-/*		 printf("%d\n",dio[card].num);*/
-		work = (dio[card].dptr->port0_1 << 16)
-			 + dio[card].dptr->port2_3;
-		*prval = work & mask;
-    return(0);
+
+	if ((card >= XY240_MAX_CARDS) || (!dio[card].dptr)) 
+	 return -1;
+	work = (dio[card].dptr->port0_1 << 16)
+	 + dio[card].dptr->port2_3;
+	*prval = work & mask;
+
+	return(0);
 }
 
 /*
@@ -308,20 +309,22 @@ xy240_bi_driver(card,mask,prval)
  */
 
 xy240_bo_read(card,mask,prval)
-	register unsigned short card;
-	unsigned int			mask;
-	register unsigned int	*prval;
- {
+register short 		card;
+unsigned int		mask;
+register unsigned int	*prval;
+{
 	register unsigned int	work;
- 		if ((card >= XY240_MAX_CARDS) || (!dio[card].dptr)){ 
-			 return -1;
-                }
+ 
+	if ((card >= XY240_MAX_CARDS) || (!dio[card].dptr)){ 
+		 return -1;
+        }
               
-		/* printf("%d\n",dio[card].num); */
-	   	work = (dio[card].dptr->port4_5 << 16)
-			 + dio[card].dptr->port6_7;
+	/* printf("%d\n",dio[card].num); */
+	work = (dio[card].dptr->port4_5 << 16)
+	 + dio[card].dptr->port6_7;
                  		
-		*prval = work &= mask;
+	*prval = work &= mask;
+
         return(0);
  }
 
@@ -331,10 +334,10 @@ xy240_bo_read(card,mask,prval)
  */
 
 xy240_bo_driver(card,val,mask)
-	register unsigned short card;
-	unsigned int			mask;
-	register unsigned int	val;
- {
+register short 		card;
+unsigned int		mask;
+register unsigned int	val;
+{
 	register unsigned int	work;
 
  	if ((card >= XY240_MAX_CARDS) || (!dio[card].dptr)) 
@@ -360,8 +363,7 @@ xy240_bo_driver(card,val,mask)
  *test routine for xy240 output 
  */
 dio_out(card,port,val)
-	unsigned short		card,port,val;
-	
+short	card,port,val;
 {
 
  if ((card > XY240_MAX_CARDS-1)) 		/*test to see if card# is allowable*/

@@ -107,12 +107,12 @@ static char SccsId[] = "$Id$\t$Date$ ";
 /* If any of the following does not exist replace it with #define <> NULL */
 
 
-long report();
-long init();
+static long report();
+static long init();
 
 #if 0
-long xy566_io_report();
-long ai_566_init();
+static long xy566_io_report();
+static long ai_566_init();
 #endif
 
 struct {
@@ -254,12 +254,12 @@ unsigned int	**proutine;
 int		wfDoneId;	/* waveform done task ID */
 
 /* forward references */
-void 	senw();
-VOID 	xy566_reset(); 
-int	ai_xy566_init();
-int	ai_xy566l_init();
-VOID 	rval_convert();
-VOID 	xy566_rval_report();
+static void 	senw();
+static VOID 	xy566_reset(); 
+static int	ai_xy566_init();
+static int	ai_xy566l_init();
+static VOID 	rval_convert();
+static VOID 	xy566_rval_report();
 
 
 static acro_intr(ap)
@@ -637,14 +637,14 @@ ai_xy566_getioscanpvt(card,scanpvt)
 unsigned short        card;
 IOSCANPVT *scanpvt;
 {
-      if((card<=MAX_DIL_CARDS) && paioscanpvt[card]) *scanpvt = paioscanpvt[card];
+      if((card<=(unsigned short)MAX_DIL_CARDS) && paioscanpvt[card]) *scanpvt = paioscanpvt[card];
       return(0);
 }
 #endif
 
 ai_xy566_driver(card,chan,type,prval)
-register unsigned short	card;
-unsigned short		chan;
+register short		card;
+short			chan;
 register unsigned int	type;
 register unsigned short *prval;
 {

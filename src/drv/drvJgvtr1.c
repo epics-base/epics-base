@@ -86,23 +86,23 @@ static char *sccsID = "@(#)drvJgvtr1.c	1.9\t8/27/92";
 #	endif
 
 
-long 	jgvtr1_io_report(
+static long 	jgvtr1_io_report(
 	unsigned	level
 );
 
-long 	jgvtr1_init(
+static long 	jgvtr1_init(
 	void
 );
 
-void 	jgvtr1_int_service(
+static void 	jgvtr1_int_service(
 	void
 );
 
-void 	jgvtr1DoneTask(
+static void 	jgvtr1DoneTask(
 	void
 );
 
-int jgvtr1_dump(
+static int jgvtr1_dump(
 	unsigned	card,
 	unsigned	n
 );
@@ -110,13 +110,13 @@ int jgvtr1_dump(
 /*
  * should be in a header file
  */
-int jgvtr1_driver(
+static int jgvtr1_driver(
 	unsigned short	card,
 	unsigned int	*pcbroutine,
 	unsigned int	*parg	/* number of values read */
 );
 
-int jgvtr1_stat(
+static int jgvtr1_stat(
 	unsigned	card,
 	short int 	level
 );
@@ -228,8 +228,7 @@ long jgvtr1_init(
 	if(pjgvtr1_config){
 		if(FASTLOCKFREE(&pjgvtr1_config->lock)<0)
 			return ERROR;
-		if(free(pjgvtr1_config)<0)
-			return ERROR;
+		free(pjgvtr1_config);
 	}
 
 	pjgvtr1_config = 

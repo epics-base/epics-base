@@ -81,27 +81,27 @@ struct hpE1404_config{
 #define hpE1404PConfig(LA) \
 	epvxiPConfig((LA), hpE1404DriverID, struct hpE1404_config *)
 
-void 	hpE1404InitLA(
+static void 	hpE1404InitLA(
 	unsigned	la
 );
 
-void 	hpE1404ShutDown(
+static void 	hpE1404ShutDown(
 	void
 );
 
-void 	hpE1404ShutDownLA(
+static void 	hpE1404ShutDownLA(
 	unsigned 		la
 );
 
 /*
  * these should be in a header file
  */
-int 	hpE1404SignalConnect(
+static int 	hpE1404SignalConnect(
 	unsigned 	la,
 	void		(*pSignalCallback)()
 );
 
-void 	hpE1404Int(
+static void 	hpE1404Int(
 	unsigned 	la
 );
 
@@ -125,7 +125,7 @@ unsigned        io_map         /* bits 0-5  correspond to trig 0-5     */
                                 /* a 0 sources the back plane           */
 );
 
-void	hpE1404IOReport(
+static void	hpE1404IOReport(
 	unsigned 		la,
 	unsigned 		level
 );

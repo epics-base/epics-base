@@ -57,7 +57,7 @@ long dbCaPutLink();
 static long init_record();
 
 /* Create the dset for devBoSoft */
-long write_bo();
+static long write_bo();
 
 struct {
 	long		number;

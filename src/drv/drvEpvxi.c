@@ -261,124 +261,124 @@ char		epvxiSymbolTableMakeIdString[] = "%03x";
 #define TRIG_LINE_FPOUT            (41)
 
 /* forward references */
-int 	vxi_find_slot0(
+static int 	vxi_find_slot0(
 	VXIE 		*pvxie
 );
-int	vxi_find_offset(
+static int	vxi_find_offset(
 	unsigned	base_la,	
 	unsigned	count,
 	unsigned	*poffset
 );
-int 	vxi_find_slot(
+static int 	vxi_find_slot(
 	struct vxi_csr	*pcsr,
 	unsigned  	*pslot,
 	unsigned	*pcrate
 );
-int 	vxi_self_test(
+static int 	vxi_self_test(
 	void
 );
-int 	vxi_init_ignore_list(
+static int 	vxi_init_ignore_list(
 	void
 );
-int 	vxi_vec_inuse(
+static int 	vxi_vec_inuse(
 	unsigned 	la
 );
-int 	mxi_map(
+static int 	mxi_map(
 	VXIE		*pvxie,
 	unsigned	base_la
 );
-int 	map_mxi_inward(
+static int 	map_mxi_inward(
 	VXIE		*pvxie,
 	unsigned	base_la
 );
-int 	open_vxi_device(
+static int 	open_vxi_device(
 	VXIE		*pvxie,
 	unsigned	la
 );
-int	vxi_begin_normal_operation(
+static int	vxi_begin_normal_operation(
 	void
 );
-void	vxi_allocate_int_lines(
+static void	vxi_allocate_int_lines(
 	void
 );
-int 	epvxiSymbolTableInit(
+static int 	epvxiSymbolTableInit(
 	void
 );
-void	nicpu030_init(
+static void	nicpu030_init(
 	VXIE		*pvxie
 );
-void	vxi_find_sc_devices(
+static void	vxi_find_sc_devices(
 	VXIE		*pvxie
 );
-void	vxi_find_dc_devices(
+static void	vxi_find_dc_devices(
 	VXIE		*pvxie,
 	unsigned	base_la 
 );
-void	set_reg_modid(
+static void	set_reg_modid(
 	unsigned	crate,
 	unsigned	slot
 );
-void	clr_all_reg_modid(
+static void	clr_all_reg_modid(
 	unsigned	crate
 );
-void	nivxi_cpu030_set_modid(
+static void	nivxi_cpu030_set_modid(
 	unsigned        crate,
 	unsigned        slot
 );
-void	nivxi_cpu030_clr_all_modid(
+static void	nivxi_cpu030_clr_all_modid(
 	unsigned        crate
 );
-void	open_slot0_device(
+static void	open_slot0_device(
 	VXIE		*pvxie,
 	unsigned	la 
 );
-void	vxi_configure_hierarchies(
+static void	vxi_configure_hierarchies(
 	unsigned	commander_la,
 	unsigned	servant_area
 );
-void	vxi_find_mxi_devices(
+static void	vxi_find_mxi_devices(
 	VXIE		*pvxie,
 	unsigned	base_la
 );
-void	vxi_unmap_mxi_devices(
+static void	vxi_unmap_mxi_devices(
 	void
 );
-void	vxi_address_config(
+static void	vxi_address_config(
 	void
 );
-void 	vxi_record_topology(
+static void 	vxi_record_topology(
 	void
 );
-void	epvxiExtenderPrint(
+static void	epvxiExtenderPrint(
 	VXIE *pvxie
 );
-void	epvxiSelfTestDelay(
+static void	epvxiSelfTestDelay(
 	void
 );
-void	epvxiRegisterCommonMakeNames(
+static void	epvxiRegisterCommonMakeNames(
 	void
 );
-VXIE	*open_mxi_device(
+static VXIE	*open_mxi_device(
 	unsigned	la,
 	VXIE		*pvxie,
 	enum ext_type	type
 );
-int 	epvxiSetDeviceOffline(
+static int 	epvxiSetDeviceOffline(
 	int 		la
 );
-void 	vxi_allocate_address_block(
+static void 	vxi_allocate_address_block(
 	VXIE		*pvxie
 );
-int 	symbol_value_fetch(
+static int 	symbol_value_fetch(
 	char 		*pname,
 	void 		*pdest,
 	unsigned 	dest_size
 );
-int 	report_one_device(
+static int 	report_one_device(
 	int		la,
 	int		level 
 );
-void 	mxi_io_report(
+static void 	mxi_io_report(
 	struct vxi_csr	*pmxi,
 	int 		level 
 );
@@ -437,13 +437,13 @@ epvxiResman(void)
   	 * (if we are running under EPICS)
 	 */
 	{
-		UTINY		type;
-		unsigned char 	*pEPICS_VXI_LA_COUNT;
+		UINT8	type;
+		unsigned char 	*pEPICS_VXI_LA_COUNT = 0;
 
 		status = symFindByName(
 				sysSymTbl,
 				"_EPICS_VXI_LA_COUNT",	
-				&(char *)pEPICS_VXI_LA_COUNT,
+				pEPICS_VXI_LA_COUNT,
 				&type);
 		if(status == OK){
 			EPICS_VXI_LA_COUNT = *pEPICS_VXI_LA_COUNT;
@@ -1351,9 +1351,9 @@ VXIE	*pvxie
 )
 {
 	int		i;
-	int		status;
+	int		status = -1;
 	short		model;
-	UTINY		type;
+	UINT8		type;
 	
 	if(vxislot0[0].present){
 		return;
@@ -1368,7 +1368,7 @@ VXIE	*pvxie
 		status = symFindByName(
 				sysSymTbl,
 				nivxi_func_names[i],
-				& (char *) pnivxi_func[i],
+				(char **) &pnivxi_func[i],
 				&type);
 		if(status != OK){
 			return;
@@ -2243,7 +2243,7 @@ unsigned 	dest_size
 )
 {
 	int	status;
-	UTINY	type;
+	UINT8	type;
 	char	*pvalue;
 
 	status = symFindByName(
@@ -2271,14 +2271,14 @@ LOCAL int
 vxi_init_ignore_list(void)
 {
   	int 	i;
-	UTINY	type;
+	UINT8	type;
 	int	status;
 
   	for(i=0; i<NELEMENTS(ignore_list); i++){
 		status =
 		  	symFindByName(	sysSymTbl,
 					ignore_list[i],
-					& (char *) ignore_addr_list[i],
+					(char **) &ignore_addr_list[i],
 					&type);
 		if(status == ERROR)
 			return ERROR;
@@ -3265,8 +3265,8 @@ int 		level
 	unsigned 	ha;
 	void		*base;
 	void		*size;
-	void		*a;
-	void		*b;
+	unsigned	a;
+	unsigned	b;
 
         printf(", MXI sub class");
 
@@ -3280,14 +3280,14 @@ int 		level
 			la,
 			ha);
 
-		a = (void *) pmxi->dir.w.dd.mxi.a24_window_low;
-		b = (void *) pmxi->dir.w.dd.mxi.a24_window_high;
+		a = pmxi->dir.w.dd.mxi.a24_window_low;
+		b = pmxi->dir.w.dd.mxi.a24_window_high;
 		printf(", A24 window 0x%X-0x%X", 
 			a,
 			b);
 
-		a = (void *) pmxi->dir.w.dd.mxi.a32_window_low;
-		b = (void *) pmxi->dir.w.dd.mxi.a32_window_high;
+		a = pmxi->dir.w.dd.mxi.a32_window_low;
+		b = pmxi->dir.w.dd.mxi.a32_window_high;
 		printf(", A32 window 0x%X-0x%X", 
 			a,
 			b);
@@ -3476,7 +3476,7 @@ char *pmodel_name
  	status = symAdd(epvxiSymbolTable, name, pcopy, EPVXI_MODEL_NAME_SYMBOL);
 	if(status < 0){
 		char 	*pold_model_name;
-		UTINY	type;
+		UINT8	type;
 
 		status = symFindByNameAndType(
 				epvxiSymbolTable, 
@@ -3531,7 +3531,7 @@ char *pmake_name
  	status = symAdd(epvxiSymbolTable, name, pcopy, EPVXI_MAKE_NAME_SYMBOL);
 	if(status<0){
 		char 	*pold_make_name;
-		UTINY	type;
+		UINT8	type;
 
 		status = symFindByNameAndType(
 				epvxiSymbolTable, 
@@ -3567,7 +3567,7 @@ epuxiLookupMakeName(
 {
  	char 	name[EPVXI_MAX_SYMBOL_LENGTH];
 	char 	*pmake_name;
-	UTINY 	type;
+	UINT8 	type;
 	int	status;
 
  	if(!epvxiSymbolTable){   /* initialize table at 1st call */
@@ -3614,7 +3614,7 @@ epuxiLookupModelName(
 {
  	char 	name[EPVXI_MAX_SYMBOL_LENGTH];
 	char 	*pmodel_name;
-	UTINY 	type;
+	UINT8 	type;
 	int	status;
 
  	if(!epvxiSymbolTable){   /* initialize table at 1st call */

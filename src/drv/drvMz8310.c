@@ -67,8 +67,8 @@
 
 
 /* If any of the following does not exist replace it with #define <> NULL */
-long mz8310_io_report();
-long mz8310_init();
+static long mz8310_io_report();
+static long mz8310_init();
 
 struct {
 	long	number;
@@ -174,8 +174,8 @@ static struct mz8310_strap_info mz8310_strap[MZ8310CHANCNT] =
 
 /* forward reference. */
 
-void mz8310_reset();
-int mz8310_io_report_card(int card, int level);
+static void mz8310_reset();
+static int mz8310_io_report_card(int card, int level);
 
 
 long mz8310_io_report(level)

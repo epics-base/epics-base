@@ -122,28 +122,28 @@ static char SccsId[] = "$Id$\t$Date$";
 typedef long (*DRVSUPFUN) ();   /* ptr to driver support function*/
 
 
-void 	at5vxi_int_service(
+static void 	at5vxi_int_service(
 	int 	addr
 );
 
-void 	at5vxi_init_card(
+static void 	at5vxi_init_card(
 	unsigned 	addr
 );
 
-void	at5vxi_shutdown(
+static void	at5vxi_shutdown(
 	void
 );
 
-void 	at5vxi_shutdown_card(
+static void 	at5vxi_shutdown_card(
 	unsigned la
 );
 
-int 	at5vxi_report_timing(
+static int 	at5vxi_report_timing(
 	unsigned card,
 	unsigned channel
 );
 
-void 	at5vxi_stat(
+static void 	at5vxi_stat(
 	unsigned	card,
 	int		level
 );
@@ -151,7 +151,7 @@ void 	at5vxi_stat(
 /*
  * these should be in a header file
  */
-long	at5vxi_init(
+static long	at5vxi_init(
 	void
 );
 

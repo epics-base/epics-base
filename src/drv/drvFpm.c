@@ -94,8 +94,8 @@ static char *sccsId = "$Id$\t$Date$";
 #include <dbDefs.h>
 #include <drvSup.h>
 
-long report();
-long init();
+static long report();
+static long init();
 struct {
         long    number;
         DRVSUPFUN       report;
@@ -165,13 +165,11 @@ struct fpm_rec
 	unsigned int int_num;		/* interrupt number */
 	};
 
-LOCAL
-struct fpm_rec *fpm;		/* fast protect control structure */
+static struct fpm_rec *fpm;		/* fast protect control structure */
 
-LOCAL
-int fpm_num;				/* # cards found - 1 */
+static int fpm_num;				/* # cards found - 1 */
 
-void 	fpm_reboot();
+static void 	fpm_reboot();
 
 /*
  * fpm_int

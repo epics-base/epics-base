@@ -154,7 +154,7 @@ bb910_driver(card,mask,prval)
 {
 	register unsigned int	work;
 
-	if (card < 0 || !pbi_bb910s[card])
+	if (!pbi_bb910s[card])
        		return (-1);
 
         /* read */

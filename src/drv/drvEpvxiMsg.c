@@ -98,20 +98,20 @@ char	vxiMsgSignalInit;
 /*
  * local functions
  */
-void 	set_la(
+void 	static set_la(
 	int	la,
 	int	*pla
 );
 
-void 	vxiMsgInt(
+static void 	vxiMsgInt(
 	unsigned 	la
 );
 
-void 	signalHandler(
+static void 	signalHandler(
 	unsigned short	signal
 );
 
-int 	epvxiReadSlowHandshake(
+static int 	epvxiReadSlowHandshake(
 	unsigned        la,
 	char            *pbuf,
 	unsigned long	count,
@@ -119,7 +119,7 @@ int 	epvxiReadSlowHandshake(
 	unsigned long	option
 );
 
-int 	epvxiReadFastHandshake(
+static int 	epvxiReadFastHandshake(
 	unsigned	la,
 	char		*pbuf,
 	unsigned long	count,
@@ -127,39 +127,39 @@ int 	epvxiReadFastHandshake(
 	unsigned long	option
 );
 
-int 	vxiMsgClose(
+static int 	vxiMsgClose(
 	unsigned        la
 );
 
-int 	vxiMsgOpen(
+static int 	vxiMsgOpen(
 	unsigned	la
 );
 
-void	vxiMsgSignalSetup(
+static void	vxiMsgSignalSetup(
 	void
 );
 
-void	vxiCPU030MsgSignalSetup(
+static void	vxiCPU030MsgSignalSetup(
 	void
 );
 
-void	vxiHP1404MsgSignalSetup(
+static void	vxiHP1404MsgSignalSetup(
 	void
 );
 
-int 	vxiAttemptAsyncModeControl(
+static int 	vxiAttemptAsyncModeControl(
 	unsigned	la,
 	unsigned long	cmd
 );
 
-int 	vxiMsgSync(
+static int 	vxiMsgSync(
 	unsigned	la,
 	unsigned	resp_mask,
 	unsigned	resp_state,
 	int		override_err
 );
 
-int 	fetch_protocol_error(
+static int 	fetch_protocol_error(
 	unsigned	la
 );
 
@@ -167,15 +167,15 @@ int 	fetch_protocol_error(
 /*
  * should be in a header
  */
-int	vxi_msg_test(
+static int	vxi_msg_test(
 	unsigned	la
 );
 
-int	vxi_msg_print_id(
+static int	vxi_msg_print_id(
 	unsigned	la
 );
 
-int 	vxi_msg_test_protocol_error(
+static int 	vxi_msg_test_protocol_error(
 	unsigned	la
 );
 

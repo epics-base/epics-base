@@ -57,7 +57,7 @@ static char *sccsId = "$Id$\t$Date$";
 #include <dbScan.h>
 #endif
 
-long init();
+static long init();
 
 struct {
         long    number;
@@ -97,12 +97,11 @@ struct hpe1368a_config{
 
 #define HPE1368A_INT_LEVEL	1	
 
-LOCAL
-int hpe1368aDriverId;
+static int hpe1368aDriverId;
 
-void hpe1368a_int_service();
-void hpe1368a_init_card();
-void hpe1368a_stat();
+static void hpe1368a_int_service();
+static void hpe1368a_init_card();
+static void hpe1368a_stat();
 
 
 /*
@@ -187,7 +186,7 @@ unsigned la;
 #endif
 
         r0 = intConnect(
-		(unsigned char) INUM_TO_IVEC(la),
+		INUM_TO_IVEC(la),
 		hpe1368a_int_service,
 		(void *) la);
 	if(r0 == ERROR)

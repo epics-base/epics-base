@@ -204,8 +204,47 @@ extern "C" int epicsShareAPI ca_sg_array_put ( const CA_SYNC_GID gid, chtype typ
         return ECA_BADSYNCGRP;
     }
 
-    return pcasg->put ( pChan, type, 
-        static_cast < unsigned > ( count ), pValue );
+    try {
+        pcasg->put ( pChan, type, 
+            static_cast < unsigned > ( count ), pValue );
+        return ECA_NORMAL;
+    }
+    catch ( cacChannel::badString & )
+    {
+        return ECA_BADSTR;
+    }
+    catch ( cacChannel::badType & )
+    {
+        return ECA_BADTYPE;
+    }
+    catch ( cacChannel::outOfBounds & )
+    {
+        return ECA_BADCOUNT;
+    }
+    catch ( cacChannel::noWriteAccess & )
+    {
+        return ECA_NOWTACCESS;
+    }
+    catch ( cacChannel::notConnected & )
+    {
+        return ECA_DISCONN;
+    }
+    catch ( cacChannel::unsupportedByService & )
+    {
+        return ECA_NOTINSERVICE;
+    }
+    catch ( cacChannel::requestTimedOut & )
+    {
+        return ECA_TIMEOUT;
+    }
+    catch ( std::bad_alloc & )
+    {
+        return ECA_ALLOCMEM;
+    }
+    catch ( ... )
+    {
+        return ECA_INTERNAL;
+    }
 }
 
 /*
@@ -228,6 +267,41 @@ extern "C" int epicsShareAPI ca_sg_array_get ( const CA_SYNC_GID gid, chtype typ
         return ECA_BADSYNCGRP;
     }
 
-    return pcasg->get ( pChan, type, 
-        static_cast < unsigned > ( count ), pValue );
+    try {
+        pcasg->get ( pChan, type, 
+            static_cast < unsigned > ( count ), pValue );
+        return ECA_NORMAL;
+    }
+    catch ( cacChannel::badString & )
+    {
+        return ECA_BADSTR;
+    }
+    catch ( cacChannel::badType & )
+    {
+        return ECA_BADTYPE;
+    }
+    catch ( cacChannel::outOfBounds & )
+    {
+        return ECA_BADCOUNT;
+    }
+    catch ( cacChannel::noReadAccess & )
+    {
+        return ECA_NORDACCESS;
+    }
+    catch ( cacChannel::notConnected & )
+    {
+        return ECA_DISCONN;
+    }
+    catch ( cacChannel::unsupportedByService & )
+    {
+        return ECA_NOTINSERVICE;
+    }
+    catch ( std::bad_alloc & )
+    {
+        return ECA_ALLOCMEM;
+    }
+    catch ( ... )
+    {
+        return ECA_INTERNAL;
+    }
 }

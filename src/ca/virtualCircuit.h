@@ -23,7 +23,7 @@
 #include "epicsTimer.h"
 #include "epicsMemory.h"
 #include "ipAddrToAsciiAsynchronous.h"
-
+#include "caServerID.h"
 #include "comBuf.h"
 #include "netiiu.h"
 
@@ -210,12 +210,13 @@ struct  caHdrLargeArray {
 
 class tcpiiu : 
         public netiiu, public tsDLNode < tcpiiu >,
+        public tsSLNode < tcpiiu >, public caServerID, 
         private wireSendAdapter, private wireRecvAdapter {
 public:
     tcpiiu ( cac &cac, double connectionTimeout, 
         epicsTimerQueue &timerQueue, const osiSockAddr &addrIn, 
-        unsigned minorVersion, class bhe &bhe, 
-        ipAddrToAsciiEngine & engineIn );
+        unsigned minorVersion, ipAddrToAsciiEngine & engineIn,
+        cacChannel::priLev priorityIn );
     ~tcpiiu ();
     void connect ();
     void destroy ();
@@ -242,8 +243,7 @@ public:
     const char * pHostName () const; // deprecated - please do not use
     bool isVirtaulCircuit ( const char *pChannelName, const osiSockAddr &addr ) const;
     bool alive () const;
-    double beaconPeriod () const;
-    bhe & getBHE () const;
+    osiSockAddr getNetworkAddress () const;
 
 private:
     tcpRecvWatchdog recvDog;
@@ -251,12 +251,10 @@ private:
     comQueSend sendQue;
     comQueRecv recvQue;
     caHdrLargeArray curMsg;
-    osiSockAddr addr;
     arrayElementCount curDataMax;
     arrayElementCount curDataBytes;
     epics_auto_ptr < hostNameCache > pHostNameCache;
-    class bhe & BHE;
-    char *pCurData;
+    char * pCurData;
     unsigned minorProtocolVersion;
     iiu_conn_state state;
     epicsEvent sendThreadFlushEvent;
@@ -470,11 +468,6 @@ inline bool tcpiiu::alive () const
     else {
         return false;
     }
-}
-
-inline bhe & tcpiiu::getBHE () const
-{
-    return this->BHE;
 }
 
 inline void tcpiiu::beaconAnomalyNotify ()

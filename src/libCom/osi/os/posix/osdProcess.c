@@ -68,7 +68,9 @@ epicsShareFunc osiGetUserNameReturn epicsShareAPI osiGetUserName (char *pBuf, un
 static int maxPosixFD ( )
 {
 	int max;
+#       if ! defined (OPEN_MAX)
 	static const int bestGuess = 1024;
+#       endif
 
 #	if defined (_SC_OPEN_MAX) /* posix */
 		max = sysconf (_SC_OPEN_MAX);

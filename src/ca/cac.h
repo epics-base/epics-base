@@ -160,9 +160,9 @@ private:
     epicsTime               programBeginTime;
     double                  connTMO;
     mutable epicsMutex      mutex; 
+    epicsMutex              preemptiveCallbackLock; 
     epicsEvent              notifyCompletionEvent;
     epicsEvent              recvProcessActivityEvent;
-    epicsEvent              recvProcessCompletion;
     epicsEvent              recvProcessThreadExit;
     epicsEvent              ioDone;
     epicsTimerQueueActive   *pTimerQueue;
@@ -180,12 +180,10 @@ private:
     unsigned                threadsBlockingOnNotifyCompletion;
     unsigned                maxRecvBytesTCP;
     unsigned                recvProcessEnableRefCount;
-    unsigned                recvProcessCompletionNBlockers;
     unsigned                pndRecvCnt;
     unsigned                readSeq;
     bool                    enablePreemptiveCallback;
     bool                    ioInProgress;
-    bool                    recvProcessInProgress;
     bool                    recvProcessThreadExitRequest;
 
     void flushRequestPrivate ();

@@ -48,6 +48,7 @@
  * .15  02-28-92	jba	ANSI C changes
  * .16  07-15-92        jba     changed VALID_ALARM to INVALID alarm
  * .17  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
+ * .18  10-10-92        jba     replaced get of trdl from torg code with recGblGetLinkValue call
  */
 
 #include	<vxWorks.h>
@@ -273,22 +274,11 @@ struct timerRecord	*ptimer;
 	if (ptimer->torg.type == DB_LINK) {
 		options=0;
 		nRequest=1;
-		status = dbGetLink(&(ptimer->torg.value.db_link),(struct dbCommon *)ptimer,DBR_FLOAT,
-                &(ptimer->trdl),&options,&nRequest);
-                if(status!=0){
-                       recGblSetSevr(ptimer,LINK_ALARM,INVALID_ALARM);
-                       return;
-                }
+		status=recGblGetLinkValue(&(ptimer->torg),(void *)ptimer,DBR_FLOAT,
+			&(ptimer->trdl),&options,&nRequest);
+		if (!RTN_SUCCESS(status)) return;
         }
-	if (ptimer->torg.type == CA_LINK) 
-	{
-	    status = dbCaGetLink(&(ptimer->torg));
-	    if(status!=0)
-	    {
-	       recGblSetSevr(ptimer,LINK_ALARM,INVALID_ALARM);
-	       return;
-	    } /* endif */
-        } /* endif */
+
 	if (ptimer->out.type != VME_IO) {
                 recGblSetSevr(ptimer,WRITE_ALARM,INVALID_ALARM);
 		return;

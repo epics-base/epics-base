@@ -13,6 +13,9 @@
 
 /*
  * $Log$
+ * Revision 1.3  2002/04/08 15:05:35  mrk
+ * forgot to initialize this
+ *
  * Revision 1.2  2001/09/06 19:09:27  mrk
  * use EPICS_TIMEZONE instead of EPICS_TS_MIN_WEST
  *
@@ -516,14 +519,17 @@ the IOC vxWorks clock may not be in sync with time stamps if
     default TSgetTime() in use and master failure is detected */
     if(!TSinitialized) TSinit();
     
+    if(event_number<epicsTimeEventBestTime) return(0);
     switch(TSdata.type)
     {
     case TS_async_master:
     case TS_async_slave:
-        if(event_number<=0)
+        if(event_number==epicsTimeEventCurrentTime
+        || event_number==epicsTimeEventBestTime) {
             *sp = TSdata.event_table[TSdata.sync_event];
-        else
+        } else {
             return TSuserGet(event_number,sp);
+        }
         break;
     case TS_direct_slave:
     case TS_direct_master:
@@ -533,14 +539,14 @@ the IOC vxWorks clock may not be in sync with time stamps if
     case TS_sync_master:
         switch(event_number)
         {
-        case 0:
+        case epicsTimeEventCurrentTime:
             if(TSgoodTimeStamps==0)
             {
                 /* one tick watch dog maintains */
                 *sp = TSdata.event_table[0];
                 break;
             }
-        case -1:
+        case epicsTimeEventBestTime:
             {
                 struct timespec ts;
                 unsigned long ticks;
@@ -573,10 +579,12 @@ the IOC vxWorks clock may not be in sync with time stamps if
         }
         break;
         default:
-            if(event_number==0)
+            if(event_number==epicsTimeEventCurrentTime
+            || event_number==epicsTimeEventBestTime) {
                 *sp = TSdata.event_table[TSdata.sync_event];
-            else
+            } else {
                 *sp = TSdata.event_table[event_number];
+            }
     }
     return 0;
 }
@@ -585,7 +593,7 @@ the IOC vxWorks clock may not be in sync with time stamps if
 /*	
 TSinit() - initialize the driver, determine mode.
 */
-static int getEvent(TS_STAMP *pDest, unsigned eventNumber)
+static int getEvent(TS_STAMP *pDest, int eventNumber)
 {
     return(TSgetTimeStamp(eventNumber,(struct timespec*)pDest));
 }

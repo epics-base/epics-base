@@ -40,7 +40,6 @@
 #include "shareLib.h"
 #include "epicsTypes.h"
 #include "tsStamp.h"
-#include "epicsAssert.h"
 #include "locationException.h"
 
 struct timespec; // POSIX real time 

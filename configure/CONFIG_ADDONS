@@ -23,6 +23,19 @@
 #		USR_CFLAGS_sun4 = -nil-
 #		USR_CFLAGS_DEFAULT = <defines for most systems, not sun4>
 #
+#	Additional target architecture, T_A, Rules for USR_CFLAGS, USR_CXXFLAGS,
+#	and USR_CPPFLAGS which are applied before the above os_class Rules:
+#	1) USR_CFLAGS_$(OS_CLASS) is used
+#	2) if there is a special $(USR_CFLAGS_$(T_A)), it's
+#	   appended to 1)
+#	3) if there is no special defined, but a generic USR_CFLAGS_$(OS_CLASS)_DEFAULT,
+#	   this one is appended
+#	4) if you have the special case that your $(USR_CFLAGS_$(T_A)) is
+#	   empty but you don't want 3), you have to define it as '-nil-', e.g.:
+#		USR_CFLAGS_vxWorks = <defines for all OS_CLASS=vxWorks target systems>
+#		USR_CFLAGS_vxWorks-68040 = -nil-
+#		USR_CFLAGS_vxWorks_DEFAULT = <defines for most vxWorks systems, not 68040>
+#
 #	These rules apply to these Makefile-variables:
 #	USR_CFLAGS	C flags
 #	USR_CXXFLAGS	C++ flags
@@ -46,6 +59,14 @@
 #	The INC source files cannot be created by the build.
 #
 
+ifneq ($(strip $(USR_CFLAGS_$(T_A))),)
+USR_CFLAGS_$(OS_CLASS)+=$(subst -nil-,,$(USR_CFLAGS_$(T_A)))
+else
+ifdef USR_CFLAGS_$(OS_CLASS)_DEFAULT
+USR_CFLAGS_$(OS_CLASS)+=$(USR_CFLAGS_$(OS_CLASS)_DEFAULT)
+endif
+endif
+
 ifneq ($(strip $(USR_CFLAGS_$(OS_CLASS))),)
 USR_CFLAGS+=$(subst -nil-,,$(USR_CFLAGS_$(OS_CLASS)))
 else
@@ -62,11 +83,27 @@ USR_INCLUDES+=$(USR_INCLUDES_DEFAULT)
 endif
 endif
 
+ifneq ($(strip $(USR_CXXFLAGS_$(T_A))),)
+USR_CXXFLAGS_$(OS_CLASS)+=$(subst -nil-,,$(USR_CXXFLAGS_$(T_A)))
+else
+ifdef USR_CXXFLAGS_$(OS_CLASS)_DEFAULT
+USR_CXXFLAGS_$(OS_CLASS)+=$(USR_CXXFLAGS_$(OS_CLASS)_DEFAULT)
+endif
+endif
+
 ifneq ($(strip $(USR_CXXFLAGS_$(OS_CLASS))),)
 USR_CXXFLAGS+=$(subst -nil-,,$(USR_CXXFLAGS_$(OS_CLASS)))
 else
 ifdef USR_CXXFLAGS_DEFAULT
 USR_CXXFLAGS+=$(USR_CXXFLAGS_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(USR_CPPFLAGS_$(T_A))),)
+USR_CPPFLAGS_$(OS_CLASS)+=$(subst -nil-,,$(USR_CPPFLAGS_$(T_A)))
+else
+ifdef USR_CPPFLAGS_$(OS_CLASS)_DEFAULT
+USR_CPPFLAGS_$(OS_CLASS)+=$(USR_CPPFLAGS_$(OS_CLASS)_DEFAULT)
 endif
 endif
 

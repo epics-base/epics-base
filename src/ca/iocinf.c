@@ -16,6 +16,7 @@
 /*	060591	joh	delinting					*/
 /*	060691	joh	removed 4 byte count from the beginning of	*/
 /*			each message					*/
+/*	071291	joh	no longer sends id at TCP connect		*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -354,37 +355,18 @@ struct ioc_in_use		*piiu;
 
       		piiu->max_msg = MAX_TCP;
 
-		/*
-		 * place the broadcast addr/port in the stream so the ioc
-		 * will know where this is coming from.
+     	 	/*	
+		 * Set non blocking IO for UNIX 
+		 * to prevent dead locks	
 		 */
-
-      		i = sizeof(saddr);
-      		status = getsockname(
-				iiu[BROADCAST_IIU].sock_chan, 
-				&saddr,
-				&i);
-      		if(status == ERROR){
-			printf("alloc_ioc: cant get my name %d\n",MYERRNO);
-			abort();
-      		}
-
-      		saddr.sin_addr.s_addr = 
-			(local_addr(iiu[BROADCAST_IIU].sock_chan))->sin_addr.s_addr;
-      		status = send(	piiu->sock_chan,
-				&saddr,
-				sizeof(saddr),
-				0);
-
-     	 	/*	Set non blocking IO for UNIX to prevent dead locks	*/
 #ifdef UNIX
         	status = socket_ioctl(
 				piiu->sock_chan,
 				FIONBIO,
 				&true);
 #endif
-
       		break;
+
     	case	IPPROTO_UDP:
       		/* 	allocate a socket			*/
       		sock = socket(	AF_INET,	/* domain	*/
@@ -399,7 +381,12 @@ struct ioc_in_use		*piiu;
 		/*
 		 * The following only needed on BSD 4.3 machines
 		 */
-      		status = setsockopt(sock,SOL_SOCKET,SO_BROADCAST,&true,sizeof(true));
+      		status = setsockopt(
+				sock,
+				SOL_SOCKET,
+				SO_BROADCAST,
+				&true,
+				sizeof(true));
       		if(status<0){
         		printf("%d\n",MYERRNO);
         		status = socket_close(sock);
@@ -496,7 +483,10 @@ struct ioc_in_use		*piiu;
 			ca_signal(ECA_INTERNAL,NULL);
 
       		strcpy(name,"RD ");                   
-      		strncat(name, taskName(VXTHISTASKID), sizeof(name)-strlen(name)-1); 
+      		strncat(
+			name, 
+			taskName(VXTHISTASKID), 
+			sizeof(name)-strlen(name)-1); 
 
       		status = taskSpawn(
 				name,

@@ -1,5 +1,5 @@
 /*	@(#)caservertask.c
- *   $Id$
+ *   @(#)caservertask.c	1.2	6/27/91
  *	Author:	Jeffrey O. Hill
  *		hill@luke.lanl.gov
  *		(505) 665 1831
@@ -29,6 +29,8 @@
  * 	Modification Log:
  * 	-----------------
  *	.01 joh	030891	now saves old client structure for later reuse
+ *	.02 joh	071591	print the delay from the last interaction in
+ *			client_stat().
  */
 
 #include <vxWorks.h>
@@ -222,42 +224,75 @@ register struct client *client;
 STATUS
 client_stat()
 {
-	FAST struct client *client;
-	NODE           *addr;
-	struct sockaddr_in *psaddr;
+	struct client *client;
 
 
 	LOCK_CLIENTQ;
 	client = (struct client *) lstNext(&clientQ);
 	while (client) {
-		char	*pproto;
 
-		if(client->proto == IPPROTO_UDP){
-			pproto = "UDP";
-		}
-		else if(client->proto == IPPROTO_TCP){
-			pproto = "TCP";
-		}
-		else{
-			pproto = "UKN";
-		}
-
-		printf("Socket %d Protocol %s\n", client->sock, pproto);
-		psaddr = &client->addr;
-		printf("\tRemote address %u.%u.%u.%u Remote port %d\n",
-		       (psaddr->sin_addr.s_addr & 0xff000000) >> 24,
-		       (psaddr->sin_addr.s_addr & 0x00ff0000) >> 16,
-		       (psaddr->sin_addr.s_addr & 0x0000ff00) >> 8,
-		       (psaddr->sin_addr.s_addr & 0x000000ff),
-		       psaddr->sin_port);
-		printf("\tChannel count %d\n", lstCount(&client->addrq));
-		addr = (NODE *) & client->addrq;
-		while (addr = lstNext(addr))
-			printf("\t%s ", ((struct db_addr *) (addr + 1))->precord);
-		printf("\n");
+		log_one_client(client);
 
 		client = (struct client *) lstNext(client);
 	}
 	UNLOCK_CLIENTQ;
+
+	if(prsrv_cast_client)
+		log_one_client(prsrv_cast_client);
+	
 	return lstCount(&clientQ);
+}
+
+
+
+/*
+ *	log_one_client()
+ *
+ */
+static void 
+log_one_client(client)
+struct client *client;
+{
+	NODE          		*addr;
+	struct sockaddr_in 	*psaddr;
+	char			*pproto;
+	unsigned long 		current;
+	unsigned long 		delay;
+	
+
+	if(client->proto == IPPROTO_UDP){
+		pproto = "UDP";
+	}
+	else if(client->proto == IPPROTO_TCP){
+		pproto = "TCP";
+	}
+	else{
+		pproto = "UKN";
+	}
+
+	current = tickGet();
+	if (current >= client->ticks_at_last_io) {
+		delay = current - client->ticks_at_last_io;
+	} 
+	else {
+		delay = current + (~0L - client->ticks_at_last_io);
+	}
+
+	printf(	"Socket %d, Protocol %s, secs since last interaction %d\n", 
+		client->sock, 
+		pproto, 
+		delay/sysClkRateGet());
+
+	psaddr = &client->addr;
+	printf("\tRemote address %u.%u.%u.%u Remote port %d\n",
+	       (psaddr->sin_addr.s_addr & 0xff000000) >> 24,
+	       (psaddr->sin_addr.s_addr & 0x00ff0000) >> 16,
+	       (psaddr->sin_addr.s_addr & 0x0000ff00) >> 8,
+	       (psaddr->sin_addr.s_addr & 0x000000ff),
+	       psaddr->sin_port);
+	printf("\tChannel count %d\n", lstCount(&client->addrq));
+	addr = (NODE *) & client->addrq;
+	while (addr = lstNext(addr))
+		printf("\t%s ", ((struct db_addr *) (addr + 1))->precord);
+	printf("\n");
 }

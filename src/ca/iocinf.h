@@ -242,4 +242,5 @@ int		ca_repeater_task();
 void		close_ioc();
 void		recv_msg_select();
 void		mark_server_available();
+void		issue_claim_channel();
 #endif

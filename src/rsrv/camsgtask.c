@@ -1,5 +1,5 @@
 /*	@(#)camsgtask.c
- *   $Id$
+ *   @(#)camsgtask.c	1.2	6/27/91
  *	Author:	Jeffrey O. Hill
  *		hill@luke.lanl.gov
  *		(505) 665 1831
@@ -32,6 +32,8 @@
  *	.02 joh 041089 	added new event passing
  *	.03 joh 060791	camsgtask() now returns info about 
  *			partial messages
+ *	.04 joh	071191	changes to recover from UDP port reuse
+ *			by rebooted clients
  */
 
 #include <vxWorks.h>
@@ -41,6 +43,7 @@
 #include <ioLib.h>
 #include <in.h>
 #include <tcp.h>
+#include <errno.h>
 #include <task_params.h>
 #include <db_access.h>
 #include <server.h>
@@ -58,7 +61,6 @@ FAST int 		sock;
   	int 			nchars;
   	FAST int		status;
   	FAST struct client 	*client = NULL;
-  	struct sockaddr_in	addr;
   	int			i;
     	int 			true = TRUE;
 
@@ -96,57 +98,41 @@ FAST int 		sock;
       		return;
     	}
 
-  	nchars = recv(	sock,
- 			&addr, 
-			sizeof(addr), 
-			0);
-  	if ( nchars <  sizeof(addr) ){
-    		logMsg("camsgtask: Protocol error\n");
-    		close(sock);
-    		return;
-  	}
-
-  	if(MPDEBUG==2){
-    		logMsg(	"camsgtask: Recieved connection request\n");
-   		logMsg("from addr %x, udp port %x \n", 
-			addr.sin_addr, 
-			addr.sin_port);
-  	}
 
 	/*
-	 * NOTE: The client structure used here does not have to be locked
-	 * since this thread does not traverse the addr que or the client
-	 * que. This thread is deleted prior to deletion of this client by
-	 * terminate_one_client().
-	 * 
-	 * wait a reasonable length of time in case the cast server is busy
+ 	 * performed in two steps purely for 
+	 * historical reasons
 	 */
-	for (i = 0; i < 10; i++) {
-		LOCK_CLIENTQ;
-		client = existing_client(&addr);
-		UNLOCK_CLIENTQ;
-	
-		if (client)
-			break;
-	
-		taskDelay(sysClkRateGet() * 5);	/* 5 sec */
-	}
-
+	client = (struct client *) create_udp_client(NULL);
+	udp_to_tcp(client, sock);
 	if (!client) {
-		logMsg("camsgtask: Unknown client (protocol error)\n");
+		logMsg("camsgtask: client init failed\n");
 		close(sock);
 		return;
 	}
 
-	/*
-	 * convert connection to TCP
-	 */
-	LOCK_SEND(client);
-	udp_to_tcp(client, sock);
-	UNLOCK_SEND(client);
-	
-	client->tid = taskIdSelf();
-	
+	i = sizeof(client->addr);
+	status = getpeername(
+			sock,
+ 			&client->addr, 
+			&i); 
+    	if(status == ERROR){
+      		logMsg("camsgtask: peer address fetch failed\n");
+      		close(sock);
+      		return;
+    	}
+				
+  	if(MPDEBUG==2){
+    		logMsg(	"camsgtask: Recieved connection request\n");
+   		logMsg("from addr %x, udp port %x \n", 
+			client->addr.sin_addr, 
+			client->addr.sin_port);
+  	}
+
+	LOCK_CLIENTQ;
+	lstAdd(&clientQ, client);
+	UNLOCK_CLIENTQ;
+
 	client->evuser = (struct event_user *) db_init_events();
 	if (!client->evuser) {
 		logMsg("camsgtask: unable to init the event facility\n");
@@ -173,14 +159,29 @@ FAST int 		sock;
 				&client->recv.buf[client->recv.cnt], 
 				sizeof(client->recv.buf)-client->recv.cnt, 
 				0);
-		if(nchars<=0){
-			if(MPDEBUG>0){
-				logMsg("CA server: msg recv error\n");
-				printErrno(errnoGet(taskIdSelf()));
+		if (nchars==0){
+			logMsg("camsgtask: nill message disconnect\n");
+			break;
+		}
+		else if(nchars<=0){
+			long	anerrno;
+
+			anerrno = errnoGet(taskIdSelf());
+
+			/*
+			 * normal conn lost conditions
+			 */
+			if(anerrno == ECONNABORTED || anerrno == ECONNRESET){
+				break;
 			}
+
+			logMsg("camsgtask: Exiting after msg recv error\n");
+			printErrno(errnoGet(taskIdSelf()));
+
 			break;
 		}
 
+		client->ticks_at_last_io = tickGet();
 		client->recv.cnt += nchars;
 		status = camessage(client, &client->recv);
 		if(status == OK){
@@ -220,10 +221,11 @@ FAST int 		sock;
 		status = ioctl(sock, FIONREAD, &nchars);
 		if (status == ERROR) {
 			printErrno(errnoGet(taskIdSelf()));
-			taskSuspend(0);
-		}
-		if (nchars == 0)
 			cas_send_msg(client, TRUE);
+		}
+		if (nchars == 0){
+			cas_send_msg(client, TRUE);
+		}
 	
 		/*
 		 * dont hang around if there are no 
@@ -236,39 +238,3 @@ FAST int 		sock;
 	free_client(client);
 }
 
-
-/*
- *
- *	read_entire_msg()
- *
- *
- */
-static int read_entire_msg(sockfd, mp, tot)
-FAST sockfd;			/* socket file descriptor */
-FAST unsigned char *mp;		/* where to read pointer */
-FAST unsigned int tot;		/* size of entire message */
-{
-	FAST unsigned int 	nchars;
-	FAST unsigned int 	total = 0;
-	int			status;
-
-	while(TRUE) {
-		nchars = recv(	sockfd, 
-				mp + total,
-				tot - total, 
-				0);
-		if(nchars <= 0){
-			if(MPDEBUG == 2) {
-				logMsg("rsrv: msg recv error\n");
-				printErrno(errnoGet(taskIdSelf()));
-			}
-			return ERROR;
-		}
-
-		total += nchars;
-		if(total == tot)
-			return total;
-		else if(total > tot)
-			return ERROR;
-	}
-}

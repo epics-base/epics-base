@@ -1,5 +1,5 @@
 /*	@(#)cast_server.c
- *   $Id$
+ *   @(#)cast_server.c	1.4	6/27/91
  *	Author:	Jeffrey O. Hill
  *		hill@luke.lanl.gov
  *		(505) 665 1831
@@ -32,6 +32,8 @@
  *	.01 joh	030891	now reuses old client structure
  *	.02 joh	032091	allways flushes if the client changes and the old
  *			client has a TCP connection.(bug introduced by .00)
+ *	.03 joh 071291	changes to avoid confusion when a rebooted
+ *			client uses the same port number
  *
  *	Improvements
  *	------------
@@ -54,6 +56,9 @@
 #include <server.h>
 
 	
+void 		clean_addrq();
+
+
 
 /*
  * CAST_SERVER
@@ -68,18 +73,11 @@ cast_server()
   	FAST int			status;
   	int				count;
   	FAST struct client		*client = NULL;
-  	FAST struct client		*true_client = NULL;
-  	FAST struct client		*temp_client;
-  	struct sockaddr_in		recv_addr;
-  	int  				recv_addr_size = sizeof(recv_addr);
+  	struct sockaddr_in		last_recv_addr;
+  	int  				recv_addr_size;
   	unsigned			nchars;
-# 	define				TIMEOUT	60 /* sec */
-  	unsigned long			timeout = TIMEOUT*sysClkRateGet();
- 	static struct message_buffer  	udp_msg;
 
-  	struct client 			*existing_client();
-  	struct client 			*create_udp_client();
-  	void		 		rsrv_online_notify_task();
+  	recv_addr_size = sizeof(prsrv_cast_client->addr);
 
   	if( IOC_cast_sock!=0 && IOC_cast_sock!=ERROR )
     		if( (status = close(IOC_cast_sock)) == ERROR )
@@ -114,8 +112,6 @@ cast_server()
   	}
 
 
-  	bfill(&udp_msg, sizeof(udp_msg), NULL);
-
   	/* tell clients we are on line again */
   	status = taskSpawn(
 		CA_ONLINE_NAME,
@@ -129,27 +125,30 @@ cast_server()
   	}
 
 
+	/*
+	 * setup new client structure but reuse old structure if
+	 * possible
+	 *
+	 */
+	while(TRUE){
+       	 	prsrv_cast_client = create_udp_client(IOC_cast_sock);
+      		if(prsrv_cast_client){
+       	 		break;
+      		}
+		taskDelay(sysClkRateGet()*60*5);
+    	}
+
+
   	while(TRUE){
 
-		/*
-		 * setup new client structure but reuse old structure if
-		 * possible
-		 *
-		 */
-		if(!client){
-       	 		client = create_udp_client(IOC_cast_sock);
-      			if(!client){
-				taskDelay(sysClkRateGet()*60*5);
-       	 			continue;
-      			}
-    		}
+  		last_recv_addr = prsrv_cast_client->addr;
 
     		status = recvfrom(
 			IOC_cast_sock,
-			udp_msg.buf,
-			sizeof(udp_msg.buf),
+			prsrv_cast_client->recv.buf,
+			sizeof(prsrv_cast_client->recv.buf),
 			NULL,
-			&recv_addr, 
+			&prsrv_cast_client->addr, 
 			&recv_addr_size);
     		if(status<0){
       			logMsg("Cast_server: UDP recv error\n");
@@ -157,8 +156,18 @@ cast_server()
      	 		taskSuspend(0);
     		}
 
-		udp_msg.cnt = status;
-		udp_msg.stk = 0;
+		prsrv_cast_client->recv.cnt = status;
+		prsrv_cast_client->recv.stk = 0;
+
+    		if(MPDEBUG==2){
+       			logMsg(	"cast_server(): msg of %d bytes\n", 
+				prsrv_cast_client->recv.cnt);
+       			logMsg(	"from addr %x, port %x \n", 
+				prsrv_cast_client->addr.sin_addr, 
+				prsrv_cast_client->addr.sin_port);
+    		}
+
+		prsrv_cast_client->ticks_at_last_io = tickGet();
 
 		/*
 		 * If we are talking to a new client flush the old one 
@@ -169,59 +178,41 @@ cast_server()
 		 * an existing TCP connection to avoid a TCP
 		 * pend which could lock up the cast server).
 		 */
-		if(	client->valid_addr &&
-			(client->addr.sin_addr.s_addr != 
-				recv_addr.sin_addr.s_addr ||
-			client->addr.sin_port != recv_addr.sin_port)){
-			cas_send_msg(client, TRUE);
+		status = bcmp(
+				&prsrv_cast_client->addr, 
+				&last_recv_addr, 
+				recv_addr_size);
+		if(status){
+			cas_send_msg(prsrv_cast_client, TRUE);
 		}
-      		client->addr = recv_addr;
-		client->valid_addr = TRUE;
 
-    		if(MPDEBUG==2){
-       			logMsg(	"cast_server(): msg of %d bytes\n", 
-				status);
-       			logMsg(	"from addr %x, port %x \n", 
-				recv_addr.sin_addr, 
-				recv_addr.sin_port);
-    		}
 
     		if(MPDEBUG==3)
-      			count = client->addrq.count;
+      			count = prsrv_cast_client->addrq.count;
 
 		/*
 		 * check for existing client occurs after
 		 * message process so that this thread never
 		 * blocks sending TCP
 		 */
-    		status = camessage(client, &udp_msg);
+    		status = camessage(
+				prsrv_cast_client, 
+				&prsrv_cast_client->recv);
 		if(status == OK){
-			if(udp_msg.cnt != udp_msg.stk){
-				printf(	"CA UDP Message OF %d\n",
-					udp_msg.cnt-udp_msg.stk);
+			if(prsrv_cast_client->recv.cnt != 
+				prsrv_cast_client->recv.stk){
+
+				printf(	"leftover CA UDP Message OF %d\n",
+					prsrv_cast_client->recv.cnt-
+						prsrv_cast_client->recv.stk);
 			}
 		}
 
-		if(client->addrq.count){
-    			LOCK_CLIENTQ;
-
-    			true_client = existing_client(&client->addr);
-			if(true_client == NULL){
-      				client->ticks_at_creation = tickGet();
-      				lstAdd(&clientQ, client);
-				client = NULL;
-			}else{
-				lstConcat(
-					&true_client->addrq,
-					&client->addrq);
-			}
-
-    			UNLOCK_CLIENTQ;
-
+		if(prsrv_cast_client->addrq.count){
       			if(MPDEBUG==3){
         			logMsg(	"Fnd %d name matches (%d tot)\n",
-					client->addrq.count-count,
-					client->addrq.count);
+					prsrv_cast_client->addrq.count-count,
+					prsrv_cast_client->addrq.count);
 			}
 		}
 
@@ -235,27 +226,63 @@ cast_server()
  	   	}
 
     		if(nchars == 0){
-			if(client)
-				cas_send_msg(client, TRUE);
-
-			/*
-			 * catch any that have not been sent yet
-			 */
-    			LOCK_CLIENTQ;
-      			temp_client = (struct client *) &clientQ;
-      			while(temp_client = (struct client *) 
-					temp_client->node.next){
-				if(temp_client->proto == IPPROTO_UDP)
-          				cas_send_msg(temp_client, TRUE);
-      			}
-
-      			clean_clientq(timeout);
-    			UNLOCK_CLIENTQ;
+			cas_send_msg(prsrv_cast_client, TRUE);
+	      		clean_addrq(prsrv_cast_client);
     		}	
   	}
 }
 
+
+/*
+ * clean_addrq
+ *
+ * 
+ */
+#define		TIMEOUT	60 /* sec */
 
+static void 
+clean_addrq(pclient)
+struct client *pclient;
+{
+	struct channel_in_use	*pciu;
+	struct channel_in_use	*pnextciu;
+	FAST unsigned long 	current = tickGet();
+	unsigned long   	delay;
+	unsigned long   	maxdelay = 0;
+	unsigned		ndelete=0;
+  	unsigned long		timeout = TIMEOUT*sysClkRateGet();
+
+	current = tickGet();
+
+	pnextciu = (struct channel_in_use *) 
+			pclient->addrq.node.next;
+
+	while(pciu = pnextciu){
+		pnextciu = (struct channel_in_use *)pciu->node.next;
+
+		if (current >= pciu->ticks_at_creation) {
+			delay = current - pciu->ticks_at_creation;
+		} 
+		else {
+			delay = current + (~0L - pciu->ticks_at_creation);
+		}
+
+		if (delay > timeout) {
+			lstDelete(&pclient->addrq, pciu);
+        		FASTLOCK(&rsrv_free_addrq_lck);
+			lstAdd(&rsrv_free_addrq, pciu);
+       			FASTUNLOCK(&rsrv_free_addrq_lck);
+			ndelete++;
+			maxdelay = max(delay, maxdelay);
+		}
+	}
+
+	if(ndelete){
+		logMsg(	"%d CA channels have expired after %d sec\n",
+			ndelete,
+			maxdelay / sysClkRateGet());
+	}
+}
 
 
 /*
@@ -263,7 +290,8 @@ cast_server()
  *
  * 
  */
-struct client *create_udp_client(sock)
+struct client 
+*create_udp_client(sock)
 unsigned sock;
 {
   	struct client *client;
@@ -291,14 +319,14 @@ unsigned sock;
       	bfill(client, sizeof(*client), NULL);
 	*/     
       	lstInit(&client->addrq);
-      	client->tid = 0;
+  	bfill(&client->addr, sizeof(client->addr), 0);
+      	client->tid = taskIdSelf();
       	client->send.stk = 0;
       	client->send.cnt = 0;
       	client->recv.stk = 0;
       	client->recv.cnt = 0;
       	client->evuser = NULL;
       	client->eventsoff = FALSE;
-	client->valid_addr = FALSE;
 	client->disconnect = FALSE;	/* for TCP only */
 
       	client->proto = IPPROTO_UDP;
@@ -333,6 +361,7 @@ unsigned	sock;
   	client->send.maxstk 	= MAX_TCP;
   	client->recv.maxstk 	= MAX_TCP;
   	client->sock 		= sock;
+      	client->tid = 		taskIdSelf();
 
   	return OK;
 }

@@ -19,8 +19,11 @@
 /*			prior to connecting chan (setting the type).	*/
 /*	041591	joh	added call to channel exsits routine		*/
 /*	060491  joh	fixed structure pass for SPARC cc		*/
-/*	060691	jow	reworked to remove 4 byte count before each	*/
+/*	060691	joh	reworked to remove 4 byte count before each	*/
 /*			macro message					*/
+/*	071291	joh	now claiming channel in use block over TCP so	*/
+/*			problems with duplicate port assigned to	*/
+/*			client after reboot go away			*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -548,16 +551,26 @@ struct in_addr			*pnet_addr;
         chan->paddr = hdrptr->m_pciu;
 
         if(chan->iocix != newiocix){
-      		struct ioc_in_use	*chpiiu = &iiu[chan->iocix];
+      		struct ioc_in_use	*chpiiu;
+
 		/*
 		 * The address changed (or was found for the first time)
 		 */
 	  	if(chan->iocix != BROADCAST_IIU)
 	   		ca_signal(ECA_NEWADDR, chan+1);
+		chpiiu = &iiu[chan->iocix];
           	lstDelete(&chpiiu->chidlist, chan);
           	chan->iocix = newiocix;
           	lstAdd(&iiu[newiocix].chidlist, chan);
         }
+
+
+	/*
+	 * claim the resource in the IOC
+	 * over TCP so problems with duplicate UDP port
+	 * after reboot go away
+	 */
+	issue_claim_channel(&iiu[chan->iocix], chan);
 
 
 	/*

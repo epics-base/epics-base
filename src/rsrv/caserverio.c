@@ -1,5 +1,5 @@
 /*	@(#)caserverio.c
- *   $Id$
+ *   @(#)caserverio.c	1.2	6/27/91
  *	Author:	Jeffrey O. Hill
  *		hill@luke.lanl.gov
  *		(505) 665 1831
@@ -28,6 +28,7 @@
  *
  * 	Modification Log:
  * 	-----------------
+ *	.01 joh 071591	log time of last io in the client structure
  */
 
 #include <vxWorks.h>
@@ -84,6 +85,8 @@ int		lock_needed;
 		}
 
   		pclient->send.stk = 0;
+
+		pclient->ticks_at_last_io = tickGet();
 	}
 
 

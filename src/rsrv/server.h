@@ -31,6 +31,9 @@
  *	.01 joh 060691	removed 4 byte count from the beginning of
  *			of each message
  *	.02 joh 060791	moved send_msg stuff into caserverio.c
+ *	.03 joh 071291	moved time stamp from client to the
+ *			channel in use block
+ *	.04 joh 071591	added ticks at last io to the client structure
  *
  */
 #ifndef INCLfast_lockh
@@ -67,29 +70,30 @@ struct client{
   struct message_buffer		recv;
   struct sockaddr_in		addr;
   void				*evuser;
-  unsigned long			ticks_at_creation;	/* for UDP timeout */
   int				tid;
   char				eventsoff;
-  char				valid_addr;
   char				disconnect;	/* disconnect detected */
+  unsigned long			ticks_at_last_io; 
 };
 
 
 /*
-per channel structure (stored in addrq off of a client block)
-*/
+ * per channel structure 
+ * (stored in addrq off of a client block)
+ */
 struct channel_in_use{
   NODE			node;
   struct db_addr	addr;
   LIST			eventq;
   void			*chid;	/* the chid from the client saved here */
+  unsigned long		ticks_at_creation;	/* for UDP timeout */
 };
 
 
 /*
-Event block extension for channel access
-some things duplicated for speed
-*/
+ * Event block extension for channel access
+ * some things duplicated for speed
+ */
 struct event_ext{
 NODE				node;
 struct extmsg			msg;
@@ -121,6 +125,7 @@ GLBLTYPE LIST			rsrv_free_addrq;
 GLBLTYPE LIST			rsrv_free_eventq;
 GLBLTYPE FAST_LOCK		rsrv_free_addrq_lck;
 GLBLTYPE FAST_LOCK		rsrv_free_eventq_lck;
+GLBLTYPE struct client		*prsrv_cast_client;
 
 #define LOCK_SEND(CLIENT)\
 FASTLOCK(&(CLIENT)->send.lock);
@@ -153,3 +158,5 @@ void            req_server();
 void            cast_server();
 void		cas_send_msg();
 struct extmsg 	*cas_alloc_msg();
+void		rsrv_online_notify_task();
+struct client 	*create_udp_client();

@@ -9,7 +9,8 @@
  *
  *	.03 060391 joh	Bumped protocol version to 4 to support changes for
  *			SPARC alignment in db_access.h
- *				
+ *	
+ *	.04 071291 joh	New command added - claim channel in use block
  */
 
 #define __IOCMSG__
@@ -46,6 +47,7 @@
 #define IOC_READ_NOTIFY		15	/* add a one shot event */
 #define IOC_READ_BUILD		16	/* read accompanying a build */
 #define REPEATER_CONFIRM	17	/* registration confirmation */
+#define IOC_CLAIM_CIU		18	/* client claims resource in server */
 
 /*
  * for use with build and search and not_found (if search fails and

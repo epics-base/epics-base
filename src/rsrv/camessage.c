@@ -1,5 +1,5 @@
 /*	@(#)camessage.c
- *   $Id$
+ *   @(#)camessage.c	1.2	6/27/91
  *	Author:	Jeffrey O. Hill
  *		hill@luke.lanl.gov
  *		(505) 665 1831
@@ -32,6 +32,8 @@
  *			list is not searched.
  *	.02 joh	011091	added missing break to error message send 
  *			chix select switch
+ *	.03 joh	071291	now timestanmps channel in use block
+ *	.04 joh	071291	code for IOC_CLAIM_CIU command
  */
 
 #include <vxWorks.h>
@@ -250,6 +252,32 @@ camessage(client, recv)
 			break;
 		case IOC_READ_SYNC:
 			read_sync_reply(mp, client);
+			break;
+		case IOC_CLAIM_CIU:
+			/*
+			 * remove channel in use block from
+			 * the UDP client where it could time
+			 * out and place it on the client
+			 * who is claiming it
+			 */
+
+			/*
+			 * clients which dont claim their 
+			 * channel in use block prior to
+			 * timeout must reconnect
+			 */
+               		status = lstFind(
+					&prsrv_cast_client->addrq, 
+					mp->m_pciu);
+			if(status<0){
+       				free_client(client);
+				exit();
+			}
+
+			lstDelete(
+				&prsrv_cast_client->addrq, 
+				mp->m_pciu);
+			lstAdd(&client->addrq, mp->m_pciu);
 			break;
 		default:
 			log_header(mp, nmsg);
@@ -501,24 +529,28 @@ build_reply(mp, client)
 	FAST struct extmsg *mp;
 	struct client  *client;
 {
-	LIST           *addrq = &client->addrq;
-	FAST struct extmsg *search_reply;
-	FAST struct extmsg *get_reply;
-	FAST int        status;
-	struct db_addr  tmp_addr;
-	FAST struct channel_in_use *pchannel;
+	LIST           			*addrq = &client->addrq;
+	FAST struct extmsg 		*search_reply;
+	FAST struct extmsg 		*get_reply;
+	FAST int        		status;
+	struct db_addr  		tmp_addr;
+	FAST struct channel_in_use 	*pchannel;
 
 
 
 	/* Exit quickly if channel not on this node */
-	status = db_name_to_addr(mp->m_cmmd == IOC_BUILD ? mp + 2 : mp + 1, &tmp_addr);
+	status = db_name_to_addr(
+			mp->m_cmmd == IOC_BUILD ? mp + 2 : mp + 1, 
+			&tmp_addr);
 	if (status < 0) {
 		if (MPDEBUG == 1)
-			logMsg("Lookup for channel \"%s\" failed\n", mp + 1);
+			logMsg(	"Lookup for channel \"%s\" failed\n", 
+				mp + 1);
 		if (mp->m_type == DOREPLY)
 			search_fail_reply(mp, client);
 		return;
 	}
+
 	/* get block off free list if possible */
 	FASTLOCK(&rsrv_free_addrq_lck);
 	pchannel = (struct channel_in_use *) lstGet(&rsrv_free_addrq);
@@ -532,6 +564,7 @@ build_reply(mp, client)
 			return;
 		}
 	}
+	pchannel->ticks_at_creation = tickGet();
 	pchannel->addr = tmp_addr;
 	pchannel->chid = (void *) mp->m_pciu;
 	/* store the addr block in a Q so it can be deallocated */

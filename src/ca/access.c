@@ -30,6 +30,7 @@
 /*	060591	joh	delinting					*/
 /*	061391	joh	RISC alignment in outgoing messages		*/
 /*	070191	joh	allways use memcpy in ca_put			*/
+/*	071291	joh	added CLAIM_CIU message			*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -2231,6 +2232,25 @@ noop_msg(piiu)
 	mptr = CAC_ALLOC_MSG(piiu, 0);
 	*mptr = nullmsg;
 	mptr->m_cmmd = htons(IOC_NOOP);
+	CAC_ADD_MSG(piiu);
+}
+
+
+/*
+ * ISSUE_CLAIM_CHANNEL (lock must be on)
+ * 
+ */
+void
+issue_claim_channel(piiu, pchan)
+struct ioc_in_use	*piiu;
+chid 			pchan;
+{
+	struct extmsg  *mptr;
+
+	mptr = CAC_ALLOC_MSG(piiu, 0);
+	*mptr = nullmsg;
+	mptr->m_cmmd = htons(IOC_CLAIM_CIU);
+	mptr->m_pciu = pchan->paddr;
 	CAC_ADD_MSG(piiu);
 }
 

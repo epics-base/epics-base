@@ -65,6 +65,7 @@ static char *sccsID = "$Id$\t$Date$";
 #include	<logLib.h>
 #include 	<string.h>
 #include 	<stdioLib.h>
+#include	<stdlib.h>
 
 #include	<fast_lock.h>
 #define devLibGlobal
@@ -1231,3 +1232,74 @@ void			*pLocation
 	return SUCCESS;
 }
 
+/******************************************************************************
+ *
+ * The follwing may, or may not be present in the BSP for the CPU in use.
+ *
+ */
+void *sysA24Malloc(unsigned long size);
+STATUS sysA24Free(void *pBlock);
+
+/******************************************************************************
+ *
+ * Routines to use to allocate and free memory present in the A24 region.
+ *
+ ******************************************************************************/
+
+static void * (*A24MallocFunc)(size_t) = NULL;
+static void   (*A24FreeFunc)(void *)     = NULL;
+int devLibA24Debug = 0;		/* Debugging flag */
+
+void *devLibA24Calloc(size_t size)
+{
+  void *ret;
+
+  ret = devLibA24Malloc(size);
+
+  if (ret == NULL)
+    return (NULL);
+
+  memset(ret, 0x00, size);
+  return(ret);
+}
+
+void *devLibA24Malloc(size_t size)
+{
+  SYM_TYPE stype;
+  static int    UsingBSP = 0;
+  void		*ret;
+
+  if (devLibA24Debug)
+    printf("devLibA24Malloc(%d) entered\n", size);
+
+  if (A24MallocFunc == NULL)
+  {
+    /* See if the sysA24Malloc() function is present. */
+    if(symFindByName(sysSymTbl,"_sysA24Malloc", (char**)&A24MallocFunc,&stype)==ERROR)
+    { /* Could not find sysA24Malloc... use the malloc one and hope we are OK */
+      A24MallocFunc = malloc;
+      A24FreeFunc   = free;
+    }
+    else
+    {
+      if(symFindByName(sysSymTbl,"_sysA24Free", (char**)&A24FreeFunc, &stype) == ERROR)
+      { /* That's strange... we have malloc, but no free! */
+        A24MallocFunc = malloc;
+        A24FreeFunc   = free;
+      }
+      else
+	UsingBSP = 1;
+    }
+  }
+  ret = A24MallocFunc(size);
+
+  if ((ret == NULL) && (UsingBSP))
+    errMessage(S_dev_noMemory, "devLibA24Malloc ran out of A24 memory, try sysA24MapRam(size)");
+
+  return(ret);
+}
+
+void devLibA24Free(void *pBlock)
+{
+  A24FreeFunc(pBlock);
+}

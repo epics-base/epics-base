@@ -478,7 +478,6 @@ void resTable<T,ID>::traverse (pSetMFArg(pCB)) const
     pList = this->pTable;
     while ( pList < &this->pTable[this->hashIdMask+1] ) {
         tsSLIter<T> pItem ( pList->first () );
-
         while ( pItem.valid () ) {
             T * p = & ( *pItem );
             (p->*pCB) ();
@@ -594,7 +593,7 @@ resTable<T,ID>::~resTable()
 //
 template <class T, class ID>
 inline resTableIter<T,ID>::resTableIter (const resTable<T,ID> &tableIn) : 
-    iter (tableIn.pTable[0]), index (1), table (tableIn) {} 
+    iter ( tableIn.pTable[0].first () ), index (1), table ( tableIn ) {} 
 
 //
 // resTableIter<T,ID>::next ()
@@ -602,15 +601,22 @@ inline resTableIter<T,ID>::resTableIter (const resTable<T,ID> &tableIn) :
 template <class T, class ID>
 inline T * resTableIter<T,ID>::next ()
 {
-    this->iter = this->iter.itemAfter ();
     if ( this->iter.valid () ) {
-        return & ( *this->iter );
+        T *p = & (*this->iter);
+        this->iter++;
+        return p;
     }
-    if ( this->index >= (1u<<this->table.hashIdNBits) ) {
-        return 0;
+    while ( true ) {
+        if ( this->index >= (1u<<this->table.hashIdNBits) ) {
+            return 0;
+        }
+        this->iter = tsSLIter<T> ( this->table.pTable[this->index++].first () );
+        if ( this->iter.valid () ) {
+            T *p = & (*this->iter);
+            this->iter++;
+            return p;
+        }
     }
-    this->iter = tsSLIter<T> ( this->table.pTable[this->index++].first () );
-    return & ( *this->iter );
 }
 
 //

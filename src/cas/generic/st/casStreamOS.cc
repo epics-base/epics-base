@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.8  1998/05/05 16:29:58  jhill
+// fixed warnings
+//
 // Revision 1.7  1997/08/05 00:47:21  jhill
 // fixed warnings
 //
@@ -352,7 +355,13 @@ void casStreamOS::eventSignal()
 //
 void casStreamOS::eventFlush()
 {
-	this->armSend();
+	//
+	// if there is nothing pending in the input
+	// queue, then flush the output queue
+	//
+	if (this->inBuf::bytesAvailable()==0u) {
+		this->armSend ();
+	}
 }
 
 
@@ -586,16 +595,18 @@ void casStreamWriteReg::callBack()
 	else {
 		casStreamOS *pStrmOS = &this->os;
 		//
-		// anything left in the send buffer that
-		// still needs to be sent ?
-		// (once this starts sending it doesnt stop until
-		// the outgoing buf is empty)
+		// if anything is left in the send buffer that
+		// still needs to be sent and there are not
+		// requests pending in the input buffer then
+		// keep sending the output buffer until it is
+		// empty
 		//
 		// do not test for this with flushCond since
 		// additional bytes may have been added since
 		// we flushed the out buffer
 		//
-		if (pStrmOS->outBuf::bytesPresent()>0u) {
+		if (pStrmOS->outBuf::bytesPresent()>0u &&
+			pStrmOS->inBuf::bytesAvailable()==0u) {
 			//
 			// delete this object now so that the
 			// arm will work 
@@ -615,31 +626,35 @@ void casStreamWriteReg::callBack()
 //
 casProcCond casStreamOS::processInput()
 {
-        caStatus status;
+	caStatus status;
 
 #	ifdef DEBUG
 		printf(
-		"Resp bytes to send=%d, Req bytes pending %d\n", 
-		this->outBuf::bytesPresent(),
-		this->inBuf::bytesPresent());
+			"Resp bytes to send=%d, Req bytes pending %d\n", 
+			this->outBuf::bytesPresent(),
+			this->inBuf::bytesPresent());
 #	endif
 
-        status = this->processMsg();
-	if (	status==S_cas_success ||
+	status = this->processMsg();
+	if (status==S_cas_success ||
 		status==S_cas_sendBlocked ||
-		status==S_casApp_postponeAsyncIO ||
-		status==S_cas_partialMessage) {
+		status==S_casApp_postponeAsyncIO) {
 
+		//
+		// if there is nothing pending in the input
+		// queue, then flush the output queue
+		//
 		if (this->inBuf::bytesAvailable()==0u) {
 			this->armSend ();
 		}
-		this->armRecv();
+		this->armRecv ();
+
 		return casProcOk;
 	}
 	else {
-                errMessage (status,
+		errMessage (status,
 	"unexpected problem with client's input - forcing disconnect");
 		return casProcDisconnect;
-        }
+	}
 }
 

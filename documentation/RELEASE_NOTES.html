@@ -25,6 +25,27 @@ problem does not occur in IOCs because they are not yet based on the portable
 server library. This bug was first detected by Ken Evans in the production CA
 gateway at the APS.</p>
 
+<h4>CA Client Library's Search Datagram Interval Exponential Backoff
+Flawed</h4>
+
+<p>CA's search datagram interval exponential backoff should look like
+this:</p>
+
+<p>30mS, 60mS, 120mS, 240mS,...</p>
+
+<p>Or a similar behavior with higher initial delays resulting from a round
+trip time delay estimate greater than 30 mS. However, instead the backoff
+delays looked like this</p>
+
+<p>30 mS, 30mS, 30mS, 30mS, 30mS, 30mS, 60mS, 120mS, 240mS ...</p>
+
+<p>This also impacts what CA does when a channel disconnects or there is a
+beacon anomaly ( a new server event). The intent was to start the search
+delay for disconnected channels in these situations at 2 seconds but due to
+the above bug the delay was more like 64 mS. </p>
+
+<p>This bug appears only in earlier versions of EPICS R3.14</p>
+
 <center>
 <h2>Changes since 3.14.3</h2>
 </center>

@@ -89,12 +89,14 @@ unsigned cacChannelIO::readSequence () const
 void cacChannelIO::hostName ( char *pBuf, unsigned bufLength ) const 
 {
     if ( bufLength ) {
-        int status = gethostname ( pBuf, bufLength );
-        if ( status ) {
-            strncpy ( pBuf, "<unknown host>", bufLength );
-            pBuf[ bufLength - 1u ] = '\0';
-        }
+        localHostNameAtLoadTime.copy (pBuf, bufLength );
     }
+}
+
+// deprecated - please do not use
+const char * cacChannelIO::pHostName () const
+{
+    return localHostNameAtLoadTime.pointer ();
 }
 
 void cacChannelIO::incrementOutstandingIO ()
@@ -104,3 +106,5 @@ void cacChannelIO::incrementOutstandingIO ()
 void cacChannelIO::decrementOutstandingIO ()
 {
 }
+
+

@@ -100,6 +100,16 @@ void cacChannel::hostName ( char *pBuf, unsigned bufLength ) const
     }
 }
 
+const char * cacChannel::pHostName () const
+{
+    if ( this->pChannelIO ) {
+        return pChannelIO->pHostName ();
+    }
+    else {
+        return "<not connected>";
+    }
+}
+
 short cacChannel::nativeType () const
 {
     if ( this->pChannelIO ) {

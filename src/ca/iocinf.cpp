@@ -17,45 +17,6 @@
 #include "addrList.h"
 
 /*
- * localHostName()
- *
- * o Indicates failure by setting ptr to nill
- *
- * o Calls non posix gethostbyname() so that we get DNS style names
- *      (gethostbyname() should be available with most BSD sock libs)
- *
- * vxWorks user will need to configure a DNS format name for the
- * host name if they wish to be cnsistent with UNIX and VMS hosts.
- *
- * this needs to attempt to determine if the process is a remote 
- * login - hard to do under UNIX
- */
-char *localHostName ()
-{
-    int     size;
-    int     status;
-    char    pName[MAXHOSTNAMELEN];
-    char    *pTmp;
-
-    status = gethostname ( pName, sizeof (pName) );
-    if(status){
-        return NULL;
-    }
-
-    size = strlen (pName)+1;
-    pTmp = (char *) malloc (size);
-    if (!pTmp) {
-        return pTmp;
-    }
-
-    strncpy ( pTmp, pName, size-1 );
-    pTmp[size-1] = '\0';
-
-    return pTmp;
-}
-
-
-/*
  * getToken()
  */
 static char *getToken (const char **ppString, char *pBuf, unsigned bufSIze)

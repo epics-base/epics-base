@@ -15,6 +15,10 @@
 #include "inetAddrID_IL.h"
 #include "bhe_IL.h"
 
+const caHdr cacnullmsg = {
+    0,0,0,0,0,0
+};
+
 tsFreeList < class tcpiiu, 16 > tcpiiu::freeList;
 
 #ifdef DEBUG
@@ -147,7 +151,7 @@ LOCAL void retryPendingClaims (tcpiiu *piiu)
 
     piiu->pcas->lock ();
     tsDLIterBD<nciu> chan ( piiu->chidList.first () );
-    while ( chan != chan.eol () ) {
+    while ( chan.valid () ) {
         if ( ! chan->claimPending ) {
             piiu->claimRequestsPending = false;
             piiu->flush ();
@@ -555,7 +559,7 @@ tcpiiu::~tcpiiu ()
     }
 
     tsDLIterBD <nciu> iter ( this->chidList.first () );
-    while ( iter != iter.eol () ) {
+    while ( iter.valid () ) {
         tsDLIterBD<nciu> next = iter.itemAfter ();
         iter->disconnect ();
         iter = next;
@@ -708,24 +712,17 @@ int tcpiiu::readyRequestMsg ()
  */
 void tcpiiu::hostNameSetMsg ()
 {
-    unsigned    size;
     caHdr       hdr;
-    char        *pName;
 
-    if ( ! CA_V41(CA_PROTOCOL_VERSION, this->minor_version_number) ) {
+    if ( ! CA_V41 ( CA_PROTOCOL_VERSION, this->minor_version_number ) ) {
         return;
     }
 
-    /*
-     * allocate space in the outgoing buffer
-     */
-    pName = this->pcas->ca_pHostName, 
-    size = strlen (pName) + 1;
     hdr = cacnullmsg;
-    hdr.m_cmmd = htons (CA_PROTO_HOST_NAME);
-    hdr.m_postsize = size;
+    hdr.m_cmmd = htons ( CA_PROTO_HOST_NAME );
+    hdr.m_postsize = localHostNameAtLoadTime.stringLength () + 1u;
     
-    this->pushStreamMsg (&hdr, pName, true);
+    this->pushStreamMsg ( &hdr, localHostNameAtLoadTime.pointer (), true );
 
     return;
 }
@@ -1326,6 +1323,12 @@ void tcpiiu::hostName ( char *pBuf, unsigned bufLength ) const
         strncpy ( pBuf, this->host_name_str, bufLength );
         pBuf[bufLength - 1u] = '\0';
     }
+}
+
+// deprecated - please dont use
+const char * tcpiiu::pHostName () const
+{
+    return this->host_name_str;
 }
 
 bool tcpiiu::ca_v42_ok () const

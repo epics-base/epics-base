@@ -58,6 +58,7 @@
 #include "osiMutex.h"
 #include "osiEvent.h"
 #include "resourceLib.h"
+#include "localHostName.h"
 
 #if defined(epicsExportSharedSymbols)
 #error suspect that libCom was not imported
@@ -179,11 +180,14 @@ private:
     unsigned            f_connected:1;
     unsigned            f_fullyConstructed:1;
     static tsFreeList < class nciu, 1024 > freeList;
+
     ~nciu (); // force pool allocation
     int issuePut ( ca_uint16_t cmd, unsigned id, chtype type, 
                      unsigned long count, const void *pvalue );
     void lock () const;
     void unlock () const;
+
+    const char * pHostName () const; // deprecated - please do not use
 };
 
 class baseNMIU : public tsDLNode <baseNMIU>,
@@ -355,7 +359,10 @@ public:
     virtual void removeFromChanList ( nciu &chan ) = 0;
     virtual void disconnect ( nciu &chan ) = 0;
 
+    virtual const char * pHostName () const = 0; // deprecated - please do not use
+
     tsDLList <nciu> chidList;
+private:
 };
 
 class udpiiu;
@@ -444,6 +451,8 @@ public:
 private:
     SOCKET                  sock;
     bool compareIfTCP (nciu &chan, const sockaddr_in &) const;
+
+    const char * pHostName () const; // deprecated - please do not use
 };
 
 class tcpRecvWatchdog : public osiTimer {
@@ -562,6 +571,7 @@ private:
     static tsFreeList < class tcpiiu, 16 > freeList;
 
     friend void cacSendThreadTCP ( void *pParam );
+    const char * pHostName () const; // deprecated - please do not use
 };
 
 class inetAddrID {
@@ -750,6 +760,7 @@ public:
     void installDisconnectedChannel ( nciu &chan );
     void notifySearchResponse ( unsigned short retrySeqNo );
     void repeaterSubscribeConfirmNotify ();
+    void replaceErrLogHandler ( caPrintfFunc *ca_printf_func );
 
     osiTimerQueue           *pTimerQueue;
     ELLLIST                 activeCASGOP;
@@ -762,7 +773,6 @@ public:
     void                    *ca_exception_arg;
     caPrintfFunc            *ca_printf_func;
     char                    *ca_pUserName;
-    char                    *ca_pHostName;
     resTable 
         < bhe, inetAddrID > beaconTable;
     tsDLIterBD <nciu>       endOfBCastList;
@@ -813,8 +823,6 @@ int ca_printf (const char *pformat, ...);
 int ca_vPrintf (const char *pformat, va_list args);
 void manage_conn (cac *pcac);
 epicsShareFunc void epicsShareAPI ca_repeater (void);
-
-char *localHostName (void);
 
 bhe *lookupBeaconInetAddr(cac *pcac,
         const struct sockaddr_in *pnet_addr);

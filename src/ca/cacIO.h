@@ -81,6 +81,8 @@ public:
     void decrementOutstandingIO ();
     void decrementOutstandingIO ( unsigned seqNumber );
 
+    const char * pHostName () const; // deprecated - please do not use
+
 protected:
     class cacChannelIO *pChannelIO;
 
@@ -134,8 +136,10 @@ private:
     virtual unsigned readSequence () const; // defaults to always zero
     virtual void incrementOutstandingIO ();
     virtual void decrementOutstandingIO ();
+    virtual const char * pHostName () const; // deprecated - please do not use
 
     cacChannel &chan;
+
     friend class cacChannel;
 };
 

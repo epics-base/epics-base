@@ -6,6 +6,5 @@
 # Site specific definitions for linux-x86 host - solaris-sparc target builds
 #-------------------------------------------------------
 
-GNU_DIR = /home/phoebus/JBA/gnu-solaris2
-GNU_TARGET_INCLUDE_DIR = $(GNU_DIR)/$(GNU_TARGET)/sys-include
+#GNU_DIR = /home/phoebus/JBA/gnu-solaris2
 

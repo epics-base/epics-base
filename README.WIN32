@@ -209,7 +209,7 @@ calls EPICS, but are not using the EPICS build system.
     It will also not define _DLL and therefore the EPICS header files will
     not specify that sharable libraries are being called. EPICS object library 
     names follow the convention "xxxObj.lib".
-6c) If you link with EPICS shareable libraries (with DLLs) then you must 
+6e) If you link with EPICS shareable libraries (with DLLs) then you must 
     use /MDd or /MD depending on whether EPICS base and your code are 
     built for debugging. This specifies the multithreaded operating environment 
     required by EPICS. It will also define _DLL and therefore the EPICS header 

@@ -1372,24 +1372,26 @@ static void dbprReportLink(
 	dbpr_msgOut(pMsgBuff,tab_size);
 	break;
     case VME_IO:
-	sprintf(pmsg,"%4s: VME card=%2d signal=%2d",
+	sprintf(pmsg,"%4s: VME card=%2d signal=%2d parm=%s",
 	    pfield_name,
-	    plink->value.vmeio.card,plink->value.vmeio.signal);
+	    plink->value.vmeio.card,plink->value.vmeio.signal,
+	    plink->value.vmeio.parm);
 	dbpr_msgOut(pMsgBuff,tab_size);
 	break;
     case CAMAC_IO:
-	sprintf(pmsg,"%4s: CAMAC branch=%2d crate=%2d slot=%2d channel=%2d",
+	sprintf(pmsg,"%4s: CAMAC b=%2d c=%2d n=%2d a=%2d f=%2d parm=%s",
 	    pfield_name,
-	    plink->value.camacio.branch,plink->value.camacio.crate,
-	    plink->value.camacio.slot,plink->value.camacio.channel);
+	    plink->value.camacio.b,plink->value.camacio.c,
+	    plink->value.camacio.n,plink->value.camacio.a,
+	    plink->value.camacio.f,plink->value.camacio.parm);
 	dbpr_msgOut(pMsgBuff,tab_size);
 	break;
     case AB_IO:
-	sprintf(pmsg,"%4s: ABIO link=%2d adaptor=%2d card=%2d signal=%2d flag=%1d",
+	sprintf(pmsg,"%4s: ABIO link=%2d adaptor=%2d card=%2d signal=%2d flag=%1d parm=%s",
 	    pfield_name,
 	    plink->value.abio.link,plink->value.abio.adapter,
 	    plink->value.abio.card,plink->value.abio.signal,
-	    plink->value.abio.plc_flag);
+	    plink->value.abio.plc_flag,plink->value.abio.parm);
 	dbpr_msgOut(pMsgBuff,tab_size);
 	break;
     case GPIB_IO:

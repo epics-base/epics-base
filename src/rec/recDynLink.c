@@ -27,7 +27,9 @@ of this distribution.
 #include <cadef.h>
 #include <caerr.h>
 #include <caeventmask.h>
+#if 0
 #include <calink.h>
+#endif
 #include <tsDefs.h>
 #include <task_params.h>
 #include <recDynLink.h>

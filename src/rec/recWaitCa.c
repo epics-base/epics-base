@@ -19,7 +19,9 @@
 #include <cadef.h>
 #include <caerr.h>
 #include <caeventmask.h>
+#if 0
 #include <calink.h>
+#endif
 #include <task_params.h>
 #include <recWaitCa.h>
 

@@ -17,6 +17,7 @@ extern "C" {
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <net/if.h>
  
 int ioctl (int fd, int req, ...);
 int close (int fd);

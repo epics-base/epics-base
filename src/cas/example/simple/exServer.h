@@ -280,6 +280,7 @@ private:
 class exServer : public caServer {
 public:
 	exServer(const char * const pvPrefix, unsigned aliasCount);
+	~exServer();
         void show (unsigned level) const;
         pvExistReturn pvExistTest (const casCtx&, const char *pPVName);
         pvCreateReturn createPV (const casCtx &ctx, const char *pPVName);

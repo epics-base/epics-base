@@ -216,7 +216,7 @@ caStatus exVectorPV::updateValue(gdd &valueIn)
 			//
 			pFE = &pF[this->info.getElementCount()];
 			while (pF<pFE) {
-				*(pF++) = 0.0;
+				*(pF++) = 0.0f;
 			}
 			*pNewValue = pF;
 		}

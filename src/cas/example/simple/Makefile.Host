@@ -15,7 +15,6 @@ SRCS += exVectorPV.cc
 SRCS += exScalarPV.cc
 SRCS += exAsyncPV.cc
 SRCS += exChannel.cc
-SRCS += templInst.cc
 
 PROD := excas
 

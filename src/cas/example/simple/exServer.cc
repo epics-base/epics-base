@@ -6,8 +6,23 @@
 //
 // Example EPICS CA server
 //
-
 #include "exServer.h"
+
+//
+// if the compiler supports explicit instantiation of
+// template member functions
+//
+#if defined(EXPL_TEMPL) 
+	//
+	// From Stroustrups's "The C++ Programming Language"
+	// Appendix A: r.14.9 
+	//
+	// This explicitly instantiates the template class's 
+	// member functions into "templInst.o"
+	//
+	template class gddAppFuncTable <exPV>;
+	template class resTable <pvEntry,stringId>;
+#endif
 
 //
 // static data for exServer
@@ -48,22 +63,22 @@ exServer::exServer(const char * const pvPrefix, unsigned aliasCount) :
 	const char * const pNameFmtStr = "%.100s%.20s";
 	const char * const pAliasFmtStr = "%.100s%.20s%u";
 
-	ft.installReadFunc ("status", &exPV::getStatus);
-	ft.installReadFunc ("severity", &exPV::getSeverity);
-	ft.installReadFunc ("seconds", &exPV::getSeconds);
-	ft.installReadFunc ("nanoseconds", &exPV::getNanoseconds);
-	ft.installReadFunc ("precision", &exPV::getPrecision);
-	ft.installReadFunc ("graphicHigh", &exPV::getHighLimit);
-	ft.installReadFunc ("graphicLow", &exPV::getLowLimit);
-	ft.installReadFunc ("controlHigh", &exPV::getHighLimit);
-	ft.installReadFunc ("controlLow", &exPV::getLowLimit);
-	ft.installReadFunc ("alarmHigh", &exPV::getHighLimit);
-	ft.installReadFunc ("alarmLow", &exPV::getLowLimit);
-	ft.installReadFunc ("alarmHighWarning", &exPV::getHighLimit);
-	ft.installReadFunc ("alarmLowWarning", &exPV::getLowLimit);
-	ft.installReadFunc ("units", &exPV::getUnits);
-	ft.installReadFunc ("value", &exPV::getValue);
-	ft.installReadFunc ("enums", &exPV::getEnums);
+	exServer::ft.installReadFunc ("status", &exPV::getStatus);
+	exServer::ft.installReadFunc ("severity", &exPV::getSeverity);
+	exServer::ft.installReadFunc ("seconds", &exPV::getSeconds);
+	exServer::ft.installReadFunc ("nanoseconds", &exPV::getNanoseconds);
+	exServer::ft.installReadFunc ("precision", &exPV::getPrecision);
+	exServer::ft.installReadFunc ("graphicHigh", &exPV::getHighLimit);
+	exServer::ft.installReadFunc ("graphicLow", &exPV::getLowLimit);
+	exServer::ft.installReadFunc ("controlHigh", &exPV::getHighLimit);
+	exServer::ft.installReadFunc ("controlLow", &exPV::getLowLimit);
+	exServer::ft.installReadFunc ("alarmHigh", &exPV::getHighLimit);
+	exServer::ft.installReadFunc ("alarmLow", &exPV::getLowLimit);
+	exServer::ft.installReadFunc ("alarmHighWarning", &exPV::getHighLimit);
+	exServer::ft.installReadFunc ("alarmLowWarning", &exPV::getLowLimit);
+	exServer::ft.installReadFunc ("units", &exPV::getUnits);
+	exServer::ft.installReadFunc ("value", &exPV::getValue);
+	exServer::ft.installReadFunc ("enums", &exPV::getEnums);
 
         //
         // hash table size may need adjustment here?
@@ -112,6 +127,13 @@ exServer::exServer(const char * const pvPrefix, unsigned aliasCount) :
 	this->installAliasName(bill, pvAlias);
 	sprintf(pvAlias, pNameFmtStr, pvPrefix, billy.getName());
 	this->installAliasName(billy, pvAlias);
+}
+
+//
+// exServer::~exServer()
+//
+exServer::~exServer()
+{
 }
 
 //

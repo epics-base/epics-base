@@ -87,11 +87,9 @@ public:
     void resetSearchTimerPeriod ( double delay );
     void beaconAnomalyNotify ();
     void removeAllChannels ( epicsGuard < callbackMutex > & cbGuard );
-    void pendioTimeoutNotify ();
     int printf ( const char *pformat, ... );
     unsigned channelCount ();
-    void uninstallChannel ( epicsGuard < callbackMutex > &,
-        epicsGuard < cacMutex > &, nciu & );
+    class tcpiiu * uninstallChanAndReturnDestroyPtr ( epicsGuard < cacMutex > &, nciu & );
     bool pushDatagramMsg ( const caHdr &hdr, const void *pExt, ca_uint16_t extsize);
 
     // exceptions
@@ -164,7 +162,7 @@ private:
     bool flushBlockThreshold ( epicsGuard < cacMutex > & ) const;
     void flushRequestIfAboveEarlyThreshold ( epicsGuard < cacMutex > & );
     void blockUntilSendBacklogIsReasonable 
-        ( epicsGuard < callbackMutex > *, epicsGuard < cacMutex > & );
+        ( cacNotify &, epicsGuard < cacMutex > & );
     void requestRecvProcessPostponedFlush ();
     osiSockAddr getNetworkAddress () const;
  

@@ -953,16 +953,6 @@ void udpiiu::removeAllChannels ( epicsGuard < callbackMutex > & )
     }
 }
 
-void udpiiu::pendioTimeoutNotify ()
-{
-    epicsGuard < udpMutex > guard ( this->mutex );
-    tsDLIterBD < nciu > chan = this->channelList.firstIter ();
-    while ( chan.valid () ) {
-        chan->connectTimeoutNotify ();
-        chan++;
-    }
-}
-
 bool udpiiu::searchMsg ( unsigned short retrySeqNumber, unsigned & retryNoForThisChannel )
 {
     bool success;
@@ -1004,11 +994,12 @@ int udpiiu::printf ( const char *pformat, ... )
     return status;
 }
 
-void udpiiu::uninstallChannel ( epicsGuard < callbackMutex > &, 
-                               epicsGuard < cacMutex > &, nciu & chan )
+class tcpiiu *  udpiiu::uninstallChanAndReturnDestroyPtr ( 
+    epicsGuard < cacMutex > &, nciu & chan )
 {
     epicsGuard < udpMutex > guard ( this->mutex );
     this->channelList.remove ( chan );
+    return 0;
 }
 
 void udpiiu::hostName ( char *pBuf, unsigned bufLength ) const
@@ -1078,9 +1069,9 @@ void udpiiu::flushRequestIfAboveEarlyThreshold ( epicsGuard < cacMutex > & guard
 }
 
 void udpiiu::blockUntilSendBacklogIsReasonable 
-    ( epicsGuard < callbackMutex > * pCBGuard, epicsGuard < cacMutex > & guard )
+    ( cacNotify & notify, epicsGuard < cacMutex > & guard )
 {
-    netiiu::blockUntilSendBacklogIsReasonable ( pCBGuard, guard );
+    netiiu::blockUntilSendBacklogIsReasonable ( notify, guard );
 }
 
 void udpiiu::requestRecvProcessPostponedFlush ()

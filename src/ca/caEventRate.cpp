@@ -43,7 +43,7 @@ void caEventRate ( const char *pName, unsigned count )
 
     status = ca_pend_io ( 10.0 );
     if ( status != ECA_NORMAL ) {
-        fprintf ( stderr, "caEventRate: %s not found\n", pName );
+        fprintf ( stderr, " not found.\n", pName );
         return;
     }
 

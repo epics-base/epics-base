@@ -68,6 +68,13 @@ foreach $name ( @nameList ) {
 	print OUT "${name}_LDFLAGS+=\$(${name}_LDFLAGS_DEFAULT)\n";
 	print OUT "endif\n";
 	print OUT "endif\n";
+	print OUT "ifneq (\$(strip \$(${name}_OBJLIBS_\$(OS_CLASS))),)\n";
+	print OUT "${name}_OBJLIBS+=\$(subst -nil-,,\$(${name}_OBJLIBS_\$(OS_CLASS)))\n";
+	print OUT "else\n";
+	print OUT "ifdef ${name}_OBJLIBS_DEFAULT\n";
+	print OUT "${name}_OBJLIBS+=\$(${name}_OBJLIBS_DEFAULT)\n";
+	print OUT "endif\n";
+	print OUT "endif\n";
 	print OUT "ifneq (\$(strip \$(${name}_LDOBJS_\$(OS_CLASS))),)\n";
 	print OUT "${name}_LDOBJS+=\$(subst -nil-,,\$(${name}_LDOBJS_\$(OS_CLASS)))\n";
 	print OUT "else\n";

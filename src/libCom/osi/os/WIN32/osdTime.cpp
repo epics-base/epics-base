@@ -388,7 +388,6 @@ void currentTime::getCurrentTime ( epicsTimeStamp & dest )
 //
 epicsTimerNotify::expireStatus currentTime::expire ( const epicsTime & )
 {
-
     // avoid interruptions by briefly becoming a time critical thread
     LARGE_INTEGER curFileTime;
     LARGE_INTEGER curPerfCounter;

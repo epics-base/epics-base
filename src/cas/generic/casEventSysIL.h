@@ -27,30 +27,6 @@
  *              Argonne National Laboratory
  *
  *
- * History
- * $Log$
- * Revision 1.7  1998/07/08 15:38:05  jhill
- * fixed lost monitors during flow control problem
- *
- * Revision 1.6  1998/02/18 22:45:29  jhill
- * fixed warning
- *
- * Revision 1.5  1997/08/05 00:47:09  jhill
- * fixed warnings
- *
- * Revision 1.4  1997/04/10 19:34:09  jhill
- * API changes
- *
- * Revision 1.3  1996/11/02 00:54:13  jhill
- * many improvements
- *
- * Revision 1.2  1996/09/16 18:24:02  jhill
- * vxWorks port changes
- *
- * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
- * ca server installation
- *
- *
  */
 
 
@@ -61,12 +37,14 @@
 // casEventSys::casEventSys ()
 //
 inline casEventSys::casEventSys () :
-	pPurgeEvent(NULL),
-	numEventBlocks(0u),
-	maxLogEntries(individualEventEntries),
-	destroyPending(aitFalse),
-	replaceEvents(aitFalse), 
-	dontProcess(aitFalse) 
+    nProcessed (0ul),
+    nPosted (0ul),
+	pPurgeEvent (NULL),
+	numEventBlocks (0u),
+	maxLogEntries (individualEventEntries),
+	destroyPending (false),
+	replaceEvents (false), 
+	dontProcess (false) 
 {
 }
 
@@ -93,7 +71,7 @@ inline void casEventSys::addToEventQueue(casEvent &event)
 //
 inline void casEventSys::setDestroyPending()
 {
-	this->destroyPending = aitTrue;
+	this->destroyPending = true;
     //
     // wakes up the event queue consumer
     //
@@ -155,6 +133,22 @@ inline casMonitor *casEventSys::resIdToMon(const caResId id)
 	// (and we know that casMonitor derived from casRes)
 	//
 	return (casMonitor *) pRes;
+}
+
+//
+// casEventSys::nEventsProcessed ()
+//
+unsigned long casEventSys::nEventsProcessed () const
+{
+    return this->nProcessed;
+}
+
+//
+// casEventSys::nEventsPosted ()
+//
+unsigned long casEventSys::nEventsPosted () const
+{
+    return this->nPosted;
 }
 
 #endif // casEventSysIL_h

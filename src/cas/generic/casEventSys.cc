@@ -26,37 +26,6 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
- *
- * History
- * $Log$
- * Revision 1.9  1999/04/30 15:33:46  jhill
- * better message
- *
- * Revision 1.8  1998/07/23 16:48:15  jhill
- * eventsOff is no longere a private member
- *
- * Revision 1.7  1998/07/08 15:38:04  jhill
- * fixed lost monitors during flow control problem
- *
- * Revision 1.6  1997/06/30 22:54:27  jhill
- * use %p with pointers
- *
- * Revision 1.5  1997/04/10 19:34:09  jhill
- * API changes
- *
- * Revision 1.4  1996/11/02 00:54:12  jhill
- * many improvements
- *
- * Revision 1.3  1996/09/16 18:24:01  jhill
- * vxWorks port changes
- *
- * Revision 1.2  1996/07/24 22:00:49  jhill
- * added pushOnToEventQueue()
- *
- * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
- * ca server installation
- *
- *
  */
 
 /*

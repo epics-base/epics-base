@@ -2,7 +2,7 @@ EPICS = ../../../..
 
 include $(EPICS)/config/CONFIG
 
-SKELETON_FILE=.epicsUnix/share/bin/flex.skel.static
+SKELETON_FILE=include/flex.skel.static
 
 USR_CFLAGS = -DDEFAULT_SKELETON_FILE=\"$(SKELETON_FILE)\"
 
@@ -26,6 +26,8 @@ OBJS = \
 PROD = $(OBDIR)/e_flex
 
 all :: parse.h parse.c $(PROD)
+
+depends: install
 
 parse.h parse.c : parse.y
 	rm -f parse.h parse.c

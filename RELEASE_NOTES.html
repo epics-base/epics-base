@@ -9,7 +9,16 @@
 <body lang="en">
 <h1>EPICS Release 3.13.7</h1>
 
-<h4>XXXX 2002</h4>
+<h3>IOC resident CA server </h3>
+<ul>
+  <li>put callback failure
+    <p><em>Symptom</em>:  IOCs  produce unexpected "ca put callback timeout"
+    messages, and may also crash.</p>
+    <p><em>Scope</em>: The bug is present only in the IOC resident CA server.
+    It was introduced in R3.13.6, and will be more likely to occur when there
+    is a particularly heavy Channel Access put callback load. </p>
+  </li>
+</ul>
 
 <h3>Changes since 3.13.6</h3>
 

@@ -85,7 +85,7 @@ static long fetch_values();
 static void monitor();
 
 #define ARG_MAX 12
-typedef long (epicsShareAPI *SUBFUNCPTR)();
+typedef long (*SUBFUNCPTR)();
 
 static long init_record(psub,pass)
     struct subRecord	*psub;

@@ -57,6 +57,9 @@
  * mgh  1/31/94   Started to add interrupt
  *      ...
  *      ...
+ *
+ * $Log$
+ *
  */
 
 
@@ -74,7 +77,6 @@
 #include	<dbAccess.h>
 #include        <recSup.h>
 #include	<devSup.h>
-#include	<module_types.h>
 #include	<link.h>
 #include	<fast_lock.h>
 
@@ -87,15 +89,19 @@
 #include        <errMdef.h>
 #include        <eventRecord.h>
 
-void SysmonInit();
-static long init();
-static long report();
-static long init_bo_record(), init_bi_record();
-static long init_mbbo_record(), init_mbbi_record();
-static long write_bo(), read_bi();
-static long write_mbbo(), read_mbbi();
-static long get_ioint_info();
-static void Sysmon_isr();
+
+#define		NUM_LINKS	1	/* max number of allowed sysmon cards */
+#define         STATIC
+
+int SysmonConfig();
+STATIC long SysmonInit();
+STATIC long SysmonReport();
+STATIC long SysmonInitBoRec(), SysmonInitBiRec();
+STATIC long SysmonInitMbboRec(), SysmonInitMbbiRec();
+STATIC long SysmonWriteBo(), SysmonReadBi();
+STATIC long SysmonWriteMbbo(), SysmonReadMbbi();
+static long SysmonGetIointInfoBi();
+STATIC void SysmonIsr();
 
 int  devSysmonDebug = 0;
 
@@ -108,29 +114,39 @@ int  devSysmonDebug = 0;
 /** devSysmonDebug >= 20 -- read commands **/
 
 
-struct parm_table {
+typedef struct ParmTableStruct 
+{
     char *parm_name;
     int  index;
-    };
-typedef struct parm_table PARM_TABLE;
+} ParmTableStruct;
 
+#define SYSMON_PARM_STATUS	0
+#define SYSMON_PARM_DIO		1
+#define SYSMON_PARM_TEMP	2
+#define SYSMON_PARM_WATCHDOG	3
 
-static PARM_TABLE table[]={
-{"StatusLink", 0},
-{"Dio", 1},
-{"IntMask", 2},
-{"Temperature", 3},
-{"Watchdog", 4},
-{"VXIVector", 5},
-{"IntVector", 6},
-{"IRQ1", 7},
-{"IRQ2", 8},
-{"IRQ3", 9},
-{"IRQ4", 10},
-{"IRQ5", 11},
-{"IRQ6", 12},
-{"IRQ7", 13}
+static ParmTableStruct ParmTable[]=
+{
+  {"StatusLink", SYSMON_PARM_STATUS},
+  {"Dio", SYSMON_PARM_DIO},
+  {"Temperature", SYSMON_PARM_TEMP},
+  {"Watchdog", SYSMON_PARM_WATCHDOG},
+
+#if 0		/* This crap is pointless -- JRW */
+
+  {"IntMask", 2},
+  {"VXIVector", 5},
+  {"IntVector", 6},
+  {"IRQ1", 7},
+  {"IRQ2", 8},
+  {"IRQ3", 9},
+  {"IRQ4", 10},
+  {"IRQ5", 11},
+  {"IRQ6", 12},
+  {"IRQ7", 13}
+#endif
 };
+#define	PARM_TABLE_SIZE	(sizeof(ParmTable)/sizeof(ParmTable[0]))
 
 /*** SysMonStatusLink   Rx, Tx ***/
 /*** SysmonDio          output, input ***/
@@ -147,7 +163,7 @@ static PARM_TABLE table[]={
 /*** SysmonIRQ6         IRQ 1 vector ***/
 /*** SysmonIRQ7         IRQ 1 vector ***/
 
-struct sysmon {
+typedef struct SysmonStruct {
   char 	                Pad[36];            /*** nF0 - nF17 36 bytes ***/
   unsigned short 	SysmonStatusLink;   /*** nF18 ***/
   unsigned short        SysmonDio;          /*** nF19 ***/
@@ -163,43 +179,42 @@ struct sysmon {
   unsigned short        SysmonIRQ5;         /*** nF29 ***/ 
   unsigned short        SysmonIRQ6;         /*** nF30 ***/ 
   unsigned short        SysmonIRQ7;         /*** nF31 ***/ 
-};
+}SysmonStruct;
 
-struct pvtarea {
+/*****************************************************************************
+ *
+ * Per-record private structure hooked onto dpvt.
+ *
+ *****************************************************************************/
+typedef struct PvtStruct 
+{
     int index;
     unsigned short mask;
-    };
+} PvtStruct;
 
-struct ioCard {                             /* structure maintained for each card */
-    int                          cardValid; /* card exists */
-    volatile unsigned short      *ThisCard; /* address of this cards registers */
-    FAST_LOCK	                 lock;      /* semaphore */
-    IOSCANPVT                    ioscanpvt; /* list of records that are processed at interrupt */
+/*****************************************************************************
+ *
+ * Per-card global variables.
+ *
+ *****************************************************************************/
+struct ioCard {			/* structure maintained for each card */
+    int         CardValid;	/* card exists */
+    unsigned long SysmonBaseA16; /* A16 card address */
+    volatile SysmonStruct *SysmonBase; /* Physical card address */
+    FAST_LOCK	lock;		/* semaphore */
+    IOSCANPVT   ioscanpvt;	/* Token for I/O intr scanned records */
+    int		VMEintVector;	/* IRQ vector used by sysmon */
+    int		VMEintLevel;	/* IRQ level */
+    int		VXIintVector;	/* Generated when C008 is written to (VXI silliness) */
+    int		IrqInfo[2];
 };
 
 
-#define		CONST_NUM_LINKS	1
-#define         STATIC
 
-static int VMEintVector = 0x71;
-static int VMEintLevel = 0x06;
-static int VXIintVector = 0x72;
-static unsigned short *SYSMON_BASE = (unsigned short *) 0x8b80;
+#define         INITLEDS        0x01
 
-/*  #define         int1            0x71 */
-/*  #define         int2            0x72 */
-/*  #define         intlevel        0x06 */
-/*  #define         SYSMON_BASE     0x8b80 hard coded base address */
+static struct ioCard cards[NUM_LINKS];        /* card information structure */
 
-#define         INITLEDS        0xff
-#define         mikeOFFSET	0x24   /* where first function starts */
-
-volatile static struct sysmon *sysmon_base;                /*base pointer of board */
-static struct ioCard cards[CONST_NUM_LINKS];        /* card information structure */
-static int		init_flag = 0;
-static int		interrupt_info[2]; /*0x71, 0x72*/
-
-/* Create the dset for devBoSysmon */
 struct dset_sysmon {
 	long		number;
 	DEVSUPFUN	report;		/* used by dbior */
@@ -210,113 +225,157 @@ struct dset_sysmon {
 };
 typedef struct dset_sysmon DSET_SYSMON;
 
-DSET_SYSMON devEventSysmon={
-	5,
-	NULL,
-	NULL,
-        NULL,
-        get_ioint_info,
-        NULL
-};
-
 DSET_SYSMON devBoSysmon={
 	5,
 	NULL,
+	SysmonInit,
+	SysmonInitBoRec,
 	NULL,
-	init_bo_record,
-	NULL,
-	write_bo
+	SysmonWriteBo
 };
 
 /* Create the dset for devBiSysmon */
 DSET_SYSMON devBiSysmon={
         5,
-        NULL,
-        NULL,
-        init_bi_record,
-        NULL,
-        read_bi
+        SysmonReport,
+        SysmonInit,
+        SysmonInitBiRec,
+        SysmonGetIointInfoBi,
+        SysmonReadBi
 };
 
 /* Create the dset for devMbboSysmon */
 DSET_SYSMON devMbboSysmon={
         5,
         NULL,
+        SysmonInit,
+        SysmonInitMbboRec,
         NULL,
-        init_mbbo_record,
-        NULL,
-        write_mbbo
+        SysmonWriteMbbo
 };
 
 /* Create the dset for devMbbiSysmon */
 DSET_SYSMON devMbbiSysmon={
         5,
         NULL,
+        SysmonInit,
+        SysmonInitMbbiRec,
         NULL,
-        init_mbbi_record,
-        NULL,
-        read_mbbi
+        SysmonReadMbbi
 };
 
+
+STATIC long SysmonReport(void)
+{
+  int j;
+
+  for (j=0; j<NUM_LINKS; j++)
+  {
+    if (cards[j].CardValid)
+    {
+      printf("    card %d: 0x%4.4X VME-IRQ 0x%2.2X VXI-IRQ 0x%2.2X IRQ-level %d\n",
+	j, cards[j].SysmonBaseA16, cards[j].VMEintVector, 
+	cards[j].VXIintVector, cards[j].VMEintLevel);
+    }
+  }
+}
+
 /*************************
-initialization of the device support
 ************************/
 
-void SysmonInit(
-    unsigned long xSYSMON_BASE,
-    int xVMEintVector,
-    int xVMEintLevel,
-    int xVXIintVector
+int SysmonConfig(
+    int	Card,			/* Which card to set parms for */
+    unsigned long SysmonBaseA16, /* Base address in A16 */
+    int VMEintVector,		/* IRQ vector used by sysmon */
+    int VMEintLevel,		/* IRQ level */
+    int VXIintVector		/* Generated when C008 is written to (VXI silliness) */
     )
 {
-    if ( 64 < xVMEintVector || xVMEintVector < 256 )	
-	VMEintVector = xVMEintVector;
-    if (devSysmonDebug >= 5)
-	printf("devSysmon: SysmonInit VME int vector = 0x%X\n", VMEintVector);
+  if ((Card < 0) || (Card >= NUM_LINKS))
+  {
+    printf("ERROR: Invalid card number specified %d\n", Card);
+    return(-1);
+  }
 
-    if ( 0 > xVMEintLevel || xVMEintLevel < 8)
-	VMEintLevel = xVMEintLevel;
-    if (devSysmonDebug >= 5)
-	printf("devSysmon: SysmonInit VME int level = %d\n", VMEintLevel);
+  cards[Card].CardValid = 0;
+  cards[Card].VMEintVector = 0;
+  cards[Card].VMEintLevel = 0;
+  cards[Card].VXIintVector = 0;
+  cards[Card].SysmonBaseA16 = 0;
+  cards[Card].IrqInfo[0] = 0;
+  cards[Card].IrqInfo[1] = 0;
 
-    if ( 64 < xVXIintVector || xVXIintVector < 256 )
-	VXIintVector = xVXIintVector;
-    if (devSysmonDebug >= 5)
-	printf("devSysmon: SysmonInit VXI int vector = 0x%X\n", VXIintVector);
+  if ((VMEintVector < 64) || (VMEintVector > 255))
+  {
+    printf("devSysmon: ERROR VME IRQ vector out of range\n");
+    return(-1);
+  }
+  if (devSysmonDebug >= 5)
+    printf("devSysmon: SysmonInit VME int vector = 0x%2.2X\n", VMEintVector);
 
-    SYSMON_BASE = (unsigned short *) xSYSMON_BASE;
-    if (devSysmonDebug >= 5)
-	printf("devSysmon: SysmonInit VME (VXI) base address = 0x%X\n", SYSMON_BASE);
+  if ((VMEintLevel < 0) || (VMEintLevel > 7))
+  {
+    printf("devSysmon: ERROR VME IRQ level out of range\n");
+    return(-1);
+  }
+  if (devSysmonDebug >= 5)
+    printf("devSysmon: SysmonInit VME int level = %d\n", VMEintLevel);
 
-    interrupt_info[0] = VMEintVector; /*0x71*/
-    interrupt_info[1] = VXIintVector; /*0x72*/
-    init(0);
+  if ((VXIintVector < 64) || (VXIintVector > 255))
+  {
+    printf("devSysmon: ERROR VXI IRQ vector out of range\n");
+    return(-1);
+  }
+  if (devSysmonDebug >= 5)
+    printf("devSysmon: SysmonInit VXI int vector = 0x%2.2X\n", VXIintVector);
 
-    }
+  if ((SysmonBaseA16 > 0xffff) || (SysmonBaseA16 & 0x003f))
+  {
+    printf("devSysmon: ERROR Invalid address specified 0x4.4X\n", SysmonBaseA16);
+    return(-1);
+  }
+  if (devSysmonDebug >= 5)
+    printf("devSysmon: SysmonInit VME (VXI) base address = %p\n", SysmonBaseA16);
 
+  cards[Card].VMEintVector = VMEintVector;
+  cards[Card].VMEintLevel = VMEintLevel;
+  cards[Card].VXIintVector = VXIintVector;
+  cards[Card].SysmonBaseA16 = SysmonBaseA16;
+
+  cards[Card].IrqInfo[0] = VMEintVector; /*0x71*/
+  cards[Card].IrqInfo[1] = VXIintVector; /*0x72*/
+
+  cards[Card].CardValid = 1;
+  return(0);
+}
 
 /**************************************************
-  initialization of isr
-  ************************************************/
+ **************************************************/
 
-static void Sysmon_isr(IOSCANPVT ioscanpvt)
+STATIC void SysmonIsr(int Card)
 {
-    logMsg("In Sysmon_isr\n");
-	scanIoRequest(ioscanpvt);
+  if (devSysmonDebug >= 10)
+    logMsg("In SysmonIsr\n");
+  scanIoRequest(cards[Card].ioscanpvt);
+  cards[Card].SysmonBase->SysmonIntMask |= 0xff00;
 }
 
 
 
+STATIC long SysmonREPORT(void)
+{
+  printf("");
+}
 /**************************************************************************
 *
 * Initialization of SYSMON Binary I/O Card
 *
 ***************************************************************************/
-static long init(int flag)
+STATIC long SysmonInit(int flag)
 {
-  int			j;
-  unsigned char		probeVal, initVal;
-  struct sysmon         *sm;
+  int			Card;
+  unsigned short	probeVal;
+  static int		init_flag = 0;
 
   
   if (init_flag != 0)
@@ -324,60 +383,59 @@ static long init(int flag)
 
   init_flag = 1;
 
-  if (sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO, (char *)SYSMON_BASE, (char **)&sysmon_base) == ERROR)
-  {
-    if (devSysmonDebug >= 5)
-       printf("devSysmon: can not find short address space\n");
-    return(ERROR);
-  }
-
   /* We end up here 1 time before all records are initialized */
-  for (j=0; j < CONST_NUM_LINKS; j++)
+  for (Card=0; Card < NUM_LINKS; Card++)
   {
+    if (cards[Card].CardValid != 0)
+    {
       if (devSysmonDebug >= 5)
-	  printf("devSysmon: init link %d\n", j);
+	  printf("devSysmon: init link %d\n", Card);
+
+      if (sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO, (char *)cards[Card].SysmonBaseA16, (char **)&(cards[Card].SysmonBase)) == ERROR)
+      {
+        if (devSysmonDebug >= 5)
+           printf("devSysmon: can not find short address space\n");
+        return(ERROR);	/* BUG */
+      }
 
       probeVal = INITLEDS;
 
       if (devSysmonDebug >= 5)
-	  printf("devSysmon: init SysmonWatchdog 0x%X\n", (char *)&sysmon_base[j].SysmonWatchdog);
+	  printf("devSysmon: init SysmonWatchdog 0x%X\n", (char *)&cards[Card].SysmonBase->SysmonWatchdog);
 
-      if (vxMemProbe((char *)&sysmon_base[j].SysmonWatchdog, WRITE, sizeof(probeVal), &probeVal) != OK)
+      if (vxMemProbe((char *)&cards[Card].SysmonBase->SysmonWatchdog, WRITE, sizeof(cards[Card].SysmonBase->SysmonWatchdog), (char *)&probeVal) != OK)
       {
-	  cards[j].cardValid = 0;		/* No card found */
+	  cards[Card].CardValid = 0;		/* No card found */
 	  if (devSysmonDebug >= 5)
 	      printf("devSysmon: init vxMemProbe FAILED\n");
       }
       else
       {
-	  probeVal = 0;
-	  vxMemProbe((char *)&sysmon_base[j].SysmonIntMask, WRITE, sizeof(probeVal), &probeVal);
-	  cards[j].cardValid = 1;		/* Remember address of the board */
-	  FASTLOCKINIT(&(cards[j].lock));
-	  FASTUNLOCK(&(cards[j].lock));	/* Init the board lock */
-	  cards[j].ThisCard = &sysmon_base[j].SysmonStatusLink;
+	  cards[Card].SysmonBase->SysmonIntMask = 0;
+
+	  FASTLOCKINIT(&(cards[Card].lock));
+	  /* FASTUNLOCK(&(cards[Card].lock));	/* Init the board lock */
 
 	  if (devSysmonDebug >= 5)
 	      printf("devSysmon: init address\n");
 
-
-	  scanIoInit(&cards[j].ioscanpvt);  /* interrupt initialized */
+	  scanIoInit(&cards[Card].ioscanpvt);  /* interrupt initialized */
 
 	  if (devSysmonDebug >= 5)
 	      printf("devSysmon: init ScanIoInit \n");
 
-	  sm = (struct sysmon *) &sysmon_base[j];
 	  if (devSysmonDebug >= 5)
-	      printf("devSysmon: init address of System Monitor %8.8x \n", sm);
+	      printf("devSysmon: init address of System Monitor %8.8x \n", cards[Card].SysmonBase);
 	  
-	  sm->SysmonIntVector = interrupt_info[0];
+	  cards[Card].SysmonBase->SysmonIntVector = cards[Card].VMEintVector;
+
 	  if (devSysmonDebug >= 5)
 	      printf("devSysmon: init Interrupt vector loaded \n");
 
-	  if(intConnect(INUM_TO_IVEC(interrupt_info[j]),(FUNCPTR)Sysmon_isr,
-			(int)cards[j].ioscanpvt)!=OK) {
-	      errPrintf(M_devSup, __FILE__, __LINE__, "devSysmon (init) intConnect failed \n");
-	      return(M_devSup);
+	  if(intConnect(INUM_TO_IVEC(cards[Card].VMEintVector),(FUNCPTR)SysmonIsr, Card)!=OK)
+	  {
+	      printf("devSysmon (init) intConnect failed \n");
+	      return(ERROR);
 
 	      if (devSysmonDebug >= 5)
 		  printf("devSysmon: init intConnect\n");
@@ -388,6 +446,8 @@ static long init(int flag)
 	      printf("devSysmon: init vxMemProbe OK\n");
 
       }
+      sysIntEnable(cards[Card].VMEintLevel);
+    }
   }
   return(OK);
 }
@@ -398,21 +458,19 @@ static long init(int flag)
 
 static long generic_init_record(struct dbCommon *pr, DBLINK *link)
 {
-    struct vmeio* pvmeio = (struct vmeio*)&(link->value);
-    int table_size, j;
-    struct pvtarea * pvt;
+    struct vmeio	*pvmeio = (struct vmeio*)&(link->value);
+    int			j;
+    PvtStruct		*pvt;
     
-    switch (link->type)
+    if (link->type != VME_IO)
     {
-    case (VME_IO) : break;
-    default:
 	recGblRecordError(S_dev_badBus,(void *)pr,
 			  "devSysmon (init_record) Illegal Bus Type");
 	return(S_dev_badBus);
     }
 
-    /* makes sure that signal is valid */
-    if (pvmeio->signal > 15) 
+    /* make sure that signal is valid */
+    if ((pvmeio->signal > 15) || (pvmeio->signal < 0))
     {
 	pr->pact = 1;          /* make sure we don't process this thing */
 
@@ -425,14 +483,14 @@ static long generic_init_record(struct dbCommon *pr, DBLINK *link)
     }
     
     /* makes sure that card is valid */
-    if (pvmeio->card > CONST_NUM_LINKS || !cards[pvmeio->card].cardValid ) 
+    if ((pvmeio->card > NUM_LINKS) || (pvmeio->card < 0) || (!cards[pvmeio->card].CardValid))
     {
 	pr->pact = 1;          /* make sure we don't process this thing */
 
 	if (devSysmonDebug >= 10)
 	{
 	    printf("devSysmon: Illegal CARD field ->%s, %d<- \n", pr->name, pvmeio->card);
-	    if(!cards[pvmeio->card].cardValid)
+	    if(!cards[pvmeio->card].CardValid)
 		printf("devSysmon: Illegal CARD field card NOT VALID \n\n");
 	}
 
@@ -442,11 +500,9 @@ static long generic_init_record(struct dbCommon *pr, DBLINK *link)
     }
 
     /* verifies that parm field is valid */
-    
-    table_size =  sizeof(table) / sizeof(PARM_TABLE);
-    for (j = 0; (j < table_size) && strcmp(table[j].parm_name, pvmeio->parm); j++ );
+    for (j = 0; (j < PARM_TABLE_SIZE) && strcmp(ParmTable[j].parm_name, pvmeio->parm); j++ );
 
-    if (j >= table_size)
+    if (j >= PARM_TABLE_SIZE)
     {
 	pr->pact = 1;          /* make sure we don't process this thing */
 	
@@ -458,9 +514,9 @@ static long generic_init_record(struct dbCommon *pr, DBLINK *link)
 	return(S_dev_badSignal);
     }
     if (devSysmonDebug >= 10)
-	printf("devSysmon: %s of record type %d - %s\n", pr->name, j, table[j].parm_name);
+	printf("devSysmon: %s of record type %d - %s\n", pr->name, j, ParmTable[j].parm_name);
 
-    pvt = (struct pvtarea *) malloc(sizeof(struct pvtarea));
+    pvt = (PvtStruct *) malloc(sizeof(PvtStruct));
     pvt->index = j;
 
     pr->dpvt = pvt;
@@ -474,21 +530,17 @@ static long generic_init_record(struct dbCommon *pr, DBLINK *link)
  * BO Initialization (Called one time for each BO SYSMON card record)
  *
  **************************************************************************/
-static long init_bo_record(struct boRecord *pbo)
+STATIC long SysmonInitBoRec(struct boRecord *pbo)
 {
     struct vmeio* pvmeio = (struct vmeio*)&(pbo->out.value);
     int status = 0;
-    int table_size;
-    struct pvtarea * pvt;
-    
+
     status = generic_init_record((struct dbCommon *)pbo, &pbo->out);
 
     if(status)
 	return(status);
 
-    pvt = pbo->dpvt;
-    
-    pvt->mask = 1<<pvmeio->signal;
+    ((PvtStruct *)(pbo->dpvt))->mask = 1<<pvmeio->signal;
 
     return (0);
 }
@@ -498,21 +550,17 @@ static long init_bo_record(struct boRecord *pbo)
  * BI Initialization (Called one time for each BI SYSMON card record)
  *
  **************************************************************************/
-static long init_bi_record(struct biRecord *pbi)
+STATIC long SysmonInitBiRec(struct biRecord *pbi)
 {
     struct vmeio* pvmeio = (struct vmeio*)&(pbi->inp.value);
     int status = 0;
-    int table_size;
-    struct pvtarea * pvt;
     
     status = generic_init_record((struct dbCommon *)pbi, &pbi->inp);
 
     if(status)
 	return(status);
 
-    pvt = pbi->dpvt;
-    
-    pvt->mask = 1<<pvmeio->signal;
+    ((PvtStruct *)(pbi->dpvt))->mask = 1<<pvmeio->signal;
 
     return (0);
 }
@@ -523,26 +571,16 @@ static long init_bi_record(struct biRecord *pbi)
  * MBBO Initialization (Called one time for each MBBO SYSMON card record)
  *
  **************************************************************************/
-static long init_mbbo_record(struct mbboRecord *pmbbo)
+STATIC long SysmonInitMbboRec(struct mbboRecord *pmbbo)
 {
     struct vmeio* pvmeio = (struct vmeio*)&(pmbbo->out.value);
     int status = 0;
-    int table_size;
-    struct pvtarea * pvt;
     
     status = generic_init_record((struct dbCommon *)pmbbo, &pmbbo->out);
 
     if(status)
 	return(status);
 
-    if (pvmeio->signal > 15)
-    {
-	recGblRecordError(S_dev_badSignal,(void *)pmbbo,
-			  "devSysmon(init_mbbo_record) Illegal OUT signal number");
-	return(S_dev_badSignal);
-    }
-
-    pvt = pmbbo->dpvt;
     pmbbo->shft = pvmeio->signal;
     pmbbo->mask <<= pmbbo->shft;
 
@@ -556,18 +594,16 @@ static long init_mbbo_record(struct mbboRecord *pmbbo)
  *
  **************************************************************************/
 
-static long init_mbbi_record(struct mbbiRecord *pmbbi)
+STATIC long SysmonInitMbbiRec(struct mbbiRecord *pmbbi)
 {
     struct vmeio* pvmeio = (struct vmeio*)&(pmbbi->inp.value);
     int status = 0;
-    int table_size;
-    struct pvtarea * pvt;
     
     status = generic_init_record((struct dbCommon *)pmbbi, &pmbbi->inp);
 
-/* load temperature values up */
+    /* load temperature values up */
 
-    if (!strcmp(table[3].parm_name, pvmeio->parm))
+    if (!strcmp(ParmTable[3].parm_name, pvmeio->parm))
     {
     	if (devSysmonDebug >= 10)
 		printf("devSysmon: mbbi record is Temperature\n");
@@ -614,14 +650,6 @@ static long init_mbbi_record(struct mbbiRecord *pmbbi)
     if(status)
 	return(status);
 
-    if (pvmeio->signal > 15)
-    {
-	recGblRecordError(S_dev_badSignal,(void *)pmbbi,
-			  "devSysmon(init_mbbi_record) Illegal IN signal number");
-	return(S_dev_badSignal);
-    }
-
-    pvt = pmbbi->dpvt;
     pmbbi->shft = pvmeio->signal;
     pmbbi->mask <<= pmbbi->shft;
 
@@ -633,29 +661,33 @@ static long init_mbbi_record(struct mbbiRecord *pmbbi)
  * Perform a write operation from a BO record
  *
  **************************************************************************/
-static long write_bo(struct boRecord *pbo)
+STATIC long SysmonWriteBo(struct boRecord *pbo)
 {
-    struct pvtarea *pvt = pbo->dpvt;
     struct vmeio *pvmeio = (struct vmeio*)&(pbo->out.value);
-    volatile unsigned short *reg;
-    unsigned short regVal;
+    PvtStruct	*pvt = (PvtStruct *)pbo->dpvt;
 
     FASTLOCK(&cards[pvmeio->card].lock);
-    reg = &cards[pvmeio->card].ThisCard[pvt->index];
-    regVal = *reg;
     
-    if(pbo->val)
+    switch (pvt->index)
     {
-	regVal |= pvt->mask;
-    }
-    else
-    {
-	regVal &= ~pvt->mask;
+    case SYSMON_PARM_DIO:
+
+      if (pbo->val)
+	cards[pvmeio->card].SysmonBase->SysmonDio |= pvt->mask;
+      else
+	cards[pvmeio->card].SysmonBase->SysmonDio &= ~pvt->mask;
+      break;
+
+    case SYSMON_PARM_WATCHDOG:
+
+      if (pbo->val)
+	cards[pvmeio->card].SysmonBase->SysmonWatchdog |= pvt->mask;
+      else
+	cards[pvmeio->card].SysmonBase->SysmonWatchdog &= ~pvt->mask;
+      break;
     }
 
-    *reg = regVal;
     FASTUNLOCK(&cards[pvmeio->card].lock);
-
     return(0);
 }
 
@@ -664,19 +696,30 @@ static long write_bo(struct boRecord *pbo)
  * Perform a read operation from a BI record
  *
  **************************************************************************/
-static long read_bi(struct biRecord *pbi)
+STATIC long SysmonReadBi(struct biRecord *pbi)
 {
-    struct pvtarea *pvt = pbi->dpvt;
     struct vmeio *pvmeio = (struct vmeio*)&(pbi->inp.value);
-    volatile unsigned short *reg;
-    unsigned short regVal;
-
-    reg = &cards[pvmeio->card].ThisCard[pvt->index];
-
+    unsigned short regVal = 0;
+    PvtStruct	*pvt = (PvtStruct *)pbi->dpvt;
     FASTLOCK(&cards[pvmeio->card].lock);
-    regVal = *reg;
+
+    switch (pvt->index)
+    {
+    case SYSMON_PARM_STATUS:
+      regVal = cards[pvmeio->card].SysmonBase->SysmonStatusLink;
+      break;
+    case SYSMON_PARM_DIO:
+      regVal = cards[pvmeio->card].SysmonBase->SysmonDio;
+      break;
+    case SYSMON_PARM_WATCHDOG:
+      regVal = cards[pvmeio->card].SysmonBase->SysmonWatchdog;
+      break;
+    }
     FASTUNLOCK(&cards[pvmeio->card].lock);
     
+    if (devSysmonDebug)
+      printf("read 0x%2.2X, masking with 0x%2.2X\n", regVal, pvt->mask);
+
     regVal &= pvt->mask;
 
     if(regVal)
@@ -693,18 +736,17 @@ static long read_bi(struct biRecord *pbi)
  * Perform a write operation from a MBBO record
  *
  **************************************************************************/
-static long write_mbbo(struct mbboRecord *pmbbo)
+STATIC long SysmonWriteMbbo(struct mbboRecord *pmbbo)
 {
-    struct pvtarea *pvt = pmbbo->dpvt;
     struct vmeio *pvmeio = (struct vmeio*)&(pmbbo->out.value);
-    volatile unsigned short *reg;
     unsigned short regVal;
 
     FASTLOCK(&cards[pvmeio->card].lock);
-    reg = &cards[pvmeio->card].ThisCard[pvt->index];
-    regVal = *reg;
+
+    regVal = cards[pvmeio->card].SysmonBase->SysmonTemperature;
     regVal = (regVal & ~pmbbo->mask) | (pmbbo->rval & pmbbo->mask);
-    *reg = regVal;
+    cards[pvmeio->card].SysmonBase->SysmonTemperature = regVal;
+
     FASTUNLOCK(&cards[pvmeio->card].lock);
     
     return(0);
@@ -715,48 +757,57 @@ static long write_mbbo(struct mbboRecord *pmbbo)
  * Perform a read operation from a MBBI record
  *
  **************************************************************************/
-static long read_mbbi(struct mbbiRecord *pmbbi)
+STATIC long SysmonReadMbbi(struct mbbiRecord *pmbbi)
 {
 
-    struct pvtarea *pvt = pmbbi->dpvt;
     struct vmeio *pvmeio = (struct vmeio*)&(pmbbi->inp.value);
-    volatile unsigned short *reg;
     unsigned short regVal;
 
-    reg = &cards[pvmeio->card].ThisCard[pvt->index];
-
     FASTLOCK(&cards[pvmeio->card].lock);
-    regVal = *reg;
+
+    regVal = cards[pvmeio->card].SysmonBase->SysmonTemperature;
+
     FASTUNLOCK(&cards[pvmeio->card].lock);
     
-    pmbbi->rval=regVal&pmbbi->mask;
+    pmbbi->rval=regVal & pmbbi->mask;
     pmbbi->udf = 0;
     return(0);
 }
 
 /*****************************************************
   record support interrupt routine
-  ***************************************************/
+ *
+ * cmd = 0 if being added
+ * cmd = 1 if taken off the I/O Event scanned list
+ *
+ ****************************************************/
 
-static long get_ioint_info(
+static long SysmonGetIointInfoBi(
 	int			cmd,
-	struct eventRecord	*pr,
+	struct biRecord		*pr,
 	IOSCANPVT		*ppvt)
 {
     struct vmeio *pvmeio = (struct vmeio *)(&pr->inp.value);
-    unsigned int	card,intvec;
+    int		intmask;
 
-    if(pvmeio->card > CONST_NUM_LINKS) {
+    if(pvmeio->card > NUM_LINKS) {
 	recGblRecordError(S_dev_badCard,(void *)pr,
 			  "devSysmon (get_int_info) exceeded maximum supported cards");
 	return(S_dev_badCard);
     }
     *ppvt = cards[pvmeio->card].ioscanpvt; 
 
-
+#if 0
     if (cmd == 0)
-	sysIntEnable(VMEintLevel);
+    {
+      intmask = (((PvtStruct *)(pr->dpvt))->mask)>>8;
+
+      if (devSysmonDebug)
+	printf("SysmonGetIointInfoBi mask is %2.2X\n", intmask);
+
+      cards[pvmeio->card].SysmonBase->SysmonIntMask |= intmask;
+    }
+#endif
 
     return(0);
 }
-

@@ -29,7 +29,7 @@ close(INP) or die "$! closing file";
 print << "END" ;
 /*#registerRecordDeviceDriver.cpp */
 /* THIS IS A GENERATED FILE. DO NOT EDIT */
-extern "C" {
+//extern "C" {
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
@@ -53,8 +53,8 @@ END
 if($numberRecordType>0) {
     for ($i=0; $i<$numberRecordType; $i++) {
         print "extern struct rset $recordType[$i]RSET;\n";
-        print "extern int $recordType[$i]RecordSizeOffset(dbRecordType *pdbRecordType);\n";
-    #NOTE the followimng caused a compiler error on vxWorks
+        print "extern \"C\" int $recordType[$i]RecordSizeOffset(dbRecordType *pdbRecordType);\n";
+    #NOTE the following caused a compiler error on vxWorks
     #    print "extern computeSizeOffset $recordType[$i]RecordSizeOffset;\n";
     }
     print "\nstatic char *recordTypeNames[$numberRecordType] = {\n";
@@ -179,6 +179,8 @@ print << "END" ;
     return(0);
 }
 
+// } /* extern "C" */
+
 /* registerRecordDeviceDriver */
 static const ioccrfArg registerRecordDeviceDriverArg0 =
                                             {"pdbbase",ioccrfArgPdbbase};
@@ -199,6 +201,4 @@ class IoccrfReg {
     IoccrfReg() { ioccrfRegister(&registerRecordDeviceDriverFuncDef,registerRecordDeviceDriverCallFunc);}
 };
 namespace { IoccrfReg ioccrfReg; }
-
-} /* extern "C" */
 END

@@ -42,6 +42,10 @@
 #include "link.h"
 #include "errMdef.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*Field types as seen by static database access clients*/
 #define DCT_STRING	0
 #define DCT_INTEGER	1
@@ -232,4 +236,9 @@ extern int dbStaticDebug;
 #define S_dbLib_noForm (M_dbLib|25)		/*dbAllocForm was not called*/
 #define S_dbLib_outMem (M_dbLib|27)		/*Out of memory*/
 #define S_dbLib_infoNotFound (M_dbLib|29)	/*Info item Not Found*/
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /*INCdbStaticLibh*/

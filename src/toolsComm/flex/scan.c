@@ -202,7 +202,7 @@ static char rcsid[] =
 #undef yywrap
 
 #include "flexdef.h"
-#include "parse.h"
+#include <parse.h>
 
 #define ACTION_ECHO fprintf( temp_action_file, "%s", yytext )
 #define MARK_END_OF_PROLOG fprintf( temp_action_file, "%%%% end of prolog\n" );

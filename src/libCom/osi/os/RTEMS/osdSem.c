@@ -216,7 +216,16 @@ semMutexId semMutexMustCreate(void)
 
 void semMutexDestroy(semMutexId id)
 {
-	semBinaryDestroy (id);
+    rtems_id sid = (rtems_id)id;
+    rtems_status_code sc;
+    
+    sc = rtems_semaphore_delete (sid);
+    if (sc == RTEMS_RESOURCE_IN_USE) {
+        rtems_semaphore_release (sid);
+        sc = rtems_semaphore_delete (sid);
+    }
+    if (sc != RTEMS_SUCCESSFUL)
+        errlogPrintf ("Can't destroy semaphore: %s\n", rtems_status_text (sc));
 }
 
 void semMutexGive(semMutexId id)

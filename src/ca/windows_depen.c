@@ -32,8 +32,14 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.20  1995/12/19  19:36:20  jhill
+ * function prototype changes
+ *
  * Revision 1.19  1995/11/29  19:15:42  jhill
- * added $Log$ to the header
+ * added $Log$
+ * Revision 1.20  1995/12/19  19:36:20  jhill
+ * function prototype changes
+ * to the header
  *
  */
 
@@ -466,7 +472,7 @@ BOOL epicsShareAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 			SetConsoleTitle("Channel Access Status");
     		freopen( "CONOUT$", "a", stderr );
 		}
-		fprintf(stderr, "Process attached to ca.dll R3.12.1\n");
+		fprintf(stderr, "Process attached to ca.dll\n");
 #endif	 			  /* init. winsock */
 		if ((status = WSAStartup(MAKEWORD(1,1), &WsaData)) != 0) {
 			fprintf(stderr,"Cant init winsock \n");
@@ -497,13 +503,13 @@ BOOL epicsShareAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 
 	case DLL_THREAD_ATTACH:
 #if _DEBUG
-		fprintf(stderr, "Thread attached to ca.dll R3.12.1\n");
+		fprintf(stderr, "Thread attached to ca.dll\n");
 #endif
 		break;
 
 	case DLL_THREAD_DETACH:
 #if _DEBUG
-		fprintf(stderr, "Thread detached from ca.dll R3.12.1\n");
+		fprintf(stderr, "Thread detached from ca.dll\n");
 #endif
 		break;
 

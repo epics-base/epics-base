@@ -781,8 +781,6 @@ private:
 	casEventRegistry        &reg;
 };
 
-static const unsigned casEventRegistryHashTableSize = 256u;
-
 //
 // casEventRegistry
 //
@@ -790,9 +788,7 @@ class casEventRegistry : private resTable <casEventMaskEntry, stringId> {
     friend class casEventMaskEntry;
 public:
     
-    casEventRegistry () :  
-        resTable<casEventMaskEntry, stringId> (casEventRegistryHashTableSize), 
-        maskBitAllocator(0) {}
+    casEventRegistry () : maskBitAllocator(0) {}
     
     virtual ~casEventRegistry();
     
@@ -821,7 +817,7 @@ class caServerI :
 	private chronIntIdResTable<casRes>,
 	public casEventRegistry {
 public:
-	caServerI ( caServer &tool, unsigned pvCountEstimate );
+	caServerI ( caServer &tool );
 	~caServerI ();
 
 	//

@@ -49,8 +49,6 @@ pvInfo exServer::billy (-1.0, "billy", 10.0f, -10.0f, excasIoAsync, 1u);
 //
 exServer::exServer ( const char * const pvPrefix, 
                     unsigned aliasCount, bool scanOnIn ) : 
-    caServer (pvListNElem+2u),
-    stringResTbl (pvListNElem*(aliasCount+1u)+2u),
     simultAsychIOCount (0u),
     scanOn (scanOnIn)
 {

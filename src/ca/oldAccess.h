@@ -188,8 +188,7 @@ private:
 class oldCAC : public cacNotify
 {
 public:
-    oldCAC ( bool enablePreemptiveCallback = false, 
-        unsigned maxNumberOfChannels = 32768 );
+    oldCAC ( bool enablePreemptiveCallback = false );
     virtual ~oldCAC ();
     void changeExceptionEvent ( caExceptionHandler *pfunc, void *arg );
     void registerForFileDescriptorCallBack ( CAFDHANDLER *pFunc, void *pArg );

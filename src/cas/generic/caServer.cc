@@ -54,7 +54,7 @@
 //
 // caServer::caServer()
 //
-epicsShareFunc caServer::caServer (unsigned pvCountEstimateIn)
+epicsShareFunc caServer::caServer ()
 {
     static bool init = false;
     
@@ -63,7 +63,7 @@ epicsShareFunc caServer::caServer (unsigned pvCountEstimateIn)
         init = true;
     }    
 
-    this->pCAS = new caServerI(*this, pvCountEstimateIn);
+    this->pCAS = new caServerI(*this);
     if (this->pCAS==NULL) {
         errMessage (S_cas_noMemory, " - unable to create caServer");
         throw S_cas_noMemory;

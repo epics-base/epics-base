@@ -494,7 +494,7 @@ int catime ( char *channelName, unsigned channelCount, enum appendNumberFlag app
         return -1;
     }
 
-    SEVCHK ( ca_context_create ( 0, channelCount * 2 ), "Unable to initialize" );
+    SEVCHK ( ca_context_create ( 0 ), "Unable to initialize" );
 
     if ( appNF == appendNumber ) {
         printf ( "Testing with %u channels named %snnn\n", 

@@ -50,8 +50,7 @@ static const double CAServerMinBeaconPeriod = 1.0e-3; // seconds
 //
 // caServerI::caServerI()
 //
-caServerI::caServerI (caServer &tool, unsigned nPV) :
-    chronIntIdResTable<casRes>(nPV*2u),
+caServerI::caServerI (caServer &tool) :
     //
     // Set up periodic beacon interval
     // (exponential back off to a plateau

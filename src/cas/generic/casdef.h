@@ -246,7 +246,7 @@ class caServer {
 	friend class casPVI;
 
 public:
-	epicsShareFunc caServer (unsigned pvCountEstimate=1024u);
+	epicsShareFunc caServer ();
 	epicsShareFunc virtual ~caServer() = 0;
 
 	//

@@ -194,8 +194,7 @@ epicsShareFunc enum channel_state epicsShareAPI ca_state (chid chan);
 /*  Must be called once before calling any of the other routines        */
 /************************************************************************/
 epicsShareFunc int epicsShareAPI ca_task_initialize (void);
-epicsShareFunc int epicsShareAPI ca_context_create ( 
-                   int preemptiveCallBackEnable, unsigned maxNumberOfChannels );
+epicsShareFunc int epicsShareAPI ca_context_create (int preemptiveCallBackEnable);
 
 /************************************************************************/
 /*  Remove CA facility from your task                                   */
@@ -927,12 +926,13 @@ typedef void * caClientCtx;
 epicsShareFunc int epicsShareAPI ca_current_context (caClientCtx *pCurrentContext);
 epicsShareFunc int epicsShareAPI ca_attach_context (caClientCtx context);
 
-epicsShareFunc int epicsShareAPI ca_channel_status (epicsThreadId tid);
+
 epicsShareFunc int epicsShareAPI ca_client_status (unsigned level);
 
 /*
  * deprecated
  */
+epicsShareFunc int epicsShareAPI ca_channel_status (epicsThreadId tid);
 epicsShareFunc int epicsShareAPI ca_import (epicsThreadId tid);
 epicsShareFunc int epicsShareAPI ca_import_cancel (epicsThreadId tid);
 

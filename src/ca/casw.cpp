@@ -100,7 +100,7 @@ int main ( int, char ** )
         return -1;
     }
 
-    resTable < bhe, inetAddrID > beaconTable ( 1024 );
+    resTable < bhe, inetAddrID > beaconTable;
     while ( 1 ) {
 
         addrSize = ( osiSocklen_t ) sizeof ( addr );

@@ -95,7 +95,9 @@ database:	DATABASE d_head d_body
 d_head:	O_PAREN WORD C_PAREN
 	{
 #ifdef vxWorks
+		/*
 		fprintf(stderr,"Warning: No EPICS version information in db file\n");
+		*/
 		pdbentry=dbAllocEntry(pdbBase);
 		free($2);
 #endif

@@ -141,7 +141,7 @@ $(TARGETS) $(PROD): $(DEPLIBS)
 
 # Adl2dl rule
 %.dl : ../%.adl
-	-$(ADL2DL) $< $
+	-$(ADL2DL) $< $@
 
 # Mangen Rule:
 %.1:%

@@ -28,7 +28,6 @@ INC += epicsVersion.h
 INC += gsd_sync_defs.h
 INC += module_types.h
 INC += shareLib.h
-#INC += createSoftLinks.sh 
 INC += task_params.h
 INC += osiMutexNOOP.h
 INC += unixFileName.h

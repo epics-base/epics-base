@@ -11,7 +11,7 @@ DEPLIBS = $(DEPLIBS_BASE)/libca.a\
           $(DEPLIBS_BASE)/libCom.a \
           $(DEPLIBS_BASE)/libAs.a
 #USR_LDLIBS = -lm -s
-USR_INCLUDES = -I$(OPENWIN)/include
+USR_INCLUDES = -I$(OPENWIN)/include -I$(X11_INC)
 USR_CFLAGS = -DXWINDOWS -UvxWorks
 
 SRCS.c = \

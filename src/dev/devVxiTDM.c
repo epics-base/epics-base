@@ -293,7 +293,7 @@ struct	tdm_config	*tc;
 static long init_pd(struct pulseDelayRecord *pd)
 {
 struct vxiio *pvxiio = (struct vxiio *)&(pd->out.value);
-int	dummy;
+unsigned short	dummy;
 short	la,signal;
 unsigned short	*channel_reg;
 static unsigned epvxiGetLa();
@@ -381,8 +381,8 @@ long		status;
 	FASTLOCK(&tc->lock);
 
 	/* check if register readable */
-	if(vxMemProbe(channel_reg[signal],READ,
-	   sizeof(unsigned short),&dummy)!=OK)
+	if(vxMemProbe((char*)(&channel_reg[signal]),READ,
+		sizeof(unsigned short),(char*)&dummy)!=OK)
 	{
 		recGblRecordError(S_dev_badSignal,(void *)pd,
 		   "devVxiTDM (init_record) vxMemProbe failed for signal/la");

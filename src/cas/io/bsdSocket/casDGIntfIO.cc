@@ -126,7 +126,6 @@ casDGIntfIO::casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager & memMgr
     status = bind ( this->sock, &serverAddr.sa, sizeof (serverAddr) );
     if ( status < 0 ) {
         char buf[64];
-        int errnoCpy = SOCKERRNO;
         ipAddrToA ( &serverAddr.ia, buf, sizeof ( buf ) );
         char sockErrBuf[64];
         convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
@@ -217,7 +216,6 @@ casDGIntfIO::casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager & memMgr
                         sizeof (serverBCastAddr.sa) );
         if (status<0) {
             char buf[64];
-            int errnoCpy = SOCKERRNO;
             ipAddrToA ( & serverBCastAddr.ia, buf, sizeof ( buf ) );
             char sockErrBuf[64];
             convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
@@ -317,8 +315,7 @@ casDGIntfIO::osdRecv ( char * pBufIn, bufSizeT size, // X aCC 361
                        &addr, &addrSize );
     if ( status <= 0 ) {
         if ( status < 0 ) {
-            int errnoCpy = SOCKERRNO;
-            if ( errnoCpy != SOCK_EWOULDBLOCK ) {
+            if ( SOCKERRNO != SOCK_EWOULDBLOCK ) {
                 char sockErrBuf[64];
                 convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
                 errlogPrintf ( "CAS: UDP recv error was %s", sockErrBuf );
@@ -361,8 +358,7 @@ casDGIntfIO::osdSend ( const char * pBufIn, bufSizeT size, // X aCC 361
         return outBufClient::flushProgress;
     }
     else {
-        int errnoCpy = SOCKERRNO;
-        if ( errnoCpy != SOCK_EWOULDBLOCK ) {
+        if ( SOCKERRNO != SOCK_EWOULDBLOCK ) {
             char buf[64];
             sockAddrToA ( & dest, buf, sizeof ( buf ) );
             char sockErrBuf[64];
@@ -382,7 +378,6 @@ bufSizeT casDGIntfIO::incomingBytesPresent () const // X aCC 361
 
 	status = socket_ioctl ( this->sock, FIONREAD, & nchars ); // X aCC 392
 	if ( status < 0 ) {
-        int localError = SOCKERRNO;
         char sockErrBuf[64];
         convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
 		errlogPrintf ( "CAS: FIONREAD failed because \"%s\"\n",

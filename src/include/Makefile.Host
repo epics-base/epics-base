@@ -26,6 +26,7 @@ INC += unixFileName.h
 
 OSINC += osiFileName.h
 OSINC += osiSock.h
+OSINC += epicsMath.h
 
 include $(TOP)/config/RULES.Host
 

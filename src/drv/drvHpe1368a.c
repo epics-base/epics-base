@@ -37,6 +37,7 @@
 
 
 #include <vxWorks.h>
+#include <dbDefs.h>
 #ifdef V5_vxWorks
 #       include <iv.h>
 #else

@@ -1,5 +1,6 @@
 #CONFIG_APP 
 include $(TOP)/config/RELEASE
+-include $(TOP)/config/RELEASE.$(HOST_ARCH)
 include $(EPICS_BASE)/config/CONFIG
 INSTALL_LOCATION = $(TOP)
 ifdef INSTALL_LOCATION_APP

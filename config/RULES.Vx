@@ -178,7 +178,6 @@ binInstalls:  $(BIN_INSTALLS)
 
 $(INSTALL_DBD)/%: % 
 	@echo "Installing $@"
-	@echo "Installing $@"
 	@$(INSTALL) -d -m 644 $< $(INSTALL_DBD)
 
 $(INSTALL_DBD)/%: ../% 

@@ -9,9 +9,9 @@
 
 <center>
 <h2>
-Converting an EPICS R3.14.0alpha2 application to beta1</h2></center>
+Converting an EPICS R3.14.0 alpha2 application to beta1</h2></center>
 
-<p><br>This document describes how to convert a R3.14.0alpha2 vxWorks application
+<p><br>This document describes how to convert a R3.14.0alpha2 application
 so that it builds with release R3.14.0beta1.
 <h3>
 Gnumake clean uninstall</h3>
@@ -36,21 +36,32 @@ Remove baseLIBOBJS</h3>
 so baseLIBOBJS is no longer needed and the file and references to it in
 the Makefile can be deleted. e.g. remove
 <blockquote><tt>-include ../baseLIBOBJS</tt></blockquote>
-and, if there are no LIBOBJS definitions in the Makefile, remove
+and the file baseLIBOBJS. If there are no LIBOBJS definitions in the Makefile,
+also remove
 <blockquote><tt>example_OBJS += $(LIBOBJS)</tt></blockquote>
 </blockquote>
 
 <h3>
-Libraries recIoc and softDevIoc</h3>
+Libraries recIoc, softDevIoc, and testDevIoc</h3>
 
 <blockquote>Add the new record and dev support libraries to &lt;name>App/src/Makefile,
 i.e. add the lines
 <blockquote><tt>example_LIBS += recIoc</tt>
-<br><tt>example_LIBS += softDevIoc</tt></blockquote>
-and remove any references to iocCoreLibrary, e.g. remove the line
+<br><tt>example_LIBS += softDevIoc</tt>
+<br><tt>example_LIBS += testDevIoc</tt></blockquote>
+and remove any references to iocLibrary, e.g. remove the line
 <blockquote><tt>example_OBJS_vxWorks += $(EPICS_BASE_BIN)/iocCoreLibrary</tt></blockquote>
-The order of references to base librararies is important so place recIoc
-and softDevIoc&nbsp; before the the other base library references.</blockquote>
+The order of references to base libraries is important so place recIoc
+and softDevIoc&nbsp; before the the other base library references.
+<p>If you are building on a WIN32 host add the following lines instead:
+<blockquote><tt># Use win32 object libs for registered support</tt>
+<br><tt>example_LIBS_win32 += recIocObj</tt>
+<br><tt>example_LIBS_win32 += softDevIocObj</tt>
+<br><tt>example_LIBS_win32 += testDevIocObj</tt>
+<br><tt>example_LIBS_DEFAULT += recIoc</tt>
+<br><tt>example_LIBS_DEFAULT += softDevIoc</tt>
+<br><tt>example_LIBS_DEFAULT += testDevIoc</tt></blockquote>
+</blockquote>
 
 <h3>
 iocrf renamed to iocsh</h3>
@@ -80,7 +91,7 @@ PROD_HOST .e.g.&nbsp; in your application src Makefiles
 <b>LIBRARY and PROD changes</b>
 <blockquote>The meaning of LIBRARY and PROD have now changed. For vxWorks,
 LIBRARY now means an archive library, OBJLIB is now a combined object file
-(only needed for R3.13 compatability) and PROD is now a combined object
+(only needed for R3.13 compatibility) and PROD is now a combined object
 file with library references resolved and will have a corresponding .munch
 file created. Thus, in your application src Makefiles,
 <blockquote>change <tt>LIBRARY_vxWorks = &lt;name></tt>
@@ -93,13 +104,18 @@ file created. Thus, in your application src Makefiles,
 In the iocBoot/ioc&lt;name>/st.cmd files,
 <blockquote>change <tt>ld &lt; &lt;name>Library.munch</tt>
 <br>to <tt>ld &lt; &lt;name>.munch</tt></blockquote>
+A SRCS definition is now required for every PROD&nbsp; and LIBRARY source
+file to determine correct header file dependancies. This is true even if
+there is only one source file for the PROD or LIBRARY . Thus, for the PROD
+caExample in your src Makefile, add&nbsp; the line
+<blockquote>&nbsp;caExample_SRCS += caExample.c</blockquote>
 </blockquote>
 
 <h3>
 registerRecordDeviceDriver changes</h3>
 
-<blockquote>The created file registerRecordDeviceDriver.cpp&amp;nbsp; is
-now used for all target architectures. Thus in your application src Makefiles
+<blockquote>The created file registerRecordDeviceDriver.cpp is now used
+for all target architectures. Thus in your application src Makefiles
 <blockquote>change <tt>example_SRCS_DEFAULT += example_registerRecordDeviceDriver.cpp</tt>
 <br>to&nbsp; <tt>example_SRCS += example_registerRecordDeviceDriver.cpp</tt></blockquote>
 </blockquote>

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.9  1998/06/16 02:29:57  jhill
+ * use smart gdd ptr
+ *
  * Revision 1.8  1997/05/05 04:50:11  jhill
  * moved pLog = NULL down
  *
@@ -74,7 +77,6 @@ casMonitor::casMonitor(caResId clientIdIn, casChannelI &chan,
 	mutex(mutexIn),
 	ciu(chan),
 	mask(maskIn),
-	pModifiedValue(NULL),
 	clientId(clientIdIn),
 	dbrType(dbrTypeIn),
 	nPend(0u),
@@ -119,18 +121,18 @@ casMonitor::~casMonitor()
 //
 void casMonitor::enable()
 {
-        caStatus status;
- 
-        this->mutex.osiLock();
-        if (!this->enabled && this->ciu->readAccess()) {
+	caStatus status;
+	
+	this->mutex.osiLock();
+	if (!this->enabled && this->ciu->readAccess()) {
 		this->enabled = TRUE;
 		status = this->ciu.getPVI().registerEvent();
 		if (status) {
 			errMessage(status,
 				"Server tool failed to register event\n");
 		}
-        }
-        this->mutex.osiUnlock();
+	}
+	this->mutex.osiUnlock();
 }
 
 //
@@ -138,12 +140,12 @@ void casMonitor::enable()
 //
 void casMonitor::disable()
 {
-        this->mutex.osiLock();
-        if (this->enabled) {
+	this->mutex.osiLock();
+	if (this->enabled) {
 		this->enabled = FALSE;
 		this->ciu.getPVI().unregisterEvent();
-        }
-        this->mutex.osiUnlock();
+	}
+	this->mutex.osiUnlock();
 }
 
 //
@@ -222,18 +224,7 @@ caStatus casMonitor::executeEvent(casMonEvent *pEV)
 	assert (pVal!=NULL);
 	
 	this->mutex.osiLock();
-	if (this->ciu.getClient().getEventsOff()==aitFalse) {
-		status = this->callBack (*pVal);
-	}
-	else {
-		//
-		// If flow control is on save the last update
-		// (and send it later when flow control goes to
-		// no flow control)
-		//
-		this->pModifiedValue = pVal;
-		status = S_cas_success;
-	}
+	status = this->callBack (*pVal);
 	this->mutex.osiUnlock();
 	
 	//
@@ -276,19 +267,5 @@ void casMonitor::show(unsigned level) const
                         dbrType, nElem, clientId, enabled, ovf, nPend);
 		this->mask.show(level);
         }
-}
-
-//
-// casMonitor::postIfModified()
-// ( this shows up undefined if g++ compiled and it is inline)
-//
-void casMonitor::postIfModified()
-{
-	this->mutex.osiLock();
-	if (this->pModifiedValue!=NULL) {
-		this->callBack (*this->pModifiedValue);
-		this->pModifiedValue = NULL;
-	}
-	this->mutex.osiUnlock();
 }
 

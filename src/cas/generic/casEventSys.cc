@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  1997/06/30 22:54:27  jhill
+ * use %p with pointers
+ *
  * Revision 1.5  1997/04/10 19:34:09  jhill
  * API changes
  *
@@ -66,7 +69,7 @@ void casEventSys::show(unsigned level) const
 	printf ("casEventSys at %p\n", this);
 	if (level>=1u) {
 		printf ("\thas coreClient at %p\n", &this->coreClient);
-		printf ("\tnumEventBlocks = %d, maxLogEntries = %d\n",
+		printf ("\tnumEventBlocks = %u, maxLogEntries = %u\n",
 			this->numEventBlocks, this->maxLogEntries);	
 		printf ("\tthere are %d events in the queue\n",
 			this->eventLogQue.count());
@@ -82,12 +85,17 @@ casEventSys::~casEventSys()
 {
 	casEvent 	*pE;
 	
+	this->mutex.osiLock();
+
+	if (this->pPurgeEvent != NULL) {
+		this->eventLogQue.remove(*this->pPurgeEvent);
+		delete this->pPurgeEvent;
+	}
+
 	/*
 	 * all active event blocks must be canceled first
 	 */
-	assert (this->numEventBlocks==0);
-
-	this->mutex.osiLock();
+	casVerify (this->numEventBlocks==0);
 
 	while ( (pE = this->eventLogQue.get()) ) {
 		delete pE;
@@ -133,7 +141,17 @@ casProcCond casEventSys::process()
 
 	this->mutex.osiLock();
 
-	while ( (pEvent = this->eventLogQue.get()) ) {
+	while (!this->dontProcess) {
+
+		pEvent = this->eventLogQue.get();
+		if (pEvent==NULL) {
+			break;
+		}
+
+		//
+		// lock must remain on until the event queue
+		// event is called
+		//
 
 		status = pEvent->cbFunc(*this);
 		if (status==S_cas_success) {
@@ -157,8 +175,7 @@ casProcCond casEventSys::process()
 			break;
 		}
 		else {
-			errMessage(status, 
-				"unexpect error processing event");
+			errMessage(status, "unexpect error processing event");
 			cond = casProcDisconnect;
 			break;
 		}
@@ -187,5 +204,92 @@ casProcCond casEventSys::process()
 	}
 
 	return cond;
+}
+
+//
+// casEventSys::eventsOn()
+// 
+void casEventSys::eventsOn()
+{
+	this->mutex.osiLock();
+
+	//
+	// allow multiple events for each monitor
+	//
+	this->replaceEvents = FALSE;
+
+	//
+	// allow the event queue to be processed
+	//
+	this->dontProcess = FALSE;
+
+	//
+	// remove purge event if it is still pending
+	//
+	if (this->pPurgeEvent != NULL) {
+		this->eventLogQue.remove (*this->pPurgeEvent);
+		delete this->pPurgeEvent;
+		this->pPurgeEvent = NULL;
+	}
+
+	this->mutex.osiUnlock();
+
+    //
+    // wakes up the event queue consumer
+    //
+    this->coreClient.eventSignal();
+}
+
+//
+// casEventSys::eventsOff()
+//
+caStatus casEventSys::eventsOff()
+{
+	this->mutex.osiLock();
+
+	//
+	// new events will replace the last event on
+	// the queue for a particular monitor
+	//
+	this->replaceEvents = TRUE;
+
+	//
+	// suppress the processing and sending of events
+	// only after we have purged the event queue
+	// for this particular client
+	//
+	if (this->pPurgeEvent==NULL) {
+		this->pPurgeEvent = new casEventPurgeEv;
+		if (this->pPurgeEvent==NULL) {
+			//
+			// if there is no room for the event then immediately
+			// stop processing and sending events to the client
+			// until we exit flow control
+			//
+			this->dontProcess = TRUE;
+		}
+		else {
+			this->casEventSys::addToEventQueue(*this->pPurgeEvent);
+		}
+	}
+
+	this->mutex.osiUnlock();
+
+	return S_cas_success;
+}
+
+//
+// casEventPurgeEv::cbFunc()
+// 
+caStatus casEventPurgeEv::cbFunc (casEventSys &evSys)
+{
+	evSys.mutex.osiLock();
+	evSys.dontProcess = TRUE;
+	evSys.pPurgeEvent = NULL;
+	evSys.mutex.osiUnlock();
+
+	delete this;
+
+	return S_cas_success;
 }
 

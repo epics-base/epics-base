@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1998/06/16 02:27:06  jhill
+ * use smart gdd ptr
+ *
  * Revision 1.4  1997/04/10 19:34:11  jhill
  * API changes
  *
@@ -59,7 +62,7 @@ caStatus casMonEvent::cbFunc(casEventSys &eSys)
         caStatus        status;
  
         //
-        // ignore this event if it is stale (and there is
+        // ignore this event if it is stale and there is
         // no call back object associated with it
         //
         pMon = eSys.resIdToMon(this->id);

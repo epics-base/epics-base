@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.23  1998/06/16 02:32:30  jhill
+ * use smart gdd ptr
+ *
  * Revision 1.22  1998/05/05 16:32:17  jhill
  * cleaned up file format
  *
@@ -542,8 +545,8 @@ caStatus casStrmClient::readNotifyResponse (casChannelI *pChan,
 //
 // casStrmClient::monitorResponse()
 //
-caStatus casStrmClient::monitorResponse (casChannelI *pChan, 
-		const caHdr &msg, gdd *pDesc, const caStatus completionStatus)
+caStatus casStrmClient::monitorResponse(casChannelI &chan, const caHdr &msg, 
+		gdd *pDesc, const caStatus completionStatus)
 {
 	caStatus completionStatusCopy = completionStatus;
 	smartGDDPointer pDBRDD;
@@ -558,11 +561,11 @@ caStatus casStrmClient::monitorResponse (casChannelI *pChan,
 	if (status) {
 		if (status==S_cas_hugeRequest) {
 			//
-			// If we cant includ the data it is a proto
+			// If we cant include the data - it is a proto
 			// violation - so we generate an exception
 			// instead
 			//
-			status = sendErr(&msg, ECA_TOLARGE, 
+			status = sendErr (&msg, ECA_TOLARGE, 
 					"unable to xmit event");
 		}
 		return status;
@@ -571,13 +574,13 @@ caStatus casStrmClient::monitorResponse (casChannelI *pChan,
 	//
 	// setup response message
 	//
-	*pReply = msg; 
+	*pReply = msg;
 	pReply->m_postsize = size;
 
 	//
 	// verify read access
 	//
-	if (!(*pChan)->readAccess()) {
+	if (!chan->readAccess()) {
 		completionStatusCopy = S_cas_noRead;
 	}
 
@@ -1192,21 +1195,7 @@ caStatus casStrmClient::disconnectChan(caResId id)
 //
 caStatus casStrmClient::eventsOnAction ()
 {
-	this->setEventsOn();
-
-	//
-	// perhaps this is to slow - perhaps there
-	// should be a queue of modified events
-	//
-	this->osiLock();
-	tsDLIterBD<casChannelI> iter(this->chanList.first());
-	const tsDLIterBD<casChannelI> eol;
-	while ( iter!=eol ) {
-		iter->postAllModifiedEvents();
-		++iter;
-	}
-	this->osiUnlock();
-
+	this->casEventSys::eventsOn();
 	return S_cas_success;
 }
 
@@ -1215,8 +1204,7 @@ caStatus casStrmClient::eventsOnAction ()
 //
 caStatus casStrmClient::eventsOffAction()
 {
-	this->setEventsOff();
-	return S_cas_success;
+	return this->casEventSys::eventsOff();
 }
 
 
@@ -1275,7 +1263,7 @@ caStatus casStrmClient::eventAddAction ()
 	// always send immediate monitor response at event add
 	//
 	if (status == S_casApp_success) {
-		status = this->monitorResponse (pciu, *mp, pDD, status);
+		status = this->monitorResponse (*pciu, *mp, pDD, status);
 	}
 	else if (status == S_casApp_asyncCompletion) {
 		status = S_cas_success;
@@ -1296,7 +1284,7 @@ caStatus casStrmClient::eventAddAction ()
 		return S_cas_success;
 	}
 	else {
-		status = this->monitorResponse (pciu, *mp, pDD, status);
+		status = this->monitorResponse (*pciu, *mp, pDD, status);
 	}
 
 	if (status==S_cas_success) {
@@ -1832,9 +1820,9 @@ caStatus createDBRDD (unsigned dbrType, aitIndex dbrCount, smartGDDPointer &pDes
 	aitUint32 gddStatus;
 	aitUint16 appType;
 	gdd *pVal;
-
+	
 	appType = gddDbrToAit[dbrType].app;
-
+	
 	//
 	// create the descriptor
 	//
@@ -1842,7 +1830,7 @@ caStatus createDBRDD (unsigned dbrType, aitIndex dbrCount, smartGDDPointer &pDes
 	if (!pDescRet) {
 		return S_cas_noMemory;
 	}
-
+	
 	//
 	// smart pointer class maintains the ref count from here down
 	//
@@ -1856,13 +1844,13 @@ caStatus createDBRDD (unsigned dbrType, aitIndex dbrCount, smartGDDPointer &pDes
 		// (Jim should have used virtual functions in gdd)
 		//
 		gddContainer *pCont = (gddContainer *) pGdd;
-
+		
 		//
 		// All DBR types have a value member 
 		//
 		gddStatus = 
 			gddApplicationTypeTable::app_table.mapAppToIndex
-				(appType, gddAppType_value, valIndex);
+			(appType, gddAppType_value, valIndex);
 		if (gddStatus) {
 			pDescRet = NULL;
 			return S_cas_internal;
@@ -1876,12 +1864,12 @@ caStatus createDBRDD (unsigned dbrType, aitIndex dbrCount, smartGDDPointer &pDes
 	else {
 		pVal = pDescRet;
 	}
-
+	
 	if (pVal->isScalar()) {
 		if (dbrCount<=1u) {
 			return S_cas_success;
 		}
-
+		
 		//
 		// scaler and managed (and need to set the bounds)
 		//	=> out of luck (cant modify bounds)
@@ -1890,7 +1878,7 @@ caStatus createDBRDD (unsigned dbrType, aitIndex dbrCount, smartGDDPointer &pDes
 			pDescRet = NULL;
 			return S_cas_internal;
 		}
-
+		
 		//
 		// convert to atomic
 		//
@@ -1904,14 +1892,14 @@ caStatus createDBRDD (unsigned dbrType, aitIndex dbrCount, smartGDDPointer &pDes
 		aitIndex bound = dbrCount;
 		unsigned dim;
 		int modAllowed;
-
+		
 		if (pDescRet->isManaged() || pDescRet->isFlat()) {
 			modAllowed = FALSE;
 		}
 		else {
 			modAllowed = TRUE;
 		}
-
+		
 		for (dim=0u; dim<(unsigned)pVal->dimension(); dim++) {
 			if (pB[dim].first()!=0u && pB[dim].size()!=bound) {
 				if (modAllowed) {
@@ -1932,7 +1920,7 @@ caStatus createDBRDD (unsigned dbrType, aitIndex dbrCount, smartGDDPointer &pDes
 		pDescRet = NULL;
 		return S_cas_internal;
 	}
-
+	
 	return S_cas_success;
 }
 
@@ -1967,10 +1955,10 @@ inline aitBool caServerI::roomForNewChannel() const
 //
 void casStrmClient::installChannel(casChannelI &chan)
 {
-        this->osiLock();
-        this->getCAS().installItem(chan);
-        this->chanList.add(chan);
-        this->osiUnlock();
+	this->osiLock();
+	this->getCAS().installItem(chan);
+	this->chanList.add(chan);
+	this->osiUnlock();
 }
  
 //
@@ -1978,78 +1966,78 @@ void casStrmClient::installChannel(casChannelI &chan)
 //
 void casStrmClient::removeChannel(casChannelI &chan)
 {
-        casRes *pRes;
- 
-        this->osiLock();
-        pRes = this->getCAS().removeItem(chan);
-        assert (&chan == (casChannelI *)pRes);
-        this->chanList.remove(chan);
-        this->osiUnlock();
+	casRes *pRes;
+	
+	this->osiLock();
+	pRes = this->getCAS().removeItem(chan);
+	assert (&chan == (casChannelI *)pRes);
+	this->chanList.remove(chan);
+	this->osiUnlock();
 }
 
 //
 //  casStrmClient::xSend()
 //
 xSendStatus casStrmClient::xSend(char *pBufIn, bufSizeT nBytesAvailableToSend,
-        bufSizeT nBytesNeedToBeSent, bufSizeT &nActualBytes)
+								 bufSizeT nBytesNeedToBeSent, bufSizeT &nActualBytes)
 {
-        xSendStatus stat;
-        bufSizeT nActualBytesDelta;
- 
-        assert (nBytesAvailableToSend>=nBytesNeedToBeSent);
- 
-        nActualBytes = 0u;
-        if (this->blockingState() == xIsntBlocking) {
-		//
-		// !! this time fetch may be slowing things down !!
-		//
-                stat = this->osdSend(pBufIn, nBytesAvailableToSend, 
-				nActualBytes);
-                if (stat == xSendOK) {
-                        this->elapsedAtLastSend = osiTime::getCurrent();
-                }
-                return stat;
-        }
- 
+	xSendStatus stat;
+	bufSizeT nActualBytesDelta;
+	
+	assert (nBytesAvailableToSend>=nBytesNeedToBeSent);
+	
 	nActualBytes = 0u;
-        while (TRUE) {
-                stat = this->osdSend(&pBufIn[nActualBytes], 
-				nBytesAvailableToSend, nActualBytesDelta);
-                if (stat != xSendOK) {
-                        return stat;
-                }
- 
+	if (this->blockingState() == xIsntBlocking) {
 		//
 		// !! this time fetch may be slowing things down !!
 		//
-                this->elapsedAtLastSend = osiTime::getCurrent();
-                nActualBytes += nActualBytesDelta;
-
+		stat = this->osdSend(pBufIn, nBytesAvailableToSend, 
+			nActualBytes);
+		if (stat == xSendOK) {
+			this->elapsedAtLastSend = osiTime::getCurrent();
+		}
+		return stat;
+	}
+	
+	nActualBytes = 0u;
+	while (TRUE) {
+		stat = this->osdSend(&pBufIn[nActualBytes], 
+			nBytesAvailableToSend, nActualBytesDelta);
+		if (stat != xSendOK) {
+			return stat;
+		}
+		
+		//
+		// !! this time fetch may be slowing things down !!
+		//
+		this->elapsedAtLastSend = osiTime::getCurrent();
+		nActualBytes += nActualBytesDelta;
+		
 		if (nBytesNeedToBeSent <= nActualBytesDelta) {
 			break;
 		}
 		nBytesAvailableToSend -= nActualBytesDelta;
-                nBytesNeedToBeSent -= nActualBytesDelta;
-        }
-        return xSendOK;
+		nBytesNeedToBeSent -= nActualBytesDelta;
+	}
+	return xSendOK;
 }
 
 //
 // casStrmClient::xRecv()
 //
 xRecvStatus casStrmClient::xRecv(char *pBufIn, bufSizeT nBytes,
-        bufSizeT &nActualBytes)
+								 bufSizeT &nActualBytes)
 {
-        xRecvStatus stat;
- 
-        stat = this->osdRecv(pBufIn, nBytes, nActualBytes);
-        if (stat==xRecvOK) {
+	xRecvStatus stat;
+	
+	stat = this->osdRecv(pBufIn, nBytes, nActualBytes);
+	if (stat==xRecvOK) {
 		//
 		// !! this time fetch may be slowing things down !!
 		//
-                this->elapsedAtLastRecv = osiTime::getCurrent();
-        }
-        return stat;
+		this->elapsedAtLastRecv = osiTime::getCurrent();
+	}
+	return stat;
 }
 
 //

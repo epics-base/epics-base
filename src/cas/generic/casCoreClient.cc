@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.8  1998/06/16 02:25:05  jhill
+ * cosmetic
+ *
  * Revision 1.7  1998/02/05 22:52:46  jhill
  * removed trash
  *
@@ -171,7 +174,7 @@ caStatus casCoreClient::writeNotifyResponse(casChannelI *, const caHdr &,
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::monitorResponse(casChannelI *, const caHdr &, 
+caStatus casCoreClient::monitorResponse(casChannelI &, const caHdr &, 
 	gdd *, const caStatus)
 {
 	return S_casApp_noSupport;

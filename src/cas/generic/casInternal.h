@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.15  1998/06/16 02:26:09  jhill
+ * allow PVs to exist without a server
+ *
  * Revision 1.14  1998/02/05 22:56:12  jhill
  * cosmetic
  *
@@ -221,15 +224,12 @@ public:
 		return this->ciu;
 	}
 
-	void postIfModified();
-
-	private:
+private:
 	casMonEvent overFlowEvent;
 	unsigned long const nElem;
 	osiMutex &mutex;
 	casChannelI &ciu;
 	const casEventMask mask;
-	smartGDDPointer pModifiedValue;
 	caResId const clientId;
 	unsigned char const dbrType;
 	unsigned char nPend;
@@ -440,8 +440,6 @@ public:
 	// fetch the unsigned integer server id for this PV
 	//
 	inline const caResId getSID();
-
-	void postAllModifiedEvents();
 
 	//
 	// addMonitor()

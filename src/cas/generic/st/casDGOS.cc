@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  1997/08/05 00:47:19  jhill
+ * fixed warnings
+ *
  * Revision 1.3  1997/06/30 22:54:33  jhill
  * use %p with pointers
  *
@@ -34,15 +37,15 @@
 
 class casDGEvWakeup : public osiTimer {
 public:
-        casDGEvWakeup(casDGOS &osIn) :
-                osiTimer(osiTime(0.0)), os(osIn) {}
-        ~casDGEvWakeup();
-        void expire();
+	casDGEvWakeup(casDGOS &osIn) :
+	osiTimer(osiTime(0.0)), os(osIn) {}
+	~casDGEvWakeup();
+	void expire();
 	void show (unsigned level) const;
 
 	const char *name() const;
 private:
-        casDGOS     &os;
+	casDGOS     &os;
 };
 
 //
@@ -75,25 +78,25 @@ void casDGEvWakeup::show(unsigned level) const
 //
 void casDGEvWakeup::expire()
 {
-        casProcCond cond;
-        cond = this->os.eventSysProcess();
-        if (cond != casProcOk) {
-                //
-                // ok to delete the client here
-                // because casStreamEvWakeup::expire()
-                // is called by the timer queue system
-                // and therefore we are not being
-                // called from a client member function
-                // higher up on the stack
-                //
-                this->os.destroy();
-
+	casProcCond cond;
+	cond = this->os.eventSysProcess();
+	if (cond != casProcOk) {
 		//
-                // must not touch the "this" pointer
-                // from this point on however
-                //
-                return;
-        }
+		// ok to delete the client here
+		// because casStreamEvWakeup::expire()
+		// is called by the timer queue system
+		// and therefore we are not being
+		// called from a client member function
+		// higher up on the stack
+		//
+		this->os.destroy();
+		
+		//
+		// must not touch the "this" pointer
+		// from this point on however
+		//
+		return;
+	}
 }
 
 //
@@ -101,13 +104,13 @@ void casDGEvWakeup::expire()
 //
 void casDGOS::eventSignal()
 {
-        if (!this->pEvWk) {
-                this->pEvWk = new casDGEvWakeup(*this);
-                if (!this->pEvWk) {
-                        errMessage(S_cas_noMemory,
-                                "casDGOS::eventSignal()");
-                }
-        }
+	if (!this->pEvWk) {
+		this->pEvWk = new casDGEvWakeup(*this);
+		if (!this->pEvWk) {
+			errMessage(S_cas_noMemory,
+				"casDGOS::eventSignal()");
+		}
+	}
 }
 
 //

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.24  1998/06/16 03:41:16  jhill
+ * fixed prototype
+ *
  * Revision 1.23  1998/06/16 02:13:59  jhill
  * use smart gdd ptr
  *
@@ -183,6 +186,7 @@ class caServerI;
 // casEventSys
 //
 class casEventSys {
+friend class casEventPurgeEv;
 public:
 	inline casEventSys (casCoreClient &coreClientIn);
 
@@ -210,22 +214,25 @@ public:
 
 	inline casCoreClient &getCoreClient();
 
-	inline aitBool getEventsOff () const;
 
-	inline void setEventsOn();
-
-	inline void setEventsOff();
+	inline aitBool getNDuplicateEvents () const;
 
 	inline void setDestroyPending();
 
+	void eventsOn();
+
+	caStatus eventsOff();
+
 private:
-	tsDLList<casEvent>	eventLogQue;
-	osiMutex		mutex;
-	casCoreClient		&coreClient;
-	unsigned		numEventBlocks;	// N event blocks installed
-	unsigned		maxLogEntries; // max log entries
-	unsigned char		eventsOff;
-	unsigned char		destroyPending;
+	tsDLList<casEvent> eventLogQue;
+	osiMutex mutex;
+	casCoreClient &coreClient;
+	casEventPurgeEv *pPurgeEvent; // flow control purge complete event
+	unsigned numEventBlocks;	// N event blocks installed
+	unsigned maxLogEntries; // max log entries
+	unsigned char destroyPending;
+	unsigned char replaceEvents; // replace last existing event on queue
+	unsigned char dontProcess; // flow ctl is on - dont process event queue
 };
 
 //
@@ -490,8 +497,8 @@ public:
 
 	inline caServerI &getCAS() const;
 
-	virtual caStatus monitorResponse(casChannelI *, 
-		const caHdr &, gdd *, const caStatus);
+	virtual caStatus monitorResponse(casChannelI &chan, const caHdr &msg, 
+		gdd *pDesc, const caStatus status);
 
 	virtual caStatus accessRightsResponse(casChannelI *);
 
@@ -664,7 +671,7 @@ public:
 			const caStatus status);
 	caStatus writeNotifyResponse(casChannelI *pChan, const caHdr &msg,
 			const caStatus status);
-	caStatus monitorResponse(casChannelI *pChan, const caHdr &msg, 
+	caStatus monitorResponse(casChannelI &chan, const caHdr &msg, 
 		gdd *pDesc, const caStatus status);
 
 	//
@@ -965,6 +972,19 @@ private:
  * invocation of async IO on the same PV.
  */
 #define maxIOInProg 50 
+
+/*
+ * when this event reaches the top of the queue we
+ * know that all duplicate events have been purged
+ * and that now no events should not be sent to the
+ * client until it exits flow control mode
+ */
+class casEventPurgeEv : public casEvent {
+public:
+private:
+	caStatus cbFunc(casEventSys &);
+};
+
 
 /*
  * this really should be in another header file

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1997/08/05 00:47:05  jhill
+ * fixed warnings
+ *
  * Revision 1.2  1997/04/10 19:34:03  jhill
  * API changes
  *
@@ -82,7 +85,7 @@ caStatus casClientMon::callBack(gdd &value)
 	msg.m_cid = this->getChannel().getSID();
 	msg.m_available = this->getClientId();
 
-	status = client.monitorResponse (&this->getChannel(),
+	status = client.monitorResponse (this->getChannel(),
 		msg, &value, S_cas_success);
 	return status;
 }

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  1998/02/18 22:45:29  jhill
+ * fixed warning
+ *
  * Revision 1.5  1997/08/05 00:47:09  jhill
  * fixed warnings
  *
@@ -61,10 +64,12 @@
 //
 inline casEventSys::casEventSys (casCoreClient &coreClientIn) :
 	coreClient(coreClientIn),
+	pPurgeEvent(NULL),
 	numEventBlocks(0u),
 	maxLogEntries(individualEventEntries),
-	eventsOff(aitFalse),
-	destroyPending(aitFalse)
+	destroyPending(aitFalse),
+	replaceEvents(aitFalse), 
+	dontProcess(aitFalse) 
 {
 }
 
@@ -73,8 +78,7 @@ inline casEventSys::casEventSys (casCoreClient &coreClientIn) :
 //
 inline caStatus casEventSys::init()
 {
-	return (this->mutex.init() ? 
-		S_cas_noMemory : S_cas_success);
+	return (this->mutex.init() ? S_cas_noMemory : S_cas_success);
 }
 
 //
@@ -82,13 +86,17 @@ inline caStatus casEventSys::init()
 //
 inline void casEventSys::addToEventQueue(casEvent &event)
 {
-        this->mutex.osiLock();
-        this->eventLogQue.add(event);
-        this->mutex.osiUnlock();
-        //
-        // wakes up the event queue consumer
-        //
-        this->coreClient.eventSignal();
+	this->mutex.osiLock();
+	this->eventLogQue.add(event);
+	this->mutex.osiUnlock();
+	//
+	// wake up the event queue consumer only if
+	// we are not supressing events to a client that
+	// is in flow control
+	//
+	if (!this->dontProcess) {
+		this->coreClient.eventSignal();
+	}
 }
 
 //
@@ -100,39 +108,15 @@ inline casCoreClient &casEventSys::getCoreClient()
 }
 
 //
-// casEventSys::getEventsOff ()
-//
-inline aitBool casEventSys::getEventsOff () const
-{
-	return this->eventsOff?aitTrue:aitFalse;
-}
-
-//
-// casEventSys::setEventsOn()
-//
-void casEventSys::setEventsOn()
-{
-	this->eventsOff = aitFalse;
-}
-
-//
-// casEventSys::setEventsOff()
-//
-void casEventSys::setEventsOff()
-{
-	this->eventsOff = aitTrue;
-}
-
-//
 // casEventSys::setDestroyPending()
 //
 void casEventSys::setDestroyPending()
 {
 	this->destroyPending = aitTrue;
-        //
-        // wakes up the event queue consumer
-        //
-        this->coreClient.eventSignal();
+    //
+    // wakes up the event queue consumer
+    //
+    this->coreClient.eventSignal();
 }
 
 //
@@ -140,9 +124,9 @@ void casEventSys::setDestroyPending()
 //
 inline void casEventSys::insertEventQueue(casEvent &insert, casEvent &prevEvent)
 {
-        this->mutex.osiLock();
-        this->eventLogQue.insertAfter(insert, prevEvent);
-        this->mutex.osiUnlock();
+	this->mutex.osiLock();
+	this->eventLogQue.insertAfter(insert, prevEvent);
+	this->mutex.osiUnlock();
 }
  
 //
@@ -150,9 +134,9 @@ inline void casEventSys::insertEventQueue(casEvent &insert, casEvent &prevEvent)
 //
 inline void casEventSys::pushOnToEventQueue(casEvent &event)
 {
-        this->mutex.osiLock();
-        this->eventLogQue.push(event);
-        this->mutex.osiUnlock();
+	this->mutex.osiLock();
+	this->eventLogQue.push(event);
+	this->mutex.osiUnlock();
 }
  
 //
@@ -160,9 +144,9 @@ inline void casEventSys::pushOnToEventQueue(casEvent &event)
 //
 inline void casEventSys::removeFromEventQueue(casEvent &event)
 {
-        this->mutex.osiLock();
-        this->eventLogQue.remove(event);
-        this->mutex.osiUnlock();
+	this->mutex.osiLock();
+	this->eventLogQue.remove(event);
+	this->mutex.osiUnlock();
 }
  
 //
@@ -170,12 +154,12 @@ inline void casEventSys::removeFromEventQueue(casEvent &event)
 //
 inline aitBool casEventSys::full()
 {
-        if (this->eventLogQue.count()>=this->maxLogEntries) {
-                return aitTrue;
-        }
-        else {
-                return aitFalse;
-        }
+	if (this->replaceEvents || this->eventLogQue.count()>=this->maxLogEntries) {
+		return aitTrue;
+	}
+	else {
+		return aitFalse;
+	}
 }
 
 //
@@ -183,13 +167,13 @@ inline aitBool casEventSys::full()
 //
 inline casMonitor *casEventSys::resIdToMon(const caResId id)
 {
-        casRes *pRes = this->coreClient.lookupRes(id, casClientMonT);
- 
-        //
-        // safe to cast because we have checked the type code above
-        // (and we know that casMonitor derived from casRes)
-        //
-        return (casMonitor *) pRes;
+	casRes *pRes = this->coreClient.lookupRes(id, casClientMonT);
+	
+	//
+	// safe to cast because we have checked the type code above
+	// (and we know that casMonitor derived from casRes)
+	//
+	return (casMonitor *) pRes;
 }
 
 #endif // casEventSysIL_h

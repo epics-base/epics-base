@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  1998/06/18 00:08:30  jhill
+ * deleted unused variables
+ *
  * Revision 1.5  1998/06/16 02:18:53  jhill
  * use smart gdd ptr
  *
@@ -134,7 +137,7 @@ caStatus casAsyncRdIOI::cbFuncAsyncIO()
 		break;
 
 	case CA_PROTO_EVENT_ADD:
-		status = client.monitorResponse(&this->chan,
+		status = client.monitorResponse(this->chan,
 				this->msg, this->pDD,
 				this->completionStatus);
 		break;

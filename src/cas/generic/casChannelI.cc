@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1998/04/14 00:50:00  jhill
+ * cosmetic
+ *
  * Revision 1.4  1997/04/10 19:34:00  jhill
  * API changes
  *
@@ -178,22 +181,6 @@ void casChannelI::clearOutstandingReads()
 	}
 
 	this->unlock();
-}
-
-
-//
-// casChannelI::postAllModifiedEvents()
-//
-void casChannelI::postAllModifiedEvents()
-{
-        this->lock();
-	tsDLIterBD<casMonitor>	iter(this->monitorList.first());
-	tsDLIterBD<casMonitor>	eol;
-        while ( iter!=eol ) {
-		iter->postIfModified(); 
-		++iter;
-        }
-        this->unlock();
 }
 
 

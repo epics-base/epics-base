@@ -1636,8 +1636,10 @@ short oldtype;
 	 ppn->dbrType = DBR_DOUBLE;
 	break;
     case(oldDBR_PUT_ACKT):
+         ppn->dbrType = DBR_PUT_ACKT;
+	break;
     case(oldDBR_PUT_ACKS):
-	 ppn->dbrType = DBR_USHORT;
+	 ppn->dbrType = DBR_PUT_ACKS;
 	break;
     default:
 	return(-1);

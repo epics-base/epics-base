@@ -49,5 +49,7 @@ dbtoolsIoc_DIR=$(EPICS_BASE_LIB)
 miscIoc_DIR=$(EPICS_BASE_LIB)
 rsrvIoc_DIR=$(EPICS_BASE_LIB)
 
+iocsh_RCS_WIN32 = iocsh.rc
+
 include $(TOP)/configure/RULES
 

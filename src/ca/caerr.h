@@ -85,7 +85,7 @@
 #define ECA_ALLOCMEM        DEFMSG(CA_K_WARNING,    6)
 #define ECA_UKNCHAN         DEFMSG(CA_K_WARNING,    7) /* defunct */
 #define ECA_UKNFIELD        DEFMSG(CA_K_WARNING,    8) /* defunct */
-#define ECA_TOLARGE         DEFMSG(CA_K_ERROR,      9)
+#define ECA_TOLARGE         DEFMSG(CA_K_WARNING,    9)
 #define ECA_TIMEOUT         DEFMSG(CA_K_WARNING,   10)
 #define ECA_NOSUPPORT       DEFMSG(CA_K_WARNING,   11) /* defunct */
 #define ECA_STRTOBIG        DEFMSG(CA_K_WARNING,   12) /* defunct */

@@ -18,7 +18,7 @@ of this distribution.
  */
 
 /*The routines in this module are serially reusable NOT reentrant*/
-
+
 #ifdef vxWorks
 #include <vxWorks.h>
 #endif
@@ -40,7 +40,7 @@ of this distribution.
 #include <special.h>
 #include <link.h>
 #include <macLib.h>
-
+
 /*private routines */
 static void yyerrorAbort(char *str);
 static void allocTemp(void *pvoid);
@@ -71,7 +71,7 @@ static void dbBreakBody(void);
 static void dbRecordHead(char *recordType,char*name,int visible);
 static void dbRecordField(char *name,char *value);
 static void dbRecordBody(void);
-
+
 /*private declarations*/
 #define MY_BUFFER_SIZE 1024
 static char *my_buffer=NULL;
@@ -344,7 +344,7 @@ static void dbAddPathCmd(char *path)
     dbAddPath(pdbbase,path);
     free((void *)path);
 }
-
+
 static void dbIncludeNew(char *filename)
 {
     inputFile	*pinputFile;
@@ -744,7 +744,7 @@ static void dbDriver(char *name)
     pgphentry->userPvt = pdrvSup;
     ellAdd(&pdbbase->drvList,&pdrvSup->node);
 }
-
+
 static void dbBreakHead(char *name)
 {
     brkTable	*pbrkTable;

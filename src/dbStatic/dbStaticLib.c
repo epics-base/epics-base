@@ -292,7 +292,7 @@ done:
     dbFinishEntry(&dbEntry);
     return(status);
 }
-
+
 static long putParmString(char **pparm,char *pstring)
 {
     size_t	size;
@@ -1814,7 +1814,7 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
     case DBF_INLINK:
     case DBF_OUTLINK:
     case DBF_FWDLINK: {
-	    DBLINK	*plink=(DBLINK *)pfield;
+	    DBLINK	*plink;
 	    char	string[80];
 	    char	*pstr=&string[0];
 	    int		ind;
@@ -1827,7 +1827,7 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
 		status = setLinkType(pdbentry);
 		if(status) {
 		    errMessage(status,"in dbPutString from setLinkType");
-		    return(NULL);
+		    return(status);
 		}
 	    } 
 	    if(stringHasMacro) {
@@ -1839,7 +1839,8 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
 	    }
 	    if(strlen(pstring)>=sizeof(string)) {
 	        status = S_dbLib_badField;
-	        errMessage(status,"dbPutString received a LONG string");
+	        errMessage(status,
+			"dbPutString received a string that is too long");
 	        return(status);
             }
 	    strcpy(pstr,pstring);

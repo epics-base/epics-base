@@ -20,9 +20,11 @@
 		Some minor changes in the way semaphores are deleted.
 18feb92,ajk	Changed to allow sharing of single CA task by all state programs. 
 		Added seqAuxTask() and removed ca_pend_event() from ss_entry().
+9aug93,ajk	Added calls to taskwdInsert() & taskwdRemove().
 ***************************************************************************/
 #define		ANSI
 #include	"seq.h"
+#include	<taskwd.h>
 
 /* Function declarations */
 LOCAL	VOID ss_task_init(SPROG *, SSCB *);
@@ -195,6 +197,9 @@ SSCB	*pSS;
 	if (pSP->task_id != pSS->task_id)
 		ca_import(seqAuxTaskId);
 
+	/* Register this task with the EPICS watchdog (no callback function) */
+	taskwdInsert(pSS->task_id, (VOIDFUNCPTR)0, (VOID *)0);
+
 	return;
 }
 
@@ -330,14 +335,18 @@ int		tid;
 	/* Wait for log semaphore (in case a task is doing a write) */
 	semTake(pSP->logSemId, 600);
 
-	/* Suspend all state set tasks except self */
-	pSS = pSP->sscb;
+	/* Remove tasks' watchdog & suspend all state set tasks except self */
 #ifdef	DEBUG
 	logMsg("   Suspending state set tasks:\n");
 #endif	DEBUG
+	pSS = pSP->sscb;
 	for (nss = 0; nss < pSP->nss; nss++, pSS++)
 	{
 		tid_ss = pSS->task_id;
+
+		/* Remove the task from EPICS watchdog */
+		taskwdRemove(tid_ss);
+
 		if ( (tid_ss != 0) && (tid != tid_ss) )
 		{
 #ifdef	DEBUG

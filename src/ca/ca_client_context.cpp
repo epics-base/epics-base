@@ -185,21 +185,31 @@ ca_client_context::~ca_client_context ()
     }
 }
 
+void ca_client_context::destroyChannelPrivate ( 
+    oldChannelNotify & chan, 
+    epicsGuard < epicsMutex > & cbGuard )
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    try {
+        chan.eliminateExcessiveSendBacklog ( 
+            &cbGuard, guard );
+    }
+    catch ( cacChannel::notConnected & ) {
+        // intentionally ignored
+    }
+    chan.destructor ( cbGuard, guard );
+    this->oldChannelNotifyFreeList.release ( & chan );
+}
+
 void ca_client_context::destroyChannel ( oldChannelNotify & chan )
 {
-    if ( this->pCallbackGuard.get() ) {
-        epicsGuard < epicsMutex > guard ( this->mutex );
-        chan.eliminateExcessiveSendBacklog ( 
-            this->pCallbackGuard.get(), guard );
-        chan.destructor ( *this->pCallbackGuard.get(), guard );
-        this->oldChannelNotifyFreeList.release ( & chan );
+    epicsGuard < epicsMutex > * pCBGuard = this->pCallbackGuard.get();
+    if ( pCBGuard ) {
+        destroyChannelPrivate ( chan, *pCBGuard );
     }
     else {
         epicsGuard < epicsMutex > cbGuard ( this->cbMutex );
-        epicsGuard < epicsMutex > guard ( this->mutex );
-        chan.eliminateExcessiveSendBacklog ( &cbGuard, guard );
-        chan.destructor ( cbGuard, guard );
-        this->oldChannelNotifyFreeList.release ( & chan );
+        destroyChannelPrivate ( chan, cbGuard );
     }
 }
 
@@ -225,6 +235,21 @@ void ca_client_context::destroyPutCallback (
     guard.assertIdenticalMutex ( this->mutex );
     pcb.~putCallback ();
     this->putCallbackFreeList.release ( & pcb );
+}
+
+void  ca_client_context::clearSubscriptionPrivate ( 
+    evid pMon, epicsGuard < epicsMutex > & cbGuard  )
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    oldChannelNotify & chan = pMon->channel ();
+    try {
+        chan.eliminateExcessiveSendBacklog ( 
+            &cbGuard, guard );
+    }
+    catch ( cacChannel::notConnected & ) {
+        // intentionally ignored
+    }
+    pMon->ioCancel ( cbGuard, guard );
 }
 
 void ca_client_context::destroySubscription ( 

@@ -365,6 +365,11 @@ private:
     void callbackProcessingCompleteNotify ();
     cacContext & createNetworkContext ( 
         epicsMutex & mutualExclusion, epicsMutex & callbackControl );
+    void destroyChannelPrivate ( 
+        oldChannelNotify & chan, epicsGuard < epicsMutex > & cbGuard );
+    void clearSubscriptionPrivate ( 
+        evid pMon, epicsGuard < epicsMutex > & cbGuard  );
+
 	ca_client_context ( const ca_client_context & );
 	ca_client_context & operator = ( const ca_client_context & );
 

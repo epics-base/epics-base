@@ -44,7 +44,7 @@ sub ReplaceLineHook { return $_[0]; }
 sub ReplaceFilename { # (filename)
     my($file) = $_[0];
     $file =~ s|.*/CVS/?.*||;	# Ignore CVS files and Replace.pl scripts
-    $file =~ s|.*/$apptypename/Replace.pl$||;
+    $file =~ s|.*/$apptypename/Replace\.pl$||;
     
     if($opt_i) {
 	# Handle name@arch stuff, copy only the closest matching file

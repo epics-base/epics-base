@@ -35,6 +35,7 @@
 #include "errlog.h"
 #include "logClient.h"
 #include "epicsStdio.h"
+#include "epicsExit.h"
 
 
 #ifndef LOCAL
@@ -49,7 +50,7 @@
 epicsShareDef int errVerbose=0;
 
 LOCAL void errlogCleanup(void);
-LOCAL void exitHandler(void);
+LOCAL void exitHandler(void*);
 LOCAL void errlogThread(void);
 
 LOCAL char *msgbufGetFree(int noConsoleMessage);
@@ -366,7 +367,7 @@ epicsShareFunc void errPrintf(long status, const char *pFileName,
     msgbufSetSize(totalChar);
 }
 
-LOCAL void exitHandler(void)
+LOCAL void exitHandler(void *pvt)
 {
     pvtData.atExit = 1;
     epicsEventSignal(pvtData.waitForWork);
@@ -403,7 +404,7 @@ LOCAL void errlogInitPvt(void *arg)
     if(tid) {
         pvtData.errlogInitFailed = FALSE;
     }
-    atexit(exitHandler);
+    epicsAtExit(exitHandler,0);
 }
 
 LOCAL void errlogCleanup(void)

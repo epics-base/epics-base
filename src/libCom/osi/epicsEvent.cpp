@@ -15,6 +15,7 @@
 
 #define epicsExportSharedSymbols
 #include "epicsEvent.h"
+#include "epicsStdioRedirect.h"
 
 //
 // Its probably preferable to not make these inline because they are in 

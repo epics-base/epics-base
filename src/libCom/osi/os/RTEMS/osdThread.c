@@ -29,6 +29,7 @@
 #include <rtems.h>
 #include <rtems/error.h>
 
+#include "epicsStdio.h"
 #include "errlog.h"
 #include "epicsMutex.h"
 #include "epicsString.h"
@@ -194,6 +195,7 @@ badInit (const char *msg)
     const char fmt[] = "%s called before epicsThreadInit finished!";
 
     syslog (LOG_CRIT, fmt, msg);
+    /* may not be safe to call epicsGetStderr */
     fprintf (stderr, fmt, msg);
     fprintf (stderr, "\n");
     rtems_task_suspend (RTEMS_SELF);
@@ -572,7 +574,7 @@ showInternalTaskInfo (rtems_id tid)
 
     the_thread = _Thread_Get (tid, &location);
     if (location != OBJECTS_LOCAL) {
-        printf ("%-30s",  "  *** RTEMS task gone! ***");
+        fprintf(epicsGetStdout(),"%-30s",  "  *** RTEMS task gone! ***");
         return;
     }
     thread = *the_thread;
@@ -586,40 +588,40 @@ showInternalTaskInfo (rtems_id tid)
      */
     epicsPri = 199-thread.real_priority;
     if (epicsPri < 0)
-        printf ("   <0");
+        fprintf(epicsGetStdout(),"   <0");
     else if (epicsPri > 99)
-        printf ("  >99");
+        fprintf(epicsGetStdout(),"  >99");
     else
-        printf (" %4d", epicsPri);
+        fprintf(epicsGetStdout()," %4d", epicsPri);
     if (thread.current_priority == thread.real_priority)
-        printf ("%4d    ", thread.current_priority);
+        fprintf(epicsGetStdout(),"%4d    ", thread.current_priority);
     else
-        printf ("%4d/%-3d", thread.real_priority, thread.current_priority);
+        fprintf(epicsGetStdout(),"%4d/%-3d", thread.real_priority, thread.current_priority);
     showBitmap (bitbuf, thread.current_state, taskState);
-    printf ("%8.8s", bitbuf);
+    fprintf(epicsGetStdout(),"%8.8s", bitbuf);
     if (thread.current_state & (STATES_WAITING_FOR_SEMAPHORE |
                                 STATES_WAITING_FOR_MUTEX |
                                 STATES_WAITING_FOR_MESSAGE))
-        printf (" %8.8x", thread.Wait.id);
+        fprintf(epicsGetStdout()," %8.8x", thread.Wait.id);
     else
-        printf (" %8.8s", "");
+        fprintf(epicsGetStdout()," %8.8s", "");
 #endif
 }
 
 static void
 epicsThreadShowHeader (void)
 {
-    printf ("            PRIORITY\n");
-    printf ("    ID    EPICS RTEMS   STATE    WAIT         NAME\n");
-    printf ("+--------+-----------+--------+--------+---------------------+\n");
+    fprintf(epicsGetStdout(),"            PRIORITY\n");
+    fprintf(epicsGetStdout(),"    ID    EPICS RTEMS   STATE    WAIT         NAME\n");
+    fprintf(epicsGetStdout(),"+--------+-----------+--------+--------+---------------------+\n");
 }
 
 static void
 epicsThreadShowInfo (struct taskVar *v, unsigned int level)
 {
-        printf ("%9.8x", v->id);
+        fprintf(epicsGetStdout(),"%9.8x", v->id);
         showInternalTaskInfo (v->id);
-        printf (" %s\n", v->name);
+        fprintf(epicsGetStdout()," %s\n", v->name);
 }
 
 void epicsThreadShow (epicsThreadId id, unsigned int level)
@@ -638,7 +640,7 @@ void epicsThreadShow (epicsThreadId id, unsigned int level)
         }
     }
     taskVarUnlock ();
-    printf ("*** Thread %x does not exist.\n", (unsigned int)id);
+    fprintf(epicsGetStdout(),"*** Thread %x does not exist.\n", (unsigned int)id);
 }
 
 void epicsThreadShowAll (unsigned int level)

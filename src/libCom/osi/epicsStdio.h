@@ -54,21 +54,6 @@ epicsShareFunc void  epicsShareAPI epicsSetStderr(FILE *);
 epicsShareFunc int epicsShareAPI epicsStdoutPrintf(
     const char *pformat, ...) EPICS_PRINTF_STYLE(1,2);
 
-#ifndef epicsStdioPVT
-#undef stdin
-#define stdin epicsGetStdin()
-#undef stdout
-#define stdout epicsGetStdout()
-#undef stderr
-#define stderr epicsGetStderr()
-
-/*The following are for making printf be fprintf(stdout */
-#ifdef printf
-#undef printf
-#endif /*printf*/
-#define printf epicsStdoutPrintf
-#endif /* epicsStdioPVT */
-
 #ifdef  __cplusplus
 }
 #endif

@@ -22,6 +22,7 @@
 #include <errno.h>
 
 #define epicsExportSharedSymbols
+#include <epicsStdioRedirect.h>
 #include <errlog.h>
 #include <cantProceed.h>
 #include <envDefs.h>

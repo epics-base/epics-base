@@ -21,11 +21,12 @@
 #include "epicsGuard.h"
 #include "epicsThread.h"
 #include "epicsSingleton.h"
+#include "epicsExit.h"
 
 static epicsThreadOnceId epicsSingletonOnceId = EPICS_THREAD_ONCE_INIT;
 static epicsMutex *pSingletonBaseMutexEPICS;
 
-static void epicsSingletonCleanup ()
+static void epicsSingletonCleanup (void *)
 {
     delete pSingletonBaseMutexEPICS;
 }
@@ -33,7 +34,7 @@ static void epicsSingletonCleanup ()
 static void epicsSingletonOnce ( void * )
 {
     pSingletonBaseMutexEPICS = new epicsMutex;
-    atexit ( epicsSingletonCleanup );
+    epicsAtExit ( epicsSingletonCleanup,0 );
 }
 
 epicsSingletonBase::epicsSingletonBase () : pSingleton ( 0 )

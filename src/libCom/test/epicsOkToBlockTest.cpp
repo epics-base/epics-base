@@ -45,15 +45,16 @@ static void thread(void *arg)
 void epicsOkToBlockTest(void)
 {
     unsigned int stackSize;
-    info *pinfo;
+    info *pinfoA;
+    info *pinfoB;
 
     stackSize = epicsThreadGetStackSize(epicsThreadStackSmall);
-    pinfo = (info *)calloc(1,sizeof(info));
-    pinfo->isOkToBlock = 0;
-    epicsThreadCreate("threadA",50,stackSize,thread,pinfo);
-    pinfo = (info *)calloc(1,sizeof(info));
-    pinfo->isOkToBlock = 1;
-    epicsThreadCreate("threadB",50,stackSize,thread,pinfo);
+    pinfoA = (info *)calloc(1,sizeof(info));
+    pinfoA->isOkToBlock = 0;
+    epicsThreadCreate("threadA",50,stackSize,thread,pinfoA);
+    pinfoB = (info *)calloc(1,sizeof(info));
+    pinfoB->isOkToBlock = 1;
+    epicsThreadCreate("threadB",50,stackSize,thread,pinfoB);
     epicsThreadSleep(2.0);
 }
 }

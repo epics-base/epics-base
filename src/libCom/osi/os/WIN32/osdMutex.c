@@ -45,6 +45,7 @@
 #include "shareLib.h"
 #include "epicsMutex.h"
 #include "epicsAssert.h"
+#include "epicsStdioRedirect.h"
 
 typedef struct epicsMutexOSD { 
     union {

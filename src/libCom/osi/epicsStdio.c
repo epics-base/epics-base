@@ -18,11 +18,8 @@
 #include <errno.h>
 
 #define epicsExportSharedSymbols
-#define epicsStdioh
 #include "shareLib.h"
 #include "epicsThread.h"
-#undef epicsStdioh
-#define epicsStdioPVT
 #include "epicsStdio.h"
 
 static epicsThreadOnceId onceId = EPICS_THREAD_ONCE_INIT;

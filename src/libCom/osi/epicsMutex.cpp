@@ -26,6 +26,7 @@
 #include <string.h>
 
 #define epicsExportSharedSymbols
+#include "epicsStdioRedirect.h"
 #include "epicsThread.h"
 #include "ellLib.h"
 #include "errlog.h"

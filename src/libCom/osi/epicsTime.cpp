@@ -19,6 +19,7 @@
 #include <limits.h>
 
 #define epicsExportSharedSymbols
+#include "epicsStdioRedirect.h"
 #include "locationException.h"
 #include "epicsAssert.h"
 #include "epicsVersion.h"

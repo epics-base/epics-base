@@ -30,6 +30,7 @@
 #include <process.h> /* for _endthread() etc */
 
 #define epicsExportSharedSymbols
+#include "epicsStdio.h"
 #include "shareLib.h"
 #include "epicsThread.h"
 #include "cantProceed.h"
@@ -849,24 +850,24 @@ static void epicsThreadShowPrivate ( epicsThreadId id, unsigned level )
     win32ThreadParam * pParm = ( win32ThreadParam * ) id;
 
     if ( pParm ) {
-        printf ( "%-15s %-8p %-8x %-9u %-9s %-7s", pParm->pName, 
+        fprintf (epicsGetStdout(), "%-15s %-8p %-8x %-9u %-9s %-7s", pParm->pName, 
             (void *) pParm, pParm->id, pParm->epicsPriority,
             epics_GetThreadPriorityAsString ( pParm->handle ),
             epicsThreadIsSuspended ( id ) ? "suspend" : "ok" );
         if ( level ) {
-            printf ( " %-8p %-8p %-8p ",
+            fprintf (epicsGetStdout(), " %-8p %-8p %-8p ",
                 (void *) pParm->handle, (void *) pParm->funptr, 
                 (void *) pParm->parm );
         }
     }
     else {
-        printf ( 
+        fprintf (epicsGetStdout(), 
             "NAME            EPICS-ID WIN32-ID EPICS-PRI WIN32-PRI STATE  " );
         if ( level ) {
-            printf ( " HANDLE   FUNCTION PARAMETER" );
+            fprintf (epicsGetStdout(), " HANDLE   FUNCTION PARAMETER" );
         }
     }
-    printf ("\n" );
+    fprintf (epicsGetStdout(),"\n" );
 }
 
 /*

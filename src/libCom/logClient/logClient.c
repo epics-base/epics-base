@@ -32,6 +32,7 @@
 #include "errlog.h"
 #include "envDefs.h"
 #include "ellLib.h"
+#include "epicsExit.h"
 
 #include "logClient.h"
 
@@ -175,14 +176,8 @@ LOCAL void logClientDestroy (logClient *pClient)
 /*
  * logClientShutdown()
  */
-LOCAL void logClientShutdown (void)
+LOCAL void logClientShutdown (void * pvt)
 {
-    /*
-     * unfortunately this does not currently work on vxWorks because WRS
-     * runs the reboot hooks in the order that
-     * they are installed (and the network is already shutdown 
-     * by the time we get here)
-     */
     logClient *pClient;
     epicsMutexMustLock (logClientGlobalMutex);
     while ( ( pClient = (logClient *) ellGet (&logClientList) ) ) {
@@ -317,7 +312,7 @@ void epicsShareAPI logClientFlush ( logClientId id )
 }
 
 /*
- *  iocLogShow ()
+ *  iocLogFlush ()
  */
 void epicsShareAPI epicsShareAPI iocLogFlush ()
 {
@@ -586,7 +581,7 @@ LOCAL void logClientGlobalInit ()
         return;
     }
 
-    atexit (logClientShutdown);
+    epicsAtExit (logClientShutdown,0);
 
     epicsMutexUnlock (logClientGlobalMutex);
 }

@@ -24,6 +24,7 @@
 #include <sched.h>
 #include <unistd.h>
 
+#include "epicsStdio.h"
 #include "ellLib.h"
 #include "epicsEvent.h"
 #include "epicsMutex.h"
@@ -600,7 +601,7 @@ void epicsThreadGetName(epicsThreadId pthreadInfo, char *name, size_t size)
 static void showThreadInfo(epicsThreadOSD *pthreadInfo,unsigned int level)
 {
     if(!pthreadInfo) {
-        printf ("            NAME     EPICS ID   PTHREAD ID   OSIPRI  OSSPRI  STATE\n");
+        fprintf(epicsGetStdout(),"            NAME     EPICS ID   PTHREAD ID   OSIPRI  OSSPRI  STATE\n");
     }
     else {
         struct sched_param param;
@@ -610,7 +611,7 @@ static void showThreadInfo(epicsThreadOSD *pthreadInfo,unsigned int level)
         if ((pthreadInfo->tid != 0)
          && (pthread_getschedparam(pthreadInfo->tid,&policy,&param) == 0))
             priority = param.sched_priority;
-    printf("%16.16s %12p %12lu    %3d%8d %8.8s\n", pthreadInfo->name,(void *)
+    fprintf(epicsGetStdout(),"%16.16s %12p %12lu    %3d%8d %8.8s\n", pthreadInfo->name,(void *)
                                    pthreadInfo,(unsigned long)pthreadInfo->tid,
                                    pthreadInfo->osiPriority,priority,
                                    pthreadInfo->isSuspended?"SUSPEND":"OK");

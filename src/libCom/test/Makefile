@@ -50,6 +50,10 @@ epicsOkToBlockTestHost_SRCS += epicsOkToBlockTestMain.cpp epicsOkToBlockTest.cpp
 PROD_HOST += epicsOkToBlockTestHost
 OBJS_IOC_vxWorks += epicsOkToBlockTest
 
+epicsExitTestHost_SRCS += epicsExitTestMain.c epicsExitTest.c
+PROD_HOST += epicsExitTestHost
+OBJS_IOC_vxWorks += epicsExitTest
+
 
 epicsTimerTestHost_SRCS += epicsTimerTestMain.cpp epicsTimerTest.cpp
 PROD_HOST += epicsTimerTestHost

@@ -1,0 +1,11 @@
+#  $Id$
+
+# Microsoft Visual C++ .NET is the default compiler
+# If you have Visual C++ 6.0, uncomment the following 3 override lines
+# This will to eliminate warnings about unknown options /GL and LTCG.
+
+#OPT_CFLAGS_YES = /Ox
+#OPT_CXXFLAGS_YES = /Ox
+#LINK_OPT_FLAGS_YES = /incremental:no /opt:ref /release $(PROD_VERSION:%=/version:%)
+
+

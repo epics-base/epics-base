@@ -66,8 +66,8 @@ epicsShareFunc int epicsShareAPI tsStampFromTimespec (TS_STAMP *pDest, const str
 /*
  * arithmetic operations
  */
-epicsShareFunc long double epicsShareAPI tsStampDiffInSeconds (const TS_STAMP *pLeft, const TS_STAMP *pRight); /* returns *pLeft - *pRight in seconds */
-epicsShareFunc void epicsShareAPI tsStampAddSeconds (TS_STAMP *pDest, long double secondsToAdd); /* adds seconds to *pDest */
+epicsShareFunc double epicsShareAPI tsStampDiffInSeconds (const TS_STAMP *pLeft, const TS_STAMP *pRight); /* returns *pLeft - *pRight in seconds */
+epicsShareFunc void epicsShareAPI tsStampAddSeconds (TS_STAMP *pDest, double secondsToAdd); /* adds seconds to *pDest */
 
 /*
  * comparison operations

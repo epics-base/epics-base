@@ -49,7 +49,7 @@ const unsigned osiTime::secPerMin = 60u;
 static const unsigned ntpEpochYear = 1900;
 static const unsigned ntpEpocMonth = 0; // January
 static const unsigned ntpEpocDayOfTheMonth = 1; // the 1st day of the month
-static const long double ULONG_MAX_PLUS_ONE = (static_cast<long double>(ULONG_MAX) + 1.0);
+static const double ULONG_MAX_PLUS_ONE = (static_cast<double>(ULONG_MAX) + 1.0);
 
 //
 // force this module to include code that can convert
@@ -84,11 +84,11 @@ class loadTimeInit {
 public:
 	loadTimeInit ();
 
-	long double epicsEpochOffset; // seconds
+	double epicsEpochOffset; // seconds
 #ifdef NTP_SUPPORT
-    long double ntpEpochOffset; // seconds
+    double ntpEpochOffset; // seconds
 #endif
-	long double time_tSecPerTick; // seconds (both NTP and EPICS use int sec)
+	double time_tSecPerTick; // seconds (both NTP and EPICS use int sec)
 };
 
 static const loadTimeInit lti;
@@ -99,7 +99,7 @@ static const loadTimeInit lti;
 loadTimeInit::loadTimeInit ()
 {
     static const time_t ansiEpoch = 0;
-	long double secWest;
+	double secWest;
 
 	{
 		time_t current = time (NULL);
@@ -164,7 +164,7 @@ loadTimeInit::loadTimeInit ()
 //
 inline void osiTime::addNanoSec (long nSecAdj)
 {
-    long double secAdj = static_cast <long double> (nSecAdj) / nSecPerSec;
+    double secAdj = static_cast <double> (nSecAdj) / nSecPerSec;
     *this += secAdj;
 }
 
@@ -173,11 +173,11 @@ inline void osiTime::addNanoSec (long nSecAdj)
 //
 osiTime::osiTime (const time_t_wrapper &ansiTimeTicks)
 {
-    static long double uLongMax = static_cast<long double>(ULONG_MAX);
-	long double sec;
+    static double uLongMax = static_cast<double> (ULONG_MAX);
+	double sec;
 
     //
-    // map time_t, which ansi C defines as some arithmetic type, into "long double"  
+    // map time_t, which ansi C defines as some arithmetic type, into type double 
     //
 	sec = ansiTimeTicks.ts * lti.time_tSecPerTick - lti.epicsEpochOffset;
 
@@ -203,14 +203,14 @@ osiTime::osiTime (const time_t_wrapper &ansiTimeTicks)
 //
 osiTime::operator time_t_wrapper () const
 {
-	long double tmp;
+	double tmp;
 	time_t_wrapper wrap;
 
     tmp = (this->secPastEpoch + lti.epicsEpochOffset) / lti.time_tSecPerTick;
 	tmp += (this->nSec / lti.time_tSecPerTick) / nSecPerSec;
 
     //
-    // map "long double" into time_t which ansi C defines as some arithmetic type
+    // map type double into time_t which ansi C defines as some arithmetic type
     //
     wrap.ts = static_cast <time_t> (tmp);
 
@@ -410,14 +410,14 @@ void osiTime::show (unsigned) const
 }
 
 //
-// osiTime::operator + (const long double &rhs)
+// osiTime::operator + (const double &rhs)
 //
 // rhs has units seconds
 //
-osiTime osiTime::operator + (const long double &rhs) const
+osiTime osiTime::operator + (const double &rhs) const
 {
 	unsigned long newSec, newNSec, secOffset, nSecOffset;
-	long double fnsec;
+	double fnsec;
 
 	if (rhs >= 0) {
 		secOffset = static_cast <unsigned long> (rhs);
@@ -464,9 +464,9 @@ osiTime osiTime::operator + (const long double &rhs) const
 // THIS-RHS > one half full scale => return -(RHS + (ULONG_MAX-THIS))
 // THIS-RHS <= one half full scale => return THIS-RHS
 //
-long double osiTime::operator - (const osiTime &rhs) const
+double osiTime::operator - (const osiTime &rhs) const
 {
-	long double nSecRes, secRes;
+	double nSecRes, secRes;
 
 	//
 	// first compute the difference between the nano-seconds members
@@ -725,11 +725,11 @@ extern "C" {
 #       endif
         return tsStampOK;
     }
-    epicsShareFunc long double epicsShareAPI tsStampDiffInSeconds (const TS_STAMP *pLeft, const TS_STAMP *pRight)
+    epicsShareFunc double epicsShareAPI tsStampDiffInSeconds (const TS_STAMP *pLeft, const TS_STAMP *pRight)
     {
         return osiTime (*pLeft) - osiTime (*pRight);
     }
-    epicsShareFunc void epicsShareAPI tsStampAddSeconds (TS_STAMP *pDest, long double seconds)
+    epicsShareFunc void epicsShareAPI tsStampAddSeconds (TS_STAMP *pDest, double seconds)
     {
         *pDest = osiTime (*pDest) + seconds;
     }

@@ -189,11 +189,11 @@ public:
 	//
 	// arithmetic operators
 	//
-	long double operator- (const osiTime &rhs) const; // returns seconds
-	osiTime operator+ (const long double &rhs) const; // add rhs seconds
-	osiTime operator- (const long double &rhs) const; // subtract rhs seconds
-	osiTime operator+= (const long double &rhs); // add rhs seconds
-	osiTime operator-= (const long double &rhs); // subtract rhs seconds
+	double operator- (const osiTime &rhs) const; // returns seconds
+	osiTime operator+ (const double &rhs) const; // add rhs seconds
+	osiTime operator- (const double &rhs) const; // subtract rhs seconds
+	osiTime operator+= (const double &rhs); // add rhs seconds
+	osiTime operator-= (const double &rhs); // subtract rhs seconds
 
 	//
 	// comparison operators
@@ -292,18 +292,18 @@ inline osiTime::osiTime () : secPastEpoch(0u), nSec(0u) {}
 
 inline osiTime::osiTime (const osiTime &t) : secPastEpoch (t.secPastEpoch), nSec (t.nSec) {}
 
-inline osiTime osiTime::operator - (const long double &rhs) const
+inline osiTime osiTime::operator - (const double &rhs) const
 {
 	return osiTime::operator + (-rhs);
 }
 
-inline osiTime osiTime::operator += (const long double &rhs)
+inline osiTime osiTime::operator += (const double &rhs)
 {
 	*this = osiTime::operator + (rhs);
 	return *this;
 }
 
-inline osiTime osiTime::operator -= (const long double &rhs)
+inline osiTime osiTime::operator -= (const double &rhs)
 {
 	*this = osiTime::operator + (-rhs);
 	return *this;

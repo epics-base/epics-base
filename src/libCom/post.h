@@ -111,4 +111,4 @@
 #define		CONST_D2R	73
 #define		CONST_R2D	74
 #define		NINT		75
-#define		END_STACK	0xff
+#define		END_STACK	127

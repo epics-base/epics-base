@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.35  1996/07/01 19:49:15  jhill
+ * turned on analog value wrap-around test
+ *
  * Revision 1.34  1996/06/19 17:59:02  jhill
  * many 3.13 beta changes
  *
@@ -100,7 +103,7 @@ int acctst(char *pname)
 			NULL);
 }
 #else /* not vxWorks */
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	if(argc == 2){
 		doacctst(argv[1]);
@@ -513,7 +516,7 @@ int doacctst(char *pname)
 			status = ca_clear_event(mid[i]);
 			if(status != ECA_NORMAL){
 				printf(
-			"Clear of event %d %x failed because \"%s\"\n",
+			"Clear of event %ld %x failed because \"%s\"\n",
 					i,
 					mid[i]->id,
 					ca_message(status));
@@ -582,7 +585,7 @@ int doacctst(char *pname)
 		if (pfloat)
 			for (i = 0; i < NUM; i++) {
 				for (j = 0; j < NUM; j++)
-					sprintf(&pstring[j][0], "%d", j + 100);
+					sprintf(&pstring[j][0], "%ld", j + 100l);
 				SEVCHK(ca_array_put(
 						DBR_STRING, 
 						NUM, 
@@ -752,8 +755,6 @@ unsigned 	iterations)
 void null_event(struct event_handler_args args)
 {
 	static int      i;
-	dbr_double_t	fval = 3.8;
-	int		status;
 	unsigned	*pInc = (unsigned *) args.usr;
 
 	if (pInc) {

@@ -44,6 +44,12 @@ typedef int                     SOCKET;
 #define INVALID_SOCKET		(-1)
 #define SOCKERRNO               errno
 #define socket_close(S)         close(S)
+#ifndef SHUT_RD
+#   define SHUT_RD 0
+#endif
+#ifndef SHUT_WR
+#   define SHUT_WR 1
+#endif
 #ifndef SHUT_RDWR
 #   define SHUT_RDWR 2
 #endif

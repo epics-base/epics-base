@@ -66,6 +66,14 @@ typedef int osiSocklen_t;
 #define SOCK_ENOTSOCK ENOTSOCK
 #define SOCK_EBADF EBADF
 
+#ifndef SHUT_RD
+#define SHUT_RD 0
+#endif
+
+#ifndef SHUT_WR
+#define SHUT_WR 1
+#endif
+
 #ifndef SHUT_RDWR
 #define SHUT_RDWR 2
 #endif

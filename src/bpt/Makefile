@@ -13,9 +13,9 @@ DBD += bptTypeKdegF.dbd
 
 PROD_LIBS = dbStaticHost Com
 PROD_HOST += makeBpt
+makeBpt_SRCS=makeBpt
 
 include $(TOP)/configure/RULES
 
-inc: $(INSTALL_PROD)
+$(COMMON_DBDS): $(INSTALL_PROD)
 
-depends: $(INSTALL_PROD)

@@ -15,7 +15,7 @@
  *	505 665 1831
  */
 
-#include "limits.h"
+#include <limits.h>
 
 #include "cacIO.h"
 #include "tsFreeList.h"

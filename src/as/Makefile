@@ -21,6 +21,7 @@ asIoc_DLL_LIBS  = dbIoc dbStaticIoc ca Com
 asHost_DIR=.
 PROD_LIBS = asHost dbStaticHost Com
 PROD_HOST = ascheck
+ascheck_SRCS = ascheck.c
 
 asHost_RCS_WIN32 = asHost.rc
 asIoc_RCS_WIN32 = asIoc.rc
@@ -34,13 +35,10 @@ include $(TOP)/configure/RULES
 # Extra rule since asLib_lex.c is included in asLib.c
 #   In my opinion, these objects should really be built
 #   independently.
-asLib$(OBJ): asLib_lex.c ../asLibRoutines.c
+asLib.c: asLib_lex.c ../asLibRoutines.c
 
 $(INSTALL_INC)/asLib.h:../asLib.h
 
 clean::
 	@$(RM) asLib.c asLib_lex.c 
-
-depends: asLib.c
-asLib.c : asLib_lex.c
 

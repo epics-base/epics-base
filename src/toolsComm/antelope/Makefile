@@ -20,4 +20,4 @@ PROD_HOST = antelope
 
 include $(TOP)/configure/RULES
 
-inc depends: $(INSTALL_PROD)
+inc: $(INSTALL_PROD)

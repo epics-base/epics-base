@@ -80,7 +80,7 @@ $(COMMON_DIR)/gddApps.h : $(INSTALL_HOST_BIN)/genApps$(HOSTEXE)
 clean::
 	$(RM) aitConvertGenerated.cc gddApps.h
 
-depends: aitConvertGenerated.cc aitTypes.h
+aitConvert$(OBJ): aitConvertGenerated.cc
 
 #	EOF base/src/gdd/Makefile.Host:n
 

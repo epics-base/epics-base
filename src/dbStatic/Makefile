@@ -34,6 +34,11 @@ PROD_LIBS := dbStaticHost Com
 dbStaticHost_DIR=.
 PROD_HOST = dbReadTest dbExpand dbToMenuH dbToRecordtypeH
 PROD_HOST +=  dbMakeDBDDepends
+dbReadTest_SRCS = dbReadTest.c
+dbExpand_SRCS = dbExpand.c
+dbToMenuH_SRCS = dbToMenuH.c
+dbToRecordtypeH_SRCS = dbToRecordtypeH.c
+dbMakeDBDDepends_SRCS = dbMakeDBDDepends.c
 
 dbStaticHost_RCS_WIN32 = dbStaticHost.rc
 dbStaticIoc_RCS_WIN32 = dbStaticIoc.rc
@@ -41,7 +46,7 @@ dbStaticIoc_RCS_WIN32 = dbStaticIoc.rc
 include $(TOP)/configure/RULES
 
 # Extra rule since dbLexRoutines.c is included in dbYacc.c
-dbYacc$(OBJ): dbLex.c ../dbLexRoutines.c
+dbYacc.c: dbLex.c ../dbLexRoutines.c
 
 clean::
 	@$(RM) dbLex.c dbYacc.c 

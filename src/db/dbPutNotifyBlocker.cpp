@@ -16,8 +16,8 @@
  *	505 665 1831
  */
 
-#include "limits.h"
-#include "string.h"
+#include <limits.h>
+#include <string.h>
 
 #include "epicsMutex.h"
 #include "epicsEvent.h"

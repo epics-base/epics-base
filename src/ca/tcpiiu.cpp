@@ -272,8 +272,8 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
         while ( true ) {
             fd_set recvInterest;
             struct timeval tmo;
-            tmo.tv_sec = 5.0;   // seconds
-            tmo.tv_usec = 0.0;  // micro seconds
+            tmo.tv_sec = 5;   // seconds
+            tmo.tv_usec = 0;  // micro seconds
             FD_ZERO ( & recvInterest );
             FD_SET ( piiu->sock, & recvInterest );
             int status = select ( piiu->sock + 1, 

@@ -66,6 +66,9 @@
  *				due to no entry for the 030 in the resman 
  *				tables - it cant see itself in A16.
  *				A work around was installed.
+ *	.22 joh 05-24-93	Fixed over-zealous parameter checks in
+ *				TTL trigger route
+ *      .23 joh 06-03-93        Fixed incorect MXI BP TTL trigger enable
  *
  * To do
  * -----
@@ -2697,6 +2700,11 @@ unsigned	io_map		/* bits 0-5  correspond to trig 0-5	*/
 	int			status;
 	int			i;
 
+	mask = (1<<VXI_N_ECL_TRIGGERS)-1;
+	if((io_map|enable_map) & ~mask){
+		return VXI_BAD_TRIGGER;
+	}
+
 	/*
 	 * CPU030 trigger routing
 	 */
@@ -2755,13 +2763,6 @@ unsigned	io_map		/* bits 0-5  correspond to trig 0-5	*/
 	else{
 		return VXI_NO_DEVICE;
 	}
-
-	mask = (1<<VXI_N_ECL_TRIGGERS)-1;
-
-	if((enable_map|io_map) & (~mask)){
-		return VXI_BAD_TRIGGER;
-	}
-
 
         pcsr = VXIBASE(la);
 
@@ -2836,6 +2837,11 @@ unsigned	io_map		/* bits 0-5  correspond to trig 0-5	*/
 	int			status;
 	int			i;
 
+	mask = (1<<VXI_N_TTL_TRIGGERS)-1;
+	if((io_map|enable_map) & ~mask){
+		return VXI_BAD_TRIGGER;
+	}
+
 	/*
 	 * NI CPU030 trigger routing 
 	 */
@@ -2895,19 +2901,14 @@ unsigned	io_map		/* bits 0-5  correspond to trig 0-5	*/
 		return VXI_NO_DEVICE;
 	}
 
-	mask = (1<<VXI_N_TTL_TRIGGERS)-1;
-
-	if(enable_map&mask || io_map&mask){
-		return VXI_BAD_TRIGGER;
-	}
-
 
         pcsr = VXIBASE(la);
 
 	if(VXIMXI(pcsr)){
 		short	tmp;
 
-		tmp = (enable_map<<8) | ~io_map; 
+		tmp = ~io_map & enable_map;
+		tmp = (enable_map<<8) | tmp;
 		pcsr->dir.w.dd.mxi.trigger_config = tmp;
 	
 		return VXI_SUCCESS;

@@ -167,6 +167,7 @@ INC += osiWireFormat.h
 INC += epicsReadline.h
 INC += epicsMessageQueue.h
 INC += epicsStdio.h
+INC += epicsGetopt.h
 
 INC += devLib.h
 
@@ -200,6 +201,8 @@ SRCS += osdTime.cpp
 SRCS += osdProcess.c
 SRCS += osdNetIntf.c
 SRCS += osdMessageQueue.c
+
+SRCS_WIN32 += epicsGetopt.c
 
 SRCS_vxWorks += devLib.c
 SRCS_vxWorks += devLibOSD.c

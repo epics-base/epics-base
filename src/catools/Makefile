@@ -18,7 +18,8 @@ SHARED_LIBRARIES = NO
 
 LIBRARY_HOST += catools
 
-catools_SRCS += tool_lib.c parseOptions.c
+catools_SRCS += tool_lib.c
+
 catools_LIBS += ca Com
 
 #Remove LIBNAME from the library names to be installed (make it a local library)

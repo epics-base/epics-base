@@ -1450,26 +1450,28 @@ VXIE		*pvxie
 	}
 
 	/*
+	 * find out how many DC devices are in the system
+	 * and there worst case (blocked address) alignment
+	 */
+	status = vxi_count_dc_devices(
+			pvxie, 
+			&nDC,
+			&maxInBlockedDC);
+	if (status) {
+		return;
+	}
+
+	if(nDC < 1){
+		return;
+	}
+
+	/*
 	 * if unanchored force them to all be in one
 	 * contiguous block
 	 */
 	prealloc = FALSE;
 	if(!pvxie->la_mapped){
 
-		/*
-		 * find out how many DC devices are in the system
-		 * and there worst case (blocked address) alignment
-		 */
-		status = vxi_count_dc_devices(
-				pvxie, 
-				&nDC,
-				&maxInBlockedDC);
-		if(status){
-			return;
-		}
-		if(nDC < 1){
-			return;
-		}
 		/*
 		 * allocate with worst case (blocked address) alignment
 		 */

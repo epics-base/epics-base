@@ -35,6 +35,17 @@
 #include "epicsAssert.h"
 #include "epicsExit.h"
 
+/* pthread_mutex_lock is NOT supposed to return EINTR but bad implementations*/
+static int mutexLock(pthread_mutex_t *id)
+{
+    int status;
+
+    while(1) {
+        status = pthread_mutex_lock(id);
+        if(status!=EINTR) return status;
+    }
+}
+
 /* Until this can be demonstrated to work leave it undefined*/
 #undef _POSIX_THREAD_PRIORITY_SCHEDULING
 
@@ -109,7 +120,7 @@ static void myAtExit(void)
         return;
     }
     epicsExitCallAtExits();
-    status = pthread_mutex_lock(&listLock);
+    status = mutexLock(&listLock);
     checkStatusQuit(status,"pthread_mutex_lock","myAtExit");
     pthreadSelf = (epicsThreadOSD *)pthread_getspecific(getpthreadInfo);
     if(pthreadSelf==NULL)
@@ -201,7 +212,7 @@ static void free_threadInfo(epicsThreadOSD *pthreadInfo)
 {
     int status;
 
-    status = pthread_mutex_lock(&listLock);
+    status = mutexLock(&listLock);
     checkStatusQuit(status,"pthread_mutex_lock","free_threadInfo");
     ellDelete(&pthreadList,&pthreadInfo->node);
     status = pthread_mutex_unlock(&listLock);
@@ -258,7 +269,7 @@ static void once(void)
     pthreadInfo = init_threadInfo("_main_",0,epicsThreadGetStackSize(epicsThreadStackSmall),0,0);
     status = pthread_setspecific(getpthreadInfo,(void *)pthreadInfo);
     checkStatusOnceQuit(status,"pthread_setspecific","epicsThreadInit");
-    status = pthread_mutex_lock(&listLock);
+    status = mutexLock(&listLock);
     checkStatusQuit(status,"pthread_mutex_lock","epicsThreadInit");
     ellAdd(&pthreadList,&pthreadInfo->node);
     status = pthread_mutex_unlock(&listLock);
@@ -281,7 +292,7 @@ static void * start_routine(void *arg)
     checkStatusQuit(status,"pthread_setspecific","start_routine");
     status = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&oldtype);
     checkStatusQuit(status,"pthread_setcanceltype","start_routine");
-    status = pthread_mutex_lock(&listLock);
+    status = mutexLock(&listLock);
     checkStatusQuit(status,"pthread_mutex_lock","start_routine");
     ellAdd(&pthreadList,&pthreadInfo->node);
     status = pthread_mutex_unlock(&listLock);
@@ -332,7 +343,7 @@ void epicsThreadOnceOsd(epicsThreadOnceId *id, void (*func)(void *), void *arg)
 {
     int status;
     epicsThreadInit();
-    status = pthread_mutex_lock(&onceLock);
+    status = mutexLock(&onceLock);
     if(status) {
         fprintf(stderr,"epicsThreadOnceOsd epicsMutexLock failed.\n");
         exit(-1);
@@ -567,7 +578,7 @@ epicsThreadId epicsThreadGetId(const char *name) {
     int status;
 
     assert(epicsThreadOnceCalled);
-    status = pthread_mutex_lock(&listLock);
+    status = mutexLock(&listLock);
     checkStatusQuit(status,"pthread_mutex_lock","epicsThreadGetId");
     pthreadInfo=(epicsThreadOSD *)ellFirst(&pthreadList);
     while(pthreadInfo) {
@@ -627,7 +638,7 @@ void epicsThreadShowAll(unsigned int level)
 
     epicsThreadInit();
     epicsThreadShow(0,level);
-    status = pthread_mutex_lock(&listLock);
+    status = mutexLock(&listLock);
     checkStatusQuit(status,"pthread_mutex_lock","epicsThreadShowAll");
     pthreadInfo=(epicsThreadOSD *)ellFirst(&pthreadList);
     while(pthreadInfo) {
@@ -649,7 +660,7 @@ void epicsThreadShow(epicsThreadId showThread, unsigned int level)
         showThreadInfo(0,level);
         return;
     }
-    status = pthread_mutex_lock(&listLock);
+    status = mutexLock(&listLock);
     checkStatusQuit(status,"pthread_mutex_lock","epicsThreadShowAll");
     pthreadInfo=(epicsThreadOSD *)ellFirst(&pthreadList);
     while(pthreadInfo) {

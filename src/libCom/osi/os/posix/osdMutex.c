@@ -36,6 +36,17 @@ if(status) { \
     cantProceed((method)); \
 }
 
+/* pthread_mutex_lock is NOT supposed to return EINTR but bad implementations*/
+static int mutexLock(pthread_mutex_t *id)
+{
+    int status;
+
+    while(1) {
+        status = pthread_mutex_lock(id);
+        if(status!=EINTR) return status;
+    }
+}
+
 /* Until these can be demonstrated to work leave them undefined*/
 /* On solaris 8 _POSIX_THREAD_PRIO_INHERIT fails*/
 #undef _POSIX_THREAD_PROCESS_SHARED
@@ -98,7 +109,7 @@ epicsMutexLockStatus epicsMutexOsdLock(struct epicsMutexOSD * pmutex)
     int status;
 
     if(!pmutex) return(epicsMutexLockError);
-    status = pthread_mutex_lock(&pmutex->lock);
+    status = mutexLock(&pmutex->lock);
     checkStatusQuit(status,"pthread_mutex_lock","epicsMutexOsdLock");
     return(epicsMutexLockOK);
 }
@@ -182,7 +193,7 @@ void epicsMutexOsdUnlock(struct epicsMutexOSD * pmutex)
 {
     int status;
 
-    status = pthread_mutex_lock(&pmutex->lock);
+    status = mutexLock(&pmutex->lock);
     checkStatusQuit(status,"pthread_mutex_lock","epicsMutexOsdUnlock");
     if((pmutex->count<=0) || (pmutex->ownerTid != pthread_self())) {
         errlogPrintf("epicsMutexOsdUnlock but caller is not owner\n");
@@ -206,7 +217,7 @@ epicsMutexLockStatus epicsMutexOsdLock(struct epicsMutexOSD * pmutex)
     int status;
 
     if(!pmutex || !tid) return(epicsMutexLockError);
-    status = pthread_mutex_lock(&pmutex->lock);
+    status = mutexLock(&pmutex->lock);
     checkStatusQuit(status,"pthread_mutex_lock","epicsMutexOsdLock");
     while(pmutex->owned && !pthread_equal(pmutex->ownerTid,tid))
         pthread_cond_wait(&pmutex->waitToBeOwner,&pmutex->lock);
@@ -224,7 +235,7 @@ epicsMutexLockStatus epicsMutexOsdTryLock(struct epicsMutexOSD * pmutex)
     epicsMutexLockStatus status;
     int pthreadStatus;
 
-    pthreadStatus = pthread_mutex_lock(&pmutex->lock);
+    pthreadStatus = mutexLock(&pmutex->lock);
     checkStatusQuit(pthreadStatus,"pthread_mutex_lock","epicsMutexOsdTryLock");
     if(!pmutex->owned || pthread_equal(pmutex->ownerTid,tid)) {
         pmutex->ownerTid = tid;

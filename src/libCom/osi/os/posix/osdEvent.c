@@ -45,6 +45,27 @@ if(status) { \
     errlogPrintf("%s failed: error %s\n",(message),strerror((status))); \
     cantProceed((method)); \
 }
+
+/* pthread_mutex_lock is NOT supposed to return EINTR but bad implementations*/
+static int mutexLock(pthread_mutex_t *id)
+{
+    int status;
+
+    while(1) {
+        status = pthread_mutex_lock(id);
+        if(status!=EINTR) return status;
+    }
+}
+
+int condTimedwait(pthread_cond_t *condId, pthread_mutex_t *mutexId,
+    struct timespec *time)
+{
+    int status;
+    while(1) {
+        status = pthread_cond_timedwait(condId,mutexId,time);
+        if(status!=EINTR) return status;
+    }
+}
 
 epicsEventId epicsEventCreate(epicsEventInitialState initialState)
 {
@@ -82,7 +103,7 @@ void epicsEventSignal(epicsEventId pevent)
 {
     int   status;
 
-    status = pthread_mutex_lock(&pevent->mutex);
+    status = mutexLock(&pevent->mutex);
     checkStatusQuit(status,"pthread_mutex_lock","epicsEventSignal");
     if(!pevent->isFull) {
         pevent->isFull = 1;
@@ -98,7 +119,7 @@ epicsEventWaitStatus epicsEventWait(epicsEventId pevent)
     int   status;
 
     if(!pevent) return(epicsEventWaitError);
-    status = pthread_mutex_lock(&pevent->mutex);
+    status = mutexLock(&pevent->mutex);
     checkStatusQuit(status,"pthread_mutex_lock","epicsEventWait");
     /*no need for while since caller must be prepared for no work*/
     if(!pevent->isFull) {
@@ -117,11 +138,11 @@ epicsEventWaitStatus epicsEventWaitWithTimeout(epicsEventId pevent, double timeo
     int   status = 0;
     int   unlockStatus;
 
-    status = pthread_mutex_lock(&pevent->mutex);
+    status = mutexLock(&pevent->mutex);
     checkStatusQuit(status,"pthread_mutex_lock","epicsEventWaitWithTimeout");
     if(!pevent->isFull) {
         convertDoubleToWakeTime(timeout,&wakeTime);
-        status = pthread_cond_timedwait(
+        status = condTimedwait(
             &pevent->cond,&pevent->mutex,&wakeTime);
     }
     if(status==0) pevent->isFull = 0;

@@ -359,23 +359,27 @@ int devInterruptInUseVME (unsigned vectorNumber)
 	int i;
 	myISR *psub;
 
-	if (!init) {
-		initHandlerAddrList();
-		init = TRUE;
-	}
+#   if CPU_FAMILY == PPC
+        return FALSE;
+#   else
+	    if (!init) {
+		    initHandlerAddrList();
+		    init = TRUE;
+	    }
  
-	psub = isrFetch (vectorNumber);
+	    psub = isrFetch (vectorNumber);
 
-	/*
-	 * its a C routine. Does it match a default handler?
-	 */
-	for (i=0; i<NELEMENTS(defaultHandlerAddr); i++) {
-		if (defaultHandlerAddr[i] == psub) {
-			return FALSE;
-		}
-	}
+	    /*
+	     * its a C routine. Does it match a default handler?
+	     */
+	    for (i=0; i<NELEMENTS(defaultHandlerAddr); i++) {
+		    if (defaultHandlerAddr[i] == psub) {
+			    return FALSE;
+		    }
+	    }
 
-	return TRUE;
+	    return TRUE;
+#   endif
 }
 
 

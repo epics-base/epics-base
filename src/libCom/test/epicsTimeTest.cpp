@@ -110,7 +110,7 @@ int epicsTimeTest (void)
                 ts.tv_nsec/(double)nSecPerSec);
             printf ("UTC struct tm = %s %f\n", asctime(&ansiDateGMT.ansi_tm), 
                 ansiDateGMT.nSec/(double)nSecPerSec);
-            begin.show (0);
+            begin.show (100);
             printf ("\n");
         } else {
             if (iTimes % 10 == 0)

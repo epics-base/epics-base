@@ -25,6 +25,9 @@
  *
  *	.10 050594 joh	New command added for CA V4.3 - wakeup the server
  * $Log$
+ * Revision 1.23  1995/08/23  00:35:17  jhill
+ * added log entries
+ *
  */
 
 #define __IOCMSG__
@@ -33,7 +36,7 @@ HDRVERSIONID(iocmsgh, "@(#) $Id$ CA version 4.4")
 
 /* TCP/UDP port number (bumped each protocol change) */
 #define CA_PROTOCOL_VERSION	4
-#define CA_MINOR_VERSION	5
+#define CA_MINOR_VERSION	6
 #define CA_UKN_MINOR_VERSION	0 /* unknown minor version */
 #if CA_PROTOCOL_VERSION == 4
 #define CA_V41(MAJOR,MINOR)	((MINOR)>=1) 
@@ -41,18 +44,21 @@ HDRVERSIONID(iocmsgh, "@(#) $Id$ CA version 4.4")
 #define CA_V43(MAJOR,MINOR)	((MINOR)>=3)
 #define CA_V44(MAJOR,MINOR)	((MINOR)>=4)
 #define CA_V45(MAJOR,MINOR)	((MINOR)>=5)
+#define CA_V46(MAJOR,MINOR)	((MINOR)>=6)
 #elif CA_PROTOCOL_VERSION > 4
 #define CA_V41(MAJOR,MINOR)	( 1 )
 #define CA_V42(MAJOR,MINOR)	( 1 )
 #define CA_V43(MAJOR,MINOR)	( 1 )
 #define CA_V44(MAJOR,MINOR)	( 1 )
 #define CA_V45(MAJOR,MINOR)	( 1 )
+#define CA_V46(MAJOR,MINOR)	( 1 )
 #else
 #define CA_V41(MAJOR,MINOR)	( 0 )
 #define CA_V42(MAJOR,MINOR)	( 0 )
 #define CA_V43(MAJOR,MINOR)	( 0 )
 #define CA_V44(MAJOR,MINOR)	( 0 )
 #define CA_V45(MAJOR,MINOR)	( 0 )
+#define CA_V46(MAJOR,MINOR)	( 0 )
 #endif 
 
 /*
@@ -61,7 +67,7 @@ HDRVERSIONID(iocmsgh, "@(#) $Id$ CA version 4.4")
  * environment variables "EPICS_CA_REPEATER_PORT" and
  * "EPICS_CA_SERVER_PORT"
  */
-#define	CA_PORT_BASE		IPPORT_USERRESERVED + 56
+#define	CA_PORT_BASE		IPPORT_USERRESERVED + 56U
 #define CA_SERVER_PORT		(CA_PORT_BASE+CA_PROTOCOL_VERSION*2)
 #define CA_REPEATER_PORT	(CA_PORT_BASE+CA_PROTOCOL_VERSION*2+1)
 
@@ -106,6 +112,7 @@ typedef ca_uint32_t	caResId;
 #define IOC_ECHO		23	/* CA V4.3 connection verify */
 #define REPEATER_REGISTER	24	/* registr for repeater fan out */
 #define IOC_SIGNAL		25	/* knock the server out of select */
+#define IOC_CLAIM_CIU_FAILED	26	/* unable to create chan resource in server */
 
 /*
  * for use with search and not_found (if search fails and

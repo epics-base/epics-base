@@ -1,5 +1,5 @@
 program sncExample
-float v;
+double v;
 assign v to "{user}:xxxExample";
 monitor v;
 

@@ -445,14 +445,12 @@ void nciu::show ( unsigned level ) const
 int nciu::printf ( const char *pFormat, ... )
 {
     va_list theArgs;
-    int status;
 
     va_start ( theArgs, pFormat );
     
-    status = this->cacCtx.vPrintf ( pFormat, theArgs );
+    int status = this->cacCtx.vPrintf ( pFormat, theArgs );
     
     va_end ( theArgs );
     
     return status;
 }
-

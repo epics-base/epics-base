@@ -57,6 +57,18 @@ unsigned accessUpdateCount;
 unsigned connectionUpdateCount;
 unsigned getCallbackCount;
 
+void showProgressBegin ()
+{
+    printf ( "{" );
+    fflush (stdout );
+}
+
+void showProgressEnd ()
+{
+    printf ( "}" );
+    fflush (stdout );
+}
+
 void showProgress ()
 {
     printf ( "." );
@@ -80,20 +92,25 @@ void monitorSubscriptionFirstUpdateTest ( chid chan )
     unsigned waitCount = 0u;
     evid id;
 
+    showProgressBegin ();
+
     /*
      * verify that the first event arrives
      */
     status = ca_add_event ( DBR_FLOAT, 
                 chan, nUpdatesTester, &eventCount, &id );
     SEVCHK (status, 0);
+    ca_pend_event ( 0.1 );
     while ( eventCount < 1 && waitCount++ < 100 ) {
-        ca_pend_event ( 0.01 );
+        printf ( "-" );
+        fflush ( stdout );
+        ca_pend_event ( 0.1 );
     }
     assert ( eventCount > 0 );
     status = ca_clear_event ( id );
     SEVCHK (status, 0);
 
-    showProgress ();
+    showProgressEnd ();
 }
 
 void accessRightsStateChange ( struct access_rights_handler_args args )
@@ -195,6 +212,8 @@ void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount, unsig
     int status;
     unsigned i, j;
 
+    showProgressBegin ();
+
     subscriptionUpdateCount = 0u;
     accessUpdateCount = 0u;
     connectionUpdateCount = 0u;
@@ -224,6 +243,8 @@ void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount, unsig
             assert ( ca_test_io () == ECA_IODONE );
         }
 
+        showProgress ();
+
         while ( connectionUpdateCount < chanCount || 
             getCallbackCount < chanCount ) {
             ca_pend_event ( 1.0 );
@@ -243,17 +264,24 @@ void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount, unsig
             }
         }
 
+        showProgress ();
+
         for ( j = 0u; j < chanCount; j += 2 ) {
             status = ca_clear_event ( pChans[j].subscription );
             SEVCHK ( status, NULL );
         }
 
+        showProgress ();
+
         for ( j = 0u; j < chanCount; j++ ) {
             status = ca_clear_channel ( pChans[j].channel );
             SEVCHK ( status, NULL );
         }
+
+        showProgress ();
+
     }
-    showProgress ();
+    showProgressEnd ();
 }
 
 /*
@@ -280,11 +308,14 @@ void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount, unsig
 void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repetitionCount )
 {
     int status;
-    unsigned connections;
     unsigned i, j;
+    unsigned connections;
+    const unsigned backgroundConnCount = 1u;
+
+    showProgressBegin ();
 
     connections = ca_get_ioc_connection_count ();
-    assert ( connections == 0u );
+    assert ( connections == backgroundConnCount );
 
     for ( i = 0; i < repetitionCount; i++ ) {
 
@@ -311,6 +342,8 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repet
             SEVCHK ( status, NULL );
         }
 
+        showProgress ();
+
         for ( j = 0u; j < chanCount; j += 2 ) {
             status = ca_change_connection_event ( pChans[j].channel, connectionStateChange );
             SEVCHK ( status, NULL );
@@ -334,10 +367,12 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repet
         status = ca_pend_io ( 1000.0 );
         SEVCHK ( status, NULL );
 
+        showProgress ();
+
         assert ( ca_test_io () == ECA_IODONE );
 
         connections = ca_get_ioc_connection_count ();
-        assert ( connections == 1u );
+        assert ( connections == backgroundConnCount );
 
         for ( j = 0u; j < chanCount; j++ ) {
             assert ( VALID_DB_REQ ( ca_field_type ( pChans[j].channel ) ) == TRUE );
@@ -345,21 +380,22 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repet
             SEVCHK ( ca_clear_channel ( pChans[j].channel ), NULL );
         }
 
+        showProgress ();
+
         /*
          * verify that connections to IOC's that are 
          * not in use are dropped
          */
-        if ( ca_get_ioc_connection_count () != 0u ) {
+        if ( ca_get_ioc_connection_count () != backgroundConnCount ) {
             ca_pend_event ( 1.0 );
             j=0;
-            while ( ca_get_ioc_connection_count () != 0u ) {
-                printf ( "-" );
+            while ( ca_get_ioc_connection_count () != backgroundConnCount ) {
                 ca_pend_event ( 1.0 );
                 assert ( ++j < 100 );
                 fflush ( stdout );
             }
-            printf ("\n");
         }
+        showProgress ();
     }
 
     for ( j = 0u; j < chanCount; j++ ) {
@@ -390,14 +426,9 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repet
              */
             ca_pend_event ( 0.1 );
             if ( ca_state( pChans[0].channel ) != cs_conn ) {
-                printf ( "waiting on pend io verify connect" );
-                fflush ( stdout );
                 while ( ca_state ( pChans[0].channel ) != cs_conn ) {
-                    printf ( "." );
-                    fflush ( stdout );
                     ca_pend_event ( 0.1 );
                 }
-                printf ( "done\n" );
             }
 
             status = ca_search_and_connect ( pChans[1].name, &pChans[1].channel, NULL, NULL  );
@@ -415,7 +446,7 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repet
     }
     status = ca_clear_channel( pChans[0].channel );
     SEVCHK ( status, NULL );
-    showProgress ();
+    showProgressEnd ();
 }
 
 /*
@@ -425,6 +456,8 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repet
 void verifyClear ( appChan *pChans )
 {
     int status;
+
+    showProgressBegin ();
 
     /*
      * verify channel clear before connect
@@ -449,7 +482,7 @@ void verifyClear ( appChan *pChans )
 
     status = ca_clear_channel ( pChans[0].channel );
     SEVCHK ( status, NULL );
-    showProgress ();
+    showProgressEnd ();
 }
 
 /*
@@ -461,6 +494,8 @@ void performGrEnumTest ( chid chan )
     unsigned count;
     int status;
     unsigned i;
+
+    showProgressBegin ();
 
     ge.no_str = -1;
 
@@ -479,7 +514,7 @@ void performGrEnumTest ( chid chan )
         }
         printf ("}\n");
     }
-    showProgress ();
+    showProgressEnd ();
 }
 
 /*
@@ -495,6 +530,7 @@ void performCtrlDoubleTest (chid chan)
     int status;
     unsigned i;
 
+
     if (!ca_write_access(chan)) {
         printf ("skipped ctrl dbl test - no write access\n");
         return;
@@ -504,6 +540,8 @@ void performCtrlDoubleTest (chid chan)
         printf ("skipped ctrl dbl test - not an analog type\n");
         return;
     }
+
+    showProgressBegin ();
 
     size = sizeof (*pDbl)*ca_element_count(chan);
     pDbl = malloc (size);
@@ -548,7 +586,7 @@ void performCtrlDoubleTest (chid chan)
 
     free (pCtrlDbl);
     free (pDbl);
-    showProgress ();
+    showProgressEnd ();
 }
 
 /*
@@ -558,9 +596,12 @@ void verifyBlockInPendIO ( chid chan )
 {
     int status;
 
+
     if ( ca_read_access (chan) ) {
         dbr_float_t req;
         dbr_float_t resp;
+
+        showProgressBegin ();
 
         req = 56.57f;
         resp = -99.99f;
@@ -592,11 +633,11 @@ void verifyBlockInPendIO ( chid chan )
     "get block test failed - val read %f\n", resp);
             assert(0);
         }
+        showProgressEnd ();
     }
     else {
         printf ("skipped pend IO block test - no read access\n");
     }
-    showProgress ();
 }
 
 /*
@@ -671,6 +712,7 @@ void verifyAnalogIO ( chid chan, int dataType, double min, double max,
     double base;
     unsigned iter;
 
+
     if ( ! ca_write_access ( chan ) ) {
         printf ("skipped analog test - no write access\n");
         return;
@@ -681,6 +723,8 @@ void verifyAnalogIO ( chid chan, int dataType, double min, double max,
         printf ("skipped analog test - not an analog type\n");
         return;
     }
+
+    showProgressBegin ();
 
     epsil = epsilon * 4.0;
     base = min;
@@ -746,7 +790,7 @@ void verifyAnalogIO ( chid chan, int dataType, double min, double max,
             assert ( 0 );
         }
     }
-    showProgress ();
+    showProgressEnd ();
 }
 
 /*
@@ -771,6 +815,7 @@ void verifyLongIO ( chid chan )
 
     incr = ( cl.upper_ctrl_limit - cl.lower_ctrl_limit );
     if ( incr >= 1 ) {
+        showProgressBegin ();
         incr /= 1000;
         if ( incr == 0 ) {
             incr = 1;
@@ -784,7 +829,7 @@ void verifyLongIO ( chid chan )
             SEVCHK ( status, "get pend failed\n" );
             assert ( iter == rdbk );
         }
-        showProgress ();
+        showProgressEnd ();
     }
     else {
         printf ( "strange limits configured for channel \"%s\"\n", ca_name (chan) );
@@ -813,6 +858,8 @@ void verifyShortIO ( chid chan )
 
     incr = ( cl.upper_ctrl_limit - cl.lower_ctrl_limit );
     if ( incr >= 1 ) {
+        showProgressBegin ();
+
         incr /= 1000;
         if ( incr == 0 ) {
             incr = 1;
@@ -826,7 +873,7 @@ void verifyShortIO ( chid chan )
             SEVCHK ( status, "get pend failed\n" );
             assert ( iter == rdbk );
         }
-        showProgress ();
+        showProgressEnd ();
     }
     else {
         printf ( "Strange limits configured for channel \"%s\"\n", ca_name (chan) );
@@ -844,13 +891,14 @@ void verifyHighThroughputRead ( chid chan )
      */
     if ( ca_read_access (chan) ) {
         dbr_float_t temp;
+        showProgressBegin ();
         for ( i=0; i<10000; i++ ) {
             status = ca_get ( DBR_FLOAT, chan, &temp );
             SEVCHK ( status ,NULL );
         }
         status = ca_pend_io (2000.0);
         SEVCHK ( status, NULL );
-        showProgress ();
+        showProgressEnd ();
     }
     else {
         printf ( "Skipped highthroughput read test - no read access\n" );
@@ -863,13 +911,14 @@ void verifyHighThroughputWrite ( chid chan )
     unsigned i;
 
     if (ca_write_access ( chan ) ) {
+        showProgressBegin ();
         for ( i=0; i<10000; i++ ) {
             dbr_double_t fval = 3.3;
             status = ca_put ( DBR_DOUBLE, chan, &fval );
             SEVCHK ( status, NULL );
         }
         SEVCHK ( ca_pend_io (2000.0), NULL );
-        showProgress ();
+        showProgressEnd ();
     }
     else{
         printf("Skipped multiple put test - no write access\n");
@@ -887,6 +936,7 @@ void verifyHighThroughputReadCallback ( chid chan )
 
     if ( ca_read_access ( chan ) ) { 
         unsigned count = 0u;
+        showProgressBegin ();
         for ( i=0; i<10000; i++ ) {
             status = ca_array_get_callback (
                     DBR_FLOAT, 1, chan, nUpdatesTester, &count );
@@ -896,7 +946,7 @@ void verifyHighThroughputReadCallback ( chid chan )
         while ( count < 10000u ) {
             ca_pend_event ( 0.1 );
         }
-        showProgress ();
+        showProgressEnd ();
     }
     else {
         printf ( "Skipped multiple get cb test - no read access\n" );
@@ -914,6 +964,7 @@ void verifyHighThroughputWriteCallback ( chid chan )
 
     if ( ca_write_access (chan) && ca_v42_ok (chan) ) {
         unsigned count = 0u;
+        showProgressBegin ();
         for ( i=0; i<10000; i++ ) {
             dbr_float_t fval = 3.3F;
             status = ca_array_put_callback (
@@ -925,7 +976,7 @@ void verifyHighThroughputWriteCallback ( chid chan )
         while ( count < 10000u ) {
             ca_pend_event ( 0.1 );
         }
-        showProgress ();
+        showProgressEnd ();
     }
     else {
         printf ( "Skipped multiple put cb test - no write access\n" );
@@ -942,6 +993,7 @@ void verifyBadString ( chid chan )
     if ( ca_write_access (chan) ) {
         dbr_string_t    stimStr;
         dbr_string_t    respStr;
+        showProgressBegin ();
         memset (stimStr, 'a', sizeof (stimStr) );
         status = ca_array_put ( DBR_STRING, 1u, chan, stimStr );
         assert ( status != ECA_NORMAL );
@@ -955,7 +1007,7 @@ void verifyBadString ( chid chan )
         printf (
 "Test fails if stim \"%s\" isnt roughly equiv to resp \"%s\"\n",
             stimStr, respStr);
-        showProgress ();
+        showProgressEnd ();
     }
     else {
         printf ( "Skipped bad string test - no write access\n" );
@@ -1000,6 +1052,8 @@ void test_sync_groups ( chid chan )
         printf ( "skipping sycnc group test - serveris on wron version\n" );
     }
 
+    showProgressBegin ();
+
     status = ca_sg_create ( &gid1 );
     SEVCHK ( status, NULL );
 
@@ -1037,7 +1091,7 @@ void test_sync_groups ( chid chan )
     status = ca_sg_delete ( gid2 );
     SEVCHK ( status, NULL );
 
-    showProgress ();
+    showProgressEnd ();
 }
 
 /*
@@ -1054,12 +1108,12 @@ void performDeleteTest ( chid chan )
     dbr_float_t temp, getResp;
     unsigned i;
     
+    showProgressBegin ();
+
     for ( i=0; i < NELEMENTS (mid); i++ ) {
         SEVCHK ( ca_add_event ( DBR_GR_FLOAT, chan, noopSubscriptionStateChange,
             &count, &mid[i]) , NULL );
     }
-
-    showProgress ();
 
     /*
      * force all of the monitors subscription requests to
@@ -1104,7 +1158,7 @@ void performDeleteTest ( chid chan )
     SEVCHK ( ca_get (DBR_FLOAT,chan,&temp), NULL );
     SEVCHK ( ca_pend_io (1000.0), NULL );
 
-    showProgress ();
+    showProgressEnd ();
 } 
 
 void eventClearTest ( chid chan )
@@ -1164,6 +1218,8 @@ void arrayTest ( chid chan )
         printf ( "skipping array test - no write access\n" );
     }
 
+    showProgressBegin ();
+
     pRF = (dbr_double_t *) calloc ( ca_element_count (chan), sizeof (*pRF) );
     assert ( pRF != NULL );
 
@@ -1217,7 +1273,7 @@ void arrayTest ( chid chan )
     free ( pRF );
     free ( pWF );
 
-    showProgress ();
+    showProgressEnd ();
 }
 
 /*
@@ -1289,28 +1345,185 @@ void verifyDataTypeMacros ()
     }
 }
 
+typedef struct {
+    evid            id;
+    dbr_float_t     lastValue;
+    unsigned        count;
+} eventTest;
+
+/*
+ * updateTestEvent ()
+ */
+void updateTestEvent ( struct event_handler_args args )
+{
+    eventTest *pET = (eventTest *) args.usr;
+    struct dbr_gr_float *pGF = (struct dbr_gr_float *) args.dbr;
+    pET->lastValue = pGF->value; 
+    pET->count++;
+}
+
+/*
+ * performMonitorUpdateTest
+ *
+ * 1) verify we can add many monitors at once
+ * 2) verify that under heavy load the last monitor
+ *      returned is the last modification sent
+ */
+void performMonitorUpdateTest ( chid chan )
+{
+    eventTest       test[100];
+    dbr_float_t     temp, getResp;
+    unsigned        i, j;
+    unsigned        flowCtrlCount = 0u;
+    unsigned        tries;
+    unsigned        prevPassCount;
+    
+    if ( ! ca_read_access ( chan ) ) {
+        return;
+    }
+    
+    showProgressBegin ();
+
+    /*
+     * set channel to known value
+     */
+    temp = 0.0;
+    SEVCHK ( ca_put ( DBR_FLOAT, chan, &temp ), NULL );
+
+    for ( i=0; i < NELEMENTS (test); i++ ) {
+        test[i].count = 0;
+        test[i].lastValue = -1.0;
+        SEVCHK(ca_add_event(DBR_GR_FLOAT, chan, updateTestEvent,
+            &test[i], &test[i].id),NULL);
+    }
+
+    /*
+     * force all of the monitors subscription requests to
+     * complete
+     *
+     * NOTE: this hopefully demonstrates that when the
+     * server is very busy with monitors the client 
+     * is still able to punch through with a request.
+     */
+    SEVCHK ( ca_get ( DBR_FLOAT, chan, &getResp) ,NULL );
+    SEVCHK ( ca_pend_io ( 1000.0 ) ,NULL );
+            
+    showProgress ();
+
+    /*
+     * dont pass the test if we dont get the first monitor update
+     */
+    tries = 0;
+    while ( 1 ) {
+        unsigned nComplete = 0u;
+        ca_pend_event ( 0.1 );
+        for ( i = 0; i < NELEMENTS ( test ); i++ ) {
+            if ( test[i].count > 0 ) {
+                if ( test[i].lastValue == temp ) {
+                    nComplete++;
+                }
+            }
+        }
+        if ( nComplete == NELEMENTS ( test ) ) {
+            break;
+        }
+        printf ( "-" );
+        fflush ( stdout );
+        assert ( tries++ < 50 );
+    }
+
+    showProgress ();
+
+    /*
+     * attempt to uncover problems where the last event isnt sent
+     * and hopefully get into a flow control situation
+     */   
+    prevPassCount = 0u;
+    for ( i=0; i < NELEMENTS ( test ); i++ ) {
+        for ( j = 0; j < NELEMENTS ( test ); j++ ) {
+            test[j].count = 0;
+            test[j].lastValue = -1.0;
+        }
+
+        for ( j = 0; j <= i; j++ ) {
+            temp = ( (float) j ) * 10.12345f + 10.7f;
+            SEVCHK ( ca_put ( DBR_FLOAT, chan, &temp ), NULL );
+        }
+
+        /*
+         * wait for the above to complete
+         */
+        getResp = -1;
+        SEVCHK ( ca_get ( DBR_FLOAT, chan, &getResp ), NULL );
+        SEVCHK ( ca_pend_io ( 1000.0 ), NULL );
+
+        assert ( getResp == temp );
+
+        /*
+         * wait for all of the monitors to have correct values
+         */
+        tries = 0;
+        while (1) {
+            unsigned passCount = 0;
+            unsigned tmpFlowCtrlCount = 0u;
+            ca_pend_event ( 0.05 );
+            for ( j = 0; j < NELEMENTS ( test ); j++ ) {
+                assert ( test[j].count <= i + 1 );
+                if ( test[j].lastValue == temp ) {
+                    if ( test[j].count < i + 1 ) {
+                        tmpFlowCtrlCount++;
+                    }
+                    passCount++;
+                }
+            }
+            if ( passCount == NELEMENTS ( test ) ) {
+                flowCtrlCount += tmpFlowCtrlCount;
+                break;
+            }
+            if ( passCount == prevPassCount ) {
+                assert ( tries++ < 50 );
+                printf ( "-" );
+                fflush ( stdout );
+            }
+            prevPassCount = passCount;
+        }
+    }
+
+    showProgress ();
+
+    /*
+     * delete the event subscriptions 
+     */
+    for ( i = 0; i < NELEMENTS ( test ); i++ ) {
+        SEVCHK ( ca_clear_event ( test[i].id ), NULL );
+    }
+        
+    /*
+     * force all of the clear event requests to
+     * complete
+     */
+    SEVCHK ( ca_get ( DBR_FLOAT, chan, &temp ), NULL );
+    SEVCHK ( ca_pend_io ( 1000.0 ), NULL );
+
+    /* printf ( "flow control bypassed %u events\n", flowCtrlCount ); */
+
+    showProgressEnd ();
+} 
+
 int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
 {
     chid chan;
     int status;
     unsigned i;
     appChan *pChans;
+    unsigned connections;
 
     printf ( "CA Client V%s, channel name \"%s\"\n", ca_version (), pName );
 
     verifyDataTypeMacros ();
 
-    pChans = calloc ( channelCount, sizeof ( *pChans ) );
-    assert ( pChans );
-
-    for ( i = 0; i < channelCount; i++ ) {
-        strncpy ( pChans[ i ].name, pName, sizeof ( pChans[ i ].name ) );
-        pChans[ i ].name[ sizeof ( pChans[i].name ) - 1 ] = '\0';
-    }
-
-    verifyBlockingConnect ( pChans, channelCount, repetitionCount );
-    verifyConnectionHandlerConnect ( pChans, channelCount, repetitionCount );
-    verifyClear ( pChans );
+    connections = ca_get_ioc_connection_count ();
+    assert ( connections == 0u );
 
     status = ca_search ( pName, &chan );
     SEVCHK ( status, NULL );
@@ -1318,7 +1531,11 @@ int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
     status = ca_pend_io ( 100.0 );
     SEVCHK ( status, NULL );
 
+    connections = ca_get_ioc_connection_count ();
+    assert ( connections == 1u );
+
     monitorSubscriptionFirstUpdateTest ( chan );
+    performMonitorUpdateTest ( chan );
     performGrEnumTest ( chan );
     performCtrlDoubleTest ( chan );
     verifyBlockInPendIO ( chan );
@@ -1334,10 +1551,34 @@ int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
     verifyHighThroughputWriteCallback ( chan );
     verifyBadString ( chan );
     test_sync_groups ( chan );
-    /* performMonitorUpdateTest ( chan ); */
     performDeleteTest ( chan );
     eventClearTest ( chan );
     arrayTest ( chan ); 
+
+    /*
+     * CA pend event delay accuracy test
+     * (CA asssumes that search requests can be sent
+     * at least every 25 mS on all supported os)
+     */
+    printf ( "\n" );
+    pend_event_delay_test ( 1.0 );
+    pend_event_delay_test ( 0.1 );
+    pend_event_delay_test ( 0.25 ); 
+
+    /* ca_channel_status ( 0 ); */
+    ca_client_status ( 0u );
+
+    pChans = calloc ( channelCount, sizeof ( *pChans ) );
+    assert ( pChans );
+
+    for ( i = 0; i < channelCount; i++ ) {
+        strncpy ( pChans[ i ].name, pName, sizeof ( pChans[ i ].name ) );
+        pChans[ i ].name[ sizeof ( pChans[i].name ) - 1 ] = '\0';
+    }
+
+    verifyBlockingConnect ( pChans, channelCount, repetitionCount );
+    verifyConnectionHandlerConnect ( pChans, channelCount, repetitionCount );
+    verifyClear ( pChans );
 
     /*
      * Verify that we can do IO with the new types for ALH
@@ -1374,18 +1615,6 @@ int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
         printf ( "CA pend event delay accuracy = %f %%\n", accuracy );
     }
 #endif
-
-    /*
-     * CA pend event delay accuracy test
-     * (CA asssumes that search requests can be sent
-     * at least every 25 mS on all supported os)
-     */
-    pend_event_delay_test ( 1.0 );
-    pend_event_delay_test ( 0.1 );
-    pend_event_delay_test ( 0.25 ); 
-
-    /* ca_channel_status ( 0 ); */
-    ca_client_status ( 0u );
 
     caTaskExistTest ();
 
@@ -1433,128 +1662,5 @@ void accessSecurity_cb(struct access_rights_handler_args args)
             ca_write_access(args.chid)?"write":"nowrite");
 #   endif
 }
-
-
-typedef struct {
-    evid            id;
-    dbr_float_t     lastValue;
-    unsigned        count;
-} eventTest;
-
-/*
- * updateTestEvent ()
- */
-void updateTestEvent (struct event_handler_args args)
-{
-    eventTest   *pET = (eventTest *) args.usr;
-    pET->lastValue = * (dbr_float_t *) args.dbr;
-    pET->count++;
-}
-
-/*
- * performMonitorUpdateTest
- *
- * 1) verify we can add many monitors at once
- * 2) verify that under heavy load the last monitor
- *      returned is the last modification sent
- */
-void performMonitorUpdateTest ( chid chan )
-{
-    eventTest       test[1000];
-    dbr_float_t     temp, getResp;
-    unsigned        i, j;
-    unsigned        flowCtrlCount = 0u;
-    unsigned        tries;
-    
-    if ( ! ca_read_access(chan) ) {
-        return;
-    }
-    
-    printf ( "Performing event subscription update test..." );
-    fflush ( stdout );
-
-    for ( i=0; i<NELEMENTS(test); i++ ) {
-        test[i].count = 0;
-        test[i].lastValue = -1.0;
-        SEVCHK(ca_add_event(DBR_GR_FLOAT, chan, updateTestEvent,
-            &test[i], &test[i].id),NULL);
-    }
-
-    /*
-     * force all of the monitors subscription requests to
-     * complete
-     *
-     * NOTE: this hopefully demonstrates that when the
-     * server is very busy with monitors the client 
-     * is still able to punch through with a request.
-     */
-    SEVCHK (ca_get(DBR_FLOAT,chan,&getResp),NULL);
-    SEVCHK (ca_pend_io(1000.0),NULL);
-            
-    /*
-     * attempt to uncover problems where the last event isnt sent
-     * and hopefully get into a flow control situation
-     */   
-    for (i=0; i<NELEMENTS(test); i++) {
-        for (j=0; j<=i; j++) {
-            temp = (float) j;
-            SEVCHK ( ca_put (DBR_FLOAT, chan, &temp), NULL);
-        }
-
-        /*
-         * wait for the above to complete
-         */
-        SEVCHK ( ca_get (DBR_FLOAT,chan,&getResp), NULL);
-        SEVCHK ( ca_pend_io (1000.0), NULL);
-
-        assert (getResp==temp);
-
-        /*
-         * wait for all of the monitors to have correct values
-         */
-        tries = 0;
-        while (1) {
-            unsigned passCount = 0;
-            for (j=0; j<NELEMENTS(test); j++) {
-                assert (test[i].count<=i);
-                if (test[i].lastValue==temp) {
-                    if (test[i].count<i) {
-                        flowCtrlCount++;
-                    }
-                    test[i].lastValue = -1.0;
-                    test[i].count = 0;
-                    passCount++;
-                }
-            }
-            if ( passCount==NELEMENTS(test) ) {
-                break;
-            }
-            SEVCHK ( ca_pend_event (0.1), 0);
-            printf (".");
-            fflush (stdout);
-
-            assert (tries<50);
-        }
-    }
-
-    /*
-     * delete the event subscriptions 
-     */
-    for ( i=0; i<NELEMENTS(test); i++ ) {
-        SEVCHK ( ca_clear_event (test[i].id), NULL);
-    }
-        
-    /*
-     * force all of the clear event requests to
-     * complete
-     */
-    SEVCHK ( ca_get (DBR_FLOAT,chan,&temp), NULL);
-    SEVCHK ( ca_pend_io (1000.0), NULL);
-
-    printf ("done.\n");
-
-    printf ("flow control bypassed %u events\n", flowCtrlCount);
-} 
-
 
 

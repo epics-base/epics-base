@@ -26,7 +26,11 @@ instance of the state program to run on an IOC add the line
 state notation language code file name.
 </blockquote>
 
-<h3>epicsExit now required.</h3>
+<h3>epicsExit</h3>
+<p>Code that calls exit or atexit should change these calls to epicsExit
+and epicsAtExit. epicsAtexit was created because of problems on
+vxWorks and windows with the implementation of atexit,
+i.e. neither of these systems implements exit and atexit according to the POSIX standard.</p>
 
 <blockquote>
    Add the following lines 

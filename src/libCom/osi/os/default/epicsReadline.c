@@ -8,6 +8,7 @@
 /* Author:  Eric Norum Date: 12DEC2001 */
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #define epicsExportSharedSymbols
 
@@ -74,7 +75,6 @@ epicsReadlineEnd(void *context)
 
 #elif EPICS_COMMANDLINE_LIBRARY == EPICS_COMMANDLINE_LIBRARY_READLINE
 
-#include <stdlib.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 

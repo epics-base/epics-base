@@ -105,8 +105,8 @@ const cac::pExcepProtoStubTCP cac::tcpExcepJumpTableCAC [] =
 //
 cac::cac ( cacNotify &notifyIn, bool enablePreemptiveCallbackIn ) :
     ipToAEngine ( "caIPAddrToAsciiEngine" ), 
-    chanTable ( 1024 ),
-    ioTable ( 1024 ),
+    chanTable ( 16384 ),
+    ioTable ( 16384 ),
     sgTable ( 128 ),
     beaconTable ( 1024 ),
     pudpiiu ( 0 ),
@@ -938,6 +938,10 @@ void cac::ioCancel ( nciu &chan, const cacChannel::ioid &id )
         baseNMIU * pmiu = this->ioTable.remove ( id );
         if ( pmiu ) {
             chan.cacPrivateListOfIO::eventq.remove ( *pmiu );
+            class netSubscription *pSubscr = pmiu->isSubscription ();
+            if ( pSubscr ) {
+                chan.getPIIU()->subscriptionCancelRequest ( chan, *pSubscr );
+            }
             pmiu->destroy ( *this );
         }
         assert ( this->threadsBlockingOnNotifyCompletion < UINT_MAX );
@@ -1128,32 +1132,30 @@ void cac::ioExceptionNotifyAndDestroy ( unsigned id, int status,
 void cac::connectAllIO ( nciu &chan )
 {
     tsDLList < baseNMIU > tmpList;
-    {
-        epicsAutoMutex autoMutex ( this->mutex );
-        tsDLIterBD < baseNMIU > pNetIO = 
-            chan.cacPrivateListOfIO::eventq.firstIter ();
-        while ( pNetIO.valid () ) {
-            tsDLIterBD < baseNMIU > next = pNetIO;
-            next++;
-            class netSubscription *pSubscr = pNetIO->isSubscription ();
-            if ( pSubscr ) {
-                try {
-                    chan.getPIIU()->subscriptionRequest ( chan, *pSubscr );
-                }
-                catch (...) {
-                    this->printf ( "cac: no memory to queue event subscription\n" );
-                }
+    epicsAutoMutex autoMutex ( this->mutex );
+    tsDLIterBD < baseNMIU > pNetIO = 
+        chan.cacPrivateListOfIO::eventq.firstIter ();
+    while ( pNetIO.valid () ) {
+        tsDLIterBD < baseNMIU > next = pNetIO;
+        next++;
+        class netSubscription *pSubscr = pNetIO->isSubscription ();
+        if ( pSubscr ) {
+            try {
+                chan.getPIIU()->subscriptionRequest ( chan, *pSubscr );
             }
-            else {
-                // it shouldnt be here at this point - so uninstall it
-                this->ioTable.remove ( *pNetIO );
-                chan.cacPrivateListOfIO::eventq.remove ( *pNetIO );
-                tmpList.add ( *pNetIO );
+            catch (...) {
+                this->printf ( "cac: insufficent memory to queue event subscription\n" );
             }
-            pNetIO = next;
         }
-        chan.getPIIU()->flushRequest ();
+        else {
+            // it shouldnt be here at this point - so uninstall it
+            this->ioTable.remove ( *pNetIO );
+            chan.cacPrivateListOfIO::eventq.remove ( *pNetIO );
+            tmpList.add ( *pNetIO );
+        }
+        pNetIO = next;
     }
+    chan.getPIIU()->flushRequest ();
     while ( baseNMIU *pIO = tmpList.get () ) {
         pIO->destroy ( *this );
     }
@@ -1162,27 +1164,28 @@ void cac::connectAllIO ( nciu &chan )
 // cancel IO operations and monitor subscriptions
 void cac::disconnectAllIO ( nciu &chan )
 {
+    epicsAutoMutex autoMutex ( this->mutex );
     tsDLList < baseNMIU > tmpList;
-    {
-        epicsAutoMutex autoMutex ( this->mutex );
-        tsDLIterBD < baseNMIU > pNetIO = 
-            chan.cacPrivateListOfIO::eventq.firstIter ();
-        while ( pNetIO.valid () ) {
-            tsDLIterBD < baseNMIU > next = pNetIO;
-            next++;
-            if ( ! pNetIO->isSubscription () ) {
-                // no use after disconnected - so uninstall it
-                this->ioTable.remove ( *pNetIO );
-                chan.cacPrivateListOfIO::eventq.remove ( *pNetIO );
-                tmpList.add ( *pNetIO );
-            }
-            pNetIO = next;
+    tsDLIterBD < baseNMIU > pNetIO = 
+        chan.cacPrivateListOfIO::eventq.firstIter ();
+    while ( pNetIO.valid () ) {
+        tsDLIterBD < baseNMIU > next = pNetIO;
+        next++;
+        if ( ! pNetIO->isSubscription () ) {
+            // no use after disconnected - so uninstall it
+            this->ioTable.remove ( *pNetIO );
+            chan.cacPrivateListOfIO::eventq.remove ( *pNetIO );
+            tmpList.add ( *pNetIO );
         }
+        pNetIO = next;
     }
     while ( baseNMIU *pIO = tmpList.get () ) {
         char buf[128];
         sprintf ( buf, "host = %100s", chan.pHostName() );
-        pIO->exception ( ECA_DISCONN, buf );
+        {
+            epicsAutoMutexRelease unlocker ( this->mutex );
+            pIO->exception ( ECA_DISCONN, buf );
+        }
         pIO->destroy ( *this );
     }
 }

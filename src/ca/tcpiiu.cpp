@@ -314,12 +314,14 @@ void tcpRecvThread::run ()
                 continue;
             }
 
+            epicsTime currentTime = epicsTime::getCurrent ();
+
             // reschedule connection activity watchdog
             // but dont hold the lock for fear of deadlocking 
             // because cancel is blocking for the completion
             // of the recvDog expire which takes the lock
             // - it take also the callback lock
-            this->iiu.recvDog.messageArrivalNotify (); 
+            this->iiu.recvDog.messageArrivalNotify ( currentTime ); 
 
             this->iiu.cacRef.messageArrivalNotify ();
 
@@ -350,7 +352,7 @@ void tcpRecvThread::run ()
                 pComBuf = new ( this->iiu.comBufMemMgr ) comBuf;
 
                 // execute receive labor
-                bool protocolOK = this->iiu.processIncoming ( guard );
+                bool protocolOK = this->iiu.processIncoming ( currentTime, guard );
                 if ( ! protocolOK ) {
                     this->iiu.cacRef.initiateAbortShutdown ( this->iiu );
                     break;
@@ -738,7 +740,8 @@ bool tcpiiu::setEchoRequestPending () // X aCC 361
 //
 // tcpiiu::processIncoming()
 //
-bool tcpiiu::processIncoming ( epicsGuard < callbackMutex > & guard )
+bool tcpiiu::processIncoming ( 
+    const epicsTime & currentTime, epicsGuard < callbackMutex > & guard )
 {
     while ( true ) {
 
@@ -814,7 +817,7 @@ bool tcpiiu::processIncoming ( epicsGuard < callbackMutex > & guard )
                 }
             }
             bool msgOK = this->cacRef.executeResponse ( guard, *this, 
-                                this->curMsg, this->pCurData );
+                                currentTime, this->curMsg, this->pCurData );
             if ( ! msgOK ) {
                 return false;
             }
@@ -1255,10 +1258,12 @@ const char * tcpiiu::pHostName () const
     return nameBuf; // ouch !!
 }
 
-void tcpiiu::removeAllChannels ( epicsGuard < callbackMutex > & cbGuard, 
+void tcpiiu::removeAllChannels ( 
+                                epicsGuard < callbackMutex > & cbGuard, 
                                 epicsGuard < cacMutex > & guard,
                                 cacDisconnectChannelPrivate & dcp )
 {
+    epicsTime currentTime = epicsTime::getCurrent ();
     while ( nciu *pChan = this->channelList.first() ) {
         // if the claim reply has not returned then we will issue
         // the clear channel request to the server when the claim reply
@@ -1266,7 +1271,7 @@ void tcpiiu::removeAllChannels ( epicsGuard < callbackMutex > & cbGuard,
         if ( pChan->connected() ) {
             this->clearChannelRequest ( guard, pChan->getSID(), pChan->getCID() );
         }
-        dcp.disconnectChannel ( cbGuard, guard, *pChan );
+        dcp.disconnectChannel ( currentTime, cbGuard, guard, *pChan );
     }
 }
 

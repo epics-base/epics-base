@@ -101,7 +101,8 @@ public:
                                     epicsGuard <cacMutex > & ); 
     void disconnectNotify ( epicsGuard <cacMutex > & );
     void beaconAnomalyNotify ();
-    void beaconArrivalNotify ();
+    void beaconArrivalNotify ( 
+        const epicsTime & currentTime );
 
     void flushRequest ();
     bool flushBlockThreshold ( epicsGuard < cacMutex > & ) const;
@@ -125,9 +126,10 @@ public:
     osiSockAddr getNetworkAddress () const;
     int printf ( const char *pformat, ... );
     unsigned channelCount ();
-    void removeAllChannels ( epicsGuard < callbackMutex > & cbGuard, 
-                                epicsGuard < cacMutex > & guard,
-                                class cacDisconnectChannelPrivate & );
+    void removeAllChannels (
+        epicsGuard < callbackMutex > & cbGuard, 
+        epicsGuard < cacMutex > & guard,
+        class cacDisconnectChannelPrivate & );
     void installChannel ( epicsGuard < cacMutex > &, nciu & chan, 
         unsigned sidIn, ca_uint16_t typeIn, arrayElementCount countIn );
     void uninstallChan ( epicsGuard < cacMutex > &, nciu & chan );
@@ -173,7 +175,8 @@ private:
     bool recvProcessPostponedFlush;
     bool discardingPendingData;
 
-    bool processIncoming ( epicsGuard < callbackMutex > & );
+    bool processIncoming ( 
+        const epicsTime & currentTime, epicsGuard < callbackMutex > & );
     unsigned sendBytes ( const void *pBuf, unsigned nBytesInBuf );
     unsigned recvBytes ( void *pBuf, unsigned nBytesInBuf );
     void connect ();
@@ -229,9 +232,10 @@ inline void tcpiiu::beaconAnomalyNotify ()
     this->recvDog.beaconAnomalyNotify ();
 }
 
-inline void tcpiiu::beaconArrivalNotify ()
+inline void tcpiiu::beaconArrivalNotify (
+    const epicsTime & currentTime )
 {
-    this->recvDog.beaconArrivalNotify ();
+    this->recvDog.beaconArrivalNotify ( currentTime );
 }
 
 inline void tcpiiu::flushIfRecvProcessRequested ()

@@ -50,8 +50,10 @@ public:
     virtual ~searchTimer ();
     void notifySearchResponse ( ca_uint32_t respDatagramSeqNo, 
         bool seqNumberIsValid, const epicsTime & currentTime );
-    void newChannleNotify ( bool firstChannel );
-    void beaconAnomalyNotify ( const double & delay );
+    void newChannleNotify ( 
+        const epicsTime & currentTime, bool firstChannel );
+    void beaconAnomalyNotify ( 
+        const epicsTime & currentTime, const double & delay );
     void show ( unsigned level ) const;
 private:
     class searchTimerMutex mutex;
@@ -70,7 +72,9 @@ private:
     ca_uint32_t dgSeqNoAtTimerExpireEnd;
     expireStatus expire ( const epicsTime & currentTime );
     void recomputeTimerPeriod ( unsigned minRetryNew );
-    void recomputeTimerPeriodAndStartTimer ( unsigned minRetryNew, const double & initialDelay );
+    void recomputeTimerPeriodAndStartTimer ( 
+        const epicsTime & currentTime, unsigned minRetryNew, 
+        const double & initialDelay );
 	searchTimer ( const searchTimer & );
 	searchTimer & operator = ( const searchTimer & );
 };

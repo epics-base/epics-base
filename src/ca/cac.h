@@ -103,7 +103,9 @@ private:
 
 class cacDisconnectChannelPrivate { // X aCC 655
 public:
-    virtual void disconnectChannel ( epicsGuard < callbackMutex > &, 
+    virtual void disconnectChannel ( 
+        const epicsTime & currentTime, 
+        epicsGuard < callbackMutex > &, 
         epicsGuard < cacMutex > &, nciu & chan ) = 0;
 };
 
@@ -125,7 +127,7 @@ public:
     void waitUntilNoRecvThreadsPending ();
     epicsGuard < callbackMutex > callbackGuardFactory ();
     bool executeResponse ( epicsGuard < callbackMutex > &, tcpiiu &, 
-        caHdrLargeArray &, char *pMsgBody );
+        const epicsTime & currentTime, caHdrLargeArray &, char *pMsgBody );
 
     // channel routines
     bool lookupChannelAndTransferToTCP ( 
@@ -266,7 +268,9 @@ private:
     void recycleWriteNotifyIO ( netWriteNotifyIO &io );
     void recycleSubscription ( netSubscription &io );
 
-    void disconnectChannel ( epicsGuard < callbackMutex > &, 
+    void disconnectChannel ( 
+        const epicsTime & currentTime, 
+        epicsGuard < callbackMutex > &, 
         epicsGuard < cacMutex > &, nciu & chan );
 
     void ioCompletionNotify ( unsigned id, unsigned type, 
@@ -289,32 +293,33 @@ private:
 
     // recv protocol stubs
     bool versionAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
-        const caHdrLargeArray &, void *pMsgBdy );
+        const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
     bool echoRespAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
-        const caHdrLargeArray &, void *pMsgBdy );
+        const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
     bool writeNotifyRespAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
-        const caHdrLargeArray &, void *pMsgBdy );
+        const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
     bool readNotifyRespAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
-        const caHdrLargeArray &, void *pMsgBdy );
+        const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
     bool eventRespAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
-        const caHdrLargeArray &, void *pMsgBdy );
+        const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
     bool readRespAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
-        const caHdrLargeArray &, void *pMsgBdy );
+        const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
     bool clearChannelRespAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
-        const caHdrLargeArray &, void *pMsgBdy );
+        const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
     bool exceptionRespAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
-        const caHdrLargeArray &, void *pMsgBdy );
+        const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
     bool accessRightsRespAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
-        const caHdrLargeArray &, void *pMsgBdy );
+        const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
     bool claimCIURespAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
-        const caHdrLargeArray &, void *pMsgBdy );
+        const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
     bool verifyAndDisconnectChan ( epicsGuard < callbackMutex > &, tcpiiu &, 
-                const caHdrLargeArray &, void *pMsgBdy );
+        const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
     bool badTCPRespAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
-        const caHdrLargeArray &, void *pMsgBdy );
+        const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
+
     typedef bool ( cac::*pProtoStubTCP ) ( 
         epicsGuard < callbackMutex > &, tcpiiu &, 
-        const caHdrLargeArray &, void *pMsgBdy );
+        const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
     static const pProtoStubTCP tcpJumpTableCAC [];
 
     bool defaultExcep ( epicsGuard < callbackMutex > &, tcpiiu &iiu, const caHdrLargeArray &hdr, 

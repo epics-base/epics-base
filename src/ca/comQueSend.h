@@ -98,9 +98,8 @@ private:
         }
         while ( nElem > nCopied ) {
             comBuf * pComBuf = newComBuf ();
-            unsigned nNew = pComBuf->push 
+            nCopied += pComBuf->push 
                         ( &pVal[nCopied], nElem - nCopied );
-            nCopied += nNew;
             this->pushComBuf ( *pComBuf );
         }
     }

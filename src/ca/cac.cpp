@@ -431,7 +431,7 @@ void cac::beaconNotify ( const inetAddrID & addr, const epicsTime & currentTime,
 
     this->beaconAnomalyCount++;
 
-    this->pudpiiu->beaconAnomalyNotify ();
+    this->pudpiiu->beaconAnomalyNotify ( currentTime );
 
 #   if DEBUG
     {
@@ -1088,19 +1088,19 @@ cac::subscriptionRequest ( nciu & chan, unsigned type, // X aCC 361
 }
 
 bool cac::versionAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
-                      const caHdrLargeArray &, void * /* pMsgBdy */ )
+    const epicsTime & currentTime, const caHdrLargeArray &, void * /* pMsgBdy */ )
 {
     return true;
 }
  
 bool cac::echoRespAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
-                      const caHdrLargeArray &, void * /* pMsgBdy */ )
+    const epicsTime & currentTime, const caHdrLargeArray &, void * /* pMsgBdy */ )
 {
     return true;
 }
 
 bool cac::writeNotifyRespAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
-                      const caHdrLargeArray &hdr, void * /* pMsgBdy */ )
+    const epicsTime & currentTime, const caHdrLargeArray &hdr, void * /* pMsgBdy */ )
 {
     int caStatus = hdr.m_cid;
     if ( caStatus == ECA_NORMAL ) {
@@ -1114,7 +1114,7 @@ bool cac::writeNotifyRespAction ( epicsGuard < callbackMutex > &, tcpiiu &,
 }
 
 bool cac::readNotifyRespAction ( epicsGuard < callbackMutex > &, tcpiiu &iiu, 
-                      const caHdrLargeArray &hdr, void *pMsgBdy )
+    const epicsTime & currentTime, const caHdrLargeArray &hdr, void *pMsgBdy )
 {
     /*
      * the channel id field is abused for
@@ -1154,7 +1154,7 @@ bool cac::readNotifyRespAction ( epicsGuard < callbackMutex > &, tcpiiu &iiu,
 }
 
 bool cac::eventRespAction (epicsGuard < callbackMutex > &, tcpiiu &iiu, 
-                const caHdrLargeArray &hdr, void *pMsgBdy )
+    const epicsTime & currentTime, const caHdrLargeArray &hdr, void *pMsgBdy )
 {   
     int caStatus;
 
@@ -1203,7 +1203,7 @@ bool cac::eventRespAction (epicsGuard < callbackMutex > &, tcpiiu &iiu,
 }
 
 bool cac::readRespAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
-                        const caHdrLargeArray &hdr, void *pMsgBdy )
+    const epicsTime & currentTime, const caHdrLargeArray &hdr, void *pMsgBdy )
 {
     this->ioCompletionNotifyAndDestroy ( hdr.m_available,
         hdr.m_dataType, hdr.m_count, pMsgBdy );
@@ -1211,7 +1211,7 @@ bool cac::readRespAction ( epicsGuard < callbackMutex > &, tcpiiu &,
 }
 
 bool cac::clearChannelRespAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
-                        const caHdrLargeArray &, void * /* pMsgBdy */ )
+    const epicsTime & currentTime, const caHdrLargeArray &, void * /* pMsgBdy */ )
 {
     return true; // currently a noop
 }
@@ -1278,7 +1278,7 @@ bool cac::writeNotifyExcep ( epicsGuard < callbackMutex > &, tcpiiu &,
 }
 
 bool cac::exceptionRespAction ( epicsGuard < callbackMutex > & cbMutexIn, tcpiiu & iiu, 
-                            const caHdrLargeArray & hdr, void * pMsgBdy )
+    const epicsTime & currentTime, const caHdrLargeArray & hdr, void * pMsgBdy )
 {
     const caHdr * pReq = reinterpret_cast < const caHdr * > ( pMsgBdy );
     unsigned bytesSoFar = sizeof ( *pReq );
@@ -1318,8 +1318,8 @@ bool cac::exceptionRespAction ( epicsGuard < callbackMutex > & cbMutexIn, tcpiiu
 }
 
 bool cac::accessRightsRespAction (
-        epicsGuard < callbackMutex > & cbGuard, tcpiiu &, // X aCC 431
-        const caHdrLargeArray &hdr, void * /* pMsgBdy */ )
+    epicsGuard < callbackMutex > & cbGuard, tcpiiu &, // X aCC 431
+    const epicsTime & currentTime, const caHdrLargeArray &hdr, void * /* pMsgBdy */ )
 {
     nciu * pChan;
     {
@@ -1347,8 +1347,8 @@ bool cac::accessRightsRespAction (
 }
 
 bool cac::claimCIURespAction (
-        epicsGuard < callbackMutex > &cbGuard, tcpiiu & iiu, // X aCC 431
-        const caHdrLargeArray & hdr, void * /* pMsgBdy */ )
+    epicsGuard < callbackMutex > &cbGuard, tcpiiu & iiu, // X aCC 431
+    const epicsTime & currentTime, const caHdrLargeArray & hdr, void * /* pMsgBdy */ )
 {
     nciu * pChan;
 
@@ -1381,19 +1381,20 @@ bool cac::claimCIURespAction (
 }
 
 bool cac::verifyAndDisconnectChan ( 
-              epicsGuard < callbackMutex > & cbGuard, tcpiiu & /* iiu */, 
-              const caHdrLargeArray & hdr, void * /* pMsgBdy */ )
+    epicsGuard < callbackMutex > & cbGuard, tcpiiu & /* iiu */, 
+    const epicsTime & currentTime, const caHdrLargeArray & hdr, void * /* pMsgBdy */ )
 {
     epicsGuard < cacMutex > guard ( this->mutex );
     nciu * pChan = this->chanTable.lookup ( hdr.m_cid );
     if ( ! pChan ) {
         return true;
     }
-    this->disconnectChannel ( cbGuard, guard, *pChan );
+    this->disconnectChannel ( currentTime, cbGuard, guard, *pChan );
     return true;
 }
 
 void cac::disconnectChannel (
+        const epicsTime & currentTime, 
         epicsGuard < callbackMutex > & cbGuard, // X aCC 431
         epicsGuard < cacMutex > & guard, nciu & chan )
 {
@@ -1401,14 +1402,14 @@ void cac::disconnectChannel (
     this->disconnectAllIO ( guard, chan, true );
     chan.getPIIU()->uninstallChan ( guard, chan );
     chan.disconnect ( *this->pudpiiu );
-    this->pudpiiu->installChannel ( chan );
+    this->pudpiiu->installChannel ( currentTime, chan );
     epicsGuardRelease < cacMutex > autoMutexRelease ( guard );
     chan.connectStateNotify ( cbGuard );
     chan.accessRightsNotify ( cbGuard );
 }
 
 bool cac::badTCPRespAction ( epicsGuard < callbackMutex > &, tcpiiu & iiu, 
-                            const caHdrLargeArray & hdr, void * /* pMsgBdy */ )
+    const epicsTime & currentTime, const caHdrLargeArray & hdr, void * /* pMsgBdy */ )
 {
     char hostName[64];
     iiu.hostName ( hostName, sizeof ( hostName ) );
@@ -1418,7 +1419,7 @@ bool cac::badTCPRespAction ( epicsGuard < callbackMutex > &, tcpiiu & iiu,
 }
 
 bool cac::executeResponse ( epicsGuard < callbackMutex > & cbLocker, tcpiiu & iiu, 
-                           caHdrLargeArray & hdr, char * pMshBody )
+    const epicsTime & currentTime, caHdrLargeArray & hdr, char * pMshBody )
 {
     // execute the response message
     pProtoStubTCP pStub;
@@ -1428,7 +1429,7 @@ bool cac::executeResponse ( epicsGuard < callbackMutex > & cbLocker, tcpiiu & ii
     else {
         pStub = cac::tcpJumpTableCAC [hdr.m_cmmd];
     }
-    return ( this->*pStub ) ( cbLocker, iiu, hdr, pMshBody );
+    return ( this->*pStub ) ( cbLocker, iiu, currentTime, hdr, pMshBody );
 }
 
 void cac::signal ( int ca_status, const char *pfilenm, 
@@ -1572,7 +1573,8 @@ double cac::beaconPeriod ( const nciu & chan ) const
 void cac::initiateConnect ( nciu & chan )
 {
     assert ( this->pudpiiu );
-    this->pudpiiu->installChannel ( chan );
+    this->pudpiiu->installChannel ( 
+        epicsTime::getCurrent(), chan );
 }
 
 void *cacComBufMemoryManager::allocate ( size_t size )

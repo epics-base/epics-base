@@ -33,12 +33,15 @@ class tcpiiu;
 
 class tcpRecvWatchdog : private epicsTimerNotify {
 public:
-    tcpRecvWatchdog ( cac &, tcpiiu &, double periodIn, epicsTimerQueue & );
+    tcpRecvWatchdog ( cac &, tcpiiu &, 
+        double periodIn, epicsTimerQueue & );
     virtual ~tcpRecvWatchdog ();
     void rescheduleRecvTimer ();
     void sendBacklogProgressNotify ();
-    void messageArrivalNotify ();
-    void beaconArrivalNotify ();
+    void messageArrivalNotify (
+        const epicsTime & currentTime );
+    void beaconArrivalNotify ( 
+        const epicsTime & currentTime );
     void beaconAnomalyNotify ();
     void connectNotify ();
     void cancel ();

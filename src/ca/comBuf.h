@@ -69,12 +69,12 @@ public:
     void clear ();
     unsigned copyInBytes ( const void *pBuf, unsigned nBytes );
     unsigned push ( comBuf & );
-    bool push ( const epicsInt8 & value );
-    bool push ( const epicsUInt8 & value );
-    bool push ( const epicsInt16 & value );
-    bool push ( const epicsUInt16 & value );
-    bool push ( const epicsInt32 & value );
-    bool push ( const epicsUInt32 & value );
+    bool push ( const epicsInt8 value );
+    bool push ( const epicsUInt8 value );
+    bool push ( const epicsInt16 value );
+    bool push ( const epicsUInt16 value );
+    bool push ( const epicsInt32 value );
+    bool push ( const epicsUInt32 value );
     bool push ( const epicsFloat32 & value );
     bool push ( const epicsFloat64 & value );
     bool push ( const epicsOldString & value );
@@ -186,7 +186,7 @@ inline unsigned comBuf::unoccupiedElem ( unsigned elemSize, unsigned nElem )
     return nElem;
 }
 
-inline bool comBuf::push ( const epicsInt8 & value )
+inline bool comBuf::push ( const epicsInt8 value )
 {
     if ( this->unoccupiedBytes () < sizeof ( value ) ) {
         return false;
@@ -196,7 +196,7 @@ inline bool comBuf::push ( const epicsInt8 & value )
     return true;
 }
 
-inline bool comBuf::push ( const epicsUInt8 & value )
+inline bool comBuf::push ( const epicsUInt8 value )
 {
     if ( this->unoccupiedBytes () < sizeof ( value ) ) {
         return false;
@@ -205,59 +205,63 @@ inline bool comBuf::push ( const epicsUInt8 & value )
     return true;
 }
 
-inline bool comBuf::push ( const epicsInt16 & value )
+inline bool comBuf::push ( const epicsInt16 value )
 {
     if ( this->unoccupiedBytes () < sizeof ( value ) ) {
         return false;
     }
-    this->buf[this->nextWriteIndex++] = 
+    this->buf[ this->nextWriteIndex + 0u ] = 
         static_cast < epicsUInt8 > ( value >> 8u );
-    this->buf[this->nextWriteIndex++] = 
+    this->buf[ this->nextWriteIndex + 1u ] = 
         static_cast < epicsUInt8 > ( value >> 0u );
+    this->nextWriteIndex += sizeof ( value );
     return true;
 }
 
-inline bool comBuf::push ( const epicsUInt16 & value )
+inline bool comBuf::push ( const epicsUInt16 value )
 {
     if ( this->unoccupiedBytes () < sizeof ( value ) ) {
          return false;
     }
-    this->buf[this->nextWriteIndex++] = 
+    this->buf[ this->nextWriteIndex + 0u ] = 
         static_cast < epicsUInt8 > ( value >> 8u );
-    this->buf[this->nextWriteIndex++] = 
+    this->buf[ this->nextWriteIndex + 1u ] = 
         static_cast < epicsUInt8 > ( value >> 0u );
+    this->nextWriteIndex += sizeof ( value );
     return true;
 }
 
-inline bool comBuf::push ( const epicsInt32 & value )
+inline bool comBuf::push ( const epicsInt32 value )
 {
     if ( this->unoccupiedBytes () < sizeof ( value ) ) {
         return false;
     }
-    this->buf[this->nextWriteIndex++] = 
+    this->buf[ this->nextWriteIndex + 0u ] = 
         static_cast < epicsUInt8 > ( value >> 24u );
-    this->buf[this->nextWriteIndex++] = 
+    this->buf[ this->nextWriteIndex + 1u ] = 
         static_cast < epicsUInt8 > ( value >> 16u );
-    this->buf[this->nextWriteIndex++] = 
+    this->buf[ this->nextWriteIndex + 2u ] = 
         static_cast < epicsUInt8 > ( value >> 8u );
-    this->buf[this->nextWriteIndex++] = 
+    this->buf[ this->nextWriteIndex + 3u ] = 
         static_cast < epicsUInt8 > ( value >> 0u );
+    this->nextWriteIndex += sizeof ( value );
     return true;
 }
 
-inline bool comBuf::push ( const epicsUInt32 & value )
+inline bool comBuf::push ( const epicsUInt32 value )
 {
     if ( this->unoccupiedBytes () < sizeof ( value ) ) {
         return false;
     }
-    this->buf[this->nextWriteIndex++] = 
+    this->buf[ this->nextWriteIndex + 0u ] = 
         static_cast < epicsUInt8 > ( value >> 24u );
-    this->buf[this->nextWriteIndex++] = 
+    this->buf[ this->nextWriteIndex + 1u ] = 
         static_cast < epicsUInt8 > ( value >> 16u );
-    this->buf[this->nextWriteIndex++] = 
+    this->buf[ this->nextWriteIndex + 2u ] = 
         static_cast < epicsUInt8 > ( value >> 8u );
-    this->buf[this->nextWriteIndex++] = 
+    this->buf[ this->nextWriteIndex + 3u ] = 
         static_cast < epicsUInt8 > ( value >> 0u );
+    this->nextWriteIndex += sizeof ( value );
     return true;
 }
 
@@ -387,7 +391,7 @@ inline unsigned comBuf::removeBytes ( unsigned nBytes )
 
 inline epicsUInt8 comBuf::popUInt8 ()
 {
-    if ( this->occupiedBytes () < 1u ) {
+    if ( this->occupiedBytes () < sizeof ( comBuf::popUInt8 () ) ) {
         comBuf::throwInsufficentBytesException ();
     }
     return this->buf[ this->nextReadIndex++ ];
@@ -395,23 +399,25 @@ inline epicsUInt8 comBuf::popUInt8 ()
 
 inline epicsUInt16 comBuf::popUInt16 ()
 {
-    if ( this->occupiedBytes () < 2u ) {
+    if ( this->occupiedBytes () < sizeof ( comBuf::popUInt16 () ) ) {
         comBuf::throwInsufficentBytesException ();
     }
-    unsigned byte1 = this->buf[ this->nextReadIndex++ ];
-    unsigned byte2 = this->buf[ this->nextReadIndex++ ];
+    unsigned byte1 = this->buf[ this->nextReadIndex + 0 ];
+    unsigned byte2 = this->buf[ this->nextReadIndex + 1 ];
+    this->nextReadIndex += sizeof ( comBuf::popUInt16 () );
     return static_cast < epicsUInt16 > ( ( byte1 << 8u ) | byte2 );
 }
 
 inline epicsUInt32 comBuf::popUInt32 () 
 {
-    if ( this->occupiedBytes () < 4u ) {
+    if ( this->occupiedBytes () < sizeof ( comBuf::popUInt32 () ) ) {
         comBuf::throwInsufficentBytesException ();
     }
-    unsigned byte1 = this->buf[ this->nextReadIndex++ ];
-    unsigned byte2 = this->buf[ this->nextReadIndex++ ];
-    unsigned byte3 = this->buf[ this->nextReadIndex++ ];
-    unsigned byte4 = this->buf[ this->nextReadIndex++ ];
+    unsigned byte1 = this->buf[ this->nextReadIndex + 0 ];
+    unsigned byte2 = this->buf[ this->nextReadIndex + 1 ];
+    unsigned byte3 = this->buf[ this->nextReadIndex + 2 ];
+    unsigned byte4 = this->buf[ this->nextReadIndex + 3 ];
+    this->nextReadIndex += sizeof ( comBuf::popUInt32 () );
     return static_cast < epicsUInt32 > 
         ( ( byte1 << 24u ) | ( byte2 << 16u ) | //X aCC 392
         ( byte3 << 8u ) | byte4 ); //X aCC 392

@@ -84,7 +84,7 @@ class udpiiu : public netiiu {
 public:
     udpiiu ( class epicsTimerQueueActive &, callbackMutex &, class cac & );
     virtual ~udpiiu ();
-    void installChannel ( nciu & );
+    void installChannel ( const epicsTime & currentTime, nciu & );
     void repeaterRegistrationMessage ( unsigned attemptNumber );
     bool searchMsg ( unsigned & retryNoForThisChannel );
     void datagramFlush ( const epicsTime & currentTime );
@@ -92,11 +92,12 @@ public:
     void show ( unsigned level ) const;
     bool wakeupMsg ();
     void repeaterConfirmNotify ();
-    void beaconAnomalyNotify ();
+    void beaconAnomalyNotify ( const epicsTime & currentTime );
     int printf ( const char *pformat, ... );
     unsigned channelCount () const;
     void uninstallChan ( epicsGuard < cacMutex > &, nciu & );
-    bool pushDatagramMsg ( const caHdr &hdr, const void *pExt, ca_uint16_t extsize);
+    bool pushDatagramMsg ( const caHdr & hdr, 
+        const void * pExt, ca_uint16_t extsize);
     void shutdown ();
     double roundTripDelayEstimate () const;
 

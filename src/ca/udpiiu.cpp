@@ -980,7 +980,7 @@ void udpiiu::repeaterConfirmNotify ()
     this->pRepeaterSubscribeTmr->confirmNotify ();
 }
 
-void udpiiu::beaconAnomalyNotify () 
+void udpiiu::beaconAnomalyNotify ( const epicsTime & currentTime ) 
 {
     {
         epicsGuard <udpMutex> guard ( this->mutex );
@@ -1010,7 +1010,7 @@ void udpiiu::beaconAnomalyNotify ()
     double delay = ( this->localPort & portBasedDelayMask );
     delay /= portTicksPerSec; 
 
-    this->pSearchTmr->beaconAnomalyNotify ( delay );
+    this->pSearchTmr->beaconAnomalyNotify ( currentTime, delay );
 }
 
 bool udpiiu::searchMsg ( unsigned & retryNoForThisChannel )
@@ -1035,7 +1035,7 @@ bool udpiiu::searchMsg ( unsigned & retryNoForThisChannel )
     return success;
 }
 
-void udpiiu::installChannel ( nciu & chan )
+void udpiiu::installChannel ( const epicsTime & currentTime, nciu & chan )
 {
     bool firstChannel = false;
 
@@ -1047,7 +1047,7 @@ void udpiiu::installChannel ( nciu & chan )
         }
     }
 
-    this->pSearchTmr->newChannleNotify ( firstChannel );
+    this->pSearchTmr->newChannleNotify ( currentTime, firstChannel );
 }
 
 int udpiiu::printf ( const char *pformat, ... )

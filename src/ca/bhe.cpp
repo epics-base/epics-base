@@ -199,7 +199,7 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
         else if ( this->pIIU ) {
             // update state of health for active virtual circuits 
             // if the beacon looks ok
-            this->pIIU->beaconArrivalNotify ();
+            this->pIIU->beaconArrivalNotify ( currentTime );
         }
     
         // update a running average period

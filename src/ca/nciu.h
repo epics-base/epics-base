@@ -73,7 +73,7 @@ public:
     void connect ();
     void connectStateNotify ( epicsGuard < callbackMutex > &  ) const;
     void accessRightsNotify ( epicsGuard < callbackMutex > & ) const;
-    void disconnect ( netiiu &newiiu );
+    void disconnect ( netiiu & newiiu );
     bool searchMsg ( class udpiiu & iiu, unsigned & retryNoForThisChannel );
     void createChannelRequest ( class tcpiiu & iiu );
     bool identifierEquivelence ( unsigned idToMatch );

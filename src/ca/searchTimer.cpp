@@ -64,23 +64,25 @@ searchTimer::~searchTimer ()
     this->timer.destroy ();
 }
 
-void searchTimer::newChannleNotify ( bool firstChannel )
+void searchTimer::newChannleNotify ( 
+    const epicsTime & currentTime, bool firstChannel )
 {
     if ( firstChannel ) {
         {
             epicsGuard < searchTimerMutex > locker ( this->mutex );
             this->recomputeTimerPeriod ( 0 );
         }
-        this->timer.start ( *this, this->period );
+        this->timer.start ( *this, currentTime + this->period );
     }
     else {
-        this->recomputeTimerPeriodAndStartTimer ( 0, 0.0 );
+        this->recomputeTimerPeriodAndStartTimer ( currentTime, 0, 0.0 );
     }
 }
 
-void searchTimer::beaconAnomalyNotify ( const double & delay )
+void searchTimer::beaconAnomalyNotify ( 
+    const epicsTime & currentTime, const double & delay )
 {
-    this->recomputeTimerPeriodAndStartTimer ( beaconAnomalyRetrySetpoint, delay );
+    this->recomputeTimerPeriodAndStartTimer ( currentTime, beaconAnomalyRetrySetpoint, delay );
 }
 
 // lock must be applied
@@ -97,7 +99,8 @@ void searchTimer::recomputeTimerPeriod ( unsigned minRetryNew )
     this->period = tsMax ( minSearchPeriod, this->period );
 }
 
-void searchTimer::recomputeTimerPeriodAndStartTimer ( unsigned minRetryNew, const double & initialDelay )
+void searchTimer::recomputeTimerPeriodAndStartTimer ( 
+    const epicsTime & currentTime, unsigned minRetryNew, const double & initialDelay )
 {
     bool start = false;
     double totalDelay = initialDelay;
@@ -117,7 +120,7 @@ void searchTimer::recomputeTimerPeriodAndStartTimer ( unsigned minRetryNew, cons
     if ( totalDelay < oldPeriod ) {
         epicsTimer::expireInfo info = this->timer.getExpireInfo ();
         if ( info.active ) {
-            double delay = epicsTime::getCurrent() - info.expireTime;
+            double delay = currentTime - info.expireTime;
             if ( delay > totalDelay ) {
                 start = true;
             }
@@ -128,7 +131,7 @@ void searchTimer::recomputeTimerPeriodAndStartTimer ( unsigned minRetryNew, cons
     }
 
     if ( start ) {
-        this->timer.start ( *this, totalDelay );
+        this->timer.start ( *this, currentTime + totalDelay );
     }
     debugPrintf ( ( "changed search period to %f sec\n", this->period ) );
 }
@@ -171,7 +174,7 @@ void searchTimer::notifySearchResponse ( ca_uint32_t respDatagramSeqNo,
     if ( reschedualNeeded ) {
 #       if defined(DEBUG) && 0
             char buf[64];
-            epicsTime ts = epicsTime::getCurrent();
+            epicsTime ts = currentTime;
             ts.strftime ( buf, sizeof(buf), "%M:%S.%09f");
 #       endif
         // debugPrintf ( ( "Response set timer delay to zero. ts=%s\n", 
@@ -338,7 +341,7 @@ epicsTimerNotify::expireStatus searchTimer::expire ( const epicsTime & currentTi
 
 #   ifdef DEBUG
         char buf[64];
-        epicsTime ts = epicsTime::getCurrent();
+        epicsTime ts = currentTime;
         ts.strftime ( buf, sizeof(buf), "%M:%S.%09f");
         debugPrintf ( ("sent %u delay sec=%f Rts=%s\n", 
             nFrameSent, this->period, buf ) );

@@ -71,10 +71,10 @@ tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ ) // X aCC 361
     }
 }
 
-void tcpRecvWatchdog::beaconArrivalNotify ()
+void tcpRecvWatchdog::beaconArrivalNotify ( const epicsTime & currentTime )
 {
     if ( ! this->beaconAnomaly && ! this->responsePending ) {
-        this->timer.start ( *this, this->period );
+        this->timer.start ( *this, currentTime + this->period );
         debugPrintf ( ("Saw a normal beacon - reseting TCP recv watchdog\n") );
     }
 }
@@ -92,11 +92,11 @@ void tcpRecvWatchdog::beaconAnomalyNotify ()
     debugPrintf ( ("Saw an abnormal beacon\n") );
 }
 
-void tcpRecvWatchdog::messageArrivalNotify ()
+void tcpRecvWatchdog::messageArrivalNotify ( const epicsTime & currentTime )
 {
     this->beaconAnomaly = false;
     this->responsePending = false;
-    this->timer.start ( *this, this->period );
+    this->timer.start ( *this, currentTime + this->period );
     debugPrintf ( ("received a message - reseting TCP recv watchdog\n") );
 }
 

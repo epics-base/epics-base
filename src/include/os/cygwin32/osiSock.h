@@ -41,19 +41,6 @@ typedef int                     SOCKET;
 
 #define FD_IN_FDSET(FD) ((FD)<FD_SETSIZE)
 
-/*
- * Windows Sockets errors redefined as regular Berkeley error constants
- */
-#define ETIMEDOUT		WSAETIMEDOUT
-
-/*
- * All Windows Sockets error constants are biased by WSABASEERR from
- * the "normal"
- */
-#define WSABASEERR		10000
-#define WSAETIMEDOUT		(WSABASEERR+60)
-
-
 #define	IOC_OUT		0x40000000	/* copy out parameters */
 #define	IOC_IN		0x80000000	/* copy in parameters */
 #define	IOC_INOUT	(IOC_IN|IOC_OUT)
@@ -73,14 +60,8 @@ typedef int                     SOCKET;
 #define    IFF_POINTOPOINT 0x10
 
 /* Used by ca/iocinf.c  */
+#define SO_SNDBUF          0x1001   /* send buffer size */
 #define SO_RCVBUF          0x1002   /* receive buffer size */
-#define WSAEISCONN         (WSABASEERR+56)
-#define WSAEINPROGRESS     (WSABASEERR+36)
-#define WSAEALREADY        (WSABASEERR+37)
-#define EISCONN            WSAEISCONN
-#define EINPROGRESS        WSAEINPROGRESS
-#define EALREADY           WSAEALREADY
-
 
 #endif /*osiSockH*/
 

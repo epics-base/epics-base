@@ -219,7 +219,7 @@ extern "C" int epicsShareAPI ca_sg_array_put ( const CA_SYNC_GID gid, chtype typ
     }
     catch ( cacChannel::unsupportedByService & )
     {
-        return ECA_NOTINSERVICE;
+        return ECA_UNAVAILINSERV;
     }
     catch ( cacChannel::requestTimedOut & )
     {
@@ -282,7 +282,7 @@ extern "C" int epicsShareAPI ca_sg_array_get ( const CA_SYNC_GID gid, chtype typ
     }
     catch ( cacChannel::unsupportedByService & )
     {
-        return ECA_NOTINSERVICE;
+        return ECA_UNAVAILINSERV;
     }
     catch ( std::bad_alloc & )
     {

@@ -3,7 +3,7 @@ TOP=../../..
 
 include $(TOP)/configure/CONFIG
 
-IOC_LIBRARY_vxWorks = iocCore
+LIBRARY_vxWorks = iocCore
 
 include $(TOP)/configure/RULES_BUILD
 
@@ -14,7 +14,6 @@ LIBOBJS = \
 	$(INSTALL_BIN)/libCom \
 	$(INSTALL_BIN)/dbStaticLib \
 	$(INSTALL_BIN)/miscLib \
-	$(INSTALL_BIN)/osiLibrary \
 	$(INSTALL_BIN)/bptLibrary \
 	$(INSTALL_BIN)/registryLibrary \
 	$(INSTALL_BIN)/rsrvLib \

@@ -2,10 +2,10 @@ TOP=../../../..
 
 include $(TOP)/configure/CONFIG
 
-SRCS += devAt5Vxi.c
-SRCS += devAt8Fp.c
+MYSRCS += devAt5Vxi.c
+MYSRCS += devAt8Fp.c
 
-IOC_PROD_vxWorks = $(SRCS:%.c=%.o)
+PROD_vxWorks = $(MYSRCS:%.c=%.o)
 
 include $(TOP)/configure/RULES_BUILD
 

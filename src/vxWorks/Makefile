@@ -7,8 +7,8 @@ TOP = ../..
 include $(TOP)/configure/CONFIG
 
 DIRS += include 
-DIRS += db
 DIRS += libvxWorks
+DIRS += db
 DIRS += drv
 DIRS += dev
 DIRS += devOpt

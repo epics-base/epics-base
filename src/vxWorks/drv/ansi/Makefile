@@ -36,7 +36,7 @@ SRCS.c += ../drvIpac.c
 SRCS.c += ../drvTip810.c
 #SRCS.c += ../drvVmic2534.c
 
-IOC_PROD_vxWorks = $(SRCS.c:../%.c=%.o)
+PROD_vxWorks = $(SRCS.c:../%.c=%.o)
 
 MAN3 = drvEpvxi.3
 

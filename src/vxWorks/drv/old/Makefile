@@ -44,7 +44,7 @@ SRCS.c += ../drvXy220.c
 SRCS.c += ../drvXy240.c
 SRCS.c += ../drvXy566.c
 
-IOC_PROD_vxWorks = $(SRCS.c:../%.c=%.o)
+PROD_vxWorks = $(SRCS.c:../%.c=%.o)
 
 include $(TOP)/configure/RULES_BUILD
 

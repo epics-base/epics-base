@@ -4,9 +4,9 @@ include $(TOP)/configure/CONFIG
 
 INC += devCommonGpib.h
 
-SRCS += devCommonGpib.c
+MYSRCS += devCommonGpib.c
 
-IOC_PROD_vxWorks = $(SRCS:%.c=%.o)
+PROD_vxWorks = $(MYSRCS:%.c=%.o)
 
 include $(TOP)/configure/RULES_BUILD
 

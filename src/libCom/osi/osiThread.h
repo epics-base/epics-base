@@ -112,7 +112,7 @@ public:
     void setPriority (unsigned);
     bool priorityIsEqual (const osiThread &otherThread) const;
     bool isSuspended () const;
-
+    bool isCurrentThread () const;
     bool operator == (const osiThread &rhs) const;
 
     /* these operate on the current thread */

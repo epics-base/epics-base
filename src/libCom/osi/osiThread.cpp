@@ -47,3 +47,7 @@ void osiThread::start ()
     this->begin.signal ();
 }
 
+bool osiThread::isCurrentThread () const
+{
+    return ( threadGetIdSelf () == this->id );
+}

@@ -206,6 +206,8 @@ private:
     void recycleSubscription ( netSubscription &io );
     void preemptiveCallbackLock ();
     void preemptiveCallbackUnlock ();
+    void removeAllChan ( netiiu & srcIIU, netiiu * pDstIIU = 0 );
+    void disconnectChannelPrivate ( nciu & chan, netiiu *pDstIIU );
 
     void ioCompletionNotify ( unsigned id, unsigned type, 
         arrayElementCount count, const void *pData );

@@ -43,20 +43,6 @@ void netiiu::show ( unsigned level ) const
     }
 }
 
-// cac lock must also be applied when calling this
-void netiiu::uninstallAllChan ( tsDLList < nciu > & dstList )
-{
-    while ( nciu *pChan = this->channelList.get () ) {
-        // if the claim reply has not returned yet then we will issue
-        // the clear chhannel request to the server when the claim reply
-        // arrives and there is no matching nciu in the client
-        if ( pChan->connected() ) {
-            this->clearChannelRequest ( pChan->getSID(), pChan->getCID() );
-        }
-        dstList.add ( *pChan );
-    }
-}
-
 void netiiu::connectTimeoutNotify ()
 {
     tsDLIterBD < nciu > chan = this->channelList.firstIter ();

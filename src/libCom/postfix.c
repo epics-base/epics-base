@@ -44,6 +44,7 @@
  * .13  08-21-92        jba     initialized *ppostfix: needed when calc expr not defined
  * .14  12-11-92	mrk	Removed include for stdioLib.h
  * .15  11-03-93		jba		Added test for extra close paren at end of expression
+ * .16  01-24-94		jba		Changed seperator test to catch invalid commas
 */
 
 /* 
@@ -413,7 +414,8 @@ short		*perror;
 
 		/* add operators to postfix until open paren */
 		while (pstacktop->element[0] != '('){
-		    if (pstacktop == &stack[1]){
+		    if (pstacktop == &stack[1] ||
+		        pstacktop == &stack[0]){
 			*perror = 6;
 			return(-1);
 		    }

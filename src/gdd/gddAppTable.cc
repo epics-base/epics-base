@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.10  1999/04/30 15:24:53  jhill
+// fixed improper container index bug
+//
 // Revision 1.9  1997/08/05 00:51:14  jhill
 // fixed problems in aitString and the conversion matrix
 //
@@ -462,11 +465,15 @@ gddStatus gddApplicationTypeTable::freeDD(gdd* dd)
 		dd->setNext(attr_table[group][app].free_list);
 		attr_table[group][app].free_list=dd;
 	}
-	else
+	else if (attr_table[group][app].type==gddApplicationTypeNormal)
 	{
 		// fprintf(stderr,"freeDD a normal DD\n");
 		dd->unreference();
 	}
+    else {
+        fprintf ( stderr,"gddApplicationTypeTable::freeDD - unexpected DD type was %d\n", 
+            attr_table[group][app].type );
+    }
 
 	return 0;
 }

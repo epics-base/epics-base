@@ -693,12 +693,12 @@ const struct in_addr  	*pnet_addr
 		LOCK;
 		chan = (ciu) bucketLookupItemUnsignedId(
 				pSlowBucket, &piiu->curMsg.m_cid);
-		UNLOCK;
 		if(!chan){
 			/*
 			 * end up here if they delete the channel
 			 * prior to connecting
 			 */
+			UNLOCK;
 			break;
 		}
 
@@ -713,6 +713,7 @@ const struct in_addr  	*pnet_addr
 			args.ar = chan->ar;
 			(*chan->pAccessRightsFunc)(args);
 		}
+		UNLOCK;
 		break;
 	}
 	case CA_PROTO_CLAIM_CIU:

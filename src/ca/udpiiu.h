@@ -86,7 +86,6 @@ public:
     void notifySearchResponse ( unsigned short retrySeqNo, const epicsTime & currentTime );
     void resetSearchTimerPeriod ( double delay );
     void beaconAnomalyNotify ();
-    void removeAllChannels ( epicsGuard < callbackMutex > & cbGuard );
     int printf ( const char *pformat, ... );
     unsigned channelCount ();
     class tcpiiu * uninstallChanAndReturnDestroyPtr ( epicsGuard < cacMutex > &, nciu & );

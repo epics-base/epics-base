@@ -172,6 +172,12 @@ udpiiu::~udpiiu ()
 {
     bool closeCompleted = false;
 
+    static limboiiu limboIIU;
+    while ( nciu * pChan = this->channelList.get () ) {
+        // no need to own CAC lock here because the channel is being decomissioned
+        pChan->disconnect ( limboIIU );
+    }
+
     this->shutdownCmd = true;
 
     this->wakeupMsg ();
@@ -940,16 +946,6 @@ void udpiiu::beaconAnomalyNotify ()
             chan->resetRetryCount ();
             chan++;
         }
-    }
-}
-
-void udpiiu::removeAllChannels ( epicsGuard < callbackMutex > & )
-{
-    epicsGuard < udpMutex > guard ( this->mutex );
-    static limboiiu limboIIU;
-    while ( nciu * pChan = this->channelList.get () ) {
-        // no need to own CAC lock here because the channel is being decomissioned
-        pChan->disconnect ( limboIIU );
     }
 }
 

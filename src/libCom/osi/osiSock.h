@@ -133,6 +133,7 @@ typedef union osiSockAddr {
 typedef struct osiSockAddrNode {
     ELLNODE node;
     osiSockAddr addr;
+    osiSockAddr netMask;
 } osiSockAddrNode;
 
 /*

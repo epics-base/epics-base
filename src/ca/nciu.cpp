@@ -408,7 +408,7 @@ int nciu::write ( unsigned type, unsigned long countIn, const void *pValue )
     else {
         status = ECA_DISCONNCHID;
     }
-    this->lockPIIU ();
+    this->unlockPIIU ();
     return status;
 }
 

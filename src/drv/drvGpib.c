@@ -52,6 +52,9 @@
  *
  *
  * $Log$
+ * Revision 1.25  1994/10/28  19:55:30  winans
+ * Added VME bus violation prevention code/bug fix from LANL.
+ *
  * Revision 1.24  1994/10/04  18:42:46  winans
  * Added an extensive debugging facility.
  *
@@ -218,7 +221,7 @@ STATIC	int	pollInhibit[NIGPIB_NUM_LINKS][IBAPERLINK];
 /******************************************************************************
  *
  * This structure is used to hold the hardware-specific information for a
- * single Bit Bus GPIB link. They are dynamically allocated (and an ibLinkTask
+ * single BitBus GPIB link. They are dynamically allocated (and an ibLinkTask
  * started for it) when an IOCTL command requests it.
  *
  * The IOCTL requests to initiate a BBGPIB_IO link comes from the device support
@@ -2007,6 +2010,102 @@ int     length; 	/* number of bytes to write out from the data buffer */
   }
   return(ERROR);
 }
+
+#ifdef INCLUDE_HIDEOS_INTERFACE
+/******************************************************************************
+ *
+ * Interface functions for HiDEOS access.
+ *
+ ******************************************************************************/
+/******************************************************************************
+ *
+ * Read up to <length> bytes into <*buffer>.
+ *
+ ******************************************************************************/
+STATIC int
+HideosGpibRead(struct ibLink *pibLink, int device, char *buffer, int length, int time)
+{
+	printf("HideosGpibRead() entered\n");
+	return(bytes read | error);
+}
+/******************************************************************************
+ *
+ * Write <length> bytes from <*buffer> in data mode.
+ *
+ ******************************************************************************/
+STATIC int
+HideosGpibWrite(struct ibLink *pibLink, int device, char *buffer, int length, int time)
+{
+	printf("HideosGpibWrite() entered\n");
+	return(bytes sent | error);
+}
+/******************************************************************************
+ *
+ * Write <length> bytes from <*buffer> in command mode.
+ *
+ ******************************************************************************/
+STATIC int
+HideosGpibCmd(struct ibLink *pibLink, char *buffer, int length)
+{
+	printf("HideosGpibCmd() entered\n");
+	return(bytes sent | error);
+}
+/******************************************************************************
+ *
+ * Verify that the given GPIB port exists.
+ *
+ ******************************************************************************/
+STATIC int
+HideosGpibCheckLink(int link, int bug)
+{
+	printf("HideosGpibCheckLink() entered\n");
+	return(OK | ERROR);
+}
+/******************************************************************************
+ *
+ * Prevent SRQs from being polled on a given GPIB port.
+ *
+ ******************************************************************************/
+STATIC int
+HideosGpibSrqPollInhibit(int link, int bug, int gpibAddr)
+{
+	printf("HideosGpibSrqPollInhibit() entered -- NOT SUPPORTED YET\n");
+	return(ERROR);
+}
+/******************************************************************************
+ *
+ * Generate a GPIB link for a HiDEOS port.
+ *
+ ******************************************************************************/
+STATIC int
+HideosGpibGenLink(int link, int bug)
+{
+	printf("HideosGpibGenLink() entered\n");
+	return(ibLinkStart() | ERROR);
+}
+/******************************************************************************
+ *
+ * Handle a GPIB IOCTL call.
+ *
+ ******************************************************************************/
+STATIC int
+HideosGpibIoctl(int link, int bug, int cmd, int v, caddr_t p)
+{
+	printf("HideosGpibIoctl() entered\n");
+	return(OK | ERROR);
+}
+/******************************************************************************
+ *
+ * Given the port information, return a link structure.
+ *
+ ******************************************************************************/
+struct	bbIbLink *
+HideosGpibFindLink(int link, int bug)
+{
+	printf("HideosGpibFindLink() entered\n");
+	return(bbIbLink* | NULL);
+}
+#endif
 
 /******************************************************************************
  *

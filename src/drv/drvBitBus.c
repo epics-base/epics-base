@@ -65,6 +65,10 @@
  * This driver currently needs work on error message generation.
  *
  * $Log$
+ * Revision 1.34  1994/10/19  18:31:22  winans
+ * ANSIfied the bitbus driver so that the compiler stopped warning about
+ * exery third line of code.
+ *
  * Revision 1.33  1994/10/04  18:42:42  winans
  * Added an extensive debugging facility.
  *
@@ -129,6 +133,8 @@ STATIC int	bbKill(int link);
 STATIC void	BBrebootFunc(void);
 
 STATIC int	txStuck(int link);
+int BBConfig(unsigned long, unsigned long, unsigned long, unsigned long, unsigned long);
+int __BBConfig(unsigned long, unsigned long, unsigned long, unsigned long, unsigned long);
 
 #ifdef BB_SUPER_DEBUG
 int BBHistDump(int link);
@@ -199,7 +205,16 @@ int BBConfig(unsigned long Link,
 	unsigned long IrqVector,
 	unsigned long IrqLevel)
 {
+  __BBConfig(Link, LinkType, BaseAddr, IrqVector, IrqLevel);
+  return(0);
+}
 
+int __BBConfig(unsigned long Link, 
+	unsigned long LinkType,
+	unsigned long BaseAddr,
+	unsigned long IrqVector,
+	unsigned long IrqLevel)
+{
   void		*pVoid;
   int		j;
   static int	FirstTime = 1;

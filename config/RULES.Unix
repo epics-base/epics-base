@@ -1,23 +1,29 @@
 # $Id$
 
-INSTALL_PROD=$(PROD:%=$(INSTALL_BIN)/%)
-INSTALL_LIBS=$(LIBNAME:%=$(INSTALL_LIB)/%)
-INSTALL_INC=$(INC:%=$(INSTALL_INCLUDE)/%)
-INSTALL_MANS+=$(MAN1:%=$(INSTALL_MAN)/man1/%)
-INSTALL_MANS+=$(MAN2:%=$(INSTALL_MAN)/man2/%)
-INSTALL_MANS+=$(MAN3:%=$(INSTALL_MAN)/man3/%)
-INSTALL_MANS+=$(MAN4:%=$(INSTALL_MAN)/man4/%)
-INSTALL_MANS+=$(MAN5:%=$(INSTALL_MAN)/man5/%)
-INSTALL_MANS+=$(MAN6:%=$(INSTALL_MAN)/man6/%)
-INSTALL_MANS+=$(MAN7:%=$(INSTALL_MAN)/man7/%)
-INSTALL_MANS+=$(MAN8:%=$(INSTALL_MAN)/man8/%)
-INSTALL_MANS+=$(MAN9:%=$(INSTALL_MAN)/man9/%)
-INSTALL_DOCS=$(DOCS:%=$(INSTALL_DOC)/%)
-INSTALL_SCRIPTS=$(SCRIPTS:%=$(INSTALL_BIN)/%)
-INSTALL_TEMPLATE=$(TEMPLATES:%=$(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%)
-INSTALL_TCLLIBS=$(TCLLIBNAME:%=$(INSTALL_TCLLIB)/%)
-INSTALL_TCLINDEX=$(TCLINDEX:%=$(INSTALL_TCLLIB)/%)
-INSTALL_CONFIGS=$(CONFIGS:%=$(INSTALL_CONFIG)/%)
+INSTALL_PROD = $(INSTALL_BIN) $(PROD:%= $(INSTALL_BIN)/%)
+INSTALL_LIBS = $(INSTALL_LIB) $(LIBNAME:%= $(INSTALL_LIB)/%)
+INSTALL_INC = $(INSTALL_INCLUDE) $(INC:%= $(INSTALL_INCLUDE)/%)
+INSTALL_OSINCLUDE = $(INSTALL_INCLUDE)/os/$(T_A)
+INSTALL_OSINC = $(INSTALL_OSINCLUDE) $(OSINC:%= $(INSTALL_OSINCLUDE)/%)
+MANLIST = 1 2 3 4 5 6 7 8 9
+INSTALL_MANS = $(foreach n, \
+        $(MANLIST),$(INSTALL_MAN)/man$(n) $(MAN$(n):%= $(INSTALL_MAN)/man$(n)/%))
+INSTALL_DOCS = $(INSTALL_DOC) $(DOCS:%= $(INSTALL_DOC)/%)
+INSTALL_SCRIPTS = $(INSTALL_BIN) $(SCRIPTS:%= $(INSTALL_BIN)/%)
+INSTALL_TEMPLATES_SUBDIR = $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
+INSTALL_TEMPLATE = $(INSTALL_TEMPLATES_SUBDIR) $(TEMPLATES:%= $(INSTALL_TEMPLATES_SUBDIR)/%)
+INSTALL_TCLLIBS = $(INSTALL_TCLLIB) $(TCLLIBNAME:%= $(INSTALL_TCLLIB)/%)
+INSTALL_TCLINDEX = $(INSTALL_TCLLIB) $(TCLINDEX:%= $(INSTALL_TCLLIB)/%)
+INSTALL_CONFIGS = $(INSTALL_TCLLIB) $(CONFIGS:%= $(INSTALL_CONFIG)/%)
+
+MAN_DIRECTORY_TARGETS = $(foreach n, $(MANLIST),$(INSTALL_MAN)/man$(n))
+
+DIRECTORY_TARGETS = $(INSTALL_INCLUDE) $(INSTALL_INCLUDE)/os \
+	$(INSTALL_OSINCLUDE) $(INSTALL_DOC) \
+	$(INSTALL_TEMPLATES)/$(TEMPLATES_DIR) $(INSTALL_TEMPLATES) \
+	$(INSTALL_LOCATION_BIN) $(INSTALL_BIN) $(INSTALL_LIB) \
+	$(INSTALL_LOCATION_LIB) $(INSTALL_CONFIG) \
+	$(MAN_DIRECTORY_TARGETS) $(INSTALL_MAN)
 
 all:: install
 
@@ -27,11 +33,15 @@ rebuild:: clean install
 
 build:: pre_build $(LIBNAME) $(TARGETS) $(PROD)
 
-inc:: $(INSTALL_INC)
+inc:: $(INSTALL_INCLUDE) $(INSTALL_INC) $(INSTALL_INCLUDE)/os \
+	$(INSTALL_OSINCLUDE) $(INSTALL_OSINC)
 
-install:: inc build $(INSTALL_LIBS) $(TARGETS) $(INSTALL_SCRIPTS) $(INSTALL_PROD) \
-	$(INSTALL_MANS) $(INSTALL_DOCS) $(INSTALL_TEMPLATE) \
-	$(INSTALL_TCLLIBS) $(INSTALL_TCLINDEX) $(INSTALL_CONFIGS)
+install:: inc build $(INSTALL_LOCATION_LIB) \
+	$(INSTALL_LIBS) $(TARGETS) $(INSTALL_SCRIPTS) \
+	$(INSTALL_LOCATION_BIN) $(INSTALL_BIN) $(INSTALL_PROD) \
+	$(INSTALL_MAN) $(INSTALL_MANS) $(INSTALL_DOCS) $(INSTALL_TEMPLATES) \
+	$(INSTALL_TEMPLATES)/$(TEMPLATES_DIR) $(INSTALL_TEMPLATE) \
+	$(INSTALL_TCLLIBS) $(INSTALL_TCLINDEX) $(INSTALL_CONFIGS) 
 
 depends:: $(SRCS.c) $(SRCS.cc)
 ifdef SRCS
@@ -49,6 +59,8 @@ clean::
 	@echo "Cleaning"
 	@$(RM) *.i *.o *.a $(TARGETS) $(PROD) $(LIBNAME) $(INC)
 
+$(DIRECTORY_TARGETS) :
+	@$(MKDIR) $@
 
 $(TARGETS) $(PROD): $(DEPLIBS)
 
@@ -149,112 +161,72 @@ $(LIBNAME): $(LIBOBJS)
 		$(RANLIB) $@; \
 	fi
 
-$(INSTALL_BIN)/%: %
-	@echo "Installing $@"
-	@test -d $(INSTALL_LOCATION_BIN) || mkdir $(INSTALL_LOCATION_BIN)
-	@test -d $(INSTALL_BIN) || mkdir $(INSTALL_BIN)
+$(INSTALL_BIN)/%: % 
+	@echo "Installing Binary $@"
 	@$(INSTALL_PRODUCT) -m 555 $< $(INSTALL_BIN)
 
-$(INSTALL_BIN)/%: ../%
-	@echo "Installing $@"
-	@test -d $(INSTALL_LOCATION_BIN) || mkdir $(INSTALL_LOCATION_BIN)
-	@test -d $(INSTALL_BIN) || mkdir $(INSTALL_BIN)
+$(INSTALL_BIN)/%: ../% 
+	@echo "Installing Binary $@"
 	@$(INSTALL_PRODUCT) -m 555 $< $(INSTALL_BIN)
 
-$(INSTALL_LIB)/%.a: %.a
+$(INSTALL_LIB)/%.a: %.a 
 	@echo "Installing library $@"
-	@test -d $(INSTALL_LOCATION_LIB) || mkdir $(INSTALL_LOCATION_LIB)
-	@test -d $(INSTALL_LIB) || mkdir $(INSTALL_LIB)
 	@$(INSTALL) -m 644 $< $(INSTALL_LIB)
 	@if [ ! -z "$(RANLIB)" ] ; then\
 		$(RANLIB) $(RANLIBFLAGS) $@; \
 	fi
 
-$(INSTALL_CONFIG)/%: %
-	@echo "Installing $@"
-	@test -d $(INSTALL_CONFIG) || mkdir $(INSTALL_CONFIG)
+$(INSTALL_CONFIG)/%: % 
+	@echo "Installing Config File $@"
 	@$(INSTALL) -m 644 $< $(INSTALL_CONFIG)
 
-$(INSTALL_CONFIG)/%: ../%
-	@echo "Installing $@"
-	@test -d $(INSTALL_CONFIG) || mkdir $(INSTALL_CONFIG)
+$(INSTALL_CONFIG)/%: ../% 
+	@echo "Installing Config File $@"
 	@$(INSTALL) -m 644 $< $(INSTALL_CONFIG)
 
-$(INSTALL_TCLLIB)/%: ../%
+$(INSTALL_TCLLIB)/%: ../% 
 	@echo "Installing Tcl library $@"
-	@test -d $(INSTALL_LOCATION_LIB) || mkdir $(INSTALL_LOCATION_LIB)
-	@test -d $(INSTALL_LIB) || mkdir $(INSTALL_LIB)
 	@$(INSTALL) -m 644 $< $(INSTALL_LIB)
 
-$(INSTALL_TCLLIB)/$(TCLINDEX): $(INSTALL_TCLLIBS)
+$(INSTALL_TCLLIB)/$(TCLINDEX): 
 	@echo "Updating $@"
 	@echo eval auto_mkindex $(INSTALL_LIB) "$(TCLLIBNAME)" | tclsh
 
-$(INSTALL_MAN)/man9/% \
-$(INSTALL_MAN)/man8/% \
-$(INSTALL_MAN)/man7/% \
-$(INSTALL_MAN)/man6/% \
-$(INSTALL_MAN)/man5/% \
-$(INSTALL_MAN)/man4/% \
-$(INSTALL_MAN)/man3/% \
-$(INSTALL_MAN)/man2/% \
-$(INSTALL_MAN)/man1/%: %
-	@echo "Installing $@"
-	@test -d $(INSTALL_MAN) || mkdir $(INSTALL_MAN)
-	@test -d $(@D) || mkdir $(@D)
+$(addsuffix /%,$(MAN_DIRECTORY_TARGETS)) : % 
+	@echo "Installing man file $@"
 	@$(INSTALL) -m 644 $< $(@D)
 
-$(INSTALL_MAN)/man9/% \
-$(INSTALL_MAN)/man8/% \
-$(INSTALL_MAN)/man7/% \
-$(INSTALL_MAN)/man6/% \
-$(INSTALL_MAN)/man5/% \
-$(INSTALL_MAN)/man4/% \
-$(INSTALL_MAN)/man3/% \
-$(INSTALL_MAN)/man2/% \
-$(INSTALL_MAN)/man1/%: ../%
-	@echo "Installing $@"
-	@test -d $(INSTALL_MAN) || mkdir $(INSTALL_MAN)
-	@test -d $(@D) || mkdir $(@D)
+$(addsuffix /%,$(MAN_DIRECTORY_TARGETS)) : ../% 
+	@echo "Installing man file $@"
 	@$(INSTALL) -m 644 $< $(@D)
 
-$(INSTALL_INCLUDE)/%: %
-	@echo "Installing $@"
-	@test -d $(INSTALL_INCLUDE) || mkdir $(INSTALL_INCLUDE)
-	@$(INSTALL) -m 644 $< $(INSTALL_INCLUDE)
+$(INSTALL_INCLUDE)/%: % 
+	@echo "Installing Include File $@"
+	@$(INSTALL) -m 644 $< $(@D)
 
-$(INSTALL_INCLUDE)/%: ../%
-	@echo "Installing $@"
-	@test -d $(INSTALL_INCLUDE) || mkdir $(INSTALL_INCLUDE)
-	@$(INSTALL) -m 644 $< $(INSTALL_INCLUDE)
+$(INSTALL_INCLUDE)/%: ../% 
+	@echo "Installing Include File $@"
+	@$(INSTALL) -m 644 $< $(@D)
 
-$(INSTALL_DOC)/%: %
-	@echo "Installing $@"
-	@test -d $(INSTALL_DOC) || mkdir $(INSTALL_DOC)
+$(INSTALL_DOC)/%: % 
+	@echo "Installing doc $@"
 	@$(INSTALL) -m 644 $< $(INSTALL_DOC)
 
-$(INSTALL_DOC)/%: ../%
-	@echo "Installing $@"
-	@test -d $(INSTALL_DOC) || mkdir $(INSTALL_DOC)
+$(INSTALL_DOC)/%: ../% 
+	@echo "Installing doc $@"
 	@$(INSTALL) -m 644 $< $(INSTALL_DOC)
 
-$(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: ../%
-	@echo "Installing $@"
-	@test -d $(INSTALL_TEMPLATES) || mkdir $(INSTALL_TEMPLATES)
-	@test -d $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR) || \
-		mkdir $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
+$(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: ../% 
+	@echo "Installing template $@"
 	@$(INSTALL) -d -m 644 $< $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
 
-$(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: %
-	@echo "Installing $@"
-	@test -d $(INSTALL_TEMPLATES) || mkdir $(INSTALL_TEMPLATES)
-	@test -d $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR) || \
-		mkdir $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
+$(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: % 
+	@echo "Installing template $@"
 	@$(INSTALL) -d -m 644 $< $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
 
 .PRECIOUS: %.o %.c
 
-.PHONY: all inc depends build install pre-build clean rebuild
+.PHONY: all inc depends build install pre-build clean rebuild  
 
 -include .DEPENDS
 

@@ -336,7 +336,7 @@ jgvtr1DoneTask()
 
 	/* dont allow two of this task */
 	if(started)
-	  exit();
+	  exit(1);
 	started = TRUE;
 
     	while(TRUE){

@@ -26,6 +26,7 @@
 #include "db_access_routines.h"
 #include "dbNotify.h"
 #include "db_test.h"
+#include "dbCommon.h"
 
 
 #define		MAX_ELEMS	10
@@ -633,30 +634,49 @@ static void print_returned(type,count,pbuffer)
     printf("\n");
 }
 #endif
+
+typedef struct tpnInfo {
+    epicsEventId callbackDone;
+    putNotify    *ppn;
+}tpnInfo;
 
 static void tpnCallback(putNotify *ppn)
 {
-    struct dbAddr	*pdbaddr = (struct dbAddr *)ppn->paddr;
-    putNotifyStatus     status = ppn->status;
-    char	*pname;
+    struct dbAddr   *pdbaddr = (struct dbAddr *)ppn->paddr;
+    tpnInfo         *ptpnInfo = (tpnInfo *)ppn->usrPvt;
+    putNotifyStatus status = ppn->status;
+    char	    *pname = pdbaddr->precord->name;
 
-    /*This is really cheating. It only works because first field is name*/
-    pname = (char *)pdbaddr->precord;
     if(status==0)
 	printf("tpnCallback: success record=%s\n",pname);
     else
-        errlogPrintf("%s tpnCallback status = %d\n",pname,status);
-    free((void *)pdbaddr);
-    free(ppn);
+        printf("%s tpnCallback status = %d\n",pname,status);
+    epicsEventSignal(ptpnInfo->callbackDone);
 }
+
+static void tpnThread(void *pvt)
+{
+    tpnInfo   *ptpnInfo = (tpnInfo *)pvt;
+    putNotify *ppn = (putNotify *)ptpnInfo->ppn;
+
+    dbPutNotify(ppn);
+    epicsEventWait(ptpnInfo->callbackDone);
+    dbNotifyCancel(ppn);
+    epicsEventDestroy(ptpnInfo->callbackDone);
+    free((void *)ppn->paddr);
+    free(ppn);
+    free(ptpnInfo);
+}
+
 
 int epicsShareAPI tpn(char	*pname,char *pvalue)
 {
-    long		status;
-    struct dbAddr	*pdbaddr=NULL;
-    putNotify		*ppn=NULL;
-    char		*psavevalue;
-    int			len;
+    long	   status;
+    tpnInfo       *ptpnInfo;
+    struct dbAddr *pdbaddr=NULL;
+    putNotify	   *ppn=NULL;
+    char	   *psavevalue;
+    int		   len;
 
     if (pname==0 || pvalue==0
       || ((*pname < ' ') || (*pname > 'z'))
@@ -693,6 +713,16 @@ int epicsShareAPI tpn(char	*pname,char *pvalue)
 	return(-1);
     }
     ppn->userCallback = tpnCallback;
-    dbPutNotify(ppn);
+    ptpnInfo = calloc(1,sizeof(tpnInfo));
+    if(!ptpnInfo) {
+	printf("calloc failed\n");
+	return(-1);
+    }
+    ptpnInfo->ppn = ppn;
+    ptpnInfo->callbackDone = epicsEventCreate(epicsEventEmpty);
+    ppn->usrPvt = ptpnInfo;
+    epicsThreadCreate("tpn",epicsThreadPriorityHigh,
+        epicsThreadGetStackSize(epicsThreadStackMedium),
+        tpnThread,ptpnInfo);
     return(0);
 }

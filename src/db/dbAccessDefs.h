@@ -13,8 +13,19 @@
 #ifndef INCdbAccessDefsh
 #define INCdbAccessDefsh
 
+#ifdef epicsExportSharedSymbols
+#   define INCLdb_accessh_epicsExportSharedSymbols
+#   undef epicsExportSharedSymbols
+#endif
+
+#include "epicsTypes.h"
 #include "epicsTime.h"
-#include "shareLib.h"
+
+#ifdef INCLdb_accessh_epicsExportSharedSymbols
+#   define epicsExportSharedSymbols
+#   include "shareLib.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -45,7 +56,7 @@ epicsShareExtern volatile int interruptAccept;
  * struct {
  *	DBRstatus
  *	DBRtime
- *	float value[10]
+ *	epicsFloat32 value[10]
  * } buffer;
  *
  * IMPORTANT!! The DBRoptions must be given in the order that they
@@ -78,7 +89,7 @@ epicsShareExtern volatile int interruptAccept;
  * typedef struct {
  *	DBRstatus
  *	DBRtime
- *	float value[10]
+ *	epicsFloat32 value[10]
  * } MYBUFFER;
  *
  * With this definition you can give definitions such as the following:
@@ -89,44 +100,44 @@ epicsShareExtern volatile int interruptAccept;
 
 /* Macros for defining each option */
 #define DBRstatus \
-	unsigned short	status;		/* alarm status */\
-	unsigned short	severity;	/* alarm severity*/\
-	unsigned short	acks;		/* alarm ack severity*/\
-	unsigned short	ackt;		/* Acknowledge transient alarms?*/
+	epicsUInt16	status;		/* alarm status */\
+	epicsUInt16	severity;	/* alarm severity*/\
+	epicsUInt16	acks;		/* alarm ack severity*/\
+	epicsUInt16	ackt;		/* Acknowledge transient alarms?*/
 #define DB_UNITS_SIZE   16
 #define DBRunits \
 	char		units[DB_UNITS_SIZE];	/* units	*/
 #define DBRprecision \
-        long            precision;      /* number of decimal places*/\
-        long            field_width;    /* field width             */
+        epicsInt32      precision;      /* number of decimal places*/\
+        epicsInt32      field_width;    /* field width             */
 #define DBRtime \
 	epicsTimeStamp	time;		/* time stamp*/
 #define DBRenumStrs \
-	unsigned long	no_str;		/* number of strings*/\
-	long		padenumStrs;	/*padding to force 8 byte align*/\
+	epicsUInt32	no_str;		/* number of strings*/\
+	epicsInt32	padenumStrs;	/*padding to force 8 byte align*/\
 	char		strs[DB_MAX_CHOICES][MAX_STRING_SIZE];	/* string values    */
 #define DBRgrLong \
-        long            upper_disp_limit;       /*upper limit of graph*/\
-        long            lower_disp_limit;       /*lower limit of graph*/
+        epicsInt32      upper_disp_limit;       /*upper limit of graph*/\
+        epicsInt32      lower_disp_limit;       /*lower limit of graph*/
 #define DBRgrDouble \
-        double          upper_disp_limit;       /*upper limit of graph*/\
-        double          lower_disp_limit;       /*lower limit of graph*/
+        epicsFloat64    upper_disp_limit;       /*upper limit of graph*/\
+        epicsFloat64    lower_disp_limit;       /*lower limit of graph*/
 #define DBRctrlLong \
-        long            upper_ctrl_limit;       /*upper limit of graph*/\
-        long            lower_ctrl_limit;       /*lower limit of graph*/
+        epicsInt32      upper_ctrl_limit;       /*upper limit of graph*/\
+        epicsInt32      lower_ctrl_limit;       /*lower limit of graph*/
 #define DBRctrlDouble \
-        double          upper_ctrl_limit;       /*upper limit of graph*/\
-        double          lower_ctrl_limit;       /*lower limit of graph*/
+        epicsFloat64    upper_ctrl_limit;       /*upper limit of graph*/\
+        epicsFloat64    lower_ctrl_limit;       /*lower limit of graph*/
 #define DBRalLong \
-        long            upper_alarm_limit;\
-        long            upper_warning_limit;\
-        long            lower_warning_limit;\
-        long            lower_alarm_limit;
+        epicsInt32      upper_alarm_limit;\
+        epicsInt32      upper_warning_limit;\
+        epicsInt32      lower_warning_limit;\
+        epicsInt32      lower_alarm_limit;
 #define DBRalDouble \
-        double          upper_alarm_limit;\
-        double          upper_warning_limit;\
-        double          lower_warning_limit;\
-        double          lower_alarm_limit;
+        epicsFloat64    upper_alarm_limit;\
+        epicsFloat64    upper_warning_limit;\
+        epicsFloat64    lower_warning_limit;\
+        epicsFloat64    lower_alarm_limit;
 
 /*  structures for each option type             */
 struct dbr_status       {DBRstatus};

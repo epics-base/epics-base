@@ -235,12 +235,12 @@ static long getStringUshort(
 static long getStringLong(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    long   *pbuffer = (long *)pto;
+    epicsInt32   *pbuffer = (epicsInt32 *)pto;
     char   *psrc=(char *)paddr->pfield;
-    long  value;
+    epicsInt32  value;
 
     if(nRequest==1 && offset==0) {
-	if(sscanf(psrc,"%ld",&value) == 1) {
+	if(sscanf(psrc,"%d",&value) == 1) {
 		*pbuffer = value;
 		return(0);
 	} else if(strlen(psrc) == 0) {
@@ -252,7 +252,7 @@ static long getStringLong(
     }
     psrc += MAX_STRING_SIZE*offset;
     while (nRequest) {
-	if(sscanf(psrc,"%ld",&value) == 1) {
+	if(sscanf(psrc,"%d",&value) == 1) {
 	    *pbuffer = value;
 	} else if(strlen(psrc) == 0) {
 		*pbuffer = 0;
@@ -272,15 +272,15 @@ static long getStringLong(
 static long getStringUlong(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    unsigned long	*pbuffer = (unsigned long *)pto;
-    char   		*psrc=(char *)paddr->pfield;
-    double  		value;
+    epicsUInt32	*pbuffer = (epicsUInt32 *)pto;
+    char   	*psrc=(char *)paddr->pfield;
+    double  	value;
 
     /*Convert to double first so that numbers like 1.0e3 convert properly*/
     /*Problem was old database access said to get unsigned long as double*/
     if(nRequest==1 && offset==0) {
 	if(sscanf(psrc,"%lf",&value) == 1) {
-		*pbuffer = (unsigned long)value;
+		*pbuffer = (epicsUInt32)value;
 		return(0);
 	} else if(strlen(psrc) == 0) {
 		*pbuffer = 0;
@@ -292,7 +292,7 @@ static long getStringUlong(
     psrc += MAX_STRING_SIZE*offset;
     while (nRequest) {
 	if(sscanf(psrc,"%lf",&value) == 1) {
-	    *pbuffer = (unsigned long)value;
+	    *pbuffer = (epicsUInt32)value;
 	} else if(strlen(psrc) == 0) {
 		*pbuffer = 0;
 	} else {
@@ -490,7 +490,7 @@ static long getCharUshort(
 static long getCharLong(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    long *pbuffer = (long *)pto;
+    epicsInt32 *pbuffer = (epicsInt32 *)pto;
     char *psrc=(char *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -509,7 +509,7 @@ static long getCharLong(
 static long getCharUlong(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    unsigned long *pbuffer = (unsigned long *)pto;
+    epicsUInt32 *pbuffer = (epicsUInt32 *)pto;
     char *psrc=(char *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -566,7 +566,7 @@ static long getCharDouble(
 static long getCharEnum(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    unsigned short *pbuffer = (unsigned short *)pto;
+    epicsEnum16 *pbuffer = (epicsEnum16 *)pto;
     char *psrc=(char *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -684,7 +684,7 @@ static long getUcharUshort(
 static long getUcharLong(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    long *pbuffer = (long *)pto;
+    epicsInt32 *pbuffer = (epicsInt32 *)pto;
     unsigned char  *psrc=(unsigned char *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -703,7 +703,7 @@ static long getUcharLong(
 static long getUcharUlong(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    unsigned long *pbuffer = (unsigned long *)pto;
+    epicsUInt32 *pbuffer = (epicsUInt32 *)pto;
     unsigned char  *psrc=(unsigned char *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -760,7 +760,7 @@ static long getUcharDouble(
 static long getUcharEnum(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    unsigned short *pbuffer = (unsigned short *)pto;
+    epicsEnum16 *pbuffer = (epicsEnum16 *)pto;
     unsigned char  *psrc=(unsigned char *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -877,7 +877,7 @@ static long getShortUshort(
 static long getShortLong(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    long *pbuffer = (long *)pto;
+    epicsInt32 *pbuffer = (epicsInt32 *)pto;
     short *psrc=(short *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -896,7 +896,7 @@ static long getShortLong(
 static long getShortUlong(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    unsigned long *pbuffer = (unsigned long *)pto;
+    epicsUInt32 *pbuffer = (epicsUInt32 *)pto;
     short *psrc=(short *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -953,7 +953,7 @@ static long getShortDouble(
 static long getShortEnum(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    unsigned short *pbuffer = (unsigned short *)pto;
+    epicsEnum16 *pbuffer = (epicsEnum16 *)pto;
     short *psrc=(short *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -1070,7 +1070,7 @@ static long getUshortUshort(
 static long getUshortLong(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    long *pbuffer = (long *)pto;
+    epicsInt32 *pbuffer = (epicsInt32 *)pto;
     unsigned short *psrc=(unsigned short *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -1089,7 +1089,7 @@ static long getUshortLong(
 static long getUshortUlong(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    unsigned long *pbuffer = (unsigned long *)pto;
+    epicsUInt32 *pbuffer = (epicsUInt32 *)pto;
     unsigned short *psrc=(unsigned short *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -1146,7 +1146,7 @@ static long getUshortDouble(
 static long getUshortEnum(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    unsigned short *pbuffer = (unsigned short *)pto;
+    epicsEnum16 *pbuffer = (epicsEnum16 *)pto;
     unsigned short *psrc=(unsigned short *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -1166,7 +1166,7 @@ static long getLongString(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
     char *pbuffer = (char *)pto;
-    long *psrc=(long *)(paddr->pfield);
+    epicsInt32 *psrc=(epicsInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	cvtLongToString(*psrc,pbuffer);
@@ -1177,7 +1177,7 @@ static long getLongString(
 	cvtLongToString(*psrc,pbuffer);
 	pbuffer += MAX_STRING_SIZE;
 	if(++offset==no_elements)
-		psrc=(long *)paddr->pfield;
+		psrc=(epicsInt32 *)paddr->pfield;
 	else
     		psrc++;
 	nRequest--;
@@ -1189,7 +1189,7 @@ static long getLongChar(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
     char *pbuffer = (char *)pto;
-    long *psrc=(long *)(paddr->pfield);
+    epicsInt32 *psrc=(epicsInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pbuffer = *psrc;
@@ -1198,7 +1198,7 @@ static long getLongChar(
     psrc += offset;
     while (nRequest) {
 	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(long *)paddr->pfield;
+	if(++offset==no_elements) psrc=(epicsInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -1208,7 +1208,7 @@ static long getLongUchar(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
     unsigned char *pbuffer = (unsigned char *)pto;
-    long *psrc=(long *)(paddr->pfield);
+    epicsInt32 *psrc=(epicsInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pbuffer = *psrc;
@@ -1217,7 +1217,7 @@ static long getLongUchar(
     psrc += offset;
     while (nRequest) {
 	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(long *)paddr->pfield;
+	if(++offset==no_elements) psrc=(epicsInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -1227,7 +1227,7 @@ static long getLongShort(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
     short *pbuffer = (short *)pto;
-    long *psrc=(long *)(paddr->pfield);
+    epicsInt32 *psrc=(epicsInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pbuffer = *psrc;
@@ -1236,7 +1236,7 @@ static long getLongShort(
     psrc += offset;
     while (nRequest) {
 	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(long *)paddr->pfield;
+	if(++offset==no_elements) psrc=(epicsInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -1246,7 +1246,7 @@ static long getLongUshort(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
     unsigned short *pbuffer = (unsigned short *)pto;
-    long *psrc=(long *)(paddr->pfield);
+    epicsInt32 *psrc=(epicsInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pbuffer = *psrc;
@@ -1255,7 +1255,7 @@ static long getLongUshort(
     psrc += offset;
     while (nRequest) {
 	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(long *)paddr->pfield;
+	if(++offset==no_elements) psrc=(epicsInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -1264,8 +1264,8 @@ static long getLongUshort(
 static long getLongLong(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    long *pbuffer = (long *)pto;
-    long *psrc=(long *)(paddr->pfield);
+    epicsInt32 *pbuffer = (epicsInt32 *)pto;
+    epicsInt32 *psrc=(epicsInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pbuffer = *psrc;
@@ -1274,7 +1274,7 @@ static long getLongLong(
     psrc += offset;
     while (nRequest) {
 	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(long *)paddr->pfield;
+	if(++offset==no_elements) psrc=(epicsInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -1283,8 +1283,8 @@ static long getLongLong(
 static long getLongUlong(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    unsigned long *pbuffer = (unsigned long *)pto;
-    long *psrc=(long *)(paddr->pfield);
+    epicsUInt32 *pbuffer = (epicsUInt32 *)pto;
+    epicsInt32 *psrc=(epicsInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pbuffer = *psrc;
@@ -1293,7 +1293,7 @@ static long getLongUlong(
     psrc += offset;
     while (nRequest) {
 	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(long *)paddr->pfield;
+	if(++offset==no_elements) psrc=(epicsInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -1303,7 +1303,7 @@ static long getLongFloat(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
     float *pbuffer = (float *)pto;
-    long *psrc=(long *)(paddr->pfield);
+    epicsInt32 *psrc=(epicsInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pbuffer = *psrc;
@@ -1312,7 +1312,7 @@ static long getLongFloat(
     psrc += offset;
     while (nRequest) {
 	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(long *)paddr->pfield;
+	if(++offset==no_elements) psrc=(epicsInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -1322,7 +1322,7 @@ static long getLongDouble(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
     double *pbuffer = (double *)pto;
-    long *psrc=(long *)(paddr->pfield);
+    epicsInt32 *psrc=(epicsInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pbuffer = *psrc;
@@ -1331,7 +1331,7 @@ static long getLongDouble(
     psrc += offset;
     while (nRequest) {
 	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(long *)paddr->pfield;
+	if(++offset==no_elements) psrc=(epicsInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -1340,8 +1340,8 @@ static long getLongDouble(
 static long getLongEnum(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    unsigned short  *pbuffer = (unsigned short  *)pto;
-    long *psrc=(long *)(paddr->pfield);
+    epicsEnum16  *pbuffer = (epicsEnum16  *)pto;
+    epicsInt32 *psrc=(epicsInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pbuffer = *psrc;
@@ -1350,7 +1350,7 @@ static long getLongEnum(
     psrc += offset;
     while (nRequest) {
 	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(long *)paddr->pfield;
+	if(++offset==no_elements) psrc=(epicsInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -1360,7 +1360,7 @@ static long getUlongString(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
     char  *pbuffer = (char  *)pto;
-    unsigned long *psrc=(unsigned long *)(paddr->pfield);
+    epicsUInt32 *psrc=(epicsUInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	cvtUlongToString(*psrc,pbuffer);
@@ -1371,7 +1371,7 @@ static long getUlongString(
 	cvtUlongToString(*psrc,pbuffer);
 	pbuffer += MAX_STRING_SIZE;
 	if(++offset==no_elements)
-		psrc=(unsigned long *)paddr->pfield;
+		psrc=(epicsUInt32 *)paddr->pfield;
 	else
     		psrc++;
 	nRequest--;
@@ -1383,7 +1383,7 @@ static long getUlongChar(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
     char  *pbuffer = (char  *)pto;
-    unsigned long *psrc=(unsigned long *)(paddr->pfield);
+    epicsUInt32 *psrc=(epicsUInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pbuffer = *psrc;
@@ -1392,7 +1392,7 @@ static long getUlongChar(
     psrc += offset;
     while (nRequest) {
 	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(unsigned long *)paddr->pfield;
+	if(++offset==no_elements) psrc=(epicsUInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -1402,7 +1402,7 @@ static long getUlongUchar(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
     unsigned char  *pbuffer = (unsigned char  *)pto;
-    unsigned long *psrc=(unsigned long *)(paddr->pfield);
+    epicsUInt32 *psrc=(epicsUInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pbuffer = *psrc;
@@ -1411,7 +1411,7 @@ static long getUlongUchar(
     psrc += offset;
     while (nRequest) {
 	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(unsigned long *)paddr->pfield;
+	if(++offset==no_elements) psrc=(epicsUInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -1421,7 +1421,7 @@ static long getUlongShort(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
     short  *pbuffer = (short  *)pto;
-    unsigned long *psrc=(unsigned long *)(paddr->pfield);
+    epicsUInt32 *psrc=(epicsUInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pbuffer = *psrc;
@@ -1430,7 +1430,7 @@ static long getUlongShort(
     psrc += offset;
     while (nRequest) {
 	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(unsigned long *)paddr->pfield;
+	if(++offset==no_elements) psrc=(epicsUInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -1440,7 +1440,7 @@ static long getUlongUshort(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
     unsigned short  *pbuffer = (unsigned short  *)pto;
-    unsigned long *psrc=(unsigned long *)(paddr->pfield);
+    epicsUInt32 *psrc=(epicsUInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pbuffer = *psrc;
@@ -1449,7 +1449,7 @@ static long getUlongUshort(
     psrc += offset;
     while (nRequest) {
 	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(unsigned long *)paddr->pfield;
+	if(++offset==no_elements) psrc=(epicsUInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -1458,8 +1458,8 @@ static long getUlongUshort(
 static long getUlongLong(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    long  *pbuffer = (long  *)pto;
-    unsigned long *psrc=(unsigned long *)(paddr->pfield);
+    epicsInt32  *pbuffer = (epicsInt32  *)pto;
+    epicsUInt32 *psrc=(epicsUInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pbuffer = *psrc;
@@ -1468,7 +1468,7 @@ static long getUlongLong(
     psrc += offset;
     while (nRequest) {
 	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(unsigned long *)paddr->pfield;
+	if(++offset==no_elements) psrc=(epicsUInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -1477,8 +1477,8 @@ static long getUlongLong(
 static long getUlongUlong(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    unsigned long  *pbuffer = (unsigned long  *)pto;
-    unsigned long *psrc=(unsigned long *)(paddr->pfield);
+    epicsUInt32  *pbuffer = (epicsUInt32  *)pto;
+    epicsUInt32 *psrc=(epicsUInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pbuffer = *psrc;
@@ -1487,7 +1487,7 @@ static long getUlongUlong(
     psrc += offset;
     while (nRequest) {
 	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(unsigned long *)paddr->pfield;
+	if(++offset==no_elements) psrc=(epicsUInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -1497,7 +1497,7 @@ static long getUlongFloat(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
     float  *pbuffer = (float  *)pto;
-    unsigned long *psrc=(unsigned long *)(paddr->pfield);
+    epicsUInt32 *psrc=(epicsUInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pbuffer = *psrc;
@@ -1506,7 +1506,7 @@ static long getUlongFloat(
     psrc += offset;
     while (nRequest) {
 	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(unsigned long *)paddr->pfield;
+	if(++offset==no_elements) psrc=(epicsUInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -1516,7 +1516,7 @@ static long getUlongDouble(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
     double  *pbuffer = (double  *)pto;
-    unsigned long *psrc=(unsigned long *)(paddr->pfield);
+    epicsUInt32 *psrc=(epicsUInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pbuffer = *psrc;
@@ -1525,7 +1525,7 @@ static long getUlongDouble(
     psrc += offset;
     while (nRequest) {
 	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(unsigned long *)paddr->pfield;
+	if(++offset==no_elements) psrc=(epicsUInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -1534,8 +1534,8 @@ static long getUlongDouble(
 static long getUlongEnum(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    unsigned short *pbuffer = (unsigned short *)pto;
-    unsigned long *psrc=(unsigned long *)(paddr->pfield);
+    epicsEnum16 *pbuffer = (epicsEnum16 *)pto;
+    epicsUInt32 *psrc=(epicsUInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pbuffer = *psrc;
@@ -1544,7 +1544,7 @@ static long getUlongEnum(
     psrc += offset;
     while (nRequest) {
 	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(unsigned long *)paddr->pfield;
+	if(++offset==no_elements) psrc=(epicsUInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -1658,7 +1658,7 @@ static long getFloatUshort(
 static long getFloatLong(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    long *pbuffer = (long *)pto;
+    epicsInt32 *pbuffer = (epicsInt32 *)pto;
     float *psrc=(float *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -1677,7 +1677,7 @@ static long getFloatLong(
 static long getFloatUlong(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    unsigned long *pbuffer = (unsigned long *)pto;
+    epicsUInt32 *pbuffer = (epicsUInt32 *)pto;
     float *psrc=(float *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -1734,7 +1734,7 @@ static long getFloatDouble(
 static long getFloatEnum(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    unsigned short *pbuffer = (unsigned short *)pto;
+    epicsEnum16 *pbuffer = (epicsEnum16 *)pto;
     float *psrc=(float *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -1858,7 +1858,7 @@ static long getDoubleUshort(
 static long getDoubleLong(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    long *pbuffer = (long *)pto;
+    epicsInt32 *pbuffer = (epicsInt32 *)pto;
     double *psrc=(double *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -1877,7 +1877,7 @@ static long getDoubleLong(
 static long getDoubleUlong(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    unsigned long *pbuffer = (unsigned long *)pto;
+    epicsUInt32 *pbuffer = (epicsUInt32 *)pto;
     double *psrc=(double *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -1935,7 +1935,7 @@ static long getDoubleDouble(
 static long getDoubleEnum(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    unsigned short *pbuffer = (unsigned short *)pto;
+    epicsEnum16 *pbuffer = (epicsEnum16 *)pto;
     double *psrc=(double *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -1969,7 +1969,7 @@ static long getEnumChar(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
     char *pbuffer = (char *)pto;
-    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+    epicsEnum16 *psrc=(epicsEnum16 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pbuffer = *psrc;
@@ -1978,7 +1978,7 @@ static long getEnumChar(
     psrc += offset;
     while (nRequest) {
 	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
+	if(++offset==no_elements) psrc=(epicsEnum16 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -1988,7 +1988,7 @@ static long getEnumUchar(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
     unsigned char *pbuffer = (unsigned char *)pto;
-    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+    epicsEnum16 *psrc=(epicsEnum16 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pbuffer = *psrc;
@@ -1997,7 +1997,7 @@ static long getEnumUchar(
     psrc += offset;
     while (nRequest) {
 	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
+	if(++offset==no_elements) psrc=(epicsEnum16 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -2007,7 +2007,7 @@ static long getEnumShort(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
     short *pbuffer = (short *)pto;
-    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+    epicsEnum16 *psrc=(epicsEnum16 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pbuffer = *psrc;
@@ -2016,7 +2016,7 @@ static long getEnumShort(
     psrc += offset;
     while (nRequest) {
 	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
+	if(++offset==no_elements) psrc=(epicsEnum16 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -2026,7 +2026,7 @@ static long getEnumUshort(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
     unsigned short *pbuffer = (unsigned short *)pto;
-    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+    epicsEnum16 *psrc=(epicsEnum16 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pbuffer = *psrc;
@@ -2035,7 +2035,7 @@ static long getEnumUshort(
     psrc += offset;
     while (nRequest) {
 	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
+	if(++offset==no_elements) psrc=(epicsEnum16 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -2044,8 +2044,8 @@ static long getEnumUshort(
 static long getEnumLong(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    long *pbuffer = (long *)pto;
-    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+    epicsInt32 *pbuffer = (epicsInt32 *)pto;
+    epicsEnum16 *psrc=(epicsEnum16 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pbuffer = *psrc;
@@ -2054,7 +2054,7 @@ static long getEnumLong(
     psrc += offset;
     while (nRequest) {
 	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
+	if(++offset==no_elements) psrc=(epicsEnum16 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -2063,8 +2063,8 @@ static long getEnumLong(
 static long getEnumUlong(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    unsigned long *pbuffer = (unsigned long *)pto;
-    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+    epicsUInt32 *pbuffer = (epicsUInt32 *)pto;
+    epicsEnum16 *psrc=(epicsEnum16 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pbuffer = *psrc;
@@ -2073,7 +2073,7 @@ static long getEnumUlong(
     psrc += offset;
     while (nRequest) {
 	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
+	if(++offset==no_elements) psrc=(epicsEnum16 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -2083,7 +2083,7 @@ static long getEnumFloat(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
     float *pbuffer = (float *)pto;
-    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+    epicsEnum16 *psrc=(epicsEnum16 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pbuffer = *psrc;
@@ -2092,7 +2092,7 @@ static long getEnumFloat(
     psrc += offset;
     while (nRequest) {
 	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
+	if(++offset==no_elements) psrc=(epicsEnum16 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -2102,7 +2102,7 @@ static long getEnumDouble(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
     double *pbuffer = (double *)pto;
-    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+    epicsEnum16 *psrc=(epicsEnum16 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pbuffer = *psrc;
@@ -2111,7 +2111,7 @@ static long getEnumDouble(
     psrc += offset;
     while (nRequest) {
 	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
+	if(++offset==no_elements) psrc=(epicsEnum16 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -2120,8 +2120,8 @@ static long getEnumDouble(
 static long getEnumEnum(
     DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
 {
-    unsigned short *pbuffer = (unsigned short *)pto;
-    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+    epicsEnum16 *pbuffer = (epicsEnum16 *)pto;
+    epicsEnum16 *psrc=(epicsEnum16 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pbuffer = *psrc;
@@ -2130,7 +2130,7 @@ static long getEnumEnum(
     psrc += offset;
     while (nRequest) {
 	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
+	if(++offset==no_elements) psrc=(epicsEnum16 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -2144,7 +2144,7 @@ static long getMenuString(DBADDR *paddr, void *pto,
     dbMenu		*pdbMenu;
     char		**papChoiceValue;
     char		*pchoice;
-    unsigned short	choice_ind= *((unsigned short*)paddr->pfield);
+    epicsEnum16	choice_ind= *((epicsEnum16*)paddr->pfield);
 
     if(no_elements!=1){
         recGblDbaddrError(S_db_onlyOne,paddr,"dbGet(getMenuString)");
@@ -2170,7 +2170,7 @@ static long getDeviceString(DBADDR *paddr, void *pto,
     dbDeviceMenu	*pdbDeviceMenu;
     char		**papChoice;
     char		*pchoice;
-    unsigned short	choice_ind= *((unsigned short*)paddr->pfield);
+    epicsEnum16	choice_ind= *((epicsEnum16*)paddr->pfield);
 
     if(no_elements!=1){
         recGblDbaddrError(S_db_onlyOne,paddr,"dbGet(getDeviceString)");
@@ -2473,7 +2473,7 @@ static long putStringEnum(
 {
     char *pbuffer = (char *)pfrom;
     struct rset 	*prset;
-    unsigned short      *pfield= (unsigned short*)(paddr->pfield);
+    epicsEnum16      *pfield= (epicsEnum16*)(paddr->pfield);
     long        	status;
     unsigned int	nchoices,ind;
     int			nargs,nchars;
@@ -2516,7 +2516,7 @@ static long putStringMenu(
     dbMenu		*pdbMenu;
     char		**papChoiceValue;
     char		*pchoice;
-    unsigned short      *pfield= (unsigned short*)(paddr->pfield);
+    epicsEnum16      *pfield= (epicsEnum16*)(paddr->pfield);
     unsigned int	nChoice,ind;
     int			nargs,nchars;
 
@@ -2553,7 +2553,7 @@ static long putStringDevice(
     dbDeviceMenu	*pdbDeviceMenu = (dbDeviceMenu *)pdbFldDes->ftPvt;
     char		**papChoice;
     char		*pchoice;
-    unsigned short      *pfield= (unsigned short*)(paddr->pfield);
+    epicsEnum16      *pfield= (epicsEnum16*)(paddr->pfield);
     unsigned int	nChoice,ind;
     int			nargs,nchars;
 
@@ -2763,7 +2763,7 @@ static long putCharEnum(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
     char *pbuffer = (char *)pfrom;
-    unsigned short  *pdest=(unsigned short *)(paddr->pfield);
+    epicsEnum16  *pdest=(epicsEnum16 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pdest = *pbuffer;
@@ -2772,7 +2772,7 @@ static long putCharEnum(
     pdest += offset;
     while (nRequest) {
 	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
+	if(++offset==no_elements) pdest=(epicsEnum16 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -2959,7 +2959,7 @@ static long putUcharEnum(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
     unsigned char *pbuffer = (unsigned char *)pfrom;
-    unsigned short  *pdest=(unsigned short *)(paddr->pfield);
+    epicsEnum16  *pdest=(epicsEnum16 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pdest = *pbuffer;
@@ -2968,7 +2968,7 @@ static long putUcharEnum(
     pdest += offset;
     while (nRequest) {
 	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
+	if(++offset==no_elements) pdest=(epicsEnum16 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -3155,7 +3155,7 @@ static long putShortEnum(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
     short *pbuffer = (short *)pfrom;
-    unsigned short  *pdest=(unsigned short *)(paddr->pfield);
+    epicsEnum16  *pdest=(epicsEnum16 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pdest = *pbuffer;
@@ -3164,7 +3164,7 @@ static long putShortEnum(
     pdest += offset;
     while (nRequest) {
 	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
+	if(++offset==no_elements) pdest=(epicsEnum16 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -3275,7 +3275,7 @@ static long putUshortLong(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
     unsigned short *pbuffer = (unsigned short *)pfrom;
-    long  *pdest=(long *)(paddr->pfield);
+    epicsInt32  *pdest=(epicsInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pdest = *pbuffer;
@@ -3284,7 +3284,7 @@ static long putUshortLong(
     pdest += offset;
     while (nRequest) {
 	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(long *)paddr->pfield;
+	if(++offset==no_elements) pdest=(epicsInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -3294,7 +3294,7 @@ static long putUshortUlong(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
     unsigned short *pbuffer = (unsigned short *)pfrom;
-    unsigned long  *pdest=(unsigned long *)(paddr->pfield);
+    epicsUInt32  *pdest=(epicsUInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pdest = *pbuffer;
@@ -3303,7 +3303,7 @@ static long putUshortUlong(
     pdest += offset;
     while (nRequest) {
 	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(unsigned long *)paddr->pfield;
+	if(++offset==no_elements) pdest=(epicsUInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -3351,7 +3351,7 @@ static long putUshortEnum(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
     unsigned short *pbuffer = (unsigned short *)pfrom;
-    unsigned short  *pdest=(unsigned short *)(paddr->pfield);
+    epicsEnum16  *pdest=(epicsEnum16 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pdest = *pbuffer;
@@ -3360,7 +3360,7 @@ static long putUshortEnum(
     pdest += offset;
     while (nRequest) {
 	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
+	if(++offset==no_elements) pdest=(epicsEnum16 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -3369,7 +3369,7 @@ static long putUshortEnum(
 static long putLongString(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    long *pbuffer = (long *)pfrom;
+    epicsInt32 *pbuffer = (epicsInt32 *)pfrom;
     char  *pdest=(char *)(paddr->pfield);
     short size=paddr->field_size;
 
@@ -3394,7 +3394,7 @@ static long putLongString(
 static long putLongChar(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    long *pbuffer = (long *)pfrom;
+    epicsInt32 *pbuffer = (epicsInt32 *)pfrom;
     char  *pdest=(char *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -3413,7 +3413,7 @@ static long putLongChar(
 static long putLongUchar(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    long *pbuffer = (long *)pfrom;
+    epicsInt32 *pbuffer = (epicsInt32 *)pfrom;
     unsigned char  *pdest=(unsigned char *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -3432,7 +3432,7 @@ static long putLongUchar(
 static long putLongShort(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    long *pbuffer = (long *)pfrom;
+    epicsInt32 *pbuffer = (epicsInt32 *)pfrom;
     short  *pdest=(short *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -3451,7 +3451,7 @@ static long putLongShort(
 static long putLongUshort(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    long *pbuffer = (long *)pfrom;
+    epicsInt32 *pbuffer = (epicsInt32 *)pfrom;
     unsigned short  *pdest=(unsigned short *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -3470,8 +3470,8 @@ static long putLongUshort(
 static long putLongLong(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    long *pbuffer = (long *)pfrom;
-    long  *pdest=(long *)(paddr->pfield);
+    epicsInt32 *pbuffer = (epicsInt32 *)pfrom;
+    epicsInt32  *pdest=(epicsInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pdest = *pbuffer;
@@ -3480,7 +3480,7 @@ static long putLongLong(
     pdest += offset;
     while (nRequest) {
 	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(long *)paddr->pfield;
+	if(++offset==no_elements) pdest=(epicsInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -3489,8 +3489,8 @@ static long putLongLong(
 static long putLongUlong(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    long *pbuffer = (long *)pfrom;
-    unsigned long  *pdest=(unsigned long *)(paddr->pfield);
+    epicsInt32 *pbuffer = (epicsInt32 *)pfrom;
+    epicsUInt32  *pdest=(epicsUInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pdest = *pbuffer;
@@ -3499,7 +3499,7 @@ static long putLongUlong(
     pdest += offset;
     while (nRequest) {
 	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(unsigned long *)paddr->pfield;
+	if(++offset==no_elements) pdest=(epicsUInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -3508,7 +3508,7 @@ static long putLongUlong(
 static long putLongFloat(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    long *pbuffer = (long *)pfrom;
+    epicsInt32 *pbuffer = (epicsInt32 *)pfrom;
     float  *pdest=(float *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -3527,7 +3527,7 @@ static long putLongFloat(
 static long putLongDouble(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    long *pbuffer = (long *)pfrom;
+    epicsInt32 *pbuffer = (epicsInt32 *)pfrom;
     double  *pdest=(double *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -3546,8 +3546,8 @@ static long putLongDouble(
 static long putLongEnum(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    long *pbuffer = (long *)pfrom;
-    unsigned short  *pdest=(unsigned short *)(paddr->pfield);
+    epicsInt32 *pbuffer = (epicsInt32 *)pfrom;
+    epicsEnum16  *pdest=(epicsEnum16 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pdest = *pbuffer;
@@ -3556,7 +3556,7 @@ static long putLongEnum(
     pdest += offset;
     while (nRequest) {
 	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
+	if(++offset==no_elements) pdest=(epicsEnum16 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -3565,7 +3565,7 @@ static long putLongEnum(
 static long putUlongString(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    unsigned long *pbuffer = (unsigned long *)pfrom;
+    epicsUInt32 *pbuffer = (epicsUInt32 *)pfrom;
     char  *pdest=(char *)(paddr->pfield);
     short size=paddr->field_size;
 
@@ -3590,7 +3590,7 @@ static long putUlongString(
 static long putUlongChar(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    unsigned long *pbuffer = (unsigned long *)pfrom;
+    epicsUInt32 *pbuffer = (epicsUInt32 *)pfrom;
     char  *pdest=(char *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -3609,7 +3609,7 @@ static long putUlongChar(
 static long putUlongUchar(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    unsigned long *pbuffer = (unsigned long *)pfrom;
+    epicsUInt32 *pbuffer = (epicsUInt32 *)pfrom;
     unsigned char  *pdest=(unsigned char *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -3628,7 +3628,7 @@ static long putUlongUchar(
 static long putUlongShort(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    unsigned long *pbuffer = (unsigned long *)pfrom;
+    epicsUInt32 *pbuffer = (epicsUInt32 *)pfrom;
     short  *pdest=(short *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -3647,7 +3647,7 @@ static long putUlongShort(
 static long putUlongUshort(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    unsigned long *pbuffer = (unsigned long *)pfrom;
+    epicsUInt32 *pbuffer = (epicsUInt32 *)pfrom;
     unsigned short  *pdest=(unsigned short *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -3666,8 +3666,8 @@ static long putUlongUshort(
 static long putUlongLong(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    unsigned long *pbuffer = (unsigned long *)pfrom;
-    long  *pdest=(long *)(paddr->pfield);
+    epicsUInt32 *pbuffer = (epicsUInt32 *)pfrom;
+    epicsInt32  *pdest=(epicsInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pdest = *pbuffer;
@@ -3676,7 +3676,7 @@ static long putUlongLong(
     pdest += offset;
     while (nRequest) {
 	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(long *)paddr->pfield;
+	if(++offset==no_elements) pdest=(epicsInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -3685,8 +3685,8 @@ static long putUlongLong(
 static long putUlongUlong(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    unsigned long *pbuffer = (unsigned long *)pfrom;
-    unsigned long  *pdest=(unsigned long *)(paddr->pfield);
+    epicsUInt32 *pbuffer = (epicsUInt32 *)pfrom;
+    epicsUInt32  *pdest=(epicsUInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pdest = *pbuffer;
@@ -3695,7 +3695,7 @@ static long putUlongUlong(
     pdest += offset;
     while (nRequest) {
 	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(unsigned long *)paddr->pfield;
+	if(++offset==no_elements) pdest=(epicsUInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -3704,7 +3704,7 @@ static long putUlongUlong(
 static long putUlongFloat(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    unsigned long *pbuffer = (unsigned long *)pfrom;
+    epicsUInt32 *pbuffer = (epicsUInt32 *)pfrom;
     float  *pdest=(float *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -3723,7 +3723,7 @@ static long putUlongFloat(
 static long putUlongDouble(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    unsigned long *pbuffer = (unsigned long *)pfrom;
+    epicsUInt32 *pbuffer = (epicsUInt32 *)pfrom;
     double  *pdest=(double *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -3742,8 +3742,8 @@ static long putUlongDouble(
 static long putUlongEnum(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    unsigned long *pbuffer = (unsigned long *)pfrom;
-    unsigned short  *pdest=(unsigned short *)(paddr->pfield);
+    epicsUInt32 *pbuffer = (epicsUInt32 *)pfrom;
+    epicsEnum16  *pdest=(epicsEnum16 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pdest = *pbuffer;
@@ -3752,7 +3752,7 @@ static long putUlongEnum(
     pdest += offset;
     while (nRequest) {
 	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
+	if(++offset==no_elements) pdest=(epicsEnum16 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -3868,7 +3868,7 @@ static long putFloatLong(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
     float *pbuffer = (float *)pfrom;
-    long  *pdest=(long *)(paddr->pfield);
+    epicsInt32  *pdest=(epicsInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pdest = *pbuffer;
@@ -3877,7 +3877,7 @@ static long putFloatLong(
     pdest += offset;
     while (nRequest) {
 	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(long *)paddr->pfield;
+	if(++offset==no_elements) pdest=(epicsInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -3887,7 +3887,7 @@ static long putFloatUlong(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
     float *pbuffer = (float *)pfrom;
-    unsigned long  *pdest=(unsigned long *)(paddr->pfield);
+    epicsUInt32  *pdest=(epicsUInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pdest = *pbuffer;
@@ -3896,7 +3896,7 @@ static long putFloatUlong(
     pdest += offset;
     while (nRequest) {
 	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(unsigned long *)paddr->pfield;
+	if(++offset==no_elements) pdest=(epicsUInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -3944,7 +3944,7 @@ static long putFloatEnum(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
     float *pbuffer = (float *)pfrom;
-    unsigned short  *pdest=(unsigned short *)(paddr->pfield);
+    epicsEnum16  *pdest=(epicsEnum16 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pdest = *pbuffer;
@@ -3953,7 +3953,7 @@ static long putFloatEnum(
     pdest += offset;
     while (nRequest) {
 	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
+	if(++offset==no_elements) pdest=(epicsEnum16 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -4069,7 +4069,7 @@ static long putDoubleLong(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
     double *pbuffer = (double *)pfrom;
-    long  *pdest=(long *)(paddr->pfield);
+    epicsInt32  *pdest=(epicsInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pdest = *pbuffer;
@@ -4078,7 +4078,7 @@ static long putDoubleLong(
     pdest += offset;
     while (nRequest) {
 	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(long *)paddr->pfield;
+	if(++offset==no_elements) pdest=(epicsInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -4088,7 +4088,7 @@ static long putDoubleUlong(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
     double *pbuffer = (double *)pfrom;
-    unsigned long  *pdest=(unsigned long *)(paddr->pfield);
+    epicsUInt32  *pdest=(epicsUInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pdest = *pbuffer;
@@ -4097,7 +4097,7 @@ static long putDoubleUlong(
     pdest += offset;
     while (nRequest) {
 	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(unsigned long *)paddr->pfield;
+	if(++offset==no_elements) pdest=(epicsUInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -4146,7 +4146,7 @@ static long putDoubleEnum(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
     double *pbuffer = (double *)pfrom;
-    unsigned short  *pdest=(unsigned short *)(paddr->pfield);
+    epicsEnum16  *pdest=(epicsEnum16 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pdest = *pbuffer;
@@ -4155,7 +4155,7 @@ static long putDoubleEnum(
     pdest += offset;
     while (nRequest) {
 	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
+	if(++offset==no_elements) pdest=(epicsEnum16 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -4164,7 +4164,7 @@ static long putDoubleEnum(
 static long putEnumString(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    unsigned short *pbuffer = (unsigned short *)pfrom;
+    epicsEnum16 *pbuffer = (epicsEnum16 *)pfrom;
     char  *pdest=(char *)(paddr->pfield);
     short size=paddr->field_size;
 
@@ -4189,7 +4189,7 @@ static long putEnumString(
 static long putEnumChar(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    unsigned short *pbuffer = (unsigned short *)pfrom;
+    epicsEnum16 *pbuffer = (epicsEnum16 *)pfrom;
     char  *pdest=(char *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -4208,7 +4208,7 @@ static long putEnumChar(
 static long putEnumUchar(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    unsigned short *pbuffer = (unsigned short *)pfrom;
+    epicsEnum16 *pbuffer = (epicsEnum16 *)pfrom;
     unsigned char  *pdest=(unsigned char *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -4227,7 +4227,7 @@ static long putEnumUchar(
 static long putEnumShort(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    unsigned short *pbuffer = (unsigned short *)pfrom;
+    epicsEnum16 *pbuffer = (epicsEnum16 *)pfrom;
     short  *pdest=(short *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -4246,7 +4246,7 @@ static long putEnumShort(
 static long putEnumUshort(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    unsigned short *pbuffer = (unsigned short *)pfrom;
+    epicsEnum16 *pbuffer = (epicsEnum16 *)pfrom;
     unsigned short  *pdest=(unsigned short *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -4265,8 +4265,8 @@ static long putEnumUshort(
 static long putEnumLong(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    unsigned short *pbuffer = (unsigned short *)pfrom;
-    long  *pdest=(long *)(paddr->pfield);
+    epicsEnum16 *pbuffer = (epicsEnum16 *)pfrom;
+    epicsInt32  *pdest=(epicsInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pdest = *pbuffer;
@@ -4275,7 +4275,7 @@ static long putEnumLong(
     pdest += offset;
     while (nRequest) {
 	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(long *)paddr->pfield;
+	if(++offset==no_elements) pdest=(epicsInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -4284,8 +4284,8 @@ static long putEnumLong(
 static long putEnumUlong(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    unsigned short *pbuffer = (unsigned short *)pfrom;
-    unsigned long  *pdest=(unsigned long *)(paddr->pfield);
+    epicsEnum16 *pbuffer = (epicsEnum16 *)pfrom;
+    epicsUInt32  *pdest=(epicsUInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pdest = *pbuffer;
@@ -4294,7 +4294,7 @@ static long putEnumUlong(
     pdest += offset;
     while (nRequest) {
 	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(unsigned long *)paddr->pfield;
+	if(++offset==no_elements) pdest=(epicsUInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -4303,7 +4303,7 @@ static long putEnumUlong(
 static long putEnumFloat(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    unsigned short *pbuffer = (unsigned short *)pfrom;
+    epicsEnum16 *pbuffer = (epicsEnum16 *)pfrom;
     float  *pdest=(float *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -4322,7 +4322,7 @@ static long putEnumFloat(
 static long putEnumDouble(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    unsigned short *pbuffer = (unsigned short *)pfrom;
+    epicsEnum16 *pbuffer = (epicsEnum16 *)pfrom;
     double  *pdest=(double *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
@@ -4341,8 +4341,8 @@ static long putEnumDouble(
 static long putEnumEnum(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
-    unsigned short *pbuffer = (unsigned short *)pfrom;
-    unsigned short  *pdest=(unsigned short *)(paddr->pfield);
+    epicsEnum16 *pbuffer = (epicsEnum16 *)pfrom;
+    epicsEnum16  *pdest=(epicsEnum16 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pdest = *pbuffer;
@@ -4351,7 +4351,7 @@ static long putEnumEnum(
     pdest += offset;
     while (nRequest) {
 	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
+	if(++offset==no_elements) pdest=(epicsEnum16 *)paddr->pfield;
 	nRequest--;
     }
     return(0);

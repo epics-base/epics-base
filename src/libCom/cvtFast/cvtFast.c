@@ -35,7 +35,7 @@
  * This routine converts numbers less than 10,000,000. It defers to f_to_str for
  * numbers requiring more than 8 places of precision. There are only eight decimal
  */
-static long	frac_multiplier[] =
+static epicsInt32	frac_multiplier[] =
 	{1,10,100,1000,10000,100000,1000000,10000000,100000000};
 
 int epicsShareAPI cvtFloatToString(
@@ -44,7 +44,7 @@ int epicsShareAPI cvtFloatToString(
 	unsigned short precision)
 {
         unsigned short	got_one,i;
-	long		whole,iplace,number,fraction,fplace;
+	epicsInt32		whole,iplace,number,fraction,fplace;
 	float		ftemp;
 	char		*startAddr;
 
@@ -62,12 +62,12 @@ int epicsShareAPI cvtFloatToString(
         };
 
  	/* remove the whole number portion */
-	whole = (long)flt_value;
+	whole = (epicsInt32)flt_value;
 	ftemp = flt_value - whole;
 
 	/* multiplier to convert fractional portion to integer */
 	fplace = frac_multiplier[precision];
-	fraction = (long)(ftemp * fplace * 10);	
+	fraction = (epicsInt32)(ftemp * fplace * 10);	
 	fraction = (fraction + 5) / 10;		/* round up */
 
 	/* determine rounding into the whole number portion */
@@ -118,7 +118,7 @@ int epicsShareAPI cvtDoubleToString(
 	unsigned short precision)
 {
         unsigned short	got_one,i;
-	long		whole,iplace,number,fraction,fplace;
+	epicsInt32		whole,iplace,number,fraction,fplace;
 	double		ftemp;
 	char		*startAddr;
 
@@ -143,12 +143,12 @@ int epicsShareAPI cvtDoubleToString(
         };
 
  	/* remove the whole number portion */
-	whole = (long)flt_value;
+	whole = (epicsInt32)flt_value;
 	ftemp = flt_value - whole;
 
 	/* multiplier to convert fractional portion to integer */
 	fplace = frac_multiplier[precision];
-	fraction = (long)(ftemp * fplace * 10);	
+	fraction = (epicsInt32)(ftemp * fplace * 10);	
 	fraction = (fraction + 5) / 10;		/* round up */
 
 	/* determine rounding into the whole number portion */
@@ -401,10 +401,10 @@ int epicsShareAPI cvtUshortToString(
 
 
 int epicsShareAPI cvtLongToString(
-    long source,
+    epicsInt32 source,
     char  *pdest)
 {
-    long  val,temp;
+    epicsInt32  val,temp;
     char  digit[11];
     int	  i,j;
     char  *startAddr = pdest;
@@ -415,8 +415,8 @@ int epicsShareAPI cvtLongToString(
 	return((int)(pdest-startAddr));
     }
     if(source<0) {
-	if(source == LONG_MIN) {
-	    sprintf(pdest,"%ld",source);
+	if(source == INT_MIN) {
+	    sprintf(pdest,"%d",source);
 	    return((int)strlen(pdest));
 	}
 	*pdest++ = '-';
@@ -437,10 +437,10 @@ int epicsShareAPI cvtLongToString(
 
 
 int epicsShareAPI cvtUlongToString(
-    unsigned long source,
+    epicsUInt32 source,
     char	  *pdest)
 {
-    unsigned long val,temp;
+    epicsUInt32 val,temp;
     char	  digit[10];
     int		  i,j;
     char	  *startAddr = pdest;
@@ -471,10 +471,10 @@ static char hex_digit_to_ascii[16]={'0','1','2','3','4','5','6','7','8','9',
 
 
 int epicsShareAPI cvtLongToHexString(
-    long source,
+    epicsInt32 source,
     char  *pdest)
 {
-    long  val,temp;
+    epicsInt32  val,temp;
     char  digit[10];
     int	  i,j;
     char  *startAddr = pdest;
@@ -485,8 +485,8 @@ int epicsShareAPI cvtLongToHexString(
 	return((int)(pdest-startAddr));
     }
     if(source<0) {
-	if(source == LONG_MIN) {
-	    sprintf(pdest,"-0x%lx",source);
+	if(source == INT_MIN) {
+	    sprintf(pdest,"-0x%x",source);
 	    return((int)strlen(pdest));
 	}
 	*pdest++ = '-';
@@ -508,10 +508,10 @@ int epicsShareAPI cvtLongToHexString(
 
 
 int epicsShareAPI cvtLongToOctalString(
-    long source,
+    epicsInt32 source,
     char  *pdest)
 {
-    long  val,temp;
+    epicsInt32  val,temp;
     char  digit[16];
     int	  i,j;
     char  *startAddr = pdest;
@@ -522,8 +522,8 @@ int epicsShareAPI cvtLongToOctalString(
 	return((int)(pdest-startAddr));
     }
     if(source<0) {
-	if(source == LONG_MIN) {
-	    sprintf(pdest,"-0%lo",source);
+	if(source == INT_MIN) {
+	    sprintf(pdest,"-0%o",source);
 	    return((int)strlen(pdest));
 	}
 	*pdest++ = '-';
@@ -551,14 +551,14 @@ int epicsShareAPI cvtLongToOctalString(
  *
  * cvtBitsToUlong()
  *
- * extract a bit field from the source unsigend long
+ * extract a bit field from the source epicsUInt32
  */
-unsigned long epicsShareAPI cvtBitsToUlong(
-unsigned long   src,
+epicsUInt32 epicsShareAPI cvtBitsToUlong(
+epicsUInt32   src,
 unsigned        bitFieldOffset,
 unsigned        bitFieldLength)
 {
-        unsigned long   mask;
+        epicsUInt32   mask;
 
         src = src >> bitFieldOffset;
 
@@ -575,16 +575,16 @@ unsigned        bitFieldLength)
  *
  * cvtUlongToBits()
  *
- * insert a bit field from the source unsigend long
- * into the destination unsigned long
+ * insert a bit field from the source epicsUInt32
+ * into the destination epicsUInt32
  */
-unsigned long epicsShareAPI cvtUlongToBits(
-unsigned long   src,
-unsigned long   dest,
+epicsUInt32 epicsShareAPI cvtUlongToBits(
+epicsUInt32   src,
+epicsUInt32   dest,
 unsigned        bitFieldOffset,
 unsigned        bitFieldLength)
 {
-        unsigned long   mask;
+        epicsUInt32   mask;
 
         mask = (1<<bitFieldLength)-1;
         mask = mask << bitFieldOffset;

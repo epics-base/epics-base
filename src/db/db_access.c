@@ -39,6 +39,9 @@
 #include "errMdef.h"
 #include "recSup.h"
 #include "alarm.h"
+#define db_accessHFORdb_accessC
+#include "db_access.h"
+#undef db_accessHFORdb_accessC
 #define epicsExportSharedSymbols
 #include "dbNotify.h"
 #include "dbAccessDefs.h"
@@ -105,7 +108,7 @@
 #define oldDBR_STSACK_STRING	oldDBR_PUT_ACKS + 1
 #define oldDBR_CLASS_NAME	oldDBR_STSACK_STRING + 1
 
-/*Following is defined in db_access.h*/
+/*Following is defined in dbConvert.h*/
 extern unsigned short dbDBRnewToDBRold[DBR_ENUM+1];
 
 
@@ -114,354 +117,6 @@ extern unsigned short dbDBRnewToDBRold[DBR_ENUM+1];
 #ifndef MAX_STRING_SIZE
 #define MAX_STRING_SIZE	40
 #endif
-
-#ifndef MAX_UNITS_SIZE
-#define MAX_UNITS_SIZE 8
-#endif
-
-/* VALUES WITH STATUS STRUCTURES */
-
-/* structure for a  string status field */
-struct dbr_sts_string{
-	short	status;	 		/* status of value */
-	short	severity;		/* severity of alarm */
-	char	value[MAX_STRING_SIZE];	/* current value */
-};
-
-/* structure for a  string status field */
-struct dbr_stsack_string{
-	unsigned short	status;	 	/* status of value */
-	unsigned short	severity;	/* severity of alarm */
-	unsigned short	ackt;		/* ack transient? */
-	unsigned short	acks;		/* ack severity */
-	char	value[MAX_STRING_SIZE];	/* current value */
-};
-
-/* structure for an short status field */
-struct dbr_sts_int{
-	short	status;	 		/* status of value */
-	short	severity;		/* severity of alarm */
-	short	value;			/* current value */
-};
-struct dbr_sts_short{
-	short	status;	 		/* status of value */
-	short	severity;		/* severity of alarm */
-	short	value;			/* current value */
-};
-
-/* structure for a  float status field */
-struct dbr_sts_float{
-	short	status;	 		/* status of value */
-	short	severity;		/* severity of alarm */
-	float	value;			/* current value */
-};
-
-/* structure for a  enum status field */
-struct dbr_sts_enum{
-	short	status;	 		/* status of value */
-	short	severity;		/* severity of alarm */
-	short	value;			/* current value */
-};
-
-/* structure for a char status field */
-struct dbr_sts_char{
-	short		status;	 	/* status of value */
-	short		severity;	/* severity of alarm */
-	char		RISC_pad;	/* RISC alignment */
-	unsigned char	value;		/* current value */
-};
-
-/* structure for a long status field */
-struct dbr_sts_long{
-	short	status;	 		/* status of value */
-	short	severity;		/* severity of alarm */
-	long	value;			/* current value */
-};
-
-/* structure for a double status field */
-struct dbr_sts_double{
-	short	status;	 		/* status of value */
-	short	severity;		/* severity of alarm */
-	long	RISC_pad;		/* RISC alignment */
-	double	value;			/* current value */
-};
-
-/* VALUES WITH STATUS AND TIME STRUCTURES */
-
-/* structure for a  string time field */
-struct dbr_time_string{
-	short		status;	 		/* status of value */
-	short		severity;		/* severity of alarm */
-	epicsTimeStamp	stamp;			/* time stamp */
-	char		value[MAX_STRING_SIZE];	/* current value */
-};
-
-/* structure for an short time field */
-struct dbr_time_short{
-	short		status;	 		/* status of value */
-	short		severity;		/* severity of alarm */
-	epicsTimeStamp	stamp;			/* time stamp */
-	short		RISC_pad;		/* RISC alignment */
-	short		value;			/* current value */
-};
-
-/* structure for a  float time field */
-struct dbr_time_float{
-	short		status;	 		/* status of value */
-	short		severity;		/* severity of alarm */
-	epicsTimeStamp	stamp;			/* time stamp */
-	float		value;			/* current value */
-};
-
-/* structure for a  enum time field */
-struct dbr_time_enum{
-	short		status;	 		/* status of value */
-	short		severity;		/* severity of alarm */
-	epicsTimeStamp	stamp;			/* time stamp */
-	short		RISC_pad;		/* RISC alignment */
-	short		value;			/* current value */
-};
-
-/* structure for a char time field */
-struct dbr_time_char{
-	short			status;	 		/* status of value */
-	short			severity;		/* severity of alarm */
-	epicsTimeStamp		stamp;			/* time stamp */
-	short			RISC_pad0;		/* RISC alignment */
-	char			RISC_pad1;		/* RISC alignment */
-	unsigned char		value;			/* current value */
-};
-
-/* structure for a long time field */
-struct dbr_time_long{
-	short		status;	 		/* status of value */
-	short		severity;		/* severity of alarm */
-	epicsTimeStamp	stamp;			/* time stamp */
-	long		value;			/* current value */
-};
-
-/* structure for a double time field */
-struct dbr_time_double{
-	short		status;	 		/* status of value */
-	short		severity;		/* severity of alarm */
-	epicsTimeStamp	stamp;			/* time stamp */
-	long		RISC_pad;		/* RISC alignment */
-	double		value;			/* current value */
-};
-
-/* VALUES WITH STATUS AND GRAPHIC STRUCTURES */
-
-/* structure for a graphic string */
-	/* not implemented; use struct_dbr_sts_string */
-
-/* structure for a graphic short field */
-struct dbr_gr_int{
-	short	status;	 		/* status of value */
-	short	severity;		/* severity of alarm */
-	char	units[MAX_UNITS_SIZE];		/* units of value */
-	short	upper_disp_limit;	/* upper limit of graph */
-	short	lower_disp_limit;	/* lower limit of graph */
-	short	upper_alarm_limit;	
-	short	upper_warning_limit;
-	short	lower_warning_limit;
-	short	lower_alarm_limit;
-	short	value;			/* current value */
-};
-struct dbr_gr_short{
-	short	status;	 		/* status of value */
-	short	severity;		/* severity of alarm */
-	char	units[MAX_UNITS_SIZE];		/* units of value */
-	short	upper_disp_limit;	/* upper limit of graph */
-	short	lower_disp_limit;	/* lower limit of graph */
-	short	upper_alarm_limit;	
-	short	upper_warning_limit;
-	short	lower_warning_limit;
-	short	lower_alarm_limit;
-	short	value;			/* current value */
-};
-
-/* structure for a graphic floating point field */
-struct dbr_gr_float{
-	short	status;	 		/* status of value */
-	short	severity;		/* severity of alarm */
-	short	precision;		/* number of decimal places */
-	short	RISC_pad0;		/* RISC alignment */
-	char	units[MAX_UNITS_SIZE];		/* units of value */
-	float	upper_disp_limit;	/* upper limit of graph */
-	float	lower_disp_limit;	/* lower limit of graph */
-	float	upper_alarm_limit;	
-	float	upper_warning_limit;
-	float	lower_warning_limit;
-	float	lower_alarm_limit;
-	float	value;			/* current value */
-};
-
-/* structure for a graphic enumeration field */
-struct dbr_gr_enum{
-	short	status;	 		/* status of value */
-	short	severity;		/* severity of alarm */
-	short	no_str;			/* number of strings */
-	char	strs[16][26];		/* state strings */
-	short	value;			/* current value */
-};
-
-/* structure for a graphic char field */
-struct dbr_gr_char{
-	short			status;	 		/* status of value */
-	short			severity;		/* severity of alarm */
-	char			units[MAX_UNITS_SIZE];		/* units of value */
-	unsigned char		upper_disp_limit;	/* upper limit of graph */
-	unsigned char		lower_disp_limit;	/* lower limit of graph */
-	unsigned char		upper_alarm_limit;	
-	unsigned char		upper_warning_limit;
-	unsigned char		lower_warning_limit;
-	unsigned char		lower_alarm_limit;
-	char			RISC_pad;		/* RISC alignment */
-	unsigned char		value;			/* current value */
-};
-
-/* structure for a graphic long field */
-struct dbr_gr_long{
-	short	status;	 		/* status of value */
-	short	severity;		/* severity of alarm */
-	char	units[MAX_UNITS_SIZE];		/* units of value */
-	long	upper_disp_limit;	/* upper limit of graph */
-	long	lower_disp_limit;	/* lower limit of graph */
-	long	upper_alarm_limit;	
-	long	upper_warning_limit;
-	long	lower_warning_limit;
-	long	lower_alarm_limit;
-	long	value;			/* current value */
-};
-
-/* structure for a graphic double field */
-struct dbr_gr_double{
-	short	status;	 		/* status of value */
-	short	severity;		/* severity of alarm */
-	short	precision;		/* number of decimal places */
-	short	RISC_pad0;		/* RISC alignment */
-	char	units[MAX_UNITS_SIZE];		/* units of value */
-	double	upper_disp_limit;	/* upper limit of graph */
-	double	lower_disp_limit;	/* lower limit of graph */
-	double	upper_alarm_limit;	
-	double	upper_warning_limit;
-	double	lower_warning_limit;
-	double	lower_alarm_limit;
-	double	value;			/* current value */
-};
-
-/* VALUES WITH STATUS, GRAPHIC and CONTROL STRUCTURES */
-
-/* structure for a control string */
-	/* not implemented; use struct_dbr_sts_string */
-
-/* structure for a control integer */
-struct dbr_ctrl_int{
-	short	status;	 		/* status of value */
-	short	severity;		/* severity of alarm */
-	char	units[MAX_UNITS_SIZE];		/* units of value */
-	short	upper_disp_limit;	/* upper limit of graph */
-	short	lower_disp_limit;	/* lower limit of graph */
-	short	upper_alarm_limit;	
-	short	upper_warning_limit;
-	short	lower_warning_limit;
-	short	lower_alarm_limit;
-	short	upper_ctrl_limit;	/* upper control limit */
-	short	lower_ctrl_limit;	/* lower control limit */
-	short	value;			/* current value */
-};
-struct dbr_ctrl_short{
-	short	status;	 		/* status of value */
-	short	severity;		/* severity of alarm */
-	char	units[MAX_UNITS_SIZE];		/* units of value */
-	short	upper_disp_limit;	/* upper limit of graph */
-	short	lower_disp_limit;	/* lower limit of graph */
-	short	upper_alarm_limit;	
-	short	upper_warning_limit;
-	short	lower_warning_limit;
-	short	lower_alarm_limit;
-	short	upper_ctrl_limit;	/* upper control limit */
-	short	lower_ctrl_limit;	/* lower control limit */
-	short	value;			/* current value */
-};
-
-/* structure for a control floating point field */
-struct dbr_ctrl_float{
-	short	status;	 		/* status of value */
-	short	severity;		/* severity of alarm */
-	short	precision;		/* number of decimal places */
-	short	RISC_pad;		/* RISC alignment */
-	char	units[MAX_UNITS_SIZE];		/* units of value */
-	float	upper_disp_limit;	/* upper limit of graph */
-	float	lower_disp_limit;	/* lower limit of graph */
-	float	upper_alarm_limit;	
-	float	upper_warning_limit;
-	float	lower_warning_limit;
-	float	lower_alarm_limit;
- 	float	upper_ctrl_limit;	/* upper control limit */
-	float	lower_ctrl_limit;	/* lower control limit */
-	float	value;			/* current value */
-};
-
-/* structure for a control enumeration field */
-struct dbr_ctrl_enum{
-	short	status;	 		/* status of value */
-	short	severity;		/* severity of alarm */
-	short	no_str;			/* number of strings */
-	char	strs[16][26];		/* state strings */
-	short	value;			/* current value */
-};
-
-/* structure for a control char field */
-struct dbr_ctrl_char{
-	short		status;	 		/* status of value */
-	short		severity;		/* severity of alarm */
-	char		units[MAX_UNITS_SIZE];		/* units of value */
-	unsigned char	upper_disp_limit;	/* upper limit of graph */
-	unsigned char	lower_disp_limit;	/* lower limit of graph */
-	unsigned char	upper_alarm_limit;	
-	unsigned char	upper_warning_limit;
-	unsigned char	lower_warning_limit;
-	unsigned char	lower_alarm_limit;
-	unsigned char	upper_ctrl_limit;	/* upper control limit */
-	unsigned char	lower_ctrl_limit;	/* lower control limit */
-	char		RISC_pad;		/* RISC alignment */
-	unsigned char	value;			/* current value */
-};
-
-/* structure for a control long field */
-struct dbr_ctrl_long{
-	short	status;	 		/* status of value */
-	short	severity;		/* severity of alarm */
-	char	units[MAX_UNITS_SIZE];		/* units of value */
-	long	upper_disp_limit;	/* upper limit of graph */
-	long	lower_disp_limit;	/* lower limit of graph */
-	long	upper_alarm_limit;	
-	long	upper_warning_limit;
-	long	lower_warning_limit;
-	long	lower_alarm_limit;
-	long	upper_ctrl_limit;	/* upper control limit */
-	long	lower_ctrl_limit;	/* lower control limit */
-	long	value;			/* current value */
-};
-
-/* structure for a control double field */
-struct dbr_ctrl_double{
-	short	status;	 		/* status of value */
-	short	severity;		/* severity of alarm */
-	short	precision;		/* number of decimal places */
-	short	RISC_pad0;		/* RISC alignment */
-	char	units[MAX_UNITS_SIZE];		/* units of value */
-	double	upper_disp_limit;	/* upper limit of graph */
-	double	lower_disp_limit;	/* lower limit of graph */
-	double	upper_alarm_limit;	
-	double	upper_warning_limit;
-	double	lower_warning_limit;
-	double	lower_alarm_limit;
-	double	upper_ctrl_limit;	/* upper control limit */
-	double	lower_ctrl_limit;	/* lower control limit */
-	double	value;			/* current value */
-};
 
 /*safe double to float conversion*/
 static void safeDoubleToFloat(double *pd,float *pf)
@@ -616,7 +271,7 @@ void		*pfl
 /*  case(oldDBR_INT): */
     case(oldDBR_SHORT):
 	{
-		short *pvalue = (short *)pbuffer;
+		dbr_short_t *pvalue = (dbr_short_t *)pbuffer;
 
 		options=0;
 		nRequest=no_elements;
@@ -627,7 +282,7 @@ void		*pfl
 	break;
     case(oldDBR_FLOAT):
 	{
-		float *pvalue = (float *)pbuffer;
+		dbr_float_t *pvalue = (dbr_float_t *)pbuffer;
 
 		options=0;
 		nRequest=no_elements;
@@ -638,7 +293,7 @@ void		*pfl
 	break;
     case(oldDBR_ENUM):
 	{
-		short *pvalue = (short *)pbuffer;
+		dbr_enum_t *pvalue = (dbr_enum_t *)pbuffer;
 
 		options=0;
 		nRequest=no_elements;
@@ -649,7 +304,7 @@ void		*pfl
 	break;
     case(oldDBR_CHAR):
 	{
-		char *pvalue = (char *)pbuffer;
+		dbr_char_t *pvalue = (dbr_char_t *)pbuffer;
 
 		options=0;
 		nRequest=no_elements;
@@ -660,7 +315,7 @@ void		*pfl
 	break;
     case(oldDBR_LONG):
 	{
-		long *pvalue = (long *)pbuffer;
+		dbr_long_t *pvalue = (dbr_long_t *)pbuffer;
 
 		options=0;
 		nRequest=no_elements;
@@ -671,7 +326,7 @@ void		*pfl
 	break;
     case(oldDBR_DOUBLE):
 	{
-		double *pvalue = (double *)pbuffer;
+		dbr_double_t *pvalue = (dbr_double_t *)pbuffer;
 
 		options=0;
 		nRequest=no_elements;
@@ -710,7 +365,7 @@ void		*pfl
 		struct {
 			DBRstatus
 		} new;
-		short *pvalue = &pold->value;
+		dbr_short_t *pvalue = &pold->value;
 
 		options=DBR_STATUS;
 		nRequest=0;
@@ -731,7 +386,7 @@ void		*pfl
 		struct {
 			DBRstatus
 		} new;
-		float *pvalue = &pold->value;
+		dbr_float_t *pvalue = &pold->value;
 
 		options=DBR_STATUS;
 		nRequest=0;
@@ -752,7 +407,7 @@ void		*pfl
 		struct {
 			DBRstatus
 		} new;
-		short *pvalue = &pold->value;
+		dbr_enum_t *pvalue = &pold->value;
 
 		options=DBR_STATUS;
 		nRequest=0;
@@ -773,7 +428,7 @@ void		*pfl
 		struct {
 			DBRstatus
 		} new;
-		unsigned char *pvalue = &pold->value;
+		dbr_char_t *pvalue = &pold->value;
 
 		options=DBR_STATUS;
 		nRequest=0;
@@ -794,7 +449,7 @@ void		*pfl
 		struct {
 			DBRstatus
 		} new;
-		long *pvalue = &pold->value;
+		dbr_long_t *pvalue = &pold->value;
 
 		options=DBR_STATUS;
 		nRequest=0;
@@ -815,7 +470,7 @@ void		*pfl
 		struct {
 			DBRstatus
 		} new;
-		double *pvalue = &pold->value;
+		dbr_double_t *pvalue = &pold->value;
 
 		options=DBR_STATUS;
 		nRequest=0;
@@ -861,7 +516,7 @@ void		*pfl
 			DBRstatus
 			DBRtime
 		} new;
-		short *pvalue = &pold->value;
+		dbr_short_t *pvalue = &pold->value;
 
 		options=DBR_STATUS | DBR_TIME;
 		nRequest=0;
@@ -884,7 +539,7 @@ void		*pfl
 			DBRstatus
 			DBRtime
 		} new;
-		float *pvalue = &pold->value;
+		dbr_float_t *pvalue = &pold->value;
 
 		options=DBR_STATUS | DBR_TIME;
 		nRequest=0;
@@ -907,7 +562,7 @@ void		*pfl
 			DBRstatus
 			DBRtime
 		} new;
-		short *pvalue = &pold->value;
+		dbr_enum_t *pvalue = &pold->value;
 
 		options=DBR_STATUS | DBR_TIME;
 		nRequest=0;
@@ -930,7 +585,7 @@ void		*pfl
 			DBRstatus
 			DBRtime
 		} new;
-		unsigned char *pvalue = &pold->value;
+		dbr_char_t *pvalue = &pold->value;
 
 		options=DBR_STATUS | DBR_TIME;
 		nRequest=0;
@@ -953,7 +608,7 @@ void		*pfl
 			DBRstatus
 			DBRtime
 		} new;
-		long *pvalue = &pold->value;
+		dbr_long_t *pvalue = &pold->value;
 
 		options=DBR_STATUS | DBR_TIME;
 		nRequest=0;
@@ -976,7 +631,7 @@ void		*pfl
 			DBRstatus
 			DBRtime
 		} new;
-		double *pvalue = &pold->value;
+		dbr_double_t *pvalue = &pold->value;
 
 		options=DBR_STATUS | DBR_TIME;
 		nRequest=0;
@@ -1003,7 +658,7 @@ void		*pfl
 			DBRgrLong
 			DBRalLong
 		} new;
-		short *pvalue = &pold->value;
+		dbr_short_t *pvalue = &pold->value;
 
 		options=DBR_STATUS|DBR_UNITS|DBR_GR_LONG|DBR_AL_LONG;
 		nRequest=0;
@@ -1036,7 +691,7 @@ void		*pfl
 			DBRgrDouble
 			DBRalDouble
 		} new;
-		float *pvalue = &pold->value;
+		dbr_float_t *pvalue = &pold->value;
 
 		options=DBR_STATUS|DBR_UNITS|DBR_PRECISION|DBR_GR_DOUBLE
 			|DBR_AL_DOUBLE;
@@ -1071,7 +726,7 @@ void		*pfl
 			DBRgrLong
 			DBRalLong
 		} new;
-		unsigned char *pvalue = &pold->value;
+		dbr_char_t *pvalue = &pold->value;
 
 		options=DBR_STATUS|DBR_UNITS|DBR_GR_LONG|DBR_AL_LONG;
 		nRequest=0;
@@ -1103,7 +758,7 @@ void		*pfl
 			DBRgrLong
 			DBRalLong
 		} new;
-		long *pvalue = &pold->value;
+		dbr_long_t *pvalue = &pold->value;
 
 		options=DBR_STATUS|DBR_UNITS|DBR_GR_LONG|DBR_AL_LONG;
 		nRequest=0;
@@ -1136,7 +791,7 @@ void		*pfl
 			DBRgrDouble
 			DBRalDouble
 		} new;
-		double *pvalue = &pold->value;
+		dbr_double_t *pvalue = &pold->value;
 
 		options=DBR_STATUS|DBR_UNITS|DBR_PRECISION|DBR_GR_DOUBLE
 			|DBR_AL_DOUBLE;
@@ -1172,7 +827,7 @@ void		*pfl
 			DBRctrlLong
 			DBRalLong
 		} new;
-		short *pvalue = &pold->value;
+		dbr_short_t *pvalue = &pold->value;
 
 		options=DBR_STATUS|DBR_UNITS|DBR_GR_LONG|DBR_CTRL_LONG
 			|DBR_AL_LONG;
@@ -1209,7 +864,7 @@ void		*pfl
 			DBRctrlDouble
 			DBRalDouble
 		} new;
-		float *pvalue = &pold->value;
+		dbr_float_t *pvalue = &pold->value;
 
 		options=DBR_STATUS|DBR_UNITS|DBR_PRECISION|DBR_GR_DOUBLE
 			|DBR_CTRL_DOUBLE|DBR_AL_DOUBLE;
@@ -1245,7 +900,7 @@ void		*pfl
 			DBRenumStrs
 		} new;
 		short no_str;
-		short *pvalue = &pold->value;
+		dbr_enum_t *pvalue = &pold->value;
 
 		memset(pold,'\0',sizeof(struct dbr_ctrl_enum));
 		/* first get status and severity */
@@ -1278,7 +933,7 @@ void		*pfl
 			DBRctrlLong
 			DBRalLong
 		} new;
-		unsigned char *pvalue = &pold->value;
+		dbr_char_t *pvalue = &pold->value;
 
 		options=DBR_STATUS|DBR_UNITS|DBR_GR_LONG|DBR_CTRL_LONG
 			|DBR_AL_LONG;
@@ -1314,7 +969,7 @@ void		*pfl
 			DBRctrlLong
 			DBRalLong
 		} new;
-		long *pvalue = &pold->value;
+		dbr_long_t *pvalue = &pold->value;
 
 		options=DBR_STATUS|DBR_UNITS|DBR_GR_LONG|DBR_CTRL_LONG
 			|DBR_AL_LONG;
@@ -1350,7 +1005,7 @@ void		*pfl
 			DBRctrlDouble
 			DBRalDouble
 		} new;
-		double *pvalue = &pold->value;
+		dbr_double_t *pvalue = &pold->value;
 
 		options=DBR_STATUS|DBR_UNITS|DBR_PRECISION|DBR_GR_DOUBLE
 			|DBR_CTRL_DOUBLE|DBR_AL_DOUBLE;

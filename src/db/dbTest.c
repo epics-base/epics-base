@@ -799,7 +799,7 @@ static void printBuffer(
 	if (retOptions & DBR_PRECISION){
 	    struct dbr_precision *pdbr_precision = (void *)pbuffer;
 
-	    printf("precision=%ld\n", pdbr_precision->precision);
+	    printf("precision=%d\n", pdbr_precision->precision);
 	}else{
 	    printf("precision not returned\n");
 	}
@@ -820,7 +820,7 @@ static void printBuffer(
 	if (retOptions & DBR_ENUM_STRS) {
 	    struct dbr_enumStrs *pdbr_enumStrs = (void *)pbuffer;
 
-	    printf("no_strs=%lu\n", pdbr_enumStrs->no_str);
+	    printf("no_strs=%u\n", pdbr_enumStrs->no_str);
 	    for (i = 0; i <pdbr_enumStrs->no_str; i++) 
 		printf("%s\n",&pdbr_enumStrs->strs[i][0]);
 	} else
@@ -831,7 +831,7 @@ static void printBuffer(
 	if (retOptions & DBR_GR_LONG) {
 	    struct dbr_grLong *pdbr_grLong = (void *)pbuffer;
 
-	    printf("grLong: %ld %ld\n",pdbr_grLong->upper_disp_limit,
+	    printf("grLong: %d %d\n",pdbr_grLong->upper_disp_limit,
 		pdbr_grLong->lower_disp_limit);
 	}else{
 	    printf("DBRgrLong not returned\n");
@@ -853,7 +853,7 @@ static void printBuffer(
 	if (retOptions & DBR_CTRL_LONG){
 	    struct dbr_ctrlLong *pdbr_ctrlLong = (void *)pbuffer;
 
-	    printf("ctrlLong: %ld %ld\n",pdbr_ctrlLong->upper_ctrl_limit,
+	    printf("ctrlLong: %d %d\n",pdbr_ctrlLong->upper_ctrl_limit,
 		pdbr_ctrlLong->lower_ctrl_limit);
 	}else{
 	    printf("DBRctrlLong not returned\n");
@@ -875,7 +875,7 @@ static void printBuffer(
 	if (retOptions & DBR_AL_LONG) {
 	    struct dbr_alLong *pdbr_alLong = (void *)pbuffer;
 
-	    printf("alLong: %ld %ld %ld %ld\n",
+	    printf("alLong: %d %d %d %d\n",
 		pdbr_alLong->upper_alarm_limit,pdbr_alLong->upper_warning_limit,
 		pdbr_alLong->lower_warning_limit,pdbr_alLong->lower_alarm_limit);
 	}else{

@@ -26,6 +26,7 @@
 
 #include <string.h>
 
+#include "epicsTypes.h"
 #include "shareLib.h"
 
 #ifdef __cplusplus
@@ -57,20 +58,20 @@ epicsShareFunc int epicsShareAPI
 epicsShareFunc int epicsShareAPI 
 	cvtUshortToString(unsigned short value, char *pstring);
 epicsShareFunc int epicsShareAPI 
-	cvtLongToString(long value, char *pstring);
+	cvtLongToString(epicsInt32 value, char *pstring);
 epicsShareFunc int epicsShareAPI 
-	cvtUlongToString(unsigned long value, char *pstring);
+	cvtUlongToString(epicsUInt32 value, char *pstring);
 epicsShareFunc int epicsShareAPI 
-	cvtLongToHexString(long value, char *pstring);
+	cvtLongToHexString(epicsInt32 value, char *pstring);
 epicsShareFunc int epicsShareAPI 
-	cvtLongToOctalString(long value, char *pstring);
-epicsShareFunc unsigned long epicsShareAPI cvtBitsToUlong(
-	unsigned long  src,
+	cvtLongToOctalString(epicsInt32 value, char *pstring);
+epicsShareFunc epicsUInt32 epicsShareAPI cvtBitsToUlong(
+	epicsUInt32  src,
 	unsigned bitFieldOffset,
 	unsigned  bitFieldLength);
-epicsShareFunc unsigned long epicsShareAPI cvtUlongToBits(
-	unsigned long src,
-	unsigned long dest,
+epicsShareFunc epicsUInt32 epicsShareAPI cvtUlongToBits(
+	epicsUInt32 src,
+	epicsUInt32 dest,
 	unsigned      bitFieldOffset,
 	unsigned      bitFieldLength);
 

@@ -60,6 +60,7 @@ typedef epicsUInt16	dbr_put_ackt_t;
 typedef epicsUInt16	dbr_put_acks_t;
 typedef epicsOldString	dbr_class_name_t;
 
+#ifndef db_accessHFORdb_accessC
 /* database field types */
 #define DBF_STRING	0
 #define	DBF_INT		1
@@ -177,7 +178,7 @@ epicsShareExtern READONLY epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1];
  *	DBR_CTRL_LONG	returns a control long structure (dbr_ctrl_long)
  *	DBR_CTRL_DOUBLE	returns a control double structure (dbr_ctrl_double)
  */
-
+#endif /*db_accessHFORdb_accessC*/
 
 /* VALUES WITH STATUS STRUCTURES */
 
@@ -524,6 +525,7 @@ struct dbr_ctrl_double{
 	dbr_double_t	value;			/* current value */
 };
 
+#ifndef db_accessHFORdb_accessC
 #define dbr_size_n(TYPE,COUNT)\
 ((unsigned)((COUNT)<=0?dbr_size[TYPE]:dbr_size[TYPE]+((COUNT)-1)*dbr_value_size[TYPE]))
 
@@ -730,6 +732,7 @@ epicsShareExtern READONLY char      *dbf_text_invalid;
 epicsShareExtern READONLY char	    *dbr_text[LAST_BUFFER_TYPE+1];
 epicsShareExtern READONLY short	    dbr_text_dim;
 epicsShareExtern READONLY char      *dbr_text_invalid;
+#endif /*db_accessHFORdb_accessC*/
 
 #ifdef __cplusplus
 }

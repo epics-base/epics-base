@@ -121,6 +121,7 @@ int main(int argc,char **argv)
     fprintf(outFile,"#include \"epicsMutex.h\"\n");
     fprintf(outFile,"#include \"link.h\"\n");
     fprintf(outFile,"#include \"epicsTime.h\"\n");
+    fprintf(outFile,"#include \"epicsTypes.h\"\n");
     pdbMenu = (dbMenu *)ellFirst(&pdbbase->menuList);
     while(pdbMenu) {
 	fprintf(outFile,"\n#ifndef INC%sH\n",pdbMenu->name);
@@ -172,7 +173,7 @@ int main(int argc,char **argv)
 			name,pdbFldDes->prompt);
 		    break;
 		case DBF_LONG :
-		    fprintf(outFile,"\tlong\t\t%s;\t/*%s*/\n",
+		    fprintf(outFile,"\tepicsInt32\t\t%s;\t/*%s*/\n",
 			name,pdbFldDes->prompt);
 		    break;
 		case DBF_ULONG :
@@ -190,7 +191,7 @@ int main(int argc,char **argv)
 		case DBF_ENUM :
 		case DBF_MENU :
 		case DBF_DEVICE :
-		    fprintf(outFile,"\tunsigned short\t%s;\t/*%s*/\n",
+		    fprintf(outFile,"\tepicsEnum16\t%s;\t/*%s*/\n",
 			name,pdbFldDes->prompt);
 		    break;
 		case DBF_INLINK :

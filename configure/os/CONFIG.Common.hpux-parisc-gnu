@@ -9,4 +9,3 @@
 
 # Include definitions common to all hpux-parisc target archs
 include $(CONFIG)/os/CONFIG.Common.hpux-parisc
-

@@ -40,5 +40,7 @@ epicsShareFunc int epicsShareAPI aspuag(char *uagname);
 epicsShareFunc int epicsShareAPI asphag(char *hagname);
 epicsShareFunc int epicsShareAPI asprules(char *asgname);
 epicsShareFunc int epicsShareAPI aspmem(char *asgname,int clients);
+epicsShareFunc int epicsShareAPI astac(
+    char *recordname,char *user,char *location);
 
 #endif /*INCdbAsLibh*/

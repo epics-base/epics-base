@@ -231,7 +231,7 @@ static void astacCallback(ASCLIENTPVT clientPvt,asClientStatus status)
 	(asCheckPut(clientPvt) ? "Yes" : "No"));
 }
 
-int astac(char *pname,char *user,char *location)
+int epicsShareAPI astac(char *pname,char *user,char *location)
 {
     DBADDR	*paddr;
     long	status;

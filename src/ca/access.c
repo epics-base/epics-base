@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.82  1996/06/19 17:58:59  jhill
+ * many 3.13 beta changes
+ *
  * Revision 1.81  1995/12/19  19:28:11  jhill
  * Dont check the array element count when they add the event (just clip it)
  *
@@ -2138,7 +2141,7 @@ long		mask
         		monix = (evid)malloc(size);
       		}
 # 		else
-		assert (0);
+		return ECA_INTERNAL;
 # 		endif
   	}
 	else {
@@ -2782,7 +2785,16 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 		 * scheduling delays (which can be substantial
 		 * on some os)
 		 */
-		if (remaining <= (1.0/CLOCKS_PER_SEC)) {
+#		ifdef CLOCKS_PER_SEC
+#			define CAC_SIGNIF_INTERVAL (1.0/CLOCKS_PER_SEC)
+#		else
+			/*
+			 * we guess (because gcc does not provide
+			 * CLOCKS_PER_SEC under sunos4)
+			 */
+#			define CAC_SIGNIF_INTERVAL (1.0/1000000)
+#		endif
+		if (remaining <= CAC_SIGNIF_INTERVAL) {
 			if(early){
 				ca_pend_io_cleanup();
 				ca_static->ca_flush_pending = TRUE;
@@ -3320,7 +3332,7 @@ LOCAL void ca_default_exception_handler(struct exception_handler_args args)
 	 */
 	LOCK;
 	sprintf(sprintf_buf, 
-		"%s - with request chan=%s op=%d data type=%s count=%d", 
+		"%s - with request chan=%s op=%ld data type=%s count=%ld", 
 		args.ctx,
 		pName,
 		args.op,

@@ -62,7 +62,7 @@ LIBSRCS += cvtBpt.c
 OBJS_IOC += iocInit
 
 LIBRARY_IOC = dbIoc
-DLL_LIBS = dbStaticIoc Com
+DLL_LIBS = dbStaticIoc ca Com 
 
 include $(TOP)/configure/RULES
 

@@ -131,20 +131,11 @@ CACVRTFUNC *cac_dbr_cvrt[]
 	cvrt_ctrl_double
 	};
 
-/*
- * Native types may not match EPICS types
- */
-typedef short		ca_short_tt;
-typedef float		ca_float_tt;
-typedef short		ca_enum_tt;
-typedef char		ca_char_tt;
-typedef int		ca_long_tt;
-typedef double		ca_double_tt;
 
-#define dbr_ntohs(A)	ntohs(A)
-#define dbr_ntohl(A)	ntohl(A)
-#define dbr_htons(A)	htons(A)
-#define dbr_htonl(A)	htonl(A)
+#define dbr_ntohs(A)	(ntohs(A))
+#define dbr_ntohl(A)	(ntohl(A))
+#define dbr_htons(A)	(htons(A))
+#define dbr_htonl(A)	(htonl(A))
 
 
 
@@ -162,8 +153,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	ca_char_tt	*pSrc = s;
-	ca_char_tt	*pDest = d;
+	char		*pSrc = s;
+	char		*pDest = d;
 
 	if(num == 1){
 		strcpy(pDest, pSrc);
@@ -188,8 +179,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	ca_short_tt	*pSrc = s;
-	ca_short_tt	*pDest = d;
+	dbr_short_t	*pSrc = s;
+	dbr_short_t	*pDest = d;
       	unsigned long	i;
 
       	for(i=0; i<num; i++){
@@ -218,8 +209,8 @@ unsigned long	num			/* number of values		*/
 )
 {
       	unsigned long	i;
-	ca_char_tt	*pSrc = s;
-	ca_char_tt	*pDest = d;
+	dbr_char_t	*pSrc = s;
+	dbr_char_t	*pDest = d;
 
       	for(i=0; i<num; i++){
       	  	*pDest++ = *pSrc++;
@@ -242,8 +233,8 @@ unsigned long	num			/* number of values		*/
 )
 {
       	unsigned long	i;
-	ca_long_tt	*pSrc = s;
-	ca_long_tt	*pDest = d;
+	dbr_long_t	*pSrc = s;
+	dbr_long_t	*pDest = d;
 
       	for(i=0; i<num; i++){
       	  	*pDest = dbr_ntohl( *pSrc );
@@ -271,8 +262,8 @@ unsigned long	num			/* number of values		*/
 )
 {
       	unsigned long 	i;
-	ca_enum_tt	*pSrc;
-	ca_enum_tt	*pDest;
+	dbr_enum_t	*pSrc;
+	dbr_enum_t	*pDest;
 
 	pSrc = s;
 	pDest = d;
@@ -304,15 +295,15 @@ unsigned long	num			/* number of values		*/
 )
 {
       	unsigned long	i;
-	ca_float_tt	*pSrc = s;
-	ca_float_tt	*pDest = d;
+	dbr_float_t	*pSrc = s;
+	dbr_float_t	*pDest = d;
 
       	for(i=0; i<num; i++){
 		if(encode){
-	  		htonf(pSrc, pDest);
+	  		dbr_htonf(pSrc, pDest);
 		}
 		else{
-	  		ntohf(pSrc, pDest);
+	  		dbr_ntohf(pSrc, pDest);
 		}
 		/*
 		 * dont increment these inside the MACRO 
@@ -338,15 +329,15 @@ unsigned long	num			/* number of values		*/
 )
 {
       	unsigned long	i;
-	ca_double_tt	*pSrc = s;
-	ca_double_tt	*pDest = d;
+	dbr_double_t	*pSrc = s;
+	dbr_double_t	*pDest = d;
 
       	for(i=0; i<num; i++){
 		if(encode){
-			htond(pSrc,pDest);
+			dbr_htond(pSrc,pDest);
 		}
 		else{
-			ntohd(pSrc,pDest);
+			dbr_ntohd(pSrc,pDest);
 		}
 		/*
 		 * dont increment these inside the MACRO 
@@ -697,32 +688,32 @@ unsigned long	num			/* number of values		*/
     	if (encode)			/* vax to ieee convert		*/
     	{
 		if (num == 1){
-		    htond(&pSrc->value, &pDest->value);
+		    dbr_htond(&pSrc->value, &pDest->value);
 		}
 		else {
 		    cvrt_double(&pSrc->value, &pDest->value, encode,num);
 		}
-    		htond(&pSrc->upper_disp_limit,&pDest->upper_disp_limit);
-    		htond(&pSrc->lower_disp_limit, &pDest->lower_disp_limit);
-    		htond(&pSrc->upper_alarm_limit, &pDest->upper_alarm_limit);
-    		htond(&pSrc->upper_warning_limit, &pDest->upper_warning_limit);
-    		htond(&pSrc->lower_alarm_limit, &pDest->lower_alarm_limit);
-    		htond(&pSrc->lower_warning_limit, &pDest->lower_warning_limit);
+    		dbr_htond(&pSrc->upper_disp_limit,&pDest->upper_disp_limit);
+    		dbr_htond(&pSrc->lower_disp_limit, &pDest->lower_disp_limit);
+    		dbr_htond(&pSrc->upper_alarm_limit, &pDest->upper_alarm_limit);
+    		dbr_htond(&pSrc->upper_warning_limit, &pDest->upper_warning_limit);
+    		dbr_htond(&pSrc->lower_alarm_limit, &pDest->lower_alarm_limit);
+    		dbr_htond(&pSrc->lower_warning_limit, &pDest->lower_warning_limit);
     	}
     	else			/* ieee to vax convert 	 	*/
     	{
 		if (num == 1){
-		    ntohd(&pSrc->value, &pDest->value);
+		    dbr_ntohd(&pSrc->value, &pDest->value);
 		}
 		else {
 		    cvrt_double(&pSrc->value, &pDest->value, encode,num);
 		}
-    		ntohd(&pSrc->upper_disp_limit,&pDest->upper_disp_limit);
-    		ntohd(&pSrc->lower_disp_limit, &pDest->lower_disp_limit);
-    		ntohd(&pSrc->upper_alarm_limit, &pDest->upper_alarm_limit);
-    		ntohd(&pSrc->upper_warning_limit, &pDest->upper_warning_limit);
-   	 	ntohd(&pSrc->lower_alarm_limit, &pDest->lower_alarm_limit);
-    		ntohd(&pSrc->lower_warning_limit, &pDest->lower_warning_limit);
+    		dbr_ntohd(&pSrc->upper_disp_limit,&pDest->upper_disp_limit);
+    		dbr_ntohd(&pSrc->lower_disp_limit, &pDest->lower_disp_limit);
+    		dbr_ntohd(&pSrc->upper_alarm_limit, &pDest->upper_alarm_limit);
+    		dbr_ntohd(&pSrc->upper_warning_limit, &pDest->upper_warning_limit);
+   	 	dbr_ntohd(&pSrc->lower_alarm_limit, &pDest->lower_alarm_limit);
+    		dbr_ntohd(&pSrc->lower_warning_limit, &pDest->lower_warning_limit);
     	}
 }
 
@@ -760,32 +751,32 @@ unsigned long	num			/* number of values		*/
     	if (encode)			/* vax to ieee convert		*/
     	{
 		if (num == 1){
-		    htonf(&pSrc->value, &pDest->value);
+		    dbr_htonf(&pSrc->value, &pDest->value);
 		}
 		else {
 		    cvrt_float(&pSrc->value, &pDest->value, encode,num);
 		}
-    		htonf(&pSrc->upper_disp_limit,&pDest->upper_disp_limit);
-    		htonf(&pSrc->lower_disp_limit, &pDest->lower_disp_limit);
-    		htonf(&pSrc->upper_alarm_limit, &pDest->upper_alarm_limit);
-    		htonf(&pSrc->upper_warning_limit, &pDest->upper_warning_limit);
-    		htonf(&pSrc->lower_alarm_limit, &pDest->lower_alarm_limit);
-    		htonf(&pSrc->lower_warning_limit, &pDest->lower_warning_limit);
+    		dbr_htonf(&pSrc->upper_disp_limit,&pDest->upper_disp_limit);
+    		dbr_htonf(&pSrc->lower_disp_limit, &pDest->lower_disp_limit);
+    		dbr_htonf(&pSrc->upper_alarm_limit, &pDest->upper_alarm_limit);
+    		dbr_htonf(&pSrc->upper_warning_limit, &pDest->upper_warning_limit);
+    		dbr_htonf(&pSrc->lower_alarm_limit, &pDest->lower_alarm_limit);
+    		dbr_htonf(&pSrc->lower_warning_limit, &pDest->lower_warning_limit);
     	}
     	else			/* ieee to vax convert 	 	*/
     	{
 		if (num == 1){
-		    ntohf(&pSrc->value, &pDest->value);
+		    dbr_ntohf(&pSrc->value, &pDest->value);
 		}
 		else {
 		    cvrt_float(&pSrc->value, &pDest->value, encode,num);
 		}
-    		ntohf(&pSrc->upper_disp_limit,&pDest->upper_disp_limit);
-    		ntohf(&pSrc->lower_disp_limit, &pDest->lower_disp_limit);
-    		ntohf(&pSrc->upper_alarm_limit, &pDest->upper_alarm_limit);
-    		ntohf(&pSrc->upper_warning_limit, &pDest->upper_warning_limit);
-   	 	ntohf(&pSrc->lower_alarm_limit, &pDest->lower_alarm_limit);
-    		ntohf(&pSrc->lower_warning_limit, &pDest->lower_warning_limit);
+    		dbr_ntohf(&pSrc->upper_disp_limit,&pDest->upper_disp_limit);
+    		dbr_ntohf(&pSrc->lower_disp_limit, &pDest->lower_disp_limit);
+    		dbr_ntohf(&pSrc->upper_alarm_limit, &pDest->upper_alarm_limit);
+    		dbr_ntohf(&pSrc->upper_warning_limit, &pDest->upper_warning_limit);
+   	 	dbr_ntohf(&pSrc->lower_alarm_limit, &pDest->lower_alarm_limit);
+    		dbr_ntohf(&pSrc->lower_warning_limit, &pDest->lower_warning_limit);
     	}
 }
 
@@ -934,7 +925,7 @@ unsigned long	num			/* number of values		*/
 	struct dbr_ctrl_double	*pSrc = s;
 	struct dbr_ctrl_double	*pDest = d;
 
-	    /* these are the same for ieee to vaax or vax to ieee */
+	    /* these are the same for ieee to vax or vax to ieee */
     	pDest->status 		= dbr_ntohs(pSrc->status);
     	pDest->severity		= dbr_ntohs(pSrc->severity);
     	pDest->precision	= dbr_ntohs(pSrc->precision);
@@ -942,35 +933,36 @@ unsigned long	num			/* number of values		*/
     	if (encode)			/* vax to ieee convert		*/
     	{
 		if (num == 1){
-	    		htond(&pSrc->value, &pDest->value);
+	    		dbr_htond(&pSrc->value, &pDest->value);
 		}
 		else {
 			cvrt_double(&pSrc->value, &pDest->value, encode, num);
 		}
-    		htond(&pSrc->upper_disp_limit,&pDest->upper_disp_limit);
-    		htond(&pSrc->lower_disp_limit, &pDest->lower_disp_limit);
-    		htond(&pSrc->upper_alarm_limit, &pDest->upper_alarm_limit);
-    		htond(&pSrc->upper_warning_limit, &pDest->upper_warning_limit);
-    		htond(&pSrc->lower_alarm_limit, &pDest->lower_alarm_limit);
-    		htond(&pSrc->lower_warning_limit, &pDest->lower_warning_limit);
-    		htond(&pSrc->lower_ctrl_limit, &pDest->lower_ctrl_limit);
-    		htond(&pSrc->upper_ctrl_limit, &pDest->upper_ctrl_limit);
+    		dbr_htond(&pSrc->upper_disp_limit,&pDest->upper_disp_limit);
+    		dbr_htond(&pSrc->lower_disp_limit, &pDest->lower_disp_limit);
+    		dbr_htond(&pSrc->upper_alarm_limit, &pDest->upper_alarm_limit);
+    		dbr_htond(&pSrc->upper_warning_limit, &pDest->upper_warning_limit);
+    		dbr_htond(&pSrc->lower_alarm_limit, &pDest->lower_alarm_limit);
+    		dbr_htond(&pSrc->lower_warning_limit, &pDest->lower_warning_limit);
+    		dbr_htond(&pSrc->lower_ctrl_limit, &pDest->lower_ctrl_limit);
+    		dbr_htond(&pSrc->upper_ctrl_limit, &pDest->upper_ctrl_limit);
     	}
     	else			/* ieee to vax convert 	 	*/
     	{
 		if (num == 1){
-	    		ntohd(&pSrc->value, &pDest->value);
+	    		dbr_ntohd(&pSrc->value, &pDest->value);
 		}
 		else {
 			cvrt_double(&pSrc->value, &pDest->value, encode, num);
 		}
-    		ntohd(&pSrc->lower_disp_limit, &pDest->lower_disp_limit);
-    		ntohd(&pSrc->upper_alarm_limit, &pDest->upper_alarm_limit);
-    		ntohd(&pSrc->upper_warning_limit, &pDest->upper_warning_limit);
-    		ntohd(&pSrc->lower_alarm_limit, &pDest->lower_alarm_limit);
-    		ntohd(&pSrc->lower_warning_limit, &pDest->lower_warning_limit);
-    		ntohd(&pSrc->lower_ctrl_limit, &pDest->lower_ctrl_limit);
-    		ntohd(&pSrc->upper_ctrl_limit, &pDest->upper_ctrl_limit);
+    		dbr_ntohd(&pSrc->lower_disp_limit, &pDest->lower_disp_limit);
+    		dbr_ntohd(&pSrc->upper_disp_limit, &pDest->upper_disp_limit);
+    		dbr_ntohd(&pSrc->upper_alarm_limit, &pDest->upper_alarm_limit);
+    		dbr_ntohd(&pSrc->upper_warning_limit, &pDest->upper_warning_limit);
+    		dbr_ntohd(&pSrc->lower_alarm_limit, &pDest->lower_alarm_limit);
+    		dbr_ntohd(&pSrc->lower_warning_limit, &pDest->lower_warning_limit);
+    		dbr_ntohd(&pSrc->lower_ctrl_limit, &pDest->lower_ctrl_limit);
+    		dbr_ntohd(&pSrc->upper_ctrl_limit, &pDest->upper_ctrl_limit);
     	}
 
 }
@@ -1006,35 +998,36 @@ unsigned long	num			/* number of values		*/
     	if (encode)			/* vax to ieee convert		*/
     	{
 		if (num == 1){
-	    		htonf(&pSrc->value, &pDest->value);
+	    		dbr_htonf(&pSrc->value, &pDest->value);
 		}
 		else {
 			cvrt_float(&pSrc->value, &pDest->value, encode, num);
 		}
-    		htonf(&pSrc->upper_disp_limit,&pDest->upper_disp_limit);
-    		htonf(&pSrc->lower_disp_limit, &pDest->lower_disp_limit);
-    		htonf(&pSrc->upper_alarm_limit, &pDest->upper_alarm_limit);
-    		htonf(&pSrc->upper_warning_limit, &pDest->upper_warning_limit);
-    		htonf(&pSrc->lower_alarm_limit, &pDest->lower_alarm_limit);
-    		htonf(&pSrc->lower_warning_limit, &pDest->lower_warning_limit);
-    		htonf(&pSrc->lower_ctrl_limit, &pDest->lower_ctrl_limit);
-    		htonf(&pSrc->upper_ctrl_limit, &pDest->upper_ctrl_limit);
+    		dbr_htonf(&pSrc->upper_disp_limit,&pDest->upper_disp_limit);
+    		dbr_htonf(&pSrc->lower_disp_limit, &pDest->lower_disp_limit);
+    		dbr_htonf(&pSrc->upper_alarm_limit, &pDest->upper_alarm_limit);
+    		dbr_htonf(&pSrc->upper_warning_limit, &pDest->upper_warning_limit);
+    		dbr_htonf(&pSrc->lower_alarm_limit, &pDest->lower_alarm_limit);
+    		dbr_htonf(&pSrc->lower_warning_limit, &pDest->lower_warning_limit);
+    		dbr_htonf(&pSrc->lower_ctrl_limit, &pDest->lower_ctrl_limit);
+    		dbr_htonf(&pSrc->upper_ctrl_limit, &pDest->upper_ctrl_limit);
     	}
     	else			/* ieee to vax convert 	 	*/
     	{
 		if (num == 1){
-	    		ntohf(&pSrc->value, &pDest->value);
+	    		dbr_ntohf(&pSrc->value, &pDest->value);
 		}
 		else {
 			cvrt_float(&pSrc->value, &pDest->value, encode, num);
 		}
-    		ntohf(&pSrc->lower_disp_limit, &pDest->lower_disp_limit);
-    		ntohf(&pSrc->upper_alarm_limit, &pDest->upper_alarm_limit);
-    		ntohf(&pSrc->upper_warning_limit, &pDest->upper_warning_limit);
-    		ntohf(&pSrc->lower_alarm_limit, &pDest->lower_alarm_limit);
-    		ntohf(&pSrc->lower_warning_limit, &pDest->lower_warning_limit);
-    		ntohf(&pSrc->lower_ctrl_limit, &pDest->lower_ctrl_limit);
-    		ntohf(&pSrc->upper_ctrl_limit, &pDest->upper_ctrl_limit);
+    		dbr_ntohf(&pSrc->lower_disp_limit, &pDest->lower_disp_limit);
+    		dbr_ntohf(&pSrc->upper_disp_limit, &pDest->upper_disp_limit);
+    		dbr_ntohf(&pSrc->upper_alarm_limit, &pDest->upper_alarm_limit);
+    		dbr_ntohf(&pSrc->upper_warning_limit, &pDest->upper_warning_limit);
+    		dbr_ntohf(&pSrc->lower_alarm_limit, &pDest->lower_alarm_limit);
+    		dbr_ntohf(&pSrc->lower_warning_limit, &pDest->lower_warning_limit);
+    		dbr_ntohf(&pSrc->lower_ctrl_limit, &pDest->lower_ctrl_limit);
+    		dbr_ntohf(&pSrc->upper_ctrl_limit, &pDest->upper_ctrl_limit);
     	}
 
 }
@@ -1408,17 +1401,25 @@ struct mitdbl {
 #define        DBLEXPMAXMIT    126     /* max MIT exponent             */
 #define        DBLEXPMINMIT    -128    /* min MIT exponent             */
 
-void htond(double *pHost, double *pNet)
+/*
+ * Converts VAX D floating point to IEEE double precision 
+ * (D floating is the VAX C default)
+ */
+void dbr_htond(dbr_double_t *pHost, dbr_double_t *pNet)
 {
-	double		copyin;
+	dbr_double_t	copyin;
 	struct mitdbl 	*pMIT;
 	struct ieeedbl 	*pIEEE;
     	ca_uint32_t	*ptmp;
     	ca_uint32_t	tmp;
 
+	/*
+	 * Use internal buffer so the src and dest ptr
+	 * can be identical
+	 */
 	copyin = *pHost;
-	pMIT = (struct mitdbl *)&copyin;
-	pIEEE = (struct ieeedbl *)pNet;
+	pMIT = (struct mitdbl *) &copyin;
+	pIEEE = (struct ieeedbl *) pNet;
 
     	if( ((int)pMIT->exp) < (DBLEXPMINMIT+MIT_DBL_SB) ){
       		pIEEE->mant1 = 0;
@@ -1438,34 +1439,43 @@ void htond(double *pHost, double *pNet)
     	 * byte swap to net order
      	 */
     	ptmp = (ca_uint32_t *) pNet;
-    	tmp = htonl(ptmp[0]);
-    	ptmp[0] = htonl(ptmp[1]);
+    	tmp = dbr_htonl(ptmp[0]);
+    	ptmp[0] = dbr_htonl(ptmp[1]);
     	ptmp[1] = tmp;
 }
 
 
 /*
+ * Converts IEEE double precision to VAX D floating point
+ * (D floating is the VAX default)
+ *
  * sign must be forced to zero if the exponent is zero to prevent a reserved
  * operand fault- joh 9-13-90
  */
-void ntohd(double *pNet, double *pHost)
+void dbr_ntohd(dbr_double_t *pNet, dbr_double_t *pHost)
 {
-	double		copyin;
+	struct ieeedbl	copyin;
 	struct mitdbl 	*pMIT;
 	struct ieeedbl 	*pIEEE;
     	ca_uint32_t	*ptmp;
     	ca_uint32_t	tmp;
 
-	copyin = *pNet;
+	pIEEE = (struct ieeedbl *)pNet;
 	pMIT = (struct mitdbl *)pHost;
-	pIEEE = (struct ieeedbl *)&copyin;
+
+	/*
+	 * Use internal buffer so the src and dest ptr
+	 * can be identical
+	 */
+	copyin = *pIEEE;
+	pIEEE = &copyin;
 
 	/*
 	 * Byte swap from net order to host order
 	 */
     	ptmp = (ca_uint32_t *) pIEEE;
-    	tmp = htonl(ptmp[0]);
-    	ptmp[0] = htonl(ptmp[1]);
+    	tmp = dbr_htonl(ptmp[0]);
+    	ptmp[0] = dbr_htonl(ptmp[1]);
     	ptmp[1] = tmp;
 
     	if( ((int)pIEEE->exp) > (DBLEXPMAXMIT + IEEE_DBL_SB) ){
@@ -1527,10 +1537,14 @@ struct mitflt{
 # define        EXPMAXMIT       126     /* max MIT exponent             */
 # define        EXPMINMIT       -128    /* min MIT exponent             */
 
-/* (this includes mapping of fringe reals to zero or infinity) */
-/* (byte swaps included in conversion */
-
-void htonf(float *pHost, float *pNet)
+/* 
+ * (this includes mapping of fringe reals to zero or infinity) 
+ * (byte swaps included in conversion 
+ *
+ * Uses internal buffer so the src and dest ptr
+ * can be identical
+ */
+void dbr_htonf(dbr_float_t *pHost, dbr_float_t *pNet)
 {
 	struct mitflt	*pMIT = (struct mitflt *) pHost;
 	struct ieeeflt	*pIEEE = (struct ieeeflt *) pNet;
@@ -1550,21 +1564,24 @@ void htonf(float *pHost, float *pNet)
     	pIEEE->mant   = mant;
     	pIEEE->exp    = exp;
     	pIEEE->sign   = sign;
-    	*(ca_uint32_t *)pIEEE = htonl(*(ca_uint32_t *)pIEEE);
+    	*(ca_uint32_t *)pIEEE = dbr_htonl(*(ca_uint32_t *)pIEEE);
 }
 
 
 /*
  * sign must be forced to zero if the exponent is zero to prevent a reserved
  * operand fault- joh 9-13-90
+ *
+ * Uses internal buffer so the src and dest ptr
+ * can be identical
  */
-void ntohf(float *pNet, float *pHost)
+void dbr_ntohf(dbr_float_t *pNet, dbr_float_t *pHost)
 {
 	struct mitflt	*pMIT = (struct mitflt *) pHost;
 	struct ieeeflt	*pIEEE = (struct ieeeflt *) pNet;
   	long  		exp,mant2,mant1,sign;
 
-    	*(ca_uint32_t *)pIEEE = ntohl(*(ca_uint32_t *)pIEEE);
+    	*(ca_uint32_t *)pIEEE = dbr_ntohl(*(ca_uint32_t *)pIEEE);
     	if( ((int)pIEEE->exp) > EXPMAXMIT + IEEE_SB){
 		sign      = pIEEE->sign;
 		exp       = EXPMAXMIT + MIT_SB;
@@ -1595,10 +1612,10 @@ void ntohf(float *pNet, float *pHost)
 #if defined(CA_FLOAT_IEEE) && 0
 
 /*
- * htond ()
+ * dbr_htond ()
  * performs only byte swapping
  */
-void htond (double *IEEEhost, double *IEEEnet)
+void dbr_htond (dbr_double_t *IEEEhost, dbr_double_t *IEEEnet)
 {
 #ifdef CA_LITTLE_ENDIAN
     	ca_uint32_t	*pHost = (ca_uint32_t *) IEEEhost;
@@ -1611,18 +1628,18 @@ void htond (double *IEEEhost, double *IEEEnet)
 	 * may be identical)
      	 */
 	tmp = pHost[0];
-	pNet[0] = htonl (pHost[1]);
-	pNet[1] = htonl (tmp);	
+	pNet[0] = dbr_htonl (pHost[1]);
+	pNet[1] = dbr_htonl (tmp);	
 #else
 	*IEEEnet = *IEEEhost;
 #endif
 }
 
 /*
- * ntohd ()
+ * dbr_ntohd ()
  * performs only byte swapping
  */
-void ntohd (double *IEEEnet, double *IEEEhost)
+void dbr_ntohd (dbr_double_t *IEEEnet, dbr_double_t *IEEEhost)
 {
 #ifdef CA_LITTLE_ENDIAN
     	ca_uint32_t	*pHost = (ca_uint32_t *) IEEEhost;
@@ -1635,35 +1652,35 @@ void ntohd (double *IEEEnet, double *IEEEhost)
 	 * may be identical)
      	 */
 	tmp = pNet[0];
-	pHost[0] = ntohl (pNet[1]);
-	pHost[1] = htonl (tmp);	
+	pHost[0] = dbr_ntohl (pNet[1]);
+	pHost[1] = dbr_htonl (tmp);	
 #else
 	*IEEEhost = *IEEEnet;
 #endif
 }
 
 /*
- * ntohf ()
+ * dbr_ntohf ()
  * performs only byte swapping
  */
-void ntohf (float *IEEEnet, float *IEEEhost)
+void dbr_ntohf (dbr_float_t *IEEEnet, dbr_float_t *IEEEhost)
 {
     	ca_uint32_t	*pHost = (ca_uint32_t *) IEEEhost;
     	ca_uint32_t	*pNet = (ca_uint32_t *) IEEEnet;
 
-    	*pHost = ntohl (*pNet);
+    	*pHost = dbr_ntohl (*pNet);
 }
 
 /*
- * htonf ()
+ * dbr_htonf ()
  * performs only byte swapping
  */
-void htonf (float *IEEEhost, float *IEEEnet)
+void dbr_htonf (dbr_float_t *IEEEhost, dbr_float_t *IEEEnet)
 {
     	ca_uint32_t	*pHost = (ca_uint32_t *) IEEEhost;
     	ca_uint32_t	*pNet = (ca_uint32_t *) IEEEnet;
 
-    	*pNet = htonl (*pHost);
+    	*pNet = dbr_htonl (*pHost);
 }
 
 #endif /* IEEE float and little endian */

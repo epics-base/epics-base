@@ -159,6 +159,7 @@ static char *sccsId = "$Id$\t$Date$";
 
 #define SRCepvxiLib	/* allocate externals here */
 #include <drvEpvxi.h>
+#include <drvHp1404a.h>
 
 #define NICPU030
 
@@ -175,9 +176,6 @@ struct {
         epvxiIOReport,
         epvxiResman};
 
-
-#define VXI_HP_MODEL_E1404		0x110
-#define VXI_HP_MODEL_E1404_SLOT0	0x10
 
 /*
  * so setting ECL triggers does not mess with the
@@ -419,14 +417,14 @@ EPVXISTAT epvxiResman(void)
   	 * (if we are running under EPICS)
 	 */
 	{
-		UINT8	type;
+		SYM_TYPE	type;
 		unsigned char 	*pEPICS_VXI_LA_COUNT = 0;
 		unsigned char 	*pEPICS_VXI_LA_BASE = 0;
 
 		status = symFindByName(
 				sysSymTbl,
 				"_EPICS_VXI_LA_BASE",	
-				&pEPICS_VXI_LA_BASE,
+				(char **)&pEPICS_VXI_LA_BASE,
 				&type);
 		if(status == OK){
 			EPICS_VXI_LA_BASE = 
@@ -441,7 +439,7 @@ EPVXISTAT epvxiResman(void)
 		status = symFindByName(
 				sysSymTbl,
 				"_EPICS_VXI_LA_COUNT",	
-				&pEPICS_VXI_LA_COUNT,
+				(char **)&pEPICS_VXI_LA_COUNT,
 				&type);
 		if(status == OK){
 			EPICS_VXI_LA_COUNT = 
@@ -469,8 +467,8 @@ EPVXISTAT epvxiResman(void)
 	 */
 	status = sysBusToLocalAdrs(
 				VME_AM_SUP_SHORT_IO,
-				VXIBASEADDR,
-				&epvxi_local_base);
+				(char *)VXIBASEADDR,
+				(char **)&epvxi_local_base);
 	if(status != OK){
 		return S_epvxi_badConfig;
 	}
@@ -745,10 +743,10 @@ LOCAL void vxi_unmap_mxi_devices(void)
 
 		pmxi = VXIBASE(addr);
 
-  		status = vxMemProbe(	pmxi,
+  		status = vxMemProbe(	(char *)pmxi,
 					READ,
 					sizeof(id),
-					&id);
+					(char *)&id);
   		if(status<0){
 			continue;
 		}
@@ -1126,10 +1124,10 @@ unsigned	la
 
 	pdevice = VXIBASE(la);
 
-  	status = vxMemProbe(	pdevice,
+  	status = vxMemProbe(	(char *)pdevice,
 				READ,
 				sizeof(id),
-				&id);
+				(char *)&id);
   	if(status<0){
 		return S_epvxi_internal;
 	}
@@ -1371,10 +1369,10 @@ VXIE		*pvxie
 	}
 
 	pcsr = VXIBASE(VXIDYNAMICADDR);
-	status = vxMemProbe(	pcsr,
+	status = vxMemProbe(	(char *)pcsr,
 				READ,
 				sizeof(id),
-				&id);
+				(char *)&id);
   	if(status == OK){
 		errPrintf(
 			S_epvxi_badConfig,
@@ -1442,10 +1440,10 @@ VXIE		*pvxie
 				SETMODID(pvxisz, slot);
 
 				status = vxMemProbe(	
-						pcsr,
+						(char *)pcsr,
 						READ,
 						sizeof(id),
-						&id);
+						(char *)&id);
 				if(status<0){
 					continue;
 				}
@@ -1460,9 +1458,9 @@ VXIE		*pvxie
 							status,
 		"VXI: DC VXI device doesnt fit");
 						errPrintf(
+							status,
 							__FILE__,
 							__LINE__,
-							status,
 		"VXI: DC VXI device in extender LA=0X%X ignored",
 							pvxie->la);
 						continue;
@@ -1531,10 +1529,10 @@ unsigned	*pCount
 	}
 
 	pcsr = VXIBASE(VXIDYNAMICADDR);
-	status = vxMemProbe(	pcsr,
+	status = vxMemProbe(	(char *)pcsr,
 				READ,
 				sizeof(id),
-				&id);
+				(char *)&id);
   	if(status == OK){
 		status = S_epvxi_badConfig;
 		errMessage(status, "SC device at DC address");
@@ -1565,10 +1563,10 @@ unsigned	*pCount
 				SETMODID(pvxisz, slot);
 
 				status = vxMemProbe(	
-						pcsr,
+						(char *)pcsr,
 						READ,
 						sizeof(id),
-						&id);
+						(char *)&id);
 				if(status>=0){
 					nDC++;
 				}
@@ -1650,9 +1648,9 @@ unsigned	la
 		status = open_vxi_device(pvxie, la);
 		if(status){
 			errPrintf(
+				status,
 				__FILE__,
 				__LINE__,
-				status,
 				"attempted slot zero device open la=0X%X",
 				la);
 			return;
@@ -1920,10 +1918,10 @@ LOCAL EPVXISTAT vxi_la_occupied(unsigned la)
 		pi16 <= (int16_t *) &pcsr->dir.r.dd.reg.ddx2e;
 		pi16++){
 
-	  	s = vxMemProbe(	pi16,
+	  	s = vxMemProbe(	(char *)pi16,
 				READ,
 				sizeof(i16),
-				&i16);
+				(char *)&i16);
 	  	if(s == OK){
 			return TRUE;
 		}
@@ -2409,7 +2407,8 @@ unsigned 	la
  */
 LOCAL void vxi_address_config(void)
 {
-	EPVXISTAT			status;
+	char		*pBase;
+	EPVXISTAT	status;
 
 	/*
 	 * fetch the EPICS address ranges from the global
@@ -2449,9 +2448,10 @@ LOCAL void vxi_address_config(void)
 	 */
 	status = sysBusToLocalAdrs(
                                 VME_AM_STD_SUP_DATA,
-                                root_extender.A24_base,
-                                &root_extender.A24_base);
+                                (char *)root_extender.A24_base,
+                                &pBase);
 	if(status == OK){
+		root_extender.A24_base = (long) pBase;
 		root_extender.A24_ok = TRUE;
 	}
 	else{
@@ -2462,9 +2462,10 @@ LOCAL void vxi_address_config(void)
         }
 	status = sysBusToLocalAdrs(
                                 VME_AM_EXT_SUP_DATA,
-                                root_extender.A32_base,
-                                &root_extender.A32_base);
+                                (char *)root_extender.A32_base,
+                                &pBase);
 	if(status == OK){
+		root_extender.A32_base = (long) pBase;
 		root_extender.A32_ok = TRUE;
 	}
 	else{
@@ -2787,7 +2788,7 @@ unsigned	addr
   	int 	i;
 	void	*psub;
 
-	psub = (void *) intVecGet(INUM_TO_IVEC(addr));
+	psub = (void *) intVecGet((FUNCPTR *)INUM_TO_IVEC(addr));
   	for(i=0; i<NELEMENTS(ignore_list); i++)
 		if(ignore_addr_list[i] == psub)
 			return FALSE;
@@ -3074,10 +3075,10 @@ EPVXISTAT epvxiDeviceVerify(unsigned la)
 	 * the self tests are verified.
 	 */
 	pcsr = VXIBASE(la);
-	status = vxMemProbe(    &pcsr->dir.r.status,
+	status = vxMemProbe(    (char *)&pcsr->dir.r.status,
 				READ,
 				sizeof(pcsr->dir.r.status),
-				&device_status);
+				(char *)&device_status);
 	if(status != OK){
 		return S_epvxi_uknDevice;
 	}
@@ -3324,8 +3325,8 @@ unsigned	io_map		/* bits 0-5  correspond to trig 0-5	*/
 	 * HP MODEL E1404 trigger routing 
 	 */
 	if(VXIMAKE(pcsr)==VXI_MAKE_HP){ 
-		if(	VXIMODEL(pcsr)==VXI_HP_MODEL_E1404 || 
-			VXIMODEL(pcsr)==VXI_HP_MODEL_E1404_SLOT0){
+		if(	VXIMODEL(pcsr)==VXI_HP_MODEL_E1404_REG || 
+			VXIMODEL(pcsr)==VXI_HP_MODEL_E1404_REG_SLOT0){
                 	return hpE1404RouteTriggerECL(
 				la, 
 				enable_map, 
@@ -3449,8 +3450,8 @@ unsigned	io_map		/* bits 0-5  correspond to trig 0-5	*/
 	 * HP MODEL E1404 trigger routing 
 	 */
 	if(VXIMAKE(pcsr)==VXI_MAKE_HP){ 
-		if(	VXIMODEL(pcsr)==VXI_HP_MODEL_E1404 ||
-			VXIMODEL(pcsr)==VXI_HP_MODEL_E1404_SLOT0){
+		if(	VXIMODEL(pcsr)==VXI_HP_MODEL_E1404_REG ||
+			VXIMODEL(pcsr)==VXI_HP_MODEL_E1404_REG_SLOT0){
                 	return hpE1404RouteTriggerTTL(
 					la, 	
 					enable_map, 
@@ -3500,8 +3501,8 @@ unsigned 	level
 	if(!epvxi_local_base){
 		status = sysBusToLocalAdrs(
                                 VME_AM_SUP_SHORT_IO,
-                                VXIBASEADDR,
-                                &epvxi_local_base);
+                                (char *)VXIBASEADDR,
+                                (char **)&epvxi_local_base);
 		if(status != OK){
 			status = S_epvxi_badConfig;
 			errMessage(
@@ -3558,10 +3559,10 @@ int		level
         int16_t                 id;
 
 	pcsr = VXIBASE(la);
-	status = vxMemProbe(    pcsr,
+	status = vxMemProbe(    (char *)pcsr,
 				READ,
 				sizeof(id),
-				&id);
+				(char *)&id);
 	if(status != OK){
 		return S_epvxi_internal;
 	}
@@ -3658,19 +3659,19 @@ int		level
 	printf("\tA16=0x%X ", (int) VXIBASE(la));
 	if(VXIMEMENBL(pcsr)){
 		long	VMEmod = NULL;
-		void	*VMEaddr = NULL;
+		char	*VMEaddr = NULL;
 		char	*pname = NULL;
-		void	*pbase;
+		char	*pbase;
 
 		switch(VXIADDRSPACE(pcsr)){
 		case VXI_ADDR_EXT_A24:
 			VMEmod = VME_AM_STD_SUP_DATA;
-			VMEaddr = (void *) (pcsr->dir.w.offset<<8);
+			VMEaddr = (char *) (pcsr->dir.w.offset<<8);
 			pname = "A24";
 			break;
 		case VXI_ADDR_EXT_A32:
 			VMEmod = VME_AM_EXT_SUP_DATA;	 
-			VMEaddr = (void *) (pcsr->dir.w.offset<<16);
+			VMEaddr = (char *) (pcsr->dir.w.offset<<16);
 			pname = "A32";
 			break;
 		}
@@ -4029,7 +4030,12 @@ char *pmodel_name
 
  	strcpy(pcopy, pmodel_name);
 
- 	status = symAdd(epvxiSymbolTable, name, pcopy, EPVXI_MODEL_NAME_SYMBOL);
+ 	status = symAdd(
+			epvxiSymbolTable, 
+			name, 
+			pcopy, 
+			EPVXI_MODEL_NAME_SYMBOL,
+			NULL);
 	if(status < 0){
 		char 	*pold_model_name;
 		UINT8	type;
@@ -4085,7 +4091,12 @@ char *pmake_name
 
  	strcpy(pcopy, pmake_name);
 
- 	status = symAdd(epvxiSymbolTable, name, pcopy, EPVXI_MAKE_NAME_SYMBOL);
+ 	status = symAdd(
+			epvxiSymbolTable, 
+			name, 
+			pcopy, 
+			EPVXI_MAKE_NAME_SYMBOL,
+			NULL);
 	if(status<0){
 		char 	*pold_make_name;
 		UINT8	type;

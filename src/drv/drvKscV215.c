@@ -44,37 +44,26 @@
 #include <dbDefs.h>
 #include <iv.h>
 #include <types.h>
+#include <stdioLib.h>
+
 #include <module_types.h>
 #include <task_params.h>
 #include <fast_lock.h>
 #include <drvEpvxi.h>
 #include <drvSup.h>
 #include <dbScan.h>
-
-static long init();
-
-struct {
-        long    number;
-        DRVSUPFUN       report;
-        DRVSUPFUN       init;
-} drvKscV215={
-        2,
-        NULL,	/* VXI report takes care of this */
-        init};
+#include <devLib.h>
 
 
-static long init()
-{
-	KscV215Init();
-	return(0);
-}
+typedef long	kscV215Stat;
+
 
 #define VXI_MODEL_KSCV215 	(0x215)
 
 #define MAXTRIES 100
 
-#define KSCV215_PCONFIG(LA) \
-epvxiPConfig((LA), KscV215DriverId, struct KscV215_config *)
+#define KSCV215_PCONFIG(LA, PC) \
+epvxiFetchPConfig((LA), KscV215DriverId, PC)
 
 #define ChannelEnable(PCSR) ((PCSR)->dir.w.dd.reg.ddx08)
 #define ModuleStatus(PCSR) ((PCSR)->dir.r.status)
@@ -90,12 +79,7 @@ struct KscV215_config{
 #define KscV215Handshake	(0x0040)
 #define KscV215csrInit		(0x9000)
 
-static int KscV215DriverId;
-
-static void KscV215_int_service();
-static void KscV215_init_card();
-static void KscV215_stat();
-static int KscV215WriteSync();
+LOCAL int KscV215DriverId;
 
 
 struct KscV215_A24{
@@ -131,6 +115,49 @@ struct KscV215_A24{
 	unsigned short 	pad14;
 };
 
+/*
+ * external
+ */
+kscV215Stat	KscV215Init(void);
+kscV215Stat KscV215_ai_driver(
+unsigned 	la,
+unsigned 	chan,
+unsigned short 	*prval 
+);
+
+/*
+ * internal
+ */
+#ifdef INTERRUPTS
+LOCAL void KscV215_int_service(unsigned la);
+#endif
+LOCAL void KscV215_init_card(unsigned la);
+
+kscV215Stat KscV215_getioscanpvt(
+unsigned 	la,
+IOSCANPVT 	*scanpvt
+);
+
+LOCAL void KscV215_stat(
+unsigned 	la,
+int		level
+);
+
+LOCAL kscV215Stat KscV215WriteSync(
+struct KscV215_A24	*pA24,
+unsigned short		*preg,
+unsigned 		val
+);
+
+
+struct {
+        long    number;
+        DRVSUPFUN       report;
+        DRVSUPFUN       init;
+} drvKscV215={
+        2,
+        NULL,	/* VXI report takes care of this */
+        KscV215Init};
 
 /*
  * KscV215_init
@@ -138,15 +165,15 @@ struct KscV215_A24{
  * initialize all KscV215 cards
  *
  */
-KscV215Init()
+kscV215Stat	KscV215Init(void)
 {
-        int     r0;
+	kscV215Stat	r0;
 
         /*
          * do nothing on crates without VXI
          */
         if(!epvxiResourceMangerOK){
-                return ERROR;
+                return VXI_SUCCESS;
         }
 
         KscV215DriverId = epvxiUniqueDriverID();
@@ -158,12 +185,12 @@ KscV215Init()
                 dsp.make = VXI_MAKE_KSC;
                 dsp.model = VXI_MODEL_KSCV215;
                 r0 = epvxiLookupLA(&dsp, KscV215_init_card, (void *)NULL);
-                if(r0<0){
-                        return ERROR;
+                if(r0){
+                        return r0;
                 }
         }
 
-        return OK;
+        return VXI_SUCCESS;
 }
 
 
@@ -174,11 +201,9 @@ KscV215Init()
  * initialize single at5vxi card
  *
  */
-LOCAL void
-KscV215_init_card(la)
-unsigned la;
+LOCAL void KscV215_init_card(unsigned la)
 {
-        int                     status;
+        kscV215Stat		status;
 	int			i;
         struct KscV215_config	*pc;
 	struct KscV215_A24	*pA24;
@@ -190,13 +215,20 @@ unsigned la;
                 KscV215DriverId,
                 (unsigned long) sizeof(*pc),
                 KscV215_stat);
-        if(status<0){
-                logMsg("KscV215: device open failed %d\n", la);
+        if(status){
+		errPrintf(
+			status,
+			__FILE__,
+			__LINE__,
+			"AT5VXI: device open failed %d\n", 
+			la);
+
                 return;
         }
 
-        pc = KSCV215_PCONFIG(la);
-        if(pc == NULL){
+        status = KSCV215_PCONFIG(la, pc);
+        if(status){
+		errMessage(status,NULL);
 		epvxiClose(la, KscV215DriverId);
                 return;
         }
@@ -207,9 +239,9 @@ unsigned la;
 	pcsr->dir.w.control = KscV215csrInit;
 
 	status = KscV215WriteSync(pA24, &pA24->controlMemoryAddr, 0);
-	if(status<0){
+	if(status){
 		epvxiClose(la, KscV215DriverId);
-		logMsg("KscV215 init failed\n");
+		errMessage(status, "KscV215 init failed\n");
 		return;
 	}
 	for(i=0; i<(NELEMENTS(pA24->channels)/2); i++){
@@ -217,9 +249,9 @@ unsigned la;
 				pA24, 
 				&pA24->controlMemoryDataWrite, 
 				0);	
-		if(status<0){
+		if(status){
 			epvxiClose(la, KscV215DriverId);
-			logMsg("KscV215 init failed\n");
+			errMessage(status, "KscV215 init failed\n");
 			return;
 		}
 	}
@@ -231,9 +263,9 @@ unsigned la;
 			pA24, 
 			&pA24->enableContinuousScanning, 
 			0);	
-	if(status<0){
+	if(status){
 		epvxiClose(la, KscV215DriverId);
-		logMsg("KscV215 init failed- device left open\n");
+		errMessage(status, "KscV215 init failed- device left open\n");
 		return;
 	}
 
@@ -245,15 +277,18 @@ unsigned la;
 		(unsigned char) INUM_TO_IVEC(la),
 		KscV215_int_service,
 		(void *) la);
-	if(status == ERROR)
+	if(status == ERROR){
+		epvxiClose(la, KscV215DriverId);
+		errMessage(S_dev_vxWorksVecInstlFail, 
+			"KscV215 init failed- device left open");
 		return;
+	}
 	sysIntEnable(KSCV215_INT_LEVEL);
 #endif
 
 	status = epvxiRegisterMakeName(VXI_MAKE_KSC, "Kinetic Systems");
-	if(status<0){
-		logMsg("%s: unable reg make\n",
-			__FILE__);
+	if(status){
+		errMessage(status, NULL);
 	}
 
         model = VXIMODEL(pcsr);
@@ -261,10 +296,8 @@ unsigned la;
                         VXIMAKE(pcsr),
                         model,
                         "V215 16 bit 32 channel ADC\n");
-        if(status<0){
-        	logMsg("%s: failed to register model at init: %x\n",
-                       __FILE__,
-                       model);
+        if(status){
+		errMessage(status, NULL);
         }
 
 }
@@ -276,25 +309,26 @@ unsigned la;
  *
  *
  */
-LOCAL int 
-KscV215WriteSync(pA24, preg, val)
-struct KscV215_A24	*pA24;
-unsigned short		*preg;
-unsigned short		val;
+LOCAL kscV215Stat KscV215WriteSync(
+struct KscV215_A24	*pA24,
+unsigned short		*preg,
+unsigned 		val
+)
 {
-	int i;
+        kscV215Stat	status;
+	int 		i;
 
 	for(i=0; i<MAXTRIES; i++){
 		*preg = val;
 		if(pA24->diag & KscV215Handshake){
-			return OK;
+			return VXI_SUCCESS;
 		}
 		taskDelay(1);
 	}
 
-	logMsg("KscV215 timed out\n");
-
-	return ERROR;
+	status = S_dev_deviceTMO;
+	errMessage(status, NULL);
+	return status;
 }
 
 
@@ -308,21 +342,22 @@ unsigned short		val;
  *
  */
 #ifdef INTERRUPTS
-LOCAL void
-KscV215_int_service(la)
-unsigned	la;
+LOCAL void KscV215_int_service(unsigned la)
 {
+	kscV215Stat		s;
         struct KscV215_config	*pc;
 
-        pc = KSCV215_PCONFIG(la);
-        if(pc == NULL){
-                return;
-        }
-
-	/*
-	 * operation completed so we can update 
-	 * the shadow value
-	 */
+        s = KSCV215_PCONFIG(la, pc);
+	if(s){
+		logMsg(	"Int to ukn device %s line=%d\n", 
+			__FILE__, 
+			__LINE__, 
+			NULL,
+			NULL,
+			NULL,
+			NULL);
+		return;
+	}
 
 	/*
 	 * tell them that the switches have settled
@@ -338,18 +373,20 @@ unsigned	la;
  * initialize single at5vxi card
  *
  */
-LOCAL void
-KscV215_stat(la,level)
-unsigned 	la;
-int		level;
+LOCAL void KscV215_stat(
+unsigned 	la,
+int		level
+)
 {
+	kscV215Stat		s;
         struct KscV215_config	*pc;
 	struct vxi_csr		*pcsr;
 	struct KscV215_A24	*pA24;
 	int i;
 
-        pc = KSCV215_PCONFIG(la);
-        if(pc == NULL){
+        s = KSCV215_PCONFIG(la, pc);
+        if(s){
+		errMessage(s, NULL);
                 return;
         }
 	pcsr = VXIBASE(la);
@@ -405,28 +442,30 @@ int		level;
  *
  *	analog input driver
  */
-int	
-KscV215_ai_driver(la,chan,prval)
-register unsigned short	la;
-unsigned short		chan;
-register unsigned short *prval;
+kscV215Stat KscV215_ai_driver(
+unsigned 	la,
+unsigned 	chan,
+unsigned short 	*prval 
+)
 {
         struct KscV215_config	*pc;
 	struct vxi_csr		*pcsr;
 	struct KscV215_A24	*pA24;
 	long			tmp;
 	int			i;
+	kscV215Stat		s;
 
-        pc = KSCV215_PCONFIG(la);
-        if(pc == NULL){
-                return ERROR;
+        s = KSCV215_PCONFIG(la, pc);
+        if(s){
+                return s;
         }
 	pcsr = VXIBASE(la);
 
 	pA24 = epvxiA24Base(la);
 
-	if(chan >= NELEMENTS(pA24->channels)/2)
-		return ERROR;
+	if(chan >= NELEMENTS(pA24->channels)/2){
+		return S_dev_badSignalNumber;
+	}
 
 	for(i=0; i<MAXTRIES; i++){
 		tmp = pA24->channels[chan<<1];
@@ -435,21 +474,32 @@ register unsigned short *prval;
 			tmp = tmp >> 4;
 			tmp &= 0xfff;
 			*prval = tmp;
-			return OK;
+			return VXI_SUCCESS;
 		}
 		taskDelay(1);
 	}
 	
-	return ERROR;
+	s = S_dev_deviceTMO;
+	return s;
 }
+
 
-KscV215_getioscanpvt(la,scanpvt)
-unsigned short	la;
-IOSCANPVT *scanpvt;
+/*
+ * KscV215_getioscanpvt()
+ */
+kscV215Stat KscV215_getioscanpvt(
+unsigned 	la,
+IOSCANPVT 	*scanpvt
+)
 {
+	kscV215Stat             s;
         struct KscV215_config	*pc;
 
-        pc = KSCV215_PCONFIG(la);
-        if(pc != NULL) *scanpvt = pc->ioscanpvt;
-	return(0);
+        s = KSCV215_PCONFIG(la, pc);
+	if(s){
+		errMessage(s, NULL);
+		return s;
+	}
+        *scanpvt = pc->ioscanpvt;
+	return	VXI_SUCCESS;
 }

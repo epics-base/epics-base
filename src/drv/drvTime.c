@@ -229,12 +229,12 @@ time_test()
     return ERROR;
 
 
-  logMsg(	"wrote: preset %x internal-clk %x delay %lf width %lf \n",
+  logMsg(	"wrote: preset %x internal-clk %x delay %f width %f \n",
 		preset,
 		int_source,
 		pulses.offset,
 		pulses.width);
-  logMsg(	"read: preset %x internal-clk %x delay %lf width %lf count %x\n",
+  logMsg(	"read: preset %x internal-clk %x delay %f width %f count %x\n",
 		t_preset,
 		t_int_source,
 		t_pulses.offset,

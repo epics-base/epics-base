@@ -3,7 +3,7 @@
  * 	HP E1404A VXI bus slot zero translator
  * 	device dependent routines
  *
- *	share/src/drv @(#)drvHp1404a.c	1.4	8/27/92
+ *	share/src/drv/$Id$
  *
  * 	Author Jeffrey O. Hill
  * 	Date		030692
@@ -40,24 +40,25 @@
  *
  */
 
-static char	*sccsId = "@(#)drvHp1404a.c	1.4\t8/27/92";
+static char	*sccsId = "$Id$\t$Date$";
 
 #include <vxWorks.h>
 #include <iv.h>
+#include <intLib.h>
+#include <rebootLib.h>
+
+#include <devLib.h>
 #include <drvEpvxi.h>
+#include <drvHp1404a.h>
 
 LOCAL unsigned long	hpE1404DriverID;
 
 struct hpE1404_config{
-	void	(*pSignalCallback)();
+	void	(*pSignalCallback)(int16_t signal);
 };
 
 #define		TLTRIG(N) (1<<(N))
 #define		ECLTRIG(N) (1<<((N)+8))
-
-#define VXI_HP_MODEL_E1404_REG_SLOT0    0x10
-#define VXI_HP_MODEL_E1404_REG          0x110
-#define VXI_HP_MODEL_E1404_MSG          0x111
 
 /*
  * enable int when signal register is written
@@ -75,56 +76,28 @@ struct hpE1404_config{
 #define bp_trig_drive	dir.w.dd.reg.ddx22
 #define signal_read	dir.r.dd.reg.ddx10
 
-#define hpE1404PConfig(LA) \
-	epvxiPConfig((LA), hpE1404DriverID, struct hpE1404_config *)
+#define hpE1404PConfig(LA, PC) \
+	epvxiFetchPConfig((LA), hpE1404DriverID, (PC))
 
-static void 	hpE1404InitLA(
+LOCAL void 	hpE1404InitLA(
 	unsigned	la
 );
 
-static void 	hpE1404ShutDown(
+LOCAL int	hpE1404ShutDown(
 	void
 );
 
-static void 	hpE1404ShutDownLA(
+LOCAL void 	hpE1404ShutDownLA(
 	unsigned 		la
 );
 
-/*
- * these should be in a header file
- */
-int 	hpE1404SignalConnect(
-	unsigned 	la,
-	void		(*pSignalCallback)()
+LOCAL void      hpE1404IOReport(
+unsigned                la,
+unsigned                level
 );
 
-static void 	hpE1404Int(
-	unsigned 	la
-);
-
-int	hpE1404RouteTriggerECL(
-unsigned        la,             /* slot zero device logical address     */
-unsigned        enable_map,     /* bits 0-5  correspond to trig 0-5     */
-                                /* a 1 enables a trigger                */
-                                /* a 0 disables a trigger               */
-unsigned        io_map         /* bits 0-5  correspond to trig 0-5     */
-                                /* a 1 sources the front panel          */
-                                /* a 0 sources the back plane           */
-);
-
-int	hpE1404RouteTriggerTTL(
-unsigned        la,             /* slot zero device logical address     */
-unsigned        enable_map,     /* bits 0-5  correspond to trig 0-5     */
-                                /* a 1 enables a trigger                */
-                                /* a 0 disables a trigger               */
-unsigned        io_map         /* bits 0-5  correspond to trig 0-5     */
-                                /* a 1 sources the front panel          */
-                                /* a 0 sources the back plane           */
-);
-
-static void	hpE1404IOReport(
-	unsigned 		la,
-	unsigned 		level
+LOCAL void      hpE1404Int(
+unsigned        la
 );
 
 
@@ -134,36 +107,46 @@ static void	hpE1404IOReport(
  *	hpE1404Init
  *
  */
-int
-hpE1404Init(
-	void
-)
+hpE1404Stat hpE1404Init(void)
 {
-	int		status;
-
+	hpE1404Stat	status;
 
 	status = rebootHookAdd(hpE1404ShutDown);
 	if(status<0){
-		return ERROR;
+		status = S_dev_internal;
+		errMessage(status, "rebootHookAdd() failed");
+		return status;
 	}
 
 	hpE1404DriverID = epvxiUniqueDriverID();
 	
-	epvxiRegisterMakeName(
+	status = epvxiRegisterMakeName(
 			VXI_MAKE_HP,
 			"Hewlett-Packard");
-	epvxiRegisterModelName(
+	if(status){
+		errMessage(status, NULL);
+	}
+	status = epvxiRegisterModelName(
 			VXI_MAKE_HP,
 			VXI_HP_MODEL_E1404_REG_SLOT0,
 			"Slot Zero Translator (reg)");
-	epvxiRegisterModelName(
+	if(status){
+		errMessage(status, NULL);
+	}
+	status = epvxiRegisterModelName(
 			VXI_MAKE_HP,
 			VXI_HP_MODEL_E1404_REG,
 			"Translator (reg)");
-	epvxiRegisterModelName(
+	if(status){
+		errMessage(status, NULL);
+	}
+	status = epvxiRegisterModelName(
 			VXI_MAKE_HP,
 			VXI_HP_MODEL_E1404_MSG,
 			"Translator (msg)");
+	if(status){
+		errMessage(status, NULL);
+	}
 
 	{
 		epvxiDeviceSearchPattern  dsp;
@@ -172,18 +155,20 @@ hpE1404Init(
 		dsp.make = VXI_MAKE_HP;
 		dsp.model = VXI_HP_MODEL_E1404_REG_SLOT0;
 		status = epvxiLookupLA(&dsp, hpE1404InitLA, (void *)NULL);
-		if(status<0){
-			return ERROR;
+		if(status){
+			errMessage(status, NULL);
+			return status;
 		}
 
 		dsp.model = VXI_HP_MODEL_E1404_REG;
 		status = epvxiLookupLA(&dsp, hpE1404InitLA, (void *)NULL);
-		if(status<0){
-			return ERROR;
+		if(status){
+			errMessage(status, NULL);
+			return status;
 		}
 	}
 
-	return OK;
+	return VXI_SUCCESS;
 }
 
 
@@ -193,28 +178,27 @@ hpE1404Init(
  *
  *
  */
-LOCAL
-void 	hpE1404ShutDown(
-	void
-)
+LOCAL int	hpE1404ShutDown(void)
 {
-	int				status;
+	hpE1404Stat			status;
 	epvxiDeviceSearchPattern  	dsp;
 
 	dsp.flags = VXI_DSP_make | VXI_DSP_model;
 	dsp.make = VXI_MAKE_HP;
 	dsp.model = VXI_HP_MODEL_E1404_REG_SLOT0;
 	status = epvxiLookupLA(&dsp, hpE1404ShutDownLA, (void *)NULL);
-	if(status<0){
-		return;
+	if(status){
+		errMessage(status, NULL);
+		return ERROR;
 	}
 
 	dsp.model = VXI_HP_MODEL_E1404_REG;
 	status = epvxiLookupLA(&dsp, hpE1404ShutDownLA, (void *)NULL);
-	if(status<0){
-		return;
+	if(status){
+		errMessage(status, NULL);
+		return	ERROR;
 	}
-
+	return OK;
 }
 
 
@@ -249,25 +233,23 @@ void 	hpE1404InitLA(
 {
 	struct hpE1404_config	*pc;
         struct vxi_csr  	*pcsr;
-	int			status;
+	hpE1404Stat		status;
 
 	status = epvxiOpen(
 			la,
 			hpE1404DriverID,
 			sizeof(*pc),
 			hpE1404IOReport);
-	if(status<0){
-		logMsg( "%s: device open failed (stat=%d) (LA=0X%02X)\n",
-			__FILE__,
-			status,
-			la);
+	if(status){
+		errMessage(status, NULL);
 		return;
 	}
 
 	pcsr = VXIBASE(la);
 
-	pc = hpE1404PConfig(la);
-	if(!pc){
+	status  = hpE1404PConfig(la, pc);
+	if(status){
+		errMessage(status, NULL);
 		epvxiClose(la, hpE1404DriverID);
 		return;
 	}
@@ -281,7 +263,7 @@ void 	hpE1404InitLA(
         intConnect(
                 INUM_TO_IVEC(la),
 		hpE1404Int,
-                (void *) la);
+                la);
 
 	/*
 	 * enable int when signal register is written
@@ -297,21 +279,22 @@ void 	hpE1404InitLA(
  *	hpE1404SignalConnect()	
  *
  */
-int 	hpE1404SignalConnect(
-	unsigned 	la,
-	void		(*pSignalCallback)()
+hpE1404Stat hpE1404SignalConnect(
+unsigned 	la,
+void		(*pSignalCallback)(int16_t signal)
 )
 {
+	hpE1404Stat		s;
 	struct hpE1404_config	*pc;
 
-	pc = hpE1404PConfig(la);
-	if(!pc){
-		return ERROR;
+	s = hpE1404PConfig(la, pc);
+	if(s){
+		return s;
 	}
 
 	pc->pSignalCallback = pSignalCallback;
 
-	return OK;
+	return VXI_SUCCESS;
 }
 
 
@@ -325,12 +308,14 @@ void 	hpE1404Int(
 	unsigned 	la
 )
 {
+	hpE1404Stat		s;
 	struct vxi_csr  	*pcsr;
 	unsigned short		signal;
 	struct hpE1404_config	*pc;
 
-	pc = hpE1404PConfig(la);
-	if(!pc){
+	s = hpE1404PConfig(la, pc);
+	if(s){
+		errMessage(s, NULL);
 		return;
 	}
 
@@ -354,7 +339,7 @@ void 	hpE1404Int(
  *	hpE1404RouteTriggerECL
  *
  */
-int	hpE1404RouteTriggerECL(
+hpE1404Stat hpE1404RouteTriggerECL(
 unsigned        la,             /* slot zero device logical address     */
 unsigned        enable_map,     /* bits 0-5  correspond to trig 0-5     */
                                 /* a 1 enables a trigger                */
@@ -382,7 +367,7 @@ unsigned        io_map         /* bits 0-5  correspond to trig 0-5     */
  *
  *
  */
-int	hpE1404RouteTriggerTTL(
+hpE1404Stat hpE1404RouteTriggerTTL(
 unsigned        la,             /* slot zero device logical address     */
 unsigned        enable_map,     /* bits 0-5  correspond to trig 0-5     */
                                 /* a 1 enables a trigger                */

@@ -55,7 +55,7 @@
  *	080493	mgb	Removed V5/V4 and EPICS_V2 conditionals
  */
 
-static char *sccsID = "@(#)drvJgvtr1.c	1.9\t8/27/92";
+static char *sccsID = "$Id$\t$Date$";
 
 /*
  * 	Code Portions
@@ -72,6 +72,11 @@ static char *sccsID = "@(#)drvJgvtr1.c	1.9\t8/27/92";
 /* drvJgvtr1.c -  Driver Support Routines for Jgvtr1 */
 
 #include	<vxWorks.h>
+#include	<types.h>
+#include	<vme.h>
+#include	<iv.h>
+#include 	<sysLib.h>
+#include 	<stdioLib.h>
 
 #include	<dbDefs.h>
 #include	<drvSup.h>
@@ -79,45 +84,46 @@ static char *sccsID = "@(#)drvJgvtr1.c	1.9\t8/27/92";
 #include        <task_params.h>
 #include 	<fast_lock.h>
 #include 	<taskwd.h>
-#include	<types.h>
-#include	<vme.h>
+#include 	<devLib.h>
 
-#include	<iv.h>
+typedef long	jgvtr1Stat;
+#define JGVTR1_SUCCESS	0
 
-
-static long 	jgvtr1_io_report(
+LOCAL jgvtr1Stat jgvtr1_io_report(
 	unsigned	level
 );
 
-static long 	jgvtr1_init(
+LOCAL jgvtr1Stat jgvtr1_init(
 	void
 );
 
-static void 	jgvtr1_int_service(
+#ifdef INTERRUPT_HARDWARE_FIXED
+LOCAL void jgvtr1_int_service(
+	void
+);
+#endif
+
+LOCAL void 	jgvtr1DoneTask(
 	void
 );
 
-static void 	jgvtr1DoneTask(
-	void
-);
-
-static int jgvtr1_dump(
+LOCAL jgvtr1Stat jgvtr1_dump(
 	unsigned	card,
 	unsigned	n
+);
+
+LOCAL jgvtr1Stat jgvtr1_stat(
+	unsigned	card,
+	int 		level
 );
 
 /*
  * should be in a header file
  */
-int jgvtr1_driver(
-	unsigned short	card,
-	unsigned int	*pcbroutine,
-	unsigned int	*parg	/* number of values read */
-);
-
-static int jgvtr1_stat(
-	unsigned	card,
-	short int 	level
+jgvtr1Stat jgvtr1_driver(
+	unsigned 	card,
+	unsigned 	*pcbroutine,
+	unsigned 	*parg	/* number of values read */
 );
 
 struct {
@@ -129,16 +135,14 @@ struct {
 	jgvtr1_io_report,
 	jgvtr1_init};
 
-static char SccsId[] = "@(#)jgvtr1_driver.c	1.4\t11/14/88";
-
-static char	*stdaddr;
-static char	*shortaddr;
+static volatile char	*stdaddr;
+static volatile char	*shortaddr;
 
 
 #define JGVTR1MAXFREQ 		25.0e6
 /* NBBY - the number of bits per byte */
-#define JGVTR1SHORTSIZE		(1<<(NBBY*sizeof(char))) 
-#define JGVTR1STDSIZE		(1<<(NBBY*sizeof(short)))
+#define JGVTR1SHORTSIZE		(1<<(NBBY*sizeof(uint8_t))) 
+#define JGVTR1STDSIZE		(1<<(NBBY*sizeof(uint16_t)))
 #define JGVTR1_INT_LEVEL 5
 #define JGVTR1BASE(CARD)\
 (shortaddr+wf_addrs[JGVTR1]+(CARD)*JGVTR1SHORTSIZE)
@@ -161,13 +165,13 @@ are complemented.
 !! our compiler allocates bit fields starting from the ms bit !! 
 */
 struct jgvtr1_status{
-	unsigned	pad:8;
- 	unsigned	internal_frequency:3;
-  	unsigned	internal_clock:1;
-  	unsigned	cycle_complete:1;
-  	unsigned	interrupt:1;
-  	unsigned	active:1;
-  	unsigned	memory_full:1;
+	volatile unsigned	pad:8;
+ 	volatile unsigned	internal_frequency:3;
+  	volatile unsigned	internal_clock:1;
+  	volatile unsigned	cycle_complete:1;
+  	volatile unsigned	interrupt:1;
+  	volatile unsigned	active:1;
+  	volatile unsigned	memory_full:1;
 };
 
 struct jgvtr1_config{
@@ -176,20 +180,21 @@ struct jgvtr1_config{
 	void		(*psub)();	/* call back routine		*/
 	void		*pprm;		/* call back parameter		*/
 	FAST_LOCK	lock;		/* mutual exclusion		*/
-	unsigned short	*pdata;		/* pointer to the data buffer	*/
+	uint16_t 	*pdata;	/* pointer to the data buffer	*/
 };
 
 /* amount of data to make available from the waveform */
 #define	JRG_MEM_SIZE	2048
 
-static
+LOCAL
 struct jgvtr1_config	*pjgvtr1_config;
-static
+
+LOCAL 
 int			jgvtr1_max_card_count;
 
 #ifdef INTERRUPT_HARDWARE_FIXED
-	static
-	SEM_ID		jgvtr1_interrupt;	/* interrupt event */
+LOCAL	
+SEM_ID		jgvtr1_interrupt;	/* interrupt event */
 #endif
 
 
@@ -200,26 +205,33 @@ int			jgvtr1_max_card_count;
  * intialize the driver for the joerger vtr1
  *
  */
-long jgvtr1_init(
-	void
-)
+jgvtr1Stat jgvtr1_init(void)
 {
-	register unsigned 	card;
-	register unsigned 	card_count = 0;
-	register struct jgvtr1_config	
-				*pconfig;
-	short			readback;
-	int			status;
+	unsigned 		card;
+	unsigned 		card_count = 0;
+	struct jgvtr1_config	*pconfig;
+	uint16_t		readback;
+	jgvtr1Stat		status;
 
 
-        if ((status = sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO,0,&shortaddr)) != OK){ 
-           printf("Addressing error for short address in jgvtr1 driver\n");
-           return ERROR;
+	status = sysBusToLocalAdrs(
+			VME_AM_SUP_SHORT_IO,
+			0,
+			(char **)&shortaddr);
+        if (status != OK){ 
+	   status = S_dev_badA16;
+	   errMessage(status,NULL);
+           return status;
         } 
 
-        if ((status = sysBusToLocalAdrs(VME_AM_STD_SUP_DATA,0,&stdaddr)) != OK){
-           logMsg("Addressing error for standard address in jgvtr1 driver\n");
-           return ERROR;
+	status = sysBusToLocalAdrs(
+			VME_AM_STD_SUP_DATA,
+			0,
+			(char **)&stdaddr);
+        if (status != OK){
+	   status = S_dev_badA24;
+	   errMessage(status,NULL);
+           return status;
         }
 
 	jgvtr1_max_card_count = wf_num_cards[JGVTR1];
@@ -233,9 +245,11 @@ long jgvtr1_init(
 	pjgvtr1_config = 
 		(struct jgvtr1_config *) 
 			calloc(wf_num_cards[JGVTR1], sizeof(*pjgvtr1_config));
-  	if(!pjgvtr1_config)
-    	  	return ERROR;
-         
+  	if(!pjgvtr1_config){
+		status = S_dev_noMemory;
+		errMessage(status,NULL);
+    	  	return status;
+        } 
 
 	for(	card=0, pconfig=pjgvtr1_config; 
 		card < wf_num_cards[JGVTR1]; 
@@ -243,16 +257,16 @@ long jgvtr1_init(
 
 		FASTLOCKINIT(&pconfig->lock);
 
-  		status = vxMemProbe(	JGVTR1BASE(card),
+  		status = vxMemProbe(	(char *)JGVTR1BASE(card),
 					READ,
 					sizeof(readback),
-					&readback);
+					(char *)&readback);
 		if(status==ERROR)
 			continue;
                
 
 		pconfig->pdata = 
-			(unsigned short *)malloc(JRG_MEM_SIZE);
+			(uint16_t *)malloc(JRG_MEM_SIZE);
 		/*
 		not easy to test for correct addressing in
 		standard address space since the module does
@@ -280,10 +294,24 @@ long jgvtr1_init(
 				WFDONE_PRI,
 				WFDONE_OPT,
 				WFDONE_STACK,
-				(FUNCPTR) jgvtr1DoneTask);
-	if(status == ERROR)
-	  	return ERROR;
-	taskwdInsert(status,NULL,NULL);
+				(FUNCPTR) jgvtr1DoneTask,
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL);
+	if(status < 0){
+		status = S_dev_internal;
+		errMessage(status, "vxWorks taskSpawn failed");
+	  	return status;
+	}
+
+	taskwdInsert(status, NULL, NULL);
          
 
 #	ifdef INTERRUPT_HARDWARE_FIXED
@@ -291,11 +319,11 @@ long jgvtr1_init(
 					jgvtr1_int_service, 
 					NULL);
   		if(status != OK)
-    			return ERROR;
+    			return S_dev_internal;
         sysIntEnable(JGVTR_INT_LEVEL); 
 #	endif
 
-    	return OK;	
+    	return JGVTR1_SUCCESS;	
 }
 
 
@@ -306,31 +334,31 @@ long jgvtr1_init(
  * initiate waveform read
  *
  */
-int jgvtr1_driver(
-	unsigned short	card,
-	unsigned int	*pcbroutine,
-	unsigned int	*parg	/* number of values read */
+jgvtr1Stat jgvtr1_driver(
+unsigned 	card,
+unsigned 	*pcbroutine,
+unsigned 	*parg	/* number of values read */
 )
 {
 	if(card >= jgvtr1_max_card_count)
-		return ERROR;
+		return S_dev_badSignalNumber;
         
 	if(!pjgvtr1_config[card].present)
-		return ERROR;
+		return S_dev_noDevice;
        
 	if(pjgvtr1_config[card].psub)
-		return ERROR;
+		return S_dev_badRequest;
 
 	FASTLOCK(&pjgvtr1_config[card].lock);
 
-	*(short *)JGVTR1BASE(card) = JGVTR1ARM;
+	*(volatile uint16_t *)JGVTR1BASE(card) = JGVTR1ARM;
 
 	pjgvtr1_config[card].pprm = parg;
  	pjgvtr1_config[card].psub = (void (*)()) pcbroutine;
  	
 	FASTUNLOCK(&pjgvtr1_config[card].lock);
 
-	return OK;
+	return JGVTR1_SUCCESS;
 } 
 
 
@@ -341,7 +369,7 @@ int jgvtr1_driver(
  *
  */
 #ifdef INTERRUPT_HARDWARE_FIXED
-void jgvtr1_int_service(void)
+LOCAL void jgvtr1_int_service(void)
 {
   	semGive(jgvtr1_interrupt);
 }
@@ -355,16 +383,15 @@ void jgvtr1_int_service(void)
  * and call back to the database with the waveform size and address
  *
  */
-void 	jgvtr1DoneTask(
-	void
-)
+LOCAL void 	jgvtr1DoneTask(void)
 {
-	register unsigned		card;
-	register struct jgvtr1_config	*pconfig;
- 	struct jgvtr1_status 		stat;
-	static char 			started = FALSE;
-	register unsigned short		*pdata,*pjgdata;
-	register long			i;
+	unsigned		card;
+	struct jgvtr1_config	*pconfig;
+ 	struct jgvtr1_status 	stat;
+	static char 		started = FALSE;
+	volatile uint16_t	*pdata;
+	volatile uint16_t	*pjgdata;
+	long			i;
 
 	/* dont allow two of this task */
 	if(started)
@@ -379,6 +406,7 @@ void 	jgvtr1DoneTask(
 			/* ges: changed from 20 ticks to 2 ticks 2/4/91 */
 			taskDelay(2);
 #		endif
+
 		for(	card=0, pconfig = pjgvtr1_config;
 			card < jgvtr1_max_card_count;
 			card++, pconfig++){
@@ -412,15 +440,20 @@ void 	jgvtr1DoneTask(
 				until it has data
 			*/
 			if(!pconfig->std_ok){
-				short 	readback;	
-				int	status;
+				uint16_t	readback;	
+				int		status;
 
-  				status = vxMemProbe(	JGVTR1DATA(card),
-							READ,
-							sizeof(readback),
-							&readback);
+  				status = vxMemProbe(	
+						(char *)JGVTR1DATA(card),
+						READ,
+						sizeof(readback),
+						(char *)&readback);
 				if(status==ERROR){
-					logMsg(	"jgvtr1 card %d incorrectly addressed- use std addr %x\n",
+					errPrintf(
+						S_dev_badA24,
+						__FILE__,
+						__LINE__,
+		"jgvtr1 card %d incorrectly addressed- use std addr 0X%X",
 						card,
 						JGVTR1DATA(card));
 					pconfig->present = FALSE;
@@ -436,16 +469,18 @@ void 	jgvtr1DoneTask(
 			  for memory full is used for now )
 */
 			if(!stat.memory_full){
-				logMsg("jgvtr1 driver: proceeding with partial mem\n");
-				logMsg("jgvtr1 driver: beware of bus errors\n");
+				errMessage(S_dev_internal,
+		"jgvtr1 driver: proceeding with partial mem");
+				errMessage(S_dev_internal,
+		"jgvtr1 driver: beware of bus errors");
 			}
 
 			/* copy the data into a local memory buffer */
 			/* this is to avoid any bus errors          */
 			for(i = 0, 
 			  pdata = pconfig->pdata, 
-			  pjgdata = (unsigned short *)JGVTR1DATA(card);
-			  i < JRG_MEM_SIZE/sizeof(unsigned short); 
+			  pjgdata = (volatile uint16_t *)JGVTR1DATA(card);
+			  i < JRG_MEM_SIZE/sizeof(uint16_t); 
 			  i++, pdata++, pjgdata++){
 				*pdata = *pjgdata;
 			}
@@ -471,17 +506,15 @@ void 	jgvtr1DoneTask(
  *
  *
  */
-long jgvtr1_io_report(
-	unsigned	level
-)
+LOCAL jgvtr1Stat jgvtr1_io_report(unsigned level)
 {
 	unsigned 	card;
 	unsigned	nelements;
-	int		status;
+	jgvtr1Stat	status;
 	
 	for(card=0; card < wf_num_cards[JGVTR1]; card++){
 		status = jgvtr1_stat(card,level);
-		if(status<0){
+		if(status){
 			continue;
 		}
 		if (level >= 2){
@@ -492,7 +525,7 @@ long jgvtr1_io_report(
 			}
 		}
 	}
-	return OK;
+	return JGVTR1_SUCCESS;
 }
 
 
@@ -505,13 +538,13 @@ long jgvtr1_io_report(
  *	
  *
  */
-int jgvtr1_stat(
+jgvtr1Stat jgvtr1_stat(
 unsigned	card,
-short int 	level
+int 		level
 )
 {
- 	struct jgvtr1_status 		stat;
-	int				status;
+ 	struct jgvtr1_status 	stat;
+	jgvtr1Stat		status;
 
 	/* 
 	internal freq status is bit reversed so I
@@ -539,10 +572,10 @@ short int 	level
 	static char  		*memory_status[] = 
 		{"",			"mem-full"};
 
-  	status = vxMemProbe(	JGVTR1BASE(card),
+  	status = vxMemProbe(	(char *)JGVTR1BASE(card),
 				READ,
 				sizeof(stat),
-				&stat);
+				(char *)&stat);
   	if(status != OK)
     	  return ERROR;
         if (level == 0)
@@ -557,7 +590,7 @@ short int 	level
 			activity_status[ stat.active ],
 			memory_status[ stat.memory_full ]);
 
-	return OK;
+	return JGVTR1_SUCCESS;
 }
 
 
@@ -565,36 +598,35 @@ short int 	level
  * jgvtr1_dump
  *
  */
-LOCAL
-int jgvtr1_dump(
-	unsigned	card,
-	unsigned	n
+LOCAL jgvtr1Stat jgvtr1_dump(
+unsigned	card,
+unsigned	n
 )
 {
-	register unsigned short		*pjgdata;
-        unsigned short                  *pread;
-        unsigned short                  *pdata;
-	unsigned			nread;
-      	int				status;
+	volatile uint16_t	*pjgdata;
+        uint16_t		*pread;
+        uint16_t		*pdata;
+	unsigned		nread;
+      	jgvtr1Stat		status;
  
         /* Print out the data if user requests it. */
 
 	n = min(JRG_MEM_SIZE,n);
 	
-	pdata = (unsigned short *)malloc(n * (sizeof(*pdata)));
+	pdata = (uint16_t *)malloc(n * (sizeof(*pdata)));
 	if(!pdata){
-		return ERROR;
+		return S_dev_noMemory;
 	}
 	
 	pread = pdata;
 	nread = 0;
-	pjgdata = (unsigned short *)JGVTR1DATA(card);
+	pjgdata = (volatile uint16_t *)JGVTR1DATA(card);
 	while(nread <= (n>>1)){
 		status = vxMemProbe(
-				pjgdata,
+				(char *)pjgdata,
 				READ,
 				sizeof(*pread),
-				pread);
+				(char *)pread);
 		if(status<0){
 			break;
 		}
@@ -616,5 +648,5 @@ int jgvtr1_dump(
 
 	free(pdata);        
 
-	return OK;
+	return JGVTR1_SUCCESS;
 }

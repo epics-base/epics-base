@@ -44,6 +44,11 @@ static char *sccsId = "$Id$\t$Date$";
 #include <vxWorks.h>
 #include <iv.h>
 #include <types.h>
+#include <intLib.h>
+#include <sysLib.h>
+#include <stdioLib.h>
+#include <vxLib.h>
+
 #include <module_types.h>
 #include <task_params.h>
 #include <fast_lock.h>
@@ -51,50 +56,70 @@ static char *sccsId = "$Id$\t$Date$";
 #include <dbDefs.h>
 #include <drvSup.h>
 #include <dbScan.h>
-
-static long init();
+#include <devLib.h>
 
-struct {
-        long    number;
-        DRVSUPFUN       report;
-        DRVSUPFUN       init;
-} drvHpe1368a={
-        2,
-        NULL,	/*VXI io report takes care of this */
-        init};
-
-
-static long init()
-{
-	hpe1368a_init();
-	return(0);
-}
 
 #define VXI_MODEL_HPE1368A 	(0xf28)
 
-#define HPE1368A_PCONFIG(LA) \
-epvxiPConfig((LA), hpe1368aDriverId, struct hpe1368a_config *)
+#define HPE1368A_PCONFIG(LA, PC) \
+epvxiFetchPConfig((LA), hpe1368aDriverId, (PC))
 
 #define ChannelEnable(PCSR) ((PCSR)->dir.w.dd.reg.ddx08)
 #define ModuleStatus(PCSR) ((PCSR)->dir.r.status)
 
 #define ALL_SWITCHES_OPEN	0
 
+typedef long	hpe1368aStat;
+
 struct hpe1368a_config{
 	FAST_LOCK	lock;		/* mutual exclusion */
 	unsigned short	pending;	/* switch position pending int */
 	unsigned short	shadow;		/* shadow of actual switch pos */
 	int		busy;		/* relays active */
-        IOSCANPVT ioscanpvt;
+        IOSCANPVT 	ioscanpvt;
 };
 
 #define HPE1368A_INT_LEVEL	1	
 
-static int hpe1368aDriverId;
+LOCAL int hpe1368aDriverId;
 
-static void hpe1368a_int_service();
-static void hpe1368a_init_card();
-static void hpe1368a_stat();
+/*
+ * external
+ */
+hpe1368aStat hpe1368a_init(void);
+
+hpe1368aStat hpe1368a_getioscanpvt(
+unsigned 	la,
+IOSCANPVT 	*scanpvt 
+);
+
+hpe1368aStat hpe1368a_bo_driver(
+unsigned 	la,
+unsigned 	val,
+unsigned 	mask 
+);
+
+hpe1368aStat hpe1368a_bi_driver(
+unsigned 	la,
+unsigned 	mask,
+unsigned 	*pval 
+);
+
+/*
+ * internal
+ */
+LOCAL void hpe1368a_int_service(unsigned la);
+LOCAL void hpe1368a_init_card(unsigned la);
+LOCAL void hpe1368a_stat(unsigned la, int level);
+
+struct {
+        long   	 	number;
+        DRVSUPFUN       report;
+        DRVSUPFUN       init;
+} drvHpe1368a={
+        2,
+        NULL,	/*VXI io report takes care of this */
+	hpe1368a_init};
 
 
 /*
@@ -103,15 +128,15 @@ static void hpe1368a_stat();
  * initialize all hpe1368a cards
  *
  */
-hpe1368a_init()
+hpe1368aStat hpe1368a_init(void)
 {
-        int     r0;
+        hpe1368aStat	r0;
 
         /*
          * do nothing on crates without VXI
          */
         if(!epvxiResourceMangerOK){
-                return OK;
+                return VXI_SUCCESS;
         }
 
         hpe1368aDriverId = epvxiUniqueDriverID();
@@ -123,12 +148,13 @@ hpe1368a_init()
                 dsp.make = VXI_MAKE_HP;
                 dsp.model = VXI_MODEL_HPE1368A;
                 r0 = epvxiLookupLA(&dsp, hpe1368a_init_card, (void *)NULL);
-                if(r0<0){
-                        return ERROR;
+                if(r0){
+			errMessage(r0, NULL);
+                        return r0;
                 }
         }
 
-        return OK;
+        return VXI_SUCCESS;
 }
 
 
@@ -139,11 +165,9 @@ hpe1368a_init()
  * initialize single at5vxi card
  *
  */
-LOCAL void
-hpe1368a_init_card(la)
-unsigned la;
+LOCAL void hpe1368a_init_card(unsigned la)
 {
-        int                     r0;
+        hpe1368aStat		r0;
         struct hpe1368a_config	*pc;
 	struct vxi_csr		*pcsr;
 	int			model;
@@ -153,13 +177,14 @@ unsigned la;
                 hpe1368aDriverId,
                 (unsigned long) sizeof(*pc),
                 hpe1368a_stat);
-        if(r0<0){
-                logMsg("hpe1368a: device open failed %d\n", la);
+        if(r0){
+		errMessage(r0,NULL);
                 return;
         }
 
-        pc = HPE1368A_PCONFIG(la);
-        if(pc == NULL){
+        r0 = HPE1368A_PCONFIG(la, pc);
+        if(r0){
+		errMessage(r0, NULL);
                 return;
         }
 
@@ -179,9 +204,11 @@ unsigned la;
         r0 = intConnect(
 		INUM_TO_IVEC(la),
 		hpe1368a_int_service,
-		(void *) la);
-	if(r0 == ERROR)
+		la);
+	if(r0 == ERROR){
+		errMessage(S_dev_vxWorksVecInstlFail, NULL);
 		return;
+	}
 
 	sysIntEnable(HPE1368A_INT_LEVEL);
 
@@ -190,14 +217,12 @@ unsigned la;
                         VXIMAKE(pcsr),
                         model,
                         "E 1368A Microwave Switch\n");
-        if(r0<0){
-        	logMsg("%s: failed to register model at init: %x\n",
-                       __FILE__,
-                       model);
+	if(r0){
+		errMessage(r0, NULL);
         }
 	r0 = epvxiRegisterMakeName(VXIMAKE(pcsr), "Hewlett-Packard");
-	if(r0<0){
-		logMsg( "%s: failed to register make\n", __FILE__);
+	if(r0){
+		errMessage(r0,NULL);
 	}
 }
 
@@ -212,13 +237,13 @@ unsigned la;
  *
  */
 LOCAL void
-hpe1368a_int_service(la)
-unsigned	la;
+hpe1368a_int_service(unsigned la)
 {
+	hpe1368aStat		s;
         struct hpe1368a_config	*pc;
 
-        pc = HPE1368A_PCONFIG(la);
-        if(pc == NULL){
+	s = HPE1368A_PCONFIG(la,pc);
+        if(s){
                 return;
         }
 
@@ -242,16 +267,18 @@ unsigned	la;
  * initialize single at5vxi card
  *
  */
-LOCAL void
-hpe1368a_stat(la,level)
-unsigned 	la;
-int		level;
+LOCAL void hpe1368a_stat(
+unsigned 	la,
+int		level
+)
 {
+	hpe1368aStat		s;
         struct hpe1368a_config	*pc;
 	struct vxi_csr		*pcsr;
 
-        pc = HPE1368A_PCONFIG(la);
-        if(pc == NULL){
+        s = HPE1368A_PCONFIG(la, pc);
+        if(s){
+		errMessage(s,NULL);
                 return;
         }
 	pcsr = VXIBASE(la);
@@ -265,44 +292,49 @@ int		level;
 	}
 }
 
-
-
-
-hpe1368a_getioscanpvt(la,scanpvt)
-unsigned short la;
-IOSCANPVT *scanpvt;
+
+/*
+ * hpe1368a_getioscanpvt()
+ */
+hpe1368aStat hpe1368a_getioscanpvt(
+unsigned 	la,
+IOSCANPVT 	*scanpvt 
+)
 {
+	hpe1368aStat		s;
         struct hpe1368a_config	*pc;
 
-        pc = HPE1368A_PCONFIG(la);
-        if(pc != NULL) *scanpvt = pc->ioscanpvt;
-	return(0);
+        s = HPE1368A_PCONFIG(la, pc);
+        if(s){
+		errMessage(s, NULL);
+		return s;
+	}
+	*scanpvt = pc->ioscanpvt;
+	return VXI_SUCCESS;
 }
 
 
 /*
- *
  * HPE1368A_BO_DRIVER
- *
- *
- *
  */
-int
-hpe1368a_bo_driver(la,val,mask)
-register unsigned short la;
-register unsigned int   val;
-unsigned int            mask;
+hpe1368aStat hpe1368a_bo_driver(
+unsigned 	la,
+unsigned 	val,
+unsigned 	mask 
+)
 {
+	hpe1368aStat		s;
         struct hpe1368a_config	*pc;
         struct vxi_csr		*pcsr;
 	unsigned int		work;	
 	
-        pc = HPE1368A_PCONFIG(la);
-        if(pc == NULL){
-                return ERROR;
-        }
-
-        pcsr = VXIBASE(la);
+        s = HPE1368A_PCONFIG(la, pc);
+	if(s){
+		errMessage(s, NULL);
+		return s;
+	}
+        
+	pcsr = VXIBASE(la);
 
 	FASTLOCK(&pc->lock);
 
@@ -317,7 +349,7 @@ unsigned int            mask;
 
 	FASTUNLOCK(&pc->lock);
 
-	return OK;
+	return VXI_SUCCESS;
 }
 
 
@@ -329,16 +361,19 @@ unsigned int            mask;
  *
  *
  */
-hpe1368a_bi_driver(la,mask,pval)
-register unsigned short la;
-unsigned int            mask;
-register unsigned int   *pval;
+hpe1368aStat hpe1368a_bi_driver(
+unsigned 	la,
+unsigned 	mask,
+unsigned 	*pval 
+)
 {
+	hpe1368aStat		s;
         struct hpe1368a_config	*pc;
 	
-        pc = HPE1368A_PCONFIG(la);
-        if(pc == NULL){
-                return ERROR;
+        s = HPE1368A_PCONFIG(la, pc);
+        if(s){
+		errMessage(s, NULL);
+                return s;
         }
 
 	FASTLOCK(&pc->lock);
@@ -347,5 +382,5 @@ register unsigned int   *pval;
 
 	FASTUNLOCK(&pc->lock);
 
-	return OK;
+	return VXI_SUCCESS;
 }

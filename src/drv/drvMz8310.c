@@ -1,8 +1,8 @@
 
 /* drvMz8310.c */
-/* share/src/drv @(#)drvMz8310.c	1.9     8/27/92 */
+/* share/src/drv$Id$*/
 /* 
- * Routines specific to the MZ8310 Low level routines for the AMD STC in
+ * Routines specific to the MZ8310. Low level routines for the AMD STC in
  * stc_driver.c
  *	Author:	Jeff Hill
  *	Date:	Feb 1989
@@ -48,33 +48,29 @@
  *  bg	06-26-92	Added level to mz8310_io_report.
  * joh  08-05-92	callable interface now conforms with epics standard
  * mgb  08-04-93	Removed V5/V4 and EPICS_V2 conditionals
+ * joh	08-24-93	Include drvStc.h and ANSI C upgrade
  */
 
 /* drvMz8310.c -  Driver Support Routines for Mz8310 */
 #include	<vxWorks.h>
 #include	<stdioLib.h>
+#include	<sysLib.h>
+#include	<stdlib.h>
+#include	<intLib.h>
+#include	<rebootLib.h>
+#include	<vxLib.h>
 #include 	<vme.h>
+#include	<iv.h>
 
 #include	<dbDefs.h>
 #include	<drvSup.h>
 #include	<module_types.h>
 #include 	<fast_lock.h>
+#include 	<devLib.h>
+#include 	<drvStc.h>
 
-#include	<iv.h>
-
-
-/* If any of the following does not exist replace it with #define <> NULL */
-static long mz8310_io_report();
-static long mz8310_init();
-
-struct {
-	long	number;
-	DRVSUPFUN	report;
-	DRVSUPFUN	init;
-} drvMz8310={
-	2,
-	mz8310_io_report,
-	mz8310_init};
+typedef long mz8310Stat;
+#define	MZ8310_SUCCESS	0
 
 #define MZ8310CHIPSIZE		0x20
 #define MZ8310SIZE		0x00000100
@@ -96,12 +92,12 @@ struct {
 				(CHIP_REVERSE(CHIP)*MZ8310CHIPSIZE))
 
 #define MZ8310_CMD_ADDR(CARD,CHIP)\
-((unsigned char *)  CHIP_ADDR(CARD,CHIP) + MZ8310CMD)
+((volatile unsigned char *)  CHIP_ADDR(CARD,CHIP) + MZ8310CMD)
 #define MZ8310_DATA_ADDR(CARD,CHIP)\
-((unsigned short *) CHIP_ADDR(CARD,CHIP) + MZ8310DATA)
+((volatile unsigned short *) CHIP_ADDR(CARD,CHIP) + MZ8310DATA)
 #if  0
 #define MZ8310VECBASE(CARD,CHIP)\
-((unsigned char *)  CHIP_ADDR(CARD,CHIP) + 0x41)
+((volatile unsigned char *)  CHIP_ADDR(CARD,CHIP) + 0x41)
 #endif
 
 #define MZ8310VECSIZE		(0x20)
@@ -129,15 +125,15 @@ struct	mz8310_conf{
 };
 
 struct mz8310_strap_info{
-  unsigned char		irq;		/* the level at which the chan gen ints */
-  unsigned char		vec_num;	/* really a vec offset-see MZ8310INTVEC */
-  unsigned char		vec_addr;	/* offset from card base address */
+  unsigned char		irq;	 /* the level at which the chan gen ints */
+  unsigned char		vec_num; /* really a vec offset-see MZ8310INTVEC */
+  unsigned char		vec_addr;/* offset from card base address */
 };
 
-static char 			*shortaddr;
+static volatile char 		*shortaddr;
 
-static struct mz8310_conf 	*mzconf;
-static unsigned int 		mz8310_card_count;
+LOCAL struct mz8310_conf 	*mzconf;
+LOCAL unsigned int 		mz8310_card_count;
 
 /* 
   only 4 unique interrupts per card but any channel can potentially 
@@ -155,7 +151,7 @@ static unsigned int 		mz8310_card_count;
 	IRQD		0xa1
 */
 
-static struct mz8310_strap_info mz8310_strap[MZ8310CHANCNT] =
+LOCAL struct mz8310_strap_info mz8310_strap[MZ8310CHANCNT] =
 { 
   {	NULL,	NULL,	NULL	}, 	/* channel 0  */
   {	NULL,	NULL,	NULL	}, 	/* channel 1  */
@@ -170,35 +166,90 @@ static struct mz8310_strap_info mz8310_strap[MZ8310CHANCNT] =
 };
 
 /* forward reference. */
+LOCAL int		mz8310_reset(void);
+LOCAL mz8310Stat	mz8310_io_report_card(unsigned card, int level);
+LOCAL mz8310Stat	mz8310_init_card(unsigned card);
+LOCAL mz8310Stat 	mz8310_setup_int(unsigned card, unsigned channel);
+LOCAL mz8310Stat	mz8310_io_report(int level);
+LOCAL mz8310Stat	mz8310_init(void);
+LOCAL mz8310Stat 	mz8310_read_test(int card, int channel);
+LOCAL void 		mz8310_int_service(struct mz8310_int_conf *icf);
 
-static void mz8310_reset();
-static int mz8310_io_report_card(int card, int level);
+/* externals */
+mz8310Stat mz8310_one_shot_read(
+int			*preset,	/* TRUE or COMPLEMENT logic */
+double			*edge0_delay,	/* sec */
+double			*edge1_delay,	/* sec */
+int			card,		/* 0 through ... */
+int			channel,	/* 0 through channels on a card */
+int			*int_source 	/* (FALSE)External/(TRUE)Internal src */
+);
 
+mz8310Stat mz8310_one_shot(	
+int	preset,		/* TRUE or COMPLEMENT logic */
+double	edge0_delay,	/* sec */
+double	edge1_delay,	/* set */
+int	card,		/* 0 through ... */
+int	channel,	/* 0 through channels on a card */
+int	int_source, 	/* (FALSE)External/ (TRUE)Internal source */
+void	*event_rtn,	/* subroutine to run on events */
+int	event_rtn_param /* parameter to pass to above routine */
+);
 
-long mz8310_io_report(level)
-int 	level;
+int	mz8310_cmd(
+unsigned 	value,
+unsigned 	card,
+unsigned 	chip
+);
+
+int mz8310_rdata(int card, int chip);
+
+int mz8310_wdata(
+unsigned 	value,
+int		card,
+int		chip
+);
+
+struct {
+	long	number;
+	DRVSUPFUN	report;
+	DRVSUPFUN	init;
+} drvMz8310={
+	2,
+	mz8310_io_report,
+	mz8310_init};
+
+
+/*
+ * mz8310_io_report()
+ */
+LOCAL mz8310Stat mz8310_io_report(int level)
 {
 	unsigned	card;
 
     	for(card=0; card<tm_num_cards[MZ8310]; card++) 
 		mz8310_io_report_card(card,level);
 
-	return OK;
+	return MZ8310_SUCCESS;
 }
 
 
 
-LOCAL
-int mz8310_io_report_card(int card, int level)
+
+/*
+ * mz8310_io_report_card()
+ */
+LOCAL mz8310Stat mz8310_io_report_card(unsigned card, int level)
 {
-  unsigned int channel, chip;
-  int status;
+  unsigned 	channel;
+  unsigned	chip;
+  mz8310Stat	status;
 
   for(chip=0; chip<MZ8310CHIPCOUNT; chip++){
       status = stc_io_report(
 			MZ8310_CMD_ADDR(card,chip), 
 			MZ8310_DATA_ADDR(card,chip));
-      if(status==ERROR){
+      if(status){
         return status;
       }
   }
@@ -209,31 +260,40 @@ int mz8310_io_report_card(int card, int level)
   if (mzconf && card<mz8310_card_count && level){
       for(channel=0;channel<MZ8310CHANCNT;channel++){
          status =  mz8310_read_test(card, channel);
-         if(status==ERROR){
-         return status;
-       }
+         if(status){
+         	return status;
+         }
 
       }
    }
-  return OK;
+  return MZ8310_SUCCESS;
 }
 
 
-long mz8310_init()
+
+/*
+ * mz8310_init()
+ */
+LOCAL mz8310Stat	mz8310_init(void)
 {
-  register unsigned int 	card;
-  register int 			status;
+  unsigned 			card;
+  mz8310Stat			status;
   struct mz8310_conf 		*temp_mzconf;
-  register unsigned int 	card_count = tm_num_cards[MZ8310];
+  unsigned 			card_count = tm_num_cards[MZ8310];
 
-  if ((status = sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO,0,&shortaddr)) != OK){ 
-  	printf("Addressing error for short address in mz8310 driver\n");
-        return ERROR;
+  status = sysBusToLocalAdrs(
+		VME_AM_SUP_SHORT_IO,
+		0,
+		(char **)&shortaddr);
+  if (status != OK){ 
+	status = S_dev_badA16;
+	errMessage(status, "A16 Address map error mz8310 driver");
+        return status;
   } 
   
   temp_mzconf = (struct mz8310_conf *) malloc(sizeof(*mzconf)*card_count);
   if(!temp_mzconf)
-    return ERROR;
+    return S_dev_noMemory;
 
   for(card=0; card<card_count; card++){
     FASTLOCKINIT(&temp_mzconf[card].lock);
@@ -241,18 +301,19 @@ long mz8310_init()
 
   if(mzconf){
     for(card=0; card<card_count; card++){
-      if(FASTLOCKFREE(&mzconf[card].lock)<0)
-        logMsg("mz8310_init: error freeing sem\n");
+      if(FASTLOCKFREE(&mzconf[card].lock)<0){
+	status = S_dev_internal;
+        errMessage(status, "error freeing sem");
+      }
     }
-    if(free(mzconf)<0)
-      logMsg("mz8310_init: error freeing device memory\n");
+    free(mzconf);
   }
 
   mzconf = temp_mzconf;
 
   for(card=0; card<card_count; card++){
     status = mz8310_init_card(card);
-    if(status<0){
+    if(status){
       break;
     }
   }
@@ -261,37 +322,42 @@ long mz8310_init()
   
   rebootHookAdd(mz8310_reset); 
 
-  return OK;
+  return MZ8310_SUCCESS;
 }
 
 
+
 /*
-Locking for this provided by mz8310_init()
-*/
-mz8310_init_card(card)
-register int 	card;		/* 0 through ... 	*/
+ *
+ * mz8310_init_card()
+ *
+ * Locking for this provided by mz8310_init()
+ */
+LOCAL mz8310Stat mz8310_init_card(unsigned card)
 {
-  register int 	chip;
-  register int	error;
-  register int	chan;
+  unsigned	chip;
+  unsigned	chan;
+  mz8310Stat	error;
   /*
-  binary division
-  data ptr seq enbl
-  16 bit bus
-  FOUT on 
-  FOUT divide by one
-  FOUT source (F1)
-  Time of day disabled
-  */
-  register unsigned short master_mode = 0x2100;
+   * binary division
+   * data ptr seq enbl
+   * 16 bit bus
+   * FOUT on 
+   * FOUT divide by one
+   * FOUT source (F1)
+   * Time of day disabled
+   */
+  unsigned short master_mode = 0x2100;
 
   for(chip=0; chip< MZ8310CHIPCOUNT; chip++){
     error = stc_init(
 		MZ8310_CMD_ADDR(card,chip), 
 		MZ8310_DATA_ADDR(card,chip), 
 		master_mode);
-    if(error!=OK)
-      return ERROR;
+    if(error){
+      errMessage(error, NULL);
+      return error;
+    }
   }
 
   for(chan=0; chan<MZ8310CHANCNT; chan++)
@@ -299,82 +365,82 @@ register int 	card;		/* 0 through ... 	*/
 
   mzconf[card].init = TRUE;
 
-  return OK;
+  return MZ8310_SUCCESS;
 }
 
 
+
 /*
-  Use probe for init safe writes
-  (locked by calling routines)
-*/
-mz8310_setup_int(card, channel)
-register unsigned int card;
-register unsigned int channel;
+ * mz8310_setup_int()
+ *
+ * (locked by calling routines)
+ */
+LOCAL mz8310Stat mz8310_setup_int(unsigned card, unsigned channel)
 {
   unsigned char	vector;
-  register int	status;
-  register int 	chip = channel/MZ8310CHANONCHIP;
-  void		mz8310_int_service();
+  mz8310Stat	status;
 
   mzconf[card].icf[channel].user_service = NULL;
   mzconf[card].icf[channel].user_param = NULL;
   mzconf[card].icf[channel].cnt = 0;
 
   /*
-  Is this channel strapped for interrupts
-  */
+   * Is this channel strapped for interrupts
+   */
   if(!MZ8310_INTERUPTABLE(channel))
-    return OK;
+    return MZ8310_SUCCESS;
 
   vector = MZ8310INTVEC(card,channel);
-  if(vxMemProbe(	MZ8310BASE(card) + mz8310_strap[channel].vec_addr,
-			WRITE,
-			sizeof(char),
-			&vector) != OK){
-    logMsg("mz8310_driver: int not setup for card %d chan %d\n",card,channel);
-    return ERROR;
+  status = vxMemProbe(        
+		(char *)MZ8310BASE(card) + mz8310_strap[channel].vec_addr,
+		WRITE,
+		sizeof(vector),
+		&vector);
+  if(status != OK){
+    	status = S_dev_noDevice;
+    	errMessage(status, NULL);
+    	return S_dev_noDevice;
   }
 
   status = intConnect(	INUM_TO_IVEC(vector), 
 			mz8310_int_service, 
-			&mzconf[card].icf[channel]);
+			(int)&mzconf[card].icf[channel]);
   if(status != OK)
-    return ERROR;
+    return S_dev_vxWorksVecInstlFail;
 
   sysIntEnable(mz8310_strap[channel].irq);
 
-  return OK;
-
+  return MZ8310_SUCCESS;
 }
 
 
-mz8310_one_shot_read(	preset,
-			edge0_delay,
-			edge1_delay, 
-			card, 
-			channel,
-			int_source)
-int			*preset;	/* TRUE or COMPLEMENT logic */
-double			*edge0_delay;	/* sec */
-double			*edge1_delay;	/* sec */
-int			card;		/* 0 through ... */
-int			channel;	/* 0 through channels on a card */
-int			*int_source; 	/* (FALSE)External/(TRUE)Internal src */
+
+/*
+ * mz8310_one_shot_read()
+ */
+mz8310Stat mz8310_one_shot_read(
+int			*preset,	/* TRUE or COMPLEMENT logic */
+double			*edge0_delay,	/* sec */
+double			*edge1_delay,	/* sec */
+int			card,		/* 0 through ... */
+int			channel,	/* 0 through channels on a card */
+int			*int_source 	/* (FALSE)External/(TRUE)Internal src */
+)
 {	
   int 			chip = channel/MZ8310CHANONCHIP;
   double 		ticks;
   unsigned short	iedge0;
   unsigned short	iedge1;
-  unsigned int 		status;
+  mz8310Stat		status;
 
   if(channel >= MZ8310CHANONCHIP * MZ8310CHIPCOUNT)
-    return ERROR;
+    return S_dev_badSignalNumber;
 
   if(card>=mz8310_card_count)
-    return ERROR;
+    return S_dev_badA16;
 
   if(!mzconf)
-    return ERROR;
+    return S_dev_noDevice;
 
   FASTLOCK(&mzconf[card].lock);
 
@@ -387,7 +453,7 @@ int			*int_source; 	/* (FALSE)External/(TRUE)Internal src */
 			MZ8310_DATA_ADDR(card,chip), 
 			channel % MZ8310CHANONCHIP,
 			int_source);
-  if(status==OK){
+  if(status==STC_SUCCESS){
     ticks = *int_source ? INT_TICKS : EXT_TICKS;
     *edge0_delay = iedge0 / ticks;
     *edge1_delay = iedge1 / ticks;
@@ -398,15 +464,17 @@ int			*int_source; 	/* (FALSE)External/(TRUE)Internal src */
   return status;
 }
 
-mz8310_read_test(card,channel)
-int card;
-int channel;
+
+/*
+ * mz8310_read_test()
+ */
+LOCAL mz8310Stat mz8310_read_test(int card, int channel)
 {
   int 		preset;
   double 	edge0_delay;
   double 	edge1_delay;
   int 		int_source;
-  int 		status;
+  mz8310Stat	status;
   static char	*pclktype[] = {"external-clk", "internal-clk"};
   static char	*ppresettype[] = {"preset-FALSE", "preset-TRUE "};
 
@@ -418,8 +486,8 @@ int channel;
 			card, 
 			channel,
 			&int_source);
-  if(status == OK){
-    printf(	"\tChannel %d %s delay=%lf width=%lf %s\n",
+  if(status==MZ8310_SUCCESS){
+    printf(	"\tChannel %d %s delay=%f width=%f %s\n",
 		channel,
 		ppresettype[preset&1],
 		edge0_delay,
@@ -434,47 +502,43 @@ int channel;
   return status;
 }
 
-
-mz8310_one_shot(	preset,
-			edge0_delay,
-			edge1_delay, 
-			card, 
-			channel,
-			int_source,
-			event_rtn,
-			event_rtn_param)
-int	preset;		/* TRUE or COMPLEMENT logic */
-double	edge0_delay;	/* sec */
-double	edge1_delay;	/* set */
-int	card;		/* 0 through ... */
-int	channel;	/* 0 through channels on a card */
-int	int_source; 	/* (FALSE)External/ (TRUE)Internal source */
-void	*event_rtn;	/* subroutine to run on events */
-int	event_rtn_param;/* parameter to pass to above routine */
+
+/*
+ * mz8310_one_shot()
+ */
+mz8310Stat mz8310_one_shot(	
+int	preset,		/* TRUE or COMPLEMENT logic */
+double	edge0_delay,	/* sec */
+double	edge1_delay,	/* set */
+int	card,		/* 0 through ... */
+int	channel,	/* 0 through channels on a card */
+int	int_source, 	/* (FALSE)External/ (TRUE)Internal source */
+void	*event_rtn,	/* subroutine to run on events */
+int	event_rtn_param /* parameter to pass to above routine */
+)
 {
-  int chip = channel/MZ8310CHANONCHIP;
-  double ticks = int_source?INT_TICKS:EXT_TICKS;
-  void	*old_handler();
-  int status;
+  int 		chip = channel/MZ8310CHANONCHIP;
+  double 	ticks = int_source?INT_TICKS:EXT_TICKS;
+  mz8310Stat	status;
 
   if(channel >= MZ8310CHANONCHIP * MZ8310CHIPCOUNT)
-    return ERROR;
+    return S_dev_badSignalNumber;
 
   if(card>=mz8310_card_count)
-    return ERROR;
+    return S_dev_badA16;
 
   if(!mzconf)
-    return ERROR;
+    return S_dev_noDevice;
 
   /* dont overflow unsigned short in STC */
   if(edge0_delay >= 0xffff/ticks)
-    return ERROR;
+    return S_dev_highValue;
   if(edge1_delay >= 0xffff/ticks)
-    return ERROR;
+    return S_dev_highValue;
   if(edge0_delay < 0.0)
-    return ERROR;
+    return S_dev_lowValue;
   if(edge1_delay < 0.0)
-    return ERROR;
+    return S_dev_lowValue;
 
   FASTLOCK(&mzconf[card].lock);
 
@@ -501,50 +565,63 @@ int	event_rtn_param;/* parameter to pass to above routine */
 }
 
 
-void mz8310_int_service(icf)
-register struct mz8310_int_conf *icf;
+
+/*
+ * mz8310_int_service()
+ */
+LOCAL void mz8310_int_service(struct mz8310_int_conf *icf)
 {
   icf->cnt++;
 
   if(icf->user_service)
     (*icf->user_service)(icf->user_param);
 
-/*  logMsg("MZINT: level %d cnt %d\n",icf->irq,icf->cnt); */
-
   return;
 }
 
 /*
-	The following are provided for mz8310 access from the shell
-*/
+ *	The following are provided for mz8310 access from the shell
+ */
 
-unsigned char	mz8310_cmd(value, card, chip)
-unsigned char	value;
-int		card;
-int		chip;
+
+/*
+ * mz8310_cmd()
+ */
+int	mz8310_cmd(
+unsigned 	value,
+unsigned 	card,
+unsigned 	chip
+)
 {
-  register unsigned char *cmd = MZ8310_CMD_ADDR(card,chip);
+  volatile unsigned char *cmd = MZ8310_CMD_ADDR(card,chip);
   
   *cmd = value;
 
   return *cmd;
 }
 
-unsigned short	mz8310_rdata(card, chip)
-int		card;
-int		chip;
+
+/*
+ * mz8310_rdata()
+ */
+int mz8310_rdata(int card, int chip)
 {
-  register unsigned short *data = MZ8310_DATA_ADDR(card,chip);
+  volatile unsigned short *data = MZ8310_DATA_ADDR(card,chip);
 
   return *data;
 }
 
-unsigned short	mz8310_wdata(value, card, chip)
-unsigned short	value;
-int		card;
-int		chip;
+
+/*
+ * mz8310_wdata()
+ */
+int mz8310_wdata(
+unsigned 	value,
+int		card,
+int		chip
+)
 {
-  register unsigned short *data = MZ8310_DATA_ADDR(card,chip);
+  volatile unsigned short *data = MZ8310_DATA_ADDR(card,chip);
 
   *data = value;
 
@@ -553,11 +630,15 @@ int		chip;
 }
 
 
-void mz8310_reset()
+
+/*
+ * mz8310_reset
+ */
+LOCAL int mz8310_reset(void)
 {
-    short card,channel,chip;
+    	short card,channel,chip;
       
-	for (card = 0;card < mz8310_card_count; card++){
+	for (card = 0; card < mz8310_card_count; card++){
 		FASTLOCK(&mzconf[card].lock); 
 		for ( channel = 0; channel < tm_num_channels[MZ8310]; channel++){
                    if (mzconf[card].icf[channel].cnt){
@@ -576,6 +657,7 @@ void mz8310_reset()
 		FASTUNLOCK(&mzconf[card].lock); 
 	}
        
+	return OK;
 }
  
     	

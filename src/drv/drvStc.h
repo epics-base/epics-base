@@ -1,5 +1,5 @@
 /* drvStc.h */
-/* share/src/drv $Id$ */
+/* share/src/drv/$Id$ */
 /*
  * The following are specific driver routines for the AMD STC
  *
@@ -74,23 +74,23 @@ typedef long    stcStat;
 
 
 stcStat stc_io_report(
-volatile unsigned char  *pcmd,
-volatile unsigned short *pdata
+volatile uint8_t	*pcmd,
+volatile uint16_t	*pdata
 );
 
 
 stcStat stc_init(
-volatile unsigned char  *pcmd,
-volatile unsigned short	*pdata,
+volatile uint8_t	*pcmd,
+volatile uint16_t	*pdata,
 unsigned 		master_mode
 );
 
 stcStat stc_one_shot_read(
 unsigned 		*preset,
-unsigned short 		*edge0_count,
-unsigned short 		*edge1_count,
-volatile unsigned char  *pcmd,
-volatile unsigned short *pdata,
+uint16_t		*edge0_count,
+uint16_t		*edge1_count,
+volatile uint8_t	*pcmd,
+volatile uint16_t	*pdata,
 unsigned 		channel,
 unsigned 		*int_source 
 );
@@ -99,8 +99,8 @@ stcStat stc_one_shot(
 unsigned 		preset,
 unsigned 		edge0_count,
 unsigned 		edge1_count,
-volatile unsigned char  *pcmd,
-volatile unsigned short *pdata,
+volatile uint8_t	*pcmd,
+volatile uint16_t	*pdata,
 unsigned 		channel,
 unsigned 		int_source 
 );

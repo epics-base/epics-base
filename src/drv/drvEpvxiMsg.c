@@ -57,8 +57,10 @@ static char	*sccsId = "$Id$\t$Date$";
 #include <intLib.h>
 #include <sysLib.h>
 #include <vxLib.h>
+
 #include <fast_lock.h>
 #include <drvEpvxi.h>
+#include <drvHp1404a.h>
 
 enum msgDeviceSyncType {
 	syncInt, 
@@ -88,12 +90,6 @@ struct epvxiMessageDeviceInfo{
 LOCAL
 int	msgCommanderLA = (-1);
 
-LOCAL
-char	vxiMsgSignalInit;
-
-#define VXI_HP_MODEL_E1404_SLOT0 	0x010
-#define VXI_HP_MODEL_E1404_MSG 		0x111
-#define VXI_HP_MODEL_E1404 		0x110
 
 #define abort(A)	taskSuspend(0)
 
@@ -113,7 +109,7 @@ LOCAL void 	vxiMsgInt(
 );
 
 LOCAL void 	signalHandler(
-	unsigned short	signal
+	int16_t 	signal
 );
 
 LOCAL EPVXISTAT 	epvxiReadSlowHandshake(
@@ -124,6 +120,7 @@ LOCAL EPVXISTAT 	epvxiReadSlowHandshake(
 	unsigned long	option
 );
 
+#ifdef FASTHANDSHAKE
 LOCAL EPVXISTAT 	epvxiReadFastHandshake(
 	unsigned	la,
 	char		*pbuf,
@@ -131,6 +128,7 @@ LOCAL EPVXISTAT 	epvxiReadFastHandshake(
 	unsigned long	*pread_count,
 	unsigned long	option
 );
+#endif
 
 LOCAL EPVXISTAT 	vxiMsgClose(
 	unsigned        la
@@ -1199,7 +1197,10 @@ void	vxiHP1404MsgSignalSetup(
 	}
 
 	msgCommanderLA = hpMsgLA;
-	hpE1404SignalConnect(hpRegLA, signalHandler);
+	status = hpE1404SignalConnect(hpRegLA, signalHandler);
+	if(status){
+		errMessage(status, NULL);
+	}
 
 	return;
 }
@@ -1482,7 +1483,6 @@ void 	vxiMsgInt(
 )
 {
 	VXIMDI		*pvximdi;
-	EPVXISTAT	status;
 	
 	/*
 	 * verify that this device is open for business
@@ -1495,14 +1495,12 @@ void 	vxiMsgInt(
 		 * wakeup pending tasks
 		 *
 		 */
-		status = semGive(pvximdi->syncSem);
-		if(status){
-			errMessage(S_epvxi_internal,"bad sem id");
-		}
+		semGive(pvximdi->syncSem);
 	}
 	else{
-		logMsg(	"%s: vxiMsgInt(): msg int to ukn or closed dev\n",
-			__FILE__,
+		logMsg(	
+	"%s: vxiMsgInt(): msg int to ukn or closed dev\n",
+			(int)__FILE__,
 			NULL,
 			NULL,
 			NULL,
@@ -1518,7 +1516,7 @@ void 	vxiMsgInt(
  */
 LOCAL
 void signalHandler(
-	unsigned short	signal
+int16_t	signal
 )
 {
 	unsigned 	signal_la;
@@ -1527,7 +1525,7 @@ void signalHandler(
 
 	if(MBE_EVENT_TEST(signal)){
 		logMsg(	"%s: VXI event was ignored %x\n", 
-			__FILE__,
+			(int)__FILE__,
 			signal,
 			NULL,
 			NULL,

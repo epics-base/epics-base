@@ -827,6 +827,8 @@ long dbWriteRecordFP(DBBASE *pdbbase,FILE *fp,char *precordTypename,int level)
 		if(!dbIsDefaultValue(pdbentry) || level>0) {
 		    fprintf(fp,"\tfield(%s,\"%s\")\n",
 			dbGetFieldName(pdbentry),dbGetString(pdbentry));
+		} else if(level>0) { /*generate 0 length string*/
+		    fprintf(fp,"\tfield(%s,\"\")\n",dbGetFieldName(pdbentry));
 		}
 		status=dbNextField(pdbentry,dctonly);
 	    }

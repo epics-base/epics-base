@@ -27,29 +27,6 @@
  *              Argonne National Laboratory
  *
  *
- * History
- * $Log$
- * Revision 1.7  1999/08/04 23:18:59  jhill
- * updated to new DLL terminators
- *
- * Revision 1.6  1997/04/10 19:34:00  jhill
- * API changes
- *
- * Revision 1.5  1996/11/02 00:54:03  jhill
- * many improvements
- *
- * Revision 1.4  1996/09/16 18:23:59  jhill
- * vxWorks port changes
- *
- * Revision 1.3  1996/09/04 20:18:27  jhill
- * moved operator -> here
- *
- * Revision 1.2  1996/07/01 19:56:10  jhill
- * one last update prior to first release
- *
- * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
- * ca server installation
- *
  *
  */
 
@@ -193,6 +170,13 @@ inline void casChannelI::postAccessRightsEvent()
 	}
 }
 
+//
+// casChannelI::enumStringTable ()
+//
+inline const vector<string> casChannelI::enumStringTable () const
+{
+    return this->pv.enumStringTable ();
+}
 
 #endif // casChannelIIL_h
 

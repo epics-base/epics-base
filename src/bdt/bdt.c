@@ -1,4 +1,6 @@
+#include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <signal.h>
 #include <errno.h>
 #include <sys/wait.h>
@@ -158,7 +160,7 @@ BDT* BdtIpOpen(char* address, int Port)
 	{
 		if ((pHostent = gethostbyname (address)) == NULL)
 			return(NULL);
-		bcopy (pHostent->h_addr, (char *) &addr, sizeof(addr));
+		memcpy (&addr,pHostent->h_addr,sizeof(addr));
 		printf("Converting name >%s< to IP number %08.8X\n", address, addr);
 	}
 #endif

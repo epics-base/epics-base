@@ -1352,8 +1352,8 @@ gddStatus gdd::put ( const gdd * dd )
             pDst += byteCount;
         }
         
-        aitUint8* pSrc = (aitUint8*) dd->dataPointer();
-        pSrc += aitSize[primitiveType()] * unusedSrcBelow;
+        aitUint8* pSrc = (aitUint8*) dd->dataVoid();
+        pSrc += aitSize[dd->primitiveType()] * unusedSrcBelow;
         int gddStatus = aitConvert (this->primitiveType(), pDst, 
             dd->primitiveType(), pSrc, srcCopySize);
         if ( gddStatus < 0 ) {

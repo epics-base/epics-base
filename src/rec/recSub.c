@@ -389,7 +389,7 @@ static void monitor(psub)
 	/* check all input fields for changes*/
 	for(i=0, pnew=&psub->a, pprev=&psub->la; i<ARG_MAX; i++, pnew++, pprev++) {
 		if(*pnew != *pprev) {
-			db_post_events(psub,pnew,monitor_mask|DBE_VALUE);
+			db_post_events(psub,pnew,monitor_mask|DBE_VALUE|DBE_LOG);
 			*pprev = *pnew;
 		}
 	}

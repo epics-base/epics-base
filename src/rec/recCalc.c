@@ -406,7 +406,7 @@ static void monitor(pcalc)
         /* check all input fields for changes*/
         for(i=0, pnew=&pcalc->a, pprev=&pcalc->la; i<ARG_MAX; i++, pnew++, pprev++) {
              if((*pnew != *pprev) || (monitor_mask&DBE_ALARM)) {
-                  db_post_events(pcalc,pnew,monitor_mask|DBE_VALUE);
+                  db_post_events(pcalc,pnew,monitor_mask|DBE_VALUE|DBE_LOG);
                   *pprev = *pnew;
 		     }
 		}

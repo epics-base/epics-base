@@ -36,6 +36,8 @@
 /*	041692	joh	set state to cs_conn before caling 		*/
 /* 			ca_request_event() so their channel 		*/
 /*			connect tests wont fail				*/
+/*	042892	joh	No longer checking the status from free() 	*/
+/*			since it varies from os to os			*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -84,6 +86,7 @@
 
 void 		reconnect_channel();
 void		ca_request_event();
+int		client_channel_exists();
 
 #define BUFSTAT 	printf("expected %d left %d\n",msgcnt,*pbufcnt);
 
@@ -456,8 +459,7 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 				}
 			lstConcat(&free_event_list, &chix->eventq);
 			lstDelete(&piiu->chidlist, chix);
-			if (free(chix) < 0)
-				abort();
+			free(chix);
 			if (!piiu->chidlist.count)
 				close_ioc(piiu);
 			UNLOCK;
@@ -689,12 +691,44 @@ int 	lock;
 
     	while(pioe = (struct pending_io_event *) lstGet(&ioeventlist)){
       		(*pioe->io_done_sub)(pioe->io_done_arg);
-      		if(free(pioe)<0)
-			abort();
+      		free(pioe);
 	}
 
 	if(lock){
   		UNLOCK;
 	}
 }
+
+
+
+
+/*
+ *      client_channel_exists()
+ *      (usually will find it in the first piiu)
+ *
+ *      LOCK should be on while in this routine
+ *
+ *      iocix field in the chid block not used here because
+ *      I dont trust the chid ptr yet.
+ */
+static int
+client_channel_exists(chan)
+        chid            chan;
+{
+        register struct ioc_in_use      *piiu;
+        register struct ioc_in_use      *pnext_iiu = &iiu[nxtiiu];
+        int                             status;
+
+        for (piiu = iiu; piiu < pnext_iiu; piiu++) {
+                /*
+                 * lstFind returns the node number or ERROR
+                 */
+                status = lstFind(&piiu->chidlist, chan);
+                if (status != ERROR) {
+                        return TRUE;
+                }
+        }
+        return FALSE;
+}
+
 

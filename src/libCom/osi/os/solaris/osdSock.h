@@ -44,6 +44,8 @@ typedef int                     SOCKET;
 #define socket_ioctl(A,B,C)     ioctl(A,B,C)
 typedef int osiSockIoctl_t;
 
+#define DOES_NOT_ACCEPT_ZERO_LENGTH_UDP
+
 #define FD_IN_FDSET(FD) ((FD)<FD_SETSIZE&&(FD)>=0)
 
 #define SOCK_EWOULDBLOCK EWOULDBLOCK

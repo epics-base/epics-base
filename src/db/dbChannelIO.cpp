@@ -46,6 +46,9 @@ dbChannelIO::dbChannelIO (
     cacChannel ( notify ), mutex ( mutexIn ), serviceIO ( serviceIO ), 
     addr ( addrIn )
 {
+    unsigned bufLen = dbNameSizeOfPV ( & this->addr ) + 1;
+    this->pNameStr.reset ( new char [ bufLen ] );
+    dbNameOfPV ( & this->addr, this->pNameStr.get (), bufLen );
 }
 
 void dbChannelIO::initiateConnect ( epicsGuard < epicsMutex > & guard )
@@ -175,11 +178,19 @@ unsigned long dbChannelIO::nativeElementCount (
     return 0u;
 }
 
-const char *dbChannelIO::pName (
-    epicsGuard < epicsMutex > & guard ) const 
+// hopefully to be eventually phased out
+const char * dbChannelIO::pName (
+    epicsGuard < epicsMutex > & guard ) const throw ()
 {
     guard.assertIdenticalMutex ( this->mutex );
-    return addr.precord->name;
+    return this->pNameStr.get ();
+}
+
+unsigned dbChannelIO::getName (
+    epicsGuard < epicsMutex > &,
+    char * pBuf, unsigned bufLen ) const throw ()
+{
+    return dbNameOfPV ( & this->addr, pBuf, bufLen );
 }
 
 short dbChannelIO::nativeType (

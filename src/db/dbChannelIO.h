@@ -36,6 +36,7 @@
 #endif
 
 #include "compilerDependencies.h"
+#include "epicsMemory.h"
 
 #ifdef dbChannelIOh_restore_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols
@@ -60,8 +61,11 @@ public:
         const struct db_field_log * pfl, cacStateNotify & notify );
     void show ( 
         epicsGuard < epicsMutex > &, unsigned level ) const;
+    unsigned getName (
+        epicsGuard < epicsMutex > &,
+        char * pBuf, unsigned bufLen ) const throw ();
     const char * pName (
-        epicsGuard < epicsMutex > & ) const;
+        epicsGuard < epicsMutex > & ) const throw ();
     void * operator new ( size_t size, 
         tsFreeList < dbChannelIO, 256, epicsMutexNOOP > & );
     epicsPlacementDeleteOperator (( void *, 
@@ -72,6 +76,8 @@ private:
     epicsMutex & mutex;
     dbContext & serviceIO;
     dbAddr addr;
+    epics_auto_ptr < char, eapt_array > pNameStr;
+
     void initiateConnect (
         epicsGuard < epicsMutex > & );
     void eliminateExcessiveSendBacklog (

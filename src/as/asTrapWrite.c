@@ -24,10 +24,11 @@ of this distribution.
 #include "ellLib.h"
 #include "freeList.h"
 #include "cantProceed.h"
-#include "asLib.h"
-#include "asTrapWrite.h"
 #include "osiSem.h"
 #include "ellLib.h"
+#define epicsExportSharedSymbols
+#include "asLib.h"
+#include "asTrapWrite.h"
 
 typedef struct listenerPvt {
     ELLNODE node;

@@ -202,5 +202,15 @@ LIBOBJS += $(EPICS_BASE_BIN)/drvHp1404a.o
 #
 #from src/devOpt
 #
+#LIBOBJS += $(EPICS_BASE_BIN)/devAnalytekGpib.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devBBInteract.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devGpibInteract.o
+#LIBOBJS += $(EPICS_BASE_BIN)/devK486Gpib.o
+#LIBOBJS += $(EPICS_BASE_BIN)/devLibOpt.o
+#LIBOBJS += $(EPICS_BASE_BIN)/devXxDc5009Gpib.o
+#LIBOBJS += $(EPICS_BASE_BIN)/devXxDg535Gpib.o
+#LIBOBJS += $(EPICS_BASE_BIN)/devXxK196Gpib.o
+#LIBOBJS += $(EPICS_BASE_BIN)/devXxK263Gpib.o
+#LIBOBJS += $(EPICS_BASE_BIN)/devXxSkeletonGpib.o
+#LIBOBJS += $(EPICS_BASE_BIN)/devXxSr620Gpib.o
+

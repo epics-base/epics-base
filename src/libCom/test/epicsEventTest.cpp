@@ -30,9 +30,7 @@ typedef struct info {
     epicsRingPointerId ring;
 }info;
 
-extern "C" {
 static void consumer(void *arg);
-}
 
 static void consumer(void *arg)
 {
@@ -70,9 +68,7 @@ static void consumer(void *arg)
     }
 }
 
-extern "C" {
 static void producer(void *arg);
-}
 
 static void producer(void *arg)
 {

@@ -82,6 +82,8 @@
 /*	111992	joh	added new arg to db_start_events() call		*/
 /*	120992	joh	switched to dll list routines			*/
 /*	122192	joh	increment outstanding ack count			*/
+/*	050593	joh	dont enable deadlock prevention if we are in	*/
+/*			post message					*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -106,7 +108,7 @@
 /************************************************************************/
 /*_end									*/
 
-static char *sccsId = "$Id$\t$Date$";
+static char *sccsId = "@(#)access.c	1.24\t2/19/93";
 
 /*
  * allocate error message string array 
@@ -253,7 +255,7 @@ unsigned		extsize;
 	 * dont allow client to send enough messages to 
 	 * to get into a deadlock
 	 */
-	if(piiu->outstanding_ack_count > ((unsigned)0)){
+	if(piiu->outstanding_ack_count > ((unsigned)0) && !post_msg_active){
 		unsigned	max1;
 		unsigned	size;
 		int		rcva;

@@ -12,6 +12,9 @@ of this distribution.
 **********************************************************************/
 /*
  * $Log$
+ * Revision 1.24  1998/06/04 19:21:14  wlupton
+ * changed to use symFindByNameEPICS
+ *
  * Revision 1.23  1998/03/19 20:41:15  mrk
  * Checked for Y2K complience. It turns out it was even ok when NTP time overflows
  * in 2036. However it was modified so that no overflows should occur while convert
@@ -139,15 +142,15 @@ of this distribution.
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <net/if.h>
-#include <envDefs.h>
-#include <envLib.h>
 
-#include <dbDefs.h>
-#include <epicsPrint.h>
-
-#include <errMdef.h>
-#include <drvSup.h>
-#include <drvTS.h>
+#include "envDefs.h"
+#include "envLib.h"
+#include "dbDefs.h"
+#include "epicsPrint.h"
+#include "errMdef.h"
+#include "drvSup.h"
+#include "drvTS.h"
+#include "bsdSocketResource.h"
 
 #define TSprintf epicsPrintf
 
@@ -939,6 +942,7 @@ static long TSgetUnixTime(struct timespec* ts)
     struct sockaddr_in sin;
     int soc;
     char host_addr[BOOT_ADDR_LEN];
+	int status;
 
     Debug0(2,"in TSgetUnixTime()\n");
     if(envGetConfigParam(&EPICS_TS_NTP_INET,BOOT_ADDR_LEN,host_addr)==NULL ||
@@ -954,8 +958,16 @@ static long TSgetUnixTime(struct timespec* ts)
 
     /* set up for ntp transaction to boot server */
     Debug(5,"host addr = %s\n",host_addr);
-    sin.sin_addr.s_addr = inet_addr(host_addr);
-    sin.sin_port = htons(UDP_NTP_PORT); /* well known registered NTP port */
+
+	/* well known registered NTP port - or whatever port they specify */
+	status = aToIPAddr (host_addr, UDP_NTP_PORT, &sin);
+	if (status) {
+	    Debug0(2,"bad host name or IP address\n");
+	    TSdata.async_type=TS_async_none;
+	    close(soc);
+		return -1;
+	}
+
     TSdata.async_type=TS_async_ntp;
     memset(&buf_ntp,0,sizeof(buf_ntp));
     buf_ntp.info[0]=0x0b;
@@ -1349,6 +1361,7 @@ static long TSasyncClient()
     struct timespec ts,diff_time,cts,curr_time;
     unsigned long nsecs;
     char host_addr[BOOT_ADDR_LEN];
+	int status;
 
     Debug0(2,"in TSasyncClient()\n");
 
@@ -1367,12 +1380,16 @@ static long TSasyncClient()
     if( (soc_unix=TSgetSocket(0,&sin_unix)) <0)
     { Debug0(1,"TSgetSocket failed\n"); return -1; }
 
-    sin_unix.sin_addr.s_addr = inet_addr(host_addr);
-    sin_unix.sin_port = htons(UDP_NTP_PORT);
+	status = aToIPAddr (host_addr, UDP_NTP_PORT, &sin_unix);
+	if (status) {
+		Debug0(2,"bad host name or IP address\n");
+		close (soc_unix);
+		return -1;
+	}
 
     /*------socket for finding master----------*/
     if( (soc_bc=TSgetBroadcastSocket(0,&sin_bc)) <0)
-    { Debug0(1,"TSgetBroadcastSocket failed\n"); return -1; }
+    { Debug0(1,"TSgetBroadcastSocket failed\n"); close(soc_unix); return -1; }
 
     sin_bc.sin_port = htons(TSdata.master_port);
     /*-----------------------------------------*/

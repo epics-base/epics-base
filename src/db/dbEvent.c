@@ -93,7 +93,6 @@
 
 
 /* local function declarations */
-LOCAL EVENTFUNC	wake_cancel;
 
 LOCAL int event_read(struct event_que *ev_que);
 
@@ -434,13 +433,8 @@ int db_event_disable(struct event_block      *pevent)
  */
 int	db_cancel_event(struct event_block	*pevent)
 {
-  	struct dbCommon		*precord;
-  	int			status;
-	struct event_user	*pevu;
-
-/* (MDA) in LANL stuff, this used to taskSuspend if invalid address
-  	PADDRCHK(pevent->paddr);
- */
+  	struct dbCommon *precord;
+ 	int status;
 
   	precord = (struct dbCommon *) pevent->paddr->precord;
 
@@ -452,40 +446,19 @@ int	db_cancel_event(struct event_block	*pevent)
   	UNLOCKREC(precord);
 
 	/*
-	 * Flush the event que so we know event block not left in use. This
-	 * requires placing a fake event which wakes this thread once the
-	 * event queue has been flushed. This replaces a block of code which
-	 * used to lower priority below the event thread to accomplish the
-	 * flush without polling.
+	 * flag the event as canceled by NULLing out the callback handler 
+	 *
+	 * make certain that the event isnt being accessed while
+	 * its call back changes
 	 */
-  	if(pevent->npend || pevent->callBackInProgress){
-		struct event_block	flush_event;
-
-		pevu = pevent->ev_que->evUser;
-
-		flush_event = *pevent;
-		flush_event.user_sub = wake_cancel;
-		flush_event.user_arg = &pevu->pflush_sem;
-		flush_event.npend = 0ul;
-		if(db_post_single_event_private(&flush_event)==OK){
-			/*
-			 * insure that the event is 
-			 * removed from the queue
-			 */
-			while(flush_event.npend){
-				semTake(
-					pevu->pflush_sem,
-					sysClkRateGet());
-			}
-		}
-
-		/* 
-		 * in case the event could not be queued 
-		 */
-		while(pevent->npend||pevent->callBackInProgress){
-			taskDelay(sysClkRateGet());
-		}
+	LOCKEVQUE(pevent->ev_que)
+	pevent->user_sub = NULL;
+  	while (pevent->npend || pevent->callBackInProgress) {
+		UNLOCKEVQUE(pevent->ev_que)
+		semTake(pevent->ev_que->evUser->pflush_sem, sysClkRateGet());
+		LOCKEVQUE(pevent->ev_que)
   	}
+	UNLOCKEVQUE(pevent->ev_que)
 
 	/*
 	 * Decrement event que quota
@@ -493,25 +466,6 @@ int	db_cancel_event(struct event_block	*pevent)
   	pevent->ev_que->quota -= EVENTENTRIES;
 
   	return OK;
-}
-
-
-/*
- * WAKE_CANCEL()
- *
- * a very short routine to inform a db_clear thread that the deleted event
- * has been flushed
- */
-LOCAL void wake_cancel(
-void 			*user_arg,
-struct dbAddr 		*paddr,
-int			eventsRemaing,
-db_field_log 		*pfl)
-{
-	SEM_ID  *psem;
-
-	psem = (SEM_ID *)user_arg;
-    	semGive(*psem);
 }
 
 
@@ -970,9 +924,12 @@ int			init_func_arg
  */
 LOCAL int event_read (struct event_que *ev_que)
 {
-  	struct event_block	*event;
-  	unsigned int		nextgetix;
-	db_field_log		*pfl;
+  	struct event_block *event;
+  	unsigned int nextgetix;
+	db_field_log *pfl;
+	void (*user_sub) (void *user_arg, struct dbAddr *paddr, 
+			int eventsRemaining, db_field_log *pfl);
+	int status;
 
 	/*
 	 * evUser ring buffer must be locked for the multiple
@@ -1034,6 +991,12 @@ LOCAL int event_read (struct event_que *ev_que)
    		event->npend--;
 
 		/*
+		 * create a local copy of the call back parameters while
+		 * we still have the lock
+		 */
+		user_sub = event->user_sub;
+
+		/*
 		 * Next event pointer can be used by event tasks to determine
 		 * if more events are waiting in the queue
 		 *
@@ -1043,17 +1006,33 @@ LOCAL int event_read (struct event_que *ev_que)
 		 * record lock, and it is calling db_post_events() waiting 
 		 * for the event queue lock (which this thread now has).
 		 */
-
-		UNLOCKEVQUE(ev_que)
-		(*event->user_sub) (event->user_arg, event->paddr,
-			ev_que->evque[nextgetix]?TRUE:FALSE, pfl);
-		LOCKEVQUE(ev_que)
+		if (user_sub != NULL) {
+			UNLOCKEVQUE(ev_que)
+			(*user_sub) (event->user_arg, event->paddr, 
+				ev_que->evque[nextgetix]?TRUE:FALSE, pfl);
+			LOCKEVQUE(ev_que)
+		}
 
 		/*
 		 * this provides a way to test to see if an event is in use
 		 * despite the fact that the event queue does not point to this event
 		 */
 		event->callBackInProgress = FALSE;
+
+		/*
+		 * check to see if this event has been canceled each
+		 * time that the callBackInProgress flag is set to false
+		 * while we have the event queue lock, and post the flush
+		 * complete sem if there are no longer any events on the
+		 * queue
+		 */
+		if (event->user_sub==NULL && event->npend==0u) {
+			status = semGive (ev_que->evUser->pflush_sem);
+			if (status!=OK) {
+				epicsPrintf ("%s.%d corrupt flush sem\n", 
+					__FILE__, __LINE__);
+			}
+		}
   	}
 
 	UNLOCKEVQUE(ev_que)

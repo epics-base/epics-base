@@ -51,8 +51,8 @@ public:
     void destroyTimerForC ( epicsTimerForC & );
 protected:
     timer ( class timerQueue & );
+    ~timer (); 
 private:
-    ~timer (); // intentionally not implemented ( see destroy )
     enum state { statePending = 45, stateLimbo = 78 };
     epicsTime exp; // experation time 
     state curState; // current state 
@@ -67,11 +67,12 @@ struct epicsTimerForC : public epicsTimerNotify, public timer {
 public:
     epicsTimerForC ( timerQueue &, epicsTimerCallback, void *pPrivateIn );
     void destroy ();
+protected:
+    ~epicsTimerForC (); // intentionally not implemented ( see destroy )
 private:
     epicsTimerCallback pCallBack;
     void * pPrivate;
     expireStatus expire ( const epicsTime & currentTime );
-    ~epicsTimerForC (); // intentionally not implemented ( see destroy )
 };
 
 class timerQueue {

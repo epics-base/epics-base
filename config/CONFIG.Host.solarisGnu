@@ -37,6 +37,8 @@ SOLARIS_VERSION = $(subst 5.,,$(shell uname -r))
 ARCH_DEP_CPPFLAGS += -DSOLARIS=$(SOLARIS_VERSION) 
 POSIX_CPPFLAGS_YES += -D__EXTENSIONS__
 
+ARCH_DEP_LDFLAGS += -mt
+
 # socket and nsl needed by libca.a
 ARCH_DEP_LDLIBS += -lsocket -lnsl
 ARCH_DEP_LDLIBS += -lposix4 -lpthread

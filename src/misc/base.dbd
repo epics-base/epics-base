@@ -1,5 +1,13 @@
+# $Id$
+#
+# This file defines the standard record types and device support
+# provided by Base and (usually) loaded into all IOCs.
+
+# Menus
 include "menuGlobal.dbd"
 include "menuConvert.dbd"
+
+# Record types
 include "aiRecord.dbd"
 include "aoRecord.dbd"
 include "biRecord.dbd"
@@ -25,40 +33,9 @@ include "stringoutRecord.dbd"
 include "subRecord.dbd"
 include "subArrayRecord.dbd"
 include "waveformRecord.dbd"
-device(ai,CONSTANT,devAiSoft,"Soft Channel")
-device(ai,CONSTANT,devAiSoftRaw,"Raw Soft Channel")
-device(ao,CONSTANT,devAoSoft,"Soft Channel")
-device(ao,CONSTANT,devAoSoftRaw,"Raw Soft Channel")
-device(bi,CONSTANT,devBiSoft,"Soft Channel")
-device(bi,CONSTANT,devBiSoftRaw,"Raw Soft Channel")
-device(bo,CONSTANT,devBoSoft,"Soft Channel")
-device(bo,CONSTANT,devBoSoftRaw,"Raw Soft Channel")
-device(event,CONSTANT,devEventSoft,"Soft Channel")
-device(longin,CONSTANT,devLiSoft,"Soft Channel")
-device(longout,CONSTANT,devLoSoft,"Soft Channel")
-device(mbbi,CONSTANT,devMbbiSoft,"Soft Channel")
-device(mbbi,CONSTANT,devMbbiSoftRaw,"Raw Soft Channel")
-device(mbbiDirect,CONSTANT,devMbbiDirectSoft,"Soft Channel")
-device(mbbiDirect,CONSTANT,devMbbiDirectSoftRaw,"Raw Soft Channel")
-device(mbbo,CONSTANT,devMbboSoft,"Soft Channel")
-device(mbbo,CONSTANT,devMbboSoftRaw,"Raw Soft Channel")
-device(mbboDirect,CONSTANT,devMbboDirectSoft,"Soft Channel")
-device(mbboDirect,CONSTANT,devMbboDirectSoftRaw,"Raw Soft Channel")
-device(stringin,CONSTANT,devSiSoft,"Soft Channel")
-device(stringout,CONSTANT,devSoSoft,"Soft Channel")
-device(subArray,CONSTANT,devSASoft,"Soft Channel")
-device(waveform,CONSTANT,devWfSoft,"Soft Channel")
 
-device(ai,CONSTANT,devAiTestAsyn,"Test Asyn")
-device(ao,CONSTANT,devAoTestAsyn,"Test Asyn")
-device(bi,CONSTANT,devBiTestAsyn,"Test Asyn")
-device(bo,CONSTANT,devBoTestAsyn,"Test Asyn")
-device(event,CONSTANT,devEventTestIoEvent,"Test Asyn")
-device(mbbi,CONSTANT,devMbbiTestAsyn,"Test Asyn")
-device(mbbo,CONSTANT,devMbboTestAsyn,"Test Asyn")
-device(stringin,CONSTANT,devSiTestAsyn,"Test Asyn")
-device(stringout,CONSTANT,devSoTestAsyn,"Test Asyn")
-device(waveform,CONSTANT,devWfTestAsyn,"Test Asyn")
+# Soft and SoftRaw device support
+include "devSoft.dbd"
 
-
+# Access security subroutines
 registrar(asSub)

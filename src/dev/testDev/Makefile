@@ -11,6 +11,8 @@ TOP=../../..
 
 include $(TOP)/configure/CONFIG
 
+DBD += devTestAsyn.dbd
+
 LIBSRCS += devAiTestAsyn.c
 LIBSRCS += devAoTestAsyn.c
 LIBSRCS += devBiTestAsyn.c

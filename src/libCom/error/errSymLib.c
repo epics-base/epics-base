@@ -68,6 +68,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <stdlib.h>
 
 #include <ellLib.h>
 #include <dbDefs.h>
@@ -137,17 +138,21 @@ int errSymBld()
     unsigned short  hashInd;
 
     if(initialized) return(0);
-    hashtable = (ERRNUMNODE**)dbCalloc(NHASH, sizeof(ERRNUMNODE*));
+    hashtable = (ERRNUMNODE**)calloc(NHASH, sizeof(ERRNUMNODE*));
+    if (!hashtable) {
+	return -1;
+    }
 
     for (i = 0; i < errSymTbl->nsymbols; i++, errArray++) {
 	modnum = errArray->errNum >> 16;
 	if (modnum < 501) {
-	    printf("errSymBld: ERROR - Module number in errSymTbl < 501\n");
-	    return (-1);
+	    printf("errSymBld: ERROR - Module number in errSymTbl < 501 was Module=%x Name=%s\n",
+		errArray->errNum, errArray->name);
+	    continue;
 	}
 	if ((errSymbolAdd(errArray->errNum, errArray->name))  <0 ) {
 	    printf("errSymBld: ERROR - errSymbolAdd() failed \n");
-	    return (-1);
+	    continue;
 	}
     }
     perrNumNode = (ERRNUMNODE *) ellFirst(perrnumlist);
@@ -206,7 +211,10 @@ char *name;
     ELLLIST        *perrnumlist = &errnumlist;
     ERRNUMNODE     *pNew;
 
-    pNew = (ERRNUMNODE*)dbCalloc(1, sizeof(ERRNUMNODE));
+    pNew = (ERRNUMNODE*)calloc(1, sizeof(ERRNUMNODE));
+    if (!pNew) {
+      return -1;
+    }
     pNew->errNum = errNum;
     pNew->message = name;
     ellAdd(perrnumlist,(ELLNODE*)pNew);

@@ -54,6 +54,11 @@ typedef struct caLink
 	char		*pputString;
 	caAttributes	*pcaAttributes;
 	long		nelements;
+        enum channel_state	caState;
+        unsigned long	caElementCount;
+        short		caFieldType;
+        short		hasReadAccess;
+        short		hasWriteAccess;
 	epicsMutexId	lock;
 	unsigned long	nDisconnect;
 	unsigned long	nNoWrite;

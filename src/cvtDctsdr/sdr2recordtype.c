@@ -158,16 +158,6 @@ int main(int argc,char **argv)
 	fprintf(stderr,"Error opening file %s\n",recordtypeInclude);
 	exit(-1);
     }
-    /*skip all lines up to beginning of structure*/
-    while(TRUE) {
-	pstr = fgets(includeLine,80,fpInclude);
-	if(!pstr) {
-	    fprintf(stderr,"Does not appear to be include file%s\n",
-		recordtypeInclude);
-	    exit(-1);
-	}
-	if(strstr(includeLine,"struct ")) break;
-    }
     fp = fopen(sdrFilename,"r");
     if(!fp) {
 	fprintf(stderr,"Error opening file %s\n",sdrFilename);
@@ -271,6 +261,17 @@ gen_rectype:
 		}
 		*pstr = tolower(*pstr);
 		pstr++;
+	    }
+            /*skip all lines up to beginning of structure*/
+	    fseek(fpInclude,0,SEEK_SET);
+	    while(TRUE) {
+		pstr = fgets(includeLine,80,fpInclude);
+		if(!pstr) {
+	    	    fprintf(stderr,"Does not appear to be include file%s\n",
+			recordtypeInclude);
+	    	    exit(-1);
+		}
+		if(strstr(includeLine,"struct ")) break;
 	    }
 	    while(TRUE) {
 		prtn = fgets(includeLine,80,fpInclude);
@@ -436,7 +437,6 @@ gen_rectype:
 	case DBF_NOACCESS: { /*includeLine holds definition*/
 		char	*ptempStr = tempStr;
 
-	        fprintf(fp,"\t\tsize(%d)\n",pfldDes->size);
 		ptemp = includeLine;
 		while(*ptemp==' ' || *ptemp=='\t') ptemp++;
 		while(*ptemp!=';') *ptempStr++ = *ptemp++;

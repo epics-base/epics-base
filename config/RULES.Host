@@ -296,13 +296,11 @@ buildInstall :: build $(TARGETS) $(INSTALL_LOCATION_BIN) \
 depends:: $(LIBSRCS) $(SRCS)
 	$(RM) .DEPENDS
 	touch .DEPENDS
-ifdef DEPENDS_RULE
-	$(DEPENDS_RULE)
-else
-	@echo RULES.Host: You have no DEPENDS_RULE defined for $(ARCH_CLASS)
-	@echo (DEPENDS_RULE should be able to handle both C and C++ files,
-	@echo  use a script if all else failes)
-	@exit
+ifdef $(SRCS.c)
+	$(DEPENDS_RULE.c)
+endif
+ifdef $(SRCS.cc)
+	$(DEPENDS_RULE.cc)
 endif
 
 

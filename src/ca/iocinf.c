@@ -47,6 +47,9 @@
 /*			address in use so that test works on UNIX	*/
 /*			kernels that support multicast			*/
 /* $Log$
+ * Revision 1.69  1997/04/23 17:05:05  jhill
+ * pc port changes
+ *
  * Revision 1.68  1997/04/10 19:26:14  jhill
  * asynch connect, faster connect, ...
  *
@@ -218,8 +221,8 @@ int			net_proto
 	 * initially there are no claim messages pending
 	 */
 	piiu->claimsPending = FALSE;
-
 	piiu->recvPending = FALSE;
+	piiu->pushPending = FALSE;
 
   	switch(piiu->sock_proto)
   	{
@@ -316,7 +319,6 @@ int			net_proto
 		}
 #endif
 
-#ifdef CA_SET_TCP_BUFFER_SIZES
 		{
 			int i;
 			int size;
@@ -327,7 +329,7 @@ int			net_proto
 					sock,
 					SOL_SOCKET,
 					SO_SNDBUF,
-					&i,
+					(char *)&i,
 					sizeof(i));
 			if(status < 0){
 				free(pNode);
@@ -341,7 +343,7 @@ int			net_proto
 					sock,
 					SOL_SOCKET,
 					SO_RCVBUF,
-					&i,
+					(char *)&i,
 					sizeof(i));
 			if(status < 0){
 				free(pNode);
@@ -367,7 +369,6 @@ int			net_proto
 				return ECA_SOCK;
 			}
 		}
-#endif
 
 		cacRingBufferInit(&piiu->recv, sizeof(piiu->send.buf));
 		cacRingBufferInit(&piiu->send, sizeof(piiu->send.buf));
@@ -892,8 +893,7 @@ LOCAL void cac_udp_send_msg_piiu(struct ioc_in_use *piiu)
 	cacRingBufferInit(
 			&piiu->send, 
 			min(MAX_UDP, sizeof(piiu->send.buf)));
-	piiu->send_needed = FALSE;
-
+	piiu->pushPending = FALSE;
 	UNLOCK;
 	return;
 }
@@ -933,7 +933,7 @@ LOCAL void cac_tcp_send_msg_piiu(struct ioc_in_use *piiu)
 		 */
 		if(sendCnt == 0){
 			piiu->sendPending = FALSE;
-			piiu->send_needed = FALSE;
+			piiu->pushPending = FALSE;
 			UNLOCK;
 
 			/* 
@@ -1946,9 +1946,16 @@ void cac_mux_io(struct timeval  *ptimeout)
 	 * first check for pending recv's with a zero time out so that
 	 * 1) flow control works correctly (and)
 	 * 2) we queue up sends resulting from recvs properly
+	 *	(this results in improved max throughput)
 	 */
         while (TRUE) {
 		LD_CA_TIME (0.0, &timeout);
+		/*
+		 * NOTE cac_select_io() will set the
+		 * send flag for a particular iiu irregradless
+		 * of what is requested here if piiu->pushPending
+		 * is set
+		 */
                 count = cac_select_io(&timeout, CA_DO_RECVS);
 		if (count<=0) {
 			break;
@@ -1979,8 +1986,7 @@ void cac_mux_io(struct timeval  *ptimeout)
 						LD_CA_TIME (SELECT_POLL, &timeout);
 					}
 					else {
-						ca_static->ca_flush_pending 
-							= FALSE;
+						ca_static->ca_flush_pending = FALSE;
 						break;
 					}
 				}

@@ -80,7 +80,7 @@ int rsrv_online_notify_task()
 	int			status;
 	int			sock;
   	int			true = TRUE;
-	short			port;
+	unsigned short		port;
 
 	taskwdInsert(taskIdSelf(),NULL,NULL);
 

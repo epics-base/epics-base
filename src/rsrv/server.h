@@ -174,7 +174,7 @@ char				get;		/* T: get F: monitor */
 GLBLTYPE int			CASDEBUG;
 GLBLTYPE int 		 	IOC_sock;
 GLBLTYPE int			IOC_cast_sock;
-GLBLTYPE int			ca_server_port;
+GLBLTYPE unsigned short		ca_server_port;
 GLBLTYPE ELLLIST		clientQ;	/* locked by clientQlock */
 GLBLTYPE ELLLIST		rsrv_free_clientQ; /* locked by clientQlock */
 GLBLTYPE ELLLIST		rsrv_free_addrq;

@@ -100,7 +100,7 @@ int cast_server(void)
 	struct sockaddr_in		new_recv_addr;
   	int  				recv_addr_size;
   	unsigned			nchars;
-	short				port;
+	unsigned short			port;
 
 	taskwdInsert((int)taskIdCurrent,NULL,NULL);
 

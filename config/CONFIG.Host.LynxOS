@@ -15,8 +15,8 @@ RANLIB = ranlib -t
 
 
 # Configure OS vendor C compiler
-ACC_ANSI = $(ACC) -ansi -mposix -D_X86_ 
-ACC_STRICT = $(ACC) -ansi -mposix -D_X86_ -pedantic
+ACC_ANSI = $(ACC) -ansi
+ACC_STRICT = $(ACC) -ansi -pedantic
 ACC_TRAD = $(ACC)
 ACC_WARN_YES = -Wall 
 ACC_WARN_NO =  -w
@@ -34,7 +34,7 @@ ACC_SHRLIB_LDFLAGS_YES =
 # Configure OS vendor C++ compiler
 CCC_NORMAL = $(CCC)
 CCC_STRICT = $(CCC)
-CCC_TEMPL_INST_FLAG = -pedantic -mposix -D_X86_ -DEXPL_TEMP
+CCC_TEMPL_INST_FLAG = -pedantic -DEXPL_TEMP
 CCC_WARN_YES = -Wall
 CCC_WARN_NO = -w
 CCC_OPT_YES =  -O
@@ -43,16 +43,14 @@ CCC_SFLAGS_YES = -Bstatic
 CCC_SFLAGS_NO=
 CCC_SLIBS_YES = 
 CCC_SLIBS_NO=
-CCC_DEPENDS_FLAG = -pedantic -mposix -D_X86_ 
+CCC_DEPENDS_FLAG = -pedantic
 
 
 # added smh 6/5/98 : when building fdmgr - seems to use this not ACC
 # in effect this overides orig def in CONFIG_COMMON :
 # which is GCC_STRICT = $(GCC) -ansi -pedantic
 GCC_STRICT = $(GCC)
-G++_STRICT = $(G++) -Wtraditional -mposix -D_X86_ -DEXPL_TEMP
+G++_STRICT = $(G++) -Wtraditional -DEXPL_TEMP
 
-
-
-ARCH_DEP_CFLAGS = -DLynxOS -mposix -D_X86_ 
+ARCH_DEP_CFLAGS = -DLynxOS -mposix -D_X86_ -DLYNXOS_RELEASE_2_4_0
 ARCH_DEP_LDFLAGS = -lc -lbsd -lnsl -lm -lposix4d9 -llynx

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.16  1998/04/10 23:07:33  jhill
+ * fixed solaris architecture specific problem where xxx>>32 was ignored
+ *
  * Revision 1.15  1998/02/05 23:25:19  jhill
  * workaround vis c++ 5.0 bug
  *
@@ -339,12 +342,6 @@ inline void uintResTable<ITEM>::installItem(ITEM &item)
 }
 
 //
-// not in stringId static because of problems with
-// shareable libraries under win32
-//
-epicsShareExtern const unsigned char stringIdFastHash[256];
-
-//
 // character string identifier
 //
 // NOTE: to be robust in situations where the new()
@@ -428,6 +425,7 @@ public:
 private:
 	const char * const pStr;
 	allocationType const allocType;
+	static const unsigned char stringIdFastHash[256];
 };
 
 //
@@ -703,10 +701,7 @@ T *resTable<T,ID>::findDelete (tsSLList<T> &list, const ID &idIn)
 // Communications of the ACM, June 1990
 // The modifications were designed by Marty Kraimer
 //
-// the addition of "extern" below makes microsofts compiler
-// work when globaldef is used
-//
-extern epicsShareDef const unsigned char stringIdFastHash[256] = {
+const unsigned char stringId::stringIdFastHash[256] = {
  39,159,180,252, 71,  6, 13,164,232, 35,226,155, 98,120,154, 69,
 157, 24,137, 29,147, 78,121, 85,112,  8,248,130, 55,117,190,160,
 176,131,228, 64,211,106, 38, 27,140, 30, 88,210,227,104, 84, 77,
@@ -724,8 +719,6 @@ extern epicsShareDef const unsigned char stringIdFastHash[256] = {
 111,141,191,103, 74,245,223, 20,161,235,122, 63, 89,149, 73,238,
 134, 68, 93,183,241, 81,196, 49,192, 65,212, 94,203, 10,200, 47
 };
-#else
-epicsShareExtern const unsigned char stringIdFastHash[256];
 #endif // instantiateRecourceLib 
 
 #endif // INCresourceLibh

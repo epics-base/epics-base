@@ -639,16 +639,26 @@ bool udpiiu::searchRespAction ( // X aCC 361
         serverAddr.ia.sin_addr = addr.ia.sin_addr;
     }
 
+    bool success;
     if ( CA_V42 ( minorVersion ) ) {
-        return this->cacRef.lookupChannelAndTransferToTCP 
+        success = this->cacRef.lookupChannelAndTransferToTCP 
             ( cbLocker, msg.m_available, msg.m_cid, 0xffff, 
                 0, minorVersion, serverAddr, currentTime );
     }
     else {
-        return this->cacRef.lookupChannelAndTransferToTCP 
+        success = this->cacRef.lookupChannelAndTransferToTCP 
             ( cbLocker, msg.m_available, msg.m_cid, msg.m_dataType, 
                 msg.m_count, minorVersion, serverAddr, currentTime );
     }
+
+    if ( success ) {
+        // deadlock can result if this is called while holding the primary
+        // mutex (because the primary mutex is used in the search timer callback)
+        this->pSearchTmr->notifySearchResponse ( this->lastReceivedSeqNo,
+            this->lastReceivedSeqNoIsValid, currentTime );
+    }
+
+    return true;
 }
 
 bool udpiiu::beaconAction ( epicsGuard < callbackMutex > &, const caHdr &msg, 
@@ -990,14 +1000,6 @@ bool udpiiu::wakeupMsg ()
 void udpiiu::repeaterConfirmNotify ()
 {
     this->pRepeaterSubscribeTmr->confirmNotify ();
-}
-
-void udpiiu::notifySearchResponse ( const epicsTime & currentTime )
-{
-    // deadlock can result if this is called while holding the primary
-    // mutex (because the primary mutex is used in the search timer callback)
-    this->pSearchTmr->notifySearchResponse ( this->lastReceivedSeqNo, 
-        this->lastReceivedSeqNoIsValid, currentTime );
 }
 
 void udpiiu::beaconAnomalyNotify () 

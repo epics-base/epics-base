@@ -91,7 +91,6 @@ public:
     void show ( unsigned level ) const;
     bool wakeupMsg ();
     void repeaterConfirmNotify ();
-    void notifySearchResponse ( const epicsTime & currentTime );
     void beaconAnomalyNotify ();
     int printf ( const char *pformat, ... );
     unsigned channelCount () const;

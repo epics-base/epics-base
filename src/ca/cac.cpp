@@ -518,7 +518,7 @@ bool cac::lookupChannelAndTransferToTCP (
          */
         pChan = this->chanTable.lookup ( cid );
         if ( ! pChan ) {
-            return true;
+            return false;
         }
 
         /*
@@ -533,7 +533,7 @@ bool cac::lookupChannelAndTransferToTCP (
                     msgForMultiplyDefinedPV ( *this, pChan->pName (), acc, addr );
                 pMsg->ioInitiate ( this->ipToAEngine );
             }
-            return true;
+            return false;
         }
 
         /*
@@ -543,7 +543,7 @@ bool cac::lookupChannelAndTransferToTCP (
         piiu = this->serverTable.lookup ( servID );
         if ( piiu ) {
             if ( ! piiu->alive () ) {
-                return true;
+                return false;
             }
         }
         else {
@@ -557,7 +557,7 @@ bool cac::lookupChannelAndTransferToTCP (
                     pBHE = new ( this->bheFreeList ) 
                                         bhe ( epicsTime (), 0u, addr.ia );
                     if ( this->beaconTable.add ( *pBHE ) < 0 ) {
-                        return true;
+                        return false;
                     }
                 }
                 this->serverTable.add ( *pnewiiu );
@@ -566,11 +566,11 @@ bool cac::lookupChannelAndTransferToTCP (
                 newIIU = true;
             }
             catch ( std::bad_alloc & ) {
-                return true;
+                return false;
             }
             catch ( ... ) {
                 this->printf ( "CAC: Unexpected exception during virtual circuit creation\n" );
-                return true;
+                return false;
             }
         }
 
@@ -612,10 +612,6 @@ bool cac::lookupChannelAndTransferToTCP (
 
     if ( newIIU ) {
         piiu->start ( cbGuard );
-    }
-
-    if ( this->pudpiiu ) {
-        this->pudpiiu->notifySearchResponse ( currentTime );
     }
 
     return true;

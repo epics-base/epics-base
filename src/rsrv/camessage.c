@@ -73,6 +73,8 @@ static char *sccsId = "%W% %G%";
 
 #include "server.h"
 
+#define LOCAL
+
 static caHdr nill_msg;
 
 #define	RECORD_NAME(PADDR) ((PADDR)->precord->name)
@@ -1872,7 +1874,7 @@ char           *pformat,
 			logMsgArgs[i] = va_arg(args, int);
 		}
 
-		logMsg(	"caserver: Unable to deliver err msg [%s]\n",
+		logMsg(	"caserver: Unable to deliver err msg to client => \"%s\"\n",
 			(int) ca_message(status),
 			NULL,
 			NULL,

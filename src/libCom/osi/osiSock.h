@@ -175,6 +175,13 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
  */
 epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket);
 
+/*
+ * WINSOCK shutdown() function does not wake up threads blocking 
+ * in TCP recv()
+ */
+enum osiSockShutdownReturn { ossrSocketClosed, ossrSocketShutdown, ossrSocketNoChange };
+epicsShareFunc enum osiSockShutdownReturn epicsShareAPI osiSocketShutdown ( SOCKET sock );
+
 #ifdef __cplusplus
 }
 #endif

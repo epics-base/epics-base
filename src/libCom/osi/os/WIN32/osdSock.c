@@ -212,3 +212,16 @@ epicsShareFunc const char * epicsShareAPI convertSocketErrorToString (int errnoI
 #endif
 }
 
+/*
+ * WINSOCK II shutdown() function does not wake up threads blocking in TCP recv()
+ */
+epicsShareFunc enum osiSockShutdownReturn epicsShareAPI osiSocketShutdown ( SOCKET sock )
+{
+    int status = socket_close ( sock );
+    if ( status ) {
+        errlogPrintf ("TCP WIN32 socket close (for shutdown purposes) error was %s\n", 
+            SOCKERRSTR (SOCKERRNO) );
+        return ossrSocketNoChange;
+    }
+    return ossrSocketClosed;
+}

@@ -80,7 +80,7 @@ static long write_mbbo(pmbbo)
     case (CONSTANT) :
         break;
     case (DB_LINK) :
-        status = dbPutLink(&pmbbo->out.value.db_link,(struct dbCommon *)pmbbo,DBR_USHORT,
+        status = dbPutLink(&pmbbo->out.value.db_link,(struct dbCommon *)pmbbo,DBR_ULONG,
                 &pmbbo->rval,1L);
         if(status!=0) {
                 recGblSetSevr(pmbbo,LINK_ALARM,VALID_ALARM);

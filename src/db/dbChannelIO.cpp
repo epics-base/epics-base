@@ -102,7 +102,7 @@ void dbChannelIO::subscribe ( unsigned type, unsigned long count,
         new dbSubscriptionIO ( this->serviceIO, *this, 
             this->addr, notify, type, count, mask, pId );
     if ( ! pIO ) {
-        throw noMemory();
+        throw std::bad_alloc ();
     }
 }
 

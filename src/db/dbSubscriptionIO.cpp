@@ -41,7 +41,7 @@ dbSubscriptionIO::dbSubscriptionIO ( dbServiceIO &serviceIO, dbChannelIO &chanIO
 {
     this->es = serviceIO.subscribe ( addr, chanIO, *this, maskIn, pId );
     if ( ! this->es ) {
-        throw cacChannel::noMemory();
+        throw std::bad_alloc ();
     }
 }
 

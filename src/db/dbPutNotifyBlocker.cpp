@@ -72,11 +72,15 @@ extern "C" void putNotifyCompletion ( putNotify *ppn )
         if ( pBlocker->pn.status ) {
             if ( pBlocker->pn.status == S_db_Blocked ) {
                 pBlocker->pNotify->exception ( 
-                    ECA_PUTCBINPROG, "put notify blocked" );
+                    ECA_PUTCBINPROG, "put notify blocked",
+                    static_cast <unsigned> (pBlocker->pn.dbrType), 
+                    static_cast <unsigned> (pBlocker->pn.nRequest) );
             }
             else {
                 pBlocker->pNotify->exception ( 
-                    ECA_PUTFAIL,  "put notify unsuccessful");
+                    ECA_PUTFAIL,  "put notify unsuccessful",
+                    static_cast <unsigned> (pBlocker->pn.dbrType), 
+                    static_cast <unsigned> (pBlocker->pn.nRequest) );
             }
         }
         else {
@@ -122,7 +126,7 @@ void dbPutNotifyBlocker::initiatePutNotify ( epicsMutex &mutex, cacWriteNotify &
             beginTimeInit = true;
         }
         {
-            epicsAutoMutexRelease blocker ( mutex );
+            epicsAutoMutexRelease autoRelease ( mutex );
             this->block.wait ( 1.0 );
         }
     }
@@ -154,9 +158,11 @@ void dbPutNotifyBlocker::initiatePutNotify ( epicsMutex &mutex, cacWriteNotify &
         memset ( &this->pn, '\0', sizeof ( this->pn ) );
         this->pNotify = 0;
         {
-            epicsAutoMutexRelease blocker ( mutex );
+            epicsAutoMutexRelease autoRelease ( mutex );
             notify.exception (
-                ECA_PUTFAIL, "dbPutNotify() returned failure" );
+                ECA_PUTFAIL, "dbPutNotify() returned failure",
+                static_cast <unsigned> (this->pn.dbrType), 
+                static_cast <unsigned> (this->pn.nRequest) );
         }
     }
 }

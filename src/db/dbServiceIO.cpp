@@ -252,7 +252,7 @@ void dbServiceIO::initiatePutNotify ( dbChannelIO &chan, struct dbAddr &addr,
     if ( ! chan.dbServicePrivateListOfIO::pBlocker ) {
         chan.dbServicePrivateListOfIO::pBlocker = new dbPutNotifyBlocker ( chan );
         if ( ! chan.dbServicePrivateListOfIO::pBlocker ) {
-            throw cacChannel::noMemory();
+            throw std::bad_alloc ();
         }
         this->ioTable.add ( *chan.dbServicePrivateListOfIO::pBlocker );
     }

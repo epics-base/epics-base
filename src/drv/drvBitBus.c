@@ -94,7 +94,7 @@ struct {
         DRVSUPFUN       report;	/* Report on the status of the Bit Bus links */
         DRVSUPFUN       init;	/* Init the xvme card */
 	DRVSUPFUN	qReq;	/* Queue a transaction request */
-} drvVme={
+} drvBitBus={
         3,
         reportBB,
         initBB,

@@ -174,10 +174,10 @@ SYS_PROD_LIBS_WIN32 := ws2_32 advapi32
 
 #	for bldErrSymTbl:
 #
-ERR_S_FILES += $(TOP)/src/include/asLib.h
+ERR_S_FILES += $(LIBCOM)/misc/asLib.h
 ERR_S_FILES += $(TOP)/src/db/dbAccess.h
-ERR_S_FILES += $(TOP)/src/include/devSup.h
-ERR_S_FILES += $(TOP)/src/include/drvSup.h
+ERR_S_FILES += $(LIBCOM)/misc/devSup.h
+ERR_S_FILES += $(LIBCOM)/misc/drvSup.h
 ERR_S_FILES += $(TOP)/src/db/recSup.h
 ERR_S_FILES += $(TOP)/src/dbStatic/dbStaticLib.h
 ERR_S_FILES += $(LIBCOM)/error/errMdef.h

@@ -3,7 +3,7 @@ include Target.include
 include $(EPICS)/config/CONFIG
 
 USR_CFLAGS = -D_NO_PROTO
-LDLIBS = -lAs -lca -lCom -lDb -lCom -s
+USR_LDLIBS = -lAs -lca -lCom -lDb -lCom -s
 
 LEX = $(ELEX)
 YACC = $(EYACC)
@@ -13,6 +13,9 @@ OBJS = ascheck.o
 LIBOBJS = asLib.o
 LIBNAME = libAs.a
 PROD = ascheck
+
+all: install_libs install
+$(PROD): $(LIBNAME)
 
 # Extra rule since asLib_lex.c is included in asLib.c
 #   In my opinion, these objects should really be built

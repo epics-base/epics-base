@@ -161,19 +161,12 @@ INC_RTEMS := CommandInterpreter.h
 SRCS_RTEMS := CommandInterpreter.c
 HTMLS_RTEMS += osi/os/RTEMS/CommandInterpreter.html
 
-#why is this here ?
-USR_CFLAGS = -D_NO_PROTO 
-
 #       Library to build:
 #       lib$(LIBRARY).a  or   ..dll/..exp/..lib
 #
 LIBRARY=Com
 SYS_DLL_LIBS := ws2_32 advapi32 user32
 
-
-#   only for WIN32:
-#   build LIBRARY as a DLL, use the specified def file
-LIBTYPE := SHARED
 
 #   libs needed for PROD and TESTPRODUCT
 PROD_LIBS := Com

@@ -1218,7 +1218,7 @@ void cac::ioExceptionNotifyAndDestroy ( unsigned id, int status,
 // resubscribe for monitors from this channel
 void cac::connectAllIO ( nciu &chan )
 {
-    bool signalNeeded;
+    bool signalNeeded = false;
     {
         tsDLList < baseNMIU > tmpList;
         epicsAutoMutex autoMutex ( this->mutex );
@@ -1258,7 +1258,7 @@ void cac::connectAllIO ( nciu &chan )
 // cancel IO operations and monitor subscriptions
 void cac::disconnectAllIO ( nciu &chan )
 {
-    bool signalNeeded;
+    bool signalNeeded = false;
     {
         epicsAutoMutex autoMutex ( this->mutex );
         tsDLList < baseNMIU > tmpList;
@@ -1293,7 +1293,7 @@ void cac::disconnectAllIO ( nciu &chan )
 
 void cac::destroyAllIO ( nciu &chan )
 {
-    bool signalNeeded;
+    bool signalNeeded = false;
     {
         epicsAutoMutex autoMutex ( this->mutex );
         while ( baseNMIU *pIO = chan.cacPrivateListOfIO::eventq.get() ) {

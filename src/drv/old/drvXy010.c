@@ -2,7 +2,7 @@
  * initialize the  Xycom SRM010 bus controller card 
  */
 /* base/src/drv $Id$ */
-/*      Author: Betty Ann Gunther
+/*      Author: Jeff Hill
  *      Date:   06-30-29
  * 	Initialize xy010 bus controller
  *

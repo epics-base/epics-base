@@ -4,7 +4,7 @@
  *	routines used to test and interface with Xycom240
  *	digital i/o module
  *
- * 	Author:      B. Kornke
+ * 	Author:      Bob Dalesio
  * 	Date:        11/20/91
  *	Experimental Physics and Industrial Control System (EPICS)
  *

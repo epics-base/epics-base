@@ -1362,7 +1362,6 @@ LOCAL void write_notify_call_back(PUTNOTIFY *ppn)
     db_post_extra_labor(pclient->evuser);
 }
 
-
 /* 
  * write_notify_reply()
  *

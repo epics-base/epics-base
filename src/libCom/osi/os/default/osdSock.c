@@ -36,6 +36,7 @@
 #include <stdlib.h>
 
 #define epicsExportSharedSymbols
+#include "osiSem.h"
 #include "osiSock.h"
 #include "epicsAssert.h"
 #include "errlog.h"
@@ -48,10 +49,16 @@
 #endif
 
 /*
+ * Protect some routines which are not thread-safe
+ */
+static semMutexId infoMutex;
+
+/*
  * NOOP
  */
 int bsdSockAttach()
 {
+	infoMutex = semMutexMustCreate ();
 	return 1;
 }
 
@@ -60,55 +67,58 @@ int bsdSockAttach()
  */
 void bsdSockRelease()
 {
+	semMutexDestroy (infoMutex);
 }
 
 /*
  * ipAddrToHostName
+ * On many systems, gethostbyaddr must be protected by a
+ * mutex since the routine is not thread-safe.
  */
 epicsShareFunc unsigned epicsShareAPI ipAddrToHostName 
             (const struct in_addr *pAddr, char *pBuf, unsigned bufSize)
 {
 	struct hostent	*ent;
+	int ret = 0;
 
 	if (bufSize<1) {
 		return 0;
 	}
 
+	semMutexMustTake (infoMutex);
 	ent = gethostbyaddr((char *) pAddr, sizeof (*pAddr), AF_INET);
 	if (ent) {
         strncpy (pBuf, ent->h_name, bufSize);
         pBuf[bufSize-1] = '\0';
-        return strlen (pBuf);
+        ret = strlen (pBuf);
 	}
-    return 0;
+	semMutexGive (infoMutex);
+    return ret;
 }
 
 /*
  * hostToIPAddr ()
+ * On many systems, gethostbyname must be protected by a
+ * mutex since the routine is not thread-safe.
  */
 epicsShareFunc int epicsShareAPI hostToIPAddr 
 				(const char *pHostName, struct in_addr *pIPA)
 {
 	struct hostent *phe;
+	int ret = -1;
 
+	semMutexMustTake (infoMutex);
 	phe = gethostbyname (pHostName);
 	if (phe && phe->h_addr_list[0]) {
 		if (phe->h_addrtype==AF_INET && phe->h_length<=sizeof(struct in_addr)) {
 			struct in_addr *pInAddrIn = (struct in_addr *) phe->h_addr_list[0];
 			
 			*pIPA = *pInAddrIn;
-
-			/*
-			 * success
-			 */
-			return 0;
+			ret = 0;
 		}
 	}
-
-	/*
-	 * return indicating an error
-	 */
-	return -1;
+	semMutexGive (infoMutex);
+	return ret;
 }
 
 epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
@@ -289,4 +299,102 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
     }
 
     free (pIfreqList);
+}
+
+/*
+ * osiLocalAddr()
+ */
+osiSockAddr osiLocalAddr(SOCKET s)
+{
+    int             	i;
+    struct ifconf   	ifconf;
+    struct ifreq    	*ifreq;
+    struct ifreq    	*pifreq, *pnextifreq;
+    unsigned            size;
+    static char     	init;
+    static osiSockAddr  addr;
+
+    if (init)
+	return addr;
+    
+    /*
+     * Assume the worst
+     */
+    init = 1;
+    addr.sa.sa_family = AF_UNSPEC;
+
+    /*
+     * Allocate memory here instead of using local stack space
+     */
+    ifconf.ifc_len = 100 * sizeof *ifreq;
+    ifreq = malloc (ifconf.ifc_len);
+    if (ifreq == NULL) {
+	errlogPrintf ("osiLocalAddr: No memory!\n");
+	return addr;
+    }
+
+    /*
+     * Get the interface configuration information
+     */
+    ifconf.ifc_req = ifreq;
+    i = socket_ioctl(s, SIOCGIFCONF, &ifconf);
+    if ((i < 0) || (ifconf.ifc_len == 0)) {
+	    errlogPrintf ("osiLocalAddr: SIOCGIFCONF ioctl failed: %s\n", strerror (errno));
+	    ifconf.ifc_len = 0;
+    }
+
+    /* 
+     * Get the address of the first interface found 
+     */
+    for (pifreq = ifconf.ifc_req;
+      (((char *)pifreq - (char *)ifconf.ifc_req) + sizeof *pifreq) <= ifconf.ifc_len ;
+      pifreq = pnextifreq) {
+	unsigned flags;
+#       if BSD >= 44
+            size = pifreq->ifr_addr.sa_len + sizeof(pifreq->ifr_name);
+            if ( size < sizeof(*pifreq)) {
+                size = sizeof(*pifreq);
+            }
+#       else
+            size = sizeof(*pifreq);
+#       endif
+
+        pnextifreq = (struct ifreq *) (size + (char *) pifreq);
+
+	/*
+	 * Don't use interfaces that are down
+	 */
+	i = socket_ioctl(s, SIOCGIFFLAGS, pifreq);
+	if (i < 0) {
+	    errlogPrintf ("osiLocaAddr: can't get flags for %s: %s\n", pifreq->ifr_name, strerror (errno));
+	    continue;
+	}
+	flags = pifreq->ifr_flags;
+	if (!(flags & IFF_UP)) {
+	    ifDepenDebugPrintf (("osiLocalAddr: Network interface %s is down\n", pifreq->ifr_name));
+	    continue;
+	}
+	
+	/*
+	 * Don't use the loop back interface
+	 */
+	if (flags & IFF_LOOPBACK)
+	    continue;
+
+	/*
+	 * Don't use non-Internet interfaces
+	 */
+	i = socket_ioctl (s, SIOCGIFADDR, pifreq);
+	if (i < 0) {
+	    errlogPrintf ("osiLocalAddr: Can't get address of %s: %s\n", pifreq->ifr_name, strerror (errno));
+	    continue;
+	}
+	if (pifreq->ifr_addr.sa_family != AF_INET)
+	    continue;
+	ifDepenDebugPrintf (("osiLocalAddr: Network interface %s found.\n", pifreq->ifr_name));
+	addr.ia = *(struct sockaddr_in *)&pifreq->ifr_addr;
+	break;
+    }
+    free (ifreq);
+    return addr;
 }

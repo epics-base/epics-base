@@ -12,7 +12,7 @@ CAS_INCLUDES = -I$(CAS)/generic -I$(CAS)/../ca
 
 USR_INCLUDES = -I$(GDD) -I$(GDD)/O.$(T_A) $(CAS_INCLUDES) 
 
-USR_LDLIBS = -lcas -lca -lCom -lgdd -lm
+USR_LDLIBS = -lcas -lca -lCom -lgdd 
 
 ifeq ($(CPLUSPLUS),G++)
 USR_LDLIBS += -liberty
@@ -61,15 +61,11 @@ GLOMBOBJ += $(BUILDDIR)casMonitor.o
 GLOMBOBJ += $(BUILDDIR)casMonEvent.o
 GLOMBOBJ += $(BUILDDIR)outBuf.o
 GLOMBOBJ += $(BUILDDIR)inBuf.o
-GLOMBOBJ += $(BUILDDIR)osiTimer.o
-GLOMBOBJ += $(BUILDDIR)osiTimerQueue.o
 GLOMBOBJ += $(BUILDDIR)casEventMask.o
 
 GLOMBOBJ += $(BUILDDIR)caServerOS.o
 GLOMBOBJ += $(BUILDDIR)casDGOS.o
 GLOMBOBJ += $(BUILDDIR)casStreamOS.o
-GLOMBOBJ += $(BUILDDIR)fdMgr.o
-GLOMBOBJ += $(BUILDDIR)osiTimeOSD.o
  
 GLOMBOBJ += $(BUILDDIR)caServerIO.o
 GLOMBOBJ += $(BUILDDIR)casDGIO.o

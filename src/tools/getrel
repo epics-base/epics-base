@@ -49,13 +49,14 @@ fi
 
 
 /bin/rm -f \
+	EPICS_BASE \
 	epics \
 	base \
 	target* \
 	vxWorks* \
 	vw
 
-echo EPICS_BASE=${BASE} >> EPICS_BASE
+echo EPICS_BASE=${BASE} > EPICS_BASE
 
 touch .current_rel_hist
 echo ${BASE} - `date` >> .current_rel_hist

@@ -86,7 +86,6 @@ public:
     virtual ~tcpSendThread ();
     void start ();
     void exitWait ();
-    void exitWaitRelease ();
     void interruptSocketSend ();
     void show ( unsigned level ) const;
 private:

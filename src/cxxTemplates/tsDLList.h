@@ -31,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.12  1998/05/29 17:25:47  jhill
+ * allow use of epicsAssert.h
+ *
  * Revision 1.11  1998/05/05 18:06:57  jhill
  * rearranged to allow compilation by g++ 2.8.1
  *
@@ -492,16 +495,16 @@ public:
 
 	T * next () 
 	{
-                T *pCur = this->pCurrent;
-                if (pCur==0) {
-                        pCur = this->pList->pFirst;
-                }
-                else {
+		T *pCur = this->pCurrent;
+		if (pCur==0) {
+			pCur = this->pList->pFirst;
+		}
+		else {
 			tsDLNode<T> *pCurNode = pCur;
-                        pCur = pCurNode->pNext;
-                }
-                this->pCurrent = pCur;
-                return pCur;
+			pCur = pCurNode->pNext;
+		}
+		this->pCurrent = pCur;
+		return pCur;
 	}
 
 	T * prev ()

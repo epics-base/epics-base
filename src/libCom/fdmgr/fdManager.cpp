@@ -21,6 +21,7 @@
 // 1) This library is not thread safe
 //
 
+#undef FD_SETSIZE
 #define FD_SETSIZE 4096
 
 //

@@ -24,5 +24,7 @@ include $(TOP)/config/RULES.Vx
 
 iocCore: $(IOC_CORE_OBJS)
 	$(LINK.c) $@ $(IOC_CORE_OBJS)
+ifneq ($(HOST_ARCH),WIN32)
 	@what $@
+endif
 

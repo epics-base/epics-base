@@ -232,6 +232,11 @@ void epicsShareAPI gphFreeMem(void *pvt)
 
 void epicsShareAPI gphDump(void *pvt)
 {
+    gphDumpFP(stdout,pvt);
+}
+
+void epicsShareAPI gphDumpFP(FILE *fp,void *pvt)
+{
     int		hashInd;
     gphPvt	*pgphPvt = (gphPvt *)pvt;
     ELLLIST	**paplist;
@@ -245,13 +250,13 @@ void epicsShareAPI gphDump(void *pvt)
 	if(paplist[hashInd] == NULL) continue;
 	plist=paplist[hashInd];
 	pgphNode = (GPHENTRY *) ellFirst(plist);
-	printf("\n %3.3hd=%3.3d",hashInd,ellCount(plist));
+	fprintf(fp,"\n %3.3hd=%3.3d",hashInd,ellCount(plist));
 	number=0;
 	while(pgphNode) {
-	    printf(" %s %p",pgphNode->name,pgphNode->pvtid);
-	    if(number++ ==2) {number=0;printf("\n        ");}
+	    fprintf(fp," %s %p",pgphNode->name,pgphNode->pvtid);
+	    if(number++ ==2) {number=0;fprintf(fp,"\n        ");}
 	    pgphNode = (GPHENTRY *) ellNext((ELLNODE*)pgphNode);
 	}
     }
-    printf("\n End of General Purpose Hash\n");
+    fprintf(fp,"\n End of General Purpose Hash\n");
 }

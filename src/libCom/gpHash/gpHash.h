@@ -40,6 +40,7 @@ epicsShareFunc void epicsShareAPI
     gphDelete(void *pvt,const char *name,void *pvtid);
 epicsShareFunc void epicsShareAPI gphFreeMem(void *pvt);
 epicsShareFunc void epicsShareAPI gphDump(void *pvt);
+epicsShareFunc void epicsShareAPI gphDumpFP(FILE *fp,void *pvt);
 
 #ifdef __cplusplus
 }

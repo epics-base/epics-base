@@ -20,7 +20,6 @@ protected:
     void * singletonPointer () const;
 private:
     void * pSingleton;
-    static class epicsMutex mutex;
     virtual void * factory () = 0;
 };
 

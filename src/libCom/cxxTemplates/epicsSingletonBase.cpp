@@ -10,9 +10,22 @@
 #define epicsExportSharedSymbols
 #include "epicsMutex.h"
 #include "epicsGuard.h"
+#include "epicsThread.h"
 #include "epicsSingleton.h"
 
-epicsMutex epicsSingletonBase::mutex;
+static epicsThreadOnceId epicsSingletonOnceId = EPICS_THREAD_ONCE_INIT;
+static epicsMutex *pSingletonBaseMutexEPICS;
+
+static void epicsSingletonCleanup ()
+{
+    delete pSingletonBaseMutexEPICS;
+}
+
+static void epicsSingletonOnce ( void * )
+{
+    pSingletonBaseMutexEPICS = new epicsMutex;
+    atexit ( epicsSingletonCleanup );
+}
 
 epicsSingletonBase::epicsSingletonBase () : pSingleton ( 0 )
 {
@@ -29,8 +42,11 @@ epicsSingletonBase::~epicsSingletonBase ()
 
 void epicsSingletonBase::lockedFactory ()
 {
-    epicsGuard < epicsMutex > guard ( this->mutex );
     if ( ! this->pSingleton ) {
-        this->pSingleton = this->factory ();
+        epicsThreadOnce ( & epicsSingletonOnceId, epicsSingletonOnce, 0 );
+        epicsGuard < epicsMutex > guard ( *pSingletonBaseMutexEPICS );
+        if ( ! this->pSingleton ) {
+            this->pSingleton = this->factory ();
+        }
     }
 }

@@ -35,22 +35,22 @@ static pSigFunc pReplacedSigUrgFunc;
 static void localInstallSigIgnore ( int signalIn, pSigFunc pNewFunc,
                                    pSigFunc * pReplacedFunc )
 {
-	pSigFunc sigRet;
+    pSigFunc sigRet;
 
-	sigRet = signal ( signalIn, pNewFunc );
-	if ( sigRet == SIG_ERR ) {
-		fprintf (stderr, "%s replace of SIGPIPE failed beacuse %s\n", 
-			__FILE__, strerror(errno));
-	}
-	else if ( sigRet != SIG_DFL && sigRet != SIG_IGN ) {
-		*pReplacedFunc = sigRet;
-	    /*
-	     * no infinite loops 
-	     */
-	    if ( *pReplacedFunc == pNewFunc ) {
-		    *pReplacedFunc = NULL;
-	    }
-	}
+    sigRet = signal ( signalIn, pNewFunc );
+    if ( sigRet == SIG_ERR ) {
+        fprintf (stderr, "%s replace of SIGPIPE failed beacuse %s\n", 
+            __FILE__, strerror(errno));
+    }
+    else if ( sigRet != SIG_DFL && sigRet != SIG_IGN ) {
+        *pReplacedFunc = sigRet;
+        /*
+         * no infinite loops 
+         */
+        if ( *pReplacedFunc == pNewFunc ) {
+            *pReplacedFunc = NULL;
+        }
+    }
 }
 
 /*
@@ -60,14 +60,14 @@ static void localInstallSigIgnore ( int signalIn, pSigFunc pNewFunc,
  */
 static void ignoreSigPipe ( int signal )
 {
-	if ( pReplacedSigPipeFunc ) {
-		( *pReplacedSigPipeFunc ) ( signal );
-	}
-	/*
-	 * some versios of unix reset to SIG_DFL
-	 * each time that the signal occurs
-	 */
-	localInstallSigIgnore ( signal, 
+    if ( pReplacedSigPipeFunc ) {
+        ( *pReplacedSigPipeFunc ) ( signal );
+    }
+    /*
+     * some versios of unix reset to SIG_DFL
+     * each time that the signal occurs
+     */
+    localInstallSigIgnore ( signal, 
         ignoreSigPipe, & pReplacedSigPipeFunc );
 }
 
@@ -78,39 +78,40 @@ static void ignoreSigPipe ( int signal )
  */
 static void ignoreSigUrg ( int signal )
 {
-	if ( pReplacedSigUrgFunc ) {
-		( *pReplacedSigUrgFunc ) ( signal );
-	}
-	/*
-	 * some versions of unix reset to SIG_DFL
-	 * each time that the signal occurs
-	 */
-	localInstallSigIgnore ( signal, 
+    if ( pReplacedSigUrgFunc ) {
+        ( *pReplacedSigUrgFunc ) ( signal );
+    }
+    /*
+     * some versions of unix reset to SIG_DFL
+     * each time that the signal occurs
+     */
+    localInstallSigIgnore ( signal, 
         ignoreSigUrg, & pReplacedSigUrgFunc );
 }
+
 /*
  * epicsSignalInstallSigPipeIgnore ()
  */
 epicsShareFunc void epicsShareAPI epicsSignalInstallSigPipeIgnore (void)
 {
-	static int init;
-	if ( init ) {
-		return;
-	}
-	localInstallSigIgnore ( SIGPIPE, 
+    static int init;
+    if ( init ) {
+        return;
+    }
+    localInstallSigIgnore ( SIGPIPE, 
         ignoreSigPipe, & pReplacedSigPipeFunc );
-	init = 1;
+    init = 1;
 }
 
 epicsShareFunc void epicsShareAPI epicsSignalInstallSigUrgIgnore ( void ) 
 {
-	static int init;
-	if ( init ) {
-		return;
-	}
-	localInstallSigIgnore ( SIGURG, 
+    static int init;
+    if ( init ) {
+        return;
+    }
+    localInstallSigIgnore ( SIGURG, 
         ignoreSigUrg, & pReplacedSigUrgFunc );
-	init = 1;
+    init = 1;
 }
 
 epicsShareFunc void epicsShareAPI epicsSignalRaiseSigUrg 

@@ -230,6 +230,8 @@ int epicsShareAPI astac(char *pname,char *user,char *location)
     ASCLIENTPVT	*pasclientpvt=NULL;
     dbCommon	*precord;
     dbFldDes	*pflddes;
+    char	*puser;
+    char	*plocation;
 
     paddr = dbCalloc(1,sizeof(DBADDR) + sizeof(ASCLIENTPVT));
     pasclientpvt = (ASCLIENTPVT *)(paddr + 1);
@@ -240,8 +242,13 @@ int epicsShareAPI astac(char *pname,char *user,char *location)
     }
     precord = paddr->precord;
     pflddes = paddr->pfldDes;
+    puser = asCalloc(1,strlen(user)+1);
+    strcpy(puser,user);
+    plocation = asCalloc(1,strlen(location)+1);
+    strcpy(plocation,location);
+
     status = asAddClient(pasclientpvt,(ASMEMBERPVT)precord->asp,
-	(int)pflddes->as_level,user,location);
+	(int)pflddes->as_level,puser,plocation);
     if(status) {
 	errMessage(status,"asAddClient error");
 	return(1);

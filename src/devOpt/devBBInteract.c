@@ -36,6 +36,7 @@
  * .01  06-19-91        nda     initial coding & debugging
  * .02  09-23-91        jrw     added proper multi-link support
  * .03	10-04-91	jrw	rewrote as BI.c for use with BitBus
+ * .04	02-12-92	jrw	added HEX file downloading support
  *
  */
 
@@ -76,7 +77,7 @@ struct	cmdPvt {
 
 #define LIST_SIZE	10
 
-static struct dpvtBitBusHead	adpvt[LIST_SIZE];
+static struct dpvtBitBusHead	adpvt[LIST_SIZE+1];	/* last one is used for the 'F' command */
 
 /* declare other required variables used by more than one routine */
 
@@ -108,7 +109,7 @@ BI()
     FASTUNLOCK(&msgReply);
     FASTLOCK(&msgReply);	/* Make sure is locked at the begining */
     
-    for (cnt = 0; cnt < LIST_SIZE; cnt++)
+    for (cnt = 0; cnt <= LIST_SIZE; cnt++)
     {
       adpvt[cnt].finishProc = bbWork;
       adpvt[cnt].priority = 0;
@@ -138,6 +139,7 @@ BI()
     printf("  'T' to do timing on messages\n");
     printf("  'R' to turn on the BB debugging flag\n");
     printf("  'r' to turn off the BB debugging flag\n");
+    printf("  'F' to download intel HEX file to a bug\n");
     printf("  'Q' to quit program\n");
     printf(">");
     ans = 0;    /* clear previous selection */
@@ -180,6 +182,10 @@ BI()
       case 'R':		/* turn on bbDebug */
         bbDebug = 1;
         break;
+      case 'f':
+      case 'F':
+	downLoadCode();
+	break;
     }               /* end case */
   }                   /* end of while ans== q or Q  */
   return(0);
@@ -399,6 +405,188 @@ configMsg()
 }
 
 /*
+ * downLoadCode()
+ *
+ * This lets a user download an Intel HEX file to a bitbus node.
+ *
+ * The format of a hex record is:
+ * :nnoooottb0b1b2b3b4b5b6b7b8b9b0babbbcbdbebfss\n
+ *
+ * where:
+ * nn   = number of data bytes on the line
+ * oooo = offset address where the data is supposed to reside when loaded
+ * tt   = record type 00 = data, 01 = end, 02 = segment record, 03 = program entry record
+ * b0-bf= hex data bytes
+ * ss   = checksum of the record
+ *
+ * This loader only recognises data records and end records, any others are
+ * treated as errors.
+ */
+
+static int
+downLoadCode()
+{
+  char	str[200];			/* place to read in strings */
+  char	hexBuf[100];			/* place to read intel HEX file lines */
+  FILE	*fp;
+  unsigned int	msgBytes;		/* current number of bytes in the message being built */
+  unsigned char	hexTotal;		/* number of data bytes in the current HEX file line */
+  unsigned char	hexBytes;		/* number of data bytes converted in HEX file line */
+  unsigned char	recType;		/* type of record being processed */
+
+  unsigned int	totalBytes;		/* total bytes sent to bug memory */
+  unsigned int	totalMsg;		/* total messages sent to the bug */
+  int		status;
+  int		inInt;
+
+  struct dpvtBitBusHead    *pdpvt = &(adpvt[LIST_SIZE]);
+
+  /* open the hex file */
+  printf("Enter (Intel-standard) HEX file name:");
+  gets(str);
+  sscanf("%s", str);
+
+  if ((fp = fopen(str, "r")) == NULL)
+  {
+    printf("Error: Can't open file >%s<\n", str);
+    return(ERROR);
+  }
+  /* get the link number */
+  printf("Enter BB Link (hex) [%02.2X]: ", (int) pdpvt->link);
+  gets(str);
+  if (sscanf(str, "%x", &inInt) == 1)
+    pdpvt->link = inInt;
+
+  /* get the bug number */
+  printf("Enter Node    (hex) [%02.2X]: ", pdpvt->txMsg.node);
+  gets(str);
+  if (sscanf(str, "%x", &inInt) == 1)
+    pdpvt->txMsg.node = inInt;
+
+  pdpvt->txMsg.cmd = RAC_DOWNLOAD_MEM;
+  pdpvt->txMsg.tasks = BB_RAC_TASK;
+
+  totalBytes = 0;
+  totalMsg = 0;
+  status = OK;
+
+  FASTUNLOCK(&msgReply);  		/* prime for first loop */
+  FASTLOCK(&msgReply);
+
+  /* read the file 1 line at a time & send the code to the bug */
+  msgBytes=0;
+  while (fgets(hexBuf, sizeof(hexBuf), fp) > 0)
+  {
+    /* parse the headers in the hex record */
+    if (hexBuf[0] != ':' || (hex2bin(&(hexBuf[7]) ,&recType) == ERROR))
+    {
+      printf("Bad line in HEX file. Line:\n%s", hexBuf);
+      status = ERROR;
+      break;
+    }
+    if (recType == 1)	/* EOF record located */
+      break;
+
+    if (recType != 0)	/* unrecognised record type encountered */
+    {
+      printf("Unrecognised record type 0x%02.2X in HEX file. Line:\n%s", recType, hexBuf);
+      status = ERROR;
+      break;
+    }
+
+    /* find the starting address */
+    if ((hex2bin(&(hexBuf[3]), &(pdpvt->txMsg.data[0])) == ERROR) || 
+			(hex2bin(&(hexBuf[5]), &(pdpvt->txMsg.data[1])) == ERROR))
+    {
+      printf("Invalid characters in HEX record offset field. Line:\n%s", hexBuf);
+      status = ERROR;
+      break;
+    }
+
+    /* find the number of bytes in the hex record */
+    if (hex2bin(&(hexBuf[1]), &hexTotal) == ERROR)
+    {
+      printf("Invalid characters in HEX record count field. Line:\n%s", hexBuf);
+      status = ERROR;
+      break;
+    }
+    hexTotal += hexTotal;	/* double since is printable format */
+    hexBytes = 0;
+    msgBytes = 2;	/* skip over the address field of the bitbus message */
+
+    while ((hexBytes < hexTotal) && (status == OK))
+    {
+      while ((msgBytes < 13) && (hexBytes < hexTotal))
+      { /* convert up to 1 message worth of data (or hit EOL) */
+        hex2bin(&(hexBuf[hexBytes+9]), &(pdpvt->txMsg.data[msgBytes]));
+        msgBytes++;
+        hexBytes+=2;
+      }
+      if (msgBytes > 2)
+      { /* send the bitbus RAC command message */
+  
+        /* length = hexBytes + header size of the bitbus message */
+	pdpvt->txMsg.length = msgBytes+7;
+  
+        pdpvt->ageLimit = 30;  /* need to reset each time */
+
+        (*(drvBitBus.qReq))(pdpvt, BB_Q_LOW); /* queue the msg */
+        FASTLOCK(&msgReply);  		/* wait for last message to finish */
+  
+	*((unsigned short int *)(pdpvt->txMsg.data)) += msgBytes-2;	/* ready for next message */
+
+        totalBytes += msgBytes-2;
+        totalMsg++;
+        msgBytes=2;
+
+	if (pdpvt->rxMsg.cmd != 0)
+	{
+	  printf("Bad message response status 0x%02.2X\n", pdpvt->rxMsg.cmd);
+	  status = ERROR;
+	}
+      }
+    }
+  }
+  /* close the hex file */
+  fclose(fp);
+
+  printf("Total bytes down loaded to BUG = %u = 0x%04.4X\n", totalBytes, totalBytes);
+  printf("Total messages sent = %u = 0x%04.4X\n", totalMsg, totalMsg);
+
+  return(status);
+}
+/*
+ * This function translates a printable ascii string containing hex
+ * digits into a binary value.
+ */
+static int
+hex2bin(pstr, pchar)
+char		*pstr;	/* string containing the ascii bytes */
+unsigned char	*pchar;	/* where to return the binary value */
+{
+  int		ctr;
+
+  ctr = 0;
+  *pchar = 0;
+  while(ctr < 2)
+  {
+    *pchar = (*pchar) << 4;
+
+    if ((pstr[ctr] >= '0') && (pstr[ctr] <= '9'))
+      (*pchar) += (pstr[ctr] & 0x0f);		/* is 0-9 value */
+    else if ((pstr[ctr] >= 'A') && (pstr[ctr] <= 'F'))
+      (*pchar) += (pstr[ctr] - 'A' + 0x0a);	/* is A-f value */
+    else if ((pstr[ctr] >= 'a') && (pstr[ctr] <= 'f'))
+      (*pchar) += (pstr[ctr] - 'a' + 0x0a);	/* is a-f value */
+    else
+      return (ERROR);	/* invalid character found in input string */
+    ctr++;
+  }
+
+  return(OK);
+}
+
+/*
  * getInt(pInt) ****************************************************
  *
  * gets a line of input from STDIN (10 characters MAX !!!!) scans the line
@@ -508,8 +696,8 @@ struct bitBusMsg *msg;
 {
   int	i;
 
-  printf("    link=%04.4X length=%02.2X route=%02.2X node=%02.2X tasks=%02.2X cmd=%02.2X\n",
-        msg->link, msg->length, msg->route, msg->node, msg->tasks, msg->cmd);
+  printf("    0x%08.8X:link=%04.4X length=%02.2X route=%02.2X node=%02.2X tasks=%02.2X cmd=%02.2X\n",
+        msg, msg->link, msg->length, msg->route, msg->node, msg->tasks, msg->cmd);
   printf("    data :");
   for (i = 0; i < msg->length - 7; i++)
   {

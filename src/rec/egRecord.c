@@ -30,9 +30,11 @@
 #include "errMdef.h"
 #include "recSup.h"
 #include "recGbl.h"
-#define epicsExportSharedSymbols
 
+#define epicsExportSharedSymbols
+#define GEN_SIZE_OFFSET
 #include "egRecord.h"
+#undef  GEN_SIZE_OFFSET
 #include "egDefs.h"
 
 #define STATIC	static

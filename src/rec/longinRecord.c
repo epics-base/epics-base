@@ -33,8 +33,9 @@
 #include "recSup.h"
 #include "recGbl.h"
 #define epicsExportSharedSymbols
-
+#define GEN_SIZE_OFFSET
 #include "longinRecord.h"
+#undef  GEN_SIZE_OFFSET
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL

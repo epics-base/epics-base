@@ -33,8 +33,9 @@
 #include "callback.h"
 
 #define epicsExportSharedSymbols
-
+#define GEN_SIZE_OFFSET
 #include "seqRecord.h"
+#undef  GEN_SIZE_OFFSET
 
 int	seqRecDebug = 0;
 

@@ -30,8 +30,9 @@
 #include "recSup.h"
 #include "recGbl.h"
 #define epicsExportSharedSymbols
-
+#define GEN_SIZE_OFFSET
 #include "longoutRecord.h"
+#undef  GEN_SIZE_OFFSET
 #include "menuIvoa.h"
 #include "menuOmsl.h"
 

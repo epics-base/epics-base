@@ -30,10 +30,11 @@
 #include "errMdef.h"
 #include "recSup.h"
 #include "recGbl.h"
-#define epicsExportSharedSymbols
-
-#include "fanoutRecord.h"
 #include "dbCommon.h"
+#define epicsExportSharedSymbols
+#define GEN_SIZE_OFFSET
+#include "fanoutRecord.h"
+#undef  GEN_SIZE_OFFSET
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL

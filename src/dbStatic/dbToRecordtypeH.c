@@ -247,7 +247,7 @@ int main(int argc,char **argv)
 	fprintf(outFile,"#endif\n");
 	pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
 	while(pdbRecordType) {
-		fprintf(outFile,"static int %sRecordSizeOffset(dbRecordType *pdbRecordType)\n{\n",
+		fprintf(outFile,"epicsShareFunc int %sRecordSizeOffset(dbRecordType *pdbRecordType)\n{\n",
 		pdbRecordType->name);
 	    fprintf(outFile,"    %sRecord *prec = 0;\n",pdbRecordType->name);
 	    for(i=0; i<pdbRecordType->no_fields; i++) {

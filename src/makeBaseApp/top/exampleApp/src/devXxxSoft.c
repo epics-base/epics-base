@@ -21,7 +21,7 @@
 /*Create the dset for devXxxSoft */
 static long init_record();
 static long read_xxx();
-epicsShareExtern struct {
+epicsShareDef struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

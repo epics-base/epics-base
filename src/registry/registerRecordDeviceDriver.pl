@@ -61,26 +61,16 @@ print << "END" ;
 #include "registryDriverSupport.h"
 #include "iocsh.h"
 #include "shareLib.h"
-#define GEN_SIZE_OFFSET
 END
-if($numberRecordType>0) {
-    for ($i=0; $i<$numberRecordType; $i++) {
-        print "#include <$recordType[$i]Record.h>\n"
-    }
-}
-print "#undef GEN_SIZE_OFFSET\n";
+
+print "extern \"C\" {\n";
 
 #definitions for recordtype
 if($numberRecordType>0) {
-    print "#ifdef __cplusplus\n";
-    print "extern \"C\" {\n";
-    print "#endif\n";
     for ($i=0; $i<$numberRecordType; $i++) {
         print "epicsShareExtern struct rset $recordType[$i]RSET;\n";
+        print "epicsShareFunc int $recordType[$i]RecordSizeOffset(dbRecordType *pdbRecordType);\n"
     }
-    print "#ifdef __cplusplus\n";
-    print "}\n";
-    print "#endif\n";
     print "\nstatic const char * const recordTypeNames[$numberRecordType] = {\n";
     for ($i=0; $i<$numberRecordType; $i++) {
         print "    \"$recordType[$i]\"";
@@ -100,15 +90,9 @@ if($numberRecordType>0) {
 
 #definitions for device
 if($numberDeviceSupport>0) {
-    print "#ifdef __cplusplus\n";
-    print "extern \"C\" {\n";
-    print "#endif\n";
     for ($i=0; $i<$numberDeviceSupport; $i++) {
         print "epicsShareExtern struct dset $deviceSupport[$i];\n";
     }
-    print "#ifdef __cplusplus\n";
-    print "}\n";
-    print "#endif\n";
     print "\nstatic const char * const deviceSupportNames[$numberDeviceSupport] = {\n";
     for ($i=0; $i<$numberDeviceSupport; $i++) {
         print "    \"$deviceSupport[$i]\"";
@@ -128,15 +112,9 @@ if($numberDeviceSupport>0) {
 
 #definitions for driver
 if($numberDriverSupport>0) {
-    print "#ifdef __cplusplus\n";
-    print "extern \"C\" {\n";
-    print "#endif\n";
     for ($i=0; $i<$numberDriverSupport; $i++) {
         print "epicsShareExtern struct drvet $driverSupport[$i];\n";
     }
-    print "#ifdef __cplusplus\n";
-    print "}\n";
-    print "#endif\n";
     print "\nstatic char *driverSupportNames[$numberDriverSupport] = {\n";
     for ($i=0; $i<$numberDriverSupport; $i++) {
         print "    \"$driverSupport[$i]\"";
@@ -157,11 +135,9 @@ if($numberDriverSupport>0) {
 #definitions registrar
 if($numberRegistrar>0) {
     print "typedef void(*REGISTRARFUNC)(void);\n";
-    print "extern \"C\" {\n";
     for ($i=0; $i<$numberRegistrar; $i++) {
 	print "epicsShareFunc void $registrar[$i](void);\n";
     }
-    print "}\n\n";
 }
 
 #Now actual registration code.
@@ -237,13 +213,12 @@ static const iocshArg *registerRecordDeviceDriverArgs[1] =
                                             {&registerRecordDeviceDriverArg0};
 static const iocshFuncDef registerRecordDeviceDriverFuncDef =
                 {"registerRecordDeviceDriver",1,registerRecordDeviceDriverArgs};
-extern "C" {
 static void registerRecordDeviceDriverCallFunc(const iocshArgBuf *)
 {
     registerRecordDeviceDriver(pdbbase);
 }
-} //extern "C"
 
+} // ext C
 /*
  * Register commands on application startup
  */

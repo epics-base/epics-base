@@ -1,11 +1,11 @@
 
 /*
- *	bsdSockResource.c
+ *	    $Id$
  *
- *	WIN32 specific initialisation for bsd sockets,
- *	based on Chris Timossi's base/src/ca/windows_depend.c,
- *  and also further additions by Kay Kasemir when this was in
- *	dllmain.cc
+ *	    WIN32 specific initialisation for bsd sockets,
+ *	    based on Chris Timossi's base/src/ca/windows_depend.c,
+ *      and also further additions by Kay Kasemir when this was in
+ *	    dllmain.cc
  *
  *      7-1-97  -joh-
  *
@@ -124,50 +124,25 @@ epicsShareFunc void epicsShareAPI bsdSockRelease()
 	}
 }
 
-
 /*
- * ipAddrToA() 
- * (convert IP address to ASCII host name)
+ * ipAddrToHostName
  */
-epicsShareFunc void epicsShareAPI ipAddrToA 
-			(const struct sockaddr_in *paddr, char *pBuf, unsigned bufSize)
+epicsShareFunc unsigned epicsShareAPI ipAddrToHostName 
+            (const struct in_addr *pAddr, char *pBuf, unsigned bufSize)
 {
-	char			*pString;
 	struct hostent	*ent;
-#	define			maxPortDigits 5u
 
 	if (bufSize<1) {
-		return;
+		return 0;
 	}
 
-	if (paddr->sin_family!=AF_INET) {
-		strncpy(pBuf, "<Ukn Addr Type>", bufSize-1);
-		/*
-		 * force null termination
-		 */
-		pBuf[bufSize-1] = '\0';
+	ent = gethostbyaddr((char *) pAddr, sizeof (*pAddr), AF_INET);
+	if (ent) {
+        strncpy (pBuf, ent->h_name, bufSize);
+        pBuf[bufSize-1] = '\0';
+        return strlen (pBuf);
 	}
-	else {
-		ent = gethostbyaddr((char *) &paddr->sin_addr, 
-				sizeof(paddr->sin_addr), AF_INET);
-		if(ent){
-			pString = ent->h_name;
-		}
-		else{
-			pString = inet_ntoa (paddr->sin_addr);
-		}
-
-		/*
-		 * allow space for the port number
-		 */
-		if (bufSize>maxPortDigits+strlen(pString)) {
-			sprintf (pBuf, "%.*s:%u", bufSize-maxPortDigits-1, 
-				pString, ntohs(paddr->sin_port));
-		}
-		else {
-			sprintf (pBuf, "%.*s", bufSize-1, pString);
-		}
-	}
+    return 0;
 }
 
 /*

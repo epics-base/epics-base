@@ -41,9 +41,7 @@
 #define INCalarmStringh 1
 
 
-static char *alarmStringhSccsId = "$Id$";
-
-char * alarmSeverityString[]={
+const char * alarmSeverityString[]={
 	"NO_ALARM",
 	"MINOR",
 	"MAJOR",
@@ -54,7 +52,7 @@ char * alarmSeverityString[]={
 /*** note:  this should be reconciled with alarm.h ***/
 
 
-char * alarmStatusString[]={
+const char * alarmStatusString[]={
 	"NO_ALARM",
 	"READ",
 	"WRITE",

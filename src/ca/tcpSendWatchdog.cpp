@@ -13,9 +13,8 @@
 #include "iocinf.h"
 
 tcpSendWatchdog::tcpSendWatchdog 
-    (double periodIn, osiTimerQueue & queueIn) :
-    osiTimer (queueIn),
-    period (periodIn)
+    ( tcpiiu &iiuIn, double periodIn, osiTimerQueue & queueIn ) :
+    osiTimer ( queueIn ), period ( periodIn ), iiu ( iiuIn )
 {
 }
 
@@ -26,10 +25,10 @@ tcpSendWatchdog::~tcpSendWatchdog ()
 void tcpSendWatchdog::expire ()
 {
     char hostName[128];
-    this->hostName ( hostName, sizeof (hostName) );
+    this->iiu.hostName ( hostName, sizeof (hostName) );
     ca_printf ( "Request not accepted by CA server %s for %g sec. Disconnecting.\n", 
         hostName, this->period);
-    this->forcedShutdown ();
+    this->iiu.forcedShutdown ();
 }
 
 void tcpSendWatchdog::destroy ()
@@ -52,12 +51,12 @@ const char *tcpSendWatchdog::name () const
     return "TCP Send Watchdog";
 }
 
-void tcpSendWatchdog::armSendWatchdog ()
+void tcpSendWatchdog::arm ()
 {
-    this->reschedule ();
+    this->osiTimer::reschedule ();
 }
 
-void tcpSendWatchdog::cancelSendWatchdog ()
+void tcpSendWatchdog::cancel ()
 {
-    this->cancel ();
+    this->osiTimer::cancel ();
 }

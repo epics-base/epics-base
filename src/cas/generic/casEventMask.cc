@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1996/12/06 22:32:11  jhill
+ * force virtual destructor
+ *
  * Revision 1.3  1996/11/02 00:54:10  jhill
  * many improvements
  *
@@ -131,7 +134,6 @@ casEventMask casEventRegistry::registerEvent(const char *pName)
 {
 	casEventMaskEntry	*pEntry;
 	stringId 		id (pName);
-	int			stat;
 	casEventMask		mask;
 
 	if (!this->hasBeenInitialized) {
@@ -151,10 +153,8 @@ casEventMask casEventRegistry::registerEvent(const char *pName)
 			errMessage(S_cas_tooManyEvents, NULL);
 		}
 		else {
-			pEntry = new casEventMaskEntry(mask, pName);
+			pEntry = new casEventMaskEntry(*this, mask, pName);
 			if (pEntry) {
-				stat = this->add(*pEntry);
-				assert(stat==0);
 				mask = *pEntry;
 			}
 			else {
@@ -201,6 +201,19 @@ void casEventRegistry::show(unsigned level)
 }
 
 //
+// casEventMaskEntry::casEventMaskEntry()
+//
+casEventMaskEntry::casEventMaskEntry(
+	casEventRegistry &regIn, casEventMask maskIn, const char *pName) :
+	reg(regIn), casEventMask (maskIn), stringId (pName) 
+{
+	int 	stat;
+
+	stat = this->reg.add(*this);
+	assert(stat==0);
+}
+
+//
 // casEventMaskEntry::~casEventMaskEntry()
 //
 // empty destructor forces virtual
@@ -210,5 +223,15 @@ void casEventRegistry::show(unsigned level)
 //
 casEventMaskEntry::~casEventMaskEntry()
 {
+        this->reg.remove (*this);
+}
+
+//
+// casEventMaskEntry::show()
+//
+void casEventMaskEntry::show (unsigned level)
+{
+	this->casEventMask::show(level);
+	this->stringId::show(level);
 }
 

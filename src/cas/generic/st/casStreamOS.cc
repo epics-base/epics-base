@@ -229,7 +229,7 @@ void casStreamIOWakeup::show(unsigned level) const
 inline void casStreamOS::armRecv()
 {
 	if (!this->pRdReg) {
-		if (this->inBuf::full()!=aitTrue) {
+		if (!this->inBuf::full()) {
 			this->pRdReg = new casStreamReadReg(*this);
 			if (!this->pRdReg) {
 				errMessage(S_cas_noMemory, "armRecv()");
@@ -444,7 +444,7 @@ void casStreamOS::recvCB()
 	    if (procCond == casProcDisconnect) {
 		    delete this;
 	    }	
-	    else if (this->inBuf::full()==aitTrue) {
+	    else if (this->inBuf::full()) {
 		    //
 		    // If there isnt any space then temporarily 
 		    // stop calling this routine until problem is resolved 

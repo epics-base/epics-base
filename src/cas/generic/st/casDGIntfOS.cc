@@ -224,24 +224,22 @@ void casDGIOWakeup::show(unsigned level) const
 //
 inline void casDGIntfOS::armRecv()
 {
-	if (!this->pRdReg) {
-		if (this->inBuf::full()!=aitTrue) {
+	if (!this->inBuf::full()) {
+	    if (!this->pRdReg) {
 			this->pRdReg = new casDGReadReg(*this);
 			if (!this->pRdReg) {
 				errMessage (S_cas_noMemory, "armRecv()");
                 throw S_cas_noMemory;
 			}
 		}
-	}
-	if (this->validBCastFD() && this->pBCastRdReg==NULL) {
-		if (this->inBuf::full()!=aitTrue) {
+	    if (this->validBCastFD() && this->pBCastRdReg==NULL) {
 			this->pBCastRdReg = new casDGBCastReadReg(*this);
 			if (!this->pBCastRdReg) {
 				errMessage (S_cas_noMemory, "armRecv()");
                 throw S_cas_noMemory;
 			}
-		}
-	}
+	    }
+    }
 }
 
 //
@@ -492,8 +490,6 @@ void casDGIntfOS::sendCB()
 //
 void casDGIntfOS::recvCB (inBuf::fillParameter parm)
 {	
-    caNetAddr from;
-
 	assert (this->pRdReg);
 
     //
@@ -512,7 +508,7 @@ void casDGIntfOS::recvCB (inBuf::fillParameter parm)
 	// (casDGReadReg is _not_ a onceOnly fdReg - 
 	// therefore an explicit delete is required here)
 	//
-	if (this->inBuf::full()==aitTrue) {
+	if (this->inBuf::full()) {
 		this->disarmRecv(); // this deletes the casDGReadReg object
 	}
 }

@@ -47,6 +47,9 @@
 /* the Advanced Micro Devices Am9513 Technical Manual		*/
 
 #include	<vxWorks.h>
+#include	<sysLib.h>
+#include	<rebootLib.h>
+#include	<intLib.h>
 #include	<vme.h>
 #include	<types.h>
 #include	<stdioLib.h>
@@ -99,6 +102,7 @@ MZDSET devPtMz8310=	{ 5,   NULL, NULL, init_pt,            NULL, write_pt};
 static void mz8310_int_service(IOSCANPVT);
 
 volatile int mz8310Debug=0;
+int mz8310NoShutdown=0;
 
 static unsigned short *shortaddr;
 /* definitions related to fields of records*/
@@ -157,7 +161,6 @@ static struct {
 static double cons[] = { 1,1e-3,1e-6,1e-9,1,1e-12 };
 
 /*keep information needed for reporting*/
-static int ncards=0;
 static struct mz8310_info {
     short present;
     FAST_LOCK lock;
@@ -237,43 +240,40 @@ static unsigned short internalCountSource[] = {F1,F2,F3,F4,F5};
 /*The following are used to communicate with the mz8310.		*/
 /*The mz8310 can not keep up when commands are sent as rapidly as possible.*/
 
-putCmd(preg,cmd)
-    unsigned char	*preg;
-    unsigned char	cmd;
+void putCmd(volatile unsigned char *preg,unsigned char cmd)
 {
     *preg = cmd;
-    if(mz8310Debug) printf("mz8310:putCmd:  pcmdreg=%x cmd=%x %d\n",preg,cmd,cmd);
+    if(mz8310Debug) printf("mz8310:putCmd:  pcmdreg=%p cmd=%x %u\n",
+	preg,cmd,cmd);
 }
 
-putData(preg,data)
-    unsigned short	*preg;
-    unsigned short	data;
+void putData(volatile unsigned short *preg,unsigned short data)
 {
     *preg = data;
-    if(mz8310Debug) printf("mz8310:putData: preg=%x data=%x %d\n",preg,data,data);
+    if(mz8310Debug) printf("mz8310:putData: preg=%p data=%x %u\n",
+	preg,data,data);
 }
 
-getCmd(preg,pcmd)
-    unsigned char	*preg;
-    unsigned char	*pcmd;
+void getCmd(volatile unsigned char *preg,unsigned char *pcmd)
 {
     *pcmd = *preg;
-    if(mz8310Debug) printf("mz8310:getCmd:  pcmdreg=%x cmd=%x %d\n",preg,*pcmd,*pcmd);
+    if(mz8310Debug) printf("mz8310:getCmd:  pcmdreg=%p cmd=%x %u\n",
+	preg,*pcmd,*pcmd);
 }
 
-getData(preg,pdata)
-    unsigned short	*preg;
-    unsigned short	*pdata;
+void getData(volatile unsigned short *preg,unsigned short *pdata)
 {
     *pdata = *preg;
-    if(mz8310Debug) printf("mz8310:getData: preg=%x data=%x %d\n",preg,*pdata,*pdata);
+    if(mz8310Debug) printf("mz8310:getData: preg=%p data=%x %u\n",
+	preg,*pdata,*pdata);
 }
 
-static void Mz8310_shutdown()
+static int Mz8310_shutdown()
 {
     int card,chip;
     volatile unsigned char  *pcmd;
 
+    if(mz8310NoShutdown) return(0);
     for(card=0;card<MAXCARDS;card++)
     {
 	if(mz8310_info[card].present==TRUE)
@@ -288,21 +288,22 @@ static void Mz8310_shutdown()
 	    FASTUNLOCK(&mz8310_info[card].lock);
 	}
     }
+    return(0);
 }
 
 
 static long init(after)
     int after;
 {
-    int card,chip,channel,intvec;
+    int card,chip,intvec;
     volatile unsigned char  *pcmd;
     volatile unsigned short *pdata;
     unsigned short data;
     int dummy;
 
     if(after)return(0);
-    if(sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO, 0, &shortaddr)) {
-	logMsg("devMz8310: sysBusToLocalAdrs failed\n");
+    if(sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO, 0, (void *)&shortaddr)) {
+	logMsg("devMz8310: sysBusToLocalAdrs failed\n",0);
 	exit(1);
     }
     memset((char *)&mz8310_info[0],0,MAXCARDS*sizeof(struct mz8310_info));
@@ -343,7 +344,7 @@ static long init(after)
     }
 
     if(rebootHookAdd(Mz8310_shutdown)<0)
-	logMsg("%s: reboot hook add failed\n", __FILE__);
+	logMsg("Mz8310_shutdown: reboot hook add failed\n");
 
     return(0);
 }
@@ -377,6 +378,7 @@ static long report(interest)
 			intvec,connected,nrec_using);
 	}
     }
+    return(0);
 }
 
 static long init_common(pdbCommon,pout,nchan)
@@ -511,13 +513,13 @@ static long get_ioint_info(
 	    unsigned char *pvecreg;
 
 	    vector=MZ8310INTVEC(card,intvec);
-	    if(intConnect(INUM_TO_IVEC(vector),(FUNCPTR)mz8310_int_service,
+	    if(intConnect(INUM_TO_IVEC(vector),mz8310_int_service,
 	    (int)mz8310_info[card].int_info[intvec].ioscanpvt)!=OK) {
 		recGblRecordError(0,(void *)pr,"devMz8310 (get_ioint_info) intConnect failed");
 		return(0);
 	    }
 	    pvecreg = PVECREG(card,intvec);
-	    if(vxMemProbe(pvecreg,WRITE,sizeof(char),&vector)!=OK) {
+	    if(vxMemProbe((void *)pvecreg,WRITE,sizeof(char),(void *)&vector)!=OK) {
 		recGblRecordError(0,(void *)pr,"devMz8310 (get_ioint_info) vxMemProbe failed");
 		return(0);
 	    }
@@ -534,7 +536,7 @@ static long cmd_pc(pr)
     volatile unsigned short *pdata;
     struct vmeio 	*pvmeio;
     int card,chip,channel,signal,set_chan_bits;
-    unsigned short  load,hold,mode;
+    unsigned short  mode;
 	
     if(!pr->dpvt) return(S_dev_NoInit);
 

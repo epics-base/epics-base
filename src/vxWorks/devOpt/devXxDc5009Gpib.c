@@ -258,7 +258,7 @@ static struct gpibCmd gpibCmds[] =
   NULL, 0, 0, userOffOn, &offOn, -1},
 
    /* Param 6 send a reading from the display */
-  {&DSET_AI, GPIBREAD, IB_Q_LOW, "send", "%lf", 0, 32,
+  {&DSET_AI, GPIBREAD, IB_Q_LOW, "DISP?", "%lf", 0, 32,
   NULL, 0, 0, NULL, NULL, -1}
 };
 

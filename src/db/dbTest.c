@@ -36,6 +36,9 @@
 
 /* Global Database Test Routines - All can be invoked via vxWorks shell
  *
+ * dba(pname)			Print dbAddr info
+ *	char	*pname		Pvname
+ *
  * dbl(ptypeName)		list record names.
  *	char	*ptypeName;	Record type. If null all record types
  *
@@ -116,6 +119,17 @@ struct fldDes *dbprGetFldRec();
 struct recTypDes *dbprGetRecTypDes();
 
 
+long dba(pname)	/* get and print dbAddr info */
+	char	*pname;
+{
+    struct dbAddr 	addr;
+    long		status;
+
+    status=dbNameToAddr(pname,&addr);
+    printDbAddr(status,&addr);
+    if(status) return(1); else return(0);
+}
+
 long dbl(ptypeName)	/* list process variables for specified record type*/
 	char	*ptypeName;
 {
@@ -172,7 +186,6 @@ long dbgf(pname)	/* get field value*/
     tab_size = 10;
 
     status=dbNameToAddr(pname,&addr);
-    printDbAddr(status,&addr);
     if(status) return(1);
     no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/addr.field_size));
     options=0;
@@ -262,7 +275,6 @@ long dbpr(pname, interest_level)	/* print record */
     tab_size = 20;
 
     status = dbNameToAddr(pname, &addr);
-    printDbAddr(status, &addr);
 
     if (status) return (1);
     if (dbpr_report(pname, &addr, interest_level, pMsgBuff, tab_size))
@@ -318,7 +330,6 @@ long dbtgf(pname)	/* test all options for dbGetField */
     tab_size = 10;
 
     status=dbNameToAddr(pname,&addr);
-    printDbAddr(status,&addr);
     if(status)return(1);
     /* try all options first */
     req_options=0xffffffff;
@@ -399,7 +410,6 @@ long dbtpf(pname,pvalue)/* test all options for dbPutField */
     tab_size = 10;
 
     status=dbNameToAddr(pname,&addr);
-    printDbAddr(status,&addr);
     if(status) return(1);
     /* DBR_STRING */
     status=dbPutField(&addr,DBR_STRING,pvalue,1L);
@@ -618,11 +628,22 @@ got_it:
     return(0);
 }
 
+static char *dbf[DBF_NTYPES]={
+	"STRING","CHAR","UCHAR","SHORT","USHORT","LONG","ULONG",
+	"FLOAT","DOUBLE","ENUM","GBLCHOICE","CVTCHOICE","RECCHOICE",
+	"DEVCHOICE","INLINK","OUTLINK","FWDLINK","NOACCESS"};
+
+static char *dbr[DBR_ENUM+2]={
+	"STRING","CHAR","UCHAR","SHORT","USHORT","LONG","ULONG",
+	"FLOAT","DOUBLE","ENUM","NOACCESS"};
+
 static void printDbAddr(status,paddr)
     long	  status;
     struct dbAddr *paddr;
 {
-    char          *pstr;
+    char	*pstr;
+    short	field_type;
+    short	dbr_field_type;
 
     if(status!=0) {
 	errMessage(status,"dbNameToAddr error");
@@ -635,11 +656,23 @@ static void printDbAddr(status,paddr)
     	printf("   Record Type: %d\n",paddr->record_type);
     else
 	printf("   Record Type: %s\n",pstr);
+    printf("     FieldType: DBF_");
+    field_type = paddr->field_type;
+    if(field_type<0 || field_type>DBR_NOACCESS)
+	printf(" Illegal = %d\n",field_type);
+    else
+	printf("%s\n",dbf[field_type]);
     printf("    Field Type: %d\n",paddr->field_type);
     printf("    Field Size: %d\n",paddr->field_size);
     printf("       Special: %d\n",paddr->special);
     printf("    Choice Set: %d\n",paddr->choice_set);
-    printf("DBR Field Type: %d\n",paddr->dbr_field_type);
+    printf("DBR Field Type: DBR_");
+    dbr_field_type = paddr->dbr_field_type;
+    if(dbr_field_type==DBR_NOACCESS)dbr_field_type=DBR_ENUM + 1;
+    if(dbr_field_type<0 || dbr_field_type>(DBR_ENUM+1))
+	printf(" Illegal = %d\n",dbr_field_type);
+    else
+	printf("%s\n",dbr[dbr_field_type]);
 }
 
 

@@ -376,7 +376,8 @@ long dbGetLink(pdblink,pdest,dbrType,pbuffer,options,nRequest)
 		}
 	
 	}
-	return(dbGetField(paddr,dbrType,pbuffer,options,nRequest));
+	status= dbGetField(paddr,dbrType,pbuffer,options,nRequest);
+	if(status) recGblRecordError(status,pdest,"dbGetLink");
 }
 
 long dbPutLink(pdblink,psource,dbrType,pbuffer,nRequest)
@@ -400,6 +401,7 @@ long dbPutLink(pdblink,psource,dbrType,pbuffer,nRequest)
 	}
 	if(!RTN_SUCCESS(status)) return(status);
 	if(pdblink->process_passive) status=dbScanPassive(paddr);
+	if(status) recGblRecordError(status,psource,"dbPutLink");
 	return(status);
 }
 
@@ -414,6 +416,7 @@ long dbPutField(paddr,dbrType,pbuffer,nRequest)
 
 	dbScanLock(paddr->precord);
 	status=dbPut(paddr,dbrType,pbuffer,nRequest);
+	if(status) recGblDbaddrError(status,paddr,"dbPutField");
 	if(RTN_SUCCESS(status) && pfldDes->process_passive) status=dbScanPassive(paddr);
 	dbScanUnlock(paddr->precord);
 	return(status);
@@ -456,7 +459,7 @@ long dbBufferSize(dbr_type,options,no_elements)
  * greater than or equal to 10,000,000.00
  *
  */
-static long f_to_str(flt_value,pstr_value,precision)
+static void f_to_str(flt_value,pstr_value,precision)
 double	flt_value;
 char	*pstr_value;
 int	precision;
@@ -466,6 +469,10 @@ int	precision;
 	short		number;
 	char	*pfirst_digit;
 
+	if(flt_value>0e0 && flt_value<udfFtest) {
+		strcpy(pstr_value,"undefined");
+		return;
+	}
 	pfirst_digit = pstr_value;
 	if (flt_value < 0){
 		*pstr_value = '-';
@@ -475,8 +482,8 @@ int	precision;
 	}
 
 	if (flt_value >= 10000000 ){
-		gcvt(flt_value,10,pstr_value);
-		return(0);
+		gcvt(flt_value,20,pstr_value);
+		return;
 	}
 
 	/* whole numbers */
@@ -531,7 +538,7 @@ int	precision;
 			*pstr_value += 1;
 		}
 	}
-	return(0);
+	return;
 }
 
 /* Convert various integer types to ascii */
@@ -571,7 +578,7 @@ static void char_to_str(source,pdest)
     *pdest = 0;
     return;
 }
-
+
 static void uchar_to_str(source,pdest)
     unsigned char source;
     char	  *pdest;
@@ -611,6 +618,10 @@ static void short_to_str(source,pdest)
 	*pdest = 0;
 	return;
     }
+    if(source==udfShort) {
+	strcpy(pdest,"undefined");
+	return;
+    }
     if(source<0) {
 	*pdest++ = '-';
 	if(source == -32768) {
@@ -631,7 +642,7 @@ static void short_to_str(source,pdest)
     *pdest = 0;
     return;
 }
-
+
 static void ushort_to_str(source,pdest)
     unsigned short source;
     char	  *pdest;
@@ -643,6 +654,10 @@ static void ushort_to_str(source,pdest)
     if(source==0) {
 	*pdest++ = '0';
 	*pdest = 0;
+	return;
+    }
+    if(source==udfUshort) {
+	strcpy(pdest,"undefined");
 	return;
     }
     val = source;
@@ -671,6 +686,10 @@ static void long_to_str(source,pdest)
 	*pdest = 0;
 	return;
     }
+    if(source==udfLong) {
+	strcpy(pdest,"undefined");
+	return;
+    }
     if(source<0) {
 	*pdest++ = '-';
 	if(source == -2147483648) {
@@ -691,7 +710,7 @@ static void long_to_str(source,pdest)
     *pdest = 0;
     return;
 }
-
+
 static void ulong_to_str(source,pdest)
     unsigned long source;
     char	  *pdest;
@@ -703,6 +722,10 @@ static void ulong_to_str(source,pdest)
     if(source==0) {
 	*pdest++ = '0';
 	*pdest = 0;
+	return;
+    }
+    if(source==udfUlong) {
+	strcpy(pdest,"undefined");
 	return;
     }
     val = source;
@@ -2112,12 +2135,12 @@ long		offset;
     }
 
     if(nRequest==1 && offset==0) {
-	return(f_to_str((double)(*psrc),pbuffer,precision));
+	f_to_str((double)(*psrc),pbuffer,precision);
+	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	status=f_to_str((double)(*psrc),pbuffer,precision);
-	if(!RTN_SUCCESS(status)) return(status);
+	f_to_str((double)(*psrc),pbuffer,precision);
 	pbuffer += MAX_STRING_SIZE;
 	if(++offset==no_elements)
 		psrc=(float *)paddr->pfield;
@@ -2352,12 +2375,12 @@ long		offset;
     }
 
     if(nRequest==1 && offset==0) {
-	return(f_to_str(*psrc,pbuffer,precision));
+	f_to_str(*psrc,pbuffer,precision);
+	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	status=f_to_str(*psrc,pbuffer,precision);
-	if(!RTN_SUCCESS(status)) return(status);
+	f_to_str(*psrc,pbuffer,precision);
 	pbuffer += MAX_STRING_SIZE;
 	if(++offset==no_elements)
 		psrc=(double *)paddr->pfield;
@@ -5031,12 +5054,12 @@ long		offset;
     }
 
     if(nRequest==1 && offset==0) {
-	status = f_to_str((double)(*pbuffer),pdest,precision);
+	f_to_str((double)(*pbuffer),pdest,precision);
 	return(0);
     }
     pdest += (size*offset);
     while (nRequest) {
-	status = f_to_str((double)(*pbuffer),pdest,precision);
+	f_to_str((double)(*pbuffer),pdest,precision);
 	pbuffer++;
 	if(++offset==no_elements)
 		pdest=(char *)paddr->pfield;
@@ -5272,12 +5295,12 @@ long		offset;
     }
 
     if(nRequest==1 && offset==0) {
-	status = f_to_str(*pbuffer,pdest,precision);
+	f_to_str(*pbuffer,pdest,precision);
 	return(0);
     }
     pdest += (size*offset);
     while (nRequest) {
-	status = f_to_str(*pbuffer,pdest,precision);
+	f_to_str(*pbuffer,pdest,precision);
 	pbuffer++;
 	if(++offset==no_elements)
 		pdest=(char *)paddr->pfield;

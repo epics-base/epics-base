@@ -1,2 +1,469 @@
-  
+/* share/src/libCom/calcPerform  $Id$ */
+/*
+ * Author:	Julie Sander and Bob Dalesio
+ * Date:	7-27-87
+ *
+ *	Control System Software for the GTA Project
+ *
+ *	Copyright 1988, 1989, the Regents of the University of California.
+ *
+ *	This software was produced under a U.S. Government contract
+ *	(W-7405-ENG-36) at the Los Alamos National Laboratory, which is
+ *	operated by the University of California for the U.S. Department
+ *	of Energy.
+ *
+ *	Developed by the Controls and Automation Group (AT-8)
+ *	Accelerator Technology Division
+ *	Los Alamos National Laboratory
+ *
+ *	Direct inqueries to:
+ *	Bob Dalesio, AT-8, Mail Stop H820
+ *	Los Alamos National Laboratory
+ *	Los Alamos, New Mexico 87545
+ *	Phone: (505) 667-3414
+ *	E-mail: dalesio@luke.lanl.gov
+ *
+ * Modification Log:
+ * -----------------
+ * .01	5-18-88		lrd	modified modulo and power to avoid math library
+ * .02	5-19-88		lrd	modified absolute value to avoid math library
+ *				defined unary math lib routines as doubles
+ *				removed include math.h
+ *				stopped loading dinglers math routines (ml)
+ *				wrote a random number generator to return a
+ *					double between 0 and 1
+ * .03	12-09-88	lrd	fixed modulo not to perform zero division
+ * .04	12-12-88	lrd	lock the record while processing
+ * .05	12-13-88	lrd	made an alarm for math error
+ * .06	12-15-88	lrd	Process the forward scan link
+ * .07  12-23-88        lrd     Alarm on locked MAX_LOCKED times
+ * .08	01-11-89	lrd	Add Right and Left Shift
+ * .09	02-01-89	lrd	Add Trig functions
+ * .10	03-14-89	lrd	fix true on C question mark operator
+ * .11	03-29-89	lrd	make hardware errors MAJOR
+ *				remove hw severity spec from database
+ * .12	04-06-89	lrd	add monitor detection
+ * .13	05-03-89	lrd	removed process mask from arg list
+ * .14	06-05-89	lrd	check for negative square root
+ * .15	08-01-89	lrd	full range of exponentiation using pow(x,y) 
+ * .16	04-04-90	lrd	fix post events for read and calc alarms
+ *				fix neg base raised to integer exponent
+ * .17	04-06-90	lrd	change conditional to check for 0 and non-zero
+ *				instead of 0 and 1 (more 'C' like)
+ * .18	09-10-90	lrd	add time stamps
+ * .19	11-26-90	lrd	add bit not and relational not - fix RNDM
+ * .20	11-29-90	lrd	conditionally process soft channels
+ * .21	12-14-90	lrd	fixed post events for the variables
+ * .22  03-15-91	mrk	moved code from calcRecord to here
+ */
+
+/* This module contains the code for processing the arithmetic
+ * expressions defined in calculation records. postfix must be called
+ * to convert a valid infix expression to postfix. CalcPerform
+ * calculates the postfix expression.
+ *
+ * Subroutines
+ *
+ *	Public
+ *
+ * calcPerform		perform the calculation
+ *	    args
+ *		double *pargs	address of arguments (12)
+ *		double *presult address of result
+ *		char   *rpcl	address of reverse polish buffer
+ *	    returns
+ *		0		fetched successfully
+ *		-1		fetch failed
+ *
+ * Private routine for calcPerform
+ *	random		random number generator
+ *	    returns
+ *		double value between 0.00 and 1.00
+ */
+
+#include	<stdio.h>
+#include	<dbDefs.h>
+#include	<post.h>
+double	random();
+
+/* the floating point math routines need to be declared as doubles */
+double	sqrt(),log(),log10();
+double	acos(),asin(),atan();
+double	cos(),sin(),tan();
+double	cosh(),sinh(),tanh();
+double	srand(),rand();
+
+#define	NOT_SET		0
+#define	TRUE_COND	1
+#define	FALSE_COND	2
+
+long calcPerform(parg,presult,post)
+double *parg;
+double *presult;
+char   *post;
+{
+	register double *pstacktop;	/* stack of values	*/
+	double		stack[80];
+	register double temp;
+	short		temp1;
+	register short	i;
+	double 		*top;
+	int 		itop;		/* integer top value	*/
+	int 		inexttop;	/* ineteger next to top value 	*/
+	short 		cond_flag;	/* conditional else flag	*/
+
+	/* initialize flag  */
+	cond_flag = NOT_SET;
+	pstacktop = &stack[0];
+
+	/* set post to postfix expression in calc structure */
+	top = pstacktop;
+
+	/* polish calculator loop */
+	while (*post != END_STACK){
+		switch (*post){
+		case FETCH_A:
+			++pstacktop;
+			*pstacktop = parg[0];
+			if(*pstacktop>0.0 && *pstacktop<udfDtest) return(-1);
+			break;
+
+		case FETCH_B:
+			++pstacktop;
+			*pstacktop = parg[1];
+			if(*pstacktop>0.0 && *pstacktop<udfDtest) return(-1);
+			break;
+
+		case FETCH_C:
+			++pstacktop;
+			*pstacktop = parg[2];
+			if(*pstacktop>0.0 && *pstacktop<udfDtest) return(-1);
+			break;
+
+		case FETCH_D:
+			++pstacktop;
+			*pstacktop = parg[3];
+			if(*pstacktop>0.0 && *pstacktop<udfDtest) return(-1);
+			break;
+
+		case FETCH_E:
+			++pstacktop;
+			*pstacktop = parg[4];
+			if(*pstacktop>0.0 && *pstacktop<udfDtest) return(-1);
+			break;
+
+		case FETCH_F:
+			++pstacktop;
+			*pstacktop = parg[5];
+			if(*pstacktop>0.0 && *pstacktop<udfDtest) return(-1);
+			break;
+
+		case FETCH_G:
+			++pstacktop;
+			*pstacktop = parg[6];
+			if(*pstacktop>0.0 && *pstacktop<udfDtest) return(-1);
+			break;
+
+		case FETCH_H:
+			++pstacktop;
+			*pstacktop = parg[7];
+			if(*pstacktop>0.0 && *pstacktop<udfDtest) return(-1);
+			break;
+
+		case FETCH_I:
+			++pstacktop;
+			*pstacktop = parg[8];
+			if(*pstacktop>0.0 && *pstacktop<udfDtest) return(-1);
+			break;
+
+		case FETCH_J:
+			++pstacktop;
+			*pstacktop = parg[9];
+			if(*pstacktop>0.0 && *pstacktop<udfDtest) return(-1);
+			break;
+
+		case FETCH_K:
+			++pstacktop;
+			*pstacktop = parg[10];
+			if(*pstacktop>0.0 && *pstacktop<udfDtest) return(-1);
+			break;
+
+		case FETCH_L:
+			++pstacktop;
+			*pstacktop = parg[11];
+			if(*pstacktop>0.0 && *pstacktop<udfDtest) return(-1);
+			break;
+
+
+		case ADD:
+			--pstacktop;
+			*pstacktop = *pstacktop + *(pstacktop+1);
+			break;
+
+		case SUB:
+			--pstacktop;
+			*pstacktop = *pstacktop - *(pstacktop+1);
+			break;
+
+		case MULT:
+			--pstacktop;
+			*pstacktop = *pstacktop * *(pstacktop+1);
+			break;
+
+		case DIV:
+			--pstacktop;
+			if (*(pstacktop+1) == 0) /* can't divide by zero */
+				return(-1);
+			*pstacktop = *pstacktop / *(pstacktop+1);
+			break;
+
+		case COND_ELSE:
+			/* first conditional set cond_flag */
+			/* true */
+			if ((*pstacktop != 0.0) && (cond_flag == NOT_SET)){
+				cond_flag  = TRUE_COND;
+				--pstacktop;		/* remove condition */
+			/* false */
+			}else if ((*pstacktop==0.0) && (cond_flag==NOT_SET)){
+				cond_flag  = FALSE_COND;
+				--pstacktop;		/* remove condition */
+				/* check for else condition */
+				i = 1;
+				while (*(post+i) != COND_ELSE){
+					/* no else value */
+					if (*(post+i) == END_STACK){
+						/* skip to end of expression */
+						while (*(post+1) != END_STACK)
+							++post;
+						/* use last value as result */
+						++pstacktop;
+						*pstacktop = *presult;
+					}
+					i++;
+				}
+			}else if (cond_flag == TRUE_COND){
+				/* skip expression - result is on stack */
+				while ((*(post+1) != COND_ELSE)
+				  && (*(post+1) != END_STACK))
+					++post;
+			}else if (cond_flag == FALSE_COND){
+				/* remove true answer from stack top */
+				--pstacktop;
+			}
+			break;
+				
+		case ABS_VAL:
+			if (*pstacktop < 0) *pstacktop = -*pstacktop;
+			break;
+
+		case UNARY_NEG:
+			*pstacktop = -1* (*pstacktop);
+			break;
+
+		case SQU_RT:
+			if (*pstacktop < 0) return(-1);	/* undefined */
+			*pstacktop = sqrt(*pstacktop);
+			break;
+
+		case LOG_10:
+			*pstacktop = log10(*pstacktop);
+			break;
+
+		case LOG_E:
+			*pstacktop = log(*pstacktop);
+			break;
+
+		case RANDOM:
+			++pstacktop;
+			*pstacktop = random();
+			break;
+
+		case EXPON:
+			--pstacktop;
+			if (*pstacktop < 0){
+				temp1 = (int) *(pstacktop+1);
+				/* is exponent an integer */
+				if ((*(pstacktop+1) - (double)temp1) != 0) return (-1);
+        			*pstacktop = exp(*(pstacktop+1) * log(-*pstacktop));
+				/* is value negative */
+				if ((temp1 % 2) > 0) *pstacktop = -*pstacktop;
+			}else{
+        			*pstacktop = exp(*(pstacktop+1) * log(*pstacktop));
+			}
+			break;
+
+		case MODULO:
+			--pstacktop;
+			itop = (int)*pstacktop;
+			inexttop = (int)*(pstacktop+1);
+			if (inexttop == 0)
+				return(-1);
+			i =  itop % inexttop;
+			*pstacktop = i;
+			break;
+
+		case REL_OR:
+			--pstacktop;
+			*pstacktop = (*pstacktop || *(pstacktop+1));
+			break;
+
+		case REL_AND:
+			--pstacktop;
+			*pstacktop = (*pstacktop && *(pstacktop+1));
+			break;
+
+		case BIT_OR:
+			/* force double values into integers and or them */
+			itop = (int)*pstacktop;
+			inexttop = (int)*(pstacktop-1);
+			--pstacktop;
+			*pstacktop = (inexttop | itop);
+			break;
+
+		case BIT_AND:
+			/* force double values into integers and and them */
+			itop = (int)*pstacktop;
+			inexttop = (int)*(pstacktop-1);
+			--pstacktop;
+			*pstacktop = (inexttop & itop);
+			break;
+
+		case BIT_EXCL_OR:
+			/*force double values to integers to exclusive or them*/
+			itop = (int)*pstacktop;
+			inexttop = (int)*(pstacktop-1);
+			--pstacktop;
+			*pstacktop = (inexttop ^ itop);
+			break;
+
+		case GR_OR_EQ:
+			--pstacktop;
+			*pstacktop = *pstacktop >= *(pstacktop+1);
+			break;
+
+		case GR_THAN:
+			--pstacktop;
+			*pstacktop = *pstacktop > *(pstacktop+1);
+			break;
+
+		case LESS_OR_EQ:
+			--pstacktop;
+			*pstacktop = *pstacktop <= *(pstacktop+1);
+			break;
+
+		case LESS_THAN:
+			--pstacktop;
+			*pstacktop = *pstacktop < *(pstacktop+1);
+			break;
+
+		case NOT_EQ:
+			--pstacktop;
+			*pstacktop = *pstacktop != *(pstacktop+1);
+			break;
+
+		case EQUAL:
+			--pstacktop;
+			*pstacktop = (*pstacktop == *(pstacktop+1));
+			break;
+
+		case RIGHT_SHIFT:
+			itop = (int)*pstacktop;
+			inexttop = (int)*(pstacktop-1);
+			--pstacktop;
+			*pstacktop = (inexttop >> itop);
+			break;
+
+		case LEFT_SHIFT:
+			itop = (int)*pstacktop;
+			inexttop = (int)*(pstacktop-1);
+			--pstacktop;
+			*pstacktop = (inexttop << itop);
+			break;
+
+		case ACOS:
+			*pstacktop = acos(*pstacktop);
+			break;
+
+		case ASIN:
+			*pstacktop = asin(*pstacktop);
+			break;
+
+		case ATAN:
+			*pstacktop = atan(*pstacktop);
+			break;
+
+		case COS:
+			*pstacktop = cos(*pstacktop);
+			break;
+
+		case SIN:
+			*pstacktop = sin(*pstacktop);
+			break;
+
+		case TAN:
+			*pstacktop = tan(*pstacktop);
+			break;
+
+		case COSH:
+			*pstacktop = cosh(*pstacktop);
+			break;
+
+		case SINH:
+			*pstacktop = sinh(*pstacktop);
+			break;
+
+		case TANH:
+			*pstacktop = tanh(*pstacktop);
+			break;
+
+		case REL_NOT:
+			*pstacktop = ((*pstacktop)?0:1);
+			break;
+
+		case BIT_NOT:
+			itop = (int)*pstacktop;
+			*pstacktop = ~itop;
+			break;
+
+		default:
+			printf("%d bad expression element\n",*post);
+			break;
+		}
+
+		/* move ahead in postfix expression */
+		++post;
+	}
+
+	/* if everything is peachy,the stack should end at its first position */
+	if (++top == pstacktop)
+		*presult = *pstacktop;
+	else
+		return(-1);
+	return(0);
+}
+
+
+/*
+ * RAND
+ *
+ * generates a random number between 0 and 1 using the
+ * seed = (multy * seed) + addy         Random Number Generator by Knuth
+ *                                              SemiNumerical Algorithms
+ *                                              Chapter 1
+ * randy = 1.0 / (seed & 0xff)          To normalize the number between 0 - 1
+ */
+static unsigned short seed = 0xa3bf;
+static unsigned short multy = 191 * 8 + 5;  /* 191 % 8 == 5 */
+static unsigned short addy = 0x3141;
+static double random()
+{
+        double  randy;
+
+        /* random number */
+        seed = (seed * multy) + addy;
+        randy = 1.0 / (seed & 0xffff);
+
+        /* between 0 - 1 */
+        return(randy);
+}
 

@@ -1,3 +1,14 @@
+/*recDynLink.c*/
+/*****************************************************************
+                          COPYRIGHT NOTIFICATION
+*****************************************************************
+
+(C)  COPYRIGHT 1993 UNIVERSITY OF CHICAGO
+ 
+This software was developed under a United States Government license
+described on the COPYRIGHT_UniversityOfChicago file included as part
+of this distribution.
+**********************************************************************/
 #include <vxWorks.h>
 #include <taskLib.h>
 #include <string.h>
@@ -352,6 +363,7 @@ LOCAL void connectCallback(struct connection_handler_args cha)
     dynLinkPvt	*pdynLinkPvt;
     
     precDynLink = (recDynLink *)ca_puser(cha.chid);
+    if(!precDynLink) return;
     pdynLinkPvt = precDynLink->pdynLinkPvt;
     if(ca_state(chid)==cs_conn) {
 	pdynLinkPvt->state = stateGetting;
@@ -371,8 +383,8 @@ LOCAL void getCallback(struct event_handler_args eha)
     size_t			nRequest;
     
     precDynLink = (recDynLink *)ca_puser(eha.chid);
+    if(!precDynLink) return;
     pdynLinkPvt = precDynLink->pdynLinkPvt;
-    pdynLinkPvt->state = stateConnected;
     pdynLinkPvt -> graphicLow = pdata->lower_disp_limit;
     pdynLinkPvt -> graphHigh = pdata->upper_disp_limit;
     pdynLinkPvt -> controlLow = pdata->lower_ctrl_limit;
@@ -385,7 +397,8 @@ LOCAL void getCallback(struct event_handler_args eha)
 	pdynLinkPvt->nRequest = ca_element_count(pdynLinkPvt->chid);
     }
     nRequest = pdynLinkPvt->nRequest;
-    pdynLinkPvt->pbuffer = calloc(nRequest,dbr_size[pdynLinkPvt->dbrType]);
+    pdynLinkPvt->pbuffer = calloc(nRequest,
+	dbr_size[mapNewToOld[pdynLinkPvt->dbrType]]);
     if(pdynLinkPvt->io==ioInput) {
 	SEVCHK(ca_add_array_event(
 	    dbf_type_to_DBR_TIME(mapNewToOld[pdynLinkPvt->dbrType]),
@@ -394,6 +407,7 @@ LOCAL void getCallback(struct event_handler_args eha)
 	    0.0,0.0,0.0,
 	    &pdynLinkPvt->evid),"ca_add_array_event");
     }
+    pdynLinkPvt->state = stateConnected;
     if(pdynLinkPvt->searchCallback) (pdynLinkPvt->searchCallback)(precDynLink);
 }
 
@@ -408,6 +422,7 @@ LOCAL void monitorCallback(struct event_handler_args eha)
     short	timeType;
     
     precDynLink = (recDynLink *)ca_puser(eha.chid);
+    if(!precDynLink) return;
     pdynLinkPvt = precDynLink->pdynLinkPvt;
     if(pdynLinkPvt->pbuffer) {
 	FASTLOCK(&pdynLinkPvt->lock);
@@ -482,7 +497,7 @@ LOCAL void recDynLinkOut(void)
     taskwdInsert(taskIdSelf(),NULL,NULL);
     SEVCHK(ca_task_initialize(),"ca_task_initialize");
     while(TRUE) {
-	semTake(wakeUpSem,sysClkRateGet()/10);
+	semTake(wakeUpSem,sysClkRateGet());
 	while (rngNBytes(outRingQ)>=sizeof(cmd) && interruptAccept){
 	    if(rngBufGet(outRingQ,(void *)&cmd,sizeof(cmd))
 	    !=sizeof(cmd)) {

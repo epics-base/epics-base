@@ -1,3 +1,14 @@
+/*recDynLinkTest.c */
+/*****************************************************************
+                          COPYRIGHT NOTIFICATION
+*****************************************************************
+
+(C)  COPYRIGHT 1993 UNIVERSITY OF CHICAGO
+ 
+This software was developed under a United States Government license
+described on the COPYRIGHT_UniversityOfChicago file included as part
+of this distribution.
+***********************************************************************/
 #include <vxWorks.h>
 #include <string.h>
 #include <stdlib.h>
@@ -107,10 +118,10 @@ int recDynTestInput(char *pvname,int nRequest)
     int		options=0;
 
     if(puserPvt) {
+	recDynLinkClear(&getDynlink);
 	free(puserPvt->pbuffer);
 	free(getDynlink.puserPvt);
 	getDynlink.puserPvt = NULL;
-	recDynLinkClear(&getDynlink);
     }
     getDynlink.puserPvt = puserPvt = (userPvt *)calloc(1,sizeof(userPvt));
     puserPvt->pbuffer = calloc(nRequest,sizeof(double));
@@ -131,10 +142,10 @@ int recDynTestNewOutput(char *pvname,int nRequest)
     int		options=0;
 
     if(puserPvt) {
+	recDynLinkClear(&putDynlink);
 	free(puserPvt->pbuffer);
 	free(putDynlink.puserPvt);
 	putDynlink.puserPvt = NULL;
-	recDynLinkClear(&putDynlink);
     }
     putDynlink.puserPvt = puserPvt = (userPvt *)calloc(1,sizeof(userPvt));
     puserPvt->pbuffer = calloc(nRequest,sizeof(double));
@@ -161,10 +172,10 @@ int recDynTestClearInput(void)
 {
     userPvt	*puserPvt= getDynlink.puserPvt;
 
+    recDynLinkClear(&getDynlink);
     free(puserPvt->pbuffer);
     free(getDynlink.puserPvt);
     getDynlink.puserPvt = NULL;
-    recDynLinkClear(&getDynlink);
     return(0);
 }
 
@@ -172,9 +183,9 @@ int recDynTestClearOutput(void)
 {
     userPvt	*puserPvt= putDynlink.puserPvt;
 
+    recDynLinkClear(&putDynlink);
     free(puserPvt->pbuffer);
     free(putDynlink.puserPvt);
     putDynlink.puserPvt = NULL;
-    recDynLinkClear(&putDynlink);
     return(0);
 }

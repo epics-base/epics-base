@@ -8,7 +8,6 @@
 #ifndef locationException_h
 #define locationException_h
 
-#include <limits.h>
 #include <stdio.h>
 
 #include "cantProceed.h"

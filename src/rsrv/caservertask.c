@@ -281,18 +281,23 @@ LOCAL int terminate_one_client(struct client *client)
 			if(pciu->pPutNotify->busy){
                 		dbNotifyCancel(&pciu->pPutNotify->dbPutNotify);
 			}
-			free(pciu->pPutNotify);
 		}
 
 		while (pevext = (struct event_ext *) ellGet(&pciu->eventq)) {
 
 			status = db_cancel_event(
 					(struct event_block *)(pevext + 1));
-			if (status == ERROR)
+			if (status)
 				taskSuspend(0);
 			FASTLOCK(&rsrv_free_eventq_lck);
 			ellAdd(&rsrv_free_eventq, &pevext->node);
 			FASTUNLOCK(&rsrv_free_eventq_lck);
+		}
+		status = db_flush_extra_labor_event(client->evuser);
+		if (status)
+			taskSuspend(0);
+		if(pciu->pPutNotify){
+			free(pciu->pPutNotify);
 		}
 		FASTLOCK(&rsrv_free_addrq_lck);
 		status = bucketRemoveItem(pCaBucket, pciu->sid, pciu);
@@ -340,6 +345,16 @@ LOCAL int terminate_one_client(struct client *client)
 		&client->addrq);
 	FASTUNLOCK(&rsrv_free_addrq_lck);
 
+	if(FASTLOCKFREE(&client->putNotifyLock)<0){
+		logMsg("CAS: couldnt free sem\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
+	}
+
 	if(FASTLOCKFREE(&client->lock)<0){
 		logMsg("CAS: couldnt free sem\n",
 			NULL,
@@ -365,8 +380,8 @@ LOCAL int terminate_one_client(struct client *client)
 		free(client->pUserName);
 	}
 
-	if(client->pLocationName){
-		free(client->pLocationName);
+	if(client->pHostName){
+		free(client->pHostName);
 	}
 
 	client->minor_version_number = CA_UKN_MINOR_VERSION;
@@ -454,9 +469,9 @@ LOCAL void log_one_client(struct client *client)
 	send_delay = delay_in_ticks(client->ticks_at_last_send);
 	recv_delay = delay_in_ticks(client->ticks_at_last_recv);
 
-	printf(	"Client Name=%s, Client Location=%s, ver=%d.%u, server tid=%x\n", 
+	printf(	"Client Name=%s, Client Host=%s, ver=%d.%u, server tid=%x\n", 
 		client->pUserName,
-		client->pLocationName,
+		client->pHostName,
 		CA_PROTOCOL_VERSION,
 		client->minor_version_number,
 		client->tid);

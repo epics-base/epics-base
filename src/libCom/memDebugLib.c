@@ -263,7 +263,7 @@ unsigned long ignoreBeforeThisTick;
 			continue;
 		}
 		fprintf(stderr, 
-			"\t%8x = malloc(%d) at %s.%d tick=%d\n", 
+			"%8x = malloc(%d) at %s.%d tick=%d\n", 
 			pHdr->pUser,
 			pHdr->size,
 			pHdr->pFile,

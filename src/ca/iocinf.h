@@ -55,37 +55,42 @@
 
 static char	*iocinfhSccsId = "$Id$";
 
-#define	DONT_COMPILE	@@@@ dont compile in this case @@@@
-
-#if defined(UNIX)
-#  	include	<sys/types.h>
-#	include	<netinet/in.h>
-#else
-#  if defined(VMS)
-# 	include	<ssdef>
-#  	include	<sys/types.h>
-#	include	<netinet/in.h>
-#  else
-#    if defined(vxWorks)
-#	include	<vxWorks.h>
-#	include	<in.h>
-#    else
-	DONT_COMPILE
-#    endif
-#  endif
-#endif
-
+/*
+ * ANSI C includes
+ */
+#include <unistd.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
+#include <signal.h>
+#include <stdlib.h>
 
+
+/*
+ * OS dependent includes
+ */
+#include "os_depen.h"
+
+/*
+ * EPICS includes
+ */
 #include <cadef.h>
-#include <iocmsg.h>
 #include <bucketLib.h>
 #include <ellLib.h> 
-#include <os_depen.h>
+#include <envDefs.h> 
+
+/*
+ * CA private includes 
+ */
+#include "iocmsg.h"
 
 #ifndef min
 #define min(A,B) ((A)>(B)?(B):(A))
+#endif
+
+#ifndef NBBY
+# define NBBY 8 /* number of bits per byte */
 #endif
 
 /*
@@ -130,6 +135,17 @@ struct pending_io_event{
   void			(*io_done_sub)();
   void			*io_done_arg;
 };
+
+union caAddr{
+	struct sockaddr_in	inetAddr;
+	struct sockaddr		sockAddr;	
+};
+
+typedef struct {
+	ELLNODE			node;
+	union caAddr		srcAddr;
+	union caAddr		destAddr;
+}caAddrNode;
 
 typedef unsigned long ca_time;
 
@@ -201,9 +217,7 @@ typedef struct caclient_put_notify{
 #	define writech		(ca_static->ca_writech)
 #endif
 
-#if defined(UNIX)
-#else
-#  if defined(vxWorks)
+#if defined(vxWorks)
 #	define io_done_sem	(ca_static->ca_io_done_sem)
 #	define evuser		(ca_static->ca_evuser)
 #	define client_lock	(ca_static->ca_client_lock)
@@ -212,15 +226,12 @@ typedef struct caclient_put_notify{
 #	define dbfree_ev_list	(ca_static->ca_dbfree_ev_list)
 #	define lcl_buff_list	(ca_static->ca_lcl_buff_list)
 #	define event_tid	(ca_static->ca_event_tid)
-#  else
-#    if defined(VMS)
+#endif
+
+#if defined(VMS)
 #	define io_done_flag	(ca_static->ca_io_done_flag)
 #	define peek_ast_buf	(ca_static->ca_peek_ast_buf)
 #	define ast_lock_count	(ca_static->ca_ast_lock_count)
-#    else
-	DONT_COMPILE
-#    endif
-#  endif
 #endif
 
 /*
@@ -264,19 +275,21 @@ struct ca_buffer{
 	(PRBUF)->wtix  \
 ) 
 
+
 /*
  * One per IOC
  */
 typedef struct ioc_in_use{
 	ELLNODE			node;
+	ELLLIST			chidlist;	/* chans on this connection */
+	ELLLIST			destAddr;
 	struct ca_static	*pcas;
+	int			sock_chan;
+	int			sock_proto;
 	unsigned		minor_version_number;
 	unsigned		contiguous_msg_count;
 	unsigned		client_busy;
 	char			active;
-	int			sock_proto;
-	struct sockaddr_in	sock_addr;
-	int			sock_chan;
 	struct ca_buffer	send;
 	struct ca_buffer	recv;
 	struct extmsg		curMsg;
@@ -295,7 +308,6 @@ typedef struct ioc_in_use{
 #endif /*__STDC__*/
 	unsigned		read_seq;
 	unsigned 		cur_read_seq;
-	ELLLIST			chidlist;	/* chans on this connection */
 	short			conn_up;	/* boolean: T-conn /F-disconn */
 	short			send_needed;	/* CA needs a send */
 	char			host_name_str[32];
@@ -348,7 +360,7 @@ struct  ca_static{
 	unsigned long	ca_nextBucketId;
 	bhe		*ca_beaconHash[BHT_INET_ADDR_MASK+1];
 	char		*ca_pUserName;
-	char		*ca_pLocationName;
+	char		*ca_pHostName;
 #if defined(UNIX) || defined(vxWorks)
 	fd_set          ca_readch;  
 	fd_set          ca_writech;  
@@ -414,7 +426,7 @@ void		ca_ready_message(struct ioc_in_use *piiu);
 void		noop_msg(struct ioc_in_use *piiu);
 void 		issue_claim_channel(struct ioc_in_use *piiu, chid pchan);
 void 		issue_identify_client(struct ioc_in_use *piiu);
-void 		issue_identify_client_location(struct ioc_in_use *piiu);
+void 		issue_client_host_name(struct ioc_in_use *piiu);
 int		ca_defunct(void);
 int 		ca_printf(char *pformat, ...);
 void 		manage_conn(int silent);
@@ -422,14 +434,14 @@ void 		mark_server_available(struct in_addr *pnet_addr);
 void		flow_control(struct ioc_in_use *piiu);
 int		broadcast_addr(struct in_addr *pcastaddr);
 int		local_addr(int s, struct sockaddr_in *plcladdr);
-int		ca_repeater_task();
+int		ca_repeater();
 void 		cac_recv_task(int tid);
 void 		cac_io_done(int lock);
 void 		ca_sg_init(void);
 void		ca_sg_shutdown(struct ca_static *ca_temp);
 int		ca_select_io(struct timeval *ptimeout, int flags);
 
-void host_from_addr(
+void caHostFromInetAddr(
 	struct in_addr *pnet_addr,
 	char		*pBuf,
 	unsigned	size
@@ -442,7 +454,6 @@ int post_msg(
 );
 int alloc_ioc(
 	struct in_addr                  *pnet_addr,
-	int                             net_proto,
 	struct ioc_in_use               **ppiiu
 );
 unsigned long cacRingBufferWrite(
@@ -455,11 +466,42 @@ unsigned long cacRingBufferRead(
 	void                    *pBuf,
 	unsigned long           nBytes);
 
-unsigned long cacRingBufferWriteSize(struct ca_buffer *pBuf, int contiguous);
-unsigned long cacRingBufferReadSize(struct ca_buffer *pBuf, int contiguous);
+unsigned long cacRingBufferWriteSize(
+	struct ca_buffer 	*pBuf, 
+	int 			contiguous);
 
-char		*localUserName();
-char		*localLocationName();
+unsigned long cacRingBufferReadSize(
+	struct ca_buffer 	*pBuf, 
+	int 			contiguous);
+
+void caSetupAddrList(
+	ELLLIST *pList, 
+	int socket);
+
+void caDiscoverInterfaces(
+	ELLLIST *pList, 
+	int socket,
+	int port);
+
+void caAddConfiguredAddr(
+	ELLLIST *pList, 
+	ENV_PARAM *pEnv,
+	int socket,
+	int port);
+
+void caPrintAddrList();
+
+char *localUserName();
+
+char *localHostName();
+
+int create_net_chan(
+struct ioc_in_use       **ppiiu,
+struct in_addr		*pnet_addr,	/* only used by TCP connections */
+int                     net_proto
+);
+
+int ca_check_for_fp();
 
 #else /*__STDC__*/
 int		ca_defunct();
@@ -474,7 +516,7 @@ void 		ca_busy_message();
 void 		ca_ready_message();
 void 		flow_control();
 void		host_from_addr();
-int		ca_repeater_task();
+int		ca_repeater();
 void		mark_server_available();
 void		issue_claim_channel();
 int		ca_request_event();
@@ -486,7 +528,7 @@ void 		cac_recv_task();
 void 		ca_sg_init();
 void		ca_sg_shutdown();
 void 		issue_identify_client();
-void 		issue_identify_client_location();
+void 		issue_client_host_name();
 void 		ca_mux_io();
 int		ca_select_io();
 unsigned long 	cacRingBufferRead();
@@ -494,7 +536,13 @@ unsigned long 	cacRingBufferWrite();
 unsigned long 	cacRingBufferWriteSize();
 unsigned long 	cacRingBufferReadSize();
 char		*localUserName();
-char		*localLocationName();
+char		*localHostName();
+void		caSetupAddrList();
+void		caDiscoverInterfaces();
+void		caAddConfiguredAddr();
+void		caPrintAddrList();
+int		create_net_chan();
+int		ca_check_for_fp();
 #endif /*__STDC__*/
 
 /*

@@ -48,7 +48,10 @@
  *	.14 joh 020194	New command added for CAV4.1 - client name
  */
 
+
 static char *sccsId = "$Id$";
+
+#include <assert.h>
 
 #include <vxWorks.h>
 #include <taskLib.h>
@@ -66,9 +69,10 @@ static char *sccsId = "$Id$";
 #include <server.h>
 #include <caerr.h>
 
+
 static struct extmsg nill_msg;
 
-#define	RECORD_NAME(PADDR) (((struct db_addr *)(PADDR))->precord)
+#define	RECORD_NAME(PADDR) ((PADDR)->precord)
 
 LOCAL void clear_channel_reply(
 struct extmsg *mp,
@@ -150,9 +154,14 @@ struct extmsg 	*mp,
 struct client  	*client
 );
 
-LOCAL void client_location_action(
+LOCAL void host_name_action(
 struct extmsg 	*mp,
 struct client  	*client
+);
+
+LOCAL void casAccessRightsCB(
+ASCLIENTPVT ascpvt, 
+asClientStatus type
 );
 
 LOCAL unsigned long	bucketID;
@@ -219,8 +228,8 @@ struct message_buffer *recv
 			client_name_action(mp, client);
 			break;
 
-		case IOC_CLIENT_LOCATION:
-			client_location_action(mp, client);
+		case IOC_HOST_NAME:
+			host_name_action(mp, client);
 			break;
 		
 		case IOC_EVENT_ADD:
@@ -287,13 +296,15 @@ struct message_buffer *recv
 					status = ECA_NOWTACCESS;
 				}
 				else{
-					status = ECA_GETFAIL;
+					status = ECA_PUTFAIL;
 				}
+				LOCK_CLIENT(client);
 				send_err(
 					mp, 
 					status, 
 					client, 
-					RECORD_NAME(pciu));
+					RECORD_NAME(&pciu->addr));
+				UNLOCK_CLIENT(client);
 				break;
 			}
 			status = db_put_field(
@@ -307,7 +318,7 @@ struct message_buffer *recv
 					mp, 
 					ECA_PUTFAIL, 
 					client, 
-					RECORD_NAME(pciu));
+					RECORD_NAME(&pciu->addr));
 				UNLOCK_CLIENT(client);
 			}
 			break;
@@ -367,9 +378,9 @@ struct message_buffer *recv
 
 
 /*
- * client_location_action()
+ * host_name_action()
  */
-LOCAL void client_location_action(
+LOCAL void host_name_action(
 struct extmsg 	*mp,
 struct client  	*client
 )
@@ -396,15 +407,15 @@ struct client  	*client
 			"");
 		return;
 	}
-	if(client->pLocationName){
-		free(client->pLocationName);
+	if(client->pHostName){
+		free(client->pHostName);
 	}
-	client->pLocationName = pMalloc;
+	client->pHostName = pMalloc;
 	strncpy(
-		client->pLocationName, 
+		client->pHostName, 
 		pName, 
 		size-1);
-	client->pLocationName[size-1]='\0';
+	client->pHostName[size-1]='\0';
 
 	pciu = (struct channel_in_use *) client->addrq.node.next;
 	while(pciu){
@@ -412,7 +423,7 @@ struct client  	*client
 				pciu->asClientPVT,
 				asDbGetAsl(&pciu->addr),
 				client->pUserName,
-				client->pLocationName);	
+				client->pHostName);	
 		if(status){
 			UNLOCK_CLIENT(prsrv_cast_client);
        			free_client(client);
@@ -471,7 +482,7 @@ struct client  	*client
 				pciu->asClientPVT,
 				asDbGetAsl(&pciu->addr),
 				client->pUserName,
-				client->pLocationName);	
+				client->pHostName);	
 		if(status){
 			UNLOCK_CLIENT(prsrv_cast_client);
        			free_client(client);
@@ -541,7 +552,7 @@ struct client  *client
 			pciu->asClientPVT,
 			asDbGetAsl(&pciu->addr),
 			client->pUserName,
-			client->pLocationName);	
+			client->pHostName);	
 	if(status){
 		UNLOCK_CLIENT(prsrv_cast_client);
        		free_client(client);
@@ -576,6 +587,8 @@ struct client  *client
 
 /*
  * write_notify_call_back()
+ *
+ * (called by the db call back thread)
  */
 LOCAL void write_notify_call_back(PUTNOTIFY *ppn)
 {
@@ -617,6 +630,8 @@ LOCAL void write_notify_call_back(PUTNOTIFY *ppn)
 
 /* 
  * write_notify_reply()
+ *
+ * (called by the CA server event task via the extra labor interface)
  */
 void write_notify_reply(void *pArg)
 {
@@ -638,7 +653,6 @@ void write_notify_reply(void *pArg)
 		FASTLOCK(&pClient->putNotifyLock);
 		ppnb = (RSRVPUTNOTIFY *)ellGet(&pClient->putNotifyQue);
 		FASTUNLOCK(&pClient->putNotifyLock);
-
 		/*
 		 * break to loop exit
 		 */
@@ -739,11 +753,14 @@ struct client  *client
 			status = semTake(
 					client->blockSem, 
 					sysClkRateGet()*60);
-			if(status != OK){
+			if(status != OK && pciu->pPutNotify->busy){
+				log_header(mp,0);
+				dbNotifyCancel(&pciu->pPutNotify->dbPutNotify);
+				pciu->pPutNotify->busy = FALSE;
 				putNotifyErrorReply(
-					client, 
-					mp, 
-					ECA_PUTCBINPROG);
+						client, 
+						mp, 
+						ECA_PUTCBINPROG);
 				return;
 			}
 		}
@@ -794,7 +811,8 @@ struct client  *client
 		 * even if it is immediate
 		 */
 		pciu->pPutNotify->dbPutNotify.status = status;
-		(*pciu->pPutNotify->dbPutNotify.userCallback)(&pciu->pPutNotify->dbPutNotify);
+		(*pciu->pPutNotify->dbPutNotify.userCallback)
+					(&pciu->pPutNotify->dbPutNotify);
 	}
 }
 
@@ -910,7 +928,7 @@ struct client  *client
 				mp,
 				ECA_ALLOCMEM, 
 				client, 
-				RECORD_NAME(pciu));
+				RECORD_NAME(&pciu->addr));
 			UNLOCK_CLIENT(client);
 			return;
 		}
@@ -937,7 +955,7 @@ struct client  *client
 			mp, 
 			ECA_ADDFAIL, 
 			client, 
-			RECORD_NAME(pciu));
+			RECORD_NAME(&pciu->addr));
 		UNLOCK_CLIENT(client);
 		FASTLOCK(&rsrv_free_eventq_lck);
 		ellAdd(&rsrv_free_eventq, &pevext->node);
@@ -1019,15 +1037,14 @@ struct client  *client
 	 */
 	if(pciu->pPutNotify){
 		if(pciu->pPutNotify->busy){
-			dbNotifyCancel(pciu->pPutNotify);
+			dbNotifyCancel(&pciu->pPutNotify->dbPutNotify);
 		}
-		free(pciu->pPutNotify);
 	}
 
         while (pevext = (struct event_ext *) ellGet(&pciu->eventq)) {
 
 		status = db_cancel_event((struct event_block *)(pevext+1));
-		if (status == ERROR){
+		if (status){
 			taskSuspend(0);
 		}
 		FASTLOCK(&rsrv_free_eventq_lck);
@@ -1035,6 +1052,14 @@ struct client  *client
 		FASTUNLOCK(&rsrv_free_eventq_lck);
         }
 
+	status = db_flush_extra_labor_event(client->evuser);
+	if(status){
+		taskSuspend(0);
+	}
+
+	if(pciu->pPutNotify){
+		free(pciu->pPutNotify);
+	}
 
 	/*
 	 * remove from access control list
@@ -1138,7 +1163,7 @@ struct client  *client
 	 * Not Found- return an error message
 	 */
 	LOCK_CLIENT(client);
-	send_err(mp, ECA_BADMONID, client, NULL);
+	send_err(mp, ECA_BADMONID, client, RECORD_NAME(&pciu->addr));
 	UNLOCK_CLIENT(client);
 
 	return;
@@ -1189,6 +1214,13 @@ db_field_log		*pfl
 		return;
 	}
 
+	/* 
+	 * setup response message
+	 */
+	*reply = *mp;
+	reply->m_postsize = pevext->size;
+	reply->m_cid = (unsigned long)pciu->cid;
+
 	/*
 	 * verify read access
 	 */
@@ -1235,9 +1267,6 @@ db_field_log		*pfl
 			cas_send_msg(client,FALSE);
 		return;
 	}
-	*reply = *mp;
-	reply->m_postsize = pevext->size;
-	reply->m_cid = (unsigned long)pciu->cid;
 	status = db_get_field(
 			      paddr,
 			      mp->m_type,
@@ -1288,8 +1317,8 @@ db_field_log		*pfl
 		 * m_cid field to identify the channel.
 		 */
 		if(	v41&&
-			!(reply->m_cmmd==IOC_READ)&&
-			!(reply->m_cmmd==IOC_READ_BUILD) ){
+			reply->m_cmmd!=IOC_READ&&
+			reply->m_cmmd!=IOC_READ_BUILD ){
 			reply->m_cid = ECA_NORMAL;
 		}
 		
@@ -1428,6 +1457,7 @@ struct client  *client
 		free(pchannel);
 		return;
 	}
+	asRegisterClientCallback(pchannel->asClientPVT, casAccessRightsCB);
 
 	/*
 	 * allocate a server id and enter the channel pointer
@@ -1475,6 +1505,12 @@ struct client  *client
 			send_err(mp, ECA_TOLARGE, client, RECORD_NAME(&tmp_addr));
 			UNLOCK_CLIENT(client);
 			asRemoveClient(&pchannel->asClientPVT);
+			FASTLOCK(&rsrv_free_addrq_lck);
+			bucketRemoveItem(
+					pCaBucket, 
+					pchannel->sid, 
+					pchannel);
+			FASTUNLOCK(&rsrv_free_addrq_lck);
 			free(pchannel);
 			return;
 		} else {
@@ -1578,9 +1614,9 @@ struct client  *client,
 char           *footnote
 )
 {
-        struct channel_in_use *pciu;
-	int        size;
-	struct extmsg *reply;
+        struct channel_in_use 	*pciu;
+	int        		size;
+	struct extmsg 		*reply;
 
 
 	/*
@@ -1597,10 +1633,11 @@ char           *footnote
 		return;
 	}
 
-	*reply = nill_msg;
-	reply->m_cmmd = IOC_ERROR;
-	reply->m_available = status;
-	reply->m_postsize = size;
+	reply[0] = nill_msg;
+	reply[0].m_cmmd = IOC_ERROR;
+	reply[0].m_available = status;
+	reply[0].m_postsize = size;
+
 	switch (curp->m_cmmd) {
 	case IOC_EVENT_ADD:
 	case IOC_EVENT_CANCEL:
@@ -1609,6 +1646,7 @@ char           *footnote
 	case IOC_SEARCH:
 	case IOC_BUILD:
 	case IOC_WRITE:
+	case IOC_WRITE_NOTIFY:
 	        /*
 		 *
 		 * Verify the channel
@@ -1622,6 +1660,7 @@ char           *footnote
 			reply->m_cid = ~0L;
 		}
 		break;
+
 	case IOC_EVENTS_ON:
 	case IOC_EVENTS_OFF:
 	case IOC_READ_SYNC:
@@ -1630,7 +1669,7 @@ char           *footnote
 		reply->m_cid = NULL;
 		break;
 	}
-	*(reply + 1) = *curp;
+	reply[1] = *curp;
 	strcpy((char *)(reply + 2), footnote);
 
 	END_MSG(client);
@@ -1647,7 +1686,9 @@ struct extmsg *mp
 )
 {
 	log_header(mp,0);
+	LOCK_CLIENT(client);
 	send_err(mp, ECA_INTERNAL, client, "ID lookup failed");
+	UNLOCK_CLIENT(client);
 }
 
 
@@ -1734,5 +1775,21 @@ LOCAL struct channel_in_use *MPTOPCIU(struct extmsg *mp)
 	FASTUNLOCK(&rsrv_free_addrq_lck);
 
 	return pciu;
+}
+
+
+/*
+ * casAccessRightsCB()
+ *
+ */
+LOCAL void casAccessRightsCB(ASCLIENTPVT ascpvt, asClientStatus type)
+{
+	switch(type)
+	{
+	case asClientCOAR:
+		break;
+	default:
+		break;
+	}
 }
 

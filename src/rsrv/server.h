@@ -58,10 +58,6 @@ static char *serverhSccsId = "$Id$";
 #include <asLib.h>
 #include <asDbLib.h>
 
-#if 1
-#include <memDebugLib.h>
-#endif
-
 struct message_buffer{
   unsigned long 		stk;
   unsigned long			maxstk;
@@ -89,7 +85,7 @@ struct client{
   char				eventsoff;
   char				disconnect;	/* disconnect detected */
   char				*pUserName;
-  char				*pLocationName;
+  char				*pHostName;
 };
 
 

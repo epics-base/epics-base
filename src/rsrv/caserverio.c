@@ -35,7 +35,10 @@
  *	.06 joh	031992	improved diagnostics
  */
 
-static char *sccsId = "@(#)caserverio.c	1.10\t7/28/92";
+static char *sccsId = "$Id$";
+
+#include <string.h>
+#include <errno.h>
 
 #include <vxWorks.h>
 #include <ellLib.h>
@@ -44,7 +47,6 @@ static char *sccsId = "@(#)caserverio.c	1.10\t7/28/92";
 #include <ioLib.h>
 #include <in.h>
 #include <netinet/tcp.h>
-#include <errno.h>
 #include <logLib.h>
 #include <sockLib.h>
 #include <errnoLib.h>
@@ -116,8 +118,8 @@ int		lock_needed;
 					CASDEBUG>2){
 
 					logMsg(
-		"CAS: client unreachable (errno=%d)\n",
-						anerrno,
+		"CAS: client unreachable \"%s\"\n",
+						(int)strerror(anerrno),
 						NULL,
 						NULL,
 						NULL,
@@ -125,9 +127,6 @@ int		lock_needed;
 						NULL);	
 				}
 				pclient->disconnect = TRUE;
-				if(pclient==prsrv_cast_client){
-					taskSuspend(taskIdSelf());
-				}
 			}
 			else{
 				logMsg(

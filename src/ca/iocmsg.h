@@ -58,7 +58,7 @@ static char	*iocmsghSccsId = "$Id$ CA version 4.1";
 #define IOC_CLAIM_CIU		18	/* client claims resource in server */
 #define IOC_WRITE_NOTIFY	19	/* notify after write chan value */
 #define IOC_CLIENT_NAME		20	/* CA V4.1 identify client */
-#define IOC_CLIENT_LOCATION	21	/* CA V4.1 identify client */
+#define IOC_HOST_NAME		21	/* CA V4.1 identify client */
 
 /*
  * for use with build and search and not_found (if search fails and

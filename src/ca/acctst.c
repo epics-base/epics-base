@@ -6,26 +6,20 @@
 static char *sccsId = "$Id$";
 
 
-/* System includes		 */
-#ifdef UNIX
 #include		<stdio.h>
-#endif /*UNIX*/
+#include		<assert.h>
 
-#ifdef vxWorks
-#include		<vxWorks.h>
-#include		<taskLib.h>
-#include		<stdio.h>
-#endif /*vxWorks*/
+#include		"os_depen.h"
 
 #include 		<cadef.h>
-#include		<db_access.h>
-#include		<os_depen.h>
 
 
 #define EVENT_ROUTINE	null_event
 #define CONN_ROUTINE	conn
 
 #define NUM		1
+
+int	conn_get_cb_count;
 
 #ifdef __STDC__
 int	doacctst(char *pname);
@@ -34,6 +28,7 @@ void 	multiple_sg_requests(chid chix, CA_SYNC_GID gid);
 void 	null_event(struct event_handler_args args);
 void 	write_event(struct event_handler_args args);
 void 	conn(struct connection_handler_args args);
+void 	conn_cb(struct event_handler_args args);
 #else /*__STDC__*/
 int	doacctst();
 void 	test_sync_groups();
@@ -41,6 +36,7 @@ void 	multiple_sg_requests();
 void 	null_event();
 void 	write_event();
 void 	conn();
+void 	conn_cb();
 #endif /*__STDC__*/
 
 
@@ -434,7 +430,7 @@ char *pname;
 						NULL)
 			}
 		else
-			abort(0);
+			assert(0);
 
 	SEVCHK(ca_pend_io(4000.0), NULL);
 
@@ -451,8 +447,10 @@ char *pname;
 		ca_get_callback(DBR_GR_FLOAT, chix1, ca_test_event, NULL);
 
 
-	SEVCHK(ca_modify_client_name("Willma"), NULL);
-	SEVCHK(ca_modify_client_location("Bed Rock"), NULL);
+	SEVCHK(ca_modify_user_name("Willma"), NULL);
+	SEVCHK(ca_modify_host_name("Bed Rock"), NULL);
+
+	assert(conn_get_cb_count == 3);
 
 	printf("-- Put/Gets done- waiting for Events --\n");
 	status = ca_pend_event(2000.0);
@@ -525,8 +523,22 @@ struct connection_handler_args args;
 		printf("Channel Off Line [%s]\n", ca_name(args.chid));
 	else
 		printf("Ukn conn ev\n");
+
+	ca_get_callback(DBR_GR_FLOAT, args.chid, conn_cb, NULL);
 }
 
+#ifdef __STDC__
+void conn_cb(struct event_handler_args args)
+#else /*__STDC__*/
+void conn_cb(args)
+struct event_handler_args args;
+#endif /*__STDC__*/
+{
+	if(!(args.status & CA_M_SUCCESS)){
+		printf("Get cb failed because \"%s\"\n", ca_message(args.status));
+	}
+	conn_get_cb_count++;
+}
 
 
 /*

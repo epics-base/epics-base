@@ -27,7 +27,7 @@
  *
  */
 
-static char	*sccsId = "%S% $Date$";
+static char	*sccsId = "$Id$";
 
 #include	<string.h>
 

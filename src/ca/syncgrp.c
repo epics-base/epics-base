@@ -35,15 +35,7 @@
  *	queue forever.
  */
 
-#include "assert.h"
-#include "string.h"
-#include "db_access.h"
 #include "iocinf.h"
-
-#ifdef vxWorks
-#include <tickLib.h>
-#include <sysLib.h>
-#endif
 
 #define CASG_MAGIC	0xFAB4CAFE
 
@@ -165,7 +157,7 @@ CA_SYNC_GID *pgid;
 	 * lock must be applied when allocating an id
 	 * and using the id bucket
 	 */
-	memset(pcasg,0,sizeof(*pcasg));
+	memset((char *)pcasg,0,sizeof(*pcasg));
 	pcasg->magic = CASG_MAGIC;
 	pcasg->id = CLIENT_ID_ALLOC; 
 	pcasg->opPendCount = 0;
@@ -456,7 +448,7 @@ void 		*pvalue;
 		}
 	}
 
-	memset(pcasgop, 0,sizeof(*pcasgop));
+	memset((char *)pcasgop, 0,sizeof(*pcasgop));
 	pcasgop->id = gid;
 	pcasgop->seqNo = pcasg->seqNo;
 	pcasgop->magic = CASG_MAGIC;
@@ -519,7 +511,7 @@ void 		*pvalue;
 		}
 	}
 
-	memset(pcasgop, 0,sizeof(*pcasgop));
+	memset((char *)pcasgop, 0,sizeof(*pcasgop));
 	pcasgop->id = gid;
 	pcasgop->seqNo = pcasg->seqNo;
 	pcasgop->magic = CASG_MAGIC;

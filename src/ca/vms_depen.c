@@ -105,3 +105,50 @@ char *localUserName()
 	return pTmp;
 }
 
+
+
+/*
+ * ca_check_for_fp()
+ */
+int ca_check_for_fp()
+{
+	return ECA_NORMAL;
+}
+
+
+
+
+/*
+ *      ca_spawn_repeater()
+ *
+ *      Spawn the repeater task as needed
+ */
+void ca_spawn_repeater()
+{
+	static          $DESCRIPTOR(image,      "EPICS_CA_REPEATER");
+	static          $DESCRIPTOR(io,         "EPICS_LOG_DEVICE");
+	static          $DESCRIPTOR(name,       "CA repeater");
+	int             status;
+	unsigned long   pid;
+
+	status = sys$creprc(
+                                    &pid,
+                                    &image,
+                                    NULL,       /* input (none) */
+                                    &io,        /* output */
+                                    &io,        /* error */
+                                    NULL,       /* use parents privs */
+                                    NULL,       /* use default quotas */
+                                    &name,
+                                    4,  /* base priority */
+                                    NULL,
+                                    NULL,
+                                    PRC$M_DETACH);
+	if (status != SS$_NORMAL){
+		SEVCHK(ECA_NOREPEATER, NULL);
+#ifdef DEBUG
+		lib$signal(status);
+#endif
+        }
+}
+

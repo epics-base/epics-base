@@ -447,16 +447,16 @@ struct client *create_udp_client(unsigned sock)
 	client->pUserName[0] = '\0';
 
 	/*
-	 * location name initially unknown
+	 * host name initially unknown
 	 */
-	client->pLocationName = malloc(1); 
-	if(!client->pLocationName){
+	client->pHostName = malloc(1); 
+	if(!client->pHostName){
 		semDelete(client->blockSem);
 		free(client->pUserName);
 		free(client);
 		return NULL;
 	}
-	client->pLocationName[0] = '\0';
+	client->pHostName[0] = '\0';
 
       	ellInit(&client->addrq);
       	ellInit(&client->putNotifyQue);

@@ -32,20 +32,13 @@
  */
 
 
-#ifdef vxWorks
-#include <stdioLib.h>
-#else /* vxWorks */
 #include <stdio.h>
-#endif /* vxWorks */
-
 #include <assert.h>
 #include <stdlib.h>
 
 #include <bucketLib.h>
 
-#ifndef NULL
-#define NULL 0
-#endif /* NULL */
+
 #ifndef NBBY
 #define NBBY 8
 #endif /* NBBY */

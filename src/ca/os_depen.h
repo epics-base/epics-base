@@ -29,37 +29,91 @@
 #ifndef INCos_depenh
 #define INCos_depenh
 
-static char *os_depenhSccsId = "@(#)os_depen.h	1.12\t2/19/93";
+static char *os_depenhSccsId = "$Id$";
 
-#if defined(UNIX)
-#	ifndef _sys_time_h
-#		include <sys/time.h>
-#	endif
-#	ifndef _sys_errno_h
-#		include <sys/errno.h>
-#	endif
-#else
-#  if defined(vxWorks)
-#	ifndef INCvxWorksh
-#		include <vxWorks.h>
-#	endif
-#	ifndef INCfast_lockh
-#		include <fast_lock.h>
-#	endif
-#	ifndef INCtaskLibh
-#		include <taskLib.h>
-#	endif
-#	ifndef INCsystimeh
-#		include <systime.h>
-#	endif
-#  else
-#    if defined(VMS)
-#    else
-	@@@@ dont compile in this case @@@@
-#    endif
-#  endif
+/*
+ * errno.h is ANSI however we
+ * include it here because of differences
+ * between error code sets provided by
+ * each socket library
+ */
+#ifdef UNIX
+#	include <errno.h>
+#	include <sys/types.h>
+#	include <sys/time.h>
+#	include <sys/ioctl.h>
+#	include <sys/param.h>
+#	include <sys/socket.h>
+#	include <netinet/in.h>
+#	include <net/if.h>
+#	define CA_OS_CONFIGURED
 #endif
 
+#ifdef vxWorks
+#	include <vxWorks.h>
+#	include <errno.h>
+#	include <sys/types.h>
+#	include <sys/ioctl.h>
+#	include <sys/socket.h>
+#	include <netinet/in.h>
+#	include <inetLib.h>
+#	include <net/if.h>
+#	include <taskLib.h>
+#	include <systime.h>
+#	include <ioLib.h>
+#	include <tickLib.h>
+#	include <taskHookLib.h>
+#	include <selectLib.h>
+#	include <sockLib.h>
+#       include <errnoLib.h>
+#       include <sysLib.h>
+#       include <taskVarLib.h>
+#       include <hostLib.h>
+#       include <logLib.h>
+#       include <usrLib.h>
+#       include <dbgLib.h>
+
+#	include <task_params.h>
+#	include <taskwd.h>
+#	include <fast_lock.h>
+
+/*
+ * logistical problems prevent including this file
+ */
+#if 0
+#define caClient
+#include                <dbEvent.h>
+#endif
+#	define CA_OS_CONFIGURED
+#endif
+
+#ifdef VMS
+#	include <sys/types.h>
+#	include <sys/socket.h>
+#	include <netinet/in.h>
+#       define  __TIME /* dont include VMS CC time.h under MULTINET */
+#	include <sys/time.h>
+#       include <tcp/errno.h>
+#	include <ssdef>
+#	include <stsdef>
+#	include <iodef.h>
+#	include <psldef.h>
+#       include <prcdef.h>
+#       include <descrip.h>
+#ifdef UCX /* GeG 09-DEC-1992 */
+#       include         <sys/ucx$inetdef.h>
+#       include         <ucx.h>
+#else
+#	include		<net/if.h>
+#       include         <vms/inetiodef.h>
+#       include         <sys/ioctl.h>
+#endif
+#	define CA_OS_CONFIGURED
+#endif /*VMS*/
+
+#ifndef CA_OS_CONFIGURED
+#       error Please define one of vxWorks, UNIX or VMS
+#endif
 
 #ifndef NULL
 #define NULL            0
@@ -116,8 +170,9 @@ static char *os_depenhSccsId = "@(#)os_depen.h	1.12\t2/19/93";
 #  	define	LOCKEVENTS
 #  	define	UNLOCKEVENTS
 #	define	EVENTLOCKTEST	(post_msg_active!=0)
-#else
-#  if defined(vxWorks)
+#endif
+
+#if defined(vxWorks)
 #	define	VXTASKIDNONE	0
 #  	define	LOCK 		semTake(client_lock, WAIT_FOREVER);
 #  	define	UNLOCK  	semGive(client_lock);
@@ -127,22 +182,19 @@ static char *os_depenhSccsId = "@(#)os_depen.h	1.12\t2/19/93";
 	{event_tid=VXTASKIDNONE; semGive(event_lock);}
 #	define	EVENTLOCKTEST \
 (((int)taskIdCurrent)==event_tid || ca_static->recv_tid == (int)taskIdCurrent)
-#  else
-#    if defined(UNIX)
+#endif
+
+#if defined(UNIX)
 #  	define	LOCK
 #  	define	UNLOCK  
 #  	define	LOCKEVENTS
 #  	define	UNLOCKEVENTS
 #	define	EVENTLOCKTEST	(post_msg_active!=0)
-#    else
-	@@@@ dont compile in this case @@@@
-#    endif
-#  endif
 #endif
 
 #ifdef vxWorks
 #	define VXTHISTASKID 	taskIdSelf()
-#	define abort(A) 	taskSuspend(VXTHISTASKID)
+#	define abort() 	taskSuspend(VXTHISTASKID)
 #endif
 
 
@@ -151,25 +203,21 @@ static char *os_depenhSccsId = "@(#)os_depen.h	1.12\t2/19/93";
 	/* (the VAXC runtime lib has its own close */
 # 		define socket_close(S) netclose(S)
 # 		define socket_ioctl(A,B,C) ioctl(A,B,C) 
-#  else
-#    if defined(UCX)				/* GeG 09-DEC-1992 */
+#  endif
+#  if defined(UCX)				/* GeG 09-DEC-1992 */
 # 		define socket_close(S) close(S)
 # 		define socket_ioctl(A,B,C) ioctl(A,B,C) 
-#    else
-#    endif
 #  endif
-#else
-#  if defined(UNIX)
+#endif
+
+#if defined(UNIX)
 #   	define socket_close(S) close(S)
 #   	define socket_ioctl(A,B,C) ioctl(A,B,C) 
-#  else
-#    if defined(vxWorks)
+#endif
+
+#if defined(vxWorks)
 #   	define socket_close(S) close(S)
 #   	define socket_ioctl(A,B,C) ioctl(A,B,C) 
-#    else
-	@@@@ dont compile in this case @@@@
-#    endif
-#  endif
 #endif
 
 #if defined(VMS)
@@ -180,15 +228,14 @@ static char *os_depenhSccsId = "@(#)os_depen.h	1.12\t2/19/93";
   		extern volatile int noshare socket_errno;
 # 		define MYERRNO	socket_errno
 #	endif
-#else
-#  if defined(vxWorks)
+#endif
+
+#if defined(vxWorks)
 # 	define MYERRNO	(errnoGet()&0xffff)
-#  else
-#    if defined(UNIX)
-  	extern int	errno;
+#endif
+
+#if defined(UNIX)
 # 	define MYERRNO	errno
-#    endif
-#  endif
 #endif
 
 #ifdef VMS
@@ -204,14 +251,14 @@ static char *os_depenhSccsId = "@(#)os_depen.h	1.12\t2/19/93";
 
 #if defined(vxWorks)
 #  	define POST_IO_EV semGive(io_done_sem)
-#else
-#  if defined(VMS)
+#endif
+
+#if defined(VMS)
 #  	define POST_IO_EV sys$setef(io_done_flag)
-#  else
-#    if defined(UNIX)
+#endif
+
+#if defined(UNIX)
 #  	define POST_IO_EV 
-#    endif
-#  endif
 #endif
 
 /* delay for when a poll is used	 				*/
@@ -239,13 +286,15 @@ static char *os_depenhSccsId = "@(#)os_depen.h	1.12\t2/19/93";
   		status = sys$waitfr(ef); \
   		if(~status&STS$M_SUCCESS)lib$signal(status); \
 	};
-#else
-#  if defined(vxWorks)
+#endif
+
+#if defined(vxWorks)
 # 	define SYSFREQ		((long) sysClkRateGet())  /* usually 60 Hz */
 # 	define TCPDELAY 	taskDelay(ca_static->ca_local_ticks);	
 # 	define time(A) 		(tickGet()/SYSFREQ)
-#  else
-#    if defined(UNIX)
+#endif
+
+#if defined(UNIX)
 #	define SYSFREQ		1000000L	/* 1 MHz	*/
 	/*
 	 * this version of TCPDELAY copies tcpdelayval into temporary storage
@@ -263,12 +312,12 @@ static char *os_depenhSccsId = "@(#)os_depen.h	1.12\t2/19/93";
 		} \
 	} 
 #	ifdef CA_GLBLSOURCE
+		struct timeval notimeout = {0,0};
 		struct timeval tcpdelayval = {0,LOCALTICKS};
 #	else
+		extern struct timeval notimeout;
 		extern struct timeval tcpdelayval;
 #	endif
-#    endif
-#  endif
 #endif
 
 

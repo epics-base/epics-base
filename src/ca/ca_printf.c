@@ -34,19 +34,18 @@
 
 static char *sccsId = "$Id$";
 
-#if defined(UNIX) || defined(VMS)
-#	include <stdio.h>
-#endif
-#if defined(vxWorks)
+#include <stdio.h>
+
+#ifdef vxWorks
 # 	include <vxWorks.h>
 #	include <logLib.h>
-#endif
+#endif /*vxWorks*/
 
 #ifdef __STDC__
 #include <stdarg.h>
-#else
+#else /*__STDC__*/
 #include <varargs.h>
-#endif
+#endif /*__STDC__*/
 
 
 /*
@@ -68,26 +67,22 @@ va_dcl
 	int		status;
 #ifndef __STDC__
 	char		*pformat;
-#endif
+#endif /*__STDC__*/
 
 #ifdef __STDC__
 	va_start(args, pformat);
-#else
+#else /*__STDC__*/
 	va_start(args);
 	pformat = va_arg(args, char *);
-#endif
+#endif /*__STDC__*/
 
 
-#if defined(UNIX) || defined(VMS)
-	{
-		status = vfprintf(
-				stderr,
-				pformat,
-				args);
-	}
-#endif
-
-#ifdef vxWorks
+#ifndef vxWorks
+	status = vfprintf(
+			stderr,
+			pformat,
+			args);
+#else /*vxWorks*/
 	{
 		int	logMsgArgs[6];
 		int	i;
@@ -106,7 +101,7 @@ va_dcl
 				logMsgArgs[5]);
 			
 	}
-#endif
+#endif /*vxWorks*/
 
 	va_end(args);
 

@@ -2,7 +2,7 @@
 /*									*/
 /*	        	      L O S  A L A M O S			*/
 /*		        Los Alamos National Laboratory			*/
-/*		         Los Alamos, New Mexico 87545			*/	
+/*		         Los Alamos, New Mexico 87545			*/
 /*									*/
 /*	Copyright, 1986, The Regents of the University of California.	*/
 /*									*/
@@ -35,36 +35,8 @@
 
 static char	*sccsId = "$Id$";
 
-#if defined(vxWorks)
-#	include		<vxWorks.h>
-#	include		<ioLib.h>
-#	include		<socket.h>
-#	include		<ioctl.h>
-#else
-#  if defined(VMS)
-#	include		<sys/types.h>
-#	include		<sys/socket.h>
-#	if defined(UCX)			/* GeG 09-DEC-1992 */
-#     		include	<sys/ucx$inetdef.h>
-#     		include	<ucx.h>
-#	else
-#		include	<sys/ioctl.h>
-#	endif
-#  else
-#    if defined(UNIX)
-#	include		<sys/types.h>
-#	include		<sys/socket.h>
-#	include		<sys/ioctl.h>
-#    else
-	@@@@ dont compile @@@@
-#    endif
-#  endif
-#endif
+#include		"iocinf.h"
 
-#include		<os_depen.h>
-#include		<cadef.h>
-#include		<iocmsg.h>
-#include		<iocinf.h>
 
 
 /*

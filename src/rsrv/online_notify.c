@@ -36,13 +36,17 @@
 static char *sccsId = "$Id$\t$Date$";
 
 /*
+ * ansi includes
+ */
+#include <string.h>
+
+/*
  *	system includes
  */
 #include <vxWorks.h>
 #include <types.h>
 #include <sockLib.h>
 #include <socket.h>
-#include <string.h>
 #include <errnoLib.h>
 #include <in.h>
 #include <logLib.h>
@@ -51,11 +55,14 @@ static char *sccsId = "$Id$\t$Date$";
 /*
  *	EPICS includes
  */
+#include <iocinf.h>
+#if 0
 #include <taskwd.h>
 #include <task_params.h>
 #include <iocmsg.h>
-
-#define abort(A) taskSuspend((int)taskIdCurrent)
+#include <ellLib.h>
+#include <envDefs.h>
+#endif
 
 
 /*
@@ -66,6 +73,8 @@ static char *sccsId = "$Id$\t$Date$";
  */
 int rsrv_online_notify_task()
 {
+	ELLLIST			destAddr;
+	caAddrNode		*pNode;
 	/*
 	 * 1 sec init delay
 	 */
@@ -76,11 +85,9 @@ int rsrv_online_notify_task()
   	unsigned long		maxdelay = CA_ONLINE_DELAY;
 	struct extmsg		msg;
 
-  	struct sockaddr_in	send_addr;
   	struct sockaddr_in	recv_addr;
 	int			status;
 	int			sock;
-	struct sockaddr_in	lcl;
   	int			true = TRUE;
 
 	taskwdInsert((int)taskIdCurrent,NULL,NULL);
@@ -92,26 +99,14 @@ int rsrv_online_notify_task()
    	 */
   	if((sock = socket (AF_INET, SOCK_DGRAM, 0)) == ERROR){
     		logMsg("CAS: online socket creation error\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
-    		abort(0);
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
+    		abort();
   	}
-
-	status = local_addr(sock, &lcl);
-	if(status<0){
-		logMsg("CAS: online notify: Network interface unavailable\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
-		abort(0);
-	}
 
       	status = setsockopt(	sock,
 				SOL_SOCKET,
@@ -119,7 +114,7 @@ int rsrv_online_notify_task()
 				(char *)&true,
 				sizeof(true));
       	if(status<0){
-    		abort(0);
+    		abort();
       	}
 
       	bfill((char *)&recv_addr, sizeof recv_addr, 0);
@@ -128,46 +123,51 @@ int rsrv_online_notify_task()
       	recv_addr.sin_port = htons(0);	 /* let slib pick port */
       	status = bind(sock, (struct sockaddr *)&recv_addr, sizeof recv_addr);
       	if(status<0)
-		abort(0);
+		abort();
 
-   	bfill((char *)&msg, sizeof msg, NULL);
+   	bfill((char *)&msg, sizeof msg, 0);
 	msg.m_cmmd = htons(IOC_RSRV_IS_UP);
-	msg.m_available = lcl.sin_addr.s_addr;
 
- 	/*  Zero the sock_addr structure */
-  	bfill((char *)&send_addr, sizeof send_addr, 0);
-  	send_addr.sin_family 	= AF_INET;
-  	send_addr.sin_port 	= htons(CA_CLIENT_PORT);
-	status = broadcast_addr(&send_addr.sin_addr);
-	if(status<0){
-		logMsg("CAS: online notify - no interface to broadcast on\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
-		abort(0);
-	}
+	ellInit(&destAddr);
+	caDiscoverInterfaces(&destAddr, sock, CA_CLIENT_PORT);
+
+	caAddConfiguredAddr(
+		&destAddr,
+		&EPICS_CA_SEARCH_ADDR_LIST,
+		sock,
+		CA_CLIENT_PORT);
+
+#	ifdef DEBUG
+		caPrintAddrList(&destAddr);
+#	endif
 
  	while(TRUE){
-        	status = sendto(
-			sock,
-        		(char *)&msg,
-        		sizeof msg,
-        		0,
-       			(struct sockaddr *)&send_addr, 
-			sizeof send_addr);
-      		if(status != sizeof msg){
-			logMsg( "%s: Socket send error was %d\n",
-				(int)__FILE__,
-				errnoGet(),
-				NULL,
-				NULL,
-				NULL,
-				NULL);
+		pNode = (caAddrNode *) destAddr.node.next;
+		while(pNode){
+			msg.m_available = 
+				pNode->srcAddr.inetAddr.sin_addr.s_addr;
+        		status = sendto(
+					sock,
+        				(char *)&msg,
+        				sizeof(msg),
+        				0,
+					&pNode->destAddr.sockAddr,
+					sizeof(pNode->destAddr.sockAddr));
+      			if(status < 0){
+				logMsg( "%s: CA beacon error was \"%s\"\n",
+					(int) __FILE__,
+					(int) strerror(errnoGet()),
+					0,
+					0,
+					0,
+					0);
+			}
+			else{
+				assert(status == sizeof(msg));
+			}
+			
+			pNode = (caAddrNode *)pNode->node.next;
 		}
-
 		taskDelay(delay);
 		delay = min(delay << 1, maxdelay);
 	}

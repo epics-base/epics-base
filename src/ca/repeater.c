@@ -62,42 +62,7 @@
 
 static char *sccsId = "$Id$\t$Date$";
 
-#if defined(VMS)
-#	include		<stsdef.h>
-#	include		<errno.h>
-#	include		<sys/types.h>
-#	include		<sys/socket.h>
-#	include		<netinet/in.h>
-#else
-#  if defined(UNIX)
-#	include		<errno.h>
-#	include		<sys/types.h>
-#	include		<sys/socket.h>
-#	include		<netinet/in.h>
-#  else
-#    if defined(vxWorks)
-#	include		<vxWorks.h>
-#	include		<errno.h>
-#	include		<types.h>
-#	include		<socket.h>
-#	include		<sockLib.h>
-#	include		<ioLib.h>
-#	include		<string.h>
-#	include		<errnoLib.h>
-#	include		<in.h>
-#    else
-	@@@@ dont compile @@@@
-#    endif
-#  endif
-#endif
-
-#ifdef vxWorks
-#include		<taskwd.h>
-#endif
-#include		<cadef.h>
-#include		<iocmsg.h>
-#include		<iocinf.h>
-#include		<os_depen.h>
+#include	"iocinf.h"
 
 /* 
  *	these can be external since there is only one instance
@@ -108,62 +73,15 @@ struct one_client{
   	struct sockaddr_in	from;
 };
 
-static
-ELLLIST	client_list;
+static ELLLIST	client_list;
 
-static
-char	buf[MAX_UDP]; 
+static char	buf[MAX_UDP]; 
 
 #ifdef __STDC__
-LOCAL int 	clean_client(struct one_client *pclient);
-LOCAL int	ca_repeater();
+LOCAL int 	clean_client(struct one_client *pclient, int sock);
 #else
 LOCAL int 	clean_client(); 
-LOCAL int	ca_repeater();
 #endif
-
-#define NTRIES 100
-
-
-/*
- *
- *	Fan out broadcasts to several processor local tasks
- *
- *
- */
-#ifdef VMS
-main()
-#else
-int ca_repeater_task()
-#endif
-{
-#if REPEATER_RETRY
-	unsigned i,j;
-
-	/*
-	 *
-	 *	This allows the system inet support to takes it
-	 *	time releasing the bind I used to test if the repeater
-	 * 	is up.
-	 *
-	 */
-	for(i=0; i<NTRIES; i++){
-		ca_repeater();
-		for(j=0; j<100; j++)
-			TCPDELAY;
-
-#		ifdef DEBUG
-			ca_printf("CA: retiring the repeater\n");
-#		endif
-	}
-#endif
-
-	ca_repeater();
-
-	ca_printf("%s, exiting\n", __FILE__);
-
-	exit(0);
-}
 
 
 /*
@@ -172,11 +90,12 @@ int ca_repeater_task()
  *
  *
  */
-LOCAL int ca_repeater()
+int ca_repeater()
 {
   	int				status;
   	int				size;
   	int 				sock;
+  	int 				bindsock;
 	int				true = 1;
 	struct sockaddr_in		from;
   	struct sockaddr_in		bd;
@@ -191,18 +110,13 @@ LOCAL int ca_repeater()
       	sock = socket(	AF_INET,	/* domain	*/
 			SOCK_DGRAM,	/* type		*/
 			0);		/* deflt proto	*/
-      	if(sock == ERROR)
-        	return FALSE;
+      	assert(sock >= 0);
 
-	status = setsockopt(	sock,	
-				SOL_SOCKET,
-				SO_REUSEADDR,
-				(char *)&true,
-				sizeof(true));
-	if(status<0){
-		ca_printf(	"%s: set socket option failed\n", 
-				__FILE__);
-	}
+     	/* 	allocate a socket			*/
+      	bindsock = socket(	AF_INET,	/* domain	*/
+			SOCK_DGRAM,	/* type		*/
+			0);		/* deflt proto	*/
+      	assert(bindsock >= 0);
 
       	memset((char *)&bd,0,sizeof(bd));
       	bd.sin_family = AF_INET;
@@ -215,18 +129,24 @@ LOCAL int ca_repeater()
 				MYERRNO);
 		}
 		socket_close(sock);
-		return FALSE;
+		exit(0);
+	}
+
+	status = setsockopt(	sock,	
+				SOL_SOCKET,
+				SO_REUSEADDR,
+				(char *)&true,
+				sizeof(true));
+	if(status<0){
+		ca_printf(	"%s: set socket option failed\n", 
+				__FILE__);
 	}
 
 	status = local_addr(sock, &local);
 	if(status != OK){
 		ca_printf("CA Repeater: no inet interfaces online?\n");
-		return FALSE;
+		assert(0);
 	}
-
-#	ifdef vxWorks
-		taskwdInsert((int)taskIdCurrent, NULL, NULL);
-#	endif
 
 #ifdef DEBUG
 	ca_printf("CA Repeater: Attached and initialized\n");
@@ -325,7 +245,7 @@ LOCAL int ca_repeater()
 			/* do it now in case item deleted */
 			pnxtclient = (struct one_client *) 
 						pclient->node.next;	
-			clean_client(pclient);
+			clean_client(pclient, bindsock);
 		}
 	}
 }
@@ -337,27 +257,17 @@ LOCAL int ca_repeater()
  *
  */
 #ifdef __STDC__
-LOCAL int clean_client(struct one_client *pclient)
+LOCAL int clean_client(struct one_client *pclient, int sock)
 #else
-LOCAL int clean_client(pclient)
-struct one_client		*pclient;
+LOCAL int clean_client(pclient, sock)
+struct one_client	*pclient;
+int 			sock;
 #endif
 {
 	int			port = pclient->from.sin_port;
-	int 			sock;
   	struct sockaddr_in	bd;
 	int			status;
 	int			present = FALSE;
-
-     	/* 	allocate a socket			*/
-      	sock = socket(	AF_INET,	/* domain	*/
-			SOCK_DGRAM,	/* type		*/
-			0);		/* deflt proto	*/
-      	if(sock == ERROR){
-		ca_printf("CA Repeater: no socket err %d\n",
-			MYERRNO);
-		return ERROR;
-	}
 
       	memset((char *)&bd,0,sizeof bd);
       	bd.sin_family = AF_INET;
@@ -372,7 +282,6 @@ struct one_client		*pclient;
 				MYERRNO);
 		}
 	}
-	socket_close(sock);
 
 	if(!present){
 		ellDelete(&client_list, &pclient->node);

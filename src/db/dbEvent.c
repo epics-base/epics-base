@@ -63,6 +63,8 @@
  * joh  21	080393 	added task watch dog	
  */
 
+#include	<assert.h>
+
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<wdLib.h>
@@ -82,6 +84,8 @@
 #include	<task_params.h>
 #include	<db_access.h>
 #include 	<dbEvent.h>
+
+#include 	<memDebugLib.h>
 
 static char *sccsId = "$Id$\t$Date$";
 
@@ -186,6 +190,13 @@ struct event_user *db_init_events(void)
 	evuser->ppendsem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
 	if(!evuser->ppendsem){
 		FASTLOCKFREE(&(evuser->firstque.writelock));
+		free(evuser);
+		return NULL;
+	}
+	evuser->pflush_sem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
+	if(!evuser->pflush_sem){
+		FASTLOCKFREE(&(evuser->firstque.writelock));
+		semDelete(evuser->ppendsem);
 		free(evuser);
 		return NULL;
 	}
@@ -337,8 +348,9 @@ struct event_block	*pevent /* ptr to event blk (not required) */
  */
 int	db_cancel_event(struct event_block	*pevent)
 {
-  	register struct dbCommon	*precord;
-  	register int			status;
+  	struct dbCommon		*precord;
+  	int			status;
+	struct event_user	*pevu;
 
 /* (MDA) in LANL stuff, this used to taskSuspend if invalid address
   	PADDRCHK(pevent->paddr);
@@ -363,41 +375,32 @@ int	db_cancel_event(struct event_block	*pevent)
 	 * flush without polling.
 	 */
   	if(pevent->npend){
-		SEM_ID			pflush_sem;
+    		struct event_block	flush_event;
 
-		pflush_sem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
+		pevu = pevent->ev_que->evuser;
 
-		if(pflush_sem){
-    			struct event_block	flush_event;
-
-    			flush_event = *pevent;
-    			flush_event.user_sub = wake_cancel;
-    			flush_event.user_arg = &pflush_sem;
-    			flush_event.npend = 0;
-
-    			if(db_post_single_event(&flush_event)==OK){
+    		flush_event = *pevent;
+    		flush_event.user_sub = wake_cancel;
+    		flush_event.user_arg = &pevu->pflush_sem;
+    		flush_event.npend = 0;
+    		if(db_post_single_event(&flush_event)==OK){
+			/*
+			 * insure that the event is 
+			 * removed from the queue
+			 */
+    			while(flush_event.npend){
 				semTake(
-					pflush_sem, 
-					WAIT_FOREVER);
-
-				/*
-				 * insure that the event is 
-				 * removed from the queue
-				 */
-    				while(flush_event.npend)
-      					taskDelay(sysClkRateGet());
+					pevu->pflush_sem,
+					sysClkRateGet());
 			}
-
-			semDelete(pflush_sem);
 		}
 
     		/* 
-		 *
 		 * in case the event could not be queued 
-		 *
 		 */
-    		while(pevent->npend)
+    		while(pevent->npend){
       			taskDelay(sysClkRateGet());
+		}
   	}
 
 	/*
@@ -448,7 +451,24 @@ void			*overflow_arg
 
 
 /*
- * DB_AD_EXTRA_LABOR_EVENT()
+ * DB_FLUSH_EXTRA_LABOR_EVENT()
+ *
+ * waits for extra labor in progress to finish
+ */
+int db_flush_extra_labor_event(
+struct event_user	*evuser
+)
+{
+	while(evuser->extra_labor){
+		taskDelay(sysClkRateGet());
+	}
+
+  	return OK;
+}
+
+
+/*
+ * DB_ADD_EXTRA_LABOR_EVENT()
  *
  * Specify a routine to be called
  * when labor is offloaded to the
@@ -472,9 +492,12 @@ void			*arg
  */
 int db_post_extra_labor(struct event_user *evuser)
 {
+	int 	status;
+
     	/* notify the event handler of extra labor */
 	evuser->extra_labor = TRUE;
-    	semGive(evuser->ppendsem);
+    	status = semGive(evuser->ppendsem);
+	assert(status == OK);
 
 	return OK;
 }
@@ -520,7 +543,6 @@ int db_post_single_event(struct event_block	*pevent)
 			bcopy(	pevent->paddr->pfield,
 				(char *)&ev_que->valque[putix].field,
 				dbr_size[pevent->paddr->field_type]);
-	
 		}
     		/* notify the event handler */
     		semGive(ev_que->evuser->ppendsem);
@@ -698,19 +720,20 @@ int			init_func_arg
   	do{
 		semTake(evuser->ppendsem, WAIT_FOREVER);
 
-    		for(	ev_que= &evuser->firstque; 
-			ev_que; 
-			ev_que = ev_que->nextque)
-
-      			event_read(ev_que);
-
 		/*
 		 * check to see if the caller has offloaded
 		 * labor to this task
 		 */
-		if(evuser->extra_labor){
+		if(evuser->extra_labor && evuser->extralabor_sub){
 			evuser->extra_labor = FALSE;
 			(*evuser->extralabor_sub)(evuser->extralabor_arg);
+		}
+
+    		for(	ev_que= &evuser->firstque; 
+			ev_que; 
+			ev_que = ev_que->nextque){
+
+      			event_read(ev_que);
 		}
 
 		/*
@@ -770,6 +793,16 @@ int			init_func_arg
 	status = semDelete(evuser->ppendsem);
 	if(status != OK){
 		logMsg("evtsk: sem delete fail at exit\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
+	}
+	status = semDelete(evuser->pflush_sem);
+	if(status != OK){
+		logMsg("evtsk: flush sem delete fail at exit\n",
 			NULL,
 			NULL,
 			NULL,

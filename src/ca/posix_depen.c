@@ -77,4 +77,56 @@ char *localUserName()
 }
 
 
+
+/*
+ * ca_check_for_fp()
+ */
+int ca_check_for_fp()
+{
+        return ECA_NORMAL;
+}
 
+
+/*
+ * ca_spawn_repeater()
+ */
+void ca_spawn_repeater()
+{
+	int     status;
+	char	*pImageName;
+
+	/*
+	 * create a duplicate process
+	 */
+	status = fork();
+	if (status < 0){
+		SEVCHK(ECA_NOREPEATER, NULL);
+		return;
+	}
+
+	/*
+ 	 * return to the caller
+	 * if its the in the initiating process
+	 */
+	if (status){
+		return;
+	}
+
+	/*
+ 	 * running in the repeater process
+	 * if here
+	 */
+	pImageName = "caRepeater";
+	status = execlp(pImageName, NULL);
+	if(status<0){	
+		ca_printf("!!WARNING!!\n");
+		ca_printf("The executable \"%s\" couldnt be located.\n", pImageName);
+		ca_printf("You may need to modify your PATH environment variable.\n");
+		ca_printf("Creating CA repeater with fork() system call.\n");
+		ca_printf("Repeater will inherit parents process name and resources.\n");
+		ca_printf("Duplicate resource consumption may occur.\n");
+		ca_repeater();
+		assert(0);
+	}
+	exit(0);
+}

@@ -50,7 +50,7 @@
 /************************************************************************/
 /*									*/
 /*	Title:	IOC socket interface module				*/
-/*	File:	/.../ca/$Id$						*/
+/*	File:	share/src/ca/iocinf.c					*/
 /*	Environment: VMS. UNIX, vxWorks					*/
 /*	Equipment: VAX, SUN, VME					*/
 /*									*/
@@ -69,83 +69,22 @@
 /************************************************************************/
 /*_end									*/
 
-static char *sccsId = "$Id$\t$Date$";
+static char *sccsId = "$Id$";
 
 
 /*	Allocate storage for global variables in this module		*/
-#define			CA_GLBLSOURCE
-
-#ifdef VMS
-#	include		<iodef.h>
-#	include		<stsdef.h>
-#	include		<sys/types.h>
-#	define		__TIME /* dont include VMS CC time.h under MULTINET */
-#	include		<sys/time.h>
-#	include		<tcp/errno.h>
-#	include		<sys/socket.h>
-#	include		<netinet/in.h>
-#	include		<netinet/tcp.h>
-#  ifdef UCX				/* GeG 09-DEC-1992 */
-#	include		<sys/ucx$inetdef.h>
-#	include		<ucx.h>
-#  else
-#	include		<vms/inetiodef.h>
-#	include		<sys/ioctl.h>
-#  endif
-#endif /*VMS*/
-
-#ifdef UNIX
-#	include		<malloc.h>
-#	include		<sys/types.h>
-#	include		<sys/errno.h>
-#	include		<sys/socket.h>
-#	include		<netinet/in.h>
-#	include		<netinet/tcp.h>
-#	include		<sys/ioctl.h>
-#	include		<sys/param.h>
-#endif /*UNIX*/
-
-#ifdef vxWorks
-#	include		<vxWorks.h>
-#	include		<systime.h>
-#	include		<ioLib.h>
-#	include		<errno.h>
-#	include		<socket.h>
-#	include		<sockLib.h>
-#	include		<tickLib.h>
-#	include		<taskLib.h>
-#	include		<selectLib.h>
-#	include		<stdio.h>
-#	include		<in.h>
-#	include 	<tcp.h>
-#	include		<ioctl.h>
-#	include		<task_params.h>
-#	include		<string.h>
-#	include		<errnoLib.h>
-#	include		<sysLib.h>
-#	include		<taskVarLib.h>
-#	include		<hostLib.h>
-#endif /*vxWorks*/
-
-#ifdef vxWorks
-#include		<taskwd.h>
-#endif
-#include		<net_convert.h>
-#include		<iocinf.h>
-
-#ifdef UNIX
-static struct timeval notimeout = {0,0};
-#endif /*UNIX*/
+#define		CA_GLBLSOURCE
+#include	"iocinf.h"
+#include	"net_convert.h"
+#include	<netinet/tcp.h>
 
 #ifdef __STDC__
 LOCAL void 	tcp_recv_msg(struct ioc_in_use *piiu);
 LOCAL void 	cac_flush_internal();
-LOCAL void 	cac_send_msg_piiu(struct ioc_in_use *piiu);
+LOCAL void 	cac_tcp_send_msg_piiu(struct ioc_in_use *piiu);
+LOCAL void 	cac_udp_send_msg_piiu(struct ioc_in_use *piiu);
 LOCAL void 	notify_ca_repeater();
 LOCAL void 	udp_recv_msg(struct ioc_in_use *piiu);
-#ifdef JUNKYARD
-LOCAL void 	clean_iiu_list();
-#endif
 #ifdef VMS
 LOCAL void 	vms_recv_msg_ast(struct ioc_in_use *piiu);
 #endif /*VMS*/
@@ -153,42 +92,28 @@ LOCAL void 	ca_process_tcp(struct ioc_in_use *piiu);
 LOCAL void 	ca_process_udp(struct ioc_in_use *piiu);
 LOCAL void 	ca_process_input_queue();
 LOCAL void	close_ioc(struct ioc_in_use *piiu);
-LOCAL int create_net_chan(
-struct ioc_in_use 	**ppiiu,
-struct in_addr		*pnet_addr,
-int			net_proto
-);
-LOCAL void cacRingBufferInit(struct ca_buffer *pBuf, unsigned long size);
+LOCAL void 	cacRingBufferInit(struct ca_buffer *pBuf, unsigned long size);
+LOCAL char	*getToken(char **ppString);
 
 #else /*__STDC__*/
 
 LOCAL void	tcp_recv_msg();
 LOCAL void   	cac_flush_internal();
-LOCAL void 	cac_send_msg_piiu();
+LOCAL void 	cac_tcp_send_msg_piiu();
+LOCAL void 	cac_udp_send_msg_piiu();
 LOCAL void 	notify_ca_repeater();
 LOCAL void	udp_recv_msg();
 #ifdef VMS
 void   		vms_recv_msg_ast();
 #endif /*VMS*/
-LOCAL int 	create_net_chan();
-#ifdef JUNKYARD
-LOCAL void 	clean_iiu_list();
-#endif
 LOCAL void 	ca_process_tcp();
 LOCAL void 	ca_process_udp();
 LOCAL void 	ca_process_input_queue();
 LOCAL void	close_ioc();
 LOCAL void 	cacRingBufferInit();
+LOCAL char 	*getToken();
 
 #endif /*__STDC__*/
-
-
-/*
- * used to be that some TCP/IPs did not include this
- */
-#ifndef NBBY
-# define NBBY 8	/* number of bits per byte */
-#endif
 
 
 
@@ -202,16 +127,15 @@ LOCAL void 	cacRingBufferInit();
 #ifdef __STDC__
 int alloc_ioc(
 struct in_addr			*pnet_addr,
-int				net_proto,
 struct ioc_in_use		**ppiiu
 )
 #else
-int alloc_ioc(pnet_addr, net_proto, ppiiu)
+int alloc_ioc(pnet_addr, ppiiu)
 struct in_addr			*pnet_addr;
-int				net_proto;
 struct ioc_in_use		**ppiiu;
 #endif
 {
+	caAddrNode		*pNode;
 	struct ioc_in_use	*piiu;
   	int			status;
 
@@ -226,8 +150,15 @@ struct ioc_in_use		**ppiiu;
 		piiu;
 		piiu = (struct ioc_in_use *) piiu->node.next){
 
-    		if(	(pnet_addr->s_addr == piiu->sock_addr.sin_addr.s_addr)
-			&& (net_proto == piiu->sock_proto)){
+		if(piiu->sock_proto!=IPPROTO_TCP){
+			continue;
+		}
+
+		pNode = (caAddrNode *)piiu->destAddr.node.next;
+		assert(pNode);
+		assert(pNode->destAddr.sockAddr.sa_family == AF_INET);
+    		if(pnet_addr->s_addr == 
+			pNode->destAddr.inetAddr.sin_addr.s_addr){
 
 			if(!piiu->conn_up){
 				continue;
@@ -240,7 +171,7 @@ struct ioc_in_use		**ppiiu;
     	}
 	UNLOCK;
 
-  	status = create_net_chan(ppiiu, pnet_addr, net_proto);
+  	status = create_net_chan(ppiiu, pnet_addr, IPPROTO_TCP);
   	return status;
 
 }
@@ -251,13 +182,13 @@ struct ioc_in_use		**ppiiu;
  *
  */
 #ifdef __STDC__
-LOCAL int create_net_chan(
+int create_net_chan(
 struct ioc_in_use 	**ppiiu,
-struct in_addr		*pnet_addr,
+struct in_addr		*pnet_addr,	/* only used by TCP connections */
 int			net_proto
 )
 #else
-LOCAL int create_net_chan(ppiiu, pnet_addr, net_proto)
+int create_net_chan(ppiiu, pnet_addr, net_proto)
 struct ioc_in_use 	**ppiiu;
 struct in_addr		*pnet_addr;
 int			net_proto;
@@ -268,6 +199,7 @@ int			net_proto;
   	int 			sock;
   	int			true = TRUE;
   	struct sockaddr_in	saddr;
+	caAddrNode		*pNode;
 
 	LOCK;
 
@@ -283,15 +215,9 @@ int			net_proto;
 
 	piiu->pcas = ca_static;
 	ellInit(&piiu->chidlist);
+	ellInit(&piiu->destAddr);
 
-  	piiu->sock_addr.sin_addr = *pnet_addr;
   	piiu->sock_proto = net_proto;
-
-   	/* 	set socket domain 	*/
-  	piiu->sock_addr.sin_family = AF_INET;
-
-  	/*	set the port 	*/
-  	piiu->sock_addr.sin_port = htons(CA_SERVER_PORT);
 
 	/*
 	 * reset the delay to the next retry or keepalive
@@ -310,8 +236,19 @@ int			net_proto;
   	{
     		case	IPPROTO_TCP:
 
+		assert(pnet_addr);
+		pNode = (caAddrNode *)calloc(1,sizeof(*pNode));
+		if(!pNode){
+			free(pNode);
+			UNLOCK;
+			return ECA_ALLOCMEM;
+		}
+  		pNode->destAddr.inetAddr.sin_family = AF_INET;
+		pNode->destAddr.inetAddr.sin_addr = *pnet_addr;
+  		pNode->destAddr.inetAddr.sin_port = htons(CA_SERVER_PORT);
+		ellAdd(&piiu->destAddr, &pNode->node);
 		piiu->recvBytes = tcp_recv_msg; 
-		piiu->sendBytes = cac_send_msg_piiu; 
+		piiu->sendBytes = cac_tcp_send_msg_piiu; 
 		piiu->procInput = ca_process_tcp; 
 
       		/* 	allocate a socket	*/
@@ -378,9 +315,7 @@ int			net_proto;
 				SO_LINGER,
 				&linger,
 				&linger_size);
-      			if(status < 0){
-				abort(0);
-      			}
+      			assert(status >= 0);
 			ca_printf(	"CAC: linger was on:%d linger:%d\n", 
 				linger.l_onoff, 
 				linger.l_linger);
@@ -444,8 +379,8 @@ int			net_proto;
       		/* connect */
       		status = connect(	
 				sock,
-				(struct sockaddr *)&piiu->sock_addr,
-				sizeof(piiu->sock_addr));
+				&pNode->destAddr.sockAddr,
+				sizeof(pNode->destAddr.sockAddr));
       		if(status < 0){
 			ca_printf("CAC: no conn errno %d\n", MYERRNO);
         		status = socket_close(sock);
@@ -474,17 +409,17 @@ int			net_proto;
 		 * Save the Host name for efficient access in the
 		 * future.
 		 */
-		host_from_addr(
-			&piiu->sock_addr.sin_addr,
+		caHostFromInetAddr(
+			pnet_addr,
 			piiu->host_name_str,
 			sizeof(piiu->host_name_str));
-
       		break;
 
     	case	IPPROTO_UDP:
-
+	
+		assert(!pnet_addr);
 		piiu->recvBytes = udp_recv_msg; 
-		piiu->sendBytes = cac_send_msg_piiu; 
+		piiu->sendBytes = cac_udp_send_msg_piiu; 
 		piiu->procInput = ca_process_udp; 
 
       		/* 	allocate a socket			*/
@@ -498,7 +433,6 @@ int			net_proto;
 		}
 
       		piiu->sock_chan = sock;
-
 
 		/*
 		 * The following only needed on BSD 4.3 machines
@@ -535,6 +469,17 @@ int			net_proto;
         		ca_printf("CAC: bind (errno=%d)\n",MYERRNO);
 			ca_signal(ECA_INTERNAL,"bind failed");
       		}
+
+		caDiscoverInterfaces(
+			&piiu->destAddr,
+			sock,
+			CA_SERVER_PORT);
+
+		caAddConfiguredAddr(
+			&piiu->destAddr, 
+			&EPICS_CA_SEARCH_ADDR_LIST,
+			sock,
+			CA_SERVER_PORT);
 
 		cacRingBufferInit(&piiu->recv, sizeof(piiu->send.buf));
 		cacRingBufferInit(&piiu->send, min(MAX_UDP, sizeof(piiu->send.buf)));
@@ -639,8 +584,9 @@ LOCAL void notify_ca_repeater()
 				MYERRNO != ENOBUFS && 
 				MYERRNO != EWOULDBLOCK){
 				ca_printf(
-	"CAC: notify_ca_repeater: send to lcl addr failed\n");
-				abort(0);
+					"send error => %s\n", 
+					strerror(MYERRNO));
+				assert(0);	
 			}
 		}
 	}
@@ -650,13 +596,89 @@ LOCAL void notify_ca_repeater()
 
 
 /*
- *	CAC_SEND_MSG_PIIU()
+ *	CAC_UDP_SEND_MSG_PIIU()
  *
  */
 #ifdef __STDC__
-LOCAL void cac_send_msg_piiu(struct ioc_in_use *piiu)
+LOCAL void cac_udp_send_msg_piiu(struct ioc_in_use *piiu)
 #else
-LOCAL void cac_send_msg_piiu(piiu)
+LOCAL void cac_udp_send_msg_piiu(piiu)
+struct ioc_in_use 	*piiu;
+#endif
+{
+	caAddrNode	*pNode;
+	unsigned long	sendCnt;
+  	int		status;
+
+	/*
+	 * check for shutdown in progress
+	 */
+	if(!piiu->conn_up){
+		return;
+	}
+
+	LOCK;
+
+	sendCnt = cacRingBufferReadSize(&piiu->send, TRUE);
+
+	assert(sendCnt<=piiu->send.max_msg);
+
+	/*
+	 * return if nothing to send
+	 */
+	if(sendCnt == 0){
+		UNLOCK;
+		return;
+	}
+
+	pNode = (caAddrNode *) piiu->destAddr.node.next;
+	while(pNode){
+		status = sendto(
+				piiu->sock_chan,
+				&piiu->send.buf[piiu->send.rdix],	
+				sendCnt,
+				0,
+				&pNode->destAddr.sockAddr,
+				sizeof(pNode->destAddr.sockAddr));
+		if(status<0){
+			if(	MYERRNO != EWOULDBLOCK && 
+				MYERRNO != ENOBUFS && 
+				MYERRNO != EINTR){
+				ca_printf(
+					"CAC: error on socket send() %d\n",
+					MYERRNO);
+			}
+
+			piiu->conn_up = FALSE;
+			break;
+		}
+		assert(status == sendCnt);
+		pNode = (caAddrNode *) pNode->node.next;
+	}
+
+	/*
+	 * forces UDP send buffer to be a 
+	 * queue instead of a ring buffer
+	 * (solves ring boundary problems)
+	 */
+	cacRingBufferInit(
+			&piiu->send, 
+			min(MAX_UDP, sizeof(piiu->send.buf)));
+	piiu->send_needed = FALSE;
+
+	UNLOCK;
+	return;
+}
+
+
+/*
+ *	CAC_TCP_SEND_MSG_PIIU()
+ *
+ */
+#ifdef __STDC__
+LOCAL void cac_tcp_send_msg_piiu(struct ioc_in_use *piiu)
+#else
+LOCAL void cac_tcp_send_msg_piiu(piiu)
 struct ioc_in_use 	*piiu;
 #endif
 {
@@ -684,38 +706,23 @@ struct ioc_in_use 	*piiu;
 		return;
 	}
 
-	status = sendto(
+	status = send(
 			piiu->sock_chan,
 			&piiu->send.buf[piiu->send.rdix],	
 			sendCnt,
-			0,
-			(struct sockaddr *)&piiu->sock_addr,
-			sizeof(piiu->sock_addr));
-
+			0);
 	if(status>=0){
-		assert(status!=0);
 		assert(status<=sendCnt);
 
 		/*
 		 * reset the delay to the next keepalive
 		 */
-    		if(piiu != piiuCast && status){
+    		if(status){
 			piiu->next_retry = time(NULL) + CA_RETRY_PERIOD;
 		}
 
 		CAC_RING_BUFFER_READ_ADVANCE(&piiu->send, status);
 		
-		/*
-		 * forces UDP send buffer to be a 
-		 * queue instead of a ring buffer
-		 * (solves ring boundary problems)
-		 */
-		if(piiu->sock_proto == IPPROTO_UDP){
-			cacRingBufferInit(
-				&piiu->send, 
-				min(MAX_UDP, sizeof(piiu->send.buf)));
-		}
-
 		sendCnt = cacRingBufferReadSize(&piiu->send, FALSE);
 		if(sendCnt==0){
 			piiu->send_needed = FALSE;
@@ -768,7 +775,7 @@ LOCAL void cac_flush_internal()
 		if(!piiu->send_needed){
 			continue;
 		}
-		cac_send_msg_piiu(piiu);
+		piiu->sendBytes(piiu);
 	}
 	UNLOCK;
 }
@@ -1055,8 +1062,9 @@ LOCAL void ca_process_tcp(piiu)
 struct ioc_in_use	*piiu;
 #endif
 {
-	int	status;
-	long	bytesToProcess;
+	caAddrNode	*pNode;
+	int		status;
+	long		bytesToProcess;
 
 	/*
 	 * dont allow recursion
@@ -1064,6 +1072,8 @@ struct ioc_in_use	*piiu;
 	if(post_msg_active){
 		return;
 	}
+
+	pNode = (caAddrNode *) piiu->destAddr.node.next;
 
 	post_msg_active++;
 
@@ -1077,7 +1087,7 @@ struct ioc_in_use	*piiu;
   		/* post message to the user */
   		status = post_msg(
 				piiu, 
-				&piiu->sock_addr.sin_addr,
+				&pNode->destAddr.inetAddr.sin_addr,
 				&piiu->recv.buf[piiu->recv.rdix],
 				bytesToProcess);
 		if(status != OK){
@@ -1379,7 +1389,6 @@ struct ioc_in_use	*piiu;
 #endif /*__STDC__*/
 {
   	chid				chix;
-  	struct connection_handler_args	args;
 	int				status;
 
 
@@ -1423,17 +1432,19 @@ struct ioc_in_use	*piiu;
 	 * remove IOC from the hash table
 	 */
 	{
+		caAddrNode	*pNode;
 		bhe		*pBHE;
 		bhe		**ppBHE;
 		unsigned 	index;
 
-        	index = ntohl(piiu->sock_addr.sin_addr.s_addr);
+		pNode = (caAddrNode *) piiu->destAddr.node.next;
+        	index = ntohl(pNode->destAddr.inetAddr.sin_addr.s_addr);
         	index &= BHT_INET_ADDR_MASK;
 		ppBHE = &ca_static->ca_beaconHash[index];
 		pBHE = *ppBHE;
         	while(pBHE){
-                	if(pBHE->inetAddr.s_addr ==
-                       		piiu->sock_addr.sin_addr.s_addr){
+                	if(pBHE->inetAddr.s_addr == 
+				pNode->destAddr.inetAddr.sin_addr.s_addr){
 				*ppBHE = pBHE->pNext;
 				free(pBHE);
                        		break;
@@ -1448,13 +1459,20 @@ struct ioc_in_use	*piiu;
 	 */
   	chix = (chid) &piiu->chidlist.node.next;
   	while(chix = (chid) chix->node.next){
+		LOCKEVENTS;
+    		if(chix->access_rights_func){
+  			struct access_rights_handler_args args;
+			args.chid = chix;
+			args.ar = chix->ar;
+      			(*chix->access_rights_func)(args);
+		}
     		if(chix->connection_func){
+  			struct connection_handler_args args;
 			args.chid = chix;
 			args.op = CA_OP_CONN_DOWN;
-			LOCKEVENTS;
       			(*chix->connection_func)(args);
-			UNLOCKEVENTS;
     		}
+		UNLOCKEVENTS;
 		chix->piiu = piiuCast;
   	}
 
@@ -1463,12 +1481,8 @@ struct ioc_in_use	*piiu;
 	 *
 	 * if we loose the broadcast IIU its a severe error
 	 */
-	if(piiuCast){
-		ellConcat(&piiuCast->chidlist, &piiu->chidlist);
-	}
-	else{
-		assert(0);
-	}
+	assert(piiuCast);
+	ellConcat(&piiuCast->chidlist, &piiu->chidlist);
 
   	assert(piiu->chidlist.count==0);
 
@@ -1491,6 +1505,8 @@ struct ioc_in_use	*piiu;
 	}
 
   	piiu->sock_chan = -1;
+
+	ellFree(&piiu->destAddr);
 
 	free(piiu);
 	UNLOCK;
@@ -1773,18 +1789,18 @@ int contiguous;
 
 
 /*
- * localLocationName()
+ * localHostName()
  *
  * o Indicates failure by setting ptr to nill
  *
  * o Calls non posix gethostbyname() so that we get DNS style names
- *      (gethostbyname() should be available will al BSD sock libs)
+ *      (gethostbyname() should be available will most BSD sock libs)
  *
  * vxWorks user will need to configure a DNS format name for the
  * host name if they wish to be cnsistent UNIX and VMS hosts.
  *
  */
-char *localLocationName()
+char *localHostName()
 {
         int     size;
         int     status;
@@ -1806,5 +1822,141 @@ char *localLocationName()
         pTmp[size-1] = '\0';
 
 	return pTmp;
+}
+
+
+/*
+ * caAddConfiguredAddr()
+ */
+#ifdef __STDC__
+void caAddConfiguredAddr(ELLLIST *pList, ENV_PARAM *pEnv, 
+	int socket, int port)
+#else /*__STDC__*/
+void caAddConfiguredAddr(pList, pEnv, socket, port)
+ELLLIST         *pList;
+ENV_PARAM       *pEnv;
+int		socket;
+int		port;
+#endif /*__STDC__*/
+{
+        caAddrNode              *pNode;
+        ENV_PARAM               list;
+        char                    *pStr;
+        char                    *pToken;
+	union caAddr		addr;
+	union caAddr		localAddr;
+	int			status;
+
+        pStr = envGetConfigParam(
+                        pEnv,
+                        sizeof(list.dflt),
+                        list.dflt);
+        if(!pStr){
+                return;
+        }
+
+	/*
+	 * obtain a local address
+	 */
+	status = local_addr(socket, &localAddr.inetAddr);
+	if(status){
+		return;
+	}
+
+        while(pToken = getToken(&pStr)){
+		addr.inetAddr.sin_family = AF_INET;
+  		addr.inetAddr.sin_port = htons(port);
+                addr.inetAddr.sin_addr.s_addr = inet_addr(pToken);
+                if(addr.inetAddr.sin_addr.s_addr == -1){
+                        ca_printf( 
+				"%s: Parsing '%s'\n",
+                                __FILE__,
+                                pEnv->name);
+                        ca_printf( 
+				"\tBad internet address format: '%s'\n",
+                                pToken);
+			continue;
+		}
+
+                pNode = (caAddrNode *) calloc(1,sizeof(*pNode));
+                if(pNode){
+                	pNode->destAddr.inetAddr = addr.inetAddr;
+                	pNode->srcAddr.inetAddr = localAddr.inetAddr;
+                	LOCK;
+                	ellAdd(pList, &pNode->node);
+                	UNLOCK;
+                }
+        }
+
+	return;
+}
+
+
+
+/*
+ * getToken()
+ */
+#ifdef __STDC__
+LOCAL char *getToken(char **ppString)
+#else /*__STDC__*/
+LOCAL char *getToken(ppString)
+char **ppString;
+#endif /*__STDC__*/
+{
+        char *pToken;
+        char *pStr;
+
+        pToken = *ppString;
+        while(isspace(*pToken)&&*pToken){
+                pToken++;
+        }
+
+        pStr = pToken;
+        while(!isspace(*pStr)&&*pStr){
+                pStr++;
+        }
+
+        if(isspace(*pStr)){
+                *pStr = '\0';
+                *ppString = pStr+1;
+        }
+        else{
+                *ppString = pStr;
+                assert(*pStr == '\0');
+        }
+
+        if(*pToken){
+                return pToken;
+        }
+        else{
+                return NULL;
+        }
+}
+
+
+/*
+ * caPrintAddrList()
+ */
+#ifdef __STDC__
+void caPrintAddrList(ELLLIST *pList)
+#else /*__STDC__*/
+void caPrintAddrList(pList)
+ELLLIST *pList;
+#endif /*__STDC__*/
+{
+        caAddrNode              *pNode;
+
+        printf("Channel Access Address List\n");
+        pNode = (caAddrNode *) ellFirst(pList);
+        while(pNode){
+                if(pNode->destAddr.sockAddr.sa_family != AF_INET){
+                        printf("<addr entry not in internet format>");
+                        continue;
+                }
+                printf(	"%s\n", 
+			inet_ntoa(pNode->destAddr.inetAddr.sin_addr));
+
+                pNode = (caAddrNode *) ellNext(&pNode->node);
+        }
 }
 

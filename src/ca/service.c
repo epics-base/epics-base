@@ -70,30 +70,8 @@
 
 static char *sccsId = "$Id$"; 
 
-#if defined(VMS)
-#	include		<sys/types.h>
-#	include		<stsdef.h>
-#else
-#  if defined(UNIX)
-#	include		<sys/types.h>
-#	include		<stdio.h>
-#  else
-#    if defined(vxWorks)
-#	include		<string.h>
-#	include		<stdio.h>
-#	include		<vxWorks.h>
-#    else
-	@@@@ dont compile @@@@
-#    endif
-#  endif
-#endif
-
-#include 	<cadef.h>
-#include	<os_depen.h>
-#include	<iocmsg.h>
-#include 	<iocinf.h>
-#include	<db_access.h>
-#include 	<net_convert.h>
+#include 	"iocinf.h"
+#include 	"net_convert.h"
 
 #ifdef __STDC__
 
@@ -249,6 +227,10 @@ printf("%s Cmd=%3d Type=%3d Count=%4d Size=%4d Avail=%8x Cid=%6d\n",
 	return OK;
 }
 
+
+/*
+ * cacMsg()
+ */
 #ifdef __STDC__
 LOCAL int cacMsg(
 struct ioc_in_use 	*piiu,
@@ -603,13 +585,13 @@ struct in_addr  	*pnet_addr;
 
 		/*
 		 * dont process the message if they have
-		 * disable notification
+		 * disabled notification
 		 */
 		if (!ca_static->ca_exception_func){
 			break;
 		}
 
-		host_from_addr(pnet_addr, nameBuf, sizeof(nameBuf));
+		caHostFromInetAddr(pnet_addr, nameBuf, sizeof(nameBuf));
 
 		if (piiu->curMsg.m_postsize > sizeof(struct extmsg)){
 			sprintf(context, 
@@ -736,8 +718,11 @@ struct in_addr		*pnet_addr;
 	 * Ignore duplicate search replies
 	 */
 	if (chan->state == cs_conn) {
+		caAddrNode	*pNode;
 
-		if (chpiiu->sock_addr.sin_addr.s_addr == 
+		pNode = (caAddrNode *) chpiiu->destAddr.node.next;
+		assert(pNode);
+		if (pNode->destAddr.inetAddr.sin_addr.s_addr == 
 				pnet_addr->s_addr) {
 			ca_printf("<Extra> ");
 #		ifdef UNIX
@@ -745,7 +730,7 @@ struct in_addr		*pnet_addr;
 #		endif
 		} else {
 
-			host_from_addr(pnet_addr,rej,sizeof(rej));
+			caHostFromInetAddr(pnet_addr,rej,sizeof(rej));
 			sprintf(
 				sprintf_buf,
 		"Channel: %s Accepted: %s Rejected: %s ",
@@ -758,12 +743,9 @@ struct in_addr		*pnet_addr;
 		return;
 	}
 
-        status = alloc_ioc	(
-				pnet_addr,
-				IPPROTO_TCP,		
-				&allocpiiu);
+        status = alloc_ioc(pnet_addr, &allocpiiu);
 	if(status != ECA_NORMAL){
-		host_from_addr(pnet_addr,rej,sizeof(rej));
+		caHostFromInetAddr(pnet_addr,rej,sizeof(rej));
 	  	ca_printf("CAC: ... %s ...\n", ca_message(status));
 	 	ca_printf("CAC: for %s on %s\n", chan+1, rej);
 	 	ca_printf("CAC: ignored search reply- proceeding\n");
@@ -808,7 +790,7 @@ struct in_addr		*pnet_addr;
 		 */
 		if(ellCount(&chpiiu->chidlist)==1){
 			issue_identify_client(chpiiu);
-			issue_identify_client_location(chpiiu);
+			issue_client_host_name(chpiiu);
 		}
         }
 

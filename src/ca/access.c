@@ -124,56 +124,13 @@ static char *sccsId = "$Id$";
  */
 #define CA_ERROR_GLBLSOURCE
 
-#include <unistd.h>
-#include <string.h>
-#include <stdlib.h>
-
-#ifdef VMS
-#	include		<stsdef.h>
-#	include		<ssdef.h>
-#	include		<psldef.h>
-#	include		<prcdef.h>
-#	include 	<descrip.h>
-#endif /*VMS*/
-
-#ifdef UNIX
-#	include		<signal.h>
-#endif /*UNIX*/
-
-#ifdef vxWorks
-#	include		<vxWorks.h>
-# 	include		<taskLib.h>
-# 	include		<task_params.h>
-#	include		<sysLib.h>
-#	include		<tickLib.h>
-#	include		<taskLib.h>
-#	include		<taskHookLib.h>
-#	include		<logLib.h>
-#	include		<usrLib.h>
-#	include		<dbgLib.h>
-#	include		<taskVarLib.h>
-#endif /*vxWorks*/
-
 /*
  * allocate db_access message strings here
  */
 #define DB_TEXT_GLBLSOURCE
-#include 		<iocinf.h>
-#include		<net_convert.h>
 
-#ifdef vxWorks
-#include		<taskwd.h>
-#endif /*vxWorks*/
-
-/*
- * logistical problems prevent including this file
- */
-#ifdef vxWorks
-#if 0
-#define caClient
-#include 		<dbEvent.h>
-#endif
-#endif
+#include 	"iocinf.h"
+#include	"net_convert.h"
 
 
 /****************************************************************/
@@ -238,8 +195,6 @@ struct ioc_in_use 	*piiu,
 unsigned		extsize,
 struct extmsg		**ppMsg
 );
-LOCAL void 	spawn_repeater();
-LOCAL int 	check_for_fp();
 LOCAL int 	ca_add_task_variable(struct ca_static *ca_temp);
 #ifdef vxWorks
 LOCAL void 	ca_task_exit_tcb(WIND_TCB *ptcb);
@@ -280,8 +235,6 @@ LOCAL void cac_wait_for_flush(IIU *piiu);
 #else /*__STDC__*/
 
 LOCAL int 	cac_alloc_msg();
-LOCAL void 	spawn_repeater();
-LOCAL int	check_for_fp(); 
 LOCAL int	ca_add_task_variable();
 #ifdef vxWorks
 LOCAL void    	ca_task_exit_tcb();
@@ -528,12 +481,10 @@ int ca_task_initialize()
 
 	if (!ca_static) {
 
-#ifdef vxWorks
-		status = check_for_fp();
+		status = ca_check_for_fp();
 		if(status != ECA_NORMAL){
 			return status;
 		}
-#endif /*vxWorks*/
 
 #ifdef UNIX
 		/*
@@ -547,7 +498,7 @@ int ca_task_initialize()
 #endif /*UNIX*/
 
 		if (repeater_installed()==FALSE) {
-			spawn_repeater();
+			ca_spawn_repeater();
 		}
 
 		ca_temp = (struct ca_static *) 
@@ -575,8 +526,8 @@ int ca_task_initialize()
 		}
 
 		/* record a default user name */
-		ca_static->ca_pLocationName = localLocationName();
-		if(!ca_static->ca_pLocationName){
+		ca_static->ca_pHostName = localHostName();
+		if(!ca_static->ca_pHostName){
 			free(ca_static->ca_pUserName);
 			free(ca_static);
 			return ECA_ALLOCMEM;
@@ -598,8 +549,7 @@ int ca_task_initialize()
 		ellInit(&ca_static->ca_putNotifyQue);
 #endif /* vxWorks */
 		ca_static->ca_pBucket = bucketCreate(CLIENT_ID_WIDTH);
-		if(!ca_static->ca_pBucket)
-			abort(0);
+		assert(ca_static->ca_pBucket);
 
 #ifdef VMS
 		{
@@ -630,15 +580,13 @@ int ca_task_initialize()
 			assert(ca_static->ca_blockSem);
 
 			evuser = (void *) db_init_events();
-			if (!evuser)
-				abort(0);
+			assert(evuser);
 
 			status = db_add_extra_labor_event(
 					evuser,
 					ca_extra_event_labor,
 					ca_static);
-			if(status)
-				abort(0);
+			assert(status==0);
 			strcpy(name, "EV ");
 			strncat(
 				name,
@@ -650,8 +598,7 @@ int ca_task_initialize()
 						ca_import,
 						taskIdSelf(),
 						-1); /* higher priority */
-			if (status != OK)
-				abort(0);
+			assert(status == OK);
 		}
 #endif /*vxWorks*/
 	}
@@ -672,15 +619,10 @@ LOCAL void create_udp_fd()
 		return;
 	}
 
-	status = broadcast_addr(&ca_static->ca_castaddr);
-	if(status != OK){
-		return;
-	}
-
-	status = alloc_ioc(
-		   &ca_static->ca_castaddr,
-		   IPPROTO_UDP,
-		   &ca_static->ca_piiuCast);
+	status = create_net_chan(
+			&ca_static->ca_piiuCast,
+			NULL,
+			IPPROTO_UDP);
 	if (~status & CA_M_SUCCESS) {
 		ca_static->ca_piiuCast = NULL;
 		return;
@@ -723,212 +665,16 @@ LOCAL void create_udp_fd()
 
 
 /*
- *	spawn_repeater()
- *
- * 	Spawn the repeater task as needed
- */
-LOCAL void spawn_repeater()
-{
-
-#ifdef UNIX
-	{
-		int	status;
-
-		/*
-		 * use of fork makes ca and repeater images larger than
-		 * required but a path is not required in the code.
-		 * 
-		 * This method of spawn places a path name in the
-		 * code so it has been avoided for now:
-		 * 	system("/path/repeater &");
-		 */
-		status = fork();
-		if (status < 0)
-			SEVCHK(ECA_NOREPEATER, NULL);
-		if (status == 0){
-			ca_repeater_task();
-			exit(0);
-		}
-	}
-#endif
-#ifdef vxWorks
-	{
-		int	status;
-
-		status = taskSpawn(
-			   CA_REPEATER_NAME,
-			   CA_REPEATER_PRI,
-			   CA_REPEATER_OPT,
-			   CA_REPEATER_STACK,
-			   ca_repeater_task,
-			   NULL,
-			   NULL,
-			   NULL,
-			   NULL,
-			   NULL,
-			   NULL,
-			   NULL,
-			   NULL,
-			   NULL,
-			   NULL);
-		if (status < 0){
-			SEVCHK(ECA_NOREPEATER, NULL);
-		}
-	}
-#endif
-#ifdef VMS
-	{
-		static          $DESCRIPTOR(image, 	"EPICS_CA_REPEATER");
-		static          $DESCRIPTOR(io, 	"EPICS_LOG_DEVICE");
-		static          $DESCRIPTOR(name, 	"CA repeater");
-		int		status;
-		unsigned long   pid;
-
-		status = sys$creprc(
-				    &pid,
-				    &image,
-				    NULL,	/* input (none) */
-				    &io,	/* output */
-				    &io,	/* error */
-				    NULL,	/* use parents privs */
-				    NULL,	/* use default quotas */
-				    &name,
-				    4,	/* base priority */
-				    NULL,
-				    NULL,
-				    PRC$M_DETACH);
-		if (status != SS$_NORMAL){
-			SEVCHK(ECA_NOREPEATER, NULL);
-#ifdef DEBUG
-			lib$signal(status);
-#endif
-		}
-	}
-#endif
-}
-
-
-
-/*
- * CHECK_FOR_FP()
- * 
- * 
- */
-#ifdef vxWorks
-LOCAL int check_for_fp()
-{
-	{
-		int             options;
-
-		if (taskOptionsGet(taskIdSelf(), &options) == ERROR)
-			abort(0);
-		if (!(options & VX_FP_TASK)) {
-			return ECA_NEEDSFP;
-		}
-	}
-	return ECA_NORMAL;
-}
-#endif
-
-
-/*
- * CA_IMPORT()
- * 
- * 
- */
-#ifdef vxWorks
-#ifdef __STDC__
-int ca_import(int tid)
-#else
-int ca_import(tid)
-int             tid;
-#endif
-{
-	int             status;
-	struct ca_static *pcas;
-	TVIU		*ptviu;
-
-	status = check_for_fp();
-	if(status != ECA_NORMAL){
-		return status;
-	}
-
-	ptviu = calloc(1, sizeof(*ptviu));
-	if(!ptviu){
-		return ECA_ALLOCMEM;
-	}
-
-	pcas = (struct ca_static *) 
-		taskVarGet(tid, (int *)&ca_static);
-	if (pcas == (struct ca_static *) ERROR){
-		free(ptviu);
-		return ECA_NOCACTX;
-	}
-
-	ca_static = NULL;
-
-	status = taskVarAdd(VXTHISTASKID, (int *)&ca_static);
-	if (status == ERROR){
-		free(ptviu);
-		return ECA_ALLOCMEM;
-	}
-
-	ca_static = pcas;
-
-	ptviu->tid = taskIdSelf();
-	LOCK;
-	ellAdd(&ca_static->ca_taskVarList, &ptviu->node);	
-	UNLOCK;
-
-	return ECA_NORMAL;
-}
-#endif
-
-
-/*
- * CA_IMPORT_CANCEL()
- */
-#ifdef vxWorks
-int ca_import_cancel(tid)
-int		tid;
-{
-	int	status;
-	TVIU	*ptviu;
-
-	LOCK;
-	ptviu = (TVIU *) ca_static->ca_taskVarList.node.next; 
-	while(ptviu){
-		if(ptviu->tid == tid){
-			break;
-		}
-	}
-
-	if(!ptviu){
-		return ECA_NOCACTX;
-	}
-
-	ellDelete(&ca_static->ca_taskVarList, &ptviu->node);
-	UNLOCK;
-
-	status = taskVarDelete(tid, (void *)&ca_static);
-	assert (status == OK);
-
-	return ECA_NORMAL;
-}
-#endif
-
-
-/*
- * CA_MODIFY_CLIENT_LOCATION_NAME()
+ * CA_MODIFY_HOST_NAME()
  *
  * Modify or override the default 
- * client location name.
+ * client host name.
  */
 #ifdef __STDC__
-int ca_modify_client_location(char *pLocationName)
+int ca_modify_host_name(char *pHostName)
 #else /*__STDC__*/
-int ca_modify_client_location(pLocationName)
-char *pLocationName;
+int ca_modify_host_name(pHostName)
+char *pHostName;
 #endif /*__STDC__*/
 {
 	char		*pTmp;
@@ -937,7 +683,7 @@ char *pLocationName;
 
 	INITCHK;
 
-	size = strlen(pLocationName)+1;
+	size = strlen(pHostName)+1;
 	if (size > STRING_LIMIT){
 		return ECA_STRTOBIG;
 	}
@@ -947,19 +693,19 @@ char *pLocationName;
 		return ECA_ALLOCMEM;
 	}
 
-	if(ca_static->ca_pLocationName){
-		free(ca_static->ca_pLocationName);
+	if(ca_static->ca_pHostName){
+		free(ca_static->ca_pHostName);
 	}
-	ca_static->ca_pLocationName = pTmp;
+	ca_static->ca_pHostName = pTmp;
 
 	/*
 	 * force null termination
 	 */
 	strncpy(	
-		ca_static->ca_pLocationName, 
-		pLocationName, 
+		ca_static->ca_pHostName, 
+		pHostName, 
 		size-1);
-	ca_static->ca_pLocationName[size-1]='\0';
+	ca_static->ca_pHostName[size-1]='\0';
 
 	/*
 	 * update all servers we are currently
@@ -968,7 +714,7 @@ char *pLocationName;
 	LOCK;
 	piiu = (struct ioc_in_use *) ca_static->ca_iiuList.node.next;
 	while(piiu){
-		issue_identify_client_location(piiu);
+		issue_client_host_name(piiu);
 		piiu = (struct ioc_in_use *) piiu->node.next;
 	}
 	UNLOCK;
@@ -979,15 +725,15 @@ char *pLocationName;
 
 
 /*
- * CA_MODIFY_CLIENT_NAME()
+ * CA_MODIFY_USER_NAME()
  *
  * Modify or override the default 
- * client (user) name.
+ * client user name.
  */
 #ifdef __STDC__
-int ca_modify_client_name(char *pClientName)
+int ca_modify_user_name(char *pClientName)
 #else /*__STDC__*/
-int ca_modify_client_name(pClientName)
+int ca_modify_user_name(pClientName)
 char *pClientName;
 #endif /*__STDC__*/
 {
@@ -1277,8 +1023,7 @@ LOCAL void ca_process_exit()
 			while (chix = (chid) chix->node.next){
 				while (monix = (evid) ellGet(&chix->eventq)) {
 					status = db_cancel_event(monix + 1);
-					if (status == ERROR)
-						abort(0);
+					assert(status == OK);
 					free(monix);
 				}
 				if(chix->ppn){
@@ -1401,6 +1146,11 @@ LOCAL void ca_process_exit()
 				piiu->curDataMax = 0;
 			}
 
+			/*
+			 * free address list
+			 */
+			ellFree(&piiu->destAddr);
+
 #ifdef VAX
 			/*
 			 * free put convert cache
@@ -1467,10 +1217,10 @@ LOCAL void ca_process_exit()
 		}
 
 		/*
-		 * free location name string
+		 * free host name string
 		 */
-		if(ca_temp->ca_pLocationName){
-			free(ca_temp->ca_pLocationName);
+		if(ca_temp->ca_pHostName){
+			free(ca_temp->ca_pHostName);
 		}
 
 		/*
@@ -1573,7 +1323,6 @@ int ca_build_and_connect
 #ifdef vxWorks
 	{
 		struct db_addr  tmp_paddr;
-		struct connection_handler_args args;
 
 		/* Find out quickly if channel is on this node  */
 		status = db_name_to_addr(name_str, &tmp_paddr);
@@ -1600,6 +1349,8 @@ int ca_build_and_connect
 			chix->count = chix->id.paddr->no_elements;
 			chix->piiu = NULL; /* none */
 			chix->state = cs_conn;
+			chix->ar.read_access = TRUE;
+			chix->ar.write_access = TRUE;
 			ellInit(&chix->eventq);
 			strncpy((char *)(chix + 1), name_str, strcnt);
 
@@ -1621,14 +1372,22 @@ int ca_build_and_connect
 			ellAdd(&local_chidlist, &chix->node);
 			UNLOCK;
 
+			LOCKEVENTS;
 			if (chix->connection_func) {
+				struct connection_handler_args args;
+
 				args.chid = chix;
 				args.op = CA_OP_CONN_UP;
-
-				LOCKEVENTS;
 				(*chix->connection_func) (args);
-				UNLOCKEVENTS;
 			}
+			if (chix->access_rights_func) {
+				struct access_rights_handler_args args;
+
+				args.chid = chix;
+				args.ar = chix->ar;
+				(*chix->access_rights_func) (args);
+			}
+			UNLOCKEVENTS;
 			return ECA_NORMAL;
 		}
 	}
@@ -1678,10 +1437,6 @@ int ca_build_and_connect
 	chix->piiu = piiuCast;
 	ellAdd(&piiuCast->chidlist, &chix->node);
 
-	/*
-	 * set the conn tries back to zero so this channel's location
-	 * can be found
-	 */
 	piiuCast->nconn_tries = 0;
 	piiuCast->next_retry = CA_CURRENT_TIME;
 	piiuCast->retry_delay = CA_RECAST_DELAY;
@@ -1848,9 +1603,6 @@ void 		*pvalue
 
 /*
  * CA_ARRAY_GET_CALLBACK()
- * 
- * 
- * 
  */
 int ca_array_get_callback
 #ifdef __STDC__
@@ -1903,7 +1655,7 @@ int ca_array_get_callback
 
 	if (monix) {
 
-		memset(monix, 0, sizeof(*monix));
+		memset((char *)monix, 0, sizeof(*monix));
 		monix->chan = chix;
 		monix->usr_func = pfunc;
 		monix->usr_arg = arg;
@@ -2039,7 +1791,7 @@ void				*usrarg;
 			return ECA_ALLOCMEM;
 		}
 
-		memset(monix,0,sizeof(*monix));
+		memset((char *)monix,0,sizeof(*monix));
 		monix->chan = chix;
 		monix->usr_func = pfunc;
 		monix->usr_arg = usrarg;
@@ -2516,6 +2268,28 @@ void		(*pfunc)();
 
 
 /*
+ * ca_replace_access_rights_event
+ */
+#ifdef __STDC__
+int ca_replace_access_rights_event(
+chid 	chan, 
+void    (*pfunc)(struct access_rights_handler_args))
+#else /*__STDC__*/
+int ca_replace_access_rights_event(chan, pfunc)
+chid	chan;
+void	(*pfunc)(struct access_rights_handler_args);
+#endif /*__STDC__*/
+{
+  	INITCHK;
+  	LOOSECHIXCHK(chan);
+
+    	chan->access_rights_func = pfunc;
+
+  	return ECA_NORMAL;
+}
+
+
+/*
  *	Specify an event subroutine to be run for asynch exceptions
  *
  */
@@ -2579,7 +2353,7 @@ void		*astarg;
     pioe = (struct pending_io_event *) malloc(sizeof(*pioe));
     if(!pioe)
       return ECA_ALLOCMEM;
-    memset(pioe,0,sizeof(*pioe));
+    memset((char *)pioe,0,sizeof(*pioe));
     pioe->io_done_arg = astarg;
     pioe->io_done_sub = ast;
     LOCK;
@@ -2626,119 +2400,125 @@ evid				*monixptr;
 long				mask;
 #endif
 {
-  evid		monix;
-  int		status;
-  int		size;
+  	evid		monix;
+  	int		status;
+  	int		size;
 
-  INITCHK;
-  LOOSECHIXCHK(chix);
+  	INITCHK;
+  	LOOSECHIXCHK(chix);
 
-  if(INVALID_DB_REQ(type))
-    return ECA_BADTYPE;
+  	if(INVALID_DB_REQ(type))
+    		return ECA_BADTYPE;
 
-  if(count > chix->count && chix->type != TYPENOTCONN)
-    return ECA_BADCOUNT;
+  	if(count > chix->count && chix->type != TYPENOTCONN)
+    		return ECA_BADCOUNT;
 
-  if(!mask)
-    return ECA_BADMASK;
+  	if(!mask)
+    		return ECA_BADMASK;
 
-  LOCK;
+  	LOCK;
 
-  /*	event descriptor	*/
-# ifdef vxWorks
-  {
-    static int			dbevsize;
+  	/*	event descriptor	*/
+# 	ifdef vxWorks
+  	{
+    		static int			dbevsize;
 
-    if(!chix->piiu){
+    		if(!chix->piiu){
 
-      if(!dbevsize)
-        dbevsize = db_sizeof_event_block();
+      			if(!dbevsize){
+        			dbevsize = db_sizeof_event_block();
+			}
+      			size = sizeof(*monix)+dbevsize;
+      			if(!(monix = (evid)ellGet(&dbfree_ev_list))){
+        			monix = (evid)malloc(size);
+      			}
+    		}
+    		else{
+      			size = sizeof(*monix);
+      			if(!(monix = (evid)ellGet(&free_event_list))){
+       		 		monix = (evid)malloc(size);
+      			}
+    		}
+  	}
+# 	else
+  		size = sizeof(*monix);
+  		if(!(monix = (evid)ellGet(&free_event_list)))
+    		monix = (evid) malloc(size);
+# 	endif
 
-      size = sizeof(*monix)+dbevsize;
-      if(!(monix = (evid)ellGet(&dbfree_ev_list))){
-        monix = (evid)malloc(size);
-      }
-    }
-    else{
-      size = sizeof(*monix);
-      if(!(monix = (evid)ellGet(&free_event_list))){
-        monix = (evid)malloc(size);
-      }
-    }
-  }
-# else
-  size = sizeof(*monix);
-  if(!(monix = (evid)ellGet(&free_event_list)))
-    monix = (evid) malloc(size);
-# endif
+  	if(!monix){
+    		UNLOCK;
+    		return ECA_ALLOCMEM;
+  	}
 
-  if(!monix){
-    UNLOCK;
-    return ECA_ALLOCMEM;
-  }
+  	memset((char *)monix,0,size);
 
-  memset(monix,0,size);
+  	/* they dont have to supply one if they dont want to */
+  	if(monixptr){
+    		*monixptr = monix;
+	}
 
-  /* they dont have to supply one if they dont want to */
-  if(monixptr)
-    *monixptr = monix;
+  	monix->chan	= chix;
+  	monix->usr_func	= ast;
+  	monix->usr_arg	= astarg;
+  	monix->type	= type;
+  	monix->count	= count;
+  	monix->p_delta	= p_delta;
+  	monix->n_delta	= n_delta;
+  	monix->timeout	= timeout;
+  	monix->mask	= mask;
 
-  monix->chan		= chix;
-  monix->usr_func	= ast;
-  monix->usr_arg	= astarg;
-  monix->type		= type;
-  monix->count		= count;
-  monix->p_delta	= p_delta;
-  monix->n_delta	= n_delta;
-  monix->timeout	= timeout;
-  monix->mask		= mask;
+# 	ifdef vxWorks
+  	{
+    		if(!chix->piiu){
+      			status = db_add_event(	
+					evuser,
+					chix->id.paddr,
+					ca_event_handler,
+					monix,
+					mask,
+					monix+1);
+      			if(status == ERROR){
+				UNLOCK;
+       				return ECA_DBLCLFAIL; 
+      			}
 
-# ifdef vxWorks
-  {
+      			/* 
+			 * Place in the channel list 
+			 * - do it after db_add_event so there
+			 * is no chance that it will be deleted 
+			 * at exit before it is completely created
+      			 */
+      			ellAdd(&chix->eventq, &monix->node);
 
-    if(!chix->piiu){
-      status = db_add_event(	evuser,
-				chix->id.paddr,
-				ca_event_handler,
-				monix,
-				mask,
-				monix+1);
-      if(status == ERROR){
-	UNLOCK;
-       	return ECA_DBLCLFAIL; 
-      }
+      			/* 
+			 * force event to be called at least once
+      			 * return warning msg if they have made the queue to full 
+		 	 * to force the first (untriggered) event.
+       			 */
+      			if(db_post_single_event(monix+1)==ERROR){
+				UNLOCK;
+       		 		return ECA_OVEVFAIL;
+      			}
 
-      /* 
-	Place in the channel list 
-	- do it after db_add_event so there
-	is no chance that it will be deleted 
-	at exit before it is completely created
-      */
-      ellAdd(&chix->eventq, &monix->node);
+      			UNLOCK;
+      			return ECA_NORMAL;
+    		} 
+  	}
+# 	endif
 
-      /* 
-	force event to be called at least once
-      	return warning msg if they have made the queue to full 
-	to force the first (untriggered) event.
-      */
-      if(db_post_single_event(monix+1)==ERROR){
-	UNLOCK;
-        return ECA_OVEVFAIL;
-      }
+  	/* It can be added to the list any place if it is remote */
+  	/* Place in the channel list */
+  	ellAdd(&chix->eventq, &monix->node);
 
-      UNLOCK;
-      return ECA_NORMAL;
-    } 
-  }
-# endif
+  	UNLOCK;
 
-  /* It can be added to the list any place if it is remote */
-  /* Place in the channel list */
-  ellAdd(&chix->eventq, &monix->node);
-
-  UNLOCK;
-
-  return ca_request_event(monix);
+	if(chix->state == cs_conn){
+  		return ca_request_event(monix);
+	}
+	else{
+		return ECA_NORMAL;
+	}
 }
 
 
@@ -3512,7 +3292,7 @@ int		lineno;
 #   ifdef VMS
       lib$signal(0);
 #   endif
-    abort(0);
+      abort();
   }
 
   ca_printf(
@@ -3619,13 +3399,14 @@ struct ioc_in_use 	*piiu;
 
 
 /*
- * ISSUE_IDENTIFY_CLIENT_LOCATION (lock must be on)
+ * ISSUE_IOC_HOST_NAME
+ * (lock must be on)
  * 
  */
 #ifdef __STDC__
-void issue_identify_client_location(struct ioc_in_use *piiu)
+void issue_client_host_name(struct ioc_in_use *piiu)
 #else /*__STDC__*/
-void issue_identify_client_location(piiu)
+void issue_client_host_name(piiu)
 struct ioc_in_use	*piiu;
 #endif /*__STDC__*/
 {
@@ -3656,10 +3437,10 @@ struct ioc_in_use	*piiu;
 	/*
 	 * allocate space in the outgoing buffer
 	 */
-	pName =	ca_static->ca_pLocationName, 
+	pName =	ca_static->ca_pHostName, 
 	size = strlen(pName)+1;
 	hdr = nullmsg;
-	hdr.m_cmmd = htons(IOC_CLIENT_LOCATION);
+	hdr.m_cmmd = htons(IOC_HOST_NAME);
 	hdr.m_postsize = size;
 	
 	cac_push_msg(piiu, &hdr, pName);

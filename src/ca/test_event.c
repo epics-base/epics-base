@@ -16,11 +16,7 @@
 
 static char *sccsId = "$Id$";
 
-/*	System includes		*/
-
-#include 	<cadef.h>
-#include	<iocmsg.h>
-#include	<iocinf.h>
+#include	"iocinf.h"
 
 
 #ifdef __STDC__

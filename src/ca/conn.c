@@ -22,7 +22,7 @@
 /*	.08 010493 joh	removed `<Trying>' message			*/
 /*	.09 090293 joh	removed flush from manage_conn			*/
 /*			(now handled by the send needed flag)		*/
-/*	.10 102093 joh	improved broadcast schedualing for		*/	
+/*	.10 102093 joh	improved broadcast schedualing for		*/
 /*			reconnects					*/
 /*									*/
 /*_begin								*/
@@ -40,28 +40,7 @@
 
 static char 	*sccsId = "$Id$\t$Date$";
 
-#if defined(UNIX)
-#	include		<stdio.h>
-#else
-#  if defined(VMS)
-#  else
-#    if defined(vxWorks)
-#include	<vxWorks.h>
-#include	<sockLib.h>
-#include	<tickLib.h>
-#include	<sysLib.h>
-#include	<stdio.h>
-#    else
-	@@@@ dont compile @@@@
-#    endif
-#  endif
-#endif
-
-#include 		<cadef.h>
-#include		<db_access.h>
-#include		<iocmsg.h>
-#include 		<iocinf.h>
-
+#include 	"iocinf.h"
 
 
 /*
@@ -322,8 +301,7 @@ struct in_addr  *pnet_addr;
 				piiuCast->sock_chan,
 				(struct sockaddr *)&saddr,
 				&saddr_length);
-		if(status<0)
-			abort(0);
+		assert(status>=0);
 		port = ntohs(saddr.sin_port);
 	}
 

@@ -123,8 +123,8 @@ private:
         this->pushComBuf ( *pComBuf );
     }
 
-	comQueSend ( const comQueSend & ) epicsThrows (());
-	comQueSend & operator = ( const comQueSend & ) epicsThrows (());
+    comQueSend ( const comQueSend & ) epicsThrows (());
+    comQueSend & operator = ( const comQueSend & ) epicsThrows (());
 };
 
 extern const char cacNillBytes[];

@@ -5,13 +5,13 @@ endif
 EPICS_BASE_HOST_BIN = $(EPICS_BASE)/bin/$(HOST_ARCH)
 
 # private versions of lex/yacc from EPICS
-EYACC = $(EPICS_BASE_HOST_BIN)/antelope$(EXE)
-ELEX = $(EPICS_BASE_HOST_BIN)/e_flex$(EXE) -S$(EPICS_BASE_INCLUDE)/flex.skel.static
+EYACC = $(EPICS_BASE_HOST_BIN)/antelope$(HOSTEXE)
+ELEX = $(EPICS_BASE_HOST_BIN)/e_flex$(HOSTEXE) -S$(EPICS_BASE_INCLUDE)/flex.skel.static
 YACC  = $(EYACC)
 LEX   = $(ELEX)
 
 # state notation language compiler (installed from base/src/sequencer)
-SNC = $(EPICS_BASE_HOST_BIN)/snc$(EXE)
+SNC = $(EPICS_BASE_HOST_BIN)/snc$(HOSTEXE)
 
 EPICS_BASE_INCLUDE      = $(EPICS_BASE)/include
 

@@ -681,35 +681,35 @@ $(INSTALL_DBD)/%: ../%
  
 %Record.h: %Record.dbd
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH$(EXE) \
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH$(HOSTEXE) \
 	        $(DBDFLAGS)  $<
  
 %Record.h: ../%Record.dbd
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH$(EXE) \
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH$(HOSTEXE) \
 	        $(DBDFLAGS)  $<
  
 menu%.h: menu%.dbd
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToMenuH$(EXE) $<
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToMenuH$(HOSTEXE) $<
  
 menu%.h: ../menu%.dbd
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToMenuH$(EXE) $<
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToMenuH$(HOSTEXE) $<
  
 bpt%.dbd: bpt%.data
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt$(EXE) $<
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt$(HOSTEXE) $<
  
 bpt%.dbd: ../bpt%.data
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt$(EXE) $<
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt$(HOSTEXE) $<
  
 ifdef DBDEXPAND
 $(DBDNAME): ../$(DBDEXPAND)
 	@echo Expanding dbd
 	@$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand$(EXE) $(DBDFLAGS) $< > $@
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand$(HOSTEXE) $(DBDFLAGS) $< > $@
 endif
 
 ifneq (,$(wildcard ../baseLIBOBJS))

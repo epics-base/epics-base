@@ -175,14 +175,13 @@ private:
 	fdReg & operator = ( const fdReg & );
 };
 
-static const unsigned fdManagerHashTableMinIndexBits = 8;
-static const unsigned fdManagerHashTableMaxIndexBits = sizeof(SOCKET)*CHAR_BIT;
-
 //
 // fdRegId::hash()
 //
 inline resTableIndex fdRegId::hash () const
 {
+    const unsigned fdManagerHashTableMinIndexBits = 8;
+    const unsigned fdManagerHashTableMaxIndexBits = sizeof(SOCKET)*CHAR_BIT;
     resTableIndex hashid;
         
     hashid = integerHash ( fdManagerHashTableMinIndexBits, 

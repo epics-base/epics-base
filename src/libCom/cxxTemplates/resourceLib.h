@@ -889,9 +889,6 @@ inline const char * stringId::resourceName () const
     return this->pStr;
 }
 
-static const unsigned stringIdMinIndexWidth = CHAR_BIT;
-static const unsigned stringIdMaxIndexWidth = sizeof ( unsigned );
-
 #ifdef instantiateRecourceLib
 
 //
@@ -968,6 +965,8 @@ stringId::~stringId()
 //
 resTableIndex stringId::hash() const
 {
+    const unsigned stringIdMinIndexWidth = CHAR_BIT;
+    const unsigned stringIdMaxIndexWidth = sizeof ( unsigned );
     const unsigned char *pUStr = 
         reinterpret_cast < const unsigned char * > ( this->pStr );
 

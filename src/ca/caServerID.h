@@ -29,12 +29,6 @@ private:
     ca_uint8_t pri;
 };
 
-// start with a very small server table to speed
-// up the flush traverse for the frequent case -
-// a small numbers of servers
-static const unsigned caServerMinIndexBitWidth = 2u;
-static const unsigned caServerMaxIndexBitWidth = 32u;
-
 inline caServerID::caServerID ( 
     const struct sockaddr_in & addrIn, unsigned priorityIn ) :
     addr ( addrIn ), pri ( static_cast <ca_uint8_t> ( priorityIn ) )
@@ -56,12 +50,18 @@ inline bool caServerID::operator == ( const caServerID & rhs ) const
 
 inline resTableIndex caServerID::hash () const
 {
+    // start with a very small server table to speed
+    // up the flush traverse for the frequent case -
+    // a small numbers of servers
+    const unsigned caServerMinIndexBitWidth = 2u;
+    const unsigned caServerMaxIndexBitWidth = 32u;
+
     unsigned index;
     index = this->addr.sin_addr.s_addr;
     index ^= this->addr.sin_port;
     index ^= this->addr.sin_port >> 8u;
     index ^= this->pri;
-    return integerHash( caServerMinIndexBitWidth, 
+    return integerHash ( caServerMinIndexBitWidth, 
         caServerMaxIndexBitWidth, index );
 }
 

@@ -26,9 +26,6 @@ private:
     struct sockaddr_in addr;
 };
 
-static const unsigned inetAddrMinIndexBitWidth = 8u;
-static const unsigned inetAddrMaxIndexBitWidth = 32u;
-
 inline inetAddrID::inetAddrID ( const struct sockaddr_in & addrIn ) :
     addr ( addrIn )
 {
@@ -46,6 +43,8 @@ inline bool inetAddrID::operator == ( const inetAddrID &rhs ) const
 
 inline resTableIndex inetAddrID::hash () const
 {
+    const unsigned inetAddrMinIndexBitWidth = 8u;
+    const unsigned inetAddrMaxIndexBitWidth = 32u;
     unsigned index;
     index = this->addr.sin_addr.s_addr;
     index ^= this->addr.sin_port;

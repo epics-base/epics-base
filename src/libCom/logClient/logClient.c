@@ -214,10 +214,9 @@ LOCAL void logClientShutdown (void)
 LOCAL void logClientSendMessageInternal ( logClientId id, const char * message )
 {
     logClient * pClient = ( logClient * ) id;
-    unsigned msgBufBytesLeft;
     unsigned strSize;
     
-    if ( iocLogDisable || ! pClient || ! message || ! *message ) {
+    if ( iocLogDisable || ! pClient || ! message ) {
         return;
     }
 
@@ -225,10 +224,11 @@ LOCAL void logClientSendMessageInternal ( logClientId id, const char * message )
 
     epicsMutexMustLock ( pClient->mutex );
 
-    msgBufBytesLeft = sizeof ( pClient->msgBuf ) - pClient->nextMsgIndex;
+    while ( strSize ) {
+        unsigned msgBufBytesLeft = 
+            sizeof ( pClient->msgBuf ) - pClient->nextMsgIndex;
 
-    while ( 1 ) {
-        while ( strSize > msgBufBytesLeft ) {
+        if ( strSize > msgBufBytesLeft ) {
             int status;
 
             if ( ! pClient->connected ) {
@@ -236,30 +236,36 @@ LOCAL void logClientSendMessageInternal ( logClientId id, const char * message )
                 return;
             }
 
+            if ( msgBufBytesLeft > 0u ) {
+                memcpy ( & pClient->msgBuf[pClient->nextMsgIndex],
+                    message, msgBufBytesLeft );
+                pClient->nextMsgIndex += msgBufBytesLeft;
+                strSize -= msgBufBytesLeft;
+                message += msgBufBytesLeft;
+            }
+
             status = send ( pClient->sock, pClient->msgBuf, 
                 pClient->nextMsgIndex, 0 );
             if ( status > 0 ) {
                 unsigned nSent = (unsigned) status;
                 if ( nSent < pClient->nextMsgIndex ) {
+                    unsigned newNextMsgIndex = pClient->nextMsgIndex - nSent;
                     memmove ( pClient->msgBuf, & pClient->msgBuf[nSent], 
-                        pClient->nextMsgIndex - nSent );
-                    pClient->nextMsgIndex -= nSent;
-                    msgBufBytesLeft = 
-                        sizeof ( pClient->msgBuf ) - pClient->nextMsgIndex;
+                        newNextMsgIndex );
+                    pClient->nextMsgIndex = newNextMsgIndex;
                 }
                 else {
                     pClient->nextMsgIndex = 0u;
-                    msgBufBytesLeft = sizeof ( pClient->msgBuf );
                 }
             }
             else {
                 char name[64];
                 char sockErrBuf[64];
-                if ( status == 0 ) {
+                if ( status ) {
                     epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
                 }
                 else {
-                    strcpy ( sockErrBuf, "server disconnected" );
+                    strcpy ( sockErrBuf, "server initiated disconnect" );
                 }
                 ipAddrToDottedIP ( &pClient->addr, name, sizeof ( name ) );
                 fprintf ( stderr, "log client: lost contact with log server at \"%s\" because \"%s\"\n", 
@@ -271,14 +277,6 @@ LOCAL void logClientSendMessageInternal ( logClientId id, const char * message )
                 return;
             }
         }
-        if ( strSize > msgBufBytesLeft ) {
-            memcpy ( & pClient->msgBuf[pClient->nextMsgIndex],
-                message, msgBufBytesLeft );
-            pClient->nextMsgIndex += msgBufBytesLeft;
-            strSize -= msgBufBytesLeft;
-            message += msgBufBytesLeft;
-            msgBufBytesLeft = 0u;
-        }
         else {
             memcpy ( & pClient->msgBuf[pClient->nextMsgIndex],
                 message, strSize );
@@ -288,8 +286,6 @@ LOCAL void logClientSendMessageInternal ( logClientId id, const char * message )
     }
     
     epicsMutexUnlock (pClient->mutex);
-    
-    return;
 }
 
 void epicsShareAPI logClientFlush ( logClientId id )
@@ -308,9 +304,10 @@ void epicsShareAPI logClientFlush ( logClientId id )
         if ( status > 0 ) {
             unsigned nSent = (unsigned) status;
             if ( nSent < pClient->nextMsgIndex ) {
+                unsigned newNextMsgIndex = pClient->nextMsgIndex - nSent;
                 memmove ( pClient->msgBuf, & pClient->msgBuf[nSent], 
-                    pClient->nextMsgIndex - nSent );
-                pClient->nextMsgIndex -= nSent;
+                    newNextMsgIndex );
+                pClient->nextMsgIndex = newNextMsgIndex;
             }
             else {
                 pClient->nextMsgIndex = 0u;
@@ -327,7 +324,7 @@ void epicsShareAPI logClientFlush ( logClientId id )
                 strcpy ( sockErrBuf, "server initiated disconnect" );
             }
             ipAddrToDottedIP ( &pClient->addr, name, sizeof ( name ) );
-            fprintf ( stderr, "log client: lost contact with log server at \"%s\"because \"%s\"\n", 
+            fprintf ( stderr, "log client: lost contact with log server at \"%s\" because \"%s\"\n", 
                 name, sockErrBuf );
             logClientReset ( pClient );
             break;

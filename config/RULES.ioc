@@ -17,7 +17,7 @@ makelinks:
 	ln -s $(TARGETBIN)/vxWorks.sym vxWorks.sym
 	ln -s $(TOP)/dbd dbd
 	ln -s $(SHARE) share
-	@for dir in $(APPDIR) ; do  \
+	@if [ -n "$(APPDIR)" ]; then for dir in "$(APPDIR)" ; do  \
 		if [ -d $(TOP)/$$dir ]; then \
 			ln -s $(TOP)/$$dir $$dir ; \
 			echo "ln -s $(TOP)/$$dir $$dir" ; \
@@ -27,7 +27,7 @@ makelinks:
 		else \
 			echo "$$dir not found" ; \
 		fi ; \
-	done
+	done; fi
  
 clean::
 	@$(RM) ascf bin vxWorks vxWorks.sym dbd share $(APPDIR)

@@ -40,11 +40,6 @@ inline const char * tcpiiu::pHostName () const
     return nameBuf; // ouch !!
 }
 
-inline SOCKET tcpiiu::getSock () const
-{
-    return this->sock;
-}
-
 inline void tcpiiu::flush ()
 {
     epicsEventSignal ( this->sendThreadFlushSignal );

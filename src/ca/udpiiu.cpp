@@ -392,6 +392,23 @@ udpiiu::udpiiu ( cac &cac ) :
             SOCKERRSTR (SOCKERRNO));
         throwWithLocation ( noSocket () );
     }
+    
+    {
+        osiSockAddr tmpAddr;
+        osiSocklen_t saddr_length = sizeof ( tmpAddr );
+        status = getsockname ( this->sock, &tmpAddr.sa, &saddr_length );
+        if ( status < 0 ) {
+            socket_close ( this->sock );
+            this->pCAC ()->printf ( "CAC: getsockname () error was \"%s\"\n", SOCKERRSTR (SOCKERRNO) );
+            throwWithLocation ( noSocket () );
+        }
+        if ( tmpAddr.sa.sa_family != AF_INET) {
+            socket_close ( this->sock );
+            this->pCAC ()->printf ( "CAC: UDP socket was not inet addr family\n" );
+            throwWithLocation ( noSocket () );
+        }
+        this->localPort = ntohs ( tmpAddr.ia.sin_port );
+    }
 
     this->nBytesInXmitBuf = 0u;
 
@@ -432,6 +449,13 @@ udpiiu::udpiiu ( cac &cac ) :
     }
 
     caStartRepeaterIfNotInstalled ( this->repeaterPort );
+
+    CAFDHANDLER *fdRegFunc;
+    void *fdRegArg;
+    this->pCAC ()->getFDRegCallback ( fdRegFunc, fdRegArg );
+    if ( fdRegFunc ) {
+        ( *fdRegFunc ) ( fdRegArg, this->sock, TRUE );
+    }    
 }
 
 /*
@@ -446,6 +470,13 @@ udpiiu::~udpiiu ()
 
     ellFree ( &this->dest );
 
+    CAFDHANDLER *fdRegFunc;
+    void *fdRegArg;
+    this->pCAC ()->getFDRegCallback ( fdRegFunc, fdRegArg );
+    if ( fdRegFunc ) {
+        ( *fdRegFunc ) ( fdRegArg, this->sock, FALSE );
+    }    
+    
     if ( ! this->sockCloseCompleted ) {
         socket_close ( this->sock );
     }
@@ -467,9 +498,22 @@ void udpiiu::shutdown ()
     if ( laborNeeded ) {
         int status;
         osiSockAddr addr;
-        osiSocklen_t size = sizeof ( addr.sa );
 
-        status = getsockname ( this->sock, &addr.sa, &size );
+        caHdr msg;
+        msg.m_cmmd = htons ( CA_PROTO_NOOP );
+        msg.m_available = htonl ( 0u );
+        msg.m_dataType = htons ( 0u );
+        msg.m_count = htons ( 0u );
+        msg.m_cid = htonl ( 0u );
+        msg.m_postsize = htons ( 0u );
+
+        addr.ia.sin_family = AF_INET;
+        addr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
+        addr.ia.sin_port = htons ( this->localPort );
+
+        // send a wakeup msg so the UDP recv thread will exit
+        status = sendto ( this->sock, reinterpret_cast < const char * > ( &msg ),  
+                sizeof (msg), 0, &addr.sa, sizeof ( addr.sa ) );
         if ( status < 0 ) {
             // this knocks the UDP input thread out of recv ()
             // on all os except linux
@@ -482,33 +526,7 @@ void udpiiu::shutdown ()
                 this->sockCloseCompleted = true;
             }
         }
-        else {
-            caHdr msg;
-            msg.m_cmmd = htons ( CA_PROTO_NOOP );
-            msg.m_available = htonl ( 0u );
-            msg.m_dataType = htons ( 0u );
-            msg.m_count = htons ( 0u );
-            msg.m_cid = htonl ( 0u );
-            msg.m_postsize = htons ( 0u );
 
-            addr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
-
-            // send a wakeup msg so the UDP recv thread will exit
-            status = sendto ( this->sock, reinterpret_cast < const char * > ( &msg ),  
-                    sizeof (msg), 0, &addr.sa, sizeof ( addr.sa ) );
-            if ( status < 0 ) {
-                // this knocks the UDP input thread out of recv ()
-                // on all os except linux
-                status = socket_close ( this->sock );
-                if ( status ) {
-                    errlogPrintf ("CAC UDP socket close error was %s\n", 
-                        SOCKERRSTR ( SOCKERRNO ) );
-                }
-                else {
-                    this->sockCloseCompleted = true;
-                }
-            }
-        }
         // wait for recv threads to exit
         epicsEventMustWait ( this->recvThreadExitSignal );
     }
@@ -822,11 +840,6 @@ void udpiiu::flush ()
     }
 
     this->nBytesInXmitBuf = 0u;
-}
-
-SOCKET udpiiu::getSock () const
-{
-    return this->sock;
 }
 
 void udpiiu::show ( unsigned level ) const

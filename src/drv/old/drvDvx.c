@@ -122,6 +122,9 @@
  *  for the DMA buffer that is appropriate.
  *
  * $Log$
+ * Revision 1.1  1995/03/30  19:35:14  jba
+ * Seperated drv files into ansi and old dirs. Added combine dir.
+ *
  * Revision 1.22  1995/01/06  17:03:43  winans
  * Added some ifdef'd out test code to see if the end of the sequence program
  * could be updated to NOT cause an extra sample from port zero to be taken
@@ -181,7 +184,7 @@ static char *SccsId = "$Id$";
 #define ADVANCE_HOLD	0xC0
 #define RESTART		0x00
 
-/* analogic 2502 memory structure */
+/* Analogic 2502 memory structure */
 struct dvx_2502
 {
 	unsigned short dev_id;		/* device id code (CFF5) */
@@ -205,7 +208,7 @@ struct dvx_inbuf
 	short	*data;			/* data buffer */
 };
 
-/* analogic 2502 control structure */
+/* Analogic 2502 control structure */
 struct dvx_rec
 {
 	struct	dvx_2502 *pdvx2502;	/* pointer to device registers */
@@ -223,6 +226,8 @@ struct dvx_rec
 	unsigned short	gain[8];	/* port gains */
 
 	int	RearmMode;		/* zero if auto-rearm, else manual */
+
+	unsigned short	ScanRate;	/* User settable scan rate */
 
 	IOSCANPVT *pioscanpvt;
 };
@@ -304,19 +309,19 @@ struct {
 static struct dvx_rec dvx[MAX_DVX_CARDS] = {
 { NULL, NULL, NULL, -1, -1, -1, -1, -1, 128, 0, {0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff}
 ,{0, 0, 0, 0, 0, 0, 0, 0},
-0 , NULL
+0 , DVX_DRATE, NULL
 },
 { NULL, NULL, NULL, -1, -1, -1, -1, -1, 128, 0, {0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff}
 ,{0, 0, 0, 0, 0, 0, 0, 0},
-0, NULL
+0, DVX_DRATE, NULL
 },
 { NULL, NULL, NULL, -1, -1, -1, -1, -1, 128, 0, {0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff}
 ,{0, 0, 0, 0, 0, 0, 0, 0},
-0, NULL
+0, DVX_DRATE, NULL
 },
 { NULL, NULL, NULL, -1, -1, -1, -1, -1, 128, 0, {0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff}
 ,{0, 0, 0, 0, 0, 0, 0, 0},
-0, NULL
+0, DVX_DRATE, NULL
 }
 };
 
@@ -425,6 +430,16 @@ dvx_int(struct dvx_rec *dvxptr)
 	cptr->csr = dvxptr->csr_shadow;
 }
 
+int dvx_SetScanRate(int Card, unsigned int Rate)
+{
+  /* make sure hardware exists */
+  if ((Card >= ai_num_cards[DVX2502]) || (Card < 0))	
+    return(-1);
+
+  dvx[Card].ScanRate = Rate & 0x0000FFFF;
+  dvx[Card].pdvx2502->samp_rate = dvx[Card].ScanRate;
+  return(0);
+}
 int dvx_RearmModeSet(int card, int mode)
 {
   /* make sure hardware exists */
@@ -672,7 +687,11 @@ LOCAL long dvx_driver_init(void)
 		/* 
 	         * set scan rate and enable external start 
       		 */
+#if 0
 		pDvxA16->samp_rate = DVX_DRATE;		/* scan rate of 184 KHz */
+#else
+		pDvxA16->samp_rate = dvx[i].ScanRate;	/* Set scan rate */
+#endif
 		dvx[i].csr_shadow |= CSR_M_ESTART;	/* enable ext start (shadow csr) */
 		pDvxA16->csr = dvx[i].csr_shadow;	/* enable external start */
 		dvx[i].mode = RUN_MODE;			/* ready to aquire data */
@@ -904,11 +923,16 @@ int sramld(int card)
 #endif
 
   /* set scan rate and run it once */
+#if 0
   dvx[card].pdvx2502->samp_rate = DVX_DRATE;
+#else
+	dvx[card].pdvx2502->samp_rate = dvx[card].ScanRate;	/* Set scan rate */
+#endif
   dvx[card].pdvx2502->csr = dvx[card].csr_shadow | CSR_M_START;
   taskDelay(sysClkRateGet());     /* let scan run */
   dvx[card].pdvx2502->csr = dvx[card].csr_shadow; /* restore csr */
 }
+
 
 /*
  * dvx_driver

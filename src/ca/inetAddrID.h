@@ -21,11 +21,9 @@ public:
     inetAddrID ( const struct sockaddr_in &addrIn );
     bool operator == ( const inetAddrID & ) const;
     resTableIndex hash () const;
-    static unsigned maxIndexBitWidth ();
-    static unsigned minIndexBitWidth ();
     void name ( char *pBuf, unsigned bufSize ) const;
 private:
-    const struct sockaddr_in addr;
+    struct sockaddr_in addr;
 };
 
 static const unsigned inetAddrMinIndexBitWidth = 8u;
@@ -52,18 +50,8 @@ inline resTableIndex inetAddrID::hash () const
     index = this->addr.sin_addr.s_addr;
     index ^= this->addr.sin_port;
     index ^= this->addr.sin_port >> 8u;
-    return integerHash( inetAddrMinIndexBitWidth, 
+    return integerHash ( inetAddrMinIndexBitWidth, 
         inetAddrMaxIndexBitWidth, index );
-}
-
-inline unsigned inetAddrID::maxIndexBitWidth ()
-{
-    return inetAddrMaxIndexBitWidth;
-}
-
-inline unsigned inetAddrID::minIndexBitWidth ()
-{
-    return inetAddrMinIndexBitWidth;
 }
 
 inline void inetAddrID::name ( char *pBuf, unsigned bufSize ) const

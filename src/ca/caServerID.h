@@ -22,8 +22,6 @@ public:
     caServerID ( const struct sockaddr_in & addrIn, unsigned priority );
     bool operator == ( const caServerID & ) const;
     resTableIndex hash () const;
-    static unsigned maxIndexBitWidth ();
-    static unsigned minIndexBitWidth ();
     osiSockAddr address () const;
     unsigned priority () const;
 private:
@@ -65,16 +63,6 @@ inline resTableIndex caServerID::hash () const
     index ^= this->pri;
     return integerHash( caServerMinIndexBitWidth, 
         caServerMaxIndexBitWidth, index );
-}
-
-inline unsigned caServerID::maxIndexBitWidth ()
-{
-    return caServerMaxIndexBitWidth;
-}
-
-inline unsigned caServerID::minIndexBitWidth ()
-{
-    return caServerMinIndexBitWidth;
 }
 
 inline osiSockAddr caServerID::address () const

@@ -51,8 +51,14 @@ foreach $file (@files) {
             if ( -d "$post/bin/$arch") { #check that directory exists
                 print OUT "${prefix}_BIN = $app_post/bin/${arch}\n";
             }
+            if ( -d "$post/bin/$arch") { #check that directory exists
+                print OUT "${prefix}_HOST_BIN = $app_post/bin/\$(EPICS_HOST_ARCH)\n";
+            }
             if ( -d "$post/lib/$arch") { #check that directory exists
                 print OUT "${prefix}_LIB = $app_post/lib/${arch}\n";
+            }
+            if ( -d "$post/include") { #check that directory exists
+                print OUT "INSTALL_INCLUDES += -I$app_post/include/os/\$(OS_CLASS)\n";
             }
             if ( -d "$post/include") { #check that directory exists
                 print OUT "INSTALL_INCLUDES += -I$app_post/include\n";

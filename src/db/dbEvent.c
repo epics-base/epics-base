@@ -84,6 +84,7 @@ struct event_que {
     unsigned short          getix;
     unsigned short          quota;          /* the number of assigned entries*/
     unsigned short          nDuplicates;    /* N events duplicated on this q */ 
+    unsigned short          nCanceled;      /* the number of canceled entries */
 };
 
 struct event_user {
@@ -231,8 +232,14 @@ int epicsShareAPI dbel ( const char *pname, unsigned level )
                 if ( ! pevent->valque ) {
                     printf (", queueing disabled" );
                 }
-                printf (", duplicate count =%u\n", 
-                    pevent->ev_que->nDuplicates );
+                if  ( pevent->ev_que->nDuplicates ) {
+                    printf (", duplicate count =%u\n", 
+                        pevent->ev_que->nDuplicates );
+                }
+                if ( pevent->ev_que->nCanceled ) {
+                    printf (", canceled count =%u\n", 
+                        pevent->ev_que->nCanceled );
+                }
             }
 
             if ( level > 3 ) {
@@ -364,7 +371,7 @@ dbEventSubscription epicsShareAPI db_add_event (
     /* otherwise add a new one to the list */
     ev_que = &evUser->firstque;
     while (TRUE) {
-        if (ev_que->quota < EVENTQUESIZE - EVENTENTRIES) {
+        if (ev_que->quota + ev_que->nCanceled < EVENTQUESIZE - EVENTENTRIES) {
             break;
         }
         if (!ev_que->nextque) {
@@ -517,6 +524,8 @@ void epicsShareAPI db_cancel_event (dbEventSubscription es)
             pevent->ev_que->evque[getix] != EVENTQEMPTY; 
             getix = RNGINC ( getix ) ) {
         if ( pevent->ev_que->evque[getix] == pevent ) {
+            assert ( pevent->ev_que->nCanceled < USHRT_MAX );
+            pevent->ev_que->nCanceled++;
             event_remove ( pevent->ev_que, getix, &canceledEvent );
         }
     }
@@ -808,6 +817,8 @@ LOCAL int event_read ( struct event_que *ev_que )
         if ( event == &canceledEvent ) {
             ev_que->evque[ev_que->getix] = EVENTQEMPTY;
             ev_que->getix = RNGINC ( ev_que->getix );
+            assert ( ev_que->nCanceled > 0 );
+            ev_que->nCanceled--;
             continue;
         }
 

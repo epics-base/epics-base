@@ -195,27 +195,11 @@ struct event_user *db_init_events(void)
         return NULL;
 
   	evUser->firstque.evUser = evUser;
-    evUser->firstque.writelock = semMutexCreate();
-    if (!evUser->firstque.writelock) {
-        freeListFree (dbevEventUserFreeList, evUser);
-        return NULL;
-    }
-	evUser->ppendsem = semBinaryCreate(semEmpty);
-	if(!evUser->ppendsem){
-                semMutexDestroy(evUser->firstque.writelock);
-		freeListFree(dbevEventUserFreeList, evUser);
-		return NULL;
-	}
-	evUser->pflush_sem = semBinaryCreate(semEmpty);
-	if(!evUser->pflush_sem){
-                semMutexDestroy(evUser->firstque.writelock);
-		semBinaryDestroy(evUser->ppendsem);
-		freeListFree(dbevEventUserFreeList, evUser);
-		return NULL;
-	}
-	evUser->flowCtrlMode = FALSE;
-
-  	return evUser;
+        evUser->firstque.writelock = semMutexCreate();
+        evUser->ppendsem = semBinaryCreate(semEmpty);
+        evUser->pflush_sem = semBinaryCreate(semEmpty);
+        evUser->flowCtrlMode = FALSE;
+        return evUser;
 }
 
 
@@ -864,10 +848,10 @@ LOCAL int event_read (struct event_que *ev_que)
 	 * suspend processing events until flow control
 	 * mode is over
 	 */
-    if (ev_que->evUser->flowCtrlMode && ev_que->nDuplicates==0u) {
+        if (ev_que->evUser->flowCtrlMode && ev_que->nDuplicates==0u) {
 	    UNLOCKEVQUE(ev_que);
-        return OK;
-    }
+            return OK;
+        }
     
 	/*
 	 * Fetch fast register copy
@@ -896,7 +880,7 @@ LOCAL int event_read (struct event_que *ev_que)
 			pfl = NULL;
 		}
 
-    	ev_que->evque[ev_que->getix] = EVENTQEMPTY;
+    		ev_que->evque[ev_que->getix] = EVENTQEMPTY;
 
 		/*
 		 * remove event from the queue

@@ -79,7 +79,7 @@ struct event_que{
     unsigned short          putix;
     unsigned short          getix;
     unsigned short          quota;          /* the number of assigned entries*/
-	unsigned short          nDuplicates;	/* N events duplicated on this q */ 
+    unsigned short          nDuplicates;	/* N events duplicated on this q */ 
 };
 
 typedef void OVRFFUNC (void *overflow_arg, unsigned count);
@@ -91,20 +91,20 @@ struct event_user {
     semId               ppendsem;       /* Wait while empty */
     semId             	pflush_sem;	    /* wait for flush */
     
-    OVRFFUNC		    *overflow_sub;  /* called when overflow detect */
+    OVRFFUNC		*overflow_sub;  /* called when overflow detect */
     void                *overflow_arg;  /* parameter to above   */
     
-    EXTRALABORFUNC	    *extralabor_sub;/* off load to event task */
+    EXTRALABORFUNC	*extralabor_sub;/* off load to event task */
     void			    *extralabor_arg;/* parameter to above */
     
     threadId            taskid;         /* event handler task id */
-    unsigned 		    queovr;		    /* event que overflow count */
+    unsigned 		queovr;		    /* event que overflow count */
     char                pendlck;        /* Only one task can pend */
     unsigned char       pendexit;       /* exit pend task */
-    unsigned char		extra_labor;	/* if set call extra labor func */
-    unsigned char		flowCtrlMode;	/* replace existing monitor */
-    int			        (*init_func)();
-    int			        init_func_arg;
+    unsigned char	extra_labor;	/* if set call extra labor func */
+    unsigned char	flowCtrlMode;	/* replace existing monitor */
+    int			 (*init_func)();
+    threadId		 init_func_arg;
 };
 
 int db_event_list(char *name);

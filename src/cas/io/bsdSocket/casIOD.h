@@ -7,6 +7,9 @@
 // Some BSD calls have crept in here
 //
 // $Log$
+// Revision 1.3  1996/08/13 23:00:29  jhill
+// removed include of netdb.h
+//
 // Revision 1.2  1996/07/24 22:03:36  jhill
 // fixed net proto for gnu compiler
 //
@@ -19,43 +22,13 @@
 #define includeCASIODH 
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#ifndef SUNOS4 // func proto do not have args for C++ (under sunos4)
-#include <arpa/inet.h>
-#endif
-
-#ifdef __cplusplus
-}
-#endif
-
-#include <bsdProto.h>
-
-typedef int                     SOCKET;
-#define SOCKERRNO               errno
-#define socket_close(S)         close(S)
-#define socket_ioctl(A,B,C)     ioctl(A,B,C)
+#include <osiSock.h>
 
 // ca
 #include <addrList.h>
 
 void hostNameFromIPAddr (const caAddr *pAddr, 
 			char *pBuf, unsigned bufSize);
-#if 0
-//
-// assuming al posix machines are IEEE float will be wrong
-//
-#define ntohf(A) (A)
-#define ntohd(A) (A)
-#define htonf(A) (A)
-#define htond(A) (A)
-#endif
 
 class caServerIO {
 public:

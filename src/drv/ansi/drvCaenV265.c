@@ -366,7 +366,7 @@ IOSCANPVT *ppvt)
 		return -1;
 	}
 
-	*ppvt = &caenV265Info[pvmeio->card].scanpvt;
+	*ppvt = caenV265Info[pvmeio->card].scanpvt;
 
 	return 0;
 }  
@@ -516,7 +516,7 @@ LOCAL void caenV265ISR(unsigned card)
 	/*
 	 * tell EPICS to scan on int
 	 */
-	scanIoRequest(&caenV265Info[card].scanpvt);
+	scanIoRequest(caenV265Info[card].scanpvt);
 
 	return;
 }

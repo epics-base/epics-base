@@ -176,7 +176,7 @@ cac::~cac ()
         while ( piiu.valid () ) {
             tsDLIterBD <tcpiiu> pnext = piiu.itemAfter ();
             {
-                epicsAutoMutex autoMutex ( this->defaultMutex );
+                epicsAutoMutex autoMutexTmp ( this->defaultMutex );
                 piiu->disconnectAllChan ( *this->pudpiiu );
             }
             piiu->disconnect ();
@@ -261,7 +261,7 @@ void cac::processRecvBacklog ()
             }
 
             {
-                epicsAutoMutex autoMutex ( this->defaultMutex );
+                epicsAutoMutex autoMutexTmp ( this->defaultMutex );
                 piiu->disconnectAllChan ( *this->pudpiiu );
             }
 

@@ -790,7 +790,7 @@ extern "C" unsigned epicsShareAPI ca_get_ioc_connection_count ()
     return pcac->connectionCount ();
 }
 
-extern "C" epicsShareFunc int epicsShareAPI ca_channel_status ( threadId tid )
+extern "C" epicsShareFunc int epicsShareAPI ca_channel_status ( threadId /* tid */ )
 {
     printf ("new OSI API does not allow peeking at thread private storage of another thread\n");
     printf ("please call \"ca_client_status ( unsigned level )\" from the subsystem specific diagnostic code.\n");

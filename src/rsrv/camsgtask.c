@@ -162,7 +162,7 @@ void camsgtask ( void *pParm )
 }
 
 
-void rsrvHostNameOnBehalf ( char * pBuf, unsigned bufSize )
+void epicsShareAPI casHostNameInitiatingCurrentThread ( char * pBuf, unsigned bufSize )
 {
     if ( bufSize ) {
         const char * pHostName = "";
@@ -178,7 +178,7 @@ void rsrvHostNameOnBehalf ( char * pBuf, unsigned bufSize )
     }
 }
 
-void rsrvUserNameOnBehalf ( char * pBuf, unsigned bufSize )
+void epicsShareAPI casUserNameInitiatingCurrentThread ( char * pBuf, unsigned bufSize )
 {
     if ( bufSize ) {
         const char * pUserName = "";

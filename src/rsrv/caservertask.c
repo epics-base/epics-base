@@ -46,6 +46,8 @@
 #define DELETE_TASK(NAME)\
 if(threadNameToId(NAME)!=0)threadDestroy(threadNameToId(NAME));
 
+epicsThreadPrivateId rsrvCurrentClient;
+
 /*
  *
  *  req_server()
@@ -71,6 +73,8 @@ LOCAL void req_server (void *pParm)
     epicsSignalInstallSigPipeIgnore ();
 
     taskwdInsert ( epicsThreadGetIdSelf (), NULL, NULL );
+    
+    rsrvCurrentClient = epicsThreadPrivateCreate ();
 
     if ( envGetConfigParamPtr ( &EPICS_CAS_SERVER_PORT ) ) {
         ca_server_port = envGetInetPortConfigParam ( &EPICS_CAS_SERVER_PORT, 
@@ -708,6 +712,7 @@ void casAttachThreadToClient ( struct client *pClient )
     epicsSignalInstallSigAlarmIgnore ();
     epicsSignalInstallSigPipeIgnore ();
     pClient->tid = epicsThreadGetIdSelf ();
+    epicsThreadPrivateSet ( rsrvCurrentClient, pClient );
     taskwdInsert ( pClient->tid, NULL, NULL );
 }
 

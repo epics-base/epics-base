@@ -88,6 +88,7 @@
 /*			ca_process_exit() under all os and not just	*/
 /*			vxWorks						*/
 /*	120293	joh	flush in ca_pend_io() if no IO oustanding	*/
+/*	121693	joh	fixed bucketLib level memory leak		*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -842,9 +843,7 @@ LOCAL void ca_process_exit()
 	struct ca_static 	*ca_temp;
 	evid            	monix;
 	IIU			*piiu;
-#ifdef vxWorks
 	int             	status;
-#endif
 
 #	if defined(DEBUG) && defined(vxWorks)
 		ca_printf("CAC: entering the exit handler 2 %x\n", tid);
@@ -1021,6 +1020,18 @@ LOCAL void ca_process_exit()
 				while (monix = (evid) ellGet(&chix->eventq)) {
 					free((char *)monix);
 				}
+				/*
+				 * release entries in the bucket table
+				 */
+				status = bucketRemoveItem(
+						pBucket, 
+						chix->cid, 
+						chix);
+				if(status != BUCKET_SUCCESS){
+					ca_signal(	
+						ECA_INTERNAL, 
+						"bad chid at exit");
+				}
 				free((char *)chix);
 			}
 			piiu = (struct ioc_in_use *) piiu->node.next;
@@ -1064,6 +1075,14 @@ LOCAL void ca_process_exit()
 		 * remove IOCs in use
 		 */
 		ellFree(&ca_temp->ca_iiuList);
+
+		/*
+		 * free top level bucket
+		 */
+		status = bucketFree(pBucket);
+		if(status != BUCKET_SUCCESS){
+			ca_signal(ECA_INTERNAL, "top level bucket free failed");
+		}
 
 		/*
 		 * free beacon hash table

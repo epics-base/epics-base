@@ -47,7 +47,7 @@
 bhe::bhe ( const epicsTime & initialTimeStamp, 
           unsigned initialBeaconNumber, const inetAddrID & addr ) epicsThrows (()) :
     inetAddrID ( addr ), timeStamp ( initialTimeStamp ), averagePeriod ( - DBL_MAX ),
-    lastBeaconNumber ( initialBeaconNumber )
+    pIIU ( 0 ), lastBeaconNumber ( initialBeaconNumber )
 {
 #   ifdef DEBUG
     {
@@ -64,10 +64,8 @@ bhe::~bhe ()
 
 void bhe::beaconAnomalyNotify ()
 {
-    tsDLIter < tcpiiu > iter = this->iiuList.firstIter ();
-    while ( iter.valid() ) {
-        iter->beaconAnomalyNotify ();
-        iter++;
+    if ( this->pIIU ) {
+        this->pIIU->beaconAnomalyNotify ();
     }
 }
 
@@ -198,14 +196,10 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
             this->beaconAnomalyNotify ();
             netChange = true;
         }
-        else {
+        else if ( this->pIIU ) {
             // update state of health for active virtual circuits 
             // if the beacon looks ok
-            tsDLIter < tcpiiu > iter = this->iiuList.firstIter ();
-            while ( iter.valid() ) {
-                iter->beaconArrivalNotify ();
-                iter++;
-            }
+            this->pIIU->beaconArrivalNotify ();
         }
     
         // update a running average period
@@ -234,16 +228,20 @@ epicsTime bhe::updateTime () const
     return this->timeStamp;
 }
 
-void bhe::registerIIU ( tcpiiu & iiu )
+void bhe::registerIIU ( tcpiiu & iiu, const epicsTime & currentTime )
 {
-    this->iiuList.add ( iiu );
+    this->pIIU = & iiu;
+    this->timeStamp = currentTime;
+    this->averagePeriod = - DBL_MAX;
 }
 
 void bhe::unregisterIIU ( tcpiiu & iiu )
 {
-    this->iiuList.remove ( iiu );
-    this->timeStamp = epicsTime();
-    this->averagePeriod = - DBL_MAX;
+    if ( this->pIIU == & iiu ) {
+        this->pIIU = 0;
+        this->timeStamp = epicsTime();
+        this->averagePeriod = - DBL_MAX;
+    }
 }
 
 void * bhe::operator new ( size_t ) // X aCC 361

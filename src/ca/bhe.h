@@ -65,16 +65,16 @@ public:
     epicsShareFunc double period () const epicsThrows (());
     epicsShareFunc epicsTime updateTime () const;
     epicsShareFunc void show ( unsigned level) const;
-    epicsShareFunc void registerIIU ( tcpiiu & );
+    epicsShareFunc void registerIIU ( tcpiiu &, const epicsTime & );
     epicsShareFunc void unregisterIIU ( tcpiiu & );
     epicsShareFunc void * operator new ( size_t size, bheMemoryManager & );
 #ifdef CXX_PLACEMENT_DELETE
     epicsShareFunc void operator delete ( void *, bheMemoryManager & ) epicsThrows (());
 #endif
 private:
-    tsDLList < tcpiiu > iiuList;
     epicsTime timeStamp;
     double averagePeriod;
+    tcpiiu * pIIU;
     ca_uint32_t lastBeaconNumber;
     void beaconAnomalyNotify ();
 	bhe ( const bhe & );

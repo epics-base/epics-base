@@ -72,10 +72,6 @@ int	asActive = FALSE;
 /*storage for freelist */
 static void *freeListPvt = NULL;
 
-/*Forward declarations for Non ANSI routines*/
-long calcPerform(double *parg,double *presult,char   *post);
-long postfix(char *pinfix, char *ppostfix,short *perror);
-
 #define RPCL_LEN 184
 #define DEFAULT "DEFAULT"
 

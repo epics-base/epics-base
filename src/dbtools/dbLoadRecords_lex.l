@@ -39,7 +39,7 @@ value {regular}|{spaces}|{escape}
 	    return(WORD);
 	  }
 
-\"{value}+\" { yylval.Str=(char *)dbmfMalloc(strlen(yytext)+1);
+\"{value}*\" { yylval.Str=(char *)dbmfMalloc(strlen(yytext)+1);
 	       yytext[strlen(yytext)-1] = '\0';
 	       strcpy(yylval.Str,yytext+1);
 	       return(VALUE);

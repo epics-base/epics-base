@@ -101,7 +101,7 @@ struct event_user {
     unsigned char       pendexit;       /* exit pend task */
     unsigned char       extra_labor;    /* if set call extra labor func */
     unsigned char       flowCtrlMode;   /* replace existing monitor */
-    int                 (*init_func)();
+    void                (*init_func)();
     threadId            init_func_arg;
 };
 
@@ -871,20 +871,14 @@ LOCAL int event_read (struct event_que *ev_que)
 LOCAL void event_task (void *pParm)
 {
     struct event_user   *evUser = (struct event_user *) pParm;
-    int                 status;
     struct event_que    *ev_que;
 
     /* init hook */
     if (evUser->init_func) {
-        status = (*evUser->init_func)(evUser->init_func_arg);
-        if (status!=DB_EVENT_OK) {
-            errlogPrintf("Unable to intialize the event system!\n");
-            semBinaryGive(evUser->ppendsem);
-            evUser->pendexit = TRUE;
-        }
+        (*evUser->init_func)(evUser->init_func_arg);
     }
 
-    taskwdInsert(threadGetIdSelf(),NULL,NULL);
+    taskwdInsert ( threadGetIdSelf(), NULL, NULL );
 
     do{
         semBinaryMustTake(evUser->ppendsem);
@@ -950,7 +944,7 @@ LOCAL void event_task (void *pParm)
  * DB_START_EVENTS()
  */
 int epicsShareAPI db_start_events (
-    dbEventCtx ctx, char *taskname, int (*init_func)(threadId), 
+    dbEventCtx ctx, char *taskname, void (*init_func)(threadId), 
     void *init_func_arg, int priority_offset)
 {
      struct event_user *evUser = (struct event_user *) ctx;

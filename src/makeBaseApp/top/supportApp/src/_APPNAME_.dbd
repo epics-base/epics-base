@@ -2,4 +2,5 @@
 #include "xxxRecord.dbd"
 #device(xxx,CONSTANT,devXxxSoft,"SoftChannel")
 #driver(myDriver)
-#registrar(mySub)
+#registrar(myRegistrar)
+#variable(myVariable)

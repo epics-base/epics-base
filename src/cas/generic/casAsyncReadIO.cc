@@ -37,29 +37,24 @@ casAsyncReadIO::casAsyncReadIO ( const casCtx & ctx ) :
 //
 casAsyncReadIO::~casAsyncReadIO ()
 {
-    epicsGuard < casCoreClient > guard ( this->client );
 	this->chan.removeAsyncIO ( *this );
 }
 
 //
 // casAsyncReadIO::postIOCompletion()
 //
-caStatus casAsyncReadIO::postIOCompletion (caStatus completionStatusIn,
-				const gdd &valueRead)
+caStatus casAsyncReadIO::postIOCompletion ( caStatus completionStatusIn,
+				const gdd & valueRead)
 {
-    {
-        epicsGuard < casCoreClient > guard ( this->client );
-	    this->pDD = & valueRead;
-	    this->completionStatus = completionStatusIn;
-    }
-
-	return this->postIOCompletionI();
+	this->pDD = & valueRead;
+	this->completionStatus = completionStatusIn;
+	return this->postIOCompletionI ();
 }
 
 //
 // casAsyncReadIO::readOP()
 //
-bool casAsyncReadIO::readOP() const
+bool casAsyncReadIO::readOP () const
 {
 	return true; // it is a read op
 }

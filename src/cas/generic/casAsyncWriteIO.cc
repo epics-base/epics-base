@@ -38,7 +38,6 @@ casAsyncWriteIO::casAsyncWriteIO ( const casCtx & ctx ) :
 //
 casAsyncWriteIO::~casAsyncWriteIO()
 {
-    epicsGuard < casCoreClient > guard ( this->client );
 	this->chan.removeAsyncIO ( *this );
 }
 

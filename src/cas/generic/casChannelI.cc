@@ -23,29 +23,17 @@
 //
 // casChannelI::casChannelI()
 //
-casChannelI::casChannelI ( const casCtx & ) :
-		pClient ( 0 ), pPV ( 0 ), cid ( 0xffffffff ),
-		accessRightsEvPending ( false )
+casChannelI::casChannelI ( const casCtx &  ctx ) :
+		pClient ( ctx.getClient() ), pPV ( ctx.getPV() ), 
+        cid ( ctx.getMsg()->m_cid ), accessRightsEvPending ( false )
 {
-}
-
-void casChannelI::bindToClientI ( 
-    casCoreClient & client, casPVI & pv, caResId cidIn )
-{
-    this->pClient = & client;
-    this->pPV = & pv;
-	this->cid = cidIn;
-	client.installChannel ( *this );
 }
 
 //
 // casChannelI::~casChannelI()
 //
 casChannelI::~casChannelI()
-{	
-    epicsGuard < casCoreClient > 
-        guard ( * this->pClient );
-    
+{	    
     //
     // cancel any pending asynchronous IO 
     //
@@ -80,8 +68,6 @@ casChannelI::~casChannelI()
 //
 void casChannelI::clearOutstandingReads()
 {
-    epicsGuard < casCoreClient > guard ( * this->pClient );
-
     //
     // cancel any pending asynchronous IO 
     //
@@ -102,20 +88,14 @@ void casChannelI::clearOutstandingReads()
 //
 void casChannelI::show ( unsigned level ) const
 {
-    epicsGuard < casCoreClient > guard ( * this->pClient );
-
-	tsDLIterConst < casMonitor > iter = 
-        this->monitorList.firstIter ();
-	if ( iter.valid () ) {
-		printf("List of CA events (monitors) for \"%s\".\n",
-			this->pPV->getName());
-	}
-	while ( iter.valid () ) {
-		iter->show ( level );
-		++iter;
-	}
-
-	this->show ( level );
+    printf ( "casChannelI: client id %u PV %s\n", 
+        this->cid, this->pPV->getName() );
+    if ( this->monitorList.count() ) {
+		printf ( "List of subscriptions attached\n" );
+        // use the client's lock to protect the list
+        this->pClient->showMonitorsInList ( 
+            this->monitorList, level );
+    }
 }
 
 //
@@ -189,7 +169,6 @@ void casChannelI::destroyClientNotify ()
 
 bool casChannelI::unistallMonitor ( ca_uint32_t clientIdIn )
 {
-    epicsGuard < casCoreClient > guard ( * this->pClient );
 	//
 	// (it is reasonable to do a linear search here because
 	// sane clients will require only one or two monitors 
@@ -216,7 +195,6 @@ void casChannelI::installMonitor (
     const unsigned type, 
     const casEventMask & mask )
 {
-    epicsGuard < casCoreClient > guard ( * this->pClient );
     casMonitor & mon = this->pClient->monitorFactory (
         *this, clientId, count, type, mask );
 	this->monitorList.add ( mon );

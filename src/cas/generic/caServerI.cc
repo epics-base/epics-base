@@ -79,7 +79,7 @@ caServerI::~caServerI()
 		//
 		// destructor takes client out of list
 		//
-		iter->destroy ();
+		delete iter.pointer ();
 		iter = tmp;
 	}
 

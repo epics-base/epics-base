@@ -165,7 +165,7 @@ epicsTimerNotify::expireStatus casStreamEvWakeup::expire ( const epicsTime & /* 
 		// called from a client member function
 		// higher up on the stack
 		//
-		os.destroy();	
+		delete & os;	
 
 		//
 		// must not touch the "this" pointer
@@ -482,7 +482,7 @@ void casStreamOS::sendCB()
 		// called from a client member function
 		// higher up on the stack
 		//
-		this->destroy();	
+		delete this;	
 		//
 		// must _not_ touch "this" pointer
 		// after the destroy 
@@ -507,7 +507,7 @@ void casStreamOS::sendCB()
 		// called from a client member function
 		// higher up on the stack
 		//
-		this->destroy();	
+		delete this;	
 		//
 		// must _not_ touch "this" pointer
 		// after the destroy 

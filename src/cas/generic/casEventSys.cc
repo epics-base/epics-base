@@ -49,8 +49,6 @@ void casEventSys::show(unsigned level) const
 //
 casEventSys::~casEventSys()
 {
-    epicsGuard < epicsMutex > guard ( this->mutex );
-
 	if ( this->pPurgeEvent != NULL ) {
 		this->eventLogQue.remove ( *this->pPurgeEvent );
 		delete this->pPurgeEvent;
@@ -64,7 +62,6 @@ casEventSys::~casEventSys()
 	while ( casEvent * pE = this->eventLogQue.get () ) {
         pE->eventSysDestroyNotify ( this->client );
 	}
-
 }
 
 //
@@ -72,7 +69,6 @@ casEventSys::~casEventSys()
 //
 void casEventSys::installMonitor()
 {
-    epicsGuard < epicsMutex > guard ( this->mutex );
 	this->numEventBlocks++;
 	this->maxLogEntries += averageEventEntries;
 }
@@ -82,7 +78,6 @@ void casEventSys::installMonitor()
 //
 void casEventSys::removeMonitor () 
 {       
-    epicsGuard < epicsMutex > guard ( this->mutex );
 	assert (this->numEventBlocks>=1u);
 	this->numEventBlocks--;
 	this->maxLogEntries -= averageEventEntries;
@@ -100,16 +95,12 @@ casEventSys::processStatus casEventSys::process ()
 	while ( ! this->dontProcess ) {
         casEvent * pEvent;
 
-        {
-            epicsGuard < epicsMutex > guard ( this->mutex );
-		    pEvent = this->eventLogQue.get ();
-        }
+		pEvent = this->eventLogQue.get ();
 
 		if ( pEvent == NULL ) {
 			break;
 		}
 
-		// lock must remain on until the event is called
 		caStatus status = pEvent->cbFunc ( this->client );
 		if ( status == S_cas_success ) {
 			ps.nAccepted++;
@@ -117,10 +108,7 @@ casEventSys::processStatus casEventSys::process ()
 		else if ( status == S_cas_sendBlocked ) {
 			// not accepted so return to the head of the list
 		    // (we will try again later)
-            {
-                epicsGuard < epicsMutex > guard ( this->mutex );
-			    this->pushOnToEventQueue ( *pEvent );
-            }
+ 			this->pushOnToEventQueue ( *pEvent );
 			ps.cond = casProcOk;
 			break;
 		}
@@ -157,28 +145,24 @@ casEventSys::processStatus casEventSys::process ()
 // 
 void casEventSys::eventsOn()
 {
-    {
-        epicsGuard < epicsMutex > guard ( this->mutex );
+	//
+	// allow multiple events for each monitor
+	//
+	this->replaceEvents = false;
 
-	    //
-	    // allow multiple events for each monitor
-	    //
-	    this->replaceEvents = false;
+	//
+	// allow the event queue to be processed
+	//
+	this->dontProcess = false;
 
-	    //
-	    // allow the event queue to be processed
-	    //
-	    this->dontProcess = false;
-
-	    //
-	    // remove purge event if it is still pending
-	    //
-	    if ( this->pPurgeEvent != NULL ) {
-		    this->eventLogQue.remove ( *this->pPurgeEvent );
-		    delete this->pPurgeEvent;
-		    this->pPurgeEvent = NULL;
-	    }
-    }
+	//
+	// remove purge event if it is still pending
+	//
+	if ( this->pPurgeEvent != NULL ) {
+		this->eventLogQue.remove ( *this->pPurgeEvent );
+		delete this->pPurgeEvent;
+		this->pPurgeEvent = NULL;
+	}
 }
 
 //
@@ -186,8 +170,6 @@ void casEventSys::eventsOn()
 //
 void casEventSys::eventsOff()
 {
-    epicsGuard < epicsMutex > guard ( this->mutex );
-
 	//
 	// new events will replace the last event on
 	// the queue for a particular monitor
@@ -228,11 +210,8 @@ casEventPurgeEv::casEventPurgeEv ( casEventSys & evSysIn ) :
 // 
 caStatus casEventPurgeEv::cbFunc ( casCoreClient & )
 {
-    {
-        epicsGuard < epicsMutex > guard ( this->evSys.mutex );
-	    this->evSys.dontProcess = true;
-	    this->evSys.pPurgeEvent = NULL;
-    }
+	this->evSys.dontProcess = true;
+	this->evSys.pPurgeEvent = NULL;
 
 	delete this;
 

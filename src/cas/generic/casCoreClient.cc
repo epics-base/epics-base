@@ -63,14 +63,6 @@ casCoreClient::~casCoreClient()
 }
 
 //
-// casCoreClient::destroy()
-//
-void casCoreClient::destroy()
-{
-	delete this;
-}
-
-//
 // casCoreClient::disconnectChan()
 //
 caStatus casCoreClient::disconnectChan(caResId)
@@ -82,6 +74,7 @@ caStatus casCoreClient::disconnectChan(caResId)
 void casCoreClient::show ( unsigned level ) const
 {
 	printf ( "Core client\n" );
+    epicsGuard < epicsMutex > guard ( this->mutex );
 	this->eventSys.show ( level );
 	printf ( "\t%d io ops in progess\n", this->ioInProgList.count() );
 	this->ctx.show ( level );
@@ -203,20 +196,151 @@ casMonitor & casCoreClient::monitorFactory (
     const casEventMask & mask )
 {
     casMonitor & mon = this->ctx.getServer()->casMonitorFactory ( 
-            chan, clientId, count, 
-            type, mask, 
-            this->mutex,
-            *this );
-    this->eventSys.installMonitor ();
+            chan, clientId, count, type, mask, *this );
+    {
+        epicsGuard < epicsMutex > guard ( this->mutex );
+        this->eventSys.installMonitor ();
+    }
     return mon;
 }
 
 void casCoreClient::destroyMonitor ( casMonitor & mon )
 {
-    this->eventSys.removeMonitor ();
+    {
+        epicsGuard < epicsMutex > guard ( this->mutex );
+        this->eventSys.removeMonitor ();
+    }
     this->ctx.getServer()->casMonitorDestroy ( mon );
 }
 
+void casCoreClient::postEvent ( tsDLList < casMonitor > & monitorList, 
+    const casEventMask & select, const gdd & event )
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    tsDLIter < casMonitor > iter = monitorList.firstIter ();
+    while ( iter.valid () ) {
+        iter->postEvent ( select, event );
+	    ++iter;
+    }
+}
 
+void casCoreClient::showMonitorsInList ( 
+    const tsDLList < casMonitor > & monitorList, unsigned level ) const
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+	tsDLIterConst < casMonitor > iter = monitorList.firstIter ();
+	while ( iter.valid () ) {
+		iter->show ( level );
+		++iter;
+	}
+}
+
+void casCoreClient::installChannelsAsynchIO ( 
+    tsDLList < casAsyncIOI > & list, casAsyncIOI & io )
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    list.add ( io );
+}
+
+void casCoreClient::uninstallChannelsAsynchIO ( 
+    tsDLList < casAsyncIOI > & list, casAsyncIOI & io )
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    list.remove ( io );
+}
+
+//
+// casCoreClient::installAsyncIO()
+//
+void casCoreClient::installAsyncIO(casAsyncIOI &ioIn)
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+	this->ioInProgList.add ( ioIn );
+}
+
+//
+// casCoreClient::removeAsyncIO()
+//
+void casCoreClient::removeAsyncIO(casAsyncIOI &ioIn)
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+	this->ioInProgList.remove ( ioIn );
+	this->ctx.getServer()->ioBlockedList::signal ();
+}
+
+casEventSys::processStatus casCoreClient::eventSysProcess ()
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+	return this->eventSys.process ();
+}
+
+void casCoreClient::addToEventQueue ( casEvent & ev )
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+	this->eventSys.addToEventQueue ( ev );
+}
+
+// clients lock protects the event list and the 
+// flags in the asynch IO object
+caStatus casCoreClient::addToEventQueue ( casAsyncIOI & io, 
+                      bool & onTheQueue, bool & posted )
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+	// dont allow them to post completion more than once
+    if ( posted || onTheQueue ) {
+        return S_cas_redundantPost;
+    }
+    posted = true;
+    onTheQueue = true;
+	this->eventSys.addToEventQueue ( io );
+    return S_cas_success;
+}
+
+void casCoreClient::insertEventQueue ( casEvent & insert, casEvent & prevEvent )
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+	this->eventSys.insertEventQueue ( insert, prevEvent );
+}
+
+void casCoreClient::removeFromEventQueue ( casEvent &  ev )
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    this->eventSys.removeFromEventQueue ( ev );
+}
+
+void casCoreClient::removeFromEventQueue ( casAsyncIOI &  io )
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    if ( io.onTheEventQueue () ) {
+        this->eventSys.removeFromEventQueue ( io );
+    }
+}
+
+void casCoreClient::enableEvents ()
+{
+    {
+        epicsGuard < epicsMutex > guard ( this->mutex );
+        this->eventSys.eventsOn ();
+    }
+    this->eventSignal (); // wake up the event queue consumer
+}
+
+void casCoreClient::disableEvents ()
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    this->eventSys.eventsOff ();
+}
+
+void casCoreClient::setDestroyPending ()
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    this->eventSys.setDestroyPending ();
+}
+
+bool casCoreClient::eventSysIsFull ()
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    return this->eventSys.full ();
+}
 
 

@@ -25,14 +25,9 @@
 //
 // casChannelI::postEvent()
 //
-inline void casChannelI::postEvent (const casEventMask &select, const gdd &event)
+inline void casChannelI::postEvent ( const casEventMask &select, const gdd &event )
 {
-    epicsGuard < casCoreClient > guard ( *this->pClient );
-    tsDLIter<casMonitor> iter = this->monitorList.firstIter ();
-    while ( iter.valid () ) {
-        iter->post (select, event);
-	    ++iter;
-    }
+    this->pClient->postEvent ( this->monitorList, select, event );
 }
 
 //
@@ -52,10 +47,11 @@ inline void casChannelI::destroyNoClientNotify()
 //
 // casChannelI::installAsyncIO()
 //
-inline void casChannelI::installAsyncIO(casAsyncIOI &io)
+inline void casChannelI::installAsyncIO ( casAsyncIOI & io )
 {
-    epicsGuard < casCoreClient > guard ( *this->pClient );
-    this->ioInProgList.add(io);
+    // install through the client so that we can 
+    // use its lock to protect the list
+    this->pClient->installChannelsAsynchIO ( this->ioInProgList, io );
 }
 
 //
@@ -63,9 +59,10 @@ inline void casChannelI::installAsyncIO(casAsyncIOI &io)
 //
 inline void casChannelI::removeAsyncIO ( casAsyncIOI & io )
 {
-    epicsGuard < casCoreClient > guard ( *this->pClient );
-    this->ioInProgList.remove(io);
-    this->pPV->unregisterIO();
+    // uninstall through the client so that we can 
+    // use its lock to protect the list
+    this->pClient->uninstallChannelsAsynchIO ( this->ioInProgList, io );
+    this->pPV->unregisterIO ();
 }
 
 //

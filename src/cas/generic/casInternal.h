@@ -79,7 +79,7 @@ public:
 	ioBlocked ();
 	virtual ~ioBlocked ();
 private:
-	ioBlockedList	*pList;
+	ioBlockedList * pList;
 	virtual void ioBlockedSignal ();
 };
 
@@ -137,7 +137,7 @@ class casMonitor :
 public:
 	casMonitor ( caResId clientIdIn, casChannelI & chan, 
 	    unsigned long nElem, unsigned dbrType,
-	    const casEventMask & maskIn, epicsMutex & mutexIn,
+	    const casEventMask & maskIn, 
         casMonitorCallbackInterface & );
 	virtual ~casMonitor();
 
@@ -145,7 +145,7 @@ public:
 
 	caStatus executeEvent ( casMonEvent & );
 
-	void post ( const casEventMask & select, const smartConstGDDPointer & pValue );
+	void postEvent ( const casEventMask & select, const smartConstGDDPointer & pValue );
 
 	caResId getClientId () const 
 	{
@@ -174,7 +174,6 @@ public:
 private:
 	casMonEvent overFlowEvent;
 	unsigned long const nElem;
-	epicsMutex & mutex;
 	casChannelI & ciu;
     casMonitorCallbackInterface & callBackIntf;
 	const casEventMask mask;
@@ -194,10 +193,10 @@ private:
 };
 
 //
-// casMonitor::post()
+// casMonitor::postEvent()
 // (check for NOOP case in line)
 //
-inline void casMonitor::post (const casEventMask &select, const smartConstGDDPointer &pValue)
+inline void casMonitor::postEvent (const casEventMask &select, const smartConstGDDPointer &pValue)
 {
 	casEventMask	result (select&this->mask);
 	//
@@ -233,6 +232,11 @@ public:
 
 	caServer *getCAS () const;
 
+    bool onTheEventQueue () const
+    {
+        return this->inTheEventQueue;
+    }
+
 protected:
 	casCoreClient & client;
 
@@ -242,11 +246,11 @@ protected:
 	caStatus postIOCompletionI();
 
 private:
-	bool inTheEventQueue:1;
-	bool posted:1;
-	bool ioComplete:1;
-	bool serverDelete:1;
-	bool duplicate:1;
+	bool inTheEventQueue;
+	bool posted;
+	bool ioComplete;
+	bool serverDelete;
+	bool duplicate;
 
 	//
 	// casEvent virtual call back function
@@ -285,9 +289,6 @@ class casChannelI : public tsDLNode < casChannelI >,
 public:
 	casChannelI ( const casCtx & ctx );
 	epicsShareFunc virtual ~casChannelI ();
-
-    void bindToClientI ( class casCoreClient & client, 
-        casPVI & pv, caResId cid );
 
 	class casCoreClient & getClient () const
 	{	
@@ -347,7 +348,7 @@ protected:
 	class casCoreClient * pClient;
 	casPVI * pPV;
 	caResId cid;    // client id 
-	bool accessRightsEvPending:1;
+	bool accessRightsEvPending;
 
 	epicsShareFunc virtual void destroy ();
 	epicsShareFunc caStatus cbFunc ( casCoreClient & ); // access rights event call back
@@ -363,8 +364,6 @@ class casPVListChan : public casChannelI, public tsDLNode<casPVListChan>
 {
 public:
     casPVListChan ( const casCtx &ctx );
-    void bindToClient ( casCoreClient & client, 
-        casPVI & pv, caResId cidIn );
     epicsShareFunc virtual ~casPVListChan();
 private:
 	casPVListChan ( const casPVListChan & );
@@ -414,12 +413,12 @@ public:
     epicsShareFunc virtual void endTransaction () = 0;
     epicsShareFunc virtual caStatus read ( const casCtx & ctx, gdd & prototype ) = 0;
     epicsShareFunc virtual caStatus write ( const casCtx & ctx, const gdd & value ) = 0;
-    epicsShareFunc virtual casChannel *createChannel (const casCtx & ctx,
+    epicsShareFunc virtual casChannel * createChannel ( const casCtx & ctx,
         const char * const pUserName, const char * const pHostName ) = 0;
     epicsShareFunc virtual aitEnum bestExternalType () const = 0;
     epicsShareFunc virtual unsigned maxDimension () const = 0; 
     epicsShareFunc virtual aitIndex maxBound ( unsigned dimension ) const = 0;
-    epicsShareFunc virtual const char *getName () const = 0;
+    epicsShareFunc virtual const char * getName () const = 0;
     epicsShareFunc casPV *apiPointer (); //retuns NULL if casPVI isnt a base of casPV
 
 private:

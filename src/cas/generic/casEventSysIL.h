@@ -38,10 +38,7 @@ inline casEventSys::casEventSys ( casCoreClient & clientIn ) :
 //
 inline void casEventSys::addToEventQueue ( casEvent & event )
 {
-    {
-        epicsGuard < epicsMutex > guard ( this->mutex );
-	    this->eventLogQue.add ( event );
-    }
+	this->eventLogQue.add ( event );
 
 	//
 	// wake up the event queue consumer only if
@@ -70,7 +67,6 @@ inline void casEventSys::setDestroyPending()
 //
 inline void casEventSys::insertEventQueue( casEvent & insert, casEvent & prevEvent )
 {
-    epicsGuard < epicsMutex > guard ( this->mutex );
 	this->eventLogQue.insertAfter ( insert, prevEvent );
 }
  
@@ -79,7 +75,6 @@ inline void casEventSys::insertEventQueue( casEvent & insert, casEvent & prevEve
 //
 inline void casEventSys::pushOnToEventQueue ( casEvent & event )
 {
-    epicsGuard < epicsMutex > guard ( this->mutex );
 	this->eventLogQue.push ( event );
 }
  
@@ -88,7 +83,6 @@ inline void casEventSys::pushOnToEventQueue ( casEvent & event )
 //
 inline void casEventSys::removeFromEventQueue ( casEvent & event )
 {
-    epicsGuard < epicsMutex > guard ( this->mutex );
 	this->eventLogQue.remove ( event );
 }
  

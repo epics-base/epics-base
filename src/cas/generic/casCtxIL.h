@@ -74,7 +74,7 @@ inline casChannelI * casCtx::getChannel() const
 //
 // casCtx::setMsg() 
 //
-inline void casCtx::setMsg ( caHdrLargeArray &msgIn, void * pBody )
+inline void casCtx::setMsg ( const caHdrLargeArray & msgIn, void * pBody )
 {
 	this->msg = msgIn;
     this->pData = pBody;

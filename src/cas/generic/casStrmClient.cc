@@ -40,16 +40,13 @@ casStrmClient::casStrmClient ( caServerI & cas, clientBufMemoryManager & memMgr 
     this->pHostName = new char [1u];
     *this->pHostName = '\0';
 
-    epicsGuard < casCoreClient > guard ( * this );
-
-	this->ctx.getServer()->installClient ( this );
-
     this->pUserName = new ( std::nothrow ) char [1u];
     if ( ! this->pUserName ) {
         free ( this->pHostName );
         throw std::bad_alloc();
     }
     *this->pUserName= '\0';
+	this->ctx.getServer()->installClient ( this );
 }
 
 //
@@ -57,19 +54,14 @@ casStrmClient::casStrmClient ( caServerI & cas, clientBufMemoryManager & memMgr 
 //
 casStrmClient::~casStrmClient()
 {
-    epicsGuard < casCoreClient > guard ( * this );
-
-	//
-	// remove this from the list of connected clients
-	//
-	this->ctx.getServer()->removeClient(this);
+	this->ctx.getServer()->removeClient ( this );
 
 	delete [] this->pUserName;
 
 	delete [] this->pHostName;
 
 	//
-	// delete all channel attached
+	// delete all channels attached
 	//
 	tsDLIter <casChannelI> iter = this->chanList.firstIter ();
 	while ( iter.valid () ) {
@@ -821,7 +813,7 @@ caStatus casStrmClient::hostNameAction()
 		size-1);
 	pMalloc[size-1]='\0';
 
-    epicsGuard < casCoreClient > guard ( * this );
+    epicsGuard < epicsMutex > guard ( this->mutex );
 
 	if (this->pHostName) {
 		delete [] this->pHostName;
@@ -867,7 +859,7 @@ caStatus casStrmClient::clientNameAction()
 		size-1);
 	pMalloc[size-1]='\0';
 
-    epicsGuard < casCoreClient > guard ( * this );
+    epicsGuard < epicsMutex > guard ( this->mutex );
 
 	if (this->pUserName) {
 		delete [] this->pUserName;
@@ -940,7 +932,7 @@ caStatus casStrmClient::claimChannelAction()
 	// prevent problems such as the PV being deleted before the
 	// channel references it
 	//
-    epicsGuard < casCoreClient > guard ( * this );
+    epicsGuard < epicsMutex > guard ( this->mutex );
 	this->asyncIOFlag = false;
 
 	//
@@ -1017,18 +1009,21 @@ caStatus casStrmClient::createChanResponse ( const caHdrLargeArray & hdr, const 
 
 	//
 	// create server tool XXX derived from casChannel
+    // (use temp context because this can be caled asynchronously)
 	//
-	this->ctx.setPV ( pPV );
+    casCtx tmpCtx;
+    tmpCtx.setClient ( this );
+    tmpCtx.setPV ( pPV );
+    tmpCtx.setMsg ( hdr, 0 );
 	casChannel * pChan = pPV->createChannel ( 
-        this->ctx, this->pUserName, this->pHostName );
+        tmpCtx, this->pUserName, this->pHostName );
 	if ( ! pChan ) {
 		pPV->deleteSignal();
 		return this->channelCreateFailedResp ( hdr, S_cas_noMemory );
 	}
 
-    pChan->bindToClient ( *this, *pPV, hdr.m_cid );
-
-	casChannelI * pChanI = (casChannelI *) pChan;
+	this->installChannel ( *pChan );
+    pPV->installChannel ( *pChan );
 
     //
     // check to see if the enum table is empty and therefore
@@ -1038,7 +1033,7 @@ caStatus casStrmClient::createChanResponse ( const caHdrLargeArray & hdr, const 
     //
     if ( nativeTypeDBR == DBR_ENUM ) {
         this->ctx.setPV ( pPV );
-        this->ctx.setChannel ( pChanI );
+        this->ctx.setChannel ( pChan );
         this->asyncIOFlag = false;
         status = pPV->updateEnumStringTable ( this->ctx );
 	    if ( this->asyncIOFlag ) {
@@ -1302,6 +1297,7 @@ caStatus casStrmClient::eventAddAction ()
 	}
 
 	if ( status == S_cas_success ) {
+        epicsGuard < epicsMutex > guard ( this->mutex );
         pciu->installMonitor (
                 mp->m_available, mp->m_count, 
                 mp->m_dataType, mask );
@@ -1474,7 +1470,7 @@ caStatus casStrmClient::readSyncAction()
 	const caHdrLargeArray *mp = this->ctx.getMsg();
 	int	status;
 
-    epicsGuard < casCoreClient > guard ( * this );
+    epicsGuard < epicsMutex > guard ( this->mutex );
 
 	//
 	// This messages indicates that the client
@@ -1857,7 +1853,7 @@ inline bool caServerI::roomForNewChannel() const
 //
 void casStrmClient::installChannel(casChannelI &chan)
 {
-    epicsGuard < casCoreClient > guard ( * this );
+    epicsGuard < epicsMutex > guard ( this->mutex );
 	this->getCAS().installItem (chan);
 	this->chanList.add(chan);
 }
@@ -1867,7 +1863,7 @@ void casStrmClient::installChannel(casChannelI &chan)
 //
 void casStrmClient::removeChannel(casChannelI &chan)
 {
-    epicsGuard < casCoreClient > guard ( * this );
+    epicsGuard < epicsMutex > guard ( this->mutex );
 	casRes * pRes = this->getCAS().removeItem(chan);
 	assert (&chan == (casChannelI *)pRes);
 	this->chanList.remove(chan);

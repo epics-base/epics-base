@@ -110,7 +110,7 @@ public:
 	casPVI * getPV () const;
 	casChannelI * getChannel () const;
 
-	void setMsg ( caHdrLargeArray &, void * pBody );
+	void setMsg ( const caHdrLargeArray &, void * pBody );
 
 	void setServer ( caServerI * p );
 
@@ -382,7 +382,6 @@ public:
 
 private:
 	tsDLList < casEvent > eventLogQue;
-	epicsMutex mutex;
     casCoreClient & client;
 	class casEventPurgeEv * pPurgeEvent; // flow control purge complete event
 	unsigned numEventBlocks;	// N event blocks installed
@@ -421,20 +420,19 @@ class casCoreClient : public ioBlocked,
 public:
 	casCoreClient ( caServerI & serverInternal ); 
 	virtual ~casCoreClient ();
-	virtual void destroy ();
 	virtual caStatus disconnectChan( caResId id );
-	virtual void show  ( unsigned level ) const;
+	virtual void show ( unsigned level ) const;
 	virtual void installChannel ( casChannelI & );
 	virtual void removeChannel ( casChannelI & );
 
 	void installAsyncIO ( casAsyncIOI & ioIn );
-
 	void removeAsyncIO ( casAsyncIOI & ioIn );
+    void installChannelsAsynchIO ( 
+        tsDLList < casAsyncIOI > & list, casAsyncIOI & io );
+    void uninstallChannelsAsynchIO ( 
+        tsDLList < casAsyncIOI > & list, casAsyncIOI & io );
 
 	caServerI & getCAS () const;
-
-    void lock ();
-    void unlock ();
 
 	//
 	// one virtual function for each CA request type that has
@@ -479,9 +477,12 @@ public:
     casEventSys::processStatus eventSysProcess();
 
 	void addToEventQueue ( casEvent & );
+	caStatus addToEventQueue ( casAsyncIOI &, 
+        bool & onTheQueue, bool & posted );
 	void insertEventQueue ( casEvent & insert, 
         casEvent & prevEvent );
 	void removeFromEventQueue ( casEvent & );
+    void removeFromEventQueue ( casAsyncIOI & );
     void enableEvents ();
     void disableEvents ();
     bool eventSysIsFull ();
@@ -498,11 +499,19 @@ public:
     caStatus casMonitorCallBack ( casMonitor &,
         const smartConstGDDPointer & );
 	casMonitor * lookupMonitor ( const caResId &idIn );
+    void postEvent ( tsDLList <casMonitor > &, 
+        const casEventMask &select, const gdd &event );
+    void showMonitorsInList ( 
+        const tsDLList < casMonitor > & monitorList, 
+        unsigned level ) const;
 
 protected:
-    epicsMutex mutex;
+    mutable epicsMutex mutex;
 	casCtx ctx;
 	bool asyncIOFlag;
+
+    void lock ();
+    void unlock ();
 
 private:
     casEventSys eventSys;
@@ -916,7 +925,7 @@ public:
     casMonitor & casMonitorFactory (  casChannelI &, 
         caResId clientId, const unsigned long count, 
         const unsigned type, const casEventMask &, 
-        epicsMutex & , casMonitorCallbackInterface & );
+        casMonitorCallbackInterface & );
     void casMonitorDestroy ( casMonitor & );
 
 private:

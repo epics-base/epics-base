@@ -151,12 +151,12 @@ inline void caServerI::casMonEventDestroy ( casMonEvent & monEvent )
 inline casMonitor & caServerI::casMonitorFactory ( 
     casChannelI & chan, caResId clientId, 
     const unsigned long count, const unsigned type, 
-    const casEventMask & mask, epicsMutex & mutexIn,
+    const casEventMask & mask, 
     casMonitorCallbackInterface & cb )
 {
     casMonitor * pMon = 
         new ( this->casMonitorFreeList ) casMonitor 
-            ( clientId, chan, count, type, mask, mutexIn, cb );
+            ( clientId, chan, count, type, mask, cb );
 	this->installItem ( *pMon );
     return *pMon;
 }

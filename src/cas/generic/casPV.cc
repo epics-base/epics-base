@@ -56,9 +56,9 @@ void casPV::destroy ()
 // casPV::createChannel()
 //
 casChannel *casPV::createChannel (const casCtx &ctx, const char * const,
-		const char * const)
+		const char * const )
 {
-	return new casChannel (ctx);
+	return new casChannel ( ctx );
 }
 
 //

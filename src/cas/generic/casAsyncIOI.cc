@@ -84,30 +84,20 @@ casAsyncIOI::~casAsyncIOI()
 	"WARNING: by deleting the async IO object.\n");
 	}
 
-    epicsGuard < casCoreClient > guard ( this->client );
-
 	//
 	// pulls itself out of the event queue
-	// if it is installed there
+	// if it is installed there. 
 	//
-	if ( this->inTheEventQueue ) {
-		this->client.removeFromEventQueue ( *this );
-	}
+	this->client.removeFromEventQueue ( *this );
 }
 
 //
 // casAsyncIOI::cbFunc()
-// (called when IO completion event reaches top of event queue)
+// o called when IO completion event reaches top of event queue
+// o clients lock is applied when calling this
 //
 caStatus casAsyncIOI::cbFunc ( casCoreClient & )
 {
-	//
-	// Use the client's lock here (which is the same as the
-	// asynch IO's lock) here because we need to leave the lock
-	// applied around the destroy() call here.
-	//
-    epicsGuard < casCoreClient > guard ( this->client );
-
 	this->inTheEventQueue = false;
 
 	caStatus status = this->cbFuncAsyncIO();
@@ -140,9 +130,9 @@ void casAsyncIOI::eventSysDestroyNotify ( casCoreClient & )
 }
 
 //
-// casAsyncIOI::postIOCompletionI()
+// casAsyncIOI::postIOCompletionI ()
 //
-caStatus casAsyncIOI::postIOCompletionI()
+caStatus casAsyncIOI::postIOCompletionI ()
 {
 	//
 	// detect the case where the server called destroy(), 
@@ -154,10 +144,10 @@ caStatus casAsyncIOI::postIOCompletionI()
 		return S_cas_redundantPost;
 	}
 
-    epicsGuard < casCoreClient > guard ( this->client );
-
-	if (this->duplicate) {
-		errMessage(S_cas_badParameter, 
+    // this is only touched in the constructor so its 
+    // ok not to not take a lock here
+	if ( this->duplicate ) {
+		errMessage ( S_cas_badParameter, 
 			"- duplicate async IO");
 		//
 		// dont use "this" after potentially destroying the
@@ -168,23 +158,11 @@ caStatus casAsyncIOI::postIOCompletionI()
 	}
 
 	//
-	// verify that they dont post completion more than once
-	//
-	if ( this->posted ) {
-		return S_cas_redundantPost;
-	}
-
-	//
-	// dont call the server tool's cancel() when this object deletes 
-	//
-	this->posted = true;
-
-	//
 	// place this event in the event queue
-	// (this also signals the event consumer)
+	// o this also signals the event consumer
+    // o clients lock protects list and flag
 	//
-	this->inTheEventQueue = true;
-	this->client.addToEventQueue ( *this );
+	return this->client.addToEventQueue ( *this, this->inTheEventQueue, this->posted );
 
 	return S_cas_success;
 }
@@ -211,16 +189,11 @@ bool casAsyncIOI::readOP() const
 
 //
 // casAsyncIOI::serverDestroyIfReadOP()
+// o clients lock is held when this is called
 //
 void casAsyncIOI::serverDestroyIfReadOP()
-{
-    //
-    // client lock used because this object's
-    // lock may be destroyed
-    //
-    epicsGuard < casCoreClient > guard ( this->client );
-    
-    if (this->readOP()) {
+{    
+    if ( this->readOP() ) {
         this->serverDestroy();
     }
     

@@ -32,10 +32,8 @@ casMonitor::casMonitor (
 	    unsigned long nElemIn, 
         unsigned dbrTypeIn,
 	    const casEventMask & maskIn, 
-        epicsMutex & mutexIn,
         casMonitorCallbackInterface & cb ) :
 	nElem ( nElemIn ),
-	mutex ( mutexIn ),
 	ciu ( chan ),
     callBackIntf ( cb ),
 	mask ( maskIn ),
@@ -55,7 +53,6 @@ casMonitor::casMonitor (
 //
 casMonitor::~casMonitor()
 {
-    epicsGuard < epicsMutex > guard ( this->mutex );
 	this->disable();
 	if ( this->ovf ) {
 	    casCoreClient &client = this->ciu.getClient();
@@ -68,7 +65,6 @@ casMonitor::~casMonitor()
 //
 void casMonitor::enable()
 {
-    epicsGuard < epicsMutex > guard ( this->mutex );
 	if ( ! this->enabled && this->ciu.readAccess() ) {
 		this->enabled = true;
 		caStatus status = this->ciu.getPVI().registerEvent();
@@ -84,7 +80,6 @@ void casMonitor::enable()
 //
 void casMonitor::disable()
 {
-    epicsGuard < epicsMutex > guard ( this->mutex );
 	if ( this->enabled ) {
 		this->enabled = false;
 		this->ciu.getPVI().unregisterEvent();
@@ -95,9 +90,7 @@ void casMonitor::disable()
 // casMonitor::push()
 //
 void casMonitor::push ( const smartConstGDDPointer & pNewValue )
-{
-    epicsGuard < epicsMutex > guard ( this->mutex );
-	
+{	
 	casCoreClient & client = this->ciu.getClient ();
     client.getCAS().incrEventsPostedCounter ();
 
@@ -174,7 +167,6 @@ caStatus casMonitor::executeEvent ( casMonEvent & ev )
 	
 	caStatus status;
     {
-        epicsGuard < epicsMutex > guard ( this->mutex );
 	    status = 
             this->callBackIntf.
                 casMonitorCallBack ( *this, *pVal );

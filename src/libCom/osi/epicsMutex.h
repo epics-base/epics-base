@@ -131,8 +131,8 @@ inline bool epicsMutex :: lock ( double timeOut )
         return false;
     } else {
         throwWithLocation ( invalidSemaphore () );
-        return false; // never here, compiler is happy
     }
+    return false; // never here, compiler is happy
 }
 
 inline bool epicsMutex :: tryLock ()
@@ -145,8 +145,8 @@ inline bool epicsMutex :: tryLock ()
         return false;
     } else {
         throwWithLocation ( invalidSemaphore () );
-        return false; // never here, but compiler is happy
     }
+    return false; // never here, but compiler is happy
 }
 
 inline void epicsMutex :: unlock ()

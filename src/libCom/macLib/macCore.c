@@ -744,7 +744,7 @@ static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
 /*
  * strdup() implementation (because it's not always available)
  */
-char *Strdup( char *string )
+static char *Strdup( char *string )
 {
     char *copy = dbmfMalloc( strlen( string ) + 1 );
 
@@ -756,6 +756,10 @@ char *Strdup( char *string )
 
 /*************************************************************************
  * $Log$
+ * Revision 1.9  1999/05/13 16:06:21  anj
+ * Cleaned up warnings - the RCS Log: keyword was on the comment line
+ * that starts with a '/' which RCS replicates for these notes...
+ *
  * Revision 1.8  1998/02/27 01:34:13  jhill
  * cleaned up the DLL symbol export
  *

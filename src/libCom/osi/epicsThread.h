@@ -188,9 +188,7 @@ inline bool epicsThread::priorityIsEqual (const epicsThread &otherThread) const
     if ( epicsThreadIsEqual (this->id, otherThread.id) ) {
         return true;
     }
-    else {
-        return false;
-    }
+    return false;
 }
 
 inline bool epicsThread::isSuspended () const
@@ -198,9 +196,7 @@ inline bool epicsThread::isSuspended () const
     if ( epicsThreadIsSuspended (this->id) ) {
         return true;
     }
-    else {
-        return false;
-    }
+    return false;
 }
 
 inline bool epicsThread::operator == (const epicsThread &rhs) const

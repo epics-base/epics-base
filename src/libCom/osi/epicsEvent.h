@@ -101,8 +101,8 @@ inline bool epicsEvent::wait (double timeOut)
         return false;
     } else {
         throwWithLocation ( invalidSemaphore () );
-        return false;
     }
+    return false;
 }
 
 inline bool epicsEvent::tryWait ()
@@ -115,8 +115,8 @@ inline bool epicsEvent::tryWait ()
         return false;
     } else {
         throwWithLocation ( invalidSemaphore () );
-        return false;
     }
+    return false;
 }
 
 inline void epicsEvent::show ( unsigned level ) const

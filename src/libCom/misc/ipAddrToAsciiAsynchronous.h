@@ -80,9 +80,7 @@ inline bool ipAddrToAsciiAsynchronous::identicalAddress ( const osiSockAddr &add
         return this->addr.ia.sin_addr.s_addr == addrIn.ia.sin_addr.s_addr &&
             this->addr.ia.sin_port == addrIn.ia.sin_port;
     }
-    else {
-        return false;
-    }
+    return false;
 }
 
 #endif // ifdef ipAddrToAsciiAsynchronous_h

@@ -1,6 +1,6 @@
 
 /*
- * Solaris specifif socket include
+ * HPUX specific socket include
  */
 
 #ifndef osdSockH
@@ -17,10 +17,7 @@ extern "C" {
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
-/*
-#include <sys/filio.h>
-#include <sys/sockio.h>
-*/
+
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
@@ -28,13 +25,6 @@ extern "C" {
 #include <netdb.h>
 #include <unistd.h> /* close() and others */
  
-/*
- * as far as I can tell there is no header file for these
- */
-/*
-int gethostname(char *name, int namelen);
-int sethostname(char *name, int namelen);
-*/
 #ifdef __cplusplus
 }
 #endif
@@ -46,6 +36,11 @@ typedef int                     SOCKET;
 #define socket_close(S)         close(S)
 #define socket_ioctl(A,B,C)     ioctl(A,B,C)
 typedef int osiSockIoctl_t;
+typedef int osiSocklen_t;
+
+/*
+#define DOES_NOT_ACCEPT_ZERO_LENGTH_UDP
+*/
 
 #define FD_IN_FDSET(FD) ((FD)<FD_SETSIZE&&(FD)>=0)
 
@@ -66,6 +61,10 @@ typedef int osiSockIoctl_t;
 #define SOCK_SHUTDOWN ESHUTDOWN
 #define SOCK_ENOTSOCK ENOTSOCK
 #define SOCK_EBADF EBADF
+
+#ifndef SD_BOTH
+#define SD_BOTH 2
+#endif
 
 #define ifreq_size(pifreq) (sizeof(pifreq->ifr_name))
 

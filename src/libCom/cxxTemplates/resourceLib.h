@@ -791,9 +791,7 @@ inline bool stringId::operator ==
     if (this->pStr!=NULL && idIn.pStr!=NULL) {
         return strcmp(this->pStr,idIn.pStr)==0;
     }
-    else {
-        return false; // not equal
-    }
+    return false; // not equal
 }
 
 //

@@ -9,8 +9,6 @@
 #include <osdReadline.h>
 
 #if (defined (IOCSH_REAL_READLINE) && defined (IOCSH_FAKE_READLINE))
-# warning "IOCSH_REAL_READLINE and IOCSH_FAKE_READLINE are both defined."
-# warning "I am assuming that you want IOCSH_REAL_READLINE support."
 # undef IOCSH_FAKE_READLINE
 #endif
 

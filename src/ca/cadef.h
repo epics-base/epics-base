@@ -920,7 +920,7 @@ epicsShareFunc READONLY char * epicsShareAPI ca_version (void);
  *                          CA prints an error message
  */
 #ifndef CA_DONT_INCLUDE_STDARGH
-typedef int caPrintfFunc (const char *pformat, va_list args);
+typedef int epicsShareAPIV caPrintfFunc (const char *pformat, va_list args);
 epicsShareFunc int epicsShareAPI ca_replace_printf_handler (
     caPrintfFunc    *ca_printf_func
 );

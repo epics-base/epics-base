@@ -86,6 +86,7 @@ SRCS.c += ../devSiSymb.c
 SRCS.c += ../devSiTestAsyn.c
 SRCS.c += ../devSmCompumotor1830.c
 SRCS.c += ../devSmOms6Axis.c
+SRCS.c += ../devSmAB1746HSTP1.c
 SRCS.c += ../devSoSoft.c
 SRCS.c += ../devSoSymb.c
 SRCS.c += ../devSoTestAsyn.c

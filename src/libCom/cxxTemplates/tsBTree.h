@@ -120,7 +120,6 @@ private:
 			if (node.pLeft) {
 				if (node.pRight) {
 					tsBTreeNode<T> *pLeftNode = node.pLeft;
-					tsBTreeNode<T> *pRightNode = node.pRight;
 					T *pR = pLeftNode->pRight;
 					if (pR) {
 						tsBTreeNode<T>::insert (*pR, *node.pRight);

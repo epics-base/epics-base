@@ -868,7 +868,7 @@ LOCAL void event_task (void *pParm)
 
     /* init hook */
     if (evUser->init_func) {
-            status = (*evUser->init_func)(evUser->init_func_arg);
+        status = (*evUser->init_func)(evUser->init_func_arg);
         if (status!=DB_EVENT_OK) {
             errlogPrintf("Unable to intialize the event system!\n");
             semBinaryGive(evUser->ppendsem);
@@ -941,8 +941,8 @@ LOCAL void event_task (void *pParm)
 /*
  * DB_START_EVENTS()
  */
-int db_start_events (dbEventCtx ctx, char *taskname, int (*init_func)(threadId), 
-                     threadId init_func_arg, int priority_offset)
+int db_start_events (dbEventCtx ctx, char *taskname, int (*init_func)(void *), 
+                     void *init_func_arg, int priority_offset)
 {
      struct event_user *evUser = (struct event_user *) ctx;
      int     taskpri;

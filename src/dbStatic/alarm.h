@@ -34,6 +34,9 @@
  * .02  08-11-92        jba     added new status DISABLE_ALARM, SIMM_ALARM
  * .03  05-11-94        jba     added new status READ_ACCESS_ALARM, WRITE_ACCESS_ALARM
  * $Log$
+ * Revision 1.3  1998/03/12 20:43:35  jhill
+ * fixed string defs
+ *
  * Revision 1.2  1996/06/19 19:59:31  jhill
  * added missing defines/enums, corrected defines
  *
@@ -43,8 +46,8 @@
 #ifndef INCalarmh
 #define INCalarmh 1
 
-#include <shareLib.h>
-#include <epicsTypes.h>
+#include "shareLib.h"
+#include "epicsTypes.h"
 
 /* defines for the choice fields */
 /* ALARM SEVERITIES - NOTE: must match defs in choiceGbl.ascii GBL_ALARM_SEV */

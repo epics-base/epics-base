@@ -4,31 +4,21 @@
 /*
  * 	Author: 	Jeffrey O. Hill 
  *      Date:            4-1-89
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- *	NOTES:
- *
- * Modification Log:
+*/
+
+/*****************************************************************
+                          COPYRIGHT NOTIFICATION
+*****************************************************************
+
+(C)  COPYRIGHT 1991 Regents of the University of California,
+and the University of Chicago Board of Governors.
+
+This software was developed under a United States Government license
+described on the COPYRIGHT_Combined file included as part
+of this distribution.
+**********************************************************************/
+
+/* Modification Log:
  * -----------------
  * joh	00	04xx89	Created
  * joh	01	043089	Init Release
@@ -64,42 +54,35 @@
  *			problem
  */
 
-#include	"epicsAssert.h"
 
-#include	<vxWorks.h>
-#include	<types.h>
-#include	<wdLib.h>
-#include	<semLib.h>
-#include	<stdioLib.h>
-#include	<vxLib.h>
-#include	<ellLib.h>
-#include	<sysLib.h>
-#include	<string.h>
-#include	<logLib.h>
-#include	<taskLib.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
 
-#include	"dbDefs.h"
-#include	"errlog.h"
-#include	"taskwd.h"
-#include	"freeList.h"
-#include 	"tsDefs.h"
-#include	"dbCommon.h"
-#include	"task_params.h"
-#include	"dbAccess.h"
-#include 	"dbEvent.h"
-#include 	"caeventmask.h"
-
-#include 	"memDebugLib.h"
-
+#include "epicsAssert.h"
+#include "cantProceed.h"
+#include "dbDefs.h"
+#include "osiSem.h"
+#include "osiThread.h"
+#include "osiClock.h"
+#include "errlog.h"
+#include "taskwd.h"
+#include "freeList.h"
+#include  "tsDefs.h"
+#include "dbCommon.h"
+#include "dbAccess.h"
+#include  "dbEvent.h"
+#include  "caeventmask.h"
 
 /* local function declarations */
-
 LOCAL int event_read(struct event_que *ev_que);
 
 LOCAL int db_post_single_event_private(struct event_block *event);
 
 /* what to do with unrecoverable errors */
-#define abort(S) taskSuspend((int)taskIdCurrent);
+#define abort(S) cantProceed("dbEvent abort")
 
 /*
  * Reliable intertask communication requires copying the current value of the
@@ -123,19 +106,21 @@ LOCAL int db_post_single_event_private(struct event_block *event);
 )
 
 #define LOCKEVQUE(EV_QUE)\
-FASTLOCK(&(EV_QUE)->writelock);
+semMutexTakeAssert((EV_QUE)->writelock);
 
 #define UNLOCKEVQUE(EV_QUE)\
-FASTUNLOCK(&(EV_QUE)->writelock);
+semMutexGive((EV_QUE)->writelock);
 
 #define LOCKREC(RECPTR)\
-FASTLOCK(&(RECPTR)->mlok);
+semMutexTakeAssert((RECPTR)->mlok);
 
 #define UNLOCKREC(RECPTR)\
-FASTUNLOCK(&(RECPTR)->mlok);
+semMutexGive((RECPTR)->mlok);
 
 LOCAL void *dbevEventUserFreeList;
 LOCAL void *dbevEventQueueFreeList;
+
+static char *EVENT_PEND_NAME = "event task";
 
 
 /*
@@ -170,7 +155,7 @@ int db_event_list(char *name)
 		printf(" ev user %lx\n", (unsigned long) pevent->ev_que->evUser);
 		printf("ring space %u\n", RNGSPACE(pevent->ev_que));
 #endif
-		printf(	"task %x select %x pfield %lx behind by %ld\n",
+		printf(	"task %p select %x pfield %lx behind by %ld\n",
 			pevent->ev_que->evUser->taskid,
 			pevent->select,
 			(unsigned long) pevent->paddr->pfield,
@@ -210,17 +195,17 @@ struct event_user *db_init_events(void)
     		return NULL;
 
   	evUser->firstque.evUser = evUser;
-	FASTLOCKINIT(&(evUser->firstque.writelock));
-	evUser->ppendsem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
+        evUser->firstque.writelock = semMutexCreate();
+	evUser->ppendsem = semBinaryCreate(semEmpty);
 	if(!evUser->ppendsem){
-		FASTLOCKFREE(&(evUser->firstque.writelock));
+                semMutexDestroy(evUser->firstque.writelock);
 		freeListFree(dbevEventUserFreeList, evUser);
 		return NULL;
 	}
-	evUser->pflush_sem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
+	evUser->pflush_sem = semBinaryCreate(semEmpty);
 	if(!evUser->pflush_sem){
-		FASTLOCKFREE(&(evUser->firstque.writelock));
-		semDelete(evUser->ppendsem);
+                semMutexDestroy(evUser->firstque.writelock);
+		semBinaryDestroy(evUser->ppendsem);
 		freeListFree(dbevEventUserFreeList, evUser);
 		return NULL;
 	}
@@ -253,7 +238,7 @@ int	db_close_events(struct event_user *evUser)
   	evUser->pendexit = TRUE;
 
   	/* notify the waiting task */
-  	semGive(evUser->ppendsem);
+  	semBinaryGive(evUser->ppendsem);
 
 
   	return OK;
@@ -319,7 +304,7 @@ struct event_block	*pevent /* ptr to event blk (not required) */
       			if(!tmp_que) 
         			return ERROR;
       			tmp_que->evUser = evUser;
-			FASTLOCKINIT(&(tmp_que->writelock));
+                        tmp_que->writelock = semMutexCreate();
       			ev_que->nextque = tmp_que;
       			ev_que = tmp_que;
       			break;
@@ -455,7 +440,7 @@ int	db_cancel_event(struct event_block	*pevent)
 	pevent->user_sub = NULL;
   	while (pevent->npend || pevent->callBackInProgress) {
 		UNLOCKEVQUE(pevent->ev_que)
-		semTake(pevent->ev_que->evUser->pflush_sem, sysClkRateGet());
+		semBinaryTakeTimeout(pevent->ev_que->evUser->pflush_sem, 1.0);
 		LOCKEVQUE(pevent->ev_que)
   	}
 	UNLOCKEVQUE(pevent->ev_que)
@@ -498,7 +483,7 @@ struct event_user	*evUser
 )
 {
 	while(evUser->extra_labor){
-		taskDelay(sysClkRateGet());
+		threadSleep(1.0);
 	}
 
   	return OK;
@@ -530,13 +515,9 @@ void			*arg
  */
 int db_post_extra_labor(struct event_user *evUser)
 {
-	int 	status;
-
     	/* notify the event handler of extra labor */
 	evUser->extra_labor = TRUE;
-    	status = semGive(evUser->ppendsem);
-	assert(status == OK);
-
+    	semBinaryGive(evUser->ppendsem);
 	return OK;
 }
 
@@ -715,7 +696,7 @@ LOCAL int db_post_single_event_private(struct event_block *event)
 		/* 
 		 * notify the event handler 
 		 */
-		semGive(ev_que->evUser->ppendsem);
+		semBinaryGive(ev_que->evUser->ppendsem);
 	}
 
 	if (pLog) {
@@ -739,39 +720,28 @@ int			init_func_arg,
 int			priority_offset
 )
 {
-  	int		status;
 	int		taskpri;
+        int		firstTry;
 
   	/* only one ca_pend_event thread may be started for each evUser ! */
-  	while(!vxTas(&evUser->pendlck))
-    		return ERROR;
-
-  	status = taskPriorityGet(taskIdSelf(), &taskpri);
-  	if(status == ERROR)
-    		return ERROR;
- 
+        threadLockContextSwitch();
+        if(evUser->pendlck==0) {
+            firstTry = TRUE;
+            ++evUser->pendlck ;
+        } else {
+            firstTry = FALSE;
+        }
+        threadUnlockContextSwitch();
+        if(!firstTry) return ERROR;
+        taskpri = threadGetPriority(threadGetIdSelf());
   	taskpri += priority_offset;
-
   	evUser->pendexit = FALSE;
-
-  	if(!taskname)
-    		taskname = EVENT_PEND_NAME;
-  	status = 
-    	taskSpawn(	
-		taskname,
-		taskpri,
-		EVENT_PEND_OPT,
-		EVENT_PEND_STACK,
-		event_task,
-		(int)evUser,
-		(int)init_func,
-		(int)init_func_arg,
-		0,0,0,0,0,0,0);
-  	if(status == ERROR)
-    		return ERROR;
-
-  	evUser->taskid = status;
-
+        evUser->init_func = init_func;
+        evUser->init_func_arg = init_func_arg;
+  	if(!taskname) taskname = EVENT_PEND_NAME;
+        evUser->taskid = threadCreate(
+            taskname,taskpri,threadGetStackSize(threadStackMedium),
+            (THREADFUNC)event_task,(void *)evUser);
   	return OK;
 }
 
@@ -781,35 +751,25 @@ int			priority_offset
  * EVENT_TASK()
  *
  */
-int event_task(
-struct event_user	*evUser,
-int			(*init_func)(),
-int			init_func_arg
-)
+void event_task( struct event_user *evUser)
 {
 	int			status;
   	struct event_que	*ev_que;
 
   	/* init hook */
-  	if (init_func) {
-    		status = (*init_func)(init_func_arg);
+  	if (evUser->init_func) {
+    		status = (*evUser->init_func)(evUser->init_func_arg);
 		if (status!=OK) {
-			logMsg("Unable to intialize the event system!\n",
-				NULL,
-				NULL,
-				NULL,
-				NULL,
-				NULL,
-				NULL);
-			semGive(evUser->ppendsem);
+			errlogPrintf("Unable to intialize the event system!\n");
+			semBinaryGive(evUser->ppendsem);
   			evUser->pendexit = TRUE;
 		}
 	}
 
-	taskwdInsert((int)taskIdCurrent,NULL,NULL);
+	taskwdInsert(threadGetIdSelf(),NULL,NULL);
 
   	do{
-		semTake(evUser->ppendsem, WAIT_FOREVER);
+		semBinaryTakeAssert(evUser->ppendsem);
 
 		/*
 		 * check to see if the caller has offloaded
@@ -830,7 +790,6 @@ int			init_func_arg
 			for(	ev_que= &evUser->firstque; 
 				ev_que; 
 				ev_que = ev_que->nextque){
-
 				event_read(ev_que);
 			}
 
@@ -844,13 +803,8 @@ int			init_func_arg
 						evUser->overflow_arg, 
 						evUser->queovr);
 				else
-					logMsg("Events lost, discard count was %d\n",
-						evUser->queovr,
-						NULL,
-						NULL,
-						NULL,
-						NULL,
-						NULL);
+					errlogPrintf("Events lost, discard count was %d\n",
+						evUser->queovr);
 				evUser->queovr = 0;
 			}
 		}
@@ -859,14 +813,7 @@ int			init_func_arg
 
   	evUser->pendlck = FALSE;
 
-	if(FASTLOCKFREE(&evUser->firstque.writelock)<0)
-		logMsg("evtsk: fast lock free fail 1\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
+        semMutexDestroy(evUser->firstque.writelock);
 
   	/* joh- added this code to free additional event queues */
   	{
@@ -876,45 +823,20 @@ int			init_func_arg
     		while(ev_que){ 
 
       			nextque = ev_que->nextque;
-			if(FASTLOCKFREE(&ev_que->writelock)<0)
-				logMsg("evtsk: fast lock free fail 2\n",
-					NULL,
-					NULL,
-					NULL,
-					NULL,
-					NULL,
-					NULL);
+			semMutexDestroy(ev_que->writelock);
 			freeListFree(dbevEventQueueFreeList, ev_que);
  			ev_que = nextque;
    		}
   	}
 
-	status = semDelete(evUser->ppendsem);
-	if(status != OK){
-		logMsg("evtsk: sem delete fail at exit\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
-	}
-	status = semDelete(evUser->pflush_sem);
-	if(status != OK){
-		logMsg("evtsk: flush sem delete fail at exit\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
-	}
+	semBinaryDestroy(evUser->ppendsem);
+	semBinaryDestroy(evUser->pflush_sem);
 
 	freeListFree(dbevEventUserFreeList, evUser);
 
-	taskwdRemove((int)taskIdCurrent);
+	taskwdRemove(threadGetIdSelf());
 
-  	return OK;
+  	return;
 }
 
 
@@ -929,7 +851,6 @@ LOCAL int event_read (struct event_que *ev_que)
 	db_field_log *pfl;
 	void (*user_sub) (void *user_arg, struct dbAddr *paddr, 
 			int eventsRemaining, db_field_log *pfl);
-	int status;
 
 	/*
 	 * evUser ring buffer must be locked for the multiple
@@ -1027,11 +948,7 @@ LOCAL int event_read (struct event_que *ev_que)
 		 * queue
 		 */
 		if (event->user_sub==NULL && event->npend==0u) {
-			status = semGive (ev_que->evUser->pflush_sem);
-			if (status!=OK) {
-				epicsPrintf ("%s.%d corrupt flush sem\n", 
-					__FILE__, __LINE__);
-			}
+			semBinaryGive (ev_que->evUser->pflush_sem);
 		}
   	}
 
@@ -1049,7 +966,7 @@ void db_event_flow_ctrl_mode_on (struct event_user *evUser)
 	/* 
 	 * notify the event handler task
 	 */
-	semGive (evUser->ppendsem);
+	semBinaryGive(evUser->ppendsem);
 #ifdef DEBUG
 	printf("fc on %lu\n", tickGet());
 #endif
@@ -1064,7 +981,7 @@ void db_event_flow_ctrl_mode_off (struct event_user *evUser)
 	/* 
 	 * notify the event handler task
 	 */
-	semGive (evUser->ppendsem);
+	semBinaryGive (evUser->ppendsem);
 #ifdef DEBUG
 	printf("fc off %lu\n", tickGet());
 #endif

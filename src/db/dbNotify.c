@@ -31,26 +31,22 @@
  * .01  03-30-95	mrk	Extracted from dbLink.c
  */
 
-#include	<vxWorks.h>
-#include	<stdlib.h>
-#include	<stdarg.h>
-#include	<stdio.h>
-#include	<string.h>
-#include	<taskLib.h>
-#include	<semLib.h>
-#include	<sysLib.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 
-#include	"dbDefs.h"
-#include	"errlog.h"
-#include	"fast_lock.h"
-#include	"dbBase.h"
-#include	"dbAccess.h"
-#include	"dbStaticLib.h"
-#include	"dbScan.h"
-#include	"dbCommon.h"
-#include	"errMdef.h"
-#include	"ellLib.h"
-#include	"recGbl.h"
+#include "dbDefs.h"
+#include "osiSem.h"
+#include "errlog.h"
+#include "dbBase.h"
+#include "dbAccess.h"
+#include "dbStaticLib.h"
+#include "dbScan.h"
+#include "dbCommon.h"
+#include "errMdef.h"
+#include "ellLib.h"
+#include "recGbl.h"
 
 /*NODE structure attached to ppnn field of each record in list*/
 typedef struct pnWaitNode {
@@ -223,7 +219,7 @@ static void notifyCallback(CALLBACK *pcallback)
 	dbScanUnlock(precord);
 	ppn->restart = FALSE;
 	ppn->callbackState = callbackNotActive;
-	semGive((SEM_ID)ppn->waitForCallback);
+	semBinaryGive((semId)ppn->waitForCallback);
 	return;
     }
     if(ppn->callbackState==callbackActive) {
@@ -251,14 +247,14 @@ void dbNotifyCancel(PUTNOTIFY *ppn)
     dbScanLock(precord);
     notifyCancel(ppn);
     if(ppn->callbackState == callbackActive) {
-	ppn->waitForCallback = (void *)semBCreate(SEM_Q_FIFO,SEM_FULL);
+	ppn->waitForCallback = (void *)semBinaryCreate(semFull);
 	ppn->callbackState = callbackCanceled;
 	dbScanUnlock(precord);
-	if(semTake((SEM_ID)ppn->waitForCallback,sysClkRateGet()*10)!=OK) {
-	    errMessage(0,"dbNotifyCancel had semTake timeout");
+	if(semBinaryTakeTimeout((semId)ppn->waitForCallback,10.0)!=semTakeOK) {
+	    errlogPrintf("dbNotifyCancel had semTake timeout\n");
 	    ppn->callbackState = callbackNotActive;
 	}
-	semDelete((SEM_ID)ppn->waitForCallback);
+	semBinaryDestroy((semId)ppn->waitForCallback);
     } else {
 	dbScanUnlock(precord);
     }

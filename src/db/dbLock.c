@@ -19,15 +19,15 @@ of this distribution.
 
 /************** DISCUSSION OF DYNAMIC LINK MODIFICATION **********************
 
-Since the purpose of lock sets is to prevent multiple tasks from simultaneously
+Since the purpose of lock sets is to prevent multiple thread from simultaneously
 accessing records in set, dynamically changing lock sets presents a problem.
 
 Four problems arise:
 
-1) Two tasks simultaneoulsy trying to change lock sets
-2) Another task has successfully issued a dbScanLock and currently owns it.
-3) A task is waiting for dbScanLock.
-4) While lock set is being changed, a task issues a dbScanLock.
+1) Two threads simultaneoulsy trying to change lock sets
+2) Another thread has successfully issued a dbScanLock and currently owns it.
+3) A thread is waiting for dbScanLock.
+4) While lock set is being changed, a thread issues a dbScanLock.
 
 Solution:
 
@@ -45,59 +45,57 @@ Each problem above is solved as follows:
 1) dbLockGlobal solves this problem.
 2) dbLockSetRecordLock solves this problem.
 3) After changing lock sets original semId id deleted.
-   This makes all tasks in semTake for that semaphore fail.
-   The code in dbScanLock makes task recover.
+   This makes all threads in semTake for that semaphore fail.
+   The code in dbScanLock makes thread recover.
 4) The global variable changingLockSets and code in
    dbScanLock and semFlush in dbLockSetGblUnlock solves
    this problem.
 
-Note that all other tasks are prevented from processing records between
+Note that all other threads are prevented from processing records between
 dbLockSetGblLock and dbLockSetGblUnlock. 
 
 dblsr may crash if executed while lock sets are being modified.
 It is NOT a good idea to make it more robust by issuing dbLockSetGblLock
-since this will delay all other tasks.
+since this will delay all other threads.
 *****************************************************************************/
 
-#include	<vxWorks.h>
-#include	<lstLib.h>
-#include	<stdlib.h>
-#include	<stdarg.h>
-#include	<stdio.h>
-#include	<string.h>
-#include	<semLib.h>
-#include	<tickLib.h>
-#include	<sysLib.h>
-#include	<taskLib.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
-#include	"dbDefs.h"
-#include	"dbBase.h"
-#include	"ellLib.h"
-#include	"dbAccess.h"
-#include	"dbStaticLib.h"
-#include	"dbConvert.h"
-#include	"dbCommon.h"
-#include	"dbLock.h"
-#include	"epicsPrint.h"
-#include	"dbFldTypes.h"
-#include	"errMdef.h"
+#include "dbDefs.h"
+#include "dbBase.h"
+#include "osiSem.h"
+#include "osiClock.h"
+#include "osiThread.h"
+#include "cantProceed.h"
+#include "ellLib.h"
+#include "dbAccess.h"
+#include "dbStaticLib.h"
+#include "dbConvert.h"
+#include "dbCommon.h"
+#include "dbLock.h"
+#include "epicsPrint.h"
+#include "dbFldTypes.h"
+#include "errMdef.h"
 
 #define STATIC static
 
 STATIC int	lockListInitialized = FALSE;
 
 STATIC ELLLIST lockList;
-STATIC SEM_ID	globalLockSemId;
-STATIC SEM_ID	globalWaitSemid;
+STATIC semId	globalLock;
+STATIC semId	globalWait;
 STATIC unsigned long id = 0;
 STATIC int changingLockSets = FALSE;
 
 typedef struct lockSet {
 	ELLNODE		node;
 	ELLLIST		recordList;
-	SEM_ID		semId;
-	ULONG		start_time;
-	int		task_id;
+	semId		lock;
+	unsigned long	start_time;
+	threadId	thread_id;
 	dbCommon	*precord;
 	unsigned long	id;
 } lockSet;
@@ -107,19 +105,16 @@ typedef struct lockRecord {
 	lockSet		*plockSet;
 	dbCommon	*precord;
 } lockRecord;
-#define semMCoptions SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY
 
 /*private routines */
 STATIC void initLockList(void)
 {
     ellInit(&lockList);
-    if((globalLockSemId = semMCreate(semMCoptions))==0) {
-	errMessage(0,"allocLockNode called semMCreate\n");
-	exit(-1);
+    if((globalLock = semMutexCreate())==0) {
+        cantProceed("initLockList failed calling semMutexCreate\n");
     }
-    if((globalWaitSemid = semBCreate(SEM_Q_FIFO,SEM_EMPTY))==0) {
-	errMessage(0,"allocLockNode called semBCreate\n");
-	exit(-1);
+    if((globalWait = semBinaryCreate(semEmpty))==0) {
+        cantProceed("initLockList failed calling semBinaryCreate\n");
     }
     lockListInitialized = TRUE;
 }
@@ -136,9 +131,8 @@ STATIC lockSet * allocLock(lockRecord *plockRecord)
     plockSet->id = id;
     ellAdd(&plockSet->recordList,&plockRecord->node);
     ellAdd(&lockList,&plockSet->node);
-    if((plockSet->semId = semMCreate(semMCoptions))==0) {
-	errMessage(0,"allocLockNode called semMCreate\n");
-	exit(-1);
+    if((plockSet->lock = semMutexCreate())==0) {
+        cantProceed("allocLock calling semMutexCreate\n");
     }
     return(plockSet);
 }
@@ -152,24 +146,18 @@ STATIC void lockAddRecord(lockSet *plockSet,lockRecord *pnew)
 
 void dbLockSetGblLock(void)
 {
-    STATUS	status;
-
     if(!lockListInitialized) initLockList();
-    status = semTake(globalLockSemId,WAIT_FOREVER);
-    if(status!=OK) {
-	epicsPrintf("dbLockSetGblLock failure\n");
-	taskSuspend(0);
-    }
+    semMutexTakeAssert(globalLock);
     changingLockSets = TRUE;
 }
 
 void dbLockSetGblUnlock(void)
 {
-    taskLock();
+    threadLockContextSwitch();
     changingLockSets = FALSE;
-    semFlush(globalWaitSemid);
-    taskUnlock();
-    semGive(globalLockSemId);
+    semBinaryFlush(globalWait);
+    threadUnlockContextSwitch();
+    semMutexGive(globalLock);
     return;
 }
 
@@ -177,32 +165,31 @@ void dbLockSetRecordLock(dbCommon *precord)
 {
     lockRecord	*plockRecord = precord->lset;
     lockSet	*plockSet;
-    STATUS	status;
+    semTakeStatus status;
 
     /*Make sure that dbLockSetGblLock was called*/
     if(!changingLockSets) {
-	epicsPrintf("dbLockSetRecordLock called before dbLockSetGblLock\n");
-	taskSuspend(0);
+        cantProceed("dbLockSetRecordLock called before dbLockSetGblLock\n");
     }
-    /*Must make sure that no other task has lock*/
+    /*Must make sure that no other thread has lock*/
     if(!plockRecord) return;
     plockSet = plockRecord->plockSet;
     if(!plockSet) return;
-    if(plockSet->task_id==taskIdSelf()) return;
+    if(plockSet->thread_id==threadGetIdSelf()) return;
     /*Wait for up to 1 minute*/
-    status = semTake(plockRecord->plockSet->semId,sysClkRateGet()*60);
-    if(status==OK) {
-	plockSet->start_time = tickGet();
-	plockSet->task_id = taskIdSelf();
+    status = semMutexTakeTimeout(plockRecord->plockSet->lock,60.0);
+    if(status==semTakeOK) {
+	plockSet->start_time = clockGetCurrentTick();
+	plockSet->thread_id = threadGetIdSelf();
 	plockSet->precord = (void *)precord;
 	/*give it back in case it will not be changed*/
-	semGive(plockRecord->plockSet->semId);
+	semMutexGive(plockRecord->plockSet->lock);
 	return;
     }
     /*Should never reach this point*/
-    epicsPrintf("dbLockSetRecordLock timeout caller 0x%x owner 0x%x",
-	taskIdSelf(),plockSet->task_id);
-    epicsPrintf(" record %s\n",precord->name);
+    errlogPrintf("dbLockSetRecordLock timeout caller 0x%x owner 0x%x",
+	threadGetIdSelf(),plockSet->thread_id);
+    errlogPrintf(" record %s\n",precord->name);
     return;
 }
 
@@ -210,25 +197,25 @@ void dbScanLock(dbCommon *precord)
 {
     lockRecord	*plockRecord;
     lockSet	*plockSet;
-    STATUS	status;
+    semTakeStatus status;
 
     if(!(plockRecord= precord->lset)) {
 	epicsPrintf("dbScanLock plockRecord is NULL record %s\n",
 	    precord->name);
-	taskSuspend(0);
+	threadSuspend(threadGetIdSelf());
     }
     while(TRUE) {
 	if(changingLockSets) {
-	    semTake(globalWaitSemid,WAIT_FOREVER);
+	    semBinaryTakeAssert(globalWait);
 	    continue;
 	}
-	status = semTake(plockRecord->plockSet->semId,WAIT_FOREVER);
-	/*semTake fails if semDelete was called while active*/
-	if(status==OK) break;
+	status = semMutexTake(plockRecord->plockSet->lock);
+	/*semMutexTake fails if semMutexDestroy was called while active*/
+	if(status==semTakeOK) break;
     }
     plockSet = plockRecord->plockSet;
-    plockSet->start_time = tickGet();
-    plockSet->task_id = taskIdSelf();
+    plockSet->start_time = clockGetCurrentTick();
+    plockSet->thread_id = threadGetIdSelf();
     plockSet->precord = (void *)precord;
     return;
 }
@@ -241,7 +228,7 @@ void dbScanUnlock(dbCommon *precord)
 	epicsPrintf("dbScanUnlock plockRecord or plockRecord->plockSet NULL\n");
 	return;
     }
-    semGive(plockRecord->plockSet->semId);
+    semMutexGive(plockRecord->plockSet->lock);
     return;
 }
 
@@ -347,10 +334,7 @@ void dbLockSetMerge(dbCommon *pfirst,dbCommon *psecond)
 	p2lockRecord = (lockRecord *)ellNext(&p2lockRecord->node);
     }
     ellConcat(&p1lockSet->recordList,&p2lockSet->recordList);
-    if(semDelete(p2lockSet->semId)!=OK) {
-	errMessage(0,"dbLockSetMerge calling semDelete");
-	taskSuspend(0);
-    }
+    semMutexDestroy(p2lockSet->lock);
     ellDelete(&lockList,&p2lockSet->node);
     free((void *)p2lockSet);
     return;
@@ -409,10 +393,7 @@ void dbLockSetSplit(dbCommon *psource)
 	}
 	if(!plockRecord->plockSet) allocLock(plockRecord);
     }
-    if(semDelete(plockSet->semId)!=OK) {
-	errMessage(0,"dbLockSetSplit calling semDelete");
-	taskSuspend(0);
-    }
+    semMutexDestroy(plockSet->lock);
     ellDelete(&lockList,&plockSet->node);
     free((void *)plockSet);
     free((void *)paprecord);
@@ -453,14 +434,14 @@ long dblsr(char *recordname,int level)
 
 	printf("Lock Set %lu %d members",
 	    plockSet->id,ellCount(&plockSet->recordList));
-	if(semTake(plockSet->semId,NO_WAIT)==OK) {
-	    semGive(plockSet->semId);
+	if(semMutexTakeNoWait(plockSet->lock)==semTakeOK) {
+	    semMutexGive(plockSet->lock);
 	    printf(" Not Locked\n");
 	} else {
 	    lockSeconds = plockSet->start_time;
-	    lockSeconds = (tickGet() - lockSeconds) / sysClkRateGet();
+	    lockSeconds = (clockGetCurrentTick() - lockSeconds) / clockGetRate();
 	    printf(" Locked %f seconds", lockSeconds);
-	    printf(" task 0x%x",plockSet->task_id);
+	    printf(" thread %p",plockSet->thread_id);
 	    if(! plockSet->precord || !plockSet->precord->name)
 		printf(" NULL record or record name\n");
 	    else

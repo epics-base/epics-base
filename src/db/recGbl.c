@@ -41,23 +41,23 @@
  * .11  03-21-94        mcn     Added fast link routines
  */
 
-#include	<vxWorks.h>
-#include	<limits.h>
-#include	<types.h>
-#include	<stdioLib.h>
-#include	<strLib.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <limits.h>
 
-#include	"dbDefs.h"
-#include	"epicsPrint.h"
-#include	"dbBase.h"
-#include	"dbEvent.h"
-#include	"dbAccess.h"
-#include	"dbConvert.h"
-#include	"dbScan.h"
-#include	"devSup.h"
-#include	"recGbl.h"
-#include	"dbCommon.h"
-#include	"drvTS.h"
+#include "dbDefs.h"
+#include "osiClock.h"
+#include "epicsPrint.h"
+#include "dbBase.h"
+#include "dbEvent.h"
+#include "dbAccess.h"
+#include "dbConvert.h"
+#include "dbScan.h"
+#include "devSup.h"
+#include "recGbl.h"
+#include "dbCommon.h"
 
 
 /* local routines */
@@ -313,10 +313,10 @@ void recGblGetTimeStamp(void* prec)
     if(pr->tsel.type!=CONSTANT)
     {
         dbGetLink(&(pr->tsel), DBR_SHORT,&(pr->tse),0,0);
-        TSgetTimeStamp((int)pr->tse,(struct timespec*)&pr->time);
+        clockGetEventTime((int)pr->tse,&pr->time);
     }
     else
-        TSgetTimeStamp((int)pr->tse,(struct timespec*)&pr->time);
+        clockGetEventTime((int)pr->tse,&pr->time);
 }
 
 

@@ -19,10 +19,6 @@ of this distribution.
  * .03	02-23-94	mrk	dbPutString to DEV_CHOICE. Ok if no INP or OUT
  */
 
-#ifdef vxWorks
-#include <vxWorks.h>
-#include <taskLib.h>
-#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>
@@ -30,6 +26,7 @@ of this distribution.
 #include <math.h>
 #include <ctype.h>
 
+#include "cantProceed.h"
 #define DBFLDTYPES_GBLSOURCE
 #define GUIGROUPS_GBLSOURCE
 #define SPECIAL_GBLSOURCE
@@ -527,29 +524,15 @@ void * epicsShareAPI dbCalloc(size_t nobj,size_t size)
 {
     void *p;
 
-    p=calloc(nobj,size);
-    if(p) return(p);
-    printf("dbCalloc: Can't allocate memory\n");
-#ifdef vxWorks
-    taskSuspend(0);
-#else
-    abort();
-#endif
-    return(NULL);
+    p=callocMustSucceed(nobj,size,"dbCalloc");
+    return(p);
 }
 void * epicsShareAPI dbMalloc(size_t size)
 {
     void *p;
 
-    p=malloc(size);
-    if(p) return(p);
-    printf("dbMalloc: Can't allocate memory\n");
-#ifdef vxWorks
-    taskSuspend(0);
-#else
-    abort();
-#endif
-    return(NULL);
+    p=mallocMustSucceed(size,"dbMalloc");
+    return(p);
 }
 
 #define INC_SIZE	256
@@ -2096,7 +2079,7 @@ long epicsShareAPI dbPutString(DBENTRY *pdbentry,char *pstring)
 		    status = putPvLink(pdbentry,ppOpt|msOpt,pstr);
 		    goto done;
 		}
-		break;
+		/*break; is unnecessary*/
 	    case VME_IO: {
 	    	    char	*end;
 

@@ -3,31 +3,20 @@
 /*
  *      Author:          Matthew Needes
  *      Date:            8-30-93
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
+*/
+
+/********************COPYRIGHT NOTIFICATION**********************************
+This software was developed under a United States Government license
+described on the COPYRIGHT_UniversityOfChicago file included as part
+of this distribution.
+****************************************************************************/
+
+/* Modification Log:
  * -----------------
  *  $Log$
+ *  Revision 1.9  1998/01/20 16:19:48  mrk
+ *  Fix include statements
+ *
  *  Revision 1.8  1996/08/05 19:33:40  jhill
  *  removed ; from if
  *
@@ -66,35 +55,31 @@
 
 /* #define BKPT_DIAG */
 
-#include	<vxWorks.h>
-#include	<lstLib.h>
-#include	<types.h>
-#include	<memLib.h>
-#include	<stdarg.h>
-#include	<stdioLib.h>
-#include	<string.h>
-#include	<taskLib.h>
-#include	<vxLib.h>
-#include	<tickLib.h>
-#include	<sysLib.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
 
-#include	"dbDefs.h"
-#include	"errlog.h"
-#include	"fast_lock.h"
-#include	"alarm.h"
-#include	"dbBase.h"
-#include	"dbAccess.h"
-#include	"dbScan.h"
-#include	"dbCommon.h"
-#include	"dbLock.h"
-#include	"dbFldTypes.h"
-#include	"dbBkpt.h"
-#include	"db_field_log.h"
-#include	"errMdef.h"
-#include	"recSup.h"
-#include	"recGbl.h"
-#include	"special.h"
-#include        "task_params.h"
+#include "dbDefs.h"
+#include "osiClock.h"
+#include "osiThread.h"
+#include "osiSem.h"
+#include "ellLib.h"
+#include "errlog.h"
+#include "alarm.h"
+#include "dbBase.h"
+#include "dbAccess.h"
+#include "dbScan.h"
+#include "dbCommon.h"
+#include "dbLock.h"
+#include "dbFldTypes.h"
+#include "dbBkpt.h"
+#include "db_field_log.h"
+#include "errMdef.h"
+#include "recSup.h"
+#include "recGbl.h"
+#include "special.h"
 
 /* private routines */
 static void dbBkptCont();
@@ -176,8 +161,8 @@ long lset_stack_not_empty = 0;
  *    The semaphore is used to prevent conflicts while
  *    operating with this stack.
  */
-static LIST lset_stack;
-static SEM_ID bkpt_stack_sem;
+static ELLLIST lset_stack;
+static semId bkpt_stack_sem;
 
 /*
  *  Stores the last lockset continued or stepped from.
@@ -194,10 +179,10 @@ static unsigned long last_lset = 0;
  *    is returned in "pnode."
  */
 #define FIND_LOCKSET(precord, pnode) \
-  pnode = (struct LS_LIST *) lstFirst(&lset_stack); \
+  pnode = (struct LS_LIST *) ellFirst(&lset_stack); \
   while ((pnode) != NULL) { \
      if (pnode->l_num == dbLockGetLockId(precord)) break; \
-     pnode = (struct LS_LIST *) lstNext((NODE *)pnode); \
+     pnode = (struct LS_LIST *) ellNext((ELLNODE *)pnode); \
   } \
 
 /*
@@ -208,10 +193,10 @@ static unsigned long last_lset = 0;
  *     being searched for in *pep_queue.
  */
 #define FIND_QUEUE_ENTRY(pep_queue, pqe, precord) \
-  pqe = (struct EP_LIST *) lstFirst(pep_queue); \
+  pqe = (struct EP_LIST *) ellFirst(pep_queue); \
   while ((pqe) != NULL) { \
      if ((pqe)->entrypoint == (precord)) break; \
-     pqe = (struct EP_LIST *) lstNext((NODE *)pqe); \
+     pqe = (struct EP_LIST *) ellNext((ELLNODE *)pqe); \
   } \
 
 /*
@@ -233,13 +218,13 @@ static long FIND_CONT_NODE(
      *  Search through stack, taking the first entry that
      *    is currently stopped at a breakpoint.
      */
-     pnode = (struct LS_LIST *) lstFirst(&lset_stack); 
+     pnode = (struct LS_LIST *) ellFirst(&lset_stack); 
      while (pnode != NULL) {
         if (pnode->precord != NULL) {
            precord = pnode->precord;
            break;
         }
-        pnode = (struct LS_LIST *) lstNext((NODE *)pnode);
+        pnode = (struct LS_LIST *) ellNext((ELLNODE *)pnode);
      }
   
      if (pnode == NULL) {
@@ -315,17 +300,17 @@ long dbb(char *record_name)
   */
   if (! lset_stack_not_empty) {
     /* initialize list and semaphore */
-     bkpt_stack_sem = semBCreate(SEM_Q_FIFO, SEM_FULL);
-     if (bkpt_stack_sem == NULL) {
+     bkpt_stack_sem = semMutexCreate();
+     if (bkpt_stack_sem == 0) {
         printf("   BKPT> Out of memory\n");
         dbScanUnlock(precord);
         return(1);
      }
-     lstInit(&lset_stack);
+     ellInit(&lset_stack);
      lset_stack_not_empty = 1;
   }
 
-  semTake(bkpt_stack_sem, WAIT_FOREVER);
+  semMutexTakeAssert(bkpt_stack_sem);
 
   FIND_LOCKSET(precord, pnode);
 
@@ -335,30 +320,30 @@ long dbb(char *record_name)
      if (pnode == NULL) {
         printf("   BKPT> Out of memory\n");
         dbScanUnlock(precord);
-        semGive(bkpt_stack_sem);
+        semMutexGive(bkpt_stack_sem);
         return(1);
      }
      pnode->precord = NULL;
 
     /* initialize breakpoint list */
-     lstInit(&pnode->bp_list);
+     ellInit(&pnode->bp_list);
 
     /* initialize entry point queue */
-     lstInit(&pnode->ep_queue);
+     ellInit(&pnode->ep_queue);
 
     /* create execution semaphore */
-     pnode->ex_sem = semBCreate(SEM_Q_FIFO, SEM_EMPTY);
+     pnode->ex_sem = semBinaryCreate(semEmpty);
      if (pnode->ex_sem == NULL) {
         printf("   BKPT> Out of memory\n");
         dbScanUnlock(precord);
-        semGive(bkpt_stack_sem);
+        semMutexGive(bkpt_stack_sem);
         return(1);
      }
 
      pnode->taskid   = 0;
      pnode->step     = 0;
      pnode->l_num    = dbLockGetLockId(precord);
-     lstAdd(&lset_stack, (NODE *)pnode);
+     ellAdd(&lset_stack, (ELLNODE *)pnode);
   }
 
  /*
@@ -368,11 +353,11 @@ long dbb(char *record_name)
   if (pbl == NULL) {
      printf("  BKPT> Out of memory\n");
      dbScanUnlock(precord);
-     semGive(bkpt_stack_sem);
+     semMutexGive(bkpt_stack_sem);
      return(1);
   }
   pbl->precord = precord; 
-  lstAdd(&pnode->bp_list, (NODE *)pbl);
+  ellAdd(&pnode->bp_list, (ELLNODE *)pbl);
 
  /*
   *  Turn on breakpoint field in record
@@ -387,20 +372,19 @@ long dbb(char *record_name)
     /*
      *  Spawn continuation task
      */
-     pnode->taskid = taskSpawn(BKPT_CONT_NAME, PERIODSCAN_PRI, BKPT_CONT_OPT,
-                   BKPT_CONT_STACK, (FUNCPTR) dbBkptCont,(int) precord,
-                   0,0,0,0,0,0,0,0,0);
-
-     if (pnode->taskid == ERROR) {
+     pnode->taskid = threadCreate("bkptCont",threadPriorityScanLow-1,
+         threadGetStackSize(threadStackBig),
+         (THREADFUNC)dbBkptCont,precord);
+     if (pnode->taskid == 0) {
         printf("   BKPT> Cannot spawn task to process record\n");
         pnode->taskid = 0;
         dbScanUnlock(precord);
-        semGive(bkpt_stack_sem);
+        semMutexGive(bkpt_stack_sem);
         return(1);
      }
   }
 
-  semGive(bkpt_stack_sem);
+  semMutexGive(bkpt_stack_sem);
   dbScanUnlock(precord);
   return(0);
 }
@@ -439,7 +423,7 @@ long dbd(char *record_name)
 
   dbScanLock(precord);
 
-  semTake(bkpt_stack_sem, WAIT_FOREVER);
+  semMutexTakeAssert(bkpt_stack_sem);
 
   FIND_LOCKSET(precord, pnode);
 
@@ -448,7 +432,7 @@ long dbd(char *record_name)
      printf("   BKPT> Logic Error in dbd()\n");
      precord->bkpt &= BKPT_OFF_MASK;
 
-     semGive(bkpt_stack_sem);
+     semMutexGive(bkpt_stack_sem);
      dbScanUnlock(precord);
      return(S_db_bkptLogic);
   }
@@ -458,20 +442,20 @@ long dbd(char *record_name)
   */
 
  /* find record in list */
-  pbl = (struct BP_LIST *) lstFirst(&pnode->bp_list);
+  pbl = (struct BP_LIST *) ellFirst(&pnode->bp_list);
   while (pbl != NULL) {
      if (pbl->precord == precord) {
-         lstDelete(&pnode->bp_list, (NODE *)pbl);
+         ellDelete(&pnode->bp_list, (ELLNODE *)pbl);
          free(pbl);
          break;
      }
-     pbl = (struct BP_LIST *) lstNext((NODE *)pbl);
+     pbl = (struct BP_LIST *) ellNext((ELLNODE *)pbl);
   }
 
   if (pbl == NULL) {
      printf("   BKPT> Logic Error in dbd()\n"); 
      precord->bkpt &= BKPT_OFF_MASK;
-     semGive(bkpt_stack_sem);
+     semMutexGive(bkpt_stack_sem);
      dbScanUnlock(precord);
      return(S_db_bkptLogic);
   }
@@ -485,10 +469,10 @@ long dbd(char *record_name)
   *  If there are no more breakpoints, give up semaphore
   *    to cause the bkptCont task to quit.
   */
-  if (lstCount(&pnode->bp_list) == 0)
-     semGive(pnode->ex_sem);
+  if (ellCount(&pnode->bp_list) == 0)
+     semBinaryGive(pnode->ex_sem);
 
-  semGive(bkpt_stack_sem);
+  semMutexGive(bkpt_stack_sem);
 
   dbScanUnlock(precord);
   return(0);
@@ -506,11 +490,11 @@ long dbc(char *record_name)
   struct dbCommon *precord = NULL;
   long status = 0;
 
-  semTake(bkpt_stack_sem, WAIT_FOREVER);
+  semMutexTakeAssert(bkpt_stack_sem);
 
   status = FIND_CONT_NODE(record_name, &pnode, &precord);
   if (status) {
-     semGive(bkpt_stack_sem);
+     semMutexGive(bkpt_stack_sem);
      return(status);
   }
 
@@ -529,13 +513,8 @@ long dbc(char *record_name)
   *    for a record with a breakpoint.  This occurs
   *    because stepping mode has been switched off.
   */
-  if (taskResume(pnode->taskid) == ERROR) {
-      printf("   BKPT> Cannot continue\n");
-      semGive(bkpt_stack_sem);
-      return(S_db_cntCont);
-  }
-
-  semGive(bkpt_stack_sem);
+  threadResume(pnode->taskid);
+  semMutexGive(bkpt_stack_sem);
   return(0);
 }
 
@@ -550,11 +529,11 @@ long dbs(char *record_name)
   struct dbCommon *precord = NULL;
   long status = 0;
 
-  semTake(bkpt_stack_sem, WAIT_FOREVER);
+  semMutexTakeAssert(bkpt_stack_sem);
 
   status = FIND_CONT_NODE(record_name, &pnode, &precord);
   if (status) {
-     semGive(bkpt_stack_sem);
+     semMutexGive(bkpt_stack_sem);
      return(status);
   }
 
@@ -563,13 +542,8 @@ long dbs(char *record_name)
 
   last_lset = pnode->l_num;
 
-  if (taskResume(pnode->taskid) == ERROR) {
-      printf("   BKPT> Cannot step\n");
-      semGive(bkpt_stack_sem);
-      return(S_db_cntCont);
-  }
-
-  semGive(bkpt_stack_sem);
+  threadResume(pnode->taskid);
+  semMutexGive(bkpt_stack_sem);
   return(0);
 }
 
@@ -591,7 +565,7 @@ static void dbBkptCont(struct dbCommon *precord)
   *  Reset breakpoint, process record, and
   *    reset bkpt field in record
   */
-  semTake(bkpt_stack_sem, WAIT_FOREVER);
+  semMutexTakeAssert(bkpt_stack_sem);
 
   FIND_LOCKSET(precord, pnode);
 
@@ -607,15 +581,15 @@ static void dbBkptCont(struct dbCommon *precord)
   */
   do {
    /* Give up semaphore before waiting to run ... */
-    semGive(bkpt_stack_sem);
+    semMutexGive(bkpt_stack_sem);
 
    /* Wait to run */
-    semTake(pnode->ex_sem, WAIT_FOREVER);
+    semBinaryTakeAssert(pnode->ex_sem);
 
    /* Bkpt stack must still be stable ! */
-    semTake(bkpt_stack_sem, WAIT_FOREVER);
+    semMutexTakeAssert(bkpt_stack_sem);
 
-    pqe = (struct EP_LIST *) lstFirst(&pnode->ep_queue);
+    pqe = (struct EP_LIST *) ellFirst(&pnode->ep_queue);
 
    /* Run through entrypoint queue */
     while (pqe != NULL) {
@@ -633,22 +607,22 @@ static void dbBkptCont(struct dbCommon *precord)
               pqe->sched = 0;
               pnode->step = 0;
          }
-         pqe = (struct EP_LIST *) lstNext((NODE *)pqe);
+         pqe = (struct EP_LIST *) ellNext((ELLNODE *)pqe);
     }
 
    /* Reset precord. (Since no records are at a breakpoint) */
     pnode->precord = NULL;
   }
-  while (lstCount(&pnode->bp_list) != 0);
+  while (ellCount(&pnode->bp_list) != 0);
 
  /* remove node from lockset stack */
-  lstDelete(&lset_stack, (NODE *)pnode);
+  ellDelete(&lset_stack, (ELLNODE *)pnode);
 
  /* free entrypoint queue */
-  lstFree(&pnode->ep_queue);
+  ellFree(&pnode->ep_queue);
 
  /* remove execution semaphore */
-  semDelete(pnode->ex_sem);
+  semBinaryDestroy(pnode->ex_sem);
 
   printf("\n   BKPT> End debug of lockset %lu\n-> ", pnode->l_num);
 
@@ -656,14 +630,14 @@ static void dbBkptCont(struct dbCommon *precord)
   free(pnode);
 
  /* if last node on stack ... */
-  if (lstCount(&lset_stack) == 0) {
+  if (ellCount(&lset_stack) == 0) {
       /* Unset flag, delete stack semaphore */
        lset_stack_not_empty = 0;
-       semDelete(bkpt_stack_sem);
+       semMutexDestroy(bkpt_stack_sem);
   }
 
   if (lset_stack_not_empty)
-     semGive(bkpt_stack_sem);
+     semMutexGive(bkpt_stack_sem);
 }
 
 /*
@@ -699,9 +673,9 @@ int dbBkpt(struct dbCommon *precord)
   *	goodness breakpoint checking is turned off during
   *	normal operation.
   */
-  semTake(bkpt_stack_sem, WAIT_FOREVER);
+  semMutexTakeAssert(bkpt_stack_sem);
   FIND_LOCKSET(precord, pnode);
-  semGive(bkpt_stack_sem);
+  semMutexGive(bkpt_stack_sem);
 
   if (pnode == NULL) {
     /* no breakpoints in precord's lockset */
@@ -730,7 +704,7 @@ int dbBkpt(struct dbCommon *precord)
   *    source, queue its execution, but dump out of dbProcess without
   *    calling record support. 
   */
-  if (pnode->taskid && (taskIdSelf() != pnode->taskid)) {
+  if (pnode->taskid && (threadGetIdSelf() != pnode->taskid)) {
     /* CONTINUE TASK CANNOT ENTER HERE */
 
     /*
@@ -748,7 +722,7 @@ int dbBkpt(struct dbCommon *precord)
 
         pqe->entrypoint = precord;
         pqe->count = 1;
-        pqe->time = tickGet();
+        pqe->time = clockGetCurrentTick();
         pqe->sched = 0;
 
 #ifdef BKPT_DIAG
@@ -758,12 +732,12 @@ int dbBkpt(struct dbCommon *precord)
        /*
         *  Take semaphore, wait on continuation task
         */
-        semTake(bkpt_stack_sem, WAIT_FOREVER);
+        semMutexTakeAssert(bkpt_stack_sem);
 
        /* Add entry to queue */
-        lstAdd(&pnode->ep_queue, (NODE *)pqe);
+        ellAdd(&pnode->ep_queue, (ELLNODE *)pqe);
 
-        semGive(bkpt_stack_sem);
+        semMutexGive(bkpt_stack_sem);
      }
      else {
         if (pqe->count < MAX_EP_COUNT)
@@ -779,7 +753,7 @@ int dbBkpt(struct dbCommon *precord)
         *  Release the semaphore, letting the continuation
         *     task begin execution of the new entrypoint.
         */ 
-        semGive(pnode->ex_sem);
+        semBinaryGive(pnode->ex_sem);
      }
      return(1);
   }
@@ -814,8 +788,8 @@ int dbBkpt(struct dbCommon *precord)
       pnode->precord = precord;
 
      /* Move current lockset to top of stack */
-      lstDelete(&lset_stack, (NODE *)pnode);
-      lstInsert(&lset_stack, NULL, (NODE *)pnode);
+      ellDelete(&lset_stack, (ELLNODE *)pnode);
+      ellInsert(&lset_stack, NULL, (ELLNODE *)pnode);
      /*
       *  Unlock database while the task suspends itself.  This
       *   is done so that dbb() dbd() dbc() dbs() may be used
@@ -825,11 +799,11 @@ int dbBkpt(struct dbCommon *precord)
       *   continue to be processed.  Cross your fingers, this
       *   might actually work !
       */
-      semGive(bkpt_stack_sem);
+      semMutexGive(bkpt_stack_sem);
       dbScanUnlock(precord);
-      taskSuspend(pnode->taskid);
+      threadSuspend(pnode->taskid);
       dbScanLock(precord);
-      semTake(bkpt_stack_sem, WAIT_FOREVER);
+      semMutexTakeAssert(bkpt_stack_sem);
    }
    return(0);
 }
@@ -860,19 +834,19 @@ long dbp(char *record_name, int interest_level)
   struct dbCommon *precord;
   int status;
 
-  semTake(bkpt_stack_sem, WAIT_FOREVER);
+  semMutexTakeAssert(bkpt_stack_sem);
 
  /* find pnode and precord pointers */
   status = FIND_CONT_NODE(record_name, &pnode, &precord);
   if (status) {
-     semGive(bkpt_stack_sem);
+     semMutexGive(bkpt_stack_sem);
      return(status);
   }
 
  /* print out record's fields */
   dbpr(precord->name, (interest_level == 0) ? 2 : interest_level);
 
-  semGive(bkpt_stack_sem);
+  semMutexGive(bkpt_stack_sem);
   return(0);
 }
 
@@ -916,40 +890,40 @@ long dbstat()
   struct EP_LIST *pqe;
   unsigned long time;
 
-  semTake(bkpt_stack_sem, WAIT_FOREVER);
+  semMutexTakeAssert(bkpt_stack_sem);
 
-  time = tickGet();
+  time = clockGetCurrentTick();
 
  /*
   *  Traverse list, reporting stopped records
   */
-  pnode = (struct LS_LIST *) lstFirst(&lset_stack);
+  pnode = (struct LS_LIST *) ellFirst(&lset_stack);
   while (pnode != NULL) {
     if (pnode->precord != NULL) {
 
-       printf("LSet: %lu  Stopped at: %-28.28s  #B: %5.5d  T: 0x%7.7x\n",
-             pnode->l_num, pnode->precord->name, lstCount(&pnode->bp_list), pnode->taskid);
+       printf("LSet: %lu  Stopped at: %-28.28s  #B: %5.5d  T: %p\n",
+             pnode->l_num, pnode->precord->name, ellCount(&pnode->bp_list), pnode->taskid);
 
       /* for each entrypoint detected, print out entrypoint statistics */
-       pqe = (struct EP_LIST *) lstFirst(&pnode->ep_queue); 
+       pqe = (struct EP_LIST *) ellFirst(&pnode->ep_queue); 
        while (pqe != NULL) {
           if (time - pqe->time) {
              printf("             Entrypoint: %-28.28s  #C: %5.5lu  C/S: %7.1f\n",
                  pqe->entrypoint->name, pqe->count,
-                 vxTicksPerSecond * pqe->count/((double)(time-pqe->time)));
+                 clockGetRate() * pqe->count/((double)(time-pqe->time)));
           }
-          pqe = (struct EP_LIST *) lstNext((NODE *)pqe);
+          pqe = (struct EP_LIST *) ellNext((ELLNODE *)pqe);
        }
     }
     else {
-       printf("LSet: %lu                                            #B: %5.5d  T: 0x%7.7x\n",
-         pnode->l_num, lstCount(&pnode->bp_list), pnode->taskid);
+       printf("LSet: %lu                                            #B: %5.5d  T: %p\n",
+         pnode->l_num, ellCount(&pnode->bp_list), pnode->taskid);
     }
 
    /*
     *  Print out breakpoints set in the lock set
     */
-    pbl = (struct BP_LIST *) lstFirst(&pnode->bp_list);
+    pbl = (struct BP_LIST *) ellFirst(&pnode->bp_list);
     while (pbl != NULL) {
         printf("             Breakpoint: %-28.28s", pbl->precord->name);
 
@@ -959,13 +933,13 @@ long dbstat()
         else
            printf("\n");
 
-        pbl = (struct BP_LIST *) lstNext((NODE *)pbl);
+        pbl = (struct BP_LIST *) ellNext((ELLNODE *)pbl);
     }
 
-    pnode = (struct LS_LIST *) lstNext((NODE *)pnode);
+    pnode = (struct LS_LIST *) ellNext((ELLNODE *)pnode);
   }
 
-  semGive(bkpt_stack_sem);
+  semMutexGive(bkpt_stack_sem);
   return(0);
 }
 
@@ -1001,7 +975,7 @@ long dbprc(char *record_name)
 /* Reset breakpoints */
 int dbreset()
 {
-  semGive(bkpt_stack_sem);
+  semMutexGive(bkpt_stack_sem);
 
   return(0);
 }

@@ -314,11 +314,6 @@ long dbPutStringNum(DBENTRY *pdbentry,char *pstring)
     return(0);
 }
 
-void dbGetRecordtypeSizeOffset(dbRecordType *pdbRecordType)
-{ /*For no run cant and dont need to set size and offset*/
-    return;
-}
-
 int epicsShareAPI dbGetMenuIndex(DBENTRY *pdbentry)
 {
     dbFldDes  	*pflddes = pdbentry->pflddes;

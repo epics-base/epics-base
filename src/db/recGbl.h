@@ -32,11 +32,7 @@
 #define INCrecGblh 1
 
 
-#ifdef vxWorks
-#ifndef INCdbCommonh
 #include <dbCommon.h>
-#endif
-#endif
 
 /*
  *  One ABSOLUTELY must include dbAccess.h before the
@@ -51,15 +47,6 @@
 #endif
 #include <dbFldTypes.h>
 
-/*************************************************************************
- * The following must match definitions in global menu definitions
- *************************************************************************/
-
-/* GBL_IVOA */
-#define IVOA_CONTINUE         0
-#define IVOA_NO_OUTPUT        1
-#define IVOA_OUTPUT_IVOV      2
-
 /*************************************************************************/
 
 #define recGblSetSevr(PREC,NSTA,NSEV) \

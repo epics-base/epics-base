@@ -42,47 +42,46 @@
  * .12  05-02-96	mrk	Allow multiple priority event scan 
  */
 
-#include	<vxWorks.h>
-#include	<stdlib.h>
-#include	<stdio.h>
-#include 	<string.h>
-#include	<semLib.h>
-#include 	<rngLib.h>
-#include 	<ellLib.h>
-#include 	<vxLib.h>
-#include 	<tickLib.h>
-#include 	<sysLib.h>
-#include 	<intLib.h>
-#include 	<math.h>
+#include <stdlib.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <string.h>
+#include <limits.h>
+#include <math.h>
 
-#include	"dbDefs.h"
-#include	"epicsPrint.h"
-#include	"dbBase.h"
-#include	"dbStaticLib.h"
-#include	"dbAccess.h"
-#include	"dbScan.h"
-#include	"taskwd.h"
-#include	"callback.h"
-#include	"dbBase.h"
-#include	"dbCommon.h"
-#include	"dbLock.h"
-#include	"devSup.h"
-#include	"recGbl.h"
-#include	"task_params.h"
-#include	"fast_lock.h"
-#include	"dbStaticLib.h"
+#include "dbDefs.h"
+#include "ellLib.h"
+#include "osiSem.h"
+#include "osiInterrupt.h"
+#include "osiThread.h"
+#include "osiClock.h"
+#include "cantProceed.h"
+#include "osiRing.h"
+#include "epicsPrint.h"
+#include "dbBase.h"
+#include "dbStaticLib.h"
+#include "dbAccess.h"
+#include "dbScan.h"
+#include "taskwd.h"
+#include "callback.h"
+#include "dbBase.h"
+#include "dbCommon.h"
+#include "dbLock.h"
+#include "devSup.h"
+#include "recGbl.h"
+#include "dbStaticLib.h"
 
 extern struct dbBase *pdbbase;
 
 /* SCAN ONCE */
 int onceQueueSize = 1000;
-static SEM_ID onceSem;
-static RING_ID onceQ;
-static int onceTaskId;
+static semId onceSem;
+static ringId onceQ;
+static threadId onceTaskId;
 
 /*all other scan types */
 typedef struct scan_list{
-	FAST_LOCK	lock;
+	semId	lock;
 	ELLLIST		list;
 	short		modified;/*has list been modified?*/
 	long		ticks;	/*ticks per period for periodic*/
@@ -117,12 +116,12 @@ static io_scan_list *iosl_head[NUM_CALLBACK_PRIORITIES]={NULL,NULL,NULL};
 /* PERIODIC SCANNER */
 static int nPeriodic=0;
 static scan_list **papPeriodic; /* pointer to array of pointers*/
-static int *periodicTaskId;		/*array of integers after allocation*/
+static void **periodicTaskId;		/*array of pointers after allocation*/
 
 /* Private routines */
 static void onceTask(void);
 static void initOnce(void);
-static void periodicTask(scan_list *psl);
+static void periodicTask(void *arg);
 static void initPeriodic(void);
 static void spawnPeriodic(int ind);
 static void wdPeriodic(long ind);
@@ -323,7 +322,7 @@ int scanppl(double rate)	/*print periodic list*/
 	psl = papPeriodic[i];
 	if(psl==NULL) continue;
 	period = psl->ticks;
-	period /= vxTicksPerSecond;
+	period /= clockGetRate();
 	if(rate>0.0 && (fabs(rate - period) >.05)) continue;
 	sprintf(message,"Scan Period= %f seconds ",period);
 	printList(psl,message);
@@ -422,7 +421,7 @@ void scanIoInit(IOSCANPVT *ppioscanpvt)
 	callbackSetPriority(priority,&piosl->callback);
 	callbackSetUser(piosl,&piosl->callback);
 	ellInit(&piosl->scan_list.list);
-	FASTLOCKINIT(&piosl->scan_list.lock);
+        piosl->scan_list.lock = semMutexCreate();
 	piosl->next=iosl_head[priority];
 	iosl_head[priority]=piosl;
     }
@@ -448,16 +447,16 @@ void scanOnce(void *precord)
     int lockKey;
     int nput;
 
-    lockKey = intLock();
-    nput = rngBufPut(onceQ,(void *)&precord,sizeof(precord));
-    intUnlock(lockKey);
+    lockKey = interruptLock();
+    nput = ringPut(onceQ,(char *)&precord,sizeof(precord));
+    interruptUnlock(lockKey);
     if(nput!=sizeof(precord)) {
 	if(newOverflow)errMessage(0,"rngBufPut overflow in scanOnce");
 	newOverflow = FALSE;
     }else {
 	newOverflow = TRUE;
     }
-    semGive(onceSem);
+    semBinaryGive(onceSem);
 }
 
 static void onceTask(void)
@@ -465,10 +464,12 @@ static void onceTask(void)
     void *precord=NULL;
 
     while(TRUE) {
-	if(semTake(onceSem,WAIT_FOREVER)!=OK)
-	    errMessage(0,"dbScan: semTake returned error in onceTask");
-	while (rngNBytes(onceQ)>=sizeof(precord)){
-	    if(rngBufGet(onceQ,(void *)&precord,sizeof(precord))!=sizeof(precord))
+	if(semBinaryTake(onceSem)!=semTakeOK)
+	    errlogPrintf("dbScan: semBinaryTake returned error in onceTask");
+        while(TRUE) {
+            int nbytes = ringGet(onceQ,(void *)&precord,sizeof(precord));
+            if(nbytes==0) break;
+	    if(nbytes!=sizeof(precord))
 		errMessage(0,"dbScan: rngBufGet returned error in onceTask");
 	    dbScanLock(precord);
 	    dbProcess(precord);
@@ -485,32 +486,38 @@ int scanOnceSetQueueSize(int size)
 
 static void initOnce(void)
 {
-    if((onceQ = rngCreate(sizeof(void *) * onceQueueSize))==NULL){
-	errMessage(0,"dbScan: initOnce failed");
-	exit(1);
+    if((onceQ = ringCreate(sizeof(void *) * onceQueueSize))==NULL){
+        cantProceed("dbScan: initOnce failed");
     }
-    if((onceSem=semBCreate(SEM_Q_FIFO,SEM_EMPTY))==NULL)
+    if((onceSem=semBinaryCreate(semEmpty))==0)
 	errMessage(0,"semBcreate failed in initOnce");
-    onceTaskId = taskSpawn(SCANONCE_NAME,SCANONCE_PRI,SCANONCE_OPT,
-	SCANONCE_STACK,(FUNCPTR)onceTask,
-	0,0,0,0,0,0,0,0,0,0);
+    onceTaskId = threadCreate("scanOnce",threadPriorityScanHigh,
+        threadGetStackSize(threadStackBig),
+        (THREADFUNC)onceTask,0);
     taskwdInsert(onceTaskId,NULL,0L);
 }
 
-static void periodicTask(scan_list *psl)
+static void periodicTask(void *arg)
 {
+    scan_list *psl = (scan_list *)arg;
 
-    unsigned long	start_time,end_time;
-    long		delay;
+    unsigned long	start_time,end_time,diff;
+    double		delay;
 
-    start_time = tickGet();
+    start_time = clockGetCurrentTick();
     while(TRUE) {
 	if(interruptAccept)scanList(psl);
-	end_time = tickGet();
-	delay = psl->ticks - (end_time - start_time);
-	if(delay<=0) delay=1;
-	taskDelay(delay);
-	start_time = tickGet();
+	end_time = clockGetCurrentTick();
+        if(end_time>=start_time) {
+            diff = end_time - start_time;
+        } else {
+            /*unsigned long overflow*/
+            diff = (UINT_MAX - start_time) + end_time;
+        }
+	delay = psl->ticks - diff;
+        delay = (delay<=0.0) ? .1 : delay/clockGetRate();
+	threadSleep(delay);
+	start_time = clockGetCurrentTick();
     }
 }
 
@@ -529,28 +536,30 @@ static void initPeriodic()
 	}
 	nPeriodic = pmenu->nChoice - SCAN_1ST_PERIODIC;
 	papPeriodic = dbCalloc(nPeriodic,sizeof(scan_list*));
-	periodicTaskId = dbCalloc(nPeriodic,sizeof(int));
+	periodicTaskId = dbCalloc(nPeriodic,sizeof(void *));
 	for(i=0; i<nPeriodic; i++) {
 		psl = dbCalloc(1,sizeof(scan_list));
 		papPeriodic[i] = psl;
-		FASTLOCKINIT(&psl->lock);
+                psl->lock = semMutexCreate();
 		ellInit(&psl->list);
 		sscanf(pmenu->papChoiceValue[i+SCAN_1ST_PERIODIC],"%f",&temp);
-		psl->ticks = temp * vxTicksPerSecond;
+		psl->ticks = temp * clockGetRate();
 	}
 }
 
 static void spawnPeriodic(int ind)
 {
     scan_list 	*psl;
-    char		taskName[20];
+    char	taskName[20];
 
     psl = papPeriodic[ind];
     sprintf(taskName,"scan%ld",psl->ticks);
-    periodicTaskId[ind] = taskSpawn(taskName,PERIODSCAN_PRI-ind,
-				PERIODSCAN_OPT,PERIODSCAN_STACK,
-				(FUNCPTR )periodicTask,(int)psl,
-				0,0,0,0,0,0,0,0,0);
+    periodicTaskId[ind] = threadCreate(
+        taskName,
+        threadPriorityScanLow + ind,
+        threadGetStackSize(threadStackBig),
+        periodicTask,
+        (void *)psl);
     taskwdInsert(periodicTaskId[ind],wdPeriodic,(void *)(long)ind);
 }
 
@@ -562,7 +571,7 @@ static void wdPeriodic(long ind)
     psl = papPeriodic[ind];
     taskwdRemove(periodicTaskId[ind]);
     /*Unlock so that task can be resumed*/
-    FASTUNLOCK(&psl->lock);
+    semMutexGive(psl->lock);
     spawnPeriodic(ind);
 }
 
@@ -579,21 +588,21 @@ static void printList(scan_list *psl,char *message)
 {
     scan_element *pse;
 
-    FASTLOCK(&psl->lock);
+    semMutexTakeAssert(psl->lock);
     pse = (scan_element *)ellFirst(&psl->list);
-    FASTUNLOCK(&psl->lock);
+    semMutexGive(psl->lock);
     if(pse==NULL) return;
     printf("%s\n",message);
     while(pse!=NULL) {
 	printf("    %-28s\n",pse->precord->name);
-	FASTLOCK(&psl->lock);
+	semMutexTakeAssert(psl->lock);
 	if(pse->pscan_list != psl) {
-	    FASTUNLOCK(&psl->lock);
+	    semMutexGive(psl->lock);
 	    printf("Returning because list changed while processing.");
 	    return;
 	}
 	pse = (scan_element *)ellNext((void *)pse);
-	FASTUNLOCK(&psl->lock);
+	semMutexGive(psl->lock);
     }
 }
 
@@ -605,19 +614,19 @@ static void scanList(scan_list *psl)
     scan_element 	*pse,*prev;
     scan_element	*next=0;
 
-    FASTLOCK(&psl->lock);
-	psl->modified = FALSE;
-	pse = (scan_element *)ellFirst(&psl->list);
-	prev = NULL;
-	if(pse) next = (scan_element *)ellNext((void *)pse);
-    FASTUNLOCK(&psl->lock);
+    semMutexTakeAssert(psl->lock);
+    psl->modified = FALSE;
+    pse = (scan_element *)ellFirst(&psl->list);
+    prev = NULL;
+    if(pse) next = (scan_element *)ellNext((void *)pse);
+    semMutexGive(psl->lock);
     while(pse) {
 	struct dbCommon *precord = pse->precord;
 
 	dbScanLock(precord);
 	dbProcess(precord);
 	dbScanUnlock(precord);
-	FASTLOCK(&psl->lock);
+	semMutexTakeAssert(psl->lock);
 	    if(!psl->modified) {
 		prev = pse;
 		pse = (scan_element *)ellNext((void *)pse);
@@ -644,10 +653,10 @@ static void scanList(scan_list *psl)
 		psl->modified = FALSE;
 	    } else {
 		/*Too many changes. Just wait till next period*/
-		FASTUNLOCK(&psl->lock);
+		semMutexGive(psl->lock);
 		return;
 	    }
-	FASTUNLOCK(&psl->lock);
+	semMutexGive(psl->lock);
     }
 }
 
@@ -675,7 +684,7 @@ static void addToList(struct dbCommon *precord,scan_list *psl)
 {
 	scan_element	*pse,*ptemp;
 
-	FASTLOCK(&psl->lock);
+	semMutexTakeAssert(psl->lock);
 	pse = precord->spvt;
 	if(pse==NULL) {
 		pse = dbCalloc(1,sizeof(scan_element));
@@ -694,7 +703,7 @@ static void addToList(struct dbCommon *precord,scan_list *psl)
 	}
 	if(ptemp==NULL) ellAdd(&psl->list,(void *)pse);
 	psl->modified = TRUE;
-	FASTUNLOCK(&psl->lock);
+	semMutexGive(psl->lock);
 	return;
 }
 
@@ -702,20 +711,20 @@ static void deleteFromList(struct dbCommon *precord,scan_list *psl)
 {
 	scan_element	*pse;
 
-	FASTLOCK(&psl->lock);
+	semMutexTakeAssert(psl->lock);
 	if(precord->spvt==NULL) {
-		FASTUNLOCK(&psl->lock);
+		semMutexGive(psl->lock);
 		return;
 	}
 	pse = precord->spvt;
 	if(pse==NULL || pse->pscan_list!=psl) {
-	    FASTUNLOCK(&psl->lock);
+	    semMutexGive(psl->lock);
 	    errMessage(-1,"deleteFromList failed");
 	    return;
 	}
 	pse->pscan_list = NULL;
 	ellDelete(&psl->list,(void *)pse);
 	psl->modified = TRUE;
-	FASTUNLOCK(&psl->lock);
+	semMutexGive(psl->lock);
 	return;
 }

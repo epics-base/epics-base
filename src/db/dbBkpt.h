@@ -32,7 +32,9 @@
 #ifndef INCdbBkptsh
 #define INCdbBkptsh 1
 
-#include <lstLib.h>
+#include <ellLib.h>
+#include <osiSem.h>
+#include <osiThread.h>
 /* Needs to be put into dbTest.h ! */
 long dbpr(char *name, int level);
 
@@ -42,8 +44,8 @@ long dbpr(char *name, int level);
  */
 
 struct BP_LIST {
-   NODE *next_list;
-   NODE *prev_list; 
+   ELLNODE *next_list;
+   ELLNODE *prev_list; 
    struct dbCommon *precord;
 };
 
@@ -52,8 +54,8 @@ struct BP_LIST {
  *    detected for a lockset.
  */
 struct EP_LIST {
-   NODE *next_list; 
-   NODE *prev_list;
+   ELLNODE *next_list; 
+   ELLNODE *prev_list;
    struct dbCommon *entrypoint;  /* pointer to entry point in lockset */
    unsigned long count;          /* number of times record processed */
    unsigned long time;           /* time record first logged */
@@ -62,17 +64,17 @@ struct EP_LIST {
 
 /*
  *  Structure for stack of lock sets that
- *  currently contain breakpoints. (uses lstLib)
+ *  currently contain breakpoints. (uses ellLib)
  */
 struct LS_LIST {
-   NODE *next_list;
-   NODE *prev_list;
+   ELLNODE *next_list;
+   ELLNODE *prev_list;
    struct dbCommon *precord;/* points to where execution is currently stopped */
    struct dbCommon *current_ep; /* current entrypoint */
-   LIST bp_list;  /* list of records containing breakpoints in a lockset */
-   LIST ep_queue; /* queue of entrypoints found so far */
-   SEM_ID ex_sem; /* semaphore for execution queue */
-   int taskid;    /* saved taskid for the task in stepping mode */
+   ELLLIST bp_list;  /* list of records containing breakpoints in a lockset */
+   ELLLIST ep_queue; /* queue of entrypoints found so far */
+   semId ex_sem; /* semaphore for execution queue */
+   threadId taskid;    /* saved taskid for the task in stepping mode */
    int step;      /* one if currently "stepping," else zero */
    unsigned long l_num;   /* lockset number */
 };

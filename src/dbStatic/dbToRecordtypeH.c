@@ -112,10 +112,8 @@ int main(int argc,char **argv)
 	fprintf(stderr,"Terminal error For input file %s\n",argv[1]);
 	exit(-1);
     }
-    fprintf(outFile,"#include <vxWorks.h>\n");
-    fprintf(outFile,"#include <semLib.h>\n");
     fprintf(outFile,"#include \"ellLib.h\"\n");
-    fprintf(outFile,"#include \"fast_lock.h\"\n");
+    fprintf(outFile,"#include \"osiSem.h\"\n");
     fprintf(outFile,"#include \"link.h\"\n");
     fprintf(outFile,"#include \"tsDefs.h\"\n");
     pdbMenu = (dbMenu *)ellFirst(&pdbbase->menuList);

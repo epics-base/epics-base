@@ -48,8 +48,6 @@ char *dbRecordName(DBENTRY *pdbentry);
 char *dbGetStringNum(DBENTRY *pdbentry);
 long dbPutStringNum(DBENTRY *pdbentry,char *pstring);
 
-void dbGetRecordtypeSizeOffset(dbRecordType *pdbRecordType);
-
 /* The following is for path */
 typedef struct dbPathNode {
 	ELLNODE		node;

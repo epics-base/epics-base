@@ -33,7 +33,7 @@
  * .04	02-02-94	mrk	added tpn (test put notify)
  * .05	02-03-94	mrk	gft was overrunning its buffer for arrays
  */
-#include	<vxWorks.h>
+#include	<stddef.h>
 #include	<stdlib.h>
 #include	<stdio.h>
 #include	<string.h>
@@ -655,11 +655,14 @@ static void tpnCallback(PUTNOTIFY *ppn)
 {
     struct dbAddr	*pdbaddr = (struct dbAddr *)ppn->paddr;
     long	status = ppn->status;
+    char	*pname;
 
+    /*This is really cheating. It only works because first field is name*/
+    pname = (char *)pdbaddr->precord;
     if(status==0)
-	printf("tpnCallback: success record=%s\n",ppn->paddr->precord);
+	printf("tpnCallback: success record=%s\n",pname);
     else
-	recGblRecordError(status,pdbaddr->precord,"tpnCallback");
+	recGblRecordError(status,pname,"tpnCallback");
     free((void *)pdbaddr);
     free(ppn);
 }

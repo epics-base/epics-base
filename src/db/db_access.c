@@ -45,11 +45,9 @@
  ***	the presumed order in dbAccess.c's dbGetField() routine
  ***/
 
-#include        <vxWorks.h>
 #include        <stddef.h>
 #include        <stdlib.h>
 #include        <stdarg.h>
-#include        <fioLib.h>
 #include        <string.h>
 #include        <types.h>
 

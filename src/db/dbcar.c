@@ -22,12 +22,10 @@ of this distribution.
 * .01  10APR96	mrk	list db to CA links
 ****************************************************************/
 
-#include <vxWorks.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include <taskLib.h>
 
 #include "dbStaticLib.h"
 #include "link.h"

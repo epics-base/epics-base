@@ -58,19 +58,16 @@ long dbtpf(char	*pname,char *pvalue); /*test put field*/
 long dbior(char	*pdrvName,int type); /*I/O report */
 int dbhcr(char *filename);		/*Hardware Configuration Report*/
 
-#include <vxWorks.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <string.h>
 #include <stdio.h>
-#include <timexLib.h>
-
-/*for open and close*/
-#include <ioLib.h>
+#include <fcntl.h>
 
 #include "dbDefs.h"
 #include "errlog.h"
 #include "ellLib.h"
-#include "fast_lock.h"
+#include "osiSem.h"
 #include "dbAccess.h"
 #include "dbBase.h"
 #include "dbCommon.h"
@@ -443,7 +440,8 @@ long dbtr(char *pname)
         printf("record active\n");
         return(1);
     }
-    if(FASTLOCKTEST(&precord->mlok)) {
+    if(semMutexTakeNoWait(precord->mlok)==semTakeOK) {
+        semBinaryGive(precord->mlok);
         printf("record locked\n");
         return(1);
     }
@@ -1293,54 +1291,4 @@ static void dbpr_msg_flush(TAB_BUFFER *pMsgBuff,int tab_size)
     pMsgBuff->pNext = pMsgBuff->out_buff;
     pMsgBuff->pNexTab = pMsgBuff->out_buff + tab_size;
     return;
-}
-
-/*
- *  Call dbProcess() 100 times to make
- *   sure Measurement is accurate, since
- *   timexN() makes use of the 60Hz clock
- */
-static void timing_routine(precord)
-struct dbCommon *precord;
-{
-   int i;
- 
-   for (i = 0; i <100; i++) {
-      dbProcess(precord);
-   }
-}
- 
-/*
- *  Time execution of record "record_name"
- */
-long dbt(record_name)
-char *record_name;
-{
-  DBADDR address;
-  struct dbCommon *precord;
-  long status = 0;
- 
- /*
-  *  Convert Name To Address
-  */
-  status = dbNameToAddr(record_name, &address);
- 
-  if (status != 0) {
-	errMessage(status," dbNameToAddr failed");
-	return(status);
-  }
- 
-  precord = address.precord;
- 
-  printf("!! Time for 100 executions of %s: !!\n", record_name);
- 
- /*
-  *  Time the record
-  */
-  dbScanLock(precord);
-  timexN((FUNCPTR)timing_routine, (int)precord,
-	0,0,0,0,0,0,0);
-  dbScanUnlock(precord);
- 
-  return(0);
 }

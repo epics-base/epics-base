@@ -39,14 +39,13 @@
 
 typedef enum {
     initHookAtBeginning,
-    initHookAfterGetResources,
     initHookAfterLogInit,
     initHookAfterCallbackInit,
     initHookAfterCaLinkInit,
     initHookAfterInitDrvSup,
     initHookAfterInitRecSup,
     initHookAfterInitDevSup,
-    initHookAfterTS_init,
+    initHookAfterClockInit,
     initHookAfterInitDatabase,
     initHookAfterFinishDevSup,
     initHookAfterScanInit,

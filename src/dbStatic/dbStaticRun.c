@@ -15,20 +15,17 @@ of this distribution.
  * .01	06-12-95	mrk	Initial
  */
 
-#ifdef vxWorks
-#include <vxWorks.h>
-#include <taskLib.h>
-#endif
+#include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>
 #include <string.h>
 #include <math.h>
-#include <symLib.h>
-#include <sysSymTbl.h>   /* for sysSymTbl*/
 
 #include "dbDefs.h"
 #include "errMdef.h"
+#include "dbBase.h"
+#include "registryRecordType.h"
 #include "epicsPrint.h"
 #include "ellLib.h"
 #include "dbDefs.h"
@@ -647,25 +644,4 @@ long dbPutMenuIndex(DBENTRY *pdbentry,int index)
 	break;
     }
     return (S_dbLib_badField);
-}
-
-void dbGetRecordtypeSizeOffset(dbRecordType *pdbRecordType)
-{
-    char	name[60];
-    SYM_TYPE	type;
-    STATUS	vxstatus;
-    long	status;
-    int (*sizeOffset)(dbRecordType *pdbRecordType);
-
-    strcpy(name,"_");
-    strcat(name,pdbRecordType->name);
-    strcat(name,"RecordSizeOffset");
-    vxstatus = symFindByNameEPICS(sysSymTbl, name,
-	(void *)&sizeOffset, &type);
-    if (vxstatus != OK) {
-	status = S_dbLib_noSizeOffset;
-	errPrintf(status,__FILE__,__LINE__,"%s",name);
-	return;
-    }
-    sizeOffset(pdbRecordType);
 }

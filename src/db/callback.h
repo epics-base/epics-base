@@ -4,29 +4,15 @@
 /*
  *      Original Author:        Marty Kraimer
  *      Date:   	        07-18-91
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
+*/
+
+/********************COPYRIGHT NOTIFICATION**********************************
+This software was developed under a United States Government license
+described on the COPYRIGHT_UniversityOfChicago file included as part
+of this distribution.
+****************************************************************************/
+
+/* Modification Log:
  * -----------------
  * .01	12-12-91	mrk	Initial version
  * .02	04-05-94	mrk	Remove casts on Lvalues (ANSI forbids)
@@ -34,10 +20,10 @@
  *				windows
  */
 
-
+
 #ifndef INCcallbackh
 #define INCcallbackh 1
-
+
 /*
  * WINDOWS also has a "CALLBACK" type def
  */
@@ -89,6 +75,5 @@ void callbackRequest();
 void callbackRequestProcessCallback();
 int callbackSetQueueSize();
 #endif /*__STDC__*/
-
 
 #endif /*INCcallbackh*/

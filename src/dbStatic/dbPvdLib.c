@@ -9,10 +9,7 @@ This software was developed under a United States Government license
 described on the COPYRIGHT_UniversityOfChicago file included as part
 of this distribution.
 **********************************************************************/
-#ifdef vxWorks
-#include <vxWorks.h>
-#include <taskLib.h>
-#endif
+#include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

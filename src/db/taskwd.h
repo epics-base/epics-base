@@ -35,11 +35,13 @@
 #ifndef INCtaskwdh
 #define INCtaskwdh 1
 
+#include "osiThread.h"
+
 #ifdef __STDC__
 void taskwdInit();
-void taskwdInsert(int tid, VOIDFUNCPTR callback,void *arg);
+void taskwdInsert(threadId tid, VOIDFUNCPTR callback,void *arg);
 void taskwdAnyInsert(void *userpvt, VOIDFUNCPTR callback,void *arg);
-void taskwdRemove(int tid);
+void taskwdRemove(threadId tid);
 void taskwdAnyRemove(void *userpvt);
 #else
 void taskwdInit();

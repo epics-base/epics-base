@@ -41,6 +41,7 @@
 #endif /*caClient*/
 
 #include <db_field_log.h>
+#include <osiThread.h>
 
 struct event_block{
         ELLNODE                 node;
@@ -78,7 +79,7 @@ typedef void			EVENTFUNC(
 struct event_que{
         /* lock writers to the ring buffer only */
         /* readers must never slow up writers */
-        FAST_LOCK               writelock;
+        semId               writelock;
         db_field_log            valque[EVENTQUESIZE];
         struct event_block      *evque[EVENTQUESIZE];
         struct event_que        *nextque;       /* in case que quota exceeded */
@@ -91,8 +92,8 @@ struct event_que{
 struct event_user{
         struct event_que        firstque;       /* the first event que */
 
-        SEM_ID                  ppendsem;       /* Wait while empty */
-        SEM_ID             	pflush_sem;	/* wait for flush */
+        semId                  ppendsem;       /* Wait while empty */
+        semId             	pflush_sem;	/* wait for flush */
 
 	void			(*overflow_sub)(/* called when overflow detect */
 					void *overflow_arg, unsigned count);
@@ -102,13 +103,15 @@ struct event_user{
 					(void *extralabor_arg);	
 	void			*extralabor_arg;/* parameter to above */
 
-        int                     taskid;         /* event handler task id */
+        threadId                taskid;         /* event handler task id */
         unsigned 		queovr;		/* event que overflow count */
 	unsigned		nDuplicates;	/* events duplicated on q */ 
         char                    pendlck;        /* Only one task can pend */
         unsigned char           pendexit;       /* exit pend task */
 	unsigned char		extra_labor;	/* if set call extra labor func */
 	unsigned char		flowCtrlMode;	/* replace existing monitor */
+        int			(*init_func)();
+        int			init_func_arg;
 };
 
 typedef void 		OVRFFUNC(void *overflow_arg, unsigned count);
@@ -163,11 +166,7 @@ int                     init_func_arg,
 int                     priority_offset
 );
 
-int event_task(
-struct event_user       *evUser,
-int			(*init_func)(int),
-int                     init_func_arg
-);
+void event_task( struct event_user *evUser);
 
 int db_event_enable(struct event_block      *pevent);
 int db_event_disable(struct event_block      *pevent);

@@ -37,7 +37,7 @@
  * .06	01-10-96	lrd	added ca_link structure fields
  */
 
-#include <dbDefs.h>
+#include "dbDefs.h"
 
 #ifndef INClinkh
 #define INClinkh 1

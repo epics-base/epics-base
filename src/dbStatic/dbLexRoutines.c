@@ -19,9 +19,6 @@ of this distribution.
 
 /*The routines in this module are serially reusable NOT reentrant*/
 
-#ifdef vxWorks
-#include <vxWorks.h>
-#endif
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -668,7 +665,6 @@ static void dbRecordtypeBody(void)
 	pgphentry->userPvt = pdbRecordType;
     }
     ellAdd(&pdbbase->recordTypeList,&pdbRecordType->node);
-    dbGetRecordtypeSizeOffset(pdbRecordType);
 }
 
 static void dbDevice(char *recordtype,char *linktype,

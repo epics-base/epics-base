@@ -70,7 +70,7 @@
 		prompt("Monitor fastlock")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("FAST_LOCK	mlok")
+		extra("semId	mlok")
 	}
 	field(MLIS,DBF_NOACCESS) {
 		prompt("Monitor List")

@@ -33,9 +33,7 @@ of this distribution.
 #include <dbBase.h>
 #include <dbFldTypes.h>
 #include <link.h>
-#ifdef vxWorks
 #include <dbCommon.h>
-#endif
 #include <dbLock.h>
 #include <tsDefs.h>
 #include <callback.h>

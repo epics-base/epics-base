@@ -5,63 +5,43 @@
 /*
  *      Original Author:        Marty Kraimer
  *      Date:   	        07-18-91
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01	12-12-91	mrk	moved from dbScan.c to callback.c
- * .02	04-23-92	jba	Fixed test on priority
- * .03	06-28-93	mrk	In callbackRequest replaced errMessage by logMsg
 */
-
-#include	<vxWorks.h>
-#include	<stdlib.h>
-#include	<stdio.h>
-#include	<semLib.h>
-#include	<rngLib.h>
-#include 	<logLib.h>
-#include 	<intLib.h>
 
-#include	"dbDefs.h"
-#include	"errlog.h"
-#include	"callback.h"
-#include	"dbAccess.h"
-#include	"recSup.h"
-#include	"taskwd.h"
-#include	"errMdef.h"
-#include	"dbCommon.h"
-#include	"dbLock.h"
-#include	"task_params.h"
+/********************COPYRIGHT NOTIFICATION**********************************
+This software was developed under a United States Government license
+described on the COPYRIGHT_UniversityOfChicago file included as part
+of this distribution.
+****************************************************************************/
+
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+#include "dbDefs.h"
+#include "osiSem.h"
+#include "osiThread.h"
+#include "osiInterrupt.h"
+#include "osiRing.h"
+#include "errlog.h"
+#include "callback.h"
+#include "dbAccess.h"
+#include "recSup.h"
+#include "taskwd.h"
+#include "errMdef.h"
+#include "dbCommon.h"
+#include "dbLock.h"
 
 int callbackQueueSize = 2000;
-static SEM_ID callbackSem[NUM_CALLBACK_PRIORITIES];
-static RING_ID callbackQ[NUM_CALLBACK_PRIORITIES];
-static int callbackTaskId[NUM_CALLBACK_PRIORITIES];
+static semId callbackSem[NUM_CALLBACK_PRIORITIES];
+static ringId callbackQ[NUM_CALLBACK_PRIORITIES];
+static threadId callbackTaskId[NUM_CALLBACK_PRIORITIES];
 static int ringOverflow[NUM_CALLBACK_PRIORITIES];
 volatile int callbackRestart=FALSE;
 
+static int priorityValue[NUM_CALLBACK_PRIORITIES] = {0,1,2};
+
 /* forward references */
-static void wdCallback(long ind); /*callback from taskwd*/
+static void wdCallback(int *ind); /*callback from taskwd*/
 static void start(int ind); /*start or restart a callbackTask*/
 
 /*public routines */
@@ -86,51 +66,43 @@ long callbackInit()
 void callbackRequest(CALLBACK *pcallback)
 {
     int priority = pcallback->priority;
-    int lockKey;
     int nput;
-    static int status;
+    int lockKey;
 
     if(priority<0 || priority>=(NUM_CALLBACK_PRIORITIES)) {
-
-	logMsg("callbackRequest called with invalid priority\n",0,0,0,0,0,0);
+	epicsPrintf("callbackRequest called with invalid priority\n");
 	return;
     }
     if(ringOverflow[priority]) return;
-    lockKey = intLock();
-    nput = rngBufPut(callbackQ[priority],(void *)&pcallback,sizeof(pcallback));
-    intUnlock(lockKey);
+    lockKey = interruptLock();
+    nput = ringPut(callbackQ[priority],(void *)&pcallback,sizeof(pcallback));
+    interruptUnlock(lockKey);
     if(nput!=sizeof(pcallback)){
-	logMsg("callbackRequest ring buffer full\n",0,0,0,0,0,0);
+	epicsPrintf("callbackRequest ring buffer full\n");
 	ringOverflow[priority] = TRUE;
     }
-    if((status=semGive(callbackSem[priority]))!=OK) {
-/*semGive randomly returns garbage value*/
-/*
-	logMsg("semGive returned error in callbackRequest\n",0,0,0,0,0,0);
-*/
-    }
+    semBinaryGive(callbackSem[priority]);
     return;
 }
-
+
 /* General purpose callback task */
-/*static*/
- void callbackTask(int priority)
+static void callbackTask(int *ppriority)
 {
+    int priority = *ppriority;
     CALLBACK *pcallback;
     int nget;
 
     ringOverflow[priority] = FALSE;
     while(TRUE) {
 	/* wait for somebody to wake us up */
-        if(semTake(callbackSem[priority],WAIT_FOREVER)!=OK ){
-		errMessage(0,"semTake returned error in callbackTask\n");
-		taskSuspend(0);
-	}
-	while(rngNBytes(callbackQ[priority])>=sizeof(pcallback)) {
-	    nget = rngBufGet(callbackQ[priority],(void *)&pcallback,sizeof(pcallback));
+        semBinaryTakeAssert(callbackSem[priority]);
+        while(TRUE) {
+	    nget = ringGet(callbackQ[priority],
+                (void *)&pcallback,sizeof(pcallback));
+            if(nget==0) break;
 	    if(nget!=sizeof(pcallback)) {
-		errMessage(0,"rngBufGet failed in callbackTask");
-		taskSuspend(0);
+		errMessage(0,"ringGet failed in callbackTask");
+		threadSuspend(threadGetIdSelf());
 	    }
 	    ringOverflow[priority] = FALSE;
 	    (*pcallback->callback)(pcallback);
@@ -141,42 +113,40 @@ void callbackRequest(CALLBACK *pcallback)
 static char *priorityName[3] = {"Low","Medium","High"};
 static void start(int ind)
 {
-    int     priority;
-    char    taskName[20];
+    unsigned int priority;
+    char taskName[20];
 
-    if((callbackSem[ind] = semBCreate(SEM_Q_FIFO,SEM_EMPTY))==NULL)
-	errMessage(0,"semBcreate failed while starting a callback task\n");
-    if(ind==0) priority = CALLBACK_PRI_LOW;
-    else if(ind==1) priority = CALLBACK_PRI_MEDIUM;
-    else if(ind==2) priority = CALLBACK_PRI_HIGH;
+    if((callbackSem[ind] = semBinaryCreate(semEmpty))==0)
+	errMessage(0,"semBinaryCreate failed while starting a callback task\n");
+    if(ind==0) priority = threadPriorityScanLow - 1;
+    else if(ind==1) priority = threadPriorityScanLow +4;
+    else if(ind==2) priority = threadPriorityScanHigh + 1;
     else {
-	errMessage(0,"semBcreate failed while starting a callback task\n");
+	errMessage(0,"callback start called with illegal priority\n");
 	return;
     }
-    if((callbackQ[ind]=rngCreate(sizeof(CALLBACK *)*callbackQueueSize)) == NULL) 
-	errMessage(0,"rngCreate failed while starting a callback task");
+    if((callbackQ[ind]=ringCreate(sizeof(CALLBACK *)*callbackQueueSize)) == 0) 
+	errMessage(0,"ringCreate failed while starting a callback task");
     sprintf(taskName,"cb%s",priorityName[ind]);
-    callbackTaskId[ind] = taskSpawn(taskName,priority,
-    			CALLBACK_OPT,CALLBACK_STACK,
-    			(FUNCPTR)callbackTask,ind,
-			0,0,0,0,0,0,0,0,0);
-    if(callbackTaskId[ind]==ERROR) {
+    callbackTaskId[ind] = threadCreate(taskName,priority,
+        threadGetStackSize(threadStackBig),(THREADFUNC)callbackTask,
+        &priorityValue[ind]);
+    if(callbackTaskId[ind]==0) {
 	errMessage(0,"Failed to spawn a callback task");
 	return;
     }
-    taskwdInsert(callbackTaskId[ind],wdCallback,(void *)(long)ind);
+    taskwdInsert(callbackTaskId[ind],wdCallback,&priorityValue[ind]);
 }
 
 
-static void wdCallback(long ind)
+static void wdCallback(int *pind)
 {
+    int ind = *pind;
     taskwdRemove(callbackTaskId[ind]);
     if(!callbackRestart)return;
-    if(taskDelete(callbackTaskId[ind])!=OK)
-	errMessage(0,"taskDelete failed while restarting a callback task\n");
-    if(semDelete(callbackSem[ind])!=OK)
-	errMessage(0,"semDelete failed while restarting a callback task\n");
-    rngDelete(callbackQ[ind]);
+    threadDestroy(callbackTaskId[ind]);
+    semBinaryDestroy(callbackSem[ind]);
+    ringDelete(callbackQ[ind]);
     start(ind);
 }
 

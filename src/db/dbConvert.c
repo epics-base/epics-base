@@ -3,49 +3,31 @@
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer
  *      Date:            11-7-90
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01  11OCT95	mrk	Moved from dbLink.c
- */
-#include	<vxWorks.h>
-#include	<stdlib.h>
-#include	<stdarg.h>
-#include	<stdio.h>
-#include	<string.h>
+*/
 
-#include	"dbDefs.h"
-#include	"errlog.h"
-#include	"cvtFast.h"
-#include	"dbBase.h"
-#include	"dbAccess.h"
-#include	"dbConvert.h"
-#include	"dbStaticLib.h"
-#include	"dbFldTypes.h"
-#include	"errMdef.h"
-#include	"recSup.h"
-#include	"recGbl.h"
+/********************COPYRIGHT NOTIFICATION**********************************
+This software was developed under a United States Government license
+described on the COPYRIGHT_UniversityOfChicago file included as part
+of this distribution.
+****************************************************************************/
+
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "dbDefs.h"
+#include "errlog.h"
+#include "cvtFast.h"
+#include "dbBase.h"
+#include "dbAccess.h"
+#include "dbConvert.h"
+#include "dbStaticLib.h"
+#include "dbFldTypes.h"
+#include "errMdef.h"
+#include "recSup.h"
+#include "recGbl.h"
 
 /* DATABASE ACCESS GET CONVERSION SUPPORT */
 

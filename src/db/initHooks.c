@@ -36,12 +36,12 @@
  */
 
 
-#include	<vxWorks.h>
-#include	<stdlib.h>
-#include	<stddef.h>
-#include	<stdio.h>
-#include	<ellLib.h>
-#include	<initHooks.h>
+#include <stdlib.h>
+#include <stddef.h>
+#include <stdio.h>
+
+#include "ellLib.h"
+#include "initHooks.h"
 
 typedef struct initHookLink {
 	ELLNODE		 node;

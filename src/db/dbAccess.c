@@ -4,28 +4,14 @@
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer
  *      Date:            11-7-90
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
+*/
+
+/********************COPYRIGHT NOTIFICATION**********************************
+This software was developed under a United States Government license
+described on the COPYRIGHT_UniversityOfChicago file included as part
+of this distribution.
+****************************************************************************/
+/*
  * Modification Log:
  * -----------------
  * .01  07-26-91	mrk	Allow choices to be retrieved as numeric
@@ -53,36 +39,33 @@
  */
 
 
-#include	<vxWorks.h>
-#include	<stdlib.h>
-#include	<stdarg.h>
-#include	<stdio.h>
-#include	<string.h>
-#include	<taskLib.h>
-#include	<vxLib.h>
-#include	<tickLib.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 
-#include	"dbDefs.h"
-#include	"errlog.h"
-#include	"fast_lock.h"
-#include	"cvtFast.h"
-#include	"alarm.h"
-#include	"dbBase.h"
-#include	"dbAccess.h"
-#include	"dbStaticLib.h"
-#include	"dbConvert.h"
-#include	"dbBkpt.h"
-#include	"dbScan.h"
-#include	"dbCommon.h"
-#include	"dbLock.h"
-#include	"dbFldTypes.h"
-#include	"dbEvent.h"
-#include	"db_field_log.h"
-#include	"errMdef.h"
-#include	"recSup.h"
-#include	"recGbl.h"
-#include	"special.h"
-#include	"asLib.h"
+#include "dbDefs.h"
+#include "errlog.h"
+#include "cantProceed.h"
+#include "cvtFast.h"
+#include "alarm.h"
+#include "dbBase.h"
+#include "dbAccess.h"
+#include "dbStaticLib.h"
+#include "dbConvert.h"
+#include "dbBkpt.h"
+#include "dbScan.h"
+#include "dbCommon.h"
+#include "dbLock.h"
+#include "dbFldTypes.h"
+#include "dbEvent.h"
+#include "db_field_log.h"
+#include "errMdef.h"
+#include "recSup.h"
+#include "recGbl.h"
+#include "special.h"
+#include "asLib.h"
 
 extern struct dbBase *pdbbase;
 extern long lset_stack_not_empty;
@@ -565,7 +548,8 @@ long dbProcess(dbCommon *precord)
     
 	/* check for trace processing*/
 	if (tpro) {
-		if (vxTas(&trace)) {
+                if(trace==0) {
+                        trace = 1;
 			trace_lset = lset;
 			set_trace = TRUE;
 		}
@@ -804,9 +788,7 @@ long dbGetLinkValue(struct link	*plink, short dbrType, void *pbuffer,
 	}
 	if(poptions) *poptions = 0;
     } else {
-	status = -1;
-	errMessage(-1,"dbGetLinkValue: Illegal link type");
-	taskSuspend(0);
+	cantProceed("dbGetLinkValue: Illegal link type");
     }
     return(status);
 }
@@ -843,9 +825,7 @@ long dbPutLinkValue(struct link *plink,short dbrType,
 		if(status < 0)
 			recGblSetSevr(psource,LINK_ALARM,INVALID_ALARM);
 	} else {
-		status=-1;
-		errMessage(-1,"dbPutLinkValue: Illegal link type");
-		taskSuspend(0);
+                cantProceed("dbPutLinkValue: Illegal link type");
 	}
 	return(status);
 }

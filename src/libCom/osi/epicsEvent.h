@@ -18,7 +18,7 @@ typedef enum {epicsEventEmpty,epicsEventFull} epicsEventInitialState;
 
 class epicsShareClass epicsEvent {
 public:
-    epicsEvent (epicsEventInitialState initial=epicsEventEmpty);
+    epicsEvent ( epicsEventInitialState initial = epicsEventEmpty );
     ~epicsEvent ();
     void signal ();
     void wait (); /* blocks until full */

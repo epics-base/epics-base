@@ -50,13 +50,13 @@ dbSubscriptionIO::dbSubscriptionIO ( dbServiceIO &serviceIO, dbChannelIO &chanIO
     }
 
     db_post_single_event ( this->es );
+
+    db_event_enable ( this->es );
 }
 
 dbSubscriptionIO::~dbSubscriptionIO ()
 {
-    if ( this->es ) {
-        db_cancel_event ( this->es );
-    }
+    this->unsubscribe ();
 }
 
 void dbSubscriptionIO::destroy ()
@@ -64,7 +64,6 @@ void dbSubscriptionIO::destroy ()
     delete this;
 }
 
-// lock should be applied
 void dbSubscriptionIO::unsubscribe ()
 {
     if ( this->es ) {

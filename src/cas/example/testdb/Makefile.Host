@@ -11,5 +11,13 @@ TOP=../../../..
 
 include $(TOP)/configure/CONFIG
 
-include $(TOP)/configure/RULES_ARCHS
+CXXCMPLR = STRICT
+
+PROD_LIBS := cas ca gdd Com
+
+SRCS += pvServ.cc
+
+PROD :=pvServ
+
+include $(TOP)/configure/RULES_BUILD
 

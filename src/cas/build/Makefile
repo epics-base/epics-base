@@ -3,8 +3,6 @@ TOP=../../..
 
 include $(TOP)/configure/CONFIG
 
-DIRS = singleThread 
-
-include $(TOP)/configure/RULES_DIRS
+include $(TOP)/configure/RULES_ARCHS
 
 

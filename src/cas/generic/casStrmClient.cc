@@ -1349,7 +1349,7 @@ caStatus casStrmClient::write()
 		status = this->writeArrayData();
 	}
 	else {
-		status = this->writeScalarData();
+		status = this->writeScalerData();
 	}
 
 	(*pPV)->endTransaction();
@@ -1359,9 +1359,9 @@ caStatus casStrmClient::write()
 
 
 //
-// casStrmClient::writeScalarData()
+// casStrmClient::writeScalerData()
 //
-caStatus casStrmClient::writeScalarData()
+caStatus casStrmClient::writeScalerData()
 {
 	gdd *pDD;
 	const caHdr *pHdr = this->ctx.getMsg();
@@ -1374,7 +1374,7 @@ caStatus casStrmClient::writeScalarData()
 		return S_cas_badType;
 	}
 
-	pDD = new gddScalar (gddAppType_value, type);
+	pDD = new gddScaler (gddAppType_value, type);
 	if (!pDD) {
 		return S_cas_noMemory;
 	}

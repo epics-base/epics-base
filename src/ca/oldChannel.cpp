@@ -27,9 +27,11 @@ oldChannel::oldChannel (caCh *pConnCallBackIn, void *pPrivateIn) :
 
 oldChannel::~oldChannel ()
 {
+    this->lock ();
     if ( ! this->pConnCallBack ) {
         this->decrementOutstandingIO ();
     }
+    this->unlock ();
 }
 
 void oldChannel::destroy ()
@@ -93,7 +95,6 @@ void oldChannel::connectNotify ()
         struct connection_handler_args  args;
         args.chid = this;
         args.op = CA_OP_CONN_UP;
-
         (*pCCB) (args);
     }
     else {
@@ -105,22 +106,26 @@ void oldChannel::connectNotify ()
 
 void oldChannel::disconnectNotify ()
 {
+    this->lock ();
     if ( this->pConnCallBack ) {
         struct connection_handler_args  args;
         args.chid = this;
         args.op = CA_OP_CONN_DOWN;
         (*this->pConnCallBack) (args);
     }
+    this->unlock ();
 }
 
 void oldChannel::accessRightsNotify (caar ar)
 {
+    this->lock ();
     if ( this->pAccessRightsFunc ) {
         struct access_rights_handler_args args;
         args.chid = this;
         args.ar = ar;
         ( *this->pAccessRightsFunc ) ( args );
     }
+    this->unlock ();
 }
 
 int oldChannel::changeConnCallBack (caCh *pfunc)

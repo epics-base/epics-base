@@ -122,7 +122,7 @@ static long init_record(psub,pass)
     }
 
     if(strlen(psub->snam)==0) {
-	epicsPrintf("%s snam not specified\n",psub);
+	epicsPrintf("%s snam not specified\n",psub->name);
 	psub->pact = TRUE;
 	return(0);
     }

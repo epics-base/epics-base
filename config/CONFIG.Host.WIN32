@@ -32,7 +32,7 @@ ARCMD = lib /nologo /verbose /out:$@
 
 #
 # Configure OS vendor C compiler
-ACC = cl 
+ACC = cl
 
 #
 # __STDC__=0 is a real great idea of Jeff that gives us both:
@@ -60,7 +60,7 @@ ACC_OPT_YES = /Ox
 #
 # /Zi include debugging info in object files
 # /Fr create source browser file
-ACC_OPT_NO = /Zi /Fr
+ACC_OPT_NO = /Zi 
 
 #
 # the following options are required when
@@ -95,7 +95,11 @@ ACC_SLIBS_NO=
 #
 # Use of /Za would dissable DLL import/export keywords which
 # EPICS include/excludes using architecture neutral macros
-CCC = cl 
+#
+# /GX support C++ exceptions
+# /GR generate RTTI information
+#
+CCC = cl /GX /GR
 CCC_NORMAL = $(CCC) /nologo /D__STDC__=0
 CCC_STRICT = $(CCC) /nologo /D__STDC__=0
 CCC_TEMPL_INST_FLAG =
@@ -113,7 +117,7 @@ CCC_OPT_YES = /Ox
 #
 # /Zi include debugging info in object files
 # /Fr create source browser file
-CCC_OPT_NO = /Zi /Fr
+CCC_OPT_NO = /Zi 
 
 #
 # the following options are required when
@@ -135,7 +139,7 @@ CCC_SLIBS_NO=
 
 LINK_OPT_FLAGS_YES = /warn:3 /incremental:no /opt:ref\
 /release $(PROD_VERSION:%=/version:%)
-LINK_OPT_FLAGS_NO = /warn:3 /debug 
+LINK_OPT_FLAGS_NO = /warn:3 /debug /incremental:no
 OPT_LDFLAGS = $(LINK_OPT_FLAGS_$(HOST_OPT))
 
 ARCH_DEP_CFLAGS=

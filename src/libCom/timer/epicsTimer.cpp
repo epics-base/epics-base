@@ -30,36 +30,12 @@
 
 #define epicsExportSharedSymbols
 #include "epicsTimer.h"
+#include "epicsGuard.h"
 #include "timerPrivate.h"
 
-struct epicsTimerQueuePassiveForC : public epicsTimerQueueNotify, public timerQueuePassive {
-public:
-    epicsTimerQueuePassiveForC ( epicsTimerQueueRescheduleCallback pCallback, void *pPrivate );
-    void destroy ();
-    void * operator new ( size_t size );
-    void operator delete ( void *pCadaver, size_t size );
-protected:
-    virtual ~epicsTimerQueuePassiveForC ();
-private:
-    epicsTimerQueueRescheduleCallback pCallback;
-    void *pPrivate;
-    void reschedule ();
-    static tsFreeList < epicsTimerQueuePassiveForC > freeList;
-    static epicsMutex freeListMutex;
-};
-
-#if defined ( _MSC_VER )
-#   pragma warning ( push )
-#   pragma warning ( disable: 4660 )
-#endif
-
-template class tsFreeList < epicsTimerForC, 32, 0 >;
-template class tsFreeList < epicsTimerQueueActiveForC, 1024, 0 >;
-template class tsFreeList < epicsTimerQueuePassiveForC, 1024, 0 >;
-
-#if defined ( _MSC_VER )
-#   pragma warning ( pop )
-#endif
+epicsSingleton < tsFreeList < epicsTimerForC, 0x20 > > epicsTimerForC::pFreeList;
+epicsSingleton < tsFreeList < epicsTimerQueuePassiveForC, 0x10 > > epicsTimerQueuePassiveForC::pFreeList;
+epicsSingleton < tsFreeList < epicsTimerQueueActiveForC, 0x10 > > epicsTimerQueueActiveForC::pFreeList;
 
 epicsTimer::~epicsTimer () {}
 
@@ -76,9 +52,9 @@ epicsTimerForC::~epicsTimerForC ()
 {
 }
 
-inline void epicsTimerForC::destroy ()
+void epicsTimerForC::destroy ()
 {
-    this->getPrivTimerQueue().destroyTimerForC ( *this );
+    delete this;
 }
 
 epicsTimerNotify::expireStatus epicsTimerForC::expire ( const epicsTime & )
@@ -86,9 +62,6 @@ epicsTimerNotify::expireStatus epicsTimerForC::expire ( const epicsTime & )
     ( *this->pCallBack ) ( this->pPrivate );
     return noRestart;
 }
-
-tsFreeList < epicsTimerQueueActiveForC > epicsTimerQueueActiveForC::freeList;
-epicsMutex epicsTimerQueueActiveForC::freeListMutex;
 
 epicsTimerQueueActiveForC::epicsTimerQueueActiveForC ( bool okToShare, unsigned priority ) :
     timerQueueActive ( okToShare, priority )
@@ -102,21 +75,6 @@ epicsTimerQueueActiveForC::~epicsTimerQueueActiveForC ()
 void epicsTimerQueueActiveForC::release ()
 {
     queueMgr.release ( *this );
-}
-
-tsFreeList < epicsTimerQueuePassiveForC > epicsTimerQueuePassiveForC::freeList;
-epicsMutex epicsTimerQueuePassiveForC::freeListMutex;
-
-inline void * epicsTimerQueuePassiveForC::operator new ( size_t size )
-{ 
-    epicsAutoMutex locker ( epicsTimerQueuePassiveForC::freeListMutex );
-    return epicsTimerQueuePassiveForC::freeList.allocate ( size );
-}
-
-inline void epicsTimerQueuePassiveForC::operator delete ( void *pCadaver, size_t size )
-{ 
-    epicsAutoMutex locker ( epicsTimerQueuePassiveForC::freeListMutex );
-    epicsTimerQueuePassiveForC::freeList.release ( pCadaver, size );
 }
 
 epicsTimerQueuePassiveForC::epicsTimerQueuePassiveForC 
@@ -135,7 +93,7 @@ void epicsTimerQueuePassiveForC::reschedule ()
     (*this->pCallback) ( this->pPrivate );
 }
 
-inline void epicsTimerQueuePassiveForC::destroy ()
+void epicsTimerQueuePassiveForC::destroy ()
 {
     delete this;
 }
@@ -144,7 +102,7 @@ extern "C" epicsTimerQueuePassiveId epicsShareAPI
     epicsTimerQueuePassiveCreate ( epicsTimerQueueRescheduleCallback pCallbackIn, void *pPrivateIn )
 {
     try {
-        return new epicsTimerQueuePassiveForC ( pCallbackIn, pPrivateIn );
+        return  new epicsTimerQueuePassiveForC ( pCallbackIn, pPrivateIn );
     }
     catch ( ... ) {
         return 0;
@@ -167,7 +125,7 @@ extern "C" epicsTimerId epicsShareAPI epicsTimerQueuePassiveCreateTimer (
     epicsTimerQueuePassiveId pQueue, epicsTimerCallback pCallback, void *pArg )
 {
     try {
-        return & pQueue->createTimerForC ( pCallback, pArg );
+        return  & pQueue->createTimerForC ( pCallback, pArg );
     }
     catch ( ... ) {
         return 0;

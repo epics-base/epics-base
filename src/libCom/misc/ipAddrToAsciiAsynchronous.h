@@ -30,18 +30,23 @@ class ipAddrToAsciiAsynchronous;
 // - it creates one thread
 class ipAddrToAsciiEngine : public epicsThreadRunable {
 public:
-    epicsShareFunc ipAddrToAsciiEngine ( const char *pName );
+    epicsShareFunc ipAddrToAsciiEngine ( const char * pName );
     virtual epicsShareFunc ~ipAddrToAsciiEngine ();
     virtual void run ();
     epicsShareFunc void show ( unsigned level ) const;
 private:
-    epicsThread &thread;
+    epicsThread & thread;
     tsDLList < ipAddrToAsciiAsynchronous > labor;
-    epicsEvent event;
+    epicsEvent laborEvent;
+    epicsEvent destructorBlockEvent;
     epicsEvent threadExit;
+    epicsEvent cancelPendCompleted;
+    ipAddrToAsciiAsynchronous * pCurrent;
     char nameTmp [1024];
-    unsigned nextId;
     bool exitFlag;
+    bool cancelPending;
+    bool callbackInProgress;
+    bool waitingForCancelPendCompletion;
     static epicsMutex mutex;
     friend class ipAddrToAsciiAsynchronous;
 };
@@ -55,17 +60,16 @@ private:
 class ipAddrToAsciiAsynchronous : 
     public tsDLNode < ipAddrToAsciiAsynchronous > {
 public:
-    epicsShareFunc ipAddrToAsciiAsynchronous ( const osiSockAddr &addr );
+    epicsShareFunc ipAddrToAsciiAsynchronous ( const osiSockAddr & addr );
     epicsShareFunc virtual ~ipAddrToAsciiAsynchronous ();
     epicsShareFunc bool ioInitiate ( ipAddrToAsciiEngine &engine );
-    epicsShareFunc bool identicalAddress ( const osiSockAddr &addr ) const;
+    epicsShareFunc bool identicalAddress ( const osiSockAddr & addr ) const;
     epicsShareFunc osiSockAddr address () const;
     epicsShareFunc void show ( unsigned level ) const;
-    virtual void ioCompletionNotify ( const char *pHostName ) = 0;
+    virtual void ioCompletionNotify ( const char * pHostName ) = 0;
 private:
     osiSockAddr addr;
-    ipAddrToAsciiEngine *pEngine;
-    unsigned id;
+    ipAddrToAsciiEngine * pEngine;
     friend class ipAddrToAsciiEngine;
 };
 

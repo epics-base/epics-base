@@ -7,7 +7,22 @@
 </head>
 
 <body lang="en">
-<h1>EPICS Release 3.13.7</h1>
+<h1>EPICS Release 3.13.8</h1>
+
+<h3>Changes since 3.13.7</h3>
+
+<p><strong>dbEvent bug</strong></p>
+<p>The bug reported for the previous release has been fixed.</p>
+<p><strong>config changes</strong></p>
+<ul>
+   <li>The default for vxWorks targets is now null,
+       i.e. CROSS_COMPILER_TARGET_ARCHS in CONFIG_SITE must be modified.</li>
+   <li>Added support for vxWorks targets: ppc603_long, ppc604_long, and sbs_pc6.</li>
+   <li>Added support for HOST_ARCH solarisGnu (solaris host using GNU compilers)</li>
+   <li>Added rule to create javadoc html files if makefile contains JAVADOC=YES.</li>
+   <li>Removed -lXext -lX libraries from link edit lines on solaris builds.</li>
+   <li>Simplified CONFIG.Host.solaris-x86 and RULES.Host config files.</li>
+</ul>
 
 <h3>Changes since 3.13.6</h3>
 
@@ -30,10 +45,6 @@
 
 <p>Field VAL now has a cvt_dbaddr method.
 If any state strings are defined the field type and dbr_field_type are declared ENUM. If no state strings are defined then the type is USHORT. Previously the types were always ENUM.</p>
-
-<p><strong>mbboRecord</strong></p>
-
-<p>mbboRecord now implements method cvt_dbaddr for the VAL field. If no state vales or state strings are defined then it sets field_type and dbr_field_type to DBF_USHORT.</p>
 
 <p><strong>camacDev</strong></p>
 <p>

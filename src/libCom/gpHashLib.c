@@ -271,7 +271,7 @@ void * gphPvt;
 	if(pgph[hashInd] == NULL) continue;
 	plist=pgph[hashInd];
 	pgphNode = (GPHENTRY *) ellFirst(plist);
-	printf("\n %3.3hd=%3.3d",hashInd,lstCount(plist));
+	printf("\n %3.3hd=%3.3d",hashInd,ellCount(plist));
 	number=0;
 	while(pgphNode) {
 	    printf(" %s %8x",pgphNode->name,pgphNode->pvtid);

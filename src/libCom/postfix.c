@@ -331,7 +331,7 @@ long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
 	*perror = 0;
 	if (* pinfix == 0 )
 		return(0);
-	pstacktop = &stack[0];
+	pstacktop = stack;
 	while (get_element(pinfix,&pelement,&no_bytes) != END){
 	    pinfix += no_bytes;
 	    switch (pelement->type){
@@ -396,8 +396,8 @@ long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
 
 		/* add operators of higher or equal priority to	*/
 		/* postfix notation				*/
-		while ((pstacktop->in_stack_pri >= pelement->in_coming_pri)
-		  && (pstacktop >= &stack[1])){
+		while ((pstacktop >= stack+1) &&
+		  (pstacktop->in_stack_pri >= pelement->in_coming_pri)) {
 		    *ppostfix++ = pstacktop->code;
 		    pstacktop--;
 		}
@@ -417,8 +417,8 @@ long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
 
 		/* add operators of higher or equal priority to	*/
 		/* postfix notation 				*/
-		while ((pstacktop->in_stack_pri >= pelement->in_coming_pri)
-		  && (pstacktop >= &stack[1])){
+		while ((pstacktop >= stack+1) &&
+		  (pstacktop->in_stack_pri >= pelement->in_coming_pri)) {
 		      *ppostfix++ = pstacktop->code;
 		      pstacktop--;
 		 }
@@ -448,8 +448,8 @@ long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
 
 		/* add operators of higher or equal priority to	*/
 		/* postfix notation				*/
-		while ((pstacktop->in_stack_pri >= in_coming_pri)
-		  && (pstacktop >= &stack[1])){
+		while ((pstacktop >= stack+1) &&
+		  (pstacktop->in_stack_pri >= pelement->in_coming_pri)) {
 		    *ppostfix++ = pstacktop->code;
 		    pstacktop--;
 		}
@@ -470,8 +470,8 @@ long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
 
 		/* add operators to postfix until open paren */
 		while (pstacktop->element[0] != '('){
-		    if (pstacktop == &stack[1] ||
-		        pstacktop == &stack[0]){
+		    if (pstacktop == stack+1 ||
+		        pstacktop == stack){
 			*perror = 6;
 			*ppostfixStart = BAD_EXPRESSION; return(-1);
 		    }
@@ -489,8 +489,8 @@ long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
 
 		/* add operators to postfix until matching paren */
 		while (pstacktop->element[0] != '('){
-		    if (pstacktop == &stack[1] ||
-		        pstacktop == &stack[0]){
+		    if (pstacktop == stack+1 ||
+		        pstacktop == stack){
 			*perror = 6;
 			*ppostfixStart = BAD_EXPRESSION; return(-1);
 		    }
@@ -508,8 +508,8 @@ long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
 
 		/* add operators of higher priority to	*/
 		/* postfix notation 				*/
-		while ((pstacktop->in_stack_pri > pelement->in_coming_pri)
-		  && (pstacktop >= &stack[1])){
+		while ((pstacktop >= stack+1) &&
+		  (pstacktop->in_stack_pri >= pelement->in_coming_pri)) {
 		      *ppostfix++ = pstacktop->code;
 		      pstacktop--;
 		 }
@@ -534,7 +534,7 @@ long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
 		}
 
 		/* add all operators on stack to postfix */
-		while (pstacktop >= &stack[1]){
+		while (pstacktop >= stack+1){
 		    if (pstacktop->element[0] == '('){
 			*perror = 6;
 			*ppostfixStart = BAD_EXPRESSION; return(-1);
@@ -562,7 +562,7 @@ long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
 	}
 
 	/* add all operators on stack to postfix */
-	while (pstacktop >= &stack[1]){
+	while (pstacktop >= stack+1){
 	    if (pstacktop->element[0] == '('){
 		*perror = 6;
 		*ppostfixStart = BAD_EXPRESSION; return(-1);

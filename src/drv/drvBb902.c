@@ -1,5 +1,5 @@
 /* drvBb902.c */
-/* share/src/drv $Id$ */
+/* share/src/drv @(#)drvBb902.c	1.6     9/14/92 */
 /*
  * subroutines that are used to interface to the binary output cards
  *
@@ -38,7 +38,7 @@
  *				 
  */
 
-static char SccsId[] = "$Id$ ";
+static char SccsId[] = "@(#)drvBb902.c	1.6     9/14/92 ";
 
 /*
  * Code Portions:
@@ -143,8 +143,8 @@ int bb902_driver_init(){
 
 int bb902_driver(card,val,mask)
 register unsigned short	card;
-register unsigned int	*val;
-unsigned int		mask;
+register unsigned int	val;
+register unsigned int	mask;
 {
 	register unsigned int work;
 
@@ -157,11 +157,11 @@ unsigned int		mask;
 		+ pbo_bb902s[card]->low_value;	    /* low */
 
 	/* alter specified bits */
-	work = (work & ~mask) | ((*val) & mask);
+	work = (work & ~mask) | (val & mask);
 
 	/* write new output */
+	pbo_bb902s[card]->low_value = (unsigned short)work;
 	pbo_bb902s[card]->high_value = (unsigned short)(work >> 16);
-		pbo_bb902s[card]->low_value = (unsigned short)work;
 	return (0);
 }
 

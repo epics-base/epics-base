@@ -60,9 +60,10 @@
  * .15  03-15-95  nda     If no readback PV (RxPV) is specified, copy desired
  *                        value (PxDV) to current value (RxCV). Now, plotting
  *                        programs can always monitor RxCV.
+ * .16  04-03-95  nda     If PV field = DESC, change to VAL                  
  */
 
-#define VERSION 1.15
+#define VERSION 1.16
 
 
 
@@ -945,6 +946,9 @@ static void lookupPVs(pscan)
 {
     struct recPvtStruct *precPvt = (struct recPvtStruct *)pscan->rpvt;
     char          *ppvn[PVN_SIZE];
+    char          *pdesc = ".DESC";
+    char          *pval  = ".VAL";
+    char          *pdot;
     struct dbAddr **ppdbAddr;   /* ptr to a ptr to dbAddr */
     long          *paddrValid;
     long          prevValid;
@@ -958,6 +962,15 @@ static void lookupPVs(pscan)
 
     for(i=0;i<NUM_DYN_PVS; i++, *ppvn += PVN_SIZE, ppdbAddr++, paddrValid++) {
         prevValid = *paddrValid;
+        /* If PV field name = DESC, change to VAL */
+        pdot = strrchr(*ppvn, '.');
+        if(pdot!=NULL) {
+            if(strncmp(pdot, pdesc, 5) == 0) {
+                strcpy(pdot, pval);
+                db_post_events(pscan, *ppvn, DBE_VALUE);
+            }
+        }
+                
         *paddrValid = dbNameToAddr(*ppvn, *ppdbAddr);
         if(*paddrValid != prevValid)  {
             db_post_events(pscan, paddrValid, DBE_VALUE);

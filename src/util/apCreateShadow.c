@@ -377,7 +377,7 @@ procDirEntries(name, dir, indbdirflag)
 	strcat(dpath, "/");
 	strcat(dpath, name);
 	if (access(dpath, R_OK | F_OK)) {
-	    if ((mkdir(dpath, 0755)) != 0) {
+	    if ((mkdir(dpath, 0775)) != 0) {
 		printf("####################################################\n");
 		printf("procDirEntries: Can't mkdir %s - errno=%d\n", dpath, errno);
 		printf("####################################################\n");

@@ -22,8 +22,8 @@
 pvExistReturn::pvExistReturn ( pvExistReturnEnum s ) :
 	status ( s ) {}
 
-pvExistReturn::pvExistReturn ( const caNetAddr & ) :
-	status ( pverExistsHere ) {}
+pvExistReturn::pvExistReturn ( const caNetAddr & addrIn ) :
+	address ( addrIn ), status ( pverExistsHere ) {}
 
 pvExistReturn::~pvExistReturn ()
 { 

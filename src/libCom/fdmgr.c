@@ -24,8 +24,14 @@
  *	.06 joh 050792  ported to V5 vxWorks now that wrs provides
  *			a fully funtional select()
  *	.07 joh 050792	allroutines now return status
+ *	.08 joh 091192	made write callbacks be oneshots in keeping
+ *			with select() system call operation	
+ *	.09 joh 091192	fixed delete pending field uninitialized if the
+ *			fdentry is reused
  *
- *	 
+ *	NOTES:
+ *	.01 write fd callbacks are one shots consistent with the lower
+ *	likelyhood of select blocking on a fd write.	 
  *
  */
 
@@ -35,16 +41,10 @@
 #	include	<systime.h>
 #	include	<errno.h>
 #	include	<fast_lock.h>
-#if 0
-#	include	<stdioLib.h>
-#endif
 #elif defined(UNIX)
 #	include	<sys/types.h>
 #	include	<sys/time.h>
 #	include	<errno.h>
-#if 0
-#	include	<stdio.h>
-#endif
 #else
 @@@@ Dont compile in this case @@@@
 #endif
@@ -73,18 +73,16 @@
 #define max(x, y)  (((x) < (y)) ? (y) : (x))
 #endif
 
-struct fd_handler{
-	void		(*pfunc)();
-	void		*param;
-};
+enum fdi_type { fdi_read, fdi_write, fdi_excp};
 
 typedef struct{
-	NODE			node;
-	int			fd;
-	struct fd_handler	rd;
-	struct fd_handler	wt;
-	struct fd_handler	excp;
-	int			delete_pending;
+	NODE		node;
+	int		fd;
+	enum fdi_type	fdi;		/* the type of fd interest */
+	fd_set		*pfds;
+	void		(*pfunc)();
+	void		*param;
+	int		delete_pending;
 }fdentry;
 
 typedef struct{
@@ -192,6 +190,15 @@ void		*param;
 	struct timeval	t;
 	int		status;
 
+	if(ptimeout->tv_sec < 0)
+		return NULL;
+	if(ptimeout->tv_usec < 0)
+		return NULL;
+
+	status = fdmgr_gettimeval(pfdctx, &t);
+	if(status < 0)
+		return NULL;
+
 	LOCK(pfdctx);
 	palarm = (alarm *) lstGet(&pfdctx->free_alarm_list);
 	UNLOCK(pfdctx);
@@ -202,10 +209,10 @@ void		*param;
 		}
 	}
 
-	if(ptimeout->tv_sec < 0)
-		return NULL;
-	if(ptimeout->tv_usec < 0)
-		return NULL;
+	/*
+	 * force all fields to a known state
+	 */
+	memset(palarm, 0, sizeof(*palarm));
 
 	ptimeout->tv_sec += ptimeout->tv_usec/USEC_PER_SEC;
 	ptimeout->tv_usec = ptimeout->tv_usec%USEC_PER_SEC;
@@ -213,10 +220,6 @@ void		*param;
 	palarm->func = func;
 	palarm->param = param;
 	
-	status = fdmgr_gettimeval(pfdctx, &t);
-	if(status < 0)
-		return NULL;
-
 	palarm->t.tv_sec = 
 		t.tv_sec + ptimeout->tv_sec + 
 		(t.tv_usec + ptimeout->tv_usec)/USEC_PER_SEC;
@@ -278,27 +281,24 @@ alarm		*palarm;
  *
  *	fdmgr_add_fd()
  *
- *	this rouitine s only supplied for compatibility	
+ *	this rouitine is supplied solely for compatibility	
  *	with earlier versions of this software
  */
 int 
-fdmgr_add_fd(pfdctx, fd, func, param)
+fdmgr_add_fd(pfdctx, fd, pfunc, param)
 fdctx 	*pfdctx;
 int	fd;
-void	(*func)();
+void	(*pfunc)();
 void	*param;
 {
 	int status;
 
-	status = fdmgr_add_fd_callback(
+	status = fdmgr_add_callback(
 			pfdctx, 
 			fd, 
-			func, 
-			param,
-			NULL, 
-			NULL, 
-			NULL, 
-			NULL);
+			fdi_read,
+			pfunc, 
+			param);
 
 	return status;
 }
@@ -306,43 +306,57 @@ void	*param;
 
 /*
  *
- *	fdmgr_add_fd_callbacks()
+ *	fdmgr_add_fd_callback()
  *
  */
 int 
-fdmgr_add_fd_callback(pfdctx, fd, rd_func, rd_param, 
-		wt_func, wt_param, excep_func, excep_param)
-fdctx 	*pfdctx;
-int	fd;
-void	(*rd_func)();
-void	*rd_param;
-void	(*wt_func)();
-void	*wt_param;
-void	(*excep_func)();
-void	*excep_param;
+fdmgr_add_callback(pfdctx, fd, fdi, pfunc, param)
+fdctx 		*pfdctx;
+int		fd;
+enum fdi_type	fdi;
+void		(*pfunc)();
+void		*param;
 {
 	fdentry		*pfdentry;
+	fd_set		*pfds;
 
+	switch(fdi){
+	case fdi_read:
+		pfds = &pfdctx->readch;
+		break;
+	case fdi_write:
+     		pfds = &pfdctx->writech;
+		break;
+	case fdi_excp:
+     		pfds = &pfdctx->excpch;
+		break;
+	default:
+		return ERROR;
+	}
+
+	pfdctx->maxfd = max(pfdctx->maxfd, fd+1);
 	LOCK(pfdctx);
 	pfdentry = (fdentry *) lstGet(&pfdctx->fdentry_free_list);
 	UNLOCK(pfdctx);
 
 	if(!pfdentry){
-		pfdentry = (fdentry *) calloc(1, sizeof(fdentry));
+		pfdentry = (fdentry *) malloc(sizeof(fdentry));
 		if(!pfdentry){
 			return ERROR;
 		}
 	}
 
-	pfdentry->fd = fd;
-	pfdentry->rd.pfunc = rd_func;
-	pfdentry->rd.param = rd_param;
-	pfdentry->wt.pfunc = wt_func;
-	pfdentry->wt.param = wt_param;
-	pfdentry->excp.pfunc = excep_func;
-	pfdentry->excp.param = excep_param;
+	/*
+	 * force all fields to a known state
+	 */
+	memset(pfdentry, 0, sizeof(*pfdentry));
 
-	pfdctx->maxfd = max(pfdctx->maxfd, fd+1);
+	pfdentry->fd = fd;
+	pfdentry->fdi = fdi;
+	pfdentry->pfds = pfds;
+	pfdentry->pfunc = pfunc;
+	pfdentry->param = param;
+	pfdentry->delete_pending = FALSE;
 
 	LOCK(pfdctx);
 	lstAdd(&pfdctx->fdentry_list, pfdentry);
@@ -356,11 +370,28 @@ void	*excep_param;
  *
  *	fdmgr_clear_fd()
  *
+ *	included solely for compatibility with previous release
+ *
  */
 int
 fdmgr_clear_fd(pfdctx, fd)
 fdctx 	*pfdctx;
 int	fd;
+{
+	return fdmgr_clear_callback(pfdctx, fd, fdi_read);
+}
+
+
+/*
+ *
+ *	fdmgr_clear_callback()
+ *
+ */
+int
+fdmgr_clear_callback(pfdctx, fd, fdi)
+fdctx 		*pfdctx;
+int		fd;
+enum fdi_type	fdi;
 {
 	register fdentry	*pfdentry;
 	int			status;
@@ -372,7 +403,7 @@ int	fd;
 		pfdentry;
 		pfdentry = (fdentry *) pfdentry->node.next){
 
-		if(pfdentry->fd == fd){
+		if(pfdentry->fd == fd && pfdentry->fdi == fdi){
 			lstDelete(&pfdctx->fdentry_list, pfdentry);
 			fdmgr_finish_off_fdentry(pfdctx, pfdentry);
 			status = OK;
@@ -389,7 +420,7 @@ int	fd;
                 pfdentry;
                 pfdentry = (fdentry *) pfdentry->node.next){
 
-                if(pfdentry->fd == fd){
+		if(pfdentry->fd == fd && pfdentry->fdi == fdi){
 			pfdentry->delete_pending = TRUE;
                         status = OK;
                         break;
@@ -420,10 +451,7 @@ fdmgr_finish_off_fdentry(pfdctx, pfdentry)
 fdctx 			*pfdctx;
 register fdentry	*pfdentry;
 {
-
-     	FD_CLR(pfdentry->fd, &pfdctx->readch);
-     	FD_CLR(pfdentry->fd, &pfdctx->writech);
-     	FD_CLR(pfdentry->fd, &pfdctx->excpch);
+     	FD_CLR(pfdentry->fd, pfdentry->pfds);
 	lstAdd(&pfdctx->fdentry_free_list, pfdentry);
 }
 
@@ -442,6 +470,7 @@ struct timeval 			*ptimeout;
 	extern			errno;
 	struct timeval		t;
 	alarm			*palarm;
+
 	/*
  	 * This routine is declared here since is only 
 	 * intended for use by this routine. If other
@@ -500,15 +529,7 @@ struct timeval 			*ptimeout;
 		pfdentry;
 		pfdentry = (fdentry *) pfdentry->node.next){
 
-		if(pfdentry->rd.pfunc){
-     			FD_SET(pfdentry->fd, &pfdctx->readch);
-		}
-		if(pfdentry->wt.pfunc){
-     			FD_SET(pfdentry->fd, &pfdctx->writech);
-		}
-		if(pfdentry->excp.pfunc){
-     			FD_SET(pfdentry->fd, &pfdctx->excpch);
-		}
+     		FD_SET(pfdentry->fd, pfdentry->pfds);
 	}
 	UNLOCK(pfdctx);
 
@@ -559,39 +580,26 @@ struct timeval 			*ptimeout;
 		}
 
 		/*
-		 * check for read active
+		 * check for fd active
 		 */
-		if(FD_ISSET(pfdentry->fd, &pfdctx->readch)){
-     			FD_CLR(pfdentry->fd, &pfdctx->readch);
-     			(*pfdentry->rd.pfunc)(pfdentry->rd.param);
-			labor_performed = TRUE;
-		}
+		if(FD_ISSET(pfdentry->fd, pfdentry->pfds)){
+     			FD_CLR(pfdentry->fd, pfdentry->pfds);
 
-		/*
-		 * check for write active
-		 */
-		if(FD_ISSET(pfdentry->fd, &pfdctx->writech)){
-     			FD_CLR(pfdentry->fd, &pfdctx->writech);
-     			(*pfdentry->wt.pfunc)(pfdentry->wt.param);
-			labor_performed = TRUE;
-		}
-	
-		/*
-		 * check for excp active
-		 */
-		if(FD_ISSET(pfdentry->fd, &pfdctx->excpch)){
-     			FD_CLR(pfdentry->fd, &pfdctx->excpch);
-     			(*pfdentry->excp.pfunc)(pfdentry->excp.param);
+     			(*pfdentry->pfunc)(pfdentry->param);
 			labor_performed = TRUE;
 		}
 
 		LOCK(pfdctx)
 		lstDelete(&pfdctx->fdentry_in_use_list, pfdentry);
+
 		/*
 		 * if it is marked pending delete
 		 * reset it and place it on the free list	
+		 *
+		 * write fd interest is treated as a one shot
+		 * so remove them after each action
 		 */
-		if(pfdentry->delete_pending){
+		if(pfdentry->delete_pending || pfdentry->fdi==fdi_write){
 			fdmgr_finish_off_fdentry(pfdctx, pfdentry);
 		}
 		else{

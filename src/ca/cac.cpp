@@ -103,13 +103,8 @@ const cac::pExcepProtoStubTCP cac::tcpExcepJumpTableCAC [] =
 //
 // cac::cac ()
 //
-cac::cac ( cacNotify &notifyIn, bool enablePreemptiveCallbackIn, 
-          unsigned maxNumberOfChannels ) :
+cac::cac ( cacNotify &notifyIn, bool enablePreemptiveCallbackIn ) :
     ipToAEngine ( "caIPAddrToAsciiEngine" ), 
-    chanTable ( maxNumberOfChannels ),
-    ioTable ( maxNumberOfChannels ),
-    sgTable ( 128 ),
-    beaconTable ( 1024 ),
     pudpiiu ( 0 ),
     pSearchTmr ( 0 ),
     pRepeaterSubscribeTmr ( 0 ),
@@ -899,8 +894,8 @@ cacChannel::ioid cac::writeNotifyRequest ( nciu &chan, unsigned type, unsigned n
                                     const void *pValue, cacWriteNotify &notifyIn )
 {
     epicsAutoMutex autoMutex ( this->mutex );
-    autoPtrRecycle  < netWriteNotifyIO > pIO ( *this, netWriteNotifyIO::factory ( 
-                this->freeListWriteNotifyIO, chan, notifyIn ) );
+    autoPtrRecycle  < netWriteNotifyIO > pIO ( this->ioTable, chan.cacPrivateListOfIO::eventq,
+        *this, netWriteNotifyIO::factory ( this->freeListWriteNotifyIO, chan, notifyIn ) );
     if ( pIO.get() ) {
         this->ioTable.add ( *pIO );
         chan.cacPrivateListOfIO::eventq.add ( *pIO );
@@ -918,12 +913,12 @@ cacChannel::ioid cac::readNotifyRequest ( nciu &chan, unsigned type,
                                          unsigned nElem, cacReadNotify &notifyIn )
 {
     epicsAutoMutex autoMutex ( this->mutex );
-    autoPtrRecycle  < netReadNotifyIO > pIO ( *this, netReadNotifyIO::factory ( 
-                this->freeListReadNotifyIO, chan, notifyIn ) );
+    autoPtrRecycle  < netReadNotifyIO > pIO ( this->ioTable, chan.cacPrivateListOfIO::eventq, *this,
+        netReadNotifyIO::factory ( this->freeListReadNotifyIO, chan, notifyIn ) );
     if ( pIO.get() ) {
-        this->flushIfRequired ( chan );
         this->ioTable.add ( *pIO );
         chan.cacPrivateListOfIO::eventq.add ( *pIO );
+        this->flushIfRequired ( chan );
         chan.getPIIU()->readNotifyRequest ( chan, *pIO, type, nElem );
         return pIO.release()->getId ();
     }
@@ -1145,8 +1140,8 @@ void cac::connectAllIO ( nciu &chan )
             try {
                 chan.getPIIU()->subscriptionRequest ( chan, *pSubscr );
             }
-            catch (...) {
-                this->printf ( "cac: insufficent memory to queue event subscription\n" );
+            catch ( ... ) {
+                this->printf ( "cac: invalid subscription request ignored\n" );
             }
         }
         else {
@@ -1225,21 +1220,14 @@ cacChannel::ioid cac::subscriptionRequest ( nciu &chan, unsigned type,
     arrayElementCount nElem, unsigned mask, cacStateNotify &notifyIn )
 {
     epicsAutoMutex autoMutex ( this->mutex );
-    autoPtrRecycle  < netSubscription > pIO ( *this, netSubscription::factory ( 
-                this->freeListSubscription, chan, type, nElem, mask, notifyIn ) );
+    autoPtrRecycle  < netSubscription > pIO ( this->ioTable, chan.cacPrivateListOfIO::eventq, *this, 
+        netSubscription::factory ( this->freeListSubscription, chan, type, nElem, mask, notifyIn ) );
     if ( pIO.get() ) {
-        chan.cacPrivateListOfIO::eventq.add ( *pIO );
         this->ioTable.add ( *pIO );
+        chan.cacPrivateListOfIO::eventq.add ( *pIO );
         if ( chan.connected () ) {
-            try {
-                this->flushIfRequired ( chan );
-                chan.getPIIU()->subscriptionRequest ( chan, *pIO );
-            }
-            catch ( ... ) {
-                chan.cacPrivateListOfIO::eventq.remove ( *pIO );
-                this->ioTable.remove ( *pIO );
-                throw;
-            }
+            this->flushIfRequired ( chan );
+            chan.getPIIU()->subscriptionRequest ( chan, *pIO );
         }
         cacChannel::ioid id = pIO->getId ();
         pIO.release ();

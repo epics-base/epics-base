@@ -1,5 +1,5 @@
 /* recGbl.c - Global record processing routines */
-/* share/src/db @(#)recGbl.c	1.15     8/29/92 */
+/* share/src/db/recGbl.c	$Id$ */
 
 /*
  *      Author:          Marty Kraimer
@@ -37,6 +37,7 @@
  * .07  08-07-92        jba     Added RTN_SUCCESS check for status
  * .08  09-15-92        jba     changed error parm in recGblRecordError calls
  * .09  09-17-92        jba     ANSI C changes
+ * .10  01-27-93        jba     set pact to true during calls to dbPutLink
  */
 
 #include	<vxWorks.h>
@@ -346,7 +347,10 @@ long recGblPutLinkValue(
 {
 	long		options=0;
 	long		status=0;
+	unsigned char   pact;
 
+	pact = precord->pact;
+	precord->pact = TRUE;
 	switch (plink->type){
 		case(CONSTANT):
 			break;
@@ -365,6 +369,7 @@ long recGblPutLinkValue(
 			status=-1;
 			recGblSetSevr(precord,SOFT_ALARM,INVALID_ALARM);
 	}
+	precord->pact = pact;
 	return(status);
 }
 

@@ -109,7 +109,6 @@ LOCAL void clean_addrq()
  */
 void cast_server(void *pParm)
 {
-    unsigned            priorityOfSelf = epicsThreadGetPrioritySelf ();
     struct sockaddr_in  sin;    
     int                 status;
     int                 count=0;
@@ -117,7 +116,6 @@ void cast_server(void *pParm)
     osiSocklen_t        recv_addr_size;
     unsigned short      port;
     int                 nchars;
-    epicsThreadId            tid;
     int                 flag;
 
     taskwdInsert(epicsThreadGetIdSelf(),NULL,NULL);

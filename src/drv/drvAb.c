@@ -1013,7 +1013,7 @@ abDoneTask(){
 		  = (struct ab1771ixe_read *)presponse->data;
     		    pab_table = &ab_btdata[link][adapter][card][0];
 		    pab_sts = &ab_btsts[link][adapter][card][0];
-		    for (i=0, sign_bit=0x100; i<ai_num_channels[AB1771IXE]; i++, sign_bit<<=1){
+		    for (i=0, sign_bit=0x1; i<ai_num_channels[AB1771IXE]; i++, sign_bit<<=1){
 
 			/* status */
 			if ((pmsg->out_of_range & sign_bit) 
@@ -1024,6 +1024,8 @@ abDoneTask(){
 			    *pab_sts = 0;
 			    /* data */
 			    *pab_table = pmsg->data[i];
+			    if(pmsg->pol_stat & (sign_bit << 8)) *pab_table = -*pab_table;
+			    *pab_table += 10000;
 			}
 			pab_sts++;
 			pab_table++;

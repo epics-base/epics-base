@@ -4356,10 +4356,11 @@ DBBASE *pdbbase;
 }
 
 #ifdef __STDC__
-void dbPvdDump(DBBASE *pdbbase)
+void dbPvdDump(DBBASE *pdbbase,int verbose)
 #else
-void dbPvdDump(pdbbase)
+void dbPvdDump(pdbbase,verbose)
 DBBASE *pdbbase;
+int verbose;
 #endif /*__STDC__*/
 {
     unsigned short  hashInd;
@@ -4369,14 +4370,16 @@ DBBASE *pdbbase;
     int		number;
     
     if (ppvd == NULL) return;
-    printf("Process Variable Directory\n");
+    printf("Process Variable Directory ");
+    printf("dbPvdHashTableSize %d dbPvdHashTableShift %d\n",
+	dbPvdHashTableSize,dbPvdHashTableShift);
     for (hashInd=0; hashInd<(unsigned short)dbPvdHashTableSize; hashInd++) {
 	if(ppvd[hashInd] == NULL) continue;
 	ppvdlist=ppvd[hashInd];
 	ppvdNode = (PVDENTRY *) ellFirst(ppvdlist);
-	printf(" %3.3hd=%3.3d\n",hashInd,ellCount(ppvdlist));
+	printf("\n%3.3hd=%3.3d ",hashInd,ellCount(ppvdlist));
 	number=0;
-	while(ppvdNode) {
+	while(ppvdNode && verbose) {
 	    printf(" %s",(char *)ppvdNode->precnode->precord);
 	    if(number++ ==2) {number=0;printf("\n        ");}
 	    ppvdNode = (PVDENTRY *) ellNext((ELLNODE*)ppvdNode);

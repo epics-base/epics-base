@@ -404,7 +404,6 @@ LOCAL void errlogInitPvt(void *arg)
     if(tid) {
         pvtData.errlogInitFailed = FALSE;
     }
-    epicsAtExit(exitHandler,0);
 }
 
 LOCAL void errlogCleanup(void)
@@ -454,6 +453,7 @@ LOCAL void errlogThread(void)
     int          noConsoleMessage;
     char         *pmessage;
 
+    epicsAtExit(exitHandler,0);
     while(TRUE) {
 	epicsEventMustWait(pvtData.waitForWork);
         if(pvtData.atExit) break;

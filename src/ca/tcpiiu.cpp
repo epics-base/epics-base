@@ -1192,18 +1192,16 @@ void tcpiiu::createChannelRequest ( nciu &chan )
     this->sendQue.commitMsg ();
 }
 
-void tcpiiu::clearChannelRequest ( nciu &chan )
+void tcpiiu::clearChannelRequest ( ca_uint32_t sid, ca_uint32_t cid )
 {
-    if ( chan.connected () ) {
-        this->sendQue.beginMsg ();
-        this->sendQue.pushUInt16 ( CA_PROTO_CLEAR_CHANNEL ); // cmd
-        this->sendQue.pushUInt16 ( 0u ); // postsize
-        this->sendQue.pushUInt16 ( 0u ); // dataType
-        this->sendQue.pushUInt16 ( 0u ); // count
-        this->sendQue.pushUInt32 ( chan.getSID () ); // cid
-        this->sendQue.pushUInt32 ( chan.getCID () ); // available 
-        this->sendQue.commitMsg ();
-    }
+    this->sendQue.beginMsg ();
+    this->sendQue.pushUInt16 ( CA_PROTO_CLEAR_CHANNEL ); // cmd
+    this->sendQue.pushUInt16 ( 0u ); // postsize
+    this->sendQue.pushUInt16 ( 0u ); // dataType
+    this->sendQue.pushUInt16 ( 0u ); // count
+    this->sendQue.pushUInt32 ( sid ); // cid
+    this->sendQue.pushUInt32 ( cid ); // available 
+    this->sendQue.commitMsg ();
 }
 
 //
@@ -1248,12 +1246,12 @@ void tcpiiu::subscriptionRequest ( nciu &chan, netSubscription & subscr )
     this->sendQue.commitMsg ();
 }
 
-void tcpiiu::subscriptionCancelRequest ( nciu &chan, netSubscription &subscr )
+void tcpiiu::subscriptionCancelRequest ( nciu & chan, netSubscription & subscr )
 {
     insertRequestHeader ( this->sendQue, 
         CA_PROTO_EVENT_CANCEL, 0u, 
-        static_cast < ca_uint16_t > ( subscr.getType () ), 
-        static_cast < ca_uint16_t > ( subscr.getCount () ), 
+        static_cast < ca_uint16_t > ( subscr.getType() ), 
+        static_cast < ca_uint16_t > ( subscr.getCount() ), 
         chan.getSID(), subscr.getID(), 
         CA_V49 ( this->minorProtocolVersion ) );
     this->sendQue.commitMsg ();

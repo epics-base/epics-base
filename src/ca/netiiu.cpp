@@ -47,7 +47,12 @@ void netiiu::show ( unsigned level ) const
 void netiiu::uninstallAllChan ( tsDLList < nciu > & dstList )
 {
     while ( nciu *pChan = this->channelList.get () ) {
-        this->clearChannelRequest ( *pChan );
+        // if the claim reply has not returned yet then we will issue
+        // the clear chhannel request to the server when the claim reply
+        // arrives and there is no matching nciu in the client
+        if ( pChan->connected() ) {
+            this->clearChannelRequest ( pChan->getSID(), pChan->getCID() );
+        }
         dstList.add ( *pChan );
     }
 }
@@ -128,7 +133,7 @@ void netiiu::createChannelRequest ( nciu & )
 {
 }
 
-void netiiu::clearChannelRequest ( nciu & )
+void netiiu::clearChannelRequest ( ca_uint32_t sid, ca_uint32_t cid )
 {
 }
 
@@ -136,7 +141,7 @@ void netiiu::subscriptionRequest ( nciu &, netSubscription & )
 {
 }
 
-void netiiu::subscriptionCancelRequest ( nciu &, netSubscription & )
+void netiiu::subscriptionCancelRequest (  nciu & chan, netSubscription & subscr )
 {
 }
 

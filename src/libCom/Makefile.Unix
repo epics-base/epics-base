@@ -38,6 +38,9 @@ depends: bld_errSym
 
 bld_errSym: $(OBDIR)/errSymTbl.c $(OBDIR)/errInc.o
 
+$(OBDIR)/errSymTbl.o: $(OBDIR)/errSymTbl.c $(OBDIR)/errInc.o
+	$(COMPILE.c) -o $@ $<
+
 $(OBDIR)/errSymTbl.c $(OBDIR)/errInc.o:
 	@/bin/rm -f errInc.o
 	@$(EPICS_BASE)/tools/blderrSymTbl

@@ -36,6 +36,9 @@ $(OBDIR)/snc.c $(OBDIR)/y.tab.h: snc.y
 	/bin/mv y.tab.h $(OBDIR)
 	/bin/mv y.output $(OBDIR)
 
+$(OBDIR)/sncVersion.o: $(OBDIR)/sncVersion.c
+	$(COMPILE.c) -o $@ $<
+
 $(OBDIR)/sncVersion.c: Version
 	/bin/rm -f $(OBDIR)/sncVersion.c
 	sh makeVersion Version > sncVersion.c

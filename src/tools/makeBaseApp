@@ -56,10 +56,10 @@ EPICS_BASE=`sed -e "s%EPICS_BASE=%%" < EPICS_BASE`
 
 if [ ! -f Makefile ]; then
 	cat  > Makefile <<-\END
+		DIRS += 
 		TOP = .
 		include $(TOP)/config/CONFIG_APP
 		include $(EPICS_BASE)/config/RULES_TOP
-		DIRS = 
 	END
 fi
 
@@ -89,7 +89,9 @@ do
 	if [ -d "${APPNAME}" ]; then continue; fi
 	mkdir ${APPNAME}
 	if [ $? -ne 0 ]; then Cleanup 1 "$USAGE"; fi
-	echo "DIRS += ${APPNAME}" >> Makefile
+	echo "DIRS += ${APPNAME}" > /tmp/'$$'.makeBaseApp.Makefile 
+	cat Makefile >> /tmp/'$$'.makeBaseApp.Makefile
+	mv -f /tmp/'$$'.makeBaseApp.Makefile Makefile
 	cd ${APPNAME}
 	cat > Makefile <<-\END
 		TOP = ..

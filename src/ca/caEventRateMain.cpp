@@ -11,15 +11,28 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void caEventRate ( const char *pName );
+void caEventRate ( const char *pName, unsigned count );
 
 int main ( int argc, char **argv )
 {
-    if ( argc < 2 || argc > 2 ) {
-        printf ( "usage: %s < PV name >\n", argv[0] );
+    if ( argc < 2 || argc > 3 ) {
+        fprintf ( stderr, "usage: %s < PV name > [subscription count]\n", argv[0] );
+        return 0;
     }
 
-    caEventRate ( argv[1] );
+    unsigned count;
+    if ( argc == 3 ) {
+        int status = sscanf ( argv[2], " %u ", & count );
+        if ( status != 1 ) {
+            fprintf ( stderr, "expected unsigned integer 2nd argument\n" );
+            return 0;
+        }
+    }
+    else {
+        count = 1;
+    }
+
+    caEventRate ( argv[1], count );
 
     return 0;
 }

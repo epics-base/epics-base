@@ -2808,11 +2808,14 @@ additional network bandwidth and server CPU load when searching for
 unresolved channels.</p>
 
 <h3><a name="caEventRat">caEventRate</a></h3>
-<pre>caEventRate &lt;PV name&gt;</pre>
+<pre>caEventRate &lt;PV name&gt; [subscription count]</pre>
 
 <h4>Description</h4>
 
-<p>Subscribe to the specified PV and periodically log its event rate.</p>
+<p>Connect to the specified PV, subscribe for monitor updates the specified
+number of times (default once),  and periodically log the current sampled
+event rate, average event rate, and the standard deviation of the event rate
+in Hertz to standard out.</p>
 
 <h3><a name="ca_test">ca_test</a></h3>
 <pre>ca_test &lt;PV name&gt; [value to be written]</pre>

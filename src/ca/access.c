@@ -1,3 +1,4 @@
+/* $Id$	*/
 /************************************************************************/
 /*									*/
 /*	        	      L O S  A L A M O S			*/
@@ -98,6 +99,10 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.75  1995/08/22  00:15:19  jhill
+ * Use 1.0/USEC_PER_SEC and not 1.0e-6
+ * Check for S_db_Pending when calling dbPutNotify()
+ *
  * Revision 1.74  1995/08/22  00:12:07  jhill
  * *** empty log message ***
  *
@@ -969,12 +974,13 @@ int epicsShareAPI ca_search_and_connect
 			 * block
 			 */
 			size = sizeof(*chix) + strcnt + sizeof(struct db_addr);
+			size = CA_MESSAGE_ALIGN(size);
 			*chixptr = chix = (chid) calloc(1,size);
 			if (!chix){
 				return ECA_ALLOCMEM;
 			}
 			chix->id.paddr = (struct db_addr *) 
-				(strcnt + (char *) (chix + 1));
+				CA_MESSAGE_ALIGN(strcnt+(char *)(chix+1));
 			*chix->id.paddr = tmp_paddr;
 			chix->puser = puser;
 			chix->pConnFunc = conn_func;

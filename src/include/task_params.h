@@ -50,6 +50,9 @@
  *				to 60 sec
  * .17	03-18-94	mcn	added entries for breakpoint tasks
  * $Log$
+ * Revision 1.4.4.1  2000/06/28 14:00:23  mrk
+ * no imbeded blanks in task names
+ *
  * Revision 1.4  1998/09/29 14:45:50  mrk
  * Task priorities were changed so that no epics task  has higher priority than netTask.
  * Definitions for IOEVENTSCAN and TIMESTAMP were removed.
@@ -77,6 +80,9 @@
  *
  * Revision 1.27  1995/11/29 19:27:59  jhill
  * added $Log$
+ * added Revision 1.4.4.1  2000/06/28 14:00:23  mrk
+ * added no imbeded blanks in task names
+ * added
  * added Revision 1.4  1998/09/29 14:45:50  mrk
  * added Task priorities were changed so that no epics task  has higher priority than netTask.
  * added Definitions for IOEVENTSCAN and TIMESTAMP were removed.
@@ -259,7 +265,7 @@
 #define CA_CLIENT_STACK		(11000*ARCH_STACK_FACTOR)
 #define CA_REPEATER_STACK	(5096*ARCH_STACK_FACTOR)
 #define CA_ONLINE_STACK		(3048*ARCH_STACK_FACTOR)
-#define TASKWD_STACK		(2000*ARCH_STACK_FACTOR)
+#define TASKWD_STACK		(4000*ARCH_STACK_FACTOR)
 #define SMIOTEST_STACK    	(2000*ARCH_STACK_FACTOR)
 #define SMROTTEST_STACK   	(2000*ARCH_STACK_FACTOR)
 #define EVENT_PEND_STACK   	(5096*ARCH_STACK_FACTOR)

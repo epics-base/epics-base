@@ -4,7 +4,7 @@
  *
  *	Experimental Physics and Industrial Control System (EPICS)
  *
- *	Copyright 1991, the Regents of the University of California,
+ *	Copyright 1990-92, the Regents of the University of California,
  *	and the University of Chicago Board of Governors.
  *
  *	This software was produced under  U.S. Government contracts:
@@ -25,13 +25,14 @@
  *
  * Modification Log:
  * -----------------
- * .01	03-09-90	rac	initial version
- * .02	07-31-91	rac	installed in SCCS
- * .03	09-18-91	rac	change arg for arCFChanRead to int--short
- *				causes problems on Sun4; other minor fixes
+ *  .01 03-09-90 rac	initial version
+ *  .02 07-31-91 rac	installed in SCCS
+ *  .03 09-18-91 rac	change arg for arCFChanRead to int--short
+ *			causes problems on Sun4; other minor fixes
+ *  .04 04-04-92 rac	add arCFChanWrite_args; handle flags for begin
+ *			and end of snapshot
  *
  * make options
- *	-DvxWorks	makes a version for VxWorks
  *	-DNDEBUG	don't compile assert() checking
  *      -DDEBUG         compile various debug code, including checks on
  *                      malloc'd memory
@@ -49,11 +50,7 @@
 * #include <cadef.h>		definitions for Channel Access
 * #include <db_access.h>	definitions for database related items
 * #include <arAccessLib.h>	structures for AR access library routines
-* #ifdef vxWorks
-* #   include <ioLib.h>		obtain mode definitions for VxWorks
-* #else
-* #   include <sys/file.h>	obtain mode definitions for SunOS
-* #endif
+* #include <sys/file.h>		obtain mode definitions for SunOS
 *
 * AR_CHAN_DESC *pChanDesc;	pointer to channel descriptor in chan file
 *   AR_CF_DESC *pCfDesc;	pointer to channel file descriptor
@@ -70,6 +67,9 @@
 *         long  arCFChanPurge(         pChanDesc,   pStamp		)
 *         long  arCFChanRead(          pChanDesc,   type,  >pDbrBuf,  count)
 *         long  arCFChanWrite(         pChanDesc,   pEvHandArg		)
+*         long  arCFChanWrite_args(    pChanDesc,   stamp, dbfType,
+*                                              count, pData, alStat, alSevr)
+*         long  arCFChanWriteByte(     pArChanDesc, value		)
 *         long  arCFChanWriteGR(       pChanDesc,   pEvHandArg		)
 *         long  arCFClose(            >ppCfDesc				)
 *   AR_CF_DESC *arCFCreate(            name,        maxBytes		)
@@ -100,17 +100,13 @@
 #ifndef INCLcadefh
 #   include <cadef.h>
 #endif
-
-#ifdef vxWorks
-#   include <vxWorks.h>
-#   include <ioLib.h>		/* for O_RDWR and O_RDONLY definitions */
-#   include <stdioLib.h>
-#   include <strLib.h>
-#else
-#   include <stdio.h>
-#   include <sys/file.h>	/* for O_RDWR and O_RDONLY definitions */
-#   include <strings.h>
+#ifndef INCLdb_accessh
+#   include <db_access.h>
 #endif
+
+#include <stdio.h>
+#include <sys/file.h>	/* for O_RDWR and O_RDONLY definitions */
+#include <strings.h>
 
 /*+/internal------------------------------------------------------------------
 * NAME  arCF_malloc/arCF_free
@@ -869,7 +865,9 @@ TS_STAMP *pPosStamp;	/* I stamp for desired data; NULL for `rewind' */
     while (1) {
 	stat = arCFChanReadTs(pArChanDesc);
 	if (stat != OK) {
-	    if ((pArChanDesc->flags & (AR_CDESC_BEGIN|AR_CDESC_INACT)) == 0) {
+	    if ((pArChanDesc->flags &
+		(AR_CDESC_BEGIN|AR_CDESC_INACT|
+		AR_CDESC_SNAP_BEGIN|AR_CDESC_SNAP_END)) == 0) {
 		retStat = ERROR;
 		break;
 	    }
@@ -1128,6 +1126,10 @@ TS_STAMP *pKeepStamp;	/* I stamp for oldest data to keep; NULL says
 *		end of file
 *	    AR_CDESC_BEGIN indicates that a new run of data is beginning
 *		for the channel
+*	    AR_CDESC_SNAP_BEGIN indicates that a new run of data is beginning
+*		for the channel, where the run is a synchronous snapshot
+*	    AR_CDESC_SNAP_END indicates that the following value is the
+*		last in a snapshot (may occur with AR_CDESC_SNAP_BEGIN)
 *	    AR_CDESC_INACT indicates that the run of data is done, because
 *		the archive request was inactivated (or disabled)
 *
@@ -1165,6 +1167,7 @@ int	count;			/* I array element count for caller's buffer */
     int		i;		/* temp for loops */
     int		byte0, byteN;	/* bytes from the entry */
     char	*pBuf;		/* temporary pointer for moving data */
+    chtype	recType;	/* type of buffer */
 
     assert(pArChanDesc != NULL);
     assert(pArChanDesc->pMIBuf != NULL);
@@ -1228,6 +1231,27 @@ int	count;			/* I array element count for caller's buffer */
 							ArCRShrtGr.lowWarnLim;
 		pAccessBuf->gshrtval.lower_alarm_limit = ArCRShrtGr.lowAlmLim;
 		break;
+	    case DBR_GR_LONG:
+#define ArCRLngGr ArCDChanHdr(pArChanDesc).graphics.longGr
+		(void)strcpy(pAccessBuf->glngval.units, ArCRLngGr.units);
+		pAccessBuf->glngval.upper_disp_limit = ArCRLngGr.upDispLim;
+		pAccessBuf->glngval.lower_disp_limit = ArCRLngGr.lowDispLim;
+		pAccessBuf->glngval.upper_alarm_limit = ArCRLngGr.upAlmLim;
+		pAccessBuf->glngval.upper_warning_limit = ArCRLngGr.upWarnLim;
+		pAccessBuf->glngval.lower_warning_limit =
+							ArCRLngGr.lowWarnLim;
+		pAccessBuf->glngval.lower_alarm_limit = ArCRLngGr.lowAlmLim;
+		break;
+	    case DBR_GR_CHAR:
+#define ArCRChrGr ArCDChanHdr(pArChanDesc).graphics.shortGr
+		(void)strcpy(pAccessBuf->gchrval.units, ArCRChrGr.units);
+		pAccessBuf->gchrval.upper_disp_limit = ArCRChrGr.upDispLim;
+		pAccessBuf->gchrval.lower_disp_limit = ArCRChrGr.lowDispLim;
+		pAccessBuf->gchrval.upper_alarm_limit = ArCRChrGr.upAlmLim;
+		pAccessBuf->gchrval.upper_warning_limit = ArCRChrGr.upWarnLim;
+		pAccessBuf->gchrval.lower_warning_limit = ArCRChrGr.lowWarnLim;
+		pAccessBuf->gchrval.lower_alarm_limit = ArCRChrGr.lowAlmLim;
+		break;
 	    case DBR_GR_FLOAT:
 #define ArCRFltGr ArCDChanHdr(pArChanDesc).graphics.floatGr
 		pAccessBuf->gfltval.precision = ArCRFltGr.precision;
@@ -1238,6 +1262,17 @@ int	count;			/* I array element count for caller's buffer */
 		pAccessBuf->gfltval.upper_warning_limit = ArCRFltGr.upWarnLim;
 		pAccessBuf->gfltval.lower_warning_limit = ArCRFltGr.lowWarnLim;
 		pAccessBuf->gfltval.lower_alarm_limit = ArCRFltGr.lowAlmLim;
+		break;
+	    case DBR_GR_DOUBLE:
+#define ArCRDblGr ArCDChanHdr(pArChanDesc).graphics.doubleGr
+		pAccessBuf->gdblval.precision = ArCRDblGr.precision;
+		(void)strcpy(pAccessBuf->gdblval.units, ArCRDblGr.units);
+		pAccessBuf->gdblval.upper_disp_limit = ArCRDblGr.upDispLim;
+		pAccessBuf->gdblval.lower_disp_limit = ArCRDblGr.lowDispLim;
+		pAccessBuf->gdblval.upper_alarm_limit = ArCRDblGr.upAlmLim;
+		pAccessBuf->gdblval.upper_warning_limit = ArCRDblGr.upWarnLim;
+		pAccessBuf->gdblval.lower_warning_limit = ArCRDblGr.lowWarnLim;
+		pAccessBuf->gdblval.lower_alarm_limit = ArCRDblGr.lowAlmLim;
 		break;
 	    case DBR_GR_ENUM:
 #define ArCREnmGr ArCDChanHdr(pArChanDesc).graphics.enumGr.pGRBuf
@@ -1265,222 +1300,21 @@ int	count;			/* I array element count for caller's buffer */
 	retStat = ERROR;
     }
     else {
-        if (ArCDChanHdr(pArChanDesc).chanType == DBF_STRING) {
-	    if (type == DBR_STRING)
-		pBuf = ((char *)pAccessBuf->strval) - 1;
-	    else if (type == DBR_STS_STRING)
-		pBuf = ((char *)pAccessBuf->sstrval.value) - 1;
-	    else if (type == DBR_TIME_STRING)
-		pBuf = ((char *)pAccessBuf->tstrval.value) - 1;
-	    else if (type == DBR_GR_STRING)
-		pBuf = ((char *)pAccessBuf->gstrval.value) - 1;
-	    else if (count <= 0)
-		pBuf = NULL;
-	    else
-		assertAlways(0);
-
-	    /* set byte count one byte shy to allow checking status on the
-	    last one.  This is done as a time saving measure */
-	    nBytes = ArCDChanHdr(pArChanDesc).elCount*db_strval_dim - 1;
-	    countBytes = count * db_strval_dim;
-	    for (i=0; i<nBytes; i++) {
-		if (i<countBytes)
-		    *(++pBuf) = ArCRFetch;
-		else
-		    ArCRFetch;
-	    }
-	    byteN = ArCRFetch;		/* last, for status */
-	    if (countBytes > nBytes)
-		*(++pBuf)  = byteN;
-	    if (byteN == ERROR)
-		retStat = ERROR;
+	assert(dbr_type_is_valid(type));
+        recType = ArCDChanHdr(pArChanDesc).chanType;
+	if (count <= 0) pBuf = NULL;
+	else pBuf = ((char *)dbr_value_ptr(pAccessBuf, type)) - 1;
+	/* set byte count one byte shy to allow checking status on the
+	last one.  This is done as a time saving measure */
+	nBytes = ArCDChanHdr(pArChanDesc).elCount*dbr_value_size[recType] - 1;
+	countBytes = count * dbr_value_size[recType];
+	for (i=0; i<nBytes; i++) {
+	    if (i<countBytes)	*(++pBuf) = ArCRFetch;
+	    else		ArCRFetch;
 	}
-        else if (ArCDChanHdr(pArChanDesc).chanType == DBF_SHORT) {
-	    if (type == DBR_SHORT)
-		pBuf = ((char *)&pAccessBuf->shrtval) - 1;
-	    else if (type == DBR_STS_SHORT)
-		pBuf = ((char *)&pAccessBuf->sshrtval.value) - 1;
-	    else if (type == DBR_TIME_SHORT)
-		pBuf = ((char *)&pAccessBuf->tshrtval.value) - 1;
-	    else if (type == DBR_GR_SHORT)
-		pBuf = ((char *)&pAccessBuf->gshrtval.value) - 1;
-	    else if (count <= 0)
-		pBuf = NULL;
-	    else
-		assertAlways(0);
-
-	    /* set byte count one byte shy to allow checking status on the
-	    last one.  This is done as a time saving measure */
-	    nBytes = ArCDChanHdr(pArChanDesc).elCount*sizeof(short) - 1;
-	    countBytes = count * sizeof(short);
-	    for (i=0; i<nBytes; i++) {
-		if (i<countBytes)
-		    *(++pBuf) = ArCRFetch;
-		else
-		    ArCRFetch;
-	    }
-	    byteN = ArCRFetch;		/* last, for status */
-	    if (countBytes > nBytes)
-		*(++pBuf)  = byteN;
-	    if (byteN == ERROR)
-		retStat = ERROR;
-	}
-        else if (ArCDChanHdr(pArChanDesc).chanType == DBF_FLOAT) {
-	    if (type == DBR_FLOAT)
-		pBuf = ((char *)&pAccessBuf->fltval) - 1;
-	    else if (type == DBR_STS_FLOAT)
-		pBuf = ((char *)&pAccessBuf->sfltval.value) - 1;
-	    else if (type == DBR_TIME_FLOAT)
-		pBuf = ((char *)&pAccessBuf->tfltval.value) - 1;
-	    else if (type == DBR_GR_FLOAT)
-		pBuf = ((char *)&pAccessBuf->gfltval.value) - 1;
-	    else if (count <= 0)
-		pBuf = NULL;
-	    else
-		assertAlways(0);
-
-	    /* set byte count one byte shy to allow checking status on the
-	    last one.  This is done as a time saving measure */
-	    nBytes = ArCDChanHdr(pArChanDesc).elCount*sizeof(float) - 1;
-	    countBytes = count * sizeof(float);
-	    for (i=0; i<nBytes; i++) {
-		if (i<countBytes)
-		    *(++pBuf) = ArCRFetch;
-		else
-		    ArCRFetch;
-	    }
-	    byteN = ArCRFetch;		/* last, for status */
-	    if (countBytes > nBytes)
-		*(++pBuf)  = byteN;
-	    if (byteN == ERROR)
-		retStat = ERROR;
-	}
-        else if (ArCDChanHdr(pArChanDesc).chanType == DBF_LONG) {
-	    if (type == DBR_LONG)
-		pBuf = ((char *)&pAccessBuf->longval) - 1;
-	    else if (type == DBR_STS_LONG)
-		pBuf = ((char *)&pAccessBuf->slngval.value) - 1;
-	    else if (type == DBR_TIME_LONG)
-		pBuf = ((char *)&pAccessBuf->tlngval.value) - 1;
-	    else if (type == DBR_GR_LONG)
-		pBuf = ((char *)&pAccessBuf->glngval.value) - 1;
-	    else if (count <= 0)
-		pBuf = NULL;
-	    else
-		assertAlways(0);
-
-	    /* set byte count one byte shy to allow checking status on the
-	    last one.  This is done as a time saving measure */
-	    nBytes = ArCDChanHdr(pArChanDesc).elCount*sizeof(long) - 1;
-	    countBytes = count * sizeof(long);
-	    for (i=0; i<nBytes; i++) {
-		if (i<countBytes)
-		    *(++pBuf) = ArCRFetch;
-		else
-		    ArCRFetch;
-	    }
-	    byteN = ArCRFetch;		/* last, for status */
-	    if (countBytes > nBytes)
-		*(++pBuf)  = byteN;
-	    if (byteN == ERROR)
-		retStat = ERROR;
-	}
-        else if (ArCDChanHdr(pArChanDesc).chanType == DBF_DOUBLE) {
-	    if (type == DBR_DOUBLE)
-		pBuf = ((char *)&pAccessBuf->doubleval) - 1;
-	    else if (type == DBR_STS_DOUBLE)
-		pBuf = ((char *)&pAccessBuf->sdblval.value) - 1;
-	    else if (type == DBR_TIME_DOUBLE)
-		pBuf = ((char *)&pAccessBuf->tdblval.value) - 1;
-	    else if (type == DBR_GR_DOUBLE)
-		pBuf = ((char *)&pAccessBuf->gdblval.value) - 1;
-	    else if (count <= 0)
-		pBuf = NULL;
-	    else
-		assertAlways(0);
-
-	    /* set byte count one byte shy to allow checking status on the
-	    last one.  This is done as a time saving measure */
-	    nBytes = ArCDChanHdr(pArChanDesc).elCount*sizeof(double) - 1;
-	    countBytes = count * sizeof(double);
-	    for (i=0; i<nBytes; i++) {
-		if (i<countBytes)
-		    *(++pBuf) = ArCRFetch;
-		else
-		    ArCRFetch;
-	    }
-	    byteN = ArCRFetch;		/* last, for status */
-	    if (countBytes > nBytes)
-		*(++pBuf)  = byteN;
-	    if (byteN == ERROR)
-		retStat = ERROR;
-	}
-        else if (ArCDChanHdr(pArChanDesc).chanType == DBF_ENUM) {
-	    if (type == DBR_ENUM)
-		pBuf = ((char *)&pAccessBuf->enmval) - 1;
-	    else if (type == DBR_STS_ENUM)
-		pBuf = ((char *)&pAccessBuf->senmval.value) - 1;
-	    else if (type == DBR_TIME_ENUM)
-		pBuf = ((char *)&pAccessBuf->tenmval.value) - 1;
-	    else if (type == DBR_GR_ENUM)
-		pBuf = ((char *)&pAccessBuf->genmval.value) - 1;
-	    else if (count <= 0)
-		pBuf = NULL;
-	    else
-		assertAlways(0);
-
-	    /* set byte count one byte shy to allow checking status on the
-	    last one.  This is done as a time saving measure */
-	    nBytes = ArCDChanHdr(pArChanDesc).elCount*sizeof(short) - 1;
-	    countBytes = count * sizeof(short);
-	    for (i=0; i<nBytes; i++) {
-		if (i<countBytes)
-		    *(++pBuf) = ArCRFetch;
-		else
-		    ArCRFetch;
-	    }
-	    byteN = ArCRFetch;		/* last, for status */
-	    if (countBytes > nBytes)
-		*(++pBuf)  = byteN;
-	    if (byteN == ERROR)
-		retStat = ERROR;
-	}
-        else if (ArCDChanHdr(pArChanDesc).chanType == DBF_CHAR) {
-	    if (type == DBR_CHAR)
-		pBuf = ((char *)&pAccessBuf->charval) - 1;
-	    else if (type == DBR_STS_CHAR)
-		pBuf = ((char *)&pAccessBuf->schrval.value) - 1;
-	    else if (type == DBR_TIME_CHAR)
-		pBuf = ((char *)&pAccessBuf->tchrval.value) - 1;
-	    else if (type == DBR_GR_CHAR)
-		pBuf = ((char *)&pAccessBuf->gchrval.value) - 1;
-	    else if (count <= 0)
-		pBuf = NULL;
-	    else
-		assertAlways(0);
-
-	    /* set byte count one byte shy to allow checking status on the
-	    last one.  This is done as a time saving measure */
-	    nBytes = ArCDChanHdr(pArChanDesc).elCount*sizeof(char) - 1;
-	    countBytes = count * sizeof(char);
-	    for (i=0; i<nBytes; i++) {
-		if (i<countBytes)
-		    *(++pBuf) = ArCRFetch;
-		else
-		    ArCRFetch;
-	    }
-	    byteN = ArCRFetch;		/* last, for status */
-	    if (countBytes > nBytes)
-		*(++pBuf)  = byteN;
-	    if (byteN == ERROR)
-		retStat = ERROR;
-	}
-	else {
-/*----------------------------------------------------------------------------
-*    illegal buffer type
-*---------------------------------------------------------------------------*/
-	    (void)fprintf(stderr, "arCFChanRead: unimplemented buffer type\n");
-	}
+	byteN = ArCRFetch;		/* last, for status */
+	if (countBytes > nBytes)	*(++pBuf)  = byteN;
+	if (byteN == ERROR)		retStat = ERROR;
     }
 
     return retStat;
@@ -1518,7 +1352,8 @@ AR_CHAN_DESC *pArChanDesc;	/* IO pointer to channel descriptor */
 
     /* turn off various flags */
     pArChanDesc->flags &= ~(AR_CDESC_EOF | AR_CDESC_BEGIN | AR_CDESC_INACT |
-						AR_CDESC_DISCON | AR_CDESC_SUP);
+				AR_CDESC_SNAP_BEGIN | AR_CDESC_SNAP_END |
+				AR_CDESC_DISCON | AR_CDESC_SUP);
 
 /*----------------------------------------------------------------------------
 * handle time stamp
@@ -1554,6 +1389,18 @@ AR_CHAN_DESC *pArChanDesc;	/* IO pointer to channel descriptor */
 	    }
 	    else if (byte0 == AR_DAT_IC_MON_BEGIN) {	/* begin monitor */
 		pArChanDesc->flags |= AR_CDESC_BEGIN;
+		retStat = ERROR;
+	    }
+	    else if (byte0 == AR_DAT_IC_SNAP_BEGIN) {	/* begin snapshot */
+		pArChanDesc->flags |= AR_CDESC_SNAP_BEGIN;
+		retStat = ERROR;
+	    }
+	    else if (byte0 == AR_DAT_IC_SNAP_SINGLE) {	/* 1 sample snapshot */
+		pArChanDesc->flags |= AR_CDESC_SNAP_BEGIN | AR_CDESC_SNAP_END;
+		retStat = ERROR;
+	    }
+	    else if (byte0 == AR_DAT_IC_SNAP_END) {	/* end snapshot */
+		pArChanDesc->flags |= AR_CDESC_SNAP_END;
 		retStat = ERROR;
 	    }
 	    else if (byte0 == AR_DAT_IC_MON_INACT) {	/* req inactivated */
@@ -1895,6 +1742,7 @@ struct event_handler_args *pArg;/* I pointer to monitor structure */
 	while (ptr < ptrEnd)
 	    (void)ArCWStore(*ptr++);
 	if (ArCWStore(*ptr++) != OK) goto error;
+#undef ArString
     }
     else if (pArg->type == DBR_TIME_SHORT) {
 #define ArShort ((struct dbr_time_short *)pCaBuf)
@@ -1904,6 +1752,7 @@ struct event_handler_args *pArg;/* I pointer to monitor structure */
 	while (ptr < ptrEnd)
 	    (void)ArCWStore(*ptr++);
 	if (ArCWStore(*ptr++) != OK) goto error;
+#undef ArShort
     }
     else if (pArg->type == DBR_TIME_FLOAT) {
 #define ArFloat ((struct dbr_time_float *)pCaBuf)
@@ -1913,6 +1762,7 @@ struct event_handler_args *pArg;/* I pointer to monitor structure */
 	while (ptr < ptrEnd)
 	    (void)ArCWStore(*ptr++);
 	if (ArCWStore(*ptr++) != OK) goto error;
+#undef ArFloat
     }
     else if (pArg->type == DBR_TIME_LONG) {
 #define ArLong ((struct dbr_time_long *)pCaBuf)
@@ -1922,6 +1772,7 @@ struct event_handler_args *pArg;/* I pointer to monitor structure */
 	while (ptr < ptrEnd)
 	    (void)ArCWStore(*ptr++);
 	if (ArCWStore(*ptr++) != OK) goto error;
+#undef ArLong
     }
     else if (pArg->type == DBR_TIME_DOUBLE) {
 #define ArDouble ((struct dbr_time_double *)pCaBuf)
@@ -1931,6 +1782,7 @@ struct event_handler_args *pArg;/* I pointer to monitor structure */
 	while (ptr < ptrEnd)
 	    (void)ArCWStore(*ptr++);
 	if (ArCWStore(*ptr++) != OK) goto error;
+#undef ArDouble
     }
     else if (pArg->type == DBR_TIME_ENUM) {
 #define ArEnum ((struct dbr_time_enum *)pCaBuf)
@@ -1940,12 +1792,310 @@ struct event_handler_args *pArg;/* I pointer to monitor structure */
 	while (ptr < ptrEnd)
 	    (void)ArCWStore(*ptr++);
 	if (ArCWStore(*ptr++) != OK) goto error;
+#undef ArEnum
     }
     else if (pArg->type == DBR_TIME_CHAR) {
 #define ArChar ((struct dbr_time_char *)pCaBuf)
 	assert(ArCDChanHdr(pArChanDesc).chanType == DBF_CHAR);
 	ptr = (char *)(&ArChar->value);
 	ptrEnd = ptr + pArg->count * sizeof(char) - 1;
+	while (ptr < ptrEnd)
+	    (void)ArCWStore(*ptr++);
+	if (ArCWStore(*ptr++) != OK) goto error;
+#undef ArChar
+    }
+    else
+	assertAlways(0);
+
+/*-----------------------------------------------------------------------------
+* update bookkeeping information
+*
+*	.lastByte
+*	.modified in data buffer
+*	.newestStamp in MI buffer
+*	.modified in MI buffer
+*----------------------------------------------------------------------------*/
+    if (pArChanDesc->pData != NULL) {
+	pArChanDesc->pDataBuf->bfInfo.lastByte = pArChanDesc->pData -
+			    (char *)&pArChanDesc->pDataBuf->bfInfo;
+	assert(pArChanDesc->pDataBuf->bfInfo.lastByte > 0);
+	assert(pArChanDesc->pDataBuf->bfInfo.lastByte < 2000);
+    }
+    ArCFModifySet(pArChanDesc->pArCfDesc, pArChanDesc->pDataBuf);
+    ArCDChanHdr(pArChanDesc).newestSecPastEpoch =
+					pArChanDesc->timeStamp.secPastEpoch;
+    ArCDChanHdr(pArChanDesc).newestNsec = pArChanDesc->timeStamp.nsec;
+    ArCFModifySet(pArChanDesc->pArCfDesc, pArChanDesc->pMIBuf);
+
+    return OK;
+error:
+    return ERROR;
+#undef CW_NSEC
+#undef CW_SPE
+}
+long
+arCFChanWrite_args(pArChanDesc, stamp, dbfType, count, pData, alStat, alSevr)
+register
+AR_CHAN_DESC *pArChanDesc;/* IO pointer to channel descriptor */
+TS_STAMP stamp;		/* I time stamp for data */
+chtype	dbfType;	/* I type of data, one of the DBF_... */
+int	count;		/* I element count for data */
+void	*pData;		/* I pointer to actual data */
+int	alStat;		/* I alarm status for data */
+int	alSevr;		/* I alarm severity for data */
+{
+#define CW_NSEC stamp.nsec
+#define CW_SPE stamp.secPastEpoch
+
+    int		stat;		/* status from calls */
+    int		deltaCode;	/* AR_DAT_IC_TIME_xxx code for delta time */
+    int		deltaCount;	/* count of bytes to represent delta time */
+    TS_STAMP	diff;		/* difference between data stamp and chanDesc */
+    ULONG	fraction;	/* fractional part of second, units vary */
+    int		fracCode;	/* AR_DAT_IC_TIME_xxx code for delta time */
+    int		fracCount;	/* count of bytes to represent delta time */
+    register
+    char	*ptr;		/* temp for pointer in loops */
+    register
+    char	*ptrEnd;	/* temp for pointer bound in loops */
+
+    assert(pArChanDesc != NULL);
+    assert(pArChanDesc->pMIBuf != NULL);
+
+    if (count != ArCDChanHdr(pArChanDesc).elCount)
+	goto error;	/* ignore changed count */
+
+    pArChanDesc->flags &= ~AR_CDESC_SUP;	/* turn off suppress */
+    
+/*----------------------------------------------------------------------------
+* time stamp handling
+*
+*    (This is done 'in-line' as an optimization strategy.  When done as a
+*    separate routine, this used as much CPU time as all the rest of
+*    arCFChanWrite() used for status and data for DBR_FLOAT.)
+*
+* NOTES
+* 1.	A lot of the logic in this routine is in support of the rule that
+*	when a "time item" is used, the item can't cross a block
+*	boundary.
+*---------------------------------------------------------------------------*/
+
+    if (TsCmpStampsLT(&stamp, &pArChanDesc->timeStamp))
+        goto error;	/* ignore time running backward */
+    if (ArCDDatInfo(pArChanDesc).stamp.secPastEpoch == 0) {
+/*----------------------------------------------------------------------------
+* case 1
+*    this is the first item which has its beginning in this block.  A
+*    time stamp in the datInfo is needed; there must be enough room
+*    in the block to avoid starting a new block--i.e., to hold the item
+*    code for the data entry.
+*
+*    Since this is the first item which has its beginning in this block,
+*    datInfo.stamp must be set.  The .firstByte item may also need to be set.
+*
+*    This may also be the first item for the channel.  If this is the case,
+*    then .oldestSecPastEpoch in chanHdr needs to be set.
+*---------------------------------------------------------------------------*/
+	if (pArChanDesc->remainCount < 1) {
+	    if (ArCWFlushAndStore(AR_DAT_IC_VAL_STAT  ) != OK)
+								    goto error;
+	}
+	else {
+	    if (ArCWStore(      AR_DAT_IC_VAL_STAT  ) != OK)
+								    goto error;
+	}
+	if (pArChanDesc->pDataBuf->bfInfo.firstByte == 0) {
+	    pArChanDesc->pDataBuf->bfInfo.firstByte = pArChanDesc->pData -
+				    (char *)(&pArChanDesc->pDataBuf->bfInfo);
+	}
+	ArCDDatInfo(pArChanDesc).stamp = stamp;
+	ArCFModifySet(pArChanDesc->pArCfDesc, pArChanDesc->pIndexBuf);
+
+	if (ArCDChanHdr(pArChanDesc).oldestSecPastEpoch == 0) {
+	    ArCDChanHdr(pArChanDesc).oldestSecPastEpoch = CW_SPE;
+	    ArCFModifySet(pArChanDesc->pArCfDesc, pArChanDesc->pMIBuf);
+	}
+    }
+    else {
+/*----------------------------------------------------------------------------
+*    not first item beginning in this block.  Figure out first what's
+*    going to be needed to handle the time stamp.  The questions are:
+*    o  without loss of significance, what type of delta time item is
+*	required?  For that type of delta time item, is the delta time
+*	less than the maximum?  If so, is there enough space left in the
+*	block to hold the delta time item and the first byte of a data item?
+*    o  if a delta time item can't be used or if there isn't enough room
+*	in the block, then a full time stamp is needed.
+*---------------------------------------------------------------------------*/
+	TsDiffAsStamp(&diff, &stamp, &pArChanDesc->timeStamp);
+	if (diff.nsec % 1000000 == 0 && diff.secPastEpoch < 30 &&
+					pArChanDesc->remainCount >= 2+1) {
+/*----------------------------------------------------------------------------
+* case 2
+*	the change can be represented as a delta milli-second (and, there is
+*	room enough to store the item and the first byte of value)
+*----------------------------------------------------------------------------*/
+	    fraction = diff.secPastEpoch*1000 + diff.nsec/1000000;
+	    (void)ArCWStore(    fraction>> 8        );
+	    (void)ArCWStore(    fraction            );
+	    if (ArCWStore(      AR_DAT_IC_VAL_STAT  ) != OK)
+								    goto error;
+	}
+	else if (diff.nsec % 1000 == 0 && diff.secPastEpoch < 15 &&
+					pArChanDesc->remainCount >= 4+1) {
+/*----------------------------------------------------------------------------
+* case 3
+*	the change can be represented as a delta micro-second (and, there is
+*	room enough to store the item and the first byte of value)
+*----------------------------------------------------------------------------*/
+	    fraction = diff.secPastEpoch*1000000 + diff.nsec/1000;
+	    (void)ArCWStore(    AR_DAT_IC_TIME_USEC );
+	    (void)ArCWStore(    fraction>>16        );
+	    (void)ArCWStore(    fraction>> 8        );
+	    (void)ArCWStore(    fraction            );
+	    if (ArCWStore(      AR_DAT_IC_VAL_STAT  ) != OK)
+								    goto error;
+	}
+	else if (diff.secPastEpoch < 4 && pArChanDesc->remainCount >= 5+1) {
+/*----------------------------------------------------------------------------
+* case 4
+*	the change can be represented as a delta nano-second (and, there is
+*	room enough to store the item and the first byte of value)
+*----------------------------------------------------------------------------*/
+	    fraction = diff.secPastEpoch*1000000000 + diff.nsec;
+	    (void)ArCWStore(    AR_DAT_IC_TIME_NSEC );
+	    (void)ArCWStore(    fraction>>24        );
+	    (void)ArCWStore(    fraction>>16        );
+	    (void)ArCWStore(    fraction>> 8        );
+	    (void)ArCWStore(    fraction            );
+	    if (ArCWStore(      AR_DAT_IC_VAL_STAT  ) != OK)
+								    goto error;
+	}
+	else {
+/*----------------------------------------------------------------------------
+* case 5
+*	the change is either too large to be accomodated by a delta time
+*	item or else there isn't enough room left in the block for a delta
+*	time item followed by the first byte of a data item.  If there isn't
+*	enough space left in the block for the required items, a new block
+*	will be started.
+*---------------------------------------------------------------------------*/
+	    deltaCode = AR_DAT_IC_TIME_STAMP;	/* full time stamp needed */
+	    deltaCount = 5+1;		/* 5 for stamp, 1 for value code */
+	    if (CW_NSEC == 0) {
+		fracCount = 2;
+		fracCode = AR_DAT_IC_TIME_MSEC;	/* delta msec */
+		/* don't add to deltaCount, since this item is optional */
+		fraction = 0;
+	    }
+	    else if (CW_NSEC % 1000000 == 0) {
+		fracCount = 2;
+		fracCode = AR_DAT_IC_TIME_MSEC;	/* delta msec */
+		deltaCount += fracCount;
+		fraction = CW_NSEC / 1000000;
+	    }
+	    else if (CW_NSEC % 1000 == 0) {
+		fracCount = 4;
+		fracCode = AR_DAT_IC_TIME_USEC;	/* delta usec */
+		deltaCount += fracCount;
+		fraction = CW_NSEC / 1000;
+	    }
+	    else {
+		fracCount = 5;
+		fracCode = AR_DAT_IC_TIME_NSEC;	/* delta nsec */
+		deltaCount += fracCount;
+		fraction = CW_NSEC;
+	    }
+
+	    if (pArChanDesc->remainCount < deltaCount) {
+		if (ArCWFlushAndStore(AR_DAT_IC_VAL_STAT  ) != OK)
+								    goto error;
+		pArChanDesc->pDataBuf->bfInfo.firstByte = pArChanDesc->pData -
+				    (char *)(&pArChanDesc->pDataBuf->bfInfo);
+		ArCDDatInfo(pArChanDesc).stamp = stamp;
+		ArCFModifySet(pArChanDesc->pArCfDesc, pArChanDesc->pIndexBuf);
+	    }
+	    else {
+		(void)ArCWStore(deltaCode    	       );
+		(void)ArCWStore(CW_SPE   >>24          );
+		(void)ArCWStore(CW_SPE   >>16          );
+		(void)ArCWStore(CW_SPE   >> 8          );
+		(void)ArCWStore(CW_SPE                 );
+		if (fraction != 0) {
+		    if (fracCode != AR_DAT_IC_TIME_MSEC) {
+			(void)ArCWStore(fracCode	    );
+			if (fracCode == AR_DAT_IC_TIME_NSEC)
+			    (void)ArCWStore(fraction>>24    );
+			(void)ArCWStore(fraction>>16        );
+		    }
+		    (void)ArCWStore(    fraction>> 8        );
+		    (void)ArCWStore(    fraction            );
+		}
+		if (ArCWStore(          AR_DAT_IC_VAL_STAT  ) != OK)
+								    goto error;
+	    }    
+	}
+    }    
+    pArChanDesc->timeStamp = stamp;
+
+/*----------------------------------------------------------------------------
+*    now store the status and data.  The code above has already stored
+*    an AR_DAT_IC_VAL_STAT item code in the file.
+*----------------------------------------------------------------------------*/
+    (void)ArCWStore(alStat);
+    (void)ArCWStore(alSevr);
+    if (dbfType == DBF_STRING) {
+	assert(ArCDChanHdr(pArChanDesc).chanType == DBF_STRING);
+	ptr = (char *)(struct dbf_string *)pData;
+	ptrEnd = ptr + count*db_strval_dim - 1;
+	while (ptr < ptrEnd)
+	    (void)ArCWStore(*ptr++);
+	if (ArCWStore(*ptr++) != OK) goto error;
+    }
+    else if (dbfType == DBF_SHORT) {
+	assert(ArCDChanHdr(pArChanDesc).chanType == DBF_SHORT);
+	ptr = (char *)(struct dbf_short *)pData;
+	ptrEnd = ptr + count * sizeof(short) - 1;
+	while (ptr < ptrEnd)
+	    (void)ArCWStore(*ptr++);
+	if (ArCWStore(*ptr++) != OK) goto error;
+    }
+    else if (dbfType == DBF_FLOAT) {
+	assert(ArCDChanHdr(pArChanDesc).chanType == DBF_FLOAT);
+	ptr = (char *)(struct dbf_float *)pData;
+	ptrEnd = ptr + count * sizeof(float) - 1;
+	while (ptr < ptrEnd)
+	    (void)ArCWStore(*ptr++);
+	if (ArCWStore(*ptr++) != OK) goto error;
+    }
+    else if (dbfType == DBF_LONG) {
+	assert(ArCDChanHdr(pArChanDesc).chanType == DBF_LONG);
+	ptr = (char *)(struct dbf_long *)pData;
+	ptrEnd = ptr + count * sizeof(long) - 1;
+	while (ptr < ptrEnd)
+	    (void)ArCWStore(*ptr++);
+	if (ArCWStore(*ptr++) != OK) goto error;
+    }
+    else if (dbfType == DBF_DOUBLE) {
+	assert(ArCDChanHdr(pArChanDesc).chanType == DBF_DOUBLE);
+	ptr = (char *)(struct dbf_double *)pData;
+	ptrEnd = ptr + count * sizeof(double) - 1;
+	while (ptr < ptrEnd)
+	    (void)ArCWStore(*ptr++);
+	if (ArCWStore(*ptr++) != OK) goto error;
+    }
+    else if (dbfType == DBF_ENUM) {
+	assert(ArCDChanHdr(pArChanDesc).chanType == DBF_ENUM);
+	ptr = (char *)(struct dbf_enum *)pData;
+	ptrEnd = ptr + count * sizeof(short) - 1;
+	while (ptr < ptrEnd)
+	    (void)ArCWStore(*ptr++);
+	if (ArCWStore(*ptr++) != OK) goto error;
+    }
+    else if (dbfType == DBF_CHAR) {
+	assert(ArCDChanHdr(pArChanDesc).chanType == DBF_CHAR);
+	ptr = (char *)(struct dbf_char *)pData;
+	ptrEnd = ptr + count * sizeof(char) - 1;
 	while (ptr < ptrEnd)
 	    (void)ArCWStore(*ptr++);
 	if (ArCWStore(*ptr++) != OK) goto error;
@@ -1976,6 +2126,7 @@ struct event_handler_args *pArg;/* I pointer to monitor structure */
     return OK;
 error:
     return ERROR;
+    
 }
 
 /*+/subr**********************************************************************
@@ -2617,11 +2768,7 @@ AR_CF_DESC *pArCfDesc;	/* I ptr to channel file descriptor */
 		if (MIBuf.chanHdr[i].name[0] != '\0') {
 		    assertAlways(strcmp(pMIBuf->chanHdr[i].name,
 						MIBuf.chanHdr[i].name) == 0);
-		    assertAlways(pMIBuf->chanHdr[i].indexHead ==
-					MIBuf.chanHdr[i].indexHead);
 		    pMIBuf->chanHdr[i].indexTail = MIBuf.chanHdr[i].indexTail;
-		    assertAlways(pMIBuf->chanHdr[i].oldestSecPastEpoch ==
-					MIBuf.chanHdr[i].oldestSecPastEpoch);
 		    pMIBuf->chanHdr[i].newestSecPastEpoch =
 					MIBuf.chanHdr[i].newestSecPastEpoch;
 		    pMIBuf->chanHdr[i].newestNsec =

@@ -434,7 +434,7 @@ static int RegKeyData (CHAR *RegPath, HANDLE hKeyRoot, LPSTR lpzValueName,
 
  }
 
-BOOL epicsAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
+BOOL epicsShareAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
 	int status;
 	WSADATA WsaData;

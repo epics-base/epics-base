@@ -97,7 +97,7 @@ void ca_sg_shutdown(struct ca_static *ca_temp)
 /*
  * ca_sg_create()
  */
-int epicsAPI ca_sg_create(CA_SYNC_GID *pgid)
+int epicsShareAPI ca_sg_create(CA_SYNC_GID *pgid)
 {
 	int	status;
 	CASG 	*pcasg;
@@ -171,7 +171,7 @@ int epicsAPI ca_sg_create(CA_SYNC_GID *pgid)
 /*
  * ca_sg_delete()
  */
-int epicsAPI ca_sg_delete(CA_SYNC_GID gid)
+int epicsShareAPI ca_sg_delete(CA_SYNC_GID gid)
 {
 	int	status;
 	CASG 	*pcasg;
@@ -209,7 +209,7 @@ int epicsAPI ca_sg_delete(CA_SYNC_GID gid)
 /*
  * ca_sg_block()
  */
-int epicsAPI ca_sg_block(CA_SYNC_GID gid, ca_real timeout)
+int epicsShareAPI ca_sg_block(CA_SYNC_GID gid, ca_real timeout)
 {
 	struct timeval	beg_time;
 	ca_real		delay;
@@ -302,7 +302,7 @@ int epicsAPI ca_sg_block(CA_SYNC_GID gid, ca_real timeout)
 /*
  * ca_sg_reset
  */
-int epicsAPI ca_sg_reset(CA_SYNC_GID gid)
+int epicsShareAPI ca_sg_reset(CA_SYNC_GID gid)
 {
 	CASG 	*pcasg;
 
@@ -324,7 +324,7 @@ int epicsAPI ca_sg_reset(CA_SYNC_GID gid)
 /*
  * ca_sg_test
  */
-int epicsAPI ca_sg_test(CA_SYNC_GID gid)
+int epicsShareAPI ca_sg_test(CA_SYNC_GID gid)
 {
 	CASG 	*pcasg;
 
@@ -350,7 +350,7 @@ int epicsAPI ca_sg_test(CA_SYNC_GID gid)
 /*
  * ca_sg_array_put()
  */
-int epicsAPI ca_sg_array_put(
+int epicsShareAPI ca_sg_array_put(
 CA_SYNC_GID 	gid, 
 chtype		type,
 unsigned long 	count, 
@@ -415,7 +415,7 @@ void 		*pvalue)
 /*
  * ca_sg_array_get()
  */
-int epicsAPI ca_sg_array_get(
+int epicsShareAPI ca_sg_array_get(
 CA_SYNC_GID 	gid, 
 chtype		type,
 unsigned long 	count, 

@@ -19,7 +19,7 @@ static char *sccsId = "$Id$";
 #include	"iocinf.h"
 
 
-void epicsAPI ca_test_event(struct event_handler_args args)
+void epicsShareAPI ca_test_event(struct event_handler_args args)
 {
   ca_printf("CAC: ~~~### in test event for [%s] ###~~~\n",args.chid+1);
   ca_printf("CAC: User argument\t%x\n", args.usr);

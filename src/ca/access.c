@@ -98,6 +98,11 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.72  1995/08/12  00:23:32  jhill
+ * check for res id in use, epicsEntry, dont wait for itsy bitsy delay
+ * in ca_pend_event(), better clean up when monitor is deleted and
+ * we are disconnected
+ *
  */
 /*_begin								*/
 /************************************************************************/
@@ -449,7 +454,7 @@ LOCAL void cac_add_msg (IIU *piiu)
 /*
  *	CA_TASK_INITIALIZE
  */
-int epicsAPI ca_task_initialize(void)
+int epicsShareAPI ca_task_initialize(void)
 {
 	int			status;
 	struct ca_static	*ca_temp;
@@ -627,7 +632,7 @@ LOCAL void create_udp_fd()
  * Modify or override the default 
  * client host name.
  */
-int epicsAPI ca_modify_host_name(char *pHostName)
+int epicsShareAPI ca_modify_host_name(char *pHostName)
 {
 	char		*pTmp;
 	unsigned	size;
@@ -682,7 +687,7 @@ int epicsAPI ca_modify_host_name(char *pHostName)
  * Modify or override the default 
  * client user name.
  */
-int epicsAPI ca_modify_user_name(char *pClientName)
+int epicsShareAPI ca_modify_user_name(char *pClientName)
 {
 	char		*pTmp;
 	unsigned	size;
@@ -737,7 +742,7 @@ int epicsAPI ca_modify_user_name(char *pClientName)
  * 	call this routine if you wish to free resources prior to task
  * 	exit- ca_task_exit() is also executed routinely at task exit.
  */
-int epicsAPI ca_task_exit (void)
+int epicsShareAPI ca_task_exit (void)
 {
 	/*
 	 * This indirectly calls ca_process_exit() below
@@ -887,7 +892,7 @@ void ca_process_exit()
  *
  * 	backwards compatible entry point to ca_search_and_connect()
  */
-int epicsAPI ca_build_and_connect
+int epicsShareAPI ca_build_and_connect
 (
  char *name_str,
  chtype get_type,
@@ -912,7 +917,7 @@ int epicsAPI ca_build_and_connect
  *
  *
  */
-int epicsAPI ca_search_and_connect
+int epicsShareAPI ca_search_and_connect
 (
  char *name_str,
  chid *chixptr,
@@ -1141,7 +1146,7 @@ int             reply_type
  * 
  * 
  */
-int epicsAPI ca_array_get
+int epicsShareAPI ca_array_get
 (
 chtype 		type,
 unsigned long 	count,
@@ -1228,7 +1233,7 @@ void 		*pvalue
 /*
  * CA_ARRAY_GET_CALLBACK()
  */
-int epicsAPI ca_array_get_callback
+int epicsShareAPI ca_array_get_callback
 (
 chtype type,
 unsigned long count,
@@ -1454,7 +1459,7 @@ LOCAL int issue_get_callback(evid monix, unsigned cmmd)
  *	CA_ARRAY_PUT_CALLBACK()
  *
  */
-int epicsAPI ca_array_put_callback
+int epicsShareAPI ca_array_put_callback
 (
 chtype				type,
 unsigned long			count,
@@ -1665,7 +1670,7 @@ LOCAL void ca_put_notify_action(PUTNOTIFY *ppn)
  *
  *
  */
-int epicsAPI ca_array_put (
+int epicsShareAPI ca_array_put (
 chtype				type,
 unsigned long			count,
 chid				chix,
@@ -1906,7 +1911,7 @@ LOCAL void free_put_convert(void *pBuf)
  *	Specify an event subroutine to be run for connection events
  *
  */
-int epicsAPI ca_change_connection_event
+int epicsShareAPI ca_change_connection_event
 (
 chid		chix,
 void 		(*pfunc)(struct connection_handler_args)
@@ -1938,7 +1943,7 @@ void 		(*pfunc)(struct connection_handler_args)
 /*
  * ca_replace_access_rights_event
  */
-int epicsAPI ca_replace_access_rights_event(
+int epicsShareAPI ca_replace_access_rights_event(
 chid 	chan, 
 void    (*pfunc)(struct access_rights_handler_args))
 {
@@ -1966,7 +1971,7 @@ void    (*pfunc)(struct access_rights_handler_args))
  *	Specify an event subroutine to be run for asynch exceptions
  *
  */
-int epicsAPI ca_add_exception_event
+int epicsShareAPI ca_add_exception_event
 (
 void 		(*pfunc)(struct exception_handler_args),
 void 		*arg
@@ -1998,7 +2003,7 @@ void 		*arg
  * Undocumented entry for the VAX OPI which may vanish in the future.
  *
  */
-int epicsAPI ca_add_io_event
+int epicsShareAPI ca_add_io_event
 (
 void 		(*ast)(),
 void 		*astarg
@@ -2033,7 +2038,7 @@ void 		*astarg
  *
  *
  */
-int epicsAPI ca_add_masked_array_event
+int epicsShareAPI ca_add_masked_array_event
 (
 chtype 		type,
 unsigned long	count,
@@ -2398,7 +2403,7 @@ void		*pfl
  *	after leaving this routine.
  *
  */
-int epicsAPI ca_clear_event (evid monix)
+int epicsShareAPI ca_clear_event (evid monix)
 {
 	int		status;
 	chid   		chix = monix->chan;
@@ -2497,7 +2502,7 @@ int epicsAPI ca_clear_event (evid monix)
  *	(from this source) after leaving this routine.
  *
  */
-int epicsAPI ca_clear_channel (chid chix)
+int epicsShareAPI ca_clear_channel (chid chix)
 {
 	int				status;
 	evid   				monix;
@@ -2659,7 +2664,7 @@ void clearChannelResources(unsigned id)
 /*	IO completes.							*/
 /*	ca_flush_io() is called by this routine.			*/
 /************************************************************************/
-int epicsAPI ca_pend (ca_real timeout, int early)
+int epicsShareAPI ca_pend (ca_real timeout, int early)
 {
 	struct timeval	beg_time;
 	ca_real		delay;
@@ -2838,7 +2843,7 @@ LOCAL	void ca_pend_io_cleanup()
  * 	flush the send buffer 
  *
  */
-int epicsAPI ca_flush_io()
+int epicsShareAPI ca_flush_io()
 {
 	struct ioc_in_use	*piiu;
 	struct timeval  	timeout;
@@ -2892,7 +2897,7 @@ int epicsAPI ca_flush_io()
  *	CA_TEST_IO ()
  *
  */
-int epicsAPI ca_test_io()
+int epicsShareAPI ca_test_io()
 {
     	if(pndrecvcnt<1){
         	return ECA_IODONE;
@@ -2908,7 +2913,7 @@ int epicsAPI ca_test_io()
  *
  *
  */
-void epicsAPI ca_signal(long ca_status,char *message)
+void epicsShareAPI ca_signal(long ca_status,char *message)
 {
 	ca_signal_with_file_and_lineno(ca_status, message, NULL, 0);
 }
@@ -2917,7 +2922,7 @@ void epicsAPI ca_signal(long ca_status,char *message)
 /*
  * ca_signal_with_file_and_lineno()
  */
-void epicsAPI ca_signal_with_file_and_lineno(
+void epicsShareAPI ca_signal_with_file_and_lineno(
 long		ca_status, 
 char		*message, 
 char		*pfilenm, 
@@ -3280,7 +3285,7 @@ LOCAL void ca_default_exception_handler(struct exception_handler_args args)
  *	(for a manager of the select system call under UNIX)
  *
  */
-int epicsAPI ca_add_fd_registration(CAFDHANDLER *func, void *arg)
+int epicsShareAPI ca_add_fd_registration(CAFDHANDLER *func, void *arg)
 {
 	fd_register_func = func;
 	fd_register_arg = arg;
@@ -3311,7 +3316,7 @@ int ca_defunct()
  *	currently implemented as a function 
  *	(may be implemented as a MACRO in the future)
  */
-char * epicsAPI ca_host_name_function(chid chix)
+char * epicsShareAPI ca_host_name_function(chid chix)
 {
 	IIU	*piiu;
 
@@ -3327,7 +3332,7 @@ char * epicsAPI ca_host_name_function(chid chix)
 /*
  * ca_v42_ok(chid chan)
  */
-int epicsAPI ca_v42_ok(chid chan)
+int epicsShareAPI ca_v42_ok(chid chan)
 {
 	int	v42;
 	IIU	*piiu;
@@ -3404,7 +3409,7 @@ int ca_channel_status(int tid)
 /*
  * ca_replace_printf_handler ()
  */
-int epicsAPI ca_replace_printf_handler (
+int epicsShareAPI ca_replace_printf_handler (
 int (*ca_printf_func)(const char *pformat, va_list args)
 )
 {

@@ -35,6 +35,9 @@ LOCAL int cac_udp_recv_msg (udpiiu *piiu)
         if ( errnoCpy == SOCK_SHUTDOWN ) {
             return -1;
         }
+        if ( errnoCpy == SOCK_ENOTSOCK ) {
+            return -1;
+        }
         if ( errnoCpy == SOCK_EINTR ) {
             if ( piiu->shutdownCmd ) {
                 return -1;
@@ -215,9 +218,11 @@ extern "C" void cacSendThreadUDP (void *pParam)
     while ( ! piiu->shutdownCmd ) {
         int status;
 
-        if (piiu->contactRepeater) {
+        if ( piiu->contactRepeater ) {
             notify_ca_repeater (piiu);
         }
+
+        semBinaryMustTake ( piiu->xmitSignal );
 
         semMutexMustTake (piiu->xmitBufLock);
 
@@ -239,6 +244,9 @@ extern "C" void cacSendThreadUDP (void *pParam)
                     }
 
                     if (localErrno == SOCK_SHUTDOWN) {
+                        break;
+                    }
+                    else if ( localErrno == SOCK_ENOTSOCK ) {
                         break;
                     }
                     else if ( localErrno == SOCK_EINTR ) {
@@ -272,8 +280,6 @@ extern "C" void cacSendThreadUDP (void *pParam)
         }
 
         semMutexGive ( piiu->xmitBufLock );
-
-        semBinaryMustTake ( piiu->xmitSignal );
     }
 
     semBinaryGive ( piiu->sendThreadExitSignal) ;
@@ -551,6 +557,7 @@ udpiiu::~udpiiu ()
 {
     nciu *pChan, *pNext;
 
+    // closes the udp socket
     this->shutdown ();
 
     LOCK (this->pcas);
@@ -577,7 +584,6 @@ udpiiu::~udpiiu ()
         (*this->pcas->ca_fd_register_func) 
             (this->pcas->ca_fd_register_arg, this->sock, FALSE);
     }
-    socket_close (this->sock);
 }
 
 /*
@@ -587,9 +593,13 @@ void udpiiu::shutdown ()
 {
     int status;
 
-    status = ::shutdown (this->sock, SD_BOTH);
+    //
+    // use of shutdown () for this purpose on UDP
+    // sockets does not work on certain OS (i.e. solaris).
+    //
+    status = socket_close ( this->sock );
     if ( status ) {
-        errlogPrintf ( "CAC UDP shutdown error was %s\n", 
+        errlogPrintf ( "CAC UDP socket close error was %s\n", 
             SOCKERRSTR (SOCKERRNO) );
     }
 

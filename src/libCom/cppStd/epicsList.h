@@ -82,10 +82,7 @@ friend class epicsListConstIterator<T>;
 
 // Specialized algorithms:
 template <class T>
-    inline void swap(epicsList<T>& x, epicsList<T>& y) { x.swap(y); }
-
-template <class T>
-    inline void epicsSwap(epicsList<T>& x, epicsList<T>& y) { x.swap(y); }
+    inline void epicsListSwap(epicsList<T>& x, epicsList<T>& y) { x.swap(y); }
 
 
 // Mutable iterator

@@ -125,7 +125,7 @@ int MAIN(int /*argc*/, char* /*argv[]*/) {
 	epicsList<fred*> Freda;
 	test(Freda.empty());
 	
-	epicsSwap(Fred, Freda);
+	epicsListSwap(Fred, Freda);
 	test(Fred.empty());
 	test(Freda.size() == 3);
 	test(Freda.front() == apf[0]);

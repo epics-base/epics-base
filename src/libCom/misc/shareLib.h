@@ -157,3 +157,20 @@
 
 #endif
 
+#ifndef INLINE_defs_EPICS
+#define INLINE_defs_EPICS
+#   ifndef __cplusplus
+#       if defined (__GNUC__)
+#	        define INLINE extern __inline__
+#       elif defined (_MSC_VER)
+#	        define INLINE __inline
+#       elif defined (_SUNPRO_C)
+#           pragma error_messages (off, extern and prior uses redeclared as static)
+#           define INLINE static
+#       else
+#	        define INLINE static
+#       endif
+#   endif /* ifndef __cplusplus */
+#endif /* ifdef INLINE_defs_EPICS */
+
+

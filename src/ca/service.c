@@ -1047,7 +1047,7 @@ void cac_reconnect_channel(caResId cid, short type, unsigned short count)
 
 	piiu = (IIU *) chan->piiu;
 
-    if ( piiu == ca_static->ca_piiuCast ) {
+    if ( piiu->state != iiu_connected ) {
 		UNLOCK;
 		return;
     }

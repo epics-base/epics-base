@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.18  1998/11/18 18:52:49  jhill
+ * fixed casChannelI undefined symbols on WIN32
+ *
  * Revision 1.17  1998/10/23 00:28:20  jhill
  * fixed HP-UX warnings
  *
@@ -432,7 +435,7 @@ class casChannelI : public tsDLNode<casChannelI>, public casRes,
 				public casEvent {
 public:
 	casChannelI (const casCtx &ctx, casChannel &chanAdapter);
-	virtual ~casChannelI();
+	epicsShareFunc virtual ~casChannelI();
 
 	casCoreClient &getClient() const
 	{	

@@ -3,6 +3,9 @@
 
 /*
  * $Log$
+ * Revision 1.31  1997/04/09 18:33:49  mrk
+ * Restore original
+ *
  * Revision 1.29  1996/06/12 20:04:51  winans
  * Added better debugging code to the initXX logic.
  *
@@ -97,6 +100,7 @@
 
 #include	<devLib.h>
 #include	<alarm.h>
+#include	<epicsPrint.h>
 #include	<cvtTable.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
@@ -2245,11 +2249,22 @@ unsigned short	val;	/* used for EFAST operations only */
 		status = (*(parmBlock->wrConversion))(status, pdpvt);
 	}
 	break;
-    case GPIBCNTL:		/* send cmd with atn line active */
+    case GPIBCNTL:	/* send cmd with atn line active */
         status = (*(drvGpib.writeIbCmd))(pdpvt->head.pibLink, pCmd->cmd, 
 				strlen(pCmd->cmd));
         break;
-    case GPIBEFASTO:		/* write the enumerated cmd from the P3 array */
+    case GPIBEFASTO:	/* write the enumerated cmd from the P3 array */
+	if(pCmd->P3==NULL) {
+	  epicsPrintf("%s devSup : GPIBEFASTO specified but no EFAST Table\n");
+	  return(ERROR);
+	} else {
+	    int i;
+	    /*Check that val in bounds*/
+            if(val>15) return(ERROR);
+            for(i=0; i<=val; i++ ) {
+              if(P3[i]==NULL) return(ERROR);
+            }
+	}
         if (pCmd->P3[val] != NULL)
 	{
 	    status = (*(drvGpib.writeIb))(pdpvt->head.pibLink,ibnode, pCmd->P3[val], 

@@ -119,16 +119,19 @@ static char *promptVXI_IO[] = {
 	"STATIC   la :",
 	"        parm:"};
 static char **promptAddr[VXI_IO+1] = {
-	promptCONSTANT,promptPV_LINK,promptVME_IO,
-	promptCAMAC_IO,promptAB_IO,promptGPIB_IO,promptBITBUS_IO,
-	NULL,NULL,promptINST_IO,promptBBGPIB_IO,
+	promptCONSTANT,
+	promptPV_LINK,
+	promptVME_IO,
+	promptCAMAC_IO,
+	promptAB_IO,
+	promptGPIB_IO,
+	promptBITBUS_IO,
+	NULL,NULL,NULL,NULL,NULL,
+	promptINST_IO,
+	promptBBGPIB_IO,
 	promptVXI_IO};
 
-static int formlines[VXI_IO+1] = {
-	1,4,2,
-	4,5,3,5,
-	0,0,1,4,
-	5};
+static int formlines[VXI_IO+1] = { 1,4,2,4,5,3,5,0,0,0,0,0,1,4,5 };
 
 
 /* internal routines*/

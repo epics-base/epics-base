@@ -488,7 +488,7 @@ int	precision;
 		flt_value = -flt_value;
 	}
 
-	if (flt_value >= 10000000 ){
+	if (flt_value >= 10000000 || flt_value < 1e-7 ){
 		gcvt(flt_value,20,pstr_value);
 		return;
 	}

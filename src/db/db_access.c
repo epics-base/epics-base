@@ -29,6 +29,7 @@
 #include <math.h>
 #include <float.h>
 
+#include "epicsConvert.h"
 #include "dbDefs.h"
 #include "errlog.h"
 #include "ellLib.h"
@@ -117,19 +118,6 @@ extern unsigned short dbDBRnewToDBRold[DBR_ENUM+1];
 #ifndef MAX_STRING_SIZE
 #define MAX_STRING_SIZE	40
 #endif
-
-/*safe double to float conversion*/
-static void safeDoubleToFloat(double *pd,float *pf)
-{
-    double abs = fabs(*pd);
-    if(abs>=FLT_MAX) {
-        if(*pd>0.0) *pf = FLT_MAX; else *pf = -FLT_MAX;
-    } else if(abs<=FLT_MIN) {
-        if(*pd>0.0) *pf = FLT_MIN; else *pf = -FLT_MIN;
-    } else {
-        *pf = *pd;
-    }
-}
 
 /* From $cs/dblib/src/dbiocsubs.c
  * subroutines
@@ -686,12 +674,12 @@ void		*pfl
 		pold->precision = new.precision;
 		strncpy(pold->units,new.units,MAX_UNITS_SIZE);
 		pold->units[MAX_UNITS_SIZE-1] = '\0';
-                safeDoubleToFloat(&new.upper_disp_limit,&pold->upper_disp_limit);
-                safeDoubleToFloat(&new.lower_disp_limit,&pold->lower_disp_limit);
-                safeDoubleToFloat(&new.upper_alarm_limit,&pold->upper_alarm_limit);
-                safeDoubleToFloat(&new.upper_warning_limit,&pold->upper_warning_limit);
-                safeDoubleToFloat(&new.lower_warning_limit,&pold->lower_warning_limit);
-                safeDoubleToFloat(&new.lower_alarm_limit,&pold->lower_alarm_limit);
+                pold->upper_disp_limit = epicsConvertDoubleToFloat(new.upper_disp_limit);
+                pold->lower_disp_limit = epicsConvertDoubleToFloat(new.lower_disp_limit);
+                pold->upper_alarm_limit = epicsConvertDoubleToFloat(new.upper_alarm_limit);
+                pold->lower_alarm_limit = epicsConvertDoubleToFloat(new.lower_alarm_limit);
+                pold->upper_warning_limit = epicsConvertDoubleToFloat(new.upper_warning_limit);
+                pold->lower_warning_limit = epicsConvertDoubleToFloat(new.lower_warning_limit);
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_FLOAT,&(pold->value),&options,
@@ -859,14 +847,14 @@ void		*pfl
 		pold->precision = new.precision;
 		strncpy(pold->units,new.units,MAX_UNITS_SIZE);
 		pold->units[MAX_UNITS_SIZE-1] = '\0';
-                safeDoubleToFloat(&new.upper_disp_limit,&pold->upper_disp_limit);
-                safeDoubleToFloat(&new.lower_disp_limit,&pold->lower_disp_limit);
-                safeDoubleToFloat(&new.upper_alarm_limit,&pold->upper_alarm_limit);
-                safeDoubleToFloat(&new.upper_warning_limit,&pold->upper_warning_limit);
-                safeDoubleToFloat(&new.lower_warning_limit,&pold->lower_warning_limit);
-                safeDoubleToFloat(&new.lower_alarm_limit,&pold->lower_alarm_limit);
-                safeDoubleToFloat(&new.upper_ctrl_limit,&pold->upper_ctrl_limit);
-                safeDoubleToFloat(&new.lower_ctrl_limit,&pold->lower_ctrl_limit);
+                pold->upper_disp_limit = epicsConvertDoubleToFloat(new.upper_disp_limit);
+                pold->lower_disp_limit = epicsConvertDoubleToFloat(new.lower_disp_limit);
+                pold->upper_alarm_limit = epicsConvertDoubleToFloat(new.upper_alarm_limit);
+                pold->lower_alarm_limit = epicsConvertDoubleToFloat(new.lower_alarm_limit);
+                pold->upper_warning_limit = epicsConvertDoubleToFloat(new.upper_warning_limit);
+                pold->lower_warning_limit = epicsConvertDoubleToFloat(new.lower_warning_limit);
+                pold->upper_ctrl_limit = epicsConvertDoubleToFloat(new.upper_ctrl_limit);
+                pold->lower_ctrl_limit = epicsConvertDoubleToFloat(new.lower_ctrl_limit);
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_FLOAT,&(pold->value),&options,

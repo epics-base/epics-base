@@ -22,6 +22,7 @@
 #include <math.h>
 #include <float.h>
 
+#include "epicsConvert.h"
 #include "dbDefs.h"
 #include "errlog.h"
 #include "cvtFast.h"
@@ -37,20 +38,6 @@
 #include "recGbl.h"
 #include "dbConvert.h"
 
-/*safe double to float conversion*/
-static void safeDoubleToFloat(double *pd,float *pf)
-{
-    double abs = fabs(*pd);
-    if(*pd==0.0) {
-        *pf = 0.0;
-    } else if(abs>=FLT_MAX) {
-        if(*pd>0.0) *pf = FLT_MAX; else *pf = -FLT_MAX;
-    } else if(abs<=FLT_MIN) {
-        if(*pd>0.0) *pf = FLT_MIN; else *pf = -FLT_MIN;
-    } else {
-        *pf = *pd;
-    }
-}
 /* DATABASE ACCESS GET CONVERSION SUPPORT */
 
 static long getStringString (
@@ -1900,12 +1887,12 @@ static long getDoubleFloat(
     double *psrc=(double *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-        safeDoubleToFloat(psrc,pbuffer);
+        *pbuffer = epicsConvertDoubleToFloat(*psrc);
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-        safeDoubleToFloat(psrc,pbuffer);
+        *pbuffer = epicsConvertDoubleToFloat(*psrc);
         ++psrc; ++pbuffer;
 	if(++offset==no_elements) psrc=(double *)paddr->pfield;
 	nRequest--;
@@ -4110,12 +4097,12 @@ static long putDoubleFloat(
     float  *pdest=(float *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-        safeDoubleToFloat(pbuffer,pdest);
+        *pdest = epicsConvertDoubleToFloat(*pbuffer);
 	return(0);
     }
     pdest += offset;
     while (nRequest) {
-        safeDoubleToFloat(pbuffer,pdest);
+        *pdest = epicsConvertDoubleToFloat(*pbuffer);
         ++pbuffer; ++pdest;
 	if(++offset==no_elements) pdest=(float *)paddr->pfield;
 	nRequest--;

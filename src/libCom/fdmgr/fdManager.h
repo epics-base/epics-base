@@ -135,6 +135,8 @@ private:
 	fdManager &manager;
 };
 
+class osiTimerQueue;
+
 //
 // fdManager
 //
@@ -148,20 +150,23 @@ public:
     //
     class fdInterestSubscriptionAlreadyExits {};
 
-	epicsShareFunc fdManager();
-	epicsShareFunc ~fdManager();
+	epicsShareFunc fdManager (osiTimerQueue &timerQueue = osiDefaultTimerQueue);
+	epicsShareFunc ~fdManager ();
 	epicsShareFunc void process (double delay); // delay parameter is in seconds
 
 	//
 	// returns NULL if the fd is unknown
 	//
-    epicsShareFunc fdReg *lookUpFD(const SOCKET fd, const fdRegType type);
+    epicsShareFunc fdReg *lookUpFD (const SOCKET fd, const fdRegType type);
+
+    osiTimerQueue & timerQueueRef () const;
 
 private:
 	tsDLList<fdReg> regList;
 	tsDLList<fdReg> activeList;
 	resTable<fdReg, fdRegId> fdTbl;
 	fd_set fdSets[fdrNEnums];
+    osiTimerQueue &timerQueue;
 
 	SOCKET maxFD;
 	unsigned processInProg;
@@ -196,6 +201,15 @@ inline resTableIndex fdRegId::hash (unsigned) const
 	//
 	return hashid;
 }
+
+//
+// fdManager::timerQueueRef ()
+//
+inline osiTimerQueue & fdManager::timerQueueRef () const
+{
+    return this->timerQueue;
+}
+
 
 #endif // fdManagerH_included
  

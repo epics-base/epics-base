@@ -85,8 +85,9 @@ const unsigned fdRegId::maxIndexBitWidth = sizeof(SOCKET)*CHAR_BIT;
 //
 // fdManager::fdManager()
 //
-epicsShareFunc fdManager::fdManager() :
-	fdTbl (1<<hashTableIndexBits)
+epicsShareFunc fdManager::fdManager (osiTimerQueue &timerQueueIn) :
+	fdTbl (1<<hashTableIndexBits),
+    timerQueue (timerQueueIn)
 {
 	size_t i;
     int status;
@@ -147,10 +148,10 @@ epicsShareFunc void fdManager::process (double delay)
 	// more than once here so that fd activity get serviced
 	// in a reasonable length of time.
 	//
-	minDelay = osiDefaultTimerQueue.delayToFirstExpire();
+	minDelay = this->timerQueue.delayToFirstExpire();
 	if (minDelay<=0.0) {
-		osiDefaultTimerQueue.process();
-		minDelay = osiDefaultTimerQueue.delayToFirstExpire();
+		this->timerQueue.process();
+		minDelay = this->timerQueue.delayToFirstExpire();
 	} 
 
 	if (minDelay>=delay) {
@@ -187,7 +188,7 @@ epicsShareFunc void fdManager::process (double delay)
 			&this->fdSets[fdrWrite], &this->fdSets[fdrException], &tv);
 	}
 
-	osiDefaultTimerQueue.process();
+	this->timerQueue.process();
 	if (status==0) {
 		this->processInProg = 0;
 		return;
@@ -383,3 +384,4 @@ fdReg::fdReg (const SOCKET fdIn, const fdRegType typIn,
 	}
 	this->manager.installReg (*this);
 }
+

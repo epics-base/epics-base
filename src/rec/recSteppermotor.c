@@ -96,7 +96,6 @@
  * .37  03-29-94	mcn	converted to fast links
  * .38  09-27-95	lrd	fix init to limit in overshoot check and retry
  *				post monitors for mcw and mccw
- *				reprocess records if the setpoint changed while they were moving
  */
 
 #include	<vxWorks.h>
@@ -298,7 +297,7 @@ static long get_units(paddr,units)
 {
     struct steppermotorRecord	*psm=(struct steppermotorRecord *)paddr->precord;
 
-    strncpy(units,psm->egu,sizeof(psm->egu));
+    strncpy(units,psm->egu,DB_UNITS_SIZE);
     return(0);
 }
 
@@ -596,8 +595,7 @@ struct steppermotorRecord	*psm;
 		    }
 
 		    /* should we retry */
-		    if ((psm->rcnt < psm->rtry) || (psm->lval != psm->val)){
-  			    psm->lval = psm->val;
+		    if (psm->rcnt < psm->rtry){
 
                             /* convert */
                             temp = psm->val / psm->dist;

@@ -13,11 +13,13 @@ CPP = $(VX_GNU_BIN)/cpp68k -nostdinc
 GCC = $(CC)
 LD = $(VX_GNU_BIN)/ld68k -r
 EPICS_LDLIBS =
+CP=cp
 MV=mv
 RM=rm -f
 MKDIR = mkdir
 RMDIR=rm -rf
 WHAT = what
+
 
 # The definitions VX_DIR, VX_GNU, GNU_DIR and GNU_LIB
 # can be overridden for specific host architectures

@@ -13,6 +13,7 @@ CPP = $(VX_GNU_BIN)/cppsparc -nostdinc
 GCC = $(CC)
 LD = $(VX_GNU_BIN)/ldsparc -r
 EPICS_LDLIBS =
+CP=cp
 MV=mv
 RM=rm -f
 MKDIR = mkdir

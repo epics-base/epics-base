@@ -13,7 +13,6 @@ DIRS += include
 DIRS += cxxTemplates
 DIRS += toolsComm
 DIRS += makeBaseApp
-DIRS += osi
 DIRS += libCom
 DIRS += dbStatic
 DIRS += db

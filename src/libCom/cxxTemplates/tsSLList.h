@@ -30,6 +30,9 @@
  *
  */
 
+#ifndef tsSLListh
+#define tsSLListh
+
 #include <assert.h>
 
 //
@@ -397,3 +400,5 @@ void tsSLIterRm<T>::remove ()
 	this->pCurrent = this->pPrevious;
 	this->pPrevious = 0; 
 }
+
+#endif // tsSLListh

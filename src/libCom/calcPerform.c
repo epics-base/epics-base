@@ -67,6 +67,7 @@
  * .31  08-21-92        jba     ANSI c changes
  * .32  12-11-92	mrk	Removed include for stdioLib.h
  * .33  08-04-93	mgb	Removed V5/V4 and EPICS_V2 conditionals
+ * .34  05-11-94	jba	Added support for CONST_PI, CONST_D2R, and CONST_R2D
 >
  */
 
@@ -112,6 +113,10 @@ static double	random();
 #define	NOT_SET		0
 #define	TRUE_COND	1
 #define	FALSE_COND	2
+
+#ifndef PI
+#define PI 3.141592654
+#endif
 
 long calcPerform(parg,presult,post)
 double *parg;
@@ -197,6 +202,21 @@ char   *post;
 		case FETCH_L:
 			++pstacktop;
 			*pstacktop = parg[11];
+			break;
+
+		case CONST_PI:
+			++pstacktop;
+			*pstacktop = PI;
+			break;
+
+		case CONST_D2R:
+			++pstacktop;
+			*pstacktop = PI/180.;
+			break;
+
+		case CONST_R2D:
+			++pstacktop;
+			*pstacktop = 180./PI;
 			break;
 
 		case ADD:

@@ -1,49 +1,55 @@
 /* recStringin.c */
- ! share/ascii $Id$
+/* share/src/rec $Id$ */
 
 /* recState.c - Record Support Routines for State records
  *
- * Author: 	Janet Anderson
- * Date:	4/23/91
+ *      Author: 	Janet Anderson
+ *      Date:   	4/23/91
  *
- *	Control System Software for the GTA Project
+ *      Author:
+ *      Date:   mm-dd-yy
  *
- *	Copyright 1988, 1989, the Regents of the University of California.
+ *      Experimental Physics and Industrial Control System (EPICS)
  *
- *	This software was produced under a U.S. Government contract
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory, which is
- *	operated by the University of California for the U.S. Department
- *	of Energy.
+ *      Copyright 1991, the Regents of the University of California,
+ *      and the University of Chicago Board of Governors.
  *
- *	Developed by the Controls and Automation Group (AT-8)
- *	Accelerator Technology Division
- *	Los Alamos National Laboratory
+ *      This software was produced under  U.S. Government contracts:
+ *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *      and (W-31-109-ENG-38) at Argonne National Laboratory.
  *
- *	Direct inqueries to:
- *	Bob Dalesio, AT-8, Mail Stop H820
- *	Los Alamos National Laboratory
- *	Los Alamos, New Mexico 87545
- *	Phone: (505) 667-3414
- *	E-mail: dalesio@luke.lanl.gov
+ *      Initial development by:
+ *              The Controls and Automation Group (AT-8)
+ *              Ground Test Accelerator
+ *              Accelerator Technology Division
+ *              Los Alamos National Laboratory
+ *
+ *      Co-developed with
+ *              The Controls and Computing Group
+ *              Accelerator Systems Division
+ *              Advanced Photon Source
+ *              Argonne National Laboratory
  *
  * Modification Log:
  * -----------------
- * .01  10-10-90	jba	device support added
+ * .01  mm-dd-yy        iii     Comment
  */
-
-#include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
-#include	<lstLib.h>
+
+
+#include        <vxWorks.h>
+#include        <types.h>
+#include        <stdioLib.h>
+#include        <lstLib.h>
 #include	<strLib.h>
 
-#include	<dbAccess.h>
-#include	<dbDefs.h>
-#include	<dbFldTypes.h>
-#include	<devSup.h>
-#include	<errMdef.h>
-#include	<link.h>
-#include	<recSup.h>
+#include        <alarm.h>
+#include        <dbAccess.h>
+#include        <dbDefs.h>
+#include        <dbFldTypes.h>
+#include        <devSup.h>
+#include        <errMdef.h>
+#include        <link.h>
+#include        <recSup.h>
 #include	<stringinRecord.h>
 
 /* Create RSET - Record Support Entry Table*/
@@ -136,7 +142,6 @@ static long process(paddr)
 	if (status==1) return(0);
 
 	tsLocalTime(&pstringin->time);
-	if(status==2) status=0;
 
 	/* check event list */
 	monitor(pstringin);
@@ -190,8 +195,7 @@ static void monitor(pstringin)
     }
 
     if(strncmp(pstringin->oval,pstringin->val,sizeof(pstringin->val))) {
-       	if(pstringin->mlis.count != 0)
-             db_post_events(pstringin,&(pstringin->val[0]),monitor_mask|DBE_VALUE);
+        db_post_events(pstringin,&(pstringin->val[0]),monitor_mask|DBE_VALUE);
 	strncpy(pstringin->oval,pstringin->val,sizeof(pstringin->val));
     }
     return;

@@ -1,42 +1,45 @@
 /* recStringout.c */
- ! share/rec $Id$
+/* share/src/rec $Id$ */
 
 /* recStringout.c - Record Support Routines for Stringout records
  *
  * Author: 	Janet Anderson
  * Date:	4/23/91
  *
- *	Control System Software for the GTA Project
+ *      Experimental Physics and Industrial Control System (EPICS)
  *
- *	Copyright 1988, 1989, the Regents of the University of California.
+ *      Copyright 1991, the Regents of the University of California,
+ *      and the University of Chicago Board of Governors.
  *
- *	This software was produced under a U.S. Government contract
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory, which is
- *	operated by the University of California for the U.S. Department
- *	of Energy.
+ *      This software was produced under  U.S. Government contracts:
+ *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *      and (W-31-109-ENG-38) at Argonne National Laboratory.
  *
- *	Developed by the Controls and Automation Group (AT-8)
- *	Accelerator Technology Division
- *	Los Alamos National Laboratory
+ *      Initial development by:
+ *              The Controls and Automation Group (AT-8)
+ *              Ground Test Accelerator
+ *              Accelerator Technology Division
+ *              Los Alamos National Laboratory
  *
- *	Direct inqueries to:
- *	Bob Dalesio, AT-8, Mail Stop H820
- *	Los Alamos National Laboratory
- *	Los Alamos, New Mexico 87545
- *	Phone: (505) 667-3414
- *	E-mail: dalesio@luke.lanl.gov
+ *      Co-developed with
+ *              The Controls and Computing Group
+ *              Accelerator Systems Division
+ *              Advanced Photon Source
+ *              Argonne National Laboratory
  *
  * Modification Log:
  * -----------------
- * .01  04-23-91	jba	device support added
- */
-
+ * .01  mm-dd-yy        iii     Comment
+ */ 
+
+
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<lstLib.h>
 #include	<strLib.h>
 
+#include        <alarm.h>
 #include	<dbAccess.h>
 #include	<dbDefs.h>
 #include	<dbFldTypes.h>
@@ -113,7 +116,7 @@ static long init_record(pstringout)
     /* get the initial value dol is a constant*/
     if (pstringout->dol.type == CONSTANT
     && (pstringout->dol.value.value<=0.0 || pstringout->dol.value.value>=udfFtest)){
-	pstringout->val = pstringout->dol.value.value;
+        sprintf(pstringout->val,"%-13.6g",pstringout->dol.value.value); 
     }
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(pstringout,process))) return(status);
@@ -138,15 +141,12 @@ static long process(paddr)
 		if((pstringout->dol.type == DB_LINK) && (pstringout->omsl == CLOSED_LOOP)){
 			long options=0;
 			long nRequest=1;
-			string val[20];
 
 			pstringout->pact = TRUE;
 			status = dbGetLink(&pstringout->dol.value.db_link,pstringout,
-				DBR_STRING,&val,&options,&nRequest);
+				DBR_STRING,pstringout->val,&options,&nRequest);
 			pstringout->pact = FALSE;
-			if(status==0){
-				pstringout->val = val;
-			}else {
+			if(!status==0){
 				if(pstringout->nsev < VALID_ALARM) {
 					pstringout->nsev = VALID_ALARM;
 					pstringout->nsta = LINK_ALARM;
@@ -216,8 +216,7 @@ static void monitor(pstringout)
     }
 
     if(strncmp(pstringout->oval,pstringout->val,sizeof(pstringout->val))) {
-       	if(pstringout->mlis.count != 0)
-             db_post_events(pstringout,&(pstringout->val[0]),monitor_mask|DBE_VALUE);
+        db_post_events(pstringout,&(pstringout->val[0]),monitor_mask|DBE_VALUE);
 	strncpy(pstringout->oval,pstringout->val,sizeof(pstringout->val));
     }
     return;

@@ -1,7 +1,3 @@
-
-/* rsrv_init.c */
-/* share/src/rsrv $Id$ */
-
 #include <vxWorks.h>
 #include <lstLib.h>
 #include <taskLib.h>

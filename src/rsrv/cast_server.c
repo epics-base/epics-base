@@ -1,7 +1,3 @@
-
-/* cast_server.c */
-/* share/src/rsrv $Id$ */
-
 /*		The IOC connection request server  */
 /*
 *******************************************************************************
@@ -12,6 +8,17 @@
 **      cast_server.c - GTA request server main loop
 **      Sun UNIX 4.2 Release 3.4
 **	First Release- Jeff Hill May 88
+**
+**
+**
+**	FIXES NEEDED: 
+**
+**	Dont send channel found message unless there is memory, a task slot,
+**	and a TCP socket available. Send a diagnostic instead. 
+**	Or ... make the timeout shorter? This is only a problem if
+**	they persist in trying to make a connection after getting no
+**	response.
+**
 *******************************************************************************
 */
 
@@ -40,11 +47,12 @@ cast_server()
   int  				recv_addr_size = sizeof(recv_addr);
   unsigned			nchars;
   static struct message_buffer  udp_msg;
-# define			TIMEOUT	60*5 /* sec */
+# define			TIMEOUT	60 /* sec */
   unsigned long			timeout = TIMEOUT * sysClkRateGet();
 
   struct client 		*existing_client();
   struct client 		*create_udp_client();
+  void		 		rsrv_online_notify_task();
 
   if( IOC_cast_sock!=0 && IOC_cast_sock!=ERROR )
     if( (status = close(IOC_cast_sock)) == ERROR )
@@ -67,7 +75,8 @@ cast_server()
   bfill(&sin, sizeof(sin), 0);
   sin.sin_family 	= AF_INET;
   sin.sin_addr.s_addr 	= INADDR_ANY;
-  sin.sin_port 		= SERVER_NUM;
+  sin.sin_port 		= CA_SERVER_PORT;
+
 	
   /* get server's Internet address */
   if (bind (IOC_cast_sock, &sin, sizeof (sin)) == ERROR){
@@ -80,6 +89,19 @@ cast_server()
 
   bfill(&udp_msg, sizeof(udp_msg), NULL);
 
+  /* tell clients we are on line again */
+  status = taskSpawn(
+	CA_ONLINE_NAME,
+	CA_ONLINE_PRI,
+	CA_ONLINE_OPT,
+	CA_ONLINE_STACK,
+	rsrv_online_notify_task);
+  if(status<0){
+    logMsg("Cast_server: couldnt start up online notify task\n");
+    printErrno(errnoGet ());
+  }
+
+
   while(TRUE){
 
     status = recvfrom(	IOC_cast_sock,
@@ -89,7 +111,7 @@ cast_server()
 			&recv_addr, 
 			&recv_addr_size);
     if(status<0){
-      logMsg("Cast_server: UDP recieve error\n");
+      logMsg("Cast_server: UDP recv error\n");
       printErrno(errnoGet ());
       taskSuspend(0);
     }
@@ -98,6 +120,8 @@ cast_server()
       logMsg("Cast_server: Recieved a corrupt broadcast\n");
       continue;
     }
+
+
 
     if(MPDEBUG==2){
        logMsg(	"cast_server(): recieved a broadcast of %d bytes\n", status);
@@ -194,7 +218,6 @@ unsigned sock;
       bfill(client, sizeof(*client), NULL);
 */     
       lstInit(&client->addrq);
-      lstInit(&client->eventq);
       client->tid = 0;
       client->send.stk = 0;
       client->send.cnt = 0;
@@ -235,10 +258,5 @@ unsigned	sock;
 
   return OK;
 }
-
-
-
-
-
 
 

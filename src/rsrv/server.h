@@ -1,7 +1,3 @@
-
-/* server.h */
-/* share/src/rsrv $Id$ */
-
 #ifndef INCLfast_lockh
 #include <fast_lock.h>
 #endif
@@ -25,7 +21,6 @@ struct client{
   int				sock;
   int				proto;
   LIST				addrq;
-  LIST				eventq;
   struct message_buffer		send;
   struct message_buffer		recv;
   struct sockaddr_in		addr;
@@ -35,6 +30,18 @@ struct client{
   int				tid;
 };
 
+
+/*
+per channel structure (stored in addrq off of a client block)
+*/
+struct channel_in_use{
+  NODE			node;
+  struct db_addr	addr;
+  LIST			eventq;
+  void			*chid;	/* the chid from the client saved here */
+};
+
+
 /*
 Event block extension for channel access
 some things duplicated for speed
@@ -42,9 +49,11 @@ some things duplicated for speed
 struct event_ext{
 NODE				node;
 struct extmsg			msg;
-struct extmsg			*mp;		/* for speed */		
+struct extmsg			*mp;		/* for speed (IOC_READ) */		
 struct client			*client;
-char				modified;	/* modified while event flow control applied */
+char				modified;	/* mod & ev flw ctrl enbl */
+char				send_lock;	/* lock send buffer */
+unsigned			size;		/* for speed */
 };
 
 
@@ -68,54 +77,52 @@ GLBLTYPE LIST			rsrv_free_eventq;
 GLBLTYPE FAST_LOCK		rsrv_free_addrq_lck;
 GLBLTYPE FAST_LOCK		rsrv_free_eventq_lck;
 
-#define LOCK_SEND(CLIENT) \
+#define LOCK_SEND(CLIENT)\
 FASTLOCK(&(CLIENT)->send.lock);
 
-#define UNLOCK_SEND(CLIENT) \
+#define UNLOCK_SEND(CLIENT)\
 FASTUNLOCK(&(CLIENT)->send.lock);
 
-#define EXTMSGPTR(CLIENT) \
+#define EXTMSGPTR(CLIENT)\
  ((struct extmsg *) &(CLIENT)->send.buf[(CLIENT)->send.stk])
 
-#define	ALLOC_MSG(CLIENT, EXTSIZE) \
-  (struct extmsg *) \
+#define	ALLOC_MSG(CLIENT, EXTSIZE)\
+  (struct extmsg *)\
   ((CLIENT)->send.stk + (EXTSIZE) + sizeof(struct extmsg) > \
-    (CLIENT)->send.maxstk ? send_msg_nolock(CLIENT): NULL, \
-      (CLIENT)->send.stk + (EXTSIZE) + sizeof(struct extmsg) > \
+    (CLIENT)->send.maxstk ? send_msg_nolock(CLIENT): NULL,\
+      (CLIENT)->send.stk + (EXTSIZE) + sizeof(struct extmsg) >\
         (CLIENT)->send.maxstk ? NULL : EXTMSGPTR(CLIENT))
 
-#define END_MSG(CLIENT) \
+#define END_MSG(CLIENT)\
   (CLIENT)->send.stk += sizeof(struct extmsg) + EXTMSGPTR(CLIENT)->m_postsize
 
 /* send with lock */
-#define send_msg(CLIENT) \
+#define send_msg(CLIENT)\
   {LOCK_SEND(CLIENT); send_msg_nolock(CLIENT); UNLOCK_SEND(CLIENT)};
 
 /* send with empty test */
-#define send_msg_nolock(CLIENT) \
+#define send_msg_nolock(CLIENT)\
 !(CLIENT)->send.stk ? FALSE: send_msg_actual(CLIENT)
 
 /* vanilla send */
-#define send_msg_actual(CLIENT) \
-( \
-  (CLIENT)->send.cnt = (CLIENT)->send.stk + sizeof((CLIENT)->send.cnt), \
-  (CLIENT)->send.stk = 0, \
-  MPDEBUG==2?logMsg("Sent a message of %d bytes\n",(CLIENT)->send.cnt):NULL, \
+#define send_msg_actual(CLIENT)\
+(\
+  (CLIENT)->send.cnt = (CLIENT)->send.stk + sizeof((CLIENT)->send.cnt),\
+  (CLIENT)->send.stk = 0,\
+  MPDEBUG==2?logMsg("Sent a message of %d bytes\n",(CLIENT)->send.cnt):NULL,\
   sendto (	(CLIENT)->sock, \
 		&(CLIENT)->send.cnt, \
 		(CLIENT)->send.cnt, \
-		0, \
-		&(CLIENT)->addr, \
-		sizeof((CLIENT)->addr))==ERROR?LOG_SEND_ERROR:TRUE \
+		0,\
+		&(CLIENT)->addr,\
+		sizeof((CLIENT)->addr))==ERROR?LOG_SEND_ERROR,FALSE:TRUE\
 )
 
 #define LOG_SEND_ERROR \
-(logMsg("Send_msg() unable to send, connection broken? %\n"), \
-printErrno(errnoGet()), \
-FALSE)
+	(logMsg("Send_msg() unable to send, connection broken? %\n"))
 
 #define LOCK_CLIENTQ \
-FASTLOCK(&clientQlock)
+	FASTLOCK(&clientQlock)
 
 #define UNLOCK_CLIENTQ \
-FASTUNLOCK(&clientQlock)
+	FASTUNLOCK(&clientQlock)

@@ -32,12 +32,13 @@
 #include "caeventmask.h"
 #include "alarm.h"
 
-#define epicsExportSharedSymbols
+#include "epicsExport.h"
 #include "asLib.h"
 #include "asDbLib.h"
 #include "asCa.h"
 
-epicsShareDef int asCaDebug = 0;
+int asCaDebug = 0;
+epicsExportAddress(int,asCaDebug);
 LOCAL int firstTime = TRUE;
 LOCAL epicsThreadId threadid=0;
 LOCAL int caInitializing=FALSE;

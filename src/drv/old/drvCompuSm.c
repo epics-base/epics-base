@@ -308,6 +308,10 @@ int smRespId;				/* task id */
 /* interrupt buffers */
 unsigned char	sm_responses[MAX_COMPU_MOTORS][RESPBUF_SZ];
 unsigned short	counts[MAX_COMPU_MOTORS];
+/* counts for debugging */
+long dbicounts; /* counts number of times through interrupt routine */
+long dbrcounts; /* counts number of times through response routine */
+long dbscounts; /* counts number of times through send routine */
 
 /* VME memory Short Address Space is set up in gta_init */
 static int *compu_addr;
@@ -392,6 +396,7 @@ compu_resp_task()
     FOREVER {
         /* wait for somebody to wake us up */
        	semTake (smRespSem, WAIT_FOREVER);
+		(dbrcounts < 0xFFFF ? dbrcounts++: 0);
  	/* the response buffer contains: 	 	 	*/
 	/* 0 -	motor number				 	*/
 	/* 1 -	the command which solicited this response	*/
@@ -522,7 +527,12 @@ register int mdnum;
 
     /* pointer to the compumotor card interface */
     pmtr = pcompu_motors[mdnum];
-
+	if (pmtr == 0)
+	{
+		intUnlock(key);
+		return(0);
+	};
+	(dbicounts < 0xFFFF ? dbicounts++: 0);
     /* place the response byte into the appropriate response buffer */
     sm_responses[mdnum][counts[mdnum]] = pmtr->cm_idb;
     counts[mdnum]++;
@@ -545,6 +555,7 @@ register int mdnum;
     }
 
     intUnlock(key);
+	return(0);
 }
 
 /*
@@ -621,17 +632,18 @@ short trigger = 0;
  *
  * driver interface to the database library layer
  */
-compu_driver(card,value_flag,arg1,arg2)
+compu_driver(card, channel, value_flag,arg1,arg2)
 register short	card;
+short	channel;
 short		value_flag;
 register int	arg1;
 register int	arg2;
 {
         register int	*pint;
         register short	*pshort;
-	short		j,i;
+	short		i;
 	char		compu_msg[20];
-
+	i = 0;
 	/* verify the stepper motor driver card is present */
 	if ((card < 0) || (card > sm_num_cards[CM57_83E]) || (!pcompu_motors[card]))
 		return (-1);
@@ -661,144 +673,16 @@ register int	arg2;
 	case (SM_MOVE):
 		if (compu_motor_array[card].mode == VELOCITY_MODE)
 			return(0);
-i = 0;
-switch (trigger){
-case (0):
-		/* move the motor */
-		compu_msg[i++] = SM_MOV_REL_POS;
-		pint = (int *)&compu_msg[i];
-		*pint = arg1;
-		i += 4;
-	compu_send_msg(pcompu_motors[card],compu_msg,i);
-	i = 0;
-		break;
-case (1): /* test sequnce buffer */
-		compu_msg[i++] = 0xda;		/* delete sequence buffer */
-		compu_msg[i++] = 01;		/* buffer 1 */
-	compu_send_msg(pcompu_motors[card],compu_msg,i);
-	i = 0;
-		compu_msg[i++] = 0xd9;		/* fill sequence buffer */
-		compu_msg[i++] = 01;		/* buffer 1 */
-	compu_send_msg(pcompu_motors[card],compu_msg,i);
-	i = 0;
-		compu_msg[i++] = SM_MOV_REL_POS;
-		pint = (int *)&compu_msg[i];
-		*pint = arg1;
-		i += 4;
-	compu_send_msg(pcompu_motors[card],compu_msg,i);
-	i = 0;
-		compu_msg[i++] = 0xd8;		/* end sequence buffer */
-		compu_msg[i++] = 0x41;		/* perform sequence buffer */
-		compu_msg[i++] = 0x01;		/* buffer 1 */
-	compu_send_msg(pcompu_motors[card],compu_msg,i);
-	i = 0;
-		break;
-case (2): /* test move buffer */
-		compu_msg[i++] = 0xc8;
-		compu_msg[i++] = 0x12;
-		compu_msg[i++] = 0x00;
-		compu_msg[i++] = 0x00;
-		compu_msg[i++] = 0x04;
-		compu_msg[i++] = 0x00;
-		compu_msg[i++] = 0x00;
-		compu_msg[i++] = 0x00;
-		compu_msg[i++] = 0x04;
-		compu_msg[i++] = 0x00;
-		compu_msg[i++] = 0x00;
-		pint = (int *)&compu_msg[i];
-		*pint = arg1;
-		i += 4;
-	compu_send_msg(pcompu_motors[card],compu_msg,i);
-	i = 0;
-		compu_msg[i++] = 0x40;
-		compu_msg[i++] = 0x12;
-	compu_send_msg(pcompu_motors[card],compu_msg,i);
-	i = 0;
-		break;
-case (3): /* test sequence buffer with move buffer */
-		compu_msg[i++] = 0xc8;
-		compu_msg[i++] = 0x12;
-		compu_msg[i++] = 0x00;
-		compu_msg[i++] = 0x00;
-		compu_msg[i++] = 0x04;
-		compu_msg[i++] = 0x00;
-		compu_msg[i++] = 0x00;
-		compu_msg[i++] = 0x00;
-		compu_msg[i++] = 0x04;
-		compu_msg[i++] = 0x00;
-		compu_msg[i++] = 0x00;
-		pint = (int *)&compu_msg[i];
-		*pint = arg1;
-		i += 4;
-	compu_send_msg(pcompu_motors[card],compu_msg,i);
-	i = 0;
-		compu_msg[i++] = 0xda;		/* delete sequence buffer */
-		compu_msg[i++] = 01;		/* buffer 1 */
-	compu_send_msg(pcompu_motors[card],compu_msg,i);
-	i = 0;
-		compu_msg[i++] = 0xd9;		/* fill sequence buffer */
-		compu_msg[i++] = 01;		/* buffer 1 */
-	compu_send_msg(pcompu_motors[card],compu_msg,i);
-	i = 0;
-		compu_msg[i++] = 0x40;
-		compu_msg[i++] = 0x12;
-	compu_send_msg(pcompu_motors[card],compu_msg,i);
-	i = 0;
-		compu_msg[i++] = 0xd8;		/* end sequence buffer */
-	compu_send_msg(pcompu_motors[card],compu_msg,i);
-	i = 0;
-		compu_msg[i++] = 0x41;		/* perform sequence buffer */
-		compu_msg[i++] = 0x01;		/* buffer 1 */
-	compu_send_msg(pcompu_motors[card],compu_msg,i);
-	i = 0;
-		break;
-case (4): /* test sequence buffer with move buffer and trigger */
-		compu_msg[i++] = 0xc8;
-		compu_msg[i++] = 0x12;
 
-		compu_msg[i++] = 0x00;
+		/* move the motor */
+		i = 0;
+		compu_msg[i++] = SM_MOV_REL_POS;
 		pint = (int *)&compu_msg[i];
-		*pint = compu_motor_data_array[card].velocity;
-		i += 4;
-		pint++;
-		*pint = compu_motor_data_array[card].accel;
-		i += 4;
-		pint++;
 		*pint = arg1;
 		i += 4;
+
 		compu_send_msg(pcompu_motors[card],compu_msg,i);
-		i = 0;
-		compu_msg[i++] = 0xda;		/* delete sequence buffer */
-		compu_msg[i++] = 01;		/* buffer 1 */
-		compu_send_msg(pcompu_motors[card],compu_msg,i);
-		i = 0;
-		compu_msg[i++] = 0xd9;		/* fill sequence buffer */
-		compu_msg[i++] = 01;		/* buffer 1 */
-		compu_send_msg(pcompu_motors[card],compu_msg,i);
-		i = 0;
-		compu_msg[i++] = 0x2c;		/* wait for trigger */
-		compu_msg[i++] = 1;		/*trigger 1 */
-		compu_msg[i++] = 1;		/* don't care about state */
-		compu_send_msg(pcompu_motors[card],compu_msg,i);
-		i = 0;
-		compu_msg[i++] = 0x40;
-		compu_msg[i++] = 0x12;
-		compu_send_msg(pcompu_motors[card],compu_msg,i);
-		i = 0;
-		compu_msg[i++] = 0xd8;		/* end sequence buffer */
-		compu_send_msg(pcompu_motors[card],compu_msg,i);
-		i = 0;
-		compu_msg[i++] = 0x41;		/* perform sequence buffer */
-		compu_msg[i++] = 0x01;		/* buffer 1 */
-		compu_send_msg(pcompu_motors[card],compu_msg,i);
-		i = 0;
-		break;
-}
-for (j = 0; j < i; j++){
-printf("%x ",compu_msg[j]);
-}
-/*		compu_send_msg(pcompu_motors[card],compu_msg,i);
-*/
+
 		/* set the motor to active */
 		compu_motor_array[card].active = TRUE;
 
@@ -884,6 +768,7 @@ register struct	compumotor	*pmotor;
 register char			*pmsg;
 register short			count;
 {
+	(dbscounts < 0xFFFF ? dbscounts++: 0);
         /* write out this command one byte at a time */
 	while (count){
 
@@ -969,4 +854,3 @@ VOID compu_sm_reset()
                 }
         }
  }
-

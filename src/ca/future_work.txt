@@ -1,10 +1,13 @@
 
 Potential upgrades to Channel Access
 
+o specify max channel count when initializing CA?
+This would allow a better hash table size allocation.
+
 o generalized access to abstract data
 o use multicast for broadcasting and ax the repeater
 o large arrays
-o improve clieny API
+o improve client API
 o improve security
 o name service (wildcard queries)
 o PV name prefix (for all PVs)

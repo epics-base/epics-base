@@ -239,6 +239,7 @@ epicsShareAPI macPutValue(
     /* handle NULL value case: if name was found, delete entry (may be
        several entries at different scoping levels) */
     if ( value == NULL ) {
+/* FIXME: don't loop or delete entries from any lower scopes */
         while ( ( entry = lookup( handle, name, FALSE ) ) != NULL )
             delete( handle, entry );
         return 0;
@@ -324,6 +325,7 @@ epicsShareAPI macGetValue(
 
     /* copy value and return +/- #chars copied depending on successful
        expansion */
+/* FIXME: nul-terminator */
     strncpy( value, entry->value, maxlen );
     length = ( value[maxlen-1] == '\0' ) ? entry->length : maxlen;
 
@@ -699,8 +701,9 @@ static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
         }
 
         /* macro reference if '$' followed by '(' or '{' */
-        macRef = ( *r == '$' && *( r + 1 ) != '\0' &&
-                                strchr( "({", *( r + 1 ) ) != NULL );
+        macRef = ( *r == '$' &&
+                   *( r + 1 ) != '\0' &&
+                   strchr( "({", *( r + 1 ) ) != NULL );
 
         /* if not macro reference (macros are not expanded in single quotes) */
         if ( quote == '\'' || !macRef ) {
@@ -816,11 +819,12 @@ static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
 
 /*
  * Copy a string, honoring the 'end of destination string' pointer
+ * Returns with **value pointing to the '\0' terminator
  */
 static void cpy2val(const char *src, char **value, char *valend)
 {
     char *v = *value;
-    while ((v < valend) && (*v++ = *src++)) {}
+    while ((v < valend) && (*v = *src++)) { v++; }
     *v = '\0';
     *value = v;
 }

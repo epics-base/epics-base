@@ -156,7 +156,8 @@ static char *dbOpenFile(DBBASE *pdbbase,const char *filename,FILE **fp)
 
     *fp = 0;
     if(!filename) return(0);
-    if(!ppathList || (ellCount(ppathList)==0) || strchr(filename,'/')){
+    if(!ppathList || (ellCount(ppathList)==0) 
+    || strchr(filename,'/') || strchr(filename,'\\')){
 	*fp = fopen(filename,"r");
 	return(0);
     }

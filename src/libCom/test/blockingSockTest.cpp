@@ -217,7 +217,7 @@ void blockingSockTest ()
 
     client.shutdown ();
     epicsThreadSleep ( 1.0 );
-    char * pStr = "esscimqi_?????";
+    const char * pStr = "esscimqi_?????";
     if ( client.recvWakeupDetected () ) {
         pStr = "esscimqi_socketBothShutdownRequired";
     }

@@ -11,5 +11,6 @@ INC += module_types.h
 INC += shareLib.h
 INC += createSoftLinks.sh 
 INC += bsdProto.h
+INC += task_params.h
 
 include $(EPICS)/config/RULES.Unix

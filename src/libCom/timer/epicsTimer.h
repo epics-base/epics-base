@@ -110,6 +110,9 @@ epicsShareFunc epicsTimerQueueThreadedId epicsShareAPI
     epicsTimerQueueThreadedAllocate ( int okToShare, unsigned int threadPriority );
 epicsShareFunc void epicsShareAPI 
     epicsTimerQueueThreadedRelease ( epicsTimerQueueThreadedId );
+epicsShareFunc epicsTimerId epicsShareAPI 
+    epicsTimerQueueThreadedCreateTimer ( epicsTimerQueueThreadedId queueid, 
+        epicsTimerCallback callback, void *arg );
 epicsShareFunc void  epicsShareAPI 
     epicsTimerQueueThreadedShow ( epicsTimerQueueThreadedId id, unsigned int level );
 
@@ -120,6 +123,9 @@ epicsShareFunc epicsTimerQueueNonThreadedId epicsShareAPI
     epicsTimerQueueNonThreadedCreate ( epicsTimerQueueRescheduleCallback, void *pPrivate );
 epicsShareFunc void epicsShareAPI 
     epicsTimerQueueNonThreadedDestroy ( epicsTimerQueueNonThreadedId );
+epicsShareFunc epicsTimerId epicsShareAPI 
+    epicsTimerQueueNonThreadedCreateTimer (
+        epicsTimerQueueNonThreadedId queueid, epicsTimerCallback pCallback, void *pArg );
 epicsShareFunc void epicsShareAPI 
     epicsTimerQueueNonThreadedProcess ( epicsTimerQueueNonThreadedId );
 epicsShareFunc double epicsShareAPI 
@@ -131,12 +137,6 @@ epicsShareFunc void  epicsShareAPI epicsTimerQueueNonThreadedShow (
 /* timer management */
 typedef struct epicsTimer * epicsTimerId;
 typedef void ( *epicsTimerCallback ) ( void *pPrivate );
-epicsShareFunc epicsTimerId epicsShareAPI 
-    epicsTimerQueueThreadedCreateTimer ( epicsTimerQueueThreadedId queueid, 
-        epicsTimerCallback callback, void *arg );
-epicsShareFunc epicsTimerId epicsShareAPI 
-    epicsTimerQueueNonThreadedCreateTimer (
-        epicsTimerQueueNonThreadedId queueid, epicsTimerCallback pCallback, void *pArg );
 epicsShareFunc void epicsShareAPI 
     epicsTimerDestroy ( epicsTimerId id );
 epicsShareFunc void epicsShareAPI 

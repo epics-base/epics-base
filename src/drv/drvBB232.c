@@ -57,6 +57,7 @@
 
 #include <drvMsg.h>
 #include <drvBitBusInterface.h>
+#include <drvRs232.h>
 #include <drvBB232.h>
 
 int	drvBB232Debug = 0;
@@ -305,6 +306,51 @@ msgChkEParm	*p;
 {
   return(MSG_EVENT_NONE);
 }
+/******************************************************************************
+ *
+ * This IOCTL function is used to handle non-I/O related operations required
+ * to operate the RS-232 interface.
+ * 
+ ******************************************************************************/
+static long
+command(p)
+ioctlCommand	*p;
+{
+  msgXact	*pxact;
+  struct dpvtBitBusHead *pdpvtBitBusHead;
+  drvBB232Link  *pdrvBB232Link;
+
+  switch (p->cmd) {
+  case IOCTL232_BREAK:	/* send a BREAK signal to the serial port. */
+    /* Build a break message to send */
+    pxact = (msgXact *) (p->pparm);
+    pdpvtBitBusHead = (struct dpvtBitBusHead *) pxact->p;
+    pdrvBB232Link = (drvBB232Link *)(pxact->phwpvt->pmsgLink->p);
+    pdpvtBitBusHead->status = BB_OK;
+    pdpvtBitBusHead->rxMaxLen = 0;
+    pdpvtBitBusHead->txMsg.length = BB_MSG_HEADER_SIZE;
+    pdpvtBitBusHead->txMsg.cmd = BB_232_BREAK + pdrvBB232Link->port;
+    pdpvtBitBusHead->rxMsg.cmd = 0;
+
+    if (drvBB232Debug > 7)
+    {
+      printf("drvBB232.control (tx L%d N%d P%d)\n", pdrvBB232Link->link, pdrvBB232Link->node, pdrvBB232Link->port);
+      drvBitBusDumpMsg(&(pdpvtBitBusHead->txMsg));
+    }
+
+    (*(drvBitBus.qReq))(pdpvtBitBusHead, BB_Q_LOW);
+    semTake(*(pdpvtBitBusHead->psyncSem), WAIT_FOREVER);
+
+    if ((pdpvtBitBusHead->status == BB_OK) && !(pdpvtBitBusHead->rxMsg.cmd & 1))
+      return(OK);
+    else
+      return(ERROR);
+  }
+
+  if (drvBB232Debug)
+    printf("drvBB232.control: bad command 0x%02.2X\n", p->cmd);
+  return(ERROR);
+}
 
 /******************************************************************************
  *
@@ -505,6 +551,8 @@ msgStrParm	*prdParm;
 
 /******************************************************************************
  *
+ * This handles any IOCTL calls made to BB-232 devices.
+ *
  ******************************************************************************/
 static long
 drvIoctl(cmd, pparm)
@@ -528,6 +576,8 @@ void	*pparm;
     return(genLink(pparm));
   case MSGIOCTL_CHECKEVENT:
     return(checkEvent(pparm));
+  case MSGIOCTL_COMMAND:
+    return(command(pparm));
   }
   return(ERROR);
 }

@@ -63,17 +63,17 @@ EPICS_CA_SERVER_PORT=5064
 #   If EPICS_CA_AUTO_ADDR_LIST is NO, then the beacon address list
 #   is not auto configured.
 #
-#   If EPICS_CA_AUTO_ADDR_LIST is YES and EPICS_CA_AUTO_ADDR_LIST
+#   If EPICS_CA_AUTO_ADDR_LIST is YES and EPICS_CAS_INTF_ADDR_LIST
 #   has _not_ been specified then beacons are sent to the broadcast 
 #   addresses of all LAN interfaces and the destination addresses of 
 #   all point-to-point serial interfaces. 
 #
-#   If EPICS_CA_AUTO_ADDR_LIST is YES and EPICS_CA_AUTO_ADDR_LIST
-#   has been specified then beacons are sent to the broadcast address 
+#   If EPICS_CA_AUTO_ADDR_LIST is YES and EPICS_CAS_INTF_ADDR_LIST
+#   _has_ been specified then beacons are sent to the broadcast address 
 #   of each LAN interface corresponding to an IP address in 
-#   EPICS_CA_AUTO_ADDR_LIST or the destination address of 
+#   EPICS_CAS_INTF_ADDR_LIST or the destination address of 
 #   a point-to-point serial interfaces corresponding to an IP
-#   address in EPICS_CA_AUTO_ADDR_LIST. 
+#   address in EPICS_CAS_INTF_ADDR_LIST. 
 #
 #   Beacons may be sent to additional hand configured addresses 
 #   (see the notes below under EPICS_CAS_BEACON_ADDR_LIST).
@@ -97,8 +97,8 @@ EPICS_CA_SERVER_PORT=5064
 #   The fact that the servers may not be using the user specified
 #   port number for TCP will be nearly transparent to EPICS 
 #   3.13 or higher clients that will be locating the servers
-#   using the user specified UDP port number, but will be connecting to
-#   the servers using whatever TCP port has been assigned.
+#   using the user specified UDP port number, but will be connecting 
+#   to the servers using whatever TCP port has been assigned.
 #   Unfortunately, a severe limitation exists in most IP
 #   kernels: if multiple servers are listening for search requests 
 #   addressed to the same UDP port then they will all receive a copy 

@@ -65,14 +65,6 @@ epicsShareFunc void epicsShareAPI dbNotifyCompletion(struct dbCommon *precord);
 
 epicsShareFunc long epicsShareAPI dbPutNotify(PUTNOTIFY *pputnotify);
 
-typedef void * dbPutNotifyID;
-
-epicsShareFunc long epicsShareAPI dbPutNotifyInitiate (
-    struct dbAddr *pAddr, unsigned type, unsigned long count, const void *pValue,
-    void (*callback)(void *), void *usrPvt, dbPutNotifyID *pID);
-
-epicsShareFunc void epicsShareAPI dbPutNotifyDestroy (dbPutNotifyID idIn);
-
 #ifdef __cplusplus
 }
 #endif

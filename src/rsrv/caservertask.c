@@ -550,6 +550,11 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 	}
 
 	if (level>=2u) {
+		if (client->udpNoBuffCount>0u) {
+			printf ("\tNumber of UDP response messages dropped due to ENOBUFs = %u\n",
+				client->udpNoBuffCount);
+		}
+
 		bytes_reserved = 0;
 		bytes_reserved += sizeof(struct client);
 

@@ -413,8 +413,8 @@ LOCAL void clean_addrq()
  */
 struct client *create_udp_client(unsigned sock)
 {
-  	struct client *client;
-
+	struct client *client;
+	
 	client = freeListMalloc(rsrvClientFreeList);
 	if(!client){
 		logMsg("CAS: no spae in pool for a new client\n",
@@ -426,29 +426,29 @@ struct client *create_udp_client(unsigned sock)
 			NULL);
 		return NULL;
 	}
-
-      	if(CASDEBUG>2)
-        	logMsg(	"CAS: Creating new udp client\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
-
- 	/*
+	
+	if(CASDEBUG>2)
+		logMsg(	"CAS: Creating new udp client\n",
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL);
+	
+	/*
 	 * The following inits to zero done instead of a bfill since the send
 	 * and recv buffers are large and don't need initialization.
 	 * 
 	 * memset(client, 0, sizeof(*client));
 	 */
-   
+	
 	client->blockSem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
 	if(!client->blockSem){
 		freeListFree(rsrvClientFreeList, client);
 		return NULL;
 	}
-
+	
 	/*
 	 * user name initially unknown
 	 */
@@ -459,7 +459,7 @@ struct client *create_udp_client(unsigned sock)
 		return NULL;
 	}
 	client->pUserName[0] = '\0';
-
+	
 	/*
 	 * host name initially unknown
 	 */
@@ -471,33 +471,33 @@ struct client *create_udp_client(unsigned sock)
 		return NULL;
 	}
 	client->pHostName[0] = '\0';
-
-      	ellInit(&client->addrq);
-      	ellInit(&client->putNotifyQue);
-  	bfill((char *)&client->addr, sizeof(client->addr), 0);
-      	client->tid = taskIdSelf();
-      	client->send.stk = 0ul;
-      	client->send.cnt = 0ul;
-      	client->recv.stk = 0ul;
-      	client->recv.cnt = 0ul;
-      	client->evuser = NULL;
+	
+	ellInit(&client->addrq);
+	ellInit(&client->putNotifyQue);
+	bfill((char *)&client->addr, sizeof(client->addr), 0);
+	client->tid = taskIdSelf();
+	client->send.stk = 0ul;
+	client->send.cnt = 0ul;
+	client->recv.stk = 0ul;
+	client->recv.cnt = 0ul;
+	client->evuser = NULL;
 	client->disconnect = FALSE;	/* for TCP only */
 	client->ticks_at_last_send = tickGet();
 	client->ticks_at_last_recv = tickGet();
-      	client->proto = IPPROTO_UDP;
-      	client->sock = sock;
-      	client->minor_version_number = CA_UKN_MINOR_VERSION;
-
-      	client->send.maxstk = MAX_UDP;
-
-      	FASTLOCKINIT(&client->lock);
-      	FASTLOCKINIT(&client->putNotifyLock);
-      	FASTLOCKINIT(&client->addrqLock);
-      	FASTLOCKINIT(&client->eventqLock);
-
-      	client->recv.maxstk = ETHERNET_MAX_UDP;
-
-      	return client;
+	client->proto = IPPROTO_UDP;
+	client->sock = sock;
+	client->minor_version_number = CA_UKN_MINOR_VERSION;
+	
+	client->send.maxstk = MAX_UDP;
+	
+	FASTLOCKINIT(&client->lock);
+	FASTLOCKINIT(&client->putNotifyLock);
+	FASTLOCKINIT(&client->addrqLock);
+	FASTLOCKINIT(&client->eventqLock);
+	
+	client->recv.maxstk = ETHERNET_MAX_UDP;
+	client->udpNoBuffCount = 0u;
+	return client;
 }
 
 

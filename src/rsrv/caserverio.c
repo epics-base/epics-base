@@ -149,9 +149,9 @@ int		lock_needed;
 				int	anerrno;
 				char	buf[64];
 
-				ipAddrToA (&pclient->addr, buf, sizeof(buf));
-
 				anerrno = errnoGet();
+
+				ipAddrToA (&pclient->addr, buf, sizeof(buf));
 
 				if(pclient->proto == IPPROTO_TCP) {
 					if(     (anerrno!=ECONNABORTED&&
@@ -172,7 +172,11 @@ int		lock_needed;
 					pclient->disconnect = TRUE;
 				}
 				else if (pclient->proto == IPPROTO_UDP) {
-					logMsg(
+					if (anerrno==ENOBUFS) {
+						pclient->udpNoBuffCount++;
+					}
+					else {
+						logMsg(
 			"CAS: UDP send to \"%s\" failed because \"%s\"\n",
 							(int)buf,
 							(int)strerror(anerrno),
@@ -180,6 +184,7 @@ int		lock_needed;
 							NULL,
 							NULL,
 							NULL);	
+					}
 				}
 				else {
 					assert (0);

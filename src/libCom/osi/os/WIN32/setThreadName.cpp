@@ -18,13 +18,14 @@
 
 /*
  * this was copied directly from an example in visual c++ 7 documentation,
- * except that C++ exceptions were substituted for structured 
- * exceptions (which are not portable to other compilers)
+ * It uses visual C++ specific keywords for exception handling, but is
+ * probably only useful when using the visual c++ or later debugger.
  *
  * Usage: setThreadName (-1, "MainThread");
  */
 extern "C" void setThreadName ( DWORD dwThreadID, LPCSTR szThreadName )
 {
+#if _MSC_VER >= 1300 && defined ( _DEBUG )
     typedef struct tagTHREADNAME_INFO
     {
         DWORD dwType; // must be 0x1000
@@ -38,12 +39,13 @@ extern "C" void setThreadName ( DWORD dwThreadID, LPCSTR szThreadName )
     info.dwThreadID = dwThreadID;
     info.dwFlags = 0;
 
-    try
+    __try
     {
-        RaiseException ( 0x406D1388, 0, 
+        RaiseException( 0x406D1388, 0, 
             sizeof(info)/sizeof(DWORD), (DWORD*)&info );
     }
-    catch ( ... )
+    __except(EXCEPTION_CONTINUE_EXECUTION)
     {
     }
+#endif
 }

@@ -83,7 +83,6 @@ static void threadSleepQuantumTest ()
         double interval = rand ();
         interval /= RAND_MAX;
         interval *= quantum;
-        interval += quantum / 2.0;
         epicsTime start = epicsTime::getCurrent ();
         epicsTime current = start;
         while ( current - start < interval ) {
@@ -107,6 +106,9 @@ static void threadSleepQuantumTest ()
         pTol = "10%";
     }
     else if ( quantumError > 0.01 ) {
+        pTol = "1%";
+    }
+    else if ( quantumError > 0.001 ) {
         pTol = "1%";
     }
     if ( pTol ) {

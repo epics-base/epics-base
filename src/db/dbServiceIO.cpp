@@ -90,6 +90,12 @@ cacChannel *dbServiceIO::createChannel (
     if ( status ) {
         return 0;
     }
+	else if ( ! ca_preemtive_callback_is_enabled () ) {
+		errlogPrintf ( 
+			"dbServiceIO: preemptive callback required for 
+			\n memory interfacing of CA channels to the DB\n" );
+		return 0;
+	}
     else {
         return new dbChannelIO ( notify, addr, *this ); 
     }

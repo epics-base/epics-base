@@ -101,15 +101,14 @@ extern "C" void putNotifyCompletion ( putNotify *ppn )
     else {
         errlogPrintf ( "put notify completion with nill pNotify?\n" );
     }
-    // no need to lock here because only one put notify at a timeis lalowed to run
+    // no need to lock here because only one put notify at a time is lalowed to run
     memset ( &pBlocker->pn, '\0', sizeof ( pBlocker->pn ) );
     pBlocker->pNotify = 0;
     pBlocker->block.signal ();
 }
 
-void dbPutNotifyBlocker::initiatePutNotify ( epicsMutex &mutex, cacWriteNotify &notify, 
-        struct dbAddr &addr, unsigned type, unsigned long count, 
-        const void *pValue )
+void dbPutNotifyBlocker::initiatePutNotify ( epicsMutex &mutex, cacWriteNotify & notify, 
+        struct dbAddr & addr, unsigned type, unsigned long count, const void * pValue )
 {
     int status;
 

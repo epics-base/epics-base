@@ -234,8 +234,8 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
 epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket)
 {
     static const unsigned   nelem = 100;
+    static char             init = 0;
     static osiSockAddr      addr;
-    static char             init = FALSE;
     int                     status;
     struct ifconf           ifconf;
     struct ifreq            *pIfreqList;
@@ -294,7 +294,7 @@ epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket)
         }
 
         status = socket_ioctl(socket, SIOCGIFFLAGS, pifreq);
-        if (status == ERROR){
+        if (status < 0){
             errlogPrintf ( "local_addr: net intf flags fetch for %s failed\n", pifreq->ifr_name );
             continue;
         }
@@ -318,7 +318,7 @@ epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket)
         }
 
         status = socket_ioctl (socket, SIOCGIFADDR, pifreq);
-        if (status == ERROR){
+        if (status < 0){
             ifDepenDebugPrintf ( ("local_addr: could not obtain addr for %s\n", pifreq->ifr_name) );
             continue;
         }
@@ -326,7 +326,7 @@ epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket)
         ifDepenDebugPrintf ( ("local_addr: net intf %s found\n", pifreq->ifr_name) );
 
         addr.sa = pifreq->ifr_addr;
-        init = TRUE;
+        init = 1;
         break;
     }
 

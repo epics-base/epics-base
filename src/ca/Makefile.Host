@@ -17,7 +17,7 @@ INC += caProto.h
 #
 
 # on generic system
-LIBSRCS_DEFAULT := posix_depen.c if_depen.c caRepeater.c
+LIBSRCS_DEFAULT := posix_depen.c if_depen.c
 
 # on WIN32 only
 LIBSRCS_WIN32   := windows_depen.c

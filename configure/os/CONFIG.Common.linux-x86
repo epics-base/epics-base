@@ -27,7 +27,7 @@ OP_SYS_LDLIBS += -lrt
 ARCH_DEP_CPPFLAGS += -D_X86_
 
 # Set runtime path for shared libraries
-RUNTIME_LDFLAGS = $(SHRLIB_SEARCH_DIRS:%=-Wl,-rpath,%)
+RUNTIME_LDFLAGS = $(SHRLIB_SEARCH_FULLPATHDIRS:%=-Wl,-rpath,%)
 
 ifeq ($(BUILD_CLASS),CROSS)
 ifeq ($(EPICS_HOST_ARCH),linux-x86)

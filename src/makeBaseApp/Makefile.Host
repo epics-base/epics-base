@@ -25,9 +25,9 @@ TEMPLATES += top/configure/replaceVAR.pl
 
 TEMPLATES += top/exampleApp/Makefile
 TEMPLATES += top/exampleApp/Db/Makefile
+TEMPLATES += top/exampleApp/Db/Makefile.Host
 TEMPLATES += top/exampleApp/Db/dbExample1.db
-TEMPLATES += top/exampleApp/Db/dbExample2.substitutions
-TEMPLATES += top/exampleApp/Db/dbExample2.template
+TEMPLATES += top/exampleApp/Db/dbExample2.db
 TEMPLATES += top/exampleApp/src/Makefile
 TEMPLATES += top/exampleApp/src/Makefile.Host
 TEMPLATES += top/exampleApp/src/Makefile.Ioc

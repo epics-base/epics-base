@@ -15,9 +15,9 @@ exampleLib_SRCS += xxxRecord.c
 exampleLib_SRCS += devXxxSoft.c
 exampleLib_SRCS += sncExample.c
 
-exampleLib_SRCS += registerRecordDeviceDriver.c
+#exampleLib_SRCS += registerRecordDeviceDriver.c
 
-LIBOBJS += registerRecordDeviceDriver.o
+LIBOBJS += $(EPICS_BASE_BIN)/registerRecordDeviceDriver.o
 
 LIBOBJS += $(EPICS_BASE_BIN)/iocCore
 LIBOBJS += $(EPICS_BASE_BIN)/seq

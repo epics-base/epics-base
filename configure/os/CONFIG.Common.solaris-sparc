@@ -32,9 +32,10 @@ OP_SYS_CPPFLAGS += -DSOLARIS=$(SOLARIS_VERSION)
 # socket and nsl needed by libca.a
 OP_SYS_LDLIBS += -lsocket -lnsl
 
-#  -R does not work unless full path names are specified
-# use loader's -R option
-DIR_LDFLAGS += $(sort $(DEPLIB_DIRS:%=-R%))
+# Set runtime path for shared libraries
+SHRLIB_LDFLAGS += $(sort $(SHRLIB_SEARCH_DIRS:%=-R%))
+DIR_LDFLAGS_YES += $(sort $(SHRLIB_SEARCH_DIRS:%=-R%))
+DIR_LDFLAGS += $(DIR_LDFLAGS_$(SHARED_LIBRARIES))
 
 ifdef CROSS
    GNU_TARGET=sparc-sun-solaris2

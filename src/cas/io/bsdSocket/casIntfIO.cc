@@ -5,32 +5,6 @@
 //
 //
 //
-// $Log$
-// Revision 1.8  1999/09/02 21:50:27  jhill
-// o changed UDP to non-blocking IO
-// o cleaned up (consolodated) UDP interface class structure
-//
-// Revision 1.7  1998/06/18 00:11:09  jhill
-// use ipAddrToA
-//
-// Revision 1.6  1998/06/16 02:35:51  jhill
-// use aToIPAddr and auto attach to winsock if its a static build
-//
-// Revision 1.5  1998/05/29 20:08:21  jhill
-// use new sock ioctl() typedef
-//
-// Revision 1.4  1998/02/05 23:11:16  jhill
-// use osiSock macros
-//
-// Revision 1.3  1997/06/13 09:16:15  jhill
-// connect proto changes
-//
-// Revision 1.2  1997/04/10 19:40:33  jhill
-// API changes
-//
-// Revision 1.1  1996/11/02 01:01:41  jhill
-// installed
-//
 //
 
 #include "server.h"
@@ -45,8 +19,8 @@ const unsigned caServerConnectPendQueueSize = 5u;
 // casIntfIO::casIntfIO()
 //
 casIntfIO::casIntfIO (const caNetAddr &addrIn) : 
-    addr (addrIn.getSockIP()),
-	sock (INVALID_SOCKET)
+	sock (INVALID_SOCKET),
+    addr (addrIn.getSockIP())
 {
 	int yes = TRUE;
 	int status;

@@ -33,9 +33,9 @@ private:
 //
 casIntfOS::casIntfOS (caServerI &casIn, const caNetAddr &addrIn, 
     bool autoBeaconAddr, bool addConfigBeaconAddr) : 
+    casIntfIO (addrIn),
     casDGIntfOS (casIn, addrIn, autoBeaconAddr, addConfigBeaconAddr),
-    cas (casIn), 
-    casIntfIO (addrIn)
+    cas (casIn)
 {    
     this->setNonBlocking();
     

@@ -35,8 +35,10 @@
 // inBuf::inBuf()
 //
 inBuf::inBuf (bufSizeT bufSizeIn, bufSizeT ioMinSizeIn) :
-    bufSize (bufSizeIn), ioMinSize (ioMinSizeIn), 
-    bytesInBuffer (0u), nextReadIndex (0u),
+    bufSize (bufSizeIn), 
+    bytesInBuffer (0u), 
+    nextReadIndex (0u),
+    ioMinSize (ioMinSizeIn), 
     ctxRecursCount (0u)
 {
     if (this->ioMinSize==0) {

@@ -162,4 +162,4 @@ LINK.c = $(CC) -o $@ $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
 LINK.cc = $(CXX) -o $@ $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS)
 
 DEPENDS_RULE.c = -$(COMPILE.c) -xM $(SRCS.c) > .DEPENDS
-DEPENDS_RULE.cc = @echo no DEPENDS_RULE.cc defined in CONFIG.solaris
+DEPENDS_RULE.cc = -$(COMPILE.cc) -xM $(SRCS.cc) >> .DEPENDS

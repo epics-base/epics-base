@@ -2,17 +2,79 @@
 <html>
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.72 [en] (X11; U; SunOS 5.8 sun4u) [Netscape]">
-   <title>EPICS Release baseR3.13.0.beta12
+   <meta name="GENERATOR" content="Mozilla/4.76 [en] (X11; U; SunOS 5.8 sun4u) [Netscape]">
+   <title>EPICS Release baseR3.13.3
 </title>
 </head>
 <body>
 
 <h1>
-EPICS Release 3.13.3</h1>
+EPICS Release 3.13.4</h1>
 
 <h4>
-July 10, 2000</h4>
+Dec 15, 2000</h4>
+
+<h3>
+Changes since 3.13.3</h3>
+<b>Channel Access</b><b></b>
+<p>Symptom: CA clients on all versions of EPICS with unresolved&nbsp; channels
+broadcast search messages too frequently if an EPICS R3.13.3 server is
+present. This bug does not occur if an R3.13.3 server is not present.
+<p>Changed: CA server now sends beacon messages which uniquely&nbsp; identify
+the server address. The CA repeater was also upgraded to detect, and fix,
+any problems of this nature.
+<p>Symptom: Undefined symbols show up when EPICS R3.13.3 was loaded&nbsp;
+into a PC IOC running Tornado II.
+<p>Changed: Conditionally compiled out references to architecture inappropriate
+system calls.
+<br>&nbsp;
+<p><b>dfanoutRecord</b>
+<br>&nbsp;
+<ul>
+<li>
+VAL and all related fields are now DBF_DOUBLE instead of DBF_LONG</li>
+
+<li>
+SELM, SELN, and SELL are now available. They have same semantics as for
+fanout record</li>
+
+<li>
+PREC is now supported.</li>
+
+<li>
+IVOA and IVOV are no longer present. The record support never used them.</li>
+</ul>
+<b>longinRecord and longoutRecord</b>
+<p>These did not properly set monitors when delta=0x80000000. This happened
+when the record was attached to a 32 bit digital device .
+<p><b>Access Security TrapWrite feature</b>
+<p>Access security now provides the ability to trap write requests coming
+from a client. RULEs in the access configuration files accept an option
+argument NOTRAPWRITE or TRAPWRITE. For example:
+<pre>RULE(1,WRITE,TRAPWRITE)</pre>
+If the additional argument is not specified the default is NOTRAPWRITE.
+<p>The purpose of this new facility is to allow things like logging Channel
+Access writes. Epics base itself does not provide this ability but only
+the hook needed by such a facility. DESY has developed a facility that
+logs CA puts. The trap writes feacure allows the DESY facility to be implemented
+without any changes to epics base. In addition it allows the user to decide
+what should be logged.
+<p>This new facility will be described in more detail in the 3.14 version
+of the Application Developer's Guide.
+<p><b>dbAccess</b>
+<p>When obtaining graphic, control, and alarm limits, the destination values
+were not initialized. If record support did not set values then the unitialized
+values were returned. This caused exceptions to occut on powerPCs. The
+values are now initialized to 0.
+<p><b>drvTS.c</b>
+<br>&nbsp;
+<ul>
+<li>
+Fixed TSgetMasterTime() bug - round-trip adjustment was garbage</li>
+
+<li>
+Replaced TSprintf() with printf() where logging inappropriate</li>
+</ul>
 
 <h3>
 Changes since 3.13.2</h3>

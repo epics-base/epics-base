@@ -45,16 +45,8 @@ struct sockaddr_in;
 struct in_addr;
 
 /*
- * convert IP address to ASCII in this order
- * 1) look for matching host name
- * 2) convert to raw dotted IP address with trailing port
- */
-epicsShareFunc void epicsShareAPI ipAddrToA
-	(const struct sockaddr_in *pInetAddr, char *pBuf, unsigned bufSize);
-
-/*
  * convert socket address to ASCII in this order
- * 1) look for matching host name
+ * 1) look for matching host name and typically add trailing IP port
  * 2) convert to raw ascii address (typically this is a 
  *      dotted IP address with trailing port)
  */
@@ -62,12 +54,34 @@ epicsShareFunc void epicsShareAPI sockAddrToA
 			(const struct sockaddr *paddr, char *pBuf, unsigned bufSize);
 
 /*
+ * convert IP address to ASCII in this order
+ * 1) look for matching host name and add trailing port
+ * 2) convert to raw dotted IP address with trailing port
+ */
+epicsShareFunc void epicsShareAPI ipAddrToA
+	(const struct sockaddr_in *pInetAddr, char *pBuf, unsigned bufSize);
+
+/*
+ * sockAddrToDottedA () 
+ * typically convert to raw dotted IP address with trailing port
+ */
+epicsShareFunc void epicsShareAPI sockAddrToDottedA 
+			( const struct sockaddr *paddr, char *pBuf, unsigned bufSize );
+
+/*
+ * ipAddrToDottedA () 
+ * convert to raw dotted IP address with trailing port
+ */
+epicsShareFunc void epicsShareAPI ipAddrToDottedA 
+			( const struct sockaddr_in *paddr, char *pBuf, unsigned bufSize );
+
+/*
  * convert inet address to a host name string
  *
  * returns the number of bytes stored in buffer not counting the terminating 
  * null character, or zero on failure
  *
- * OS specific
+ * there are many OS specific implementation stubs for this routine
  */
 epicsShareFunc unsigned epicsShareAPI ipAddrToHostName 
             (const struct in_addr *pAddr, char *pBuf, unsigned bufSize);

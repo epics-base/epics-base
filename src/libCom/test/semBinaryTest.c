@@ -119,6 +119,7 @@ void semBinaryTest(int nthreads,int verbose)
     time_t tp;
     int errVerboseSave = errVerbose;
 
+    threadInit ();
     errVerbose = verbose;
     binary = semBinaryMustCreate(semEmpty);
     printf("calling semBinaryTakeTimeout(binary,2.0) time %ld\n",time(&tp));

@@ -65,6 +65,7 @@ void semMutexTest(int nthreads,int verbose)
     time_t tp;
     int errVerboseSave = errVerbose;
 
+    threadInit ();
     errVerbose = verbose;
     mutex = semMutexMustCreate();
     printf("calling semMutexTake(mutex) time %ld\n",time(&tp));

@@ -42,6 +42,7 @@ void timerTest(void)
     TS_STAMP start;
     int i;
 
+    threadInit ();
     timerQueue = osiTimerQueueCreate(threadPriorityLow);
     for(i=0; i<ntimers ; i++) {
         timer[i] = calloc(1,sizeof(myPvt));

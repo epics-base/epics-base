@@ -39,6 +39,7 @@ void threadTest(int ntasks,int verbose)
     int startPriority,minPriority,maxPriority;
     int errVerboseSave = errVerbose;
 
+    threadInit ();
     errVerbose = verbose;
     errlogInit(4096);
     id = calloc(ntasks,sizeof(threadId *));
@@ -67,7 +68,7 @@ void threadTest(int ntasks,int verbose)
             startPriority,minPriority,maxPriority);
     }
     threadSleep(.1);
-    threadShow();
+    threadShowAll(0);
     threadSleep(5.0);
     errlogPrintf("threadTest terminating\n");
     errVerbose = errVerboseSave;

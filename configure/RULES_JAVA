@@ -1,59 +1,113 @@
 # $Id$
 #
-#---------------------------------------------------------------
-#     Java classes and packages
-#
 
-ifdef JAVA
+
+#-------------------------------------------------------
+# java jdk1.1.5 definitions
+
+JAVA_INC = $(JAVA_DIR)/include
+JAVA_BIN = $(JAVA_DIR)/bin
+JAVA_INCLUDES += -I${JAVA_INC} -I${JAVA_INC}/${OS_CLASS}
+
+JAVACCMD = $(subst \,/,$(JAVA_BIN)/javac$(EXE) $(CLASSPATH) $(SOURCEPATH) $(JAVACFLAGS))
+JAVAHCMD = $(subst \,/,$(JAVA_BIN)/javah$(EXE) -d $(COMMON_DIR) -force $(CLASSPATH) $(JAVAHFLAGS))
+JARCMD   = $(subst \,/,$(JAVA_BIN)/jar$(EXE) $(JAR_OPTIONS) $(COMMON_JAR) $(JARINPUT))
+
+#-------------------------------------------------------
+vpath %.java .. 
+
+CLASSPATH=-classpath $(INSTALL_JAVA)$(addprefix :,$(USR_CLASSPATH))
+SOURCEPATH=-sourcepath .:..:../..
+
+#-------------------------------------------------------
+# Java install directory
 
 INSTALL_JAVA = $(INSTALL_LOCATION)/javalib
 JAVA_DIRECTORY_TARGETS += $(INSTALL_JAVA)
-ifdef PACKAGE
-JAVA_DIRECTORY_TARGETS += $(INSTALL_JAVA)/$(PACKAGE)
-endif #ifdef PACKAGE
 
-vpath %.class $(INSTALL_JAVA)/$(PACKAGE)
-vpath %.java .. 
+#-------------------------------------------------------
+# Java native method C header files
 
+JAVAHFLAGS += $(USR_JAVAHFLAGS)
+COMMON_JAVAINC += $(addprefix $(COMMON_DIR)/,$(JAVAINC))
+JAVAINC_CLASSFILES += $(addprefix $(INSTALL_JAVA)/,$(subst _,/,$(subst .h,.class,$(JAVAINC))))
+JAVAINC_CLASSNAMES += $(subst _,.,$(subst .h,,$(JAVAINC)))
+
+#-------------------------------------------------------
+# Java class files
+
+JAVACFLAGS += $(USR_JAVACFLAGS)
 CLASSES += $(subst .java,.class,$(JAVA))
-TESTCLASSES += $(subst .java,.class,$(TESTJAVA))
-INSTALL_CLASSES =$(CLASSES:%=$(INSTALL_JAVA)/$(PACKAGE)/%)
-INSTALL_JAR =$(JAR:%=$(INSTALL_JAVA)/%)
+DEPJAVA += $(subst .class,.java,$(CLASSES))
+INSTALL_CLASSES = $(addprefix $(INSTALL_JAVA)/,$(CLASSES))
 
+TESTCLASSES += $(subst .java,.class,$(notdir $(TESTJAVA)))
+COMMON_TESTCLASSES += $(addprefix $(COMMON_DIR)/,$(TESTCLASSES))
+DEPTESTJAVA += $(subst .class,.java,$(TESTCLASSES))
+
+#-------------------------------------------------------
+# Java jar file
+
+COMMON_JAR += $(addprefix $(COMMON_DIR)/,$(JAR))
+INSTALL_JAR =$(addprefix $(INSTALL_JAVA)/,$(JAR))
+JARMANIFEST += $(firstword $(trim $(MANIFEST) $(JAR_MANIFEST)))
+JARINPUT += $(subst .java,.class,$(JAR_INPUT))
+JARDEPFILES +=  $(JARINPUT) $(JARMANIFEST)
+ifneq ($(JARMANIFEST),)
+JAR_OPTIONS = cvmf $(JARMANIFEST)
+else
 JAR_OPTIONS = cvf
-ifdef MANIFEST
-JAR_OPTIONS = cvmf
 endif
-JAR_DEPFILES +=  $(wildcard $(JAR_INPUT) $(addsuffix /*,$(JAR_INPUT)))
 
-build: $(TESTCLASSES) $(JAR)
+#-------------------------------------------------------
+# Java rules
 
-buildInstall : $(JAVA_DIRECTORY_TARGETS) $(INSTALL_CLASSES) $(INSTALL_JAR)
+all:    install
 
-clean::
-	@$(RM) $(TESTCLASSES) $(JAR)
+inc:  $(JAVA_DIRECTORY_TARGETS) $(INSTALL_CLASSES) $(COMMON_JAVAINC)
+
+build: inc
+
+build:  $(COMMON_TESTCLASSES) $(COMMON_JAR)
+
+buildInstall : build
+
+buildInstall : $(INSTALL_JAR)
+
+install: buildInstall
+
+rebuild: clean install
+
+#This clean works only from O.* dirs.
+clean:: 
+	@$(RMDIR) $(INSTALL_CLASSES)
+	@$(RM) $(INSTALL_JAR)
+	@$(RM) $(COMMON_TESTCLASSES) $(COMMON_JAR) $(COMMON_JAVAINC)
 
 $(JAVA_DIRECTORY_TARGETS):
 	$(MKDIR) -p $@
 
-%.class:%.java
-	@echo Creating java class file $@
-	$(RM) $@
-	$(JAVACCMD) $< 
-
-$(INSTALL_JAVA)/$(PACKAGE)/%.class:%.java
-	@echo Creating java class file $@
+$(COMMON_JAVAINC):$(JAVAINC_CLASSFILES)
+	@echo Creating header files $(COMMON_JAVAINC)
 	@$(RM) $@
-	$(JAVACCMD) -d $(INSTALL_JAVA) $< 
+	$(JAVAHCMD) $(JAVAINC_CLASSNAMES)
 
-$(JAR):%.jar:  $(JAR_DEPFILES)
+$(COMMON_TESTCLASSES): $(addprefix ../,$(DEPTESTJAVA))
+	@echo Creating test java class files $(COMMON_TESTCLASSES)
+	@$(RM) $@
+	$(JAVACCMD) -d $(COMMON_DIR) $^
+
+$(INSTALL_CLASSES): $(addprefix ../,$(DEPJAVA))
+	@echo Creating java class files 
+	@$(RM) $@
+	$(JAVACCMD) -d $(INSTALL_JAVA) $^
+
+$(COMMON_DIR)/%.jar: $(JARDEPFILES)
 	@echo Creating java jar file $@
 	@$(RM) $@
 	$(JARCMD)
 
-$(INSTALL_JAVA)/%.jar: %.jar
-	@echo "Installing jar file $@"
-	$(INSTALL) -d -m 644 $< $(@D)
-
-endif  #ifdef JAVA
+$(INSTALL_JAVA)/%.jar: $(COMMON_DIR)/%.jar
+	@echo "Installing java jar file $@"
+	@$(INSTALL) -d -m 644 $< $(@D)
 

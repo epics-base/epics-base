@@ -381,6 +381,8 @@ long epicsShareAPI dbtr(char *pname)
     long 	     status;
     struct dbCommon  *precord;
 
+    if(pname == NULL)
+        return 0;
     status=dbNameToAddr(pname,&addr);
     if(status) {
 	errMessage(status," dbNameToAddr failed");

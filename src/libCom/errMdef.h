@@ -61,6 +61,10 @@ extern "C" {
 #include "ellLib.h"
 #include "shareLib.h"
 
+/*The following is only included because before 3.13.0beta12 errMessage */
+/*and errPrintf were defined here					*/
+#include "errlog.h"
+
 #define RTN_SUCCESS(STATUS) ((STATUS)==0)
 
 #define M_dbAccess	(501 <<16) /*Database Access Routines */
@@ -88,13 +92,6 @@ extern "C" {
 #define M_bucket	(525 <<16) /*Bucket Hash*/
 #define M_gddFuncTbl	(526 <<16) /*gdd jump table*/
 
-/*
- * redefine errMessage with a macro so we can print 
- * the file and line number
- */
-#define errMessage(S, PM) \
-         errPrintf(S, __FILE__, __LINE__, PM)
-
 #ifdef errMDefUseProtoANSI
 epicsShareFunc int epicsShareAPI errSymFind(long status, char *name);
 epicsShareFunc int epicsShareAPI UnixSymFind(long status, char *name, long *value);
@@ -103,11 +100,8 @@ epicsShareFunc void epicsShareAPI errSymTest(unsigned short modnum, unsigned sho
 epicsShareFunc void epicsShareAPI errSymTestPrint(long errNum);
 epicsShareFunc int epicsShareAPI errSymBld();
 epicsShareFunc int epicsShareAPI errSymbolAdd (long errNum,char *name);
-epicsShareFunc void epicsShareAPI errPrintf(long status, const char *pFileName, 
-	int lineno, const char *pformat, ...);
 epicsShareFunc void epicsShareAPI errSymDump();
 epicsShareFunc void epicsShareAPI tstErrSymFind();
-epicsShareFunc void epicsShareAPI errInit(void);
 
 #else /* errMDefUseProtoANSI */ 
 
@@ -118,7 +112,6 @@ epicsShareFunc int epicsShareAPI ModSymFind();
 epicsShareFunc void epicsShareAPI errSymTestPrint();
 epicsShareFunc int epicsShareAPI errSymBld();
 epicsShareFunc int epicsShareAPI errSymbolAdd();
-epicsShareFunc void epicsShareAPI errPrintf();
 epicsShareFunc void epicsShareAPI errSymDump();
 epicsShareFunc void epicsShareAPI tstErrSymFind();
 #endif /* errMDefUseProtoANSI */ 

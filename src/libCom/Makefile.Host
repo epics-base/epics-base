@@ -14,6 +14,7 @@ INC += cvtFast.h
 INC += ellLib.h
 INC += envDefs.h
 INC += epicsAssert.h
+INC += errlog.h
 INC += epicsPrint.h
 INC += errMdef.h
 INC += error.h
@@ -28,12 +29,12 @@ INC += fdManager.h
 INC += osiTime.h
 INC += osiTimer.h
 INC += macLib.h
-INC += impLib.h
 INC += sigPipeIgnore.h
 INC += dbmf.h
 INC += ipAddrToA.h
 INC += epicsString.h
 INC += truncateFile.h
+INC += adjustment.h
 
 #	For WIN32 we supply getopt as part of libCom:
 INC_WIN32 := getopt.h
@@ -50,7 +51,7 @@ LIBSRCS += cvtFast.c
 LIBSRCS += ellLib.c
 LIBSRCS += envSubr.c
 LIBSRCS += envData.c
-LIBSRCS += errPrintfUNIX.c
+LIBSRCS += errlogUNIX.c
 LIBSRCS += errSymLib.c
 LIBSRCS += errSymTbl.c
 LIBSRCS += fdmgr.c
@@ -62,7 +63,6 @@ LIBSRCS += postfix.c
 LIBSRCS += realpath.c
 LIBSRCS += tsSubr.c
 LIBSRCS += assertUNIX.c
-LIBSRCS += impLib.c
 LIBSRCS += macCore.c
 LIBSRCS += macUtil.c
 LIBSRCS += sigPipeIgnore.c
@@ -71,6 +71,7 @@ LIBSRCS += ipAddrToA.c
 LIBSRCS += epicsString.c
 LIBSRCS += truncateFile.c
 LIBSRCS += aToIPAddr.c
+LIBSRCS += adjustment.c
 
 #
 # if CPLUSPLUS isnt empty then include C++ src codes
@@ -103,7 +104,6 @@ PROD_LIBS = Com
 #TESTPROD=tsTest 
 #TESTPROD=envtest
 #TESTPROD=osiTimeTest fdManagerTest
-PROD = impExpand
 
 MAN3 = gpHash.3 freeList.3
 

@@ -61,10 +61,10 @@ epicsShareFunc extern void epicsShareAPI
 
 #ifdef epicsAssertAuthor
 #define assert(exp) \
-{if (!(exp)) epicsAssert (__FILE__, __LINE__, #exp, epicsAssertAuthor);}
+( (exp) ? ( void ) : epicsAssert( __FILE__, __LINE__, #exp, epicsAssertAuthor ) )
 #else /* epicsAssertAuthor */
 #define assert(exp) \
-{if (!(exp)) epicsAssert (__FILE__, __LINE__, #exp, 0);}
+( (exp) ? ( void ) : epicsAssert( __FILE__, __LINE__, #exp, 0 ) )
 #endif /* epicsAssertAuthor */
 
 #else /*__STDC__ or __cplusplus*/
@@ -72,10 +72,10 @@ epicsShareFunc extern void epicsShareAPI
 
 #ifdef epicsAssertAuthor
 #define assert(exp) \
-{if (!(exp)) epicsAssert (__FILE__, __LINE__, "", epicsAssertAuthor);}
+( (exp) ? ( void ) : epicsAssert( __FILE__, __LINE__, "", epicsAssertAuthor ) )
 #else /* epicsAssertAuthor */
 #define assert(exp) \
-{if (!(exp)) epicsAssert (__FILE__, __LINE__, "", 0);}
+( (exp) ? ( void ) : epicsAssert( __FILE__, __LINE__, "", 0 ) )
 #endif /* epicsAssertAuthor */
 
 #endif /* (__STDC__ or __cplusplus) and not VAXC */

@@ -62,26 +62,26 @@
 #include 	"osiSock.h"
 #include	"truncateFile.h"
 
-static unsigned short	ioc_log_port;
-static long		ioc_log_file_limit;
-static char		ioc_log_file_name[256];
-static char		ioc_log_file_command[256];
+static unsigned short ioc_log_port;
+static long ioc_log_file_limit;
+static char ioc_log_file_name[256];
+static char ioc_log_file_command[256];
 
 
 #ifndef TRUE
-#define	TRUE	1
+#define	TRUE 1
 #endif
 #ifndef FALSE
-#define	FALSE	0
+#define	FALSE 0
 #endif
 
 struct iocLogClient {
-	int			insock;
-	struct ioc_log_server	*pserver;
-	size_t			nChar;
-	char			recvbuf[1024];
-	char			name[32];
-	char			ascii_time[32];
+	int insock;
+	struct ioc_log_server *pserver;
+	size_t nChar;
+	char recvbuf[1024];
+	char name[32];
+	char ascii_time[32];
 };
 
 struct ioc_log_server {
@@ -92,7 +92,6 @@ struct ioc_log_server {
 	SOCKET sock;
 	long max_file_size;
 };
-
 
 #define IOCLS_ERROR (-1)
 #define IOCLS_OK 0
@@ -124,10 +123,10 @@ static int sighupPipe[2];
  */
 int main()
 {
-	struct sockaddr_in 	    serverAddr;	/* server's address */
-	struct timeval          timeout;
-	int			            status;
-	struct ioc_log_server	*pserver;
+	struct sockaddr_in serverAddr;	/* server's address */
+	struct timeval timeout;
+	int status;
+	struct ioc_log_server *pserver;
 
 	osiSockIoctl_t	optval;
 

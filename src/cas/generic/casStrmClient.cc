@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1996/07/01 19:56:14  jhill
+ * one last update prior to first release
+ *
  * Revision 1.3  1996/06/26 21:18:59  jhill
  * now matches gdd api revisions
  *
@@ -57,7 +60,7 @@ static const caHdr nill_msg = {0u,0u,0u,0u,0u,0u};
 //
 // casStrmClient::verifyRequest()
 //
-inline caStatus casStrmClient::verifyRequest (casChannelI *&pChan)
+caStatus casStrmClient::verifyRequest (casChannelI *&pChan)
 {
         const caHdr   *mp = this->ctx.getMsg();
  
@@ -1379,6 +1382,9 @@ caStatus casStrmClient::writeScalerData()
 		return S_cas_badType;
 	}
 
+	pDD->setStat(epicsAlarmNone);
+	pDD->setSevr(epicsSevNone);
+
 	//
 	// No suprises when multiple codes are looking
 	// at the same data
@@ -1449,6 +1455,9 @@ caStatus casStrmClient::writeArrayData()
 	// install allocated area into the DD
 	//
 	pDD->putRef (pData, type, pDestructor);
+
+	pDD->setStat(epicsAlarmNone);
+	pDD->setSevr(epicsSevNone);
 
 	//
 	// No suprises when multiple codes are looking

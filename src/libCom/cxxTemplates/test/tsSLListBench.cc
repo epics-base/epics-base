@@ -32,7 +32,6 @@ private:
 main ()
 {
 	tsSLList<fred>	list;
-	tsSLIter<fred>	iter(list);
 	fred		*pFred;
 	unsigned 	i;
 	clock_t		clk;
@@ -45,9 +44,11 @@ main ()
 	}
 
 	clk = clock();
-	iter = list;
-	while ( (pFred = iter()) ) {
-		pFred->inc();
+	{
+		tsSLIter<fred>	iter(list);
+		while ( (pFred = iter()) ) {
+			pFred->inc();
+		}
 	}
 	diff = clock() - clk;
 	delay = diff;
@@ -57,9 +58,11 @@ main ()
 
 	pFred = new fred();
 	clk = clock();
-	iter = list;
-	for (i=0; i<LOOPCOUNT; i++) {
-		pFred->inc();
+	{
+		tsSLIter<fred>	iter(list);
+		for (i=0; i<LOOPCOUNT; i++) {
+			pFred->inc();
+		}
 	}
 	diff = clock() - clk;
 	delay = diff;

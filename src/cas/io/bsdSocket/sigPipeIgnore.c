@@ -11,19 +11,21 @@
 #include <errno.h>
 #include <string.h>
 
-#include <sigPipeIgnore.h>
+#include "sigPipeIgnore.h"
 
 typedef void (*pSigFunc) ();
 
 static pSigFunc pReplacedFunc;
 
-#ifdef WIN32
+#ifndef UNIX // all os except UNIX
  
 void installSigPipeIgnore (void)
 {
 }
  
-#else // WIN32
+#else // it is UNIX 
+
+static void localInstallSigPipeIgnore (void);
 
 /*
  * ignoreSigPipe ()
@@ -33,6 +35,11 @@ static void ignoreSigPipe (int param)
 	if (pReplacedFunc) {
 		(*pReplacedFunc) (param);
 	}
+	/*
+	 * some versios of unix reset to SIG_DFL
+	 * each time that the signal occurs
+	 */
+	localInstallSigPipeIgnore ();
 }
 
 /*
@@ -45,15 +52,38 @@ void installSigPipeIgnore (void)
 	if (init) {
 		return;
 	}
-
-	pReplacedFunc = signal (SIGPIPE, ignoreSigPipe);
-	if (pReplacedFunc == SIG_ERR) {
-		char *pFmt = "replace of SIGPIPE failed beacuse\n";
-		fprintf (stderr, pFmt, __FILE__, strerror(errno));
-	}
-
+	localInstallSigPipeIgnore();
 	init = 1;
 }
 
-#endif // WIN32
+/*
+ * localInstallSigPipeIgnore ()
+ *
+ * dont allow disconnect to terminate process
+ * when running in UNIX environment
+ *
+ * allow error to be returned to sendto()
+ * instead of handling disconnect at interrupt
+ */
+static void localInstallSigPipeIgnore (void)
+{
+	pSigFunc sigRet;
+
+	sigRet = signal (SIGPIPE, ignoreSigPipe);
+	if (sigRet==SIG_ERR) {
+		fprintf (stderr, "%s replace of SIGPIPE failed beacuse %s\n", 
+			__FILE__, strerror(errno));
+	}
+	else if (sigRet!=SIG_DFL && sigRet!=SIG_IGN) {
+		pReplacedFunc = sigRet;
+	}
+	/*
+	 * no infinite loops 
+	 */
+	if (pReplacedFunc==ignoreSigPipe) {
+		pReplacedFunc = NULL;
+	}
+}
+
+#endif // UNIX 
 

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.7  1996/12/06 22:26:36  jhill
+ * added auto cleanup of installed classes to destroy
+ *
  * Revision 1.6  1996/11/02 01:07:17  jhill
  * many improvements
  *
@@ -69,7 +72,7 @@ typedef	unsigned 	resTableIndex;
 #define resTableIndexBitWidth (sizeof(resTableIndex)*CHAR_BIT)
 
 //
-// class T must derive class ID
+// class T must derive from class ID and also from class tsSLNode<T>
 //
 // NOTE: Classes installed into this table should have
 // a virtual destructor so that the delete in ~resTable() will
@@ -78,8 +81,6 @@ typedef	unsigned 	resTableIndex;
 template <class T, class ID>
 class resTable {
 public:
-	enum resTableDelFlag {rtdfDelete, rtdfNoDelete};
-
 	resTable() :
 		pTable(0), hashIdMask(0), hashIdNBits(0), nInUse(0) {}
 
@@ -94,10 +95,19 @@ public:
 		}
 	}
 
+	//
+	// destroy all res in the table
+	//
 	void destroyAllEntries();
 
-	void show (unsigned level);
+	//
+	// call T::show(level) for each res in the table
+	//
+	void show (unsigned level) const;
 
+	//
+	// add a res to the table
+	//
 	int add (T &res)
 	{
 		//
@@ -113,18 +123,33 @@ public:
 		return 0;
 	}
 
+	//
+	// remove a res from the table
+	//
 	T *remove (const ID &idIn)
 	{
 		tsSLList<T> &list = this->pTable[this->hash(idIn)];
-		return this->find(list, idIn, rtdfDelete);
+		return this->findDelete(list, idIn);
 	}
 
 
+	//
+	// find an res in the table
+	//
 	T *lookup (const ID &idIn)
 	{
 		tsSLList<T> &list = this->pTable[this->hash(idIn)];
 		return this->find(list, idIn);
 	}
+
+	//
+	// Call (pT->*pCB) () for each item in the table
+	//
+	// where pT is a pointer to type T and pCB is
+	// a pointer to a memmber function of T with 
+	// no parameters and returning void
+	//
+	void traverse(void (T::*pCB)());
 
 private:
 	tsSLList<T>	*pTable;
@@ -147,8 +172,7 @@ private:
 	// iterator points to the item found upon return
 	// (or NULL if nothing matching was found)
 	//
-	T *find (tsSLList<T> &list, const ID &idIn, 
-		resTableDelFlag df=rtdfNoDelete)
+	T *find (tsSLList<T> &list, const ID &idIn)
 	{
 		tsSLIter<T> 	iter(list);
 		T		*pItem;
@@ -157,10 +181,33 @@ private:
 		while ( (pItem = iter()) ) {
 			pId = pItem;
 			if (*pId == idIn) {
-				if (df==rtdfDelete) {
-					iter.remove();
-					this->nInUse--;
-				}
+				break;
+			}
+		}
+		return pItem;
+	}
+
+	//
+	// findDelete
+	// searches from where the iterator points to the
+	// end of the list for idIn
+	//
+	// iterator points to the item found upon return
+	// (or NULL if nothing matching was found)
+	//
+	// removes the item if it finds it
+	//
+	T *findDelete (tsSLList<T> &list, const ID &idIn)
+	{
+		tsSLIterRm<T> 	iter(list);
+		T		*pItem;
+		ID		*pId;
+
+		while ( (pItem = iter()) ) {
+			pId = pItem;
+			if (*pId == idIn) {
+				iter.remove();
+				this->nInUse--;
 				break;
 			}
 		}
@@ -212,16 +259,6 @@ protected:
 };
 
 //
-// resource with unsigned chronological identifier
-//
-template <class ITEM>
-class uintRes : public uintId, public tsSLNode<ITEM> {
-friend class uintResTable<ITEM>;
-public:
-	uintRes(unsigned idIn=UINT_MAX) : uintId(idIn) {}
-};
-
-//
 // special resource table which uses 
 // unsigned integer keys allocated in chronological sequence
 // 
@@ -232,23 +269,38 @@ class uintResTable : public resTable<ITEM, uintId> {
 public:
 	uintResTable() : allocId(1u) {} // hashing is faster close to zero
 
-	//
-	// NOTE: This detects (and avoids) the case where 
-	// the PV id wraps around and we attempt to have two 
-	// resources with the same id.
-	//
-	void installItem(ITEM &item)
-	{
-		int resTblStatus;
-		do {
-			item.uintId::id = this->allocId++;
-			resTblStatus = this->add(item);
-		}
-		while (resTblStatus);
-	}
+	inline void installItem(ITEM &item);
 private:
 	unsigned 	allocId;
 };
+
+//
+// resource with unsigned chronological identifier
+//
+template <class ITEM>
+class uintRes : public uintId, public tsSLNode<ITEM> {
+friend class uintResTable<ITEM>;
+public:
+	uintRes(unsigned idIn=UINT_MAX) : uintId(idIn) {}
+};
+
+//
+// uintRes<ITEM>::installItem()
+//
+// NOTE: This detects (and avoids) the case where 
+// the PV id wraps around and we attempt to have two 
+// resources with the same id.
+//
+template <class ITEM>
+inline void uintResTable<ITEM>::installItem(ITEM &item)
+{
+	int resTblStatus;
+	do {
+		item.uintRes<ITEM>::id = allocId++;
+		resTblStatus = this->add(item);
+	}
+	while (resTblStatus);
+}
 
 //
 // pointer identifier
@@ -292,40 +344,89 @@ private:
 //
 // character string identifier
 //
+// NOTE: to be robust in situations where the new()
+// in the constructor might fail a careful consumer 
+// of this class should check to see if the 
+// stringId::resourceName() below
+// returns a valid (non--NULL) string pointer.
+// Eventually an exception will be thrown if
+// new fails (when this is portable).
+//
 class stringId {
 public:
-        stringId (char const * const idIn) :
-		pStr(new char [strlen(idIn)+1u])
+	enum allocationType {copyString, refString};
+
+	//
+	// allocCopyString()
+	//
+	static inline char * allocCopyString(const char * const pStr)
 	{
-		if (this->pStr!=NULL) {
-			strcpy(this->pStr, idIn);
+		char *pNewStr = new char [strlen(pStr)+1u];
+		if (pNewStr) {
+			strcpy (pNewStr, pStr);
 		}
+		return pNewStr;
 	}
+
+	//
+	// stringId() constructor
+	//
+	// Use typeIn==refString only if the string passed in will exist
+	// and remain constant during the entire lifespan of the stringId
+	// object.
+	//
+        stringId (char const * const idIn, allocationType typeIn=copyString) :
+		pStr(typeIn==copyString?allocCopyString(idIn):idIn),
+		allocType(typeIn) {}
 
 	~ stringId()
 	{
-		if (this->pStr!=NULL) {
-			delete [] this->pStr;
+		if (this->allocType==copyString) {
+			if (this->pStr!=NULL) {
+				delete [] (char *) this->pStr;
+			}
 		}
 	}
- 
+
+	//
+	// The hash algorithm is a modification of the algorithm described in 
+	// Fast Hashing of Variable Length Text Strings, Peter K. Pearson, 
+	// Communications of the ACM, June 1990 
+	// The modifications were designed by Marty Kraimer
+	//
         resTableIndex resourceHash(unsigned nBitsId) const
         {
-                resTableIndex hashid;
-		unsigned i;
- 
 		if (this->pStr==NULL) {
 			return 0u;
 		}
 
-                hashid = 0u;
-		for (i=0u; this->pStr[i]; i++) {
-			hashid += this->pStr[i] * (i+1u);
+		unsigned h0 = 0u;
+		unsigned h1 = 0u;
+		unsigned c;
+		unsigned i;
+		for (i=0u; (c = this->pStr[i]); i++) {
+			//
+			// odd 
+			//
+			if (i&1u) {
+				h1 = this->T[h1 ^ c];
+			}
+			//
+			// even 
+			//
+			else {
+				h0 = this->T[h0 ^ c];
+			}
 		}
 
-		hashid = hashid % (1u<<nBitsId);
-
-                return hashid;
+		//
+		// does not work well for more than 65k entries ?
+		// (because some indexes in the table will not be produced)
+		//
+		if (nBitsId>=8u) {
+			h1 = h1 << (nBitsId-8u);
+		}
+		return h1 ^ h0;
         }
  
         int operator == (const stringId &idIn)
@@ -338,22 +439,27 @@ public:
 		}
         }
 
+	//
+	// return the pointer to the string
+	// (also used to test to see if "new()"
+	// failed in the constructor
+	//
 	const char * resourceName()
 	{
 		return this->pStr;
 	}
 
-	void show (unsigned)
+	void show (unsigned level) const
 	{
-		printf ("resource id = %s\n", this->pStr);
+		if (level>2u) {
+			printf ("resource id = %s\n", this->pStr);
+		}
 	}
 private:
-        char * const pStr;
+        const char * const pStr;
+	allocationType const allocType;
+	static unsigned char T[256];
 };
-
-#if defined(__SUNPRO_CC) || defined(EXPAND_TEMPLATES_HERE)
-# 	include "resourceLib.cc"
-#endif
 
 #endif // INCresourceLibh
 

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/11/02 00:54:02  jhill
+ * many improvements
+ *
  * Revision 1.2  1996/09/04 20:18:03  jhill
  * init new chan member
  *
@@ -38,11 +41,11 @@
  *
  */
 
-#include <server.h>
-#include <casEventSysIL.h> // casEventSys inline func
-#include <casAsyncIOIIL.h> // casAsyncIOI inline func
-#include <casPVIIL.h> // casPVI inline func
-#include <casCtxIL.h> // casCtx inline func
+#include "server.h"
+#include "casEventSysIL.h" // casEventSys inline func
+#include "casAsyncIOIIL.h" // casAsyncIOI inline func
+#include "casPVIIL.h" // casPVI inline func
+#include "casCtxIL.h" // casCtx inline func
 
 
 //
@@ -52,7 +55,9 @@ casChannelI::casChannelI(const casCtx &ctx, casChannel &chanAdapter) :
 		client(* (casStrmClient *) ctx.getClient()), 
 		pv(*ctx.getPV()), 
 		chan(chanAdapter),
-		cid(ctx.getMsg()->m_cid)
+		cid(ctx.getMsg()->m_cid),
+		clientDestroyPending(FALSE),
+		accessRightsEvPending(FALSE)
 {
 	assert(&this->client);
 	assert(&this->pv);
@@ -67,8 +72,6 @@ casChannelI::casChannelI(const casCtx &ctx, casChannel &chanAdapter) :
 //
 casChannelI::~casChannelI()
 {
-        casAsyncIOI		*pIO;
-        casMonitor		*pMonitor;
 	casChanDelEv		*pCDEV;
 	caStatus		status;
 
@@ -77,31 +80,34 @@ casChannelI::~casChannelI()
         //
         // cancel any pending asynchronous IO 
         //
-	tsDLFwdIter<casAsyncIOI> iterIO(this->ioInProgList);
-	pIO = iterIO.next();
-        while (pIO) {
-		casAsyncIOI	*pNextIO;
+	tsDLIterBD<casAsyncIOI> iterAIO(this->ioInProgList.first());
+	const tsDLIterBD<casAsyncIOI> eolAIO;
+	tsDLIterBD<casAsyncIOI> tmpAIO;
+        while ( iterAIO!=eolAIO ) {
 		//
 		// destructor removes from this list
 		//
-		pNextIO = iterIO.next();
-		pIO->destroy();
-                pIO = pNextIO;
+		tmpAIO = iterAIO;
+		++tmpAIO;
+		iterAIO->destroy();
+		iterAIO = tmpAIO;
         }
 
 	//
 	// cancel the monitors 
 	//
-	tsDLFwdIter<casMonitor>	iterMon(this->monitorList);
-	pMonitor = iterMon.next();
-        while (pMonitor) {
-        	casMonitor *pNextMon;
+	tsDLIterBD<casMonitor> iterMon(this->monitorList.first());
+	const tsDLIterBD<casMonitor> eolMon;
+	tsDLIterBD<casMonitor> tmpMon;
+        while ( iterMon!=eolMon ) {
+        	casMonitor *pMonitor;
 		//
 		// destructor removes from this list
 		//
-		pNextMon = iterMon.next();
+		pMonitor = tmpMon = iterMon;
+		++tmpMon;
 		delete pMonitor;
-		pMonitor = pNextMon;
+		iterMon = tmpMon;
         }
 
 	this->client.removeChannel(*this);
@@ -112,9 +118,9 @@ casChannelI::~casChannelI()
         this->pv.deleteSignal();
 
 	//
-	// if its an old client and there is no memory
-	// we disconnect them here (and delete the client) 
-	// - therefore dont use member client after this point
+	// If we are not in the process of deleting the client
+	// then inform the client that we have deleted its 
+	// channel
 	//
 	if (!this->clientDestroyPending) {
 		pCDEV = new casChanDelEv(this->getCID());
@@ -124,10 +130,19 @@ casChannelI::~casChannelI()
 		else {	
 			status = this->client.disconnectChan (this->getCID());
 			if (status) {
-				errMessage(status, NULL);
-				if (status == S_cas_disconnect) {
-					this->client.destroy();
-				}
+				//
+				// At this point there is no space in pool
+				// for a tiny object and there is also
+				// no outgoing buffer space in which to place
+				// a message in which we inform the client
+				// that his channel was deleted.
+				//
+				// => disconnect this client via the event
+				// queue because deleting the client here
+				// will result in bugs because no doubt this
+				// could be called by a client member function.
+				//
+				this->client.setDestroyPending();
 			}
 		}
 	}
@@ -141,23 +156,22 @@ casChannelI::~casChannelI()
 //
 void casChannelI::clearOutstandingReads()
 {
-	casAsyncIOI *pIO;
-
 	this->lock();
 
         //
         // cancel any pending asynchronous IO 
         //
-	tsDLFwdIter<casAsyncIOI> iterIO(this->ioInProgList);
-	pIO = iterIO.next();
-        while (pIO) {
-		casAsyncIOI	*pNextIO;
+	tsDLIterBD<casAsyncIOI> iterIO(this->ioInProgList.first());
+	tsDLIterBD<casAsyncIOI> eolIO;
+	tsDLIterBD<casAsyncIOI> tmp;
+        while (iterIO!=eolIO) {
 		//
 		// destructor removes from this list
 		//
-		pNextIO = iterIO.next();
-		pIO->destroyIfReadOP();
-                pIO = pNextIO;
+		tmp = iterIO;
+		++tmp;
+		iterIO->destroyIfReadOP();
+		iterIO = tmp;
         }
 
 	this->unlock();
@@ -169,12 +183,12 @@ void casChannelI::clearOutstandingReads()
 //
 void casChannelI::postAllModifiedEvents()
 {
-	casMonitor		*pMon;
-
         this->lock();
-	tsDLFwdIter<casMonitor>	iter(this->monitorList);
-        while ( (pMon=iter.next()) ) {
-		pMon->postIfModified(); 
+	tsDLIterBD<casMonitor>	iter(this->monitorList.first());
+	tsDLIterBD<casMonitor>	eol;
+        while ( iter!=eol ) {
+		iter->postIfModified(); 
+		++iter;
         }
         this->unlock();
 }
@@ -183,25 +197,58 @@ void casChannelI::postAllModifiedEvents()
 //
 // casChannelI::show()
 //
-void casChannelI::show(unsigned level)
+void casChannelI::show(unsigned level) const
 {
-	casMonitor	 	*pMon;
-
 	this->lock();
-	tsDLFwdIter<casMonitor>	iter(this->monitorList);
 
-	if ( (pMon = iter.next()) ) {
+	tsDLIterBD<casMonitor> iter(this->monitorList.first());
+	tsDLIterBD<casMonitor> eol;
+	if ( iter!=eol ) {
 		printf("List of CA events (monitors) for \"%s\".\n",
-			this->pv.resourceName());
+			this->pv->getName());
 	}
-
-	while (pMon) {
-		pMon->show(level);
-		pMon = iter.next();
+	while ( iter!=eol ) {
+		iter->show(level);
+		++iter;
 	}
 
 	(*this)->show(level);
 
 	this->unlock();
+}
+
+
+//
+// casChannelI::cbFunc()
+//
+// access rights event call back
+//
+caStatus casChannelI::cbFunc(casEventSys &)
+{
+	caStatus stat;
+
+	stat = this->client.accessRightsResponse(this);
+	if (stat==S_cas_success) {
+		this->accessRightsEvPending = FALSE;
+	}
+	return stat;
+}
+
+//
+// casChannelI::destroy()
+//
+// call the destroy in the server tool
+//
+void casChannelI::destroy()
+{
+        this->chan.destroy();
+}
+
+//
+// casChannelI::resourceType()
+//
+casResType casChannelI::resourceType() const
+{
+	return casChanT;
 }
 

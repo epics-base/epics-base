@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  1996/12/11 00:58:35  jhill
+ * better diagnostic
+ *
  * Revision 1.5  1996/11/02 00:54:04  jhill
  * many improvements
  *
@@ -47,13 +50,15 @@
  *
  */
 
+#include <stdarg.h>
 
-#include <server.h>
-#include <casClientIL.h> // inline func for casClient
-#include <casEventSysIL.h> // inline func for casEventSys
-#include <casCtxIL.h> // inline func for casCtx
-#include <inBufIL.h> // inline func for inBuf 
-#include <db_access.h>
+#include "server.h"
+#include "casClientIL.h" // inline func for casClient
+#include "casEventSysIL.h" // inline func for casEventSys
+#include "casCtxIL.h" // inline func for casCtx
+#include "inBufIL.h" // inline func for inBuf 
+#include "casPVIIL.h" // inline func for casPVI 
+#include "db_access.h"
 
 VERSIONID(camsgtaskc,"%W% %G%")
 
@@ -124,59 +129,60 @@ void casClient::loadProtoJumpTable()
 
 	//
 	// Request Protocol Jump Table
+	// (use of & here is more portable)
 	//
 	casClient::msgHandlers[CA_PROTO_NOOP] = 
-			casClient::noopAction;
+			&casClient::noopAction;
 	casClient::msgHandlers[CA_PROTO_EVENT_ADD] = 
-			casClient::eventAddAction;
+			&casClient::eventAddAction;
 	casClient::msgHandlers[CA_PROTO_EVENT_CANCEL] = 
-			casClient::eventCancelAction;
+			&casClient::eventCancelAction;
 	casClient::msgHandlers[CA_PROTO_READ] = 
-			casClient::readAction;
+			&casClient::readAction;
 	casClient::msgHandlers[CA_PROTO_WRITE] = 	
-			casClient::writeAction;
+			&casClient::writeAction;
 	casClient::msgHandlers[CA_PROTO_SNAPSHOT] = 
-			casClient::uknownMessageAction;
+			&casClient::uknownMessageAction;
 	casClient::msgHandlers[CA_PROTO_SEARCH] = 
-			casClient::searchAction;
+			&casClient::searchAction;
 	casClient::msgHandlers[CA_PROTO_BUILD] = 
-			casClient::ignoreMsgAction;
+			&casClient::ignoreMsgAction;
 	casClient::msgHandlers[CA_PROTO_EVENTS_OFF] = 
-			casClient::eventsOffAction;
+			&casClient::eventsOffAction;
 	casClient::msgHandlers[CA_PROTO_EVENTS_ON] = 
-			casClient::eventsOnAction;
+			&casClient::eventsOnAction;
 	casClient::msgHandlers[CA_PROTO_READ_SYNC] = 
-			casClient::readSyncAction;
+			&casClient::readSyncAction;
 	casClient::msgHandlers[CA_PROTO_ERROR] = 
-			casClient::uknownMessageAction;
+			&casClient::uknownMessageAction;
 	casClient::msgHandlers[CA_PROTO_CLEAR_CHANNEL] = 
-			casClient::clearChannelAction;
+			&casClient::clearChannelAction;
 	casClient::msgHandlers[CA_PROTO_RSRV_IS_UP] = 
-			casClient::uknownMessageAction;
+			&casClient::uknownMessageAction;
 	casClient::msgHandlers[CA_PROTO_NOT_FOUND] = 
-			casClient::uknownMessageAction;
+			&casClient::uknownMessageAction;
 	casClient::msgHandlers[CA_PROTO_READ_NOTIFY] = 
-			casClient::readNotifyAction;
+			&casClient::readNotifyAction;
 	casClient::msgHandlers[CA_PROTO_READ_BUILD] = 
-			casClient::ignoreMsgAction;
+			&casClient::ignoreMsgAction;
 	casClient::msgHandlers[REPEATER_CONFIRM] = 
-			casClient::uknownMessageAction;
+			&casClient::uknownMessageAction;
 	casClient::msgHandlers[CA_PROTO_CLAIM_CIU] = 
-			casClient::claimChannelAction;
+			&casClient::claimChannelAction;
 	casClient::msgHandlers[CA_PROTO_WRITE_NOTIFY] = 
-			casClient::writeNotifyAction;
+			&casClient::writeNotifyAction;
 	casClient::msgHandlers[CA_PROTO_CLIENT_NAME] = 
-			casClient::clientNameAction;
+			&casClient::clientNameAction;
 	casClient::msgHandlers[CA_PROTO_HOST_NAME] = 
-			casClient::hostNameAction;
+			&casClient::hostNameAction;
 	casClient::msgHandlers[CA_PROTO_ACCESS_RIGHTS] = 
-			casClient::uknownMessageAction;
+			&casClient::uknownMessageAction;
 	casClient::msgHandlers[CA_PROTO_ECHO] = 
-			casClient::echoAction;
+			&casClient::echoAction;
 	casClient::msgHandlers[REPEATER_REGISTER] = 
-			casClient::uknownMessageAction;
+			&casClient::uknownMessageAction;
 	casClient::msgHandlers[CA_PROTO_CLAIM_CIU_FAILED] = 
-			casClient::uknownMessageAction;
+			&casClient::uknownMessageAction;
 
 	casClient::msgHandlersInit = TRUE;
 }
@@ -552,7 +558,7 @@ void casClient::dumpMsg(const caHdr *mp, const void *dp)
 	pciu = this->resIdToChannel(mp->m_cid);
 
 	if (pciu) {
-		strncpy(pPVName, pciu->getPVI().resourceName(), sizeof(pPVName));
+		strncpy(pPVName, pciu->getPVI()->getName(), sizeof(pPVName));
 		if (&pciu->getClient()!=this) {
 			strncat(pPVName, "!Bad Client!", sizeof(pPVName));
 		}

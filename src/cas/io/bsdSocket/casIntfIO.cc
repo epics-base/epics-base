@@ -6,9 +6,12 @@
 //
 //
 // $Log$
+// Revision 1.1  1996/11/02 01:01:41  jhill
+// installed
+//
 //
 
-#include <server.h>
+#include "server.h"
 
 //
 // 5 appears to be a TCP/IP built in maximum

@@ -7,12 +7,15 @@
 // (for single threaded version of the server)
 //
 // $Log$
+// Revision 1.1  1996/11/02 01:01:34  jhill
+// installed
+//
 //
 
 #include <stdio.h>
 
-#include <casdef.h>
-#include <osiMutexNOOP.h>
+#include "casdef.h"
+#include "osiMutexNOOP.h"
 
 
 //
@@ -35,7 +38,9 @@ ioBlocked::~ioBlocked()
 //
 void ioBlocked::ioBlockedSignal()
 {
-	fprintf(stderr, "in virtual base ioBlocked::ioBlockedSignal() ?\n");
+	//
+	// NOOP
+	//
 }
 
 //

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1996/11/02 00:53:53  jhill
+ * many improvements
+ *
  * Revision 1.3  1996/09/16 18:23:56  jhill
  * vxWorks port changes
  *
@@ -41,26 +44,18 @@
  *
  */
 
-#include <server.h>
-#include <caServerIIL.h>	// caServerI in line func
-#include <dbMapper.h>        	// ait to dbr types 
-#include <gddAppTable.h>        // EPICS application type table
+#include "server.h"
+#include "caServerIIL.h"	// caServerI in line func
+#include "dbMapper.h"        	// ait to dbr types 
+#include "gddAppTable.h"        // EPICS application type table
 
-//
-// NOTES
-// .01 All use of member pCAS in this file must first verify
-// that we successfully created a caServerI in
-// the constructor
-//
 
 
 //
 // caServer::caServer()
 //
-caServer::caServer(unsigned pvMaxNameLengthIn, unsigned pvCountEstimateIn, 
-		unsigned maxSimultaneousIOIn) :
-        	pCAS (new caServerI(*this, pvMaxNameLengthIn,
-                	pvCountEstimateIn, maxSimultaneousIOIn)),
+caServer::caServer(unsigned pvCountEstimateIn) :
+        	pCAS (new caServerI(*this, pvCountEstimateIn)),
 		valueEventMask(this->registerEvent("value")),
 		logEventMask(this->registerEvent("log")),
 		alarmEventMask(this->registerEvent("alarm"))
@@ -112,7 +107,7 @@ casEventMask caServer::registerEvent (const char *pName)
 //
 // caServer::show()
 //
-void caServer::show(unsigned level)
+void caServer::show(unsigned level) const
 {
 	if (this->pCAS) {
 		this->pCAS->show(level);
@@ -149,6 +144,8 @@ unsigned caServer::getDebugLevel ()
         }
 }
 
+//
+// casRes::~casRes()
 //
 // This must be virtual so that derived destructor will
 // be run indirectly. Therefore it cannot be inline.

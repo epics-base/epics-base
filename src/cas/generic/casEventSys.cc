@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1996/11/02 00:54:12  jhill
+ * many improvements
+ *
  * Revision 1.3  1996/09/16 18:24:01  jhill
  * vxWorks port changes
  *
@@ -49,8 +52,8 @@
 /*
  * EPICS
  */
-#include <server.h>
-#include <casEventSysIL.h> // casMonitor inline func
+#include "server.h"
+#include "casEventSysIL.h" // casMonitor inline func
 
 //
 // casEventSys::show()
@@ -166,6 +169,19 @@ casProcCond casEventSys::process()
 	}
 
 	this->mutex.osiUnlock();
+
+	//
+	// allows the derived class to be informed that it
+	// needs to delete itself via the event system
+	//
+	// this gets the server out of nasty situations
+	// where the client needs to be deleted but
+	// the caller may be using the client's "this"
+	// pointer.
+	//
+	if (this->destroyPending) {
+		cond = casProcDisconnect;
+	}
 
 	return cond;
 }

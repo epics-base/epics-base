@@ -28,8 +28,8 @@
  *	History
  */
 
-#include <server.h>
-#include <dgInBufIL.h> // in line func for dgInBuf
+#include "server.h"
+#include "dgInBufIL.h" // in line func for dgInBuf
 
 //
 // casDGIO::clientHostName()

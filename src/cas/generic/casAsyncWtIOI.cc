@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/11/06 22:15:56  jhill
+ * allow monitor init read to using rd async io
+ *
  * Revision 1.1  1996/11/02 01:01:04  jhill
  * installed
  *
@@ -36,10 +39,10 @@
  */
 
 
-#include <server.h>
-#include <casAsyncIOIIL.h> // casAsyncIOI in line func
-#include <casChannelIIL.h> // casChannelI in line func
-#include <casCtxIL.h> // casCtx in line func
+#include "server.h"
+#include "casAsyncIOIIL.h" // casAsyncIOI in line func
+#include "casChannelIIL.h" // casChannelI in line func
+#include "casCtxIL.h" // casCtx in line func
 
 //
 // casAsyncWtIOI::casAsyncWtIOI()

@@ -7,6 +7,9 @@
 // Some BSD calls have crept in here
 //
 // $Log$
+// Revision 1.1  1996/11/02 01:01:32  jhill
+// installed
+//
 // Revision 1.3  1996/09/04 22:04:07  jhill
 // moved netdb.h include here
 //
@@ -21,8 +24,8 @@
 #ifndef includeCASOSDH 
 #define includeCASOSDH 
 
-#include <osiTimer.h>
-#include <fdManager.h>
+#include "osiTimer.h"
+#include "fdManager.h"
 
 class caServerI;
 class caServerOS;

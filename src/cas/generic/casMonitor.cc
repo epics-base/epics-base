@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  1996/11/02 00:54:18  jhill
+ * many improvements
+ *
  * Revision 1.5  1996/09/16 18:24:03  jhill
  * vxWorks port changes
  *
@@ -48,11 +51,11 @@
  */
 
 
-#include <server.h>
-#include <casChannelIIL.h> // casChannelI inline func
-#include <casEventSysIL.h> // casEventSys inline func
-#include <casMonEventIL.h> // casMonEvent inline func
-#include <casCtxIL.h> // casCtx inline func
+#include "server.h"
+#include "casChannelIIL.h" // casChannelI inline func
+#include "casEventSysIL.h" // casEventSys inline func
+#include "casMonEventIL.h" // casMonEvent inline func
+#include "casCtxIL.h" // casCtx inline func
 
 
 //
@@ -269,12 +272,13 @@ caStatus casMonitor::executeEvent(casMonEvent *pEV)
 //
 // casMonitor::show(unsigned level)
 //
-void casMonitor::show(unsigned level)
+void casMonitor::show(unsigned level) const
 {
-        if (level>0u) {
+        if (level>1u) {
                 printf(
 "\tmonitor type=%u count=%lu client id=%u enabled=%u OVF=%u nPend=%u\n",
                         dbrType, nElem, clientId, enabled, ovf, nPend);
+		this->mask.show(level);
         }
 }
 

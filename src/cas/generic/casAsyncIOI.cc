@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1996/12/13 00:08:35  jhill
+ * dont unlock after destroy
+ *
  * Revision 1.4  1996/11/02 00:53:58  jhill
  * many improvements
  *
@@ -36,10 +39,10 @@
  */
 
 
-#include <server.h>
-#include <casEventSysIL.h> // casEventSys in line func
-#include <casAsyncIOIIL.h> // casAsyncIOI in line func
-#include <casCtxIL.h> // casCtx in line func
+#include "server.h"
+#include "casEventSysIL.h" // casEventSys in line func
+#include "casAsyncIOIIL.h" // casAsyncIOI in line func
+#include "casCtxIL.h" // casCtx in line func
 
 //
 // casAsyncIOI::casAsyncIOI()
@@ -52,6 +55,19 @@ casAsyncIOI::casAsyncIOI(casCoreClient &clientIn, casAsyncIO &ioExternalIn) :
 	ioComplete(FALSE),
 	serverDelete(FALSE)
 {
+	//
+	// catch situation where they create more than one
+	// async IO object per request
+	//
+	if (client.asyncIOFlag) {
+		errMessage(S_cas_badParameter, 
+			"- duplicate async IO creation");
+		this->duplicate = TRUE;
+	}
+	else {
+		client.asyncIOFlag = TRUE;
+		this->duplicate = FALSE;
+	}
 }
 
 //
@@ -165,6 +181,18 @@ caStatus casAsyncIOI::postIOCompletionI()
 {
 	this->lock();
 
+	if (this->duplicate) {
+		errMessage(S_cas_badParameter, 
+			"- duplicate async IO");
+		//
+		// dont use "this" after potentially destroying the
+		// object here
+		//
+		this->serverDelete = TRUE;
+		(*this)->destroy();
+		return S_cas_redundantPost;
+	}
+
 	//
 	// verify that they dont post completion more than once
 	//
@@ -194,7 +222,7 @@ caStatus casAsyncIOI::postIOCompletionI()
 // casAsyncIOI::getCAS()
 // (not inline because this is used by the interface class)
 //
-caServer *casAsyncIOI::getCAS()
+caServer *casAsyncIOI::getCAS() const
 {
         return this->client.getCAS().getAdapter();
 }
@@ -215,13 +243,13 @@ int casAsyncIOI::readOP()
 //
 void casAsyncIOI::destroyIfReadOP()
 {
-	casCoreClient &client = this->client;
+	casCoreClient &clientCopy = this->client;
 
         //
         // client lock used because this object's
         // lock may be destroyed
         //
-        client.osiLock();
+        clientCopy.osiLock();
  
 	if (this->readOP()) {
         	this->serverDelete = TRUE;
@@ -232,7 +260,8 @@ void casAsyncIOI::destroyIfReadOP()
 	// NO REF TO THIS OBJECT BELOW HERE
 	// BECAUSE OF THE DELETE ABOVE
 	//
-        client.osiUnlock();
+
+        clientCopy.osiUnlock();
 }
 
 //

@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.4  1996/12/12 21:24:17  jhill
+// moved casStreamOS *pStrmOS decl down
+//
 // Revision 1.3  1996/12/12 19:02:36  jhill
 // fixed send does not get armed after complete flush bug
 //
@@ -26,10 +29,10 @@
 //
 // CA server
 // 
-#include <server.h>
-#include <casClientIL.h> // casClient inline func
-#include <inBufIL.h> // inBuf inline func
-#include <outBufIL.h> // outBuf inline func
+#include "server.h"
+#include "casClientIL.h" // casClient inline func
+#include "inBufIL.h" // inBuf inline func
+#include "outBufIL.h" // outBuf inline func
 
 //
 // casStreamReadReg
@@ -174,12 +177,20 @@ void casStreamEvWakeup::expire()
 	cond = this->os.casEventSys::process();
 	if (cond != casProcOk) {
 		//
-		// if "this" is being used above this
-		// routine on the stack then problems 
-		// will result if we delete "this" here
+		// ok to delete the client here
+		// because casStreamEvWakeup::expire()
+		// is called by the timer queue system
+		// and therefore we are not being
+		// called from a client member function
+		// higher up on the stack
 		//
-		// delete &this->os;	
-		ca_printf("strm event sys process failed\n");
+		this->os.destroy();	
+
+		//
+		// must not touch the "this" pointer
+		// from this point on however
+		//
+		return;
 	}
 }
 
@@ -506,21 +517,22 @@ void casStreamWriteReg::callBack()
 	// attempt to flush the output buffer 
 	//
 	flushCond = os.flush();
-	switch (flushCond) {
-	case casFlushCompleted:
-	case casFlushPartial:
+	if (	flushCond==casFlushCompleted ||
+		flushCond==casFlushPartial) {
 		if (os.sendBlocked) {
 			os.sendBlocked = FALSE;
 		}
-		break;
-	case casFlushNone:
-		break;
-	case casFlushDisconnect:
+	}
+	else if (flushCond==casFlushDisconnect) {
 		return;
-		break;
-	default:
+	}
+#if defined(DEBUG)
+	else if (flushCond==casFlushNone) {
+	}
+	else {
 		assert(0);
 	}
+#endif
 
 	//
 	// If we are unable to flush out all of the events 
@@ -531,7 +543,20 @@ void casStreamWriteReg::callBack()
 	//
 	procCond = this->os.casEventSys::process();
 	if (procCond != casProcOk) {
-		ca_printf("strm event sys process failed\n");
+		//
+		// ok to delete the client here
+		// because casStreamWriteReg::callBack()
+		// is called by the fdManager system
+		// and therefore we are not being
+		// called from a client member function
+		// higher up on the stack
+		//
+		this->os.destroy();	
+		//
+		// must not touch "this" pointer
+		// after the destroy however
+		//
+		return;
 	}
 
 #	if defined(DEBUG)
@@ -592,20 +617,20 @@ casProcCond casStreamOS::processInput()
 #	endif
 
         status = this->processMsg();
-        switch (status) {
-        case S_cas_sendBlocked:
-        case S_cas_partialMessage:
-        case S_cas_ioBlocked:
-	case S_cas_success:
+	if (	status==S_cas_success ||
+		status==S_cas_sendBlocked ||
+		status==S_casApp_postponeAsyncIO ||
+		status==S_cas_partialMessage) {
+
 		if (this->inBuf::bytesAvailable()==0u) {
 			this->armSend ();
 		}
 		this->armRecv();
 		return casProcOk;
-		break;
-        default:
+	}
+	else {
                 errMessage (status,
-                 	"unexpected problem with client's input - forcing disconnect");
+	"unexpected problem with client's input - forcing disconnect");
 		return casProcDisconnect;
         }
 }

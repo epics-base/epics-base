@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1997/01/10 21:17:59  jhill
+ * code around gnu g++ inline bug when -O isnt used
+ *
  * Revision 1.3  1997/01/09 22:29:17  jhill
  * installed hostBuild branch
  *
@@ -45,7 +48,7 @@
 #ifndef casPVListChanIL_h
 #define casPVListChanIL_h
 
-#include <casPVIIL.h>
+#include "casPVIIL.h"
 
 //
 // empty for now since casPVListChan::casPVListChan()

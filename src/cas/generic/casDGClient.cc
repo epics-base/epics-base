@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.8  1997/01/10 21:17:53  jhill
+ * code around gnu g++ inline bug when -O isnt used
+ *
  * Revision 1.7  1996/11/02 00:54:08  jhill
  * many improvements
  *
@@ -53,14 +56,14 @@
  *
  */
 
-#include <server.h>
-#include <caServerIIL.h> // caServerI inline func
-#include <casClientIL.h> // casClient inline func
-#include <dgOutBufIL.h> // dgOutBuf inline func
-#include <dgInBufIL.h> // dgInBuf inline func
-#include <casCtxIL.h> // casCtx inline func
-#include <casCoreClientIL.h> // casCoreClient inline func
-#include <gddApps.h>
+#include "server.h"
+#include "caServerIIL.h" // caServerI inline func
+#include "casClientIL.h" // casClient inline func
+#include "dgOutBufIL.h" // dgOutBuf inline func
+#include "dgInBufIL.h" // dgInBuf inline func
+#include "casCtxIL.h" // casCtx inline func
+#include "casCoreClientIL.h" // casCoreClient inline func
+#include "gddApps.h"
 
 //
 // CA Server Datagram (DG) Client
@@ -124,32 +127,68 @@ caStatus casDGClient::searchAction()
 	void		*dp = this->ctx.getData();
 	const char	*pChanName = (const char *) dp;
 	caStatus	status;
+	pvExistReturn	pver;
 
 	if (this->ctx.getServer()->getDebugLevel()>2u) {
 		printf("client is searching for \"%s\"\n", pChanName);
 	}
 
 	//
+	// verify that we have sufficent memory for a PV and a
+	// monitor prior to calling PV exist test so that when
+	// the server runs out of memory we dont reply to
+	// search requests, and therefore dont thrash through
+	// caServer::pvExistTest() and casCreatePV::createPV()
+	//
+#ifdef vxWorks
+#	error code needs to be implemented here when we port
+#	error to memory limited environment 
+#endif
+
+	//
 	// ask the server tool if this PV exists
 	//
-	pvExistReturn retVal = 
+	this->asyncIOFlag = 0u;
+	casPVExistReturn retVal = 
 		this->ctx.getServer()->pvExistTest(this->ctx, pChanName);
-	if (retVal.getStatus() == S_casApp_asyncCompletion) {
-		status = S_cas_success;
-	}
-	else if (retVal.getStatus()==S_cas_ioBlocked) {
-		//
-		// If too many exist test IO operations are in progress
-		// then we will just ignore this request (and wait for
-		// the client to try again later)
-		//
-		status = S_cas_success;
-	}
-	else {
-		status = this->searchResponse(*mp, retVal);
+	if (retVal.getStatus()!=S_cas_success) {
+		return retVal.getStatus();
 	}
 
-	return S_cas_success;
+        //
+        // prevent problems when they initiate
+        // async IO but dont return status
+        // indicating so (and vise versa)
+        //
+	pver = retVal.getAppStat();
+        if (this->asyncIOFlag) {
+		pver = pverAsyncCompletion;
+        }
+        else if (pver == pverAsyncCompletion) {
+		pver = pverDoesNotExistHere;
+                errMessage(S_cas_badParameter, 
+		"- expected asynch IO creation from caServer::pvExistTest()");
+        }
+
+	//
+	// otherwise we assume sync IO operation was initiated
+	//
+	switch (pver) {
+	case pverDoesNotExistHere:
+	case pverAsyncCompletion:
+		status = S_cas_success;
+		break;
+
+	case pverExistsHere:
+		status = this->searchResponse(*mp, retVal.getAppStat());
+		break;
+
+	default:
+		status = S_cas_badParameter;
+		break;
+	}
+
+	return status;
 }
 
 
@@ -157,18 +196,22 @@ caStatus casDGClient::searchAction()
 // caStatus casDGClient::searchResponse()
 //
 caStatus casDGClient::searchResponse(const caHdr &msg, 
-	const pvExistReturn &retVal)
+	const pvExistReturn retVal)
 {
 	caStatus	status;
 	caHdr 		*search_reply;
 	unsigned short	*pMinorVersion;
 
-	this->ctx.getServer()->pvExistTestCompletion();
-
 	//
 	// normal search failure is ignored
 	//
-	if (retVal.getStatus()==S_casApp_pvNotFound) {
+	if (retVal==pverDoesNotExistHere) {
+		return S_cas_success;
+	}
+
+	if (retVal!=pverExistsHere) {
+		fprintf(stderr, 
+"async exist completion with invalid return code \"pverAsynchCompletion\"?\n");
 		return S_cas_success;
 	}
 
@@ -198,29 +241,6 @@ caStatus casDGClient::searchResponse(const caHdr &msg,
 			"R3.11 connect sequence from old client was ignored");
 		return status;
         }
-
-	//
-	// check for bad parameters
-	//
-	if (retVal.getStatus()) {
-		errMessage(retVal.getStatus(),NULL);
-		return S_cas_success;
-	}
-	if (retVal.getString()) {
-		if (retVal.getString()[0]=='\0') {
-			errMessage(S_cas_badParameter, 
-				"PV name descr is empty");
-			return S_cas_success;
-		}
-		if (this->ctx.getServer()->getDebugLevel()>2u) {
-			printf("Search request matched for PV=\"%s\"\n", 
-				retVal.getString());
-		}
-	}
-	else {
-		errMessage(S_cas_badParameter, "PV name descr is nill");
-		return S_cas_success;
-	}
 
 	/*
 	 * obtain space for the reply message
@@ -381,7 +401,7 @@ void casDGClient::processDG(casDGIntfIO &inMsgIO, casDGIntfIO &outMsgIO)
 // casDGClient::asyncSearchResp()
 //
 caStatus casDGClient::asyncSearchResponse(casDGIntfIO &outMsgIO, const caAddr &outAddr,
-		const caHdr &msg, const pvExistReturn &retVal)
+		const caHdr &msg, const pvExistReturn retVal)
 {
 	caStatus stat;
 

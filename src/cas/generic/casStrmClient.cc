@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.14  1996/12/12 18:56:27  jhill
+ * doc
+ *
  * Revision 1.13  1996/12/11 01:03:52  jhill
  * removed redundant bad client attach detect
  *
@@ -111,58 +114,13 @@ caStatus casStrmClient::verifyRequest (casChannelI *&pChan)
         //
         // element count out of range ?
         //
-        if (mp->m_count > pChan->getPVI().nativeCount()) {
+        if (mp->m_count > pChan->getPVI().nativeCount() || mp->m_count==0u) {
                 return this->sendErr(mp, ECA_BADCOUNT, NULL);
         }
  
-        //
-        // If too many IO operations are in progress against this pv 
-        // then we will need to wait until later to initiate this
-        // request.
-        //
-	if (pChan->getPVI().okToBeginNewIO()!=aitTrue) {
-		pChan->getPVI().addItemToIOBLockedList(*this);
-                return S_cas_ioBlocked;
-	}
-	else {
-        	return S_cas_validRequest;
-        }
+        return S_cas_validRequest;
 }
 
-
-//
-// casStrmClient::createChannel()
-//
-inline caStatus casStrmClient::createChannel (const char *pName) 
-{
-	caStatus	status;
-
-	/*
-	 * Verify that the server still has this channel
-	 * and that we have it's correct official name.
-	 * I assume that we may have found this server by
-	 * contacting a name resolution service so we need to
-	 * verify that the specified channel still exists here.
-	 */
-	pvExistReturn retVal =
-		this->ctx.getServer()->pvExistTest(this->ctx, pName);
-	if (retVal.getStatus() == S_casApp_asyncCompletion) {
-		status = S_cas_success;
-	}
-	else if (retVal.getStatus() == S_cas_ioBlocked) {
-		this->ctx.getServer()->addItemToIOBLockedList(*this);
-		status = S_cas_ioBlocked;
-	}
-	else {
-		//
-		// All use of the string in retVal below ends up getting
-		// copied (not referenced) so we are ok if they wrap
-		// pName through into retVal
-		//
-		status = this->createChanResponse (*this->ctx.getMsg(), retVal);
-	}
-	return status;
-}
 
 
 
@@ -222,9 +180,6 @@ caStatus casStrmClient::init()
 //
 casStrmClient::~casStrmClient()
 {
-	casChannelI		*pChan;
-	casChannelI		*pNextChan;
-
         this->osiLock();
 
 	//
@@ -243,15 +198,17 @@ casStrmClient::~casStrmClient()
 	//
 	// delete all channel attached
 	//
-	tsDLFwdIter<casChannelI> iter(this->chanList);
-	pChan = iter.next();
-	while (pChan) {
+	tsDLIterBD<casChannelI> iter(this->chanList.first());
+	const tsDLIterBD<casChannelI> eol;
+	tsDLIterBD<casChannelI> tmp;
+	while (iter!=eol) {
 		//
 		// destroying the channel removes it from the list
 		//
-		pNextChan = iter();
-		pChan->clientDestroy();
-		pChan = pNextChan;
+		tmp = iter;
+		++tmp;
+		iter->clientDestroy();
+		iter = tmp;
         }
 
         this->osiUnlock();
@@ -322,11 +279,14 @@ caStatus casStrmClient::readAction ()
 
 	pDesc = NULL;
 	status = this->read(pDesc); 
-	if (status==S_casApp_success && pDesc) {
+	if (status==S_casApp_success) {
 		status = this->readResponse(pChan, *mp, pDesc, S_cas_success);
 	}
 	else if (status == S_casApp_asyncCompletion) {
 		status = S_cas_success;
+	}
+	else if (status == S_casApp_postponeAsyncIO) {
+		pChan->getPVI().addItemToIOBLockedList(*this);
 	}
 	else {
 		status = this->sendErrWithEpicsStatus(mp, status, ECA_GETFAIL);
@@ -429,8 +389,14 @@ caStatus casStrmClient::readNotifyAction ()
 
 	pDesc = NULL;
 	status = this->read(pDesc); 
-	if (status == S_casApp_asyncCompletion) {
+	if (status == S_casApp_success) {
+		status = this->readNotifyResponse(pChan, *mp, pDesc, status);
+	}
+	else if (status == S_casApp_asyncCompletion) {
 		status = S_cas_success;
+	}
+	else if (status == S_casApp_postponeAsyncIO) {
+		pChan->getPVI().addItemToIOBLockedList(*this);
 	}
 	else {
 		status = this->readNotifyResponse(pChan, *mp, pDesc, status);
@@ -540,19 +506,12 @@ caStatus casStrmClient::monitorResponse (casChannelI *pChan,
 		const caHdr &msg, gdd *pDesc, const caStatus completionStatus)
 {
 	caStatus	completionStatusCopy = completionStatus;
+	gdd		*pDBRDD = NULL;
 	caHdr 		*pReply;
 	unsigned	size;
 	caStatus	status;
 	int        	strcnt;
-	gdd		*pDBRDD;
 	gddStatus       gdds;
-
-	//
-	// verify read access
-	//
-        if (!(*pChan)->readAccess()) {
-		completionStatusCopy = S_cas_noRead;
-        }
 
 	size = dbr_size_n (msg.m_type, msg.m_count);
 	status = this->allocMsg(size, &pReply);
@@ -564,7 +523,7 @@ caStatus casStrmClient::monitorResponse (casChannelI *pChan,
 			// instead
 			//
 			status = sendErr(&msg, ECA_TOLARGE, 
-					"unable to xmit enevt info");
+					"unable to xmit event");
 		}
 		return status;
 	}
@@ -576,17 +535,21 @@ caStatus casStrmClient::monitorResponse (casChannelI *pChan,
 	pReply->m_postsize = size;
 
 	//
+	// verify read access
+	//
+        if (!(*pChan)->readAccess()) {
+		completionStatusCopy = S_cas_noRead;
+        }
+
+	//
 	// cid field abused to store the status here
 	//
 	if (completionStatusCopy == S_cas_success) {
 		if (pDesc) {
 
-			status = createDBRDD(msg.m_type, msg.m_count, pDBRDD);
-			if (status != S_cas_success) {
-				pDBRDD = NULL;
-				completionStatusCopy = status;
-			}
-			else {
+			completionStatusCopy = createDBRDD(msg.m_type, 
+							msg.m_count, pDBRDD);
+			if (completionStatusCopy==S_cas_success) {
 				gdds = gddApplicationTypeTable::
 					app_table.smartCopy(pDBRDD, pDesc);
 				if (gdds) {
@@ -627,9 +590,13 @@ caStatus casStrmClient::monitorResponse (casChannelI *pChan,
 		}
 	}
 	else {
-		errMessage(completionStatusCopy, "monitor response");
+		errMessage(completionStatusCopy, "- in monitor response");
+
 		if (completionStatusCopy== S_cas_noRead) {
 			pReply->m_cid = ECA_NORDACCESS;
+		}
+		else if (completionStatusCopy==S_cas_noMemory) {
+			pReply->m_cid = ECA_ALLOCMEM;
 		}
 		else {
 			pReply->m_cid = ECA_GETFAIL;
@@ -688,11 +655,11 @@ caStatus casStrmClient::writeAction()
 	// initiate the  write operation
 	//
 	status = this->write(); 
-	if (status==S_casApp_success) {
+	if (status==S_casApp_success || status == S_casApp_asyncCompletion) {
 		status = S_cas_success;
 	}
-	else if (status == S_casApp_asyncCompletion) {
-		status = S_cas_success;
+	else if (status==S_casApp_postponeAsyncIO) {
+		pChan->getPVI().addItemToIOBLockedList(*this);
 	}
 	else {
 		status = this->sendErrWithEpicsStatus(mp, status, ECA_PUTFAIL);
@@ -760,6 +727,9 @@ caStatus casStrmClient::writeNotifyAction()
 	if (status == S_casApp_asyncCompletion) {
 		status = S_cas_success;
 	}
+	else if (status==S_casApp_postponeAsyncIO) {
+		pChan->getPVI().addItemToIOBLockedList(*this);
+	}
 	else {
 		status = casStrmClient::writeNotifyResponse(pChan, *mp,
 				status);
@@ -811,7 +781,6 @@ caStatus casStrmClient::hostNameAction()
 {
 	const caHdr 		*mp = this->ctx.getMsg();
 	char 			*pName = (char *) this->ctx.getData();
-	casChannelI		*pciu;
 	unsigned		size;
 	char 			*pMalloc;
 
@@ -837,9 +806,11 @@ caStatus casStrmClient::hostNameAction()
 	}
 	this->pHostName = pMalloc;
 
-	tsDLFwdIter<casChannelI> iter(this->chanList);
-	while ( (pciu = iter.next()) ) {
-		(*pciu)->setOwner(this->pUserName, this->pHostName);
+	tsDLIterBD<casChannelI> iter(this->chanList.first());
+	const tsDLIterBD<casChannelI> eol;
+	while ( iter!=eol ) {
+		(*iter)->setOwner(this->pUserName, this->pHostName);
+		++iter;
 	}
 
 	this->osiUnlock();
@@ -855,7 +826,6 @@ caStatus casStrmClient::clientNameAction()
 {
 	const caHdr 		*mp = this->ctx.getMsg();
 	char 			*pName = (char *) this->ctx.getData();
-	casChannelI		*pciu;
 	unsigned		size;
 	char 			*pMalloc;
 
@@ -882,9 +852,11 @@ caStatus casStrmClient::clientNameAction()
 	}
 	this->pUserName = pMalloc;
 
-	tsDLFwdIter<casChannelI>	iter(this->chanList);
-	while ( (pciu = iter.next()) ) {
-		(*pciu)->setOwner(this->pUserName, this->pHostName);
+	tsDLIterBD<casChannelI>	iter(this->chanList.first());
+	const tsDLIterBD<casChannelI> eol;
+	while ( iter!=eol ) {
+		(*iter)->setOwner(this->pUserName, this->pHostName);
+		++iter;
 	}
 	this->osiUnlock();
 
@@ -900,8 +872,8 @@ caStatus casStrmClient::claimChannelAction()
 {
 	const caHdr 	*mp = this->ctx.getMsg();
 	char		*pName = (char *) this->ctx.getData();
-	int		status;
 	unsigned	nameLength;
+	caStatus	status;
 
 	/*
 	 * The available field is used (abused)
@@ -922,7 +894,7 @@ caStatus casStrmClient::claimChannelAction()
                 // new API was added to the server (they must
                 // now use clients at EPICS 3.12 or higher)
                 //
-                status = this->sendErr(mp, ECA_DEFUNCT,
+                this->sendErr(mp, ECA_DEFUNCT,
                         "R3.11 connect sequence from old client was ignored");
                 return S_cas_badProtocol; // disconnect client
 	}
@@ -941,13 +913,146 @@ caStatus casStrmClient::claimChannelAction()
 		return S_cas_badProtocol; // disconnect client
 	}
 
-	status = this->createChannel (pName);
-	if (status == S_casApp_asyncCompletion) {
-		//
-		// asynchronous completion 
-		//
-		status = S_cas_success;
+	//
+	// prevent problems such as the PV being deleted before the
+	// channel references it
+	//
+	this->osiLock();
+	this->asyncIOFlag = 0u;
+	const pvCreateReturn pvcr =  
+			(*this->ctx.getServer())->createPV (this->ctx, pName);
+	//
+	// prevent problems when they initiate
+	// async IO but dont return status
+	// indicating so (and vise versa)
+	//
+	if (this->asyncIOFlag) {
+		status = S_cas_success;	
 	}
+	else if (pvcr.getStatus() == S_casApp_asyncCompletion) {
+		status = this->createChanResponse(*mp, 
+			pvCreateReturn(S_cas_badParameter));
+		errMessage(S_cas_badParameter, 
+		"- expected asynch IO creation from caServer::createPV()");
+	}
+	else if (pvcr.getStatus() == S_casApp_postponeAsyncIO) {
+		status = S_casApp_postponeAsyncIO;
+		this->ctx.getServer()->addItemToIOBLockedList(*this);
+	}
+	else {
+		status = this->createChanResponse(*mp, pvcr);
+	}
+	this->osiUnlock();
+	return status;
+}
+
+//
+// casStrmClient::createChanResponse()
+//
+// LOCK must be applied
+//
+caStatus casStrmClient::createChanResponse(const caHdr &hdr, const pvCreateReturn &pvcr)
+{
+	casPVI		*pPV;
+	casChannel 	*pChan;
+	casChannelI 	*pChanI;
+	caHdr 		*claim_reply; 
+	caHdr 		*dummy; 
+	unsigned	dbrType;
+	caStatus	status;
+
+	if (pvcr.getStatus() != S_cas_success) {
+		return this->channelCreateFailed(&hdr, pvcr.getStatus());
+	}
+
+	pPV = pvcr.getPV();
+
+	//
+	// If status is ok and the PV isnt set then guess that the
+	// pv isnt in this server
+	//
+	if (pPV == NULL) {
+		return this->channelCreateFailed(&hdr, S_casApp_pvNotFound);
+	}
+
+	//
+	// NOTE:
+	// We are allocating enough space for both the claim
+	// response and the access response so that we know for
+	// certain that they will both be sent together.
+	//
+	status = this->allocMsg (sizeof(caHdr), &dummy);
+	if (status) {
+		return status;
+	}
+
+	//
+	// create server tool XXX derived from casChannel
+	//
+	this->ctx.setPV(pPV);
+	pChan = (*pPV)->createChannel(this->ctx, 
+			this->pUserName, this->pHostName);
+	if (!pChan) {
+		pvcr.getPV()->deleteSignal();
+		return this->channelCreateFailed(&hdr, S_cas_noMemory);
+	}
+
+	this->osiUnlock();
+
+	pChanI = (casChannelI *) pChan;
+
+	//
+	// NOTE:
+	// We are certain that the request will complete
+	// here because we allocated enough space for this
+	// and the claim response above.
+	//
+	status = casStrmClient::accessRightsResponse(pChanI);
+	if (status) {
+		errMessage(status, "incompplete channel create?");
+		pChanI->clientDestroy();
+		return this->channelCreateFailed(&hdr, status);
+	}
+
+	status = pPV->bestDBRType(dbrType);
+	if (status) {
+		errMessage(status, "best external dbr type fetch failed");
+		pChanI->clientDestroy();
+		return this->channelCreateFailed(&hdr, status);
+	}
+
+	//
+	// NOTE:
+	// We are allocated enough space for both the claim
+	// response and the access response so that we know for
+	// certain that they will both be sent together.
+	// Nevertheles, some (old) clients do not receive
+	// an access rights response so we allocate again
+	// here to be certain that we are at the correct place in
+	// the protocol buffer.
+	//
+	// The 3rd arg indicates - dont lock the buffer again
+	//
+	status = this->allocMsg (0u, &claim_reply, FALSE);
+	//
+	// Not sending the access rights response and the claim
+	// response is a severe error which is avoided by
+	// the first (oversize) allocMsg
+	//
+	assert (status==S_cas_success);
+
+	*claim_reply = nill_msg;
+	claim_reply->m_cmmd = CA_PROTO_CLAIM_CIU;
+	claim_reply->m_type = dbrType;
+	claim_reply->m_count = pPV->nativeCount();
+	claim_reply->m_cid = hdr.m_cid;
+	claim_reply->m_available = pChanI->getSID();
+
+	//
+	// Unlock the buffer (and convert it to network format
+	//
+	this->commitMsg();
+
 	return status;
 }
 
@@ -965,7 +1070,15 @@ caStatus        createStatus)
         caStatus        status;
         caHdr   	*reply;
  
-	errMessage (createStatus, "- Server unable to create a new PV");
+	if (createStatus == S_casApp_asyncCompletion) {
+		errMessage(S_cas_badParameter, 
+	"- no asynchronous IO create in createPV() ?");
+		errMessage(S_cas_badParameter, 
+	"- or S_casApp_asyncCompletion was async IO competion code ?");
+	}
+	else {
+		errMessage (createStatus, "- Server unable to create a new PV");
+	}
         if (CA_V46(CA_PROTOCOL_VERSION,this->minor_version_number)) {
  
                 status = allocMsg (0u, &reply);
@@ -1012,7 +1125,7 @@ caStatus casStrmClient::disconnectChan(caResId id)
         }
         else {
 		ca_printf(
-"Disconnecting old client when server tool deleted its channel or PV\n");
+"Disconnecting old client because of internal channel or PV delete\n");
 		createStatus = S_cas_disconnect;
         }
  
@@ -1026,8 +1139,6 @@ caStatus casStrmClient::disconnectChan(caResId id)
 //
 caStatus casStrmClient::eventsOnAction ()
 {
-	casChannelI		*pciu;
-
 	this->setEventsOn();
 
 	//
@@ -1035,9 +1146,11 @@ caStatus casStrmClient::eventsOnAction ()
 	// should be a queue of modified events
 	//
 	this->osiLock();
-	tsDLFwdIter<casChannelI> iter(this->chanList);
-	while ( (pciu = iter.next()) ) {
-		pciu->postAllModifiedEvents();
+	tsDLIterBD<casChannelI> iter(this->chanList.first());
+	const tsDLIterBD<casChannelI> eol;
+	while ( iter!=eol ) {
+		iter->postAllModifiedEvents();
+		++iter;
 	}
 	this->osiUnlock();
 
@@ -1069,15 +1182,9 @@ caStatus casStrmClient::eventAddAction ()
 	caStatus		status;
 	casEventMask		mask;
 
-	pciu = this->resIdToChannel(mp->m_cid);
-	if (!pciu) {
-		logBadId(mp, (void *) pMonInfo);
-		return S_cas_internal;
-	}
-
-	if (mp->m_count==0u) {
-		this->sendErr(mp, ECA_BADCOUNT, "event add request");
-		return S_cas_success;
+	status = casStrmClient::verifyRequest (pciu);
+	if (status != S_cas_validRequest) {
+		return status;
 	}
 
 	//
@@ -1102,20 +1209,37 @@ caStatus casStrmClient::eventAddAction ()
 		return S_cas_success;
 	}
 
-	pMonitor = new casClientMon(*pciu, mp->m_available, 
-				mp->m_count, mp->m_type, mask, *this);
-	if (!pMonitor) {
-		this->sendErr(mp, ECA_ALLOCMEM, NULL);
-		return S_cas_internal;
-	}
-
 	//
-	// always send immediate monitor response at event add
+	// Attempt to read the first monitored value prior to creating
+	// the monitor object so that if the server tool chooses
+	// to postpone asynchronous IO we can safely restart this
+	// request later.
 	//
 	pDD = NULL;
 	status = this->read(pDD); 
-	if (status == S_casApp_asyncCompletion) {
+	//
+	// always send immediate monitor response at event add
+	//
+	if (status == S_casApp_success) {
+		status = this->monitorResponse (pciu, *mp, pDD, status);
+	}
+	else if (status == S_casApp_asyncCompletion) {
 		status = S_cas_success;
+	}
+	else if (status == S_casApp_postponeAsyncIO) {
+		//
+		// try again later
+		//
+		pciu->getPVI().addItemToIOBLockedList(*this);
+	}
+	else if (status == S_casApp_noMemory) {
+		//
+		// If we cant send the first monitor value because
+		// there isnt pool space for a gdd then delete 
+		// (disconnect) the channel
+		//
+		(*pciu)->destroy();
+		return S_cas_success;
 	}
 	else {
 		status = this->monitorResponse (pciu, *mp, pDD, status);
@@ -1125,6 +1249,21 @@ caStatus casStrmClient::eventAddAction ()
 		int gddStatus;
 		gddStatus = pDD->unreference();
 		assert(gddStatus==0);
+	}
+
+	if (status==S_cas_success) {
+
+		pMonitor = new casClientMon(*pciu, mp->m_available, 
+					mp->m_count, mp->m_type, mask, *this);
+		if (!pMonitor) {
+			this->sendErr(mp, ECA_ALLOCMEM, NULL);
+			//
+			// If we cant allocate space for a monitor then
+			// delete (disconnect) the channel
+			//
+			(*pciu)->destroy();
+			status = S_cas_success;
+		}
 	}
 
 	return status;
@@ -1283,7 +1422,6 @@ caStatus casStrmClient::readSyncAction()
 	const caHdr 	*mp = this->ctx.getMsg();
 	int		status;
 	caHdr 		*reply;
-	casChannelI	*pChan;
 
 	//
 	// This messages indicates that the client
@@ -1292,9 +1430,11 @@ caStatus casStrmClient::readSyncAction()
 	// a read.
 	//
 	this->osiLock();
-	tsDLFwdIter<casChannelI> iter(this->chanList);
-	while ( (pChan = iter.next()) ) {
-		pChan->clearOutstandingReads();
+	tsDLIterBD<casChannelI> iter(this->chanList.first());
+	const tsDLIterBD<casChannelI> eol;
+	while ( iter!=eol ) {
+		iter->clearOutstandingReads();
+		++iter;
 	}
 	this->osiUnlock();
 
@@ -1382,6 +1522,11 @@ caStatus casStrmClient::write()
 	}
 
 	//
+	// clear async IO flag
+	//
+	this->asyncIOFlag = 0u;
+
+	//
 	// DBR_STRING is stored outside the DD so it
 	// lumped in with arrays
 	//
@@ -1390,6 +1535,25 @@ caStatus casStrmClient::write()
 	}
 	else {
 		status = this->writeScalarData();
+	}
+
+	//
+	// prevent problems when they initiate
+	// async IO but dont return status
+	// indicating so (and vise versa)
+	//
+	if (this->asyncIOFlag) {
+		if (status!=S_casApp_asyncCompletion) {
+			fprintf(stderr, 
+"Application returned %d from casPV::write() - expected S_casApp_asyncCompletion\n",
+				status);
+			status = S_casApp_asyncCompletion;
+		}
+	}
+	else if (status == S_casApp_asyncCompletion) {
+		status = S_cas_badParameter;
+		errMessage(status, 
+		"- expected asynch IO creation from casPV::write()");
 	}
 
 	(*pPV)->endTransaction();
@@ -1544,7 +1708,9 @@ caStatus casStrmClient::read(gdd *&pDescRet)
 		return status;
 	}
 
-	assert(pDescRet);
+	if (!pDescRet) {
+		return S_cas_noMemory;
+	}
 
 	//
 	// the PV state must not be modified during a transaction
@@ -1555,16 +1721,37 @@ caStatus casStrmClient::read(gdd *&pDescRet)
 	}
 
 	//
+	// clear the async IO flag
+	//
+	this->asyncIOFlag = 0u;
+
+	//
 	// call the server tool's virtual function
 	//
 	status = (*this->ctx.getPV())->read(this->ctx, *pDescRet);
+
+	//
+	// prevent problems when they initiate
+	// async IO but dont return status
+	// indicating so (and vise versa)
+	//
+	if (this->asyncIOFlag) {
+		if (status!=S_casApp_asyncCompletion) {
+			fprintf(stderr, 
+"Application returned %d from casPV::read() - expected S_casApp_asyncCompletion\n",
+				status);
+			status = S_casApp_asyncCompletion;
+		}
+	}
+	else if (status == S_casApp_asyncCompletion) {
+		status = S_cas_badParameter;
+		errMessage(status, 
+			"- expected asynch IO creation from casPV::read()");
+	}
+
 	if (status) {
 		pDescRet->unreference();
 		pDescRet = NULL;
-		if (status!=S_casApp_asyncCompletion) {
-			errMessage(status, 
-				" - response from server tool\n");
-		}
 	}
 
 	(*this->ctx.getPV())->endTransaction();
@@ -1693,161 +1880,6 @@ const char *casStrmClient::userName() const
 const char *casStrmClient::hostName() const
 {
 	return this->pHostName?this->pHostName:"?";
-}
-
-
-//
-// casStrmClient::createChanResponse()
-//
-caStatus casStrmClient::createChanResponse(const caHdr &msg, 
-		const pvExistReturn &retVal) 
-{
-	casChannel 	*pChan;
-	casChannelI 	*pChanI;
-	casPVI		*pPV;
-	caHdr 		*claim_reply; 
-	caHdr 		*dummy; 
-	unsigned	dbrType;
-	caStatus	status;
-
-	this->ctx.getServer()->pvExistTestCompletion();
-
-	if (retVal.getStatus()) {
-		return this->channelCreateFailed(&msg, retVal.getStatus());
-	}
-
-	if (!retVal.getString()) {
-		return this->channelCreateFailed(&msg, S_cas_badParameter);
-	}
-
-	if (retVal.getString()[0]=='\0') {
-		return this->channelCreateFailed(&msg, S_cas_badParameter);
-	}
-
-	//
-	// NOTE:
-	// We are allocating enough space for both the claim
-	// response and the access response so that we know for
-	// certain that they will both be sent together.
-	//
-	status = this->allocMsg (sizeof(caHdr), &dummy);
-	if (status) {
-		return status;
-	}
-
-	//
-	// prevent problems such as the PV being deleted before the
-	// channel references it
-	//
-	this->osiLock();
-
-	pPV = this->ctx.getServer()->createPV(retVal.getString());
-	if (!pPV) {
-		this->osiUnlock();
-		return this->channelCreateFailed(&msg, S_cas_noMemory);
-	}
-
-	//
-	// create server tool XXX derived from casChannel
-	//
-	this->ctx.setPV(pPV);
-	pChan = (*pPV)->createChannel(this->ctx, 
-			this->pUserName, this->pHostName);
-	if (!pChan) {
-		this->osiUnlock();
-		pPV->deleteSignal();
-		return this->channelCreateFailed(&msg, S_cas_noMemory);
-	}
-
-	this->osiUnlock();
-
-	pChanI = (casChannelI *) pChan;
-
-	//
-	// NOTE:
-	// We are certain that the request will complete
-	// here because we allocated enough space for this
-	// and the claim response above.
-	//
-	status = casStrmClient::accessRightsResponse(pChanI);
-	if (status) {
-		errMessage(status, "incompplete channel create?");
-		pChanI->clientDestroy();
-		return this->channelCreateFailed(&msg, status);
-	}
-
-	status = pPV->bestDBRType(dbrType);
-	if (status) {
-		errMessage(status, "best external dbr type fetch failed");
-		pChanI->clientDestroy();
-		return this->channelCreateFailed(&msg, status);
-	}
-
-	//
-	// NOTE:
-	// We are allocated enough space for both the claim
-	// response and the access response so that we know for
-	// certain that they will both be sent together.
-	// Nevertheles, some (old) clients do not receive
-	// an access rights response so we allocate again
-	// here to be certain that we are at the correct place in
-	// the protocol buffer.
-	//
-	status = this->allocMsg (sizeof(caHdr), &claim_reply, 
-			FALSE /* dont lock the out buffer again*/);
-	//
-	// Not sending the access rights response and the claim
-	// response is a severe error which is avoided by
-	// the first (oversize) allocMsg
-	//
-	assert (status==S_cas_success);
-
-	*claim_reply = nill_msg;
-	claim_reply->m_cmmd = CA_PROTO_CLAIM_CIU;
-	claim_reply->m_type = dbrType;
-	claim_reply->m_count = pPV->nativeCount();
-	claim_reply->m_cid = msg.m_cid;
-	claim_reply->m_available = pChanI->getSID();
-
-	//
-	// Unlock the buffer (and convert it to network format
-	//
-	this->commitMsg();
-
-	return status;
-}
-
-//
-// caServerI::createPV ()
-//
-casPVI *caServerI::createPV (const char *pName)
-{
-        casPVI          *pPVI;
-
-	//
-	// create resource id
-	// (this does a malloc to obtain space for the string)
-	//
-	stringId id (pName);
-
-        this->osiLock ();
-
-        pPVI = this->stringResTbl.lookup (id);
-	if (!pPVI) {
-        	casPV	*pPV;
-		pPV = (*this)->createPV (this->ctx, pName);
-		if (pPV) {
-			pPVI = (casPVI *) pPV;
-		}
-        }
-
-	//
-	// lock shouldnt be released until we finish creating and
-	// installing the PV
-	//
-        this->osiUnlock ();
-
-        return pPVI;
 }
 
 //

@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include "resourceLib.h"
+#define INSTANCIATE_RES_LIB_STATIC
 #include "resourceLib.cc"
 
 #ifdef SUNOS4
@@ -21,6 +22,10 @@ public:
 	{
 		printf("fred %s\n", pName);
 	}
+	void destroy()
+	{
+		// always on stack so noop
+	}
 private:
 	const char * const pName;
 };
@@ -28,12 +33,28 @@ private:
 class jane : public stringId, public tsSLNode<jane> {
 public:
 	jane (const char *pNameIn) : stringId(pNameIn) {}
+
+	void testTraverse();
+
+	void destroy()
+	{
+		// always on stack so noop
+	}
 };
 
 //
-// Sun C++ 4.1 still appears to be lacking support in this area
+// jane::testTraverse()
 //
-#if !defined(__SUNPRO_CC)
+void jane::testTraverse()
+{
+	printf("Traverse Test\n");
+	this->show(10);
+}
+
+//
+// explicitly instantiates on compilers that support this
+//
+#if defined(EXPL_TEMPL)
         //
         // From Stroustrups's "The C++ Programming Language"
         // Appendix A: r.14.9
@@ -55,14 +76,14 @@ main()
 	resTable<jane,stringId>	strTbl;	
 	fred			fred1("fred1",0x1000a432);
 	fred			fred2("fred2",0x0000a432);
-	jane			jane1("jane1");
-	jane			jane2("jane2");
+	jane			jane1("rrrrrrrrrrrrrrrrrrrrrrrrrr1");
+	jane			jane2("rrrrrrrrrrrrrrrrrrrrrrrrrr2");
 	fred			*pFred;
 	jane			*pJane;
 	uintId			uintId1(0x1000a432);
 	uintId			uintId2(0x0000a432);
-	stringId		strId1("jane1");
-	stringId		strId2("jane2");
+	stringId		strId1("rrrrrrrrrrrrrrrrrrrrrrrrrr1");
+	stringId		strId2("rrrrrrrrrrrrrrrrrrrrrrrrrr2");
 	int			status;
  
 	status = intTbl.init(8);
@@ -157,6 +178,7 @@ main()
         printf("It took %15.10f u sec per string hash lookup\n", duration);
  
 	strTbl.show(10u);
+	strTbl.traverse(&jane::testTraverse);
 
 	strTbl.remove(strId1);
 	strTbl.remove(strId2);

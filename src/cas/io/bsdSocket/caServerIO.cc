@@ -5,6 +5,9 @@
 //
 //
 // $Log$
+// Revision 1.3  1996/11/02 00:54:42  jhill
+// many improvements
+//
 // Revision 1.2  1996/06/21 02:12:40  jhill
 // SOLARIS port
 //
@@ -15,10 +18,10 @@
 
 #include <ctype.h>
 
-#include <server.h>
-#include <sigPipeIgnore.h>
+#include "server.h"
+#include "sigPipeIgnore.h"
 
-static char *getToken(char **ppString);
+static char *getToken(const char **ppString, char *pBuf, unsigned bufSIze);
 
 int caServerIO::staticInitialized;
 
@@ -49,8 +52,8 @@ inline void caServerIO::staticInit()
 //
 caStatus caServerIO::init(caServerI &cas)
 {
-	ENV_PARAM buf;
-	char *pStr;
+	char buf[64u];
+	const char *pStr;
 	char *pToken;
 	caStatus stat;
 	unsigned short port;
@@ -65,21 +68,30 @@ caStatus caServerIO::init(caServerI &cas)
         // clients to find the server). If this also isnt available
         // then use a hard coded default - CA_SERVER_PORT.
         //
-	if (envParamIsEmpty(&EPICS_CAS_SERVER_PORT)) {
-		port = caFetchPortConfig(&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
+	if (envGetConfigParamPtr(&EPICS_CAS_SERVER_PORT)) {
+		port = caFetchPortConfig(&EPICS_CAS_SERVER_PORT, CA_SERVER_PORT);
 	}
 	else {
-		port = caFetchPortConfig(&EPICS_CAS_SERVER_PORT, CA_SERVER_PORT);
+		port = caFetchPortConfig(&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
 	}
 
 	memset((char *)&addr,0,sizeof(addr));
 	addr.sa.sa_family = AF_INET;
 	addr.in.sin_port =  ntohs (port);
 
-	pStr = envGetConfigParam(&EPICS_CA_AUTO_ADDR_LIST,
-			sizeof(buf.dflt), buf.dflt);
-	if (strstr(pStr,"no")||strstr(pStr,"NO")) {
-		autoBeaconAddr = FALSE;
+	pStr = envGetConfigParam(&EPICS_CA_AUTO_ADDR_LIST, sizeof(buf), buf);
+	if (pStr) {
+		if (strstr(pStr,"no")||strstr(pStr,"NO")) {
+			autoBeaconAddr = FALSE;
+		}
+		else if (strstr(pStr,"yes")||strstr(pStr,"YES")) {
+			autoBeaconAddr = TRUE;
+		}
+		else {
+			fprintf(stderr, 
+		"CAS: EPICS_CA_AUTO_ADDR_LIST = \"%s\"? Assuming \"YES\"\n", pStr);
+			autoBeaconAddr = TRUE;
+		}
 	}
 	else {
 		autoBeaconAddr = TRUE;
@@ -89,12 +101,11 @@ caStatus caServerIO::init(caServerI &cas)
 	// bind to the the interfaces specified - otherwise wildcard
 	// with INADDR_ANY and allow clients to attach from any interface
 	//
-	pStr = envGetConfigParam(&EPICS_CAS_INTF_ADDR_LIST, 
-		sizeof(buf.dflt), buf.dflt);
+	pStr = envGetConfigParamPtr(&EPICS_CAS_INTF_ADDR_LIST);
 	if (pStr) {
 		int configAddrOnceFlag = TRUE;
 		stat = S_cas_noInterface; 
-		while ( (pToken = getToken(&pStr)) ) {
+		while ( (pToken = getToken(&pStr, buf, sizeof(buf))) ) {
 			addr.in.sin_addr.s_addr = inet_addr(pToken);
 			if (addr.in.sin_addr.s_addr == ~0ul) {
 				ca_printf(
@@ -136,35 +147,32 @@ void caServerIO::show (unsigned /* level */) const
 //
 // getToken()
 //
-static char *getToken(char **ppString)
+static char *getToken(const char **ppString, char *pBuf, unsigned bufSIze)
 {
-        char *pToken;
-        char *pStr;
+        const char *pToken;
+        unsigned i;
  
         pToken = *ppString;
         while(isspace(*pToken)&&*pToken){
                 pToken++;
         }
  
-        pStr = pToken;
-        while(!isspace(*pStr)&&*pStr){
-                pStr++;
+        for (i=0u; i<bufSIze; i++) {
+                if (isspace(pToken[i]) || pToken[i]=='\0') {
+                        pBuf[i] = '\0';
+                        break;
+                }
+                pBuf[i] = pToken[i];
         }
  
-        if(isspace(*pStr)){
-                *pStr = '\0';
-                *ppString = pStr+1;
-        }
-        else{
-                *ppString = pStr;
-                assert(*pStr == '\0');
-        }
+        *ppString = &pToken[i];
  
         if(*pToken){
-                return pToken;
+                return pBuf;
         }
         else{
                 return NULL;
         }
 }
+
 

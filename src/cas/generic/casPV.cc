@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1996/12/06 22:34:22  jhill
+ * add maxDimension() and maxBound()
+ *
  * Revision 1.4  1996/11/02 00:54:21  jhill
  * many improvements
  *
@@ -51,14 +54,13 @@
 // 1) Always verify that pPVI isnt nill prior to using it
 //
 
-#include <server.h>
-#include <casPVIIL.h> 	// casPVI inline func
-#include <casCtxIL.h> 	// casCtx inline func
+#include "server.h"
+#include "casPVIIL.h" 	// casPVI inline func
+#include "casCtxIL.h" 	// casCtx inline func
 
-casPV::casPV (const casCtx &ctx, const char * const pPVName) :
-	casPVI (*ctx.getServer(), pPVName, *this)
+casPV::casPV (caServer &casIn) :
+	casPVI (casIn, *this)
 {
-	
 }
 
 casPV::~casPV()
@@ -68,22 +70,12 @@ casPV::~casPV()
 //
 // casPV::show()
 //
-void casPV::show(unsigned level) 
+void casPV::show(unsigned level)  const
 {
 	if (level>2u) {
-		printf ("casPV: Max simultaneous async io = %d\n",
-			this->maxSimultAsyncOps());
 		printf ("casPV: Best external type = %d\n",
 			this->bestExternalType());
 	}
-}
-
-//
-// casPV::maxSimultAsyncOps()
-//
-unsigned casPV::maxSimultAsyncOps() const
-{
-	return 1u;
 }
 
 //
@@ -192,7 +184,7 @@ void casPV::postEvent (const casEventMask &select, gdd &event)
 // for virtual casPV::destroy()
 // ***************
 //
-caServer *casPV::getCAS()
+caServer *casPV::getCAS() const
 {
 	return this->casPVI::getExtServer();
 }

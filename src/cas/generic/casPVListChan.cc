@@ -30,6 +30,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1997/01/10 21:17:58  jhill
+ * code around gnu g++ inline bug when -O isnt used
+ *
  * Revision 1.1  1996/12/06 22:36:18  jhill
  * use destroyInProgress flag now functional nativeCount()
  *
@@ -37,8 +40,8 @@
  *
  */
 
-#include <server.h>
-#include <casPVIIL.h>
+#include "server.h"
+#include "casPVIIL.h"
 
 //
 // this needs to be here (and not in dgInBufIL.h) if we

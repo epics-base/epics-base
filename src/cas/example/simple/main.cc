@@ -1,17 +1,19 @@
 
-#include <exServer.h>
-#include <fdManager.h>
+#include "exServer.h"
+#include "fdManager.h"
 
 //
 // main()
 // (example single threaded ca server tool main loop)
 //
-int main (int argc, const char **argv)
+extern int main (int argc, const char **argv)
 {
 	osiTime		begin(osiTime::getCurrent());
 	exServer	*pCAS;
 	unsigned 	debugLevel = 0u;
 	float		executionTime;
+	char		pvPrefix[128] = "";
+	unsigned	aliasCount = 1u;
 	aitBool		forever = aitTrue;
 	int		i;
 
@@ -23,12 +25,20 @@ int main (int argc, const char **argv)
 			forever = aitFalse;
 			continue;
 		}
-		printf ("usage: %s -d<debug level> -t<execution time>\n", 
+		if (sscanf(argv[i],"-p %127s", pvPrefix)==1) {
+			continue;
+		}
+		if (sscanf(argv[i],"-c %u", &aliasCount)==1) {
+			continue;
+		}
+		printf (
+"usage: %s [-d<debug level> -t<execution time> -p<PV name prefix> -c<numbered alias count>]\n", 
 			argv[0]);
+
 		return (1);
 	}
 
-	pCAS = new exServer(32u,5u,500u);
+	pCAS = new exServer(pvPrefix, aliasCount);
 	if (!pCAS) {
 		return (-1);
 	}
@@ -56,6 +66,7 @@ int main (int argc, const char **argv)
 			delay = osiTime::getCurrent() - begin;
 		}
 	}
+	pCAS->show(2u);
 	delete pCAS;
 	return (0);
 }

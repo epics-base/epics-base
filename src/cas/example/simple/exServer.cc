@@ -7,16 +7,7 @@
 // Example EPICS CA server
 //
 
-#include <exServer.h>
-
-const pvInfo exServer::pvList[] = {
-	pvInfo (1.0e-1, "jane", 10.0f, 0.0f, excasIoSync, 1u),
-	pvInfo (2.0, "fred", 10.0f, -10.0f, excasIoSync, 1u),
-	pvInfo (1.0e-1, "janet", 10.0f, 0.0f, excasIoAsync, 1u),
-	pvInfo (2.0, "freddy", 10.0f, -10.0f, excasIoAsync, 1u),
-	pvInfo (2.0, "alan", 10.0f, -10.0f, excasIoSync, 100u),
-	pvInfo (20.0, "albert", 10.0f, -10.0f, excasIoSync, 1000u)
-};
+#include "exServer.h"
 
 //
 // static data for exServer
@@ -24,107 +15,259 @@ const pvInfo exServer::pvList[] = {
 gddAppFuncTable<exPV> exServer::ft;
 
 //
+// static list of pre-created PVs
+//
+pvInfo exServer::pvList[] = {
+	pvInfo (1.0e-1, "jane", 10.0f, 0.0f, excasIoSync, 1u),
+	pvInfo (2.0, "fred", 10.0f, -10.0f, excasIoSync, 1u),
+	pvInfo (1.0e-1, "janet", 10.0f, 0.0f, excasIoAsync, 1u),
+	pvInfo (2.0, "freddy", 10.0f, -10.0f, excasIoAsync, 1u),
+	pvInfo (2.0, "alan", 10.0f, -10.0f, excasIoSync, 100u),
+	pvInfo (20.0, "albert", 10.0f, -10.0f, excasIoSync, 1000u)
+};
+//
+// static on-the-fly PVs
+//
+pvInfo exServer::bill (2.0, "bill", 10.0f, -10.0f, excasIoSync, 1u);
+pvInfo exServer::billy (2.0, "billy", 10.0f, -10.0f, excasIoAsync, 1u);
+
+//
 // exServer::exServer()
 //
-exServer::exServer(unsigned pvMaxNameLength, unsigned pvCountEstimate, 
-	unsigned maxSimultaneousIO) :
-	caServer(pvMaxNameLength, pvCountEstimate, maxSimultaneousIO)
+exServer::exServer(const char * const pvPrefix, unsigned aliasCount) : 
+	caServer(NELEMENTS(this->pvList)+2u),
+	simultAsychIOCount(0u)
 {
-	ft.installReadFunc("status",exPV::getStatus);
-	ft.installReadFunc("severity",exPV::getSeverity);
-	ft.installReadFunc("seconds",exPV::getSeconds);
-	ft.installReadFunc("nanoseconds",exPV::getNanoseconds);
-	ft.installReadFunc("precision",exPV::getPrecision);
-	ft.installReadFunc("graphicHigh",exPV::getHighLimit);
-	ft.installReadFunc("graphicLow",exPV::getLowLimit);
-	ft.installReadFunc("controlHigh",exPV::getHighLimit);
-	ft.installReadFunc("controlLow",exPV::getLowLimit);
-	ft.installReadFunc("alarmHigh",exPV::getHighLimit);
-	ft.installReadFunc("alarmLow",exPV::getLowLimit);
-	ft.installReadFunc("alarmHighWarning",exPV::getHighLimit);
-	ft.installReadFunc("alarmLowWarning",exPV::getLowLimit);
-	ft.installReadFunc("units",exPV::getUnits);
-	ft.installReadFunc("value",exPV::getValue);
-	ft.installReadFunc("enums",exPV::getEnums);
+	unsigned i;
+	exPV *pPV;
+	pvInfo *pPVI;
+	pvInfo *pPVAfter = 
+		&exServer::pvList[NELEMENTS(exServer::pvList)];
+	int resLibStatus;
+	char pvAlias[256];
+	const char * const pNameFmtStr = "%.100s%.20s";
+	const char * const pAliasFmtStr = "%.100s%.20s%u";
+
+	ft.installReadFunc ("status", &exPV::getStatus);
+	ft.installReadFunc ("severity", &exPV::getSeverity);
+	ft.installReadFunc ("seconds", &exPV::getSeconds);
+	ft.installReadFunc ("nanoseconds", &exPV::getNanoseconds);
+	ft.installReadFunc ("precision", &exPV::getPrecision);
+	ft.installReadFunc ("graphicHigh", &exPV::getHighLimit);
+	ft.installReadFunc ("graphicLow", &exPV::getLowLimit);
+	ft.installReadFunc ("controlHigh", &exPV::getHighLimit);
+	ft.installReadFunc ("controlLow", &exPV::getLowLimit);
+	ft.installReadFunc ("alarmHigh", &exPV::getHighLimit);
+	ft.installReadFunc ("alarmLow", &exPV::getLowLimit);
+	ft.installReadFunc ("alarmHighWarning", &exPV::getHighLimit);
+	ft.installReadFunc ("alarmLowWarning", &exPV::getLowLimit);
+	ft.installReadFunc ("units", &exPV::getUnits);
+	ft.installReadFunc ("value", &exPV::getValue);
+	ft.installReadFunc ("enums", &exPV::getEnums);
+
+        //
+        // hash table size may need adjustment here?
+        //
+        resLibStatus = this->stringResTbl.init(NELEMENTS(this->pvList)*(aliasCount+1u)+2u);
+        if (resLibStatus) {
+                fprintf(stderr, "CAS: string resource id table init failed\n");
+		//
+		// should throw an exception once this is portable
+		//
+		assert(resLibStatus==0);
+        }
+
+	//
+	// pre-create all of the simple PVs that this server will export
+	//
+	for (pPVI = exServer::pvList; pPVI < pPVAfter; pPVI++) {
+		pPV = pPVI->createPV (*this, aitTrue);
+		if (!pPV) {
+			fprintf(stderr, "Unable to create new PV \"%s\"\n",
+				pPVI->getName());
+		}
+
+
+		//
+		// Install canonical (root) name
+		//
+		sprintf(pvAlias, pNameFmtStr, pvPrefix, pPVI->getName());
+		this->installAliasName(*pPVI, pvAlias);
+
+		//
+		// Install numbered alias names
+		//
+		for (i=0u; i<aliasCount; i++) {
+			sprintf(pvAlias, pAliasFmtStr, pvPrefix,  
+					pPVI->getName(), i);
+			this->installAliasName(*pPVI, pvAlias);
+		}
+	}
+
+	//
+	// Install create on-the-fly PVs 
+	// into the PV name hash table
+	//
+	sprintf(pvAlias, pNameFmtStr, pvPrefix, bill.getName());
+	this->installAliasName(bill, pvAlias);
+	sprintf(pvAlias, pNameFmtStr, pvPrefix, billy.getName());
+	this->installAliasName(billy, pvAlias);
+}
+
+//
+// exServer::installAliasName()
+//
+void exServer::installAliasName(pvInfo &info, const char *pAliasName)
+{
+	pvEntry	*pEntry;
+
+	pEntry = new pvEntry(info, *this, pAliasName);
+	if (pEntry) {
+		int resLibStatus;
+		resLibStatus = this->stringResTbl.add(*pEntry);
+		if (resLibStatus==0) {
+			return;
+		}
+		else {
+			delete pEntry;
+		}
+	}
+	fprintf(stderr, 
+"Unable to enter PV=\"%s\" Alias=\"%s\" in PV name alias hash table\n",
+		info.getName(), pAliasName);
 }
 
 //
 // exServer::pvExistTest()
 //
-pvExistReturn exServer::pvExistTest(const casCtx &ctxIn, const char *pPVName)
+pvExistReturn exServer::pvExistTest(const casCtx& ctxIn, const char *pPVName)
 {
-	const pvInfo	*pPVI;
+	//
+	// lifetime of id is shorter than lifetime of pName
+	//
+	stringId id(pPVName, stringId::refString);
+	pvEntry *pPVE;
 
-	pPVI = exServer::findPV(pPVName);
-	if (pPVI) {
-		if (pPVI->getIOType()==excasIoAsync) {
-			exAsyncExistIO	*pIO;
-			pIO = new exAsyncExistIO(*pPVI, ctxIn);
-			if (pIO) {
-				return pvExistReturn(S_casApp_asyncCompletion);
-			}
-			else {
-				return pvExistReturn(S_casApp_noMemory);
-			}
-		}
-
-		const char *pName = pPVI->getName();
-		return pvExistReturn(S_casApp_success, pName);
+	//
+	// Look in hash table for PV name (or PV alias name)
+	//
+	pPVE = this->stringResTbl.lookup(id);
+	if (!pPVE) {
+		return pverDoesNotExistHere;
 	}
 
-	return pvExistReturn(S_casApp_pvNotFound);
-}
+	pvInfo &pvi(pPVE->getInfo());
 
-//
-// findPV()
-//
-const pvInfo *exServer::findPV(const char *pName)
-{
-	const pvInfo *pPVI;
-	const pvInfo *pPVAfter = 
-		&exServer::pvList[NELEMENTS(exServer::pvList)];
+	//
+	// Initiate async IO if this is an async PV
+	//
+	if (pvi.getIOType() == excasIoSync) {
+		return pverExistsHere;
+	}
+	else {
+		if (this->simultAsychIOCount>=maxSimultAsyncIO) {
+			return pverDoesNotExistHere;
+		}
 
-	for (pPVI = exServer::pvList; pPVI < pPVAfter; pPVI++) {
-		if (strcmp (pName, pPVI->getName().string()) == '\0') {
-			return pPVI;
+		this->simultAsychIOCount++;
+
+		exAsyncExistIO	*pIO;
+		pIO = new exAsyncExistIO(pvi, ctxIn, *this);
+		if (pIO) {
+			return pverAsyncCompletion;
+		}
+		else {
+			return pverDoesNotExistHere;
 		}
 	}
-	return NULL;
 }
 
 //
 // exServer::createPV()
 //
-casPV *exServer::createPV (const casCtx &ctxIn, const char *pPVName)
+pvCreateReturn exServer::createPV (const casCtx &ctx, const char *pName)
 {
-	const pvInfo	*pInfo;
-	exPV		*pPV;
+	//
+	// lifetime of id is shorter than lifetime of pName
+	//
+	stringId id(pName, stringId::refString); 
+	exPV *pPV;
+	pvEntry *pPVE;
 
-	pInfo = exServer::findPV(pPVName);
-	if (!pInfo) {
-		return NULL;
+	pPVE = this->stringResTbl.lookup(id);
+	if (!pPVE) {
+		return pvCreateReturn(S_casApp_pvNotFound);
 	}
+
+	pvInfo &pvi(pPVE->getInfo());
+
+	//
+	// If this is a synchronous PV create the PV now 
+	//
+	if (pvi.getIOType() == excasIoSync) {
+		pPV = pvi.createPV(*this, aitFalse);
+		if (!pPV) {
+			pvCreateReturn(S_casApp_noMemory);
+		}
+		return pvCreateReturn(*pPV);
+	}
+	//
+	// Initiate async IO if this is an async PV
+	//
+	else {
+		if (this->simultAsychIOCount>=maxSimultAsyncIO) {
+			return pvCreateReturn(S_casApp_postponeAsyncIO);
+		}
+
+		this->simultAsychIOCount++;
+
+		exAsyncCreateIO	*pIO = 
+			new exAsyncCreateIO(pvi, *this, ctx);
+		if (pIO) {
+			return pvCreateReturn(S_casApp_asyncCompletion);
+		}
+		else {
+			return pvCreateReturn(S_casApp_noMemory);
+		}
+	}
+}
+
+//
+// pvInfo::createPV()
+//
+exPV *pvInfo::createPV (exServer &exCAS, aitBool preCreateFlag)
+{
+	if (this->pPV) {
+		return this->pPV;
+	}
+
+	exPV		*pNewPV;
 
 	//
 	// create an instance of the appropriate class
 	// depending on the io type and the number
 	// of elements
 	//
-	if (pInfo->getElementCount()==1u) {
-		switch (pInfo->getIOType()){
+	if (this->elementCount==1u) {
+		switch (this->ioType){
 		case excasIoSync:
-			pPV = new exScalarPV (ctxIn, *pInfo);
+			pNewPV = new exScalarPV (exCAS, *this, preCreateFlag);
 			break;
 		case excasIoAsync:
-			pPV = new exAsyncPV (ctxIn, *pInfo);
+			pNewPV = new exAsyncPV (exCAS, *this, preCreateFlag);
 			break;
 		default:
-			pPV = NULL;
+			pNewPV = NULL;
 			break;
 		}
 	}
 	else {
-		pPV = new exVectorPV (ctxIn, *pInfo);
+		if (this->ioType==excasIoSync) {
+			pNewPV = new exVectorPV (exCAS, *this, preCreateFlag);
+		}
+		else {
+			pNewPV = NULL;
+		}
 	}
 	
 	//
@@ -132,21 +275,23 @@ casPV *exServer::createPV (const casCtx &ctxIn, const char *pPVName)
 	// the constructor because the base class's
 	// pure virtual function would be called)
 	//
-	if (pPV) {
-		pPV->scan();
+	if (pNewPV) {
+		this->pPV = pNewPV;
+		pNewPV->scan();
 	}
 
-	return pPV;
+	return pNewPV;
 }
 
 //
-// exServer::show()
+// exServer::show() 
 //
-void exServer::show (unsigned level)
+void exServer::show (unsigned level) const
 {
 	//
 	// server tool specific show code goes here
 	//
+	this->stringResTbl.show(level);
 
 	//
 	// print information about ca server libarary
@@ -170,12 +315,10 @@ void exOSITimer::destroy()
 //
 void exAsyncExistIO::expire()
 {
-	const char *pName = pvi.getName();
-
         //
         // post IO completion
         //
-        this->postIOCompletion (pvExistReturn(S_cas_success, pName));
+        this->postIOCompletion (pverExistsHere);
 }
 
 //
@@ -184,5 +327,30 @@ void exAsyncExistIO::expire()
 const char *exAsyncExistIO::name() const
 {
 	return "exAsyncExistIO";
+}
+
+//
+// exAsyncCreateIO::expire()
+// (a virtual function that runs when the base timer expires)
+//
+void exAsyncCreateIO::expire()
+{
+	exPV *pPV;
+
+	pPV = this->pvi.createPV(this->cas, aitFalse);
+	if (pPV) {
+		this->postIOCompletion (pvCreateReturn(*pPV));
+	}
+	else {
+		this->postIOCompletion (pvCreateReturn(S_casApp_noMemory));
+	}
+}
+
+//
+// exAsyncCreateIO::name()
+//
+const char *exAsyncCreateIO::name() const
+{
+	return "exAsyncCreateIO";
 }
 

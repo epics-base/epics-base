@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/11/02 00:54:19  jhill
+ * many improvements
+ *
  * Revision 1.2  1996/09/16 18:24:04  jhill
  * vxWorks port changes
  *
@@ -41,7 +44,7 @@
 
 
 
-#include<server.h>
+#include"server.h"
 
 class casMsgIO {
 public:

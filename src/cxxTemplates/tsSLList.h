@@ -31,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  1997/01/22 21:14:21  jhill
+ * fixed class decl order for VMS
+ *
  * Revision 1.5  1996/11/02 01:07:20  jhill
  * many improvements
  *
@@ -49,17 +52,15 @@
  *
  */
 
-#ifndef assert // allows epicsAssert.h 
-#include <assert.h>
-#endif
-
 //
 // tsSLNode<>
+// NOTE: T must derive from tsSLNode<T>
 //
 template <class T>
 class tsSLNode {
 friend class tsSLList<T>;
 friend class tsSLIter<T>;
+friend class tsSLIterRm<T>;
 public:
 	tsSLNode() : pNext(0) {}
 
@@ -76,6 +77,7 @@ private:
 
 //
 // tsSLList<>
+// NOTE: T must derive from tsSLNode<T>
 //
 template <class T>
 class tsSLList : public tsSLNode<T> {
@@ -138,6 +140,9 @@ public:
 //
 // tsSLIter<T>
 //
+// A simple fast single link linked list iterator
+// (which must not be called again after it returns NULL)
+//
 // Notes:
 // 1) No direct access to pCurrent is provided since
 //      this might allow for confusion when an item
@@ -146,40 +151,22 @@ public:
 //
 template <class T>
 class tsSLIter {
+friend class tsSLIterRm<T>;
 public:
-	tsSLIter(tsSLList<T> &listIn) :
-		pCurrent(0), pPrevious(0), pList(&listIn) {}
-
-	void reset()
-	{
-		this->pCurrent = 0;
-		this->pPrevious = 0;
-	}
-
-	void reset (tsSLList<T> &listIn)
-	{
-		this->pList = &listIn;
-		this->reset();
-	}
-
-	void operator = (tsSLList<T> &listIn) 
-	{
-		this->reset(listIn);
-	}
+	tsSLIter(const tsSLList<T> &listIn) : pCurrent(&listIn) {}
 
 	//
 	// move iterator forward
 	//
+	// **** NOTE ****
+	// This may be called continuously until it returns
+	// NULL. Attempts to call this again after it has
+	// returned NULL will fail 
+	//
 	T * next () 
 	{
 		T *pNewCur;
-		if (this->pCurrent) {
-			this->pPrevious = this->pCurrent;
-		}
-		else {
-			this->pPrevious = this->pList;
-		}
-		this->pCurrent = pNewCur = this->pPrevious->pNext;
+		this->pCurrent = pNewCur = this->pCurrent->pNext;
 		return pNewCur;
 	}
 
@@ -189,6 +176,48 @@ public:
 	T * operator () () 
 	{
 		return this->next();
+	}
+
+private:
+	const tsSLNode<T> *pCurrent;
+};
+
+//
+// tsSLIterRm<T>
+// (A tsSLIter<T> that allows removing a node)
+//
+// adds remove method (and does not construct
+// with const list)
+//
+// Notes:
+// 1) No direct access to pCurrent is provided since
+//      this might allow for confusion when an item
+//      is removed (and pCurrent ends up pointing at
+//      an item that has been seen before)
+//
+//
+template <class T>
+class tsSLIterRm : private tsSLIter<T> {
+public:
+	tsSLIterRm(tsSLList<T> &listIn) :  
+		tsSLIter<T>(listIn), pPrevious(0) {}
+
+	//
+	// move iterator forward
+	//
+	T * next () 
+	{
+		// strip const
+		this->pPrevious = (tsSLNode<T> *) this->pCurrent;
+		return tsSLIter<T>::next();
+	}
+
+	//
+	// move iterator forward
+	//
+	T * operator () () 
+	{
+		return this->tsSLIterRm<T>::next();
 	}
 
 	//
@@ -203,20 +232,15 @@ public:
 	// This may be called once for each cycle of the 
 	// iterator. Attempts to call this twice without
 	// moving the iterator forward inbetween the two
-	// calls will assert fail
+	// calls will fail
 	//
 	void remove ()
 	{
-		if (this->pCurrent) {
-			assert(this->pPrevious);
-			this->pPrevious->pNext = this->pCurrent->pNext;
-			this->pCurrent = this->pPrevious;
-			this->pPrevious = 0; 
-		}
+		this->pPrevious->pNext = this->pCurrent->pNext;
+		this->pCurrent = this->pPrevious;
+		this->pPrevious = 0; 
 	}
 private:
-	tsSLNode<T>	*pCurrent;
-	tsSLNode<T> 	*pPrevious;
-	tsSLList<T>	*pList;
+	tsSLNode<T> *pPrevious;
 };
 

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  1996/11/02 00:53:54  jhill
+ * many improvements
+ *
  * Revision 1.5  1996/09/16 18:23:56  jhill
  * vxWorks port changes
  *
@@ -50,8 +53,8 @@
 #define CAS_VERSION_GLOBAL
 
 #define caServerGlobal
-#include <server.h>
-#include <casCtxIL.h> // casCtx in line func
+#include "server.h"
+#include "casCtxIL.h" // casCtx in line func
 
 static const osiTime CAServerMaxBeaconPeriod (5.0 /* sec */);
 static const osiTime CAServerMinBeaconPeriod (1.0e-3 /* sec */);
@@ -60,9 +63,8 @@ static const osiTime CAServerMinBeaconPeriod (1.0e-3 /* sec */);
 //
 // caServerI::show()
 //
-void caServerI::show (unsigned level)
+void caServerI::show (unsigned level) const
 {
-        casStrmClient		*pClient;
         int			bytes_reserved;
 
         printf( "Channel Access Server Status V%d.%d\n",
@@ -71,16 +73,19 @@ void caServerI::show (unsigned level)
 	this->osiMutex::show(level);
 
         this->osiLock();
-	tsDLFwdIter<casStrmClient> iterCl(this->clientList);
-        while ( (pClient = iterCl.next()) ) {
-                pClient->show(level);
+	const tsDLIterBD<casStrmClient> eolSC;
+	tsDLIterBD<casStrmClient> iterCl(this->clientList.first());
+        while ( iterCl!=eolSC ) {
+                iterCl->show(level);
+		++iterCl;
         }
         this->dgClient.show(level);
 
-	casIntfOS *pIF;
-	tsDLFwdIter<casIntfOS> iterIF(this->intfList);
-	while ( (pIF = iterIF.next()) ) {
-		pIF->show(level);
+	const tsDLIterBD<casIntfOS> eolIOS;
+	tsDLIterBD<casIntfOS> iterIF(this->intfList.first());
+        while ( iterIF!=eolIOS ) {
+		iterIF->show(level);
+		++iterIF;
 	}
 
         this->osiUnlock();
@@ -113,11 +118,6 @@ void caServerI::show (unsigned level)
                 this->osiLock();
                 this->uintResTable<casRes>::show(level);
                 this->osiUnlock();
-                printf( 
-	"The server's character string resource id conversion table:\n");
-		this->osiLock();
-                this->stringResTbl.show(level);
-               	this->osiUnlock();
         }
 
         // @@@@@@ caPrintAddrList(&destAddr);
@@ -129,8 +129,7 @@ void caServerI::show (unsigned level)
 //
 // caServerI::caServerI()
 //
-caServerI::caServerI (caServer &tool, unsigned maxNameLength, 
-		unsigned nPV, unsigned maxSimultIO) :
+caServerI::caServerI (caServer &tool, unsigned nPV) :
 	caServerOS(*this),
 	casEventRegistry(* (osiMutex *) this),
 	dgClient(*this),
@@ -141,18 +140,14 @@ caServerI::caServerI (caServer &tool, unsigned maxNameLength,
         //
 	beaconPeriod(CAServerMinBeaconPeriod),
 	adapter(tool),
-	pvCount(0u),
 	debugLevel(0u),
-	nExistTestInProg(0u),
-	pvMaxNameLength(maxNameLength), 
 	pvCountEstimate(nPV<100u?100u:nPV), 
-	maxSimultaneousIO(maxSimultIO),
 	haveBeenInitialized(FALSE)
 {
 	caStatus	status;
 
 	assert(&adapter);
-	ctx.setServer(this);
+	//ctx.setServer(this);
 
 	status = this->init();
 	if (status) {
@@ -200,18 +195,9 @@ caStatus caServerI::init()
 	//
 	// hash table size may need adjustment here?
 	//
-	resLibStatus = this->uintResTable<casRes>::init(this->pvCountEstimate*8u);
+	resLibStatus = this->uintResTable<casRes>::init(this->pvCountEstimate*2u);
 	if (resLibStatus) {
 		ca_printf("CAS: integer resource id table init failed\n");
-		return S_cas_noMemory;
-	}
-
-	//
-	// hash table size may need adjustment here?
-	//
-	resLibStatus = this->stringResTbl.init(this->pvCountEstimate*2u);
-	if (resLibStatus) {
-		ca_printf("CAS: string resource id table init failed\n");
 		return S_cas_noMemory;
 	}
 
@@ -232,13 +218,18 @@ caServerI::~caServerI()
 	//
 	// delete all clients
 	//
-	casClient *pClient;
-	tsDLFwdIter<casStrmClient>	iter(this->clientList);
-	pClient = iter.next();
-	while (pClient) {
-		casClient *pNextClient = iter.next();
-		delete pClient;
-		pClient = pNextClient;
+	tsDLIterBD<casStrmClient> iter(this->clientList.first());
+	tsDLIterBD<casStrmClient> eol;
+	tsDLIterBD<casStrmClient> tmp;
+	while ( iter!=eol ) {
+		tmp = iter;
+		++tmp;
+		//
+		// destructor takes client out of list
+		//
+		casStrmClient *pC = iter;
+		delete pC;
+		iter = tmp;
 	}
 
 	casIntfOS *pIF;
@@ -247,11 +238,6 @@ caServerI::~caServerI()
 	}
 
 	this->osiUnlock();
-
-	//
-	// verify that we didnt leak a PV
-	//
-	assert (this->pvCount==0u);
 }
 
 
@@ -380,8 +366,6 @@ caStatus caServerI::addAddr(const caAddr &caAddr, int autoBeaconAddr,
 //
 void caServerI::sendBeacon()
 {
-	casIntfOS *pIntf;
-
 	//
 	// send a broadcast beacon over each configured
 	// interface unless EPICS_CA_AUTO_ADDR_LIST specifies
@@ -389,9 +373,10 @@ void caServerI::sendBeacon()
 	// addresses.
 	// 
 	this->osiLock();
-	tsDLFwdIter<casIntfOS> iter(this->intfList);
-	while ( (pIntf = iter.next()) ) {
-		pIntf->requestBeacon();
+	tsDLIterBD<casIntfOS> iter(this->intfList.first());
+	while ( iter ) {
+		iter->requestBeacon();
+		iter++;
 	}
 	this->osiUnlock();
  

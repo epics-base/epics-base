@@ -2,25 +2,33 @@
 // Example EPICS CA server
 //
 
-#include <exServer.h>
-#include <gddApps.h>
+#include "exServer.h"
+#include "gddApps.h"
 
 osiTime exPV::currentTime;
 
 //
 // exPV::exPV()
 //
-exPV::exPV (const casCtx &ctxIn, const pvInfo &setup) : 
+exPV::exPV (caServer &casIn, pvInfo &setup, aitBool preCreateFlag) : 
 	pValue(NULL),
-	pScanTimer(NULL),
 	info(setup),
-	casPV(ctxIn, setup.getName().string()),
-	interest(aitFalse)
+	casPV(casIn),
+	interest(aitFalse),
+	preCreate(preCreateFlag)
 {
 	//
 	// no dataless PV allowed
 	//
 	assert (this->info.getElementCount()>=1u);
+
+	//
+	// start a very slow background scan 
+	// (we will speed this up to the normal rate when
+	// someone is watching the PV)
+	//
+	this->pScanTimer = 
+		new exScanTimer (this->getScanPeriod(), *this);
 }
 
 //
@@ -35,6 +43,19 @@ exPV::~exPV()
 	if (this->pValue) {
 		this->pValue->unreference();
 		this->pValue = NULL;
+	}
+	this->info.destroyPV();
+}
+
+//
+// exPV::destroy()
+// this is replaced by a noop since we are 
+// pre-creating most of the PVs during init in this simple server
+//
+void exPV::destroy()
+{
+	if (!this->preCreate) {
+		delete this;
 	}
 }
 
@@ -102,7 +123,7 @@ osiBool exScanTimer::again() const
 //
 const osiTime exScanTimer::delay() const
 {
-	return pv.getScanRate();
+	return pv.getScanPeriod();
 }
 
 //
@@ -132,18 +153,25 @@ caStatus exPV::interestRegister()
 		return S_casApp_success;
 	}
 
-	if (!this->pScanTimer) {
+	this->interest = aitTrue;
+
+	//
+	// If a slow scan is pending then reschedule it
+	// with the specified scan period.
+	//
+	if (this->pScanTimer) {
+		this->pScanTimer->reschedule(this->info.getScanPeriod());
+	}
+	else {
 		this->pScanTimer = new exScanTimer
-				(this->info.getScanRate(), *this);
+				(this->info.getScanPeriod(), *this);
 		if (!this->pScanTimer) {
 			errPrintf (S_cas_noMemory, __FILE__, __LINE__,
 				"Scan init for %s failed\n", 
-				this->info.getName().string());
+				this->info.getName());
 			return S_cas_noMemory;
 		}
 	}
-
-	this->interest = aitTrue;
 
 	return S_casApp_success;
 }
@@ -153,17 +181,16 @@ caStatus exPV::interestRegister()
 //
 void exPV::interestDelete()
 {
-	if (this->pScanTimer) {
-		delete this->pScanTimer;
-		this->pScanTimer = NULL;
-	}
 	this->interest = aitFalse;
+	if (this->pScanTimer) {
+		this->pScanTimer->reschedule(this->getScanPeriod());
+	}
 }
 
 //
 // exPV::show()
 //
-void exPV::show(unsigned level) 
+void exPV::show(unsigned level) const
 {
 	if (level>1u) {
 		if (this->pValue) {

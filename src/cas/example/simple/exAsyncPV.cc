@@ -4,16 +4,7 @@
 // (asynchrronous process variable)
 //
 
-#include <exServer.h>
-
-//
-// exAsyncPV::maxSimultAsyncOps()
-// (virtual replacement for the default)
-//
-unsigned exAsyncPV::maxSimultAsyncOps () const
-{
-        return 500u;
-}
+#include "exServer.h"
 
 //
 // exAsyncPV::read()
@@ -23,6 +14,12 @@ caStatus exAsyncPV::read (const casCtx &ctx, gdd &valueIn)
 {
 	exAsyncReadIO	*pIO;
 	
+	if (this->simultAsychIOCount>=maxSimultAsyncIO) {
+		return S_casApp_postponeAsyncIO;
+	}
+
+	this->simultAsychIOCount++;
+
 	pIO = new exAsyncReadIO(ctx, *this, valueIn);
 	if (!pIO) {
 		return S_casApp_noMemory;
@@ -39,6 +36,12 @@ caStatus exAsyncPV::write (const casCtx &ctx, gdd &valueIn)
 {
 	exAsyncWriteIO	*pIO;
 	
+	if (this->simultAsychIOCount>=maxSimultAsyncIO) {
+		return S_casApp_postponeAsyncIO;
+	}
+
+	this->simultAsychIOCount++;
+
 	pIO = new exAsyncWriteIO(ctx, *this, valueIn);
 	if (!pIO) {
 		return S_casApp_noMemory;

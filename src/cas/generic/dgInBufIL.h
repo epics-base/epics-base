@@ -2,8 +2,8 @@
 #ifndef dgInBufILh
 #define dgInBufILh
 
-#include <casOpaqueAddrIL.h>
-#include <inBufIL.h>
+#include "casOpaqueAddrIL.h"
+#include "inBufIL.h"
 
 //
 // dgInBuf::clear()

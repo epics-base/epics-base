@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/11/02 00:54:16  jhill
+ * many improvements
+ *
  * Revision 1.2  1996/06/26 21:18:55  jhill
  * now matches gdd api revisions
  *
@@ -39,10 +42,10 @@
  */
 
 
-#include <server.h>
-#include <casEventSysIL.h> // casEventSys in line func
-#include <casMonEventIL.h> // casMonEvent in line func
-#include <casCtxIL.h> // casCtx in line func
+#include "server.h"
+#include "casEventSysIL.h" // casEventSys in line func
+#include "casMonEventIL.h" // casMonEvent in line func
+#include "casCtxIL.h" // casCtx in line func
 
 //
 // casMonEvent::cbFunc()
@@ -91,4 +94,12 @@ void casMonEvent::assign (casMonitor &monitor, gdd *pValueIn)
         this->id = monitor.casRes::getId();
 }
 
+//
+// ~casMonEvent ()
+// (this is not in line because it is virtual in the base)
+//
+casMonEvent::~casMonEvent ()
+{
+	this->clear();
+}
 

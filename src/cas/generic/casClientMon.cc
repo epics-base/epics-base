@@ -29,13 +29,16 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
+ * ca server installation
+ *
  *
  */
 
 
-#include <server.h>
+#include "server.h"
 
-#include <casChannelIIL.h>
+#include "casChannelIIL.h"
 
 
 //
@@ -79,5 +82,24 @@ caStatus casClientMon::callBack(gdd &value)
 	status = client.monitorResponse (&this->getChannel(),
 			msg, &value, S_cas_success);
 	return status;
+}
+
+//
+// casClientMon::destroy()
+//
+// this class is always created inside the server
+// lib with new
+//
+void casClientMon::destroy()
+{
+	delete this;
+}
+
+//
+// casClientMon::resourceType()
+//
+casResType casClientMon::resourceType() const
+{
+	return casClientMonT;
 }
 

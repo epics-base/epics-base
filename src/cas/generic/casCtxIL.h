@@ -7,7 +7,7 @@
 //
 inline casCtx::casCtx() :
 	pData(NULL), pCAS(NULL), pClient(NULL),
-	pChannel(NULL), pPV(NULL)
+	pChannel(NULL), pPV(NULL), nAsyncIO(0u)
 {
 	memset(&this->msg, 0, sizeof(this->msg));
 }

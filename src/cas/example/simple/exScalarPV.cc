@@ -1,9 +1,10 @@
 
-#include <exServer.h>
-#include <gddApps.h>
 #include <math.h>
 #include <limits.h>
 #include <stdlib.h>
+
+#include "exServer.h"
+#include "gddApps.h"
 
 #define myPI 3.14159265358979323846
 
@@ -31,7 +32,7 @@ void exScalarPV::scan()
         gdd             *pDD;
         float           newValue;
         float           limit;
- 
+
         //
         // update current time (so we are not required to do
         // this every time that we write the PV which impacts

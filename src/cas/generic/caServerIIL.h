@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/11/02 00:53:56  jhill
+ * many improvements
+ *
  * Revision 1.2  1996/09/16 18:23:57  jhill
  * vxWorks port changes
  *
@@ -94,82 +97,12 @@ inline casChannelI *caServerI::resIdToChannel(const caResId &id)
 }
 
 //
-// caServerI::pvExistTestPossible()
-//
-inline aitBool caServerI::pvExistTestPossible()
-{
-	if (this->nExistTestInProg < this->maxSimultaneousIO) {
-		return aitTrue;
-	}
-	return aitFalse;
-}
-
-//
 // find the channel associated with a resource id
 //
-inline pvExistReturn caServerI::pvExistTest(
+inline casPVExistReturn caServerI::pvExistTest(
 		const casCtx &ctxIn, const char *pPVName)
 {
-	this->osiLock();
-	if (pvExistTestPossible()) {
-		this->nExistTestInProg++;
-		osiUnlock();
-		return (*this)->pvExistTest(ctxIn, pPVName);
-	}
-	else {
-		osiUnlock();
-		return pvExistReturn(S_cas_ioBlocked);
-	}
-}
-
-//
-// caServerI::pvExistTestCompletion()
-//
-inline void caServerI::pvExistTestCompletion()
-{
-	this->osiLock();
-	this->nExistTestInProg--;
-	this->osiUnlock();
-	this->ioBlockedList::signal();
-}
-
-
-//
-// install a PV into the server
-//
-inline void caServerI::installPV (casPVI &pv)
-{
-	int resLibStatus;
-
-	this->osiLock ();
-	this->pvCount++;
-	resLibStatus = this->stringResTbl.add (pv);
-	this->osiUnlock ();
-	assert (resLibStatus==0);
-}
-
-//
-// remove  PV from the server
-//
-inline void caServerI::removePV(casPVI &pv)
-{
-	casPVI *pPV;
-
-	this->osiLock();
-	casVerify (this->pvCount>=1u);
-	this->pvCount--;
-	pPV = this->stringResTbl.remove (pv);
-	this->osiUnlock();
-	casVerify (pPV!=0);
-	casVerify (pPV==&pv);
-}
-
-//
-// caServerI::getPVMaxNameLength()
-//
-inline unsigned caServerI::getPVMaxNameLength() const
-{
-	return this->pvMaxNameLength;
+	return casPVExistReturn((*this)->pvExistTest(ctxIn, pPVName));
 }
 
 //

@@ -34,7 +34,7 @@
 //
 //
 
-#include <server.h>
+#include "server.h"
 
 //
 // casDGIntfIO::casDGIntfIO()
@@ -89,6 +89,28 @@ caStatus casDGIntfIO::init(const caAddr &addr, unsigned connectWithThisPortIn,
                 return S_cas_internal;
         }
 
+	{
+		/*
+		 *
+		 * this allows for faster connects by queuing
+		 * additional incomming UDP search frames
+		 *
+		 * this allocates a 32k buffer
+		 * (uses a power of two)
+		 */
+		int size = 1u<<15u;
+        	status = setsockopt(
+               	         	this->sock,
+                        	SOL_SOCKET,
+                        	SO_RCVBUF,
+                        	(char *)&size,
+                        	sizeof(size));
+		if (status<0) {
+			errMessage(S_cas_internal,
+				"CAS: unable to set cast socket size\n");
+		}
+	}
+
         /*
          * release the port in case we exit early. Also if
          * on a kernel with MULTICAST mods then we can have
@@ -109,12 +131,12 @@ caStatus casDGIntfIO::init(const caAddr &addr, unsigned connectWithThisPortIn,
 	//
 	// Fetch port configuration from EPICS environment variables
 	//
-	if (envParamIsEmpty(&EPICS_CAS_SERVER_PORT)) {
-		serverPort = caFetchPortConfig(&EPICS_CA_SERVER_PORT, 
+	if (envGetConfigParamPtr(&EPICS_CAS_SERVER_PORT)) {
+		serverPort = caFetchPortConfig(&EPICS_CAS_SERVER_PORT, 
 					CA_SERVER_PORT);
 	}
 	else {
-		serverPort = caFetchPortConfig(&EPICS_CAS_SERVER_PORT, 
+		serverPort = caFetchPortConfig(&EPICS_CA_SERVER_PORT, 
 					CA_SERVER_PORT);
 	}
 	beaconPort = caFetchPortConfig(&EPICS_CA_REPEATER_PORT, 
@@ -168,14 +190,14 @@ caStatus casDGIntfIO::init(const caAddr &addr, unsigned connectWithThisPortIn,
 		 * by default use EPICS_CA_ADDR_LIST for the
 		 * beacon address list
 		 */
-		ENV_PARAM *pParam = &EPICS_CA_ADDR_LIST;
+		const ENV_PARAM *pParam;
 
-		if (envParamIsEmpty(&EPICS_CAS_INTF_ADDR_LIST) &&
-			envParamIsEmpty(&EPICS_CAS_BEACON_ADDR_LIST)) {
-			pParam = &EPICS_CA_ADDR_LIST;
+		if (envGetConfigParamPtr(&EPICS_CAS_INTF_ADDR_LIST) || 
+			envGetConfigParamPtr(&EPICS_CAS_BEACON_ADDR_LIST)) {
+			pParam = &EPICS_CAS_BEACON_ADDR_LIST;
 		}
 		else {
-			pParam = &EPICS_CAS_BEACON_ADDR_LIST;
+			pParam = &EPICS_CA_ADDR_LIST;
 		}
 
 		/* 

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/11/02 00:54:13  jhill
+ * many improvements
+ *
  * Revision 1.2  1996/09/16 18:24:02  jhill
  * vxWorks port changes
  *
@@ -54,7 +57,8 @@ inline casEventSys::casEventSys (casCoreClient &coreClientIn) :
 	coreClient(coreClientIn),
 	numEventBlocks(0u),
 	maxLogEntries(individualEventEntries),
-	eventsOff(aitFalse)
+	eventsOff(aitFalse),
+	destroyPending(aitFalse)
 {
 }
 
@@ -113,6 +117,18 @@ void casEventSys::setEventsOn()
 void casEventSys::setEventsOff()
 {
 	this->eventsOff = aitTrue;
+}
+
+//
+// casEventSys::setDestroyPending()
+//
+void casEventSys::setDestroyPending()
+{
+	this->destroyPending = aitTrue;
+        //
+        // wakes up the event queue consumer
+        //
+        this->coreClient.eventSignal();
 }
 
 //

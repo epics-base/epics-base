@@ -26,37 +26,38 @@
 //
 // EPICS
 //
-#include <epicsAssert.h>
-#include <casdef.h>
-#include <gddAppFuncTable.h>
-#include <osiTimer.h>
-
-#ifndef max
-#define max(A,B) ((A)<(B)?(B):(A))
-#endif
-
-#ifndef min
-#define min(A,B) ((A)>(B)?(B):(A))
-#endif
+#include "epicsAssert.h"
+#include "casdef.h"
+#include "gddAppFuncTable.h"
+#include "osiTimer.h"
+#include "resourceLib.h"
+#include "minmax.h"
 
 #ifndef NELEMENTS
 #	define NELEMENTS(A) (sizeof(A)/sizeof(A[0]))
 #endif
 
-#define LOCAL static
+#define maxSimultAsyncIO 1000u
 
 //
 // info about all pv in this server
 //
 enum excasIoType {excasIoSync, excasIoAsync};
 
+class exPV;
+class exServer;
+
+//
+// pvInfo
+//
 class pvInfo {
 public:
-	pvInfo (double scanRateIn, const char *pName, 
+	pvInfo (double scanPeriodIn, const char *pNameIn, 
 			aitFloat32 hoprIn, aitFloat32 loprIn, 
 			excasIoType ioTypeIn, unsigned countIn) :
-			scanRate(scanRateIn), name(pName), hopr(hoprIn), 
-			lopr(loprIn), ioType(ioTypeIn), elementCount(countIn)
+			scanPeriod(scanPeriodIn), pName(pNameIn), 
+			hopr(hoprIn), lopr(loprIn), ioType(ioTypeIn), 
+			elementCount(countIn), pPV(0)
 	{
 	}
 
@@ -65,29 +66,64 @@ public:
 	// for this class
 	//
 	pvInfo (const pvInfo &copyIn) :
-			scanRate(copyIn.scanRate), name(copyIn.name), 
+			scanPeriod(copyIn.scanPeriod), pName(copyIn.pName), 
 			hopr(copyIn.hopr), lopr(copyIn.lopr), 
-			ioType(copyIn.ioType), elementCount(copyIn.elementCount)
+			ioType(copyIn.ioType), elementCount(copyIn.elementCount),
+			pPV(copyIn.pPV)
 	{
 	}
 
-	const double getScanRate () const { return this->scanRate; }
-	const aitString &getName () const { return this->name; }
+	const double getScanPeriod () const { return this->scanPeriod; }
+	const char *getName () const { return this->pName; }
 	const double getHopr () const { return this->hopr; }
 	const double getLopr () const { return this->lopr; }
 	const excasIoType getIOType () const { return this->ioType; }
 	const unsigned getElementCount() const { return this->elementCount; }
+        void destroyPV() { this->pPV=NULL; }
+        exPV *createPV (exServer &exCAS, aitBool preCreateFlag);
 private:
-	const double		scanRate;
-	const aitString		name;
+	const double		scanPeriod;
+	const char 		*pName;
 	const double 		hopr;
 	const double		lopr;
 	const excasIoType	ioType;
 	const unsigned		elementCount;
+	exPV			*pPV;
 };
 
-class exPV;
+//
+// pvEntry 
+//
+// o entry in the string hash table for the pvInfo
+// o Since there may be aliases then we may end up
+// with several of this class all referencing 
+// the same pv info class (justification
+// for this breaking out into a seperate class
+// from pvInfo)
+//
+class pvEntry : public stringId, public tsSLNode<pvEntry> {
+public:
+	pvEntry (pvInfo  &infoIn, exServer &casIn, const char *pAliasName) : 
+		stringId(pAliasName), info(infoIn), cas(casIn) 
+	{
+		assert(this->stringId::resourceName()!=NULL);
+	}
 
+	inline ~pvEntry();
+
+	pvInfo &getInfo() const { return this->info; }
+	
+	void destroy ()
+	{
+		//
+		// always created with new
+		//
+		delete this;
+	}
+private:
+	pvInfo &info;
+	exServer &cas;
+};
 
 //
 // exScanTimer
@@ -107,13 +143,12 @@ private:
 //
 // exPV
 //
-class exPV : public casPV {
-
+class exPV : public casPV, public tsSLNode<exPV> {
 public:
-	exPV (const casCtx &ctxIn, const pvInfo &setup);
+	exPV (caServer &cas, pvInfo &setup, aitBool preCreateFlag);
 	virtual ~exPV();
 
-	void show(unsigned level);
+	void show(unsigned level) const;
 
         //
         // Called by the server libary each time that it wishes to
@@ -170,20 +205,43 @@ public:
 	//
 	aitTimeStamp getTS();
 
-	const float getScanRate()
+        //
+	// If no one is watching scan the PV with 10.0
+	// times the specified period
+        //
+	const float getScanPeriod()
 	{
-		return this->info.getScanRate();
+		double curPeriod;
+
+		curPeriod = this->info.getScanPeriod();
+		if (!this->interest) {
+			curPeriod *= 10.0L;
+		}
+		return curPeriod;
 	}
 
 	caStatus read (const casCtx &, gdd &protoIn);
 
 	caStatus write (const casCtx &, gdd &protoIn);
 
+	void destroy();
+
+	const pvInfo &getPVInfo()
+	{
+		return this->info;
+	}
+
+	const char *getName() const
+	{
+		return this->info.getName();
+	}
+
 protected:
 	gdd			*pValue;
 	exScanTimer		*pScanTimer;
-	const pvInfo & 		info; 
+	pvInfo & 		info; 
 	aitBool			interest;
+	aitBool			preCreate;
 	static osiTime		currentTime;
 
 	virtual caStatus updateValue (gdd &value) = 0;
@@ -194,8 +252,8 @@ protected:
 //
 class exScalarPV : public exPV {
 public:
-	exScalarPV (const casCtx &ctxIn, const pvInfo &setup) :
-			exPV (ctxIn, setup) {}
+	exScalarPV (caServer &cas, pvInfo &setup, aitBool preCreateFlag) :
+			exPV (cas, setup, preCreateFlag) {}
 	void scan();
 private:
 	caStatus updateValue (gdd &value);
@@ -206,8 +264,8 @@ private:
 //
 class exVectorPV : public exPV {
 public:
-	exVectorPV (const casCtx &ctxIn, const pvInfo &setup) :
-			exPV (ctxIn, setup) {}
+	exVectorPV (caServer &cas, pvInfo &setup, aitBool preCreateFlag) :
+			exPV (cas, setup, preCreateFlag) {}
 	void scan();
 
 	unsigned maxDimension() const;
@@ -222,20 +280,46 @@ private:
 //
 class exServer : public caServer {
 public:
-	exServer(unsigned pvMaxNameLength, unsigned pvCountEstimate=0x3ff,
-			unsigned maxSimultaneousIO=1u);
-        void show (unsigned level);
-        pvExistReturn pvExistTest (const casCtx &ctxIn, const char *pPVName);
-        casPV *createPV (const casCtx &ctxIn, const char *pPVName);
+	exServer(const char * const pvPrefix, unsigned aliasCount);
+        void show (unsigned level) const;
+        pvExistReturn pvExistTest (const casCtx&, const char *pPVName);
+        pvCreateReturn createPV (const casCtx &ctx, const char *pPVName);
 
-	static const pvInfo *findPV(const char *pName);
+	void installAliasName(pvInfo &info, const char *pAliasName);
+	inline void removeAliasName(pvEntry &entry);
 
 	static gddAppFuncTableStatus read(exPV &pv, gdd &value) 
 	{
 		return exServer::ft.read(pv, value);
 	}
+
+	//
+	// removeIO
+	//
+	void removeIO()
+	{
+		if (this->simultAsychIOCount>0u) {
+			this->simultAsychIOCount--;
+		}
+		else {
+			fprintf(stderr, "inconsistent simultAsychIOCount?\n");
+		}
+	}
 private:
-	static const pvInfo pvList[];
+	resTable<pvEntry,stringId> stringResTbl;
+	unsigned simultAsychIOCount;
+
+	//
+	// list of pre-created PVs
+	//
+	static pvInfo pvList[];
+
+	//
+	// on-the-fly PVs 
+	//
+	static pvInfo bill;
+	static pvInfo billy;
+
 	static gddAppFuncTable<exPV> ft;
 };
 
@@ -247,8 +331,9 @@ public:
 	//
 	// exAsyncPV()
 	//
-	exAsyncPV (const casCtx &ctxIn, const pvInfo &setup) :
-		exScalarPV (ctxIn, setup) {}
+	exAsyncPV (caServer &cas, pvInfo &setup, aitBool preCreateFlag) :
+		exScalarPV (cas, setup, preCreateFlag),
+		simultAsychIOCount(0u) {}
 
         //
         // read
@@ -260,8 +345,20 @@ public:
         //
         caStatus write(const casCtx &ctxIn, gdd &value);
 
-	unsigned maxSimultAsyncOps () const;
+	//
+	// removeIO
+	//
+	void removeIO()
+	{
+		if (this->simultAsychIOCount>0u) {
+			this->simultAsychIOCount--;
+		}
+		else {
+			fprintf(stderr, "inconsistent simultAsychIOCount?\n");
+		}
+	}
 private:
+	unsigned simultAsychIOCount;
 };
 
 //
@@ -332,6 +429,7 @@ public:
 
 	~exAsyncWriteIO()
 	{
+		this->pv.removeIO();
 		this->value.unreference();
 	}
 
@@ -365,6 +463,7 @@ public:
 
 	~exAsyncReadIO()
 	{
+		this->pv.removeIO();
 		this->proto.unreference();
 	}
 
@@ -391,8 +490,14 @@ public:
 	//
 	// exAsyncExistIO()
 	//
-	exAsyncExistIO(const pvInfo &pviIn, const casCtx &ctxIn) :
-		casAsyncPVExistIO(ctxIn), pvi(pviIn) {}
+	exAsyncExistIO(const pvInfo &pviIn, const casCtx &ctxIn,
+			exServer &casIn) :
+		casAsyncPVExistIO(ctxIn), pvi(pviIn), cas(casIn) {}
+
+	~exAsyncExistIO()
+	{
+		this->cas.removeIO();
+	}
 
 	//
 	// expire()
@@ -404,6 +509,56 @@ public:
 	const char *name() const;
 private:
 	const pvInfo	&pvi;
+	exServer	&cas;
 };
 
+ 
+//
+// exAsyncCreateIO
+// (PV create async IO)
+//
+class exAsyncCreateIO : public casAsyncPVCreateIO, public exOSITimer {
+public:
+	//
+	// exAsyncCreateIO()
+	//
+	exAsyncCreateIO(pvInfo &pviIn, exServer &casIn, 
+		const casCtx &ctxIn) :
+		casAsyncPVCreateIO(ctxIn), pvi(pviIn), cas(casIn) {}
+
+	~exAsyncCreateIO()
+	{
+		this->cas.removeIO();
+	}
+
+	//
+	// expire()
+	// (a virtual function that runs when the base timer expires)
+	// see exServer.cc
+	//
+	void expire();
+
+	const char *name() const;
+private:
+	pvInfo		&pvi;
+	exServer	&cas;
+};
+
+//
+// exServer::removeAliasName()
+//
+inline void exServer::removeAliasName(pvEntry &entry)
+{
+        pvEntry *pE;
+        pE = this->stringResTbl.remove(entry);
+        assert(pE = &entry);
+}
+
+//
+// pvEntry::~pvEntry()
+//
+inline pvEntry::~pvEntry()
+{
+        this->cas.removeAliasName(*this);
+}
  

@@ -1,7 +1,7 @@
 
-#include <server.h>
-#include <casOpaqueAddrIL.h>
-#include <outBufIL.h>
+#include "server.h"
+#include "casOpaqueAddrIL.h"
+#include "outBufIL.h"
 
 //
 // this needs to be here (and not in dgInBufIL.h) if we

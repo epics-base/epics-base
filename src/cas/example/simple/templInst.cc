@@ -9,11 +9,13 @@
 
 #include "exServer.h"
 #include "gddAppFuncTable.cc"
+#include "resourceLib.cc"
 
 //
-// Sun C++ 4.1 still appears to be lacking support in this area
+// if the compiler supports explicit instantiation of
+// template member functions
 //
-#if !defined(__SUNPRO_CC)
+#if defined(EXPL_TEMPL) 
 	//
 	// From Stroustrups's "The C++ Programming Language"
 	// Appendix A: r.14.9 
@@ -22,5 +24,6 @@
 	// member functions into "templInst.o"
 	//
 	template class gddAppFuncTable <exPV>;
+	template class resTable <pvEntry,stringId>;
 #endif
 

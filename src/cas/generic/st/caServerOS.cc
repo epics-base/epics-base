@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  1996/11/02 01:01:27  jhill
+ * installed
+ *
  * Revision 1.2  1996/08/05 19:28:49  jhill
  * space became tab
  *
@@ -19,7 +22,7 @@
 //
 // CA server
 // 
-#include <server.h>
+#include "server.h"
 
 //
 // casBeaconTimer

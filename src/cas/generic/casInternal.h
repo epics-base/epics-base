@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.10  1997/01/10 21:17:55  jhill
+ * code around gnu g++ inline bug when -O isnt used
+ *
  * Revision 1.9  1996/12/06 22:33:49  jhill
  * virtual ~casPVI(), ~casPVListChan(), ~casChannelI()
  *
@@ -96,7 +99,8 @@ class casRes : public uintRes<casRes>
 public:
         virtual ~casRes();
         virtual casResType resourceType() const = 0;
-	virtual void show (unsigned level) = 0;
+	virtual void show (unsigned level) const = 0;
+	virtual void destroy() = 0;
 private:
 };
 
@@ -136,7 +140,7 @@ class casMonitor;
 class casMonEvent : public casEvent {
 public:
 	//
-	// only used when this part of another structure
+	// only used when this is part of another structure
 	// (and we need to postpone true construction)
 	//
 	inline casMonEvent ();
@@ -145,8 +149,9 @@ public:
 
 	//
 	// ~casMonEvent ()
+	// (not inline because this is virtual in the base class)
 	//
-	inline ~casMonEvent ();
+	~casMonEvent ();
 
 	caStatus cbFunc(casEventSys &);
 
@@ -180,7 +185,7 @@ public:
 
         void post(const casEventMask &select, gdd &value);
 
-        virtual void show (unsigned level);
+        virtual void show (unsigned level) const;
 	virtual caStatus callBack(gdd &value)=0;
 
 	caResId getClientId() const 
@@ -260,6 +265,7 @@ class casAsyncIO;
 class casAsyncReadIO;
 class casAsyncWriteIO;
 class casAsyncPVExistIO;
+class casAsyncPVCreateIO;
 
 class casAsyncIOI : public casEvent, public tsDLNode<casAsyncIOI> {
 public:
@@ -279,7 +285,7 @@ public:
 
 	void destroyIfReadOP();
 
-	caServer *getCAS();
+	caServer *getCAS() const;
 
 	inline void destroy();
 
@@ -294,6 +300,7 @@ private:
 	unsigned	posted:1;
 	unsigned	ioComplete:1;
 	unsigned	serverDelete:1;
+	unsigned	duplicate:1;
         //
         // casEvent virtual call back function
         // (called when IO completion event reaches top of event queue)
@@ -411,7 +418,7 @@ public:
         //
         // place notification of IO completion on the event queue
         //
-	caStatus postIOCompletion(const pvExistReturn &retVal);
+	caStatus postIOCompletion(const pvExistReturn retVal);
 
 	caStatus cbFuncAsyncIO();
 	casAsyncIO &getAsyncIO();
@@ -422,15 +429,42 @@ private:
 	const casOpaqueAddr	dgOutAddr;
 };
 
+//
+// casAsyncPVCIOI 
+//
+// (server internal asynchronous read IO class)
+//
+class casAsyncPVCIOI : public casAsyncIOI { 
+public:
+        casAsyncPVCIOI(const casCtx &ctx, casAsyncPVCreateIO &ioIn);
+	virtual ~casAsyncPVCIOI();
+
+        //
+        // place notification of IO completion on the event queue
+        //
+	caStatus postIOCompletion(const pvCreateReturn &retVal);
+
+	caStatus cbFuncAsyncIO();
+	casAsyncIO &getAsyncIO();
+private:
+        caHdr const	msg;
+	pvCreateReturn 	retVal;
+};
+
 class casChannel;
 class casPVI;
 
-class casChannelI : public tsDLNode<casChannelI>, public casRes {
+//
+// casChannelI
+//
+// this derives from casEvent so that access rights
+// events can be posted
+//
+class casChannelI : public tsDLNode<casChannelI>, public casRes, 
+			public casEvent {
 public:
 	casChannelI (const casCtx &ctx, casChannel &chanAdapter);
 	virtual ~casChannelI();
-
-	void show (unsigned level);
 
         casCoreClient &getClient() const
 	{	
@@ -475,20 +509,27 @@ public:
 
 	inline void postEvent (const casEventMask &select, gdd &event);
 
-	casResType resourceType() const 
-	{
-		return casChanT;
-	}
+	virtual casResType resourceType() const;
 
-	inline void lock();
-	inline void unlock();
+	virtual void show (unsigned level) const;
+
+	virtual void destroy();
+
+	inline void lock() const;
+	inline void unlock() const;
 
 	inline void clientDestroy();
 
-	inline casChannel * operator -> ();
+	inline casChannel * operator -> () const;
 
 	void clearOutstandingReads();
 
+	//
+	// access rights event call back
+	//
+        caStatus cbFunc(casEventSys &);
+
+	inline void postAccessRightsEvent();
 protected:
         tsDLList<casMonitor>	monitorList;
 	tsDLList<casAsyncIOI>	ioInProgList;
@@ -497,6 +538,7 @@ protected:
 	casChannel		&chan;
         caResId const           cid;    // client id 
 	unsigned		clientDestroyPending:1;
+	unsigned		accessRightsEvPending:1;
 };
 
 //
@@ -514,23 +556,22 @@ class casCtx;
 class casChannel;
 class casPV;
 
+//
+// casPVI
+//
 class casPVI : 
-	public stringId,	 // server PV name table installation
-	public tsSLNode<casPVI>,  // server PV name table installation 
+	public tsSLNode<casPVI>,  // server resource table installation 
+	public casRes,		// server resource table installation 
 	public ioBlockedList	// list of clients io blocked on this pv
 {
 public:
-        //
-        // The PV name here must be the canonical and unique name
-        // for the PV in this system
-        //
-	casPVI (caServerI &cas, const char * const pNameIn, casPV &pvAdapter);
+	casPVI (caServer &cas, casPV &pvAdapter);
 	virtual ~casPVI(); 
 
         //
         // for use by the server library
         //
-        inline caServerI &getCAS();
+        inline caServerI &getCAS() const;
 
         //
         // CA only does 1D arrays for now (and the new server
@@ -547,7 +588,6 @@ public:
 	//
 	// only for use by casAsyncIOI 
 	//
-	inline void registerIO();
 	inline void unregisterIO();
 
 	//
@@ -565,22 +605,25 @@ public:
 	//
 	inline void deleteSignal();
 
-	void show(unsigned level);
-
 	inline void postEvent (const casEventMask &select, gdd &event);
 
 	inline casPV *interfaceObjectPointer() const;
 
-	caServer *getExtServer();
+	caServer *getExtServer() const;
 
 	//
 	// bestDBRType()
 	//
 	inline caStatus bestDBRType (unsigned &dbrType);
 
-	inline aitBool okToBeginNewIO() const;
-
 	inline casPV * operator -> () const;
+
+        virtual casResType resourceType() const;
+
+	virtual void show(unsigned level) const;
+
+	virtual void destroy();
+
 private:
 	tsDLList<casPVListChan>	chanList;
 	caServerI		&cas;
@@ -589,50 +632,7 @@ private:
 	unsigned		nIOAttached;
 	unsigned		destroyInProgress:1;
 
-	inline void lock();
-	inline void unlock();
+	inline void lock() const;
+	inline void unlock() const;
 };
-
-//
-// inline functions associated with the return arg from
-// caServer::pvExistTest()
-//
-inline pvExistReturn::pvExistReturn(caStatus status,
-        char* pCanonicalNameStr) :
-        stat(status), str(pCanonicalNameStr) 
-{
-}
-inline pvExistReturn::pvExistReturn(caStatus status,
-        const char* pCanonicalNameStr) :
-        stat(status), str(pCanonicalNameStr) 
-{
-}
-inline pvExistReturn::pvExistReturn(pvExistReturn &init) :
-        stat(init.stat), str(init.str) 
-{
-}
-inline pvExistReturn::pvExistReturn(const pvExistReturn &init) :
-        stat(init.stat), str(init.str) 
-{
-}
-inline const caStatus pvExistReturn::getStatus() const
-{
-        return this->stat;
-}
-inline const char* pvExistReturn::getString() const
-{
-        return str.string();
-}
-inline pvExistReturn& pvExistReturn::operator=(pvExistReturn &rhs) 
-{
-        this->stat = rhs.stat;
-        this->str = rhs.str;
-        return *this;
-}
-inline pvExistReturn& pvExistReturn::operator=(const pvExistReturn &rhs) 
-{
-        this->stat = rhs.stat;
-        this->str = rhs.str;
-        return *this;
-}
 

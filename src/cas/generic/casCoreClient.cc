@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1996/11/02 00:54:07  jhill
+ * many improvements
+ *
  * Revision 1.3  1996/09/16 18:23:59  jhill
  * vxWorks port changes
  *
@@ -42,13 +45,13 @@
  */
 
 
-#include <server.h>
-#include <caServerIIL.h>	// caServerI in line func
-#include <casAsyncIOIIL.h>	// casAsyncIOI in line func
-#include <casEventSysIL.h>	// casEventSys in line func
-#include <casCtxIL.h>		// casCtx in line func
-#include <inBufIL.h>		// inBuf in line func
-#include <outBufIL.h>		// outBuf in line func
+#include "server.h"
+#include "caServerIIL.h"	// caServerI in line func
+#include "casAsyncIOIIL.h"	// casAsyncIOI in line func
+#include "casEventSysIL.h"	// casEventSys in line func
+#include "casCtxIL.h"		// casCtx in line func
+#include "inBufIL.h"		// inBuf in line func
+#include "outBufIL.h"		// outBuf in line func
 
 //
 // casCoreClient::init()
@@ -124,27 +127,26 @@ void casCoreClient::loadProtoJumpTable()
 //
 casCoreClient::~casCoreClient()
 {
-	casAsyncIOI		*pCurIO;
-
         if (this->ctx.getServer()->getDebugLevel()>0u) {
                 ca_printf ("CAS: Connection Terminated\n");
         }
 
 	this->osiLock();
-	tsDLFwdIter<casAsyncIOI>   iterIO(this->ioInProgList);
+	tsDLIterBD<casAsyncIOI>   iterIO(this->ioInProgList.first());
+	tsDLIterBD<casAsyncIOI>   tmpIO;
+	tsDLIterBD<casAsyncIOI>   eolIO;
 
         //
         // cancel any pending asynchronous IO
         //
-        pCurIO = iterIO.next();
-        while (pCurIO) {
-                casAsyncIOI     *pNextIO;
+        while (iterIO!=eolIO) {
                 //
                 // destructor removes from this list
                 //
-                pNextIO = iterIO.next();
-		pCurIO->destroy();
-                pCurIO = pNextIO;
+		tmpIO = iterIO;
+		++tmpIO;
+		iterIO->destroy();
+		iterIO = tmpIO;
         }
 
 	this->osiUnlock();
@@ -180,11 +182,11 @@ void casCoreClient::show (unsigned level) const
 // asynchronous completion
 //
 caStatus casCoreClient::asyncSearchResponse(casDGIntfIO &,
-		const caAddr &, const caHdr &, const pvExistReturn &)
+		const caAddr &, const caHdr &, const pvExistReturn)
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::createChanResponse(const caHdr &, const pvExistReturn &)
+caStatus casCoreClient::createChanResponse(const caHdr &, const pvCreateReturn &)
 {
 	return S_casApp_noSupport;
 }
@@ -210,6 +212,10 @@ caStatus casCoreClient::writeNotifyResponse(casChannelI *, const caHdr &,
 }
 caStatus casCoreClient::monitorResponse(casChannelI *, const caHdr &, 
 	gdd *, const caStatus)
+{
+	return S_casApp_noSupport;
+}
+caStatus casCoreClient::accessRightsResponse(casChannelI *)
 {
 	return S_casApp_noSupport;
 }

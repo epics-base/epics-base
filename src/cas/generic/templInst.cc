@@ -10,9 +10,10 @@
 #include "resourceLib.cc"
 
 //
-// Sun C++ 4.1 still appears to be lacking support in this area
+// if the compiler supports explicit instantiation of
+// template member functions
 //
-#if !defined(__SUNPRO_CC)
+#if defined(EXPL_TEMPL)
 	//
 	// From Stroustrups's "The C++ Programming Language"
 	// Appendix A: r.14.9 
@@ -21,7 +22,6 @@
 	// functions into "templInst.o"
 	//
 	template class resTable <casEventMaskEntry, stringId>;
-	template class resTable <casPVI, stringId>;
 	template class resTable <casRes, uintId>;
 #endif
 

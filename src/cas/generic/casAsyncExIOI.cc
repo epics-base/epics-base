@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/11/06 22:15:53  jhill
+ * allow monitor init read to using rd async io
+ *
  * Revision 1.1  1996/11/02 01:01:02  jhill
  * installed
  *
@@ -37,12 +40,12 @@
  */
 
 
-#include <server.h>
-#include <casAsyncIOIIL.h> 	// casAsyncIOI in line func
-#include <casChannelIIL.h>	// casChannelI in line func
-#include <casOpaqueAddrIL.h>	// casOpaqueAddr in line func
-#include <casCtxIL.h>		// casCtx in line func
-#include <casCoreClientIL.h>	// casCoreClient in line func
+#include "server.h"
+#include "casAsyncIOIIL.h" 	// casAsyncIOI in line func
+#include "casChannelIIL.h"	// casChannelI in line func
+#include "casOpaqueAddrIL.h"	// casOpaqueAddr in line func
+#include "casCtxIL.h"		// casCtx in line func
+#include "casCoreClientIL.h"	// casCoreClient in line func
 
 //
 // casAsyncExIOI::casAsyncExIOI()
@@ -69,7 +72,7 @@ casAsyncExIOI::~casAsyncExIOI()
 //
 // casAsyncExIOI::postIOCompletion()
 //
-caStatus casAsyncExIOI::postIOCompletion(const pvExistReturn &retValIn)
+caStatus casAsyncExIOI::postIOCompletion(const pvExistReturn retValIn)
 {
 	this->retVal = retValIn; 
 	return this->postIOCompletionI();
@@ -92,10 +95,6 @@ caStatus casAsyncExIOI::cbFuncAsyncIO()
 		assert(this->pOutDGIntfIO);
 		status = this->client.asyncSearchResponse(*this->pOutDGIntfIO,
 				this->dgOutAddr.get(), this->msg, this->retVal);
-                break;
- 
-        case CA_PROTO_CLAIM_CIU:
-		status = this->client.createChanResponse(this->msg, this->retVal);
                 break;
  
         default:

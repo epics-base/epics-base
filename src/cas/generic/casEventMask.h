@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1996/12/11 01:02:35  jhill
+ * removed casEventMaskEntry def
+ *
  * Revision 1.3  1996/12/06 22:32:10  jhill
  * force virtual destructor
  *
@@ -72,7 +75,7 @@ public:
 		this->clear();
 	}
 	
-	void show (unsigned level);
+	void show (unsigned level) const;
  
 	int eventsSelected()
 	{

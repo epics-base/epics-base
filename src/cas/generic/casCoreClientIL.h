@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1  1996/11/02 01:01:06  jhill
+ * installed
+ *
  *
  */
 
@@ -74,6 +77,7 @@ inline void casCoreClient::removeAsyncIO(casAsyncIOI &ioIn)
 {
 	this->osiLock();
 	this->ioInProgList.remove(ioIn);
+	this->ctx.getServer()->ioBlockedList::signal();
 	this->osiUnlock();
 }
 

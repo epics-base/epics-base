@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/11/02 00:54:17  jhill
+ * many improvements
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
  * ca server installation
  *
@@ -38,12 +41,6 @@
 
 #ifndef casMonEventIL_h
 #define casMonEventIL_h
-
-//
-// All functions here moved to casMonEvent.cc until
-// I can determine what is causing them to end up 
-// undefined
-//
 
 //
 // casMonEvent::casMonEvent()
@@ -107,14 +104,6 @@ inline void casMonEvent::clear()
 		this->pValue = NULL;
 	}
 	this->id = 0u;
-}
-
-//
-// ~casMonEvent ()
-//
-inline casMonEvent::~casMonEvent ()
-{
-        this->clear();
 }
 
 //

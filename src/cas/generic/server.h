@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.15  1997/01/10 21:18:05  jhill
+ * code around gnu g++ inline bug when -O isnt used
+ *
  * Revision 1.14  1996/12/11 00:57:56  jhill
  * moved casEventMaskEntry here
  *
@@ -133,12 +136,16 @@ enum casProcCond {casProcOk, casProcDisconnect};
 /*
  * maximum peak log entries for each event block (registartion)
  * (events cached into the last queue entry if over flow occurs)
+ * (if this exceeds 256 then the casMonitor::nPend must
+ * be assigned a new data type)
  */
 #define individualEventEntries 16u
 
 /*
  * maximum average log entries for each event block (registartion)
  * (events cached into the last queue entry if over flow occurs)
+ * (if this exceeds 256 then the casMonitor::nPend must
+ * be assigned a new data type)
  */
 #define averageEventEntries 4u
 
@@ -159,7 +166,9 @@ public:
 
 	inline caStatus init();
 
-	~casEventSys();
+	virtual ~casEventSys();
+
+	virtual void destroy()=0;
 
 	void show(unsigned level) const;
 	casProcCond process();
@@ -185,6 +194,8 @@ public:
 
 	inline void setEventsOff();
 
+	inline void setDestroyPending();
+
 private:
 	tsDLList<casEvent>	eventLogQue;
 	osiMutex		mutex;
@@ -192,6 +203,7 @@ private:
 	unsigned		numEventBlocks;	// N event blocks installed
 	unsigned		maxLogEntries; // max log entries
 	unsigned char		eventsOff;
+	unsigned char		destroyPending;
 };
 
 //
@@ -206,15 +218,14 @@ public:
 
         caStatus callBack(gdd &value);
 
-        casResType resourceType() const
-        {
-                return casClientMonT;
-        }
+	virtual casResType resourceType() const;
 
 	caResId getId() const
 	{
 		return this->casRes::getId();
 	}
+
+	virtual void destroy();
 private:
 };
 
@@ -249,6 +260,7 @@ public:
         inline void setChannel(casChannelI *p);
 
 	void show (unsigned level) const;
+	
 private:
         caHdr			msg;	// ca message header
 	void			*pData; // pointer to data following header
@@ -256,6 +268,7 @@ private:
         casCoreClient		*pClient;
         casChannelI             *pChannel;
         casPVI                  *pPV;
+	unsigned		nAsyncIO; // checks for improper use of async io
 };
 
 enum casFillCondition{
@@ -426,6 +439,12 @@ private:
 //
 class casCoreClient : public osiMutex, public ioBlocked, 
 	public casEventSys {
+
+//
+// allows casAsyncIOI constructor to check for asynch IO duplicates
+//
+friend casAsyncIOI::casAsyncIOI(casCoreClient &clientIn, casAsyncIO &ioExternalIn);
+
 public:
 	casCoreClient(caServerI &serverInternal); 
 	caStatus init();
@@ -451,14 +470,15 @@ public:
         virtual caStatus monitorResponse(casChannelI *, 
 			const caHdr &, gdd *, const caStatus);
 
+        virtual caStatus accessRightsResponse(casChannelI *);
+
         //
         // one virtual function for each CA request type that has
         // asynchronous completion
         //
         virtual caStatus asyncSearchResponse(casDGIntfIO &outMsgIO,
-		const caAddr &outAddr, const caHdr &, const pvExistReturn &);
-        virtual caStatus createChanResponse(const caHdr &, 
-				const pvExistReturn &);
+		const caAddr &outAddr, const caHdr &, const pvExistReturn);
+        virtual caStatus createChanResponse(const caHdr &, const pvCreateReturn &);
         virtual caStatus readResponse(casChannelI *, const caHdr &,
                         	gdd *, const caStatus); 
         virtual caStatus readNotifyResponse(casChannelI *, const caHdr &, 
@@ -476,6 +496,7 @@ public:
 	virtual casDGIntfIO* fetchOutIntf();
 protected:
 	casCtx			ctx;
+	unsigned char		asyncIOFlag;
 
 private:
 	tsDLList<casAsyncIOI>   ioInProgList;
@@ -613,7 +634,7 @@ public:
         // one function for each CA request type that has
         // asynchronous completion
         //
-        virtual caStatus createChanResponse(const caHdr &, const pvExistReturn &);
+        virtual caStatus createChanResponse(const caHdr &, const pvCreateReturn &);
         caStatus readResponse(casChannelI *pChan, const caHdr &msg,
                         gdd *pDesc, const caStatus status);
         caStatus readNotifyResponse(casChannelI *pChan, const caHdr &msg,
@@ -753,11 +774,11 @@ private:
         //
         caStatus searchFailResponse(const caHdr *pMsg);
 
-        caStatus searchResponse(const caHdr &, const pvExistReturn &);
+        caStatus searchResponse(const caHdr &, const pvExistReturn);
 
 	caStatus asyncSearchResponse(casDGIntfIO &outMsgIO, 
 		const caAddr &outAddr, const caHdr &msg, 
-		const pvExistReturn &retVal);
+		const pvExistReturn);
 	caAddr fetchRespAddr();
 	casDGIntfIO* fetchOutIntf();
 
@@ -781,7 +802,9 @@ public:
         casEventMaskEntry (casEventRegistry &regIn,
                 casEventMask maskIn, const char *pName);
         virtual ~casEventMaskEntry();
-        void show (unsigned level);
+        void show (unsigned level) const;
+
+	virtual void destroy();
 private:
         casEventRegistry        &reg;
 };
@@ -804,7 +827,7 @@ public:
 
         casEventMask registerEvent (const char *pName);
  
-        void show (unsigned level);
+        void show (unsigned level) const;
  
 private:
 	osiMutex &mutex;
@@ -819,6 +842,27 @@ private:
 
 class casClientMon;
 
+//
+// casPVExistReturn
+//
+// special return code for the server internal version of pvExistTest()
+//
+class casPVExistReturn {
+public:
+	casPVExistReturn(pvExistReturn appIn) 
+		{app=appIn; stat = S_cas_success; }
+	casPVExistReturn(caStatus statIn)
+		{app=pverDoesNotExistHere; stat = statIn; }
+	caStatus getStatus() const {return stat;}
+	pvExistReturn getAppStat() const {return app;}
+private:
+	pvExistReturn 	app;
+	caStatus	stat;
+};
+
+//
+// caServerI
+// 
 class caServerI : 
 	public osiMutex, // osiMutex must be first because it is used
 			// by ioBlockedList and casEventRegistry
@@ -828,8 +872,7 @@ class caServerI :
 	private uintResTable<casRes>,
 	public casEventRegistry {
 public:
-	caServerI(caServer &tool, unsigned pvMaxNameLength, 
-		unsigned pvCountEstimate, unsigned maxSimultaneousIO);
+	caServerI(caServer &tool, unsigned pvCountEstimate);
 	caStatus init(); //constructor does not return status
 	~caServerI();
 
@@ -854,18 +897,6 @@ public:
 
 	void removeClient(casStrmClient *pClient);
 
-        unsigned getMaxSimultaneousIO() const {return this->maxSimultaneousIO;}
-
-	//
-	// install a PV into the server
-	//
-	inline void installPV(casPVI &pv);
-
-	//
-	// remove  PV from the server
-	//
-	inline void removePV(casPVI &pv);
-
         //
         // is there space for a new channel
         //
@@ -878,19 +909,13 @@ public:
 
 	unsigned getDebugLevel() const { return debugLevel; }
 	inline void setDebugLevel(unsigned debugLevelIn);
-	inline pvExistReturn pvExistTest (const casCtx &ctx, const char *pPVName);
-	inline void pvExistTestCompletion();
-	inline aitBool pvExistTestPossible();
-
-	casPVI *createPV(const char *pName);
+	inline casPVExistReturn pvExistTest (const casCtx &ctx, const char *pPVName);
 
         osiTime getBeaconPeriod() const { return this->beaconPeriod; }
 
-	void show(unsigned level);
+	void show(unsigned level) const;
 
 	inline casRes *lookupRes(const caResId &idIn, casResType type);
-
-	inline unsigned getPVMaxNameLength() const;
 
 	inline caServer *getAdapter();
 
@@ -913,27 +938,16 @@ private:
         void advanceBeaconPeriod();
 
         casDGOS				dgClient;
-	casCtx				ctx;
+	//casCtx				ctx;
 	tsDLList<casStrmClient>		clientList;
 	tsDLList<casIntfOS>		intfList;
-	resTable<casPVI,stringId>	stringResTbl;
         osiTime 			beaconPeriod;
 	caServer			&adapter;
-	unsigned			pvCount;
         unsigned 			debugLevel;
-        unsigned			nExistTestInProg;
 
-        // max number of IO ops pending simultaneously
-        // (for operations that are not directed at a particular PV)
-        const unsigned 			pvMaxNameLength;
-
-        // the estimated number of proces variables default = ???
+        // the estimated number of proces variables default = 1024u 
         const unsigned 			pvCountEstimate;
 
-        // the maximum number of characters in a pv name
-        // default = none - required initialization parameter
-        const unsigned 			maxSimultaneousIO;
-	
 	unsigned char			haveBeenInitialized;
 };
 

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.9  1997/01/09 22:22:30  jhill
+ * MSC cannot use the default constructor
+ *
  * Revision 1.8  1996/12/06 22:36:17  jhill
  * use destroyInProgress flag now functional nativeCount()
  *
@@ -68,7 +71,7 @@
 //
 // casPVI::getCAS() 
 //
-inline caServerI &casPVI::getCAS() 
+inline caServerI &casPVI::getCAS() const
 {
 	return this->cas;
 }
@@ -95,7 +98,7 @@ casPV * casPVI::operator -> () const
 //
 // casPVI::lock()
 //
-inline void casPVI::lock()
+inline void casPVI::lock() const
 {
 	//
 	// NOTE:
@@ -109,7 +112,7 @@ inline void casPVI::lock()
 //
 // casPVI::unlock()
 //
-inline void casPVI::unlock()
+inline void casPVI::unlock() const
 {
 	this->cas.osiUnlock();
 }
@@ -135,38 +138,10 @@ inline void casPVI::removeChannel(casPVListChan &chan)
 }
 
 //
-// okToBeginNewIO()
-//
-inline aitBool casPVI::okToBeginNewIO() const
-{
-	if (this->nIOAttached >= (*this)->maxSimultAsyncOps()) {               
-		return aitFalse;
-	}
-	else {
-		return aitTrue;
-	}
-}
-
-//
-// casPVI::registerIO()
-//
-inline void casPVI::registerIO()
-{
-	this->lock();
-	casVerify (this->nIOAttached < (*this)->maxSimultAsyncOps());
-	this->nIOAttached++;
-	this->unlock();
-}
-
-//
 // casPVI::unregisterIO()
 //
 inline void casPVI::unregisterIO()
 {
-	this->lock();
-	assert(this->nIOAttached>0u);
-	this->nIOAttached--;
-	this->unlock();
 	this->ioBlockedList::signal();
 }
 
@@ -216,7 +191,7 @@ inline caStatus  casPVI::bestDBRType (unsigned &dbrType)
 	return S_cas_success;
 }
 
-#include <casChannelIIL.h> // inline func for casChannelI
+#include "casChannelIIL.h" // inline func for casChannelI
 
 //
 // functions that use casChannelIIL.h below here
@@ -227,8 +202,6 @@ inline caStatus  casPVI::bestDBRType (unsigned &dbrType)
 //
 inline void casPVI::postEvent (const casEventMask &select, gdd &event)
 {
-        casPVListChan           *pChan;
- 
         if (this->nMonAttached==0u) {
                 return;
         }
@@ -240,9 +213,11 @@ inline void casPVI::postEvent (const casEventMask &select, gdd &event)
         event.markConstant();
  
 	this->lock();
-        tsDLFwdIter<casPVListChan> iter(this->chanList);
-        while ( (pChan = iter.next()) ) {
-                pChan->postEvent(select, event);
+        tsDLIterBD<casPVListChan> iter(this->chanList.first());
+        const tsDLIterBD<casPVListChan> eol;
+        while ( iter != eol ) {
+                iter->postEvent(select, event);
+		++iter;
         }
 	this->unlock();
 }

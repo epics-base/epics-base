@@ -3,13 +3,18 @@
 // Author: Jeff HIll (LANL)
 //
 // $Log$
+// Revision 1.1  1996/12/06 22:20:22  jhill
+// moved down one level
+//
 // Revision 1.2  1996/09/16 18:22:09  jhill
 // added cvs log entries
 //
 //
 
-#include <exServer.h>
+#include <vxWorks.h>
 #include <taskLib.h>
+
+#include "exServer.h"
 
 //
 // so we can call this from the vxWorks shell

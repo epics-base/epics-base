@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1996/11/02 00:54:03  jhill
+ * many improvements
+ *
  * Revision 1.4  1996/09/16 18:23:59  jhill
  * vxWorks port changes
  *
@@ -48,12 +51,13 @@
 #ifndef casChannelIIL_h
 #define casChannelIIL_h
 
-#include <casCoreClientIL.h>
+#include "casCoreClientIL.h"
+#include "casEventSysIL.h"
 
 //
 // casChannelI::operator -> ()
 //
-inline casChannel * casChannelI::operator -> ()
+inline casChannel * casChannelI::operator -> () const
 {
         return &this->chan;
 }
@@ -61,7 +65,7 @@ inline casChannel * casChannelI::operator -> ()
 //
 // casChannelI::lock()
 //
-inline void casChannelI::lock()
+inline void casChannelI::lock() const
 {
 	this->client.osiLock();
 }
@@ -69,7 +73,7 @@ inline void casChannelI::lock()
 //
 // casChannelI::unlock()
 //
-inline void casChannelI::unlock()
+inline void casChannelI::unlock() const
 {
 	this->client.osiUnlock();
 }
@@ -79,12 +83,12 @@ inline void casChannelI::unlock()
 //
 inline void casChannelI::postEvent(const casEventMask &select, gdd &event)
 {
-        casMonitor              *pMon;
- 
 	this->lock();
-        tsDLFwdIter<casMonitor>    iter(this->monitorList);
-        while ( (pMon = iter.next()) ) {
-                pMon->post(select, event);
+        tsDLIterBD<casMonitor> iter(this->monitorList.first());
+        const tsDLIterBD<casMonitor> eol;
+        while ( iter!=eol ) {
+                iter->post(select, event);
+		++iter;
         }
 	this->unlock();
 }
@@ -124,14 +128,15 @@ inline void casChannelI::addMonitor(casMonitor &mon)
 //
 inline casMonitor *casChannelI::findMonitor(const caResId clientIdIn)
 {
-	casMonitor              *pMon;
-
 	this->lock();
-	tsDLFwdIter<casMonitor>    iter(this->monitorList);
-	while ( (pMon = iter.next()) ) {
-		if ( clientIdIn == pMon->getClientId()) {
+	tsDLIterBD<casMonitor> iter(this->monitorList.first());
+	tsDLIterBD<casMonitor> eol;
+	while ( iter!=eol ) {
+		if ( clientIdIn == iter->getClientId()) {
+			casMonitor *pMon = iter;
 			return pMon;
 		}
+		++iter;
 	}
 	this->unlock();
 	return NULL;
@@ -146,7 +151,7 @@ inline void casChannelI::clientDestroy()
 	(*this)->destroy();
 }
 
-#include <casPVIIL.h>
+#include "casPVIIL.h"
 
 //
 // functions that use casPVIIL.h below here 
@@ -158,7 +163,6 @@ inline void casChannelI::clientDestroy()
 inline void casChannelI::installAsyncIO(casAsyncIOI &io)
 {
         this->lock();
-        this->pv.registerIO();
         this->ioInProgList.add(io);
         this->unlock();
 }
@@ -181,6 +185,17 @@ inline void casChannelI::removeAsyncIO(casAsyncIOI &io)
 inline const caResId casChannelI::getSID()
 {
 	return this->uintId::getId();
+}
+
+//
+// casChannelI::postAccessRightsEvent()
+//
+inline void casChannelI::postAccessRightsEvent()
+{
+	if (!this->accessRightsEvPending) {
+		this->accessRightsEvPending = TRUE;
+		this->client.addToEventQueue(*this);
+	}
 }
 
 

@@ -2,8 +2,10 @@
 TOP = ../../../..
 include $(TOP)/config/CONFIG_BASE
 
+CXXCMPLR = STRICT
+
 TESTPROD := resourceLibTest tsDLListBench tsDLListTest tsDLListTest \
-		tsSLListBench tsSLListTest
+		tsSLListBench tsSLListTest minmaxTest 
 
 include $(TOP)/config/RULES.Host
 

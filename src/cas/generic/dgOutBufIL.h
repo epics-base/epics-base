@@ -2,8 +2,8 @@
 #ifndef dgOutBufILh
 #define dgOutBufILh
 
-#include <casOpaqueAddrIL.h>
-#include <outBufIL.h>
+#include "casOpaqueAddrIL.h"
+#include "outBufIL.h"
 
 //
 // All of the functions in this file moved to dgOutBuf.cc because

@@ -5,6 +5,9 @@
 //
 //
 // $Log$
+// Revision 1.8  1997/01/10 00:00:01  jhill
+// close() => socket_close()
+//
 // Revision 1.7.2.1  1996/11/25 16:33:00  jhill
 // close() => socket_close()
 //
@@ -31,7 +34,7 @@
 //
 //
 
-#include <server.h>
+#include "server.h"
 
 
 //

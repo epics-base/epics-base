@@ -22,12 +22,10 @@ private:
 main ()
 {
 	tsSLList<fred>	list;
-	tsSLIter<fred>	iter(list);
 	fred		*pFred;
 	fred		*pFredII;
 	fred		*pFredBack;
 	tsSLList<jane>	janeList;
-	tsSLIter<jane>	janeIter(janeList);
 	jane		*pJane;
 
 	pFred = new fred("A");
@@ -35,8 +33,11 @@ main ()
 
 	list.add(*pFred);
 	list.add(*pFredII);
-	pFredBack = iter();
-	assert(pFredBack == pFredII);
+	{
+		tsSLIter<fred> iter(list);
+		pFredBack = iter();
+		assert(pFredBack == pFredII);
+	}
 	list.remove(*pFredII);  // removes *pFred !!
 	list.add(*pFred);
 	pFredBack = list.get();
@@ -45,9 +46,11 @@ main ()
 	assert (pFredBack == pFredII);
 	list.add(*pFredII);
 	list.add(*pFred);
-	iter.reset();
-	while ( (pFredBack = iter()) ) {
-		iter.remove();
+	{
+		tsSLIterRm<fred> iter(list);
+		while ( (pFredBack = iter()) ) {
+			iter.remove();
+		}
 	}
 	pFredBack = list.get();
 	assert (pFredBack == 0);
@@ -56,8 +59,11 @@ main ()
 	list.add(* new fred("C"));
 	list.add(* new fred("D"));
 
-	while ( (pFredBack = iter()) ) {
-		pFredBack->show();
+	{
+		tsSLIter<fred> iter(list);
+		while ( (pFredBack = iter()) ) {
+			pFredBack->show();
+		}
 	}
 
 	pJane = new jane("JA");
@@ -65,19 +71,31 @@ main ()
 	pJane = new jane("JB");
 	janeList.add(*pJane);	
 
-	while ( (pJane = janeIter()) ) {
-		pJane->show();
+	{
+		tsSLIter<jane>	janeIter(janeList);
+		while ( (pJane = janeIter()) ) {
+			pJane->show();
+		}
 	}
 
-	while ( (pFredBack = iter()) ) {
-		pFredBack->show();
+	{
+		tsSLIter<fred> iter(list);
+		while ( (pFredBack = iter()) ) {
+			pFredBack->show();
+		}
 	}
 
-	while ( (pFredBack = iter()) ) {
-		iter.remove();
+	{
+		tsSLIterRm<fred> iter(list);
+		while ( (pFredBack = iter()) ) {
+			iter.remove();
+		}
 	}
 
-	pFredBack = iter();
-	assert(pFredBack==NULL);
+	{
+		tsSLIter<fred> iter(list);
+		pFredBack = iter();
+		assert(pFredBack==NULL);
+	}
 }
 

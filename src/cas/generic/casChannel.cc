@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1996/09/04 20:17:34  jhill
+ * use ptr not ref to satisfy MSVISC++
+ *
  * Revision 1.3  1996/08/13 22:52:31  jhill
  * changes for MVC++
  *
@@ -42,9 +45,9 @@
  */
 
 
-#include <server.h>
-#include <casChannelIIL.h> // casChannelI inline func
-#include <casPVListChanIL.h> // casPVListChan inline func
+#include "server.h"
+#include "casChannelIIL.h" // casChannelI inline func
+#include "casPVListChanIL.h" // casPVListChan inline func
 
 //
 // casChannel::casChannel()
@@ -74,14 +77,6 @@ casPV *casChannel::getPV()
 }
 
 //
-// casChannel::postEvent()
-//
-void casChannel::postEvent (const casEventMask &select, gdd &event)
-{
-	this->casChannelI::postEvent(select, event);
-}
-
-//
 // casChannel::setOwner()
 //
 void casChannel::setOwner(const char * const /* pUserName */, 
@@ -90,21 +85,6 @@ void casChannel::setOwner(const char * const /* pUserName */,
 	//
 	// NOOP
 	//
-}
-
-//
-// casChannel::interestRegister()
-//
-caStatus casChannel::interestRegister()
-{
-	return S_casApp_success;
-}
-
-//
-// casChannel::interestDelete()
-//
-void casChannel::interestDelete()
-{
 }
 
 //
@@ -135,7 +115,7 @@ aitBool casChannel::confirmationRequested() const
 //
 // casChannel::show()
 //
-void casChannel::show(unsigned level) 
+void casChannel::show(unsigned level) const
 {
 	if (level>2u) {
 		printf("casChannel: read access = %d\n",
@@ -155,4 +135,11 @@ void casChannel::destroy()
 	delete this;
 }
 
+//
+// casChannel::postAccessRightsEvent()
+//
+void casChannel::postAccessRightsEvent()
+{
+	this->casChannelI::postAccessRightsEvent();
+}
 

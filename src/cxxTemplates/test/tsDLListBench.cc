@@ -40,7 +40,6 @@ main ()
 	}
 
 	clk = clock();
-	iter = list;
 	while ( (pFred = iter()) ) {
 		pFred->inc();
 	}
@@ -52,7 +51,6 @@ main ()
 
 	pFred = new fred();
 	clk = clock();
-	iter = list;
 	for (i=0; i<LOOPCOUNT; i++) {
 		pFred->inc();
 	}

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.7  1996/12/12 18:55:38  jhill
+ * fixed client initiated pv delete calls interestDelete() VF bug
+ *
  * Revision 1.6  1996/12/06 22:35:06  jhill
  * added destroyInProgress flag
  *
@@ -59,18 +62,25 @@
 //
 // casPVI::casPVI()
 //
-casPVI::casPVI(caServerI &casIn, const char * const pNameIn, 
-		casPV &pvAdapterIn) : 
-	stringId(pNameIn),
-	cas(casIn), 
+casPVI::casPVI(caServer &casIn, casPV &pvAdapterIn) : 
+	cas(*casIn.pCAS), 
 	pv(pvAdapterIn),
 	nMonAttached(0u),
 	nIOAttached(0u),
 	destroyInProgress(FALSE)
 {
+	//
+	// we would like to throw an exception for this one
+	// (but this is not portable)
+	//
 	assert(&this->cas);
+
+	//
+	// this will always be true
+	//
 	assert(&this->pv);
-	this->cas.installPV(*this);
+
+	this->cas.installItem(*this);
 }
 
 
@@ -79,10 +89,9 @@ casPVI::casPVI(caServerI &casIn, const char * const pNameIn,
 //
 casPVI::~casPVI()
 {
-	casPVListChan		*pChan;
-	casPVListChan		*pNextChan;
-
 	this->lock();
+
+	this->cas.removeItem(*this);
 
 	assert(!this->destroyInProgress);
 	this->destroyInProgress = TRUE;
@@ -90,18 +99,19 @@ casPVI::~casPVI()
 	//
 	// delete any attached channels
 	//
-	tsDLFwdIter<casPVListChan> iter(this->chanList);
-	pChan = iter.next();
-	while (pChan) {
+	tsDLIterBD<casPVListChan> iter(this->chanList.first());
+	const tsDLIterBD<casPVListChan> eol;
+	tsDLIterBD<casPVListChan> tmp;
+	while (iter!=eol) {
 		//
 		// deleting the channel removes it from the list
 		//
-		pNextChan = iter.next();
-		(*pChan)->destroy();
-		pChan = pNextChan;
-	}
 
-	this->cas.removePV(*this);
+		tmp = iter;
+		++tmp;
+		(*iter)->destroy();
+		iter = tmp;
+	}
 
 	this->unlock();
 
@@ -122,12 +132,14 @@ casPVI::~casPVI()
 //
 // casPVI::show()
 //
-void casPVI::show(unsigned level)
+void casPVI::show(unsigned level) const
 {
 	this->lock();
 
-	printf("\"%s\"\n", this->resourceName());
-
+	if (level>1u) {
+		printf ("CA Server PV: nChanAttached=%u nMonAttached=%u nIOAttached=%u\n",
+			this->chanList.count(), this->nMonAttached, this->nIOAttached);
+	}
 	(*this)->show(level);
 
 	this->unlock();
@@ -174,9 +186,25 @@ void casPVI::unregisterEvent()
 // (not inline because details of caServerI must not
 // leak into server tool)
 //
-caServer *casPVI::getExtServer()
+caServer *casPVI::getExtServer() const
 {
 	return this->cas.getAdapter();
 }
 
+//
+// casPVI::destroy()
+//
+// call the destroy in the server tool
+//
+void casPVI::destroy()
+{
+	this->pv.destroy();
+}
+
+// casPVI::resourceType()
+//
+casResType casPVI::resourceType() const
+{
+	return casPVT;
+}
 

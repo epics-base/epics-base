@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1996/12/11 01:01:56  jhill
+ * casEventMaskEntry constr does res tbl add
+ *
  * Revision 1.4  1996/12/06 22:32:11  jhill
  * force virtual destructor
  *
@@ -45,11 +48,11 @@
  */
 
 
-#include <epicsAssert.h>
+#include "epicsAssert.h"
 #include <stdio.h>
 #include <limits.h>
 
-#include <server.h>
+#include "server.h"
 
 #ifdef TEST
 main ()
@@ -132,8 +135,12 @@ inline casEventMask casEventRegistry::maskAllocator()
 //
 casEventMask casEventRegistry::registerEvent(const char *pName)
 {
+	//
+	// NOTE: pName outlives id here
+	// (so the refString option is ok)
+	//
+	stringId 		id (pName, stringId::refString);
 	casEventMaskEntry	*pEntry;
-	stringId 		id (pName);
 	casEventMask		mask;
 
 	if (!this->hasBeenInitialized) {
@@ -171,7 +178,7 @@ casEventMask casEventRegistry::registerEvent(const char *pName)
 //
 // casEventMask::show()
 //
-void casEventMask::show(unsigned level)
+void casEventMask::show(unsigned level) const
 {
 	if (level>0u) {
 		printf ("casEventMask = %x\n", this->mask);
@@ -186,7 +193,7 @@ casEventMask::casEventMask (casEventRegistry &reg, const char *pName)
 //
 // casEventRegistry::show()
 //
-void casEventRegistry::show(unsigned level)
+void casEventRegistry::show(unsigned level) const
 {
 	if (!this->hasBeenInitialized) {
 		printf ("casEventRegistry: not initialized\n");
@@ -209,6 +216,7 @@ casEventMaskEntry::casEventMaskEntry(
 {
 	int 	stat;
 
+	assert(this->resourceName()!=NULL);
 	stat = this->reg.add(*this);
 	assert(stat==0);
 }
@@ -227,9 +235,17 @@ casEventMaskEntry::~casEventMaskEntry()
 }
 
 //
+// casEventMaskEntry::destroy()
+//
+void casEventMaskEntry::destroy()
+{
+	delete this;
+}
+
+//
 // casEventMaskEntry::show()
 //
-void casEventMaskEntry::show (unsigned level)
+void casEventMaskEntry::show (unsigned level) const 
 {
 	this->casEventMask::show(level);
 	this->stringId::show(level);

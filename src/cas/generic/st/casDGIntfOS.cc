@@ -10,8 +10,8 @@
 //
 // CA server
 // 
-#include <server.h>
-#include <casIODIL.h> // IO Depen in line func
+#include "server.h"
+#include "casIODIL.h" // IO Depen in line func
 
 //
 // casDGReadReg

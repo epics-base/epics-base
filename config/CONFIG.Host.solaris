@@ -67,7 +67,7 @@ CCC_SHRLIB_CFLAGS_YES =
 CCC_SHRLIB_LDFLAGS_YES =  -G -h $@ -z ignore -z combreloc -z lazyload
  
 
-ARCH_DEP_CFLAGS = -DSOLARIS
+ARCH_DEP_CFLAGS = -DSOLARIS=$(subst 5.,,$(shell uname -r)) 
 POSIX_CPPFLAGS_YES += -D__EXTENSIONS__
 
 # socket and nsl needed by libca.a

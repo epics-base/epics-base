@@ -4,7 +4,7 @@
  *
  *	Experimental Physics and Industrial Control System (EPICS)
  *
- *	Copyright 1991, the Regents of the University of California,
+ *	Copyright 1991-92, the Regents of the University of California,
  *	and the University of Chicago Board of Governors.
  *
  *	This software was produced under  U.S. Government contracts:
@@ -25,13 +25,13 @@
  *
  * Modification Log:
  * -----------------
- * .00	08-09-90	rac	initial version
- * .01	06-18-91	rac	installed in SCCS
- * .02	07-20-91	rac	use EPICS_TS_MIN_WEST to override TS_MIN_WEST
- * .03	08-16-91	rac	use envGetLongConfigParam
- * .04	09-05-91	joh	updated for v5 vxWorks
- * .05	01-27-92	rac	fixed off-by-1 bug for leap years in
- *				tsTextToStamp
+ *  .00 08-09-90 rac	initial version
+ *  .01 06-18-91 rac	installed in SCCS
+ *  .02 07-20-91 rac	use EPICS_TS_MIN_WEST to override TS_MIN_WEST
+ *  .03 08-16-91 rac	use envGetLongConfigParam
+ *  .04 09-05-91 joh	updated for v5 vxWorks
+ *  .05 01-27-92 rac	fixed off-by-1 bug for leap years in tsTextToStamp
+ *  .06 08-03-92 rac	added tsRound... routines
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -77,6 +77,8 @@
 *  void  TsDiffAsDouble(   >pSecAsDouble, pStamp1,       pStamp2	)
 *  void  TsDiffAsStamp(    >pStampDiff,   pStamp1,       pStamp2	)
 *  long  tsLocalTime(      >pStamp					)
+*  long  tsRoundDownLocal(<>pStamp,       intervalUL			)
+*  long  tsRoundUpLocal(  <>pStamp,       intervalUL			)
 *  char *tsStampToText(     pStamp,       textType,      >textBuffer	)
 *					 TS_TEXT_MONDDYYYY   buf[32]
 *					 TS_TEXT_MMDDYY      buf[28]
@@ -120,6 +122,12 @@
 #include <envDefs.h>
 #define TS_PRIVATE_DATA
 #include <tsDefs.h>
+
+void tsStampFromLocal();
+void tsStampToLocal();
+
+static int needToInitMinWest=1;
+static long tsMinWest=TS_MIN_WEST;
 
 static int daysInMonth[] =    {31,28,31,30, 31, 30, 31, 31, 30, 31, 30, 31};
 static int dayYear1stOfMon[] = {0,31,59,90,120,151,181,212,243,273,304,334};
@@ -607,7 +615,185 @@ TS_STAMP *pStamp;	/* O pointer to time stamp buffer */
     return retStat;
 }
 
+/*+/subr**********************************************************************
+* NAME	tsRoundDownLocal - round a time stamp to interval, based on local time
+*
+* DESCRIPTION
+*	The time stamp is rounded down to the prior interval, based on
+*	local time.  The rounding interval must be between 1 second and
+*	86400 seconds (a full day).
+*
+* RETURNS
+*	S_ts_OK, or
+*	S_ts_badRoundInterval if the rounding interval is invalid
+*
+* EXAMPLES
+* 1.	Round a time stamp back to 0000 hours, at the beginning of the day.
+*	TS_STAMP	now;
+*
+*	tsRoundDownLocal(&now, 86400);
+*
+*-*/
+long
+tsRoundDownLocal(pStamp, interval)
+TS_STAMP *pStamp;	/* IO pointer to time stamp buffer */
+unsigned long interval;	/* I rounding interval, in seconds */
+{
+    long	retStat=S_ts_OK;/* return status to caller */
+    struct tsDetail detail;
+    unsigned long seconds;
+
+    tsStampToLocal(*pStamp, &detail);
+    if (interval < 1. || interval > 86400.)
+	retStat = S_ts_badRoundInterval;
+    else {
+	seconds = detail.seconds + 60*detail.minutes + 3600*detail.hours;
+	seconds -= seconds % interval;
+	detail.hours = seconds / 3600;
+	detail.minutes = (seconds % 3600) / 60;
+	detail.seconds = seconds % 60;
+	tsStampFromLocal(pStamp, &detail);
+	pStamp->nsec = 0;
+    }
+
+    return retStat;
+}
+
+/*+/subr**********************************************************************
+* NAME	tsRoundUpLocal - round a time stamp to interval, based on local time
+*
+* DESCRIPTION
+*	The time stamp is rounded down to the prior interval, based on
+*	local time.  The rounding interval must be between 1 second and
+*	86400 seconds (a full day).
+*
+* RETURNS
+*	S_ts_OK, or
+*	S_ts_badRoundInterval if the rounding interval is invalid
+*
+* EXAMPLES
+* 1.	Round a time stamp forward to 0000 hours, at the beginning of the 
+*	following day.
+*	TS_STAMP	now;
+*
+*	tsRoundUpLocal(&now, 86400);
+*
+*-*/
+long
+tsRoundUpLocal(pStamp, interval)
+TS_STAMP *pStamp;	/* IO pointer to time stamp buffer */
+unsigned long interval;	/* I rounding interval, in seconds */
+{
+    long	retStat=S_ts_OK;/* return status to caller */
+    struct tsDetail detail;
+    unsigned long seconds;
+
+    tsStampToLocal(*pStamp, &detail);
+    if (interval < 1. || interval > 86400.)
+	retStat = S_ts_badRoundInterval;
+    else {
+	seconds = detail.seconds + 60*detail.minutes + 3600*detail.hours;
+	if (pStamp->nsec > 0)
+	    seconds++;
+	seconds += interval - 1;
+	seconds -= seconds % interval;
+	detail.hours = seconds / 3600;
+	detail.minutes = (seconds % 3600) / 60;
+	detail.seconds = seconds % 60;
+	tsStampFromLocal(pStamp, &detail);
+	pStamp->nsec = 0;
+    }
+
+    return retStat;
+}
+
 void tsStampToLocalZone();
+/*+/internal******************************************************************
+* NAME	tsStampFromLocal - convert time stamp to local time
+*
+* DESCRIPTION
+*	Converts a tsDetail structure for local time into an EPICS time
+*	stamp, taking daylight savings time into consideration.
+*
+* RETURNS
+*	void
+*
+* BUGS
+* o	doesn't handle 0 time stamps for time zones west of Greenwich
+*
+*-*/
+static void
+tsStampFromLocal(pStamp, pT)
+TS_STAMP	*pStamp;/* O EPICS time stamp resulting from conversion */
+struct tsDetail *pT;	/* I pointer to time structure to convert */
+{
+    long	retStat=S_ts_OK;/* return status to caller */
+
+    TS_STAMP	stamp;		/* temp for building time stamp */
+    int		year;		/* temp for year number */
+    int		days;		/* temp for days since epoch */
+    int		dstBegin;	/* day DST begins */
+    int		dstEnd;		/* day DST ends */
+    int		dst;		/* (0, 1) for DST (isn't, is) in effect */
+
+    if (needToInitMinWest)
+	tsInitMinWest();
+
+    year = TS_EPOCH_YEAR;
+    days = pT->dayYear;
+    while (year < pT->year) {
+	if (year % 400 == 0 || (year % 4 == 0 && year % 100 != 0))
+	    days += 366;
+	else
+	    days += 365;
+	year++;
+    }
+    pT->dayOfWeek = (days + TS_EPOCH_WDAY_NUM) % 7;
+    stamp.secPastEpoch = days * 86400;	/* converted to seconds */
+    stamp.secPastEpoch += pT->hours*3600 + pT->minutes*60 + pT->seconds;
+/*----------------------------------------------------------------------------
+*	we now have a stamp which corresponds to the text time, BUT with
+*	the assumption that the text time is standard time.  Three daylight
+*	time issues must be dealt with: was the text time during DST; was
+*	the text time during the `skipped' time when standard ends and DST
+*	begins; and was it during the `limbo' time when DST ends and standard
+*	begins.
+*
+*	If, for example, DST ends at 2 a.m., and 1 hour is added during DST,
+*	then the limbo time begins at 1 a.m. DST and ends at 2 a.m. standard.
+*----------------------------------------------------------------------------*/
+    dstBegin = sunday(TS_DST_BEGIN, pT->leapYear, pT->dayYear, pT->dayOfWeek);
+    dstEnd = sunday(TS_DST_END, pT->leapYear, pT->dayYear, pT->dayOfWeek);
+    assert(dstBegin != dstEnd);
+    dst = 0;
+    if (dstBegin < dstEnd && (pT->dayYear < dstBegin || pT->dayYear > dstEnd))
+	    ;		/* not DST; no action */
+    else if (dstBegin > dstEnd && pT->dayYear < dstBegin && pT->dayYear>dstEnd)
+	    ;		/* not DST; no action */
+    else if (pT->dayYear == dstBegin) {
+	if (pT->hours < TS_DST_HOUR_ON)
+	    ;		/* not DST; no action */
+	else if (pT->hours < TS_DST_HOUR_ON + TS_DST_HRS_ADD)
+	    retStat = S_ts_timeSkippedDST;
+	else
+	    dst = 1;
+    }
+    else if (pT->dayYear != dstEnd)
+	dst = 1;
+    else {
+	if (pT->hours >= TS_DST_HOUR_OFF + TS_DST_HRS_ADD)
+	    ;	/* not DST */
+	else if (pT->hours < TS_DST_HOUR_OFF)
+	    dst = 1;
+	else if (pT->dstOverlapChar == 'd')
+	    dst = 1;
+    }
+    if (dst)
+	stamp.secPastEpoch -= TS_DST_HRS_ADD * 3600;
+    stamp.secPastEpoch += tsMinWest*60;
+    *pStamp = stamp;
+}
+
 /*+/internal******************************************************************
 * NAME	tsStampToLocal - convert time stamp to local time
 *
@@ -675,9 +861,6 @@ struct tsDetail *pT;	/* O pointer to time structure for conversion */
 
     return;
 }
-
-static int needToInitMinWest=1;
-static long tsMinWest=TS_MIN_WEST;
 
 static tsInitMinWest()
 {
@@ -941,13 +1124,8 @@ char	**pText;	/* IO ptr to ptr to string containing time and date */
     TS_STAMP	stamp;		/* temp for building time stamp */
     char	*pField;	/* pointer to field */
     char	delim;		/* delimiter character */
-    int		count;		/* count from scan of next field */
-    int		year;		/* temp for year number */
-    int		days;		/* temp for days since epoch */
     long	nsec;		/* temp for nano-seconds */
-    int		dstBegin;	/* day DST begins */
-    int		dstEnd;		/* day DST ends */
-    int		dst;		/* (0, 1) for DST (isn't, is) in effect */
+    int		count;		/* count from scan of next field */
 
     if (needToInitMinWest)
 	tsInitMinWest();
@@ -1145,65 +1323,13 @@ char	**pText;	/* IO ptr to ptr to string containing time and date */
 	}
     }
 
-/*----------------------------------------------------------------------------
-* convert tsDetail structure into a time stamp, after doing a little more
-*	refinement of the tsDetail structure
-*----------------------------------------------------------------------------*/
-    stamp.secPastEpoch = 0;
-    stamp.nsec = nsec;
     if (retStat == S_ts_OK) {
-	year = TS_EPOCH_YEAR;
-	days = t.dayYear;
-	while (year < t.year) {
-	    if (year % 400 == 0 || (year % 4 == 0 && year % 100 != 0))
-		days += 366;
-	    else
-		days += 365;
-	    year++;
-	}
-	t.dayOfWeek = (days + TS_EPOCH_WDAY_NUM) % 7;
-	stamp.secPastEpoch = days * 86400;	/* converted to seconds */
-	stamp.secPastEpoch += t.hours*3600 + t.minutes*60 + t.seconds;
-/*----------------------------------------------------------------------------
-*	we now have a stamp which corresponds to the text time, BUT with
-*	the assumption that the text time is standard time.  Three daylight
-*	time issues must be dealt with: was the text time during DST; was
-*	the text time during the `skipped' time when standard ends and DST
-*	begins; and was it during the `limbo' time when DST ends and standard
-*	begins.
-*
-*	If, for example, DST ends at 2 a.m., and 1 hour is added during DST,
-*	then the limbo time begins at 1 a.m. DST and ends at 2 a.m. standard.
-*----------------------------------------------------------------------------*/
-	dstBegin = sunday(TS_DST_BEGIN, t.leapYear, t.dayYear, t.dayOfWeek);
-	dstEnd = sunday(TS_DST_END, t.leapYear, t.dayYear, t.dayOfWeek);
-	assert(dstBegin != dstEnd);
-	dst = 0;
-	if (dstBegin < dstEnd && (t.dayYear < dstBegin || t.dayYear > dstEnd))
-		;		/* not DST; no action */
-	else if (dstBegin > dstEnd && t.dayYear < dstBegin && t.dayYear>dstEnd)
-		;		/* not DST; no action */
-	else if (t.dayYear == dstBegin) {
-	    if (t.hours < TS_DST_HOUR_ON)
-		;		/* not DST; no action */
-	    else if (t.hours < TS_DST_HOUR_ON + TS_DST_HRS_ADD)
-		retStat = S_ts_timeSkippedDST;
-	    else
-		dst = 1;
-	}
-	else if (t.dayYear != dstEnd)
-	    dst = 1;
-	else {
-	    if (t.hours >= TS_DST_HOUR_OFF + TS_DST_HRS_ADD)
-		;	/* not DST */
-	    else if (t.hours < TS_DST_HOUR_OFF)
-		dst = 1;
-	    else if (t.dstOverlapChar == 'd')
-		dst = 1;
-	}
-	if (dst)
-	    stamp.secPastEpoch -= TS_DST_HRS_ADD * 3600;
-	stamp.secPastEpoch += tsMinWest*60;
+	tsStampFromLocal(&stamp, &t);
+	stamp.nsec = nsec;
+    }
+    else {
+	stamp.secPastEpoch = 0;
+	stamp.nsec = nsec;
     }
 
     *pStamp = stamp;

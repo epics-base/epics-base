@@ -57,12 +57,11 @@ sub GetVars {
 		# Discard comments, carriage returns and trailing whitespace
 		next if m/^ \s* \#/x;
 		chomp;
-		if (m/^ \s* ([A-Za-z_]\w*) \s* = \s* (.*) \s* $/x) {
+		if (m/^ \s* ([A-Za-z_]\w*) \s* = \s* ( \S* | ".*" ) \s* $/x) {
 			my ($var, $val) = ($1, $2);
 			next unless $need_var{$var};
-			$val =~ s/^"(.*)"$/$1/x;
-			# Added chomp for win32 builds
-			$value{$var} = chomp($VAL);
+			$val =~ s/^"(.*)"$/$1/;
+			$value{$var} = $val;
 		}
 	}
 	close IN;

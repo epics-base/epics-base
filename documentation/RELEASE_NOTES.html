@@ -212,6 +212,11 @@ updated to detect this type of problem.</p>
 thread support is defective when file scope destructors are being run. The
 symptom was a hang during process exit. A workaround was installed.</p>
 
+<h4>Multiple CA Servers on MAC OSX</h4>
+
+<p>A patch was made to allow multiple CA servers on MAC OSX. OSX is a recent
+branch off of BSD and therefore requires socket option SO_REUSEPORT.</p>
+
 <center>
 <h2>Changes since 3.14.1</h2>
 </center>

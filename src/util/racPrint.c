@@ -41,13 +41,14 @@
  * 1.8	08/31/90	rac	handle /subhead text--- divider lines
  * 1.9	09/17/90	rac	fix long line bug; allow more pages
  * 1.10	07-28-91	rac	installed in EPICS
+ * 1.11 07-28-91	rac	add -w option for page width
  *
  */
 /*+/mod***********************************************************************
 * TITLE	racPrint - filter for printing
 *
 * SYNOPSIS
-*	racPrint [-l lm] [-o output] [-t tab] input ...
+*	racPrint [-l lm] [-o output] [-t tab] [-P point] [-w width] input ...
 *	    
 *	   lm	is the number of columns for left margin; default 0.
 *	   tab	is the tab width, in columns; default 8.
@@ -56,6 +57,8 @@
 *	   output  is an ascii file containing the input file broken
 *		into pages, with pages in reverse order;
 *		default is stdout.
+*	   point  is a point size for PostScript printers
+*	   width  is page width, in characters
 *
 * DESCRIPTION
 *	The input file is broken into pages and written in reverse page
@@ -144,6 +147,8 @@ int		toc_sub = 0;	/* subscript into toc structure */
 
 int		left_margin = 0;	/* width of left margin in output */
 int		line_numbering = 1;	/* flag to number lines in output */
+int		page_width = 80;	/* page width, in characters */
+int		point_size = 0;		/* PostScript point size if non-zero */
 int		tab_width = 8;	/* columns per 'tab stop' */
 char	overflow[lineBufDim];	/* overflow record buffer */
 int	overflow_flag = 0;	/* overflow record buffer in use */
@@ -162,7 +167,7 @@ main(argc, argv)
     struct FILE_INF in_file;	/* input file */
     struct FILE_INF out_file;	/* output file */
 
-    char	line[MAXCHAR];	/* line of file */
+    char	line[MAXCHAR+1];	/* line of file */
     int		get_next_page();	/* get a page from the file */
 
     get_time_and_date(date);
@@ -336,7 +341,7 @@ line_store (line, rec, line_no)
 *    in the text, it will be shown as itself.
 *    -------------------------------------------------------------*/
 #define store_c(c) \
-if (l_col < MAXCHAR-1)\
+if (l_col < page_width-1)\
     line[l_col++] = c;\
 else\
     line[lmar-2] = '*';
@@ -344,11 +349,11 @@ else\
     overflow_flag = 0;	/* reset overflow flag */
     lmar = l_col;	/* save this to make tab expansion 'sane' */
     while ((c=rec[r_col++]) != NULL && !overflow_flag) {
-        if (l_col < MAXCHAR-2) {
+        if (l_col < page_width-2) {
             switch (c) {
                 case '\t':
 		    line[l_col++] = ' ';	
-		    while (l_col < MAXCHAR-1 &&
+		    while (l_col < page_width-1 &&
 					    ((l_col-lmar) % tab_width) != 0)
                         line[l_col++] = ' ';
 		    break;
@@ -459,7 +464,7 @@ int get_next_page(p_in_file)
     for(; line<MAXLINE-2; line++)
         strcpy(pages[pages_sub].lines[line],"\n");
     if (line < MAXLINE-1) {
-	for (col=0; col<(MAXCHAR-12)/2; col++)
+	for (col=0; col<(page_width-12)/2; col++)
 	    pages[pages_sub].lines[line][col] = ' ';
 	sprintf(&(pages[pages_sub].lines[line][col]), 
 		"Page %d-%d\n", file_no, page_no);
@@ -483,12 +488,12 @@ int get_next_page(p_in_file)
         pages[pages_sub].lines[line][col++] = ' ';
     sprintf(&pages[pages_sub].lines[line][col],"%s  %s  %s",
 			date,
-	(p_in_file->date_mod[0] != '\0') ? "last modified on " : " ",
+	(p_in_file->date_mod[0] != '\0') ? "last modified:" : " ",
 			p_in_file->date_mod);
     for (col=strlen(pages[pages_sub].lines[line]);
-		col<MAXCHAR-2-strlen(p_in_file->name); col++)
+		col<page_width-2-strlen(p_in_file->name); col++)
     	pages[pages_sub].lines[line][col] = ' ';
-    sprintf(&(pages[pages_sub].lines[line][MAXCHAR-2-strlen(p_in_file->name)]),
+    sprintf(&(pages[pages_sub].lines[line][page_width-2-strlen(p_in_file->name)]),
 		"%s\n", p_in_file->name);
 
     line = 1;	/* line 1 has path and subroutine name */
@@ -498,9 +503,9 @@ int get_next_page(p_in_file)
     sprintf(&pages[pages_sub].lines[line][col],"%s",
 			p_in_file->path);
     for (col=strlen(pages[pages_sub].lines[line]);
-		col<MAXCHAR-2-strlen(p_in_file->subr); col++)
+		col<page_width-2-strlen(p_in_file->subr); col++)
     	pages[pages_sub].lines[line][col] = ' ';
-    sprintf(&(pages[pages_sub].lines[line][MAXCHAR-2-strlen(p_in_file->subr)]),
+    sprintf(&(pages[pages_sub].lines[line][page_width-2-strlen(p_in_file->subr)]),
 		"%s\n", p_in_file->subr);
 
     line++;	/* line 2 is blank */
@@ -539,7 +544,7 @@ get_option_args(argc, argv, p_out_file)
 *    -------------------------------------------------------------*/
 
     p_out_file->ptr = stdout;	/* default for output is stdout */
-    while ((c = getopt (argc, argv, "l:t:o:")) != -1) {
+    while ((c = getopt (argc, argv, "l:t:o:P:w:")) != -1) {
      	switch(c) {
             case'l':
                 left_margin = atoi(optarg);	/* -l left_margin */
@@ -551,6 +556,14 @@ get_option_args(argc, argv, p_out_file)
 		    fprintf(stderr, "racPrint: can't open %s\n", optarg);
 		    exit(1);
 		}
+            	break;
+	    case'P':
+		point_size = atoi(optarg);	/* -P PostScript point_size */
+		break;
+	    case'w':
+		page_width = atoi(optarg);	/* -w page_width */
+		if (page_width > MAXCHAR)
+		    page_width = MAXCHAR;
 		break;
             case'?':
                 errflg++;
@@ -566,7 +579,7 @@ usage()
 {
     fprintf(stderr,
 	  "Usage: racPrint [-l l_mar] [-t tabwid] [-o out_file]\
-input_file\n");
+ [-w width] [-P point] input_file\n");
     exit(2);
 }
 

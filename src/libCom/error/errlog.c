@@ -76,6 +76,7 @@ LOCAL struct {
     ELLLIST	listenerList;
     ELLLIST	msgQueue;
     msgNode	*pnextSend;
+    int		errlogInitFailed;
     int		buffersize;
     int		sevToLog;
     int		toConsole;
@@ -295,13 +296,13 @@ epicsShareFunc void epicsShareAPIV errPrintf(long status, const char *pFileName,
     msgbufSetSize(totalChar);
 }
 
-typedef struct {int bufsize;} errlogInitArg;
-
 static void errlogInitPvt(void *arg)
 {
-    int bufsize = ((errlogInitArg *)arg)->bufsize;
+    int bufsize = *(int *)arg;
     void	*pbuffer;
+    threadId tid;
 
+    pvtData.errlogInitFailed = TRUE;
     if(bufsize<BUFFER_SIZE) bufsize = BUFFER_SIZE;
     pvtData.buffersize = bufsize;
     ellInit(&pvtData.listenerList);
@@ -313,21 +314,21 @@ static void errlogInitPvt(void *arg)
     /*Allow an extra MAX_MESSAGE_SIZE for extra margain of safety*/
     pbuffer = pvtCalloc(pvtData.buffersize+MAX_MESSAGE_SIZE,sizeof(char));
     pvtData.pbuffer = pbuffer;
-    threadCreate("errlog",threadPriorityLow,
+    tid = threadCreate("errlog",threadPriorityLow,
         threadGetStackSize(threadStackSmall),
         (THREADFUNC)errlogTask,0);
-
-    iocLogInit();
+    if(tid) pvtData.errlogInitFailed = FALSE;
 }
 
 epicsShareFunc int epicsShareAPI errlogInit(int bufsize)
 {
     static threadOnceId errlogOnceFlag=OSITHREAD_ONCE_INIT;
-    errlogInitArg arg;
 
-    arg.bufsize = bufsize;
-    threadOnce(&errlogOnceFlag,errlogInitPvt,&arg);
-
+    threadOnce(&errlogOnceFlag,errlogInitPvt,(void *)&bufsize);
+    if(pvtData.errlogInitFailed) {
+        fprintf(stderr,"errlogInit failed\n");
+        exit(1);
+    }
     return(0);
 }
 

@@ -93,7 +93,7 @@ epicsShareFunc int epicsShareAPI osiSockAttach()
 		return FALSE;
 	}
 
-#	if _DEBUG			  
+#	if defined ( _DEBUG ) && 0	  
 		fprintf(stderr, "EPICS attached to winsock version %s\n", WsaData.szDescription);
 #	endif	
 	
@@ -110,7 +110,7 @@ epicsShareFunc void epicsShareAPI osiSockRelease()
 	if (nAttached) {
 		if (--nAttached==0u) {
 			WSACleanup();
-#			if _DEBUG			  
+#			if defined ( _DEBUG ) && 0			  
 				fprintf(stderr, "EPICS released winsock version %s\n", WsaData.szDescription);
 #			endif
 			memset (&WsaData, '\0', sizeof(WsaData));

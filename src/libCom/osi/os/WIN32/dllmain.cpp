@@ -44,7 +44,7 @@ BOOL WINAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 	case DLL_PROCESS_ATTACH:
 		if ( ! osiSockAttach() ) 
 			return FALSE;
-#		ifdef _DEBUG
+#		if defined ( _DEBUG ) && 0
 			fprintf(stderr, "Process attached to Com.dll version %s\n", EPICS_VERSION_STRING);
 #		endif
 		break;
@@ -52,7 +52,7 @@ BOOL WINAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 	case DLL_PROCESS_DETACH:
 		osiSockRelease();
         epicsThreadCleanupWIN32 ();
-#		ifdef _DEBUG
+#		if defined ( _DEBUG ) && 0
 			fprintf(stderr, "Process detached from Com.dll version %s\n", EPICS_VERSION_STRING);
 #		endif
 		break;

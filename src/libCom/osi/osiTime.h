@@ -38,6 +38,7 @@
 #include <time.h>
 
 #include "shareLib.h"
+#include "tsDefs.h"
 
 struct TS_STAMP; // EPICS
 class aitTimeStamp; // GDD

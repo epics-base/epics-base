@@ -19,6 +19,7 @@ epicsShareFunc void epicsShareAPI semBinaryTakeAssert(semId id);
 epicsShareFunc semTakeStatus epicsShareAPI semBinaryTakeTimeout(semId id, double timeOut);
 epicsShareFunc semTakeStatus epicsShareAPI semBinaryTakeNoWait(semId id);
 epicsShareFunc void epicsShareAPI semBinaryFlush(semId id);
+epicsShareFunc void epicsShareAPI semBinaryShow(semId id);
 
 epicsShareFunc semId epicsShareAPI semMutexCreate(void);
 epicsShareFunc void epicsShareAPI semMutexDestroy(semId id);
@@ -27,7 +28,7 @@ epicsShareFunc semTakeStatus epicsShareAPI semMutexTake(semId id);
 epicsShareFunc void epicsShareAPI semMutexTakeAssert(semId id);
 epicsShareFunc semTakeStatus epicsShareAPI semMutexTakeTimeout(semId id, double timeOut);
 epicsShareFunc semTakeStatus epicsShareAPI semMutexTakeNoWait(semId id);
-epicsShareFunc void epicsShareAPI semMutexFlush(semId id);
+epicsShareFunc void epicsShareAPI semMutexShow(semId id);
 
 #ifdef __cplusplus
 }

@@ -238,7 +238,7 @@ unsigned tcpiiu::sendBytes ( const void *pBuf, unsigned nBytesInBuf )
             if ( localError == SOCK_EINTR ) {
                 continue;
             }
-       
+
             if ( localError != SOCK_EPIPE && localError != SOCK_ECONNRESET &&
                 localError != SOCK_ETIMEDOUT && localError != SOCK_ECONNABORTED ) {
                 ca_printf ("CAC: unexpected TCP send error: %s\n", SOCKERRSTR (localError) );
@@ -283,6 +283,10 @@ unsigned tcpiiu::recvBytes ( void *pBuf, unsigned nBytesInBuf )
         }
         
         if ( localErrno == SOCK_ECONNABORTED ) {
+            return 0u;
+        }
+
+        if ( localErrno == SOCK_ECONNRESET ) {
             return 0u;
         }
 
@@ -535,6 +539,14 @@ void tcpiiu::cleanShutdown ()
         if ( status ) {
             errlogPrintf ("CAC TCP socket shutdown error was %s\n", 
                 SOCKERRSTR (SOCKERRNO) );
+            status = socket_close ( this->sock );
+            if ( status ) {
+                errlogPrintf ("CAC TCP socket close error was %s\n", 
+                    SOCKERRSTR (SOCKERRNO) );
+            }
+            else {
+                this->sock = INVALID_SOCKET;
+            }
         }
         semBinaryGive ( this->sendThreadFlushSignal );
         semBinaryGive ( this->recvThreadRingBufferSpaceAvailableSignal );
@@ -551,11 +563,28 @@ void tcpiiu::forcedShutdown ()
     this->lock ();
     if ( this->state != iiu_disconnected ) {
         this->state = iiu_disconnected;
-        int status = socket_close ( this->sock );
+ 
+        struct linger tmpLinger;
+        tmpLinger.l_onoff = true;
+        tmpLinger.l_linger = 0u;
+
+        // force abortive clousure
+        int status = setsockopt ( this->sock, SOL_SOCKET, SO_LINGER, 
+            reinterpret_cast <char *> ( &tmpLinger ), sizeof (tmpLinger) );
+        if ( status != 0 ) {
+            errlogPrintf ( "CAC TCP socket linger set error was %s\n", 
+                SOCKERRSTR (SOCKERRNO) );
+        }
+
+        status = socket_close ( this->sock );
         if ( status ) {
             errlogPrintf ("CAC TCP socket close error was %s\n", 
                 SOCKERRSTR (SOCKERRNO) );
         }
+        else {
+            this->sock = INVALID_SOCKET;
+        }
+
         semBinaryGive ( this->sendThreadFlushSignal );
         semBinaryGive ( this->recvThreadRingBufferSpaceAvailableSignal );
         this->clientCtx ().signalRecvActivity ();
@@ -602,6 +631,14 @@ tcpiiu::~tcpiiu ()
     if ( this->pCurData ) {
         free ( this->pCurData );
     }
+
+    if ( this->sock != INVALID_SOCKET ) {
+        int status = socket_close ( this->sock );
+        if ( status ) {
+            errlogPrintf ("CAC TCP socket close error was %s\n", 
+                SOCKERRSTR ( SOCKERRNO ) );
+        }
+    }
 }
 
 void tcpiiu::suicide ()
@@ -637,7 +674,7 @@ void tcpiiu::show ( unsigned level ) const
         this->netiiu::show ( level - 1u );
     }
     if ( level > 2u ) {
-        printf ( "\tcurrent data cache pointer = %p current data cache size = %u\n",
+        printf ( "\tcurrent data cache pointer = %p current data cache size = %lu\n",
             this->pCurData, this->curDataMax );
         printf ( "\tcontiguous receive message count=%u, busy detect bool=%u, flow control bool=%u\n", 
             this->contigRecvMsgCount, this->busyStateDetected, this->flowControlActive );

@@ -16,11 +16,6 @@
 #include "nciu.h"
 #include "netIO.h"
 
-baseNMIU::baseNMIU ( nciu &chanIn ) : 
-    chan ( chanIn )
-{
-}
-
 baseNMIU::~baseNMIU ()
 {
 }

@@ -9,7 +9,7 @@
 #  Contains definitions common to all RTEMS targets
 #
 #  This file is maintained by the build community.
-#  Sites may override definitions in CONFIG_SITE.Common.RTEMS
+#  Sites may override definitions in os/CONFIG_SITE.Common.RTEMS
 #-------------------------------------------------------
 #
 
@@ -54,6 +54,11 @@ LDLIBS = $(TARGET_LDLIBS) $(USR_LDLIBS) $(DEPLIB_LDLIBS) $(STATIC_LDLIBS)\
 CPPFLAGS += $(CROSS_CPPFLAGS) $(POSIX_CPPFLAGS) $(EPICS_BASE_CPPFLAGS)\
  $(TARGET_CPPFLAGS) $(USR_CPPFLAGS) $(ARCH_DEP_CPPFLAGS)\
  $(OP_SYS_CPPFLAGS) $(CODE_CPPFLAGS)
+
+#-------------------------------------------------------
+# RTEMS prefix and suffix definitions
+EXE =
+OBJ = .o
 
 #--------------------------------------------------
 # Although RTEMS uses gcc, it wants to use gcc its own way

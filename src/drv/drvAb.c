@@ -551,10 +551,10 @@ unsigned short 	card;
 	printf("Allen Bradley: abBtCallback Logic Error");
 	return;
     }
-    (preq->callback)(preq);
+    pabbtrequest[link][adapter][card] = NULL;
     pcard = &ab_config[link][adapter][card];
     *pcard &= ~(AB_INTERFACE_TYPE|AB_INIT_BIT|AB_SENT_INIT);
-    pabbtrequest[link][adapter][card] = NULL;
+    (preq->callback)(preq);
 }
 
 int ab_bt_read(link,adapter,card,preq)

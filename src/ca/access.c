@@ -34,6 +34,9 @@
 /*	072391	joh	added event locking for vxWorks			*/
 /*	072591	joh	quick POLL in ca_pend_io() should return 	*/
 /*			ECA_NORMAL not ECA_TIMEOUT if pend count == 0	*/
+/*	082391	joh	check for connection down when reissuing	*/
+/*			monitors					*/
+/*	090991	joh	converted to v5 vxWorks				*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -72,9 +75,6 @@
 
 #ifdef vxWorks
 # include		<taskLib.h>
-/*
-# include		<dblib.h>
-*/
 # include		<task_params.h>
 #endif
 
@@ -163,9 +163,9 @@ void	*db_init_events();
 void	ca_default_exception_handler();
 int	ca_import();
 void 	spawn_repeater();
-void    ca_task_exit_tcbx();
 #ifdef vxWorks
 void 	ca_task_exit_tid();
+void    ca_task_exit_tcb();
 #else
 void 	ca_process_exit();
 #endif
@@ -216,6 +216,7 @@ ca_task_initialize
 ()
 #endif
 {
+	int	status;
 
 	if (!ca_static) {
 
@@ -235,16 +236,19 @@ ca_task_initialize
 		ca_static->ca_exception_func = ca_default_exception_handler;
 		ca_static->ca_exception_arg = NULL;
 
-#ifdef VMS
+		status = broadcast_addr(&ca_static->ca_castaddr);
+		if(status == OK){
+			ca_static->ca_cast_available = TRUE;
+			SEVCHK(ECA_NOCAST, NULL);
+		}
+
+#if defined(VMS)
 		{
-			int             status;
 			status = lib$get_ef(&io_done_flag);
 			if (status != SS$_NORMAL)
 				lib$signal(status);
 		}
-#endif
-
-#ifdef vxWorks
+#elif defined(vxWorks)
 		{
 			char            name[15];
 			int             status;
@@ -253,6 +257,14 @@ ca_task_initialize
 
 			FASTLOCKINIT(&client_lock);
 			FASTLOCKINIT(&event_lock);
+#ifdef V5_vxWorks
+			io_done_sem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
+#else
+			io_done_sem = semCreate();
+#endif
+			if(!io_done_sem){
+				abort();
+			}
 
 			evuser = (void *) db_init_events();
 			if (!evuser)
@@ -271,6 +283,9 @@ ca_task_initialize
 			if (status != OK)
 				abort();
 		}
+#elif defined(UNIX)
+#else
+		@@@@ dont compile in this case @@@@
 #endif
 
 	}
@@ -435,7 +450,7 @@ ca_add_task_variable()
 	 * only one delete hook for all CA tasks
 	 */
 	if (vxTas(&ca_installed)) {
-		status = taskDeleteHookAdd(ca_task_exit_tcbx);
+		status = taskDeleteHookAdd(ca_task_exit_tcb);
 		if (status == ERROR) {
 			logMsg("ca_init_task: could not add CA delete routine\n");
 			abort();
@@ -476,12 +491,28 @@ ca_task_exit
  *
  */
 #ifdef vxWorks                                                 
+#ifdef V5_vxWorks
 static void
-ca_task_exit_tcbx(ptcbx)
-TCBX *ptcbx;
+ca_task_exit_tcb(ptcb)
+WIND_TCB 	*ptcb;
 {
-  	ca_task_exit_tid((int) ptcbx->taskId);
+	/*
+	 * NOTE: vxWorks provides no method at this time 
+	 * to get the task id from the ptcb so I am
+	 * taking the liberty of using the ptcb as
+	 * the task id - somthing which may not be true
+	 * on future releases of vxWorks
+	 */
+  	ca_task_exit_tid((int) ptcb);
 }
+#else
+static void
+ca_task_exit_tcb(ptcbx)
+TCBX 	*ptcbx;
+{
+	ca_task_exit_tid((int) ptcbx->taskId);
+}
+#endif
 #endif
 
 
@@ -645,9 +676,12 @@ ca_process_exit()
 
 		UNLOCK;
 
+		if(FASTLOCKFREE(&client_lock) < 0)
+			ca_signal(ECA_INTERNAL, "couldnt free memory");
+		if(FASTLOCKFREE(&event_lock) < 0)
+			ca_signal(ECA_INTERNAL, "couldnt free memory");
 		if (free((char *)ca_temp) < 0)
-			ca_signal(ECA_INTERNAL, "Unable to free task static variables");
-
+			ca_signal(ECA_INTERNAL, "couldnt free memory");
 
 		/*
 		 * Only remove task variable if user is calling this from
@@ -704,7 +738,6 @@ ca_build_and_connect
 	long            status;
 	chid            chix;
 	int             strcnt;
- 	struct in_addr	castaddr;
 
 	/*
 	 * make sure that chix is NULL on fail
@@ -794,58 +827,59 @@ ca_build_and_connect
 	}
 #endif
 
-	/* allocate CHIU (channel in use) block */
-	/* also allocate enough for the channel name */
-	*chixptr = chix = (chid) malloc(sizeof(*chix) + strcnt);
-	if (!chix)
-		return ECA_ALLOCMEM;
+	if (ca_static->ca_cast_available) {
+		/* allocate CHIU (channel in use) block */
+		/* also allocate enough for the channel name */
+		*chixptr = chix = (chid) malloc(sizeof(*chix) + strcnt);
+		if (!chix)
+			return ECA_ALLOCMEM;
 
-	LOCK;
-	castaddr = broadcast_addr();
-	status = alloc_ioc(
-			   &castaddr,
-			   IPPROTO_UDP,
-			   &chix->iocix
-		);
-	if (~status & CA_M_SUCCESS) {
-		*chixptr = (chid) free((char *)chix);
-		goto exit;
-	}
-	chix->puser = puser;
-	chix->connection_func = conn_func;
-	chix->type = TYPENOTCONN;	/* invalid initial type 	 */
-	chix->count = 0;	/* invalid initial count	 */
-	chix->paddr = (void *) NULL;	/* invalid initial paddr	 */
+		LOCK;
+		status = alloc_ioc(
+				   &ca_static->ca_castaddr,
+				   IPPROTO_UDP,
+				   &chix->iocix
+			);
+		if (~status & CA_M_SUCCESS) {
+			*chixptr = (chid) free((char *) chix);
+			goto exit;
+		}
+		chix->puser = puser;
+		chix->connection_func = conn_func;
+		chix->type = TYPENOTCONN;	/* invalid initial type 	 */
+		chix->count = 0;/* invalid initial count	 */
+		chix->paddr = (void *) NULL;	/* invalid initial paddr	 */
 
-	/* save stuff for build retry if required */
-	chix->build_type = get_type;
-	chix->build_count = get_count;
-	chix->build_value = (void *) pvalue;
-	chix->name_length = strcnt;
-	chix->state = cs_never_conn;
-	lstInit(&chix->eventq);
+		/* save stuff for build retry if required */
+		chix->build_type = get_type;
+		chix->build_count = get_count;
+		chix->build_value = (void *) pvalue;
+		chix->name_length = strcnt;
+		chix->state = cs_never_conn;
+		lstInit(&chix->eventq);
 
-	/* Save this channels name for retry if required */
-	strncpy(chix + 1, name_str, strcnt);
+		/* Save this channels name for retry if required */
+		strncpy(chix + 1, name_str, strcnt);
 
-	lstAdd(&iiu[BROADCAST_IIU].chidlist, chix);
-	/*
-	 * set the conn tries back to zero so this channel's location can be
-	 * found
-	 */
-	iiu[BROADCAST_IIU].nconn_tries = 0;
-	iiu[BROADCAST_IIU].next_retry = CA_CURRENT_TIME;
-	iiu[BROADCAST_IIU].retry_delay = 1;	/* sec */
+		lstAdd(&iiu[BROADCAST_IIU].chidlist, chix);
+		/*
+		 * set the conn tries back to zero so this channel's location
+		 * can be found
+		 */
+		iiu[BROADCAST_IIU].nconn_tries = 0;
+		iiu[BROADCAST_IIU].next_retry = CA_CURRENT_TIME;
+		iiu[BROADCAST_IIU].retry_delay = 1;	/* sec */
 
-	build_msg(chix, DONTREPLY);
-	if (!chix->connection_func) {
-		SETPENDRECV;
-		if (VALID_BUILD(chix))
+		build_msg(chix, DONTREPLY);
+		if (!chix->connection_func) {
 			SETPENDRECV;
-	}
+			if (VALID_BUILD(chix))
+				SETPENDRECV;
+		}
 exit:
 
-	UNLOCK;
+		UNLOCK;
+	}
 
 	return status;
 
@@ -1068,6 +1102,12 @@ issue_get_callback(monix)
 	unsigned        	count;
 	register struct extmsg	*mptr;
 
+  	/* 
+	 * dont send the message if the conn is down 
+	 * (it will be sent once connected)
+  	 */
+    	if(!iiu[chix->iocix].conn_up)
+		return;
 	/*
 	 * set to the native count if they specify zero
 	 */
@@ -1398,7 +1438,6 @@ unsigned			mask;
 #endif
 {
   register evid			monix;
-  void				ca_request_event();
   register int			status;
 
   LOOSECHIXCHK(chix);
@@ -1498,13 +1537,7 @@ unsigned			mask;
   /* Place in the channel list */
   lstAdd(&chix->eventq, monix);
 
-  /* 
-	dont send the message if the conn is down 
-	(it will be sent once connected)
-  */
-  if(chix->iocix!=BROADCAST_IIU)
-    if(iiu[chix->iocix].conn_up)
-      ca_request_event(monix);
+  ca_request_event(monix);
 
   status = ECA_NORMAL;
 
@@ -1529,6 +1562,13 @@ ca_request_event(monix)
 	unsigned		size = sizeof(struct mon_info);
 	unsigned        	count;
 	register struct monops	*mptr;
+
+  	/* 
+	 * dont send the message if the conn is down 
+	 * (it will be sent once connected)
+  	 */
+    	if(!iiu[chix->iocix].conn_up)
+		return;
 
 	/*
 	 * clip to the native count and set to the native count if they
@@ -1829,6 +1869,7 @@ ca_clear_channel
 
 	/* disable their further use of deallocated channel */
 	chix->type = TYPENOTINUSE;
+	chix->state = cs_closed;
 
 	/* the while is only so I can break to the lock exit */
 	LOCK;
@@ -1953,7 +1994,7 @@ int			early;
 {
   	time_t 		beg_time;
 
-#ifdef vxWorks
+#if 0
   	static int		sysfreq;
 
   	if(!sysfreq)
@@ -1977,7 +2018,7 @@ int			early;
 	/*
 	 * quick exit if a poll
 	 */
-  	if(timeout<DELAYVAL && timeout != 0.0){
+  	if((timeout*SYSFREQ)<LOCALTICKS && timeout != 0.0){
 
 		/*
 		 * on UNIX call recv_msg() with zero timeout. on vxWorks and VMS
@@ -2009,28 +2050,29 @@ int			early;
   	beg_time = time(NULL);
 
   	while(TRUE){
-#ifdef UNIX
+#		if defined(UNIX)
     		{
       			struct timeval	itimeout;
 
-      			itimeout.tv_usec 	= SYSFREQ * DELAYVAL;	
+      			itimeout.tv_usec 	= LOCALTICKS;	
       			itimeout.tv_sec  	= 0;
       			LOCK;
       			recv_msg_select(&itimeout);
       			UNLOCK;
     		}
+#		elif defined(vxWorks)
+#ifdef	V5_vxWorks
+			semTake(io_done_sem, LOCALTICKS);
+#else
+			{
+				int dummy;
+				vrtxPend(&io_done_sem->count, LOCALTICKS, &dummy);
+			}
 #endif
-#ifdef vxWorks
-    		{
-      			int dummy;
-      			unsigned int clockticks = DELAYVAL * sysfreq;
-      			vrtxPend(&io_done_flag,clockticks,&dummy);
-    		}
-#endif
-#ifdef VMS
+#		elif defined(VMS)
     		{
       			int 		status; 
-      			unsigned int 	systim[2]={-SYSFREQ*DELAYVAL,~0};
+      			unsigned int 	systim[2]={-LOCALTICKS,~0};
 	
       			status = sys$setimr(
 				io_done_flag, 
@@ -2043,8 +2085,11 @@ int			early;
       			status = sys$waitfr(io_done_flag);
       			if(status != SS$_NORMAL)
         			lib$signal(status);
-    		}    
-#endif
+    		}   
+#		else
+			@@@@ dont compile in this case @@@@ 
+#		endif
+
    		LOCK;
       		manage_conn(TRUE);
     		UNLOCK;
@@ -2198,6 +2243,12 @@ ca_busy_message(piiu)
 {
 	struct extmsg  *mptr;
 
+  	/* 
+	 * dont send the message if the conn is down 
+  	 */
+    	if(!piiu->conn_up)
+		return;
+
 	LOCK;
 	mptr = CAC_ALLOC_MSG(piiu, 0);
 	*mptr = nullmsg;
@@ -2217,6 +2268,12 @@ ca_ready_message(piiu)
 	register struct ioc_in_use *piiu;
 {
 	struct extmsg  *mptr;
+
+  	/* 
+	 * dont send the message if the conn is down 
+  	 */
+    	if(!piiu->conn_up)
+		return;
 
 	LOCK;
 	mptr = CAC_ALLOC_MSG(piiu, 0);
@@ -2256,6 +2313,12 @@ struct ioc_in_use	*piiu;
 chid 			pchan;
 {
 	struct extmsg  *mptr;
+
+  	/* 
+	 * dont send the message if the conn is down 
+  	 */
+    	if(!piiu->conn_up)
+		return;
 
 	mptr = CAC_ALLOC_MSG(piiu, 0);
 	*mptr = nullmsg;

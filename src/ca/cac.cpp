@@ -507,10 +507,10 @@ void cac::repeaterSubscribeConfirmNotify ()
     }
 }
 
-bool cac::lookupChannelAndTransferToTCP ( 
-             epicsGuard < callbackMutex > & cbGuard, unsigned cid, unsigned sid, 
-             ca_uint16_t typeCode, arrayElementCount count, 
-             unsigned minorVersionNumber, const osiSockAddr & addr )
+bool cac::transferChanToVirtCircuit ( 
+    epicsGuard < callbackMutex > & cbGuard, unsigned cid, unsigned sid, 
+    ca_uint16_t typeCode, arrayElementCount count, 
+    unsigned minorVersionNumber, const osiSockAddr & addr )
 {
     bool newIIU = false;
     tcpiiu * piiu = 0;
@@ -1506,6 +1506,11 @@ void cac::initiateAbortShutdown ( tcpiiu & iiu )
 {
     epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
     epicsGuard < cacMutex > guard ( this->mutex );
+    // Disconnect all channels immediately from the timer thread
+    // because on certain OS such as HPUX its difficult to 
+    // unblock a blocking send() call, and we need immediate 
+    // disconnect notification.
+    iiu.removeAllChannels ( cbGuard, guard, *this );
     iiu.initiateAbortShutdown ( cbGuard, guard );
 }
 

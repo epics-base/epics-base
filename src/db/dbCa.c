@@ -50,6 +50,7 @@ epicsShareFunc void * epicsShareAPI dbCalloc(size_t nobj,size_t size);
 #include "db_access_routines.h"
 #include "db_convert.h"
 #include "dbScan.h"
+#include "dbLock.h"
 #include "dbCa.h"
 #include "dbCaPvt.h"
 
@@ -78,6 +79,18 @@ static void addAction(caLink *pca, short link_action)
 
     epicsMutexMustLock(caListSem);
     if(pca->link_action==0) callAdd = TRUE;
+    if((pca->link_action&CA_DELETE)!=0) {
+        errlogPrintf("dbCa:addAction %d but CA_DELETE already requested\n",
+            link_action);
+        callAdd = FALSE;
+        link_action=0;
+    }
+    assert((pca->link_action&CA_DELETE)==0);
+    if(link_action&CA_DELETE) {
+        if(++removesOutstanding>=removesOutstandingWarning) {
+            printf("dbCa: Warning removesOutstanding %d\n",removesOutstanding);
+        }
+    }
     pca->link_action |= link_action;
     if(callAdd) ellAdd(&caList,&pca->node);
     epicsMutexUnlock(caListSem);
@@ -122,9 +135,6 @@ void epicsShareAPI dbCaRemoveLink( struct link *plink)
     epicsMutexMustLock(pca->lock);
     pca->plink = 0;
     plink->value.pv_link.pvt = 0;
-    if(++removesOutstanding>=removesOutstandingWarning) {
-        printf("dbCa: Warning removesOutstanding %d\n",removesOutstanding);
-    }
     epicsMutexUnlock(pca->lock);
     addAction(pca,CA_DELETE);
 }
@@ -274,7 +284,13 @@ long epicsShareAPI dbCaGetAttributes(const struct link *plink,
             plink->value.pv_link.precord);
         return(-1);
     }
+    epicsMutexMustLock(pca->lock);
+    if(pca->caState != cs_conn || !pca->hasWriteAccess) {
+        epicsMutexUnlock(pca->lock);
+        return(-1);
+    }
     if(pca->pcaAttributes) {
+        epicsMutexUnlock(pca->lock);
         errlogPrintf("dbCaGetAttributes: record %s duplicate call\n",
             plink->value.pv_link.precord);
         return(-1);
@@ -282,7 +298,6 @@ long epicsShareAPI dbCaGetAttributes(const struct link *plink,
     pcaAttributes = dbCalloc(1,sizeof(caAttributes));
     pcaAttributes->callback = callback;
     pcaAttributes->usrPvt = usrPvt;
-    epicsMutexMustLock(pca->lock);
     pca->pcaAttributes = pcaAttributes;
     link_action |= CA_GET_ATTRIBUTES;
     epicsMutexUnlock(pca->lock);
@@ -605,44 +620,50 @@ static void connectionCallback(struct connection_handler_args arg)
     plink = pca->plink;
     if(!plink) goto done;
     if(ca_state(arg.chid) != cs_conn){
-    struct pv_link *ppv_link = &(plink->value.pv_link);
-    dbCommon	*precord = ppv_link->precord;
+        struct pv_link *ppv_link = &(plink->value.pv_link);
+        dbCommon	*precord = ppv_link->precord;
 
-    pca->nDisconnect++;
-    if(precord) {
-        if((ppv_link->pvlMask&pvlOptCP)
-        || ((ppv_link->pvlMask&pvlOptCPP)&&(precord->scan==0)))
-        scanOnce(precord);
-    }
-    goto done;
+        pca->nDisconnect++;
+        if(precord) {
+            if((ppv_link->pvlMask&pvlOptCP)
+            || ((ppv_link->pvlMask&pvlOptCPP)&&(precord->scan==0)))
+            scanOnce(precord);
+        }
+        goto done;
     }
     if(pca->gotFirstConnection) {
-    if((pca->nelements != ca_element_count(arg.chid))
-    || (pca->dbrType != ca_field_type(arg.chid))){
-        /* field type or nelements changed */
-        /*Only safe thing is to delete old caLink and allocate a new one*/
-        pca->plink = 0;
-        plink->value.pv_link.pvt = 0;
-        epicsMutexUnlock(pca->lock);
-        addAction(pca,CA_DELETE);
-        dbCaAddLink(plink);
-        return;
-    }
+        if((pca->nelements != ca_element_count(arg.chid))
+        || (pca->dbrType != ca_field_type(arg.chid))){
+            struct pv_link *ppv_link = &(plink->value.pv_link);
+            dbCommon	*precord = ppv_link->precord;
+            /* field type or nelements changed */
+            /*Only safe thing is to delete old caLink and allocate a new one*/
+            epicsMutexUnlock(pca->lock);
+            dbScanLock(precord);
+            epicsMutexMustLock(pca->lock);
+            pca->plink = 0;
+            plink->value.pv_link.pvt = 0;
+            epicsMutexUnlock(pca->lock);
+            dbScanUnlock(precord);
+            addAction(pca,CA_DELETE);
+            dbCaAddLink(plink);
+            return;
+        }
     }
     pca->gotFirstConnection = TRUE;
     pca->nelements = ca_element_count(arg.chid);
     pca->dbrType = ca_field_type(arg.chid);
     if((plink->value.pv_link.pvlMask & pvlOptInpNative) && (!pca->pgetNative)){
-    link_action |= CA_MONITOR_NATIVE;
+        link_action |= CA_MONITOR_NATIVE;
     }
     if((plink->value.pv_link.pvlMask & pvlOptInpString) && (!pca->pgetString)){
-    link_action |= CA_MONITOR_STRING;
+        link_action |= CA_MONITOR_STRING;
     }
     if((plink->value.pv_link.pvlMask & pvlOptOutNative) && (pca->gotOutNative)){
-    link_action |= CA_WRITE_NATIVE;
+        link_action |= CA_WRITE_NATIVE;
     }
     if((plink->value.pv_link.pvlMask & pvlOptOutString) && (pca->gotOutString)){
-    link_action |= CA_WRITE_STRING;
+        link_action |= CA_WRITE_STRING;
     }
     if(pca->pcaAttributes) link_action |= CA_GET_ATTRIBUTES;
 done:
@@ -674,7 +695,6 @@ void dbCaTask()
             }
             ellDelete(&caList,&pca->node);
             link_action = pca->link_action;
-            pca->link_action = 0;
             if(link_action&CA_DELETE) --removesOutstanding;
             epicsMutexUnlock(caListSem); /*Give it back immediately*/
             if(link_action&CA_DELETE) {/*This must be first*/
@@ -689,6 +709,7 @@ void dbCaTask()
                 free(pca);
                 continue; /*No other link_action makes sense*/
             }
+            pca->link_action = 0;
             if(link_action&CA_CONNECT) {
                 status = ca_create_channel(
                       pca->pvname,connectionCallback,(void *)pca,

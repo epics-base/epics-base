@@ -89,13 +89,13 @@ CPLUSPLUS=CCC
 #   STRICT -  ANSI C - force warning flags
 #   ANSI   -  ANSI C
 #   OLD    -  Standard C - Not appropriate here.
-CMPLR=ANSI
+CMPLR=STRICT
 
 # Default C++ compiler ANSI level
 #   STRICT -  ANSI C++ force strict warning flags
 #   NORMAL -  ANSI C++ optional warning flags
 #   Individual Makefiles may override
-CXXCMPLR=NORMAL
+CXXCMPLR=STRICT
  
 #  Build client objects statically ?
 #        must be either YES or NO

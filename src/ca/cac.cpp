@@ -1581,7 +1581,7 @@ void *cacComBufMemoryManager::allocate ( size_t size ) epicsThrows (( std::bad_a
 
 void cacComBufMemoryManager::release ( void * pCadaver ) epicsThrows (())
 {
-    return this->freeList.release ( pCadaver );
+    this->freeList.release ( pCadaver );
 }
 
 void cac::pvMultiplyDefinedNotify ( msgForMultiplyDefinedPV & mfmdpv, 

@@ -95,7 +95,7 @@ epicsShareFunc void epicsShareAPI
 epicsShareFunc void * epicsShareAPI freeListCalloc(void *pvt)
 {
     FREELISTPVT *pfl = pvt;
-#   ifdef EPICS_DEBUG
+#   ifdef EPICS_FREELIST_DEBUG
         return callocMustSucceed(1,pfl->size,"freeList Debug Calloc");
 #   else
         void	*ptemp;
@@ -109,7 +109,7 @@ epicsShareFunc void * epicsShareAPI freeListCalloc(void *pvt)
 epicsShareFunc void * epicsShareAPI freeListMalloc(void *pvt)
 {
     FREELISTPVT *pfl = pvt;
-#   ifdef EPICS_DEBUG
+#   ifdef EPICS_FREELIST_DEBUG
         return callocMustSucceed(1,pfl->size,"freeList Debug Malloc");
 #   else
         void	*ptemp;
@@ -154,10 +154,11 @@ epicsShareFunc void * epicsShareAPI freeListMalloc(void *pvt)
 
 epicsShareFunc void epicsShareAPI freeListFree(void *pvt,void*pmem)
 {
-#   ifdef EPICS_DEBUG
+    FREELISTPVT	*pfl = pvt;
+#   ifdef EPICS_FREELIST_DEBUG
+        memset ( pmem, 0xdd, pfl->size );
         free(pmem);
 #   else
-        FREELISTPVT	*pfl = pvt;
         void	**ppnext;
 
         epicsMutexMustLock(pfl->lock);

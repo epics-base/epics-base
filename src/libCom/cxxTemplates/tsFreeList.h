@@ -15,6 +15,10 @@
 
 #include <new>
 
+#ifdef EPICS_FREELIST_DEBUG
+#   include <string.h>
+#endif
+
 //
 // To allow your class to be allocated off of a free list
 // using the new operator:
@@ -122,7 +126,7 @@ tsFreeList < T, N, DEBUG_LEVEL > :: ~tsFreeList ()
 template < class T, unsigned N, unsigned DEBUG_LEVEL >
 inline void * tsFreeList < T, N, DEBUG_LEVEL >::allocate ( size_t size )
 {
-#   ifdef EPICS_DEBUG
+#   ifdef EPICS_FREELIST_DEBUG
         return ::operator new ( size, std::nothrow );
 #   else
         tsFreeListItem < T, DEBUG_LEVEL > *p;
@@ -179,7 +183,8 @@ tsFreeListItem < T, DEBUG_LEVEL > * tsFreeList < T, N, DEBUG_LEVEL >::allocateFr
 template < class T, unsigned N, unsigned DEBUG_LEVEL >
 inline void tsFreeList < T, N, DEBUG_LEVEL >::release ( void *pCadaver, size_t size )
 {
-#   ifdef EPICS_DEBUG
+#   ifdef EPICS_FREELIST_DEBUG
+        memset ( pCadaver, 0xdd, size );
         ::operator delete ( pCadaver );
 #   else
         if ( DEBUG_LEVEL > 9 ) {

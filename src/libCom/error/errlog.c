@@ -299,6 +299,8 @@ epicsShareFunc void epicsShareAPIV errPrintf(long status, const char *pFileName,
     msgbufSetSize(totalChar);
 }
 
+static void exitHandler(void) {errlogFlush();}
+
 static void errlogInitPvt(void *arg)
 {
     int bufsize = *(int *)arg;
@@ -321,6 +323,7 @@ static void errlogInitPvt(void *arg)
     tid = epicsThreadCreate("errlog",epicsThreadPriorityLow,
         epicsThreadGetStackSize(epicsThreadStackSmall),
         (EPICSTHREADFUNC)errlogTask,0);
+    atexit(exitHandler);
     if(tid) pvtData.errlogInitFailed = FALSE;
 }
 

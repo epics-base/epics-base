@@ -208,8 +208,8 @@ ifdef PROD_LIBS
 #	add to USR_LDLIBS so that the libs are linked
 
 ifdef WIN32
-PRODDEPLIBS:=$(PROD_LIBS:%=%.lib)
-USR_LDLIBS += $(PRODDEPLIBS)
+PRODDEPLIBS:=$(PROD_LIBS:%=$(INSTALL_LIB)/%.lib)
+USR_LDLIBS += -libpath:$(INSTALL_LIB) $(PROD_LIBS:%=%.lib)
 else
 #	On Unix: library "ca" is linked with "-lca"  etc.
 PRODDEPLIBS=$(PROD_LIBS:%=$(INSTALL_LIB)/lib%.a)
@@ -224,7 +224,6 @@ endif
 ifdef SYS_PROD_LIBS
 
 ifdef WIN32
-PRODDEPLIBS+=$(SYS_PROD_LIBS:%=$(INSTALL_LIB)/%.lib)
 #	add to USR_LDLIBS so that the libs are linked
 #	we need the full path because there is no "-L" option on WIN32....
 USR_LDLIBS += $(SYSPRODDEPLIBS)
@@ -471,7 +470,6 @@ endif
 	$(MANGEN) -s $(<F)
 	$(MV) $(<F).nr $(<F).1
 
-
 #	Rules for building LIBRARY with LIBSRCS
 #	(which are now LIBNAME, LIBOBJS)
 #
@@ -503,7 +501,7 @@ endif
 #	If so, we define _WINDLL so that
 #	e.g. include/shareLib.h works correctly.
 #
-#HOST_OPT_FLAGS += $(subst $@, -D_WINDLL, $(findstring $@,$(LIBOBJS)))
+HOST_OPT_FLAGS += $(subst $@, -D_WINDLL, $(findstring $@,$(LIBOBJS)))
 
 $(DLLNAME): $(LIBOBJS)
 	link $(WIN32_DLLFLAGS)\

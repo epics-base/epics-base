@@ -22,8 +22,10 @@
  * Comments are recognized as part of the syntax.
  */
 
+/*
 #include	"parse.h"
-#include	"snc.h"		/* output from yacc */
+#include	"snc.h"	
+*/
 #ifndef	TRUE
 #define	TRUE	1
 #define	FALSE	0

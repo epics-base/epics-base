@@ -321,4 +321,5 @@ global_c
 :	C_STMT		{ global_c_stmt($1); }
 ;
 %%
-
+#include "snc_lex.c"
+#include "snc_main.c"

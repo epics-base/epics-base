@@ -8,6 +8,7 @@ SRCS.c = ../iocLogClient.c ../veclist.c ../ldpp.c
 LIBOBJS = veclist.o iocLogClient.o ldpp.o
 
 LIBNAME = vxComLib
+SCRIPTS = vxldscript.MRI
 
 include $(EPICS)/config/RULES.Vx
 

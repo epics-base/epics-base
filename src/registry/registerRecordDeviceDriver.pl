@@ -200,10 +200,8 @@ class IoccrfReg {
     IoccrfReg() { iocshRegister(&registerRecordDeviceDriverFuncDef,registerRecordDeviceDriverCallFunc);}
 };
 #if !defined(__GNUC__) || !(__GNUC__<2 || (__GNUC__==2 && __GNUC_MINOR__<=95))
-namespace {
-#endif
+namespace { IoccrfReg iocshReg; }
+#else
 IoccrfReg iocshReg;
-#if !defined(__GNUC__) || !(__GNUC__<2 || (__GNUC__==2 && __GNUC_MINOR__<=95))
-}
 #endif
 END

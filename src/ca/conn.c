@@ -9,17 +9,15 @@
 /*									*/
 /*	History								*/
 /*	-------								*/
-/*									*/
-/*	Date		Programmer	Comments			*/
-/*	----		----------	--------			*/
-/*	6/89		Jeff Hill	Init Release			*/
+/*	.00 06xx89 joh	Init Release					*/
+/*	.01 060591 joh	delinting					*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
 /*									*/
 /*	Title:	IOC connection automation				*/
 /*	File:	atcs:[ca]conn.c						*/
-/*	Environment: VMS, UNIX, VRTX					*/
+/*	Environment: VMS, UNIX, vxWorks					*/
 /*	Equipment: VAX, SUN, VME					*/
 /*									*/
 /*									*/
@@ -36,10 +34,11 @@
 #include		<iocmsg.h>
 #include 		<iocinf.h>
 
+
 
 /*
  *
- *	CHID_RETRY
+ *	MANAGE_CONN
  *
  *	retry disconnected channels
  *
@@ -47,28 +46,44 @@
  *	NOTES:
  *	Lock must be applied while in this routine
  */
-chid_retry(silent)
+void manage_conn(silent)
 char			silent;
 {
   	register chid		chix;
   	register unsigned int	retry_cnt = 0;
+  	register unsigned int	keepalive_cnt = 0;
   	unsigned int		retry_cnt_no_handler = 0;
-  	char			string[100];
+  	char			string[128];
+	ca_time			current;
   	int			i;
-  	int			search_type;
 
-	/*
-	 * CASTTMO+pndrecvcnt*LKUPTMO)/DELAYVAL + 1
-	 */
-#define CASTTMO		0.150		/* 150 mS	*/
-#define LKUPTMO		0.015		/* 15 mS 	*/
+	current = time(NULL);
 
   	for(i=0; i< nxtiiu; i++){
-    		if(i != BROADCAST_IIU && iiu[i].conn_up)
+  		int	search_type;
+
+		if(iiu[i].next_retry > current)
+			continue;
+
+		/*
+		 * periodic keepalive on unused channels
+		 */
+    		if(i != BROADCAST_IIU && iiu[i].conn_up){
+
+			/*
+			 * reset of delay to the next keepalive
+			 * occurs when the message is sent
+			 */
+			noop_msg(&iiu[i]);
+			keepalive_cnt++;
       			continue;
+		}
 
     		if(iiu[i].nconn_tries++ > MAXCONNTRIES)
       			continue;
+
+		iiu[i].retry_delay += iiu[i].retry_delay;
+		iiu[i].next_retry = current + iiu[i].retry_delay;
 
     		search_type = (i==BROADCAST_IIU? DONTREPLY: DOREPLY);
 
@@ -80,14 +95,13 @@ char			silent;
      			retry_cnt++;
 
       			if(!(silent || chix->connection_func)){
-       				 ca_signal(ECA_CHIDNOTFND, chix+1);
+       				ca_signal(ECA_CHIDNOTFND, chix+1);
 				retry_cnt_no_handler++;
 			}
     		}
   	}
 
   	if(retry_cnt){
-    		send_msg();
     		printf("<Trying> ");
 #ifdef UNIX
     		fflush(stdout);
@@ -99,7 +113,10 @@ char			silent;
     		}
   	}
 
-  	return ECA_NORMAL;
+	if(keepalive_cnt|retry_cnt){
+    		cac_send_msg();
+	}
+
 }
 
 
@@ -115,49 +132,96 @@ char			silent;
  *
  */
 void
-mark_server_available(net_addr)
-struct in_addr	net_addr;
+mark_server_available(pnet_addr)
+struct in_addr  *pnet_addr;
 {
-  	int i;
-  	void noop_msg();
+	unsigned		port;	
+  	int 			i;
+
+	/*
+	 * if timers have expired take care of them
+	 * before they are reset
+	 */
+	manage_conn(TRUE);
+
+#ifdef DEBUG
+	printf("<%s> ",host_from_addr(pnet_addr));
+#ifdef UNIX
+    	fflush(stdout);
+#endif
+#endif
 
  	for(i=0;i<nxtiiu;i++)
-    		if(	(net_addr.s_addr == 
+    		if(	(pnet_addr->s_addr == 
 			iiu[i].sock_addr.sin_addr.s_addr)){
 
-			/*
-			 *	reset the retry count out
-			 *
-			 */
-      			iiu[i].nconn_tries = 0;
-
-			/*
-			 * Check if the conn is down but TCP 
-			 * has not informed me by sending a NULL msg
-			 */
       			if(iiu[i].conn_up){
+				/*
+				 * Check if the conn is down but TCP 
+				 * has not informed me by sending a NULL msg
+				 */
         			noop_msg(&iiu[i]);
-        			send_msg();
+        			cac_send_msg();
       			}
+			else{
+				/*
+				 * reset the delay to the next retry 
+				 */
+				iiu[i].next_retry = CA_CURRENT_TIME;
+      				iiu[i].nconn_tries = 0;
+				iiu[i].retry_delay = 1;
+				manage_conn(TRUE);
+			}
       			return;
     		}
 
 	/*
-	 *	Not on a known IOC so try a directed UDP
+	 * never connected to this IOC before
 	 *
+	 * We end up here when the client starts before the server
+	 *
+	 * It would be best if this used a directed UDP
+	 *		reply rather than a broadcast
 	 */
-/*
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	This connects when the client starts before the server
-	1) uses a broadcast- should use a directed UDP messaage
-	2) many clients with nonexsistent channels could
-	cause a flood here
 
-	
+	/*
+	 * reset the retry cnt to 3
+	 */
+      	iiu[BROADCAST_IIU].nconn_tries = MAXCONNTRIES-3;
 
+	/*
+	 * This part is very important since many machines
+	 * could have channels in a disconnected state which
+	 * dont exist anywhere on the network. This insures
+	 * that we dont have many CA clients synchronously
+	 * flooding the network with broadcasts.
+	 *
+	 * I fetch the local port number and use the low order bits
+	 * as a pseudo random delay to prevent every one 
+	 * from replying at once.
+	 */
+	{
+  	  	struct sockaddr_in	saddr;
+		unsigned		saddr_length = sizeof(saddr);
+		int			status;
 
+		status = getsockname(
+				iiu[BROADCAST_IIU].sock_chan,
+				&saddr,
+				&saddr_length);
+		if(status<0)
+			abort();
+		port = saddr.sin_port;
+	}
 
-  	iiu[BROADCAST_IIU].nconn_tries = MAXCONNTRIES-1;
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-*/
+	iiu[BROADCAST_IIU].retry_delay = (port&0xf) + 1;
+	iiu[BROADCAST_IIU].next_retry = time(NULL) + iiu[BROADCAST_IIU].retry_delay;
+#ifdef DEBUG
+	printf("<Trying ukn online after pseudo random delay=%d sec> ",
+		iiu[BROADCAST_IIU].retry_delay);
+#ifdef UNIX
+    	fflush(stdout);
+#endif
+#endif
+
 }

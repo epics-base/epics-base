@@ -9,11 +9,9 @@
 /*									*/
 /*	History								*/
 /*	-------								*/
-/*									*/
-/*	Date		Programmer	Comments			*/
-/*	----		----------	--------			*/
-/*	8/87		Jeff Hill	Init Release			*/
-/*	1/90		Jeff Hill	fd_set in the UNIX version only	*/
+/*	.01 08xx87 joh	Init Release					*/
+/*	.02 01xx90 joh	fd_set in the UNIX version only			*/
+/*	.03 060691 joh	Rearanged buffer struct for SPARC port		*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -60,7 +58,6 @@
 #	include	<os_depen.h>
 #endif
 
-void send_msg();
 
 /* throw out requests prior to last ECA_TIMEOUT from ca_pend */
 #define	VALID_MSG(PIIU) (piiu->read_seq == piiu->cur_read_seq)
@@ -87,25 +84,13 @@ enum channel_state{cs_never_conn, cs_prev_conn, cs_conn, closed};
 #define SETPENDRECV	{pndrecvcnt++;}
 #define CLRPENDRECV	{if(--pndrecvcnt<1){IODONESUB; POST_IO_EV;}}
 
-/* size of object in bytes rounded up to nearest long word */
-#define	QUAD_ROUND(A)	(((A)+3)>>2)
-#define	QUAD_SIZEOF(A)	(QUAD_ROUND(sizeof(A)))
-
-/* size of object in bytes rounded up to nearest short word */
-#define	BI_ROUND(A)	(((A)+1)>>1)
-#define	BI_SIZEOF(A)	(QUAD_ROUND(sizeof(A)))
-/*
-#define	MAX(A,B)	(((A)>(B))?(A):(B))
-#define MIN(A,B)	(((A)>(B))?(B):(A))
-*/
 /************************************************************************/
 /*	Structures							*/
 /************************************************************************/
-
 /* stk must be above and contiguous with buf ! */
 struct buffer{
-  unsigned long		stk;
   char			buf[MAX_MSG_SIZE];	/* from iocmsg.h */
+  unsigned long		stk;
 };
 
 
@@ -121,6 +106,9 @@ struct pending_io_event{
   void			*io_done_arg;
 };
 
+typedef unsigned long	ca_time;
+#define CA_RETRY_PERIOD	5		/* sec to next keepalive */
+#define CA_CURRENT_TIME 0
 
 #define MAX_CONTIGUOUS_MSG_COUNT 2
 
@@ -148,14 +136,15 @@ struct pending_io_event{
 #define io_done_flag	(ca_static->ca_io_done_flag)
 #define evuser		(ca_static->ca_evuser)
 #define client_lock	(ca_static->ca_client_lock)
-#define event_buf	(ca_static->ca_event_buf)
-#define event_buf_size	(ca_static->ca_event_buf_size)
 #define local_chidlist	(ca_static->ca_local_chidlist)
 #define dbfree_ev_list	(ca_static->ca_dbfree_ev_list)
+#define lcl_buff_list	(ca_static->ca_lcl_buff_list)
 #endif
 #ifdef VMS
 #define io_done_flag	(ca_static->ca_io_done_flag)
+#define peek_ast_buf	(ca_static->ca_peek_ast_buf)
 #endif
+
 
 struct  ca_static{
   unsigned short	ca_nxtiiu;
@@ -166,7 +155,7 @@ struct  ca_static{
   void			(*ca_connection_func)();
   void			*ca_connection_arg;
   void			(*ca_fd_register_func)();
-  void			(*ca_fd_register_arg)();
+  void			*ca_fd_register_arg;
   short			ca_exit_in_progress;  
   unsigned short	ca_post_msg_active; 
   LIST			ca_free_event_list;
@@ -177,16 +166,16 @@ struct  ca_static{
 #endif
 #ifdef VMS
   int			ca_io_done_flag;
+  char			ca_peek_ast_buf;
 #endif
 #ifdef vxWorks
   int			ca_io_done_flag;
   void			*ca_evuser;
   FAST_LOCK		ca_client_lock;
-  void			*ca_event_buf;
-  unsigned		ca_event_buf_size;
   int			ca_tid;
   LIST			ca_local_chidlist;
   LIST			ca_dbfree_ev_list;
+  LIST			ca_lcl_buff_list;
 #endif
   struct ioc_in_use{
     unsigned		contiguous_msg_count;
@@ -200,10 +189,10 @@ struct  ca_static{
     unsigned		read_seq;
     unsigned 		cur_read_seq;
     LIST		chidlist;		/* chans on this connection */
-    unsigned		nconn_wait;		/* number delays before try */
-    unsigned		nconn_tries;		/* number of times conn was tried */
     int			conn_up;		/* boolean: T-conn /F-disconn */
-    unsigned		count_to_refresh;	/* ndelays to conn retry */
+    unsigned		nconn_tries;
+    ca_time		next_retry;
+    ca_time		retry_delay;
 #define MAXCONNTRIES 3
 #ifdef VMS	/* for qio ASTs */
     struct sockaddr_in	recvfrom;
@@ -236,12 +225,21 @@ struct  ca_static{
 GLBLTYPE
 struct ca_static *ca_static;
 
-#ifdef VMS
-GLBLTYPE
-char		ca_unique_address;
-# define	MYTIMERID  (&ca_unique_address)
-#endif
-
-
-
+/*
+ * CA internal functions
+ *
+ */
+void 		cac_send_msg();
+void 		build_msg();
+struct in_addr  broadcast_addr();
+void		manage_conn();
+void 		noop_msg();
+void 		ca_busy_message();
+void 		ca_ready_message();
+void 		flow_control();
+char 		*host_from_addr();
+int		ca_repeater_task();
+void		close_ioc();
+void		recv_msg_select();
+void		mark_server_available();
 #endif

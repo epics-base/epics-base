@@ -1,12 +1,54 @@
+/*	@(#)server.h
+ *   $Id$
+ *	Author:	Jeffrey O. Hill
+ *		hill@luke.lanl.gov
+ *		(505) 665 1831
+ *	Date:	5-88
+ *
+ *	Experimental Physics and Industrial Control System (EPICS)
+ *
+ *	Copyright 1991, the Regents of the University of California,
+ *	and the University of Chicago Board of Governors.
+ *
+ *	This software was produced under  U.S. Government contracts:
+ *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *	and (W-31-109-ENG-38) at Argonne National Laboratory.
+ *
+ *	Initial development by:
+ *		The Controls and Automation Group (AT-8)
+ *		Ground Test Accelerator
+ *		Accelerator Technology Division
+ *		Los Alamos National Laboratory
+ *
+ *	Co-developed with
+ *		The Controls and Computing Group
+ *		Accelerator Systems Division
+ *		Advanced Photon Source
+ *		Argonne National Laboratory
+ *
+ * 	Modification Log:
+ * 	-----------------
+ *	.01 joh 060691	removed 4 byte count from the beginning of
+ *			of each message
+ *	.02 joh 060791	moved send_msg stuff into caserverio.c
+ *
+ */
 #ifndef INCLfast_lockh
 #include <fast_lock.h>
 #endif
 
-#include <iocmsg.h>
+#ifndef INCLdb_accessh
+#include <db_access.h>
+#endif
 
-/* buf & cnt must be contiguous */
-/* cnt must be first */
-/* buf must be second */
+#ifndef INClstLibh
+#include <lstLib.h>
+#endif
+
+#ifndef __IOCMSG__
+#include <iocmsg.h>
+#endif
+
 
 struct message_buffer{
   unsigned 			stk;
@@ -25,9 +67,11 @@ struct client{
   struct message_buffer		recv;
   struct sockaddr_in		addr;
   void				*evuser;
-  char				eventsoff;
   unsigned long			ticks_at_creation;	/* for UDP timeout */
   int				tid;
+  char				eventsoff;
+  char				valid_addr;
+  char				disconnect;	/* disconnect detected */
 };
 
 
@@ -69,7 +113,8 @@ LOCAL keyed;
 
 GLBLTYPE int 		 	IOC_sock;
 GLBLTYPE int			IOC_cast_sock;
-GLBLTYPE LIST			clientQ;	
+GLBLTYPE LIST			clientQ;	/* locked by clientQlock */
+GLBLTYPE LIST			rsrv_free_clientQ; /* locked by clientQlock */
 GLBLTYPE FAST_LOCK		clientQlock;
 GLBLTYPE int			MPDEBUG;
 GLBLTYPE LIST			rsrv_free_addrq;
@@ -86,43 +131,25 @@ FASTUNLOCK(&(CLIENT)->send.lock);
 #define EXTMSGPTR(CLIENT)\
  ((struct extmsg *) &(CLIENT)->send.buf[(CLIENT)->send.stk])
 
-#define	ALLOC_MSG(CLIENT, EXTSIZE)\
-  (struct extmsg *)\
-  ((CLIENT)->send.stk + (EXTSIZE) + sizeof(struct extmsg) > \
-    (CLIENT)->send.maxstk ? send_msg_nolock(CLIENT): NULL,\
-      (CLIENT)->send.stk + (EXTSIZE) + sizeof(struct extmsg) >\
-        (CLIENT)->send.maxstk ? NULL : EXTMSGPTR(CLIENT))
+/*
+ *	ALLOC_MSG 	get a ptr to space in the buffer
+ *	END_MSG 	push a message onto the buffer stack
+ *
+ */
+#define	ALLOC_MSG(CLIENT, EXTSIZE)	cas_alloc_msg(CLIENT, EXTSIZE)
 
 #define END_MSG(CLIENT)\
+  EXTMSGPTR(CLIENT)->m_postsize = CA_MESSAGE_ALIGN(EXTMSGPTR(CLIENT)->m_postsize),\
   (CLIENT)->send.stk += sizeof(struct extmsg) + EXTMSGPTR(CLIENT)->m_postsize
 
-/* send with lock */
-#define send_msg(CLIENT)\
-  {LOCK_SEND(CLIENT); send_msg_nolock(CLIENT); UNLOCK_SEND(CLIENT)};
 
-/* send with empty test */
-#define send_msg_nolock(CLIENT)\
-!(CLIENT)->send.stk ? FALSE: send_msg_actual(CLIENT)
+#define LOCK_CLIENTQ	FASTLOCK(&clientQlock)
 
-/* vanilla send */
-#define send_msg_actual(CLIENT)\
-(\
-  (CLIENT)->send.cnt = (CLIENT)->send.stk + sizeof((CLIENT)->send.cnt),\
-  (CLIENT)->send.stk = 0,\
-  MPDEBUG==2?logMsg("Sent a message of %d bytes\n",(CLIENT)->send.cnt):NULL,\
-  sendto (	(CLIENT)->sock, \
-		&(CLIENT)->send.cnt, \
-		(CLIENT)->send.cnt, \
-		0,\
-		&(CLIENT)->addr,\
-		sizeof((CLIENT)->addr))==ERROR?LOG_SEND_ERROR,FALSE:TRUE\
-)
+#define UNLOCK_CLIENTQ	FASTUNLOCK(&clientQlock)
 
-#define LOG_SEND_ERROR \
-	(logMsg("Send_msg() unable to send, connection broken? %\n"))
-
-#define LOCK_CLIENTQ \
-	FASTLOCK(&clientQlock)
-
-#define UNLOCK_CLIENTQ \
-	FASTUNLOCK(&clientQlock)
+struct client	*existing_client();
+void            camsgtask();
+void            req_server();
+void            cast_server();
+void		cas_send_msg();
+struct extmsg 	*cas_alloc_msg();

@@ -29,7 +29,7 @@
  *
  * Modification Log:
  * -----------------
- * .01	mm-dd-yy	iii	Comment
+ * .01	06-25-91 joh	inserted the RISC aligned db_access.h structures
  */
 
 
@@ -110,28 +110,16 @@
 
 /* function declarations */
 
+/* 
+ * database access address structure  
+ */
+#include <db_addr.h>
 
-/* database access address structure (removed from db_access.h and put here) */
-struct db_addr{
-        char    *precord;       /* record number of specified type */
-        char    *pfield;        /* offset from the record origin */
-        char    *pad0;          /* not used by old              */
-        short   pad1;           /*not used by old               */
-        short   no_elements;    /* number of elements in arrays of data */
-        short   record_type;    /* type of record being accessed */
-        short   pad2;           /* not used by old              */
-        short   field_size;     /* size of the field being accessed */
-                                /* from database for values of waveforms */
-        short   special;        /* special processing                   */
-        short   choice_set;     /* index of choiceSet GBLCHOICE & RECCHOICE*/
-        short   field_type;     /* field type as seen by database request*/
-                                /*DBR_STRING,...,DBR_ENUM,DBR_NOACCESS*/
-};
+#ifndef MAX_STRING_SIZE
+#define MAX_STRING_SIZE	40
+#endif
 
-
-
-/* structures for old database access */
-
+
 /* VALUES WITH STATUS STRUCTURES */
 
 /* structure for a  string status field */
@@ -169,9 +157,10 @@ struct dbr_sts_enum{
 
 /* structure for a char status field */
 struct dbr_sts_char{
-	short		status;	 		/* status of value */
-	short		severity;		/* severity of alarm */
-	unsigned char	value;			/* current value */
+	short		status;	 	/* status of value */
+	short		severity;	/* severity of alarm */
+	char		RISC_pad;	/* RISC alignment */
+	unsigned char	value;		/* current value */
 };
 
 /* structure for a long status field */
@@ -185,6 +174,7 @@ struct dbr_sts_long{
 struct dbr_sts_double{
 	short	status;	 		/* status of value */
 	short	severity;		/* severity of alarm */
+	long	RISC_pad;		/* RISC alignment */
 	double	value;			/* current value */
 };
 
@@ -203,6 +193,7 @@ struct dbr_time_short{
 	short		status;	 		/* status of value */
 	short		severity;		/* severity of alarm */
 	TS_STAMP	stamp;			/* time stamp */
+	short		RISC_pad;		/* RISC alignment */
 	short		value;			/* current value */
 };
 
@@ -219,6 +210,7 @@ struct dbr_time_enum{
 	short		status;	 		/* status of value */
 	short		severity;		/* severity of alarm */
 	TS_STAMP	stamp;			/* time stamp */
+	short		RISC_pad;		/* RISC alignment */
 	short		value;			/* current value */
 };
 
@@ -227,6 +219,8 @@ struct dbr_time_char{
 	short			status;	 		/* status of value */
 	short			severity;		/* severity of alarm */
 	TS_STAMP		stamp;			/* time stamp */
+	short			RISC_pad0;		/* RISC alignment */
+	char			RISC_pad1;		/* RISC alignment */
 	unsigned char		value;			/* current value */
 };
 
@@ -243,6 +237,7 @@ struct dbr_time_double{
 	short		status;	 		/* status of value */
 	short		severity;		/* severity of alarm */
 	TS_STAMP	stamp;			/* time stamp */
+	long		RISC_pad;		/* RISC alignment */
 	double		value;			/* current value */
 };
 
@@ -282,6 +277,7 @@ struct dbr_gr_float{
 	short	status;	 		/* status of value */
 	short	severity;		/* severity of alarm */
 	short	precision;		/* number of decimal places */
+	short	RISC_pad0;		/* RISC alignment */
 	char	units[8];		/* units of value */
 	float	upper_disp_limit;	/* upper limit of graph */
 	float	lower_disp_limit;	/* lower limit of graph */
@@ -303,16 +299,17 @@ struct dbr_gr_enum{
 
 /* structure for a graphic char field */
 struct dbr_gr_char{
-	short		status;	 		/* status of value */
-	short		severity;		/* severity of alarm */
-	char		units[8];		/* units of value */
-	unsigned char	upper_disp_limit;	/* upper limit of graph */
-	unsigned char	lower_disp_limit;	/* lower limit of graph */
-	unsigned char	upper_alarm_limit;	
-	unsigned char	upper_warning_limit;
-	unsigned char	lower_warning_limit;
-	unsigned char	lower_alarm_limit;
-	unsigned char	value;			/* current value */
+	short			status;	 		/* status of value */
+	short			severity;		/* severity of alarm */
+	char			units[8];		/* units of value */
+	unsigned char		upper_disp_limit;	/* upper limit of graph */
+	unsigned char		lower_disp_limit;	/* lower limit of graph */
+	unsigned char		upper_alarm_limit;	
+	unsigned char		upper_warning_limit;
+	unsigned char		lower_warning_limit;
+	unsigned char		lower_alarm_limit;
+	char			RISC_pad;		/* RISC alignment */
+	unsigned char		value;			/* current value */
 };
 
 /* structure for a graphic long field */
@@ -334,6 +331,7 @@ struct dbr_gr_double{
 	short	status;	 		/* status of value */
 	short	severity;		/* severity of alarm */
 	short	precision;		/* number of decimal places */
+	short	RISC_pad0;		/* RISC alignment */
 	char	units[8];		/* units of value */
 	double	upper_disp_limit;	/* upper limit of graph */
 	double	lower_disp_limit;	/* lower limit of graph */
@@ -384,6 +382,7 @@ struct dbr_ctrl_float{
 	short	status;	 		/* status of value */
 	short	severity;		/* severity of alarm */
 	short	precision;		/* number of decimal places */
+	short	RISC_pad;		/* RISC alignment */
 	char	units[8];		/* units of value */
 	float	upper_disp_limit;	/* upper limit of graph */
 	float	lower_disp_limit;	/* lower limit of graph */
@@ -418,6 +417,7 @@ struct dbr_ctrl_char{
 	unsigned char	lower_alarm_limit;
 	unsigned char	upper_ctrl_limit;	/* upper control limit */
 	unsigned char	lower_ctrl_limit;	/* lower control limit */
+	char		RISC_pad;		/* RISC alignment */
 	unsigned char	value;			/* current value */
 };
 
@@ -442,6 +442,7 @@ struct dbr_ctrl_double{
 	short	status;	 		/* status of value */
 	short	severity;		/* severity of alarm */
 	short	precision;		/* number of decimal places */
+	short	RISC_pad0;		/* RISC alignment */
 	char	units[8];		/* units of value */
 	double	upper_disp_limit;	/* upper limit of graph */
 	double	lower_disp_limit;	/* lower limit of graph */
@@ -453,6 +454,8 @@ struct dbr_ctrl_double{
 	double	lower_ctrl_limit;	/* lower control limit */
 	double	value;			/* current value */
 };
+
+
 
 
 

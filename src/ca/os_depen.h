@@ -96,15 +96,17 @@ extern int 		taskIdCurrent;
 
 #ifdef VMS
 struct iosb{
-short 		status;
-unsigned short 	count;
-void 		*device;
+	short 		status;
+	unsigned short 	count;
+	void 		*device;
 };
+static char	ca_unique_address;
+#define		MYTIMERID  (&ca_unique_address)
 #endif
 
 struct 	timeval{
-  unsigned long	tv_sec;
-  unsigned long	tv_usec;
+  	unsigned long	tv_sec;
+  	unsigned long	tv_usec;
 };
 
 #ifdef vxWorks
@@ -137,15 +139,19 @@ struct 	timeval{
 #endif
 
 #ifdef vxWorks
-# define SYSFREQ	sysClkRateGet()	/* 60 Hz	*/
-# define TCPDELAY 	taskDelay((unsigned int)DELAYVAL*SYSFREQ);	
-# define time(A) 	(tickGet()/sysfreq)
+# 	define SYSFREQ		sysClkRateGet()	/* usually 60 Hz */
+# 	define TCPDELAY 	taskDelay((unsigned int)DELAYVAL*SYSFREQ);	
+# 	define time(A) 		(tickGet()/SYSFREQ)
 #endif
 
 #ifdef UNIX
-#  define SYSFREQ	1000000		/* 1 MHz	*/
-#  define TCPDELAY {if(select(0,NULL,NULL,NULL,&tcpdelayval)<0)abort();}
-static struct timeval tcpdelayval = {0,(unsigned int)DELAYVAL*SYSFREQ};
+#	define SYSFREQ	1000000		/* 1 MHz	*/
+#	define TCPDELAY {if(select(0,NULL,NULL,NULL,&tcpdelayval)<0)abort();}
+#  	ifndef CA_GLBLSOURCE
+		extern struct timeval tcpdelayval;
+#	else
+		struct timeval tcpdelayval = {0,(unsigned int)DELAYVAL*SYSFREQ};
+#	endif
 #endif
 
 

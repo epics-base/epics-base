@@ -9,10 +9,8 @@
 /*									*/
 /*	History								*/
 /*	-------								*/
-/*									*/
-/*	Date		Programmer	Comments			*/
-/*	----		----------	--------			*/
-/*	6/89		Jeff Hill	Init Release			*/
+/*	06xx89	joh	First Release					*/
+/*	060591	joh	delinting					*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -47,38 +45,46 @@
 #include		<iocmsg.h>
 #include		<iocinf.h>
 
-
+
 /*
-Keep track of how many times messages have come with out a break in between
-*/
+ * FLOW CONTROL
+ * 
+ * Keep track of how many times messages have 
+ * come with out a break in between and 
+ * suppress monitors if we are behind
+ * (an update is sent when we catch up)
+ */
+void
 flow_control(piiu)
-struct ioc_in_use               *piiu; 
-{	
-  unsigned 			nbytes;
-  register int			status;
-  register int			busy = piiu->client_busy;
+	struct ioc_in_use *piiu;
+{
+	unsigned        nbytes;
+	register int    status;
+	register int    busy = piiu->client_busy;
 
-  status = socket_ioctl(	piiu->sock_chan,
-				FIONREAD,
-				&nbytes);
-  if(status < 0)
-    return ERROR;
+	status = socket_ioctl(piiu->sock_chan,
+			      FIONREAD,
+			      &nbytes);
+	if (status < 0) {
+		close_ioc(piiu);
+		return;
+	}
 
-  if(nbytes){
-    piiu->contiguous_msg_count++;
-    if(!busy)
-      if(piiu->contiguous_msg_count > MAX_CONTIGUOUS_MSG_COUNT){
-        piiu->client_busy = TRUE;
-        ca_busy_message(piiu);
-      }                                  
-  }
-  else{
-    piiu->contiguous_msg_count=0;
-    if(busy){
-      ca_ready_message(piiu);
-      piiu->client_busy = FALSE;
-    }                                   
-  }
+	if (nbytes) {
+		piiu->contiguous_msg_count++;
+		if (!busy)
+			if (piiu->contiguous_msg_count >
+			    MAX_CONTIGUOUS_MSG_COUNT) {
+				piiu->client_busy = TRUE;
+				ca_busy_message(piiu);
+			}
+	} else {
+		piiu->contiguous_msg_count = 0;
+		if (busy) {
+			ca_ready_message(piiu);
+			piiu->client_busy = FALSE;
+		}
+	}
 
-  return;
+	return;
 }

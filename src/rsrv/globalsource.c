@@ -1,16 +1,35 @@
-/*
-*******************************************************************************
-**                              GTA PROJECT
-**      Copyright 1988, The Regents of the University of California.
-**                      Los Alamos National Laboratory
-**                      Los Alamos New Mexico 87845
-**      inmsgtask0.c - GTA request server message reader task.
-**      Sun UNIX 4.2 Release 3.4
-**      Bob Dingler February 11, 1988
-*******************************************************************************
-*/
+/*	@(#)globalsource.c
+ *   $Id$
+ *	Author:	Jeffrey O. Hill
+ *		hill@luke.lanl.gov
+ *		(505) 665 1831
+ *	Date:	5-88
+ *
+ *	Experimental Physics and Industrial Control System (EPICS)
+ *
+ *	Copyright 1991, the Regents of the University of California,
+ *	and the University of Chicago Board of Governors.
+ *
+ *	This software was produced under  U.S. Government contracts:
+ *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *	and (W-31-109-ENG-38) at Argonne National Laboratory.
+ *
+ *	Initial development by:
+ *		The Controls and Automation Group (AT-8)
+ *		Ground Test Accelerator
+ *		Accelerator Technology Division
+ *		Los Alamos National Laboratory
+ *
+ *	Co-developed with
+ *		The Controls and Computing Group
+ *		Accelerator Systems Division
+ *		Advanced Photon Source
+ *		Argonne National Laboratory
+ *
+ * 	Modification Log:
+ * 	-----------------
+ */
 #define GLBLSOURCE
-
 
 #include <vxWorks.h>
 #include <lstLib.h>

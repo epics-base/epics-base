@@ -1,18 +1,21 @@
 #ifndef __IOCMSG__
 /*
-	History
-	1/90	joh	removed status field in favor of a seperate command- 
-			saves space on every successful operation
-
-	4-13-90	joh	moved server ports to above IPPORT_USERRESERVED
-			see in.h
-				
-*/
+ *	History
+ * 	.01 01xx90 joh	removed status field in favor of a independent m_cmmd- 
+ *			saves space on every successful operation
+ *
+ *	.02 041390 joh	moved server ports to above IPPORT_USERRESERVED
+ *			see in.h
+ *
+ *	.03 060391 joh	Bumped protocol version to 4 to support changes for
+ *			SPARC alignment in db_access.h
+ *				
+ */
 
 #define __IOCMSG__
 
 /* TCP/UDP port number (bumped each protocol change) */
-#define CA_PROTOCOL_VERSION	3
+#define CA_PROTOCOL_VERSION	4
 #define	CA_PORT_BASE		IPPORT_USERRESERVED + 56
 #define CA_SERVER_PORT		(CA_PORT_BASE+CA_PROTOCOL_VERSION*2)
 #define CA_CLIENT_PORT		(CA_PORT_BASE+CA_PROTOCOL_VERSION*2+1)
@@ -23,7 +26,6 @@
 
 
 		/* values for m_cmmd */
-
 #define IOC_NOOP		0	/* do nothing, but verify TCP */
 #define IOC_EVENT_ADD		1	/* add an event */
 #define IOC_EVENT_CANCEL	2	/* cancel an event */
@@ -45,20 +47,42 @@
 #define IOC_READ_BUILD		16	/* read accompanying a build */
 #define REPEATER_CONFIRM	17	/* registration confirmation */
 
-	/*
-	for use with build and search and not_found
-	(if search fails and its not a broadcast tell
-	the client to look elesewhere)
-	*/
+/*
+ * for use with build and search and not_found (if search fails and
+ * its not a broadcast tell the client to look elesewhere)
+ */
 #define DOREPLY		10
 #define DONTREPLY	5
 
-	
-	/* extmsg - the nonvariant part of each message sent/recv
-		by the request server.
-	*/
+/* size of object in bytes rounded up to nearest oct word */
+#define	OCT_ROUND(A)	(((A)+7)>>3)
+#define	OCT_SIZEOF(A)	(OCT_ROUND(sizeof(A)))
 
+/* size of object in bytes rounded up to nearest long word */
+#define	QUAD_ROUND(A)	(((A)+3)>>2)
+#define	QUAD_SIZEOF(A)	(QUAD_ROUND(sizeof(A)))
 
+/* size of object in bytes rounded up to nearest short word */
+#define	BI_ROUND(A)	(((A)+1)>>1)
+#define	BI_SIZEOF(A)	(BI_ROUND(sizeof(A)))
+
+/*
+ * Required Message Alignment 
+ *
+ * Determined by the architecture with the most restrictive
+ * alignment requirements (currently the SPARC).
+ *
+ * octal rounding
+ *
+ * NOTE: all structures declared in this file must have a
+ * byte count which is evenly divisible by 8 for the SPARC.
+ */
+#define CA_MESSAGE_ALIGN(A) (OCT_ROUND(A)<<3)
+
+/*
+ * the common part of each message sent/recv by the
+ * CA server.
+ */
 struct	extmsg {
 	unsigned short	m_cmmd;		/* operation to be performed */
 	unsigned short	m_postsize;	/* size of message extension */	
@@ -70,7 +94,9 @@ struct	extmsg {
 };
 
 
-	/* for  monitor (event) message extension */
+/*
+ * for  monitor (event) message extension
+ */
 struct  mon_info{
 	float		m_lval;		/* low delta */
 	float		m_hval;		/* high delta */ 

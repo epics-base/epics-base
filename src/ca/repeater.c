@@ -36,18 +36,24 @@
  *
  *	This server does not gaurantee the reliability of 
  *	fanned out broadcasts in keeping with the nature of 
- *	broadcasts. Therefore, CA provides a backup.
+ *	broadcasts. Therefore, CA retransmitts lost msgs.
  *
  *	UDP datagrams delivered between two processes on the same 
  *	machine dont travel over the LAN.
  *
  *
- * Modification Log:
- * -----------------
+ * 	Modification Log:
+ * 	-----------------
+ *	.01 060691 joh	Took out 4 byte count at message begin to 
+ *			in preparation for SPARC alignment
+ *
  */
 
 #include		<vxWorks.h>
 #include		<lstLib.h>
+#ifdef VMS
+#include		<stsdef.h>
+#endif
 
 #include		<errno.h>
 #include		<types.h>
@@ -60,9 +66,9 @@
 struct sockaddr_in	*local_addr();
 
 /* 
-	these can be external since there is only one instance
-	per machine so we dont care about reentrancy
-*/
+ *	these can be external since there is only one instance
+ *	per machine so we dont care about reentrancy
+ */
 struct one_client{
 	NODE			node;
   	struct sockaddr_in	from;
@@ -72,9 +78,13 @@ static
 LIST	client_list;
 
 static
-char	buf[MAX_UDP]; /* bigger than max TCP */
+char	buf[MAX_UDP]; 
 
+int	ca_repeater();
 
+#define NTRIES 100
+
+
 /*
  *
  *	Fan out broadcasts to several processor local tasks
@@ -87,6 +97,38 @@ main()
 ca_repeater_task()
 #endif
 {
+	unsigned i,j;
+
+	/*
+	 *
+	 *	This allows the system inet support to takes it
+	 *	time releasing the bind I used to test if the repeater
+	 * 	is up.
+	 *
+	 */
+	for(i=0; i<NTRIES; i++){
+		ca_repeater();
+		for(j=0; j<100; j++)
+			TCPDELAY;
+#ifdef DEBUG
+		printf("CA: retiring the repeater\n");
+#endif
+	}
+
+	printf("CA: Only one CA repeater thread per host\n");
+
+	return ERROR;
+}
+
+
+/*
+ *
+ *	ca_repeater()
+ *
+ *
+ */
+ca_repeater()
+{
   	int				status;
   	int				size;
   	int 				sock;
@@ -96,7 +138,6 @@ ca_repeater_task()
   	int				from_size = sizeof from;
   	struct one_client		*pclient;
   	struct one_client		*pnxtclient;
- 	unsigned 			*pcount = (unsigned *)buf;
 
 
 	lstInit(&client_list);
@@ -106,22 +147,27 @@ ca_repeater_task()
 			SOCK_DGRAM,	/* type		*/
 			0);		/* deflt proto	*/
       	if(sock == ERROR)
-        	abort();
+        	return FALSE;
 
       	memset(&bd,0,sizeof bd);
       	bd.sin_family = AF_INET;
       	bd.sin_addr.s_addr = htonl(INADDR_ANY);	
      	bd.sin_port = htons(CA_CLIENT_PORT);	
       	status = bind(sock, &bd, sizeof bd);
-     	if(status<0)
-		if(MYERRNO == EADDRINUSE){
-			printf("Only one CA repeater thread per host\n");
-			exit();
+     	if(status<0){
+		if(MYERRNO != EADDRINUSE){
+			printf("CA REepeater: unexpected bind fail %d\n", 
+				MYERRNO);
 		}
-		else
-			abort();
+		socket_close(sock);
+		return FALSE;
+	}
 
 	local = *local_addr(sock);
+
+#ifdef DEBUG
+	printf("CA Repeater: Attached and initialized\n");
+#endif
 
 	while(TRUE){
 
@@ -134,9 +180,7 @@ ca_repeater_task()
 					&from_size);
 
    	 	if(size > 0){
-   	 		if(size != ntohl(*pcount))
-				printf("ca repeater: corrupt msg ignored\n");
-			else if(from.sin_addr.s_addr != local.sin_addr.s_addr)
+			if(from.sin_addr.s_addr != local.sin_addr.s_addr)
 				for(	pclient = (struct one_client *) 
 						client_list.node.next;
 					pclient;
@@ -150,18 +194,17 @@ ca_repeater_task()
             	                    		0,
             	                    		&pclient->from, 
                	                 		sizeof pclient->from);
-   					if(status < 0)
-        					abort();
+   					if(status < 0){
+						printf("CA Repeater: fanout err %d\n",
+							MYERRNO);
+					}
 #ifdef DEBUG
 					printf("Sent\n");
 #endif
 				}
 		}
 		else if(size == 0){
-			struct {
-				unsigned	length;
-				struct extmsg	extmsg;
-			}confirm;
+			struct extmsg	confirm;
 
 			/*
 			 * If this is a processor local message then add to
@@ -189,9 +232,8 @@ ca_repeater_task()
 			}
 
    			memset(&confirm, NULL, sizeof confirm);
-			confirm.length = htonl(sizeof confirm);
-			confirm.extmsg.m_cmmd = htons(REPEATER_CONFIRM);
-			confirm.extmsg.m_available = local.sin_addr.s_addr;
+			confirm.m_cmmd = htons(REPEATER_CONFIRM);
+			confirm.m_available = local.sin_addr.s_addr;
         		status = sendto(
 				sock,
         			&confirm,
@@ -199,10 +241,15 @@ ca_repeater_task()
         			0,
        				&from, /* reflect back to sender */
 				sizeof from);
-      			if(status != sizeof confirm)
-				abort();
-		}else
-			abort();
+      			if(status != sizeof confirm){
+				printf("CA Repeater: confirm err %d\n",
+					MYERRNO);
+			}
+		}
+		else{
+			printf("CA Repeater: recv err %d\n",
+				MYERRNO);
+		}
 
 		/* remove any dead wood prior to pending */
 		for(	pclient = (struct one_client *) 
@@ -217,7 +264,7 @@ ca_repeater_task()
 	}
 }
 
-
+
 /*
  *
  *	check to see if this client is still around
@@ -236,8 +283,11 @@ struct one_client		*pclient;
       	sock = socket(	AF_INET,	/* domain	*/
 			SOCK_DGRAM,	/* type		*/
 			0);		/* deflt proto	*/
-      	if(sock == ERROR)
-        	abort();
+      	if(sock == ERROR){
+		printf("CA Repeater: no socket err %d\n",
+			MYERRNO);
+		return ERROR;
+	}
 
       	memset(&bd,0,sizeof bd);
       	bd.sin_family = AF_INET;
@@ -247,10 +297,12 @@ struct one_client		*pclient;
      	if(status<0){
 		if(MYERRNO == EADDRINUSE)
 			present = TRUE;
-		else
-			abort();
+		else{
+			printf("CA Repeater: client cleanup err %d\n",
+				MYERRNO);
+		}
 	}
-	close(sock);
+	socket_close(sock);
 
 	if(!present){
 		lstDelete(&client_list, pclient);

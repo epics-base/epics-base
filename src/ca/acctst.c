@@ -13,16 +13,15 @@
 #include 		<cadef.h>
 #include		<db_access.h>
 
-/*
-#define CA_TEST_CHNL	"AI_T2000"
-*/
 #define CA_TEST_CHNL	"ca:ai_2000"
-#define CA_TEST_CHNL4	"ca:ai_2000"
+#define CA_TEST_CHNL4	"ca:bo_000"
 
-#define EVENT_ROUTINE	null_event
 /*
 #define EVENT_ROUTINE	ca_test_event
+#define CONN_ROUTINE	NULL
 */
+#define EVENT_ROUTINE	null_event
+#define CONN_ROUTINE	conn
 
 #define NUM		1
 
@@ -50,6 +49,7 @@ main()
   void			ca_test_event();
   void			null_event();
   struct dbr_gr_float	*ptr;
+  struct dbr_gr_float	*pgrfloat;
   float 		delay = .003;
 
   long			status;
@@ -60,6 +60,7 @@ main()
   char			string[41];
   float			value;
   float			*pfloat;
+  double		*pdouble;
   struct dbr_ctrl_float	*pctrl;
   char			pstring[NUM][MAX_STRING_SIZE];
   void			write_event();
@@ -92,7 +93,7 @@ main()
 		0,
 		&chix4,
 		NULL,
-		conn,
+		CONN_ROUTINE,
 		NULL),NULL);
     SEVCHK(ca_build_and_connect(
 		CA_TEST_CHNL,
@@ -100,7 +101,7 @@ main()
 		0,
 		&chix2,
 		NULL,
-		conn,
+		CONN_ROUTINE,
 		NULL),NULL);
     SEVCHK(ca_build_and_connect(
 		CA_TEST_CHNL,
@@ -108,7 +109,7 @@ main()
 		0,
 		&chix1,
 		NULL,
-		conn,
+		CONN_ROUTINE,
 		NULL),NULL);
     status = ca_pend_io(10.0);
     SEVCHK(status,NULL);
@@ -137,7 +138,7 @@ main()
 		0,
 		&chix4,
 		NULL,
-		conn,
+		CONN_ROUTINE,
 		NULL),NULL);
     SEVCHK(ca_build_and_connect(
 		CA_TEST_CHNL,
@@ -145,7 +146,7 @@ main()
 		0,
 		&chix2,
 		NULL,
-		conn,
+		CONN_ROUTINE,
 		NULL),NULL);
     SEVCHK(ca_build_and_connect(
 		CA_TEST_CHNL,
@@ -153,10 +154,10 @@ main()
 		0,
 		&chix1,
 		NULL,
-		conn,
+		CONN_ROUTINE,
 		NULL),NULL);
 
-  status = ca_pend_io(1.0);
+  status = ca_pend_io(10.0);
   SEVCHK(status,NULL);
 
   if(INVALID_DB_REQ(chix1->type))
@@ -190,6 +191,8 @@ main()
     status = ca_add_event(DBR_FLOAT, chix4, EVENT_ROUTINE, 0xaaaaaaaa, &monix);
     SEVCHK(status,NULL);
     SEVCHK(ca_clear_event(monix),NULL);
+    status = ca_add_event(DBR_FLOAT, chix4, EVENT_ROUTINE, 0xaaaaaaaa, &monix);
+    SEVCHK(status,NULL);
   }
   if(VALID_DB_REQ(chix4->type)){
     status = ca_add_event(DBR_FLOAT, chix4, EVENT_ROUTINE, 0xaaaaaaaa, &monix);
@@ -206,6 +209,8 @@ main()
 
 
   pfloat = (float *) malloc(sizeof(float)*NUM);
+  pdouble = (double *) malloc(sizeof(double)*NUM);
+  pgrfloat = (struct dbr_gr_float *) malloc(sizeof(*pgrfloat)*NUM);
 
 
   if(VALID_DB_REQ(chix1->type))
@@ -215,6 +220,8 @@ main()
           sprintf(&pstring[j][0],"%d",j+100);
         SEVCHK(ca_array_put(DBR_STRING,NUM,chix1,pstring),NULL)  
         SEVCHK(ca_array_get(DBR_FLOAT,NUM,chix1,pfloat),NULL)  
+        SEVCHK(ca_array_get(DBR_DOUBLE,NUM,chix1,pdouble),NULL)  
+        SEVCHK(ca_array_get(DBR_GR_FLOAT,NUM,chix1,pgrfloat),NULL)  
       }
     else
       abort();
@@ -224,18 +231,22 @@ main()
 # ifdef VMS
   lib$show_timer();
 # endif
-  for(i=0;i<NUM;i++)
-    printf("Value Returned from put/get %f\n",pfloat[i]);
+  for(i=0;i<NUM;i++){
+    printf("Float value Returned from put/get %f\n",pfloat[i]);
+    printf("Double value Returned from put/get %f\n",pdouble[i]);
+    printf("GR Float value Returned from put/get %f\n",pgrfloat[i].value);
+  }
 
   for(i=0;i<10;i++)
-    ca_get_callback(DBR_FLOAT, chix1, ca_test_event, NULL);
+    ca_get_callback(DBR_GR_FLOAT, chix1, ca_test_event, NULL);
 
   printf("-- Put/Gets done- waiting for Events --\n");
-  status = ca_pend_event(500.0);
+  status = ca_pend_event(60.0);
   if(status == ECA_TIMEOUT){
 
     free(ptr);
     free(pfloat);
+    free(pgrfloat);
 
     exit();
   }else
@@ -251,8 +262,8 @@ void null_event()
 {
   static int i;
 
-  if(i++>100){
-    printf("100 occured\n");
+  if(i++>1000){
+    printf("1000 occured\n");
     i = 0;
   }
 }

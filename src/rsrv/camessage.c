@@ -41,7 +41,6 @@
 #include <db_access.h>
 #include <task_params.h>
 #include <server.h>
-#include <dblib.h>
 #include <caerr.h>
 
 
@@ -58,6 +57,7 @@ void	event_cancel_reply();
 void	clear_channel_reply();
 void	send_err();
 void	log_header();
+void    search_fail_reply();
 
 
 /*
@@ -397,7 +397,7 @@ read_reply(pevext, paddr, hold, pfl)
 FAST struct event_ext *pevext;
 FAST struct db_addr *paddr;
 int             hold;	/* more on the way if true */
-db_field_log   *pfl;
+void		*pfl;
 {
 	FAST struct extmsg *mp = pevext->mp;
 	FAST struct client *client = pevext->client;
@@ -508,7 +508,6 @@ build_reply(mp, client)
 	struct db_addr  tmp_addr;
 	FAST struct channel_in_use *pchannel;
 
-	void            search_fail_reply();
 
 
 	/* Exit quickly if channel not on this node */

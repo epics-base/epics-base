@@ -1,11 +1,37 @@
 /*
  *	O N L I N E _ N O T I F Y . C
+ *
  *	tell CA clients this a server has joined the network
  *
- *	Author: Jeffrey O. Hill
+ *	@(#)online_notify.c
+ *   $Id$
+ *	Author:	Jeffrey O. Hill
+ *		hill@luke.lanl.gov
+ *		(505) 665 1831
+ *	Date:	103090
  *
- *	Hisory
- *	.00 103090 	joh	First release
+ *	Experimental Physics and Industrial Control System (EPICS)
+ *
+ *	Copyright 1991, the Regents of the University of California,
+ *	and the University of Chicago Board of Governors.
+ *
+ *	This software was produced under  U.S. Government contracts:
+ *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *	and (W-31-109-ENG-38) at Argonne National Laboratory.
+ *
+ *	Initial development by:
+ *		The Controls and Automation Group (AT-8)
+ *		Ground Test Accelerator
+ *		Accelerator Technology Division
+ *		Los Alamos National Laboratory
+ *
+ *	Co-developed with
+ *		The Controls and Computing Group
+ *		Accelerator Systems Division
+ *		Advanced Photon Source
+ *		Argonne National Laboratory
+ *
+ *	History
  */
 
 /*
@@ -17,17 +43,13 @@
 #include <in.h>
 
 /*
- *	LAACS includes
+ *	EPICS includes
  */
 #include <task_params.h>
 #include <iocmsg.h>
 
 #define abort taskSuspend
 
-struct complete_msg{
-	unsigned		length;
-	struct extmsg		extmsg;
-};
 
 /*
  *	RSRV_ONLINE_NOTIFY_TASK
@@ -45,7 +67,7 @@ void rsrv_online_notify_task()
 	 * CA_ONLINE_DELAY [sec] max delay
 	 */
   	unsigned long		maxdelay = CA_ONLINE_DELAY * sysClkRateGet();
-	struct complete_msg	msg;
+	struct extmsg		msg;
 
   	struct sockaddr_in	send_addr;
   	struct sockaddr_in	recv_addr;
@@ -90,9 +112,8 @@ void rsrv_online_notify_task()
 		abort(0);
 
    	bfill(&msg, sizeof msg, NULL);
-	msg.length = htonl(sizeof msg);
-	msg.extmsg.m_cmmd = htons(IOC_RSRV_IS_UP);
-	msg.extmsg.m_available = lcl.sin_addr.s_addr;
+	msg.m_cmmd = htons(IOC_RSRV_IS_UP);
+	msg.m_available = lcl.sin_addr.s_addr;
 
  	/*  Zero the sock_addr structure */
   	bfill(&send_addr, sizeof send_addr, 0);
@@ -101,8 +122,6 @@ void rsrv_online_notify_task()
   	send_addr.sin_port 	= htons(CA_CLIENT_PORT);
 
  	while(TRUE){
-  
-
         	status = sendto(
 			sock,
         		&msg,
@@ -120,38 +139,3 @@ void rsrv_online_notify_task()
 }
 
 
-
-
-
-
-
-
-
-#ifdef JUNKYARD
-  	client = create_udp_client(sock);
- 	client->addr = send_addr;
-  	client->ticks_at_creation = tickGet();
-
-	while(TRUE){
-    		reply = (struct extmsg *) ALLOC_MSG(client, 0);
-    		if(!reply)
-      			abort(0);
-
-
-  		bfill(reply, sizeof(*reply), NULL);
-  		reply->m_cmmd = IOC_RSRV_IS_UP;
-		reply->m_available = lcl.sin_addr.s_addr;
-  		reply->m_postsize = 0;
-
-  		END_MSG(client);
-  		send_msg(client);
-
-		taskDelay(delay);
-		delay = delay << 1;
-	}
-/*
-	Should it need to quit....
-
-  	free_one_client(client);
-*/
-#endif

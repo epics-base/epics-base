@@ -304,7 +304,7 @@ inline T * tsSLIter<T>::operator () ()
 //
 template <class T>
 inline tsSLIterRm<T>::tsSLIterRm (tsSLList<T> &listIn) :
-  pPrevious (0), pCurrent (0), list (listIn) {};
+  pPrevious (0), pCurrent (0), list (listIn) {}
 
 
 //

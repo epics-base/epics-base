@@ -68,7 +68,12 @@ LIBNAME = dbLib
 
 include $(EPICS)/config/RULES.Vx
 
-dbCommon.h: ../dbCommonRecord.ascii
+dbCommon.h: ../dbCommonRecord.ascii dbCommon.ascii
 	$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbAsciiToRecordtypeH $<
 
+dbCommon.ascii: ../dbCommon.ascii
+	@test -f $@ || ln -s  $< $@
+
+clean::
+	@$(RM) dbCommon.ascii rec base

@@ -323,7 +323,7 @@ int epicsShareAPI ca_task_exit (void);
 
 /************************************************************************
  * anachronistic entry points                                           *
- * **** Fetching a value while searching nolonger supported****         *
+ * **** Fetching a value while searching no longer supported****         *
  ************************************************************************/
 #define ca_build_channel(NAME,XXXXX,CHIDPTR,YYYYY)\
 ca_build_and_connect(NAME, XXXXX, 1, CHIDPTR, YYYYY, 0, 0)
@@ -371,7 +371,7 @@ int epicsShareAPI ca_search_and_connect
 	
 /*
  * anachronistic entry point
- * **** Fetching a value while searching nolonger supported **** 
+ * **** Fetching a value while searching no longer supported **** 
  *
  * pChanName 	R 	channel name string
  * pChanID 	RW 	channel id written here
@@ -861,7 +861,7 @@ typedef void CAFDHANDLER(void *parg, int fd, int opened);
  *
  * pHandler	R	pointer to function which is to be called
  *			when an fd is created or deleted
- * pArg		R	argument passsed to above function
+ * pArg		R	argument passed to above function
  */
 int epicsShareAPI ca_add_fd_registration
 (

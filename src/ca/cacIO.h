@@ -53,7 +53,53 @@ private:
     friend class cacNotify;
 };
 
-class cacChannel;
+class cacChannel {
+public:
+    cacChannel ();
+    virtual ~cacChannel () = 0;
+    virtual void destroy () = 0;
+
+    void attachIO ( class cacChannelIO &io );
+    int read ( unsigned type, unsigned long count, void *pValue );
+    int read ( unsigned type, unsigned long count, cacNotify & );
+    int write ( unsigned type, unsigned long count, const void *pvalue );
+    int write ( unsigned type, unsigned long count, const void *pvalue, cacNotify &notify );
+    int subscribe ( unsigned type, unsigned long count, unsigned mask, cacNotify &notify );
+    void hostName ( char *pBuf, unsigned bufLength ) const;
+    short nativeType () const;
+    unsigned long nativeElementCount () const;
+    channel_state state () const;
+    bool readAccess () const;
+    bool writeAccess () const;
+    const char *pName () const;
+    unsigned searchAttempts () const;
+    bool ca_v42_ok () const;
+    bool connected () const;
+    caar accessRights () const;
+    unsigned readSequence () const;
+    void incrementOutstandingIO ();
+    void decrementOutstandingIO ();
+    void decrementOutstandingIO ( unsigned seqNumber );
+
+protected:
+    class cacChannelIO *pChannelIO;
+
+    virtual void lock ();
+    virtual void unlock ();
+
+private:
+    virtual void ioAttachNotify ();
+    virtual void ioReleaseNotify ();
+    virtual void connectNotify ();
+    virtual void disconnectNotify ();
+    virtual void accessRightsNotify ( caar );
+    virtual void exceptionNotify ( int status, const char *pContext );
+    virtual void connectTimeoutNotify ();
+
+    static osiMutex defaultMutex;
+
+    friend class cacChannelIO;
+};
 
 class epicsShareClass cacChannelIO {
 public:

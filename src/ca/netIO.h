@@ -28,21 +28,27 @@
 
 #include "nciu.h"
 
-// does the local compiler support placement delete
-#if defined (_MSC_VER) 
-#   if _MSC_VER >= 1200
-#       define NETIO_PLACEMENT_DELETE
-#   endif
-#elif defined ( __HP_aCC )
-#   if _HP_aCC > 033300
-#       define NETIO_PLACEMENT_DELETE
-#   endif
-#elif defined ( __BORLANDC__ )
-#   if __BORLANDC__ > 0x550
-#       define NETIO_PLACEMENT_DELETE
-#   endif
+// does the compiler support placement delete
+#if defined (_MSC_VER) && ( _MSC_VER >= 1200 )
+#   define NETIO_PLACEMENT_DELETE
+#elif defined ( __HP_aCC ) && ( _HP_aCC > 033300 )
+#   define NETIO_PLACEMENT_DELETE
+#elif defined ( __BORLANDC__ ) && ( __BORLANDC__ > 0x550 )
+#   define NETIO_PLACEMENT_DELETE
 #else
 #   define NETIO_PLACEMENT_DELETE
+#endif
+
+// SUN PRO generates multiply defined symbols if the baseNMIU
+// destructor is virtual (therefore it is protected). 
+// I assume that SUNPRO will fix this in future versions.
+// Otherwise, with other compilers we get warnings (and 
+// potential problems) if we dont make the baseNMIU
+// destructor virtual.
+#if defined ( __SUNPRO_CC ) && ( __SUNPRO_CC <= 0x530 )
+#   define NETIO_VIRTUAL_DESTRUCTOR
+#else
+#   define NETIO_VIRTUAL_DESTRUCTOR virtual
 #endif
 
 class baseNMIU : public tsDLNode < baseNMIU >, // X aCC 655
@@ -64,10 +70,7 @@ public:
 //
     virtual nciu & channel () const = 0;
 protected:
-    // SUN PRO generates undefined symbols if this is virtual
-    // (therefore it is protected)
-    // virtual
-    ~baseNMIU (); 
+    NETIO_VIRTUAL_DESTRUCTOR ~baseNMIU (); 
 };
 
 class netSubscription : public baseNMIU  {

@@ -32,14 +32,15 @@
 #define osiTimerHInclude
 
 #include "shareLib.h" /* reset share lib defines */
-#include "osiTime.h"
 #include "osiThread.h"
-#include "osiMutex.h"
-#include "osiEvent.h"
+#include "tsStamp.h"
 
 #ifdef __cplusplus
 
+#include "osiTime.h"
 #include "tsDLList.h"
+#include "osiMutex.h"
+#include "osiEvent.h"
 
 class osiTimerQueue;
 class managerThread;

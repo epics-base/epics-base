@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#include "dbStaticLib.h"
 #include "recSup.h"
 #include "devSup.h"
 #include "drvSup.h"
@@ -13,7 +14,7 @@
 #include "registryDeviceSupport.h"
 #include "registryDriverSupport.h"
 
-int registerRecordDeviceDriver(DBBASE *pdbbase)
+int registerRecordDeviceDriver(struct dbBase *pdbbase)
 {
     dbRecordType *pdbRecordType;
     recordTypeLocation *precordTypeLocation;

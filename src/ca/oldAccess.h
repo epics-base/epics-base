@@ -161,9 +161,8 @@ private:
 struct oldSubscription : public cacStateNotify {
 public:
     oldSubscription ( 
-        oldChannelNotify &,
-        unsigned type, arrayElementCount nElem, unsigned mask, 
-        caEventCallBackFunc *pFunc, void *pPrivate );
+        oldChannelNotify &, caEventCallBackFunc *pFunc, void *pPrivate );
+    void begin ( unsigned type, arrayElementCount nElem, unsigned mask );
     void destroy ();
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
@@ -341,11 +340,15 @@ inline const char * oldChannelNotify::pHostName () const
 }
 
 inline oldSubscription::oldSubscription  (
-        oldChannelNotify &chanIn,
-        unsigned type, arrayElementCount nElem, unsigned mask, 
-        caEventCallBackFunc *pFuncIn, void *pPrivateIn ) :
+        oldChannelNotify & chanIn, 
+        caEventCallBackFunc * pFuncIn, void * pPrivateIn ) :
     chan ( chanIn ), id ( 0 ), pFunc ( pFuncIn ), 
         pPrivate ( pPrivateIn ), subscribed ( false )
+{
+}
+
+inline void oldSubscription::begin  ( unsigned type, 
+              arrayElementCount nElem, unsigned mask )
 {
     this->chan.subscribe ( type, nElem, mask, *this, this->id );
     this->subscribed = true;

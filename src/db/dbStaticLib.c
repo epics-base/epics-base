@@ -1608,6 +1608,7 @@ char *pstring;
 	    DBLINK	*plink=(DBLINK *)pfield;
 	    char	string[80];
 	    char	*pstr=&string[0];
+	    int		ind;
 
 	    if(strlen(pstring)>=sizeof(string)) {
 	        status = S_dbLib_badField;
@@ -1617,6 +1618,11 @@ char *pstring;
 	    strcpy(pstr,pstring);
 	    /*strip off leading blanks and tabs*/
 	    while(*pstr && (*pstr==' ' || *pstr=='\t')) pstr++;
+	    /*strip off trailing blanks and tabs*/
+	    if(pstr) for(ind = strlen(pstr)-1; ind>=0; ind--) {
+		if(pstr[ind]!=' ' && pstr[ind]!='\t') break;
+		pstr[ind] = '\0';
+	    }
 	    if(!pstr || strlen(pstr)<=0 ) {
 		if(plink->type==PV_LINK) dbCvtLinkToConstant(pdbentry);
 		if(plink->type!=CONSTANT) return(S_dbLib_badField);
@@ -1628,14 +1634,15 @@ char *pstring;
 	    	    int		pp=0;
 		    int		ms=0;
 	    	    char	*end;
-		    char	chr;
+		    double	tempval;
 
 		    /* Check first to see if string is a constant*/
-		    chr = pstr[0];
-		    if(isdigit(chr) || chr=='.' || chr=='-' || chr=='+') {
+		    /*It is a double if strtod eats entire string*/
+		    /*Note that leading and trailing blanks have already been stripped*/
+		    tempval = strtod(pstr,&end);
+		    if(*end == 0) {
 			if(plink->type==PV_LINK) dbCvtLinkToConstant(pdbentry);
-			plink->value.value = strtod(pstr,&end);
-			if(*end!=0) return(S_dbLib_badField);
+			plink->value.value = tempval;
 			return(0);
 		    }
 		    if(plink->type==CONSTANT) dbCvtLinkToPvlink(pdbentry);

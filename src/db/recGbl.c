@@ -202,9 +202,9 @@ void recGblGetGraphicDouble(struct dbAddr *paddr,struct dbr_grDouble *pgd)
 void recGblGetAlarmDouble(struct dbAddr *paddr,struct dbr_alDouble *pad)
 {
     pad->upper_alarm_limit = 0;
-    pad->upper_alarm_limit = 0;
+    pad->upper_warning_limit = 0;
     pad->lower_warning_limit = 0;
-    pad->lower_warning_limit = 0;
+    pad->lower_alarm_limit = 0;
 
     return;
 }

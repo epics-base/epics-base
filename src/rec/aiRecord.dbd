@@ -159,8 +159,13 @@ recordtype(ai) {
 		interest(2)
 		initial("1")
 	}
+	field(EOFF,DBF_DOUBLE) {
+		prompt("Eng Unit Offset")
+		special(SPC_NOMOD)
+		interest(2)
+	}
 	field(ROFF,DBF_LONG) {
-		prompt("Raw Offset")
+		prompt("Raw Offset, obsolete")
 		pp(TRUE)
 		interest(2)
 	}

@@ -1,7 +1,7 @@
-/* recAi.c */
+/* aiRecord.c */
 /* base/src/rec $Id$ */
   
-/* recAi.c - Record Support Routines for Analog Input records */
+/* aiRecord.c - Record Support Routines for Analog Input records */
 /*
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer
@@ -72,25 +72,26 @@
  * .33  03-29-94        mcn     converted to fast links
  */
 
-#include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
-#include	<lstLib.h>
-#include	<string.h>
+#include <vxWorks.h>
+#include <types.h>
+#include <stdioLib.h>
+#include <lstLib.h>
+#include <string.h>
 
-#include	<alarm.h>
-#include	<cvtTable.h>
-#include	<dbDefs.h>
-#include	<dbAccess.h>
-#include	<dbScan.h>
-#include	<dbEvent.h>
-#include	<dbFldTypes.h>
-#include	<devSup.h>
-#include	<errMdef.h>
-#include	<recSup.h>
-#include	<special.h>
+#include "dbDefs.h"
+#include "errlog.h"
+#include "alarm.h"
+#include "cvtTable.h"
+#include "dbAccess.h"
+#include "dbScan.h"
+#include "dbEvent.h"
+#include "dbFldTypes.h"
+#include "devSup.h"
+#include "recSup.h"
+#include "special.h"
+#include "menuConvert.h"
 #define GEN_SIZE_OFFSET
-#include	<aiRecord.h>
+#include "aiRecord.h"
 #undef  GEN_SIZE_OFFSET
 
 /* Create RSET - Record Support Entry Table*/
@@ -182,6 +183,7 @@ static long init_record(void *precord,int pass)
 	return(S_dev_missingSup);
     }
     pai->init = TRUE;
+    pai->eoff = pai->egul;
 
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(pai))) return(status);
@@ -201,7 +203,6 @@ static long process(void *precord)
 		recGblRecordError(S_dev_missingSup,(void *)pai,"read_ai");
 		return(S_dev_missingSup);
 	}
-
 	status=readValue(pai); /* read the new value */
 	/* check if device support set pact */
 	if ( !pact && pai->pact ) return(0);
@@ -355,22 +356,20 @@ static void alarm(aiRecord *pai)
 
 static void convert(aiRecord *pai)
 {
-	double			 val;
-	float		aslo=pai->aslo;
-	float		aoff=pai->aoff;
+	double val;
 
 
-	val = pai->rval + pai->roff;
+	val = (double)pai->rval + (double)pai->roff;
 	/* adjust slope and offset */
-	if(aslo!=0.0) val*=aslo;
-	if(aoff!=0.0) val+=aoff;
+	if(pai->aslo!=0.0) val*=pai->aslo;
+	val+=pai->aoff;
 
 	/* convert raw to engineering units and signal units */
-	if(pai->linr == 0) {
+	if(pai->linr == menuConvertNO_CONVERSION) {
 		; /* do nothing*/
 	}
-	else if(pai->linr == 1) {
-		val = (val * pai->eslo) + pai->egul;
+	else if(pai->linr == menuConvertLINEAR) {
+		val = (val * pai->eslo) + pai->eoff;
 	}
 	else { /* must use breakpoint table */
                 if (cvtRawToEngBpt(&val,pai->linr,pai->init,(void *)&pai->pbrk,&pai->lbrk)!=0) {
@@ -380,7 +379,7 @@ static void convert(aiRecord *pai)
 
 	/* apply smoothing algorithm */
 	if (pai->smoo != 0.0){
-	    if (pai->init == TRUE) pai->val = val;	/* initial condition */
+	    if (pai->init) pai->val = val;	/* initial condition */
 	    pai->val = val * (1.00 - pai->smoo) + (pai->val * pai->smoo);
 	}else{
 	    pai->val = val;

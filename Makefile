@@ -13,6 +13,10 @@
 #         install because the release.% syntax is illegal.
 #
 # $Log$
+# Revision 1.18  1994/10/13  19:44:34  mda
+# Introduce temporary symbol (ARCH_TYPE=$$ARCH) and use in later targets/rules
+# to avoid problem with $* symbol resolution in some versions of gnumake.
+#
 # Revision 1.17  1994/10/05  18:45:57  jba
 # Modified syntax of makefile usage
 #
@@ -65,11 +69,11 @@ depends:
 			${MAKE} ${MFLAGS} $@.$$ARCH;			\
 		done)
 
-release: depends install
+release: install 
 	@echo TOP: Creating Release...
 	@tools/MakeRelease
 
-built_release: depends install
+built_release: install
 	@echo TOP: Creating Fully Built Release...
 	@tools/MakeRelease -b
 

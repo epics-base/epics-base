@@ -161,7 +161,7 @@ int iocClockGetCurrent(epicsTimeStamp *pDest)
     epicsMutexUnlock(piocClockPvt->lock);
     return(0);
 }
-
+
 int iocClockGetEvent(epicsTimeStamp *pDest, unsigned eventNumber)
 {
      if (eventNumber==epicsTimeEventCurrentTime) {
@@ -173,12 +173,22 @@ int iocClockGetEvent(epicsTimeStamp *pDest, unsigned eventNumber)
 
 int epicsTimeGetCurrent (epicsTimeStamp *pDest)
 {
+    if(!piocClockPvt) {
+        iocClockInit();
+        /*wait two seconds for syncNTP to contact network time server*/
+        epicsThreadSleep(2.0); 
+    }
     if(piocClockPvt->getCurrent) return((*piocClockPvt->getCurrent)(pDest));
     return(epicsTimeERROR);
 }
 
 int epicsTimeGetEvent (epicsTimeStamp *pDest, unsigned eventNumber)
 {
+    if(!piocClockPvt) {
+        iocClockInit();
+        /*wait two seconds for syncNTP to contact network time server*/
+        epicsThreadSleep(2.0); 
+    }
     if(piocClockPvt->getEvent)
         return((*piocClockPvt->getEvent)(pDest,eventNumber));
     return(epicsTimeERROR);

@@ -84,7 +84,6 @@ static void epicsThreadInit(void)
         assert(epicsThreadOnceMutex);
     }
     lock = 0;
-    iocClockInit();
 }
 
 unsigned int epicsThreadGetStackSize (epicsThreadStackSizeClass stackSizeClass) 

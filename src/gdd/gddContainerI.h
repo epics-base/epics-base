@@ -7,6 +7,9 @@
  *
  * $Id$
  * $Log$
+ * Revision 1.3  1999/05/10 23:42:25  jhill
+ * fixed many const releated problems
+ *
  * Revision 1.2  1999/04/30 15:24:53  jhill
  * fixed improper container index bug
  *
@@ -84,11 +87,11 @@ inline gdd* gddCursor::next(gddContainer*& dd)
 inline gdd* gddCursor::current(void) const 
 	{ return (gdd*)constGddCursor::current(); }
 inline gdd* gddCursor::current(gddScalar*& dd) const
-	{ return (gdd*)constGddCursor::current(); }
+	{ return (gdd*)constGddCursor::current((const gddScalar*&)dd); }
 inline gdd* gddCursor::current(gddAtomic*& dd) const
-	{ return (gdd*)constGddCursor::current(); }
+	{ return (gdd*)constGddCursor::current((const gddAtomic*&)dd); }
 inline gdd* gddCursor::current(gddContainer*& dd) const
-	{ return (gdd*)constGddCursor::current(); }
+	{ return (gdd*)constGddCursor::current((const gddContainer*&)dd); }
 
 inline gdd* gddCursor::operator[](int index)
 { return (gdd *) constGddCursor::operator [](index); }

@@ -162,13 +162,6 @@ udpiiu::udpiiu ( cac &cac ) :
     }
 
     caStartRepeaterIfNotInstalled ( this->repeaterPort );
-
-    CAFDHANDLER *fdRegFunc;
-    void *fdRegArg;
-    this->pCAC ()->getFDRegCallback ( fdRegFunc, fdRegArg );
-    if ( fdRegFunc ) {
-        ( *fdRegFunc ) ( fdRegArg, this->sock, true );
-    }    
 }
 
 /*
@@ -182,13 +175,6 @@ udpiiu::~udpiiu ()
     epicsEventDestroy ( this->recvThreadExitSignal );
 
     ellFree ( &this->dest );
-
-    CAFDHANDLER *fdRegFunc;
-    void *fdRegArg;
-    this->pCAC ()->getFDRegCallback ( fdRegFunc, fdRegArg );
-    if ( fdRegFunc ) {
-        ( *fdRegFunc ) ( fdRegArg, this->sock, false );
-    }    
     
     if ( ! this->sockCloseCompleted ) {
         socket_close ( this->sock );

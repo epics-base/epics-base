@@ -21,68 +21,43 @@
 tsFreeList < class putCallback, 1024 > putCallback::freeList;
 epicsMutex putCallback::freeListMutex;
 
+putCallback::putCallback ( oldChannelNotify &chanIn, 
+                                 caEventCallBackFunc *pFuncIn, void *pPrivateIn ) :
+    chan ( chanIn ), pFunc ( pFuncIn ), pPrivate ( pPrivateIn )
+{
+}
+
 putCallback::~putCallback ()
 {
 }
 
-void putCallback::release ()
-{
-    delete this;
-}
-
-void putCallback::completionNotify ( cacChannelIO &io )
+void putCallback::completion ()
 {
     struct event_handler_args args;
 
     args.usr = this->pPrivate;
-    args.chid = & io;
+    args.chid = & this->chan;
     args.type = TYPENOTCONN;
     args.count = 0;
     args.status = ECA_NORMAL;
     args.dbr = 0;
-    (*this->pFunc) (args);
+    ( *this->pFunc ) (args);
+    delete this;
 }
 
-void putCallback::completionNotify ( cacChannelIO &io, unsigned type, 
-    unsigned long count, const void * /* pData */ )
-{
-    struct event_handler_args args;
-
-    args.usr = this->pPrivate;
-    args.chid = & io;
-    args.type = type;
-    args.count = count;
-    args.status = ECA_NORMAL;
-    args.dbr = 0;
-    (*this->pFunc) (args);
-}
-
-void putCallback::exceptionNotify ( cacChannelIO &io, 
+void putCallback::exception (  
     int status, const char * /* pContext */ )
 {
     struct event_handler_args args;
 
     args.usr = this->pPrivate;
-    args.chid = & io;
+    args.chid = & this->chan;
     args.type = TYPENOTCONN;
     args.count = 0;
     args.status = status;
     args.dbr = 0;
-    (*this->pFunc) (args);
-}
-
-void putCallback::exceptionNotify ( cacChannelIO &io, int status, 
-    const char * /* pContext */, unsigned type, unsigned long count )
-{
-    struct event_handler_args args;
-
-    args.usr = this->pPrivate;
-    args.chid = & io;
-    args.type = type;
-    args.count = count;
-    args.status = status;
-    args.dbr = 0;
-    (*this->pFunc) (args);
+    ( *this->pFunc ) (args);
+    delete this;
 }
 
 

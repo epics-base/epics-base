@@ -15,8 +15,8 @@
 #include "nciu_IL.h"
 #include "baseNMIU_IL.h"
 
-netReadNotifyIO::netReadNotifyIO ( nciu &chan, cacNotify &notifyIn ) :
-    baseNMIU ( notifyIn, chan ) 
+netReadNotifyIO::netReadNotifyIO ( nciu &chan, cacDataNotify &notify ) :
+    baseNMIU ( chan ), notify ( notify )
 {
 }
 
@@ -33,15 +33,33 @@ void netReadNotifyIO::show ( unsigned level ) const
     }
 }
 
-void netReadNotifyIO::cancel ()
-{
-    this->chan.getClient().destroyReadNotifyIO ( *this );
-}
-
 void netReadNotifyIO::destroy ( cacRecycle & recycle )
 {
     this->~netReadNotifyIO();
     recycle.recycleReadNotifyIO ( *this );
 }
+
+void netReadNotifyIO::completion ()
+{
+    this->chan.getClient().printf ( "Read response w/o data ?\n" );
+}
+
+void netReadNotifyIO::exception ( int status, const char *pContext )
+{
+    this->notify.exception ( status, pContext, UINT_MAX, 0 );
+}
+
+void netReadNotifyIO::completion ( unsigned type, 
+    unsigned long count, const void *pData )
+{
+    this->notify.completion ( type, count, pData );
+}
+
+void netReadNotifyIO::exception ( int status, 
+    const char *pContext, unsigned type, unsigned long count )
+{
+    this->notify.exception ( status, pContext, type, count );
+}
+
 
 

@@ -18,7 +18,7 @@
 #include "iocinf.h"
 #include "oldAccess.h"
 
-tsFreeList < class oldChannelNotify, 1024 > oldChannelNotify::freeList;
+tsFreeList < struct oldChannelNotify, 1024 > oldChannelNotify::freeList;
 epicsMutex oldChannelNotify::freeListMutex;
 
 extern "C" void cacNoopConnHandler ( struct connection_handler_args )
@@ -29,19 +29,17 @@ extern "C" void cacNoopAccesRightsHandler ( struct access_rights_handler_args )
 {
 }
 
-oldChannelNotify::oldChannelNotify ( caCh *pConnCallBackIn, void *pPrivateIn ) :
-pConnCallBack ( pConnCallBackIn ? pConnCallBackIn : cacNoopConnHandler ), 
+oldChannelNotify::oldChannelNotify ( cac &cacIn, const char *pName, 
+                                    caCh *pConnCallBackIn, void *pPrivateIn ) :
+    io ( cacIn.createChannel ( pName, *this ) ),
+    pConnCallBack ( pConnCallBackIn ? pConnCallBackIn : cacNoopConnHandler ), 
     pPrivate ( pPrivateIn ), pAccessRightsFunc ( cacNoopAccesRightsHandler )
 {
 }
 
 oldChannelNotify::~oldChannelNotify ()
 {
-}
-
-void oldChannelNotify::release ()
-{
-    delete this;
+    delete & this->io;
 }
 
 void oldChannelNotify::setPrivatePointer ( void *pPrivateIn )
@@ -54,16 +52,16 @@ void * oldChannelNotify::privatePointer () const
     return this->pPrivate;
 }
 
-int oldChannelNotify::changeConnCallBack ( cacChannelIO &chan, caCh *pfunc )
+int oldChannelNotify::changeConnCallBack ( caCh *pfunc )
 {
     this->pConnCallBack = pfunc ? pfunc : cacNoopConnHandler;
     // test for NOOP connection handler does _not_ occur here because the
     // lock is not applied
-    chan.notifyStateChangeFirstConnectInCountOfOutstandingIO ();
+    this->io.notifyStateChangeFirstConnectInCountOfOutstandingIO ();
     return ECA_NORMAL;
 }
 
-int oldChannelNotify::replaceAccessRightsEvent ( cacChannelIO &chan, caArh *pfunc )
+int oldChannelNotify::replaceAccessRightsEvent ( caArh *pfunc )
 {
     // The order of the following is significant to guarantee that the
     // access rights handler is always gets called even if the channel connects
@@ -71,47 +69,45 @@ int oldChannelNotify::replaceAccessRightsEvent ( cacChannelIO &chan, caArh *pfun
     // handler could be called twice here with the same access rights state, but 
     // that will not upset the application.
     this->pAccessRightsFunc = pfunc ? pfunc : cacNoopAccesRightsHandler;
-    if ( chan.connected () ) {
+    if ( this->io.connected () ) {
         struct access_rights_handler_args args;
-        args.chid = &chan;
-        args.ar = chan.accessRights ();
+        args.chid = this;
+        caAccessRights tmp = this->io.accessRights ();
+        args.ar.read_access = tmp.readPermit ();
+        args.ar.write_access = tmp.writePermit ();
         ( *pfunc ) ( args );
     }
     return ECA_NORMAL;
 }
 
-void oldChannelNotify::connectNotify ( cacChannelIO &chan )
+void oldChannelNotify::connectNotify ( cacChannel & )
 {
     struct connection_handler_args  args;
-    args.chid = &chan;
+    args.chid = this;
     args.op = CA_OP_CONN_UP;
     ( *this->pConnCallBack ) ( args );
 }
 
-void oldChannelNotify::disconnectNotify ( cacChannelIO &chan )
+void oldChannelNotify::disconnectNotify ( cacChannel & )
 {
     struct connection_handler_args args;
-    args.chid = &chan;
+    args.chid = this;
     args.op = CA_OP_CONN_DOWN;
     ( *this->pConnCallBack ) ( args );
 }
 
-void oldChannelNotify::accessRightsNotify ( cacChannelIO &chan, const caar &ar )
+void oldChannelNotify::accessRightsNotify ( cacChannel &, const caAccessRights &ar )
 {
     struct access_rights_handler_args args;
-    args.chid = &chan;
-    args.ar = ar;
+    args.chid = this;
+    args.ar.read_access = ar.readPermit();
+    args.ar.write_access = ar.writePermit();
     ( *this->pAccessRightsFunc ) ( args );
 }
 
 bool oldChannelNotify::includeFirstConnectInCountOfOutstandingIO () const
 {
     return ( this->pConnCallBack == cacNoopConnHandler );
-}
-
-class oldChannelNotify * oldChannelNotify::pOldChannelNotify ()
-{
-    return this;
 }
 
 void * oldChannelNotify::operator new ( size_t size )

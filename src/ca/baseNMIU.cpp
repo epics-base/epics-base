@@ -14,8 +14,8 @@
 #include "nciu_IL.h"
 #include "baseNMIU_IL.h"
 
-baseNMIU::baseNMIU ( cacNotify &notifyIn, nciu &chanIn ) : 
-    cacNotifyIO ( notifyIn ), chan ( chanIn )
+baseNMIU::baseNMIU ( nciu &chanIn ) : 
+    chan ( chanIn )
 {
 }
 
@@ -30,13 +30,7 @@ class netSubscription * baseNMIU::isSubscription ()
 
 void baseNMIU::show ( unsigned /* level */ ) const
 {
-    printf ( "CA IO primitive at %p for channel %s\n", 
-        static_cast <const void *> ( this ), this->chan.pName () );
+    printf ( "CA IO primitive at %p\n", 
+        static_cast <const void *> ( this ) );
 }
-
-cacChannelIO & baseNMIU::channelIO () const
-{
-    return this->chan;
-}
-
 

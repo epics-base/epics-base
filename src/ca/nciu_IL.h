@@ -32,11 +32,6 @@ inline void nciu::operator delete ( void *pCadaver, size_t size )
     nciu::freeList.release ( pCadaver, size );
 }
 
-inline bool nciu::fullyConstructed () const
-{
-    return this->f_fullyConstructed;
-}
-
 inline bool nciu::identifierEquivelence ( unsigned idToMatch )
 {
     return idToMatch == this->id;
@@ -47,10 +42,10 @@ inline void nciu::resetRetryCount ()
     this->retry = 0u;
 }
 
-inline void nciu::accessRightsStateChange ( const caar &arIn )
+inline void nciu::accessRightsStateChange ( const caAccessRights &arIn )
 {
     this->accessRightState = arIn;
-    this->notify ().accessRightsNotify ( *this, arIn );
+    this->notify().accessRightsNotify ( *this, arIn );
 }
 
 inline ca_uint32_t nciu::getSID () const
@@ -81,13 +76,16 @@ inline void nciu::searchReplySetUp ( netiiu &iiu, unsigned sidIn,
     this->typeCode = typeIn;      
     this->count = countIn;
     this->sid = sidIn;
-    this->accessRightState.read_access = true;
-    this->accessRightState.write_access = true;
 }
 
 inline bool nciu::connected () const
 {
     return this->f_connected;
+}
+
+inline bool nciu::previouslyConnected () const
+{
+    return this->f_previousConn;
 }
 
 inline bool nciu::isAttachedToVirtaulCircuit ( const osiSockAddr &addrIn )

@@ -29,120 +29,27 @@
  */
 
 #include "iocinf.h"
+#include "oldAccess.h"
+#include "oldChannelNotify_IL.h"
 
-tsFreeList < class syncGroupNotify, 1024 > syncGroupNotify::freeList;
-epicsMutex syncGroupNotify::freeListMutex;
-
-syncGroupNotify::syncGroupNotify ( CASG &sgIn, void *pValueIn ) :
-    sg (sgIn), magic (CASG_MAGIC), pValue (pValueIn), seqNo ( sgIn.seqNo )
+syncGroupNotify::syncGroupNotify ( CASG &sgIn, chid chanIn ) :
+    chan ( chanIn ), sg ( sgIn ), 
+        magic ( CASG_MAGIC ), id ( 0u ), idIsValid ( false )
 {
-    epicsAutoMutex locker ( this->sg.mutex );
-    this->sg.ioList.add (*this);
-    this->sg.opPendCount++;
-}
-
-void syncGroupNotify::release ()
-{
-    delete this;
 }
 
 syncGroupNotify::~syncGroupNotify ()
 {
-    epicsAutoMutex locker ( this->sg.mutex );
-    this->sg.ioList.remove (*this);
-}
-
-void syncGroupNotify::completionNotify ( cacChannelIO & )
-{
-    bool done;
-
-    if ( this->magic != CASG_MAGIC ) {
-        ca_printf ("cac: sync group io_complete(): bad sync grp op magic number?\n");
-        return;
-    }
-
-    {
-        epicsAutoMutex locker ( this->sg.mutex );
-        if ( this->seqNo == this->sg.seqNo ) {
-            assert ( this->sg.opPendCount > 0u );
-            this->sg.opPendCount--;
-            done = this->sg.opPendCount == 0;
-        }
-        else {
-            done = true;
-        }
-    }
-
-    if ( done ) {
-        this->sg.sem.signal ();
-    }
-}
-
-void syncGroupNotify::completionNotify ( cacChannelIO &, 
-    unsigned type, unsigned long count, const void *pData )
-{
-    if ( this->magic != CASG_MAGIC ) {
-        ca_printf ("cac: sync group io_complete(): bad sync grp op magic number?\n");
-        return;
-    }
-
-    bool complete;
-
-    {
-        epicsAutoMutex locker ( this->sg.mutex );
-        if ( this->seqNo == this->sg.seqNo ) {
-            /*
-             * Update the user's variable
-             */
-            if ( this->pValue ) {
-                size_t size = dbr_size_n ( type, count );
-                memcpy ( this->pValue, pData, size );
-            }
-            assert ( this->sg.opPendCount > 0u );
-            this->sg.opPendCount--;
-            complete = this->sg.opPendCount == 0;
-        }
-        else {
-            complete = true;
-        }
-    }
-
-    if ( complete ) {
-        this->sg.sem.signal ();
+    if ( this->idIsValid ) {
+        this->chan->ioCancel ( this->id );
     }
 }
 
 void syncGroupNotify::show ( unsigned /* level */ ) const
 {
-    printf ( "pending sg op: pVal=%p, magic=%u seqNo=%lu sg=%p\n",
-         this->pValue, this->magic, this->seqNo, 
+    printf ( "pending sg op: chan=%s magic=%u sg=%p\n",
+         this->chan->pName(), this->magic, 
          static_cast <void *> ( &this->sg ) );
-}
-
-void syncGroupNotify::exceptionNotify ( cacChannelIO &io,
-    int status, const char *pContext )
-{
-    ca_signal_formated ( status, __FILE__, __LINE__, 
-            "CA Sync Group request to channel %s failed because \"%s\"\n", 
-            io.pName (), pContext);
-}
-
-void syncGroupNotify::exceptionNotify ( cacChannelIO &io,
-    int status, const char *pContext, unsigned type, unsigned long count )
-{
-    ca_signal_formated ( status, __FILE__, __LINE__, 
-            "CA Sync Group request failed with channel=%s type=%d count=%ld because \"%s\"\n", 
-            io.pName (), type, count, pContext);
-}
-
-void * syncGroupNotify::operator new (size_t size)
-{
-    return syncGroupNotify::freeList.allocate ( size );
-}
-
-void syncGroupNotify::operator delete (void *pCadaver, size_t size)
-{
-    syncGroupNotify::freeList.release ( pCadaver, size );
 }
 
 

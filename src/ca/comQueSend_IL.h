@@ -18,6 +18,8 @@
 #ifndef comQueSend_ILh
 #define comQueSend_ILh
 
+#include <new>
+
 #include "comBuf_IL.h"
 
 inline bufferReservoir::~bufferReservoir ()
@@ -30,16 +32,13 @@ inline comBuf *bufferReservoir::fetchOneBuffer ()
     return this->reservedBufs.get ();
 }
 
-inline bool bufferReservoir::addOneBuffer ()
+inline void bufferReservoir::addOneBuffer ()
 {
     comBuf *pBuf = new comBuf;
-    if ( pBuf ) {
-        this->reservedBufs.add ( *pBuf );
-        return true;
+    if ( ! pBuf ) {
+        throw std::bad_alloc();
     }
-    else {
-        return false;
-    }
+    this->reservedBufs.add ( *pBuf );
 }
 
 inline unsigned bufferReservoir::nBytes ()

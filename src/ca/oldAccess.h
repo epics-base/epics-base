@@ -15,41 +15,72 @@
  *	505 665 1831
  */
 
-
-class oldChannelNotify : public cacChannelNotify {
+struct oldChannelNotify : public cacChannelNotify {
 public:
-    oldChannelNotify ( caCh *pConnCallBackIn, void *pPrivateIn );
-    void release ();
+    oldChannelNotify ( cac &, const char *pName, caCh *pConnCallBackIn, void *pPrivateIn );
+    void destroy ();
+    bool ioAttachOK ();
     void setPrivatePointer ( void * );
     void * privatePointer () const;
-    int changeConnCallBack ( cacChannelIO &, caCh *pfunc );
-    int replaceAccessRightsEvent ( cacChannelIO &chan, caArh *pfunc );
+    int changeConnCallBack ( caCh *pfunc );
+    int replaceAccessRightsEvent ( caArh *pfunc );
 
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
+
+    const char *pName () const;
+    void show ( unsigned level ) const;
+    void initiateConnect ();
+    void read ( 
+        unsigned type, unsigned long count, 
+        cacDataNotify &notify, cacChannel::ioid *pId = 0 );
+    void read ( 
+        unsigned type, unsigned long count, 
+        void *pValue );
+    void write ( 
+        unsigned type, unsigned long count, 
+        const void *pValue );
+    void write ( 
+        unsigned type, unsigned long count, const void *pValue, 
+        cacNotify &, cacChannel::ioid *pId = 0 );
+    void subscribe ( 
+        unsigned type, unsigned long count, unsigned mask, 
+        cacDataNotify &, cacChannel::ioid & );
+    void ioCancel ( const cacChannel::ioid & );
+    void ioShow ( const cacChannel::ioid &, unsigned level ) const;
+    short nativeType () const;
+    unsigned long nativeElementCount () const;
+    caAccessRights accessRights () const; // defaults to unrestricted access
+    unsigned searchAttempts () const; // defaults to zero
+    double beaconPeriod () const; // defaults to negative DBL_MAX
+    bool ca_v42_ok () const; 
+    bool connected () const; 
+    bool previouslyConnected () const;
+    void hostName ( char *pBuf, unsigned bufLength ) const; // defaults to local host name
+    const char * pHostName () const; // deprecated - please do not use
 protected:
     ~oldChannelNotify (); // must allocate from pool
 private:
+    cacChannel &io;
     caCh *pConnCallBack;
     void *pPrivate;
     caArh *pAccessRightsFunc;
-    void connectNotify ( cacChannelIO &chan );
-    void disconnectNotify ( cacChannelIO &chan );
-    void accessRightsNotify ( cacChannelIO &chan, const caar & );
+    void connectNotify ( cacChannel &chan );
+    void disconnectNotify ( cacChannel &chan );
+    void accessRightsNotify ( cacChannel &chan, const caAccessRights & );
     bool includeFirstConnectInCountOfOutstandingIO () const;
-    class oldChannelNotify * pOldChannelNotify ();
-    static tsFreeList < class oldChannelNotify, 1024 > freeList;
+    static tsFreeList < struct oldChannelNotify, 1024 > freeList;
     static epicsMutex freeListMutex;
 };
 
-class getCopy : public cacNotify {
+class getCopy : public cacDataNotify {
 public:
     getCopy ( cac &cacCtx, unsigned type, 
         unsigned long count, void *pValue );
-    void release ();
+    void destroy ();
+    void show ( unsigned level ) const;
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
-    void show ( unsigned level ) const;
 protected:
     ~getCopy (); // allocate only out of pool
 private:
@@ -58,34 +89,30 @@ private:
     void *pValue;
     unsigned readSeq;
     unsigned type;
-    void completionNotify ( cacChannelIO & );
-    void completionNotify ( cacChannelIO &, 
+    void completion (
         unsigned type, unsigned long count, const void *pData);
-    void exceptionNotify ( cacChannelIO &, 
-        int status, const char *pContext);
-    void exceptionNotify ( cacChannelIO &, 
+    void exception (
         int status, const char *pContext, unsigned type, unsigned long count );
     static tsFreeList < class getCopy, 1024 > freeList;
     static epicsMutex freeListMutex;
 };
 
-class getCallback : public cacNotify {
+class getCallback : public cacDataNotify {
 public:
-    getCallback ( caEventCallBackFunc *pFunc, void *pPrivate );
-    void release ();
+    getCallback ( oldChannelNotify &chanIn, 
+        caEventCallBackFunc *pFunc, void *pPrivate );
+    void destroy ();
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
 protected:
     ~getCallback (); // allocate only out of pool
 private:
+    oldChannelNotify &chan;
     caEventCallBackFunc *pFunc;
     void *pPrivate;
-    void completionNotify ( cacChannelIO & );
-    void completionNotify ( cacChannelIO &, 
+    void completion (
         unsigned type, unsigned long count, const void *pData);
-    void exceptionNotify ( cacChannelIO &, 
-        int status, const char *pContext);
-    void exceptionNotify ( cacChannelIO &, 
+    void exception (
         int status, const char *pContext, unsigned type, unsigned long count );
     static tsFreeList < class getCallback, 1024 > freeList;
     static epicsMutex freeListMutex;
@@ -93,51 +120,90 @@ private:
 
 class putCallback : public cacNotify {
 public:
-    putCallback ( caEventCallBackFunc *pFunc, void *pPrivate );
-    void release ();
+    putCallback ( oldChannelNotify &, 
+        caEventCallBackFunc *pFunc, void *pPrivate );
+    void destroy ();
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
 protected:
     ~putCallback (); // allocate only out of pool
 private:
+    oldChannelNotify &chan;
     caEventCallBackFunc *pFunc;
     void *pPrivate;
-    void completionNotify ( cacChannelIO & );
-    void completionNotify ( cacChannelIO &, 
-        unsigned type, unsigned long count, const void *pData );
-    void exceptionNotify ( cacChannelIO &, 
+    void completion ();
+    void exception ( 
         int status, const char *pContext );
-    void exceptionNotify ( cacChannelIO &, 
-        int status, const char *pContext, unsigned type, unsigned long count );
     static tsFreeList < class putCallback, 1024 > freeList;
     static epicsMutex freeListMutex;
 };
 
-struct oldSubscription : public cacNotify {
+struct oldSubscription : public cacDataNotify {
 public:
-    oldSubscription ( caEventCallBackFunc *pFunc, void *pPrivate );
-    void release ();
+    oldSubscription ( 
+        oldChannelNotify &,
+        unsigned type, unsigned long nElem, unsigned mask, 
+        caEventCallBackFunc *pFunc, void *pPrivate );
+    bool ioAttachOK ();
+    void destroy ();
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
+    oldChannelNotify &channel () const;
 protected:
     ~oldSubscription (); // must allocate from pool
 private:
+    oldChannelNotify &chan;
+    cacChannel::ioid id;
     caEventCallBackFunc *pFunc;
     void *pPrivate;
-    void completionNotify ( cacChannelIO & );
-    void completionNotify ( cacChannelIO &, 
+    bool subscribed;
+    void completion (
         unsigned type, unsigned long count, const void *pData );
-    void exceptionNotify ( cacChannelIO &, 
-        int status, const char *pContext );
-    void exceptionNotify ( cacChannelIO &, 
+    void exception (
         int status, const char *pContext, unsigned type, unsigned long count );
     static tsFreeList < struct oldSubscription, 1024 > freeList;
     static epicsMutex freeListMutex;
 };
 
-inline getCallback::getCallback ( caEventCallBackFunc *pFuncIn, void *pPrivateIn ) :
-    pFunc ( pFuncIn ), pPrivate ( pPrivateIn )
+inline oldSubscription::oldSubscription  (
+        oldChannelNotify &chanIn,
+        unsigned type, unsigned long nElem, unsigned mask, 
+        caEventCallBackFunc *pFuncIn, void *pPrivateIn ) :
+    chan ( chanIn ), id ( 0 ), pFunc ( pFuncIn ), 
+        pPrivate ( pPrivateIn ), subscribed ( false )
 {
+    this->chan.subscribe ( type, nElem, mask, *this, this->id );
+    this->subscribed = true;
+}
+
+inline void oldSubscription::destroy ()
+{
+    if ( this->subscribed ) {
+        this->chan.ioCancel ( this->id );
+    }
+    delete this;
+}
+
+inline void * oldSubscription::operator new ( size_t size )
+{
+    epicsAutoMutex locker ( oldSubscription::freeListMutex );
+    return oldSubscription::freeList.allocate ( size );
+}
+
+inline void oldSubscription::operator delete ( void *pCadaver, size_t size )
+{
+    epicsAutoMutex locker ( oldSubscription::freeListMutex );
+    oldSubscription::freeList.release ( pCadaver, size );
+}
+
+inline oldChannelNotify & oldSubscription::channel () const
+{
+    return this->chan;
+}
+
+inline void getCopy::destroy ()
+{
+    delete this;
 }
 
 inline void * getCopy::operator new ( size_t size )
@@ -152,21 +218,9 @@ inline void getCopy::operator delete ( void *pCadaver, size_t size )
     getCopy::freeList.release ( pCadaver, size );
 }
 
-inline void * getCallback::operator new ( size_t size )
+inline void putCallback::destroy ()
 {
-    epicsAutoMutex locker ( getCallback::freeListMutex );
-    return getCallback::freeList.allocate ( size );
-}
-
-inline void getCallback::operator delete ( void *pCadaver, size_t size )
-{
-    epicsAutoMutex locker ( getCallback::freeListMutex );
-    getCallback::freeList.release ( pCadaver, size );
-}
-
-inline putCallback::putCallback ( caEventCallBackFunc *pFuncIn, void *pPrivateIn ) :
-    pFunc ( pFuncIn ), pPrivate ( pPrivateIn )
-{
+    delete this;
 }
 
 inline void * putCallback::operator new ( size_t size )
@@ -181,19 +235,19 @@ inline void putCallback::operator delete ( void *pCadaver, size_t size )
     putCallback::freeList.release ( pCadaver, size );
 }
 
-inline oldSubscription::oldSubscription  ( caEventCallBackFunc *pFuncIn, void *pPrivateIn ) :
-    pFunc ( pFuncIn ), pPrivate ( pPrivateIn )
+inline void getCallback::destroy ()
 {
+    delete this;
 }
 
-inline void * oldSubscription::operator new ( size_t size )
+inline void * getCallback::operator new ( size_t size )
 {
-    epicsAutoMutex locker ( oldSubscription::freeListMutex );
-    return oldSubscription::freeList.allocate ( size );
+    epicsAutoMutex locker ( getCallback::freeListMutex );
+    return getCallback::freeList.allocate ( size );
 }
 
-inline void oldSubscription::operator delete ( void *pCadaver, size_t size )
+inline void getCallback::operator delete ( void *pCadaver, size_t size )
 {
-    epicsAutoMutex locker ( oldSubscription::freeListMutex );
-    oldSubscription::freeList.release ( pCadaver, size );
+    epicsAutoMutex locker ( getCallback::freeListMutex );
+    getCallback::freeList.release ( pCadaver, size );
 }

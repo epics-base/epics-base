@@ -119,36 +119,34 @@ void netiiu::lastChannelDetachNotify ()
 {
 }
 
-int netiiu::writeRequest ( nciu &, unsigned, unsigned, const void * )
+void netiiu::writeRequest ( nciu &, unsigned, unsigned, const void * )
 {
-    return ECA_DISCONNCHID;
+    throw cacChannel::notConnected();
 }
 
-int netiiu::writeNotifyRequest ( nciu &, netWriteNotifyIO &, unsigned, unsigned, const void * )
+void netiiu::writeNotifyRequest ( nciu &, netWriteNotifyIO &, unsigned, unsigned, const void * )
 {
-    return ECA_DISCONNCHID;
+    throw cacChannel::notConnected();
 }
 
-int netiiu::readNotifyRequest ( nciu &, netReadNotifyIO &, unsigned, unsigned )
+void netiiu::readNotifyRequest ( nciu &, netReadNotifyIO &, unsigned, unsigned )
 {
-    return ECA_DISCONNCHID;
+    throw cacChannel::notConnected();
 }
 
-int netiiu::createChannelRequest ( nciu & )
-{
-    return ECA_DISCONNCHID;
-}
-
-int netiiu::clearChannelRequest ( nciu & )
-{
-    return ECA_DISCONNCHID;
-}
-
-void netiiu::subscriptionRequest ( netSubscription & )
+void netiiu::createChannelRequest ( nciu & )
 {
 }
 
-void netiiu::subscriptionCancelRequest ( netSubscription & )
+void netiiu::clearChannelRequest ( nciu & )
+{
+}
+
+void netiiu::subscriptionRequest ( nciu &, netSubscription & )
+{
+}
+
+void netiiu::subscriptionCancelRequest ( nciu &, netSubscription & )
 {
 }
 

@@ -90,7 +90,7 @@ void comQueSend::clear ()
 //   to the que while some other thread is flushing
 //   and therefore prevents deadlocks, and it also
 //   allows proper status to be returned)
-int comQueSend::reserveSpace ( unsigned msgSize )
+void comQueSend::reserveSpace ( unsigned msgSize )
 {
     unsigned bytesReserved;
 
@@ -102,15 +102,9 @@ int comQueSend::reserveSpace ( unsigned msgSize )
     }
 
     while ( bytesReserved < msgSize ) {
-        if ( reservoir.addOneBuffer () ) {
-            bytesReserved += comBuf::capacityBytes ();
-        }
-        else {
-            return ECA_ALLOCMEM;
-        }
+        reservoir.addOneBuffer ();
+        bytesReserved += comBuf::capacityBytes ();
     }
-
-    return ECA_NORMAL;
 }
 
 void comQueSend::copy_dbr_string ( const void *pValue, unsigned nElem )

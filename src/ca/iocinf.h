@@ -153,7 +153,7 @@ struct msgDescriptor {
 class bufferReservoir {
 public:
     ~bufferReservoir ();
-    bool addOneBuffer ();
+    void addOneBuffer ();
     comBuf *fetchOneBuffer ();
     unsigned nBytes ();
     void drain ();
@@ -166,7 +166,7 @@ public:
     comQueSend ( wireSendAdapter & );
     ~comQueSend ();
     void clear ();
-    int reserveSpace ( unsigned msgSize );
+    void reserveSpace ( unsigned msgSize );
     unsigned occupiedBytes () const;
     bool flushEarlyThreshold ( unsigned nBytesThisMsg ) const;
     bool flushBlockThreshold ( unsigned nBytesThisMsg ) const;
@@ -209,9 +209,9 @@ private:
 
 class caClient {
 public:
-    virtual void exceptionNotify (int status, const char *pContext,
+    virtual void exception (int status, const char *pContext,
         const char *pFileName, unsigned lineNo) = 0;
-    virtual void exceptionNotify (int status, const char *pContext,
+    virtual void exception (int status, const char *pContext,
         unsigned type, unsigned long count, 
         const char *pFileName, unsigned lineNo) = 0;
 };
@@ -220,35 +220,31 @@ class netiiu;
 class tcpiiu;
 class baseNMIU;
 
-//
-// fields in class nciu which really belong to tcpiiu
-//
 class cacPrivateListOfIO {
 private:
     tsDLList < class baseNMIU > eventq;
     friend class cac;
 };
 
-class nciu : public cacChannelIO, public tsDLNode < nciu >,
+class nciu : public cacChannel, public tsDLNode < nciu >,
     public chronIntIdRes < nciu >, public cacPrivateListOfIO {
 public:
     nciu ( class cac &, netiiu &, 
         cacChannelNotify &, const char *pNameIn );
-    bool fullyConstructed () const;
     void connect ( unsigned nativeType, 
         unsigned long nativeCount, unsigned sid );
     void connect ();
     void disconnect ( netiiu &newiiu );
     bool searchMsg ( unsigned short retrySeqNumber, 
         unsigned &retryNoForThisChannel );
-    int createChannelRequest ();
+    void createChannelRequest ();
     bool isAttachedToVirtaulCircuit ( const osiSockAddr & );
     bool identifierEquivelence ( unsigned idToMatch );
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
     void resetRetryCount ();
     unsigned getRetrySeqNo () const;
-    void accessRightsStateChange ( const caar &arIn );
+    void accessRightsStateChange ( const caAccessRights & );
     ca_uint32_t getSID () const;
     ca_uint32_t getCID () const;
     netiiu * getPIIU ();
@@ -262,11 +258,12 @@ public:
     const char * pHostName () const; // deprecated - please do not use
     unsigned long nativeElementCount () const;
     bool connected () const;
+    bool previouslyConnected () const;
 protected:
     ~nciu (); // force pool allocation
 private:
     cac &cacCtx;
-    caar accessRightState;
+    caAccessRights accessRightState;
     unsigned count;
     char *pNameStr;
     netiiu *piiu;
@@ -276,45 +273,54 @@ private:
     unsigned short nameLength; // channel name length
     unsigned short typeCode;
     unsigned f_connected:1;
-    unsigned f_fullyConstructed:1;
     unsigned f_previousConn:1; // T if connected in the past
     unsigned f_claimSent:1;
     unsigned f_firstConnectDecrementsOutstandingIO:1;
     unsigned f_connectTimeOutSeen:1;
     void initiateConnect ();
-    int read ( unsigned type, 
-        unsigned long count, cacNotify &notify );
-    int write ( unsigned type, 
-        unsigned long count, const void *pValue );
-    int write ( unsigned type, 
-        unsigned long count, const void *pValue, cacNotify & );
-    int subscribe ( unsigned type, unsigned long nElem, 
-                         unsigned mask, cacNotify &notify,
-                         cacNotifyIO *&pNotifyIO );
+    ioStatus read ( unsigned type, unsigned long count, 
+        cacDataNotify &, ioid * );
+    void write ( unsigned type, unsigned long count, 
+        const void *pValue );
+    ioStatus write ( unsigned type, unsigned long count, 
+        const void *pValue, cacNotify &, ioid * );
+    void subscribe ( unsigned type, unsigned long nElem, 
+        unsigned mask, cacDataNotify &notify, ioid * );
+    void ioCancel ( const ioid & );
+    void ioShow ( const ioid &, unsigned level ) const;
     short nativeType () const;
-    channel_state state () const;
-    caar accessRights () const;
+    caAccessRights accessRights () const;
     unsigned searchAttempts () const;
     double beaconPeriod () const;
     bool ca_v42_ok () const;
     void hostName ( char *pBuf, unsigned bufLength ) const;
     void notifyStateChangeFirstConnectInCountOfOutstandingIO ();
+    static void stringVerify ( const char *pStr, const unsigned count );
     static tsFreeList < class nciu, 1024 > freeList;
     static epicsMutex freeListMutex;
 };
 
-class baseNMIU : public cacNotifyIO, public tsDLNode < baseNMIU >, 
+class baseNMIU : public tsDLNode < baseNMIU >, 
         public chronIntIdRes < baseNMIU > {
 public:
-    baseNMIU ( cacNotify &notifyIn, nciu &chan );
+    baseNMIU ( nciu &chan );
     virtual class netSubscription * isSubscription ();
     virtual void destroy ( class cacRecycle & ) = 0; // only called by cac
+    virtual void completion () = 0;
+    virtual void exception ( int status, const char *pContext ) = 0;
+    virtual void completion ( unsigned type, 
+        unsigned long count, const void *pData ) = 0;
+    virtual void exception ( int status, 
+        const char *pContext, unsigned type, unsigned long count ) = 0;
     void show ( unsigned level ) const;
     ca_uint32_t getID () const;
     nciu & channel () const;
-    cacChannelIO & channelIO () const;
 protected:
     virtual ~baseNMIU () = 0;
+//
+// perhpas we should not store the channel here and instead fetch it out of the 
+// notify 
+//
     nciu &chan;
 };
 
@@ -323,21 +329,27 @@ public:
     static netSubscription * factory ( 
         tsFreeList < class netSubscription, 1024 > &, 
         nciu &chan, unsigned type, unsigned long count, 
-        unsigned mask, cacNotify &notify );
+        unsigned mask, cacDataNotify &notify );
     void show ( unsigned level ) const;
-    unsigned long getCount () const;
+    unsigned long getCount ( nciu & ) const;
     unsigned getType () const;
     unsigned getMask () const;
-    void destroy ( cacRecycle & );
+    void destroy ( class cacRecycle & );
+    void completion ();
+    void exception ( int status, const char *pContext );
+    void completion ( unsigned type, 
+        unsigned long count, const void *pData );
+    void exception ( int status, 
+        const char *pContext, unsigned type, unsigned long count );
 protected:
+    ~netSubscription ();
 private:
     const unsigned long count;
+    cacDataNotify &notify;
     const unsigned type;
     const unsigned mask;
     netSubscription ( nciu &chan, unsigned type, unsigned long count, 
-        unsigned mask, cacNotify &notify );
-    ~netSubscription ();
-    void cancel ();
+        unsigned mask, cacDataNotify &notify );
     class netSubscription * isSubscription ();
     void * operator new ( size_t, 
         tsFreeList < class netSubscription, 1024 > & );
@@ -351,13 +363,20 @@ class netReadNotifyIO : public baseNMIU {
 public:
     static netReadNotifyIO * factory ( 
         tsFreeList < class netReadNotifyIO, 1024 > &, 
-        nciu &chan, cacNotify &notify );
+        nciu &chan, cacDataNotify &notify );
     void show ( unsigned level ) const;
-    void destroy ( cacRecycle & );
-private:
-    netReadNotifyIO ( nciu &chan, cacNotify &notify );
+    void destroy ( class cacRecycle & );
+    void completion ();
+    void exception ( int status, const char *pContext );
+    void completion ( unsigned type, 
+        unsigned long count, const void *pData );
+    void exception ( int status, 
+        const char *pContext, unsigned type, unsigned long count );
+protected:
     ~netReadNotifyIO ();
-    void cancel ();
+private:
+    cacDataNotify &notify;
+    netReadNotifyIO ( nciu &chan, cacDataNotify &notify );
     void * operator new ( size_t, 
         tsFreeList < class netReadNotifyIO, 1024 > & );
 #   if ! defined ( NO_PLACEMENT_DELETE )
@@ -372,11 +391,18 @@ public:
         tsFreeList < class netWriteNotifyIO, 1024 > &, 
         nciu &chan, cacNotify &notify );
     void show ( unsigned level ) const;
-    void destroy ( cacRecycle & );
-private:
-    netWriteNotifyIO ( nciu &chan, cacNotify &notify );
+    void destroy ( class cacRecycle & );
+    void completion ();
+    void exception ( int status, const char *pContext );
+    void completion ( unsigned type, 
+        unsigned long count, const void *pData );
+    void exception ( int status, 
+        const char *pContext, unsigned type, unsigned long count );
+protected:
     ~netWriteNotifyIO ();
-    void cancel ();
+private:
+    cacNotify &notify;
+    netWriteNotifyIO ( nciu &chan, cacNotify &notify );
     void * operator new ( size_t, 
         tsFreeList < class netWriteNotifyIO, 1024 > & );
 #   if ! defined ( NO_PLACEMENT_DELETE )
@@ -449,15 +475,15 @@ public:
     virtual bool ca_v42_ok () const;
     virtual bool ca_v41_ok () const;
     virtual bool pushDatagramMsg ( const caHdr &hdr, const void *pExt, ca_uint16_t extsize);
-    virtual int writeRequest ( nciu &, unsigned type, unsigned nElem, const void *pValue);
-    virtual int writeNotifyRequest ( nciu &, netWriteNotifyIO &, unsigned type, unsigned nElem, const void *pValue );
-    virtual int readNotifyRequest ( nciu &, netReadNotifyIO &, unsigned type, unsigned nElem );
-    virtual int createChannelRequest ( nciu & );
+    virtual void writeRequest ( nciu &, unsigned type, unsigned nElem, const void *pValue );
+    virtual void writeNotifyRequest ( nciu &, netWriteNotifyIO &, unsigned type, unsigned nElem, const void *pValue );
+    virtual void readNotifyRequest ( nciu &, netReadNotifyIO &, unsigned type, unsigned nElem );
+    virtual void createChannelRequest ( nciu & );
     virtual void connectAllIO ( nciu &chan );
     virtual void disconnectAllIO ( nciu &chan );
-    virtual int clearChannelRequest ( nciu & );
-    virtual void subscriptionRequest ( netSubscription &subscr );
-    virtual void subscriptionCancelRequest ( netSubscription &subscr );
+    virtual void clearChannelRequest ( nciu & );
+    virtual void subscriptionRequest ( nciu &, netSubscription &subscr );
+    virtual void subscriptionCancelRequest ( nciu &, netSubscription &subscr );
     virtual double beaconPeriod () const;
     virtual void flushRequest ();
     virtual bool flushBlockThreshold () const;
@@ -541,6 +567,9 @@ public:
     // exceptions
     class noSocket {};
     class noMemory {};
+
+    void fdCreateNotify ( CAFDHANDLER *func, void *pArg );
+    void fdDestroyNotify ( CAFDHANDLER *func, void *pArg );
 private:
     char xmitBuf [MAX_UDP_SEND];   
     char recvBuf [MAX_UDP_RECV];
@@ -585,7 +614,6 @@ public:
     void connectNotify ();
     void cancel ();
     void show ( unsigned level ) const;
-
 private:
     const double period;
     epicsTimer &timer;
@@ -655,8 +683,8 @@ public:
     bool initiateConnect ( const osiSockAddr &addrIn, unsigned minorVersion, 
         class bhe &bhe, ipAddrToAsciiEngine &engineIn );
     void connect ();
-    void disconnect ();
-    void suicide ();
+    void processIncoming ();
+    void destroy ();
     void cleanShutdown ();
     void forcedShutdown ();
     void beaconAnomalyNotify ();
@@ -670,7 +698,6 @@ public:
     virtual void show ( unsigned level ) const;
     bool setEchoRequestPending ();
 
-    void processIncoming ();
     bool ca_v41_ok () const;
     bool ca_v42_ok () const;
     bool ca_v44_ok () const;
@@ -681,6 +708,9 @@ public:
     bool alive () const;
     double beaconPeriod () const;
     bhe * getBHE () const;
+
+    void fdCreateNotify ( epicsMutex &mutex, CAFDHANDLER *func, void *pArg );
+    void fdDestroyNotify ( CAFDHANDLER *func, void *pArg );
 private:
     tcpRecvWatchdog recvDog;
     tcpSendWatchdog sendDog;
@@ -720,38 +750,21 @@ private:
     void lastChannelDetachNotify ();
 
     // send protocol stubs
-    int echoRequest ();
-    int noopRequest ();
-    int disableFlowControlRequest ();
-    int enableFlowControlRequest ();
-    int hostNameSetRequest ();
-    int userNameSetRequest ();
-    int writeRequest ( nciu &, unsigned type, unsigned nElem, const void *pValue );
-    int writeNotifyRequest ( nciu &, netWriteNotifyIO &, unsigned type, unsigned nElem, const void *pValue );
-    int readNotifyRequest ( nciu &, netReadNotifyIO &, unsigned type, unsigned nElem );
-    int createChannelRequest ( nciu & );
-    int clearChannelRequest ( nciu & );
-    void subscriptionRequest ( netSubscription &subscr );
-    void subscriptionCancelRequest ( netSubscription &subscr );
-
-    // recv protocol stubs
-    bool noopAction ();
-    bool echoRespAction ();
-    bool writeNotifyRespAction ();
-    bool readNotifyRespAction ();
-    bool eventRespAction ();
-    bool readRespAction ();
-    bool clearChannelRespAction ();
-    bool exceptionRespAction ();
-    bool accessRightsRespAction ();
-    bool claimCIURespAction ();
-    bool verifyAndDisconnectChan ();
-    bool badTCPRespAction ();
+    void echoRequest ();
+    void noopRequest ();
+    void disableFlowControlRequest ();
+    void enableFlowControlRequest ();
+    void hostNameSetRequest ();
+    void userNameSetRequest ();
+    void writeRequest ( nciu &, unsigned type, unsigned nElem, const void *pValue );
+    void writeNotifyRequest ( nciu &, netWriteNotifyIO &, unsigned type, unsigned nElem, const void *pValue );
+    void readNotifyRequest ( nciu &, netReadNotifyIO &, unsigned type, unsigned nElem );
+    void createChannelRequest ( nciu & );
+    void clearChannelRequest ( nciu & );
+    void subscriptionRequest ( nciu &, netSubscription &subscr );
+    void subscriptionCancelRequest ( nciu &, netSubscription &subscr );
 
     bool flush (); // only to be called by the send thread
-
-    typedef bool ( tcpiiu::*pProtoStubTCP ) ();
-    static const pProtoStubTCP tcpJumpTableCAC [];
 };
 
 class inetAddrID {
@@ -839,60 +852,107 @@ private:
 
 static const unsigned CASG_MAGIC = 0xFAB4CAFE;
 
-class syncGroupNotify : public cacNotify, public tsDLNode < syncGroupNotify > {
+// used to control access to CASG's recycle routines which
+// should only be indirectly invoked by CASG when its lock
+// is applied
+class casgRecycle {
 public:
-    syncGroupNotify  ( struct CASG &sgIn, void *pValue );
-    void release ();
-    void show ( unsigned level ) const;
-
-    void * operator new ( size_t size );
-    void operator delete ( void *pCadaver, size_t size );
-protected:
-    virtual ~syncGroupNotify (); // allocate only from pool
-private:
-    struct CASG &sg;
-    unsigned magic;
-    void *pValue;
-    unsigned long seqNo;
-    void completionNotify ( cacChannelIO & );
-    void completionNotify ( cacChannelIO &,
-        unsigned type, unsigned long count, const void *pData );
-    void exceptionNotify ( cacChannelIO &,
-        int status, const char *pContext );
-    void exceptionNotify ( cacChannelIO &,
-        int status, const char *pContext, unsigned type, unsigned long count );
-    static tsFreeList < class syncGroupNotify, 1024 > freeList;
-    static epicsMutex freeListMutex;
+    virtual void recycleSyncGroupWriteNotify ( class syncGroupWriteNotify &io ) = 0;
+    virtual void recycleSyncGroupReadNotify ( class syncGroupReadNotify &io ) = 0;
 };
 
-/*
- * one per synch group
- */
-struct CASG : public chronIntIdRes < CASG > {
+class syncGroupNotify : public tsDLNode < syncGroupNotify > {
+public:
+    syncGroupNotify  ( struct CASG &sgIn, chid );
+    virtual void destroy ( casgRecycle & ) = 0;
+    void show ( unsigned level ) const;
+protected:
+    chid chan;
+    struct CASG &sg;
+    const unsigned magic;
+    cacChannel::ioid id;
+    bool idIsValid;
+    ~syncGroupNotify ();  
+};
+
+class syncGroupReadNotify : public syncGroupNotify, public cacDataNotify {
+public:
+    static syncGroupReadNotify * factory ( 
+        tsFreeList < class syncGroupReadNotify, 128 > &, 
+        struct CASG &, chid, unsigned type, 
+        unsigned long count, void *pValueIn );
+    void destroy ( casgRecycle & );
+    void show ( unsigned level ) const;
+protected:
+    virtual ~syncGroupReadNotify ();
+private:
+    void *pValue;
+    syncGroupReadNotify ( struct CASG &sgIn, chid, 
+        unsigned type, unsigned long count, void *pValueIn );
+    void * operator new ( size_t, 
+        tsFreeList < class syncGroupReadNotify, 128 > & );
+#   if ! defined ( NO_PLACEMENT_DELETE )
+    void operator delete ( void *, size_t, 
+        tsFreeList < class syncGroupReadNotify, 128 > & );
+#   endif
+    void completion (
+        unsigned type, unsigned long count, const void *pData );
+    void exception (
+        int status, const char *pContext, unsigned type, unsigned long count );
+};
+
+class syncGroupWriteNotify : public syncGroupNotify, public cacNotify {
+public:
+    static syncGroupWriteNotify * factory ( 
+        tsFreeList < class syncGroupWriteNotify, 128 > &, 
+        struct CASG &, chid, unsigned type, 
+        unsigned long count, const void *pValueIn );
+    void destroy ( casgRecycle & );
+    void show ( unsigned level ) const;
+protected:
+    virtual ~syncGroupWriteNotify (); // allocate only from pool
+private:
+    void *pValue;
+    syncGroupWriteNotify  ( struct CASG &, chid, unsigned type, 
+                       unsigned long count, const void *pValueIn );
+    void * operator new ( size_t, 
+        tsFreeList < class syncGroupWriteNotify, 128 > & );
+#   if ! defined ( NO_PLACEMENT_DELETE )
+    void operator delete ( void *, size_t, 
+        tsFreeList < class syncGroupWriteNotify, 128 > & );
+#   endif
+    void completion ();
+    void exception (int status, const char *pContext );
+};
+
+struct CASG : public chronIntIdRes < CASG >, private casgRecycle {
 public:
     CASG (cac &cacIn);
+    bool ioComplete () const;
     void destroy ();
     bool verify () const;
-    bool ioComplete () const;
     int block ( double timeout );
     void reset ();
     void show ( unsigned level ) const;
     int get ( chid pChan, unsigned type, unsigned long count, void *pValue );
     int put ( chid pChan, unsigned type, unsigned long count, const void *pValue );
+    void destroyIO ( syncGroupNotify & );
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
+protected:
+    ~CASG ();
 private:
+    tsDLList < syncGroupNotify > ioList;
     epicsMutex mutable mutex;
     epicsEvent sem;
-    tsDLList < syncGroupNotify > ioList;
-    unsigned long opPendCount;
-    unsigned long seqNo;
     cac &client;
     unsigned magic;
-    ~CASG ();
+    tsFreeList < class syncGroupReadNotify, 128 > freeListReadOP;
+    tsFreeList < class syncGroupWriteNotify, 128 > freeListWriteOP;
+    void recycleSyncGroupWriteNotify ( syncGroupWriteNotify &io );
+    void recycleSyncGroupReadNotify ( syncGroupReadNotify &io );
     static tsFreeList < struct CASG, 128 > freeList;
     static epicsMutex freeListMutex;
-    friend class syncGroupNotify;
 };
 
 class ioCounterNet {
@@ -914,7 +974,7 @@ private:
 };
 
 // used to control access to cac's recycle routines which
-// should only be indirectly invoked by CAC whenits lock
+// should only be indirectly invoked by CAC when its lock
 // is applied
 class cacRecycle {
 public:
@@ -923,13 +983,20 @@ public:
     virtual void recycleSubscription ( netSubscription &io ) = 0;
 };
 
-//
-//      If multiple lock are applied simultaneously then they 
-//      must be applied in this order to avoid deadlocks
-//
-//      cac::iiuListMutex
-//      cac::defaultMutex:
-//
+template < class T >
+class autoPtrRecycle {
+public:
+    autoPtrRecycle ( cacRecycle &, T * );
+    ~autoPtrRecycle ();
+    T & operator * () const;
+    T * operator -> () const;
+    T * get () const;
+    T * release ();
+private:
+    T *p;
+    cacRecycle &r;
+};
+
 class cac : public caClient, private cacRecycle
 {
 public:
@@ -955,30 +1022,17 @@ public:
     void flushRequest ();
     int pendIO ( const double &timeout );
     int pendEvent ( const double &timeout );
-    bool ioCompletionNotify ( unsigned id, unsigned type, 
-        unsigned long count, const void *pData );
-    bool ioExceptionNotify ( unsigned id, 
-        int status, const char *pContext );
-    bool ioExceptionNotify ( unsigned id, int status, 
-        const char *pContext, unsigned type, unsigned long count );
-    bool ioCompletionNotifyAndDestroy ( unsigned id );
-    bool ioCompletionNotifyAndDestroy ( unsigned id, 
-        unsigned type, unsigned long count, const void *pData );
-    bool ioExceptionNotifyAndDestroy ( unsigned id, 
-       int status, const char *pContext );
-    bool ioExceptionNotifyAndDestroy ( unsigned id, 
-       int status, const char *pContext, unsigned type, unsigned long count );
     void connectAllIO ( nciu &chan );
     void disconnectAllIO ( nciu &chan );
     void destroyAllIO ( nciu &chan );
-    void destroyReadNotifyIO ( netReadNotifyIO &io );
-    void destroyWriteNotifyIO ( netWriteNotifyIO &io );
-    void destroySubscription ( netSubscription &io );
+    void executeResponse ( tcpiiu &, caHdr &, char *pMshBody );
+    void ioCancel ( nciu &chan, const cacChannel::ioid &id );
+    void ioShow ( const cacChannel::ioid &id, unsigned level ) const;
 
     // exception routines
-    void exceptionNotify ( int status, const char *pContext,
+    void exception ( int status, const char *pContext,
         const char *pFileName, unsigned lineNo );
-    void exceptionNotify ( int status, const char *pContext,
+    void exception ( int status, const char *pContext,
         unsigned type, unsigned long count, 
         const char *pFileName, unsigned lineNo );
     void changeExceptionEvent ( caExceptionHandler *pfunc, void *arg );
@@ -986,24 +1040,23 @@ public:
 
     // channel routines
     bool connectChannel ( unsigned id );
-    bool connectChannel ( bool v44Ok, unsigned id,  
-          unsigned nativeType, unsigned long nativeCount, unsigned sid );
-    void disconnectChannel ( unsigned id );
     void installNetworkChannel ( nciu &, netiiu *&piiu );
     bool lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid, 
              unsigned typeCode, unsigned long count, unsigned minorVersionNumber,
              const osiSockAddr & );
-    void accessRightsNotify ( unsigned id, const caar & );
     void uninstallChannel ( nciu & );
-    cacChannelIO * createChannelIO ( const char *name_str, cacChannelNotify &chan );
-    void registerService ( cacServiceIO &service );
+    cacChannel & createChannel ( const char *name_str, cacChannelNotify &chan );
+    void registerService ( cacService &service );
 
     // IO request stubs
-    int writeRequest ( nciu &, unsigned type, unsigned nElem, const void *pValue );
-    int writeNotifyRequest ( nciu &, cacNotify &, unsigned type, unsigned nElem, const void *pValue );
-    int readNotifyRequest ( nciu &, cacNotify &, unsigned type, unsigned nElem );
-    cacNotifyIO * subscriptionRequest ( nciu &chan, unsigned type, unsigned long nElem, 
-                unsigned mask, cacNotify &notify );
+    void writeRequest ( nciu &, unsigned type, 
+        unsigned nElem, const void *pValue );
+    cacChannel::ioid writeNotifyRequest ( nciu &, unsigned type, 
+        unsigned nElem, const void *pValue, cacNotify & );
+    cacChannel::ioid readNotifyRequest ( nciu &, unsigned type, 
+        unsigned nElem, cacDataNotify & );
+    cacChannel::ioid subscriptionRequest ( nciu &, unsigned type, 
+        unsigned long nElem, unsigned mask, cacDataNotify & );
 
     // sync group routines
     CASG * lookupCASG ( unsigned id );
@@ -1012,7 +1065,6 @@ public:
 
     // fd call back registration
     void registerForFileDescriptorCallBack ( CAFDHANDLER *pFunc, void *pArg );
-    void getFDRegCallback ( CAFDHANDLER *&fdRegFunc, void *&fdRegArg ) const;
 
     // callback preemption control
     void enableCallbackPreemption ();
@@ -1030,14 +1082,13 @@ public:
     const char * userNamePointer () const;
     unsigned getInitializingThreadsPriority () const;
 
-    epicsMutex & mutex ();
+    epicsMutex & mutexRef ();
 
 private:
     ioCounterNet            ioCounter;
     ipAddrToAsciiEngine     ipToAEngine;
     cacServiceList          services;
     tsDLList <tcpiiu>       iiuList;
-    tsDLList <tcpiiu>       iiuListLimbo;
     chronIntIdResTable
         < nciu >            chanTable;
     chronIntIdResTable 
@@ -1057,10 +1108,8 @@ private:
                             freeListSubscription;
     epicsTime               programBeginTime;
     double                  connTMO;
-    // defaultMutex can be applied if iiuListMutex is already applied
-    mutable epicsMutex      defaultMutex; 
-    // iiuListMutex must not be applied if defaultMutex is already applied
-    mutable epicsMutex      iiuListMutex;
+    mutable epicsMutex      mutex; 
+    epicsEvent              notifyCompletionEvent;
     epicsTimerQueueActive   *pTimerQueue;
     caExceptionHandler      *ca_exception_func;
     void                    *ca_exception_arg;
@@ -1072,13 +1121,47 @@ private:
     udpiiu                  *pudpiiu;
     searchTimer             *pSearchTmr;
     repeaterSubscribeTimer  *pRepeaterSubscribeTmr;
+    unsigned                ioNotifyInProgressId;
     unsigned                initializingThreadsPriority;
+    unsigned                threadsBlockingOnNotifyCompletion;
     bool                    enablePreemptiveCallback;
+    bool                    ioInProgress;
     bool setupUDP ();
     void flushIfRequired ( nciu & ); // lock must be applied
     void recycleReadNotifyIO ( netReadNotifyIO &io );
     void recycleWriteNotifyIO ( netWriteNotifyIO &io );
     void recycleSubscription ( netSubscription &io );
+
+    bool ioCompletionNotify ( unsigned id, unsigned type, 
+        unsigned long count, const void *pData );
+    bool ioExceptionNotify ( unsigned id, 
+        int status, const char *pContext );
+    bool ioExceptionNotify ( unsigned id, int status, 
+        const char *pContext, unsigned type, unsigned long count );
+    bool ioCompletionNotifyAndDestroy ( unsigned id );
+    bool ioCompletionNotifyAndDestroy ( unsigned id, 
+        unsigned type, unsigned long count, const void *pData );
+    bool ioExceptionNotifyAndDestroy ( unsigned id, 
+       int status, const char *pContext );
+    bool ioExceptionNotifyAndDestroy ( unsigned id, 
+       int status, const char *pContext, unsigned type, unsigned long count );
+
+    // recv protocol stubs
+    bool noopAction ( tcpiiu &, const caHdr &, void *pMsgBdy );
+    bool echoRespAction ( tcpiiu &, const caHdr &, void *pMsgBdy );
+    bool writeNotifyRespAction ( tcpiiu &, const caHdr &, void *pMsgBdy );
+    bool readNotifyRespAction ( tcpiiu &, const caHdr &, void *pMsgBdy );
+    bool eventRespAction ( tcpiiu &, const caHdr &, void *pMsgBdy );
+    bool readRespAction ( tcpiiu &, const caHdr &, void *pMsgBdy );
+    bool clearChannelRespAction ( tcpiiu &, const caHdr &, void *pMsgBdy );
+    bool exceptionRespAction ( tcpiiu &, const caHdr &, void *pMsgBdy );
+    bool accessRightsRespAction ( tcpiiu &, const caHdr &, void *pMsgBdy );
+    bool claimCIURespAction ( tcpiiu &, const caHdr &, void *pMsgBdy );
+    bool verifyAndDisconnectChan ( tcpiiu &, const caHdr &, void *pMsgBdy );
+    bool badTCPRespAction ( tcpiiu &, const caHdr &, void *pMsgBdy );
+    typedef bool ( cac::*pProtoStubTCP ) ( 
+        tcpiiu &, const caHdr &, void *pMsgBdy );
+    static const pProtoStubTCP tcpJumpTableCAC [];
 };
 
 /*

@@ -20,19 +20,19 @@ cacChannelNotify::~cacChannelNotify ()
 {
 }
 
-void cacChannelNotify::connectNotify ( cacChannelIO & )
+void cacChannelNotify::connectNotify ( cacChannel & )
 {
 }
 
-void cacChannelNotify::disconnectNotify ( cacChannelIO & )
+void cacChannelNotify::disconnectNotify ( cacChannel & )
 {
 }
 
-void cacChannelNotify::accessRightsNotify ( cacChannelIO &, const caar & )
+void cacChannelNotify::accessRightsNotify ( cacChannel &, const caAccessRights & )
 {
 }
 
-void cacChannelNotify::exceptionNotify ( cacChannelIO &io, int status, const char *pContext )
+void cacChannelNotify::exception ( cacChannel &io, int status, const char *pContext )
 {
     ca_signal_formated ( status, __FILE__, __LINE__, "channel=%s context=\"%s\"\n", 
         io.pHostName (), pContext );
@@ -41,9 +41,4 @@ void cacChannelNotify::exceptionNotify ( cacChannelIO &io, int status, const cha
 bool cacChannelNotify::includeFirstConnectInCountOfOutstandingIO () const
 {
     return false;
-}
-
-class oldChannelNotify * cacChannelNotify::pOldChannelNotify ()
-{
-    return 0;
 }

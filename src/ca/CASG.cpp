@@ -29,13 +29,14 @@
 
 #include "iocinf.h"
 #include "oldAccess.h"
+#include "autoPtrDestroy.h"
+#include "oldChannelNotify_IL.h"
 
 tsFreeList < struct CASG, 128 > CASG::freeList;
 epicsMutex CASG::freeListMutex;
 
 CASG::CASG ( cac &cacIn ) :
-    opPendCount ( 0u ),  seqNo ( 0u ), 
-	client ( cacIn ), magic ( CASG_MAGIC )
+    client ( cacIn ), magic ( CASG_MAGIC )
 {
     client.installCASG ( *this );
 }
@@ -48,14 +49,7 @@ void CASG::destroy ()
 CASG::~CASG ()
 {
     if ( this->verify () ) {
-        {
-            epicsAutoMutex locker ( this->mutex );
-            tsDLIterBD <syncGroupNotify> notify = this->ioList.firstIter ();
-            while ( notify.valid () ) {
-                notify->release ();
-                notify = this->ioList.firstIter ();
-            }
-        }
+        this->reset ();
         this->client.uninstallCASG ( *this );
         this->magic = 0;
     }
@@ -74,7 +68,6 @@ bool CASG::verify () const
  */
 int CASG::block ( double timeout )
 {
-    unsigned long initialSeqNo = this->seqNo;
     epicsTime cur_time;
     epicsTime beg_time;
     double  delay;
@@ -94,15 +87,11 @@ int CASG::block ( double timeout )
 
     this->client.enableCallbackPreemption ();
 
-    status = ECA_NORMAL;
     while ( 1 ) {
         {
             epicsAutoMutex locker ( this->mutex );
-            if ( this->seqNo != initialSeqNo ) {
-                break;
-            }
-            if ( this->opPendCount == 0u ) {
-                this->seqNo++;
+            if ( this->ioList.count() == 0u ) {
+                status = ECA_NORMAL;
                 break;
             }
         }
@@ -114,10 +103,7 @@ int CASG::block ( double timeout )
              * recv backlog at least once
              */
             status = ECA_TIMEOUT;
-            {
-                epicsAutoMutex locker ( this->mutex );
-                this->seqNo++;
-            }
+            this->reset ();
             break;
         }
 
@@ -139,20 +125,21 @@ int CASG::block ( double timeout )
 void CASG::reset ()
 {
     epicsAutoMutex locker ( this->mutex );
-    this->opPendCount = 0;
-    this->seqNo++;
+    syncGroupNotify *pNotify;
+    while ( ( pNotify = this->ioList.get () ) ) {
+        pNotify->destroy ( * this );
+    }
 }
 
-void CASG::show ( unsigned level) const
+void CASG::show ( unsigned level ) const
 {
-    printf ( "Sync Group: id=%u, magic=%u, opPend=%lu, seqNo=%lu\n",
-        this->getId (), this->magic, this->opPendCount, this->seqNo );
-
+    printf ( "Sync Group: id=%u, magic=%u, opPend=%lu\n",
+        this->getId (), this->magic, this->ioList.count () );
     if ( level ) {
         epicsAutoMutex locker ( this->mutex );
         tsDLIterConstBD < syncGroupNotify > notify = this->ioList.firstIter ();
         while ( notify.valid () ) {
-            notify->show (level);
+            notify->show ( level - 1u );
             notify++;
         }
     }
@@ -160,7 +147,128 @@ void CASG::show ( unsigned level) const
 
 bool CASG::ioComplete () const
 {
-    return ( this->opPendCount == 0u );
+    return ( this->ioList.count () == 0u );
+}
+
+int CASG::put ( chid pChan, unsigned type, unsigned long count, const void *pValue )
+{
+    try {
+        epicsAutoMutex locker ( this->mutex );
+        syncGroupNotify *pNotify = syncGroupWriteNotify::factory ( 
+            this->freeListWriteOP, *this, pChan, type, count, pValue );
+        if ( pNotify ) {
+            this->ioList.add ( *pNotify );
+            return ECA_NORMAL;
+        }
+        else {
+            return ECA_ALLOCMEM;
+        }
+    }
+    catch ( cacChannel::badString & )
+    {
+        return ECA_BADSTR;
+    }
+    catch ( cacChannel::badType & )
+    {
+        return ECA_BADTYPE;
+    }
+    catch ( cacChannel::outOfBounds & )
+    {
+        return ECA_BADCOUNT;
+    }
+    catch ( cacChannel::noWriteAccess & )
+    {
+        return ECA_NOWTACCESS;
+    }
+    catch ( cacChannel::notConnected & )
+    {
+        return ECA_DISCONN;
+    }
+    catch ( cacChannel::unsupportedByService & )
+    {
+        return ECA_NOTINSERVICE;
+    }
+    catch ( cacChannel::noMemory & )
+    {
+        return ECA_ALLOCMEM;
+    }
+    catch ( ... )
+    {
+        return ECA_INTERNAL;
+    }
+}
+
+int CASG::get ( chid pChan, unsigned type, unsigned long count, void *pValue )
+{
+
+    try {
+        epicsAutoMutex locker ( this->mutex );
+        syncGroupNotify * pNotify = syncGroupReadNotify::factory ( 
+            this->freeListReadOP, *this, pChan, type, count, pValue );
+        if ( pNotify ) {
+            this->ioList.add ( *pNotify );
+            return ECA_NORMAL;
+        }
+        else {
+            return ECA_ALLOCMEM;
+        }
+    }
+    catch ( cacChannel::badString & )
+    {
+        return ECA_BADSTR;
+    }
+    catch ( cacChannel::badType & )
+    {
+        return ECA_BADTYPE;
+    }
+    catch ( cacChannel::outOfBounds & )
+    {
+        return ECA_BADCOUNT;
+    }
+    catch ( cacChannel::noReadAccess & )
+    {
+        return ECA_NORDACCESS;
+    }
+    catch ( cacChannel::notConnected & )
+    {
+        return ECA_DISCONN;
+    }
+    catch ( cacChannel::unsupportedByService & )
+    {
+        return ECA_NOTINSERVICE;
+    }
+    catch ( cacChannel::noMemory & )
+    {
+        return ECA_ALLOCMEM;
+    }
+    catch ( ... )
+    {
+        return ECA_INTERNAL;
+    }
+}
+
+void CASG::destroyIO ( syncGroupNotify &notify )
+{
+    unsigned requestsIncomplete;
+    {
+        epicsAutoMutex locker ( this->mutex );
+        this->ioList.remove ( notify );
+        requestsIncomplete = this->ioList.count ();
+        notify.destroy ( *this );
+    }
+    if ( requestsIncomplete == 0u ) {
+        this->sem.signal ();
+    }
+}
+
+void CASG::recycleSyncGroupWriteNotify ( syncGroupWriteNotify &io )
+{
+    this->freeListWriteOP.release ( &io, sizeof ( io ) );
+}
+
+void CASG::recycleSyncGroupReadNotify ( syncGroupReadNotify &io )
+{
+    this->freeListReadOP.release ( &io, sizeof ( io ) );
 }
 
 void * CASG::operator new (size_t size)
@@ -173,31 +281,5 @@ void CASG::operator delete (void *pCadaver, size_t size)
 {
     epicsAutoMutex locker ( CASG::freeListMutex );
     CASG::freeList.release ( pCadaver, size );
-}
-
-int CASG::put (chid pChan, unsigned type, unsigned long count, const void *pValue)
-{
-    syncGroupNotify *pNotify = new syncGroupNotify ( *this, 0);
-    if ( ! pNotify ) {
-        return ECA_ALLOCMEM;
-    }
-    int status = pChan->write ( type, count, pValue, *pNotify );
-    if ( status != ECA_NORMAL ) {
-        pNotify->release ();
-    }
-    return status;
-}
-
-int CASG::get (chid pChan, unsigned type, unsigned long count, void *pValue)
-{
-    syncGroupNotify *pNotify = new syncGroupNotify ( *this, pValue);
-    if ( ! pNotify ) {
-        return ECA_ALLOCMEM;
-    }
-    int status = pChan->read ( type, count, *pNotify );
-    if ( status != ECA_NORMAL ) {
-        pNotify->release ();
-    }
-    return status;
 }
 

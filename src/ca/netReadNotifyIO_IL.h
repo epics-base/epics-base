@@ -20,7 +20,7 @@
 
 inline netReadNotifyIO * netReadNotifyIO::factory ( 
     tsFreeList < class netReadNotifyIO, 1024 > &freeList, 
-    nciu &chan, cacNotify &notify )
+    nciu &chan, cacDataNotify &notify )
 {
     return new ( freeList ) netReadNotifyIO ( chan, notify );
 }

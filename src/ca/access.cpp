@@ -27,6 +27,8 @@
 #include "oldAccess.h"
 #include "cac_IL.h"
 #include "baseNMIU_IL.h"
+#include "autoPtrDestroy.h"
+#include "oldChannelNotify_IL.h"
 
 epicsThreadPrivateId caClientContextId;
 
@@ -141,7 +143,7 @@ extern "C" epicsShareFunc int epicsShareAPI ca_context_create ( int preemptiveCa
 //
 // ca_register_service ()
 //
-epicsShareFunc int epicsShareAPI ca_register_service ( cacServiceIO *pService )
+epicsShareFunc int epicsShareAPI ca_register_service ( cacService *pService )
 {
     cac *pcac;
     int caStatus = fetchClientContext (&pcac);
@@ -236,25 +238,32 @@ extern "C" int epicsShareAPI ca_search_and_connect (
         return ECA_EMPTYSTR;
     }
 
-    oldChannelNotify *pChanNotify = new oldChannelNotify ( conn_func, puser );
+    oldChannelNotify *pChanNotify = new oldChannelNotify ( *pcac, name_str, conn_func, puser );
     if ( ! pChanNotify ) {
         return ECA_ALLOCMEM;
     }
 
-    cacChannelIO *pIO = pcac->createChannelIO ( name_str, *pChanNotify );
-    if ( pIO ) {
-        *chanptr = pIO;
+    if ( pChanNotify->ioAttachOK() ) {
+        *chanptr = pChanNotify;
         // make sure that their chan pointer is set prior to
         // calling connection call backs
-        pIO->initiateConnect ();
+        pChanNotify->initiateConnect ();
         return ECA_NORMAL;
     }
     else {
-        pChanNotify->release ();
+        pChanNotify->destroy ();
         return ECA_ALLOCMEM;
     }
 }
 
+/*
+ *  ca_clear_channel ()
+ */
+extern "C" int epicsShareAPI ca_clear_channel ( chid pChan )
+{
+    pChan->destroy ();
+    return ECA_NORMAL;
+}
 
 /*
  * ca_array_get ()
@@ -273,17 +282,49 @@ extern "C" int epicsShareAPI ca_array_get ( chtype type,
     }
     unsigned tmpType = static_cast < unsigned > ( type );
 
-    getCopy *pNotify = new getCopy ( *pcac, tmpType, count, pValue );
-    if ( ! pNotify ) {
+    autoPtrDestroy < getCopy > pNotify 
+        ( new getCopy ( *pcac, tmpType, count, pValue ) );
+    if ( ! pNotify.get() ) {
         return ECA_ALLOCMEM;
     }
 
-    int status = pChan->read ( type, count, *pNotify );
-    if ( status != ECA_NORMAL ) {
-        pNotify->release ();
+    try {
+        pChan->read ( type, count, *pNotify );
+        pNotify.release ();
+        return ECA_NORMAL;
     }
-
-    return status;
+    catch ( cacChannel::badString & )
+    {
+        return ECA_BADSTR;
+    }
+    catch ( cacChannel::badType & )
+    {
+        return ECA_BADTYPE;
+    }
+    catch ( cacChannel::outOfBounds & )
+    {
+        return ECA_BADCOUNT;
+    }
+    catch ( cacChannel::noReadAccess & )
+    {
+        return ECA_NORDACCESS;
+    }
+    catch ( cacChannel::notConnected & )
+    {
+        return ECA_DISCONN;
+    }
+    catch ( cacChannel::unsupportedByService & )
+    {
+        return ECA_NOTINSERVICE;
+    }
+    catch ( cacChannel::noMemory & )
+    {
+        return ECA_ALLOCMEM;
+    }
+    catch ( ... )
+    {
+        return ECA_GETFAIL;
+    }
 }
 
 /*
@@ -293,44 +334,159 @@ extern "C" int epicsShareAPI ca_array_get_callback ( chtype type,
             unsigned long count, chid pChan,
             caEventCallBackFunc *pfunc, void *arg )
 {
-    getCallback *pNotify = new getCallback ( pfunc, arg );
-    if ( ! pNotify ) {
+    if ( type < 0 ) {
+        return ECA_BADTYPE;
+    }
+    unsigned tmpType = static_cast < unsigned > ( type );
+
+    autoPtrDestroy < getCallback > pNotify 
+        ( new getCallback ( *pChan, pfunc, arg ) );
+    if ( ! pNotify.get() ) {
         return ECA_ALLOCMEM;
     }
 
-    int status = pChan->read ( type, count, *pNotify );
-    if ( status != ECA_NORMAL ) {
-        pNotify->release ();
+    try {
+        pChan->read ( tmpType, count, *pNotify );
+        pNotify.release ();
+        return ECA_NORMAL;
     }
-
-    return status;
+    catch ( cacChannel::badString & )
+    {
+        return ECA_BADSTR;
+    }
+    catch ( cacChannel::badType & )
+    {
+        return ECA_BADTYPE;
+    }
+    catch ( cacChannel::outOfBounds & )
+    {
+        return ECA_BADCOUNT;
+    }
+    catch ( cacChannel::noReadAccess & )
+    {
+        return ECA_NORDACCESS;
+    }
+    catch ( cacChannel::notConnected & )
+    {
+        return ECA_DISCONN;
+    }
+    catch ( cacChannel::unsupportedByService & )
+    {
+        return ECA_NOTINSERVICE;
+    }
+    catch ( cacChannel::noMemory & )
+    {
+        return ECA_ALLOCMEM;
+    }
+    catch ( ... )
+    {
+        return ECA_GETFAIL;
+    }
 }
 
 /*
  *  ca_array_put_callback ()
  */
 extern "C" int epicsShareAPI ca_array_put_callback ( chtype type, unsigned long count, 
-    chid pChan, const void *pvalue, caEventCallBackFunc *pfunc, void *usrarg )
+    chid pChan, const void *pValue, caEventCallBackFunc *pfunc, void *usrarg )
 {
-    putCallback *pNotify = new putCallback ( pfunc, usrarg );
-    if ( ! pNotify ) {
+    if ( type < 0 ) {
+        return ECA_BADTYPE;
+    }
+    unsigned tmpType = static_cast < unsigned > ( type );
+
+    autoPtrDestroy < putCallback > pNotify
+            ( new putCallback ( *pChan, pfunc, usrarg ) );
+    if ( ! pNotify.get() ) {
         return ECA_ALLOCMEM;
     }
 
-    int status = pChan->write ( type, count, pvalue, *pNotify );
-    if ( status != ECA_NORMAL ) {
-        pNotify->release ();
+    try {
+        pChan->write ( tmpType, count, pValue, *pNotify );
+        pNotify.release ();
+        return ECA_NORMAL;
     }
-    return status;
+    catch ( cacChannel::badString & )
+    {
+        return ECA_BADSTR;
+    }
+    catch ( cacChannel::badType & )
+    {
+        return ECA_BADTYPE;
+    }
+    catch ( cacChannel::outOfBounds & )
+    {
+        return ECA_BADCOUNT;
+    }
+    catch ( cacChannel::noWriteAccess & )
+    {
+        return ECA_NOWTACCESS;
+    }
+    catch ( cacChannel::notConnected & )
+    {
+        return ECA_DISCONN;
+    }
+    catch ( cacChannel::unsupportedByService & )
+    {
+        return ECA_NOTINSERVICE;
+    }
+    catch ( cacChannel::noMemory & )
+    {
+        return ECA_ALLOCMEM;
+    }
+    catch ( ... )
+    {
+        return ECA_PUTFAIL;
+    }
 }
 
 /*
  *  ca_array_put ()
  */
 extern "C" int epicsShareAPI ca_array_put ( chtype type, unsigned long count, 
-                                chid pChan, const void *pvalue )
+                                chid pChan, const void *pValue )
 {
-     return pChan->write ( type, count, pvalue );
+    if ( type < 0 ) {
+        return ECA_BADTYPE;
+    }
+    unsigned tmpType = static_cast < unsigned > ( type );
+
+    try {
+        pChan->write ( tmpType, count, pValue );
+        return ECA_NORMAL;
+    }
+    catch ( cacChannel::badString & )
+    {
+        return ECA_BADSTR;
+    }
+    catch ( cacChannel::badType & )
+    {
+        return ECA_BADTYPE;
+    }
+    catch ( cacChannel::outOfBounds & )
+    {
+        return ECA_BADCOUNT;
+    }
+    catch ( cacChannel::noWriteAccess & )
+    {
+        return ECA_NOWTACCESS;
+    }
+    catch ( cacChannel::notConnected & )
+    {
+        return ECA_DISCONN;
+    }
+    catch ( cacChannel::unsupportedByService & )
+    {
+        return ECA_NOTINSERVICE;
+    }
+    catch ( cacChannel::noMemory & )
+    {
+        return ECA_ALLOCMEM;
+    }
+    catch ( ... )
+    {
+        return ECA_PUTFAIL;
+    }
 }
 
 /*
@@ -338,13 +494,8 @@ extern "C" int epicsShareAPI ca_array_put ( chtype type, unsigned long count,
  */
 extern "C" int epicsShareAPI ca_change_connection_event ( chid pChan, caCh *pfunc )
 {
-    oldChannelNotify * pNotify = pChan->notify ().pOldChannelNotify ();
-    if ( pNotify ) {
-        return pNotify->changeConnCallBack ( *pChan, pfunc );
-    }
-    else {
-        return ECA_INTERNAL;
-    }
+    return pChan->changeConnCallBack ( pfunc );
+    return ECA_INTERNAL;
 }
 
 /*
@@ -352,14 +503,7 @@ extern "C" int epicsShareAPI ca_change_connection_event ( chid pChan, caCh *pfun
  */
 extern "C" int epicsShareAPI ca_replace_access_rights_event ( chid pChan, caArh *pfunc )
 {
-    oldChannelNotify * pNotify = pChan->notify ().pOldChannelNotify ();
-    if ( pNotify ) {
-        return pNotify->replaceAccessRightsEvent ( *pChan, pfunc );
-    }
-    else {
-        return ECA_INTERNAL;
-    }
-
+    return pChan->replaceAccessRightsEvent ( pfunc );
 }
 
 /*
@@ -387,7 +531,10 @@ extern "C" int epicsShareAPI ca_add_masked_array_event (
         ca_real, ca_real, ca_real, 
         evid *monixptr, long mask )
 {
-    static const long maskMask = 0xffff;
+    if ( type < 0 ) {
+        return ECA_BADTYPE;
+    }
+    unsigned tmpType = static_cast < unsigned > ( type );
 
     if ( INVALID_DB_REQ (type) ) {
         return ECA_BADTYPE;
@@ -397,6 +544,7 @@ extern "C" int epicsShareAPI ca_add_masked_array_event (
         return ECA_BADFUNCPTR;
     }
 
+    static const long maskMask = 0xffff;
     if ( ( mask & maskMask ) == 0) {
         return ECA_BADMASK;
     }
@@ -419,23 +567,47 @@ extern "C" int epicsShareAPI ca_add_masked_array_event (
         return ECA_TOLARGE;
     }
 
-    oldSubscription *pSubsr = new oldSubscription  ( pCallBack, pCallBackArg );
-    if ( ! pSubsr ) {
+    try {
+        autoPtrDestroy < oldSubscription > pSubsr
+            ( new oldSubscription  ( 
+            *pChan, tmpType, count, mask, pCallBack, pCallBackArg ) );
+        if ( ! pSubsr.get () ) {
+            return ECA_ALLOCMEM;
+        }
+
+        if ( monixptr ) {
+            *monixptr = pSubsr.release ();
+        }
+        return ECA_NORMAL;
+    }
+    catch ( cacChannel::badType & )
+    {
+        return ECA_BADTYPE;
+    }
+    catch ( cacChannel::outOfBounds & )
+    {
+        return ECA_BADCOUNT;
+    }
+    catch ( cacChannel::badEventSelection & )
+    {
+        return ECA_BADMASK;
+    }
+    catch ( cacChannel::noReadAccess & )
+    {
+        return ECA_NORDACCESS;
+    }
+    catch ( cacChannel::unsupportedByService & )
+    {
+        return ECA_NOTINSERVICE;
+    }
+    catch ( cacChannel::noMemory & )
+    {
         return ECA_ALLOCMEM;
     }
-
-    cacNotifyIO *pIO;
-    int status = pChan->subscribe ( type, count, mask, *pSubsr, pIO );
-    if ( status == ECA_NORMAL ) {
-        if ( monixptr ) {
-            *monixptr = pIO;
-        }
+    catch ( ... )
+    {
+        return ECA_INTERNAL;
     }
-    else {
-        pSubsr->release ();
-    }
-
-    return status;
 }
 
 /*
@@ -443,22 +615,13 @@ extern "C" int epicsShareAPI ca_add_masked_array_event (
  */
 extern "C" int epicsShareAPI ca_clear_event ( evid pMon )
 {
-    pMon->cancel ();
+    pMon->destroy ();
     return ECA_NORMAL;
 }
 
 extern "C" chid epicsShareAPI ca_evid_to_chid ( evid pMon )
 {
-    return & pMon->channelIO ();
-}
-
-/*
- *  ca_clear_channel ()
- */
-extern "C" int epicsShareAPI ca_clear_channel ( chid pChan )
-{
-    delete pChan;
-    return ECA_NORMAL;
+    return & pMon->channel (); 
 }
 
 /*
@@ -750,25 +913,31 @@ extern "C" unsigned long epicsShareAPI ca_element_count (chid pChan)
  */
 extern "C" epicsShareFunc enum channel_state epicsShareAPI ca_state (chid pChan)
 {
-    return pChan->state ();
+    if ( pChan->connected() ) {
+        return cs_conn;
+    }
+    else if ( pChan->previouslyConnected() ){
+        return cs_prev_conn;
+    }
+    else {
+        return cs_never_conn;
+    }
 }
 
 /*
  * ca_set_puser ()
  */
-extern "C" epicsShareFunc void epicsShareAPI ca_set_puser (chid pChan, void *puser)
+extern "C" epicsShareFunc void epicsShareAPI ca_set_puser ( chid pChan, void *puser )
 {
-    oldChannelNotify *pNotify = pChan->notify ().pOldChannelNotify ();
-    pNotify->setPrivatePointer ( puser );
+    pChan->setPrivatePointer ( puser );
 }
 
 /*
  * ca_get_puser ()
  */
-extern "C" epicsShareFunc void * epicsShareAPI ca_puser (chid pChan)
+extern "C" epicsShareFunc void * epicsShareAPI ca_puser ( chid pChan )
 {
-    oldChannelNotify *pNotify = pChan->notify ().pOldChannelNotify ();
-    return pNotify->privatePointer ();
+    return pChan->privatePointer ();
 }
 
 /*
@@ -776,12 +945,7 @@ extern "C" epicsShareFunc void * epicsShareAPI ca_puser (chid pChan)
  */
 extern "C" epicsShareFunc unsigned epicsShareAPI ca_read_access (chid pChan)
 {
-    if ( pChan->accessRights ().read_access ) {
-        return true;
-    }
-    else {
-        return false;
-    }
+    return pChan->accessRights().readPermit();
 }
 
 /*
@@ -789,12 +953,7 @@ extern "C" epicsShareFunc unsigned epicsShareAPI ca_read_access (chid pChan)
  */
 extern "C" epicsShareFunc unsigned epicsShareAPI ca_write_access (chid pChan)
 {
-    if ( pChan->accessRights ().write_access ) {
-        return true;
-    }
-    else {
-        return false;
-    }
+    return pChan->accessRights().writePermit();
 }
 
 /*

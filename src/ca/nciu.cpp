@@ -19,6 +19,8 @@
  * lock.
  */
 
+#include <new>
+
 #include "iocinf.h"
 
 #include "nciu_IL.h"
@@ -30,13 +32,10 @@
 tsFreeList < class nciu, 1024 > nciu::freeList;
 epicsMutex nciu::freeListMutex;
 
-static const caar defaultAccessRights = { false, false };
-
 nciu::nciu ( cac &cacIn, netiiu &iiuIn, cacChannelNotify &chanIn, 
             const char *pNameIn ) :
-    cacChannelIO ( chanIn ), 
+    cacChannel ( chanIn ), 
     cacCtx ( cacIn ),
-    accessRightState ( defaultAccessRights ),
     count ( 0 ),
     piiu ( &iiuIn ),
     sid ( UINT_MAX ),
@@ -45,7 +44,6 @@ nciu::nciu ( cac &cacIn, netiiu &iiuIn, cacChannelNotify &chanIn,
     nameLength ( strlen ( pNameIn ) + 1 ),
     typeCode ( USHRT_MAX ),
     f_connected ( false ),
-    f_fullyConstructed ( true ),
     f_previousConn ( false ),
     f_claimSent ( false ),
     f_firstConnectDecrementsOutstandingIO ( false ),
@@ -58,18 +56,13 @@ nciu::nciu ( cac &cacIn, netiiu &iiuIn, cacChannelNotify &chanIn,
 
     this->pNameStr = new char [ this->nameLength ];
     if ( ! this->pNameStr ) {
-        this->f_fullyConstructed = false;
-        return;
+        throw std::bad_alloc ();
     }
     strcpy ( this->pNameStr, pNameIn );
 }
 
 nciu::~nciu ()
 {
-    if ( ! this->fullyConstructed () ) {
-        return;
-    }
-
     // care is taken so that a lock is not applied during this phase
     this->cacCtx.destroyAllIO ( *this );
     this->cacCtx.uninstallChannel ( *this );
@@ -127,8 +120,8 @@ void nciu::connect ( unsigned nativeType,
      * will always be access 
      */
     if ( ! v41Ok ) {
-        this->accessRightState.read_access = true;
-        this->accessRightState.write_access = true;
+        this->accessRightState.setReadPermit();
+        this->accessRightState.setWritePermit();
     }
 
     // resubscribe for monitors from this channel 
@@ -143,7 +136,7 @@ void nciu::connect ( unsigned nativeType,
      * their call back here
      */
     if ( ! v41Ok ) {
-        this->notify ().accessRightsNotify ( *this, this->accessRightState );
+        this->notify().accessRightsNotify ( *this, this->accessRightState );
     }
 }
 
@@ -158,8 +151,8 @@ void nciu::disconnect ( netiiu &newiiu )
     this->typeCode = USHRT_MAX;
     this->count = 0u;
     this->sid = UINT_MAX;
-    this->accessRightState.read_access = false;
-    this->accessRightState.write_access = false;
+    this->accessRightState.clrReadPermit();
+    this->accessRightState.clrWritePermit();
     this->f_claimSent = false;
 
     if ( this->f_connected ) {
@@ -174,8 +167,8 @@ void nciu::disconnect ( netiiu &newiiu )
         /*
          * look for events that have an event cancel in progress
          */
-        this->notify ().disconnectNotify ( *this );
-        this->notify ().accessRightsNotify ( *this, this->accessRightState );
+        this->notify().disconnectNotify ( *this );
+        this->notify().accessRightsNotify ( *this, this->accessRightState );
     }
 
     this->resetRetryCount ();
@@ -223,128 +216,121 @@ unsigned nciu::nameLen () const
     return this->nameLength;
 }
 
-int nciu::createChannelRequest ()
+void nciu::createChannelRequest ()
 {
-    int status = this->piiu->createChannelRequest ( *this );
-    if ( status == ECA_NORMAL ) {
-        this->f_claimSent = true;
-    }
-    return status;
+    this->piiu->createChannelRequest ( *this );
+    this->f_claimSent = true;
 }
 
-int nciu::read ( unsigned type, unsigned long countIn, cacNotify &notify )
+cacChannel::ioStatus nciu::read ( unsigned type, unsigned long countIn, 
+                     cacDataNotify &notify, ioid *pId )
 {
     //
     // fail out if their arguments are invalid
     //
     if ( ! this->f_connected ) {
-        return ECA_DISCONNCHID;
+        throw notConnected ();
     }
     if ( INVALID_DB_REQ (type) ) {
-        return ECA_BADTYPE;
+        throw badType ();
     }
-    if ( ! this->accessRightState.read_access ) {
-        return ECA_NORDACCESS;
+    if ( ! this->accessRightState.readPermit() ) {
+        throw noReadAccess ();
     }
     if ( countIn > UINT_MAX ) {
-        return ECA_BADCOUNT;
+        throw outOfBounds ();
     }
+
     if ( countIn == 0 ) {
         countIn = this->count;
     }
     
-    return this->cacCtx.readNotifyRequest ( *this, notify, type, countIn );
+    ioid tmpId = this->cacCtx.readNotifyRequest ( *this, type, countIn, notify );
+    if ( pId ) {
+        *pId = tmpId;
+    }
+    return cacChannel::iosAsynch;
 }
 
-/*
- * check_a_dbr_string()
- */
-static int check_a_dbr_string ( const char *pStr, const unsigned count )
+void nciu::stringVerify ( const char *pStr, const unsigned count )
 {
     for ( unsigned i = 0; i < count; i++ ) {
         unsigned int strsize = 0;
         while ( pStr[strsize++] != '\0' ) {
             if ( strsize >= MAX_STRING_SIZE ) {
-                return ECA_STRTOBIG;
+                throw badString();
             }
         }
         pStr += MAX_STRING_SIZE;
     }
-
-    return ECA_NORMAL;
 }
 
-int nciu::write ( unsigned type, unsigned long countIn, const void *pValue )
+void nciu::write ( unsigned type, 
+                 unsigned long countIn, const void *pValue )
 {
-    // check this first so thet get a decent diagnostic
-    if ( ! this->f_connected ) {
-        return ECA_DISCONNCHID;
-    }
-
-    if ( ! this->accessRightState.write_access ) {
-        return ECA_NOWTACCESS;
+    if ( ! this->accessRightState.writePermit() ) {
+        throw noWriteAccess();
     }
 
     if ( countIn > this->count || countIn == 0 ) {
-        return ECA_BADCOUNT;
+        throw outOfBounds();
     }
 
     if ( type == DBR_STRING ) {
-        int status = check_a_dbr_string ( (char *) pValue, countIn );
-        if ( status != ECA_NORMAL ) {
-            return status;
-        }
+        nciu::stringVerify ( (char *) pValue, countIn );
     }
 
-    return this->cacCtx.writeRequest ( *this, type, countIn, pValue );
+    this->cacCtx.writeRequest ( *this, type, countIn, pValue );
 }
 
-int nciu::write ( unsigned type, unsigned long countIn, const void *pValue, cacNotify &notify )
+cacChannel::ioStatus nciu::write ( unsigned type, unsigned long countIn, 
+                        const void *pValue, cacNotify &notify, ioid *pId )
 {
-    // check this first so thet get a decent diagnostic
-    if ( ! this->f_connected ) {
-        return ECA_DISCONNCHID;
-    }
-
-    if ( ! this->accessRightState.write_access ) {
-        return ECA_NOWTACCESS;
+    if ( ! this->accessRightState.writePermit() ) {
+        throw noWriteAccess();
     }
 
     if ( countIn > this->count || countIn == 0 ) {
-            return ECA_BADCOUNT;
+        throw outOfBounds();
     }
 
     if ( type == DBR_STRING ) {
-        int status = check_a_dbr_string ( (char *) pValue, countIn );
-        if ( status != ECA_NORMAL ) {
-            return status;
-        }
+        nciu::stringVerify ( (char *) pValue, countIn );
     }
 
-    return this->cacCtx.writeNotifyRequest ( *this, notify, type, countIn, pValue );
+    ioid tmpId = this->cacCtx.writeNotifyRequest ( *this, type, countIn, pValue, notify );
+    if ( pId ) {
+        *pId = tmpId;
+    }
+    return cacChannel::iosAsynch;
 }
 
-int nciu::subscribe ( unsigned type, unsigned long nElem, 
-                         unsigned mask, cacNotify &notify,
-                         cacNotifyIO *&pNotifyIO )
+void nciu::subscribe ( unsigned type, unsigned long nElem, 
+                         unsigned mask, cacDataNotify &notify, ioid *pId )
 {
     if ( INVALID_DB_REQ(type) ) {
-        return ECA_BADTYPE;
+        throw badType();
     }
 
     if ( mask > 0xffff || mask == 0u ) {
-        return ECA_BADMASK;
+        throw badEventSelection();
     }
 
-    cacNotifyIO * pIO = this->cacCtx.subscriptionRequest ( 
-            *this, type, nElem, mask, notify );
-    if ( pIO ) {
-        pNotifyIO = pIO;
-        return ECA_NORMAL;;
+    ioid tmpId = this->cacCtx.subscriptionRequest ( 
+                *this, type, nElem, mask, notify );
+    if ( pId ) {
+        *pId = tmpId;
     }
-    else {
-        return ECA_ALLOCMEM;
-    }
+}
+
+void nciu::ioCancel ( const ioid &id )
+{
+    this->cacCtx.ioCancel ( *this, id );
+}
+
+void nciu::ioShow ( const ioid &id, unsigned level ) const
+{
+    this->cacCtx.ioShow ( id, level );
 }
 
 void nciu::initiateConnect ()
@@ -355,26 +341,26 @@ void nciu::initiateConnect ()
 
 void nciu::hostName ( char *pBuf, unsigned bufLength ) const
 {   
-    epicsAutoMutex locker ( this->cacCtx.mutex() );
+    epicsAutoMutex locker ( this->cacCtx.mutexRef() );
     this->piiu->hostName ( pBuf, bufLength );
 }
 
 // deprecated - please do not use, this is _not_ thread safe
 const char * nciu::pHostName () const
 {
-    epicsAutoMutex locker ( this->cacCtx.mutex() );
+    epicsAutoMutex locker ( this->cacCtx.mutexRef() );
     return this->piiu->pHostName (); // ouch !
 }
 
 bool nciu::ca_v42_ok () const
 {
-    epicsAutoMutex locker ( this->cacCtx.mutex() );
+    epicsAutoMutex locker ( this->cacCtx.mutexRef() );
     return this->piiu->ca_v42_ok ();
 }
 
 short nciu::nativeType () const
 {
-    epicsAutoMutex locker ( this->cacCtx.mutex() );
+    epicsAutoMutex locker ( this->cacCtx.mutexRef() );
     short type;
     if ( this->f_connected ) {
         if ( this->typeCode < SHRT_MAX ) {
@@ -392,7 +378,7 @@ short nciu::nativeType () const
 
 unsigned long nciu::nativeElementCount () const
 {
-    epicsAutoMutex locker ( this->cacCtx.mutex() );
+    epicsAutoMutex locker ( this->cacCtx.mutexRef() );
     unsigned long countOut;
     if ( this->f_connected ) {
         countOut = this->count;
@@ -403,44 +389,28 @@ unsigned long nciu::nativeElementCount () const
     return countOut;
 }
 
-channel_state nciu::state () const
+caAccessRights nciu::accessRights () const
 {
-    epicsAutoMutex locker ( this->cacCtx.mutex() );
-    channel_state stateOut;
-    if ( this->f_connected ) {
-        stateOut = cs_conn;
-    }
-    else if ( this->f_previousConn ) {
-        stateOut = cs_prev_conn;
-    }
-    else {
-        stateOut = cs_never_conn;
-    }
-    return stateOut;
-}
-
-caar nciu::accessRights () const
-{
-    epicsAutoMutex locker ( this->cacCtx.mutex() );
-    caar tmp = this->accessRightState;
+    epicsAutoMutex locker ( this->cacCtx.mutexRef() );
+    caAccessRights tmp = this->accessRightState;
     return tmp;
 }
 
 unsigned nciu::searchAttempts () const
 {
-    epicsAutoMutex locker ( this->cacCtx.mutex() );
+    epicsAutoMutex locker ( this->cacCtx.mutexRef() );
     return this->retry;
 }
 
 double nciu::beaconPeriod () const
 {
-    epicsAutoMutex locker ( this->cacCtx.mutex() );
+    epicsAutoMutex locker ( this->cacCtx.mutexRef() );
     return this->piiu->beaconPeriod ();
 }
 
 void nciu::notifyStateChangeFirstConnectInCountOfOutstandingIO ()
 {
-    epicsAutoMutex locker ( this->cacCtx.mutex() );
+    epicsAutoMutex locker ( this->cacCtx.mutexRef() );
     // test is performed via a callback so that locking is correct
     if ( ! this->f_connectTimeOutSeen && ! this->f_previousConn ) {
         if ( this->notify ().includeFirstConnectInCountOfOutstandingIO () ) { 
@@ -460,7 +430,7 @@ void nciu::notifyStateChangeFirstConnectInCountOfOutstandingIO ()
 
 void nciu::show ( unsigned level ) const
 {
-    epicsAutoMutex locker ( this->cacCtx.mutex() );
+    epicsAutoMutex locker ( this->cacCtx.mutexRef() );
     if ( this->f_connected ) {
         char hostNameTmp [256];
         this->hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
@@ -471,8 +441,8 @@ void nciu::show ( unsigned level ) const
             printf ( ", native type %s, native element count %u",
                 dbf_type_to_text ( tmpTypeCode ), this->count );
             printf ( ", %sread access, %swrite access", 
-                this->accessRightState.read_access ? "" : "no ", 
-                this->accessRightState.write_access ? "" : "no ");
+                this->accessRightState.readPermit() ? "" : "no ", 
+                this->accessRightState.writePermit() ? "" : "no ");
         }
         printf ( "\n" );
     }
@@ -490,9 +460,11 @@ void nciu::show ( unsigned level ) const
         printf ( "\tsearch retry number=%u, search retry sequence number=%u\n", 
             this->retry, this->retrySeqNo );
         printf ( "\tname length=%u\n", this->nameLength );
-        printf ( "\tfully cunstructed boolean=%u\n", this->f_fullyConstructed );
     }
 }
+
+
+
 
 
 

@@ -23,7 +23,6 @@ inline bool tcpiiu::fullyConstructed () const
 
 inline void tcpiiu::hostName ( char *pBuf, unsigned bufLength ) const
 {   
-    epicsAutoMutex locker ( this->pCAC()->mutex() );
     if ( this->pHostNameCache ) {
         this->pHostNameCache->hostName ( pBuf, bufLength );
     }
@@ -79,4 +78,17 @@ inline void tcpiiu::beaconAnomalyNotify ()
 inline void tcpiiu::beaconArrivalNotify ()
 {
     this->recvDog.beaconArrivalNotify ();
+}
+
+inline void tcpiiu::fdCreateNotify ( epicsMutex &mutex, CAFDHANDLER *func, void *pArg )
+{
+    if ( this->fdRegCallbackNeeded ) {
+        epicsAutoMutexRelease autoRelease ( mutex );
+        ( *func ) ( pArg, this->sock, true );
+    }
+}
+
+inline void tcpiiu::fdDestroyNotify ( CAFDHANDLER *func, void *pArg )
+{
+    ( *func ) ( pArg, this->sock, false );
 }

@@ -34,17 +34,7 @@ getCopy::~getCopy ()
 {
 }
 
-void getCopy::release () 
-{
-    delete this;
-}
-
-void getCopy::completionNotify ( cacChannelIO &io )
-{
-    this->cacNotify::completionNotify ( io );
-}
-
-void getCopy::completionNotify ( cacChannelIO &chan, unsigned typeIn, 
+void getCopy::completion ( unsigned typeIn, 
     unsigned long countIn, const void *pDataIn )
 {
     if  ( this->type == typeIn ) {
@@ -52,22 +42,19 @@ void getCopy::completionNotify ( cacChannelIO &chan, unsigned typeIn,
         this->cacCtx.decrementOutstandingIO ( this->readSeq );
     }
     else {
-        this->exceptionNotify ( chan, ECA_INTERNAL, 
-            "bad data type match in get copy back response" );
+        this->exception ( ECA_INTERNAL, 
+            "bad data type match in get copy back response",
+            typeIn, countIn);
     }
+    delete this;
 }
 
-
-void getCopy::exceptionNotify ( cacChannelIO &chan, 
-    int status, const char *pContext )
-{
-    this->cacNotify::exceptionNotify ( chan, status, pContext );
-}
-
-void getCopy::exceptionNotify ( cacChannelIO &chan, 
+void getCopy::exception (
     int status, const char *pContext, unsigned typeIn, unsigned long countIn )
 {
-    this->cacNotify::exceptionNotify ( chan, status, pContext, typeIn, countIn );
+    this->cacCtx.exception ( status, pContext, typeIn, 
+        countIn, __FILE__, __LINE__  );
+    delete this;
 }
 
 void getCopy::show ( unsigned level ) const

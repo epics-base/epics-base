@@ -66,11 +66,10 @@ inline unsigned cac::sequenceNumberOfOutstandingIO () const
     return this->ioCounter.sequenceNumber ();
 }
 
-inline epicsMutex & cac::mutex ()
+inline epicsMutex & cac::mutexRef ()
 {
-    return this->defaultMutex;
+    return this->mutex;
 }
-
 
 #endif // cac_ILh
 

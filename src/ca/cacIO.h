@@ -15,134 +15,217 @@
  *	505 665 1831
  */
 
+//
+// Open Issues
+// -----------
+//
+// 1) A status code from the old client side interface is passed
+// to the exception notify callback. Should we just pass a string?
+// If so, then how do they detect the type of error and recover.
+//
+// 2) Some exception types are present here but there is no common
+// exception base class in use.
+//
+// 3) Should I be passing the channel reference in cacChannelNotify?
+//
+// 4) Should the code for caAccessRights not be inline so that this
+// interface is version independent.
+//
+//
 
 #include "tsDLList.h"
 #include "epicsMutex.h"
 
 #include "shareLib.h"
 
-struct cacChannelIO;
-struct cacNotifyIO;
+class cacChannel;
 
-// in the future we should probably not include the type and the count in this interface
+// this should not be passing caerr.h status to the exception callback
 class epicsShareClass cacNotify {
 public:
     virtual ~cacNotify () = 0;
-    virtual void release () = 0;
-    virtual void completionNotify ( cacChannelIO & );
-    virtual void completionNotify ( cacChannelIO &, unsigned type, 
-        unsigned long count, const void *pData );
-    virtual void exceptionNotify ( cacChannelIO &, 
-        int status, const char *pContext );
-    virtual void exceptionNotify ( cacChannelIO &, 
-        int status, const char *pContext, unsigned type, unsigned long count );
+    virtual void completion () = 0;
+    virtual void exception ( int status, const char *pContext ) = 0;
 };
 
-// this name is probably poor
-struct epicsShareClass cacNotifyIO {
+// 1) this should not be passing caerr.h status to the exception callback
+// 2) obviously the data should be passed here using the new data access API
+class epicsShareClass cacDataNotify {
 public:
-    cacNotifyIO ( cacNotify & );
-    cacNotify & notify () const;
-    virtual void cancel () = 0;
-    virtual void show ( unsigned level ) const = 0;
-    // the following commits us to deleting the IO when the channel is deleted :-(
-    virtual cacChannelIO & channelIO () const = 0; 
-protected:
-    virtual ~cacNotifyIO () = 0;
+    virtual ~cacDataNotify () = 0;
+    virtual void completion ( unsigned type, 
+        unsigned long count, const void *pData ) = 0;
+    virtual void exception ( int status, 
+        const char *pContext, unsigned type, unsigned long count ) = 0;
+};
+
+class caAccessRights {
+public:
+    caAccessRights ( 
+        bool readPermit = false, 
+        bool writePermit = false, 
+        bool operatorConfirmationRequest = false);
+    void setReadPermit ();
+    void setWritePermit ();
+    void setOperatorConfirmationRequest ();
+    void clrReadPermit ();
+    void clrWritePermit ();
+    void clrOperatorConfirmationRequest ();
+    bool readPermit () const;
+    bool writePermit () const;
+    bool operatorConfirmationRequest () const;
 private:
-    cacNotify &callback;
+    unsigned f_readPermit:1;
+    unsigned f_writePermit:1;
+    unsigned f_operatorConfirmationRequest:1;
 };
 
 class epicsShareClass cacChannelNotify {
 public:
     virtual ~cacChannelNotify () = 0;
-    virtual void release () = 0;
-    virtual void connectNotify ( cacChannelIO & );
-    virtual void disconnectNotify ( cacChannelIO & );
-    virtual void accessRightsNotify ( cacChannelIO &, const caar & );
-    virtual void exceptionNotify ( cacChannelIO &, int status, const char *pContext );
-    // not for public consumption
+// is it useful to pass the channel IO here ?????
+    virtual void connectNotify ( cacChannel & );
+    virtual void disconnectNotify ( cacChannel & );
+    virtual void accessRightsNotify ( cacChannel &, const caAccessRights & );
+    virtual void exception ( cacChannel &, int status, const char *pContext );
+    // not for public consumption -- can we get rid of this
     virtual bool includeFirstConnectInCountOfOutstandingIO () const;
-    virtual class oldChannelNotify * pOldChannelNotify ();
 };
 
 //
 // Notes
-// 1) these routines should be changed to throw exceptions and not return
-// ECA_XXXX style status in the future.
+// 1) This interface assumes that when a channel is deleted then all
+// attached IO is deleted. This is left over from the old interface,
+// but perhaps is a bad practce that should be eliminated? If so,
+// then the IO should not store or use a pointer to the channel.
 //
-struct epicsShareClass cacChannelIO {
+class epicsShareClass cacChannel {
 public:
-    cacChannelIO ( cacChannelNotify & );
+    typedef unsigned ioid;
+    enum ioStatus { iosSynch, iosAsynch };
+
+    cacChannel ( cacChannelNotify & );
     cacChannelNotify & notify () const;
-    virtual ~cacChannelIO () = 0;
+    virtual ~cacChannel () = 0;
     virtual const char *pName () const = 0;
     virtual void show ( unsigned level ) const = 0;
     virtual void initiateConnect () = 0;
-    virtual int read ( unsigned type, 
-        unsigned long count, cacNotify &notify ) = 0;
-    virtual int write ( unsigned type, 
-        unsigned long count, const void *pValue ) = 0;
-    virtual int write ( unsigned type, 
-        unsigned long count, const void *pValue, 
-        cacNotify &notify ) = 0;
-    virtual int subscribe ( unsigned type, 
-        unsigned long count, unsigned mask, 
-        cacNotify &notify, cacNotifyIO *& ) = 0;
+    virtual void write ( unsigned type, unsigned long count, 
+        const void *pValue ) = 0;
+    virtual ioStatus read ( unsigned type, unsigned long count, 
+        cacDataNotify &, ioid * = 0 ) = 0;
+    virtual ioStatus write ( unsigned type, unsigned long count, 
+        const void *pValue, cacNotify &, ioid * = 0 ) = 0;
+    virtual void subscribe ( unsigned type, unsigned long count, 
+        unsigned mask, cacDataNotify &, ioid * = 0 ) = 0;
+    virtual void ioCancel ( const ioid & ) = 0;
+    virtual void ioShow ( const ioid &, unsigned level ) const = 0;
     virtual short nativeType () const = 0;
     virtual unsigned long nativeElementCount () const = 0;
-    virtual channel_state state () const; // defaults to always connected
-    virtual caar accessRights () const; // defaults to unrestricted access
+    virtual caAccessRights accessRights () const; // defaults to unrestricted access
     virtual unsigned searchAttempts () const; // defaults to zero
     virtual double beaconPeriod () const; // defaults to negative DBL_MAX
     virtual bool ca_v42_ok () const; // defaults to true
     virtual bool connected () const; // defaults to true
-    virtual void hostName (char *pBuf, unsigned bufLength) const; // defaults to local host name
-    virtual const char * pHostName () const; // deprecated - please do not use
-    virtual void notifyStateChangeFirstConnectInCountOfOutstandingIO (); // deprecated - please do not use
+    virtual bool previouslyConnected () const; // defaults to true
+    virtual void hostName ( char *pBuf, unsigned bufLength ) const; // defaults to local host name
+
+    virtual const char * pHostName () const; 
+    virtual void notifyStateChangeFirstConnectInCountOfOutstandingIO ();
+
+    // exceptions
+    class badString {};
+    class badType {};
+    class outOfBounds {};
+    class badEventSelection {};
+    class noWriteAccess {};
+    class noReadAccess {};
+    class notConnected {};
+    class unsupportedByService {};
+    class noMemory {};
+
 private:
     cacChannelNotify & callback;
 };
 
-struct cacServiceIO : public tsDLNode < cacServiceIO > {
+struct cacService : public tsDLNode < cacService > {
 public:
-    virtual cacChannelIO *createChannelIO ( 
+    virtual cacChannel * createChannel ( 
         const char *pName, cacChannelNotify & ) = 0;
     virtual void show ( unsigned level ) const = 0;
 };
 
 class cacServiceList {
 public:
-    epicsShareFunc void registerService ( cacServiceIO &service );
-    epicsShareFunc cacChannelIO * createChannelIO ( 
+    epicsShareFunc void registerService ( cacService &service );
+    epicsShareFunc cacChannel * createChannel ( 
         const char *pName, cacChannelNotify & );
     epicsShareFunc void show ( unsigned level ) const;
 private:
-    tsDLList < cacServiceIO > services;
+    tsDLList < cacService > services;
     mutable epicsMutex mutex;
 };
 
 epicsShareExtern cacServiceList cacGlobalServiceList;
 
-epicsShareFunc int epicsShareAPI ca_register_service ( struct cacServiceIO *pService );
+epicsShareFunc int epicsShareAPI ca_register_service ( struct cacService *pService );
 
-inline cacNotifyIO::cacNotifyIO ( cacNotify &notify ) :
+inline cacChannel::cacChannel ( cacChannelNotify &notify ) :
     callback ( notify )
 {
 }
 
-inline cacNotify & cacNotifyIO::notify () const
+inline cacChannelNotify & cacChannel::notify () const
 {
     return this->callback;
 }
 
-inline cacChannelIO::cacChannelIO ( cacChannelNotify &notify ) :
-    callback ( notify )
+inline caAccessRights::caAccessRights ( 
+    bool readPermit, bool writePermit, bool operatorConfirmationRequest) :
+    f_readPermit ( readPermit ), f_writePermit ( writePermit ), 
+        f_operatorConfirmationRequest ( operatorConfirmationRequest ) {}
+
+inline void caAccessRights::setReadPermit ()
 {
+    this->f_readPermit = true;
 }
 
-inline cacChannelNotify & cacChannelIO::notify () const
+inline void caAccessRights::setWritePermit ()
 {
-    return this->callback;
+    this->f_writePermit = true;
 }
 
+inline void caAccessRights::setOperatorConfirmationRequest ()
+{
+    this->f_operatorConfirmationRequest = true;
+}
+
+inline void caAccessRights::clrReadPermit ()
+{
+    this->f_readPermit = false;
+}
+
+inline void caAccessRights::clrWritePermit ()
+{
+    this->f_writePermit = false;
+}
+
+inline void caAccessRights::clrOperatorConfirmationRequest ()
+{
+    this->f_operatorConfirmationRequest = false;
+}
+
+inline bool caAccessRights::readPermit () const
+{
+    return this->f_readPermit;
+}
+
+inline bool caAccessRights::writePermit () const
+{
+    return this->f_writePermit;
+}
+
+inline bool caAccessRights::operatorConfirmationRequest () const
+{
+    return this->f_operatorConfirmationRequest;
+}

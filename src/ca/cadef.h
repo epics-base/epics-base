@@ -47,10 +47,10 @@
 extern "C" {
 #endif
 
-typedef struct cacChannelIO     *chid;
+typedef struct oldChannelNotify *chid;
 typedef chid                    chanId; /* for when the structures field name is "chid" */
 typedef long                    chtype;
-typedef struct cacNotifyIO      *evid;
+typedef struct oldSubscription  *evid;
 typedef double                  ca_real;
 
 /* Format for the arguments to user connection handlers         */

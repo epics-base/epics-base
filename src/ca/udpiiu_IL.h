@@ -28,5 +28,15 @@ inline unsigned udpiiu::getPort () const
     return this->localPort;
 }
 
+inline void udpiiu::fdCreateNotify ( CAFDHANDLER *func, void *pArg )
+{
+    ( *func ) ( pArg, this->sock, true );
+}
+
+inline void udpiiu::fdDestroyNotify ( CAFDHANDLER *func, void *pArg )
+{
+    ( *func ) ( pArg, this->sock, false );
+}
+
 #endif // udpiiu_ILh
 

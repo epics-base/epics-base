@@ -16,7 +16,7 @@
 #include "baseNMIU_IL.h"
 
 netWriteNotifyIO::netWriteNotifyIO ( nciu &chan, cacNotify &notifyIn ) :
-    baseNMIU ( notifyIn, chan )
+    baseNMIU ( chan ), notify ( notifyIn )
 {
 }
 
@@ -33,15 +33,35 @@ void netWriteNotifyIO::show ( unsigned level ) const
     }
 }
 
-void netWriteNotifyIO::cancel ()
-{
-    this->chan.getClient().destroyWriteNotifyIO ( *this );
-}
-
 void netWriteNotifyIO::destroy ( cacRecycle & recycle )
 {
     this->~netWriteNotifyIO ();
     recycle.recycleWriteNotifyIO ( *this );
 }
+
+void netWriteNotifyIO::completion ()
+{
+    this->notify.completion ();
+}
+
+void netWriteNotifyIO::exception ( int status, const char *pContext )
+{
+    this->notify.exception ( status, pContext );
+}
+
+void netWriteNotifyIO::completion ( unsigned type, 
+    unsigned long count, const void *pData )
+{
+    this->chan.getClient().printf ( "Write response with data ?\n" );
+}
+
+void netWriteNotifyIO::exception ( int status, 
+    const char *pContext, unsigned type, unsigned long count )
+{
+    this->notify.exception ( status, pContext );
+}
+
+
+
 
 

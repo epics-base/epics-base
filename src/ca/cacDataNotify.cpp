@@ -12,8 +12,6 @@
 
 #include "iocinf.h"
 
-cacNotifyIO::~cacNotifyIO ()
+cacDataNotify::~cacDataNotify ()
 {
-    this->callback.release ();
 }
-

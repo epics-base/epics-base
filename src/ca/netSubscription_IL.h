@@ -21,7 +21,7 @@
 inline netSubscription * netSubscription::factory ( 
     tsFreeList < class netSubscription, 1024 > &freeList, 
     nciu &chan, unsigned type, unsigned long count, 
-    unsigned mask, cacNotify &notify )
+    unsigned mask, cacDataNotify &notify )
 {
     return new ( freeList ) netSubscription ( chan, type, 
                                 count, mask, notify );
@@ -46,9 +46,9 @@ inline void netSubscription::operator delete ( void *pCadaver, size_t size,
 }
 #endif
 
-inline unsigned long netSubscription::getCount () const
+inline unsigned long netSubscription::getCount ( nciu &chan ) const
 {
-    unsigned long nativeCount = this->chan.nativeElementCount ();
+    unsigned long nativeCount = chan.nativeElementCount ();
     if ( this->count == 0u || this->count > nativeCount ) {
         return nativeCount;
     }

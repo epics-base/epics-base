@@ -15,20 +15,16 @@
 #include "nciu_IL.h"
 #include "baseNMIU_IL.h"
 
-netSubscription::netSubscription ( nciu &chan, unsigned typeIn, unsigned long countIn, 
-        unsigned maskIn, cacNotify &notifyIn ) :
-    baseNMIU ( notifyIn, chan ), 
-    count ( countIn ), type ( typeIn ), mask ( maskIn )
+netSubscription::netSubscription ( nciu &chan, 
+        unsigned typeIn, unsigned long countIn, 
+        unsigned maskIn, cacDataNotify &notifyIn ) :
+    baseNMIU ( chan ), count ( countIn ), 
+    notify ( notifyIn ), type ( typeIn ), mask ( maskIn )
 {
 }
 
 netSubscription::~netSubscription () 
 {
-}
-
-void netSubscription::cancel () 
-{
-    this->chan.getClient().destroySubscription ( *this );
 }
 
 void netSubscription::destroy ( cacRecycle &recycle )
@@ -52,3 +48,27 @@ void netSubscription::show ( unsigned level ) const
         this->baseNMIU::show ( level - 1u );
     }
 }
+
+void netSubscription::completion ()
+{
+    this->chan.getClient().printf ( "subscription update w/o data ?\n" );
+}
+
+void netSubscription::exception ( int status, const char *pContext )
+{
+    this->notify.exception ( status, pContext, UINT_MAX, 0 );
+}
+
+void netSubscription::completion ( unsigned type, 
+    unsigned long count, const void *pData )
+{
+    this->notify.completion ( type, count, pData );
+}
+
+void netSubscription::exception ( int status, 
+    const char *pContext, unsigned type, unsigned long count )
+{
+    this->notify.exception ( status, pContext, type, count );
+}
+
+

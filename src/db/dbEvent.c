@@ -767,33 +767,33 @@ LOCAL void db_post_single_event_private (struct evSubscrip *event)
  *
  */
 int epicsShareAPI db_post_events(
-void            *prec,
-void            *pval,
-unsigned int    select
+void            *pRecord,
+void            *pField,
+unsigned int    caEventMask
 )
 {  
-    struct dbCommon     *precord = (struct dbCommon *)prec;
+    struct dbCommon     *pdbc = (struct dbCommon *)pRecord;
     struct evSubscrip   *event;
 
-    if (precord->mlis.count == 0) return DB_EVENT_OK;       /* no monitors set */
+    if (pdbc->mlis.count == 0) return DB_EVENT_OK;       /* no monitors set */
 
-    LOCKREC(precord);
+    LOCKREC(pdbc);
   
-    for (event = (struct evSubscrip *) precord->mlis.node.next;
+    for (event = (struct evSubscrip *) pdbc->mlis.node.next;
         event; event = (struct evSubscrip *) event->node.next){
         
         /*
          * Only send event msg if they are waiting on the field which
          * changed or pval==NULL and waiting on alarms and alarms changed
          */
-        if ( (event->paddr->pfield == (void *)pval || pval==NULL) &&
-            (select & event->select)) {
+        if ( (event->paddr->pfield == (void *)pField || pField==NULL) &&
+            (caEventMask & event->select)) {
 
             db_post_single_event_private (event);
         }
     }
 
-    UNLOCKREC(precord);
+    UNLOCKREC(pdbc);
     return DB_EVENT_OK;
 
 }

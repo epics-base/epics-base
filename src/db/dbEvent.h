@@ -55,7 +55,7 @@ epicsShareFunc int epicsShareAPI db_event_list (
 epicsShareFunc int epicsShareAPI dbel (
     const char *name, unsigned level);
 epicsShareFunc int epicsShareAPI db_post_events (
-    void *precord, void *pvalue, unsigned select);
+    void *pRecord, void *pField, unsigned caEventMask );
 
 typedef void * dbEventCtx;
 

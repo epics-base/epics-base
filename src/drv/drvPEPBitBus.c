@@ -1192,7 +1192,8 @@ qBBReq(pdpvt, prio)
 struct  dpvtBitBusHead *pdpvt;
 int     prio;
 {
-  char	message[100];
+  char	message[200];
+  static linkErrFlags[BB_NUM_LINKS];	/* Supposedly init'd to zero */
 
   if ((prio < 0) || (prio >= BB_NUM_PRIO)) {
     sprintf(message, 
@@ -1202,11 +1203,20 @@ int     prio;
     return(ERROR);
   }
 
-  if (checkLink(pdpvt->link) == ERROR) {
-    sprintf(message, 
-	    "invalid link number requested in call to qbbreq(%08.8X, %d) %d\n", 
+  if (checkLink(pdpvt->link) == ERROR)
+  {
+    if (pdpvt->link >= BB_NUM_LINKS)
+    {
+      sprintf(message, "qbbreq(%08.8X, %d) %d\n", pdpvt, prio, pdpvt->link);
+      errMessage(S_BB_badlink, message);
+    }
+    else if (linkErrFlags[pdpvt->link] == 0)
+    { /* Anti-message swamping check */
+      linkErrFlags[pdpvt->link] = 1;
+      sprintf(message, "qbbreq(%08.8X, %d) %d... card not present\n", 
 	    pdpvt, prio, pdpvt->link);
-    errMessage(S_BB_rfu1, message);
+      errMessage(S_BB_badlink, message);
+    }
     return(ERROR);
   }
 

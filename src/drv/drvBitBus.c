@@ -1033,39 +1033,7 @@ int	link;
 	    /* All data bytes have been sent, put on busy list and release */
 
 	    /* Don't add to busy list if was a RAC_RESET_SLAVE */
-	    if (pnode->txMsg.cmd != RAC_RESET_SLAVE)
-	    {
-	      /* Lock the busy list */
-	      semTake(plink->busyList.sem, WAIT_FOREVER);
-  
-              /* set the retire time */
-              pnode->retire = tickGet();
-	      if (pnode->ageLimit)
-	        pnode->retire += pnode->ageLimit;
-	      else
-		pnode->retire += 5 * sysClkRateGet();
-    
-	      if (plink->busyList.head == NULL)
-	        dogStart = 1;
-              else
-	        dogStart = 0;
-  
-              /* Add pnode to the busy list */
-              listAddTail(&(plink->busyList), pnode);
-  
-              /* Count the outstanding messages */
-              (plink->deviceStatus[pnode->txMsg.node])++;
-    
-	      semGive(plink->busyList.sem);
-  
-              /* If just added something to an empty busy list, start the dog */
-              if (dogStart)
-              {
-                now = tickGet();
-                wdStart(pXvmeLink[link]->watchDogId, plink->busyList.head->retire - now, xvmeTmoHandler, link);
-              }
-	    }
-	    else
+	    if ((pnode->txMsg.cmd == RAC_RESET_SLAVE) && (pnode->txMsg.tasks == 0))
 	    { /* Finish the transaction here if was a RAC_RESET_SLAVE */
   
               /* if (bbDebug) */
@@ -1097,6 +1065,38 @@ int	link;
 	      semGive(plink->queue[BB_Q_HIGH].sem);
 /* -- BUG -- I don't really need this */
 	      /* taskDelay(15); */ 	/* wait while bug is resetting */
+	    }
+	    else
+	    {
+	      /* Lock the busy list */
+	      semTake(plink->busyList.sem, WAIT_FOREVER);
+  
+              /* set the retire time */
+              pnode->retire = tickGet();
+	      if (pnode->ageLimit)
+	        pnode->retire += pnode->ageLimit;
+	      else
+		pnode->retire += 5 * sysClkRateGet();
+    
+	      if (plink->busyList.head == NULL)
+	        dogStart = 1;
+              else
+	        dogStart = 0;
+  
+              /* Add pnode to the busy list */
+              listAddTail(&(plink->busyList), pnode);
+  
+              /* Count the outstanding messages */
+              (plink->deviceStatus[pnode->txMsg.node])++;
+    
+	      semGive(plink->busyList.sem);
+  
+              /* If just added something to an empty busy list, start the dog */
+              if (dogStart)
+              {
+                now = tickGet();
+                wdStart(pXvmeLink[link]->watchDogId, plink->busyList.head->retire - now, xvmeTmoHandler, link);
+              }
 	    }
 
 	    /* Tell the 8044 to fire out the message now */
@@ -1155,7 +1155,8 @@ qBBReq(pdpvt, prio)
 struct  dpvtBitBusHead *pdpvt;
 int     prio;
 {
-  char	message[100];
+  static linkErrFlags[BB_NUM_LINKS];    /* Supposedly init'd to zero */
+  char	message[200];
 
   if ((prio < 0) || (prio >= BB_NUM_PRIO))
   {
@@ -1163,12 +1164,30 @@ int     prio;
     errMessage(S_BB_badPrio, message);
     return(ERROR);
   }
+#if 0
   if (checkLink(pdpvt->link) == ERROR)
   {
     sprintf(message, "invalid link requested in call to qbbreq(%08.8X, %d)\n", pdpvt, prio);
     errMessage(S_BB_rfu1, message);
     return(ERROR);
   }
+#else
+  if (checkLink(pdpvt->link) == ERROR)
+  {
+    if (pdpvt->link >= BB_NUM_LINKS)
+    {
+      sprintf(message, "qbbreq(%08.8X, %d) %d\n", pdpvt, prio, pdpvt->link);
+      errMessage(S_BB_badlink, message);
+    }
+    else if (linkErrFlags[pdpvt->link] == 0)
+    { /* Anti-message swamping check */
+      linkErrFlags[pdpvt->link] = 1;
+      sprintf(message, "qbbreq(%08.8X, %d) %d... card not present\n", pdpvt, prio, pdpvt->link);
+      errMessage(S_BB_badlink, message);
+    }
+    return(ERROR);
+  }
+#endif
   if (bbDebug>5)
     printf("qbbreq(0x%08.8X, %d): transaction queued\n", pdpvt, prio);
   if (bbDebug>6)

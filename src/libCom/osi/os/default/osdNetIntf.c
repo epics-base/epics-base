@@ -181,6 +181,13 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
                 continue;
             }
             pNewNode->addr.sa = pifreq->ifr_broadaddr;
+            status = socket_ioctl (socket, SIOCGIFNETMASK, pifreq);
+            if ( status ) {
+                errlogPrintf ("osiSockDiscoverInterfaces(): net intf \"%s\": net mask fetch fail\n", pifreq->ifr_name);
+                free ( pNewNode );
+                continue;
+            }
+            pNewNode->netMask.sa = pifreq->ifr_netmask;
         }
         else if ( pifreq->ifr_flags & IFF_POINTOPOINT ) {
             status = socket_ioctl ( socket, SIOCGIFDSTADDR, pifreq);
@@ -190,6 +197,7 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
                 continue;
             }
             pNewNode->addr.sa = pifreq->ifr_dstaddr;
+            memset ( &pNewNode->netMask, '\0', sizeof ( pNewNode->netMask ) );
         }
         else {
             errlogPrintf ( "osiSockDiscoverInterfaces(): net intf \"%s\": not pt to pt or bcast?\n", pifreq->ifr_name );

@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 1.10  1999/07/17 00:43:30  jhill
+ * include build date
+ *
  * Revision 1.9  1998/11/23 23:51:04  jhill
  * fixed warning
  *
@@ -30,12 +33,15 @@
 
 #include    <stdlib.h>
 #include    <stdio.h>
-#include    <epicsVersion.h>
+#include    "epicsVersion.h"
+
+#define epicsExportSharedSymbols
+#include    "epicsRelease.h"
 
 char *epicsRelease= "@(#)EPICS IOC CORE built on " __DATE__;
 char *epicsRelease1 = epicsReleaseVersion;
 
-int coreRelease()
+int epicsShareAPI coreRelease()
 {
     printf ("############################################################################\n");
     printf ("###  %s\n", epicsRelease);

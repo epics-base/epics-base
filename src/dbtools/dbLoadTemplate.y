@@ -44,11 +44,13 @@
 #include "getopt.h"
 #endif
 
+int dbLoadRecords(char* pfilename, char* pattern);
+
+#define epicsExportSharedSymbols
+#include "dbLoadTemplate.h"
+
 static int line_num;
 static int yyerror();
-int dbLoadTemplate(char* sub_file);
-
-int dbLoadRecords(char* pfilename, char* pattern);
 
 #define VAR_MAX_VAR_STRING 5000
 #define VAR_MAX_VARS 100
@@ -269,7 +271,7 @@ static int yyerror(char* str)
 
 static int is_not_inited = 1;
  
-int dbLoadTemplate(char* sub_file)
+int epicsShareAPI dbLoadTemplate(char* sub_file)
 {
 	FILE *fp;
 	int ind;

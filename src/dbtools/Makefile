@@ -5,11 +5,13 @@ include $(TOP)/configure/CONFIG
 #YACCOPT := -l
 #LEXOPT  := -L
 
+INC += dbLoadTemplate.h
+
 LIBSRCS += dbLoadTemplate.c
 
 LIBRARY_IOC = dbtoolsIoc
 
-dbtoolsIoc_DLL_LIBS  = dbStaticIoc Com
+dbtoolsIoc_DLL_LIBS  = asIoc dbStaticIoc Com
 
 HTMLS += dbLoadTemplate.html
 

@@ -49,7 +49,7 @@ typedef struct{
 	dbRecordType	*precordType;
 	dbRecordNode	*precnode;
 }PVDENTRY;
-int dbPvdTableSize(int size);
+epicsShareFunc int epicsShareAPI dbPvdTableSize(int size);
 extern int dbStaticDebug;
 void	dbPvdInitPvt(DBBASE *pdbbase);
 PVDENTRY *dbPvdFind(DBBASE *pdbbase,const char *name,int lenname);

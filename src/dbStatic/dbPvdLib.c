@@ -84,7 +84,7 @@ static unsigned short hash( const char *pname, int length)
     return((ind1<<dbPvdHashTableShift) ^ ind0);
 }
 
-int dbPvdTableSize(int size)
+int epicsShareAPI dbPvdTableSize(int size)
 {
     int		i;
 

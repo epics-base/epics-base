@@ -51,7 +51,11 @@ install:
 
 release: install
 	@echo TOP: Building Release...
-	@tools/BuildRelease
+	@tools/MakeRelease
+
+built_release: install
+	@echo TOP: Creating Fully Built Release...
+	@tools/MakeRelease -b
 
 clean_flags:
 	@rm -f dirs.* depends.* build_libs.* \

@@ -1,5 +1,4 @@
-/* ao_driver.c */
-/* share/src/drv @(#)ao_driver.c	1.2     6/7/91 */
+/* share/src/drv $Id$ */
 /*
  * subroutines that are used to interface to the vme analog output cards
  *
@@ -46,7 +45,10 @@
  *				standard
  * .10	08-05-92	joh	added EPICS driver dispatch table	
  * .11	08-05-92	joh	moved parameters from ao_driver.h to here
+ * .12	08-11-92	joh	num of cards now dyn configurable	
  */
+
+static char *sccsID = "$Id$\t$Date$";
 
 #include <vxWorks.h>
 #include <vme.h>
@@ -55,8 +57,9 @@
 #include "module_types.h"
 
 /* VMIVME 4100 defines */
-#define MAX_AO_VMI_CARDS        8
-#define VMI_ENABLE_OUT          0xc100 /*Fail LED off, enable P3 output.*/
+#define MAX_AO_VMI_CARDS	(ao_num_cards[VMI4100]) 
+#define VMI_MAXCHAN		(ao_num_channels[VMI4100])
+#define VMI_ENABLE_OUT		0xc100 /*Fail LED off, enable P3 output.*/
 
 /* memory structure of the Xycom 4100 Interface */
 
@@ -78,7 +81,7 @@ struct {
         vmi4100_init};
 
 LOCAL
-unsigned short	*pao_vmi4100[MAX_AO_VMI_CARDS];
+unsigned short	**pao_vmi4100;
 
 LOCAL
 int vmi4100_addr;
@@ -91,12 +94,22 @@ int vmi4100_addr;
  */
 long vmi4100_init()
 {
-	register unsigned short **pcards_present = pao_vmi4100;
-	register unsigned short *base_addr = ao_addrs[VMI4100];  
+	register unsigned short **pcards_present;
+	register unsigned short *base_addr;  
 	short			shval;
         int                     status;
 	register union aoVMI	*pcard;
 	register short		i;
+
+	base_addr = (unsigned short *)ao_addrs[VMI4100];  
+
+	pao_vmi4100 = (unsigned short  **)
+		calloc(MAX_AO_VMI_CARDS, sizeof(*pao_vmi4100));
+	if(!pao_vmi4100){
+		return ERROR;
+	}
+
+	pcards_present = pao_vmi4100;
 
         if ((status = sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO,base_addr, &vmi4100_addr)) != OK){ 
            printf("Addressing error in vmi4100 driver\n");

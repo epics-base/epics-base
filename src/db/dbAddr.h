@@ -54,6 +54,8 @@ typedef struct putNotify{
         void            *waitForCallback;
 }PUTNOTIFY;
 
+int dbPutNotifyMapType (PUTNOTIFY *ppn, short oldtype);
+
 /*
  * old db access API
  * (included here because these routines use dbAccess.h and their

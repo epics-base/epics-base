@@ -4,13 +4,15 @@
 #  This file is maintained by the EPICS community.
 
 # BUILD_TYPE
-#   Currently either Vx or Unix
-BUILD_TYPE = Unix
+#   Currently either Vx or Host
+BUILD_TYPE = Host
+
+ARCH_CLASS = solaris
  
 # Compiler and utility invocation (supply path to compiler here)
 #   (with warning flags built in)
 #  Paths to compilers
-GCC = /opt/gnu/bin/gcc
+GCC = /opt/gnu/bin/gcc 
 ACC = $(SPARCWORKS)/bin/cc
 # SUNCC doesn't exist under Solaris
 
@@ -28,9 +30,17 @@ YACC = $(EYACC)
 LEX = $(ELEX)
 G++ = /opt/gnu/bin/g++
 CCC = /opt/SUNWspro/bin/CC
-MV = mv
+
 RMDIR = rm -rf
 MKDIR = mkdir
+CP=cp
+MV=mv
+RM=rm -f
+MKDIR=mkdir
+RMDIR=rm -rf
+EXE=
+OBJ=.o
+
 
 ACC_ANSI_INVOKE_W_NO = $(ACC) -Xa -w
 ACC_ANSI_INVOKE_W_YES = $(ACC) -Xa
@@ -118,29 +128,26 @@ UNIX_LDLIBS = $(UNIX_SLIBS) -lm $(CCOMPILER_LDLIBS)
  
 # Architecture specific build flags
 ARCH_DEP_CFLAGS = -DSOLARIS 
-ARCH_DEP_CCFLAGS = $(ARCH_DEP_CFLAGS)
+ARCH_DEP_CXXFLAGS = $(ARCH_DEP_CFLAGS)
 ARCH_DEP_LDLIBS = -lsocket -lnsl
 # -lsocket     needed by libca.a
 # -lnsl        needed by libca.a 
  
 UNIX_CFLAGS = $(UNIX_SFLAGS) $(UNIX_INCLUDES) $(USR_INCLUDES) $(OP_SYS_FLAGS)
  
-UNIX_CCFLAGS = $(UNIX_CFLAGS)
+UNIX_CXXFLAGS = $(UNIX_CFLAGS)
  
 # Target specific flags
 TARGET_CFLAGS = $($(basename $@)_CFLAGS)
-TARGET_CCFLAGS = $($(basename $@)_CCFLAGS)
+TARGET_CXXFLAGS = $($(basename $@)_CXXFLAGS)
 TARGET_CPPFLAGS = $($(basename $@)_CPPFLAGS)
 TARGET_LDFLAGS = $($(basename $@)_LDFLAGS)
 TARGET_LDLIBS = $($(basename $@)_LDLIBS)
 TARGET_SNCFLAGS = $($(basename $@)_SNCFLAGS)
 
 CFLAGS = $(UNIX_OPT_FLAGS) $(TARGET_CFLAGS) $(USR_CFLAGS) $(ARCH_DEP_CFLAGS) $(UNIX_CFLAGS)
-CCFLAGS = $(UNIX_OPT_FLAGS) $(TARGET_CCFLAGS) $(USR_CCFLAGS) $(ARCH_DEP_CCFLAGS) $(UNIX_CCFLAGS)
+CXXFLAGS = $(UNIX_OPT_FLAGS) $(TARGET_CXXFLAGS) $(USR_CXXFLAGS) $(ARCH_DEP_CXXFLAGS) $(UNIX_CXXFLAGS)
 CPPFLAGS += $(TARGET_CPPFLAGS) $(USR_CPPFLAGS)
-
-# GNU make likes CXX instead of CCC
-CXXFLAGS = $(CCFLAGS)
 
 LDFLAGS = $(SPECIAL_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS) $(ARCH_DEP_LDFLAGS) $(UNIX_LDFLAGS)
 LDLIBS = $(TARGET_LDLIBS) $(USR_LDLIBS) $(ARCH_DEP_LDLIBS) $(UNIX_LDLIBS)
@@ -148,8 +155,9 @@ LDLIBS = $(TARGET_LDLIBS) $(USR_LDLIBS) $(ARCH_DEP_LDLIBS) $(UNIX_LDLIBS)
 # Override SUN defaults
 COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c
 COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c
-LINK.c = $(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
-LINK.cc = $(CXX) $(CCFLAGS) $(CPPFLAGS) $(LDFLAGS)
+# Unlike the 'Unix' makesystem, output flags -o .. are now part of LINK.c[c]
+LINK.c = $(CC) -o $@ $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
+LINK.cc = $(CXX) -o $@ $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS)
 
 DEPENDS_RULE.c = -$(COMPILE.c) -xM $(SRCS.c) > .DEPENDS
 DEPENDS_RULE.cc = @echo no DEPENDS_RULE.cc defined in CONFIG.Unix.solaris

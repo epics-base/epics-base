@@ -251,16 +251,15 @@ ca_uint16_t rsrvGetUInt16 ( struct message_buffer *recv )
  * this assumes that we have already checked to see 
  * if sufficent bytes are available
  */
-ca_uint16_t rsrvGetUInt32 ( struct message_buffer *recv )
+ca_uint32_t rsrvGetUInt32 ( struct message_buffer *recv )
 {
-    ca_uint16_t tmp;
+    ca_uint32_t tmp;
     /*
      * this assumes that we have already checked to see 
      * if sufficent bytes are available
      */
     assert ( recv->cnt - recv->stk >= 4u );
-    tmp = recv->buf[recv->stk++];
-    tmp <<= 24u;
+    tmp = recv->buf[recv->stk++] <<= 24u;
     tmp |= recv->buf[recv->stk++] << 16u;
     tmp |= recv->buf[recv->stk++] << 8u;
     tmp |= recv->buf[recv->stk++];

@@ -78,7 +78,7 @@ private:
             nCopied = 0u;
         }
         while ( nElem > nCopied ) {
-            comBuf *pComBuf = new ( std::nothrow ) comBuf;
+            pComBuf = new ( std::nothrow ) comBuf;
             if ( ! pComBuf ) {
                 this->wire.forcedShutdown ();
                 throw std::bad_alloc ();

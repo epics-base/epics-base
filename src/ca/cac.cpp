@@ -1369,7 +1369,7 @@ bool cac::clearChannelRespAction ( tcpiiu &, const caHdrLargeArray &, void * /* 
     return true; // currently a noop
 }
 
-bool cac::defaultExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr, 
+bool cac::defaultExcep ( tcpiiu &iiu, const caHdrLargeArray &, 
                     const char *pCtx, unsigned status )
 {
     char buf[512];
@@ -1388,7 +1388,7 @@ bool cac::eventAddExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr,
     return true;
 }
 
-bool cac::readExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr, 
+bool cac::readExcep ( tcpiiu &, const caHdrLargeArray &hdr, 
                      const char *pCtx, unsigned status )
 {
     this->ioExceptionNotifyAndDestroy ( hdr.m_available, 
@@ -1396,7 +1396,7 @@ bool cac::readExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr,
     return true;
 }
 
-bool cac::writeExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr, 
+bool cac::writeExcep ( tcpiiu &, const caHdrLargeArray &hdr, 
                       const char *pCtx, unsigned status )
 {
     nciu * pChan = this->chanTable.lookup ( hdr.m_available );
@@ -1407,7 +1407,7 @@ bool cac::writeExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr,
     return true;
 }
 
-bool cac::readNotifyExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr, 
+bool cac::readNotifyExcep ( tcpiiu &, const caHdrLargeArray &hdr, 
                            const char *pCtx, unsigned status )
 {
     this->ioExceptionNotifyAndDestroy ( hdr.m_available, 
@@ -1415,7 +1415,7 @@ bool cac::readNotifyExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr,
     return true;
 }
 
-bool cac::writeNotifyExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr, 
+bool cac::writeNotifyExcep ( tcpiiu &, const caHdrLargeArray &hdr, 
                             const char *pCtx, unsigned status )
 {
     this->ioExceptionNotifyAndDestroy ( hdr.m_available, 

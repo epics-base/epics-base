@@ -88,18 +88,18 @@ unsigned comQueRecv::removeBytes ( unsigned nBytes )
         if ( ! pComBuf ) {
             return totalBytes;
         }
-        unsigned nBytes = pComBuf->removeBytes ( bytesLeft );
+        unsigned nBytesThisTime = pComBuf->removeBytes ( bytesLeft );
         if ( pComBuf->occupiedBytes () == 0u ) {
             this->bufs.remove ( *pComBuf );
             pComBuf->destroy ();
         }
-        if ( nBytes == 0u) {
-            return totalBytes;
+        if ( nBytesThisTime == 0u) {
+            break;
         }
-        totalBytes += nBytes;
+        totalBytes += nBytesThisTime;
         bytesLeft = nBytes - totalBytes;
     }
-    return nBytes;
+    return totalBytes;
 }
 
 void comQueRecv::pushLastComBufReceived ( comBuf & bufIn )

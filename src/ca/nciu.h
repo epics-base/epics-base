@@ -197,9 +197,9 @@ inline void nciu::connectTimeoutNotify ()
 }
 
 inline void nciu::writeException ( int status,
-    const char *pContext, unsigned type, arrayElementCount count )
+    const char *pContext, unsigned typeIn, arrayElementCount countIn )
 {
-    this->notify().writeException ( status, pContext, type, count );
+    this->notify().writeException ( status, pContext, typeIn, countIn );
 }
 
 #endif // ifdef nciuh

@@ -72,9 +72,9 @@ void netSubscription::exception ( int status, const char *pContext )
 }
 
 void netSubscription::exception ( int status, const char *pContext, 
-                                 unsigned type, arrayElementCount count )
+                                 unsigned typeIn, arrayElementCount countIn )
 {
-    this->notify.exception ( status, pContext, type, count );
+    this->notify.exception ( status, pContext, typeIn, countIn );
 }
 
 void netSubscription::completion ( unsigned typeIn, 

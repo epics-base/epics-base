@@ -31,7 +31,7 @@ tcpRecvWatchdog::~tcpRecvWatchdog ()
     delete & this->timer;
 }
 
-epicsTimerNotify::expireStatus tcpRecvWatchdog::expire ( const epicsTime & currentTime )
+epicsTimerNotify::expireStatus tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ )
 {
     if ( this->responsePending ) {
         this->cancel ();

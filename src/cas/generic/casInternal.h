@@ -34,7 +34,7 @@
 //
 #include "tsDLList.h"
 #include "resourceLib.h"
-#define CA_MINOR_PROTOCOL_REVISION 8
+#define CA_MINOR_PROTOCOL_REVISION 10
 #include "caProto.h"
 #include "smartGDDPointer.h"
 
@@ -498,4 +498,15 @@ private:
 	casPVI ( const casPVI & );
 	casPVI & operator = ( const casPVI & );
 };
+
+/* a modified ca header with capacity for large arrays */
+struct caHdrLargeArray {
+    ca_uint32_t m_postsize;     /* size of message extension */
+    ca_uint32_t m_count;        /* operation data count      */
+    ca_uint32_t m_cid;          /* channel identifier        */
+    ca_uint32_t m_available;    /* protocol stub dependent   */
+    ca_uint16_t m_dataType;     /* operation data type       */
+    ca_uint16_t m_cmmd;         /* operation to be performed */
+};
+
 

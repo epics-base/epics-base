@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.8  2002/02/06 02:28:24  jhill
+ * fixed warnings
+ *
  * Revision 1.7  2001/01/11 21:54:53  jhill
  * accomodate Marty's osi => epics name changes
  *
@@ -83,11 +86,11 @@ casClientMon::~casClientMon()
 //
 // casClientMon::callBack()
 //
-caStatus casClientMon::callBack (const smartConstGDDPointer &value)
+caStatus casClientMon::callBack ( const smartConstGDDPointer &value )
 {
-	casCoreClient &client = this->getChannel().getClient();
+	casCoreClient & client = this->getChannel().getClient();
 	caStatus status;
-	caHdr msg;
+	caHdrLargeArray msg;
 
 	//
 	// reconstruct the msg header
@@ -98,13 +101,13 @@ caStatus casClientMon::callBack (const smartConstGDDPointer &value)
 	assert ( type <= 0xffff );
 	msg.m_dataType = static_cast <ca_uint16_t> ( type );
 	unsigned long count = this->getCount();
-	assert ( count <= 0xffff );
-	msg.m_count = static_cast <ca_uint16_t> ( count );
+	assert ( count <= 0xffffffff );
+	msg.m_count = static_cast <ca_uint32_t> ( count );
 	msg.m_cid = this->getChannel().getSID();
 	msg.m_available = this->getClientId();
 
-	status = client.monitorResponse (this->getChannel(),
-		msg, value, S_cas_success);
+	status = client.monitorResponse ( this->getChannel(),
+		msg, value, S_cas_success );
 	return status;
 }
 

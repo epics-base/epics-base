@@ -36,14 +36,12 @@
 //
 // outBuf::outBuf()
 //
-outBuf::outBuf (unsigned bufSizeIn) : 
-	bufSize (bufSizeIn), stack (0u), ctxRecursCount (0u)
+outBuf::outBuf ( outBufClient & clientIn ) : 
+	client ( clientIn ), bufSize ( 0 ), stack ( 0u ), ctxRecursCount ( 0u )
 {
-	this->pBuf = new char [this->bufSize];
-	if (!this->pBuf) {
-		throw S_cas_noMemory;
-	}
-	memset (this->pBuf, '\0', this->bufSize);
+	this->pBuf = pGlobalBufferFactoryCAS->newSmallBuffer ();
+    this->bufSize = pGlobalBufferFactoryCAS->smallBufferSize ();
+	memset ( this->pBuf, '\0', this->bufSize );
 }
 
 //
@@ -51,42 +49,52 @@ outBuf::outBuf (unsigned bufSizeIn) :
 //
 outBuf::~outBuf()
 {
-    assert (this->ctxRecursCount==0);
-	delete [] this->pBuf;
+    assert ( this->ctxRecursCount == 0 );
+    if ( this->bufSize == pGlobalBufferFactoryCAS->smallBufferSize () ) {
+        pGlobalBufferFactoryCAS->destroySmallBuffer ( this->pBuf );
+    }
+    else if ( this->bufSize == pGlobalBufferFactoryCAS->largeBufferSize () ) {
+        pGlobalBufferFactoryCAS->destroyLargeBuffer ( this->pBuf );
+    }
+    else if ( this->pBuf ) {
+        errlogPrintf ( 
+            "cas: unusual outBuf buffer size %u in destructor - probable leak\n",
+            this->bufSize );
+    }
 }
 
 //
 // outBuf::allocRawMsg ()
 //
-caStatus outBuf::allocRawMsg (bufSizeT msgsize, void **ppMsg)
+caStatus outBuf::allocRawMsg ( bufSizeT msgsize, void **ppMsg )
 {
 	bufSizeT stackNeeded;
 	
-	msgsize = CA_MESSAGE_ALIGN (msgsize);
+	msgsize = CA_MESSAGE_ALIGN ( msgsize );
 
 	this->mutex.lock ();
 
-	if (msgsize>this->bufSize) {
+	if ( msgsize > this->bufSize ) {
 	    this->mutex.unlock ();
 		return S_cas_hugeRequest;
 	}
 
 	stackNeeded = this->bufSize - msgsize;
 
-	if (this->stack > stackNeeded) {
+	if ( this->stack > stackNeeded ) {
 		
 		//
 		// Try to flush the output queue
 		//
-		this->flush (this->stack-stackNeeded);
+		this->flush ( this->stack-stackNeeded );
 
 		//
 		// If this failed then the fd is nonblocking 
 		// and we will let select() take care of it
 		//
-		if (this->stack > stackNeeded) {
+		if ( this->stack > stackNeeded ) {
 			this->mutex.unlock();
-			this->sendBlockSignal();
+			this->client.sendBlockSignal();
 			return S_cas_sendBlocked;
 		}
 	}
@@ -99,63 +107,135 @@ caStatus outBuf::allocRawMsg (bufSizeT msgsize, void **ppMsg)
 	return S_cas_success;
 }
 
+caStatus outBuf::copyInHeader ( ca_uint16_t response, ca_uint32_t payloadSize,
+    ca_uint16_t dataType, ca_uint32_t nElem, ca_uint32_t cid, 
+    ca_uint32_t responseSpecific, void **ppPayload )
+{
+    ca_uint32_t alignedPayloadSize = CA_MESSAGE_ALIGN ( payloadSize );
+    ca_uint32_t hdrSize;
+
+    if ( alignedPayloadSize < 0xffff && nElem < 0xffff ) {
+        hdrSize = sizeof ( caHdr );
+    }
+    else {
+        hdrSize = sizeof ( caHdr ) + 2 * sizeof (ca_uint32_t);
+    }
+
+    caHdr * pHdr;
+    caStatus status = this->allocRawMsg ( hdrSize + alignedPayloadSize, 
+                reinterpret_cast < void ** > ( & pHdr ) );
+    if ( status != S_cas_success ) {
+        if ( status == S_cas_hugeRequest ) {
+            this->expandBuffer ();
+            status = this->allocRawMsg ( hdrSize + alignedPayloadSize, 
+                        reinterpret_cast < void ** > ( & pHdr ) );
+            if ( status != S_cas_success ) {
+                return status;
+            }
+        }
+        else {
+            return status;
+        }
+    }
+
+	pHdr->m_cmmd = epicsHTON16 ( response );
+	pHdr->m_dataType = epicsHTON16 ( dataType );
+	pHdr->m_cid = epicsHTON32 ( cid );
+	pHdr->m_available = epicsHTON32 ( responseSpecific );
+    char * pPayload;
+    if ( hdrSize == sizeof ( caHdr ) ) {
+	    pHdr->m_postsize = epicsHTON16 ( alignedPayloadSize );
+	    pHdr->m_count = epicsHTON16 ( nElem );
+        pPayload = reinterpret_cast < char * > ( pHdr + 1 );
+    }
+    else {
+	    pHdr->m_postsize = epicsHTON16 ( 0xffff );
+	    pHdr->m_count = epicsHTON16 ( 0 );
+        ca_uint32_t * pLW = reinterpret_cast <ca_uint32_t *> ( pHdr + 1 );
+        pLW[0] = epicsHTON32 ( alignedPayloadSize );
+        pLW[1] = epicsHTON32 ( nElem );
+        pPayload = reinterpret_cast < char * > ( pLW + 2 );
+    }
+
+    /* zero out pad bytes */
+    if ( alignedPayloadSize > payloadSize ) {
+        memset ( pPayload + payloadSize, '\0', 
+            alignedPayloadSize - payloadSize );
+    }
+
+    if ( ppPayload ) {
+        *ppPayload = pPayload;
+    }
+
+    return status;
+}
+
 //
 // outBuf::commitMsg ()
 //
 void outBuf::commitMsg ()
 {
-	caHdr *mp;
-    unsigned diff;
-	ca_uint16_t	extSize;
+    ca_uint32_t payloadSize;
+    ca_uint32_t elementCount;
+    ca_uint32_t hdrSize;
 
-	mp = (caHdr *) &this->pBuf[this->stack];
+    const caHdr * mp = ( caHdr * ) & this->pBuf[ this->stack ];
+    if ( mp->m_postsize == 0xffff || mp->m_count == 0xffff ) {
+        const ca_uint32_t *pLW = reinterpret_cast <const ca_uint32_t *> ( mp + 1 );
+        payloadSize = epicsNTOH32 ( pLW[0] );
+        elementCount = epicsNTOH32 ( pLW[1] );
+        hdrSize = sizeof ( caHdr ) + 2 * sizeof ( ca_uint32_t );
+    }
+    else {
+        payloadSize = epicsNTOH16 ( mp->m_postsize );
+        elementCount = epicsNTOH16 ( mp->m_count );
+        hdrSize = sizeof ( caHdr );
+    }
 
-	extSize = static_cast <ca_uint16_t> ( CA_MESSAGE_ALIGN (mp->m_postsize) );
+    this->commitRawMsg ( hdrSize + payloadSize );
 
-	//
-	// Guarantee that all portions of outgoing messages 
-	// (including alignment pad) are initialized 
-	//
-	diff = extSize - mp->m_postsize;
-	if (diff>0u) {
-		memset ( reinterpret_cast<char *>(mp+1) + mp->m_postsize, '\0', diff );
-	}
-
-  	if (this->getDebugLevel()) {
+  	if ( this->client.getDebugLevel() ) {
 		errlogPrintf (
-"CAS Response => cmd=%d id=%x typ=%d cnt=%d psz=%d avail=%x outBuf ptr=%lx\n",
-			mp->m_cmmd, mp->m_cid, mp->m_dataType, mp->m_count, mp->m_postsize,
-			mp->m_available, (long)mp);
+"CAS Response => cmd=%d id=%x typ=%d cnt=%d psz=%d avail=%x outBuf ptr=%p \n",
+			epicsNTOH16 ( mp->m_cmmd ), epicsNTOH32 ( mp->m_cid ), 
+            epicsNTOH16 ( mp->m_dataType ), elementCount, payloadSize,
+			epicsNTOH32 ( mp->m_available ), static_cast <const void *> ( mp ) );
 	}
+}
 
-	//
-	// convert to network byte order
-	// (data following header is handled elsewhere)
-	//
-	mp->m_cmmd = epicsHTON16 (mp->m_cmmd);
-	mp->m_postsize = epicsHTON16 (extSize);
-	mp->m_dataType = epicsHTON16 (mp->m_dataType);
-	mp->m_count = epicsHTON16 (mp->m_count);
-	mp->m_cid = epicsHTON32 (mp->m_cid);
-	mp->m_available = epicsHTON32 (mp->m_available);
-
-    commitRawMsg (extSize + sizeof(*mp));
+//
+// outBuf::commitMsg ()
+//
+void outBuf::commitMsg ( ca_uint32_t reducedPayloadSize )
+{
+    caHdr * mp = ( caHdr * ) & this->pBuf[ this->stack ];
+    reducedPayloadSize = CA_MESSAGE_ALIGN ( reducedPayloadSize );
+    if ( mp->m_postsize == 0xffff || mp->m_count == 0xffff ) {
+        ca_uint32_t *pLW = reinterpret_cast <ca_uint32_t *> ( mp + 1 );
+        assert ( reducedPayloadSize <= epicsNTOH32 ( pLW[0] ) );
+        pLW[0] = epicsHTON32 ( reducedPayloadSize );
+    }
+    else {
+        assert ( reducedPayloadSize <= epicsNTOH16 ( mp->m_postsize ) );
+        mp->m_postsize = epicsHTON16 ( static_cast <ca_uint16_t> ( reducedPayloadSize ) );
+    }
+    this->commitMsg ();
 }
 
 //
 // outBuf::flush ()
 //
-outBuf::flushCondition outBuf::flush (bufSizeT spaceRequired)
+outBufClient::flushCondition outBuf::flush ( bufSizeT spaceRequired )
 {
-	bufSizeT 		nBytes;
-    bufSizeT        nBytesRequired;
-	flushCondition	cond;
+	bufSizeT nBytes;
+    bufSizeT nBytesRequired;
+    outBufClient::flushCondition cond;
 
 	this->mutex.lock();
 
     if (this->ctxRecursCount>0) {
         this->mutex.unlock();
-        return flushNone;
+        return outBufClient::flushNone;
     }
 
 	if (spaceRequired>this->bufSize) {
@@ -173,9 +253,9 @@ outBuf::flushCondition outBuf::flush (bufSizeT spaceRequired)
 		}
 	}
 
-	cond = this->xSend(this->pBuf, this->stack, 
+	cond = this->client.xSend(this->pBuf, this->stack, 
 			nBytesRequired, nBytes);
-	if (cond==flushProgress) {
+    if (cond==outBufClient::flushProgress) {
 		bufSizeT len;
 
 		if (nBytes >= this->stack) {
@@ -190,9 +270,9 @@ outBuf::flushCondition outBuf::flush (bufSizeT spaceRequired)
 			this->stack = len;
 		}
 
-		if (this->getDebugLevel()>2u) {
+		if (this->client.getDebugLevel()>2u) {
 		    char buf[64];
-			this->clientHostName (buf, sizeof(buf));
+			this->client.hostName (buf, sizeof(buf));
 			errlogPrintf ("CAS: Sent a %d byte reply to %s\n",
 				nBytes, buf);
 		}
@@ -252,8 +332,20 @@ bufSizeT outBuf::popCtx (const outBufCtx &ctx) // X aCC 361
 //
 void outBuf::show (unsigned level) const
 {
-    if (level>1u) {
+    if ( level > 1u ) {
         printf("\tUndelivered response bytes = %d\n", this->bytesPresent());
     }
 }
+
+void outBuf::expandBuffer ()
+{
+    if ( this->bufSize < pGlobalBufferFactoryCAS->largeBufferSize () ) {
+        char * pNewBuf = pGlobalBufferFactoryCAS->newLargeBuffer ();
+        memcpy ( pNewBuf, this->pBuf, this->stack );
+        pGlobalBufferFactoryCAS->destroySmallBuffer ( this->pBuf );
+        this->pBuf = pNewBuf;
+        this->bufSize = pGlobalBufferFactoryCAS->largeBufferSize ();
+    }
+}
+
 

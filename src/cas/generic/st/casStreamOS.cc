@@ -244,11 +244,11 @@ void casStreamIOWakeup::start ( casStreamOS &os  )
 //
 inline void casStreamOS::armRecv()
 {
-	if (!this->pRdReg) {
-		if (!this->inBuf::full()) {
-			this->pRdReg = new casStreamReadReg(*this);
-			if (!this->pRdReg) {
-				errMessage(S_cas_noMemory, "armRecv()");
+	if ( ! this->pRdReg ) {
+		if ( ! this->in.full() ) {
+			this->pRdReg = new casStreamReadReg ( *this );
+			if ( ! this->pRdReg ) {
+				errMessage ( S_cas_noMemory, "armRecv()" );
                 throw S_cas_noMemory;
 			}
 		}
@@ -270,11 +270,11 @@ inline void casStreamOS::disarmRecv()
 //
 inline void casStreamOS::armSend()
 {
-	if (this->outBuf::bytesPresent()==0u) {
+	if ( this->out.bytesPresent () == 0u ) {
 		return;
 	}
 
-	if (!this->pWtReg) {
+	if ( ! this->pWtReg ) {
 		this->pWtReg = new casStreamWriteReg(*this);
 		if (!this->pWtReg) {
 			errMessage(S_cas_noMemory, "armSend() failed");
@@ -318,7 +318,7 @@ void casStreamOS::eventFlush()
 	// if there is nothing pending in the input
 	// queue, then flush the output queue
 	//
-	if (this->inBuf::bytesAvailable()==0u) {
+	if ( this->in.bytesAvailable() == 0u ) {
 		this->armSend ();
 	}
 }
@@ -396,16 +396,16 @@ void casStreamReadReg::callBack ()
 //
 void casStreamOS::recvCB()
 {
-	inBuf::fillCondition fillCond;
+	inBufClient::fillCondition fillCond;
 	casProcCond procCond;
 
-	assert (this->pRdReg);
+	assert ( this->pRdReg );
 
     //
     // copy in new messages 
     //
-    fillCond = this->fill();
-	if (fillCond == casFillDisconnect) {
+    fillCond = this->in.fill();
+	if ( fillCond == casFillDisconnect ) {
 		delete this;
 	}
     else {
@@ -413,7 +413,7 @@ void casStreamOS::recvCB()
 	    if (procCond == casProcDisconnect) {
 		    delete this;
 	    }	
-	    else if (this->inBuf::full()) {
+	    else if ( this->in.full() ) {
 		    //
 		    // If there isnt any space then temporarily 
 		    // stop calling this routine until problem is resolved 
@@ -470,19 +470,19 @@ void casStreamWriteReg::callBack()
 //
 void casStreamOS::sendCB()
 {
-    outBuf::flushCondition flushCond;
+    outBufClient::flushCondition flushCond;
 	casProcCond procCond; 
 
 	//
 	// attempt to flush the output buffer 
 	//
-	flushCond = this->flush();
+	flushCond = this->out.flush ();
 	if (flushCond==flushProgress) {
 		if (this->sendBlocked) {
 			this->sendBlocked = FALSE;
 		}
 	}
-	else if (flushCond==outBuf::flushDisconnect) {
+	else if ( flushCond == outBufClient::flushDisconnect ) {
 		//
 		// ok to delete the client here
 		// because casStreamWriteReg::callBack()
@@ -552,8 +552,8 @@ void casStreamOS::sendCB()
 		// additional bytes may have been added since
 		// we flushed the out buffer
 		//
-		if (this->outBuf::bytesPresent()>0u &&
-			this->inBuf::bytesAvailable()==0u) {
+		if ( this->out.bytesPresent() > 0u &&
+			this->in.bytesAvailable() == 0u ) {
 			this->armSend();
 		}
 	}
@@ -586,7 +586,7 @@ casProcCond casStreamOS::processInput() // X aCC 361
 		// if there is nothing pending in the input
 		// queue, then flush the output queue
 		//
-		if (this->inBuf::bytesAvailable()==0u) {
+		if ( this->in.bytesAvailable() == 0u ) {
 			this->armSend ();
 		}
 		this->armRecv ();

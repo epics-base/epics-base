@@ -106,36 +106,36 @@ void casCoreClient::show (unsigned level) const
 // asynchronous completion
 //
 caStatus casCoreClient::asyncSearchResponse (
-		const caNetAddr &, const caHdr &, const pvExistReturn &)
+		const caNetAddr &, const caHdrLargeArray &, const pvExistReturn & )
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::createChanResponse (const caHdr &, const pvAttachReturn &)
+caStatus casCoreClient::createChanResponse ( const caHdrLargeArray &, const pvAttachReturn & )
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::readResponse (casChannelI *, const caHdr &, 
+caStatus casCoreClient::readResponse (casChannelI *, const caHdrLargeArray &, 
 	const smartConstGDDPointer &, const caStatus)
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::readNotifyResponse (casChannelI *, const caHdr &, 
+caStatus casCoreClient::readNotifyResponse (casChannelI *, const caHdrLargeArray &, 
 	const smartConstGDDPointer &, const caStatus)
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::writeResponse (const caHdr &, 
+caStatus casCoreClient::writeResponse (const caHdrLargeArray &, 
 	const caStatus)
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::writeNotifyResponse (const caHdr &, 
+caStatus casCoreClient::writeNotifyResponse (const caHdrLargeArray &, 
 	const caStatus)
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::monitorResponse (casChannelI &, const caHdr &, 
-	const smartConstGDDPointer &, const caStatus)
+caStatus casCoreClient::monitorResponse ( casChannelI &, const caHdrLargeArray &, 
+	const smartConstGDDPointer &, const caStatus )
 {
 	return S_casApp_noSupport;
 }

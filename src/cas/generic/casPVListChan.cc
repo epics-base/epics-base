@@ -34,10 +34,6 @@
 #include "casPVIIL.h"
 
 //
-// this needs to be here (and not in dgInBufIL.h) if we
-// are to avoid undefined symbols under gcc 2.7.x with -g
-//
-//
 // casPVListChan::casPVListChan()
 //
 casPVListChan::casPVListChan (const casCtx &ctx) :

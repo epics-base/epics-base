@@ -207,7 +207,7 @@ void casDGIOWakeup::show(unsigned level) const
 //
 void casDGIntfOS::armRecv()
 {
-	if (!this->inBuf::full()) {
+	if ( ! this->in.full () ) {
 	    if (!this->pRdReg) {
 			this->pRdReg = new casDGReadReg(*this);
 			if (!this->pRdReg) {
@@ -243,7 +243,7 @@ void casDGIntfOS::disarmRecv()
 //
 void casDGIntfOS::armSend()
 {
-	if (this->outBuf::bytesPresent()==0u) {
+	if ( this->out.bytesPresent () == 0u ) {
 		return;
 	}
 
@@ -291,7 +291,7 @@ void casDGIntfOS::eventFlush()
 	// if there is nothing pending in the input
 	// queue, then flush the output queue
 	//
-	if (this->inBuf::bytesAvailable()==0u) {
+	if ( this->in.bytesAvailable() == 0u ) {
 		this->armSend ();
 	}
 }
@@ -322,7 +322,7 @@ void casDGIntfOS::show(unsigned level) const
 //
 void casDGReadReg::callBack()
 {
-    this->os.recvCB (inBuf::fpNone);
+    this->os.recvCB ( inBufClient::fpNone );
 }
 
 //
@@ -348,7 +348,7 @@ void casDGReadReg::show(unsigned level) const
 //
 void casDGBCastReadReg::callBack()
 {
-    this->os.recvCB (inBuf::fpUseBroadcastInterface);
+    this->os.recvCB ( inBufClient::fpUseBroadcastInterface );
 }
 
 //
@@ -414,13 +414,13 @@ void casDGIntfOS::sendBlockSignal()
 //
 void casDGIntfOS::sendCB()
 {
-	flushCondition flushCond;
+    outBufClient::flushCondition flushCond;
 
 	//
 	// attempt to flush the output buffer 
 	//
-	flushCond = this->flush();
-	if (flushCond==flushProgress) {
+	flushCond = this->out.flush();
+	if ( flushCond == flushProgress ) {
 		if (this->sendBlocked) {
 			this->sendBlocked = false;
 		}
@@ -458,14 +458,14 @@ void casDGIntfOS::sendCB()
 //
 // casDGIntfOS::recvCB()
 //
-void casDGIntfOS::recvCB (inBuf::fillParameter parm)
+void casDGIntfOS::recvCB ( inBufClient::fillParameter parm )
 {	
 	assert (this->pRdReg);
 
     //
     // copy in new messages 
     //
-    this->inBuf::fill (parm);
+    this->in.fill ( parm );
     this->processInput ();
 
 	//
@@ -478,7 +478,7 @@ void casDGIntfOS::recvCB (inBuf::fillParameter parm)
 	// (casDGReadReg is _not_ a onceOnly fdReg - 
 	// therefore an explicit delete is required here)
 	//
-	if (this->inBuf::full()) {
+	if ( this->in.full() ) {
 		this->disarmRecv(); // this deletes the casDGReadReg object
 	}
 }
@@ -500,7 +500,7 @@ void casDGIntfOS::processInput()
 		status!=S_casApp_postponeAsyncIO) {
         char pName[64u];
 
-        this->clientHostName (pName, sizeof (pName));
+        this->hostName (pName, sizeof (pName));
 		errPrintf (status, __FILE__, __LINE__,
 	        "unexpected problem with UDP input from \"%s\"", pName);
 	}
@@ -511,8 +511,8 @@ void casDGIntfOS::processInput()
     // input buffer then keep sending the output 
     // buffer until it is empty
 	//
-    if (this->outBuf::bytesPresent()>0u) {
-        if ( this->bytesAvailable () == 0 ) {
+    if ( this->out.bytesPresent() > 0u ) {
+        if ( this->in.bytesAvailable () == 0 ) {
             this->armSend ();
         }
 	}

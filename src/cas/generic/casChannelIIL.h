@@ -97,26 +97,6 @@ inline void casChannelI::addMonitor(casMonitor &mon)
 }
 
 //
-// casChannelI::findMonitor
-// (it is reasonable to do a linear search here because
-// sane clients will require only one or two monitors
-// per channel)
-//
-inline tsDLIterBD <casMonitor> casChannelI::findMonitor (const caResId clientIdIn)
-{
-	this->lock ();
-	tsDLIterBD <casMonitor> iter = this->monitorList.firstIter ();
-    while ( iter.valid () ) {
-		if ( clientIdIn == iter->getClientId () ) {
-			break;
-		}
-		iter++;
-	}
-	this->unlock ();
-	return iter;
-}
-
-//
 // casChannelI::destroyNoClientNotify()
 //
 inline void casChannelI::destroyNoClientNotify() 

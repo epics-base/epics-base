@@ -37,26 +37,23 @@
 //
 // casAsyncReadIO::casAsyncReadIO()
 //
-casAsyncReadIO::casAsyncReadIO(const casCtx &ctx) :
-	casAsyncIOI(*ctx.getClient()),
-	msg(*ctx.getMsg()), 
-	chan(*ctx.getChannel()), 
-	pDD(NULL),
-	completionStatus(S_cas_internal)
+casAsyncReadIO::casAsyncReadIO ( const casCtx & ctx ) :
+	casAsyncIOI ( *ctx.getClient() ), msg ( *ctx.getMsg() ), 
+	chan( *ctx.getChannel () ), pDD ( NULL ), completionStatus ( S_cas_internal )
 {
-	assert (&this->chan);
+	assert ( &this->chan );
 
-	this->chan.installAsyncIO(*this);
+	this->chan.installAsyncIO ( *this );
 }
 
 //
 // casAsyncReadIO::~casAsyncReadIO()
 //
-casAsyncReadIO::~casAsyncReadIO()
+casAsyncReadIO::~casAsyncReadIO ()
 {
 	this->lock();
 
-	this->chan.removeAsyncIO(*this);
+	this->chan.removeAsyncIO ( *this );
 
 	this->unlock();
 }

@@ -37,7 +37,7 @@
 #include <stdio.h>
 
 #if defined(epicsExportSharedSymbols)
-#error suspect that libCom, ca, and gdd were not imported
+#   error suspect that libCom, ca, and gdd were not imported
 #endif
 
 //
@@ -55,6 +55,7 @@
 #include "errMdef.h" // EPICS error codes 
 #include "resourceLib.h" // EPICS hashing templates
 #include "errlog.h" // EPICS error logging interface
+#include "epicsSingleton.h"
 
 //
 // CA
@@ -188,44 +189,38 @@ private:
 
 class casCtx {
 public:
-	inline casCtx();
+	casCtx();
 
 	//
 	// get
 	//
-	inline const caHdr *getMsg() const;
-	inline void *getData() const;
-	inline caServerI * getServer() const;
-	inline casCoreClient * getClient() const;
-	inline casPVI * getPV() const;
-	inline casChannelI * getChannel() const;
+	const caHdrLargeArray * getMsg() const;
+	void * getData() const;
+	caServerI * getServer() const;
+	casCoreClient * getClient() const;
+	casPVI * getPV() const;
+	casChannelI * getChannel() const;
 
-	//
-	// set
-	// (assumes incoming message is in network byte order)
-	//
-	inline void setMsg(const char *pBuf);
+	void setMsg ( caHdrLargeArray &, void * pBody );
 
-	inline void setData(void *p);
+	void setServer ( caServerI *p );
 
-	inline void setServer(caServerI *p);
+	void setClient ( casCoreClient *p );
 
-	inline void setClient(casCoreClient *p);
+	void setPV ( casPVI *p );
 
-	inline void setPV(casPVI *p);
+	 void setChannel ( casChannelI *p );
 
-	inline void setChannel(casChannelI *p);
-
-	void show (unsigned level) const;
+	void show ( unsigned level ) const;
 	
 private:
-	caHdr			msg;	// ca message header
-	void			*pData; // pointer to data following header
-	caServerI               *pCAS;
-	casCoreClient		*pClient;
-	casChannelI             *pChannel;
-	casPVI                  *pPV;
-	unsigned		nAsyncIO; // checks for improper use of async io
+	caHdrLargeArray msg;	// ca message header
+	void            *pData; // pointer to data following header
+	caServerI       *pCAS;
+	casCoreClient   *pClient;
+	casChannelI     *pChannel;
+	casPVI          *pPV;
+	unsigned        nAsyncIO; // checks for improper use of async io
 };
 
 //
@@ -248,6 +243,37 @@ private:
     bufSizeT        nextReadIndex;
 };
 
+class casBufferFactory {
+public:
+    casBufferFactory ();
+    ~casBufferFactory ();
+    unsigned smallBufferSize () const;
+    char * newSmallBuffer ();
+    void destroySmallBuffer ( char * pBuf );
+    unsigned largeBufferSize () const;
+    char * newLargeBuffer ();
+    void destroyLargeBuffer ( char * pBuf );
+private:
+    void * smallBufFreeList; 
+    void * largeBufFreeList; 
+    unsigned largeBufferSizePriv;
+};
+
+extern epicsSingleton < casBufferFactory > pGlobalBufferFactoryCAS;
+
+class inBufClient {
+public:
+    enum fillCondition { casFillNone,  casFillProgress,  
+        casFillDisconnect };
+    // this is a hack for a Solaris IP kernel feature
+    enum fillParameter { fpNone, fpUseBroadcastInterface };
+    virtual unsigned getDebugLevel () const = 0;
+    virtual bufSizeT incomingBytesPresent () const = 0;
+    virtual fillCondition xRecv ( char *pBuf, bufSizeT nBytesToRecv, 
+        enum fillParameter parm, bufSizeT &nByesRecv ) = 0;
+    virtual void hostName ( char *pBuf, unsigned bufSize ) const = 0;
+};
+
 //
 // inBuf 
 //
@@ -255,13 +281,7 @@ class inBuf {
     friend class inBufCtx;
 public:
 
-    enum fillCondition {casFillNone,  casFillProgress,  
-        casFillDisconnect};
-
-    // this is a hack for a Solaris IP kernel feature
-    enum fillParameter {fpNone, fpUseBroadcastInterface};
-    
-    inBuf (bufSizeT bufSizeIn, bufSizeT ioMinSizeIn);
+    inBuf ( inBufClient &, bufSizeT ioMinSizeIn );
     virtual ~inBuf ();
     
     bufSizeT bytesPresent () const;
@@ -273,17 +293,15 @@ public:
     //
     // fill the input buffer with any incoming messages
     //
-    fillCondition fill (enum fillParameter parm=fpNone);
+    inBufClient::fillCondition fill ( inBufClient::fillParameter parm = inBufClient::fpNone );
     
-    void show (unsigned level) const;
+    void show ( unsigned level ) const;
 
-protected:
+    void removeMsg ( bufSizeT nBytes );
 
     void clear ();
-    
-    char *msgPtr () const;
-    
-    void removeMsg (bufSizeT nBytes);
+
+    char * msgPtr () const;
 
     //
     // This is used to create recursive protocol stacks. A subsegment
@@ -294,22 +312,22 @@ protected:
     //
     // pushCtx() returns an outBufCtx to be restored by popCtx()
     //
-    const inBufCtx pushCtx (bufSizeT headerSize, bufSizeT bodySize);
-	bufSizeT popCtx (const inBufCtx &); // returns actual size
+    const inBufCtx pushCtx ( bufSizeT headerSize, bufSizeT bodySize );
+	bufSizeT popCtx ( const inBufCtx & ); // returns actual size
+
+    unsigned bufferSize () const;
+
+    void expandBuffer ();
 
 private:
     epicsMutex  mutex;
-    char        *pBuf;
+    inBufClient & client;
+    char        * pBuf;
     bufSizeT    bufSize;
     bufSizeT    bytesInBuffer;
     bufSizeT    nextReadIndex;
     bufSizeT    ioMinSize;
     unsigned    ctxRecursCount;
-    virtual unsigned getDebugLevel () const = 0;
-    virtual bufSizeT incomingBytesPresent () const = 0;
-    virtual fillCondition xRecv (char *pBuf, bufSizeT nBytesToRecv, 
-        enum inBuf::fillParameter parm, bufSizeT &nByesRecv) = 0;
-    virtual void clientHostName (char *pBuf, unsigned bufSize) const = 0;
 	inBuf ( const inBuf & );
 	inBuf & operator = ( const inBuf & );
 };
@@ -333,6 +351,16 @@ private:
 	bufSizeT        stack;
 };
 
+class outBufClient {
+public:
+    enum flushCondition { flushNone, flushProgress, flushDisconnect };
+	virtual unsigned getDebugLevel () const = 0;
+	virtual void sendBlockSignal () = 0;
+	virtual flushCondition xSend ( char *pBuf, bufSizeT nBytesAvailableToSend, 
+		bufSizeT nBytesNeedToBeSent, bufSizeT &nBytesSent ) = 0;
+	virtual void hostName ( char *pBuf, unsigned bufSize ) const = 0;
+};
+
 //
 // outBuf
 //
@@ -340,34 +368,37 @@ class outBuf {
     friend class outBufCtx;
 public:
 
-    enum flushCondition {flushNone, flushProgress, flushDisconnect};
-
-	outBuf (bufSizeT bufSizeIn);
+	outBuf ( outBufClient & );
 	virtual ~outBuf ();
 
-	bufSizeT bytesPresent() const;
+	bufSizeT bytesPresent () const;
 
 	//
 	// flush output queue
 	// (returns the number of bytes sent)
     //
-	flushCondition flush (bufSizeT spaceRequired=bufSizeT_MAX);
+    outBufClient::flushCondition flush ( bufSizeT spaceRequired=bufSizeT_MAX );
 
 	void show (unsigned level) const;
 
-protected:
+    unsigned bufferSize () const;
 
 	//
 	// allocate message buffer space
 	// (leaves message buffer locked)
 	//
-	caStatus allocMsg (bufSizeT extsize, caHdr **ppMsg);
+    caStatus copyInHeader ( ca_uint16_t response, ca_uint32_t payloadSize,
+        ca_uint16_t dataType, ca_uint32_t nElem, ca_uint32_t cid, 
+        ca_uint32_t responseSpecific, void **pPayload );
 
-	//
-	// allocate message buffer space
-	// (leaves message buffer locked)
-	//
-	caStatus allocRawMsg (bufSizeT size, void **ppMsg);
+    //
+    // commit message created with copyInHeader
+    //
+    void commitMsg ();
+	void commitMsg ( ca_uint32_t reducedPayloadSize );
+
+    caStatus allocRawMsg ( bufSizeT msgsize, void **ppMsg );
+	void commitRawMsg ( bufSizeT size );
 
     //
     // This is used to create recursive protocol stacks. A subsegment
@@ -378,37 +409,20 @@ protected:
     //
     // pushCtx() returns an outBufCtx to be restored by popCtx()
     //
-    const outBufCtx pushCtx (bufSizeT headerSize, bufSizeT maxBodySize, void *&pHeader);
-	bufSizeT popCtx (const outBufCtx &); // returns actual size
-
-	//
-	// commits message allocated with allocMsg()
-	//
-	void commitMsg ();
-
-	//
-	// commits message allocated with allocRawMsg()
-	//
-	void commitRawMsg (bufSizeT size);
+    const outBufCtx pushCtx ( bufSizeT headerSize, bufSizeT maxBodySize, void *&pHeader );
+	bufSizeT popCtx ( const outBufCtx & ); // returns actual size
 
 	void clear ();
 
 private:
     mutable epicsMutex  mutex;
-	char                *pBuf;
+    outBufClient        & client;                 
+	char                * pBuf;
 	bufSizeT            bufSize;
 	bufSizeT            stack;
     unsigned            ctxRecursCount;
 
-	virtual unsigned getDebugLevel() const = 0;
-	virtual void sendBlockSignal() = 0;
-
-	//
-	// io dependent
-	//
-	virtual flushCondition xSend (char *pBuf, bufSizeT nBytesAvailableToSend, 
-		bufSizeT nBytesNeedToBeSent, bufSizeT &nBytesSent) = 0;
-	virtual void clientHostName (char *pBuf, unsigned bufSize) const = 0;
+    void expandBuffer ();
 
 	outBuf ( const outBuf & );
 	outBuf & operator = ( const outBuf & );
@@ -444,8 +458,8 @@ public:
 
 	caServerI &getCAS() const;
 
-	virtual caStatus monitorResponse (casChannelI &chan, const caHdr &msg, 
-		const smartConstGDDPointer &pDesc, const caStatus status);
+	virtual caStatus monitorResponse ( casChannelI &chan, const caHdrLargeArray &msg, 
+		const smartConstGDDPointer &pDesc, const caStatus status );
 
 	virtual caStatus accessRightsResponse(casChannelI *);
 
@@ -454,16 +468,16 @@ public:
 	// asynchronous completion
 	//
 	virtual caStatus asyncSearchResponse (
-		const caNetAddr &outAddr, 
-		const caHdr &, const pvExistReturn &);
+		const caNetAddr & outAddr, 
+		const caHdrLargeArray &, const pvExistReturn & );
 	virtual caStatus createChanResponse (
-		const caHdr &, const pvAttachReturn &);
+		const caHdrLargeArray &, const pvAttachReturn &);
 	virtual caStatus readResponse (
-		casChannelI *, const caHdr &, const smartConstGDDPointer &, const caStatus); 
+		casChannelI *, const caHdrLargeArray &, const smartConstGDDPointer &, const caStatus); 
 	virtual caStatus readNotifyResponse (
-		casChannelI *, const caHdr &, const smartConstGDDPointer &, const caStatus);
-	virtual caStatus writeResponse (const caHdr &, const caStatus);
-	virtual caStatus writeNotifyResponse (const caHdr &, const caStatus);
+		casChannelI *, const caHdrLargeArray &, const smartConstGDDPointer &, const caStatus);
+	virtual caStatus writeResponse (const caHdrLargeArray &, const caStatus);
+	virtual caStatus writeNotifyResponse (const caHdrLargeArray &, const caStatus);
 
 	//
 	// used only with DG clients 
@@ -471,8 +485,8 @@ public:
 	virtual caNetAddr fetchLastRecvAddr () const;
 
 protected:
-	casCtx			ctx;
-	unsigned char		asyncIOFlag;
+	casCtx ctx;
+	unsigned char asyncIOFlag;
 
 private:
 	tsDLList<casAsyncIOI>   ioInProgList;
@@ -483,17 +497,17 @@ private:
 //
 // casClient
 //
-class casClient : public casCoreClient, public inBuf, public outBuf {
+class casClient : public casCoreClient, public outBufClient, 
+    public inBufClient {
 public:
-    typedef caStatus (casClient::*pCASMsgHandler) ();
 
-	casClient (caServerI &, bufSizeT ioMinSizeIn);
+	casClient ( caServerI &, bufSizeT ioMinSizeIn );
 	virtual ~casClient ();
 
-	virtual void show (unsigned level) const;
+	virtual void show ( unsigned level ) const;
 
-	caStatus sendErr (const caHdr *, const int reportedStatus,
-			const char *pFormat, ...);
+	caStatus sendErr ( const caHdrLargeArray *, const int reportedStatus,
+			const char *pFormat, ... );
 
     void sendVersion ();
 
@@ -502,32 +516,37 @@ public:
 	//
 	// find the channel associated with a resource id
 	//
-	casChannelI *resIdToChannel (const caResId &id);
+	casChannelI * resIdToChannel (const caResId &id);
 
-	virtual void clientHostName (char *pBuf, unsigned bufSize) const = 0;
+	virtual void hostName ( char *pBuf, unsigned bufSize ) const = 0;
 
 protected:
-	unsigned	minor_version_number;
-	epicsTime		lastSendTS;
-	epicsTime		lastRecvTS;
+    inBuf in;
+    outBuf out;
+	unsigned minor_version_number;
+    unsigned incommingBytesToDrain;
+	epicsTime lastSendTS;
+	epicsTime lastRecvTS;
 
-	caStatus sendErrWithEpicsStatus(const caHdr *pMsg,
-			caStatus epicsStatus, caStatus clientStatus);
+	caStatus sendErrWithEpicsStatus ( const caHdrLargeArray *pMsg,
+			caStatus epicsStatus, caStatus clientStatus );
 
 #	define logBadId(MP, DP, CACSTAT, RESID) \
 	this->logBadIdWithFileAndLineno(MP, DP, CACSTAT, __FILE__, __LINE__, RESID)
-	caStatus logBadIdWithFileAndLineno(const caHdr *mp,
+	caStatus logBadIdWithFileAndLineno ( const caHdrLargeArray *mp,
 			const void *dp, const int cacStat, const char *pFileName, 
-			const unsigned lineno, const unsigned resId);
+			const unsigned lineno, const unsigned resId );
 
 	caStatus processMsg();
 
 	//
 	// dump message to stderr
 	//
-	void dumpMsg (const caHdr *mp, const void *dp, const char *pFormat, ...);
+	void dumpMsg ( const caHdrLargeArray *mp, const void *dp, const char *pFormat, ... );
+
 
 private:
+    typedef caStatus ( casClient::*pCASMsgHandler ) ();
 
 	//
 	// one function for each CA request type
@@ -579,6 +598,8 @@ public:
 
 	void show (unsigned level) const;
 
+    void flush ();
+
 	//
 	// installChannel()
 	//
@@ -593,15 +614,15 @@ public:
 	// one function for each CA request type that has
 	// asynchronous completion
 	//
-	virtual caStatus createChanResponse (const caHdr &, const pvAttachReturn &);
-	caStatus readResponse (casChannelI *pChan, const caHdr &msg,
+	virtual caStatus createChanResponse (const caHdrLargeArray &, const pvAttachReturn &);
+	caStatus readResponse (casChannelI *pChan, const caHdrLargeArray &msg,
 			const smartConstGDDPointer &pDesc, const caStatus status);
-	caStatus readNotifyResponse (casChannelI *pChan, const caHdr &msg,
+	caStatus readNotifyResponse (casChannelI *pChan, const caHdrLargeArray &msg,
 			const smartConstGDDPointer &pDesc, const caStatus status);
-	caStatus writeResponse (const caHdr &msg, const caStatus status);
-	caStatus writeNotifyResponse (const caHdr &msg, const caStatus status);
-	caStatus monitorResponse (casChannelI &chan, const caHdr &msg, 
-		const smartConstGDDPointer &pDesc, const caStatus status);
+	caStatus writeResponse (const caHdrLargeArray &msg, const caStatus status);
+	caStatus writeNotifyResponse (const caHdrLargeArray &msg, const caStatus status);
+	caStatus monitorResponse ( casChannelI & chan, const caHdrLargeArray & msg, 
+		const smartConstGDDPointer & pDesc, const caStatus status );
 
 	caStatus noReadAccessEvent(casClientMon *);
 
@@ -615,7 +636,7 @@ public:
 
 	unsigned getDebugLevel() const;
 
-    virtual void clientHostName (char *pBuf, unsigned bufSize) const = 0;
+    virtual void hostName (char *pBuf, unsigned bufSize) const = 0;
 
 protected:
 
@@ -666,7 +687,7 @@ private:
 	//
 	// channelCreateFailed()
 	//
-	caStatus channelCreateFailed (const caHdr *mp, caStatus createStatus);
+	caStatus channelCreateFailed ( const caHdrLargeArray *mp, caStatus createStatus );
 
 	caStatus writeArrayData();
 	caStatus writeScalarData();
@@ -675,22 +696,26 @@ private:
 	//
 	// io independent send/recv
 	//
-    outBuf::flushCondition xSend (char *pBuf, bufSizeT nBytesAvailableToSend,
-			bufSizeT nBytesNeedToBeSent, bufSizeT &nBytesSent);
-    inBuf::fillCondition xRecv (char *pBuf, bufSizeT nBytesToRecv,
-			fillParameter parm, bufSizeT &nByesRecv);
+    outBufClient::flushCondition xSend ( char * pBuf, bufSizeT nBytesAvailableToSend,
+			bufSizeT nBytesNeedToBeSent, bufSizeT & nBytesSent );
+    inBufClient::fillCondition xRecv ( char * pBuf, bufSizeT nBytesToRecv,
+			inBufClient::fillParameter parm, bufSizeT & nByesRecv );
 
 	virtual xBlockingStatus blockingState() const = 0;
 
-	virtual outBuf::flushCondition osdSend (const char *pBuf, bufSizeT nBytesReq,
-			bufSizeT &nBytesActual) = 0;
-	virtual inBuf::fillCondition osdRecv (char *pBuf, bufSizeT nBytesReq,
-			bufSizeT &nBytesActual) = 0;
+	virtual outBufClient::flushCondition osdSend ( const char *pBuf, bufSizeT nBytesReq,
+			bufSizeT & nBytesActual ) = 0;
+	virtual inBufClient::fillCondition osdRecv ( char *pBuf, bufSizeT nBytesReq,
+			bufSizeT &nBytesActual ) = 0;
 
-	caStatus readNotifyResponseECA_XXX (casChannelI *pChan, 
-		const caHdr &msg, const smartConstGDDPointer &pDesc, const caStatus ecaStatus);
-	caStatus writeNotifyResponseECA_XXX (const caHdr &msg,
-			const caStatus status);
+    caStatus readNotifyFailureResponse ( const caHdrLargeArray & msg, 
+        const caStatus ECA_XXXX );
+
+    caStatus monitorFailureResponse ( const caHdrLargeArray & msg, 
+        const caStatus ECA_XXXX );
+
+	caStatus writeNotifyResponseECA_XXX ( const caHdrLargeArray &msg,
+			const caStatus status );
 
 	casStrmClient ( const casStrmClient & );
 	casStrmClient & operator = ( const casStrmClient & );
@@ -712,7 +737,7 @@ public:
 	//
 	// only for use with DG io
 	//
-	void sendBeacon ();
+	void sendBeacon ( ca_uint32_t beaconNumber );
 
     virtual void sendBeaconIO (char &msg, bufSizeT length, 
         aitUint16 &portField, aitUint32 &addrField) = 0;
@@ -721,7 +746,7 @@ public:
 
 	unsigned getDebugLevel() const;
 
-    void clientHostName (char *pBuf, unsigned bufSize) const;
+    void hostName (char *pBuf, unsigned bufSize) const;
 
 	caNetAddr fetchLastRecvAddr () const;
 
@@ -749,25 +774,25 @@ private:
 	//
 	// searchFailResponse()
 	//
-	caStatus searchFailResponse (const caHdr *pMsg);
+	caStatus searchFailResponse (const caHdrLargeArray *pMsg);
 
-	caStatus searchResponse (const caHdr &, const pvExistReturn &);
+	caStatus searchResponse (const caHdrLargeArray &, const pvExistReturn &);
 
-	caStatus asyncSearchResponse (const caNetAddr &outAddr, 
-		const caHdr &msg, const pvExistReturn &);
+	caStatus asyncSearchResponse ( const caNetAddr & outAddr, 
+		const caHdrLargeArray & msg, const pvExistReturn & );
 
 	//
 	// IO depen
 	//
-	outBuf::flushCondition xSend (char *pBufIn, bufSizeT nBytesAvailableToSend, 
-		bufSizeT nBytesNeedToBeSent, bufSizeT &nBytesSent);
-	inBuf::fillCondition xRecv (char *pBufIn, bufSizeT nBytesToRecv, 
-        fillParameter parm, bufSizeT &nByesRecv);
+	outBufClient::flushCondition xSend ( char *pBufIn, bufSizeT nBytesAvailableToSend, 
+		bufSizeT nBytesNeedToBeSent, bufSizeT &nBytesSent );
+	inBufClient::fillCondition xRecv ( char *pBufIn, bufSizeT nBytesToRecv, 
+        fillParameter parm, bufSizeT &nByesRecv );
 
-	virtual outBuf::flushCondition osdSend (const char *pBuf, bufSizeT nBytesReq,
-			const caNetAddr &addr) = 0;
-	virtual inBuf::fillCondition osdRecv (char *pBuf, bufSizeT nBytesReq,
-			fillParameter parm, bufSizeT &nBytesActual, caNetAddr &addr) = 0;
+	virtual outBufClient::flushCondition osdSend ( const char *pBuf, bufSizeT nBytesReq,
+			const caNetAddr & addr ) = 0;
+	virtual inBufClient::fillCondition osdRecv ( char *pBuf, bufSizeT nBytesReq,
+			fillParameter parm, bufSizeT &nBytesActual, caNetAddr & addr ) = 0;
 
     //
     // cadg
@@ -915,6 +940,7 @@ private:
 	unsigned                debugLevel;
     unsigned                nEventsProcessed; 
     unsigned                nEventsPosted; 
+    ca_uint32_t             beaconCounter;
 
     //
     // predefined event types

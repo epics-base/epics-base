@@ -62,7 +62,8 @@ caServerI::caServerI (caServer &tool) :
     adapter (tool),
     debugLevel (0u),
     nEventsProcessed (0u),
-    nEventsPosted (0u)
+    nEventsPosted (0u),
+    beaconCounter (0u)
 {
 	caStatus status;
 	double maxPeriod;
@@ -239,10 +240,12 @@ void caServerI::sendBeacon()
         epicsGuard < epicsMutex > locker ( this->mutex );
 	    tsDLIterBD <casIntfOS> iter = this->intfList.firstIter ();
 	    while ( iter.valid () ) {
-		    iter->sendBeacon ();
+		    iter->sendBeacon ( this->beaconCounter );
 		    iter++;
 	    }
     }
+
+    this->beaconCounter++;
  
 	//
 	// double the period between beacons (but dont exceed max)

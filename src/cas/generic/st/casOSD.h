@@ -94,12 +94,12 @@ public:
     void processInput();
 
 private:
-    casDGIOWakeup       ioWk;
-    casDGEvWakeup       evWk;
-	casDGReadReg        *pRdReg;
-	casDGBCastReadReg   *pBCastRdReg; // fix for solaris bug
-	casDGWriteReg       *pWtReg;
-	bool		        sendBlocked;
+    casDGIOWakeup ioWk;
+    casDGEvWakeup evWk;
+	casDGReadReg *pRdReg;
+	casDGBCastReadReg *pBCastRdReg; // fix for solaris bug
+	casDGWriteReg *pWtReg;
+	bool sendBlocked;
 
     void armRecv ();
     void armSend ();
@@ -107,7 +107,7 @@ private:
     void disarmRecv ();
     void disarmSend ();
 
-    void recvCB (inBuf::fillParameter parm);
+    void recvCB ( inBufClient::fillParameter parm );
 	void sendCB ();
 
 	void sendBlockSignal ();

@@ -110,16 +110,16 @@ casStrmClient::~casStrmClient()
 //
 caStatus casStrmClient::uknownMessageAction ()
 {
-	const caHdr *mp = this->ctx.getMsg();
+	const caHdrLargeArray *mp = this->ctx.getMsg();
 	caStatus status;
 
-	this->dumpMsg (mp, this->ctx.getData(),
-        "bad request code from virtual circuit=%u\n", mp->m_cmmd);
+	this->dumpMsg ( mp, this->ctx.getData(),
+        "bad request code from virtual circuit=%u\n", mp->m_cmmd );
 
 	/* 
 	 *	most clients dont recover from this
 	 */
-	status = this->sendErr (mp, ECA_INTERNAL, "Invalid Request Code");
+	status = this->sendErr ( mp, ECA_INTERNAL, "Invalid Request Code" );
 	if (status) {
 		return status;
 	}
@@ -136,7 +136,7 @@ caStatus casStrmClient::uknownMessageAction ()
 //
 caStatus casStrmClient::verifyRequest (casChannelI *&pChan)
 {
-	const caHdr   *mp = this->ctx.getMsg();
+	const caHdrLargeArray * mp = this->ctx.getMsg();
 
 	//
 	// channel exists for this resource id ?
@@ -189,8 +189,8 @@ void casStrmClient::show (unsigned level) const
 	if (level > 1u) {
 		printf ("\tuser %s at %s\n", this->pUserName, this->pHostName);
 	}
-	this->inBuf::show(level);
-	this->outBuf::show(level);
+	this->in.show(level);
+	this->out.show(level);
 }
 
 /*
@@ -198,7 +198,7 @@ void casStrmClient::show (unsigned level) const
  */
 caStatus casStrmClient::readAction ()
 {
-	const caHdr *mp = this->ctx.getMsg();
+	const caHdrLargeArray *mp = this->ctx.getMsg();
 	caStatus status;
 	casChannelI *pChan;
 	smartGDDPointer pDesc;
@@ -245,70 +245,54 @@ caStatus casStrmClient::readAction ()
 //
 // casStrmClient::readResponse()
 //
-caStatus casStrmClient::readResponse (casChannelI *pChan, const caHdr &msg, 
-					const smartConstGDDPointer &pDesc, const caStatus status)
+caStatus casStrmClient::readResponse ( casChannelI * pChan, const caHdrLargeArray & msg, 
+					const smartConstGDDPointer & pDesc, const caStatus status )
 {
-	caHdr 		*reply;
-	unsigned	size;
-	caStatus	localStatus;
-	int			mapDBRStatus;
-	int        	strcnt;
-
-	if (status!=S_casApp_success) {
-		return this->sendErrWithEpicsStatus(&msg, status, ECA_GETFAIL);
+	if ( status != S_casApp_success ) {
+		return this->sendErrWithEpicsStatus ( & msg, status, ECA_GETFAIL );
 	}
 
-	size = dbr_size_n (msg.m_dataType, msg.m_count);
-	localStatus = this->allocMsg(size, &reply);
-	if (localStatus) {
-		if (localStatus==S_cas_hugeRequest) {
-			localStatus = sendErr(&msg, ECA_TOLARGE, NULL);
-		}
-		return localStatus;
-	}
-
-
-	//
-	// setup response message
-	//
-	*reply = msg; 
-	assert ( size <= 0xffff );
-	reply->m_postsize = static_cast <ca_uint16_t> ( size );
-	reply->m_cid = pChan->getCID();
+    void *pPayload;
+    {
+	    unsigned payloadSize = dbr_size_n ( msg.m_dataType, msg.m_count );
+        caStatus localStatus = this->out.copyInHeader ( msg.m_cmmd, payloadSize,
+            msg.m_dataType, msg.m_count, pChan->getCID (), 
+            msg.m_available, & pPayload );
+	    if ( localStatus ) {
+		    if ( localStatus==S_cas_hugeRequest ) {
+			    localStatus = sendErr ( &msg, ECA_TOLARGE, NULL );
+		    }
+		    return localStatus;
+	    }
+    }
 
 	//
 	// convert gdd to db_access type
 	// (places the data in network format)
 	//
-	mapDBRStatus = gddMapDbr[msg.m_dataType].conv_dbr((reply+1), msg.m_count, *pDesc, pChan->enumStringTable());
-	if (mapDBRStatus<0) {
+	int mapDBRStatus = gddMapDbr[msg.m_dataType].conv_dbr(
+        pPayload, msg.m_count, *pDesc, pChan->enumStringTable() );
+	if ( mapDBRStatus < 0 ) {
 		pDesc->dump();
 		errPrintf (S_cas_badBounds, __FILE__, __LINE__, "- get with PV=%s type=%u count=%u",
 				pChan->getPVI().getName(), msg.m_dataType, msg.m_count);
-		return this->sendErrWithEpicsStatus(&msg, S_cas_badBounds, ECA_GETFAIL);
+		return this->sendErrWithEpicsStatus ( 
+            &msg, S_cas_badBounds, ECA_GETFAIL );
 	}
 #ifdef CONVERSION_REQUIRED
-	/* use type as index into conversion jumptable */
-	(* cac_dbr_cvrt[msg.m_dataType])
-		( reply + 1,
-		  reply + 1,
-		  TRUE,       /* host -> net format */
-		  msg.m_count);
+	( * cac_dbr_cvrt[msg.m_dataType] )
+		( pPayload, pPayload, TRUE, msg.m_count );
 #endif
-	//
-	// force string message size to be the true size rounded to even
-	// boundary
-	//
-	if (msg.m_dataType == DBR_STRING && msg.m_count == 1u) {
-		/* add 1 so that the string terminator will be shipped */
-		strcnt = strlen((char *)(reply + 1u)) + 1u;
-		assert ( strcnt <= 0xffff );
-		reply->m_postsize = static_cast <ca_uint16_t> (strcnt);
+
+    if ( msg.m_dataType == DBR_STRING && msg.m_count == 1u ) {
+		unsigned reducedPayloadSize = strlen ( static_cast < char * > ( pPayload ) ) + 1u;
+	    this->out.commitMsg ( reducedPayloadSize );
 	}
+    else {
+	    this->out.commitMsg ();
+    }
 
-	this->commitMsg ();
-
-	return localStatus;
+	return S_cas_success;
 }
 
 //
@@ -316,14 +300,14 @@ caStatus casStrmClient::readResponse (casChannelI *pChan, const caHdr &msg,
 //
 caStatus casStrmClient::readNotifyAction ()
 {
-	const caHdr *mp = this->ctx.getMsg();
+	const caHdrLargeArray *mp = this->ctx.getMsg();
 	int status;
 	casChannelI *pChan;
 	smartGDDPointer pDesc;
 
-	status = this->verifyRequest (pChan);
-	if (status != ECA_NORMAL) {
-		return this->readNotifyResponseECA_XXX (NULL, *mp, NULL, status);
+	status = this->verifyRequest ( pChan );
+	if ( status != ECA_NORMAL ) {
+		return this->readNotifyFailureResponse ( *mp, status );
 	}
 
 	//
@@ -331,10 +315,10 @@ caStatus casStrmClient::readNotifyAction ()
 	// 
 	if (!pChan->readAccess()) {
 		if (CA_V41(this->minor_version_number)) {
-			return this->readNotifyResponseECA_XXX (NULL, *mp, NULL, ECA_NORDACCESS);
+			return this->readNotifyFailureResponse ( *mp, ECA_NORDACCESS );
 		}
 		else {
-			return this->readNotifyResponse (NULL, *mp, NULL, S_cas_noRead);
+			return this->readNotifyResponse ( NULL, *mp, NULL, S_cas_noRead );
 		}
 	}
 
@@ -358,142 +342,95 @@ caStatus casStrmClient::readNotifyAction ()
 //
 // casStrmClient::readNotifyResponse()
 //
-caStatus casStrmClient::readNotifyResponse (casChannelI *pChan, 
-		const caHdr &msg, const smartConstGDDPointer &pDesc, const caStatus completionStatus)
+caStatus casStrmClient::readNotifyResponse ( casChannelI * pChan, 
+		const caHdrLargeArray & msg, const smartConstGDDPointer & pDesc, const caStatus completionStatus )
 {
-	caStatus ecaStatus;
-
-	if (completionStatus!=S_cas_success) {
-		ecaStatus = ECA_GETFAIL;
-	}
-	else {
-		ecaStatus = ECA_NORMAL;
-	}
-	ecaStatus = this->readNotifyResponseECA_XXX (pChan, msg, pDesc, ecaStatus);
-	if (ecaStatus) {
-		return ecaStatus;
-	}
-
-	//
-	// send independent warning exception to the client so that they
-	// will see the error string associated with this error code 
-	// since the error string cant be sent with the get call back 
-	// response (hopefully this is useful information)
-	//
-	// order is very important here because it determines that the get 
-	// call back response is always sent, and that this warning exception
-	// message will be sent at most one time (in rare instances it will
-	// not be sent, but at least it will not be sent multiple times).
-	// The message is logged to the console in the rare situations when
-	// we are unable to send.
-	//
-	if (completionStatus!=S_cas_success) {
-		ecaStatus = this->sendErrWithEpicsStatus (&msg, completionStatus, ECA_NOCONVERT);
-		if (ecaStatus) {
-			errMessage (completionStatus, "<= get callback failure detail not passed to client");
+	if ( completionStatus != S_cas_success ) {
+        caStatus ecaStatus =  this->readNotifyFailureResponse ( msg, ECA_GETFAIL );
+    	//
+	    // send independent warning exception to the client so that they
+	    // will see the error string associated with this error code 
+	    // since the error string cant be sent with the get call back 
+	    // response (hopefully this is useful information)
+	    //
+	    // order is very important here because it determines that the get 
+	    // call back response is always sent, and that this warning exception
+	    // message will be sent at most one time (in rare instances it will
+	    // not be sent, but at least it will not be sent multiple times).
+	    // The message is logged to the console in the rare situations when
+	    // we are unable to send.
+	    //
+		caStatus tmpStatus = this->sendErrWithEpicsStatus ( & msg, completionStatus, ECA_NOCONVERT );
+		if ( tmpStatus ) {
+			errMessage ( completionStatus, "<= get callback failure detail not passed to client" );
 		}
+        return ecaStatus;
 	}
+
+	if ( ! pDesc ) {
+ 		errMessage ( S_cas_badParameter, 
+			"no data in server tool asynch read resp ?" );
+        return this->readNotifyFailureResponse ( msg, ECA_GETFAIL );
+	}
+
+    void *pPayload;
+    {
+	    unsigned size = dbr_size_n ( msg.m_dataType, msg.m_count );
+        caStatus status = this->out.copyInHeader ( msg.m_cmmd, size,
+                    msg.m_dataType, msg.m_count, ECA_NORMAL, 
+                    msg.m_available, & pPayload );
+	    if ( status ) {
+		    if ( status == S_cas_hugeRequest ) {
+			    status = sendErr ( & msg, ECA_TOLARGE, NULL );
+		    }
+		    return status;
+	    }
+    }
+
+    //
+	// convert gdd to db_access type
+	//
+	int mapDBRStatus = gddMapDbr[msg.m_dataType].conv_dbr ( pPayload, 
+        msg.m_count, *pDesc, pChan->enumStringTable() );
+	if ( mapDBRStatus < 0 ) {
+		pDesc->dump();
+		errPrintf ( S_cas_badBounds, __FILE__, __LINE__, 
+            "- get notify with PV=%s type=%u count=%u",
+			pChan->getPVI().getName(), msg.m_dataType, msg.m_count );
+        return this->readNotifyFailureResponse ( msg, ECA_NOCONVERT );
+	}
+
+#ifdef CONVERSION_REQUIRED
+	( * cac_dbr_cvrt[ msg.m_dataType ] )
+		( pPayload, pPayload, TRUE, msg.m_count );
+#endif
+
+	if ( msg.m_dataType == DBR_STRING && msg.m_count == 1u ) {
+		unsigned reducedPayloadSize = strlen ( static_cast < char * > ( pPayload ) ) + 1u;
+	    this->out.commitMsg ( reducedPayloadSize );
+	}
+    else {
+	    this->out.commitMsg ();
+    }
+
 	return S_cas_success;
 }
 
 //
-// casStrmClient::readNotifyResponseECA_XXX ()
+// casStrmClient::readNotifyFailureResponse ()
 //
-caStatus casStrmClient::readNotifyResponseECA_XXX (casChannelI *pChan, 
-		const caHdr &msg, const smartConstGDDPointer &pDesc, const caStatus ecaStatus)
+caStatus casStrmClient::readNotifyFailureResponse ( const caHdrLargeArray & msg, const caStatus ECA_XXXX )
 {
-	caHdr 		*reply;
-	unsigned	size;
-	caStatus	status;
-
-	size = dbr_size_n (msg.m_dataType, msg.m_count);
-	status = this->allocMsg(size, &reply);
-	if (status) {
-		if (status==S_cas_hugeRequest) {
-			//
-			// All read notify responses must include a buffer of
-			// the size they specify - otherwise an exception
-			// is generated
-			//
-			status = sendErr(&msg, ECA_TOLARGE, NULL);
-		}
-		return status;
+    assert ( ECA_XXXX != ECA_NORMAL );
+    void *pPayload;
+	unsigned size = dbr_size_n ( msg.m_dataType, msg.m_count );
+    caStatus status = this->out.copyInHeader ( msg.m_cmmd, size,
+                msg.m_dataType, msg.m_count, ECA_XXXX, 
+                msg.m_available, & pPayload );
+	if ( ! status ) {
+	    memset ( pPayload, '\0', size );
 	}
-
-	//
-	// setup response message
-	//
-	*reply = msg; 
-	assert ( size <= 0xffff );
-	reply->m_postsize = static_cast<ca_uint16_t> (size);
-
-	//
-	// cid field abused to store the status here
-	//
-	if (ecaStatus == ECA_NORMAL) {
-		if (!pDesc) {
-			errMessage(S_cas_badParameter, 
-			"because no data in server tool asynch read resp");
-			reply->m_cid = ECA_GETFAIL;
-		}
-		else {
-			int mapDBRStatus;
-			//
-			// convert gdd to db_access type
-			// (places the data in network format)
-			//
-			mapDBRStatus = gddMapDbr[msg.m_dataType].conv_dbr((reply+1), msg.m_count, *pDesc, pChan->enumStringTable());
-			if (mapDBRStatus<0) {
-				pDesc->dump();
-				errPrintf (S_cas_badBounds, __FILE__, __LINE__, "- get notify with PV=%s type=%u count=%u",
-					pChan->getPVI().getName(), msg.m_dataType, msg.m_count);
-				reply->m_cid = ECA_GETFAIL;
-			}
-			else {
-				reply->m_cid = ECA_NORMAL;
-			}
-		}
-	}
-	else {
-		reply->m_cid = ecaStatus;
-	}
-
-	//
-	// If they return non-zero status or a nill gdd ptr
-	//
-	if (reply->m_cid != ECA_NORMAL) {
-		//
-		// If the operation failed clear the response data
-		// area
-		//
-		memset ((char *)(reply+1), '\0', size);
-	}
-#ifdef CONVERSION_REQUIRED
-	else {
-
-		/* use type as index into conversion jumptable */
-		(* cac_dbr_cvrt[msg.m_dataType])
-			( reply + 1,
-			  reply + 1,
-			  TRUE,       /* host -> net format */
-			  msg.m_count);
-	}
-#endif
-
-	//
-	// force string message size to be the true size rounded to even
-	// boundary
-	//
-	if (msg.m_dataType == DBR_STRING && msg.m_count == 1u) {
-		/* add 1 so that the string terminator will be shipped */
-		size_t strcnt = strlen((char *)(reply + 1u)) + 1u;
-		assert ( strcnt < 0xffff );
-		reply->m_postsize = static_cast <ca_uint16_t> ( strcnt );
-	}
-
-	this->commitMsg ();
-
-	return S_cas_success;
+    return status;
 }
 
 //
@@ -541,7 +478,11 @@ static smartGDDPointer createDBRDD (unsigned dbrType, aitIndex dbrCount)
 		// returned for DBR types
 		//
 		if ( dbrCount > 1 ) {
-			pDescRet = new gdd (*pDescRet);
+            gdd & gddRef = *pDescRet;
+            gddContainer * pContainer = (gddContainer*) & gddRef;
+            gdd *pDuplicate = new gdd ( pContainer );
+            pDescRet = pDuplicate;
+
 			//
 			// smart pointer class maintains the ref count from here down
 			//
@@ -592,27 +533,17 @@ static smartGDDPointer createDBRDD (unsigned dbrType, aitIndex dbrCount)
 		pVal->setDimension ( 1u, &bds );
 	}
 	else if ( pVal->isAtomic () ) {
-		const gddBounds* pB = pVal->getBounds ();
-		aitIndex bound = dbrCount;
-		unsigned dim;
-		int modAllowed;
 		
 		if ( pDescRet->isManaged () || pDescRet->isFlat () ) {
-			modAllowed = FALSE;
+		    pDescRet = NULL;
+		    return pDescRet;
 		}
-		else {
-			modAllowed = TRUE;
-		}
-		
-		for ( dim=0u; dim < pVal->dimension (); dim++ ) {
+
+		aitIndex bound = dbrCount;
+		const gddBounds* pB = pVal->getBounds ();
+		for ( unsigned dim = 0u; dim < pVal->dimension (); dim++ ) {
 			if ( pB[dim].first () != 0u && pB[dim].size() != bound ) {
-				if ( modAllowed ) {
-					pVal->setBound( dim, 0u, bound );
-				}
-				else {
-					pDescRet = NULL;
-					return pDescRet;
-				}
+				pVal->setBound( dim, 0u, bound );
 			}
 			bound = 1u;
 		}
@@ -631,125 +562,105 @@ static smartGDDPointer createDBRDD (unsigned dbrType, aitIndex dbrCount)
 //
 // casStrmClient::monitorResponse ()
 //
-caStatus casStrmClient::monitorResponse (casChannelI &chan, const caHdr &msg, 
-		const smartConstGDDPointer &pDesc, const caStatus completionStatus)
+caStatus casStrmClient::monitorFailureResponse ( const caHdrLargeArray & msg, 
+    const caStatus ECA_XXXX )
 {
-	caStatus completionStatusCopy = completionStatus;
-	smartGDDPointer pDBRDD;
-	caHdr *pReply;
-	unsigned size;
-	caStatus status;
-	gddStatus gdds;
-
-	size = dbr_size_n (msg.m_dataType, msg.m_count);
-	status = this->allocMsg(size, &pReply);
-	if (status) {
-		if (status==S_cas_hugeRequest) {
-			//
-			// If we cant include the data - it is a proto
-			// violation - so we generate an exception
-			// instead
-			//
-			status = sendErr (&msg, ECA_TOLARGE, 
-					"unable to xmit event");
-		}
-		return status;
+    assert ( ECA_XXXX != ECA_NORMAL );
+    void *pPayload;
+	unsigned size = dbr_size_n ( msg.m_dataType, msg.m_count );
+    caStatus status = this->out.copyInHeader ( msg.m_cmmd, size,
+                msg.m_dataType, msg.m_count, ECA_XXXX, 
+                msg.m_available, & pPayload );
+	if ( ! status ) {
+	    memset ( pPayload, '\0', size );
+        this->out.commitMsg ();
 	}
+    return status;
+}
 
-	//
-	// setup response message
-	//
-	*pReply = msg;
-	assert ( size <= 0xffff );
-	pReply->m_postsize = static_cast<ca_uint16_t> (size);
+//
+// casStrmClient::monitorResponse ()
+//
+caStatus casStrmClient::monitorResponse ( casChannelI & chan, const caHdrLargeArray & msg, 
+		const smartConstGDDPointer & pDesc, const caStatus completionStatus )
+{
+    void * pPayload;
+    {
+	    ca_uint32_t size = dbr_size_n ( msg.m_dataType, msg.m_count );
+        caStatus status = out.copyInHeader ( msg.m_cmmd, size,
+            msg.m_dataType, msg.m_count, ECA_NORMAL, 
+            msg.m_available, & pPayload );
+	    if ( status ) {
+		    if ( status == S_cas_hugeRequest ) {
+			    status = sendErr ( & msg, ECA_TOLARGE, 
+					    "unable to xmit event" );
+		    }
+		    return status;
+	    }
+    }
 
-	//
-	// verify read access
-	//
-	if (!chan.readAccess()) {
-		completionStatusCopy = S_cas_noRead;
+    smartGDDPointer pDBRDD;
+	if ( ! chan.readAccess () ) {
+        return monitorFailureResponse ( msg, ECA_NORDACCESS );
 	}
-
-	//
-	// cid field abused to store the status here
-	//
-	if (completionStatusCopy == S_cas_success) {
-
-		if (!pDesc) {
-            completionStatusCopy = S_cas_badParameter;
-		}
-		else {
-			pDBRDD = createDBRDD (msg.m_dataType, msg.m_count);
-            if (!pDBRDD) {
-                completionStatusCopy = S_cas_noMemory;
+	else if ( completionStatus == S_cas_success ) {
+	    pDBRDD = createDBRDD ( msg.m_dataType, msg.m_count );
+        if ( ! pDBRDD ) {
+            return monitorFailureResponse ( msg, ECA_ALLOCMEM );
+        }
+	    else if ( pDesc.valid() ) {
+	        gddStatus gdds = gddApplicationTypeTable::
+		        app_table.smartCopy ( & (*pDBRDD), & (*pDesc) );
+	        if ( gdds < 0 ) {
+		        errPrintf ( S_cas_noConvert, __FILE__, __LINE__,
+        "no conversion between event app type=%d and DBR type=%d Element count=%d",
+			        pDesc->applicationType (), msg.m_dataType, msg.m_count);
+                return monitorFailureResponse ( msg, ECA_NOCONVERT );
             }
-            else {
-				gdds = gddApplicationTypeTable::
-					app_table.smartCopy ( & (*pDBRDD), & (*pDesc) );
-				if (gdds) {
-					errPrintf (status, __FILE__, __LINE__,
-"no conversion between event app type=%d and DBR type=%d Element count=%d",
-						pDesc->applicationType(),
-						msg.m_dataType,
-						msg.m_count);
-					completionStatusCopy = S_cas_noConvert;
-				}
-			}
-		}
-	}
-
-	//	
-	// see no DD and no convert case above
-	//
-	if (completionStatusCopy == S_cas_success) {
-		pReply->m_cid = ECA_NORMAL;
-
-		//
-		// there appears to be no success/fail
-		// status from this routine
-		//
-		gddMapDbr[msg.m_dataType].conv_dbr ((pReply+1), msg.m_count, *pDBRDD, chan.enumStringTable());
-
-#ifdef CONVERSION_REQUIRED
-		/* use type as index into conversion jumptable */
-		(* cac_dbr_cvrt[msg.m_dataType])
-			( pReply + 1,
-			  pReply + 1,
-			  TRUE,       /* host -> net format */
-			  msg.m_count);
-#endif
-		//
-		// force string message size to be the true size 
-		//
-		if (msg.m_dataType == DBR_STRING && msg.m_count == 1u) {
-			// add 1 so that the string terminator 
-			// will be shipped 
-			size_t strcnt = strlen((char *)(pReply + 1u)) + 1u;
-			assert ( strcnt < 0xffff );
-			pReply->m_postsize = static_cast <ca_uint16_t> ( strcnt );
-		}
+        }
+        else {
+		    errMessage ( S_cas_badParameter, "no GDD in monitor response ?" );
+            return monitorFailureResponse ( msg, ECA_GETFAIL );
+        }
 	}
 	else {
-		errMessage(completionStatusCopy, "- in monitor response");
-
-		if (completionStatusCopy== S_cas_noRead) {
-			pReply->m_cid = ECA_NORDACCESS;
+		errMessage ( completionStatus, "- in monitor response" );
+		if ( completionStatus == S_cas_noRead ) {
+            return monitorFailureResponse ( msg, ECA_NORDACCESS );
 		}
-		else if (completionStatusCopy==S_cas_noMemory) {
-			pReply->m_cid = ECA_ALLOCMEM;
+		else if ( completionStatus == S_cas_noMemory ) {
+            return monitorFailureResponse ( msg, ECA_ALLOCMEM );
 		}
 		else {
-			pReply->m_cid = ECA_GETFAIL;
+            return monitorFailureResponse ( msg, ECA_GETFAIL );
 		}
-
-		//
-		// If the operation failed clear the response data
-		// area
-		//
-		memset ((char *)(pReply+1u), '\0', size);
 	}
 
-	this->commitMsg ();
+	//
+	// there appears to be no success/fail
+	// status from this routine
+	//
+	int mapDBRStatus = gddMapDbr[msg.m_dataType].conv_dbr ( pPayload, msg.m_count, 
+        *pDBRDD, chan.enumStringTable() );
+    if ( mapDBRStatus < 0 ) {
+        return monitorFailureResponse ( msg, ECA_NOCONVERT );
+    }
+
+#ifdef CONVERSION_REQUIRED
+	/* use type as index into conversion jumptable */
+	(* cac_dbr_cvrt[msg.m_dataType])
+		( pPayload, pPayload, TRUE,  msg.m_count );
+#endif
+	//
+	// force string message size to be the true size 
+	//
+	if ( msg.m_dataType == DBR_STRING && msg.m_count == 1u ) {
+		ca_uint32_t reducedPayloadSize = strlen ( static_cast < char * > ( pPayload ) ) + 1u;
+	    this->out.commitMsg ( reducedPayloadSize );
+	}
+    else {
+	    this->out.commitMsg ();
+    }
 
 	return S_cas_success;
 }
@@ -759,8 +670,8 @@ caStatus casStrmClient::monitorResponse (casChannelI &chan, const caHdr &msg,
  */
 caStatus casStrmClient::writeAction()
 {	
-	const caHdr 	*mp = this->ctx.getMsg();
-	caStatus	status;
+	const caHdrLargeArray *mp = this->ctx.getMsg();
+	caStatus status;
 	casChannelI	*pChan;
 
 	status = this->verifyRequest (pChan);
@@ -814,7 +725,7 @@ caStatus casStrmClient::writeAction()
 // casStrmClient::writeResponse()
 //
 caStatus casStrmClient::writeResponse ( 
-		const caHdr &msg, const caStatus completionStatus)
+		const caHdrLargeArray &msg, const caStatus completionStatus)
 {
 	caStatus status;
 
@@ -835,7 +746,7 @@ caStatus casStrmClient::writeResponse (
  */
 caStatus casStrmClient::writeNotifyAction()
 {
-	const caHdr 	*mp = this->ctx.getMsg();
+	const caHdrLargeArray *mp = this->ctx.getMsg();
 	int		status;
 	casChannelI	*pChan;
 
@@ -879,7 +790,7 @@ caStatus casStrmClient::writeNotifyAction()
  * casStrmClient::writeNotifyResponse()
  */
 caStatus casStrmClient::writeNotifyResponse(
-		const caHdr &msg, const caStatus completionStatus)
+		const caHdrLargeArray &msg, const caStatus completionStatus)
 {
 	caStatus ecaStatus;
 
@@ -920,25 +831,17 @@ caStatus casStrmClient::writeNotifyResponse(
 /* 
  * casStrmClient::writeNotifyResponseECA_XXX()
  */
-caStatus casStrmClient::writeNotifyResponseECA_XXX(
-		const caHdr &msg, const caStatus ecaStatus)
+caStatus casStrmClient::writeNotifyResponseECA_XXX (
+		const caHdrLargeArray & msg, const caStatus ecaStatus )
 {
-	caHdr		*preply;
-	caStatus	opStatus;
-
-	opStatus = this->allocMsg(0u, &preply);
-	if (opStatus) {
-		return opStatus;
+    caStatus status = out.copyInHeader ( msg.m_cmmd, 0,
+        msg.m_dataType, msg.m_count, ecaStatus, 
+        msg.m_available, 0 );
+	if ( ! status ) {
+    	this->out.commitMsg ();
 	}
 
-	*preply = msg;
-	preply->m_postsize = 0u;
-	preply->m_cid = ecaStatus;
-
-	/* commit the message */
-	this->commitMsg();
-
-	return S_cas_success;
+	return status;
 }
 
 /*
@@ -946,7 +849,7 @@ caStatus casStrmClient::writeNotifyResponseECA_XXX(
  */
 caStatus casStrmClient::hostNameAction()
 {
-	const caHdr 		*mp = this->ctx.getMsg();
+	const caHdrLargeArray *mp = this->ctx.getMsg();
 	char 			*pName = (char *) this->ctx.getData();
 	unsigned		size;
 	char 			*pMalloc;
@@ -993,7 +896,7 @@ caStatus casStrmClient::hostNameAction()
  */
 caStatus casStrmClient::clientNameAction()
 {
-	const caHdr 		*mp = this->ctx.getMsg();
+	const caHdrLargeArray *mp = this->ctx.getMsg();
 	char 			*pName = (char *) this->ctx.getData();
 	unsigned		size;
 	char 			*pMalloc;
@@ -1040,7 +943,7 @@ caStatus casStrmClient::clientNameAction()
  */
 caStatus casStrmClient::claimChannelAction()
 {
-	const caHdr *mp = this->ctx.getMsg();
+	const caHdrLargeArray *mp = this->ctx.getMsg();
 	char *pName = (char *) this->ctx.getData();
 	caServerI &cas = *this->ctx.getServer();
 	caStatus status;
@@ -1123,14 +1026,13 @@ caStatus casStrmClient::claimChannelAction()
 //
 // LOCK must be applied
 //
-caStatus casStrmClient::createChanResponse(const caHdr &hdr, const pvAttachReturn &pvar)
+caStatus casStrmClient::createChanResponse(const caHdrLargeArray &hdr, const pvAttachReturn &pvar)
 {
-	casPVI		*pPV;
-	casChannel 	*pChan;
-	casChannelI 	*pChanI;
-	caHdr 		*claim_reply; 
-    bufSizeT    nBytes;
-	caStatus	status;
+	casPVI *pPV;
+	casChannel *pChan;
+	casChannelI *pChanI;
+    bufSizeT nBytes;
+	caStatus status;
 
 	if (pvar.getStatus() != S_cas_success) {
 		return this->channelCreateFailed (&hdr, pvar.getStatus());
@@ -1165,14 +1067,13 @@ caStatus casStrmClient::createChanResponse(const caHdr &hdr, const pvAttachRetur
 	}
 
 	//
-	// NOTE:
 	// We are allocating enough space for both the claim
 	// response and the access rights response so that we know for
 	// certain that they will both be sent together.
 	//
     void *pRaw;
-    const outBufCtx outctx = this->outBuf::pushCtx 
-                    (0, 2*sizeof(caHdr), pRaw);
+    const outBufCtx outctx = this->out.pushCtx 
+                    ( 0, 2 * sizeof ( caHdr ), pRaw );
     if (outctx.pushResult()!=outBufCtx::pushCtxSuccess) {
         return S_cas_sendBlocked;
     }
@@ -1183,7 +1084,7 @@ caStatus casStrmClient::createChanResponse(const caHdr &hdr, const pvAttachRetur
 	this->ctx.setPV (pPV);
 	pChan = pPV->createChannel (this->ctx, this->pUserName, this->pHostName);
 	if (!pChan) {
-        this->outBuf::popCtx (outctx);
+        this->out.popCtx (outctx);
 		pPV->deleteSignal();
 		return this->channelCreateFailed (&hdr, S_cas_noMemory);
 	}
@@ -1191,21 +1092,19 @@ caStatus casStrmClient::createChanResponse(const caHdr &hdr, const pvAttachRetur
 	pChanI = (casChannelI *) pChan;
 
 	//
-	// NOTE:
 	// We are certain that the request will complete
 	// here because we allocated enough space for this
 	// and the claim response above.
 	//
 	status = casStrmClient::accessRightsResponse(pChanI);
 	if (status) {
-        this->outBuf::popCtx (outctx);
+        this->out.popCtx (outctx);
 		errMessage(status, "incomplete channel create?");
 		pChanI->destroyNoClientNotify();
 		return this->channelCreateFailed(&hdr, status);
 	}
 
 	//
-	// NOTE:
 	// We are allocated enough space for both the claim
 	// response and the access response so that we know for
 	// certain that they will both be sent together.
@@ -1214,31 +1113,27 @@ caStatus casStrmClient::createChanResponse(const caHdr &hdr, const pvAttachRetur
 	// here to be certain that we are at the correct place in
 	// the protocol buffer.
 	//
-	status = this->allocMsg (0u, &claim_reply);
-    if (status!=S_cas_success) {
-        this->outBuf::popCtx (outctx);
-		errMessage(status, "incomplete channel create?");
+	assert ( nativeType <= 0xffff );
+	unsigned nativeCount = pPV->nativeCount();
+    status = this->out.copyInHeader ( CA_PROTO_CLAIM_CIU, 0,
+        static_cast <ca_uint16_t> ( nativeType ), 
+        static_cast <ca_uint16_t> ( nativeCount ), 
+        hdr.m_cid, pChanI->getSID(), 0 );
+    if ( status != S_cas_success ) {
+        this->out.popCtx ( outctx );
+		errMessage ( status, "incomplete channel create?" );
 		pChanI->destroyNoClientNotify();
-		return this->channelCreateFailed(&hdr, status);
+		return this->channelCreateFailed ( &hdr, status );
 	}
 
-	*claim_reply = nill_msg;
-	claim_reply->m_cmmd = CA_PROTO_CLAIM_CIU;
-	assert ( nativeType <= 0xffff );
-	claim_reply->m_dataType = static_cast <ca_uint16_t> (nativeType);
-	unsigned nativeCount = pPV->nativeCount();
-	assert ( nativeType <= 0xffff );
-	claim_reply->m_count = static_cast <ca_uint16_t> (nativeCount);
-	claim_reply->m_cid = hdr.m_cid;
-	claim_reply->m_available = pChanI->getSID();
-    this->commitMsg();
+    this->out.commitMsg ();
 
     //
     // commit the message
     //
-    nBytes = this->outBuf::popCtx (outctx);
+    nBytes = this->out.popCtx (outctx);
     assert ( nBytes == 2*sizeof(caHdr) );
-    this->outBuf::commitRawMsg (nBytes);
+    this->out.commitRawMsg (nBytes);
 
 	return status;
 }
@@ -1249,37 +1144,32 @@ caStatus casStrmClient::createChanResponse(const caHdr &hdr, const pvAttachRetur
  * If we are talking to an CA_V46 client then tell them when a channel
  * cant be created (instead of just disconnecting)
  */
-caStatus casStrmClient::channelCreateFailed(
-const caHdr     *mp,
-caStatus        createStatus)
+caStatus casStrmClient::channelCreateFailed (
+    const caHdrLargeArray *mp, caStatus createStatus )
 {
     caStatus status;
-    caHdr *reply;
  
-	if (createStatus == S_casApp_asyncCompletion) {
-		errMessage(S_cas_badParameter, 
+	if ( createStatus == S_casApp_asyncCompletion ) {
+		errMessage( S_cas_badParameter, 
 	"- no asynchronous IO create in pvAttach() ?");
-		errMessage(S_cas_badParameter, 
+		errMessage( S_cas_badParameter, 
 	"- or S_casApp_asyncCompletion was async IO competion code ?");
 	}
 	else {
-		errMessage (createStatus, "- Server unable to create a new PV");
+		errMessage ( createStatus, "- Server unable to create a new PV");
 	}
-	if (CA_V46(this->minor_version_number)) {
-
-		status = allocMsg (0u, &reply);
-		if (status) {
+	if ( CA_V46( this->minor_version_number ) ) {
+        status = this->out.copyInHeader ( CA_PROTO_CLAIM_CIU_FAILED, 0,
+            0, 0, mp->m_cid, 0, 0 );
+		if ( status ) {
 			return status;
 		}
-		*reply = nill_msg;
-		reply->m_cmmd = CA_PROTO_CLAIM_CIU_FAILED;
-		reply->m_cid = mp->m_cid;
-		this->commitMsg();
+		this->out.commitMsg ();
 		createStatus = S_cas_success;
 	}
 	else {
-		status = this->sendErrWithEpicsStatus(mp, createStatus, ECA_ALLOCMEM);
-		if (status) {
+		status = this->sendErrWithEpicsStatus ( mp, createStatus, ECA_ALLOCMEM );
+		if ( status ) {
 			return status;
 		}
 	}
@@ -1293,27 +1183,24 @@ caStatus        createStatus)
  * If we are talking to an CA_V47 client then tell them when a channel
  * was deleted by the server tool 
  */
-caStatus casStrmClient::disconnectChan(caResId id)
+caStatus casStrmClient::disconnectChan ( caResId id )
 {
 	caStatus status;
 	caStatus createStatus;
-	caHdr *reply;
 
-	if (CA_V47(this->minor_version_number)) {
+    if ( CA_V47 ( this->minor_version_number ) ) {
 
-		status = allocMsg (0u, &reply);
-		if (status) {
+        status = this->out.copyInHeader ( CA_PROTO_SERVER_DISCONN, 0,
+            0, 0, id, 0, 0 );
+		if ( status ) {
 			return status;
 		}
-		*reply = nill_msg;
-		reply->m_cmmd = CA_PROTO_SERVER_DISCONN;
-		reply->m_cid = id;
-		this->commitMsg();
+		this->out.commitMsg ();
 		createStatus = S_cas_success;
 	}
 	else {
-		errlogPrintf(
-		"Disconnecting old client because of internal channel or PV delete\n");
+		errlogPrintf (
+		    "Disconnecting old client because of internal channel or PV delete\n");
 		createStatus = S_cas_disconnect;
 	}
 
@@ -1342,7 +1229,7 @@ caStatus casStrmClient::eventsOffAction()
 //
 caStatus casStrmClient::eventAddAction ()
 {
-	const caHdr *mp = this->ctx.getMsg();
+	const caHdrLargeArray *mp = this->ctx.getMsg();
 	struct mon_info *pMonInfo = (struct mon_info *) 
 					this->ctx.getData();
 	casClientMon *pMonitor;
@@ -1411,10 +1298,10 @@ caStatus casStrmClient::eventAddAction ()
 		return S_cas_success;
 	}
 	else {
-		status = this->monitorResponse (*pciu, *mp, pDD, status);
+		status = this->monitorResponse ( *pciu, *mp, pDD, status );
 	}
 
-	if (status==S_cas_success) {
+	if ( status == S_cas_success ) {
 
 		pMonitor = new casClientMon(*pciu, mp->m_available, 
 					mp->m_count, mp->m_dataType, mask, *this);
@@ -1440,17 +1327,16 @@ caStatus casStrmClient::eventAddAction ()
 //
 caStatus casStrmClient::clearChannelAction ()
 {
-	const caHdr *mp = this->ctx.getMsg();
-	void *dp = this->ctx.getData();
-	caHdr *reply;
-	casChannelI *pciu;
+	const caHdrLargeArray * mp = this->ctx.getMsg();
+	const void * dp = this->ctx.getData();
+	casChannelI * pciu;
 	int status;
 
 	/*
 	 * Verify the channel
 	 */
-	pciu = this->resIdToChannel (mp->m_cid);
-	if (pciu==NULL) {
+	pciu = this->resIdToChannel ( mp->m_cid );
+	if ( pciu == NULL ) {
 		/*
 		 * it is possible that the channel delete arrives just 
 		 * after the server tool has deleted the PV so we will
@@ -1461,8 +1347,8 @@ caStatus casStrmClient::clearChannelAction ()
 		 * return early here if we are unable to send the warning
 		 * so that send block conditions will be handled
 		 */
-		status = logBadId (mp, dp, ECA_BADCHID, mp->m_cid);
-		if (status) {
+		status = logBadId ( mp, dp, ECA_BADCHID, mp->m_cid );
+		if ( status ) {
 			return status;
 		}
 		//
@@ -1472,26 +1358,20 @@ caStatus casStrmClient::clearChannelAction ()
 		//
 	}
 
-	/*
-	 * send delete confirmed message
-	 */
-	status = this->allocMsg (0u, &reply);
-	if (status) {
-		return status;
-	}
-
 	//
-	// only execute the request after we have allocated
-	// space for the response
+	// send delete confirmed message
 	//
-	if (pciu) {
-		pciu->destroyNoClientNotify ();
-	}
+    status = this->out.copyInHeader ( mp->m_cmmd, 0,
+        mp->m_dataType, mp->m_count, 
+        mp->m_cid, mp->m_available, 0 );
+    if ( ! status ) {
+        this->out.commitMsg ();
+	    if ( pciu ) {
+		    pciu->destroyNoClientNotify ();
+	    }
+    }
 
-	*reply = *mp;
-	this->commitMsg ();
-
-	return S_cas_success;
+	return status;
 }
 
 
@@ -1500,17 +1380,16 @@ caStatus casStrmClient::clearChannelAction ()
 //
 caStatus casStrmClient::eventCancelAction ()
 {
-	const caHdr *mp = this->ctx.getMsg ();
-	void *dp = this->ctx.getData ();
+	const caHdrLargeArray * mp = this->ctx.getMsg ();
+	const void * dp = this->ctx.getData ();
 	casChannelI *pciu;
-	caHdr *reply;
 	int status;
 	
 	/*
 	 * Verify the channel
 	 */
-	pciu = this->resIdToChannel (mp->m_cid);
-	if (!pciu) {
+	pciu = this->resIdToChannel ( mp->m_cid );
+	if ( ! pciu ) {
 		/*
 		 * it is possible that the event delete arrives just 
 		 * after the server tool has deleted the PV. In this
@@ -1518,7 +1397,8 @@ caStatus casStrmClient::eventCancelAction ()
 		 * resource id for the return message and so we must force
 		 * the client to reconnect.
 		 */
-		return logBadId (mp, dp, ECA_BADCHID, mp->m_cid);
+		logBadId ( mp, dp, ECA_BADCHID, mp->m_cid );
+        return S_cas_badResourceId;
 	}
 
 	/*
@@ -1527,33 +1407,27 @@ caStatus casStrmClient::eventCancelAction ()
     tsDLIterBD <casMonitor> pMon = pciu->findMonitor ( mp->m_available );
 	if ( ! pMon.valid () ) {
 		//
-		// this indicates client or server library corruption
+		// this indicates client or server library corruption so a
+        // disconnect is the best response
 		//
-		return logBadId ( mp, dp, ECA_BADMONID, mp->m_cid );
+		logBadId ( mp, dp, ECA_BADMONID, mp->m_available );
+        return S_cas_badResourceId;
 	}
 
-	/*
-	 * allocate delete confirmed message
-	 */
-	status = allocMsg ( 0u, &reply );
-	if ( status ) {
-		return status;
-	}
-	
-	reply->m_cmmd = CA_PROTO_EVENT_ADD;
-	reply->m_postsize = 0u;
 	unsigned type = pMon->getType ();
 	assert ( type <= 0xff );
-	reply->m_dataType = static_cast <unsigned char> ( type );
-	reply->m_count = (unsigned short) pMon->getCount ();
-	reply->m_cid = pciu->getCID ();
-	reply->m_available = pMon->getClientId ();
+    status = this->out.copyInHeader ( CA_PROTO_EVENT_ADD, 0,
+        static_cast <unsigned char> ( type ), pMon->getCount (), 
+        pciu->getCID (), pMon->getClientId (), 0 );
+	if ( ! status ) {
+	    this->out.commitMsg ();
+	    pMon->destroy ();
+	}	
+    else {
+        printf ( "no room for subscription destroy response message\n" );
+    }
 	
-	this->commitMsg ();
-	
-	pMon->destroy ();
-	
-	return S_cas_success;
+	return status;
 }
 
 #if 0
@@ -1570,7 +1444,7 @@ caStatus casStrmClient::noReadAccessEvent(casClientMon *pMon)
 	caHdr 		*reply;
 	int		status;
 
-	size = dbr_size_n (pMon->getType(), pMon->getCount());
+	size = dbr_size_n ( pMon->getType(), pMon->getCount() );
 
 	falseReply.m_cmmd = CA_PROTO_EVENT_ADD;
 	falseReply.m_postsize = size;
@@ -1580,8 +1454,8 @@ caStatus casStrmClient::noReadAccessEvent(casClientMon *pMon)
 	falseReply.m_available = pMon->getClientId();
 
 	status = this->allocMsg(size, &reply);
-	if (status) {
-		if(status == S_cas_hugeRequest){
+	if ( status ) {
+		if( status == S_cas_hugeRequest ) {
 			return this->sendErr(&falseReply, ECA_TOLARGE, NULL);
 		}
 		return status;
@@ -1603,7 +1477,7 @@ caStatus casStrmClient::noReadAccessEvent(casClientMon *pMon)
 		reply->m_postsize = size;
 		reply->m_cid = ECA_NORDACCESS;
 		memset((char *)(reply+1), 0, size);
-		this->commitMsg();
+		this->commitMsg ();
 	}
 	
 	return S_cas_success;
@@ -1615,9 +1489,8 @@ caStatus casStrmClient::noReadAccessEvent(casClientMon *pMon)
 //
 caStatus casStrmClient::readSyncAction()
 {
-	const caHdr 	*mp = this->ctx.getMsg();
-	int		status;
-	caHdr 		*reply;
+	const caHdrLargeArray *mp = this->ctx.getMsg();
+	int	status;
 
 	//
 	// This messages indicates that the client
@@ -1633,16 +1506,14 @@ caStatus casStrmClient::readSyncAction()
 	}
 	this->unlock();
 
-	status = this->allocMsg ( 0u, &reply );
-	if ( status ) {
-		return status;
+    status = this->out.copyInHeader ( mp->m_cmmd, 0,
+        mp->m_dataType, mp->m_count, 
+        mp->m_cid, mp->m_available, 0 );
+	if ( ! status ) {
+	    this->out.commitMsg ();
 	}
 
-	*reply = *mp;
-
-	this->commitMsg ();
-
-	return S_cas_success;
+	return status;
 }
 
  //
@@ -1654,39 +1525,33 @@ caStatus casStrmClient::readSyncAction()
  //
 caStatus casStrmClient::accessRightsResponse(casChannelI *pciu)
 {
-    caHdr       *reply;
-    unsigned    ar;
-    int         v41;
-    int         status;
+    unsigned ar;
+    int v41;
+    int status;
     
-    /*
-    * noop if this is an old client
-    */
-    v41 = CA_V41(this->minor_version_number);
-    if(!v41){
+    //
+    // noop if this is an old client
+    //
+    v41 = CA_V41 ( this->minor_version_number );
+    if ( ! v41 ) {
         return S_cas_success;
     }
     
-    ar = 0; /* none */
-    if (pciu->readAccess()) {
+    ar = 0; // none 
+    if ( pciu->readAccess() ) {
         ar |= CA_PROTO_ACCESS_RIGHT_READ;
     }
-    if (pciu->writeAccess()) {
+    if ( pciu->writeAccess() ) {
         ar |= CA_PROTO_ACCESS_RIGHT_WRITE;
     }
     
-    status = this->allocMsg(0u, &reply);
-    if(status){
-        return status;
+    status = this->out.copyInHeader ( CA_PROTO_ACCESS_RIGHTS, 0,
+        0, 0, pciu->getCID(), ar, 0 );
+    if ( ! status ) {
+        this->out.commitMsg ();
     }
     
-    *reply = nill_msg;
-    reply->m_cmmd = CA_PROTO_ACCESS_RIGHTS;
-    reply->m_cid = pciu->getCID();
-    reply->m_available = ar;
-    this->commitMsg();
-    
-    return S_cas_success;
+    return status;
 }
 
 //
@@ -1694,7 +1559,7 @@ caStatus casStrmClient::accessRightsResponse(casChannelI *pciu)
 //
 caStatus casStrmClient::write()
 {
-	const caHdr	*pHdr = this->ctx.getMsg();
+	const caHdrLargeArray *pHdr = this->ctx.getMsg();
 	casPVI		*pPV = this->ctx.getPV();
 	caStatus	status;
 
@@ -1768,7 +1633,7 @@ caStatus casStrmClient::write()
 caStatus casStrmClient::writeScalarData()
 {
 	smartGDDPointer pDD;
-	const caHdr *pHdr = this->ctx.getMsg();
+	const caHdrLargeArray *pHdr = this->ctx.getMsg();
 	gddStatus gddStat;
 	caStatus status;
 	aitEnum	type;
@@ -1836,7 +1701,7 @@ caStatus casStrmClient::writeScalarData()
 caStatus casStrmClient::writeArrayData()
 {
 	smartGDDPointer pDD;
-	const caHdr *pHdr = this->ctx.getMsg();
+	const caHdrLargeArray *pHdr = this->ctx.getMsg();
 	gddDestructor *pDestructor;
 	gddStatus gddStat;
 	caStatus status;
@@ -1930,7 +1795,7 @@ caStatus casStrmClient::writeArrayData()
 //
 caStatus casStrmClient::read (smartGDDPointer &pDescRet)
 {
-	const caHdr	    *pHdr = this->ctx.getMsg();
+	const caHdrLargeArray *pHdr = this->ctx.getMsg();
 	caStatus        status;
 
 	pDescRet = createDBRDD (pHdr->m_dataType, pHdr->m_count);
@@ -1961,7 +1826,7 @@ caStatus casStrmClient::read (smartGDDPointer &pDescRet)
 	// async IO but dont return status
 	// indicating so (and vise versa)
 	//
-	if (this->asyncIOFlag) {
+	if ( this->asyncIOFlag ) {
 		if (status!=S_casApp_asyncCompletion) {
 			fprintf(stderr, 
 "Application returned %d from casPV::read() - expected S_casApp_asyncCompletion\n",
@@ -1969,13 +1834,13 @@ caStatus casStrmClient::read (smartGDDPointer &pDescRet)
 			status = S_casApp_asyncCompletion;
 		}
 	}
-	else if (status == S_casApp_asyncCompletion) {
+	else if ( status == S_casApp_asyncCompletion ) {
 		status = S_cas_badParameter;
 		errMessage(status, 
 			"- expected asynch IO creation from casPV::read()");
 	}
 
-	if (status) {
+	if ( status ) {
 		pDescRet = NULL;
 	}
 
@@ -2036,29 +1901,29 @@ void casStrmClient::removeChannel(casChannelI &chan)
 //
 //  casStrmClient::xSend()
 //
-outBuf::flushCondition casStrmClient::xSend (char *pBufIn,
+outBufClient::flushCondition casStrmClient::xSend ( char * pBufIn,
                                              bufSizeT nBytesAvailableToSend,
                                              bufSizeT nBytesNeedToBeSent,
-                                             bufSizeT &nActualBytes)
+                                             bufSizeT & nActualBytes )
 {
-    outBuf::flushCondition stat;
+    outBufClient::flushCondition stat;
     bufSizeT nActualBytesDelta;
     bufSizeT totalBytes;
 
-    assert (nBytesAvailableToSend>=nBytesNeedToBeSent);
+    assert ( nBytesAvailableToSend >= nBytesNeedToBeSent );
 	
     totalBytes = 0u;
     while ( true ) {
-        stat = this->osdSend (&pBufIn[totalBytes],
-                              nBytesAvailableToSend-totalBytes, nActualBytesDelta);
-        if (stat != outBuf::flushProgress) {
-            if (totalBytes>0) {
+        stat = this->osdSend ( &pBufIn[totalBytes],
+                              nBytesAvailableToSend-totalBytes, nActualBytesDelta );
+        if ( stat != outBufClient::flushProgress ) {
+            if ( totalBytes > 0 ) {
                 nActualBytes = totalBytes;
 		        //
 		        // !! this time fetch may be slowing things down !!
 		        //
 		        //this->lastSendTS = epicsTime::getCurrent();
-                return outBuf::flushProgress;
+                return outBufClient::flushProgress;
             }
             else {
                 return stat;
@@ -2067,31 +1932,31 @@ outBuf::flushCondition casStrmClient::xSend (char *pBufIn,
 		
         totalBytes += nActualBytesDelta;
 		
-        if (totalBytes>=nBytesNeedToBeSent) {
+        if ( totalBytes >= nBytesNeedToBeSent ) {
 		    //
 		    // !! this time fetch may be slowing things down !!
 		    //
 		    //this->lastSendTS = epicsTime::getCurrent();
             nActualBytes = totalBytes;
-            return outBuf::flushProgress;
+            return outBufClient::flushProgress;
         }
     }
-	return outBuf::flushDisconnect; // happy compiler 
+	return outBufClient::flushDisconnect; // happy compiler 
 }
 
 //
 // casStrmClient::xRecv()
 //
-inBuf::fillCondition casStrmClient::xRecv(char *pBufIn, bufSizeT nBytes,
-                                 enum inBuf::fillParameter, bufSizeT &nActualBytes)
+inBufClient::fillCondition casStrmClient::xRecv ( char * pBufIn, bufSizeT nBytes,
+                                 inBufClient::fillParameter, bufSizeT & nActualBytes )
 {
-	inBuf::fillCondition stat;
+	inBufClient::fillCondition stat;
 	
-	stat = this->osdRecv (pBufIn, nBytes, nActualBytes);
+	stat = this->osdRecv ( pBufIn, nBytes, nActualBytes );
     //
     // this is used to set the time stamp for write GDD's
     //
-    this->lastRecvTS = epicsTime::getCurrent();
+    this->lastRecvTS = epicsTime::getCurrent ();
 	return stat;
 }
 
@@ -2102,4 +1967,10 @@ unsigned casStrmClient::getDebugLevel() const
 {
 	return this->getCAS().getDebugLevel();
 }
+
+void casStrmClient::flush ()
+{
+    this->out.flush ();
+}
+
 

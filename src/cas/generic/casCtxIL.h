@@ -17,15 +17,15 @@ inline casCtx::casCtx() :
 //
 // casCtx::getMsg()
 //
-inline const caHdr *casCtx::getMsg() const 
+inline const caHdrLargeArray * casCtx::getMsg() const 
 {	
-	return &this->msg;
+	return & this->msg;
 }
 
 //
 // casCtx::getData()
 //
-inline void *casCtx::getData() const 
+inline void * casCtx::getData() const 
 {
 	return this->pData;
 }
@@ -64,29 +64,11 @@ inline casChannelI * casCtx::getChannel() const
 
 //
 // casCtx::setMsg() 
-// (assumes incoming message is in network byte order)
 //
-inline void casCtx::setMsg(const char *pBuf)
+inline void casCtx::setMsg ( caHdrLargeArray &msgIn, void * pBody )
 {
-	//
-	// copy as raw bytes in order to avoid
-	// alignment problems
-	//
-	memcpy (&this->msg, pBuf, sizeof(this->msg));
-	this->msg.m_cmmd = epicsNTOH16 (this->msg.m_cmmd);
-	this->msg.m_postsize = epicsNTOH16 (this->msg.m_postsize);
-	this->msg.m_dataType = epicsNTOH16 (this->msg.m_dataType);
-	this->msg.m_count = epicsNTOH16 (this->msg.m_count);
-	this->msg.m_cid = epicsNTOH32 (this->msg.m_cid);
-	this->msg.m_available = epicsNTOH32 (this->msg.m_available);
-}
-
-//
-// casCtx::setData()
-//
-inline void casCtx::setData(void *p) 
-{
-	this->pData = p;
+	this->msg = msgIn;
+    this->pData = pBody;
 }
 
 //

@@ -52,10 +52,10 @@ inline void outBuf::clear ()
 //
 //	(if space is avilable this leaves the send lock applied)
 //			
-inline caStatus outBuf::allocMsg (bufSizeT extsize, caHdr **ppMsg)
-{
-    return this->allocRawMsg (extsize + sizeof(caHdr), (void **)ppMsg);
-}
+//inline caStatus outBuf::allocMsg (bufSizeT extsize, caHdr **ppMsg)
+//{
+//    return this->allocRawMsg (extsize + sizeof(caHdr), (void **)ppMsg);
+//}
 
 //
 // outBuf::commitRawMsg()
@@ -63,7 +63,7 @@ inline caStatus outBuf::allocMsg (bufSizeT extsize, caHdr **ppMsg)
 inline void outBuf::commitRawMsg (bufSizeT size)
 {
 	this->stack += size;
-	assert (this->stack <= this->bufSize);
+	assert ( this->stack <= this->bufSize );
 	
     this->mutex.unlock();
 }

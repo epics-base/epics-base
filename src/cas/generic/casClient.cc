@@ -51,9 +51,9 @@ casClient::pCASMsgHandler casClient::msgHandlers[CA_PROTO_LAST_CMMD+1u];
 //
 // casClient::casClient()
 //
-casClient::casClient(caServerI &serverInternal, bufSizeT ioSizeMinIn) : 
-    casCoreClient (serverInternal),
-    inBuf (MAX_MSG_SIZE, ioSizeMinIn), outBuf (MAX_MSG_SIZE)
+casClient::casClient ( caServerI &serverInternal, bufSizeT ioSizeMinIn ) : 
+    casCoreClient ( serverInternal ), in ( *this, ioSizeMinIn ), out ( *this ),
+	minor_version_number ( 0 ), incommingBytesToDrain ( 0 )
 {
     //
     // static member init 
@@ -183,8 +183,8 @@ void casClient::show (unsigned level) const
 	printf ( "casClient at %p\n", 
         static_cast <const void *> ( this ) );
 	this->casCoreClient::show (level);
-	this->inBuf::show (level);
-	this->outBuf::show (level);
+	this->in.show (level);
+	this->out.show (level);
 }
 
 //
@@ -192,88 +192,122 @@ void casClient::show (unsigned level) const
 //
 caStatus casClient::processMsg ()
 {
-	unsigned    msgsize;
-	unsigned    bytesLeft;
-	int         status;
-	const caHdr *mp;
-	const char  *rawMP;
+    // drain message that does not fit
+    if ( this->incommingBytesToDrain ) {
+        unsigned bytesLeft = this->in.bytesPresent();
+        if ( bytesLeft  < this->incommingBytesToDrain ) {
+            this->in.removeMsg ( bytesLeft );
+            this->incommingBytesToDrain -= bytesLeft;
+            return S_cas_success;
+        }
+        else {
+            this->in.removeMsg ( this->incommingBytesToDrain );
+            this->incommingBytesToDrain = 0u;
+        }
+    }
 
 	//
 	// process any messages in the in buffer
 	//
-	status = S_cas_success;
+	int status = S_cas_success;
 
-	while ( (bytesLeft = this->inBuf::bytesPresent()) ) {
+	unsigned bytesLeft;
+	while ( ( bytesLeft = this->in.bytesPresent() ) ) {
+        caHdrLargeArray msgTmp;
+        unsigned msgSize;
+        ca_uint32_t hdrSize;
+        char * rawMP;
+        {
+	        //
+	        // copy as raw bytes in order to avoid
+	        // alignment problems
+	        //
+            caHdr smallHdr;
+            if ( bytesLeft < sizeof ( smallHdr ) ) {
+                break;
+            }
 
-		/*
-		 * incomplete message - return success and
-		 * wait for more bytes to arrive
-		 */
-		if (bytesLeft < sizeof(*mp)) {
-			status = S_cas_success;
-			break;
-		}
+            rawMP = this->in.msgPtr ();
+	        memcpy ( & smallHdr, rawMP, sizeof ( smallHdr ) );
 
-        rawMP = this->inBuf::msgPtr();
-		this->ctx.setMsg(rawMP);
+            ca_uint32_t payloadSize = epicsNTOH16 ( smallHdr.m_postsize );
+            ca_uint32_t nElem = epicsNTOH16 ( smallHdr.m_count );
+            if ( payloadSize != 0xffff && nElem != 0xffff ) {
+                hdrSize = sizeof ( smallHdr );
+            }
+            else {
+                ca_uint32_t LWA[2];
+                hdrSize = sizeof ( smallHdr ) + sizeof ( LWA );
+                if ( bytesLeft < hdrSize ) {
+                    break;
+                }
+                //
+                // copy as raw bytes in order to avoid
+                // alignment problems
+                //
+                memcpy ( LWA, rawMP + sizeof ( caHdr ), sizeof( LWA ) );
+                payloadSize = epicsNTOH32 ( LWA[0] );
+                nElem = epicsNTOH32 ( LWA[1] );
+            }
 
-		//
-		// get pointer to msg copy in local byte order
-		//
-		mp = this->ctx.getMsg();
+            msgTmp.m_cmmd = epicsNTOH16 ( smallHdr.m_cmmd );
+            msgTmp.m_postsize = payloadSize;
+            msgTmp.m_dataType = epicsNTOH16 ( smallHdr.m_dataType );
+            msgTmp.m_count = nElem;
+            msgTmp.m_cid = epicsNTOH32 ( smallHdr.m_cid );
+            msgTmp.m_available = epicsNTOH32 ( smallHdr.m_available );
 
-		msgsize = mp->m_postsize + sizeof(*mp);
 
-		/*
-		 * incomplete message - return success and
-		 * wait for more bytes to arrive
-		 */
-		if (msgsize > bytesLeft) { 
-			status = S_cas_success;
-			break;
-		}
+            msgSize = hdrSize + payloadSize;
+            if ( bytesLeft < msgSize ) {
+                if ( msgSize > this->in.bufferSize() ) {
+                    this->in.expandBuffer ();
+                    // msg to large - set up message drain
+                    if ( msgSize > this->in.bufferSize() ) {
+                        this->dumpMsg ( & msgTmp, 0, 
+                            "The client requested transfer is greater than available " 
+                            "memory in server or EPICS_CA_MAX_ARRAY_BYTES\n" );
+                        status = this->sendErr ( & msgTmp, ECA_TOLARGE, 
+                            "request didnt fit within the CA server's message buffer" );
+                        this->in.removeMsg ( bytesLeft );
+                        this->incommingBytesToDrain = msgSize - bytesLeft;
+                    }
+                }
+                break;
+            }
 
-		this->ctx.setData((void *)(rawMP+sizeof(*mp)));
+            this->ctx.setMsg ( msgTmp, rawMP + hdrSize );
 
-		if (this->getCAS().getDebugLevel()> 2u) {
-			this->dumpMsg (mp, (void *)(mp+1), NULL);
-		}
+		    if ( this->getCAS().getDebugLevel() > 2u ) {
+			    this->dumpMsg ( & msgTmp, rawMP + hdrSize, 0 );
+		    }
+
+        }
 
 		//
 		// Reset the context to the default
 		// (guarantees that previous message does not get mixed 
 		// up with the current message)
 		//
-		this->ctx.setChannel (NULL);
-		this->ctx.setPV (NULL);
+		this->ctx.setChannel ( NULL );
+		this->ctx.setPV ( NULL );
 
 		//
-		// Check for bad protocol element
+		// Call protocol stub
 		//
-		if (mp->m_cmmd >= NELEMENTS(casClient::msgHandlers)){
-			status = this->uknownMessageAction ();
+        pCASMsgHandler pHandler;
+		if ( msgTmp.m_cmmd < NELEMENTS ( casClient::msgHandlers ) ) {
+            pHandler = this->casClient::msgHandlers[msgTmp.m_cmmd];
+		}
+        else {
+            pHandler = & casClient::uknownMessageAction;
+        }
+		status = ( this->*pHandler ) ();
+		if ( status ) {
 			break;
 		}
 
-		//
-		// Call protocol stub 
-		//
-        try {
-		    status = (this->*casClient::msgHandlers[mp->m_cmmd]) ();
-		    if (status) {
-			    break;
-		    }
-        }
-        catch (...) {
-            this->dumpMsg (mp, this->ctx.getData(), "request resulted in C++ exception\n");
-            status = this->sendErr (mp, ECA_INTERNAL, "request resulted in C++ exception");
-	        if (status) {
-		        break;
-	        }
-            break;
-        }
-
-        this->inBuf::removeMsg (msgsize);
+        this->in.removeMsg ( msgSize );
 	}
 
 	return status;
@@ -339,22 +373,17 @@ caStatus casClient::hostNameAction ()
 //
 caStatus casClient::echoAction ()
 {
-	const caHdr 	*mp = this->ctx.getMsg();
-	void 		*dp = this->ctx.getData();
-	int		status;
-	caHdr 		*reply; 
+	const caHdrLargeArray * mp = this->ctx.getMsg();
+	const void * dp = this->ctx.getData();
+    void * pPayloadOut;
 
-    status = this->outBuf::allocMsg (mp->m_postsize, &reply);
-	if (status) {
-		if (status==S_cas_hugeRequest) {
-			status = sendErr(mp, ECA_TOLARGE, NULL);
-		}
-		return status;
-	}
-	*reply = *mp;
-	memcpy((char *) (reply+1), (char *) dp, mp->m_postsize);
-    this->outBuf::commitMsg();
-
+    caStatus status = this->out.copyInHeader ( mp->m_cmmd, mp->m_postsize, 
+        mp->m_dataType, mp->m_count, mp->m_cid, mp->m_available,
+        & pPayloadOut );
+    if ( ! status ) {
+        memcpy ( pPayloadOut, dp, mp->m_postsize );
+        this->out.commitMsg ();
+    }
 	return S_cas_success;
 }
 
@@ -369,66 +398,48 @@ caStatus casClient::noopAction ()
 // send minor protocol revision to the client
 void casClient::sendVersion ()
 {
-	caHdr * pReply; 
-	caStatus status = this->allocMsg ( 0, &pReply );
-    if ( status ) {
-        return;
+    caStatus status = this->out.copyInHeader ( CA_PROTO_VERSION, 0, 
+        0, CA_MINOR_PROTOCOL_REVISION, 0, 0, 0 );
+    if ( ! status ) {
+        this->out.commitMsg ();
     }
-    memset ( pReply, '\0', sizeof ( *pReply ) );
-    pReply->m_cmmd = CA_PROTO_VERSION;
-    pReply->m_count = CA_MINOR_PROTOCOL_REVISION;
-	this->commitMsg ();
 }
 
 //
 //	casClient::sendErr()
 //
-caStatus casClient::sendErr(
-const caHdr  	*curp,
-const int	reportedStatus,
-const char	*pformat,
-		...
-)
+caStatus casClient::sendErr ( const caHdrLargeArray *curp, const int reportedStatus,
+    const char	*pformat, ... )
 {
-	va_list args;
-	casChannelI *pciu;
-	unsigned size;
-	caHdr *reply;
-	char *pMsgString;
-	int status;
+	unsigned stringSize;
 	char msgBuf[1024]; /* allocate plenty of space for the message string */
-
-	if (pformat) {
-		va_start (args, pformat);
-		status = vsprintf (msgBuf, pformat, args);
-		if (status<0) {
+	if ( pformat ) {
+	    va_list args;
+		va_start ( args, pformat );
+		int status = vsprintf (msgBuf, pformat, args);
+		if ( status < 0 ) {
 			errPrintf (S_cas_internal, __FILE__, __LINE__,
 				"bad sendErr(%s)", pformat);
-			size = 0u;
+			stringSize = 0u;
 		}
 		else {
-			size = 1u + (unsigned) status;
+			stringSize = 1u + (unsigned) status;
 		}
 	}
 	else {
-		size = 0u;
+		stringSize = 0u;
 	}
 
-	/*
-	 * allocate plenty of space for a sprintf() buffer
-	 */
-    status = this->outBuf::allocMsg (size+sizeof(caHdr), &reply);
-	if (status) {
-		return status;
-	}
+    unsigned hdrSize = sizeof ( caHdr );
+    if ( ( curp->m_postsize >= 0xffff || curp->m_count >= 0xffff ) && 
+            CA_V49( this->minor_version_number ) ) {
+        hdrSize += 2 * sizeof ( ca_uint32_t );
+    }
 
-	reply[0] = nill_msg;
-	reply[0].m_cmmd = CA_PROTO_ERROR;
-	reply[0].m_available = reportedStatus;
-
-	switch (curp->m_cmmd) {
+    ca_uint32_t cid = 0u;
+	switch ( curp->m_cmmd ) {
 	case CA_PROTO_SEARCH:
-		reply->m_cid = curp->m_cid;
+		cid = curp->m_cid;
 		break;
 
 	case CA_PROTO_EVENT_ADD:
@@ -437,52 +448,70 @@ const char	*pformat,
 	case CA_PROTO_READ_NOTIFY:
 	case CA_PROTO_WRITE:
 	case CA_PROTO_WRITE_NOTIFY:
-		/*
-		 * Verify the channel
-		 */
-		pciu = this->resIdToChannel(curp->m_cid);
-		if(pciu){
-			reply->m_cid = pciu->getCID();
-		}
-		else{
-			reply->m_cid = ~0u;
-		}
-		break;
+        {
+		    /*
+		    * Verify the channel
+		    */
+            casChannelI * pciu = this->resIdToChannel ( curp->m_cid );
+		    if ( pciu ) {
+			    cid = pciu->getCID();
+		    }
+		    else{
+			    cid = ~0u;
+		    }
+		    break;
+        }
 
 	case CA_PROTO_EVENTS_ON:
 	case CA_PROTO_EVENTS_OFF:
 	case CA_PROTO_READ_SYNC:
 	case CA_PROTO_SNAPSHOT:
 	default:
-		reply->m_cid = (caResId) ~0UL;
+		cid = (caResId) ~0UL;
 		break;
 	}
 
-	/*
-	 * copy back the request protocol
-	 * (in network byte order)
-	 */
-	reply[1].m_postsize = epicsHTON16 (curp->m_postsize);
-	reply[1].m_cmmd = epicsHTON16 (curp->m_cmmd);
-	reply[1].m_dataType = epicsHTON16 (curp->m_dataType);
-	reply[1].m_count = epicsHTON16 (curp->m_count);
-	reply[1].m_cid = epicsHTON32 (curp->m_cid);
-	reply[1].m_available = epicsHTON32 (curp->m_available);
+    caHdr * pReqOut;
+    caStatus status = this->out.copyInHeader ( CA_PROTO_ERROR, 
+        hdrSize + stringSize, 0, 0, cid, reportedStatus,
+        reinterpret_cast <void **> ( & pReqOut ) );
+    if ( ! status ) {
+        char * pMsgString;
 
-	/*
-	 * add their optional context string into the protocol
-	 */
-	if (size>0u) {
-		pMsgString = (char *) (reply+2u);
-		strncpy (pMsgString, msgBuf, size-1u);
-		pMsgString[size-1u] = '\0';
-	}
+        /*
+         * copy back the request protocol
+         * (in network byte order)
+         */
+        if ( ( curp->m_postsize >= 0xffff || curp->m_count >= 0xffff ) && 
+                CA_V49( this->minor_version_number ) ) {
+            ca_uint32_t *pLW = ( ca_uint32_t * ) ( pReqOut + 1 );
+            pReqOut->m_cmmd = htons ( curp->m_cmmd );
+            pReqOut->m_postsize = htons ( 0xffff );
+            pReqOut->m_dataType = htons ( curp->m_dataType );
+            pReqOut->m_count = htons ( 0u );
+            pReqOut->m_cid = htonl ( curp->m_cid );
+            pReqOut->m_available = htonl ( curp->m_available );
+            pLW[0] = htonl ( curp->m_postsize );
+            pLW[1] = htonl ( curp->m_count );
+            pMsgString = ( char * ) ( pLW + 2 );
+        }
+        else {
+            pReqOut->m_cmmd = htons (curp->m_cmmd);
+            pReqOut->m_postsize = htons ( ( (ca_uint16_t) curp->m_postsize ) );
+            pReqOut->m_dataType = htons (curp->m_dataType);
+            pReqOut->m_count = htons ( ( (ca_uint16_t) curp->m_count ) );
+            pReqOut->m_cid = htonl (curp->m_cid);
+            pReqOut->m_available = htonl (curp->m_available);
+            pMsgString = ( char * ) ( pReqOut + 1 );
+         }
 
-	size += sizeof(caHdr);
-	assert ( size < 0xffff );
-	reply->m_postsize = static_cast <ca_uint16_t> ( size );
+        /*
+         * add their context string into the protocol
+         */
+        memcpy ( pMsgString, msgBuf, stringSize );
 
-    this->outBuf::commitMsg();
+        this->out.commitMsg ();
+    }
 
 	return S_cas_success;
 }
@@ -493,52 +522,44 @@ const char	*pformat,
  * same as sendErr() except that we convert epicsStatus
  * to a string and send that additional detail
  */
-caStatus casClient::sendErrWithEpicsStatus(const caHdr *pMsg, 
-	caStatus epicsStatus, caStatus clientStatus)
+caStatus casClient::sendErrWithEpicsStatus ( const caHdrLargeArray * pMsg, 
+	caStatus epicsStatus, caStatus clientStatus )
 {
 	long	status;
 	char	buf[0x1ff];
 
-	status = errSymFind(epicsStatus, buf);
+	status = errSymFind ( epicsStatus, buf );
 	if (status) {
-		sprintf(buf, "UKN error code = 0X%u\n",
-			epicsStatus);
+		sprintf ( buf, "UKN error code = 0X%u\n",
+			epicsStatus );
 	}
 	
-	return this->sendErr(pMsg, clientStatus, buf);
+	return this->sendErr ( pMsg, clientStatus, buf );
 }
 
 /*
  * casClient::logBadIdWithFileAndLineno()
  */
-caStatus casClient::logBadIdWithFileAndLineno(
-const caHdr 	*mp,
-const void	*dp,
-const int cacStatus,
-const char	*pFileName,
-const unsigned	lineno,
-const unsigned id
+caStatus casClient::logBadIdWithFileAndLineno ( const caHdrLargeArray * mp,
+    const void	* dp, const int cacStatus, const char * pFileName, 
+    const unsigned lineno, const unsigned id
 )
 {
 	int status;
 
-	if (pFileName) {
-	    this->dumpMsg (mp, dp, 
+	if ( pFileName) {
+	    this-> dumpMsg ( mp, dp, 
             "bad resource id in \"%s\" at line %d\n",
-			pFileName, lineno);
+			pFileName, lineno );
 	}
     else {
-	    this->dumpMsg (mp, dp, 
-            "bad resource id\n");
+	    this->dumpMsg ( mp, dp, 
+            "bad resource id\n" );
     }
 
 	status = this->sendErr (
-			mp, 
-			cacStatus, 
-			"Bad Resource ID=%u detected at %s.%d",
-			id,
-			pFileName,
-			lineno);
+			mp, cacStatus, "Bad Resource ID=%u detected at %s.%d",
+			id, pFileName, lineno);
 
 	return status;
 }
@@ -551,21 +572,22 @@ const unsigned id
 //	dp arg allowed to be null
 //
 //
-void casClient::dumpMsg(const caHdr *mp, const void *dp, const char *pFormat, ...)
+void casClient::dumpMsg ( const caHdrLargeArray *mp, 
+                         const void *dp, const char *pFormat, ... )
 {
     casChannelI *pciu;
     char        pName[64u];
     char        pPVName[64u];
     va_list     theArgs;
         
-    if (pFormat) {
-        va_start (theArgs, pFormat);
-        errlogPrintf ("CAS: ");
-        errlogVprintf (pFormat, theArgs);
-        va_end (theArgs);
+    if ( pFormat ) {
+        va_start ( theArgs, pFormat );
+        errlogPrintf ( "CAS: " );
+        errlogVprintf ( pFormat, theArgs );
+        va_end ( theArgs );
     }
 
-    this->clientHostName (pName, sizeof (pName));
+    this->hostName (pName, sizeof (pName));
 
     pciu = this->resIdToChannel(mp->m_cid);
 
@@ -591,8 +613,8 @@ void casClient::dumpMsg(const caHdr *mp, const void *dp, const char *pFormat, ..
         mp->m_postsize,
         mp->m_available);
 
-    if (mp->m_cmmd==CA_PROTO_WRITE && mp->m_dataType==DBR_STRING && dp) {
-            errlogPrintf("CAS: The string written: %s \n", (char *)dp);
+    if ( mp->m_cmmd == CA_PROTO_WRITE && mp->m_dataType == DBR_STRING && dp ) {
+        errlogPrintf("CAS: The string written: %s \n", (char *)dp);
     }
 }
 

@@ -809,7 +809,7 @@ public:
 	epicsShareFunc virtual void destroy ();
 
 private:
-	caHdr const msg;
+	caHdrLargeArray const msg;
 	casChannelI &chan; 
 	smartConstGDDPointer pDD;
 	caStatus completionStatus;
@@ -870,7 +870,7 @@ public:
 	epicsShareFunc virtual void destroy ();
 
 private:
-	caHdr const	msg;
+	caHdrLargeArray const	msg;
 	casChannelI	&chan; 
 	caStatus	completionStatus;
 
@@ -919,7 +919,7 @@ public:
 	epicsShareFunc virtual void destroy();
 
 private:
-	caHdr const msg;
+	caHdrLargeArray const msg;
 	pvExistReturn retVal;
 	const caNetAddr dgOutAddr;
 
@@ -966,7 +966,7 @@ public:
 	epicsShareFunc virtual void destroy ();
 
 private:
-	caHdr const	msg;
+	caHdrLargeArray const	msg;
 	pvAttachReturn retVal;
 
 	epicsShareFunc caStatus cbFuncAsyncIO ();

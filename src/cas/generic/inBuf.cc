@@ -34,25 +34,20 @@
 //
 // inBuf::inBuf()
 //
-inBuf::inBuf (bufSizeT bufSizeIn, bufSizeT ioMinSizeIn) :
-    bufSize (bufSizeIn), 
-    bytesInBuffer (0u), 
-    nextReadIndex (0u),
-    ioMinSize (ioMinSizeIn), 
-    ctxRecursCount (0u)
+inBuf::inBuf ( inBufClient &clientIn, bufSizeT ioMinSizeIn ) :
+    client ( clientIn ), pBuf ( 0 ), bufSize ( 0u ), bytesInBuffer ( 0u ), nextReadIndex ( 0u ),
+    ioMinSize ( ioMinSizeIn ), ctxRecursCount ( 0u )
 {
-    if (this->ioMinSize==0) {
+    if ( this->ioMinSize == 0 ) {
         this->ioMinSize = 1;
     }
-
-    if ( this->bufSize < this->ioMinSize ) {
-        this->bufSize = this->ioMinSize;
+    if ( this->ioMinSize <= pGlobalBufferFactoryCAS->smallBufferSize () ) {
+        this->pBuf = pGlobalBufferFactoryCAS->newSmallBuffer ();
+        this->bufSize = pGlobalBufferFactoryCAS->smallBufferSize ();
     }
-
-    this->pBuf = new char [this->bufSize];
-    if (!this->pBuf) {
-        this->bufSize = 0u;
-        throw S_cas_noMemory;
+    else {
+        this->pBuf = new char [ this->ioMinSize ];
+        this->bufSize = this->ioMinSize;
     }
 }
 
@@ -62,8 +57,16 @@ inBuf::inBuf (bufSizeT bufSizeIn, bufSizeT ioMinSizeIn) :
 //
 inBuf::~inBuf ()
 {
-    assert (this->ctxRecursCount==0);
-	delete [] this->pBuf;
+    assert ( this->ctxRecursCount == 0 );
+    if ( this->bufSize == pGlobalBufferFactoryCAS->smallBufferSize () ) {
+        pGlobalBufferFactoryCAS->destroySmallBuffer ( this->pBuf );
+    }
+    else if ( this->bufSize == pGlobalBufferFactoryCAS->largeBufferSize () ) {
+        pGlobalBufferFactoryCAS->destroyLargeBuffer ( this->pBuf );
+    }
+    else {
+        delete [] this->pBuf;
+    }
 }
 
 //
@@ -81,11 +84,11 @@ void inBuf::show (unsigned level) const
 //
 // inBuf::fill()
 //
-inBuf::fillCondition inBuf::fill (fillParameter parm)
+inBufClient::fillCondition inBuf::fill ( inBufClient::fillParameter parm )
 {
 	bufSizeT bytesOpen;
 	bufSizeT bytesRecv;
-	inBuf::fillCondition stat;
+	inBufClient::fillCondition stat;
 
 	//
 	// move back any prexisting data to the start of the buffer
@@ -108,20 +111,20 @@ inBuf::fillCondition inBuf::fill (fillParameter parm)
 	// noop if the buffer is full
 	//
 	bytesOpen = this->bufSize - this->bytesInBuffer;
-	if (bytesOpen < this->ioMinSize) {
-		return casFillNone;
+	if ( bytesOpen < this->ioMinSize ) {
+        return inBufClient::casFillNone;
 	}
 
-	stat = this->xRecv (&this->pBuf[this->bytesInBuffer], 
-			bytesOpen, parm, bytesRecv);
-	if (stat == casFillProgress) {
+	stat = this->client.xRecv ( &this->pBuf[this->bytesInBuffer], 
+			bytesOpen, parm, bytesRecv );
+    if ( stat == inBufClient::casFillProgress ) {
 	    assert (bytesRecv<=bytesOpen);
 	    this->bytesInBuffer += bytesRecv;
 
-	    if (this->getDebugLevel()>2u) {
+	    if ( this->client.getDebugLevel() > 2u ) {
 		    char buf[64];
 
-		    this->clientHostName(buf, sizeof(buf));
+		    this->client.hostName ( buf, sizeof ( buf ) );
 
 		    printf ("CAS: incoming %u byte msg from %s\n",
 			    bytesRecv, buf);
@@ -134,11 +137,11 @@ inBuf::fillCondition inBuf::fill (fillParameter parm)
 //
 // inBuf::pushCtx ()
 //
-const inBufCtx inBuf::pushCtx (bufSizeT headerSize, // X aCC 361
-                               bufSizeT bodySize)
+const inBufCtx inBuf::pushCtx ( bufSizeT headerSize, // X aCC 361
+                               bufSizeT bodySize )
 {
-    if (headerSize+bodySize>(this->bytesInBuffer - this->nextReadIndex) || 
-        this->ctxRecursCount==UINT_MAX) {
+    if ( headerSize + bodySize > ( this->bytesInBuffer - this->nextReadIndex ) || 
+        this->ctxRecursCount == UINT_MAX ) {
         return inBufCtx ();
     }
     else {
@@ -159,7 +162,7 @@ const inBufCtx inBuf::pushCtx (bufSizeT headerSize, // X aCC 361
 //
 bufSizeT inBuf::popCtx (const inBufCtx &ctx) // X aCC 361
 {
-    if (ctx.stat==inBufCtx::pushCtxSuccess) {
+    if ( ctx.stat==inBufCtx::pushCtxSuccess ) {
         this->mutex.lock();
         bufSizeT bytesRemoved = this->nextReadIndex;
         this->pBuf = ctx.pBuf;
@@ -176,5 +179,21 @@ bufSizeT inBuf::popCtx (const inBufCtx &ctx) // X aCC 361
     }
 }
 
+void inBuf::expandBuffer ()
+{
+    if ( this->bufSize < pGlobalBufferFactoryCAS->largeBufferSize () ) {
+        char * pNewBuf = pGlobalBufferFactoryCAS->newLargeBuffer ();
+        memcpy ( pNewBuf, &this->pBuf[this->nextReadIndex], this->bytesPresent () );
+        this->nextReadIndex = 0u;
+        pGlobalBufferFactoryCAS->destroySmallBuffer ( this->pBuf );
+        this->pBuf = pNewBuf;
+        this->bufSize = pGlobalBufferFactoryCAS->largeBufferSize ();
+    }
+}
+
+unsigned inBuf::bufferSize () const
+{
+    return this->bufSize;
+}
 
 

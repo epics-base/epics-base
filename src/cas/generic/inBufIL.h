@@ -16,8 +16,8 @@ inline bufSizeT inBuf::bytesPresent () const
 inline bufSizeT inBuf::bytesAvailable () const 
 {
 	bufSizeT bp;
-	bp = this->bytesPresent();
-	bp += this->incomingBytesPresent();
+	bp = this->bytesPresent ();
+	bp += this->client.incomingBytesPresent ();
 	return bp;
 }
 
@@ -52,10 +52,10 @@ inline char *inBuf::msgPtr () const
 //
 // inBuf::removeMsg()
 //
-inline void inBuf::removeMsg (bufSizeT nBytes) 
+inline void inBuf::removeMsg ( bufSizeT nBytes ) 
 {
 	this->nextReadIndex += nBytes;
-	assert (this->nextReadIndex<=this->bytesInBuffer);
+	assert ( this->nextReadIndex <= this->bytesInBuffer );
 }
 
 //

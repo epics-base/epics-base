@@ -1,0 +1,29 @@
+# CONFIG.Common.solaris-sparc
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Sites may override these definitions in CONFIG_SITE.Common.solaris-sparc
+#-------------------------------------------------------
+
+# Include definitions common to all Unix target archs
+include $(CONFIG)/os/CONFIG.Common.UnixCommon
+
+OS_CLASS = solaris
+ARCH_CLASS = sparc
+
+GCC_POSIX_CPPFLAGS += -D__EXTENSIONS__
+G++_POSIX_CPPFLAGS += -D__EXTENSIONS__
+
+GCC_STATIC_LDLIBS_YES= -lposix4 -lpthread -lthread
+GCC_STATIC_LDLIBS_NO= -lposix4 -lpthread -lthread
+G++_STATIC_LDLIBS_YES= -lposix4 -lpthread -lthread
+G++_STATIC_LDLIBS_NO= -lposix4 -lpthread -lthread
+
+ARCH_DEP_CPPFLAGS = -DSOLARIS
+# socket and nsl needed by libca.a
+ARCH_DEP_LDLIBS +=  -lsocket -lnsl
+
+# use loader's -R option
+DEPLIB_LDFLAGS += $(sort $(DEPLIB_DIRS:%=-R%))
+

@@ -235,7 +235,7 @@ DEPENDS_RULE = -$(COMPILE.cpp) $(DEPENDS_FLAG) $^ > DEPENDS
 
 #--------------------------------------------------
 # Include files
-INCLUDES = $(USR_INCLUDES) $(INSTALL_INCLUDES) \
+INCLUDES = -I. $(USR_INCLUDES) $(INSTALL_INCLUDES) \
     $(TARGET_INCLUDES) $(GENERIC_SRC_INCLUDES) $(OP_SYS_INCLUDES)
 
 #--------------------------------------------------

@@ -19,6 +19,7 @@ of this distribution.
 #include <sysLib.h>
 #include <sntpcLib.h>
 #include <time.h>
+#include <errno.h>
 
 #include "epicsTypes.h"
 #include "cantProceed.h"
@@ -54,36 +55,25 @@ static void syncNTP(void)
     struct timespec Currtime;
     TS_STAMP epicsTime;
     STATUS status;
-    int nConsecutiveBad = 0;
+    int prevStatusBad = 0;
+    int firstTime=1;
 
     while(1) {
+        double diffTime;
+        if(!firstTime)threadSleep(iocClockSyncRate);
+        firstTime = 0;
         status = sntpcTimeGet(piocClockPvt->pserverAddr,
             piocClockPvt->tickRate,&Currtime);
         if(status) {
-            if(++nConsecutiveBad>6) {
+            if(!prevStatusBad)
                 errlogPrintf("iocClockSyncWithNTPserver: sntpcTimeGet %s\n",
-                    strerror(status));
-                nConsecutiveBad = 0;
-            }
-            threadSleep(iocClockSyncRate);
+                    strerror(errno));
+            prevStatusBad = 1;
             continue;
         }
-        nConsecutiveBad = 0;
-        semMutexMustTake(piocClockPvt->lock);
-        clock_settime(CLOCK_REALTIME,&Currtime);
-        tsStampFromTimespec(&piocClockPvt->clock,&Currtime);
-        piocClockPvt->lastTick = tickGet();
-        semMutexGive(piocClockPvt->lock);
-    }
-    while(1) {
-        double diffTime;
-        threadSleep(iocClockSyncRate);
-        status = sntpcTimeGet(piocClockPvt->pserverAddr,
-            piocClockPvt->tickRate,&Currtime);
-        if(status) {
-            errlogPrintf("iocClockSyncWithNTPserver: sntpcTimeGet %s\n",
-                strerror(status));
-            continue;
+        if(prevStatusBad) {
+            errlogPrintf("iocClockSyncWithNTPserver: sntpcTimeGet OK\n");
+            prevStatusBad = 0;
         }
         tsStampFromTimespec(&epicsTime,&Currtime);
         semMutexMustTake(piocClockPvt->lock);
@@ -193,6 +183,11 @@ int tsStampGetEvent (TS_STAMP *pDest, unsigned eventNumber)
     return(tsStampERROR);
 }
 
+/* Unless
+   putenv("TIMEZONE=<name>::<minutesWest>:<start daylight>:<end daylight>")
+   is executed before and epics software is loaded, UTC rather than local
+   time will be displayed
+*/
 void date()
 {
     TS_STAMP now;

@@ -113,7 +113,7 @@ void casClient::loadProtoJumpTable()
 	// (use of & here is more portable)
 	//
 	casClient::msgHandlers[CA_PROTO_VERSION] = 
-			&casClient::noopAction;
+			&casClient::versionAction;
 	casClient::msgHandlers[CA_PROTO_EVENT_ADD] = 
 			&casClient::eventAddAction;
 	casClient::msgHandlers[CA_PROTO_EVENT_CANCEL] = 
@@ -388,9 +388,9 @@ caStatus casClient::echoAction ()
 }
 
 /*
- * casClient::noopAction()
+ * casClient::versionAction()
  */
-caStatus casClient::noopAction ()
+caStatus casClient::versionAction ()
 {
 	return S_cas_success;
 }

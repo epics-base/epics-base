@@ -34,7 +34,7 @@
 //
 #include "tsDLList.h"
 #include "resourceLib.h"
-#define CA_MINOR_PROTOCOL_REVISION 10
+#define CA_MINOR_PROTOCOL_REVISION 11
 #include "caProto.h"
 #include "smartGDDPointer.h"
 

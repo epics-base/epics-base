@@ -553,7 +553,7 @@ private:
 	//
 	virtual caStatus uknownMessageAction () = 0;
 	caStatus ignoreMsgAction ();
-	caStatus noopAction ();
+	virtual caStatus versionAction ();
 	virtual caStatus eventAddAction ();
 	virtual caStatus eventCancelAction ();
 	virtual caStatus readAction ();
@@ -756,6 +756,7 @@ protected:
 
 private:
     caNetAddr lastRecvAddr;
+    ca_uint32_t seqNoOfReq;
 
 	//
 	// one function for each CA request type
@@ -785,6 +786,8 @@ private:
 			const caNetAddr & addr ) = 0;
 	virtual inBufClient::fillCondition osdRecv ( char *pBuf, bufSizeT nBytesReq,
 			fillParameter parm, bufSizeT &nBytesActual, caNetAddr & addr ) = 0;
+
+    caStatus versionAction ();
 
     //
     // cadg

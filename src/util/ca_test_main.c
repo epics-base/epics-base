@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 	 * print error and return if arguments are invalid
 	 */
 	if(argc < 2  || argc > 3){
-		printf("usage: ca_test channel_name <\"put value\">\n");
+		printf("usage: %s <PV name> [optional value to be written]\n", argv[0]);
 		printf("the following arguments were received\n");
 		while(argc>0) {
 			printf("%s\n",argv[0]);

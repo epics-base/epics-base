@@ -15,7 +15,7 @@ SRCS = \
 	../syncgrp.c ../if_depen.c ../netdb_depen.c ../bsd_depen.c \
 	../posix_depen.c ../caRepeater.c
 
-OBJS = 
+OBJS = caRepeater.o
 
 LIBOBJS = \
 	iocinf.o access.o test_event.o service.o flow_control.o repeater.o \
@@ -26,9 +26,4 @@ LIBNAME = libca.a
 PROD = caRepeater
 
 include $(EPICS)/config/RULES.Unix
-
-$(PROD): $(OBJS) $(DEPLIBS)
-
-%: %.o 
-	$(LINK.c) -o $@ $< $(LDLIBS)
 

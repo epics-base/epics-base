@@ -12,7 +12,7 @@ PROD = vxComLib
 include $(EPICS)/config/RULES.Vx
 
 clean::
-	@rm -f vxComLib
+	@$(RM) vxComLib
 
 vxComLib: $(OBJS)
 	$(RM) $@

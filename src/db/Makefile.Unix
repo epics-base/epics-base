@@ -26,11 +26,10 @@ LIBNAME = libDb.a
 
 PROD = dbta dbl dbls atdb
 
-all: install
+include $(EPICS)/config/RULES.Unix
 
 atdb: atdb.o atdb_yacc.o
 	$(LINK.c) -o $@ atdb.o atdb_yacc.o $(LDLIBS)
-
 
 # Extra rule since atdb_lex.c is included in atdb_yacc.c
 #   In my opinion, these objects should really be built
@@ -38,12 +37,7 @@ atdb: atdb.o atdb_yacc.o
 atdb_yacc.o: atdb_lex.c
 
 clean::
-	/bin/rm -f atdb_lex.c atdb_yacc.c $(PROD)
+	@$(RM) atdb_lex.c atdb_yacc.c 
 
-include $(EPICS)/config/RULES.Unix
-
-
-%: %.o $(DEPLIBS)
-	$(LINK.c) -o $@ $<  $(LDLIBS)
 
 

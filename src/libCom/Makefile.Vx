@@ -28,13 +28,12 @@ PROD = libCom libCom1 libCom2
 include $(EPICS)/config/RULES.Vx
 
 clean::
-	@rm -f errInc.c errSymTbl.c libCom
-
+	@$(RM) errInc.c errSymTbl.c
 
 build: errSymTbl.o errInc.o
 
 errSymTbl.c errInc.o: errInc.c
-	@/bin/rm -f errInc.o
+	@$(RM) errInc.o
 	@$(EPICS_BASE)/tools/blderrSymTbl
 
 errInc.c: ../errInc.c

@@ -10,9 +10,6 @@ PROD = miscLib
 
 include $(EPICS)/config/RULES.Vx
 
-clean::
-	@rm -f miscLib
-
 miscLib: $(OBJS)
 	$(RM) $@
 	$(LINK.c) $@ $(OBJS) $(LDLIBS)

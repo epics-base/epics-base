@@ -24,8 +24,8 @@ subtool: dbLoadTemplate.c dbLoadTemplate_lex.c dbVarSub.o
 	$(LINK.c) $(CFLAGS) -DSUB_TOOL -o subtool dbLoadTemplate.c dbVarSub.o -s
 
 clean::
-	rm -f dbLoadTemplate_lex.c dbLoadTemplate.c dbLoadRecords_lex.c \
-			dbLoadRecords.c subtool dbLoadTemplate dbSubs
+	@$(RM) dbLoadTemplate_lex.c dbLoadTemplate.c dbLoadRecords_lex.c \
+			dbLoadRecords.c
 
 dbSubs: $(OBJS)
 	$(RM) $@

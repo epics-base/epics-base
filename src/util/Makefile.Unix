@@ -36,5 +36,3 @@ PROD = \
 
 include $(EPICS)/config/RULES.Unix
 
-%: %.o $(DEPLIBS)
-	$(LINK.c) -o $@ $< $(LDLIBS)

@@ -6,8 +6,6 @@ LINK.c=$(LD) $(LDFLAGS)
 
 SRCS=
 
-IOC_CORE = $(INSTALL_BIN)/$(T_A)/iocCore
-
 IOC_CORE_OBJS = \
 	$(INSTALL_BIN)/$(T_A)/asLibrary \
 	$(INSTALL_BIN)/$(T_A)/dbLib \
@@ -18,36 +16,17 @@ IOC_CORE_OBJS = \
 	$(INSTALL_BIN)/$(T_A)/miscLib \
 	$(INSTALL_BIN)/$(T_A)/dbSubs
 
+PROD = iocCore vxWorks vxWorks.sym
 
 include $(EPICS)/config/RULES.Vx
 
-build_libs build_prod build \
-install_libs install_prod install: installVX iocCore
+vxWorks: $(VX_IMAGE)
+	@$(INSTALL) -m 444 $? $@
 
-clean:: rm_iocCore
+vxWorks.sym: $(VX_IMAGE_SYM)
+	@$(INSTALL) -m 444 $? $@
 
-installVX: $(EPICS_VX_IMAGE) $(EPICS_VX_IMAGE_SYM)
-
-$(INSTALL_BIN):
-	mkdir $(INSTALL_BIN)
-
-$(INSTALL_BIN)/$(T_A): $(INSTALL_BIN)
-	mkdir $(INSTALL_BIN)/$(T_A)
-
-$(EPICS_VX_IMAGE): $(VX_IMAGE) $(INSTALL_BIN) $(INSTALL_BIN)/$(T_A)
-	@echo "Installing $@"
-	@install -m 444 $(VX_IMAGE) $@
-
-$(EPICS_VX_IMAGE_SYM): $(VX_IMAGE_SYM) $(INSTALL_BIN) $(INSTALL_BIN)/$(T_A)
-	@echo "Installing $@"
-	@install -m 444 $(VX_IMAGE_SYM) $@
-
-rm_iocCore:
-	$(RM) $(IOC_CORE)
-
-iocCore: $(IOC_CORE)
-
-$(IOC_CORE): $(IOC_CORE_OBJS)
+iocCore: $(IOC_CORE_OBJS)
 	$(LINK.c) $@ $(IOC_CORE_OBJS)
 	@what $@
 

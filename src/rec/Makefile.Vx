@@ -30,9 +30,6 @@ PROD = recSup
 
 include $(EPICS)/config/RULES.Vx
 
-clean::
-	@rm -f recSup
-
 $(PROD): $(OBJS)
 	$(RM) $@
 	$(LINK.c) $@ $(OBJS) $(LDLIBS)

@@ -21,9 +21,6 @@ OBJS = \
 
 include $(EPICS)/config/RULES.Vx
 
-clean::
-	@rm devLibOpt
-
 devLibOpt: $(OBJS)
 	$(RM) $@
 	$(LINK.c) $@ $(OBJS) $(LDLIBS)

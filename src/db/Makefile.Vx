@@ -20,9 +20,6 @@ PROD = initHooks.o dbLib
 
 include $(EPICS)/config/RULES.Vx
 
-clean::
-	@rm -f dbLib
-
 dbLib: $(OBJSdbLib)
 	$(RM) $@
 	$(LINK.c) $@ $(OBJSdbLib) $(LDLIBS)

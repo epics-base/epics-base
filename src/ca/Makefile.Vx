@@ -17,9 +17,6 @@ PROD = caLib
 
 include $(EPICS)/config/RULES.Vx
 
-clean::
-	rm -f caLib
-
 caLib: $(OBJS)
 	$(RM) $@
 	$(LINK.c) $@ $(OBJS) $(LDLIBS)

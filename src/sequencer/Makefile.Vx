@@ -17,14 +17,12 @@ PROD = seq
 include $(EPICS)/config/RULES.Vx
 
 clean::
-	rm -f seq seqVersion.c
-
+	@$(RM) seqVersion.c
 
 seq: $(OBJS)
 	$(RM) $@
 	$(LINK.c) $@ $(OBJS) $(LDLIBS)
 
-
 seqVersion.c: ../Version
-	/bin/rm -f seqVersion.c
+	$(RM) seqVersion.c
 	sh ../makeSeqVersion ../Version > seqVersion.c

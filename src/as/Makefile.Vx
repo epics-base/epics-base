@@ -16,8 +16,7 @@ include $(EPICS)/config/RULES.Vx
 asLib.o: asLib_lex.c ../asLibRoutines.c
 
 clean::
-	@rm -f asLib_lex.c asLibrary asLib.c
-
+	@$(RM) asLib_lex.c asLib.c
 
 asLibrary : $(OBJS)
 	$(RM) $@

@@ -16,9 +16,6 @@ PROD = dbgLib rsrvLib
 
 include $(EPICS)/config/RULES.Vx
 
-clean::
-	@rm -f dbgLib rsrvLib
-
 dbgLib: $(OBJS) globalsource.o
 	$(RM) $@
 	$(LINK.c) $@ $(OBJS) globalsource.o $(LDLIBS)
@@ -27,6 +24,3 @@ rsrvLib: $(OBJS)
 	$(RM) $@
 	$(LINK.c) $@ $(OBJS) $(LDLIBS)
 
-
-clean::
-	rm -f dbgLib rsrvLib

@@ -19,7 +19,7 @@ LIBOBJS = asLib.o
 LIBNAME = libAs.a
 PROD = ascheck
 
-all: install_libs install
+include $(EPICS)/config/RULES.Unix
 
 # Extra rule since asLib_lex.c is included in asLib.c
 #   In my opinion, these objects should really be built
@@ -27,9 +27,5 @@ all: install_libs install
 asLib.o: asLib_lex.c ../asLibRoutines.c
 
 clean::
-	rm -f asLib.c asLib_lex.c ascheck
+	@$(RM) asLib.c asLib_lex.c 
 
-include $(EPICS)/config/RULES.Unix
-
-%: %.o $(DEPLIBS)
-	$(LINK.c) -o $@ $<  $(LDLIBS)

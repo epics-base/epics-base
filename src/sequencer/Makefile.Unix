@@ -11,11 +11,9 @@ SRCS =  ../snc_main.c ../parse.c ../phase2.c ../gen_ss_code.c \
 OBJS =  snc_main.o parse.o phase2.o gen_ss_code.o \
 	gen_tables.o sncVersion.o snc.o snc_lex.o
 
-LIBOBJS =
-
 PROD = snc
 
-all: install
+include $(EPICS)/config/RULES.Unix
 
 #
 #  The generated lex file includes snc.h
@@ -23,13 +21,11 @@ all: install
 snc_lex.c: snc.h
 
 sncVersion.c: ../Version
-	/bin/rm -f sncVersion.c
+	$(RM) sncVersion.c
 	sh ../makeVersion ../Version > sncVersion.c
 
 clean::
-	rm -f y.output sncVersion.c snc_lex.c snc.c snc.h snc
-
-include $(EPICS)/config/RULES.Unix
+	@$(RM) y.output sncVersion.c snc_lex.c snc.c snc.h
 
 $(PROD): $(OBJS)
 	$(LINK.c) -o $@ $(OBJS) $(LDLIBS)

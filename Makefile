@@ -13,6 +13,9 @@
 #         install because the release.% syntax is illegal.
 #
 # $Log$
+# Revision 1.15  1994/09/08  17:25:39  mcn
+# Changed clean to tools/Clean.  Added "uninstall" dependency.
+#
 # Revision 1.14  1994/09/07  20:42:19  jba
 # Minor changes
 #
@@ -34,48 +37,6 @@ EPICS=..
 include $(EPICS)/config/CONFIG_SITE
 
 all: install
-
-pre_build:
-	@(for ARCH in ${BUILD_ARCHS};					\
-		do							\
-			${MAKE} ${MFLAGS} $@.$$ARCH;			\
-		done)
-
-build_libs:
-	@(for ARCH in ${BUILD_ARCHS};					\
-		do							\
-			${MAKE} ${MFLAGS} $@.$$ARCH;			\
-		done)
-
-install_libs:
-	@(for ARCH in ${BUILD_ARCHS};					\
-		do							\
-			${MAKE} ${MFLAGS} $@.$$ARCH;			\
-		done)
-
-build_prod:
-	@(for ARCH in ${BUILD_ARCHS};					\
-		do							\
-			${MAKE} ${MFLAGS} $@.$$ARCH;			\
-		done)
-
-install_prod:
-	@(for ARCH in ${BUILD_ARCHS};					\
-		do							\
-			${MAKE} ${MFLAGS} $@.$$ARCH;			\
-		done)
-
-install_man:
-	@(for ARCH in ${BUILD_ARCHS};					\
-		do							\
-			${MAKE} ${MFLAGS} $@.$$ARCH;			\
-		done)
-
-install_includes:
-	@(for ARCH in ${BUILD_ARCHS};					\
-		do							\
-			${MAKE} ${MFLAGS} $@.$$ARCH;			\
-		done)
 
 build:
 	@(for ARCH in ${BUILD_ARCHS};					\
@@ -132,36 +93,6 @@ dirs.%:
 	@tools/CheckArch $*
 	@echo $*: Creating Directories
 	@tools/MakeDirs $*
-
-pre_build.%: dirs.%
-	@echo $*: Performing Pre Build
-	@${MAKE} ${MFLAGS} ARCH=$* -f Makefile.subdirs pre_build
-
-
-build_libs.%: dirs.%
-	@echo $*: Building Libraries
-	@${MAKE} ${MFLAGS} ARCH=$* -f Makefile.subdirs build_libs
-
-
-install_libs.%: dirs.%
-	@echo $*: Installing Libraries
-	@${MAKE} ${MFLAGS} ARCH=$* -f Makefile.subdirs install_libs
-
-build_prod.%: dirs.% 
-	@echo $*: Building
-	@${MAKE} ${MFLAGS} ARCH=$* -f Makefile.subdirs build_prod
-
-install_prod.%: dirs.% 
-	@echo $*: Building
-	@${MAKE} ${MFLAGS} ARCH=$* -f Makefile.subdirs install_prod
-
-install_man.%: dirs.% 
-	@echo $*: Building
-	@${MAKE} ${MFLAGS} ARCH=$* -f Makefile.subdirs install_man
-
-install_includes.%: dirs.% 
-	@echo $*: Building
-	@${MAKE} ${MFLAGS} ARCH=$* -f Makefile.subdirs install_includes
 
 build.%: dirs.% 
 	@echo $*: Building

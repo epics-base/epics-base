@@ -44,9 +44,9 @@ vpath %.h $(USER_VPATH)
 #	   this one is appended
 #	4) if you have the special case that your USR_CFLAGS_$(ARCH_CLASS) is
 #	   empty but you don't want 3), you have to define it as '-nil-', e.g.:
-#		USR_CFLAGS := <defines for all systems>
-#		USR_CFLAGS_sun4 := -nil-
-#		USR_CFLAGS_DEFAULT := <defines for most systems, not sun4>
+#		USR_CFLAGS = <defines for all systems>
+#		USR_CFLAGS_sun4 = -nil-
+#		USR_CFLAGS_DEFAULT = <defines for most systems, not sun4>
 #
 #	These rules apply to these Makefile-variables:
 #	USR_CFLAGS	C flags
@@ -59,11 +59,11 @@ vpath %.h $(USER_VPATH)
 #	SCRIPTS		scripts to install
 #
 #	Remark:
-#	If you define a special INC, e.g. INC_WIN32 := getopt.h,
+#	If you define a special INC, e.g. INC_WIN32 = getopt.h,
 #	the source (getopt.h) has to be in os/WIN32 (or os/<your ARCH_CLASS>)
 #
 #	This makes INC_$(ARCH_CLASS) slightly different from OSINC:
-#	OSINC := a_file.h
+#	OSINC = a_file.h
 #	means that you have a special  os/$(ARCH_CLASS)/a_file.h
 #	for _every_ ARCH_CLASS.
 #	If you use INC_$(ARCH_CLASS), you need the special include
@@ -170,73 +170,6 @@ endif
 
 endif
 
-# -------------------------------------------------------------------
-#	adjust names to platform specific pre-/postfixes,
-#	this is ugly (ifdef XXX...) but hopefully get's you there...
-# -------------------------------------------------------------------
-
-#	adjust names of libraries to build
-#
-#	But: if there are no objects LIBOBJS to include
-#	in this library (may be for e.g. base/src/libCompat
-#	on some archs), don't define (and build) any library!
-ifdef LIBRARY
-ifdef LIBOBJS
-
-ifndef WIN32
-#	handle plain Unix first because it's easy: <lib> ->  lib<lib>.a
-LIBNAME:=$(LIBRARY:%=lib%.a)
-
-else
-#	WIN32 library name:
-LIBNAME:=$(LIBRARY).lib
-#	check if DLL or plain lib requested:
-ifeq ($(LIBTYPE),SHARED)
-#	create name for dll, import file
-DLLNAME:=$(LIBRARY).dll
-#	libs defined that we need to link the DLL with?
-DLL_DEP_LIBS:=$(DLL_LIBS:%=$(INSTALL_LIB)/%.lib)
-endif # LIBTYPE=SHARED
-endif # WIN32
-
-endif
-endif # LIBRARY and LIBOBJS
-
-#	dito for libraries used by PROD
-#
-ifdef PROD_LIBS
-#	add to USR_LDLIBS so that the libs are linked
-
-ifdef WIN32
-PRODDEPLIBS:=$(PROD_LIBS:%=$(INSTALL_LIB)/%.lib)
-USR_LDLIBS += $(PROD_LIBS:%=$(INSTALL_LIB)/%.lib)
-else
-#	On Unix: library "ca" is linked with "-lca"  etc.
-PRODDEPLIBS=$(PROD_LIBS:%=$(INSTALL_LIB)/lib%.a)
-USR_LDLIBS += -L$(INSTALL_LIB) $(PROD_LIBS:%=-l%) 
-endif
-
-endif
-
-
-#	dito for system libraries used by PROD
-#
-ifdef SYS_PROD_LIBS
-
-ifdef WIN32
-#	add to USR_LDLIBS so that the libs are linked
-USR_LDLIBS += $(SYSPRODDEPLIBS)
-else
-#	On Unix: it is difficult to determine where the
-# 	system lib is (because of add on compilere).
-#	Therefore no additions to PRODDEPLIBS for
-#	system libraries.
-#
-USR_LDLIBS += $(SYS_PROD_LIBS:%=-l%) 
-endif
-
-endif
-
 #	adjust executables
 ifdef PROD
 PROD := $(addsuffix $(EXE), $(PROD))
@@ -290,15 +223,33 @@ ifdef TEMPLATES_DIR
 DIRECTORY_TARGETS += $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
 endif
 
+#	if there are no objects LIBOBJS to include
+#	in this library (may be for e.g. base/src/libCompat
+#	on some archs), don't define (and build) any library!
+ifdef LIBRARY
+ifdef LIBOBJS
+LIBTARGETS = $(INSTALL_LOCATION_LIB) $(INSTALL_LIB)
+#	check if DLL or plain lib requested:
+ifeq ($(LIBTYPE),SHARED)
+#
+# LIBTYPE=="SHARED" indicates build
+# DLL and also build object archive library
+#
+LIBTARGETS += $(DLLNAME) $(INSTALL_DLLS) $(LIBNAME) $(INSTALL_LIBS)
+else # LIBTYPE=SHARED
+#
+# otherwise build only object archive library
+#
+LIBTARGETS += $(LIBNAME) $(INSTALL_LIBS)
+endif # LIBTYPE=SHARED
+endif # LIBOBJS
+endif # LIBRARY
 
 #	Main target
 #
 all::	install
 
-build:: $(LIBNAME) $(DLLNAME) \
-	$(INSTALL_LOCATION_LIB) $(INSTALL_LIB)\
-	$(INSTALL_LIBS) $(INSTALL_DLLS) $(PROD) $(TESTPROD)
-
+build:: $(LIBTARGETS) $(PROD) $(TESTPROD)
 
 inc:: $(INSTALL_INCLUDE) $(INSTALL_INC) \
 	$(INSTALL_INCLUDE)/os $(INSTALL_OSINCLUDE) $(INSTALL_OSINC)
@@ -467,64 +418,19 @@ endif
 	$(MANGEN) -s $<
 	$(MV) $(<F).nr $(<F).1
 
-#	Rules for building LIBRARY with LIBSRCS
-#	(which are now LIBNAME, LIBOBJS)
-#
-ifdef WIN32
-
-ifeq ($(LIBTYPE),SHARED)
-#	A WIN32 dll has tree parts:
-#	x.dll: the real dll (DLLNAME)
-#	x.lib: what you link to progs that use the dll (LIBNAME)
-#	x.exp: what you need to build the dll (in no variable)
-#
-#	the latter two are created automatically when building the dll:
-$(LIBNAME):	$(DLLNAME)
-
-#	test if there is a def file for this dll:
-#
-DLL_DEF_FILE := ../$(LIBRARY).def
-
-ifeq ($(DLL_DEF_FILE), $(wildcard $(DLL_DEF_FILE)))
-DLL_DEF := -def:$(DLL_DEF_FILE)
-endif
-
-#	HOST_OPT_FLAGS is part of CFLAGS/CXXFLAGS,
-#	which in turn are used in COMPILE.c[c]
-#
-#	If we compile a .c, .cc into an $(OBJ),
-#	we test if this object is part of the 
-#	library objects LIBOBJS.
-#	If so, we define _WINDLL so that
-#	e.g. include/shareLib.h works correctly.
-#
-HOST_OPT_FLAGS += $(subst $@, -D_WINDLL, $(findstring $@,$(LIBOBJS)))
-
+# rule for shareable (DLL- dynamic link library) creation
 $(DLLNAME): $(LIBOBJS)
-	link $(WIN32_DLLFLAGS)\
-		-implib:$(LIBNAME) -out:$(DLLNAME) $(DLL_DEF)\
-		$(DLL_DEP_LIBS) $(ARCH_DEP_LDLIBS) $(HOST_LDLIBS) $(LIBOBJS)
-else
-#	still on WIN32, this time no DLL but plain lib requested:
-$(LIBNAME):	$(LIBOBJS)
-	lib -nologo -verbose -out:$(LIBNAME) $(LIBOBJS)
-	lib -nologo -list $(LIBNAME)
+	$(LINK.dll) $(LIBOBJS) $(DLL_LDLIBS)
 
-endif # LIBTYPE is SHARED ?
-
-else  # not WIN32
-
-#	usual Unix rule for lib creation
+# rule for lib (archive of object files) creation
 $(LIBNAME): $(LIBOBJS)
 	$(RM) $@
-	$(ARCMD) $@ $(LIBOBJS)
-	@if [ ! -z "$(RANLIB)" ] ; then\
-		echo $(RANLIB) $@; \
-		$(RANLIB) $@; \
-	fi
-endif # ifdef WIN32
-# end of library creation rules
-
+	$(ARCMD) $(LIBOBJS)
+ifdef RANLIB
+ifeq ($(RANLIB), $(wildcard $(RANLIB)))
+	$(RANLIB) $@;
+endif # RANLIB image exists
+endif # RANLIB
 
 $(INSTALL_BIN)/%: ../os/$(ARCH_CLASS)/%
 	@echo "Installing os-specific script $@"

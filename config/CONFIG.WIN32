@@ -4,20 +4,7 @@
 #	needs
 #	* gnumake (OK, sources for WIN32 are available)
 #	* Perl    (e.g. from www.perl.com )
-#	* a UNIX-like shell (ouch!)
 #
-#	I found no fully operational shell and no sources for WIN32 so far,
-#	Cygnus' bash e.g. cannot handle this:
-#	(echo a>a; echo b>>a)
-#	Right now I use the knts that I wrote and simplified scripts.
-#	Jeff eliminated many shell-lines in Makefile.*.
-#
-
-#	Set this to the UNIX-like shell that you have:
-#
-#	it is now possible to just use the DOS shell
-#
-#SHELL=knts
 
 # 	Use std path variables from ms
 HOME = $(HOMEDRIVE)$(HOMEPATH)
@@ -34,13 +21,16 @@ BUILD_TYPE=Host
 HOST_OPT = YES 
 
 # 	-Ox  : maximum optimizations
-#	-Wn  ; use this warning level (all warnings at level 4)
-CXX_OPT_FLAGS_YES = -Ox -W3
+#	-Wn  : use this warning level (all warnings at level 4)
+#	-MD  : use MSVCRT (run-time as DLL, multi-thread support)
+CXX_OPT_FLAGS_YES = -Ox -W3 -MD
 #	-Zi  : include debugging info in object files
-CXX_OPT_FLAGS_NO = -Zi -W3 -D_DEBUG
+#	-MDd : use MSVCRTD (debug, multi-thread support)
+CXX_OPT_FLAGS_NO = -Zi -W3 -MDd
 CXX_OPT_FLAGS = $(CXX_OPT_FLAGS_$(HOST_OPT))
+
 LINK_OPT_FLAGS_YES = 
-LINK_OPT_FLAGS_NO = -debug
+LINK_OPT_FLAGS_NO = -debug 
 LINK_OPT_FLAGS = $(LINK_OPT_FLAGS_$(HOST_OPT))
 
 
@@ -59,14 +49,17 @@ WIN32=1
 YACC  = $(EYACC)
 LEX   = $(ELEX)
 CC    = cl -nologo
+CXX	  = cl -nologo
+ARCMD = lib -nologo -verbose -out:$@
 CP    = $(PERL) $(INSTALL_BIN)/cp.pl
 MV    = $(PERL) $(INSTALL_BIN)/mv.pl
 RM    = $(PERL) $(INSTALL_BIN)/rm.pl -f
 MKDIR = $(PERL) $(INSTALL_BIN)/mkdir.pl
 RMDIR = $(PERL) $(INSTALL_BIN)/rm.pl -rf
+ECHO  = echo
+
 EXE=.exe
 OBJ=.obj
-ECHO = echo
 
 # Include files
 HOST_INCLUDES = -I. -I.. $(USR_INCLUDES) -I$(INSTALL_INCLUDE) \
@@ -79,15 +72,10 @@ HOST_INCLUDES = -I. -I.. $(USR_INCLUDES) -I$(INSTALL_INCLUDE) \
 #	2) set it to 0 to use MS C "extensions" (open for _open etc.)
 #	   because MS uses:   if __STDC__ ... disable many nice things
 #
-#	-MDd : use MSVCRTD (run-time as DLL, multi-thread support)
-#	       this also calls for _DLL
-#
 #	Unable to use -Za to turn on __STDC__ because there are
 #	non-standard constructs in winnt.h etc
 #
-OP_SYS_FLAGS = -MDd -VMG -VMV -DWIN32 -D_WIN32  -D_WINDOWS \
-	-D_X86_ -D_NTSDK -D_DLL -D__STDC__=0
-
+OP_SYS_FLAGS = -D__STDC__=0
 
 HOST_LDLIBS = user32.lib kernel32.lib wsock32.lib advapi32.lib winmm.lib
 HOST_LDFLAGS = -nologo
@@ -101,9 +89,8 @@ DLLENTRY = @12
 
 #	yes, for MS it's I386 for 386, 486, Pentium!
 #	don't mix this with VxWorks which has different BSPs for [34]86 !
-WIN32_DLLFLAGS = $(HOST_LDFLAGS) $(HOST_LDLIBS)\
+WIN32_DLLFLAGS = $(HOST_LDFLAGS) \
 	-subsystem:windows -dll -incremental:no $(LINK_OPT_FLAGS) -machine:I386 
-
 
 ARCH_DEP_CFLAGS =
 ARCH_DEP_CXXFLAGS = $(ARCH_DEP_CFLAGS)
@@ -123,10 +110,9 @@ CFLAGS = $(HOST_OPT_FLAGS) $(TARGET_CFLAGS) $(USR_CFLAGS) $(ARCH_DEP_CFLAGS) $(H
 CXXFLAGS = $(HOST_OPT_FLAGS) $(TARGET_CXXFLAGS) $(USR_CXXFLAGS) $(ARCH_DEP_CXXFLAGS) $(HOST_CXXFLAGS)
 CPPFLAGS += $(TARGET_CPPFLAGS) $(USR_CPPFLAGS)
 
-CXX=cl -nologo
-
-LDFLAGS=$(SPECIAL_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS) $(ARCH_DEP_LDFLAGS) $(HOST_LDFLAGS)
-LDLIBS=$(TARGET_LDLIBS) $(USR_LDLIBS) $(ARCH_DEP_LDLIBS) $(HOST_LDLIBS)
+LDFLAGS = $(SPECIAL_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS) $(ARCH_DEP_LDFLAGS) $(HOST_LDFLAGS)
+LDLIBS = $(TARGET_LDLIBS) $(USR_LDLIBS) $(ARCH_DEP_LDLIBS) $(HOST_LDLIBS)
+DLL_LDLIBS = $(DLL_DEP_LIBS) $(ARCH_DEP_LDLIBS) $(HOST_LDLIBS)
  
 # Override SUN defaults
 COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c
@@ -136,11 +122,52 @@ COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c
 #	i.e.  -Tp  has to be immediately before the source file name
 COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -Tp
 
-LINK.c=link $(LINK_OPT_FLAGS) $(LDFLAGS) -out:$@
-LINK.cc=$(LINK.c)
+LINK.c = link $(LINK_OPT_FLAGS) $(LDFLAGS) -out:$@
+LINK.cc = $(LINK.c)
+
+
+#
+# specify dll .def file only if it exists
+#
+DLL_DEF_FLAG = $(addprefix -def:,$(wildcard ../$(LIBRARY).def))
+
+#	HOST_OPT_FLAGS is part of CFLAGS/CXXFLAGS,
+#	which in turn are used in COMPILE.c[c]
+#
+#	If we compile a .c, .cc into an $(OBJ),
+#	we test if this object is part of the 
+#	library objects LIBOBJS.
+#	If so, we define _WINDLL so that
+#	e.g. include/shareLib.h works correctly.
+#
+HOST_OPT_FLAGS += $(subst $@, -D_WINDLL, $(findstring $@,$(LIBOBJS)))
+
+#
+#	A WIN32 dll has three parts:
+#	x.dll: the real dll (DLLNAME)
+#	x.lib: what you link to progs that use the dll (LIBNAME)
+#	x.exp: what you need to build the dll (in no variable)
+#
+LINK.dll = link $(WIN32_DLLFLAGS) -implib:$(@:%.dll=%.lib) -out:$@ $(DLL_DEF_FLAG)
 
 #	The DEPENDS_RULE may be a script on other systems,
 #	if you need different rules for .c and .cc,
 #	that script has to figure out what to call.
 #
 DEPENDS_RULE = @echo no DEPENDS_RULE defined in CONFIG.WIN32
+
+#	adjust names of libraries to build
+#
+#	But: if there are no objects LIBOBJS to include
+#	in this library (may be for e.g. base/src/libCompat
+#	on some archs), don't define (and build) any library!
+DLLNAME = $(LIBRARY).dll
+#	libs defined that we need to link the DLL with
+DLL_DEP_LIBS = $(DLL_LIBS:%=$(INSTALL_LIB)/%.lib)
+
+LIBNAME = $(LIBRARY).lib
+PRODDEPLIBS = $(PROD_LIBS:%=$(INSTALL_LIB)/%.lib)
+USR_LDLIBS += $(PRODDEPLIBS)
+SYSPRODDEPLIBS = # ???????? unimplemented dependency
+USR_LDLIBS += $(SYSPRODDEPLIBS) 
+

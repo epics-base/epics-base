@@ -1,9 +1,6 @@
 
-#
-# no longer required
-#
-#SHELL=knts
-
+# 	Use std path variables from ms
+HOME = $(HOMEDRIVE)$(HOMEPATH)
 
 # BUILD_TYPE
 #   Currently either Vx or Unix

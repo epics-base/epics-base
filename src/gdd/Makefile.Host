@@ -23,9 +23,13 @@ INC += gddAppTable.h
 INC += gddAppFuncTable.h
 INC += gddApps.h
 
-AITGENSRCS := gdd.cc gddTest.cc gddAppTable.cc gddNewDel.cc \
+genApps_SRCS =  genApps.cc gdd.cc gddTest.cc gddAppTable.cc gddNewDel.cc \
 	gddAppDefs.cc aitTypes.c aitConvert.cc aitHelpers.cc  \
 	gddArray.cc gddContainer.cc gddErrorCodes.cc gddUtils.cc
+
+aitGen_SRCS = aitGen.c  aitTypes.c
+
+TESTPROD = aitGen  genApps
 
 LIBSRCS := gdd.cc gddTest.cc gddAppTable.cc gddNewDel.cc \
 	gddAppDefs.cc aitTypes.c aitConvert.cc aitHelpers.cc dbMapper.cc \
@@ -58,20 +62,6 @@ aitConvertGenerated.cc: aitGen$(EXE) ../aitTypes.h
 
 gddApps.h : genApps$(EXE)
 	./genApps$(EXE) $@
-
-# unfortunately there is only one TESTPROD/TESTPROD_SRCS allowed
-# right now
-# (or many 'simple' progs:
-#  TESTPROD:=a b c
-#  where a is build from a.cc,   b from b.cc, c from c.cc
-# )
-#
-# This rule, however, should be system-independent:
-aitGen$(EXE): aitGen$(OBJ) aitTypes$(OBJ)
-	$(LINK.c) $^ 
-
-genApps$(EXE): genApps$(OBJ) $(addsuffix $(OBJ), $(basename $(AITGENSRCS)))
-	$(LINK.cc) $^ 
 
 clean::
 	$(RM) aitConvertGenerated.cc aitGen$(EXE) genApps$(EXE)

@@ -59,6 +59,7 @@
  * .18  08-11-92	joh	io report format cleanup	
  * .19  08-02-93	mrk	Added call to taskwdInsert
  * .20  08-05-93	jbk	took out 200000 pulse limit
+ * .21  02-28-94	mrk	Replaced itob by cvtLongToString
  */
 
 /* data requests are made from the oms_task at
@@ -468,26 +469,14 @@ int		arg2;
 		motor_data_array[card][channel].velocity = arg1;
 		strcpy(oms_move_msg,"A?\nVL");
 		oms_move_msg[MOTOR_POS] = oms_motor_specifier[channel];
-		if (arg1 < 0){
-			oms_move_msg[5] = '-';
-			count = itob(&oms_move_msg[5+1],-arg1,10) + 1;
-		}else{
-			count = itob(&oms_move_msg[5],arg1,10);
-		}
-		oms_move_msg[5+count] = 0;	/* terminate */
+		count = cvtLongToString(arg1,&oms_move_msg[5]);
 		strcat(oms_move_msg,"\n");
 		oms_send_msg(oms_motor_present[card],oms_move_msg);
 
 		/* set the acceleration */
 		strcpy(oms_move_msg,"A?\nAC");
 		oms_move_msg[MOTOR_POS] = oms_motor_specifier[channel];
-		if (arg2 < 0){
-			oms_move_msg[5] = '-';
-			count = itob(&oms_move_msg[5+1],-arg2,10) + 1;
-		}else{
-			count = itob(&oms_move_msg[5],arg2,10);
-		}
-		oms_move_msg[5+count] = 0;	/* terminate */
+		count = cvtLongToString(arg2,&oms_move_msg[5]);
 		strcat(oms_move_msg,"\n");
 		oms_send_msg(oms_motor_present[card],oms_move_msg);
 
@@ -497,15 +486,7 @@ int		arg2;
 		/* move the motor */
 		strcpy(oms_move_msg,"A?\nAF\nMR");
 		oms_move_msg[1] = oms_motor_specifier[channel];
-		if (arg1 < 0){
-			/* if (arg1 < -200000) arg1 = -0x0ffffff; */
-			oms_move_msg[8] = '-';
-			count = itob(&oms_move_msg[8+1],-arg1,10) + 1;
-		}else{
-			/* if (arg1 > 200000) arg1 = 0x0ffffff; */
-			count = itob(&oms_move_msg[8],arg1,10);
-		}
-		oms_move_msg[8+count] = 0;	/* terminate */
+		count = cvtLongToString(arg1,&oms_move_msg[8]);
 		strcat(oms_move_msg,"\nGO\n");
 		oms_send_msg(oms_motor_present[card],oms_move_msg);
 

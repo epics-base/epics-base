@@ -39,7 +39,5 @@ all :: bld_errSym $(LIBNAME) $(PROD)
 bld_errSym:
 	$(EPICS_BASE)/tools/blderrSymTbl
 
-install: $(EPICS_BASE_LIB)/$(T_ARCH)/libCom.a
-
 include $(EPICS)/config/RULES
 

@@ -134,7 +134,8 @@ typedef float           ca_float32_t;
  * fields aligned on natural boundaries.
  *
  * NOTE: all structures declared in this file must have a
- * byte count which is evenly divisible by 8 for the SPARC.
+ * byte count which is evenly divisible by 8 matching
+ * the largest atomic data type in db_access.h.
  */
 #define CA_MESSAGE_ALIGN(A) (OCT_ROUND(A)<<3)
 

@@ -304,7 +304,7 @@ int epicsShareAPI scanppl(double period)	/*print periodic list*/
 	psl = papPeriodic[i];
 	if(psl==NULL) continue;
 	if(period>0.0 && (fabs(period - psl->period) >.05)) continue;
-	sprintf(message,"Scan Period= %f seconds ",psl->period);
+	sprintf(message,"Scan Period= %lf seconds ",psl->period);
 	printList(psl,message);
     }
     return(0);
@@ -514,7 +514,7 @@ static void initPeriodic()
 		papPeriodic[i] = psl;
                 psl->lock = epicsMutexMustCreate();
 		ellInit(&psl->list);
-		sscanf(pmenu->papChoiceValue[i+SCAN_1ST_PERIODIC],"%f",&temp);
+		sscanf(pmenu->papChoiceValue[i+SCAN_1ST_PERIODIC],"%lf",&temp);
 		psl->period = temp;
 	}
 }
@@ -525,7 +525,7 @@ static void spawnPeriodic(int ind)
     char	taskName[20];
 
     psl = papPeriodic[ind];
-    sprintf(taskName,"scan%f",psl->period);
+    sprintf(taskName,"scan%lf",psl->period);
     /*strip off trailing 0s*/
     while(taskName[strlen(taskName)-1]=='0') taskName[strlen(taskName)-1] = 0;
     /*strip trailing . */

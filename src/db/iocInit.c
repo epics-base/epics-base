@@ -190,6 +190,7 @@ int iocInit(char * pResourceFilename)
     if(finishDevSup()!=0) logMsg("iocInit: Device Support Failed during Finalization\n",0,0,0,0,0,0);
     if (pinitHooks) (*pinitHooks)(INITHOOKafterFinishDevSup);
     scanInit();
+    asInit(NULL);
     /* wait 1/2 second to make sure all tasks are started*/
     (void)taskDelay(sysClkRateGet()/2);
     if (pinitHooks) (*pinitHooks)(INITHOOKafterScanInit);
@@ -197,7 +198,6 @@ int iocInit(char * pResourceFilename)
     if (pinitHooks) (*pinitHooks)(INITHOOKafterInterruptAccept);
     if(initialProcess()!=0) logMsg("iocInit: initialProcess Failed\n",0,0,0,0,0,0);
     if (pinitHooks) (*pinitHooks)(INITHOOKafterInitialProcess);
-    asInit();
     rsrv_init();
     logMsg("iocInit: All initialization complete\n",0,0,0,0,0,0);
     if (pinitHooks) (*pinitHooks)(INITHOOKatEnd);

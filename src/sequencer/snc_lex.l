@@ -11,6 +11,7 @@
 15jan92,ajk	Fixed to allow "!" as a unary operator.
 17Jul92,rcz	changed warn_flag to warn_opt
 17Jul92,rcz	Ported ajk version from lanl
+04apr93,ajk	Increased STR_BFR_SIZE from 30000 to 300000
 ***************************************************************************/
 /* Lexical analyzer for State Notation Compiler (snc).
  *
@@ -34,7 +35,7 @@
 #else
 #define	RETURN(param)	return(param);
 #endif
-#define	STR_BFR_SIZE	30000
+#define	STR_BFR_SIZE	300000
 
 extern int	line_num, c_line_num; /* input line number */
 extern int	warn_opt; /* compiler warning flag */

@@ -102,13 +102,6 @@ POSIX_CPPFLAGS_YES = -D_POSIX_SOURCE
 POSIX_CPPFLAGS_NO =
 
 #--------------------------------------------------
-# Optimization flag overrides
-OPT_CFLAGS_YES = -O3
-OPT_CFLAGS_NO =
-OPT_CXXFLAGS_YES = -O3
-OPT_CXXFLAGS_NO =
-
-#--------------------------------------------------
 # osithead use default stack, YES or NO override
 OSITHREAD_USE_DEFAULT_STACK = NO
 

@@ -47,6 +47,9 @@
  * .09 050494 pg        HPUX port changes.
  * .10 021694 joh	ANSI C	
  * $Log$
+ * Revision 1.30  1998/06/16 02:43:16  jhill
+ * use ip addr conversion in libCom - and cosmetic changes
+ *
  * Revision 1.29  1998/05/29 20:19:11  jhill
  * use new sock ioctl() typedef
  *
@@ -625,10 +628,12 @@ static void writeMessagesToLog (struct iocLogClient *pclient)
 		if (status<0) {
 			handleLogFileError();
 		}
-		if (status != ntci) {
-			fprintf(stderr, "iocLogServer: didnt calculate number of characters correctly?\n");
-		}
-		pserver->filePos += status;
+        else {
+		    if (status != ntci) {
+			    fprintf(stderr, "iocLogServer: didnt calculate number of characters correctly?\n");
+		    }
+		    pserver->filePos += status;
+        }
 		pline += nchar+1u;
 	}
 }
@@ -659,17 +664,6 @@ static void freeLogClient(struct iocLogClient     *pclient)
 		}
 		writeMessagesToLog (pclient);
 	}
-
-#if 0
-	status = fprintf(
-		pclient->pserver->poutfile,
-		"%s %s ----- Client Disconnect -----\n",
-		pclient->name,
-		pclient->ascii_time);
-	if(status<0){
-		handleLogFileError();
-	}
-#endif
 
 	status = fdmgr_clear_callback(
 		       pclient->pserver->pfdctx,

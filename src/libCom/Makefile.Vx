@@ -19,6 +19,7 @@ SRCS.c += ../pal.c
 SRCS.c += ../paldef.c
 SRCS.c += errSymTbl.c
 SRCS.c += ../errPrintfVX.c
+SRCS.c += ../assertVX.c
 
 OBJS += calcPerform.o
 OBJS += cvtBpt.o
@@ -36,6 +37,7 @@ OBJS += freeListLib.o
 OBJS += pal.o
 OBJS += paldef.o
 OBJS += errPrintfVX.o
+OBJS += assertVX.o
 
 PROD = libCom
 

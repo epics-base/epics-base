@@ -75,6 +75,7 @@
  *			the handling of SYD_B_MISSING samples; add an
  *			option for exporting only means; fix a bug in
  *			sydInputReset where last buffer didn't get discarded;
+ *  .18	03-22-93	changed VALID_ALARM to INVALID_ALARM - thanks
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -1886,7 +1887,7 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 *	for the channel.
 *----------------------------------------------------------------------------*/
 		useVal = 1;
-		if (alSev == VALID_ALARM) {
+		if (alSev == INVALID_ALARM) {
 		    useVal = 0;
 		    pSChan->pDataCodeL[sub] = 'I';
 		}

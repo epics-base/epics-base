@@ -26,6 +26,8 @@ OP_SYS_LDLIBS += -lrt
 
 ARCH_DEP_CPPFLAGS += -D_X86_
 ARCH_DEP_CFLAGS += -mcpu=pentium
+#athlon flags
+#ARCH_DEP_CFLAGS += -mcpu=athlon-mp -march=athlon-mp -mfpmath=sse
 
 # Set runtime path for shared libraries
 RUNTIME_LDFLAGS = $(SHRLIB_SEARCH_DIRS:%=-Wl,-rpath,%)

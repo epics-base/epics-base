@@ -23,7 +23,8 @@
 #       <operating system>-<architecture>[-<alternate compiler>]
 #
 #  Currently Supporting:
-#	hpux-parisc
+#	hpux-parisc            (HP compiler used for host builds)
+#	hpux-parisc-gnu        (GNU compiler used for host builds)
 #	osf-alpha
 #	solaris-sparc          (sun compiler used for host builds)
 #	solaris-sparc-gnu      (GNU compiler used for host builds)
@@ -57,10 +58,14 @@
 #       vxWorks-68060
 #       vxWorks-pentium
 #       vxWorks-ppc603
+#       vxWorks-ppc603_long
 #       vxWorks-ppc604
+#       vxWorks-ppc604_long
 #       RTEMS-gen68360
 #       RTEMS-mvme167
 #       RTEMS-pc386
+#       RTEMS-mcp750
+#       RTEMS-psim
 #
 # Definitions of CROSS_COMPILER_TARGET_ARCHS in
 # configure/os/CONFIG_SITE.<host>.Common files will

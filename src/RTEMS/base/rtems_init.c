@@ -33,6 +33,15 @@
 #include <osiUnistd.h>
 #include <iocsh.h>
 
+#ifndef OMIT_NFS_SUPPORT
+# ifndef RTEMS_EPICS_NFS_SERVER_PATH
+#  define RTEMS_EPICS_NFS_SERVER_PATH "/tftpboot/epics"
+# endif
+# ifndef RTEMS_EPICS_NFS_MOUNT_POINT
+#  define RTEMS_EPICS_NFS_MOUNT_POINT "/epics"
+# endif
+#endif
+
 /*
  * Architecture-dependent routines
  */
@@ -168,13 +177,28 @@ rtems_set_directory (void)
 
     if ((path = malloc (pathsize)) == NULL)
         LogFatal ("Can't create TFTP path name -- no memory.\n");
-    strcpy (path, "/TFTP/BOOTP_HOST/epics/");
+#ifdef OMIT_NFS_SUPPORT
+    strcpy (path, "/TFTP/BOOTP_HOST/tftpboot/epics/");
     l = strlen (path);
     if (gethostname (&path[l], pathsize - l - 2) || (path[l] == '\0'))
         LogFatal ("Can't get host name");
     strcat (path, "/");
+#else
+    {
+    char *cp = strrchr(rtems_bsdnet_bootp_cmdline, '/');
+    if (cp == NULL)
+        l = strlen(rtems_bsdnet_bootp_cmdline);
+    else
+        l = cp - rtems_bsdnet_bootp_cmdline;
+    if (l >= pathsize)
+        LogFatal ("Boot command path too long");
+    strncpy(path, rtems_bsdnet_bootp_cmdline, l);
+    path[l] = '\0';
+    }
+#endif
     if (chdir (path) < 0)
-        LogFatal ("Can't set initial TFTP directory");
+        LogFatal ("Can't set initial directory");
+    free(path);
 }
 
 /*
@@ -208,11 +232,25 @@ static void netStatCallFunc(const iocshArgBuf *args)
 {
     rtems_netstat(args[0].ival);
 }
+
 static const iocshFuncDef stackCheckFuncDef = {"stackCheck",0,NULL};
 static void stackCheckCallFunc(const iocshArgBuf *args)
 {
     Stack_check_Dump_usage ();
 }
+
+#ifndef OMIT_NFS_SUPPORT
+static const iocshArg nfsMountArg0 = { "[uid.gid@]host",iocshArgString};
+static const iocshArg nfsMountArg1 = { "server path",iocshArgString};
+static const iocshArg nfsMountArg2 = { "mount point",iocshArgString};
+static const iocshArg * const nfsMountArgs[3] = {&nfsMountArg0,&nfsMountArg1,
+                                                 &nfsMountArg2};
+static const iocshFuncDef nfsMountFuncDef = {"nfsMount",3,nfsMountArgs};
+static void nfsMountCallFunc(const iocshArgBuf *args)
+{
+    nfsMount(args[0].sval, args[1].sval, args[2].sval);
+}
+#endif
 
 /*
  * Register RTEMS-specific commands
@@ -221,6 +259,9 @@ static void iocshRegisterRTEMS (void)
 {
     iocshRegister(&netStatFuncDef, netStatCallFunc);
     iocshRegister(&stackCheckFuncDef, stackCheckCallFunc);
+#ifndef OMIT_NFS_SUPPORT
+    iocshRegister(&nfsMountFuncDef, nfsMountCallFunc);
+#endif
 }
 
 /*
@@ -281,9 +322,11 @@ Init (rtems_task_argument ignored)
 #endif
 #if defined(__PPC) && defined(HAVE_PPCBUG)
     {
-   extern void setBootConfigFromPPCBUGNVRAM(void);
-   setBootConfigFromPPCBUGNVRAM();
-   }
+    extern void setBootConfigFromPPCBUGNVRAM(void);
+    setBootConfigFromPPCBUGNVRAM();
+    argv[0] = rtems_bsdnet_bootp_boot_file_name;
+    argv[1] = rtems_bsdnet_bootp_cmdline ;
+    }
 #endif
 
     /*
@@ -313,8 +356,17 @@ Init (rtems_task_argument ignored)
     }
     printf ("***** Initializing network *****\n");
     rtems_bsdnet_initialize_network ();
+#ifdef OMIT_NFS_SUPPORT
     printf ("***** Initializing TFTP *****\n");
     rtems_bsdnet_initialize_tftp_filesystem ();
+#else
+    printf ("***** Initializing NFS *****\n");
+    rpcUdpInit();
+    nfsInit(0,0);
+    nfsMount(rtems_bsdnet_bootp_server_name,
+                                            RTEMS_EPICS_NFS_SERVER_PATH,
+                                            RTEMS_EPICS_NFS_MOUNT_POINT);
+#endif
 
     /*
      * Use BSP-supplied time of day if available

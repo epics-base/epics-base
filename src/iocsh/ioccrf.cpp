@@ -21,13 +21,15 @@ of this distribution.
 #include "dbAccess.h"
 #define epicsExportSharedSymbols
 #include "ioccrf.h"
+#include "ioccrfRegisterCommon.h"
 #include "epicsReadline.h"
 
-struct IoccrfFunc {
+class IoccrfFunc {
+  public:
     ioccrfFuncDef const *pFuncDef;
     ioccrfCallFunc func;
-    IoccrfFunc() { pFuncDef=NULL; func=NULL; }
-    IoccrfFunc(const ioccrfFuncDef *d, ioccrfCallFunc f) { pFuncDef=d; func=f; }
+    IoccrfFunc(): pFuncDef(NULL), func(NULL) { }
+    IoccrfFunc(const ioccrfFuncDef *d, ioccrfCallFunc f): pFuncDef(d), func(f){}
     IoccrfFunc& operator=(const IoccrfFunc& rhs) { pFuncDef=rhs.pFuncDef;
                                                    func=rhs.func;
                                                    return *this; }
@@ -449,3 +451,39 @@ ioccrf (const char *pathname)
     free (argBuf);
     return 0;
 }
+
+/*
+ * Dummy internal commands -- register and install in command table
+ * so they show up in the help display
+ */
+
+/* help */
+static const ioccrfArg helpArg0 = { "command",ioccrfArgInt};
+static const ioccrfArg *helpArgs[1] = {&helpArg0};
+static const ioccrfFuncDef helpFuncDef =
+    {"help",1,helpArgs};
+static void helpCallFunc(const ioccrfArgBuf *args)
+{
+}
+
+/* exit */
+static const ioccrfFuncDef exitFuncDef =
+    {"exit",0,0};
+static void exitCallFunc(const ioccrfArgBuf *args)
+{
+}
+
+static void localRegister (void)
+{
+    ioccrfRegister(&helpFuncDef,helpCallFunc);
+    ioccrfRegister(&exitFuncDef,exitCallFunc);
+}
+
+/*
+ * Register commands on application startup
+ */
+class IoccrfRegister {
+  public:
+    IoccrfRegister() { localRegister(); ioccrfRegisterCommon(); }
+};
+static IoccrfRegister ioccrfRegisterObj;

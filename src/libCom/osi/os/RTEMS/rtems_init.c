@@ -26,7 +26,6 @@
 #include <osiThread.h>
 #include <logClient.h>
 #include <ioccrf.h>
-#include <ioccrfRegisterCommon.h>
 #include <registerRecordDeviceDriverRegister.h>
 #include <dbStaticLib.h>
 
@@ -319,7 +318,6 @@ Init (rtems_task_argument ignored)
      * Run the EPICS startup script
      */
     printf ("***** Executing EPICS startup script *****\n");
-    ioccrfRegisterCommon ();
     ioccrfRegisterRTEMS ();
     registerRecordDeviceDriverRegister ();
     ioccrf ("st.cmd");

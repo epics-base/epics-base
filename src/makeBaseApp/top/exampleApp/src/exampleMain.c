@@ -19,12 +19,10 @@ of this distribution.
 #include "dbTest.h"
 #include "registryRecordType.h"
 #include "ioccrf.h"
-#include "ioccrfRegisterCommon.h"
 #include "registerRecordDeviceDriverRegister.h"
 
 int main(int argc,char *argv[])
 {
-    ioccrfRegisterCommon();
     registerRecordDeviceDriverRegister();
     if(argc>=2) {    
         ioccrf(argv[1]);

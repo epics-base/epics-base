@@ -657,6 +657,7 @@ void epicsThreadShowAll (unsigned int level)
 
 double epicsThreadSleepQuantum ( void )
 {
-     return 1.0 / rtemsTicksPerSecond_double;
-}
+    extern double rtemsTicksPerSecond_double;
 
+    return 1.0 / rtemsTicksPerSecond_double;
+}

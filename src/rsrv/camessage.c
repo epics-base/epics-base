@@ -2102,8 +2102,10 @@ int camessage (struct client  *client, struct message_buffer *recv)
         msgsize = tmp_postsize + sizeof(*mp);
         
         if (msgsize > bytes_left) {
-            if ( msgsize > recv->cnt ) {
-                log_header ( "rsrv: CA message received was too large", client, mp, nmsg );
+            if ( msgsize > sizeof(client->recv.buf) ) {
+                const char *pCtx = "rsrv: CA request message too large";
+                send_err ( mp, ECA_TOLARGE, client, pCtx );
+                log_header ( pCtx , client, mp, nmsg );
                 return RSRV_ERROR;
             }
             return RSRV_OK;

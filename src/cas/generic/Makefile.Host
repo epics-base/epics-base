@@ -2,7 +2,7 @@
 TOP = ../../../..
 include $(TOP)/config/CONFIG_BASE
 
-INC := casdef.h casInternal.h casEventMask.h 
+INC := casdef.h casInternal.h casEventMask.h caNetAddr.h
 
 include $(TOP)/config/RULES.Host
 

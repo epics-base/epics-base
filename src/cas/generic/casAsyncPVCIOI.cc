@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1  1997/04/10 19:38:14  jhill
+ * installed
+ *
  * Revision 1.2  1996/11/06 22:15:53  jhill
  * allow monitor init read to using rd async io
  *
@@ -43,7 +46,6 @@
 #include "server.h"
 #include "casAsyncIOIIL.h" 	// casAsyncIOI in line func
 #include "casChannelIIL.h"	// casChannelI in line func
-#include "casOpaqueAddrIL.h"	// casOpaqueAddr in line func
 #include "casCtxIL.h"		// casCtx in line func
 #include "casCoreClientIL.h"	// casCoreClient in line func
 
@@ -53,7 +55,8 @@
 casAsyncPVCIOI::casAsyncPVCIOI(const casCtx &ctx, 
 			casAsyncPVCreateIO &ioIn) :
 	casAsyncIOI(*ctx.getClient(), ioIn),
-	msg(*ctx.getMsg())
+	msg(*ctx.getMsg()),
+	retVal(S_cas_badParameter)
 {
 	assert (&this->msg);
 	this->client.installAsyncIO(*this);

@@ -2,7 +2,6 @@
 #ifndef dgInBufILh
 #define dgInBufILh
 
-#include "casOpaqueAddrIL.h"
 #include "inBufIL.h"
 
 //

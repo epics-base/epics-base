@@ -30,6 +30,9 @@
  * 	Modification Log:
  * 	-----------------
  * 	$Log$
+ * 	Revision 1.12  1997/04/10 19:34:19  jhill
+ * 	API changes
+ *
  * 	Revision 1.11  1997/01/09 22:24:46  jhill
  * 	eliminate MSVC++ warning resulting from passing *this to a base
  *
@@ -112,7 +115,7 @@
 // This eliminates a warning resulting from passing *this
 // to a base class during derived class construction.
 //
-#ifdef WIN32
+#if defined(WIN32)
 #	pragma warning (disable:4355)
 #endif
 
@@ -173,6 +176,8 @@ typedef aitUint32 caStatus;
 #define S_casApp_undefined (M_casApp | 9) /*undefined value*/
 #define S_casApp_postponeAsyncIO (M_casApp | 10) /*postpone asynchronous IO*/
 
+#include <caNetAddr.h>
+
 //
 // pv exist test return
 //
@@ -181,19 +186,79 @@ typedef aitUint32 caStatus;
 // to do so return pverDoesNotExistHere (and the client will
 // retry the request later).
 //
-enum pvExistReturn {pverExistsHere, pverDoesNotExistHere, 
+enum pvExistReturnEnum {pverExistsHere, pverDoesNotExistHere, 
 	pverAsyncCompletion};
+class pvExistReturn {
+public:
+	//
+	// most server tools will use this
+	//
+	pvExistReturn (pvExistReturnEnum s=pverDoesNotExistHere) :
+		status(s) {}
+	//
+	// directory service server tools 
+	// will use this
+	//
+	// (see caNetAddr.h)
+	//
+	pvExistReturn (const caNetAddr &addressIn) :
+		status(pverExistsHere), address(addressIn) {}
+
+	const pvExistReturn &operator = (pvExistReturnEnum rhs)
+	{
+		this->status = rhs;
+		this->address.clear();
+		return *this;
+	}
+	const pvExistReturn &operator = (const caNetAddr &rhs)
+	{
+		this->status = pverExistsHere;
+		this->address = rhs;
+		return *this;
+	}
+	pvExistReturnEnum getStatus() const {return this->status;}
+	int addrIsValid() const {return this->address.isSock();}
+	caNetAddr getAddr() const {return this->address;}
+private:
+	pvExistReturnEnum	status;
+	caNetAddr		address;
+};
 
 class casPV;
 
 class pvCreateReturn {
 public:
-	pvCreateReturn()
-		{ this->pPV = NULL; this->stat = S_cas_badParameter; } 
 	pvCreateReturn(caStatus statIn)
 		{ this->pPV = NULL; this->stat = statIn; }
 	pvCreateReturn(casPV &pv) 
 		{ this->pPV = &pv; this->stat = S_casApp_success; }
+
+	const pvCreateReturn &operator = (caStatus rhs)
+	{
+		this->pPV = NULL;
+		if (rhs == S_casApp_success) {
+			rhs = S_cas_badParameter;
+		}
+		this->stat = rhs;
+		return *this;
+	}	
+	const pvCreateReturn &operator = (casPV &pvIn)
+	{
+		this->stat = S_casApp_success;
+		this->pPV = &pvIn;
+		return *this;
+	}	
+	const pvCreateReturn &operator = (casPV *pPVIn)
+	{
+		if (pPVIn!=NULL) {
+			this->stat = S_casApp_success;
+		}
+		else {
+			this->stat = S_casApp_pvNotFound;
+		}
+		this->pPV = pPVIn;
+		return *this;
+	}	
 	const caStatus getStatus() const { return this->stat; }
 	casPV *getPV() const { return this->pPV; }
 	
@@ -251,16 +316,14 @@ public:
 	// return pverExistsHere;	// server has PV
 	// return pverDoesNotExistHere;	// server does know of this PV
 	// return pverAsynchCompletion;	// deferred result 
-	// return pverNoMemoryForAsyncOP; // unable to defer result 
 	//
-	// Return S_casApp_postponeAsyncIO if too many simultaneous
-	// asynchronous IO operations are pending aginst the server. 
-	// The server library will retry the request whenever an
-	// asynchronous IO operation (create or exist) completes
-	// against the server.
+	// Return pverDoesNotExistHere if too many simultaneous
+	// asynchronous IO operations are pending against the server. 
+	// The client library will retry the request at some time
+	// in the future.
 	//
 	virtual pvExistReturn pvExistTest (const casCtx &ctx, 
-			const char *pPVAliasName) = 0;
+			const char *pPVAliasName);
 
         //
         // createPV() is called _every_ time that a PV is attached to
@@ -281,19 +344,20 @@ public:
 	// PV).
 	//
 	// example return from this procedure:
-	// return pvCreateReturn(*pPV);	// success
-	// return pvCreateReturn(S_casApp_pvNotFound); // no PV by that name here
-	// return pvCreateReturn(S_casApp_noMemory); // no resource to create pv
-	// return pvCreateReturn(S_casApp_asyncCompletion); // deferred completion
+	// return pPV;	// success (pass by pointer)
+	// return PV;	// success (pass by ref)
+	// return S_casApp_pvNotFound; // no PV by that name here
+	// return S_casApp_noMemory; // no resource to create pv
+	// return S_casApp_asyncCompletion; // deferred completion
 	//
 	// Return S_casApp_postponeAsyncIO if too many simultaneous
-	// asynchronous IO operations are pending aginst the server. 
+	// asynchronous IO operations are pending against the server. 
 	// The server library will retry the request whenever an
 	// asynchronous IO operation (create or exist) completes
 	// against the server.
 	//
         virtual pvCreateReturn createPV (const casCtx &ctx,
-			const char *pPVAliasName) = 0;
+			const char *pPVAliasName);
 
 	//
 	// common event masks 

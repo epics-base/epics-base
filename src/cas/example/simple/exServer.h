@@ -66,10 +66,10 @@ public:
 	// for this class
 	//
 	pvInfo (const pvInfo &copyIn) :
-			scanPeriod(copyIn.scanPeriod), pName(copyIn.pName), 
-			hopr(copyIn.hopr), lopr(copyIn.lopr), 
-			ioType(copyIn.ioType), elementCount(copyIn.elementCount),
-			pPV(copyIn.pPV)
+		scanPeriod(copyIn.scanPeriod), pName(copyIn.pName), 
+		hopr(copyIn.hopr), lopr(copyIn.lopr), 
+		ioType(copyIn.ioType), elementCount(copyIn.elementCount),
+		pPV(copyIn.pPV)
 	{
 	}
 
@@ -78,7 +78,8 @@ public:
 	const double getHopr () const { return this->hopr; }
 	const double getLopr () const { return this->lopr; }
 	const excasIoType getIOType () const { return this->ioType; }
-	const unsigned getElementCount() const { return this->elementCount; }
+	const unsigned getElementCount() const 
+		{ return this->elementCount; }
         void destroyPV() { this->pPV=NULL; }
         exPV *createPV (exServer &exCAS, aitBool preCreateFlag);
 private:
@@ -103,7 +104,8 @@ private:
 //
 class pvEntry : public stringId, public tsSLNode<pvEntry> {
 public:
-	pvEntry (pvInfo  &infoIn, exServer &casIn, const char *pAliasName) : 
+	pvEntry (pvInfo  &infoIn, exServer &casIn, 
+			const char *pAliasName) : 
 		stringId(pAliasName), info(infoIn), cas(casIn) 
 	{
 		assert(this->stringId::resourceName()!=NULL);
@@ -113,13 +115,8 @@ public:
 
 	pvInfo &getInfo() const { return this->info; }
 	
-	void destroy ()
-	{
-		//
-		// always created with new
-		//
-		delete this;
-	}
+	inline void destroy ();
+
 private:
 	pvInfo &info;
 	exServer &cas;
@@ -252,7 +249,8 @@ protected:
 //
 class exScalarPV : public exPV {
 public:
-	exScalarPV (caServer &cas, pvInfo &setup, aitBool preCreateFlag) :
+	exScalarPV (caServer &cas, 
+		pvInfo &setup, aitBool preCreateFlag) :
 			exPV (cas, setup, preCreateFlag) {}
 	void scan();
 private:
@@ -264,7 +262,8 @@ private:
 //
 class exVectorPV : public exPV {
 public:
-	exVectorPV (caServer &cas, pvInfo &setup, aitBool preCreateFlag) :
+	exVectorPV (caServer &cas, pvInfo &setup, 
+		aitBool preCreateFlag) :
 			exPV (cas, setup, preCreateFlag) {}
 	void scan();
 
@@ -302,7 +301,8 @@ public:
 			this->simultAsychIOCount--;
 		}
 		else {
-			fprintf(stderr, "inconsistent simultAsychIOCount?\n");
+			fprintf(stderr, 
+			"simultAsychIOCount underflow?\n");
 		}
 	}
 private:
@@ -560,5 +560,16 @@ inline void exServer::removeAliasName(pvEntry &entry)
 inline pvEntry::~pvEntry()
 {
         this->cas.removeAliasName(*this);
+}
+
+//
+// pvEntry:: destroy()
+//
+inline void pvEntry::destroy ()
+{
+	//
+	// always created with new
+	//
+	delete this;
 }
  

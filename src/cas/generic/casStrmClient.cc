@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.15  1997/04/10 19:34:18  jhill
+ * API changes
+ *
  * Revision 1.14  1996/12/12 18:56:27  jhill
  * doc
  *
@@ -84,6 +87,7 @@
 #include "inBufIL.h"		// inBuf inline functions
 #include "outBufIL.h"		// outBuf inline functions
 #include "gddApps.h"
+#include "net_convert.h"	// byte order conversion from libca
 
 VERSIONID(casStrmClientcc,"%W% %G%")
 
@@ -349,6 +353,14 @@ caStatus casStrmClient::readResponse (casChannelI *pChan, const caHdr &msg,
 	//
 	gddMapDbr[msg.m_type].conv_dbr((reply+1), pDesc);
 
+#ifdef CONVERSION_REQUIRED
+	/* use type as index into conversion jumptable */
+	(* cac_dbr_cvrt[msg.m_type])
+		( reply + 1,
+		  reply + 1,
+		  TRUE,       /* host -> net format */
+		  msg.m_count);
+#endif
 	//
 	// force string message size to be the true size rounded to even
 	// boundary
@@ -483,6 +495,14 @@ caStatus casStrmClient::readNotifyResponse (casChannelI *,
 		memset ((char *)(reply+1), '\0', size);
 	}
 
+#ifdef CONVERSION_REQUIRED
+	/* use type as index into conversion jumptable */
+	(* cac_dbr_cvrt[msg.m_type])
+		( reply + 1,
+		  reply + 1,
+		  TRUE,       /* host -> net format */
+		  msg.m_count);
+#endif
 	//
 	// force string message size to be the true size rounded to even
 	// boundary
@@ -579,6 +599,14 @@ caStatus casStrmClient::monitorResponse (casChannelI *pChan,
 		//
 		gddMapDbr[msg.m_type].conv_dbr ((pReply+1), pDBRDD);
 
+#ifdef CONVERSION_REQUIRED
+		/* use type as index into conversion jumptable */
+		(* cac_dbr_cvrt[msg.m_type])
+			( pReply + 1,
+			  pReply + 1,
+			  TRUE,       /* host -> net format */
+			  msg.m_count);
+#endif
 		//
 		// force string message size to be the true size 
 		//
@@ -1181,6 +1209,7 @@ caStatus casStrmClient::eventAddAction ()
 	gdd			*pDD;
 	caStatus		status;
 	casEventMask		mask;
+	unsigned short		caProtoMask;
 
 	status = casStrmClient::verifyRequest (pciu);
 	if (status != S_cas_validRequest) {
@@ -1190,22 +1219,23 @@ caStatus casStrmClient::eventAddAction ()
 	//
 	// place monitor mask in correct byte order
 	//
-	pMonInfo->m_mask = ntohs (pMonInfo->m_mask);
-
-	if (pMonInfo->m_mask&DBE_VALUE) {
+	caProtoMask = ntohs (pMonInfo->m_mask);
+	if (caProtoMask&DBE_VALUE) {
 		mask |= this->getCAS().getAdapter()->valueEventMask;
 	}
 
-	if (pMonInfo->m_mask&DBE_LOG) {
+	if (caProtoMask&DBE_LOG) {
 		mask |= this->getCAS().getAdapter()->logEventMask;
 	}
 	
-	if (pMonInfo->m_mask&DBE_ALARM) {
+	if (caProtoMask&DBE_ALARM) {
 		mask |= this->getCAS().getAdapter()->alarmEventMask;
 	}
 
 	if (mask.noEventsSelected()) {
-		this->sendErr(mp, ECA_BADMASK, "event add request");
+		char errStr[40];
+		sprintf(errStr, "event add req with mask=0X%X\n", caProtoMask);
+		this->sendErr(mp, ECA_BADMASK, errStr);
 		return S_cas_success;
 	}
 
@@ -1512,6 +1542,15 @@ caStatus casStrmClient::write()
 	if (dbr_value_offset[pHdr->m_type]) {
 		return S_cas_badType;
 	}
+
+#ifdef CONVERSION_REQUIRED
+	/* use type as index into conversion jumptable */
+	(* cac_dbr_cvrt[pHdr->m_type])
+		( this->ctx.getData(),
+		  this->ctx.getData(),
+		  FALSE,       /* net -> host format */
+		  pHdr->m_count);
+#endif
 
 	//
 	// the PV state must not be modified during a transaction

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.7  1997/04/10 19:33:53  jhill
+ * API changes
+ *
  * Revision 1.6  1996/11/02 00:53:54  jhill
  * many improvements
  *
@@ -333,7 +336,7 @@ void serverToolDebugFunc(const char *pFile, unsigned line, const char *pComment)
 //
 // caServerI::addAddr()
 //
-caStatus caServerI::addAddr(const caAddr &caAddr, int autoBeaconAddr,
+caStatus caServerI::addAddr(const caNetAddr &addr, int autoBeaconAddr,
 			int addConfigBeaconAddr)
 {
         caStatus stat;
@@ -341,7 +344,7 @@ caStatus caServerI::addAddr(const caAddr &caAddr, int autoBeaconAddr,
  
         pIntf = new casIntfOS(*this);
         if (pIntf) {
-                stat = pIntf->init(caAddr, this->dgClient, 
+                stat = pIntf->init(addr, this->dgClient, 
 				autoBeaconAddr, addConfigBeaconAddr);
                 if (stat==S_cas_success) {
 			this->osiLock();

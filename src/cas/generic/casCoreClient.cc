@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1997/04/10 19:34:03  jhill
+ * API changes
+ *
  * Revision 1.4  1996/11/02 00:54:07  jhill
  * many improvements
  *
@@ -182,7 +185,7 @@ void casCoreClient::show (unsigned level) const
 // asynchronous completion
 //
 caStatus casCoreClient::asyncSearchResponse(casDGIntfIO &,
-		const caAddr &, const caHdr &, const pvExistReturn)
+		const caNetAddr &, const caHdr &, const pvExistReturn &)
 {
 	return S_casApp_noSupport;
 }
@@ -239,11 +242,9 @@ void casCoreClient::removeChannel(casChannelI &)
 //
 // casCoreClient::fetchRespAddr()
 //
-caAddr casCoreClient::fetchRespAddr()
+caNetAddr casCoreClient::fetchRespAddr()
 {
-	caAddr	addr;
-	memset (&addr, '\0', sizeof(addr));
-	return addr;
+	return caNetAddr(); // sets addr type to UDF
 }
 
 //

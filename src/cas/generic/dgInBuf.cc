@@ -1,7 +1,6 @@
 
 #include "server.h"
 #include "inBufIL.h"
-#include "casOpaqueAddrIL.h"
 
 //
 // this needs to be here (and not in dgInBufIL.h) if we
@@ -30,7 +29,7 @@ dgInBuf::~dgInBuf()
 //
 int dgInBuf::hasAddress() const
 {
-	return this->from.hasBeenInitialized();
+	return this->from.isSock();
 }
 
 //
@@ -39,12 +38,12 @@ int dgInBuf::hasAddress() const
 xRecvStatus dgInBuf::xRecv (char *pBufIn, bufSizeT nBytesToRecv,
         bufSizeT &nByesRecv)
 {
-        caAddr addr;
+        caNetAddr addr;
         xRecvStatus stat;
  
         stat = this->xDGRecv (pBufIn, nBytesToRecv, nByesRecv, addr);
         if (stat == xRecvOK) {
-                this->from.set(addr);
+                this->from = addr;
         }
         return stat;
 }
@@ -52,8 +51,8 @@ xRecvStatus dgInBuf::xRecv (char *pBufIn, bufSizeT nBytesToRecv,
 //
 // dgInBuf::getSender()
 //
-caAddr dgInBuf::getSender() const
+caNetAddr dgInBuf::getSender() const
 {
-        return this->from.get();
+        return this->from;
 }
 

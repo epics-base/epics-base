@@ -5,6 +5,9 @@
 //
 //
 // $Log$
+// Revision 1.4  1997/04/10 19:40:31  jhill
+// API changes
+//
 // Revision 1.3  1996/11/02 00:54:42  jhill
 // many improvements
 //
@@ -20,6 +23,7 @@
 
 #include "server.h"
 #include "sigPipeIgnore.h"
+#include "addrList.h"
 
 static char *getToken(const char **ppString, char *pBuf, unsigned bufSIze);
 
@@ -52,12 +56,12 @@ inline void caServerIO::staticInit()
 //
 caStatus caServerIO::init(caServerI &cas)
 {
-	char buf[64u];
-	const char *pStr;
+	char buf[64u]; 
+	const char *pStr; 
 	char *pToken;
 	caStatus stat;
 	unsigned short port;
-	caAddr addr;
+	struct sockaddr_in saddr;
 	int autoBeaconAddr;
 
 	caServerIO::staticInit();
@@ -75,9 +79,9 @@ caStatus caServerIO::init(caServerI &cas)
 		port = caFetchPortConfig(&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
 	}
 
-	memset((char *)&addr,0,sizeof(addr));
-	addr.sa.sa_family = AF_INET;
-	addr.in.sin_port =  ntohs (port);
+	memset((char *)&saddr,0,sizeof(saddr));
+	saddr.sin_family = AF_INET;
+	saddr.sin_port =  ntohs (port);
 
 	pStr = envGetConfigParam(&EPICS_CA_AUTO_ADDR_LIST, sizeof(buf), buf);
 	if (pStr) {
@@ -106,8 +110,8 @@ caStatus caServerIO::init(caServerI &cas)
 		int configAddrOnceFlag = TRUE;
 		stat = S_cas_noInterface; 
 		while ( (pToken = getToken(&pStr, buf, sizeof(buf))) ) {
-			addr.in.sin_addr.s_addr = inet_addr(pToken);
-			if (addr.in.sin_addr.s_addr == ~0ul) {
+			saddr.sin_addr.s_addr = inet_addr(pToken);
+			if (saddr.sin_addr.s_addr == ~0ul) {
 				ca_printf(
 					"%s: Parsing '%s'\n",
 					__FILE__,
@@ -117,7 +121,7 @@ caStatus caServerIO::init(caServerI &cas)
 					pToken);
 				continue;
 			}
-			stat = cas.addAddr(addr, autoBeaconAddr, configAddrOnceFlag);
+			stat = cas.addAddr(caNetAddr(saddr), autoBeaconAddr, configAddrOnceFlag);
 			if (stat) {
 				errMessage(stat, NULL);
 				break;
@@ -126,8 +130,8 @@ caStatus caServerIO::init(caServerI &cas)
 		}
 	}
 	else {
-		addr.in.sin_addr.s_addr = INADDR_ANY;
-		stat = cas.addAddr(addr, autoBeaconAddr, TRUE);
+		saddr.sin_addr.s_addr = INADDR_ANY;
+		stat = cas.addAddr(caNetAddr(saddr), autoBeaconAddr, TRUE);
 		if (stat) {
 			errMessage(stat, NULL);
 		}
@@ -174,5 +178,4 @@ static char *getToken(const char **ppString, char *pBuf, unsigned bufSIze)
                 return NULL;
         }
 }
-
 

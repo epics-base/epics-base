@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1997/04/10 19:34:13  jhill
+ * API changes
+ *
  * Revision 1.3  1996/11/02 00:54:19  jhill
  * many improvements
  *
@@ -40,9 +43,6 @@
  *
  *
  */
-
-
-
 
 #include"server.h"
 
@@ -65,9 +65,9 @@ public:
         //
         xSendStatus xSend (char *pBuf, bufSizeT nBytesAvailableToSend,
                         bufSizeT nBytesNeedToBeSent, bufSizeT &nBytesSent,
-                        const caAddr &addr);
+                        const caNetAddr &addr);
         xRecvStatus xRecv (char *pBuf, bufSizeT nBytesToRecv,
-                        bufSizeT &nByesRecv, caAddr &addr);
+                        bufSizeT &nByesRecv, caNetAddr &addr);
  
         virtual bufSizeT incommingBytesPresent() const;
         virtual casIOState state() const=0;
@@ -93,9 +93,9 @@ private:
         xBlockingStatus blockingStatus;
  
         virtual xSendStatus osdSend (const char *pBuf, bufSizeT nBytesReq,
-                        bufSizeT &nBytesActual, const caAddr &addr) =0;
+                        bufSizeT &nBytesActual, const caNetAddr &addr) =0;
         virtual xRecvStatus osdRecv (char *pBuf, bufSizeT nBytesReq,
-                        bufSizeT &nBytesActual, caAddr &addr) =0;
+                        bufSizeT &nBytesActual, caNetAddr &addr) =0;
         virtual void osdShow (unsigned level) const = 0;
         virtual void xSetNonBlocking();
 };
@@ -139,7 +139,7 @@ void casMsgIO::show(unsigned level) const
 // casMsgIO::xRecv()
 //
 xRecvStatus casMsgIO::xRecv(char *pBuf, bufSizeT nBytes, 
-	bufSizeT &nActualBytes, caAddr &from)
+	bufSizeT &nActualBytes, caNetAddr &from)
 {
 	xRecvStatus stat;
 
@@ -155,7 +155,7 @@ xRecvStatus casMsgIO::xRecv(char *pBuf, bufSizeT nBytes,
 //
 xSendStatus casMsgIO::xSend(char *pBuf, bufSizeT nBytesAvailableToSend, 
 	bufSizeT nBytesNeedToBeSent, bufSizeT &nActualBytes, 
-	const caAddr &to)
+	const caNetAddr &to)
 {
 	xSendStatus stat;
 	bufSizeT nActualBytesDelta;

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.9  1997/04/10 19:34:06  jhill
+ * API changes
+ *
  * Revision 1.8  1997/01/10 21:17:53  jhill
  * code around gnu g++ inline bug when -O isnt used
  *
@@ -127,7 +130,6 @@ caStatus casDGClient::searchAction()
 	void		*dp = this->ctx.getData();
 	const char	*pChanName = (const char *) dp;
 	caStatus	status;
-	pvExistReturn	pver;
 
 	if (this->ctx.getServer()->getDebugLevel()>2u) {
 		printf("client is searching for \"%s\"\n", pChanName);
@@ -149,38 +151,34 @@ caStatus casDGClient::searchAction()
 	// ask the server tool if this PV exists
 	//
 	this->asyncIOFlag = 0u;
-	casPVExistReturn retVal = 
-		this->ctx.getServer()->pvExistTest(this->ctx, pChanName);
-	if (retVal.getStatus()!=S_cas_success) {
-		return retVal.getStatus();
-	}
+	pvExistReturn pver = 
+		(*this->ctx.getServer())->pvExistTest(this->ctx, pChanName);
 
         //
         // prevent problems when they initiate
         // async IO but dont return status
         // indicating so (and vise versa)
         //
-	pver = retVal.getAppStat();
         if (this->asyncIOFlag) {
 		pver = pverAsyncCompletion;
         }
-        else if (pver == pverAsyncCompletion) {
+        else if (pver.getStatus() == pverAsyncCompletion) {
 		pver = pverDoesNotExistHere;
                 errMessage(S_cas_badParameter, 
-		"- expected asynch IO creation from caServer::pvExistTest()");
+		"- expected asynch IO status from caServer::pvExistTest()");
         }
 
 	//
 	// otherwise we assume sync IO operation was initiated
 	//
-	switch (pver) {
+	switch (pver.getStatus()) {
 	case pverDoesNotExistHere:
 	case pverAsyncCompletion:
 		status = S_cas_success;
 		break;
 
 	case pverExistsHere:
-		status = this->searchResponse(*mp, retVal.getAppStat());
+		status = this->searchResponse(*mp, pver);
 		break;
 
 	default:
@@ -196,7 +194,7 @@ caStatus casDGClient::searchAction()
 // caStatus casDGClient::searchResponse()
 //
 caStatus casDGClient::searchResponse(const caHdr &msg, 
-	const pvExistReturn retVal)
+	const pvExistReturn &retVal)
 {
 	caStatus	status;
 	caHdr 		*search_reply;
@@ -205,11 +203,11 @@ caStatus casDGClient::searchResponse(const caHdr &msg,
 	//
 	// normal search failure is ignored
 	//
-	if (retVal==pverDoesNotExistHere) {
+	if (retVal.getStatus()==pverDoesNotExistHere) {
 		return S_cas_success;
 	}
 
-	if (retVal!=pverExistsHere) {
+	if (retVal.getStatus()!=pverExistsHere) {
 		fprintf(stderr, 
 "async exist completion with invalid return code \"pverAsynchCompletion\"?\n");
 		return S_cas_success;
@@ -250,16 +248,42 @@ caStatus casDGClient::searchResponse(const caHdr &msg,
 		return status;
 	}
 
+
+	*search_reply = msg;
+	search_reply->m_postsize = sizeof(*pMinorVersion);
 	/*
+	 * cid field is abused to carry the IP 
+	 * address in CA_V48 or higher
+	 * (this allows a CA servers to serve
+	 * as a directory service)
+	 *
 	 * type field is abused to carry the IP 
 	 * port number here CA_V44 or higher
 	 * (this allows multiple CA servers on one
 	 * host)
 	 */
-	*search_reply = msg;
-	search_reply->m_postsize = sizeof(*pMinorVersion);
-	search_reply->m_cid = ~0U;
-	search_reply->m_type = this->pOutMsgIO->serverPortNumber();
+	if (CA_V48(CA_PROTOCOL_VERSION,msg.m_count)) {
+		if (retVal.addrIsValid()) {
+			caNetAddr addr = retVal.getAddr();
+			struct sockaddr_in ina = addr.getSockIP();
+			search_reply->m_cid = ina.sin_addr.s_addr;
+			if (ina.sin_port==0u) {
+				search_reply->m_type = this->pOutMsgIO->serverPortNumber();
+			}
+			else {
+				search_reply->m_type = ina.sin_port;
+			}
+		}
+		else {
+			search_reply->m_cid = ~0U;
+			search_reply->m_type = this->pOutMsgIO->serverPortNumber();
+		}
+	}
+	else {
+		search_reply->m_cid = ~0U;
+		search_reply->m_type = this->pOutMsgIO->serverPortNumber();
+	}
+
 	search_reply->m_count = 0ul;
 
 	/*
@@ -322,7 +346,7 @@ void casDGClient::sendBeacon(casDGIntfIO &io)
 	//
 	// send it to all addresses on the beacon list
 	//
-	io.sendBeacon(buf, sizeof(msg), msg.m_available);
+	io.sendBeacon(buf, sizeof(msg), msg.m_available, msg.m_count);
 }
 
 //
@@ -400,8 +424,9 @@ void casDGClient::processDG(casDGIntfIO &inMsgIO, casDGIntfIO &outMsgIO)
 //
 // casDGClient::asyncSearchResp()
 //
-caStatus casDGClient::asyncSearchResponse(casDGIntfIO &outMsgIO, const caAddr &outAddr,
-		const caHdr &msg, const pvExistReturn retVal)
+caStatus casDGClient::asyncSearchResponse(
+	casDGIntfIO &outMsgIO, const caNetAddr &outAddr,
+	const caHdr &msg, const pvExistReturn &retVal)
 {
 	caStatus stat;
 
@@ -425,7 +450,7 @@ caStatus casDGClient::asyncSearchResponse(casDGIntfIO &outMsgIO, const caAddr &o
 // casDGClient::xDGSend()
 //
 xSendStatus casDGClient::xDGSend (char *pBufIn, bufSizeT nBytesNeedToBeSent, 
-		bufSizeT &nBytesSent, const caAddr &recipient)
+		bufSizeT &nBytesSent, const caNetAddr &recipient)
 {
 	xSendStatus stat;
 
@@ -447,7 +472,7 @@ xSendStatus casDGClient::xDGSend (char *pBufIn, bufSizeT nBytesNeedToBeSent,
 // casDGClient::xDGRecv()
 //
 xRecvStatus casDGClient::xDGRecv (char *pBufIn, bufSizeT nBytesToRecv,
-			bufSizeT &nByesRecv, caAddr &sender)
+			bufSizeT &nByesRecv, caNetAddr &sender)
 {
 	xRecvStatus stat;
 
@@ -489,7 +514,7 @@ unsigned casDGClient::getDebugLevel() const
 //
 // casDGClient::fetchRespAddr()
 //
-caAddr casDGClient::fetchRespAddr()
+caNetAddr casDGClient::fetchRespAddr()
 {
 	return this->getRecipient();
 }

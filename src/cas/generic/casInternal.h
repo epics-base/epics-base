@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.11  1997/04/10 19:34:10  jhill
+ * API changes
+ *
  * Revision 1.10  1997/01/10 21:17:55  jhill
  * code around gnu g++ inline bug when -O isnt used
  *
@@ -87,6 +90,7 @@ private:
 class casChanDelEv : public casEvent {
 public:
 	casChanDelEv(caResId idIn) : id(idIn) {}
+	~casChanDelEv();
         caStatus cbFunc(casEventSys &);
 private:
 	caResId	id;
@@ -114,7 +118,7 @@ class ioBlocked : public tsDLNode<ioBlocked> {
 friend class ioBlockedList;
 public:
 	ioBlocked ();
-	virtual ~ioBlocked ()=0;
+	virtual ~ioBlocked ();
 private:
 	ioBlockedList	*pList;
 	virtual void ioBlockedSignal ();
@@ -358,51 +362,6 @@ private:
         caStatus	completionStatus;
 };
 
-union ca_addr;
-
-//
-// casOpaqueAddr
-//
-// store address as an opaque array of bytes so that
-// we dont drag the socket (or other IO specific)
-// headers into the server tool.
-//
-//
-// get() will assert fail if the init flag has not been
-//	set
-//
-class casOpaqueAddr
-{
-public:
-	//
-	// casOpaqueAddr()
-	//
-	casOpaqueAddr();
-
-	//
-	// clear()
-	//
-	void clear();
-
-	inline int hasBeenInitialized() const;
-	inline casOpaqueAddr (const union ca_addr &addr);
-	inline void set (const union ca_addr &);
-	inline union ca_addr get () const;
-private:
-	char	opaqueAddr[16u]; // large enough for socket addresses
-	char	init;
-	
-	//
-	// simple class that will assert fail if
-	// sizeof(opaqueAddr) < sizeof(caAddr)
-	//
-	class checkSize {
-	public:
-		checkSize();
-	};
-	static checkSize sizeChecker;
-};
-
 class casDGIntfIO;
 
 //
@@ -426,7 +385,7 @@ private:
         caHdr const		msg;
 	pvExistReturn 		retVal;
 	casDGIntfIO * const 	pOutDGIntfIO;
-	const casOpaqueAddr	dgOutAddr;
+	const caNetAddr	dgOutAddr;
 };
 
 //

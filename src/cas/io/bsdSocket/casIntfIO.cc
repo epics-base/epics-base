@@ -6,6 +6,9 @@
 //
 //
 // $Log$
+// Revision 1.2  1997/04/10 19:40:33  jhill
+// API changes
+//
 // Revision 1.1  1996/11/02 01:01:41  jhill
 // installed
 //
@@ -32,7 +35,7 @@ casIntfIO::casIntfIO() :
 //
 // casIntfIO::init()
 //
-caStatus casIntfIO::init(const caAddr &addrIn, casDGClient &dgClientIn,
+caStatus casIntfIO::init(const caNetAddr &addrIn, casDGClient &dgClientIn,
 		int autoBeaconAddr, int addConfigBeaconAddr)
 {
 	int		yes = TRUE;
@@ -63,10 +66,10 @@ caStatus casIntfIO::init(const caAddr &addrIn, casDGClient &dgClientIn,
 		return S_cas_internal;
         }
 
-	this->addr = addrIn;
+	this->addr = addrIn.getSockIP();
         status = bind(
                         this->sock,
-                        (sockaddr *) &this->addr.sa,
+                        (sockaddr *) &this->addr,
                         sizeof(this->addr));
         if (status<0) {
                 if (SOCKERRNO == EADDRINUSE) {
@@ -75,25 +78,27 @@ caStatus casIntfIO::init(const caAddr &addrIn, casDGClient &dgClientIn,
 			// (so the getsockname() call below will
 			// work correctly)
 			//
-        		this->addr.in.sin_port = ntohs (0);
+			
+        		this->addr.sin_port = ntohs (0);
 			status = bind(
 					this->sock,
-					&this->addr.sa,
+					(sockaddr *)&this->addr,
 					sizeof(this->addr));
 		}
 		if (status<0) {
 			errPrintf(S_cas_bindFail,
 				__FILE__, __LINE__,
 				"- bind TCP IP addr=%s port=%u failed because %s",
-				inet_ntoa(this->addr.in.sin_addr),
-				ntohs(this->addr.in.sin_port),
+				inet_ntoa(this->addr.sin_addr),
+				ntohs(this->addr.sin_port),
 				strerror(SOCKERRNO));
 			return S_cas_bindFail;
 		}
         }
 
 	addrSize = sizeof(this->addr);
-	status = getsockname(this->sock, &this->addr.sa, &addrSize);
+	status = getsockname(this->sock, 
+			(struct sockaddr *)&this->addr, &addrSize);
 	if (status) {
                 ca_printf("CAS: getsockname() error %s\n", strerror(SOCKERRNO));
 		return S_cas_internal;
@@ -103,7 +108,7 @@ caStatus casIntfIO::init(const caAddr &addrIn, casDGClient &dgClientIn,
 	// be sure of this now so that we can fetch the IP 
 	// address and port number later
 	//
-        assert (this->addr.sa.sa_family == AF_INET);
+        assert (this->addr.sin_family == AF_INET);
 
         status = listen(this->sock, caServerConnectPendQueueSize);
         if(status < 0) {
@@ -119,7 +124,7 @@ caStatus casIntfIO::init(const caAddr &addrIn, casDGClient &dgClientIn,
 	if (!this->pNormalUDP) {
 		return S_cas_noMemory;
 	}
-	stat = this->pNormalUDP->init(addr, this->portNumber(), 
+	stat = this->pNormalUDP->init(this->addr, this->portNumber(), 
 			autoBeaconAddr, addConfigBeaconAddr);
 	if (stat) {
 		return stat;
@@ -133,7 +138,7 @@ caStatus casIntfIO::init(const caAddr &addrIn, casDGClient &dgClientIn,
 	// we will also need to bind to the broadcast address 
 	// for that interface (if it has one)
 	//
-	if (this->addr.in.sin_addr.s_addr != INADDR_ANY) {
+	if (this->addr.sin_addr.s_addr != INADDR_ANY) {
 		this->pBCastUDP = this->newDGIntfIO(dgClientIn);
 		if (this->pBCastUDP) {
 			stat = this->pBCastUDP->init(addr, this->portNumber(), 
@@ -181,13 +186,13 @@ casIntfIO::~casIntfIO()
 //
 casStreamOS *casIntfIO::newStreamClient(caServerI &cas) const
 {
-        caAddr          newAddr;
+	struct sockaddr	newAddr;
         SOCKET          newSock;
         int             length;
 	casStreamOS	*pOS;
  
-        length = sizeof(newAddr.sa);
-        newSock = accept(this->sock, &newAddr.sa, &length);
+        length = sizeof(newAddr);
+        newSock = accept(this->sock, &newAddr, &length);
         if (newSock==INVALID_SOCKET) {
                 if (SOCKERRNO!=EWOULDBLOCK) {
                         ca_printf(
@@ -197,7 +202,7 @@ casStreamOS *casIntfIO::newStreamClient(caServerI &cas) const
                 }
                 return NULL;
         }
-        else if (sizeof(newAddr.sa)>(size_t)length) {
+        else if (sizeof(newAddr)>(size_t)length) {
 		socket_close(newSock);
                 ca_printf("CAS: accept returned bad address len?\n");
                 return NULL;
@@ -252,7 +257,7 @@ void casIntfIO::show(unsigned level) const
 //
 unsigned casIntfIO::portNumber() const
 {
-	return ntohs(this->addr.in.sin_port);
+	return ntohs(this->addr.sin_port);
 }
 
 //

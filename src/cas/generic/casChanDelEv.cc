@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1997/04/10 19:33:58  jhill
+ * API changes
+ *
  * Revision 1.2  1996/11/02 00:54:01  jhill
  * many improvements
  *
@@ -41,6 +44,13 @@
 
 #include "server.h"
 #include "casEventSysIL.h" // casEventSys in line func
+
+//
+// casChanDelEv()
+//
+casChanDelEv::~casChanDelEv()
+{
+}
 
 //
 // casChanDelEv()

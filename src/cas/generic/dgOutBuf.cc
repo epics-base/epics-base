@@ -1,6 +1,5 @@
 
 #include "server.h"
-#include "casOpaqueAddrIL.h"
 #include "outBufIL.h"
 
 //
@@ -31,8 +30,7 @@ xSendStatus dgOutBuf::xSend (char *pBufIn,
         bufSizeT &nBytesSent)
 {
         assert(nBytesAvailableToSend>=nBytesNeedToBeSent);
-        return xDGSend(pBufIn, nBytesAvailableToSend, nBytesSent,
-                        this->to.get());
+        return xDGSend(pBufIn, nBytesAvailableToSend, nBytesSent, this->to);
 }
 
 //
@@ -53,9 +51,9 @@ void dgOutBuf::clear()
 //
 // dgOutBuf::setRecipient()
 //
-void dgOutBuf::setRecipient(const caAddr &addr)
+void dgOutBuf::setRecipient(const caNetAddr &addr)
 {
-	this->to.set(addr);
+	this->to = addr;
 }
 
 //
@@ -64,8 +62,8 @@ void dgOutBuf::setRecipient(const caAddr &addr)
 //
 // dgOutBuf::getRecipient()
 //
-caAddr dgOutBuf::getRecipient()
+caNetAddr dgOutBuf::getRecipient()
 {
-        return this->to.get();
+        return this->to;
 }
 

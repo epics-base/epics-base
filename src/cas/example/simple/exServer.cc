@@ -140,7 +140,8 @@ void exServer::installAliasName(pvInfo &info, const char *pAliasName)
 //
 // exServer::pvExistTest()
 //
-pvExistReturn exServer::pvExistTest(const casCtx& ctxIn, const char *pPVName)
+pvExistReturn exServer::pvExistTest
+	(const casCtx& ctxIn, const char *pPVName)
 {
 	//
 	// lifetime of id is shorter than lifetime of pName
@@ -185,7 +186,8 @@ pvExistReturn exServer::pvExistTest(const casCtx& ctxIn, const char *pPVName)
 //
 // exServer::createPV()
 //
-pvCreateReturn exServer::createPV (const casCtx &ctx, const char *pName)
+pvCreateReturn exServer::createPV 
+	(const casCtx &ctx, const char *pName)
 {
 	//
 	// lifetime of id is shorter than lifetime of pName
@@ -196,7 +198,7 @@ pvCreateReturn exServer::createPV (const casCtx &ctx, const char *pName)
 
 	pPVE = this->stringResTbl.lookup(id);
 	if (!pPVE) {
-		return pvCreateReturn(S_casApp_pvNotFound);
+		return S_casApp_pvNotFound;
 	}
 
 	pvInfo &pvi = pPVE->getInfo();
@@ -206,17 +208,20 @@ pvCreateReturn exServer::createPV (const casCtx &ctx, const char *pName)
 	//
 	if (pvi.getIOType() == excasIoSync) {
 		pPV = pvi.createPV(*this, aitFalse);
-		if (!pPV) {
-			pvCreateReturn(S_casApp_noMemory);
+		if (pPV) {
+			return *pPV;
 		}
-		return pvCreateReturn(*pPV);
+		else {
+			return S_casApp_noMemory;
+		}
+		
 	}
 	//
 	// Initiate async IO if this is an async PV
 	//
 	else {
 		if (this->simultAsychIOCount>=maxSimultAsyncIO) {
-			return pvCreateReturn(S_casApp_postponeAsyncIO);
+			return S_casApp_postponeAsyncIO;
 		}
 
 		this->simultAsychIOCount++;
@@ -224,10 +229,10 @@ pvCreateReturn exServer::createPV (const casCtx &ctx, const char *pName)
 		exAsyncCreateIO	*pIO = 
 			new exAsyncCreateIO(pvi, *this, ctx);
 		if (pIO) {
-			return pvCreateReturn(S_casApp_asyncCompletion);
+			return S_casApp_asyncCompletion;
 		}
 		else {
-			return pvCreateReturn(S_casApp_noMemory);
+			return S_casApp_noMemory;
 		}
 	}
 }

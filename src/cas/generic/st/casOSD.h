@@ -7,6 +7,9 @@
 // Some BSD calls have crept in here
 //
 // $Log$
+// Revision 1.2  1997/04/10 19:34:31  jhill
+// API changes
+//
 // Revision 1.1  1996/11/02 01:01:32  jhill
 // installed
 //
@@ -83,7 +86,7 @@ class casIntfOS : public casIntfIO, public tsDLNode<casIntfOS>
 public:
 	casIntfOS (caServerI &casIn) : 
 		cas (casIn), pRdReg (NULL) {}
-	caStatus init(const caAddr &addr, casDGClient &dgClientIn,
+	caStatus init(const caNetAddr &addr, casDGClient &dgClientIn,
 			int autoBeaconAddr, int addConfigBeaconAddr);
 	virtual ~casIntfOS();
 

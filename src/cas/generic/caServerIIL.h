@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1997/04/10 19:33:54  jhill
+ * API changes
+ *
  * Revision 1.3  1996/11/02 00:53:56  jhill
  * many improvements
  *
@@ -94,15 +97,6 @@ inline casChannelI *caServerI::resIdToChannel(const caResId &id)
         // (and we know that casChannelI derived from casRes)
         //
         return (casChannelI *) pRes;
-}
-
-//
-// find the channel associated with a resource id
-//
-inline casPVExistReturn caServerI::pvExistTest(
-		const casCtx &ctxIn, const char *pPVName)
-{
-	return casPVExistReturn((*this)->pvExistTest(ctxIn, pPVName));
 }
 
 //

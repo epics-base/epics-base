@@ -38,8 +38,8 @@
 void casDGIO::clientHostName (char *pBufIn, unsigned bufSizeIn) const
 {
         if (this->hasAddress()) {
-                const caAddr addr = this->getSender();
-                ipAddrToA (&addr.in, pBufIn, bufSizeIn);
+                struct sockaddr_in addr = this->getSender();
+                ipAddrToA (&addr, pBufIn, bufSizeIn);
         }
         else {
                 if (bufSizeIn>=1u) {

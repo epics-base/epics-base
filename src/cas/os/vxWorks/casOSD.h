@@ -7,6 +7,9 @@
 // Some BSD calls have crept in here
 //
 // $Log$
+// Revision 1.3  1996/11/02 00:55:00  jhill
+// many improvements
+//
 // Revision 1.2  1996/09/16 18:27:10  jhill
 // vxWorks port changes
 //
@@ -103,7 +106,7 @@ class casIntfOS : public casIntfIO, public tsDLNode<casIntfOS>
 public:
         casIntfOS (caServerI &casIn) :
                 cas (casIn), pRdReg (NULL) {}
-        caStatus init(const caAddr &addr, casDGClient &dgClientIn,
+        caStatus init(const caNetAddr &addr, casDGClient &dgClientIn,
                         int autoBeaconAddr, int addConfigBeaconAddr);
         ~casIntfOS();
  

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1997/04/10 19:33:54  jhill
+ * API changes
+ *
  * Revision 1.2  1996/11/06 22:15:53  jhill
  * allow monitor init read to using rd async io
  *
@@ -43,17 +46,17 @@
 #include "server.h"
 #include "casAsyncIOIIL.h" 	// casAsyncIOI in line func
 #include "casChannelIIL.h"	// casChannelI in line func
-#include "casOpaqueAddrIL.h"	// casOpaqueAddr in line func
 #include "casCtxIL.h"		// casCtx in line func
 #include "casCoreClientIL.h"	// casCoreClient in line func
 
 //
 // casAsyncExIOI::casAsyncExIOI()
 //
-casAsyncExIOI::casAsyncExIOI(const casCtx &ctx, 
-			casAsyncPVExistIO &ioIn) :
+casAsyncExIOI::casAsyncExIOI(
+	const casCtx &ctx, casAsyncPVExistIO &ioIn) :
 	casAsyncIOI(*ctx.getClient(), ioIn),
 	msg(*ctx.getMsg()),
+	retVal(pverDoesNotExistHere),
 	pOutDGIntfIO(ctx.getClient()->fetchOutIntf()),
 	dgOutAddr(ctx.getClient()->fetchRespAddr())
 {
@@ -94,7 +97,7 @@ caStatus casAsyncExIOI::cbFuncAsyncIO()
 		//
 		assert(this->pOutDGIntfIO);
 		status = this->client.asyncSearchResponse(*this->pOutDGIntfIO,
-				this->dgOutAddr.get(), this->msg, this->retVal);
+				this->dgOutAddr, this->msg, this->retVal);
                 break;
  
         default:

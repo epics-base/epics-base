@@ -1,6 +1,9 @@
 
 // $Id$
 // $Log$
+// Revision 1.2  1997/03/05 21:16:22  jbk
+// Fixes cvs log id at top
+//
 
 #include <stdio.h>
 #include "pvServ.h"
@@ -80,7 +83,7 @@ int main(int argc, char* argv[])
 
 	Debug3("total=%d,rate=%lf,prefix=%s\n",total_pv,rate,name);
 
-	server = new serv(total_pv,rate,name,40u,total_pv,total_pv);
+	server = new serv(total_pv,rate,name,total_pv);
 	rc=server->Main();
 	delete server;
 	return rc;
@@ -100,38 +103,19 @@ int serv::InitDB(void)
 
 int serv::Main(void)
 {
-	unsigned i;
+
 	int not_done=1;
-
-	double inv=(1.0/event_rate);
-	double num=(unsigned long)inv;
-	double fract=inv-num;
-	unsigned long lfract=fract?(unsigned long)(1.0/fract):0;
-	unsigned long nsec = lfract?1000000000u/lfract:0;
-	unsigned long sec = (unsigned long)num;
-	struct timeval tv_curr,tv_prev;
-
-	osiTime delay(sec,nsec);
-
-	tv_prev.tv_sec=0;
-	tv_prev.tv_usec=0;
-
-	Debug2("Update every sec=%lu nsec=%lu\n",sec,nsec);
+	
+	if (event_rate>0) {
+		Debug1("Update every %f sec\n", inv);
+		double inv=(1.0/event_rate);
+		pScanTimer = new scanTimer (inv, *this);
+	}
 
 	while(not_done)
 	{
+		osiTime delay(10.0);
 		fileDescriptorManager.process(delay);
-
-		gettimeofday(&tv_curr,NULL);
-
-		if(tv_curr.tv_sec-tv_prev.tv_sec >= sec && 
-			tv_curr.tv_usec-tv_prev.tv_usec >= (nsec/1000))
-		{
-			for(i=0;i<pv_total;i++)
-				db_sync[i].eventReady();
-		}
-
-		tv_prev=tv_curr;
 	}
 
 	return 0;
@@ -139,10 +123,10 @@ int serv::Main(void)
 
 // ------------------------- server stuff ----------------------------
 
-serv::serv(int tot,double rate,char* name,
-		unsigned max_name_len,unsigned pv_count_est,unsigned max_sim_io):
-	caServer(max_name_len, pv_count_est, max_sim_io),
-	db_sync(NULL),pv_total(tot),event_rate(rate),prefix(name)
+serv::serv(int tot,double rate,char* name,unsigned pv_count_est):
+	caServer(pv_count_est),
+	db_sync(NULL),pv_total(tot),event_rate(rate),prefix(name),
+	pScanTimer(NULL)
 {
 	event_mask|=(alarmEventMask|valueEventMask|logEventMask);
 
@@ -159,6 +143,7 @@ serv::serv(int tot,double rate,char* name,
 serv::~serv(void)
 {
 	delete [] db_sync;
+	if (pScanTimer) delete pScanTimer;
 }
 
 pvExistReturn serv::pvExistTest(const casCtx&,const char* pvname)
@@ -185,9 +170,9 @@ pvExistReturn serv::pvExistTest(const casCtx&,const char* pvname)
 		pvExistReturn(rc);
 }
 
-casPV* serv::createPV(const casCtx& in,const char* pvname)
+pvCreateReturn serv::createPV(const casCtx& in,const char* pvname)
 {
-	casPV* rc=NULL;
+	casPV* pPV=NULL;
 	int val;
 
 	Debug1("createPV: %s\n",pvname);
@@ -199,29 +184,43 @@ casPV* serv::createPV(const casCtx& in,const char* pvname)
 		{
 			Debug("createPV: I am making this PV\n");
 			if(val>=0 && val<pv_total)
-				rc=new servPV(in,*this,pvname,db_sync[val]);
+				pPV=new servPV(*this,pvname,db_sync[val]);
 		}
 	}
 
-	return rc;
+	if (pPV) {
+		return pvCreateReturn(*pPV);
+	}
+	else {
+		return pvCreateReturn(S_casApp_pvNotFound);
+	}
+}
+
+void serv::scan(void)
+{
+	unsigned i;
+	for(i=0;i<pv_total;i++)
+		db_sync[i].eventReady();
 }
 
 // -----------------------PV stuff -------------------------------
 
-servPV::servPV(const casCtx& c,serv& m,const char* n,dBase& x):
-	casPV(c,n),db(x),mgr(m),monitored(0)
+servPV::servPV(serv& m,const char* n,dBase& x):
+	casPV(m),db(x),mgr(m),monitored(0)
 {
 	db.node=this;
 	value=new gddScalar(appValue,aitEnumFloat64);
+	pName=new char [strlen(n)+1];
+	assert(pName);
+	strcpy(pName,n);
 }
 
 servPV::~servPV(void)
 {
 	value->unreference();
 	db.node=NULL;
+	delete [] pName;
 }
-
-unsigned servPV::maxSimultAsyncOps(void) const { return 100000u; }
 
 caStatus servPV::interestRegister()
 {
@@ -237,6 +236,11 @@ void servPV::interestDelete()
 aitEnum servPV::bestExternalType() const
 {
 	return aitEnumFloat64;
+}
+
+const char *servPV::getName() const
+{
+	return pName;
 }
 
 caStatus servPV::read(const casCtx&, gdd &dd)
@@ -275,5 +279,29 @@ void servPV::eventReady(void)
 	value->setStatSevr(db.stat,db.sevr);
 	value->setTimeStamp(&db.ts);
 	postEvent(mgr.event_mask,*value);
+}
+
+//
+// scanTimer::expire ()
+//
+void scanTimer::expire ()
+{
+        serv.scan();
+}
+
+//
+// scanTimer::again()
+//
+osiBool scanTimer::again() const
+{
+	return osiTrue;
+}
+
+//
+// scanTimer::delay()
+//
+const osiTime scanTimer::delay() const
+{
+	return period;
 }
 

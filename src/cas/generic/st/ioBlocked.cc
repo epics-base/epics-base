@@ -7,6 +7,9 @@
 // (for single threaded version of the server)
 //
 // $Log$
+// Revision 1.2  1997/04/10 19:34:32  jhill
+// API changes
+//
 // Revision 1.1  1996/11/02 01:01:34  jhill
 // installed
 //
@@ -19,7 +22,7 @@
 
 
 //
-// ioBlocked::~ioBlocked()
+// ioBlocked::ioBlocked()
 //
 ioBlocked::ioBlocked() :
 	pList(NULL)

@@ -86,7 +86,8 @@ caStatus exPV::update(gdd &valueIn)
 		return cas;
 	}
 
-        cur.get (t.tv_sec, t.tv_nsec);
+        t.tv_sec = (time_t) cur.getSecTruncToLong ();
+	t.tv_nsec = cur.getNSecTruncToLong ();
         this->pValue->setTimeStamp(&t);
 	this->pValue->setStat (epicsAlarmNone);
 	this->pValue->setSevr (epicsSevNone);
@@ -242,7 +243,8 @@ inline aitTimeStamp exPV::getTS()
 	}
 	else {
 		osiTime cur(osiTime::getCurrent());
-		cur.get(ts.tv_sec, ts.tv_nsec);
+		ts.tv_sec = (time_t) cur.getSecTruncToLong ();
+		ts.tv_nsec = cur.getNSecTruncToLong ();
 	}
 	return ts;
 }

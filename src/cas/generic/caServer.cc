@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1997/04/10 19:33:52  jhill
+ * API changes
+ *
  * Revision 1.4  1996/11/02 00:53:53  jhill
  * many improvements
  *
@@ -87,6 +90,22 @@ caServer::~caServer()
 	if (this->pCAS) {
 		delete this->pCAS;
 	}
+}
+
+//
+// caServer::pvExistTest()
+//
+pvExistReturn caServer::pvExistTest (const casCtx &, const char *)
+{
+	return pverDoesNotExistHere;
+}
+
+//
+// caServer::createPV()
+//
+pvCreateReturn caServer::createPV (const casCtx &, const char *)
+{
+	return S_casApp_pvNotFound;
 }
 
 //

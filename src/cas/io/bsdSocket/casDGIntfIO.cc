@@ -36,6 +36,7 @@
 
 #include "server.h"
 #include "ipAddrToA.h"
+#include "addrList.h"
 
 //
 // casDGIntfIO::casDGIntfIO()
@@ -45,7 +46,8 @@ casDGIntfIO::casDGIntfIO(casDGClient &clientIn) :
 	client(clientIn),
 	sock(INVALID_SOCKET),
 	sockState(casOffLine),
-	connectWithThisPort(0)
+	connectWithThisPort(0),
+	dgPort(0)
 {
 	ellInit(&this->beaconAddrList);
 }
@@ -53,16 +55,15 @@ casDGIntfIO::casDGIntfIO(casDGClient &clientIn) :
 //
 // casDGIntfIO::init()
 //
-caStatus casDGIntfIO::init(const caAddr &addr, unsigned connectWithThisPortIn,
+caStatus casDGIntfIO::init(const caNetAddr &addr, unsigned connectWithThisPortIn,
 		int autoBeaconAddr, int addConfigBeaconAddr, 
 		int useBroadcastAddr, casDGIntfIO *pAltOutIn)
 {
-	int		yes = TRUE;
-	caAddr		serverAddr;
-	int		status;
-	unsigned short 	serverPort;
-	unsigned short 	beaconPort;
-	ELLLIST		BCastAddrList;
+	int			yes = TRUE;
+	struct sockaddr_in	serverAddr;
+	int			status;
+	aitInt16 		beaconPort;
+	ELLLIST			BCastAddrList;
 
 	if (pAltOutIn) {
 		this->pAltOutIO = pAltOutIn;
@@ -133,11 +134,11 @@ caStatus casDGIntfIO::init(const caAddr &addr, unsigned connectWithThisPortIn,
 	// Fetch port configuration from EPICS environment variables
 	//
 	if (envGetConfigParamPtr(&EPICS_CAS_SERVER_PORT)) {
-		serverPort = caFetchPortConfig(&EPICS_CAS_SERVER_PORT, 
+		this->dgPort = caFetchPortConfig(&EPICS_CAS_SERVER_PORT, 
 					CA_SERVER_PORT);
 	}
 	else {
-		serverPort = caFetchPortConfig(&EPICS_CA_SERVER_PORT, 
+		this->dgPort = caFetchPortConfig(&EPICS_CA_SERVER_PORT, 
 					CA_SERVER_PORT);
 	}
 	beaconPort = caFetchPortConfig(&EPICS_CA_REPEATER_PORT, 
@@ -146,21 +147,21 @@ caStatus casDGIntfIO::init(const caAddr &addr, unsigned connectWithThisPortIn,
 	/*
 	 * discover beacon addresses associated with this interface
 	 */
-	serverAddr.in = addr.in;
+	serverAddr = addr;
 	if (autoBeaconAddr || useBroadcastAddr) {
 		ellInit(&BCastAddrList);
 		caDiscoverInterfaces(
 				&BCastAddrList,
 				this->sock,
 				beaconPort,
-				serverAddr.in.sin_addr); /* match addr */
+				serverAddr.sin_addr); /* match addr */
 		if (useBroadcastAddr) {
 			caAddrNode *pAddr;
 			if (ellCount(&BCastAddrList)!=1) {
 				return S_cas_noInterface;
 			}
 			pAddr = (caAddrNode *) ellFirst(&BCastAddrList);
-			serverAddr.in.sin_addr = pAddr->destAddr.in.sin_addr; 
+			serverAddr.sin_addr = pAddr->destAddr.in.sin_addr; 
 		}
 		if (autoBeaconAddr) {
 			ellConcat(&this->beaconAddrList, &BCastAddrList);
@@ -170,17 +171,17 @@ caStatus casDGIntfIO::init(const caAddr &addr, unsigned connectWithThisPortIn,
 		}
 	}
 
-        serverAddr.in.sin_port = htons (serverPort);
+        serverAddr.sin_port = htons (this->dgPort);
         status = bind(
                         this->sock,
-                        &serverAddr.sa,
-                        sizeof (serverAddr.sa));
+                        (struct sockaddr *)&serverAddr,
+                        sizeof (serverAddr));
         if (status<0) {
 		errPrintf(S_cas_bindFail,
 			__FILE__, __LINE__,
                         "- bind UDP IP addr=%s port=%u failed because %s",
-			inet_ntoa(serverAddr.in.sin_addr),
-			(unsigned) serverPort,
+			inet_ntoa(serverAddr.sin_addr),
+			(unsigned) this->dgPort,
                         strerror(SOCKERRNO));
                 return S_cas_bindFail;
         }
@@ -278,18 +279,19 @@ void casDGIntfIO::xSetNonBlocking()
 // casDGIntfIO::osdRecv()
 //
 xRecvStatus casDGIntfIO::osdRecv(char *pBuf, bufSizeT size, 
-	bufSizeT &actualSize, caAddr &from)
+	bufSizeT &actualSize, caNetAddr &fromOut)
 {
 	int status;
 	int addrSize;
+	struct sockaddr from;
 
         if (this->sockState!=casOnLine) {
                 return xRecvDisconnect;
         }
 
-	addrSize = sizeof(from.sa);
+	addrSize = sizeof(from);
         status = recvfrom(this->sock, pBuf, size, 0,
-                        &from.sa, &addrSize);
+                        &from, &addrSize);
         if (status<0) {
                 if(SOCKERRNO == EWOULDBLOCK){
 			actualSize = 0u;
@@ -303,6 +305,7 @@ xRecvStatus casDGIntfIO::osdRecv(char *pBuf, bufSizeT size,
                 }
         }
 
+	fromOut = from;
 	actualSize = (bufSizeT) status;
 	return xRecvOK;
 }
@@ -311,7 +314,7 @@ xRecvStatus casDGIntfIO::osdRecv(char *pBuf, bufSizeT size,
 // casDGIntfIO::osdSend()
 //
 xSendStatus casDGIntfIO::osdSend(const char *pBuf, bufSizeT size, 
-				bufSizeT &actualSize, const caAddr &to)
+				bufSizeT &actualSize, const caNetAddr &to)
 {
         int		status;
         int		anerrno;
@@ -328,8 +331,9 @@ xSendStatus casDGIntfIO::osdSend(const char *pBuf, bufSizeT size,
 	//
 	// (char *) cast below is for brain dead wrs prototype
 	//
+	struct sockaddr dest = to;
         status = sendto(this->sock, (char *) pBuf, size, 0,
-                        (sockaddr *) &to.sa, sizeof(to.sa));
+                        &dest, sizeof(dest));
 	if (status>0) {
         	if (size != (unsigned) status) {
                         ca_printf ("CAS: partial UDP msg discarded??\n");
@@ -360,7 +364,7 @@ xSendStatus casDGIntfIO::osdSend(const char *pBuf, bufSizeT size,
 //
 // casDGIntfIO::sendBeacon()
 // 
-void casDGIntfIO::sendBeacon(char &msg, unsigned length, aitUint32 &m_avail) 
+void casDGIntfIO::sendBeacon(char &msg, unsigned length, aitUint32 &m_ipa, aitUint16 &m_port) 
 {
         caAddrNode      *pAddr;
         int             status;
@@ -373,8 +377,8 @@ void casDGIntfIO::sendBeacon(char &msg, unsigned length, aitUint32 &m_avail)
                 pAddr;
                 pAddr = (caAddrNode *)ellNext(&pAddr->node)) {
 
-                m_avail = htonl(pAddr->srcAddr.in.sin_addr.s_addr);
-
+                m_ipa = htonl(pAddr->srcAddr.in.sin_addr.s_addr);
+		m_port = htons(this->dgPort);
                 status = sendto(
                                 this->sock,
                                 &msg,

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.16  1997/04/10 19:34:23  jhill
+ * API changes
+ *
  * Revision 1.15  1997/01/10 21:18:05  jhill
  * code around gnu g++ inline bug when -O isnt used
  *
@@ -115,7 +118,6 @@ HDRVERSIONID(serverh, "%W% %G%")
 //
 // CAS
 //
-#include "casAddr.h"
 #include "osiMutexCAS.h" // NOOP on single threaded OS
 void casVerifyFunc(const char *pFile, unsigned line, const char *pExp);
 void serverToolDebugFunc(const char *pFile, unsigned line, const char *pComment);
@@ -335,15 +337,15 @@ public:
 
 	int hasAddress() const;
 
-	caAddr getSender() const;
+	caNetAddr getSender() const;
 
         xRecvStatus xRecv (char *pBufIn, bufSizeT nBytesToRecv,
 			bufSizeT &nByesRecv);
 
         virtual xRecvStatus xDGRecv (char *pBuf, bufSizeT nBytesToRecv,
-			bufSizeT &nByesRecv, caAddr &sender) = 0;
+			bufSizeT &nByesRecv, caNetAddr &sender) = 0;
 private:
-	casOpaqueAddr	from;
+	caNetAddr	from;
 };
 
 //
@@ -416,9 +418,9 @@ public:
 
         virtual ~dgOutBuf();
 
-	caAddr getRecipient();
+	caNetAddr getRecipient();
 
-	void setRecipient(const caAddr &addr);
+	void setRecipient(const caNetAddr &addr);
 
 	void clear();
 
@@ -426,9 +428,9 @@ public:
 			bufSizeT nBytesNeedToBeSent, bufSizeT &nBytesSent);
 
         virtual xSendStatus xDGSend (char *pBuf, bufSizeT nBytesNeedToBeSent, 
-			bufSizeT &nBytesSent, const caAddr &recipient) = 0;
+			bufSizeT &nBytesSent, const caNetAddr &recipient) = 0;
 private:
-	casOpaqueAddr	to;	
+	caNetAddr	to;	
 };
 
 
@@ -476,23 +478,27 @@ public:
         // one virtual function for each CA request type that has
         // asynchronous completion
         //
-        virtual caStatus asyncSearchResponse(casDGIntfIO &outMsgIO,
-		const caAddr &outAddr, const caHdr &, const pvExistReturn);
-        virtual caStatus createChanResponse(const caHdr &, const pvCreateReturn &);
-        virtual caStatus readResponse(casChannelI *, const caHdr &,
-                        	gdd *, const caStatus); 
-        virtual caStatus readNotifyResponse(casChannelI *, const caHdr &, 
-				gdd *, const caStatus);
-        virtual caStatus writeResponse(casChannelI *, const caHdr &,
-				const caStatus);
-        virtual caStatus writeNotifyResponse(casChannelI *, const caHdr &, 
-				const caStatus);
+        virtual caStatus asyncSearchResponse(
+		casDGIntfIO &outMsgIO, const caNetAddr &outAddr, 
+		const caHdr &, const pvExistReturn &);
+        virtual caStatus createChanResponse(
+		const caHdr &, const pvCreateReturn &);
+        virtual caStatus readResponse(
+		casChannelI *, const caHdr &,
+                gdd *, const caStatus); 
+        virtual caStatus readNotifyResponse(
+		casChannelI *, const caHdr &, 
+		gdd *, const caStatus);
+        virtual caStatus writeResponse(
+		casChannelI *, const caHdr &, const caStatus);
+        virtual caStatus writeNotifyResponse(
+		casChannelI *, const caHdr &, const caStatus);
 
 	//
 	// The following are only used with async IO for
 	// DG clients 
 	// 
-	virtual caAddr fetchRespAddr();
+	virtual caNetAddr fetchRespAddr();
 	virtual casDGIntfIO* fetchOutIntf();
 protected:
 	casCtx			ctx;
@@ -774,12 +780,12 @@ private:
         //
         caStatus searchFailResponse(const caHdr *pMsg);
 
-        caStatus searchResponse(const caHdr &, const pvExistReturn);
+        caStatus searchResponse(const caHdr &, const pvExistReturn &);
 
-	caStatus asyncSearchResponse(casDGIntfIO &outMsgIO, 
-		const caAddr &outAddr, const caHdr &msg, 
-		const pvExistReturn);
-	caAddr fetchRespAddr();
+	caStatus asyncSearchResponse(
+		casDGIntfIO &outMsgIO, const caNetAddr &outAddr, 
+		const caHdr &msg, const pvExistReturn &);
+	caNetAddr fetchRespAddr();
 	casDGIntfIO* fetchOutIntf();
 
 
@@ -787,9 +793,9 @@ private:
 	// IO depen
 	//
         xRecvStatus xDGRecv (char *pBuf, bufSizeT nBytesToRecv,
-			bufSizeT &nByesRecv, caAddr &sender);
+			bufSizeT &nByesRecv, caNetAddr &sender);
 	xSendStatus xDGSend (char *pBuf, bufSizeT nBytesNeedToBeSent, 
-			bufSizeT &nBytesSent, const caAddr &recipient);
+			bufSizeT &nBytesSent, const caNetAddr &recipient);
 	bufSizeT incommingBytesPresent() const;
 };
 
@@ -813,7 +819,7 @@ private:
 // casEventRegistry
 //
 class casEventRegistry : private resTable <casEventMaskEntry, stringId> {
-	friend casEventMaskEntry;
+	friend class casEventMaskEntry;
 public:
         casEventRegistry(osiMutex &mutexIn) : 
 		mutex(mutexIn), allocator(0), hasBeenInitialized(0) {}
@@ -841,24 +847,6 @@ private:
 #include "casOSD.h" // OS dependent
 
 class casClientMon;
-
-//
-// casPVExistReturn
-//
-// special return code for the server internal version of pvExistTest()
-//
-class casPVExistReturn {
-public:
-	casPVExistReturn(pvExistReturn appIn) 
-		{app=appIn; stat = S_cas_success; }
-	casPVExistReturn(caStatus statIn)
-		{app=pverDoesNotExistHere; stat = statIn; }
-	caStatus getStatus() const {return stat;}
-	pvExistReturn getAppStat() const {return app;}
-private:
-	pvExistReturn 	app;
-	caStatus	stat;
-};
 
 //
 // caServerI
@@ -909,7 +897,6 @@ public:
 
 	unsigned getDebugLevel() const { return debugLevel; }
 	inline void setDebugLevel(unsigned debugLevelIn);
-	inline casPVExistReturn pvExistTest (const casCtx &ctx, const char *pPVName);
 
         osiTime getBeaconPeriod() const { return this->beaconPeriod; }
 
@@ -932,7 +919,7 @@ public:
 
 	inline aitBool ready();
 
-	caStatus addAddr(const caAddr &caAddr, int autoBeaconAddr,
+	caStatus addAddr(const caNetAddr &addr, int autoBeaconAddr,
 			int addConfigAddr);
 private:
         void advanceBeaconPeriod();

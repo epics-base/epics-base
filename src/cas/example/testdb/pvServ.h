@@ -2,6 +2,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.2  1997/03/05 21:16:23  jbk
+ * Fixes cvs log id at top
+ *
  */
 
 #include "casdef.h"
@@ -45,18 +48,37 @@ public:
 	servPV* node;
 };
 
+class serv;
+
+//
+// scanTimer
+//
+class scanTimer : public osiTimer {
+public:
+	scanTimer (double delayIn, serv &servIn) : 
+		osiTimer(delayIn), serv(servIn),
+		period(delayIn) {}
+	void expire ();
+	osiBool again() const;
+	const osiTime delay() const;
+private:
+	serv	&serv;
+	double period;
+};
+
 class serv : public caServer
 {
 public:
-	serv(int totpv,double rate,char* prefix,
-		unsigned maxnamelen,unsigned pvtotalest, unsigned maxsimio);
+	serv(int totpv,double rate,char* prefix,unsigned pvtotalest);
 	virtual ~serv(void);
 
 	virtual pvExistReturn pvExistTest(const casCtx& c,const char* pvname);
-	virtual casPV* createPV(const casCtx& c,const char* pvname);
+	virtual pvCreateReturn createPV(const casCtx& c,const char* pvname);
 
 	int InitDB(void);
 	int Main(void);
+
+	void scan();
 
 	// sloppy
 	char* prefix;
@@ -65,12 +87,13 @@ public:
 	double event_rate;
 	casEventMask event_mask;
 	dBase* db_sync;
+	scanTimer *pScanTimer;
 };
 
 class servPV : public casPV
 {
 public:
-	servPV(const casCtx&,serv&,const char* pvname,dBase&);
+	servPV(serv&,const char* pvname,dBase&);
 	virtual ~servPV(void);
 
 	virtual caStatus interestRegister(void);
@@ -79,7 +102,7 @@ public:
 	virtual caStatus read(const casCtx &ctx, gdd &prototype);
 	virtual caStatus write(const casCtx &ctx, gdd &value);
 	virtual void destroy(void);
-	virtual unsigned maxSimultAsyncOps(void) const;
+	virtual const char *getName() const;
 
 	void eventReady(void);
 
@@ -88,5 +111,7 @@ private:
 	dBase& db;
 	gdd* value;
 	int monitored;
+	char *pName;
 };
+
 

@@ -31,7 +31,7 @@ private:
 //
 // casIntfOS::init()
 //
-caStatus casIntfOS::init(const caAddr &addrIn, casDGClient &dgClientIn,
+caStatus casIntfOS::init(const caNetAddr &addrIn, casDGClient &dgClientIn,
 		int autoBeaconAddr, int addConfigBeaconAddr)
 {
 	caStatus stat;

@@ -5,6 +5,9 @@
 //
 //
 // $Log$
+// Revision 1.11  1997/05/01 19:59:09  jhill
+// new header file for ipAddrToA()
+//
 // Revision 1.10  1997/04/23 17:27:01  jhill
 // use matching buffer sizes
 //
@@ -218,7 +221,7 @@ xRecvStatus casStreamIO::osdRecv(char *pInBuf, bufSizeT nBytes,
 			break;
 
 		default:
-			ipAddrToA(&this->addr.in, buf, sizeof(buf));
+			ipAddrToA(&this->addr, buf, sizeof(buf));
 			ca_printf(
 		"CAS: client %s disconnected because \"%s\"\n",
 				buf, strerror(SOCKERRNO));
@@ -240,10 +243,10 @@ void casStreamIO::osdShow (unsigned level) const
 	printf ("casStreamIO at %x\n", (unsigned) this);
 	if (level>1u) {
 		char buf[64];
-		ipAddrToA(&this->addr.in, buf, sizeof(buf));
+		ipAddrToA(&this->addr, buf, sizeof(buf));
 		printf (
 			"client=%s, port=%x\n",
-			buf, ntohs(this->addr.in.sin_port));
+			buf, ntohs(this->addr.sin_port));
 	}
 }
 
@@ -302,7 +305,7 @@ bufSizeT casStreamIO::incommingBytesPresent() const
 			break;
 
 		default:
-			ipAddrToA(&this->addr.in, buf, sizeof(buf));
+			ipAddrToA(&this->addr, buf, sizeof(buf));
 			ca_printf(
 		"CAS: FIONREAD for %s failed because \"%s\"\n",
 				buf, strerror(SOCKERRNO));
@@ -323,7 +326,7 @@ bufSizeT casStreamIO::incommingBytesPresent() const
 //
 void casStreamIO::clientHostName (char *pInBuf, unsigned bufSizeIn) const
 {
-	ipAddrToA (&this->addr.in, pInBuf, bufSizeIn);
+	ipAddrToA (&this->addr, pInBuf, bufSizeIn);
 }
 
 //

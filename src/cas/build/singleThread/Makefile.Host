@@ -11,7 +11,7 @@ include $(TOP)/config/CONFIG_BASE
 CXXCMPLR = STRICT
 
 # sometimes it's good to have different C/C++ flags, not now:
-USR_CFLAGS = -I$(SRC) -I$(IOSRC) -I$(STSRC) -I$(CA) 
+USR_CFLAGS = -I$(SRC) -I$(IOSRC) -I$(STSRC) -I$(CA) -DcaNetAddrSock
 USR_CXXFLAGS = $(USR_CFLAGS)
 
 LIBSRCS += caServer.cc
@@ -38,7 +38,6 @@ LIBSRCS += casAsyncPVCIOI.cc
 LIBSRCS += casEventSys.cc
 LIBSRCS += casMonitor.cc
 LIBSRCS += casMonEvent.cc
-LIBSRCS += casOpaqueAddr.cc
 LIBSRCS += inBuf.o 
 LIBSRCS += outBuf.cc
 LIBSRCS += dgInBuf.o 

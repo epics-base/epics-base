@@ -17,14 +17,33 @@ void epicsThreadRunable::show(unsigned int) const {};
 
 void epicsThreadCallEntryPoint ( void * pPvt )
 {
+    bool waitRelease = false;
     epicsThread * pThread = static_cast <epicsThread *> ( pPvt );
-    pThread->begin.wait ();
-    if ( ! pThread->cancel ) {
-        pThread->runable.run ();
+    pThread->pWaitReleaseFlag = & waitRelease;
+    try {
+        pThread->beginEvent.wait ();
+        if ( ! pThread->cancel ) {
+            pThread->runable.run ();
+        }
+        if ( ! waitRelease ) {
+            pThread->exitWaitRelease ();
+        }
+        return;
     }
-    pThread->id = 0;
-    pThread->terminated = true;
-    pThread->exit.signal ();
+    catch ( const epicsThread::exitException & ) {
+        if ( ! waitRelease ) {
+            pThread->exitWaitRelease ();
+        }
+        return;
+    }
+    catch ( ... ) {
+        throw;
+    }
+}
+
+void epicsThread::exit ()
+{
+    throw exitException ();
 }
 
 void epicsThread::exitWait ()
@@ -35,14 +54,25 @@ void epicsThread::exitWait ()
 bool epicsThread::exitWait ( double delay )
 {
     if ( ! this->terminated ) {
-        this->exit.wait ( delay );
+        this->exitEvent.wait ( delay );
     }
     return this->terminated;
 }
 
+void epicsThread::exitWaitRelease ()
+{
+    if ( this->isCurrentThread() ) {
+        this->id = 0;
+        this->terminated = true;
+        *this->pWaitReleaseFlag = true;
+        this->exitEvent.signal ();
+    }
+}
+
 epicsThread::epicsThread ( epicsThreadRunable &r, const char *name,
     unsigned stackSize, unsigned priority ) :
-        runable(r), cancel (false), terminated ( false )
+        runable(r), pWaitReleaseFlag ( 0 ),
+            cancel (false), terminated ( false )
 {
     this->id = epicsThreadCreate ( name, priority, stackSize,
         epicsThreadCallEntryPoint, static_cast <void *> (this) );
@@ -52,7 +82,7 @@ epicsThread::~epicsThread ()
 {
     if ( this->id ) {
         this->cancel = true;
-        this->begin.signal ();
+        this->beginEvent.signal ();
         while ( ! this->exitWait ( 10.0 )  ) {
             char nameBuf [256];
             this->getName ( nameBuf, sizeof ( nameBuf ) );
@@ -68,7 +98,7 @@ epicsThread::~epicsThread ()
 
 void epicsThread::start ()
 {
-    this->begin.signal ();
+    this->beginEvent.signal ();
 }
 
 bool epicsThread::isCurrentThread () const

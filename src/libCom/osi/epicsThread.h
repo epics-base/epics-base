@@ -121,6 +121,8 @@ public:
     void start();
     void exitWait ();
     bool exitWait ( double delay ); 
+    void exitWaitRelease (); // noop if not called by managed thread
+    static void exit ();
     void resume ();
     void getName (char *name, size_t size) const;
     unsigned int getPriority () const;
@@ -136,15 +138,18 @@ public:
     static const char * getNameSelf ();
     class mustBeCalledByManagedThread {}; // exception
 private:
-    epicsThreadRunable &runable;
+    epicsThreadRunable & runable;
     epicsThreadId id;
-    epicsEvent exit;
-    epicsEvent begin;
+    epicsEvent exitEvent;
+    epicsEvent beginEvent;
+    volatile bool * pWaitReleaseFlag;
     bool cancel;
     bool terminated;
 
     epicsThread ( const epicsThread & );
     epicsThread & operator = ( const epicsThread & );
+
+    class exitException {};
 
     friend void epicsThreadCallEntryPoint (void *pPvt);
 };

@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.22  2001/01/31 13:33:41  mrk
+ * osiTime=>epicsTime
+ *
  * Revision 1.21  1999/10/28 18:12:54  jhill
  * removed use of macro max() because it was classing with the C++ RTL
  *
@@ -77,12 +80,11 @@
  *
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <limits.h>
 #ifndef assert // allows use of epicsAssert.h
 #include <assert.h> 
 #endif
+#include <string.h>
+#include <limits.h>
 
 #include "shareLib.h"
 
@@ -96,7 +98,6 @@ inline char* strDup(const char* x)
 	strcpy(y,x);
 	return y;
 }
-
 
 struct timespec;
 struct epicsTimeStamp;

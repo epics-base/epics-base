@@ -5,6 +5,9 @@
 // $Id$
 //
 // $Log$
+// Revision 1.13  2001/01/31 13:33:41  mrk
+// osiTime=>epicsTime
+//
 // Revision 1.12  1999/08/05 22:15:42  jhill
 // removed knowledge of class osiTime
 //
@@ -43,6 +46,8 @@
 // new in EPICS base
 //
 //
+
+#include <stdio.h>
 
 #define epicsExportSharedSymbols
 #include "aitTypes.h"

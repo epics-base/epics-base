@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.19  1998/04/16 21:16:09  jhill
+// allow copies of less than the number of elements returned
+//
 // Revision 1.18  1997/08/05 00:51:09  jhill
 // fixed problems in aitString and the conversion matrix
 //
@@ -89,9 +92,11 @@
 // hardcoded in same order as aitConvert.h
 // no way to detect a string type!!!!!!!
 
-// addition of extern here makes ms compiler
-// happy when globaldef is used
-extern epicsShareDef const chtype gddAitToDbr[] = { 
+//
+// C++ will not make a const decl external linkage unless
+// we explicitly specify extern
+//
+epicsShareDef extern const chtype gddAitToDbr[] = { 
 	0,
 	DBR_CHAR,
 	DBR_CHAR,
@@ -107,11 +112,6 @@ extern epicsShareDef const chtype gddAitToDbr[] = {
 	999
 };
 
-// addition of extern here makes ms compiler
-// happy when epicsShareDef is used
-#ifdef _MSC_VER
-extern
-#endif 
 epicsShareDef gddDbrToAitTable gddDbrToAit[] = {
 	// normal
 	{ aitEnumFixedString,	0,	"value" },
@@ -764,6 +764,10 @@ static gdd* mapGraphicShortToGdd(void* v, aitIndex count)
 		if(vdd.dimension()!=1) vdd.reset(aitEnumInt16,1,&count);
 		else vdd.setPrimType(aitEnumInt16);
 		vdd.setBound(0,0,count);
+//
+// joh - looks like a dangling ref to the input dbr type here
+// with no destructor
+//
 		vdd.putRef(&db->value);
 	}
 	return dd;
@@ -798,6 +802,10 @@ static gdd* mapControlShortToGdd(void* v, aitIndex count)
 		if(vdd.dimension()!=1) vdd.reset(aitEnumInt16,1,&count);
 		else vdd.setPrimType(aitEnumInt16);
 		vdd.setBound(0,0,count);
+//
+// joh - looks like a dangling ref to the input dbr type here
+// with no destructor
+//
 		vdd.putRef(&db->value);
 	}
 	return dd;
@@ -880,6 +888,10 @@ static gdd* mapGraphicFloatToGdd(void* v, aitIndex count)
 		if(vdd.dimension()!=1) vdd.reset(aitEnumFloat32,1,&count);
 		else vdd.setPrimType(aitEnumFloat32);
 		vdd.setBound(0,0,count);
+//
+// joh - looks like a dangling ref to the input dbr type here
+// with no destructor
+//
 		vdd.putRef(&db->value);
 	}
 	return dd;
@@ -915,6 +927,10 @@ static gdd* mapControlFloatToGdd(void* v, aitIndex count)
 		if(vdd.dimension()!=1) vdd.reset(aitEnumFloat32,1,&count);
 		else vdd.setPrimType(aitEnumFloat32);
 		vdd.setBound(0,0,count);
+//
+// joh - looks like a dangling ref to the input dbr type here
+// with no destructor
+//
 		vdd.putRef(&db->value);
 	}
 	return dd;
@@ -1131,6 +1147,10 @@ static gdd* mapGraphicCharToGdd(void* v, aitIndex count)
 		if(vdd.dimension()!=1) vdd.reset(aitEnumInt8,1,&count);
 		else vdd.setPrimType(aitEnumInt8);
 		vdd.setBound(0,0,count);
+//
+// joh - looks like a dangling ref to the input dbr type here
+// with no destructor
+//
 		vdd.putRef(&db->value);
 	}
 	return dd;
@@ -1165,6 +1185,10 @@ static gdd* mapControlCharToGdd(void* v, aitIndex count)
 		if(vdd.dimension()!=1) vdd.reset(aitEnumInt8,1,&count);
 		else vdd.setPrimType(aitEnumInt8);
 		vdd.setBound(0,0,count);
+//
+// joh - looks like a dangling ref to the input dbr type here
+// with no destructor
+//
 		vdd.putRef(&db->value);
 	}
 	return dd;
@@ -1248,6 +1272,10 @@ static gdd* mapGraphicLongToGdd(void* v, aitIndex count)
 		if(vdd.dimension()!=1) vdd.reset(aitEnumInt32,1,&count);
 		else vdd.setPrimType(aitEnumInt32);
 		vdd.setBound(0,0,count);
+//
+// joh - looks like a dangling ref to the input dbr type here
+// with no destructor
+//
 		vdd.putRef(&db->value);
 	}
 	return dd;
@@ -1282,6 +1310,10 @@ static gdd* mapControlLongToGdd(void* v, aitIndex count)
 		if(vdd.dimension()!=1) vdd.reset(aitEnumInt32,1,&count);
 		else vdd.setPrimType(aitEnumInt32);
 		vdd.setBound(0,0,count);
+//
+// joh - looks like a dangling ref to the input dbr type here
+// with no destructor
+//
 		vdd.putRef(&db->value);
 	}
 	return dd;
@@ -1364,6 +1396,10 @@ static gdd* mapGraphicDoubleToGdd(void* v, aitIndex count)
 		if(vdd.dimension()!=1) vdd.reset(aitEnumFloat64,1,&count);
 		else vdd.setPrimType(aitEnumFloat64);
 		vdd.setBound(0,0,count);
+//
+// joh - looks like a dangling ref to the input dbr type here
+// with no destructor
+//
 		vdd.putRef(&db->value);
 	}
 	return dd;
@@ -1399,6 +1435,10 @@ static gdd* mapControlDoubleToGdd(void* v, aitIndex count)
 		if(vdd.dimension()!=1) vdd.reset(aitEnumFloat64,1,&count);
 		else vdd.setPrimType(aitEnumFloat64);
 		vdd.setBound(0,0,count);
+//
+// joh - looks like a dangling ref to the input dbr type here
+// with no destructor
+//
 		vdd.putRef(&db->value);
 	}
 	return dd;
@@ -1476,10 +1516,11 @@ epicsShareFunc void gddMakeMapDBR(gddApplicationTypeTable* tt)
 
 // An array of one function per DBR structure is provided here so conversions
 // can take place quickly by knowing the DBR enumerated type.
-
-// addition of extern here makes ms compiler
-// happy when globaldef is used
-extern epicsShareDef const gddDbrMapFuncTable gddMapDbr[] = {
+//
+// C++ will not make a const decl external linkage unless
+// we explicitly specify extern
+//
+epicsShareDef extern const gddDbrMapFuncTable gddMapDbr[] = {
 	{ mapStringToGdd,		mapGddToString },			// DBR_STRING
 	{ mapShortToGdd,		mapGddToShort },			// DBR_SHORT
 	{ mapFloatToGdd,		mapGddToFloat },			// DBR_FLOAT

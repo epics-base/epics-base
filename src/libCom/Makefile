@@ -175,8 +175,8 @@ INC += taskwd.h
 SRCS += taskwd.c
 
 SRC_DIRS += $(LIBCOM)/timer
-INC += osiTimer.h
-SRCS += osiTimer.cpp
+#INC += osiTimer.h
+#SRCS += osiTimer.cpp
 INC += epicsTimer.h
 SRCS += epicsTimer.cpp
 SRCS += timer.cpp

@@ -2,7 +2,7 @@ EPICS = ../../../..
 include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
-USR_CFLAGS = -g -DACCESS_SECURITY -D_NO_PROTO
+USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
 USR_LDLIBS = -lca -lCom
 USR_LDFLAGS = -L.
 
@@ -14,14 +14,14 @@ SRCS.c = \
 	../iocinf.c ../access.c ../test_event.c ../service.c \
 	../flow_control.c ../repeater.c ../conn.c ../acctst.c \
 	../syncgrp.c ../if_depen.c ../netdb_depen.c ../bsd_depen.c \
-	../gsd_sync_subr.c ../posix_depen.c ../caRepeater.c ../acctst.c
+	../posix_depen.c ../caRepeater.c ../acctst.c
 
 OBJS = caRepeater.o 
 
 LIBOBJS = \
 	iocinf.o access.o test_event.o service.o flow_control.o repeater.o \
 	conn.o syncgrp.o if_depen.o netdb_depen.o \
-	gsd_sync_subr.o bsd_depen.o posix_depen.o
+	bsd_depen.o posix_depen.o
 
 LIBNAME = libca.a
 

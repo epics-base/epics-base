@@ -1,5 +1,5 @@
 /*
- *	%W% %G%
+ *	$Id$	
  *      Author: Jeffrey O. Hill
  *              hill@luke.lanl.gov
  *              (505) 665 1831
@@ -75,10 +75,6 @@ void cac_mux_io(struct timeval  *ptimeout)
         int                     newInput;
         struct timeval          timeout;
 
-        if(!ca_static->ca_repeater_contacted){
-                notify_ca_repeater();
-        }
-
         cac_clean_iiu_list();
 
         timeout = *ptimeout;
@@ -97,13 +93,14 @@ void cac_mux_io(struct timeval  *ptimeout)
                 while(count>0);
 
                 ca_process_input_queue();
+
+		/*
+		 * manage search timers and detect disconnects
+		 */
+		manage_conn(TRUE);
         }
         while(newInput);
 
-        /*
-         * manage search timers and detect disconnects
-         */
-        manage_conn(TRUE);
 }
 
 

@@ -33,7 +33,7 @@
 /************************************************************************/
 /*_end									*/
 
-static char	*sccsId = "%W% %G%";
+static char	*sccsId = "@(#) $Id$";
 
 #include		"iocinf.h"
 

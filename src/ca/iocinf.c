@@ -66,7 +66,7 @@
 /************************************************************************/
 /*_end									*/
 
-static char *sccsId = "%W% %G%";
+static char *sccsId = "@(#) $Id$";
 
 
 /*	Allocate storage for global variables in this module		*/
@@ -505,25 +505,32 @@ void notify_ca_repeater()
 	int			status;
 	static int		once = FALSE;
 
-	if(!piiuCast)
-		return;
-	if(!piiuCast->conn_up)
-		return;
-
-	if(ca_static->ca_repeater_contacted){
+	if (ca_static->ca_repeater_contacted) {
 		return;
 	}
 
-	if(ca_static->ca_repeater_tries>N_REPEATER_TRIES_PRIOR_TO_MSG && !once){
-		ca_printf("Unable to contact CA repeater after %d tries\n",
+	if (!piiuCast) {
+		return;
+	}
+
+	if (!piiuCast->conn_up) {
+		return;
+	}
+
+	if (ca_static->ca_repeater_tries>N_REPEATER_TRIES_PRIOR_TO_MSG){
+		if (!once) {
+			ca_printf(
+		"Unable to contact CA repeater after %d tries\n",
 			N_REPEATER_TRIES_PRIOR_TO_MSG);
-		ca_printf("Silence this message by starting a CA repeater daemon\n");
-		once = TRUE;
+			ca_printf(
+		"Silence this message by starting a CA repeater daemon\n");
+			once = TRUE;
+		}
 	}
 
 	LOCK; /*MULTINET TCP/IP routines are not reentrant*/
      	status = local_addr(piiuCast->sock_chan, &saddr);
-	if(status == OK){
+	if (status == OK) {
 		memset((char *)&msg, 0, sizeof(msg));
 		msg.m_cmmd = htons(REPEATER_REGISTER);
 		msg.m_available = saddr.sin_addr.s_addr;

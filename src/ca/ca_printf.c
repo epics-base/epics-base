@@ -32,7 +32,7 @@
 /************************************************************************/
 /*_end                              					*/
 
-static char *sccsId = "%W% %G%";
+static char *sccsId = "@(#) $Id$";
 
 #include <stdio.h>
 #include <stdarg.h>

@@ -1,5 +1,5 @@
 /*
- *	%W% %G%	
+ *	$Id$	
  *      Author: Jeffrey O. Hill
  *              hill@luke.lanl.gov
  *              (505) 665 1831
@@ -63,14 +63,16 @@ void cac_gettimeval(struct timeval  *pt)
  	 * Lazy Init
 	 */
 	if(!rate){
+		sem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
 		rate = sysClkRateGet();
 		assert(rate);
-		sem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
 		assert(sem!=NULL);
 	}
+	else {
+		status = semTake(sem, WAIT_FOREVER);
+		assert(status==OK);
+	}
 
-	status = semTake(sem, WAIT_FOREVER);
-	assert(status==OK);
 	current = tickGet();
 	if(current<last){
 		offset += (~0UL)/rate;
@@ -751,10 +753,6 @@ void cac_recv_task(int  tid)
                 timeout.tv_usec = 0;
                 timeout.tv_sec = 1;
 
-	        if(!ca_static->ca_repeater_contacted){
-       			notify_ca_repeater();
-        	}
-
         	cac_clean_iiu_list();
 
 		cac_select_io(
@@ -762,6 +760,7 @@ void cac_recv_task(int  tid)
 			CA_DO_RECVS);
 
                 ca_process_input_queue();
+
         	manage_conn(TRUE);
         }
 }

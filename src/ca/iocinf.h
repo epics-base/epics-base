@@ -73,7 +73,7 @@
 #       define HDRVERSIONID(NAME,VERS)
 #endif /*CAC_VERSION_GLOBAL*/
 
-HDRVERSIONID(iocinfh, "%W% %G%")
+HDRVERSIONID(iocinfh, "$Id$")
 
 /*
  * ANSI C includes
@@ -187,8 +187,8 @@ extern const ca_time CA_CURRENT_TIME;
  */
 #define MAXCONNTRIES 		30	/* N conn retries on unchanged net */
 
-#define SELECT_POLL 		(.10) 	/* units sec - polls into recast */
-#define CA_RECAST_DELAY 	(0.005) /* initial delay to next recast (sec) */
+#define SELECT_POLL 		(0.1) 	/* units sec - polls into recast */
+#define CA_RECAST_DELAY 	(0.1) /* initial delay to next recast (sec) */
 #define CA_RECAST_PORT_MASK	0xff	/* random retry interval off port */
 #define CA_RECAST_PERIOD 	(5.0)	/* ul on retry period long term (sec) */
 
@@ -208,6 +208,7 @@ extern const ca_time CA_CURRENT_TIME;
 #define CA_RETRY_PERIOD		5	/* int sec to next keepalive */
 
 #define N_REPEATER_TRIES_PRIOR_TO_MSG	50
+#define REPEATER_TRY_PERIOD		(0.1)
 
 #ifdef vxWorks
 typedef struct caclient_put_notify{
@@ -382,6 +383,7 @@ struct  ca_static{
 	ELLLIST		putCvrtBuf;
 	ca_time		ca_conn_next_retry;
 	ca_time		ca_conn_retry_delay;
+	ca_time		ca_last_repeater_try;
 	fd_set          ca_readch;  
 	fd_set          ca_writech;  
 	long		ca_pndrecvcnt;

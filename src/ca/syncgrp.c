@@ -1,5 +1,5 @@
 /*
- *	%W% %G%	
+ *	$Id$
  *      Author: Jeffrey O. Hill
  *              hill@luke.lanl.gov
  *              (505) 665 1831
@@ -60,11 +60,23 @@ void ca_sg_init(void)
  */
 void ca_sg_shutdown(struct ca_static *ca_temp)
 {
+	CASG 	*pcasg;
+	int	status;
+
 	/*
 	 * free all sync group lists
 	 */
+	LOCK;
+	pcasg = (CASG *) ellFirst (&ca_temp->activeCASG);
+	while (pcasg) {
+		status = bucketRemoveItemUnsignedId (
+				ca_temp->ca_pSlowBucket, &pcasg->id);
+		assert (status == BUCKET_SUCCESS);
+		pcasg = (CASG *) ellNext(&pcasg->node);
+	}
 	ellFree(&ca_temp->activeCASG);
 	ellFree(&ca_temp->freeCASG);
+	UNLOCK;
 	ellInit(&ca_temp->activeCASGOP);
 	ellInit(&ca_temp->freeCASGOP);
 

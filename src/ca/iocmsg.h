@@ -27,21 +27,29 @@
 
 #define __IOCMSG__
 
-HDRVERSIONID(iocmsgh, "%W% %G% CA version 4.3")
+HDRVERSIONID(iocmsgh, "@(#) $Id$ CA version 4.4")
 
 /* TCP/UDP port number (bumped each protocol change) */
 #define CA_PROTOCOL_VERSION	4
-#define CA_MINOR_VERSION	3
+#define CA_MINOR_VERSION	4
 #define CA_UKN_MINOR_VERSION	0 /* unknown minor version */
 #if CA_PROTOCOL_VERSION == 4
 #define CA_V41(MAJOR,MINOR)	((MINOR)>=1) 
 #define CA_V42(MAJOR,MINOR)	((MINOR)>=2)
 #define CA_V43(MAJOR,MINOR)	((MINOR)>=3)
-#else
+#define CA_V44(MAJOR,MINOR)	((MINOR)>=4)
+#elif CA_PROTOCOL_VERSION > 4
 #define CA_V41(MAJOR,MINOR)	( 1 )
 #define CA_V42(MAJOR,MINOR)	( 1 )
 #define CA_V43(MAJOR,MINOR)	( 1 )
+#define CA_V44(MAJOR,MINOR)	( 1 )
+#else
+#define CA_V41(MAJOR,MINOR)	( 0 )
+#define CA_V42(MAJOR,MINOR)	( 0 )
+#define CA_V43(MAJOR,MINOR)	( 0 )
+#define CA_V44(MAJOR,MINOR)	( 0 )
 #endif 
+
 #define	CA_PORT_BASE		IPPORT_USERRESERVED + 56
 #define CA_SERVER_PORT		(CA_PORT_BASE+CA_PROTOCOL_VERSION*2)
 #define CA_CLIENT_PORT		(CA_PORT_BASE+CA_PROTOCOL_VERSION*2+1)

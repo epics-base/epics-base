@@ -68,7 +68,7 @@
 /************************************************************************/
 /*_end									*/
 
-static char *sccsId = "%W% %G%"; 
+static char *sccsId = "@(#) $Id$"; 
 
 #include 	"iocinf.h"
 #include 	"net_convert.h"
@@ -676,7 +676,8 @@ struct in_addr  	*pnet_addr
 		chid	chan;
 
 		LOCK;
-		chan = bucketLookupItemUnsignedId(pSlowBucket, &piiu->curMsg.m_cid);
+		chan = bucketLookupItemUnsignedId(
+				pSlowBucket, &piiu->curMsg.m_cid);
 		UNLOCK;
 		if(!chan){
 			/*
@@ -686,6 +687,9 @@ struct in_addr  	*pnet_addr
 			break;
 		}
 
+		if (CA_V44(CA_PROTOCOL_VERSION,piiu->minor_version_number)) {
+        		chan->id.sid = ntohl (piiu->curMsg.m_available);
+		}
 		reconnect_channel(piiu, chan);
 		break;
 	}
@@ -724,7 +728,9 @@ struct in_addr          *pnet_addr
 	 * lock required around use of the sprintf buffer
 	 */
 	LOCK;
-	chan = bucketLookupItemUnsignedId(pSlowBucket, &piiu->curMsg.m_available);
+	chan = bucketLookupItemUnsignedId(
+			pSlowBucket, 
+			&piiu->curMsg.m_available);
 	if(!chan){
 		UNLOCK;
 		return;

@@ -114,7 +114,7 @@
 /************************************************************************/
 /*_end									*/
 
-static char *sccsId = "%W% %G%";
+static char *sccsId = "@(#) $Id$";
 
 /*
  * allocate error message string array 
@@ -1078,10 +1078,10 @@ int             reply_type
 		return status;
 	}
 
-	mptr->m_cmmd = htons(cmd);
+	mptr->m_cmmd = htons (cmd);
 	mptr->m_available = chix->cid;
 	mptr->m_type = reply_type;
-	mptr->m_count = 0;
+	mptr->m_count = htons (CA_MINOR_VERSION);
 	mptr->m_cid = chix->cid;
 
 	/* 
@@ -1135,8 +1135,9 @@ void 		*pvalue
 		return ECA_NORDACCESS;
 	}
 
-	if (count > chix->count)
+	if (count > chix->count) {
 		return ECA_BADCOUNT;
+	}
 
 #ifdef vxWorks
 	{
@@ -1319,7 +1320,7 @@ LOCAL int issue_get_callback(evid monix, unsigned cmmd)
 	 * dont send the message if the conn is down 
 	 * (it will be sent once connected)
   	 */
-	if(chix->state != cs_conn){
+	if (chix->state != cs_conn) {
 		return ECA_BADCHID;
 	}
 
@@ -1341,7 +1342,7 @@ LOCAL int issue_get_callback(evid monix, unsigned cmmd)
 	hdr.m_postsize = 0;
 	hdr.m_cid = chix->id.sid;
 
-	status = cac_push_msg(piiu, &hdr, 0);
+	status = cac_push_msg (piiu, &hdr, 0);
 
 	piiu->send_needed = TRUE;
 
@@ -2281,6 +2282,7 @@ int APIENTRY ca_clear_event (evid monix)
 	int		status;
 	chid   		chix = monix->chan;
 	struct extmsg 	hdr;
+	evid		lkup;
 
 	/*
 	 * is it a valid channel ?
@@ -2290,9 +2292,15 @@ int APIENTRY ca_clear_event (evid monix)
 	/*
 	 * is it a valid monitor id
 	 */
-	status = ellFind(&chix->eventq, &monix->node);
-	if(status==ERROR){
-		return ECA_BADMONID;
+	if (chix->piiu) {
+		LOCK;
+		lkup = (evid) bucketLookupItemUnsignedId(
+					pFastBucket,
+					&monix->id);
+		UNLOCK;
+		if (lkup != monix) {
+			return ECA_BADMONID;
+		}
 	}
 
 	/* disable any further events from this event block */
@@ -3031,6 +3039,8 @@ void issue_identify_client(struct ioc_in_use *piiu)
 void issue_claim_channel(struct ioc_in_use *piiu, chid pchan)
 {
 	struct extmsg  	hdr;
+	unsigned	size;
+	char		*pName;
 
 	if(!piiu){
 		return;
@@ -3044,7 +3054,19 @@ void issue_claim_channel(struct ioc_in_use *piiu, chid pchan)
 
 	hdr = nullmsg;
 	hdr.m_cmmd = htons(IOC_CLAIM_CIU);
-	hdr.m_cid = pchan->id.sid;
+
+	if(CA_V44(CA_PROTOCOL_VERSION, piiu->minor_version_number)){
+		hdr.m_cid = pchan->cid;
+		pName = ca_name(pchan);
+		size = strlen(pName)+1;
+	}
+	else {
+		hdr.m_cid = pchan->id.sid;
+		pName = NULL;
+		size = 0;
+	}
+
+	hdr.m_postsize = size;
 
 	/*
 	 * The available field is used (abused)
@@ -3053,7 +3075,7 @@ void issue_claim_channel(struct ioc_in_use *piiu, chid pchan)
 	 */
 	hdr.m_available = htonl(CA_MINOR_VERSION);
 
-	cac_push_msg(piiu, &hdr, NULL);
+	cac_push_msg(piiu, &hdr, pName);
 
 	piiu->send_needed = TRUE;
 }

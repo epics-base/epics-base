@@ -3,7 +3,7 @@
  * CA test/debug routine
  */
 
-static char *sccsId = "%W% %G%";
+static char *sccsId = "@(#) $Id$";
 
 #ifdef VMS
 #include <LIB$ROUTINES.H>
@@ -122,17 +122,17 @@ int doacctst(char *pname)
 					    NULL);
 		SEVCHK(status, NULL);
 
-		assert(INVALID_DB_REQ(chix1->type) == TRUE);
-		assert(INVALID_DB_REQ(chix2->type) == TRUE);
-		assert(INVALID_DB_REQ(chix3->type) == TRUE);
-		assert(INVALID_DB_REQ(chix4->type) == TRUE);
+		if (ca_test_io() == ECA_IOINPROGRESS) {
+			assert(INVALID_DB_REQ(chix1->type) == TRUE);
+			assert(INVALID_DB_REQ(chix2->type) == TRUE);
+			assert(INVALID_DB_REQ(chix3->type) == TRUE);
+			assert(INVALID_DB_REQ(chix4->type) == TRUE);
 
-		assert(ca_state(chix1) == cs_never_conn);
-		assert(ca_state(chix2) == cs_never_conn);
-		assert(ca_state(chix3) == cs_never_conn);
-		assert(ca_state(chix4) == cs_never_conn);
-
-		assert(ca_test_io() == ECA_IOINPROGRESS);
+			assert(ca_state(chix1) == cs_never_conn);
+			assert(ca_state(chix2) == cs_never_conn);
+			assert(ca_state(chix3) == cs_never_conn);
+			assert(ca_state(chix4) == cs_never_conn);
+		}
 
 		status = ca_pend_io(1000.0);
 		SEVCHK(status, NULL);

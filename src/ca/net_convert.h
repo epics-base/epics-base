@@ -1,5 +1,5 @@
 /*
- *	%W% %G%
+ *	$Id$	
  *
  *	N E T _ C O N V E R T . H
  *	MACROS for rapid conversion between HOST data formats and those used

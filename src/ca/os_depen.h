@@ -30,7 +30,7 @@
 #ifndef INCos_depenh
 #define INCos_depenh
 
-static char *os_depenhSccsId = "%W% %G%";
+static char *os_depenhSccsId = "$Id$";
 
 /*
  * errno.h is ANSI however we

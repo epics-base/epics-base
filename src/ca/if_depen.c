@@ -1,5 +1,5 @@
 /* if_depen.c */
-/* share/src/ca/%W% %G% */
+/* share/src/ca/$Id$ */
 
 /*
  *      Author:	Jeff Hill 
@@ -35,7 +35,7 @@
  */
 
 
-static char	*sccsId = "%W% %G%";
+static char	*sccsId = "@(#) $Id$";
 
 
 #include "iocinf.h"

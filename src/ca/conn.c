@@ -41,7 +41,7 @@
 /************************************************************************/
 /*_end									*/
 
-static char 	*sccsId = "%W% %G%";
+static char 	*sccsId = "@(#) $Id$";
 
 #include 	"iocinf.h"
 
@@ -156,6 +156,27 @@ void manage_conn(int silent)
 
         }
         UNLOCK;
+
+	/*
+	 * try to attach to the repeater if we havent yet
+	 */
+	if (!ca_static->ca_repeater_contacted) {
+		delay = cac_time_diff (
+				&current,
+				&ca_static->ca_last_repeater_try);
+		if (delay > REPEATER_TRY_PERIOD) {
+			ca_static->ca_last_repeater_try = current;
+			notify_ca_repeater();
+		}
+	}
+
+	/*
+	 * Stop here if there are not any disconnected channels
+	 */
+	if (piiuCast->chidlist.count == 0) {
+		ca_static->ca_manage_conn_active = FALSE;
+		return;
+	}
 
 	if(ca_static->ca_conn_next_retry.tv_sec == CA_CURRENT_TIME.tv_sec &&
 	   ca_static->ca_conn_next_retry.tv_usec == CA_CURRENT_TIME.tv_usec){

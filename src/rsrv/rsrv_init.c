@@ -64,9 +64,9 @@ rsrv_init()
 	 */
 	free_client(NULL);
 
-
 	DELETE_TASK(taskNameToId(CAST_SRVR_NAME));
 	DELETE_TASK(taskNameToId(REQ_SRVR_NAME));
+	DELETE_TASK(taskNameToId(CA_ONLINE_NAME));
 	taskSpawn(REQ_SRVR_NAME,
 		  REQ_SRVR_PRI,
 		  REQ_SRVR_OPT,

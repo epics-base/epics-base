@@ -84,8 +84,8 @@ int main(int argc,char **argv)
     dbPvdDump(pdbbase);
     gphDump(pdbbase->pgpHash);
     dbDumpMenu(pdbbase,NULL);
-    dbDumpRecord(pdbbase,NULL,0);
 */
+    dbDumpRecord(pdbbase,NULL,0);
     dbFreeBase(pdbbase);
     return(0);
 }

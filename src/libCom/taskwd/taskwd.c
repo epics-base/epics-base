@@ -126,7 +126,7 @@ void epicsShareAPI taskwdRemove(epicsThreadId tid)
             epicsMutexUnlock(lock);
             return;
         }
-        pt = (struct task_list *)ellNext((ELLNODE *)pt);
+        pt = (struct task_list *)ellNext(&pt->node);
     }
     epicsMutexUnlock(lock);
     errMessage(-1,"taskwdRemove failed");
@@ -146,7 +146,7 @@ void epicsShareAPI taskwdAnyRemove(void *userpvt)
             epicsMutexUnlock(anylock);
             return;
         }
-        pt = (struct task_list *)ellNext((void *)pt);
+        pt = (struct task_list *)ellNext(&pt->node);
     }
     epicsMutexUnlock(anylock);
     errMessage(-1,"taskwdanyRemove failed");
@@ -161,7 +161,7 @@ static void taskwdTask(void)
             epicsMutexMustLock(lock);
             pt = (struct task_list *)ellFirst(&list);
             while(pt) {
-                next = (struct task_list *)ellNext((void *)pt);
+                next = (struct task_list *)ellNext(&pt->node);
                 if(epicsThreadIsSuspended(pt->id.tid)) {
                     char message[100];
 
@@ -177,7 +177,7 @@ static void taskwdTask(void)
                                 TASKWDANYFUNCPRR pcallback = pt->callback;
                                 (pcallback)(ptany->arg,pt->id.tid);
                             }
-                            ptany = (struct task_list *)ellNext((ELLNODE *)ptany);
+                            ptany = (struct task_list *)ellNext(&ptany->node);
                         }
                         if(pt->callback) {
                             TASKWDFUNCPRR pcallback = pt->callback;

@@ -340,7 +340,7 @@ int epicsShareAPI scanpel(int event_number)  /*print event list */
 	for(priority=0; priority<NUM_CALLBACK_PRIORITIES; priority++) {
 	    pevent_scan_list = pevent_list[priority][evnt];
 	    if(!pevent_scan_list) continue;
-	    if(ellCount(&pevent_scan_list->scan_list) ==0) continue;
+	    if(ellCount(&pevent_scan_list->scan_list.list) ==0) continue;
 	    sprintf(message,"Event %d Priority %s",evnt,priorityName[priority]);
 	    printList(&pevent_scan_list->scan_list,message);
 	}
@@ -400,7 +400,7 @@ void epicsShareAPI post_event(int event)
 	for(priority=0; priority<NUM_CALLBACK_PRIORITIES; priority++) {
 		pevent_scan_list = pevent_list[priority][evnt];
 		if(!pevent_scan_list) continue;
-		if(ellCount(&pevent_scan_list->scan_list) >0)
+		if(ellCount(&pevent_scan_list->scan_list.list) >0)
 			callbackRequest((void *)pevent_scan_list);
 	}
 }
@@ -583,7 +583,7 @@ static void printList(scan_list *psl,char *message)
 	    printf("Returning because list changed while processing.");
 	    return;
 	}
-	pse = (scan_element *)ellNext((void *)pse);
+	pse = (scan_element *)ellNext(&pse->node);
 	epicsMutexUnlock(psl->lock);
     }
 }
@@ -600,7 +600,7 @@ static void scanList(scan_list *psl)
     psl->modified = FALSE;
     pse = (scan_element *)ellFirst(&psl->list);
     prev = NULL;
-    if(pse) next = (scan_element *)ellNext((void *)pse);
+    if(pse) next = (scan_element *)ellNext(&pse->node);
     epicsMutexUnlock(psl->lock);
     while(pse) {
 	struct dbCommon *precord = pse->precord;
@@ -611,27 +611,27 @@ static void scanList(scan_list *psl)
 	epicsMutexMustLock(psl->lock);
 	    if(!psl->modified) {
 		prev = pse;
-		pse = (scan_element *)ellNext((void *)pse);
-		if(pse)next = (scan_element *)ellNext((void *)pse);
+		pse = (scan_element *)ellNext(&pse->node);
+		if(pse)next = (scan_element *)ellNext(&pse->node);
 	    } else if (pse->pscan_list==psl) {
 		/*This scan element is still in same scan list*/
 		prev = pse;
-		pse = (scan_element *)ellNext((void *)pse);
-		if(pse)next = (scan_element *)ellNext((void *)pse);
+		pse = (scan_element *)ellNext(&pse->node);
+		if(pse)next = (scan_element *)ellNext(&pse->node);
 		psl->modified = FALSE;
 	    } else if (prev && prev->pscan_list==psl) {
 		/*Previous scan element is still in same scan list*/
-		pse = (scan_element *)ellNext((void *)prev);
+		pse = (scan_element *)ellNext(&prev->node);
 		if(pse) {
-		    prev = (scan_element *)ellPrevious((void *)pse);
-		    next = (scan_element *)ellNext((void *)pse);
+		    prev = (scan_element *)ellPrevious(&pse->node);
+		    next = (scan_element *)ellNext(&pse->node);
 		}
 		psl->modified = FALSE;
 	    } else if (next && next->pscan_list==psl) {
 		/*Next scan element is still in same scan list*/
 		pse = next;
-		prev = (scan_element *)ellPrevious((void *)pse);
-		next = (scan_element *)ellNext((void *)pse);
+		prev = (scan_element *)ellPrevious(&pse->node);
+		next = (scan_element *)ellNext(&pse->node);
 		psl->modified = FALSE;
 	    } else {
 		/*Too many changes. Just wait till next period*/
@@ -678,10 +678,10 @@ static void addToList(struct dbCommon *precord,scan_list *psl)
 	while(ptemp) {
 		if(ptemp->precord->phas>precord->phas) {
 			ellInsert(&psl->list,
-				ellPrevious((void *)ptemp),(void *)pse);
+				ellPrevious(&ptemp->node),&pse->node);
 			break;
 		}
-		ptemp = (scan_element *)ellNext((void *)ptemp);
+		ptemp = (scan_element *)ellNext(&ptemp->node);
 	}
 	if(ptemp==NULL) ellAdd(&psl->list,(void *)pse);
 	psl->modified = TRUE;

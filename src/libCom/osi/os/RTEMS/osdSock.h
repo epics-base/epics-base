@@ -73,10 +73,8 @@ int  select(int  n,  fd_set  *readfds,  fd_set  *writefds, fd_set *exceptfds, st
 #define SD_BOTH	2
 
 /*
- * Ensure that we get the right network code in osdSock.c
+ * Ensure that we get the right network code in default/osdNetIntf.c.
  */
-#if (defined(BSD) && (BSD < 44))
-# define BSD 44
-#endif
+#define SOCKADDR_HAS_LEN 1
 
 #endif /*osdSockH*/

@@ -1,7 +1,7 @@
 #	Makefile  for  base/src/sample
 #
 #
-#	Sample Makefile showing all possible entries
+#	Sample Makefile showing some possible entries
 #	that are allowed using RULES_BUILD.
 #
 
@@ -66,7 +66,7 @@ INC         = file.h
 #	defining a library
 # --------------------------------------------------------------------
 #
-#	Contents of a library are specified via LIBSRCS.
+#	Contents of a library are specified via SRCS, LIBSRCS, or .._SRCS.
 #	From this the platform specific object names (.o, .obj, ...)
 #	are derived automatically.
 #

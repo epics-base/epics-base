@@ -96,7 +96,8 @@ HOST_ARCH=$2
 MAKE=$3
 SRC=$TOP/src
 INCLUDEH="-I$SRC/include -I$SRC/as -I$SRC/ca -I$SRC/cas/generic -I$SRC/db -I..\
-	-I$SRC/drv/old -I$SRC/drv/ansi -I$SRC/dbStatic -I$SRC/bpt -I$SRC/dev" 
+	-I$SRC/drv/old -I$SRC/drv/ansi -I$SRC/dbStatic -I$SRC/bpt -I$SRC/dev\
+	-I$SRC/gdd -I$SRC/cxxTemplates" 
 
 case $HOST_ARCH in
     alpha | hp700 | sgi | Linux)

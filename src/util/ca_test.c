@@ -455,6 +455,18 @@ static print_returned(type,pbuffer,count)
 		break;
 	}
 	case (DBR_STS_ENUM):
+	{
+		struct dbr_sts_enum *pvalue
+		  = (struct dbr_sts_enum *)pbuffer;
+		unsigned short *pshort = &pvalue->value;
+		printf("%2d %2d",pvalue->status,pvalue->severity);
+		if(count==1) printf("\tValue: ");
+		for (i = 0; i < count; i++,pshort++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
+			printf("%d ",*pshort);
+		}
+		break;
+	}
 	case (DBR_STS_SHORT):
 	{
 		struct dbr_sts_short *pvalue
@@ -534,8 +546,22 @@ static print_returned(type,pbuffer,count)
 		printf("%s",pvalue->value);
 		break;
 	}
-	case (DBR_TIME_SHORT):
 	case (DBR_TIME_ENUM):
+	{
+		struct dbr_time_enum *pvalue
+		  = (struct dbr_time_enum *)pbuffer;
+		unsigned short *pshort = &pvalue->value;
+		printf("%2d %2d",pvalue->status,pvalue->severity);
+		printf("\tTimeStamp: %lx %lx",
+			pvalue->stamp.secPastEpoch, pvalue->stamp.nsec);
+		if(count==1) printf("\tValue: ");
+		for (i = 0; i < count; i++,pshort++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
+			printf("%d ",*pshort);
+		}
+		break;
+	}
+	case (DBR_TIME_SHORT):
 	{
 		struct dbr_time_short *pvalue
 		  = (struct dbr_time_short *)pbuffer;

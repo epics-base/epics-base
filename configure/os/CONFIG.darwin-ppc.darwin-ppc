@@ -21,7 +21,7 @@ CODE_CFLAGS =
 CODE_CXXFLAGS = 
 
 #
-# -O3 is too agressive on Darwin
+# -O3 is too agressive on Darwin with the April, 2002 Developer Tools
 #
 OPT_CFLAGS_YES = -O2
 OPT_CXXFLAGS_YES = -O2

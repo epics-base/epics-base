@@ -1,10 +1,8 @@
 #!/usr/bin/perl
 #-----------------------------------------------------------------------
-#              mkmf.pl: Perl script to create include file  dependancies
+#              mkmf.pl: Perl script to create include file dependancies
 #
-# mkmf.pl is mkmf modified for the EPICS system to output only include
-# file dependancies. It is intendend as a fallback when the gnu compilers
-# gcc and g++ are not available, and it has the following limitations.
+# Limitations:
 #
 # 1) Only handles the #include preprocessor command. Does not understand
 #    the preproceeor commands #define, #if, #ifdef, #ifndef, ...
@@ -14,28 +12,6 @@
 #    do #ifdefs #ifndef ...
 # 4) Does not know where system include files are located
 # 
-#-----------------------------------------------------------------------
-#              mkmf: Perl script for makefile construction
-#
-# AUTHOR: V. Balaji (vb@gfdl.gov)
-#         SGI/GFDL Princeton University
-#
-# Full web documentation for mkmf:
-#     http://www.gfdl.gov/~vb/mkmf.html
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# For the full text of the GNU General Public License,
-# write to: Free Software Foundation, Inc.,
-#           675 Mass Ave, Cambridge, MA 02139, USA.
 #-----------------------------------------------------------------------
 
 require 5;
@@ -129,11 +105,11 @@ my %includes;            # global list of includes
 my @cmdline;
 my %obj_of_include;        # hash of includes for current object
 print "Collecting dependencies for $object ...\n" if $opt_v;
-@cmdline = "$object: $source";
+@cmdline = "$object: ";
 #includes: done in subroutine since it must be recursively called to look for embedded includes
 &get_include_list( $object, $source );
 #write the command line: if no file-specific command, use generic command for this suffix
-&print_formatted_list(@cmdline);
+&print_formatted_list(@cmdline) if $#cmdline > 1 ;
 
 # subroutine to seek out includes recursively
 sub get_include_list {

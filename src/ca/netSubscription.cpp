@@ -26,6 +26,7 @@ netSubscription::netSubscription ( nciu &chan, unsigned typeIn, unsigned long co
 netSubscription::~netSubscription () 
 {
     this->chan.subscriptionCancelMsg ( *this );
+    this->chan.unistallSubscription ( *this );
 }
 
 void netSubscription::destroy ()
@@ -43,8 +44,9 @@ void netSubscription::subscriptionCancelMsg ()
     this->chan.subscriptionCancelMsg ( *this );
 }
 
-void netSubscription::disconnect ( const char * /* pHostName */ )
+bool netSubscription::isSubscription () const
 {
+    return true;
 }
 
 void netSubscription::completionNotify ()

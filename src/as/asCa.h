@@ -21,6 +21,7 @@ extern "C" {
 epicsShareFunc void epicsShareAPI asCaStart(void);
 epicsShareFunc void epicsShareAPI asCaStop(void);
 epicsShareFunc int epicsShareAPI ascar(int level);
+epicsShareFunc int epicsShareAPI ascarFP(FILE *fp, int level);
 
 #ifdef __cplusplus
 }

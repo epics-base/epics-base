@@ -260,14 +260,16 @@ void epicsShareAPI asCaStop(void)
     epicsMutexUnlock(asCaTaskLock);
 }
 
-int epicsShareAPI ascar(int level)
+int epicsShareAPI ascar(int level) {return ascarFP(stdout,level);}
+
+int epicsShareAPI ascarFP(FILE *fp,int level)
 {
     ASG                *pasg;
     int  n=0,nbad=0;
     enum channel_state state;
 
     if(!pasbase) {
-        printf("access security not started\n");
+        fprintf(fp,"access security not started\n");
         return(0);
     }
     pasg = (ASG *)ellFirst(&pasbase->asgList);
@@ -282,21 +284,21 @@ int epicsShareAPI ascar(int level)
             state = ca_state(chid);
             if(state!=cs_conn) ++nbad;
             if(level>1 || (level==1 && state!=cs_conn)) {
-                printf("connected:");
-                if(state==cs_never_conn) printf("never ");
-                else if(state==cs_prev_conn) printf("prev  ");
-                else if(state==cs_conn) printf("yes   ");
-                else if(state==cs_closed) printf("closed");
-                else printf("unknown");
-                printf(" read:%s write:%s",
+                fprintf(fp,"connected:");
+                if(state==cs_never_conn) fprintf(fp,"never ");
+                else if(state==cs_prev_conn) fprintf(fp,"prev  ");
+                else if(state==cs_conn) fprintf(fp,"yes   ");
+                else if(state==cs_closed) fprintf(fp,"closed");
+                else fprintf(fp,"unknown");
+                fprintf(fp," read:%s write:%s",
                     (ca_read_access(chid) ? "yes" : "no "),
                     (ca_write_access(chid) ? "yes" : "no "));
-                printf(" %s %s\n", ca_name(chid),ca_host_name(chid));
+                fprintf(fp," %s %s\n", ca_name(chid),ca_host_name(chid));
             }
             pasginp = (ASGINP *)ellNext((ELLNODE *)pasginp);
         }
         pasg = (ASG *)ellNext((ELLNODE *)pasg);
     }
-    printf("%d channels %d not connected\n",n,nbad);
+    fprintf(fp,"%d channels %d not connected\n",n,nbad);
     return(0);
 }

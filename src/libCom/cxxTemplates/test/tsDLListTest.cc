@@ -32,13 +32,12 @@ int main ()
 {
     unsigned                i;
     tsDLList<fred>          list;
-    tsDLFwdIter<fred>       iter(list);
     fred                    *pFred;
     fred                    *pFredII;
     fred                    *pFredBack;
     tsDLList<jane>          janeList;
-    tsDLFwdIter<jane>       janeFwdIter(janeList);
-    tsDLBwdIter<jane>       janeBwdIter(janeList);
+    tsDLIter<jane>          janeFwdIter = janeList.firstIter();
+    tsDLIter<jane>          janeBwdIter = janeList.lastIter();
     jane                    *pJane;
 
     pFred = new fred ("A");
@@ -46,10 +45,10 @@ int main ()
 
     list.add (*pFred);
     list.add (*pFredII);
-    pFredBack = iter ();
-    assert (pFredBack == pFred);
-    pFredBack = iter ();
-    assert (pFredBack == pFredII);
+    tsDLIter <fred> iter = list.firstIter();
+    assert (iter.pointer() == pFred);
+    iter++;
+    assert (iter.pointer() == pFredII);
     list.remove(*pFred);
     list.add(*pFred);
     pFredBack = list.get();
@@ -62,9 +61,10 @@ int main ()
     list.add(* new fred("C"));
     list.add(* new fred("D"));
 
-    iter.reset();
-    while ( (pFredBack = iter()) ) {
-        pFredBack->show();
+    iter = list.firstIter();
+    while ( iter.valid() ) {
+        iter->show();
+        iter++;
     }
 
     pJane = new jane("JA");
@@ -74,20 +74,23 @@ int main ()
     janeList.add(*pJane);   
     assert ( janeList.find ( *pJane ) == 1 );
 
-    while ( (pJane = janeFwdIter()) ) {
-        pJane->show();
+    while ( janeFwdIter.valid() ) {
+        janeFwdIter->show();
+        janeFwdIter++;
     }
 
-    while ( (pJane = janeBwdIter()) ) {
-        pJane->show();
+    while ( janeBwdIter.valid() ) {
+        janeBwdIter->show();
+        janeBwdIter--;
     }
 
-    iter.reset();
-    while ( (pFredBack = iter()) ) {
-        pFredBack->show();
+    iter = list.firstIter();
+    while ( iter.valid() ) {
+        iter->show();
+        iter++;
     }
 
-    tsDLIterBD < jane > bdIter = janeList.firstIter ();
+    tsDLIter < jane > bdIter = janeList.firstIter ();
     i = 0;
     while ( bdIter.valid () ) {
         i++;
@@ -95,15 +98,17 @@ int main ()
     }
     assert ( i == janeList.count () );
 
-    iter.reset();
-    while ( ( pFredBack = iter () ) ) {
-        iter.remove();
+    iter = list.firstIter();
+    while ( iter.pointer() ) {
+        list.remove( * iter.pointer() );
+        iter++;
     }
     assert(list.count()==0);
 
-    janeFwdIter.reset();
-    while ( (pFredBack = janeFwdIter()) ) {
-        janeFwdIter.remove();
+    janeFwdIter = janeList.firstIter();
+    while ( janeFwdIter.valid() ) {
+        janeList.remove( * janeFwdIter.pointer() );
+        janeFwdIter++;
     }
     assert(janeList.count()==0);
 
@@ -111,9 +116,10 @@ int main ()
     janeList.add(*pJane);   
     pJane = new jane("JB");
     janeList.add(*pJane);   
-    janeBwdIter.reset();
-    while ( (pFredBack = janeBwdIter()) ) {
-        janeBwdIter.remove();
+    janeBwdIter = janeList.lastIter();
+    while ( janeBwdIter.valid() ) {
+        janeList.remove( * janeBwdIter.pointer() );
+        janeBwdIter--;
     }
     assert(janeList.count()==0);
 

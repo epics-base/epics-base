@@ -31,8 +31,8 @@ private:
 
 int main ()
 {
-	tsDLList<fred>		list;
-	tsDLFwdIter<fred>	iter(list);
+	tsDLList<fred>  list;
+	tsDLIter<fred>  iter = list.firstIter();
 	fred			*pFred;
 	unsigned 		i;
 	clock_t			clk;
@@ -45,8 +45,9 @@ int main ()
 	}
 
 	clk = clock();
-	while ( (pFred = iter()) ) {
-		pFred->inc();
+	while ( iter.valid() ) {
+		iter->inc();
+        iter++;
 	}
 	diff = clock() - clk;
 	delay = diff;

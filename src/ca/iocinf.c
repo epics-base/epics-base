@@ -1,5 +1,5 @@
 /************************************************************************/
-/* $Id$									*/
+/* $Id$								*/
 /*									*/
 /*	        	      L O S  A L A M O S			*/
 /*		        Los Alamos National Laboratory			*/
@@ -46,82 +46,6 @@
 /*	021794	joh	turn on SO_REUSEADDR only after the test for	*/
 /*			address in use so that test works on UNIX	*/
 /*			kernels that support multicast			*/
-/*
- * $Log$
- * Revision 1.84  1998/11/10 21:57:20  jhill
- * reduced socket buf sizes
- *
- * Revision 1.83  1998/10/07 14:32:51  jba
- * Modified log message.
- *
- * Revision 1.82  1998/09/24 21:22:53  jhill
- *  subtle changes related to efficency when checking connection timers
- *
- * Revision 1.81  1998/07/07 23:04:00  jhill
- * cosmetic changes
- *
- * Revision 1.80  1998/06/18 00:07:12  jhill
- * use ipAddrToA
- *
- * Revision 1.79  1998/06/17 00:39:05  jhill
- * fixed problem where beta 12 briefly didnt communicate with old CA repeaters
- *
- * Revision 1.78  1998/06/16 01:16:09  jhill
- * allow saturated clients to poll/use new consolodated IP address routines in libCom/clean up when a server and client delete the PV simultaneously
- *
- * Revision 1.77  1998/05/29 00:03:19  jhill
- * allow CA to run systems w/o local interface query capabilities (ie cygwin32)
- *
- * Revision 1.76  1998/04/14 00:39:49  jhill
- * cosmetic
- *
- * Revision 1.75  1998/03/12 20:39:09  jhill
- * fixed problem where 3.13.beta11 unable to connect to 3.11 with correct native type
- *
- * Revision 1.74  1998/02/05 22:29:42  jhill
- * use osiSock macros
- *
- * Revision 1.73  1997/08/04 23:37:09  jhill
- * added beacon anomaly flag init/allow ip 255.255.255.255
- *
- * Revision 1.71  1997/06/13 09:14:19  jhill
- * connect/search proto changes
- *
- * Revision 1.70  1997/05/05 04:44:39  jhill
- * socket buf matches CA buf size, and pushPending flag added
- *
- * Revision 1.69  1997/04/23 17:05:05  jhill
- * pc port changes
- *
- * Revision 1.68  1997/04/10 19:26:14  jhill
- * asynch connect, faster connect, ...
- *
- * Revision 1.67  1997/01/08 22:48:42  jhill
- * improved message
- *
- * Revision 1.66  1996/11/02 00:50:53  jhill
- * many pc port, const in API, and other changes
- *
- * Revision 1.65  1996/09/16 16:37:02  jhill
- * o dont print disconnect message when the last channel on a connection is
- * 	deleted and the conn goes away
- * o local exceptions => exception handler
- *
- * Revision 1.64  1996/08/13 23:15:36  jhill
- * fixed warning
- *
- * Revision 1.63  1996/07/09 22:41:28  jhill
- * silence gcc warning
- *
- * Revision 1.62  1996/06/19 17:59:06  jhill
- * many 3.13 beta changes
- *
- * Revision 1.61  1995/12/19  19:33:02  jhill
- * function prototype changes
- *
- * Revision 1.60  1995/11/29  19:26:01  jhill
- * cleaned up interface to recv() and send()
- *								*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -143,9 +67,8 @@
 /************************************************************************/
 /*_end									*/
 
-static char *sccsId = "@(#) $Id$";
+static char *sccsId = "@# $Id$";
 
-
 /*	Allocate storage for global variables in this module		*/
 #define		CA_GLBLSOURCE
 #include	"iocinf.h"
@@ -166,9 +89,6 @@ LOCAL char 	*getToken(const char **ppString, char *pBuf,
 				unsigned bufSize);
 
 
-
-
-
 /*
  *	ALLOC_IOC()
  *
@@ -220,7 +140,6 @@ struct ioc_in_use		**ppiiu
   	return status;
 }
 
-
 /*
  *	CREATE_NET_CHAN()
  *
@@ -708,7 +627,6 @@ LOCAL void cac_connect_iiu (struct ioc_in_use *piiu)
 	UNLOCK;
 }
 
-
 /*
  * caSetupBCastAddrList()
  */
@@ -764,7 +682,6 @@ void caSetupBCastAddrList (ELLLIST *pList, SOCKET sock, unsigned short port)
 	}
 }
 
-
 /*
  *	NOTIFY_CA_REPEATER()
  *
@@ -894,7 +811,6 @@ void notify_ca_repeater()
 }
 
 
-
 /*
  *	CAC_UDP_SEND_MSG_PIIU()
  *
@@ -974,7 +890,6 @@ LOCAL void cac_udp_send_msg_piiu(struct ioc_in_use *piiu)
 	return;
 }
 
-
 /*
  *	CAC_TCP_SEND_MSG_PIIU()
  *
@@ -1065,7 +980,6 @@ LOCAL void cac_tcp_send_msg_piiu(struct ioc_in_use *piiu)
 	return;
 }
 
-
 /*
  * ca_process_input_queue()
  */
@@ -1096,8 +1010,6 @@ void ca_process_input_queue()
 	UNLOCK;
 }
 
-
-
 /*
  * TCP_RECV_MSG()
  *
@@ -1168,7 +1080,6 @@ LOCAL void tcp_recv_msg(struct ioc_in_use *piiu)
 	return;
 }
 
-
 /*
  * ca_process_tcp()
  *
@@ -1236,8 +1147,6 @@ LOCAL void ca_process_tcp(struct ioc_in_use *piiu)
  	return;
 }
 
-
-
 /*
  *	UDP_RECV_MSG()
  *
@@ -1326,8 +1235,6 @@ LOCAL void udp_recv_msg(struct ioc_in_use *piiu)
 	return;
 }
 
-
-
 /*
  *	CA_PROCESS_UDP()
  *
@@ -1406,7 +1313,6 @@ LOCAL void ca_process_udp(struct ioc_in_use *piiu)
   	return; 
 }
 
-
 /*
  *	cac_close_ioc ()
  *	(free resources associated with a client connection)
@@ -1487,7 +1393,6 @@ void cac_close_ioc (IIU *piiu)
 	UNLOCK;
 }
 
-
 /*
  * cacDisconnectChannel()
  */
@@ -1576,7 +1481,6 @@ void cacDisconnectChannel(ciu chix)
 	UNLOCK;
 }
 
-
 /*
  *	REPEATER_INSTALLED()
  *
@@ -1656,8 +1560,6 @@ int repeater_installed()
 	return installed;
 }
 
-
-
 /*
  * cacRingBufferRead()
  *
@@ -1691,7 +1593,6 @@ unsigned long		nBytes)
 	}
 }
 
-
 /*
  * cacRingBufferWrite()
  *
@@ -1725,8 +1626,6 @@ unsigned long		nBytes)
 	}
 }
 
-
-
 /*
  * cacRingBufferInit()
  *
@@ -1740,7 +1639,6 @@ LOCAL void cacRingBufferInit(struct ca_buffer *pBuf, unsigned long size)
 	pBuf->readLast = TRUE;
 }
 
-
 /*
  * cacRingBufferReadSize()
  *
@@ -1779,7 +1677,6 @@ unsigned long cacRingBufferReadSize(struct ca_buffer *pBuf, int contiguous)
 	return count;
 }
 
-
 /*
  * cacRingBufferWriteSize()
  *
@@ -1814,8 +1711,6 @@ unsigned long cacRingBufferWriteSize(struct ca_buffer *pBuf, int contiguous)
 	return count;
 }
 
-
-
 /*
  * localHostName()
  *
@@ -1854,7 +1749,6 @@ char *localHostName()
 	return pTmp;
 }
 
-
 /*
  * caAddConfiguredAddr()
  */
@@ -1924,8 +1818,6 @@ void epicsShareAPI caAddConfiguredAddr(ELLLIST *pList, const ENV_PARAM *pEnv,
 	return;
 }
 
-
-
 /*
  * getToken()
  */
@@ -1957,7 +1849,6 @@ LOCAL char *getToken(const char **ppString, char *pBuf, unsigned bufSIze)
 	}
 }
 
-
 /*
  * caPrintAddrList()
  */
@@ -1980,7 +1871,6 @@ void caPrintAddrList(ELLLIST *pList)
         }
 }
 
-
 /*
  * caFetchPortConfig()
  */
@@ -2020,7 +1910,6 @@ unsigned short epicsShareAPI caFetchPortConfig
 	return port;
 }
 
-
 /*
  *      CAC_MUX_IO()
  */
@@ -2109,7 +1998,6 @@ void cac_mux_io(struct timeval  *ptimeout, unsigned iocCloseAllowed)
 	checkConnWatchdogs(iocCloseAllowed);
 }
 
-
 /*
  * caSendMsgPending()
  */

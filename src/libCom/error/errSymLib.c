@@ -81,7 +81,6 @@
 #include <symLib.h>
 #include <errnoLib.h>
 
-#include <mprintf.h>
 
 extern SYMTAB_ID  statSymTbl;
 

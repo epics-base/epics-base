@@ -63,21 +63,6 @@ LOCAL EVENTFUNC read_reply;
 #define logBadId(CLIENT, MP, PPL)\
 logBadIdWithFileAndLineno(CLIENT, MP, PPL, __FILE__, __LINE__)
 
-#if 0
-/*
- * casMalloc()
- *
- * (dont drop below some max block threshold)
- */
-LOCAL void *casMalloc(size_t size)
-{
-        if (!osiSufficentSpaceInPool(size)) {
-                return NULL;
-        }
-        return malloc(size);
-}
-#endif
-
 /*
  * casCalloc()
  *

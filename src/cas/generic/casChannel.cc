@@ -19,7 +19,7 @@
 #include "casdef.h"
 #include "casChannelI.h"
 
-casChannel::casChannel ( const casCtx & ctx ) : 
+casChannel::casChannel ( const casCtx & /* ctx */ ) : 
     pChanI ( 0 )
 {
 }

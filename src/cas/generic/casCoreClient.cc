@@ -130,7 +130,7 @@ caStatus casCoreClient::channelDestroyEventNotify (
 }
 
 void casCoreClient::casChannelDestroyFromInterfaceNotify ( 
-    casChannelI &, bool immediatedSestroyNeeded )
+    casChannelI &, bool /* immediateDestroyNeeded */ )
 {
     assert ( 0 );
 }

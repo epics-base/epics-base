@@ -259,7 +259,7 @@ void caServerI::casMonitorDestroy ( casMonitor & cm )
 //
 //
 void caServerI::dumpMsg ( const char * pHostName, const char * pUserName,
-    const caHdrLargeArray * mp, const void * dp, const char * pFormat, ... )
+    const caHdrLargeArray * mp, const void * /* dp */, const char * pFormat, ... )
 {
     va_list theArgs;
     if ( pFormat ) {

@@ -77,7 +77,7 @@ casAsyncIOI::~casAsyncIOI()
 caStatus casAsyncIOI::cbFunc ( 
     casCoreClient &, 
     epicsGuard < casClientMutex > & clientGuard,
-    epicsGuard < evSysMutex > & evGuard )
+    epicsGuard < evSysMutex > & )
 {
     caStatus status = S_cas_success;
     {

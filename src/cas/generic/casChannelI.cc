@@ -66,7 +66,7 @@ void casChannelI::show ( unsigned level ) const
 caStatus casChannelI::cbFunc ( 
     casCoreClient &, 
     epicsGuard < casClientMutex > & clientGuard,
-    epicsGuard < evSysMutex > & evGuard )
+    epicsGuard < evSysMutex > & )
 {
     caStatus stat = S_cas_success;
     {

@@ -20,8 +20,8 @@
 #include "fdManager.h"
 
 #define epicsExportSharedSymbols
-#include "caServerI.h"
 #include "casMonitor.h"
+#include "caServerI.h"
 
 caServer::caServer ()
 {

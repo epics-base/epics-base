@@ -124,6 +124,7 @@ INC += epicsString.h
 INC += epicsTypes.h
 INC += gsd_sync_defs.h
 INC += shareLib.h
+INC += epicsExport.h
 INC += truncateFile.h
 INC += unixFileName.h
 INC += locationException.h

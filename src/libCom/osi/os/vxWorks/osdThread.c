@@ -234,8 +234,15 @@ int epicsThreadIsSuspended(epicsThreadId id)
 void epicsThreadSleep(double seconds)
 {
     STATUS status;
+    int ticks;
 
-    status = taskDelay((int)(seconds*sysClkRateGet()));
+    if(seconds<=0.0) {
+        ticks = 0;
+    } else {
+        ticks = seconds*sysClkRateGet();
+        if(ticks<=0) ticks = 1;
+    }
+    status = taskDelay(ticks);
     if(status) errlogPrintf(0,"epicsThreadSleep\n");
 }
 

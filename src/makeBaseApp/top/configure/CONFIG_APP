@@ -13,8 +13,6 @@ ifdef T_A
 -include $(TOP)/configure/O.$(T_A)/CONFIG_APP_INCLUDE
 endif
 
-# Where to install databases
-INSTALL_DB = $(INSTALL_LOCATION)/db
 # dbst based database optimization (default: NO)
 DB_OPT = NO
 # May be overridden if not all databases should be installed

@@ -28,12 +28,13 @@ SRCS.c += ../macCore.c
 SRCS.c += ../macUtil.c
 #SRCS.c += ../osiTimer.cc
 #SRCS.c += ../os/vxWorks/osdTime.cc
-SRCS.c += ../os/vxWorks/ipAddrToA.c
 SRCS.c += ../os/vxWorks/sigPipeIgnore.c
 SRCS.c += ../dbmf.c
 SRCS.c += ../epicsString.c
 SRCS.c += ../aToIPAddr.c
 SRCS.c += ../adjustment.c
+SRCS.c += ../os/vxWorks/bsdSockResource.c
+SRCS.c += ../os/vxWorks/osiSleep.c
 
 LIBOBJS += cvtFast.o
 LIBOBJS += ellLib.o
@@ -57,12 +58,13 @@ LIBOBJS += macCore.o
 LIBOBJS += macUtil.o
 #LIBOBJS += osiTimer.o
 #LIBOBJS += osdTime.o
-LIBOBJS += ipAddrToA.o
 LIBOBJS += sigPipeIgnore.o
 LIBOBJS += dbmf.o
 LIBOBJS += epicsString.o
 LIBOBJS += aToIPAddr.o
 LIBOBJS += adjustment.o
+LIBOBJS += bsdSockResource.o
+LIBOBJS += osiSleep.o
 
 LIBNAME = libCom
 

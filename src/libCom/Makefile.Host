@@ -31,12 +31,13 @@ INC += osiTimer.h
 INC += macLib.h
 INC += sigPipeIgnore.h
 INC += dbmf.h
-INC += ipAddrToA.h
 INC += epicsString.h
 INC += truncateFile.h
 INC += adjustment.h
 INC += postfix.h
 INC += sCalcPostfix.h
+INC += osiSleep.h
+INC += bsdSocketResource.h
 
 #	For WIN32 we supply getopt as part of libCom:
 INC_WIN32 := getopt.h
@@ -70,11 +71,12 @@ LIBSRCS += macCore.c
 LIBSRCS += macUtil.c
 LIBSRCS += sigPipeIgnore.c
 LIBSRCS += dbmf.c
-LIBSRCS += ipAddrToA.c
 LIBSRCS += epicsString.c
 LIBSRCS += truncateFile.c
 LIBSRCS += aToIPAddr.c
 LIBSRCS += adjustment.c
+LIBSRCS += bsdSockResource.c
+LIBSRCS += osiSleep.c
 
 #
 # if CPLUSPLUS isnt empty then include C++ src codes
@@ -88,7 +90,7 @@ LIBSRCS += $(patsubst %,osdTime.cc,$(strip $(CPLUSPLUS)))
 
 #	WIN32 has no getopt, we add it to the Com lib,
 #	special initialisation is done in winmain.c
-LIBSRCS_WIN32 := getopt.c dllmain.cc
+LIBSRCS_WIN32 := getopt.c dllmain.cc getLastWSAErrorAsString.c
 
 #       Library to build:
 #       lib$(LIBRARY).a  or   ..dll/..exp/..lib

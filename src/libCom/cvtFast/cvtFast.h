@@ -51,7 +51,7 @@ extern "C" {
 
 #include "shareLib.h"
 
-#ifdef __STDC__
+#if defined(__STDC__) || defined(__cplusplus)
 
 /*
  * each of these functions return the number of characters "transmitted"

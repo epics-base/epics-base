@@ -35,6 +35,7 @@
  * .04  02-28-92	jba	ANSI C changes
  * .05  04-10-92        jba     pact now used to test for asyn processing, not status
  * .06  04-18-92        jba     removed process from dev init_record parms
+ * .07  06-02-92        jba     changed graphic/control limits for dly,odly,wide,owid
  */ 
 
 #include     <vxWorks.h>
@@ -189,7 +190,11 @@ static long get_graphic_double(paddr,pgd)
 {
     struct pulseDelayRecord     *ppd=(struct pulseDelayRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)&ppd->val){
+    if(paddr->pfield==(void *)&ppd->val
+    || paddr->pfield==(void *)&ppd->dly
+    || paddr->pfield==(void *)&ppd->wide
+    || paddr->pfield==(void *)&ppd->odly
+    || paddr->pfield==(void *)&ppd->owid){
          pgd->upper_disp_limit = ppd->hopr;
          pgd->lower_disp_limit = ppd->lopr;
     } else recGblGetGraphicDouble(paddr,pgd);
@@ -202,7 +207,9 @@ static long get_control_double(paddr,pcd)
 {
     struct pulseDelayRecord     *ppd=(struct pulseDelayRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)&ppd->val){
+    if(paddr->pfield==(void *)&ppd->val
+    || paddr->pfield==(void *)&ppd->dly
+    || paddr->pfield==(void *)&ppd->wide){
          pcd->upper_ctrl_limit = ppd->hopr;
          pcd->lower_ctrl_limit = ppd->lopr;
     } else recGblGetControlDouble(paddr,pcd);

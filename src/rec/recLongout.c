@@ -34,6 +34,7 @@
  * .03  02-28-92	jba	ANSI C changes
  * .04  04-10-92        jba     pact now used to test for asyn processing, not status
  * .05  04-18-92        jba     removed process from dev init_record parms
+ * .06  06-02-92        jba     changed graphic/control limits for hihi,high,low,lolo
  */ 
 
 
@@ -225,7 +226,11 @@ static long get_graphic_double(paddr,pgd)
 {
     struct longoutRecord	*plongout=(struct longoutRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)&plongout->val){
+    if(paddr->pfield==(void *)&plongout->val
+    || paddr->pfield==(void *)&plongout->hihi
+    || paddr->pfield==(void *)&plongout->high
+    || paddr->pfield==(void *)&plongout->low
+    || paddr->pfield==(void *)&plongout->lolo){
         pgd->upper_disp_limit = plongout->hopr;
         pgd->lower_disp_limit = plongout->lopr;
     } else recGblGetGraphicDouble(paddr,pgd);
@@ -238,7 +243,11 @@ static long get_control_double(paddr,pcd)
 {
     struct longoutRecord	*plongout=(struct longoutRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)&plongout->val){
+    if(paddr->pfield==(void *)&plongout->val
+    || paddr->pfield==(void *)&plongout->hihi
+    || paddr->pfield==(void *)&plongout->high
+    || paddr->pfield==(void *)&plongout->low
+    || paddr->pfield==(void *)&plongout->lolo){
         pcd->upper_ctrl_limit = plongout->hopr;
         pcd->lower_ctrl_limit = plongout->lopr;
     } else recGblGetControlDouble(paddr,pcd);

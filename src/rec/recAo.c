@@ -57,6 +57,7 @@
  * .24  02-28-92	jba	ANSI C changes
  * .25  04-10-92        jba     pact now used to test for asyn processing, not status
  * .26  04-18-92        jba     removed process from dev init_record parms
+ * .27  06-02-92        jba     changed graphic/control limits for hihi,high,low,lolo
  */
 
 #include	<vxWorks.h>
@@ -295,6 +296,10 @@ static long get_graphic_double(paddr,pgd)
     struct aoRecord	*pao=(struct aoRecord *)paddr->precord;
 
     if(paddr->pfield==(void *)&pao->val
+    || paddr->pfield==(void *)&pao->hihi
+    || paddr->pfield==(void *)&pao->high
+    || paddr->pfield==(void *)&pao->low
+    || paddr->pfield==(void *)&pao->lolo
     || paddr->pfield==(void *)&pao->oval
     || paddr->pfield==(void *)&pao->pval){
         pgd->upper_disp_limit = pao->hopr;
@@ -310,6 +315,10 @@ static long get_control_double(paddr,pcd)
     struct aoRecord	*pao=(struct aoRecord *)paddr->precord;
 
     if(paddr->pfield==(void *)&pao->val
+    || paddr->pfield==(void *)&pao->hihi
+    || paddr->pfield==(void *)&pao->high
+    || paddr->pfield==(void *)&pao->low
+    || paddr->pfield==(void *)&pao->lolo
     || paddr->pfield==(void *)&pao->oval
     || paddr->pfield==(void *)&pao->pval){
         pcd->upper_ctrl_limit = pao->drvh;

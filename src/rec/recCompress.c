@@ -52,6 +52,7 @@
  * .12  02-05-92	jba	Changed function arguments from paddr to precord 
  * .13  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
  * .14  02-28-92	jba	ANSI C changes
+ * .15  06-02-92        jba     changed graphic/control limits for hil,ilil 
  */
 
 #include	<vxWorks.h>
@@ -293,7 +294,9 @@ static long get_graphic_double(paddr,pgd)
 {
     struct compressRecord *pcompress=(struct compressRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)pcompress->bptr){
+    if(paddr->pfield==(void *)pcompress->bptr
+    || paddr->pfield==(void *)&pcompress->ihil
+    || paddr->pfield==(void *)&pcompress->ilil){
         pgd->upper_disp_limit = pcompress->hopr;
         pgd->lower_disp_limit = pcompress->lopr;
     } else recGblGetGraphicDouble(paddr,pgd);
@@ -306,7 +309,9 @@ static long get_control_double(paddr,pcd)
 {
     struct compressRecord *pcompress=(struct compressRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)pcompress->bptr){
+    if(paddr->pfield==(void *)pcompress->bptr
+    || paddr->pfield==(void *)&pcompress->ihil
+    || paddr->pfield==(void *)&pcompress->ilil){
         pcd->upper_ctrl_limit = pcompress->hopr;
         pcd->lower_ctrl_limit = pcompress->lopr;
     } else recGblGetControlDouble(paddr,pcd);

@@ -36,6 +36,7 @@
  * .05  02-28-92	jba	ANSI C changes
  * .06  04-10-92        jba     pact now used to test for asyn processing, not status
  * .07  04-18-92        jba     removed process from dev init_record parms
+ * .08  06-02-92        jba     changed graphic/control limits for per,oper
  */ 
 
 #include     <vxWorks.h>
@@ -260,7 +261,9 @@ static long get_graphic_double(paddr,pgd)
 {
     struct pulseTrainRecord     *ppt=(struct pulseTrainRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)&ppt->val){
+    if(paddr->pfield==(void *)&ppt->val
+    || paddr->pfield==(void *)&ppt->per
+    || paddr->pfield==(void *)&ppt->oper){
         pgd->upper_disp_limit = ppt->hopr;
         pgd->lower_disp_limit = ppt->lopr;
     } else recGblGetGraphicDouble(paddr,pgd);
@@ -274,7 +277,8 @@ static long get_control_double(paddr,pcd)
 {
     struct pulseTrainRecord     *ppt=(struct pulseTrainRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)&ppt->val){
+    if(paddr->pfield==(void *)&ppt->val
+    || paddr->pfield==(void *)&ppt->per){
         pcd->upper_ctrl_limit = ppt->hopr;
         pcd->lower_ctrl_limit = ppt->lopr;
     } else recGblGetControlDouble(paddr,pcd);

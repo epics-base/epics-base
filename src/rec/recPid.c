@@ -35,6 +35,7 @@
  * .03  02-05-92	jba	Changed function arguments from paddr to precord 
  * .04  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
  * .05  02-28-92	jba	ANSI C changes
+ * .06  06-02-92        jba     changed graphic/control limits for hihi,high,low,lolo
  */
 
 #include	<vxWorks.h>
@@ -192,6 +193,10 @@ static long get_graphic_double(paddr,pgd)
     struct pidRecord	*ppid=(struct pidRecord *)paddr->precord;
 
     if(paddr->pfield==(void *)&ppid->val
+    || paddr->pfield==(void *)&ppid->hihi
+    || paddr->pfield==(void *)&ppid->high
+    || paddr->pfield==(void *)&ppid->low
+    || paddr->pfield==(void *)&ppid->lolo
     || paddr->pfield==(void *)&ppid->p
     || paddr->pfield==(void *)&ppid->i
     || paddr->pfield==(void *)&ppid->d
@@ -209,6 +214,10 @@ static long get_control_double(paddr,pcd)
     struct pidRecord	*ppid=(struct pidRecord *)paddr->precord;
 
     if(paddr->pfield==(void *)&ppid->val
+    || paddr->pfield==(void *)&ppid->hihi
+    || paddr->pfield==(void *)&ppid->high
+    || paddr->pfield==(void *)&ppid->low
+    || paddr->pfield==(void *)&ppid->lolo
     || paddr->pfield==(void *)&ppid->p
     || paddr->pfield==(void *)&ppid->i
     || paddr->pfield==(void *)&ppid->d

@@ -63,6 +63,7 @@
  * .23  02-28-92	jba	ANSI C changes
  * .24  04-10-92	jba	pact now used to test for asyn processing, not status
  * .25  04-18-92        jba     removed process from dev init_record parms
+ * .26  06-02-92        jba     changed graphic/control limits for hihi,high,low,lolo
  */
 
 #include	<vxWorks.h>
@@ -271,7 +272,11 @@ static long get_graphic_double(paddr,pgd)
 {
     struct aiRecord	*pai=(struct aiRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)&pai->val){
+    if(paddr->pfield==(void *)&pai->val ||
+       paddr->pfield==(void *)&pai->hihi ||
+       paddr->pfield==(void *)&pai->high ||
+       paddr->pfield==(void *)&pai->low ||
+       paddr->pfield==(void *)&pai->lolo){
         pgd->upper_disp_limit = pai->hopr;
         pgd->lower_disp_limit = pai->lopr;
     } else recGblGetGraphicDouble(paddr,pgd);
@@ -284,7 +289,11 @@ static long get_control_double(paddr,pcd)
 {
     struct aiRecord	*pai=(struct aiRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)&pai->val){
+    if(paddr->pfield==(void *)&pai->val ||
+       paddr->pfield==(void *)&pai->hihi ||
+       paddr->pfield==(void *)&pai->high ||
+       paddr->pfield==(void *)&pai->low ||
+       paddr->pfield==(void *)&pai->lolo){
     pcd->upper_ctrl_limit = pai->hopr;
     pcd->lower_ctrl_limit = pai->lopr;
     } else recGblGetControlDouble(paddr,pcd);

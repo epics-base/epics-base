@@ -22,6 +22,7 @@ SRCS.cc += ../exPV.cc
 SRCS.cc += ../exSyncPV.cc 
 SRCS.cc += ../exAsyncPV.cc 
 SRCS.cc += ../exChannel.cc 
+SRCS.cc += ../templInst.cc 
 
 OBJS += main.o
 OBJS += exServer.o
@@ -29,6 +30,7 @@ OBJS += exPV.o
 OBJS += exSyncPV.o
 OBJS += exAsyncPV.o
 OBJS += exChannel.o
+OBJS += templInst.o
 
 PROD += excas
 

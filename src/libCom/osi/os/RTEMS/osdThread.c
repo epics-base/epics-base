@@ -360,7 +360,7 @@ epicsThreadIsSuspended (epicsThreadId id)
 
     default:
         errlogPrintf("epicsThreadIsSuspended: %s\n", rtems_status_text (sc));
-        return 0;
+        return 1;
     }
 }
 

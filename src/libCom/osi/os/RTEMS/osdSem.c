@@ -32,8 +32,9 @@ semBinaryCreate(semInitialState initialState)
     rtems_interrupt_level level;
     static char c1 = 'a';
     static char c2 = 'a';
+    static char c3 = 'a';
     
-    sc = rtems_semaphore_create (rtems_build_name ('S', 'B', c2, c1),
+    sc = rtems_semaphore_create (rtems_build_name ('B', c3, c2, c1),
         initialState,
 	RTEMS_FIFO | RTEMS_SIMPLE_BINARY_SEMAPHORE |
 	    RTEMS_NO_INHERIT_PRIORITY | RTEMS_NO_PRIORITY_CEILING | RTEMS_LOCAL,
@@ -45,11 +46,19 @@ semBinaryCreate(semInitialState initialState)
     }
     rtems_interrupt_disable (level);
     if (c1 == 'z') {
-        if (c2 == 'z')
-       	    c2 = 'a';
-	else
+        if (c2 == 'z') {
+            if (c3 == 'z') {
+                c3 = 'a';
+            }
+            else {
+                c3++;
+            }
+            c2 = 'a';
+        }
+        else {
             c2++;
-	c1 = 'a';
+        }
+        c1 = 'a';
     }
     else {
         c1++;
@@ -182,8 +191,9 @@ semMutexCreate(void)
     rtems_interrupt_level level;
     static char c1 = 'a';
     static char c2 = 'a';
+    static char c3 = 'a';
     
-    sc = rtems_semaphore_create (rtems_build_name ('S', 'M', c2, c1),
+    sc = rtems_semaphore_create (rtems_build_name ('M', c3, c2, c1),
         1,
         RTEMS_PRIORITY|RTEMS_BINARY_SEMAPHORE|RTEMS_INHERIT_PRIORITY |RTEMS_NO_PRIORITY_CEILING|RTEMS_LOCAL,
         0,
@@ -194,11 +204,19 @@ semMutexCreate(void)
     }
     rtems_interrupt_disable (level);
     if (c1 == 'z') {
-        if (c2 == 'z')
-       	    c2 = 'a';
-	else
+        if (c2 == 'z') {
+            if (c3 == 'z') {
+                c3 = 'a';
+            }
+            else {
+                c3++;
+            }
+            c2 = 'a';
+        }
+        else {
             c2++;
-	c1 = 'a';
+        }
+        c1 = 'a';
     }
     else {
         c1++;

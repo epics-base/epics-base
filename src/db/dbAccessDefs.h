@@ -217,15 +217,15 @@ struct dbr_alDouble     {DBRalDouble};
         : (((DBADDR*)((PLNK)->value.pv_link.pvt))) \
     )
 
-epicsShareFunc struct rset * epicsShareAPI dbGetRset(struct dbAddr *paddr);
+epicsShareFunc struct rset * epicsShareAPI dbGetRset(const struct dbAddr *paddr);
 epicsShareFunc long epicsShareAPI dbPutAttribute(
-    char *recordTypename,char *name,char*value);
-epicsShareFunc int epicsShareAPI dbIsValueField(struct dbFldDes *pdbFldDes);
-epicsShareFunc int epicsShareAPI dbGetFieldIndex(struct dbAddr *paddr);
+    const char *recordTypename,const char *name,const char*value);
+epicsShareFunc int epicsShareAPI dbIsValueField(const struct dbFldDes *pdbFldDes);
+epicsShareFunc int epicsShareAPI dbGetFieldIndex(const struct dbAddr *paddr);
 epicsShareFunc long epicsShareAPI dbGetNelements(
-    struct link *plink,long *nelements);
-epicsShareFunc int epicsShareAPI dbIsLinkConnected(struct link *plink);
-epicsShareFunc int epicsShareAPI dbGetLinkDBFtype(struct link *plink);
+    const struct link *plink,long *nelements);
+epicsShareFunc int epicsShareAPI dbIsLinkConnected(const struct link *plink);
+epicsShareFunc int epicsShareAPI dbGetLinkDBFtype(const struct link *plink);
 epicsShareFunc long epicsShareAPI dbScanLink(
     struct dbCommon *pfrom, struct dbCommon *pto);
 epicsShareFunc long epicsShareAPI dbScanPassive(
@@ -251,19 +251,19 @@ epicsShareFunc long epicsShareAPI dbPut(
 
 /* various utility routines */
 epicsShareFunc long epicsShareAPI dbGetControlLimits(
-    struct link *plink,double *low, double *high);
+    const struct link *plink,double *low, double *high);
 epicsShareFunc long epicsShareAPI dbGetGraphicLimits(
-    struct link *plink,double *low, double *high);
+    const struct link *plink,double *low, double *high);
 epicsShareFunc long epicsShareAPI dbGetAlarmLimits(
-    struct link *plink,double *lolo, double *low, double *high, double *hihi);
+    const struct link *plink,double *lolo, double *low, double *high, double *hihi);
 epicsShareFunc long epicsShareAPI dbGetPrecision(
-    struct link *plink,short *precision);
+    const struct link *plink,short *precision);
 epicsShareFunc long epicsShareAPI dbGetUnits(
-    struct link *plink,char *units,int unitsSize);
+    const struct link *plink,char *units,int unitsSize);
 epicsShareFunc long epicsShareAPI dbGetSevr(
-    struct link *plink,short *severity);
+    const struct link *plink,short *severity);
 epicsShareFunc long epicsShareAPI dbGetTimeStamp(
-    struct link *plink,epicsTimeStamp *pstamp);
+    const struct link *plink,epicsTimeStamp *pstamp);
 
 typedef void(*SPC_ASCALLBACK)(struct dbCommon *);
 /*dbSpcAsRegisterCallback called by access security */

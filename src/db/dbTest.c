@@ -350,7 +350,7 @@ long epicsShareAPI dbpr(char *pname,int interest_level)
     int              tab_size;
 
     if (pname == NULL)
-        return;
+        return(0);
     pmsg = pMsgBuff->message;
     tab_size = 20;
 

@@ -65,7 +65,7 @@ static unsigned char T[256] = {
 };
 
 
-static unsigned short hash( char *pname, int length)
+static unsigned short hash( const char *pname, int length)
 {
     unsigned char h0=0;
     unsigned char h1=0;
@@ -120,7 +120,7 @@ void    dbPvdInitPvt(dbBase *pdbbase)
     return;
 }
 
-PVDENTRY *dbPvdFind(dbBase *pdbbase,char *name,int lenName)
+PVDENTRY *dbPvdFind(dbBase *pdbbase,const char *name,int lenName)
 {
     unsigned short	hashInd;
     ELLLIST		**ppvd = (ELLLIST **) pdbbase->ppvd;

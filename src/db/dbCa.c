@@ -246,7 +246,7 @@ long epicsShareAPI dbCaPutLink(struct link *plink,short dbrType,
     return(status);
 }
 
-long epicsShareAPI dbCaGetAttributes(struct link *plink,
+long epicsShareAPI dbCaGetAttributes(const struct link *plink,
 	void (*callback)(void *usrPvt),void *usrPvt)
 {
     caLink	*pca;
@@ -280,7 +280,7 @@ long epicsShareAPI dbCaGetAttributes(struct link *plink,
     return(status);
 }
 
-caAttributes *getpcaAttributes(struct link *plink)
+caAttributes *getpcaAttributes(const struct link *plink)
 {
     caLink	*pca;
 
@@ -290,7 +290,8 @@ caAttributes *getpcaAttributes(struct link *plink)
     return(pca->pcaAttributes);
 }
 
-long epicsShareAPI dbCaGetControlLimits(struct link *plink,double *low, double *high)
+long epicsShareAPI dbCaGetControlLimits(
+    const struct link *plink,double *low, double *high)
 {
     caAttributes *pcaAttributes;
 
@@ -301,7 +302,8 @@ long epicsShareAPI dbCaGetControlLimits(struct link *plink,double *low, double *
     return(0);
 }
 
-long epicsShareAPI dbCaGetGraphicLimits(struct link *plink,double *low, double *high)
+long epicsShareAPI dbCaGetGraphicLimits(
+    const struct link *plink,double *low, double *high)
 {
     caAttributes *pcaAttributes;
 
@@ -312,8 +314,9 @@ long epicsShareAPI dbCaGetGraphicLimits(struct link *plink,double *low, double *
     return(0);
 }
 
-long epicsShareAPI dbCaGetAlarmLimits(struct link *plink,
-	double *lolo, double *low, double *high, double *hihi)
+long epicsShareAPI dbCaGetAlarmLimits(
+    const struct link *plink,
+    double *lolo, double *low, double *high, double *hihi)
 {
     caAttributes *pcaAttributes;
 
@@ -326,7 +329,8 @@ long epicsShareAPI dbCaGetAlarmLimits(struct link *plink,
     return(0);
 }
 
-long epicsShareAPI dbCaGetPrecision(struct link *plink,short *precision)
+long epicsShareAPI dbCaGetPrecision(
+    const struct link *plink,short *precision)
 {
     caAttributes *pcaAttributes;
 
@@ -336,7 +340,8 @@ long epicsShareAPI dbCaGetPrecision(struct link *plink,short *precision)
     return(0);
 }
 
-long epicsShareAPI dbCaGetUnits(struct link *plink,char *units,int unitsSize)
+long epicsShareAPI dbCaGetUnits(
+    const struct link *plink,char *units,int unitsSize)
 {
     caAttributes *pcaAttributes;
 
@@ -347,7 +352,8 @@ long epicsShareAPI dbCaGetUnits(struct link *plink,char *units,int unitsSize)
     return(0);
 }
 
-long epicsShareAPI dbCaGetNelements(struct link *plink,long *nelements)
+long epicsShareAPI dbCaGetNelements(
+    const struct link *plink,long *nelements)
 {
     caLink	*pca;
 
@@ -359,7 +365,8 @@ long epicsShareAPI dbCaGetNelements(struct link *plink,long *nelements)
     return(0);
 }
 
-long epicsShareAPI dbCaGetSevr(struct link *plink,short *severity)
+long epicsShareAPI dbCaGetSevr(
+    const struct link *plink,short *severity)
 {
     caLink	*pca;
 
@@ -371,7 +378,8 @@ long epicsShareAPI dbCaGetSevr(struct link *plink,short *severity)
     return(0);
 }
 
-long epicsShareAPI dbCaGetTimeStamp(struct link *plink,epicsTimeStamp *pstamp)
+long epicsShareAPI dbCaGetTimeStamp(
+    const struct link *plink,epicsTimeStamp *pstamp)
 {
     caLink	*pca;
 
@@ -383,7 +391,8 @@ long epicsShareAPI dbCaGetTimeStamp(struct link *plink,epicsTimeStamp *pstamp)
     return(0);
 }
 
-int epicsShareAPI dbCaIsLinkConnected(struct link *plink)
+int epicsShareAPI dbCaIsLinkConnected(
+    const struct link *plink)
 {
     caLink	*pca;
 
@@ -395,7 +404,8 @@ int epicsShareAPI dbCaIsLinkConnected(struct link *plink)
     if(ca_state(pca->chid)==cs_conn) return(TRUE);
     return(FALSE);
 }
-int epicsShareAPI dbCaGetLinkDBFtype(struct link *plink)
+int epicsShareAPI dbCaGetLinkDBFtype(
+    const struct link *plink)
 {
     caLink	*pca;
 

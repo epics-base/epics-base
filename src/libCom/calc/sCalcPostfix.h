@@ -37,7 +37,7 @@
 #define		BAD_EXPRESSION	0
 #define		END_STACK	127
 
-epicsShareFunc long epicsShareAPI sCalcPostfix (char *pinfix, 
+epicsShareFunc long epicsShareAPI sCalcPostfix (const char *pinfix, 
         char **pp_postfix, short *perror);
 
 epicsShareFunc long epicsShareAPI 

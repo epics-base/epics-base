@@ -254,9 +254,9 @@ static struct expression_element	elements[] = {
  * find the pointer to an entry in the element table
  */
 static int find_element(pbuffer,pelement,pno_bytes)
- register char	*pbuffer;
- register struct expression_element	**pelement;
- register short	*pno_bytes;
+ char	*pbuffer;
+ struct expression_element	**pelement;
+ short	*pno_bytes;
  {
 
  	/* compare the string to each element in the element table */
@@ -278,9 +278,9 @@ static int find_element(pbuffer,pelement,pno_bytes)
  * get an expression element
  */
 static int get_element(pinfix,pelement,pno_bytes)
-register char	*pinfix;
-register struct expression_element	**pelement;
-register short		*pno_bytes;
+char	*pinfix;
+struct expression_element	**pelement;
+short		*pno_bytes;
 {
 
 	/* get the next expression element from the infix expression */
@@ -303,19 +303,26 @@ register short		*pno_bytes;
  *
  * convert an infix expression to a postfix expression
  */
-long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
+#define MAX_POSTFIX_SIZE 100
+long epicsShareAPI postfix(const char *pin,char *ppostfix,short *perror)
 {
 	short		no_bytes;
-	register short	operand_needed;
-	register short	new_expression;
+	short	operand_needed;
+	short	new_expression;
 	struct expression_element	stack[80];
 	struct expression_element	*pelement;
-	register struct expression_element	*pstacktop;
+	struct expression_element	*pstacktop;
 	double		constant;
-	register char   *pposthold, *pc;	
+	char   *pposthold, *pc;	
 	char in_stack_pri, in_coming_pri, code;
 	char           *ppostfixStart = ppostfix;
+        char infix[MAX_POSTFIX_SIZE];
+        char *pinfix = &infix[0];
+        int len;
 
+        len = strlen(pin);
+        if(len>=MAX_POSTFIX_SIZE) return(-1);
+        strcpy(infix,pin);
 	/* convert infix expression to upper case */
 	for (pc=pinfix; *pc; pc++) {
 		if (islower(*pc)) *pc = toupper(*pc);

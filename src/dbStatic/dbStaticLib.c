@@ -203,12 +203,12 @@ sizeof(promptRF_IO)/sizeof(char *),
 sizeof(promptVXI_IO)/sizeof(char *)};
 
 /*forward references for private routines*/
-static long putParmString(char **pparm,char *pstring);
+static long putParmString(char **pparm,const char *pstring);
 static long mapLINKTtoFORMT(DBLINK *plink,dbFldDes *pflddes,int *ind);
 static void entryErrMessage(DBENTRY *pdbentry,long status,char *mess);
 static void zeroDbentry(DBENTRY *pdbentry);
 static char *getpMessage(DBENTRY *pdbentry);
-static long putPvLink(DBENTRY *pdbentry,short pvlMask,char *pvname);
+static long putPvLink(DBENTRY *pdbentry,short pvlMask,const char *pvname);
 static long epicsShareAPI dbAddOnePath (DBBASE *pdbbase, const char *path, unsigned length);
 
 /*Following are obsolete. Will go away next release*/
@@ -221,7 +221,7 @@ long epicsShareAPI dbWrite(DBBASE *pdbbase,FILE *fpdctsdr,FILE *fp)
     fprintf(stderr,"dbWrite obsolete. It does NOTHING\n");
     return(-1);
 }
-long epicsShareAPI dbFindRecdes(DBENTRY *pdbentry,char *recdesname)
+long epicsShareAPI dbFindRecdes(DBENTRY *pdbentry,const char *recdesname)
 	{return dbFindRecordType(pdbentry,recdesname);}
 long epicsShareAPI dbFirstRecdes(DBENTRY *pdbentry)
 	{return dbFirstRecordType(pdbentry);}
@@ -237,7 +237,7 @@ long epicsShareAPI dbNextFielddes(DBENTRY *pdbentry,int dctonly)
 	{return dbNextField(pdbentry,dctonly);}
 char ** epicsShareAPI dbGetChoices(DBENTRY *pdbentry)
 	{return dbGetMenuChoices(pdbentry);}
-void epicsShareAPI dbDumpRecDes(DBBASE *pdbbase,char *recordTypeName)
+void epicsShareAPI dbDumpRecDes(DBBASE *pdbbase,const char *recordTypeName)
 	{dbDumpRecordType(pdbbase,recordTypeName);}
 
 /* internal routines*/
@@ -320,7 +320,7 @@ done:
     return(status);
 }
 
-static long putParmString(char **pparm,char *pstring)
+static long putParmString(char **pparm,const char *pstring)
 {
     size_t	size;
 
@@ -466,7 +466,7 @@ static char *getpMessage(DBENTRY *pdbentry)
     return(pdbentry->message);
 }
 
-static long putPvLink(DBENTRY *pdbentry,short pvlMask,char *pvname)
+static long putPvLink(DBENTRY *pdbentry,short pvlMask,const char *pvname)
 {
     dbFldDes	*pflddes;
     DBLINK	*plink;
@@ -859,7 +859,7 @@ static long epicsShareAPI dbAddOnePath (DBBASE *pdbbase, const char *path, unsig
 
 
 long epicsShareAPI dbWriteRecord(DBBASE *ppdbbase,const char *filename,
-	char *precordTypename,int level)
+	const char *precordTypename,int level)
 {
     FILE	*outFile;
 
@@ -872,7 +872,8 @@ long epicsShareAPI dbWriteRecord(DBBASE *ppdbbase,const char *filename,
     return(fcloseNotSTD(outFile));
 }
 
-long epicsShareAPI dbWriteRecordFP(DBBASE *pdbbase,FILE *fp,char *precordTypename,int level)
+long epicsShareAPI dbWriteRecordFP(
+    DBBASE *pdbbase,FILE *fp,const char *precordTypename,int level)
 {
     DBENTRY	dbentry;
     DBENTRY	*pdbentry=&dbentry;
@@ -939,7 +940,8 @@ long epicsShareAPI dbWriteRecordFP(DBBASE *pdbbase,FILE *fp,char *precordTypenam
     return(0);
 }
 
-long epicsShareAPI dbWriteMenu(DBBASE *ppdbbase,const char *filename,char *menuName)
+long epicsShareAPI dbWriteMenu(
+    DBBASE *ppdbbase,const char *filename,const char *menuName)
 {
     FILE	*outFile;
 
@@ -955,7 +957,7 @@ long epicsShareAPI dbWriteMenu(DBBASE *ppdbbase,const char *filename,char *menuN
     return(0);
 }
 
-long epicsShareAPI dbWriteMenuFP(DBBASE *pdbbase,FILE *fp,char *menuName)
+long epicsShareAPI dbWriteMenuFP(DBBASE *pdbbase,FILE *fp,const char *menuName)
 {
     dbMenu	*pdbMenu;
     int		gotMatch;
@@ -986,7 +988,8 @@ long epicsShareAPI dbWriteMenuFP(DBBASE *pdbbase,FILE *fp,char *menuName)
     return(0);
 }
 
-long epicsShareAPI dbWriteRecordType(DBBASE *pdbbase,const char *filename,char *recordTypeName)
+long epicsShareAPI dbWriteRecordType(
+    DBBASE *pdbbase,const char *filename,const char *recordTypeName)
 {
     FILE	*outFile;
 
@@ -1002,7 +1005,8 @@ long epicsShareAPI dbWriteRecordType(DBBASE *pdbbase,const char *filename,char *
     return(0);
 }
 
-long epicsShareAPI dbWriteRecordTypeFP(DBBASE *pdbbase,FILE *fp,char *recordTypeName)
+long epicsShareAPI dbWriteRecordTypeFP(
+    DBBASE *pdbbase,FILE *fp,const char *recordTypeName)
 {
     dbRecordType	*pdbRecordType;
     dbFldDes	*pdbFldDes;
@@ -1246,7 +1250,8 @@ int epicsShareAPI dbGetNRecordTypes(DBENTRY *pdbentry)
     return(ellCount(&pdbentry->pdbbase->recordTypeList));
 }
 
-long epicsShareAPI dbPutRecordAttribute(DBENTRY *pdbentry, char *name,char*value)
+long epicsShareAPI dbPutRecordAttribute(
+    DBENTRY *pdbentry, const char *name, const char*value)
 {
     dbRecordType	*precordType = pdbentry->precordType;
     int			createNew = TRUE;
@@ -1292,7 +1297,7 @@ long epicsShareAPI dbPutRecordAttribute(DBENTRY *pdbentry, char *name,char*value
     return(0);
 }
 
-long epicsShareAPI dbGetRecordAttribute(DBENTRY *pdbentry,char *name)
+long epicsShareAPI dbGetRecordAttribute(DBENTRY *pdbentry,const char *name)
 {
     dbRecordType	*precordType = pdbentry->precordType;
     int			compare;
@@ -1419,7 +1424,7 @@ int epicsShareAPI dbGetPromptGroup(DBENTRY *pdbentry)
     return(pflddes->promptgroup);
 }
 
-long epicsShareAPI dbCreateRecord(DBENTRY *pdbentry,char *precordName)
+long epicsShareAPI dbCreateRecord(DBENTRY *pdbentry,const char *precordName)
 {
     dbRecordType	*precordType = pdbentry->precordType;
     dbFldDes		*pdbFldDes;
@@ -1575,7 +1580,7 @@ char * epicsShareAPI dbGetRecordName(DBENTRY *pdbentry)
     return(dbRecordName(pdbentry));
 }
 
-long epicsShareAPI dbRenameRecord(DBENTRY *pdbentry,char *newName)
+long epicsShareAPI dbRenameRecord(DBENTRY *pdbentry,const char *newName)
 {
     dbBase		*pdbbase = pdbentry->pdbbase;
     dbRecordType	*precordType = pdbentry->precordType;
@@ -1647,7 +1652,7 @@ int epicsShareAPI dbIsVisibleRecord(DBENTRY *pdbentry)
     return(precnode->visible?1:0);
 }
 
-long epicsShareAPI dbCopyRecord(DBENTRY *pdbentry,char *newRecordName,int overWriteOK)
+long epicsShareAPI dbCopyRecord(DBENTRY *pdbentry,const char *newRecordName,int overWriteOK)
 {
     dbRecordType	*precordType = pdbentry->precordType;
     dbFldDes		*pdbFldDes;
@@ -1936,7 +1941,7 @@ char * epicsShareAPI dbGetString(DBENTRY *pdbentry)
     return (message);
 }
 
-long epicsShareAPI dbPutString(DBENTRY *pdbentry,char *pstring)
+long epicsShareAPI dbPutString(DBENTRY *pdbentry,const char *pstring)
 {
     dbFldDes  	*pflddes = pdbentry->pflddes;
     void	*pfield = pdbentry->pfield;
@@ -2312,7 +2317,7 @@ done:
     return(status);
 }
 
-char * epicsShareAPI dbVerify(DBENTRY *pdbentry,char *pstring)
+char * epicsShareAPI dbVerify(DBENTRY *pdbentry,const char *pstring)
 {
     dbFldDes  	*pflddes = pdbentry->pflddes;
     char	*message;
@@ -2639,7 +2644,7 @@ long epicsShareAPI dbPutInfo(DBENTRY *pdbentry,const char *name,const char *stri
     return (0);
 }
 
-brkTable * epicsShareAPI dbFindBrkTable(dbBase *pdbbase,char *name)
+brkTable * epicsShareAPI dbFindBrkTable(dbBase *pdbbase,const char *name)
 {
     GPHENTRY *pgph;
 
@@ -2648,7 +2653,7 @@ brkTable * epicsShareAPI dbFindBrkTable(dbBase *pdbbase,char *name)
     return((brkTable *)pgph->userPvt);
 }
 
-dbMenu * epicsShareAPI dbFindMenu(dbBase *pdbbase,char *name)
+dbMenu * epicsShareAPI dbFindMenu(dbBase *pdbbase,const char *name)
 {
     GPHENTRY *pgph;
 
@@ -2733,7 +2738,7 @@ char * epicsShareAPI dbGetMenuStringFromIndex(DBENTRY *pdbentry, int index)
     return (NULL);
 }
 
-int epicsShareAPI dbGetMenuIndexFromString(DBENTRY *pdbentry, char *choice)
+int epicsShareAPI dbGetMenuIndexFromString(DBENTRY *pdbentry, const char *choice)
 {
     dbFldDes  	*pflddes = pdbentry->pflddes;
     int		ind;
@@ -3067,7 +3072,7 @@ long epicsShareAPI dbPutForm(DBENTRY *pdbentry,char **value)
 	    DBENTRY	*plinkentry = &dbEntry;
 	    short	ppOpt = 0;
 	    short	msOpt = 0;
-	    char	*pstr;
+	    const char	*pstr;
 
 	    pstr = *value;
 	    **verify = 0;
@@ -3103,7 +3108,7 @@ long epicsShareAPI dbPutForm(DBENTRY *pdbentry,char **value)
 	    DBENTRY	*plinkentry = &dbEntry;
 	    short	ppOpt = 0;
 	    short	msOpt = 0;
-	    char	*pstr;
+	    const char	*pstr;
 
 	    pstr = *value;
 	    **verify = 0;
@@ -3135,7 +3140,7 @@ long epicsShareAPI dbPutForm(DBENTRY *pdbentry,char **value)
     case FORM_FWDLINK: {
 	    short	ppOpt = 0;
 	    short	msOpt = 0;
-	    char	*pstr;
+	    const char	*pstr;
 
 	    pstr = *value;
 	    **verify = 0;
@@ -3562,7 +3567,8 @@ void  epicsShareAPI dbDumpPath(DBBASE *pdbbase)
     return;
 }
 
-void  epicsShareAPI dbDumpRecord(dbBase *pdbbase,char *precordTypename,int level)
+void  epicsShareAPI dbDumpRecord(
+    dbBase *pdbbase,const char *precordTypename,int level)
 {
     if(!pdbbase) {
 	printf("pdbbase not specified\n");
@@ -3571,7 +3577,7 @@ void  epicsShareAPI dbDumpRecord(dbBase *pdbbase,char *precordTypename,int level
     dbWriteRecordFP(pdbbase,stdout,precordTypename,level);
 }
 
-void  epicsShareAPI dbDumpMenu(DBBASE *pdbbase,char *menuName)
+void  epicsShareAPI dbDumpMenu(DBBASE *pdbbase,const char *menuName)
 {
     if(!pdbbase) {
 	printf("pdbbase not specified\n");
@@ -3580,7 +3586,7 @@ void  epicsShareAPI dbDumpMenu(DBBASE *pdbbase,char *menuName)
     dbWriteMenuFP(pdbbase,stdout,menuName);
 }
 
-void  epicsShareAPI dbDumpRecordType(DBBASE *pdbbase,char *recordTypeName)
+void  epicsShareAPI dbDumpRecordType(DBBASE *pdbbase,const char *recordTypeName)
 {
     dbRecordType	*pdbRecordType;
     dbFldDes	*pdbFldDes;
@@ -3622,7 +3628,8 @@ void  epicsShareAPI dbDumpRecordType(DBBASE *pdbbase,char *recordTypeName)
     }
 }
 
-void  epicsShareAPI dbDumpFldDes(DBBASE *pdbbase,char *recordTypeName,char *fname)
+void  epicsShareAPI dbDumpFldDes(
+    DBBASE *pdbbase,const char *recordTypeName,const char *fname)
 {
     dbRecordType	*pdbRecordType;
     dbFldDes	*pdbFldDes;
@@ -3710,7 +3717,7 @@ void  epicsShareAPI dbDumpFldDes(DBBASE *pdbbase,char *recordTypeName,char *fnam
     }
 }
 
-void  epicsShareAPI dbDumpDevice(DBBASE *pdbbase,char *recordTypeName)
+void  epicsShareAPI dbDumpDevice(DBBASE *pdbbase,const char *recordTypeName)
 {
     dbRecordType	*pdbRecordType;
     devSup	*pdevSup;
@@ -3750,7 +3757,7 @@ void  epicsShareAPI dbDumpDriver(DBBASE *pdbbase)
     dbWriteDriverFP(pdbbase,stdout);
 }
 
-void  epicsShareAPI dbDumpBreaktable(DBBASE *pdbbase,char *name)
+void  epicsShareAPI dbDumpBreaktable(DBBASE *pdbbase,const char *name)
 {
     brkTable	*pbrkTable;
     brkInt	*pbrkInt;

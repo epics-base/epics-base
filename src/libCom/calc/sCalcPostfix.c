@@ -278,9 +278,9 @@ static int strncasecmpPrivate(char *s1, char *s2, size_t n)
  * find the pointer to an entry in the element table
  */
 static int find_element(pbuffer, pelement, pno_bytes, parg)
- register char	*pbuffer;
- register struct expression_element	**pelement;
- register short	*pno_bytes, *parg;
+ char	*pbuffer;
+ struct expression_element	**pelement;
+ short	*pno_bytes, *parg;
  {
 	*parg = 0;
 
@@ -317,9 +317,9 @@ static int find_element(pbuffer, pelement, pno_bytes, parg)
  * get an expression element
  */
 static int get_element(pinfix, pelement, pno_bytes, parg)
-register char	*pinfix;
-register struct expression_element	**pelement;
-register short	*pno_bytes, *parg;
+char	*pinfix;
+struct expression_element	**pelement;
+short	*pno_bytes, *parg;
 {
 
 	/* get the next expression element from the infix expression */
@@ -341,7 +341,7 @@ register short	*pno_bytes, *parg;
 
 #if OVERRIDESTDCALC
 /* Override standard EPICS expression evaluator (if we're loaded after it). */
-long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
+long epicsShareAPI postfix(const char *pinfix,char *ppostfix,short *perror)
 {
 	char *my_ppostfix = NULL, *s, *d;
 	long retval;
@@ -365,22 +365,28 @@ long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
  *
  * convert an infix expression to a postfix expression
  */
-long epicsShareAPI sCalcPostfix(char *pinfix, char **pp_postfix, short *perror)
+#define MAX_POSTFIX_SIZE 100
+long epicsShareAPI sCalcPostfix(const char *pin, char **pp_postfix, short *perror)
 {
 	short no_bytes;
-	register short operand_needed;
-	register short new_expression;
+	short operand_needed;
+	short new_expression;
 	struct expression_element stack[80];
 	struct expression_element *pelement;
-	register struct expression_element *pstacktop;
+	struct expression_element *pstacktop;
 	double constant;
-	register char c, *pposthold;	
+	char c, *pposthold;	
 	char in_stack_pri, in_coming_pri, code;
 	char *ppostfix, *ppostfixStart;
 	short arg;
+        char infix[MAX_POSTFIX_SIZE];
+        char *pinfix = &infix[0];
+        int len;
 
 	if (sCalcPostfixDebug) printf("sCalcPostfix: entry\n");
-
+        len = strlen(pin);
+        if(len>=MAX_POSTFIX_SIZE) return(-1);
+        strcpy(infix,pin);
 	/* Allocate a buffer for the postfix expression. */
 	if (*pp_postfix) free(*pp_postfix);	/* Free old buffer. */
 	ppostfix = calloc(5*strlen(pinfix)+7, 1);

@@ -32,7 +32,7 @@ of this distribution.
 #include "dbStaticPvt.h"
  
 
-long dbAllocRecord(DBENTRY *pdbentry,char *precordName)
+long dbAllocRecord(DBENTRY *pdbentry,const char *precordName)
 {
     dbRecordType	*pdbRecordType = pdbentry->precordType;
     dbRecordNode	*precnode = pdbentry->precnode;
@@ -286,7 +286,7 @@ char *dbGetStringNum(DBENTRY *pdbentry)
     return((char *)pap[pflddes->indRecordType]);
 }
 
-long dbPutStringNum(DBENTRY *pdbentry,char *pstring)
+long dbPutStringNum(DBENTRY *pdbentry,const char *pstring)
 {
     dbRecordNode *precnode = pdbentry->precnode;
     dbFldDes  	*pflddes = pdbentry->pflddes;

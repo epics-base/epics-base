@@ -145,7 +145,7 @@ static void doubleToString(double value,char *preturn)
 }
 
 
-long dbAllocRecord(DBENTRY *pdbentry,char *precordName)
+long dbAllocRecord(DBENTRY *pdbentry,const char *precordName)
 {
     dbRecordType	*pdbRecordType = pdbentry->precordType;
     dbRecordNode	*precnode = pdbentry->precnode;
@@ -519,7 +519,7 @@ char *dbGetStringNum(DBENTRY *pdbentry)
     return (message);
 }
 
-long dbPutStringNum(DBENTRY *pdbentry,char *pstring)
+long dbPutStringNum(DBENTRY *pdbentry,const char *pstring)
 {
     dbFldDes  	*pflddes = pdbentry->pflddes;
     void	*pfield = pdbentry->pfield;

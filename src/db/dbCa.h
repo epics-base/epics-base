@@ -24,24 +24,24 @@ epicsShareFunc long epicsShareAPI dbCaGetLink(
 epicsShareFunc long epicsShareAPI dbCaPutLink(
     struct link *plink,short dbrType,const void *pbuffer,long nRequest);
 epicsShareFunc long epicsShareAPI dbCaGetAttributes(
-    struct link *plink,void (*callback)(void *usrPvt),void *usrPvt);
+    const struct link *plink,void (*callback)(void *usrPvt),void *usrPvt);
 epicsShareFunc long epicsShareAPI dbCaGetControlLimits(
-    struct link *plink,double *low, double *high);
+    const struct link *plink,double *low, double *high);
 epicsShareFunc long epicsShareAPI dbCaGetGraphicLimits(
-    struct link *plink,double *low, double *high);
+    const struct link *plink,double *low, double *high);
 epicsShareFunc long epicsShareAPI dbCaGetAlarmLimits(
-    struct link *plink,double *lolo, double *low, double *high, double *hihi);
+    const struct link *plink,double *lolo, double *low, double *high, double *hihi);
 epicsShareFunc long epicsShareAPI dbCaGetPrecision(
-    struct link *plink,short *precision);
+    const struct link *plink,short *precision);
 epicsShareFunc long epicsShareAPI dbCaGetUnits(
-    struct link *plink,char *units,int unitsSize);
+    const struct link *plink,char *units,int unitsSize);
 epicsShareFunc long epicsShareAPI dbCaGetNelements(
-    struct link *plink,long *nelements);
+    const struct link *plink,long *nelements);
 epicsShareFunc long epicsShareAPI dbCaGetSevr(
-    struct link *plink,short *severity);
+    const struct link *plink,short *severity);
 epicsShareFunc long epicsShareAPI dbCaGetTimeStamp(
-    struct link *plink,epicsTimeStamp *pstamp);
-epicsShareFunc int epicsShareAPI dbCaIsLinkConnected(struct link *plink);
-epicsShareFunc int epicsShareAPI dbCaGetLinkDBFtype(struct link *plink);
+    const struct link *plink,epicsTimeStamp *pstamp);
+epicsShareFunc int epicsShareAPI dbCaIsLinkConnected(const struct link *plink);
+epicsShareFunc int epicsShareAPI dbCaGetLinkDBFtype(const struct link *plink);
 
 #endif /*INCdbCah*/

@@ -39,14 +39,14 @@ void dbFreePath(DBBASE *pdbbase);
 int dbIsMacroOk(DBENTRY *pdbentry);
 
 /*The following routines have different versions for run-time no-run-time*/
-long dbAllocRecord(DBENTRY *pdbentry,char *precordName);
+long dbAllocRecord(DBENTRY *pdbentry,const char *precordName);
 long dbFreeRecord(DBENTRY *pdbentry);
 
 long dbGetFieldAddress(DBENTRY *pdbentry);
 char *dbRecordName(DBENTRY *pdbentry);
 
 char *dbGetStringNum(DBENTRY *pdbentry);
-long dbPutStringNum(DBENTRY *pdbentry,char *pstring);
+long dbPutStringNum(DBENTRY *pdbentry,const char *pstring);
 
 /* The following is for path */
 typedef struct dbPathNode {
@@ -64,7 +64,7 @@ typedef struct{
 int dbPvdTableSize(int size);
 extern int dbStaticDebug;
 void	dbPvdInitPvt(DBBASE *pdbbase);
-PVDENTRY *dbPvdFind(DBBASE *pdbbase,char *name,int lenname);
+PVDENTRY *dbPvdFind(DBBASE *pdbbase,const char *name,int lenname);
 PVDENTRY *dbPvdAdd(DBBASE *pdbbase,dbRecordType *precordType,dbRecordNode *precnode);
 void dbPvdDelete(DBBASE *pdbbase,dbRecordNode *precnode);
 void dbPvdFreeMem(DBBASE *pdbbase);

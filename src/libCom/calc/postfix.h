@@ -40,7 +40,7 @@
 #include "shareLib.h"
 
 epicsShareFunc long epicsShareAPI 
-	postfix (char *pinfix, char *ppostfix, short *perror);
+	postfix (const char *pinfix, char *ppostfix, short *perror);
 
 epicsShareFunc long epicsShareAPI 
 	calcPerform(double *parg, double *presult, char  *post);

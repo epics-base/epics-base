@@ -398,7 +398,7 @@ static void getOptions(DBADDR *paddr,void **poriginal,long *options,void *pflin)
 	*poriginal = pbuffer;
 }
 
-struct rset * epicsShareAPI dbGetRset(struct dbAddr *paddr)
+struct rset * epicsShareAPI dbGetRset(const struct dbAddr *paddr)
 {
 	struct dbFldDes *pfldDes = (struct dbFldDes *)paddr->pfldDes;
 
@@ -406,7 +406,8 @@ struct rset * epicsShareAPI dbGetRset(struct dbAddr *paddr)
 	return(pfldDes->pdbRecordType->prset);
 }
 
-long epicsShareAPI dbPutAttribute(char *recordTypename,char *name,char*value)
+long epicsShareAPI dbPutAttribute(
+    const char *recordTypename,const char *name,const char*value)
 {
 	DBENTRY		dbEntry;
 	DBENTRY		*pdbEntry = &dbEntry;
@@ -421,7 +422,7 @@ long epicsShareAPI dbPutAttribute(char *recordTypename,char *name,char*value)
 	return(status);
 }
 
-int epicsShareAPI dbIsValueField(struct dbFldDes *pdbFldDes)
+int epicsShareAPI dbIsValueField(const struct dbFldDes *pdbFldDes)
 {
     if(pdbFldDes->pdbRecordType->indvalFlddes == pdbFldDes->indRecordType)
 	return(TRUE);
@@ -429,12 +430,12 @@ int epicsShareAPI dbIsValueField(struct dbFldDes *pdbFldDes)
 	return(FALSE);
 }
 
-int epicsShareAPI dbGetFieldIndex(struct dbAddr *paddr)
+int epicsShareAPI dbGetFieldIndex(const struct dbAddr *paddr)
 {
     return(((struct dbFldDes *)paddr->pfldDes)->indRecordType);
 }
 
-long epicsShareAPI dbGetNelements(struct link *plink,long *nelements)
+long epicsShareAPI dbGetNelements(const struct link *plink,long *nelements)
 {
     switch(plink->type) {
     case CONSTANT:
@@ -453,7 +454,7 @@ long epicsShareAPI dbGetNelements(struct link *plink,long *nelements)
     return(S_db_badField);
 }
 
-int epicsShareAPI dbIsLinkConnected(struct link *plink)
+int epicsShareAPI dbIsLinkConnected(const struct link *plink)
 {
     switch(plink->type) {
 	case DB_LINK: return(TRUE);
@@ -463,7 +464,7 @@ int epicsShareAPI dbIsLinkConnected(struct link *plink)
     return(FALSE);
 }
 
-int epicsShareAPI dbGetLinkDBFtype(struct link *plink)
+int epicsShareAPI dbGetLinkDBFtype(const struct link *plink)
 {
     switch(plink->type) {
 	case DB_LINK: 
@@ -756,8 +757,8 @@ int epicsShareAPI dbLoadRecords(char* pfilename, char* substitutions)
 }
 
 
-long epicsShareAPI dbGetLinkValue(struct link	*plink, short dbrType, void *pbuffer,
-	long *poptions, long *pnRequest)
+long epicsShareAPI dbGetLinkValue(struct link *plink,
+    short dbrType, void *pbuffer,long *poptions, long *pnRequest)
 {
     long		status = 0;
 
@@ -815,7 +816,7 @@ long epicsShareAPI dbGetLinkValue(struct link	*plink, short dbrType, void *pbuff
 	}
     }else if(plink->type==CA_LINK) {
 	struct dbCommon	*precord = plink->value.pv_link.precord;
-	struct pv_link	*pcalink = &(plink->value.pv_link);
+	const struct pv_link	*pcalink = &(plink->value.pv_link);
 	unsigned short sevr;
 
 	status=dbCaGetLink(plink,dbrType,pbuffer,&sevr,pnRequest);
@@ -831,8 +832,8 @@ long epicsShareAPI dbGetLinkValue(struct link	*plink, short dbrType, void *pbuff
     return(status);
 }
 
-long epicsShareAPI dbPutLinkValue(struct link *plink,short dbrType,
-	const void *pbuffer,long nRequest)
+long epicsShareAPI dbPutLinkValue(struct link *plink,
+    short dbrType,const void *pbuffer,long nRequest)
 {
 	long		status=0;
 
@@ -868,8 +869,8 @@ long epicsShareAPI dbPutLinkValue(struct link *plink,short dbrType,
 	return(status);
 }
 
-long epicsShareAPI dbGetField( DBADDR	*paddr,short dbrType,void *pbuffer,
-    long *options,long *nRequest,void *pflin)
+long epicsShareAPI dbGetField(DBADDR *paddr,short dbrType,
+    void *pbuffer, long *options,long *nRequest,void *pflin)
 {
     short	dbfType = paddr->field_type;
     dbCommon	*precord = (dbCommon *)(paddr->precord);
@@ -911,8 +912,8 @@ done:
     return(status);
 }
 
-long epicsShareAPI dbGet(DBADDR *paddr,short dbrType,void *pbuffer,long *options,
-	long *nRequest,void *pflin)
+long epicsShareAPI dbGet(DBADDR *paddr,short dbrType,
+    void *pbuffer,long *options,long *nRequest,void *pflin)
 {
 	db_field_log	*pfl= (db_field_log *)pflin;
 	long		no_elements=paddr->no_elements;
@@ -995,7 +996,8 @@ long epicsShareAPI dbGet(DBADDR *paddr,short dbrType,void *pbuffer,long *options
         return(status);
 }
 
-long epicsShareAPI dbPutField(DBADDR *paddr,short dbrType,const void *pbuffer,long  nRequest)
+long epicsShareAPI dbPutField(
+    DBADDR *paddr,short dbrType,const void *pbuffer,long  nRequest)
 {
     long	status = 0;
     long	special=paddr->special;
@@ -1155,7 +1157,8 @@ long		offset;
     return(0);
 }
 
-long epicsShareAPI dbPut(DBADDR *paddr,short dbrType,const void *pbuffer,long nRequest)
+long epicsShareAPI dbPut(DBADDR *paddr,short dbrType,
+    const void *pbuffer,long nRequest)
 {
 	long		no_elements=paddr->no_elements;
 	long		dummy;
@@ -1228,7 +1231,7 @@ long epicsShareAPI dbPut(DBADDR *paddr,short dbrType,const void *pbuffer,long nR
 
 /* various utility routines */
 long epicsShareAPI dbGetControlLimits(
-    struct link *plink,double *low, double *high)
+    const struct link *plink,double *low, double *high)
 {
     struct buffer {
         DBRctrlDouble
@@ -1250,7 +1253,7 @@ long epicsShareAPI dbGetControlLimits(
 }
 
 long epicsShareAPI dbGetGraphicLimits(
-    struct link *plink,double *low, double *high)
+    const struct link *plink,double *low, double *high)
 {
     struct buffer {
         DBRgrDouble
@@ -1271,7 +1274,7 @@ long epicsShareAPI dbGetGraphicLimits(
     return(0);
 }
 
-long epicsShareAPI dbGetAlarmLimits(struct link *plink,
+long epicsShareAPI dbGetAlarmLimits(const struct link *plink,
 	double *lolo, double *low, double *high, double *hihi)
 {
     struct buffer {
@@ -1296,7 +1299,7 @@ long epicsShareAPI dbGetAlarmLimits(struct link *plink,
     return(0);
 }
 
-long epicsShareAPI dbGetPrecision(struct link *plink,short *precision)
+long epicsShareAPI dbGetPrecision(const struct link *plink,short *precision)
 {
     struct buffer {
         DBRprecision
@@ -1316,7 +1319,8 @@ long epicsShareAPI dbGetPrecision(struct link *plink,short *precision)
     return(0);
 }
 
-long epicsShareAPI dbGetUnits(struct link *plink,char *units,int unitsSize)
+long epicsShareAPI dbGetUnits(
+    const struct link *plink,char *units,int unitsSize)
 {
     struct buffer {
         DBRunits
@@ -1336,7 +1340,7 @@ long epicsShareAPI dbGetUnits(struct link *plink,char *units,int unitsSize)
     return(0);
 }
 
-long epicsShareAPI dbGetSevr(struct link *plink,short *severity)
+long epicsShareAPI dbGetSevr(const struct link *plink,short *severity)
 {
     DBADDR *paddr;
 
@@ -1347,7 +1351,7 @@ long epicsShareAPI dbGetSevr(struct link *plink,short *severity)
     return(0);
 }
 
-long epicsShareAPI dbGetTimeStamp(struct link *plink,epicsTimeStamp *pstamp)
+long epicsShareAPI dbGetTimeStamp(const struct link *plink,epicsTimeStamp *pstamp)
 {
     DBADDR *paddr;
 

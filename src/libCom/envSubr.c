@@ -73,6 +73,7 @@
 #else
 #	include <sys/types.h>
 #	include <netinet/in.h>
+#	include	<arpa/inet.h>
 #endif
 
 #ifdef vxWorks
@@ -84,10 +85,6 @@
 #include <envDefs.h>
 #include <errMdef.h>
 
-/*
- * for VMS
- */
-unsigned long	inet_addr (char *);
 
 
 /*+/subr**********************************************************************

@@ -79,13 +79,13 @@ public:
     bool identicalPort ( const osiSockAddr &from );
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
+protected:
+    ~repeaterClient ();
 private:
     osiSockAddr from;
     SOCKET sock;
-    static tsFreeList < class repeaterClient, 0x20 > freeList;
-    ~repeaterClient ();
     unsigned port () const;
-    friend class gnuWarningEliminate;
+    static tsFreeList < class repeaterClient, 0x20 > freeList;
 };
 
 /* 

@@ -233,6 +233,10 @@ initialize_remote_filesystem(const char **argv)
     strcat (path, "/st.cmd");
     argv[1] = path;
 #else
+    extern char *env_nfsServer;
+    extern char *env_nfsPath;
+    extern char *env_nfsMountPoint;
+    char *server_name;
     char *server_path;
     char *mount_point;
     char *cp;
@@ -241,41 +245,57 @@ initialize_remote_filesystem(const char **argv)
     printf ("***** Initializing NFS *****\n");
     rpcUdpInit();
     nfsInit(0,0);
-    /*
-     * Use first component of nvram/bootp command line pathname
-     * to set up initial NFS mount.  A "/tftpboot/" is prepended
-     * if the pathname does not begin with a '/'.  This allows
-     * NFS and TFTP to have a similar view of the remote system.
-     */
-    if (rtems_bsdnet_bootp_cmdline[0] == '/')
-        cp = rtems_bsdnet_bootp_cmdline + 1;
-    else
-        cp = rtems_bsdnet_bootp_cmdline;
-    cp = strchr(cp, '/');
-    if ((cp == NULL)
-     || ((l = cp - rtems_bsdnet_bootp_cmdline) == 0))
-        LogFatal("\"%s\" is not a valid command pathname.\n", rtems_bsdnet_bootp_cmdline);
-    cp = mustMalloc(l + 20, "NFS mount paths");
-    server_path = cp;
-    if (rtems_bsdnet_bootp_cmdline[0] == '/') {
-        mount_point = server_path;
-        strncpy(mount_point, rtems_bsdnet_bootp_cmdline, l);
-        mount_point[l] = '\0';
+    if (env_nfsServer && env_nfsPath && env_nfsMountPoint) {
+        server_name = env_nfsServer;
+        server_path = env_nfsPath;
+        mount_point = env_nfsMountPoint;
+        cp = mount_point;
+        while ((cp = strchr(cp+1, '/')) != NULL) {
+            *cp = '\0';
+            if (mkdir (mount_point, 0755) != 0)
+                LogFatal("Can't create directory \"%s\": %s.\n",
+                                                mount_point, strerror(errno));
+            *cp = '/';
+        }
         argv[1] = rtems_bsdnet_bootp_cmdline;
     }
     else {
-        char *abspath = mustMalloc(strlen(rtems_bsdnet_bootp_cmdline)+2,"Absolute command path");
-        strcpy(server_path, "/tftpboot/");
-        mount_point = server_path + strlen(server_path);
-        strncpy(mount_point, rtems_bsdnet_bootp_cmdline, l);
-        mount_point[l] = '\0';
-        mount_point--;
-        strcpy(abspath, "/");
-        strcat(abspath, rtems_bsdnet_bootp_cmdline);
-        argv[1] = abspath;
+        /*
+         * Use first component of nvram/bootp command line pathname
+         * to set up initial NFS mount.  A "/tftpboot/" is prepended
+         * if the pathname does not begin with a '/'.  This allows
+         * NFS and TFTP to have a similar view of the remote system.
+         */
+        if (rtems_bsdnet_bootp_cmdline[0] == '/')
+            cp = rtems_bsdnet_bootp_cmdline + 1;
+        else
+            cp = rtems_bsdnet_bootp_cmdline;
+        cp = strchr(cp, '/');
+        if ((cp == NULL)
+         || ((l = cp - rtems_bsdnet_bootp_cmdline) == 0))
+            LogFatal("\"%s\" is not a valid command pathname.\n", rtems_bsdnet_bootp_cmdline);
+        cp = mustMalloc(l + 20, "NFS mount paths");
+        server_path = cp;
+        if (rtems_bsdnet_bootp_cmdline[0] == '/') {
+            mount_point = server_path;
+            strncpy(mount_point, rtems_bsdnet_bootp_cmdline, l);
+            mount_point[l] = '\0';
+            argv[1] = rtems_bsdnet_bootp_cmdline;
+        }
+        else {
+            char *abspath = mustMalloc(strlen(rtems_bsdnet_bootp_cmdline)+2,"Absolute command path");
+            strcpy(server_path, "/tftpboot/");
+            mount_point = server_path + strlen(server_path);
+            strncpy(mount_point, rtems_bsdnet_bootp_cmdline, l);
+            mount_point[l] = '\0';
+            mount_point--;
+            strcpy(abspath, "/");
+            strcat(abspath, rtems_bsdnet_bootp_cmdline);
+            argv[1] = abspath;
+        }
+        server_name = rtems_bsdnet_bootp_server_name;
     }
-    nfsMount(rtems_bsdnet_bootp_server_name, server_path, mount_point);
-    free(cp);
+    nfsMount(server_name, server_path, mount_point);
 #endif
 }
 

@@ -10,6 +10,10 @@
 #include <epicsStdio.h>
 #include <epicsString.h>
 
+char *env_nfsServer;
+char *env_nfsPath;
+char *env_nfsMountPoint;
+
 #if defined(HAVE_MOTLOAD)
 /*
  * Motorola MOTLOAD NVRAM Access
@@ -210,6 +214,8 @@ env(const char *parm, const char *defaultValue)
 void
 setBootConfigFromNVRAM(void)
 {
+    const char *cp1;
+
     if (rtems_bsdnet_config.bootp != NULL)
         return;
     rtems_bsdnet_config.gateway = env("GATEWAY", NULL);
@@ -224,6 +230,23 @@ setBootConfigFromNVRAM(void)
     rtems_bsdnet_config.ifconfig->ip_address = env("IPADDR0", "192.168.0.2");
     rtems_bsdnet_bootp_boot_file_name = env("BOOTFILE", "epics/iocNobody/bin/RTEMS-uC5282/myApp.boot");
     rtems_bsdnet_bootp_cmdline = env("CMDLINE", "epics/iocBoot/iocNobody/st.cmd");
+    if ((cp1 = env("NFSMOUNT", NULL)) != NULL) {
+        char *cp2, *cp3;
+        if (((cp2 = strchr(cp1, ':')) != NULL)
+         && (((cp3 = strchr(cp2+1, ' ')) != NULL)
+          || ((cp3 = strchr(cp2+1, ':')) != NULL))) {
+            int l1 = cp2 - cp1;
+            int l2 = cp3 - cp2 - 1;
+            int l3 = strlen(cp3) - 1;
+            if (l1 && l2 && l3) {
+                *cp2++ = '\0';
+                *cp3++ = '\0';
+                env_nfsServer = cp1;
+                env_nfsPath = cp2;
+                env_nfsMountPoint = cp3;
+            }
+        }
+    }
 }
 
 #else

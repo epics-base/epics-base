@@ -63,7 +63,6 @@ LIBSRCS += postfix.c
 LIBSRCS += calcPerform.c
 LIBSRCS += sCalcPostfix.c
 LIBSRCS += sCalcPerform.c
-LIBSRCS += sCalcPostfix.c
 LIBSRCS += realpath.c
 LIBSRCS += tsSubr.c
 LIBSRCS += assertUNIX.c

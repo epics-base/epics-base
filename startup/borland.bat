@@ -36,18 +36,11 @@ REM    ====== OPTIONAL ENVIRONMENT VARIABLES FOLLOW ======
 REM    --------------- GNU make flags --------------------
 REM set MAKEFLAGS=-w
 
-REM    --------------- EPICS -----------------------------
-REM    Pre R3.14 requirements
-REM set HOST_ARCH=Borland
-REM set PATH=%PATH%;G:\epics\base\bin\%HOST_ARCH%
-REM set PATH=%PATH%;G:\epics\extensions\bin\%HOST_ARCH%
-
 REM    --------------- EPICS Channel Access --------------
 REM    Uncomment and modify the following lines
 REM    to override the base/configure/CONFIG_ENV defaults
-REM set EPICS_CA_ADDR_LIST=164.54.5.255
 REM set EPICS_CA_ADDR_LIST=164.54.188.65 164.54.5.255
-REM set EPICS_CA_AUTO_CA_ADDR_LIST=YES
+REM set EPICS_CA_AUTO_ADDR_LIST=YES
 
 REM    --------------- vim (use cygwin vim ) ----------------
 REM HOME needed by vim to write .viminfo file.
@@ -57,15 +50,12 @@ set VIM=c:\cygwin
 
 REM    --------------- JAVA ------------------------------
 REM    Needed for java extensions
-REM set PATH=%PATH%;C:\jdk1.2.2\bin
-REM set CLASSPATH=%CLASSPATH%;C:\jdk1.2.2\lib\tools.jar
-REM set PATH=C:\j2sdk1.4.0\bin;%PATH%
-
+set PATH=%PATH%;C:\j2sdk1.4.0\bin
 set CLASSPATH=G:\epics\extensions\javalib
-set PATH=%PATH%;D:\jsdk1.3.1_02\bin
 
 REM    --------------- Exceed ----------------------------
 REM    Needed for XWindow extensions
+REM    Cygwin should preceed Exceed in path
 REM set PATH=%PATH%;C:\Exceed
 
 REM    ===================================================

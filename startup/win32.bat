@@ -6,7 +6,7 @@ REM    --------------- WINDOWS ---------------------------
 REM    ----- WIN95 -----
 REM set PATH=C:\WINDOWS;C:\WINDOWS\COMMAND
 REM    ----- WINNT -----
-set PAth=c:\wiNNT;C:\WINNT\system32
+set PATH=C:\WINNT;C:\WINNT\SYSTEM32
 
 REM    --------------- GNU make (use cygwin make ) ----------------
 REM    Needed only if using GNU make from cygwin
@@ -25,7 +25,7 @@ REM    ----- Visual c++ 6.0 -----
 call "C:\Program files\Microsoft Visual Studio\Vc98\bin\vcvars32.bat"
 
 REM    --------------- EPICS -----------------------------
-REM ----- R3.14 EPICS -----
+REM    R3.14 requirements
 set EPICS_HOST_ARCH=win32-x86
 set PATH=%PATH%;G:\epics\base\bin\%EPICS_HOST_ARCH%
 set PATH=%PATH%;G:\epics\extensions\bin\%EPICS_HOST_ARCH%
@@ -36,27 +36,26 @@ REM    ====== OPTIONAL ENVIRONMENT VARIABLES FOLLOW ======
 REM    --------------- GNU make flags --------------------
 REM set MAKEFLAGS=-w
 
+REM    --------------- EPICS Channel Access --------------
+REM    Uncomment and modify the following lines
+REM    to override the base/configure/CONFIG_ENV defaults
+REM set EPICS_CA_ADDR_LIST=164.54.188.65 164.54.5.255
+REM set EPICS_CA_AUTO_ADDR_LIST=YES
+
 REM    --------------- vim (use cygwin vim ) ----------------
 REM HOME needed by vim to write .viminfo file.
 set HOME=c:/users/%USERNAME%
 REM VIM needed by vim to find _vimrc file.
 set VIM=c:\cygwin
 
-REM    --------------- EPICS Channel Access --------------
-REM    Uncomment and modify the following lines
-REM    to override the base/configure/CONFIG_ENV defaults
-REM set EPICS_CA_ADDR_LIST=164.54.5.255
-REM set EPICS_CA_ADDR_LIST=164.54.188.65 164.54.5.255
-REM set EPICS_CA_AUTO_CA_ADDR_LIST=YES
-
 REM    --------------- JAVA ------------------------------
 REM    Needed for java extensions
-REM set CLASSPATH=G:\epics\extensions\javalib
-REM set PATH=%PATH%;C:\jdk1.3\bin
-set CLASSPATH=%CLASSPATH%;C:\jdk1.3\lib\tools.jar
+set PATH=%PATH%;C:\j2sdk1.4.0\bin
+set CLASSPATH=G:\epics\extensions\javalib
 
 REM    --------------- Exceed ----------------------------
 REM    Needed for XWindow extensions
+REM    Cygwin should preceed Exceed in path
 REM set PATH=%PATH%;C:\Exceed
 
 REM    ===================================================

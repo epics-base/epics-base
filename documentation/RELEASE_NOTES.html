@@ -37,9 +37,9 @@ bit integer. The basic change was to change:</p>
   <li>dbConvert and dbFastLinkConv</li>
 </ul>
 
-<p><span style="font-weight: bold">Hardware Link Definitions</span></p>
+<p><strong>Hardware Link Definitions</strong></p>
 
-<p>The various parts of hardware link definitions nor accept HEX values,
+<p>The various parts of hardware link definitions now accept HEX values,
 e.g.</p>
 <pre>field(INP,"L0 A1 C0 S0xa @")
 </pre>
@@ -51,7 +51,7 @@ e.g.</p>
     in HEX.</li>
 </ul>
 
-<p><span style="font-weight: bold">dbDumpFldDes</span></p>
+<p><strong>dbDumpFldDes</strong></p>
 
 <p>A macro has been defined so that client code can be written that is
 compatible between 3.13 and 3.14.</p>
@@ -64,6 +64,16 @@ compatible between 3.13 and 3.14.</p>
     only pthread_mutex. This is much faster (2 to 3 times as fast) as the
     previous implementation. </li>
 </ul>
+
+<p><strong>Mac OS X</strong></p>
+<p>Now supported as development platform and as IOC.
+
+<p><strong>RTEMS</strong></p>
+<p>Additional RTEMS-pc386 network drivers are available</p>
+
+<p><strong>iocsh</strong></p>
+<p>Configurable iocsh command-line editing support (none, readline, libtecla)</p>
+
 
 <center>
 <h2>Changes since beta1</h2>

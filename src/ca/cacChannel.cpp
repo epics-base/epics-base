@@ -25,13 +25,12 @@ cacChannel::cacChannel () : pChannelIO (0)
 
 cacChannel::~cacChannel ()
 {
-    cacChannelIO *pChanIO = this->pChannelIO;
-    if ( pChanIO ) {
-        pChanIO->destroy ();
+    if ( this->pChannelIO ) {
+        this->pChannelIO->destroy ();
     }
 }
 
-void cacChannel::attachIO (cacChannelIO &io)
+void cacChannel::attachIO ( cacChannelIO &io )
 {
     assert ( ! this->pChannelIO );
     this->pChannelIO = &io;
@@ -40,9 +39,8 @@ void cacChannel::attachIO (cacChannelIO &io)
 
 int cacChannel::read ( unsigned type, unsigned long count, cacNotify & notify )
 {
-    cacChannelIO *pIO = this->pChannelIO;
-    if ( pIO ) {
-        return pIO->read ( type, count, notify );
+    if ( this->pChannelIO ) {
+        return this->pChannelIO->read ( type, count, notify );
     }
     else {
         return ECA_DISCONNCHID;
@@ -51,9 +49,8 @@ int cacChannel::read ( unsigned type, unsigned long count, cacNotify & notify )
 
 int cacChannel::read ( unsigned type, unsigned long count, void *pValue )
 {
-    cacChannelIO *pIO = this->pChannelIO;
-    if ( pIO ) {
-        return pIO->read ( type, count, pValue );
+    if ( this->pChannelIO ) {
+        return this->pChannelIO->read ( type, count, pValue );
     }
     else {
         return ECA_DISCONNCHID;
@@ -62,9 +59,8 @@ int cacChannel::read ( unsigned type, unsigned long count, void *pValue )
 
 int cacChannel::write (unsigned type, unsigned long count, const void *pvalue )
 {
-    cacChannelIO *pIO = this->pChannelIO;
-    if ( pIO ) {
-        return pIO->write (type, count, pvalue);
+    if ( this->pChannelIO ) {
+        return this->pChannelIO->write (type, count, pvalue);
     }
     else {
         return ECA_DISCONNCHID;
@@ -74,9 +70,8 @@ int cacChannel::write (unsigned type, unsigned long count, const void *pvalue )
 int cacChannel::write (unsigned type, unsigned long count, 
                        const void *pvalue, cacNotify & notify )
 {
-    cacChannelIO *pIO = this->pChannelIO;
-    if ( pIO ) {
-        return pIO->write (type, count, pvalue, notify);
+    if ( this->pChannelIO ) {
+        return this->pChannelIO->write (type, count, pvalue, notify);
     }
     else {
         return ECA_DISCONNCHID;
@@ -86,9 +81,8 @@ int cacChannel::write (unsigned type, unsigned long count,
 int cacChannel::subscribe ( unsigned type, unsigned long count, 
                            unsigned mask, cacNotify &notify )
 {
-    cacChannelIO *pIO = this->pChannelIO;
-    if ( pIO ) {
-        return pIO->subscribe ( type, count, mask, notify );
+    if ( this->pChannelIO ) {
+        return this->pChannelIO->subscribe ( type, count, mask, notify );
     }
     else {
         return ECA_DISCONNCHID;
@@ -98,9 +92,8 @@ int cacChannel::subscribe ( unsigned type, unsigned long count,
 void cacChannel::hostName ( char *pBuf, unsigned bufLength ) const
 {
     if ( bufLength ) {
-        cacChannelIO *pIO = this->pChannelIO;
-        if ( pIO ) {
-            pIO->hostName (pBuf, bufLength);
+        if ( this->pChannelIO ) {
+            this->pChannelIO->hostName (pBuf, bufLength);
         }
         else {
             strncpy ( pBuf, "<not connected>", bufLength );
@@ -111,9 +104,8 @@ void cacChannel::hostName ( char *pBuf, unsigned bufLength ) const
 
 const char * cacChannel::pHostName () const
 {
-    cacChannelIO *pIO = this->pChannelIO;
-    if ( pIO ) {
-        return pIO->pHostName ();
+    if ( this->pChannelIO ) {
+        return this->pChannelIO->pHostName ();
     }
     else {
         return "<not connected>";
@@ -122,9 +114,8 @@ const char * cacChannel::pHostName () const
 
 short cacChannel::nativeType () const
 {
-    cacChannelIO *pIO = this->pChannelIO;
-    if ( pIO ) {
-        return pIO->nativeType ();
+    if ( this->pChannelIO ) {
+        return this->pChannelIO->nativeType ();
     }
     else {
         return TYPENOTCONN;
@@ -133,9 +124,8 @@ short cacChannel::nativeType () const
  
 unsigned long cacChannel::nativeElementCount () const
 {
-    cacChannelIO *pIO = this->pChannelIO;
-    if ( pIO ) {
-        return pIO->nativeElementCount ();
+    if ( this->pChannelIO ) {
+        return this->pChannelIO->nativeElementCount ();
     }
     else {
         return 0ul;
@@ -144,9 +134,8 @@ unsigned long cacChannel::nativeElementCount () const
 
 channel_state cacChannel::state () const
 {
-    cacChannelIO *pIO = this->pChannelIO;
-    if ( pIO ) {
-        return pIO->state ();
+    if ( this->pChannelIO ) {
+        return this->pChannelIO->state ();
     }
     else {
         return cs_never_conn;
@@ -155,9 +144,8 @@ channel_state cacChannel::state () const
 
 bool cacChannel::readAccess () const
 {
-    cacChannelIO *pIO = this->pChannelIO;
-    if ( pIO ) {
-        caar ar = pIO->accessRights ();
+    if ( this->pChannelIO ) {
+        caar ar = this->pChannelIO->accessRights ();
         return ar.read_access;
     }
     else {
@@ -167,9 +155,8 @@ bool cacChannel::readAccess () const
 
 bool cacChannel::writeAccess () const
 {
-    cacChannelIO *pIO = this->pChannelIO;
-    if ( pIO ) {
-        caar ar = pChannelIO->accessRights ();
+    if ( this->pChannelIO ) {
+        caar ar = this->pChannelIO->accessRights ();
         return ar.write_access;
     }
     else {
@@ -179,9 +166,8 @@ bool cacChannel::writeAccess () const
 
 const char *cacChannel::pName () const
 {
-    cacChannelIO *pIO = this->pChannelIO;
-    if ( pIO ) {
-        return pIO->pName ();
+    if ( this->pChannelIO ) {
+        return this->pChannelIO->pName ();
     }
     else {
         return "<disconnected>";
@@ -190,9 +176,8 @@ const char *cacChannel::pName () const
 
 unsigned cacChannel::searchAttempts () const
 {
-    cacChannelIO *pIO = this->pChannelIO;
-    if ( pIO ) {
-        return pIO->searchAttempts ();
+    if ( this->pChannelIO ) {
+        return this->pChannelIO->searchAttempts ();
     }
     else {
         return 0u;
@@ -201,9 +186,8 @@ unsigned cacChannel::searchAttempts () const
 
 double cacChannel::beaconPeriod () const
 {
-    cacChannelIO *pIO = this->pChannelIO;
-    if ( pIO ) {
-        return pIO->beaconPeriod ();
+    if ( this->pChannelIO ) {
+        return this->pChannelIO->beaconPeriod ();
     }
     else {
         return - DBL_MAX;
@@ -212,9 +196,8 @@ double cacChannel::beaconPeriod () const
 
 bool cacChannel::ca_v42_ok () const
 {
-    cacChannelIO *pIO = this->pChannelIO;
-    if ( pIO ) {
-        return pIO->ca_v42_ok ();
+    if ( this->pChannelIO ) {
+        return this->pChannelIO->ca_v42_ok ();
     }
     else {
         return false;
@@ -223,9 +206,8 @@ bool cacChannel::ca_v42_ok () const
 
 bool cacChannel::connected () const
 {
-    cacChannelIO *pIO = this->pChannelIO;
-    if ( pIO ) {
-        return pIO->connected ();
+    if ( this->pChannelIO ) {
+        return this->pChannelIO->connected ();
     }
     else {
         return false;
@@ -234,9 +216,8 @@ bool cacChannel::connected () const
 
 caar cacChannel::accessRights () const
 {
-    cacChannelIO *pIO = this->pChannelIO;
-    if ( pIO ) {
-        return pIO->accessRights ();
+    if ( this->pChannelIO ) {
+        return this->pChannelIO->accessRights ();
     }
     else {
         // static here avoids undefined memory read warning from
@@ -277,9 +258,8 @@ void cacChannel::connectTimeoutNotify ()
 
 unsigned cacChannel::readSequence () const
 {
-    cacChannelIO *pIO = this->pChannelIO;
-    if ( pIO ) {
-        return pIO->readSequence ();
+    if ( this->pChannelIO ) {
+        return this->pChannelIO->readSequence ();
     }
     else {
         return 0u;
@@ -288,32 +268,28 @@ unsigned cacChannel::readSequence () const
 
 void cacChannel::decrementOutstandingIO ()
 {
-    cacChannelIO *pIO = this->pChannelIO;
-    if ( pIO ) {
-        pIO->decrementOutstandingIO ();
+    if ( this->pChannelIO ) {
+        this->pChannelIO->decrementOutstandingIO ();
     }
 }
 
 void cacChannel::incrementOutstandingIO ()
 {
-    cacChannelIO *pIO = this->pChannelIO;
-    if ( pIO ) {
-        pIO->incrementOutstandingIO ();
+    if ( this->pChannelIO ) {
+        this->pChannelIO->incrementOutstandingIO ();
     }
 }
 
 void cacChannel::lockOutstandingIO () const
 {
-    cacChannelIO *pIO = this->pChannelIO;
-    if ( pIO ) {
-        pIO->lockOutstandingIO ();
+    if ( this->pChannelIO ) {
+        this->pChannelIO->lockOutstandingIO ();
     }
 }
 
 void cacChannel::unlockOutstandingIO () const
 {
-    cacChannelIO *pIO = this->pChannelIO;
-    if ( pIO ) {
-        pIO->unlockOutstandingIO ();
+    if ( this->pChannelIO ) {
+        this->pChannelIO->unlockOutstandingIO ();
     }
 }

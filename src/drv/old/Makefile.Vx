@@ -11,15 +11,20 @@ USR_CFLAGS = -fshared-data -fvolatile -mnobitfield -traditional
 endif
 
 INC += drvBB232.h
+INC += drvBitBus.h
 INC += drvBitBusErr.h
 INC += drvBitBusInterface.h
-INC += drvMsg.h
-INC += drvGpibInterface.h
+INC += drvGpib.h
 INC += drvGpibErr.h
+INC += drvGpibInterface.h
 INC += drvHiDEOSGpib.h
+INC += drvJgvtr1.h
+INC += drvMsg.h
+INC += drvOms.h
 INC += drvRs232.h
 INC += drvTy232.h
 INC += steppermotor.h
+
 
 SRCS.c += ../module_types.c
 SRCS.c += ../drvBB232.c

@@ -45,6 +45,10 @@ epicsMutexTestHost_SRCS += epicsMutexTestMain.cpp epicsMutexTest.cpp
 PROD_HOST += epicsMutexTestHost
 OBJS_IOC += epicsMutexTest
 
+epicsExceptionTestHost_SRCS += epicsExceptionTestMain.cpp epicsExceptionTest.cpp
+PROD_HOST += epicsExceptionTestHost
+OBJS_IOC += epicsExceptionTest
+
 #fdmgrTest_SRCS += fdmgrTest.c
 #PROD_HOST += fdmgrTest
 

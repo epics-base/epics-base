@@ -93,3 +93,6 @@ ARCH_DEP_CFLAGS = -DSUNOS4
 #SPECIAL_LANG = /usr/lang/SC3.0.1
 #SPECIAL_LANG = /usr/lang/lib
 
+# Runtime ldflags
+RUNTIME_LDFLAGS =$(addprefix -R,$(EPICS_BASE)/lib/$(EPICS_HOST_ARCH)\
+ $(EPICS_EXTENSIONS)/lib/$(EPICS_HOST_ARCH))

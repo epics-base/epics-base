@@ -216,11 +216,6 @@ STATIC_LDFLAGS = $($(ANSI)_SLDFLAGS_$(STATIC_BUILD))
 STATIC_LDLIBS = $($(ANSI)_SLIBS_$(STATIC_BUILD))
 
 #--------------------------------------------------
-# Runtime ldflags
-RUNTIME_LDFLAGS =$(addprefix -R,$(EPICS_BASE)/lib/$(EPICS_HOST_ARCH)\
- $(EPICS_EXTENSIONS)/lib/$(EPICS_HOST_ARCH))
-
-#--------------------------------------------------
 # ar definition default
 ARCMD = $(AR) $(ARFLAGS) $@
 

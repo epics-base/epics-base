@@ -75,11 +75,15 @@
                 (sizeof (array) / sizeof ((array) [0]))
 #endif
 
+#ifndef __cplusplus
+
 #ifndef max
 #define max(x, y)       (((x) < (y)) ? (y) : (x))
 #endif
 #ifndef min
 #define min(x, y)       (((x) < (y)) ? (x) : (y))
+#endif
+
 #endif
 
 #ifndef OFFSET

@@ -27,7 +27,7 @@ TEMPLATES += top/exampleApp/src/xxxRecord.c
 TEMPLATES += top/exampleApp/src/caExample.c
 TEMPLATES += top/exampleApp/src/caMonitor.c
 TEMPLATES += top/exampleApp/src/exampleInclude.dbd
-TEMPLATES += top/exampleApp/src/sncExample.st
+TEMPLATES += top/exampleApp/src/sncExample.stt
 TEMPLATES += top/exampleApp/src/xxxRecord.dbd
 TEMPLATES += top/exampleApp/src/exampleMain.c
 

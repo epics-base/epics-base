@@ -45,9 +45,10 @@ static char SccsId[] = "@(#)bb902_driver.c $Id$ ";
  */
 
 #include <vxWorks.h>
-#include  <vme.h>
+#include <vme.h>
 #include <module_types.h>
-#include <drvsubs.h>
+
+#define MAX_BB_BO_CARDS (bo_num_cards[BB902])
 
 /* Burr-Brown 902 binary output memory structure */
 struct bo_bb902{

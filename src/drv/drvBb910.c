@@ -49,10 +49,20 @@
 #include <vxWorks.h>
 #include <vme.h>
 #include <module_types.h>
-#include <bi_driver.h>
 #include <drvsubs.h>
 
-static char SccsId[] = "@(#)bb910_driver.c	1.1\t9/22/88";
+static char SccsId[] = "$Id$\t$Date$";
+
+#define MAX_BB_BI_CARDS	(bi_num_cards[BB910]) 
+
+/* Burr-Brown 910 binary input memory structure */
+/* Note: the high and low order words are switched from the io card */
+struct bi_bb910{
+        unsigned short  csr;            /* control status register */
+        unsigned short  low_value;      /* low order 16 bits value */
+        unsigned short  high_value;     /* high order 16 bits value */
+        char    end_pad[0x100-6];       /* pad until next card */
+};
 
 /* pointers to the binary input cards */
 struct bi_bb910 *pbi_bb910s[MAX_BB_BI_CARDS];      /* Burr-Brown 910s */

@@ -156,8 +156,8 @@ rebuild: clean install
 
 inc: $(INSTALL_INC) $(INSTALL_OSINC)
 
-build: $(LIBTARGETS) $(PROD) $(TESTPROD) $(TARGETS) \
-	$(MENUS) $(RECTYPES) $(BPTS)
+build: $(MENUS) $(RECTYPES) $(BPTS) \
+	$(LIBTARGETS) $(PROD) $(TESTPROD) $(TARGETS)
 
 ifdef DBDEXPAND
 build:	$(DBDNAME)

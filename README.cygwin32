@@ -61,20 +61,20 @@ BUILD INSTRUCTIONS
         gunzip -d <basereleasename>.gz
         chmod +w -R *
 
-4) Set environment variables and path using base/cygwin32.bat
+4) Set environment variables and path using base\cygwin32.bat
 -------------------------------------------------------------
         <edit cygwin32.bat changing paths if necessary>
-        cd <epicsBaseReleaseDir>/base
+        cd <epicsBaseReleaseDir>\startup
         cygwin32.bat
 
-5) Set site specific parms in epics base/config files
+5) Set site specific parms in epics base\config files
 -----------------------------------------------------
-	cd <epicsBaseReleaseDir>/base/config
+	cd <epicsBaseReleaseDir>\base\config
 	<edit CONFIG_SITE* files>
 
 6) Build epics base
 -------------------
-        cd <epicsBaseReleaseDir>/base
+        cd <epicsBaseReleaseDir>\base
         make
 
 7) Create an EPICS application area (note forward slashes on perl cmd)

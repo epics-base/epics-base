@@ -155,7 +155,7 @@ int errSymBld()
     for (i = 0; i < errSymTbl->nsymbols; i++, errArray++) {
 	modnum = errArray->errNum >> 16;
 	if (modnum < 501) {
-	    printf("errSymBld: ERROR - Module number in errSymTbl < 501 was Module=%x Name=%s\n",
+	    printf("errSymBld: ERROR - Module number in errSymTbl < 501 was Module=%lx Name=%s\n",
 		errArray->errNum, errArray->name);
 	    continue;
 	}
@@ -200,8 +200,8 @@ long errNum;
 unsigned short modnum;
 unsigned short errnum;
 
-	modnum = errNum >> 16;
-	errnum = errNum & 0xffff;
+	modnum = (unsigned short) (errNum >> 16);
+	errnum = (unsigned short) (errNum & 0xffff);
 	return((unsigned short)(((modnum - 500) * 20) + errnum) % NHASH);
 }
 
@@ -275,7 +275,7 @@ int ModSymFind(status, pname, pvalue)
     ERRNUMNODE *pNextNode;
     ERRNUMNODE **phashnode = NULL;
 
-    modNum = (status >> 16);
+    modNum = (unsigned short) (status >> 16);
     if (modNum < 501) {
 	*pvalue = -1;
 	return(0);
@@ -319,7 +319,7 @@ int errSymFind(status, name)
 	errSymBld();
     }
 
-    modnum = (status >> 16);
+    modnum = (unsigned short) (status >> 16);
     if (modnum <= 500)
 #ifdef vxWorks
 	symFindByValue((SYMTAB_ID)statSymTbl, status, name,(int*) &value, (SYM_TYPE*)&type);
@@ -397,8 +397,8 @@ long errNum;
 	errSymBld();
 
     message[0] = '\0';
-    modnum = errNum >> 16;
-    errnum = errNum & 0xffff;
+    modnum = (unsigned short) (errNum >> 16);
+    errnum = (unsigned short) (errNum & 0xffff);
     if (modnum < 501) {
         printf("Usage:  errSymTestPrint(long errNum) \n");
         printf("errSymTestPrint: module number < 501 \n");
@@ -435,5 +435,3 @@ unsigned short endErrNum;
 	errSymTestPrint(errNum);
     }
 }
-
-

@@ -9,6 +9,21 @@
 const pvInfo *pvInfo::pFirst;
 
 //
+// if the compiler supports explicit instantiation of
+// template member functions
+//
+#if defined(EXPL_TEMPL) 
+	//
+	// From Stroustrups's "The C++ Programming Language"
+	// Appendix A: r.14.9 
+	//
+	// This explicitly instantiates the template class's 
+	// member functions into "templInst.o"
+	//
+	template class resTable <pvEntry,stringId>;
+#endif
+
+//
 // directoryServer::directoryServer()
 //
 directoryServer::directoryServer(const char * const pvPrefix, unsigned pvCount, unsigned aliasCount) : 

@@ -10,7 +10,6 @@ PROD_LIBS := cas ca gdd Com
 
 SRCS += main.cc
 SRCS += directoryServer.cc
-SRCS += templInst.cc
 
 PROD := caDirServ
 

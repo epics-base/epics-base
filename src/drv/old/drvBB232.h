@@ -58,10 +58,7 @@ typedef struct {
   msgParmBlock	*pparmBlock;
 } drvBB232Link;
 
-#ifndef DRVBB232_C
-extern
-#endif
-msgDrvBlock drvBB232Block;
+extern msgDrvBlock drvBB232Block;
 
 #define	BB232_DEFAULT_AGE	(sysClkRateGet())	/* 1 second */
 

@@ -31,7 +31,6 @@
  *
  */
 
-#define	DRVBB232_C
 
 #include <vxWorks.h>
 #include <stdlib.h>

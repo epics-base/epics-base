@@ -69,9 +69,6 @@ typedef struct {
   msgParmBlock	*pparmBlock;
 } devTy232Link;
 
-#ifndef DRVTY232_C
-extern
-#endif
-msgDrvBlock drv232Block;
+extern msgDrvBlock drv232Block;
 
 #endif

@@ -380,8 +380,11 @@ struct link	*plink;		/* I/O link structure from record */
     return(NULL);
   }
   sprintf(name, "%s", pparmBlock->pdrvBlock->taskName);
-  if ((taskId = taskSpawn(name, pparmBlock->pdrvBlock->taskPri, pparmBlock->pdrvBlock->taskOpt, pparmBlock->pdrvBlock->taskStack, msgTask, pparmBlock->pdrvBlock, pmsgLink)) == ERROR)
-  {
+  if ((taskId = taskSpawn(
+  name, pparmBlock->pdrvBlock->taskPri, pparmBlock->pdrvBlock->taskOpt,
+  pparmBlock->pdrvBlock->taskStack, msgTask, pparmBlock->pdrvBlock,
+  pmsgLink,
+  0,0,0,0,0,0,0,0)) == ERROR) {
     printf("Message driver: Failed to start link task %s\n", name);
 /* BUG --delete the FASTLOCK in here */
     status = ERROR;

@@ -23,8 +23,6 @@ typedef enum {epicsEventEmpty,epicsEventFull} epicsEventInitialState;
 
 #ifdef __cplusplus
 
-#include "locationException.h"
-
 class epicsShareClass epicsEvent {
 public:
     epicsEvent ( epicsEventInitialState initial = epicsEventEmpty );

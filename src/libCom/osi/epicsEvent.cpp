@@ -18,15 +18,16 @@
 #include "epicsEvent.h"
 #include "epicsStdioRedirect.h"
 
-/* 
- * exception payload
- */
-class epicsEvent::invalidSemaphore : public std::exception
+// vxWorks 5.4 gcc fails during compile when I use std::exception
+using namespace std;
+
+// exception payload
+class epicsEvent::invalidSemaphore : public exception
 {
-    const char * what () const;
+    const char * what () const throw ();
 }; 
 
-const char * epicsEvent::invalidSemaphore:: what () const 
+const char * epicsEvent::invalidSemaphore::what () const throw () 
 {
     return "epicsEvent::invalidSemaphore()";
 }
@@ -61,7 +62,7 @@ void epicsEvent::wait ()
     epicsEventWaitStatus status;
     status = epicsEventWait (this->id);
     if (status!=epicsEventWaitOK) {
-        throwWithLocation ( invalidSemaphore () );
+        throw invalidSemaphore ();
     }
 }
 
@@ -74,7 +75,7 @@ bool epicsEvent::wait (double timeOut)
     } else if (status==epicsEventWaitTimeout) {
         return false;
     } else {
-        throwWithLocation ( invalidSemaphore () );
+        throw invalidSemaphore ();
     }
     return false;
 }
@@ -88,7 +89,7 @@ bool epicsEvent::tryWait ()
     } else if (status==epicsEventWaitTimeout) {
         return false;
     } else {
-        throwWithLocation ( invalidSemaphore () );
+        throw invalidSemaphore ();
     }
     return false;
 }

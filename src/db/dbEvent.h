@@ -52,6 +52,7 @@ struct event_block{
 					db_field_log *pfl);
         void                    *user_arg;
         struct event_que        *ev_que;
+	db_field_log		*pLastLog;
         unsigned char           select;
         char                    valque;
         unsigned long           npend;  /* n times this event is on the que */
@@ -64,7 +65,8 @@ typedef void			EVENTFUNC(
 					db_field_log *pfl);
 
 
-#define EVENTQUESIZE    EVENTENTRIES  *32
+#define EVENTSPERQUE	32
+#define EVENTQUESIZE    (EVENTENTRIES  * EVENTSPERQUE)
 #define EVENTENTRIES    16      /* the number of que entries for each event */
 #define EVENTQEMPTY     ((struct event_block *)NULL)
 

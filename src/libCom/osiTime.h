@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.7  1999/04/30 00:02:02  jhill
+ * added getCurrentEPICS()
+ *
  * Revision 1.6  1997/06/13 09:31:46  jhill
  * fixed warnings
  *
@@ -74,17 +77,19 @@
 #include "shareLib.h"
 
 class epicsShareClass osiTime {
-	friend inline osiTime operator+ 
+	friend osiTime operator+ 
 		(const osiTime &lhs, const osiTime &rhs);
-	friend inline osiTime operator- 
+	friend osiTime operator- 
 		(const osiTime &lhs, const osiTime &rhs);
-	friend inline int operator>= 
+	friend int operator>= 
 		(const osiTime &lhs, const osiTime &rhs);
-	friend inline int operator> 
+	friend int operator> 
 		(const osiTime &lhs, const osiTime &rhs);
-	friend inline int operator<=
+	friend int operator<=
 		(const osiTime &lhs, const osiTime &rhs);
-	friend inline int operator< 
+	friend int operator< 
+		(const osiTime &lhs, const osiTime &rhs);
+	friend int operator==
 		(const osiTime &lhs, const osiTime &rhs);
 public:
 	osiTime () : sec(0u), nSec(0u) {}
@@ -165,23 +170,68 @@ public:
 	static osiTime getCurrent();
 
 	//
-	// return time stamp with EPICS epoch
+	// convert to and from EPICS TS_STAMP format
 	//
-	static osiTime getCurrentEPICS()
+	// include tsDefs.h prior to including osiTime.h
+	// if you need these capabilities
+	//
+#ifdef INC_tsDefs_h
+	operator TS_STAMP () const
 	{
-		//
-		// 1/1/90 20 yr (5 leap) of seconds
-		//
-		static const unsigned epicsEpochSecPast1970 = 7305 * 86400; 
-
-		osiTime ts(osiTime::getCurrent());
-		assert (ts.sec>=epicsEpochSecPast1970);
-		ts.sec -= epicsEpochSecPast1970;
+		TS_STAMP ts;
+		assert (this->sec>=osiTime::epicsEpochSecPast1970);
+		ts.secPastEpoch = this->sec - osiTime::epicsEpochSecPast1970;
+		ts.nsec = this->nSec;
 		return ts;
 	}
 
-	osiTime operator+= (const osiTime &rhs);
-	osiTime operator-= (const osiTime &rhs);
+	osiTime (const TS_STAMP &ts) 
+	{
+		this->sec = ts.secPastEpoch + osiTime::epicsEpochSecPast1970;
+		this->nSec = ts.nsec;
+	}
+
+	operator = (const TS_STAMP &rhs)
+	{
+		this->sec = rhs.secPastEpoch + osiTime::epicsEpochSecPast1970;
+		this->nSec = rhs.nsec;
+	}
+#endif
+
+	//
+	// convert to and from GDD's aitTimeStamp format
+	//
+	// include aitHelpers.h prior to including osiTime.h
+	// if you need these capabilities
+	//
+#ifdef aitHelpersInclude
+	operator aitTimeStamp () const
+	{
+		return aitTimeStamp (this->sec, this->nSec);
+	}
+
+	osiTime (const aitTimeStamp &ts) 
+	{
+		ts.get (this->sec, this->nSec);
+	}
+
+	operator = (const aitTimeStamp &rhs)
+	{
+		rhs.get (this->sec, this->nSec);
+	}
+#endif
+
+	osiTime operator+= (const osiTime &rhs)
+	{
+		*this = *this + rhs;
+		return *this;
+	}
+
+	osiTime operator-= (const osiTime &rhs)
+	{
+		*this = *this - rhs;
+		return *this;
+	}
 
 	void show(unsigned)
 	{
@@ -191,17 +241,13 @@ public:
 private:
 	unsigned long sec;
 	unsigned long nSec;
+
+	static const unsigned epicsEpochSecPast1970; 
 };
 
 inline osiTime operator+ (const osiTime &lhs, const osiTime &rhs)
 {
 	return osiTime(lhs.sec + rhs.sec, lhs.nSec + rhs.nSec);	
-}
-
-inline osiTime osiTime::operator+= (const osiTime &rhs)
-{
-	*this = *this + rhs;
-	return *this;
 }
 
 //
@@ -235,11 +281,6 @@ inline osiTime operator- (const osiTime &lhs, const osiTime &rhs)
 	return osiTime(sec, nSec);	
 }
 
-inline osiTime osiTime::operator-= (const osiTime &rhs)
-{
-	*this = *this - rhs;
-	return *this;
-}
 
 inline int operator <= (const osiTime &lhs, const osiTime &rhs)
 {
@@ -345,6 +386,17 @@ inline int operator > (const osiTime &lhs, const osiTime &rhs)
 		}
 	}
 	return rc;
+}
+
+inline int operator==
+		(const osiTime &lhs, const osiTime &rhs)
+{
+	if (lhs.sec == rhs.sec && lhs.nSec == rhs.nSec) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
 }
 
 #endif // osiTimehInclude

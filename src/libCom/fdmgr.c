@@ -71,6 +71,9 @@
  *			we eliminate delete ambiguity (chance of the same
  *			being reused).
  * $Log$
+ * Revision 1.29  1998/02/27 01:34:12  jhill
+ * cleaned up the DLL symbol export
+ *
  * Revision 1.28  1998/02/20 21:45:14  evans
  * Made a large number of changes to epicsShareThings in libCom routines
  * to get imports and exports straight on WIN32.  Not everything is fixed
@@ -138,11 +141,8 @@ static char	*pSccsId = "@(#) $Id$";
 #include "epicsAssert.h"
 #include "epicsTypes.h"
 #include "fdmgr.h"
-
-#if 0
-#define NOBSDNETPROTO
-#include "bsdProto.h"
-#endif
+#include "osiSleep.h"
+#include "bsdSocketResource.h"
 
 #ifndef TRUE
 #define TRUE 1
@@ -177,12 +177,12 @@ typedef struct{
 }fdentry;
 
 typedef struct{
-        ELLNODE                 node;
-        struct timeval          t;
-        void                    (*func)(void *pParam);
-        void                    *param;
-        enum alarm_list_type    alt;
-        unsigned                id;
+	ELLNODE                 node;
+	struct timeval          t;
+	void                    (*func)(void *pParam);
+	void                    *param;
+	enum alarm_list_type    alt;
+	unsigned                id;
 }fdmgrAlarm;
 
 #if defined(vxWorks)
@@ -261,45 +261,59 @@ epicsShareFunc fdctx * epicsShareAPI fdmgr_init(void)
 {
 	fdctx 		*pfdctx;
 
+	assert (bsdSockAttach());
+
 	pfdctx = (fdctx *) calloc(1, sizeof(fdctx));
 	if (!pfdctx) {
+		bsdSockRelease();
 		return pfdctx;
 	}
 
 	pfdctx->pAlarmBucket = bucketCreate (1024);
 	if (!pfdctx->pAlarmBucket) {
 		free (pfdctx);
+		bsdSockRelease();
 		return NULL;
 	}
 
 #	if defined(vxWorks)
 		pfdctx->lock = semMCreate (SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
 		if (pfdctx->lock == NULL){
+			bsdSockRelease();
 			return NULL;
 		}
 		pfdctx->fdmgr_pend_event_lock = semMCreate (SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
 		if (pfdctx->fdmgr_pend_event_lock == NULL){
+			bsdSockRelease();
 			return NULL;
 		}
 		pfdctx->expired_alarm_lock = semMCreate (SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
 		if (pfdctx->expired_alarm_lock == NULL) {
+			bsdSockRelease();
 			return NULL;
 		}
 		pfdctx->fd_handler_lock = semMCreate (SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
 		if (pfdctx->fd_handler_lock == NULL) {
+			bsdSockRelease();
 			return NULL;
 		}
 		pfdctx->clk_rate = sysClkRateGet();
 		pfdctx->last_tick_count = tickGet();
 #	endif
 
-	ellInit(&pfdctx->fdentry_list);
-	ellInit(&pfdctx->fdentry_in_use_list);
-	ellInit(&pfdctx->fdentry_free_list);
-	ellInit(&pfdctx->alarm_list);
-	ellInit(&pfdctx->expired_alarm_list);
-	ellInit(&pfdctx->free_alarm_list);
+	/*
+	 * winsock requires this
+	 */
+    FD_ZERO (&pfdctx->readch);
+    FD_ZERO (&pfdctx->writech);
+    FD_ZERO (&pfdctx->excpch);
 
+	ellInit (&pfdctx->fdentry_list);
+	ellInit (&pfdctx->fdentry_in_use_list);
+	ellInit (&pfdctx->fdentry_free_list);
+	ellInit (&pfdctx->alarm_list);
+	ellInit (&pfdctx->expired_alarm_list);
+	ellInit (&pfdctx->free_alarm_list);
 
 	/*
  	 * returns NULL if unsuccessful
@@ -350,6 +364,8 @@ epicsShareFunc int epicsShareAPI fdmgr_delete(fdctx *pfdctx)
 	bucketFree (pfdctx->pAlarmBucket);
 	ellFree(&pfdctx->expired_alarm_list);
 	ellFree(&pfdctx->free_alarm_list);
+
+	bsdSockRelease();
 
 	return FDMGR_OK;
 }
@@ -580,7 +596,7 @@ void			*param
 	fd_set		*pfds;
 
 	if (!FD_IN_FDSET(fd)) {
-		fprintf (stderr, "%s: fd > FD_SETSIZE ignored\n", 
+		fdmgrPrintf ("%s: fd > FD_SETSIZE ignored\n", 
 			__FILE__);
 		return FDMGR_ERROR;
 	}
@@ -735,7 +751,7 @@ fdctx 			*pfdctx,
 register fdentry	*pfdentry
 )
 {
-     	FD_CLR(pfdentry->fd, pfdentry->pfds);
+	FD_CLR(pfdentry->fd, pfdentry->pfds);
 	ellAdd(&pfdctx->fdentry_free_list, &pfdentry->node);
 }
 
@@ -815,9 +831,10 @@ fdctx 				*pfdctx,
 struct timeval 			*ptimeout
 )
 {
-	register fdentry	*pfdentry;
-	int			labor_performed;
-	int			status;
+	register fdentry *pfdentry;
+	int labor_performed;
+	int status;
+	int ioPending = 0;
 
 	labor_performed = FALSE;
 
@@ -827,29 +844,48 @@ struct timeval 			*ptimeout
 		pfdentry = (fdentry *) pfdentry->node.next){
 
      		FD_SET(pfdentry->fd, pfdentry->pfds);
+			ioPending = 1;
 	}
 	UNLOCK(pfdctx);
 
 	/*
-	 * V5 vxWorks ref man has an ominous
-	 * comment about deleting a task while
-	 * it is in select() so I am turning
-	 * on task delete disable to be safe
+ 	 * win32 requires this (others will
+	 * run faster with this installed)
 	 */
-#	ifdef vxWorks 
-		taskSafe();
-#	endif
+	if (!ioPending) {
+		/*
+		 * recover from subtle differences between
+		 * windows sockets and UNIX sockets implementation
+		 * of select()
+		 */
+		if (ptimeout->tv_sec!=0 ||
+			ptimeout->tv_usec!=0 ) {
+			osiSleep (ptimeout->tv_sec, ptimeout->tv_usec);
+		}
+		status = 0;
+	}
+	else {
+		/*
+		 * V5 vxWorks ref man has an ominous
+		 * comment about deleting a task while
+		 * it is in select() so I am turning
+		 * on task delete disable to be safe
+		 */
+#		ifdef vxWorks 
+			taskSafe();
+#		endif
+  		status = select(
+				pfdctx->maxfd,
+				&pfdctx->readch,
+				&pfdctx->writech,
+				&pfdctx->excpch,
+				ptimeout);
 
-  	status = select(
-			pfdctx->maxfd,
-			&pfdctx->readch,
-			&pfdctx->writech,
-			&pfdctx->excpch,
-			ptimeout);
+#		ifdef vxWorks 
+			taskUnsafe();
+#		endif
+	}
 
-#	ifdef vxWorks 
-		taskUnsafe();
-#	endif
 	if(status == 0){
 		return labor_performed;
 	}

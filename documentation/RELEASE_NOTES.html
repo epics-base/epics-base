@@ -31,23 +31,21 @@ that it ignores case.</p>
 
 <h4>R3.13 compatability files</h4>
 
-<p>R3.13 compatability files will no longer be generated as
-default during the build. There are two new macros, COMPAT_313
-and COMPAT_TOOLS_313, in configure/CONFIG_SITE which can be
-set to YES for R3.13 compatability files to be created and 
-installed.  You should set COMPAT_313 to YES if you want R3.13
-ioc applications and R3.13 extensions built with this R3.14 base.
-Setting COMPAT_313 to yes in CONFIG_SITE will result in the perl
-build tools and vxWorks object files to be installed.  If you
-wish to build only R3.13 extensions and not R3.13 ioc applications
-with this R3.14 base, you can install only the perl tools needed
-by the R3.13 build by setting only COMPAT_TOOLS_313 to YES in
-configure/CONFIG_SITE.
-</p>
-
-<p>The COMPAT_313 macro is set to NO in the CONFIG_SITE distribution
-file.
-</p>
+<p>R3.13 compatability files are no longer generated automatically
+during the build. configure/CONFIG_SITE contains two new
+macros for building compatibility files. 
+They are set to NO but can be set to YES.
+The macros are:</p>
+<ul>
+   <li>COMPAT_TOOLS_313
+      <p>This will install the compatibility files needed to build
+         R3.13 extensions built with this R3.14 base.</p>
+   </li>
+   <li>COMPAT_313
+      <p>This will install the compatibility files needed to build
+         R3.13 extensions and IOC applications built with this R3.14 base.</p>
+   </li>
+</ul>
 
 <h4>APS Virtual LINAC Templates</h4>
 

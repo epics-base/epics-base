@@ -465,12 +465,9 @@ LOCAL void event_remove ( struct event_que *ev_que,
 /*
  * DB_CANCEL_EVENT()
  *
- *
- * This routine does not prevent two threads from deleting one block at the
- * same time.
+ * This routine does not prevent two threads from deleting 
+ * the same block at the same time.
  * 
- * This routine does not deallocate the event block since it normally will be
- * part of a larger structure.
  */
 void epicsShareAPI db_cancel_event (dbEventSubscription es)
 {

@@ -13,14 +13,12 @@ while ($line = <STDIN>)
         ($adr,$type,$name) = split ' ',$line,3;
         chop $name;
         $name =~ s/^__/_/;
-        next if ( $name =~ /^__?GLOBAL_.D.\.\./ );
         @dtorlist = (@dtorlist,$name);
     };
     if ($line =~ /__?GLOBAL_.I.+/) {
         ($adr,$type,$name) = split ' ',$line,3;
         chop $name;
         $name =~ s/^__/_/;
-        next if ( $name =~ /^__?GLOBAL_.I.\.\./ );
         @ctorlist = (@ctorlist,$name);
     };
 }

@@ -18,8 +18,7 @@ tcpRecvWatchdog::tcpRecvWatchdog
     period ( periodIn ),
     echoProtocolAccepted ( echoProtocolAcceptedIn ),
     responsePending ( false ),
-    beaconAnomaly ( true ),
-    dead (true)
+    beaconAnomaly ( true )
 {
 }
 
@@ -30,10 +29,11 @@ tcpRecvWatchdog::~tcpRecvWatchdog ()
 void tcpRecvWatchdog::expire ()
 {
     if ( this->responsePending ) {
+        this->cancel ();
         char hostName[128];
         this->hostName ( hostName, sizeof (hostName) );
         ca_printf ( "CA server %s unresponsive for %g sec. Disconnecting.\n", 
-            hostName, this->period );
+            hostName, this->period + CA_ECHO_TIMEOUT );
         this->shutdown ();
     }
     else {
@@ -51,7 +51,7 @@ void tcpRecvWatchdog::destroy ()
 
 bool tcpRecvWatchdog::again () const
 {
-    return ( ! this->dead );
+    return true;
 }
 
 double tcpRecvWatchdog::delay () const

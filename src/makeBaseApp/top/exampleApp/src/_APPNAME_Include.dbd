@@ -1,3 +1,4 @@
 include "base.dbd"
 include "xxxSupport.dbd"
 registrar(mySubRegistrar)
+variable(mySubDebug)

@@ -1,30 +1,38 @@
-# Example vxWorks startup file
+## Example vxWorks startup file
 
-# Following will be needed for many board support packages
+## The following is needed if your board support package doesn't at boot time
+## automatically cd to the directory containing its startup script
 #cd "_TOP_/iocBoot/_IOC_"
 
 < cdCommands
-
 #< ../nfsCommands
 
 cd topbin
-# You may have to change _APPNAME_ to something else
-# everywhere it appears in this file
+## You may have to change _APPNAME_ to something else
+## everywhere it appears in this file
 
 ld < _APPNAME_.munch
 
-#The following uses drvTS for vxWorks. May be needed for hardware event systems
+## This drvTS initializer is needed if the IOC has a hardware event system
 #TSinit
 
+## Register all support components
 cd top
 dbLoadDatabase("dbd/_APPNAME_.dbd",0,0)
 registerRecordDeviceDriver(pdbbase)
+
+## Load record instances
 dbLoadRecords("db/dbExample1.db","user=_USER_")
 dbLoadRecords("db/dbExample2.db","user=_USER_,no=1,scan=1 second")
 dbLoadRecords("db/dbExample2.db","user=_USER_,no=2,scan=2 second")
 dbLoadRecords("db/dbExample2.db","user=_USER_,no=3,scan=5 second")
 dbLoadRecords("db/dbSubExample.db","user=_USER_")
 
+## Set this to see messages from mySub
+#mySubDebug = 1
+
 cd startup
-iocInit
+iocInit()
+
+## Start any sequence programs
 #seq &sncExample,"user=_USER_"

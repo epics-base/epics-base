@@ -5,19 +5,24 @@
 #include <subRecord.h>
 #include <epicsExport.h>
 
+int mySubDebug;
+epicsExportAddress(int, mySubDebug);
+
 typedef long (*processMethod)(subRecord *precord);
 
 static long mySubInit(subRecord *precord,processMethod process)
 {
-    printf("Record %s called mySubInit(%p, %p)\n",
-	   precord->name, (void*) precord, (void*) process);
+    if (mySubDebug)
+        printf("Record %s called mySubInit(%p, %p)\n",
+               precord->name, (void*) precord, (void*) process);
     return(0);
 }
 
 static long mySubProcess(subRecord *precord)
 {
-    printf("Record %s called mySubProcess(%p)\n",
-	   precord->name, (void*) precord);
+    if (mySubDebug)
+        printf("Record %s called mySubProcess(%p)\n",
+               precord->name, (void*) precord);
     return(0);
 }
 

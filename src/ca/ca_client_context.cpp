@@ -727,14 +727,18 @@ cacContext & ca_client_context::createNetworkContext (
     return * new cac ( mutexIn, cbMutexIn, *this );
 }
 
-void epicsShareAPI caInstallDefaultService ( cacService & service )
+void ca_client_context::installDefaultService ( cacService & service )
 {
     // this wont consistently work if called from file scope constructor
     epicsGuard < epicsMutex > guard ( ca_client_context::defaultServiceInstallMutex );
     if ( ca_client_context::pDefaultService ) {
-        throw std::logic_error ( "CA in-memory service already installed and can't be replaced");
+        throw std::logic_error
+            ( "CA in-memory service already installed and can't be replaced");
     }
     ca_client_context::pDefaultService = & service;
 }
 
-
+void epicsShareAPI caInstallDefaultService ( cacService & service )
+{
+    ca_client_context::installDefaultService ( service );
+}

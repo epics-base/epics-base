@@ -307,6 +307,7 @@ public:
     void blockForEventAndEnableCallbacks ( 
         epicsEvent & event, const double & timeout );
     CASG * lookupCASG ( epicsGuard < epicsMutex > &, unsigned id );
+    static void installDefaultService ( cacService & );
     void installCASG ( epicsGuard < epicsMutex > &, CASG & );
     void uninstallCASG ( epicsGuard < epicsMutex > &, CASG & );
     void selfTest () const;
@@ -389,7 +390,6 @@ private:
     friend int epicsShareAPI ca_sg_block ( const CA_SYNC_GID gid, ca_real timeout );
     friend int epicsShareAPI ca_sg_reset ( const CA_SYNC_GID gid );
     friend int epicsShareAPI ca_sg_test ( const CA_SYNC_GID gid );
-    friend void epicsShareAPI caInstallDefaultService ( cacService & );
     friend int epicsShareAPI ca_change_connection_event ( chid pChan, caCh *pfunc );
     friend int epicsShareAPI ca_replace_access_rights_event ( chid pChan, caArh *pfunc );
     friend void epicsShareAPI ca_get_host_name ( chid pChan, char *pBuf, unsigned bufLength );

@@ -89,10 +89,6 @@
  *		FLASE		expression element not found
  */
 
-#ifdef vxWorks
-#include  <vxWorks.h>
-#endif
-
 #include	<stdlib.h>
 #include	<stdio.h>
 #include	<string.h>

@@ -121,26 +121,13 @@
 #include <limits.h>
 #include <math.h>
 
-#define INC_tsDefs_h
-#if defined(vxWorks)
-#   include <vxWorks.h>
-#   include "drvTS.h"
-#elif defined(VMS)
-#   include <sys/types.h>
-#   include <sys/time.h>
-#   include <sys/socket.h>
-#elif defined(_WIN32)
-#   include <winsock2.h>
-#   include <time.h>
-#else
-#   include <sys/time.h>
-#endif
+#include "osiClock.h"
+
 
 #define epicsExportSharedSymbols
 #include "epicsAssert.h"
 #include "envDefs.h"
 #define createTSSubrGlobals
-#undef INC_tsDefs_h
 #include "tsDefs.h"
 
 
@@ -666,95 +653,7 @@ long epicsShareAPI tsLocalTime(TS_STAMP *pStamp)
     long	retStat=S_ts_OK;/* return status to caller */
 
     assert(pStamp != NULL);
-
-    {
-#   if defined(vxWorks)
-	    retStat = TScurrentTimeStamp((struct timespec*)pStamp);
-	    if (retStat == 0) {
-			return S_ts_OK;
-	    }
-	    else {
-			return S_ts_sysTimeError;
-	    }
-#   elif defined(_WIN32)
-		static long offset_time_s = 0;  /* time diff (sec) from 1990 when EPICS started */
-		static LARGE_INTEGER time_prev, time_freq;
-		LARGE_INTEGER time_cur, time_sec, time_remainder;
-
-		if (offset_time_s == 0) {
-			/*
-			 * initialize elapsed time counters
-			 *
-			 * All CPUs running win32 currently have HR
-			 * counters (Intel and Mips processors do)
-			 */
-			if (QueryPerformanceCounter (&time_prev)==0) {
-				return S_ts_sysTimeError;
-			}
-			if (QueryPerformanceFrequency (&time_freq)==0) {
-				return S_ts_sysTimeError;
-			}
-			offset_time_s = (long)time(NULL) - TS_EPOCH_SEC_PAST_1970 
-								- (long)(time_prev.QuadPart/time_freq.QuadPart);
-		}
-
-		/*
-		 * dont need to check status since it was checked once
-		 * during initialization to see if the CPU has HR
-		 * counters (Intel and Mips processors do)
-		 */
-		QueryPerformanceCounter (&time_cur);
-		if (time_prev.QuadPart > time_cur.QuadPart)	{	/* must have been a timer roll-over */
-			double offset;
-			/*
-			 * must have been a timer roll-over
-			 * It takes 9.223372036855e+18/time_freq sec
-			 * to roll over this counter (time_freq is 1193182
-			 * sec on my system). This is currently about 245118 years.
-			 *
-			 * attempt to add number of seconds in a 64 bit integer
-			 * in case the timer resolution improves
-			 */
-			offset = pow(2.0, 63.0)-1.0/time_freq.QuadPart;
-			if (offset<=LONG_MAX-offset_time_s) {
-				offset_time_s += (long) offset;
-			}
-			else {
-				/*
-				 * this problem cant be fixed, but hopefully will never occurr
-				 */
-				fprintf (stderr, "%s.%d Timer overflowed\n", __FILE__, __LINE__);
-				return S_ts_sysTimeError;
-			}
-		}
-		time_sec.QuadPart = time_cur.QuadPart / time_freq.QuadPart;
-		time_remainder.QuadPart = time_cur.QuadPart % time_freq.QuadPart;
-		if (time_sec.QuadPart > LONG_MAX-offset_time_s) {
-			/*
-			 * this problem cant be fixed, but hopefully will never occurr
-			 */
-			fprintf (stderr, "%s.%d Timer value larger than storage\n", __FILE__, __LINE__);
-			return S_ts_sysTimeError;
-		}
-
-		/* add time (sec) since 1990 */
-		pStamp->secPastEpoch = offset_time_s + (long)time_sec.QuadPart;
-		pStamp->nsec = (long)((time_remainder.QuadPart*1000000000)/time_freq.QuadPart);
-
-		time_prev = time_cur;
-
-#   else
-		struct timeval curtime;
-
-		assert(pStamp != NULL);
-		if (gettimeofday(&curtime, (struct timezone *)NULL) == -1)
-			retStat = S_ts_sysTimeError;
-		else {
-			pStamp->nsec = curtime.tv_usec * 1000;
-			pStamp->secPastEpoch = curtime.tv_sec - TS_EPOCH_SEC_PAST_1970;
-		}
-#	endif
-    }
+    clockGetCurrentTime(pStamp);
 
     pStamp->nsec = pStamp->nsec - (pStamp->nsec % TS_TRUNC);
     return retStat;

@@ -19,12 +19,6 @@ of this distribution.
  * .01  11-21-97	pmm	Initial Implementation	
  */
 
-#ifdef vxWorks
-#include <vxWorks.h>
-#include <taskLib.h>
-#include "fast_lock.h"
-#endif
-
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>

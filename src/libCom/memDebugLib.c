@@ -33,22 +33,12 @@
 #include <string.h>
 #include <time.h>
 
+#include "osiClock.h"
+#include "osiSem.h"
 #define  epicsExportSharedSymbols
 #include "epicsAssert.h"
 #include "ellLib.h"
 
-#ifdef vxWorks
-#define LOCKS_REQUIRED
-#include <tickLib.h>
-#endif /*vxWorks*/
-
-#ifdef LOCKS_REQUIRED
-#include "fast_lock.h"
-#else /*LOCKS_REQUIRED*/
-#define FASTLOCK(A) 
-#define FASTUNLOCK(A)
-#define FASTLOCKINIT(A)
-#endif /*LOCKS_REQUIRED*/
 
 unsigned memDebugLevel = 1;
 
@@ -73,10 +63,8 @@ typedef struct debugMallocHeader{
 
 #define LOCAL static
 
-#ifdef LOCKS_REQUIRED 
 LOCAL int memDebugInit;
-LOCAL FAST_LOCK	memDebugLock;
-#endif /*LOCKS_REQUIRED*/ 
+LOCAL semId	memDebugLock;
 
 #ifdef __STDC__
 LOCAL int memDebugVerify(DMH *pHdr);
@@ -113,23 +101,17 @@ unsigned long 	size;
 	pHdr->line = line;
 	pHdr->size = size;
 	pHdr->magic = debugMallocMagic;
-#ifdef vxWorks
-	pHdr->tick = tickGet();
-#else /*vxWorks*/
-	pHdr->tick = clock();
-#endif /*vxWorks*/
+	pHdr->tick = clockGetCurrentTick();
 	strcpy (pHdr->pFoot, debugMallocFooter);
 
-#ifdef LOCKS_REQUIRED
 	if(!memDebugInit){
 		memDebugInit = 1;
-		FASTLOCKINIT(&memDebugLock);
+                memDebugLock = semMutexCreate();
 	}
-#endif /*LOCKS_REQUIRED*/
 
-	FASTLOCK(&memDebugLock);
+	semMutexTake(memDebugLock);
 	ellAdd(&memDebugList, &pHdr->node);
-	FASTUNLOCK(&memDebugLock);
+	semMutexGive(memDebugLock);
 
 	if(memDebugLevel>2){
 		fprintf(stderr, "%08x=malloc(%ld) %s.%ld\n", 
@@ -175,11 +157,11 @@ void *ptr;
 	int	status;
 
 	pHdr = -1 + (DMH *) ptr;
-	FASTLOCK(&memDebugLock);
+	semMutexTake(memDebugLock);
 	status = ellFind(&memDebugList, &pHdr->node);
 
 	if(status<0 || (pHdr->pUser != ptr)){
-		FASTUNLOCK(&memDebugLock);
+		semMutexGive(memDebugLock);
 		fprintf(stderr, "%s.%ld free(%08x) failed\n", 
 			pFile, line, (unsigned) ptr);
 		fprintf(stderr, "malloc occured at %s.%ld\n", 
@@ -187,7 +169,7 @@ void *ptr;
 		assert(0);
 	}
 	ellDelete(&memDebugList, &pHdr->node);
-	FASTUNLOCK(&memDebugLock);
+	semMutexGive(memDebugLock);
 
 	memDebugVerify(pHdr);	
 
@@ -242,12 +224,12 @@ int memDebugVerifyAll()
 	int	status;
 	DMH	*pHdr;
 
-	FASTLOCK(&memDebugLock);
+	semMutexTake(memDebugLock);
 	pHdr = (DMH *) ellFirst(&memDebugList);
 	while( (pHdr = (DMH *) ellNext(pHdr)) ){
 		status = memDebugVerify(pHdr);
 	}
-	FASTUNLOCK(&memDebugLock);
+	semMutexGive(memDebugLock);
 	return 0;
 }
 
@@ -264,7 +246,7 @@ unsigned long ignoreBeforeThisTick;
 {
 	DMH	*pHdr;
 
-	FASTLOCK(&memDebugLock);
+	semMutexTake(memDebugLock);
 	pHdr = (DMH *) ellFirst(&memDebugList);
 	while(pHdr){
 		if(pHdr->tick>=ignoreBeforeThisTick){
@@ -278,6 +260,6 @@ unsigned long ignoreBeforeThisTick;
 		}
 		pHdr = (DMH *) ellNext(pHdr);
 	}
-	FASTUNLOCK(&memDebugLock);
+	semMutexGive(memDebugLock);
 	return 0;
 }

@@ -22,9 +22,9 @@ typedef struct{
 } GPHENTRY;
 
 void    gphInitPvt(void **ppvt);
-GPHENTRY *gphFind(void *pvt,char *name,void *pvtid);
-GPHENTRY *gphAdd(void *pvt,char *name,void *pvtid);
-void gphDelete(void *pvt,char *name,void *pvtid);
+GPHENTRY *gphFind(void *pvt,const char *name,void *pvtid);
+GPHENTRY *gphAdd(void *pvt,const char *name,void *pvtid);
+void gphDelete(void *pvt,const char *name,void *pvtid);
 void gphFreeMem(void *pvt);
 void gphDump(void *pvt);
 

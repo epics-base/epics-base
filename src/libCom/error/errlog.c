@@ -14,25 +14,22 @@ of this distribution.
  *	NOTE: Original version is adaptation of old version of errPrintfVX.c
 */
 
-#include <vxWorks.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
-#include <taskLib.h>
-#include <intLib.h>
-#include <semLib.h>
-#include <vxLib.h>
-#include <errnoLib.h>
-#include <logLib.h>
 
 #define ERRLOG_INIT
+#include "osiThread.h"
+#include "osiSem.h"
+#include "osiInterrupt.h"
+#include "errno.h"
+
 #include "epicsAssert.h"
 #include "errMdef.h"
 #include "error.h"
 #include "ellLib.h"
-#include "task_params.h"
 #include "errlog.h"
 
 
@@ -53,7 +50,6 @@ LOCAL char * msgbufGetSend(void);
 LOCAL void msgbufFreeSend(void);
 
 LOCAL void *pvtCalloc(size_t count,size_t size);
-LOCAL void pvtSemTake(SEM_ID semid);
 
 typedef struct listenerNode{
     ELLNODE	node;
@@ -68,9 +64,9 @@ typedef struct msgNode {
 } msgNode;
 
 LOCAL struct {
-    SEM_ID	errlogTaskWaitForWork;
-    SEM_ID	msgQueueLock;
-    SEM_ID	listenerLock;
+    semId	errlogTaskWaitForWork;
+    semId	msgQueueLock;
+    semId	listenerLock;
     ELLLIST	listenerList;
     ELLLIST	msgQueue;
     msgNode	*pnextSend;
@@ -86,8 +82,9 @@ epicsShareFunc int epicsShareAPIV errlogPrintf( const char *pFormat, ...)
     va_list	pvar;
     int		nchar;
 
-    if(INT_CONTEXT()) {
-	logMsg("errlogPrintf called from interrupt level\n",0,0,0,0,0,0);
+    if(interruptIsInterruptContext()) {
+	interruptContextMessage
+            ("errlogPrintf called from interrupt level\n");
 	return 0;
     }
     errlogInit(0);
@@ -103,8 +100,9 @@ epicsShareFunc int epicsShareAPIV errlogVprintf(
     int nchar;
     char *pbuffer;
 
-    if(INT_CONTEXT()) {
-	logMsg("errlogVprintf called from interrupt level\n",0,0,0,0,0,0);
+    if(interruptIsInterruptContext()) {
+	interruptContextMessage
+            ("errlogVprintf called from interrupt level\n");
 	return 0;
     }
     errlogInit(0);
@@ -117,12 +115,11 @@ epicsShareFunc int epicsShareAPIV errlogVprintf(
 
 epicsShareFunc int epicsShareAPI errlogMessage(const char *message)
 {
-    int  status;
     char *pbuffer;
 
-    if(INT_CONTEXT()) {
-	status = logMsg ("errlogMessage called from interrupt level %s",
-	    message,0,0,0,0,0);
+    if(interruptIsInterruptContext()) {
+	interruptContextMessage
+            ("errlogMessage called from interrupt level\n");
 	return 0;
     }
     errlogInit(0);
@@ -139,8 +136,9 @@ epicsShareFunc int epicsShareAPIV errlogSevPrintf(
     va_list	pvar;
     int		nchar;
 
-    if(INT_CONTEXT()) {
-	logMsg("errlogSevPrintf called from interrupt level\n",0,0,0,0,0,0);
+    if(interruptIsInterruptContext()) {
+	interruptContextMessage
+            ("errlogSevPrintf called from interrupt level\n");
 	return 0;
     }
     errlogInit(0);
@@ -159,8 +157,9 @@ epicsShareFunc int epicsShareAPIV errlogSevVprintf(
     int		totalChar=0;
 
     if(pvtData.sevToLog>severity) return(0);
-    if(INT_CONTEXT()) {
-	logMsg("errlogSevVprintf called from interrupt level\n",0,0,0,0,0,0);
+    if(interruptIsInterruptContext()) {
+	interruptContextMessage
+            ("errlogSevVprintf called from interrupt level\n");
 	return 0;
     }
     errlogInit(0);
@@ -206,10 +205,10 @@ epicsShareFunc void epicsShareAPI errlogAddListener(
 
     errlogInit(0);
     plistenerNode = pvtCalloc(1,sizeof(listenerNode));
-    pvtSemTake(pvtData.listenerLock);
+    semMutexTake(pvtData.listenerLock);
     plistenerNode->listener = listener;
     ellAdd(&pvtData.listenerList,&plistenerNode->node);
-    semGive(pvtData.listenerLock);
+    semMutexGive(pvtData.listenerLock);
 }
     
 epicsShareFunc void epicsShareAPI errlogRemoveListener(
@@ -218,7 +217,7 @@ epicsShareFunc void epicsShareAPI errlogRemoveListener(
     listenerNode *plistenerNode;
 
     errlogInit(0);
-    pvtSemTake(pvtData.listenerLock);
+    semMutexTake(pvtData.listenerLock);
     plistenerNode = (listenerNode *)ellFirst(&pvtData.listenerList);
     while(plistenerNode) {
 	if(plistenerNode->listener==listener) {
@@ -228,7 +227,7 @@ epicsShareFunc void epicsShareAPI errlogRemoveListener(
 	}
 	plistenerNode = (listenerNode *)ellNext(&plistenerNode->node);
     }
-    semGive(pvtData.listenerLock);
+    semMutexGive(pvtData.listenerLock);
     if(!plistenerNode) printf("errlogRemoveListener did not find listener\n");
 }
 
@@ -247,8 +246,8 @@ epicsShareFunc void epicsShareAPIV errPrintf(long status, const char *pFileName,
     int		nchar;
     int		totalChar=0;
 
-    if(INT_CONTEXT()) {
-	logMsg("errPrintf called from interrupt level\n",0,0,0,0,0,0);
+    if(interruptIsInterruptContext()) {
+	interruptContextMessage("errPrintf called from interrupt level\n");
 	return;
     }
     errlogInit(0);
@@ -259,7 +258,7 @@ epicsShareFunc void epicsShareAPIV errPrintf(long status, const char *pFileName,
 	    pFileName, lineno);
 	pnext += nchar; totalChar += nchar;
     }
-    if(status==0) status = MYERRNO;
+    if(status==0) status = errno;
     if(status>0) {
 	int		rtnval;
 	char    	name[256];
@@ -288,36 +287,27 @@ epicsShareFunc void epicsShareAPIV errPrintf(long status, const char *pFileName,
     msgbufSetSize(totalChar);
 }
 
-#define optionsSemM SEM_Q_PRIORITY|SEM_DELETE_SAFE|SEM_INVERSION_SAFE
 epicsShareFunc int epicsShareAPI errlogInit(int bufsize)
 {
     static int errlogInitFlag=0;
     void	*pbuffer;;
 
-    if(!vxTas(&errlogInitFlag)) return(0);
+    if(errlogInitFlag) return(0);
+    errlogInitFlag = 1;
     if(bufsize<BUFFER_SIZE) bufsize = BUFFER_SIZE;
     pvtData.buffersize = bufsize;
     ellInit(&pvtData.listenerList);
     ellInit(&pvtData.msgQueue);
     pvtData.toConsole = TRUE;
-    if((pvtData.errlogTaskWaitForWork=semBCreate(SEM_Q_FIFO,SEM_EMPTY))==NULL) {
-	logMsg("semBCreate failed in errlogInit",0,0,0,0,0,0);
-	taskSuspend(0);
-    }
-    if((pvtData.listenerLock=semMCreate(optionsSemM))==NULL) {
-	logMsg("semMCreate failed in errlogInit",0,0,0,0,0,0);
-	taskSuspend(0);
-    }
-    if((pvtData.msgQueueLock=semMCreate(optionsSemM))==NULL) {
-	logMsg("semMCreate failed in errlogInit",0,0,0,0,0,0);
-	taskSuspend(0);
-    }
+    pvtData.errlogTaskWaitForWork = semBinaryCreate(semEmpty);
+    pvtData.listenerLock = semMutexCreate();
+    pvtData.msgQueueLock = semMutexCreate();
     /*Allow an extra MAX_MESSAGE_SIZE for extra margain of safety*/
     pbuffer = pvtCalloc(pvtData.buffersize+MAX_MESSAGE_SIZE,sizeof(char));
     pvtData.pbuffer = pbuffer;
-    taskSpawn(ERRLOG_NAME,ERRLOG_PRI,ERRLOG_OPT,
-	ERRLOG_STACK,(FUNCPTR)errlogTask,
-	0,0,0,0,0,0,0,0,0,0);
+    threadCreate("errlog",threadPriorityLow,
+        threadGetStackSize(threadStackSmall),
+        (THREADFUNC)errlogTask,0);
     /*For now make sure iocLogInit is called*/
     iocLogInit();
     return(0);
@@ -330,16 +320,16 @@ LOCAL void errlogTask(void)
     while(TRUE) {
 	char	*pmessage;
 
-	pvtSemTake(pvtData.errlogTaskWaitForWork);
+	semBinaryTake(pvtData.errlogTaskWaitForWork);
 	while((pmessage = msgbufGetSend())) {
-	    pvtSemTake(pvtData.listenerLock);
+	    semMutexTake(pvtData.listenerLock);
 	    if(pvtData.toConsole) printf("%s",pmessage);
 	    plistenerNode = (listenerNode *)ellFirst(&pvtData.listenerList);
 	    while(plistenerNode) {
 		(*plistenerNode->listener)(pmessage);
 		plistenerNode = (listenerNode *)ellNext(&plistenerNode->node);
 	    }
-	    semGive(pvtData.listenerLock);
+            semMutexGive(pvtData.listenerLock);
 	    msgbufFreeSend();
 	}
     }
@@ -381,7 +371,7 @@ LOCAL char *msgbufGetFree()
 {
     msgNode	*pnextSend;
 
-    pvtSemTake(pvtData.msgQueueLock);
+    semMutexTake(pvtData.msgQueueLock);
     if((ellCount(&pvtData.msgQueue) == 0) && pvtData.missedMessages) {
 	int	nchar;
 
@@ -395,7 +385,7 @@ LOCAL char *msgbufGetFree()
     pvtData.pnextSend = pnextSend = msgbufGetNode();
     if(pnextSend) return(pnextSend->message);
     ++pvtData.missedMessages;
-    semGive(pvtData.msgQueueLock);
+    semMutexGive(pvtData.msgQueueLock);
     return(0);
 }
 
@@ -427,8 +417,8 @@ LOCAL void msgbufSetSize(int size)
         pnextSend->length = size+1;
     }
     ellAdd(&pvtData.msgQueue,&pnextSend->node);
-    semGive(pvtData.msgQueueLock);
-    semGive(pvtData.errlogTaskWaitForWork);
+    semMutexGive(pvtData.msgQueueLock);
+    semBinaryGive(pvtData.errlogTaskWaitForWork);
 }
 
 /*errlogTask is the only task that calls msgbufGetSend and msgbufFreeSend*/
@@ -439,9 +429,9 @@ LOCAL char * msgbufGetSend()
 {
     msgNode	*pnextSend;
 
-    pvtSemTake(pvtData.msgQueueLock);
+    semMutexTake(pvtData.msgQueueLock);
     pnextSend = (msgNode *)ellFirst(&pvtData.msgQueue);
-    semGive(pvtData.msgQueueLock);
+    semMutexGive(pvtData.msgQueueLock);
     if(!pnextSend) return(0);
     return(pnextSend->message);
 }
@@ -450,14 +440,14 @@ LOCAL void msgbufFreeSend()
 {
     msgNode	*pnextSend;
 
-    pvtSemTake(pvtData.msgQueueLock);
+    semMutexTake(pvtData.msgQueueLock);
     pnextSend = (msgNode *)ellFirst(&pvtData.msgQueue);
     if(!pnextSend) {
 	printf("errlog: msgbufFreeSend logic error\n");
-	taskSuspend(0);
+	threadSuspend(threadGetIdSelf());
     }
     ellDelete(&pvtData.msgQueue,&pnextSend->node);
-    semGive(pvtData.msgQueueLock);
+    semMutexGive(pvtData.msgQueueLock);
 }
 
 LOCAL void *pvtCalloc(size_t count,size_t size)
@@ -467,15 +457,7 @@ LOCAL void *pvtCalloc(size_t count,size_t size)
     pmem = calloc(count,size);
     if(!pmem) {
 	printf("calloc failed in errlog\n");
-	taskSuspend(0);
+	threadSuspend(threadGetIdSelf());
     }
     return(pmem);
-}
-
-LOCAL void pvtSemTake(SEM_ID semid)
-{
-    if(semTake(semid,WAIT_FOREVER)!=OK) {
-	logMsg("epicsPrint: semTake returned error\n",0,0,0,0,0,0);
-	taskSuspend(0);
-    }
 }

@@ -52,14 +52,12 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
  */
 
 #include <stdio.h>
-#ifdef vxWorks
-#include <vxWorks.h>
-#include <taskLib.h>
-#endif
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
 
+#include "cantProceed.h"
+#include "osiSem.h"
 #define epicsExportSharedSymbols
 #include "dbDefs.h"
 #include "ellLib.h"
@@ -70,9 +68,7 @@ typedef struct gphPvt {
     int		tableSize;
     int		nShift;
     ELLLIST	**paplist; /*pointer to array of pointers to ELLLIST */
-#ifdef vxWorks
-    FAST_LOCK	lock;
-#endif
+    semId	lock;
 }gphPvt;
 
 
@@ -106,17 +102,11 @@ static void *myCalloc(size_t nobj,size_t size)
 {
     void *p;
 
-    p=calloc(nobj,size);
-    if(p) return(p);
-#ifdef vxWorks
-    taskSuspend(0);
-#else
-    abort();
-#endif
-    return(NULL);
+    p = callocMustSucceed(nobj,size,"freeListLib");
+    return(p);
 }
 
-static int hash( char *pname,int nShift)
+static int hash(const char *pname,int nShift)
 {
     unsigned char	h0=0;
     unsigned char	h1=0;
@@ -156,14 +146,12 @@ void epicsShareAPI gphInitPvt(void **ppvt,int size)
     pgphPvt->tableSize = tableSize;
     pgphPvt->nShift = nShift;
     pgphPvt->paplist = myCalloc(tableSize, sizeof(ELLLIST *));
-#ifdef vxWorks
-    FASTLOCKINIT(&pgphPvt->lock);
-#endif
+    pgphPvt->lock = semMutexCreate();
     *ppvt = (void *)pgphPvt;
     return;
 }
 	
-GPHENTRY * epicsShareAPI gphFind(void *pvt,char *name,void *pvtid)
+GPHENTRY * epicsShareAPI gphFind(void *pvt,const char *name,void *pvtid)
 {
     int		hashInd;
     gphPvt	*pgphPvt = (gphPvt *)pvt;
@@ -174,9 +162,7 @@ GPHENTRY * epicsShareAPI gphFind(void *pvt,char *name,void *pvtid)
     if(pgphPvt==NULL) return(NULL);
     paplist = pgphPvt->paplist;
     hashInd = hash(name,pgphPvt->nShift);
-#ifdef vxWorks
-    FASTLOCK(&pgphPvt->lock);
-#endif
+    semMutexTake(pgphPvt->lock);
     if ((gphlist=paplist[hashInd]) == NULL) {
 	pgphNode = NULL;
     } else {
@@ -188,13 +174,11 @@ GPHENTRY * epicsShareAPI gphFind(void *pvt,char *name,void *pvtid)
 	}
 	pgphNode = (GPHENTRY *) ellNext((ELLNODE*)pgphNode);
     }
-#ifdef vxWorks
-    FASTUNLOCK(&pgphPvt->lock);
-#endif
+    semMutexGive(pgphPvt->lock);
     return(pgphNode);
 }
 
-GPHENTRY * epicsShareAPI gphAdd(void *pvt,char *name,void *pvtid)
+GPHENTRY * epicsShareAPI gphAdd(void *pvt,const char *name,void *pvtid)
 {
     int		hashInd;
     gphPvt	*pgphPvt = (gphPvt *)pvt;
@@ -205,9 +189,7 @@ GPHENTRY * epicsShareAPI gphAdd(void *pvt,char *name,void *pvtid)
     if(pgphPvt==NULL) return(NULL);
     paplist = pgphPvt->paplist;
     hashInd = hash(name,pgphPvt->nShift);
-#ifdef vxWorks
-    FASTLOCK(&pgphPvt->lock);
-#endif
+    semMutexTake(pgphPvt->lock);
     if(paplist[hashInd] == NULL) {
 	paplist[hashInd] = myCalloc(1, sizeof(ELLLIST));
 	ellInit(paplist[hashInd]);
@@ -217,9 +199,7 @@ GPHENTRY * epicsShareAPI gphAdd(void *pvt,char *name,void *pvtid)
     while(pgphNode) {
 	if((strcmp(name,(char *)pgphNode->name) == 0)
 	&&(pvtid == pgphNode->pvtid)) {
-#ifdef vxWorks
-	    FASTUNLOCK(&pgphPvt->lock);
-#endif
+            semMutexGive(pgphPvt->lock);
 	    return(NULL);
 	}
 	pgphNode = (GPHENTRY *) ellNext((ELLNODE*)pgphNode);
@@ -228,13 +208,11 @@ GPHENTRY * epicsShareAPI gphAdd(void *pvt,char *name,void *pvtid)
     pgphNode->name = name;
     pgphNode->pvtid = pvtid;
     ellAdd(plist, (ELLNODE*)pgphNode);
-#ifdef vxWorks
-    FASTUNLOCK(&pgphPvt->lock);
-#endif
+    semMutexGive(pgphPvt->lock);
     return (pgphNode);
 }
 
-void epicsShareAPI gphDelete(void *pvt,char *name,void *pvtid)
+void epicsShareAPI gphDelete(void *pvt,const char *name,void *pvtid)
 {
     int		hashInd;
     gphPvt	*pgphPvt = (gphPvt *)pvt;
@@ -245,9 +223,7 @@ void epicsShareAPI gphDelete(void *pvt,char *name,void *pvtid)
     if(pgphPvt==NULL) return;
     paplist = pgphPvt->paplist;
     hashInd = hash(name,pgphPvt->nShift);
-#ifdef vxWorks
-    FASTLOCK(&pgphPvt->lock);
-#endif
+    semMutexTake(pgphPvt->lock);
     if(paplist[hashInd] == NULL) {
 	pgphNode = NULL;
     } else {
@@ -263,9 +239,7 @@ void epicsShareAPI gphDelete(void *pvt,char *name,void *pvtid)
 	}
 	pgphNode = (GPHENTRY *) ellNext((ELLNODE*)pgphNode);
     }
-#ifdef vxWorks
-    FASTUNLOCK(&pgphPvt->lock);
-#endif
+    semMutexGive(pgphPvt->lock);
     return;
 }
 

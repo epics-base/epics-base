@@ -92,10 +92,6 @@
  *		UNKNOWN_ELEMENT	unknown element found in the infix expression
  */
 
-#ifdef vxWorks
-#include  <vxWorks.h>
-#endif
-
 #include	<stdlib.h>
 #include	<stdio.h>
 #include	<string.h>
@@ -267,8 +263,7 @@ static struct expression_element	fetch_string_element = {
 "AA",		0,	0,	OPERAND,	SFETCH,   /* fetch var */
 };
 
-#if !defined(UNIX)
-static int strncasecmp(char *s1, char *s2, size_t n)
+static int strncasecmpPrivate(char *s1, char *s2, size_t n)
 {
 	short i;
 	for (i=0; i<(short)n && (*s1 || *s2); i++, s1++, s2++) {
@@ -277,7 +272,6 @@ static int strncasecmp(char *s1, char *s2, size_t n)
 	}
 	return(0);
 }
-#endif
 /*
  * FIND_ELEMENT
  *
@@ -293,7 +287,7 @@ static int find_element(pbuffer, pelement, pno_bytes, parg)
  	/* compare the string to each element in the element table */
  	*pelement = &elements[0];
  	while ((*pelement)->element[0] != NULL){
- 		if (strncasecmp(pbuffer,(*pelement)->element, strlen((*pelement)->element)) == 0){
+ 		if (strncasecmpPrivate(pbuffer,(*pelement)->element, strlen((*pelement)->element)) == 0){
  			*pno_bytes += strlen((*pelement)->element);
  			return(TRUE);
  		}

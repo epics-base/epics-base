@@ -59,10 +59,6 @@
  *    double value between 0.00 and 1.00
  */
 
-#ifdef vxWorks
-#include <vxWorks.h>
-#endif
-
 #include	<stdlib.h>
 #include	<stdio.h>
 #include	<string.h>

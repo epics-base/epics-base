@@ -48,10 +48,7 @@
  *				Also they are not used on vxWorks
  */
 
-#ifdef vxWorks
-#include <vxWorks.h>
-#endif
-
+#include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>		/* XPG2/XPG3/POSIX.1/FIPS151-1/ANSI-C */
@@ -444,7 +441,7 @@ int epicsShareAPI cvtLongToString(
     }
     if(source<0) {
 	if(source == LONG_MIN) {
-	    sprintf(pdest,"%ld", (long)LONG_MIN);
+	    sprintf(pdest,"%ld",(long)LONG_MIN);
 	    return((int)strlen(pdest));
 	}
 	*pdest++ = '-';

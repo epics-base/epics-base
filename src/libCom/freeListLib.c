@@ -52,15 +52,13 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
  * .02  03-28-97	joh	added freeListItemAvail() function	
  */
 
-#ifdef vxWorks
-#include <vxWorks.h>
-#include <taskLib.h>
-#include "fast_lock.h"
-#endif
 
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
+
+#include "cantProceed.h"
+#include "osiSem.h"
 
 #define epicsExportSharedSymbols
 #include "freeList.h"
@@ -76,9 +74,7 @@ typedef struct {
     void	*head;
     allocMem	*mallochead;
     size_t	nBlocksAvailable;
-#ifdef vxWorks
-    FAST_LOCK	lock;
-#endif
+    semId	lock;
 }FREELISTPVT;
 
 epicsShareFunc void epicsShareAPI 
@@ -86,22 +82,13 @@ epicsShareFunc void epicsShareAPI
 {
     FREELISTPVT	*pfl;
 
-    pfl = (void *)calloc((size_t)1,(size_t)sizeof(FREELISTPVT));
-    if(!pfl) {
-#ifdef vxWorks
-	taskSuspend(0);
-#else
-	abort();
-#endif
-    }
+    pfl = callocMustSucceed(1,sizeof(FREELISTPVT), "freeListInitPvt");
     pfl->size = adjustToWorstCaseAlignment(size);
     pfl->nmalloc = nmalloc;
     pfl->head = NULL;
     pfl->mallochead = NULL;
     pfl->nBlocksAvailable = 0u;
-#ifdef vxWorks
-    FASTLOCKINIT(&pfl->lock);
-#endif
+    pfl->lock = semMutexCreate();
     *ppvt = (void *)pfl;
     return;
 }
@@ -124,23 +111,17 @@ epicsShareFunc void * epicsShareAPI freeListMalloc(void *pvt)
     allocMem	*pallocmem;
     int		i;
 
-#ifdef vxWorks
-    FASTLOCK(&pfl->lock);
-#endif
+    semMutexTake(pfl->lock);
     ptemp = pfl->head;
     if(ptemp==0) {
 	ptemp = (void *)malloc(pfl->nmalloc*pfl->size);
 	if(ptemp==0) {
-#ifdef vxWorks
-	    FASTUNLOCK(&pfl->lock);
-#endif
+	    semMutexGive(pfl->lock);
 	    return(0);
 	}
 	pallocmem = (allocMem *)calloc(1,sizeof(allocMem));
 	if(pallocmem==0) {
-#ifdef vxWorks
-	    FASTUNLOCK(&pfl->lock);
-#endif
+	    semMutexGive(pfl->lock);
 	    free(ptemp);
 	    return(0);
 	}
@@ -160,9 +141,7 @@ epicsShareFunc void * epicsShareAPI freeListMalloc(void *pvt)
     ppnext = pfl->head;
     pfl->head = *ppnext;
     pfl->nBlocksAvailable--;
-#ifdef vxWorks
-    FASTUNLOCK(&pfl->lock);
-#endif
+    semMutexGive(pfl->lock);
     return(ptemp);
 }
 
@@ -171,16 +150,12 @@ epicsShareFunc void epicsShareAPI freeListFree(void *pvt,void*pmem)
     FREELISTPVT	*pfl = pvt;
     void	**ppnext;
 
-#ifdef vxWorks
-    FASTLOCK(&pfl->lock);
-#endif
+    semMutexTake(pfl->lock);
     ppnext = pmem;
     *ppnext = pfl->head;
     pfl->head = pmem;
     pfl->nBlocksAvailable++;
-#ifdef vxWorks
-    FASTUNLOCK(&pfl->lock);
-#endif
+    semMutexGive(pfl->lock);
 }
 
 epicsShareFunc void epicsShareAPI freeListCleanup(void *pvt)

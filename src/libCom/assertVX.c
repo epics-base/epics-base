@@ -33,8 +33,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include <vxWorks.h>
-#include <taskLib.h>
+#include "osiThread.h"
 
 #define epicsExportSharedSymbols
 #include "epicsPrint.h"
@@ -45,17 +44,17 @@
  * epicsAssert ()
  *
  * This forces assert failures into the log file and then
- * calls taskSuspend() instead of exit() so that we can debug
+ * calls threadSuspend() instead of exit() so that we can debug
  * the problem.
  */
 void epicsAssert (const char *pFile, const unsigned line, const char *pExp,
 	const char *pAuthorName)
 {
-	int	taskId = taskIdSelf();
+    threadId threadid = threadGetIdSelf();
 
     epicsPrintf (	
 "\n\n\n%s: A call to \"assert (%s)\" failed in %s at %d\n", 
-		taskName (taskId),
+		threadGetName (threadid),
 		pExp, 
 		pFile, 
 		line);
@@ -63,8 +62,8 @@ void epicsAssert (const char *pFile, const unsigned line, const char *pExp,
 	if (pAuthorName) {
 
         	epicsPrintf (	
-"Please send a copy of the output from \"tt (0x%x)\" and a copy of this message\n",
-		taskId);
+"Please send a copy of the output from \"tt (%p)\" and a copy of this message\n",
+		threadid);
 
         	epicsPrintf (	
 "to \"%s\" (the author of this call to assert()) or \"tech-talk@aps.anl.gov\"\n", 
@@ -74,8 +73,8 @@ void epicsAssert (const char *pFile, const unsigned line, const char *pExp,
 	else {
 
         	epicsPrintf (	
-"Please send a copy of the output from \"tt (0x%x)\" and a copy of this message\n",
-		taskId);
+"Please send a copy of the output from \"tt (%p)\" and a copy of this message\n",
+		threadid);
 
         	epicsPrintf (	
 "to the author or \"tech-talk@aps.anl.gov\"\n");
@@ -83,6 +82,6 @@ void epicsAssert (const char *pFile, const unsigned line, const char *pExp,
 	}
 	epicsPrintf ("This problem occurred in \"%s\"\n", epicsReleaseVersion);
 
-    taskSuspend (taskId);
+    threadSuspend (threadid);
 }
 

@@ -52,13 +52,6 @@ typedef struct		/* ERRSYMTAB - symbol table */
     } ERRSYMTAB;
 typedef ERRSYMTAB *ERRSYMTAB_ID;
 
-#ifdef vxWorks
-#define MYERRNO	(errnoGet()&0xffff)
-#else
-#define MYERRNO	errno
-#endif
-
-
 /*************************************************************/
 struct errSet {			/* This defines one module error set */
     long            number;	/* dimension of err strings */

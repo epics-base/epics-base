@@ -35,10 +35,6 @@
 
 #include <stdlib.h>
 
-#ifdef vxWorks
-#include <vxWorks.h>
-#endif
-
 #define epicsExportSharedSymbols
 #include "epicsAssert.h"
 #include "ellLib.h"

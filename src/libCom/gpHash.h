@@ -59,22 +59,22 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include "shareLib.h"
 
 #include "ellLib.h"
-#ifdef vxWorks
-#include "fast_lock.h"
-#endif
 
 typedef struct{
     ELLNODE	node;
-    char	*name;		/*address of name placed in directory*/
+    const char	*name;		/*address of name placed in directory*/
     void	*pvtid;		/*private name for subsystem user*/
     void	*userPvt;	/*private for user*/
 } GPHENTRY;
 
 /*tableSize must be power of 2 in range 256 to 65536*/
 epicsShareFunc void epicsShareAPI gphInitPvt(void **ppvt,int tableSize);
-epicsShareFunc GPHENTRY * epicsShareAPI gphFind(void *pvt,char *name,void *pvtid);
-epicsShareFunc GPHENTRY * epicsShareAPI gphAdd(void *pvt,char *name,void *pvtid);
-epicsShareFunc void epicsShareAPI gphDelete(void *pvt,char *name,void *pvtid);
+epicsShareFunc GPHENTRY * epicsShareAPI
+    gphFind(void *pvt,const char *name,void *pvtid);
+epicsShareFunc GPHENTRY * epicsShareAPI
+    gphAdd(void *pvt,const char *name,void *pvtid);
+epicsShareFunc void epicsShareAPI
+    gphDelete(void *pvt,const char *name,void *pvtid);
 epicsShareFunc void epicsShareAPI gphFreeMem(void *pvt);
 epicsShareFunc void epicsShareAPI gphDump(void *pvt);
 #endif /*INCgpHashh*/

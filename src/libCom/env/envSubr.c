@@ -76,12 +76,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef vxWorks
-#include <inetLib.h>
-#include <envLib.h>
-#include <errnoLib.h>
-#endif
-
 #define epicsExportSharedSymbols
 #include "errMdef.h"
 #include "envDefs.h"
@@ -426,10 +420,6 @@ const ENV_PARAM *pParam,	/* I pointer to config param structure */
 char		*value		/* I pointer to value string */
 )
 {
-#ifndef vxWorks
-    	fprintf(stderr, "envSetConfigParam can only be used under vxWorks\n");
-	return -1L;
-#else
 	long	retCode = 0;
 	int	status;
 	char	*pEnv;
@@ -447,7 +437,7 @@ char		*value		/* I pointer to value string */
 "Failed to set environment parameter \"%s\" to \"%s\" because \"%s\"\n",
 			pParam->name,
 			value,
-			strerror (errnoGet()));
+			strerror (errno));
 		return -1L;
 	}
 
@@ -463,17 +453,10 @@ char		*value		/* I pointer to value string */
 "Failed to set environment parameter \"%s\" to \"%s\" because \"%s\"\n",
 			pParam->name,
 			value,
-			strerror (errnoGet()));
+			strerror (errno));
 		retCode = -1L;
 	}
-	/*
- 	 * vxWorks copies into a private buffer
-	 * (this does not match UNIX behavior)
-	 */
-	free (pEnv);
-	
 	return retCode;
-#endif
 }
 
 /*+/subr**********************************************************************

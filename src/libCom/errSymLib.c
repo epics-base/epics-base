@@ -70,16 +70,8 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#ifdef vxWorks
-#include <vxWorks.h>
-#include <taskLib.h>
-#include <types.h>
-#include <symLib.h>
-#include <errnoLib.h>
-
-extern SYMTAB_ID  statSymTbl;
-
-#endif
+#include "cantProceed.h"
+#include <errno.h>
 
 #define epicsExportSharedSymbols
 #include "dbDefs.h"
@@ -87,18 +79,7 @@ extern SYMTAB_ID  statSymTbl;
 #include "errSymTbl.h"
 
 
-#ifdef __STDC__
 static unsigned short errhash(long errNum);
-#else /*__STDC__*/
-static unsigned short errhash();
-#endif /*__STDC__*/
-
-
-#ifdef vxWorks
-#define MYERRNO	(errnoGet()&0xffff)
-#else
-#define MYERRNO	errno
-#endif
 
 typedef struct errnumnode {
     ELLNODE             node;
@@ -141,15 +122,8 @@ int epicsShareAPI errSymBld()
     unsigned short  hashInd;
 
     if(initialized) return(0);
-    hashtable = (ERRNUMNODE**)calloc(NHASH, sizeof(ERRNUMNODE*));
-    if(!hashtable) {
-	printf("errSymBld: Can't allocate storage\n");
-#ifdef vxWorks
-	taskSuspend(0);
-#else
-	abort();
-#endif
-    }
+    hashtable = (ERRNUMNODE**)callocMustSucceed
+        (NHASH, sizeof(ERRNUMNODE*),"errSymBld");
     for (i = 0; i < errSymTbl->nsymbols; i++, errArray++) {
 	modnum = errArray->errNum >> 16;
 	if (modnum < 501) {
@@ -186,14 +160,7 @@ int epicsShareAPI errSymBld()
  * HASH
  * returns the hash index of errNum
 ****************************************************************/
-#ifdef __STDC__
-static
-unsigned short errhash(long errNum)
-#else
-static
-unsigned short errhash(errNum)
-long errNum;
-#endif /* __STDC__ */
+static unsigned short errhash(long errNum)
 {
 unsigned short modnum;
 unsigned short errnum;
@@ -207,26 +174,12 @@ unsigned short errnum;
  * ERRSYMBOLADD
  * adds symbols to the master errnumlist as compiled from errSymTbl.c
  ***************************************************************/
-#ifdef __STDC__
 int epicsShareAPI errSymbolAdd (long errNum,char *name)
-#else
-int epicsShareAPI errSymbolAdd (errNum,name)
-long errNum;
-char *name;
-#endif /* __STDC__ */
 {
     ELLLIST        *perrnumlist = &errnumlist;
     ERRNUMNODE     *pNew;
 
-    pNew = (ERRNUMNODE*)calloc(1, sizeof(ERRNUMNODE));
-    if(!pNew) {
-	printf("errSymbolAdd: Can't allocate storage\n");
-#ifdef vxWorks
-	taskSuspend(0);
-#else
-	abort();
-#endif
-    }
+    pNew = (ERRNUMNODE*)callocMustSucceed(1,sizeof(ERRNUMNODE),"errSymbolAdd");
     pNew->errNum = errNum;
     pNew->message = name;
     ellAdd(perrnumlist,(ELLNODE*)pNew);
@@ -234,52 +187,9 @@ char *name;
 }
 
 /****************************************************************
- * UNIXSYMFIND
- ***************************************************************/
-/* 
- * Use of sys_nerr and sys_errlist in this routine 
- * present portability problems
- *
- * ANSI strerror() provides this functionality 
- * so this is hopefully no longer needed
- * joh 10-02-96
- *
- */
-#if 0 
-#ifndef vxWorks
-#ifdef __STDC__
-int epicsShareAPI UnixSymFind(long status, char *pname, long *pvalue)
-#else
-int epicsShareAPI UnixSymFind(status, pname, pvalue)
-    long            status;
-    char           *pname;
-    long           *pvalue;
-#endif /* __STDC__ */
-{
-    if(!initialized) errSymBld();
-    if (status >= sys_nerr || status < 1) {
-	*pvalue = -1;
-	return(0);
-    }
-    strcpy(pname, sys_errlist[status]);
-    *pvalue = status;
-    return(0);
-}
-#endif
-#endif
-
-
-/****************************************************************
  * MODSYMFIND
  ***************************************************************/
-#ifdef __STDC__
 int epicsShareAPI ModSymFind(long status, char *pname, long *pvalue)
-#else
-int epicsShareAPI ModSymFind(status, pname, pvalue)
-    long            status;
-    char           *pname;
-    long           *pvalue;
-#endif /* __STDC__ */
 {
     unsigned short  modNum;
     unsigned short  hashInd;
@@ -312,29 +222,15 @@ int epicsShareAPI ModSymFind(status, pname, pvalue)
 /****************************************************************
  * ERRSYMFIND
  ***************************************************************/
-#ifdef __STDC__
 int epicsShareAPI errSymFind(long status, char *name)
-#else
-/* errSymFind - Locate error symbol */
-int epicsShareAPI errSymFind(status, name)
-    long            status;
-    char           *name;
-#endif /* __STDC__ */
 {
     long            value;
-#ifdef vxWorks
-    unsigned char   type;
-#endif
     unsigned short  modnum;
 
     if (!initialized) errSymBld();
 
     modnum = (unsigned short) (status >> 16);
-    if (modnum <= 500)
-#ifdef vxWorks
-	symFindByValue((SYMTAB_ID)statSymTbl, status, name,(int*) &value, (SYM_TYPE*)&type);
-#else
-	{
+    if (modnum <= 500) {
 		const char *pStr = strerror(status);
 		if (pStr) {
 			strcpy(name,strerror(status));
@@ -343,10 +239,9 @@ int epicsShareAPI errSymFind(status, name)
 		else {
 			sprintf(name,"err = %ld", status);
 		}
-	}
-#endif
-    else
+    } else {
 	ModSymFind(status, name, &value);
+    }
     if (value != status)
 	return (-1);
     else
@@ -357,11 +252,7 @@ int epicsShareAPI errSymFind(status, name)
 /****************************************************************
  * errSymDump
  ***************************************************************/
-#ifdef __STDC__
 void epicsShareAPI errSymDump()
-#else
-void epicsShareAPI errSymDump()
-#endif /* __STDC__ */
 {
 ERRNUMNODE    **phashnode = NULL;
 ERRNUMNODE     *pNextNode;
@@ -400,12 +291,7 @@ int firstTime;
 /****************************************************************
  * errSymTestPrint
  ***************************************************************/
-#ifdef __STDC__
 void epicsShareAPI errSymTestPrint(long errNum)
-#else
-void epicsShareAPI errSymTestPrint(errNum)
-long errNum;
-#endif /* __STDC__ */
 {
     char            message[256];
     unsigned short modnum;
@@ -431,14 +317,8 @@ long errNum;
 /****************************************************************
  * ERRSYMTEST
 ****************************************************************/
-#ifdef __STDC__
-void epicsShareAPI errSymTest(unsigned short modnum, unsigned short begErrNum, unsigned short endErrNum)
-#else
-void epicsShareAPI errSymTest(modnum, begErrNum, endErrNum)
-unsigned short modnum;
-unsigned short begErrNum;
-unsigned short endErrNum;
-#endif /* __STDC__ */
+void epicsShareAPI errSymTest(unsigned short modnum,
+    unsigned short begErrNum, unsigned short endErrNum)
 {
     long            errNum;
     unsigned short  errnum;

@@ -5,8 +5,8 @@ static char *sccsId = "@(#)acctst.c	1.8\t2/19/93";
  */
 
 #if 1
-#define CA_TEST_CHNL	"ca:ai_2000"
-#define CA_TEST_CHNL4	"ca:ai_2000"
+#define CA_TEST_CHNL	"fredy"
+#define CA_TEST_CHNL4	"fredy"
 #else
 #if 0
 #define CA_TEST_CHNL	"ts2:ai0"
@@ -24,6 +24,7 @@ static char *sccsId = "@(#)acctst.c	1.8\t2/19/93";
 #  if defined(vxWorks)
 #	include		<vxWorks.h>
 #	include		<taskLib.h>
+#	include		<stdio.h>
 #  endif
 #endif
 
@@ -42,17 +43,32 @@ static char *sccsId = "@(#)acctst.c	1.8\t2/19/93";
 
 
 #ifdef vxWorks
-spacctst()
+int spacctst()
 {
 	int             acctst();
 
-	return taskSpawn("acctst", 200, VX_FP_TASK, 20000, acctst);
+	return taskSpawn(
+			"acctst", 
+			200, 
+			VX_FP_TASK, 
+			20000, 
+			acctst,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
 }
 #endif
 
 
 #ifdef vxWorks
-acctst()
+int acctst()
 #else
 main()
 #endif
@@ -77,7 +93,7 @@ main()
 
 	SEVCHK(ca_task_initialize(), "Unable to initialize");
 
-	ca_printf("begin\n");
+	printf("begin\n");
 #ifdef VMS
 	lib$init_timer();
 #endif
@@ -181,13 +197,13 @@ main()
 	SEVCHK(status, NULL);
 
 	if (INVALID_DB_REQ(chix1->type))
-		ca_printf("Failed to locate %s\n", CA_TEST_CHNL);
+		printf("Failed to locate %s\n", CA_TEST_CHNL);
 	if (INVALID_DB_REQ(chix2->type))
-		ca_printf("Failed to locate %s\n", CA_TEST_CHNL);
+		printf("Failed to locate %s\n", CA_TEST_CHNL);
 	if (INVALID_DB_REQ(chix3->type))
-		ca_printf("Failed to locate %s\n", CA_TEST_CHNL);
+		printf("Failed to locate %s\n", CA_TEST_CHNL);
 	if (INVALID_DB_REQ(chix4->type))
-		ca_printf("Failed to locate %s\n", CA_TEST_CHNL4);
+		printf("Failed to locate %s\n", CA_TEST_CHNL4);
 	/*
 	 * SEVCHK(status,NULL); if(status == ECA_TIMEOUT) exit();
 	 */
@@ -198,7 +214,7 @@ main()
 
 	pfloat = &ptr->value;
 	for (i = 0; i < NUM; i++)
-		ca_printf("Value Returned from build %f\n", pfloat[i]);
+		printf("Value Returned from build %f\n", pfloat[i]);
 
 #ifdef VMS
 	lib$init_timer();
@@ -208,7 +224,7 @@ main()
 	 * verify we dont jam up on many uninterrupted
 	 * solicitations
 	 */
-	ca_printf("Performing multiple get test...");
+	printf("Performing multiple get test...");
 #ifdef UNIX
 	fflush(stdout);
 #endif
@@ -220,12 +236,12 @@ main()
 		}
 		SEVCHK(ca_pend_io(200.0), NULL);
 	}
-	ca_printf("done.\n");
+	printf("done.\n");
 
 	/*
 	 * verify we can add many monitors at once
 	 */
-	ca_printf("Performing multiple monitor test...");
+	printf("Performing multiple monitor test...");
 #ifdef UNIX
 	fflush(stdout);
 #endif
@@ -255,24 +271,49 @@ main()
 		SEVCHK(ca_get(DBR_FLOAT,chix4,&temp),NULL);
 		SEVCHK(ca_pend_io(100.0),NULL);
 	}
-	ca_printf("done.\n");
+	printf("done.\n");
 	
 	if (VALID_DB_REQ(chix4->type)) {
-		status = ca_add_event(DBR_FLOAT, chix4, EVENT_ROUTINE, 0xaaaaaaaa, &monix);
+		status = ca_add_event(
+				DBR_FLOAT, 
+				chix4, 
+				EVENT_ROUTINE, 
+				(void *)0xaaaaaaaa, 
+				&monix);
 		SEVCHK(status, NULL);
 		SEVCHK(ca_clear_event(monix), NULL);
-		status = ca_add_event(DBR_FLOAT, chix4, EVENT_ROUTINE, 0xaaaaaaaa, &monix);
+		status = ca_add_event(
+				DBR_FLOAT, 
+				chix4, 
+				EVENT_ROUTINE, 
+				(void *)0xaaaaaaaa, 
+				&monix);
 		SEVCHK(status, NULL);
 	}
 	if (VALID_DB_REQ(chix4->type)) {
-		status = ca_add_event(DBR_FLOAT, chix4, EVENT_ROUTINE, 0xaaaaaaaa, &monix);
+		status = ca_add_event(
+				DBR_FLOAT, 
+				chix4, 
+				EVENT_ROUTINE, 
+				(void *)0xaaaaaaaa, 
+				&monix);
 		SEVCHK(status, NULL);
 		SEVCHK(ca_clear_event(monix), NULL);
 	}
 	if (VALID_DB_REQ(chix3->type)) {
-		status = ca_add_event(DBR_FLOAT, chix3, EVENT_ROUTINE, 0xaaaaaaaa, &monix);
+		status = ca_add_event(
+				DBR_FLOAT, 
+				chix3, 
+				EVENT_ROUTINE, 
+				(void *)0xaaaaaaaa, 
+				&monix);
 		SEVCHK(status, NULL);
-		status = ca_add_event(DBR_FLOAT, chix3, write_event, 0xaaaaaaaa, &monix);
+		status = ca_add_event(
+				DBR_FLOAT, 
+				chix3, 
+				write_event, 
+				(void *)0xaaaaaaaa, 
+				&monix);
 		SEVCHK(status, NULL);
 	}
 	pfloat = (float *) malloc(sizeof(float) * NUM);
@@ -285,13 +326,33 @@ main()
 			for (i = 0; i < NUM; i++) {
 				for (j = 0; j < NUM; j++)
 					sprintf(&pstring[j][0], "%d", j + 100);
-				SEVCHK(ca_array_put(DBR_STRING, NUM, chix1, pstring), NULL)
-					SEVCHK(ca_array_get(DBR_FLOAT, NUM, chix1, pfloat), NULL)
-					SEVCHK(ca_array_get(DBR_DOUBLE, NUM, chix1, pdouble), NULL)
-					SEVCHK(ca_array_get(DBR_GR_FLOAT, NUM, chix1, pgrfloat), NULL)
+					SEVCHK(ca_array_put(
+						DBR_STRING, 
+						NUM, 
+						chix1, 
+						pstring), 
+						NULL)
+					SEVCHK(ca_array_get(
+						DBR_FLOAT, 
+						NUM, 
+						chix1, 
+						pfloat), 
+						NULL)
+					SEVCHK(ca_array_get(
+						DBR_DOUBLE, 
+						NUM, 
+						chix1, 
+						pdouble), 
+						NULL)
+					SEVCHK(ca_array_get(
+						DBR_GR_FLOAT, 
+						NUM, 
+						chix1, 
+						pgrfloat), 
+						NULL)
 			}
 		else
-			abort();
+			abort(0);
 
 	SEVCHK(ca_pend_io(4.0), NULL);
 
@@ -299,15 +360,15 @@ main()
 	lib$show_timer();
 #endif
 	for (i = 0; i < NUM; i++) {
-		ca_printf("Float value Returned from put/get %f\n", pfloat[i]);
-		ca_printf("Double value Returned from put/get %f\n", pdouble[i]);
-		ca_printf("GR Float value Returned from put/get %f\n", pgrfloat[i].value);
+		printf("Float value Returned from put/get %f\n", pfloat[i]);
+		printf("Double value Returned from put/get %f\n", pdouble[i]);
+		printf("GR Float value Returned from put/get %f\n", pgrfloat[i].value);
 	}
 
 	for (i = 0; i < 10; i++)
 		ca_get_callback(DBR_GR_FLOAT, chix1, ca_test_event, NULL);
 
-	ca_printf("-- Put/Gets done- waiting for Events --\n");
+	printf("-- Put/Gets done- waiting for Events --\n");
 	status = ca_pend_event(60.0);
 	if (status == ECA_TIMEOUT) {
 
@@ -315,10 +376,11 @@ main()
 		free(pfloat);
 		free(pgrfloat);
 
-		exit();
+		exit(0);
 	} else
 		SEVCHK(status, NULL);
 
+	return(0);
 }
 
 
@@ -331,7 +393,7 @@ null_event()
 	static int      i;
 
 	if (i++ > 1000) {
-		ca_printf("1000 occured\n");
+		printf("1000 occured\n");
 		i = 0;
 	}
 }
@@ -359,9 +421,9 @@ conn(args)
 {
 
 	if (args.op == CA_OP_CONN_UP)
-		ca_printf("Channel On Line [%s]\n", ca_name(args.chid));
+		printf("Channel On Line [%s]\n", ca_name(args.chid));
 	else if (args.op == CA_OP_CONN_DOWN)
-		ca_printf("Channel Off Line [%s]\n", ca_name(args.chid));
+		printf("Channel Off Line [%s]\n", ca_name(args.chid));
 	else
-		ca_printf("Ukn conn ev\n");
+		printf("Ukn conn ev\n");
 }

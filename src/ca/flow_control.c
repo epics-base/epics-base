@@ -33,7 +33,7 @@
 /************************************************************************/
 /*_end									*/
 
-static char	*sccsId = "@(#)flow_control.c	1.7\t6/2/93";
+static char	*sccsId = "$Id$";
 
 #if defined(vxWorks)
 #	include		<vxWorks.h>
@@ -75,9 +75,12 @@ static char	*sccsId = "@(#)flow_control.c	1.7\t6/2/93";
  * suppress monitors if we are behind
  * (an update is sent when we catch up)
  */
-void
-flow_control(piiu)
-	struct ioc_in_use *piiu;
+#ifdef __STDC__
+void flow_control(struct ioc_in_use *piiu)
+#else
+void flow_control(piiu)
+struct ioc_in_use *piiu;
+#endif
 {
 	unsigned        nbytes;
 	register int    status;
@@ -89,9 +92,11 @@ flow_control(piiu)
 	 */
 	status = socket_ioctl(piiu->sock_chan,
 			      FIONREAD,
-			      &nbytes);
+			      (int)&nbytes);
 	if (status < 0) {
+		LOCK;
 		close_ioc(piiu);
+		UNLOCK;
 		return;
 	}
 

@@ -79,6 +79,10 @@ static char *sccsId = "$Id$\t$Date$";
 #	include		<errno.h>
 #	include		<types.h>
 #	include		<socket.h>
+#	include		<sockLib.h>
+#	include		<ioLib.h>
+#	include		<string.h>
+#	include		<errnoLib.h>
 #	include		<in.h>
 #    else
 	@@@@ dont compile @@@@
@@ -86,8 +90,12 @@ static char *sccsId = "$Id$\t$Date$";
 #  endif
 #endif
 
-#include		<ellLib.h>
+#ifdef vxWorks
+#include		<taskwd.h>
+#endif
+#include		<cadef.h>
 #include		<iocmsg.h>
+#include		<iocinf.h>
 #include		<os_depen.h>
 
 /* 
@@ -105,9 +113,13 @@ ELLLIST	client_list;
 static
 char	buf[MAX_UDP]; 
 
-static int 	clean_client();
-static int	ca_repeater();
-int		local_addr();
+#ifdef __STDC__
+LOCAL int 	clean_client(struct one_client *pclient);
+LOCAL int	ca_repeater();
+#else
+LOCAL int 	clean_client(); 
+LOCAL int	ca_repeater();
+#endif
 
 #define NTRIES 100
 
@@ -121,7 +133,7 @@ int		local_addr();
 #ifdef VMS
 main()
 #else
-ca_repeater_task()
+int ca_repeater_task()
 #endif
 {
 #if REPEATER_RETRY
@@ -163,8 +175,7 @@ ca_repeater_task()
  *
  *
  */
-static int
-ca_repeater()
+LOCAL int ca_repeater()
 {
   	int				status;
   	int				size;
@@ -195,11 +206,11 @@ ca_repeater()
 				__FILE__);
 	}
 
-      	memset(&bd,0,sizeof bd);
+      	memset((char *)&bd,0,sizeof bd);
       	bd.sin_family = AF_INET;
       	bd.sin_addr.s_addr = htonl(INADDR_ANY);	
      	bd.sin_port = htons(CA_CLIENT_PORT);	
-      	status = bind(sock, &bd, sizeof bd);
+      	status = bind(sock, (struct sockaddr *)&bd, sizeof bd);
      	if(status<0){
 		if(MYERRNO != EADDRINUSE){
 			ca_printf("CA Repeater: unexpected bind fail %d\n", 
@@ -230,7 +241,7 @@ ca_repeater()
 					buf,
 					sizeof buf,
 					0,
-					&from, 
+					(struct sockaddr *)&from, 
 					&from_size);
 
    	 	if(size > 0){
@@ -246,7 +257,7 @@ ca_repeater()
           	                      		buf,
          	      				size,
             	                    		0,
-            	                    		&pclient->from, 
+            	                    		(struct sockaddr *)&pclient->from, 
                	                 		sizeof pclient->from);
    					if(status < 0){
 						ca_printf("CA Repeater: fanout err %d\n",
@@ -263,7 +274,7 @@ ca_repeater()
 			/*
 			 * If this is a processor local message then add to
 			 * the list of clients to repeat to if not there
-			 * allready
+			 * already
 			 */
 			for(	pclient = (struct one_client *) 
 					client_list.node.next;
@@ -278,22 +289,25 @@ ca_repeater()
 					malloc(sizeof *pclient);
 				if(pclient){
 					pclient->from = from;
-					ellAdd(&client_list, pclient);
+					ellAdd(	&client_list, 
+						&pclient->node);
 #ifdef DEBUG
-					ca_printf("Added %x %d\n", from.sin_port, size);
+					ca_printf(
+						"Added %x %d\n", 
+						from.sin_port, size);
 #endif
 				}
 			}
 
-   			memset(&confirm, NULL, sizeof confirm);
+   			memset((char *)&confirm, NULL, sizeof confirm);
 			confirm.m_cmmd = htons(REPEATER_CONFIRM);
 			confirm.m_available = local.sin_addr.s_addr;
         		status = sendto(
 				sock,
-        			&confirm,
+        			(char *)&confirm,
         			sizeof confirm,
         			0,
-       				&from, /* reflect back to sender */
+       				(struct sockaddr *)&from, /* back to sender */
 				sizeof from);
       			if(status != sizeof confirm){
 				ca_printf("CA Repeater: confirm err %d\n",
@@ -324,9 +338,12 @@ ca_repeater()
  *	check to see if this client is still around
  *
  */
-static int
-clean_client(pclient)
+#ifdef __STDC__
+LOCAL int clean_client(struct one_client *pclient)
+#else
+LOCAL int clean_client(pclient)
 struct one_client		*pclient;
+#endif
 {
 	int			port = pclient->from.sin_port;
 	int 			sock;
@@ -344,11 +361,11 @@ struct one_client		*pclient;
 		return ERROR;
 	}
 
-      	memset(&bd,0,sizeof bd);
+      	memset((char *)&bd,0,sizeof bd);
       	bd.sin_family = AF_INET;
       	bd.sin_addr.s_addr = htonl(INADDR_ANY);	
      	bd.sin_port = port;	
-      	status = bind(sock, &bd, sizeof bd);
+      	status = bind(sock, (struct sockaddr *)&bd, sizeof bd);
      	if(status<0){
 		if(MYERRNO == EADDRINUSE)
 			present = TRUE;
@@ -360,7 +377,7 @@ struct one_client		*pclient;
 	socket_close(sock);
 
 	if(!present){
-		ellDelete(&client_list, pclient);
+		ellDelete(&client_list, &pclient->node);
 		free(pclient);
 #ifdef DEBUG
 		ca_printf("Deleted\n");

@@ -90,6 +90,7 @@ static char *sccsId = "$Id$\t$Date$";
 #  endif
 #else
 #  if defined(UNIX)
+#	include		<malloc.h>
 #	include		<sys/types.h>
 #	include		<sys/errno.h>
 #	include		<sys/socket.h>
@@ -103,14 +104,26 @@ static char *sccsId = "$Id$\t$Date$";
 #	include		<ioLib.h>
 #	include		<errno.h>
 #	include		<socket.h>
+#	include		<sockLib.h>
+#	include		<tickLib.h>
+#	include		<taskLib.h>
+#	include		<selectLib.h>
+#	include		<stdio.h>
 #	include		<in.h>
-#	include		<tcp.h>
+#	include 	<tcp.h>
 #	include		<ioctl.h>
 #	include		<task_params.h>
+#	include		<string.h>
+#	include		<errnoLib.h>
+#	include		<sysLib.h>
+#	include		<taskVarLib.h>
 #    endif
 #  endif
 #endif
 
+#ifdef vxWorks
+#include		<taskwd.h>
+#endif
 #include		<cadef.h>
 #include		<net_convert.h>
 #include		<iocmsg.h>
@@ -118,15 +131,39 @@ static char *sccsId = "$Id$\t$Date$";
 
 static struct timeval notimeout = {0,0};
 
-void 	close_ioc();
-static void	recv_msg();
-static void	tcp_recv_msg();
-static void	udp_recv_msg();
-static void	notify_ca_repeater();
-static void   	cac_flush_internal();
-static int	cac_send_msg_piiu();
+#ifdef __STDC__
+LOCAL void 	tcp_recv_msg(struct ioc_in_use *piiu);
+LOCAL void 	cac_flush_internal();
+LOCAL int 	cac_send_msg_piiu(struct ioc_in_use *piiu);
+LOCAL void 	notify_ca_repeater();
+LOCAL void 	recv_msg(struct ioc_in_use *piiu);
+LOCAL void 	udp_recv_msg(struct ioc_in_use *piiu);
+LOCAL void 	clean_iiu_list();
 #ifdef VMS
-void   	vms_recv_msg_ast();
+LOCAL void 	vms_recv_msg_ast(struct ioc_in_use *piiu);
+#endif
+
+LOCAL int
+create_net_chan(
+struct ioc_in_use 	**ppiiu,
+struct in_addr		*pnet_addr,
+int			net_proto
+);
+
+#else
+
+LOCAL void	tcp_recv_msg();
+LOCAL void   	cac_flush_internal();
+LOCAL int	cac_send_msg_piiu();
+LOCAL void 	notify_ca_repeater();
+LOCAL void	recv_msg();
+LOCAL void	udp_recv_msg();
+#ifdef VMS
+void   		vms_recv_msg_ast();
+#endif
+LOCAL int 	create_net_chan();
+LOCAL void 	clean_iiu_list();
+
 #endif
 
 
@@ -147,49 +184,46 @@ void   	vms_recv_msg_ast();
  *
  *	LOCK should be on while in this routine
  */
-alloc_ioc(pnet_addr, net_proto, iocix)
+#ifdef __STDC__
+int alloc_ioc(
+struct in_addr			*pnet_addr,
+int				net_proto,
+struct ioc_in_use		**ppiiu
+)
+#else
+int alloc_ioc(pnet_addr, net_proto, ppiiu)
 struct in_addr			*pnet_addr;
 int				net_proto;
-unsigned short			*iocix;
+struct ioc_in_use		**ppiiu;
+#endif
 {
-  	int			i;
+	struct ioc_in_use	*piiu;
   	int			status;
 
-  	/****************************************************************/
-  	/* 	IOC allready allocated ?				*/
-  	/****************************************************************/
-  	for(i=0;i<nxtiiu;i++)
-    		if(	(pnet_addr->s_addr == iiu[i].sock_addr.sin_addr.s_addr)
-			&& (net_proto == iiu[i].sock_proto)){
+	/*
+	 * look for an existing connection
+	 *
+	 * quite a bottle neck with increasing connection count
+	 *
+	 */
+	for(	piiu = (struct ioc_in_use *) iiuList.node.next;
+		piiu;
+		piiu = (struct ioc_in_use *) piiu->node.next){
 
-      		if(!iiu[i].conn_up){
-			/* an old connection is resumed */
-        		status = create_net_chan(&iiu[i]);
-        		if(status != ECA_NORMAL)
-          			return status;
-        		ca_signal(
-				ECA_NEWCONN,
-				iiu[i].host_name_str);
-      		}
+    		if(	(pnet_addr->s_addr == piiu->sock_addr.sin_addr.s_addr)
+			&& (net_proto == piiu->sock_proto)){
 
-      		*iocix = i;
-      		return ECA_NORMAL;
+			if(!piiu->conn_up){
+				continue;
+			}
+
+			*ppiiu = piiu;
+      			return ECA_NORMAL;
+		}
     	}
 
-  	/* 	is there an IOC In Use block available to allocate	*/
-  	if(nxtiiu>=MAXIIU)
-    		return ECA_MAXIOC;
-
-  	/* 	set network address block	*/
-  	iiu[nxtiiu].sock_addr.sin_addr = *pnet_addr;
-  	iiu[nxtiiu].sock_proto = net_proto;
-  	status = create_net_chan(&iiu[nxtiiu]);
-  	if(status != ECA_NORMAL)
-    		return status;
-
-  	*iocix = nxtiiu++;
-
-  	return ECA_NORMAL;
+  	status = create_net_chan(ppiiu, pnet_addr, net_proto);
+  	return status;
 
 }
 
@@ -199,15 +233,33 @@ unsigned short			*iocix;
  *
  *	LOCK should be on while in this routine
  */
-static int
-create_net_chan(piiu)
-struct ioc_in_use		*piiu;
+#ifdef __STDC__
+LOCAL int create_net_chan(
+struct ioc_in_use 	**ppiiu,
+struct in_addr		*pnet_addr,
+int			net_proto
+)
+#else
+LOCAL int create_net_chan(ppiiu, pnet_addr, net_proto)
+struct ioc_in_use 	**ppiiu;
+struct in_addr		*pnet_addr;
+int			net_proto;
+#endif
 {
+	struct ioc_in_use	*piiu;
   	int			status;
   	int 			sock;
   	int			true = TRUE;
   	struct sockaddr_in	saddr;
   	int			i;
+
+	piiu = (IIU *) calloc(1, sizeof(*piiu));
+	if(!piiu){
+		return ECA_ALLOCMEM;
+	}
+
+  	piiu->sock_addr.sin_addr = *pnet_addr;
+  	piiu->sock_proto = net_proto;
 
    	/* 	set socket domain 	*/
   	piiu->sock_addr.sin_family = AF_INET;
@@ -230,8 +282,10 @@ struct ioc_in_use		*piiu;
       		sock = socket(	AF_INET,	/* domain	*/
 				SOCK_STREAM,	/* type		*/
 				0);		/* deflt proto	*/
-      		if(sock == ERROR)
+      		if(sock == ERROR){
+			free(piiu);
         		return ECA_SOCK;
+		}
 
       		piiu->sock_chan = sock;
 
@@ -243,9 +297,10 @@ struct ioc_in_use		*piiu;
 				sock,
 				IPPROTO_TCP,
 				TCP_NODELAY,
-				&true,
+				(char *)&true,
 				sizeof true);
       		if(status < 0){
+			free(piiu);
         		status = socket_close(sock);
 			if(status<0){
 				SEVCHK(ECA_INTERNAL,NULL);
@@ -263,9 +318,10 @@ struct ioc_in_use		*piiu;
 				sock,
 				SOL_SOCKET,
 				SO_KEEPALIVE,
-				&true,
+				(char *)&true,
 				sizeof true);
       		if(status < 0){
+			free(piiu);
         		status = socket_close(sock);
 			if(status<0){
 				SEVCHK(ECA_INTERNAL,NULL);
@@ -284,7 +340,7 @@ struct ioc_in_use		*piiu;
 				&linger,
 				&linger_size);
       			if(status < 0){
-				abort();
+				abort(0);
       			}
 			ca_printf(	"CAC: linger was on:%d linger:%d\n", 
 				linger.l_onoff, 
@@ -302,6 +358,7 @@ struct ioc_in_use		*piiu;
 				&i,
 				sizeof(i));
         	if(status < 0){
+			free(piiu);
           		status = socket_close(sock);
 			if(status<0){
 				SEVCHK(ECA_INTERNAL,NULL);
@@ -316,6 +373,7 @@ struct ioc_in_use		*piiu;
 				&i,
 				sizeof(i));
         	if(status < 0){
+			free(piiu);
           		status = socket_close(sock);
 			if(status<0){
 				SEVCHK(ECA_INTERNAL,NULL);
@@ -330,9 +388,10 @@ struct ioc_in_use		*piiu;
 				sock,
 				SOL_SOCKET,
 				SO_SNDBUF,
-				&piiu->tcp_send_buff_size,
+				(char *)&piiu->tcp_send_buff_size,
 				&i);
         	if(status < 0 || i != sizeof(piiu->tcp_send_buff_size)){
+			free(piiu);
           		status = socket_close(sock);
 			if(status<0){
 				SEVCHK(ECA_INTERNAL,NULL);
@@ -343,7 +402,7 @@ struct ioc_in_use		*piiu;
       		/* connect */
       		status = connect(	
 				sock,
-				&piiu->sock_addr,
+				(struct sockaddr *)&piiu->sock_addr,
 				sizeof(piiu->sock_addr));
       		if(status < 0){
 			ca_printf("CAC: no conn errno %d\n", MYERRNO);
@@ -351,6 +410,7 @@ struct ioc_in_use		*piiu;
 			if(status<0){
 				SEVCHK(ECA_INTERNAL,NULL);
 			}
+			free(piiu);
         		return ECA_CONN;
       		}
       		piiu->max_msg = MAX_TCP;
@@ -372,7 +432,6 @@ struct ioc_in_use		*piiu;
 		 */
 		{
 			char 	*ptmpstr;
-			int	len;
 	
 			ptmpstr = host_from_addr(&piiu->sock_addr.sin_addr);
 			strncpy(
@@ -388,8 +447,10 @@ struct ioc_in_use		*piiu;
       		sock = socket(	AF_INET,	/* domain	*/
 				SOCK_DGRAM,	/* type		*/
 				0);		/* deflt proto	*/
-      		if(sock == ERROR)
+      		if(sock == ERROR){
+			free (piiu);
         		return ECA_SOCK;
+		}
 
       		piiu->sock_chan = sock;
 
@@ -401,9 +462,10 @@ struct ioc_in_use		*piiu;
 				sock,
 				SOL_SOCKET,
 				SO_BROADCAST,
-				&true,
+				(char *)&true,
 				sizeof(true));
       		if(status<0){
+			free(piiu);
         		ca_printf("CAC: sso (errno=%d)\n",MYERRNO);
         		status = socket_close(sock);
 			if(status < 0){
@@ -412,7 +474,7 @@ struct ioc_in_use		*piiu;
         		return ECA_CONN;
       		}
 
-      		memset(&saddr,0,sizeof(saddr));
+      		memset((char *)&saddr,0,sizeof(saddr));
       		saddr.sin_family = AF_INET;
 		/* 
 		 * let slib pick lcl addr 
@@ -435,10 +497,6 @@ struct ioc_in_use		*piiu;
 		 * future.
 		 */
 		{
-			char 	*ptmpstr;
-			int	len;
-	
-			ptmpstr = host_from_addr(&piiu->sock_addr.sin_addr);
 			strncpy(
 				piiu->host_name_str, 
 				"<<unknown host>>", 
@@ -448,6 +506,7 @@ struct ioc_in_use		*piiu;
       		break;
 
 	default:
+		free(piiu);
       		ca_signal(ECA_INTERNAL,"alloc_ioc: ukn protocol\n");
 		/*
 		 * turn off gcc warnings
@@ -463,6 +522,7 @@ struct ioc_in_use		*piiu;
 			if(status < 0){
 				SEVCHK(ECA_INTERNAL,NULL);
 			}
+			free(piiu);
       			return ECA_ALLOCMEM;
     		}
 	}
@@ -476,13 +536,13 @@ struct ioc_in_use		*piiu;
 			if(status < 0){
 				SEVCHK(ECA_INTERNAL,NULL);
 			}
+			free(piiu);
       			return ECA_ALLOCMEM;
     		}
 	}
 
 	piiu->send_retry_count = SEND_RETRY_COUNT_INIT;
   	piiu->recv->stk = 0;
-  	piiu->conn_up = TRUE;
 	piiu->active = FALSE;
   	if(fd_register_func){
 		LOCKEVENTS;
@@ -515,39 +575,15 @@ struct ioc_in_use		*piiu;
       			exit();
     		}
   	}
-#else
-#  if defined(vxWorks)
-  	{  
-      		static void	recv_task();
-      		int 	pri;
-      		char	name[15];
-
-      		status == taskPriorityGet(VXTASKIDSELF, &pri);
-      		if(status<0)
-			ca_signal(ECA_INTERNAL,NULL);
-
-      		strcpy(name,"RD ");                   
-      		strncat(
-			name, 
-			taskName(VXTHISTASKID), 
-			sizeof(name)-strlen(name)-1); 
-
-      		status = taskSpawn(
-				name,
-				pri-1,
-				VX_FP_TASK,
-				4096,
-				recv_task,
-				piiu,
-				taskIdSelf());
-      		if(status<0)
-			ca_signal(ECA_INTERNAL,NULL);
-
-      		piiu->recv_tid = status;
-
-  	}
-#  endif
 #endif
+
+	/*
+	 * add to the list of active IOCs
+	 */
+	ellAdd(&iiuList, &piiu->node);
+
+	piiu->conn_up = TRUE;
+	*ppiiu = piiu;
 
   	return ECA_NORMAL;
 }
@@ -565,24 +601,25 @@ struct ioc_in_use		*piiu;
  * 	LOCK should be on while in this routine
  * 	(MULTINET TCP/IP routines are not reentrant)
  */
-static void 
-notify_ca_repeater()
+LOCAL void notify_ca_repeater()
 {
 	struct sockaddr_in	saddr;
 	int			status;
 
-	if(!iiu[BROADCAST_IIU].conn_up)
+	if(!piiuCast)
+		return;
+	if(!piiuCast->conn_up)
 		return;
 
-     	status = local_addr(iiu[BROADCAST_IIU].sock_chan, &saddr);
+     	status = local_addr(piiuCast->sock_chan, &saddr);
 	if(status == OK){
       		saddr.sin_port = htons(CA_CLIENT_PORT);	
       		status = sendto(
-			iiu[BROADCAST_IIU].sock_chan,
+			piiuCast->sock_chan,
         		NULL,
         		0, /* zero length message */
         		0,
-       			&saddr, 
+       			(struct sockaddr *)&saddr, 
 			sizeof saddr);
       		if(status < 0){
 			if(	MYERRNO == EINTR || 
@@ -593,7 +630,7 @@ notify_ca_repeater()
 			else{
 				ca_printf(
 	"CAC: notify_ca_repeater: send to lcl addr failed\n");
-				abort();
+				abort(0);
 			}
 		}
 	}
@@ -612,21 +649,15 @@ void cac_send_msg()
 	int				done;
 	int				status;
 
-  	for(piiu=iiu; piiu<&iiu[nxtiiu]; piiu++){
+  	for(	piiu=(IIU *)iiuList.node.next; 
+		piiu; 
+		piiu=(IIU *)piiu->node.next){
+
 		piiu->send_retry_count = SEND_RETRY_COUNT_INIT;
 	}
 
   	if(!ca_static->ca_repeater_contacted)
 		notify_ca_repeater();
-
-#if 0
-	/*
-	 * dont call it recursively
-	 */
-	if(send_msg_active){
-		return;
-	}
-#endif
 
 	send_msg_active++;
 
@@ -649,9 +680,11 @@ void cac_send_msg()
 #		endif
 
 		done = TRUE;
-  		for(piiu=iiu; piiu<&iiu[nxtiiu]; piiu++){
+  		for(	piiu=(IIU *)iiuList.node.next; 
+			piiu; 
+			piiu=(IIU *)piiu->node.next){
 
-    			if(!piiu->send->stk)
+    			if(!piiu->send->stk || !piiu->conn_up)
 				continue;
 
 			status = cac_send_msg_piiu(piiu);
@@ -676,8 +709,11 @@ void cac_send_msg()
 			 * to a send buffer and a recursive 
 			 * ca_send_msg() call was refused above
 			 */
-  			for(piiu=iiu;piiu<&iiu[nxtiiu];piiu++){
-    				if(piiu->send->stk){
+  			for(	piiu=(IIU *)iiuList.node.next; 
+				piiu; 
+				piiu=(IIU *)piiu->node.next){
+
+    				if(piiu->send->stk && piiu->conn_up){
 					done = FALSE;
 				}
 			}
@@ -697,48 +733,28 @@ void cac_send_msg()
  *
  * 
  */
-static int
-cac_send_msg_piiu(piiu)
-register struct ioc_in_use 	*piiu;
+#ifdef __STDC__
+LOCAL int cac_send_msg_piiu(struct ioc_in_use *piiu)
+#else
+LOCAL int cac_send_msg_piiu(piiu)
+struct ioc_in_use 	*piiu;
+#endif
 {
   	unsigned 		cnt;
   	void			*pmsg;    
   	int			status;
-	struct ioc_in_use 	*piiu_socket;
 
 	cnt = piiu->send->stk;
 	pmsg = (void *) piiu->send->buf;	
 
 	while(TRUE){
 
-		if(piiu->conn_up){
-			/*
-			 * use TCP if connection exists
-			 */
-			piiu_socket = piiu;
-		}
-		else{
-			/* 
-			 * use UDP   
-			 *
-			 * NOTE: this does not use a broadcast
-			 * if the location of the channel is
-			 * known from a previous connection.
-			 *
-			 * (piiu->sock_addr points to the
-			 *	known address)
-			 */
-			if(!iiu[BROADCAST_IIU].conn_up)
-				return ERROR;
-
-			piiu_socket = &iiu[BROADCAST_IIU];
-		}
 		status = sendto(
-				piiu_socket->sock_chan,
+				piiu->sock_chan,
 				pmsg,	
 				cnt,
 				0,
-				&piiu->sock_addr,
+				(struct sockaddr *)&piiu->sock_addr,
 				sizeof(piiu->sock_addr));
 
 		/*
@@ -758,7 +774,7 @@ register struct ioc_in_use 	*piiu;
 			pmsg = (void *) (status+(char *)pmsg);
 		}
 		else if(status == 0){
-ca_printf("CAC: sent zero ?\n");
+			ca_printf("CAC: sent zero ?\n");
 			TCPDELAY;
 		}
 		else if(MYERRNO == EWOULDBLOCK ||
@@ -785,7 +801,7 @@ ca_printf("CAC: sent zero ?\n");
 					"CAC: error on socket send() %d\n",
 					MYERRNO);
 			}
-			close_ioc(piiu_socket);
+			close_ioc(piiu);
 			return OK;
 		}
 
@@ -799,7 +815,7 @@ ca_printf("CAC: sent zero ?\n");
 	/*
 	 * reset the delay to the next keepalive
 	 */
-    	if(piiu != &iiu[BROADCAST_IIU] && piiu->conn_up){
+    	if(piiu != piiuCast){
 		piiu->next_retry = time(NULL) + CA_RETRY_PERIOD;
 	}
 
@@ -814,14 +830,16 @@ ca_printf("CAC: sent zero ?\n");
  * Flush the output - but dont block
  *
  */
-static void cac_flush_internal()
+LOCAL void cac_flush_internal()
 {
 	register struct ioc_in_use      *piiu;
 
 	LOCK
-	for(piiu=iiu; piiu<&iiu[nxtiiu]; piiu++){
+	for(	piiu = (IIU *)iiuList.node.next; 
+		piiu; 
+		piiu = (IIU *)piiu->node.next){
 
-		if(piiu->send->stk==0 || !piiu->send_needed)
+		if(piiu->send->stk==0 || !piiu->send_needed || !piiu->conn_up)
 			continue;
 
 		cac_send_msg_piiu(piiu);
@@ -838,30 +856,40 @@ static void cac_flush_internal()
  *	2) Return early if nothing outstanding
  * 
  */
-#ifdef UNIX
-void			
-recv_msg_select(ptimeout)
+#if defined(UNIX) || defined(vxWorks)
+#ifdef __STDC__
+void recv_msg_select(struct timeval  *ptimeout)
+#else
+void recv_msg_select(ptimeout)
 struct timeval 	*ptimeout;
+#endif
 {
   	long				status;
   	register struct ioc_in_use 	*piiu;
-  	struct timeval 			*ptmptimeout;
+	struct timeval			timeout;
 
-  	ptmptimeout = ptimeout;
   	while(TRUE){
 
-    		for(piiu=iiu;piiu<&iiu[nxtiiu];piiu++)
-      			if(piiu->conn_up){
-        			FD_SET(piiu->sock_chan,&readch);
-        			FD_SET(piiu->sock_chan,&excepch);
-      			}
+		LOCK;
+    		for(	piiu=(IIU *)iiuList.node.next;
+			piiu;
+			piiu=(IIU *)piiu->node.next){
+
+			if(!piiu->conn_up){
+				continue;
+			}
+
+       			FD_SET(piiu->sock_chan,&readch);
+       			FD_SET(piiu->sock_chan,&excepch);
+		}
+		UNLOCK;
 
     		status = select(
 				sizeof(fd_set)*NBBY,
 				&readch,
 				NULL,
 				&excepch,
-				ptmptimeout);
+				ptimeout);
 
   		if(status<=0){  
 			if(status == 0)
@@ -886,25 +914,76 @@ struct timeval 	*ptimeout;
 			}
 		}                                                         
 
-    		for(piiu=iiu;piiu<&iiu[nxtiiu];piiu++){
-      			if(piiu->conn_up){
-      				if(FD_ISSET(piiu->sock_chan,&readch) ||
-					FD_ISSET(piiu->sock_chan,&excepch)){
-          				recv_msg(piiu);
-				}
+		/*
+		 * I dont want to lock while traversing
+		 * this list so that we are free to take 
+		 * it at a lower level
+		 *
+		 * I know that an item can be added to the
+		 * end of the list while traversing it
+		 * - no lock required here.
+		 *
+		 * I know that an item is only deleted from 
+		 * this list in this routine
+		 * - no lock required here.
+		 *
+		 * LOCK is applied when if a block is added
+		 */
+    		for(	piiu=(IIU *)iiuList.node.next;
+			piiu;
+			piiu=(IIU *)piiu->node.next){
+
+			if(!piiu->conn_up){
+				continue;
+			}
+
+      			if(FD_ISSET(piiu->sock_chan,&readch) ||
+				FD_ISSET(piiu->sock_chan,&excepch)){
+          			recv_msg(piiu);
 			}
 		}
 
   		/*
    		 * double check to make sure that nothing is left pending
   	 	 */
-    		ptmptimeout = &notimeout;
+		timeout.tv_sec =0;
+		timeout.tv_usec = 0;
+		ptimeout = &timeout;
   	}
+
+	LOCK;
+	clean_iiu_list();
+	UNLOCK;
 
 	cac_flush_internal();
 }
 #endif
 
+
+/*
+ * clean_iiu_list()
+ */
+LOCAL void clean_iiu_list()
+{
+	IIU	*piiu;
+
+	piiu=(IIU *)iiuList.node.next;
+    	while(piiu){
+		IIU	*pnext;
+
+		/*
+		 * iiu block may be deleted here
+		 * so I save the pointer to the next
+		 * block 
+	 	 */
+		pnext=(IIU *)piiu->node.next;
+		if(!piiu->conn_up){
+			ellDelete(&iiuList, &piiu->node);
+			free(piiu);
+		}
+		piiu=pnext;
+	}
+}
 
 
 /*
@@ -912,10 +991,17 @@ struct timeval 	*ptimeout;
  *
  *
  */
-static void 
-recv_msg(piiu)
+#ifdef __STDC__
+LOCAL void recv_msg(struct ioc_in_use *piiu)
+#else
+LOCAL void recv_msg(piiu)
 struct ioc_in_use	*piiu;
+#endif
 {
+	if(!piiu->conn_up){
+		return;
+	}
+
 	piiu->active = TRUE;
 
   	switch(piiu->sock_proto){
@@ -932,7 +1018,7 @@ struct ioc_in_use	*piiu;
 
   	default:
     		ca_printf("CAC: cac_send_msg: ukn protocol\n");
-    		abort();
+    		abort(0);
   	}  
 
 	piiu->active = FALSE;
@@ -943,13 +1029,15 @@ struct ioc_in_use	*piiu;
  * TCP_RECV_MSG()
  *
  */
-static void 
-tcp_recv_msg(piiu)
+#ifdef __STDC__
+LOCAL void tcp_recv_msg(struct ioc_in_use *piiu)
+#else
+LOCAL void tcp_recv_msg(piiu)
 struct ioc_in_use	*piiu;
+#endif
 {
   	long			byte_cnt;
   	int			status;
-  	int			timeoutcnt;
   	struct buffer		*rcvb = 	piiu->recv;
   	int			sock = 		piiu->sock_chan;
 
@@ -1005,14 +1093,14 @@ struct ioc_in_use	*piiu;
   	/* post message to the user */
 	byte_cnt = rcvb->stk;
   	status = post_msg(
-			rcvb->buf, 
+			(struct extmsg *)rcvb->buf, 
 			&byte_cnt, 
 			&piiu->sock_addr.sin_addr, 
 			piiu);
 	if(status != OK){
-	 	LOCK;
-                close_ioc(piiu);
-                UNLOCK;
+		LOCK;
+		close_ioc(piiu);
+		UNLOCK;
 		return;
 	}
 	if(byte_cnt>0){
@@ -1032,7 +1120,7 @@ struct ioc_in_use	*piiu;
 	/*
 	 * reset the delay to the next keepalive
 	 */
-    	if(piiu != &iiu[BROADCAST_IIU] && piiu->conn_up){
+    	if(piiu != piiuCast){
 		piiu->next_retry = time(NULL) + CA_RETRY_PERIOD;
 	}
 
@@ -1045,15 +1133,17 @@ struct ioc_in_use	*piiu;
  *	UDP_RECV_MSG()
  *
  */
-static void 
-udp_recv_msg(piiu)
+#ifdef __STDC__
+LOCAL void udp_recv_msg(struct ioc_in_use *piiu)
+#else
+LOCAL void udp_recv_msg(piiu)
 struct ioc_in_use	*piiu;
+#endif
 {
   	int			status;
   	struct buffer		*rcvb = 	piiu->recv;
   	int			sock = 		piiu->sock_chan;
   	int			reply_size;
-  	char			*ptr;
   	unsigned		nchars;
 	struct msglog{
   		long			nbytes;
@@ -1069,13 +1159,13 @@ struct ioc_in_use	*piiu;
 		pmsglog = (struct msglog *) &rcvb->buf[rcvb->stk];
     		rcvb->stk += sizeof(*pmsglog);
 
-  		reply_size = sizeof(struct sockaddr_in);
+  		reply_size = sizeof(pmsglog->addr);
     		status = recvfrom(	
 				sock,
 				&rcvb->buf[rcvb->stk],
 				MAX_UDP,
 				0,
-				&pmsglog->addr, 
+				(struct sockaddr *)&pmsglog->addr, 
 				&reply_size);
     		if(status < 0){
 			/*
@@ -1098,17 +1188,16 @@ struct ioc_in_use	*piiu;
 #ifdef DEBUG
       		ca_printf("CAC: recieved a udp reply of %d bytes\n",byte_cnt);
 #endif
-		
 
     		if(rcvb->stk + MAX_UDP + sizeof(*pmsglog) > MAX_MSG_SIZE)
       			break;
-	
+
     		/*
     		 * More comming ?
     		 */
     		status = socket_ioctl(	sock,
 					FIONREAD,
-					&nchars);
+					(int) &nchars);
     		if(status<0)
       			ca_signal(ECA_INTERNAL,"unexpected udp ioctl err\n");
 
@@ -1123,12 +1212,14 @@ struct ioc_in_use	*piiu;
   		/* post message to the user */
 		msgcount = pmsglog->nbytes;
   		status = post_msg(
-				pmsglog+1, 
+				(struct extmsg *)(pmsglog+1), 
 				&msgcount,
 				&pmsglog->addr.sin_addr,
 				piiu);
 		if(status != OK || msgcount != 0){
-			ca_printf(	"CAC: UDP alignment problem %d\n",
+			ca_printf("CAC: bad UDP msg from port=%d addr=%x align=%d\n",
+				pmsglog->addr.sin_port,
+				pmsglog->addr.sin_addr.s_addr,
 				msgcount);
 		}
 
@@ -1147,46 +1238,30 @@ struct ioc_in_use	*piiu;
  * RECV_TASK()
  *
  */
-static void 
-recv_task(piiu, moms_tid)
-struct ioc_in_use	*piiu;
-int			moms_tid;
+#ifdef __STDC__
+void cac_recv_task(int	tid)
+#else
+void cac_recv_task(tid)
+int		tid;
+#endif
 {
+	struct timeval	timeout;
   	int		status;
 
 	taskwdInsert((int) taskIdCurrent, NULL, NULL);
 
-  	status = taskVarAdd(VXTHISTASKID, &ca_static); 
-  	if(status == ERROR)                            
-    		abort();                                     
-
- 	ca_static = (struct ca_static *) 
-			taskVarGet(moms_tid, &ca_static);
-
-  	if(ca_static == (struct ca_static*)ERROR)
-    		abort();
-
-  	while(piiu->conn_up){
-    		recv_msg(piiu);
-		cac_flush_internal();
-	}
+	status = ca_import(tid);
+	SEVCHK(status, NULL);
 
 	/*
-	 * Exit recv task
-	 * 
-	 * NOTE on vxWorks I dont want the global channel access exit handler to
-	 * run for this pod of tasks when the recv task exits so I delete the
-	 * task variable here. The CA exit handler ignores tasks with out the
-	 * ca task var defined.
+	 * detects connection loss and self exits
+	 * in close_ioc()
 	 */
-
-  	status = taskVarDelete(VXTHISTASKID, &ca_static); 
-  	if(status == ERROR)                            
-    		abort();                                     
-
-	taskwdRemove((int) taskIdCurrent, NULL, NULL);
-
-  	exit();
+  	while(TRUE){
+		timeout.tv_usec = 0;
+		timeout.tv_sec = 20;
+		recv_msg_select(&timeout);
+	}
 }
 #endif
 
@@ -1198,9 +1273,12 @@ int			moms_tid;
  *
  */
 #ifdef VMS
-static void 
-vms_recv_msg_ast(piiu)
+#ifdef __STDC__
+LOCAL void vms_recv_msg_ast(struct ioc_in_use *piiu)
+#else
+LOCAL void vms_recv_msg_ast(piiu)
 struct ioc_in_use	*piiu;
+#endif
 {
   	short		io_status;
 
@@ -1217,7 +1295,7 @@ struct ioc_in_use	*piiu;
 		notify_ca_repeater();
 
 	recv_msg(piiu);
-
+	clean_iiu_list();
 	cac_flush_internal();
 	  
 	/*
@@ -1253,21 +1331,25 @@ struct ioc_in_use	*piiu;
  *	NOTES:
  *	Lock must be applied while in this routine
  */
-void
-close_ioc(piiu)
+#ifdef __STDC__
+void close_ioc(struct ioc_in_use *piiu)
+#else
+void close_ioc(piiu)
 struct ioc_in_use	*piiu;
+#endif
 {
-  	register chid			chix;
+  	chid				chix;
   	struct connection_handler_args	args;
 	int				status;
 
-	if(piiu == &iiu[BROADCAST_IIU]){
-		ca_signal(ECA_INTERNAL, 
-			"Unable to perform UDP broadcast\n");
-	}
-
-  	if(!piiu->conn_up)
+	if(!piiu->conn_up){
 		return;
+	}
+	piiu->conn_up = FALSE;
+
+	if(piiu == piiuCast){
+		piiuCast = NULL;
+	}
 
   	/*
   	 * reset send stack- discard pending ops when the conn broke (assume
@@ -1276,7 +1358,6 @@ struct ioc_in_use	*piiu;
   	piiu->send->stk = 0;
   	piiu->recv->stk = 0;
   	piiu->max_msg = MAX_UDP;
-  	piiu->conn_up = FALSE;
 	piiu->active = FALSE;
 
 	/*
@@ -1286,9 +1367,10 @@ struct ioc_in_use	*piiu;
 	piiu->nconn_tries = 0;
 	piiu->retry_delay = CA_RECAST_DELAY;
 
-# 	ifdef UNIX
+# 	if defined(UNIX) || defined(vxWorks)
   	/* clear unused select bit */
   	FD_CLR(piiu->sock_chan, &readch);
+       	FD_CLR(piiu->sock_chan, &excepch);
 # 	endif 
 
 	/*
@@ -1305,6 +1387,12 @@ struct ioc_in_use	*piiu;
     		chix->id.sid = ~0L;
   	}
 
+  	if(piiu->chidlist.count){
+    		ca_signal(
+			ECA_DISCONN, 
+			piiu->host_name_str);
+	}
+
 	/*
 	 * call their connection handler as required
 	 */
@@ -1317,7 +1405,15 @@ struct ioc_in_use	*piiu;
       			(*chix->connection_func)(args);
 			UNLOCKEVENTS;
     		}
+		chix->piiu = piiuCast;
   	}
+
+	/*
+	 * move all channels to the broadcast IIU
+	 */
+	if(piiuCast){
+		ellConcat(&piiuCast->chidlist, &piiu->chidlist);
+	}
 
   	if(fd_register_func){
 		LOCKEVENTS;
@@ -1330,10 +1426,9 @@ struct ioc_in_use	*piiu;
 		SEVCHK(ECA_INTERNAL,NULL);
 	}
   	piiu->sock_chan = -1;
-  	if(piiu->chidlist.count){
-    		ca_signal(
-			ECA_DISCONN, 
-			piiu->host_name_str);
+
+	if(!piiuCast){
+		ca_printf("Unable to broadcast- channels will not reconnect\n");
 	}
 }
 
@@ -1363,7 +1458,7 @@ struct ioc_in_use	*piiu;
  *
  * 	072392 - problem solved by using SO_REUSEADDR
  */
-repeater_installed()
+int repeater_installed()
 {
   	int				status;
   	int 				sock;
@@ -1376,7 +1471,7 @@ repeater_installed()
 			SOCK_DGRAM,	/* type		*/
 			0);		/* deflt proto	*/
       	if(sock == ERROR){
-        	abort();
+        	abort(0);
 	}
 
 	status = setsockopt(	sock,
@@ -1388,7 +1483,7 @@ repeater_installed()
 		ca_printf(      "CAC: set socket option reuseaddr failed\n");
 	}
 
-      	memset(&bd,0,sizeof bd);
+      	memset((char *)&bd,0,sizeof bd);
       	bd.sin_family = AF_INET;
       	bd.sin_addr.s_addr = htonl(INADDR_ANY);	
      	bd.sin_port = htons(CA_CLIENT_PORT);	
@@ -1399,7 +1494,7 @@ repeater_installed()
 		if(MYERRNO == EADDRINUSE)
 			installed = TRUE;
 		else
-			abort();
+			abort(0);
 
 	status = socket_close(sock);
 	if(status<0){

@@ -37,6 +37,7 @@ static char	*sccsId = "@(#)convert.c	1.5\t7/27/92";
 #  define memset(D,V,N)	bfill(D,N,V)
 #endif
 
+static void no_cvrt();
 
 /*
  *	Routine we will do later
@@ -44,7 +45,7 @@ static char	*sccsId = "@(#)convert.c	1.5\t7/27/92";
  *
  *
  */
-no_cvrt()
+static void no_cvrt()
 {
 	ca_printf("Sorry, conversion for that type currently not implemented\n");
 	exit();
@@ -83,11 +84,20 @@ cvrt_ctrl_double()	{no_cvrt();}
  *
  *
  */
+#ifdef __STDC__
+cvrt_short(
+short		*s,			/* source			*/
+short		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+int		num			/* number of values		*/
+)
+#else
 cvrt_short(s,d,encode,num)
-short			*s;			/* source			*/
-short			*d;			/* destination			*/
-int 			encode;			/* cvrt VAX to IEEE if T	*/
-int			num;			/* number of values		*/
+short		*s;			/* source			*/
+short		*d;			/* destination			*/
+int 		encode;			/* cvrt VAX to IEEE if T	*/
+int		num;			/* number of values		*/
+#endif
 {
       	unsigned int	i;
 
@@ -105,11 +115,20 @@ int			num;			/* number of values		*/
  *
  *
  */
-cvrt_char(s,d,encode,num)
-char			*s;			/* source			*/
-char			*d;			/* destination			*/
-int 			encode;			/* cvrt VAX to IEEE if T	*/
-int			num;			/* number of values		*/
+#ifdef __STDC__
+int cvrt_char(
+char		*s;			/* source			*/
+char		*d;			/* destination			*/
+int 		encode;			/* cvrt VAX to IEEE if T	*/
+int		num;			/* number of values		*/
+)
+#else
+int cvrt_char(
+char		*s,			/* source			*/
+char		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+int		num			/* number of values		*/
+#endif
 {
       	unsigned int	i;
 
@@ -127,11 +146,20 @@ int			num;			/* number of values		*/
  *
  *
  */
-cvrt_long(s,d,encode,num)
-long			*s;			/* source			*/
-long			*d;			/* destination			*/
-int 			encode;			/* cvrt VAX to IEEE if T	*/
-int			num;			/* number of values		*/
+#ifdef __STDC__
+int cvrt_long(
+long		*s,			/* source			*/
+long		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+int		num			/* number of values		*/
+)
+#else
+int cvrt_long(s,d,encode,num)
+long		*s;			/* source			*/
+long		*d;			/* destination			*/
+int 		encode;			/* cvrt VAX to IEEE if T	*/
+int		num;			/* number of values		*/
+#endif
 {
       	unsigned int	i;
 
@@ -149,11 +177,20 @@ int			num;			/* number of values		*/
  *
  *
  */
-cvrt_enum(s,d,encode,num)
-short			*s;			/* source			*/
-short			*d;			/* destination			*/
-int 			encode;			/* cvrt VAX to IEEE if T	*/
-int			num;			/* number of values		*/
+#ifdef __STDC__
+int cvrt_enum(
+short		*s,			/* source			*/
+short		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+int		num			/* number of values		*/
+)
+#else
+int cvrt_enum(s,d,encode,num)
+short		*s;			/* source			*/
+short		*d;			/* destination			*/
+int 		encode;			/* cvrt VAX to IEEE if T	*/
+int		num;			/* number of values		*/
+#endif
 {
       	unsigned int	i;
 
@@ -173,11 +210,19 @@ int			num;			/* number of values		*/
  * 	code but better performance.
  *
  */
-cvrt_float(s,d,encode,num)
+#ifdef __STDC__
+int cvrt_float(
+float			*s,			/* source		*/
+float			*d,			/* destination		*/
+int 			encode,			/* cvrt VAX to IEEE if T*/
+int			num			/* number of values	*/
+#else
+int cvrt_float(s,d,encode,num)
 float			*s;			/* source		*/
 float			*d;			/* destination		*/
 int 			encode;			/* cvrt VAX to IEEE if T*/
 int			num;			/* number of values	*/
+#endif
 {
       	unsigned int	i;
 
@@ -206,11 +251,20 @@ int			num;			/* number of values	*/
  *
  *
  */
-cvrt_double(s,d,encode,num)
-double			*s;			/* source			*/
-double			*d;			/* destination			*/
-int 			encode;			/* cvrt VAX to IEEE if T	*/
-int			num;			/* number of values		*/
+#ifdef __STDC__
+int cvrt_double(
+double		*s,			/* source			*/
+double		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+int		num			/* number of values		*/
+)
+#else
+int cvrt_double(s,d,encode,num)
+double		*s;			/* source			*/
+double		*d;			/* destination			*/
+int 		encode;			/* cvrt VAX to IEEE if T	*/
+int		num;			/* number of values		*/
+#endif
 {
       	unsigned int	i;
 
@@ -231,11 +285,20 @@ int			num;			/* number of values		*/
  *
  *
  */
-cvrt_string(s,d,encode,num)
-char			*s;			/* source			*/
-char			*d;			/* destination			*/
-int 			encode;			/* cvrt VAX to IEEE if T	*/
-int			num;			/* number of values		*/
+#ifdef __STDC__
+int cvrt_string(
+char		*s,			/* source			*/
+char		*d,			/* destination			*/
+int 		encode,			/* cvrt VAX to IEEE if T	*/
+int		num			/* number of values		*/
+)
+#else
+int cvrt_string(s,d,encode,num)
+char		*s;			/* source			*/
+char		*d;			/* destination			*/
+int 		encode;			/* cvrt VAX to IEEE if T	*/
+int		num;			/* number of values		*/
+#endif
 {
       	unsigned int	i;
 
@@ -264,11 +327,20 @@ int			num;			/* number of values		*/
 **		format;
 ****************************************************************************/
 
+#ifdef __STDC__
+cvrt_sts_string(
+struct dbr_sts_string   *s,                     /* source               */
+struct dbr_sts_string   *d,                     /* destination          */
+int encode,                                     /* do VAX to IEEE       */
+int                     num                    /* number of values     */
+)
+#else
 cvrt_sts_string(s,d,encode,num)
 struct dbr_sts_string	*s;			/* source		*/
 struct dbr_sts_string	*d;			/* destination		*/
 int encode;					/* do VAX to IEEE 	*/
 int			num;			/* number of values	*/
+#endif
 {
 			
     /* convert ieee to vax format or vax to ieee */
@@ -296,11 +368,20 @@ int			num;			/* number of values	*/
 **		format
 ****************************************************************************/
 
+#ifdef __STDC__
+cvrt_sts_short(
+struct dbr_sts_int      *s,                     /* source               */
+struct dbr_sts_int      *d,                     /* destination          */
+int                     encode,                 /* if true; vax to ieee */
+int                     num                    /* number of values     */
+)
+#else
 cvrt_sts_short(s,d,encode,num)
 struct dbr_sts_int	*s;			/* source		*/
 struct dbr_sts_int	*d;			/* destination		*/
 int 			encode;			/* if true, vax to ieee	*/
 int			num;			/* number of values	*/
+#endif
 {
     register i;
     short	*sval_ptr,*dval_ptr;	/* ptrs to source, destination */
@@ -343,11 +424,20 @@ int			num;			/* number of values	*/
 **		format;
 ****************************************************************************/
 
+#ifdef __STDC__
+cvrt_sts_float(
+struct dbr_sts_float    *s,                     /* source               */
+struct dbr_sts_float    *d,                     /* destination          */
+int                     encode,                 /* it true, vax to ieee */
+int                     num                    /* number of values     */
+)
+#else
 cvrt_sts_float(s,d,encode,num)
 struct dbr_sts_float	*s;			/* source		*/
 struct dbr_sts_float	*d;			/* destination		*/
 int 			encode;			/* it true, vax to ieee */
 int			num;			/* number of values	*/
+#endif
 {
     register i;
     float *sval_ptr,*dval_ptr;
@@ -446,11 +536,20 @@ int			num;			/* number of values	*/
 **	 
 ****************************************************************************/
 
-cvrt_gr_short(s,d,encode,num)
+#ifdef __STDC__
+int cvrt_gr_short(
+struct dbr_gr_int       *s,                     /* source               */
+struct dbr_gr_int       *d,                     /* destination          */
+int                     encode,                 /* if true, vax to ieee */
+int                     num                    /* number of values     */
+)
+#else
+int cvrt_gr_short(s,d,encode,num)
 struct dbr_gr_int	*s;			/* source		*/
 struct dbr_gr_int	*d;			/* destination		*/
 int 			encode;			/* if true, vax to ieee */
 int			num;			/* number of values	*/
+#endif
 {
     register i;
     short *sval_ptr,*dval_ptr;
@@ -499,11 +598,20 @@ int			num;			/* number of values	*/
 **		format;
 ****************************************************************************/
 
-cvrt_gr_float(s,d,encode,num)
+#ifdef __STDC__
+int cvrt_gr_float(
+struct dbr_gr_float	*s,			/* source		*/
+struct dbr_gr_float	*d,			/* destination		*/
+int			encode,			/* if true, vax to ieee */
+int			num			/* number of values	*/
+)
+#else
+int cvrt_gr_float(s,d,encode,num)
 struct dbr_gr_float	*s;			/* source		*/
 struct dbr_gr_float	*d;			/* destination		*/
 int			encode;			/* if true, vax to ieee */
 int			num;			/* number of values	*/
+#endif
 {
     register i;
     float *sval_ptr,*dval_ptr;
@@ -577,11 +685,20 @@ int			num;			/* number of values	*/
 **	 
 ****************************************************************************/
 
-cvrt_ctrl_short(s,d,encode,num)
+#ifdef __STDC__
+int cvrt_ctrl_short(
+struct dbr_ctrl_int	*s,			/* source		*/
+struct dbr_ctrl_int	*d,			/* destination		*/
+int			encode,			/* if true, vax to ieee */
+int			num			/* number of values	*/
+)
+#else
+int cvrt_ctrl_short(s,d,encode,num)
 struct dbr_ctrl_int	*s;			/* source		*/
 struct dbr_ctrl_int	*d;			/* destination		*/
 int			encode;			/* if true, vax to ieee */
 int			num;			/* number of values	*/
+#endif
 {
     register i;
     short *sval_ptr,*dval_ptr;
@@ -633,11 +750,20 @@ int			num;			/* number of values	*/
 **		format;
 ****************************************************************************/
 
-cvrt_ctrl_float(s,d,encode,num)
+#ifdef __STDC__
+int cvrt_ctrl_float(
+struct dbr_ctrl_float	*s,			/* source		*/
+struct dbr_ctrl_float	*d,			/* destination		*/
+int 			encode,			/* if true, vax to ieee */
+int			num			/* number of values	*/
+)
+#else
+int cvrt_ctrl_float(s,d,encode,num)
 struct dbr_ctrl_float	*s;			/* source		*/
 struct dbr_ctrl_float	*d;			/* destination		*/
 int 			encode;			/* if true, vax to ieee */
 int			num;			/* number of values	*/
+#endif
 {
     register i;
     float *sval_ptr,*dval_ptr;
@@ -712,11 +838,20 @@ int			num;			/* number of values	*/
 **		format;
 ****************************************************************************/
 
+#ifdef __STDC__
+cvrt_ctrl_enum(
+struct dbr_ctrl_enum	*s,			/* source		*/
+struct dbr_ctrl_enum	*d,			/* destination		*/
+int 			encode,			/* if true, vax to ieee */
+int			num			/* number of values	*/
+)
+#else
 cvrt_ctrl_enum(s,d,encode,num)
 struct dbr_ctrl_enum	*s;			/* source		*/
 struct dbr_ctrl_enum	*d;			/* destination		*/
 int 			encode;			/* if true, vax to ieee */
 int			num;			/* number of values	*/
+#endif
 {
     register i;
     short *sval_ptr,*dval_ptr;

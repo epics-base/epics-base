@@ -22,6 +22,8 @@
 /*	.08 010493 joh	removed `<Trying>' message			*/
 /*	.09 090293 joh	removed flush from manage_conn			*/
 /*			(now handled by the send needed flag)		*/
+/*	.10 102093 joh	improved broadcast schedualing for		*/	
+/*			reconnects					*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -44,7 +46,11 @@ static char 	*sccsId = "$Id$\t$Date$";
 #  if defined(VMS)
 #  else
 #    if defined(vxWorks)
-#include		<vxWorks.h>
+#include	<vxWorks.h>
+#include	<sockLib.h>
+#include	<tickLib.h>
+#include	<sysLib.h>
+#include	<stdio.h>
 #    else
 	@@@@ dont compile @@@@
 #    endif
@@ -55,6 +61,7 @@ static char 	*sccsId = "$Id$\t$Date$";
 #include		<db_access.h>
 #include		<iocmsg.h>
 #include 		<iocinf.h>
+
 
 
 /*
@@ -67,79 +74,81 @@ static char 	*sccsId = "$Id$\t$Date$";
  *	NOTES:
  *	Lock must be applied while in this routine
  */
+#ifdef __STDC__
+void manage_conn(int silent)
+#else
 void manage_conn(silent)
-char			silent;
+int	silent;
+#endif
 {
-  	register chid		chix;
-  	register unsigned int	retry_cnt = 0;
-  	register unsigned int	keepalive_cnt = 0;
+	struct ioc_in_use	*piiu;
+  	chid			chix;
+  	unsigned int		retry_cnt = 0;
+  	unsigned int		keepalive_cnt = 0;
   	unsigned int		retry_cnt_no_handler = 0;
 	ca_time			current;
-  	int			i;
 
 	current = time(NULL);
 
-  	for(i=0; i< nxtiiu; i++){
-  		int	search_type;
+	/*
+	 * issue connection heartbeat
+	 */
+	for(	piiu = (struct ioc_in_use *) iiuList.node.next;
+		piiu;
+		piiu = (struct ioc_in_use *) piiu->node.next){
 
-		if(iiu[i].next_retry == CA_CURRENT_TIME){
-			if(!iiu[i].conn_up || i==BROADCAST_IIU){
-				iiu[i].next_retry = 
-					current + iiu[i].retry_delay;
-			}
-			else{
-				iiu[i].next_retry = 
-					current + CA_RETRY_PERIOD;
-			}
+		if(piiu == piiuCast || !piiu->conn_up){
 			continue;
 		}
 
-		if(iiu[i].next_retry > current)
+		if(piiu->next_retry == CA_CURRENT_TIME){
+			piiu->next_retry = current + CA_RETRY_PERIOD;
+			continue;
+		}
+
+		if(piiu->next_retry > current)
 			continue;
 
 		/*
 		 * periodic keepalive on unused channels
 		 */
-    		if(i != BROADCAST_IIU && iiu[i].conn_up){
 
-			/*
-			 * reset of delay to the next keepalive
-			 * occurs when the message is sent
-			 */
-			noop_msg(&iiu[i]);
-			keepalive_cnt++;
+		/*
+		 * reset of delay to the next keepalive
+		 * occurs when the message is sent
+		 */
+		noop_msg(piiu);
+		keepalive_cnt++;
+	}
 
-			/*
-			 * allow execution to continue through
-			 * the connection retry code below
-			 * since we may be connected while 
-			 * some channels which have not been
-			 * verified to exist on the recently 
-			 * booted IOC.
-			 */
+	if(!piiuCast){
+		return;
+	}
+
+	if(piiuCast->next_retry == CA_CURRENT_TIME){
+		piiuCast->next_retry = current + piiuCast->retry_delay;
+	}
+
+	if(piiuCast->next_retry > current)
+		return;
+
+    	if(piiuCast->nconn_tries++ > MAXCONNTRIES)
+      		return;
+
+	piiuCast->retry_delay += piiuCast->retry_delay;
+	piiuCast->next_retry = current + piiuCast->retry_delay;
+
+    	chix = (chid) &piiuCast->chidlist.node.next;
+    	while(chix = (chid) chix->node.next){
+      		build_msg(chix, DONTREPLY);
+     		retry_cnt++;
+
+      		if(!(silent || chix->connection_func)){
+       			ca_signal(ECA_CHIDNOTFND, (char *)(chix+1));
+			retry_cnt_no_handler++;
 		}
-
-    		if(iiu[i].nconn_tries++ > MAXCONNTRIES)
-      			continue;
-
-		iiu[i].retry_delay += iiu[i].retry_delay;
-		iiu[i].next_retry = current + iiu[i].retry_delay;
-
-    		search_type = (i==BROADCAST_IIU? DONTREPLY: DOREPLY);
-
-    		chix = (chid) &iiu[i].chidlist;
-    		while(chix = (chid) chix->node.next){
-      			if(chix->type != TYPENOTCONN)
-				continue;
-      			build_msg(chix,search_type);
-     			retry_cnt++;
-
-      			if(!(silent || chix->connection_func)){
-       				ca_signal(ECA_CHIDNOTFND, (char *)(chix+1));
-				retry_cnt_no_handler++;
-			}
-    		}
-  	}
+    	}
+  	
 
   	if(retry_cnt){
 #ifdef TRYING_MESSAGE
@@ -168,12 +177,14 @@ char			silent;
  *	Lock must be applied while in this routine
  *
  */
-void
-mark_server_available(pnet_addr)
+#ifdef __STDC__
+void mark_server_available(struct in_addr *pnet_addr)
+#else
+void mark_server_available(pnet_addr)
 struct in_addr  *pnet_addr;
+#endif
 {
 	unsigned		port;	
-  	int 			i;
 
 	/*
 	 * if timers have expired take care of them
@@ -188,43 +199,17 @@ struct in_addr  *pnet_addr;
 #endif
 #endif
 
- 	for(i=0;i<nxtiiu;i++)
-    		if(	(pnet_addr->s_addr == 
-			iiu[i].sock_addr.sin_addr.s_addr)){
-
-      			if(iiu[i].conn_up){
-				/*
-				 * Check if the conn is down but TCP 
-				 * has not informed me by sending a NULL msg
-				 */
-        			noop_msg(&iiu[i]);
-        			cac_send_msg();
-      			}
-			else{
-				/*
-				 * reset the delay to the next retry 
-				 */
-				iiu[i].next_retry = CA_CURRENT_TIME;
-      				iiu[i].nconn_tries = 0;
-				iiu[i].retry_delay = CA_RECAST_DELAY;
-				manage_conn(TRUE);
-			}
-      			return;
-    		}
+	if(!piiuCast){
+		return;
+	}
 
 	/*
 	 * never connected to this IOC before
 	 *
 	 * We end up here when the client starts before the server
 	 *
-	 * It would be best if this used a directed UDP
-	 *		reply rather than a broadcast
 	 */
 
-	/*
-	 * reset the retry cnt
-	 */
-      	iiu[BROADCAST_IIU].nconn_tries = 0;
 
 	/*
 	 * This part is very important since many machines
@@ -243,11 +228,11 @@ struct in_addr  *pnet_addr;
 		int			status;
 
 		status = getsockname(
-				iiu[BROADCAST_IIU].sock_chan,
-				&saddr,
+				piiuCast->sock_chan,
+				(struct sockaddr *)&saddr,
 				&saddr_length);
 		if(status<0)
-			abort();
+			abort(0);
 		port = saddr.sin_port;
 	}
 
@@ -256,17 +241,25 @@ struct in_addr  *pnet_addr;
 		int	next;
 
 		delay = (port&CA_RECAST_PORT_MASK) + CA_RECAST_PERIOD;
-		iiu[BROADCAST_IIU].retry_delay = 
-			min(iiu[BROADCAST_IIU].retry_delay, delay);
 
-		next = time(NULL) + iiu[BROADCAST_IIU].retry_delay;
-		iiu[BROADCAST_IIU].next_retry = 
-			min(next, iiu[BROADCAST_IIU].next_retry);
+		next = time(NULL) + delay;
+
+		/*
+		 * next retry time most likely
+		 * invalid in this case
+		 */
+    		if(piiuCast->nconn_tries >= MAXCONNTRIES ||
+			next < piiuCast->next_retry){
+			piiuCast->next_retry = next;
+			piiuCast->retry_delay = CA_RECAST_DELAY;
+		}
+
+	      	piiuCast->nconn_tries = 0;
 	}
 
 #ifdef DEBUG
 	ca_printf("CAC: <Trying ukn online after pseudo random delay=%d sec> ",
-		iiu[BROADCAST_IIU].retry_delay);
+		piiuCast->retry_delay);
 #ifdef UNIX
     	fflush(stdout);
 #endif

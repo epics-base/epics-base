@@ -68,7 +68,7 @@
 /************************************************************************/
 /*_end									*/
 
-static char *sccsId = "@(#)service.c	1.17\t6/2/93";
+static char *sccsId = "$Id$"; 
 
 #if defined(VMS)
 #	include		<sys/types.h>
@@ -79,6 +79,8 @@ static char *sccsId = "@(#)service.c	1.17\t6/2/93";
 #	include		<stdio.h>
 #  else
 #    if defined(vxWorks)
+#	include		<string.h>
+#	include		<stdio.h>
 #	include		<vxWorks.h>
 #    else
 	@@@@ dont compile @@@@
@@ -86,17 +88,27 @@ static char *sccsId = "@(#)service.c	1.17\t6/2/93";
 #  endif
 #endif
 
-#include	<os_depen.h>
 #include 	<cadef.h>
-#include	<db_access.h>
+#include	<os_depen.h>
 #include	<iocmsg.h>
 #include 	<iocinf.h>
+#include	<db_access.h>
 #include 	<net_convert.h>
 
-static void 	reconnect_channel();
-void		ca_request_event();
+#ifdef __STDC__
 
-#define BUFSTAT 	ca_printf("CAC: expected %d left %d\n",msgcnt,*pbufcnt);
+LOCAL void reconnect_channel(
+struct extmsg           *hdrptr,
+struct in_addr          *pnet_addr
+);
+
+#else
+
+LOCAL void 	reconnect_channel();
+
+#endif
+
+#define BUFSTAT ca_printf("CAC: expected %d left %d\n",msgcnt,*pbufcnt);
 
 
 
@@ -106,21 +118,29 @@ void		ca_request_event();
  * 
  * 
  */
-int
-post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
-	register struct extmsg 		*hdrptr;
-	register long   		*pbufcnt;
-	struct in_addr  		*pnet_addr;
-	struct ioc_in_use 		*piiu;
+#ifdef __STDC__
+int post_msg(
+struct extmsg 		*hdrptr,
+long   			*pbufcnt,
+struct in_addr  	*pnet_addr,
+struct ioc_in_use 	*piiu
+)
+#else
+int post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
+struct extmsg 		*hdrptr;
+long   			*pbufcnt;
+struct in_addr  	*pnet_addr;
+struct ioc_in_use 	*piiu;
+#endif
 {
 	evid            monix;
 	long            msgcnt;
 
-	register void  *t_available;
-	register unsigned short t_postsize;
-	register unsigned short t_cmmd;
-	register chtype t_type;
-	register unsigned short t_count;
+	void  		*t_available;
+	unsigned short 	t_postsize;
+	unsigned short 	t_cmmd;
+	chtype 		t_type;
+	unsigned short 	t_count;
 	int             status;
 
 
@@ -200,8 +220,8 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 				UNLOCKEVENTS;
 			}
 			LOCK;
-			ellDelete(&pend_read_list, monix);
-			ellAdd(&free_event_list, monix);
+			ellDelete(&pend_read_list, &monix->node);
+			ellAdd(&free_event_list, &monix->node);
 			UNLOCK;
 
 			piiu->outstanding_ack_count--;
@@ -225,8 +245,8 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			 */
 			if (!t_postsize) {
 				LOCK;
-				ellDelete(&monix->chan->eventq, monix);
-				ellAdd(&free_event_list, monix);
+				ellDelete(&monix->chan->eventq, &monix->node);
+				ellAdd(&free_event_list, &monix->node);
 				UNLOCK;
 
 				piiu->outstanding_ack_count--;
@@ -287,8 +307,17 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			chan = bucketLookupItem(pBucket, hdrptr->m_cid);
 			UNLOCK;
 			if(!chan){
-				ca_signal(ECA_INTERNAL, 
-				"bad client channel id from server");
+				if(t_cmmd == IOC_READ_BUILD){
+					printf(
+			"Stale build reply from %s with id %x ignored",
+						host_from_addr(pnet_addr),
+						hdrptr->m_cid);
+					UNLOCK;
+				}
+				else{
+					ca_signal(ECA_INTERNAL, 
+						"bad client channel id from server");
+				}
 				break;
 			}
 
@@ -323,8 +352,8 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 				t_count);
 #else
 			memcpy(
-				       t_available,
-				       hdrptr + 1,
+				       (char *) t_available,
+				       (char *) (hdrptr + 1),
 				       size);
 #endif
 
@@ -375,33 +404,13 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			break;
 
 		case IOC_NOT_FOUND:
-		{
-			chid            chix = (chid) t_available;
-			struct ioc_in_use *piiu = &iiu[chix->iocix];
-
-			LOCK;
-			ellDelete(&piiu->chidlist, chix);
-			ellAdd(&iiu[BROADCAST_IIU].chidlist, chix);
-			chix->iocix = BROADCAST_IIU;
-			if (!piiu->chidlist.count)
-				close_ioc(piiu);
-			/*
-			 * reset the delay to the next retry or keepalive
-			 */
-			iiu[BROADCAST_IIU].next_retry = CA_CURRENT_TIME;
-			iiu[BROADCAST_IIU].nconn_tries = 0;
-
-			manage_conn(TRUE);
-			UNLOCK;
-
 			break;
-		}
 
 		case IOC_CLEAR_CHANNEL:
 		{
-			chid            chix = (chid) t_available;
-			struct ioc_in_use *piiu = &iiu[chix->iocix];
-			register evid   monix;
+			chid            	chix = (chid) t_available;
+			struct ioc_in_use 	*piiu = chix->piiu;
+			register evid   	monix;
 
 
 			LOCK;
@@ -413,11 +422,15 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			     monix;
 			     monix = (evid) monix->node.next)
 				if (monix->chan == chix) {
-					ellDelete(&pend_read_list, monix);
-					ellAdd(&free_event_list, monix);
+					ellDelete(	
+						&pend_read_list, 
+						&monix->node);
+					ellAdd(
+						&free_event_list, 
+						&monix->node);
 				}
 			ellConcat(&free_event_list, &chix->eventq);
-			ellDelete(&piiu->chidlist, chix);
+			ellDelete(&piiu->chidlist, &chix->node);
 			status = bucketRemoveItem(pBucket, chix->cid, chix);
 			if(status != BUCKET_SUCCESS){
 				ca_signal(
@@ -426,8 +439,9 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			}
 			free(chix);
 			piiu->outstanding_ack_count--;
-			if (!piiu->chidlist.count)
+			if (!piiu->chidlist.count){
 				close_ioc(piiu);
+			}
 			UNLOCK;
 			break;
 		}
@@ -457,7 +471,7 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 				sprintf(context, 
 					"detected by: %s for: %s", 
 					name, 
-					hdrptr + 2);
+					(char *)(hdrptr + 2));
 			}
 			else{
 				sprintf(context, "detected by: %s", name);
@@ -537,16 +551,23 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
  *	LOCK must be on
  *
  */
-static void reconnect_channel(hdrptr,pnet_addr)
-register struct extmsg		*hdrptr;
-struct in_addr			*pnet_addr;
+#ifdef __STDC__
+LOCAL void reconnect_channel(
+struct extmsg           *hdrptr,
+struct in_addr          *pnet_addr
+)
+#else
+LOCAL void reconnect_channel(hdrptr,pnet_addr)
+struct extmsg		*hdrptr;
+struct in_addr		*pnet_addr;
+#endif
 {
       	chid			chan;
-	unsigned short		newiocix;
       	evid			pevent;
 	int			status;
 	enum channel_state	prev_cs;
-	struct ioc_in_use 	*chpiiu;
+	IIU			*allocpiiu;
+	IIU			*chpiiu;
 
 	/*
 	 * ignore broadcast replies for deleted channels
@@ -568,7 +589,13 @@ struct in_addr			*pnet_addr;
 		return;
 	}
 
-	chpiiu = &iiu[chan->iocix];
+	chpiiu = chan->piiu;
+
+	if(!chpiiu){
+		ca_printf("cast reply to local channel??\n");
+		UNLOCK;
+		return;
+	}
 
 	if (chan->state == cs_conn) {
 
@@ -591,7 +618,7 @@ struct in_addr			*pnet_addr;
 			sprintf(
 				sprintf_buf,
 		"Channel: %s Accepted: %s Rejected: %s ",
-				chan + 1,
+				(char *)(chan + 1),
 				acc,
 				rej);
 			ca_signal(ECA_DBLCHNL, sprintf_buf);
@@ -616,12 +643,13 @@ struct in_addr			*pnet_addr;
         status = alloc_ioc	(
 				pnet_addr,
 				IPPROTO_TCP,		
-				&newiocix
-				);
+				&allocpiiu);
 	if(status != ECA_NORMAL){
-	  	ca_printf("CAC: ... %s ...\n", ca_message(status));
-	 	ca_printf("CAC: for %s on %s\n", chan+1, host_from_addr(pnet_addr));
-	 	ca_printf("CAC: ignored search reply- proceeding\n");
+	  	ca_printf(	"CAC: ... %s ...\n", ca_message(status));
+	 	ca_printf(	"CAC: for %s on %s\n", 
+				chan+1, 
+				host_from_addr(pnet_addr));
+	 	ca_printf(	"CAC: ignored search reply- proceeding\n");
 		UNLOCK;
 	  	return;
 	}
@@ -631,18 +659,16 @@ struct in_addr			*pnet_addr;
         chan->count = ntohs(hdrptr->m_count);      
         chan->id.sid = hdrptr->m_cid;
 
-        if(chan->iocix != newiocix){
-      		struct ioc_in_use	*chpiiu;
+        if(chpiiu != allocpiiu){
 
 		/*
 		 * The address changed (or was found for the first time)
 		 */
-	  	if(chan->iocix != BROADCAST_IIU)
+	  	if(chpiiu != piiuCast)
 	   		ca_signal(ECA_NEWADDR, (char *)(chan+1));
-		chpiiu = &iiu[chan->iocix];
-          	ellDelete(&chpiiu->chidlist, chan);
-          	chan->iocix = newiocix;
-          	ellAdd(&iiu[newiocix].chidlist, chan);
+          	ellDelete(&chpiiu->chidlist, &chan->node);
+          	chan->piiu = chpiiu = allocpiiu; 
+          	ellAdd(&chpiiu->chidlist, &chan->node);
         }
 
 	/*
@@ -658,7 +684,7 @@ struct in_addr			*pnet_addr;
 	 * over TCP so problems with duplicate UDP port
 	 * after reboot go away
 	 */
-	issue_claim_channel(&iiu[chan->iocix], chan);
+	issue_claim_channel(chpiiu, chan);
 
 	/*
 	 * NOTE: monitor and callback reissue must occur prior to calling
@@ -710,9 +736,12 @@ struct in_addr			*pnet_addr;
  *
  *
  */
-void
-cac_io_done(lock)
+#ifdef __STDC__
+void cac_io_done(int lock)
+#else
+void cac_io_done(lock)
 int 	lock;
+#endif
 {
   	register struct pending_io_event	*pioe;
 	

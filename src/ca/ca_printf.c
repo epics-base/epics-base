@@ -1,13 +1,52 @@
-static char *sccsId = "@(#)ca_printf.c	1.2\t7/27/92";
+/************************************************************************/
+/*                                                                      */
+/*                            L O S  A L A M O S                        */
+/*                      Los Alamos National Laboratory                  */
+/*                       Los Alamos, New Mexico 87545                   */
+/*                                                                      */
+/*      Copyright, 1986, The Regents of the University of California.   */
+/*                                                                      */
+/*	Author								*/
+/*	------								*/
+/*	Jeff Hill							*/
+/*                                                                      */
+/*      History                                                         */
+/*      -------                                                         */
+/*                                                                      */
+/*_begin                                                                */
+/************************************************************************/
+/*                                                                      */
+/*      Title:  channel access TCPIP interface include file             */
+/*      File:   ca_printf.c	                                       	*/
+/*      Environment: VMS, UNIX, VRTX                                    */
+/*                                                                      */
+/*                                                                      */
+/*      Purpose                                                         */
+/*      -------                                                         */
+/*                                                                      */
+/*                                                                      */
+/*                                                                      */
+/*      Special comments                                                */
+/*      ------- --------                                                */
+/*                                                                      */
+/************************************************************************/
+/*_end                              					*/
+
+static char *sccsId = "$Id$";
 
 #if defined(UNIX) || defined(VMS)
 #	include <stdio.h>
 #else
 #  if defined(vxWorks)
 # 	include <vxWorks.h>
+#	include <logLib.h>
 #  endif
 #endif
+#ifdef __STDC__
+#include <stdarg.h>
+#else
 #include <varargs.h>
+#endif
 
 
 /*
@@ -18,17 +57,26 @@ static char *sccsId = "@(#)ca_printf.c	1.2\t7/27/92";
  *	Dump error messages to the appropriate place
  *
  */
-int
-ca_printf(va_alist)
+#ifdef __STDC__
+int ca_printf(char *pformat, ...)
+#else
+int ca_printf(va_alist)
 va_dcl
+#endif
 {
 	va_list		args;
-	char		*pformat;
 	int		status;
+#ifndef __STDC__
+	char		*pformat;
+#endif
 
+#ifdef __STDC__
+	va_start(args, pformat);
+#else
 	va_start(args);
-
 	pformat = va_arg(args, char *);
+#endif
+
 
 #if defined(UNIX) || defined(VMS)
 	{
@@ -54,8 +102,7 @@ va_dcl
 				logMsgArgs[2],
 				logMsgArgs[3],
 				logMsgArgs[4],
-				logMsgArgs[5],
-				logMsgArgs[6]);
+				logMsgArgs[5]);
 			
 	}
 #  else

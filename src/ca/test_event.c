@@ -14,17 +14,21 @@
  *
  */
 
-static char *sccsId = "@(#)test_event.c	1.6\t7/27/92";
+static char *sccsId = "$Id$";
 
 /*	System includes		*/
 
-#include 		<cadef.h>
-#include 		<db_access.h>
+#include 	<cadef.h>
+#include	<iocmsg.h>
+#include	<iocinf.h>
 
 
-void 	
-ca_test_event(args)
+#ifdef __STDC__
+void ca_test_event(struct event_handler_args args)
+#else
+void ca_test_event(args)
 struct event_handler_args	args;
+#endif
 {
   ca_printf("CAC: ~~~### in test event for [%s] ###~~~\n",args.chid+1);
   ca_printf("CAC: User argument\t%x\n", args.usr);

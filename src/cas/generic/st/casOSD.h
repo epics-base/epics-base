@@ -1,32 +1,8 @@
 //
 // $Id$
 //
-// casOSD.h - Channel Access Server OS Dependent for posix
+// casOSD.h - Channel Access Server OS dependent wrapper
 // 
-//
-// Some BSD calls have crept in here
-//
-// $Log$
-// Revision 1.4  1997/08/05 00:47:20  jhill
-// fixed warnings
-//
-// Revision 1.3  1997/06/13 09:16:10  jhill
-// connect proto changes
-//
-// Revision 1.2  1997/04/10 19:34:31  jhill
-// API changes
-//
-// Revision 1.1  1996/11/02 01:01:32  jhill
-// installed
-//
-// Revision 1.3  1996/09/04 22:04:07  jhill
-// moved netdb.h include here
-//
-// Revision 1.2  1996/08/13 22:58:15  jhill
-// fdMgr.h => fdmanager.h
-//
-// Revision 1.1.1.1  1996/06/20 00:28:06  jhill
-// ca server installation
 //
 //
 

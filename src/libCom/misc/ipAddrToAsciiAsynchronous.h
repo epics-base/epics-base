@@ -26,75 +26,34 @@
 #ifndef ipAddrToAsciiAsynchronous_h
 #define ipAddrToAsciiAsynchronous_h
 
-#include "epicsThread.h"
-#include "epicsMutex.h"
-#include "epicsEvent.h"
-#include "tsDLList.h"
 #include "osiSock.h"
 #include "shareLib.h"
 
-class ipAddrToAsciiAsynchronous;
-
-// - this class executes the synchronous DNS query
-// - it creates one thread
-class ipAddrToAsciiEngine : public epicsThreadRunable {
+class epicsShareClass ipAddrToAsciiCallBack {
 public:
-    epicsShareFunc ipAddrToAsciiEngine ( const char * pName );
-    virtual epicsShareFunc ~ipAddrToAsciiEngine ();
-    virtual void run ();
-    epicsShareFunc void show ( unsigned level ) const;
-private:
-    epicsThread & thread;
-    tsDLList < ipAddrToAsciiAsynchronous > labor;
-    epicsEvent laborEvent;
-    epicsEvent destructorBlockEvent;
-    epicsEvent threadExit;
-    epicsEvent cancelPendCompleted;
-    ipAddrToAsciiAsynchronous * pCurrent;
-    char nameTmp [1024];
-    bool exitFlag;
-    bool cancelPending;
-    bool callbackInProgress;
-    bool waitingForCancelPendCompletion;
-    static epicsMutex mutex;
-	ipAddrToAsciiEngine ( const ipAddrToAsciiEngine & );
-	ipAddrToAsciiEngine & operator = ( const ipAddrToAsciiEngine & );
-    friend class ipAddrToAsciiAsynchronous;
+    virtual void transactionComplete ( const char * pHostName ) = 0;
+    virtual void show ( unsigned level ) const; 
+    virtual ~ipAddrToAsciiCallBack () = 0;
 };
 
-// - this class implements the asynchronous DNS query
-// - it completes early with the host name in dotted IP address form 
-//   if the ipAddrToAsciiEngine is destroyed before IO completion
-//   or if there are too many items already in the engine's queue.
-// 
-class ipAddrToAsciiAsynchronous : 
-    public tsDLNode < ipAddrToAsciiAsynchronous > {
+class epicsShareClass ipAddrToAsciiTransaction {
 public:
-    epicsShareFunc ipAddrToAsciiAsynchronous ( const osiSockAddr & addr );
-    epicsShareFunc virtual ~ipAddrToAsciiAsynchronous ();
-    epicsShareFunc void ioInitiate ( ipAddrToAsciiEngine & engine );
-    epicsShareFunc bool identicalAddress ( const osiSockAddr & addr ) const;
-    epicsShareFunc osiSockAddr address () const;
-    epicsShareFunc void show ( unsigned level ) const;
-    virtual void ioCompletionNotify ( const char * pHostName ) = 0;
-private:
-    osiSockAddr addr;
-    ipAddrToAsciiEngine * pEngine;
-    friend class ipAddrToAsciiEngine;
+    virtual void release () = 0; 
+    virtual void ipAddrToAscii ( const osiSockAddr &, ipAddrToAsciiCallBack & ) = 0;
+    virtual osiSockAddr address () const  = 0;
+    virtual void show ( unsigned level ) const = 0; 
+protected:
+    virtual ~ipAddrToAsciiTransaction () = 0;
 };
 
-inline osiSockAddr ipAddrToAsciiAsynchronous::address () const
-{
-    return this->addr;
-}
-
-inline bool ipAddrToAsciiAsynchronous::identicalAddress ( const osiSockAddr &addrIn ) const
-{
-    if ( this->addr.sa.sa_family == AF_INET && addrIn.sa.sa_family == AF_INET ) {
-        return this->addr.ia.sin_addr.s_addr == addrIn.ia.sin_addr.s_addr &&
-            this->addr.ia.sin_port == addrIn.ia.sin_port;
-    }
-    return false;
-}
+class epicsShareClass ipAddrToAsciiEngine {
+public:
+    virtual void release () = 0; 
+    virtual ipAddrToAsciiTransaction & createTransaction () = 0;
+    virtual void show ( unsigned level ) const = 0; 
+    static ipAddrToAsciiEngine & allocate ();
+protected:
+    virtual ~ipAddrToAsciiEngine () = 0;
+};
 
 #endif // ifdef ipAddrToAsciiAsynchronous_h

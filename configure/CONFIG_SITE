@@ -22,11 +22,9 @@
 #	WIN32
 #	LynxOS
 #
-#  HOST_ARCH now an environment variable
-#  HOST_ARCH=$(shell /usr/local/epics/startup/HostArch)
-ifndef HOST_ARCH
-	HOST_ARCH=unsupported
-endif
+#  EPICS_HOST_ARCH is an environment variable
+#  EPICS_HOST_ARCH=$(shell /usr/local/epics/startup/EpicsHostArch)
+
 
 #  The cross-compiler architectures to build EPICS for
 #
@@ -47,7 +45,7 @@ CROSS_COMPILER_TARGET_ARCHS=vxWorks-68040
 #  the build for the CROSS_COMPILER_TARGET_ARCHS
 #  uncomment the following line and specify them.
 #
-#CROSS_COMPILER_HOST_ARCHS=
+CROSS_COMPILER_HOST_ARCHS=solaris-sparc linux-x86
 
 #  Client ANSI C Compiler (for Host builds)
 #   GCC     GNU			(gcc -ansi)
@@ -83,7 +81,7 @@ CXXCMPLR=STRICT
 #                 distribution file contains YES override
 #
 #     NOTE solaris and sun4: If YES then LD_LIBRARY_PATH must
-#     include fullpathname $(INSTALL_LOCATION)/lib/$(HOST_ARCH)
+#     include fullpathname $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH)
 #     for both the base build and when invoking base executables
 SHARED_LIBRARIES=NO
 

@@ -14,10 +14,10 @@
 CROSS1 = $(CROSS_COMPILER_TARGET_ARCHS$(word 1,$(CROSS_COMPILER_HOST_ARCHS)))
 
 # CROSS2 will be defined only when CROSS_COMPILER_HOST_ARCHS is defined
-# and HOST_ARCH is one of it's words  
-CROSS2 = $(CROSS_COMPILER_TARGET_ARCHS$(filter-out 1,$(words $(filter $(HOST_ARCH),$(CROSS_COMPILER_HOST_ARCHS)))))
+# and EPICS_HOST_ARCH is one of it's words  
+CROSS2 = $(CROSS_COMPILER_TARGET_ARCHS$(filter-out 1,$(words $(filter $(EPICS_HOST_ARCH),$(CROSS_COMPILER_HOST_ARCHS)))))
 
-BUILD_ARCHS = $(HOST_ARCH) $(CROSS1) $(CROSS2)
+BUILD_ARCHS = $(EPICS_HOST_ARCH) $(CROSS1) $(CROSS2)
 
 #-------------------------------------------------------
 # Divider and suffix

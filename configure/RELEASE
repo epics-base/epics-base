@@ -1,6 +1,6 @@
 #RELEASE Location of external products
 #
-# NOTE: RELEASE.$(HOST_ARCH) files will override
+# NOTE: RELEASE.$(EPICS_HOST_ARCH) files will override
 
 #  Tornado directory
 VX_DIR = /usr/local/vw/tornado101

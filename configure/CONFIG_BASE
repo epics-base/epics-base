@@ -5,7 +5,8 @@ endif
 #---------------------------------------------------------------
 # Epics base directories
 
-EPICS_BASE_HOST_BIN = $(EPICS_BASE)/bin/$(HOST_ARCH)
+EPICS_BASE_HOST_BIN = $(EPICS_BASE)/bin/$(EPICS_HOST_ARCH)
+EPICS_EXTENSIONS_HOST_BIN = $(EPICS_EXTENSIONS)/bin/$(EPICS_HOST_ARCH)
 EPICS_BASE_INCLUDE  = $(EPICS_BASE)/include
 
 ifdef T_A
@@ -68,7 +69,7 @@ LEX   = $(ELEX)
 SNC = $(EPICS_BASE_HOST_BIN)/snc$(HOSTEXE)
 
 # adl2dl 
-ADL2DL = $(EPICS_EXTENSIONS)/bin/$(HOST_ARCH)/adl2dl
+ADL2DL = $(EPICS_EXTENSIONS_HOST_BIN)/adl2dl
 
 # sch2edif compiler and flags
 SCH2EDIF = sch2edif
@@ -78,10 +79,10 @@ SCH2EDIF_FLAGS =
  
 # e2db and flags
 #    - again there is an assumption where edb.def is installed.
-E2DB = $(EPICS_EXTENSIONS)/bin/$(HOST_ARCH)/e2db
+E2DB = $(EPICS_EXTENSIONS_HOST_BIN)/e2db
 E2DB_SYSFLAGS = -ate -d $(EPICS_EXTENSIONS)/templates/capfast/edb.def
 E2DB_FLAGS =
 
 #dbst 
-DBST = $(EPICS_EXTENSIONS)/bin/$(HOST_ARCH)/dbst
+DBST = $(EPICS_EXTENSIONS_HOST_BIN)/dbst
 

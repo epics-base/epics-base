@@ -19,3 +19,9 @@ CCC = $(GNU_BIN)/c++
 #
 CODE_CFLAGS = 
 CODE_CXXFLAGS = 
+
+#
+# -O3 is too agressive on Darwin
+#
+OPT_CFLAGS_YES = -O2
+OPT_CXXFLAGS_YES = -O2

@@ -93,6 +93,7 @@ INC += gsd_sync_defs.h
 INC += shareLib.h
 INC += truncateFile.h
 INC += unixFileName.h
+INC += locationException.h
 SRCS += aToIPAddr.c
 SRCS += adjustment.c
 SRCS += cantProceed.c
@@ -124,6 +125,7 @@ INC += osdSigPipeIgnore.h
 INC += tsStamp.h
 INC += osiMutex.h
 INC += osiEvent.h
+INC += osiProcess.h
 
 SRCS += osdSock.c
 SRCS += osiSock.c
@@ -138,6 +140,7 @@ SRCS += osiThread.cpp
 SRCS += osdTime.cpp
 SRCS += osiTime.cpp
 SRCS += osdSigPipeIgnore.c
+SRCS += osdProcess.c
 #tsStamp code is part of osiTime and osdTime
 
 SRC_DIRS += $(LIBCOM)/taskwd
@@ -165,7 +168,7 @@ USR_CFLAGS = -D_NO_PROTO
 #       lib$(LIBRARY).a  or   ..dll/..exp/..lib
 #
 LIBRARY=Com
-SYS_DLL_LIBS := ws2_32
+SYS_DLL_LIBS := ws2_32 advapi32 user32
 
 
 #   only for WIN32:

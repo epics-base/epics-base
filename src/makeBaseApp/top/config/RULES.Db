@@ -11,7 +11,7 @@ REPLACEVAR	= $(PERL) $(TOP)/config/replaceVAR.pl
 ifndef WIN32
 TOUCH		= touch
 else
-TOUCH		= type NUL >>
+TOUCH		= $(PERL) $(TOP)/config/touch.pl
 endif
 
 #-----------------------------------------------------------------

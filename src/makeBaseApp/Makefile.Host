@@ -20,6 +20,7 @@ TEMPLATES += top/config/RULES_TOP
 TEMPLATES += top/config/makeDbDepends.pl
 TEMPLATES += top/config/convertRelease.pl
 TEMPLATES += top/config/replaceVAR.pl
+TEMPLATES += top/config/touch.pl
 
 TEMPLATES += top/exampleApp/Makefile
 TEMPLATES += top/exampleApp/Db/Makefile

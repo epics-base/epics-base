@@ -59,6 +59,7 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <stddef.h>
 #include <stdio.h>
 #include <gpHash.h>
+#include <freeList.h>
 #ifdef vxWorks
 #include <taskLib.h>
 #endif
@@ -66,6 +67,9 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 /*Declare storage for Global Variables */
 ASBASE		*pasbase=NULL;
 int	asActive = FALSE;
+
+/*storage for freelist */
+static void *freeListPvt = NULL;
 
 /*Forward declarations for Non ANSI routines*/
 long calcPerform(double *parg,double *presult,char   *post);
@@ -101,6 +105,7 @@ long asInitialize(ASINPUTFUNCPTR inputfunction)
 
     pasbaseold = pasbase;
     pasbase = asCalloc(1,sizeof(ASBASE));
+    if(!freeListPvt) freeListInitPvt(&freeListPvt,sizeof(ASGCLIENT),20);
     ellInit(&pasbase->uagList);
     ellInit(&pasbase->hagList);
     ellInit(&pasbase->asgList);
@@ -240,39 +245,39 @@ long asChangeGroup(ASMEMBERPVT *asMemberPvt,char *newAsgName)
 
 void *asGetMemberPvt(ASMEMBERPVT asMemberPvt)
 {
-    ASGMEMBER	*pasmember = asMemberPvt;
+    ASGMEMBER	*pasgmember = asMemberPvt;
 
     if(!asActive) return(NULL);
-    if(!pasmember) return(NULL);
-    return(pasmember->userPvt);
+    if(!pasgmember) return(NULL);
+    return(pasgmember->userPvt);
 }
 
 void asPutMemberPvt(ASMEMBERPVT asMemberPvt,void *userPvt)
 {
-    ASGMEMBER	*pasmember = asMemberPvt;
+    ASGMEMBER	*pasgmember = asMemberPvt;
     if(!asActive) return;
-    if(!pasmember) return;
-    pasmember->userPvt = userPvt;
+    if(!pasgmember) return;
+    pasgmember->userPvt = userPvt;
 }
 
 long asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt,
 	int asl,char *user,char *host)
 {
-    ASGMEMBER	*pasmember = asMemberPvt;
-    ASGCLIENT	*pasclient;
+    ASGMEMBER	*pasgmember = asMemberPvt;
+    ASGCLIENT	*pasgclient;
     long	status;
     if(!asActive) return(0);
-    pasclient = asCalloc(1,sizeof(ASGCLIENT));
-    *pasClientPvt = pasclient;
-    pasclient->pasgMember = asMemberPvt;
-    pasclient->level = asl;
-    pasclient->user = user;
-    pasclient->host = host;
+    pasgclient = freeListCalloc(freeListPvt);
+    *pasClientPvt = pasgclient;
+    pasgclient->pasgMember = asMemberPvt;
+    pasgclient->level = asl;
+    pasgclient->user = user;
+    pasgclient->host = host;
 #ifdef vxWorks
     FASTLOCK(&asLock);
 #endif
-    ellAdd(&pasmember->clientList,(ELLNODE *)pasclient);
-    status = asCompute(pasclient);
+    ellAdd(&pasgmember->clientList,(ELLNODE *)pasgclient);
+    status = asCompute(pasgclient);
 #ifdef vxWorks
     FASTUNLOCK(&asLock);
 #endif
@@ -281,17 +286,17 @@ long asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt,
 
 long asChangeClient(ASCLIENTPVT asClientPvt,int asl,char *user,char *host)
 {
-    ASGCLIENT	*pasclient = asClientPvt;
+    ASGCLIENT	*pasgclient = asClientPvt;
     long	status;
 
     if(!asActive) return(0);
-    pasclient->level = asl;
-    pasclient->user = user;
-    pasclient->host = host;
+    pasgclient->level = asl;
+    pasgclient->user = user;
+    pasgclient->host = host;
 #ifdef vxWorks
     FASTLOCK(&asLock);
 #endif
-    status = asCompute(pasclient);
+    status = asCompute(pasgclient);
 #ifdef vxWorks
     FASTUNLOCK(&asLock);
 #endif
@@ -300,15 +305,15 @@ long asChangeClient(ASCLIENTPVT asClientPvt,int asl,char *user,char *host)
 
 long asRemoveClient(ASCLIENTPVT *asClientPvt)
 {
-    ASGCLIENT	*pasgClient = *asClientPvt;
+    ASGCLIENT	*pasgclient = *asClientPvt;
     ASGMEMBER	*pasgMember;
 
     if(!asActive) return(0);
-    if(!pasgClient) return(0);
+    if(!pasgclient) return(0);
 #ifdef vxWorks
     FASTLOCK(&asLock);
 #endif
-    pasgMember = pasgClient->pasgMember;
+    pasgMember = pasgclient->pasgMember;
     if(!pasgMember) {
 	errMessage(-1,"asRemoveClient: No ASGMEMBER");
 #ifdef vxWorks
@@ -316,11 +321,11 @@ long asRemoveClient(ASCLIENTPVT *asClientPvt)
 #endif
 	return(-1);
     }
-    ellDelete(&pasgMember->clientList,(ELLNODE *)pasgClient);
+    ellDelete(&pasgMember->clientList,(ELLNODE *)pasgclient);
 #ifdef vxWorks
     FASTUNLOCK(&asLock);
 #endif
-    free((void *)pasgClient);
+    freeListFree(freeListPvt,pasgclient);
     *asClientPvt = NULL;
     return(0);
 }
@@ -328,26 +333,31 @@ long asRemoveClient(ASCLIENTPVT *asClientPvt)
 void asRegisterClientCallback(ASCLIENTPVT asClientPvt,
 	ASCLIENTCALLBACK pcallback)
 {
-    ASGCLIENT	*pasclient = asClientPvt;
+    ASGCLIENT	*pasgclient = asClientPvt;
 
-    pasclient->pcallback = pcallback;
+#ifdef vxWorks
+    FASTLOCK(&asLock);
+    pasgclient->pcallback = pcallback;
+    (*pasgclient->pcallback)(pasgclient,asClientCOAR);
+    FASTUNLOCK(&asLock);
+#endif
 }
 
 void *asGetClientPvt(ASCLIENTPVT asClientPvt)
 {
-    ASGCLIENT	*pasclient = asClientPvt;
+    ASGCLIENT	*pasgclient = asClientPvt;
 
     if(!asActive) return(NULL);
-    if(!pasclient) return(NULL);
-    return(pasclient->userPvt);
+    if(!pasgclient) return(NULL);
+    return(pasgclient->userPvt);
 }
 
 void asPutClientPvt(ASCLIENTPVT asClientPvt,void *userPvt)
 {
-    ASGCLIENT	*pasclient = asClientPvt;
+    ASGCLIENT	*pasgclient = asClientPvt;
     if(!asActive) return;
-    if(!pasclient) return;
-    pasclient->userPvt = userPvt;
+    if(!pasgclient) return;
+    pasgclient->userPvt = userPvt;
 }
 
 long asComputeAllAsg(void)
@@ -401,11 +411,11 @@ long asComputeAsg(ASG *pasg)
 long asCompute(ASCLIENTPVT asClientPvt)
 {
     asAccessRights	access=asNOACCESS;
-    ASGCLIENT		*pasgClient = asClientPvt;
-    ASGMEMBER		*pasgMember = pasgClient->pasgMember;
+    ASGCLIENT		*pasgclient = asClientPvt;
+    ASGMEMBER		*pasgMember = pasgclient->pasgMember;
     ASG			*pasg = pasgMember->pasg;
     ASGRULE		*pasgrule;
-    asAccessRights	oldaccess=pasgClient->access;
+    asAccessRights	oldaccess=pasgclient->access;
     GPHENTRY		*pgphentry;
 
     if(!pasg) return(0);
@@ -413,7 +423,7 @@ long asCompute(ASCLIENTPVT asClientPvt)
     while(pasgrule) {
 	if(access == asWRITE) break;
 	if(access>=pasgrule->access) goto next_rule;
-	if(pasgClient->level > pasgrule->level) goto next_rule;
+	if(pasgclient->level > pasgrule->level) goto next_rule;
 	/*if uagList is empty then no need to check uag*/
 	if(ellCount(&pasgrule->uagList)>0){
 	    ASGUAG	*pasguag;
@@ -422,7 +432,7 @@ long asCompute(ASCLIENTPVT asClientPvt)
 	    pasguag = (ASGUAG *)ellFirst(&pasgrule->uagList);
 	    while(pasguag) {
 		if(puag = pasguag->puag) {
-		    pgphentry = gphFind(pasbase->phash,pasgClient->user,puag);
+		    pgphentry = gphFind(pasbase->phash,pasgclient->user,puag);
 		    if(pgphentry) goto check_hag;
 		}
 		pasguag = (ASGUAG *)ellNext((ELLNODE *)pasguag);
@@ -438,7 +448,7 @@ check_hag:
 	    pasghag = (ASGHAG *)ellFirst(&pasgrule->hagList);
 	    while(pasghag) {
 		if(phag = pasghag->phag) {
-		    pgphentry=gphFind(pasbase->phash,pasgClient->host,phag);
+		    pgphentry=gphFind(pasbase->phash,pasgclient->host,phag);
 		    if(pgphentry) goto check_calc;
 		}
 		pasghag = (ASGHAG *)ellNext((ELLNODE *)pasghag);
@@ -452,9 +462,9 @@ check_calc:
 next_rule:
 	pasgrule = (ASGRULE *)ellNext((ELLNODE *)pasgrule);
     }
-    pasgClient->access = access;
-    if(pasgClient->pcallback && oldaccess!=access) {
-	(*pasgClient->pcallback)(pasgClient,asClientCOAR);
+    pasgclient->access = access;
+    if(pasgclient->pcallback && oldaccess!=access) {
+	(*pasgclient->pcallback)(pasgclient,asClientCOAR);
     }
     return(0);
 }
@@ -777,6 +787,11 @@ int asDumpMem(char *asgname,void (*memcallback)(ASMEMBERPVT),int clients)
 	pasg = (ASG *)ellNext((ELLNODE *)pasg);
     }
     return(0);
+}
+
+int asDumpHash(void)
+{
+    gphDump(pasbase->phash);
 }
 
 /*Start of private routines*/

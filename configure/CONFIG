@@ -29,7 +29,6 @@ include $(CONFIG)/CONFIG_SITE
 #  Host architecture specific definitions
 #
 include $(CONFIG)/os/CONFIG.Host.$(HOST_ARCH)
--include $(CONFIG)/os/CONFIG_SITE.Host.$(HOST_ARCH)
 
 ifdef T_A
 
@@ -41,8 +40,8 @@ endif
 
 include $(CONFIG)/os/CONFIG.Target.$(T_A)
 #
+-include $(CONFIG)/os/CONFIG_SITE.Host.$(HOST_ARCH)
 -include $(CONFIG)/os/CONFIG_SITE.Target.$(T_A)
-#
 -include $(CONFIG)/os/CONFIG_SITE.$(HOST_ARCH).$(T_A)
 
 endif

@@ -10,17 +10,7 @@
 #ifndef epicsMutexh
 #define epicsMutexh
 
-#if 0
-
-#ifdef __cplusplus
-#   include <new>
-#   include <stdexcept>
-#endif
-
-#include <stdarg.h>
 #include "epicsAssert.h"
-
-#endif
 
 #include "shareLib.h"
 

@@ -217,15 +217,15 @@ cac::cac ( cacNotify & notifyIn, bool enablePreemptiveCallbackIn ) :
 
 cac::~cac ()
 {
+    // this blocks until the UDP thread exits so that
+    // it will not sneak in any new clients
     //
     // lock intentionally not held here so that we dont deadlock 
     // waiting for the UDP thread to exit while it is waiting to 
     // get the lock.
-
-    // this blocks until the UDP thread exits so that
-    // it will not sneak in any new clients
-    delete this->pudpiiu;
-    this->pudpiiu = 0; // for initiateAbortShutdown()
+    if ( this->pudpiiu ) {
+        this->pudpiiu->shutdown ();
+    }
 
     //
     // shutdown all tcp connections
@@ -252,6 +252,10 @@ cac::~cac ()
     //
     while ( this->serverTable.numEntriesInstalled() ) {
         this->iiuUninstall.wait ();
+    }
+
+    if ( this->pudpiiu ) {
+        delete this->pudpiiu;
     }
 
     freeListCleanup ( this->tcpSmallRecvBufFreeList );

@@ -42,7 +42,7 @@ public:
     epicsShareFunc virtual ~epicsTimerNotify ();
     // return "noRestart" or "expireStatus ( restart, 30.0 /* sec */ )"
     virtual expireStatus expire ( const epicsTime & currentTime ) = 0;
-    epicsShareFunc virtual epicsShareFunc void show ( unsigned int level ) const;
+    epicsShareFunc virtual void show ( unsigned int level ) const;
 };
 
 class epicsTimer {              // X aCC 655

@@ -100,6 +100,11 @@ const char *tcpRecvWatchdog::name () const
     return "TCP Receive Watchdog";
 }
 
+void tcpRecvWatchdog::cancelRecvWatchdog ()
+{
+    this->cancel ();
+}
+
 void tcpRecvWatchdog::show ( unsigned level ) const
 {
     printf ( "Receive virtual circuit watchdog at %p, period %s\n",

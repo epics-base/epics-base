@@ -27,7 +27,9 @@ DIRS += rsrv
 DIRS += rec
 DIRS += dev
 #Following are optional
+ifeq ($(findstring vxWorks,$(BUILD_ARCHS)),vxWorks)
 DIRS += vxWorks
+endif
 #DIRS += gdd
 #DIRS += cas
 

@@ -99,7 +99,7 @@ LINK.c = $(LINK.cpp)
 # Only one LIBRARY_HOST allowed
 ifdef LIBRARY_HOST
 LIBSRCS_HOST+= $(SRCS) $(LIBSRCS) $($(addsuffix _SRCS,$(LIBRARY_HOST)))
-ifneq ($($(addsuffix _SRCS_$(OS_CLASS),$(LIBRARY_HOST))),)
+ifneq ($(strip $($(addsuffix _SRCS_$(OS_CLASS),$(LIBRARY_HOST)))),)
 LIBSRCS_HOST += $(subst -nil-,,$($(addsuffix _SRCS_$(OS_CLASS),$(LIBRARY_HOST))))
 else
 LIBSRCS_HOST += $($(addsuffix _SRCS_DEFAULT,$(LIBRARY_HOST)))
@@ -116,7 +116,7 @@ endif # LIBRARY_HOST
 # Only one LIBRARY_IOC allowed
 ifdef LIBRARY_IOC
 LIBSRCS_IOC+= $(SRCS) $(LIBSRCS) $($(addsuffix _SRCS,$(LIBRARY_IOC)))
-ifneq ($($(addsuffix _SRCS_$(OS_CLASS),$(LIBRARY_IOC))),)
+ifneq ($(strip $($(addsuffix _SRCS_$(OS_CLASS),$(LIBRARY_IOC)))),)
 LIBSRCS_IOC += $(subst -nil-,,$($(addsuffix _SRCS_$(OS_CLASS),$(LIBRARY_IOC))))
 else
 LIBSRCS_IOC += $($(addsuffix _SRCS_DEFAULT,$(LIBRARY_IOC)))
@@ -156,7 +156,7 @@ rebuild: clean install
 
 inc: $(INSTALL_INC) $(INSTALL_OSINC)
 
-build: $(MENUS) $(RECTYPES) $(BPTS) \
+build: $(MENUS) $(RECTYPES) $(BPTS) $(OBJS) \
 	$(LIBTARGETS) $(PROD) $(TESTPROD) $(TARGETS)
 
 ifdef DBDEXPAND

@@ -3,7 +3,7 @@
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
    <meta name="Author" content="jba">
-   <meta name="GENERATOR" content="Mozilla/4.76 [en] (X11; U; SunOS 5.8 sun4u) [Netscape]">
+   <meta name="GENERATOR" content="Mozilla/4.77 [en] (X11; U; SunOS 5.8 sun4u) [Netscape]">
 </head>
 <body>
 README.htm
@@ -115,9 +115,10 @@ file. You will also need one or more board support packages. Consult the
 vxWorks documentation for details.
 <p><b>Optional GNU compiler requirement for solaris-sparc&nbsp; and win32-x86
 hosts</b>
-<br>If you wish to run "gnumake depends"&nbsp; to create header dependancy
-include files for c/c++ source code, g++ must be be in your path. Also,
-if you have state notation language source files (*.st files) which require
+<br>If you wish to have the build automatically&nbsp; create header dependancy
+include files for c/c++ source code (HDEPENDS set to YES&nbsp;in CONFIG_SITE)
+, the gnu compilers gcc and&nbsp; g++ must be be in your path. Also, if
+you have state notation language source files (*.st files) which require
 c preprocessing before conversion to c source,&nbsp; gcc must be in your
 path.</blockquote>
 
@@ -357,7 +358,7 @@ Definitions and rules for java jars and classes</tt>
 Rules specific to a &lt;top> dir (uninstall and tar)</tt>
 <br><tt>Sample.Makefile&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Sample makefile
 with comments</tt>
-<br><tt></tt>&nbsp;
+<br>&nbsp;
 <li>
 base/configure/os directory - contains os-arch specific definitions</li>
 
@@ -394,6 +395,8 @@ for use in IOCs</tt>
 <br><tt>makeMakefile.pl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 Creates a Makefile in O.&lt;arch> dirs</tt>
 <br><tt>makeMakefileInclude.pl&nbsp; Creates file to be included by Makefile</tt>
+<br><tt>makeRulesInclude.pl&nbsp;&nbsp;&nbsp;&nbsp; Creates .h depends
+files included by Makefile</tt>
 <br><tt>mkdir.pl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 Creates a directory (like Unix mkdir)</tt>
 <br><tt>munch.pl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -440,8 +443,9 @@ in the following files:
 <blockquote><tt>configure/CONFIG_SITE&nbsp;&nbsp;&nbsp;&nbsp; </tt>Build
 choices. Specify target archs.
 <br><tt>configure/CONFIG_SITE_ENV </tt>Environment variable&nbsp; defaults
-<br><tt>configure/RELEASE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</tt>TORNADO 2 full path location</blockquote>
+<br><tt>configure/RELEASE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+</tt>TORNADO
+2 full path location</blockquote>
 
 <p><br><b>Host configuration</b>
 <br>To configure each host system, you may override the default definitions

@@ -55,16 +55,22 @@ void myThread::run()
     errlogPrintf("threadFunc %d stopping argvalue %p\n",myPrivate,argvalue);
 }
 
+static void threadSleepMeasureDelay( const double & delay )
+{
+    epicsTime beg = epicsTime::getCurrent();
+    epicsThreadSleep ( delay );
+    epicsTime end = epicsTime::getCurrent();
+    printf ( "epicsThreadSleep ( %10f ) finished after %10f sec\n", 
+        delay, end - beg );
+}
+
 static void threadSleepTest()
 {
     for ( int i = 0u; i < 20; i++ ) {
-        epicsTime beg = epicsTime::getCurrent();
         double delay = ldexp ( 1.0 , -i );
-        epicsThreadSleep ( delay );
-        epicsTime end = epicsTime::getCurrent();
-        printf ( "epicsThreadSleep ( %g ) finished after %g sec\n", 
-            delay, end - beg );
+        threadSleepMeasureDelay ( delay );
     }
+    threadSleepMeasureDelay ( 0.0 );
 }
 
 extern "C" void threadTest(int ntasks,int verbose)

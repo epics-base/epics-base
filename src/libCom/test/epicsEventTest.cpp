@@ -113,17 +113,24 @@ static void producer(void *arg)
 
 } // extern "C"
 
+static void eventWaitMeasureDelay( const epicsEventId &id, const double & delay )
+{
+    epicsTime beg = epicsTime::getCurrent();
+    epicsEventWaitWithTimeout ( id, delay );
+    epicsTime end = epicsTime::getCurrent();
+    printf ( "epicsEventWaitWithTimeout ( %10f ) timed out after %10f sec\n", 
+        delay, end - beg );
+}
+
 static void eventWaitTest()
 {
     epicsEventId event = epicsEventMustCreate ( epicsEventEmpty );
     for ( int i = 0u; i < 20; i++ ) {
-        epicsTime beg = epicsTime::getCurrent();
         double delay = ldexp ( 1.0 , -i );
-        epicsEventWaitWithTimeout ( event, delay );
-        epicsTime end = epicsTime::getCurrent();
-        printf ( "epicsEventWaitWithTimeout ( %g ) timed out after %g sec\n", 
-            delay, end - beg );
+        eventWaitMeasureDelay ( event, delay );
     }
+    eventWaitMeasureDelay ( event, 0.0 );
+    epicsEventDestroy ( event );
 }
 
 

@@ -1,12 +1,3 @@
-#*************************************************************************
-# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
-#     National Laboratory.
-# Copyright (c) 2002 The Regents of the University of California, as
-#     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
-#*************************************************************************
 # CONFIG.Host.Linux
 #
 #  This file is maintained by the EPICS community.
@@ -21,19 +12,55 @@ AR = ar -rc
 ARCMD = $(AR) $@
 RANLIB = ranlib -t
 
-ANSI=GCC
-CPLUSPLUS=G++
+#OP_SYS_FLAGS = -D_BSD_SOURCE -D_POSIX_SOURCE
 
-GCC_SHRLIB_LDFLAGS_YES +=  -Wl,-soname,$@
-G++_SHRLIB_LDFLAGS_YES +=  -Wl,-soname,$@
+# Configure OS vendor C compiler
+ACC = gcc
+ACC_ANSI = $(ACC)
+#ACC_ANSI = $(ACC) -ansi -D_SVID_SOURCE
+#ACC_STRICT = $(ACC) -Xc
+ACC_STRICT = $(ACC) -pedantic
+#ACC_STRICT = $(ACC)  -ansi -pedantic -D_SVID_SOURCE
+ACC_TRAD = $(ACC)
+ACC_WARN_YES =  -Wall
+ACC_WARN_NO =  -w
+ACC_OPT_YES =  -O
+ACC_OPT_NO = -g
+ACC_SFLAGS_YES = -static
+ACC_SFLAGS_NO=
+ACC_SLIBS_YES =
+ACC_SLIBS_NO=
+ACC_SHRLIB_CFLAGS_YES =  -fPIC
+ACC_SHRLIB_LDFLAGS_YES =  -shared -Wl,-soname,$@ 
 
-OP_SYS_CFLAGS += -D_BSD_SOURCE
 
-ARCH_DEP_CFLAGS = -D_X86_ -Dlinux -mcpu=pentium
-ARCH_DEP_LDLIBS += -lpthread -lreadline -lcurses -lrt
+# Configure OS vendor C++ compiler
+CCC = g++
+CCC_NORMAL = $(CCC)
+CCC_STRICT = $(CCC)
+#CCC_TEMPL_INST_FLAG = -DEXPL_TEMPL
+CCC_WARN_YES =  -Wall
+CCC_WARN_NO =
+CCC_OPT_YES =  -O
+CCC_OPT_NO = -g
+CCC_SFLAGS_YES = -static
+CCC_SFLAGS_NO=
+CCC_SLIBS_YES =
+CCC_SLIBS_NO=
+CCC_DEPENDS_FLAG = -MM
+CCC_SHRLIB_CFLAGS_YES =  -fPIC
+CCC_SHRLIB_LDFLAGS_YES =  -shared -Wl,-soname,$@ 
 
-#Allows R3.13 built extensions to load R3.14 shared libs
-SYS_DLL_LIBS_Linux += pthread readline curses rt
+# added smh 6/5/98 : when building fdmgr - seems to use this not ACC
+# in effect this overides orig def in CONFIG_COMMON :
+# which is GCC_STRICT = $(GCC) -ansi -pedantic
+GCC_STRICT = $(GCC) 
+G++_STRICT = $(G++)  -Wtraditional
+
+
+#ARCH_DEP_CFLAGS = -D_X86_ -Dlinux -D_USE_BSD
+ARCH_DEP_CFLAGS = -D_X86_ -Dlinux
+ARCH_DEP_LDFLAGS =
 
 #glibc FAQ
 #	"_GNU_SOURCE:  glibc does not make the GNU extensions available 
@@ -47,9 +74,5 @@ SYS_DLL_LIBS_Linux += pthread readline curses rt
 #	and see if that makes the problem go away."
 #ARCH_DEP_CFLAGS += -D_GNU_SOURCE
 
-# Runtime ldflags
-RUNTIME_LIBS =$(EPICS_BASE)/lib/$(EPICS_HOST_ARCH)\
- $(EPICS_EXTENSIONS)/lib/$(EPICS_HOST_ARCH)
-RUNTIME_LDFLAGS = $(RUNTIME_LIBS:%=-Wl,-rpath,%)
 
 

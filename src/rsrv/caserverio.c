@@ -52,6 +52,7 @@ static char *sccsId = "@(#) $Id$";
 #include <errnoLib.h>
 #include <taskLib.h>
 #include <tickLib.h>
+#include <inetLib.h>
 
 #include <server.h>
 
@@ -146,6 +147,10 @@ int		lock_needed;
 		if( pclient->send.stk != (unsigned)status){
 			if(status < 0){
 				int	anerrno;
+				char	buf[64];
+
+				buf[0u] = '\0';
+				inet_ntoa_b(pclient->addr.sin_addr, buf);
 
 				anerrno = errnoGet();
 
@@ -157,9 +162,9 @@ int		lock_needed;
 						CASDEBUG>2){
 
 						logMsg(
-					"CAS: TCP send failed because \"%s\"\n",
+			"CAS: TCP send to \"%s\" failed because \"%s\"\n",
+							(int)buf,
 							(int)strerror(anerrno),
-							NULL,
 							NULL,
 							NULL,
 							NULL,
@@ -169,9 +174,9 @@ int		lock_needed;
 				}
 				else if (pclient->proto == IPPROTO_UDP) {
 					logMsg(
-					"CAS: UDP send failed because \"%s\"\n",
+			"CAS: UDP send to \"%s\" failed because \"%s\"\n",
+							(int)buf,
 							(int)strerror(anerrno),
-							NULL,
 							NULL,
 							NULL,
 							NULL,

@@ -1380,9 +1380,12 @@ caStatus casStrmClient::enumPostponedCreateChanResponse (
 	// response and the access rights response so that we know for
 	// certain that they will both be sent together.
 	//
+    // Considering the possibility of large arrays we must allocate
+    // an additional 2 * sizeof(ca_uint32_t)
+    //
     void *pRaw;
     const outBufCtx outctx = this->out.pushCtx 
-                    ( 0, 2 * sizeof ( caHdr ), pRaw );
+                    ( 0, 2 * sizeof ( caHdr ) + 2 * sizeof(ca_uint32_t), pRaw );
     if ( outctx.pushResult() != outBufCtx::pushCtxSuccess ) {
         return S_cas_sendBlocked;
     }
@@ -1419,10 +1422,11 @@ caStatus casStrmClient::enumPostponedCreateChanResponse (
 	// the protocol buffer.
 	//
 	assert ( nativeTypeDBR <= 0xffff );
-	unsigned nativeCount = chan.getPVI().nativeCount();
+	aitIndex nativeCount = chan.getPVI().nativeCount();
+	assert ( nativeCount <= 0xffffffff );
     status = this->out.copyInHeader ( CA_PROTO_CLAIM_CIU, 0,
         static_cast <ca_uint16_t> ( nativeTypeDBR ), 
-        static_cast <ca_uint16_t> ( nativeCount ), 
+        static_cast <ca_uint32_t> ( nativeCount ), 
         hdr.m_cid, chan.getSID(), 0 );
     if ( status != S_cas_success ) {
 
@@ -1444,7 +1448,9 @@ caStatus casStrmClient::enumPostponedCreateChanResponse (
     // commit the message
     //
     bufSizeT nBytes = this->out.popCtx ( outctx );
-    assert ( nBytes == 2*sizeof(caHdr) );
+    assert ( 
+        nBytes == 2 * sizeof ( caHdr ) || 
+        nBytes == 2 * sizeof ( caHdr ) + 2 * sizeof ( ca_uint32_t ) );
     this->out.commitRawMsg ( nBytes );
 
 	return status;

@@ -120,7 +120,7 @@ semBinaryTakeNoWait(semBinaryId id)
     sc = rtems_semaphore_obtain (sid, RTEMS_NO_WAIT, RTEMS_NO_TIMEOUT);
     if (sc == RTEMS_SUCCESSFUL)
         return semTakeOK;
-    else if (sc == RTEMS_TIMEOUT)
+    else if (sc == RTEMS_UNSATISFIED)
         return semTakeTimeout;
     else
         return semTakeError;

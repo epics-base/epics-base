@@ -54,5 +54,5 @@ STATIC_LDLIBS_NO=
 SHRLIB_LDFLAGS = -z defs -KPIC -G -h $@
 LOADABLE_SHRLIB_LDFLAGS = -KPIC -G -h $@
 
-OP_SYS_LDFLAGS = -z ignore -z combreloc -z lazyload
+OP_SYS_LDFLAGS += -z ignore -z combreloc -z lazyload
 

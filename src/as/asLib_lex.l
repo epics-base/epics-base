@@ -39,7 +39,7 @@ INP[A-L] {/* If A-L is changed then ASMAXINP must also be changed*/
 {name}+ { /*unquoted string*/
 	yylval.Str=(char *)asCalloc(1,strlen(yytext)+1);
 	strcpy(yylval.Str,yytext);
-	return(tokenNAME);
+	return(tokenSTRING);
 	}
 
 \"{string}*\" { /*quoted string*/

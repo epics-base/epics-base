@@ -16,7 +16,7 @@ static ASGRULE *yyAsgRule=NULL;
 %token tokenUAG tokenHAG tokenASG tokenRULE tokenCALC 
 %token <Str> tokenINP
 %token <Int> tokenINTEGER
-%token <Str> tokenNAME  tokenSTRING
+%token <Str> tokenSTRING
 
 %union
 {
@@ -39,7 +39,7 @@ asconfig_item:	tokenUAG uag_head uag_body
 	|	tokenASG asg_head
 	;
 
-uag_head:	'(' tokenNAME ')'
+uag_head:	'(' tokenSTRING ')'
 	{
 		yyUag = asUagAdd($2);
 		if(!yyUag) yyerror("");
@@ -57,19 +57,15 @@ uag_user_list:	uag_user_list ',' uag_user_list_name
 	|	uag_user_list_name
 	;
 
-uag_user_list_name:	tokenNAME
+uag_user_list_name:	tokenSTRING
 	{
-		long	status;
-
-		status = asUagAddUser(yyUag,$1);
-		if(status) {
+		if (asUagAddUser(yyUag,$1))
 			yyerror($1);
-		}
 		free((void *)$1);
 	}
 	;
 
-hag_head:	'(' tokenNAME ')'
+hag_head:	'(' tokenSTRING ')'
 	{
 		yyHag = asHagAdd($2);
 		if(!yyHag) yyerror("");
@@ -84,19 +80,15 @@ hag_user_list:	hag_user_list ',' hag_user_list_name
 	|	hag_user_list_name
 	;
 
-hag_user_list_name:	tokenNAME
+hag_user_list_name:	tokenSTRING
 	{
-		long	status;
-
-		status = asHagAddHost(yyHag,$1);
-		if(status) {
+		if (asHagAddHost(yyHag,$1))
 			yyerror("");
-		}
 		free((void *)$1);
 	}
 	;
 
-asg_head:	'(' tokenNAME ')'
+asg_head:	'(' tokenSTRING ')'
 	{
 		yyAsg = asAsgAdd($2);
 		if(!yyAsg) yyerror("");
@@ -116,17 +108,13 @@ asg_body_item:	inp_config | rule_config
 
 inp_config:	tokenINP '(' inp_body ')'
 	{
-		long	status;
-
-		status = asAsgAddInp(yyAsg,$<Str>3,$<Int>1);
-		if(status) {
+		if (asAsgAddInp(yyAsg,$<Str>3,$<Int>1))
 			yyerror("");
-		}
 		free((void *)$<Str>3);
 	}
 	;
 
-inp_body:	tokenNAME
+inp_body:	tokenSTRING
 	;
 
 rule_config:	tokenRULE rule_head rule_body
@@ -134,7 +122,7 @@ rule_config:	tokenRULE rule_head rule_body
 
 rule_head: rule_head_manditory rule_head_options
 
-rule_head_manditory:	'(' tokenINTEGER ',' tokenNAME 
+rule_head_manditory:	'(' tokenINTEGER ',' tokenSTRING 
 	{
 		asAccessRights	rights;
 
@@ -156,7 +144,7 @@ rule_head_manditory:	'(' tokenINTEGER ',' tokenNAME
 rule_head_options: ')'
         |          rule_log_options
 
-rule_log_options:  ',' tokenNAME ')'
+rule_log_options:  ',' tokenSTRING ')'
         {
                 if((strcmp($2,"TRAPWRITE")==0)) {
                         long status;
@@ -180,12 +168,8 @@ rule_list_item: tokenUAG '(' rule_uag_list ')'
 	|	tokenHAG  '(' rule_hag_list ')'
 	|	tokenCALC '(' tokenSTRING ')'
 	{
-		long status;
-
-		status = asAsgRuleCalc(yyAsgRule,$3);
-		if(status){
-		    yyerror("access security CALC failure");
-		}
+		if (asAsgRuleCalc(yyAsgRule,$3))
+			yyerror("access security CALC failure");
 		free((void *)$3);
 	}
 	;
@@ -194,14 +178,10 @@ rule_uag_list:	rule_uag_list ',' rule_uag_list_name
 	|	rule_uag_list_name
 	;
 
-rule_uag_list_name:	tokenNAME
+rule_uag_list_name:	tokenSTRING
 	{
-		long status;
-
-		status = asAsgRuleUagAdd(yyAsgRule,$1);
-		if(status) {
-		    yyerror("");
-		}
+		if (asAsgRuleUagAdd(yyAsgRule,$1))
+			yyerror("");
 		free((void *)$1);
 	}
 	;
@@ -210,14 +190,10 @@ rule_hag_list:	rule_hag_list ',' rule_hag_list_name
 	|	rule_hag_list_name
 	;
 
-rule_hag_list_name:	tokenNAME
+rule_hag_list_name:	tokenSTRING
 	{
-		long status;
-
-		status = asAsgRuleHagAdd(yyAsgRule,$1);
-		if(status) {
-		    yyerror("");
-		}
+		if (asAsgRuleHagAdd(yyAsgRule,$1))
+			yyerror("");
 		free((void *)$1);
 	}
 	;

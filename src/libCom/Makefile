@@ -202,6 +202,7 @@ SRCS += tsDefs.c
 INC_WIN32 := getopt.h
 SRCS_WIN32 := getopt.c
 SRCS_WIN32 += dllmain.cpp
+SRCS_WIN32 += forceBadAllocException.cpp
 
 # For vxWorks a clock
 INC_vxWorks += iocClock.h

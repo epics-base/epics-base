@@ -16,6 +16,7 @@ INC += asCa.h
 INC += asTrapWrite.h
 
 LIB_SRCS += asLib.c
+LIB_SRCS += asTrapWrite.c
 
 asIoc_SRCS += asDbLib.c
 asIoc_SRCS += asCa.c

@@ -32,3 +32,4 @@ device(mbbo,CONSTANT,devMbboSoftCallback,"Async Soft Channel")
 device(mbboDirect,CONSTANT,devMbboDirectSoftCallback,"Async Soft Channel")
 device(stringout,CONSTANT,devSoSoftCallback,"Async Soft Channel")
 
+device(stringin,INST_IO,devTimestampSI,"Soft Timestamp")

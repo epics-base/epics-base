@@ -121,6 +121,8 @@ epicsShareFunc long epicsShareAPI
 	envGetLongConfigParam(const ENV_PARAM *pParam, long *pLong);
 epicsShareFunc const char * epicsShareAPI 
 	envGetConfigParamPtr(const ENV_PARAM *pParam);
+epicsShareFunc unsigned short epicsShareAPI envGetInetPortConfigParam 
+        (const ENV_PARAM *pEnv, unsigned short defaultPort);
 #else
 epicsShareFunc char * epicsShareAPI envGetConfigParam();
 epicsShareFunc char * epicsShareAPI envGetConfigParamPtr();
@@ -130,6 +132,7 @@ epicsShareFunc long epicsShareAPI envGetInetAddrConfigParam();
 epicsShareFunc long epicsShareAPI envGetDoubleConfigParam();
 epicsShareFunc long epicsShareAPI envGetLongConfigParam();
 epicsShareFunc char * epicsShareAPI envGetConfigParamPtr();
+epicsShareFunc unsigned short epicsShareAPI envGetInetPortConfigParam();
 #endif
 
 #ifdef __cplusplus

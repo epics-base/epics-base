@@ -490,3 +490,38 @@ epicsPrtEnvParams()
     return 0;
 }
 
+/*
+ * envGetInetPortConfigParam ()
+ */
+epicsShareFunc unsigned short epicsShareAPI envGetInetPortConfigParam 
+                (const ENV_PARAM *pEnv, unsigned short defaultPort)
+{
+    long        longStatus;
+    long        epicsParam;
+    int         port;
+
+    longStatus = envGetLongConfigParam (pEnv, &epicsParam);
+    if (longStatus!=0) {
+        epicsParam = (long) defaultPort;
+        errlogPrintf ("EPICS Environment \"%s\" integer fetch failed\n", pEnv->name);
+        errlogPrintf ("setting \"%s\" = %ld\n", pEnv->name, epicsParam);
+    }
+
+    if (epicsParam<=IPPORT_USERRESERVED || epicsParam>0xffff) {
+        errlogPrintf ("EPICS Environment \"%s\" out of range\n", pEnv->name);
+        /*
+         * Quit if the port is wrong due coding error
+         */
+        assert (epicsParam != (long) defaultPort);
+        epicsParam = (long) defaultPort;
+        errlogPrintf ("Setting \"%s\" = %ld\n", pEnv->name, epicsParam);
+    }
+
+    /*
+     * ok to clip to unsigned short here because we checked the range
+     */
+    port = (unsigned short) epicsParam;
+
+    return port;
+}
+

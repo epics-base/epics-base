@@ -11,7 +11,7 @@ OS_CLASS = vxWorks
 
 # The definitions VX_DIR, VX_GNU, GNU_DIR and GNU_LIB
 # can be overridden for specific host architectures
-# by creating a CONFIG_SITE.Vx.<host_arch> file with
+# by creating a CONFIG_SITE.Vx.<host_archfile with
 # the override definitions.
 
 # Tornado directory definitions
@@ -34,13 +34,15 @@ VX_INCLUDE = $(VX_INCLUDE_$(TORNADO))
 VX_GNU = $(VX_GNU_$(TORNADO))
 GNU_BIN = $(VX_GNU_BIN_$(TORNADO))
 GNU_LIB = $(VX_GNU_LIB_$(TORNADO))
+export GCC_EXEC_PREFIX = $(GNU_LIB)/gcc-lib/
+export WIND_BASE = $(VX_DIR)
 
 #--------------------------------------------------
 # VxWorks command definitions
 
 GCC = $(GNU_BIN)/cc$(CMPLR_SUFFIX) -B$(GNU_LIB)/gcc-lib/ -nostdinc
 AR = $(GNU_BIN)/ar$(CMPLR_SUFFIX)
-CPP = $(GNU_BIN)/cpp$(CMPLR_SUFFIX) -nostdinc
+CPP = $(GNU_BIN)/cc$(CMPLR_SUFFIX) -B$(GNU_LIB)/gcc-lib/ -nostdinc -x c -E
 RANLIB = $(GNU_BIN)/ranlib$(CMPLR_SUFFIX)
 LD = $(GNU_BIN)/ld$(CMPLR_SUFFIX) -r
 
@@ -50,8 +52,7 @@ LD = $(GNU_BIN)/ld$(CMPLR_SUFFIX) -r
 CPLUSPLUS_YES = G++
 G++ = $(GNU_BIN)/cc$(CMPLR_SUFFIX) -B$(GNU_LIB)/gcc-lib/ -nostdinc
 LD_G++ = $(GNU_BIN)/ld$(CMPLR_SUFFIX) -r
-NM = $(GNU_BIN)/nm$(CMPLR_SUFFIX)
-MUNCH = $(GNU_BIN)/munch
+NM = $(GNU_BIN)/nm$(CMPLR_SUFFIX)$(HOSTEXE)
 
 #--------------------------------------------------
 # Pre Tornado C++ crosscompiler definitions
@@ -86,6 +87,11 @@ CPLUSPLUS = $(CPLUSPLUS_$(TORNADO))
 LD_CXX = $(LD_$(CPLUSPLUS))
 
 #--------------------------------------------------
+# Override flags in CONFIG_COMMON
+GCC_DEP_CFLAGS = -D_REENTRANT
+G++_DEP_CFLAGS = -D_REENTRANT
+
+#--------------------------------------------------
 # Operating system flags
 OP_SYS_INCLUDES = -I$(VX_INCLUDE)
 OP_SYS_CFLAGS = -DvxWorks -DV5_vxWorks -fno-builtin 
@@ -101,9 +107,9 @@ endif
 #--------------------------------------------------
 # Optimization flag overrides
 GCC_OPT_YES = -O2 -fstrength-reduce
-GCC_OPT_NO =
+GCC_OPT_NO = -g
 G++_OPT_YES = -O2 -fstrength-reduce
-G++_OPT_NO =
+G++_OPT_NO = -g
 
 OPT_CFLAGS = $($(ANSI)_OPT_$(VX_OPT))
 OPT_CXXFLAGS = $($(CPLUSPLUS)_OPT_$(VX_OPT))
@@ -122,4 +128,26 @@ WARN_CXXFLAGS = $($(CPLUSPLUS)_WARN_$(VX_WARN))
 # Link definitions
 LINK.c = $(LD) $(LDFLAGS) -o
 LINK.cc = $(LD_CXX) $(LDFLAGS) -o
+
+
+#--------------------------------------------------
+# Munch definitions
+MUNCH_SUFFIX=.munch
+MUNCHNAME = $(LIBNAME:%=%$(MUNCH_SUFFIX))
+
+#--------------------------------------------------
+# C++ host processing
+ifeq ($(wildcard $(GNU_BIN)/munch.tcl),$(GNU_BIN)/munch.tcl)
+#tornado2
+export WIND_BASE = $(VX_DIR)
+export WIND_HOST_TYPE
+ifneq ($(WIND_HOST_TYPE),x86-win32)
+export PATH := $(GNU_BIN):$(PATH)
+endif
+MUNCH = $(GNU_BIN)/wtxtcl$(HOSTEXE) $(GNU_BIN)/munch.tcl -asm $(ARCH_CLASS)
+else
+#tornado101
+MUNCH = $(GNU_BIN)/$(CMPLR_PREFIX)munch$(HOSTEXE)
+endif
+
 

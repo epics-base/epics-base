@@ -44,7 +44,11 @@ HPCC_SLIBS_NO=
 HPCC_SHRLIB_CFLAGS_YES = +Z
 HPCC_SHRLIB_LDFLAGS_YES = -b
 
-# New HP C++ compiler
+#Old HP C++ compiler
+#CCC = CC
+#CCC_NORMAL = $(CCC) +p
+
+#New HP C++ compiler
 CCC = aCC
 # avoid treating "future errors" as actual errors
 CCC_NORMAL = $(CCC) +W302 +W829 +W818 +W392 +W469 +W495 +W749 +W667 +W392 +W684
@@ -62,12 +66,12 @@ CCC_SHRLIB_CFLAGS_YES = +Z
 # shared libs will be found by searching environment variable SHLIB_PATH,
 # then by searching the specified path (see below)
 CCC_SHRLIB_LDFLAGS_YES = -b
-
-CCC_DEPENDS_FLAG =
+CCC_DEPENDS_FLAG = +m
 
 # +DAportable causes portable object code to be created for execution
 # on different PA-Risc machines
 ARCH_DEP_CFLAGS = -D_HPUX_SOURCE -DHP_UX +DAportable
 ARCH_DEP_CXXFLAGS = -D_HPUX_SOURCE -DHP_UX +DAportable
 ARCH_DEP_LDLIBS =
-ARCH_DEP_LDFLAGS = -Wl,+s,+b$(DEFAULT_SHRLIB_SEARCH_PATH)
+ARCH_DEP_LDFLAGS = -Wl,+b$(DEFAULT_SHRLIB_SEARCH_PATH),+s
+

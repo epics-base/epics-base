@@ -4,34 +4,34 @@
  
 
 ARCHS += $(BUILD_ARCHS) host cross
-ACTIONS += clean inc depends buildInstall browse
+ACTIONS += clean inc depends build install buildInstall
  
 dirPart = $(word 1, $(subst $(DIVIDER), ,$@))
-actionArchPart = $(subst $(dirPart)$(DIVIDER), ,$@)
+actionArchPart = $(join $(word 2, $(subst $(DIVIDER), ,$@)), \
+ $(addprefix $(DIVIDER),$(word 3, $(subst $(DIVIDER), ,$@))))
  
 dirActionArchTargets = $(foreach dir, $(DIRS), \
-                       $(foreach action, $(ACTIONS) install,\
+                       $(foreach action, $(ACTIONS),\
                        $(foreach arch, $(ARCHS), \
                        $(dir)$(DIVIDER)$(action)$(DIVIDER)$(arch))))
 dirArchTargets += $(foreach dir, $(DIRS), \
                   $(foreach arch, $(ARCHS),\
                   $(dir)$(DIVIDER)$(arch)))
 dirActionTargets += $(foreach dir, $(DIRS), \
-                    $(foreach action, $(ACTIONS) install,\
+                    $(foreach action, $(ACTIONS),\
                     $(dir)$(DIVIDER)$(action)))
-actionArchTargets = $(foreach action, $(ACTIONS) install,\
+actionArchTargets = $(foreach action, $(ACTIONS),\
                     $(foreach arch, $(ARCHS), \
                     $(action)$(DIVIDER)$(arch)))
-
-installArchTargets = $(foreach action, install,\
-                    $(foreach arch, $(ARCHS), \
-                    $(action)$(DIVIDER)$(arch)))
-
+ifeq ($(MAKE_INC_TARGET_FIRST),YES)
 all install :: inc buildInstall 
+$(ARCHS) $(installArchTargets) :: inc
+else
+all install :: buildInstall 
+endif
+
 
 rebuild:: clean all
-
-$(ARCHS) $(installArchTargets) :: inc
 
 $(DIRS) $(dirActionTargets) $(dirArchTargets)$(dirActionArchTargets) ::
 	$(MAKE) -C $(dirPart) $(actionArchPart)
@@ -40,11 +40,9 @@ $(ARCHS) $(ACTIONS) $(actionArchTargets) ::%: \
 	$(foreach dir, $(DIRS), $(dir)$(DIVIDER)%)
  
 
-.PHONY :: $(DIRS) all install rebuild
+.PHONY :: $(DIRS) all rebuild
 .PHONY :: $(ARCHS) $(ACTIONS)
 .PHONY :: $(dirActionTargets) $(dirArchTargets)
 .PHONY :: $(dirActionArchTargets)
 .PHONY :: $(actionArchTargets)
-.PHONY :: $(installArchTargets)
-
 

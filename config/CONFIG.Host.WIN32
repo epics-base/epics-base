@@ -20,11 +20,9 @@ CPLUSPLUS = CCC
 MSVISC = c:\\Program\ Files\\DevStudio\\Vc
 WINLINK = link
 
-RCCMD = rc -l 0x409  -fo $@ $<
+RCCMD = rc -l 0x409 -i . -i .. -i $(INSTALL_INCLUDE) -i $(EPICS_BASE_INCLUDE) -fo $@ $<
 
 ARCMD = lib /nologo /verbose /out:$@
-
-BAFCMD = bscmake /nologo /o $@
 
 #
 # Configure OS vendor C compiler
@@ -90,11 +88,10 @@ ACC_SLIBS_NO=
 # because MS uses:   if __STDC__ ... disable many nice things
 #
 # Use of /Za would dissable DLL import/export keywords which
-# Use of /GX supports C++ extensions
 # EPICS include/excludes using architecture neutral macros
 CCC = cl 
-CCC_NORMAL = $(CCC) /nologo /D__STDC__=0 /GX
-CCC_STRICT = $(CCC) /nologo /D__STDC__=0 /GX
+CCC_NORMAL = $(CCC) /nologo /D__STDC__=0
+CCC_STRICT = $(CCC) /nologo /D__STDC__=0
 CCC_TEMPL_INST_FLAG =
 
 #
@@ -129,7 +126,7 @@ CCC_SFLAGS_NO= /MD$(VISC_SFLAGS_DEBUG) $(VISC_EPICS_DLL)
 #
 CCC_SLIBS_YES=
 CCC_SLIBS_NO=
- 
+
 LINK_OPT_FLAGS_YES = /WARN:3 /incremental:no /opt:ref\
 /release $(PROD_VERSION:%=/version:%)
 LINK_OPT_FLAGS_NO = /WARN:3 /debug 
@@ -149,8 +146,6 @@ WIN32=1
 EXE=.exe
 OBJ=.obj
 RES=.res
-BAF=.bsc
-BOF=.sbr
 
 #       Problem: MS Visual C++ does not recognize  *.cc as C++ source,
 #       we have to compile xx.cc  using the flag -Tp xx.cc,

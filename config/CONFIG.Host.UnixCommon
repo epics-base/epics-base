@@ -19,7 +19,6 @@ LIBNAME = $(LIBRARY:%=lib%.a)
 SHRLIB_SUFFIX = .so
 
 SHRLIBNAME = lib$(LIBRARY)$(SHRLIB_SUFFIX)$(SHRLIB_VERSION:%=.%)
-SHRLIB_LDFLAGS = $($(ANSI)_SHRLIB_LDFLAGS_$(strip $(SHARED_LIBRARIES)))
 
 DLL_LDLIBS = $(PRODNAME_LIBS:%=-l%) $(PROD_LIBS:%=-l%) $(USR_LIBS:%=-l%)
 
@@ -47,7 +46,6 @@ OBJ = .o
 COND_PROD_DEPLIBS = $(foreach prod,$(PROD), $(foreach lib, $($(basename $(prod))_LIBS),$(firstword $(wildcard $($(lib)_DIR)/lib$(lib).* $(EPICS_BASE_LIB)/lib$(lib).*))))
 PRODNAME_DEPLIBS = $(foreach lib,$(PRODNAME_LIBS),$(firstword $(wildcard $($(lib)_DIR)/lib$(lib).* $(EPICS_BASE_LIB)/lib$(lib).*)))
 PROD_DEPLIBS = $(foreach lib,$(PROD_LIBS),$(firstword $(wildcard $($(lib)_DIR)/lib$(lib).* $(EPICS_BASE_LIB)/lib$(lib).*)))
-
 USR_DEPLIBS = $(foreach lib,$(USR_LIBS),$(firstword $(wildcard $($(lib)_DIR)/lib$(lib).* $(EPICS_BASE_LIB)/lib$(lib).*)))
 
 #--------------------------------------------------

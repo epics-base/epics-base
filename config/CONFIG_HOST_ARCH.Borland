@@ -1,4 +1,4 @@
-#  CONFIG_HOST_ARCH.WIN32
+#  CONFIG_HOST_ARCH.Borland
 #
 
 EXE=.exe
@@ -9,6 +9,7 @@ MV   =$(PERL) $(EPICS_BASE_HOST_BIN)/mv.pl
 RM   =$(PERL) $(EPICS_BASE_HOST_BIN)/rm.pl -f
 MKDIR=$(PERL) $(EPICS_BASE_HOST_BIN)/mkdir.pl
 RMDIR=$(PERL) $(EPICS_BASE_HOST_BIN)/rm.pl -rf
+FN   =$(PERL) $(EPICS_BASE_HOST_BIN)/fullName.pl
 CHMOD=echo
 ECHO=echo
 

@@ -13,14 +13,15 @@
 #	i.e.: the arch running DCT/getrel/etc.
 #
 #  Currently Supporting:
-#	sun4
-#	hp700
-#	alpha
-#	solaris
-#	sgi
+#	Borland
 #	Linux
 #	WIN32
-#	LynxOS
+#	alpha
+#	cygwin32
+#	hp700
+#	sgi
+#	solaris
+#	sun4
 #
 #  HOST_ARCH now an environment variable
 #  HOST_ARCH=$(shell /usr/local/epics/startup/HostArch)
@@ -31,17 +32,22 @@ endif
 #  The architectures to build EPICS for
 #
 #  Currently Supporting:
-#       mv167
+#       frc40
+#       frc5ce
+#       hkbaja47
+#       hkv2f
+#       mv147
+#       mv1604
 #       mv162
 #       mv162lc
-#       mv147
-#       hkv2f
-#	niCpu030
-#	pc486
-#	frc5ce
-#	hkbaja47
+#       mv167
+#       mv177
+#       niCpu030
+#       pc486
+#       ppc604
+#       vxipc
 #
-CROSS_COMPILER_TARGET_ARCHS=vxWorks-68040
+CROSS_COMPILER_TARGET_ARCHS=vxWorks-68040 vxWorks-ppc604
 
 
 #  If only a subset of the host architectures perform
@@ -57,7 +63,8 @@ TORNADO=YES
  
 #  VxWorks directory for TORNADO=YES
 #VX_DIR_YES=c:\\Tornado
-VX_DIR_YES = /usr/local/vw/tornado101
+#VX_DIR_YES = /usr/local/vw/tornado101
+VX_DIR_YES = /usr/local/vw/tornado20
 
 #  VxWorks directory for TORNADO=NO
 #VX_DIR_NO=$(VW)
@@ -77,7 +84,7 @@ GNU_DIR = /usr/local/hideos/gnu_install-2.7.2
 #  Client ANSI C Compiler (for Host builds)
 #   GCC     (gcc -ansi) GNU
 #   ACC     (acc)       OS VENDOR
-#   HPCC   (cc -Aa)    OTHER VENDOR 
+#   HPACC   (cc -Aa)    OTHER VENDOR 
 ANSI=ACC
  
 #  C++ Compiler (for Host builds)
@@ -99,6 +106,10 @@ CMPLR=STRICT
 #   NORMAL -  ANSI C++ optional warning flags
 #   Individual Makefiles may override
 CXXCMPLR=STRICT
+
+#  Build should install all include files first?
+#	must be either YES or NO
+MAKE_INC_TARGET_FIRST=NO
 
 #  Build shared libraries?
 #  (archive libraries will also be built)

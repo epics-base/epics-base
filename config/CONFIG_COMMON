@@ -9,20 +9,17 @@
 
 # Common Configuration Information 
 
-# EPICS base version
-BASE_3_14=1
-
 # CROSS1 will be defined only when CROSS_COMPILER_HOST_ARCHS is NOT defined
 CROSS1 = $(CROSS_COMPILER_TARGET_ARCHS$(word 1,$(CROSS_COMPILER_HOST_ARCHS)))
- 
+
 # CROSS2 will be defined only when CROSS_COMPILER_HOST_ARCHS is defined
 # and HOST_ARCH is one of it's words  
 CROSS2 = $(CROSS_COMPILER_TARGET_ARCHS$(filter-out 1,$(words $(filter $(HOST_ARCH),$(CROSS_COMPILER_HOST_ARCHS)))))
- 
+
 BUILD_ARCHS = $(HOST_ARCH) $(CROSS1) $(CROSS2)
- 
+
 INSTALL_LOCATION = $(TOP)
- 
+
 INSTALL_LOCATION_LIB        = $(INSTALL_LOCATION)/lib
 INSTALL_LOCATION_BIN        = $(INSTALL_LOCATION)/bin
 
@@ -42,6 +39,8 @@ OBJ = .
 RES = .
 
 EPICS_BASE_HOST_BIN = $(EPICS_BASE)/bin/$(HOST_ARCH)
+EPICS_BASE_HOST_LIB = $(EPICS_BASE)/lib/$(HOST_ARCH)
+INSTALL_HOST_LIB = $(INSTALL_LOCATION)/lib/$(HOST_ARCH)
 
 
 # private versions of lex/yacc from EPICS
@@ -79,6 +78,7 @@ EPICS_BASE_BIN          = $(EPICS_BASE)/bin/$(T_A)
 GCC_ANSI = $(GCC) -ansi
 GCC_STRICT = $(GCC) -ansi -pedantic
 GCC_TRAD = $(GCC) -traditional
+GCC_DEP_CFLAGS = -fPIC -D_REENTRANT
 GCC_WARN_YES = -Wall
 GCC_WARN_NO = -w
 GCC_OPT_YES = -O
@@ -87,13 +87,14 @@ GCC_SFLAGS_YES = -static
 GCC_SFLAGS_NO =
 GCC_SLIBS_YES =
 GCC_SLIBS_NO =
-GCC_SHRLIB_CFLAGS_YES =  -fPIC
+GCC_SHRLIB_CFLAGS_YES =
 GCC_SHRLIB_LDFLAGS_YES =  -shared
 
 G++_NORMAL = $(G++) -ansi -pedantic
 G++_STRICT = $(G++) -ansi -pedantic -Wtraditional
 G++_TRAD = $(G++) -traditional
 G++_TEMPL_INST_FLAG = -DEXPL_TEMPL
+G++_DEP_CFLAGS = -fPIC -D_REENTRANT
 G++_WARN_YES = -Wall \
       -Wmissing-prototypes -Woverloaded-virtual \
       -Wwrite-strings -Wconversion -Wstrict-prototypes\
@@ -106,14 +107,14 @@ G++_SFLAGS_NO =
 G++_SLIBS_YES =
 G++_SLIBS_NO =
 G++_DEPENDS_FLAG = -MM
-G++_SHRLIB_CFLAGS_YES =  -fPIC
+G++_SHRLIB_CFLAGS_YES =
 G++_SHRLIB_LDFLAGS_YES =  -shared
 
 #--------------------------------------------------
 # C compiler
 
 CC = $($(ANSI)_$(CMPLR))
- 
+
 #---------------------------------------------------------------
 # Vendor compiler dependent options
 VENDOR_DEP_CFLAGS = $($(ANSI)_DEP_CFLAGS)
@@ -151,6 +152,7 @@ USR_CXXFLAGS =
 USR_LDFLAGS =
 USR_LDLIBS =
 USR_CPPFLAGS =
+USR_DBDFLAGS =
 
 #--------------------------------------------------
 # Target specific options
@@ -165,27 +167,16 @@ TARGET_SNCFLAGS = $($(basename $@)_SNCFLAGS)
 #--------------------------------------------------
 # Depends flag
 DEPENDS_FLAG = $($(CPLUSPLUS)_DEPENDS_FLAG)
- 
+
 #--------------------------------------------------
 # C++ template flag option
 TEMPL_INST_CXXFLAG = $($(CPLUSPLUS)_TEMPL_INST_FLAG)
- 
+
 #--------------------------------------------------
 # Epics includes (CONFIG.Vx will override OS_CLASS)
 OS_CLASS = $(ARCH_CLASS)
-
-#---------------------------------------------------------------
-EPICS_INCLUDES = -I$(INSTALL_INCLUDE)/os/$(OS_CLASS) -I$(INSTALL_INCLUDE)
-
-#       if we are not building base add base includes and ld dirs
-#       (convenience for extensions and applications)
-ifneq ($(EPICS_BASE),$(TOP))
-ifneq ($(EPICS_BASE),$(INSTALL_LOCATION))
-EPICS_INCLUDES += -I$(EPICS_BASE_INCLUDE) 
-EPICS_INCLUDES += -I$(EPICS_BASE_INCLUDE)/os/$(OS_CLASS)
-EPICS_INCLUDES += -I$(EPICS_BASE_INCLUDE)/generic
-endif
-endif
+EPICS_INCLUDES = -I$(INSTALL_INCLUDE) -I$(INSTALL_INCLUDE)/os/$(OS_CLASS)
+EPICS_DBDFLAGS = -I $(INSTALL_LOCATION)/dbd
 
 #--------------------------------------------------
 # Warnings flags  (CONFIG.Vx will override)
@@ -197,18 +188,18 @@ WARN_CXXFLAGS = $($(CPLUSPLUS)_WARN_$(HOST_WARN))
 OPT_CFLAGS = $($(ANSI)_OPT_$(HOST_OPT))
 OPT_CXXFLAGS = $($(CPLUSPLUS)_OPT_$(HOST_OPT))
 OPT_LDFLAGS =
- 
+
 #--------------------------------------------------
 # Static build options
 STATIC_CFLAGS = $($(ANSI)_SFLAGS_$(STATIC_BUILD))
 STATIC_CXXCFLAGS = $($(CPLUSPLUS)_SFLAGS_$(STATIC_BUILD))
 STATIC_LDFLAGS = $($(ANSI)_SLDFLAGS_$(STATIC_BUILD))
 STATIC_LDLIBS = $($(ANSI)_SLIBS_$(STATIC_BUILD))
- 
+
 #--------------------------------------------------
 # ar definition default
 ARCMD = $(AR) $(ARFLAGS) $@
- 
+
 #--------------------------------------------------
 # depends definition 
 DEPENDS_RULE = -$(COMPILE.cc) $(DEPENDS_FLAG) $^ > DEPENDS
@@ -217,7 +208,7 @@ DEPENDS_RULE = -$(COMPILE.cc) $(DEPENDS_FLAG) $^ > DEPENDS
 
 # Include files
 
-INCLUDES = $(USR_INCLUDES) -I. -I.. $(EPICS_INCLUDES)  $(TARGET_INCLUDES) $(OP_SYS_INCLUDES)
+INCLUDES = -I. -I.. $(USR_INCLUDES) $(EPICS_INCLUDES) $(TARGET_INCLUDES) $(OP_SYS_INCLUDES)
 
 CFLAGS = $(OPT_CFLAGS) $(DEBUG_CFLAGS) $(WARN_CFLAGS) $(TARGET_CFLAGS)\
  $(USR_CFLAGS) $(ARCH_DEP_CFLAGS) $(VENDOR_DEP_CFLAGS) $(STATIC_CFLAGS)\
@@ -237,9 +228,11 @@ CPPFLAGS += $(TARGET_CPPFLAGS) $(USR_CPPFLAGS) $(ARCH_DEP_CPPFLAGS)
 
 CPPSNCFLAGS = $(INCLUDES)
 
+DBDFLAGS = -I . -I .. $(USR_DBDFLAGS) $(EPICS_DBDFLAGS)
+
 # Build compile line here
-COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c $(SOURCE_FLAG)
-COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $(SOURCE_CXXFLAG)
+COMPILE.c = $(CC) $(CPPFLAGS) $(CFLAGS) -c $(SOURCE_FLAG)
+COMPILE.cc = $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(SOURCE_CXXFLAG)
 
 endif
 

@@ -50,3 +50,13 @@ record(xxx, "$(user):xxxExample")
 	field(LSV, "MINOR")
 	field(LLSV, "MAJOR")
 }
+record(compress,"$(user):compressExample")
+{
+	field(DESC, "Circular buffer")
+	field(INP,"$(user):aiExample.VAL CP NMS")
+	field(ALG,"Circular Buffer")
+	field(NSAM,"10")
+	field(HOPR,"10")
+	field(EGU,"Counts")
+}
+

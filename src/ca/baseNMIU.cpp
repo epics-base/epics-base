@@ -12,6 +12,7 @@
 
 #include "iocinf.h"
 #include "nciu_IL.h"
+#include "baseNMIU_IL.h"
 
 baseNMIU::baseNMIU ( cacNotify &notifyIn, nciu &chanIn ) : 
     cacNotifyIO ( notifyIn ), chan ( chanIn )

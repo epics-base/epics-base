@@ -188,7 +188,7 @@ int epicsShareAPI asInitAsyn(ASDBCALLBACK *pcallback)
 	return(-1);
     }
     asInitTheadId = epicsThreadCreate("asInitTask",
-        (epicsThreadPriorityChannelAccessServer + 9),
+        (epicsThreadPriorityCAServerHigh + 1),
         epicsThreadGetStackSize(epicsThreadStackBig),
         (EPICSTHREADFUNC)asInitTask,(void *)pcallback);
     if(asInitTheadId==0) {

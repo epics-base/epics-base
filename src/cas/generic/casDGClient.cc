@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.14  1998/04/10 23:13:14  jhill
+ * fixed byte swap problems, and use default port if server tool returns PV IP addr, but no port
+ *
  * Revision 1.13  1998/02/05 22:54:19  jhill
  * moved inline func here
  *
@@ -151,7 +154,9 @@ caStatus casDGClient::searchAction()
 	caStatus	status;
 
 	if (this->ctx.getServer()->getDebugLevel()>2u) {
-		printf("client is searching for \"%s\"\n", pChanName);
+		char pName[64u];
+		this->clientHostName (pName, sizeof (pName));
+		printf("%s is searching for \"%s\"\n", pName, pChanName);
 	}
 
 	//
@@ -249,6 +254,11 @@ caStatus casDGClient::searchResponse(const caHdr &msg,
 	 * to a search request. This is no longer supported.
 	 */
 	if ( !CA_V44(CA_PROTOCOL_VERSION,msg.m_count) ) {
+		if (this->ctx.getServer()->getDebugLevel()>0u) {
+			char pName[64u];
+			this->clientHostName (pName, sizeof (pName));
+			printf("client \"%s\" using EPICS R3.11 CA connect protocol was ignored\n", pName);
+		}
 		//
 		// old connect protocol was dropped when the
 		// new API was added to the server (they must
@@ -425,7 +435,7 @@ void casDGClient::processDG(casDGIntfIO &inMsgIO, casDGIntfIO &outMsgIO)
 			status = this->processMsg();
 			if (status) {
 				errMessage (status,
-			"unexpected error processing stateless protocol");
+			"- unexpected error processing stateless protocol");
 			}
 			//
 			// force all replies to go to the sender

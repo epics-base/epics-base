@@ -47,10 +47,10 @@ typedef enum {
 
 #ifdef epicsAlarmGLOBAL
 READONLY char *epicsAlarmSeverityStrings [lastEpicsAlarmSev+1] = {
-		stringOf (epicsSevNone),
-		stringOf (epicsSevMinor),
-		stringOf (epicsSevMajor),
-		stringOf (epicsSevInvalid),
+	"NO_ALARM",
+	"MINOR",
+	"MAJOR",
+	"INVALID",
 };
 #else /*epicsAlarmGLOBAL*/
 epicsShareExtern READONLY char *epicsAlarmSeverityStrings [lastEpicsAlarmSev+1];
@@ -117,28 +117,28 @@ typedef enum {
 
 #ifdef epicsAlarmGLOBAL
 READONLY char *epicsAlarmConditionStrings [lastEpicsAlarmCond+1] = {
-		stringOf (epicsAlarmNone),
-		stringOf (epicsAlarmRead),
-		stringOf (epicsAlarmWrite),
-		stringOf (epicsAlarmHiHi),
-		stringOf (epicsAlarmHigh),
-		stringOf (epicsAlarmLoLo),
-		stringOf (epicsAlarmLow),
-		stringOf (epicsAlarmState),
-		stringOf (epicsAlarmCos),
-		stringOf (epicsAlarmComm),
-		stringOf (epicsAlarmTimeout),
-		stringOf (epicsAlarmHwLimit),
-		stringOf (epicsAlarmCalc),
-		stringOf (epicsAlarmScan),
-		stringOf (epicsAlarmLink),
-		stringOf (epicsAlarmSoft),
-		stringOf (epicsAlarmBadSub),
-		stringOf (epicsAlarmUDF),
-		stringOf (epicsAlarmDisable),
-		stringOf (epicsAlarmSimm),
-		stringOf (epicsAlarmReadAccess),
-		stringOf (epicsAlarmWriteAccess),
+	"NO_ALARM",
+	"READ",
+	"WRITE",
+	"HIHI",
+	"HIGH",
+	"LOLO",
+	"LOW",
+	"STATE",
+	"COS",
+	"COMM",
+	"TIMEOUT",
+	"HWLIMIT",
+	"CALC",
+	"SCAN",
+	"LINK",
+	"SOFT",
+	"BAD_SUB",
+	"UDF",
+	"DISABLE",
+	"SIMM",
+	"READ_ACCESS",
+	"WRITE_ACCESS",
 };
 #else /*epicsAlarmGLOBAL*/
 epicsShareExtern READONLY char *epicsAlarmConditionStrings [lastEpicsAlarmCond+1];
@@ -151,4 +151,3 @@ epicsShareExtern READONLY char *epicsAlarmConditionStrings [lastEpicsAlarmCond+1
 #endif
 
 #endif /* INCalarmh */
-

@@ -11,6 +11,14 @@
 
 /* alarmString.h - String values for alarms (Must match alarm.h)!!!!*/
 /* share/epicsH @(#)alarmString.h	1.3     11/6/90 */
+
+/* As of January 2004 (EPICS Base 3.14.5), the use of this file is
+ *
+ *                      D E P R E C A T E D
+ *
+ *         Please use the definitions in alarm.h instead.           */
+
+
 #ifndef INCalarmStringh
 #define INCalarmStringh 1
 

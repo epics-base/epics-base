@@ -111,6 +111,7 @@ static char	*pSccsId = "@(#) $Id$";
 #include <tickLib.h>
 #include <logLib.h>
 #include <selectLib.h>
+#include <semLib.h>
 #endif
 
 #include <epicsAssert.h>
@@ -151,19 +152,23 @@ typedef struct{
 }fdentry;
 
 #if defined(vxWorks)
-#	define LOCK(PFDCTX)	FASTLOCK(&(PFDCTX)->lock)
-#	define UNLOCK(PFDCTX)	FASTUNLOCK(&(PFDCTX)->lock)
+#	define LOCK(PFDCTX)	assert(semTake((PFDCTX)->lock, WAIT_FOREVER)==OK);
+#	define UNLOCK(PFDCTX)	assert(semGive((PFDCTX)->lock)==OK);
+
 #	define UNLOCK_FDMGR_PEND_EVENT(PFDCTX) \
-		FASTUNLOCK(&(PFDCTX)->fdmgr_pend_event_lock) \
-		(PFDCTX)->fdmgr_pend_event_tid = NULL;
+		{(PFDCTX)->fdmgr_pend_event_tid = NULL; \
+		assert(semGive((PFDCTX)->fdmgr_pend_event_lock)==OK);}
+
 #	define LOCK_EXPIRED(PFDCTX) \
-		FASTLOCK(&(PFDCTX)->expired_alarm_lock)
+		assert(semTake((PFDCTX)->expired_alarm_lock, WAIT_FOREVER)==OK);
 #	define UNLOCK_EXPIRED(PFDCTX) \
-		FASTUNLOCK(&(PFDCTX)->expired_alarm_lock)	
+		assert(semGive((PFDCTX)->expired_alarm_lock)==OK);
+
 #	define LOCK_FD_HANDLER(PFDCTX) \
-		FASTLOCK(&(PFDCTX)->fd_handler_lock)
+		assert(semTake((PFDCTX)->fd_handler_lock, WAIT_FOREVER)==OK);
 #	define UNLOCK_FD_HANDLER(PFDCTX) \
-		FASTUNLOCK(&(PFDCTX)->fd_handler_lock)	
+		assert(semGive((PFDCTX)->fd_handler_lock)==OK);
+
 #elif defined(UNIX) || defined(VMS) || defined(_WIN32)
 #	define LOCK(PFDCTX)
 #	define UNLOCK(PFDCTX)
@@ -224,10 +229,22 @@ fdctx *fdmgr_init(void)
 
 	pfdctx = (fdctx *) calloc(1, sizeof(fdctx));
 #	if defined(vxWorks)
-		FASTLOCKINIT(&pfdctx->lock);
-		FASTLOCKINIT(&pfdctx->fdmgr_pend_event_lock);
-		FASTLOCKINIT(&pfdctx->expired_alarm_lock);
-		FASTLOCKINIT(&pfdctx->fd_handler_lock);
+		pfdctx->lock = semMCreate (SEM_DELETE_SAFE);
+		if (pfdctx->lock == NULL){
+			return NULL;
+		}
+		pfdctx->fdmgr_pend_event_lock = semMCreate (SEM_DELETE_SAFE);
+		if (pfdctx->fdmgr_pend_event_lock == NULL){
+			return NULL;
+		}
+		pfdctx->expired_alarm_lock = semMCreate (SEM_DELETE_SAFE);
+		if (pfdctx->expired_alarm_lock == NULL) {
+			return NULL;
+		}
+		pfdctx->fd_handler_lock = semMCreate (SEM_DELETE_SAFE);
+		if (pfdctx->fd_handler_lock == NULL) {
+			return NULL;
+		}
 		pfdctx->clk_rate = sysClkRateGet();
 		pfdctx->last_tick_count = tickGet();
 #	endif
@@ -239,7 +256,7 @@ fdctx *fdmgr_init(void)
 	ellInit(&pfdctx->free_alarm_list);
 
 	/*
- 	 * returns NULL if unsuccessfull
+ 	 * returns NULL if unsuccessful
 	 */
 	return pfdctx;
 }
@@ -252,16 +269,29 @@ fdctx *fdmgr_init(void)
  */
 int fdmgr_delete(fdctx *pfdctx)
 {
+	int	status;
+
 	if(!pfdctx){
 		return ERROR;
 	}
 
 #	if defined(vxWorks)
-		FASTLOCKFREE(&pfdctx->lock);
-		FASTLOCKFREE(&pfdctx->fdmgr_pend_event_lock);
-		FASTLOCKFREE(&pfdctx->expired_alarm_lock);
-		FASTLOCKFREE(&pfdctx->fd_handler_lock);
+		status = semDelete (pfdctx->lock);
+		assert (status == OK);
+		status = semDelete (pfdctx->fdmgr_pend_event_lock);
+		assert (status == OK);
+		status = semDelete (pfdctx->expired_alarm_lock);
+		assert (status == OK);
+		status = semDelete (pfdctx->fd_handler_lock);
+		assert (status == OK);
 #	endif
+
+	ellFree(&pfdctx->fdentry_list);
+	ellFree(&pfdctx->fdentry_in_use_list);
+	ellFree(&pfdctx->fdentry_free_list);
+	ellFree(&pfdctx->alarm_list);
+	ellFree(&pfdctx->expired_alarm_list);
+	ellFree(&pfdctx->free_alarm_list);
 
 	return OK;
 }
@@ -334,7 +364,7 @@ void		*param
 		}
 	}
 	if(pa){
-	ellInsert(&pfdctx->alarm_list, pa->node.previous, &palarm->node);
+		ellInsert(&pfdctx->alarm_list, pa->node.previous, &palarm->node);
 	}
 	else{
 		ellAdd(&pfdctx->alarm_list, &palarm->node);
@@ -421,7 +451,7 @@ fdmgrAlarm		*palarm
  *
  *	fdmgr_add_fd()
  *
- *	this rouitine is supplied solely for compatibility	
+ *	this routine is supplied solely for compatibility	
  *	with earlier versions of this software
  */
 int fdmgr_add_fd(
@@ -574,10 +604,14 @@ enum fdi_type	fdi
 	/*
 	 * wait for it to finish if it is in progress
 	 * when running in a multithreaded environment
+	 *
+	 * Taking the lock here guarantees that if the 
+	 * event we are deleting is in progress then
+	 * we will wait for it to complete prior to
+	 * proceeding
 	 */
 #	ifdef vxWorks
 		if(delete_pending == TRUE){
-@@@@ review all of this delete pending stuff
 			LOCK_FD_HANDLER(pfdctx);
 			UNLOCK_FD_HANDLER(pfdctx);
 		}
@@ -777,6 +811,9 @@ struct timeval 			*ptimeout
 
 			/*
 			 * sync with clear
+			 *
+			 * This allows the clearing thread to wait 
+			 * until the event that it is clearing completes
 			 */
 			LOCK_FD_HANDLER(pfdctx);
 
@@ -860,12 +897,6 @@ struct timeval	*poffset
  	 * the alarm queue).
 	 */
 	/*
- 	 * no need to lock here since this list is only touched
-	 * by this routine, this routine is not exported
-	 * and I am only allowing one thread in fdmgr_pend_event()
-	 * at at time.
-	 */
-	/*
 	 * I dont want the primary LOCK to be applied while in their
  	 * alarm handler as this would prevent them from
 	 * calling fdmgr routines from within a handler
@@ -878,7 +909,7 @@ struct timeval	*poffset
 	LOCK_EXPIRED(pfdctx);
 	pa = (fdmgrAlarm*) pfdctx->expired_alarm_list.node.next;
 	while(pa){
-		void	(*pfunc)();
+		void	(*pfunc)(void *pParam);
 
 		/*
 		 * check to see if it has been disabled 
@@ -1019,7 +1050,7 @@ struct timeval	*pt
 LOCAL void lockFDMGRPendEvent (fdctx *pfdctx)
 {
 #	if defined(vxWorks)
-		FASTLOCK(&pfdctx->fdmgr_pend_event_lock); 
+		assert(semTake (pfdctx->fdmgr_pend_event_lock, WAIT_FOREVER)==OK); 
 		pfdctx->fdmgr_pend_event_tid = taskIdCurrent;
 #	else
 		assert (pfdctx->fdmgr_pend_event_in_use==0); 

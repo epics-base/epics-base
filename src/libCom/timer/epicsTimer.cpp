@@ -50,13 +50,13 @@ private:
 
 class epicsTimerQueueNotifyForC : public epicsTimerQueueNotify {
 public:
-    epicsTimerQueueNotifyForC ( epicsTimerQueueReschedualCallback pCallback, void *pPrivate );
+    epicsTimerQueueNotifyForC ( epicsTimerQueueRescheduleCallback pCallback, void *pPrivate );
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
 protected:
     virtual ~epicsTimerQueueNotifyForC ();
 private:
-    epicsTimerQueueReschedualCallback pCallback;
+    epicsTimerQueueRescheduleCallback pCallback;
     void *pPrivate;
     void reschedule ();
     static tsFreeList < epicsTimerQueueNotifyForC > freeList;
@@ -98,7 +98,7 @@ inline void epicsTimerQueueNotifyForC::operator delete ( void *pCadaver, size_t 
 }
 
 
-epicsTimerQueueNotifyForC::epicsTimerQueueNotifyForC ( epicsTimerQueueReschedualCallback pCallbackIn, void *pPrivateIn ) :
+epicsTimerQueueNotifyForC::epicsTimerQueueNotifyForC ( epicsTimerQueueRescheduleCallback pCallbackIn, void *pPrivateIn ) :
     pCallback ( pCallbackIn ), pPrivate ( pPrivateIn ) {}
 
 epicsTimerQueueNotifyForC::~epicsTimerQueueNotifyForC () {}
@@ -109,7 +109,7 @@ void epicsTimerQueueNotifyForC::reschedule ()
 }
 
 extern "C" epicsTimerQueueNonThreadedId epicsShareAPI
-    epicsTimerQueueNonThreadedCreate ( epicsTimerQueueReschedualCallback pCallbackIn, void *pPrivateIn )
+    epicsTimerQueueNonThreadedCreate ( epicsTimerQueueRescheduleCallback pCallbackIn, void *pPrivateIn )
 {
     try {
         epicsTimerQueueNotifyForC *pNotify = new epicsTimerQueueNotifyForC ( pCallbackIn, pPrivateIn );

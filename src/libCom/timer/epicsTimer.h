@@ -115,9 +115,9 @@ epicsShareFunc void  epicsShareAPI
 
 /* non-threaded timer queue management */
 typedef struct epicsTimerQueueNonThreaded * epicsTimerQueueNonThreadedId;
-typedef void ( *epicsTimerQueueReschedualCallback ) ( void *pPrivate );
+typedef void ( *epicsTimerQueueRescheduleCallback ) ( void *pPrivate );
 epicsShareFunc epicsTimerQueueNonThreadedId epicsShareAPI
-    epicsTimerQueueNonThreadedCreate ( epicsTimerQueueReschedualCallback, void *pPrivate );
+    epicsTimerQueueNonThreadedCreate ( epicsTimerQueueRescheduleCallback, void *pPrivate );
 epicsShareFunc void epicsShareAPI 
     epicsTimerQueueNonThreadedDestroy ( epicsTimerQueueNonThreadedId );
 epicsShareFunc void epicsShareAPI 

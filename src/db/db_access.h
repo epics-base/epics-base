@@ -1175,7 +1175,7 @@ union db_access_val{
 	"DBR_PUT_ACKS",
 	"DBR_STSACK_STRING",
     };
-    READONLY char * READONLY dbr_text_invalid = "DBR_invalid";
+    READONLY char * dbr_text_invalid = "DBR_invalid";
     READONLY short   dbr_text_dim = (sizeof dbr_text)/(sizeof (char *));
 #endif
 

@@ -47,7 +47,6 @@ public:
     void initiatePutNotify ( epicsMutex &mutex, cacWriteNotify &notify, struct dbAddr &addr, 
             unsigned type, unsigned long count, const void *pValue );
     void cancel ();
-    void completion ();
     void show ( unsigned level ) const;
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
@@ -113,7 +112,6 @@ public:
             cacReadNotify &notify );
     void callStateNotify ( unsigned type, unsigned long count, 
             const struct db_field_log *pfl, cacStateNotify &notify );
-    void putNotifyCompletion ( dbPutNotifyBlocker & ); 
     void show ( unsigned level ) const;
     void * operator new ( size_t size);
     void operator delete ( void *pCadaver, size_t size );
@@ -156,7 +154,6 @@ public:
     void initiatePutNotify ( dbChannelIO &, struct dbAddr &, unsigned type, 
         unsigned long count, const void *pValue, cacWriteNotify &notify, 
         cacChannel::ioid *pId ); 
-    void putNotifyCompletion ( dbPutNotifyBlocker & ); 
     void show ( unsigned level ) const;
     void showAllIO ( const dbChannelIO &chan, unsigned level ) const;
     void destroyAllIO ( dbChannelIO & chan );

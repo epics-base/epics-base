@@ -83,11 +83,6 @@ cacChannel::ioStatus dbChannelIO::write ( unsigned type, unsigned long count,
     return iosAsynch;
 }
 
-void dbChannelIO::putNotifyCompletion ( dbPutNotifyBlocker &blocker )
-{
-    this->serviceIO.putNotifyCompletion ( blocker );
-}
-
 void dbChannelIO::subscribe ( unsigned type, unsigned long count, 
     unsigned mask, cacStateNotify &notify, ioid *pId ) 
 {   

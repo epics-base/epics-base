@@ -255,12 +255,6 @@ void dbServiceIO::initiatePutNotify ( dbChannelIO &chan, struct dbAddr &addr,
     }
 }
 
-void dbServiceIO::putNotifyCompletion ( dbPutNotifyBlocker &blocker )
-{
-    epicsAutoMutex locker ( this->mutex );
-    blocker.completion ();
-}
-
 void dbServiceIO::destroyAllIO ( dbChannelIO & chan )
 {
     dbSubscriptionIO *pIO;

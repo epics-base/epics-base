@@ -88,19 +88,12 @@ extern "C" void putNotifyCompletion ( putNotify *ppn )
         }
     }
     else {
-        errlogPrintf ( "put notify completion pNotify = %p?\n", pBlocker->pNotify );
+        errlogPrintf ( "put notify completion with nill pNotify?\n" );
     }
+    // no need to lock here because only one put notify at a timeis lalowed to run
     memset ( &pBlocker->pn, '\0', sizeof ( pBlocker->pn ) );
     pBlocker->pNotify = 0;
     pBlocker->block.signal ();
-    pBlocker->chan.putNotifyCompletion ( *pBlocker );
-}
-
-void dbPutNotifyBlocker::completion ()
-{
-    memset ( &this->pn, '\0', sizeof ( this->pn ) );
-    this->pNotify = 0;
-    this->block.signal ();
 }
 
 void dbPutNotifyBlocker::initiatePutNotify ( epicsMutex &mutex, cacWriteNotify &notify, 

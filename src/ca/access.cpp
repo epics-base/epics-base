@@ -691,8 +691,13 @@ int epicsShareAPI ca_create_subscription (
 
     try {
         epicsGuard < epicsMutex > guard ( pChan->getClientCtx().mutex );
-        pChan->eliminateExcessiveSendBacklog ( 
-            pChan->getClientCtx().pCallbackGuard.get(), guard );
+        try {
+            pChan->eliminateExcessiveSendBacklog ( 
+                pChan->getClientCtx().pCallbackGuard.get(), guard );
+        }
+        catch ( cacChannel::notConnected & ) {
+            // intentionally ignored
+        }
         autoPtrFreeList < oldSubscription, 0x400, epicsMutexNOOP > pSubsr
             ( pChan->getClientCtx().subscriptionFreeList,
                 new ( pChan->getClientCtx().subscriptionFreeList )
@@ -757,18 +762,13 @@ epicsShareFunc int epicsShareAPI ca_clear_subscription ( evid pMon )
 {
     oldChannelNotify & chan = pMon->channel ();
     ca_client_context & cac = chan.getClientCtx ();
-    if ( cac.pCallbackGuard.get() ) {
-        epicsGuard < epicsMutex > guard ( cac.mutex );
-        chan.eliminateExcessiveSendBacklog ( 
-            cac.pCallbackGuard.get(), guard );
-        pMon->ioCancel ( *cac.pCallbackGuard, guard );
+    epicsGuard < epicsMutex > * pCBGuard = cac.pCallbackGuard.get();
+    if ( pCBGuard ) {
+        cac.clearSubscriptionPrivate ( pMon, *pCBGuard );
     }
     else {
         epicsGuard < epicsMutex > cbGuard ( cac.cbMutex );
-        epicsGuard < epicsMutex > guard ( cac.mutex );
-        chan.eliminateExcessiveSendBacklog ( 
-            &cbGuard, guard );
-        pMon->ioCancel ( cbGuard, guard );
+        cac.clearSubscriptionPrivate ( pMon, cbGuard );
     }
     return ECA_NORMAL;
 }

@@ -11,6 +11,9 @@
 /*	-------								*/
 /*	.00 06xx89 joh	Init Release					*/
 /*	.01 060591 joh	delinting					*/
+/*	.02 031892 joh	initial broadcast retry delay is now a #define	*/
+/*	.03 031992 joh	reset the iiu delay if the current time 	*/
+/*			is specified					*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -64,6 +67,11 @@ char			silent;
 
   	for(i=0; i< nxtiiu; i++){
   		int	search_type;
+
+		if(iiu[i].next_retry == CA_CURRENT_TIME){
+			iiu[i].next_retry = current + iiu[i].retry_delay;
+			continue;
+		}
 
 		if(iiu[i].next_retry > current)
 			continue;
@@ -172,7 +180,7 @@ struct in_addr  *pnet_addr;
 				 */
 				iiu[i].next_retry = CA_CURRENT_TIME;
       				iiu[i].nconn_tries = 0;
-				iiu[i].retry_delay = 1;
+				iiu[i].retry_delay = CA_RECAST_DELAY;
 				manage_conn(TRUE);
 			}
       			return;
@@ -217,8 +225,10 @@ struct in_addr  *pnet_addr;
 		port = saddr.sin_port;
 	}
 
-	iiu[BROADCAST_IIU].retry_delay = (port&0xf) + 1;
-	iiu[BROADCAST_IIU].next_retry = time(NULL) + iiu[BROADCAST_IIU].retry_delay;
+	iiu[BROADCAST_IIU].retry_delay = 
+		(port&0xf) + CA_RECAST_DELAY;
+	iiu[BROADCAST_IIU].next_retry = 
+		time(NULL) + iiu[BROADCAST_IIU].retry_delay;
 #ifdef DEBUG
 	printf("<Trying ukn online after pseudo random delay=%d sec> ",
 		iiu[BROADCAST_IIU].retry_delay);

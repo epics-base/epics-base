@@ -28,32 +28,39 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
+ * .01  07-26-91	mrk	Major cleanup
  */
 
 #include        <db_access.h>
+
 
 /* function declarations */
 static print_returned();
 
 
-/*
- * TGF
- * Test get field
- */
-char		tgf_buffer[1200];
-#define		MAX_ELEMS	250
-int gft(name,index)
-char		*name;
-register short	index;
+char		tgf_buffer[600];
+#define		MAX_ELEMS	50
+int gft(pname,index)
+char		*pname;
+short	index;
 {
 	struct  db_addr	addr;
 	struct  db_addr	*paddr = &addr;
 	short		number_elements;
+	int	i;
+	int status;
 
+	if (pname==0 || ((*pname < ' ') || (*pname > 'z'))) {
+		printf("\nusage \"pv name\"\n");
+		return;
+	}
 	/* convert name to database address */
-	db_name_to_addr(name,&addr,index);
-	
+	status=db_name_to_addr(pname,&addr,index);
+	if(status) {
+		printf("db_name_to_addr failed\n");
+		return(1);
+	}
+	printf("   Record Name: %s\n",pname);
 	printf("   Record Type: %d\n",addr.record_type);
 	printf("Record Address: 0x%x\n",addr.precord);
 	printf("    Field Type: %d\n",addr.field_type);
@@ -63,107 +70,19 @@ register short	index;
 	number_elements =
 		((addr.no_elements > MAX_ELEMS)?MAX_ELEMS:addr.no_elements);
 
-	/* failedfetch as each type */
-	if (db_get_field(paddr,DBR_STRING,tgf_buffer,1) < 0)
-	    printf("\n\tDBR_STRING failed");
-	else print_returned(DBR_STRING,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_SHORT,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_SHORT failed");
-	else print_returned(DBR_SHORT,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_FLOAT,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_FLOAT failed");
-	else print_returned(DBR_FLOAT,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_ENUM,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_ENUM failed");
-	else print_returned(DBR_ENUM,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_CHAR,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_CHAR failed");
-	else print_returned(DBR_CHAR,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_LONG,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_LONG failed");
-	else print_returned(DBR_LONG,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_DOUBLE,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_DOUBLE failed");
-	else print_returned(DBR_DOUBLE,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_STS_STRING,tgf_buffer,1) < 0)
-	    printf("\n\tDBR_STS_STRING failed");
-	else print_returned(DBR_STS_STRING,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_STS_SHORT,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_STS_SHORT failed");
-	else print_returned(DBR_STS_SHORT,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_STS_FLOAT,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_STS_FLOAT failed");
-	else print_returned(DBR_STS_FLOAT,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_STS_ENUM,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_STS_ENUM failed");
-	else print_returned(DBR_STS_ENUM,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_STS_CHAR,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_STS_CHAR failed");
-	else print_returned(DBR_STS_CHAR,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_STS_LONG,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_STS_LONG failed");
-	else print_returned(DBR_STS_LONG,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_STS_DOUBLE,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_STS_DOUBLE failed");
-	else print_returned(DBR_STS_DOUBLE,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_TIME_STRING,tgf_buffer,1) < 0)
-	    printf("\n\tDBR_TIME_STRING failed");
-	else print_returned(DBR_TIME_STRING,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_TIME_SHORT,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_TIME_SHORT failed");
-	else print_returned(DBR_TIME_SHORT,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_TIME_FLOAT,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_TIME_FLOAT failed");
-	else print_returned(DBR_TIME_FLOAT,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_TIME_ENUM,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_TIME_ENUM failed");
-	else print_returned(DBR_TIME_ENUM,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_TIME_CHAR,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_TIME_CHAR failed");
-	else print_returned(DBR_TIME_CHAR,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_TIME_LONG,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_TIME_LONG failed");
-	else print_returned(DBR_TIME_LONG,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_TIME_DOUBLE,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_TIME_DOUBLE failed");
-	else print_returned(DBR_TIME_DOUBLE,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_GR_STRING,tgf_buffer,1) < 0)
-	    printf("\n\tDBR_GR_STRING failed");
-	else print_returned(DBR_GR_STRING,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_GR_SHORT,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_GR_SHORT failed");
-	else print_returned(DBR_GR_SHORT,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_GR_FLOAT,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_GR_FLOAT failed");
-	else print_returned(DBR_GR_FLOAT,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_GR_ENUM,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_GR_ENUM failed");
-	else print_returned(DBR_GR_ENUM,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_GR_CHAR,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_GR_CHAR failed");
-	else print_returned(DBR_GR_CHAR,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_GR_LONG,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_GR_LONG failed");
-	else print_returned(DBR_GR_LONG,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_GR_DOUBLE,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_GR_DOUBLE failed");
-	else print_returned(DBR_GR_DOUBLE,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_CTRL_SHORT,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_CTRL_SHORT failed");
-	else print_returned(DBR_CTRL_SHORT,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_CTRL_FLOAT,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_CTRL_FLOAT failed");
-	else print_returned(DBR_CTRL_FLOAT,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_CTRL_CHAR,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_CTRL_CHAR failed");
-	else print_returned(DBR_CTRL_CHAR,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_CTRL_LONG,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_CTRL_LONG failed");
-	else print_returned(DBR_CTRL_LONG,tgf_buffer,number_elements);
-	if (db_get_field(paddr,DBR_CTRL_DOUBLE,tgf_buffer,number_elements) < 0)
-	    printf("\n\tDBR_CTRL_DOUBLE failed");
-	else print_returned(DBR_CTRL_DOUBLE,tgf_buffer,number_elements);
-	printf("\n");
+	for(i=0; i<=LAST_BUFFER_TYPE; i++) {
+		if(addr.field_type==0) {
+			if( (i!=DBR_STRING)
+			 && (i!=DBR_STS_STRING)
+			 && (i!=DBR_TIME_STRING)
+			 && (i!=DBR_GR_STRING)
+			 && (i!=DBR_CTRL_STRING)) continue;
+		}
+		if(db_get_field(paddr,i,tgf_buffer,number_elements,0)<0)
+			printf("\t%s Failed\n",dbr_text[i]);
+		else
+			print_returned(i,tgf_buffer,number_elements);
+	}
 	return(0);
 }
 
@@ -174,27 +93,36 @@ register short	index;
 int pft(pname,pvalue,index)
 char		*pname;
 char		*pvalue;
-register short	index;
+short	index;
 {
 	struct db_addr		addr;
 	struct db_addr		*paddr = &addr;
 	char			buffer[500];
 	struct dbr_ctrl_enum	test_enum;
-	register short		i;
+	short			i;
 	short			shortvalue;
 	long			longvalue;
 	float			floatvalue;
 	unsigned char		charvalue;
 	double			doublevalue;
+	int status;
 
-	if (((*pname < ' ') || (*pname > 'z'))
+	if (pname==0 || pvalue==0
+	  || ((*pname < ' ') || (*pname > 'z'))
 	  || ((*pvalue < ' ') || (*pvalue > 'z'))){
 		printf("\nusage \"pv name\",\"value\"\n");
 		return;
 	}
 
 	/* convert name to database address */
-	db_name_to_addr(pname,&addr,index);
+
+	/* convert name to database address */
+	status=db_name_to_addr(pname,&addr,index);
+	if(status) {
+		printf("db_name_to_addr failed\n");
+		return(1);
+	}
+	printf("   Record Name: %s\n",pname);
 	printf("   Record Type: %d\n",addr.record_type);
 	printf("Record Address: 0x%x\n",addr.precord);
 	printf("    Field Type: %d\n",addr.field_type);
@@ -204,7 +132,7 @@ register short	index;
 	if (db_put_field(paddr,DBR_STRING,pvalue,1) < 0) printf("\n\t failed ");
 	if (db_get_field(paddr,DBR_STRING,buffer,1) < 0) printf("\n\tfailed");
 	else print_returned(DBR_STRING,buffer,1);
-	if(addr.field_type<=DBF_STRING || addr.field_type>=DBF_NO_ACCESS)
+	if(addr.field_type<=DBF_STRING)
 	  return(0);
 	if(sscanf(pvalue,"%hd",&shortvalue)==1) {
 	  if (db_put_field(paddr,DBR_SHORT,&shortvalue,1) < 0) 
@@ -260,71 +188,62 @@ register short	index;
  * print out the values in a database access interface structure
  */
 static print_returned(type,pbuffer,count)
-  register short	type;
-  register char	*pbuffer;
+  short	type;
+  char	*pbuffer;
   short		count;
 {
-    register short i;
+    short i;
 
+    printf("%s\t",dbr_text[type]);
     switch(type){
 	case (DBR_STRING):
-		printf("\n\tDBR_STRING Value: %s",pbuffer);
+		printf("%s\t",pbuffer);
 		break;
 	case (DBR_SHORT):
+	case (DBR_ENUM):
 	{
-		register short *pvalue = (short *)pbuffer;
-		printf("\n\tDBR_SHORT ");
+		short *pvalue = (short *)pbuffer;
 		for (i = 0; i < count; i++,pvalue++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
 			printf("%d ",*(short *)pvalue);
-			if ((i % 16) == 15) printf("\n\t");
 		}
 		break;
 	}
 	case (DBR_FLOAT):
 	{
-		register float *pvalue = (float *)pbuffer;
-		printf("\n\tDBR_FLOAT ");
+		float *pvalue = (float *)pbuffer;
 		for (i = 0; i < count; i++,pvalue++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
 			printf("%6.4f ",*(float *)pvalue);
-			if ((i % 16) == 15) printf("\n\t");
 		}
-		break;
-	}
-	case (DBR_ENUM):
-	{
-		register short *pvalue = (short *)pbuffer;
-		printf("\n\tDBR_ENUM  %d",*pvalue);
 		break;
 	}
 	case (DBR_CHAR):
 	{
 		int	value;
 
-		printf("\n\tDBR_CHAR ");
 		for (i = 0; i < count; i++,pbuffer++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
 			value = *(unsigned char *)pbuffer;
 			printf("%d ",value);
-			if ((i % 16) == 15) printf("\n\t");
 		}
 		break;
 	}
 	case (DBR_LONG):
 	{
-		register long *pvalue = (long *)pbuffer;
-		printf("\n\tDBR_LONG ");
+		long *pvalue = (long *)pbuffer;
 		for (i = 0; i < count; i++,pvalue++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
 			printf("0x%x ",*pvalue);
-			if ((i % 16) == 15) printf("\n\t");
 		}
 		break;
 	}
 	case (DBR_DOUBLE):
 	{
-		register double *pvalue = (double *)pbuffer;
-		printf("\n\tDBR_DOUBLE ");
+		double *pvalue = (double *)pbuffer;
 		for (i = 0; i < count; i++,pvalue++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
 			printf("%6.4f ",(float)(*pvalue));
-			if ((i % 16) == 15) printf("\n\t");
 		}
 		break;
 	}
@@ -332,406 +251,385 @@ static print_returned(type,pbuffer,count)
 	case (DBR_GR_STRING):
 	case (DBR_CTRL_STRING):
 	{
-		register struct dbr_sts_string *pvalue 
+		struct dbr_sts_string *pvalue 
 		  = (struct dbr_sts_string *) pbuffer;
-		printf("\n\tDBR_STS_STRING %2d %2d",pvalue->status,
-			pvalue->severity);
+		printf("%2d %2d",pvalue->status,pvalue->severity);
 		printf("\tValue: %s",pvalue->value);
 		break;
 	}
+	case (DBR_STS_ENUM):
 	case (DBR_STS_SHORT):
 	{
-		register struct dbr_sts_short *pvalue
+		struct dbr_sts_short *pvalue
 		  = (struct dbr_sts_short *)pbuffer;
-		register short *pshort = &pvalue->value;
-		printf("\n\tDBR_STS_SHORT %2d %2d",pvalue->status,
-			pvalue->severity);
-		printf("\tValue: ");
+		short *pshort = &pvalue->value;
+		printf("%2d %2d",pvalue->status,pvalue->severity);
+		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,pshort++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
 			printf("%d ",*pshort);
-			if ((i % 16) == 15) printf("\n\t");
 		}
 		break;
 	}
 	case (DBR_STS_FLOAT):
 	{
-		register struct dbr_sts_float *pvalue
+		struct dbr_sts_float *pvalue
 		  = (struct dbr_sts_float *)pbuffer;
-		register float *pfloat = &pvalue->value;
-		printf("\n\tDBR_STS_FLOAT %2d %2d",pvalue->status,
-			pvalue->severity);
-		printf("\tValue: ");
+		float *pfloat = &pvalue->value;
+		printf("%2d %2d",pvalue->status,pvalue->severity);
+		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,pfloat++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
 			printf("%6.4f ",*pfloat);
-			if ((i % 16) == 15) printf("\n\t");
 		}
-		break;
-	}
-	case (DBR_STS_ENUM):
-	{
-		register struct dbr_sts_enum *pvalue
-		  = (struct dbr_sts_enum *)pbuffer;
-		printf("\n\tDBR_STS_ENUM %2d %2d",pvalue->status,
-			pvalue->severity);
-		printf("\tValue: %d",pvalue->value);
 		break;
 	}
 	case (DBR_STS_CHAR):
 	{
-		register struct dbr_sts_char *pvalue
+		struct dbr_sts_char *pvalue
 		  = (struct dbr_sts_char *)pbuffer;
-		register unsigned char *pchar = &pvalue->value;
+		unsigned char *pchar = &pvalue->value;
 		short value;
 
-		printf("\n\tDBR_STS_CHAR %2d %2d",pvalue->status,
-			pvalue->severity);
-		printf("\tValue: ");
+		printf("%2d %2d",pvalue->status,pvalue->severity);
+		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,pchar++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
 			value=*pchar;
 			printf("%d ",value);
-			if ((i % 16) == 15) printf("\n\t");
 		}
 		break;
 	}
 	case (DBR_STS_LONG):
 	{
-		register struct dbr_sts_long *pvalue
+		struct dbr_sts_long *pvalue
 		  = (struct dbr_sts_long *)pbuffer;
-		register long *plong = &pvalue->value;
-		printf("\n\tDBR_STS_LONG %2d %2d",pvalue->status,
-			pvalue->severity);
-		printf("\tValue: ");
+		long *plong = &pvalue->value;
+		printf("%2d %2d",pvalue->status,pvalue->severity);
+		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,plong++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
 			printf("0x%lx ",*plong);
-			if ((i % 16) == 15) printf("\n\t");
 		}
 		break;
 	}
 	case (DBR_STS_DOUBLE):
 	{
-		register struct dbr_sts_double *pvalue
+		struct dbr_sts_double *pvalue
 		  = (struct dbr_sts_double *)pbuffer;
-		register double *pdouble = &pvalue->value;
-		printf("\n\tDBR_STS_DOUBLE %2d %2d",pvalue->status,
-			pvalue->severity);
-		printf("\tValue: ");
+		double *pdouble = &pvalue->value;
+		printf("%2d %2d",pvalue->status,pvalue->severity);
+		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,pdouble++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
 			printf("%6.4f ",(float)(*pdouble));
-			if ((i % 16) == 15) printf("\n\t");
 		}
 		break;
 	}
 	case (DBR_TIME_STRING):
 	{
-		register struct dbr_time_string *pvalue 
+		struct dbr_time_string *pvalue 
 		  = (struct dbr_time_string *) pbuffer;
-		printf("\n\tDBR_TIME_STRING %2d %2d",pvalue->status,
-			pvalue->severity);
-		printf("\n\tTimeStamp: %lx %lx \n\tValue: ",
+		printf("%2d %2d",pvalue->status,pvalue->severity);
+		printf("\tTimeStamp: %lx %lx",
 			pvalue->stamp.secPastEpoch, pvalue->stamp.nsec);
-		printf("%s\n\t",pvalue->value);
+		printf("\tValue: ");
+		printf("%s",pvalue->value);
 		break;
 	}
 	case (DBR_TIME_SHORT):
+	case (DBR_TIME_ENUM):
 	{
-		register struct dbr_time_short *pvalue
+		struct dbr_time_short *pvalue
 		  = (struct dbr_time_short *)pbuffer;
-		register short *pshort = &pvalue->value;
-		printf("\n\tDBR_TIME_SHORT %2d %2d",pvalue->status,
-			pvalue->severity);
-		printf("\tTimeStamp: %lx %lx \n\tValue: ",
+		short *pshort = &pvalue->value;
+		printf("%2d %2d",pvalue->status,pvalue->severity);
+		printf("\tTimeStamp: %lx %lx",
 			pvalue->stamp.secPastEpoch, pvalue->stamp.nsec);
+		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,pshort++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
 			printf("%d ",*pshort);
-			if ((i % 16) == 15) printf("\n\t");
 		}
 		break;
 	}
 	case (DBR_TIME_FLOAT):
 	{
-		register struct dbr_time_float *pvalue
+		struct dbr_time_float *pvalue
 		  = (struct dbr_time_float *)pbuffer;
-		register float *pfloat = &pvalue->value;
-		printf("\n\tDBR_TIME_FLOAT %2d %2d",pvalue->status,
-			pvalue->severity);
-		printf("\tTimeStamp: %lx %lx \n\tValue: ",
+		float *pfloat = &pvalue->value;
+		printf("%2d %2d",pvalue->status,pvalue->severity);
+		printf("\tTimeStamp: %lx %lx",
 			pvalue->stamp.secPastEpoch, pvalue->stamp.nsec);
+		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,pfloat++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
 			printf("%6.4f ",*pfloat);
-			if ((i % 16) == 15) printf("\n\t");
 		}
-		break;
-	}
-	case (DBR_TIME_ENUM):
-	{
-		register struct dbr_time_enum *pvalue
-		  = (struct dbr_time_enum *)pbuffer;
-		printf("\n\tDBR_TIME_ENUM %2d %2d",pvalue->status,
-			pvalue->severity);
-		printf("\tTimeStamp: %lx %lx \n\tValue: ",
-			pvalue->stamp.secPastEpoch, pvalue->stamp.nsec);
-		printf("%d\n\t",pvalue->value);
 		break;
 	}
 	case (DBR_TIME_CHAR):
 	{
-		register struct dbr_time_char *pvalue
+		struct dbr_time_char *pvalue
 		  = (struct dbr_time_char *)pbuffer;
-		register unsigned char *pchar = &pvalue->value;
-		printf("\n\tDBR_TIME_CHAR %2d %2d",pvalue->status,
-			pvalue->severity);
-		printf("\tTimeStamp: %lx %lx \n\tValue: ",
+		unsigned char *pchar = &pvalue->value;
+		printf("%2d %2d",pvalue->status,pvalue->severity);
+		printf("\tTimeStamp: %lx %lx",
 			pvalue->stamp.secPastEpoch, pvalue->stamp.nsec);
+		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,pchar++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
 			printf("%d ",(short)(*pchar));
-			if ((i % 16) == 15) printf("\n\t");
 		}
 		break;
 	}
 	case (DBR_TIME_LONG):
 	{
-		register struct dbr_time_long *pvalue
+		struct dbr_time_long *pvalue
 		  = (struct dbr_time_long *)pbuffer;
-		register long *plong = &pvalue->value;
-		printf("\n\tDBR_TIME_LONG %2d %2d",pvalue->status,
-			pvalue->severity);
-		printf("\tTimeStamp: %lx %lx \n\tValue: ",
+		long *plong = &pvalue->value;
+		printf("%2d %2d",pvalue->status,pvalue->severity);
+		printf("\tTimeStamp: %lx %lx",
 			pvalue->stamp.secPastEpoch, pvalue->stamp.nsec);
+		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,plong++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
 			printf("0x%lx ",*plong);
-			if ((i % 16) == 15) printf("\n\t");
 		}
 		break;
 	}
 	case (DBR_TIME_DOUBLE):
 	{
-		register struct dbr_time_double *pvalue
+		struct dbr_time_double *pvalue
 		  = (struct dbr_time_double *)pbuffer;
-		register double *pdouble = &pvalue->value;
-		printf("\n\tDBR_TIME_DOUBLE %2d %2d",pvalue->status,
-			pvalue->severity);
-		printf("\tTimeStamp: %lx %lx \n\tValue: ",
+		double *pdouble = &pvalue->value;
+		printf("%2d %2d",pvalue->status,pvalue->severity);
+		printf("\tTimeStamp: %lx %lx",
 			pvalue->stamp.secPastEpoch, pvalue->stamp.nsec);
+		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,pdouble++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
 			printf("%6.4f ",(float)(*pdouble));
-			if ((i % 16) == 15) printf("\n\t");
 		}
 		break;
 	}
 	case (DBR_GR_SHORT):
 	{
-		register struct dbr_gr_short *pvalue
+		struct dbr_gr_short *pvalue
 		  = (struct dbr_gr_short *)pbuffer;
-		register short *pshort = &pvalue->value;
-		printf("\n\tDBR_GR_SHORT %2d %2d",pvalue->status,
-			pvalue->severity);
-		printf(" %.8s %6d %6d %6d %6d %6d %6d",pvalue->units,
+		short *pshort = &pvalue->value;
+		printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
+			pvalue->units);
+		printf("\n\t%8d %8d %8d %8d %8d %8d",
 		  pvalue->upper_disp_limit,pvalue->lower_disp_limit,
 		  pvalue->upper_alarm_limit,pvalue->upper_warning_limit,
 		  pvalue->lower_warning_limit,pvalue->lower_alarm_limit);
-		printf("\n\tValue: ");
+		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,pshort++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
 			printf("%d ",*pshort);
-			if ((i % 16) == 15) printf("\n\t");
 		}
 		break;
 	}
 	case (DBR_GR_FLOAT):
 	{
-		register struct dbr_gr_float *pvalue
+		struct dbr_gr_float *pvalue
 		  = (struct dbr_gr_float *)pbuffer;
-		register float *pfloat = &pvalue->value;
-		printf("\n\tDBR_GR_FLOAT%2d %2d",pvalue->status,
-			pvalue->severity);
-		printf(" %3d %.8s\n\t%6.4f %6.4f %6.4f %6.4f %6.4f %6.4f",
-		  pvalue->precision, pvalue->units,
+		float *pfloat = &pvalue->value;
+		printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
+			pvalue->units);
+		printf(" %3d\n\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f",
+		  pvalue->precision,
 		  pvalue->upper_disp_limit,pvalue->lower_disp_limit,
 		  pvalue->upper_alarm_limit,pvalue->upper_warning_limit,
 		  pvalue->lower_warning_limit,pvalue->lower_alarm_limit);
-		printf("\n\tValue: ");
+		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,pfloat++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
 			printf("%6.4f ",*pfloat);
-			if ((i % 16) == 15) printf("\n\t");
 		}
 		break;
 	}
 	case (DBR_GR_ENUM):
 	case (DBR_CTRL_ENUM):
 	{
-		register struct dbr_gr_enum *pvalue
+		struct dbr_gr_enum *pvalue
 		  = (struct dbr_gr_enum *)pbuffer;
-		printf("\n\tDBR_GR_ENUM%2d %2d",pvalue->status,
+		printf("%2d %2d",pvalue->status,
 			pvalue->severity);
-		printf("\n\t%3d",pvalue->no_str);
-		for (i = 0; i < pvalue->no_str; i++)
-			printf("\n\t%.26s",pvalue->strs[i]);
-		printf("\n\tValue: %d",pvalue->value);
+		printf("\tValue: %d",pvalue->value);
+		if(pvalue->no_str>0) {
+			printf("\n\t%3d",pvalue->no_str);
+			for (i = 0; i < pvalue->no_str; i++)
+				printf("\n\t%.26s",pvalue->strs[i]);
+		}
 		break;
 	}
 	case (DBR_GR_CHAR):
 	{
-		register struct dbr_gr_char *pvalue
+		struct dbr_gr_char *pvalue
 		  = (struct dbr_gr_char *)pbuffer;
-		register unsigned char *pchar = &pvalue->value;
-		printf("\n\tDBR_GR_CHAR%2d %2d",pvalue->status,
-			pvalue->severity);
-		printf(" %.8s %4d %4d %4d %4d %4d %4d",pvalue->units,
+		unsigned char *pchar = &pvalue->value;
+		printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
+			pvalue->units);
+		printf("\n\t%8d %8d %8d %8d %8d %8d",
 		  pvalue->upper_disp_limit,pvalue->lower_disp_limit,
 		  pvalue->upper_alarm_limit,pvalue->upper_warning_limit,
 		  pvalue->lower_warning_limit,pvalue->lower_alarm_limit);
-		printf("\n\tValue: ");
+		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,pchar++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
 			printf("%d ",(short)(*pchar));
-			if ((i % 16) == 15) printf("\n\t");
 		}
 		break;
 	}
 	case (DBR_GR_LONG):
 	{
-		register struct dbr_gr_long *pvalue
+		struct dbr_gr_long *pvalue
 		  = (struct dbr_gr_long *)pbuffer;
-		register long *plong = &pvalue->value;
-		printf("\n\tDBR_GR_LONG %2d %2d",pvalue->status,
-			pvalue->severity);
-		printf("%.8s\n\t%8d %8d %8d %8d %8d %8d",pvalue->units,
+		long *plong = &pvalue->value;
+		printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
+			pvalue->units);
+		printf("\n\t%8d %8d %8d %8d %8d %8d",
 		  pvalue->upper_disp_limit,pvalue->lower_disp_limit,
 		  pvalue->upper_alarm_limit,pvalue->upper_warning_limit,
 		  pvalue->lower_warning_limit,pvalue->lower_alarm_limit);
-		printf("\n\tValue: ");
+		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,plong++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
 			printf("0x%lx ",*plong);
-			if ((i % 16) == 15) printf("\n\t");
 		}
 		break;
 	}
 	case (DBR_GR_DOUBLE):
 	{
-		register struct dbr_gr_double *pvalue
+		struct dbr_gr_double *pvalue
 		  = (struct dbr_gr_double *)pbuffer;
-		register double *pdouble = &pvalue->value;
-		printf("\n\tDBR_GR_DOUBLE %2d %2d",pvalue->status,
-			pvalue->severity);
-		printf(" %3d %.8s\n\t%6.4f %6.4f %6.4f %6.4f %6.4f %6.4f",
-		  pvalue->precision, pvalue->units,
+		double *pdouble = &pvalue->value;
+		printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
+			pvalue->units);
+		printf(" %3d\n\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f",
+		  pvalue->precision,
 		  (float)(pvalue->upper_disp_limit),
 		  (float)(pvalue->lower_disp_limit),
 		  (float)(pvalue->upper_alarm_limit),
 		  (float)(pvalue->upper_warning_limit),
 		  (float)(pvalue->lower_warning_limit),
 		  (float)(pvalue->lower_alarm_limit));
-		printf("\n\tValue: ");
+		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,pdouble++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
 			printf("%6.4f ",(float)(*pdouble));
-			if ((i % 16) == 15) printf("\n\t");
 		}
 		break;
 	}
 	case (DBR_CTRL_SHORT):
 	{
-		register struct dbr_ctrl_short *pvalue
+		struct dbr_ctrl_short *pvalue
 		  = (struct dbr_ctrl_short *)pbuffer;
-		register short *pshort = &pvalue->value;
-		printf("\n\tDBR_CTRL_SHORT %2d %2d",pvalue->status,
-		  pvalue->severity);
-		printf(" %.8s\n\t%6d %6d %6d %6d %6d %6d",pvalue->units,
-		  pvalue->upper_disp_limit,pvalue->lower_disp_limit,
-		  pvalue->upper_alarm_limit,pvalue->upper_warning_limit,
-		  pvalue->lower_warning_limit,pvalue->lower_alarm_limit);
-		printf(" %6d %6d",
-		  pvalue->upper_ctrl_limit,pvalue->lower_ctrl_limit);
-		printf("\n\tValue: ");
-		for (i = 0; i < count; i++,pshort++){
-			printf("%d ",*pshort);
-			if ((i % 16) == 15) printf("\n\t");
-		}
-		break;
-	}
-	case (DBR_CTRL_FLOAT):
-	{
-		register struct dbr_ctrl_float *pvalue
-		  = (struct dbr_ctrl_float *)pbuffer;
-		register float *pfloat = &pvalue->value;
-		printf("\n\tDBR_CTRL_FLOAT %2d %2d",pvalue->status,
-		  pvalue->severity);
-		printf(" %3d %.8s\n\t%6.4f %6.4f %6.4f %6.4f %6.4f %6.4f",
-		  pvalue->precision, pvalue->units,
-		  pvalue->upper_disp_limit,pvalue->lower_disp_limit,
-		  pvalue->upper_alarm_limit,pvalue->upper_warning_limit,
-		  pvalue->lower_warning_limit,pvalue->lower_alarm_limit);
-		printf(" %6.4f %6.4f",
-		  pvalue->upper_ctrl_limit,pvalue->lower_ctrl_limit);
-		printf("\n\tValue: ");
-		for (i = 0; i < count; i++,pfloat++){
-			printf("%6.4f ",*pfloat);
-			if ((i % 16) == 15) printf("\n\t");
-		}
-		break;
-	}
-	case (DBR_CTRL_CHAR):
-	{
-		register struct dbr_ctrl_char *pvalue
-		  = (struct dbr_ctrl_char *)pbuffer;
-		register unsigned char *pchar = &pvalue->value;
-		printf("\n\tDBR_CTRL_CHAR %2d %2d",pvalue->status,
-		  pvalue->severity);
-		printf(" %.8s %4d %4d %4d %4d %4d %4d",pvalue->units,
-		  pvalue->upper_disp_limit,pvalue->lower_disp_limit,
-		  pvalue->upper_alarm_limit,pvalue->upper_warning_limit,
-		  pvalue->lower_warning_limit,pvalue->lower_alarm_limit);
-		printf(" %4d %4d",
-		  pvalue->upper_ctrl_limit,pvalue->lower_ctrl_limit);
-		printf("\n\tValue: ");
-		for (i = 0; i < count; i++,pchar++){
-			printf("%4d ",(short)(*pchar));
-			if ((i % 16) == 15) printf("\n\t");
-		}
-		break;
-	}
-	case (DBR_CTRL_LONG):
-	{
-		register struct dbr_ctrl_long *pvalue
-		  = (struct dbr_ctrl_long *)pbuffer;
-		register long *plong = &pvalue->value;
-		printf("\n\tDBR_CTRL_LONG %2d %2d",pvalue->status,
-		  pvalue->severity);
-		printf(" %.8s %8d %8d\n\t%8d %8d %8d %8d",pvalue->units,
+		short *pshort = &pvalue->value;
+		printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
+			pvalue->units);
+		printf("\n\t%8d %8d %8d %8d %8d %8d",
 		  pvalue->upper_disp_limit,pvalue->lower_disp_limit,
 		  pvalue->upper_alarm_limit,pvalue->upper_warning_limit,
 		  pvalue->lower_warning_limit,pvalue->lower_alarm_limit);
 		printf(" %8d %8d",
 		  pvalue->upper_ctrl_limit,pvalue->lower_ctrl_limit);
-		printf("\n\tValue: ");
+		if(count==1) printf("\tValue: ");
+		for (i = 0; i < count; i++,pshort++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
+			printf("%d ",*pshort);
+		}
+		break;
+	}
+	case (DBR_CTRL_FLOAT):
+	{
+		struct dbr_ctrl_float *pvalue
+		  = (struct dbr_ctrl_float *)pbuffer;
+		float *pfloat = &pvalue->value;
+		printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
+			pvalue->units);
+		printf(" %3d\n\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f",
+		  pvalue->precision,
+		  pvalue->upper_disp_limit,pvalue->lower_disp_limit,
+		  pvalue->upper_alarm_limit,pvalue->upper_warning_limit,
+		  pvalue->lower_warning_limit,pvalue->lower_alarm_limit);
+		printf(" %8.3f %8.3f",
+		  pvalue->upper_ctrl_limit,pvalue->lower_ctrl_limit);
+		if(count==1) printf("\tValue: ");
+		for (i = 0; i < count; i++,pfloat++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
+			printf("%6.4f ",*pfloat);
+		}
+		break;
+	}
+	case (DBR_CTRL_CHAR):
+	{
+		struct dbr_ctrl_char *pvalue
+		  = (struct dbr_ctrl_char *)pbuffer;
+		unsigned char *pchar = &pvalue->value;
+		printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
+			pvalue->units);
+		printf("\n\t%8d %8d %8d %8d %8d %8d",
+		  pvalue->upper_disp_limit,pvalue->lower_disp_limit,
+		  pvalue->upper_alarm_limit,pvalue->upper_warning_limit,
+		  pvalue->lower_warning_limit,pvalue->lower_alarm_limit);
+		printf(" %8d %8d",
+		  pvalue->upper_ctrl_limit,pvalue->lower_ctrl_limit);
+		if(count==1) printf("\tValue: ");
+		for (i = 0; i < count; i++,pchar++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
+			printf("%4d ",(short)(*pchar));
+		}
+		break;
+	}
+	case (DBR_CTRL_LONG):
+	{
+		struct dbr_ctrl_long *pvalue
+		  = (struct dbr_ctrl_long *)pbuffer;
+		long *plong = &pvalue->value;
+		printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
+			pvalue->units);
+		printf("\n\t%8d %8d %8d %8d %8d %8d",
+		  pvalue->upper_disp_limit,pvalue->lower_disp_limit,
+		  pvalue->upper_alarm_limit,pvalue->upper_warning_limit,
+		  pvalue->lower_warning_limit,pvalue->lower_alarm_limit);
+		printf(" %8d %8d",
+		  pvalue->upper_ctrl_limit,pvalue->lower_ctrl_limit);
+		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,plong++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
 			printf("0x%lx ",*plong);
-			if ((i % 16) == 15) printf("\n\t");
 		}
 		break;
 	}
 	case (DBR_CTRL_DOUBLE):
 	{
-		register struct dbr_ctrl_double *pvalue
+		struct dbr_ctrl_double *pvalue
 		  = (struct dbr_ctrl_double *)pbuffer;
-		register double *pdouble = &pvalue->value;
-		printf("\n\tDBR_CTRL_DOUBLE%2d %2d",pvalue->status,
-		  pvalue->severity);
-		printf(" %3d %.8s\n\t%6.6f %6.6f %6.6f %6.6f %6.6f %6.6f",
-		  pvalue->precision, pvalue->units,
+		double *pdouble = &pvalue->value;
+		printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
+			pvalue->units);
+		printf(" %3d\n\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f",
+		  pvalue->precision,
 		  (float)(pvalue->upper_disp_limit),
 		  (float)(pvalue->lower_disp_limit),
 		  (float)(pvalue->upper_alarm_limit),
 		  (float)(pvalue->upper_warning_limit),
 		  (float)(pvalue->lower_warning_limit),
 		  (float)(pvalue->lower_alarm_limit));
-		printf(" %6.6f %6.6f",
+		printf(" %8.3f %8.3f",
 		  (float)(pvalue->upper_ctrl_limit),
 		  (float)(pvalue->lower_ctrl_limit));
-		printf("\n\tValue: ");
+		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,pdouble++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
 			printf("%6.6f ",(float)(*pdouble));
-			if ((i % 16) == 15) printf("\n\t");
 		}
 		break;
 	}
     }
+    printf("\n");
 }
 

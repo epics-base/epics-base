@@ -90,6 +90,7 @@ const struct devLibVirtualOS devLibRTEMSOS =
     devConnectInterruptVME, devDisconnectInterruptVME,
     devEnableInterruptLevelVME, devDisableInterruptLevelVME,
     devA24Malloc,devA24Free,rtmsDevInit};
+devLibVirtualOS *pdevLibVirtualOS = &devLibRTEMSOS;
 
 /* RTEMS specific initialization */
 LOCAL long

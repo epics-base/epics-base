@@ -121,7 +121,10 @@ static long init_record(pmbbo,pass)
     long status;
     int	i;
 
-    if (pass==0) return(0);
+    if (pass==0) {
+        init_common(pmbbo);
+        return(0);
+    }
 
     /* mbbo.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
     if (pmbbo->siml.type == CONSTANT) {

@@ -169,6 +169,7 @@ recordtype(mbbo) {
 	field(ZRST,DBF_STRING) {
 		prompt("Zero String")
 		promptgroup(GUI_BITS1)
+		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 		size(16)
@@ -176,6 +177,7 @@ recordtype(mbbo) {
 	field(ONST,DBF_STRING) {
 		prompt("One String")
 		promptgroup(GUI_BITS1)
+		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 		size(16)
@@ -183,6 +185,7 @@ recordtype(mbbo) {
 	field(TWST,DBF_STRING) {
 		prompt("Two String")
 		promptgroup(GUI_BITS1)
+		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 		size(16)
@@ -190,6 +193,7 @@ recordtype(mbbo) {
 	field(THST,DBF_STRING) {
 		prompt("Three String")
 		promptgroup(GUI_BITS1)
+		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 		size(16)
@@ -197,6 +201,7 @@ recordtype(mbbo) {
 	field(FRST,DBF_STRING) {
 		prompt("Four String")
 		promptgroup(GUI_BITS1)
+		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 		size(16)
@@ -204,6 +209,7 @@ recordtype(mbbo) {
 	field(FVST,DBF_STRING) {
 		prompt("Five String")
 		promptgroup(GUI_BITS1)
+		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 		size(16)
@@ -211,6 +217,7 @@ recordtype(mbbo) {
 	field(SXST,DBF_STRING) {
 		prompt("Six String")
 		promptgroup(GUI_BITS1)
+		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 		size(16)
@@ -218,6 +225,7 @@ recordtype(mbbo) {
 	field(SVST,DBF_STRING) {
 		prompt("Seven String")
 		promptgroup(GUI_BITS1)
+		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 		size(16)
@@ -225,6 +233,7 @@ recordtype(mbbo) {
 	field(EIST,DBF_STRING) {
 		prompt("Eight String")
 		promptgroup(GUI_BITS2)
+		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 		size(16)
@@ -232,6 +241,7 @@ recordtype(mbbo) {
 	field(NIST,DBF_STRING) {
 		prompt("Nine String")
 		promptgroup(GUI_BITS2)
+		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 		size(16)
@@ -239,6 +249,7 @@ recordtype(mbbo) {
 	field(TEST,DBF_STRING) {
 		prompt("Ten String")
 		promptgroup(GUI_BITS2)
+		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 		size(16)
@@ -246,6 +257,7 @@ recordtype(mbbo) {
 	field(ELST,DBF_STRING) {
 		prompt("Eleven String")
 		promptgroup(GUI_BITS2)
+		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 		size(16)
@@ -253,6 +265,7 @@ recordtype(mbbo) {
 	field(TVST,DBF_STRING) {
 		prompt("Twelve String")
 		promptgroup(GUI_BITS2)
+		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 		size(16)
@@ -260,6 +273,7 @@ recordtype(mbbo) {
 	field(TTST,DBF_STRING) {
 		prompt("Thirteen String")
 		promptgroup(GUI_BITS2)
+		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 		size(16)
@@ -267,6 +281,7 @@ recordtype(mbbo) {
 	field(FTST,DBF_STRING) {
 		prompt("Fourteen String")
 		promptgroup(GUI_BITS2)
+		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 		size(16)
@@ -274,6 +289,7 @@ recordtype(mbbo) {
 	field(FFST,DBF_STRING) {
 		prompt("Fifteen String")
 		promptgroup(GUI_BITS2)
+		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
 		size(16)

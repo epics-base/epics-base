@@ -42,6 +42,7 @@
 //
 #include "gdd.h"
 #include "gddAppTable.h"
+#include "errMdef.h"
 
 typedef aitUint32 gddAppFuncTableStatus;
 

@@ -26,6 +26,7 @@ ACC = $(SPARCWORKS)/bin/cc
 ACC_ANSI = $(ACC) -Xa
 ACC_STRICT = $(ACC) -Xc -v
 ACC_TRAD = $(ACC) -Xs
+ACC_DEP_CFLAGS = -KPIC -D_REENTRANT 
 ACC_WARN_YES = 
 ACC_WARN_NO =  -w
 ACC_OPT_YES =  -O
@@ -34,13 +35,14 @@ ACC_SFLAGS_YES= -Bstatic
 ACC_SFLAGS_NO=
 ACC_SLIBS_YES= -lw -lintl -Bdynamic -ldl -Bstatic -lXext -lX
 ACC_SLIBS_NO=
-ACC_SHRLIB_CFLAGS_YES =  -KPIC -D_REENTRANT 
+ACC_SHRLIB_CFLAGS_YES =
 ACC_SHRLIB_LDFLAGS_YES =  -G -h $@
 
 # Configure OS vendor C++ compiler
 CCC = $(SPARCWORKS)/bin/CC
 CCC_NORMAL = $(CCC) +p
 CCC_STRICT = $(CCC) +p
+CCC_DEP_CFLAGS = -KPIC -D_REENTRANT 
 CCC_TEMPL_INST_FLAG =
 CCC_WARN_YES = +w
 CCC_WARN_NO = 
@@ -52,6 +54,7 @@ CCC_SLIBS_YES= -lw -lintl -Bdynamic -ldl -Bstatic -lXext -lX
 CCC_SLIBS_NO=
 CCC_DEPENDS_FLAG = -xM1
  
+
 ARCH_DEP_CFLAGS = -DSOLARIS 
 # socket and nsl needed by libca.a
 ARCH_DEP_LDLIBS = -lsocket -lnsl

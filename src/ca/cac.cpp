@@ -219,11 +219,11 @@ cac::~cac ()
     // make certain that process thread isnt deleting 
     // tcpiiu objects at the same that this thread is
     //
-    if ( this->pRecvProcThread ) {
+    if ( this->pRecvProcessThread ) {
         this->recvProcessThreadExitRequest = true;
         this->recvProcessActivityEvent.signal ();
         this->recvProcessThreadExit.wait ();
-        delete this->pRecvProcThread;
+        delete this->pRecvProcessThread;
     }
 
     {

@@ -166,7 +166,6 @@ private:
     epicsEvent              ioDone;
     epicsTimerQueueActive   *pTimerQueue;
     char                    *pUserName;
-    epicsThread             *pRecvProcThread;
     class udpiiu            *pudpiiu;
     class searchTimer       *pSearchTmr;
     class repeaterSubscribeTimer  

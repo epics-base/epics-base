@@ -56,6 +56,7 @@ TORNADO=YES
 #TORNADO=NO
  
 #  VxWorks directory for TORNADO=YES
+#VX_DIR_YES=c:\\Tornado
 VX_DIR_YES = /usr/local/vw/tornado101
 
 #  VxWorks directory for TORNADO=NO
@@ -98,13 +99,17 @@ CMPLR=STRICT
 #   Individual Makefiles may override
 CXXCMPLR=STRICT
 
-#  Build shared libraries? (Unix type Host builds only)
+#  Build shared libraries?
 #  (archive libraries will also be built)
 #        must be either YES or NO
+#     NOTE: CONFIG_SITE.Host.$(HOST_ARCH) files may override
+#
+#     NOTE WIN32: YES results in a DLL. CONFIG_SITE.Host.WIN32
+#                 distribution file contains YES override
 #
 #     NOTE solaris and sun4: If YES then LD_LIBRARY_PATH must
-#     include $(INSTALL_LOCATION)/lib/$(HOST_ARCH) both
-#     for the base build and when invoking base executables
+#     include fullpathname $(INSTALL_LOCATION)/lib/$(HOST_ARCH)
+#     for both the base build and when invoking base executables
 SHARED_LIBRARIES=NO
 
 #  Build client objects statically ?

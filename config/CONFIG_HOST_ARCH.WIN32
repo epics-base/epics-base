@@ -12,7 +12,7 @@ CHMOD=echo
 WHAT=echo
 ECHO=echo
 
-WIND_HOST_TYPE = 
+WIND_HOST_TYPE = x86-win32
  
 # 	Use std path variables from ms
 HOME = $(HOMEDRIVE)$(HOMEPATH)

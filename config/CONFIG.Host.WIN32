@@ -125,7 +125,7 @@ CCC_SLIBS_YES=
 CCC_SLIBS_NO=
  
 LINK_OPT_FLAGS_YES = /WARN:3 /incremental:no /opt:ref\
-/release /version:$(EPICS_VERSION).$(EPICS_REVISION)
+/release $(PROD_VERSION:%=/version:%)
 LINK_OPT_FLAGS_NO = /WARN:3 /debug 
 OPT_LDFLAGS = $(LINK_OPT_FLAGS_$(HOST_OPT))
 
@@ -191,30 +191,33 @@ HOST_OPT_FLAGS += $(subst $@, /_WINDLL, $(findstring $@,$(LIBOBJS)))
 
 #
 #	A WIN32 dll has three parts:
-#	x.dll: the real dll (DLLNAME)
+#	x.dll: the real dll (SHRLIBNAME)
 #	x.lib: what you link to progs that use the dll (LIBNAME)
 #	x.exp: what you need to build the dll (in no variable)
 #
-LINK.dll = $(WINLINK) /nologo $(WIN32_DLLFLAGS) /implib:$(@:%.dll=%.lib) /out:$@ $(DLL_DEF_FLAG)
+LINK.shrlib = $(WINLINK) /nologo $(WIN32_DLLFLAGS) /implib:$(DLL_LINK_LIBNAME) /out:$(SHRLIBNAME) $(DLL_DEF_FLAG)
 
 #	adjust names of libraries to build
 #
 #	But: if there are no objects LIBOBJS to include
 #	in this library (may be for e.g. base/src/libCompat
 #	on some archs), don't define (and build) any library!
-DLLNAME = $(LIBRARY).dll
+SHRLIBNAME = $(LIBRARY).dll
 
 #
 # Under WIN32 we have the unique situation where the DLL link creates the
 # DLL link library xxx.lib and we need to be very careful to avoid replacing
 # the xxx.lib created by the dll link with an xxx.lib created by $(AR)
 #
-# LIBTYPE is empty if we are not building a DLL
+# SHARED_LIBRARIES is YES if we are building a DLL and NO if we aren't
 #
-DLL_LINK_LIBNAME_SHARED = $(LIBRARY).lib
-DLL_LINK_LIBNAME = $(DLL_LINK_LIBNAME_$(LIBTYPE))
-OBJECT_LIBNAME_ = $(LIBRARY).lib
-LIBNAME = $(OBJECT_LIBNAME_$(LIBTYPE))
+DLL_LINK_LIBNAME_YES = $(LIBRARY).lib
+DLL_LINK_LIBNAME = $(DLL_LINK_LIBNAME_$(SHARED_LIBRARIES))
+OBJECT_LIBNAME_NO = $(LIBRARY).lib
+LIBNAME = $(OBJECT_LIBNAME_$(SHARED_LIBRARIES))
+
+#	dll install location
+INSTALL_SHRLIB = $(INSTALL_BIN)
 
 #--------------------------------------------------
 # Dependancy definitions

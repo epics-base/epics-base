@@ -17,6 +17,8 @@ EXE=.exe
 ANSI=GCC
 # c++ code won't build with b19
 CPLUSPLUS=
+# Shared libraries not implemented yet
+SHARED_LIBRARIES=NO
 #==========================
 # Fix for cygwin32 beta17.1 includes
 #OP_SYS_INCLUDES += /usr/local/include/g++

@@ -9,6 +9,7 @@ ARCH_CLASS = Linux
 include $(EPICS_BASE)/config/CONFIG.Host.UnixCommon
 
 AR = ar -rc
+ARCMD = $(AR) $@
 RANLIB = ranlib -t
 
 # Configure OS vendor C compiler
@@ -54,5 +55,18 @@ CCC_DEPENDS_FLAG = -MM
 
 ARCH_DEP_CFLAGS = -D_X86_ -Dlinux
 ARCH_DEP_LDFLAGS =
+
+#glibc FAQ
+#	"_GNU_SOURCE:  glibc does not make the GNU extensions available 
+#	automatically.  If a program depends on the GNU extensions or some other
+#	non-standard functionality, it is necessary to compile it with the C 
+#	compiler option -D_GNU_SOURCE, or better to put #define _GNU_SOURCE at
+#	the beginning of your source files, before any C library header files 
+#	are included.  This difference normally manifests itself in the form
+#	of missing prototypes and/or data type definitions.  Thus, if you get
+#	such errors, the first thing you should do is try defining _GNU_SOURCE
+#	and see if that makes the problem go away."
+#ARCH_DEP_CFLAGS += -D_GNU_SOURCE
+
 
 

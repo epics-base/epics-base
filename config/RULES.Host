@@ -1,4 +1,4 @@
-#
+
 # $Id$
 #
 #	Rules for making things specified in Makefile.Host
@@ -238,8 +238,7 @@ INCREC +=$(RECTYPES) $(MENUS)
 
 INSTALL_PROD= $(PROD:%= $(INSTALL_BIN)/%)
 INSTALL_LIBS= $(LIBNAME:%=$(INSTALL_LIB)/%)
-INSTALL_SHRLIBS= $(SHRLIBNAME:%=$(INSTALL_LIB)/%)
-INSTALL_DLLS=$(DLLNAME:%=$(INSTALL_BIN)/%)
+INSTALL_SHRLIBS= $(SHRLIBNAME:%=$(INSTALL_SHRLIB)/%)
 INSTALL_DLL_LINK_LIBS=$(DLL_LINK_LIBNAME:%=$(INSTALL_LIB)/%)
 INSTALL_TCLLIBS=$(TCLLIBNAME:%=$(INSTALL_TCLLIB)/%)
 INSTALL_TCLINDEX=$(TCLINDEX:%=$(INSTALL_TCLLIB)/%)
@@ -283,6 +282,15 @@ DIRECTORY_TARGETS += $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
 endif
 
 #---------------------------------------------------------------
+ifneq (x$(SHARED_LIBRARIES_$(ARCH_CLASS)),x)
+SHARED_LIBRARIES+=$(subst -nil-,,$(SHARED_LIBRARIES_$(ARCH_CLASS)))
+else
+ifdef SHARED_LIBRARIES_DEFAULT
+SHARED_LIBRARIES_+=$(SHARED_LIBRARIES_DEFAULT)
+endif
+endif
+
+#---------------------------------------------------------------
 # must use c++ linker if linking to shared libs with c++ code
 ifeq ($(strip $(SHARED_LIBRARIES)),YES)
 ifneq ($(strip $(CPLUSPLUS)),)
@@ -291,6 +299,15 @@ endif # CPLUSPLUS
 endif # LIBTYPE
 
 #---------------------------------------------------------------
+# Version number for base shared libraries (and win32 products)
+ifeq ($(EPICS_BASE),$(TOP))
+SHRLIB_VERSION = $(EPICS_VERSION).$(EPICS_REVISION)
+PROD_VERSION = $(EPICS_VERSION).$(EPICS_REVISION)
+endif # EPICS_BASE
+
+#---------------------------------------------------------------
+#	Libraries
+#
 #	if there are no objects LIBOBJS to include
 #	in this library (may be for e.g. base/src/libCompat
 #	on some archs), don't define (and build) any library!
@@ -299,17 +316,10 @@ ifdef LIBOBJS
 LIBTARGETS = $(INSTALL_LOCATION_LIB) $(INSTALL_LIB)
 LIBTARGETS += $(LIBNAME) $(INSTALL_LIBS)
 
-#	check if DLL or plain lib requested: (Win32 build)
-ifeq ($(strip $(LIBTYPE)),SHARED)
-#
-# LIBTYPE=="SHARED" indicates build
-# DLL and install both dll and dll link library
-#
-LIBTARGETS += $(DLLNAME) $(INSTALL_DLLS) $(INSTALL_DLL_LINK_LIBS)
-endif # LIBTYPE=SHARED
-
-#  check if shared library requested: (Unix type build)
+#  check if shared libraries requested
 ifeq ($(strip $(SHARED_LIBRARIES)),YES)
+
+PROD_VERSION =$(SHRLIB_VERSION)
 CFLAGS += $(SHRLIB_CFLAGS)
 CXXFLAGS += $(SHRLIB_CFLAGS)
 ifeq ($(findstring cc,$(suffix $(LIBSRCS))),cc)
@@ -317,7 +327,8 @@ SHRLIB_LINKER = $(CXX)
 else
 SHRLIB_LINKER = $(CC)
 endif
-LIBTARGETS += $(SHRLIBNAME) $(INSTALL_SHRLIBS)
+LIBTARGETS += $(SHRLIBNAME) $(INSTALL_SHRLIBS) $(INSTALL_DLL_LINK_LIBS)
+
 endif # SHARED_LIBRARIES=YES
 
 endif # LIBOBJS
@@ -356,7 +367,7 @@ depends:: $(LIBSRCS) $(SRCS)
 
 clean::
 	@echo "Cleaning"
-	@$(RM) *.i *$(OBJ) *.a $(PROD) $(TESTPROD) $(LIBNAME) $(INC) *$(RES) $(TARGETS)
+	@$(RM) *.i *$(OBJ) *.a $(PROD) $(TESTPROD) $(LIBNAME) $(SHRLIBNAME) $(INC) *$(RES) $(TARGETS)
 
 $(DIRECTORY_TARGETS) :
 	$(MKDIR) $@
@@ -378,6 +389,22 @@ PRODNAME_RCS=$(RCS)
 endif
 
 ifdef PRODNAME
+
+ifneq (x$(PRODNAME_SRCS_$(ARCH_CLASS)),x)
+PRODNAME_SRCS += $(subst -nil-,,$(PRODNAME_SRCS_$(ARCH_CLASS)))
+else
+ifdef PRODNAME_SRCS_DEFAULT
+PRODNAME_SRCS += $(PRODNAME_SRCS_DEFAULT)
+endif
+endif
+
+ifneq (x$(PRODNAME_RCS_$(ARCH_CLASS)),x)
+PRODNAME_RCS += $(subst -nil-,,$(PRODNAME_RCS_$(ARCH_CLASS)))
+else
+ifdef PRODNAME_RCS_DEFAULT
+PRODNAME_RCS += $(PRODNAME_RCS_DEFAULT)
+endif
+endif
 
 $(PRODNAME): $(PROD_DEPLIBS) $(PRODNAME_DEPLIBS)
 
@@ -409,7 +436,11 @@ PROD_RESS=$(addsuffix $(RES), $(basename $(RCS)  $(COND_PROD_RCS)))
 PROD_MAKE_COMMAND=$(MAKE) $@\
 	PRODNAME="$@"\
 	PRODNAME_SRCS="$(SRCS) $($(basename $@)_SRCS)"\
-	PRODNAME_RCS="$(RCS) $($(basename $@)_RCS) $($(basename $@)_RCS_$(ARCH_CLASS))"\
+	PRODNAME_SRCS_DEFAULT="$($(basename $@)_SRCS_DEFAULT)"\
+	PRODNAME_SRCS_$(ARCH_CLASS)="$($(basename $@)_SRCS_$(ARCH_CLASS))"\
+	PRODNAME_RCS="$(RCS) $($(basename $@)_RCS)"\
+	PRODNAME_RCS_DEFAULT="$($(basename $@)_RCS_DEFAULT)"\
+	PRODNAME_RCS_$(ARCH_CLASS)="$($(basename $@)_RCS_$(ARCH_CLASS))"\
 	PRODNAME_LIBS="$($(basename $@)_LIBS)"
 
 $(PROD): $(PROD_OBJS) $(PROD_RESS) $(PROD_DEPLIBS) $(COND_PROD_DEPLIBS)
@@ -638,12 +669,8 @@ $(DBDNAME): ../$(DBDEXPAND)
 	@$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand$(EXE) $(USER_DBDFLAGS) $< > $@
 
-# rule for shareable (DLL- dynamic link library) creation
-$(DLLNAME): $(LIBOBJS)
-	$(LINK.dll) $(LIBOBJS) $(DLL_LDLIBS)
-
-$(SHRLIBNAME): $(LIBOBJS)
-	$(LINK.dll) $(LIBOBJS)
+$(DLL_LINK_LIBNAME) $(SHRLIBNAME): $(LIBOBJS)
+	$(LINK.shrlib) $(LIBOBJS) $(DLL_LDLIBS)
 
 # rule for lib (archive of object files) creation
 $(LIBNAME): $(LIBOBJS)
@@ -674,14 +701,14 @@ endif # RANLIB
 
 $(INSTALL_LIB)/%.lib: %.lib
 	@echo "Installing library $@"
-	@$(INSTALL) -m 644 $< $(INSTALL_LIB)
+	@$(INSTALL) -d -m 644 $< $(INSTALL_LIB)
 
-$(INSTALL_SHRLIBS): $(SHRLIBNAME)
+$(INSTALL_SHRLIB)/lib%: lib%
 	@echo "Installing library $@"
-	$(INSTALL) -m 555 $< $(INSTALL_LIB)
+	@$(INSTALL) -m 555 $< $(INSTALL_SHRLIB)
 ifdef SHRLIB_VERSION
-	$(RM) $(subst $(SHRLIB_VERSION),,$@)
-	ln -s $< $(subst $(SHRLIB_VERSION),,$@)
+	@$(RM) $(@:%.$(SHRLIB_VERSION)=%)
+	ln -s $< $(@:%.$(SHRLIB_VERSION)=%) 
 endif # SHRLIB_VERSION
 
 $(INSTALL_TCLLIB)/%: %

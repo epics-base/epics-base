@@ -89,16 +89,18 @@ LIBSRCS_DEFAULT = posix.c
 LIBSRCS_WIN32   = win32_special.c
 LIBSRCS_BSD     = -nil-
 
-#	Type of library to build.
-#	On WIN32, SHARED results in a DLL, others may ignore this.
-LIBTYPE=SHARED
-
 #	Library to build:
 #	lib$(LIBRARY).a  or   ..dll/..exp/..lib
 #
 #	Currently you can build only one (1) lib per Makefile.Host!
 #	
 LIBRARY=libname
+
+# if SHARED_LIBRARIES is YES then 
+#	Library version
+SHRLIB_VERSION = 
+#	On WIN32 results in /version:$(SHRLIB_VERSION) link option
+#	On Unix type hosts .$(SHRLIB_VERSION) is appended to library name  
 
 # --------------------------------------------------------------------
 #	defining products (executable programs)
@@ -136,6 +138,11 @@ PROD_DEFAULT = product_for_rest
 PROD_WIN32   = product_only_for_WIN32
 PROD_BSD     = product_only_for_BSD
 PROD_SYSV    = product_only_for_SYSV
+
+#	Product version
+PROD_VERSION = 
+#	On WIN32 results in /version:$(SHRLIB_VERSION) link option
+#	On Unix type hosts PROD_VERSION) is ignored
 
 #	Scripts to install
 #

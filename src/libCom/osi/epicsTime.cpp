@@ -461,7 +461,7 @@ epicsTime epicsTime::operator + (const double &rhs) const
     if (rhs >= 0) {
         secOffset = static_cast <unsigned long> (rhs);
         fnsec = rhs - secOffset;
-        nSecOffset = static_cast <unsigned long> (fnsec * nSecPerSec);
+        nSecOffset = static_cast <unsigned long> ( (fnsec * nSecPerSec) + 0.5 );
 
         newSec = this->secPastEpoch + secOffset; // overflow expected
         newNSec = this->nSec + nSecOffset;
@@ -473,7 +473,7 @@ epicsTime epicsTime::operator + (const double &rhs) const
     else {
         secOffset = static_cast <unsigned long> (-rhs);
         fnsec = rhs + secOffset;
-        nSecOffset = static_cast <unsigned long> (-fnsec * nSecPerSec);
+        nSecOffset = static_cast <unsigned long> ( (-fnsec * nSecPerSec) + 0.5 );
 
         newSec = this->secPastEpoch - secOffset; // underflow expected
         if (this->nSec>=nSecOffset) {

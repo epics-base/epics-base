@@ -9,13 +9,12 @@ static char *sccsId = "@(#) $Id$";
 #include <LIB$ROUTINES.H>
 #endif
 
-#include		<stdio.h>
-#include		<assert.h>
+#include	<stdio.h>
+#include	<assert.h>
 
-#include		"os_depen.h"
+#include	"os_depen.h"
 
-#include 		<cadef.h>
-
+#include 	<cadef.h>
 
 #define EVENT_ROUTINE	null_event
 #define CONN_ROUTINE	conn
@@ -75,17 +74,19 @@ int doacctst(char *pname)
 	chid            chix2;
 	chid            chix3;
 	chid            chix4;
-	struct dbr_gr_float *ptr;
-	struct dbr_gr_float *pgrfloat;
+	struct dbr_gr_float *ptr = NULL;
+	struct dbr_gr_float *pgrfloat = NULL;
+	float          *pfloat = NULL;
+	double         *pdouble = NULL;
 	long            status;
 	long            i, j;
 	evid            monix;
-	float          *pfloat;
-	double         *pdouble;
 	char            pstring[NUM][MAX_STRING_SIZE];
 
 
 	SEVCHK(ca_task_initialize(), "Unable to initialize");
+
+	conn_get_cb_count = 0;
 
 	printf("begin\n");
 #ifdef VMS
@@ -198,8 +199,6 @@ int doacctst(char *pname)
 	lib$show_timer();
 #endif /*VMS*/
 
-	pfloat = &ptr->value;
-
 #ifdef VMS
 	lib$init_timer();
 #endif /*VMS*/
@@ -297,7 +296,6 @@ int doacctst(char *pname)
 	else{
 		printf("Skipped multiple get cb test - no read access\n");
 	}
-
 
 	if(ca_v42_ok(chix1)){
 		test_sync_groups(chix1);
@@ -413,10 +411,10 @@ int doacctst(char *pname)
 				&monix);
 		SEVCHK(status, NULL);
 	}
-	pfloat = (float *) malloc(sizeof(float) * NUM);
-	pdouble = (double *) malloc(sizeof(double) * NUM);
-	pgrfloat = (struct dbr_gr_float *) malloc(sizeof(*pgrfloat) * NUM);
 
+	pfloat = (float *) calloc(sizeof(float),NUM);
+	pdouble = (double *) calloc(sizeof(double),NUM);
+	pgrfloat = (struct dbr_gr_float *) calloc(sizeof(*pgrfloat),NUM);
 
 	if (VALID_DB_REQ(chix1->type))
 		if (pfloat)
@@ -482,10 +480,18 @@ int doacctst(char *pname)
 		SEVCHK(status, NULL);
 	}
 
-	free(ptr);
-	free(pfloat);
-	free(pdouble);
-	free(pgrfloat);
+	if (ptr){
+		free (ptr);
+	}
+	if (pfloat) {
+		free(pfloat);
+	}
+	if (pdouble) {
+		free(pdouble);
+	}
+	if (pgrfloat) {
+		free(pgrfloat);
+	}
 
 	status = ca_task_exit();
 	SEVCHK(status,NULL);

@@ -7,34 +7,42 @@
 #include <stdio.h>
 #include <stddef.h>
 
-static void osiThreadCallEntryPoint (void *pPvt); // for gnu warning
+static void osiThreadCallEntryPoint ( void *pPvt ); // for gnu warning
 
 #define epicsExportSharedSymbols
 #include "osiThread.h"
 
-static void osiThreadCallEntryPoint (void *pPvt)
+static void osiThreadCallEntryPoint ( void *pPvt )
 {
-    osiThread *pThread = static_cast<osiThread *> (pPvt);
-    pThread->entryPoint ();
+    osiThread *pThread = static_cast <osiThread *> ( pPvt );
+    pThread->begin.wait ();
+    if ( ! pThread->cancel ) {
+        pThread->entryPoint ();
+    }
     pThread->exit.signal ();
 }
 
-
-osiThread::osiThread () : id(0), exit()
+osiThread::osiThread ( const char *name, unsigned stackSize, unsigned priority ) :
+    cancel (false)
 {
+    this->id = threadCreate ( name, priority, stackSize,
+        osiThreadCallEntryPoint, static_cast <void *> (this) );
 }
 
 osiThread::~osiThread ()
 {
-    while ( !this->exit.wait (5.0) ) {
-        printf ("osiThread::~osiThread ():"
-                " Warning, thread object destroyed before thread exit \n");
+    if ( this->id ) {
+        this->cancel = true;
+        this->begin.signal ();
+        while ( ! this->exit.wait ( 5.0 ) ) {
+            printf ("osiThread::~osiThread ():"
+                    " Warning, thread object destroyed before thread exit \n");
+        }
     }
 }
 
-void osiThread::start(const char *name, unsigned stackSize, unsigned priority)
+void osiThread::start ()
 {
-    id = threadCreate (name, priority, stackSize,
-        osiThreadCallEntryPoint, static_cast <void *> (this) );
+    this->begin.signal ();
 }
 

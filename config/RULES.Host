@@ -308,7 +308,7 @@ endif
 
 clean::
 	@echo "Cleaning"
-	@$(RM) *.i *$(OBJ) *.a $(PROD) $(LIBNAME) $(INC)
+	@$(RM) *.i *$(OBJ) *.a $(PROD) $(TESTPROD) $(LIBNAME) $(INC)
 
 $(DIRECTORY_TARGETS) :
 	$(MKDIR) $@

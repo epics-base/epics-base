@@ -157,14 +157,14 @@ long dbCommonInit(dbCommon *precord, int pass)
     *    is equal to constant set in the record's disv field.
     */
     status = recGblInitFastInLink(&(precord->sdis),
-	(void *) precord, DBF_SHORT, "DISA");
+	(void *) precord, DBR_SHORT, "DISA");
     if (status)
        recGblRecordError(status, (void *) precord, "dbCommonInit: SDIS");
    /*
     *  Initialize the time stamp link.
     */
     status = recGblInitFastInLink(&(precord->tsel),
-	(void *) precord, DBF_SHORT, "TSE");
+	(void *) precord, DBR_SHORT, "TSE");
 
     if (status)
        recGblRecordError(status, (void *)precord, "dbCommonInit: TSEL");

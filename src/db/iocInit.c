@@ -515,6 +515,8 @@ LOCAL long initDatabase(void)
            /* Find pointer to record instance */
 	    precord = pdbRecordNode->precord;
 	    if(!(precord->name[0])) continue;
+	    rtnval = dbCommonInit(precord,1);
+	    if (status==0) status = rtnval;
 	    precord->rset = prset;
 	    if(!prset->init_record) continue;
 	    rtnval = (*prset->init_record)(precord,1);

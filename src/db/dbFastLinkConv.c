@@ -91,7 +91,7 @@ long cvt_uninit(
      void *to,
      struct dbAddr *paddr)
 {
-  printf("Error in record support, uninitialized link.\n");
+  recGblDbaddrError(-1,paddr,"cvt_uninit: uninitialized link");
   return(-1);
 }
 

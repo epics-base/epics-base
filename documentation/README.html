@@ -490,16 +490,18 @@ need uname in your path.
 <p><b>LD_LIBRARY_PATH</b>
 <br>
 It is no longer necessary to have LD_LIBRARY_PATH include
-EPICS directories on Unix type system. The shared libraries
-and executables will contain full path name to libraries
+EPICS directories on Unix type system. R3.14 shared libraries
+and executables will contain the full path name to libraries
 they require. However, if you move the EPICS directories
 from their build-time location then in order for libraries
 to be found at runtime LD_LIBRARY_PATH must include the full
 pathname to $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH) when
 invoking executables.  Building shared libraries is now the
-default setting for all Unix type hosts.
+default setting for all Unix type hosts. NOTE: You will still
+need LD_LIBRARY_PATH for R3.13 extension shared libraries
+even if the R3.13 extensions are built with R3.14 base.
 
-<br>
+<p><b>Win32 PATH</b>
 <br>
 On WIN32 systems, building shared libraries is the default setting
 and you will need to add fullpathname to $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH)

@@ -111,22 +111,37 @@ int		lock_needed;
 
 				anerrno = errnoGet();
 
-				if(     (anerrno!=ECONNABORTED&&
-					anerrno!=ECONNRESET&&
-					anerrno!=EPIPE&&
-					anerrno!=ETIMEDOUT)||
-					CASDEBUG>2){
+				if(pclient->proto == IPPROTO_TCP) {
+					if(     (anerrno!=ECONNABORTED&&
+						anerrno!=ECONNRESET&&
+						anerrno!=EPIPE&&
+						anerrno!=ETIMEDOUT)||
+						CASDEBUG>2){
 
-					logMsg(
-		"CAS: client unreachable \"%s\"\n",
-						(int)strerror(anerrno),
-						NULL,
-						NULL,
-						NULL,
-						NULL,
-						NULL);	
+						logMsg(
+		"CAS: TCP send failed because \"%s\"\n",
+							(int)strerror(anerrno),
+							NULL,
+							NULL,
+							NULL,
+							NULL,
+							NULL);	
+					}
+					pclient->disconnect = TRUE;
 				}
-				pclient->disconnect = TRUE;
+				else if (pclient->proto == IPPROTO_UDP) {
+					logMsg(
+		"CAS: UDP send failed because \"%s\"\n",
+							(int)strerror(anerrno),
+							NULL,
+							NULL,
+							NULL,
+							NULL,
+							NULL);	
+				}
+				else {
+					assert (0);
+				}
 			}
 			else{
 				logMsg(

@@ -66,7 +66,6 @@ struct xvmeRegs {
 
 #define BB_APERLINK	256	/* node 255 is the master */
 #define BB_SEND_CMD	0x0	/* command to initiate sending of msg */
-#define BB_MAX_MSG_LENGTH   20	/* currently max node configuration */
 
 #define XVME_ENABLE_INT	0x08	/* Allow xvme interupts */
 #define XVME_TX_INT	0x20	/* int enable TX only */
@@ -102,17 +101,6 @@ struct xvmeRegs {
 #define	XVME_FSVALID	0x31	/* these are the only valid status bits */
 #define XVME_FSIDLE	0x01	/* fifo_stat & FSVALID = 0x1 when it is idle */
 #define	XVME_RESET	0x80	/* Write this and you reset the XVME card */
-
-/* BitBus Transaction Message Structure */
-struct bitBusMsg {
-    unsigned short link;	/* account for this in length only! */
-    unsigned char  length;
-    unsigned char  route;
-    unsigned char  node;
-    unsigned char  tasks;
-    unsigned char  cmd;
-    unsigned char  parm[BB_MAX_MSG_LENGTH - 7 + 1]; /* save room for \0 */
-};
 
 /* Partial List of RAC Command Definitions (defined in BitBus Specification) */
 #define RAC_RESET_SLAVE		0x00 
@@ -211,9 +199,9 @@ ader information */
   unsigned char *rxMsg;         /* where to place next message byte (after heade
 r transfer!!!) */
   int           cHead;          /* byte counter for data in rxHead */
-  struct dpvtHead *rxDpvtHead;  /* for message currently receiving */
+  struct dpvtBitBusHead *rxDpvtHead;  /* for message currently receiving */
 
   int           txCount;        /* number of bytes sent in current message */
-  struct dpvtHead *txDpvtHead;  /* for message currently transmitting */
+  struct dpvtBitBusHead *txDpvtHead;  /* for message currently transmitting */
   unsigned char *txMsg;         /* next byte to transmit in current msg */
 };

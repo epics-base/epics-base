@@ -392,6 +392,7 @@ caStatus casClient::echoAction ()
 	const void * dp = this->ctx.getData();
     void * pPayloadOut;
 
+    epicsGuard < epicsMutex > guard ( this->mutex );
     caStatus status = this->out.copyInHeader ( mp->m_cmmd, mp->m_postsize, 
         mp->m_dataType, mp->m_count, mp->m_cid, mp->m_available,
         & pPayloadOut );
@@ -413,6 +414,7 @@ caStatus casClient::versionAction ()
 // send minor protocol revision to the client
 void casClient::sendVersion ()
 {
+    epicsGuard < epicsMutex > guard ( this->mutex );
     caStatus status = this->out.copyInHeader ( CA_PROTO_VERSION, 0, 
         0, CA_MINOR_PROTOCOL_REVISION, 0, 0, 0 );
     if ( ! status ) {
@@ -486,6 +488,7 @@ caStatus casClient::sendErr ( const caHdrLargeArray *curp, const int reportedSta
 	}
 
     caHdr * pReqOut;
+    epicsGuard < epicsMutex > guard ( this->mutex );
     caStatus status = this->out.copyInHeader ( CA_PROTO_ERROR, 
         hdrSize + stringSize, 0, 0, cid, reportedStatus,
         reinterpret_cast <void **> ( & pReqOut ) );
@@ -612,8 +615,8 @@ void casClient::dumpMsg ( const caHdrLargeArray *mp,
     char pHostName[32];
     this->hostName ( pHostName, sizeof ( pHostName) );
 
-    errlogPrintf (  
-"CAS: %s on %s at %s: cmd=%d cid=%s typ=%d cnt=%d psz=%d avail=%x\n",
+    fprintf ( stderr, 
+"CAS Request: %s on %s at %s: cmd=%d cid=%s typ=%d cnt=%d psz=%d avail=%x\n",
         pUserName,
         pHostName,
         pName,

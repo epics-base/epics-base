@@ -275,6 +275,7 @@ caStatus casDGClient::searchResponse ( const caHdrLargeArray & msg,
     }
     
     ca_uint16_t * pMinorVersion;
+    epicsGuard < epicsMutex > guard ( this->mutex );
     status = this->out.copyInHeader ( CA_PROTO_SEARCH, 
         sizeof ( *pMinorVersion ), serverPort, 0, 
         serverAddr, msg.m_available, 
@@ -302,6 +303,7 @@ caStatus casDGClient::searchFailResponse ( const caHdrLargeArray * mp )
 {
 	int		status;
 
+    epicsGuard < epicsMutex > guard ( this->mutex );
     status = this->out.copyInHeader ( CA_PROTO_NOT_FOUND, 0,
         mp->m_dataType, mp->m_count, mp->m_cid, mp->m_available, 0 );
 
@@ -453,6 +455,8 @@ caStatus casDGClient::asyncSearchResponse ( const caNetAddr & outAddr,
         return S_cas_success;
     }
 
+    epicsGuard < epicsMutex > guard ( this->mutex );
+
     //
     // start a DG context in the output protocol stream
     // and grab the send lock
@@ -506,6 +510,8 @@ caStatus casDGClient::processDG ()
             status = S_cas_internal;
             break;
         }
+
+        epicsGuard < epicsMutex > guard ( this->mutex );
 
         //
         // start a DG context in the output protocol stream

@@ -42,15 +42,6 @@ inline bool inBuf::full () const
 }
 
 //
-// inBuf::clear()
-//
-inline void inBuf::clear ()
-{
-	this->bytesInBuffer = 0u;
-	this->nextReadIndex = 0u;
-}
-
-//
 // inBuf::msgPtr()
 //
 inline char *inBuf::msgPtr () const 

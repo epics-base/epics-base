@@ -102,7 +102,7 @@ inBufClient::fillCondition inBuf::fill ( inBufClient::fillParameter parm )
 
 		    this->client.hostName ( buf, sizeof ( buf ) );
 
-		    printf ("CAS: incoming %u byte msg from %s\n",
+		    fprintf ( stderr, "CAS Incoming: %u byte msg from %s\n",
 			    bytesRecv, buf);
 	    }
 	}
@@ -139,7 +139,6 @@ const inBufCtx inBuf::pushCtx ( bufSizeT headerSize, // X aCC 361
 bufSizeT inBuf::popCtx ( const inBufCtx &ctx ) // X aCC 361
 {
     if ( ctx.stat==inBufCtx::pushCtxSuccess ) {
-        epicsGuard < epicsMutex > guard ( this->mutex );
         bufSizeT bytesRemoved = this->nextReadIndex;
         this->pBuf = ctx.pBuf;
         this->bufSize = ctx.bufSize;

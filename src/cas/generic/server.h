@@ -222,8 +222,6 @@ public:
 
     void removeMsg ( bufSizeT nBytes );
 
-    void clear ();
-
     char * msgPtr () const;
 
     //
@@ -243,7 +241,6 @@ public:
     void expandBuffer ();
 
 private:
-    epicsMutex mutex;
     inBufClient & client;
     clientBufMemoryManager & memMgr;
     char * pBuf;
@@ -336,10 +333,7 @@ public:
     const outBufCtx pushCtx ( bufSizeT headerSize, bufSizeT maxBodySize, void *&pHeader );
 	bufSizeT popCtx ( const outBufCtx & ); // returns actual size
 
-	void clear ();
-
 private:
-    mutable epicsMutex mutex;
     outBufClient & client;       
     clientBufMemoryManager & memMgr;
 	char * pBuf;

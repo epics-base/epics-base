@@ -51,10 +51,7 @@ caStatus outBuf::allocRawMsg ( bufSizeT msgsize, void **ppMsg )
 
     msgsize = CA_MESSAGE_ALIGN ( msgsize );
 
-    this->mutex.lock ();
-
     if ( msgsize > this->bufSize ) {
-        this->mutex.unlock ();
         return S_cas_hugeRequest;
     }
 
@@ -72,7 +69,6 @@ caStatus outBuf::allocRawMsg ( bufSizeT msgsize, void **ppMsg )
         // and we will let select() take care of it
         //
         if ( this->stack > stackNeeded ) {
-            this->mutex.unlock();
             this->client.sendBlockSignal();
             return S_cas_sendBlocked;
         }
@@ -174,8 +170,8 @@ void outBuf::commitMsg ()
     this->commitRawMsg ( hdrSize + payloadSize );
 
     if ( this->client.getDebugLevel() ) {
-        errlogPrintf (
-            "CAS Response => cmd=%d id=%x typ=%d cnt=%d psz=%d avail=%x outBuf ptr=%p \n",
+        fprintf ( stderr,
+            "CAS Response: cmd=%d id=%x typ=%d cnt=%d psz=%d avail=%x outBuf ptr=%p \n",
             epicsNTOH16 ( mp->m_cmmd ), epicsNTOH32 ( mp->m_cid ), 
             epicsNTOH16 ( mp->m_dataType ), elementCount, payloadSize,
             epicsNTOH32 ( mp->m_available ), static_cast <const void *> ( mp ) );
@@ -209,8 +205,6 @@ outBufClient::flushCondition outBuf::flush ( bufSizeT spaceRequired )
     bufSizeT nBytes;
     bufSizeT nBytesRequired;
     outBufClient::flushCondition cond;
-
-    epicsGuard < epicsMutex > guard ( this->mutex );
 
     if ( this->ctxRecursCount > 0 ) {
         return outBufClient::flushNone;
@@ -251,7 +245,7 @@ outBufClient::flushCondition outBuf::flush ( bufSizeT spaceRequired )
         if ( this->client.getDebugLevel () > 2u ) {
             char buf[64];
             this->client.hostName ( buf, sizeof ( buf ) );
-            errlogPrintf ( "CAS: Sent a %d byte reply to %s\n",
+            fprintf ( stderr, "CAS outgoing: %u byte reply to %s\n",
                            nBytes, buf );
         }
     }

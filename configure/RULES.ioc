@@ -15,7 +15,8 @@ install: buildInstall
 
 buildInstall: $(TARGETS)
 
-cdCommands: $(wildcard $(TOP)/configure/RELEASE*) $(TOP)/configure/CONFIG
+cdCommands: $(wildcard $(TOP)/configure/RELEASE*) \
+	$(TOP)/configure/CONFIG $(TOP)/bin
 	@$(RM) $@
 ifeq ($(IOCS_APPL_TOP),)
 	$(PERL) $(TOOLS)/convertRelease.pl -a $(ARCH) $@

@@ -23,13 +23,14 @@
 <p>The IOC shell now uses the vxWorks ledLib routines so command-line editing
 is now the same in the IOC shell as it is in the vxWorks shell.</p>
 
-<h4>CA client library crashes when the same PV name is on multiple server</h4>
+<h4>CA client library crashes when the same PV name is on multiple
+servers</h4>
 
-<p>If the CA client library was searching for a PV name that is hosted by
+<p>If the CA client library was searching for a PV name that was hosted on
 more than one server a segmentation violation occurred when printing a
 diagnostic message resulting in a failure of the CA client library. The bug
-was intrioduced in R3.14.3. The code was tested on WIN32 prior to release.
-The problem has so far been reproduced only on Linux. </p>
+was introduced in R3.14.3. The code was tested on WIN32 prior to release, but
+the problem has so far been reproduced only on Linux.</p>
 
 <p>Thanks to Ernest Williams at the SNS for discovering and helping to
 diagnose the problem.</p>
@@ -43,15 +44,15 @@ disconnect state transition when the channel was already known to be
 disconnected. This has caused the sequencer to improperly maintain its
 connected channel count. Other CA client side tools may also be impacted.</p>
 
-<p>This problem is exacerbated by the fact that recent versions of vxWorks
-appear to experience a connect failure if the vxWorks IP kernel reassigns the
-same ephemeral TCP port number as was assigned during a previous lifetime.
-The IP kernel on the vxWorks system hosting the CA server might have a stale
-entry for this ephemeral port that has not yet timed out which prevents the
-client from connecting with the ephemeral port assigned by the IP kernel.
-Eventually, after EPICS_CA_CONN_TMO seconds, the TCP connect sequence is
-aborted and the client library closes the socket, opens a new socket,
-receives a new ephemeral port assignment, and successfully connects.</p>
+<p>Recent versions of vxWorks appear to experience a connect failure if the
+vxWorks IP kernel reassigns the same ephemeral TCP port number as was
+assigned during a previous lifetime. The IP kernel on the vxWorks system
+hosting the CA server might have a stale entry for this ephemeral port that
+has not yet timed out which prevents the client from connecting with the
+ephemeral port assigned by the IP kernel. Eventually, after EPICS_CA_CONN_TMO
+seconds, the TCP connect sequence is aborted and the client library closes
+the socket, opens a new socket, receives a new ephemeral port assignment, and
+successfully connects.</p>
 
 <p>Thanks to Mark Rivers for initially reporting the bug and energetically
 assisting with identifying the cause.</p>

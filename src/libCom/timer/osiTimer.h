@@ -39,7 +39,7 @@
 
 #include "osiTime.h"
 #include "tsDLList.h"
-#include "osiMutex.h"
+#include "epicsMutex.h"
 #include "epicsEvent.h"
 
 class osiTimerQueue;
@@ -189,7 +189,7 @@ public:
     epicsShareFunc void process ();
     epicsShareFunc void show (unsigned level) const;
 private:
-    osiMutex mutex;
+    epicsMutex mutex;
     epicsEvent rescheduleEvent;
     epicsEvent exitEvent;
     tsDLList <osiTimer> timerLists [osiTimer::numberOfTimerLists];

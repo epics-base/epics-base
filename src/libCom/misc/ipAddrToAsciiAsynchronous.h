@@ -18,8 +18,9 @@
 #define ipAddrToAsciiAsynchronous_h
 
 #include "epicsMutex.h"
-#include "osiSock.h"
+#include "epicsEvent.h"
 #include "tsDLList.h"
+#include "osiSock.h"
 #include "shareLib.h"
 
 class ipAddrToAsciiAsynchronous;

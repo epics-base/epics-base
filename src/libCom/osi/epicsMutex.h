@@ -66,13 +66,15 @@ public:
     epicsAutoMutex ( epicsMutex & );
     ~epicsAutoMutex ();
 private:
+    epicsMutex ( const epicsMutex & );
+    epicsMutex & operator = ( const epicsMutex & );
     epicsMutex &mutex;
 };
 
 inline epicsMutex::epicsMutex ()
+    id ( epicsMutexCreate () )
 {
-    this->id = epicsMutexCreate ();
-    if (this->id==0) {
+    if ( this->id == 0 ) {
         throwWithLocation ( noMemory () );
     }
 }

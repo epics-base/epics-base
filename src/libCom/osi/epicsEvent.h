@@ -27,6 +27,8 @@ public:
     class invalidSemaphore {}; /* exception */
     class noMemory {}; /* exception */
 private:
+    epicsEvent ( const osiEvent & );
+    epicsEvent & operator = ( const osiEvent & );
     epicsEventId id;
 };
 #endif /*__cplusplus */
@@ -59,10 +61,10 @@ epicsShareFunc void epicsShareAPI epicsEventShow(
 
 /*The c++ implementation consists of inline calls to the c code */
 #ifdef __cplusplus
-inline epicsEvent::epicsEvent (epicsEventInitialState initial)
+inline epicsEvent::epicsEvent (epicsEventInitialState initial) :
+    id ( epicsEventCreate ( initial ) )
 {
-    this->id = epicsEventCreate (initial);
-    if (this->id==0) {
+    if ( this->id == 0 ) {
         throwWithLocation ( noMemory () );
     }
 }

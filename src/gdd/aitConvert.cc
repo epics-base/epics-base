@@ -5,6 +5,9 @@
 // $Id$
 //
 // $Log$
+// Revision 1.6  1997/08/05 00:51:03  jhill
+// fixed problems in aitString and the conversion matrix
+//
 // Revision 1.5  1997/04/23 17:12:53  jhill
 // fixed export of symbols from WIN32 DLL
 //
@@ -38,9 +41,7 @@
 #define epicsExportSharedSymbols
 #include "aitConvert.h"
 
-extern "C" {
 int aitNoConvert(void* /*dest*/,const void* /*src*/,aitIndex /*count*/) {return -1;}
-}
 
 #ifdef AIT_CONVERT
 #undef AIT_CONVERT

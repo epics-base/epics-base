@@ -72,15 +72,16 @@ static char *sccsId = "@(#) $Id$";
 
 #include 	"iocinf.h"
 #include 	"net_convert.h"
+#include 	"bsdSocketResource.h"
 
 LOCAL int cacMsg(
 struct ioc_in_use 	*piiu,
-const struct in_addr  	*pnet_addr
+const struct sockaddr_in  	*pnet_addr
 );
 
 LOCAL void perform_claim_channel(
 IIU			*piiu,
-const struct in_addr    *pnet_addr
+const struct sockaddr_in    *pnet_addr
 );
 
 LOCAL void verifyChanAndDisconnect(IIU *piiu, enum channel_state state);
@@ -99,7 +100,7 @@ extern CACVRTFUNC *cac_dbr_cvrt[];
  */
 int post_msg(
 struct ioc_in_use 	*piiu,
-const struct in_addr  	*pnet_addr,
+const struct sockaddr_in  	*pnet_addr,
 char			*pInBuf,
 unsigned long		blockSize
 )
@@ -240,7 +241,7 @@ unsigned long		blockSize
  */
 LOCAL int cacMsg(
 struct ioc_in_use 	*piiu,
-const struct in_addr  	*pnet_addr
+const struct sockaddr_in  	*pnet_addr
 )
 {
 	miu	monix;
@@ -540,7 +541,7 @@ const struct in_addr  	*pnet_addr
 				ina.sin_addr.s_addr = piiu->curMsg.m_available;
 			}
 			else {
-				ina.sin_addr = *pnet_addr;
+				ina.sin_addr = pnet_addr->sin_addr;
 			}
 			if (piiu->curMsg.m_count != 0) {
 				ina.sin_port = htons (piiu->curMsg.m_count);
@@ -589,8 +590,7 @@ const struct in_addr  	*pnet_addr
 			break;
 		}
 
-		caHostFromInetAddr(pnet_addr, nameBuf, sizeof(nameBuf));
-
+		ipAddrToA (pnet_addr, nameBuf, sizeof(nameBuf));
 		if (piiu->curMsg.m_postsize > sizeof(caHdr)){
 			sprintf(context, 
 				"detected by: %s for: %s", 
@@ -757,7 +757,7 @@ LOCAL void verifyChanAndDisconnect(IIU *piiu, enum channel_state state)
 	 * need to move the channel back to the cast IIU
 	 * (so we will be able to reconnect)
 	 */
-	cacDisconnectChannel(chan, chan->state);
+	cacDisconnectChannel(chan);
 	UNLOCK;
 }
 
@@ -769,7 +769,7 @@ LOCAL void verifyChanAndDisconnect(IIU *piiu, enum channel_state state)
  */
 LOCAL void perform_claim_channel(
 IIU			*piiu,
-const struct in_addr	*pnet_addr
+const struct sockaddr_in	*pnet_addr
 )
 {
 	struct sockaddr_in	ina;
@@ -839,17 +839,17 @@ const struct in_addr	*pnet_addr
 			ina.sin_addr.s_addr = piiu->curMsg.m_cid;
 		}
 		else {
-			ina.sin_addr = *pnet_addr;
+			ina.sin_addr = pnet_addr->sin_addr;
 		}
 		ina.sin_port = htons (piiu->curMsg.m_type);
 	}
 	else if (CA_V45 (CA_PROTOCOL_VERSION,minorVersion)) {
 		ina.sin_port = htons(piiu->curMsg.m_type);
-		ina.sin_addr = *pnet_addr;
+		ina.sin_addr = pnet_addr->sin_addr;
 	}
 	else {
 		ina.sin_port = htons(ca_static->ca_server_port);
-		ina.sin_addr = *pnet_addr;
+		ina.sin_addr = pnet_addr->sin_addr;
 	}
 
 	/*
@@ -863,7 +863,7 @@ const struct in_addr	*pnet_addr
 		assert(pNode);
 		if (pNode->destAddr.in.sin_addr.s_addr != ina.sin_addr.s_addr ||
 			pNode->destAddr.in.sin_port != ina.sin_port) {
-			caHostFromInetAddr(pnet_addr,rej,sizeof(rej));
+			ipAddrToA (pnet_addr, rej, sizeof(rej));
 			sprintf(
 				sprintf_buf,
 		"Channel: %s Accepted: %s Rejected: %s ",
@@ -876,7 +876,7 @@ const struct in_addr	*pnet_addr
 		return;
 	}
 
-        status = alloc_ioc (&ina, &allocpiiu);
+	status = alloc_ioc (&ina, &allocpiiu);
 	switch (status) {
 
 	case ECA_NORMAL:
@@ -893,7 +893,7 @@ const struct in_addr	*pnet_addr
 	  	return;
 
 	default:
-		caHostFromInetAddr(pnet_addr,rej,sizeof(rej));
+		ipAddrToA (pnet_addr, rej, sizeof(rej));
 	  	ca_printf("CAC: ... %s ...\n", ca_message(status));
 	 	ca_printf("CAC: for %s on %s\n", chan+1, rej);
 	 	ca_printf("CAC: ignored search reply- proceeding\n");

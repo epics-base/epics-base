@@ -707,12 +707,21 @@ struct timeval 			*ptimeout
 #	ifdef vxWorks 
 		taskSafe();
 #	endif
+#	if defined (__hpux)
+  	status = select(
+			pfdctx->maxfd,
+			(int *)&pfdctx->readch,
+			(int *)&pfdctx->writech,
+			(int *)&pfdctx->excpch,
+			ptimeout);
+#	else
   	status = select(
 			pfdctx->maxfd,
 			&pfdctx->readch,
 			&pfdctx->writech,
 			&pfdctx->excpch,
 			ptimeout);
+#	endif
 #	ifdef vxWorks 
 		taskUnsafe();
 #	endif

@@ -108,14 +108,21 @@ if(client_lock->recurse>0){
 	taskSuspend(0);
 }
 #endif
-
+#if defined(__hpux)
+        status = select(
+                        maxfd+1,
+                        (int *)&pfdi->readMask,
+                        (int *)&pfdi->writeMask,
+                        (int *)NULL,
+                        ptimeout);
+#else
         status = select(
                         maxfd+1,
                         &pfdi->readMask,
                         &pfdi->writeMask,
                         NULL,
                         ptimeout);
-
+#endif
 #if 0
 printf("leaving select stat=%d errno=%d \n", status, MYERRNO);
 #endif

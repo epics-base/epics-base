@@ -568,20 +568,13 @@ epicsShareFunc void epicsShareAPI epicsThreadSuspendSelf ()
         TlsGetValue ( pGbl->tlsIndexThreadLibraryEPICS );
     if ( ! pParm ) {
         pParm = epicsThreadImplicitCreate ();
-        if ( ! pParm ) {
-            stat =  SuspendThread ( GetCurrentThread () );
-            assert ( stat != 0xFFFFFFFF );
-            return;
-        }
     }
-
-    EnterCriticalSection ( & pGbl->mutex );
-
-    stat =  SuspendThread ( pParm->handle );
-    pParm->isSuspended = 1;
-
-    LeaveCriticalSection ( & pGbl->mutex );
-
+    if ( pParm ) {
+        EnterCriticalSection ( & pGbl->mutex );
+        pParm->isSuspended = 1;
+        LeaveCriticalSection ( & pGbl->mutex );
+    }
+    stat =  SuspendThread ( GetCurrentThread () );
     assert ( stat != 0xFFFFFFFF );
 }
 

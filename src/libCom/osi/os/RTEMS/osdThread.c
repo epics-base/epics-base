@@ -42,10 +42,15 @@ struct taskVar {
     void                **threadVariables;
     int			threadVariablesAdded;
 };
-static semMutexId onceMutex;
 static semMutexId taskVarMutex;
 static struct taskVar *taskVarHead;
 #define RTEMS_NOTEPAD_TASKVAR       11
+
+/*
+ * Support for `once-only' execution
+ */
+static int initialized;
+static semMutexId onceMutex;
 
 /* Just map osi 0 to 99 into RTEMS 199 to 100 */
 /* For RTEMS lower number means higher priority */
@@ -115,6 +120,20 @@ threadWrapper (rtems_task_argument arg)
 }
 
 /*
+ * Report initialization failures
+ */
+static void
+badInit (const char *msg)
+{
+    const char fmt[] = "%s called before threadInit finished!";
+
+    syslog (LOG_CRIT, fmt, msg);
+    fprintf (stderr, fmt, msg);
+    fprintf (stderr, "\n");
+    rtems_task_suspend (RTEMS_SELF);
+}
+
+/*
  * OS-dependent initialization
  * No need to worry about making this thread-safe since
  * it must be called before threadCreate creates
@@ -123,20 +142,10 @@ threadWrapper (rtems_task_argument arg)
 void
 threadInit (void)
 {
-    static int initialized;
-
     if (!initialized) {
+	onceMutex = semMutexMustCreate();
+	taskVarMutex = semMutexMustCreate ();
 	initialized = 1;
-	onceMutex = semMutexCreate();
-	if (!onceMutex) {
-	    syslog (LOG_CRIT, "Can't create `once' mutex");
-	    rtems_task_suspend (RTEMS_SELF);
-	}
-	taskVarMutex = semMutexCreate ();
-	if (!taskVarMutex) {
-	    syslog (LOG_CRIT, "Can't create task variable mutex");
-	    rtems_task_suspend (RTEMS_SELF);
-	}
 	threadCreate ("ImsgDaemon", 99,
 		    threadGetStackSize (threadStackSmall),
 		    InterruptContextMessageDaemon, NULL);
@@ -157,7 +166,8 @@ threadCreate (const char *name,
     rtems_unsigned32 note;
     char c[4];
 
-    threadInit ();
+    if (!initialized)
+	badInit ("threadCreate");
     if (stackSize < RTEMS_MINIMUM_STACK_SIZE) {
         errlogPrintf ("threadCreate %s illegal stackSize %d\n",name,stackSize);
         return 0;
@@ -353,13 +363,15 @@ threadId threadGetId (const char *name)
  */
 void threadOnceOsd(threadOnceId *id, void(*func)(void *), void *arg)
 {
-	semMutexMustTake(onceMutex);
-	if (*id == 0) {
-		*id = -1;
-		func(arg);
-		*id = 1;
-	}
-	semMutexGive(onceMutex);
+    if (!initialized)
+	badInit ("threadOnce");
+    semMutexMustTake(onceMutex);
+    if (*id == 0) {
+	    *id = -1;
+	    func(arg);
+	    *id = 1;
+    }
+    semMutexGive(onceMutex);
 }
 
 /*

@@ -67,4 +67,16 @@ int  select(int  n,  fd_set  *readfds,  fd_set  *writefds, fd_set *exceptfds, st
 #define       INADDR_LOOPBACK         (u_long)0x7F000001
 #endif
 
+/*
+ * For shutdown()
+ */
+#define SD_BOTH	2
+
+/*
+ * Ensure that we get the right network code in osdSock.c
+ */
+#if (defined(BSD) && (BSD < 44))
+# define BSD 44
+#endif
+
 #endif /*osdSockH*/

@@ -431,7 +431,7 @@ inline void cac::disconnectAllChannels (
 {
     cbGuard.assertIdenticalMutex ( this->cbMutex );
     guard.assertIdenticalMutex ( this->mutex );
-    iiu.removeAllChannels ( cbGuard, guard, *this->pudpiiu );
+    iiu.removeAllChannels ( false, cbGuard, guard, *this->pudpiiu );
 }
 
 inline notifyGuard::notifyGuard ( cacContextNotify & notifyIn ) :

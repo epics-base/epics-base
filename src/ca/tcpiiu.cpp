@@ -1626,6 +1626,7 @@ const char * tcpiiu::pHostName (
 }
 
 void tcpiiu::removeAllChannels ( 
+    bool supressApplicationNotify,
     epicsGuard < epicsMutex > & cbGuard, 
     epicsGuard < epicsMutex > & guard,
     udpiiu & discIIU )
@@ -1649,14 +1650,18 @@ void tcpiiu::removeAllChannels (
         pChan->disconnectAllIO ( cbGuard, guard );
         discIIU.installDisconnectedChannel ( *pChan );
         pChan->setServerAddressUnknown ( discIIU, guard );
-        pChan->unresponsiveCircuitNotify ( cbGuard, guard );
+        if ( ! supressApplicationNotify ) {
+            pChan->unresponsiveCircuitNotify ( cbGuard, guard );
+        }
     }
 
     while ( nciu * pChan = this->connectedList.get () ) {
         pChan->disconnectAllIO ( cbGuard, guard );
         discIIU.installDisconnectedChannel ( *pChan );
         pChan->setServerAddressUnknown ( discIIU, guard );
-        pChan->unresponsiveCircuitNotify ( cbGuard, guard );
+        if ( ! supressApplicationNotify ) {
+            pChan->unresponsiveCircuitNotify ( cbGuard, guard );
+        }
     }
 
     while ( nciu * pChan = this->unrespCircuit.get () ) {

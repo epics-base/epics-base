@@ -162,6 +162,7 @@ public:
     unsigned channelCount ( 
         epicsGuard < epicsMutex > & );
     void removeAllChannels (
+        bool supressApplicationNotify,
         epicsGuard < epicsMutex > & cbGuard, 
         epicsGuard < epicsMutex > & guard, udpiiu & );
     void installChannel ( epicsGuard < epicsMutex > &,

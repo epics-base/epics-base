@@ -243,7 +243,7 @@ cac::~cac ()
         tsDLIter < tcpiiu > iter = this->circuitList.firstIter ();
         while ( iter.valid() ) {
             // this causes a clean shutdown to occur
-            iter->removeAllChannels ( cbGuard, guard, *this->pudpiiu );
+            iter->removeAllChannels ( true, cbGuard, guard, *this->pudpiiu );
             iter++;
         }
     }
@@ -1157,7 +1157,7 @@ void cac::destroyIIU ( tcpiiu & iiu )
         }
        
         assert ( this->pudpiiu );
-        iiu.removeAllChannels ( cbGuard, guard, *this->pudpiiu );
+        iiu.removeAllChannels ( false, cbGuard, guard, *this->pudpiiu );
     }
 
     {

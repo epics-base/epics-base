@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.93  1997/04/29 06:05:57  jhill
+ * use free list
+ *
  * Revision 1.92  1997/04/23 17:04:57  jhill
  * pc port changes
  *
@@ -736,6 +739,7 @@ int ca_os_independent_init (void)
 
 	ca_static->ca_flush_pending = FALSE;
 	ca_static->ca_min_retry = UINT_MAX;
+	ca_static->ca_number_iiu_in_fc = 0u;
 
 	return ECA_NORMAL;
 }
@@ -1230,8 +1234,6 @@ int	reply_type
 
 	UNLOCK;
 
-	piiu->send_needed = TRUE;
-
 	return ECA_NORMAL;
 }
 
@@ -1538,8 +1540,6 @@ LOCAL int issue_get_callback(evid monix, unsigned cmmd)
 	hdr.m_cid = chix->id.sid;
 
 	status = cac_push_msg (piiu, &hdr, 0);
-
-	piiu->send_needed = TRUE;
 
 	return status;
 }
@@ -1959,8 +1959,6 @@ const void	*pvalue
 	free_put_convert(pCvrtBuf);
 #	endif /*CONVERSION_REQUIRED*/
 
-	piiu->send_needed = TRUE;
-
   	return status;
 }
 
@@ -2311,8 +2309,6 @@ int ca_request_event(evid monix)
 	msg.m_info.m_pad = 0; /* allow future use */	
 
 	status = cac_push_msg(piiu, &msg.m_header, &msg.m_info);
-
-	piiu->send_needed = TRUE;
 
 	return status;
 }
@@ -3185,7 +3181,7 @@ int ca_busy_message(struct ioc_in_use *piiu)
 	
 	status = cac_push_msg_no_block(piiu, &hdr, NULL);
 	if (status == ECA_NORMAL) {
-		piiu->send_needed = TRUE;
+		piiu->pushPending = TRUE;
 	}
 	return status;
 }
@@ -3216,7 +3212,7 @@ int ca_ready_message(struct ioc_in_use *piiu)
 	
 	status = cac_push_msg_no_block(piiu, &hdr, NULL);
 	if (status == ECA_NORMAL) {
-		piiu->send_needed = TRUE;
+		piiu->pushPending = TRUE;
 	}
 	return status;
 }
@@ -3248,7 +3244,7 @@ int echo_request(struct ioc_in_use *piiu, ca_time *pCurrentTime)
 	status = cac_push_msg_no_block(piiu, &hdr, NULL);
 	if (status == ECA_NORMAL) {
 		piiu->echoPending = TRUE;
-		piiu->send_needed = TRUE;
+		piiu->pushPending = TRUE;
 		piiu->timeAtEchoRequest = *pCurrentTime;
 	}
 
@@ -3275,7 +3271,7 @@ void noop_msg(struct ioc_in_use *piiu)
 	
 	status = cac_push_msg_no_block(piiu, &hdr, NULL);
 	if (status == ECA_NORMAL) {
-		piiu->send_needed = TRUE;
+		piiu->pushPending = TRUE;
 	}
 }
 
@@ -3322,8 +3318,6 @@ void issue_client_host_name(struct ioc_in_use *piiu)
 	
 	cac_push_msg(piiu, &hdr, pName);
 
-	piiu->send_needed = TRUE;
-
 	return;
 }
 
@@ -3368,8 +3362,6 @@ void issue_identify_client(struct ioc_in_use *piiu)
 	hdr.m_postsize = size;
 	
 	cac_push_msg(piiu, &hdr, pName);
-
-	piiu->send_needed = TRUE;
 
 	return;
 }
@@ -3451,7 +3443,6 @@ int issue_claim_channel (chid pchan)
 	UNLOCK;
 	
 	if (status == ECA_NORMAL) {
-		piiu->send_needed = TRUE;
 
 		/*
 		 * move to the end of the list once the claim has been sent

@@ -92,7 +92,13 @@
 /*	011394	joh	fixed bucketLib level memory leak (vxWorks)	*/
 /*	020494	joh	Added user name protocol			*/
 /*      022294  joh     fixed recv task id verify at exit (vxWorks)     */
-/*									*/
+/*      072895  joh     fixed problem resulting from unsigned long 	*/
+/*			tv_sec var in struct timeval in sys/time.h	*/
+/*			under HPUX					*/
+/************************************************************************/
+/*
+ * $Log$
+ */
 /*_begin								*/
 /************************************************************************/
 /*									*/
@@ -443,7 +449,7 @@ LOCAL void cac_add_msg (IIU *piiu)
 /*
  *	CA_TASK_INITIALIZE
  */
-int APIENTRY ca_task_initialize(void)
+int epicsAPI ca_task_initialize(void)
 {
 	int			status;
 	struct ca_static	*ca_temp;
@@ -566,6 +572,7 @@ LOCAL void create_udp_fd()
 	status = create_net_chan(
 			&ca_static->ca_piiuCast,
 			NULL,
+			ca_static->ca_server_port,
 			IPPROTO_UDP);
 	if (~status & CA_M_SUCCESS) {
 		ca_static->ca_piiuCast = NULL;
@@ -620,7 +627,7 @@ LOCAL void create_udp_fd()
  * Modify or override the default 
  * client host name.
  */
-int APIENTRY ca_modify_host_name(char *pHostName)
+int epicsAPI ca_modify_host_name(char *pHostName)
 {
 	char		*pTmp;
 	unsigned	size;
@@ -675,7 +682,7 @@ int APIENTRY ca_modify_host_name(char *pHostName)
  * Modify or override the default 
  * client user name.
  */
-int APIENTRY ca_modify_user_name(char *pClientName)
+int epicsAPI ca_modify_user_name(char *pClientName)
 {
 	char		*pTmp;
 	unsigned	size;
@@ -730,7 +737,7 @@ int APIENTRY ca_modify_user_name(char *pClientName)
  * 	call this routine if you wish to free resources prior to task
  * 	exit- ca_task_exit() is also executed routinely at task exit.
  */
-int APIENTRY ca_task_exit (void)
+int epicsAPI ca_task_exit (void)
 {
 	/*
 	 * This indirectly calls ca_process_exit() below
@@ -858,10 +865,10 @@ void ca_process_exit()
 	/*
 	 * free hash tables 
 	 */
-	status = bucketFree(ca_static->ca_pSlowBucket);
-	assert(status == BUCKET_SUCCESS);
-	status = bucketFree(ca_static->ca_pFastBucket);
-	assert(status == BUCKET_SUCCESS);
+	status = bucketFree (ca_static->ca_pSlowBucket);
+	assert (status == S_bucket_success);
+	status = bucketFree (ca_static->ca_pFastBucket);
+	assert (status == S_bucket_success);
 
 	/*
 	 * free beacon hash table
@@ -880,7 +887,7 @@ void ca_process_exit()
  *
  * 	backwards compatible entry point to ca_search_and_connect()
  */
-int APIENTRY ca_build_and_connect
+int epicsAPI ca_build_and_connect
 (
  char *name_str,
  chtype get_type,
@@ -905,7 +912,7 @@ int APIENTRY ca_build_and_connect
  *
  *
  */
-int APIENTRY ca_search_and_connect
+int epicsAPI ca_search_and_connect
 (
  char *name_str,
  chid *chixptr,
@@ -1010,13 +1017,20 @@ int APIENTRY ca_search_and_connect
 	}
 
 	LOCK;
-	chix->cid = CLIENT_SLOW_ID_ALLOC;
-	status = bucketAddItemUnsignedId(pSlowBucket, &chix->cid, chix);
-	if(status != BUCKET_SUCCESS){
+	do {
+		chix->cid = CLIENT_SLOW_ID_ALLOC;
+		status = bucketAddItemUnsignedId (pSlowBucket, 
+					&chix->cid, chix);
+	} while (status == S_bucket_idInUse);
+
+	if (status != S_bucket_success) {
 		*chixptr = (chid) NULL;
 		free((char *) chix);
 		UNLOCK;
-		return ECA_ALLOCMEM;
+		if (status == S_bucket_noMemory) {
+			return ECA_ALLOCMEM;
+		}
+		return ECA_INTERNAL;
 	}
 
 	chix->puser = puser;
@@ -1127,7 +1141,7 @@ int             reply_type
  * 
  * 
  */
-int APIENTRY ca_array_get
+int epicsAPI ca_array_get
 (
 chtype 		type,
 unsigned long 	count,
@@ -1195,8 +1209,10 @@ void 		*pvalue
 		}
 		else {
 			LOCK;
-			ellDelete (&pend_read_list, &monix->node);
-			caIOBlockFree (monix);
+			if (ca_state(chix)==cs_conn) {
+				ellDelete (&pend_read_list, &monix->node);
+				caIOBlockFree (monix);
+			}
 			UNLOCK;
 		}
 	} 
@@ -1212,7 +1228,7 @@ void 		*pvalue
 /*
  * CA_ARRAY_GET_CALLBACK()
  */
-int APIENTRY ca_array_get_callback
+int epicsAPI ca_array_get_callback
 (
 chtype type,
 unsigned long count,
@@ -1273,8 +1289,10 @@ void *arg
 		status = issue_get_callback (monix, IOC_READ_NOTIFY);
 		if (status != ECA_NORMAL) {
 			LOCK;
-			ellDelete (&pend_read_list, &monix->node);
-			caIOBlockFree (monix);
+			if (ca_state(chix)==cs_conn) {
+				ellDelete (&pend_read_list, &monix->node);
+				caIOBlockFree (monix);
+			}
 			UNLOCK;
 		}
 	} 
@@ -1305,12 +1323,15 @@ LOCAL evid caIOBlockCreate(void)
 	}
 
 	if (pIOBlock) {
-		pIOBlock->id = CLIENT_FAST_ID_ALLOC;
-		status = bucketAddItemUnsignedId(
-				pFastBucket, 
-				&pIOBlock->id, 
-				pIOBlock);
-		if(status != BUCKET_SUCCESS){
+		do {
+			pIOBlock->id = CLIENT_FAST_ID_ALLOC;
+			status = bucketAddItemUnsignedId(
+					pFastBucket, 
+					&pIOBlock->id, 
+					pIOBlock);
+		} while (status == S_bucket_idInUse);
+
+		if(status != S_bucket_success){
 			free(pIOBlock);
 			pIOBlock = NULL;
 		}
@@ -1333,7 +1354,7 @@ void caIOBlockFree(evid pIOBlock)
 	status = bucketRemoveItemUnsignedId(
 			ca_static->ca_pFastBucket, 
 			&pIOBlock->id);
-	assert (status == BUCKET_SUCCESS);
+	assert (status == S_bucket_success);
 	pIOBlock->id = ~0U; /* this id always invalid */
 	ellAdd (&free_event_list, &pIOBlock->node);
 	UNLOCK;
@@ -1433,7 +1454,7 @@ LOCAL int issue_get_callback(evid monix, unsigned cmmd)
  *	CA_ARRAY_PUT_CALLBACK()
  *
  */
-int APIENTRY ca_array_put_callback
+int epicsAPI ca_array_put_callback
 (
 chtype				type,
 unsigned long			count,
@@ -1577,8 +1598,10 @@ void				*usrarg
 			pvalue);
 	if(status != ECA_NORMAL){
 		LOCK;
-		ellDelete (&pend_write_list, &monix->node);
-		caIOBlockFree(monix);
+		if (ca_state(chix)==cs_conn) {
+			ellDelete (&pend_write_list, &monix->node);
+			caIOBlockFree(monix);
+		}
 		UNLOCK;
 		return status;
 	}
@@ -1642,7 +1665,7 @@ LOCAL void ca_put_notify_action(PUTNOTIFY *ppn)
  *
  *
  */
-int APIENTRY ca_array_put (
+int epicsAPI ca_array_put (
 chtype				type,
 unsigned long			count,
 chid				chix,
@@ -1883,7 +1906,7 @@ LOCAL void free_put_convert(void *pBuf)
  *	Specify an event subroutine to be run for connection events
  *
  */
-int APIENTRY ca_change_connection_event
+int epicsAPI ca_change_connection_event
 (
 chid		chix,
 void 		(*pfunc)(struct connection_handler_args)
@@ -1915,7 +1938,7 @@ void 		(*pfunc)(struct connection_handler_args)
 /*
  * ca_replace_access_rights_event
  */
-int APIENTRY ca_replace_access_rights_event(
+int epicsAPI ca_replace_access_rights_event(
 chid 	chan, 
 void    (*pfunc)(struct access_rights_handler_args))
 {
@@ -1943,7 +1966,7 @@ void    (*pfunc)(struct access_rights_handler_args))
  *	Specify an event subroutine to be run for asynch exceptions
  *
  */
-int APIENTRY ca_add_exception_event
+int epicsAPI ca_add_exception_event
 (
 void 		(*pfunc)(struct exception_handler_args),
 void 		*arg
@@ -1975,7 +1998,7 @@ void 		*arg
  * Undocumented entry for the VAX OPI which may vanish in the future.
  *
  */
-int APIENTRY ca_add_io_event
+int epicsAPI ca_add_io_event
 (
 void 		(*ast)(),
 void 		*astarg
@@ -2010,7 +2033,7 @@ void 		*astarg
  *
  *
  */
-int APIENTRY ca_add_masked_array_event
+int epicsAPI ca_add_masked_array_event
 (
 chtype 		type,
 unsigned long	count,
@@ -2140,8 +2163,10 @@ long		mask
   		status = ca_request_event(monix);
 		if (status != ECA_NORMAL) {
 			LOCK;
-			ellDelete (&chix->eventq, &monix->node);
-			caIOBlockFree(monix);
+			if (ca_state(chix)==cs_conn) {
+				ellDelete (&chix->eventq, &monix->node);
+				caIOBlockFree(monix);
+			}
 			UNLOCK
 		}
 		return status;
@@ -2373,7 +2398,7 @@ void		*pfl
  *	after leaving this routine.
  *
  */
-int APIENTRY ca_clear_event (evid monix)
+int epicsAPI ca_clear_event (evid monix)
 {
 	int		status;
 	chid   		chix = monix->chan;
@@ -2448,6 +2473,7 @@ int APIENTRY ca_clear_event (evid monix)
 	else{
 		LOCK;
 		ellDelete(&monix->chan->eventq, &monix->node);
+		caIOBlockFree(monix);
 		UNLOCK;
 		status = ECA_NORMAL;
 	}
@@ -2471,7 +2497,7 @@ int APIENTRY ca_clear_event (evid monix)
  *	(from this source) after leaving this routine.
  *
  */
-int APIENTRY ca_clear_channel (chid chix)
+int epicsAPI ca_clear_channel (chid chix)
 {
 	int				status;
 	evid   				monix;
@@ -2614,7 +2640,7 @@ void clearChannelResources(unsigned id)
 	ellDelete (&piiu->chidlist, &chix->node);
 	status = bucketRemoveItemUnsignedId (
 			ca_static->ca_pSlowBucket, &chix->cid);
-	assert (status == BUCKET_SUCCESS);
+	assert (status == S_bucket_success);
 	free (chix);
 	if (piiu!=piiuCast && !piiu->chidlist.count){
 		TAG_CONN_DOWN(piiu);
@@ -2633,7 +2659,7 @@ void clearChannelResources(unsigned id)
 /*	IO completes.							*/
 /*	ca_flush_io() is called by this routine.			*/
 /************************************************************************/
-int APIENTRY ca_pend(ca_real timeout, int early)
+int epicsAPI ca_pend (ca_real timeout, int early)
 {
 	struct timeval	beg_time;
 	ca_real		delay;
@@ -2648,13 +2674,12 @@ int APIENTRY ca_pend(ca_real timeout, int early)
     		return ECA_EVDISALLOW;
 	}
 
+	cac_gettimeval (&ca_static->currentTime);
+
   	/*	
 	 * Flush the send buffers
 	 * (guarantees that we wait for all send buffer to be 
 	 * flushed even if this requires blocking)
-	 *
-	 * Also takes care of outstanding recvs
-	 * for single threaded clients 
 	 */
 	ca_flush_io();
 
@@ -2662,10 +2687,6 @@ int APIENTRY ca_pend(ca_real timeout, int early)
         	return ECA_NORMAL;
 	}
 
-	/*
-	 * the current time set iderectly within ca_flush_io()
-	 * above.
-	 */
 	beg_time = ca_static->currentTime;
 	delay = 0.0;
   	while(TRUE){
@@ -2681,25 +2702,37 @@ int APIENTRY ca_pend(ca_real timeout, int early)
 		}
 		else{
 			remaining = timeout-delay;
-      			if(remaining<=0.0){
-				if(early){
-					ca_pend_io_cleanup();
-				}
-				ca_flush_io();
-        			return ECA_TIMEOUT;
-      			}
 			/*
 			 * Allow for CA background labor
 			 */
 			remaining = min(SELECT_POLL, remaining);
   		}    
 
-		tmo.tv_sec = (long) remaining;
-		tmo.tv_usec = (long) ((remaining-tmo.tv_sec)*USEC_PER_SEC);
-		cac_block_for_io_completion(&tmo);
 
 		/*
-		 * the current time set within cac_block_for_io_completion()
+		 * If we are no longer waiting any significant
+		 * delay then return 
+		 */
+		if (remaining<=1.0e-6) {
+			if(early){
+				ca_pend_io_cleanup();
+				ca_flush_io();
+			}
+			/* 
+			 * be certain that we processed
+			 * recv backlog at least once
+			 */
+			tmo.tv_sec = 0L;
+			tmo.tv_usec = 0L;
+			cac_block_for_io_completion (&tmo);
+			return ECA_TIMEOUT;
+		}
+		tmo.tv_sec = (long) remaining;
+		tmo.tv_usec = (long) ((remaining-tmo.tv_sec)*USEC_PER_SEC);
+		cac_block_for_io_completion (&tmo);
+
+		/*
+		 * the current time set within cac_block_for_io_completion ()
 		 * above.
 		 */
 		if (timeout != 0.0) {
@@ -2714,20 +2747,31 @@ int APIENTRY ca_pend(ca_real timeout, int early)
  */
 ca_real cac_time_diff (ca_time *pTVA, ca_time *pTVB)
 {
-	ca_real 	delay;
+        ca_real         delay;
+        ca_real         udelay;
 
-	if(pTVA->tv_usec>pTVB->tv_usec){
-		delay = pTVA->tv_sec - pTVB->tv_sec;
-		delay += (pTVA->tv_usec - pTVB->tv_usec) /
-				(ca_real)(USEC_PER_SEC);
-	}
-	else{
-		delay = pTVA->tv_sec - pTVB->tv_sec - 1L;
-		delay += (USEC_PER_SEC - pTVB->tv_usec + pTVA->tv_usec) /
-				(ca_real)(USEC_PER_SEC);
-	}
+        /*
+         * works with unsigned tv_sec in struct timeval
+         * under HPUX
+         */
+        if (pTVA->tv_sec>pTVB->tv_sec) {
+                delay = pTVA->tv_sec - pTVB->tv_sec;
+        }
+        else {
+                delay = pTVB->tv_sec - pTVA->tv_sec;
+                delay = -delay;
+        }
 
-	return delay;
+        if(pTVA->tv_usec>pTVB->tv_usec){
+                udelay = pTVA->tv_usec - pTVB->tv_usec;
+        }
+        else{
+                delay -= 1.0;
+                udelay = (USEC_PER_SEC - pTVB->tv_usec) + pTVA->tv_usec;
+        }
+        delay += udelay / USEC_PER_SEC;
+
+        return delay;
 }
 
 
@@ -2791,28 +2835,19 @@ LOCAL	void ca_pend_io_cleanup()
 /*
  *	CA_FLUSH_IO()
  *
- * 	Flush the send buffer 
+ * 	flush the send buffer 
  *
  */
-int APIENTRY ca_flush_io()
+int epicsAPI ca_flush_io()
 {
 	struct ioc_in_use	*piiu;
 	struct timeval  	timeout;
-	int			pending;
 	unsigned long		bytesPending;
 
   	INITCHK;
 
-	pending = TRUE;
-      	timeout.tv_usec = 0;	
-	timeout.tv_sec = 0;
-	while(pending){
-
-		/*
-		 * perform socket io
-		 * and process recv backlog
-		 */
-		cac_mux_io(&timeout);
+	while (TRUE) {
+		int	pending;
 
 		/*
 		 * wait for all buffers to flush
@@ -2837,7 +2872,16 @@ int APIENTRY ca_flush_io()
 		}
 		UNLOCK;
 
+		if (!pending) {
+			break;
+		}
+
+		/*
+		 * perform socket io
+		 * and process recv backlog
+		 */
 		LD_CA_TIME (SELECT_POLL, &timeout);
+		cac_mux_io (&timeout);
 	}
 
   	return ECA_NORMAL;
@@ -2848,7 +2892,7 @@ int APIENTRY ca_flush_io()
  *	CA_TEST_IO ()
  *
  */
-int APIENTRY ca_test_io()
+int epicsAPI ca_test_io()
 {
     	if(pndrecvcnt<1){
         	return ECA_IODONE;
@@ -2864,7 +2908,7 @@ int APIENTRY ca_test_io()
  *
  *
  */
-void APIENTRY ca_signal(long ca_status,char *message)
+void epicsAPI ca_signal(long ca_status,char *message)
 {
 	ca_signal_with_file_and_lineno(ca_status, message, NULL, 0);
 }
@@ -2873,7 +2917,7 @@ void APIENTRY ca_signal(long ca_status,char *message)
 /*
  * ca_signal_with_file_and_lineno()
  */
-void APIENTRY ca_signal_with_file_and_lineno(
+void epicsAPI ca_signal_with_file_and_lineno(
 long		ca_status, 
 char		*message, 
 char		*pfilenm, 
@@ -3236,7 +3280,7 @@ LOCAL void ca_default_exception_handler(struct exception_handler_args args)
  *	(for a manager of the select system call under UNIX)
  *
  */
-int APIENTRY ca_add_fd_registration(CAFDHANDLER *func, void *arg)
+int epicsAPI ca_add_fd_registration(CAFDHANDLER *func, void *arg)
 {
 	fd_register_func = func;
 	fd_register_arg = arg;
@@ -3267,7 +3311,7 @@ int ca_defunct()
  *	currently implemented as a function 
  *	(may be implemented as a MACRO in the future)
  */
-char * APIENTRY ca_host_name_function(chid chix)
+char * epicsAPI ca_host_name_function(chid chix)
 {
 	IIU	*piiu;
 
@@ -3283,7 +3327,7 @@ char * APIENTRY ca_host_name_function(chid chix)
 /*
  * ca_v42_ok(chid chan)
  */
-int APIENTRY ca_v42_ok(chid chan)
+int epicsAPI ca_v42_ok(chid chan)
 {
 	int	v42;
 	IIU	*piiu;
@@ -3360,10 +3404,12 @@ int ca_channel_status(int tid)
 /*
  * ca_replace_printf_handler ()
  */
-int APIENTRY ca_replace_printf_handler (
+int epicsAPI ca_replace_printf_handler (
 int (*ca_printf_func)(const char *pformat, va_list args)
 )
 {
+	INITCHK;
+
 	if (ca_printf_func) {
 		ca_static->ca_printf_func = ca_printf_func;
 	}

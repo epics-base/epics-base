@@ -63,16 +63,17 @@ INSTALL_LIBRARY = $(INSTALL)
 
 #-------------------------------------------------------
 # vpath directories
+GENERIC_SRC_DIRS = . .. $(SRC_DIRS)
 OS_SRC_DIRS += $(foreach dir, $(SRC_DIRS) .., \
-            $(dir)/os/$(OS_CLASS) $(dir)/os/posix $(dir) )
+            $(dir)/os/$(OS_CLASS) $(dir)/os/posix $(dir)/os/default )
+ALL_SRC_DIRS = $(OS_SRC_DIRS) $(GENERIC_SRC_DIRS)
 
 #-------------------------------------------------------
 # compile line include directories
-SRC_INCLUDES += $(addprefix -I,$(OS_SRC_DIRS))
 INSTALL_INCLUDES += \
        -I$(INSTALL_INCLUDE)/os/$(OS_CLASS) \
-       -I$(INSTALL_INCLUDE)/os/posix \
-       -I$(INSTALL_INCLUDE)
+       -I$(INSTALL_INCLUDE) 
+GENERIC_SRC_INCLUDES = $(addprefix -I, $(GENERIC_SRC_DIRS))
 
 #--------------------------------------------------
 # GNU compiler defaults
@@ -234,9 +235,8 @@ DEPENDS_RULE = -$(COMPILE.cpp) $(DEPENDS_FLAG) $^ > DEPENDS
 
 #--------------------------------------------------
 # Include files
-
-INCLUDES = -I. $(USR_INCLUDES) $(SRC_INCLUDES) $(INSTALL_INCLUDES)\
-  $(TARGET_INCLUDES) $(OP_SYS_INCLUDES)
+INCLUDES = $(USR_INCLUDES) $(INSTALL_INCLUDES) \
+    $(TARGET_INCLUDES) $(GENERIC_SRC_INCLUDES) $(OP_SYS_INCLUDES)
 
 #--------------------------------------------------
 # Flags
@@ -316,18 +316,45 @@ INSTALL_DBS = $(DBDINSTALL:%= $(INSTALL_DBD)/%)\
 
 INSTALL_DBDNAME = $(DBDNAME:%= $(INSTALL_DBD)/%)
 
-INSTALL_INC += $(foreach inc,$(INC), \
-    $(addprefix $(INSTALL_INCLUDE)/, \
-    $(firstword  \
-    $(foreach dir,$(SRC_DIRS), \
-    $(subst $(dir)/, , \
-    $(wildcard \
-         $(dir)/os/$(OS_CLASS)/$(inc) \
-         $(dir)/os/posix/$(inc) \
-         $(dir)/$(inc)))) \
-    $(subst ../, ,$(wildcard ../os/$(OS_CLASS)/$(inc) \
-	 ../os/posix/$(inc) ../$(inc) )) \
-    $(inc)))) 
+#
+# auto determine the directory paths that things are installed to
+# RULES:
+# 1) found in any one of several os specific area 
+#       => install to $(INSTALL_INCLUDE)/os/$(OS_CLASS)
+# 2) not foundin (1) and found in generic area 
+#       => install to $(INSTALL_INCLUDE)
+# 3) not found in (1) or (2) then may be (not yet) computer generated 
+#       => install into $(INSTALL_INCLUDE)/os/$(OS_CLASS) and let
+#       build rules work on vpath
+#
+# These rules guarantee that the users include from
+# no more than two directories
+#
+INSTALL_INC += $(foreach inc, $(INC), \
+    $(firstword \
+        $(INSTALL_INC_hhh) \
+        $(INSTALL_INC_ddd) \
+        $(INSTALL_INC_iii) ) )
 
+#
+# Rule 1
+#
+INSTALL_INC_hhh = $(addprefix $(INSTALL_INCLUDE)/os/$(OS_CLASS)/, $(INSTALL_INC_ggg) )
+INSTALL_INC_ggg = $(foreach dir, $(OS_SRC_DIRS), $(INSTALL_INC_fff)  )
+INSTALL_INC_fff = $(subst $(dir)/, , $(INSTALL_INC_eee) )
+INSTALL_INC_eee = $(wildcard $(addsuffix /$(inc), $(dir)) )
+
+#
+# Rule 2
+#
+INSTALL_INC_ddd = $(addprefix $(INSTALL_INCLUDE)/, $(INSTALL_INC_ccc) )
+INSTALL_INC_ccc = $(foreach dir, .. $(SRC_DIRS), $(INSTALL_INC_bbb)  )
+INSTALL_INC_bbb = $(subst $(dir)/, , $(INSTALL_INC_aaa) )
+INSTALL_INC_aaa = $(wildcard $(addsuffix /$(inc), $(dir)) )
+
+#
+# Rule 3
+#
+INSTALL_INC_iii = $(INSTALL_INCLUDE)/os/$(OS_CLASS)/$(inc)
 
 endif

@@ -251,7 +251,7 @@ struct seqRecord *pseq;
       printf("seqRec-process Checking link %d - lnk %d dol %d\n", tmp,
       plink->lnk.type, plink->dol.type);
 
-    if ((lmask & 1) && ((plink->lnk.type == DB_LINK)||(plink->dol.type == DB_LINK))||((plink->lnk.type == CA_LINK)||(plink->dol.type == CA_LINK)))
+    if ((lmask & 1) && ((plink->lnk.type != CONSTANT)||(plink->dol.type != CONSTANT)))
     {
       if (seqRecDebug > 4)
 	printf("  seqRec-process Adding link %d at index %d\n", tmp, pcb->index);

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  1997/06/30 22:54:33  jhill
+ * use %p with pointers
+ *
  * Revision 1.2  1997/04/10 19:34:30  jhill
  * API changes
  *
@@ -28,7 +31,6 @@
 // CA server
 // 
 #include "server.h"
-#include "casClientIL.h"
 
 class casDGEvWakeup : public osiTimer {
 public:

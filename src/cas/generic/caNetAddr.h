@@ -15,10 +15,11 @@
 #define caNetAddrH
 
 #ifdef caNetAddrSock
-#include <osiSock.h>
+#include "osiSock.h"
 #endif
 
-#include <epicsAssert.h>
+#include "epicsAssert.h"
+#include "shareLib.h"
 
 class verifyCANetAddr {
 public:
@@ -26,7 +27,7 @@ public:
 };
 
 enum caNetAddrType {casnaUDF, casnaSock}; // only IP addresses (and undefined) supported at this time
-class caNetAddr {
+class epicsShareClass caNetAddr {
 	friend class verifyCANetAddr;
 public:
 

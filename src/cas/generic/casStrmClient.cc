@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.17  1997/06/30 22:54:28  jhill
+ * use %p with pointers
+ *
  * Revision 1.16  1997/06/13 09:16:00  jhill
  * connect proto changes
  *
@@ -78,19 +81,19 @@
  *
  */
 
-#include "server.h"
 #include "dbMapper.h"		// ait to dbr types
-#include "gddAppTable.h"        // EPICS application type table
+#include "gddAppTable.h"    // EPICS application type table
+#include "gddApps.h"		// gdd predefined application type codes
+#include "net_convert.h"	// byte order conversion from libca
+
+#include "server.h"
 #include "caServerIIL.h"	// caServerI inline functions
-#include "casClientIL.h"	// casClient inline functions
 #include "casChannelIIL.h"	// casChannelI inline functions
 #include "casPVIIL.h"		// casPVI inline functions
 #include "casCtxIL.h"		// casCtx inline functions
 #include "casEventSysIL.h"	// casEventSys inline functions
 #include "inBufIL.h"		// inBuf inline functions
 #include "outBufIL.h"		// outBuf inline functions
-#include "gddApps.h"
-#include "net_convert.h"	// byte order conversion from libca
 
 static const caHdr nill_msg = {0u,0u,0u,0u,0u,0u};
 
@@ -317,7 +320,8 @@ caStatus casStrmClient::readResponse (casChannelI *pChan, const caHdr &msg,
 {
 	caHdr 		*reply;
 	unsigned	size;
-	int        	localStatus;
+	caStatus	localStatus;
+	int			mapDBRStatus;
 	int        	strcnt;
 
 	if (status!=S_casApp_success) {
@@ -352,8 +356,10 @@ caStatus casStrmClient::readResponse (casChannelI *pChan, const caHdr &msg,
 	// convert gdd to db_access type
 	// (places the data in network format)
 	//
-	gddMapDbr[msg.m_type].conv_dbr((reply+1), pDesc);
-
+	mapDBRStatus = gddMapDbr[msg.m_type].conv_dbr((reply+1), msg.m_count, pDesc);
+	if (mapDBRStatus<0) {
+		return this->sendErrWithEpicsStatus(&msg, S_cas_badBounds, ECA_GETFAIL);
+	}
 #ifdef CONVERSION_REQUIRED
 	/* use type as index into conversion jumptable */
 	(* cac_dbr_cvrt[msg.m_type])
@@ -462,12 +468,19 @@ caStatus casStrmClient::readNotifyResponse (casChannelI *,
 	//
 	if (completionStatus == S_cas_success) {
 		if (pDesc) {
+			int mapDBRStatus;
 			//
 			// convert gdd to db_access type
 			// (places the data in network format)
 			//
-			gddMapDbr[msg.m_type].conv_dbr((reply+1), pDesc);
-			reply->m_cid = ECA_NORMAL;
+			mapDBRStatus = gddMapDbr[msg.m_type].conv_dbr((reply+1), msg.m_count, pDesc);
+			if (mapDBRStatus<0) {
+				errMessage(S_cas_badBounds, "get notify request");
+				reply->m_cid = ECA_GETFAIL;
+			}
+			else {
+				reply->m_cid = ECA_NORMAL;
+			}
 		}
 		else {
 			errMessage(S_cas_badParameter, 
@@ -598,7 +611,7 @@ caStatus casStrmClient::monitorResponse (casChannelI *pChan,
 		// there appears to be no success/fail
 		// status from this routine
 		//
-		gddMapDbr[msg.m_type].conv_dbr ((pReply+1), pDBRDD);
+		gddMapDbr[msg.m_type].conv_dbr ((pReply+1), msg.m_count, pDBRDD);
 
 #ifdef CONVERSION_REQUIRED
 		/* use type as index into conversion jumptable */
@@ -1377,7 +1390,7 @@ caStatus casStrmClient::eventCancelAction()
 	reply->m_cmmd = CA_PROTO_EVENT_ADD;
 	reply->m_postsize = 0u;
 	reply->m_type = pMon->getType();
-	reply->m_count = pMon->getCount();
+	reply->m_count = (unsigned short) pMon->getCount();
 	reply->m_cid = pciu->getCID();
 	reply->m_available = pMon->getClientId();
 
@@ -1862,8 +1875,10 @@ caStatus createDBRDD (unsigned dbrType, aitIndex dbrCount, gdd *&pDescRet)
 		//
 		// convert to atomic
 		//
-		pVal->setDimension(1);
-		pVal->setBound(0, 0u, dbrCount);
+		gddBounds bds;
+		bds.setSize(dbrCount);
+		bds.setFirst(0u);
+		pVal->setDimension(1u, &bds);
 	}
 	else if (pVal->isAtomic()) {
 		const gddBounds* pB = pVal->getBounds();
@@ -1879,7 +1894,7 @@ caStatus createDBRDD (unsigned dbrType, aitIndex dbrCount, gdd *&pDescRet)
 		}
 
 		for (dim=0u; dim<(unsigned)pVal->dimension(); dim++) {
-			if (pB->first()!=0u && pB->size()!=bound) {
+			if (pB[dim].first()!=0u && pB[dim].size()!=bound) {
 				if (modAllowed) {
 					pVal->setBound(dim, 0u, bound);
 				}
@@ -1889,7 +1904,7 @@ caStatus createDBRDD (unsigned dbrType, aitIndex dbrCount, gdd *&pDescRet)
 					return S_cas_internal;
 				}
 			}
-			bound = 0u;
+			bound = 1u;
 		}
 	}
 	else {

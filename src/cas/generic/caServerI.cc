@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.8  1997/06/13 09:15:51  jhill
+ * connect proto changes
+ *
  * Revision 1.7  1997/04/10 19:33:53  jhill
  * API changes
  *
@@ -295,12 +298,12 @@ void caServerI::connectCB(casIntfOS &intf)
 //
 void caServerI::advanceBeaconPeriod()
 {
-        //
-        // return if we are already at the plateau
-        //
-        if (this->beaconPeriod >= CAServerMaxBeaconPeriod) {
-                return;
-        }
+	//
+	// return if we are already at the plateau
+	//
+	if (this->beaconPeriod >= CAServerMaxBeaconPeriod) {
+		return;
+	}
 
 	this->beaconPeriod += this->beaconPeriod;
 
@@ -383,9 +386,9 @@ void caServerI::sendBeacon()
 	}
 	this->osiUnlock();
  
-        //
-        // double the period between beacons (but dont exceed max)
-        //
-        this->advanceBeaconPeriod();
+	//
+	// double the period between beacons (but dont exceed max)
+	//
+	this->advanceBeaconPeriod();
 }
 

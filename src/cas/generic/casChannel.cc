@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1997/04/10 19:33:59  jhill
+ * API changes
+ *
  * Revision 1.4  1996/09/04 20:17:34  jhill
  * use ptr not ref to satisfy MSVISC++
  *
@@ -44,7 +47,6 @@
  *
  */
 
-
 #include "server.h"
 #include "casChannelIIL.h" // casChannelI inline func
 #include "casPVListChanIL.h" // casPVListChan inline func
@@ -52,7 +54,7 @@
 //
 // casChannel::casChannel()
 //
-casChannel::casChannel(const casCtx &ctx) : 
+epicsShareFunc casChannel::casChannel(const casCtx &ctx) : 
 	casPVListChan (ctx, *this) 
 {
 }
@@ -60,11 +62,11 @@ casChannel::casChannel(const casCtx &ctx) :
 //
 // casChannel::~casChannel()
 //
-casChannel::~casChannel() 
+epicsShareFunc casChannel::~casChannel() 
 {
 }
 
-casPV *casChannel::getPV()
+epicsShareFunc casPV *casChannel::getPV()
 {
 	casPVI *pPVI = &this->casChannelI::getPVI();
 
@@ -79,7 +81,7 @@ casPV *casChannel::getPV()
 //
 // casChannel::setOwner()
 //
-void casChannel::setOwner(const char * const /* pUserName */, 
+epicsShareFunc void casChannel::setOwner(const char * const /* pUserName */, 
 	const char * const /* pHostName */)
 {
 	//
@@ -90,7 +92,7 @@ void casChannel::setOwner(const char * const /* pUserName */,
 //
 // casChannel::readAccess()
 //
-aitBool casChannel::readAccess () const 
+epicsShareFunc aitBool casChannel::readAccess () const 
 {
 	return aitTrue;
 }
@@ -98,7 +100,7 @@ aitBool casChannel::readAccess () const
 //
 // casChannel::writeAccess()
 //
-aitBool casChannel::writeAccess() const 
+epicsShareFunc aitBool casChannel::writeAccess() const 
 {
 	return aitTrue;
 }
@@ -107,7 +109,7 @@ aitBool casChannel::writeAccess() const
 //
 // casChannel::confirmationRequested()
 //
-aitBool casChannel::confirmationRequested() const 
+epicsShareFunc aitBool casChannel::confirmationRequested() const 
 {
 	return aitFalse;
 }
@@ -115,7 +117,7 @@ aitBool casChannel::confirmationRequested() const
 //
 // casChannel::show()
 //
-void casChannel::show(unsigned level) const
+epicsShareFunc void casChannel::show(unsigned level) const
 {
 	if (level>2u) {
 		printf("casChannel: read access = %d\n",
@@ -130,7 +132,7 @@ void casChannel::show(unsigned level) const
 //
 // casChannel::destroy()
 //
-void casChannel::destroy()
+epicsShareFunc void casChannel::destroy()
 {
 	delete this;
 }
@@ -138,7 +140,7 @@ void casChannel::destroy()
 //
 // casChannel::postAccessRightsEvent()
 //
-void casChannel::postAccessRightsEvent()
+epicsShareFunc void casChannel::postAccessRightsEvent()
 {
 	this->casChannelI::postAccessRightsEvent();
 }

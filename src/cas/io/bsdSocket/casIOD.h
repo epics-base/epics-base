@@ -7,6 +7,9 @@
 // Some BSD calls have crept in here
 //
 // $Log$
+// Revision 1.8  1997/06/13 09:16:14  jhill
+// connect proto changes
+//
 // Revision 1.7  1997/01/10 21:18:55  jhill
 // code around gnu g++ inline bug when -O isnt used
 //
@@ -33,7 +36,9 @@
 #ifndef includeCASIODH
 #define includeCASIODH 
 
+#undef epicsExportSharedSymbols
 #include "envDefs.h"
+#define epicsExportSharedSymbols
 
 void hostNameFromIPAddr (const caNetAddr *pAddr, 
 			char *pBuf, unsigned bufSize);
@@ -76,13 +81,13 @@ public:
 	void processDG();
 
 private:
-        ELLLIST        		beaconAddrList;
-	casDGIntfIO		*pAltOutIO;
-	casDGClient		&client;
-        SOCKET         		sock;
-        casIOState     		sockState;
-	aitInt16		connectWithThisPort;
-	aitInt16		dgPort;
+	ELLLIST beaconAddrList;
+	casDGIntfIO *pAltOutIO;
+	casDGClient &client;
+	SOCKET sock;
+	casIOState sockState;
+	unsigned short connectWithThisPort;
+	unsigned short dgPort;
 };
 
 struct ioArgsToNewStreamIO {
@@ -143,10 +148,10 @@ public:
 		return caNetAddr(this->addr);
 	}
 private:
-        casIOState              sockState;
-        SOCKET                  sock;
-        struct sockaddr_in	addr;
-	xBlockingStatus		blockingFlag;
+	casIOState sockState;
+	SOCKET sock;
+	struct sockaddr_in addr;
+	xBlockingStatus blockingFlag;
 };
 
 class caServerIO;
@@ -166,17 +171,17 @@ public:
 	virtual ~casIntfIO();
 	void show(unsigned level) const;
 
-        unsigned portNumber() const;
+	unsigned portNumber() const;
 
-        int getFD() const;
+	int getFD() const;
 
-        void setNonBlocking();
+	void setNonBlocking();
 
-       	// 
-        // called when we expect that a virtual circuit for a
-        // client can be created
-       	// 
-       	casStreamOS *newStreamClient(caServerI &cas) const;
+	// 
+	// called when we expect that a virtual circuit for a
+	// client can be created
+	// 
+	casStreamOS *newStreamClient(caServerI &cas) const;
 	
 	virtual casDGIntfIO *newDGIntfIO (casDGClient &dgClientIn) const = 0;
 
@@ -185,7 +190,7 @@ private:
 	casDGIntfIO *pNormalUDP;	// attached to this intf's addr
 	casDGIntfIO *pBCastUDP;	// attached to this intf's broadcast addr
 	SOCKET sock;
-        struct sockaddr_in addr;
+	struct sockaddr_in addr;
 };
 
 //
@@ -193,24 +198,24 @@ private:
 //
 class caServerIO {
 public:
-        caStatus init(caServerI &cas); //constructor does not return status
+	caStatus init(caServerI &cas); //constructor does not return status
 	~caServerIO();
- 
-        //
-        // show status of IO subsystem
-        //
-        void show (unsigned level) const;
- 
+
+	//
+	// show status of IO subsystem
+	//
+	void show (unsigned level) const;
+
 private:
 
-        //
-        // static member data
-        //
-        static int staticInitialized;
-        //
-        // static member func
-        //
-        static inline void staticInit();
+	//
+	// static member data
+	//
+	static int staticInitialized;
+	//
+	// static member func
+	//
+	static inline void staticInit();
 };
 
 

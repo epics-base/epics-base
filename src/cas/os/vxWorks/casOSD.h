@@ -7,6 +7,9 @@
 // Some BSD calls have crept in here
 //
 // $Log$
+// Revision 1.4  1997/06/13 09:16:17  jhill
+// connect proto changes
+//
 // Revision 1.3  1996/11/02 00:55:00  jhill
 // many improvements
 //
@@ -24,9 +27,8 @@
 #ifndef includeCASOSDH 
 #define includeCASOSDH 
 
-
-#include <osiMutex.h>
-#include <osiTimer.h>
+#include "osiMutex.h"
+#include "osiTimer.h"
 
 class caServerI;
 

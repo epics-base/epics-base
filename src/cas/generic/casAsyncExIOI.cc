@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1997/06/13 09:15:53  jhill
+ * connect proto changes
+ *
  * Revision 1.3  1997/04/10 19:33:54  jhill
  * API changes
  *
@@ -52,7 +55,7 @@
 //
 // casAsyncExIOI::casAsyncExIOI()
 //
-casAsyncExIOI::casAsyncExIOI(
+epicsShareFunc casAsyncExIOI::casAsyncExIOI(
 	const casCtx &ctx, casAsyncPVExistIO &ioIn) :
 	casAsyncIOI(*ctx.getClient(), ioIn),
 	msg(*ctx.getMsg()),
@@ -75,7 +78,7 @@ casAsyncExIOI::~casAsyncExIOI()
 //
 // casAsyncExIOI::postIOCompletion()
 //
-caStatus casAsyncExIOI::postIOCompletion(const pvExistReturn retValIn)
+epicsShareFunc caStatus casAsyncExIOI::postIOCompletion(const pvExistReturn retValIn)
 {
 	this->retVal = retValIn; 
 	return this->postIOCompletionI();
@@ -86,7 +89,7 @@ caStatus casAsyncExIOI::postIOCompletion(const pvExistReturn retValIn)
 // casAsyncExIOI::cbFuncAsyncIO()
 // (called when IO completion event reaches top of event queue)
 //
-caStatus casAsyncExIOI::cbFuncAsyncIO()
+epicsShareFunc caStatus casAsyncExIOI::cbFuncAsyncIO()
 {
 	caStatus 	status;
 

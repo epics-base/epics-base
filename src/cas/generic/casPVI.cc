@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.8  1997/04/10 19:34:15  jhill
+ * API changes
+ *
  * Revision 1.7  1996/12/12 18:55:38  jhill
  * fixed client initiated pv delete calls interestDelete() VF bug
  *
@@ -203,7 +206,7 @@ void casPVI::destroy()
 
 // casPVI::resourceType()
 //
-casResType casPVI::resourceType() const
+epicsShareFunc casResType casPVI::resourceType() const
 {
 	return casPVT;
 }

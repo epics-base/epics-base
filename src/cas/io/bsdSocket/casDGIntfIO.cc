@@ -59,11 +59,11 @@ caStatus casDGIntfIO::init(const caNetAddr &addr, unsigned connectWithThisPortIn
 		int autoBeaconAddr, int addConfigBeaconAddr, 
 		int useBroadcastAddr, casDGIntfIO *pAltOutIn)
 {
-	int			yes = TRUE;
-	struct sockaddr_in	serverAddr;
-	int			status;
-	aitInt16 		beaconPort;
-	ELLLIST			BCastAddrList;
+	int yes = TRUE;
+	struct sockaddr_in serverAddr;
+	int status;
+	unsigned short beaconPort;
+	ELLLIST BCastAddrList;
 
 	if (pAltOutIn) {
 		this->pAltOutIO = pAltOutIn;

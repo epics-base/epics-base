@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.6  1997/06/30 22:54:34  jhill
+// use %p with pointers
+//
 // Revision 1.5  1997/04/10 19:34:32  jhill
 // API changes
 //
@@ -33,7 +36,6 @@
 // CA server
 // 
 #include "server.h"
-#include "casClientIL.h" // casClient inline func
 #include "inBufIL.h" // inBuf inline func
 #include "outBufIL.h" // outBuf inline func
 

@@ -49,9 +49,10 @@ pvInfo exServer::billy (2.0, "billy", 10.0f, -10.0f, excasIoAsync, 1u);
 //
 // exServer::exServer()
 //
-exServer::exServer(const char * const pvPrefix, unsigned aliasCount) : 
+exServer::exServer(const char * const pvPrefix, unsigned aliasCount, aitBool scanOnIn) : 
 	caServer(NELEMENTS(this->pvList)+2u),
-	simultAsychIOCount(0u)
+	simultAsychIOCount(0u),
+	scanOn(scanOnIn)
 {
 	unsigned i;
 	exPV *pPV;
@@ -80,23 +81,23 @@ exServer::exServer(const char * const pvPrefix, unsigned aliasCount) :
 	exServer::ft.installReadFunc ("value", &exPV::getValue);
 	exServer::ft.installReadFunc ("enums", &exPV::getEnums);
 
-        //
-        // hash table size may need adjustment here?
-        //
-        resLibStatus = this->stringResTbl.init(NELEMENTS(this->pvList)*(aliasCount+1u)+2u);
-        if (resLibStatus) {
-                fprintf(stderr, "CAS: string resource id table init failed\n");
+	//
+	// hash table size may need adjustment here?
+	//
+	resLibStatus = this->stringResTbl.init(NELEMENTS(this->pvList)*(aliasCount+1u)+2u);
+	if (resLibStatus) {
+		fprintf(stderr, "CAS: string resource id table init failed\n");
 		//
 		// should throw an exception once this is portable
 		//
 		assert(resLibStatus==0);
-        }
+	}
 
 	//
 	// pre-create all of the simple PVs that this server will export
 	//
 	for (pPVI = exServer::pvList; pPVI < pPVAfter; pPVI++) {
-		pPV = pPVI->createPV (*this, aitTrue);
+		pPV = pPVI->createPV (*this, aitTrue, scanOnIn);
 		if (!pPV) {
 			fprintf(stderr, "Unable to create new PV \"%s\"\n",
 				pPVI->getName());
@@ -229,14 +230,13 @@ pvCreateReturn exServer::createPV
 	// If this is a synchronous PV create the PV now 
 	//
 	if (pvi.getIOType() == excasIoSync) {
-		pPV = pvi.createPV(*this, aitFalse);
+		pPV = pvi.createPV(*this, aitFalse, this->scanOn);
 		if (pPV) {
 			return *pPV;
 		}
 		else {
 			return S_casApp_noMemory;
 		}
-		
 	}
 	//
 	// Initiate async IO if this is an async PV
@@ -249,7 +249,7 @@ pvCreateReturn exServer::createPV
 		this->simultAsychIOCount++;
 
 		exAsyncCreateIO	*pIO = 
-			new exAsyncCreateIO(pvi, *this, ctx);
+			new exAsyncCreateIO(pvi, *this, ctx, this->scanOn);
 		if (pIO) {
 			return S_casApp_asyncCompletion;
 		}
@@ -262,7 +262,7 @@ pvCreateReturn exServer::createPV
 //
 // pvInfo::createPV()
 //
-exPV *pvInfo::createPV (exServer &exCAS, aitBool preCreateFlag)
+exPV *pvInfo::createPV (exServer &exCAS, aitBool preCreateFlag, aitBool scanOn)
 {
 	if (this->pPV) {
 		return this->pPV;
@@ -278,10 +278,10 @@ exPV *pvInfo::createPV (exServer &exCAS, aitBool preCreateFlag)
 	if (this->elementCount==1u) {
 		switch (this->ioType){
 		case excasIoSync:
-			pNewPV = new exScalarPV (exCAS, *this, preCreateFlag);
+			pNewPV = new exScalarPV (exCAS, *this, preCreateFlag, scanOn);
 			break;
 		case excasIoAsync:
-			pNewPV = new exAsyncPV (exCAS, *this, preCreateFlag);
+			pNewPV = new exAsyncPV (exCAS, *this, preCreateFlag, scanOn);
 			break;
 		default:
 			pNewPV = NULL;
@@ -290,7 +290,7 @@ exPV *pvInfo::createPV (exServer &exCAS, aitBool preCreateFlag)
 	}
 	else {
 		if (this->ioType==excasIoSync) {
-			pNewPV = new exVectorPV (exCAS, *this, preCreateFlag);
+			pNewPV = new exVectorPV (exCAS, *this, preCreateFlag, scanOn);
 		}
 		else {
 			pNewPV = NULL;
@@ -301,6 +301,10 @@ exPV *pvInfo::createPV (exServer &exCAS, aitBool preCreateFlag)
 	// load initial value (this is not done in
 	// the constructor because the base class's
 	// pure virtual function would be called)
+	//
+	// We always perform this step even if
+	// scanning is disable so that there will
+	// always be an initial value
 	//
 	if (pNewPV) {
 		this->pPV = pNewPV;
@@ -364,7 +368,7 @@ void exAsyncCreateIO::expire()
 {
 	exPV *pPV;
 
-	pPV = this->pvi.createPV(this->cas, aitFalse);
+	pPV = this->pvi.createPV(this->cas, aitFalse, this->scanOn);
 	if (pPV) {
 		this->postIOCompletion (pvCreateReturn(*pPV));
 	}

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1997/04/10 19:33:55  jhill
+ * API changes
+ *
  * Revision 1.2  1996/11/02 00:53:57  jhill
  * many improvements
  *
@@ -44,7 +47,7 @@
 // This must be virtual so that derived destructor will
 // be run indirectly. Therefore it cannot be inline.
 //
-casAsyncIO::~casAsyncIO()
+epicsShareFunc casAsyncIO::~casAsyncIO()
 {
 }
 
@@ -52,7 +55,7 @@ casAsyncIO::~casAsyncIO()
 // casAsyncIO::destroy()
 // (default is a normal delete)
 //
-void casAsyncIO::destroy()
+epicsShareFunc void casAsyncIO::destroy()
 {
 	delete this;
 }

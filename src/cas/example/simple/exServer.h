@@ -80,15 +80,15 @@ public:
 	const excasIoType getIOType () const { return this->ioType; }
 	const unsigned getElementCount() const 
 		{ return this->elementCount; }
-        void destroyPV() { this->pPV=NULL; }
-        exPV *createPV (exServer &exCAS, aitBool preCreateFlag);
+	void destroyPV() { this->pPV=NULL; }
+	exPV *createPV (exServer &exCAS, aitBool preCreateFlag, aitBool scanOn);
 private:
-	const double		scanPeriod;
-	const char 		*pName;
-	const double 		hopr;
-	const double		lopr;
+	const double	scanPeriod;
+	const char		*pName;
+	const double 	hopr;
+	const double	lopr;
 	const excasIoType	ioType;
-	const unsigned		elementCount;
+	const unsigned	elementCount;
 	exPV			*pPV;
 };
 
@@ -142,36 +142,36 @@ private:
 //
 class exPV : public casPV, public tsSLNode<exPV> {
 public:
-	exPV (caServer &cas, pvInfo &setup, aitBool preCreateFlag);
+	exPV (caServer &cas, pvInfo &setup, aitBool preCreateFlag, aitBool scanOn);
 	virtual ~exPV();
 
 	void show(unsigned level) const;
 
-        //
-        // Called by the server libary each time that it wishes to
-        // subscribe for PV the server tool via postEvent() below.
-        //
-        caStatus interestRegister();
+	//
+	// Called by the server libary each time that it wishes to
+	// subscribe for PV the server tool via postEvent() below.
+	//
+	caStatus interestRegister();
 
-        //
-        // called by the server library each time that it wishes to
-        // remove its subscription for PV value change events
-        // from the server tool via caServerPostEvents()
-        //
-        void interestDelete();
+	//
+	// called by the server library each time that it wishes to
+	// remove its subscription for PV value change events
+	// from the server tool via caServerPostEvents()
+	//
+	void interestDelete();
 
 	aitEnum bestExternalType() const;
 
-        //
-        // chCreate() is called each time that a PV is attached to
-        // by a client. The server tool must create a casChannel object
-        // (or a derived class) each time that this routine is called
-        //
-        // If the operation must complete asynchronously then return
-        // the status code S_casApp_asyncCompletion and then
-        // create the casChannel object at some time in the future
-        //
-        //casChannel *createChannel ();
+	//
+	// chCreate() is called each time that a PV is attached to
+	// by a client. The server tool must create a casChannel object
+	// (or a derived class) each time that this routine is called
+	//
+	// If the operation must complete asynchronously then return
+	// the status code S_casApp_asyncCompletion and then
+	// create the casChannel object at some time in the future
+	//
+	//casChannel *createChannel ();
 
 	//
 	// This gets called when the pv gets a new value
@@ -202,10 +202,10 @@ public:
 	//
 	aitTimeStamp getTS();
 
-        //
+	//
 	// If no one is watching scan the PV with 10.0
 	// times the specified period
-        //
+	//
 	const float getScanPeriod()
 	{
 		double curPeriod;
@@ -214,7 +214,7 @@ public:
 		if (!this->interest) {
 			curPeriod *= 10.0L;
 		}
-		return curPeriod;
+		return (float) curPeriod;
 	}
 
 	caStatus read (const casCtx &, gdd &protoIn);
@@ -237,9 +237,10 @@ protected:
 	gdd			*pValue;
 	exScanTimer		*pScanTimer;
 	pvInfo & 		info; 
-	aitBool			interest;
-	aitBool			preCreate;
-	static osiTime		currentTime;
+	aitBool		interest;
+	aitBool		preCreate;
+	aitBool		scanOn;
+	static osiTime	currentTime;
 
 	virtual caStatus updateValue (gdd &value) = 0;
 };
@@ -250,8 +251,8 @@ protected:
 class exScalarPV : public exPV {
 public:
 	exScalarPV (caServer &cas, 
-		pvInfo &setup, aitBool preCreateFlag) :
-			exPV (cas, setup, preCreateFlag) {}
+		pvInfo &setup, aitBool preCreateFlag, aitBool scanOnIn) :
+			exPV (cas, setup, preCreateFlag, scanOnIn) {}
 	void scan();
 private:
 	caStatus updateValue (gdd &value);
@@ -263,8 +264,8 @@ private:
 class exVectorPV : public exPV {
 public:
 	exVectorPV (caServer &cas, pvInfo &setup, 
-		aitBool preCreateFlag) :
-			exPV (cas, setup, preCreateFlag) {}
+		aitBool preCreateFlag, aitBool scanOnIn) :
+			exPV (cas, setup, preCreateFlag, scanOnIn) {}
 	void scan();
 
 	unsigned maxDimension() const;
@@ -279,7 +280,7 @@ private:
 //
 class exServer : public caServer {
 public:
-	exServer(const char * const pvPrefix, unsigned aliasCount);
+	exServer(const char * const pvPrefix, unsigned aliasCount, aitBool scanOn);
 	~exServer();
         void show (unsigned level) const;
         pvExistReturn pvExistTest (const casCtx&, const char *pPVName);
@@ -309,6 +310,7 @@ public:
 private:
 	resTable<pvEntry,stringId> stringResTbl;
 	unsigned simultAsychIOCount;
+	aitBool scanOn;
 
 	//
 	// list of pre-created PVs
@@ -332,19 +334,20 @@ public:
 	//
 	// exAsyncPV()
 	//
-	exAsyncPV (caServer &cas, pvInfo &setup, aitBool preCreateFlag) :
-		exScalarPV (cas, setup, preCreateFlag),
+	exAsyncPV (caServer &cas, pvInfo &setup, 
+		aitBool preCreateFlag, aitBool scanOnIn) :
+		exScalarPV (cas, setup, preCreateFlag, scanOnIn),
 		simultAsychIOCount(0u) {}
 
-        //
-        // read
-        //
-        caStatus read(const casCtx &ctxIn, gdd &value);
+	//
+	// read
+	//
+	caStatus read(const casCtx &ctxIn, gdd &value);
 
-        //
-        // write
-        //
-        caStatus write(const casCtx &ctxIn, gdd &value);
+	//
+	// write
+	//
+	caStatus write(const casCtx &ctxIn, gdd &value);
 
 	//
 	// removeIO
@@ -369,27 +372,27 @@ class exChannel : public casChannel{
 public:
         exChannel(const casCtx &ctxIn) : casChannel(ctxIn) {}
 
-        //void setOwner(const char *pUserName, const char *pHostName){};
+	//void setOwner(const char *pUserName, const char *pHostName){};
 
-        //
-        // called when the first client begins to monitor the PV
-        //
-        caStatus interestRegister () 
+	//
+	// called when the first client begins to monitor the PV
+	//
+	caStatus interestRegister () 
 	{	
-		return S_cas_success;
+	return S_cas_success;
 	}
 
-        //
-        // called when the last client stops monitoring the PV
-        //
-        void interestDelete () {}
+	//
+	// called when the last client stops monitoring the PV
+	//
+	void interestDelete () {}
 
-        //
-        // the following are encouraged to change during an channel's
-        // lifetime
-        //
-        aitBool readAccess () const {return aitTrue;};
-        aitBool writeAccess () const {return aitTrue;};
+	//
+	// the following are encouraged to change during an channel's
+	// lifetime
+	//
+	aitBool readAccess () const {return aitTrue;};
+	aitBool writeAccess () const {return aitTrue;};
 
 private:
 };
@@ -524,8 +527,9 @@ public:
 	// exAsyncCreateIO()
 	//
 	exAsyncCreateIO(pvInfo &pviIn, exServer &casIn, 
-		const casCtx &ctxIn) :
-		casAsyncPVCreateIO(ctxIn), pvi(pviIn), cas(casIn) {}
+		const casCtx &ctxIn, aitBool scanOnIn) :
+		casAsyncPVCreateIO(ctxIn), pvi(pviIn), 
+			cas(casIn), scanOn(scanOnIn) {}
 
 	~exAsyncCreateIO()
 	{
@@ -541,8 +545,9 @@ public:
 
 	const char *name() const;
 private:
-	pvInfo		&pvi;
+	pvInfo	&pvi;
 	exServer	&cas;
+	aitBool	scanOn;
 };
 
 //

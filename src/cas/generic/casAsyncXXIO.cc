@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1997/04/10 19:33:58  jhill
+ * API changes
+ *
  * Revision 1.1  1996/11/02 01:01:05  jhill
  * installed
  *
@@ -36,13 +39,24 @@
  *
  */
 
+//
+// EPICS
+// (some of these are included from casdef.h but
+// are included first here so that they are included
+// once only before epicsExportSharedSymbols is defined)
+//
+#include "alarm.h"		// EPICS alarm severity/condition 
+#include "errMdef.h"	// EPICS error codes 
+#include "gdd.h" 		// EPICS data descriptors 
+
+#define epicsExportSharedSymbols
 #include "casdef.h"
 
 //
 // This must be virtual so that derived destructor will
 // be run indirectly. Therefore it cannot be inline.
 //
-casAsyncReadIO::~casAsyncReadIO()
+epicsShareFunc casAsyncReadIO::~casAsyncReadIO()
 {
 }
 
@@ -50,7 +64,7 @@ casAsyncReadIO::~casAsyncReadIO()
 // This must be virtual so that derived destructor will
 // be run indirectly. Therefore it cannot be inline.
 //
-casAsyncWriteIO::~casAsyncWriteIO()
+epicsShareFunc casAsyncWriteIO::~casAsyncWriteIO()
 {
 }
 
@@ -58,7 +72,7 @@ casAsyncWriteIO::~casAsyncWriteIO()
 // This must be virtual so that derived destructor will
 // be run indirectly. Therefore it cannot be inline.
 //
-casAsyncPVExistIO::~casAsyncPVExistIO()
+epicsShareFunc casAsyncPVExistIO::~casAsyncPVExistIO()
 {
 }
 
@@ -66,7 +80,7 @@ casAsyncPVExistIO::~casAsyncPVExistIO()
 // This must be virtual so that derived destructor will
 // be run indirectly. Therefore it cannot be inline.
 //
-casAsyncPVCreateIO::~casAsyncPVCreateIO()
+epicsShareFunc casAsyncPVCreateIO::~casAsyncPVCreateIO()
 {
 }
 

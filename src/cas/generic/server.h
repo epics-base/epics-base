@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.18  1997/06/30 22:54:30  jhill
+ * use %p with pointers
+ *
  * Revision 1.17  1997/06/13 09:16:06  jhill
  * connect proto changes
  *
@@ -88,23 +91,39 @@
 //
 #include <stdio.h>
 
+#if defined(epicsExportSharedSymbols)
+#error suspect that libCom, ca, and gdd were not imported
+#endif
+
 //
 // EPICS
+// (some of these are included from casdef.h but
+// are included first here so that they are included
+// once only before epicsExportSharedSymbols is defined)
 //
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 #include "epicsAssert.h"
+#include "osiTime.h"
+#include "alarm.h"	// EPICS alarm severity/condition 
+#include "errMdef.h"	// EPICS error codes 
+#include "gdd.h" 		// EPICS data descriptors 
+#include "resourceLib.h"
 
 //
 // CA
 //
 #include "caCommonDef.h"
 #include "caerr.h"
-#include "casdef.h"
-#include "osiTime.h"
+
+#if defined(epicsExportSharedSymbols)
+#error suspect that libCom, ca, and gdd were not imported
+#endif
 
 //
 // CAS
 //
+#define epicsExportSharedSymbols
+#include "casdef.h" // sets proper def for shareLib.h defines
 #include "osiMutexCAS.h" // NOOP on single threaded OS
 void casVerifyFunc(const char *pFile, unsigned line, const char *pExp);
 void serverToolDebugFunc(const char *pFile, unsigned line, const char *pComment);
@@ -508,82 +527,82 @@ class casClient;
 typedef caStatus (casClient::*pCASMsgHandler) ();
 class casClient : public casCoreClient {
 public:
-        casClient (caServerI &, inBuf &, outBuf &);
+	casClient (caServerI &, inBuf &, outBuf &);
 	caStatus init(); //constructor does not return status
-        virtual ~casClient ();
+	virtual ~casClient ();
 
 	void show(unsigned level) const;
 
-        //
-        // send error response to a message
-        //
-        caStatus sendErr(const caHdr *, const int reportedStatus,
-                        const char *pFormat, ...);
+	//
+	// send error response to a message
+	//
+	caStatus sendErr(const caHdr *, const int reportedStatus,
+			const char *pFormat, ...);
 
 	unsigned getMinorVersion() const {return this->minor_version_number;}
 
 
-        //
-        // find the channel associated with a resource id
-        //
-        inline casChannelI *resIdToChannel(const caResId &id);
+	//
+	// find the channel associated with a resource id
+	//
+	casChannelI *resIdToChannel(const caResId &id);
 
-        virtual void clientHostName (char *pBuf, 
-			unsigned bufSize) const = 0;
+	virtual void clientHostName (char *pBuf, 
+		unsigned bufSize) const = 0;
 
 protected:
-        unsigned	minor_version_number;
+	unsigned	minor_version_number;
 	osiTime		elapsedAtLastSend;
 	osiTime		elapsedAtLastRecv;
 
-        caStatus processMsg();
+	caStatus processMsg();
 
 
-        //
-        //
-        //
-        caStatus sendErrWithEpicsStatus(const caHdr *pMsg,
-                        caStatus epicsStatus, caStatus clientStatus);
+	//
+	//
+	//
+	caStatus sendErrWithEpicsStatus(const caHdr *pMsg,
+			caStatus epicsStatus, caStatus clientStatus);
 
-        //
-        // logBadIdWithFileAndLineno()
-        //
+	//
+	// logBadIdWithFileAndLineno()
+	//
 #	define logBadId(MP, DP) \
 	this->logBadIdWithFileAndLineno(MP, DP, __FILE__, __LINE__)
-        caStatus logBadIdWithFileAndLineno(const caHdr *mp,
-                        const void *dp, const char *pFileName, 
+	caStatus logBadIdWithFileAndLineno(const caHdr *mp,
+			const void *dp, const char *pFileName, 
 			const unsigned lineno);
 
 private:
 	inBuf &inBufRef;
 	outBuf &outBufRef;
 
-        //
-        // dump message to stderr
-        //
-        void dumpMsg(const caHdr *mp, const void *dp);
+	//
+	// dump message to stderr
+	//
+	void dumpMsg(const caHdr *mp, const void *dp);
 
-        //
-        // one function for each CA request type
-        //
-        caStatus uknownMessageAction ();
-        caStatus ignoreMsgAction ();
-        caStatus noopAction ();
-        virtual caStatus eventAddAction ();
-        virtual caStatus eventCancelAction ();
-        virtual caStatus readAction ();
-        virtual caStatus readNotifyAction ();
-        virtual caStatus writeAction ();
-        virtual caStatus searchAction ();
-        virtual caStatus eventsOffAction ();
-        virtual caStatus eventsOnAction ();
-        virtual caStatus readSyncAction ();
-        virtual caStatus clearChannelAction ();
-        virtual caStatus claimChannelAction ();
-        virtual caStatus writeNotifyAction ();
-        virtual caStatus clientNameAction ();
-        virtual caStatus hostNameAction ();
-        virtual caStatus echoAction ();
+	//
+	// one function for each CA request type
+	//
+	caStatus uknownMessageAction ();
+	caStatus ignoreMsgAction ();
+	caStatus noopAction ();
+	virtual caStatus eventAddAction ();
+	virtual caStatus eventCancelAction ();
+	virtual caStatus readAction ();
+	virtual caStatus readNotifyAction ();
+	virtual caStatus writeAction ();
+	virtual caStatus searchAction ();
+	virtual caStatus eventsOffAction ();
+	virtual caStatus eventsOnAction ();
+	virtual caStatus readSyncAction ();
+	virtual caStatus clearChannelAction ();
+	virtual caStatus claimChannelAction ();
+	virtual caStatus writeNotifyAction ();
+	virtual caStatus clientNameAction ();
+	virtual caStatus hostNameAction ();
+	virtual caStatus echoAction ();
 
 	//
 	// obtain the user name and host from the derived class
@@ -591,9 +610,9 @@ private:
 	virtual const char *hostName() const;
 	virtual const char *userName() const;
 
-        //
-        // static members
-        //
+	//
+	// static members
+	//
 	static void loadProtoJumpTable();
 	static pCASMsgHandler msgHandlers[CA_PROTO_LAST_CMMD+1u];
 	static int msgHandlersInit;
@@ -607,11 +626,11 @@ private:
 class casStrmClient : public inBuf, public outBuf, public casClient,
 	public tsDLNode<casStrmClient> {
 public:
-        casStrmClient (caServerI &cas);
+	casStrmClient (caServerI &cas);
 	caStatus init(); //constructor does not return status
-        ~casStrmClient();
+	~casStrmClient();
 
-        void show (unsigned level) const;
+	void show (unsigned level) const;
 
 	//
 	// installChannel()
@@ -623,26 +642,26 @@ public:
 	//
 	void removeChannel(casChannelI &chan);
 
-        //
-        // one function for each CA request type that has
-        // asynchronous completion
-        //
-        virtual caStatus createChanResponse(const caHdr &, const pvCreateReturn &);
-        caStatus readResponse(casChannelI *pChan, const caHdr &msg,
-                        gdd *pDesc, const caStatus status);
-        caStatus readNotifyResponse(casChannelI *pChan, const caHdr &msg,
-                        gdd *pDesc, const caStatus status);
-        caStatus writeResponse(casChannelI *pChan, const caHdr &msg,
-                        const caStatus status);
-        caStatus writeNotifyResponse(casChannelI *pChan, const caHdr &msg,
-                        const caStatus status);
-        caStatus monitorResponse(casChannelI *pChan, const caHdr &msg, 
+	//
+	// one function for each CA request type that has
+	// asynchronous completion
+	//
+	virtual caStatus createChanResponse(const caHdr &, const pvCreateReturn &);
+	caStatus readResponse(casChannelI *pChan, const caHdr &msg,
 			gdd *pDesc, const caStatus status);
+	caStatus readNotifyResponse(casChannelI *pChan, const caHdr &msg,
+			gdd *pDesc, const caStatus status);
+	caStatus writeResponse(casChannelI *pChan, const caHdr &msg,
+			const caStatus status);
+	caStatus writeNotifyResponse(casChannelI *pChan, const caHdr &msg,
+			const caStatus status);
+	caStatus monitorResponse(casChannelI *pChan, const caHdr &msg, 
+		gdd *pDesc, const caStatus status);
 
-        //
-        //
-        //
-        caStatus noReadAccessEvent(casClientMon *);
+	//
+	//
+	//
+	caStatus noReadAccessEvent(casClientMon *);
 
 	//
 	// obtain the user name and host 
@@ -654,41 +673,41 @@ public:
 
 	unsigned getDebugLevel() const;
 private:
-        tsDLList<casChannelI>	chanList;
-        char                    *pUserName;
-        char                    *pHostName;
+	tsDLList<casChannelI>	chanList;
+	char                    *pUserName;
+	char                    *pHostName;
 
-        //
-        // createChannel()
-        //
-        caStatus createChannel (const char *pName);
+	//
+	// createChannel()
+	//
+	caStatus createChannel (const char *pName);
 
-        //
-        // verify read/write requests
-        //
-        caStatus verifyRequest (casChannelI *&pChan);
+	//
+	// verify read/write requests
+	//
+	caStatus verifyRequest (casChannelI *&pChan);
 
-        //
-        // one function for each CA request type
-        //
-        caStatus eventAddAction ();
-        caStatus eventCancelAction ();
-        caStatus readAction ();
-        caStatus readNotifyAction ();
-        caStatus writeAction ();
-        caStatus eventsOffAction ();
-        caStatus eventsOnAction ();
-        caStatus readSyncAction ();
-        caStatus clearChannelAction ();
-        caStatus claimChannelAction ();
-        caStatus writeNotifyAction ();
-        caStatus clientNameAction ();
-        caStatus hostNameAction ();
+	//
+	// one function for each CA request type
+	//
+	caStatus eventAddAction ();
+	caStatus eventCancelAction ();
+	caStatus readAction ();
+	caStatus readNotifyAction ();
+	caStatus writeAction ();
+	caStatus eventsOffAction ();
+	caStatus eventsOnAction ();
+	caStatus readSyncAction ();
+	caStatus clearChannelAction ();
+	caStatus claimChannelAction ();
+	caStatus writeNotifyAction ();
+	caStatus clientNameAction ();
+	caStatus hostNameAction ();
 
-        //
-        // accessRightsResponse()
-        //
-        caStatus accessRightsResponse (casChannelI *pciu);
+	//
+	// accessRightsResponse()
+	//
+	caStatus accessRightsResponse (casChannelI *pciu);
 	//
 
 	// these prepare the gdd based on what is in the ca hdr
@@ -696,22 +715,22 @@ private:
 	caStatus read (gdd *&pDesc);
 	caStatus write ();
 
-        //
-        // channelCreateFailed()
-        //
-        caStatus channelCreateFailed (const caHdr *mp, caStatus createStatus);
+	//
+	// channelCreateFailed()
+	//
+	caStatus channelCreateFailed (const caHdr *mp, caStatus createStatus);
 
 	caStatus writeArrayData();
 	caStatus writeScalarData();
 	caStatus writeString();
 
-        //
-        // io independent send/recv
-        //
-        xSendStatus xSend (char *pBuf, bufSizeT nBytesAvailableToSend,
-                        bufSizeT nBytesNeedToBeSent, bufSizeT &nBytesSent);
-        xRecvStatus xRecv (char *pBuf, bufSizeT nBytesToRecv,
-                        bufSizeT &nByesRecv);
+	//
+	// io independent send/recv
+	//
+	xSendStatus xSend (char *pBuf, bufSizeT nBytesAvailableToSend,
+			bufSizeT nBytesNeedToBeSent, bufSizeT &nBytesSent);
+	xRecvStatus xRecv (char *pBuf, bufSizeT nBytesToRecv,
+			bufSizeT &nByesRecv);
 	virtual xBlockingStatus blockingState() const = 0;
 	virtual xSendStatus osdSend (const char *pBuf, bufSizeT nBytesReq,
 			bufSizeT &nBytesActual) = 0;
@@ -727,11 +746,11 @@ class casDGIntfIO;
 //
 class casDGClient : public dgInBuf, public dgOutBuf, public casClient {
 public:
-        casDGClient (caServerI &serverIn);
+	casDGClient (caServerI &serverIn);
 
 	caStatus init(); //constructor does not return status
 
-        void show (unsigned level) const;
+	void show (unsigned level) const;
 
 	//
 	// only for use with DG io
@@ -757,17 +776,17 @@ private:
 
 	void ioBlockedSignal(); // dummy
 
-        //
-        // one function for each CA request type
-        //
-        caStatus searchAction ();
+	//
+	// one function for each CA request type
+	//
+	caStatus searchAction ();
 
-        //
-        // searchFailResponse()
-        //
-        caStatus searchFailResponse(const caHdr *pMsg);
+	//
+	// searchFailResponse()
+	//
+	caStatus searchFailResponse(const caHdr *pMsg);
 
-        caStatus searchResponse(const caHdr &, const pvExistReturn &);
+	caStatus searchResponse(const caHdr &, const pvExistReturn &);
 
 	caStatus asyncSearchResponse(
 		casDGIntfIO &outMsgIO, const caNetAddr &outAddr, 
@@ -779,7 +798,7 @@ private:
 	//
 	// IO depen
 	//
-        xRecvStatus xDGRecv (char *pBuf, bufSizeT nBytesToRecv,
+	xRecvStatus xDGRecv (char *pBuf, bufSizeT nBytesToRecv,
 			bufSizeT &nByesRecv, caNetAddr &sender);
 	xSendStatus xDGSend (char *pBuf, bufSizeT nBytesNeedToBeSent, 
 			bufSizeT &nBytesSent, const caNetAddr &recipient);
@@ -790,16 +809,16 @@ private:
 // casEventMaskEntry
 //
 class casEventMaskEntry : public tsSLNode<casEventMaskEntry>,
-        public casEventMask, public stringId {
+	public casEventMask, public stringId {
 public:
-        casEventMaskEntry (casEventRegistry &regIn,
-                casEventMask maskIn, const char *pName);
-        virtual ~casEventMaskEntry();
-        void show (unsigned level) const;
+	casEventMaskEntry (casEventRegistry &regIn,
+	    casEventMask maskIn, const char *pName);
+	virtual ~casEventMaskEntry();
+	void show (unsigned level) const;
 
 	virtual void destroy();
 private:
-        casEventRegistry        &reg;
+	casEventRegistry        &reg;
 };
 
 //
@@ -808,26 +827,26 @@ private:
 class casEventRegistry : private resTable <casEventMaskEntry, stringId> {
 	friend class casEventMaskEntry;
 public:
-        casEventRegistry(osiMutex &mutexIn) : 
+	casEventRegistry(osiMutex &mutexIn) : 
 		mutex(mutexIn), allocator(0), hasBeenInitialized(0) {}
 
 	int init();
 
-        ~casEventRegistry()
-        {
-                this->destroyAllEntries();
-        }
+	~casEventRegistry()
+	{
+	    this->destroyAllEntries();
+	}
 
-        casEventMask registerEvent (const char *pName);
- 
-        void show (unsigned level) const;
- 
+	casEventMask registerEvent (const char *pName);
+
+	void show (unsigned level) const;
+
 private:
 	osiMutex &mutex;
-        unsigned allocator;
-        unsigned char hasBeenInitialized;
- 
-        casEventMask maskAllocator();
+	unsigned allocator;
+	unsigned char hasBeenInitialized;
+
+	casEventMask maskAllocator();
 };
 
 #include "casIOD.h" // IO dependent
@@ -851,31 +870,31 @@ public:
 	caStatus init(); //constructor does not return status
 	~caServerI();
 
-        //
-        // find the channel associated with a resource id
-        //
-        inline casChannelI *resIdToChannel(const caResId &id);
+	//
+	// find the channel associated with a resource id
+	//
+	inline casChannelI *resIdToChannel(const caResId &id);
 
-        //
-        // find the PV associated with a resource id
-        //
-        casPVI *resIdToPV(const caResId &id);
+	//
+	// find the PV associated with a resource id
+	//
+	casPVI *resIdToPV(const caResId &id);
 
-        //
-        // find the client monitor associated with a resource id
-        //
+	//
+	// find the client monitor associated with a resource id
+	//
 	casClientMon *resIdToClientMon(const caResId &idIn);
 
-        casDGClient &castClient() {return this->dgClient;}
+	casDGClient &castClient() {return this->dgClient;}
 
 	void installClient(casStrmClient *pClient);
 
 	void removeClient(casStrmClient *pClient);
 
-        //
-        // is there space for a new channel
-        //
-        aitBool roomForNewChannel() const;
+	//
+	// is there space for a new channel
+	//
+	aitBool roomForNewChannel() const;
 
 	//
 	// send beacon and advance beacon timer
@@ -885,7 +904,7 @@ public:
 	unsigned getDebugLevel() const { return debugLevel; }
 	inline void setDebugLevel(unsigned debugLevelIn);
 
-        osiTime getBeaconPeriod() const { return this->beaconPeriod; }
+	osiTime getBeaconPeriod() const { return this->beaconPeriod; }
 
 	void show(unsigned level) const;
 
@@ -900,7 +919,7 @@ public:
 	//
 	// call virtual function in the interface class
 	//
-        inline caServer * operator -> ();
+	inline caServer * operator -> ();
 
 	void connectCB(casIntfOS &);
 
@@ -909,18 +928,18 @@ public:
 	caStatus addAddr(const caNetAddr &addr, int autoBeaconAddr,
 			int addConfigAddr);
 private:
-        void advanceBeaconPeriod();
+	void advanceBeaconPeriod();
 
-        casDGOS				dgClient;
+	casDGOS				dgClient;
 	//casCtx				ctx;
 	tsDLList<casStrmClient>		clientList;
 	tsDLList<casIntfOS>		intfList;
-        osiTime 			beaconPeriod;
+	osiTime 			beaconPeriod;
 	caServer			&adapter;
-        unsigned 			debugLevel;
+	unsigned 			debugLevel;
 
-        // the estimated number of proces variables default = 1024u 
-        const unsigned 			pvCountEstimate;
+	// the estimated number of proces variables default = 1024u 
+	const unsigned 			pvCountEstimate;
 
 	unsigned char			haveBeenInitialized;
 };

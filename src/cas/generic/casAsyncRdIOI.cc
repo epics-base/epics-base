@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1997/04/10 19:33:56  jhill
+ * API changes
+ *
  * Revision 1.2  1996/11/06 22:15:54  jhill
  * allow monitor init read to using rd async io
  *
@@ -56,7 +59,7 @@
 //
 // casAsyncRdIOI::casAsyncRdIOI()
 //
-casAsyncRdIOI::casAsyncRdIOI(const casCtx &ctx, casAsyncReadIO &ioIn) :
+epicsShareFunc casAsyncRdIOI::casAsyncRdIOI(const casCtx &ctx, casAsyncReadIO &ioIn) :
 	casAsyncIOI(*ctx.getClient(), ioIn),
 	msg(*ctx.getMsg()), 
 	chan(*ctx.getChannel()), 
@@ -91,7 +94,7 @@ casAsyncRdIOI::~casAsyncRdIOI()
 //
 // casAsyncRdIOI::postIOCompletion()
 //
-caStatus casAsyncRdIOI::postIOCompletion(caStatus completionStatusIn,
+epicsShareFunc caStatus casAsyncRdIOI::postIOCompletion(caStatus completionStatusIn,
 				gdd &valueRead)
 {
 	int gddStatus;
@@ -110,7 +113,7 @@ caStatus casAsyncRdIOI::postIOCompletion(caStatus completionStatusIn,
 //
 // casAsyncRdIOI::readOP()
 //
-int casAsyncRdIOI::readOP()
+epicsShareFunc int casAsyncRdIOI::readOP()
 {
 	return TRUE; // it is a read op
 }

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1997/04/10 19:34:02  jhill
+ * API changes
+ *
  * Revision 1.3  1996/12/11 00:59:37  jhill
  * added bad chan attachment detection
  *
@@ -44,44 +47,6 @@
 
 #ifndef casClientIL_h
 #define casClientIL_h
-
-#include "caServerIIL.h" // caServerI inline func 
-#include "casCtxIL.h" // caServerI inline func 
-
-//
-// find the channel associated with a resource id
-//
-inline casChannelI *casClient::resIdToChannel(const caResId &id)
-{
-        casChannelI *pChan;
- 
-	//
-	// look up the id in a hash table
-	//
-        pChan = this->ctx.getServer()->resIdToChannel(id);
-
-	//
-	// update the context
-	//
-        this->ctx.setChannel(pChan);
-	if (!pChan) {
-		return NULL;
-	}
-
-	//
-	// If the channel isnt attached to this client then
-	// something has gone wrong
-	//
-	if (&pChan->getClient()!=this) {
-		return NULL;
-	}
-
-	//
-	// update the context
-	//
-        this->ctx.setPV(&pChan->getPVI());
-        return pChan;
-}
 
 //
 // casClient::getDebugLevel()

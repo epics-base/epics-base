@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.10  1997/04/10 19:34:16  jhill
+ * API changes
+ *
  * Revision 1.9  1997/01/09 22:22:30  jhill
  * MSC cannot use the default constructor
  *
@@ -182,8 +185,7 @@ inline void casPVI::deleteSignal()
 //
 inline caStatus  casPVI::bestDBRType (unsigned &dbrType)
 {
-	int dbr;
-	dbr = gddAitToDbr[(*this)->bestExternalType()];
+	int dbr = gddAitToDbr[(*this)->bestExternalType()];
 	if (INVALID_DB_FIELD(dbr)) {
 		return S_cas_badType;
 	}
@@ -202,23 +204,23 @@ inline caStatus  casPVI::bestDBRType (unsigned &dbrType)
 //
 inline void casPVI::postEvent (const casEventMask &select, gdd &event)
 {
-        if (this->nMonAttached==0u) {
-                return;
-        }
- 
-        //
-        // the event queue is looking at the DD 
-        // now so it must not be changed
-        //
-        event.markConstant();
- 
+	if (this->nMonAttached==0u) {
+		return;
+	}
+
+	//
+	// the event queue is looking at the DD 
+	// now so it must not be changed
+	//
+	event.markConstant();
+
 	this->lock();
-        tsDLIterBD<casPVListChan> iter(this->chanList.first());
-        const tsDLIterBD<casPVListChan> eol;
-        while ( iter != eol ) {
-                iter->postEvent(select, event);
+	tsDLIterBD<casPVListChan> iter(this->chanList.first());
+	const tsDLIterBD<casPVListChan> eol;
+	while ( iter != eol ) {
+		iter->postEvent(select, event);
 		++iter;
-        }
+	}
 	this->unlock();
 }
 

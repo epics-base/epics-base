@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1997/04/10 19:34:08  jhill
+ * API changes
+ *
  * Revision 1.4  1996/12/11 01:02:35  jhill
  * removed casEventMaskEntry def
  *
@@ -52,7 +55,7 @@
  
 class casEventRegistry;
 
-class casEventMask {
+class epicsShareClass casEventMask {
         friend inline casEventMask operator| (const casEventMask &lhs, 
 					const casEventMask &rhs);
         friend inline casEventMask operator& (const casEventMask &lhs, 

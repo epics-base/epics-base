@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  1997/04/10 19:33:56  jhill
+ * API changes
+ *
  * Revision 1.5  1996/12/13 00:08:35  jhill
  * dont unlock after destroy
  *
@@ -131,7 +134,7 @@ casAsyncIOI::~casAsyncIOI()
 // casAsyncIOI::cbFunc()
 // (called when IO completion event reaches top of event queue)
 //
-caStatus casAsyncIOI::cbFunc(class casEventSys &)
+epicsShareFunc caStatus casAsyncIOI::cbFunc(class casEventSys &)
 {
 	casCoreClient	&theClient = this->client;
 	caStatus 	status;
@@ -230,7 +233,7 @@ caServer *casAsyncIOI::getCAS() const
 //
 // casAsyncIOI::readOP()
 //
-int casAsyncIOI::readOP()
+epicsShareFunc int casAsyncIOI::readOP()
 {
 	//
 	// not a read op

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1997/04/10 19:34:03  jhill
+ * API changes
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
  * ca server installation
  *
@@ -65,22 +68,22 @@ casClientMon::~casClientMon()
 //
 caStatus casClientMon::callBack(gdd &value)
 {
-        casCoreClient	&client = this->getChannel().getClient();
-        caStatus	status;
-	caHdr		msg;
+	casCoreClient &client = this->getChannel().getClient();
+	caStatus status;
+	caHdr msg;
 
 	//
 	// reconstruct the msg header
 	//
-        msg.m_cmmd = CA_PROTO_EVENT_ADD;
-        msg.m_postsize = 0u;
-        msg.m_type = this->getType();
-        msg.m_count = this->getCount();
-        msg.m_cid = this->getChannel().getSID();
-        msg.m_available = this->getClientId();
+	msg.m_cmmd = CA_PROTO_EVENT_ADD;
+	msg.m_postsize = 0u;
+	msg.m_type = this->getType();
+	msg.m_count = (ca_uint16_t) this->getCount();
+	msg.m_cid = this->getChannel().getSID();
+	msg.m_available = this->getClientId();
 
 	status = client.monitorResponse (&this->getChannel(),
-			msg, &value, S_cas_success);
+		msg, &value, S_cas_success);
 	return status;
 }
 

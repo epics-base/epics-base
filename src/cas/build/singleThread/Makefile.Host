@@ -60,6 +60,10 @@ LIBSRCS += casStreamIO.cc
 
 LIBRARY := cas
 
+LIBTYPE := SHARED
+
+DLL_LIBS := ca gdd Com
+
 include $(TOP)/config/RULES.Host
 
 clean::

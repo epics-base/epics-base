@@ -14,11 +14,12 @@ extern int main (int argc, const char **argv)
 	float		executionTime;
 	char		pvPrefix[128] = "";
 	unsigned	aliasCount = 1u;
-	aitBool		forever = aitTrue;
+	unsigned	scanOn = 1u;
+	aitBool	forever = aitTrue;
 	int		i;
 
 	for (i=1; i<argc; i++) {
-		if (sscanf(argv[i], "-d %u", &debugLevel)==1) {
+		if (sscanf(argv[i], "-d\t%u", &debugLevel)==1) {
 			continue;
 		}
 		if (sscanf(argv[i],"-t %f", &executionTime)==1) {
@@ -31,14 +32,18 @@ extern int main (int argc, const char **argv)
 		if (sscanf(argv[i],"-c %u", &aliasCount)==1) {
 			continue;
 		}
+		if (sscanf(argv[i],"-s %u", &scanOn)==1) {
+			continue;
+		}
+		printf ("\"%s\"?\n", argv[i]);
 		printf (
-"usage: %s [-d<debug level> -t<execution time> -p<PV name prefix> -c<numbered alias count>]\n", 
+"usage: %s [-d<debug level> -t<execution time> -p<PV name prefix> -c<numbered alias count>] -s<1=scan on (default), 0=scan off]>\n", 
 			argv[0]);
 
 		return (1);
 	}
 
-	pCAS = new exServer(pvPrefix, aliasCount);
+	pCAS = new exServer(pvPrefix, aliasCount, (aitBool) scanOn);
 	if (!pCAS) {
 		return (-1);
 	}

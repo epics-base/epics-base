@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1997/04/10 19:33:57  jhill
+ * API changes
+ *
  * Revision 1.2  1996/11/06 22:15:56  jhill
  * allow monitor init read to using rd async io
  *
@@ -47,7 +50,7 @@
 //
 // casAsyncWtIOI::casAsyncWtIOI()
 //
-casAsyncWtIOI::casAsyncWtIOI(const casCtx &ctx, casAsyncWriteIO &ioIn) :
+epicsShareFunc casAsyncWtIOI::casAsyncWtIOI(const casCtx &ctx, casAsyncWriteIO &ioIn) :
 	casAsyncIOI(*ctx.getClient(), ioIn),
 	msg(*ctx.getMsg()), 
 	chan(*ctx.getChannel()),
@@ -72,7 +75,7 @@ casAsyncWtIOI::~casAsyncWtIOI()
 //
 // casAsyncWtIOI::postIOCompletion()
 //
-caStatus casAsyncWtIOI::postIOCompletion(caStatus completionStatusIn)
+epicsShareFunc caStatus casAsyncWtIOI::postIOCompletion(caStatus completionStatusIn)
 {
 	this->completionStatus = completionStatusIn;
 	return this->postIOCompletionI();

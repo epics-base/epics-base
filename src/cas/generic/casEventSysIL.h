@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1997/04/10 19:34:09  jhill
+ * API changes
+ *
  * Revision 1.3  1996/11/02 00:54:13  jhill
  * many improvements
  *
@@ -67,7 +70,7 @@ inline casEventSys::casEventSys (casCoreClient &coreClientIn) :
 //
 inline caStatus casEventSys::init()
 {
-	if (mutex.init()) {
+	if (this->mutex.init()) {
 		return S_cas_noMemory;
 	}
 	return S_cas_success;

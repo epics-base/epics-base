@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.7  1997/06/25 05:09:00  jhill
+ * removed templInst.cc
+ *
  * Revision 1.6  1997/06/13 09:15:50  jhill
  * connect proto changes
  *
@@ -50,10 +53,11 @@
  *
  */
 
+#include "dbMapper.h"		// ait to dbr types 
+#include "gddAppTable.h"	// EPICS application type table
+
 #include "server.h"
 #include "caServerIIL.h"	// caServerI in line func
-#include "dbMapper.h"        	// ait to dbr types 
-#include "gddAppTable.h"        // EPICS application type table
 
 //
 // if the compiler supports explicit instantiation of
@@ -75,7 +79,7 @@
 //
 // caServer::caServer()
 //
-caServer::caServer(unsigned pvCountEstimateIn) :
+epicsShareFunc caServer::caServer(unsigned pvCountEstimateIn) :
         	pCAS (new caServerI(*this, pvCountEstimateIn)),
 		valueEventMask(this->registerEvent("value")),
 		logEventMask(this->registerEvent("log")),
@@ -103,7 +107,7 @@ caServer::caServer(unsigned pvCountEstimateIn) :
 //
 // caServer::~caServer()
 //
-caServer::~caServer()
+epicsShareFunc caServer::~caServer()
 {
 	if (this->pCAS) {
 		delete this->pCAS;
@@ -113,7 +117,7 @@ caServer::~caServer()
 //
 // caServer::pvExistTest()
 //
-pvExistReturn caServer::pvExistTest (const casCtx &, const char *)
+epicsShareFunc pvExistReturn caServer::pvExistTest (const casCtx &, const char *)
 {
 	return pverDoesNotExistHere;
 }
@@ -121,7 +125,7 @@ pvExistReturn caServer::pvExistTest (const casCtx &, const char *)
 //
 // caServer::createPV()
 //
-pvCreateReturn caServer::createPV (const casCtx &, const char *)
+epicsShareFunc pvCreateReturn caServer::createPV (const casCtx &, const char *)
 {
 	return S_casApp_pvNotFound;
 }
@@ -129,7 +133,7 @@ pvCreateReturn caServer::createPV (const casCtx &, const char *)
 //
 // caServer::registerEvent()
 //
-casEventMask caServer::registerEvent (const char *pName)
+epicsShareFunc casEventMask caServer::registerEvent (const char *pName)
 {
 	if (this->pCAS) {
 		return this->pCAS->registerEvent(pName);
@@ -144,7 +148,7 @@ casEventMask caServer::registerEvent (const char *pName)
 //
 // caServer::show()
 //
-void caServer::show(unsigned level) const
+epicsShareFunc void caServer::show(unsigned level) const
 {
 	if (this->pCAS) {
 		this->pCAS->show(level);
@@ -157,7 +161,7 @@ void caServer::show(unsigned level) const
 //
 // caServer::setDebugLevel()
 //
-void caServer::setDebugLevel (unsigned level)
+epicsShareFunc void caServer::setDebugLevel (unsigned level)
 {
 	if (pCAS) {
 		this->pCAS->setDebugLevel(level);
@@ -170,7 +174,7 @@ void caServer::setDebugLevel (unsigned level)
 //
 // caServer::getDebugLevel()
 //
-unsigned caServer::getDebugLevel ()
+epicsShareFunc unsigned caServer::getDebugLevel ()
 {
         if (pCAS) {
                 return this->pCAS->getDebugLevel();

@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.4  1997/06/30 23:38:47  jhill
+// use %p for pointers
+//
 // Revision 1.3  1996/11/02 00:55:01  jhill
 // many improvements
 //
@@ -23,7 +26,6 @@
 // CA server
 // 
 #include<server.h>
-#include <casClientIL.h> // casClient inline func
 #include <task_params.h> // EPICS task priorities
 
 

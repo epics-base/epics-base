@@ -18,6 +18,10 @@
 #endif
 #endif
 
+class exVecDestructor: public gddDestructor {
+	virtual void run (void *);
+};
+
 //
 // exVectorPV::maxDimension()
 //
@@ -44,20 +48,21 @@ aitIndex exVectorPV::maxBound (unsigned dimension) const
 //
 void exVectorPV::scan()
 {
-        caStatus        status;
-        double          radians;
-        gdd             *pDD;
-	aitFloat32 	*pF, *pFE, *pCF;
-        float           newValue;
-        float           limit;
- 
-        //
-        // update current time (so we are not required to do
-        // this every time that we write the PV which impacts
-        // throughput under sunos4 because gettimeofday() is
-        // slow)
-        //
-        this->currentTime = osiTime::getCurrent();
+	caStatus		status;
+	double		radians;
+	gdd			*pDD;
+	aitFloat32		*pF, *pFE, *pCF;
+	float			newValue;
+	float			limit;
+	exVecDestructor	*pDest;
+
+	//
+	// update current time (so we are not required to do
+	// this every time that we write the PV which impacts
+	// throughput under sunos4 because gettimeofday() is
+	// slow)
+	//
+	this->currentTime = osiTime::getCurrent();
  
 	pDD = new gddAtomic (gddAppType_value, aitEnumFloat32, 
 			1u, this->info.getElementCount());
@@ -71,13 +76,21 @@ void exVectorPV::scan()
 	pF = new aitFloat32 [this->info.getElementCount()];
 	if (!pF) {
 		pDD->unreference();
+		return;
+	}
+
+	pDest = new exVecDestructor;
+	if (!pDest) {
+		delete [] pF;
+		pDD->unreference();
+		return;
 	}
 
 	//
 	// install the buffer into the DD
 	// (do this before we increment pF)
 	//
-	*pDD = pF;
+	pDD->putRef(pF, pDest);
 
 	//
 	// double check for reasonable bounds on the
@@ -88,7 +101,7 @@ void exVectorPV::scan()
 		if (this->pValue->dimension()==1u) {
 			const gddBounds *pB = this->pValue->getBounds();
 			if (pB[0u].size()==this->info.getElementCount()) {
-				pCF = *pDD;
+				pCF = *this->pValue;
 			}
 		}
 	}
@@ -239,3 +252,11 @@ caStatus exVectorPV::updateValue(gdd &valueIn)
         return S_casApp_success;
 }
 
+//
+// exVecDestructor::run()
+//
+void exVecDestructor::run (void *pUntyped)
+{
+	aitFloat32 *pf = (aitFloat32 *) pUntyped;
+	delete [] pf;
+}

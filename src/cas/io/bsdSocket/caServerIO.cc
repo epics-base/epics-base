@@ -5,6 +5,9 @@
 //
 //
 // $Log$
+// Revision 1.6  1997/06/30 23:40:48  jhill
+// use %p for pointers
+//
 // Revision 1.5  1997/06/13 09:16:12  jhill
 // connect proto changes
 //
@@ -44,13 +47,13 @@ caServerIO::~caServerIO()
 //
 inline void caServerIO::staticInit()
 {
-        if (caServerIO::staticInitialized) {
-                return;
-        }
- 
+	if (caServerIO::staticInitialized) {
+		return;
+	}
+
 	installSigPipeIgnore();
 
-        caServerIO::staticInitialized = TRUE;
+	caServerIO::staticInitialized = TRUE;
 }
 
 
@@ -69,12 +72,12 @@ caStatus caServerIO::init(caServerI &cas)
 
 	caServerIO::staticInit();
 
-        //
-        // first try for the server's private port number env var.
-        // If this available use the CA server port number (used by
-        // clients to find the server). If this also isnt available
-        // then use a hard coded default - CA_SERVER_PORT.
-        //
+	//
+	// first try for the server's private port number env var.
+	// If this available use the CA server port number (used by
+	// clients to find the server). If this also isnt available
+	// then use a hard coded default - CA_SERVER_PORT.
+	//
 	if (envGetConfigParamPtr(&EPICS_CAS_SERVER_PORT)) {
 		port = caFetchPortConfig(&EPICS_CAS_SERVER_PORT, CA_SERVER_PORT);
 	}

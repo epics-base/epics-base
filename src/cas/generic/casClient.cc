@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.8  1997/06/30 22:54:25  jhill
+ * use %p with pointers
+ *
  * Revision 1.7  1997/04/10 19:34:01  jhill
  * API changes
  *
@@ -56,7 +59,6 @@
 #include <stdarg.h>
 
 #include "server.h"
-#include "casClientIL.h" // inline func for casClient
 #include "casEventSysIL.h" // inline func for casEventSys
 #include "casCtxIL.h" // inline func for casCtx
 #include "inBufIL.h" // inline func for inBuf 
@@ -113,6 +115,41 @@ caStatus casClient::init()
         }
 
 	return S_cas_success;
+}
+
+//
+// find the channel associated with a resource id
+//
+casChannelI *casClient::resIdToChannel(const caResId &id)
+{
+	casChannelI *pChan;
+
+	//
+	// look up the id in a hash table
+	//
+	pChan = this->ctx.getServer()->resIdToChannel(id);
+
+	//
+	// update the context
+	//
+	this->ctx.setChannel(pChan);
+	if (!pChan) {
+		return NULL;
+	}
+
+	//
+	// If the channel isnt attached to this client then
+	// something has gone wrong
+	//
+	if (&pChan->getClient()!=this) {
+		return NULL;
+	}
+
+	//
+	// update the context
+	//
+	this->ctx.setPV(&pChan->getPVI());
+	return pChan;
 }
 
 

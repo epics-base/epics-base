@@ -10,12 +10,13 @@ osiTime exPV::currentTime;
 //
 // exPV::exPV()
 //
-exPV::exPV (caServer &casIn, pvInfo &setup, aitBool preCreateFlag) : 
+exPV::exPV (caServer &casIn, pvInfo &setup, aitBool preCreateFlag, aitBool scanOnIn) : 
 	pValue(NULL),
 	info(setup),
 	casPV(casIn),
 	interest(aitFalse),
-	preCreate(preCreateFlag)
+	preCreate(preCreateFlag),
+	scanOn(scanOnIn)
 {
 	//
 	// no dataless PV allowed
@@ -27,8 +28,10 @@ exPV::exPV (caServer &casIn, pvInfo &setup, aitBool preCreateFlag) :
 	// (we will speed this up to the normal rate when
 	// someone is watching the PV)
 	//
-	this->pScanTimer = 
-		new exScanTimer (this->getScanPeriod(), *this);
+	if (this->scanOn) {
+		this->pScanTimer = 
+			new exScanTimer (this->getScanPeriod(), *this);
+	}
 }
 
 //
@@ -64,43 +67,43 @@ void exPV::destroy()
 //
 caStatus exPV::update(gdd &valueIn)
 {
-        caServer *pCAS = this->getCAS();
-        //
-        // gettimeofday() is very slow under sunos4
-        //
-        osiTime cur (this->currentTime);
-        struct timespec t;
+	caServer *pCAS = this->getCAS();
+	//
+	// gettimeofday() is very slow under sunos4
+	//
+	osiTime cur (this->currentTime);
+	struct timespec t;
 	caStatus cas;
  
-        if (!pCAS) {
-                return S_casApp_noSupport;
-        }
+	if (!pCAS) {
+		return S_casApp_noSupport;
+	}
  
-#       if DEBUG
-                printf("Setting %s too:\n", this->info.getName().string());
-                valueIn.dump();
-#       endif
+#	if DEBUG
+		printf("Setting %s too:\n", this->info.getName().string());
+		valueIn.dump();
+#	endif
 
 	cas = this->updateValue (valueIn);
 	if (cas || !this->pValue) {
 		return cas;
 	}
 
-        t.tv_sec = (time_t) cur.getSecTruncToLong ();
+	t.tv_sec = (time_t) cur.getSecTruncToLong ();
 	t.tv_nsec = cur.getNSecTruncToLong ();
-        this->pValue->setTimeStamp(&t);
+	this->pValue->setTimeStamp(&t);
 	this->pValue->setStat (epicsAlarmNone);
 	this->pValue->setSevr (epicsSevNone);
-	
+
 	//
 	// post a value change event
 	//
-        if (this->interest==aitTrue) {
-                casEventMask select(pCAS->valueEventMask|pCAS->logEventMask);
-                this->postEvent (select, *this->pValue);
-        }
- 
-        return S_casApp_success;
+	if (this->interest==aitTrue) {
+			casEventMask select(pCAS->valueEventMask|pCAS->logEventMask);
+			this->postEvent (select, *this->pValue);
+	}
+
+	return S_casApp_success;
 }
 
 //
@@ -108,7 +111,7 @@ caStatus exPV::update(gdd &valueIn)
 //
 void exScanTimer::expire ()
 {
-        pv.scan();
+	pv.scan();
 }
 
 //
@@ -156,16 +159,20 @@ caStatus exPV::interestRegister()
 
 	this->interest = aitTrue;
 
+	if (!this->scanOn) {
+		return S_casApp_success;
+	}
+
 	//
 	// If a slow scan is pending then reschedule it
 	// with the specified scan period.
 	//
 	if (this->pScanTimer) {
-		this->pScanTimer->reschedule(this->info.getScanPeriod());
+		this->pScanTimer->reschedule(this->getScanPeriod());
 	}
 	else {
 		this->pScanTimer = new exScanTimer
-				(this->info.getScanPeriod(), *this);
+				(this->getScanPeriod(), *this);
 		if (!this->pScanTimer) {
 			errPrintf (S_cas_noMemory, __FILE__, __LINE__,
 				"Scan init for %s failed\n", 
@@ -183,7 +190,7 @@ caStatus exPV::interestRegister()
 void exPV::interestDelete()
 {
 	this->interest = aitFalse;
-	if (this->pScanTimer) {
+	if (this->pScanTimer && this->scanOn) {
 		this->pScanTimer->reschedule(this->getScanPeriod());
 	}
 }
@@ -301,7 +308,7 @@ caStatus exPV::getLowLimit(gdd &value)
 //
 caStatus exPV::getUnits(gdd &units)
 {
-	static aitString str("furlongs");
+	aitString str("furlongs", aitStrRefConstImortal);
 	units.put(str);
 	return S_cas_success;
 }
@@ -345,7 +352,7 @@ caStatus exPV::getValue(gdd &value)
 //
 caStatus exPV::write (const casCtx &, gdd &valueIn)
 {
-        return this->update (valueIn);
+	return this->update (valueIn);
 }
  
 //
@@ -354,6 +361,6 @@ caStatus exPV::write (const casCtx &, gdd &valueIn)
 //
 caStatus exPV::read (const casCtx &, gdd &protoIn)
 {
-        return exServer::read(*this, protoIn);
+	return exServer::read(*this, protoIn);
 }
 

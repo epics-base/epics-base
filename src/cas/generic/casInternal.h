@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.12  1997/06/13 09:15:58  jhill
+ * connect proto changes
+ *
  * Revision 1.11  1997/04/10 19:34:10  jhill
  * API changes
  *
@@ -180,16 +183,16 @@ private:
 //
 class casMonitor : public tsDLNode<casMonitor>, public casRes {
 public:
-        casMonitor(caResId clientIdIn, casChannelI &chan, 
-		unsigned long nElem, unsigned dbrType,
-		const casEventMask &maskIn, osiMutex &mutexIn);
-        virtual ~casMonitor();
+	casMonitor(caResId clientIdIn, casChannelI &chan, 
+	unsigned long nElem, unsigned dbrType,
+	const casEventMask &maskIn, osiMutex &mutexIn);
+	virtual ~casMonitor();
 
 	caStatus executeEvent(casMonEvent *);
 
-        void post(const casEventMask &select, gdd &value);
+	inline void post(const casEventMask &select, gdd &value);
 
-        virtual void show (unsigned level) const;
+	virtual void show (unsigned level) const;
 	virtual caStatus callBack(gdd &value)=0;
 
 	caResId getClientId() const 
@@ -210,26 +213,26 @@ public:
 	{	
 		return this->ciu;
 	}
-	
+
 	void postIfModified();
 
-private:
-        casMonEvent		overFlowEvent;
-	unsigned long const     nElem;
-	osiMutex		&mutex;
-	casChannelI		&ciu;
-	const casEventMask	mask;
-	gdd			*pModifiedValue;
-	caResId const		clientId;
-	unsigned char const	dbrType;
-	unsigned char		nPend;
-	unsigned		ovf:1;
-	unsigned		enabled:1;
+	private:
+	casMonEvent overFlowEvent;
+	unsigned long const nElem;
+	osiMutex &mutex;
+	casChannelI &ciu;
+	const casEventMask mask;
+	gdd *pModifiedValue;
+	caResId const clientId;
+	unsigned char const dbrType;
+	unsigned char nPend;
+	unsigned ovf:1;
+	unsigned enabled:1;
 
 	void enable();
 	void disable();
 
-        void push (gdd &value);
+	void push (gdd &value);
 };
 
 //
@@ -241,24 +244,17 @@ inline void casMonitor::post(const casEventMask &select, gdd &value)
 	casEventMask	result(select&this->mask);
 	//
 	// NOOP if this event isnt selected
+	// or if it is disabled
 	//
-        if (result.noEventsSelected()) {
-                return;
-        }
- 
-        //
-        // NOOP if currently disabled
-        //
-        if (!this->enabled) {
-                return;
-        }
+	if (result.noEventsSelected() || !this->enabled) {
+		return;
+	}
 
 	//
 	// else push it on the queue
 	//
 	this->push(value);
 }
-
 
 class caServer;
 class casCoreClient;
@@ -276,16 +272,16 @@ public:
 	casAsyncIOI (casCoreClient &client, casAsyncIO &ioExternal);
 	virtual ~casAsyncIOI();
 
-        //
-        // place notification of IO completion on the event queue
-        //
+	//
+	// place notification of IO completion on the event queue
+	//
 	caStatus postIOCompletionI();
 
 	inline void lock();
 	inline void unlock();
 
 	virtual caStatus cbFuncAsyncIO()=0;
-	virtual int readOP();
+	epicsShareFunc virtual int readOP();
 
 	void destroyIfReadOP();
 
@@ -296,7 +292,7 @@ public:
 	void reportInvalidAsynchIO(unsigned);
 
 protected:
-        casCoreClient	&client;   
+	casCoreClient	&client;   
 	casAsyncIO	&ioExternal;
 
 private:
@@ -305,11 +301,11 @@ private:
 	unsigned	ioComplete:1;
 	unsigned	serverDelete:1;
 	unsigned	duplicate:1;
-        //
-        // casEvent virtual call back function
-        // (called when IO completion event reaches top of event queue)
-        //
-        caStatus cbFunc(casEventSys &);
+	//
+	// casEvent virtual call back function
+	// (called when IO completion event reaches top of event queue)
+	//
+	epicsShareFunc caStatus cbFunc(casEventSys &);
 
 	inline casAsyncIO * operator -> ();
 };
@@ -321,22 +317,22 @@ private:
 //
 class casAsyncRdIOI : public casAsyncIOI { 
 public:
-        casAsyncRdIOI(const casCtx &ctx, casAsyncReadIO &ioIn);
+	epicsShareFunc casAsyncRdIOI(const casCtx &ctx, casAsyncReadIO &ioIn);
 	virtual ~casAsyncRdIOI();
 
 	void destroyIfReadOP();
 
-	caStatus cbFuncAsyncIO();
+	epicsShareFunc caStatus cbFuncAsyncIO();
 	casAsyncIO &getAsyncIO();
 
-	caStatus postIOCompletion(caStatus completionStatus,
-			gdd &valueRead);
-	int readOP();
+	epicsShareFunc caStatus postIOCompletion(caStatus completionStatus,
+		gdd &valueRead);
+	epicsShareFunc int readOP();
 private:
-        caHdr const	msg;
+	caHdr const	msg;
 	casChannelI	&chan; 
 	gdd		*pDD;
-        caStatus	completionStatus;
+	caStatus	completionStatus;
 };
 
 //
@@ -346,20 +342,20 @@ private:
 //
 class casAsyncWtIOI : public casAsyncIOI { 
 public:
-        casAsyncWtIOI(const casCtx &ctx, casAsyncWriteIO &ioIn);
+	epicsShareFunc casAsyncWtIOI(const casCtx &ctx, casAsyncWriteIO &ioIn);
 	virtual ~casAsyncWtIOI();
 
-        //
-        // place notification of IO completion on the event queue
-        //
-	caStatus postIOCompletion(caStatus completionStatus);
+	//
+	// place notification of IO completion on the event queue
+	//
+	epicsShareFunc caStatus postIOCompletion(caStatus completionStatus);
 
-	caStatus cbFuncAsyncIO();
+	epicsShareFunc caStatus cbFuncAsyncIO();
 	casAsyncIO &getAsyncIO();
 private:
-        caHdr const	msg;
+	caHdr const	msg;
 	casChannelI	&chan; 
-        caStatus	completionStatus;
+	caStatus	completionStatus;
 };
 
 class casDGIntfIO;
@@ -371,18 +367,18 @@ class casDGIntfIO;
 //
 class casAsyncExIOI : public casAsyncIOI { 
 public:
-        casAsyncExIOI(const casCtx &ctx, casAsyncPVExistIO &ioIn);
+	epicsShareFunc casAsyncExIOI(const casCtx &ctx, casAsyncPVExistIO &ioIn);
 	virtual ~casAsyncExIOI();
 
-        //
-        // place notification of IO completion on the event queue
-        //
-	caStatus postIOCompletion(const pvExistReturn retVal);
+	//
+	// place notification of IO completion on the event queue
+	//
+	epicsShareFunc caStatus postIOCompletion(const pvExistReturn retVal);
 
-	caStatus cbFuncAsyncIO();
+	epicsShareFunc caStatus cbFuncAsyncIO();
 	casAsyncIO &getAsyncIO();
 private:
-        caHdr const		msg;
+	caHdr const		msg;
 	pvExistReturn 		retVal;
 	casDGIntfIO * const 	pOutDGIntfIO;
 	const caNetAddr	dgOutAddr;
@@ -395,18 +391,18 @@ private:
 //
 class casAsyncPVCIOI : public casAsyncIOI { 
 public:
-        casAsyncPVCIOI(const casCtx &ctx, casAsyncPVCreateIO &ioIn);
+	epicsShareFunc casAsyncPVCIOI(const casCtx &ctx, casAsyncPVCreateIO &ioIn);
 	virtual ~casAsyncPVCIOI();
 
-        //
-        // place notification of IO completion on the event queue
-        //
-	caStatus postIOCompletion(const pvCreateReturn &retVal);
+	//
+	// place notification of IO completion on the event queue
+	//
+	epicsShareFunc caStatus postIOCompletion(const pvCreateReturn &retVal);
 
-	caStatus cbFuncAsyncIO();
+	epicsShareFunc caStatus cbFuncAsyncIO();
 	casAsyncIO &getAsyncIO();
 private:
-        caHdr const	msg;
+	caHdr const	msg;
 	pvCreateReturn 	retVal;
 };
 
@@ -420,35 +416,35 @@ class casPVI;
 // events can be posted
 //
 class casChannelI : public tsDLNode<casChannelI>, public casRes, 
-			public casEvent {
+				public casEvent {
 public:
 	casChannelI (const casCtx &ctx, casChannel &chanAdapter);
 	virtual ~casChannelI();
 
-        casCoreClient &getClient() const
+	casCoreClient &getClient() const
 	{	
 		return this->client;
 	}
-        const caResId getCID() 
+	const caResId getCID() 
 	{
 		return this->cid;
 	}
 	//
 	// fetch the unsigned integer server id for this PV
 	//
-        inline const caResId getSID();
+	inline const caResId getSID();
 
-        void postAllModifiedEvents();
+	void postAllModifiedEvents();
 
 	//
 	// addMonitor()
 	//
-        inline void addMonitor(casMonitor &mon);
+	inline void addMonitor(casMonitor &mon);
 
 	//
 	// deleteMonitor()
 	//
-        inline void deleteMonitor(casMonitor &mon);
+	inline void deleteMonitor(casMonitor &mon);
 
 	//
 	// findMonitor
@@ -458,7 +454,7 @@ public:
 	//
 	inline casMonitor *findMonitor(const caResId clientIdIn);
 
-        casPVI &getPVI() const 
+	casPVI &getPVI() const 
 	{
 		return this->pv;
 	}
@@ -486,16 +482,16 @@ public:
 	//
 	// access rights event call back
 	//
-        caStatus cbFunc(casEventSys &);
+	caStatus cbFunc(casEventSys &);
 
 	inline void postAccessRightsEvent();
 protected:
-        tsDLList<casMonitor>	monitorList;
+	tsDLList<casMonitor>	monitorList;
 	tsDLList<casAsyncIOI>	ioInProgList;
-        casCoreClient		&client;
-        casPVI 			&pv;
+	casCoreClient		&client;
+	casPVI 			&pv;
 	casChannel		&chan;
-        caResId const           cid;    // client id 
+	caResId const           cid;    // client id 
 	unsigned		clientDestroyPending:1;
 	unsigned		accessRightsEvPending:1;
 };
@@ -527,22 +523,22 @@ public:
 	casPVI (caServer &cas, casPV &pvAdapter);
 	virtual ~casPVI(); 
 
-        //
-        // for use by the server library
-        //
-        inline caServerI &getCAS() const;
+	//
+	// for use by the server library
+	//
+	inline caServerI &getCAS() const;
 
-        //
-        // CA only does 1D arrays for now (and the new server
-        // temporarily does only scalers)
-        //
-        inline aitIndex nativeCount();
+	//
+	// CA only does 1D arrays for now (and the new server
+	// temporarily does only scalers)
+	//
+	inline aitIndex nativeCount();
 
-        //
-        // only for use by casMonitor
-        //
-        caStatus registerEvent ();
-        void unregisterEvent ();
+	//
+	// only for use by casMonitor
+	//
+	caStatus registerEvent ();
+	void unregisterEvent ();
 
 	//
 	// only for use by casAsyncIOI 
@@ -577,7 +573,7 @@ public:
 
 	inline casPV * operator -> () const;
 
-        virtual casResType resourceType() const;
+	epicsShareFunc virtual casResType resourceType() const;
 
 	virtual void show(unsigned level) const;
 

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  1997/06/30 23:38:46  jhill
+ * use %p for pointers
+ *
  * Revision 1.2  1996/09/16 18:27:09  jhill
  * vxWorks port changes
  *
@@ -24,7 +27,6 @@
 #include <taskLib.h> // vxWorks
 
 #include <server.h>
-#include <casClientIL.h> // casClient inline func
 #include <task_params.h> // EPICS task priorities
 
 //

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1997/06/13 09:15:54  jhill
+ * connect proto changes
+ *
  * Revision 1.1  1997/04/10 19:38:14  jhill
  * installed
  *
@@ -52,7 +55,7 @@
 //
 // casAsyncPVCIOI::casAsyncPVCIOI()
 //
-casAsyncPVCIOI::casAsyncPVCIOI(const casCtx &ctx, 
+epicsShareFunc casAsyncPVCIOI::casAsyncPVCIOI(const casCtx &ctx, 
 			casAsyncPVCreateIO &ioIn) :
 	casAsyncIOI(*ctx.getClient(), ioIn),
 	msg(*ctx.getMsg()),
@@ -73,7 +76,7 @@ casAsyncPVCIOI::~casAsyncPVCIOI()
 //
 // casAsyncPVCIOI::postIOCompletion()
 //
-caStatus casAsyncPVCIOI::postIOCompletion(const pvCreateReturn &retValIn)
+epicsShareFunc caStatus casAsyncPVCIOI::postIOCompletion(const pvCreateReturn &retValIn)
 {
 	this->retVal = retValIn; 
 	return this->postIOCompletionI();

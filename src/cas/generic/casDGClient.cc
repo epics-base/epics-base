@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.11  1997/06/30 22:54:27  jhill
+ * use %p with pointers
+ *
  * Revision 1.10  1997/06/13 09:15:56  jhill
  * connect proto changes
  *
@@ -61,15 +64,14 @@
  *
  *
  */
+#include "gddApps.h"
 
 #include "server.h"
 #include "caServerIIL.h" // caServerI inline func
-#include "casClientIL.h" // casClient inline func
 #include "dgOutBufIL.h" // dgOutBuf inline func
 #include "dgInBufIL.h" // dgInBuf inline func
 #include "casCtxIL.h" // casCtx inline func
 #include "casCoreClientIL.h" // casCoreClient inline func
-#include "gddApps.h"
 
 //
 // CA Server Datagram (DG) Client

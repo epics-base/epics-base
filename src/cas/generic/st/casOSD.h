@@ -7,6 +7,9 @@
 // Some BSD calls have crept in here
 //
 // $Log$
+// Revision 1.3  1997/06/13 09:16:10  jhill
+// connect proto changes
+//
 // Revision 1.2  1997/04/10 19:34:31  jhill
 // API changes
 //
@@ -27,8 +30,12 @@
 #ifndef includeCASOSDH 
 #define includeCASOSDH 
 
+#undef epicsExportSharedSymbols
 #include "osiTimer.h"
 #include "fdManager.h"
+#define epicsExportSharedSymbols
+
+#include "shareLib.h" // redefine share lib defines
 
 class caServerI;
 class caServerOS;
@@ -113,18 +120,18 @@ class casStreamOS : public casStreamIO {
 	friend class casStreamEvWakeup;
 	friend class casStreamIOWakeup;
 public:
-        casStreamOS(caServerI &, const ioArgsToNewStreamIO &ioArgs);
+	casStreamOS(caServerI &, const ioArgsToNewStreamIO &ioArgs);
 	caStatus init();
 	~casStreamOS();
 
-        //
-        // process any incomming messages
-        //
-        casProcCond processInput();
-        caStatus start();
+	//
+	// process any incomming messages
+	//
+	casProcCond processInput();
+	caStatus start();
 
-        void recvCB();
-        void sendCB();
+	void recvCB();
+	void sendCB();
 
 	void sendBlockSignal();
 	
@@ -140,13 +147,13 @@ private:
 	casStreamEvWakeup	*pEvWk;
 	casStreamIOWakeup	*pIOWk;
 	unsigned		sendBlocked:1;
-        //
-        //
-        //
-        inline void armSend ();
-        inline void armRecv ();
-        inline void disarmSend();
-        inline void disarmRecv();
+	//
+	//
+	//
+	inline void armSend ();
+	inline void armRecv ();
+	inline void disarmSend();
+	inline void disarmRecv();
 };
 
 class casDGEvWakeup;
@@ -157,13 +164,13 @@ class casDGEvWakeup;
 class casDGOS : public casDGIO {
 	friend class casDGEvWakeup;
 public:
-        casDGOS(caServerI &cas);
+	casDGOS(caServerI &cas);
 	~casDGOS();
 
-        //
-        // process any incomming messages
-        //
-        casProcCond processInput();
+	//
+	// process any incomming messages
+	//
+	casProcCond processInput();
 
 	void sendBlockSignal() {}
 
@@ -172,7 +179,7 @@ public:
 
 	void show(unsigned level) const;
 
-        caStatus start();
+	caStatus start();
 private:
 	casDGEvWakeup	*pEvWk;
 };

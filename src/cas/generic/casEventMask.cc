@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  1997/04/10 19:34:07  jhill
+ * API changes
+ *
  * Revision 1.5  1996/12/11 01:01:56  jhill
  * casEventMaskEntry constr does res tbl add
  *
@@ -47,8 +50,6 @@
  *
  */
 
-
-#include "epicsAssert.h"
 #include <stdio.h>
 #include <limits.h>
 

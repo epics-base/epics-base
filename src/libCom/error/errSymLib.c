@@ -54,6 +54,8 @@
  * .03  04-29-93	joh 	errPrint() became errPrintStatus()	
  * .04	05-06-93	joh	errPrintStatus() get var args 
  *				for vprintf()
+ * .05 	05-02-94	joh	errToLogMsg now defaults to TRUE
+ *
  * Modification Log: errSymLib.c
  * -----------------
  * .01  09-04-93        rcz     Merged errMessage.c, errPrint.c, errSymFind.c
@@ -76,7 +78,6 @@
 
 extern SYMTAB_ID  statSymTbl;
 
-extern int errToLogMsg;
 #else
 #include <string.h>
 extern int errno;
@@ -108,7 +109,7 @@ extern ERRSYMTAB_ID errSymTbl;
 
 
 #ifdef vxWorks
-int errToLogMsg = FALSE;
+int errToLogMsg = TRUE;
 #endif
 
 /*Declare storage for errVerbose( defined in errMdef.h)*/

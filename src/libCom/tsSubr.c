@@ -807,6 +807,13 @@ struct tsDetail *pT;	/* I pointer to time structure to convert */
 	else if (pT->dstOverlapChar == 'd')
 	    dst = 1;
     }
+/*----------------------------------------------------------------------------
+*    assume no DST if tsMinWest is 600 (includes Hawaii and may be
+*    exclusively Hawaii?). (WFL, 95/08/15)
+*----------------------------------------------------------------------------*/
+	if (tsMinWest == 600)
+		dst = 0;
+
     if (dst)
 	stamp.secPastEpoch -= TS_DST_HRS_ADD * 3600;
     stamp.secPastEpoch += tsMinWest*60;
@@ -868,6 +875,13 @@ struct tsDetail *pT;	/* O pointer to time structure for conversion */
 	else
 	    dst = 1;
     }
+
+/*----------------------------------------------------------------------------
+*    assume no DST if tsMinWest is 600 (includes Hawaii and may be
+*    exclusively Hawaii?). (WFL, 95/08/15)
+*----------------------------------------------------------------------------*/
+	if (tsMinWest == 600)
+		dst = 0;
 
 /*----------------------------------------------------------------------------
 *    now, if necessary, change the time stamp to daylight and then convert

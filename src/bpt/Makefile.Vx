@@ -7,10 +7,10 @@ VX_WARN_YES = -Wall -pedantic
 
 MENUS += menuConvert.h
 
-BPTS += bptTypeJdegC.db
-BPTS += bptTypeJdegF.db
-BPTS += bptTypeKdegC.db
-BPTS += bptTypeKdegF.db
+BPTS += bptTypeJdegC.dbd
+BPTS += bptTypeJdegF.dbd
+BPTS += bptTypeKdegC.dbd
+BPTS += bptTypeKdegF.dbd
 
 
 SRCS.c = \

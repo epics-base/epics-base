@@ -1,16 +1,6 @@
-
-/* drvDvx.c */
-/* drvDvx.c -  Driver Support Routines for Dvx */
-/* share/src/drv $Id$ */
-#include	<vxWorks.h>
-#include	<stdioLib.h>
-#include	 <vme.h>
-
-#include	<dbDefs.h>
-#include	<drvSup.h>
-#include	<module_types.h>
-#include	<dvx_driver.h>
 /*
+ * share/src/drv $Id$
+ *
  * subroutines which are used to interface with the analogic 2502
  * A/D scanner cards
  *
@@ -86,13 +76,23 @@
  * BG 6/26/92   added level to dvx_io_report in drvDvx structure.
  * JH 6/29/92	moved the rest of the dvx io_report here
  * BG 7/2/92	removed the semaphores from dvx_io_report
+ * JH 8/5/92	dvx driver init is called from drvDvx now	
  */
 
+static char *SccsId = "$Id$\t$Date$";
+
+#include	<vxWorks.h>
+#include	<stdioLib.h>
+#include	<vme.h>
+#include	<dbDefs.h>
+#include	<drvSup.h>
+#include	<module_types.h>
+#include	<drvDvx.h>
 
 
 /* If any of the following does not exist replace it with #define <> NULL */
-static long report();
-static long init();
+long dvx_io_report();
+long dvx_driver_init();
 
 struct {
 	long	number;
@@ -100,23 +100,9 @@ struct {
 	DRVSUPFUN	init;
 } drvDvx={
 	2,
-	report,
-	init};
-
-static long report(level)
-int	level;
-{
-    dvx_io_report(level);
-}
-
-static long init()
-{
-    int status;
+	dvx_io_report,
+	dvx_driver_init};
 
-    return(0);
-}
-
-static char *SccsId = "@(#)dvx_driver.c 1.0\t5/1/90";
 struct dvx_rec dvx[MAX_DVX_CARDS];
 static char *dvx_shortaddr;
 static char *dvx_stdaddr;
@@ -125,8 +111,8 @@ static char *dvx_stdaddr;
 
 short dvx_cards_found[MAX_DVX_CARDS]; 
 
-void  dvx_reset();
- 
+void dvx_reset();
+void dvx_int(); 
 
 /*
  * dvx_int
@@ -134,6 +120,7 @@ void  dvx_reset();
  * interrupt service routine
  *
  */
+void
 dvx_int(dvxptr)
  struct dvx_rec *dvxptr;
 {
@@ -180,7 +167,7 @@ dvx_int(dvxptr)
  * initialization for 2502 cards
  *
  */
-dvx_driver_init()
+long dvx_driver_init()
 {
  int card_id, i, j, status;
  short *ramptr;
@@ -198,12 +185,12 @@ dvx_driver_init()
 
 
  if ((status = sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO,ai_addrs[DVX2502],&dvx_shortaddr)) != OK){
-   printf("Addressing error in dvx driver short address \n");
+   printf("A16 base addr problems DVX 2502\n");
    return ERROR;
  }
 
  if ((status = sysBusToLocalAdrs(VME_AM_STD_SUP_DATA,ai_memaddrs[DVX2502],&dvx_stdaddr)) != OK){
-   printf("Addressing error in dvx driver\n");
+   printf("A24 base addr problems DVX 2502\n");
    return ERROR;
  }
 
@@ -226,6 +213,16 @@ dvx_driver_init()
       if ((ibptr = (struct dvx_inbuf *)malloc(sizeof (struct dvx_inbuf)))
           == NULL)			/* abort if buffer allocation */
        return -1;			/* unsuccessfull */
+      
+      /*
+       * test for local/external addr dont match
+       * as the author assumed
+       */
+      if(lclToA24(ibptr)!=ibptr){
+		logMsg("%s: A24 address map failure\n");
+		return ERROR;
+      }
+
       if (j == 0)
        dvx[i].inbuf = ibptr;		/* initialize if first */
       ibptr->link = ibptra;		/* link to last buffer */
@@ -444,7 +441,7 @@ dvx_dump(card,firstchan,lastchan)
  *
  *
 */
-int dvx_io_report(level)
+long dvx_io_report(level)
    short int level;
  {  
    short int i, j, card_id;
@@ -537,9 +534,6 @@ dvx_dma_init(ptr)
  dev = ptr->pdvx2502;				/* point to hardware */
  dev->dma_point = DMA_CSR; 		        /* reset chip */
  dev->dma_data = CMR_RESET;
-#if 0 /* If we are processor 0 this is allready taken care of ?? */
- sysBCLSet(0x00000700,0x00000200);		/* enable add mods 3D, 39 */
-#endif
  /* build chain table */
  if ((cptr = cptr0 = (short *)malloc(DVX_CTBL)) == NULL)
   return -1;
@@ -668,4 +662,31 @@ dvx_reset()
 	if(card_found){
 		taskDelay(sysClkRateGet());
 	}
+}
+
+
+
+/*
+ *
+ * lclToA24()
+ *
+ *
+ */
+LOCAL
+void *lclToA24(void *pLocal)
+{
+	int	status;
+	void	*pA24;
+
+	status = sysLocalToBusAdrs(
+                        VME_AM_STD_USER_DATA,
+                        pLocal,
+                        &pA24);
+	if(status<0){
+		logMsg(	"%s:Local addr 0x%X does not map to A24 addr\n",
+			__FILE__,
+			pLocal);
+		return NULL;
+	}
+	return pA24;
 }

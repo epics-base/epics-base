@@ -48,6 +48,7 @@
  * .10	06-26-92        bg	Added level to compu_sm_io_report in drvCompuSm 
  *                              structure   
  * .11	06-29-92	joh	took file ptr arg out of io report
+ * .12	08-06-92	joh	include file name change	
  */
 #include <vxWorks.h>
 #include <vme.h>
@@ -62,7 +63,7 @@
 #include	<dbDefs.h>
 #include	<drvSup.h>
 #include	<module_types.h>
-#include	<compu_sm_driver.h>
+#include	<drvCompuSm.h>
 #include	 <steppermotor.h>
 #include	 <task_params.h>
 

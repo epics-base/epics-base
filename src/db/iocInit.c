@@ -41,6 +41,7 @@
  * .11  02-28-92        jba     ANSI C changes
  * .12  03-26-92        mrk     changed test if(status) to if(rtnval)
  * .13  04-17-92        rcz     changed sdrLoad to dbRead
+ * .14	04-17-92	mrk	Added wait before interruptAccept
  *				
  */
 
@@ -76,6 +77,9 @@
 #include	<recSup.h>
 #include	<envDefs.h>
 #include	<dbBase.h>
+/*This module will declare and initilize module_type variables*/
+#define MODULE_TYPES_INIT 1
+#include        <module_types.h>
 
 static initialized=FALSE;
 
@@ -145,6 +149,8 @@ char * pResourceFilename;
     }
     callbackInit();
     scanInit();
+    /* wait 1/2 second to make sure all tasks are started*/
+    (void)taskDelay(sysClkRateGet()/2);
     interruptAccept=TRUE;
     wakeup_init=TRUE; /*old IO_EVENT_SCAN*/
     if(initialProcess()!=0) logMsg("iocInit: initialProcess Failed\n");
@@ -320,7 +326,7 @@ static long initDatabase()
     short	i,j,k;
     char	message[120];
     long	status=0;
-    long	rtnval;
+    long	rtnval=0;
     short	nset=0;
     short	lookAhead;
     struct recLoc	*precLoc;

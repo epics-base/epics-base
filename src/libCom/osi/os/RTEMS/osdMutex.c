@@ -80,7 +80,7 @@ epicsMutexOsdCreate(void)
       the_semaphore = _Semaphore_Get( sid, &location );
       _Thread_Enable_dispatch();  
 
-      return the_semaphore;
+      return (epicsMutexId)the_semaphore;
     }
 #endif
     return (epicsMutexId)sid;
@@ -206,8 +206,10 @@ epicsMutexLockStatus epicsMutexTryLock(epicsMutexId id)
         0, /* same as passed to obtain -- ticks */
         level
     );
-    if (_Thread_Executing->Wait.return_code == 0)
+    if (_Thread_Executing->Wait.return_code == CORE_MUTEX_STATUS_SUCCESSFUL)
         return epicsMutexLockOK;
+    else if (_Thread_Executing->Wait.return_code == CORE_MUTEX_STATUS_UNSATISFIED_NOWAIT)
+        return epicsMutexLockTimeout;
     else
         return epicsMutexLockError;
 #else
@@ -228,5 +230,5 @@ epicsShareFunc void epicsMutexShow(epicsMutexId id,unsigned int level)
     Semaphore_Control *the_semaphore = (Semaphore_Control *)id;
     id = (epicsMutexId)the_semaphore->Object.id;
 #endif
-	epicsEventShow (id,level);
+	epicsEventShow ((epicsEventId)id,level);
 }

@@ -206,4 +206,5 @@ extern int dbStaticDebug;
 #define S_dbLib_nameLength (M_dbLib|17)		/*Record Name is too long*/
 #define S_dbLib_noRecSup (M_dbLib|19)		/*Record support not found*/
 #define S_dbLib_strLen (M_dbLib|21)		/*String is too long*/
+#define S_dbLib_noSizeOffset (M_dbLib|23)	/*Missing SizeOffset Routine*/
 #endif /*INCdbStaticLibh*/

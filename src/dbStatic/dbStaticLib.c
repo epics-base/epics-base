@@ -1957,6 +1957,10 @@ char *dbVerify(DBENTRY *pdbentry,char *pstring)
 	    unsigned long  value;
 	    char  *endp;
 
+	    if(strchr(pstring,'-')) {
+		strcpy(message,"not an unsigned number");
+		return(message);
+	    }
 	    value = strtoul(pstring,&endp,0);
 	    if(*endp!=0) {
 		strcpy(message,"not an integer number");
@@ -2048,12 +2052,12 @@ char *dbGetRange(DBENTRY *pdbentry)
     if(!pflddes) {strcpy(message,"fldDes not found"); return(message);}
     switch (pflddes->field_type) {
     case DBF_STRING: {strcpy(message,"string"); return(message);}
-    case DBF_CHAR : {strcpy(message,"-128<->127"); return(message);}
-    case DBF_SHORT : {strcpy(message,"-32768<->32767");return(message);}
-    case DBF_LONG: {strcpy(message,"integer"); return(message);}
-    case DBF_UCHAR: {strcpy(message,"0<->255");return(message);}
-    case DBF_USHORT:{strcpy(message,"0<->65535");return(message);}
-    case DBF_ULONG:{strcpy(message,"unsigned integer");return(message);}
+    case DBF_CHAR : {strcpy(message,"-128 to 127"); return(message);}
+    case DBF_SHORT : {strcpy(message,"-32768 to 32767");return(message);}
+    case DBF_LONG: {strcpy(message,"long"); return(message);}
+    case DBF_UCHAR: {strcpy(message,"0 to 255");return(message);}
+    case DBF_USHORT:{strcpy(message,"0 to 65535");return(message);}
+    case DBF_ULONG:{strcpy(message,"unsigned long");return(message);}
     case DBF_ENUM: return(NULL);
     case DBF_FLOAT:
     case DBF_DOUBLE: {strcpy(message,"float");return(message);}

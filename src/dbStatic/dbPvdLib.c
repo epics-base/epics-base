@@ -155,7 +155,7 @@ PVDENTRY *dbPvdAdd(dbBase *pdbbase,dbRecordType *precordType,dbRecordNode *precn
     ppvdlist=ppvd[hashInd];
     ppvdNode = (PVDENTRY *) ellFirst(ppvdlist);
     while(ppvdNode) {
-	if(strcmp(name,(char *)ppvdNode->precnode->precord) == 0) return(NULL);
+	if(strcmp(name,(char *)ppvdNode->precnode->recordname)==0) return(NULL);
 	ppvdNode = (PVDENTRY *) ellNext((ELLNODE*)ppvdNode);
     }
     ppvdNode = dbCalloc(1, sizeof(PVDENTRY));
@@ -180,8 +180,8 @@ void dbPvdDelete(dbBase *pdbbase,dbRecordNode *precnode)
     ppvdlist=ppvd[hashInd];
     ppvdNode = (PVDENTRY *) ellFirst(ppvdlist);
     while(ppvdNode) {
-	if(ppvdNode->precnode && ppvdNode->precnode->precord
-	&& strcmp(name,(char *)ppvdNode->precnode->precord) == 0) {
+	if(ppvdNode->precnode && ppvdNode->precnode->recordname
+	&& strcmp(name,(char *)ppvdNode->precnode->recordname) == 0) {
 	    ellDelete(ppvdlist, (ELLNODE*)ppvdNode);
 	    free((void *)ppvdNode);
 	    return;
@@ -213,6 +213,7 @@ void dbPvdFreeMem(dbBase *pdbbase)
 	free((void *)ppvd[hashInd]);
     }
     free((void *)ppvd);
+    pdbbase->ppvd = NULL;
 }
 
 void dbPvdDump(dbBase *pdbbase,int verbose)

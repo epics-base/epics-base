@@ -35,9 +35,6 @@ of this distribution.
 #include <cvtFast.h>
 #include <dbStaticLib.h>
 #include <dbStaticPvt.h>
-#include <devSup.h>
-#include <drvSup.h>
-#include <recSup.h>
 #include <special.h>
 
 static char hex_digit_to_ascii[16]={'0','1','2','3','4','5','6','7','8','9',
@@ -603,7 +600,7 @@ void dbGetRecordtypeSizeOffset(dbRecordType *pdbRecordType)
     vxstatus = symFindByName(sysSymTbl, name,
 	(void *)&sizeOffset, &type);
     if (vxstatus != OK) {
-	status = S_rec_noSizeOffset;
+	status = S_dbLib_noSizeOffset;
 	errPrintf(status,__FILE__,__LINE__,"%s",name);
 	taskSuspend(0);
     }

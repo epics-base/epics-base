@@ -31,23 +31,26 @@ HDRVERSIONID(iocmsgh, "@(#) $Id$ CA version 4.4")
 
 /* TCP/UDP port number (bumped each protocol change) */
 #define CA_PROTOCOL_VERSION	4
-#define CA_MINOR_VERSION	4
+#define CA_MINOR_VERSION	5
 #define CA_UKN_MINOR_VERSION	0 /* unknown minor version */
 #if CA_PROTOCOL_VERSION == 4
 #define CA_V41(MAJOR,MINOR)	((MINOR)>=1) 
 #define CA_V42(MAJOR,MINOR)	((MINOR)>=2)
 #define CA_V43(MAJOR,MINOR)	((MINOR)>=3)
 #define CA_V44(MAJOR,MINOR)	((MINOR)>=4)
+#define CA_V45(MAJOR,MINOR)	((MINOR)>=5)
 #elif CA_PROTOCOL_VERSION > 4
 #define CA_V41(MAJOR,MINOR)	( 1 )
 #define CA_V42(MAJOR,MINOR)	( 1 )
 #define CA_V43(MAJOR,MINOR)	( 1 )
 #define CA_V44(MAJOR,MINOR)	( 1 )
+#define CA_V45(MAJOR,MINOR)	( 1 )
 #else
 #define CA_V41(MAJOR,MINOR)	( 0 )
 #define CA_V42(MAJOR,MINOR)	( 0 )
 #define CA_V43(MAJOR,MINOR)	( 0 )
 #define CA_V44(MAJOR,MINOR)	( 0 )
+#define CA_V45(MAJOR,MINOR)	( 0 )
 #endif 
 
 /*
@@ -72,7 +75,7 @@ HDRVERSIONID(iocmsgh, "@(#) $Id$ CA version 4.4")
 typedef unsigned short  ca_uint16_t;
 typedef unsigned int	ca_uint32_t;
 typedef float           ca_float32_t;
-
+typedef ca_uint32_t	caResId;
 
 		/* values for m_cmmd */
 #define IOC_NOOP		0	/* do nothing, but verify TCP */
@@ -169,4 +172,5 @@ struct	monops {			/* monitor req opi to ioc */
 	struct mon_info	m_info;
 };
 
-#endif
+#endif /* __IOCMSG__ */
+

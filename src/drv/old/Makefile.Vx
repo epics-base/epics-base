@@ -15,9 +15,9 @@ endif
 #The following have been unbundled. DONT USE THESE
 #INC += drvBB232.h
 #INC += drvBitBus.h
-#INC += drvBitBusErr.h
 #INC += drvMsg.h
-#drvBitBusInterface APPEARS HERE AND IN UNBUNDLED - BIG PROBLEM
+# drvBitBusErr and drvBitBusInterface APPEAR HERE AND IN UNBUNDLED - BIG PROBLEM
+INC += drvBitBusErr.h
 INC += drvBitBusInterface.h
 #SRCS.c += ../drvBB232.c
 #SRCS.c += ../drvBitBus.c

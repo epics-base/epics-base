@@ -232,7 +232,6 @@ caStatus casEventSys::addToEventQueue ( casAsyncIOI & event,
         wakeupNeeded = ! this->dontProcess && this->eventLogQue.count() == 0;
 	    this->eventLogQue.add ( event );
     }
-
     return S_cas_success;
 }
 

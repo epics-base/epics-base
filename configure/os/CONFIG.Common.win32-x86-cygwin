@@ -28,7 +28,7 @@ ARCH_DEP_CPPFLAGS += -D_X86_
 OP_SYS_CPPFLAGS += -DCYGWIN32 -U_WIN32
 
 # Set runtime path for shared libraries
-RUNTIME_LDFLAGS = $(SHRLIB_SEARCH_DIRS:%=-Wl,-rpath,%)
+RUNTIME_LDFLAGS = $(SHRLIB_SEARCH_FULLPATHDIRS:%=-Wl,-rpath,%)
 
 LDLIBS_READLINE = -lcygreadline5 -lcygcurses7
 

@@ -26,7 +26,7 @@ LOADABLE_SHRLIB_SUFFIX = .sl
 # Set runtime path for shared libraries
 empty:=                                      # trick from the make docs...
 space:= $(empty) $(empty)
-RUNTIME_LDFLAGS = -Wl,+b$(subst $(space),:,$(sort $(SHRLIB_SEARCH_DIRS))),+s
+RUNTIME_LDFLAGS = -Wl,+b$(subst $(space),:,$(sort $(SHRLIB_SEARCH_FULLPATHDIRS))),+s
 
 ifeq ($(BUILD_CLASS),CROSS)
    GNU_TARGET=parisc-hp-unix

@@ -17,8 +17,12 @@ VALID_BUILDS = Host Ioc
 GNU_DIR = /usr/local
 
 #-------------------------------------------------------
-SHRLIB_SEARCH_DIRS := $(foreach dir,$(SHRLIB_SEARCH_DIRS), \
-  $(shell perl $(TOOLS)/fullPathName.pl $(dir)))
+FULLPATHTOP= $(shell perl $(TOOLS)/fullPathName.pl $(TOP))
+# Get fullpathname of modules relative to TOP
+SHRLIB_SEARCH_FULLPATHTOP = $(SHRLIB_SEARCH_DIRS:$(TOP)/%=$(FULLPATHTOP)/%)
+# Get fullpathname of other relative dirs
+SHRLIB_SEARCH_FULLPATHDIRS = $(SHRLIB_SEARCH_FULLPATHTOP:.%= \
+  $(shell perl $(TOOLS)/fullPathName.pl .%)
 
 #-------------------------------------------------------
 # Unix prefix and suffix definitions

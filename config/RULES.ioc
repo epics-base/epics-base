@@ -17,8 +17,10 @@ makelinks:
 	ln -s $(TARGETBIN)/vxWorks.sym vxWorks.sym
 	ln -s $(TOP)/dbd dbd
 	ln -s $(SHARE) share
-	@if [ -n "$(APPDIR)" ]; then for dir in "$(APPDIR)" ; do  \
-		if [ -d $(TOP)/$$dir ]; then \
+	@for dir in $(APPDIR) scum ; do  \
+		if [ $$dir = scum ]; then \
+			: ; \
+		elif [ -d $(TOP)/$$dir ]; then \
 			ln -s $(TOP)/$$dir $$dir ; \
 			echo "ln -s $(TOP)/$$dir $$dir" ; \
 		elif [ -d $(MASTER_IOCAPPS)/$$dir ]; then \
@@ -27,7 +29,7 @@ makelinks:
 		else \
 			echo "$$dir not found" ; \
 		fi ; \
-	done; fi
+	done
  
 clean::
 	@$(RM) ascf bin vxWorks vxWorks.sym dbd share $(APPDIR)

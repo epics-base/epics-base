@@ -171,12 +171,15 @@ void outBuf::commitMsg ()
 
     this->commitRawMsg ( hdrSize + payloadSize );
 
-    if ( this->client.getDebugLevel() ) {
-        fprintf ( stderr,
-            "CAS Response: cmd=%d id=%x typ=%d cnt=%d psz=%d avail=%x outBuf ptr=%p \n",
-            epicsNTOH16 ( mp->m_cmmd ), epicsNTOH32 ( mp->m_cid ), 
-            epicsNTOH16 ( mp->m_dataType ), elementCount, payloadSize,
-            epicsNTOH32 ( mp->m_available ), static_cast <const void *> ( mp ) );
+    unsigned debugLevel = this->client.getDebugLevel();
+    if ( debugLevel ) {
+        if ( mp->m_cmmd != CA_PROTO_VERSION || debugLevel > 2 ) {
+            fprintf ( stderr,
+                "CAS Response: cmd=%d id=%x typ=%d cnt=%d psz=%d avail=%x outBuf ptr=%p \n",
+                epicsNTOH16 ( mp->m_cmmd ), epicsNTOH32 ( mp->m_cid ), 
+                epicsNTOH16 ( mp->m_dataType ), elementCount, payloadSize,
+                epicsNTOH32 ( mp->m_available ), static_cast <const void *> ( mp ) );
+        }
     }
 }
 

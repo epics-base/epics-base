@@ -33,7 +33,9 @@
 #include "epicsTimer.h"
 #include "epicsEvent.h"
 #include "epicsAssert.h"
+#include "epicsGuard.h"
 #include "tsFreeList.h"
+#include "epicsSingleton.h"
 
 static const double delayVerifyOffset = 1.0; // sec 
 
@@ -54,8 +56,7 @@ private:
     epicsTime expireStamp;
     double expectedDelay;
     expireStatus expire ( const epicsTime & );
-    static tsFreeList < class delayVerify, 0x20 > freeList;
-    static epicsMutex freeListMutex;
+    static epicsSingleton < tsFreeList < class delayVerify, 0x20 > > pFreeList;
 };
 
 static unsigned expireCount;
@@ -98,19 +99,16 @@ inline void delayVerify::start ( const epicsTime &expireTime )
     this->timer.start ( *this, expireTime );
 }
 
-tsFreeList < class delayVerify, 0x20 > delayVerify::freeList;
-epicsMutex delayVerify::freeListMutex;
+epicsSingleton < tsFreeList < class delayVerify, 0x20 > > delayVerify::pFreeList;
 
 inline void * delayVerify::operator new ( size_t size )
 {
-    epicsAutoMutex locker ( delayVerify::freeListMutex );
-    return delayVerify::freeList.allocate ( size );
+    return delayVerify::pFreeList->allocate ( size );
 }
 
 inline void delayVerify::operator delete ( void *pCadaver, size_t size )
 {
-    epicsAutoMutex locker ( delayVerify::freeListMutex );
-    delayVerify::freeList.release ( pCadaver, size );
+    delayVerify::pFreeList->release ( pCadaver, size );
 }
 
 epicsTimerNotify::expireStatus delayVerify::expire ( const epicsTime &currentTime )
@@ -166,8 +164,7 @@ private:
     epicsTimer &timer;
     bool failOutIfExpireIsCalled;
     expireStatus expire ( const epicsTime & );
-    static tsFreeList < class cancelVerify, 0x20 > freeList;
-    static epicsMutex freeListMutex;
+    static epicsSingleton < tsFreeList < class cancelVerify, 0x20 > > pFreeList;
 };
 
 cancelVerify::cancelVerify ( epicsTimerQueue &queueIn ) :
@@ -185,19 +182,16 @@ inline void cancelVerify::start ( const epicsTime &expireTime )
     this->timer.start ( *this, expireTime );
 }
 
-tsFreeList < class cancelVerify, 0x20 > cancelVerify::freeList;
-epicsMutex cancelVerify::freeListMutex;
+epicsSingleton < tsFreeList < class cancelVerify, 0x20 > > cancelVerify::pFreeList;
 
 inline void * cancelVerify::operator new ( size_t size )
 {
-    epicsAutoMutex locker ( cancelVerify::freeListMutex );
-    return cancelVerify::freeList.allocate ( size );
+    return cancelVerify::pFreeList->allocate ( size );
 }
 
 inline void cancelVerify::operator delete ( void *pCadaver, size_t size )
 {
-    epicsAutoMutex locker ( cancelVerify::freeListMutex );
-    cancelVerify::freeList.release ( pCadaver, size );
+    cancelVerify::pFreeList->release ( pCadaver, size );
 }
 
 inline void cancelVerify::cancel ()
@@ -244,6 +238,78 @@ void testCancel ()
     queue.release ();
 }
 
+class expireDestroVerify : public epicsTimerNotify {
+public:
+    expireDestroVerify ( epicsTimerQueue & );
+    void * operator new ( size_t size );
+    void operator delete ( void *pCadaver, size_t size );
+    void start ( const epicsTime &expireTime );
+protected:
+    virtual ~expireDestroVerify ();
+private:
+    epicsTimer & timer;
+    expireStatus expire ( const epicsTime & );
+    static epicsSingleton < tsFreeList < class expireDestroVerify, 0x20 > > pFreeList;
+};
+
+expireDestroVerify::expireDestroVerify ( epicsTimerQueue & queueIn ) :
+    timer ( queueIn.createTimer () )
+{
+}
+
+expireDestroVerify::~expireDestroVerify ()
+{
+    this->timer.destroy ();
+}
+
+inline void expireDestroVerify::start ( const epicsTime & expireTime )
+{
+    this->timer.start ( *this, expireTime );
+}
+
+epicsSingleton < tsFreeList < class expireDestroVerify, 0x20 > > expireDestroVerify::pFreeList;
+
+inline void * expireDestroVerify::operator new ( size_t size )
+{
+    return expireDestroVerify::pFreeList->allocate ( size );
+}
+
+inline void expireDestroVerify::operator delete ( void *pCadaver, size_t size )
+{
+    expireDestroVerify::pFreeList->release ( pCadaver, size );
+}
+
+epicsTimerNotify::expireStatus expireDestroVerify::expire ( const epicsTime & )
+{
+    delete this;
+    return noRestart;
+}
+
+//
+// verify that a timer can be destroyed in expire
+//
+void testExpireDestroy ()
+{
+    static const unsigned nTimers = 25u;
+    expireDestroVerify *pTimers[nTimers];
+    unsigned i;
+
+    epicsTimerQueueActive &queue = 
+        epicsTimerQueueActive::allocate ( true, epicsThreadPriorityMin );
+
+    for ( i = 0u; i < nTimers; i++ ) {
+        pTimers[i] = new expireDestroVerify ( queue );
+        assert ( pTimers[i] );
+    }
+    epicsTime cur = epicsTime::getCurrent ();
+    for ( i = 0u; i < nTimers; i++ ) {
+        pTimers[i]->start ( cur );
+    }
+    epicsThreadSleep ( 5.0 );
+    queue.release ();
+}
+
+
 class periodicVerify : public epicsTimerNotify {
 public:
     periodicVerify ( epicsTimerQueue & );
@@ -259,8 +325,7 @@ private:
     unsigned nExpire;
     bool failOutIfExpireIsCalled;
     expireStatus expire ( const epicsTime & );
-    static tsFreeList < class periodicVerify, 0x20 > freeList;
-    static epicsMutex freeListMutex;
+    static epicsSingleton < tsFreeList < class periodicVerify, 0x20 > > pFreeList;
 };
 
 periodicVerify::periodicVerify ( epicsTimerQueue & queueIn ) :
@@ -279,19 +344,16 @@ inline void periodicVerify::start ( const epicsTime &expireTime )
     this->timer.start ( *this, expireTime );
 }
 
-tsFreeList < class periodicVerify, 0x20 > periodicVerify::freeList;
-epicsMutex periodicVerify::freeListMutex;
+epicsSingleton < tsFreeList < class periodicVerify, 0x20 > > periodicVerify::pFreeList;
 
 inline void * periodicVerify::operator new ( size_t size )
 {
-    epicsAutoMutex locker ( periodicVerify::freeListMutex );
-    return periodicVerify::freeList.allocate ( size );
+    return periodicVerify::pFreeList->allocate ( size );
 }
 
 inline void periodicVerify::operator delete ( void *pCadaver, size_t size )
 {
-    epicsAutoMutex locker ( periodicVerify::freeListMutex );
-    periodicVerify::freeList.release ( pCadaver, size );
+    periodicVerify::pFreeList->release ( pCadaver, size );
 }
 
 inline void periodicVerify::cancel ()
@@ -348,21 +410,9 @@ void testPeriodic ()
     queue.release ();
 }
 
-#if defined ( _MSC_VER )
-#   pragma warning ( push )
-#   pragma warning ( disable: 4660 )
-#endif
-
-template class tsFreeList < delayVerify, 32, 0 >;
-template class tsFreeList < cancelVerify, 32, 0 >;
-template class tsFreeList < periodicVerify, 32, 0 >;
-
-#if defined ( _MSC_VER )
-#   pragma warning ( pop )
-#endif
-
 void epicsTimerTest ()
 {
+    testExpireDestroy ();
     testAccuracy ();
     testCancel ();
     testPeriodic ();

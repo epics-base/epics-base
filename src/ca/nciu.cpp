@@ -542,7 +542,7 @@ void nciu::resubscribe ( epicsGuard < epicsMutex > & guard )
         // them here.
         if ( pSubscr ) {
             try {
-                this->getPIIU(guard)->subscriptionRequest ( guard, *this, *pSubscr );
+                pSubscr->subscribeIfRequired ( guard, *this );
             }
             catch ( ... ) {
                 errlogPrintf ( "CAC: failed to send subscription request "

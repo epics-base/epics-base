@@ -770,7 +770,7 @@ netSubscription & cac::subscriptionRequest (
     this->ioTable.add ( *pIO );
     if ( chan.connected ( guard ) ) {
         this->flushIfRequired ( guard, *chan.getPIIU(guard) );
-        chan.getPIIU(guard)->subscriptionRequest ( guard, chan, *pIO );
+        pIO->subscribeIfRequired ( guard, chan );
     }
     return *pIO.release ();
 }

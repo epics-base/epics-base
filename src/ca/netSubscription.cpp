@@ -37,7 +37,7 @@ netSubscription::netSubscription (
         unsigned maskIn, cacStateNotify & notifyIn ) :
     count ( countIn ), privateChanForIO ( chanIn ),
     notify ( notifyIn ), type ( typeIn ), mask ( maskIn ),
-    updateWhileDisconnected ( false )
+    updateWhileDisconnected ( false ), subscribed ( false )
 {
     if ( ! dbr_type_is_valid ( typeIn ) ) {
         throw cacChannel::badType ();
@@ -93,6 +93,9 @@ void netSubscription::exception (
     epicsGuard < epicsMutex > & guard, cacRecycle & recycle, 
     int status, const char * pContext )
 {
+    if ( status == ECA_DISCONN ) {
+        this->subscribed = false;
+    }
     if ( status == ECA_CHANDESTROY ) {
         this->notify.exception ( 
             guard, status, pContext, UINT_MAX, 0 );
@@ -118,6 +121,9 @@ void netSubscription::exception (
     cacRecycle & recycle, int status, const char * pContext, 
     unsigned typeIn, arrayElementCount countIn )
 {
+    if ( status == ECA_DISCONN ) {
+        this->subscribed = false;
+    }
     if ( status == ECA_CHANDESTROY ) {
         this->notify.exception ( 
             guard, status, pContext, UINT_MAX, 0 );
@@ -151,6 +157,16 @@ void netSubscription::completion (
     }
     else {
         this->updateWhileDisconnected = true;
+    }
+}
+
+void netSubscription::subscribeIfRequired (
+    epicsGuard < epicsMutex > & guard, nciu & chan )
+{
+    if ( ! this->subscribed ) {
+        chan.getPIIU(guard)->subscriptionRequest ( 
+            guard, chan, *this );
+        this->subscribed = true;
     }
 }
 

@@ -8,13 +8,29 @@ ARCH_CLASS = Darwin
 # Include definitions common to all Unix archs
 include $(EPICS_BASE)/config/CONFIG.Host.UnixCommon
 
-#AR = ar -rc
-#ARCMD = $(AR) $@
-#RANLIB = ranlib -t
-
-CC=cc
-CXX=c++
+#
+# The config files are a real mess.  The following set of definitions
+# seems to work for all the weird ways in which the extensions makefile
+# fragments use them.
+#
+ANSI = GCC
+CPLUSPLUS = c++
+CC = cc
+CXX= c++
+GCC = cc
 
 OP_SYS_CFLAGS += -no-cpp-precomp
 OP_SYS_INCLUDES = -I/sw/include -I/usr/X11R6/include
 OP_SYS_LDFLAGS += -L/sw/lib -L/usr/X11R6/lib
+
+#
+# Compiler/linker problems prevent the use of shared libraries at the moment
+#
+SHARED_LIBRARIES_Darwin = NO
+
+#
+# Something like this will be needed once shared libraries are built
+#
+SHRLIB_SUFFIX = .dylib$(SHARED_LIBRARIES)
+GCC_SHRLIB_LDFLAGS_YES += -dynamiclib -flat_namespace
+G++_SHRLIB_LDFLAGS_YES += -dynamiclib -flat_namespace

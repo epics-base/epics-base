@@ -37,6 +37,6 @@ OP_SYS_LDLIBS += -lreadline
 
 #
 # Stuff that will be needed when going to shared libraries
-#
-SHRLIB_LDFLAGS = -dynamiclib
+# -compatibility_version $(SHRLIB_VERSION) -current_version $(SHRLIB_VERSION).1
+SHRLIB_LDFLAGS = -dynamiclib -flat_namespace -undefined suppress 
 SHRLIB_SUFFIX = $(addprefix .,$(SHRLIB_VERSION)).dylib

@@ -282,12 +282,9 @@ cac::~cac ()
 
     this->beaconTable.traverse ( &bhe::destroy );
 
-    // if we get here and the IO is still attached then we have a
-    // leaked io block that was not registered with a channel.
-    if ( this->ioTable.numEntriesInstalled () ) {
-        this->printf ( "CAC %u orphaned IO items?\n",
-            this->ioTable.numEntriesInstalled () );
-    }
+    // its ok for channels and subscriptions to still
+    // exist at this point. The user created them and 
+    // its his responsibility to clean them up.
 
     osiSockRelease ();
 

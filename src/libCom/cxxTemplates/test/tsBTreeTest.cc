@@ -47,30 +47,30 @@ main ()
 
 	tree.traverse(A::show);
 
-	assert(!tree.remove(a6));
+	assert(tree.remove(a6)==tsbtrrNotFound);
 	tree.insert(a6);
-	assert(tree.remove(a6));
-	assert(tree.remove(a5));
-	assert(!tree.remove(a5));
+	assert(tree.remove(a6)==tsbtrrFound);
+	assert(tree.remove(a5)==tsbtrrFound);
+	assert(tree.remove(a5)==tsbtrrNotFound);
 	assert(!tree.verify(a5));
 	assert(tree.verify(a4));
-	assert(tree.remove(a0));
+	assert(tree.remove(a0)==tsbtrrFound);
 	assert(!tree.verify(a0));
-	assert(!tree.remove(a0));
+	assert(tree.remove(a0)==tsbtrrNotFound);
 	tree.insert(a5);
 	assert(tree.verify(a5));
 	assert(tree.verify(a2));
-	assert(tree.remove(a2));
+	assert(tree.remove(a2)==tsbtrrFound);
 	assert(!tree.verify(a2));
-	assert(!tree.remove(a2));
+	assert(tree.remove(a2)==tsbtrrNotFound);
 	assert(tree.verify(a5));
-	assert(tree.remove(a5));
-	assert(!tree.remove(a5));
-	assert(!tree.remove(a0));
-	assert(tree.remove(a4));
-	assert(tree.remove(a3));
-	assert(!tree.remove(a4));
-	assert(tree.remove(a1));
+	assert(tree.remove(a5)==tsbtrrFound);
+	assert(tree.remove(a5)==tsbtrrNotFound);
+	assert(tree.remove(a0)==tsbtrrNotFound);
+	assert(tree.remove(a4)==tsbtrrFound);
+	assert(tree.remove(a3)==tsbtrrFound);
+	assert(tree.remove(a4)==tsbtrrNotFound);
+	assert(tree.remove(a1)==tsbtrrFound);
 
 	tree.traverse(A::show);
 

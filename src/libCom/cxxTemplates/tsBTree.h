@@ -1,16 +1,24 @@
 
+#ifndef assert // allow use of epicsAssert.h
 #include <assert.h>
+#endif
 
 //
 // tsBTreeRMRet
 //
+enum tsbtRR {tsbtrrNotFound, tsbtrrFound};
 template <class T>
 class tsBTreeRMRet {
 public:
-	tsBTreeRMRet (unsigned foundItIn, T *pNewSegIn) :
+	tsBTreeRMRet (tsbtRR foundItIn, T *pNewSegIn) :
 		foundIt(foundItIn), pNewSeg(pNewSegIn) {}
 
-	const unsigned	foundIt;
+	operator tsbtRR ()
+	{
+		return this->foundIt;
+	}
+
+	const tsbtRR	foundIt;
 	T * const 	pNewSeg;
 };
 
@@ -109,10 +117,10 @@ private:
 							self.tsBTreeNode<T>::pRight;
 					}
 				}
-				return tsBTreeRMRet<T>(1u, self.tsBTreeNode<T>::pLeft); // found it
+				return tsBTreeRMRet<T>(tsbtrrFound, self.tsBTreeNode<T>::pLeft); // found it
 			}
 			else {
-				return tsBTreeRMRet<T>(1u, self.tsBTreeNode<T>::pRight); // found it
+				return tsBTreeRMRet<T>(tsbtrrFound, self.tsBTreeNode<T>::pRight); // found it
 			}
 		}
 
@@ -121,23 +129,23 @@ private:
 			if (self.tsBTreeNode<T>::pLeft) {
 				tsBTreeRMRet<T> ret = tsBTreeNode<T>::
 					remove(*self.tsBTreeNode<T>::pLeft, item);
-				if (ret.foundIt) {
+				if (ret.foundIt==tsbtrrFound) {
 					self.tsBTreeNode<T>::pLeft= ret.pNewSeg;
-					return tsBTreeRMRet<T>(1u,&self); // TRUE - found it
+					return tsBTreeRMRet<T>(tsbtrrFound,&self); // TRUE - found it
 				}
 			}
-			return tsBTreeRMRet<T>(0u, 0u); // not found
+			return tsBTreeRMRet<T>(tsbtrrNotFound, 0u); // not found
 		}
 		else if(result==btGreater) {
 			if (self.tsBTreeNode<T>::pRight) {
 				tsBTreeRMRet<T> ret = tsBTreeNode<T>::
 					remove(*self.tsBTreeNode<T>::pRight, item);
-				if (ret.foundIt) {
+				if (ret.foundIt==tsbtrrFound) {
 					self.tsBTreeNode<T>::pRight = ret.pNewSeg;
-					return tsBTreeRMRet<T>(1u,&self); // TRUE - found it
+					return tsBTreeRMRet<T>(tsbtrrFound,&self); // TRUE - found it
 				}
 			}
-			return tsBTreeRMRet<T>(0u, 0u); // not found
+			return tsBTreeRMRet<T>(tsbtrrNotFound, 0u); // not found
 		}
 		else {
 			assert(0);

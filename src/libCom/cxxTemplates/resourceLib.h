@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.10  1997/06/13 09:21:51  jhill
+ * fixed compiler compatibility problems
+ *
  * Revision 1.9  1997/04/23 17:11:15  jhill
  * stringId::T[] => stringIdFastHash[]
  *
@@ -69,7 +72,9 @@
 #include <limits.h>
 #include <string.h>
 #include <math.h>
+#ifndef assert // allow use of epicsAssert.h
 #include <assert.h>
+#endif
 
 #include "tsSLList.h"
 #include "shareLib.h"

@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.15  1998/10/23 19:47:12  jhill
+// fixed inline is too big warning
+//
 // Revision 1.14  1998/06/16 02:06:32  jhill
 // lazy init sock lib when its a static build & recoverfrom select differences in winsock
 //
@@ -207,16 +210,14 @@ epicsShareFunc void fdManager::process (const osiTime &delay)
 		return;
 	}
 	else if (status<0) {
-		if (SOCKERRNO == SOCK_EINTR) {
-			this->processInProg = 0;
-			return;
-		}
-		else {
+		if (SOCKERRNO != SOCK_EINTR) {
 			fprintf(stderr, 
 			"fdManager: select failed because errno=%d=\"%s\"\n",
 				SOCKERRNO, SOCKERRSTR);
 		}
-	}
+		this->processInProg = 0;
+		return;	
+    }
 
 	//
 	// Look for activity

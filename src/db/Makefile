@@ -68,6 +68,8 @@ LIBSRCS += dbPutNotifyBlocker.cpp
 LIBRARY_IOC = dbIoc
 DLL_LIBS = dbStaticIoc ca Com 
 
+dbIoc_RCS_WIN32 = dbIoc.rc
+
 include $(TOP)/configure/RULES
 
 $(INSTALL_INCLUDE)/dbCommon.h: ../dbCommonRecord.dbd ../dbCommon.dbd

@@ -20,6 +20,7 @@
 #include "iocinf.h"
 #include "cac.h"
 #include "inetAddrID.h"
+#include "caServerID.h"
 #include "virtualCircuit.h"
 #include "syncGroup.h"
 #include "nciu.h"
@@ -259,16 +260,13 @@ cac::~cac ()
     //
     {
         epicsAutoMutex autoMutex ( this->mutex );
-        for ( tsDLIterBD < tcpiiu > piiu = this->iiuList.firstIter(); 
-                piiu.valid(); piiu++ ) {
-            piiu->cleanShutdown ();
-        }
+        this->serverTable.traverse ( tcpiiu::cleanShutdown );
     }
 
     //
     // wait for tcp threads to exit
     //
-    while ( this->iiuList.count() ) {
+    while ( this->serverTable.numEntriesInstalled() ) {
         this->iiuUninstal.wait ();
     }
 
@@ -322,17 +320,13 @@ void cac::flushRequest ()
 // lock must be applied
 void cac::flushRequestPrivate ()
 {
-    tsDLIterBD <tcpiiu> piiu = this->iiuList.firstIter ();
-    while ( piiu.valid () ) {
-        piiu->flushRequest ();
-        piiu++;
-    }
+    this->serverTable.traverse ( tcpiiu::flushRequest );
 }
 
 unsigned cac::connectionCount () const
 {
     epicsAutoMutex autoMutex ( this->mutex );
-    return this->iiuList.count ();
+    return this->serverTable.numEntriesInstalled ();
 }
 
 void cac::show ( unsigned level ) const
@@ -342,12 +336,7 @@ void cac::show ( unsigned level ) const
     ::printf ( "Channel Access Client Context at %p for user %s\n", 
         static_cast <const void *> ( this ), this->pUserName );
     if ( level > 0u ) {
-        tsDLIterConstBD < tcpiiu > piiu = this->iiuList.firstIter ();
-        while ( piiu.valid() ) {
-            piiu->show ( level - 1u );
-            piiu++;
-	    }
-
+        this->serverTable.show ( level - 1u );
         ::printf ( "\tconnection time out watchdog period %f\n", this->connTMO );
         ::printf ( "\tpreemptive calback is %s\n",
             this->enablePreemptiveCallback ? "enabled" : "disabled" );
@@ -405,7 +394,7 @@ void cac::show ( unsigned level ) const
 /*
  *  cac::beaconNotify
  */
-void cac::beaconNotify ( const inetAddrID &addr, const epicsTime &currentTime )
+void cac::beaconNotify ( const inetAddrID & addr, const epicsTime & currentTime )
 {
     epicsAutoMutex autoMutex ( this->mutex );
 
@@ -623,13 +612,22 @@ void cac::registerService ( cacService &service )
     this->services.registerService ( service );
 }
 
-cacChannel & cac::createChannel ( const char *pName, cacChannelNotify &chan )
+cacChannel & cac::createChannel ( const char * pName, 
+    cacChannelNotify & chan, cacChannel::priLev pri )
 {
     cacChannel *pIO;
 
-    pIO = this->services.createChannel ( pName, chan );
+    if ( pri > cacChannel::priorityMax ) {
+        throw cacChannel::badPriority ();
+    }
+
+    if ( pName == 0 || pName[0] == '\0' ) {
+        throw cacChannel::badString ();
+    }
+
+    pIO = this->services.createChannel ( pName, chan, pri );
     if ( ! pIO ) {
-        pIO = cacGlobalServiceList.createChannel ( pName, chan );
+        pIO = cacGlobalServiceList.createChannel ( pName, chan, pri );
         if ( ! pIO ) {
             if ( ! this->pudpiiu || ! this->pSearchTmr ) {
                 if ( ! this->setupUDP () ) {
@@ -637,7 +635,7 @@ cacChannel & cac::createChannel ( const char *pName, cacChannelNotify &chan )
                 }
             }
             epics_auto_ptr < cacChannel > pNetChan 
-                ( new nciu ( *this, limboIIU, chan, pName ) );
+                ( new nciu ( *this, limboIIU, chan, pName, pri ) );
             if ( pNetChan.get() ) {
                 return *pNetChan.release ();
             }
@@ -695,7 +693,7 @@ void cac::repeaterSubscribeConfirmNotify ()
 
 bool cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid, 
              ca_uint16_t typeCode, arrayElementCount count, 
-             unsigned minorVersionNumber, const osiSockAddr &addr,
+             unsigned minorVersionNumber, const osiSockAddr & addr,
              const epicsTime & currentTime )
 {
     unsigned  retrySeqNumber;
@@ -729,17 +727,16 @@ bool cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
         /*
          * look for an existing virtual circuit
          */
-        tcpiiu *piiu;
-        bhe *pBHE = this->beaconTable.lookup ( addr.ia );
-        if ( pBHE ) {
-            piiu = pBHE->getIIU ();
-            if ( piiu ) {
-                if ( ! piiu->alive () ) {
-                    return true;
-                }
+        caServerID servID ( addr.ia, chan->getPriority() );
+        tcpiiu * piiu = this->serverTable.lookup ( servID );
+        if ( piiu ) {
+            if ( ! piiu->alive () ) {
+                return true;
             }
         }
-        else {
+
+        bhe * pBHE = this->beaconTable.lookup ( addr.ia );
+        if ( ! pBHE ) {
             pBHE = new bhe ( epicsTime (), addr.ia );
             if ( pBHE ) {
                 if ( this->beaconTable.add ( *pBHE ) < 0 ) {
@@ -750,18 +747,18 @@ bool cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
             else {
                 return true;
             }
-            piiu = 0;
         }
 
         if ( ! piiu ) {
             try {
                 piiu = new tcpiiu ( *this, this->connTMO, *this->pTimerQueue,
-                            addr, minorVersionNumber, *pBHE, this->ipToAEngine );
+                            addr, minorVersionNumber, this->ipToAEngine,
+                            chan->getPriority() );
                 if ( ! piiu ) {
                     return true;
                 }
-                this->iiuList.add ( *piiu  );
-
+                this->serverTable.add ( *piiu );
+                pBHE->registerIIU ( *piiu );
             }
             catch ( ... ) {
                 this->printf ( "CAC: Exception during virtual circuit creation\n" );
@@ -936,12 +933,12 @@ void cac::ioCancel ( nciu &chan, const cacChannel::ioid &id )
 void cac::ioCancelPrivate ( nciu &chan, const cacChannel::ioid &id )
 {   
     epicsAutoMutex autoMutex ( this->mutex );
-    this->flushIfRequired ( *chan.getPIIU() );
     baseNMIU * pmiu = this->ioTable.remove ( id );
     if ( pmiu ) {
         chan.cacPrivateListOfIO::eventq.remove ( *pmiu );
         class netSubscription *pSubscr = pmiu->isSubscription ();
         if ( pSubscr ) {
+            this->flushIfRequired ( *chan.getPIIU() );
             chan.getPIIU()->subscriptionCancelRequest ( chan, *pSubscr );
         }
         pmiu->destroy ( *this );
@@ -1175,7 +1172,7 @@ void cac::disconnectAllIO ( nciu & chan, bool enableCallbacks )
 void cac::destroyAllIO ( nciu & chan )
 {
     if ( ! epicsThreadPrivateGet ( caClientCallbackThreadId ) &&
-        this->enablePreemptiveCallback  ) {
+        this->enablePreemptiveCallback ) {
         // force any callbacks in progress to complete
         // before deleting the IO
         epicsAutoMutex autoMutex ( this->callbackMutex );
@@ -1196,7 +1193,12 @@ void cac::privateDestroyAllIO ( nciu & chan )
         if ( pSubscr ) {
             chan.getPIIU()->subscriptionCancelRequest ( chan, *pSubscr );
         }
-        pIO->exception ( ECA_CHANDESTROY, chan.pName() );
+        {
+            epicsAutoMutexRelease autoMutexRelease ( this->mutex );
+            // If they call ioCancel() here it will be ignored
+            // because the IO has been unregistered above
+            pIO->exception ( ECA_CHANDESTROY, chan.pName() );
+        }
         pIO->destroy ( *this );
     }        
 }
@@ -1710,7 +1712,14 @@ void cac::uninstallIIU ( tcpiiu & iiu )
         iiu.hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
         genLocalExcep ( *this, ECA_DISCONN, hostNameTmp );
     }
-    iiu.getBHE().unbindFromIIU ();
+    osiSockAddr addr = iiu.getNetworkAddress ();
+    if ( addr.sa.sa_family == AF_INET ) {
+        inetAddrID tmp ( addr.ia );
+        bhe *pBHE = this->beaconTable.lookup ( tmp );
+        if ( pBHE ) {
+            pBHE->unregisterIIU ( iiu);
+        }
+    }
     assert ( this->pudpiiu );
     tsDLList < nciu > tmpList;
     iiu.uninstallAllChan ( tmpList );
@@ -1724,7 +1733,7 @@ void cac::uninstallIIU ( tcpiiu & iiu )
             pChan->accessRightsNotify ();
         }
     }
-    this->iiuList.remove ( iiu );
+    this->serverTable.remove ( iiu );
     this->pSearchTmr->resetPeriod ( 0.0 );
     // signal iiu uninstal event so that cac can properly shut down
     this->iiuUninstal.signal();
@@ -1761,5 +1770,22 @@ void cac::preemptiveCallbackUnlock()
             this->noRecvThreadsPending.signal ();
         }
     }
+}
+
+double cac::beaconPeriod ( const nciu & chan ) const
+{
+    epicsAutoMutex locker ( this->mutex );
+    const netiiu * pIIU = chan.getConstPIIU ();
+    if ( pIIU ) {
+        osiSockAddr addr = pIIU->getNetworkAddress ();
+        if ( addr.sa.sa_family == AF_INET ) {
+            inetAddrID tmp ( addr.ia );
+            bhe *pBHE = this->beaconTable.lookup ( tmp );
+            if ( pBHE ) {
+                return pBHE->period ();
+            }
+        }
+    }
+    return - DBL_MAX;
 }
 

@@ -297,7 +297,7 @@ static long write_timer(struct timerRecord *ptimer)
    }
 
    /* call device support */
-   if ((pdset->write)(ptimer) != OK) {
+   if ((pdset->write)(ptimer) != 0) {
          recGblSetSevr(ptimer,WRITE_ALARM,INVALID_ALARM);
          return 0;
    }

@@ -1,18 +1,23 @@
 EPICS = ../../..
-include $(EPICS)/config/CONFIG_vx
+include $(EPICS)/config/CONFIG
 
-USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
-LDLIBS =
+USR_CFLAGS = -D_NO_PROTO
+LDLIBS = -lAs -lca -lCom -lDb -lCom -s
+LEX = $(ELEX)
+YACC = $(EYACC)
 
 SRCS = \
-	asDbLib.c asCa.c asLib.c
+	ascheck.c asLib.c
 
 OBJS = \
+	$(OBDIR)/ascheck.o
 
 LIBOBJS = \
-	$(OBDIR)/asDbLib.o $(OBDIR)/asCa.o $(OBDIR)/asLib.o
+	$(OBDIR)/asLib.o
 
-LIBNAME = asLibrary
+LIBNAME = libAs.a
+
+PROD = $(OBDIR)/ascheck
 
 depends: $(OBDIR)/asLib.c
 
@@ -32,4 +37,4 @@ $(OBDIR)/asLib.o: $(OBDIR)/asLib.c asLibRoutines.c
 	$(CC) -c  $(CFLAGS) -o $(OBDIR)/asLib.o $(OBDIR)/asLib.c
 	@#load  $(CFLAGS) asLib.c
 
-include $(EPICS)/config/RULES.Vx
+include $(EPICS)/config/RULES.Unix

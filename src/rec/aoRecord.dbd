@@ -67,6 +67,20 @@ recordtype(ao) {
 		pp(TRUE)
 		interest(1)
 	}
+	field(RAWF,DBF_LONG) {
+		prompt("Raw Value Full")
+		promptgroup(GUI_CONVERT)
+		special(SPC_LINCONV)
+		pp(TRUE)
+		interest(1)
+	}
+	field(RAWL,DBF_LONG) {
+		prompt("Raw Value Low")
+		promptgroup(GUI_CONVERT)
+		special(SPC_LINCONV)
+		pp(TRUE)
+		interest(1)
+	}
 	field(EGU,DBF_STRING) {
 		prompt("Engineering Units")
 		promptgroup(GUI_DISPLAY)

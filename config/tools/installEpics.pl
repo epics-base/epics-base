@@ -37,7 +37,7 @@ $install_dir =~ s[/$][];	# remove trailing '/'
 $install_dir =~ s[//][/]g;	# replace '//' by '/'
 
 #	Do we have to create the directory?
-unless (-d $install_dir)
+unless ( (-d $install_dir) || (-l $install_dir) )
 {
 	#	Create dir only if -d option given
 	Usage ("$install_dir does not exist") unless ($opt_d);

@@ -45,6 +45,8 @@ endif
 
 all:: install 
 
+build:: inc
+
 rebuild:: clean install
 
 pre_build:: 
@@ -57,7 +59,7 @@ endif
 
 inc:: $(INSTALL_INC) $(INSTALL_OSINC)
 
-install:: inc buildInstall 
+install:: buildInstall 
 
 buildInstall :: build $(INSTALL_INCREC)\
          $(INSTALL_LIBS) $(INSTALL_LIBS_CXX) \

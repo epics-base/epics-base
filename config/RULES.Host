@@ -30,9 +30,6 @@ vpath %.h $(USER_VPATH)
 vpath %.c $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
 vpath %.cc $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
 vpath %.rc $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
-#	This prevents base/src/include/*.h from being installed. Why??
-#vpath %.h ../os/$(ARCH_CLASS) ../os/generic ..
-vpath %.h $(USER_VPATH)   
 
 #	check for add-on CFLAGS and CXXFLAGS
 #
@@ -330,6 +327,8 @@ endif # LIBRARY
 
 all::	install
 
+build:: inc
+
 build:: $(LIBTARGETS) $(PROD) $(TESTPROD) $(INSTALLS) \
 	$(MENUS) $(RECTYPES) $(BPTS)
 ifdef DBDEXPAND
@@ -340,7 +339,7 @@ inc:: $(INSTALL_INC) $(INSTALL_OSINC)
 
 rebuild:: clean install
 
-install:: inc buildInstall 
+install:: buildInstall 
 
 buildInstall :: build $(TARGETS) \
 	$(INSTALL_SCRIPTS) $(INSTALL_PROD) \

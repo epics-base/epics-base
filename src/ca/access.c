@@ -196,7 +196,7 @@ unsigned		extsize,
 struct extmsg		**ppMsg
 );
 #ifdef vxWorks
-LOCAL void 	ca_task_exit_tid(int tid);
+void 	ca_task_exit_tid(int tid);
 #else /*vxWorks*/
 LOCAL void 	ca_process_exit();
 #endif /*vxWorks*/
@@ -233,7 +233,7 @@ LOCAL void cac_wait_for_flush(IIU *piiu);
 
 LOCAL int 	cac_alloc_msg();
 #ifdef vxWorks
-LOCAL void 	ca_task_exit_tid();
+void 	ca_task_exit_tid();
 #else
 LOCAL void 	ca_process_exit();
 #endif 
@@ -779,9 +779,9 @@ int ca_task_exit
  */
 #ifdef vxWorks
 #ifdef __STDC__
-LOCAL void ca_task_exit_tid(int tid)
+void ca_task_exit_tid(int tid)
 #else
-LOCAL void ca_task_exit_tid(tid)
+void ca_task_exit_tid(tid)
 	int             tid;
 #endif
 #else

@@ -257,11 +257,6 @@ cac::~cac ()
     freeListCleanup ( this->tcpSmallRecvBufFreeList );
     freeListCleanup ( this->tcpLargeRecvBufFreeList );
 
-    if ( this->pudpiiu ) {
-        epicsGuard < callbackMutex > autoMutexCB ( this->cbMutex );
-        this->pudpiiu->removeAllChannels ( autoMutexCB );
-    }
-
     delete [] this->pUserName;
 
     this->beaconTable.traverse ( &bhe::destroy );
@@ -813,10 +808,12 @@ void cac::ioCancel ( nciu &chan, const cacChannel::ioid &id )
     }
     // wait for any IO callbacks in progress to complete
     // prior to destroying the IO object
-    epicsGuard < callbackMutex > autoMutex ( this->cbMutex );
+    {
+        epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
+    }
     // now it is safe to destroy the IO object
     {
-        epicsGuard < cacMutex > autoMutex ( this->mutex );
+        epicsGuard < cacMutex > guard ( this->mutex );
         pmiu->destroy ( *this );
     }
 }

@@ -362,9 +362,11 @@ BUCKET  *bucketCreate (unsigned nHashTableEntries)
 
 	pb->hashIdMask = mask;
 	pb->hashIdNBits = nbits;
+	freeListInitPvt(&pb->freeListPVT, sizeof(ITEM), 1024); 
 
 	pb->pTable = (ITEM **) calloc (mask+1, sizeof(*pb->pTable));
 	if (!pb->pTable) {
+		freeListCleanup(pb->freeListPVT);
 		free (pb);
 		return NULL;
 	}
@@ -394,12 +396,7 @@ BUCKET	*prb;
 	/*
 	 * free the free list
 	 */
-	pi = prb->pFreeItems;
-	while (pi) {
-		pni = pi->pItem;
-		free (pi);
-		pi = pni;
-	}
+	freeListCleanup(prb->freeListPVT);
 	free (prb->pTable);
 	free (prb);
 
@@ -433,15 +430,9 @@ LOCAL int bucketAddItem(BUCKET *prb, bucketSET *pBSET, const void *pId, const vo
 	 * try to get it off the free list first. If
 	 * that fails then malloc()
 	 */
-	pi = prb->pFreeItems;
-	if (pi) {
-		prb->pFreeItems = pi->pItem;
-	}
-	else {
-		pi = (ITEM *) malloc (sizeof(ITEM));
-		if(!pi){
-			return S_bucket_noMemory;
-		}
+	pi = (ITEM *) freeListMalloc(prb->freeListPVT);
+	if (!pi) {
+		return S_bucket_noMemory;
 	}
 
 	/*
@@ -459,6 +450,7 @@ LOCAL int bucketAddItem(BUCKET *prb, bucketSET *pBSET, const void *pId, const vo
 	 */
 	ppiExists = (*pBSET->pCompare) (ppi, pId);
 	if (ppiExists) {
+		freeListFree(prb->freeListPVT,pi);
 		return S_bucket_idInUse;
 	}
 	pi->pItem = *ppi;
@@ -508,8 +500,7 @@ LOCAL int bucketRemoveItem (BUCKET *prb, bucketSET *pBSET, const void *pId)
 	/*
 	 * stuff it on the free list
 	 */
-	pi->pItem = prb->pFreeItems;
-	prb->pFreeItems = pi;
+	freeListFree(prb->freeListPVT, pi);
 
 	return S_bucket_success;
 }
@@ -575,26 +566,11 @@ BUCKET *pb;
 	double		stdDev;
 	unsigned	count;
 	unsigned	maxEntries;
-	unsigned	freeListCount;
-
-	/*
-	 * count bytes on the free list
-	 */
-	pi = pb->pFreeItems;
-	freeListCount = 0;
-	while (pi) {
-		freeListCount++;
-		pni = pi->pItem;
-		pi = pni;
-	}
 
 	printf(	"Bucket entries in use = %d bytes in use = %ld\n",
 		pb->nInUse,
 		(long) (sizeof(*pb)+(pb->hashIdMask+1)*
 			sizeof(ITEM *)+pb->nInUse*sizeof(ITEM)));
-
-	printf(	"Free list bytes in use = %ld\n",
-		(long)(freeListCount*sizeof(ITEM)));
 
 	ppi = pb->pTable;
 	nElem = pb->hashIdMask+1;

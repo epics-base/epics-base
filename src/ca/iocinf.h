@@ -32,6 +32,9 @@
 /************************************************************************/
 
 /* $Log$
+ * Revision 1.61  1997/04/23 17:05:07  jhill
+ * pc port changes
+ *
  * Revision 1.60  1997/04/10 19:26:24  jhill
  * asynch connect, faster connect, ...
  *
@@ -342,7 +345,6 @@ typedef struct caclient_put_notify{
 #define pndrecvcnt	(ca_static->ca_pndrecvcnt)
 #define ioeventlist	(ca_static->ca_ioeventlist)
 #define nxtiiu		(ca_static->ca_nxtiiu)
-#define free_event_list	(ca_static->ca_free_event_list)
 #define pend_read_list	(ca_static->ca_pend_read_list)
 #define pend_write_list	(ca_static->ca_pend_write_list)
 #define fd_register_func\
@@ -361,7 +363,6 @@ typedef struct caclient_put_notify{
 #	define client_lock	(ca_static->ca_client_lock)
 #	define event_lock	(ca_static->ca_event_lock)
 #	define local_chidlist	(ca_static->ca_local_chidlist)
-#	define dbfree_ev_list	(ca_static->ca_dbfree_ev_list)
 #	define lcl_buff_list	(ca_static->ca_lcl_buff_list)
 #	define event_tid	(ca_static->ca_event_tid)
 #endif
@@ -482,13 +483,10 @@ typedef struct {
 struct  ca_static{
 	ELLLIST		ca_iiuList;
 	ELLLIST		ca_ioeventlist;
-	ELLLIST		ca_free_event_list;
 	ELLLIST		ca_pend_read_list;
 	ELLLIST		ca_pend_write_list;
 	ELLLIST		activeCASG;
-	ELLLIST		freeCASG;
 	ELLLIST		activeCASGOP;
-	ELLLIST		freeCASGOP;
 	ELLLIST		putCvrtBuf;
 	ELLLIST		fdInfoFreeList;
 	ELLLIST		fdInfoList;
@@ -511,6 +509,9 @@ struct  ca_static{
 	BUCKET		*ca_pSlowBucket;
 	BUCKET		*ca_pFastBucket;
 	bhe		*ca_beaconHash[BHT_INET_ADDR_MASK+1];
+	void		*ca_ioBlockFreeListPVT;
+	void		*ca_sgFreeListPVT;
+	void		*ca_sgopFreeListPVT;
 	ciu		ca_pEndOfBCastList;
 	unsigned long	ca_search_responses; /* num valid search resp within seq # */
 	unsigned long	ca_search_tries; /* num search tries within seq # */
@@ -536,11 +537,11 @@ struct  ca_static{
 	SEM_ID		ca_event_lock; /* dont allow events to preempt */
 	SEM_ID		ca_putNotifyLock;
 	ELLLIST		ca_local_chidlist;
-	ELLLIST		ca_dbfree_ev_list;
 	ELLLIST		ca_lcl_buff_list;
 	ELLLIST		ca_putNotifyQue;
 	ELLLIST		ca_taskVarList;
 	void		*ca_evuser;
+	void		*ca_dbMonixFreeList;
 	int		ca_event_tid;
 	int		ca_tid;
     	int		recv_tid;

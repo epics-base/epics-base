@@ -33,6 +33,9 @@
  * 	.02 121693 joh	added bucketFree() 
  * 	.03 052395 joh	use std EPICS status 
  *	$Log$
+ *	Revision 1.3  1997/04/10 19:45:35  jhill
+ *	API changes and include with  not <>
+ *
  *	Revision 1.2  1996/06/19 19:44:53  jhill
  *	C++ support
  *
@@ -63,11 +66,11 @@ typedef struct item{
 }ITEM;
 
 typedef struct bucket{
-	ITEM			**pTable;
-	ITEM			*pFreeItems;
-	unsigned		hashIdMask;
-	unsigned		hashIdNBits;
-        unsigned        	nInUse;
+	ITEM		**pTable;
+	void		*freeListPVT;
+	unsigned	hashIdMask;
+	unsigned	hashIdNBits;
+        unsigned        nInUse;
 }BUCKET;
 
 

@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.22  1996/11/22 19:08:02  jhill
+ * added const to API
+ *
  * Revision 1.21  1996/11/02 00:51:08  jhill
  * many pc port, const in API, and other changes
  *
@@ -55,6 +58,7 @@
  */
 
 #include "iocinf.h"
+#include "freeList.h"
 
 LOCAL void io_complete(struct event_handler_args args);
 
@@ -67,8 +71,8 @@ void ca_sg_init(void)
 	/*
 	 * init all sync group lists
 	 */
-	ellInit(&ca_static->activeCASG);
-	ellInit(&ca_static->freeCASG);
+	freeListInitPvt(&ca_static->ca_sgFreeListPVT,sizeof(CASG),32);
+	freeListInitPvt(&ca_static->ca_sgopFreeListPVT,sizeof(CASGOP),256);
 
 	return;
 }
@@ -99,13 +103,13 @@ void ca_sg_shutdown(struct ca_static *ca_temp)
 	/*
 	 * per sync group
 	 */
-	ellFree (&ca_temp->freeCASG);
+	freeListCleanup(ca_temp->ca_sgFreeListPVT);
 
 	/*
 	 * per sync group op
 	 */
 	ellFree (&ca_temp->activeCASGOP);
-	ellFree (&ca_temp->freeCASGOP);
+	freeListCleanup(ca_temp->ca_sgopFreeListPVT);
 
 	UNLOCK;
 
@@ -132,14 +136,12 @@ int epicsShareAPI ca_sg_create(CA_SYNC_GID *pgid)
  	 * first look on a free list. If not there
 	 * allocate dynamic memory for it.
 	 */
-	LOCK;
-	pcasg = (CASG *) ellGet(&ca_static->freeCASG);
+	pcasg = (CASG *) freeListMalloc(ca_static->ca_sgFreeListPVT);
 	if(!pcasg){
-		pcasg = (CASG *) malloc(sizeof(*pcasg));	
-		if(!pcasg){
-			return ECA_ALLOCMEM;
-		}
+		return ECA_ALLOCMEM;
 	}
+
+	LOCK;
 
 	/*
  	 * setup initial values for all of the fields
@@ -170,7 +172,7 @@ int epicsShareAPI ca_sg_create(CA_SYNC_GID *pgid)
 		/*
 	  	 * place it back on the free sync group list
 	 	 */
-		ellAdd (&ca_static->freeCASG, &pcasg->node);
+		freeListFree(ca_static->ca_sgFreeListPVT, pcasg);
 		UNLOCK;
 		if (status == S_bucket_noMemory) {
 			return ECA_ALLOCMEM;
@@ -217,9 +219,9 @@ int epicsShareAPI ca_sg_delete(const CA_SYNC_GID gid)
 
 	pcasg->magic = 0;
 	ellDelete(&ca_static->activeCASG, &pcasg->node);
-	ellAdd(&ca_static->freeCASG, &pcasg->node);
-
 	UNLOCK;
+
+	freeListFree(ca_static->ca_sgFreeListPVT, pcasg);
 
 	return ECA_NORMAL;
 }
@@ -417,24 +419,21 @@ const void 		*pvalue)
 	CASGOP	*pcasgop;
 	CASG 	*pcasg;
 
-	LOCK;
-	pcasg = bucketLookupItemUnsignedId(pSlowBucket, &gid);
-	if(!pcasg || pcasg->magic != CASG_MAGIC){
-		UNLOCK;
-		return ECA_BADSYNCGRP;
-	}
-
 	/*
  	 * first look on a free list. If not there
 	 * allocate dynamic memory for it.
 	 */
-	pcasgop = (CASGOP *)ellGet(&ca_static->freeCASGOP);
+	pcasgop = (CASGOP *) freeListMalloc(ca_static->ca_sgopFreeListPVT);
 	if(!pcasgop){
-		pcasgop = (CASGOP *)malloc(sizeof(*pcasgop));	
-		if(!pcasgop){
-			UNLOCK;
-			return ECA_ALLOCMEM;
-		}
+		return ECA_ALLOCMEM;
+	}
+
+	LOCK;
+	pcasg = bucketLookupItemUnsignedId(pSlowBucket, &gid);
+	if(!pcasg || pcasg->magic != CASG_MAGIC){
+		UNLOCK;
+		freeListFree(ca_static->ca_sgopFreeListPVT, pcasgop);
+		return ECA_BADSYNCGRP;
 	}
 
 	memset((char *)pcasgop, 0,sizeof(*pcasgop));
@@ -459,8 +458,8 @@ const void 		*pvalue)
 		assert(pcasg->opPendCount>=1u);
                 pcasg->opPendCount--;
                 ellDelete(&ca_static->activeCASGOP, &pcasgop->node);
-                ellAdd(&ca_static->freeCASGOP, &pcasgop->node);
                 UNLOCK;
+		freeListFree(ca_static->ca_sgopFreeListPVT, pcasgop);
          }
 
 
@@ -483,24 +482,21 @@ void 			*pvalue)
 	CASGOP	*pcasgop;
 	CASG 	*pcasg;
 
-	LOCK;
-	pcasg = bucketLookupItemUnsignedId(pSlowBucket, &gid);
-	if(!pcasg || pcasg->magic != CASG_MAGIC){
-		UNLOCK;
-		return ECA_BADSYNCGRP;
-	}
-
 	/*
  	 * first look on a free list. If not there
 	 * allocate dynamic memory for it.
 	 */
-	pcasgop = (CASGOP *)ellGet(&ca_static->freeCASGOP);
+	pcasgop = (CASGOP *) freeListMalloc(ca_static->ca_sgopFreeListPVT);
 	if(!pcasgop){
-		pcasgop = (CASGOP *) malloc(sizeof(*pcasgop));	
-		if(!pcasgop){
-			UNLOCK;
-			return ECA_ALLOCMEM;
-		}
+		return ECA_ALLOCMEM;
+	}
+
+	LOCK;
+	pcasg = bucketLookupItemUnsignedId(pSlowBucket, &gid);
+	if(!pcasg || pcasg->magic != CASG_MAGIC){
+		UNLOCK;
+		freeListFree(ca_static->ca_sgopFreeListPVT, pcasgop);
+		return ECA_BADSYNCGRP;
 	}
 
 	memset((char *)pcasgop, 0,sizeof(*pcasgop));
@@ -525,8 +521,8 @@ void 			*pvalue)
 		assert(pcasg->opPendCount>=1u);
 		pcasg->opPendCount--;
 		ellDelete(&ca_static->activeCASGOP, &pcasgop->node);
-		ellAdd(&ca_static->freeCASGOP, &pcasgop->node);
 		UNLOCK;
+		freeListFree(ca_static->ca_sgopFreeListPVT, pcasgop);
 	}
 	return status;
 }
@@ -547,7 +543,6 @@ LOCAL void io_complete(struct event_handler_args args)
 	LOCK;
 	ellDelete(&ca_static->activeCASGOP, &pcasgop->node);
 	pcasgop->magic = 0;
-	ellAdd(&ca_static->freeCASGOP, &pcasgop->node);
 
 	/*
  	 * ignore stale replies
@@ -567,6 +562,7 @@ LOCAL void io_complete(struct event_handler_args args)
 			pcasgop->id,
 			ca_message(args.status));
 		UNLOCK;
+		freeListFree(ca_static->ca_sgopFreeListPVT, pcasgop);
 		return;
 	}
 
@@ -586,6 +582,8 @@ LOCAL void io_complete(struct event_handler_args args)
 	pcasg->opPendCount--;
 
 	UNLOCK;
+
+	freeListFree(ca_static->ca_sgopFreeListPVT, pcasgop);
 
 	/*
  	 * Wake up any tasks pending

@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.29  1997/04/23 17:05:10  jhill
+ * pc port changes
+ *
  * Revision 1.28  1997/04/10 19:26:19  jhill
  * asynch connect, faster connect, ...
  *
@@ -63,6 +66,7 @@
 #include "iocinf.h"
 #include "remLib.h"
 #include "dbEvent.h"
+#include "freeList.h"
 
 LOCAL void ca_repeater_task();
 LOCAL void ca_task_exit_tcb(WIND_TCB *ptcb);
@@ -364,10 +368,12 @@ int cac_os_depen_init(struct ca_static *pcas)
 	int             status;
 
 	ellInit(&pcas->ca_local_chidlist);
-	ellInit(&pcas->ca_dbfree_ev_list);
 	ellInit(&pcas->ca_lcl_buff_list);
 	ellInit(&pcas->ca_taskVarList);
 	ellInit(&pcas->ca_putNotifyQue);
+
+	freeListInitPvt(&pcas->ca_dbMonixFreeList,
+		db_sizeof_event_block()+sizeof(struct pending_event),256);
 
 	pcas->ca_tid = taskIdSelf();
 	pcas->ca_client_lock = semMCreate(SEM_DELETE_SAFE);
@@ -481,7 +487,7 @@ LOCAL int cac_os_depen_exit_tid (struct ca_static *pcas, int tid)
 			status = db_cancel_event((struct event_block *)(monix+1));
 			LOCK;
 			assert(status == OK);
-			free(monix);
+			freeListFree (ca_static->ca_dbMonixFreeList, monix);
 		}
 		if (chix->ppn) {
 			CACLIENTPUTNOTIFY *ppn;
@@ -550,8 +556,7 @@ LOCAL int cac_os_depen_exit_tid (struct ca_static *pcas, int tid)
 	 * remove local chid blocks, paddr blocks, waiting ev blocks
 	 */
 	ellFree(&pcas->ca_local_chidlist);
-	ellFree(&pcas->ca_dbfree_ev_list);
-
+	freeListCleanup(pcas->ca_dbMonixFreeList);
 
 	/*
 	 * remove semaphores here so that ca_process_exit()
@@ -918,12 +923,30 @@ void cac_recv_task(int  tid)
         	cac_clean_iiu_list();
 
 		/*
+		 * first check for pending recv's with a 
+		 * zero time out so that
+		 * 1) flow control works correctly (and)
+		 * 2) we queue up sends resulting from recvs properly
+		 */
+		while (TRUE) {
+			LD_CA_TIME (0.0, &timeout);
+			count = cac_select_io(&timeout, CA_DO_RECVS);
+			if (count<=0) {
+				break;
+			}
+			ca_process_input_queue();
+		}
+
+		/*
+		 * flush out all pending io prior to blocking
+		 *
 		 * NOTE: this must be longer than one vxWorks
 		 * tick or we will infinite loop 
 		 */
-                timeout.tv_usec = (4*USEC_PER_SEC)/sysClkRateGet();
+                timeout.tv_usec = (4/*ticks*/ * USEC_PER_SEC)/sysClkRateGet();
                 timeout.tv_sec = 0;
-		count = cac_select_io(&timeout, CA_DO_RECVS);
+		count = cac_select_io(&timeout, 
+			CA_DO_RECVS|CA_DO_SENDS);
 		ca_process_input_queue();
         	manage_conn();
 #endif

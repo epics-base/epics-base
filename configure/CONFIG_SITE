@@ -98,12 +98,15 @@ CXXCMPLR=STRICT
 #     NOTE: os/CONFIG.$(EPICS_HOST_ARCH).$(EPICS_HOST_ARCH) files and
 #     os/CONFIG_SITE.$(EPICS_HOST_ARCH).$(EPICS_HOST_ARCH) files may override
 #
-#     NOTE WIN32: YES results in a DLL.
+#     NOTE WIN32: YES results in a DLL.  Valid settings are
+#                   SHARED_LIBRARIES=YES and STATIC_BUILD=NO
+#                   SHARED_LIBRARIES=NO  and STATIC_BUILD=YES
 #
 SHARED_LIBRARIES=YES
 
 #  Build client objects statically ?
 #        must be either YES or NO
+#
 STATIC_BUILD=NO
 
 #  Should header dependancy files be automatically generated

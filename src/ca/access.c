@@ -59,6 +59,14 @@
 /*	031892 	joh	initial broadcast retry delay is now a #define	*/
 /*	032092	joh	dont allow them to add an event which does not	*/
 /*			select anything (has a nill mask)		*/
+/*	041492	joh	Use channel state enum to determine if I need	*/
+/*			to send monitor clear message to the IOC 	*/
+/*			instead of the IOC in use conn up flag		*/
+/*			(did the same thing to the tests in 		*/
+/*			issue_get_callback() & request_event())		*/
+/*	041492	joh	fixed bug introduced by 022692 when the chan	*/
+/*			state enum was used after it was set to		*/
+/*			cs_closed					*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -1198,8 +1206,9 @@ issue_get_callback(monix)
 	 * dont send the message if the conn is down 
 	 * (it will be sent once connected)
   	 */
-    	if(!iiu[chix->iocix].conn_up || chix->iocix == BROADCAST_IIU)
+	if(chix->state != cs_conn){
 		return;
+	}
 
 	/*
 	 * set to the native count if they specify zero
@@ -1663,8 +1672,9 @@ ca_request_event(monix)
 	 * dont send the message if the conn is down 
 	 * (it will be sent once connected)
   	 */
-    	if(!iiu[chix->iocix].conn_up || chix->iocix == BROADCAST_IIU)
+	if(chix->state != cs_conn){
 		return;
+	}
 
 	/*
 	 * clip to the native count and set to the native count if they
@@ -1910,10 +1920,7 @@ ca_clear_event
 	 * check for conn down while locked to avoid a race
 	 */
 	LOCK;
-	if (!iiu[chix->iocix].conn_up || chix->iocix == BROADCAST_IIU){
-		lstDelete(&monix->chan->eventq, monix);
-	}else{
-
+	if(chix->state == cs_conn){
 		mptr = CAC_ALLOC_MSG(&iiu[chix->iocix], 0);
 
 		/* msg header	 */
@@ -1928,6 +1935,9 @@ ca_clear_event
 		 *	after confirmation from IOC 
 		 */
 		CAC_ADD_MSG(&iiu[chix->iocix]);
+	}
+	else{
+		lstDelete(&monix->chan->eventq, monix);
 	}
 	UNLOCK;
 
@@ -1957,14 +1967,16 @@ ca_clear_channel
 	register chid   chix;
 #endif
 {
-	register evid   monix;
-	struct ioc_in_use *piiu = &iiu[chix->iocix];
-	register struct extmsg *mptr;
+	register evid   		monix;
+	struct ioc_in_use 		*piiu = &iiu[chix->iocix];
+	register struct extmsg 		*mptr;
+	enum channel_state		old_chan_state;
 
 	LOOSECHIXCHK(chix);
 
 	/* disable their further use of deallocated channel */
 	chix->type = TYPENOTINUSE;
+	old_chan_state = chix->state;
 	chix->state = cs_closed;
 
 	/* the while is only so I can break to the lock exit */
@@ -2013,7 +2025,7 @@ ca_clear_channel
 		 * 
 		 * check for conn state while locked to avoid a race
 		 */
-		if(chix->state != cs_conn){
+		if(old_chan_state != cs_conn){
 			lstConcat(&free_event_list, &chix->eventq);
 			lstDelete(&piiu->chidlist, chix);
 			if (free((char *) chix) < 0)

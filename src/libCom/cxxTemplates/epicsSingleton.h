@@ -104,15 +104,18 @@ inline epicsSingleton<TYPE>::~epicsSingleton ()
     // sorts of problems then clean up is left to other classes.
 }
 
+// SUN PRO generates warnings unless it sees an implementation
 #if defined ( __SUNPRO_CC ) && __SUNPRO_CC < 0x550
     // SUN PRO 5.4 generates bogus warnings unless it sees an implementation
     template < class TYPE >
-    inline epicsSingleton<TYPE>::epicsSingleton ( const epicsSingleton & )
+    inline epicsSingleton<TYPE>::epicsSingleton ( 
+        const epicsSingleton<TYPE> & )
     {
         assert ( 0 );
     }
     template < class TYPE >
-    inline epicsSingleton & epicsSingleton<TYPE>::operator = ( const epicsSingleton & )
+    inline epicsSingleton<TYPE> & epicsSingleton<TYPE>::operator = 
+        ( const epicsSingleton<TYPE> & )
     {
         assert ( 0 );
     }

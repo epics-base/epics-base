@@ -12,6 +12,19 @@ dd Month 2004</h1>
 
 <h2 align="center">Changes since 3.14.5</h2>
 
+<h4>EPICS_HOST_ARCH win32-x86-cygwin renamed to cygwin-x86</h4>
+
+<p> The EPICS_HOST_ARCH win32-x86-cygwin was renamed cygwin-x86 to avoid
+confusion about what OS interfaces are used on Windows: native win32 or cygwin's
+emulation of POSIX. Now we have 
+<ul>
+<li>win32-x86  Uses native win32 interfaces with MS compiler.</li>
+<li>win32-x86-borland  Uses native win32 interfaces with borland compiler.</li>
+<li>win32-x86-gnu Uses native win32 interfaces with cygwin gnu compiler. (Not implemented yet.)</li>
+<li>cygwin-x86 Uses cygwin POSIX interfaces with cygwin gnu compiler.</li>
+</ul>
+</p>
+
 <h4>EPICS_TS_NTP_INET</h4>
 
 <p>The time server's IP address used by the vxWorks clock routines was not

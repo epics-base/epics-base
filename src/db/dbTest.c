@@ -17,6 +17,7 @@
 #include <stdio.h>
 
 #include "epicsStdio.h"
+#include "epicsString.h"
 #include "dbDefs.h"
 #include "errlog.h"
 #include "ellLib.h"

@@ -1,5 +1,5 @@
 menu(menuAlarmStat) {
-	choice(menuAlarmStat,"")
+	choice(menuAlarmStat,"NO_ALARM")
 	choice(menuAlarmStatREAD,"READ")
 	choice(menuAlarmStatWRITE,"WRITE")
 	choice(menuAlarmStatHIHI,"HIHI")

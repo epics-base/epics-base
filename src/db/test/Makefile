@@ -2,7 +2,7 @@ TOP=../../..
 
 include $(TOP)/configure/CONFIG
 
-PROD_LIBS += dbIoc dbStaticHost Com
+PROD_LIBS += dbIoc dbStaticHost ca Com
 dbIoc_DIR=$(INSTALL_LIB)
 dbStaticHost_DIR=$(INSTALL_LIB)
 

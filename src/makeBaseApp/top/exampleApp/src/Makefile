@@ -59,11 +59,17 @@ example_SRCS += caMonitor.c
 example_SRCS_DEFAULT += example_registerRecordDeviceDriver.cpp
 example_SRCS_DEFAULT += exampleMain.c
 example_SRCS_vxWorks += -nil-
-#example_SRCS_vxWorks += sncExample.c
 
-example_OBJS_vxWorks += $(EPICS_BASE_BIN)/registerRecordDeviceDriver
 example_OBJS_vxWorks += $(EPICS_BASE_BIN)/iocCoreLibrary
-#example_OBJS_vxWorks += $(SEQ_BIN)/seq
+
+#example_SRCS_vxWorks += sncExample.c
+#example_OBJS_vxWorks += $(SEQ_BIN)/seqLibrary
+#example_LIBS += seq
+#example_LIBS += pv
+#seq_DIR    = $(SEQ_LIB)
+#example_LIBS += pvCa
+
+
 
 -include ../baseLIBOBJS
 example_OBJS += $(LIBOBJS)

@@ -34,11 +34,44 @@ in the configure/CONFIG_SITE file which must be set to
 YES for R3.13 compatability files to be created and installed.
 You will need to set COMPAT_313 to YES if you want R3.13 ioc
 applications or R3.13 extensions built with this R3.14 base.
+If you wish to build only R3.13 extensions and not R3.13 ioc
+applications with this R3.14 base, you can install scripts
+needed by the R3.13 build by doing a gnumake in the
+&lt;base&gt;/config/tools directory.
 </p>
 
 <p>The COMPAT_313 macro is set to NO in the CONFIG_SITE distribution
 file.
 </p>
+
+<h4>APS Virtual LINAC Templates</h4>
+
+<p>A new set of templates has been included in R3.14.5 to
+implement a Virtual LINAC in an ioc using databases and
+sequence programs. The Virtual LINAC simulates the generation
+and transmission of an electron beam down a LINAC. Several
+steering coils, BPMs, and other typical accelerator components
+are simulated to provide a realistic interaction between the
+operator and the "LINAC". Since it is an entirely soft application,
+it will work on any platform. An medm display is provided as the
+primary GUI. It can also be used to experiment with other CA
+client tools.</p>
+
+<p>To install the templates, use the following commands:</p>
+ 
+<pre>
+  mkdir <top>
+  cd <top>
+  &lt;base&gt;/bin/&lt;arch&gt;/makeBaseApp.pl -t vlinac vlinac
+  &lt;base&gt;/bin/&lt;arch&gt;/makeBaseApp.pl -i -t vlinac vlinac
+</pre>
+
+<p>For further information, see:</p>
+
+<pre>
+  &lt;top&gt;/vlinacApp/misc/README
+  &lt;top&gt;/vlinacApp/misc/Virtual_Linac_Info.pdf
+</pre>
 
 <h4>Stringin record time-stamp soft device support</h4>
 Add simple device support for converting time to nicely-formatted string using

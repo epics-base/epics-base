@@ -22,15 +22,6 @@
  * auto include of all stuff that cadef.h uses 
  */
 
-/*
- * use two ifdef's for trad C compatibility
- */
-#ifndef CA_DONT_INCLUDE_STDARGH
-#ifdef CAC_ANSI_FUNC_PROTO 
-#include <stdarg.h>
-#endif
-#endif
-
 #include "caerr.h"
 #include "db_access.h"
 #include "caeventmask.h"
@@ -48,6 +39,11 @@ extern "C" {
 #ifdef __STDC__ 
 #ifndef CAC_ANSI_FUNC_PROTO
 #define CAC_ANSI_FUNC_PROTO
+#endif
+#endif
+#ifndef CA_DONT_INCLUDE_STDARGH
+#ifdef CAC_ANSI_FUNC_PROTO 
+#include <stdarg.h>
 #endif
 #endif
 

@@ -34,6 +34,8 @@
  * .03  12-11-91        jba     Moved set of alarm stat and sevr to macros
  * .04  01-14-92        mrk	Added interrupt support
  * .05	03-13-92	jba	ANSI C changes
+ * .05  04-10-92        jba     pact now used to test for asyn processing, not return value
+ * .05  04-13-92        jba     Removed filename fp from report
  *      ...
  */
 
@@ -55,6 +57,7 @@
 #include	<dbDefs.h>
 #include	<dbAccess.h>
 #include	<dbCommon.h>
+#include	<fast_lock.h>
 #include        <recSup.h>
 #include	<devSup.h>
 #include	<dbScan.h>
@@ -126,6 +129,7 @@ static struct {
 static int ncards=0;
 static struct mz8310_info {
     short present;
+    FAST_LOCK lock;
     struct {
 	short connected;
 	short nrec_using;
@@ -223,7 +227,7 @@ getCmd(preg,pcmd)
     unsigned char	*pcmd;
 {
     *pcmd = *preg;
-    if(mz8310Debug) printf("mx8310:getCmd:  pcmdreg=%x cmd=%x %d\n",preg,*pcmd,*pcmd);
+    if(mz8310Debug) printf("mz8310:getCmd:  pcmdreg=%x cmd=%x %d\n",preg,*pcmd,*pcmd);
 }
 
 getData(preg,pdata)
@@ -235,7 +239,7 @@ getData(preg,pdata)
 }
 
 static long init(after)
-    short after;
+    int after;
 {
     int card,chip,channel,intvec;
     volatile unsigned char  *pcmd;
@@ -248,9 +252,12 @@ static long init(after)
 	logMsg("devMz8310: sysBusToLocalAdrs failed\n");
 	exit(1);
     }
+    memset((char *)&mz8310_info[0],0,MAXCARDS*sizeof(struct mz8310_info));
     BASE = tm_addrs[MZ8310];
     for(card=0; card<MAXCARDS; card++) {
 	mz8310_info[card].present = FALSE;
+	FASTLOCKINIT(&mz8310_info[card].lock);
+	FASTLOCK(&mz8310_info[card].lock);
 	for(chip=0; chip<NCHIP; chip ++) {
 	    pcmd = PCMDREG(card,chip); pdata = PDATAREG(card,chip);
 	    if(vxMemProbe(pcmd, READ, sizeof(*pcmd), &dummy) != OK)continue;
@@ -273,6 +280,7 @@ static long init(after)
 		}
 	    }
 	}
+	FASTUNLOCK(&mz8310_info[card].lock);
 	/*Initialize I/O scanning for each interrupt vector		*/
 	/*Note that interrupt vectors are not initialized until the	*/
 	/*first record is attached via get_ioint_info.			*/
@@ -283,15 +291,14 @@ static long init(after)
     return(0);
 }
 
-static long report(fp,interest)
-    FILE *fp;
+static long report(interest)
     int  interest;
 {
     int card,chip,channel,intvec;
 
     for(card=0; card<MAXCARDS; card++) {
 	if(!mz8310_info[card].present) continue;
-	fprintf(fp,"mz8310: card %d\n",card);
+	printf("mz8310: card %d\n",card);
 	if(interest==0)continue;
 	for(chip=0; chip<NCHIP; chip++) {
 	    for(channel=0; channel<CHANONCHIP; channel++) {
@@ -299,7 +306,7 @@ static long report(fp,interest)
 
 		nrec_using = mz8310_info[card].chan_info[chip][channel].nrec_using;
 		if(nrec_using==0) continue;
-		fprintf(fp,"   chip: %d channel: %d nrec_using: %d\n",
+		printf("   chip: %d channel: %d nrec_using: %d\n",
 			chip,channel,nrec_using);
 	    }
 	}
@@ -309,7 +316,7 @@ static long report(fp,interest)
 	    nrec_using = mz8310_info[card].int_info[intvec].nrec_using;
 	    connected = mz8310_info[card].int_info[intvec].connected;
 	    if(nrec_using==0 && !connected) continue;
-	    fprintf(fp,"  intvec: %d connected: %d nrec_using: %d  eventRecord\n",
+	    printf("  intvec: %d connected: %d nrec_using: %d  eventRecord\n",
 			intvec,connected,nrec_using);
 	}
     }
@@ -472,6 +479,7 @@ static long cmd_pc(pr)
     channel = signal - chip*CHANONCHIP;
     pcmd = PCMDREG(card,chip);
     pdata = PDATAREG(card,chip);
+    FASTLOCK(&mz8310_info[card].lock);
     switch (pr->cmd) {
 	case CTR_READ:
 	    putCmd(pcmd,(SAVE | (3<<channel)));
@@ -512,7 +520,8 @@ static long cmd_pc(pr)
                 recGblSetSevr(pr,WRITE_ALARM,VALID_ALARM);
 		recGblRecordError(S_db_badField,pr,
 		    "devMz8310 : illegal clks value");
-		return(1);
+		pr->pact=TRUE;
+		break;
 	    }
 	    mode |= (pr->clks << 8);
 	    putCmd(pcmd,(DISARM | (3<<channel)));
@@ -531,8 +540,9 @@ static long cmd_pc(pr)
             recGblSetSevr(pr,WRITE_ALARM,MAJOR_ALARM);
 	    recGblRecordError(S_db_badField,pr,
 		"devMz8310 : illegal command");
-	    return(0);
+	    break;
     }
+    FASTUNLOCK(&mz8310_info[card].lock);
     return(0);
 }  
 
@@ -564,7 +574,8 @@ static long write_pd(pr)
         recGblSetSevr(pr,WRITE_ALARM,VALID_ALARM);
 	recGblRecordError(S_db_badField,pr,
 		"devMz8310 : computed illegal clock rate");
-	return(1);
+	pr->pact=TRUE;
+	return(0);
     }
     holdCount = clockRate*pr->wide;
     if(holdCount<1e0) holdCount = 1e0;
@@ -584,7 +595,8 @@ static long write_pd(pr)
         recGblSetSevr(pr,WRITE_ALARM,VALID_ALARM);
 	recGblRecordError(S_db_badField,pr,
 		"devMz8310 : computed illegal clock rate");
-	return(1);
+	pr->pact=TRUE;
+	return(0);
     }
     load = loadCount + .5;
     hold = holdCount + .5;
@@ -602,12 +614,14 @@ static long write_pd(pr)
             recGblSetSevr(pr,WRITE_ALARM,VALID_ALARM);
 	    recGblRecordError(S_db_badField,pr,
 		"devMz8310 : illegal clks value");
-	    return(1);
+	    pr->pact=TRUE;
+	    return(0);
 	}
 	mode |= (pr->clks << 8);
     }
 
     /* setup counter */
+    FASTLOCK(&mz8310_info[card].lock);
     putCmd(pcmd,(DISARM | (1<<channel)));
     /* Set initial state of output */
     putCmd(pcmd,((pr->llow==0 ? CLRTOGOUT : SETTOGOUT) | (channel+1)));
@@ -626,6 +640,7 @@ static long write_pd(pr)
     putCmd(pcmd,(LOAD | (1<<channel)));
     putCmd(pcmd,(STEP | (channel+1)));
     putCmd(pcmd,(ARM | (1<<channel)));
+    FASTUNLOCK(&mz8310_info[card].lock);
     pr->udf = FALSE;
     return(0);
 }
@@ -675,7 +690,8 @@ static long write_pt(pr)
         recGblSetSevr(pr,WRITE_ALARM,VALID_ALARM);
 	recGblRecordError(S_db_badField,pr,
 		"devMz8310 : computed illegal clock rate");
-	return(1);
+	pr->pact=TRUE;
+	return(0);
     }
     holdCount = periodInClockUnits*pr->dcy/100.0;
     if(holdCount<1e0) holdCount = 1e0;
@@ -694,7 +710,8 @@ static long write_pt(pr)
         recGblSetSevr(pr,WRITE_ALARM,VALID_ALARM);
 	recGblRecordError(S_db_badField,pr,
 		"devMz8310 : computed illegal clock rate");
-	return(1);
+	pr->pact=TRUE;
+	return(0);
     }
     load = loadCount + .5;
     hold = holdCount + .5;
@@ -718,12 +735,14 @@ static long write_pt(pr)
             recGblSetSevr(pr,WRITE_ALARM,VALID_ALARM);
 	    recGblRecordError(S_db_badField,pr,
 		"devMz8310 : illegal clks value");
-	    return(1);
+	    pr->pact=TRUE;
+	    return(0);
 	}
 	mode |= (pr->clks << 8);
     }
 
     /* setup counter */
+    FASTLOCK(&mz8310_info[card].lock);
     putCmd(pcmd,(DISARM | (1<<channel)));
     /* Set initial state of output */
     putCmd(pcmd,((pr->llow==0 ? CLRTOGOUT : SETTOGOUT) | (channel+1)));
@@ -740,6 +759,7 @@ static long write_pt(pr)
     }
     /* Load and arm counter*/
     putCmd(pcmd,(LOADARM | (1<<channel)));
+    FASTUNLOCK(&mz8310_info[card].lock);
     pr->udf = FALSE;
     return(0);
 }

@@ -22,7 +22,9 @@ POSIX_CPPFLAGS_NO =
 POSIX_LDLIBS_NO =
 
 # -D_BSD_SOURCE for gethostname() in unistd.h as needed by cacChannelIO.cpp.
-ARCH_DEP_CPPFLAGS += -DCYGWIN32 -U_WIN32
-ARCH_DEP_LDFLAGS =
-####ARCH_DEP_LDLIBS = -lreadline -lcurses -lrt
+OP_SYS_CPPFLAGS += -DCYGWIN32 -U_WIN32
+OP_SYS_LDFLAGS =
+####OP_SYS_LDLIBS = -lreadline -lcurses -lrt
+
+ARCH_DEP_CPPFLAGS += -D_X86_
 

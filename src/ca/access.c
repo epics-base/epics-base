@@ -281,28 +281,45 @@ void			*pext
 	if(extsize+sizeof(msg)>piiu->send.max_msg){
 		return ECA_TOLARGE;
 	}
-	while(TRUE){
-      		struct timeval	itimeout;
 
+	bytesAvailable = cacRingBufferWriteSize(&piiu->send, FALSE);
+
+	if (bytesAvailable<extsize+sizeof(msg)) {
+		/*
+		 * try to send first so that we avoid the
+		 * overhead of select() in high throughput
+		 * situations
+		 */
+		(*piiu->sendBytes)(piiu);
 		bytesAvailable = 
 			cacRingBufferWriteSize(&piiu->send, FALSE);
-		if(bytesAvailable>=extsize+sizeof(msg)){
-			break;
-		}
-		/*
-		 * if connection drops request
-		 * cant be completed
-		 */
-		if(!piiu->conn_up){
+
+		while(bytesAvailable<extsize+sizeof(msg)){
+			struct timeval	itimeout;
+
+			/*
+			 * if connection drops request
+			 * cant be completed
+			 */
+			if(!piiu->conn_up){
+				UNLOCK;
+				return ECA_BADCHID;
+			}
+
 			UNLOCK;
-			return ECA_BADCHID;
+
+			LD_CA_TIME (SELECT_POLL, &itimeout);
+			cac_mux_io(&itimeout);
+
+			LOCK;
+
+			bytesAvailable = cacRingBufferWriteSize(
+						&piiu->send, 
+						FALSE);
+			if(bytesAvailable>=extsize+sizeof(msg)){
+				break;
+			}
 		}
-		UNLOCK;
-
-		LD_CA_TIME (SELECT_POLL, &itimeout);
-		cac_mux_io(&itimeout);
-
-		LOCK;
 	}
 
 
@@ -424,23 +441,37 @@ struct extmsg		**ppMsg
 	}
 
 	bytesAvailable = cacRingBufferWriteSize(&piiu->send, TRUE);
-  	while(bytesAvailable<msgsize){
-	      	struct timeval	itimeout;
-
-		UNLOCK;
-		LD_CA_TIME (SELECT_POLL, &itimeout);
-		cac_mux_io(&itimeout);
-		LOCK;
-
+  	if (bytesAvailable<msgsize) {
 		/*
-		 * if connection drops request
-		 * cant be completed
+		 * try to send first so that we avoid the
+		 * overhead of select() in high throughput
+		 * situations
 		 */
-		if(!piiu->conn_up){
-			return ECA_BADCHID;
-		}
+		(*piiu->sendBytes)(piiu);
+		bytesAvailable = cacRingBufferWriteSize(
+					&piiu->send, 
+					TRUE);
 
-		bytesAvailable = cacRingBufferWriteSize(&piiu->send, TRUE);
+  		while (bytesAvailable<msgsize) {
+			struct timeval	itimeout;
+
+			/*
+			 * if connection drops request
+			 * cant be completed
+			 */
+			if(!piiu->conn_up){
+				return ECA_BADCHID;
+			}
+
+			UNLOCK;
+			LD_CA_TIME (SELECT_POLL, &itimeout);
+			cac_mux_io(&itimeout);
+			LOCK;
+
+			bytesAvailable = cacRingBufferWriteSize(
+						&piiu->send, 
+						TRUE);
+		}
 	}
 
 	pmsg = (struct extmsg *) &piiu->send.buf[piiu->send.wtix];
@@ -1188,6 +1219,12 @@ void 		*pvalue
 	}
 #endif
 
+	/*
+	 * lock around io block create and list add
+	 * so that we are not deleted without
+	 * reclaiming the resource
+	 */
+	LOCK;
 	monix = caIOBlockCreate();
 	if (monix) {
 
@@ -1196,13 +1233,20 @@ void 		*pvalue
 		monix->count = count;
 		monix->usr_arg = pvalue;
 
-		LOCK;
 		ellAdd(&pend_read_list, &monix->node);
-		UNLOCK;
+	}
+	UNLOCK;
 
+	if (monix) {
 		status = issue_get_callback(monix, IOC_READ);
 		if (status == ECA_NORMAL) {
 			SETPENDRECV;
+		}
+		else {
+			LOCK;
+			ellDelete (&pend_read_list, &monix->node);
+			caIOBlockFree (monix);
+			UNLOCK;
 		}
 	} 
 	else {
@@ -1255,8 +1299,13 @@ void *arg
 	}
 #endif
 
+	/*
+	 * lock around io block create and list add
+	 * so that we are not deleted without
+	 * reclaiming the resource
+	 */
+	LOCK;
 	monix = caIOBlockCreate();
-
 	if (monix) {
 
 		monix->chan = chix;
@@ -1265,11 +1314,18 @@ void *arg
 		monix->type = type;
 		monix->count = count;
 
-		LOCK;
 		ellAdd(&pend_read_list, &monix->node);
-		UNLOCK;
+	}
+	UNLOCK;
 
+	if (monix) {
 		status = issue_get_callback (monix, IOC_READ_NOTIFY);
+		if (status != ECA_NORMAL) {
+			LOCK;
+			ellDelete (&pend_read_list, &monix->node);
+			caIOBlockFree (monix);
+			UNLOCK;
+		}
 	} 
 	else {
 		status = ECA_ALLOCMEM;
@@ -1428,20 +1484,8 @@ void				*usrarg
 		return ECA_NOSUPPORT;
 	}
 
-	if(piiu){
-		monix = (evid) caIOBlockCreate();
-		if (!monix){
-			return ECA_ALLOCMEM;
-		}
-
-		monix->chan = chix;
-		monix->usr_func = pfunc;
-		monix->usr_arg = usrarg;
-		monix->type = type;
-		monix->count = count;
-	}
 #ifdef vxWorks
-	else{
+	if (!piiu) {
 		CACLIENTPUTNOTIFY	*ppn;
 		int 			size;
 
@@ -1513,6 +1557,26 @@ void				*usrarg
 	}
 #endif /*vxWorks*/
 
+	/*
+	 * lock around io block create and list add
+	 * so that we are not deleted without
+	 * reclaiming the resource
+	 */
+	LOCK;
+	monix = (evid) caIOBlockCreate();
+	if (!monix) {
+		UNLOCK;
+		return ECA_ALLOCMEM;
+	}
+	ellAdd(&pend_write_list, &monix->node);
+	UNLOCK;
+
+	monix->chan = chix;
+	monix->usr_func = pfunc;
+	monix->usr_arg = usrarg;
+	monix->type = type;
+	monix->count = count;
+
 	status = issue_ca_array_put(
 			IOC_WRITE_NOTIFY, 
 			monix->id,
@@ -1521,18 +1585,13 @@ void				*usrarg
 			chix, 
 			pvalue);
 	if(status != ECA_NORMAL){
-		if(chix->piiu){
-			caIOBlockFree(monix);
-		}
+		LOCK;
+		ellDelete (&pend_write_list, &monix->node);
+		caIOBlockFree(monix);
+		UNLOCK;
 		return status;
 	}
 
-
-	if(piiu){
-		LOCK;
-		ellAdd(&pend_write_list, &monix->node);
-		UNLOCK;
-	}
 
   	return status;
 }
@@ -1995,30 +2054,31 @@ long		mask
   	if(!mask)
     		return ECA_BADMASK;
 
+	/*
+	 * lock around io block create and list add
+	 * so that we are not deleted without
+	 * reclaiming the resource
+	 */
   	LOCK;
 
-  	/*	event descriptor	*/
-# 	ifdef vxWorks
-  	{
+  	if (!chix->piiu) {
+# 		ifdef vxWorks
     		static int			dbevsize;
 
-    		if(!chix->piiu){
-
-      			if(!dbevsize){
-        			dbevsize = db_sizeof_event_block();
-			}
-      			size = sizeof(*monix)+dbevsize;
-      			if(!(monix = (evid)ellGet(&dbfree_ev_list))){
-        			monix = (evid)malloc(size);
-      			}
-    		}
-    		else{
-			monix = caIOBlockCreate();
-    		}
+      		if(!dbevsize){
+        		dbevsize = db_sizeof_event_block();
+		}
+      		size = sizeof(*monix)+dbevsize;
+      		if(!(monix = (evid)ellGet(&dbfree_ev_list))){
+        		monix = (evid)malloc(size);
+      		}
+# 		else
+		assert (0);
+# 		endif
   	}
-# 	else
+	else {
 		monix = caIOBlockCreate();
-# 	endif
+	}
 
   	if(!monix){
     		UNLOCK;
@@ -2041,42 +2101,40 @@ long		mask
   	monix->mask	= mask;
 
 # 	ifdef vxWorks
-  	{
-    		if(!chix->piiu){
-      			status = db_add_event(	
-					evuser,
-					chix->id.paddr,
-					ca_event_handler,
-					monix,
-					mask,
-					monix+1);
-      			if(status == ERROR){
-				UNLOCK;
-       				return ECA_DBLCLFAIL; 
-      			}
+	if(!chix->piiu){
+		status = db_add_event(	
+				evuser,
+				chix->id.paddr,
+				ca_event_handler,
+				monix,
+				mask,
+				monix+1);
+		if(status == ERROR){
+			UNLOCK;
+			return ECA_DBLCLFAIL; 
+		}
 
-      			/* 
-			 * Place in the channel list 
-			 * - do it after db_add_event so there
-			 * is no chance that it will be deleted 
-			 * at exit before it is completely created
-      			 */
-      			ellAdd(&chix->eventq, &monix->node);
+		/* 
+		 * Place in the channel list 
+		 * - do it after db_add_event so there
+		 * is no chance that it will be deleted 
+		 * at exit before it is completely created
+		 */
+		ellAdd(&chix->eventq, &monix->node);
 
-      			/* 
-			 * force event to be called at least once
-      			 * return warning msg if they have made the queue to full 
-		 	 * to force the first (untriggered) event.
-       			 */
-      			if(db_post_single_event(monix+1)==ERROR){
-				UNLOCK;
-       		 		return ECA_OVEVFAIL;
-      			}
+		/* 
+		 * force event to be called at least once
+		 * return warning msg if they have made the queue to full 
+		 * to force the first (untriggered) event.
+		 */
+		if(db_post_single_event(monix+1)==ERROR){
+			UNLOCK;
+			return ECA_OVEVFAIL;
+		}
 
-      			UNLOCK;
-      			return ECA_NORMAL;
-    		} 
-  	}
+		UNLOCK;
+		return ECA_NORMAL;
+	} 
 # 	endif
 
   	/* It can be added to the list any place if it is remote */
@@ -2086,7 +2144,14 @@ long		mask
   	UNLOCK;
 
 	if(chix->state == cs_conn){
-  		return ca_request_event(monix);
+  		status = ca_request_event(monix);
+		if (status != ECA_NORMAL) {
+			LOCK;
+			ellDelete (&chix->eventq, &monix->node);
+			caIOBlockFree(monix);
+			UNLOCK
+		}
+		return status;
 	}
 	else{
 		return ECA_NORMAL;
@@ -2939,7 +3004,7 @@ int echo_request(struct ioc_in_use *piiu, ca_time *pCurrentTime)
 	struct extmsg  	*phdr;
 
 	status = cac_alloc_msg_no_flush (piiu, sizeof(*phdr), &phdr);
-	if (status) {
+	if (status != ECA_NORMAL) {
 		return status;
 	}
 

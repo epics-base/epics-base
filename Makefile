@@ -14,7 +14,9 @@
 TOP = .
 include $(TOP)/configure/CONFIG
 
+ifeq ($(findstring YES,$(COMPAT_313) $(COMPAT_TOOLS_313)),YES)
 DIRS += config config/tools
+endif
 DIRS += configure src
 
 include $(TOP)/configure/RULES_TOP

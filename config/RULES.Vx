@@ -256,11 +256,11 @@ $(INSTALL_INCLUDE)/%: ../%
 
 $(INSTALL_DOC)/%: % 
 	@echo "Installing $@"
-	@$(INSTALL) -m 644 $< $(INSTALL_DOC)
+	@$(INSTALL) -m 644 $< $(@D)
 
 $(INSTALL_DOC)/%: ../% 
 	@echo "Installing $@"
-	@$(INSTALL) -m 644 $< $(INSTALL_DOC)
+	@$(INSTALL) -m 644 $< $(@D)
 
 $(INSTALL_HTML)/$(HTMLS_DIR)/%: % 
 	@echo "Installing $@"

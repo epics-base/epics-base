@@ -1,0 +1,23 @@
+
+# BUILD_TYPE
+#   Currently either Vx or Unix
+BUILD_TYPE = Vx
+
+# For Vx directories of form:
+#
+#   $(VX_DIR)/$(HOST_ARCH).$(ARCH_CLASS)/bin
+#
+# And configuration files:
+#
+#   CONFIG_SITE.Vx.68k  -or-  CONFIG_SITE.Unix.sun4
+#
+ARCH_CLASS = sparc
+
+include $(EPICS_BASE)/config/CONFIG.$(BUILD_TYPE).$(ARCH_CLASS)
+
+# Architecture specific build flags
+ARCH_DEP_CFLAGS = -DCPU=SPARC -DCPU_FAMILY=SPARC
+# Removed -O2 [24/12/96 PMM]
+ARCH_DEP_CXXFLAGS = -fno-builtin -ansi -pipe -nostdinc -DCPU=SPARC \
+                      -DVXWORKS -Dsigned= -Dvolatile= +V  
+

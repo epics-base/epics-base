@@ -45,6 +45,7 @@
 //
 //
 
+#include <new>
 #include <stdarg.h>
 
 #ifdef epicsExportSharedSymbols

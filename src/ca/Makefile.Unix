@@ -34,13 +34,7 @@ include $(EPICS)/config/RULES.Unix
 acctst: acctst.o $(LIBOBJS) $(DEPLIBS_BASE)/libCom.a
 	$(LINK.c) -o $@ $< $(LIBOBJS) $(DEPLIBS_BASE)/libCom.a 
 
-acctst.o: ../acctst.c
-	$(COMPILE.c) $<
-
 catime: catime.o $(LIBOBJS) $(DEPLIBS_BASE)/libCom.a 
 	$(LINK.c) -o $@ $< $(LIBOBJS) $(DEPLIBS_BASE)/libCom.a 
-
-catime.o: ../catime.c
-	$(COMPILE.c) $<
 
 

@@ -51,6 +51,7 @@ INC += osdSigPipeIgnore.h
 INC += tsStamp.h
 
 SRCS += osdSockResource.c
+SRCS += osiSockResource.c
 SRCS += osdAssert.c
 SRCS += osdFindGlobalSymbol.c
 SRCS += osdInterrupt.c

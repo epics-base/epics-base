@@ -37,13 +37,13 @@ epicsSetEnvParams()
 {
     printf("setting EPICS environment parameters\n");
     envSetConfigParam(&EPICS_TS_MIN_WEST, "360");
-    envSetConfigParam(&EPICS_SYSCLK_INET, "130.202.241.16");
-    envSetConfigParam(&EPICS_IOCMCLK_INET, "130.202.241.124");
+    envSetConfigParam(&EPICS_SYSCLK_INET, "164.54.8.2");
+    envSetConfigParam(&EPICS_IOCMCLK_INET, "164.54.8.53");
     envSetConfigParam(&EPICS_SYSCLK_PORT, "2200");
     envSetConfigParam(&EPICS_IOCMCLK_PORT, "2300");
     envSetConfigParam(&EPICS_AR_PORT, "7002");
     envSetConfigParam(&EPICS_CMD_PROTO_PORT, "7003");
-    envSetConfigParam(&EPICS_IOC_LOG_INET, "130.202.241.16");
+    envSetConfigParam(&EPICS_IOC_LOG_INET, "164.54.8.2");
     envSetConfigParam(&EPICS_IOC_LOG_PORT, "7004");
     envSetConfigParam(&EPICS_IOC_LOG_FILE_LIMIT, "1000000");
     envSetConfigParam(&EPICS_IOC_LOG_FILE_NAME, "/home/phebos1/epics/apple/log/iocLog.text");

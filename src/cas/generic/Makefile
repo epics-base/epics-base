@@ -3,5 +3,7 @@ TOP = ../../..
 
 include $(TOP)/configure/CONFIG
 
-include $(TOP)/configure/RULES_ARCHS
+INC := casdef.h casInternal.h casEventMask.h caNetAddr.h
+
+include $(TOP)/configure/RULES
 

@@ -49,6 +49,7 @@
  * .19	08-14-92	jba	included dblinks with maximize severity in lockset
  * .20	08-27-92	mrk	removed wakeup_init (For old I/O Event scanning)
  * .21	09-05-92	rcz	changed dbUserExit to initHooks
+ * .22	09-10-92	rcz	added many initHooks - INITHOOK*<place> argument
  *
  */
 
@@ -110,7 +111,7 @@ long initDatabase();
 long addToSet();
 long initialProcess();
 long getResources();
-long setMasterTimeToSelf();
+void setMasterTimeToSelf();
 
 int iocInit(pResourceFilename)
 char * pResourceFilename;
@@ -126,58 +127,77 @@ char * pResourceFilename;
 	logMsg("iocInit can only be called once\n");
 	return(-1);
     }
-    coreRelease();
-    epicsSetEnvParams();
-
-    /* if function initHooks exists call it */
-    strcpy(name,"_");
-    strcat(name,"initHooks");
-    rtnval = symFindByName(sysSymTbl,name,(void *)&pinitHooks,&type);
     if (!pdbBase) {
 	logMsg("iocInit aborting because No database loaded by dbLoad\n");
 	return(-1);
     }
-    if(rtnval==OK && (type&N_TEXT!=0)) {
-	hookrtn=(*pinitHooks)(SETMASTERTIMETOSELF);
-	logMsg("initHooks(SETMASTERTIMETOSELF) was called\n");
+    /* if function initHooks exists setup ptr pinitHooks */
+    strcpy(name,"_");
+    strcat(name,"initHooks");
+    rtnval = symFindByName(sysSymTbl,name,(void *)&pinitHooks,&type);
+    if(!(rtnval==OK && (type&N_TEXT!=0))) {
+	logMsg("iocInit - WARNING symbol initHooks has wrong type - skipping all init hooks\n");
+	pinitHooks=NULL;
     }
+    if (pinitHooks) (*pinitHooks)(INITHOOKatBeginning);
+    coreRelease();
+    epicsSetEnvParams();
+    if (pinitHooks) (*pinitHooks)(INITHOOKafterSetEnvParams);
     status=getResources(pResourceFilename);
     if(status!=0) {
 	logMsg("iocInit aborting because getResources failed\n");
 	return(-1);
     }
+    if (pinitHooks) (*pinitHooks)(INITHOOKafterGetResources);
     status = iocLogInit();
     if(status!=0){
         logMsg("iocInit Failed to Initialize Ioc Log Client \n");
     }
+    if (pinitHooks) (*pinitHooks)(INITHOOKafterLogInit);
     initialized = TRUE;
     taskwdInit();
+    callbackInit();
+    /* wait 1/10 second */
+    (void)taskDelay(sysClkRateGet()/10);
+    if (pinitHooks) (*pinitHooks)(INITHOOKafterCallbackInit);
 
     /* added for Channel Access Links */
     dbCaLinkInit((int) 1);
+    if (pinitHooks) (*pinitHooks)(INITHOOKafterCaLinkInit1);
 
     if(initDrvSup()!=0) logMsg("iocInit: Drivers Failed during Initialization\n");
+    if (pinitHooks) (*pinitHooks)(INITHOOKafterInitDrvSup);
     if(initRecSup()!=0) logMsg("iocInit: Record Support Failed during Initialization\n");
+    if (pinitHooks) (*pinitHooks)(INITHOOKafterInitRecSup);
     if(initDevSup()!=0) logMsg("iocInit: Device Support Failed during Initialization\n");
+    if (pinitHooks) (*pinitHooks)(INITHOOKafterInitDevSup);
     ts_init();
+    if (pinitHooks) (*pinitHooks)(INITHOOKafterTS_init);
     if(initDatabase()!=0) logMsg("iocInit: Database Failed during Initialization\n");
+    if (pinitHooks) (*pinitHooks)(INITHOOKafterInitDatabase);
     /* added for Channel Access Links */
     dbCaLinkInit((int) 2);
-
+    if (pinitHooks) (*pinitHooks)(INITHOOKafterCaLinkInit2);
     if(finishDevSup()!=0) logMsg("iocInit: Device Support Failed during Finalization\n");
+    if (pinitHooks) (*pinitHooks)(INITHOOKafterFinishDevSup);
 
+#if 0
     if(rtnval==OK && (type&N_TEXT!=0)) {
 	hookrtn=(*pinitHooks)(DBUSEREXIT);
 	logMsg("initHooks(DBUSEREXIT) was called\n");
     }
-    callbackInit();
+#endif
     scanInit();
     /* wait 1/2 second to make sure all tasks are started*/
     (void)taskDelay(sysClkRateGet()/2);
+    if (pinitHooks) (*pinitHooks)(INITHOOKafterScanInit);
     interruptAccept=TRUE;
+    if (pinitHooks) (*pinitHooks)(INITHOOKafterInterruptAccept);
     if(initialProcess()!=0) logMsg("iocInit: initialProcess Failed\n");
+    if (pinitHooks) (*pinitHooks)(INITHOOKafterInitialProcess);
     rsrv_init();
     logMsg("iocInit: All initialization complete\n");
+    if (pinitHooks) (*pinitHooks)(INITHOOKatEnd);
 
     return(0);
 }
@@ -826,7 +846,7 @@ char * pfilename;
     }
     return (0);
 }
-long setMasterTimeToSelf()
+void setMasterTimeToSelf()
 {
     BOOT_PARAMS     bp;
     char           *pnext;
@@ -844,14 +864,14 @@ long setMasterTimeToSelf()
 	sprintf(message,
 		"setMasterTimeToSelf: unable to parse boot params\n");
 	errMessage(-1L, message);
-	return (-1);
+	return;
     }
     rtnval = symFindByName(sysSymTbl, name, &pSymAddr, &type);
     if (rtnval != OK || (type & N_TEXT == 0)) {
 	sprintf(message,
 		"setMasterTimeToSelf: symBol EPICS_IOCMCLK_INET not found");
 	errMessage(-1L, message);
-	return (-1);
+	return;
     }
     ptr = (char*)&bp.ead;
     len=strlen((char*)&bp.ead);
@@ -865,5 +885,5 @@ long setMasterTimeToSelf()
     ptr = (char*)&bp.ead;
     len=strlen(ptr);
     strncpy((char*)(pSymAddr + sizeof(void *)), ptr,len+1);
-    return (0);
+    return;
 }

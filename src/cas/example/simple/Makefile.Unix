@@ -1,0 +1,94 @@
+
+CAS = ../../..
+TOP = $(CAS)/../..
+
+include $(TOP)/config/CONFIG_BASE
+
+CXXCMPLR = STRICT
+
+USR_INCLUDES = 
+USR_LDLIBS = -lcas -lca -lCom -lgdd 
+
+USR_LDFLAGS = 
+
+DEPLIBS_BASE = $(EPICS_BASE_LIB)
+DEPLIBSWOCAS = $(DEPLIBS_BASE)/libca.a $(DEPLIBS_BASE)/libCom.a \
+	$(DEPLIBS_BASE)/libgdd.a
+DEPLIBS = $(DEPLIBS_BASE)/libcas.a $(DEPLIBSWOCAS)
+
+SRCS.cc += ../main.cc 
+SRCS.cc += ../exServer.cc 
+SRCS.cc += ../exPV.cc 
+SRCS.cc += ../exSyncPV.cc 
+SRCS.cc += ../exAsyncPV.cc 
+SRCS.cc += ../exChannel.cc 
+SRCS.cc += ../templInst.cc 
+
+OBJS += main.o
+OBJS += exServer.o
+OBJS += exPV.o
+OBJS += exSyncPV.o
+OBJS += exAsyncPV.o
+OBJS += exChannel.o
+OBJS += templInst.o
+
+PROD += excas
+
+BUILDDIR = $(CAS)/build/singleThread/O.sun4/
+
+GLOMBOBJ += $(BUILDDIR)caServer.o
+GLOMBOBJ += $(BUILDDIR)caServerI.o
+GLOMBOBJ += $(BUILDDIR)casCoreClient.o
+GLOMBOBJ += $(BUILDDIR)casClient.o
+GLOMBOBJ += $(BUILDDIR)casDGClient.o
+GLOMBOBJ += $(BUILDDIR)casStrmClient.o
+GLOMBOBJ += $(BUILDDIR)casPV.o
+GLOMBOBJ += $(BUILDDIR)casPVI.o
+GLOMBOBJ += $(BUILDDIR)casChannel.o
+GLOMBOBJ += $(BUILDDIR)casChannelI.o
+GLOMBOBJ += $(BUILDDIR)casClientMon.o
+GLOMBOBJ += $(BUILDDIR)casChanDelEv.o
+GLOMBOBJ += $(BUILDDIR)casMsgIO.o
+GLOMBOBJ += $(BUILDDIR)casAsyncIO.o
+GLOMBOBJ += $(BUILDDIR)casAsyncIOI.o
+GLOMBOBJ += $(BUILDDIR)casEventSys.o
+GLOMBOBJ += $(BUILDDIR)casMonitor.o
+GLOMBOBJ += $(BUILDDIR)casMonEvent.o
+GLOMBOBJ += $(BUILDDIR)outBuf.o
+GLOMBOBJ += $(BUILDDIR)inBuf.o
+GLOMBOBJ += $(BUILDDIR)casEventMask.o
+GLOMBOBJ += $(BUILDDIR)ioBlocked.o
+
+GLOMBOBJ += $(BUILDDIR)caServerOS.o
+GLOMBOBJ += $(BUILDDIR)casDGOS.o
+GLOMBOBJ += $(BUILDDIR)casStreamOS.o
+ 
+GLOMBOBJ += $(BUILDDIR)caServerIO.o
+GLOMBOBJ += $(BUILDDIR)casDGIO.o
+GLOMBOBJ += $(BUILDDIR)casStreamIO.o
+GLOMBOBJ += $(BUILDDIR)sigPipeIgnore.o
+ 
+include $(TOP)/config/RULES.Unix
+
+excas: $(OBJS) $(DEPLIBS)
+	$(LINK.cc) -o $@ $(OBJS) $(LDFLAGS) $(LDLIBS)
+
+#
+# fast link (without waiting for library build)
+#
+fexcas:  $(OBJS) $(GLOMBOBJ) $(DEPLIBSWOCAS)
+	$(LINK.cc) -o $@ $(OBJS) $(GLOMBOBJ) $(DEPLIBSWOCAS) 
+
+#
+# build with purify 
+#
+pexcas: $(OBJS) $(DEPLIBS)
+	$(PURIFY) $(LINK.cc) -o $@ $(OBJS) $(LDFLAGS) $(LDLIBS)  
+
+clean::
+	@$(RM) excas 
+	@$(RM) fexcas 
+	@$(RM) pexcas 
+	@$(RM) -rf Templates.DB
+	@$(RM) core 
+

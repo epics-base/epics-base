@@ -1,0 +1,13 @@
+
+This directory contains an example ca server. The example server
+exports 4 process variables (PVs): "fred", "freddy", "jane", and
+"janet". "fred" and "jane" are synchronous PVs. "freddy" and "janet" 
+are asynchronous. Many ca servers will find that synchronous 
+variables will meet there needs and therefore will not require
+the increased complexity associated with asynchronous PVs. The PVs in
+the example server are updated periodically. Some random "noise"
+is added to each PVs current value each time that it is updated.
+
+The example server does not so far implement enumerated data types.
+
+

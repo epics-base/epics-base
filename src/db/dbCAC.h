@@ -79,8 +79,8 @@ public:
 protected:
     virtual ~dbSubscriptionIO ();
 private:
-    cacStateNotify &notify;
-    dbChannelIO &chan;
+    cacStateNotify & notify;
+    dbChannelIO & chan;
     dbEventSubscription es;
     unsigned type;
     unsigned long count;
@@ -119,7 +119,7 @@ public:
 protected:
     ~dbChannelIO (); // allocate only from pool
 private:
-    dbServiceIO &serviceIO;
+    dbServiceIO & serviceIO;
     dbAddr addr;
     void initiateConnect ();
     ioStatus read ( unsigned type, unsigned long count, 
@@ -149,8 +149,8 @@ public:
             cacReadNotify &notify );
     void callStateNotify ( struct dbAddr &addr, unsigned type, unsigned long count, 
             const struct db_field_log *pfl, cacStateNotify &notify );
-    dbEventSubscription subscribe ( struct dbAddr &addr, dbChannelIO &chan,
-        dbSubscriptionIO &subscr, unsigned mask, cacChannel::ioid * );
+    dbEventSubscription subscribe ( struct dbAddr & addr, dbChannelIO & chan,
+        dbSubscriptionIO & subscr, unsigned mask );
     void initiatePutNotify ( dbChannelIO &, struct dbAddr &, unsigned type, 
         unsigned long count, const void *pValue, cacWriteNotify &notify, 
         cacChannel::ioid *pId ); 

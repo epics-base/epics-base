@@ -1391,7 +1391,7 @@ void eventClearTest ( chid chan )
     SEVCHK ( status, NULL);
 
     status = ca_add_event ( DBR_FLOAT, chan, selfDeleteEvent, 
-                0, &globalEventID);
+                0, &globalEventID );
     SEVCHK ( status, NULL );
 }
 

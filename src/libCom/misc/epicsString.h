@@ -28,6 +28,8 @@ epicsShareFunc int epicsShareAPI epicsStrnCaseCmp(const char *s1,const char *s2,
 epicsShareFunc char * epicsShareAPI epicsStrDup(const char *s);
 epicsShareFunc int epicsShareAPI epicsStrPrintEscaped(
     FILE *fp, const char *s, int n);
+epicsShareFunc int epicsShareAPI epicsStrSnPrintEscaped(
+    char *outbuf, int outsize, const char *inbuf, int inlen);
 
 #ifdef __cplusplus
 }

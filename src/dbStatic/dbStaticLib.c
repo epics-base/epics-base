@@ -202,35 +202,6 @@ static char *getpMessage(DBENTRY *pdbentry);
 static long putPvLink(DBENTRY *pdbentry,short pvlMask,const char *pvname);
 static long epicsShareAPI dbAddOnePath (DBBASE *pdbbase, const char *path, unsigned length);
 
-/*Following are obsolete. Will go away next release*/
-long epicsShareAPI dbRead(DBBASE *pdbbase,FILE *fp)
-{
-    return(dbReadDatabaseFP(&pdbbase,fp,0,0));
-}
-long epicsShareAPI dbWrite(DBBASE *pdbbase,FILE *fpdctsdr,FILE *fp)
-{
-    fprintf(stderr,"dbWrite obsolete. It does NOTHING\n");
-    return(-1);
-}
-long epicsShareAPI dbFindRecdes(DBENTRY *pdbentry,const char *recdesname)
-	{return dbFindRecordType(pdbentry,recdesname);}
-long epicsShareAPI dbFirstRecdes(DBENTRY *pdbentry)
-	{return dbFirstRecordType(pdbentry);}
-long epicsShareAPI dbNextRecdes(DBENTRY *pdbentry)
-	{return dbNextRecordType(pdbentry);}
-char * epicsShareAPI dbGetRecdesName(DBENTRY *pdbentry)
-	{return dbGetRecordTypeName(pdbentry);}
-int epicsShareAPI dbGetNRecdes(DBENTRY *pdbentry)
-	{return dbGetNRecordTypes(pdbentry);}
-long epicsShareAPI dbFirstFielddes(DBENTRY *pdbentry,int dctonly)
-	{return dbFirstField(pdbentry,dctonly);}
-long epicsShareAPI dbNextFielddes(DBENTRY *pdbentry,int dctonly)
-	{return dbNextField(pdbentry,dctonly);}
-char ** epicsShareAPI dbGetChoices(DBENTRY *pdbentry)
-	{return dbGetMenuChoices(pdbentry);}
-void epicsShareAPI dbDumpRecDes(DBBASE *pdbbase,const char *recordTypeName)
-	{dbDumpRecordType(pdbbase,recordTypeName);}
-
 /* internal routines*/
 static int fcloseNotSTD(FILE *stream)
 {
@@ -3623,7 +3594,7 @@ void  epicsShareAPI dbDumpRecordType(DBBASE *pdbbase,const char *recordTypeName)
     }
 }
 
-void  epicsShareAPI dbDumpFldDes(
+void  epicsShareAPI dbDumpField(
     DBBASE *pdbbase,const char *recordTypeName,const char *fname)
 {
     dbRecordType	*pdbRecordType;

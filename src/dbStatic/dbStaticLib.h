@@ -100,26 +100,6 @@ epicsShareFunc long epicsShareAPI dbWriteBreaktable(
     DBBASE *pdbbase,const char *filename);
 epicsShareFunc long epicsShareAPI dbWriteBreaktableFP(DBBASE *pdbbase,FILE *fp);
 
-/*Following  are obsolete. For now dbRead calls dbAsciiRead.*/
-/*  dbWrite does nothing						*/
-#define DB_RECORDTYPE_IO	0x1
-#define DB_RECORD_IO		0x2
-epicsShareFunc long epicsShareAPI dbRead(DBBASE *pdbbase,FILE *fp);
-epicsShareFunc long epicsShareAPI dbWrite(
-    DBBASE *pdbbase,FILE *fpdctsdr,FILE *fp);
-epicsShareFunc long epicsShareAPI dbFindRecdes(
-    DBENTRY *pdbentry,const char *recdesname);
-epicsShareFunc long epicsShareAPI dbFirstRecdes(DBENTRY *pdbentry);
-epicsShareFunc long epicsShareAPI dbNextRecdes(DBENTRY *pdbentry);
-epicsShareFunc char * epicsShareAPI dbGetRecdesName(DBENTRY *pdbentry);
-epicsShareFunc int  epicsShareAPI dbGetNRecdes(DBENTRY *pdbentry);
-epicsShareFunc long epicsShareAPI dbFirstFielddes(DBENTRY *pdbentry,int dctonly);
-epicsShareFunc long epicsShareAPI dbNextFielddes(DBENTRY *pdbentry,int dctonly);
-epicsShareFunc char ** epicsShareAPI dbGetChoices(DBENTRY *pdbentry);
-epicsShareFunc void epicsShareAPI dbDumpRecDes(
-    DBBASE *pdbbase,const char *recordTypeName);
-/*End obsolete routines*/
-
 epicsShareFunc long epicsShareAPI dbFindRecordType(
     DBENTRY *pdbentry,const char *recordTypename);
 epicsShareFunc long epicsShareAPI dbFirstRecordType(DBENTRY *pdbentry);
@@ -225,7 +205,7 @@ epicsShareFunc void epicsShareAPI dbDumpMenu(
     DBBASE *pdbbase,const char *menuName);
 epicsShareFunc void epicsShareAPI dbDumpRecordType(
     DBBASE *pdbbase,const char *recordTypeName);
-epicsShareFunc void epicsShareAPI dbDumpFldDes(
+epicsShareFunc void epicsShareAPI dbDumpField(
     DBBASE *pdbbase,const char *recordTypeName,const char *fname);
 epicsShareFunc void epicsShareAPI dbDumpDevice(
     DBBASE *pdbbase,const char *recordTypeName);

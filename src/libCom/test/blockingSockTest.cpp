@@ -1,6 +1,7 @@
 
 #include <string.h>
 #include <assert.h>
+#include <stdio.h>
 
 #include "osiSock.h"
 #include "osiWireFormat.h"

@@ -11,6 +11,7 @@
 
 /* Author: Jeff Hill Date:    March 28 2001 */
 
+#include <stdio.h>
 
 #include "epicsTime.h"
 #include "epicsThread.h"

@@ -30,10 +30,13 @@
  * .01  07-26-91	mrk	Major cleanup
  * .02  08-06-91	mrk	More cleanup
  * .03	08-13-91	mrk	Added extra null arg to db_get_field calls
+ * .04	02-02-94	mrk	added tpn (test put notify)
+ * .05	02-03-94	mrk	gft was overrunning its buffer for arrays
  */
 #include	<vxWorks.h>
 #include	<stdlib.h>
 #include	<stdio.h>
+#include        <dbDefs.h>
 #include        <db_access.h>
 
 
@@ -41,12 +44,12 @@
 static void print_returned();
 
 
-char		tgf_buffer[600];
-#define		MAX_ELEMS	50
+#define		MAX_ELEMS	10
 int gft(pname,index)
 char		*pname;
 short	index;
 {
+	char		tgf_buffer[MAX_ELEMS*MAX_STRING_SIZE+sizeof(struct dbr_ctrl_double)];
 	struct  db_addr	addr;
 	struct  db_addr	*paddr = &addr;
 	short		number_elements;
@@ -133,7 +136,7 @@ short	index;
 	if (db_put_field(paddr,DBR_STRING,pvalue,1) < 0) printf("\n\t failed ");
 	if (db_get_field(paddr,DBR_STRING,buffer,1,NULL) < 0) printf("\n\tfailed");
 	else print_returned(DBR_STRING,buffer,1);
-	if(addr.field_type<=DBF_STRING)
+	if(addr.field_type<=DBF_STRING || addr.field_type==DBF_ENUM)
 	  return(0);
 	if(sscanf(pvalue,"%hd",&shortvalue)==1) {
 	  if (db_put_field(paddr,DBR_SHORT,&shortvalue,1) < 0) 
@@ -637,4 +640,60 @@ static void print_returned(type,pbuffer,count)
     }
     printf("\n");
 }
+
+static void tpnCallback(PUTNOTIFY *ppn)
+{
+    struct db_addr	*pdbaddr = (struct db_addr *)ppn->paddr;
+    long	status = ppn->status;
 
+    if(status==0)
+	printf("tpnCallback: success record=%s\n",ppn->paddr->precord);
+    else
+	recGblRecordError(status,pdbaddr->precord,"tpnCallback");
+    free((void *)pdbaddr);
+    free(ppn);
+}
+
+long tpn(char	*pname,char *pvalue)
+{
+    long		status;
+    struct db_addr	*pdbaddr=NULL;
+    PUTNOTIFY		*ppn=NULL;
+    char		*psavevalue;
+    int			len;
+
+    len = strlen(pvalue);
+    /*allocate space for value immediately following DBADDR*/
+    pdbaddr = calloc(1,sizeof(struct db_addr) + len+1);
+    if(!pdbaddr) {
+	printf("calloc failed\n");
+	return(-1);
+    }
+    psavevalue = (char *)(pdbaddr + 1);
+    strcpy(psavevalue,pvalue);
+    status = db_name_to_addr(pname,pdbaddr);
+    if(status) {
+	printf("db_name_to_addr failed\n");
+	free((void *)pdbaddr);
+	return(-1);
+    }
+    ppn = calloc(1,sizeof(PUTNOTIFY));
+    if(!pdbaddr) {
+	printf("calloc failed\n");
+	return(-1);
+    }
+    ppn->paddr = pdbaddr;
+    ppn->pbuffer = psavevalue;
+    ppn->nRequest = 1;
+    if(dbPutNotifyMapType(ppn,DBR_STRING)) {
+	printf("dbPutNotifyMapType failed\n");
+	printf("calloc failed\n");
+	return(-1);
+    }
+    ppn->userCallback = tpnCallback;
+    status = dbPutNotify(ppn);
+    if(status) {
+    	errMessage(status, "tpn");
+    }
+    return(0);
+}

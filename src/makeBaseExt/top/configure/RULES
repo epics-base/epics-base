@@ -1,0 +1,4 @@
+# $Id$
+
+include $(EPICS_BASE)/configure/RULES
+include $(EPICS_BASE)/configure/RULES_JAVA

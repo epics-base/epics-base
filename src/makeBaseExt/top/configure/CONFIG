@@ -1,0 +1,6 @@
+# $Id$
+
+include $(TOP)/configure/CONFIG_EXTENSIONS
+# Add any changes to make rules here
+
+#CROSS_COMPILER_TARGET_ARCHS =

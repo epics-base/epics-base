@@ -293,16 +293,12 @@ public:
     void decrementOutstandingIO ( unsigned seqNumber );
     bool searchMsg ( unsigned short retrySeqNumber, 
         unsigned &retryNoForThisChannel );
-    void subscriptionCancelMsg ( class netSubscription &subsc );
     bool fullyConstructed () const;
     bool isAttachedToVirtaulCircuit ( const osiSockAddr & );
     bool identifierEquivelence ( unsigned idToMatch );
-
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
-
-    int subscriptionMsg ( netSubscription &, bool userThread );
-    void unistallSubscription ( netSubscription & );
+    void unistallSubscription ( class netSubscription & );
     void resetRetryCount ();
     unsigned getRetrySeqNo () const;
     void accessRightsStateChange ( const caar &arIn );
@@ -350,10 +346,8 @@ public:
     virtual void completionNotify ( unsigned type, unsigned long count, const void *pData ) = 0;
     virtual void exceptionNotify ( int status, const char *pContext ) = 0;
     virtual void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count ) = 0;
-    virtual bool isSubscription () const;
+    virtual class netSubscription * isSubscription ();
     virtual void show ( unsigned level ) const;
-    virtual int subscriptionMsg ();
-    virtual void subscriptionCancelMsg ();
     ca_uint32_t getID () const;
     nciu & channel ();
     void destroy ();
@@ -381,9 +375,7 @@ private:
     void completionNotify ( unsigned type, unsigned long count, const void *pData );
     void exceptionNotify ( int status, const char *pContext );
     void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
-    int subscriptionMsg ();
-    void subscriptionCancelMsg ();
-    bool isSubscription () const;
+    class netSubscription * isSubscription ();
     ~netSubscription ();
     static tsFreeList < class netSubscription, 1024 > freeList;
 };
@@ -501,6 +493,8 @@ public:
     void resetChannelRetryCounts ();
     void attachChannel ( nciu &chan );
     void detachChannel ( nciu &chan );
+    int installSubscription ( netSubscription &subscr );
+    void unistallSubscription ( netSubscription &subscr );
     virtual void hostName (char *pBuf, unsigned bufLength) const;
     virtual const char * pHostName () const; // deprecated - please do not use
     virtual bool isVirtaulCircuit ( const char *pChannelName, const osiSockAddr &addr ) const;
@@ -512,22 +506,22 @@ public:
     virtual int writeNotifyRequest ( nciu &, cacNotify &, unsigned type, unsigned nElem, const void *pValue );
     virtual int readCopyRequest ( nciu &, unsigned type, unsigned nElem, void *pValue );
     virtual int readNotifyRequest ( nciu &, cacNotify &, unsigned type, unsigned nElem );
-    virtual int subscriptionRequest ( netSubscription &subscr, bool userThread );
-    virtual int subscriptionCancelRequest ( netSubscription &subscr  );
-    virtual int installSubscription ( netSubscription &subscr );
-    virtual void unistallSubscription ( nciu &chan, netSubscription &subscr );
-    virtual void subscribeAllIO ( nciu &chan );
     virtual int createChannelRequest ( nciu & );
+    virtual void connectAllIO ( nciu &chan );
     virtual void disconnectAllIO ( nciu &chan );
     virtual int clearChannelRequest ( nciu & );
 
 protected:
     cac * pCAC () const;
     mutable epicsMutex mutex;
+
 private:
     tsDLList < nciu > channelList;
     class cac *pClientCtx;
+
     virtual void lastChannelDetachNotify ();
+    virtual int subscriptionRequest ( netSubscription &subscr, bool userThread );
+    virtual int subscriptionCancelRequest ( netSubscription &subscr, bool userThread  );
 };
 
 class limboiiu : public netiiu {
@@ -753,10 +747,6 @@ public:
     int readNotifyRequest ( nciu &, cacNotify &, unsigned type, unsigned nElem );
     int createChannelRequest ( nciu & );
     int clearChannelRequest ( nciu & );
-    int subscriptionRequest ( netSubscription &subscr, bool userThread );
-    int subscriptionCancelRequest ( netSubscription &subscr  );
-    int installSubscription ( netSubscription &subscr );
-    void unistallSubscription ( nciu &chan, netSubscription &subscr );
 
     void hostName ( char *pBuf, unsigned bufLength ) const;
     const char * pHostName () const; // deprecated - please do not use
@@ -839,8 +829,11 @@ private:
         int status, const char *pContext );
     void ioExceptionNotifyAndDestroy ( unsigned id, 
        int status, const char *pContext, unsigned type, unsigned long count );
-    void subscribeAllIO ( nciu &chan );
+    void connectAllIO ( nciu &chan );
     void disconnectAllIO ( nciu &chan );
+
+    int subscriptionRequest ( netSubscription &subscr, bool userThread );
+    int subscriptionCancelRequest ( netSubscription &subscr, bool userThread  );
 
     typedef void ( tcpiiu::*pProtoStubTCP ) ();
     static const pProtoStubTCP tcpJumpTableCAC [];
@@ -908,12 +901,11 @@ public:
     recvProcessThread ( class cac *pcacIn );
     virtual ~recvProcessThread ();
     void run ();
-    void signalShutDown ();
     void enable ();
     void disable ();
     void signalActivity ();
+    bool isCurrentThread () const;
     void show ( unsigned level ) const;
-    epicsThread thread;
 private:
     //
     // The additional complexity associated with
@@ -922,6 +914,7 @@ private:
     // and therefore reduces the chance of creating
     // a deadlock window during code maintenance.
     //
+    epicsThread thread;
     epicsEvent recvActivity;
     class cac *pcac;
     epicsEvent exit;
@@ -938,7 +931,6 @@ public:
     sendProcessThread ( class cac &cacIn );
     virtual ~sendProcessThread ();
     void run ();
-    void signalShutDown ();
     void signalActivity ();
     epicsThread thread;
 private:

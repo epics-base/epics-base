@@ -15,6 +15,12 @@
  *	505 665 1831
  */
 
+#ifndef cac_ILh
+#define cac_ILh
+
+#include "recvProcessThread_IL.h"
+#include "udpiiu_IL.h"
+
 inline int cac::vPrintf ( const char *pformat, va_list args )
 {
     return ( *this->pVPrintfFunc ) ( pformat, args );
@@ -54,4 +60,25 @@ inline unsigned cac::getInitializingThreadsPriority () const
     return this->initializingThreadsPriority;
 }
 
+// the recv thread is not permitted to flush as this
+// can result in a push / pull deadlock on the TCP pipe.
+// Instead, the recv thread scheduals the flush with the 
+// send thread which runs at a higher priority than the 
+// send thread. The same applies to the UDP thread for
+// locking hierarchy reasons.
+inline bool cac::flushPermit () const
+{
+    if ( this->pRecvProcThread ) {
+        if ( this->pRecvProcThread->isCurrentThread () ) {
+            return false;
+        }
+    }
+    if ( this->pudpiiu ) {
+        if ( this->pudpiiu->isCurrentThread () ) {
+            return false;
+        }
+    }
+    return true;
+}
 
+#endif // cac_ILh

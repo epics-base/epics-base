@@ -34,7 +34,8 @@ recvProcessThread::recvProcessThread (cac *pcacIn) :
 
 recvProcessThread::~recvProcessThread ()
 {
-    this->signalShutDown ();
+    this->shutDown = true;
+    this->recvActivity.signal ();
     this->exit.wait ();
 }
 
@@ -69,12 +70,6 @@ void recvProcessThread::run ()
         this->recvActivity.wait ();
     }
     this->exit.signal ();
-}
-
-void recvProcessThread::signalShutDown ()
-{
-    this->shutDown = true;
-    this->recvActivity.signal ();
 }
 
 void recvProcessThread::enable ()

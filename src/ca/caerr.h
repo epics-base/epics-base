@@ -152,7 +152,7 @@ READONLY char   *ca_message_text[]
 "Database value get for that channel failed during channel search",
 "Unable to initialize without the vxWorks VX_FP_TASK task option set",
 "Event queue overflow has prevented first pass event after event add",
-"A monitor by that id cant be found",
+"bad event subscription identifier",
 "Remote channel has new network address",
 "New or resumed network connection",
 "Specified task isnt a member of a CA context",

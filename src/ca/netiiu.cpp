@@ -196,22 +196,33 @@ int netiiu::subscriptionRequest ( netSubscription &subscr, bool )
     return ECA_NORMAL;
 }
 
-int netiiu::subscriptionCancelRequest ( netSubscription & )
+int netiiu::subscriptionCancelRequest ( netSubscription &, bool userThread )
 {
-    return ECA_DISCONNCHID;
+    return ECA_NORMAL;
 }
 
 int netiiu::installSubscription ( netSubscription &subscr )
 {
-    epicsAutoMutex autoMutex ( this->mutex );
-    subscr.channel ().tcpiiuPrivateListOfIO::eventq.add ( subscr );
-    return ECA_NORMAL;
+    // we must install the subscription first on the channel so that 
+    // proper installation is guaranteed to occur if a connect occurs 
+    // beteen these two steps
+    {
+        epicsAutoMutex autoMutex ( this->mutex );
+        subscr.channel ().tcpiiuPrivateListOfIO::eventq.add ( subscr );
+    }
+    return this->subscriptionRequest ( subscr, true );
 }
 
-void netiiu::unistallSubscription ( nciu &, netSubscription &subscr )
+void netiiu::unistallSubscription ( netSubscription &subscr )
 {
-    epicsAutoMutex autoMutex ( this->mutex );
-    subscr.channel ().tcpiiuPrivateListOfIO::eventq.remove ( subscr );
+    // we must cancel the subscription first so that clean up
+    // is guaranteed to occur if a disconnect occurs beteen 
+    // these two steps
+    this->subscriptionCancelRequest ( subscr, true );
+    {
+        epicsAutoMutex autoMutex ( this->mutex );
+        subscr.channel ().tcpiiuPrivateListOfIO::eventq.remove ( subscr );
+    }
 }
 
 void netiiu::hostName ( char *pBuf, unsigned bufLength ) const
@@ -231,6 +242,6 @@ void netiiu::disconnectAllIO ( nciu & )
 {
 }
 
-void netiiu::subscribeAllIO ( nciu & )
+void netiiu::connectAllIO ( nciu & )
 {
 }

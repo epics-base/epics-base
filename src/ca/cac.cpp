@@ -21,6 +21,7 @@
 #include "nciu_IL.h"
 #include "ioCounter_IL.h"
 #include "comQueSend_IL.h"
+#include "recvProcessThread_IL.h"
 
 extern "C" void cacRecursionLockExitHandler ()
 {
@@ -157,9 +158,9 @@ cac::~cac ()
     // make certain that process thread isnt deleting 
     // tcpiiu objects at the same that this thread is
     //
-    recvProcessThread *pTmp = this->pRecvProcThread;
-    this->pRecvProcThread = 0;
-    delete pTmp;
+    if ( this->pRecvProcThread ) {
+        this->pRecvProcThread->disable ();
+    }
 
     if ( this->pudpiiu ) {
         // this blocks until the UDP thread exits so that
@@ -191,6 +192,10 @@ cac::~cac ()
             piiu->suicide ();
             piiu = pnext;
         }
+    }
+
+    if ( this->pRecvProcThread ) {
+        delete this->pRecvProcThread;
     }
 
     if ( this->pRepeaterSubscribeTmr ) {
@@ -1031,23 +1036,4 @@ void cac::destroyNCIU ( nciu & chan )
     chan.cacDestroy ();
 }
 
-// the recv thread is not permitted to flush as this
-// can result in a push / pull deadlock on the TCP pipe.
-// Instead, the recv thread scheduals the flush with the 
-// send thread which runs at a higher priority than the 
-// send thread. The same applies to the UDP thread for
-// locking hierarchy reasons.
-bool cac::flushPermit () const
-{
-    if ( this->pRecvProcThread ) {
-        if ( this->pRecvProcThread->thread.isCurrentThread () ) {
-            return false;
-        }
-    }
-    if ( this->pudpiiu ) {
-        if ( this->pudpiiu->isCurrentThread () ) {
-            return false;
-        }
-    }
-    return true;
-}
+

@@ -1687,11 +1687,6 @@ int tcpiiu::clearChannelRequest ( nciu &chan )
 
     epicsAutoMutex autoMutex ( this->mutex );
 
-    baseNMIU *pNMIU;
-    while ( ( pNMIU = chan.tcpiiuPrivateListOfIO::eventq.first () ) ) {
-        delete pNMIU;
-    }
-
     if ( ! chan.verifyConnected ( *this ) ) {
         status = ECA_DISCONNCHID;
     }
@@ -1741,6 +1736,8 @@ int tcpiiu::subscriptionRequest ( netSubscription &subscr, bool userThread )
             status = ECA_NORMAL;
         }
         else {
+            this->ioTable.add ( subscr );
+
             // header
             this->sendQue.pushUInt16 ( CA_PROTO_EVENT_ADD ); // cmd
             this->sendQue.pushUInt16 ( 16u ); // postsize
@@ -1761,27 +1758,39 @@ int tcpiiu::subscriptionRequest ( netSubscription &subscr, bool userThread )
     return status;
 }
 
-int tcpiiu::subscriptionCancelRequest ( netSubscription &subscr )
+int tcpiiu::subscriptionCancelRequest ( netSubscription &subscr, bool userThread )
 {
     if ( this->sendQue.flushThreshold ( 16u ) ) {
-        this->flushToWire ( true );
+        if ( userThread ) {
+            this->flushToWire ( true );
+        }
+        else {
+            this->flush ();
+        }
     }
 
     epicsAutoMutex autoMutex ( this->mutex );
 
-    int status = this->sendQue.reserveSpace ( 16u );
-    if ( status == ECA_NORMAL ) {
-        if ( ! subscr.channel ().verifyConnected ( *this ) ) {
-            status = ECA_DISCONNCHID;
+    int status;
+    baseNMIU *pIO = this->ioTable.remove ( subscr );
+    if ( pIO == &subscr ) {
+        status = this->sendQue.reserveSpace ( 16u );
+        if ( status == ECA_NORMAL ) {
+            if ( ! subscr.channel ().verifyConnected ( *this ) ) {
+                status = ECA_DISCONNCHID;
+            }
+            else {
+                this->sendQue.pushUInt16 ( CA_PROTO_EVENT_CANCEL ); // cmd
+                this->sendQue.pushUInt16 ( 0u ); // postsize
+                this->sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( subscr.getType () ) ); // dataType
+                this->sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( subscr.getCount () ) ); // count
+                this->sendQue.pushUInt32 ( subscr.channel ().getSID () ); // cid
+                this->sendQue.pushUInt32 ( subscr.getID () ); // available
+            }
         }
-        else {
-            this->sendQue.pushUInt16 ( CA_PROTO_EVENT_CANCEL ); // cmd
-            this->sendQue.pushUInt16 ( 0u ); // postsize
-            this->sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( subscr.getType () ) ); // dataType
-            this->sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( subscr.getCount () ) ); // count
-            this->sendQue.pushUInt32 ( subscr.channel ().getSID () ); // cid
-            this->sendQue.pushUInt32 ( subscr.getID () ); // available
-        }
+    }
+    else {
+        status = ECA_BADMONID;
     }
 
     return status;
@@ -1950,18 +1959,27 @@ void tcpiiu::ioExceptionNotifyAndDestroy ( unsigned id, int status,
     }
 }
 
-
 // resubscribe for monitors from this channel
-void tcpiiu::subscribeAllIO ( nciu &chan )
+void tcpiiu::connectAllIO ( nciu &chan )
 {
     epicsAutoMutex autoMutex ( this->mutex );
     if ( chan.verifyConnected ( *this ) ) {
         tsDLIterBD < baseNMIU > iter = 
             chan.tcpiiuPrivateListOfIO::eventq.first ();
         while ( iter.valid () ) {
-            this->ioTable.add ( *iter );
-            iter->subscriptionMsg ();
-            iter++;
+            tsDLIterBD < baseNMIU > next = iter.itemAfter ();
+            class netSubscription *pSubscr = iter->isSubscription ();
+            if ( pSubscr ) {
+                this->subscriptionRequest ( *pSubscr, false );
+            }
+            else {
+                // it shouldnt be here at this point - so uninstall it
+                this->ioTable.remove ( *iter );
+                chan.tcpiiuPrivateListOfIO::eventq.remove ( *iter );
+                iter->exceptionNotify ( ECA_DISCONN, this->pHostName () );
+                iter->destroy ();
+            }
+            iter = next;
         }
     }
     this->flush ();
@@ -1976,10 +1994,15 @@ void tcpiiu::disconnectAllIO ( nciu &chan )
             chan.tcpiiuPrivateListOfIO::eventq.first ();
         while ( iter.valid () ) {
             tsDLIterBD < baseNMIU > next = iter.itemAfter ();
-            this->ioTable.remove ( *iter );
-            if ( ! iter->isSubscription () ) {
-                iter->exceptionNotify ( ECA_DISCONN, this->pHostName () );
+            class netSubscription *pSubscr = iter->isSubscription ();
+            if ( pSubscr ) {
+                this->subscriptionCancelRequest ( *pSubscr, false );
+            }
+            else {
+                // no use after disconnected - so uninstall it
+                this->ioTable.remove ( *iter );
                 chan.tcpiiuPrivateListOfIO::eventq.remove ( *iter );
+                iter->exceptionNotify ( ECA_DISCONN, this->pHostName () );
                 iter->destroy ();
             }
             iter = next;
@@ -1987,20 +2010,4 @@ void tcpiiu::disconnectAllIO ( nciu &chan )
     }
 }
 
-int tcpiiu::installSubscription ( netSubscription &subscr )
-{
-    {
-        epicsAutoMutex autoMutex ( this->mutex );
-        subscr.channel ().tcpiiuPrivateListOfIO::eventq.add ( subscr );
-        this->ioTable.add ( subscr );
-    }
-    return this->subscriptionRequest ( subscr, true );
-}
 
-void tcpiiu::unistallSubscription ( nciu &chan, netSubscription &subscr )
-{
-    epicsAutoMutex autoMutex ( this->mutex );
-    chan.tcpiiuPrivateListOfIO::eventq.remove ( subscr );
-    baseNMIU *pIO = this->ioTable.remove ( subscr );
-    assert ( pIO == &subscr );
-}

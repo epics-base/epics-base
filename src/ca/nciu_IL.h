@@ -93,11 +93,6 @@ inline unsigned nciu::getRetrySeqNo () const
     return this->retrySeqNo;
 }
 
-inline void nciu::subscriptionCancelMsg ( netSubscription &subsc )
-{
-    this->piiu->subscriptionCancelRequest ( subsc );
-}
-
 // this is to only be used by early protocol revisions
 inline void nciu::connect ()
 {
@@ -131,4 +126,10 @@ inline netiiu * nciu::getPIIU ()
 {
     return this->piiu;
 }
+
+inline void nciu::unistallSubscription ( netSubscription &subscr )
+{
+    this->piiu->unistallSubscription ( subscr );
+}
+
 

@@ -850,7 +850,3 @@ void udpiiu::show ( unsigned level ) const
     }
 }
 
-bool udpiiu::isCurrentThread () const
-{
-    return ( this->recvThreadId == epicsThreadGetIdSelf () );
-}

@@ -25,7 +25,6 @@ netSubscription::netSubscription ( nciu &chan, unsigned typeIn, unsigned long co
 
 netSubscription::~netSubscription () 
 {
-    this->chan.subscriptionCancelMsg ( *this );
     this->chan.unistallSubscription ( *this );
 }
 
@@ -34,19 +33,9 @@ void netSubscription::destroy ()
     delete this;
 }
 
-int netSubscription::subscriptionMsg ()
+class netSubscription * netSubscription::isSubscription ()
 {
-    return this->chan.subscriptionMsg ( *this, false );
-}
-
-void netSubscription::subscriptionCancelMsg ()
-{
-    this->chan.subscriptionCancelMsg ( *this );
-}
-
-bool netSubscription::isSubscription () const
-{
-    return true;
+    return this;
 }
 
 void netSubscription::completionNotify ()

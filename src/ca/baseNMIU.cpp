@@ -27,18 +27,9 @@ void baseNMIU::destroy ()
     delete this;
 }
 
-int baseNMIU::subscriptionMsg ()
+class netSubscription * baseNMIU::isSubscription () 
 {
-    return ECA_NORMAL;
-}
-
-void baseNMIU::subscriptionCancelMsg ()
-{
-}
-
-bool baseNMIU::isSubscription () const
-{
-    return false;
+    return 0;
 }
 
 void baseNMIU::show ( unsigned /* level */ ) const

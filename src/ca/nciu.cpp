@@ -67,6 +67,7 @@ void nciu::destroy ()
 {
     // this occurs here so that it happens when
     // a lock is not applied
+    this->piiu->disconnectAllIO ( *this );
     this->piiu->clearChannelRequest ( *this );
     this->cacCtx.destroyNCIU ( *this );
 }
@@ -260,7 +261,7 @@ void nciu::connect ( unsigned nativeType,
     this->unlock ();
 
     // resubscribe for monitors from this channel 
-    this->piiu->subscribeAllIO ( *this );
+    this->piiu->connectAllIO ( *this );
 
     this->connectNotify ();
 
@@ -349,16 +350,6 @@ bool nciu::searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThisCh
     }
 
     return status;
-}
-
-int nciu::subscriptionMsg ( netSubscription &subscr, bool userThread  )
-{
-    return this->piiu->subscriptionRequest ( subscr, userThread );
-}
-
-void nciu::unistallSubscription ( netSubscription &subscr )
-{
-    this->piiu->unistallSubscription ( *this, subscr );
 }
 
 void nciu::incrementOutstandingIO ()

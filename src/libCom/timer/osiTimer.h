@@ -167,7 +167,7 @@ class osiTimerQueue : public osiThread {
 friend class osiTimer;
 public:
 	osiTimerQueue (unsigned managerThreadPriority = threadPriorityMin);
-	~osiTimerQueue();
+	virtual ~osiTimerQueue();
 	double delayToFirstExpire () const; // returns seconds
 	void process ();
 	void show (unsigned level) const;

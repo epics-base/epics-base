@@ -319,7 +319,7 @@ void osiTimer::unlock () const
 //
 osiTimerQueue::osiTimerQueue (unsigned managerThreadPriority) :
     osiThread ("osiTimerQueue", threadGetStackSize (threadStackMedium), managerThreadPriority),
-    inProcess (false), pExpireTmr (0), terminateFlag (false)
+    pExpireTmr (0), inProcess (false), terminateFlag (false)
 {
 }
 

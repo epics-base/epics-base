@@ -141,8 +141,8 @@ private:
 
 osiTimerForOldFdmgr::osiTimerForOldFdmgr (oldFdmgr &fdmgrIn, 
     double delayIn, pCallBackFDMgr pFuncIn, void *pParamIn) :
-    fdmgr (fdmgrIn), osiTimer (delayIn, fdmgrIn.timerQueueRef ()), 
-    pFunc (pFuncIn), pParam(pParamIn)
+    osiTimer (delayIn, fdmgrIn.timerQueueRef ()), 
+    fdmgr (fdmgrIn), pFunc (pFuncIn), pParam(pParamIn)
 {
     if (pFuncIn==NULL) {
 #       ifdef noExceptionsFromCXX
@@ -279,6 +279,7 @@ extern "C" epicsShareFunc int epicsShareAPI fdmgr_add_callback (
     oldFdmgr *pfdm = static_cast <oldFdmgr *> (pfdctx);
     fdRegForOldFdmgr *pfdrbc;
     bool onceOnly = (fdi==fdi_write);
+    unsigned fdiType;
 
     if (pfdm==NULL) {
         return -1;
@@ -288,15 +289,21 @@ extern "C" epicsShareFunc int epicsShareAPI fdmgr_add_callback (
         return -1;
     }
 
-    if (fdi<0 || fdi>=fdiToFdRegTypeNElements) {
+    if (fdi<0) {
+        return -1;
+    }
+
+    fdiType = (unsigned) fdi;
+
+    if (fdiType>=fdiToFdRegTypeNElements) {
         return -1;
     }
 
 #   ifdef noExceptionsFromCXX
-        pfdrbc = new fdRegForOldFdmgr (fd, fdiToFdRegType[fdi], onceOnly, *pfdm, pFunc, pParam);
+        pfdrbc = new fdRegForOldFdmgr (fd, fdiToFdRegType[fdiType], onceOnly, *pfdm, pFunc, pParam);
 #   else
         try {
-            pfdrbc = new fdRegForOldFdmgr (fd, fdiToFdRegType[fdi], onceOnly, *pfdm, pFunc, pParam);
+            pfdrbc = new fdRegForOldFdmgr (fd, fdiToFdRegType[fdiType], onceOnly, *pfdm, pFunc, pParam);
         }
         catch (...)
         {

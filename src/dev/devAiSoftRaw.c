@@ -79,9 +79,7 @@ struct {
 static long init_record(pai)
     struct aiRecord	*pai;
 {
-    char message[100];
-/* Added for Channel Access Links */
-long status;
+    long status;
 
     /* ai.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pai->inp.type) {
@@ -97,9 +95,8 @@ long status;
     case (CA_LINK) :
 	break;
     default :
-	strcpy(message,pai->name);
-	strcat(message,": devAiSoftRaw (init_record) Illegal INP field");
-	errMessage(S_db_badField,message);
+	recGblRecordError(S_db_badField,pai,
+		"devAiSoftRaw (init_record) Illegal INP field");
 	return(S_db_badField);
     }
     return(0);
@@ -108,7 +105,6 @@ long status;
 static long read_ai(pai)
     struct aiRecord	*pai;
 {
-    char message[100];
     long status,options,nRequest;
 
     /* ai.inp must be a CONSTANT or a DB_LINK or a CA_LINK*/
@@ -136,9 +132,8 @@ static long read_ai(pai)
     default :
         if(recGblSetSevr(pai,SOFT_ALARM,VALID_ALARM)){
 		if(pai->stat!=SOFT_ALARM) {
-			strcpy(message,pai->name);
-			strcat(message,": devAiSoftRaw (read_ai) Illegal INP field");
-			errMessage(S_db_badField,message);
+			recGblRecordError(S_db_badField,pai,
+			   "devAiSoftRaw (read_ai) Illegal INP field");
 		}
 	}
     }

@@ -74,7 +74,6 @@ struct {
 static long init_record(phistogram)
     struct histogramRecord	*phistogram;
 {
-    char message[100];
 
     /* histogram.svl must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (phistogram->svl.type) {
@@ -88,9 +87,8 @@ static long init_record(phistogram)
     case (CA_LINK) :
 	break;
     default :
-	strcpy(message,phistogram->name);
-	strcat(message,": devHistogramSoft (init_record) Illegal SVL field");
-	errMessage(S_db_badField,message);
+	recGblRecordError(S_db_badField,phistogram,
+		"devHistogramSoft (init_record) Illegal SVL field");
 	return(S_db_badField);
     }
     return(0);
@@ -99,7 +97,6 @@ static long init_record(phistogram)
 static long read_histogram(phistogram)
     struct histogramRecord	*phistogram;
 {
-    char message[100];
     long status,options,nRequest;
 
     /* histogram.svl must be a CONSTANT or a DB_LINK or a CA_LINK*/
@@ -125,9 +122,8 @@ static long read_histogram(phistogram)
 		phistogram->nsev = VALID_ALARM;
 		phistogram->nsta = SOFT_ALARM;
 		if(phistogram->stat!=SOFT_ALARM) {
-			strcpy(message,phistogram->name);
-			strcat(message,": devHistogramSoft (read_histogram) Illegal SVL field");
-			errMessage(S_db_badField,message);
+			recGblRecordError(S_db_badField,phistogram,
+			    "devHistogramSoft (read_histogram) Illegal SVL field");
 		}
 	}
     }

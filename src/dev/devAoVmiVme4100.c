@@ -81,16 +81,14 @@ struct {
 static long init_record(pao)
     struct aoRecord	*pao;
 {
-    char message[100];
 
     /* ao.out must be an VME_IO */
     switch (pao->out.type) {
     case (VME_IO) :
 	break;
     default :
-	strcpy(message,pao->name);
-	strcat(message,": devAoVmiVme4100 (init_record) Illegal OUT field");
-	errMessage(S_db_badField,message);
+	recGblRecordError(S_db_badField,pao,
+		"devAoVmiVme4100 (init_record) Illegal OUT field");
 	return(S_db_badField);
     }
 

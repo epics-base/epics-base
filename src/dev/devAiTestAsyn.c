@@ -97,7 +97,6 @@ static void myCallback(pcallback)
 static long init_record(pai)
     struct aiRecord	*pai;
 {
-    char message[100];
     struct callback *pcallback;
 
     /* ai.inp must be a CONSTANT*/
@@ -112,9 +111,8 @@ static long init_record(pai)
 	pai->udf = FALSE;
 	break;
     default :
-	strcpy(message,pai->name);
-	strcat(message,": devAiTestAsyn (init_record) Illegal INP field");
-	errMessage(S_db_badField,message);
+	recGblRecordError(S_db_badField,pai,
+		"devAiTestAsyn (init_record) Illegal INP field");
 	return(S_db_badField);
     }
     return(0);
@@ -123,7 +121,6 @@ static long init_record(pai)
 static long read_ai(pai)
     struct aiRecord	*pai;
 {
-    char message[100];
     struct callback *pcallback=(struct callback *)(pai->dpvt);
     int		wait_time;
 
@@ -145,9 +142,8 @@ static long read_ai(pai)
     default :
         if(recGblSetSevr(pai,SOFT_ALARM,VALID_ALARM)){
 		if(pai->stat!=SOFT_ALARM) {
-			strcpy(message,pai->name);
-			strcat(message,": devAiTestAsyn (read_ai) Illegal INP field");
-			errMessage(S_db_badField,message);
+			recGblRecordError(S_db_badField,pai,
+			   "devAiTestAsyn (read_ai) Illegal INP field");
 		}
 	}
     }

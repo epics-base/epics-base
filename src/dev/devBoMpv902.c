@@ -72,8 +72,7 @@ struct {
 static long init_record(pbo)
     struct boRecord	*pbo;
 {
-    char message[100];
-    int value,status;
+    int value,status=0;
     struct vmeio *pvmeio;
 
     /* bo.out must be an VME_IO */
@@ -84,27 +83,15 @@ static long init_record(pbo)
 	pbo->mask <<= pvmeio->signal;
         /* read the value via bo driver */
         status = bb902_read(pvmeio->card,pbo->mask,&value);
-	if(status == 0) {
-		pbo->rval = value;
-	} else if(status == -1) {
-		strcpy(message,pbo->name);
-		strcat(message,": devBoMpv902 (init_record) card does not exist");
-		errMessage(S_db_badField,message);
-		return(S_db_badField);
-	} else {
-		strcpy(message,pbo->name);
-		strcat(message,": devBoMpv902 (init_record) illegal device");
-		errMessage(S_db_badField,message);
-		return(S_db_badField);
-	}
+	if(status == 0) pbo->rval = value;
+	else status = 2;
 	break;
     default :
-	strcpy(message,pbo->name);
-	strcat(message,": devBoMpv902 (init_record) Illegal OUT field");
-	errMessage(S_db_badField,message);
-	return(S_db_badField);
+	status = S_db_badField;
+	recGblRecordError(status,pbo,
+		"devBoMpv902 (init_record) Illegal OUT field");
     }
-    return(0);
+    return(status);
 }
 
 static long write_bo(pbo)

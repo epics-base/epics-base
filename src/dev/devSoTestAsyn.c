@@ -98,7 +98,6 @@ static void myCallback(pcallback)
 static long init_record(pstringout)
     struct stringoutRecord	*pstringout;
 {
-    char message[100];
     struct callback *pcallback;
 
     /* stringout.out must be a CONSTANT*/
@@ -111,9 +110,8 @@ static long init_record(pstringout)
 	pcallback->wd_id = wdCreate();
 	break;
     default :
-	strcpy(message,pstringout->name);
-	strcat(message,": devSoTestAsyn (init_record) Illegal OUT field");
-	errMessage(S_db_badField,message);
+	recGblRecordError(S_db_badField,pstringout,
+		"devSoTestAsyn (init_record) Illegal OUT field");
 	return(S_db_badField);
     }
     return(0);
@@ -122,7 +120,6 @@ static long init_record(pstringout)
 static long write_stringout(pstringout)
     struct stringoutRecord	*pstringout;
 {
-    char message[100];
     struct callback *pcallback=(struct callback *)(pstringout->dpvt);
     int		wait_time;
 
@@ -144,9 +141,8 @@ static long write_stringout(pstringout)
     default :
         if(recGblSetSevr(pstringout,SOFT_ALARM,VALID_ALARM)){
 		if(pstringout->stat!=SOFT_ALARM) {
-			strcpy(message,pstringout->name);
-			strcat(message,": devSoTestAsyn (read_stringout) Illegal OUT field");
-			errMessage(S_db_badField,message);
+			recGblRecordError(S_db_badField,pstringout,
+			    "devSoTestAsyn (read_stringout) Illegal OUT field");
 		}
 	}
     }

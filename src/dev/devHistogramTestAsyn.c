@@ -96,7 +96,6 @@ static void myCallback(pcallback)
 static long init_record(phistogram)
     struct histogramRecord	*phistogram;
 {
-    char message[100];
     struct callback *pcallback;
 
     /* histogram.svl must be a CONSTANT*/
@@ -110,9 +109,8 @@ static long init_record(phistogram)
 	phistogram->sgnl = phistogram->svl.value.value;
 	break;
     default :
-	strcpy(message,phistogram->name);
-	strcat(message,": devHistogramTestAsyn (init_record) Illegal SVL field");
-	errMessage(S_db_badField,message);
+	recGblRecordError(S_db_badField,phistogram,
+	    "devHistogramTestAsyn (init_record) Illegal SVL field");
 	return(S_db_badField);
     }
     return(0);
@@ -121,7 +119,6 @@ static long init_record(phistogram)
 static long read_histogram(phistogram)
     struct histogramRecord	*phistogram;
 {
-    char message[100];
     struct callback *pcallback=(struct callback *)(phistogram->dpvt);
     int		wait_time;
 
@@ -143,9 +140,8 @@ static long read_histogram(phistogram)
     default :
         if(recGblSetSevr(phistogram,SOFT_ALARM,VALID_ALARM)){
 		if(phistogram->stat!=SOFT_ALARM) {
-			strcpy(message,phistogram->name);
-			strcat(message,": devHistogramTestAsyn (read_histogram) Illegal SVL field");
-			errMessage(S_db_badField,message);
+			recGblRecordError(S_db_badField,phistogram,
+			    "devHistogramTestAsyn (read_histogram) Illegal SVL field");
 		}
 	}
     }

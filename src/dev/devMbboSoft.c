@@ -94,11 +94,7 @@ struct mbboRecord *pmbbo;
 static long write_mbbo(pmbbo)
     struct mbboRecord	*pmbbo;
 {
-    char message[100];
-    long status;
-/* added for Channel Access Links */
-long options;
-long nrequest;
+    long status,options,nrequest;
 
     /* mbbo.out must be a CONSTANT or a DB_LINK or a CA_LINK*/
     switch (pmbbo->out.type) {
@@ -119,9 +115,8 @@ long nrequest;
     default :
         if(recGblSetSevr(pmbbo,SOFT_ALARM,VALID_ALARM)){
                 if(pmbbo->stat!=SOFT_ALARM) {
-                        strcpy(message,pmbbo->name);
-                        strcat(message,": devMbboSoft (write_mbbo) Illegal OUT field");
-                        errMessage(S_db_badField,message);
+                        recGblRecordError(S_db_badField,pmbbo,
+			    "devMbboSoft (write_mbbo) Illegal OUT field");
                 }
         }
     }

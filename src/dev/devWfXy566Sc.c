@@ -100,16 +100,14 @@ static void myCallback(pwf,no_read,pdata)
 static long init_record(pwf)
     struct waveformRecord	*pwf;
 {
-    char message[100];
 
     /* wf.inp must be an VME_IO */
     switch (pwf->inp.type) {
     case (VME_IO) :
 	break;
     default :
-	strcpy(message,pwf->name);
-	strcat(message,": devWfXy566Sc (init_record) Illegal INP field");
-	errMessage(S_db_badField,message);
+	recGblRecordError(S_db_badField,pwf,
+		"devWfXy566Sc (init_record) Illegal INP field");
 	return(S_db_badField);
     }
     return(0);

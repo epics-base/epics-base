@@ -74,9 +74,7 @@ struct {
 static long init_record(pwf)
     struct waveformRecord	*pwf;
 {
-    char message[100];
-/* Added for Channel Access Links */
-long status;
+    long status;
 
     /* wf.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pwf->inp.type) {
@@ -92,9 +90,8 @@ long status;
     case (CA_LINK) :
 	break;
     default :
-	strcpy(message,pwf->name);
-	strcat(message,": devWfSoft (init_record) Illegal INP field");
-	errMessage(S_db_badField,message);
+	recGblRecordError(S_db_badField,pwf,
+		"devWfSoft (init_record) Illegal INP field");
 	return(S_db_badField);
     }
     return(0);
@@ -103,7 +100,6 @@ long status;
 static long read_wf(pwf)
     struct waveformRecord	*pwf;
 {
-    char message[100];
     long options,nRequest;
 
     /* wf.inp must be a CONSTANT or a DB_LINK or a CA_LINK*/
@@ -130,9 +126,8 @@ static long read_wf(pwf)
     default :
         if(recGblSetSevr(pwf,SOFT_ALARM,VALID_ALARM)){
 		if(pwf->stat!=SOFT_ALARM) {
-			strcpy(message,pwf->name);
-			strcat(message,": devWfSoft (read_wf) Illegal INP field");
-			errMessage(S_db_badField,message);
+			recGblRecordError(S_db_badField,pwf,
+			    "devWfSoft (read_wf) Illegal INP field");
 		}
 	}
     }

@@ -73,7 +73,6 @@ struct {
 static long init_record(pmbbi)
     struct mbbiRecord	*pmbbi;
 {
-    char message[100];
 
     /* mbbi.inp must be an VME_IO */
     switch (pmbbi->inp.type) {
@@ -82,9 +81,8 @@ static long init_record(pmbbi)
 	pmbbi->mask <<= pmbbi->shft;
 	break;
     default :
-	strcpy(message,pmbbi->name);
-	strcat(message,": devMbbiMpv910 (init_record) Illegal INP field");
-	errMessage(S_db_badField,message);
+	recGblRecordError(S_db_badField,pmbbi,
+		"devMbbiMpv910 (init_record) Illegal INP field");
 	return(S_db_badField);
     }
     return(0);

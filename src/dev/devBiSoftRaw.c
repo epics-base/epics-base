@@ -76,9 +76,7 @@ struct {
 static long init_record(pbi)
     struct biRecord	*pbi;
 {
-    char message[100];
-/* Added for Channel Access Links */
-long status;
+    long status;
 
     /* bi.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pbi->inp.type) {
@@ -94,9 +92,8 @@ long status;
     case (CA_LINK) :
         break;
     default :
-	strcpy(message,pbi->name);
-	strcat(message,": devBiSoftRaw (init_record) Illegal INP field");
-	errMessage(S_db_badField,message);
+	recGblRecordError(S_db_badField,pbi,
+		"devBiSoftRaw (init_record) Illegal INP field");
 	return(S_db_badField);
     }
     return(0);
@@ -105,7 +102,6 @@ long status;
 static long read_bi(pbi)
     struct biRecord	*pbi;
 {
-    char message[100];
     long status,options,nRequest;
 
     /* bi.inp must be a CONSTANT or a DB_LINK or a CA_LINK*/
@@ -132,9 +128,8 @@ static long read_bi(pbi)
     default :
         if(recGblSetSevr(pbi,SOFT_ALARM,VALID_ALARM)){
                 if(pbi->stat!=SOFT_ALARM) {
-                        strcpy(message,pbi->name);
-                        strcat(message,": devBiSoftRaw (read_bi) Illegal INP field");
-                        errMessage(S_db_badField,message);
+                        recGblRecordError(S_db_badField,pbi,
+			    "devBiSoftRaw (read_bi) Illegal INP field");
                 }
         }
     }

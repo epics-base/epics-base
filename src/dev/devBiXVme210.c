@@ -72,7 +72,6 @@ struct {
 static long init_record(pbi)
     struct biRecord	*pbi;
 {
-    char message[100];
     struct vmeio *pvmeio;
 
     /* bi.inp must be an VME_IO */
@@ -83,9 +82,8 @@ static long init_record(pbi)
 	pbi->mask <<= pvmeio->signal;
 	break;
     default :
-	strcpy(message,pbi->name);
-	strcat(message,": devBiXVme210 (init_record) Illegal INP field");
-	errMessage(S_db_badField,message);
+	recGblRecordError(S_db_badField,pbi,
+		"devBiXVme210 (init_record) Illegal INP field");
 	return(S_db_badField);
     }
     return(0);

@@ -89,11 +89,7 @@ long status;
 static long write_pt(ppt)
     struct pulseTrainRecord	*ppt;
 {
-    char message[100];
-    long status;
-/* added for Channel Access Links */
-long options;
-long nrequest;
+    long status,options,nrequest;
 
     /* pt.out must be a CONSTANT or a DB_LINK or a CA_LINK*/
     switch (ppt->out.type) {
@@ -113,9 +109,8 @@ long nrequest;
     default :
         if(recGblSetSevr(ppt,WRITE_ALARM,VALID_ALARM)){
                 if(ppt->stat!=SOFT_ALARM) {
-                        strcpy(message,ppt->name);
-                        strcat(message,": devPtSoft (write_pt) Illegal OUT field");
-                        errMessage(S_db_badField,message);
+                        recGblRecordError(S_db_badField,ppt,
+			    "devPtSoft (write_pt) Illegal OUT field");
                 }
         }
     }

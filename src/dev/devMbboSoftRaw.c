@@ -81,7 +81,7 @@ long status;
     if (pmbbo->out.type == PV_LINK)
         status = dbCaAddOutlink(&(pmbbo->out), (void *) pmbbo, "RVAL");
     else
-        status = 0L;
+        status = 2;
  
     return status;
  
@@ -90,11 +90,7 @@ long status;
 static long write_mbbo(pmbbo)
     struct mbboRecord	*pmbbo;
 {
-    char message[100];
-    long status;
-/* added for Channel Access Links */
-long options;
-long nrequest;
+    long status,options,nrequest;
 
     /* mbbo.out must be a CONSTANT or a DB_LINK or a CA_LINK*/
     switch (pmbbo->out.type) {
@@ -115,9 +111,8 @@ long nrequest;
     default :
         if(recGblSetSevr(pmbbo,SOFT_ALARM,VALID_ALARM)){
                 if(pmbbo->stat!=SOFT_ALARM) {
-                        strcpy(message,pmbbo->name);
-                        strcat(message,": devMbboSoftRaw (write_mbbo) Illegal OUT field");
-                        errMessage(S_db_badField,message);
+                        recGblRecordError(S_db_badField,pmbbo,
+			    "devMbboSoftRaw (write_mbbo) Illegal OUT field");
                 }
         }
     }

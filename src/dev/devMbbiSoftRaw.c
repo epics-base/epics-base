@@ -77,9 +77,7 @@ struct {
 static long init_record(pmbbi)
     struct mbbiRecord	*pmbbi;
 {
-    char message[100];
-/* Added for Channel Access Links */
-long status;
+    long status;
 
     /* mbbi.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pmbbi->inp.type) {
@@ -95,9 +93,8 @@ long status;
     case (CA_LINK) :
         break;
     default :
-	strcpy(message,pmbbi->name);
-	strcat(message,": devMbbiSoftRaw (init_record) Illegal INP field");
-	errMessage(S_db_badField,message);
+	recGblRecordError(S_db_badField,pmbbi,
+		"devMbbiSoftRaw (init_record) Illegal INP field");
 	return(S_db_badField);
     }
     return(0);
@@ -106,7 +103,6 @@ long status;
 static long read_mbbi(pmbbi)
     struct mbbiRecord	*pmbbi;
 {
-    char message[100];
     long status,options,nRequest;
 
     /* mbbi.inp must be a CONSTANT or a DB_LINK or a CA_LINK*/
@@ -133,9 +129,8 @@ static long read_mbbi(pmbbi)
     default :
         if(recGblSetSevr(pmbbi,SOFT_ALARM,VALID_ALARM)){
                 if(pmbbi->stat!=SOFT_ALARM) {
-                        strcpy(message,pmbbi->name);
-                        strcat(message,": devMbbiSoftRaw (read_mbbi) Illegal INP field");
-                        errMessage(S_db_badField,message);
+                        recGblRecordError(S_db_badField,pmbbi,
+			    "devMbbiSoftRaw (read_mbbi) Illegal INP field");
                 }
         }
     }

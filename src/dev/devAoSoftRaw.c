@@ -92,11 +92,9 @@ long status;
 static long write_ao(pao)
     struct aoRecord	*pao;
 {
-    char message[100];
     long status;
-/* added for Channel Access Links */
-long options;
-long nrequest;
+    long options;
+    long nrequest;
 
     /* ao.out must be a CONSTANT or a DB_LINK or a CA_LINK*/
     switch (pao->out.type) {
@@ -117,9 +115,8 @@ long nrequest;
     default :
         if(recGblSetSevr(pao,SOFT_ALARM,VALID_ALARM)){
 		if(pao->stat!=SOFT_ALARM) {
-			strcpy(message,pao->name);
-			strcat(message,": devAoSoftRaw (write_ao) Illegal OUT field");
-			errMessage(S_db_badField,message);
+			recGblRecordError(S_db_badField,pao,
+			   "devAoSoftRaw (write_ao) Illegal OUT field");
 		}
 	}
     }

@@ -88,11 +88,7 @@ long status;
 static long write_longout(plongout)
     struct longoutRecord	*plongout;
 {
-    char message[100];
-    long status;
-/* added for Channel Access Links */
-long options;
-long nrequest;
+    long status,options,nrequest;
 
     /* longout.out must be a CONSTANT or a DB_LINK or a CA_LINK*/
     switch (plongout->out.type) {
@@ -113,9 +109,8 @@ long nrequest;
     default :
         if(recGblSetSevr(plongout,SOFT_ALARM,VALID_ALARM)){
 		if(plongout->stat!=SOFT_ALARM) {
-			strcpy(message,plongout->name);
-			strcat(message,": devLoSoft (write_longout) Illegal OUT field");
-			errMessage(S_db_badField,message);
+			recGblRecordError(S_db_badField,plongout,
+			    "devLoSoft (write_longout) Illegal OUT field");
 		}
 	}
     }

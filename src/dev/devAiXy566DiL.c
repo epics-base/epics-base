@@ -78,7 +78,6 @@ struct {
 static long init_record(pai)
     struct aiRecord	*pai;
 {
-    char message[100];
     unsigned short value;
     struct vmeio *pvmeio;
     long status;
@@ -88,9 +87,8 @@ static long init_record(pai)
     case (VME_IO) :
 	break;
     default :
-	strcpy(message,pai->name);
-	strcat(message,": devAiXy566DiL (init_record) Illegal INP field");
-	errMessage(S_db_badField,message);
+	recGblRecordError(S_db_badField,pai,
+		"devAiXy566DiL (init_record) Illegal INP field");
 	return(S_db_badField);
     }
 
@@ -100,9 +98,8 @@ static long init_record(pai)
     /* call driver so that it configures card */
     pvmeio = (struct vmeio *)&(pai->inp.value);
     if(status=ai_xy566_driver(pvmeio->card,pvmeio->signal,XY566DIL,&value)) {
-	strcpy(message,pai->name);
-	strcat(message,": devAiXy566DiL (init_record) ai_xy566_driver error");
-	errMessage(status,message);
+	recGblRecordError(status,pai,
+		"devAiXy566DiL (init_record) ai_xy566_driver error");
 	return(status);
     }
     return(0);

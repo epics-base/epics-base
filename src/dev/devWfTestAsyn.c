@@ -97,7 +97,6 @@ static void myCallback(pcallback)
 static long init_record(pwf)
     struct waveformRecord	*pwf;
 {
-    char message[100];
     struct callback *pcallback;
 
     /* wf.inp must be a CONSTANT*/
@@ -111,9 +110,8 @@ static long init_record(pwf)
 	pwf->nord = 0;
 	break;
     default :
-	strcpy(message,pwf->name);
-	strcat(message,": devWfTestAsyn (init_record) Illegal INP field");
-	errMessage(S_db_badField,message);
+	recGblRecordError(S_db_badField,pwf,
+		"devWfTestAsyn (init_record) Illegal INP field");
 	return(S_db_badField);
     }
     return(0);
@@ -122,7 +120,6 @@ static long init_record(pwf)
 static long read_wf(pwf)
     struct waveformRecord	*pwf;
 {
-    char message[100];
     struct callback *pcallback=(struct callback *)(pwf->dpvt);
     int		wait_time;
 
@@ -144,9 +141,8 @@ static long read_wf(pwf)
     default :
         if(recGblSetSevr(pwf,SOFT_ALARM,VALID_ALARM)){
 		if(pwf->stat!=SOFT_ALARM) {
-			strcpy(message,pwf->name);
-			strcat(message,": devWfTestAsyn (read_wf) Illegal INP field");
-			errMessage(S_db_badField,message);
+			recGblRecordError(S_db_badField,pwf,
+			    "devWfTestAsyn (read_wf) Illegal INP field");
 		}
 	}
     }

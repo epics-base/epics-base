@@ -73,10 +73,9 @@ struct {
 static long init_record(pmbbo)
     struct mbboRecord	*pmbbo;
 {
-    char message[100];
     unsigned long value;
     struct vmeio *pvmeio;
-    int		status;
+    int		status=0;
 
     /* mbbo.out must be an VME_IO */
     switch (pmbbo->out.type) {
@@ -86,14 +85,14 @@ static long init_record(pmbbo)
 	pmbbo->mask <<= pmbbo->shft;
 	status = bb902_read(pvmeio->card,pmbbo->mask,&value);
 	if(status==0) pmbbo->rbv = pmbbo->rval = value;
+	else status = 2;
 	break;
     default :
-	strcpy(message,pmbbo->name);
-	strcat(message,": devMbboMpv902 (init_record) Illegal OUT field");
-	errMessage(S_db_badField,message);
-	return(S_db_badField);
+	status = S_db_badField;
+	recGblRecordError(status,pmbbo,
+		"devMbboMpv902 (init_record) Illegal OUT field");
     }
-    return(0);
+    return(status);
 }
 
 static long write_mbbo(pmbbo)

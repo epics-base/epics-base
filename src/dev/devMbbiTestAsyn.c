@@ -98,7 +98,6 @@ static void myCallback(pcallback)
 static long init_record(pmbbi)
     struct mbbiRecord	*pmbbi;
 {
-    char message[100];
     struct callback *pcallback;
 
     /* mbbi.inp must be a CONSTANT*/
@@ -113,9 +112,8 @@ static long init_record(pmbbi)
 	pmbbi->udf = FALSE;
 	break;
     default :
-	strcpy(message,pmbbi->name);
-	strcat(message,": devMbbiTestAsyn (init_record) Illegal INP field");
-	errMessage(S_db_badField,message);
+	recGblRecordError(S_db_badField,pmbbi,
+		"devMbbiTestAsyn (init_record) Illegal INP field");
 	return(S_db_badField);
     }
     return(0);
@@ -124,7 +122,6 @@ static long init_record(pmbbi)
 static long read_mbbi(pmbbi)
     struct mbbiRecord	*pmbbi;
 {
-    char message[100];
     struct callback *pcallback=(struct callback *)(pmbbi->dpvt);
     int		wait_time;
 
@@ -146,9 +143,8 @@ static long read_mbbi(pmbbi)
     default :
         if(recGblSetSevr(pmbbi,SOFT_ALARM,VALID_ALARM)){
 		if(pmbbi->stat!=SOFT_ALARM) {
-			strcpy(message,pmbbi->name);
-			strcat(message,": devMbbiTestAsyn (read_mbbi) Illegal INP field");
-			errMessage(S_db_badField,message);
+			recGblRecordError(S_db_badField,pmbbi,
+			    "devMbbiTestAsyn (read_mbbi) Illegal INP field");
 		}
 	}
     }

@@ -97,7 +97,6 @@ static void myCallback(pcallback)
 static long init_record(pstringin)
     struct stringinRecord	*pstringin;
 {
-    char message[100];
     struct callback *pcallback;
 
     /* stringin.inp must be a CONSTANT*/
@@ -114,9 +113,8 @@ static long init_record(pstringin)
 		}
 	break;
     default :
-	strcpy(message,pstringin->name);
-	strcat(message,": devSiTestAsyn (init_record) Illegal INP field");
-	errMessage(S_db_badField,message);
+	recGblRecordError(S_db_badField,pstringin,
+		"devSiTestAsyn (init_record) Illegal INP field");
 	return(S_db_badField);
     }
     return(0);
@@ -125,7 +123,6 @@ static long init_record(pstringin)
 static long read_stringin(pstringin)
     struct stringinRecord	*pstringin;
 {
-    char message[100];
     struct callback *pcallback=(struct callback *)(pstringin->dpvt);
     int		wait_time;
 
@@ -147,9 +144,8 @@ static long read_stringin(pstringin)
     default :
         if(recGblSetSevr(pstringin,SOFT_ALARM,VALID_ALARM)){
 		if(pstringin->stat!=SOFT_ALARM) {
-			strcpy(message,pstringin->name);
-			strcat(message,": devSiTestAsyn (read_stringin) Illegal INP field");
-			errMessage(S_db_badField,message);
+			recGblRecordError(S_db_badField,pstringin,
+			    "devSiTestAsyn (read_stringin) Illegal INP field");
 		}
 	}
     }

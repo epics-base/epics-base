@@ -99,7 +99,6 @@ static void myCallback(pcallback)
 static long init_record(pbi)
     struct biRecord	*pbi;
 {
-    char message[100];
     struct callback *pcallback;
 
     /* bi.inp must be a CONSTANT*/
@@ -114,9 +113,8 @@ static long init_record(pbi)
 	pbi->udf = FALSE;
 	break;
     default :
-	strcpy(message,pbi->name);
-	strcat(message,": devBiTestAsyn (init_record) Illegal INP field");
-	errMessage(S_db_badField,message);
+	recGblRecordError(S_db_badField,pbi,
+		"devBiTestAsyn (init_record) Illegal INP field");
 	return(S_db_badField);
     }
     return(0);
@@ -125,7 +123,6 @@ static long init_record(pbi)
 static long read_bi(pbi)
     struct biRecord	*pbi;
 {
-    char message[100];
     struct callback *pcallback=(struct callback *)(pbi->dpvt);
     int		wait_time;
 
@@ -147,9 +144,8 @@ static long read_bi(pbi)
     default :
         if(recGblSetSevr(pbi,SOFT_ALARM,VALID_ALARM)){
 		if(pbi->stat!=SOFT_ALARM) {
-			strcpy(message,pbi->name);
-			strcat(message,": devBiTestAsyn (read_bi) Illegal INP field");
-			errMessage(S_db_badField,message);
+			recGblRecordError(S_db_badField,pbi,
+			    "devBiTestAsyn (read_bi) Illegal INP field");
 		}
 	}
     }

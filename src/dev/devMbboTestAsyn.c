@@ -100,7 +100,6 @@ static void myCallback(pcallback)
 static long init_record(pmbbo)
     struct mbboRecord	*pmbbo;
 {
-    char message[100];
     struct callback *pcallback;
 
     /* mbbo.out must be a CONSTANT*/
@@ -113,9 +112,8 @@ static long init_record(pmbbo)
 	pcallback->wd_id = wdCreate();
 	break;
     default :
-	strcpy(message,pmbbo->name);
-	strcat(message,": devMbboTestAsyn (init_record) Illegal OUT field");
-	errMessage(S_db_badField,message);
+	recGblRecordError(S_db_badField,pmbbo,
+	    "devMbboTestAsyn (init_record) Illegal OUT field");
 	return(S_db_badField);
     }
     return(2);
@@ -124,7 +122,6 @@ static long init_record(pmbbo)
 static long write_mbbo(pmbbo)
     struct mbboRecord	*pmbbo;
 {
-    char message[100];
     struct callback *pcallback=(struct callback *)(pmbbo->dpvt);
     int		wait_time;
 
@@ -146,9 +143,8 @@ static long write_mbbo(pmbbo)
     default :
         if(recGblSetSevr(pmbbo,SOFT_ALARM,VALID_ALARM)){
 		if(pmbbo->stat!=SOFT_ALARM) {
-			strcpy(message,pmbbo->name);
-			strcat(message,": devMbboTestAsyn (read_mbbo) Illegal OUT field");
-			errMessage(S_db_badField,message);
+			recGblRecordError(S_db_badField,pmbbo,
+			    "devMbboTestAsyn (read_mbbo) Illegal OUT field");
 		}
 	}
     }

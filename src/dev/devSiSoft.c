@@ -73,9 +73,7 @@ struct {
 static long init_record(pstringin)
     struct stringinRecord	*pstringin;
 {
-    char message[100];
-/* Added for Channel Access Links */
-long status;
+    long status;
 
     /* stringin.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pstringin->inp.type) {
@@ -95,9 +93,8 @@ long status;
     case (CA_LINK) :
         break;
     default :
-	strcpy(message,pstringin->name);
-	strcat(message,": devSiSoft (init_record) Illegal INP field");
-	errMessage(S_db_badField,message);
+	recGblRecordError(S_db_badField,pstringin,
+		"devSiSoft (init_record) Illegal INP field");
 	return(S_db_badField);
     }
     return(0);
@@ -106,7 +103,6 @@ long status;
 static long read_stringin(pstringin)
     struct stringinRecord	*pstringin;
 {
-    char message[100];
     long status=0,options,nRequest;
 
     /* stringin.inp must be a CONSTANT or a DB_LINK or a CA_LINK*/
@@ -133,9 +129,8 @@ static long read_stringin(pstringin)
     default :
         if(recGblSetSevr(pstringin,SOFT_ALARM,VALID_ALARM)){
                 if(pstringin->stat!=SOFT_ALARM) {
-                        strcpy(message,pstringin->name);
-                        strcat(message,": devSiSoft (read_stringin) Illegal INP field");
-                        errMessage(S_db_badField,message);
+                        recGblRecordError(S_db_badField,pstringin,
+			    "devSiSoft (read_stringin) Illegal INP field");
                 }
         }
     }

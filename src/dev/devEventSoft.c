@@ -72,9 +72,7 @@ struct {
 static long init_record(pevent)
     struct eventRecord	*pevent;
 {
-    char message[100];
-/* Added for Channel Access Links */
-long status;
+    long status;
 
     /* event.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pevent->inp.type) {
@@ -93,9 +91,8 @@ long status;
     case (CA_LINK) :
         break;
     default :
-	strcpy(message,pevent->name);
-	strcat(message,": devEventSoft (init_record) Illegal INP field");
-	errMessage(S_db_badField,message);
+	recGblRecordError(S_db_badField,pevent,
+	    "devEventSoft (init_record) Illegal INP field");
 	return(S_db_badField);
     }
     return(0);
@@ -104,7 +101,6 @@ long status;
 static long read_event(pevent)
     struct eventRecord	*pevent;
 {
-    char message[100];
     long status=0,options,nRequest;
 
     /* event.inp must be a CONSTANT or a DB_LINK or a CA_LINK*/
@@ -131,9 +127,8 @@ static long read_event(pevent)
     default :
         if(recGblSetSevr(pevent,SOFT_ALARM,VALID_ALARM)){
                 if(pevent->stat!=SOFT_ALARM) {
-                        strcpy(message,pevent->name);
-                        strcat(message,": devEventSoft (read_event) Illegal INP field");
-                        errMessage(S_db_badField,message);
+                        recGblRecordError(S_db_badField,pevent,
+			    "devEventSoft (read_event) Illegal INP field");
                 }
         }
     }

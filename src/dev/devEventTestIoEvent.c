@@ -57,15 +57,13 @@ struct {
 	DEVSUPFUN	init_record;
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	read_event;
-	DEVSUPFUN	special_linconv;
 }devEventTestIoEvent={
-	6,
+	5,
 	NULL,
 	init,
 	NULL,
 	get_ioint_info,
-	read_event,
-	NULL};
+	read_event};
 
 static IOSCANPVT ioscanpvt;
 WDOG_ID wd_id=NULL;

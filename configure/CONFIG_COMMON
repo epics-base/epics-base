@@ -295,6 +295,7 @@ COMPILE.cpp = $(CCC) -c $(CPPFLAGS) $(CXXFLAGS) $(call PATH_FILTER,$(INCLUDES)) 
 # Depends command
 
 HDEPENDS_FLAGS =
+# Use only dependancies from current top tree
 HDEPENDS_INCLUDES = $(filter .%,$(subst -I,,$(INCLUDES)))
 HDEPENDSFLAGS = -m $*$(DEP) $(HDEPENDS_INCLUDES) $@ $<
 HDEPENDS_CMD_YES   = -$(MKMF) $(HDEPENDS_FLAGS) $(HDEPENDSFLAGS)

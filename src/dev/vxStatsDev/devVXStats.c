@@ -365,7 +365,7 @@ static void cpuUsageTask()
 	unsigned long tickStart,tickEnd=0;
         int nBurnNow;
         double nBurnNoContention = (double)usage.nBurnNoContention;
-	double nBurnContention,newusage;
+	double newusage;
 
 	nBurnNow=0;
 	tickStart = tickGet();
@@ -377,7 +377,6 @@ static void cpuUsageTask()
             if((tickEnd - tickStart) >= usage.ticksToBurn) break;
 	}
         if(tickEnd<tickStart) continue; /*allow for tick overflow*/
-        nBurnContention = (double)nBurnNow;
         newusage = 100.0*((nBurnNoContention - nBurnNow)/nBurnNoContention);
         semTake(usage.lock,WAIT_FOREVER);
 	usage.usage = newusage;

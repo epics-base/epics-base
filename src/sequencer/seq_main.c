@@ -624,9 +624,8 @@ int		arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8; /* arguments */
 	semGive(pSP->logSemId);
 	if (status != count)
 	{
-		logMsg("Log file error, fd=%d, error no.=%d\n", fd, errnoGet(), 
-		  0,0,0,0);
-		printErrno(errnoGet());
+		logMsg("Log file error, fd=%d, error no.= %d = \"%s\"\n", 
+			fd, errnoGet(), (int) strerror(errnoGet()),0,0,0);
 		return ERROR;
 	}
 

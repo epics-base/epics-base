@@ -19,8 +19,8 @@ OBJS_IOC += threadTest
 #fdmgrTest_SRCS += fdmgrTest.c
 #PROD += fdmgrTest
 
-#osiTimeTest_SRCS += osiTimeTest.cc
-#PROD += osiTimeTest
+osiTimeTest_SRCS += osiTimeTest.cc
+PROD += osiTimeTest
 
 include $(TOP)/configure/RULES
 

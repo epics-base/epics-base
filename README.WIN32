@@ -25,6 +25,10 @@ Right now this port of EPICS to WIN32 should allow you to
   and all other EPICS base libraries as DLLs.
 * build gdd, cas and a demo of the new portable CA server on WIN32.
 
+To build only for WIN32 and not cross compile for IOC development type 
+"make host" or in your config files set "CROSS_COMPILER_HOST_ARCHS=void"
+
+
 1) see what you have
 --------------------
 

@@ -21,11 +21,13 @@ private:
 void epicsTimerExample()
 {
     epicsTimerQueueActive &queue = epicsTimerQueueActive::allocate(true);
-    something first("first",queue);
-    something second("second",queue);
+    {
+        something first("first",queue);
+        something second("second",queue);
 
-    first.start(1.0);
-    second.start(1.5);
-    epicsThreadSleep(2.0);
+        first.start(1.0);
+        second.start(1.5);
+        epicsThreadSleep(2.0);
+    }
     queue.release();
 }

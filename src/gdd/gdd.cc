@@ -26,6 +26,15 @@ gdd_NEWDEL_NEW(gdd)
 gdd_NEWDEL_DEL(gdd)
 gdd_NEWDEL_STAT(gdd)
 
+epicsMutex * gdd::pGlobalMutex = 0;
+epicsThreadOnceId gdd::staticInitOnce = EPICS_THREAD_ONCE_INIT;
+
+void gdd::staticInit ( void * )
+{
+    gdd::pGlobalMutex = new epicsMutex;
+    assert ( gdd::pGlobalMutex );
+}
+
 class gddFlattenDestructor : public gddDestructor
 {
 public:
@@ -85,6 +94,8 @@ gdd::gdd(int app, aitEnum prim, int dimen, aitUint32* val)
 
 void gdd::init(int app, aitEnum prim, int dimen)
 {
+    epicsThreadOnce ( & gdd::staticInitOnce, gdd::staticInit, 0 );
+
 	setApplType(app);
 	//
 	// joh - we intentionally dont call setPrimType()

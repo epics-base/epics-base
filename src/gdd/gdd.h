@@ -501,6 +501,10 @@ private:
 	mutable aitUint32 ref_cnt;
 	aitUint8 flags;
 
+    static epicsMutex * pGlobalMutex;
+    static epicsThreadOnceId staticInitOnce;
+    static void staticInit ( void * );
+
 	const gdd* indexDD (aitIndex index) const;
 };
 

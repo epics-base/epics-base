@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.37  1996/09/16 16:31:01  jhill
+ * fixed NT warnings
+ *
  * Revision 1.36  1996/07/24 21:55:33  jhill
  * fixed gnu warnings
  *
@@ -365,21 +368,21 @@ int doacctst(char *pname)
 		base = DBL_MIN;
 		for (i=DBL_MIN_EXP; i<DBL_MAX_EXP; i+=DBL_MAX_EXP/10) {
 			incr = ldexp (0.5,i);
-			iter = (umsigned long) (DBL_MAX/fabs(incr));
+			iter = (unsigned long) (DBL_MAX/fabs(incr));
 			iter = min (iter,10);
 			doubleTest(chix1, base, incr, epsil, iter);
 		}
 		base = DBL_MAX;
 		for (i=DBL_MIN_EXP; i<DBL_MAX_EXP; i+=DBL_MAX_EXP/10) {
 			incr =  - ldexp (0.5,i);
-			iter = (umsigned long) (DBL_MAX/fabs(incr));
+			iter = (unsigned long) (DBL_MAX/fabs(incr));
 			iter = min (iter,10);
 			doubleTest(chix1, base, incr, epsil, iter);
 		}
 		base = - DBL_MAX;
 		for (i=DBL_MIN_EXP; i<DBL_MAX_EXP; i+=DBL_MAX_EXP/10) {
 			incr = ldexp (0.5,i);
-			iter = (umsigned long) (DBL_MAX/fabs(incr));
+			iter = (unsigned long) (DBL_MAX/fabs(incr));
 			iter = min (iter,10);
 			doubleTest(chix1, base, incr, epsil, iter);
 		}

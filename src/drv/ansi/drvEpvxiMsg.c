@@ -620,10 +620,10 @@ EPVXISTAT 	epvxiReadSlowHandshake(
 {
 	VXIMDI			*pvximdi;
         struct vxi_csr		*pcsr;
-        short                   resp;
+        uint16_t		resp;
         EPVXISTAT		status;
         int			function_status;
-	int			i;
+	unsigned long		i;
 
 	while(!(pvximdi = epvxiPMsgConfig(la))){
 		status = vxiMsgOpen(la);
@@ -730,11 +730,11 @@ unsigned long	option
 {
 	VXIMDI			*pvximdi;
        	struct vxi_csr		*pcsr;
-	int			i;
-	short			cmd;
-	short 			extra;
+	unsigned long		i;
+	uint16_t		cmd;
+	uint16_t		extra;
 	EPVXISTAT		status;
-	char			*pstr;
+	uint8_t			*pstr;
 
 	while(!(pvximdi = epvxiPMsgConfig(la))){
 		status = vxiMsgOpen(la);
@@ -746,14 +746,14 @@ unsigned long	option
         pcsr = VXIBASE(la);
 
 	FASTLOCK(&pvximdi->lck);
-	pstr = pbuf;
+	pstr = (uint8_t *) pbuf;
 	if(option&epvxiWriteOptPartialMsg){
-		extra = 0;
+		extra = 0u;
 	}
 	else{
 		extra = MBC_END;
 	}
-	for(i=0; i<count; i++){
+	for(i=0u; i<count; i++){
 
                 /*
                  * wait for handshake

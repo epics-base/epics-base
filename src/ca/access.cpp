@@ -1031,6 +1031,16 @@ extern "C" int epicsShareAPI ca_attach_context ( struct oldCAC * pCtx )
     return ECA_NORMAL;
 }
 
+int epicsShareAPI ca_preemtive_callback_is_enabled ()
+{
+    oldCAC *pcac = (oldCAC *) epicsThreadPrivateGet ( caClientContextId );
+    if ( ! pcac ) {
+        return 0;
+    }
+    return pcac->preemptiveCallbakIsEnabled ();
+}
+
+
 extern "C" void epicsShareAPI ca_self_test ()
 {
     oldCAC *pcac = (oldCAC *) epicsThreadPrivateGet ( caClientContextId );

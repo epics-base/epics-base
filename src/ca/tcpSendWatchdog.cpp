@@ -43,8 +43,9 @@ epicsTimerNotify::expireStatus tcpSendWatchdog::expire (
     if ( ! this->cacRef.preemptiveCallbakIsEnabled() ) {
         if ( this->iiu.bytesArePendingInOS() ) {
             this->cacRef.printf ( 
-                "Warning: non-preemptive CA application has send data pending but it has not called ca_pend_event()\n" );
-            return expireStatus ( restart, this->period );
+                "The CA client is disconnecting after a flush request timed out, "
+                "but receive data is pending, probably because the non-preemptive"
+                "mode application isnt calling ca_pend_event()\n" );
         }
     }
 #   ifdef DEBUG

@@ -45,10 +45,13 @@ epicsTimerNotify::expireStatus
 tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ ) // X aCC 361
 {
     if ( this->responsePending ) {
-        if ( this->iiu.bytesArePendingInOS() ) {
-            this->cacRef.printf ( 
-"Warning: non-preemptive CA client application has incoming messages pending, but it does not called ca_pend_event()\n" );
-            return expireStatus ( restart, this->period );
+        if ( ! this->cacRef.preemptiveCallbakIsEnabled() ) {
+            if ( this->iiu.bytesArePendingInOS() ) {
+                this->cacRef.printf ( 
+                    "The CA client is disconnecting because a CA server isnt responding "
+                    "when there are incoming messages pending probably because the "
+                    "application isnt calling ca_pend_event().\n" );
+            }
         }
         this->cancel ();
 #       ifdef DEBUG

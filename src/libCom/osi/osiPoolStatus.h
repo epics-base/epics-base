@@ -14,7 +14,7 @@
 extern "C" {
 #endif
 
-epicsShareFunc int epicsShareAPI osiSufficentSpaceInPool ();
+epicsShareFunc int epicsShareAPI osiSufficentSpaceInPool (void);
 
 #ifdef __cplusplus
 }

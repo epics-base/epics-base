@@ -735,8 +735,8 @@ void doubleTest ( chid chan, dbr_double_t beginValue,
         status = ca_pend_io ( 100.0 );
         SEVCHK ( status, NULL );
         if ( fabs ( fval - fretval ) > epsilon ) {
-            printf ( "float test failed val written %f\n", fval );
-            printf ( "float test failed val read %f\n", fretval );
+            printf ( "double test failed val written %f\n", fval );
+            printf ( "double test failed val read %f\n", fretval );
             assert ( 0 );
         }
         fval += increment;

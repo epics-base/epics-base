@@ -41,6 +41,7 @@ INC += epicsAlgorithm.h
 INC += epicsExcept.h
 INC += epicsList.h
 INC += epicsListBase.h
+INC += epics_auto_ptr.h
 SRCS += epicsListBase.cpp
 
 # From cxxTemplates

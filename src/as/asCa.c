@@ -146,15 +146,13 @@ LOCAL void eventCallback(struct event_handler_args arg)
 
 LOCAL void asCaTask(void)
 {
-    static const int enablePreemption = 1;
     ASG		*pasg;
     ASGINP	*pasginp;
     CAPVT	*pcapvt;
     int		status;
 
     taskwdInsert(threadGetIdSelf(),NULL,NULL);
-    SEVCHK(ca_context_create(enablePreemption),
-        "asCaTask calling ca_context_create");
+    SEVCHK(ca_task_initialize(),"ca_task_initialize");
     SEVCHK(ca_add_exception_event(exceptionCallback,NULL),
         "ca_add_exception_event");
     while(TRUE) { 

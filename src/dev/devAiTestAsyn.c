@@ -48,6 +48,7 @@
 #include	<recSup.h>
 #include	<devSup.h>
 #include	<link.h>
+#include	<dbCommon.h>
 #include	<aiRecord.h>
 
 /* Create the dset for devAiTestAsyn */
@@ -72,23 +73,21 @@ struct {
 
 /* control block for callback*/
 struct callback {
-	void (*callback)();
-	int priority;
-	struct dbCommon *prec;
+	CALLBACK	callback;
+	struct dbCommon *precord;
 	WDOG_ID wd_id;
 };
 
-void callbackRequest();
 
 static void myCallback(pcallback)
     struct callback *pcallback;
 {
-    struct aiRecord *pai=(struct aiRecord *)(pcallback->prec);
-    struct rset     *prset=(struct rset *)(pai->rset);
+    struct dbCommon *precord=pcallback->precord;
+    struct rset     *prset=(struct rset *)(precord->rset);
 
-    dbScanLock((struct dbCommon *)pai);
-    (*prset->process)(pai);
-    dbScanUnlock((struct dbCommon *)pai);
+    dbScanLock(precord);
+    (*prset->process)(precord);
+    dbScanUnlock(precord);
 }
     
     
@@ -103,10 +102,9 @@ static long init_record(pai)
     switch (pai->inp.type) {
     case (CONSTANT) :
 	pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
-	pai->dpvt = (caddr_t)pcallback;
-	pcallback->callback = myCallback;
-	pcallback->priority = priorityLow;
-	pcallback->prec = (struct dbCommon *)pai;
+	pai->dpvt = (void *)pcallback;
+	callbackSetCallback(myCallback,pcallback);
+	pcallback->precord = (struct dbCommon *)pai;
 	pcallback->wd_id = wdCreate();
 	pai->val = pai->inp.value.value;
 	pai->udf = FALSE;
@@ -137,6 +135,7 @@ static long read_ai(pai)
 	} else {
 		wait_time = (int)(pai->disv * vxTicksPerSecond);
 		if(wait_time<=0) return(0);
+		callbackSetPriority(pai->prio,pcallback);
 		printf("%s Starting asynchronous processing\n",pai->name);
 		wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
 		return(1);

@@ -48,6 +48,7 @@
 #include	<recSup.h>
 #include	<devSup.h>
 #include	<link.h>
+#include	<dbCommon.h>
 #include	<stringinRecord.h>
 
 /* Create the dset for devSiTestAsyn */
@@ -72,25 +73,21 @@ struct {
 
 /* control block for callback*/
 struct callback {
-	void (*callback)();
-	int priority;
-	struct dbCommon *prec;
-	WDOG_ID wd_id;
+        CALLBACK        callback;
+        struct dbCommon *precord;
+        WDOG_ID wd_id;
 };
-
-void callbackRequest();
 
 static void myCallback(pcallback)
     struct callback *pcallback;
 {
-    struct stringinRecord *pstringin=(struct stringinRecord *)(pcallback->prec);
-    struct rset     *prset=(struct rset *)(pstringin->rset);
+    struct dbCommon *precord=pcallback->precord;
+    struct rset     *prset=(struct rset *)(precord->rset);
 
-    dbScanLock((struct dbCommon *)pstringin);
-    (*prset->process)(pstringin);
-    dbScanUnlock((struct dbCommon *)pstringin);
+    dbScanLock(precord);
+    (*prset->process)(precord);
+    dbScanUnlock(precord);
 }
-    
     
 
 static long init_record(pstringin)
@@ -103,10 +100,9 @@ static long init_record(pstringin)
     switch (pstringin->inp.type) {
     case (CONSTANT) :
 	pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
-	pstringin->dpvt = (caddr_t)pcallback;
-	pcallback->callback = myCallback;
-	pcallback->priority = priorityLow;
-        pcallback->prec = (struct dbCommon *)pstringin;
+	pstringin->dpvt = (void *)pcallback;
+	callbackSetCallback(myCallback,pcallback);
+        pcallback->precord = (struct dbCommon *)pstringin;
 	pcallback->wd_id = wdCreate();
 	if (pstringin->inp.value.value!=0.0) {
         	sprintf(pstringin->val,"%-14.7g",pstringin->inp.value.value);
@@ -139,6 +135,7 @@ static long read_stringin(pstringin)
 	} else {
 		wait_time = (int)(pstringin->disv * vxTicksPerSecond);
 		if(wait_time<=0) return(0);
+		callbackSetPriority(pstringin->prio,pcallback);
 		printf("%s Starting asynchronous processing\n",pstringin->name);
 		wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
 		return(1);

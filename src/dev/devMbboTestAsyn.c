@@ -50,6 +50,7 @@
 #include	<recSup.h>
 #include	<devSup.h>
 #include	<link.h>
+#include	<dbCommon.h>
 #include	<mbboRecord.h>
 
 /* Create the dset for devMbboTestAsyn */
@@ -74,22 +75,20 @@ struct {
 
 /* control block for callback*/
 struct callback {
-	void (*callback)();
-	int priority;
-	struct dbCommon *prec;
-	WDOG_ID wd_id;
+        CALLBACK        callback;
+        struct dbCommon *precord;
+        WDOG_ID wd_id;
 };
-void callbackRequest();
 
 static void myCallback(pcallback)
     struct callback *pcallback;
 {
-    struct mbboRecord *pmbbo=(struct mbboRecord *)(pcallback->prec);
-    struct rset     *prset=(struct rset *)(pmbbo->rset);
+    struct dbCommon *precord=pcallback->precord;
+    struct rset     *prset=(struct rset *)(precord->rset);
 
-    dbScanLock((struct dbCommon *)pmbbo);
-    (*prset->process)(pmbbo);
-    dbScanUnlock((struct dbCommon *)pmbbo);
+    dbScanLock(precord);
+    (*prset->process)(precord);
+    dbScanUnlock(precord);
 }
     
     
@@ -104,10 +103,9 @@ static long init_record(pmbbo)
     switch (pmbbo->out.type) {
     case (CONSTANT) :
 	pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
-	pmbbo->dpvt = (caddr_t)pcallback;
-	pcallback->callback = myCallback;
-	pcallback->priority = priorityLow;
-        pcallback->prec = (struct dbCommon *)pmbbo;
+	pmbbo->dpvt = (void *)pcallback;
+	callbackSetCallback(myCallback,pcallback);
+        pcallback->precord = (struct dbCommon *)pmbbo;
 	pcallback->wd_id = wdCreate();
 	break;
     default :
@@ -136,6 +134,7 @@ static long write_mbbo(pmbbo)
 	} else {
 		wait_time = (int)(pmbbo->disv * vxTicksPerSecond);
 		if(wait_time<=0) return(0);
+		callbackSetPriority(pmbbo->prio,pcallback);
 		printf("%s Starting asynchronous processing\n",pmbbo->name);
 		wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
 		return(1);

@@ -49,6 +49,7 @@
 #include	<recSup.h>
 #include	<devSup.h>
 #include	<link.h>
+#include	<dbCommon.h>
 #include	<mbbiRecord.h>
 
 /* Create the dset for devMbbiTestAsyn */
@@ -73,25 +74,21 @@ struct {
 
 /* control block for callback*/
 struct callback {
-	void (*callback)();
-	int priority;
-	struct dbCommon *prec;
-	WDOG_ID wd_id;
+        CALLBACK        callback;
+        struct dbCommon *precord;
+        WDOG_ID wd_id;
 };
-
-void callbackRequest();
 
 static void myCallback(pcallback)
     struct callback *pcallback;
 {
-    struct mbbiRecord *pmbbi=(struct mbbiRecord *)(pcallback->prec);
-    struct rset     *prset=(struct rset *)(pmbbi->rset);
+    struct dbCommon *precord=pcallback->precord;
+    struct rset     *prset=(struct rset *)(precord->rset);
 
-    dbScanLock((struct dbCommon *)pmbbi);
-    (*prset->process)(pmbbi);
-    dbScanUnlock((struct dbCommon *)pmbbi);
+    dbScanLock(precord);
+    (*prset->process)(precord);
+    dbScanUnlock(precord);
 }
-    
     
 
 static long init_record(pmbbi)
@@ -104,10 +101,9 @@ static long init_record(pmbbi)
     switch (pmbbi->inp.type) {
     case (CONSTANT) :
 	pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
-	pmbbi->dpvt = (caddr_t)pcallback;
-	pcallback->callback = myCallback;
-	pcallback->priority = priorityLow;
-        pcallback->prec = (struct dbCommon *)pmbbi;
+	pmbbi->dpvt = (void *)pcallback;
+	callbackSetCallback(myCallback,pcallback);
+        pcallback->precord = (struct dbCommon *)pmbbi;
 	pcallback->wd_id = wdCreate();
 	pmbbi->val = pmbbi->inp.value.value;
 	pmbbi->udf = FALSE;
@@ -138,6 +134,7 @@ static long read_mbbi(pmbbi)
 	} else {
 		wait_time = (int)(pmbbi->disv * vxTicksPerSecond);
 		if(wait_time<=0) return(0);
+		callbackSetPriority(pmbbi->prio,pcallback);
 		printf("%s Starting asynchronous processing\n",pmbbi->name);
 		wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
 		return(1);

@@ -48,6 +48,7 @@
 #include	<recSup.h>
 #include	<devSup.h>
 #include	<link.h>
+#include	<dbCommon.h>
 #include	<histogramRecord.h>
 
 /* Create the dset for devHistogramTestAsyn */
@@ -72,24 +73,20 @@ struct {
 
 /* control block for callback*/
 struct callback {
-	void (*callback)();
-	int priority;
-	struct dbCommon *prec;
-	WDOG_ID wd_id;
+        CALLBACK        callback;
+        struct dbCommon *precord;
+        WDOG_ID wd_id;
 };
-
-void callbackRequest();
 
 static void myCallback(pcallback)
     struct callback *pcallback;
 {
-    struct histogramRecord *phistogram=(struct histogramRecord *)(pcallback->prec);
-    struct rset     *prset=(struct rset *)(phistogram->rset);
+    struct dbCommon *precord=pcallback->precord;
+    struct rset     *prset=(struct rset *)(precord->rset);
 
-    dbScanLock((struct dbCommon *)phistogram);
-    (*prset->process)(phistogram);
-    dbScanUnlock((struct dbCommon *)phistogram);
-    return;
+    dbScanLock(precord);
+    (*prset->process)(precord);
+    dbScanUnlock(precord);
 }
 
 static long init_record(phistogram)
@@ -102,10 +99,9 @@ static long init_record(phistogram)
     switch (phistogram->svl.type) {
     case (CONSTANT) :
 	pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
-	phistogram->dpvt = (caddr_t)pcallback;
-	pcallback->callback = myCallback;
-	pcallback->priority = priorityLow;
-        pcallback->prec = (struct dbCommon *)phistogram;
+	phistogram->dpvt = (void *)pcallback;
+	callbackSetCallback(myCallback,pcallback);
+        pcallback->precord = (struct dbCommon *)phistogram;
 	pcallback->wd_id = wdCreate();
 	phistogram->sgnl = phistogram->svl.value.value;
 	break;
@@ -135,6 +131,7 @@ static long read_histogram(phistogram)
 	} else {
 		wait_time = (int)(phistogram->disv * vxTicksPerSecond);
 		if(wait_time<=0) return(0);
+		callbackSetPriority(phistogram->prio,pcallback);
 		printf("%s Starting asynchronous processing\n",phistogram->name);
 		wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
 		return(1);

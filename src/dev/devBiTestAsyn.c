@@ -49,6 +49,7 @@
 #include	<recSup.h>
 #include	<devSup.h>
 #include	<link.h>
+#include	<dbCommon.h>
 #include	<biRecord.h>
 
 /* Create the dset for devBiTestAsyn */
@@ -73,26 +74,22 @@ struct {
 
 /* control block for callback*/
 struct callback {
-	void (*callback)();
-	int priority;
-	struct dbCommon *prec;
+	CALLBACK        callback;
+	struct dbCommon *precord;
 	WDOG_ID wd_id;
-	void (*process)();
 };
 
-void callbackRequest();
 
 static void myCallback(pcallback)
     struct callback *pcallback;
 {
-    struct biRecord *pbi=(struct biRecord *)(pcallback->prec);
-    struct rset     *prset=(struct rset *)(pbi->rset);
+    struct dbCommon *precord=pcallback->precord;
+    struct rset     *prset=(struct rset *)(precord->rset);
 
-    dbScanLock((struct dbCommon *)pbi);
-    (*prset->process)(pbi);
-    dbScanUnlock((struct dbCommon *)pbi);
+    dbScanLock(precord);
+    (*prset->process)(precord);
+    dbScanUnlock(precord);
 }
-    
     
 
 static long init_record(pbi)
@@ -105,10 +102,9 @@ static long init_record(pbi)
     switch (pbi->inp.type) {
     case (CONSTANT) :
 	pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
-	pbi->dpvt = (caddr_t)pcallback;
-	pcallback->callback = myCallback;
-	pcallback->priority = priorityLow;
-	pcallback->prec = (struct dbCommon *)pbi;
+	pbi->dpvt = (void *)pcallback;
+	callbackSetCallback(myCallback,pcallback);
+	pcallback->precord = (struct dbCommon *)pbi;
 	pcallback->wd_id = wdCreate();
 	pbi->val = pbi->inp.value.value;
 	pbi->udf = FALSE;
@@ -139,6 +135,7 @@ static long read_bi(pbi)
 	} else {
 		wait_time = (int)(pbi->disv * vxTicksPerSecond);
 		if(wait_time<=0) return(0);
+		callbackSetPriority(pbi->prio,pcallback);
 		printf("%s Starting asynchronous processing\n",pbi->name);
 		wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
 		return(1);

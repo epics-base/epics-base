@@ -49,6 +49,7 @@
 #include        <recSup.h>
 #include	<devSup.h>
 #include	<link.h>
+#include	<dbCommon.h>
 #include	<waveformRecord.h>
 
 /* Create the dset for devWfTestAsyn */
@@ -73,23 +74,22 @@ struct {
 
 /* control block for callback*/
 struct callback {
-	void (*callback)();
-	int priority;
-	struct dbCommon *prec;
-	WDOG_ID wd_id;
+        CALLBACK        callback;
+        struct dbCommon *precord;
+        WDOG_ID wd_id;
 };
-void callbackRequest();
 
 static void myCallback(pcallback)
     struct callback *pcallback;
 {
-    struct waveformRecord *pwf=(struct waveformRecord *)(pcallback->prec);
-    struct rset     *prset=(struct rset *)(pwf->rset);
+    struct dbCommon *precord=pcallback->precord;
+    struct rset     *prset=(struct rset *)(precord->rset);
 
-    dbScanLock((struct dbCommon *)pwf);
-    (*prset->process)(pwf);
-    dbScanUnlock((struct dbCommon *)pwf);
+    dbScanLock(precord);
+    (*prset->process)(precord);
+    dbScanUnlock(precord);
 }
+
 static long init_record(pwf)
     struct waveformRecord	*pwf;
 {
@@ -100,10 +100,9 @@ static long init_record(pwf)
     switch (pwf->inp.type) {
     case (CONSTANT) :
 	pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
-	pwf->dpvt = (caddr_t)pcallback;
-	pcallback->callback = myCallback;
-	pcallback->priority = priorityLow;
-        pcallback->prec = (struct dbCommon *)pwf;
+	pwf->dpvt = (void *)pcallback;
+	callbackSetCallback(myCallback,pcallback);
+        pcallback->precord = (struct dbCommon *)pwf;
 	pcallback->wd_id = wdCreate();
 	pwf->nord = 0;
 	break;
@@ -133,6 +132,7 @@ static long read_wf(pwf)
 	} else {
 		wait_time = (int)(pwf->disv * vxTicksPerSecond);
 		if(wait_time<=0) return(0);
+		callbackSetPriority(pwf->prio,pcallback);
 		printf("%s Starting asynchronous processing\n",pwf->name);
 		wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
 		return(1);

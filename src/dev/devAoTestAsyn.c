@@ -50,6 +50,7 @@
 #include	<recSup.h>
 #include	<devSup.h>
 #include	<link.h>
+#include	<dbCommon.h>
 #include	<aoRecord.h>
 
 /* Create the dset for devAoTestAsyn */
@@ -74,22 +75,20 @@ struct {
 
 /* control block for callback*/
 struct callback {
-	void (*callback)();
-	int priority;
-	struct dbCommon *prec;
+	CALLBACK        callback;
+	struct dbCommon *precord;
 	WDOG_ID wd_id;
 };
-void callbackRequest();
 
 static void myCallback(pcallback)
     struct callback *pcallback;
 {
-    struct aoRecord *pao=(struct aoRecord *)(pcallback->prec);
-    struct rset     *prset=(struct rset *)(pao->rset);
+    struct dbCommon *precord=pcallback->precord;
+    struct rset     *prset=(struct rset *)(precord->rset);
 
-    dbScanLock((struct dbCommon *)pao);
-    (*prset->process)(pao);
-    dbScanUnlock((struct dbCommon *)pao);
+    dbScanLock(precord);
+    (*prset->process)(precord);
+    dbScanUnlock(precord);
 }
     
     
@@ -104,10 +103,9 @@ static long init_record(pao)
     switch (pao->out.type) {
     case (CONSTANT) :
 	pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
-	pao->dpvt = (caddr_t)pcallback;
-	pcallback->callback = myCallback;
-	pcallback->priority = priorityLow;
-	pcallback->prec = (struct dbCommon *)pao;
+	pao->dpvt = (void *)pcallback;
+	callbackSetCallback(myCallback,pcallback);
+	pcallback->precord = (struct dbCommon *)pao;
 	pcallback->wd_id = wdCreate();
 	break;
     default :
@@ -136,6 +134,7 @@ static long write_ao(pao)
 	} else {
 		wait_time = (int)(pao->disv * vxTicksPerSecond);
 		if(wait_time<=0) return(0);
+		callbackSetPriority(pao->prio,pcallback);
 		printf("%s Starting asynchronous processing\n",pao->name);
 		wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
 		return(1);

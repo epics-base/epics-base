@@ -49,6 +49,7 @@
 #include	<recSup.h>
 #include	<devSup.h>
 #include	<link.h>
+#include	<dbCommon.h>
 #include	<stringoutRecord.h>
 
 /* Create the dset for devSoTestAsyn */
@@ -73,24 +74,21 @@ struct {
 
 /* control block for callback*/
 struct callback {
-	void (*callback)();
-	int priority;
-	struct dbCommon *prec;
-	WDOG_ID wd_id;
+        CALLBACK        callback;
+        struct dbCommon *precord;
+        WDOG_ID wd_id;
 };
-void callbackRequest();
 
 static void myCallback(pcallback)
     struct callback *pcallback;
 {
-    struct stringoutRecord *pstringout=(struct stringoutRecord *)(pcallback->prec);
-    struct rset     *prset=(struct rset *)(pstringout->rset);
+    struct dbCommon *precord=pcallback->precord;
+    struct rset     *prset=(struct rset *)(precord->rset);
 
-    dbScanLock((struct dbCommon *)pstringout);
-    (*prset->process)(pstringout);
-    dbScanUnlock((struct dbCommon *)pstringout);
+    dbScanLock(precord);
+    (*prset->process)(precord);
+    dbScanUnlock(precord);
 }
-    
     
 
 static long init_record(pstringout)
@@ -103,10 +101,9 @@ static long init_record(pstringout)
     switch (pstringout->out.type) {
     case (CONSTANT) :
 	pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
-	pstringout->dpvt = (caddr_t)pcallback;
-	pcallback->callback = myCallback;
-	pcallback->priority = priorityLow;
-        pcallback->prec = (struct dbCommon *)pstringout;
+	pstringout->dpvt = (void *)pcallback;
+	callbackSetCallback(myCallback,pcallback);
+        pcallback->precord = (struct dbCommon *)pstringout;
 	pcallback->wd_id = wdCreate();
 	break;
     default :
@@ -135,6 +132,7 @@ static long write_stringout(pstringout)
 	} else {
 		wait_time = (int)(pstringout->disv * vxTicksPerSecond);
 		if(wait_time<=0) return(0);
+		callbackSetPriority(pstringout->prio,pcallback);
 		printf("%s Starting asynchronous processing\n",pstringout->name);
 		wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
 		return(1);

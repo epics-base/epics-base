@@ -7,9 +7,6 @@
 #include <stdio.h>
 #include <stddef.h>
 
-extern "C" {
-static void epicsThreadCallEntryPoint ( void *pPvt ); // for gnu warning
-}
 
 
 #define epicsExportSharedSymbols

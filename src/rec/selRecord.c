@@ -89,7 +89,6 @@ static int do_sel();
 static int fetch_values();
 static void monitor();
 
-#define ARG_MAX 12
 
 static long init_record(psel,pass)
     struct selRecord	*psel;

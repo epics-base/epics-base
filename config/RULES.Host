@@ -522,7 +522,9 @@ $(PACKAGE)_%.h:$(INSTALL_JAVA)/$(PACKAGE)/%.class
 
 depends:: $(LIBSRCS) $(SRCS) $(COND_PROD_SRCS)
 	$(RM) DEPENDS
+ifneq ($(strip $(LIBSRCS) $(SRCS) $(COND_PROD_SRCS)),)
 	$(DEPENDS_RULE)
+endif
 
 ifeq ($(HOST_ARCH),Borland)
 %$(EXE): %.c

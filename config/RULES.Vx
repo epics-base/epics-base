@@ -76,7 +76,9 @@ endif
 
 depends:: $(SRCS.c) $(SRCS.cc)
 	$(RM) DEPENDS
+ifneq ($(strip $(SRCS.c) $(SRCS.cc)),)
 	$(DEPENDS_RULE)
+endif
 
 clean::
 	@echo "Cleaning"

@@ -36,7 +36,8 @@
  * .05  02-28-92        jba     ANSI C changes
  * .06  04-17-92        rcz     removed dbPvd for mrk
  * .07  05-19-92        mrk	Mods for changes to internal database structures
- * .07  07-21-92        jba	ansi c changes
+ * .08  07-21-92        jba	ansi c changes
+ * .09  09-24-93        jbk adjusted dbpr to print vxi links correctly
  */
 
 /* Global Database Test Routines - All can be invoked via vxWorks shell
@@ -1376,6 +1377,26 @@ static void dbprReportLink(
 	    pfield_name,
 	    plink->value.vmeio.card,plink->value.vmeio.signal,
 	    plink->value.vmeio.parm);
+	dbpr_msgOut(pMsgBuff,tab_size);
+	break;
+    case VXI_IO:
+	if(plink->value.vxiio.flag==0)
+	{
+	    sprintf(pmsg,"%4s: VXI frame=%2d slot=%2d signal=%2d parm=%s",
+	    	pfield_name,
+	    	plink->value.vxiio.frame,
+		plink->value.vxiio.slot,
+	    	plink->value.vxiio.signal,
+	    	plink->value.vxiio.parm);
+	}
+	else
+	{
+	    sprintf(pmsg,"%4s: VXI la=%2d signal=%2d parm=%s",
+	    	pfield_name,
+	    	plink->value.vxiio.la,
+	    	plink->value.vxiio.signal,
+	    	plink->value.vxiio.parm);
+	}
 	dbpr_msgOut(pMsgBuff,tab_size);
 	break;
     case CAMAC_IO:

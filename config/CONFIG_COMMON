@@ -11,15 +11,15 @@
 
 # CROSS1 will be defined only when CROSS_COMPILER_HOST_ARCHS is NOT defined
 CROSS1 = $(CROSS_COMPILER_TARGET_ARCHS$(word 1,$(CROSS_COMPILER_HOST_ARCHS)))
- 
+
 # CROSS2 will be defined only when CROSS_COMPILER_HOST_ARCHS is defined
 # and HOST_ARCH is one of it's words  
 CROSS2 = $(CROSS_COMPILER_TARGET_ARCHS$(filter-out 1,$(words $(filter $(HOST_ARCH),$(CROSS_COMPILER_HOST_ARCHS)))))
- 
+
 BUILD_ARCHS = $(HOST_ARCH) $(CROSS1) $(CROSS2)
- 
+
 INSTALL_LOCATION = $(TOP)
- 
+
 INSTALL_LOCATION_LIB        = $(INSTALL_LOCATION)/lib
 INSTALL_LOCATION_BIN        = $(INSTALL_LOCATION)/bin
 
@@ -110,7 +110,7 @@ G++_SHRLIB_LDFLAGS_YES =  -shared
 # C compiler
 
 CC = $($(ANSI)_$(CMPLR))
- 
+
 #---------------------------------------------------------------
 # Vendor compiler dependent options
 VENDOR_DEP_CFLAGS = $($(ANSI)_DEP_CFLAGS)
@@ -148,6 +148,7 @@ USR_CXXFLAGS =
 USR_LDFLAGS =
 USR_LDLIBS =
 USR_CPPFLAGS =
+USR_DBDFLAGS =
 
 #--------------------------------------------------
 # Target specific options
@@ -162,15 +163,16 @@ TARGET_SNCFLAGS = $($(basename $@)_SNCFLAGS)
 #--------------------------------------------------
 # Depends flag
 DEPENDS_FLAG = $($(CPLUSPLUS)_DEPENDS_FLAG)
- 
+
 #--------------------------------------------------
 # C++ template flag option
 TEMPL_INST_CXXFLAG = $($(CPLUSPLUS)_TEMPL_INST_FLAG)
- 
+
 #--------------------------------------------------
 # Epics includes (CONFIG.Vx will override OS_CLASS)
 OS_CLASS = $(ARCH_CLASS)
 EPICS_INCLUDES = -I$(INSTALL_INCLUDE) -I$(INSTALL_INCLUDE)/os/$(OS_CLASS)
+EPICS_DBDFLAGS = -I $(INSTALL_LOCATION)/dbd
 
 #--------------------------------------------------
 # Warnings flags  (CONFIG.Vx will override)
@@ -182,18 +184,18 @@ WARN_CXXFLAGS = $($(CPLUSPLUS)_WARN_$(HOST_WARN))
 OPT_CFLAGS = $($(ANSI)_OPT_$(HOST_OPT))
 OPT_CXXFLAGS = $($(CPLUSPLUS)_OPT_$(HOST_OPT))
 OPT_LDFLAGS =
- 
+
 #--------------------------------------------------
 # Static build options
 STATIC_CFLAGS = $($(ANSI)_SFLAGS_$(STATIC_BUILD))
 STATIC_CXXCFLAGS = $($(CPLUSPLUS)_SFLAGS_$(STATIC_BUILD))
 STATIC_LDFLAGS = $($(ANSI)_SLDFLAGS_$(STATIC_BUILD))
 STATIC_LDLIBS = $($(ANSI)_SLIBS_$(STATIC_BUILD))
- 
+
 #--------------------------------------------------
 # ar definition default
 ARCMD = $(AR) $(ARFLAGS) $@
- 
+
 #--------------------------------------------------
 # depends definition 
 DEPENDS_RULE = -$(COMPILE.cc) $(DEPENDS_FLAG) $^ > DEPENDS
@@ -202,7 +204,7 @@ DEPENDS_RULE = -$(COMPILE.cc) $(DEPENDS_FLAG) $^ > DEPENDS
 
 # Include files
 
-INCLUDES = -I. -I.. $(EPICS_INCLUDES) $(USR_INCLUDES) $(TARGET_INCLUDES) $(OP_SYS_INCLUDES)
+INCLUDES = -I. -I.. $(USR_INCLUDES) $(EPICS_INCLUDES) $(TARGET_INCLUDES) $(OP_SYS_INCLUDES)
 
 CFLAGS = $(OPT_CFLAGS) $(DEBUG_CFLAGS) $(WARN_CFLAGS) $(TARGET_CFLAGS)\
  $(USR_CFLAGS) $(ARCH_DEP_CFLAGS) $(VENDOR_DEP_CFLAGS) $(STATIC_CFLAGS)\
@@ -221,6 +223,8 @@ LDLIBS = $(TARGET_LDLIBS) $(USR_LDLIBS) $(ARCH_DEP_LDLIBS)\
 CPPFLAGS += $(TARGET_CPPFLAGS) $(USR_CPPFLAGS) $(ARCH_DEP_CPPFLAGS)
 
 CPPSNCFLAGS = $(INCLUDES)
+
+DBDFLAGS = -I . -I .. $(USR_DBDFLAGS) $(EPICS_DBDFLAGS)
 
 # Build compile line here
 COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c $(SOURCE_FLAG)

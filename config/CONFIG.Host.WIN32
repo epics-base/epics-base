@@ -241,7 +241,7 @@ DLL_LIBS = $(subst $(LIBRARY),, $(PROD_LIBS))
 #
 #	EPICS libs that we need to link the DLL with
 #	(it isnt necessary to rebuild the dll if these change)
-DLL_DEPLIBS = $(DLL_LIBS:%=$(firstword $(%_DIR) $(EPICS_BASE_LIB))/%.lib)
+DLL_DEPLIBS = $(foreach lib,$(DLL_LIBS),$(firstword $($(lib)_DIR) $(EPICS_BASE_LIB))/$(lib).lib)
 
 USR_LDLIBS = $(PRODNAME_DEPLIBS) $(PROD_DEPLIBS) $(USR_DEPLIBS) $(SYS_PROD_LIBS:%=%.lib)
 

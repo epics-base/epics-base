@@ -69,10 +69,10 @@ gddApps.h :  $(EPICS_BASE_HOST_BIN)/genApps$(HOSTEXE)
 # This rule, however, should be system-independent:
 ifeq ($(HOST_ARCH),$(T_A))
 
-aitGen$(HOSTEXE): aitGen$(OBJ) aitTypes$(OBJ)
+../O.$(HOST_ARCH)/aitGen$(HOSTEXE): aitGen$(OBJ) aitTypes$(OBJ)
 	$(LINK.c) $^ 
 
-genApps$(HOSTEXE): genApps$(OBJ) $(addsuffix $(OBJ), $(basename $(AITGENSRCS)))
+../O.$(HOST_ARCH)/genApps$(HOSTEXE): genApps$(OBJ) $(addsuffix $(OBJ), $(basename $(AITGENSRCS)))
 	$(LINK.cc) $^ 
 
 endif

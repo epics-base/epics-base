@@ -201,7 +201,8 @@ $(COMMON_DIR)/%.dbd: %Include.dbd
 	@$(DBDDEPENDS_CMD)
 	@echo "Expanding dbd"
 	@$(RM) $@
-	$(DBEXPAND) $(DBDFLAGS) $< > $@
+	$(DBEXPAND) $(DBDFLAGS) $< > dbExpand.tmp
+	$(MV) dbExpand.tmp $@
 
 $(INSTALL_DBD)/%: %
 	@echo "Installing dbd file $@"

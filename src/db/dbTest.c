@@ -194,52 +194,6 @@ long epicsShareAPI dbnr(int verbose)
     return(0);
 }
 
-static int specified_by(const char *ptest, const char *pspec)
-{
-    short               inx;
-    short               wild_card_start;
- 
-        /* check if the specification begins with a wild card */
-        if (*pspec == '*') wild_card_start = TRUE;
-        else wild_card_start = FALSE;
- 
-        /* check for specification */
-        while (TRUE) {
-                /* skip any wild cards */
-                while (*pspec == '*') pspec++;
- 
-                /* find the specification chars to compare */
-                inx = 0;
-                while ( (*(pspec+inx) != '*') && (*(pspec+inx)) )
-                        inx++;
- 
-                /* check for specification ending with wildcard */
-                if (inx == 0) return(TRUE);
- 
-                /* find the spec chars in the test string */
-                while ((strlen(ptest) >= inx)
-                  && (strncmp(ptest,pspec,inx) != 0) ) {
- 
-                        /* check variable beginning */
-                        if (!wild_card_start) return(FALSE);
-                        else ptest++;
-                }
- 
-                /* check segment found */
-                if (strlen(ptest) < inx) return(FALSE);
- 
-                /* adjust pointers and wild card indication */
-                wild_card_start = TRUE;
-                ptest += inx;
-                pspec += inx;
- 
-                /* check for end of specification */
-                if (*pspec == 0) {
-                        if (*ptest == 0) return(TRUE);
-                        else return(FALSE);
-                }
-        }
-}
  
 long epicsShareAPI dbgrep(const char *pmask)
 {
@@ -262,7 +216,7 @@ long epicsShareAPI dbgrep(const char *pmask)
 	status = dbFirstRecord(pdbentry);
 	while(!status) {
 	    pname = dbGetRecordName(pdbentry);
-            if (specified_by(pname, pmask))  printf("%s\n", pname);
+            if (epicsStrGlobMatch(pname, pmask))  printf("%s\n", pname);
 	    status = dbNextRecord(pdbentry);
 	}
 	status = dbNextRecordType(pdbentry);

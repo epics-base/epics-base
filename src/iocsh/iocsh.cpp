@@ -370,15 +370,15 @@ static void helpCallFunc(const iocshArgBuf *args)
     int argc = args[0].aval.ac;
     const char * const * argv = args[0].aval.av;
     struct iocshFuncDef const *piocshFuncDef;
-    struct iocshCommand *found;
+    struct iocshCommand *pcmd;
 
     if (argc == 1) {
         int l, col = 0;
 
         printf ("Type `help command_name' to get more information about a particular command.\n");
         iocshTableLock ();
-        for (found = iocshCommandHead ; found != NULL ; found = found->next) {
-            piocshFuncDef = found->pFuncDef;
+        for (pcmd = iocshCommandHead ; pcmd != NULL ; pcmd = pcmd->next) {
+            piocshFuncDef = pcmd->pFuncDef;
             l = strlen (piocshFuncDef->name);
             if ((l + col) >= 79) {
                 fputc ('\n', stdout);
@@ -403,24 +403,22 @@ static void helpCallFunc(const iocshArgBuf *args)
     }
     else {
         for (int iarg = 1 ; iarg < argc ; iarg++) {
-            found = (iocshCommand *)registryFind (iocshCmdID, argv[iarg]);
-            if (found == NULL) {
-                printf ("%s -- no such command.\n", argv[iarg]);
-            }
-            else {
-                piocshFuncDef = found->pFuncDef;
-                fputs (piocshFuncDef->name, stdout);
-                for (int a = 0 ; a < piocshFuncDef->nargs ; a++) {
-                    const char *cp = piocshFuncDef->arg[a]->name;
-                    if ((piocshFuncDef->arg[a]->type == iocshArgArgv)
-                     || (strchr (cp, ' ') == NULL)) {
-                        fprintf (stdout, " %s", cp);
+            for (pcmd = iocshCommandHead ; pcmd != NULL ; pcmd = pcmd->next) {
+                piocshFuncDef = pcmd->pFuncDef;
+                if (epicsStrGlobMatch(piocshFuncDef->name, argv[iarg]) != 0) {
+                    fputs (piocshFuncDef->name, stdout);
+                    for (int a = 0 ; a < piocshFuncDef->nargs ; a++) {
+                        const char *cp = piocshFuncDef->arg[a]->name;
+                        if ((piocshFuncDef->arg[a]->type == iocshArgArgv)
+                         || (strchr (cp, ' ') == NULL)) {
+                            fprintf (stdout, " %s", cp);
+                        }
+                        else {
+                            fprintf (stdout, " '%s'", cp);
+                        }
                     }
-                    else {
-                        fprintf (stdout, " '%s'", cp);
-                    }
+                    fprintf (stdout,"\n");;
                 }
-                fprintf (stdout,"\n");;
             }
         }
     }

@@ -30,6 +30,8 @@ epicsShareFunc int epicsShareAPI epicsStrPrintEscaped(
     FILE *fp, const char *s, int n);
 epicsShareFunc int epicsShareAPI epicsStrSnPrintEscaped(
     char *outbuf, int outsize, const char *inbuf, int inlen);
+epicsShareFunc int epicsShareAPI epicsStrGlobMatch(
+    const char *str, const char *pattern);
 
 #ifdef __cplusplus
 }

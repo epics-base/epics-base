@@ -55,6 +55,8 @@ static char	*pSCCSID = "@(#)iocLogServer.c	1.9\t05/05/94";
 #include	<string.h>
 #include	<errno.h>
 
+#include 	<unistd.h>
+
 #include	<sys/types.h>
 #include	<sys/time.h>
 #include	<sys/socket.h>
@@ -102,8 +104,8 @@ struct ioc_log_server {
 #define OK 0
 #endif
 
-static void acceptNewClient (struct ioc_log_server *pserver);
-static void readFromClient (struct iocLogClient *pclient);
+static void acceptNewClient (void *pParam);
+static void readFromClient(void *pParam);
 static void logTime (struct iocLogClient *pclient);
 static int getConfig(void);
 static int openLogFile(struct ioc_log_server *pserver);
@@ -128,18 +130,20 @@ int main()
 	if(status<0){
 		fprintf(stderr, "iocLogServer: EPICS environment underspecified\n");
 		fprintf(stderr, "iocLogServer: failed to initialize\n");
-		exit(ERROR);
+		return ERROR;
 	}
 
 	pserver = (struct ioc_log_server *) 
 			calloc(1, sizeof *pserver);
 	if(!pserver){
-		abort();
+		fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
+		return ERROR;
 	}
 
 	pserver->pfdctx = (void *) fdmgr_init();
 	if(!pserver->pfdctx){
-		abort();
+		fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
+		return ERROR;
 	}
 
 	/*
@@ -148,7 +152,8 @@ int main()
 	 */
 	pserver->sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (pserver->sock<0) {
-		abort();
+		fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
+		return ERROR;
 	}
 	
         status = setsockopt(    pserver->sock,
@@ -157,9 +162,8 @@ int main()
                                 &optval,
                                 sizeof(optval));
         if(status<0){
-                fprintf(stderr,
-			"%s: set socket option failed\n",
-                        __FILE__);
+		fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
+		return ERROR;
         }
 
 	/* Zero the sock_addr structure */
@@ -173,21 +177,24 @@ int main()
 		fprintf(stderr,
 			"ioc log server allready installed on port %ld?\n", 
 			ioc_log_port);
-		exit(ERROR);
+		fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
+		return ERROR;
 	}
 
 	/* listen and accept new connections */
 	status = listen(pserver->sock, 10);
 	if (status<0) {
-		abort();
+		fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
+		return ERROR;
 	}
 
 	status = openLogFile(pserver);
 	if(status<0){
 		fprintf(stderr,
-			"File access problems `%s'\n", 
-			ioc_log_file_name);
-		exit(ERROR);
+			"File access problems to `%s' becuse `%s'\n", 
+			ioc_log_file_name,
+			strerror(errno));
+		return ERROR;
 	}
 
 	status = fdmgr_add_fd(
@@ -196,7 +203,7 @@ int main()
 			acceptNewClient, 
 			pserver);
 	if(status<0){
-		abort();
+		return ERROR;
 	}
 
 	while(TRUE){
@@ -249,8 +256,9 @@ static void handleLogFileError(void)
  *	acceptNewClient()
  *
  */
-static void acceptNewClient(struct ioc_log_server *pserver)
+static void acceptNewClient(void *pParam)
 {
+	struct ioc_log_server	*pserver = (struct ioc_log_server *)pParam;
 	struct iocLogClient	*pclient;
 	int			size;
 	struct sockaddr_in 	addr;
@@ -343,13 +351,14 @@ static void acceptNewClient(struct ioc_log_server *pserver)
  */
 #define NITEMS 1
 
-static void readFromClient(struct iocLogClient *pclient)
+static void readFromClient(void *pParam)
 {
-	int             status;
-	int             length;
-	char		*pcr;
-	char		*pline;
-	unsigned	stacksize;
+	struct iocLogClient	*pclient = (struct iocLogClient *)pParam;
+	int             	status;
+	int             	length;
+	char			*pcr;
+	char			*pline;
+	unsigned		stacksize;
 
 	logTime(pclient);
 
@@ -405,10 +414,9 @@ static void readFromClient(struct iocLogClient *pclient)
 			       pclient->insock);
 		if(close(pclient->insock)<0)
 			abort();
-#ifndef __hpux /* definition is void free() on HP */
-		if(free(pclient)<0)
-			abort();
-#endif
+
+		free (pclient);
+
 		return;
 	}
 
@@ -460,12 +468,11 @@ static void readFromClient(struct iocLogClient *pclient)
 	 */
 	length = ftell(pclient->pserver->poutfile);
 	if (length > pclient->pserver->max_file_size) {
-#		define 	FILE_BEGIN 0
 #		ifdef DEBUG
 			fprintf(stderr,
 				"ioc log server: resetting the file pointer\n");
 #		endif
-		fseek(pclient->pserver->poutfile, 0, FILE_BEGIN);
+		rewind (pclient->pserver->poutfile);
 		status = ftruncate(
 				   fileno(pclient->pserver->poutfile),
 				   length);
@@ -487,15 +494,17 @@ static void logTime(struct iocLogClient *pclient)
 {
 	time_t		sec;
 	char		*pcr;
+	char		*pTimeString;
 
-	sec = time(NULL);
-	strncpy(pclient->ascii_time, 
-		ctime(&sec), 
-		sizeof(pclient->ascii_time) );
-	pclient->ascii_time[sizeof(pclient->ascii_time)-1] = NULL;
+	sec = time (NULL);
+	pTimeString = ctime (&sec);
+	strncpy (pclient->ascii_time, 
+		pTimeString, 
+		sizeof (pclient->ascii_time) );
+	pclient->ascii_time[sizeof(pclient->ascii_time)-1] = '\0';
 	pcr = strchr(pclient->ascii_time, '\n');
-	if(pcr){
-		*pcr = NULL;
+	if (pcr) {
+		*pcr = '\0';
 	}
 }
 

@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.10  2001/06/11 17:57:31  jhill
+ * workarounds for problems discovered when building for RTEMS
+ *
  * Revision 1.9  2000/09/27 19:45:55  jhill
  * fixed ifdef around vis c++ pragma
  *
@@ -93,7 +96,7 @@ epicsShareExtern aitFunc aitConvertFromNetTable[aitTotal][aitTotal];
 
 #if defined(__cplusplus)
 
-extern const std::vector<std::string> aitEmptyEnumStringTable;
+extern std::vector<std::string> aitEmptyEnumStringTable;
 
 inline int aitConvert(aitEnum desttype, void* dest,
  aitEnum srctype, const void* src, aitIndex count, 

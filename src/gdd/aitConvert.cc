@@ -5,6 +5,9 @@
 // $Id$
 //
 // $Log$
+// Revision 1.11  2001/06/11 17:57:31  jhill
+// workarounds for problems discovered when building for RTEMS
+//
 // Revision 1.10  1999/10/29 00:42:04  jhill
 // remove redundant includes
 //
@@ -69,7 +72,7 @@ int aitNoConvert(void* /*dest*/,const void* /*src*/,aitIndex /*count*/, const st
 #define min(A,B) ((A)<(B)?(A):(B))
 #endif
 
-const std::vector<std::string> aitEmptyEnumStringTable;
+std::vector<std::string> aitEmptyEnumStringTable;
 
 /* put the fixed conversion functions here (ones not generated) */
 

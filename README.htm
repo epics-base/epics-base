@@ -1,0 +1,643 @@
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+xmlns:w="urn:schemas-microsoft-com:office:word"
+xmlns="http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1252">
+<meta name=ProgId content=Word.Document>
+<meta name=Generator content="Microsoft Word 9">
+<meta name=Originator content="Microsoft Word 9">
+<link rel=File-List href="./README_files/filelist.xml">
+<title>EPICS base README file</title>
+<!--[if gte mso 9]><xml>
+ <o:DocumentProperties>
+  <o:Author>...</o:Author>
+  <o:LastAuthor>Jba</o:LastAuthor>
+  <o:Revision>8</o:Revision>
+  <o:TotalTime>1010</o:TotalTime>
+  <o:LastPrinted>2000-08-28T14:51:00Z</o:LastPrinted>
+  <o:Created>2000-08-28T14:51:00Z</o:Created>
+  <o:LastSaved>2000-09-27T21:31:00Z</o:LastSaved>
+  <o:Pages>4</o:Pages>
+  <o:Words>1091</o:Words>
+  <o:Characters>6224</o:Characters>
+  <o:Company>.....</o:Company>
+  <o:Lines>51</o:Lines>
+  <o:Paragraphs>12</o:Paragraphs>
+  <o:CharactersWithSpaces>7643</o:CharactersWithSpaces>
+  <o:Version>9.2720</o:Version>
+ </o:DocumentProperties>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <w:WordDocument>
+  <w:DisplayHorizontalDrawingGridEvery>0</w:DisplayHorizontalDrawingGridEvery>
+  <w:DisplayVerticalDrawingGridEvery>0</w:DisplayVerticalDrawingGridEvery>
+  <w:UseMarginsForDrawingGridOrigin/>
+  <w:Compatibility>
+   <w:FootnoteLayoutLikeWW8/>
+   <w:ShapeLayoutLikeWW8/>
+   <w:AlignTablesRowByRow/>
+   <w:ForgetLastTabAlignment/>
+   <w:LayoutRawTableWidth/>
+   <w:LayoutTableRowsApart/>
+  </w:Compatibility>
+ </w:WordDocument>
+</xml><![endif]-->
+<style>
+<!--
+ /* Font Definitions */
+@font-face
+	{font-family:"MS Mincho";
+	panose-1:2 2 6 9 4 2 5 8 3 4;
+	mso-font-alt:"\FF2D\FF33 \660E\671D";
+	mso-font-charset:128;
+	mso-generic-font-family:roman;
+	mso-font-pitch:fixed;
+	mso-font-signature:-1610612033 1757936891 16 0 131231 0;}
+@font-face
+	{font-family:"\@MS Mincho";
+	mso-font-charset:128;
+	mso-generic-font-family:roman;
+	mso-font-pitch:fixed;
+	mso-font-signature:-1610612033 1757936891 16 0 131231 0;}
+ /* Style Definitions */
+p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{mso-style-parent:"";
+	margin:0in;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:"Times New Roman";
+	mso-fareast-font-family:"Times New Roman";}
+h1
+	{mso-style-next:Normal;
+	margin:0in;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	page-break-after:avoid;
+	mso-outline-level:1;
+	font-size:12.0pt;
+	mso-bidi-font-size:10.0pt;
+	font-family:"Times New Roman";
+	mso-font-kerning:0pt;
+	mso-ansi-language:FR;}
+h2
+	{mso-style-next:Normal;
+	margin:0in;
+	margin-bottom:.0001pt;
+	text-indent:.5in;
+	mso-pagination:widow-orphan;
+	page-break-after:avoid;
+	mso-outline-level:2;
+	font-size:14.0pt;
+	mso-bidi-font-size:10.0pt;
+	font-family:"Times New Roman";}
+h3
+	{mso-style-next:Normal;
+	margin:0in;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	page-break-after:avoid;
+	mso-outline-level:3;
+	font-size:14.0pt;
+	mso-bidi-font-size:10.0pt;
+	font-family:"Times New Roman";}
+a:link, span.MsoHyperlink
+	{color:blue;
+	text-decoration:underline;
+	text-underline:single;}
+a:visited, span.MsoHyperlinkFollowed
+	{color:purple;
+	text-decoration:underline;
+	text-underline:single;}
+p.MsoPlainText, li.MsoPlainText, div.MsoPlainText
+	{margin:0in;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:"Courier New";
+	mso-fareast-font-family:"Times New Roman";}
+@page Section1
+	{size:8.5in 11.0in;
+	margin:1.0in 1.25in 1.0in 1.25in;
+	mso-header-margin:.5in;
+	mso-footer-margin:.5in;
+	mso-paper-source:0;}
+div.Section1
+	{page:Section1;}
+-->
+</style>
+</head>
+
+<body lang=EN-US link=blue vlink=purple style='tab-interval:.5in'>
+
+<div class=Section1>
+
+<h1><span lang=FR>README.html</span></h1>
+
+<p class=MsoNormal align=center style='text-align:center'><b><span lang=FR
+style='font-size:16.0pt;mso-bidi-font-size:10.0pt;mso-ansi-language:FR'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></b></p>
+
+<p class=MsoNormal align=center style='text-align:center'><b><span lang=FR
+style='font-size:16.0pt;mso-bidi-font-size:10.0pt;mso-ansi-language:FR'>Installation
+Instructions<o:p></o:p></span></b></p>
+
+<p class=MsoNormal align=center style='text-align:center'><b><span lang=FR
+style='font-size:16.0pt;mso-bidi-font-size:10.0pt;mso-ansi-language:FR'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></b></p>
+
+<p class=MsoNormal align=center style='text-align:center'><b><span lang=FR
+style='font-size:16.0pt;mso-bidi-font-size:10.0pt;mso-ansi-language:FR'>EPICS
+base<o:p></o:p></span></b></p>
+
+<p class=MsoNormal align=center style='text-align:center'><b><span
+style='font-size:16.0pt;mso-bidi-font-size:10.0pt'>Release 3.14.0alpha1 <o:p></o:p></span></b></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></b></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'>What
+is EPICS base?<o:p></o:p></span></b></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='margin-left:.5in;mso-outline-level:5'><span
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt'>The Experimental Physics and
+Industrial Control Systems (EPICS) is an extensible set of software components and
+tools with which application developers can create a control system. This
+control system can be used to control accelerators, detectors, telescopes, or
+other scientific experimental equipment. EPICS base is the set of core
+software, i.e. the components of EPICS without which EPICS would not function.
+EPICS base allows an arbitrary number of target systems, IOCs (input/output
+controllers), and host systems, OPIs (operator interfaces) of various types. <o:p></o:p></span></p>
+
+<p class=MsoNormal style='margin-left:.5in;mso-outline-level:5'><span
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'>What
+is new in this release?<o:p></o:p></span></b></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='margin-left:.5in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt'>This version of EPICS base contains significant
+changes and offers major improvements in functionality over previous versions.
+Please check the RELEASE_NOTES file in the distribution for description of
+changes and release migration details.<o:p></o:p></span></p>
+
+<p class=MsoNormal><span style='font-size:12.0pt;mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'>Copyright<o:p></o:p></span></b></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='margin-left:.5in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt'>Please review the COPYRIGHT* files included in the
+distribution for legal terms of usage.<o:p></o:p></span></p>
+
+<p class=MsoNormal><span style='font-size:12.0pt;mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'>Supported
+platforms<o:p></o:p></span></b></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='margin-left:.5in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt'>Currently this version of EPICS base has been built
+on the following hosts and targets. If you are trying to build EPICS base on a
+different host or for a different target machine you must have the proper
+host/target cross compiler and header files and you will have to add the
+appropriate configure files to the base/configure/os/directory. You can start
+by copying existing configuration files in the configure/os directory and then
+make changes for your new platforms. <o:p></o:p></span></p>
+
+<p class=MsoNormal style='margin-left:1.0in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></p>
+
+<p class=MsoNormal style='text-indent:.5in'><b><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt'>Host target platforms (operating system –
+architecture - &lt;alternate c++ compiler&gt;)<o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='text-indent:.5in'><b><span style='font-size:14.0pt;
+mso-bidi-font-size:10.0pt'><span style='mso-tab-count:1'>          </span></span></b><span
+lang=FR style='font-size:12.0pt;mso-bidi-font-size:10.0pt;mso-ansi-language:
+FR'>solaris - sparc<o:p></o:p></span></p>
+
+<p class=MsoNormal style='text-indent:.5in'><span lang=FR style='font-size:
+12.0pt;mso-bidi-font-size:10.0pt;mso-ansi-language:FR'><span style='mso-tab-count:
+1'>            </span>linux - x86<o:p></o:p></span></p>
+
+<p class=MsoNormal style='text-indent:.5in'><span lang=FR style='font-size:
+12.0pt;mso-bidi-font-size:10.0pt;mso-ansi-language:FR'><span style='mso-tab-count:
+1'>            </span></span><span style='font-size:12.0pt;mso-bidi-font-size:
+10.0pt'>win32 - x86<o:p></o:p></span></p>
+
+<p class=MsoNormal style='text-indent:.5in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt'><span style='mso-tab-count:1'>            </span>win32
+- x86 - borland<o:p></o:p></span></p>
+
+<p class=MsoNormal style='text-indent:.5in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></p>
+
+<p class=MsoNormal style='text-indent:.5in'><b><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt'>Cross compile target platforms (operating system -
+architecture)<o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='margin-left:.5in;text-indent:.5in'><span lang=FR
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt;mso-ansi-language:FR'>vxWorks
+- 486<o:p></o:p></span></p>
+
+<p class=MsoNormal style='text-indent:.5in'><span lang=FR style='font-size:
+12.0pt;mso-bidi-font-size:10.0pt;mso-ansi-language:FR'><span style='mso-tab-count:
+1'>            </span>vxWorks - 68040<o:p></o:p></span></p>
+
+<p class=MsoNormal style='text-indent:.5in'><span lang=FR style='font-size:
+12.0pt;mso-bidi-font-size:10.0pt;mso-ansi-language:FR'><span style='mso-tab-count:
+1'>            </span></span><span style='font-size:12.0pt;mso-bidi-font-size:
+10.0pt'>vxWorks - 68040lc<o:p></o:p></span></p>
+
+<p class=MsoNormal style='text-indent:.5in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt'><span style='mso-tab-count:1'>            </span>vxWorks
+- 68060<o:p></o:p></span></p>
+
+<p class=MsoNormal style='text-indent:.5in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt'><span style='mso-tab-count:1'>            </span>vxWorks
+- ppc604<o:p></o:p></span></p>
+
+<p class=MsoNormal style='text-indent:.5in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt'><span style='mso-tab-count:1'>            </span>vxWorks
+- pentium<o:p></o:p></span></p>
+
+<p class=MsoNormal style='text-indent:.5in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt'><span style='mso-tab-count:1'>            </span>RTEMS
+- gen68360<o:p></o:p></span></p>
+
+<p class=MsoNormal style='text-indent:.5in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt'><span style='mso-tab-count:1'>            </span>RTEMS
+- mvme167<o:p></o:p></span></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></b></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'>Supported
+compilers<o:p></o:p></span></b></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'><span
+style='mso-tab-count:1'>          </span><o:p></o:p></span></b></p>
+
+<p class=MsoPlainText style='margin-left:.5in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt;font-family:"Times New Roman"'>This version of EPICS base
+has been built and tested using the host vendor's C++ compiler as well as the
+GNU g++ compiler. The GNU cross-compiler has been used for all cross-compiled
+targets. </span><span style='font-size:12.0pt;mso-bidi-font-size:10.0pt;
+font-family:"Times New Roman";mso-fareast-font-family:"MS Mincho"'>You may need
+the host vendor's C++ compiler in your search path to do EPICS builds. Check
+the definitions of ACC and CCC in
+base/configure/os/CONFIG.&lt;host&gt;.&lt;host&gt; or the definitions for GCC
+and G++ if ANSI=GCC and CPLUSPLUS=GCC are specified in CONFIG_SITE.<o:p></o:p></span></p>
+
+<p class=MsoPlainText style='margin-left:1.0in'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'>Software
+requirements</span></b><span style='font-size:12.0pt;mso-bidi-font-size:10.0pt'>
+<o:p></o:p></span></p>
+
+<p class=MsoNormal><span style='font-size:12.0pt;mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></p>
+
+<p class=MsoNormal style='margin-left:.5in;mso-outline-level:5'><b><span
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt'>GNU make<o:p></o:p></span></b></p>
+
+<p class=MsoPlainText style='margin-left:1.0in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt;font-family:"Times New Roman";mso-fareast-font-family:
+"MS Mincho"'>You must use GNU make, gnumake, for any EPICS builds.<span
+style="mso-spacerun: yes">  </span>Set your path so that a gnumake version 3.70
+or later is available.</span><span style='font-size:12.0pt;mso-bidi-font-size:
+10.0pt;font-family:"Times New Roman"'><o:p></o:p></span></p>
+
+<p class=MsoNormal style='margin-left:.5in;mso-outline-level:5'><b><span
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt'>Perl<o:p></o:p></span></b></p>
+
+<p class=MsoPlainText style='margin-left:1.0in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt;font-family:"Times New Roman";mso-fareast-font-family:
+"MS Mincho"'>You must have perl version 5.0 or later installed. The configure
+files do not specify the perl full pathname.<span style="mso-spacerun: yes"> 
+</span>You need the perl executable in your search path.</span><span
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt;font-family:"Times New Roman"'><o:p></o:p></span></p>
+
+<p class=MsoNormal style='margin-left:.5in;mso-outline-level:5'><b><span
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt'>Unzip and tar (Winzip on
+WIN32 systems)<o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='margin-left:1.0in;mso-outline-level:5'><span
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt;mso-fareast-font-family:"MS Mincho"'>You
+must have tools available to unzip and untar the EPICS base distribution file.</span><b><span
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt'><o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='margin-left:.5in;mso-outline-level:5'><b><span
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt'>Tornado 2.0<o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='margin-left:1.0in;mso-outline-level:5'><span
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt;mso-fareast-font-family:"MS Mincho"'>You
+must have Tornado 2.0 installed if any of your target systems are vxWorks
+systems.<span style="mso-spacerun: yes">  </span>Tornado 2.0 provides the
+cross-compiler and header files needed to build for these target systems. The
+full path location to Tornado 2.0 must be specified in the base/configure/RELEASE
+file.</span> <span style='font-size:12.0pt;mso-bidi-font-size:10.0pt'>You will
+also need one or more board support packages. Consult the vxWorks documentation
+for details.<o:p></o:p></span></p>
+
+<p class=MsoPlainText style='margin-left:1.0in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt;font-family:"Times New Roman"'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'>Host
+system storage requirements<o:p></o:p></span></b></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='margin-left:.5in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt'>The GNU zipped tar file is approximately 1.4 MB in
+size. The unzipped untarred distribution source tree is approximately 6 MB. The
+build created files for each host take approximately 40 MB and the build
+created files for each target take approximately 10 MB.<o:p></o:p></span></p>
+
+<p class=MsoNormal><span style='font-size:12.0pt;mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'>Documentation<o:p></o:p></span></b></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='margin-left:.5in;mso-outline-level:5'><span
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt'>EPICS documentation is available
+on the WWW via the EPICS home page at APS:<span style="mso-spacerun: yes"> 
+</span>URL <a href="http://www.aps.anl.gov/Epics">http://www.aps.anl.gov/Epics</a><o:p></o:p></span></p>
+
+<p class=MsoNormal style='margin-left:.5in;mso-outline-level:5'><span
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></p>
+
+<p class=MsoNormal style='margin-left:.5in;mso-outline-level:5'><span
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt'>HTML and ascii text versions
+of this README file are in the distribution file and they are also will be available
+on the IOC software R3.14 page which can be accessed from the APS EPICS home
+page. <o:p></o:p></span></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></b></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'>WWW
+pages<o:p></o:p></span></b></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'><span
+style='mso-tab-count:1'>          </span><o:p></o:p></span></b></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'><span
+style='mso-tab-count:1'>          </span>EPICS home page at APS<o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='margin-left:.5in;mso-outline-level:5'><b><span
+style='font-size:14.0pt;mso-bidi-font-size:10.0pt'><span style='mso-tab-count:
+1'>          </span></span></b><span style='font-size:12.0pt;mso-bidi-font-size:
+10.0pt'><a href="http://www.aps.anl.gov/Epics">http://www.aps.anl.gov/Epics</a><o:p></o:p></span></p>
+
+<p class=MsoNormal style='margin-left:.5in;mso-outline-level:5'><b><span
+style='font-size:14.0pt;mso-bidi-font-size:10.0pt'>Other WWW sites<o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='margin-left:1.0in;mso-outline-level:5'><span
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt'>Additional information on
+EPICS can be found at the various other WWW links on the EPICS home page at
+APS.</span><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'><o:p></o:p></span></b></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'><span
+style='mso-tab-count:1'>          </span>Mailing Lists<o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='margin-left:1.0in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt'>There are five EPICS mailing lists provided by APS.
+See The EPICS home page for subscription instructions.<o:p></o:p></span></p>
+
+<p class=MsoNormal style='margin-left:1.0in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'>Distribution
+components (this section needs work)<o:p></o:p></span></b></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='text-indent:.5in'><b><span style='font-size:14.0pt;
+mso-bidi-font-size:10.0pt'>README Files<o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='text-indent:.5in'><b><span style='font-size:14.0pt;
+mso-bidi-font-size:10.0pt'>Startup directory files<o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='text-indent:.5in'><b><span style='font-size:14.0pt;
+mso-bidi-font-size:10.0pt'><span style='mso-tab-count:1'>          </span>.cshrc<o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='text-indent:.5in'><b><span style='font-size:14.0pt;
+mso-bidi-font-size:10.0pt'><span style='mso-tab-count:1'>          </span>EpicsHostArch<o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='text-indent:.5in'><b><span style='font-size:14.0pt;
+mso-bidi-font-size:10.0pt'><span style='mso-tab-count:1'>          </span>epics.bat<o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='text-indent:.5in'><b><span style='font-size:14.0pt;
+mso-bidi-font-size:10.0pt'><span style='mso-tab-count:1'>          </span>.bashrc<o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='text-indent:.5in'><b><span style='font-size:14.0pt;
+mso-bidi-font-size:10.0pt'><span style='mso-tab-count:1'>          </span>…<o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='text-indent:.5in'><b><span style='font-size:14.0pt;
+mso-bidi-font-size:10.0pt'>Configure directory<o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='text-indent:.5in'><b><span style='font-size:14.0pt;
+mso-bidi-font-size:10.0pt'><span style='mso-tab-count:1'>          </span></span></b><b><span
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt'>Directory structure <o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='margin-left:.5in;text-indent:.5in'><b><span
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt'>OS file naming convention</span></b><span
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt'><o:p></o:p></span></p>
+
+<h2>Src directory</h2>
+
+<p class=MsoNormal style='margin-left:.5in;text-indent:.5in'><b><span
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt'>Directory structure<o:p></o:p></span></b></p>
+
+<p class=MsoNormal><span style='font-size:12.0pt;mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'>Building
+EPICS base (Unix and Win32)<o:p></o:p></span></b></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></b></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'><span
+style='mso-tab-count:1'>          </span>Unpack file<o:p></o:p></span></b></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'><span
+style='mso-tab-count:2'>                    </span></span></b><span
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt'>Unzip and untar the
+distribution file. Use WinZip on Windows systems.<o:p></o:p></span></p>
+
+<p class=MsoNormal style='text-indent:.5in'><b><span style='font-size:14.0pt;
+mso-bidi-font-size:10.0pt'>Set environment variable<o:p></o:p></span></b></p>
+
+<p class=MsoPlainText style='margin-left:1.0in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt;font-family:"Times New Roman";mso-fareast-font-family:
+"MS Mincho"'>Before you can build or use EPICS R3.14, the environment variable
+EPICS_HOST_ARCH must be defined. A perl script EpicsHostArch.pl in the
+base/startup directory has been provided to help set EPICS_HOST_ARCH. You
+should have EPICS_HOST_ARCH set to </span><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt;font-family:"Times New Roman"'>your host operating
+system followed by a dash and then your host architecture, e.g. solaris-sparc.<o:p></o:p></span></p>
+
+<p class=MsoNormal style='text-indent:.5in'><b><span style='font-size:14.0pt;
+mso-bidi-font-size:10.0pt'>Check path requirements<o:p></o:p></span></b></p>
+
+<p class=MsoPlainText style='margin-left:1.0in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt;font-family:"Times New Roman";mso-fareast-font-family:
+"MS Mincho"'>As already mentioned, you must have the perl executable and you
+may need C and C++ compilers in your search path. For building base you also
+must have echo in your search path. For Unix host builds you also need touch,
+cpp, cp, rm, mv, and mkdir in your search path and /bin/chmod must exist. On
+some Unix systems you may also need ar and ranlib in you path.</span><b><span
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt;font-family:"Times New Roman"'><o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='text-indent:.5in'><b><span style='font-size:14.0pt;
+mso-bidi-font-size:10.0pt'><span style="mso-spacerun: yes"> </span>Do
+site-specific build configuration</span></b><b><span style='font-size:14.0pt;
+mso-bidi-font-size:10.0pt;mso-fareast-font-family:"MS Mincho"'><o:p></o:p></span></b></p>
+
+<p class=MsoPlainText style='margin-left:1.0in'><b><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt;font-family:"Times New Roman"'>Site configuration<o:p></o:p></span></b></p>
+
+<p class=MsoPlainText style='margin-left:1.0in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt;font-family:"Times New Roman";mso-fareast-font-family:
+"MS Mincho"'>To configure EPICS, you may want to modify the default definitions
+in the following files:<o:p></o:p></span></p>
+
+<p class=MsoPlainText style='margin-left:.7in;text-indent:.5in'><span
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt;font-family:"Times New Roman";
+mso-fareast-font-family:"MS Mincho"'>configure/CONFIG_SITE<span
+style='mso-tab-count:2'>               </span>- Build choices. Specify your
+targets architectures.<o:p></o:p></span></p>
+
+<p class=MsoPlainText style='margin-left:1.2in'><span lang=FR style='font-size:
+12.0pt;mso-bidi-font-size:10.0pt;font-family:"Times New Roman";mso-fareast-font-family:
+"MS Mincho";mso-ansi-language:FR'>configure/CONFIG_SITE_ENV<span
+style='mso-tab-count:1'>     </span>- Set your environment variable definitions<o:p></o:p></span></p>
+
+<p class=MsoPlainText style='margin-left:1.2in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt;font-family:"Times New Roman";mso-fareast-font-family:
+"MS Mincho"'>configure/RELEASE<span style='mso-tab-count:2'>                      </span>-
+TORNADO full path location<o:p></o:p></span></p>
+
+<p class=MsoPlainText style='margin-left:1.0in'><b><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt;font-family:"Times New Roman"'>Host configuration<o:p></o:p></span></b></p>
+
+<p class=MsoPlainText style='margin-left:1.0in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt;font-family:"Times New Roman";mso-fareast-font-family:
+"MS Mincho"'>To configure each host system, you may override the default
+definitions by adding a new file with override definitions into the
+configure/os directory. The new file should have the same name as the
+distribution file to be overridden except with CONFIG in the name changed to
+CONFIG_SITE.<o:p></o:p></span></p>
+
+<p class=MsoPlainText style='margin-left:.7in;text-indent:.5in'><span
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt;font-family:"Times New Roman";
+mso-fareast-font-family:"MS Mincho"'>configure/os/CONFIG.&lt;host&gt;.&lt;host&gt;<span
+style='mso-tab-count:1'>        </span>- Host build settings <o:p></o:p></span></p>
+
+<p class=MsoPlainText style='margin-left:1.2in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt;font-family:"Times New Roman";mso-fareast-font-family:
+"MS Mincho"'>configure/os/CONFIG.&lt;host&gt;.Common<span style='mso-tab-count:
+1'>     </span>- Host cross build settings<o:p></o:p></span></p>
+
+<p class=MsoPlainText style='margin-left:1.0in'><b><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt;font-family:"Times New Roman"'>Target configuration<o:p></o:p></span></b></p>
+
+<p class=MsoPlainText style='margin-left:1.0in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt;font-family:"Times New Roman";mso-fareast-font-family:
+"MS Mincho"'>To configure each target system, you may override the default
+definitions by adding a new file with override definitions into the
+configure/os directory. The new file should have the same name as the
+distribution file to be overridden except with CONFIG in the name replaced by
+CONFIG_SITE.<o:p></o:p></span></p>
+
+<p class=MsoPlainText style='margin-left:.7in;text-indent:.5in'><span
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt;font-family:"Times New Roman";
+mso-fareast-font-family:"MS Mincho"'>configure/os/CONFIG.Common.&lt;target&gt;<span
+style='mso-tab-count:1'>   </span>- Target cross build settings <o:p></o:p></span></p>
+
+<p class=MsoPlainText style='margin-left:1.2in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt;font-family:"Times New Roman";mso-fareast-font-family:
+"MS Mincho"'>configure/os/CONFIG.&lt;host&gt;.&lt;target&gt;<span
+style='mso-tab-count:1'>      </span>- Host-target build settings </span></p>
+
+<p class=MsoNormal style='text-indent:.5in'><b><span style='font-size:14.0pt;
+mso-bidi-font-size:10.0pt'>Build EPICS base<o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='margin-left:1.0in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt'>After configuring the build you should be able to
+build EPICS base by issuing the following commands in the distribution’s root
+directory (base) -<span style="mso-spacerun: yes">  </span><o:p></o:p></span></p>
+
+<p class=MsoNormal style='margin-left:1.0in;text-indent:.5in;mso-outline-level:
+5'><span style='font-size:12.0pt;mso-bidi-font-size:10.0pt'>gnumake clean
+uninstall <o:p></o:p></span></p>
+
+<p class=MsoNormal style='margin-left:1.0in;text-indent:.5in;mso-outline-level:
+5'><span style='font-size:12.0pt;mso-bidi-font-size:10.0pt'>gnumake<o:p></o:p></span></p>
+
+<p class=MsoNormal style='margin-left:1.0in;mso-outline-level:5'><span
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt'>The command &quot;gnumake clean
+uninstall&quot; will remove all files and directories generated by a previous build.
+The command &quot;gnumake&quot; will build and install everything for the
+configured host and targets.<o:p></o:p></span></p>
+
+<p class=MsoNormal style='margin-left:1.0in;mso-outline-level:5'><span
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt'>It is recommended that you
+do a “make clean uninstall” at the root directory of an EPICS<span
+style="mso-spacerun: yes">  </span>directory structure before each complete
+rebuild to ensure that all components will be rebuilt.<o:p></o:p></span></p>
+
+<p class=MsoNormal style='mso-outline-level:5'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></p>
+
+<h3>Multiple host platforms</h3>
+
+<p class=MsoNormal style='mso-outline-level:5'><b><span style='font-size:14.0pt;
+mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></b></p>
+
+<p class=MsoPlainText style='margin-left:.5in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt;font-family:"Times New Roman";mso-fareast-font-family:
+"MS Mincho"'>You can build using a single EPICS directory structure on multiple
+host systems and for multiple cross target systems. The intermediate and binary
+files generated by the build will be created in separate system subdirectories
+and installed into the appropriate separate host/target install directories.
+EPICS executables and perl scripts are installed into the $(INSTALL_LOCATION)/bin/&lt;arch&gt;
+directories. Libraries are installed into $(INSTALL_LOCATION)/lib/&lt;arch&gt;.
+The default definition for $(INSTALL_LOCATION) is $(TOP) which is the rootdirectory
+in the directory structure, base. Temporary objects are stored in
+O.&lt;arch&gt; source subdirectories, This allows objects for multiple cross target
+architectures to be maintained at the same time.</span><span style='font-size:
+12.0pt;mso-bidi-font-size:10.0pt'> </span><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt;font-family:"Times New Roman"'>To build EPICS base
+for a specific host/target combination you must have the proper host/target c++
+cross compiler and target header files and the base/configure/os directory must
+have the appropriate configure files.</span><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt;font-family:"Times New Roman";mso-fareast-font-family:
+"MS Mincho"'><o:p></o:p></span></p>
+
+<p class=MsoPlainText><span style='font-size:12.0pt;mso-bidi-font-size:10.0pt;
+font-family:"Times New Roman";mso-fareast-font-family:"MS Mincho"'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'>Example
+base application<o:p></o:p></span></b></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></b></p>
+
+<p class=MsoNormal style='margin-left:.5in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt'>A perl tool, makeBaseApp.pl is included in the
+distribution file. This script will create a sample application that then can built
+and the executed to try out this release of base. Also a perl tool, makeBaseExt.pl
+is included in the distribution file. This script will create a sample
+extension that then can be built and executed. The makeBaseApp.pl and
+makeBaseExt.pl scripts will be installed into the bin/&lt;hostarch&gt; during
+the base build. <o:p></o:p></span></p>
+
+<p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></b></p>
+
+</div>
+
+</body>
+
+</html>

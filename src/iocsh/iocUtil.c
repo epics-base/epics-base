@@ -1,7 +1,6 @@
 /* iocUtil.c */
 /* Author:  W. Eric Norum Date: 02MAY2000 */
 
-#include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -119,12 +118,22 @@ static const ioccrfArg * const putenvArgs[1] = {&putenvArg0};
 static const ioccrfFuncDef putenvFuncDef = {"putenv",1,putenvArgs};
 static void putenvCallFunc(const ioccrfArgBuf *args)
 {
-    const char *cp = args[0].sval;
+    char *cp;
 
-    if (!cp)
+    /*
+     * Some versions of putenv set the environment to 
+     * point to the string that is passed so we have
+     * to make a copy before stashing it.
+     * Yes, this will cause memory leaks if the same variable is
+     * placed in the environment more than once.
+     */
+    if (!args[0].sval)
         return;
-    if (putenv ((char *)cp))
-        printf ("putenv(%s) failed.\n", cp);
+    cp = strdup (args[0].sval);
+    if ((cp == NULL) || putenv (cp)) {
+        free (cp);
+        printf ("putenv(%s) failed.\n", args[0].sval);
+    }
 }
 
 /* iocLogInit */

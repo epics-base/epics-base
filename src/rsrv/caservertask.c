@@ -31,6 +31,7 @@
  *	.01 joh	030891	now saves old client structure for later reuse
  *	.02 joh	071591	print the delay from the last interaction in
  *			client_stat().
+ *	.03 joh 080991	close the socket if task create fails
  */
 
 #include <vxWorks.h>
@@ -112,6 +113,7 @@ req_server()
 			if (status == ERROR) {
 				logMsg("Unable to spawn network server\n");
 				printErrno(errnoGet());
+				close(i);
 			}
 		}
 	}

@@ -286,7 +286,9 @@ void dbServiceIO::destroyAllIO ( dbChannelIO & chan )
     while ( ( pIO = tmp.get() ) ) {
         pIO->destroy ();
     }
-    chan.dbServicePrivateListOfIO::pBlocker->destroy ();
+    if ( chan.dbServicePrivateListOfIO::pBlocker ) {
+        chan.dbServicePrivateListOfIO::pBlocker->destroy ();
+    }
 }
 
 void dbServiceIO::ioCancel ( dbChannelIO & chan, const cacChannel::ioid &id )

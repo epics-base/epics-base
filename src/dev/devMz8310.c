@@ -271,9 +271,12 @@ static int Mz8310_shutdown()
 {
     int card,chip;
     volatile unsigned char  *pcmd;
+    int maxCards;
 
     if(mz8310NoShutdown) return(0);
-    for(card=0;card<MAXCARDS;card++)
+    maxCards = MAXCARDS;
+    if(tm_num_channels[MZ8310] < maxCards) maxCards = tm_num_channels[MZ8310];
+    for(card=0;card<maxCards;card++)
     {
 	if(mz8310_info[card].present==TRUE)
 	{

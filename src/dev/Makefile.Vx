@@ -95,12 +95,14 @@ SRCS.c += ../devWfSoft.c
 SRCS.c += ../devWfTestAsyn.c
 SRCS.c += ../devWfXy566Sc.c
 SRCS.c += ../devXy240.c
+
 SRCS.c += ../devAB1771IFE.c
 SRCS.c += ../devAB1771IL.c
 SRCS.c += ../devAB1771IR.c
 SRCS.c += ../devAB1771IXE.c
 SRCS.c += ../devAB1771OFE.c
 SRCS.c += ../devABBINARY.c
+SRCS.c += ../devMpc.c
 
 #	OBJS += devAaiCamac.o
 #	OBJS += devAiCamac.o
@@ -199,6 +201,7 @@ OBJS += devAB1771IR.o
 OBJS += devAB1771IXE.o
 OBJS += devAB1771OFE.o
 OBJS += devABBINARY.o
+OBJS += devMpc.o
 
 PROD = devSup
 
@@ -207,8 +210,5 @@ include $(EPICS)/config/RULES.Vx
 $(PROD): $(OBJS)
 	$(RM) $@
 	$(LINK.c) $@ $(OBJS) $(LDLIBS)
-
-
-
 
 

@@ -55,8 +55,6 @@ ANSI=ACC
 #  C++ Compiler (for Host builds)
 #   G++     GNU C++		(g++)
 #   CCC     OS VENDOR C++	(sun4/solaris: CC ; hp700: aCC)
-#Note: if CPLUSPLUS is empty then C++ src codes are not built
-#CPLUSPLUS=	# use this if site does not have C++ compiler
 CPLUSPLUS=CCC
 
 # Default ANSI level, individual Makefiles will override

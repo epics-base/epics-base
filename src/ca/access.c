@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.76  1995/08/23  00:34:06  jhill
+ * fixed vxWorks specific SPARC data alignment problem
+ *
  * Revision 1.75  1995/08/22  00:15:19  jhill
  * Use 1.0/USEC_PER_SEC and not 1.0e-6
  * Check for S_db_Pending when calling dbPutNotify()
@@ -973,8 +976,8 @@ int epicsShareAPI ca_search_and_connect
 			 * also allocate enough for the channel name & paddr
 			 * block
 			 */
-			size = sizeof(*chix) + strcnt + sizeof(struct db_addr);
-			size = CA_MESSAGE_ALIGN(size);
+			size = sizeof(*chix) + strcnt + sizeof(struct db_addr)
+				+CA_MESSAGE_ALIGN(1);
 			*chixptr = chix = (chid) calloc(1,size);
 			if (!chix){
 				return ECA_ALLOCMEM;

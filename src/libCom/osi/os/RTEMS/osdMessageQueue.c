@@ -113,8 +113,7 @@ rtems_status_code rtems_message_queue_send_timeout(
 
       if ( msg_status == CORE_MESSAGE_QUEUE_STATUS_UNSATISFIED_WAIT )
         msg_status = _Thread_Executing->Wait.return_code;
-
-      return msg_status;
+      return _Message_queue_Translate_core_message_queue_return_code( msg_status );
   }
   return RTEMS_INTERNAL_ERROR;   /* unreached - only to remove warnings */
 }

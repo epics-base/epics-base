@@ -69,8 +69,12 @@ static void localInstallSigHandler ( int signalIn, pSigFunc pNewFunc,
 extern "C" {
 static void ignoreSigPipe ( int signal )
 {
-    if ( pReplacedSigPipeFunc ) {
-        ( *pReplacedSigPipeFunc ) ( signal );
+    static volatile int reentered = 1;
+
+    if (--reentered == 0) {
+        if ( pReplacedSigPipeFunc ) {
+            ( *pReplacedSigPipeFunc ) ( signal );
+        }
     }
 }
 }
@@ -81,9 +85,14 @@ static void ignoreSigPipe ( int signal )
 extern "C" {
 static void ignoreSigAlarm ( int signal )
 {
-    if ( pReplacedSigAlarmFunc ) {
-        ( *pReplacedSigAlarmFunc ) ( signal );
+    static volatile int reentered = 1;
+
+    if (--reentered == 0) {
+        if ( pReplacedSigAlarmFunc ) {
+            ( *pReplacedSigAlarmFunc ) ( signal );
+        }
     }
+    ++reentered;
 }
 }
 
@@ -93,7 +102,7 @@ static void ignoreSigAlarm ( int signal )
 epicsShareFunc void epicsShareAPI epicsSignalInstallSigPipeIgnore (void)
 {
     localInstallSigHandler ( SIGPIPE, 
-        ignoreSigAlarm, & pReplacedSigPipeFunc );
+        ignoreSigPipe, & pReplacedSigPipeFunc );
 }
 
 /*
@@ -118,4 +127,3 @@ epicsShareFunc void epicsShareAPI epicsSignalRaiseSigAlarm
             strerror ( status ) );
     }
 }
-

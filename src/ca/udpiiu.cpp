@@ -170,6 +170,9 @@ void udpiiu::repeaterRegistrationMessage ( unsigned attemptNumber )
             saddr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
             saddr.ia.sin_port = htons ( this->repeaterPort );   
         }
+        else {
+            saddr.ia.sin_port = htons ( this->repeaterPort );   
+        }
     }
     else {
         saddr.ia.sin_family = AF_INET;

@@ -183,8 +183,6 @@ cac::~cac ()
     }
     this->iiuListMutex.unlock ();
 
-    this->defaultMutex.lock ();
-
     //
     // shutdown udp and wait for threads to exit
     //

@@ -316,11 +316,10 @@ private:
     friend int epicsShareAPI ca_array_put_callback ( chtype type, 
             arrayElementCount count, chid pChan, const void *pValue, 
             caEventCallBackFunc *pfunc, void *usrarg );
-    friend int epicsShareAPI ca_add_masked_array_event ( 
+    friend int epicsShareAPI ca_create_subscription ( 
             chtype type, arrayElementCount count, chid pChan, 
-            caEventCallBackFunc *pCallBack, void *pCallBackArg, 
-            ca_real, ca_real, ca_real, 
-            evid *monixptr, long mask );
+            long mask, caEventCallBackFunc *pCallBack, void *pCallBackArg, 
+            evid *monixptr );
     friend int epicsShareAPI ca_sg_create ( CA_SYNC_GID * pgid );
     friend int epicsShareAPI ca_sg_delete ( const CA_SYNC_GID gid );
 };

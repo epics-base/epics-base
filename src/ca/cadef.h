@@ -223,42 +223,6 @@ epicsShareFunc int epicsShareAPI ca_context_create (enum ca_preemptive_callback_
 epicsShareFunc int epicsShareAPI ca_task_exit (void);
 epicsShareFunc void epicsShareAPI ca_context_destroy (void);
 
-/************************************************************************
- * anachronistic entry points                                           *
- * **** Fetching a value while searching no longer supported****        *
- ************************************************************************/
-#define ca_build_channel(NAME,XXXXX,CHIDPTR,YYYYY)\
-ca_build_and_connect(NAME, XXXXX, 1, CHIDPTR, YYYYY, 0, 0)
-
-#define ca_array_build(NAME,XXXXX, ZZZZZZ, CHIDPTR,YYYYY)\
-ca_build_and_connect(NAME, XXXXX, ZZZZZZ, CHIDPTR, YYYYY, 0, 0)
-
-epicsShareFunc int epicsShareAPI ca_build_and_connect
-(
-     const char         *pChanName, 
-     chtype             , /* pass TYPENOTCONN */
-     unsigned long      , /* pass 0 */
-     chid *             pChanID, 
-     void *             , /* pass NULL */
-     caCh *             pFunc,
-     void *             pArg
-);
-
-#define ca_search(pChanName, pChanID)\
-ca_search_and_connect (pChanName, pChanID, 0, 0)
-
-epicsShareFunc int epicsShareAPI ca_search_and_connect
-(
-     const char     *pChanName, 
-     chid           *pChanID, 
-     caCh           *pFunc, 
-     void           *pArg
-);
-
-/************************************************************************/
-/*  End of anachronistic entry points                                   */
-/************************************************************************/
-
 typedef unsigned capri; 
 #define CA_PRIORITY_MAX 99
 #define CA_PRIORITY_MIN 0
@@ -543,60 +507,26 @@ epicsShareFunc int epicsShareAPI ca_array_get_callback
 /************************************************************************/
 
 /*
- * ca_add_event ()
- *
- * assumes "delta" info comes from the database or defaults
+ * ca_create_subscription ()
  *
  * type     R   data type from db_access.h
  * count    R   array element count
  * chan     R   channel identifier  
- * pFunc    R   pointer to call-back function
- * pArg     R   copy of this pointer passed to pFunc
- * pEventID W   event id written at specified address
- */
-#define ca_add_event(type,chan,pFunc,pArg,pEventID)\
-ca_add_array_event(type,1u,chan,pFunc,pArg,0.0,0.0,0.0,pEventID)
-
-
-/*  Sets both P_DELTA and M_DELTA below to argument DELTA       */
-#define ca_add_delta_event(TYPE,CHID,ENTRY,ARG,DELTA,EVID)\
-    ca_add_array_event(TYPE,1,CHID,ENTRY,ARG,DELTA,DELTA,0.0,EVID)
-
-#define ca_add_general_event(TYPE,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID)\
-ca_add_array_event(TYPE,1,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID)
-
-#define ca_add_array_event(TYPE,COUNT,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID)\
-ca_add_masked_array_event(TYPE,COUNT,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID, DBE_VALUE | DBE_ALARM)
-
-/*
- * ca_add_masked_array_event ()
- *
- * type     R   data type from db_access.h
- * count    R   array element count
- * chan     R   channel identifier  
- * pFunc    R   pointer to call-back function
- * pArg     R   copy of this pointer passed to pFunc
- * p_delta  R   not currently used (set to 0.0) 
- * n_delta  R   not currently used (set to 0.0)
- * timeout  R   not currently used (set to 0.0)
- * pEventID W   event id written at specified address
  * mask     R   event mask - one of {DBE_VALUE, DBE_ALARM, DBE_LOG}
+ * pFunc    R   pointer to call-back function
+ * pArg     R   copy of this pointer passed to pFunc
+ * pEventID W   event id written at specified address
  */
-epicsShareFunc int epicsShareAPI ca_add_masked_array_event
+epicsShareFunc int epicsShareAPI ca_create_subscription
 (
      chtype                 type,   
      unsigned long          count,   
      chid                   chanId,
+     long                   mask,
      caEventCallBackFunc *  pFunc,
      void *                 pArg,
-     ca_real                p_delta,
-     ca_real                n_delta,
-     ca_real                timeout,
-     evid *                 pEventID, 
-     long                   mask
+     evid *                 pEventID
 );
-
-epicsShareFunc chid epicsShareAPI ca_evid_to_chid ( evid id );
 
 /************************************************************************/
 /*  Remove a function from a list of those specified to run             */
@@ -604,14 +534,16 @@ epicsShareFunc chid epicsShareAPI ca_evid_to_chid ( evid id );
 /*                                                                      */
 /************************************************************************/
 /*
- * ca_clear_event()
+ * ca_clear_subscription()
  *
  * eventID  R   event id
  */
-epicsShareFunc int epicsShareAPI ca_clear_event
+epicsShareFunc int epicsShareAPI ca_clear_subscription
 (
      evid eventID
 );
+
+epicsShareFunc chid epicsShareAPI ca_evid_to_chid ( evid id );
 
 
 /************************************************************************/
@@ -940,7 +872,6 @@ epicsShareFunc unsigned epicsShareAPI ca_search_attempts (chid chan);
 epicsShareFunc double epicsShareAPI ca_beacon_period (chid chan);
 epicsShareFunc double epicsShareAPI ca_receive_watchdog_delay (chid chan);
 
-
 /*
  * used when an auxillary thread needs to join a CA client context started
  * by another thread
@@ -952,13 +883,35 @@ epicsShareFunc int epicsShareAPI ca_attach_context ( struct ca_client_context * 
 epicsShareFunc int epicsShareAPI ca_client_status ( unsigned level );
 epicsShareFunc int epicsShareAPI ca_context_status ( struct ca_client_context *, unsigned level );
 
-
 /*
  * deprecated
  */
+#define ca_build_channel(NAME,XXXXX,CHIDPTR,YYYYY)\
+ca_build_and_connect(NAME, XXXXX, 1, CHIDPTR, YYYYY, 0, 0)
+#define ca_array_build(NAME,XXXXX, ZZZZZZ, CHIDPTR,YYYYY)\
+ca_build_and_connect(NAME, XXXXX, ZZZZZZ, CHIDPTR, YYYYY, 0, 0)
+epicsShareFunc int epicsShareAPI ca_build_and_connect
+    ( const char *pChanName, chtype, unsigned long, 
+    chid * pChanID, void *, caCh * pFunc, void * pArg );
+#define ca_search(pChanName, pChanID)\
+ca_search_and_connect (pChanName, pChanID, 0, 0)
+epicsShareFunc int epicsShareAPI ca_search_and_connect
+    ( const char * pChanName, chid * pChanID, 
+    caCh *pFunc, void * pArg );
 epicsShareFunc int epicsShareAPI ca_channel_status (epicsThreadId tid);
-epicsShareFunc int epicsShareAPI ca_import (epicsThreadId tid);
-epicsShareFunc int epicsShareAPI ca_import_cancel (epicsThreadId tid);
+epicsShareFunc int epicsShareAPI ca_clear_event ( evid eventID );
+#define ca_add_event(type,chan,pFunc,pArg,pEventID)\
+ca_add_array_event(type,1u,chan,pFunc,pArg,0.0,0.0,0.0,pEventID)
+#define ca_add_delta_event(TYPE,CHID,ENTRY,ARG,DELTA,EVID)\
+    ca_add_array_event(TYPE,1,CHID,ENTRY,ARG,DELTA,DELTA,0.0,EVID)
+#define ca_add_general_event(TYPE,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID)\
+ca_add_array_event(TYPE,1,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID)
+#define ca_add_array_event(TYPE,COUNT,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID)\
+ca_add_masked_array_event(TYPE,COUNT,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID, DBE_VALUE | DBE_ALARM)
+epicsShareFunc int epicsShareAPI ca_add_masked_array_event
+    ( chtype type, unsigned long count, chid chanId, caEventCallBackFunc * pFunc,
+        void * pArg, ca_real p_delta, ca_real n_delta, ca_real timeout,
+        evid * pEventID, long mask );
 
 /*
  * defunct
@@ -989,6 +942,8 @@ epicsShareFunc int epicsShareAPI ca_array_get ();
 epicsShareFunc int epicsShareAPI ca_array_get_callback ();
 epicsShareFunc int epicsShareAPI ca_add_masked_array_event ();
 epicsShareFunc int epicsShareAPI ca_clear_event ();
+epicsShareFunc int epicsShareAPI ca_create_subscription ();
+epicsShareFunc int epicsShareAPI ca_clear_subscription ();
 epicsShareFunc int epicsShareAPI ca_pend ();
 epicsShareFunc int epicsShareAPI ca_test_io ();
 epicsShareFunc int epicsShareAPI ca_flush_io ();

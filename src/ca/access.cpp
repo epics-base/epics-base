@@ -650,15 +650,10 @@ int epicsShareAPI ca_add_exception_event ( caExceptionHandler *pfunc, void *arg 
     return ECA_NORMAL;
 }
 
-/*
- *  ca_add_masked_array_event
- */
-// extern "C"
-int epicsShareAPI ca_add_masked_array_event ( 
+int epicsShareAPI ca_create_subscription ( 
         chtype type, arrayElementCount count, chid pChan, 
-        caEventCallBackFunc *pCallBack, void *pCallBackArg, 
-        ca_real, ca_real, ca_real, 
-        evid *monixptr, long mask )
+        long mask, caEventCallBackFunc * pCallBack, void * pCallBackArg, 
+        evid * monixptr )
 {
     if ( type < 0 ) {
         return ECA_BADTYPE;
@@ -731,16 +726,33 @@ int epicsShareAPI ca_add_masked_array_event (
 }
 
 /*
- *  ca_clear_event ()
+ *  ca_add_masked_array_event
  */
-// extern "C"
-int epicsShareAPI ca_clear_event ( evid pMon )
+int epicsShareAPI ca_add_masked_array_event ( 
+        chtype type, arrayElementCount count, chid pChan, 
+        caEventCallBackFunc *pCallBack, void *pCallBackArg, 
+        ca_real, ca_real, ca_real, 
+        evid *monixptr, long mask )
+{
+    return ca_create_subscription ( type, count, pChan, mask,
+        pCallBack, pCallBackArg, monixptr );
+}
+
+epicsShareFunc int epicsShareAPI ca_clear_subscription ( evid pMon )
 {
     oldChannelNotify & chan = pMon->channel ();
     ca_client_context & cac = chan.getClientCtx ();
     pMon->ioCancel ();
     cac.destroySubscription ( *pMon );
     return ECA_NORMAL;
+}
+
+/*
+ *  ca_clear_event ()
+ */
+int epicsShareAPI ca_clear_event ( evid pMon )
+{
+    return ca_clear_subscription ( pMon );
 }
 
 // extern "C"

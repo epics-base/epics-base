@@ -127,15 +127,15 @@ height="31" width="88"></a></p>
 
 <h3><a href="#Function Call Reference">Function Call Interface Index</a></h3>
 <ul>
-  <li><a href="#ca_add_event">ca_add_event</a></li>
   <li><a href="#ca_add_exception_event">ca_add_exception_event</a></li>
   <li><a href="#ca_attach_context">ca_attach_context&nbsp;</a></li>
   <li><a href="#ca_clear_channel">ca_clear_channel</a></li>
-  <li><a href="#ca_clear_event">ca_clear_event</a></li>
+  <li><a href="#ca_clear_event">ca_clear_subscription</a></li>
   <li><a href="#ca_client_status">ca_client_status</a></li>
   <li><a href="#ca_client_status">ca_context_status</a></li>
   <li><a href="#ca_context_destroy">ca_context_destroy</a></li>
   <li><a href="#ca_create_channel">ca_create_channel</a></li>
+  <li><a href="#ca_add_event">ca_create_subscription</a></li>
   <li><a href="#ca_current_context">ca_current_context</a></li>
   <li><a href="#ca_dump_db">ca_dump_dbr()</a></li>
   <li><a href="#ca_element_count">ca_element_count</a></li>
@@ -176,6 +176,8 @@ height="31" width="88"></a></p>
 
 <h3>Deprecated Function Call Interface Function Index</h3>
 <ul>
+  <li><a href="#ca_add_event">ca_add_event</a></li>
+  <li><a href="#ca_clear_event">ca_clear_event</a></li>
   <li><a href="#ca_create_channel">ca_search</a></li>
   <li><a href="#ca_create_channel">ca_search_and_connect</a></li>
   <li><a href="#ca_context_destroy">ca_task_exit</a></li>
@@ -1250,6 +1252,22 @@ library. When the CA client library invokes a user's&nbsp;call back function
 it will always wait for the current callback to complete prior to executing
 another call back function.</p>
 
+<p>To set up a traditional single threaded client you will need code like
+this (see <a href="#ca_context_create">ca_context_create</a> and <a
+href="#Client2">CA Client Contexts and Application Specific Auxiliary
+Threads</a>) .</p>
+
+<p><code>SEVCHK ( ca_context_create(ca_disable_preemptive_callback ),
+"application pdq calling ca_context_create" );</code></p>
+
+<p>To set up a preemptive callback enabled CA client context you will need
+code like this (see <a href="#ca_context_create">ca_context_create</a>and <a
+href="#Client2">CA Client Contexts and Application Specific Auxiliary
+Threads</a>) .</p>
+
+<p><code>SEVCHK ( ca_context_create(ca_enable_preemptive_callback ),
+"application pdq calling ca_context_create" );</code></p>
+
 <h3><a name="Client2">CA Client Contexts and Application Specific Auxiliary
 Threads</a></h3>
 
@@ -1725,23 +1743,14 @@ ca_pend_io()
 
 <p>ca_pend_event()</p>
 
-<h3><a name="ca_add_event"></a><code>ca_add_event()</code></h3>
+<h3><a name="ca_add_event"></a><code>ca_create_subscription()</code></h3>
 <pre><code>#include &lt;cadef.h&gt;
 typedef void ( *pCallBack ) (
         struct event_handler_args );
-int ca_add_event( chtype TYPE, chid CHID, 
-        pCallBack USERFUNC, void *USERARG, 
-        evid *PEVID); 
-int ca_add_array_event( chtype TYPE,
-        unsigned long COUNT, chid CHID,
-        pCallBack USERFUNC, void *USERARG, 
-        double RESERVED, double RESERVED, 
-        double RESERVED, evid *PEVID );
-int ca_add_masked_array_event ( chtype TYPE, 
+int ca_create_subscription ( chtype TYPE, 
         unsigned long COUNT, chid CHID, 
-        pCallBack USERFUNC, void *USERARG, 
-        double RESERVED, double RESERVED, double RESERVED, 
-        evid *PEVID, unsigned long MASK );</code></pre>
+        unsigned long MASK, pCallBack USERFUNC, void *USERARG, 
+        evid *PEVID );</code></pre>
 
 <h4>Description</h4>
 
@@ -1861,9 +1870,9 @@ ca_pend_event()
 
 <p>ca_flush_io()</p>
 
-<h3><a name="ca_clear_event"></a><code>ca_clear_event()</code></h3>
+<h3><a name="ca_clear_event"></a><code>ca_clear_subscription()</code></h3>
 <pre><code>#include &lt;cadef.h&gt;
-int ca_clear_event ( evid EVID );</code></pre>
+int ca_clear_subscription ( evid EVID );</code></pre>
 
 <h4>Description</h4>
 

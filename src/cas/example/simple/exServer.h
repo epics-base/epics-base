@@ -29,8 +29,8 @@
 //
 // EPICS
 //
-#include "epicsAssert.h"
 #include "casdef.h"
+#include "epicsAssert.h"
 #include "gddAppFuncTable.h"
 #include "osiTimer.h"
 #include "resourceLib.h"

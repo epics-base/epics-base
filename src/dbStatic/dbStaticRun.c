@@ -602,7 +602,7 @@ void dbGetRecordtypeSizeOffset(dbRecordType *pdbRecordType)
     if (vxstatus != OK) {
 	status = S_dbLib_noSizeOffset;
 	errPrintf(status,__FILE__,__LINE__,"%s",name);
-	taskSuspend(0);
+	return;
     }
     sizeOffset(pdbRecordType);
 }

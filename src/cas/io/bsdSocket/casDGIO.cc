@@ -35,6 +35,9 @@
 //
 
 #include <server.h>
+#ifdef SOLARIS
+#       include <sys/filio.h>
+#endif
 
 //
 // casDGIO::casDGIO()

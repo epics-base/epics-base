@@ -5,10 +5,17 @@
 //
 //
 // $Log$
+// Revision 1.1.1.1  1996/06/20 00:28:19  jhill
+// ca server installation
+//
 //
 
 #include <server.h>
 #include <sigPipeIgnore.h>
+
+#ifdef SOLARIS
+#       include <sys/filio.h>
+#endif
 
 const unsigned caServerConnectPendQueueSize = 10u;
 

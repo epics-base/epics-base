@@ -5,9 +5,19 @@
 //
 //
 // $Log$
+// Revision 1.1.1.1  1996/06/20 00:28:19  jhill
+// ca server installation
+//
 //
 
 #include <server.h>
+#ifdef SOLARIS
+#       include <sys/filio.h>
+#endif
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 
 //

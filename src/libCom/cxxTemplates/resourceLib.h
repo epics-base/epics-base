@@ -482,7 +482,7 @@ void resTable<T,ID>::traverse (pSetMFArg(pCB)) const
         while ( pItem.valid () ) {
             T * p = & ( *pItem );
             (p->*pCB) ();
-            pItem = pItem->itemAfter ();
+            pItem = pItem.itemAfter ();
         }
         pList++;
     }

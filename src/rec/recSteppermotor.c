@@ -82,6 +82,7 @@
  * .26  03-18-92	mrk	move retry to callback
 				Make STOP stop even if retry>0
 				Make motor move whenever VAL field accessed
+ * .27  04-08-92	mrk	break out device support
  */
 
 #include	<vxWorks.h>
@@ -141,9 +142,15 @@ struct rset steppermotorRSET={
 	get_control_double,
 	get_alarm_double };
 
-/* because the driver does all the work just declare device support here*/
-struct dset devSmCompumotor1830={4,NULL,NULL,NULL,NULL};
-struct dset devSmOms6Axis={4,NULL,NULL,NULL,NULL};
+struct smdset {
+        long            number;
+        DEVSUPFUN       dev_report;
+        DEVSUPFUN       init;
+        DEVSUPFUN       init_record;
+        DEVSUPFUN       get_ioint_info;
+        DEVSUPFUN       sm_command;
+};
+
 
 #define VELOCITY 0
 #define POSITION 1
@@ -164,13 +171,28 @@ void sm_get_position();
 static long init_record(psm)
     struct steppermotorRecord	*psm;
 {
+    struct smdset *pdset;
+    long status;
+
+
+    if(!(pdset = (struct smdset *)(psm->dset))) {
+        recGblRecordError(S_dev_noDSET,psm,"sm: init_record");
+        return(S_dev_noDSET);
+    }
+    /* must have sm_command function defined */
+    if( (pdset->number < 5) || (pdset->sm_command == NULL) ) {
+        recGblRecordError(S_dev_missingSup,psm,"sm: init_record");
+        return(S_dev_missingSup);
+    }
+    if( pdset->init_record ) {
+        if((status=(*pdset->init_record)(psm,process))) return(status);
+    }
 
     /* get the initial value if dol is a constant*/
     if (psm->dol.type == CONSTANT ){
             psm->udf = FALSE;
             psm->val = psm->dol.value.value;
     }
-
     init_sm(psm);
     return(0);
 }
@@ -179,7 +201,14 @@ static long init_record(psm)
 static long process(psm)
 	struct steppermotorRecord	*psm;
 {
+	struct smdset   *pdset = (struct smdset *)(psm->dset);
+	long             status;
 
+        if( (pdset==NULL) || (pdset->sm_command==NULL) ) {
+                psm->pact=TRUE;
+                recGblRecordError(S_dev_missingSup,psm,"sm_command");
+                return(S_dev_missingSup);
+        }
 	/* intialize the stepper motor record when the init bit is 0 */
 	/* the init is set when the readback returns */
 	if (psm->init <= 0){
@@ -206,7 +235,7 @@ static long process(psm)
 	psm->pact=FALSE;
 	return(0);
 }
-
+
 static long get_value(psm,pvdes)
     struct steppermotorRecord		*psm;
     struct valueDes	*pvdes;
@@ -237,7 +266,6 @@ static long special(paddr,after)
     }
 }
 
-
 static long get_units(paddr,units)
     struct dbAddr *paddr;
     char	  *units;
@@ -260,7 +288,7 @@ static long get_precision(paddr,precision)
     recGblGetPrec(paddr,precision);
     return(0);
 }
-
+
 static long get_graphic_double(paddr,pgd)
     struct dbAddr *paddr;
     struct dbr_grDouble	*pgd;
@@ -388,16 +416,13 @@ static void smcb_callback(psm_data,psm)
 struct motor_data	*psm_data;
 struct steppermotorRecord	*psm;
 {
+    struct smdset   *pdset = (struct smdset *)(psm->dset);
     short	stat,sevr,nsta,nsev;
     int		intAccept=interruptAccept;
     short	post_events;
     double          temp;
-    short	card,channel;
     short	done_move=0;
 
-    card = psm->out.value.vmeio.card;
-    channel = psm->out.value.vmeio.signal;
-   
     if(intAccept) {
 	dbScanLock((struct dbCommon *)psm);
 	if(psm->pact) {
@@ -514,16 +539,10 @@ struct steppermotorRecord	*psm;
         if (psm->movn){
                 if (psm->posm){ /* moving in the positive direction */
                         if (psm->rbv > (psm->val + psm->rdbd))
-                                sm_driver(psm->dtyp,
-                                        psm->out.value.vmeio.card,
-                                        psm->out.value.vmeio.signal,
-                                        SM_MOTION,0);
+                                (*pdset->sm_command)(psm,SM_MOTION,0,0);
                 }else{          /* moving in the negative direction */
                         if (psm->rbv < (psm->val + psm->rdbd) )
-                                sm_driver(psm->dtyp,
-                                        psm->out.value.vmeio.card,
-                                        psm->out.value.vmeio.signal,
-                                        SM_MOTION,0);
+                                (*pdset->sm_command)(psm,SM_MOTION,0,0);
                 }
         }
 	if(!psm->movn) {
@@ -549,7 +568,7 @@ struct steppermotorRecord	*psm;
     
 
 			    /* move motor */
-			    if (sm_driver(psm->dtyp,card,channel,SM_MOVE,psm->rval-psm->rrbv,0) < 0){
+			    if ((*pdset->sm_command)(psm,SM_MOVE,psm->rval-psm->rrbv,0) < 0){
 				    recGblSetSevr(psm,WRITE_ALARM,VALID_ALARM);
 			    } else {
 			        psm->movn = 1;
@@ -594,14 +613,10 @@ struct steppermotorRecord	*psm;
 static void init_sm(psm)
 struct steppermotorRecord      *psm;
 {
+	struct smdset   *pdset = (struct smdset *)(psm->dset);
 	int	acceleration,velocity;
-	short	card,channel;
 	short		status=0;
 
-	/* the motor number is the card number */
-	card = psm->out.value.vmeio.card;
-	channel = psm->out.value.vmeio.signal;
-	
 	/* check supported hardware */
 	if (psm->out.type != VME_IO){
 		psm->init = 1;
@@ -616,22 +631,22 @@ struct steppermotorRecord      *psm;
 
 	/* initialize the motor */
 	/* set mode - first command checks card present */
-	if (sm_driver(psm->dtyp,card,channel,SM_MODE,psm->mode,0) < 0){
+	if ((*pdset->sm_command)(psm,SM_MODE,psm->mode,0) < 0){
 		recGblSetSevr(psm,WRITE_ALARM,VALID_ALARM);
 		psm->init = 1;
 		return;
 	}
 
 	/* set encoder/motor ratio */
-	sm_driver(psm->dtyp,card,channel,SM_ENCODER_RATIO,psm->mres,psm->eres);
+	(*pdset->sm_command)(psm,SM_ENCODER_RATIO,psm->mres,psm->eres);
 
 	/* set the velocity */
-	sm_driver(psm->dtyp,card,channel,SM_VELOCITY,velocity,acceleration);
+	(*pdset->sm_command)(psm,SM_VELOCITY,velocity,acceleration);
         psm->lvel = psm->velo;
         psm->lacc = psm->accl;
 
 	/* set the callback routine */
-	sm_driver(psm->dtyp,card,channel,SM_CALLBACK,smcb_callback,psm);
+	(*pdset->sm_command)(psm,SM_CALLBACK,smcb_callback,psm);
 
 	/* initialize the limit values */
 	psm->mcw = psm->mccw = -1;
@@ -640,14 +655,14 @@ struct steppermotorRecord      *psm;
 	if (psm->mode == POSITION){
 		if (psm->ialg != 0){
 			if (psm->ialg == POSITIVE_LIMIT){
-				status = sm_driver(psm->dtyp,card,channel,SM_MOVE,0x0fffffff,0);
+				status = (*pdset->sm_command)(psm,SM_MOVE,0x0fffffff,0);
 			}else if (psm->ialg == NEGATIVE_LIMIT){
-				status = sm_driver(psm->dtyp,card,channel,SM_MOVE,-0x0fffffff,0);
+				status = (*pdset->sm_command)(psm,SM_MOVE,-0x0fffffff,0);
 			}
 			psm->sthm = 1;
 		/* force a read of the position and status */
 		}else{
-			status = sm_driver(psm->dtyp,card,channel,SM_READ,0,0);
+			status = (*pdset->sm_command)(psm,SM_READ,0,0);
 		}
 		if (status < 0){
 			recGblSetSevr(psm,WRITE_ALARM,VALID_ALARM);
@@ -655,8 +670,6 @@ struct steppermotorRecord      *psm;
 		}
 		psm->init = -1;
 	}else if (psm->mode == VELOCITY){
-		/* get the velocity */
-/*		get_velocity(motor,smcb_velocity_req);*/
 		psm->velo = 0;
 		psm->init = 1;
 	}
@@ -672,19 +685,16 @@ struct steppermotorRecord      *psm;
 static void positional_sm(psm)
 struct steppermotorRecord	*psm;
 {
-	short	card,channel;
+	struct smdset   *pdset = (struct smdset *)(psm->dset);
         int             acceleration,velocity;
 
 	/* only VME stepper motor cards supported */
 	if (psm->out.type != VME_IO) return;
 
-	/* the motor number is the card number */
-	card = psm->out.value.vmeio.card;
-	channel = psm->out.value.vmeio.signal;
 	
 	/* emergency stop */
 	if (psm->stop){
-		sm_driver(psm->dtyp,card,channel,SM_MOTION,0,0);
+		(*pdset->sm_command)(psm,SM_MOTION,0,0);
 		psm->stop = 0;
 		psm->rcnt=psm->rtry+1;
 		if (psm->mlis.count) db_post_events(psm,&psm->stop,DBE_VALUE|DBE_LOG);
@@ -699,7 +709,7 @@ struct steppermotorRecord	*psm;
         if ((psm->velo != psm->lvel) || (psm->lacc != psm->accl)){
                 acceleration = (1/psm->accl) * psm->velo * psm->mres;
                 velocity = psm->velo * psm->mres;
-                sm_driver(psm->dtyp,card,channel,SM_VELOCITY,velocity,acceleration);
+                (*pdset->sm_command)(psm,SM_VELOCITY,velocity,acceleration);
                 psm->lvel = psm->velo;
                 psm->lacc = psm->accl;
         }
@@ -712,7 +722,7 @@ struct steppermotorRecord	*psm;
 		psm->rbv = 0;
 		psm->rrbv = 0;
 		psm->ival = 0;		/* resets initial offset */
-		sm_driver(psm->dtyp,card,channel,SM_SET_HOME,0,0);
+		(*pdset->sm_command)(psm,SM_SET_HOME,0,0);
 		if(psm->mlis.count) {
 			db_post_events(psm,&psm->rbv,DBE_VALUE|DBE_LOG);
 			db_post_events(psm,&psm->val,DBE_VALUE|DBE_LOG);
@@ -755,7 +765,7 @@ struct steppermotorRecord	*psm;
 		}
 	        /* move motor */
 		psm->movn = 1;
-		if (sm_driver(psm->dtyp,card,channel,SM_MOVE,psm->rval-psm->rrbv,0) < 0){
+		if ((*pdset->sm_command)(psm,SM_MOVE,psm->rval-psm->rrbv,0) < 0){
 			psm->movn=0;
 			recGblSetSevr(psm,WRITE_ALARM,VALID_ALARM);
 		}
@@ -772,12 +782,9 @@ struct steppermotorRecord	*psm;
 static void velocity_sm(psm)
 struct steppermotorRecord	*psm;
 {
+	struct smdset   *pdset = (struct smdset *)(psm->dset);
 	float	chng_vel;
 	int	acceleration,velocity;
-	short	card,channel;
-
-	/* only VME stepper motor cards supported */
-	if (psm->out.type != VME_IO) return;
 
 	/* fetch the desired value if there is a database link */
         if (psm->dol.type == DB_LINK && psm->omsl == CLOSED_LOOP){
@@ -791,9 +798,6 @@ struct steppermotorRecord	*psm;
 		} else psm->udf=FALSE;
 	}
 
-	/* the motor number is the card number */
-	card = psm->out.value.vmeio.card;
-	channel = psm->out.value.vmeio.signal;
 	
 	/* Motor not at desired velocity */
 	if ((psm->mlst == psm->val) && (psm->val != psm->rbv) && (psm->cvel)) {
@@ -819,10 +823,10 @@ struct steppermotorRecord	*psm;
 			velocity = ((psm->val >= 0) ? psm->rval : -psm->rval);
 
 			/* motor commands */
-			sm_driver(psm->dtyp,card,channel,SM_VELOCITY,velocity,acceleration);
+			(*pdset->sm_command)(psm,SM_VELOCITY,velocity,acceleration);
 	
 			/*the last arg of next call is check for direction */
-			if(sm_driver(psm->dtyp,card,channel,SM_MOTION,1,(psm->val < 0))){
+			if((*pdset->sm_command)(psm,SM_MOTION,1,(psm->val < 0))){
 				recGblSetSevr(psm,WRITE_ALARM,VALID_ALARM);
 				return;
 			}
@@ -832,7 +836,7 @@ struct steppermotorRecord	*psm;
 		/* trust it will stop - to read velocity here will not */
 		/* work as the motor takes more time to stop than the  */
 		/* request for velocity takes to return		       */
-		sm_driver(psm->dtyp,card,channel,SM_MOTION,0,0);
+		(*pdset->sm_command)(psm,SM_MOTION,0,0);
 		psm->rbv = 0;
 		psm->rrbv = 0;
 		psm->cvel = 0;
@@ -855,8 +859,9 @@ static void sm_get_position(psm,moving)
 struct steppermotorRecord	*psm;
 short                           moving;
 {
-	short	reset;
-	float		new_pos,delta;
+    struct smdset	*pdset = (struct smdset *)(psm->dset);
+    short		reset;
+    float		new_pos,delta;
 
     /* get readback position */
     if (psm->rdbl.type == DB_LINK){
@@ -885,10 +890,7 @@ short                           moving;
     /* readback position at initialization */
     if ((psm->init <= 0) && (moving == 0)){
 	if (psm->sthm){
-		sm_driver(psm->dtyp,
-		  psm->out.value.vmeio.card,
-		  psm->out.value.vmeio.signal,
-		  SM_SET_HOME,0,0);
+		(*pdset->sm_command)(psm,SM_SET_HOME,0,0);
 		psm->sthm = 0;
 		return;
 	}

@@ -12,4 +12,8 @@
 /*
  * OS-dependent VME support
  */
+#ifndef __i386__
+#ifndef __mc68000
 #include <bsp/VME.h>
+#endif
+#endif

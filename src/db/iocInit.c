@@ -443,7 +443,7 @@ static long initDatabase()
 			    	((struct dbCommon *)(dbAddr.precord))->lset= -1;
 			    plink->type = DB_LINK;
 			    plink->value.db_link.pdbAddr =
-				calloc(1,sizeof(struct dbAddr));
+				(struct dbAddr *)calloc(1,sizeof(struct dbAddr));
 			    *((struct dbAddr *)(plink->value.db_link.pdbAddr))=dbAddr;
 			}
 			else {

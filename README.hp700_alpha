@@ -21,8 +21,8 @@
 3. HP native c++ compiler has problem to handle the head files
    in which a inline function is used in conjuction with template
 
-   base/src/cas, the portable CA server is compiled successfully with
-   gnu c++ but not HP native c++ because of the above limitation.
+   base/src/cas, the portable CA server can't be compiled successfully
+   because of the above limitation.
 
    This problem can be resolved by spliting the function declarations
    from the inline code in the files in base/src/cxxTemplates.

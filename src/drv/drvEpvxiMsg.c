@@ -946,11 +946,7 @@ EPVXISTAT 	vxiMsgOpen(
 
 	vxiMsgSignalSetup();
 
-#	ifdef V5_vxWorks
-		pvximdi->syncSem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
-#	else
-		pvximdi->syncSem = semCreate();
-#	endif
+	pvximdi->syncSem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
 	if(!pvximdi->syncSem){
 		return S_epvxi_noMemory;
 	}
@@ -987,8 +983,10 @@ EPVXISTAT 	vxiMsgOpen(
 		 * state. Some dont.
 		 *
 		 */
-		errMessage(
+		errPrintf(
 			status,
+			__FILE__,
+			__LINE__,
 			"Device rejected MBC_READ_PROTOCOL (la=0X%X)",
 			la);
 		return VXI_SUCCESS;
@@ -1056,8 +1054,10 @@ printf("mb device has response gen\n");
 	}
 	if(	MBR_STATUS(resp) != MBR_STATUS_SUCCESS ||
 		(resp^cmd)&MBR_CR_CONFIRM_MASK){
-		errMessage(
+		errPrintf(
 			S_epvxi_msgDeviceFailure,
+			__FILE__,
+			__LINE__,
 			"Control Response Failed %x", 
 			resp);
 		return VXI_SUCCESS;
@@ -1104,8 +1104,8 @@ void	vxiMsgSignalSetup(
 
 	if(msgCommanderLA<0){
 		errMessage(
-			S_epvxi_msgDeviceFailure,
-			"Unable to locate the MB commander's LA");
+			S_epvxi_noCmdr,
+			NULL);
 	}
 }
 
@@ -1248,8 +1248,10 @@ LOCAL EPVXISTAT 	vxiAttemptAsyncModeControl(
 				la,
 				tmpcmd);
 		if(status){
-			errMessage(
+			errPrintf(
 				status,
+				__FILE__,
+				__LINE__,
 				"IDENTIFY_COMMANDER rejected (la=0X%X)",
 				la);
 			return status;
@@ -1262,8 +1264,10 @@ printf("sent id cmdr (la=0X%X) (cmd=%x)\n", la, tmpcmd);
 			cmd,
 			&resp);
 	if(status){
-		errMessage(
+		errPrintf(
 			status,
+			__FILE__,
+			__LINE__,
 			"Async mode control rejected (la=0X%X)",
 			la);
 		return status;
@@ -1271,8 +1275,10 @@ printf("sent id cmdr (la=0X%X) (cmd=%x)\n", la, tmpcmd);
 	if(	MBR_STATUS(resp) != MBR_STATUS_SUCCESS ||
 		(resp^cmd)&MBR_AMC_CONFIRM_MASK){
 		status = S_epvxi_msgDeviceFailure;
-		errMessage(
+		errPrintf(
 			status,
+			__FILE__,
+			__LINE__,
 			"async mode ctrl failure (la=0X%X,cmd=%x,resp=%x)",
 			la,
 			cmd,
@@ -1372,12 +1378,16 @@ LOCAL EPVXISTAT 	vxiMsgSync(
 	 * sync timed out if we got here
 	 */
 	status = S_epvxi_deviceTMO;
-	errMessage(
+	errPrintf(
 		status,
+		__FILE__,
+		__LINE__,
 		"msg dev timed out after %d sec", 
 		(pvximdi->timeout-timeout) / sysClkRateGet());
-	errMessage(
+	errPrintf(
 		status,
+		__FILE__,
+		__LINE__,
 		"resp mask %4x, request %4x, actual %4x",
 		resp_mask,
 		resp_state,
@@ -1422,8 +1432,10 @@ LOCAL EPVXISTAT 	fetch_protocol_error(
 		pvximdi->err = FALSE;
 	}
 	else{
-		errMessage(
+		errPrintf(
 			S_epvxi_msgDeviceFailure,
+			__FILE__,
+			__LINE__,
 			"Device failed to clear its ERR bit (la=0X%X)",
 			la);
 	}

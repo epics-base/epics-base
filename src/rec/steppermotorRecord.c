@@ -931,7 +931,7 @@ struct steppermotorRecord	*psm;
 		psm->sthm = 0;
 		return;
 	}
-        psm->rbv = psm->val = psm->ival + new_pos;
+        psm->rbv = psm->val = psm->lval = psm->ival + new_pos;
 	psm->rval = psm->rrbv = psm->rbv / psm->dist;
 	psm->init = 1;
 	if (psm->mlis.count != 0){

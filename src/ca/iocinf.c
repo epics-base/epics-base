@@ -47,6 +47,9 @@
 /*			address in use so that test works on UNIX	*/
 /*			kernels that support multicast			*/
 /* $Log$
+ * Revision 1.64  1996/08/13 23:15:36  jhill
+ * fixed warning
+ *
  * Revision 1.63  1996/07/09 22:41:28  jhill
  * silence gcc warning
  *
@@ -425,7 +428,7 @@ int			net_proto
 				sizeof(saddr));
       		if(status<0){
         		ca_printf("CAC: bind (err=%s)\n",strerror(MYERRNO));
-			ca_signal(ECA_INTERNAL,"bind failed");
+			genLocalExcep (ECA_INTERNAL,"bind failed");
       		}
 #endif
 
@@ -451,7 +454,7 @@ int			net_proto
 
 	default:
 		free(piiu);
-      		ca_signal(ECA_INTERNAL,"alloc_ioc: ukn protocol\n");
+      		genLocalExcep (ECA_INTERNAL,"alloc_ioc: ukn protocol");
 		/*
 		 * turn off gcc warnings
 		 */
@@ -541,7 +544,7 @@ void caSetupBCastAddrList (ELLLIST *pList, SOCKET sock, unsigned port)
 		port);
 
 	if (ellCount(pList)==0) {
-		ca_signal (ECA_NOSEARCHADDR, NULL);
+		genLocalExcep (ECA_NOSEARCHADDR, NULL);
 	}
 }
 
@@ -1206,6 +1209,7 @@ LOCAL void close_ioc (IIU *piiu)
 	caAddrNode	*pNode;
   	chid		chix;
 	int		status;
+	unsigned	chanDisconnectCount;
 
 	/*
 	 * dont close twice
@@ -1224,9 +1228,12 @@ LOCAL void close_ioc (IIU *piiu)
 
 	if (piiu == piiuCast) {
 		piiuCast = NULL;
+		chanDisconnectCount = 0u;
 	}
 	else {
 		chid	pNext;
+
+		chanDisconnectCount = ellCount(&piiu->chidlist);
 
 		/*
 		 * remove IOC from the hash table
@@ -1277,7 +1284,9 @@ LOCAL void close_ioc (IIU *piiu)
 
 	ellFree (&piiu->destAddr);
 
-	ca_signal (ECA_DISCONN,piiu->host_name_str);
+	if (chanDisconnectCount) {
+		genLocalExcep (ECA_DISCONN, piiu->host_name_str);
+	}
 
 	free (piiu);
 

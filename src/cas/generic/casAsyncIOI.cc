@@ -163,8 +163,6 @@ caStatus casAsyncIOI::postIOCompletionI ()
     // o clients lock protects list and flag
 	//
 	return this->client.addToEventQueue ( *this, this->inTheEventQueue, this->posted );
-
-	return S_cas_success;
 }
 
 //

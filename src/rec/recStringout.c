@@ -222,7 +222,7 @@ static long process(pstringout)
 	if ( !pact && pstringout->pact ) return(0);
 	pstringout->pact = TRUE;
 
-	tsLocalTime(&pstringout->time);
+	recGblGetTimeStamp(pstringout);
 
 	/* check event list */
 	monitor(pstringout);

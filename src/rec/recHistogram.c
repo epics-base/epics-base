@@ -137,7 +137,7 @@ static void wdCallback(pcallback)
      /* force post events for any count change */
      if(phistogram->mcnt>0){
           dbScanLock((struct dbCommon *)phistogram);
-          tsLocalTime(&phistogram->time);
+          recGblGetTimeStamp(phistogram);
           db_post_events(phistogram,&phistogram->bptr,DBE_VALUE);
           phistogram->mcnt=0;
           dbScanUnlock((struct dbCommon *)phistogram);
@@ -263,7 +263,7 @@ static long process(phistogram)
      if ( !pact && phistogram->pact ) return(0);
      phistogram->pact = TRUE;
 
-     tsLocalTime(&phistogram->time);
+     recGblGetTimeStamp(phistogram);
 
      if(status==0)add_count(phistogram);
      else if(status==2)status=0;

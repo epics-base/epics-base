@@ -161,7 +161,7 @@ static long process(ptimer)
 	/* write the new value */
 	status = write_timer(ptimer);
 	ptimer->udf=FALSE;
-	tsLocalTime(&ptimer->time);
+	recGblGetTimeStamp(ptimer);
 
         /* check event list */
         monitor(ptimer);

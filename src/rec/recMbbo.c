@@ -305,7 +305,7 @@ CONTINUE:
     if ( !pact && pmbbo->pact ) return(0);
     pmbbo->pact = TRUE;
 
-    tsLocalTime(&pmbbo->time);
+    recGblGetTimeStamp(pmbbo);
     /* check event list */
     monitor(pmbbo);
     /* process the forward scan link record */

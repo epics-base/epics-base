@@ -139,7 +139,7 @@ static long process(ppid)
 		return(0);
 	}
 
-	tsLocalTime(&ppid->time);
+	recGblGetTimeStamp(ppid);
 	/* check for alarms */
 	alarm(ppid);
 

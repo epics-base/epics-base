@@ -188,7 +188,7 @@ static long process(plongin)
 	if ( !pact && plongin->pact ) return(0);
 	plongin->pact = TRUE;
 
-	tsLocalTime(&plongin->time);
+	recGblGetTimeStamp(plongin);
 
 	/* check for alarms */
 	alarm(plongin);

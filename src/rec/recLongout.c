@@ -222,7 +222,7 @@ static long process(plongout)
 	if ( !pact && plongout->pact ) return(0);
 	plongout->pact = TRUE;
 
-	tsLocalTime(&plongout->time);
+	recGblGetTimeStamp(plongout);
 
 	/* check for alarms */
 	alarm(plongout);

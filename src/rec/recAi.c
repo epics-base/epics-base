@@ -141,7 +141,9 @@ struct aidset { /* analog input dset */
 
 
 /*Following from timing system		*/
+/*
 extern unsigned int     gts_trigger_counter;
+*/
 
 static void alarm();
 static void convert();
@@ -222,6 +224,8 @@ static long process(pai)
 	}
 
         /* event throttling */
+	/*Will not work with new event systems*/
+/*
         if (pai->scan == SCAN_IO_EVENT){
                 if ((pai->evnt != 0)  && (gts_trigger_counter != 0)){
                         if ((gts_trigger_counter % pai->evnt) != 0){
@@ -229,13 +233,14 @@ static long process(pai)
                         }
                 }
         }
+*/
 
 	status=readValue(pai); /* read the new value */
 	/* check if device support set pact */
 	if ( !pact && pai->pact ) return(0);
 	pai->pact = TRUE;
 
-	tsLocalTime(&pai->time);
+	recGblGetTimeStamp(pai);
 	if (status==0) convert(pai);
 	else if (status==2) status=0;
 

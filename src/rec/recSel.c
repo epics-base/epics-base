@@ -163,7 +163,7 @@ static long process(psel)
 		}
 	}
 
-	tsLocalTime(&psel->time);
+	recGblGetTimeStamp(psel);
 	/* check for alarms */
 	alarm(psel);
 

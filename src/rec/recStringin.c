@@ -183,7 +183,7 @@ static long process(pstringin)
 	if ( !pact && pstringin->pact ) return(0);
 	pstringin->pact = TRUE;
 
-	tsLocalTime(&pstringin->time);
+	recGblGetTimeStamp(pstringin);
 
 	/* check event list */
 	monitor(pstringin);

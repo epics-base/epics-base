@@ -275,7 +275,7 @@ static long process(pao)
 	if ( !pact && pao->pact ) return(0);
 	pao->pact = TRUE;
 
-	tsLocalTime(&pao->time);
+	recGblGetTimeStamp(pao);
 
 	/* check event list */
 	monitor(pao);

@@ -96,7 +96,7 @@ static long process(ppermissive)
 
     ppermissive->pact=TRUE;
     ppermissive->udf=FALSE;
-    tsLocalTime(&ppermissive->time);
+    recGblGetTimeStamp(ppermissive);
     monitor(ppermissive);
     recGblFwdLink(ppermissive);
     ppermissive->pact=FALSE;

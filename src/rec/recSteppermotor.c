@@ -227,7 +227,7 @@ static long process(psm)
 	/* the init is set when the readback returns */
 	if (psm->init <= 0){
 		if(psm->init==0) init_sm(psm);
-		tsLocalTime(&psm->time);
+		recGblGetTimeStamp(psm);
 		monitor(psm);
 		return(0);
 	}
@@ -236,7 +236,7 @@ static long process(psm)
 	if(psm->cmod == POSITION) {
 		positional_sm(psm);
 		if(!psm->dmov) {
-			tsLocalTime(&psm->time);
+			recGblGetTimeStamp(psm);
 			monitor(psm);
 			psm->pact=FALSE;
 			return(0);
@@ -245,7 +245,7 @@ static long process(psm)
 	else {
 		velocity_sm(psm);
 	}
-	tsLocalTime(&psm->time);
+	recGblGetTimeStamp(psm);
 	/* check event list */
 	monitor(psm);
 	/* process the forward scan link record */
@@ -455,7 +455,7 @@ struct steppermotorRecord	*psm;
 	    return;
 	}
 	psm->pact = TRUE;
-	tsLocalTime(&psm->time);
+	recGblGetTimeStamp(psm);
     } else psm->mlis.count=0;
     if (psm->cmod == VELOCITY){
 	/* check velocity */
@@ -616,7 +616,7 @@ struct steppermotorRecord	*psm;
                         db_post_events(psm,&psm->dmov,DBE_VALUE|DBE_LOG);
 
                 /* check for deviation from desired value */
-		tsLocalTime(&psm->time);
+		recGblGetTimeStamp(psm);
                 alarm(psm);
 		monitor(psm);
 		/* process the forward scan link record */

@@ -174,7 +174,7 @@ static long process(psub)
         if(status==0) status = do_gsub(psub);
         psub->pact = TRUE;
 	if(status==1) return(0);
-	tsLocalTime(&psub->time);
+	recGblGetTimeStamp(psub);
         /* check for alarms */
         alarm(psub);
         /* check event list */

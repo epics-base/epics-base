@@ -225,7 +225,7 @@ static long process(pmbbi)
 	if ( !pact && pmbbi->pact ) return(0);
 	pmbbi->pact = TRUE;
 
-	tsLocalTime(&pmbbi->time);
+	recGblGetTimeStamp(pmbbi);
 	if(status==0) { /* convert the value */
         	unsigned long 	*pstate_values;
         	short  		i;

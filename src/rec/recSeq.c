@@ -343,7 +343,7 @@ struct seqRecord *pseq;
   /* process the forward scan link record */
   recGblFwdLink(pseq);
 
-  tsLocalTime(&pseq->time);
+  recGblGetTimeStamp(pseq);
   pseq->pact = FALSE;
 
   return(0);

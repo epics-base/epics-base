@@ -295,7 +295,7 @@ static long process(pbo)
 	if ( !pact && pbo->pact ) return(0);
 	pbo->pact = TRUE;
 
-	tsLocalTime(&pbo->time);
+	recGblGetTimeStamp(pbo);
 	wait_time = (int)((pbo->high) * vxTicksPerSecond); /* seconds to ticks */
 	if(pbo->val==1 && wait_time>0) {
 		struct callback *pcallback;

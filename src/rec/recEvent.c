@@ -166,7 +166,7 @@ static long process(pevent)
  
 	if(pevent->val>0) post_event((int)pevent->val);
 
-	tsLocalTime(&pevent->time);
+	recGblGetTimeStamp(pevent);
 
 	/* check event list */
 	monitor(pevent);

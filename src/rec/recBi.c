@@ -196,7 +196,7 @@ static long process(pbi)
 	if ( !pact && pbi->pact ) return(0);
 	pbi->pact = TRUE;
 
-	tsLocalTime(&pbi->time);
+	recGblGetTimeStamp(pbi);
 	if(status==0) { /* convert rval to val */
 		if(pbi->rval==0) pbi->val =0;
 		else pbi->val = 1;

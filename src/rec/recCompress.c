@@ -187,7 +187,7 @@ static long process(pcompress)
 	/* check event list */
 	if(status!=1) {
 		pcompress->udf=FALSE;
-		tsLocalTime(&pcompress->time);	
+		recGblGetTimeStamp(pcompress);
 		monitor(pcompress);
 		/* process the forward scan link record */
 		recGblFwdLink(pcompress);

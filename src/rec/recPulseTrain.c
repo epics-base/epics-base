@@ -210,7 +210,7 @@ static long process(ppt)
      if(status==-1)status = 0;
 
      ppt->udf=FALSE;
-     tsLocalTime(&ppt->time);
+     recGblGetTimeStamp(ppt);
 
      /* check event list */
      monitor(ppt);

@@ -176,7 +176,7 @@ static long process(pcalc)
 			recGblSetSevr(pcalc,CALC_ALARM,INVALID_ALARM);
 		} else pcalc->udf = FALSE;
 	}
-	tsLocalTime(&pcalc->time);
+	recGblGetTimeStamp(pcalc);
 	/* check for alarms */
 	alarm(pcalc);
 	/* check event list */
@@ -408,15 +408,16 @@ struct calcRecord *pcalc;
 {
 	struct link	*plink;	/* structure of the link field  */
 	double		*pvalue;
-	long		status,options=0,nRequest=1;
+	long		status=0,options=0,nRequest=1;
 	int		i;
 
 	for(i=0, plink=&pcalc->inpa, pvalue=&pcalc->a; i<ARG_MAX; i++, plink++, pvalue++) {
 
+	    if(plink->type!=CONSTANT)
                 status = recGblGetLinkValue(plink,(void *)pcalc,
                           DBR_DOUBLE,pvalue,&options,&nRequest); 
 
-		if (!RTN_SUCCESS(status)) return(status);
+	    if (!RTN_SUCCESS(status)) return(status);
 	}
 	return(0);
 }

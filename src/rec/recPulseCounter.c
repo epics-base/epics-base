@@ -258,7 +258,7 @@ static long process(struct pulseCounterRecord *ppc)
 
      ppc->pact = TRUE;
      ppc->udf=FALSE;
-     tsLocalTime(&ppc->time);
+     recGblGetTimeStamp(ppc);
 
      /* check event list */
      monitor(ppc);

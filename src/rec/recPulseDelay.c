@@ -220,7 +220,7 @@ static long process(ppd)
      ppd->pact = TRUE;
 
      ppd->udf=FALSE;
-     tsLocalTime(&ppd->time);
+     recGblGetTimeStamp(ppd);
 
      /* check event list */
      monitor(ppd);

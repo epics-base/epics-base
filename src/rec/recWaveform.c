@@ -132,7 +132,9 @@ static void monitor();
 static long readValue();
 
 /*Following from timing system          */
+/*
 extern unsigned int     gts_trigger_counter;
+*/
 
 
 static long init_record(pwf,pass)
@@ -217,6 +219,8 @@ static long process(pwf)
                 return(S_dev_missingSup);
         }
         /* event throttling */
+	/* will not work with new event system*/
+/*
         if (pwf->scan == SCAN_IO_EVENT){
                 if ((pwf->evnt != 0)  && (gts_trigger_counter != 0)){
                         if ((gts_trigger_counter % pwf->evnt) != 0){
@@ -225,6 +229,7 @@ static long process(pwf)
                         }
                 }
         }
+*/
 
 	if ( pact && pwf->busy ) return(0);
 
@@ -234,7 +239,7 @@ static long process(pwf)
         pwf->pact = TRUE;
 
 	pwf->udf=FALSE;
-	tsLocalTime(&pwf->time);
+	recGblGetTimeStamp(pwf);
 
 	monitor(pwf);
         /* process the forward scan link record */

@@ -98,7 +98,7 @@ static long process(pstate)
 
 	pstate->udf = FALSE;
         pstate->pact=TRUE;
-	tsLocalTime(&pstate->time);
+	recGblGetTimeStamp(pstate);
 	monitor(pstate);
         /* process the forward scan link record */
         recGblFwdLink(pstate);

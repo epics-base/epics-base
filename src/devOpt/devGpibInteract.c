@@ -246,16 +246,20 @@ static int timingStudy(void)
         pCmd[i]->busy = 0;		/* mark message 'not in queue' */
 	pCmd[i]->count = 0;
 
+#ifdef USE_162_STUFF
         if (pCmd[i]->linkId < MVME162_LINK_NUM_BASE)
         {
+#endif
           (*(drvGpib.ioctl))(pCmd[i]->linkType, pCmd[i]->linkId, pCmd[i]->bug, IBGENLINK, 0, NULL);
           (*(drvGpib.ioctl))(pCmd[i]->linkType, pCmd[i]->linkId, pCmd[i]->bug, IBGETLINK, 0, &(pCmd[i]->head.pibLink));
+#ifdef USE_162_STUFF
         }
         else
         {
           drv162IB_InitLink(pCmd[i]->linkId);
           drv162IB_GetLink(pCmd[i]->linkId, &(pCmd[i]->head.pibLink));
         }
+#endif
       }
       else
       {
@@ -291,11 +295,14 @@ static int timingStudy(void)
 	  pCmd[i]->count++;
 	  pCmd[i]->busy = 1;	/* mark the xact as busy */
 
+#ifdef USE_162_STUFF
           if (pCmd[i]->linkId < MVME162_LINK_NUM_BASE)
+#endif
             (*(drvGpib.qGpibReq))(pCmd[i], IB_Q_LOW);
+#ifdef USE_162_STUFF
           else
             drv162IB_QueueReq(pCmd[i], IB_Q_LOW);
-
+#endif
 	  reps--;
 	  if (reps%10000 == 0)
 	  {
@@ -361,11 +368,16 @@ static int sendMsg(void)
   replyIsBack = FALSE;
   ticks = 0;
 
+#ifdef USE_162_STUFF
   if (pCmd->linkId < MVME162_LINK_NUM_BASE)
   {
+#endif
+
     (*(drvGpib.ioctl))(pCmd->linkType, pCmd->linkId, pCmd->bug, IBGENLINK, 0, NULL);
     (*(drvGpib.ioctl))(pCmd->linkType, pCmd->linkId, pCmd->bug, IBGETLINK, 0, &(pCmd->head.pibLink));
     (*(drvGpib.qGpibReq))(pCmd, IB_Q_LOW); /* queue the msg */
+
+#ifdef USE_162_STUFF
   }
   else
   {
@@ -373,6 +385,7 @@ static int sendMsg(void)
     drv162IB_GetLink(pCmd->linkId, &(pCmd->head.pibLink));
     drv162IB_QueueReq(pCmd, IB_Q_LOW);
   }
+#endif
 
   while (!replyIsBack && (ticks < maxTicks))      /* wait for reply msg */
   {
@@ -403,10 +416,15 @@ static int gpibWork(struct gpibIntCmd *pCmd)
   switch (pCmd->type) {
     case 'w':
     case 'W':         /* write the message to the GPIB listen adrs */
+#ifdef USE_162_STUFF
       if (pCmd->linkId < MVME162_LINK_NUM_BASE)
+#endif
         status =(*(drvGpib.writeIb))(pCmd->head.pibLink, pCmd->head.device, pCmd->cmd, strlen(pCmd->cmd), GITime);
+
+#ifdef USE_162_STUFF
       else
         status = drv162IB_write(pCmd->head.pibLink, pCmd->head.device, pCmd->cmd, strlen(pCmd->cmd), GITime);
+#endif
 
       if (status == ERROR)
 	strcpy(pCmd->resp, "GPIB TIMEOUT (while talking)");
@@ -415,10 +433,14 @@ static int gpibWork(struct gpibIntCmd *pCmd)
       break;
     case 'r':
     case 'R':               /* write the command string */
+#ifdef USE_162_STUFF
       if (pCmd->linkId < MVME162_LINK_NUM_BASE)
+#endif
         status = (*(drvGpib.writeIb))(pCmd->head.pibLink, pCmd->head.device, pCmd->cmd, strlen(pCmd->cmd), GITime);
+#ifdef USE_162_STUFF
       else
         status = drv162IB_write(pCmd->head.pibLink, pCmd->head.device, pCmd->cmd, strlen(pCmd->cmd), GITime);
+#endif
 
       if (status == ERROR)
       {
@@ -430,10 +452,14 @@ static int gpibWork(struct gpibIntCmd *pCmd)
     case 'i':
       /* read the instrument  */
       pCmd->resp[0] = 0;          /* clear response string */
+#ifdef USE_162_STUFF
       if (pCmd->linkId < MVME162_LINK_NUM_BASE)
+#endif
         status = (*(drvGpib.readIb))(pCmd->head.pibLink, pCmd->head.device, pCmd->resp, MAX_MSG_LENGTH, GITime);
+#ifdef USE_162_STUFF
       else
         status = drv162IB_read(pCmd->head.pibLink, pCmd->head.device, pCmd->resp, MAX_MSG_LENGTH, GITime);
+#endif
 
       if (status == ERROR)
       {

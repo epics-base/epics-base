@@ -160,94 +160,94 @@ struct	expression_element{
 static struct expression_element	elements[] = {
 /*
 element	i_s_p	i_c_p	type_element	internal_rep */
-"ABS",		7,	8,	UNARY_OPERATOR,	ABS_VAL,   /* absolute value */
-"NOT",		7,	8,	UNARY_OPERATOR,	UNARY_NEG, /* unary negate */
-"-",		7,	8,	MINUS_OPERATOR,	UNARY_NEG, /* unary negate (or binary op) */
-"SQRT",		7,	8,	UNARY_OPERATOR,	SQU_RT,    /* square root */
-"SQR",		7,	8,	UNARY_OPERATOR,	SQU_RT,    /* square root */
-"EXP",		7,	8,	UNARY_OPERATOR,	EXP,       /* exponential function */
-"LOGE",		7,	8,	UNARY_OPERATOR,	LOG_E,     /* log E */
-"LN",		7,	8,	UNARY_OPERATOR,	LOG_E,     /* log E */
-"LOG",		7,	8,	UNARY_OPERATOR,	LOG_10,    /* log 10 */
-"ACOS",		7,	8,	UNARY_OPERATOR,	ACOS,      /* arc cosine */
-"ASIN",		7,	8,	UNARY_OPERATOR,	ASIN,      /* arc sine */
-"ATAN2",	7,	8,	UNARY_OPERATOR,	ATAN2,     /* arc tangent */
-"ATAN",		7,	8,	UNARY_OPERATOR,	ATAN,      /* arc tangent */
-"MAX",		7,	8,	UNARY_OPERATOR,	MAX_VAL,   /* maximum of 2 args */
-"MIN",		7,	8,	UNARY_OPERATOR,	MIN_VAL,   /* minimum of 2 args */
-"CEIL",		7,	8,	UNARY_OPERATOR,	CEIL,      /* smallest integer >= */
-"FLOOR",	7,	8,	UNARY_OPERATOR,	FLOOR,     /* largest integer <=  */
-"NINT",		7,	8,	UNARY_OPERATOR,	NINT,      /* nearest integer */
-"INT",		7,	8,	UNARY_OPERATOR,	NINT,      /* nearest integer */
-"COSH",		7,	8,	UNARY_OPERATOR,	COSH,      /* hyperbolic cosine */
-"COS",		7,	8,	UNARY_OPERATOR,	COS,       /* cosine */
-"SINH",		7,	8,	UNARY_OPERATOR,	SINH,      /* hyperbolic sine */
-"SIN",		7,	8,	UNARY_OPERATOR,	SIN,       /* sine */
-"TANH",		7,	8,	UNARY_OPERATOR,	TANH,      /* hyperbolic tangent*/
-"TAN",		7,	8,	UNARY_OPERATOR,	TAN,       /* tangent */
-"!=",		3,	3,	BINARY_OPERATOR,NOT_EQ,    /* not equal */
-"!",		7,	8,	UNARY_OPERATOR, REL_NOT,   /* not */
-"~",		7,	8,	UNARY_OPERATOR, BIT_NOT,   /* bitwise not */
-"DBL",		7,	8,	UNARY_OPERATOR, TO_DOUBLE, /* convert to double */
-"STR",		7,	8,	UNARY_OPERATOR, TO_STRING, /* convert to string */
-"$P",		7,	8,	UNARY_OPERATOR,	PRINTF,    /* formatted print to string */
-"PRINTF",	7,	8,	UNARY_OPERATOR,	PRINTF,    /* formatted print to string */
-"$S",		7,	8,	UNARY_OPERATOR,	SSCANF,    /* scan string argument */
-"SSCANF",	7,	8,	UNARY_OPERATOR,	SSCANF,    /* scan string argument */
-"RNDM",    	0,	0,	OPERAND,	RANDOM,        /* Random Number */
-"OR",		1,	1,	BINARY_OPERATOR,BIT_OR,    /* or */
-"AND",		2,	2,	BINARY_OPERATOR,BIT_AND,   /* and */
-"XOR",		1,	1,	BINARY_OPERATOR,BIT_EXCL_OR, /* exclusive or */
-"PI",		0,	0,	OPERAND,	CONST_PI,      /* pi */
-"D2R",		0,	0,	OPERAND,	CONST_D2R,     /* pi/180 */
-"R2D",		0,	0,	OPERAND,	CONST_R2D,     /* 180/pi */
-"S2R",		0,	0,	OPERAND,	CONST_S2R,     /* arc-sec to radians: pi/(180*3600) */
-"R2S",		0,	0,	OPERAND,	CONST_R2S,     /* radians to arc-sec: (180*3600)/pi */
-"0",		0,	0,	FLOAT_PT_CONST,	LITERAL,   /* flt pt constant */
-"1",		0,	0,	FLOAT_PT_CONST,	LITERAL,   /* flt pt constant */
-"2",		0,	0,	FLOAT_PT_CONST,	LITERAL,   /* flt pt constant */
-"3",		0,	0,	FLOAT_PT_CONST,	LITERAL,   /* flt pt constant */
-"4",		0,	0,	FLOAT_PT_CONST,	LITERAL,   /* flt pt constant */
-"5",		0,	0,	FLOAT_PT_CONST,	LITERAL,   /* flt pt constant */
-"6",		0,	0,	FLOAT_PT_CONST,	LITERAL,   /* flt pt constant */
-"7",		0,	0,	FLOAT_PT_CONST,	LITERAL,   /* flt pt constant */
-"8",		0,	0,	FLOAT_PT_CONST,	LITERAL,   /* flt pt constant */
-"9",		0,	0,	FLOAT_PT_CONST,	LITERAL,   /* flt pt constant */
-".",		0,	0,	FLOAT_PT_CONST,	LITERAL,   /* flt pt constant */
-"\"",		0,	0,	STRING_CONST,	SLITERAL,  /* string constant */
-"'",		0,	0,	STRING_CONST,	SLITERAL,  /* string constant */
-"?",		0,	0,	CONDITIONAL,	COND_IF,   /* conditional */
-":",		0,	0,	CONDITIONAL,	COND_ELSE, /* else */
-"(",		0,	8,	UNARY_OPERATOR,	PAREN,     /* open paren */
-"[",		0,	8,	BINARY_OPERATOR,SUBRANGE,  /* string subrange */
-"{",		0,	8,	BINARY_OPERATOR,REPLACE,   /* string replace */
-"^",		6,	6,	BINARY_OPERATOR,EXPON,     /* exponentiation */
-"**",		6,	6,	BINARY_OPERATOR,EXPON,     /* exponentiation */
-"+",		4,	4,	BINARY_OPERATOR,ADD,       /* addition */
+{"ABS",		7,	8,	UNARY_OPERATOR,	ABS_VAL},     /* absolute value */
+{"NOT",		7,	8,	UNARY_OPERATOR,	UNARY_NEG},   /* unary negate */
+{"-",		7,	8,	MINUS_OPERATOR,	UNARY_NEG},   /* unary negate (or binary op) */
+{"SQRT",	7,	8,	UNARY_OPERATOR,	SQU_RT},      /* square root */
+{"SQR",		7,	8,	UNARY_OPERATOR,	SQU_RT},      /* square root */
+{"EXP",		7,	8,	UNARY_OPERATOR,	EXP},         /* exponential function */
+{"LOGE",	7,	8,	UNARY_OPERATOR,	LOG_E},       /* log E */
+{"LN",		7,	8,	UNARY_OPERATOR,	LOG_E},       /* log E */
+{"LOG",		7,	8,	UNARY_OPERATOR,	LOG_10},      /* log 10 */
+{"ACOS",	7,	8,	UNARY_OPERATOR,	ACOS},        /* arc cosine */
+{"ASIN",	7,	8,	UNARY_OPERATOR,	ASIN},        /* arc sine */
+{"ATAN2",	7,	8,	UNARY_OPERATOR,	ATAN2},       /* arc tangent */
+{"ATAN",	7,	8,	UNARY_OPERATOR,	ATAN},        /* arc tangent */
+{"MAX",		7,	8,	UNARY_OPERATOR,	MAX_VAL},     /* maximum of 2 args */
+{"MIN",		7,	8,	UNARY_OPERATOR,	MIN_VAL},     /* minimum of 2 args */
+{"CEIL",	7,	8,	UNARY_OPERATOR,	CEIL},        /* smallest integer >= */
+{"FLOOR",	7,	8,	UNARY_OPERATOR,	FLOOR},       /* largest integer <=  */
+{"NINT",	7,	8,	UNARY_OPERATOR,	NINT},        /* nearest integer */
+{"INT",		7,	8,	UNARY_OPERATOR,	NINT},        /* nearest integer */
+{"COSH",	7,	8,	UNARY_OPERATOR,	COSH},        /* hyperbolic cosine */
+{"COS",		7,	8,	UNARY_OPERATOR,	COS},         /* cosine */
+{"SINH",	7,	8,	UNARY_OPERATOR,	SINH},        /* hyperbolic sine */
+{"SIN",		7,	8,	UNARY_OPERATOR,	SIN},         /* sine */
+{"TANH",	7,	8,	UNARY_OPERATOR,	TANH},        /* hyperbolic tangent*/
+{"TAN",		7,	8,	UNARY_OPERATOR,	TAN},         /* tangent */
+{"!=",		3,	3,	BINARY_OPERATOR,NOT_EQ},      /* not equal */
+{"!",		7,	8,	UNARY_OPERATOR, REL_NOT},     /* not */
+{"~",		7,	8,	UNARY_OPERATOR, BIT_NOT},     /* bitwise not */
+{"DBL",		7,	8,	UNARY_OPERATOR, TO_DOUBLE},   /* convert to double */
+{"STR",		7,	8,	UNARY_OPERATOR, TO_STRING},   /* convert to string */
+{"$P",		7,	8,	UNARY_OPERATOR,	PRINTF},      /* formatted print to string */
+{"PRINTF",	7,	8,	UNARY_OPERATOR,	PRINTF},      /* formatted print to string */
+{"$S",		7,	8,	UNARY_OPERATOR,	SSCANF},      /* scan string argument */
+{"SSCANF",	7,	8,	UNARY_OPERATOR,	SSCANF},      /* scan string argument */
+{"RNDM",    	0,	0,	OPERAND,	RANDOM},      /* Random Number */
+{"OR",		1,	1,	BINARY_OPERATOR,BIT_OR},      /* or */
+{"AND",		2,	2,	BINARY_OPERATOR,BIT_AND},     /* and */
+{"XOR",		1,	1,	BINARY_OPERATOR,BIT_EXCL_OR}, /* exclusive or */
+{"PI",		0,	0,	OPERAND,	CONST_PI},    /* pi */
+{"D2R",		0,	0,	OPERAND,	CONST_D2R},   /* pi/180 */
+{"R2D",		0,	0,	OPERAND,	CONST_R2D},   /* 180/pi */
+{"S2R",		0,	0,	OPERAND,	CONST_S2R},   /* arc-sec to radians: pi/(180*3600) */
+{"R2S",		0,	0,	OPERAND,	CONST_R2S},   /* radians to arc-sec: (180*3600)/pi */
+{"0",		0,	0,	FLOAT_PT_CONST,	LITERAL},     /* flt pt constant */
+{"1",		0,	0,	FLOAT_PT_CONST,	LITERAL},     /* flt pt constant */
+{"2",		0,	0,	FLOAT_PT_CONST,	LITERAL},     /* flt pt constant */
+{"3",		0,	0,	FLOAT_PT_CONST,	LITERAL},     /* flt pt constant */
+{"4",		0,	0,	FLOAT_PT_CONST,	LITERAL},     /* flt pt constant */
+{"5",		0,	0,	FLOAT_PT_CONST,	LITERAL},     /* flt pt constant */
+{"6",		0,	0,	FLOAT_PT_CONST,	LITERAL},     /* flt pt constant */
+{"7",		0,	0,	FLOAT_PT_CONST,	LITERAL},     /* flt pt constant */
+{"8",		0,	0,	FLOAT_PT_CONST,	LITERAL},     /* flt pt constant */
+{"9",		0,	0,	FLOAT_PT_CONST,	LITERAL},     /* flt pt constant */
+{".",		0,	0,	FLOAT_PT_CONST,	LITERAL},     /* flt pt constant */
+{"\"",		0,	0,	STRING_CONST,	SLITERAL},    /* string constant */
+{"'",		0,	0,	STRING_CONST,	SLITERAL},    /* string constant */
+{"?",		0,	0,	CONDITIONAL,	COND_IF},     /* conditional */
+{":",		0,	0,	CONDITIONAL,	COND_ELSE},   /* else */
+{"(",		0,	8,	UNARY_OPERATOR,	PAREN},       /* open paren */
+{"[",		0,	8,	BINARY_OPERATOR,SUBRANGE},    /* string subrange */
+{"{",		0,	8,	BINARY_OPERATOR,REPLACE},     /* string replace */
+{"^",		6,	6,	BINARY_OPERATOR,EXPON},       /* exponentiation */
+{"**",		6,	6,	BINARY_OPERATOR,EXPON},       /* exponentiation */
+{"+",		4,	4,	BINARY_OPERATOR,ADD},         /* addition */
 #if 0 /* "-" operator is overloaded; may be unary or binary */
-"-",		4,	4,	BINARY_OPERATOR,SUB,       /* subtraction */
+{"-",		4,	4,	BINARY_OPERATOR,SUB},         /* subtraction */
 #endif
-"*",		5,	5,	BINARY_OPERATOR,MULT,      /* multiplication */
-"/",		5,	5,	BINARY_OPERATOR,DIV,       /* division */
-"%",		5,	5,	BINARY_OPERATOR,MODULO,    /* modulo */
-",",		0,	0,	SEPARATOR,	COMMA,         /* comma */
-")",		0,	0,	CLOSE_PAREN,	PAREN,     /* close paren */
-"]",		0,	0,	CLOSE_BRACKET,	SUBRANGE,  /* close bracket */
-"}",		0,	0,	CLOSE_CURLY,	REPLACE,   /* close curly bracket */
-"||",		1,	1,	BINARY_OPERATOR,REL_OR,    /* logical or */
-"|",		1,	1,	BINARY_OPERATOR,BIT_OR,    /* bitwise or */
-"&&",		2,	2,	BINARY_OPERATOR,REL_AND,   /* logical and */
-"&",		2,	2,	BINARY_OPERATOR,BIT_AND,   /* bitwise and */
-">>",		2,	2,	BINARY_OPERATOR,RIGHT_SHIFT, /* right shift */
-">=",		3,	3,	BINARY_OPERATOR,GR_OR_EQ,  /* greater or equal*/
-">",		3,	3,	BINARY_OPERATOR,GR_THAN,   /* greater than */
-"<<",		2,	2,	BINARY_OPERATOR,LEFT_SHIFT, /* left shift */
-"<=",		3,	3,	BINARY_OPERATOR,LESS_OR_EQ,/* less or equal to*/
-"<",		3,	3,	BINARY_OPERATOR,LESS_THAN, /* less than */
-"#",		3,	3,	BINARY_OPERATOR,NOT_EQ,    /* not equal */
-"==",		3,	3,	BINARY_OPERATOR,EQUAL,     /* equal */
-"=",		3,	3,	BINARY_OPERATOR,EQUAL,     /* equal */
-""
+{"*",		5,	5,	BINARY_OPERATOR,MULT},        /* multiplication */
+{"/",		5,	5,	BINARY_OPERATOR,DIV},         /* division */
+{"%",		5,	5,	BINARY_OPERATOR,MODULO},      /* modulo */
+{",",		0,	0,	SEPARATOR,	COMMA},       /* comma */
+{")",		0,	0,	CLOSE_PAREN,	PAREN},       /* close paren */
+{"]",		0,	0,	CLOSE_BRACKET,	SUBRANGE},    /* close bracket */
+{"}",		0,	0,	CLOSE_CURLY,	REPLACE},     /* close curly bracket */
+{"||",		1,	1,	BINARY_OPERATOR,REL_OR},      /* logical or */
+{"|",		1,	1,	BINARY_OPERATOR,BIT_OR},      /* bitwise or */
+{"&&",		2,	2,	BINARY_OPERATOR,REL_AND},     /* logical and */
+{"&",		2,	2,	BINARY_OPERATOR,BIT_AND},     /* bitwise and */
+{">>",		2,	2,	BINARY_OPERATOR,RIGHT_SHIFT}, /* right shift */
+{">=",		3,	3,	BINARY_OPERATOR,GR_OR_EQ},    /* greater or equal*/
+{">",		3,	3,	BINARY_OPERATOR,GR_THAN},     /* greater than */
+{"<<",		2,	2,	BINARY_OPERATOR,LEFT_SHIFT},  /* left shift */
+{"<=",		3,	3,	BINARY_OPERATOR,LESS_OR_EQ},  /* less or equal to*/
+{"<",		3,	3,	BINARY_OPERATOR,LESS_THAN},   /* less than */
+{"#",		3,	3,	BINARY_OPERATOR,NOT_EQ},      /* not equal */
+{"==",		3,	3,	BINARY_OPERATOR,EQUAL},       /* equal */
+{"=",		3,	3,	BINARY_OPERATOR,EQUAL},       /* equal */
+{""}
 };
 
 /*

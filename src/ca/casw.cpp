@@ -72,7 +72,7 @@ int main ( int argc, char **argv )
         addrSize = ( osiSocklen_t ) sizeof ( addr );
         status = recvfrom ( sock, buf, sizeof ( buf ), 0,
                             &addr.sa, &addrSize );
-        if ( status >= sizeof ( *pCurMsg ) ) {
+        if ( status >= static_cast <int> ( sizeof ( *pCurMsg ) ) ) {
             pCurMsg = reinterpret_cast < caHdr * > ( buf );
             if ( htons ( pCurMsg->m_cmmd ) == REPEATER_CONFIRM ) {
                 break;
@@ -114,7 +114,7 @@ int main ( int argc, char **argv )
         }
         
         pCurMsg = reinterpret_cast < const caHdr * > ( ( pCurBuf = buf ) );
-        while ( status >= sizeof ( *pCurMsg ) ) {
+        while ( status >= static_cast < int > ( sizeof ( *pCurMsg ) ) ) {
             if ( ntohs ( pCurMsg->m_cmmd ) == CA_PROTO_RSRV_IS_UP ) {
                 struct sockaddr_in ina;
 

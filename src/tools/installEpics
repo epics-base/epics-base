@@ -8,6 +8,7 @@
 ##########################################################
 TOOL=`basename $0`
 MODE=755
+CREATE_DIR=0
 USAGE="Usage:
 	$TOOL [ -m mode ] file ... directory
 
@@ -22,7 +23,8 @@ do
 	case $i in
 	-m)             MODE=$2; shift 2;;
 	-g | -o)        echo $USAGE; echo "$i not implemented"; shift 2;;
-	-c | -s | -d )  echo $USAGE; echo "$i not implemented"; shift;;
+	-c | -s)        echo $USAGE; echo "$i not implemented"; shift;;
+	-d)             CREATE_DIR=1;shift;;
 	--)             shift; break;;
 	esac
 done
@@ -34,16 +36,30 @@ then
 	exit 1
 fi
 
-INSTALL_BIN=
+INSTALL_DIR=
 FILELIST=
 for i 
 do
-	FILELIST="${FILELIST} ${INSTALL_BIN}"; INSTALL_BIN=$i; shift;
+	FILELIST="${FILELIST} ${INSTALL_DIR}"; INSTALL_DIR=$i; shift;
 done
 
-if [ ! -d ${INSTALL_BIN} ] ;then
-    echo "$USAGE\n Can't find directory '${INSTALL_BIN}'"
-    exit 1
+if [ ! -d "${INSTALL_DIR}" ] ;then
+    if [ "${CREATE_DIR}" ] ;then
+        OLDIFS=${IFS}
+        IFS=/
+        DIRNAME=
+        for DIR in ${INSTALL_DIR}
+        do
+		    DIRNAME=${DIRNAME}/${DIR}
+            if [ ! -d "${DIRNAME}" ] ;then
+                mkdir "${DIRNAME}"
+            fi
+        done
+        IFS=${OLDIFS}
+    else
+        echo "$USAGE\n Can't find directory '${INSTALL_DIR}'"
+        exit 1
+    fi
 fi
 
 for FILE in ${FILELIST} 
@@ -55,17 +71,17 @@ do
 
 	TEST=
 	FILEBASENAME=`basename ${FILE}`
-	if [ -f ${INSTALL_BIN}/${FILEBASENAME} ] ;  then 
-		#Is ${INSTALL_BIN}/${FILEBASENAME} link timestamp  newer than ${FILE}
-		TEST=`find ${INSTALL_BIN} -name "${FILEBASENAME}" -newer ${FILE} -print`
+	if [ -f ${INSTALL_DIR}/${FILEBASENAME} ] ;  then 
+		#Is ${INSTALL_DIR}/${FILEBASENAME} link timestamp  newer than ${FILE}
+		TEST=`find ${INSTALL_DIR} -name "${FILEBASENAME}" -newer ${FILE} -print`
 	fi
 	if [ "${TEST}x" = "x" ] ; then 
 		#echo "Installing ${FILEBASENAME}"
-		/bin/rm -f ${INSTALL_BIN}/${FILEBASENAME}
-		/bin/cp -p ${FILE} ${INSTALL_BIN}/${FILEBASENAME}
-		/bin/chmod ${MODE} ${INSTALL_BIN}/${FILEBASENAME}
+		/bin/rm -f ${INSTALL_DIR}/${FILEBASENAME}
+		/bin/cp -p ${FILE} ${INSTALL_DIR}/${FILEBASENAME}
+		/bin/chmod ${MODE} ${INSTALL_DIR}/${FILEBASENAME}
 	else 
-			echo "${INSTALL_BIN}/${FILEBASENAME} is up to date"
+			echo "${INSTALL_DIR}/${FILEBASENAME} is up to date"
 	fi
 done
 

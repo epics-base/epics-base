@@ -1,13 +1,35 @@
 TOP = ../../..
 include $(TOP)/config/CONFIG_BASE
 
-SRCS.c = ../iocLogClient.c ../veclist.c ../ldpp.c
+SRCS.c = ../iocLogClient.c ../veclist.c
 
-LIBOBJS = veclist.o iocLogClient.o ldpp.o
+#
+# Tornado supplies this
+#
+ifeq ($(strip $(TORNADO)),NO)
+SRCS.c += ../ldpp.c
+endif
+
+LIBOBJS = veclist.o iocLogClient.o
+
+#
+# Tornado supplies this
+#
+ifeq ($(strip $(TORNADO)),NO)
+LIBOBJS += ldpp.o
+endif
+
 LIBOBJS_mips = symFindByNameMips.o
 
+
 LIBNAME = vxComLib
+
+#
+# Tornado supplies this
+#
+ifeq ($(strip $(TORNADO)),NO)
 SCRIPTS = vxldscript.MRI
+endif
 
 include $(TOP)/config/RULES.Vx
 

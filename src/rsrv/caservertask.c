@@ -166,7 +166,7 @@ LOCAL int req_server (void)
     }
 
     /* listen and accept new connections */
-    if ( listen ( IOC_sock, 10 ) < 0 ) {
+    if ( listen ( IOC_sock, 20 ) < 0 ) {
         errlogPrintf ("CAS: Listen error\n");
         socket_close (IOC_sock);
         epicsThreadSuspendSelf ();
@@ -239,6 +239,7 @@ epicsShareFunc int epicsShareAPI rsrv_init (void)
     freeListInitPvt ( &rsrvChanFreeList, sizeof(struct channel_in_use), 512 );
     freeListInitPvt ( &rsrvEventFreeList, sizeof(struct event_ext), 512 );
     freeListInitPvt ( &rsrvSmallBufFreeListTCP, MAX_TCP, 16 );
+    initializePutNotifyFreeList ();
 
     status =  envGetLongConfigParam ( &EPICS_CA_MAX_ARRAY_BYTES, &maxBytesAsALong );
     if ( status || maxBytesAsALong < 0 ) {
@@ -264,7 +265,6 @@ epicsShareFunc int epicsShareAPI rsrv_init (void)
         }
     }
     freeListInitPvt ( &rsrvLargeBufFreeListTCP, rsrvSizeofLargeBufTCP, 1 );
-
     ellInit ( &beaconAddrList );
     prsrv_cast_client = NULL;
     pCaBucket = NULL;
@@ -363,10 +363,7 @@ LOCAL void log_one_client (struct client *client, unsigned level)
         while (pciu){
             bytes_reserved += sizeof(struct channel_in_use);
             bytes_reserved += sizeof(struct event_ext)*ellCount(&pciu->eventq);
-            if(pciu->pPutNotify){
-                bytes_reserved += sizeof(*pciu->pPutNotify);
-                bytes_reserved += pciu->pPutNotify->valueSize;
-            }
+            bytes_reserved += rsrvSizeOfPutNotify ( pciu->pPutNotify );
             pciu = (struct channel_in_use *) ellNext(&pciu->node);
         }
         epicsMutexUnlock(client->addrqLock);
@@ -449,12 +446,15 @@ void epicsShareAPI casr (unsigned level)
                     freeListItemsAvail ( rsrvSmallBufFreeListTCP );
         bytes_reserved += rsrvSizeofLargeBufTCP * 
                     freeListItemsAvail ( rsrvLargeBufFreeListTCP );
+        bytes_reserved += rsrvSizeOfPutNotify ( 0 ) * 
+                    freeListItemsAvail ( rsrvPutNotifyFreeList );
         printf( "There are currently %u bytes on the server's free list\n",
             bytes_reserved);
-        printf( "%u client(s), %u channel(s), %u event(s) (monitors)\n",
+        printf( "%u client(s), %u channel(s), %u event(s) (monitors) %u putNotify(s)\n",
             freeListItemsAvail (rsrvClientFreeList),
             freeListItemsAvail (rsrvChanFreeList),
-            freeListItemsAvail (rsrvEventFreeList));
+            freeListItemsAvail (rsrvEventFreeList),
+            freeListItemsAvail ( rsrvPutNotifyFreeList ));
         printf( "%u small buffers (%u bytes ea), and %u jumbo buffers (%u bytes ea)\n",
             freeListItemsAvail ( rsrvSmallBufFreeListTCP ), MAX_TCP,
             freeListItemsAvail ( rsrvLargeBufFreeListTCP ), rsrvSizeofLargeBufTCP );
@@ -601,12 +601,7 @@ void destroy_tcp_client ( struct client *client )
             }
             freeListFree (rsrvEventFreeList, pevext);
         }
-        if (pciu->pPutNotify) {
-            if ( pciu->pPutNotify->busy ) {
-                dbNotifyCancel ( &pciu->pPutNotify->dbPutNotify );
-            } 
-            free ( pciu->pPutNotify );
-        }
+        rsrvFreePutNotify ( client, pciu->pPutNotify );
         LOCK_CLIENTQ;
         status = bucketRemoveItemUnsignedId ( pCaBucket, &pciu->sid);
         UNLOCK_CLIENTQ;

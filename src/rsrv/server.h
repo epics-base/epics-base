@@ -97,36 +97,21 @@ typedef struct client {
   char                  disconnect; /* disconnect detected */
 } client;
 
-
-/*
- * for tracking db put notifies
- */
-typedef struct rsrv_put_notify {
-    ELLNODE         node;
-    putNotify       dbPutNotify;
-    caHdrLargeArray msg;
-    unsigned        valueSize; /* size of block pointed to by dbPutNotify */
-    char            busy; /* put notify in progress */
-    char            onExtraLaborQueue;
-} RSRVPUTNOTIFY;
-
-
 /*
  * per channel structure 
  * (stored in addrq off of a client block)
  */
 struct channel_in_use {
-    ELLNODE         node;
-    ELLLIST         eventq;
-    struct client   *client;
-    RSRVPUTNOTIFY   *pPutNotify; /* potential active put notify */
-    const unsigned  cid;    /* client id */
-    const unsigned  sid;    /* server id */
-    epicsTimeStamp  time_at_creation;   /* for UDP timeout */
-    struct dbAddr   addr;
-    ASCLIENTPVT     asClientPVT;
+    ELLNODE node;
+    ELLLIST eventq;
+    struct client *client;
+    struct rsrv_put_notify *pPutNotify; /* potential active put notify */
+    const unsigned cid;    /* client id */
+    const unsigned sid;    /* server id */
+    epicsTimeStamp time_at_creation;   /* for UDP timeout */
+    struct dbAddr addr;
+    ASCLIENTPVT asClientPVT;
 };
-
 
 /*
  * Event block extension for channel access
@@ -177,6 +162,7 @@ GLBLTYPE void               *rsrvEventFreeList;
 GLBLTYPE void               *rsrvSmallBufFreeListTCP; 
 GLBLTYPE void               *rsrvLargeBufFreeListTCP; 
 GLBLTYPE unsigned           rsrvSizeofLargeBufTCP;
+GLBLTYPE void               *rsrvPutNotifyFreeList; 
 
 #define CAS_HASH_TABLE_SIZE 4096
 
@@ -191,7 +177,7 @@ void cas_send_bs_msg ( struct client *pclient, int lock_needed );
 void cas_send_dg_msg ( struct client *pclient );
 int rsrv_online_notify_task (void);
 int cast_server (void);
-struct client *create_client ();
+struct client *create_client ( SOCKET sock, int proto );
 void destroy_client ( struct client * );
 struct client *create_tcp_client ( SOCKET sock );
 void destroy_tcp_client ( struct client * );
@@ -200,6 +186,10 @@ int camessage ( struct client *client );
 void write_notify_reply ( void *pArg );
 int rsrvCheckPut ( const struct channel_in_use *pciu );
 int rsrv_version_reply ( struct client *client );
+void rsrvFreePutNotify ( struct client *pClient, 
+                        struct rsrv_put_notify *pNotify );
+void initializePutNotifyFreeList (void);
+unsigned rsrvSizeOfPutNotify ( struct rsrv_put_notify *pNotify );
 
 /*
  * inclming protocol maintetnance

@@ -52,6 +52,36 @@ LOCAL EVENTFUNC read_reply;
 logBadIdWithFileAndLineno(CLIENT, MP, PPL, __FILE__, __LINE__)
 
 /*
+ * for tracking db put notifies
+ */
+typedef struct rsrv_put_notify {
+    ELLNODE         node;
+    putNotify       dbPutNotify;
+    caHdrLargeArray msg;
+    unsigned        valueSize; /* size of block pointed to by dbPutNotify */
+    char            busy; /* put notify in progress */
+    char            onExtraLaborQueue;
+    /*
+     * Include a union of all scalar types 
+     * including fixed length strings so
+     * that in many cases we can avoid 
+     * allocating another buffer and only
+     * use an rsrv_put_notify from its
+     * free list.
+     */
+    union {
+        dbr_string_t strval;
+        dbr_short_t shrtval;
+        dbr_short_t intval;
+        dbr_float_t fltval;
+        dbr_enum_t enmval;
+        dbr_char_t charval;
+        dbr_long_t longval;
+        dbr_double_t doubleval;
+    } dbrScalarValue;
+} RSRVPUTNOTIFY;
+
+/*
  * casCalloc()
  *
  * (dont drop below some max block threshold)
@@ -1478,6 +1508,116 @@ LOCAL void putNotifyErrorReply ( struct client *client, caHdrLargeArray *mp, int
     SEND_UNLOCK ( client );
 }
 
+void initializePutNotifyFreeList ()
+{
+    if ( ! rsrvPutNotifyFreeList ) {
+        freeListInitPvt ( &rsrvPutNotifyFreeList, 
+            sizeof(struct rsrv_put_notify), 512 );
+        assert ( rsrvPutNotifyFreeList );
+    }
+}
+
+static struct rsrv_put_notify * 
+    rsrvAllocPutNotify ( struct channel_in_use * pciu )
+{
+    struct rsrv_put_notify *pNotify;
+    
+    if ( rsrvPutNotifyFreeList ) {
+        pNotify = (RSRVPUTNOTIFY *)
+            freeListCalloc ( rsrvPutNotifyFreeList );
+        if ( pNotify ) {
+            pNotify->dbPutNotify.pbuffer = 
+                    &pNotify->dbrScalarValue;
+            pNotify->valueSize = 
+                    sizeof (pNotify->dbrScalarValue);
+            pNotify->dbPutNotify.usrPvt = pciu;
+            pNotify->dbPutNotify.paddr = &pciu->addr;
+            pNotify->dbPutNotify.userCallback = 
+                    write_notify_call_back;
+        }
+    }
+    else {
+        pNotify = NULL;
+    }
+    return pNotify;
+}
+
+static int rsrvExpandPutNotify ( 
+    struct rsrv_put_notify * pNotify, unsigned sizeNeeded )
+{
+    int booleanStatus;
+    
+    if ( sizeNeeded > pNotify->valueSize ) {
+        /*
+         * try to use the union embeded in the free list 
+         * item, but allocate a random sized block if they 
+         * writing a vector.
+         */
+        if ( pNotify->valueSize > 
+            sizeof (pNotify->dbrScalarValue) ) {
+            free ( pNotify->dbPutNotify.pbuffer );
+        }
+        pNotify->dbPutNotify.pbuffer = casCalloc(1,sizeNeeded);
+        if ( pNotify->dbPutNotify.pbuffer ) {
+            pNotify->valueSize = sizeNeeded;
+            booleanStatus = TRUE;
+        }
+        else {
+            /*
+             * revert back to the embedded union
+             */
+            pNotify->dbPutNotify.pbuffer = 
+                &pNotify->dbrScalarValue;
+            pNotify->valueSize = 
+                    sizeof (pNotify->dbrScalarValue);
+            booleanStatus = FALSE;
+        }
+    }
+    else {
+        booleanStatus = TRUE;
+    }
+    
+    return booleanStatus;
+}
+
+unsigned rsrvSizeOfPutNotify ( struct rsrv_put_notify *pNotify )
+{
+    unsigned size = sizeof ( *pNotify );
+    if ( pNotify ) {
+        if ( pNotify->valueSize > 
+                sizeof ( pNotify->dbrScalarValue ) ) {
+            size += pNotify->valueSize;
+        }
+    }
+    return size;
+}
+
+void rsrvFreePutNotify ( client *pClient, 
+        struct rsrv_put_notify *pNotify )
+{
+     if ( pNotify ) {
+        /*
+         * if the put notify is outstanding then cancel it
+         */
+        if ( pNotify->busy ) {
+            dbNotifyCancel ( &pNotify->dbPutNotify );
+        } 
+
+        epicsMutexMustLock ( pClient->putNotifyLock );
+        if ( pNotify->onExtraLaborQueue ) {
+            ellDelete ( &pClient->putNotifyQue, 
+                        &pNotify->node );
+        }
+        epicsMutexUnlock ( pClient->putNotifyLock );
+
+        if ( pNotify->valueSize > 
+                sizeof(pNotify->dbrScalarValue) ) {
+            free ( pNotify->dbPutNotify.pbuffer );
+        }
+        freeListFree ( rsrvPutNotifyFreeList, pNotify );
+     }
+}
+
 /*
  * write_notify_action()
  */
@@ -1507,7 +1647,7 @@ LOCAL int write_notify_action ( caHdrLargeArray *mp, void *pPayload,
 
     size = dbr_size_n (mp->m_dataType, mp->m_count);
 
-    if (pciu->pPutNotify) {
+    if ( pciu->pPutNotify ) {
 
         /*
          * serialize concurrent put notifies 
@@ -1523,35 +1663,26 @@ LOCAL int write_notify_action ( caHdrLargeArray *mp, void *pPayload,
                 return RSRV_OK;
             }
         }
-
-        /*
-         * if not busy then free the current
-         * block if it is to small
-         */
-        if(pciu->pPutNotify->valueSize<size){
-            free(pciu->pPutNotify);
-            pciu->pPutNotify = NULL;
-        }
     }
-
-    /*
-     * send error and go to next request
-     * if there isnt enough memory left
-     */
-    if(!pciu->pPutNotify){
-        pciu->pPutNotify = (RSRVPUTNOTIFY *) 
-            casCalloc(1, sizeof(*pciu->pPutNotify)+size);
-        if(!pciu->pPutNotify){
+    else {
+        pciu->pPutNotify = rsrvAllocPutNotify ( pciu );
+        if ( ! pciu->pPutNotify ) {
+            /*
+             * send error and go to next request
+             * if there isnt enough memory left
+             */
             log_header ( "no memory to initiate put notify", 
                 client, mp, pPayload, 0 );
             putNotifyErrorReply (client, mp, ECA_ALLOCMEM);
             return RSRV_ERROR;
         }
-        pciu->pPutNotify->valueSize = size;
-        pciu->pPutNotify->dbPutNotify.pbuffer = (pciu->pPutNotify+1);
-        pciu->pPutNotify->dbPutNotify.usrPvt = pciu;
-        pciu->pPutNotify->dbPutNotify.paddr = &pciu->addr;
-        pciu->pPutNotify->dbPutNotify.userCallback = write_notify_call_back;
+    }
+    
+    if ( ! rsrvExpandPutNotify ( pciu->pPutNotify, size ) ) {
+        log_header ( "no memory to initiate vector put notify", 
+            client, mp, pPayload, 0 );
+        putNotifyErrorReply ( client, mp, ECA_ALLOCMEM );
+        return RSRV_ERROR;
     }
 
     pciu->pPutNotify->busy = TRUE;
@@ -1690,7 +1821,8 @@ LOCAL int event_add_action (caHdrLargeArray *mp, void *pPayload, struct client *
 /*
  *  clear_channel_reply()
  */
-LOCAL int clear_channel_reply ( caHdrLargeArray *mp, void *pPayload, struct client  *client )
+LOCAL int clear_channel_reply ( caHdrLargeArray *mp, 
+        void *pPayload, struct client  *client )
 {
      struct event_ext *pevext;
      struct channel_in_use *pciu;
@@ -1707,19 +1839,7 @@ LOCAL int clear_channel_reply ( caHdrLargeArray *mp, void *pPayload, struct clie
          return RSRV_ERROR;
      }
      
-     /*
-      * if a put notify is outstanding then cancel it
-      */
-     if(pciu->pPutNotify){
-        if(pciu->pPutNotify->busy){
-            dbNotifyCancel ( &pciu->pPutNotify->dbPutNotify );
-        }
-        epicsMutexMustLock ( client->putNotifyLock );
-        if ( pciu->pPutNotify->onExtraLaborQueue ) {
-	        ellDelete ( &client->putNotifyQue, &pciu->pPutNotify->node );
-        }
-        epicsMutexUnlock ( client->putNotifyLock );
-     }
+     rsrvFreePutNotify ( client, pciu->pPutNotify );
      
      while (TRUE){
          epicsMutexMustLock(client->eventqLock);
@@ -1744,11 +1864,7 @@ LOCAL int clear_channel_reply ( caHdrLargeArray *mp, void *pPayload, struct clie
         SEND_UNLOCK(client);
         return RSRV_ERROR;
      }
-     
-     if (pciu->pPutNotify) {
-         free (pciu->pPutNotify);
-     }
-     
+          
      /*
       * send delete confirmed message
       */

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/08/13 22:56:12  jhill
+ * added init for mutex class
+ *
  * Revision 1.2  1996/08/05 19:25:17  jhill
  * removed unused code
  *
@@ -300,10 +303,10 @@ void casVerifyFunc(const char *pFile, unsigned line, const char *pExp)
 //
 // serverToolDebugFunc()
 // 
-void serverToolDebugFunc(const char *pFile, unsigned line)
+void serverToolDebugFunc(const char *pFile, unsigned line, const char *pComment)
 {
        fprintf(stderr,
-		"Bad server tool response detected at line %u in \"%s\"\n",
-                line, pFile);
+"Bad server tool response detected at line %u in \"%s\" because \"%s\"\n",
+                line, pFile, pComment);
 }
 

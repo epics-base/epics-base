@@ -99,7 +99,8 @@ struct caHdrLargeArray;
 class cac : private cacRecycle
 {
 public:
-    cac ( cacNotify &, bool enablePreemptiveCallback = false );
+    cac ( cacNotify &, bool enablePreemptiveCallback = false, 
+        unsigned maxNumberOfChannels = 32768 );
     virtual ~cac ();
 
     // beacon management

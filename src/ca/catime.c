@@ -484,7 +484,7 @@ LOCAL void test (
  */
 int catime ( char *channelName, unsigned channelCount, enum appendNumberFlag appNF )
 {
-    unsigned        i;
+    unsigned    i;
     unsigned    strsize;
     unsigned    nBytes;
     ti          *pItemList;
@@ -494,7 +494,7 @@ int catime ( char *channelName, unsigned channelCount, enum appendNumberFlag app
         return -1;
     }
 
-    SEVCHK ( ca_task_initialize(),"Unable to initialize" );
+    SEVCHK ( ca_context_create ( 0, channelCount * 2 ), "Unable to initialize" );
 
     if ( appNF == appendNumber ) {
         printf ( "Testing with %u channels named %snnn\n", 

@@ -103,10 +103,11 @@ const cac::pExcepProtoStubTCP cac::tcpExcepJumpTableCAC [] =
 //
 // cac::cac ()
 //
-cac::cac ( cacNotify &notifyIn, bool enablePreemptiveCallbackIn ) :
+cac::cac ( cacNotify &notifyIn, bool enablePreemptiveCallbackIn, 
+          unsigned maxNumberOfChannels ) :
     ipToAEngine ( "caIPAddrToAsciiEngine" ), 
-    chanTable ( 16384 ),
-    ioTable ( 16384 ),
+    chanTable ( maxNumberOfChannels ),
+    ioTable ( maxNumberOfChannels ),
     sgTable ( 128 ),
     beaconTable ( 1024 ),
     pudpiiu ( 0 ),
@@ -913,7 +914,8 @@ cacChannel::ioid cac::writeNotifyRequest ( nciu &chan, unsigned type, unsigned n
     }
 }
 
-cacChannel::ioid cac::readNotifyRequest ( nciu &chan, unsigned type, unsigned nElem, cacReadNotify &notifyIn )
+cacChannel::ioid cac::readNotifyRequest ( nciu &chan, unsigned type, 
+                                         unsigned nElem, cacReadNotify &notifyIn )
 {
     epicsAutoMutex autoMutex ( this->mutex );
     autoPtrRecycle  < netReadNotifyIO > pIO ( *this, netReadNotifyIO::factory ( 

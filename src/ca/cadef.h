@@ -194,7 +194,8 @@ epicsShareFunc enum channel_state epicsShareAPI ca_state (chid chan);
 /*  Must be called once before calling any of the other routines        */
 /************************************************************************/
 epicsShareFunc int epicsShareAPI ca_task_initialize (void);
-epicsShareFunc int epicsShareAPI ca_context_create ( int preemptiveCallBackEnable );
+epicsShareFunc int epicsShareAPI ca_context_create ( 
+                   int preemptiveCallBackEnable, unsigned maxNumberOfChannels );
 
 /************************************************************************/
 /*  Remove CA facility from your task                                   */

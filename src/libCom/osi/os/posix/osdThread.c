@@ -330,8 +330,7 @@ unsigned int threadGetPriority(threadId id)
 
 unsigned int threadGetPrioritySelf(void)
 {
-    threadInfo *pthreadInfo = (threadInfo *)pthread_getspecific(getpthreadInfo);
-    return(pthreadInfo->osiPriority);
+    return(threadGetPriority(threadGetIdSelf()));
 }
 
 void threadSetPriority(threadId id,unsigned int priority)

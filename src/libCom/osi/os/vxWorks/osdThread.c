@@ -165,6 +165,11 @@ unsigned int threadGetPriority(threadId id)
     return(getOsiPriorityValue(priority));
 }
 
+unsigned int threadGetPrioritySelf(void)
+{
+    return(threadGetPriority(threadGetIdSelf()));
+}
+
 void threadSetPriority(threadId id,unsigned int osip)
 {
     int tid = (int)id;

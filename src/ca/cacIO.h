@@ -49,19 +49,17 @@
 
 #ifdef epicsExportSharedSymbols
 #   define cacIOh_restore_epicsExportSharedSymbols
-#undef epicsExportSharedSymbols
+#   undef epicsExportSharedSymbols
 #endif
-
-#include "shareLib.h"
 
 #include "tsDLList.h"
 #include "epicsMutex.h"
 
 #ifdef cacIOh_restore_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols
+#   include "shareLib.h"
 #endif
 
-#include "shareLib.h"
 
 class cacChannel;
 

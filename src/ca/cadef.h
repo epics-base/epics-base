@@ -50,15 +50,13 @@
 #   undef epicsExportSharedSymbols
 #endif
 
-#include "shareLib.h"
-
 #include "epicsThread.h"
 
 #ifdef INCLcadefh_accessh_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols
+#   include "shareLib.h"
 #endif
 
-#include "shareLib.h"
 
 #include "caerr.h"
 #include "db_access.h"

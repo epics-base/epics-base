@@ -28,8 +28,6 @@
 #   undef epicsExportSharedSymbols
 #endif
 
-#include "shareLib.h"
-
 #include "tsDLList.h"
 #include "tsFreeList.h"
 #include "epicsSingleton.h"
@@ -37,11 +35,11 @@
 
 #ifdef bhehEpicsExportSharedSymbols
 #   define epicsExportSharedSymbols
+#   include "shareLib.h"
 #endif
 
 #include "inetAddrID.h"
 
-#include "shareLib.h"
 
 class tcpiiu;
 

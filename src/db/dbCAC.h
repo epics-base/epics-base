@@ -30,24 +30,21 @@
 #define dbCACh
 
 #ifdef epicsExportSharedSymbols
-#define dbCACh_restore_epicsExportSharedSymbols
-#undef epicsExportSharedSymbols
+#   define dbCACh_restore_epicsExportSharedSymbols
+#   undef epicsExportSharedSymbols
 #endif
-
-#include "shareLib.h"
 
 #include "tsDLList.h"
 #include "epicsSingleton.h"
 #include "tsFreeList.h"
 #include "resourceLib.h"
-
 #include "cacIO.h"
 
 #ifdef dbCACh_restore_epicsExportSharedSymbols
-#define epicsExportSharedSymbols
+#   define epicsExportSharedSymbols
+#   include "shareLib.h"
 #endif
 
-#include "shareLib.h"
 
 #include "db_access.h"
 #include "dbNotify.h"

@@ -46,5 +46,5 @@ seqsource:
 	cd sequencer ; /bin/sh build.it
 
 devtestsource:
-	cd devtest ; /bin/sh build.it
+	cd toolsComm/devtest ; /bin/sh build.it
 

@@ -59,6 +59,7 @@ bool cacChannel::connected () const
     return true;
 }
 
+// the default is to assume that it is a locally hosted channel
 void cacChannel::hostName ( char *pBuf, unsigned bufLength ) const 
 {
     if ( bufLength ) {
@@ -67,6 +68,7 @@ void cacChannel::hostName ( char *pBuf, unsigned bufLength ) const
 }
 
 // deprecated - please do not use
+// the default is to assume that it is a locally hosted channel
 const char * cacChannel::pHostName () const
 {
     return pLocalHostNameAtLoadTime->pointer ();

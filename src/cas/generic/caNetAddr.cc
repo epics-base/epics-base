@@ -16,6 +16,7 @@
 //              johill@lanl.gov
 //
 
+#include <stdexcept>
 #include <stdio.h>
 
 #define epicsExportSharedSymbols
@@ -32,12 +33,10 @@ public:
 //
 void caNetAddr::stringConvert ( char *pString, unsigned stringLength ) const
 {
-#   ifdef caNetAddrSock     
     if ( this->type == casnaInet ) {
         ipAddrToA (&this->addr.ip, pString, stringLength);
         return;
     }
-#   endif    
     if ( stringLength ) {
         strncpy ( pString, "<Undefined Address>", stringLength );
         pString[stringLength-1] = '\n';
@@ -75,12 +74,10 @@ bool caNetAddr::operator == (const caNetAddr &rhs) const // X aCC 361
     if ( this->type != rhs.type ) {
         return false;
     }
-#   ifdef caNetAddrSock
     if ( this->type == casnaInet ) {
         return ( this->addr.ip.sin_addr.s_addr == rhs.addr.ip.sin_addr.s_addr ) && 
             ( this->addr.ip.sin_port == rhs.addr.ip.sin_port );
     }
-#   endif
     else {
         return false;
     }

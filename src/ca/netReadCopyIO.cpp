@@ -67,8 +67,7 @@ void netReadCopyIO::exceptionNotify ( int status,
     const char *pContextIn, unsigned typeIn, unsigned long countIn )
 {
     ca_signal_formated (status, __FILE__, __LINE__, 
-        "%s type=%d count=%ld\n", 
-        pContextIn, typeIn, countIn);
+        "%s type=%d count=%ld\n", pContextIn, typeIn, countIn);
 }
 
 void netReadCopyIO::show ( unsigned level ) const

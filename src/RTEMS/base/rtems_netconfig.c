@@ -41,6 +41,11 @@ static struct rtems_bsdnet_ifconfig loopback_config = {
 # define NIC_NAME   "ep0"
 # define NIC_ATTACH rtems_3c509_driver_attach
 
+#elif defined(EPICS_RTEMS_NIC_EEPRO)     /* Intel EtherExpressPr (82559ER) */
+  extern int rtems_fxp_attach (struct rtems_bsdnet_ifconfig *, int);
+# define NIC_NAME   "fxp1"
+# define NIC_ATTACH rtems_fxp_attach
+
 #else                                    /* Use NIC provided by BSP */
 # define NIC_NAME   RTEMS_BSP_NETWORK_DRIVER_NAME
 # define NIC_ATTACH RTEMS_BSP_NETWORK_DRIVER_ATTACH

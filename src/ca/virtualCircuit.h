@@ -105,7 +105,7 @@ public:
         epicsGuard < epicsMutex > & guard );
     void sendTimeoutNotify ( const epicsTime & currentTime,
         epicsGuard < callbackMutex > & cbGuard );
-    void tcpiiu::receiveTimeoutNotify( 
+    void receiveTimeoutNotify( 
         epicsGuard < callbackMutex > & cbGuard,
         epicsGuard < epicsMutex > & );
     void beaconAnomalyNotify ( epicsGuard < epicsMutex > & );

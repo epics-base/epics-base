@@ -76,9 +76,17 @@ long epicsShareAPI dba(char*pname)
     DBADDR 	addr;
     long		status;
 
+    if (pname==0 || *pname==0) {
+    	printf("\nusage \"pv name\"\n");
+    	return(1);
+    }
     status=dbNameToAddr(pname,&addr);
+    if(status) {
+        printf("dbNameToAddr failed\n");
+        return 0;
+    }
     printDbAddr(status,&addr);
-    return(status);
+    return 0;
 }
 
 long epicsShareAPI dbl(char	*precordTypename,char *filename,char *fields)
@@ -258,6 +266,10 @@ long epicsShareAPI dbgrep(char *pmask)
     long	status;
     char	*pname;
 
+    if (pmask==0 || *pmask==0 ) {
+    	printf("\nusage \"reg\"\n");
+    	return(1);
+    }
     if(!pdbbase) {
         fprintf(stderr,"no database has been loaded\n");
         return(0);
@@ -291,6 +303,10 @@ long epicsShareAPI dbgf(char	*pname)
     int             	tab_size;
     tab_size = 10;
 
+    if (pname==0 || *pname==0) {
+    	printf("\nusage \"pv name\"\n");
+    	return(1);
+    }
     status=dbNameToAddr(pname,&addr);
     if(status) {
 	errMessage(status," dbNameToAddr failed");
@@ -320,6 +336,10 @@ long epicsShareAPI dbpf(char	*pname,char *pvalue)
     DBADDR addr;
     long	  status;
 
+    if (pname==0 || *pname==0) {
+    	printf("\nusage \"pv name\" \"value\"\n");
+    	return(1);
+    }
     /* make sure value was passed*/
     if(pvalue==0) {
 	errMessage(0L,"No value was specified");
@@ -358,8 +378,15 @@ long epicsShareAPI dbpr(char *pname,int interest_level)
     char            *pmsg;
     int              tab_size;
 
-    if (pname == NULL)
-        return(0);
+    if (pname==0 || *pname==0) {
+    	printf("\nusage \"pv name\"\n");
+    	return(1);
+    }
+    status=dbNameToAddr(pname,&addr);
+    if(status) {
+        printf("dbNameToAddr failed\n");
+        return 0;
+    }
     pmsg = pMsgBuff->message;
     tab_size = 20;
 
@@ -381,12 +408,14 @@ long epicsShareAPI dbtr(char *pname)
     long 	     status;
     struct dbCommon  *precord;
 
-    if(pname == NULL)
-        return 0;
+    if (pname==0 || *pname==0) {
+    	printf("\nusage \"pv name\"\n");
+    	return(1);
+    }
     status=dbNameToAddr(pname,&addr);
     if(status) {
-	errMessage(status," dbNameToAddr failed");
-	return(status);
+        printf("dbNameToAddr failed\n");
+        return 0;
     }
     precord=(struct dbCommon*)(addr.precord);
     if (precord->pact) {
@@ -421,10 +450,14 @@ long epicsShareAPI dbtgf(char *pname)
 
     tab_size = 10;
 
+    if (pname==0 || *pname==0) {
+    	printf("\nusage \"pv name\"\n");
+    	return(1);
+    }
     status=dbNameToAddr(pname,&addr);
     if(status) {
-	errMessage(status," dbNameToAddr failed");
-	return(status);
+        printf("dbNameToAddr failed\n");
+        return 0;
     }
     /* try all options first */
     req_options=0xffffffff;
@@ -504,10 +537,14 @@ long epicsShareAPI dbtpf(char	*pname,char *pvalue)
 
     tab_size = 10;
 
+    if (pname==0 || *pname==0) {
+    	printf("\nusage \"pv name\"\n");
+    	return(1);
+    }
     status=dbNameToAddr(pname,&addr);
     if(status) {
-	errMessage(status," dbNameToAddr failed");
-	return(status);
+        printf("dbNameToAddr failed\n");
+        return 0;
     }
     /* DBR_STRING */
     status=dbPutField(&addr,DBR_STRING,pvalue,1L);

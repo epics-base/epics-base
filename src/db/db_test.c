@@ -657,6 +657,12 @@ int epicsShareAPI tpn(char	*pname,char *pvalue)
     char		*psavevalue;
     int			len;
 
+    if (pname==0 || pvalue==0
+      || ((*pname < ' ') || (*pname > 'z'))
+      || ((*pvalue < ' ') || (*pvalue > 'z'))){
+    	printf("\nusage \"pv name\",\"value\"\n");
+    	return(1);
+    }
     len = strlen(pvalue);
     /*allocate space for value immediately following DBADDR*/
     pdbaddr = calloc(1,sizeof(struct dbAddr) + len+1);

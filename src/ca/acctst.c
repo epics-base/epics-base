@@ -67,9 +67,11 @@ void showProgress ()
 
 void nUpdatesTester ( struct event_handler_args args )
 {
-    unsigned *pCtr = (unsigned *) args.usr;
-    ( *pCtr ) ++;
-    if ( args.status != ECA_NORMAL ) {
+    if ( args.status == ECA_NORMAL ) {
+        unsigned *pCtr = (unsigned *) args.usr;
+        ( *pCtr ) ++;
+    }
+    else {
         printf ( "subscription update failed for \"%s\" because \"%s\"", 
             ca_name ( args.chid ), ca_message ( args.status ) );
     }
@@ -205,23 +207,27 @@ void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan )
 
 void ioTesterGet ( struct event_handler_args args )
 {
-    unsigned *pCtr = (unsigned *) args.usr;
-    if ( args.status != ECA_NORMAL ) {
+    if ( args.status == ECA_NORMAL ) {
+        unsigned *pCtr = (unsigned *) args.usr;
+        ( *pCtr ) ++;
+    }
+    else {
         printf("get call back failed for \"%s\" because \"%s\"", 
             ca_name ( args.chid ), ca_message ( args.status ) );
     }
-    ( *pCtr ) ++;
 }
 
 void ioTesterEvent ( struct event_handler_args args )
 {
-    int status;
-    if ( args.status != ECA_NORMAL ) {
+    if ( args.status == ECA_NORMAL ) {
+        int status;
+        status = ca_get_callback ( DBR_STS_STRING, args.chid, ioTesterGet, args.usr );
+        SEVCHK ( status, 0 );
+    }
+    else {
         printf ( "subscription update failed for \"%s\" because \"%s\"", 
             ca_name ( args.chid ), ca_message ( args.status ) );
     }
-    status = ca_get_callback ( DBR_STS_STRING, args.chid, ioTesterGet, args.usr );
-    SEVCHK ( status, 0 );
 }
 
 void verifyMonitorSubscriptionFlushIO ( chid chan )
@@ -310,28 +316,22 @@ void connectionStateChange ( struct connection_handler_args args )
 
 void subscriptionStateChange ( struct event_handler_args args )
 {
+    struct dbr_sts_string * pdbrgs = ( struct dbr_sts_string * ) args.dbr;
     appChan *pChan = (appChan *) args.usr;
 
+    assert ( args.status == ECA_NORMAL );
     assert ( pChan->channel == args.chid );
     assert ( pChan->connected );
     assert ( args.type == DBR_STS_STRING );
+    assert ( strlen ( pdbrgs->value ) <= MAX_STRING_SIZE );
     pChan->subscriptionUpdateCount++;
     subscriptionUpdateCount++;
-
-    if ( args.status != ECA_NORMAL ) {
-        printf("subscription update failed for \"%s\" because \"%s\"", 
-            ca_name ( args.chid ), ca_message ( args.status ) );
-    }
-    else {
-        struct dbr_sts_string * pdbrgs = ( struct dbr_sts_string * ) args.dbr;
-        assert ( strlen ( pdbrgs->value ) <= MAX_STRING_SIZE );
-    }
 }
 
 void noopSubscriptionStateChange ( struct event_handler_args args )
 {
     if ( args.status != ECA_NORMAL ) {
-        printf ( "subscription update failed for \"%s\" because \"%s\"", 
+        printf ( "noopSubscriptionStateChange: subscription update failed for \"%s\" because \"%s\"", 
             ca_name ( args.chid ), ca_message ( args.status ) );
     }
 }
@@ -1525,7 +1525,11 @@ void acctstExceptionNotify ( struct exception_handler_args args )
 static unsigned arrayEventExceptionNotifyComplete = 0;
 void arrayEventExceptionNotify ( struct event_handler_args args )
 {
-    if ( args.status != ECA_NORMAL ) {
+    if ( args.status == ECA_NORMAL ) {
+        printf ( "arrayEventExceptionNotify: expected exception but didnt receive one \"%s\" because \"%s\"", 
+            ca_name ( args.chid ), ca_message ( args.status ) );
+    }
+    else {
         arrayEventExceptionNotifyComplete = 1;
     }
 }
@@ -1701,7 +1705,13 @@ void arrayReadNotify ( struct event_handler_args args )
 }
 void arrayWriteNotify ( struct event_handler_args args )
 {
-    arrayWriteNotifyComplete = 1;
+    if ( args.status == ECA_NORMAL ) {
+        arrayWriteNotifyComplete = 1;
+    }
+    else {
+       printf ( "arrayWriteNotify: update failed for \"%s\" because \"%s\"", 
+            ca_name ( args.chid ), ca_message ( args.status ) );
+    }
 }
 
 void arrayTest ( chid chan, unsigned maxArrayBytes )

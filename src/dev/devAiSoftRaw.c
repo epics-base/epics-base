@@ -31,6 +31,7 @@
  * Modification Log:
  * -----------------
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
+ * .02  03-04-92        jba     Added special_linconv 
  * 	...
  */
 
@@ -38,6 +39,7 @@
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
+#include	<string.h>
 
 #include	<alarm.h>
 #include	<cvtTable.h>
@@ -51,6 +53,7 @@
 /* Create the dset for devAiSoftRaw */
 long init_record();
 long read_ai();
+long special_linconv();
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -66,7 +69,7 @@ struct {
 	init_record,
 	NULL,
 	read_ai,
-	NULL};
+	special_linconv};
 
 
 static long init_record(pai)
@@ -126,4 +129,14 @@ static long read_ai(pai)
 	}
     }
     return(0);
+}
+
+static long special_linconv(pai,after)
+     struct aiRecord   *pai;
+     int after;
+{
+
+	if(!after) return(0);
+
+	return(0);
 }

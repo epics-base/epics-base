@@ -30,12 +30,14 @@
  * Modification Log:
  * -----------------
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
+ * .02  03-04-92        jba     Added special_linconv
  *      ...
  */
 
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
+#include	<string.h>
 
 #include	<alarm.h>
 #include	<dbDefs.h>
@@ -47,7 +49,8 @@
 #include	<aoRecord.h>
 
 /* Create the dset for devAoSoftRaw */
-long write_ao();
+static long write_ao();
+static long special_linconv();
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -63,7 +66,7 @@ struct {
 	NULL,
 	NULL,
 	write_ao,
-	NULL};
+	special_linconv};
 
 
 static long write_ao(pao)
@@ -96,3 +99,14 @@ static long write_ao(pao)
     }
     return(0);
 }
+
+static long special_linconv(pao,after)
+    struct aoRecord	*pao;
+    int after;
+{
+
+    if(!after) return(0);
+
+    return(0);
+}
+

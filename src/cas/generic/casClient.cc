@@ -112,7 +112,7 @@ void casClient::loadProtoJumpTable()
 	// Request Protocol Jump Table
 	// (use of & here is more portable)
 	//
-	casClient::msgHandlers[CA_PROTO_NOOP] = 
+	casClient::msgHandlers[CA_PROTO_VERSION] = 
 			&casClient::noopAction;
 	casClient::msgHandlers[CA_PROTO_EVENT_ADD] = 
 			&casClient::eventAddAction;
@@ -364,6 +364,20 @@ caStatus casClient::echoAction ()
 caStatus casClient::noopAction ()
 {
 	return S_cas_success;
+}
+
+// send minor protocol revision to the client
+void casClient::sendVersion ()
+{
+	caHdr * pReply; 
+	caStatus status = this->allocMsg ( 0, &pReply );
+    if ( status ) {
+        return;
+    }
+    memset ( pReply, '\0', sizeof ( *pReply ) );
+    pReply->m_cmmd = CA_PROTO_VERSION;
+    pReply->m_count = CA_MINOR_PROTOCOL_REVISION;
+	this->commitMsg ();
 }
 
 //

@@ -352,18 +352,19 @@ LOCAL myISR *isrFetch(unsigned vectorNumber)
  */
 int devInterruptInUseVME (unsigned vectorNumber)
 {
-    static int init;
-    int i;
-    myISR *psub;
+#if CPU_FAMILY == PPC
+    return FALSE;
+#else
+    {
+        static int init;
+        int i;
+        myISR *psub;
 
-#   if CPU_FAMILY == PPC
-        return FALSE;
-#   else
         if (!init) {
             initHandlerAddrList();
             init = TRUE;
         }
- 
+    
         psub = isrFetch (vectorNumber);
 
         /*
@@ -374,8 +375,8 @@ int devInterruptInUseVME (unsigned vectorNumber)
                 return FALSE;
             }
         }
-
-        return TRUE;
+    }
+    return TRUE;
 #   endif
 }
 

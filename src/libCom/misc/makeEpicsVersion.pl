@@ -48,7 +48,7 @@ print OUT "#define EPICS_MODIFICATION   $mod\n";
 print OUT "#define EPICS_UPDATE_NAME    $upd_name\n";
 print OUT "#define EPICS_UPDATE_LEVEL   $upd_level\n";
 print OUT "#define EPICS_VERSION_STRING \"EPICS $ver_str\"\n";
-print OUT "#define epicsReleaseVersion \"@(#)EPICS R$ver_str $cvs_tag $cvs_date\"\n";
+print OUT "#define epicsReleaseVersion \"EPICS R$ver_str $cvs_tag $cvs_date\"\n";
 
 close OUT;
 

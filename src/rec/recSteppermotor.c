@@ -61,11 +61,27 @@
  *                              move the conversion to steps in line
  *                              apply deadband to overshoot checking
 
+ * .21  06-25-91        mk      fix direction indication
+ * .22  06-25-91        mk/lrd  fix encoder position divide by zero
+ * .23  06-25-91        lrd     add DBE_LOG to monitors other than value
+ * .24  07-02-91        rac     avoid gcc warnings
+ * .25  08-28-91        lrd     add open circuit detect on limit switches
+ * .26  09-16-91        lrd     fix IALG not 0 and SCAN not Passive - The motor
+ *                              would continually attempt to initialize
+ * .27  12-09-91        lrd     new INVALID severity for errors that invalidate
+ *                              the results
+ * .28  12-17-91        lrd     changed the MDEL and ADEL deadbands so
+ *                              the range for exceeding the deadband includes
+ *                              the value specified. (i.e. 0 is always violated)
+
  * .21  10-15-90	mrk	extensible record and device support
  * .22  10-24-91	jba	bug fix to alarms
  * .23  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  * .24  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
  * .25  02-28-92	jba	ANSI C changes
+ * .26  03-18-92	mrk	move retry to callback
+				Make STOP stop even if retry>0
+				Make motor move whenever VAL field accessed
  */
 
 #include	<vxWorks.h>
@@ -78,6 +94,7 @@
 #include	<dbDefs.h>
 #include	<dbAccess.h>
 #include	<dbFldTypes.h>
+#include	<dbScan.h>
 #include	<devSup.h>
 #include	<errMdef.h>
 #include	<recSup.h>
@@ -90,7 +107,7 @@
 #define initialize NULL
 static long init_record();
 static long process();
-#define special NULL
+static long  special();
 static long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
@@ -142,7 +159,6 @@ void positional_sm();
 void velocity_sm();
 void sm_get_position();
 
-static not_init_record=FALSE;
 
 
 static long init_record(psm)
@@ -166,9 +182,8 @@ static long process(psm)
 
 	/* intialize the stepper motor record when the init bit is 0 */
 	/* the init is set when the readback returns */
-	not_init_record=TRUE;
-	if (psm->init == 0){
-		init_sm(psm);
+	if (psm->init <= 0){
+		if(psm->init==0) init_sm(psm);
 		tsLocalTime(&psm->time);
 		monitor(psm);
 		return(0);
@@ -201,6 +216,27 @@ static long get_value(psm,pvdes)
     (float *)(pvdes->pvalue) = &psm->val;
     return(0);
 }
+
+static long special(paddr,after)
+    struct dbAddr *paddr;
+    int           after;
+{
+    struct steppermotorRecord *psm =
+				(struct steppermotorRecord *)(paddr->precord);
+    int                 special_type = paddr->special;
+
+    if(!after) return(0);
+    switch(special_type) {
+    case(SPC_MOD):
+	/* set lval different than val so that motor will move*/
+	if(psm->lval==psm->val) psm->lval = psm->val+1.0;
+        return(0);
+    default:
+        recGblDbaddrError(S_db_badChoice,paddr,"stepperMotor: special");
+        return(S_db_badChoice);
+    }
+}
+
 
 static long get_units(paddr,units)
     struct dbAddr *paddr;
@@ -304,15 +340,7 @@ static void monitor(psm)
         short           stat,sevr,nsta,nsev;
 
         /* get previous stat and sevr  and new stat and sevr*/
-        stat=psm->stat;
-        sevr=psm->sevr;
-        nsta=psm->nsta;
-        nsev=psm->nsev;
-        /*set current stat and sevr*/
-        psm->stat = nsta;
-        psm->sevr = nsev;
-        psm->nsta = 0;
-        psm->nsev = 0;
+	recGblResetSevr(psm,stat,sevr,nsta,nsev);
 
         /* Flags which events to fire on the value field */
         monitor_mask = 0;
@@ -360,23 +388,17 @@ static void smcb_callback(psm_data,psm)
 struct motor_data	*psm_data;
 struct steppermotorRecord	*psm;
 {
-    short           stat,sevr,nsta,nsev;
+    short	stat,sevr,nsta,nsev;
+    int		intAccept=interruptAccept;
+    short	post_events;
+    double          temp;
+    short	card,channel;
+    short	done_move=0;
+
+    card = psm->out.value.vmeio.card;
+    channel = psm->out.value.vmeio.signal;
    
-/*
-printf("smcb_callback\n");
-printf("%d %d %d %d %d %d %d %d %d\n",
-psm_data->cw_limit,
-psm_data->ccw_limit,
-psm_data->moving,
-psm_data->direction,
-psm_data->constant_velocity,
-psm_data->velocity,
-psm_data->encoder_position,
-psm_data->motor_position,
-psm_data->accel
-);
-*/
-    if(not_init_record) {
+    if(intAccept) {
 	dbScanLock((struct dbCommon *)psm);
 	if(psm->pact) {
 	    dbScanUnlock((struct dbCommon *)psm);
@@ -400,28 +422,28 @@ psm_data->accel
 	if (psm->dir != psm_data->direction){
 		psm->dir = psm_data->direction;
 		if (psm->mlis.count)
-			db_post_events(psm,&psm->dir,DBE_VALUE);
+			db_post_events(psm,&psm->dir,DBE_VALUE|DBE_LOG);
 	}
 
 	/* constant velocity */
 	if (psm->cvel != psm_data->constant_velocity){
 		psm->cvel = psm_data->constant_velocity;
 		if (psm->mlis.count)
-			db_post_events(psm,&psm->cvel,DBE_VALUE);
+			db_post_events(psm,&psm->cvel,DBE_VALUE|DBE_LOG);
 	}
     }else{ /* POSITION*/
 	/* constant velocity */
 	if (psm->cvel != psm_data->constant_velocity){
 		psm->cvel = psm_data->constant_velocity;
 		if (psm->mlis.count)
-			db_post_events(psm,&psm->cvel,DBE_VALUE);
+			db_post_events(psm,&psm->cvel,DBE_VALUE|DBE_LOG);
 	}
 
 	/* direction */
 	if (psm->dir != psm_data->direction){
 		psm->dir = psm_data->direction;
 		if (psm->mlis.count)
-			db_post_events(psm,&psm->dir,DBE_VALUE);
+			db_post_events(psm,&psm->dir,DBE_VALUE|DBE_LOG);
 	}
 
 	/* encoder position */
@@ -429,49 +451,45 @@ psm_data->accel
 	/* use the quardrature encoding technique - if we use an encoder      */
 	/* that does not, then we need to make quadrature encoder a database  */
 	/* field and use the 4 on that condition !!!!!                        */
-	if (psm->epos){
+	if (psm->eres){
 		psm->epos = (psm_data->encoder_position * psm->dist * psm->mres)
 		  / (psm->eres * 4);
 		if (psm->mlis.count)
-			db_post_events(psm,&psm->epos,DBE_VALUE);
+			db_post_events(psm,&psm->epos,DBE_VALUE|DBE_LOG);
 	}
 
 	/* motor position */
 	if (psm->mpos != psm_data->motor_position){
 		psm->mpos = psm_data->motor_position * psm->dist;
 		if (psm->mlis.count)
-			db_post_events(psm,&psm->mpos,DBE_VALUE);
+			db_post_events(psm,&psm->mpos,DBE_VALUE|DBE_LOG);
 	}
 
 	/* limit switches */
 	if (psm->mcw != psm_data->cw_limit){
 		psm->mcw = psm_data->cw_limit;
-		psm->cw = (psm->mcw)?0:1;
+		psm->cw = (psm->mcw)?0:1;   /* change sense for VMS OPI */
 		if (psm->mlis.count)
-			db_post_events(psm,&psm->cw,DBE_VALUE);
+			db_post_events(psm,&psm->cw,DBE_VALUE|DBE_LOG);
 	}
 	if (psm->mccw != psm_data->ccw_limit){
 		psm->mccw = psm_data->ccw_limit;
-		psm->ccw = (psm->mccw)?0:1;
+		psm->ccw = (psm->mccw)?0:1; /* change sense for VMS OPI */
 		if (psm->mlis.count)
-			db_post_events(psm,&psm->ccw,DBE_VALUE);
+			db_post_events(psm,&psm->ccw,DBE_VALUE|DBE_LOG);
 	}
 
 	/* alarm conditions for limit switches */
-	if ((psm->ccw == 0) || (psm->cw == 0)){	/* limit violation */
-		recGblSetSevr(psm,HW_LIMIT_ALARM,psm->hlsv);
-	}
-
-
         /* get previous stat and sevr  and new stat and sevr*/
         recGblResetSevr(psm,stat,sevr,nsta,nsev);
-
-        /* anyone waiting for an event on this record */
-        if (psm->mlis.count!=0  && (stat!=nsta || sevr!=nsev) ){
-		db_post_events(psm,&psm->val,DBE_VALUE|DBE_ALARM);
-		db_post_events(psm,&psm->stat,DBE_VALUE);
-		db_post_events(psm,&psm->sevr,DBE_VALUE);
-   	 }
+	post_events = FALSE;
+	if (psm->mccw && psm->mcw){                    /* limits disconnected */
+		recGblSetSevr(psm,WRITE_ALARM,VALID_ALARM);
+		post_events = TRUE;
+	}else if ((psm->ccw == 0) || (psm->cw == 0)){  /* limit violation */
+		recGblSetSevr(psm,HW_LIMIT_ALARM,psm->hlsv);
+		post_events = TRUE;
+	}
 
 	/* get the read back value */
 	sm_get_position(psm,psm_data->moving);
@@ -484,6 +502,14 @@ psm_data->accel
 			db_post_events(psm,&psm->movn,DBE_VALUE|DBE_LOG);
 	}
 
+
+        /* anyone waiting for an event on this record */
+        if (psm->mlis.count!=0  && post_events) {
+		db_post_events(psm,&psm->val,DBE_VALUE|DBE_ALARM|DBE_LOG);
+		db_post_events(psm,&psm->rbv,DBE_VALUE|DBE_ALARM|DBE_LOG);
+		db_post_events(psm,&psm->stat,DBE_VALUE|DBE_LOG);
+		db_post_events(psm,&psm->sevr,DBE_VALUE|DBE_LOG);
+   	 }
         /* stop motor on overshoot */
         if (psm->movn){
                 if (psm->posm){ /* moving in the positive direction */
@@ -500,8 +526,62 @@ psm_data->accel
                                         SM_MOTION,0);
                 }
         }
+	if(!psm->movn) {
+	    /* difference between desired position and readback pos */
+	    if ( (psm->rbv < (psm->val - psm->rdbd))
+	      || (psm->rbv > (psm->val + psm->rdbd)) ){
+                    /* determine direction */
+                    if (psm->rcnt == 0)
+                            psm->posm = (psm->rbv < psm->val);
+    
+		    /* one attempt was made - record the error */
+		    if (psm->rcnt == 1){
+			    psm->miss = (psm->val - psm->rbv);
+			    if (psm->mlis.count)
+				    db_post_events(psm,&psm->miss,DBE_VALUE|DBE_LOG);
+		    }
+
+		    /* should we retry */
+		    if (psm->rcnt <= psm->rtry){
+                            /* convert */
+                            temp = psm->val / psm->dist;
+                            psm->rval = temp;
+    
+
+			    /* move motor */
+			    if (sm_driver(psm->dtyp,card,channel,SM_MOVE,psm->rval-psm->rrbv,0) < 0){
+				    recGblSetSevr(psm,WRITE_ALARM,VALID_ALARM);
+			    } else {
+			        psm->movn = 1;
+			        psm->rcnt++;
+			        if (psm->mlis.count){
+				    db_post_events(psm,&psm->movn,DBE_VALUE|DBE_LOG);
+				    db_post_events(psm,&psm->rcnt,DBE_VALUE|DBE_LOG);
+			        }
+                                done_move = 0;
+			    }
+                    /* no more retries - put the record in alarm */
+                    }else{
+                            done_move = 1;
+                    }
+            }else{
+                    /* error doesn't exceed deadband - done moving */
+                    done_move = 1;
+            }
+	}
+        /* there was a move in progress and now it is complete */
+        if (done_move && (psm->dmov == 0)){
+                psm->dmov = 1;
+                if (psm->mlis.count)
+                        db_post_events(psm,&psm->dmov,DBE_VALUE|DBE_LOG);
+
+                /* check for deviation from desired value */
+                alarm(psm);
+		monitor(psm);
+
+	}
     }
-    if(not_init_record) {
+    if(intAccept) {
 	psm->pact = FALSE;
 	dbScanUnlock((struct dbCommon *)psm);
     }
@@ -573,6 +653,7 @@ struct steppermotorRecord      *psm;
 			recGblSetSevr(psm,WRITE_ALARM,VALID_ALARM);
 			return;
 		}
+		psm->init = -1;
 	}else if (psm->mode == VELOCITY){
 		/* get the velocity */
 /*		get_velocity(motor,smcb_velocity_req);*/
@@ -591,9 +672,8 @@ struct steppermotorRecord      *psm;
 static void positional_sm(psm)
 struct steppermotorRecord	*psm;
 {
-	short	card,channel,done_move;
+	short	card,channel;
         int             acceleration,velocity;
-	double          temp;
 
 	/* only VME stepper motor cards supported */
 	if (psm->out.type != VME_IO) return;
@@ -606,7 +686,8 @@ struct steppermotorRecord	*psm;
 	if (psm->stop){
 		sm_driver(psm->dtyp,card,channel,SM_MOTION,0,0);
 		psm->stop = 0;
-		if (psm->mlis.count) db_post_events(psm,&psm->stop,DBE_VALUE);
+		psm->rcnt=psm->rtry+1;
+		if (psm->mlis.count) db_post_events(psm,&psm->stop,DBE_VALUE|DBE_LOG);
 		return;
 	}
 
@@ -633,9 +714,9 @@ struct steppermotorRecord	*psm;
 		psm->ival = 0;		/* resets initial offset */
 		sm_driver(psm->dtyp,card,channel,SM_SET_HOME,0,0);
 		if(psm->mlis.count) {
-			db_post_events(psm,&psm->rbv,DBE_VALUE);
-			db_post_events(psm,&psm->val,DBE_VALUE);
-			db_post_events(psm,&psm->sthm,DBE_VALUE);
+			db_post_events(psm,&psm->rbv,DBE_VALUE|DBE_LOG);
+			db_post_events(psm,&psm->val,DBE_VALUE|DBE_LOG);
+			db_post_events(psm,&psm->sthm,DBE_VALUE|DBE_LOG);
 		}
 		return;
 	}
@@ -672,59 +753,14 @@ struct steppermotorRecord	*psm;
 			db_post_events(psm,&psm->lval,DBE_VALUE|DBE_LOG);
 			db_post_events(psm,&psm->dmov,DBE_VALUE|DBE_LOG);
 		}
-	}
-
-	/* difference between desired position and readback pos */
-	if ( (psm->rbv < (psm->val - psm->rdbd))
-	  || (psm->rbv > (psm->val + psm->rdbd)) ){
-                /* determine direction */
-                if (psm->rcnt == 0)
-                        psm->posm = (psm->rbv < psm->val);
-
-		/* one attempt was made - record the error */
-		if (psm->rcnt == 1){
-			psm->miss = (psm->val - psm->rbv);
-			if (psm->mlis.count)
-				db_post_events(psm,&psm->miss,DBE_VALUE|DBE_LOG);
+	        /* move motor */
+		psm->movn = 1;
+		if (sm_driver(psm->dtyp,card,channel,SM_MOVE,psm->rval-psm->rrbv,0) < 0){
+			psm->movn=0;
+			recGblSetSevr(psm,WRITE_ALARM,VALID_ALARM);
 		}
-
-		/* should we retry */
-		if (psm->rcnt <= psm->rtry){
-                        /* convert */
-                        temp = psm->val / psm->dist;
-                        psm->rval = temp;
-
-
-			/* move motor */
-			if (sm_driver(psm->dtyp,card,channel,SM_MOVE,psm->rval-psm->rrbv,0) < 0){
-				recGblSetSevr(psm,WRITE_ALARM,VALID_ALARM);
-				return;
-			}
-			psm->movn = 1;
-			psm->rcnt++;
-			if (psm->mlis.count){
-				db_post_events(psm,&psm->movn,DBE_VALUE|DBE_LOG);
-				db_post_events(psm,&psm->rcnt,DBE_VALUE|DBE_LOG);
-			}
-                        done_move = 0;
-                /* no more retries - put the record in alarm */
-                }else{
-                        done_move = 1;
-                }
-        }else{
-                /* error doesn't exceed deadband - done moving */
-                done_move = 1;
-        }
-        /* there was a move in progress and now it is complete */
-        if (done_move && (psm->dmov == 0)){
-                psm->dmov = 1;
-                if (psm->mlis.count)
-                        db_post_events(psm,&psm->dmov,DBE_VALUE|DBE_LOG);
-
-                /* check for deviation from desired value */
-                alarm(psm);
-
 	}
+
 	return;
 }
 
@@ -847,7 +883,7 @@ short                           moving;
     }
 
     /* readback position at initialization */
-    if ((psm->init == 0) && (moving == 0)){
+    if ((psm->init <= 0) && (moving == 0)){
 	if (psm->sthm){
 		sm_driver(psm->dtyp,
 		  psm->out.value.vmeio.card,
@@ -860,8 +896,8 @@ short                           moving;
 	psm->rval = psm->rrbv = psm->rbv / psm->dist;
 	psm->init = 1;
 	if (psm->mlis.count != 0){
-		db_post_events(psm,&psm->val,DBE_VALUE|DBE_ALARM);
-		db_post_events(psm,&psm->rbv,DBE_VALUE|DBE_ALARM);
+		db_post_events(psm,&psm->val,DBE_VALUE|DBE_ALARM|DBE_LOG);
+		db_post_events(psm,&psm->rbv,DBE_VALUE|DBE_ALARM|DBE_LOG);
 	}
     /* readback normally */
     }else{

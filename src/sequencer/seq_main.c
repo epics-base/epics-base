@@ -413,7 +413,7 @@ SPROG		*pSP;
 	pvalue = seqMacValGet(pname, strlen(pname), pSP->mac_ptr);
 	if (pvalue != NULL && strlen(pvalue) > 0)
 	{	/* Create & open file for write only */
-		delete(pvalue);
+		remove(pvalue);
 		fd = open(pvalue, O_CREAT | O_WRONLY, 0664);
 		if (fd != ERROR)
 			pSP->logFd = fd;

@@ -38,8 +38,6 @@
 
 #include "dbDefs.h"
 #include "epicsPrint.h"
-#include "osiWatchdog.h"
-#include "osiClock.h"
 #include "alarm.h"
 #include "dbAccess.h"
 #include "dbEvent.h"
@@ -58,7 +56,7 @@ int	seqRecDebug = 0;
 
 /* Create RSET - Record Support Entry Table*/
 static long 	init_record(), process(), asyncFinish(), get_precision();
-static void	processCallback(), watchDog();
+static void	processCallback();
 
 struct rset seqRSET={
 	RSETNUMBER,
@@ -87,20 +85,20 @@ struct rset seqRSET={
 #define SELN_BIT_MASK	~(0xffff << NUM_LINKS)
 
 /* This is what a link-group looks like in a sequence record */
-struct	linkDesc {
+typedef struct	linkDesc {
   double          dly;	/* Delay value (in seconds) */
   struct link     dol;	/* Where to fetch the input value from */
   double          dov;	/* If dol is CONSTANT, this is the CONSTANT value */
   struct link     lnk;	/* Where to put the value from dol */
-};
+}linkDesc;
 
 /* Callback structure used by the watchdog function to queue link processing */
-struct	callbackSeq {
-  CALLBACK		callBack;	/* used for the callback task */
-  watchdogId		wd_id;		/* Watchdog udes for delays */
-  struct linkDesc *plinks[NUM_LINKS+1]; /* Pointers to links to process */
-  int			index;
-};
+typedef struct callbackSeq {
+  CALLBACK	callback;	/* used for the callback task */
+  seqRecord     *pseqRecord;
+  linkDesc 	*plinks[NUM_LINKS+1]; /* Pointers to links to process */
+  int		index;
+}callbackSeq;
 
 int processNextLink();
 /*****************************************************************************
@@ -116,12 +114,12 @@ int processNextLink();
  ******************************************************************************/
 static long 
 init_record(pseq, pass)
-struct seqRecord *pseq;
+seqRecord *pseq;
 int pass;
 {
     int		index;
-    struct  linkDesc      *plink;
-    struct callbackSeq *pcallbackSeq;
+    linkDesc      *plink;
+    callbackSeq *pcallbackSeq;
 
     if (pass==0) return(0);
 
@@ -129,11 +127,12 @@ int pass;
       printf("init_record(%s) entered\n", pseq->name);
 
     /* Allocate a callback structure for use in processing */
-    pseq->dpvt = (void *)malloc(sizeof(struct  callbackSeq));
-    pcallbackSeq = (struct callbackSeq *)pseq->dpvt;
-    pcallbackSeq->callBack.callback = processCallback;
-    pcallbackSeq->callBack.user = (void *) pseq;
-    pcallbackSeq->wd_id = watchdogCreate();
+    pcallbackSeq  = (callbackSeq *)calloc(1,sizeof(callbackSeq));
+    pcallbackSeq->pseqRecord = pseq;
+    callbackSetCallback(processCallback,&pcallbackSeq->callback);
+    callbackSetUser(pcallbackSeq,&pcallbackSeq->callback);
+    callbackSetPriority(pseq->prio,&pcallbackSeq->callback);
+    pseq->dpvt = (void *)pcallbackSeq;
 
     /* Get link selection if sell is a constant and nonzero */
     if (pseq->sell.type==CONSTANT)
@@ -144,7 +143,7 @@ int pass;
     }
 
   /* Copy over ALL the input link constants here */
-  plink = (struct linkDesc *)(&(pseq->dly1));
+  plink = (linkDesc *)(&(pseq->dly1));
 
   index = 0;
   while (index < NUM_LINKS)
@@ -185,10 +184,10 @@ int pass;
  ******************************************************************************/
 static long 
 process(pseq)
-struct seqRecord *pseq;
+seqRecord *pseq;
 {
-  struct  callbackSeq	*pcb = (struct callbackSeq *) (pseq->dpvt);
-  struct  linkDesc	*plink;
+  callbackSeq	*pcb = (callbackSeq *) (pseq->dpvt);
+  linkDesc	*plink;
   unsigned short	lmask;
   int			tmp;
 
@@ -203,7 +202,7 @@ struct seqRecord *pseq;
   pseq->pact = TRUE;
 
   /* Reset the PRIO in case it was changed */
-  pcb->callBack.priority = pseq->prio;
+  callbackSetPriority(pseq->prio,&pcb->callback);
 
   /*
    * We should not bother supporting seqSELM_All or seqSELM_Specified
@@ -247,7 +246,7 @@ struct seqRecord *pseq;
   }
   /* Figure out which links are going to be processed */
   pcb->index = 0;
-  plink = (struct linkDesc *)(&(pseq->dly1));
+  plink = (linkDesc *)(&(pseq->dly1));
   tmp = 1;
   while (lmask)
   {
@@ -298,9 +297,9 @@ struct seqRecord *pseq;
  *
  ******************************************************************************/
 int processNextLink(pseq)
-struct seqRecord *pseq;
+seqRecord *pseq;
 {
-  struct  callbackSeq   *pcb = (struct callbackSeq *) (pseq->dpvt);
+  callbackSeq   *pcb = (callbackSeq *) (pseq->dpvt);
   int			wdDelay;
 
   if (seqRecDebug > 5)
@@ -315,15 +314,12 @@ struct seqRecord *pseq;
   {
     if (pcb->plinks[pcb->index]->dly > 0.0)
     {
-      /* Use the watch-dog as a delay mechanism */
-      wdDelay = (int)(pcb->plinks[pcb->index]->dly * clockGetRate());
-      watchdogStart(pcb->wd_id, wdDelay,
-          (WATCHDOGFUNC)watchDog, (void *)(&(pcb->callBack)));
+      callbackRequestDelayed( &pcb->callback,pcb->plinks[pcb->index]->dly);
     }
     else
     {
       /* No delay, do it now.  Avoid recursion by using the callback task */
-      watchDog((int)(&(pcb->callBack)));
+      callbackRequest(&pcb->callback);
     }
   }
   return(0);
@@ -338,7 +334,7 @@ struct seqRecord *pseq;
  ******************************************************************************/
 static long
 asyncFinish(pseq)
-struct seqRecord *pseq;
+seqRecord *pseq;
 {
   unsigned short MonitorMask;
 
@@ -360,22 +356,8 @@ struct seqRecord *pseq;
 
   return(0);
 }
-/*****************************************************************************
- *
- * Schedule the process continuation via the callback tasks.
- *
- * This function is called by the watchdog task when it is time to process the
- * "next" link-group in the sequence record.
- *
- ******************************************************************************/
-static void
-watchDog(pcallback)
-CALLBACK *pcallback;
-{
-  callbackRequest(pcallback);
-  return;
-}
-/*****************************************************************************
+
+/*****************************************************************************
  *
  * Link-group processing function.
  *
@@ -391,13 +373,14 @@ CALLBACK *pcallback;
  *
  ******************************************************************************/
 static void
-processCallback(pCallback)
-CALLBACK *pCallback;
+processCallback(CALLBACK *arg)
 {
-  struct seqRecord *pseq = (struct seqRecord *)(pCallback->user);
-  struct  callbackSeq   *pcb = (struct callbackSeq *) (pseq->dpvt);
-  double		myDouble;
+  callbackSeq *pcb;
+  seqRecord *pseq;
+  double	myDouble;
 
+  callbackGetUser(pcb,arg);
+  pseq = pcb->pseqRecord;
   dbScanLock((struct dbCommon *)pseq);
 
   if (seqRecDebug > 5)
@@ -442,7 +425,7 @@ get_precision(paddr, precision)
 struct dbAddr *paddr;
 long          *precision;
 {
-  struct	seqRecord	*pseq = (struct seqRecord *) paddr->precord;
+  seqRecord	*pseq = (seqRecord *) paddr->precord;
 
   *precision = pseq->prec;
 

@@ -50,8 +50,6 @@
 
 #include "dbDefs.h"
 #include "epicsPrint.h"
-#include "osiWatchdog.h"
-#include "osiClock.h"
 #include "alarm.h"
 #include "callback.h"
 #include "dbAccess.h"
@@ -117,26 +115,23 @@ struct histogramdset { /* histogram input dset */
 };
 
 /* control block for callback*/
-struct callback {
-     void (*callback)();
-     int priority;
-     struct dbAddr dbAddr;
-     watchdogId wd_id;
-};
+typedef struct myCallback {
+     CALLBACK callback;
+     histogramRecord *phistogram;
+}myCallback;
 
-/*
-void callbackRequest();
-*/
-
 static long add_count();
 static long clear_histogram();
 static void monitor();
 static long readValue();
 
-static void wdogCallback(pcallback)
-     struct callback *pcallback;
+static void wdogCallback(CALLBACK *arg)
 {
-     struct histogramRecord *phistogram=(struct histogramRecord *)(pcallback->dbAddr.precord);
+     myCallback *pcallback;
+     struct histogramRecord *phistogram;
+
+     callbackGetUser(pcallback,arg);
+     phistogram = pcallback->phistogram;
      /* force post events for any count change */
      if(phistogram->mcnt>0){
           dbScanLock((struct dbCommon *)phistogram);
@@ -148,9 +143,7 @@ static void wdogCallback(pcallback)
 
      if(phistogram->sdel>0) {
           /* start new watchdog timer on monitor */
-          watchdogStart(pcallback->wd_id,
-              (int)(phistogram->sdel *clockGetRate()),
-              (WATCHDOGFUNC)callbackRequest,(void *)pcallback);
+          callbackRequestDelayed(&pcallback->callback,(double)phistogram->sdel);
      }
 
      return;
@@ -158,30 +151,25 @@ static void wdogCallback(pcallback)
 static long wdogInit(phistogram)
     struct histogramRecord	*phistogram;
 {
-     struct callback *pcallback;
+     myCallback *pcallback;
 
      if(phistogram->wdog==NULL && phistogram->sdel>0) {
           /* initialize a watchdog timer */
-          pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
-          phistogram->wdog = (void *)pcallback;
+          pcallback = (myCallback *)(calloc(1,sizeof(myCallback)));
+          pcallback->phistogram = phistogram;
 	  if(!pcallback) return -1;
-          pcallback->callback = wdogCallback;
-          pcallback->priority = priorityLow;
-          pcallback->wd_id = watchdogCreate();
-          dbNameToAddr(phistogram->name,&(pcallback->dbAddr));
+          callbackSetCallback(wdogCallback,&pcallback->callback);
+          callbackSetUser(pcallback,&pcallback->callback);
+          callbackSetPriority(priorityLow,&pcallback->callback);
+          phistogram->wdog = (void *)pcallback;
      }
 
      if (!phistogram->wdog) return -1;
-     pcallback = (struct callback *)phistogram->wdog;
+     pcallback = (myCallback *)phistogram->wdog;
      if(!pcallback) return -1;
-
-     watchdogCancel(pcallback->wd_id);
-  
      if( phistogram->sdel>0) {
          /* start new watchdog timer on monitor */
-         watchdogStart(pcallback->wd_id,
-             (int)(phistogram->sdel * clockGetRate()),
-             (WATCHDOGFUNC)callbackRequest,(void *)pcallback);
+         callbackRequestDelayed(&pcallback->callback,(double)phistogram->sdel);
      }
      return 0;
 }

@@ -74,8 +74,6 @@
 #include <string.h>
 
 #include "dbDefs.h"
-#include "osiWatchdog.h"
-#include "osiClock.h"
 #include "epicsPrint.h"
 #include "alarm.h"
 #include "callback.h"
@@ -141,35 +139,29 @@ struct bodset { /* binary output dset */
 
 
 /* control block for callback*/
-struct callback {
+typedef struct myCallback {
         CALLBACK        callback;
         struct dbCommon *precord;
-        watchdogId wd_id;
-};
+}myCallback;
 
 static void alarm();
 static void monitor();
 static long writeValue();
 
-void callbackRequest();
-
-static void myCallback(pcallback)
-    struct callback *pcallback;
+static void myCallbackFunc(CALLBACK *arg)
 {
+    myCallback *pcallback;
+    struct boRecord *pbo;
 
-    struct boRecord *pbo=(struct boRecord *)pcallback->precord;
-    int		    wait_time;
-
+    callbackGetUser(pcallback,arg);
+    pbo=(struct boRecord *)pcallback->precord;
     dbScanLock((struct dbCommon *)pbo);
     if(pbo->pact) {
-	wait_time = (int)(pbo->high * clockGetRate());
-	if (pbo->val==1 && wait_time>0) {
-		struct callback *pcallback;
-		pcallback = (struct callback *)(pbo->rpvt);
-        	if(pcallback->wd_id==NULL) pcallback->wd_id = watchdogCreate();
-                callbackSetPriority(pbo->prio, &pcallback->callback);
-               	watchdogStart(pcallback->wd_id, wait_time,
-                    (WATCHDOGFUNC)callbackRequest, (void *)pcallback);
+	if((pbo->val==1) && (pbo->high>0)){
+	    myCallback *pcallback;
+	    pcallback = (myCallback *)(pbo->rpvt);
+            callbackSetPriority(pbo->prio, &pcallback->callback);
+            callbackRequestDelayed(&pcallback->callback,(double)pbo->high);
 	}
     } else {
 	pbo->val = 0;
@@ -184,7 +176,7 @@ static long init_record(pbo,pass)
 {
     struct bodset *pdset;
     long status=0;
-    struct callback *pcallback;
+    myCallback *pcallback;
 
     if (pass==0) return(0);
 
@@ -213,9 +205,10 @@ static long init_record(pbo,pass)
 	}
     }
 
-    pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
+    pcallback = (myCallback *)(calloc(1,sizeof(myCallback)));
     pbo->rpvt = (void *)pcallback;
-    callbackSetCallback(myCallback,&pcallback->callback);
+    callbackSetCallback(myCallbackFunc,&pcallback->callback);
+    callbackSetUser(pcallback,&pcallback->callback);
     pcallback->precord = (struct dbCommon *)pbo;
 
     if( pdset->init_record ) {
@@ -304,14 +297,11 @@ static long process(pbo)
 	pbo->pact = TRUE;
 
 	recGblGetTimeStamp(pbo);
-	wait_time = (int)(pbo->high * clockGetRate());
-	if (pbo->val==1 && wait_time>0) {
-		struct callback *pcallback;
-		pcallback = (struct callback *)(pbo->rpvt);
-        	if(pcallback->wd_id==0) pcallback->wd_id = watchdogCreate();
-                callbackSetPriority(pbo->prio, &pcallback->callback);
-               	watchdogStart(pcallback->wd_id, wait_time,
-                    (WATCHDOGFUNC)callbackRequest, (void *)pcallback);
+	if((pbo->val==1) && (pbo->high>0)){
+	    myCallback *pcallback;
+	    pcallback = (myCallback *)(pbo->rpvt);
+            callbackSetPriority(pbo->prio, &pcallback->callback);
+            callbackRequestDelayed(&pcallback->callback,(double)pbo->high);
 	}
 	/* check event list */
 	monitor(pbo);

@@ -49,8 +49,6 @@
 #include <math.h>
 
 #include "alarm.h"
-#include "osiWatchdog.h"
-#include "osiClock.h"
 #include "dbDefs.h"
 #include "dbAccess.h"
 #include "dbEvent.h"
@@ -126,9 +124,7 @@ struct rset calcoutRSET={
 
 struct rpvtStruct {
         CALLBACK  doOutCb;
-        watchdogId   wd_id_0;
         CALLBACK  checkLinkCb;
-        watchdogId   wd_id_1;
         short     wd_id_1_LOCK;
         short     caLinkStat; /* NO_CA_LINKS,CA_LINKS_ALL_OK,CA_LINKS_NOT_OK */
 };
@@ -208,16 +204,13 @@ static long init_record(pcalc,pass)
     callbackSetCallback(checkLinksCallback, &prpvt->checkLinkCb);
     callbackSetPriority(0, &prpvt->checkLinkCb);
     callbackSetUser(pcalc, &prpvt->checkLinkCb);
-    prpvt->wd_id_0 = watchdogCreate();
-    prpvt->wd_id_1 = watchdogCreate();
     prpvt->wd_id_1_LOCK = 0;
 
 /* Can't do this. Sometimes initialization is not done after 1 second
    and then dbScanLock will complain !!!
 
     if(prpvt->caLinkStat == CA_LINKS_NOT_OK) {
-        watchdogStart(prpvt->wd_id_1, clockGetRate(), (WATCHDOGFUNC)callbackRequest,
-                (void *)(&prpvt->checkLinkCb));
+        callbackRequestDelayed(&prpvt->checkLinkCb->callback,1.0);
         prpvt->wd_id_1_LOCK = 1;
     }
 */
@@ -289,11 +282,8 @@ static long process(pcalc)
             if(pcalc->odly > 0.0) {
                 pcalc->dlya = 1;
                 db_post_events(pcalc,&pcalc->dlya,DBE_VALUE);
-                wdDelay = (int)(pcalc->odly * clockGetRate());
                 callbackSetPriority(pcalc->prio, &prpvt->doOutCb);
-                watchdogStart(prpvt->wd_id_0, wdDelay,
-                    (WATCHDOGFUNC)callbackRequest,
-                        (void *)(&prpvt->doOutCb));
+                callbackRequestDelayed(&prpvt->doOutCb,(double)pcalc->odly);
             }
             else {
                 execOutput(pcalc);
@@ -349,7 +339,6 @@ static long special(paddr,after)
         }
         db_post_events(pcalc,&pcalc->clcv,DBE_VALUE);
         return(0);
-        break;
 
       case(calcoutRecordOCAL):
         pcalc->oclv=postfix(pcalc->ocal,pcalc->orpc,&error_number);
@@ -360,7 +349,6 @@ static long special(paddr,after)
         db_post_events(pcalc,&pcalc->oclv,DBE_VALUE);
 
         return(0);
-        break;
 
       case(calcoutRecordINPA):
       case(calcoutRecordINPB):
@@ -396,8 +384,7 @@ static long special(paddr,after)
             *plinkValid = calcoutINAV_EXT_NC;
             /* DO_CALLBACK, if not already scheduled */
             if(!prpvt->wd_id_1_LOCK) {
-                watchdogStart(prpvt->wd_id_1, clockGetRate()/2, (WATCHDOGFUNC)callbackRequest,
-                    (void *)(&prpvt->checkLinkCb));
+                callbackRequestDelayed(&prpvt->checkLinkCb,.5);
                 prpvt->wd_id_1_LOCK = 1;
                 prpvt->caLinkStat = CA_LINKS_NOT_OK;
             }
@@ -406,7 +393,6 @@ static long special(paddr,after)
 
         
         return(0);
-        break;
 
       default:
 	recGblDbaddrError(S_db_badChoice,paddr,"calc: special");
@@ -565,14 +551,13 @@ static void alarm(pcalc)
 	return;
 }
 
-static void doOutputCallback(pcallback)
-    struct callback *pcallback;
+static void doOutputCallback(CALLBACK *arg)
 {
 
     dbCommon    *pcalc;
     struct rset *prset;
 
-    callbackGetUser(pcalc, pcallback);
+    callbackGetUser(pcalc, arg);
     prset = (struct rset *)pcalc->rset;
     dbScanLock((struct dbCommon *)pcalc);
     (*prset->process)(pcalc);
@@ -704,14 +689,13 @@ static int fetch_values(pcalc)
 	return(0);
 }
 
-static void checkLinksCallback(pcallback)
-    struct callback *pcallback;
+static void checkLinksCallback(CALLBACK *arg)
 {
 
     struct calcoutRecord *pcalc;
     struct rpvtStruct   *prpvt;
 
-    callbackGetUser(pcalc, pcallback);
+    callbackGetUser(pcalc, arg);
     prpvt = (struct rpvtStruct *)pcalc->rpvt;
     
     dbScanLock((struct dbCommon *)pcalc);
@@ -769,8 +753,7 @@ static void checkLinks(pcalc)
     if(!prpvt->wd_id_1_LOCK && caLinkNc) {
         /* Schedule another CALLBACK */
         prpvt->wd_id_1_LOCK = 1;
-        watchdogStart(prpvt->wd_id_1, clockGetRate()/2, (WATCHDOGFUNC)callbackRequest,
-               (void *)(&prpvt->checkLinkCb));
+        callbackRequestDelayed(&prpvt->checkLinkCb,.5);
     }
 }
 

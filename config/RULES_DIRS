@@ -23,8 +23,13 @@ dirActionTargets += $(foreach dir, $(DIRS), \
 actionArchTargets = $(foreach action, $(ACTIONS),\
                     $(foreach arch, $(ARCHS), \
                     $(action)$(DIVIDER)$(arch)))
-
+ifeq ($(MAKE_INC_TARGET_FIRST),YES)
+all install :: inc buildInstall 
+$(ARCHS) $(installArchTargets) :: inc
+else
 all install :: buildInstall 
+endif
+
 
 rebuild:: clean all
 

@@ -14,7 +14,6 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <process.h>
-#include <mmsystem.h>
 
 /*
  * this does specify that winsock should be exported,

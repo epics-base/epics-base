@@ -259,6 +259,7 @@ $(COMMON_DIR)/%.db$(RAW): %.substitutions
 	@$(RM) $@$(DEP)
 	@$(DBDDEPENDS_CMD)
 	@echo "$@:$(TEMPLATE_FILENAME)" >> $@$(DEP)
+	@echo "$@:$($*_DEPENDS)" >> $@$(DEP)
 	@echo "Inflating database from $<"
 	@$(RM) $@
 	$(MSI) $(DBFLAGS) -S$< $(TEMPLATE_FILENAME) > msi.tmp

@@ -35,8 +35,6 @@ of this distribution.
 #include "osiThread.h"
 #include "tsStamp.h"
 #include "errlog.h"
-#include "cadef.h"
-#include "caerr.h"
 #include "alarm.h"
 #include "link.h"
 #include "errMdef.h"
@@ -46,6 +44,8 @@ of this distribution.
 epicsShareFunc void * epicsShareAPI dbCalloc(size_t nobj,size_t size);
 #include "dbCaPvt.h"
 #define epicsExportSharedSymbols
+#include "cadef.h"
+#include "caerr.h"
 #include "db_access.h"
 #include "dbScan.h"
 #include "dbCa.h"

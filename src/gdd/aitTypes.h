@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.12  1999/05/13 20:59:39  jhill
+ * removed redundant includes
+ *
  * Revision 1.11  1999/05/11 00:30:04  jhill
  * removed unused includes
  *
@@ -57,18 +60,18 @@
 
 #include "shareLib.h"
 
-typedef char		aitInt8;
-typedef unsigned char	aitUint8;
-typedef short		aitInt16;
-typedef unsigned short	aitUint16;
-typedef aitUint16		aitEnum16;
-typedef int             aitInt32;
-typedef unsigned int 	aitUint32;
-typedef float		aitFloat32;
-typedef double		aitFloat64;
-typedef aitUint32		aitIndex;
-typedef void*		aitPointer;
-typedef aitUint32		aitStatus;
+typedef char                aitInt8;
+typedef unsigned char       aitUint8;
+typedef short               aitInt16;
+typedef unsigned short      aitUint16;
+typedef aitUint16           aitEnum16;
+typedef int                 aitInt32;
+typedef unsigned int        aitUint32;
+typedef float               aitFloat32;
+typedef double              aitFloat64;
+typedef aitUint32           aitIndex;
+typedef void*               aitPointer;
+typedef aitUint32           aitStatus;
 
 /* should the bool be added as a conversion type? it currently is not */
 typedef enum {

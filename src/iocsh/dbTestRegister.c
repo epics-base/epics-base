@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
+#include "epicsStdio.h"
 #include "dbTest.h"
 #include "db_test.h"
 #include "dbLock.h"
@@ -34,13 +35,12 @@ static void dbaCallFunc(const iocshArgBuf *args) { dba(args[0].sval);}
 
 /* dbl */
 static const iocshArg dblArg0 = { "record type",iocshArgString};
-static const iocshArg dblArg1 = { "output file",iocshArgString};
-static const iocshArg dblArg2 = { "fields",iocshArgString};
-static const iocshArg * const dblArgs[3] = {&dblArg0,&dblArg1,&dblArg2};
-static const iocshFuncDef dblFuncDef = {"dbl",3,dblArgs};
+static const iocshArg dblArg1 = { "fields",iocshArgString};
+static const iocshArg * const dblArgs[] = {&dblArg0,&dblArg1};
+static const iocshFuncDef dblFuncDef = {"dbl",2,dblArgs};
 static void dblCallFunc(const iocshArgBuf *args)
 {
-    dbl(args[0].sval,args[1].sval,args[2].sval);
+    dbl(args[0].sval,args[1].sval);
 }
 
 /* dbnr */
@@ -98,9 +98,9 @@ static void dbtpfCallFunc(const iocshArgBuf *args)
 { dbtpf(args[0].sval,args[1].sval);}
 
 /* dbior */
-static const iocshArg dbiorArg0 = { "record name",iocshArgString};
+static const iocshArg dbiorArg0 = { "driver name",iocshArgString};
 static const iocshArg dbiorArg1 = { "interest level",iocshArgInt};
-static const iocshArg * const dbiorArgs[2] = {&dbiorArg0,&dbiorArg1};
+static const iocshArg * const dbiorArgs[] = {&dbiorArg0,&dbiorArg1};
 static const iocshFuncDef dbiorFuncDef = {"dbior",2,dbiorArgs};
 static void dbiorCallFunc(const iocshArgBuf *args)
 { dbior(args[0].sval,args[1].ival);}

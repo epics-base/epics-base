@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
+#include "epicsStdio.h"
 #include "rsrv.h"
 #include "dbEvent.h"
 #define epicsExportSharedSymbols

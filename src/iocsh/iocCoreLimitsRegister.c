@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
+#include "epicsStdio.h"
 #include "callback.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"

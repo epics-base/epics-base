@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
+#include "epicsStdio.h"
 #include "envDefs.h"
 #define epicsExportSharedSymbols
 #include "iocsh.h"

@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
+#include "epicsStdio.h"
 #include "dbAccess.h" 
 #include "iocInit.h"
 #include "dbLoadTemplate.h"

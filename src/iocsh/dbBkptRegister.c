@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
+#include "epicsStdio.h"
 #include "ellLib.h"
 #include "errlog.h"
 #include "alarm.h"

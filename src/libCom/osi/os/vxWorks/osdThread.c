@@ -353,3 +353,11 @@ void *epicsThreadPrivateGet(epicsThreadPrivateId id)
     }
     return(data);
 }
+
+double epicsThreadSleepQuantum ()
+{
+    double HZ;
+    HZ = sysClkRateGet ();
+    return 1.0 / HZ;
+}
+

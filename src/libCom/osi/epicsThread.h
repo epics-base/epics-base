@@ -85,6 +85,7 @@ epicsShareFunc int epicsShareAPI epicsThreadIsEqual(
     epicsThreadId id1, epicsThreadId id2);
 epicsShareFunc int epicsShareAPI epicsThreadIsSuspended(epicsThreadId id);
 epicsShareFunc void epicsShareAPI epicsThreadSleep(double seconds);
+epicsShareFunc double epicsShareAPI epicsThreadSleepQuantum(void);
 epicsShareFunc epicsThreadId epicsShareAPI epicsThreadGetIdSelf(void);
 epicsShareFunc epicsThreadId epicsShareAPI epicsThreadGetId(const char *name);
 
@@ -134,10 +135,10 @@ public:
     void start();
     void exitWait ();
     bool exitWait ( double delay ); 
-    void exitWaitRelease (); // noop if not called by managed thread
+    void exitWaitRelease (); /* noop if not called by managed thread */
     static void exit ();
     void resume ();
-    void getName (char *name, size_t size) const;
+    void getName ( char * name, size_t size ) const;
     epicsThreadId getId () const;
     unsigned int getPriority () const;
     void setPriority (unsigned int);
@@ -148,9 +149,9 @@ public:
     /* these operate on the current thread */
     static void suspendSelf ();
     static void sleep (double seconds);
-    //static epicsThread & getSelf ();
+    /* static epicsThread & getSelf (); */
     static const char * getNameSelf ();
-    class mustBeCalledByManagedThread {}; // exception
+    class mustBeCalledByManagedThread {}; /* exception */
 private:
     epicsThreadRunable & runable;
     epicsThreadId id;
@@ -167,14 +168,14 @@ private:
     class exitException {};
 };
 
-template <class T>
+template < class T >
 class epicsThreadPrivate {
 public:
     epicsThreadPrivate ();
     ~epicsThreadPrivate ();
-    T *get () const;
+    T * get () const;
     void set (T *);
-    class unableToCreateThreadPrivate {}; // exception
+    class unableToCreateThreadPrivate {}; /* exception */
 private:
     epicsThreadPrivateId id;
 };

@@ -654,3 +654,9 @@ void epicsThreadShowAll (unsigned int level)
     }
     taskVarUnlock ();
 }
+
+double epicsThreadSleepQuantum ( void )
+{
+     return 1.0 / rtemsTicksPerSecond_double;
+}
+

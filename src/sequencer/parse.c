@@ -452,6 +452,7 @@ char		*line;
 char		*fname;
 {
 	extern int		line_num;
+	extern char             *src_file;
 
 	line_num = atoi(line);
 	src_file = fname;

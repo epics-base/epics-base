@@ -315,6 +315,7 @@ gen_state_prog_table()
 encode_options()
 {
 	int		options;
+	extern int      async_opt, debug_opt, reent_opt, conn_opt, newef_opt;
 
 	options = 0;
 	if (async_opt)

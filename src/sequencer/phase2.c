@@ -176,6 +176,7 @@ Expr		*ep;
 reconcile_states()
 {
 	extern int	num_errors;
+	extern  Expr    *ss_list;
 	Expr		*ssp, *sp, *sp1, tr;
 
 	for (ssp = ss_list; ssp != 0; ssp = ssp->next)

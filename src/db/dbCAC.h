@@ -88,7 +88,7 @@ public:
     void destroy ();
     int initiatePutNotify ( cacNotify &notify, struct dbAddr &addr, 
             unsigned type, unsigned long count, const void *pValue );
-    uninstallPutNotifyIO ( dbPutNotifyIO &io );
+    void uninstallPutNotifyIO ( dbPutNotifyIO &io );
     dbChannelIO & channel () const;
     void show ( unsigned level ) const;
     void * operator new ( size_t size );

@@ -51,7 +51,7 @@ dbPutNotifyBlocker::~dbPutNotifyBlocker ()
     }
 }
 
-dbPutNotifyBlocker::uninstallPutNotifyIO ( dbPutNotifyIO &io )
+void dbPutNotifyBlocker::uninstallPutNotifyIO ( dbPutNotifyIO &io )
 {
     dbAutoScanLock ( this->chan );
     if ( &io == this->pPN ) {

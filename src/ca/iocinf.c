@@ -588,8 +588,14 @@ void notify_ca_repeater()
 		 * SOLARIS will not accept a zero length message
 		 * and we are just porting there for 3.12 so
 		 * we will use the new protocol for 3.12
+		 *
+		 * recent versions of UCX will not accept a zero 
+		 * length message and we will assume that folks
+		 * using newer versions of UCX have rebooted (and
+		 * therefore restarted the CA repeater - and therefore
+		 * moved it to an EPICS release that accepets this protocol)
 		 */
-#		ifdef SOLARIS 
+#		if defined(SOLARIS) || defined(UCX)
 			len = sizeof(msg);
 # 		else /* SOLARIS */
 			len = 0;
@@ -664,7 +670,7 @@ LOCAL void cac_udp_send_msg_piiu(struct ioc_in_use *piiu)
 		status = sendto(
 				piiu->sock_chan,
 				&piiu->send.buf[piiu->send.rdix],	
-				sendCnt,
+				(int) sendCnt,
 				0,
 				&pNode->destAddr.sockAddr,
 				sizeof(pNode->destAddr.sockAddr));
@@ -743,26 +749,24 @@ LOCAL void cac_tcp_send_msg_piiu(struct ioc_in_use *piiu)
 			return;
 		}
 
+		assert (sendCnt<=INT_MAX);
+
 		status = send(
 				piiu->sock_chan,
 				&piiu->send.buf[piiu->send.rdix],	
-				sendCnt,
+				(int) sendCnt,
 				0);
-		if (status<0) {
+		if (status<=0) {
 			break;
-		}
-		else if (status==0) {
-			TAG_CONN_DOWN(piiu);
-			UNLOCK;
-			return;
 		}
 
 		CAC_RING_BUFFER_READ_ADVANCE(&piiu->send, status);
+	}
 
-		if (((unsigned long)status) != sendCnt) {
-			UNLOCK;
-			return;
-		}
+	if (status==0) {
+		TAG_CONN_DOWN(piiu);
+		UNLOCK;
+		return;
 	}
 
 	localError = MYERRNO;
@@ -905,9 +909,11 @@ LOCAL void tcp_recv_msg(struct ioc_in_use *piiu)
 			break;
 		}
 
+		assert (writeSpace<=INT_MAX);
+
 		status = recv(	piiu->sock_chan,
 				&piiu->recv.buf[piiu->recv.wtix],
-				writeSpace,
+				(int) writeSpace,
 				0);
 		if(status == 0){
 			TAG_CONN_DOWN(piiu);
@@ -939,12 +945,7 @@ LOCAL void tcp_recv_msg(struct ioc_in_use *piiu)
 		 * from this IOC
 		 */
 		piiu->timeAtLastRecv = ca_static->currentTime;
-
-		if (((unsigned long)status) != writeSpace) {
-			break;
-		}
 	}
-
 
 	UNLOCK;
 	return;

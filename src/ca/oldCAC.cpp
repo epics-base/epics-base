@@ -205,7 +205,7 @@ void oldCAC::show ( unsigned level ) const
     if ( level > 0u ) {
         this->mutex.show ( level - 1u );
         this->clientCtx.show ( level - 1u );
-        ::printf ( "\tpreemptive calback is %s\n",
+        ::printf ( "\tpreemptive callback is %s\n",
             this->pCallbackGuard ? "disabled" : "enabled" );
         ::printf ( "\tthere are %u unsatisfied IO operations blocking ca_pend_io()\n",
                 this->pndRecvCnt );

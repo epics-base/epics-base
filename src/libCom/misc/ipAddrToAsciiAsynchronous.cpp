@@ -110,7 +110,7 @@ void ipAddrToAsciiEngine::run ()
 void ipAddrToAsciiEngine::show ( unsigned level ) const
 {
     epicsGuard < epicsMutex > locker ( ipAddrToAsciiEngine::mutex );
-    printf ( "ipAddrToAsciiEngine at %p with %u requests pendingh\n", 
+    printf ( "ipAddrToAsciiEngine at %p with %u requests pending\n", 
         static_cast <const void *> (this), this->labor.count () );
     if ( level > 0u ) {
         tsDLIterConstBD < ipAddrToAsciiAsynchronous > pItem = this->labor.firstIter ();

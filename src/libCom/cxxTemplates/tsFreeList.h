@@ -155,7 +155,7 @@ template < class T, unsigned N, class MUTEX >
 void tsFreeList < T, N, MUTEX >::release ( void * pCadaver, size_t size )
 {
     if ( size != sizeof ( T ) || N == 0u || tsFreeListDebugBypass ) {
-        tsFreeListMemSetDelete ( p, size );
+        tsFreeListMemSetDelete ( pCadaver, size );
         ::operator delete ( pCadaver );
     }
     else if ( pCadaver ) {

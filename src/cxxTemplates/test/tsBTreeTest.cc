@@ -28,7 +28,7 @@ private:
 	const char *pName;
 };
 
-main ()
+int main ()
 {
 	tsBTree<A> tree; 
 	A a0 ("fred");

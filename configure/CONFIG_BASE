@@ -76,7 +76,7 @@ MAKEDBDDEPENDS             = $(EPICS_BASE_HOST_BIN)/dbMakeDBDDepends$(HOSTEXE)
 REPLACEVAR                 = $(PERL) $(TOOLS)/replaceVAR.pl
 DBTORECORDTYPEH            = $(EPICS_BASE_HOST_BIN)/dbToRecordtypeH$(HOSTEXE)
 DBTOMENUH                  = $(EPICS_BASE_HOST_BIN)/dbToMenuH$(HOSTEXE)
-REGISTERRECORDDEVICEDRIVER = $(EPICS_BASE_HOST_BIN)/registerRecordDeviceDriver.pl
+REGISTERRECORDDEVICEDRIVER = $(PERL) $(EPICS_BASE_HOST_BIN)/registerRecordDeviceDriver.pl
 
 # private versions of lex/yacc from EPICS
 EYACC = $(EPICS_BASE_HOST_BIN)/antelope$(HOSTEXE)

@@ -16,7 +16,13 @@ extern "C" {
 epicsShareFunc int epicsShareAPI epicsSnprintf(
     char *str, size_t size, const char *format, ...)
 {
-    return snprintf ( str, size, format );
+    int nchars;
+    va_list pvar;
+
+    va_start(pvar,format);
+    nchars = epicsVsnprintf(str,size,format,pvar);
+    va_end (pvar);
+    return(nchars);
 }
 
 epicsShareFunc int epicsShareAPI epicsVsnprintf(

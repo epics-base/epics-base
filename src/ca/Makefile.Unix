@@ -35,9 +35,11 @@ PROD = caRepeater
 include $(TOP)/src/config/RULES.Unix
 
 acctst: acctst.o $(LIBOBJS) $(DEPLIBS_BASE)/libCom.a
-	$(LINK.c) -o $@ $< $(LIBOBJS) $(DEPLIBS_BASE)/libCom.a 
+	$(LINK.c) -o $@ $< $(LIBOBJS) $(DEPLIBS_BASE)/libCom.a \
+		$(ARCH_DEP_LDLIBS) -lm
 
 catime: catime.o $(LIBOBJS) $(DEPLIBS_BASE)/libCom.a 
-	$(LINK.c) -o $@ $< $(LIBOBJS) $(DEPLIBS_BASE)/libCom.a 
+	$(LINK.c) -o $@ $< $(LIBOBJS) $(DEPLIBS_BASE)/libCom.a \
+		$(ARCH_DEP_LDLIBS) -lm
 
 

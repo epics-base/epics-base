@@ -158,6 +158,14 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
         this->averagePeriod = currentPeriod * 0.125 + this->averagePeriod * 0.875;
     }
 
+    //{
+    //    char name[64];
+    //    this->name ( name, sizeof ( name ) );
+    //
+    //    printf ( "new beacon period %f for %s\n", 
+    //        this->averagePeriod, name );
+    //}
+
     this->timeStamp = currentTime;
 
     return netChange;

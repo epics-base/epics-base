@@ -57,6 +57,9 @@
  *			datagram socket (and watching for ECONNREFUSED)
  *
  * $Log$
+ * Revision 1.46  1998/09/24 21:22:54  jhill
+ * conn.c
+ *
  * Revision 1.45  1998/06/16 00:58:12  jhill
  * attach to winsock when its a static build
  *
@@ -197,12 +200,17 @@ void epicsShareAPI ca_repeater()
 
 	sock = msr.sock;
 
-	status = local_addr(sock, &local);
+	status = local_addr (sock, &local);
 	if(status != OK){
-		ca_printf(
-	"CA Repeater: no local IP address during initialization - fatal\n");
-		bsdSockRelease();
-		exit (0);
+		/*
+		 * use the loop back address to communicate with the CA repeater
+		 * if this os does not have interface query capabilities
+		 *
+		 * this will only work with 3.13 beta 12 CA repeaters or later
+		 */
+		local.sin_family = AF_INET;
+		local.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
+		local.sin_port = htons (0);
 	}
 
 #ifdef DEBUG

@@ -25,10 +25,8 @@ CONFIGS += RULES_BUILD
 CONFIGS += RULES_DIRS
 CONFIGS += RULES_TOP
 
-BIN_INSTALLS += $(wildcard ../tools/*.pl)
-BIN_INSTALLS += ../tools/getrel
-BIN_INSTALLS += ../tools/installEpics
-BIN_INSTALLS += ../tools/testmkdir
+CONFIGS += $(subst ../,,$(wildcard ../tools/*.pl))
+CONFIGS += tools/installEpics
 
 include $(TOP)/configure/RULES_BUILD
 

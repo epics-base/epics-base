@@ -63,22 +63,17 @@ void timerQueueActive::run ()
 {
     this->exitFlag = false;
     while ( ! this->terminateFlag ) {
-        double delay = this->queue.delayToFirstExpire ();
-        if ( delay <= 0.0 ) {
-            this->queue.process ();
-        }
-        else {
-            debugPrintf ( ( "timer thread sleeping for %g sec (max)\n", delay ) );
-            this->rescheduleEvent.wait ( delay );
-        }
+        double delay = this->queue.process ( epicsTime::getCurrent() );
+        debugPrintf ( ( "timer thread sleeping for %g sec (max)\n", delay ) );
+        this->rescheduleEvent.wait ( delay );
     }
     this->exitFlag = true; 
     this->exitEvent.signal (); // no access to queue after exitEvent signal
 }
 
-epicsTimer & timerQueueActive::createTimer ( epicsTimerNotify & notify )
+epicsTimer & timerQueueActive::createTimer ()
 {
-    timer *pTmr = new timer ( notify, this->queue );
+    timer *pTmr = new timer ( this->queue );
     if ( ! pTmr ) {
         throwWithLocation ( timer::noMemory () );
     }

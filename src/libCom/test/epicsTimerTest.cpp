@@ -40,7 +40,6 @@ static const double delayVerifyOffset = 1.0; // sec
 class delayVerify : public epicsTimerNotify {
 public:
     delayVerify ( double expectedDelay, epicsTimerQueue & );
-    expireStatus expire ();
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
     void start ( const epicsTime &expireTime );
@@ -54,6 +53,7 @@ private:
     epicsTime beginStamp;
     epicsTime expireStamp;
     double expectedDelay;
+    expireStatus expire ( const epicsTime & );
     static tsFreeList < class delayVerify, 0x20 > freeList;
     static epicsMutex freeListMutex;
 };
@@ -62,7 +62,7 @@ static unsigned expireCount;
 static epicsEvent expireEvent;
 
 delayVerify::delayVerify ( double expectedDelayIn, epicsTimerQueue &queue ) :
-    timer ( queue.createTimer ( *this ) ), expectedDelay ( expectedDelayIn )
+    timer ( queue.createTimer() ), expectedDelay ( expectedDelayIn )
 {
 }
 
@@ -95,7 +95,7 @@ void delayVerify::checkError () const
 
 inline void delayVerify::start ( const epicsTime &expireTime )
 {
-    this->timer.start ( expireTime );
+    this->timer.start ( *this, expireTime );
 }
 
 tsFreeList < class delayVerify, 0x20 > delayVerify::freeList;
@@ -113,9 +113,9 @@ inline void delayVerify::operator delete ( void *pCadaver, size_t size )
     delayVerify::freeList.release ( pCadaver, size );
 }
 
-epicsTimerNotify::expireStatus delayVerify::expire ()
+epicsTimerNotify::expireStatus delayVerify::expire ( const epicsTime &currentTime )
 {
-    this->expireStamp = epicsTime::getCurrent ();
+    this->expireStamp = currentTime;
     if ( --expireCount == 0u ) {
         expireEvent.signal ();
     }
@@ -156,7 +156,6 @@ void testAccuracy ()
 class cancelVerify : public epicsTimerNotify {
 public:
     cancelVerify ( epicsTimerQueue & );
-    expireStatus expire ();
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
     void start ( const epicsTime &expireTime );
@@ -166,12 +165,13 @@ protected:
 private:
     epicsTimer &timer;
     bool failOutIfExpireIsCalled;
+    expireStatus expire ( const epicsTime & );
     static tsFreeList < class cancelVerify, 0x20 > freeList;
     static epicsMutex freeListMutex;
 };
 
 cancelVerify::cancelVerify ( epicsTimerQueue &queue ) :
-    timer ( queue.createTimer ( *this ) ), failOutIfExpireIsCalled ( false )
+    timer ( queue.createTimer () ), failOutIfExpireIsCalled ( false )
 {
 }
 
@@ -182,7 +182,7 @@ cancelVerify::~cancelVerify ()
 
 inline void cancelVerify::start ( const epicsTime &expireTime )
 {
-    this->timer.start ( expireTime );
+    this->timer.start ( *this, expireTime );
 }
 
 tsFreeList < class cancelVerify, 0x20 > cancelVerify::freeList;
@@ -206,7 +206,7 @@ inline void cancelVerify::cancel ()
     this->failOutIfExpireIsCalled = true;
 }
 
-epicsTimerNotify::expireStatus cancelVerify::expire ()
+epicsTimerNotify::expireStatus cancelVerify::expire ( const epicsTime & )
 {
     double root = 3.14159;
     for ( unsigned i = 0u; i < 10000; i++ ) {
@@ -247,7 +247,6 @@ void testCancel ()
 class periodicVerify : public epicsTimerNotify {
 public:
     periodicVerify ( epicsTimerQueue & );
-    expireStatus expire ();
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
     void start ( const epicsTime &expireTime );
@@ -259,12 +258,13 @@ private:
     unsigned nExpire;
     epicsTimer &timer;
     bool failOutIfExpireIsCalled;
+    expireStatus expire ( const epicsTime & );
     static tsFreeList < class periodicVerify, 0x20 > freeList;
     static epicsMutex freeListMutex;
 };
 
 periodicVerify::periodicVerify ( epicsTimerQueue &queue ) :
-    nExpire ( 0u ), timer ( queue.createTimer ( *this ) ), failOutIfExpireIsCalled ( false )
+    nExpire ( 0u ), timer ( queue.createTimer () ), failOutIfExpireIsCalled ( false )
 {
 }
 
@@ -275,7 +275,7 @@ periodicVerify::~periodicVerify ()
 
 inline void periodicVerify::start ( const epicsTime &expireTime )
 {
-    this->timer.start ( expireTime );
+    this->timer.start ( *this, expireTime );
 }
 
 tsFreeList < class periodicVerify, 0x20 > periodicVerify::freeList;
@@ -304,7 +304,7 @@ inline void periodicVerify::verifyCount ()
     assert ( this->nExpire > 1u );
 }
 
-epicsTimerNotify::expireStatus periodicVerify::expire ()
+epicsTimerNotify::expireStatus periodicVerify::expire ( const epicsTime & )
 {
     this->nExpire++;
     double root = 3.14159;

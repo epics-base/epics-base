@@ -50,23 +50,18 @@ timerQueuePassive::timerQueuePassive ( epicsTimerQueueNotify &notifyIn ) :
 
 timerQueuePassive::~timerQueuePassive () {}
 
-epicsTimer & timerQueuePassive::createTimer ( epicsTimerNotify & notifyIn )
+epicsTimer & timerQueuePassive::createTimer ()
 {
-    timer *pTmr = new timer ( notifyIn, this->queue );
+    timer *pTmr = new timer ( this->queue );
     if ( ! pTmr ) {
         throwWithLocation ( timer::noMemory () );
     }
     return *pTmr;
 }
 
-void timerQueuePassive::process ()
+double timerQueuePassive::process ( const epicsTime & currentTime )
 {
-    this->queue.process ();
-}
-
-double timerQueuePassive::getNextExpireDelay () const
-{
-    return this->queue.delayToFirstExpire ();
+    return this->queue.process ( currentTime );
 }
 
 void timerQueuePassive::show ( unsigned int level ) const

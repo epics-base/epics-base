@@ -43,11 +43,11 @@
 
 class timer : public epicsTimer, public tsDLNode < timer > {
 public:
-    timer ( epicsTimerNotify &, class timerQueue & );
-    void start ( const epicsTime & );
-    void start ( double delaySeconds );
+    timer ( class timerQueue & );
+    void start ( class epicsTimerNotify &, const epicsTime & );
+    void start ( class epicsTimerNotify &, double delaySeconds );
     void cancel ();
-    double getExpireDelay () const;
+    expireInfo getExpireInfo () const;
     void show ( unsigned int level ) const;
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
@@ -58,11 +58,10 @@ private:
     enum state { statePending = 45, stateLimbo = 78 };
     epicsTime exp; // experation time 
     state curState; // current state 
-    epicsTimerNotify &notify; // callback
+    epicsTimerNotify *pNotify; // callback
     timerQueue &queue;
-    void privateStart ( const epicsTime & );
+    void privateStart ( epicsTimerNotify & notify, const epicsTime & );
     void privateCancel ();
-    double privateDelayToFirstExpire () const;
     static tsFreeList < class timer, 0x20 > freeList;
     static epicsMutex freeListMutex;
     friend class timerQueue;
@@ -72,8 +71,7 @@ class timerQueue {
 public:
     timerQueue ( epicsTimerQueueNotify &notify );
     ~timerQueue ();
-    void process ();
-    double delayToFirstExpire () const;
+    double process ( const epicsTime & currentTime );
     void show ( unsigned int level ) const;
 private:
     mutable epicsMutex mutex;
@@ -102,7 +100,7 @@ class timerQueueActive : public epicsTimerQueueActive,
 public:
     timerQueueActive ( bool okToShare, unsigned priority );
     ~timerQueueActive () = 0;
-    epicsTimer & createTimer ( epicsTimerNotify & );
+    epicsTimer & createTimer ();
     void show ( unsigned int level ) const;
     bool sharingOK () const;
     int threadPriority () const;
@@ -149,9 +147,8 @@ extern timerQueueActiveMgr queueMgr;
 class timerQueuePassive : public epicsTimerQueuePassive {
 public:
     timerQueuePassive ( epicsTimerQueueNotify & );
-    epicsTimer & createTimer ( epicsTimerNotify & );
-    void process ();
-    double getNextExpireDelay () const;
+    epicsTimer & createTimer ();
+    double process ( const epicsTime & currentTime );
     void show ( unsigned int level ) const;
     void release ();
     timerQueue & getTimerQueue ();
@@ -175,20 +172,6 @@ inline void timer::operator delete ( void *pCadaver, size_t size )
 {
     epicsAutoMutex locker ( timer::freeListMutex );
     timer::freeList.release ( pCadaver, size );
-}
-
-inline double timer::privateDelayToFirstExpire () const
-{
-    if ( this->curState == statePending ) {
-        double delay = this->exp - epicsTime::getCurrent ();
-        if ( delay < 0.0 ) {
-            delay = 0.0;
-        }
-        return delay;
-    }
-    else {
-        return -DBL_MAX;
-    }
 }
 
 inline bool timerQueueActive::sharingOK () const

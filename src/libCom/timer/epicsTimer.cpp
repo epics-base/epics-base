@@ -43,7 +43,7 @@ protected:
 private:
     epicsTimerCallback pCallBack;
     void * pPrivate;
-    expireStatus expire ();
+    expireStatus expire ( const epicsTime & currentTime );
     static tsFreeList < epicsTimerForC > freeList;
     static epicsMutex freeListMutex;
 };
@@ -70,7 +70,7 @@ tsFreeList < epicsTimerForC > epicsTimerForC::freeList;
 epicsMutex epicsTimerForC::freeListMutex;
 
 epicsTimerForC::epicsTimerForC ( timerQueue &queue, epicsTimerCallback pCBIn, void *pPrivateIn ) :
-    timer ( *this, queue ), pCallBack ( pCBIn ), pPrivate ( pPrivateIn )
+    timer ( queue ), pCallBack ( pCBIn ), pPrivate ( pPrivateIn )
 {
 }
 
@@ -95,7 +95,7 @@ inline void epicsTimerForC::operator delete ( void *pCadaver, size_t size )
     epicsTimerForC::freeList.release ( pCadaver, size );
 }
 
-epicsTimerNotify::expireStatus epicsTimerForC::expire ()
+epicsTimerNotify::expireStatus epicsTimerForC::expire ( const epicsTime & )
 {
     ( *this->pCallBack ) ( this->pPrivate );
     return noRestart;
@@ -171,17 +171,10 @@ extern "C" void epicsShareAPI
     pQueue->destroy ();
 }
 
-extern "C" void epicsShareAPI 
+extern "C" double epicsShareAPI 
     epicsTimerQueuePassiveProcess ( epicsTimerQueuePassiveId pQueue )
 {
-    pQueue->process ();
-}
-
-extern "C" double epicsShareAPI 
-    epicsTimerQueuePassiveGetDelayToNextExpire (
-        epicsTimerQueuePassiveId pQueue )
-{
-    return pQueue->getNextExpireDelay ();
+    return pQueue->process ( epicsTime::getCurrent() );
 }
 
 extern "C" epicsTimerId epicsShareAPI epicsTimerQueuePassiveCreateTimer (
@@ -243,13 +236,13 @@ extern "C" void  epicsShareAPI epicsTimerDestroy ( epicsTimerId pTmr )
 extern "C" void  epicsShareAPI epicsTimerStartTime (
     epicsTimerId pTmr, const epicsTimeStamp *pTime )
 {
-    pTmr->start ( *pTime );
+    pTmr->start ( *pTmr, *pTime );
 }
 
 extern "C" void  epicsShareAPI epicsTimerStartDelay (
     epicsTimerId pTmr, double delaySeconds )
 {
-    pTmr->start ( delaySeconds );
+    pTmr->start ( *pTmr, delaySeconds );
 }
 
 extern "C" void  epicsShareAPI epicsTimerCancel ( epicsTimerId pTmr )

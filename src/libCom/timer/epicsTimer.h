@@ -20,6 +20,11 @@ of this distribution.
 
 #ifdef __cplusplus
 
+//
+// Notes:
+// 1) epicsTimer does not hold its lock when calling callbacks.
+//
+
 // code using a timer must implement epicsTimerNotify
 class epicsTimerNotify {
 public:
@@ -35,23 +40,29 @@ public:
         double delay;
     };
     // return noRestart OR return expireStatus ( restart, 30.0 /* sec */ );
-    virtual expireStatus expire () = 0;
+    virtual expireStatus expire ( const epicsTime & currentTime ) = 0;
     virtual epicsShareFunc void show ( unsigned int level ) const;
 };
 
 class epicsTimer {
 public:
     virtual ~epicsTimer () = 0;
-    virtual void start ( const epicsTime & ) = 0;
-    virtual void start ( double delaySeconds ) = 0;
+    virtual void start ( epicsTimerNotify &, const epicsTime & ) = 0;
+    virtual void start ( epicsTimerNotify &, double delaySeconds ) = 0;
     virtual void cancel () = 0;
-    virtual double getExpireDelay () const = 0;
+    struct expireInfo {
+        expireInfo ( bool active, const epicsTime &expireTime );
+        bool active;
+        epicsTime expireTime;
+    };
+    virtual expireInfo getExpireInfo () const = 0;
+    double getExpireDelay ();
     virtual void show ( unsigned int level ) const = 0;
 };
 
 class epicsTimerQueue {
 public:
-    virtual epicsTimer & createTimer ( epicsTimerNotify & ) = 0;
+    virtual epicsTimer & createTimer () = 0;
     virtual void show ( unsigned int level ) const = 0;
 protected:
     virtual ~epicsTimerQueue () = 0;
@@ -77,8 +88,7 @@ class epicsTimerQueuePassive : public epicsTimerQueue {
 public:
     static epicsShareFunc epicsTimerQueuePassive & create ( epicsTimerQueueNotify & );
     virtual ~epicsTimerQueuePassive () = 0;
-    virtual void process () = 0;
-    virtual double getNextExpireDelay () const = 0;
+    virtual double process ( const epicsTime & currentTime ) = 0; // returns delay to next expire
 };
 
 inline epicsTimerNotify::expireStatus::expireStatus ( restart_t restart ) : 
@@ -103,6 +113,27 @@ inline double epicsTimerNotify::expireStatus::expirationDelay () const
 {
     assert ( this->again );
     return this->delay;
+}
+
+inline epicsTimer::expireInfo::expireInfo ( bool activeIn, 
+    const epicsTime & expireTimeIn ) :
+        active ( activeIn ), expireTime ( expireTimeIn ) 
+{
+}
+
+inline double epicsTimer::getExpireDelay ()
+{
+    epicsTimer::expireInfo info = this->getExpireInfo ();
+    if ( info.active ) {
+        double delay = info.expireTime - epicsTime::getCurrent ();
+        if ( delay < 0.0 ) {
+            delay = 0.0;
+        }
+        return delay;
+    }
+    else {
+        return - DBL_MAX;
+    }
 }
 
 extern "C" {
@@ -133,11 +164,8 @@ epicsShareFunc void epicsShareAPI
 epicsShareFunc epicsTimerId epicsShareAPI 
     epicsTimerQueuePassiveCreateTimer (
         epicsTimerQueuePassiveId queueid, epicsTimerCallback pCallback, void *pArg );
-epicsShareFunc void epicsShareAPI 
-    epicsTimerQueuePassiveProcess ( epicsTimerQueuePassiveId );
 epicsShareFunc double epicsShareAPI 
-    epicsTimerQueuePassiveGetDelayToNextExpire (
-        epicsTimerQueuePassiveId );
+    epicsTimerQueuePassiveProcess ( epicsTimerQueuePassiveId );
 epicsShareFunc void  epicsShareAPI epicsTimerQueuePassiveShow (
     epicsTimerQueuePassiveId id, unsigned int level );
 

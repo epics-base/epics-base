@@ -48,39 +48,35 @@ timerQueue::~timerQueue ()
     }
 }
 
-double timerQueue::delayToFirstExpire () const
-{
-    epicsAutoMutex locker ( this->mutex );
-    timer *pTmr = this->timerList.first ();
-    if ( pTmr ) {
-        return pTmr->privateDelayToFirstExpire ();
-    }
-    else {
-        return DBL_MAX;
-    }
-}
-
-void timerQueue::process ()
-{
-    epicsTime cur ( epicsTime::getCurrent () );
-  
+double timerQueue::process ( const epicsTime & currentTime )
+{  
     {
         epicsAutoMutex locker ( this->mutex );
 
         if ( this->pExpireTmr ) {
             // if some other thread is processing the queue
             // (or if this is a recursive call)
-            return; 
+            timer *pTmr = this->timerList.first ();
+            if ( pTmr ) {
+                double delay = pTmr->exp - currentTime;
+                if ( delay < 0.0 ) {
+                    delay = 0.0;
+                }
+                return delay;
+            }
+            else {
+                return DBL_MAX;
+            }
         }
 
+        //
+        // Tag current epired tmr so that we can detect if call back
+        // is in progress when canceling the timer.
+        //
         this->pExpireTmr = this->timerList.first ();
         if ( this->pExpireTmr ) {
-            if ( cur >= this->pExpireTmr->exp ) {
+            if ( currentTime >= this->pExpireTmr->exp ) {
                 this->timerList.remove ( *this->pExpireTmr ); 
-                //
-                // Tag current epired tmr so that we can detect if call back
-                // is in progress when canceling the timer.
-                //
                 this->pExpireTmr->curState = timer::stateLimbo;
                 this->processThread = epicsThreadGetIdSelf ();
 #               ifdef DEBUG
@@ -88,13 +84,14 @@ void timerQueue::process ()
 #               endif 
             }
             else {
+                double delay = this->pExpireTmr->exp - currentTime;
                 this->pExpireTmr = 0;
-                debugPrintf ( ( "no activity process %f to next\n", this->pExpireTmr->exp - cur ) );
-                return;
+                debugPrintf ( ( "no activity process %f to next\n", delay ) );
+                return delay;
             }
         }
         else {
-            return;
+            return DBL_MAX;
         }
     }
 
@@ -106,9 +103,10 @@ void timerQueue::process ()
  
         debugPrintf ( ( "%5u expired \"%s\" with error %f sec\n", 
             N++, typeid ( this->pExpireTmr->notify ).name (), 
-            cur - this->pExpireTmr->exp ) );
+            currentTime - this->pExpireTmr->exp ) );
 
-        epicsTimerNotify::expireStatus expStat = this->pExpireTmr->notify.expire ();
+        epicsTimerNotify::expireStatus expStat = 
+            this->pExpireTmr->pNotify->expire ( currentTime );
 
         epicsAutoMutex locker ( this->mutex );
 
@@ -120,15 +118,21 @@ void timerQueue::process ()
             // cancel() waits for this
             this->cancelPending = false;
             this->cancelBlockingEvent.signal ();
+            this->pExpireTmr->pNotify = 0;
         }
         // restart as nec
         else if ( expStat.restart() ) {
-            this->pExpireTmr->privateStart ( cur + expStat.expirationDelay() );
+            this->pExpireTmr->privateStart ( 
+                *this->pExpireTmr->pNotify, 
+                currentTime + expStat.expirationDelay() );
+        }
+        else {
+            this->pExpireTmr->pNotify = 0;
         }
 
         this->pExpireTmr = this->timerList.first ();
         if ( this->pExpireTmr ) {
-            if ( cur >= this->pExpireTmr->exp ) {
+            if ( currentTime >= this->pExpireTmr->exp ) {
                 this->timerList.remove ( *this->pExpireTmr ); 
                 this->pExpireTmr->curState = timer::stateLimbo;
 #               ifdef DEBUG
@@ -136,14 +140,15 @@ void timerQueue::process ()
 #               endif 
             }
             else {
+                double delay = this->pExpireTmr->exp - currentTime;
                 this->pExpireTmr = 0;
                 this->processThread = 0;
-                return;
+                return delay;
             }
         }
         else {
             this->processThread = 0;
-            return;
+            return DBL_MAX;
         }
     }
 }

@@ -4,6 +4,10 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.4  1996/06/26 21:00:06  jbk
+// Fixed up code in aitHelpers, removed unused variables in others
+// Fixed potential problem in gddAppTable.cc with the map functions
+//
 // Revision 1.3  1996/06/26 02:42:05  jbk
 // more correction to the aitString processing - testing menus
 //
@@ -133,7 +137,7 @@ static int mapGddToString(void* v, gdd* dd) {
 	aitFixedString* db = (aitFixedString*)v;
 	aitFixedString* dbx = (aitFixedString*)dd->dataPointer();
 	int len = dd->getDataSizeElements();
-	if(dbx!=db) dd->get(db);
+	if(dbx!=db) dd->getConvert(*db);
 	return len;
 }
 

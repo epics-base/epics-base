@@ -7,6 +7,9 @@
  *
  * $Id$
  * $Log$
+ * Revision 1.2  1997/04/23 17:13:05  jhill
+ * fixed export of symbols from WIN32 DLL
+ *
  * Revision 1.1  1997/03/21 01:56:09  jbk
  * *** empty log message ***
  *
@@ -27,7 +30,7 @@ public:
 	gddScalar(int app) : gdd(app) { }
 	gddScalar(int app,aitEnum prim) : gdd(app,prim) { }
 
-	void dump(void);
+	void dump(void) const;
 	void test(void);
 
 	gddScalar& operator=(aitFloat64 d) { *((gdd*)this)=d; return *this; }

@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.9  1997/08/05 00:51:14  jhill
+// fixed problems in aitString and the conversion matrix
+//
 // Revision 1.8  1997/04/23 17:13:01  jhill
 // fixed export of symbols from WIN32 DLL
 //
@@ -497,10 +500,9 @@ aitUint32 gddApplicationTypeTable::getValue(aitUint32 ap)
 
 // ----------------------smart copy functions------------------------
 // the source in the container we must walk through is this called
-gddStatus gddApplicationTypeTable::copyDD_src(gdd* dest, gdd* src)
+gddStatus gddApplicationTypeTable::copyDD_src(gdd& dest, const gdd& src)
 {
 	gddStatus rc=0,s;
-	gddContainer* cdd;
 	gddCursor cur;
 	gdd* dd;
 	aitIndex index;
@@ -508,52 +510,52 @@ gddStatus gddApplicationTypeTable::copyDD_src(gdd* dest, gdd* src)
 	// this could be done better (faster) if we did not always recurse for
 	// each GDD.  I could have checked for type container before recursing.
 
-	if(src->isContainer())
+	if(src.isContainer())
 	{
+		gddContainer& cdd = (gddContainer&) src;
+
 		// go through src gdd and map app types to index into dest
-		cdd=(gddContainer*)src;
-		cur=cdd->getCursor();
-		for(dd=cur.first();dd;dd=dd->next()) copyDD_src(dest,dd);
+		cur=cdd.getCursor();
+		for(dd=cur.first();dd;dd=dd->next()) copyDD_src(dest,*dd);
 	}
 	else
 	{
 		// find src gdd in dest container and just do put()
-		s=mapAppToIndex(dest->applicationType(),src->applicationType(),index);
+		s=mapAppToIndex(dest.applicationType(),src.applicationType(),index);
 
 		if(s==0)
-			rc=dest[index].put(src);
+			rc=dest[index].put(&src);
 	}
 	return rc;
 }
 
 // the destination in the container we must walk through is this called
-gddStatus gddApplicationTypeTable::copyDD_dest(gdd* dest, gdd* src)
+gddStatus gddApplicationTypeTable::copyDD_dest(gdd& dest, const gdd& src)
 {
 	gddStatus rc=0,s;
-	gddContainer* cdd;
 	gddCursor cur;
 	gdd* dd;
 	aitIndex index;
 
-	if(dest->isContainer())
+	if(dest.isContainer())
 	{
+		gddContainer& cdd = (gddContainer&) dest;
 		// go through dest gdd and map app types to index into src
-		cdd=(gddContainer*)dest;
-		cur=cdd->getCursor();
-		for(dd=cur.first();dd;dd=dd->next()) copyDD_dest(dd,src);
+		cur=cdd.getCursor();
+		for(dd=cur.first();dd;dd=dd->next()) copyDD_dest(*dd,src);
 	}
 	else
 	{
 		// find dest gdd in src container and just do put()
-		s=mapAppToIndex(src->applicationType(),dest->applicationType(),index);
+		s=mapAppToIndex(src.applicationType(),dest.applicationType(),index);
 
 		if(s==0)
-			rc=dest->put(&src[index]);
+			rc=dest.put(&src[index]);
 	}
 	return rc;
 }
 
-gddStatus gddApplicationTypeTable::smartCopy(gdd* dest, gdd* src)
+gddStatus gddApplicationTypeTable::smartCopy(gdd* dest, const gdd* src)
 {
 	gddStatus rc=0;
 
@@ -561,9 +563,9 @@ gddStatus gddApplicationTypeTable::smartCopy(gdd* dest, gdd* src)
 	// feature is used.
 
 	if(dest->isContainer() && dest->isManaged())
-		rc=copyDD_src(dest,src);
+		rc=copyDD_src(*dest,*src);
 	else if(src->isContainer() && src->isManaged())
-		rc=copyDD_dest(dest,src);
+		rc=copyDD_dest(*dest,*src);
 	else if(!src->isContainer() && !dest->isContainer())
 		rc=dest->put(src); // both are not containers, let gdd handle it
 	else
@@ -575,10 +577,9 @@ gddStatus gddApplicationTypeTable::smartCopy(gdd* dest, gdd* src)
 
 // ----------------------smart reference functions------------------------
 // the source in the container we must walk through is this called
-gddStatus gddApplicationTypeTable::refDD_src(gdd* dest, gdd* src)
+gddStatus gddApplicationTypeTable::refDD_src(gdd& dest, const gdd& src)
 {
 	gddStatus rc=0,s;
-	gddContainer* cdd;
 	gddCursor cur;
 	gdd* dd;
 	aitIndex index;
@@ -586,52 +587,51 @@ gddStatus gddApplicationTypeTable::refDD_src(gdd* dest, gdd* src)
 	// this could be done better (faster) if we did not always recurse for
 	// each GDD.  I could have checked for type container before recursing.
 
-	if(src->isContainer())
+	if(src.isContainer())
 	{
+		gddContainer& cdd=(gddContainer&)src;
 		// go through src gdd and map app types to index into dest
-		cdd=(gddContainer*)src;
-		cur=cdd->getCursor();
-		for(dd=cur.first();dd;dd=dd->next()) refDD_src(dest,dd);
+		cur=cdd.getCursor();
+		for(dd=cur.first();dd;dd=dd->next()) refDD_src(dest,*dd);
 	}
 	else
 	{
 		// find src gdd in dest container and just do put()
-		s=mapAppToIndex(dest->applicationType(),src->applicationType(),index);
+		s=mapAppToIndex(dest.applicationType(),src.applicationType(),index);
 
 		if(s==0)
-			rc=dest[index].putRef(src);
+			rc=dest[index].putRef(&src);
 	}
 	return rc;
 }
 
 // the destination in the container we must walk through is this called
-gddStatus gddApplicationTypeTable::refDD_dest(gdd* dest, gdd* src)
+gddStatus gddApplicationTypeTable::refDD_dest(gdd& dest, const gdd& src)
 {
 	gddStatus rc=0,s;
-	gddContainer* cdd;
 	gddCursor cur;
 	gdd* dd;
 	aitIndex index;
 
-	if(dest->isContainer())
+	if(dest.isContainer())
 	{
+		gddContainer& cdd=(gddContainer&)dest;
 		// go through dest gdd and map app types to index into src
-		cdd=(gddContainer*)dest;
-		cur=cdd->getCursor();
-		for(dd=cur.first();dd;dd=dd->next()) refDD_dest(dd,src);
+		cur=cdd.getCursor();
+		for(dd=cur.first();dd;dd=dd->next()) refDD_dest(*dd,src);
 	}
 	else
 	{
 		// find dest gdd in src container and just do put()
-		s=mapAppToIndex(src->applicationType(),dest->applicationType(),index);
+		s=mapAppToIndex(src.applicationType(),dest.applicationType(),index);
 
 		if(s==0)
-			rc=dest->putRef(&src[index]);
+			rc=dest.putRef(&src[index]);
 	}
 	return rc;
 }
 
-gddStatus gddApplicationTypeTable::smartRef(gdd* dest, gdd* src)
+gddStatus gddApplicationTypeTable::smartRef(gdd* dest, const gdd* src)
 {
 	gddStatus rc=0;
 
@@ -639,9 +639,9 @@ gddStatus gddApplicationTypeTable::smartRef(gdd* dest, gdd* src)
 	// feature is used.
 
 	if(dest->isContainer() && dest->isManaged())
-		rc=refDD_src(dest,src);
+		rc=refDD_src(*dest,*src);
 	else if(src->isContainer() && src->isManaged())
-		rc=refDD_dest(dest,src);
+		rc=refDD_dest(*dest,*src);
 	else if(!src->isContainer() && !dest->isContainer())
 		rc=dest->putRef(src); // both are not containers, let gdd handle it
 	else

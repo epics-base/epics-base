@@ -7,6 +7,9 @@
  *
  * $Id$
  * $Log$
+ * Revision 1.2  1997/04/23 17:13:03  jhill
+ * fixed export of symbols from WIN32 DLL
+ *
  * Revision 1.1  1997/03/21 01:56:05  jbk
  * *** empty log message ***
  *
@@ -32,12 +35,12 @@ public:
 	gddArray(int app, aitEnum prim, int dimen, ...);
 
 	// view dimension size info as a bounding box instead of first/count
-	gddStatus getBoundingBoxSize(aitUint32* put_info_here);
+	gddStatus getBoundingBoxSize(aitUint32* put_info_here) const;
 	gddStatus setBoundingBoxSize(const aitUint32* const get_info_from_here);
-	gddStatus getBoundingBoxOrigin(aitUint32* put_info_here);
+	gddStatus getBoundingBoxOrigin(aitUint32* put_info_here) const;
 	gddStatus setBoundingBoxOrigin(const aitUint32* const get_info_from_here);
 
-	void dump(void);
+	void dump(void) const;
 	void test(void);
 
 	gddArray& operator=(aitFloat64* v) { *((gdd*)this)=v; return *this; }

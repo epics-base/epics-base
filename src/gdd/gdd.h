@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.25  1998/05/05 21:09:52  jhill
+ * removed backslash which conuses cpp
+ *
  * Revision 1.24  1997/08/05 00:51:12  jhill
  * fixed problems in aitString and the conversion matrix
  *
@@ -127,7 +130,7 @@
 #include "aitConvert.h"
 
 class gddContainer;
-class gddAtomic;
+class gddArray;
 class gddScalar;
 
 // Not Complete in this prototype:
@@ -193,7 +196,9 @@ public:
 	aitEnum primitiveType(void) const;
 	unsigned dimension(void) const;
 	aitType& getData(void);
+	const aitType& getData(void) const;
 	aitType* dataUnion(void);
+	const aitType* dataUnion(void) const;
 	gddDestructor* destructor(void) const;
 	gdd* next(void);
 	void setNext(gdd*);
@@ -201,7 +206,7 @@ public:
 	const gddBounds* getBounds(void) const;
 	const gddBounds* getBounds(int bn) const;
 
-	void dump(void);
+	void dump(void) const;
 	void test(void);
 
 	void setPrimType(aitEnum t);
@@ -212,7 +217,7 @@ public:
 	gddStatus clear(void); // clear all fields of the DD, including arrays
 	gddStatus changeType(int appltype, aitEnum primtype);
 	gddStatus setBound(unsigned dim_to_set, aitIndex first, aitIndex count);
-	gddStatus getBound(unsigned dim_to_get, aitIndex& first, aitIndex& count);
+	gddStatus getBound(unsigned dim_to_get, aitIndex& first, aitIndex& count) const;
 	gddStatus registerDestructor(gddDestructor*);
 	gddStatus replaceDestructor(gddDestructor*);
 	void* dataVoid(void) const;
@@ -234,7 +239,7 @@ public:
 	aitUint16 getStat(void) const;
 	aitUint16 getSevr(void) const;
 	void setStatSevr(aitInt16 stat, aitInt16 sevr);
-	void getStatSevr(aitInt16& stat, aitInt16& sevr);
+	void getStatSevr(aitInt16& stat, aitInt16& sevr) const;
 
 	size_t getTotalSizeBytes(void) const;
 	size_t getDataSizeBytes(void) const;
@@ -287,6 +292,17 @@ public:
 	gdd& operator=(const gdd& v);
 
 	// get a pointer to the data in the DD
+	void getRef(const aitFloat64*& d) const;
+	void getRef(const aitFloat32*& d) const;
+	void getRef(const aitUint32*& d) const;
+	void getRef(const aitInt32*& d) const;
+	void getRef(const aitUint16*& d) const;
+	void getRef(const aitInt16*& d) const;
+	void getRef(const aitUint8*& d) const;
+	void getRef(const aitInt8*& d) const;
+	void getRef(const aitString*& d) const;
+	void getRef(const aitFixedString*& d) const;
+	void getRef(const void*& d) const;
 	void getRef(aitFloat64*& d);
 	void getRef(aitFloat32*& d);
 	void getRef(aitUint32*& d);
@@ -326,16 +342,16 @@ public:
 	gddStatus putRef(const gdd*);
 
 	// get the data in the form the user wants (do conversion)
-	void getConvert(aitFloat64& d);
-	void getConvert(aitFloat32& d);
-	void getConvert(aitUint32& d);
-	void getConvert(aitInt32& d);
-	void getConvert(aitUint16& d);
-	void getConvert(aitInt16& d);
-	void getConvert(aitUint8& d);
-	void getConvert(aitInt8& d);
-	void getConvert(aitString& d);
-	void getConvert(aitFixedString& d);
+	void getConvert(aitFloat64& d) const;
+	void getConvert(aitFloat32& d) const;
+	void getConvert(aitUint32& d) const;
+	void getConvert(aitInt32& d) const;
+	void getConvert(aitUint16& d) const;
+	void getConvert(aitInt16& d) const;
+	void getConvert(aitUint8& d) const;
+	void getConvert(aitInt8& d) const;
+	void getConvert(aitString& d) const;
+	void getConvert(aitFixedString& d) const;
 
 	// convert the user data to the type in the DD and set value
 	void putConvert(aitFloat64 d);
@@ -376,31 +392,31 @@ public:
 	gddStatus put(aitType* d);
 
 	// copy the array data out of the DD
-	void get(void* d);
-	void get(void* d,aitEnum);
-	void get(aitFloat64* d);
-	void get(aitFloat32* d);
-	void get(aitUint32* d);
-	void get(aitInt32* d);
-	void get(aitUint16* d);
-	void get(aitInt16* d);
-	void get(aitUint8* d);
-	void get(aitInt8* d);
-	void get(aitString* d);
-	void get(aitFixedString* d);
+	void get(void* d) const;
+	void get(void* d,aitEnum) const;
+	void get(aitFloat64* d) const;
+	void get(aitFloat32* d) const;
+	void get(aitUint32* d) const;
+	void get(aitInt32* d) const;
+	void get(aitUint16* d) const;
+	void get(aitInt16* d) const;
+	void get(aitUint8* d) const;
+	void get(aitInt8* d) const;
+	void get(aitString* d) const;
+	void get(aitFixedString* d) const;
 
 	// copy the data out of the DD
-	void get(aitFloat64& d);
-	void get(aitFloat32& d);
-	void get(aitUint32& d);
-	void get(aitInt32& d);
-	void get(aitUint16& d);
-	void get(aitInt16& d);
-	void get(aitUint8& d);
-	void get(aitInt8& d);
-	void get(aitString& d);
-	void get(aitFixedString& d);
-	void get(aitType& d);
+	void get(aitFloat64& d) const;
+	void get(aitFloat32& d) const;
+	void get(aitUint32& d) const;
+	void get(aitInt32& d) const;
+	void get(aitUint16& d) const;
+	void get(aitInt16& d) const;
+	void get(aitUint8& d) const;
+	void get(aitInt8& d) const;
+	void get(aitString& d) const;
+	void get(aitFixedString& d) const;
+	void get(aitType& d) const;
 
 	// Same as putRef() methods
 	gdd& operator=(aitFloat64* v);
@@ -427,34 +443,73 @@ public:
 	// gdd& operator=(aitFixedString d); // not present
 
 	// Same as getRef() methods
-	operator aitFloat64*(void) const;
-	operator aitFloat32*(void) const;
-	operator aitUint32*(void) const;
-	operator aitInt32*(void) const;
-	operator aitUint16*(void) const;
-	operator aitInt16*(void) const;
-	operator aitUint8*(void) const;
-	operator aitInt8*(void) const;
-	operator aitString*(void) const;
-	operator aitFixedString*(void) const;
+	operator const aitFloat64*(void) const;
+	operator const aitFloat32*(void) const;
+	operator const aitUint32*(void) const;
+	operator const aitInt32*(void) const;
+	operator const aitUint16*(void) const;
+	operator const aitInt16*(void) const;
+	operator const aitUint8*(void) const;
+	operator const aitInt8*(void) const;
+	operator const aitString*(void) const;
+	operator const aitFixedString*(void) const;
+
+	operator aitFloat64*(void);
+	operator aitFloat32*(void);
+	operator aitUint32*(void);
+	operator aitInt32*(void);
+	operator aitUint16*(void);
+	operator aitInt16*(void);
+	operator aitUint8*(void);
+	operator aitInt8*(void);
+	operator aitString*(void);
+	operator aitFixedString*(void);
 
 	// Same as get() methods
-	operator aitFloat64(void);
-	operator aitFloat32(void);
-	operator aitUint32(void);
-	operator aitInt32(void);
-	operator aitUint16(void);
-	operator aitInt16(void);
-	operator aitUint8(void);
-	operator aitInt8(void);
-	operator aitString(void);
+	operator aitFloat64(void) const;
+	operator aitFloat32(void) const;
+	operator aitUint32(void) const;
+	operator aitInt32(void) const;
+	operator aitUint16(void) const;
+	operator aitInt16(void) const;
+	operator aitUint8(void) const;
+	operator aitInt8(void) const;
+	operator aitString(void) const;
 	// gdd::operator aitFixedString(void); // not present
+
+	//
+	// added by JOH 4-23-99 so that the correct method
+	// is used if the container gdd is not organized
+	// as an array of GDDs in memory
+	//
+	// note that this requires a reference (pointers
+	// do not invoke this function)
+	//
+	gdd & operator [] (aitIndex index);
+	const gdd & operator [] (aitIndex index) const;
+	gdd & operator [] (int index);
+	const gdd & operator [] (int index) const;
+
+	//
+	// The following can be slow and inefficient
+	// if the GDD isnt "flat"
+	//
+	// Only appropriate for container GDDs
+	//
+	const gdd* getDD(aitIndex index) const;
+	const gdd* getDD(aitIndex index, const gddScalar*&) const;
+	const gdd* getDD(aitIndex index, const gddArray*&) const;
+	const gdd* getDD(aitIndex index, const gddContainer*&) const;
+	gdd* getDD(aitIndex index);
+	gdd* getDD(aitIndex index,gddScalar*&);
+	gdd* getDD(aitIndex index,gddArray*&);
+	gdd* getDD(aitIndex index,gddContainer*&);
 
 	gddStatus genCopy(aitEnum t, const void* d,
 		aitDataFormat f=aitLocalDataFormat);
 	void adjust(gddDestructor* d,void* v,aitEnum type,
 		aitDataFormat f=aitLocalDataFormat);
-	void get(aitEnum t,void* v,aitDataFormat f=aitLocalDataFormat);
+	void get(aitEnum t,void* v,aitDataFormat f=aitLocalDataFormat) const;
 	void set(aitEnum t,const void* v,aitDataFormat f=aitLocalDataFormat);
 
 	// following methods are used to import and export data into and out
@@ -485,7 +540,7 @@ protected:
 
 	void init(int app, aitEnum prim, int dimen);
 	void freeBounds(void);
-	void dumpInfo(void);
+	void dumpInfo(void) const;
 	gddStatus copyStuff(gdd*,int type);
 	gddStatus clearData(void);
 
@@ -513,13 +568,16 @@ protected:
 private:
 	aitUint16 ref_cnt;
 	aitUint8 flags;
+
+	const gdd* gdd::indexDD (aitIndex index) const;
 };
 
-#include "gddI.h"
 
 // include these to be backward compatible with first gdd library version
 #include "gddArray.h"
 #include "gddScalar.h"
 #include "gddContainer.h"
+
+#include "gddI.h"
 
 #endif

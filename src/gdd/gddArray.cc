@@ -7,6 +7,9 @@
 //
 // $Id$
 // $Log$
+// Revision 1.2  1997/04/23 17:13:02  jhill
+// fixed export of symbols from WIN32 DLL
+//
 // Revision 1.1  1997/03/21 01:56:04  jbk
 // *** empty log message ***
 //
@@ -31,7 +34,7 @@ gddAtomic::gddAtomic(int app, aitEnum prim, int dimen, ...):
 	va_end(ap);
 }
 
-gddStatus gddAtomic::getBoundingBoxSize(aitUint32* b)
+gddStatus gddAtomic::getBoundingBoxSize(aitUint32* b) const
 {
 	unsigned i;
 	gddStatus rc=0;
@@ -63,7 +66,7 @@ gddStatus gddAtomic::setBoundingBoxSize(const aitUint32* const b)
 	return rc;
 }
 
-gddStatus gddAtomic::getBoundingBoxOrigin(aitUint32* b)
+gddStatus gddAtomic::getBoundingBoxOrigin(aitUint32* b) const
 {
 	unsigned i;
 	gddStatus rc=0;

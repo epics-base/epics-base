@@ -8,6 +8,9 @@
 //
 // $Id$
 // $Log$
+// Revision 1.2  1997/04/23 17:13:03  jhill
+// fixed export of symbols from WIN32 DLL
+//
 // Revision 1.1  1997/03/21 01:56:05  jbk
 // *** empty log message ***
 //
@@ -47,12 +50,28 @@ void gddContainer::cInit(int tot)
 	setData(dd_list);
 }
 
+
 gddContainer::gddContainer(gddContainer* ec)
 {
+	//
+	// added this because the "copy()" below bombs
+	// if the GDD isnt initialized
+	// joh - 4-23-99
+	//
+	this->init (ec->appl_type, aitEnumContainer, 1);
+
+#if 1
+	//
+	// this replaces some the strange code below
+	// that existed before
+	// joh - 4-23-99
+	//
+	copyInfo(ec);
+#else
 	unsigned i;
 	gdd* dd_list;
 	gdd* temp;
-
+	
 	copy(ec);
 	dd_list=NULL;
 
@@ -67,24 +86,7 @@ gddContainer::gddContainer(gddContainer* ec)
 		dd_list=temp;
 	}
 	setData(dd_list);
-}
-
-gdd* gddContainer::getDD(aitIndex index)
-{
-	if (index==0u) {
-		return this;
-	}
-	else if(index>getDataSizeElements())
-		return NULL;
-	else
-	{
-		aitIndex i;
-		gdd* dd=(gdd*)dataPointer();
-		for(i=1u;i<index;i++) {
-			dd=(gdd*)dd->next();
-		}
-		return dd;
-	}
+#endif
 }
 
 gddStatus gddContainer::insert(gdd* dd)

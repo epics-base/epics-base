@@ -7,21 +7,17 @@
  *
  * $Id$
  * $Log$
+ * Revision 1.1  1997/03/21 01:56:07  jbk
+ * *** empty log message ***
+ *
  *
  */
 
 inline gdd* gddContainer::cData(void) const
 	{ return (gdd*)dataPointer(); }
-inline int gddContainer::total(void)
+inline int gddContainer::total(void) const
 	{ return bounds->size(); }
-inline gdd* gddContainer::operator[](aitIndex index)
-	{ return getDD(index); }
-inline gdd* gddContainer::getDD(aitIndex index,gddScalar*& dd)
-	{ return (gdd*)(dd=(gddScalar*)getDD(index)); }
-inline gdd* gddContainer::getDD(aitIndex index,gddAtomic*& dd)
-	{ return (gdd*)(dd=(gddAtomic*)getDD(index)); }
-inline gdd* gddContainer::getDD(aitIndex index,gddContainer*& dd)
-	{ return (gdd*)(dd=(gddContainer*)getDD(index)); }
+
 inline gddStatus gddContainer::setBound(aitIndex f, aitIndex c)
 	{ bounds->set(f,c); return 0; }
 

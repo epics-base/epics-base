@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.26  1998/10/26 11:18:41  lange
+// Bug in gdd::~gdd fixed (CA gateway crashes).
+//
 // Revision 1.25  1998/06/23 15:10:36  jhill
 // fixed use of nill ptr in gdd::put(const gdd* dd)
 //
@@ -187,7 +190,13 @@ void gdd::init(int app, aitEnum prim, int dimen)
 
 gdd::gdd(gdd* dd)
 {
-	ref_cnt=1;
+	//
+	// added this because the "copy()" below bombs
+	// if the GDD isnt initialized
+	// joh - 4-23-99
+	//
+	this->init (dd->appl_type, dd->primitiveType(), dd->dimension());
+
 	copyInfo(dd);
 }
 
@@ -313,9 +322,16 @@ gddStatus gdd::genCopy(aitEnum t, const void* d, aitDataFormat f)
 			}
 			else
 			{
-				setData(buf);
 				destruct=new gddDestructor;
-				destruct->reference();
+				if (destruct==NULL) {
+					gddAutoPrint("gdd::genCopy()",gddErrorNewFailed);
+					rc=gddErrorNewFailed;
+					free (buf);
+				}
+				else {
+					setData(buf);
+					destruct->reference();
+				}
 			}
 		}
 		if(rc==0)
@@ -374,7 +390,7 @@ gddStatus gdd::setBound(unsigned index_dim, aitIndex first, aitIndex count)
 	return rc;
 }
 
-gddStatus gdd::getBound(unsigned index_dim, aitIndex& first, aitIndex& count)
+gddStatus gdd::getBound(unsigned index_dim, aitIndex& first, aitIndex& count) const
 {
 	gddStatus rc=0;
 	if(index_dim<dimension())
@@ -428,8 +444,21 @@ gddStatus gdd::copyStuff(gdd* dd,int ctype)
 		//
 		init(dd->applicationType(),dd->primitiveType(),dd->dimension());
 
-		if(dd->isScalar())
-			data=dd->data;
+		if(dd->isScalar()) {
+			if (dd->primitiveType()==aitEnumString) {
+				aitString* pStrDest =(aitString*)&data;
+				aitString* pStrSrc =(aitString*)&dd->data;
+				*pStrDest = *pStrSrc;
+			}
+			else if (dd->primitiveType()==aitEnumFixedString) {
+				aitFixedString* pStrDest =(aitFixedString*)data.Pointer;
+				aitFixedString* pStrSrc =(aitFixedString*)dd->data.Pointer;
+				memcpy (pStrDest, pStrSrc, sizeof(aitFixedString));
+			}
+			else {
+				data=dd->data;
+			}
+		}
 		else // atomic
 		{
 			const gddBounds* bnds = dd->getBounds();
@@ -444,9 +473,16 @@ gddStatus gdd::copyStuff(gdd* dd,int ctype)
 				if( (array=new aitUint8[a_size]) )
 				{
 					destruct=new gddDestructor;
-					destruct->reference();
-					memcpy(array,dd->dataPointer(),a_size);
-					setData(array);
+					if (destruct!=NULL) {
+						destruct->reference();
+						memcpy(array,dd->dataPointer(),a_size);
+						setData(array);
+					}
+					else {
+						free (array);
+						gddAutoPrint("gdd::copyStuff()",gddErrorNewFailed);
+						rc=gddErrorNewFailed;
+					}
 				}
 				else
 				{
@@ -1014,6 +1050,17 @@ gddStatus gdd::clear(void)
 		return gddErrorNotAllowed;
 	}
 
+
+	if(isScalar()) 
+	{
+		//
+		// this code clears out aitString and 
+		// aitFixedString scalars
+		//
+		// joh 4-23-99
+		//		
+		changeType(0,aitEnumInvalid);
+	}
 	if(isAtomic())
 	{
 		destroyData();
@@ -1065,7 +1112,7 @@ gddStatus gdd::reset(aitEnum prim, int dimen, aitIndex* cnt)
 	return rc;
 }
 
-void gdd::get(aitString& d)
+void gdd::get(aitString& d) const
 {
 	if(primitiveType()==aitEnumString)
 	{
@@ -1075,7 +1122,7 @@ void gdd::get(aitString& d)
 	else
 		get(aitEnumString,&d);
 }
-void gdd::get(aitFixedString& d)
+void gdd::get(aitFixedString& d) const
 {
 	if(primitiveType()==aitEnumFixedString){
 		strncpy(d.fixed_string,data.FString->fixed_string,
@@ -1086,12 +1133,12 @@ void gdd::get(aitFixedString& d)
 		get(aitEnumFixedString,&d);
 }
 
-void gdd::getConvert(aitString& d)
+void gdd::getConvert(aitString& d) const
 {
 	get(aitEnumString,&d);
 }
 
-void gdd::getConvert(aitFixedString& d)
+void gdd::getConvert(aitFixedString& d) const
 {
 	get(aitEnumFixedString,d.fixed_string);
 }
@@ -1246,8 +1293,15 @@ gddStatus gdd::put(const gdd* dd)
 				if((arr=new aitUint8[sz]))
 				{
 					destruct=new gddDestructor;
-					destruct->reference();
-					setData(arr);
+					if (destruct!=NULL) {
+						destruct->reference();
+						setData(arr);
+					}
+					else {
+						free (arr);
+						gddAutoPrint("gdd::copyData(const gdd*)",gddErrorNewFailed);
+						rc=gddErrorNewFailed;
+					}
 				}
 				else
 				{
@@ -1558,9 +1612,57 @@ void gdd::setPrimType (aitEnum t)
 	}
 
 	//
-	// I (joh) assume that nothing needs to be done when
-	// the primative type of a container changes
+	// I (joh) assume that something needs to be done when
+	// the primative type of a container changes, but I
+	// have not looked into this so far. 
 	//
 
 	this->prim_type = t;
+}
+
+//
+// gdd::indexDD()
+//
+// modified by JOH 4-23-99 so that the correct method
+// is used if the container gdd is not organized
+// as an array of GDDs in memory (i.e. its not flat)
+//
+const gdd* gdd::indexDD (aitIndex index) const
+{
+	aitIndex i;
+	unsigned nElem;
+
+	if (index==0u) {
+		return this;
+	}
+
+	//
+	// otherwise this had better be a container
+	// we are indexing
+	//
+	assert (this->prim_type==aitEnumContainer);
+
+	//
+	// catch out of bounds index
+	//
+	nElem = getDataSizeElements();
+	assert (index<=nElem);
+
+	//
+	// if the container GDD is "flat"
+	//
+	if (this->isFlat()) {
+		return this + index;
+	}
+
+	//
+	// otherwise linear search for it
+	//
+	gdd* dd = (gdd*) dataPointer();
+	i = nElem;
+	while (i>index) {
+		dd=(gdd*)dd->next();
+		i--;
+	}
+	return dd;
 }

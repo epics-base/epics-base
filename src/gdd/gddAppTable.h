@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.5  1997/04/23 17:13:02  jhill
+ * fixed export of symbols from WIN32 DLL
+ *
  * Revision 1.4  1997/01/12 20:32:49  jbk
  * many errors fixed
  *
@@ -125,8 +128,8 @@ public:
 
 	// copy as best as possible from src to dest, one of the gdd must be
 	// managed for this to succeed
-	gddStatus smartCopy(gdd* dest, gdd* src);
-	gddStatus smartRef(gdd* dest, gdd* src);
+	gddStatus smartCopy(gdd* dest, const gdd* src);
+	gddStatus smartRef(gdd* dest, const gdd* src);
 
 	// old style interface
 	int tagC2I(const char* const ctag, int& tag);
@@ -155,10 +158,10 @@ public:
 protected:
 	void GenerateTypes(void);
 
-	gddStatus copyDD_src(gdd* dest, gdd* src);
-	gddStatus copyDD_dest(gdd* dest, gdd* src);
-	gddStatus refDD_src(gdd* dest, gdd* src);
-	gddStatus refDD_dest(gdd* dest, gdd* src);
+	gddStatus copyDD_src(gdd& dest, const gdd& src);
+	gddStatus copyDD_dest(gdd& dest, const gdd& src);
+	gddStatus refDD_src(gdd& dest, const gdd& src);
+	gddStatus refDD_dest(gdd& dest, const gdd& src);
 
 private:
 	gddStatus splitApplicationType(aitUint32 r,aitUint32& g,aitUint32& a) const;

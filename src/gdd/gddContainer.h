@@ -7,6 +7,9 @@
  *
  * $Id$
  * $Log$
+ * Revision 1.2  1997/04/23 17:13:04  jhill
+ * fixed export of symbols from WIN32 DLL
+ *
  * Revision 1.1  1997/03/21 01:56:06  jbk
  * *** empty log message ***
  *
@@ -29,17 +32,10 @@ public:
 
 	gddStatus insert(gdd*);
 	gddStatus remove(aitIndex index);
-	int total(void);
+	int total(void) const;
 
-	void dump(void);
+	void dump(void) const;
 	void test(void);
-
-	// The following are slow and inefficient
-	gdd* getDD(aitIndex index);
-	gdd* getDD(aitIndex index,gddScalar*&);
-	gdd* getDD(aitIndex index,gddAtomic*&);
-	gdd* getDD(aitIndex index,gddContainer*&);
-	gdd* operator[](aitIndex index);
 
 	// preferred method for looking into a container
 	gddCursor getCursor(void) const;
@@ -87,6 +83,7 @@ public:
 	gdd* current(gddContainer*&);
 
 	gdd* operator[](int index);
+
 private:
 	const gddContainer* list;
 	gdd* curr;

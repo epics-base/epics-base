@@ -173,7 +173,7 @@ inline void casChannelI::postAccessRightsEvent()
 //
 // casChannelI::enumStringTable ()
 //
-inline const &std::vector< std::string >& casChannelI::enumStringTable () const
+inline const std::vector< std::string >& casChannelI::enumStringTable () const
 {
     return this->pv.enumStringTable ();
 }

@@ -497,7 +497,8 @@ int	db_cancel_event(struct event_block	*pevent)
     }
     assert ( pevent->npend == 0u );
 
-    while ( pevent->callBackInProgress ) {
+    while ( pevent->callBackInProgress && 
+            pevent->ev_que->evUser->taskid != taskIdSelf()) {
         UNLOCKEVQUE ( pevent->ev_que )
 		semTake(pevent->ev_que->evUser->pflush_sem, sysClkRateGet());
         LOCKEVQUE ( pevent->ev_que )

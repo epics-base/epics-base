@@ -1709,6 +1709,12 @@ static long TSgetData(char* buf, int buf_size, int soc,
     volatile unsigned long s,us;
     struct timeval timeOut;
     struct timespec send_time,recv_time;
+    struct sockaddr_in local_sin;
+    
+    if (!from_sin) {
+	/* Tornado 2.2 doesn't like NULLs in recvfrom() */
+	from_sin = &local_sin;
+    }
     
     /*
      * joh 08-26-99
@@ -1755,16 +1761,13 @@ static long TSgetData(char* buf, int buf_size, int soc,
     else
     {
         /* data available */
-        flen=from_sin?sizeof(struct sockaddr):0;
+        flen=sizeof(struct sockaddr);
         if((mlen=recvfrom(soc,buf,buf_size,0,from_sin,&flen))<0)
         { perror("recvfrom failed"); return -1; }
-        if(from_sin)
-        {
-            Debug(8,"recvfrom port %d\n",
-                ntohs(((struct sockaddr_in*)from_sin)->sin_port));
-            Debug(8,"flen = %d\n",flen);
-            Debug(8,"mlen = %d\n",mlen);
-        }
+        Debug(8,"recvfrom port %d\n",
+            ntohs(((struct sockaddr_in*)from_sin)->sin_port));
+        Debug(8,"flen = %d\n",flen);
+        Debug(8,"mlen = %d\n",mlen);
         if(round_trip) TScalcDiff(&send_time,&recv_time,round_trip);
     }
     return mlen;

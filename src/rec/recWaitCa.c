@@ -1,3 +1,10 @@
+/* 
+ * 07-27-95  nda  made QUEUE_SIZE a global variable so it could
+ *                be changed at boot time for LOTS OF WAIT records
+ * 
+ *
+ */
+
 #include <vxWorks.h>
 #include <taskLib.h>
 #include <string.h>
@@ -18,7 +25,8 @@
 
 extern int interruptAccept;
 
-#define QUEUE_SIZE 256
+int   recWaitCaQsize = 256;
+
 LOCAL int	taskid=0;
 LOCAL RING_ID	ringQ;;
 LOCAL FAST_LOCK	lock;
@@ -50,7 +58,7 @@ LOCAL void eventCallback(struct event_handler_args eha)
 LOCAL void recWaitCaStart(void)
 {
     FASTLOCKINIT(&lock);
-    if((ringQ = rngCreate(sizeof(void *) * QUEUE_SIZE)) == NULL) {
+    if((ringQ = rngCreate(sizeof(void *) * recWaitCaQsize)) == NULL) {
 	errMessage(0,"recWaitCaStart failed");
 	exit(1);
     }

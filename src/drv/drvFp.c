@@ -1,6 +1,5 @@
-
-/* fp.c */
-/*
+/* drvFp.c */
+/* share/src/drv $Id$
  * 	routines which are used to test and interface with the 
  *	FP10S fast protect module
  *
@@ -49,6 +48,7 @@
  * .10 joh 071092	added scan task wakeup from ISR	 
  * .11 joh 071092	moved ivec allocation to module_types.h
  * .12 joh 072792	added soft reboot int disable
+ * .13 mrk 090192	support epics I/O event scan, and added DRVET
  */
 
 
@@ -97,7 +97,34 @@ static char *sccsId = "$Id$\t$Date$";
 #endif
 
 #include "module_types.h"
+#include <dbDefs.h>
+#include <drvSup.h>
+#ifndef EPICS_V2
+#include <dbScan.h>
+#endif
+
+long report();
+long init();
+struct {
+        long    number;
+        DRVSUPFUN       report;
+        DRVSUPFUN       init;
+} drvFp={
+        2,
+        report,
+        init};
 
+static long report()
+{
+	fp_io_report();
+}
+
+static long init()
+{
+    fp_init(0);
+    return(0);
+}
+
 /* general constants */
 #define FP_INTLEV	5		/* interrupt level */
 #define FP_BUFSIZ	8		/* input buffer size */
@@ -158,6 +185,9 @@ struct fp_rec
 	short fp_vector;		/* interrupt vector */
 	short mode;			/* operating mode */
 	unsigned int int_num;		/* interrupt number */
+#ifndef EPICS_V2
+        IOSCANPVT ioscanpvt;
+#endif
 	};
 
 LOCAL
@@ -207,7 +237,11 @@ unsigned card;
    /*
     * wakeup the interrupt driven scanner
     */
+#ifdef EPICS_V2
    io_scanner_wakeup(IO_BI, AT8_FP10S_BI, card);
+#else
+          scanIoRequest(fp[card].ioscanpvt);
+#endif
    break;
  }
  ptr->int_num++;				/* log interrupt */
@@ -293,6 +327,9 @@ fp_init(addr)
   */
   fp[i].fptr->csr |= CSR_IEN;		/* enable interrupts */
   fp[i].mode = FP_RUN;			/* normal run mode */
+#ifndef EPICS_V2
+  scanIoInit(&fp[i].ioscanpvt);
+#endif
   }
  fp_num = i - 1;			/* record max card # */
  if (!(fp_semid = semCreate()))		/* abort if can't create semaphore */
@@ -493,3 +530,14 @@ int level;
                 printf("BI: AT8-FP-S:    card %d\n", i);
         }
 } 
+
+#ifndef EPICS_V2
+fp_getioscanpvt(card,scanpvt)
+unsigned short card;
+IOSCANPVT *scanpvt;
+{
+        if ((card >= bi_num_cards[AT8_FP10S_BI])) return(0);
+        *scanpvt = fp[card].ioscanpvt;
+        return(0);
+}
+#endif

@@ -1,6 +1,7 @@
+/* drvFpm.c */
+/* share/src/drv $Id$ */
+
 /*
- * fpm.c
- *
  * control routines for use with the FP10M fast protect master modules
  *
  *      routines which are used to test and interface with the
@@ -50,6 +51,7 @@
  *			recompilation
  * .10 joh 071092	moved ivec allocation to module_types.h
  * .11 joh 072792       added soft reboot int disable
+ * .12 mrk 090292	added DRVET
  *
  *
  * Routines:
@@ -89,8 +91,31 @@ static char *sccsId = "$Id$\t$Date$";
 #endif
 
 #include "module_types.h"
+#include <dbDefs.h>
+#include <drvSup.h>
+
+long report();
+long init();
+struct {
+        long    number;
+        DRVSUPFUN       report;
+        DRVSUPFUN       init;
+} drvFpm={
+        2,
+        report,
+        init};
 
+static long report()
+{
+        fpm_io_report();
+}
 
+static long init()
+{
+    fpm_init(0);
+    return(0);
+}
+
 /* general constants */
 #define FPM_INTLEV	5		/* interrupt level */
 

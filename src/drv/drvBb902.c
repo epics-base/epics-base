@@ -183,6 +183,7 @@ register unsigned int	*pval;
 	/* readback */
 	*pval = (pbo_bb902s[card]->high_value << 16)	/* high */
 	+ pbo_bb902s[card]->low_value;		/* low */
+	return(0);
 }
 
 #define masks(K) ((1<<K))

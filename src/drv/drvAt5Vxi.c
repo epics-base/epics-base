@@ -115,13 +115,12 @@
 #include <task_params.h>
 #include <fast_lock.h>
 #include <epvxiLib.h>
+#include <drvSup.h>
 #ifndef EPICS_V2
 #include <dbScan.h>
 #endif
 
 static char SccsId[] = "$Id$\t$Date$";
-
-typedef long (*DRVSUPFUN) ();   /* ptr to driver support function*/
 
 
 void 		log_at5vxi_failure();

@@ -33,7 +33,7 @@
  *      -----------------
  *	.01 071792 joh	Added model name registration
  *	.02 081992 joh	vxiUniqueDriverID -> epvxiUniqueDriverID	
- *	.03 082692 mrk	Added support for new I/O event scanning
+ *	.03 082692 mrk	Added support for new I/O event scanning and DRVET
  *
  */
 
@@ -50,10 +50,30 @@
 #include <task_params.h>
 #include <fast_lock.h>
 #include <epvxiLib.h>
+#include <dbDefs.h>
+#include <drvSup.h>
 #ifndef EPICS_V2
 #include <dbScan.h>
 #endif
+
+long init();
 
+struct {
+        long    number;
+        DRVSUPFUN       report;
+        DRVSUPFUN       init;
+} drvKscV215={
+        2,
+        NULL,	/* VXI report takes care of this */
+        init};
+
+
+static long init()
+{
+	KscV215Init();
+	return(0);
+}
+
 #define VXI_MODEL_KSCV215 	(0x215)
 
 #define MAXTRIES 100
@@ -438,7 +458,7 @@ register unsigned short *prval;
 }
 
 #ifndef EPICS_V2
-KscV215_at5vxi_getioscanpvt(la,scanpvt)
+KscV215_getioscanpvt(la,scanpvt)
 unsigned short	la;
 IOSCANPVT *scanpvt;
 {

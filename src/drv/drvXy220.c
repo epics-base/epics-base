@@ -137,6 +137,7 @@ int xy220_driver_init(){
 		pbo_xy220s[i] = 0;
 	    }
 	}
+	return(0);
 }
 
 /*

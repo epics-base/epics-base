@@ -1,3 +1,6 @@
+/* drvHpe1368a.c*/
+/* share/src/drv @(#) $Id$ */
+
 /*
  *      hpe1368a_driver.c
  *
@@ -31,7 +34,7 @@
  *      -----------------
  *	.01 071792 joh	Added model name registration
  *	.02 081992 joh	vxiUniqueDriverID -> epvxiUniqueDriverID	
- *	.03 082692 mrk	Added support for new I/O event scanning
+ *	.03 082692 mrk	Added support for new I/O event scanning and DRVET
  *
  */
 
@@ -48,11 +51,30 @@
 #include <task_params.h>
 #include <fast_lock.h>
 #include <epvxiLib.h>
+#include <dbDefs.h>
+#include <drvSup.h>
 #ifndef EPICS_V2
 #include <dbScan.h>
 #endif
+
+long init();
+
+struct {
+        long    number;
+        DRVSUPFUN       report;
+        DRVSUPFUN       init;
+} drvHpe1368a={
+        2,
+        NULL,	/*VXI io report takes care of this */
+        init};
 
 
+static long init()
+{
+	hpe1368a_init();
+	return(0);
+}
+
 #define VXI_MODEL_HPE1368A 	(0xf28)
 
 #define HPE1368A_PCONFIG(LA) \

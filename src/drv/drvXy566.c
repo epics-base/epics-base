@@ -100,8 +100,7 @@ static char SccsId[] = "$Id$\t$Date$ ";
  * senb/senw		Writes to the 566 where the call provides a req'd delay
  */
 
-/* If any of the following does not exist replace it with #define <> NULL */
-
+
 long report();
 long init();
 
@@ -114,7 +113,7 @@ struct {
 	report,
 	init};
 
-
+
 static long report()
 {
     ai_xy566_io_report();
@@ -127,7 +126,7 @@ static long init()
     xy566_init();
     return(0);
 }
-
+
 #define MAX_SE_CARDS	(ai_num_cards[XY566SE])
 #define MAX_DI_CARDS	(ai_num_cards[XY566DI])
 #define MAX_DIL_CARDS	(ai_num_cards[XY566DIL])

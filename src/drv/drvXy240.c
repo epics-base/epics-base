@@ -240,7 +240,7 @@ register initialization
 } 	
 
 #ifndef EPICS_V2
-xy240_bi_getioscanpvt(card,scanpvt)
+xy240_getioscanpvt(card,scanpvt)
 unsigned short card;
 IOSCANPVT *scanpvt;
 {

@@ -11,36 +11,36 @@ TOP=../../..
 
 include $(TOP)/configure/CONFIG
 
-SRCS += devAiSoft.c
-SRCS += devAiSoftRaw.c
-SRCS += devAoSoft.c
-SRCS += devAoSoftRaw.c
-SRCS += devBiSoft.c
-SRCS += devBiSoftRaw.c
-SRCS += devBoSoft.c
-SRCS += devBoSoftRaw.c
-SRCS += devEventSoft.c
-SRCS += devHistogramSoft.c
-SRCS += devLiSoft.c
-SRCS += devLoSoft.c
-SRCS += devMbbiDirectSoft.c
-SRCS += devMbbiDirectSoftRaw.c
-SRCS += devMbbiSoft.c
-SRCS += devMbbiSoftRaw.c
-SRCS += devMbboDirectSoft.c
-SRCS += devMbboDirectSoftRaw.c
-SRCS += devMbboSoft.c
-SRCS += devMbboSoftRaw.c
-SRCS += devSASoft.c
-SRCS += devSiSoft.c
-SRCS += devSoSoft.c
-SRCS += devWfSoft.c
+LIBSRCS += devAiSoft.c
+LIBSRCS += devAiSoftRaw.c
+LIBSRCS += devAoSoft.c
+LIBSRCS += devAoSoftRaw.c
+LIBSRCS += devBiSoft.c
+LIBSRCS += devBiSoftRaw.c
+LIBSRCS += devBoSoft.c
+LIBSRCS += devBoSoftRaw.c
+LIBSRCS += devEventSoft.c
+LIBSRCS += devHistogramSoft.c
+LIBSRCS += devLiSoft.c
+LIBSRCS += devLoSoft.c
+LIBSRCS += devMbbiDirectSoft.c
+LIBSRCS += devMbbiDirectSoftRaw.c
+LIBSRCS += devMbbiSoft.c
+LIBSRCS += devMbbiSoftRaw.c
+LIBSRCS += devMbboDirectSoft.c
+LIBSRCS += devMbboDirectSoftRaw.c
+LIBSRCS += devMbboSoft.c
+LIBSRCS += devMbboSoftRaw.c
+LIBSRCS += devSASoft.c
+LIBSRCS += devSiSoft.c
+LIBSRCS += devSoSoft.c
+LIBSRCS += devWfSoft.c
 
 LIBRARY_IOC += softDevIoc
-softDevIoc_LIBS += dbIoc
+softDevIoc_LIBS += recIoc asIoc dbIoc registryIoc dbStaticIoc ca Com
 
 # For R3.13 compatability
-OBJS_vxWorks = $(SRCS:%.c=%)
+OBJS_vxWorks = $(LIBSRCS:%.c=%)
 
 include $(TOP)/configure/RULES
 

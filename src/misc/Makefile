@@ -23,7 +23,7 @@ LIBSRCS +=  asSubRecordFunctions.c
 LIBRARY_IOC = miscIoc
 
 miscIoc_RCS_WIN32 = miscIoc.rc
-miscIoc_LIBS  = dbStaticIoc dbIoc asIoc rsrvIoc registryIoc Com
+miscIoc_LIBS  = recIoc asIoc dbIoc registryIoc dbStaticIoc ca Com
 
 # For R3.13 compatibility only
 OBJLIB_vxWorks=miscIoc

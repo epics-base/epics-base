@@ -15,6 +15,8 @@
 #Syntax:
 # ARCH_<host_arch> = <epics_host_arch>
 ARCH_solarisGnu = solaris-sparc-gnu
+#ARCH_solaris = solaris-sparc-static
+#ARCH_solaris = solaris-sparc-debug
 ARCH_solaris = solaris-sparc
 ARCH_sun4 = sun4-sparc
 ARCH_Linux = linux-x86

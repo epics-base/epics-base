@@ -46,7 +46,10 @@
 /*	021794	joh	turn on SO_REUSEADDR only after the test for	*/
 /*			address in use so that test works on UNIX	*/
 /*			kernels that support multicast			*/
-/* $Log$								*/
+/* $Log$
+ * Revision 1.60  1995/11/29  19:26:01  jhill
+ * cleaned up interface to recv() and send()
+ *								*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -84,6 +87,7 @@ LOCAL void 	ca_process_tcp(struct ioc_in_use *piiu);
 LOCAL void 	ca_process_udp(struct ioc_in_use *piiu);
 LOCAL void 	cacRingBufferInit(struct ca_buffer *pBuf, unsigned long size);
 LOCAL char	*getToken(char **ppString);
+LOCAL void 	close_ioc (IIU *piiu);
 
 
 
@@ -158,7 +162,9 @@ int			net_proto
   	int			status;
   	SOCKET			sock;
   	int			true = TRUE;
+#if 0
   	struct sockaddr_in	saddr;
+#endif
 	caAddrNode		*pNode;
 
 	LOCK;
@@ -193,9 +199,9 @@ int			net_proto
 			return ECA_ALLOCMEM;
 		}
       		memset((char *)&pNode->destAddr,0,sizeof(pNode->destAddr));
-  		pNode->destAddr.inetAddr.sin_family = AF_INET;
-		pNode->destAddr.inetAddr.sin_addr = *pnet_addr;
-  		pNode->destAddr.inetAddr.sin_port = htons (port);
+  		pNode->destAddr.in.sin_family = AF_INET;
+		pNode->destAddr.in.sin_addr = *pnet_addr;
+  		pNode->destAddr.in.sin_port = htons (port);
 		ellAdd(&piiu->destAddr, &pNode->node);
 		piiu->recvBytes = tcp_recv_msg; 
 		piiu->sendBytes = cac_tcp_send_msg_piiu; 
@@ -326,8 +332,8 @@ int			net_proto
       		/* connect */
       		status = connect(	
 				sock,
-				&pNode->destAddr.sockAddr,
-				sizeof(pNode->destAddr.sockAddr));
+				&pNode->destAddr.sa,
+				sizeof(pNode->destAddr.sa));
       		if(status < 0){
 			ca_printf("CAC: no conn err=\"%s\"\n", strerror(MYERRNO));
         		status = socket_close(sock);
@@ -396,6 +402,7 @@ int			net_proto
         		return ECA_CONN;
       		}
 
+#if 0
       		memset((char *)&saddr,0,sizeof(saddr));
       		saddr.sin_family = AF_INET;
 		/* 
@@ -411,6 +418,7 @@ int			net_proto
         		ca_printf("CAC: bind (err=%s)\n",strerror(MYERRNO));
 			ca_signal(ECA_INTERNAL,"bind failed");
       		}
+#endif
 
 		/*
 		 * load user and auto configured
@@ -672,8 +680,8 @@ LOCAL void cac_udp_send_msg_piiu(struct ioc_in_use *piiu)
 				&piiu->send.buf[piiu->send.rdix],	
 				(int) sendCnt,
 				0,
-				&pNode->destAddr.sockAddr,
-				sizeof(pNode->destAddr.sockAddr));
+				&pNode->destAddr.sa,
+				sizeof(pNode->destAddr.sa));
 		if(status>=0){
 			actualSendCnt = (unsigned long) status;
 			assert (actualSendCnt == sendCnt);
@@ -985,7 +993,7 @@ LOCAL void ca_process_tcp(struct ioc_in_use *piiu)
   		/* post message to the user */
   		status = post_msg(
 				piiu, 
-				&pNode->destAddr.inetAddr.sin_addr,
+				&pNode->destAddr.in.sin_addr,
 				&piiu->recv.buf[piiu->recv.rdix],
 				bytesToProcess);
 		if(status != OK){
@@ -1184,7 +1192,7 @@ LOCAL void ca_process_udp(struct ioc_in_use *piiu)
  *
  *
  */
-void close_ioc (struct ioc_in_use *piiu)
+LOCAL void close_ioc (IIU *piiu)
 {
 	caAddrNode	*pNode;
   	chid		chix;
@@ -1216,7 +1224,7 @@ void close_ioc (struct ioc_in_use *piiu)
 		 */
 		pNode = (caAddrNode *) piiu->destAddr.node.next;
 		assert (pNode);
-		removeBeaconInetAddr (&pNode->destAddr.inetAddr.sin_addr);
+		removeBeaconInetAddr (&pNode->destAddr.in.sin_addr);
 
 		/*
 		 * Mark all of their channels disconnected
@@ -1618,13 +1626,13 @@ char *localHostName()
 void caAddConfiguredAddr(ELLLIST *pList, ENV_PARAM *pEnv, 
 	SOCKET socket, int port)
 {
-        caAddrNode              *pNode;
-        ENV_PARAM               list;
-        char                    *pStr;
-        char                    *pToken;
-	union caAddr		addr;
-	union caAddr		localAddr;
-	int			status;
+        caAddrNode      *pNode;
+        ENV_PARAM       list;
+        char            *pStr;
+        char            *pToken;
+	caAddr		addr;
+	caAddr		localAddr;
+	int		status;
 
         pStr = envGetConfigParam(
                         pEnv,
@@ -1637,17 +1645,17 @@ void caAddConfiguredAddr(ELLLIST *pList, ENV_PARAM *pEnv,
 	/*
 	 * obtain a local address
 	 */
-	status = local_addr(socket, &localAddr.inetAddr);
+	status = local_addr(socket, &localAddr.in);
 	if(status){
 		return;
 	}
 
         while(pToken = getToken(&pStr)){
       		memset((char *)&addr,0,sizeof(addr));
-		addr.inetAddr.sin_family = AF_INET;
-  		addr.inetAddr.sin_port = htons(port);
-                addr.inetAddr.sin_addr.s_addr = inet_addr(pToken);
-                if(addr.inetAddr.sin_addr.s_addr == -1){
+		addr.in.sin_family = AF_INET;
+  		addr.in.sin_port = htons(port);
+                addr.in.sin_addr.s_addr = inet_addr(pToken);
+                if(addr.in.sin_addr.s_addr == -1){
                         ca_printf( 
 				"%s: Parsing '%s'\n",
                                 __FILE__,
@@ -1660,11 +1668,9 @@ void caAddConfiguredAddr(ELLLIST *pList, ENV_PARAM *pEnv,
 
                 pNode = (caAddrNode *) calloc(1,sizeof(*pNode));
                 if(pNode){
-                	pNode->destAddr.inetAddr = addr.inetAddr;
-                	pNode->srcAddr.inetAddr = localAddr.inetAddr;
-                	LOCK;
+                	pNode->destAddr.in = addr.in;
+                	pNode->srcAddr.in = localAddr.in;
                 	ellAdd(pList, &pNode->node);
-                	UNLOCK;
                 }
         }
 
@@ -1719,12 +1725,12 @@ void caPrintAddrList(ELLLIST *pList)
         printf("Channel Access Address List\n");
         pNode = (caAddrNode *) ellFirst(pList);
         while(pNode){
-                if(pNode->destAddr.sockAddr.sa_family != AF_INET){
+                if(pNode->destAddr.sa.sa_family != AF_INET){
                         printf("<addr entry not in internet format>");
                         continue;
                 }
                 printf(	"%s\n", 
-			inet_ntoa(pNode->destAddr.inetAddr.sin_addr));
+			inet_ntoa(pNode->destAddr.in.sin_addr));
 
                 pNode = (caAddrNode *) ellNext(&pNode->node);
         }

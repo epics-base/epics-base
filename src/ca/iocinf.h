@@ -32,6 +32,9 @@
 /************************************************************************/
 
 /* $Log$
+ * Revision 1.50  1995/10/18  16:45:40  jhill
+ * Use recast delay greater than one vxWorks tick
+ *
  * Revision 1.49  1995/10/12  01:33:12  jhill
  * Initial delay between search frames went from .1 to .01 sec,
  * Added flush pending flag, Make all usage of port be unsigned short.
@@ -603,7 +606,6 @@ void freeBeaconHash(struct ca_static *ca_temp);
 void removeBeaconInetAddr(const struct in_addr *pnet_addr);
 bhe *lookupBeaconInetAddr(const struct in_addr *pnet_addr);
 bhe *createBeaconHashEntry(const struct in_addr *pnet_addr);
-void close_ioc(IIU *piiu);
 void notify_ca_repeater(void);
 void cac_clean_iiu_list(void);
 

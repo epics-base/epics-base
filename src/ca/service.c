@@ -795,7 +795,7 @@ const struct in_addr	*pnet_addr
 
 		pNode = (caAddrNode *) chpiiu->destAddr.node.next;
 		assert(pNode);
-		if (pNode->destAddr.inetAddr.sin_addr.s_addr != 
+		if (pNode->destAddr.in.sin_addr.s_addr != 
 				pnet_addr->s_addr) {
 
 			caHostFromInetAddr(pnet_addr,rej,sizeof(rej));

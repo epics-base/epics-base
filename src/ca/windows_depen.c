@@ -32,6 +32,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.19  1995/11/29  19:15:42  jhill
+ * added $Log$ to the header
+ *
  */
 
 /*
@@ -279,10 +282,10 @@ void caDiscoverInterfaces(ELLLIST *pList, SOCKET socket, int port)
 		return;
 	}
 	broadcast_addr(&bcast_addr);
-	pNode->destAddr.inetAddr.sin_addr.s_addr = bcast_addr.s_addr;	//broadcast addr
-	pNode->destAddr.inetAddr.sin_port = htons(port);
-	pNode->destAddr.inetAddr.sin_family = AF_INET;
-	//pNode->srcAddr.inetAddr = 0 ;//localAddr;
+	pNode->destAddr.in.sin_addr.s_addr = bcast_addr.s_addr;	//broadcast addr
+	pNode->destAddr.in.sin_port = htons(port);
+	pNode->destAddr.in.sin_family = AF_INET;
+	//pNode->srcAddr.in = 0 ;//localAddr;
 
 	/*
 	 * LOCK applied externally

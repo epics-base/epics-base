@@ -607,9 +607,9 @@ bool udpiiu::searchRespAction ( // X aCC 361
          * analysis rules
          */
         ca_uint8_t * pPayLoad = ( ca_uint8_t *) ( &msg + 1 );
-        unsigned byte1 = pPayLoad[0];
-        unsigned byte2 = pPayLoad[1];
-        minorVersion = ( byte1 << 8u ) | byte2;
+        unsigned byte0 = pPayLoad[0];
+        unsigned byte1 = pPayLoad[1];
+        minorVersion = ( byte0 << 8u ) | byte1;
     }
     else {
         minorVersion = CA_UKN_MINOR_VERSION;

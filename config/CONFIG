@@ -3,6 +3,11 @@
 #
 #  The developer may edit this file.
 
+# assume T_A is the host arch if not specified
+ifndef T_A
+T_A = $(HOST_ARCH)
+endif
+
 #  EPICS base definitions
 #
 include $(EPICS_BASE)/config/CONFIG_COMMON
@@ -10,11 +15,6 @@ include $(EPICS_BASE)/config/CONFIG_COMMON
 #  Site-specific build options
 #
 include $(EPICS_BASE)/config/CONFIG_SITE
- 
-# assume T_A is the host arch if not specified
-ifndef T_A
-T_A = $(HOST_ARCH)
-endif
 
 #  Architecture specific definitions
 #

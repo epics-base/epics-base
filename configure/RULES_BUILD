@@ -52,6 +52,7 @@ ifeq ($(findstring Host,$(VALID_BUILDS)),Host)
 LIBRARY += $(LIBRARY_HOST)
 OBJS += $(OBJS_HOST)
 PROD += $(PROD_HOST)
+SCRIPTS += $(SCRIPTS_HOST)
 TESTPROD += $(TESTPROD_HOST)
 endif
 
@@ -59,6 +60,7 @@ ifeq ($(findstring Ioc,$(VALID_BUILDS)),Ioc)
 LIBRARY += $(LIBRARY_IOC)
 OBJS += $(OBJS_IOC)
 PROD += $(PROD_IOC)
+SCRIPTS += $(SCRIPTS_IOC)
 TESTPROD += $(TESTPROD_IOC)
 endif
 

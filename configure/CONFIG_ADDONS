@@ -304,6 +304,22 @@ SCRIPTS += $(SCRIPTS_DEFAULT)
 endif
 endif
 
+ifneq ($(strip $(SCRIPTS_IOC_$(OS_CLASS))),)
+SCRIPTS_IOC+=$(subst -nil-,,$(SCRIPTS_IOC_$(OS_CLASS)))
+else
+ifneq (,$(strip $(SCRIPTS_IOC_DEFAULT)))
+SCRIPTS_IOC+=$(SCRIPTS_IOC_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(SCRIPTS_HOST_$(OS_CLASS))),)
+SCRIPTS_HOST+=$(subst -nil-,,$(SCRIPTS_HOST_$(OS_CLASS)))
+else
+ifneq (,$(strip $(SCRIPTS_HOST_DEFAULT)))
+SCRIPTS_HOST+=$(SCRIPTS_HOST_DEFAULT)
+endif
+endif
+
 #
 #	concat specific resource files
 #

@@ -449,7 +449,7 @@ void cac::beaconNotify ( const inetAddrID &addr )
      */
     pBHE = this->lookupBeaconInetAddr ( addr );
     if ( pBHE ) {
-        netChange = pBHE->updateBeaconPeriod ( this->programBeginTime );
+        netChange = pBHE->updatePeriod ( this->programBeginTime );
     }
     else {
         /*
@@ -916,19 +916,20 @@ tcpiiu * cac::constructTCPIIU ( const osiSockAddr &addr, unsigned minorVersion )
     {
         epicsAutoMutex autoMutex ( this->defaultMutex );
         pBHE = this->lookupBeaconInetAddr ( addr.ia );
-        if ( ! pBHE ) {
-            pBHE = this->createBeaconHashEntry ( addr.ia, osiTime () );
-            if ( ! pBHE ) {
-                return NULL;
+        if ( pBHE ) {
+            piiu = pBHE->getIIU ();
+            if ( piiu ) {
+                if ( piiu->alive () ) {
+                    return piiu;
+                }
+                else {
+                    return NULL;
+                }
             }
         }
-    
-        piiu = pBHE->getIIU ();
-        if ( piiu ) {
-            if ( piiu->alive () ) {
-                return piiu;
-            }
-            else {
+        else {
+            pBHE = this->createBeaconHashEntry ( addr.ia, osiTime () );
+            if ( ! pBHE ) {
                 return NULL;
             }
         }

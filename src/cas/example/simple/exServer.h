@@ -40,6 +40,7 @@
 //
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 #include "gddAppFuncTable.h"
+#include "smartGDDPointer.h"
 #include "epicsTimer.h"
 #include "casdef.h"
 #include "epicsAssert.h"

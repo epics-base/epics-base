@@ -7,6 +7,7 @@
 
 #include <string.h>
 
+#define epicsExportSharedSymbols
 #include "gddEnumStringTable.h"
 
 gddEnumStringTable::~gddEnumStringTable ()

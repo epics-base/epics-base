@@ -46,7 +46,6 @@ if(status) { \
     cantProceed((method)); \
 }
 
-/* pthread_mutex_lock is NOT supposed to return EINTR but bad implementations*/
 static int mutexLock(pthread_mutex_t *id)
 {
     int status;
@@ -54,16 +53,28 @@ static int mutexLock(pthread_mutex_t *id)
     while(1) {
         status = pthread_mutex_lock(id);
         if(status!=EINTR) return status;
+        errlogPrintf("pthread_mutex_lock returned EINTR. Violates SUSv3\n");
     }
 }
 
-int condTimedwait(pthread_cond_t *condId, pthread_mutex_t *mutexId,
+static int condTimedwait(pthread_cond_t *condId, pthread_mutex_t *mutexId,
     struct timespec *time)
 {
     int status;
     while(1) {
         status = pthread_cond_timedwait(condId,mutexId,time);
         if(status!=EINTR) return status;
+        errlogPrintf("pthread_cond_timedwait returned EINTR. Violates SUSv3\n");
+    }
+}
+
+static int condWait(pthread_cond_t *condId, pthread_mutex_t *mutexId)
+{
+    int status;
+    while(1) {
+        status = pthread_cond_wait(condId,mutexId);
+        if(status!=EINTR) return status;
+        errlogPrintf("pthread_cond_wait returned EINTR. Violates SUSv3\n");
     }
 }
 
@@ -123,7 +134,7 @@ epicsEventWaitStatus epicsEventWait(epicsEventId pevent)
     checkStatusQuit(status,"pthread_mutex_lock","epicsEventWait");
     /*no need for while since caller must be prepared for no work*/
     if(!pevent->isFull) {
-        status = pthread_cond_wait(&pevent->cond,&pevent->mutex);
+        status = condWait(&pevent->cond,&pevent->mutex);
         checkStatusQuit(status,"pthread_cond_wait","epicsEventWait");
     }
     pevent->isFull = 0;

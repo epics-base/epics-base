@@ -35,7 +35,6 @@
 #include "epicsAssert.h"
 #include "epicsExit.h"
 
-/* pthread_mutex_lock is NOT supposed to return EINTR but bad implementations*/
 static int mutexLock(pthread_mutex_t *id)
 {
     int status;
@@ -43,6 +42,7 @@ static int mutexLock(pthread_mutex_t *id)
     while(1) {
         status = pthread_mutex_lock(id);
         if(status!=EINTR) return status;
+        errlogPrintf("pthread_mutex_lock returned EINTR. Violates SUSv3\n");
     }
 }
 
@@ -354,7 +354,7 @@ void epicsThreadOnceOsd(epicsThreadOnceId *id, void (*func)(void *), void *arg)
         status = pthread_mutex_unlock(&onceLock);
         checkStatusQuit(status,"pthread_mutex_unlock","epicsThreadOnceOsd");
            func(arg);
-        status = pthread_mutex_lock(&onceLock);
+        status = mutexLock(&onceLock);
         checkStatusQuit(status,"pthread_mutex_lock","epicsThreadOnceOsd");
         *id = +1;   /* +1 => func() done (see epicsThreadOnce() macro defn) */
     }

@@ -36,7 +36,6 @@ if(status) { \
     cantProceed((method)); \
 }
 
-/* pthread_mutex_lock is NOT supposed to return EINTR but bad implementations*/
 static int mutexLock(pthread_mutex_t *id)
 {
     int status;
@@ -44,9 +43,19 @@ static int mutexLock(pthread_mutex_t *id)
     while(1) {
         status = pthread_mutex_lock(id);
         if(status!=EINTR) return status;
+        errlogPrintf("pthread_mutex_lock returned EINTR. Violates SUSv3\n");
     }
 }
 
+static int condWait(pthread_cond_t *condId, pthread_mutex_t *mutexId)
+{
+    int status;
+    while(1) {
+        status = pthread_cond_wait(condId,mutexId);
+        if(status!=EINTR) return status;
+        errlogPrintf("pthread_cond_wait returned EINTR. Violates SUSv3\n");
+    }
+}
 /* Until these can be demonstrated to work leave them undefined*/
 /* On solaris 8 _POSIX_THREAD_PRIO_INHERIT fails*/
 #undef _POSIX_THREAD_PROCESS_SHARED
@@ -220,7 +229,7 @@ epicsMutexLockStatus epicsMutexOsdLock(struct epicsMutexOSD * pmutex)
     status = mutexLock(&pmutex->lock);
     checkStatusQuit(status,"pthread_mutex_lock","epicsMutexOsdLock");
     while(pmutex->owned && !pthread_equal(pmutex->ownerTid,tid))
-        pthread_cond_wait(&pmutex->waitToBeOwner,&pmutex->lock);
+        condWait(&pmutex->waitToBeOwner,&pmutex->lock);
     pmutex->ownerTid = tid;
     pmutex->owned = 1;
     pmutex->count++;

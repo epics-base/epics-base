@@ -9,8 +9,21 @@ USR_CFLAGS = -ansi
 
 VX_WARN_YES = -Wall -pedantic
 
-INC += epvxi.h
+INC += canBus.h
+INC += drvAb.h
+INC += drvAt5Vxi.h
 INC += drvEpvxi.h
+INC += drvHp1404a.h
+INC += drvHpe1368a.h
+INC += drvIpac.h
+INC += drvKscV215.h
+INC += drvMz8310.h
+INC += drvStc.h
+INC += drvTip810.h
+INC += epvxi.h
+INC += ipModules.h
+INC += ipic.h
+INC += pca82c200.h
 
 SRCS.c += ../drvAb.c
 SRCS.c += ../drvAt5Vxi.c

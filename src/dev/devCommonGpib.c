@@ -1953,15 +1953,7 @@ struct gpibDpvt *pdpvt;
 
     /* go access board with this message, unless convert was unsuccessful */
     /* NOTE the use of val instead of rval for the EFASTO operation index! */
-    /* P1 will be max number of P3 strings*/
-    if(pCmd->P3 && (pCmd->P1<=0)) {/*determine max number of P3 strings*/
-        int i=0;
-        while(pCmd->P3[i] !=NULL) i++;
-        pCmd->P1 = i;
-    }
-    if(pmbbo->val >= pCmd->P1) cnvrtStat = ERROR;
-    if( (cnvrtStat == ERROR)
-     || (devGpibLib_xxGpibWork(pdpvt, pCmd->type, pmbbo->val) == ERROR))
+    if ((cnvrtStat == ERROR) || (devGpibLib_xxGpibWork(pdpvt, pCmd->type, pmbbo->val) == ERROR))
     {
 	devGpibLib_setPvSevr(pmbbo,WRITE_ALARM,VALID_ALARM);
     }

@@ -48,10 +48,10 @@ bool gddEnumStringTable::expand ( unsigned nStringsRequired )
     }
 }
 
-void gddEnumStringTable::reserve ( unsigned nStrings )
+void gddEnumStringTable::reserve ( unsigned nStringsIn )
 {
-    if ( nStrings > this->nStringSlots ) {
-        this->expand ( nStrings );
+    if ( nStringsIn > this->nStringSlots ) {
+        this->expand ( nStringsIn );
     }
 }
 

@@ -64,7 +64,7 @@ void beaconAnomalyGovernor::start ()
     }
 }
 
-epicsTimerNotify::expireStatus beaconAnomalyGovernor::expire ( const epicsTime & currentTime )
+epicsTimerNotify::expireStatus beaconAnomalyGovernor::expire ( const epicsTime & )
 {
     if ( this->anomalyPending ) {
         this->anomalyPending = false;

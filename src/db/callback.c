@@ -30,6 +30,7 @@
  * Modification Log:
  * -----------------
  * .01	12-12-91	mrk	moved from dbScan.c to callback.c
+ * .02	04-23-92	jba	Fixed test on priority
 */
 
 #include	<vxWorks.h>
@@ -74,7 +75,7 @@ void callbackRequest(CALLBACK *pcallback)
     int nput;
     static int status;
 
-    if(priority<0 || priority>(NUM_CALLBACK_PRIORITIES)) {
+    if(priority<0 || priority>=(NUM_CALLBACK_PRIORITIES)) {
 	logMsg("callbackRequest called with invalid priority");
 	return;
     }

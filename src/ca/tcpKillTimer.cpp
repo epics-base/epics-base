@@ -14,6 +14,10 @@
  *	505 665 1831
  */
 
+#ifdef _MSC_VER
+#   pragma warning(disable:4355)
+#endif
+
 #include "cac.h"
 #include "tcpKillTimer.h"
 

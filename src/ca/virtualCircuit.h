@@ -99,8 +99,13 @@ public:
     void start ();
     void initiateCleanShutdown ( epicsGuard < cacMutex > & );
     void initiateAbortShutdown ( epicsGuard < callbackMutex > &, 
-                                    epicsGuard <cacMutex > & ); 
-    void disconnectNotify ( epicsGuard <cacMutex > & );
+                                    epicsGuard < cacMutex > & ); 
+    void unresponsiveCircuitNotify ( epicsGuard < callbackMutex > &, 
+                                    epicsGuard < cacMutex > &  );
+    void tcpiiu::responsiveCircuitNotify ( 
+        epicsGuard < callbackMutex > & cbGuard, 
+        epicsGuard < cacMutex > & guard );
+    void disconnectNotify ( epicsGuard < cacMutex > & );
     void beaconAnomalyNotify ();
     void beaconArrivalNotify ( 
         const epicsTime & currentTime );
@@ -127,14 +132,16 @@ public:
     bool connecting () const;
     osiSockAddr getNetworkAddress () const;
     int printf ( const char *pformat, ... );
-    unsigned channelCount ();
+    unsigned channelCount ( epicsGuard < callbackMutex > & );
     void removeAllChannels (
         epicsGuard < callbackMutex > & cbGuard, 
         epicsGuard < cacMutex > & guard,
         class cacDisconnectChannelPrivate & );
-    void installChannel ( epicsGuard < cacMutex > &, nciu & chan, 
+    void installChannel ( epicsGuard < callbackMutex > &,
+        epicsGuard < cacMutex > &, nciu & chan, 
         unsigned sidIn, ca_uint16_t typeIn, arrayElementCount countIn );
-    void uninstallChan ( epicsGuard < cacMutex > &, nciu & chan );
+    void uninstallChan ( epicsGuard < callbackMutex > &,
+        epicsGuard < cacMutex > &, nciu & chan );
 
     bool bytesArePendingInOS () const;
 
@@ -182,6 +189,7 @@ private:
     bool recvProcessPostponedFlush;
     bool discardingPendingData;
     bool socketHasBeenClosed;
+    bool softDisconnect;
 
     bool processIncoming ( 
         const epicsTime & currentTime, epicsGuard < callbackMutex > & );
@@ -276,8 +284,9 @@ inline void tcpiiu::flushIfRecvProcessRequested ()
     }
 }
 
-inline unsigned tcpiiu::channelCount ()
+inline unsigned tcpiiu::channelCount ( epicsGuard < callbackMutex > & )
 {
+    // protected by callback lock
     return this->channelList.count ();
 }
 

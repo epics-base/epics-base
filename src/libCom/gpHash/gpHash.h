@@ -67,6 +67,10 @@ typedef struct{
     void	*userPvt;	/*private for user*/
 } GPHENTRY;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*tableSize must be power of 2 in range 256 to 65536*/
 epicsShareFunc void epicsShareAPI gphInitPvt(void **ppvt,int tableSize);
 epicsShareFunc GPHENTRY * epicsShareAPI
@@ -77,4 +81,9 @@ epicsShareFunc void epicsShareAPI
     gphDelete(void *pvt,const char *name,void *pvtid);
 epicsShareFunc void epicsShareAPI gphFreeMem(void *pvt);
 epicsShareFunc void epicsShareAPI gphDump(void *pvt);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /*INCgpHashh*/

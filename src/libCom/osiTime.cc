@@ -260,7 +260,7 @@ osiTime::osiTime (const struct tm_nano_sec &tm)
 //
 // operator struct timespec ()
 //
-inline osiTime::operator struct timespec () const
+osiTime::operator struct timespec () const
 {
 	struct timespec ts;
 	time_t_wrapper ansiTimeTicks;
@@ -274,7 +274,7 @@ inline osiTime::operator struct timespec () const
 //
 // osiTime (const struct timespec &ts)
 //
-inline osiTime::osiTime (const struct timespec &ts)
+osiTime::osiTime (const struct timespec &ts)
 {
 	this->sec = osiTime::time_tToInternalSec (ts.tv_sec);
 	assert (ts.tv_nsec>=0);

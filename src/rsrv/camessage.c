@@ -52,11 +52,11 @@
 
 static char *sccsId = "%W% %G%";
 
+#include <vxWorks.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
 
-#include <vxWorks.h>
 #include <taskLib.h>
 #include <types.h>
 #include <in.h>

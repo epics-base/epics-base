@@ -1,7 +1,5 @@
 # $Id$
 
-VPATH += .:..
-
 INSTALL_PROD=$(PROD:%=$(INSTALL_BIN)/%)
 INSTALL_LIBS=$(LIBNAME:%=$(INSTALL_LIB)/%)
 INSTALL_INC=$(INC:%=$(INSTALL_INCLUDE)/%)
@@ -59,7 +57,7 @@ $(TARGETS) $(PROD): $(DEPLIBS)
 	$(RM) $@
 	$(LINK.c) -o $@ $< $(LDLIBS)
 
-#$(PROD): $(OBJS) $(DEPLIBS)
+#$(PROD): $(OBJS)
 #	$(RM) $@
 #	$(LINK.c) -o $@ ${OBJS} $(LDLIBS)
 
@@ -67,11 +65,19 @@ $(TARGETS) $(PROD): $(DEPLIBS)
 	$(RM) $@
 	$(COMPILE.c) $<
 
+%.o: ../%.c
+	$(RM) $@
+	$(COMPILE.c) $<
+
 %.o: %.cc
 	$(RM) $@
 	$(COMPILE.cc) $<
 
-%.c: %.y
+%.o: ../%.cc
+	$(RM) $@
+	$(COMPILE.cc) $<
+
+%.c: ../%.y
 	$(RM) y.tab.c y.tab.h
 	$(YACC) $(YACCOPT) $<
 	@if [ -f y.tab.c ]; \
@@ -85,14 +91,14 @@ $(TARGETS) $(PROD): $(DEPLIBS)
 			/bin/mv y.tab.h $*.h; \
 	fi
 
-%.c: %.l
+%.c: ../%.l
 	$(RM) lex.yy.c
 	$(LEX) $(LEXOPT) $<
 	$(RM) $@
 	/bin/mv lex.yy.c $@
 
-#state notation language rules
-%.c: %.st
+#state notation language rule
+%.c: ../%.st
 	@echo "preprocessing $*.st"
 	@$(RM) $*.i
 	$(CPP) $(CPPFLAGS) $< $*.i
@@ -109,6 +115,9 @@ $(TARGETS) $(PROD): $(DEPLIBS)
 %.db: %.edf
 	$(E2DB) $(E2SR_SYSFLAGS) $(E2SR_FLAGS) $<
 
+%.db: ../%.edf
+	$(E2DB) $(E2SR_SYSFLAGS) $(E2SR_FLAGS) $<
+
 %.edf: ../%.sch $(DEPSCHS)
 	@if [ ! -f cad.rc -a -r ../cad.rc ] ; then ln -s ../cad.rc ; fi
 	$(SCH2EDIF) $(SCH2EDIF_SYSFLAGS) $(SCH2EDIF_FLAGS) $<
@@ -121,6 +130,13 @@ $(TARGETS) $(PROD): $(DEPLIBS)
 	$(MANGEN) -s $(<F)
 	mv $(<F).nr $(<F).1
 
+# Mangen Rule:
+%.1:../%
+	$(RM) $(<F)
+	$(RM) $(<F).nr
+	ln -s $<
+	$(MANGEN) -s $(<F)
+	mv $(<F).nr $(<F).1
 
 $(LIBNAME): $(LIBOBJS)
 	@echo Building library $@
@@ -132,6 +148,12 @@ $(LIBNAME): $(LIBOBJS)
 	fi
 
 $(INSTALL_BIN)/%: %
+	@echo "Installing $@"
+	@test -d $(INSTALL_LOCATION_BIN) || mkdir $(INSTALL_LOCATION_BIN)
+	@test -d $(INSTALL_BIN) || mkdir $(INSTALL_BIN)
+	@$(INSTALL_PRODUCT) -m 555 $< $(INSTALL_BIN)
+
+$(INSTALL_BIN)/%: ../%
 	@echo "Installing $@"
 	@test -d $(INSTALL_LOCATION_BIN) || mkdir $(INSTALL_LOCATION_BIN)
 	@test -d $(INSTALL_BIN) || mkdir $(INSTALL_BIN)
@@ -151,7 +173,12 @@ $(INSTALL_CONFIG)/%: %
 	@test -d $(INSTALL_CONFIG) || mkdir $(INSTALL_CONFIG)
 	@$(INSTALL) -m 644 $< $(INSTALL_CONFIG)
 
-$(INSTALL_TCLLIB)/%: %
+$(INSTALL_CONFIG)/%: ../%
+	@echo "Installing $@"
+	@test -d $(INSTALL_CONFIG) || mkdir $(INSTALL_CONFIG)
+	@$(INSTALL) -m 644 $< $(INSTALL_CONFIG)
+
+$(INSTALL_TCLLIB)/%: ../%
 	@echo "Installing Tcl library $@"
 	@test -d $(INSTALL_LOCATION_LIB) || mkdir $(INSTALL_LOCATION_LIB)
 	@test -d $(INSTALL_LIB) || mkdir $(INSTALL_LIB)
@@ -175,7 +202,26 @@ $(INSTALL_MAN)/man1/%: %
 	@test -d $(@D) || mkdir $(@D)
 	@$(INSTALL) -m 644 $< $(@D)
 
+$(INSTALL_MAN)/man9/% \
+$(INSTALL_MAN)/man8/% \
+$(INSTALL_MAN)/man7/% \
+$(INSTALL_MAN)/man6/% \
+$(INSTALL_MAN)/man5/% \
+$(INSTALL_MAN)/man4/% \
+$(INSTALL_MAN)/man3/% \
+$(INSTALL_MAN)/man2/% \
+$(INSTALL_MAN)/man1/%: ../%
+	@echo "Installing $@"
+	@test -d $(INSTALL_MAN) || mkdir $(INSTALL_MAN)
+	@test -d $(@D) || mkdir $(@D)
+	@$(INSTALL) -m 644 $< $(@D)
+
 $(INSTALL_INCLUDE)/%: %
+	@echo "Installing $@"
+	@test -d $(INSTALL_INCLUDE) || mkdir $(INSTALL_INCLUDE)
+	@$(INSTALL) -m 644 $< $(INSTALL_INCLUDE)
+
+$(INSTALL_INCLUDE)/%: ../%
 	@echo "Installing $@"
 	@test -d $(INSTALL_INCLUDE) || mkdir $(INSTALL_INCLUDE)
 	@$(INSTALL) -m 644 $< $(INSTALL_INCLUDE)
@@ -185,8 +231,23 @@ $(INSTALL_DOC)/%: %
 	@test -d $(INSTALL_DOC) || mkdir $(INSTALL_DOC)
 	@$(INSTALL) -m 644 $< $(INSTALL_DOC)
 
+$(INSTALL_DOC)/%: ../%
+	@echo "Installing $@"
+	@test -d $(INSTALL_DOC) || mkdir $(INSTALL_DOC)
+	@$(INSTALL) -m 644 $< $(INSTALL_DOC)
+
+$(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: ../%
+	@echo "Installing $@"
+	@test -d $(INSTALL_TEMPLATES) || mkdir $(INSTALL_TEMPLATES)
+	@test -d $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR) || \
+		mkdir $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
+	@$(INSTALL) -d -m 644 $< $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
+
 $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: %
 	@echo "Installing $@"
+	@test -d $(INSTALL_TEMPLATES) || mkdir $(INSTALL_TEMPLATES)
+	@test -d $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR) || \
+		mkdir $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
 	@$(INSTALL) -d -m 644 $< $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
 
 .PRECIOUS: %.o %.c

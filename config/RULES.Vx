@@ -1,7 +1,5 @@
 # $Id$
 
-VPATH += .:..
-
 INCREC +=$(RECTYPES) $(MENUS)
 INSTALL_PROD=$(PROD:%=$(INSTALL_BIN)/%)
 INSTALL_LIBS=$(LIBNAME:%=$(INSTALL_BIN)/%)
@@ -32,7 +30,7 @@ all:: install
 pre_build:: 
 
 build:: pre_build $(MENUS) $(RECTYPES) $(BPTS)\
-         $(LIBNAME) $(TARGETS) $(PROD) $(DBDEXPAND)
+         $(LIBNAME) $(TARGETS) $(PROD)
 
 inc:: $(INSTALL_INC) 
 
@@ -75,11 +73,19 @@ clean::
 	$(RM) $@
 	$(COMPILE.c) $<
 
+%.o: ../%.c
+	$(RM) $@
+	$(COMPILE.c) $<
+
 %.o: %.cc
 	$(RM) $@
 	$(COMPILE.cc) $<
 
-%.c: %.y
+%.o: ../%.cc
+	$(RM) $@
+	$(COMPILE.cc) $<
+
+%.c: ../%.y
 	$(RM) y.tab.c y.tab.h
 	$(YACC) $(YACCOPT) $<
 	@if [ -f y.tab.c ]; \
@@ -93,14 +99,14 @@ clean::
 			/bin/mv y.tab.h $*.h; \
 	fi
 
-%.c: %.l
+%.c: ../%.l
 	$(RM) lex.yy.c
 	$(LEX) $(LEXOPT) $<
 	$(RM) $@
 	/bin/mv lex.yy.c $@
 
 #state notation language rules
-%.c: %.st
+%.c: ../%.st
 	@echo "preprocessing $*.st"
 	@$(RM) $*.i
 	$(CPP) $(CPPFLAGS) $< $*.i
@@ -115,6 +121,9 @@ clean::
 
 # Capfast Rules:
 %.db: %.edf
+	$(E2DB) $(E2SR_SYSFLAGS) $(E2SR_FLAGS) $<
+
+%.db: ../%.edf
 	$(E2DB) $(E2SR_SYSFLAGS) $(E2SR_FLAGS) $<
 
 %.edf: ../%.sch $(DEPSCHS)
@@ -135,7 +144,17 @@ $(INSTALL_DBD)/%: %
 	@test -d $(INSTALL_DBD) || mkdir $(INSTALL_DBD)
 	@$(INSTALL) -m 644 $< $(INSTALL_DBD)
 
+$(INSTALL_DBD)/%: ../%
+	@echo "Installing $@"
+	@test -d $(INSTALL_DBD) || mkdir $(INSTALL_DBD)
+	@$(INSTALL) -m 644 $< $(INSTALL_DBD)
+
 %Record.h: %Record.dbd
+	$(RM) $@
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH \
+		$(USER_DBDFLAGS)  $<
+
+%Record.h: ../%Record.dbd
 	$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH \
 		$(USER_DBDFLAGS)  $<
@@ -144,22 +163,23 @@ menu%.h: menu%.dbd
 	$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToMenuH $<
 
+menu%.h: ../menu%.dbd
+	$(RM) $@
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToMenuH $<
+
 bpt%.dbd: bpt%.data
 	$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt $<
 
-$(DBDNAME): $(DBDEXPAND)
+bpt%.dbd: ../bpt%.data
+	$(RM) $@
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt $<
+
+$(DBDNAME): ../$(DBDEXPAND)
 	@echo expanding dbd
 	@$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand\
 		$(USER_DBDFLAGS) $< > $@
-
-%.1:%
-	$(RM) $(<F)
-	$(RM) $(<F).nr
-	ln -s $<
-	$(MANGEN) -s $(<F)
-	mv $(<F).nr $(<F).1
 
 $(LIBNAME): $(LIBOBJS)
 	@echo Building library $@
@@ -167,6 +187,12 @@ $(LIBNAME): $(LIBOBJS)
 	$(LINK.c) $@ $(LIBOBJS)
 
 $(INSTALL_BIN)/%: %
+	@echo "Installing $@"
+	@test -d $(INSTALL_LOCATION_BIN) || mkdir $(INSTALL_LOCATION_BIN)
+	@test -d $(INSTALL_BIN) || mkdir $(INSTALL_BIN)
+	@$(INSTALL) -m 555 $< $(INSTALL_BIN)
+
+$(INSTALL_BIN)/%: ../%
 	@echo "Installing $@"
 	@test -d $(INSTALL_LOCATION_BIN) || mkdir $(INSTALL_LOCATION_BIN)
 	@test -d $(INSTALL_BIN) || mkdir $(INSTALL_BIN)
@@ -192,12 +218,36 @@ $(INSTALL_MAN)/man1/%: %
 	@test -d $(@D) || mkdir $(@D)
 	@$(INSTALL) -m 644 $< $(@D)
 
+$(INSTALL_MAN)/man9/% \
+$(INSTALL_MAN)/man8/% \
+$(INSTALL_MAN)/man7/% \
+$(INSTALL_MAN)/man6/% \
+$(INSTALL_MAN)/man5/% \
+$(INSTALL_MAN)/man4/% \
+$(INSTALL_MAN)/man3/% \
+$(INSTALL_MAN)/man2/% \
+$(INSTALL_MAN)/man1/%: ../%
+	@echo "Installing $@"
+	@test -d $(INSTALL_MAN) || mkdir $(INSTALL_MAN)
+	@test -d $(@D) || mkdir $(@D)
+	@$(INSTALL) -m 644 $< $(@D)
+
 $(INSTALL_INCLUDE)/%: %
 	@echo "Installing $@"
 	@test -d $(INSTALL_INCLUDE) || mkdir $(INSTALL_INCLUDE)
 	@$(INSTALL) -m 644 $< $(INSTALL_INCLUDE)
 
+$(INSTALL_INCLUDE)/%: ../%
+	@echo "Installing $@"
+	@test -d $(INSTALL_INCLUDE) || mkdir $(INSTALL_INCLUDE)
+	@$(INSTALL) -m 644 $< $(INSTALL_INCLUDE)
+
 $(INSTALL_DOC)/%: %
+	@echo "Installing $@"
+	@test -d $(INSTALL_DOC) || mkdir $(INSTALL_DOC)
+	@$(INSTALL) -m 644 $< $(INSTALL_DOC)
+
+$(INSTALL_DOC)/%: ../%
 	@echo "Installing $@"
 	@test -d $(INSTALL_DOC) || mkdir $(INSTALL_DOC)
 	@$(INSTALL) -m 644 $< $(INSTALL_DOC)

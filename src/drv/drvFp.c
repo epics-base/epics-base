@@ -256,85 +256,85 @@ unsigned card;
  *
  */
 fp_init(addr)
- unsigned int addr;
+unsigned int addr;
 {
- int i;
- short junk;
- short intvec = AT8FP_IVEC_BASE;
- struct fp1 *ptr;
- int status;
+	int i;
+	short junk;
+	short intvec = AT8FP_IVEC_BASE;
+	struct fp1 *ptr;
+	int status;
 
- fp = (struct fp_rec *) calloc(bi_num_cards[AT8_FP10S_BI], sizeof(*fp));
- if(!fp){
-   return -5;
- }
+	fp = (struct fp_rec *) calloc(bi_num_cards[AT8_FP10S_BI], sizeof(*fp));
+	if(!fp){
+		return -5;
+	}
 
- if(!addr){
-	addr = bi_addrs[AT8_FP10S_BI];
- }	
+	if(!addr){
+		addr = bi_addrs[AT8_FP10S_BI];
+	}	
 
- status = sysBusToLocalAdrs(
-			VME_AM_SUP_SHORT_IO,
-			addr,
-			&ptr);
- if(status<0){
-	logMsg("VME shrt IO addr err in the slave fast protect driver\n");
-	return -4;
- }
+	status = sysBusToLocalAdrs( VME_AM_SUP_SHORT_IO, addr, &ptr);
+	if(status<0){
+		logMsg("VME shrt IO addr err in the slave fast protect driver\n");
+		return(-4);
+	}
 
- status = rebootHookAdd(fp_reboot);
- if(status<0){
-	logMsg("%s: reboot hook add failed\n", __FILE__);
- }
+	status = rebootHookAdd(fp_reboot);
+	if(status<0){
+		logMsg("%s: reboot hook add failed\n", __FILE__);
+	}
 
- for (i = 0; (i < bi_num_cards[AT8_FP10S_BI]) && (vxMemProbe(ptr,READ,2,&junk) == OK);
-      i++,ptr++)
-  {
-  /*
-  register initialization
-  */
-  ptr->csr = 0x0000;			/* disable interface */
-  fp[i].fptr = ptr;			/* hardware location */
-  fp[i].fp_vector = intvec++;		/* interrupt vector */
-  ptr->ivec = fp[i].fp_vector;		/* load vector */
-  fp[i].mode = FP_NMSG;			/* set default mode (no messages) */
-  fp[i].int_num = 0;			/* initialize interrupt number */
-  fp[i].type = 10;			/* board type */
-  fp[i].num = i;			/* board number */    
-  /*
-  initialize input buffer
-  */    
-  fp[i].drvstat = ptr->srd;			/* initialize enable switch data */
-  fp[i].drvstat |= ptr->frd<<16;		/* initialize fault data */
-  fp[i].drvstat |= (ptr->csr & 0xff00)<<16;	/* csr status bits */
-  /*
-  set up interrupt handler
-  */
-  ptr->csr |= FP_INTLEV<<4;		/* set up board for level 5 interrupt */
-  if (intConnect(INUM_TO_IVEC(fp[i].fp_vector),fp_int,i) != OK)
-   return -2;				/* abort if can't connect */
-  sysIntEnable(FP_INTLEV);
-  ptr->csr |= 0x0001;
-  ptr->csr ^= 0x0001;			/* clear status bits */
-  if (ptr->csr & CSR_OPTIC)
-   logMsg("fast protect #%d optically coupled\n",i);
-  else
-   logMsg("fast protect #%d elecrically coupled\n",i);
-  /*
-  start up module
-  */
-  fp[i].fptr->csr |= CSR_IEN;		/* enable interrupts */
-  fp[i].mode = FP_RUN;			/* normal run mode */
-#ifndef EPICS_V2
-  scanIoInit(&fp[i].ioscanpvt);
+	for (i = 0; 
+	  (i < bi_num_cards[AT8_FP10S_BI]) && (vxMemProbe(ptr,READ,2,&junk) == OK);
+	  i++,ptr++) {
+
+		/* register initialization */
+		ptr->csr = 0x0000;		/* disable interface */
+		fp[i].fptr = ptr;		/* hardware location */
+		fp[i].fp_vector = intvec++;	/* interrupt vector */
+		ptr->ivec = fp[i].fp_vector;	/* load vector */
+		fp[i].mode = FP_NMSG;		/* set default mode (no messages) */
+		fp[i].int_num = 0;		/* initialize interrupt number */
+		fp[i].type = 10;		/* board type */
+		fp[i].num = i;			/* board number */    
+
+		/* initialize input buffer */    
+		fp[i].drvstat = ptr->srd;	/* initialize enable switch data */
+		fp[i].drvstat |= ptr->frd<<16;	/* initialize fault data */
+		fp[i].drvstat |= (ptr->csr & 0xff00)<<16;	/* csr status bits */
+
+		/* set up interrupt handler */
+		ptr->csr |= FP_INTLEV<<4;	/* level 5 interrupt */
+		if (intConnect(INUM_TO_IVEC(fp[i].fp_vector),fp_int,i) != OK)
+			return(-2);		/* abort if can't connect */
+		sysIntEnable(FP_INTLEV);
+		ptr->csr |= 0x0001;
+		ptr->csr ^= 0x0001;		/* clear status bits */
+		if (ptr->csr & CSR_OPTIC)
+			logMsg("fast protect #%d optically coupled\n",i);
+		else
+			logMsg("fast protect #%d elecrically coupled\n",i);
+
+		/* start up module */
+		fp[i].fptr->csr |= CSR_IEN;	/* enable interrupts */
+		fp[i].mode = FP_RUN;		/* normal run mode */
+ifndef EPICS_V2
+		scanIoInit(&fp[i].ioscanpvt);
+endif
+	}
+	fp_num = i - 1;				/* record max card # */
+
+	/* create the semaphore */
+#ifndef V5_vxWorks
+	fp_semid = semCreate();
+#else
+	fp_semid = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
 #endif
-  }
- fp_num = i - 1;			/* record max card # */
- fp_semid = semCreate();		/* abort if can't create semaphore */
- if ((int)fp_semid == 0)		/* abort if can't create semaphore */
-  return -3;
- return i;				/* return # found */
-}
+	if ((int)fp_semid == 0)		/* abort if can't create semaphore */
+		return(-3);
+
+	return(i);				/* return # found */
+}	
 
 
 /*

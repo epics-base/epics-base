@@ -67,8 +67,8 @@ of this distribution.
 #include "special.h"
 #include "asLib.h"
 
-extern struct dbBase *pdbbase;
 extern long lset_stack_not_empty;
+struct dbBase *pdbbase=NULL;
 
 static short mapDBFToDBR[DBF_NTYPES] = {
 	DBR_STRING, DBR_CHAR, DBR_UCHAR, DBR_SHORT, DBR_USHORT, 

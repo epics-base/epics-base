@@ -82,8 +82,6 @@ LOCAL int initialized=FALSE;
 /* The following is for use by interrupt routines */
 volatile int interruptAccept=FALSE;
 
-struct dbBase *pdbbase=NULL;
-
 /* define forward references*/
 LOCAL void initDrvSup(void);
 LOCAL void initRecSup(void);

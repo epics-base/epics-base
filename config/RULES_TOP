@@ -4,7 +4,7 @@
 
 include $(TOP)/config/RULES_DIRS
 
-uninstall$(DIVIDER)%::
+$(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS))::
 	@$(RMDIR)  rec.bak rec
 	@$(RMDIR) $(INSTALL_LOCATION_BIN)/$* $(INSTALL_LOCATION_LIB)/$* \
 		$(INSTALL_DBD) $(INSTALL_MAN) $(INSTALL_INCLUDE) $(INSTALL_DOC)\
@@ -57,7 +57,7 @@ help:
 	@echo "     xxxRecord.o"
 
 .PHONY :: uninstall tar help cleandirs
-.PHONY :: $(addprefix uninstall$(DIVIDER),$(BUILDARCHS))
+.PHONY :: $(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS))
 
 
 

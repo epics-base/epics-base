@@ -1432,7 +1432,7 @@ caStatus casStrmClient::enumPostponedCreateChanResponse (
 	assert ( nativeCount <= 0xffffffff );
     status = this->out.copyInHeader ( CA_PROTO_CREATE_CHAN, 0,
         static_cast <ca_uint16_t> ( nativeTypeDBR ), 
-        static_cast <ca_uint32_t> ( nativeCount ), 
+        static_cast <ca_uint32_t> ( nativeCount ), // X aCC 392
         hdr.m_cid, chan.getSID(), 0 );
     if ( status != S_cas_success ) {
 

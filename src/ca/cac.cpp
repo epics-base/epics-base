@@ -508,7 +508,7 @@ void cac::repeaterSubscribeConfirmNotify ()
 }
 
 bool cac::transferChanToVirtCircuit ( 
-    epicsGuard < callbackMutex > & cbGuard, unsigned cid, unsigned sid, 
+    epicsGuard < callbackMutex > & cbGuard, unsigned cid, unsigned sid, // X aCC 431
     ca_uint16_t typeCode, arrayElementCount count, 
     unsigned minorVersionNumber, const osiSockAddr & addr )
 {

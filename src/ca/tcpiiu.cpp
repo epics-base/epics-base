@@ -640,7 +640,7 @@ void tcpiiu::disconnectNotify ( epicsGuard < cacMutex > & )
     this->sendThreadFlushEvent.signal ();
 }
 
-void tcpiiu::initiateAbortShutdown ( epicsGuard < callbackMutex > & cbGuard, 
+void tcpiiu::initiateAbortShutdown ( epicsGuard < callbackMutex > & cbGuard, // X aCC 431
                                     epicsGuard < cacMutex > & guard )
 {
     if ( ! this->discardingPendingData ) {
@@ -663,7 +663,7 @@ void tcpiiu::initiateAbortShutdown ( epicsGuard < callbackMutex > & cbGuard,
     this->shutdown ( guard );
 }
 
-void tcpiiu::shutdown ( epicsGuard <cacMutex > & guard )
+void tcpiiu::shutdown ( epicsGuard <cacMutex > & guard ) // X aCC 431
 {
     iiu_conn_state oldState = this->state;
     if ( oldState != iiucs_abort_shutdown ) {
@@ -897,7 +897,7 @@ bool tcpiiu::processIncoming (
 /*
  * tcpiiu::hostNameSetRequest ()
  */
-void tcpiiu::hostNameSetRequest ( epicsGuard < cacMutex > & locker )
+void tcpiiu::hostNameSetRequest ( epicsGuard < cacMutex > & locker ) // X aCC 431
 {
     if ( ! CA_V41 ( this->minorProtocolVersion ) ) {
         return;
@@ -927,7 +927,7 @@ void tcpiiu::hostNameSetRequest ( epicsGuard < cacMutex > & locker )
 /*
  * tcpiiu::userNameSetRequest ()
  */
-void tcpiiu::userNameSetRequest ( epicsGuard < cacMutex > & locker )
+void tcpiiu::userNameSetRequest ( epicsGuard < cacMutex > & locker ) // X aCC 431
 {
     if ( ! CA_V41 ( this->minorProtocolVersion ) ) {
         return;
@@ -952,7 +952,7 @@ void tcpiiu::userNameSetRequest ( epicsGuard < cacMutex > & locker )
     minder.commit ();
 }
 
-void tcpiiu::disableFlowControlRequest ( epicsGuard < cacMutex > & locker )
+void tcpiiu::disableFlowControlRequest ( epicsGuard < cacMutex > & locker ) // X aCC 431
 {
     if ( this->sendQue.flushEarlyThreshold ( 16u ) ) {
         this->flushRequest ();
@@ -965,7 +965,7 @@ void tcpiiu::disableFlowControlRequest ( epicsGuard < cacMutex > & locker )
     minder.commit ();
 }
 
-void tcpiiu::enableFlowControlRequest ( epicsGuard < cacMutex > & locker )
+void tcpiiu::enableFlowControlRequest ( epicsGuard < cacMutex > & locker ) // X aCC 431
 {
     if ( this->sendQue.flushEarlyThreshold ( 16u ) ) {
         this->flushRequest ();
@@ -978,7 +978,7 @@ void tcpiiu::enableFlowControlRequest ( epicsGuard < cacMutex > & locker )
     minder.commit ();
 }
 
-void tcpiiu::versionMessage ( epicsGuard < cacMutex > & locker,
+void tcpiiu::versionMessage ( epicsGuard < cacMutex > & locker, // X aCC 431
                              const cacChannel::priLev & priority )
 {
     assert ( priority <= 0xffff );
@@ -995,7 +995,7 @@ void tcpiiu::versionMessage ( epicsGuard < cacMutex > & locker,
     minder.commit ();
 }
 
-void tcpiiu::echoRequest ( epicsGuard < cacMutex > & locker )
+void tcpiiu::echoRequest ( epicsGuard < cacMutex > & locker ) // X aCC 431
 {
     if ( this->sendQue.flushEarlyThreshold ( 16u ) ) {
         this->flushRequest ();
@@ -1008,7 +1008,7 @@ void tcpiiu::echoRequest ( epicsGuard < cacMutex > & locker )
     minder.commit ();
 }
 
-void tcpiiu::writeRequest ( epicsGuard < cacMutex > & guard,
+void tcpiiu::writeRequest ( epicsGuard < cacMutex > & guard, // X aCC 431
                 nciu &chan, unsigned type, unsigned nElem, const void *pValue )
 {
     if ( ! chan.connected () ) {
@@ -1022,7 +1022,7 @@ void tcpiiu::writeRequest ( epicsGuard < cacMutex > & guard,
 }
 
 
-void tcpiiu::writeNotifyRequest ( epicsGuard < cacMutex > & guard,
+void tcpiiu::writeNotifyRequest ( epicsGuard < cacMutex > & guard, // X aCC 431
                                  nciu &chan, netWriteNotifyIO &io, unsigned type,  
                                 unsigned nElem, const void *pValue )
 {
@@ -1039,7 +1039,7 @@ void tcpiiu::writeNotifyRequest ( epicsGuard < cacMutex > & guard,
     minder.commit ();
 }
 
-void tcpiiu::readNotifyRequest ( epicsGuard < cacMutex > & locker, 
+void tcpiiu::readNotifyRequest ( epicsGuard < cacMutex > & locker, // X aCC 431
                                nciu & chan, netReadNotifyIO & io, 
                                unsigned dataType, unsigned nElem )
 {
@@ -1073,7 +1073,7 @@ void tcpiiu::readNotifyRequest ( epicsGuard < cacMutex > & locker,
 }
 
 void tcpiiu::createChannelRequest ( 
-    nciu & chan, epicsGuard < cacMutex > & guard )
+    nciu & chan, epicsGuard < cacMutex > & guard ) // X aCC 431
 {
     const char *pName;
     unsigned nameLength;
@@ -1114,7 +1114,7 @@ void tcpiiu::createChannelRequest (
     minder.commit ();
 }
 
-void tcpiiu::clearChannelRequest ( epicsGuard < cacMutex > & locker,
+void tcpiiu::clearChannelRequest ( epicsGuard < cacMutex > & locker, // X aCC 431
                                   ca_uint32_t sid, ca_uint32_t cid )
 {
     comQueSendMsgMinder minder ( this->sendQue, locker );
@@ -1129,7 +1129,7 @@ void tcpiiu::clearChannelRequest ( epicsGuard < cacMutex > & locker,
 // this routine return void because if this internally fails the best response
 // is to try again the next time that we reconnect
 //
-void tcpiiu::subscriptionRequest ( epicsGuard < cacMutex > & locker,
+void tcpiiu::subscriptionRequest ( epicsGuard < cacMutex > & locker, // X aCC 431
                                   nciu &chan, netSubscription & subscr )
 {
     if ( ! chan.connected() ) {
@@ -1169,7 +1169,7 @@ void tcpiiu::subscriptionRequest ( epicsGuard < cacMutex > & locker,
     minder.commit ();
 }
 
-void tcpiiu::subscriptionCancelRequest ( epicsGuard < cacMutex > & locker,
+void tcpiiu::subscriptionCancelRequest ( epicsGuard < cacMutex > & locker, // X aCC 431
                              nciu & chan, netSubscription & subscr )
 {
     comQueSendMsgMinder minder ( this->sendQue, locker );

@@ -76,7 +76,7 @@ extern "C" void epicsShareAPI ca_dump_dbr (
         dbr_short_t *pvalue = (dbr_short_t *)pbuffer;
         for (i = 0; i < count; i++,pvalue++){
             if(count!=1 && (i%10 == 0)) printf("\n");
-            printf("%d ",*(short *)pvalue);
+            printf("%d ",* (short *)pvalue); // X aCC 392
         }
         break;
     }
@@ -94,7 +94,7 @@ extern "C" void epicsShareAPI ca_dump_dbr (
         dbr_float_t *pvalue = (dbr_float_t *)pbuffer;
         for (i = 0; i < count; i++,pvalue++){
             if(count!=1 && (i%10 == 0)) printf("\n");
-            printf("%6.4f ",*(float *)pvalue);
+            printf("%6.4f ",*(float *)pvalue); // X aCC 392
         }
         break;
     }

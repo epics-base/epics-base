@@ -96,7 +96,8 @@ epicsMessageQueueDestroy(epicsMessageQueueId pmsg)
 {
     struct eventNode *evp;
 
-    while ((evp = (struct eventNode *)ellGet(&pmsg->eventFreeList)) != NULL) {
+    while ((evp = reinterpret_cast < struct eventNode * >
+            ( ellGet(&pmsg->eventFreeList) ) ) != NULL) {
         epicsEventDestroy(evp->event);
         free(evp);
     }
@@ -110,9 +111,10 @@ getEventNode(epicsMessageQueueId pmsg)
 {
     struct eventNode *evp;
 
-    evp = (struct eventNode *)ellGet(&pmsg->eventFreeList);
+    evp = reinterpret_cast < struct eventNode * > ( ellGet(&pmsg->eventFreeList) );
     if (evp == NULL) {
-        evp = (struct eventNode *)callocMustSucceed(1, sizeof(*evp), "epicsMessageQueueGetEventNode");
+        evp = (struct eventNode *) callocMustSucceed(1, sizeof(*evp),
+                                                     "epicsMessageQueueGetEventNode");
         evp->event = epicsEventMustCreate(epicsEventEmpty);
     }
     return evp;
@@ -168,7 +170,8 @@ mySend(epicsMessageQueueId pmsg, void *message, unsigned int size, bool wait, bo
     /*
      * Copy message to waiting receiver
      */
-    if ((pthr = (struct threadNode *)ellGet(&pmsg->receiveQueue)) != NULL) {
+    if ((pthr = reinterpret_cast < struct threadNode * >
+         ( ellGet(&pmsg->receiveQueue) ) ) != NULL) {
         memcpy(pthr->buf, message, size);
         pthr->size = size;
         pthr->eventSent = true;
@@ -236,7 +239,8 @@ myReceive(epicsMessageQueueId pmsg, void *message, bool wait, bool haveTimeout, 
         /*
          * Wake up the oldest task waiting to send
          */
-        if ((pthr = (struct threadNode *)ellGet(&pmsg->sendQueue)) != NULL) {
+        if ((pthr = reinterpret_cast < struct threadNode * >
+             ( ellGet(&pmsg->sendQueue) ) ) != NULL) {
             pthr->eventSent = true;
             epicsEventSignal(pthr->evp->event);
         }
@@ -255,7 +259,8 @@ myReceive(epicsMessageQueueId pmsg, void *message, bool wait, bool haveTimeout, 
     /*
      * Wake up the oldest task waiting to send
      */
-    if ((pthr = (struct threadNode *)ellGet(&pmsg->sendQueue)) != NULL) {
+    if ((pthr = reinterpret_cast < struct threadNode * >
+         ( ellGet(&pmsg->sendQueue) ) ) != NULL) {
         pthr->eventSent = true;
         epicsEventSignal(pthr->evp->event);
     }

@@ -118,8 +118,8 @@ int main(int argc, char *argv[])
     }
     
     registerRecordDeviceDriver(pdbbase);
-    registryFunctionAdd("exit", (REGISTRYFUNCTION) exitSubroutine);
-    
+    registryFunctionAdd("exit", (REGISTRYFUNCTION) exitSubroutine); // X aCC 331
+
     while (argc>1 && **argv == '-') {
 	switch ((*argv)[1]) {
 	case 'a':

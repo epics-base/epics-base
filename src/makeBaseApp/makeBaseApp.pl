@@ -201,6 +201,9 @@ sub get_commandline_opts { #no args
 	closedir BINDIR;
 	if ($opt_a) {
 	    $arch = $opt_a;
+	} elsif (@archs == 1) {
+	    $arch = $archs[0];
+	    print "Using target architecture $arch (only one available)\n";
 	} else {
 	    print "The following target architectures are available in base:\n";
 	    foreach $arch (@archs) {

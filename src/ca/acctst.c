@@ -1733,9 +1733,7 @@ void arrayReadNotify ( struct event_handler_args args )
     dbr_double_t *pRF = ( dbr_double_t * ) ( args.dbr );
     int i;
     for ( i = 0; i < args.count; i++ ) {
-        if ( pWF[i] != pRF[i] ) {
-            assert ( 0 );
-        }
+        assert ( pWF[i] == pRF[i] );
     }
     arrayReadNotifyComplete = 1;
 }

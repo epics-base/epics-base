@@ -1,10 +1,10 @@
-# CONFIG.Common.hpux-68k
+# CONFIG.Common.hpux-parisc
 #
 # $Id$
 # This file is maintained by the build community.
 #
-# Definitions for hpux-68k target archs
-# Sites may override these definitions in CONFIG_SITE.Common.hpux-68k
+# Definitions for hpux-parisc target archs
+# Sites may override these definitions in CONFIG_SITE.Common.hpux-parisc
 #-------------------------------------------------------
 
 #Include definitions common to unix targets
@@ -21,7 +21,7 @@ POSIX_LDLIBS_NO +=
 OP_SYS_CPPFLAGS = -D_HPUX_SOURCE -DHP_UX
 OP_SYS_CFLAGS = +z
 OP_SYS_CXXFLAGS = +z
-OP_SYS_LDLIBS +=
+OP_SYS_LDLIBS += -lpthread
 
 SHRLIB_SUFFIX = .sl
 

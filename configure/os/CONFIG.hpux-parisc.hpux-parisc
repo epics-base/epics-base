@@ -27,30 +27,33 @@ WARN_CFLAGS_NO = -w
 OPT_CFLAGS_YES = -O
 OPT_CFLAGS_NO = -g
 
-# HP's aCC will not compile things if run in STRICT mode
-CXXCMPLR=NORMAL
+CXXCMPLR=STRICT
+
+COMPILE_FILTER.cpp = 2>&1 | $(TOP)/configure/tools/filterWarnings.pl
 
 # Configure OS vendor C++ compiler
-CONFORM_CXXFLAGS_NORMAL = +W302 +W829 +W818 +W392 +W469 +W495 +W749 +W667 +W392 +W684
-CONFORM_CXXFLAGS_STRICT = +p
+CONFORM_CXXFLAGS_NORMAL = -AA -mt -Aa
+#CONFORM_CXXFLAGS_STRICT = +p
+CONFORM_CXXFLAGS_STRICT = -AA -mt -Aa
+
 ######################################################
 # +DAportable causes portable object code to be created for execution
 # on different PA-Risc machines
 CODE_CXXFLAGS = +DAportable
 WARN_CXXFLAGS_YES = +w
 WARN_CXXFLAGS_NO =
-OPT_CXXFLAGS_YES = -O
+OPT_CXXFLAGS_YES = +O3
 OPT_CXXFLAGS_NO = -g
 
-STATIC_LDFLAGS_YES= -Wl,-a,archive +A
+STATIC_LDFLAGS_YES= -Wl,-a,archive -l:libc.sl +A
 # shared libs will be found by searching environment variable SHLIB_PATH,
 # then by searching the specified path (see below)
 STATIC_LDFLAGS_YES+= -b
 STATIC_LDFLAGS_NO = -Wl,+b$(DEFAULT_SHRLIB_SEARCH_PATH),+s
 STATIC_LDLIBS_YES=
 STATIC_LDLIBS_NO=
+TARGET_LDFLAGS += -AA -mt
 
 SHRLIB_LDFLAGS_YES =  -G -h $@
 
 HDEPENDS_FLAGS_CMPLR = +m
-

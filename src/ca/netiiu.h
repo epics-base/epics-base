@@ -51,9 +51,9 @@ public:
     virtual void writeNotifyRequest ( nciu &, netWriteNotifyIO &, unsigned type, unsigned nElem, const void *pValue );
     virtual void readNotifyRequest ( nciu &, netReadNotifyIO &, unsigned type, unsigned nElem );
     virtual void createChannelRequest ( nciu & );
-    virtual void clearChannelRequest ( nciu & );
+    virtual void clearChannelRequest ( ca_uint32_t sid, ca_uint32_t cid );
     virtual void subscriptionRequest ( nciu &, netSubscription &subscr );
-    virtual void subscriptionCancelRequest ( nciu &, netSubscription &subscr );
+    virtual void subscriptionCancelRequest ( nciu & chan, netSubscription & subscr );
     virtual void flushRequest ();
     virtual bool flushBlockThreshold () const;
     virtual void flushRequestIfAboveEarlyThreshold ();

@@ -73,6 +73,7 @@ public:
     virtual void show ( unsigned level ) const;
     bool setEchoRequestPending ();
     void requestRecvProcessPostponedFlush ();
+    void clearChannelRequest ( ca_uint32_t sid, ca_uint32_t cid );
 
     bool ca_v41_ok () const;
     bool ca_v42_ok () const;
@@ -132,9 +133,8 @@ private:
     void writeNotifyRequest ( nciu &, netWriteNotifyIO &, unsigned type, unsigned nElem, const void *pValue );
     void readNotifyRequest ( nciu &, netReadNotifyIO &, unsigned type, unsigned nElem );
     void createChannelRequest ( nciu & );
-    void clearChannelRequest ( nciu & );
-    void subscriptionRequest ( nciu &, netSubscription &subscr );
-    void subscriptionCancelRequest ( nciu &, netSubscription &subscr );
+    void subscriptionRequest ( nciu &, netSubscription & subscr );
+    void subscriptionCancelRequest (  nciu & chan, netSubscription & subscr );
     void flushIfRecvProcessRequested ();
     bool flush (); // only to be called by the send thread
 

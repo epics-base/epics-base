@@ -19,7 +19,7 @@ LIBOBJS =
 
 PROD = $(OBDIR)/snc
 
-depends: $(OBDIR)/snc_lex.c $(OBDIR)/snc.c $(OBDIR)/sncVersion.c
+pre_build: $(OBDIR)/snc_lex.c $(OBDIR)/snc.c $(OBDIR)/sncVersion.c
 
 # Rules for lex & yacc (not dependent on architecture):
 $(OBDIR)/snc_lex.c: snc_lex.l $(OBDIR)/y.tab.h
@@ -33,7 +33,7 @@ $(OBDIR)/snc.c $(OBDIR)/y.tab.h: snc.y
 	/bin/rm -f $(OBDIR)/snc.c y.tab.c $(OBDIR)/y.tab.h $(OBDIR)/y.output
 	yacc -d -v snc.y
 	/bin/mv y.tab.c $(OBDIR)/snc.c
-	/bin/mv y.tab.h $(OBDIR)
+	/bin/cp y.tab.h $(OBDIR)
 	/bin/mv y.output $(OBDIR)
 
 $(OBDIR)/sncVersion.o: $(OBDIR)/sncVersion.c

@@ -247,6 +247,14 @@ int main()
 	}
 	alTbl.show(1u);
 
+    resTableIter< albert, intId<unsigned,8> > alTblIter (alTbl);
+    albert *pa;
+    i=0;
+    while (pa = alTblIter.next()) {
+        i++;
+    }
+    assert (i==tableSize*8);
+
 	return 0;
 }
 

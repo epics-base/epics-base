@@ -320,7 +320,7 @@ inline void tsDLList<T>::add (T &item)
     theNode.pNext = 0;
     theNode.pPrev = this->pLast;
 
-    if (this->itemCount) {
+    if ( this->itemCount ) {
         tsDLNode<T> &lastNode = *this->pLast;
         lastNode.pNext = &item;
     }

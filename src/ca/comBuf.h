@@ -330,7 +330,7 @@ inline unsigned comBuf::push ( const epicsOldString * pValue, unsigned nElem )
         nBytes = nElem * sizeof ( *pValue );
     }
     memcpy ( &this->buf[ index ], pValue, nBytes );
-    this->nextWriteIndex += nBytes;
+    this->nextWriteIndex = index + nBytes;
     return nElem;
 }
 

@@ -239,7 +239,7 @@ void scanAdd(struct dbCommon *precord)
 void scanDelete(struct dbCommon *precord)
 {
 	short		scan;
-	scan_list *psl;
+	scan_list *psl = 0;
 
 	/* get the list on which this record belongs */
 	scan = precord->scan;
@@ -344,7 +344,7 @@ int scanpel(int event_number)  /*print event list */
 	for(priority=0; priority<NUM_CALLBACK_PRIORITIES; priority++) {
 	    pevent_scan_list = pevent_list[priority][evnt];
 	    if(!pevent_scan_list) continue;
-	    if(ellCount(&pevent_scan_list->scan_list) ==0) continue;
+	    if(ellCount(&pevent_scan_list->scan_list.list) ==0) continue;
 	    sprintf(message,"Event %d Priority %s",evnt,priorityName[priority]);
 	    printList(&pevent_scan_list->scan_list,message);
 	}
@@ -404,7 +404,7 @@ void post_event(int event)
 	for(priority=0; priority<NUM_CALLBACK_PRIORITIES; priority++) {
 		pevent_scan_list = pevent_list[priority][evnt];
 		if(!pevent_scan_list) continue;
-		if(ellCount(&pevent_scan_list->scan_list) >0)
+		if(ellCount(&pevent_scan_list->scan_list.list) >0)
 			callbackRequest((void *)pevent_scan_list);
 	}
 }
@@ -593,7 +593,7 @@ static void printList(scan_list *psl,char *message)
 	    printf("Returning because list changed while processing.");
 	    return;
 	}
-	pse = (scan_element *)ellNext((void *)pse);
+	pse = (scan_element *)ellNext(&pse->node);
 	FASTUNLOCK(&psl->lock);
     }
 }

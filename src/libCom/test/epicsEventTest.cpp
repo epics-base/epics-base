@@ -1,6 +1,7 @@
 /* epicsEventTest.cpp */
 
 /* Author:  Marty Kraimer Date:    26JAN2000 */
+/*          timeout accuracy tests by Jeff Hill */
 
 /********************COPYRIGHT NOTIFICATION**********************************
 This software was developed under a United States Government license
@@ -15,11 +16,13 @@ of this distribution.
 #include <stdio.h>
 #include <errno.h>
 #include <time.h>
+#include <math.h>
 
 #include "epicsThread.h"
 #include "epicsEvent.h"
 #include "epicsMutex.h"
 #include "epicsRingPointer.h"
+#include "epicsTime.h"
 #include "errlog.h"
 
 
@@ -109,6 +112,20 @@ static void producer(void *arg)
 }
 
 } // extern "C"
+
+static void eventWaitTest()
+{
+    epicsEventId event = epicsEventMustCreate ( epicsEventEmpty );
+    for ( unsigned i = 0u; i < 20; i++ ) {
+        epicsTime beg = epicsTime::getCurrent();
+        double delay = ldexp ( 1.0 , -i );
+        epicsEventWaitWithTimeout ( event, delay );
+        epicsTime end = epicsTime::getCurrent();
+        printf ( "epicsEventWaitWithTimeout ( %g ) timed out after %g sec\n", 
+            delay, end - beg );
+    }
+}
+
 
 extern "C" void epicsEventTest(int nthreads,int verbose)
 {
@@ -121,6 +138,8 @@ extern "C" void epicsEventTest(int nthreads,int verbose)
     int status;
     time_t tp;
     int errVerboseSave = errVerbose;
+
+    eventWaitTest();
 
     errVerbose = verbose;
     event = epicsEventMustCreate(epicsEventEmpty);

@@ -1,6 +1,7 @@
 /* epicsThreadTest.cpp */
 
-/* Author:  Marty Kraimer Date:    26JAN2000 */
+/* Author:  Marty Kraimer Date:    26JAN2000  */
+/*          sleep accuracy tests by Jeff Hill */
 
 /********************COPYRIGHT NOTIFICATION**********************************
 This software was developed under a United States Government license
@@ -15,8 +16,10 @@ of this distribution.
 #include <stdio.h>
 #include <errno.h>
 #include <time.h>
+#include <math.h>
 
 #include "epicsThread.h"
+#include "epicsTime.h"
 #include "errlog.h"
 
 static epicsThreadPrivate<int> privateKey;
@@ -52,6 +55,18 @@ void myThread::run()
     errlogPrintf("threadFunc %d stopping argvalue %p\n",myPrivate,argvalue);
 }
 
+static void threadSleepTest()
+{
+    for ( unsigned i = 0u; i < 20; i++ ) {
+        epicsTime beg = epicsTime::getCurrent();
+        double delay = ldexp ( 1.0 , -i );
+        epicsThreadSleep ( delay );
+        epicsTime end = epicsTime::getCurrent();
+        printf ( "epicsThreadSleep ( %g ) finished after %g sec\n", 
+            delay, end - beg );
+    }
+}
+
 extern "C" void threadTest(int ntasks,int verbose)
 {
     myThread **papmyThread;
@@ -59,6 +74,8 @@ extern "C" void threadTest(int ntasks,int verbose)
     char **name;
     int startPriority,minPriority,maxPriority;
     int errVerboseSave = errVerbose;
+
+    threadSleepTest();
 
     errVerbose = verbose;
     errlogInit(4096);

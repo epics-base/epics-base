@@ -34,6 +34,9 @@
  * .02  08-11-92        jba     added new status DISABLE_ALARM, SIMM_ALARM
  * .03  05-11-94        jba     added new status READ_ACCESS_ALARM, WRITE_ACCESS_ALARM
  * $Log$
+ * Revision 1.2  1996/06/19 19:59:31  jhill
+ * added missing defines/enums, corrected defines
+ *
  *
  */
 
@@ -64,10 +67,10 @@ typedef enum {
 
 #ifdef epicsAlarmGLOBAL
 READONLY char *epicsAlarmSeverityStrings [lastEpicsAlarmSev+1] = {
-		stringOf (NO_ALARM),
-		stringOf (MINOR_ALARM),
-		stringOf (MAJOR_ALARM),
-		stringOf (INVALID_ALARM),
+		stringOf (epicsSevNone),
+		stringOf (epicsSevMinor),
+		stringOf (epicsSevMajor),
+		stringOf (epicsSevInvalid),
 };
 #else /*epicsAlarmGLOBAL*/
 epicsShareExtern READONLY char *epicsAlarmSeverityStrings [lastEpicsAlarmSev+1];
@@ -134,6 +137,7 @@ typedef enum {
 
 #ifdef epicsAlarmGLOBAL
 READONLY char *epicsAlarmConditionStrings [lastEpicsAlarmCond+1] = {
+		stringOf (epicsAlarmNone),
 		stringOf (epicsAlarmRead),
 		stringOf (epicsAlarmWrite),
 		stringOf (epicsAlarmHiHi),

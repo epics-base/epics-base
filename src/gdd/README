@@ -5,6 +5,10 @@
 # $Id$
 #
 # $Log$
+# Revision 1.2  1996/06/26 21:00:04  jbk
+# Fixed up code in aitHelpers, removed unused variables in others
+# Fixed potential problem in gddAppTable.cc with the map functions
+#
 # Revision 1.1  1996/06/25 19:11:27  jbk
 # new in EPICS base
 #
@@ -130,6 +134,47 @@ that is the answer.  In the convert functions, the temp variable
 used to hold a value (character value) is always a stack variable and
 needs to be copied.  Maybe the temp char variable should be copied over
 the existing string if it will fit. No.
+
+************** 8/28/96 ****************
+
+network/host byte ordering issue:
+
+Change isNetworkByteOrder() in class gdd to:
+	isLocalDataFormat()   - true if data format is local host format
+	isNetworkDataFormat() - true if data format is network format
+
+	Both the above can be true at the same time if local host data format
+	is the same as network data format
+
+Add method to class gdd:
+	markLocalDataFormat()
+	markNotLocalDataFormat()
+
+Modify putRef() functions of gdd class:
+	add third argument to specify the byte order that data is in.
+	default mode to local data format.  this turns out to be ugly
+	because the second argument (gddDestructor*) defaults to NULL.
+	But this is probably OK, since this will not be used often.
+
+Modify getRef() functions of gdd class:
+	add another argument that specifies the data format the user desires.
+	default to local data format, first access to an array that is not
+	in the correct format will cause the entire array to be converted
+	to the desired format.
+
+putConvert() and getConvert() notes:
+	getConvert will always return values in local data format
+	putConvert will always take local data format values as arguments
+
+put() and get() notes:
+	get always returns data in local data format
+	put always takes data in local data format
+
+Modify dbMapper.cc:
+	add dbMapperToDbrMode({to_network_byte_order,keep_in_local_order})
+	change all function to honor this mode setting
+	any gdd converted to a dbr type could be change to network byte order
+	depending on this mode.
 
 Jim
 

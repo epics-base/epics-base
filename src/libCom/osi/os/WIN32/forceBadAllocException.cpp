@@ -14,7 +14,7 @@
 // This behavior is not in conformance with the 
 // ANSI / ISO C++.
 // 
-#if _MSC_VER > 1000 && _MSC_VER < 1300
+#if _MSC_VER > 1000 && _MSC_VER < 1400
 
 #include <new>
 #include <new.h>

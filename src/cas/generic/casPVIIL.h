@@ -29,6 +29,12 @@
  *
  * History
  * $Log$
+ * Revision 1.8  1996/12/06 22:36:17  jhill
+ * use destroyInProgress flag now functional nativeCount()
+ *
+ * Revision 1.7.2.1  1996/11/25 16:31:55  jhill
+ * MSC cannot use the default constructor localCASRef(this->cas)
+ *
  * Revision 1.7  1996/11/02 00:54:23  jhill
  * many improvements
  *
@@ -170,7 +176,8 @@ inline void casPVI::unregisterIO()
 //
 inline void casPVI::deleteSignal()
 {
-	caServerI	&localCASRef(this->cas);
+	/* MSC cannot use the default constructor localCASRef(this->cas): */
+	caServerI	&localCASRef = this->cas;
 
 	//
 	// We dont take the PV lock here because

@@ -581,11 +581,11 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 				pciu->addr.precord->name,
 				ellCount(&pciu->eventq),
 				asCheckGet(pciu->asClientPVT)?'r':'-',
-				asCheckPut(pciu->asClientPVT)?'w':'-');
+				rsrvCheckPut(pciu)?'w':'-');
 			pciu = (struct channel_in_use *) ellNext(&pciu->node);
 			if( ++i % 3 == 0){
 				printf("\n");
-			}
+            }
 		}
 		FASTUNLOCK(&client->addrqLock);
 		printf("\n");

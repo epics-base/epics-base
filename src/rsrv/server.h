@@ -45,6 +45,14 @@
 
 static char *serverhSccsId = "@(#)server.h	1.19 5/6/94";
 
+#if defined(CAS_VERSION_GLOBAL) && 0
+#       define HDRVERSIONID(NAME,VERS) VERSIONID(NAME,VERS)
+#else /*CAS_VERSION_GLOBAL*/
+#       define HDRVERSIONID(NAME,VERS)
+#endif /*CAS_VERSION_GLOBAL*/
+
+typedef int SOCKET;
+
 #include <vxLib.h>
 #include <ellLib.h>
 #include <fast_lock.h>
@@ -54,6 +62,7 @@ static char *serverhSccsId = "@(#)server.h	1.19 5/6/94";
 #include <dbEvent.h>
 #include <iocmsg.h>
 #include <bucketLib.h>
+#include <taskwd.h>
 
 #include <asLib.h>
 #include <asDbLib.h>
@@ -112,8 +121,8 @@ struct channel_in_use{
   ELLLIST			eventq;
   struct client			*client;
   RSRVPUTNOTIFY			*pPutNotify; /* potential active put notify */
-  unsigned long			cid;	/* client id */
-  unsigned long			sid;	/* server id */
+  const unsigned 		cid;	/* client id */
+  const unsigned 		sid;	/* server id */
   unsigned long			ticks_at_creation;	/* for UDP timeout */
   struct db_addr		addr;
   ASCLIENTPVT			asClientPVT;
@@ -158,6 +167,9 @@ GLBLTYPE FAST_LOCK		rsrv_free_addrq_lck;
 GLBLTYPE FAST_LOCK		rsrv_free_eventq_lck;
 GLBLTYPE struct client		*prsrv_cast_client;
 GLBLTYPE BUCKET            	*pCaBucket;
+
+#define CAS_HASH_TABLE_SIZE 4096
+
 /*
  * set true if max memory block drops below MAX_BLOCK_THRESHOLD
  */

@@ -315,7 +315,9 @@ LOCAL int terminate_one_client(struct client *client)
 			free(pciu->pPutNotify);
 		}
 		FASTLOCK(&rsrv_free_addrq_lck);
-		status = bucketRemoveItem(pCaBucket, pciu->sid, pciu);
+		status = bucketRemoveItemUnsignedId (
+				pCaBucket, 
+				&pciu->sid);
 		FASTUNLOCK(&rsrv_free_addrq_lck);
 		if(status != BUCKET_SUCCESS){
 			logMsg(

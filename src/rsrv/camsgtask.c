@@ -78,7 +78,6 @@ FAST int 		sock;
   	int 			nchars;
   	FAST int		status;
 	FAST struct client 	*client;
-  	int			i;
     	int 			true = TRUE;
 
 	client = NULL;

@@ -182,7 +182,7 @@ LOCAL void access_rights_reply(
 struct channel_in_use *pciu
 );
 
-LOCAL unsigned long	bucketID;
+LOCAL unsigned 		bucketID;
 
 
 /*
@@ -204,7 +204,7 @@ struct message_buffer *recv
 	struct channel_in_use 	*pciu;
 
 	if(!pCaBucket){
-		pCaBucket = bucketCreate(NBBY*sizeof(mp->m_cid));
+		pCaBucket = bucketCreate(CAS_HASH_TABLE_SIZE);
 		if(!pCaBucket){
 			return ERROR;
 		}
@@ -1183,7 +1183,7 @@ struct client  *client
 	}
 
 	FASTLOCK(&rsrv_free_addrq_lck);
-	status = bucketRemoveItem(pCaBucket, pciu->sid, pciu);
+	status = bucketRemoveItemUnsignedId (pCaBucket, &pciu->sid);
 	if(status != BUCKET_SUCCESS){
 		logBadId(client, mp);
 	}
@@ -1544,12 +1544,12 @@ struct client  *client
 )
 {
 	struct extmsg 		*search_reply;
-	struct extmsg 		*get_reply;
 	unsigned short		*pMinorVersion;
 	int        		status;
 	struct db_addr  	tmp_addr;
 	struct channel_in_use 	*pchannel;
-	unsigned long		sid;
+	unsigned 		sid;
+	unsigned		*pCID;
 
 
 
@@ -1606,7 +1606,11 @@ struct client  *client
 	pchannel->ticks_at_creation = tickGet();
 	pchannel->addr = tmp_addr;
 	pchannel->client = client;
-	pchannel->cid = mp->m_cid;
+	/*
+	 * bypass read only warning
+	 */
+	pCID = (unsigned *) &pchannel->cid;
+	*pCID = mp->m_cid;
 
 	/*
 	 * allocate a server id and enter the channel pointer
@@ -1614,8 +1618,12 @@ struct client  *client
 	 */
 	FASTLOCK(&rsrv_free_addrq_lck);
 	sid = bucketID++;
-	pchannel->sid = sid;
-	status = bucketAddItem(pCaBucket, sid, pchannel);
+	/*
+	 * bypass read only warning
+	 */
+	pCID = (unsigned *) &pchannel->sid;
+	*pCID = sid;
+	status = bucketAddItemUnsignedId (pCaBucket, &pchannel->sid, pchannel);
 	FASTUNLOCK(&rsrv_free_addrq_lck);
 	if(status!=BUCKET_SUCCESS){
 		SEND_LOCK(client);
@@ -1905,10 +1913,11 @@ struct client	*pc
  */
 LOCAL struct channel_in_use *MPTOPCIU(struct extmsg *mp)
 {
-	struct channel_in_use *pciu;
+	struct channel_in_use 	*pciu;
+	const unsigned		id = mp->m_cid;
 
 	FASTLOCK(&rsrv_free_addrq_lck);
-	pciu = bucketLookupItem(pCaBucket, mp->m_cid);
+	pciu = bucketLookupItemUnsignedId (pCaBucket, &id);
 	FASTUNLOCK(&rsrv_free_addrq_lck);
 
 	return pciu;
@@ -1926,7 +1935,6 @@ LOCAL void casAccessRightsCB(ASCLIENTPVT ascpvt, asClientStatus type)
 	struct client		*pclient;
 	struct channel_in_use 	*pciu;
 	struct event_ext	*pevext;
-	int			status;
 
 	pciu = asGetClientPvt(ascpvt);
 	assert(pciu);

@@ -339,11 +339,12 @@ LOCAL void clean_addrq()
 		}
 
 		if (delay > timeout) {
-			int status;
 
 			ellDelete(&prsrv_cast_client->addrq, &pciu->node);
         		FASTLOCK(&rsrv_free_addrq_lck);
-			s = bucketRemoveItem(pCaBucket, pciu->sid, pciu);
+			s = bucketRemoveItemUnsignedId (
+				pCaBucket,
+				&pciu->sid);
 			if(s != BUCKET_SUCCESS){
 				logMsg(
 					"%s Bad id at close",

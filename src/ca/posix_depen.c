@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.26  1999/05/11 19:42:44  jhill
+ * close all open files when spawning the repeater
+ *
  * Revision 1.25  1998/08/12 16:36:54  jhill
  * allow the user name to change when they use su
  *
@@ -207,6 +210,30 @@ char *localUserName()
 	return pTmp;
 }
 
+/*
+ * max_unix_fd()
+ *
+ * attempt to determine the maximum file descriptor
+ * on all UNIX systems
+ */
+int max_unix_fd( )
+{
+	int max;
+	static const int bestGuess = 1024;
+
+#	if defined(OPEN_MAX)
+		max = OPEN_MAX;
+#	elif defined(_SC_OPEN_MAX)
+		max = sysconf (_SC_OPEN_MAX);
+		if (max<0) {
+			max = bestGuess;
+		}
+#	else
+		max = bestGuess;
+#	endif
+
+	return max;
+}
 
 
 /*

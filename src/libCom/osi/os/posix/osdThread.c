@@ -453,8 +453,10 @@ void threadShow(threadId id,unsigned int level)
 	errlogPrintf ("            NAME       ID      PRI    STATE     WAIT\n");
     }
     else {
-	errlogPrintf("%16.16s %8x %8d\n", pthreadInfo->name,(threadId)
-		     pthreadInfo,pthreadInfo->osiPriority);
+	errlogPrintf("%16.16s %8x %8d %8.8s\n", pthreadInfo->name,(threadId)
+		     pthreadInfo,pthreadInfo->osiPriority,pthreadInfo->
+		     isSuspended?"SUSPEND":"OK");
+	threadSleep(0.05);
 	if(level>0)
 	    ; /* more info */
     }

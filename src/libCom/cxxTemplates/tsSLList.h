@@ -31,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.13  1998/10/23 00:20:41  jhill
+ * attempted to clean up HP-UX warnings
+ *
  * Revision 1.12  1998/06/16 03:03:07  jhill
  * eliminated dangling ptr warning from bounds checker
  *

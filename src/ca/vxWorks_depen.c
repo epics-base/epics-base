@@ -42,8 +42,6 @@ LOCAL int cac_os_depen_exit_tid (struct ca_static *pcas, int tid);
 LOCAL int cac_add_task_variable (struct ca_static *ca_temp);
 LOCAL void deleteCallBack(CALLBACK *pcb);
 
-#define USEC_PER_SEC 1000000
-
 
 /*
  * cac_gettimeval()

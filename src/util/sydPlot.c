@@ -26,7 +26,9 @@
  * Modification Log:
  * -----------------
  * .01	12-04-90	rac	initial version
- * .02	mm-dd-yy	rac	version 2.0, installed in SCCS
+ * .02	06-30-91	rac	installed in SCCS
+ * .03	09-06-91	rac	change pprAreaErase to pprRegionErase; add
+ *				documentation
  *
  * make options
  *	-DXWINDOWS	makes a version for X11
@@ -38,8 +40,24 @@
 * TITLE	sydPlot.c - plotting for synchronous data
 *
 * DESCRIPTION
+*	These routines provide high-level plotting capability in conjunction
+*	with the sydSubr.c routines.  The data acquired by the sydSubr
+*	routines are accepted directly by these plotting routines.
+*
+*	These routines support plotting in either batch or incremental mode.
+*	In batch mode, all the samples exist at the time of plotting; for
+*	incremental mode, only part (or none) of the samples exist when
+*	plotting starts, and additional samples are to be plotted as they
+*	arrive.
+*
+*	Some windowing events, such as expose and resize, are transparently
+*	handled by these routines.  Hard copy of plots to a PostScript
+*	printer is easily available.
 *
 * QUICK REFERENCE
+*
+* #include <sydDefs.h>
+* #include <sydPlotDefs.h>
 *
 *         void  sydPlotAxisAutoRange(pSlave)
 *         long  sydPlotAxisSetAttr(pSlave, attr, value, pArg)
@@ -52,12 +70,26 @@
 *         long  sydPlotInitUW(pMstr, pSspec, pDisp, window, gc)
 *         long  sydPlotSamples(pMstr, begin, end, incrFlag)
 *         long  sydPlotSetAttr(pMstr, attr, value, pArg)
-*		attr = SYD_PLATTR_{FG1,FG2,LINE,MARK,MONO,POINT,SHOW,UNDER,WRAP}
+*                  attr = SYD_PLATTR_{FG1,FG2,LINE,MARK,MONO,POINT,SHOW,
+*                                     UNDER,WRAP}
 *         long  sydPlotSetTitles(pMstr, top, left, bottom, right) 
 *         long  sydPlotWinLoop(pMstr)
 *         long  sydPlotWinReplot(pMstr)
+*
+* DESCRIPTION, continued
+*	These routines generally work with the concepts of `plot master'
+*	and `plot slave'.  The plot master structure roughly corresponds
+*	to a plotting surface (i.e., X11 window or PostScript sheet) and
+*	contains most of the information necessary to perform plotting.
+*	The plot master contains a list of plot slave structures, each of
+*	which is analogous to a data channel.  A plot slave structure
+*	contains channel specific information, including data.  Time
+*	stamp information is provided via the plot master, through the
+*	use of its connection to synchronous sample structures.
+*
 * BUGS
-* o	sydPlotInitUW doesn't support SUNVIEW
+* o	sydPlotInitUW doesn't support SunView; some other routines have
+*	questionable support
 *   
 *-***************************************************************************/
 #include <genDefs.h>
@@ -93,11 +125,11 @@
 * NAME	sydPlotAxisAutoRange - set axis ends to min and max data values
 *
 * DESCRIPTION
+*	Sets the endpoints of the axis for the plot slave structure to
+*	be the minimum and maximum of the data for the slave.
 *
 * RETURNS
-*
-* BUGS
-* o	text
+*	void
 *
 * SEE ALSO
 *
@@ -106,7 +138,7 @@
 *-*/
 void
 sydPlotAxisAutoRange(pSlave)
-SYD_PL_SLAVE *pSlave;
+SYD_PL_SLAVE *pSlave;	/* I pointer to plot slave structure */
 {
     pSlave->originVal = pSlave->pSChan->minDataVal;
     pSlave->extentVal = pSlave->pSChan->maxDataVal;
@@ -119,9 +151,14 @@ SYD_PL_SLAVE *pSlave;
 *	Setting an attribute doesn't automatically reset other related
 *	attributes.
 *
-*	sydPlotAxisSetAttr(pSlave, SYD_PLATTR_XCHAN, {0,1}, NULL)
-*	sydPlotAxisSetAttr(pSlave, SYD_PLATTR_BG, 0, pBgPixelValue)
-*	sydPlotAxisSetAttr(pSlave, SYD_PLATTR_FG, 0, pFgPixelValue)
+*	Declare a slave to be used as the x-axis channel when x vs. y
+*	plotting is done:
+*	    sydPlotAxisSetAttr(pSlave, SYD_PLATTR_XCHAN, {0,1}, NULL)
+*
+*	Set the background and/or foreground pixel values for X11 for
+*	a slave:
+*	    sydPlotAxisSetAttr(pSlave, SYD_PLATTR_BG, 0, pBgPixelValue)
+*	    sydPlotAxisSetAttr(pSlave, SYD_PLATTR_FG, 0, pFgPixelValue)
 *
 * RETURNS
 *	S_syd_OK
@@ -157,12 +194,18 @@ void	*pArg;		/* I pointer for value for attribute */
 * NAME	sydPlotAxisSetup - set up axis information for a channel
 *
 * DESCRIPTION
+*	Set up axis information.
+*	o   the axis endpoints are set to LOPR and HOPR.  If LOPR==HOPR,
+*	    then minimum and maximum data values are used for endpoints.
+*	    If min==max, then arbitrary values are used.
+*	o   number of major intervals is set to 5
 *
 * RETURNS
 *	void
 *
 * BUGS
-* o	text
+* o	in pathological cases, the setup is overly arbitrary
+* o	number of intervals is fixed at 5
 *
 * SEE ALSO
 *
@@ -171,7 +214,7 @@ void	*pArg;		/* I pointer for value for attribute */
 *-*/
 void
 sydPlotAxisSetup(pSlave)
-SYD_PL_SLAVE *pSlave;
+SYD_PL_SLAVE *pSlave;	/* I pointer to plot slave structure */
 {
     SYD_CHAN	*pSChan=pSlave->pSChan;
     double	originVal, extentVal;
@@ -227,7 +270,7 @@ SYD_PL_SLAVE *pSlave;
 }
 
 /*+/subr**********************************************************************
-* NAME	sydPlotChanAdd - add a slave
+* NAME	sydPlotChanAdd - add a plot slave
 *
 * DESCRIPTION
 *	Adds a slave to a master plot structure.  Some of the items needed
@@ -257,8 +300,9 @@ SYD_PL_SLAVE *pSlave;
 *-*/
 SYD_PL_SLAVE *
 sydPlotChanAdd(pMstr, pSChan)
-SYD_PL_MSTR *pMstr;	/* IO pointer to plot master */
-SYD_CHAN *pSChan;	/* I pointer to synchronous data channel structure */
+SYD_PL_MSTR *pMstr;	/* I pointer to plot master */
+SYD_CHAN *pSChan;	/* I pointer to synchronous data channel structure,
+				as from sydChanOpen */
 {
     SYD_PL_SLAVE *pSlave;	/* pointer to slave structure */
     int		i;
@@ -304,15 +348,15 @@ SYD_CHAN *pSChan;	/* I pointer to synchronous data channel structure */
 }
 
 /*+/subr**********************************************************************
-* NAME	sydPlotDone - multiple x vs y rundown
+* NAME	sydPlotDone - plotting rundown
 *
 * DESCRIPTION
+*	Wrap up processing for a plot.  Each slave is closed.  The present
+*	size and position of the plot window are saved in the plot master
+*	structure.
 *
 * RETURNS
 *	S_syd_OK
-*
-* BUGS
-* o	text
 *
 * SEE ALSO
 *
@@ -352,12 +396,10 @@ int	quitFlag;	/* I use 0 for replot, 1 for total rundown */
 * NAME	sydPlotEraseSamples - erase samples from the screen
 *
 * DESCRIPTION
+*	Erase the plot areas for the plot master.
 *
 * RETURNS
 *	S_syd_OK
-*
-* BUGS
-* o	text
 *
 * SEE ALSO
 *
@@ -376,7 +418,7 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
     while (pSlave != NULL) {
 	pSlave->first = 1;
 	if (pSlave->pArea != NULL) {
-	    pprAreaErase(pSlave->pArea, 1., 1., -1., -1.);
+	    pprRegionErase(pSlave->pArea, 1., 1., -1., -1.);
 	}
 	pSlave = pSlave->pNext;
     }
@@ -389,28 +431,42 @@ static void sydPlotInit_common();
 * NAME	sydPlotInit - plotting initialization
 *
 * DESCRIPTION
-*	use sydPlotWinLoop for actual plotting
-*	`fullInit' results in initializing for a default window size and
-*		position.  If fullInit is zero, then the size and position
-*		in the plot master are used.
+*	Initialize for plotting, using an automatically created window:
+*	o   the window is created
+*	o   if full initialization is requested, then the default window
+*	    size and position are used; otherwise, the size and position
+*	    in the plot master (as saved by sydPlotDone) are used.
+*
+*	This routine doesn't perform any plotting--sydPlotWinLoop must
+*	be called to do the actual plotting.
+*
+*	The type of plotting which is done depends both on the window type
+*	specified in the call to this routine and on the way that the plot
+*	master is set up at the time of the call to sydPlotWinLoop.
 *
 * RETURNS
-*	S_syd_OK
+*	S_syd_OK, or
+*	S_syd_ERROR if initialization can't be completed
 *
 * BUGS
 * o	need an sdrXxx call to initialize a master with caller-supplied
 *	or default size and position
 *
 * SEE ALSO
+*	sydPlotInitUW, sydPlotDone, sydPlotWinLoop
+*	sydPlotSetAttr
 *
 * EXAMPLE
 *
 *-*/
 long
 sydPlotInit(pMstr, pSspec, winType, dispName, winTitle, fullInit)
-SYD_PL_MSTR *pMstr;	/* IO pointer to plot master structure */
+SYD_PL_MSTR *pMstr;	/* I pointer to plot master structure */
 SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
-PPR_WIN_TY winType;	/* I type of "plot window": PPR_WIN_xxx */
+PPR_WIN_TY winType;	/* I type of "plot window": PPR_WIN_xxx
+			    PPR_WIN_SCREEN for an X11 window
+			    PPR_WIN_POSTSCRIPT for a PostScript file
+			    PPR_WIN_EPS for an Encapsulated PostScript file
 char	*dispName;	/* I name of "plot window"--display, PostScript
 			    file, EPS file, or NULL */
 char	*winTitle;	/* I title for window title bar and icon */
@@ -418,14 +474,15 @@ int	fullInit;	/* I 0 or 1 to do partial or full initialization */
 {
     if (fullInit) {
 	pMstr->pWin = pprWinOpen(winType, dispName, winTitle, 0,0,0,0);
-	assertAlways(pMstr->pWin != NULL);
+	if (pMstr->pWin == NULL)
+	    return S_syd_ERROR;
 	pprWinInfo(pMstr->pWin, &pMstr->x, &pMstr->y, &pMstr->width,
 							&pMstr->height);
     }
     else {
 	pMstr->pWin = pprWinOpen(winType, dispName, winTitle, 
 			pMstr->x, pMstr->y, pMstr->width, pMstr->height);
-	assertAlways(pMstr->pWin != NULL);
+	return S_syd_ERROR;
     }
 
     pMstr->winType = winType;
@@ -478,23 +535,35 @@ SYD_PL_MSTR *pMstr;
 * NAME	sydPlotInitUW - plotting initialization, using User Window
 *
 * DESCRIPTION
-*	use sydPlotWinReplot for actual plotting
-*	sydPlotSamples can be used for incremental plotting
+*	Initialize for plotting, using a user-supplied window.
+*
+*	This routine doesn't perform any actual plotting.  When an expose
+*	or resize event occurs (or when additional samples are received
+*	when plotting in incremental mode), one of the following routines
+*	must be called to perform plotting:
+*
+*	sydPlotWinReplot--plots all the samples in the synchronous data
+*	set.
+*
+*	sydPlotSamples--plots the indicated subset of the samples in the
+*	synchronous data set.
 *
 * RETURNS
 *	S_syd_OK
 *
 * BUGS
-* o	text
+* o	available only for X11
 *
 * SEE ALSO
+*	sydPlotInit, sydPlotDone, sydPlotWinReplot, sydPlotSamples
+*	sydPlotSetAttr
 *
 * EXAMPLE
 *
 *-*/
 long
 sydPlotInitUW(pMstr, pSspec, pDisp, window, gc)
-SYD_PL_MSTR *pMstr;	/* IO pointer to plot master structure */
+SYD_PL_MSTR *pMstr;	/* I pointer to plot master structure */
 SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
 Display	*pDisp;		/* I X11 display pointer */
 Window	window;		/* I X11 window handle */
@@ -520,6 +589,13 @@ GC	gc;		/* I X11 gc handle */
 * NAME	sydPlotSamples - plot one or more sync samples
 *
 * DESCRIPTION
+*	Plot one or more samples in the synchronous sample set (whose
+*	handle is held by the plot master).  The sample range is specified
+*	as sample numbers within the sync sample set.
+*
+*	This routine is for use only with sydPlotInitUW.  When this routine
+*	is called, the sydPlot_xxx routine indicated by the .plotAxis
+*	member of the plot master structure is called.
 *
 * RETURNS
 *	void
@@ -528,6 +604,7 @@ GC	gc;		/* I X11 gc handle */
 * o	text
 *
 * SEE ALSO
+*	sydPlotInitUW, sydPlotSetAttr, sydPlot_xxx
 *
 * NOTES
 * 1.	The `incrFlag' argument allows plotting in either batch or
@@ -591,9 +668,11 @@ int	incrFlag;	/* I 0,1 for batch,incremental plotting */
 *	S_syd_OK
 *
 * BUGS
-* o	text
+* o	there should be a SYD_PLATTR_AXIS_TYPE, rather than having to
+*	explicitly set the .plotAxis member of the plot master structure
 *
 * SEE ALSO
+*	sydPlotSetTitles, sydPlotInit, sydPlotInitUW
 *
 * EXAMPLE
 *
@@ -642,6 +721,7 @@ void	*pArg;		/* I pointer for value for attribute */
 * o	text
 *
 * SEE ALSO
+*	sydPlot_setup, sydPlotSetAttr
 *
 * EXAMPLE
 *
@@ -678,23 +758,33 @@ char	*right;		/* I title for right of plot, or NULL */
 * NAME	sydPlotWinLoop - do the actual plotting
 *
 * DESCRIPTION
-*	for use with sydPlotInit
+*	Perform the actual plotting for a plot master which was set up
+*	using sydPlotInit.
+*
+*	This routine is for use only with sydPlotInit.  When this routine
+*	is called, the sydPlot_xxx routine indicated by the .plotAxis
+*	member of the plot master structure is called.
+*
+*	This routine creates and maps a window and draws the plot.  This
+*	routine retains control (for processing expose and resize events)
+*	until the mouse pointer is placed in the plot window and the right
+*	button is clicked.
 *
 * RETURNS
-*	OK, or
-*	ERROR
+*	S_syd_OK
 *
 * BUGS
 * o	text
 *
 * SEE ALSO
+*	sydPlotInit, sydPlotSetAttr, sydPlot_xxx
 *
 * EXAMPLE
 *
 *-*/
 long
 sydPlotWinLoop(pMstr)
-SYD_PL_MSTR *pMstr;	/* IO pointer to plot master structure */
+SYD_PL_MSTR *pMstr;	/* I pointer to plot master structure */
 {
     SYD_PLAX pltTy = pMstr->plotAxis;		/* type of plot desired */
     long	stat;
@@ -732,23 +822,25 @@ SYD_PL_MSTR *pMstr;	/* IO pointer to plot master structure */
 * NAME	sydPlotWinReplot - do the actual plotting
 *
 * DESCRIPTION
-*	for use with sydPlotInitUW
+*	Perform the actual plotting for a plot master which was set up
+*	using sydPlotInitUW.  This routine calls the sydPlot_xxx routine
+*	indicated by the .plotAxis member of the plot master structure.
 *
 * RETURNS
-*	OK, or
-*	ERROR
+*	S_syd_OK
 *
 * BUGS
 * o	text
 *
 * SEE ALSO
+*	sydPlotInitUW, sydPlotSamples, sydPlot_xxx
 *
 * EXAMPLE
 *
 *-*/
 long
 sydPlotWinReplot(pMstr)
-SYD_PL_MSTR *pMstr;	/* IO pointer to plot master structure */
+SYD_PL_MSTR *pMstr;	/* I pointer to plot master structure */
 {
     char	refText[28];
     int		npts;
@@ -781,13 +873,43 @@ SYD_PL_MSTR *pMstr;	/* IO pointer to plot master structure */
 * NAME	sydPlot - call the plot routine appropriate for plot type
 *
 * DESCRIPTION
+*	Provides a generic interface for doing the actual plotting.  This
+*	routine calls the specific plotting routine as dictated by the
+*	set up for the plot master.  That routine will draw the grid(s)
+*	and plot the data.
+*
+*	Prior to calling this routine, the caller must set several values
+*	in the plot master structure to control how plotting is done.  Except
+*	for the .plotAxis member, the preferred method for setting the
+*	values is with the sydPlotSetAttr routine.
+*
+*	.plotAxis--the type of axis used in plotting:
+*	    SYD_PLAX_TY		value vs time, separate grids
+*	    SYD_PLAX_TYY	value vs time, shared grid
+*	    SYD_PLAX_XY		value vs value, separate grids
+*	    SYD_PLAX_XYY	value vs value, shared grid
+*	    SYD_PLAX_Y		value vs bin number, separate grids
+*	    SYD_PLAX_YY		value vs bin number, shared grid
+*	    SYD_PLAX_SMITH_IMP	value vs value, with Smith impedance overlay
+*	    SYD_PLAX_SMITH_ADM	value vs value, with Smith admittance overlay
+*	    SYD_PLAX_SMITH_IMM	value vs value, with Smith immitance overlay
+*
+*	.linePlot--1 to connect data points with lines, else 0
+*	.markPlot--1 to plot a mark at each data point, else 0
+*	.pointPlot--1 to plot a point at each data point, else 0
+*	.showStat--1 to plot a status indicator at each data point, else 0
 *
 * RETURNS
+*	void
 *
 * BUGS
 * o	text
 *
 * SEE ALSO
+*	sydPlotSetAttr, specific sydPlot_xxx routines
+*
+* NOTES
+* 1. This routine isn't intended to be called directly.  
 *
 * EXAMPLE
 *
@@ -838,26 +960,48 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 	assertAlways(0);
 
 
-/*+/subr**********************************************************************
+/*+/internal******************************************************************
 * NAME	sydPlot_setup - set up titles and margins for a plot window
 *
 * DESCRIPTION
 *	Plots whatever titles are present in the plot master, reserving
-*	an appropriate margin when necessary.  The caller is given the
-*	appropriate coordinates and sizes for the sub-plots.
+*	an appropriate margin when necessary.
+*
+*	All slaves can be plotted in a shared grid, or separate grids
+*	can be used.  This is controlled by the `nGrids' argument.
+*
+*	This routine returns information to allow easily intermixing calls
+*	to the pprPlot routines with calls to sydPlot routines.
+*
+*	If plotting is for PostScript, date and time are plotted in the
+*	upper right corner of the window.
 *
 * RETURNS
 *	void
 *
 * BUGS
-* o	handles only vertical subdividing of the plot window
+* o	handles only vertical subdividing of the plot window (i.e., into
+*	long horizontal strips)
 *
 *-*/
 static void
 sydPlot_setup(pMstr, nGrids, pXlo, pYlo, pXhi, pYhi, pYpart, pCh, pChX)
 SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
-double	*pXlo, *pYlo, *pXhi, *pYhi, *pYpart, *pCh, *pChX;
-int	nGrids;
+int	nGrids;		/* I number of grids */
+double	*pXlo;		/* O pointer to X position of lower left corner of
+				first grid, as fraction of window width */
+double	*pYlo;		/* O pointer to Y position of lower left corner of
+				first grid, as fraction of window height */
+double	*pXhi;		/* O pointer to X position of upper right corner of
+				first grid, as fraction of window width */
+double	*pYhi;		/* O pointer to Y position of upper right corner of
+				first grid, as fraction of window height */
+double	*pYpart;	/* O pointer to fraction of window height occupied
+				by a single grid (all grids are equal) */
+double	*pCh;		/* O pointer to character height, as fraction
+				of window height */
+double	*pChX;		/* O pointer to character height for rotated text,
+				as fraction of window width */
 {
     PPR_WIN	*pWin;		/* pointer to plot window structure */
     double	xlo, ylo, xhi, yhi, yPart, charHt, charHtX;
@@ -936,6 +1080,9 @@ int	nGrids;
 * SEE ALSO
 *	sydPlot_SmithGrid, sydPlot_SmithSamples
 *
+* NOTES
+* 1. This routine isn't intended to be called directly.  
+*
 * EXAMPLE
 *
 *-*/
@@ -987,6 +1134,9 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 * BUGS
 * o	channel names aren't displayed
 * o	colors are done only under X11
+*
+* NOTES
+* 1. This routine isn't intended to be called directly.  
 *
 *-*/
 void
@@ -1166,6 +1316,9 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 *
 * SEE ALSO
 *
+* NOTES
+* 1. This routine isn't intended to be called directly.  
+*
 * EXAMPLE
 *
 *-*/
@@ -1191,6 +1344,9 @@ int	incr;		/* I 0,1 for batch,incremental plotting */
 * o	text
 *
 * SEE ALSO
+*
+* NOTES
+* 1. This routine isn't intended to be called directly.  
 *
 * EXAMPLE
 *
@@ -1222,6 +1378,9 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 *	some intelligent adaptation, based on time interval for X
 *
 * SEE ALSO
+*
+* NOTES
+* 1. This routine isn't intended to be called directly.  
 *
 * EXAMPLE
 *
@@ -1307,6 +1466,9 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 * o	text
 *
 * SEE ALSO
+*
+* NOTES
+* 1. This routine isn't intended to be called directly.  
 *
 * EXAMPLE
 *
@@ -1433,6 +1595,9 @@ int	incr;		/* I 0,1 for batch,incremental plotting */
 *
 * SEE ALSO
 *
+* NOTES
+* 1. This routine isn't intended to be called directly.  
+*
 * EXAMPLE
 *
 *-*/
@@ -1462,6 +1627,9 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 * o	text
 *
 * SEE ALSO
+*
+* NOTES
+* 1. This routine isn't intended to be called directly.  
 *
 * EXAMPLE
 *
@@ -1567,6 +1735,9 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 *
 * SEE ALSO
 *
+* NOTES
+* 1. This routine isn't intended to be called directly.  
+*
 * EXAMPLE
 *
 *-*/
@@ -1597,6 +1768,9 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 * o	text
 *
 * SEE ALSO
+*
+* NOTES
+* 1. This routine isn't intended to be called directly.  
 *
 * EXAMPLE
 *
@@ -1685,6 +1859,9 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 * o	line plot isn't handled
 *
 * SEE ALSO
+*
+* NOTES
+* 1. This routine isn't intended to be called directly.  
 *
 * EXAMPLE
 *
@@ -1830,6 +2007,9 @@ int	incr;		/* I 0,1 for batch,incremental plotting */
 *
 * SEE ALSO
 *
+* NOTES
+* 1. This routine isn't intended to be called directly.  
+*
 * EXAMPLE
 *
 *-*/
@@ -1903,6 +2083,9 @@ int	sub;
 *
 * SEE ALSO
 *
+* NOTES
+* 1. This routine isn't intended to be called directly.  
+*
 * EXAMPLE
 *
 *-*/
@@ -1933,6 +2116,9 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 * o	text
 *
 * SEE ALSO
+*
+* NOTES
+* 1. This routine isn't intended to be called directly.  
 *
 * EXAMPLE
 *
@@ -2049,6 +2235,9 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 *
 * SEE ALSO
 *
+* NOTES
+* 1. This routine isn't intended to be called directly.  
+*
 * EXAMPLE
 *
 *-*/
@@ -2078,6 +2267,9 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 * o	text
 *
 * SEE ALSO
+*
+* NOTES
+* 1. This routine isn't intended to be called directly.  
 *
 * EXAMPLE
 *
@@ -2165,6 +2357,9 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 * o	text
 *
 * SEE ALSO
+*
+* NOTES
+* 1. This routine isn't intended to be called directly.  
 *
 * EXAMPLE
 *
@@ -2293,6 +2488,9 @@ int	incr;		/* I 0,1 for batch,incremental plotting */
 *
 * SEE ALSO
 *
+* NOTES
+* 1. This routine isn't intended to be called directly.  
+*
 * EXAMPLE
 *
 *-*/
@@ -2345,6 +2543,9 @@ int	sub;
 *
 * SEE ALSO
 *
+* NOTES
+* 1. This routine isn't intended to be called directly.  
+*
 * EXAMPLE
 *
 *-*/
@@ -2374,6 +2575,9 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 * o	text
 *
 * SEE ALSO
+*
+* NOTES
+* 1. This routine isn't intended to be called directly.  
 *
 * EXAMPLE
 *

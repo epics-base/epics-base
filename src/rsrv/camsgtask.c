@@ -121,7 +121,7 @@ void camsgtask (struct client *client)
              * disconnect when there are severe message errors
              */
             ipAddrToA (&client->addr, buf, sizeof(buf));
-            errlogPrintf ("CAS: forcing disconnect from %s\n", buf);
+            epicsPrintf ("CAS: forcing disconnect from %s\n", buf);
                 break;
         }
         

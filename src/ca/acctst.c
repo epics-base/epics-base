@@ -1494,7 +1494,7 @@ void performMonitorUpdateTest ( chid chan )
     /*
      * set channel to known value
      */
-    temp = 0.0;
+    temp = 1.0;
     SEVCHK ( ca_put ( DBR_FLOAT, chan, &temp ), NULL );
 
     for ( i = 0; i < NELEMENTS(test); i++ ) {

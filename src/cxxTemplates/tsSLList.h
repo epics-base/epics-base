@@ -31,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.8  1997/06/13 09:21:53  jhill
+ * fixed compiler compatibility problems
+ *
  * Revision 1.7  1997/04/10 19:43:10  jhill
  * API changes
  *
@@ -79,7 +82,7 @@ public:
 	// when someone copies into a class deriving from this
 	// do _not_ change the node pointers
 	//
-	void operator = (tsSLNode<T> &) {}
+	void operator = (const tsSLNode<T> &) {}
 
 private:
 	T	*pNext;
@@ -162,9 +165,9 @@ public:
 //
 template <class T>
 class tsSLIter {
-friend class tsSLIterRm<T>;
 public:
-	tsSLIter(const tsSLList<T> &listIn) : pCurrent(&listIn) {}
+	tsSLIter(const tsSLList<T> &listIn) : 
+		pCurrent(&listIn) {}
 
 	//
 	// move iterator forward
@@ -200,6 +203,11 @@ private:
 // adds remove method (and does not construct
 // with const list)
 //
+// tsSLIter isnt a base class because this
+// requires striping const from pCurrent which could get
+// us in trouble with a high quality
+// optimizing compiler
+//
 // Notes:
 // 1) No direct access to pCurrent is provided since
 //      this might allow for confusion when an item
@@ -208,19 +216,25 @@ private:
 //
 //
 template <class T>
-class tsSLIterRm : private tsSLIter<T> {
+class tsSLIterRm {
 public:
 	tsSLIterRm(tsSLList<T> &listIn) :  
-		tsSLIter<T>(listIn), pPrevious(0) {}
+		pCurrent(&listIn), pPrevious(0) {}
 
 	//
 	// move iterator forward
 	//
+	// **** NOTE ****
+	// This may be called continuously until it returns
+	// NULL. Attempts to call this again after it has
+	// returned NULL will fail 
+	//
 	T * next () 
 	{
-		// strip const
-		this->pPrevious = (tsSLNode<T> *) this->pCurrent;
-		return tsSLIter<T>::next();
+		T *pNewCur;
+		this->pPrevious = this->pCurrent;
+		this->pCurrent = pNewCur = this->pCurrent->pNext;
+		return pNewCur;
 	}
 
 	//
@@ -228,16 +242,16 @@ public:
 	//
 	T * operator () () 
 	{
-		return this->tsSLIterRm<T>::next();
+		return this->next();
 	}
 
 	//
 	// remove current node
-        // (and move current to be the previos item -
+	// (and move current to be the previos item -
 	// the item seen by the iterator before the 
 	// current one - this guarantee that the list 
 	// will be accessed sequentially even if an item
-        // is removed)
+	// is removed)
 	//
 	// **** NOTE ****
 	// This may be called once for each cycle of the 
@@ -251,7 +265,9 @@ public:
 		this->pCurrent = this->pPrevious;
 		this->pPrevious = 0; 
 	}
+
 private:
 	tsSLNode<T> *pPrevious;
+	tsSLNode<T> *pCurrent;
 };
 

@@ -31,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.9  1997/06/13 09:21:52  jhill
+ * fixed compiler compatibility problems
+ *
  * Revision 1.8  1997/04/11 20:49:48  jhill
  * added no arg reset() to bwd iter
  *
@@ -61,6 +64,8 @@
 #ifndef tsDLListH_include
 #define tsDLListH_include
 
+#include <assert.h>
+
 template <class T> class tsDLList;
 template <class T> class tsDLIterBD;
 template <class T> class tsDLIter;
@@ -84,7 +89,7 @@ public:
 	// when someone copies in a class deriving from this
 	// do _not_ change the node pointers
 	//
-	void operator = (tsDLNode<T> &) {}
+	void operator = (const tsDLNode<T> &) {}
 
 protected:
 	T	*getNext(void) { return pNext; }
@@ -113,20 +118,12 @@ private:
 		this->pLast = 0;
 		this->itemCount = 0u;
 	}
+
 public:
+
 	tsDLList () 
 	{
-		this->clear();
-	}
-
-	//
-	// installs items in addList on the list 
-	// (and removes all items from addList)
-	//
-	tsDLList (tsDLList<T> &addList)  
-	{
-		*this = addList;
-		addList.clear();	
+		clear();
 	}
 
 	//
@@ -174,7 +171,6 @@ public:
 		//
 		addList.clear();
 	}
-
 
 	//
 	// add() 
@@ -275,7 +271,6 @@ public:
 		this->itemCount--;
 	}
 
-
 	//
 	// pop ()
 	// (returns the first item on the list)
@@ -323,6 +318,21 @@ private:
 	T		*pFirst;
 	T		*pLast;
 	unsigned	itemCount;
+
+	//
+	// past functionality incompatible
+	// with strict definition of a copy
+	// constructor so this has been eliminated
+	//
+	// copying one list item into another and
+	// ending up with to list headers pointing
+	// at the same list is always a questionable
+	// thing to do.
+	//
+	// therefore, this is intentionally _not_
+	// implemented.
+	//
+	tsDLList (const tsDLList &);
 };
 
 //
@@ -341,78 +351,78 @@ public:
 	tsDLIterBD (class tsDLIterBD<T> &copyIn) : 
 		pEntry(copyIn.pEntry) {}
 
-        tsDLIterBD<T> & operator = (T *pNewEntry)
-        {
-                this->pEntry = pNewEntry;
+	tsDLIterBD<T> & operator = (T *pNewEntry)
+	{
+		this->pEntry = pNewEntry;
 		return *this;
 	}
 
-        tsDLIterBD<T> &operator = (const tsDLIterBD<T> &copyIn)
-        {
-                this->pEntry = copyIn.pEntry;
+	tsDLIterBD<T> &operator = (const tsDLIterBD<T> &copyIn)
+	{
+		this->pEntry = copyIn.pEntry;
 		return *this;
 	}
 
-        int operator == (const tsDLIterBD<T> &rhs) const
-        {
-                return (this->pEntry == rhs.pEntry);
+	int operator == (const tsDLIterBD<T> &rhs) const
+	{
+		return (this->pEntry == rhs.pEntry);
 	}
 
-        int operator != (const tsDLIterBD<T> &rhs) const
-        {
-                return (this->pEntry != rhs.pEntry);
+	int operator != (const tsDLIterBD<T> &rhs) const
+	{
+		return (this->pEntry != rhs.pEntry);
 	}
 
-        T & operator * () const
-        {
-                return *this->pEntry;
+	T & operator * () const
+	{
+		return *this->pEntry;
 	}
 
-        T * operator -> () const
-        {
-                return this->pEntry;
+	T * operator -> () const
+	{
+		return this->pEntry;
 	}
 
-        operator T* () const
-        {
-                return this->pEntry;
+	operator T* () const
+	{
+		return this->pEntry;
 	}
 
 	//
 	// prefix ++
 	//
-        T *operator ++ () 
-        {
-                return this->pEntry = this->pEntry->tsDLNode<T>::pNext;
-        }
+	T *operator ++ () 
+	{
+		return this->pEntry = this->pEntry->tsDLNode<T>::pNext;
+	}
 
 	//
 	// postfix ++
 	//
-        T *operator ++ (int) 
-        {
+	T *operator ++ (int) 
+	{
 		T *pE = this->pEntry;
 		this->pEntry = this->pEntry->tsDLNode<T>::pNext;
-                return pE;
-        }
+		return pE;
+	}
 
 	//
 	// prefix -- 
 	//
-        T *operator -- () 
-        {
-                return this->pEntry = pEntry->tsDLNode<T>::pPrev;
-        }
+	T *operator -- () 
+	{
+		return this->pEntry = pEntry->tsDLNode<T>::pPrev;
+	}
 
 	//
 	// postfix -- 
 	//
-        T *operator -- (int) 
-        {
+	T *operator -- (int) 
+	{
 		T *pE = this->pEntry;
 		this->pEntry = pEntry->tsDLNode<T>::pPrev;
-                return pE;
-        }
+		return pE;
+	}
 private:
 	T *pEntry;
 };
@@ -439,16 +449,16 @@ public:
 		this->pCurrent = 0;
 	}
 
-        void reset (tsDLList<T> &listIn)
-        {
-                this->reset();
-                this->pList = &listIn;
-        }
+	void reset (tsDLList<T> &listIn)
+	{
+	    this->reset();
+	    this->pList = &listIn;
+	}
 
-        void operator = (tsDLList<T> &listIn)
-        {
-                this->reset(listIn);
-        }
+	void operator = (tsDLList<T> &listIn)
+	{
+	    this->reset(listIn);
+	}
 
 	T * next () 
 	{
@@ -463,18 +473,18 @@ public:
                 return pCur;
 	}
 
-        T * prev ()
-        {
-                T *pCur = this->pCurrent;
-                if (pCur==0) {
-                        pCur = this->pList->pLast;
-                }
-                else {
-                        pCur = pCur->tsDLNode<T>::pPrev;
-                }
-                this->pCurrent = pCur;
-                return pCur;
-        }
+	T * prev ()
+	{
+	    T *pCur = this->pCurrent;
+	    if (pCur==0) {
+			pCur = this->pList->pLast;
+	    }
+	    else {
+			pCur = pCur->tsDLNode<T>::pPrev;
+	    }
+	    this->pCurrent = pCur;
+	    return pCur;
+	}
 
 	T * first()
 	{
@@ -482,11 +492,11 @@ public:
 		return this->pCurrent;
 	}
 
-        T * last()
-        {
-                this->pCurrent = this->pList->pLast;
-                return this->pCurrent;
-        }
+	T * last()
+	{
+	    this->pCurrent = this->pList->pLast;
+	    return this->pCurrent;
+	}
 
 	T * operator () () 
 	{
@@ -523,18 +533,18 @@ public:
 	{
 		this->tsDLIter<T>::reset();
 	}
-        void reset (tsDLList<T> &listIn)
-        {
-                this->tsDLIter<T>::reset(listIn);
-        }
-        void operator = (tsDLList<T> &listIn)
-        {
-                this->tsDLIter<T>::reset(listIn);
-        }
-        T * operator () ()
-        {
-                return this->tsDLIter<T>::next();
-        }
+	void reset (tsDLList<T> &listIn)
+	{
+	    this->tsDLIter<T>::reset(listIn);
+	}
+	void operator = (tsDLList<T> &listIn)
+	{
+	    this->tsDLIter<T>::reset(listIn);
+	}
+	T * operator () ()
+	{
+	    return this->tsDLIter<T>::next();
+	}
 	T * next () 
 	{
 		return this->tsDLIter<T>::next();
@@ -603,18 +613,18 @@ public:
 	{
 		this->tsDLIter<T>::reset();
 	}
-        void reset (tsDLList<T> &listIn)
-        {
-                this->tsDLIter<T>::reset(listIn);
-        }
-        void operator = (tsDLList<T> &listIn)
-        {
-                this->tsDLIter<T>::reset(listIn);
-        }
-        T * operator () ()
-        {
-                return this->tsDLIter<T>::prev();
-        }
+	void reset (tsDLList<T> &listIn)
+	{
+	    this->tsDLIter<T>::reset(listIn);
+	}
+	void operator = (tsDLList<T> &listIn)
+	{
+	    this->tsDLIter<T>::reset(listIn);
+	}
+	T * operator () ()
+	{
+	    return this->tsDLIter<T>::prev();
+	}
 	T * prev () 
 	{
 		return this->tsDLIter<T>::prev();

@@ -17,24 +17,32 @@
 // To allow your class to be allocated off of a free list
 // using the new operator:
 // 
-// 1) add the following static, private free list data member 
+// 1) add the following static, private free list data members 
 // to your class
 //
 // static tsFreeList < class classXYZ, 1024 > freeList;
+// static epicsMutex freeListMutex;
 //
 // 2) add the following member functions to your class
 // 
 // inline void * classXYZ::operator new ( size_t size )
 // {
+//    epicsAutoMutex locker ( classXYZ::freeListMutex );
 //    return classXYZ::freeList.allocate ( size );
 // }
 //
 // inline void classXYZ::operator delete ( void *pCadaver, size_t size )
 // {
-//     classXYZ::freeList.release ( pCadaver, size );
+//    epicsAutoMutex locker ( classXYZ::freeListMutex );
+//    classXYZ::freeList.release ( pCadaver, size );
 // }
 //
-// If you wish to force use of the new operator, then declare your class's 
+// NOTES:
+//
+// 1) If a tsFreeList instance is used by more than one thread then the
+// user must provide mutual exclusion in their new and delete handlers.
+//
+// 2) If you wish to force use of the new operator, then declare your class's 
 // destructor as a protected member function.
 //
 
@@ -53,7 +61,7 @@ template < class T, unsigned DEBUG_LEVEL >
 union tsFreeListItem {
 public:
     tsFreeListItem < T, DEBUG_LEVEL > *pNext;
-    char pad[ sizeof (T) ];
+    char pad[ sizeof ( T ) ];
 };
 
 template < class T, unsigned N = 0x400, unsigned DEBUG_LEVEL = 0u >
@@ -63,7 +71,7 @@ struct tsFreeListChunk {
 };
 
 template < class T, unsigned N = 0x400, unsigned DEBUG_LEVEL = 0u >
-class tsFreeList : private epicsMutex {
+class tsFreeList {
 public:
     tsFreeList ();
     ~tsFreeList ();
@@ -76,16 +84,18 @@ private:
 };
 
 template < class T, unsigned N, unsigned DEBUG_LEVEL >
-inline tsFreeList < T, N, DEBUG_LEVEL >::tsFreeList () : 
-    pFreeList (0), pChunkList (0) {}
+inline tsFreeList < T, N, DEBUG_LEVEL > :: tsFreeList () : 
+    pFreeList ( 0 ), pChunkList ( 0 ) {}
 
 template < class T, unsigned N, unsigned DEBUG_LEVEL >
-tsFreeList < T, N, DEBUG_LEVEL >::~tsFreeList ()
+tsFreeList < T, N, DEBUG_LEVEL > :: ~tsFreeList ()
 {
     tsFreeListChunk < T, N, DEBUG_LEVEL > *pChunk;
-    unsigned nChunks = 0u;
+    unsigned nChunks;
 
-    this->lock ();
+    if ( DEBUG_LEVEL > 0u ) {
+        nChunks = 0u;
+    }
 
     while ( ( pChunk = this->pChunkList ) ) {
         this->pChunkList = this->pChunkList->pNext;
@@ -94,8 +104,6 @@ tsFreeList < T, N, DEBUG_LEVEL >::~tsFreeList ()
             nChunks++;
         }
     }
-
-    this->unlock();
 
     if ( DEBUG_LEVEL > 0u ) {
         fprintf ( stderr, "free list destructor for class %s returned %u objects to pool\n", 
@@ -117,8 +125,6 @@ inline void * tsFreeList < T, N, DEBUG_LEVEL >::allocate ( size_t size )
         return ::operator new ( size );
     }
 
-    this->lock ();
-
     p = this->pFreeList;
     if ( p ) {
         this->pFreeList = p->pNext;
@@ -126,8 +132,6 @@ inline void * tsFreeList < T, N, DEBUG_LEVEL >::allocate ( size_t size )
     else {
         p = this->allocateFromNewChunk ();
     }
-
-    this->unlock ();
 
     return static_cast < void * > ( p );
 }
@@ -170,12 +174,10 @@ inline void tsFreeList < T, N, DEBUG_LEVEL >::release ( void *pCadaver, size_t s
         ::operator delete ( pCadaver );
     }
     else if ( pCadaver ) {
-        this->lock ();
         tsFreeListItem < T, DEBUG_LEVEL > *p = 
             static_cast < tsFreeListItem < T, DEBUG_LEVEL > *> ( pCadaver );
         p->pNext = this->pFreeList;
         this->pFreeList = p;
-        this->unlock ();
     }
 }
 

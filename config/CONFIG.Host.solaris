@@ -23,7 +23,7 @@ SPARCWORKS = /opt/SUNWspro
 
 # Configure OS vendor C compiler
 ACC = $(SPARCWORKS)/bin/cc
-ACC_ANSI = $(ACC) -Xa
+ACC_ANSI = $(ACC) -Xa -v
 ACC_STRICT = $(ACC) -Xc -v
 ACC_TRAD = $(ACC) -Xs
 ACC_DEP_CFLAGS = -KPIC -D_REENTRANT 

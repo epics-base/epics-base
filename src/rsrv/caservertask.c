@@ -227,11 +227,13 @@ int free_client(struct client *client)
  */
 LOCAL int terminate_one_client(struct client *client)
 {
-	int        	servertid;
-	int        	tmpsock;
-	int        	status;
-	struct event_ext 	*pevext;
-	struct channel_in_use *pciu;
+    int                     servertid;
+    int                     tmpsock;
+    int                     status;
+    struct event_ext        *pevext;
+    struct channel_in_use   *pciu;
+    ELLLIST                 tmpQueue;
+    RSRVPUTNOTIFY           *ppnb;
 
 	if (client->proto != IPPROTO_TCP) {
 		logMsg("CAS: non TCP client delete ignored\n",
@@ -256,11 +258,48 @@ LOCAL int terminate_one_client(struct client *client)
 			NULL);
 	}
 
-	/*
-	 * exit flow control so the event system will
-	 * shutdown correctly
-	 */
-	db_event_flow_ctrl_mode_off(client->evuser);
+    /*
+     * cancel any put notify in progress 
+     */
+    ellInit ( &tmpQueue );
+    while ( TRUE ) {
+        FASTLOCK(&client->addrqLock);
+        pciu = (struct channel_in_use *) ellGet(&client->addrq);
+        FASTUNLOCK(&client->addrqLock);
+        if(!pciu){
+            break;
+        }
+
+        ellAdd ( &tmpQueue, &pciu->node );
+
+        if ( pciu->pPutNotify ) {
+            if ( pciu->pPutNotify->busy ) {
+                dbNotifyCancel ( &pciu->pPutNotify->dbPutNotify );
+            }
+        }
+    }
+
+    /*
+     * remove all put notify entries from the extra labor queue
+     */
+    FASTLOCK ( &client->putNotifyLock );
+    do {
+        ppnb = ( RSRVPUTNOTIFY * ) ellGet ( &client->putNotifyQue );
+    }
+    while ( ppnb );
+    FASTUNLOCK ( &client->putNotifyLock );
+
+    /*
+     * exit flow control so the event system will
+     * shutdown correctly
+     */
+    db_event_flow_ctrl_mode_off(client->evuser);
+
+    /*
+     * wait for any put notify in progress to comple
+     */
+    status = db_flush_extra_labor_event(client->evuser);
+    assert(status==OK);
 
 	/*
 	 * Server task deleted first since close() is not reentrant
@@ -282,20 +321,9 @@ LOCAL int terminate_one_client(struct client *client)
 	}
 
 	while(TRUE){
-		FASTLOCK(&client->addrqLock);
-		pciu = (struct channel_in_use *) ellGet(&client->addrq);
-		FASTUNLOCK(&client->addrqLock);
+		pciu = (struct channel_in_use *) ellGet ( &tmpQueue );
 		if(!pciu){
 			break;
-		}
-
-		/*
-		 * put notify in progress needs to be deleted
-		 */
-		if(pciu->pPutNotify){
-			if(pciu->pPutNotify->busy){
-                		dbNotifyCancel(&pciu->pPutNotify->dbPutNotify);
-			}
 		}
 
 		while (TRUE){
@@ -315,8 +343,6 @@ LOCAL int terminate_one_client(struct client *client)
 			}
 			freeListFree(rsrvEventFreeList, pevext);
 		}
-		status = db_flush_extra_labor_event(client->evuser);
-		assert(status==OK);
 		if(pciu->pPutNotify){
 			free(pciu->pPutNotify);
 		}

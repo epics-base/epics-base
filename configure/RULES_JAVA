@@ -16,7 +16,6 @@
 
 JAVA_INC = $(JAVA_DIR)/include
 JAVA_BIN = $(JAVA_DIR)/bin
-JAVA_INCLUDES += -I$(JAVA_INC) -I$(JAVA_INC)/$(OS_CLASS) -I$(COMMON_DIR)
 JAVA_INCLUDES += -I$(JAVA_INC) -I$(JAVA_INC)/$(word 1, $(subst -, ,$(T_A))) -I$(COMMON_DIR)
 
 JAVACCMD = $(subst \,/,$(JAVA_BIN)/javac$(EXE) $(CLASSPATH) $(SOURCEPATH) $(JAVACFLAGS))

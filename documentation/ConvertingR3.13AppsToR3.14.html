@@ -3,16 +3,16 @@
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
    <meta name="Author" content="jba">
-   <meta name="GENERATOR" content="Mozilla/4.77 [en] (X11; U; SunOS 5.8 sun4u) [Netscape]">
+   <meta name="GENERATOR" content="Mozilla/4.78 [en] (X11; U; SunOS 5.8 sun4u) [Netscape]">
 </head>
 <body>
 
 <center>
 <h2>
-Converting an EPICS R3.13 application to R3.14.0.beta1</h2></center>
+Converting an EPICS R3.13 application to R3.14.0.beta2</h2></center>
 
 <p><br>This document describes how to convert a R3.13 vxWorks application
-so that it builds with release R3.14.0beta1.&nbsp; It describes procedures
+so that it builds with release R3.14.0beta2.&nbsp; It describes procedures
 such that:
 <ul>
 <li>
@@ -37,7 +37,7 @@ Create a new R3.14 application</h3>
 
 <blockquote><tt>mkdir &lt;top></tt>
 <br><tt>cd &lt;top></tt>
-<br><tt>&lt;full path to R3.14.0beta1 base>/bin/&lt;host_arch>/makeBaseApp.pl
+<br><tt>&lt;full path to R3.14.0beta2 base>/bin/&lt;host_arch>/makeBaseApp.pl
 -t example example</tt></blockquote>
 
 <h3>
@@ -55,7 +55,7 @@ TEMPLATES_TOP from old application RELEASE file.
 <br>If sequence programs (*.st or *.stt files) exist in your application,
 add the SNCSEQ location definition for the R3.14 seq external module
 <blockquote><tt>SNCSEQ =&lt;full path to seq module top></tt></blockquote>
-The R3.14 seq module must exist and be built with EPICS base R3.14.0beta1.</blockquote>
+The R3.14 seq module must exist and be built with EPICS base R3.14.0beta2.</blockquote>
 
 <h3>
 Modify the Makefiles in &lt;top>/*App directories.</h3>
@@ -128,12 +128,18 @@ lines
 <br>to&nbsp;&nbsp; <font face="Arial,Helvetica">&lt;prodname>_SRCS += &lt;name>.c</font>
 <br>or&nbsp;<font face="Arial,Helvetica"> &lt;prodname>_SRCS += &lt;name>.cc</font>
 <br>if the c/c++ source files exist in the current directory.
+<p>Remove any duplicate <font face="Arial,Helvetica">prodname>_SRCS definitions.</font>
 <p>Change&nbsp;&nbsp;&nbsp; <tt>LIBOBJS += &lt;seq_program_name>.o</tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 lines
 <br>to&nbsp;&nbsp; <tt>&lt;prodname>_SRCS += &lt;seq_program_name>.stt</tt>
 <br>or&nbsp; <tt>&lt;prodname>_SRCS += &lt;seq_program_name>.st</tt>
 <p>Add the lines
-<blockquote><tt>#&lt;name>_LIBS += seq</tt>
+<blockquote># &lt;name>_registerRecordDeviceDriver.cpp will be created
+from &lt;name>.dbd
+<br>&lt;name>_SRCS += example_registerRecordDeviceDriver.cpp
+<p>#The following adds support from base/src/vxWorks
+<br>&lt;name>_OBJS_vxWorks += $(EPICS_BASE_BIN)/vxComLibrary
+<p><tt>#&lt;name>_LIBS += seq</tt>
 <br><tt>#&lt;name>_LIBS += pv</tt>
 <br><tt>#seq_DIR&nbsp;&nbsp;&nbsp; = $(SNCSEQ_LIB)</tt>
 <br><tt>#pv_DIR&nbsp;&nbsp;&nbsp;&nbsp; = $(SNCSEQ_LIB)</tt>
@@ -154,7 +160,8 @@ where <tt>&lt;name></tt> is the&nbsp; name in the <tt>PROD_vxWorks</tt>
 definition, and uncomment the first four lines if you have sequence programs
 (.st or .stt files) in the current directory.
 <p>Place all macro definitions between the include lines.
-<p>Place any rules after the last include line.</blockquote>
+<p>Place any rules after the last include line.
+<p>Remove the file Makefile.Vx.</blockquote>
 
 <h3>
 Modify the Makefiles in &lt;top>/iocBoot directory.</h3>
@@ -173,11 +180,14 @@ Modify the Makefiles in &lt;top>/iocBoot/ioc* directories.</h3>
 <p>Change <tt>include ARCH = &lt;old arch specification e.g. mv167></tt>
 <br>to&nbsp;&nbsp;&nbsp;&nbsp; <tt>include ARCH = &lt;new arch specificatio
 e.g. vxWorks-68040></tt>
+<p><tt>Add the following macro definition</tt>
+<br><tt>TARGETS = cdCommands</tt>
+<p>Place all macro definitions between the include lines.
 <p>Change <tt>include $(TOP)/config/RULES.ioc</tt>
 <br>to&nbsp;&nbsp;&nbsp;&nbsp; <tt>include $(TOP)/configure/RULES.ioc</tt>
-<p>Add the following rule at the end of the Makefile.
-<blockquote><tt>buildInstall: cdCommands</tt></blockquote>
-</blockquote>
+<p><tt>If it exists, remove the line</tt>
+<br><tt>buildInstall: cdCommands</tt>
+<br>&nbsp;</blockquote>
 
 <h3>
 Modify st.cmd in &lt;top>/iocBoot/ioc* directories.</h3>
@@ -204,6 +214,14 @@ to
 <br><tt>dbLoadRecords("db/dbExample1.db","user=jba")</tt>
 <br><tt>dbLoadRecords("db/dbExample2.db")</tt></blockquote>
 </blockquote>
+
+<h3>
+recGbl calls</h3>
+
+<blockquote>You will need to add the line&nbsp; "#include "recGbl.h" to
+any source files that have recGbl* calls so that the file will compile
+without "implicit declaration of function" warnings and the library will
+load in the ioc without "undefined symbol: _recGblSetSevr" errors.</blockquote>
 
 <h3>
 Record support changes</h3>
@@ -238,12 +256,14 @@ Controls and Data Acquisition at APS.</blockquote>
 RecDynLink.o and devPtSoft changes</h3>
 
 <blockquote>recDynLink.o and devPtSoft.o are no longer in EPICS base and
-now exist as separate EPICS modules.You must now add the appropriate module
-full path definitions to your application config/RELEASE file, and change
-<tt>LIBOBJS</tt>
-location definition <tt>$(EPICS_BASE_BIN)</tt> to the module definition
-bin directory in your application src directory files.&nbsp; See "Hardware
-support changes" below for instructions.</blockquote>
+now exist as separate EPICS modules. If these are not used in your application,
+comment out references to them in base.dbd and baseLIBOBJS. If they are
+used, you must now add the appropriate module full path definitions to
+your application config/RELEASE file, and change
+<tt>LIBOBJS</tt> location
+definition <tt>$(EPICS_BASE_BIN)</tt> to the module definition bin directory
+in your application src directory files.&nbsp; See "Hardware support changes"
+below for instructions.</blockquote>
 
 <h3>
 Hardware support changes</h3>
@@ -251,7 +271,7 @@ Hardware support changes</h3>
 <blockquote>All hardware support (dev, drv and dbd files) except soft support
 has been unbundled from base R3.14. This support includes the files symb.dbd,
 drvHp1404a.o, drvEpvxiMsg.o, and drvEpvxi.o. If these are not used by your
-application, comment out references to them in base.dbd.</blockquote>
+application, comment out references to them in base.dbd and baseLIBOBJS.</blockquote>
 
 <blockquote>Hardware support now exists as separate EPICS modules. The
 hardware support for your site should be downloaded and built with base
@@ -284,10 +304,7 @@ dbLoadtemplate tool changes</h3>
 extension, msi, which should be downloaded and built with base R3.14 by
 your EPICS administrator. dbLoadTemplate is still supported on iocs.&nbsp;
 If, in your application, db files are created from template and substitution
-files you should&nbsp; add the definition
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <tt>EPICS_EXTENSIONS=&lt;full
-path name to epics extensions directory></tt>
-<p>to your application config/RELEASE file.</blockquote>
+files you should&nbsp; must have the msi executable in your path.</blockquote>
 
 <blockquote>
 <blockquote>&nbsp;</blockquote>

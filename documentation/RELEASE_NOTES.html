@@ -18,6 +18,16 @@
 <h2>Changes since 3.14.2</h2>
 </center>
 
+<h4>Close-On-Exec flag set for all sockets created in EPICS base</h4>
+
+<p>On POSIX systsems if a Channel Access application spawns off 3rd party
+software with an exec() call then all open file desriptors are inherited
+unless the close-on-exec flag is set for each file descriptor. A new wrapper
+function was created so that all sockets created in EPICS base will have the
+close-on-exec flag set on POSIX systems. The function which spawns the CA
+repeater with exec() used to close all open files except stdin/stdout/stderr.
+This step was no longer required and therefore was removed from the code.</p>
+
 <h4>Temporary Files on Windows</h4>
 
 <p>The tmpfile() function on windows requires that all temporary files be
@@ -28,7 +38,7 @@ epicsTempFile()" that creates a temporary file on WIN32 with a name epicsNNN
 using one of the following paths was installed into libCom. It searches
 starting with (1) below and stops when it finds a specified path that exists.
 On POSIX systems, and systems that default to POSIX behavior, epicsTempFile()
-simply calls tmpfile(). </p>
+simply calls tmpfile().</p>
 <ol>
   <li>where the TMP environment variable specifies</li>
   <li>in c:\tmp</li>

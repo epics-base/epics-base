@@ -1,5 +1,5 @@
 /* devXxCommonGpib.c */
-/* share/src/dev $Id$ */
+/* share/src/devOpt  $Id$ */
 /*
  *      Author: 		John Winans
  *      Origional Author:	Ned D. Arnold
@@ -2097,7 +2097,7 @@ unsigned short	val;
 
             /* if user specified a secondary convert routine, call it */
 
-	    if ((status != ERROR) && (parmBlock->wrConversion != NULL))
+	    if (parmBlock->wrConversion != NULL)
 		status = (*(parmBlock->wrConversion))(status, pdpvt);
 	}
         break;
@@ -2139,9 +2139,25 @@ unsigned short	val;
 
     case GPIBREADW:		/* for SRQs, write the command first */
     case GPIBEFASTIW:
+        status = (*(drvGpib.writeIb))(pdpvt->linkType, pdpvt->head.link, 
+                                bbnode, ibnode, pCmd->cmd, strlen(pCmd->cmd));
+	break;
+
     case GPIBCMD:		/* write the cmd to the GPIB listen adrs */
         status = (*(drvGpib.writeIb))(pdpvt->linkType, pdpvt->head.link, 
                                 bbnode, ibnode, pCmd->cmd, strlen(pCmd->cmd));
+
+	if ((status != ERROR) && parmBlock->respond2Writes)
+	{   /* device responds to write commands, read the response */
+
+	    status = (*(drvGpib.readIb))(pdpvt->linkType, pdpvt->head.link, 
+                                bbnode, ibnode, pdpvt->rsp, pCmd->rspLen);
+
+            /* if user specified a secondary convert routine, call it */
+
+	    if (parmBlock->wrConversion != NULL)
+		status = (*(parmBlock->wrConversion))(status, pdpvt);
+	}
 	break;
     case GPIBCNTL:		/* send cmd with atn line active */
         status = (*(drvGpib.writeIbCmd))(pdpvt->linkType, pdpvt->head.link,
@@ -2151,6 +2167,18 @@ unsigned short	val;
         if (pCmd->P3[val] != NULL)
 	    status = (*(drvGpib.writeIb))(pdpvt->linkType, pdpvt->head.link,
 			bbnode, ibnode, pCmd->P3[val], strlen(pCmd->P3[val]));
+
+	if ((status != ERROR) && parmBlock->respond2Writes)
+	{   /* device responds to write commands, read the response */
+
+	    status = (*(drvGpib.readIb))(pdpvt->linkType, pdpvt->head.link, 
+                                bbnode, ibnode, pdpvt->rsp, pCmd->rspLen);
+
+            /* if user specified a secondary convert routine, call it */
+
+	    if (parmBlock->wrConversion != NULL)
+		status = (*(parmBlock->wrConversion))(status, pdpvt);
+	}
 	break;
     }
     if(*parmBlock->debugFlag)
@@ -2208,6 +2236,10 @@ short             status;
  *
  * This function is used to parse enumerated response strings.
  *
+ * Only as many bytes as are found in the enums array elements are compared
+ * when searching for a match.  The \0 at the end of the enums array elements
+ * is not considered in the comparison.
+ *
  ******************************************************************************/
 int
 checkEnums(msg, enums)
@@ -2215,16 +2247,20 @@ char	*msg;
 char	**enums;
 {
     int		i;
+    int		j;
 
     i = 0;
     while (enums[i] != NULL)	/* check each enum until match found */
-    {
-	if (strcmp(enums[i], msg) == 0)
-	    break;
+    {				/* will stop on first match */
+
+	j = 0;			/* only check as much as found in enums[i] */
+        while (enums[i][j] && enums[i][j] == msg[j])
+	    j++;
+
+        if (enums[i][j] == '\0')
+	    return(i);		/* found, return index */
+
 	i++;
     }
-    if (enums[i] == NULL)
-	return(-1);		/* not found, return error */
-
-    return(i);			/* found, return index */
+    return(-1);		/* not found, return error */
 }

@@ -23,8 +23,10 @@ CONFIG ?= $(TOP)/configure
 
 -include $(CONFIG)/RELEASE
 -include $(CONFIG)/RELEASE.$(EPICS_HOST_ARCH)
+ifdef T_A
 -include $(CONFIG)/RELEASE.Common.$(T_A)
 -include $(CONFIG)/RELEASE.$(EPICS_HOST_ARCH).$(T_A)
+endif
 
 include $(CONFIG)/CONFIG_COMMON
 
@@ -68,21 +70,11 @@ endif
 
 #  User specific definitions
 #
--include $(HOME)/configure/CONFIG
--include $(HOME)/os/configure/CONFIG.Host.$(HOST_ARCH)
--include $(HOME)/os/configure/CONFIG.Host.$(EPICS_HOST_ARCH)
--include $(HOME)/os/configure/CONFIG.$(HOST_ARCH).Common
--include $(HOME)/os/configure/CONFIG.$(EPICS_HOST_ARCH).Common
+-include $(HOME)/configure/CONFIG_USER
+-include $(HOME)/configure/CONFIG_USER.$(EPICS_HOST_ARCH)
 ifdef T_A
--include $(HOME)/configure/CONFIG.$(OS_CLASS)
--include $(HOME)/configure/CONFIG.Target.$(T_A)
--include $(HOME)/configure/CONFIG.Common.$(T_A)
--include $(HOME)/configure/CONFIG.$(HOST_ARCH).$(T_A)
--include $(HOME)/configure/CONFIG.$(EPICS_HOST_ARCH).$(T_A)
--include $(HOME)/configure/os/CONFIG.Target.$(T_A)
--include $(HOME)/configure/os/CONFIG.Common.$(T_A)
--include $(HOME)/configure/os/CONFIG.$(HOST_ARCH).$(T_A)
--include $(HOME)/configure/os/CONFIG.$(EPICS_HOST_ARCH).$(T_A)
+-include $(HOME)/configure/CONFIG_USER.Common.$(T_A)
+-include $(HOME)/configure/CONFIG_USER.$(EPICS_HOST_ARCH).$(T_A)
 endif
 
 #  All options

@@ -28,8 +28,6 @@ netiiu::~netiiu ()
 
 void netiiu::show ( unsigned level ) const
 {
-    epicsAutoMutex autoMutex ( this->mutex );
-
     printf ( "network IO base class\n" );
     if ( level > 1 ) {
         tsDLIterConstBD < nciu > pChan = this->channelList.firstIter ();
@@ -41,26 +39,6 @@ void netiiu::show ( unsigned level ) const
     if ( level > 2u ) {
         printf ( "\tcac pointer %p\n", 
             static_cast <void *> ( this->pClientCtx ) );
-        this->mutex.show ( level - 2u );
-    }
-}
-
-// cac lock must also be applied when
-// calling this
-void netiiu::attachChannel ( nciu &chan )
-{
-    epicsAutoMutex autoMutex ( this->mutex );
-    this->channelList.add ( chan );
-}
-
-// cac lock must also be applied when
-// calling this
-void netiiu::detachChannel ( nciu &chan )
-{
-    epicsAutoMutex autoMutex ( this->mutex );
-    this->channelList.remove ( chan );
-    if ( this->channelList.count () == 0u ) {
-        this->lastChannelDetachNotify ();
     }
 }
 
@@ -68,56 +46,20 @@ void netiiu::detachChannel ( nciu &chan )
 // calling this
 void netiiu::disconnectAllChan ( netiiu & newiiu )
 {
-    tsDLList < nciu > list;
-
-    {
-        epicsAutoMutex autoMutex ( this->mutex );
-        tsDLIterBD < nciu > chan = this->channelList.firstIter ();
-        while ( chan.valid () ) {
-            tsDLIterBD < nciu > next = chan;
-            next++;
-            this->clearChannelRequest ( *chan );
-            this->channelList.remove ( *chan );
-            chan->disconnect ( newiiu );
-            list.add ( *chan );
-            chan = next;
-        }
+    tsDLIterBD < nciu > chan = this->channelList.firstIter ();
+    while ( chan.valid () ) {
+        tsDLIterBD < nciu > next = chan;
+        next++;
+        this->clearChannelRequest ( *chan );
+        this->channelList.remove ( *chan );
+        chan->disconnect ( newiiu );
+        newiiu.channelList.add ( *chan );
+        chan = next;
     }
-
-    {
-        epicsAutoMutex autoMutex ( newiiu.mutex );
-        newiiu.channelList.add ( list );
-    }
-}
-
-//
-// netiiu::destroyAllIO ()
-//
-// care is taken to not hold the lock while deleting the
-// IO so that subscription delete request (sent by the
-// IO's destructor) do not deadlock
-//
-bool netiiu::destroyAllIO ( nciu &chan )
-{
-    tsDLList < baseNMIU > eventQ;
-    {
-        epicsAutoMutex autoMutex ( this->mutex );
-        if ( chan.verifyIIU ( *this ) ) {
-            eventQ.add ( chan.tcpiiuPrivateListOfIO::eventq );
-        }
-        else {
-            return false;
-        }
-    }
-    while ( baseNMIU *pIO = eventQ.get () ) {
-        delete pIO;
-    }
-    return true;
 }
 
 void netiiu::connectTimeoutNotify ()
 {
-    epicsAutoMutex autoMutex ( this->mutex );
     tsDLIterBD < nciu > chan = this->channelList.firstIter ();
     while ( chan.valid () ) {
         chan->connectTimeoutNotify ();
@@ -127,7 +69,6 @@ void netiiu::connectTimeoutNotify ()
 
 void netiiu::resetChannelRetryCounts ()
 {
-    epicsAutoMutex autoMutex ( this->mutex );
     tsDLIterBD < nciu > chan = this->channelList.firstIter ();
     while ( chan.valid () ) {
         chan->resetRetryCount ();
@@ -138,8 +79,6 @@ void netiiu::resetChannelRetryCounts ()
 bool netiiu::searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThisChannel )
 {
     bool success;
-
-    epicsAutoMutex autoMutex ( this->mutex );
 
     if ( nciu *pChan = this->channelList.get () ) {
         success = pChan->searchMsg ( retrySeqNumber, retryNoForThisChannel );
@@ -186,12 +125,12 @@ int netiiu::writeRequest ( nciu &, unsigned, unsigned, const void * )
     return ECA_DISCONNCHID;
 }
 
-int netiiu::writeNotifyRequest ( nciu &, cacNotify &, unsigned, unsigned, const void * )
+int netiiu::writeNotifyRequest ( nciu &, netWriteNotifyIO &, unsigned, unsigned, const void * )
 {
     return ECA_DISCONNCHID;
 }
 
-int netiiu::readNotifyRequest ( nciu &, cacNotify &, unsigned, unsigned )
+int netiiu::readNotifyRequest ( nciu &, netReadNotifyIO &, unsigned, unsigned )
 {
     return ECA_DISCONNCHID;
 }
@@ -206,26 +145,12 @@ int netiiu::clearChannelRequest ( nciu & )
     return ECA_DISCONNCHID;
 }
 
-void netiiu::subscriptionRequest ( netSubscription &, bool )
+void netiiu::subscriptionRequest ( netSubscription & )
 {
 }
 
-void netiiu::subscriptionCancelRequest ( netSubscription &, bool )
+void netiiu::subscriptionCancelRequest ( netSubscription & )
 {
-}
-
-void netiiu::installSubscription ( netSubscription &subscr )
-{
-    bool connectedWhenInstalled;
-    {
-        epicsAutoMutex autoMutex ( this->mutex );
-        subscr.channel ().tcpiiuPrivateListOfIO::eventq.add ( subscr );
-        connectedWhenInstalled = subscr.channel ().connected ();
-    }
-    // iiu pointer briefly points at tcpiiu before the channel is connected
-    if ( connectedWhenInstalled ) {
-        this->subscriptionRequest ( subscr, true );
-    }
 }
 
 void netiiu::hostName ( char *pBuf, unsigned bufLength ) const
@@ -249,17 +174,24 @@ void netiiu::connectAllIO ( nciu & )
 {
 }
 
-bool netiiu::uninstallIO ( baseNMIU &io )
-{
-    epicsAutoMutex autoMutex ( this->mutex );
-    if ( io.channel ().verifyIIU ( *this ) ) {
-        io.channel ().tcpiiuPrivateListOfIO::eventq.remove ( io );
-        return true;
-    }
-    return false;
-}
-
 double netiiu::beaconPeriod () const
 {
     return ( - DBL_MAX );
+}
+
+void netiiu::flushRequest ()
+{
+}
+
+bool netiiu::flushBlockThreshold () const
+{
+    return false;
+}
+
+void netiiu::flushRequestIfAboveEarlyThreshold ()
+{
+}
+
+void netiiu::blockUntilSendBacklogIsReasonable ( epicsMutex & )
+{
 }

@@ -87,7 +87,7 @@ int CASG::block ( double timeout )
 
     cur_time = epicsTime::getCurrent ();
 
-    this->client.flush ();
+    this->client.flushRequest ();
 
     beg_time = cur_time;
     delay = 0.0;

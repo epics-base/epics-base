@@ -49,10 +49,7 @@ inline void nciu::resetRetryCount ()
 
 inline void nciu::accessRightsStateChange ( const caar &arIn )
 {
-    {
-        epicsAutoMutex locker ( this->cacCtx.nciuPrivate::mutex );
-        this->accessRightState = arIn;
-    }
+    this->accessRightState = arIn;
     this->notify ().accessRightsNotify ( *this, arIn );
 }
 
@@ -64,23 +61,6 @@ inline ca_uint32_t nciu::getSID () const
 inline ca_uint32_t nciu::getCID () const
 {
     return this->id;
-}
-
-
-//
-// this routine is used to verify that the channel's
-// iiu pointer and connection state has not changed 
-// before the iiu's mutex was applied
-//
-
-inline bool nciu::verifyConnected ( netiiu &iiuIn )
-{
-    return ( this->piiu == &iiuIn ) && this->f_connected;
-}
-
-inline bool nciu::verifyIIU ( netiiu &iiuIn )
-{
-    return ( this->piiu == &iiuIn );
 }
 
 inline unsigned nciu::getRetrySeqNo () const
@@ -97,7 +77,6 @@ inline void nciu::connect ()
 inline void nciu::searchReplySetUp ( netiiu &iiu, unsigned sidIn, 
     unsigned typeIn, unsigned long countIn )
 {
-    epicsAutoMutex locker ( this->cacCtx.nciuPrivate::mutex );
     this->piiu = &iiu;
     this->typeCode = typeIn;      
     this->count = countIn;
@@ -120,5 +99,18 @@ inline netiiu * nciu::getPIIU ()
 {
     return this->piiu;
 }
+
+inline void nciu::uninstallIO ( baseNMIU &io )
+{
+    this->cacCtx.uninstallIO ( io );
+}
+
+inline void nciu::connectTimeoutNotify ()
+{
+    this->f_connectTimeOutSeen = true;
+}
+
+
+
 
 

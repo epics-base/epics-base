@@ -179,7 +179,12 @@ inline unsigned comQueSend::occupiedBytes () const
     return this->nBytesPending;
 }
 
-inline bool comQueSend::flushThreshold ( unsigned nBytesThisMsg ) const
+inline bool comQueSend::flushBlockThreshold ( unsigned nBytesThisMsg ) const
+{
+    return ( this->nBytesPending + nBytesThisMsg > 16 * comBuf::capacityBytes () );
+}
+
+inline bool comQueSend::flushEarlyThreshold ( unsigned nBytesThisMsg ) const
 {
     return ( this->nBytesPending + nBytesThisMsg > 4 * comBuf::capacityBytes () );
 }

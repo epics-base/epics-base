@@ -23,7 +23,7 @@ inline bool tcpiiu::fullyConstructed () const
 
 inline void tcpiiu::hostName ( char *pBuf, unsigned bufLength ) const
 {   
-    epicsAutoMutex locker ( this->mutex );
+    epicsAutoMutex locker ( this->pCAC()->mutex() );
     if ( this->pHostNameCache ) {
         this->pHostNameCache->hostName ( pBuf, bufLength );
     }
@@ -40,7 +40,7 @@ inline const char * tcpiiu::pHostName () const
     return nameBuf; // ouch !!
 }
 
-inline void tcpiiu::flush ()
+inline void tcpiiu::flushRequest ()
 {
     epicsEventSignal ( this->sendThreadFlushSignal );
 }

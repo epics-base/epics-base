@@ -25,18 +25,11 @@ baseNMIU::~baseNMIU ()
 
 void baseNMIU::cancel ()
 {
-    unsigned i = 0u;
-    while ( ! this->chan.getPIIU ()->uninstallIO ( *this ) ) {
-        if ( i++ > 1000u ) {
-            ca_printf ( "CAC: unable to destroy IO\n" );
-            break;
-        }
-    }
-    this->ioCancelRequest ();
+    this->chan.uninstallIO ( *this );
     delete this;
 }
 
-class netSubscription * baseNMIU::isSubscription () 
+class netSubscription * baseNMIU::isSubscription ()
 {
     return 0;
 }
@@ -50,10 +43,6 @@ void baseNMIU::show ( unsigned /* level */ ) const
 cacChannelIO & baseNMIU::channelIO () const
 {
     return this->chan;
-}
-
-void baseNMIU::ioCancelRequest ()
-{
 }
 
 

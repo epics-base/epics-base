@@ -500,7 +500,7 @@ extern "C" int epicsShareAPI ca_flush_io ()
         return caStatus;
     }
 
-    pcac->flush ();
+    pcac->flushRequest ();
 
     return ECA_NORMAL;
 }

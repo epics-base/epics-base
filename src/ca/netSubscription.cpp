@@ -34,11 +34,6 @@ class netSubscription * netSubscription::isSubscription ()
     return this;
 }
 
-void netSubscription::ioCancelRequest ()
-{
-    this->chan.getPIIU ()->subscriptionCancelRequest ( *this, true );
-}
-
 void netSubscription::show ( unsigned level ) const
 {
     printf ( "event subscription IO at %p, type %s, element count %lu, mask %u\n", 

@@ -71,15 +71,7 @@ nciu::~nciu ()
     }
 
     // care is taken so that a lock is not applied during this phase
-    unsigned i = 0u;
-    while ( ! this->piiu->destroyAllIO ( *this ) ) {
-        if ( i++ > 1000u ) {
-            this->cacCtx.printf ( 
-                "CAC: unable to destroy IO when channel destroyed?\n" );
-            break;
-        }
-    }
-    this->piiu->clearChannelRequest ( *this );
+    this->cacCtx.destroyAllIO ( *this );
     this->cacCtx.uninstallChannel ( *this );
 
     if ( ! this->f_connectTimeOutSeen && ! this->f_previousConn ) {
@@ -89,6 +81,155 @@ nciu::~nciu ()
     }
 
     delete [] this->pNameStr;
+}
+
+void nciu::connect ( unsigned nativeType, 
+	unsigned long nativeCount, unsigned sidIn )
+{
+    bool v41Ok;
+
+    if ( ! this->f_claimSent ) {
+        ca_printf (
+            "CAC: Ignored conn resp to chan lacking virtual circuit CID=%u SID=%u?\n",
+            this->getId (), sidIn );
+        return;
+    }
+
+    if ( this->f_connected ) {
+        ca_printf (
+            "CAC: Ignored conn resp to conn chan CID=%u SID=%u?\n",
+            this->getId (), sidIn );
+        return;
+    }
+
+
+    if ( ! this->f_connectTimeOutSeen && ! this->f_previousConn ) {
+        if ( this->f_firstConnectDecrementsOutstandingIO ) {
+            this->cacCtx.decrementOutstandingIO ();
+        }
+    }
+
+    if ( this->piiu ) {
+        v41Ok = this->piiu->ca_v41_ok ();
+    }
+    else {
+        v41Ok = false;
+    }    
+    this->typeCode = nativeType;
+    this->count = nativeCount;
+    this->sid = sidIn;
+    this->f_connected = true;
+    this->f_previousConn = true;
+
+    /*
+     * if less than v4.1 then the server will never
+     * send access rights and we know that there
+     * will always be access 
+     */
+    if ( ! v41Ok ) {
+        this->accessRightState.read_access = true;
+        this->accessRightState.write_access = true;
+    }
+
+    // resubscribe for monitors from this channel 
+    this->cacCtx.connectAllIO ( *this );
+
+    this->notify().connectNotify ( *this );
+
+    /*
+     * if less than v4.1 then the server will never
+     * send access rights and we know that there
+     * will always be access and also need to call 
+     * their call back here
+     */
+    if ( ! v41Ok ) {
+        this->notify ().accessRightsNotify ( *this, this->accessRightState );
+    }
+}
+
+void nciu::disconnect ( netiiu &newiiu )
+{
+    bool wasConnected;
+
+    this->piiu->disconnectAllIO ( *this );
+
+    this->piiu = &newiiu;
+    this->retry = 0u;
+    this->typeCode = USHRT_MAX;
+    this->count = 0u;
+    this->sid = UINT_MAX;
+    this->accessRightState.read_access = false;
+    this->accessRightState.write_access = false;
+    this->f_claimSent = false;
+
+    if ( this->f_connected ) {
+        wasConnected = true;
+    }
+    else {
+        wasConnected = false;
+    }
+    this->f_connected = false;
+
+    if ( wasConnected ) {
+        /*
+         * look for events that have an event cancel in progress
+         */
+        this->notify ().disconnectNotify ( *this );
+        this->notify ().accessRightsNotify ( *this, this->accessRightState );
+    }
+
+    this->resetRetryCount ();
+}
+
+/*
+ * nciu::searchMsg ()
+ */
+bool nciu::searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThisChannel )
+{
+    caHdr msg;
+    bool success;
+
+    msg.m_cmmd = htons ( CA_PROTO_SEARCH );
+    msg.m_available = this->getId ();
+    msg.m_dataType = htons ( DONTREPLY );
+    msg.m_count = htons ( CA_MINOR_VERSION );
+    msg.m_cid = this->getId ();
+
+    success = this->piiu->pushDatagramMsg ( msg, 
+            this->pNameStr, this->nameLength );
+    if ( success ) {
+        //
+        // increment the number of times we have tried 
+        // to find this channel
+        //
+        if ( this->retry < MAXCONNTRIES ) {
+            this->retry++;
+        }
+        this->retrySeqNo = retrySeqNumber;
+        retryNoForThisChannel = this->retry;
+     }
+
+    return success;
+}
+
+
+const char *nciu::pName () const
+{
+    return this->pNameStr;
+}
+
+unsigned nciu::nameLen () const
+{
+    return this->nameLength;
+}
+
+int nciu::createChannelRequest ()
+{
+    int status = this->piiu->createChannelRequest ( *this );
+    if ( status == ECA_NORMAL ) {
+        this->f_claimSent = true;
+    }
+    return status;
 }
 
 int nciu::read ( unsigned type, unsigned long countIn, cacNotify &notify )
@@ -112,13 +253,13 @@ int nciu::read ( unsigned type, unsigned long countIn, cacNotify &notify )
         countIn = this->count;
     }
     
-    return this->piiu->readNotifyRequest ( *this, notify, type, countIn );
+    return this->cacCtx.readNotifyRequest ( *this, notify, type, countIn );
 }
 
 /*
  * check_a_dbr_string()
  */
-LOCAL int check_a_dbr_string ( const char *pStr, const unsigned count )
+static int check_a_dbr_string ( const char *pStr, const unsigned count )
 {
     for ( unsigned i = 0; i < count; i++ ) {
         unsigned int strsize = 0;
@@ -155,7 +296,7 @@ int nciu::write ( unsigned type, unsigned long countIn, const void *pValue )
         }
     }
 
-    return this->piiu->writeRequest ( *this, type, countIn, pValue );
+    return this->cacCtx.writeRequest ( *this, type, countIn, pValue );
 }
 
 int nciu::write ( unsigned type, unsigned long countIn, const void *pValue, cacNotify &notify )
@@ -180,264 +321,7 @@ int nciu::write ( unsigned type, unsigned long countIn, const void *pValue, cacN
         }
     }
 
-    return this->piiu->writeNotifyRequest ( *this, notify, type, countIn, pValue );
-}
-
-void nciu::initiateConnect ()
-{   
-    this->notifyStateChangeFirstConnectInCountOfOutstandingIO ();
-    this->cacCtx.installNetworkChannel ( *this, this->piiu );
-}
-
-void nciu::connect ( unsigned nativeType, 
-	unsigned long nativeCount, unsigned sidIn )
-{
-    bool v41Ok;
-    {
-        epicsAutoMutex locker ( this->cacCtx.nciuPrivate::mutex );
-
-        if ( ! this->f_claimSent ) {
-            ca_printf (
-                "CAC: Ignored conn resp to chan lacking virtual circuit CID=%u SID=%u?\n",
-                this->getId (), sidIn );
-            return;
-        }
-
-        if ( this->f_connected ) {
-            ca_printf (
-                "CAC: Ignored conn resp to conn chan CID=%u SID=%u?\n",
-                this->getId (), sidIn );
-            return;
-        }
-
-
-        if ( ! this->f_connectTimeOutSeen && ! this->f_previousConn ) {
-            if ( this->f_firstConnectDecrementsOutstandingIO ) {
-                this->cacCtx.decrementOutstandingIO ();
-            }
-        }
-
-        if ( this->piiu ) {
-            v41Ok = this->piiu->ca_v41_ok ();
-        }
-        else {
-            v41Ok = false;
-        }    
-        this->typeCode = nativeType;
-        this->count = nativeCount;
-        this->sid = sidIn;
-        this->f_connected = true;
-        this->f_previousConn = true;
-
-        /*
-         * if less than v4.1 then the server will never
-         * send access rights and we know that there
-         * will always be access 
-         */
-        if ( ! v41Ok ) {
-            this->accessRightState.read_access = true;
-            this->accessRightState.write_access = true;
-        }
-    }
-
-    // resubscribe for monitors from this channel 
-    this->piiu->connectAllIO ( *this );
-
-    this->notify ().connectNotify ( *this );
-
-    /*
-     * if less than v4.1 then the server will never
-     * send access rights and we know that there
-     * will always be access and also need to call 
-     * their call back here
-     */
-    if ( ! v41Ok ) {
-        this->notify ().accessRightsNotify ( *this, this->accessRightState );
-    }
-}
-
-void nciu::connectTimeoutNotify ()
-{
-    if ( ! this->f_connectTimeOutSeen ) {
-        epicsAutoMutex locker ( this->cacCtx.nciuPrivate::mutex );
-        this->f_connectTimeOutSeen = true;
-    }
-}
-
-void nciu::disconnect ( netiiu &newiiu )
-{
-    bool wasConnected;
-
-    this->piiu->disconnectAllIO ( *this );
-
-    {
-        epicsAutoMutex locker ( this->cacCtx.nciuPrivate::mutex );
-
-        this->piiu = &newiiu;
-        this->retry = 0u;
-        this->typeCode = USHRT_MAX;
-        this->count = 0u;
-        this->sid = UINT_MAX;
-        this->accessRightState.read_access = false;
-        this->accessRightState.write_access = false;
-        this->f_claimSent = false;
-
-        if ( this->f_connected ) {
-            wasConnected = true;
-        }
-        else {
-            wasConnected = false;
-        }
-        this->f_connected = false;
-    }
-
-    if ( wasConnected ) {
-        /*
-         * look for events that have an event cancel in progress
-         */
-        this->notify ().disconnectNotify ( *this );
-        this->notify ().accessRightsNotify ( *this, this->accessRightState );
-    }
-
-    this->resetRetryCount ();
-}
-
-/*
- * nciu::searchMsg ()
- */
-bool nciu::searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThisChannel )
-{
-    caHdr msg;
-    bool success;
-
-    msg.m_cmmd = htons ( CA_PROTO_SEARCH );
-    msg.m_available = this->getId ();
-    msg.m_dataType = htons ( DONTREPLY );
-    msg.m_count = htons ( CA_MINOR_VERSION );
-    msg.m_cid = this->getId ();
-
-    success = this->piiu->pushDatagramMsg ( msg, 
-            this->pNameStr, this->nameLength );
-    if ( success ) {
-        //
-        // increment the number of times we have tried 
-        // to find this channel
-        //
-        epicsAutoMutex locker ( this->cacCtx.nciuPrivate::mutex );
-        if ( this->retry < MAXCONNTRIES ) {
-            this->retry++;
-        }
-        this->retrySeqNo = retrySeqNumber;
-        retryNoForThisChannel = this->retry;
-     }
-
-    return success;
-}
-
-void nciu::hostName ( char *pBuf, unsigned bufLength ) const
-{   
-    this->piiu->hostName ( pBuf, bufLength );
-}
-
-// deprecated - please do not use, this is _not_ thread safe
-const char * nciu::pHostName () const
-{
-    return this->piiu->pHostName (); // ouch !
-}
-
-bool nciu::ca_v42_ok () const
-{
-    return this->piiu->ca_v42_ok ();
-}
-
-short nciu::nativeType () const
-{
-    short type;
-
-    epicsAutoMutex locker ( this->cacCtx.nciuPrivate::mutex );
-    if ( this->f_connected ) {
-        if ( this->typeCode < SHRT_MAX ) {
-            type = static_cast <short> ( this->typeCode );
-        }
-        else {
-            type = TYPENOTCONN;
-        }
-    }
-    else {
-        type = TYPENOTCONN;
-    }
-
-    return type;
-}
-
-unsigned long nciu::nativeElementCount () const
-{
-    unsigned long countOut;
-    epicsAutoMutex locker ( this->cacCtx.nciuPrivate::mutex );
-
-    if ( this->f_connected ) {
-        countOut = this->count;
-    }
-    else {
-        countOut = 0ul;
-    }
-
-    return countOut;
-}
-
-channel_state nciu::state () const
-{
-    epicsAutoMutex locker ( this->cacCtx.nciuPrivate::mutex );
-    channel_state stateOut;
-
-    if ( this->f_connected ) {
-        stateOut = cs_conn;
-    }
-    else if ( this->f_previousConn ) {
-        stateOut = cs_prev_conn;
-    }
-    else {
-        stateOut = cs_never_conn;
-    }
-
-    return stateOut;
-}
-
-caar nciu::accessRights () const
-{
-    epicsAutoMutex locker ( this->cacCtx.nciuPrivate::mutex );
-    caar tmp = this->accessRightState;
-    return tmp;
-}
-
-const char *nciu::pName () const
-{
-    return this->pNameStr;
-}
-
-unsigned nciu::nameLen () const
-{
-    return this->nameLength;
-}
-
-unsigned nciu::searchAttempts () const
-{
-    return this->retry;
-}
-
-double nciu::beaconPeriod () const
-{
-    return this->piiu->beaconPeriod ();
-}
-
-int nciu::createChannelRequest ()
-{
-    int status = this->piiu->createChannelRequest ( *this );
-    if ( status == ECA_NORMAL ) {
-        epicsAutoMutex locker ( this->cacCtx.nciuPrivate::mutex );
-        this->f_claimSent = true;
-    }
-    return status;
+    return this->cacCtx.writeNotifyRequest ( *this, notify, type, countIn, pValue );
 }
 
 int nciu::subscribe ( unsigned type, unsigned long nElem, 
@@ -455,7 +339,7 @@ int nciu::subscribe ( unsigned type, unsigned long nElem,
     netSubscription *pSubcr = new netSubscription ( *this, 
         type, nElem, mask, notify );
     if ( pSubcr ) {
-        this->piiu->installSubscription ( *pSubcr );
+        this->cacCtx.installSubscription ( *pSubcr );
         pNotifyIO = pSubcr;
         return ECA_NORMAL;;
     }
@@ -464,9 +348,100 @@ int nciu::subscribe ( unsigned type, unsigned long nElem,
     }
 }
 
+void nciu::initiateConnect ()
+{   
+    this->notifyStateChangeFirstConnectInCountOfOutstandingIO ();
+    this->cacCtx.installNetworkChannel ( *this, this->piiu );
+}
+
+void nciu::hostName ( char *pBuf, unsigned bufLength ) const
+{   
+    epicsAutoMutex locker ( this->cacCtx.mutex() );
+    this->piiu->hostName ( pBuf, bufLength );
+}
+
+// deprecated - please do not use, this is _not_ thread safe
+const char * nciu::pHostName () const
+{
+    epicsAutoMutex locker ( this->cacCtx.mutex() );
+    return this->piiu->pHostName (); // ouch !
+}
+
+bool nciu::ca_v42_ok () const
+{
+    epicsAutoMutex locker ( this->cacCtx.mutex() );
+    return this->piiu->ca_v42_ok ();
+}
+
+short nciu::nativeType () const
+{
+    epicsAutoMutex locker ( this->cacCtx.mutex() );
+    short type;
+    if ( this->f_connected ) {
+        if ( this->typeCode < SHRT_MAX ) {
+            type = static_cast <short> ( this->typeCode );
+        }
+        else {
+            type = TYPENOTCONN;
+        }
+    }
+    else {
+        type = TYPENOTCONN;
+    }
+    return type;
+}
+
+unsigned long nciu::nativeElementCount () const
+{
+    epicsAutoMutex locker ( this->cacCtx.mutex() );
+    unsigned long countOut;
+    if ( this->f_connected ) {
+        countOut = this->count;
+    }
+    else {
+        countOut = 0ul;
+    }
+    return countOut;
+}
+
+channel_state nciu::state () const
+{
+    epicsAutoMutex locker ( this->cacCtx.mutex() );
+    channel_state stateOut;
+    if ( this->f_connected ) {
+        stateOut = cs_conn;
+    }
+    else if ( this->f_previousConn ) {
+        stateOut = cs_prev_conn;
+    }
+    else {
+        stateOut = cs_never_conn;
+    }
+    return stateOut;
+}
+
+caar nciu::accessRights () const
+{
+    epicsAutoMutex locker ( this->cacCtx.mutex() );
+    caar tmp = this->accessRightState;
+    return tmp;
+}
+
+unsigned nciu::searchAttempts () const
+{
+    epicsAutoMutex locker ( this->cacCtx.mutex() );
+    return this->retry;
+}
+
+double nciu::beaconPeriod () const
+{
+    epicsAutoMutex locker ( this->cacCtx.mutex() );
+    return this->piiu->beaconPeriod ();
+}
+
 void nciu::notifyStateChangeFirstConnectInCountOfOutstandingIO ()
 {
-    epicsAutoMutex locker ( this->cacCtx.nciuPrivate::mutex );
+    epicsAutoMutex locker ( this->cacCtx.mutex() );
     // test is performed via a callback so that locking is correct
     if ( ! this->f_connectTimeOutSeen && ! this->f_previousConn ) {
         if ( this->notify ().includeFirstConnectInCountOfOutstandingIO () ) { 
@@ -486,6 +461,7 @@ void nciu::notifyStateChangeFirstConnectInCountOfOutstandingIO ()
 
 void nciu::show ( unsigned level ) const
 {
+    epicsAutoMutex locker ( this->cacCtx.mutex() );
     if ( this->f_connected ) {
         char hostNameTmp [256];
         this->hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
@@ -518,5 +494,6 @@ void nciu::show ( unsigned level ) const
         printf ( "\tfully cunstructed boolean=%u\n", this->f_fullyConstructed );
     }
 }
+
 
 

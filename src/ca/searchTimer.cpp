@@ -18,8 +18,9 @@
 //
 // searchTimer::searchTimer ()
 //
-searchTimer::searchTimer ( udpiiu &iiuIn, epicsTimerQueue &queueIn ) :
+searchTimer::searchTimer ( udpiiu &iiuIn, epicsTimerQueue &queueIn, epicsMutex &mutexIn ) :
     timer ( queueIn.createTimer ( *this ) ),
+    mutex ( mutexIn ),
     iiu ( iiuIn ),
     framesPerTry ( INITIALTRIESPERFRAME ),
     framesPerTryCongestThresh ( UINT_MAX ),
@@ -133,6 +134,7 @@ void searchTimer::notifySearchResponse ( unsigned short retrySeqNoIn )
 //
 epicsTimerNotify::expireStatus searchTimer::expire ()
 {
+    epicsAutoMutex locker ( this->mutex );
     unsigned nFrameSent = 0u;
     unsigned nChanSent = 0u;
 
@@ -142,165 +144,161 @@ epicsTimerNotify::expireStatus searchTimer::expire ()
     if ( this->iiu.channelCount () == 0 ) {
         return noRestart;
     }   
-    
-    {
-        epicsAutoMutex locker ( this->mutex );
 
+    /*
+     * increment the retry sequence number
+     */
+    this->retrySeqNo++; /* allowed to roll over */
+
+    /*
+     * dynamically adjust the number of UDP frames per 
+     * try depending how many search requests are not 
+     * replied to
+     *
+     * This determines how many search request can be 
+     * sent together (at the same instant in time).
+     *
+     * The variable this->framesPerTry
+     * determines the number of UDP frames to be sent
+     * each time that expire() is called.
+     * If this value is too high we will waste some
+     * network bandwidth. If it is too low we will
+     * use very little of the incoming UDP message
+     * buffer associated with the server's port and
+     * will therefore take longer to connect. We 
+     * initialize this->framesPerTry
+     * to a prime number so that it is less likely that the
+     * same channel is in the last UDP frame
+     * sent every time that this is called (and
+     * potentially discarded by a CA server with
+     * a small UDP input queue). 
+     */
+    /*
+     * increase frames per try only if we see better than
+     * a 93.75% success rate for one pass through the list
+     */
+    if (this->searchResponsesWithinThisPass >
+        (this->searchTriesWithinThisPass-(this->searchTriesWithinThisPass/16u)) ) {
         /*
-         * increment the retry sequence number
+         * increase UDP frames per try if we have a good score
          */
-        this->retrySeqNo++; /* allowed to roll over */
-    
-        /*
-         * dynamically adjust the number of UDP frames per 
-         * try depending how many search requests are not 
-         * replied to
-         *
-         * This determines how many search request can be 
-         * sent together (at the same instant in time).
-         *
-         * The variable this->framesPerTry
-         * determines the number of UDP frames to be sent
-         * each time that expire() is called.
-         * If this value is too high we will waste some
-         * network bandwidth. If it is too low we will
-         * use very little of the incoming UDP message
-         * buffer associated with the server's port and
-         * will therefore take longer to connect. We 
-         * initialize this->framesPerTry
-         * to a prime number so that it is less likely that the
-         * same channel is in the last UDP frame
-         * sent every time that this is called (and
-         * potentially discarded by a CA server with
-         * a small UDP input queue). 
-         */
-        /*
-         * increase frames per try only if we see better than
-         * a 93.75% success rate for one pass through the list
-         */
-        if (this->searchResponsesWithinThisPass >
-            (this->searchTriesWithinThisPass-(this->searchTriesWithinThisPass/16u)) ) {
+        if ( this->framesPerTry < MAXTRIESPERFRAME ) {
             /*
-             * increase UDP frames per try if we have a good score
+             * a congestion avoidance threshold similar to TCP is now used
              */
-            if ( this->framesPerTry < MAXTRIESPERFRAME ) {
-                /*
-                 * a congestion avoidance threshold similar to TCP is now used
-                 */
-                if ( this->framesPerTry < this->framesPerTryCongestThresh ) {
-                    this->framesPerTry += this->framesPerTry;
-                }
-                else {
-                    this->framesPerTry += (this->framesPerTry/8) + 1;
-                }
-                debugPrintf ( ("Increasing frame count to %u t=%u r=%u\n", 
-                    this->framesPerTry, this->searchTriesWithinThisPass, this->searchResponsesWithinThisPass) );
+            if ( this->framesPerTry < this->framesPerTryCongestThresh ) {
+                this->framesPerTry += this->framesPerTry;
             }
+            else {
+                this->framesPerTry += (this->framesPerTry/8) + 1;
+            }
+            debugPrintf ( ("Increasing frame count to %u t=%u r=%u\n", 
+                this->framesPerTry, this->searchTriesWithinThisPass, this->searchResponsesWithinThisPass) );
         }
+    }
+    /*
+     * if we detect congestion because we have less than a 87.5% success 
+     * rate then gradually reduce the frames per try
+     */
+    else if ( this->searchResponsesWithinThisPass < 
+        (this->searchTriesWithinThisPass-(this->searchTriesWithinThisPass/8u)) ) {
+            if (this->framesPerTry>1) {
+                this->framesPerTry--;
+            }
+            this->framesPerTryCongestThresh = this->framesPerTry/2 + 1;
+            debugPrintf ( ("Congestion detected - set frames per try to %u t=%u r=%u\n", 
+                this->framesPerTry, this->searchTriesWithinThisPass, 
+                this->searchResponsesWithinThisPass) );
+    }
+
+    while ( 1 ) {
+            
         /*
-         * if we detect congestion because we have less than a 87.5% success 
-         * rate then gradually reduce the frames per try
+         * clear counter when we reach the end of the list
+         *
+         * if we are making some progress then
+         * dont increase the delay between search
+         * requests
          */
-        else if ( this->searchResponsesWithinThisPass < 
-            (this->searchTriesWithinThisPass-(this->searchTriesWithinThisPass/8u)) ) {
-                if (this->framesPerTry>1) {
-                    this->framesPerTry--;
-                }
-                this->framesPerTryCongestThresh = this->framesPerTry/2 + 1;
-                debugPrintf ( ("Congestion detected - set frames per try to %u t=%u r=%u\n", 
-                    this->framesPerTry, this->searchTriesWithinThisPass, 
-                    this->searchResponsesWithinThisPass) );
-        }
-    
-        while ( 1 ) {
-                
-            /*
-             * clear counter when we reach the end of the list
-             *
-             * if we are making some progress then
-             * dont increase the delay between search
-             * requests
-             */
-            if ( this->searchTriesWithinThisPass >= this->iiu.channelCount () ) {
-                if ( this->searchResponsesWithinThisPass == 0u ) {
-                    debugPrintf ( ("increasing search try interval\n") );
-                    this->setRetryInterval ( this->minRetry + 1u );
-                }
-            
-                this->minRetry = UINT_MAX;
-            
-                /*
-                 * increment the retry sequence number
-                 * (this prevents the time of the next search
-                 * try from being set to the current time if
-                 * we are handling a response from an old
-                 * search message)
-                 */
-                this->retrySeqNo++; /* allowed to roll over */
-            
-                /*
-                 * so that old search tries will not update the counters
-                 */
-                this->retrySeqAtPassBegin = this->retrySeqNo;
-
-                this->searchTriesWithinThisPass = 0;
-                this->searchResponsesWithinThisPass = 0;
-
-                debugPrintf ( ("saw end of list\n") );
+        if ( this->searchTriesWithinThisPass >= this->iiu.channelCount () ) {
+            if ( this->searchResponsesWithinThisPass == 0u ) {
+                debugPrintf ( ("increasing search try interval\n") );
+                this->setRetryInterval ( this->minRetry + 1u );
             }
         
-            unsigned retryNoForThisChannel;
-            if ( ! this->iiu.searchMsg ( this->retrySeqNo, retryNoForThisChannel ) ) {
-                nFrameSent++;
-            
-                if ( nFrameSent >= this->framesPerTry ) {
-                    break;
-                }
-
-                this->iiu.flush ();
-           
-                if ( ! this->iiu.searchMsg ( this->retrySeqNo, retryNoForThisChannel ) ) {
-                    break;
-                }
-            }
-
-            if ( this->minRetry > retryNoForThisChannel ) {
-                this->minRetry = retryNoForThisChannel;
-            }
-
-            if ( this->searchTriesWithinThisPass < UINT_MAX ) {
-                this->searchTriesWithinThisPass++;
-            }
-            if ( nChanSent < UINT_MAX ) {
-                nChanSent++;
-            }
-
+            this->minRetry = UINT_MAX;
+        
             /*
-             * dont send any of the channels twice within one try
+             * increment the retry sequence number
+             * (this prevents the time of the next search
+             * try from being set to the current time if
+             * we are handling a response from an old
+             * search message)
              */
-            if ( nChanSent >= this->iiu.channelCount () ) {
-                /*
-                 * add one to nFrameSent because there may be 
-                 * one more partial frame to be sent
-                 */
-                nFrameSent++;
-            
-                /* 
-                 * cap this->framesPerTry to
-                 * the number of frames required for all of 
-                 * the unresolved channels
-                 */
-                if ( this->framesPerTry > nFrameSent ) {
-                    this->framesPerTry = nFrameSent;
-                }
-            
+            this->retrySeqNo++; /* allowed to roll over */
+        
+            /*
+             * so that old search tries will not update the counters
+             */
+            this->retrySeqAtPassBegin = this->retrySeqNo;
+
+            this->searchTriesWithinThisPass = 0;
+            this->searchResponsesWithinThisPass = 0;
+
+            debugPrintf ( ("saw end of list\n") );
+        }
+    
+        unsigned retryNoForThisChannel;
+        if ( ! this->iiu.searchMsg ( this->retrySeqNo, retryNoForThisChannel ) ) {
+            nFrameSent++;
+        
+            if ( nFrameSent >= this->framesPerTry ) {
                 break;
             }
+
+            this->iiu.datagramFlush ();
+       
+            if ( ! this->iiu.searchMsg ( this->retrySeqNo, retryNoForThisChannel ) ) {
+                break;
+            }
+        }
+
+        if ( this->minRetry > retryNoForThisChannel ) {
+            this->minRetry = retryNoForThisChannel;
+        }
+
+        if ( this->searchTriesWithinThisPass < UINT_MAX ) {
+            this->searchTriesWithinThisPass++;
+        }
+        if ( nChanSent < UINT_MAX ) {
+            nChanSent++;
+        }
+
+        /*
+         * dont send any of the channels twice within one try
+         */
+        if ( nChanSent >= this->iiu.channelCount () ) {
+            /*
+             * add one to nFrameSent because there may be 
+             * one more partial frame to be sent
+             */
+            nFrameSent++;
+        
+            /* 
+             * cap this->framesPerTry to
+             * the number of frames required for all of 
+             * the unresolved channels
+             */
+            if ( this->framesPerTry > nFrameSent ) {
+                this->framesPerTry = nFrameSent;
+            }
+        
+            break;
         }
     }
 
     // flush out the search request buffer
-    this->iiu.flush ();
+    this->iiu.datagramFlush ();
 
     debugPrintf ( ("sent %u delay sec=%f\n", nFrameSent, this->period) );
 

@@ -46,30 +46,6 @@ inline unsigned cac::getInitializingThreadsPriority () const
     return this->initializingThreadsPriority;
 }
 
-// the process thread is not permitted to flush as this
-// can result in a push / pull deadlock on the TCP pipe.
-// Instead, the process thread scheduals the flush with the 
-// send thread which runs at a higher priority than the 
-// send thread. The same applies to the UDP thread for
-// locking hierarchy reasons.
-//
-// this is only called when we detect send queue quota
-// exceeded
-inline bool cac::flushPermit () const
-{
-    if ( this->pRecvProcThread ) {
-        if ( this->pRecvProcThread->isCurrentThread () ) {
-            return false;
-        }
-    }
-    if ( this->pudpiiu ) {
-        if ( this->pudpiiu->isCurrentThread () ) {
-            return false;
-        }
-    }
-    return true;
-}
-
 inline void cac::incrementOutstandingIO ()
 {
     this->ioCounter.increment ();
@@ -89,6 +65,12 @@ inline unsigned cac::sequenceNumberOfOutstandingIO () const
 {
     return this->ioCounter.sequenceNumber ();
 }
+
+inline epicsMutex & cac::mutex ()
+{
+    return this->defaultMutex;
+}
+
 
 #endif // cac_ILh
 

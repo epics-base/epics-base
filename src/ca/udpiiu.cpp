@@ -454,13 +454,10 @@ epicsShareFunc void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repea
 
 void udpiiu::shutdown ()
 {
-    {
-        epicsAutoMutex autoMutex ( this->mutex );
-        if ( this->shutdownCmd ) {
-            return;
-        }
-        this->shutdownCmd = true;
+    if ( this->shutdownCmd ) {
+        return;
     }
+    this->shutdownCmd = true;
 
     caHdr msg;
     msg.m_cmmd = htons ( CA_PROTO_NOOP );
@@ -735,8 +732,6 @@ bool udpiiu::pushDatagramMsg ( const caHdr &msg, const void *pExt, ca_uint16_t e
         return false;
     }
 
-    epicsAutoMutex autoMutex ( this->mutex );
-
     if ( msgsize + this->nBytesInXmitBuf > sizeof ( this->xmitBuf ) ) {
         return false;
     }
@@ -754,14 +749,9 @@ bool udpiiu::pushDatagramMsg ( const caHdr &msg, const void *pExt, ca_uint16_t e
     return true;
 }
 
-//
-// udpiiu::flush ()
-//
-void udpiiu::flush ()
+void udpiiu::datagramFlush ()
 {
     osiSockAddrNode  *pNode;
-
-    epicsAutoMutex autoMutex ( this->mutex );
 
     if ( this->nBytesInXmitBuf == 0u ) {
         return;
@@ -820,7 +810,6 @@ void udpiiu::flush ()
 
 void udpiiu::show ( unsigned level ) const
 {
-    epicsAutoMutex autoMutex ( this->mutex );
     printf ( "Datagram IO circuit (and disconnected channel repository)\n");
     if ( level > 1u ) {
         this->netiiu::show ( level - 1u );

@@ -20,13 +20,16 @@ class inetAddrID {
 public:
     inetAddrID ( const struct sockaddr_in &addrIn );
     bool operator == ( const inetAddrID & ) const;
-    resTableIndex hash ( unsigned nBitsHashIndex ) const;
+    resTableIndex hash () const;
     static unsigned maxIndexBitWidth ();
     static unsigned minIndexBitWidth ();
     void name ( char *pBuf, unsigned bufSize ) const;
 private:
     const struct sockaddr_in addr;
 };
+
+static const unsigned inetAddrMinIndexBitWidth = 8u;
+static const unsigned inetAddrMaxIndexBitWidth = 32u;
 
 inline inetAddrID::inetAddrID ( const struct sockaddr_in &addrIn ) :
     addr (addrIn)
@@ -43,22 +46,24 @@ inline bool inetAddrID::operator == ( const inetAddrID &rhs ) const
     return false;
 }
 
-inline resTableIndex inetAddrID::hash ( unsigned ) const
+inline resTableIndex inetAddrID::hash () const
 {
     unsigned index;
     index = this->addr.sin_addr.s_addr;
     index ^= this->addr.sin_port;
-    return intId < unsigned, 8u, 32u > :: hashEngine (index);
+    index ^= this->addr.sin_port >> 8u;
+    return integerHash < inetAddrMinIndexBitWidth,
+        inetAddrMaxIndexBitWidth > ( index );
 }
 
 inline unsigned inetAddrID::maxIndexBitWidth ()
 {
-    return 32u;
+    return inetAddrMaxIndexBitWidth;
 }
 
 inline unsigned inetAddrID::minIndexBitWidth ()
 {
-    return 8u;
+    return inetAddrMinIndexBitWidth;
 }
 
 inline void inetAddrID::name ( char *pBuf, unsigned bufSize ) const

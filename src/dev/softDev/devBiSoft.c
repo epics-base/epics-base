@@ -25,10 +25,13 @@
 #include        "recSup.h"
 #include	"devSup.h"
 #include	"biRecord.h"
+#define epicsExportSharedSymbols
+#include	"shareLib.h"
+
 /* Create the dset for devBiSoft */
 static long init_record();
 static long read_bi();
-struct {
+epicsShareExtern struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

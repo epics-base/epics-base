@@ -33,11 +33,13 @@
 #include "link.h"
 #include "dbCommon.h"
 #include "waveformRecord.h"
+#define epicsExportSharedSymbols
+#include "shareLib.h"
 
 /* Create the dset for devWfTestAsyn */
 static long init_record();
 static long read_wf();
-struct {
+epicsShareExtern struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

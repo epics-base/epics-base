@@ -117,11 +117,21 @@ int main(int argc,char **argv)
 	errPrintf(0,__FILE__,__LINE__,"Error opening %s\n",outFilename);
 	exit(-1);
     }
+    fprintf(outFile,"#ifdef epicsExportSharedSymbols\n");
+    fprintf(outFile,"#   define INCrecH_epicsExportSharedSymbols\n");
+    fprintf(outFile,"#   undef epicsExportSharedSymbols\n");
+    fprintf(outFile,"#endif\n");
+
     fprintf(outFile,"#include \"ellLib.h\"\n");
     fprintf(outFile,"#include \"epicsMutex.h\"\n");
     fprintf(outFile,"#include \"link.h\"\n");
     fprintf(outFile,"#include \"epicsTime.h\"\n");
     fprintf(outFile,"#include \"epicsTypes.h\"\n");
+
+    fprintf(outFile,"#ifdef INCrecH_epicsExportSharedSymbols\n");
+    fprintf(outFile,"#   define epicsExportSharedSymbols\n");
+    fprintf(outFile,"#endif\n");
+    fprintf(outFile,"#include \"shareLib.h\"\n");
     pdbMenu = (dbMenu *)ellFirst(&pdbbase->menuList);
     while(pdbMenu) {
 	fprintf(outFile,"\n#ifndef INC%sH\n",pdbMenu->name);
@@ -140,6 +150,9 @@ int main(int argc,char **argv)
     while(pdbRecordType) {
 	fprintf(outFile,"#ifndef INC%sH\n",pdbRecordType->name);
 	fprintf(outFile,"#define INC%sH\n",pdbRecordType->name);
+    fprintf(outFile,"#ifdef epicsExportSharedSymbols\n");
+    fprintf(outFile,"epicsShareExtern struct rset %sRSET;\n",pdbRecordType->name);
+    fprintf(outFile,"#endif\n");
 	fprintf(outFile,"typedef struct %s",pdbRecordType->name);
 	if(!isdbCommonRecord) fprintf(outFile,"Record");
 	fprintf(outFile," {\n");
@@ -234,7 +247,10 @@ int main(int argc,char **argv)
 	fprintf(outFile,"#endif\n");
 	pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
 	while(pdbRecordType) {
-	    fprintf(outFile,"int %sRecordSizeOffset(dbRecordType *pdbRecordType)\n{\n",
+		fprintf(outFile,"#ifdef epicsExportSharedSymbols\n");
+		fprintf(outFile,"epicsShareFunc \n");
+		fprintf(outFile,"#endif\n");
+		fprintf(outFile,"int epicsShareAPI %sRecordSizeOffset(dbRecordType *pdbRecordType)\n{\n",
 		pdbRecordType->name);
 	    fprintf(outFile,"    %sRecord *prec = 0;\n",pdbRecordType->name);
 	    for(i=0; i<pdbRecordType->no_fields; i++) {

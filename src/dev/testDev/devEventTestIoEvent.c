@@ -27,11 +27,14 @@
 #include "recSup.h"
 #include "devSup.h"
 #include "eventRecord.h"
+#define epicsExportSharedSymbols
+#include "shareLib.h"
+
 /* Create the dset for devEventTestIoEvent */
 static long init_record();
 static long get_ioint_info();
 static long read_event();
-struct {
+epicsShareExtern struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

@@ -39,6 +39,8 @@
 #include "recGbl.h"
 #include "special.h"
 #include "menuOmsl.h"
+#define epicsExportSharedSymbols
+
 #define GEN_SIZE_OFFSET
 #include "dfanoutRecord.h"
 #undef  GEN_SIZE_OFFSET
@@ -62,7 +64,7 @@ static long get_graphic_double();
 static long get_control_double();
 static long get_alarm_double();
 
-struct rset dfanoutRSET={
+epicsShareDef struct rset dfanoutRSET={
 	RSETNUMBER,
 	report,
 	initialize,

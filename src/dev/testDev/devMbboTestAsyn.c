@@ -34,11 +34,13 @@
 #include "link.h"
 #include "dbCommon.h"
 #include "mbboRecord.h"
+#define epicsExportSharedSymbols
+#include "shareLib.h"
 
 /* Create the dset for devMbboTestAsyn */
 static long init_record();
 static long write_mbbo();
-struct {
+epicsShareExtern struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

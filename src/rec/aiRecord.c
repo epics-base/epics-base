@@ -36,6 +36,7 @@
 #include "recGbl.h"
 #include "special.h"
 #include "menuConvert.h"
+#define epicsExportSharedSymbols
 #define GEN_SIZE_OFFSET
 #include "aiRecord.h"
 #undef  GEN_SIZE_OFFSET
@@ -59,7 +60,9 @@ static long get_graphic_double();
 static long get_control_double();
 static long get_alarm_double();
  
-struct rset aiRSET={
+epicsShareDef int jbaint=88l;
+
+epicsShareDef struct rset aiRSET={
 	RSETNUMBER,
 	report,
 	initialize,

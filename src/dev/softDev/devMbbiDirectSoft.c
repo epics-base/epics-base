@@ -25,10 +25,13 @@
 #include        "recSup.h"
 #include	"devSup.h"
 #include	"mbbiDirectRecord.h"
+#define epicsExportSharedSymbols
+#include "shareLib.h"
+
 /* Create the dset for devMbbiSoft */
 static long init_record();
 static long read_mbbi();
-struct {
+epicsShareExtern struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

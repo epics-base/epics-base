@@ -28,6 +28,9 @@
 #include        "recSup.h"
 #include	"devSup.h"
 #include	"boRecord.h"
+#define epicsExportSharedSymbols
+#include "shareLib.h"
+
 
 /* added for Channel Access Links */
 static long init_record();
@@ -35,7 +38,7 @@ static long init_record();
 /* Create the dset for devBoSoftRaw */
 static long write_bo();
 
-struct {
+epicsShareExtern struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

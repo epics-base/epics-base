@@ -35,6 +35,8 @@
 #include "recSup.h"
 #include "recGbl.h"
 #include "special.h"
+#define epicsExportSharedSymbols
+
 #define GEN_SIZE_OFFSET
 #include "boRecord.h"
 #undef  GEN_SIZE_OFFSET
@@ -60,7 +62,7 @@ static long put_enum_str();
 #define get_control_double NULL
 #define get_alarm_double NULL
 
-struct rset boRSET={
+epicsShareDef struct rset boRSET={
 	RSETNUMBER,
 	report,
 	initialize,

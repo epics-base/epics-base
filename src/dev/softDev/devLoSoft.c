@@ -24,10 +24,13 @@
 #include        "recSup.h"
 #include	"devSup.h"
 #include	"longoutRecord.h"
+#define epicsExportSharedSymbols
+#include "shareLib.h"
+
 /* Create the dset for devLoSoft */
 static long init_record();
 static long write_longout();
-struct {
+epicsShareExtern struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

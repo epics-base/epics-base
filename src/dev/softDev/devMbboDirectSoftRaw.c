@@ -25,11 +25,14 @@
 #include        "recSup.h"
 #include	"devSup.h"
 #include	"mbboDirectRecord.h"
+#define epicsExportSharedSymbols
+#include "shareLib.h"
+
 
 /* Create the dset for devMbboDirectSoftRaw */
 static long init_record();
 static long write_mbbo();
-struct {
+epicsShareExtern struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

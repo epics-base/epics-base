@@ -10,8 +10,6 @@
 TOP=../..
 include $(TOP)/configure/CONFIG
 
-SHARED_LIBRARIES = NO
-
 INC += egDefs.h
 INC += erDefs.h
 INC += ereventDefs.h
@@ -83,6 +81,8 @@ LIBSRCS += subArrayRecord.c
 LIBSRCS += waveformRecord.c
 
 LIBRARY_IOC += recIoc
+
+recIoc_LIBS = dbStaticIoc registryIoc asIoc dbIoc ca Com
 
 # For R3.13 compatability
 OBJS_vxWorks = $(LIBSRCS:%.c=%)

@@ -33,11 +33,13 @@
 #include "link.h"
 #include "dbCommon.h"
 #include "aiRecord.h"
+#define epicsExportSharedSymbols
+#include "shareLib.h"
 
 /* Create the dset for devAiTestAsyn */
 static long init_record();
 static long read_ai();
-struct {
+epicsShareExtern struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -54,6 +56,7 @@ struct {
 	read_ai,
 	NULL};
 
+
 static long init_record(pai)
     struct aiRecord	*pai;
 {

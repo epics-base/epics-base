@@ -61,16 +61,23 @@ print << "END" ;
 #include "registryDriverSupport.h"
 #include "registryFunction.h"
 #include "iocsh.h"
+#include "shareLib.h"
 END
 
 #definitions for recordtype
 if($numberRecordType>0) {
+    print "#ifdef __cplusplus\n";
+    print "extern \"C\" {\n";
+    print "#endif\n";
     for ($i=0; $i<$numberRecordType; $i++) {
-        print "extern \"C\" struct rset $recordType[$i]RSET;\n";
-        print "extern \"C\" int $recordType[$i]RecordSizeOffset(dbRecordType *pdbRecordType);\n";
+        print "epicsShareExtern struct rset $recordType[$i]RSET;\n";
+        print "epicsShareFunc int epicsShareAPI $recordType[$i]RecordSizeOffset(dbRecordType *pdbRecordType);\n";
     #NOTE the following caused a compiler error on vxWorks
     #    print "extern computeSizeOffset $recordType[$i]RecordSizeOffset;\n";
     }
+    print "#ifdef __cplusplus\n";
+    print "}\n";
+    print "#endif\n";
     print "\nstatic const char * const recordTypeNames[$numberRecordType] = {\n";
     for ($i=0; $i<$numberRecordType; $i++) {
         print "    \"$recordType[$i]\"";
@@ -90,9 +97,15 @@ if($numberRecordType>0) {
 
 #definitions for device
 if($numberDeviceSupport>0) {
+    print "#ifdef __cplusplus\n";
+    print "extern \"C\" {\n";
+    print "#endif\n";
     for ($i=0; $i<$numberDeviceSupport; $i++) {
-        print "extern \"C\" struct dset $deviceSupport[$i];\n";
+        print "epicsShareExtern struct dset $deviceSupport[$i];\n";
     }
+    print "#ifdef __cplusplus\n";
+    print "}\n";
+    print "#endif\n";
     print "\nstatic const char * const deviceSupportNames[$numberDeviceSupport] = {\n";
     for ($i=0; $i<$numberDeviceSupport; $i++) {
         print "    \"$deviceSupport[$i]\"";
@@ -112,9 +125,15 @@ if($numberDeviceSupport>0) {
 
 #definitions for driver
 if($numberDriverSupport>0) {
+    print "#ifdef __cplusplus\n";
+    print "extern \"C\" {\n";
+    print "#endif\n";
     for ($i=0; $i<$numberDriverSupport; $i++) {
-        print "extern \"C\" struct drvet $driverSupport[$i];\n";
+        print "epicsShareExtern struct drvet $driverSupport[$i];\n";
     }
+    print "#ifdef __cplusplus\n";
+    print "}\n";
+    print "#endif\n";
     print "\nstatic char *driverSupportNames[$numberDriverSupport] = {\n";
     for ($i=0; $i<$numberDriverSupport; $i++) {
         print "    \"$driverSupport[$i]\"";

@@ -30,11 +30,13 @@
 #include	"devSup.h"
 #include	"link.h"
 #include	"waveformRecord.h"
+#define epicsExportSharedSymbols
+#include "shareLib.h"
 
 /* Create the dset for devWfSoft */
 static long init_record();
 static long read_wf();
-struct {
+epicsShareExtern struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

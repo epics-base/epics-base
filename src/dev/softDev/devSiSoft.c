@@ -26,11 +26,13 @@
 #include        "recSup.h"
 #include	"devSup.h"
 #include	"stringinRecord.h"
+#define epicsExportSharedSymbols
+#include "shareLib.h"
 
 /* Create the dset for devSiSoft */
 static long init_record();
 static long read_stringin();
-struct {
+epicsShareExtern struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

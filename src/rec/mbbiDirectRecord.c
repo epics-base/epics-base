@@ -35,6 +35,8 @@
 #include "recSup.h"
 #include "recGbl.h"
 #include "special.h"
+#define epicsExportSharedSymbols
+
 #define GEN_SIZE_OFFSET
 #include "mbbiDirectRecord.h"
 #undef  GEN_SIZE_OFFSET
@@ -58,7 +60,7 @@ static long process();
 #define get_control_double NULL
 #define get_alarm_double NULL
 
-struct rset mbbiDirectRSET={
+epicsShareDef struct rset mbbiDirectRSET={
 	RSETNUMBER,
 	report,
 	initialize,

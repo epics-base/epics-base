@@ -24,12 +24,15 @@
 #include        "recSup.h"
 #include	"devSup.h"
 #include	"longinRecord.h"
+#define epicsExportSharedSymbols
+#include "shareLib.h"
+
 
 /* Create the dset for devLiSoft */
 static long init_record();
 static long read_longin();
 
-struct {
+epicsShareExtern struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

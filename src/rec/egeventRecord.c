@@ -30,6 +30,9 @@
 #include "recSup.h"
 #include "recGbl.h"
 
+#define epicsExportSharedSymbols
+
+
 #include "egRecord.h"
 #define GEN_SIZE_OFFSET
 #include "egeventRecord.h"
@@ -59,7 +62,7 @@ static long get_graphic_double(struct dbAddr *paddr, struct dbr_grDouble *pgd);
 static long get_control_double(struct dbAddr *paddr, struct dbr_ctrlDouble *pcd);
 static long get_alarm_double(struct dbAddr *paddr, struct dbr_alDouble *pad);
 
-struct rset egeventRSET={
+epicsShareDef struct rset egeventRSET={
 	RSETNUMBER,
 	report,
 	initialize,

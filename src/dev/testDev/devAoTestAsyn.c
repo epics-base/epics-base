@@ -34,11 +34,13 @@
 #include "link.h"
 #include "dbCommon.h"
 #include "aoRecord.h"
+#define epicsExportSharedSymbols
+#include "shareLib.h"
 
 /* Create the dset for devAoTestAsyn */
 static long init_record();
 static long write_ao();
-struct {
+epicsShareExtern struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

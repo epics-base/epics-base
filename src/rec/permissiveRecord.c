@@ -31,6 +31,8 @@
 #include "errMdef.h"
 #include "recSup.h"
 #include "recGbl.h"
+#define epicsExportSharedSymbols
+
 #define GEN_SIZE_OFFSET
 #include "permissiveRecord.h"
 #undef  GEN_SIZE_OFFSET
@@ -54,7 +56,7 @@ static long process();
 #define get_control_double NULL
 #define get_alarm_double NULL
 
-struct rset permissiveRSET={
+epicsShareDef struct rset permissiveRSET={
 	RSETNUMBER,
 	report,
 	initialize,

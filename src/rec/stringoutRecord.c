@@ -33,6 +33,8 @@
 #include "errMdef.h"
 #include "recSup.h"
 #include "recGbl.h"
+#define epicsExportSharedSymbols
+
 #define GEN_SIZE_OFFSET
 #include "stringoutRecord.h"
 #undef  GEN_SIZE_OFFSET
@@ -58,7 +60,7 @@ static long process();
 #define get_control_double NULL
 #define get_alarm_double NULL
 
-struct rset stringoutRSET={
+epicsShareDef struct rset stringoutRSET={
 	RSETNUMBER,
 	report,
 	initialize,

@@ -36,6 +36,8 @@
 #include "errMdef.h"
 #include "recSup.h"
 #include "recGbl.h"
+#define epicsExportSharedSymbols
+
 #define GEN_SIZE_OFFSET
 #include "subRecord.h"
 #undef  GEN_SIZE_OFFSET
@@ -59,7 +61,7 @@ static long get_graphic_double();
 static long get_control_double();
 static long get_alarm_double();
 
-struct rset subRSET={
+epicsShareDef struct rset subRSET={
 	RSETNUMBER,
 	report,
 	initialize,
@@ -85,7 +87,7 @@ static long fetch_values();
 static void monitor();
 
 #define ARG_MAX 12
-typedef long (*SUBFUNCPTR)();
+typedef long (epicsShareAPI *SUBFUNCPTR)();
 
 static long init_record(psub,pass)
     struct subRecord	*psub;

@@ -31,6 +31,8 @@
 #include "recGbl.h"
 #include "erDefs.h"
 
+#define epicsExportSharedSymbols
+
 #define GEN_SIZE_OFFSET
 #include "erRecord.h"
 #undef  GEN_SIZE_OFFSET
@@ -58,7 +60,7 @@ static long get_graphic_double(struct dbAddr *paddr, struct dbr_grDouble *pgd);
 static long get_control_double(struct dbAddr *paddr, struct dbr_ctrlDouble *pcd);
 static long get_alarm_double(struct dbAddr *paddr, struct dbr_alDouble *pad);
 
-struct rset erRSET={
+epicsShareDef struct rset erRSET={
 	RSETNUMBER,
 	report,
 	initialize,

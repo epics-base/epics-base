@@ -29,13 +29,16 @@
 #include        "recSup.h"
 #include	"devSup.h"
 #include	"boRecord.h"
+#define epicsExportSharedSymbols
+#include "shareLib.h"
+
 
 static long init_record();
 
 /* Create the dset for devBoSoft */
 static long write_bo();
 
-struct {
+epicsShareExtern struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

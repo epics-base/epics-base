@@ -31,6 +31,8 @@
 #include "recGbl.h"
 
 #include "ereventDefs.h"
+#define epicsExportSharedSymbols
+
 #define GEN_SIZE_OFFSET
 #include "ereventRecord.h"
 #undef  GEN_SIZE_OFFSET
@@ -58,7 +60,7 @@ STATIC long ErEventProc(struct ereventRecord *);
 #define get_control_double NULL
 #define get_alarm_double NULL
 
-struct rset ereventRSET={
+epicsShareDef struct rset ereventRSET={
 	RSETNUMBER,
 	report,
 	initialize,

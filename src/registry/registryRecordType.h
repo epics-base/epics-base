@@ -20,8 +20,7 @@ struct dbRecordType;
 struct rset;
 struct dbBase;
 
-typedef int (*computeSizeOffset)(struct dbRecordType *pdbRecordType);
-
+typedef int (epicsShareAPI *computeSizeOffset)(struct dbRecordType *pdbRecordType);
 
 typedef struct recordTypeLocation {
     struct rset *prset;

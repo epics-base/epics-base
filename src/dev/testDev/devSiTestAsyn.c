@@ -32,11 +32,13 @@
 #include "link.h"
 #include "dbCommon.h"
 #include "stringinRecord.h"
+#define epicsExportSharedSymbols
+#include "shareLib.h"
 
 /* Create the dset for devSiTestAsyn */
 static long init_record();
 static long read_stringin();
-struct {
+epicsShareExtern struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

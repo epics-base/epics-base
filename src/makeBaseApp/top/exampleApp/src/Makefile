@@ -13,19 +13,28 @@ DBD += _APPNAME_.dbd
 
 #=============================
 
-PROD_IOC = _APPNAME_
+LIBRARY_IOC += _APPNAME_Ioc
 
-_APPNAME__SRCS += xxxRecord.c
-_APPNAME__SRCS += devXxxSoft.c
-_APPNAME__SRCS += dbSubExample.c
+_APPNAME_Ioc_SRCS += xxxRecord.c
+_APPNAME_Ioc_SRCS += devXxxSoft.c
+
+_APPNAME_Ioc_LIBS += $(EPICS_BASE_IOC_LIBRARIES)
+_APPNAME_Ioc_SYS_LIBS_solaris += c
+
+#=============================
+
+PROD_IOC = _APPNAME_
 
 # <name>_registerRecordDeviceDriver.cpp will be created from <name>.dbd
 _APPNAME__SRCS += _APPNAME__registerRecordDeviceDriver.cpp
+_APPNAME__SRCS += dbSubExample.c
 _APPNAME__SRCS_DEFAULT += _APPNAME_Main.cpp
 _APPNAME__SRCS_vxWorks += -nil-
 
 #The following adds support from base/src/vxWorks
 _APPNAME__OBJS_vxWorks += $(EPICS_BASE_BIN)/vxComLibrary
+
+_APPNAME__LIBS += _APPNAME_Ioc
 
 #NOTES:
 #      1)It is not possible to build sncExample both as a component of _APPNAME_
@@ -36,46 +45,16 @@ _APPNAME__OBJS_vxWorks += $(EPICS_BASE_BIN)/vxComLibrary
 #_APPNAME__SRCS += sncExample.stt
 #_APPNAME__LIBS += seq
 #_APPNAME__LIBS += pv
-#seq_DIR    = $(SNCSEQ_LIB)
-#pv_DIR     = $(SNCSEQ_LIB)
+
+_APPNAME__LIBS += $(EPICS_BASE_IOC_LIBRARIES)
 
 #The following builds sncExample as a standalone application
 #PROD_HOST += sncExample
 #sncExample_SNCFLAGS += +m
 #sncExample_SRCS += sncExample.stt
-#seq_DIR    = $(SNCSEQ_LIB)
-#pv_DIR     = $(SNCSEQ_LIB)
 #sncExample_LIBS += seq
 #sncExample_LIBS += pv
-#sncExample_LIBS += iocsh
-#sncExample_LIBS += miscIoc
-#sncExample_LIBS += rsrvIoc
-#sncExample_LIBS += dbtoolsIoc
-#sncExample_LIBS += asIoc
-#sncExample_LIBS += dbIoc
-#sncExample_LIBS += registryIoc
-#sncExample_LIBS += dbStaticIoc
-#sncExample_LIBS += ca
-#sncExample_LIBS += Com
-
-# Use win32 object libs for registered support
-_APPNAME__LIBS_win32 += recIocObj
-_APPNAME__LIBS_win32 += softDevIocObj
-_APPNAME__LIBS_win32 += testDevIocObj
-_APPNAME__LIBS_DEFAULT += recIoc
-_APPNAME__LIBS_DEFAULT += softDevIoc
-_APPNAME__LIBS_DEFAULT += testDevIoc
-
-_APPNAME__LIBS += iocsh
-_APPNAME__LIBS += miscIoc
-_APPNAME__LIBS += rsrvIoc
-_APPNAME__LIBS += dbtoolsIoc
-_APPNAME__LIBS += asIoc
-_APPNAME__LIBS += dbIoc
-_APPNAME__LIBS += registryIoc
-_APPNAME__LIBS += dbStaticIoc
-_APPNAME__LIBS += ca
-_APPNAME__LIBS += Com
+#sncExample_LIBS += $(EPICS_BASE_IOC_LIBRARIES)
 
 #===========================
 

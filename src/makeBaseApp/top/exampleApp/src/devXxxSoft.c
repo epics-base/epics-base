@@ -15,11 +15,13 @@
 #include "devSup.h"
 #include "link.h"
 #include "xxxRecord.h"
+#define epicsExportSharedSymbols
+#include "shareLib.h"
 
 /*Create the dset for devXxxSoft */
 static long init_record();
 static long read_xxx();
-struct {
+epicsShareExtern struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

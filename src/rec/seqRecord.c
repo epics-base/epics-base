@@ -32,6 +32,8 @@
 #include "special.h"
 #include "callback.h"
 
+#define epicsExportSharedSymbols
+
 #define GEN_SIZE_OFFSET
 #include "seqRecord.h"
 #undef  GEN_SIZE_OFFSET
@@ -42,7 +44,7 @@ int	seqRecDebug = 0;
 static long 	init_record(), process(), asyncFinish(), get_precision();
 static void	processCallback();
 
-struct rset seqRSET={
+epicsShareDef struct rset seqRSET={
 	RSETNUMBER,
 	NULL,			/* report */
 	NULL,			/* initialize */

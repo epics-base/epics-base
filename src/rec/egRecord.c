@@ -30,6 +30,7 @@
 #include "errMdef.h"
 #include "recSup.h"
 #include "recGbl.h"
+#define epicsExportSharedSymbols
 
 #define GEN_SIZE_OFFSET
 #include "egRecord.h"
@@ -59,7 +60,7 @@ STATIC long EgProc(struct egRecord *);
 #define get_control_double NULL
 #define get_alarm_double NULL
 
-struct rset egRSET={
+epicsShareDef struct rset egRSET={
 	RSETNUMBER,
 	report,
 	initialize,

@@ -32,6 +32,8 @@
 #include "errMdef.h"
 #include "recSup.h"
 #include "recGbl.h"
+#define epicsExportSharedSymbols
+
 #define GEN_SIZE_OFFSET
 #include "selRecord.h"
 #undef  GEN_SIZE_OFFSET
@@ -55,7 +57,7 @@ static long get_graphic_double();
 static long get_control_double();
 static long get_alarm_double();
 
-struct rset selRSET={
+epicsShareDef struct rset selRSET={
 	RSETNUMBER,
 	report,
 	initialize,

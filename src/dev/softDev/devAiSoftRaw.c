@@ -28,10 +28,13 @@
 #include "devSup.h"
 #include "link.h"
 #include "aiRecord.h"
+#define epicsExportSharedSymbols
+#include "shareLib.h"
+
 /* Create the dset for devAiSoftRaw */
 static long init_record(aiRecord *pai);
 static long read_ai(aiRecord *pai);
-struct {
+epicsShareExtern struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

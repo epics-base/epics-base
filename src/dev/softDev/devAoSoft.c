@@ -30,13 +30,15 @@
 #include	"link.h"
 #include	"special.h"
 #include	"aoRecord.h"
+#define epicsExportSharedSymbols
+#include	"shareLib.h"
 
 /* added for Channel Access Links */
 static long init_record();
 
 /* Create the dset for devAoSoft */
 static long write_ao();
-struct {
+epicsShareExtern struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

@@ -30,10 +30,12 @@
 #include "link.h"
 #include "special.h"
 #include "aoRecord.h"
+#define epicsExportSharedSymbols
+#include "shareLib.h"
 
 /* Create the dset for devAoSoftRaw */
 static long write_ao(aoRecord *pao);
-struct {
+epicsShareExtern struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

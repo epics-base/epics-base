@@ -24,11 +24,14 @@
 #include        "recSup.h"
 #include	"devSup.h"
 #include	"eventRecord.h"
+#define epicsExportSharedSymbols
+#include "shareLib.h"
+
 
 /* Create the dset for devEventSoft */
 static long init_record();
 static long read_event();
-struct {
+epicsShareExtern struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;

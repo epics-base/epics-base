@@ -29,6 +29,7 @@
  * -----------------
  * .01  01-11-89        lrd     add right and left shift
  * .02  02-01-89        lrd     add trig functions
+ * .03  02-17-92        jba     add exp
  */
 
 /*	defines for element table      */
@@ -72,27 +73,30 @@
 #define		ABS_VAL		37
 #define		UNARY_NEG	38
 #define		SQU_RT		39
-#define		LOG_10		40
-#define		LOG_E		41
-#define		RANDOM		42
-#define		ADD		43
-#define		SUB		44
-#define		MULT		45
-#define		DIV		46
-#define		EXPON		47
-#define		MODULO		48
-#define		BIT_OR		49
-#define		BIT_AND		50
-#define		BIT_EXCL_OR	51
-#define		GR_OR_EQ	52
-#define		GR_THAN		53
-#define		LESS_OR_EQ	54
-#define		LESS_THAN	55
-#define		NOT_EQ		56
-#define		EQUAL		57
-#define		REL_OR		58
-#define		REL_AND		59
-#define		REL_NOT		60
-#define		BIT_NOT		61
-#define		PAREN		62
+#define		EXP		40
+#define		CEIL		41
+#define		FLOOR		42
+#define		LOG_10		43
+#define		LOG_E		44
+#define		RANDOM		45
+#define		ADD		46
+#define		SUB		47
+#define		MULT		48
+#define		DIV		49
+#define		EXPON		50
+#define		MODULO		51
+#define		BIT_OR		52
+#define		BIT_AND		53
+#define		BIT_EXCL_OR	54
+#define		GR_OR_EQ	55
+#define		GR_THAN		56
+#define		LESS_OR_EQ	57
+#define		LESS_THAN	58
+#define		NOT_EQ		59
+#define		EQUAL		60
+#define		REL_OR		61
+#define		REL_AND		62
+#define		REL_NOT		63
+#define		BIT_NOT		64
+#define		PAREN		65
 #define		END_STACK	-1

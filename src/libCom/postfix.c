@@ -35,6 +35,7 @@
  *                              element table and added a warning label
  * .05  11-26-90        lrd     fix SINH, COSH, TANH
  * .06	02-20-92	rcz	fixed for vxWorks build
+ * .07  02-24-92        jba     add EXP and fixed trailing blanks in expression
 */
 
 /* 
@@ -139,11 +140,14 @@ static struct expression_element	elements[] = {
 "ABS",		7,	8,	UNARY_OPERATOR,	ABS_VAL,   /* absolute value */
 "NOT",		7,	8,	UNARY_OPERATOR,	UNARY_NEG, /* unary negate */
 "SQR",		7,	8,	UNARY_OPERATOR,	SQU_RT,    /* square root */
+"EXP",		7,	8,	UNARY_OPERATOR,	EXP,       /* exponential function */
 "LOGE",		7,	8,	UNARY_OPERATOR,	LOG_E,     /* log E */
 "LOG",		7,	8,	UNARY_OPERATOR,	LOG_10,    /* log 10 */
 "ACOS",		7,	8,	UNARY_OPERATOR,	ACOS,      /* arc cosine */
 "ASIN",		7,	8,	UNARY_OPERATOR,	ASIN,      /* arc sine */
 "ATAN",		7,	8,	UNARY_OPERATOR,	ATAN,      /* arc tangent */
+"CEIL",		7,	8,	UNARY_OPERATOR,	CEIL,      /* smallest integer >= */
+"FLOOR",	7,	8,	UNARY_OPERATOR,	FLOOR,     /* largest integer <=  */
 "COSH",		7,	8,	UNARY_OPERATOR,	COSH,      /* hyperbolic cosine */
 "COS",		7,	8,	UNARY_OPERATOR,	COS,       /* cosine */
 "SINH",		7,	8,	UNARY_OPERATOR,	SINH,      /* hyperbolic sine */
@@ -211,7 +215,7 @@ static struct expression_element	elements[] = {
  *
  * find the pointer to an entry in the element table
  */
-static find_element(pbuffer,pelement,pno_bytes)
+static int find_element(pbuffer,pelement,pno_bytes)
  register char	*pbuffer;
  register struct expression_element	**pelement;
  register short	*pno_bytes;
@@ -235,14 +239,12 @@ static find_element(pbuffer,pelement,pno_bytes)
  *
  * get an expression element
  */
-static get_element(pinfix,pelement,pno_bytes,plink)
+static int get_element(pinfix,pelement,pno_bytes,plink)
 register char	*pinfix;
 register struct expression_element	**pelement;
 register short		*pno_bytes;
 struct link		*plink;
 {
-	char	buffer[40];
-	register short	i;
 
 	/* get the next expression element from the infix expression */
 	if (*pinfix == NULL) return(END);
@@ -251,6 +253,7 @@ struct link		*plink;
 		*pno_bytes += 1;
 		pinfix++;
 	}
+	if (*pinfix == NULL) return(END);
 	if (!find_element(pinfix,pelement,pno_bytes))
 		return(UNKNOWN_ELEMENT);
 	return(FINE);
@@ -273,7 +276,6 @@ short		*perror;
 	short		no_bytes;
 	register short	operand_needed;
 	register short	new_expression;
-	register short	link_inx;	/* index into variable table	*/
 	struct link	new_link;
 	struct expression_element	stack[80];
 	struct expression_element	*pelement;

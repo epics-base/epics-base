@@ -58,6 +58,8 @@
  * .22  03-15-91	mrk	moved code from calcRecord to here
  * .23	08-01-91	rac	don't use FETCH_G ... for V2
  * .24	02-20-92	rcz	fixed for vxWorks build
+ * .25	02-24-92	jba	add EXP and fix for EXPON when *pstacktop is 0
+ * .26	02-28-92	jba	added CEIL and FLOOR
  */
 
 /* This module contains the code for processing the arithmetic
@@ -107,7 +109,6 @@ char   *post;
 {
 	double *pstacktop;	/* stack of values	*/
 	double		stack[80];
-	double temp;
 	short		temp1;
 	short	i;
 	double 		*top;
@@ -258,6 +259,10 @@ char   *post;
 			*pstacktop = sqrt(*pstacktop);
 			break;
 
+		case EXP:
+			*pstacktop = exp(*pstacktop);
+			break;
+
 		case LOG_10:
 			*pstacktop = log10(*pstacktop);
 			break;
@@ -273,6 +278,7 @@ char   *post;
 
 		case EXPON:
 			--pstacktop;
+			if (*pstacktop == 0) break;
 			if (*pstacktop < 0){
 				temp1 = (int) *(pstacktop+1);
 				/* is exponent an integer */
@@ -407,6 +413,14 @@ char   *post;
 
 		case TANH:
 			*pstacktop = tanh(*pstacktop);
+			break;
+
+		case CEIL:
+			*pstacktop = ceil(*pstacktop);
+			break;
+
+		case FLOOR:
+			*pstacktop = floor(*pstacktop);
 			break;
 
 		case REL_NOT:

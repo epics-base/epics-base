@@ -5,3 +5,4 @@ dbLoadRecords("../../db/dbExample2.db","user=_USER_Host,no=1,scan=1 second")
 dbLoadRecords("../../db/dbExample2.db","user=_USER_Host,no=2,scan=2 second")
 dbLoadRecords("../../db/dbExample2.db","user=_USER_Host,no=3,scan=5 second")
 iocInit()
+#seq snctest,"user=_USER_Host"

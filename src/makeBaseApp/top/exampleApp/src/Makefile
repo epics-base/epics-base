@@ -62,14 +62,15 @@ example_SRCS_vxWorks += -nil-
 
 example_OBJS_vxWorks += $(EPICS_BASE_BIN)/iocCoreLibrary
 
-#example_SRCS_vxWorks += sncExample.c
-#example_OBJS_vxWorks += $(SEQ_BIN)/seqLibrary
+#example_SRCS += sncExample.st
+
+#seq_DIR    = $(SNCSEQ_LIB)
+#example_OBJS_vxWorks += $(SNCSEQ_BIN)/seqLibrary
+#example_OBJS_vxWorks += $(SNCSEQ_BIN)/pvLibrary
+#example_OBJS_vxWorks += $(SNCSEQ_BIN)/pvCaLibrary
 #example_LIBS += seq
 #example_LIBS += pv
-#seq_DIR    = $(SEQ_LIB)
 #example_LIBS += pvCa
-
-
 
 -include ../baseLIBOBJS
 example_OBJS += $(LIBOBJS)

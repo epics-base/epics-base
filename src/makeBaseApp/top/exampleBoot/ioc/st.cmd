@@ -30,3 +30,4 @@ dbLoadRecords("db/dbExample2.db","user=_USER_,no=3,scan=5 second")
 
 cd startup
 iocInit
+#seq &snctest,"user=_USER_"

@@ -151,7 +151,7 @@ epicsShareFunc epicsMutexLockStatus epicsShareAPI
     if ( pSem->threadId == thisThread ) {
         assert ( pSem->recursionCount < UINT_MAX );
         pSem->recursionCount++;
-        return;
+        return epicsMutexLockOK;
     }
     else if ( ! TryEnterCriticalSection ( &pSem->mutex ) ) {
         DWORD delay = 0;

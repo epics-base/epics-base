@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.17  1995/09/29  22:13:59  jhill
+ * check for nill dbr pointer
+ *
  * Revision 1.16  1995/08/22  00:27:55  jhill
  * added cvs style mod log
  *
@@ -252,7 +255,7 @@ int epicsShareAPI ca_sg_block(CA_SYNC_GID gid, ca_real timeout)
 	/*
 	 * always flush at least once.
 	 */
-	ca_flush_io();
+	ca_static->ca_flush_pending = TRUE;
 
 	cac_gettimeval (&ca_static->currentTime);
         beg_time = ca_static->currentTime;

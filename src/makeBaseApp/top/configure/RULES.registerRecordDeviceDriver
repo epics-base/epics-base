@@ -1,6 +1,6 @@
 registerRecordDeviceDriver.o: registerRecordDeviceDriver.c
 
-registerRecordDeviceDriver.c: $(TOP)/dbd/$(DBDNAME)
+registerRecordDeviceDriver.c: $(INSTALL_DBD)/$(DBDNAME)
 	$(RM) registerRecordDeviceDriver.c
 	$(EPICS_BASE_HOST_BIN)/registerRecordDeviceDriver.pl \
-	$(TOP)/dbd/$(DBDNAME) > registerRecordDeviceDriver.c
+	$(INSTALL_DBD)/$(DBDNAME) > registerRecordDeviceDriver.c

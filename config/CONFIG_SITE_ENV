@@ -38,8 +38,8 @@ EPICS_TS_NTP_INET=
 #       path name in response to SIGHUP - the new path name will
 #       replace any path name supplied in EPICS_IOC_LOG_FILE_NAME
 
-EPICS_IOC_LOG_INET=164.54.2.167
-EPICS_IOC_LOG_FILE_NAME=/home/helios4/iocinfo/iocerrorlog/iocLog
+EPICS_IOC_LOG_INET=164.54.8.167
+EPICS_IOC_LOG_FILE_NAME=/home/phebos1/epics/apple/log/iocLog.text
 EPICS_IOC_LOG_FILE_COMMAND=
 EPICS_IOC_LOG_FILE_LIMIT=1000000
 

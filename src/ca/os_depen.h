@@ -15,6 +15,8 @@
  *	.04 joh 092491	changed order of ops on LOCALTICKS
  *	.05 joh	092691	added NELEMENTS()
  *	.06 joh 111991	added EVENTLOCKTEST
+ *	.07 joh 120291	added declaration of taskIdCurrent for
+ *			compiling with V4 vxWorks 
  *
  */
 
@@ -34,6 +36,9 @@
 #	endif
 #	ifndef INCtaskLibh
 #		include <taskLib.h>
+#	endif
+#	ifndef V5_vxWorks
+		IMPORT ULONG taskIdCurrent;
 #	endif
 #elif defined(VMS)
 #else

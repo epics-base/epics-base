@@ -20,7 +20,6 @@
 
 #include "shareLib.h"
 
-class cacChannel;
 class cacNotifyIO;
 
 class epicsShareClass cacNotify {
@@ -54,6 +53,8 @@ private:
     friend class cacNotify;
 };
 
+class cacChannel;
+
 class epicsShareClass cacChannelIO {
 public:
     cacChannelIO ( cacChannel &chan );
@@ -66,6 +67,9 @@ public:
     void accessRightsNotify ( caar );
 
     virtual const char *pName () const = 0;
+
+    void lock ();
+    void unlock ();
 
 private:
     virtual int read ( unsigned type, unsigned long count, void *pValue) = 0;
@@ -89,9 +93,16 @@ private:
     friend class cacChannel;
 };
 
+class epicsShareClass cacLocalChannelIO : 
+    public cacChannelIO, public tsDLNode <cacLocalChannelIO> {
+public:
+    cacLocalChannelIO ( cacChannel &chan );
+    virtual ~cacLocalChannelIO () = 0;
+};
+
 struct cacServiceIO : public tsDLNode <cacServiceIO> {
 public:
-    epicsShareFunc virtual cacChannelIO *createChannelIO ( cacChannel &chan, const char *pName ) = 0;
+    epicsShareFunc virtual cacLocalChannelIO *createChannelIO ( cacChannel &chan, const char *pName ) = 0;
 private:
 };
 
@@ -99,7 +110,7 @@ class cacServiceList : private osiMutex {
 public:
     epicsShareFunc cacServiceList ();
     epicsShareFunc void registerService ( cacServiceIO &service );
-    epicsShareFunc cacChannelIO * createChannelIO (const char *pName, cacChannel &chan);
+    epicsShareFunc cacLocalChannelIO * createChannelIO (const char *pName, cacChannel &chan);
 private:
     tsDLList <cacServiceIO> services;
 };

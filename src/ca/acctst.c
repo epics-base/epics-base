@@ -1919,6 +1919,8 @@ void unequalServerBufferSizeTest ( const char * pName, unsigned interestLevel )
     status = ca_pend_io ( timeoutToPendIO );
     assert ( status == ECA_NORMAL );
 
+    showProgress ( interestLevel );
+
     if ( ! ca_write_access ( newChan ) ) {
         printf ( "skipping unequal buffer size test - no write access\n" );
         status = ca_clear_channel ( newChan );
@@ -1939,10 +1941,15 @@ void unequalServerBufferSizeTest ( const char * pName, unsigned interestLevel )
     status = ca_clear_channel ( newChan );
     assert ( status == ECA_NORMAL );
 
+    showProgress ( interestLevel );
+
     status = ca_create_channel ( pName, 0, 0, 0, &newChan );
     assert ( status == ECA_NORMAL );
     status = ca_pend_io ( timeoutToPendIO );
     assert ( status == ECA_NORMAL );
+
+    showProgress ( interestLevel );
+
     status = ca_array_put ( DBR_DOUBLE, ca_element_count ( newChan ), 
                 newChan, pWF ); 
     status = ca_array_get ( DBR_DOUBLE, 1, 

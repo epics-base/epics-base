@@ -40,6 +40,7 @@ vpath %.c $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
 vpath %.cc $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
 vpath %.cpp $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
 vpath %.rc $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
+vpath %.jar $(USER_VPATH) ..
 
 #	check for add-on CFLAGS and CXXFLAGS
 #
@@ -466,6 +467,15 @@ TESTCLASSES += $(subst .java,.class,$(TESTJAVA))
 INSTALL_CLASSES =$(CLASSES:%=$(INSTALL_JAVA)/$(PACKAGE)/%)
 INSTALL_JAR =$(JAR:%=$(INSTALL_JAVA)/%)
 
+ifeq ($(strip $(JAVADOC)),YES)
+DIRECTORY_TARGETS += $(INSTALL_HTML)
+INSTALL_JAVADOC = $(CLASSES:%.class=$(INSTALL_HTML)/%.html)
+ifdef PACKAGE
+DIRECTORY_TARGETS += $(INSTALL_HTML)/$(PACKAGE)
+INSTALL_JAVADOC = $(CLASSES:%.class=$(INSTALL_HTML)/$(PACKAGE)/$(PACKAGE)/%.html)
+endif
+endif
+
 JAR_OPTIONS = cvf
 ifdef MANIFEST
 JAR_OPTIONS = cvmf
@@ -478,10 +488,10 @@ $(DIRECTORY_TARGETS) :
 
 build:: $(TESTCLASSES) $(JAR)
 
-buildInstall :: $(DIRECTORY_TARGETS) $(INSTALL_CLASSES) $(INSTALL_JAR)
+buildInstall :: $(DIRECTORY_TARGETS) $(INSTALL_CLASSES) $(INSTALL_JAR) $(INSTALL_JAVADOC)
 
 clean::
-	@$(RM) $(TESTCLASSES) $(JAR)
+	@$(RM) $(TESTCLASSES) $(JAR) $(INSTALL_CLASSES) $(INSTALL_JAVADOC)
 
 %.class:%.java
 	@echo Creating java class file $@
@@ -492,6 +502,11 @@ $(INSTALL_JAVA)/$(PACKAGE)/%.class:%.java
 	@echo Creating java class file $@
 	@$(RM) $@
 	$(JAVACCMD) -d $(INSTALL_JAVA) $<
+
+$(INSTALL_JAVADOC):$(JAVA)
+	@echo Creating javadoc html files $@
+	@$(RM) $@
+	$(JAVADOCCMD) -d $(INSTALL_HTML)/$(PACKAGE) $(PACKAGE) 
 
 $(JAR):%.jar:  $(JAR_DEPFILES)
 	@echo Creating java jar file $@
@@ -505,7 +520,7 @@ $(INSTALL_JAVA)/%.jar: %.jar
 $(PACKAGE)_%.h:$(INSTALL_JAVA)/$(PACKAGE)/%.class
 	$(JAVAHCMD) $(PACKAGE).$*
 
-.PRECIOUS: $(INSTALL_CLASSES)
+.PRECIOUS: $(INSTALL_CLASSES) $(INSTALL_JAVADOC)
 
 #---------------------------------------------------------------
 #---------------------------------------------------------------

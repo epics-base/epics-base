@@ -12,6 +12,7 @@
  *			the system modifies my timeval structure.
  *			Also droped the TCPDELAY to 50 mS
  *	.03 joh	090391	Updated for V5 vxWorks
+ *	.04 joh 092491	changed order of ops on LOCALTICKS
  *
  */
 
@@ -155,14 +156,13 @@
 
 /*
  * order of ops is important here
- * SYSFREQ must evenly divide by DELAYTICKS for
- * optimal accuracy without overflow
+ * 
+ * NOTE: large SYFREQ can cause an overflow 
  */
-#define LOCALTICKS	((SYSFREQ/TICKSPERSEC)*DELAYTICKS)
-
+#	define LOCALTICKS	((SYSFREQ*DELAYTICKS)/TICKSPERSEC)
 
 #if defined(VMS)
-# 	define SYSFREQ	10000000L	/* 10 MHz	*/
+# 	define SYSFREQ		10000000L	/* 10 MHz	*/
 # 	define TCPDELAY\
 	{ \
 		static int ef=NULL; \
@@ -179,7 +179,7 @@
 # 	define TCPDELAY 	taskDelay(LOCALTICKS);	
 # 	define time(A) 		(tickGet()/SYSFREQ)
 #elif defined(UNIX)
-#	define SYSFREQ	1000000L	/* 1 MHz	*/
+#	define SYSFREQ		1000000L	/* 1 MHz	*/
 	/*
 	 * this version of TCPDELAY copies tcpdelayval into temporary storage
 	 * just in case the system modifies the timeval arg to select

@@ -88,7 +88,7 @@ int dbPutNotifyIO::initiate ( struct dbAddr &addr, unsigned type,
     status = ::dbPutNotify ( &this->pn );
     if ( status && status != S_db_Pending ) {
         this->pn.status = status;
-        putNotifyCallback ();
+        this->cacNotifyIO::exceptionNotify ( ECA_PUTFAIL,  "dbPutNotify() returned failure");
     }
     return ECA_NORMAL;
 }

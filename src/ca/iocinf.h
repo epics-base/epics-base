@@ -825,8 +825,6 @@ int cac_select_io (cac *pcac, double maxDelay, int flags);
 
 char *localHostName (void);
 
-int ca_os_independent_init (cac *pcac, const pvAdapter *ppva);
-
 bhe *lookupBeaconInetAddr(cac *pcac,
         const struct sockaddr_in *pnet_addr);
 

@@ -54,7 +54,6 @@
 #include "errlog.h"
 #include "ellLib.h"
 #include "tsStamp.h"
-#include "pvAdapter.h"
 #include "dbStaticLib.h"
 #include "dbBase.h"
 #include "dbCommon.h"

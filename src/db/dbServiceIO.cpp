@@ -27,16 +27,16 @@
 #include "db_access_routines.h"
 #include "dbCAC.h"
 
-class loadTimeInit {
+class dbServiceIOLoadTimeInit {
 public:
-    loadTimeInit ();
+    dbServiceIOLoadTimeInit ();
 private:
     dbServiceIO dbio;
 };
 
-static loadTimeInit lti;
+static dbServiceIOLoadTimeInit lti;
 
-loadTimeInit::loadTimeInit ()
+dbServiceIOLoadTimeInit::dbServiceIOLoadTimeInit ()
 {
     cacGlobalServiceList.registerService ( this->dbio );
 }

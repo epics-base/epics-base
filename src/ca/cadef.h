@@ -43,7 +43,6 @@
 #include "caerr.h"
 #include "db_access.h"
 #include "caeventmask.h"
-#include "pvAdapter.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -196,8 +195,6 @@ epicsShareFunc int epicsShareAPI ca_task_initialize (void);
 /*  Normally called automatically at task exit                          */
 /************************************************************************/
 epicsShareFunc int epicsShareAPI ca_task_exit (void);
-
-epicsShareFunc int epicsShareAPI ca_register_service ( struct cacServiceIO *pService );
 
 /************************************************************************
  * anachronistic entry points                                           *

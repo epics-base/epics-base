@@ -11,7 +11,6 @@ INC += caerr.h
 INC += caeventmask.h
 INC += caProto.h
 INC += db_access.h
-INC += pvAdapter.h
 INC += addrList.h
 INC += cacIO.h
 

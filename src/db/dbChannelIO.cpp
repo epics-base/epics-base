@@ -33,8 +33,8 @@ extern "C" unsigned short dbDBRnewToDBRold[DBR_ENUM+1];
 tsFreeList < dbChannelIO > dbChannelIO::freeList;
 
 dbChannelIO::dbChannelIO ( cacChannel &chan, const dbAddr &addrIn, dbServiceIO &serviceIO ) :
-    cacChannelIO ( chan ), serviceIO ( serviceIO ), addr ( addrIn ), 
-    pGetCallbackCache ( 0 ), getCallbackCacheSize ( 0ul )
+    cacChannelIO ( chan ), serviceIO ( serviceIO ), pGetCallbackCache ( 0 ), 
+    getCallbackCacheSize ( 0ul ), addr ( addrIn )
 {
     this->connectNotify ();
 }

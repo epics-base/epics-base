@@ -48,7 +48,7 @@ extern "C" void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr *pad
 class dbSubscriptionIO : public cacNotifyIO {
 public:
     dbSubscriptionIO ( dbChannelIO &chanIO, cacNotify &, unsigned type, unsigned long count );
-    int dbSubscriptionIO::begin ( struct dbAddr &addr, unsigned mask );
+    int begin ( struct dbAddr &addr, unsigned mask );
     void destroy ();
     static void * operator new ( size_t size );
     static void operator delete ( void *pCadaver, size_t size );
@@ -99,7 +99,7 @@ private:
 class dbServiceIO : public cacServiceIO {
 public:
     dbServiceIO ();
-    ~dbServiceIO ();
+    virtual ~dbServiceIO ();
     cacChannelIO *createChannelIO ( cacChannel &chan, const char *pName );
     void subscriptionUpdate ( struct dbAddr &addr, unsigned type, unsigned long count, 
             const struct db_field_log *pfl, cacNotifyIO &notify );

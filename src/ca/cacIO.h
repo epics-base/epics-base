@@ -105,3 +105,7 @@ private:
 };
 
 epicsShareExtern cacServiceList cacGlobalServiceList;
+
+epicsShareFunc int epicsShareAPI ca_register_service ( struct cacServiceIO *pService );
+
+

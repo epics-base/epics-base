@@ -681,7 +681,7 @@ long dbGetLinkValue(struct link	*plink, short dbrType, void *pbuffer,
 
 	    if((dbrType<0) || (dbrType>DBR_ENUM) || (dbfType > DBF_DEVICE)) {
 		status = S_db_badDbrtype;
-		recGblRecordError(status,(void *)precord,"GetLinkValue");
+		recGblRecordError(status,(void *)precord,"GetLinkValue Failed");
 		recGblSetSevr(precord,LINK_ALARM,INVALID_ALARM);
 		return(status);
 	    }

@@ -31,6 +31,8 @@
 
 #define CAS_VERSION_GLOBAL
 
+#include "epicsGuard.h"
+
 #include "addrList.h"
 
 #define caServerGlobal

@@ -2,6 +2,18 @@
 #ifndef outBufILh
 #define outBufILh
 
+#ifdef epicsExportSharedSymbols
+#define outBufILh_epicsExportSharedSymbols
+#undef epicsExportSharedSymbols
+#endif
+
+#include "epicsGuard.h"
+
+#ifdef outBufILh_epicsExportSharedSymbols
+#define epicsExportSharedSymbols
+#endif
+
+
 //
 // outBuf::bytesPresent ()
 // number of bytes in the output queue

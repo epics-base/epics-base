@@ -32,6 +32,17 @@
 #ifndef caServerIIL_h
 #define caServerIIL_h
 
+#ifdef epicsExportSharedSymbols
+#define caServerIIL_h_epicsExportSharedSymbols
+#undef epicsExportSharedSymbols
+#endif
+
+#include "epicsGuard.h"
+
+#ifdef caServerIIL_h_epicsExportSharedSymbols
+#define epicsExportSharedSymbols
+#endif
+
 //
 // caServerI::getAdapter()
 //

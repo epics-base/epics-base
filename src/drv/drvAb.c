@@ -844,7 +844,7 @@ unsigned short		*pmsg;
 	wtrans(pmsg,pmb_msg);
 
 	/* initiate the timeout clock */
-	wdStart(wd_id[link],SECOND,ab_timeout,link);
+	wdStart(wd_id[link],vxTicksPerSecond,ab_timeout,link);
 	/* alert the scanner to the new request */
 	p6008->sc_intr = 1;
 
@@ -873,7 +873,7 @@ unsigned short		*pmsg;
 	}
 	if (status != BT_ACCEPTED){
 		if (status == 0x14){
-			taskDelay(SECOND/10);
+			taskDelay(vxTicksPerSecond/10);
 			if(ab_debug >1) 
 			    logMsg("link %x BTQ full, delaying...\n",link);
 		}else{
@@ -1130,11 +1130,14 @@ ab_bi_cos_simulator()
 	short				first_scan,first_scan_complete;
 	short				adapter_status_change;
 
-	first_scan_complete = first_scan = 0;
+	/* dont do anything until interruptAccept */
 	for(;;){
-		/* flag first scan */
-		if (interruptAccept && !first_scan_complete) first_scan = 1;
-
+		if(interruptAccept) break;
+		taskDelay(vxTicksPerSecond/15);
+	}
+	first_scan_complete = FALSE;
+	first_scan = TRUE;
+	for(;;){
 		/* check each link */
 		link = 0;
 		for (link = 0; link < AB_MAX_LINKS; link++){
@@ -1176,12 +1179,12 @@ ab_bi_cos_simulator()
 
 	    /* turn off first scan */
 	    if (first_scan){
-		first_scan_complete = 1;
-		first_scan = 0;
+		first_scan_complete = TRUE;
+		first_scan = FALSE;
 	    }
 
 	    /* check for changes at about 15 Hertz */
-	    taskDelay(SECOND/15);
+	    taskDelay(vxTicksPerSecond/15);
 	}
 }
 
@@ -1415,7 +1418,7 @@ unsigned short	link;
 	/* commands with response */
 	case AUTO_CONF:
 	case LINK_STATUS:
-		wdStart(wd_id[link],SECOND*10,ab_timeout,link);
+		wdStart(wd_id[link],vxTicksPerSecond*10,ab_timeout,link);
 		p6008->sc_intr = 1;	/* wakeup scanner tsk */
 		semTake(ab_cmd_sem, WAIT_FOREVER);
 		/* was this a timeout? */
@@ -1449,7 +1452,7 @@ unsigned short	link;
 	case SET_MODE:
 	case SET_UP:
 		wtrans(pmsg,pmb_msg);		/* xfer data to local mailbox */
-		wdStart(wd_id[link],SECOND*5,ab_timeout,link);
+		wdStart(wd_id[link],vxTicksPerSecond*5,ab_timeout,link);
 		p6008->sc_intr = 1;	/* wakeup scanner */
 		semTake(ab_cmd_sem, WAIT_FOREVER);
 		/* was this a timeout? */
@@ -2323,7 +2326,7 @@ int status;
 	}
 
 	/* run every 1/10 second */
-	taskDelay(SECOND/10);
+	taskDelay(vxTicksPerSecond/10);
     }
 }
 

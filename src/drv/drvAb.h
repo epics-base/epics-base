@@ -85,8 +85,6 @@
 #define BT_ACCEPTED	0x2f		/* block trans accepted by scanner */
 #define	BT_TIMEOUT	0x23		/* block transfer timeout */
 
-/* clock equates */
-#define	SECOND		60		/* 60 ticks per second */
 
 /* DUAL PORTED MEMORY AREA DEFINITION */
 /* mail box definition */

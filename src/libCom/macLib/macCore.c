@@ -59,13 +59,13 @@ static MAC_ENTRY *last    ( MAC_HANDLE *handle );
 static MAC_ENTRY *next    ( MAC_ENTRY  *entry );
 static MAC_ENTRY *previous( MAC_ENTRY  *entry );
 
-static MAC_ENTRY *create( MAC_HANDLE *handle, char *name, long special );
-static MAC_ENTRY *lookup( MAC_HANDLE *handle, char *name, long special );
-static char      *rawval( MAC_HANDLE *handle, MAC_ENTRY *entry, char *value );
+static MAC_ENTRY *create( MAC_HANDLE *handle, const char *name, long special );
+static MAC_ENTRY *lookup( MAC_HANDLE *handle, const char *name, long special );
+static char      *rawval( MAC_HANDLE *handle, MAC_ENTRY *entry, const char *value );
 static void       delete( MAC_HANDLE *handle, MAC_ENTRY *entry );
 static long       expand( MAC_HANDLE *handle );
 static void       trans ( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
-                        char *term, char **rawval, char **value, char *valend );
+                        char *term, const char **rawval, char **value, char *valend );
 
 /*
  * Flag bits
@@ -73,7 +73,7 @@ static void       trans ( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
 #define FLAG_SUPPRESS_WARNINGS  0x1
 #define FLAG_USE_ENVIRONMENT    0x80
 
-static char *Strdup( char *string );
+static char *Strdup( const char *string );
 
 /*
  * Static variables
@@ -163,7 +163,7 @@ long                            /* #chars copied, <0 if any macros are */
 epicsShareAPI macExpandString(
     MAC_HANDLE  *handle,        /* opaque handle */
 
-    char        *src,           /* source string */
+    const char  *src,           /* source string */
 
     char        *dest,          /* destination string */
 
@@ -171,7 +171,8 @@ epicsShareAPI macExpandString(
                                 /* to destination string */
 {
     MAC_ENTRY entry;
-    char *s, *d;
+    const char *s;
+    char *d;
     long length;
 
     /* check handle */
@@ -217,9 +218,9 @@ long                            /* length of value */
 epicsShareAPI macPutValue(
     MAC_HANDLE  *handle,        /* opaque handle */
 
-    char        *name,          /* macro name */
+    const char  *name,          /* macro name */
 
-    char        *value )        /* macro value */
+    const char  *value )        /* macro value */
 {
     MAC_ENTRY   *entry;         /* pointer to this macro's entry structure */
 
@@ -272,7 +273,7 @@ long                            /* #chars copied (<0 if undefined) */
 epicsShareAPI macGetValue(
     MAC_HANDLE  *handle,        /* opaque handle */
 
-    char        *name,          /* macro name or reference */
+    const char  *name,          /* macro name or reference */
 
     char        *value,         /* string to receive macro value or name */
                                 /* argument if macro is undefined */
@@ -441,7 +442,7 @@ long                            /* 0 = OK; <0 = ERROR */
 epicsShareAPI macReportMacros(
     MAC_HANDLE  *handle )       /* opaque handle */
 {
-    char      *format = "%-1s %-16s %-16s %s\n";
+    const char *format = "%-1s %-16s %-16s %s\n";
     MAC_ENTRY *entry;
 
     /* check handle */
@@ -509,7 +510,7 @@ static MAC_ENTRY *previous( MAC_ENTRY *entry )
 /*
  * Create new macro entry (can assume it doesn't exist)
  */
-static MAC_ENTRY *create( MAC_HANDLE *handle, char *name, long special )
+static MAC_ENTRY *create( MAC_HANDLE *handle, const char *name, long special )
 {
     ELLLIST   *list  = &handle->list;
     MAC_ENTRY *entry = ( MAC_ENTRY * ) dbmfMalloc( sizeof( MAC_ENTRY ) );
@@ -539,7 +540,7 @@ static MAC_ENTRY *create( MAC_HANDLE *handle, char *name, long special )
 /*
  * Look up macro entry with matching "special" attribute by name
  */
-static MAC_ENTRY *lookup( MAC_HANDLE *handle, char *name, long special )
+static MAC_ENTRY *lookup( MAC_HANDLE *handle, const char *name, long special )
 {
     MAC_ENTRY *entry;
 
@@ -567,7 +568,7 @@ static MAC_ENTRY *lookup( MAC_HANDLE *handle, char *name, long special )
 /*
  * Copy raw value to macro entry
  */
-static char *rawval( MAC_HANDLE *handle, MAC_ENTRY *entry, char *value )
+static char *rawval( MAC_HANDLE *handle, MAC_ENTRY *entry, const char *value )
 {
     if ( entry->rawval != NULL )
         dbmfFree( entry->rawval );
@@ -604,7 +605,7 @@ static void delete( MAC_HANDLE *handle, MAC_ENTRY *entry )
 static long expand( MAC_HANDLE *handle )
 {
     MAC_ENTRY *entry;
-    char      *rawval;
+    const char *rawval;
     char      *value;
 
     if ( !handle->dirty )
@@ -646,10 +647,11 @@ static long expand( MAC_HANDLE *handle )
  * For now, use default special characters
  */
 static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
-                   char *term, char **rawval, char **value, char *valend )
+                   char *term, const char **rawval, char **value, char *valend )
 {
     char quote;
-    char *r, *v, *n2, *r2;
+    const char *r, *r2;
+    char *v, *n2;
     char name2[MAC_SIZE + 1];
     long discard;
     long macRef;
@@ -776,7 +778,7 @@ static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
 /*
  * strdup() implementation which uses our own memory allocator
  */
-static char *Strdup( char *string )
+static char *Strdup(const char *string )
 {
     char *copy = dbmfMalloc( strlen( string ) + 1 );
 

@@ -36,7 +36,7 @@ epicsShareAPI macParseDefns(
     MAC_HANDLE	*handle,	/* opaque handle; can be NULL if default */
 				/* special characters are to be used */
 
-    char	*defns,		/* macro definitions in "a=xxx,b=yyy" */
+    const char	*defns,		/* macro definitions in "a=xxx,b=yyy" */
 				/* format */
 
     char	**pairs[] )	/* address of variable to receive pointer */
@@ -51,11 +51,12 @@ epicsShareAPI macParseDefns(
     long quote;
     long escape;
     long nbytes;
-    char **ptr;
-    char **end;
+    const char **ptr;
+    const char **end;
     long *del;
     char *memCp, **memCpp;
-    char *c, *s, *d, **p;
+    const char *c;
+    char *s, *d, **p;
     enum { preName, inName, preValue, inValue } state;
 
     /* debug output */
@@ -67,8 +68,8 @@ epicsShareAPI macParseDefns(
     numMax = strlen( defns );
     if ( numMax < altNumMax )
         numMax = altNumMax;
-    ptr = ( char ** ) malloc( numMax * sizeof( char * ) );
-    end = ( char ** ) malloc( numMax * sizeof( char * ) );
+    ptr = (const  char ** ) malloc( numMax * sizeof( char * ) );
+    end = (const  char ** ) malloc( numMax * sizeof( char * ) );
     del = ( long *  ) malloc( numMax * sizeof( long   ) );
     if ( ptr == NULL || end == NULL  || del == NULL ) goto error;
 

@@ -139,7 +139,7 @@ epicsShareFunc long             /* #chars copied, <0 if any macros are */
 epicsShareAPI macExpandString(
     MAC_HANDLE  *handle,        /* opaque handle */
 
-    char        *src,           /* source string */
+    const char  *src,           /* source string */
 
     char        *dest,          /* destination string */
 
@@ -152,16 +152,16 @@ epicsShareFunc long             /* length of value */
 epicsShareAPI macPutValue(
     MAC_HANDLE  *handle,        /* opaque handle */
 
-    char        *name,          /* macro name */
+    const char  *name,          /* macro name */
 
-    char        *value          /* macro value */
+    const char  *value          /* macro value */
 );
 
 epicsShareFunc long             /* #chars copied (<0 if undefined) */
 epicsShareAPI macGetValue(
     MAC_HANDLE  *handle,        /* opaque handle */
 
-    char        *name,          /* macro name or reference */
+    const char  *name,          /* macro name or reference */
 
     char        *value,         /* string to receive macro value or name */
                                 /* argument if macro is undefined */
@@ -198,7 +198,7 @@ epicsShareAPI macParseDefns(
     MAC_HANDLE  *handle,        /* opaque handle; can be NULL if default */
                                 /* special characters are to be used */
 
-    char        *defns,         /* macro definitions in "a=xxx,b=yyy" */
+    const char  *defns,         /* macro definitions in "a=xxx,b=yyy" */
                                 /* format */
 
     char        **pairs[]       /* address of variable to receive pointer */
@@ -219,7 +219,7 @@ epicsShareAPI macInstallMacros(
 
 epicsShareFunc char *           /* expanded string; NULL if any undefined macros */
 epicsShareAPI macEnvExpand(
-    char *str                   /* string to be expanded */
+    const char *str             /* string to be expanded */
 );
 
 #ifdef __cplusplus

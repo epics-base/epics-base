@@ -20,7 +20,7 @@
 #include "macLib.h"
 
 char * epicsShareAPI
-macEnvExpand(char *str)
+macEnvExpand(const char *str)
 {
     MAC_HANDLE *handle;
     static char *pairs[] = { "", "environ", NULL, NULL };

@@ -91,7 +91,7 @@ FAST int 		sock;
 				IPPROTO_TCP,
 				TCP_NODELAY,
 				(char *)&true,
-				sizeof true);
+				sizeof(true));
     	if(status == ERROR){
       		logMsg("CAS: TCP_NODELAY option set failed\n",
 			NULL,
@@ -114,7 +114,7 @@ FAST int 		sock;
 			SOL_SOCKET, 
 			SO_KEEPALIVE,
 		    	(char *)&true, 
-			sizeof true);
+			sizeof(true));
     	if(status == ERROR){
       		logMsg("CAS: SO_KEEPALIVE option set failed\n",
 			NULL,

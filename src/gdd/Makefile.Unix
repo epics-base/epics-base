@@ -5,6 +5,9 @@
 # $Id$
 #
 # $Log$
+# Revision 1.8  1996/07/09 22:58:55  jhill
+# added installation of the include files
+#
 # Revision 1.7  1996/07/08 15:20:02  jba
 # Moved include RULES.Unix
 #
@@ -52,6 +55,7 @@ INC += aitConvert.h
 INC += aitHelpers.h
 INC += dbMapper.h
 INC += gddAppTable.h
+INC += gddAppFuncTable.h
 INC += gddApps.h
 
 DEPENDS_RULE.cc = -$(COMPILE.cc) -xM $(SRCS.cc) >> .DEPENDS

@@ -13,6 +13,11 @@
 #	Jeff eliminated many shell-lines in Makefile.*.
 #
 
+#	Set this to the UNIX-like shell that you have:
+#
+#	it is now possible to just use the DOS shell
+#
+#SHELL=knts
 
 # 	Use std path variables from ms
 HOME = $(HOMEDRIVE)$(HOMEPATH)
@@ -24,10 +29,12 @@ BUILD_TYPE=Host
 #
 # optimize/debug flags
 #
-HOST_OPT = YES
-CXX_OPT_FLAGS_YES = -Ox
-#	-Zi  : included debugging info
-CXX_OPT_FLAGS_NO = -Zi
+HOST_OPT = YES 
+# 	-Ox  : maximum optimizations
+#	-Wn  ; use this warning level (all warnings at level 4)
+CXX_OPT_FLAGS_YES = -Ox -W1
+#	-Zi  : include debugging info in object files
+CXX_OPT_FLAGS_NO = -Zi -W1
 CXX_OPT_FLAGS = $(CXX_OPT_FLAGS_$(HOST_OPT))
 LINK_OPT_FLAGS_YES = 
 LINK_OPT_FLAGS_NO = -debug

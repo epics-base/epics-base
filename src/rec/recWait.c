@@ -44,11 +44,13 @@
  * 2.00  02-20-95        nda    added queuing to SCAN_IO_EVENT mode so no transitions of data 
  *                              would be missed. Can put back to cached mode by setting
  *                              recWaitCacheMode (effects all wait records !)
+ * 2.01  08-07-95        nda    Multiple records with DOLN's didn't work, 
+ *                              added calloc for dola structure.
  *
  *
  */
 
-#define VERSION 2.00
+#define VERSION 2.01
 
 
 
@@ -229,6 +231,7 @@ static long init_record(pwait,pass)
       pwait->inka = calloc(1,sizeof(struct dbAddr));
       pwait->inla = calloc(1,sizeof(struct dbAddr));
       pwait->outa = calloc(1,sizeof(struct dbAddr));
+      pwait->dola = calloc(1,sizeof(struct dbAddr));
  
       pwait->cbst = calloc(1,sizeof(struct cbStruct));
 
@@ -766,10 +769,10 @@ static void reqOutput(pwait)
 void execOutput(pcbst)
    struct cbStruct *pcbst;
 {
-static long status;
-static long nRequest = 1;
-static long options  = 0;
-static double oldDold; 
+long status;
+long nRequest = 1;
+long options  = 0;
+double oldDold; 
 
     /* if output link is valid , decide between VAL and DOL */
     if(!pcbst->pwait->outv) {

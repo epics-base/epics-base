@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.13  1997/06/30 18:16:13  jhill
+ * guess at DEC C++ compiler bug workaround
+ *
  * Revision 1.12  1997/06/25 05:48:39  jhill
  * moved resourceLib.cc into resourceLib.h
  *
@@ -85,8 +88,8 @@
 #include "tsSLList.h"
 #include "shareLib.h"
 
-typedef int 		resLibStatus;
-typedef	unsigned 	resTableIndex;
+typedef int resLibStatus;
+typedef unsigned resTableIndex;
 
 #define resTableIndexBitWidth (sizeof(resTableIndex)*CHAR_BIT)
 
@@ -127,20 +130,7 @@ public:
 	//
 	// add a res to the table
 	//
-	int add (T &res)
-	{
-		//
-		// T must derive from ID
-		//
-		tsSLList<T> &list = this->pTable[this->hash(res)];
-
-		if (this->find(list, res) != 0) {
-			return -1;
-		}
-		list.add(res);
-		this->nInUse++;
-		return 0;
-	}
+	int add (T &res);
 
 	//
 	// remove a res from the table
@@ -174,7 +164,7 @@ private:
 	tsSLList<T>	*pTable;
 	unsigned	hashIdMask;
 	unsigned	hashIdNBits;
-        unsigned       	nInUse;
+	unsigned	nInUse;
 
 	resTableIndex hash(const ID & idIn)
 	{
@@ -331,10 +321,10 @@ inline void uintResTable<ITEM>::installItem(ITEM &item)
 //
 class ptrId {
 public:
-        ptrId (void const * const idIn) : id(idIn) {}
- 
-        resTableIndex resourceHash(unsigned nBitsId) const
-        {
+	ptrId (void const * const idIn) : id(idIn) {}
+
+	resTableIndex resourceHash(unsigned nBitsId) const
+	{
 		//
 		// This makes the assumption that
 		// a pointer will fit inside of a long
@@ -342,27 +332,27 @@ public:
 		// CPU architectures)
 		//
 		unsigned long src = (unsigned long) this->id;
-                unsigned long hashid;
- 
-                hashid = src;
-                src = src >> nBitsId;
-                while (src) {
-                        hashid = hashid ^ src;
-                        src = src >> nBitsId;
-                }
-                //
-                // the result here is always masked to the
-                // proper size after it is returned to the resource class
-                //
-                return (resTableIndex) hashid;
-        }
- 
-        int operator == (const ptrId &idIn)
-        {
-                return this->id == idIn.id;
-        }
+		unsigned long hashid;
+
+		hashid = src;
+		src = src >> nBitsId;
+		while (src) {
+			hashid = hashid ^ src;
+			src = src >> nBitsId;
+		}
+		//
+		// the result here is always masked to the
+		// proper size after it is returned to the resource class
+		//
+		return (resTableIndex) hashid;
+	}
+
+	int operator == (const ptrId &idIn)
+	{
+		return this->id == idIn.id;
+	}
 private:
-        void const * const id;
+	void const * const id;
 };
 
 //
@@ -405,7 +395,7 @@ public:
 	// and remain constant during the entire lifespan of the stringId
 	// object.
 	//
-        stringId (char const * const idIn, allocationType typeIn=copyString) :
+	stringId (char const * const idIn, allocationType typeIn=copyString) :
 		pStr(typeIn==copyString?allocCopyString(idIn):idIn),
 		allocType(typeIn) {}
 
@@ -424,8 +414,8 @@ public:
 	// Communications of the ACM, June 1990 
 	// The modifications were designed by Marty Kraimer
 	//
-        resTableIndex resourceHash(unsigned nBitsId) const
-        {
+	resTableIndex resourceHash(unsigned nBitsId) const
+	{
 		if (this->pStr==NULL) {
 			return 0u;
 		}
@@ -457,17 +447,17 @@ public:
 			h1 = h1 << (nBitsId-8u);
 		}
 		return h1 ^ h0;
-        }
+	}
  
-        int operator == (const stringId &idIn)
-        {
+	int operator == (const stringId &idIn)
+	{
 		if (this->pStr!=NULL && idIn.pStr!=NULL) {
-                	return strcmp(this->pStr,idIn.pStr)==0;
+			return strcmp(this->pStr,idIn.pStr)==0;
 		}
 		else {
 			return 0u; // not equal
 		}
-        }
+	}
 
 	//
 	// return the pointer to the string
@@ -486,7 +476,7 @@ public:
 		}
 	}
 private:
-        const char * const pStr;
+	const char * const pStr;
 	allocationType const allocType;
 };
 
@@ -635,6 +625,25 @@ void resTable<T,ID>::traverse (void (T::*pCB)())
 }
 
 //
+// add a res to the table
+//
+template <class T, class ID>
+int resTable<T,ID>::add (T &res)
+{
+	//
+	// T must derive from ID
+	//
+	tsSLList<T> &list = this->pTable[this->hash(res)];
+
+	if (this->find(list, res) != 0) {
+		return -1;
+	}
+	list.add(res);
+	this->nInUse++;
+	return 0;
+}
+
+//
 // this needs to be instanciated only once (normally in libCom)
 //
 #ifdef instantiateStringIdFastHash 
@@ -644,7 +653,10 @@ void resTable<T,ID>::traverse (void (T::*pCB)())
 // Communications of the ACM, June 1990
 // The modifications were designed by Marty Kraimer
 //
-epicsShareExtern const unsigned char stringIdFastHash[256] = {
+// the addition of "extern" below makes microsofts compiler
+// work when globaldef is used
+//
+extern epicsShareDef const unsigned char stringIdFastHash[256] = {
  39,159,180,252, 71,  6, 13,164,232, 35,226,155, 98,120,154, 69,
 157, 24,137, 29,147, 78,121, 85,112,  8,248,130, 55,117,190,160,
 176,131,228, 64,211,106, 38, 27,140, 30, 88,210,227,104, 84, 77,
@@ -662,6 +674,8 @@ epicsShareExtern const unsigned char stringIdFastHash[256] = {
 111,141,191,103, 74,245,223, 20,161,235,122, 63, 89,149, 73,238,
 134, 68, 93,183,241, 81,196, 49,192, 65,212, 94,203, 10,200, 47
 };
+#else
+epicsShareExtern const unsigned char stringIdFastHash[256];
 #endif // instantiateStringIdFastHash 
 
 #endif // INCresourceLibh

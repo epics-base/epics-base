@@ -64,6 +64,7 @@
  * .31  08-06-92        jba     New algorithm for calculating analog alarms
  * .32  08-19-92        jba     Added simulation processing
  * .33  08-19-92        jba     Added code for invalid alarm output action
+ * .34  10-15-93        jba     modified oroc test to work on the mv162
 
  */
 
@@ -487,7 +488,7 @@ static void convert(pao,pvalue)
 
 	/* now set value equal to desired output value */
         /* apply the output rate of change */
-        if ( pao->oroc ){/*must be defined and >0*/
+        if ( (pao->oroc) != 0.0 ){/*must be defined and >0*/
 		float		diff;
 
                 diff = value - pao->oval;

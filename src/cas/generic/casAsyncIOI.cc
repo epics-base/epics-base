@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/06/26 21:18:50  jhill
+ * now matches gdd api revisions
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:14  jhill
  * ca server installation
  *
@@ -45,7 +48,9 @@
 // casAsyncIOI::casAsyncIOI()
 //
 casAsyncIOI::casAsyncIOI(const casCtx &ctx, casAsyncIO &ioIn, gdd *pDD) :
-	msg(*ctx.getMsg()), client(*ctx.getClient()), 
+	msg(*ctx.getMsg()), 
+	client(*ctx.getClient()), 
+	asyncIO(ioIn),
 	pChan(ctx.getChannel()), 
 	pDesc(pDD),
 	completionStatus(S_cas_internal),
@@ -56,10 +61,7 @@ casAsyncIOI::casAsyncIOI(const casCtx &ctx, casAsyncIO &ioIn, gdd *pDD) :
 {
 	assert (&this->client);
 	assert (&this->msg);
-	//
-	// casAsyncIOI must be a base of casAsyncIO
-	//
-	assert (this == (casAsyncIOI *)&ioIn);
+	assert (&this->asyncIO);
 
 	if (this->pChan) {
 		this->pChan->installAsyncIO(*this);

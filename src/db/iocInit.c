@@ -29,10 +29,14 @@
  * -----------------
  * .01  07-20-91	rac	print release data; set env params
  * .02	08-06-91	mrk	parm string length test changed to warning
- *				with continue
- * .03	08-30-91	mrk	completed .02 fix
- * .04	10-10-91	rcz	changed getResources to accomodate EPICS_ 
- *				parameters in a structure (first try)
+ * .03  08-09-91        joh     added ioc log client init
+ * .04  09-10-91        joh     moved VME stuff from here to initVme()
+ * .05  09-10-91        joh     printf() -> logMsg()
+ * .06  09-10-91        joh     print message only on failure
+ * .07  08-30-91	rcz	completed .02 fix
+ * .04  10-10-91        rcz     changed getResources to accomodate EPICS_
+ *                              parameters in a structure (first try)
+ *				
  */
 
 #include	<vxWorks.h>
@@ -65,14 +69,14 @@
 static initialized=FALSE;
 
 /* define forward references*/
-extern long initBusController();
 extern long sdrLoad();
-extern long initDrvSup();
-extern long initRecSup();
-extern long initDevSup();
-extern long initDatabase();
-extern long addToSet();
-extern long getResources();
+long initDrvSup();
+long initRecSup();
+long initDevSup();
+long initDatabase();
+long addToSet();
+long initialProcess();
+long getResources();
 
 
 iocInit(pfilename,pResourceFilename)
@@ -86,58 +90,48 @@ char * pResourceFilename;
     UTINY type;
 
     if(initialized) {
-	printf("iocInit can only be called once\n");
+	logMsg("iocInit can only be called once\n");
 	return(-1);
     }
     coreRelease();
     epicsSetEnvParams();
-    if(status=initBusController()) {
-	printf("Xycom SRM010 Bus Controller Not Present\n");
+
+    status = iocLogInit();
+    if(status!=0){
+        logMsg("iocInit Failed to Initialize Ioc Log Client \n");
     }
-    if(status=sdrLoad(pfilename)) {
-	printf("iocInit aborting because sdrLoad failed\n");
+
+    status=sdrLoad(pfilename);
+    if(status!=<0) {
+	logMsg("iocInit aborting because sdrLoad failed\n");
 	return(-1);
     }
-    if(status=getResources(pResourceFilename)) {
-	printf("iocInit aborting because getResources failed\n");
+
+    status=getResources(pResourceFilename);
+    if(status!=<0) {
+	logMsg("iocInit aborting because getResources failed\n");
 	return(-1);
     }
-    printf("getResources completed\n");
     initialized = TRUE;
-    printf("sdrLoad completed\n");
-    /* enable interrupt level 5 and 6 */
-    sysIntEnable(5);
-    sysIntEnable(6);
-    if(initDrvSup()==0) printf("Drivers Initialized\n");
-    if(initRecSup()==0) printf("Record Support Initialized\n");
-    if(initDevSup()==0) printf("Device Support Initialized\n");
-    ts_init(); printf("Time Stamp Driver Initialized\n");
-    if(initDatabase()==0) printf("Database Initialized\n");
+    if(initDrvSup()!=<0) logMsg("iocInit: Drivers Failed to Initialized\n");
+    if(initRecSup()!=<0) logMsg("iocInit: Record Support Failed to Initialized\n");
+    if(initDevSup()!=<0) logMsg("iocInit: Device Support Failed to Initialized\n");
+    ts_init();
+    if(initDatabase()!=<0) logMsg("iocInit: Database Failed to Initialized\n");
+
     /* if user exit exists call it */
     strcpy(name,"_");
     strcat(name,"dbUserExit");
     rtnval = symFindByName(sysSymTbl,name,&pdbUserExit,&type);
     if(rtnval==OK && (type&N_TEXT!=0)) {
 	(*pdbUserExit)();
-	printf("User Exit was called\n");
+	logMsg("User Exit was called\n");
     }
-    scan_init(); printf("Scanners Initialized\n");
-    rsrv_init(); printf("Channel Access Servers Initialized\n");
-    printf("iocInit: All initialization complete\n");
+    if(initialProcess()!=0) logMsg("iocInit: initialProcess Failed\n");
+    scan_init();
+    rsrv_init();
+    logMsg("iocInit: All initialization complete\n");
 
-    return(0);
-}
-
-#include	<module_types.h>
-
-static long initBusController(){ /*static */
-    char	ctemp;
-
-    /* initialize the  Xycom SRM010 bus controller card */
-    ctemp = XY_LED;
-    if (vxMemProbe(SRM010_ADDR, WRITE,1,&ctemp) == -1) {
-    	return(-1);
-    }
     return(0);
 }
 
@@ -312,6 +306,16 @@ static long initDatabase()
 	        /* If NAME is null then skip this record*/
 		if(!(precord->name[0])) continue;
 
+		/*initialize fields rset and pdba*/
+		(struct rset *)(precord->rset) = prset;
+		strncpy(name,precord->name,PVNAME_SZ);
+		strcat(name,".VAL");
+		if(dbNameToAddr(name,&precord->pdba)) {
+			status = S_db_notFound;
+			errMessage(status,
+				"initDatbase logic error: dbNameToAddr failed");
+		}
+
 	        /* initialize mlok and mlis*/
 		FASTLOCKINIT(&precord->mlok);
 		lstInit(&(precord->mlis));
@@ -479,6 +483,27 @@ static long addToSet(precord,record_type,lookAhead,i,j,lset)
     return(0);
 }
 
+static long initialProcess()
+{
+    short	i,j;
+    struct recLoc	*precLoc;
+    struct dbCommon	*precord;
+    
+    if(!dbRecords) return(0);
+    for(i=0; i< (dbRecords->number); i++) {
+	if(!(precLoc = dbRecords->papRecLoc[i]))continue;
+	for(j=0, ((char *)precord) = precLoc->pFirst;
+	    j<precLoc->no_records;
+	    j++, ((char *)precord) += precLoc->rec_size ) {
+	        /* If NAME is null then skip this record*/
+		if(!(precord->name[0])) continue;
+		if(!precord->pini) continue;
+		(void)dbProcess(precord->pdba);
+	}
+    }
+    return(0);
+}
+
 #define MAX 128
 #define SAME 0
 static char    *cvt_str[] = {
@@ -500,7 +525,7 @@ static long getResources(fname) /* Resource Definition File interpreter */
     int             i = 0;
     int             found = 0;
     int             cvType = 0;
-    int             epicsFlag;
+    int		    epicsFlag;
     char            buff[MAX + 1];
     char            name[40];
     char            s1[MAX];
@@ -566,24 +591,24 @@ static long getResources(fname) /* Resource Definition File interpreter */
 	    return (-1);
 	}
 	if ( (strncmp(s1,"EPICS_",6)) == SAME)
-	    epicsFlag = 1;
-	else
-	    epicsFlag = 0;
+            epicsFlag = 1;
+        else
+            epicsFlag = 0;
 
 	switch (cvType) {
-	case 0: /* DBF_STRING */
+	case 0:	/* DBF_STRING */
 	    len = strlen(s3);
 	    len2 = 20;
 	    if (len >= len2) {
 		sprintf(message,
-                       "getResources: Warning, string might exceed previous reserved space - line=%d",
+			"getResources: Warning, string might exceed previous reserved space - line=%d",
 			lineNum);
 		errMessage(-1L, message);
 	    }
-	    if ( epicsFlag )
-	        strncpy(pSymAddr+sizeof(caddr_t), s3, len + 1);
-	    else
-	        strncpy(pSymAddr, s3, len + 1);
+            if ( epicsFlag )
+                strncpy(pSymAddr+sizeof(caddr_t), s3, len + 1);
+            else
+                strncpy(pSymAddr, s3, len + 1);
 	    break;
 	case 1:	/* DBF_SHORT */
 	    if ((sscanf(s3, "%hd", &n_short)) != 1) {
@@ -592,62 +617,65 @@ static long getResources(fname) /* Resource Definition File interpreter */
 		errMessage(0L, message);
 	        return (-1);
 	    }
-	    if ( epicsFlag ) {
-		sprintf(message,
-                       "getResources: EPICS_ type DBF_SHORT not supported - line=%d",
-			lineNum);
-		errMessage(-1L, message);
-	    }
-	    else
-	        *(short *) pSymAddr = n_short;
+            if ( epicsFlag ) {
+                sprintf(message,
+                       "getResources: EPICS_ type DBF_SHORT not supported - line =%d",
+                        lineNum);
+                errMessage(-1L, message);
+            }
+            else
+                *(short *) pSymAddr = n_short;
+
 	    break;
-	case 2: /* DBF_LONG */
+	case 2:	/* DBF_LONG */
 	    if ((sscanf(s3, "%ld", &n_long)) != 1) {
 		sprintf(message,
 		      "getResources: conversion failed - line=%d", lineNum);
 		errMessage(0L, message);
 	        return (-1);
 	    }
-	    if ( epicsFlag ) {
-		sprintf(message,
-                       "getResources: EPICS_ type DBF_LONG not supported - line=%d",
-			lineNum);
-		errMessage(-1L, message);
-	    }
-	    else
-	        *(long *) pSymAddr = n_long;
+            if ( epicsFlag ) {
+                sprintf(message,
+                       "getResources: EPICS_ type DBF_LONG not supported - line= %d",
+                        lineNum);
+                errMessage(-1L, message);
+            }
+            else
+                *(long *) pSymAddr = n_long;
 	    break;
-	case 3: /* DBF_FLOAT */
+	case 3:	/* DBF_FLOAT */
 	    if ((sscanf(s3, "%e", &n_float)) != 1) {
 		sprintf(message,
 		      "getResources: conversion failed - line=%d", lineNum);
 		errMessage(0L, message);
 	        return (-1);
 	    }
-	    if ( epicsFlag ) {
-		sprintf(message,
-                       "getResources: EPICS_ type DBF_FLOAT not supported - line=%d",
-			lineNum);
-		errMessage(-1L, message);
-	    }
-	    else
-	        *(float *) pSymAddr = n_float;
+            if ( epicsFlag ) {
+                sprintf(message,
+                       "getResources: EPICS_ type DBF_FLOAT not supported - line =%d",
+                        lineNum);
+                errMessage(-1L, message);
+            }
+            else
+                *(float *) pSymAddr = n_float;
+
 	    break;
-	case 4: /* DBF_DOUBLE */
+	case 4:	/* DBF_DOUBLE */
 	    if ((sscanf(s3, "%le", &n_double)) != 1) {
 		sprintf(message,
 		      "getResources: conversion failed - line=%d", lineNum);
 		errMessage(0L, message);
 	        return (-1);
 	    }
-	    if ( epicsFlag ) {
-		sprintf(message,
+            if ( epicsFlag ) {
+                sprintf(message,
                        "getResources: EPICS_ type DBF_DOUBLE not supported - line=%d",
-			lineNum);
-		errMessage(-1L, message);
-	    }
-	    else
-	        *(double *) pSymAddr = n_double;
+                        lineNum);
+                errMessage(-1L, message);
+            }
+            else
+                *(double *) pSymAddr = n_double;
+
 	    break;
 	default:
 	    sprintf(message,

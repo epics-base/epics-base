@@ -1,6 +1,5 @@
 /* dbAccess.c */
 /* share/src/db  $Id$ */
-
 /*
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer
@@ -30,7 +29,11 @@
  * Modification Log:
  * -----------------
  * .01  07-26-91	mrk	Allow choices to be retrieved as numeric
+ * .02  08-13-91	mrk	Support db_field_log for dbGetField
+ * .03  09-30-91	mrk	Support for TPRO and DISP
  */
+
+/* This is a major revision of the original implementation of database access.*/
 
 /* Global Database Access Routines
  *
@@ -70,12 +73,13 @@
  *	caddr_t		pbuffer;	addr of input data
  *	long		nRequest;
  *
- * dbGetField(paddr,dbrType,pbuffer,options,nRequest)
+ * dbGetField(paddr,dbrType,pbuffer,options,nRequest,pfl)
  *	struct dbAddr	*paddr;	
  *	short		dbrType;	DBR_xxx
  *	caddr_t		pbuffer;	addr of returned data
  *	long		*options;	addr of options
  *	long		*nRequest;	addr of number of elements
+ *	struct db_field_log pfl;	addr of field_log
  *
  * dbPutField(paddr,dbrType,pbuffer,nRequest)
  *	struct dbAddr	*paddr;	
@@ -107,6 +111,7 @@
 #include 	<dbRecDes.h>
 #include 	<dbRecType.h>
 #include	<dbRecords.h>
+#include	<db_field_log.h>
 #include	<errMdef.h>
 #include	<link.h>
 #include	<recSup.h>
@@ -202,28 +207,37 @@ long dbProcess(paddr)
 {
 	struct rset	*prset;
 	struct dbCommon *precord=(struct dbCommon *)(paddr->precord);
-	long		status;
+	unsigned char	tpro=precord->tpro;
+	short		lset = precord->lset;
+	long		status = 0;
+	static char 	trace=0;
+	static int	trace_lset=0;
+	int		set_trace=FALSE;
     
-	if (jba_debug)
-	printf ("-------------------------%s dbProcess entered -----------------\n",precord->name);
-
+	/* check for trace processing*/
+	if(tpro) {
+		if(vxTas(&trace)) {
+			trace = TRUE;
+			trace_lset = lset;
+			set_trace = TRUE;
+		}
+	}
 	/* If already active dont process */
 	if(precord->pact) {
 	        struct rset     *prset;
 		struct valueDes valueDes;
 
-	if (jba_debug)
-	printf ("-------------------------%s already active -----------------\n",precord->name);
-
+		if(trace && trace_lset==lset)
+			logMsg("active:    %s\n",precord->name);
 		/* raise scan alarm after MAX_LOCK times */
-		if(precord->stat==SCAN_ALARM) return(0);
-		if(precord->lcnt++ !=MAX_LOCK) return(0);
+		if(precord->stat==SCAN_ALARM) goto all_done;
+		if(precord->lcnt++ !=MAX_LOCK) goto all_done;
 		precord->sevr = MAJOR_ALARM;
 		precord->stat = SCAN_ALARM;
 		precord->nsev = 0;
 		precord->nsta = 0;
 		/* anyone waiting for an event on this record?*/
-		if(precord->mlis.count==0) return(0);
+		if(precord->mlis.count==0) goto all_done;
 		db_post_events(precord,&precord->stat,DBE_VALUE);
 		db_post_events(precord,&precord->sevr,DBE_VALUE);
 	        prset=GET_PRSET(paddr->record_type);
@@ -231,45 +245,45 @@ long dbProcess(paddr)
 			(*prset->get_value)(precord,&valueDes);
 			db_post_events(precord,valueDes.pvalue,DBE_VALUE|DBE_ALARM);
 		}
-		return(0);
+		goto all_done;
 	} else precord->lcnt=0;
-		
-
 
 	/* get the scan disable link if defined*/
 	if(precord->sdis.type == DB_LINK) {
 		long	options=0;
 		long	nRequest=1;
 
-		(status = dbGetLink(&precord->sdis.value.db_link,precord,
-			DBR_SHORT,(caddr_t)(&(precord->disa)),&options,&nRequest));
-		if(!RTN_SUCCESS(status)) {
-			recGblDbaddrError(status,paddr,"dbProcess");
-			return(status);
-	    	}
+		status = dbGetLink(&precord->sdis.value.db_link,precord,
+			DBR_SHORT,(caddr_t)(&(precord->disa)),&options,&nRequest);
+		if(!RTN_SUCCESS(status)) recGblDbaddrError(status,paddr,"dbProcess");
 	}
 	/* if disabled just return success */
 	if(precord->disa == precord->disv) {
-
-	if (jba_debug)
-	printf ("-------------------------%s is disabled -----------------\n",precord->name);
-
-		return(0);
+		if(trace && trace_lset==lset)
+			logMsg("disabled:  %s\n",precord->name);
+		goto all_done;
 	}
 
 	/* locate record processing routine */
 	if(!(prset=GET_PRSET(paddr->record_type)) || !(prset->process)) {
 		precord->pact=1;/*set pact TRUE so error is issued only once*/
 		recGblRecSupError(S_db_noRSET,paddr,"dbProcess","process");
-		return(S_db_noRSET);
+		status = S_db_noRSET;
+		if(trace && trace_lset==lset)
+			logMsg("failure:   %s\n",precord->name);
+		goto all_done;
 	}
 
 	/* process record */
 	status = (*prset->process)(paddr);
+	if(trace && trace_lset==lset)
+		logMsg("processed: %s\n",precord->name);
 
-	if (jba_debug)
-	printf ("-------------------------%s processed ------------------------\n",precord->name);
-
+all_done:
+	if(set_trace) {
+		trace_lset = 0;
+		trace = 0;
+	}
 	return(status);
 
 }
@@ -376,7 +390,7 @@ long dbGetLink(pdblink,pdest,dbrType,pbuffer,options,nRequest)
 		}
 	
 	}
-	status= dbGetField(paddr,dbrType,pbuffer,options,nRequest);
+	status= dbGetField(paddr,dbrType,pbuffer,options,nRequest,NULL);
 	if(status) recGblRecordError(status,pdest,"dbGetLink");
 }
 
@@ -414,6 +428,12 @@ long dbPutField(paddr,dbrType,pbuffer,nRequest)
 	long	status;
 	struct fldDes *pfldDes=(struct fldDes *)(paddr->pfldDes);
 
+	/*check for putField disabled*/
+	if(precord->disp) {
+		struct dbCommon *precord = (struct dbCommon *)(paddr->precord);
+
+		if((caddr_t)(&precord->disp) != paddr->pfield) return(0);
+	}
 	dbScanLock(paddr->precord);
 	status=dbPut(paddr,dbrType,pbuffer,nRequest);
 	if(status) recGblDbaddrError(status,paddr,"dbPutField");
@@ -2117,7 +2137,7 @@ long		offset;
     else
 	status=S_db_precision;
     if(!RTN_SUCCESS(status)) {
-	recGblRecSupError(status,paddr,"db_get_field","get_precision");
+	recGblRecSupError(status,paddr,"dbGetField","get_precision");
 	return(status);
     }
 
@@ -2357,7 +2377,7 @@ long		offset;
     else
 	status=S_db_precision;
     if(!RTN_SUCCESS(status)) {
-	recGblRecSupError(status,paddr,"db_get_field","get_precision");
+	recGblRecSupError(status,paddr,"dbGetField","get_precision");
 	return(status);
     }
 
@@ -2593,7 +2613,7 @@ long		offset;
     if((prset=GET_PRSET(record_type)) && (prset->get_enum_str))
         return( (*prset->get_enum_str)(paddr,pbuffer) );
     status=S_db_noRSET;
-    recGblRecSupError(status,paddr,"db_get_field","get_enum_str");
+    recGblRecSupError(status,paddr,"dbGetField","get_enum_str");
     return(S_db_badDbrtype);
 }
 
@@ -2957,12 +2977,13 @@ void get_graphics();
 void get_control();
 void get_alarm();
 
-long dbGetField(paddr,dbrType,pbuffer,options,nRequest)
+long dbGetField(paddr,dbrType,pbuffer,options,nRequest,pfl)
 struct dbAddr	*paddr;
 short		dbrType;
 caddr_t		pbuffer;
 long		*options;
 long		*nRequest;
+db_field_log	*pfl;
 {
 	long		no_elements=paddr->no_elements;
 	long 		offset;
@@ -2981,8 +3002,13 @@ long		*nRequest;
 	/* Process options */
 	pcommon = (struct dbCommon *)(paddr->precord);
 	if( (*options) & DBR_STATUS ) {
-	    *((unsigned short *)pbuffer)++ = pcommon->stat;
-	    *((unsigned short *)pbuffer)++ = pcommon->sevr;
+	    if(pfl!=NULL) {
+		*((unsigned short *)pbuffer)++ = pfl->stat;
+		*((unsigned short *)pbuffer)++ = pfl->sevr;
+	    } else {
+		*((unsigned short *)pbuffer)++ = pcommon->stat;
+		*((unsigned short *)pbuffer)++ = pcommon->sevr;
+	    }
 	    perr_status=((long *)pbuffer)++;
 	    *perr_status = 0;
 	}
@@ -3009,8 +3035,13 @@ long		*nRequest;
 	    pbuffer += dbr_precision_size;
 	}
 	if( (*options) & DBR_TIME ) {
-	    *((unsigned long *)pbuffer)++ = pcommon->time.secPastEpoch;
-	    *((unsigned long *)pbuffer)++ = pcommon->time.nsec;
+	    if(pfl!=NULL) {
+		*((unsigned long *)pbuffer)++ = pfl->time.secPastEpoch;
+		*((unsigned long *)pbuffer)++ = pfl->time.nsec;
+	    } else {
+		*((unsigned long *)pbuffer)++ = pcommon->time.secPastEpoch;
+		*((unsigned long *)pbuffer)++ = pcommon->time.nsec;
+	    }
 	}
 	if( (*options) & DBR_ENUM_STRS ) get_enum_strs(paddr,&pbuffer,prset,options);
 	if( (*options) & (DBR_GR_LONG|DBR_GR_DOUBLE ))
@@ -3049,7 +3080,18 @@ GET_DATA:
 		return(S_db_badDbrtype);
 	}
 	/* convert database field to buffer type and place it in the buffer */
-	status=(*pconvert_routine)(paddr,pbuffer,*nRequest,no_elements,offset);
+	if(pfl!=NULL) {
+	    struct dbAddr	localAddr;
+
+	    bcopy(paddr,&localAddr,sizeof(localAddr));
+	    /*Use longest field size*/
+	    localAddr.pfield = (char *)&pfl->field;
+	    status=(*pconvert_routine)(&localAddr,pbuffer,*nRequest,
+			no_elements,offset);
+	} else {
+	    status=(*pconvert_routine)(paddr,pbuffer,*nRequest,
+			no_elements,offset);
+	}
 	if(perr_status) *perr_status = status;
         return(status);
 }

@@ -1,6 +1,5 @@
 /* dbScan.c */
 /* share/src/db  $Id$ */
-
 /* tasks and subroutines to scan the database */
 /*
  *      Author:          Bob Dalesio
@@ -57,6 +56,7 @@
  *				intr_event_poster to io_scanner_wakeup
  * .16  09-14-90	mrk	changed for new record/device support
  * .17  10-24-90	mrk	replaced momentary task by general purpose callback task
+ * .18  09-30-91	mrk	added intLock to callbackRequest
  */
 
 /*
@@ -659,7 +659,15 @@ callbackTask(){
 callbackRequest(pcallback)
     struct callback *pcallback;
 {
-        rngBufPut(callbackQ,&pcallback,sizeof(pcallback));
+	int priority = pcallback->priority;
+	int lockKey;
+	int nput;
+
+	/* multiple writers are possible so block interrupts*/
+	lockKey = intLock();
+        nput = rngBufPut(callbackQ,&pcallback,sizeof(pcallback));
+	intUnLock(lockKey);
+	if(nput!=sizeof(pcallback)) logMsg("callbackRequest ring buffer full");
 	semGive(&callbackSem);
 }
 

@@ -1,5 +1,4 @@
 /* share/src/db  $Id$ */
-
 /*      database access subroutines */
 /*
  *      Author: Bob Dalesio
@@ -30,8 +29,10 @@
  * -----------------
  * .01  07-26-91	mrk	Major cleanup
  * .02  08-06-91	mrk	More cleanup
+ * .03	08-13-91	mrk	Added extra null arg to db_get_field calls
  */
-
+#include	<vxWorks.h>
+#include	<types.h>
 #include        <db_access.h>
 
 
@@ -79,7 +80,7 @@ short	index;
 			 && (i!=DBR_GR_STRING)
 			 && (i!=DBR_CTRL_STRING)) continue;
 		}
-		if(db_get_field(paddr,i,tgf_buffer,number_elements,0)<0)
+		if(db_get_field(paddr,i,tgf_buffer,number_elements,NULL)<0)
 			printf("\t%s Failed\n",dbr_text[i]);
 		else
 			print_returned(i,tgf_buffer,number_elements);
@@ -131,28 +132,28 @@ short	index;
 	printf("    Field Size: %d\n",addr.field_size);
 	printf("   No Elements: %d\n",addr.no_elements);
 	if (db_put_field(paddr,DBR_STRING,pvalue,1) < 0) printf("\n\t failed ");
-	if (db_get_field(paddr,DBR_STRING,buffer,1) < 0) printf("\n\tfailed");
+	if (db_get_field(paddr,DBR_STRING,buffer,1,NULL) < 0) printf("\n\tfailed");
 	else print_returned(DBR_STRING,buffer,1);
 	if(addr.field_type<=DBF_STRING)
 	  return(0);
 	if(sscanf(pvalue,"%hd",&shortvalue)==1) {
 	  if (db_put_field(paddr,DBR_SHORT,&shortvalue,1) < 0) 
 		printf("\n\t SHORT failed ");
-	  if (db_get_field(paddr,DBR_SHORT,buffer,1) < 0) 
+	  if (db_get_field(paddr,DBR_SHORT,buffer,1,NULL) < 0) 
 		printf("\n\t SHORT GET failed");
 	  else print_returned(DBR_SHORT,buffer,1);
 	}
 	if(sscanf(pvalue,"%ld",&longvalue)==1) {
 	  if (db_put_field(paddr,DBR_LONG,&longvalue,1) < 0) 
 		printf("\n\t LONG failed ");
-		if (db_get_field(paddr,DBR_LONG,buffer,1) < 0) 
+		if (db_get_field(paddr,DBR_LONG,buffer,1,NULL) < 0) 
 		  printf("\n\t LONG GET failed");
 		else print_returned(DBR_LONG,buffer,1);
 	}
 	if(sscanf(pvalue,"%f",&floatvalue)==1) {
 	  if (db_put_field(paddr,DBR_FLOAT,&floatvalue,1) < 0) 
 		printf("\n\t FLOAT failed ");
-	  if (db_get_field(paddr,DBR_FLOAT,buffer,1) < 0) 
+	  if (db_get_field(paddr,DBR_FLOAT,buffer,1,NULL) < 0) 
 		printf("\n\t FLOAT GET failed");
 	  else print_returned(DBR_FLOAT,buffer,1);
 	}
@@ -160,7 +161,7 @@ short	index;
 	  doublevalue=floatvalue;
 	  if (db_put_field(paddr,DBR_DOUBLE,&doublevalue,1) < 0)
 			printf("\n\t DOUBLE failed ");
-	  if (db_get_field(paddr,DBR_DOUBLE,buffer,1) < 0) 
+	  if (db_get_field(paddr,DBR_DOUBLE,buffer,1,NULL) < 0) 
 		printf("\n\t DOUBLE GET failed");
 	  else print_returned(DBR_DOUBLE,buffer,1);
 	}
@@ -168,14 +169,14 @@ short	index;
 	  charvalue=(unsigned char)shortvalue;
 	  if (db_put_field(paddr,DBR_CHAR,&charvalue,1) < 0) 
 		printf("\n\t CHAR failed ");
-	  if (db_get_field(paddr,DBR_CHAR,buffer,1) < 0) 
+	  if (db_get_field(paddr,DBR_CHAR,buffer,1,NULL) < 0) 
 		printf("\n\t CHAR GET failed");
 	  else print_returned(DBR_CHAR,buffer,1);
 	}
 	if(sscanf(pvalue,"%hu",&shortvalue)==1) {
 	  if (db_put_field(paddr,DBR_ENUM,&shortvalue,1) < 0) 
 		printf("\n\t ENUM failed ");
-	  if (db_get_field(paddr,DBR_ENUM,buffer,1) < 0) 
+	  if (db_get_field(paddr,DBR_ENUM,buffer,1,NULL) < 0) 
 		printf("\n\t ENUM GET failed");
 	  else print_returned(DBR_ENUM,buffer,1);
 	}

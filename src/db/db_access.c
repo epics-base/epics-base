@@ -1,6 +1,5 @@
 /* db_access.c */
 /* share/src/db  $Id$ */
-
 /* db_access.c - Interface between old database access and new */
 /*
  *      Author:          Bob Dalesio
@@ -31,6 +30,7 @@
  * -----------------
  * .01	06-25-91 joh	inserted the RISC aligned db_access.h structures
  * .02	08-06-91 mrk	Make extra values 0
+ * .03	08-13-91 mrk	Add pfl argument to dbGetField calls
  */
 
 
@@ -531,6 +531,7 @@ new_alarm(){
  *			see DBR_ defines in db_access.h
  *	pbuffer		return buffer
  *	no_elements	number of elements
+ *      caddr_t		pfl;
  *    returns
  *	0		successful
  *	-1		failed
@@ -575,11 +576,12 @@ db_name_to_addr(pname,paddr)
 
 typedef char DBSTRING[MAX_STRING_SIZE];
 
-db_get_field(paddr,buffer_type,pbuffer,no_elements)
+db_get_field(paddr,buffer_type,pbuffer,no_elements,pfl)
 struct dbAddr	*paddr;
 short		buffer_type;
 char		*pbuffer;
 unsigned short	no_elements;
+caddr_t		pfl;
 {
     long status;
     long options;
@@ -596,7 +598,8 @@ unsigned short	no_elements;
 
 		options=0;
 		nRequest=no_elements;
-		status = dbGetField(paddr,DBR_STRING,pbuffer,&options,&nRequest);
+		status = dbGetField(paddr,DBR_STRING,pbuffer,&options,&nRequest,
+			pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i][0] = 0;
 	}
 	break;
@@ -607,7 +610,8 @@ unsigned short	no_elements;
 
 		options=0;
 		nRequest=no_elements;
-		status = dbGetField(paddr,DBR_SHORT,pbuffer,&options,&nRequest);
+		status = dbGetField(paddr,DBR_SHORT,pbuffer,&options,&nRequest,
+			pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -617,7 +621,8 @@ unsigned short	no_elements;
 
 		options=0;
 		nRequest=no_elements;
-		status = dbGetField(paddr,DBR_FLOAT,pbuffer,&options,&nRequest);
+		status = dbGetField(paddr,DBR_FLOAT,pbuffer,&options,&nRequest,
+			pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -627,7 +632,8 @@ unsigned short	no_elements;
 
 		options=0;
 		nRequest=no_elements;
-		status = dbGetField(paddr,DBR_ENUM,pbuffer,&options,&nRequest);
+		status = dbGetField(paddr,DBR_ENUM,pbuffer,&options,&nRequest,
+			pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -637,7 +643,8 @@ unsigned short	no_elements;
 
 		options=0;
 		nRequest=no_elements;
-		status = dbGetField(paddr,DBR_CHAR,pbuffer,&options,&nRequest);
+		status = dbGetField(paddr,DBR_CHAR,pbuffer,&options,&nRequest,
+			pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -647,7 +654,8 @@ unsigned short	no_elements;
 
 		options=0;
 		nRequest=no_elements;
-		status = dbGetField(paddr,DBR_LONG,pbuffer,&options,&nRequest);
+		status = dbGetField(paddr,DBR_LONG,pbuffer,&options,&nRequest,
+			pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -657,7 +665,8 @@ unsigned short	no_elements;
 
 		options=0;
 		nRequest=no_elements;
-		status = dbGetField(paddr,DBR_DOUBLE,pbuffer,&options,&nRequest);
+		status = dbGetField(paddr,DBR_DOUBLE,pbuffer,&options,&nRequest,
+			pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -673,13 +682,14 @@ unsigned short	no_elements;
 
 		options=DBR_STATUS;
 		nRequest=0;
-		status = dbGetField(paddr,DBR_STRING,&new,&options,&nRequest);
+		status = dbGetField(paddr,DBR_STRING,&new,&options,&nRequest,
+			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_STRING,&(pold->value[0]),
-			&options,&nRequest);
+			&options,&nRequest,pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i][0] = 0;
 	}
 	break;
@@ -694,13 +704,14 @@ unsigned short	no_elements;
 
 		options=DBR_STATUS;
 		nRequest=0;
-		status = dbGetField(paddr,DBR_SHORT,&new,&options,&nRequest);
+		status = dbGetField(paddr,DBR_SHORT,&new,&options,&nRequest,
+			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_SHORT,&(pold->value),&options,
-			&nRequest);
+			&nRequest,pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -714,13 +725,14 @@ unsigned short	no_elements;
 
 		options=DBR_STATUS;
 		nRequest=0;
-		status = dbGetField(paddr,DBR_FLOAT,&new,&options,&nRequest);
+		status = dbGetField(paddr,DBR_FLOAT,&new,&options,&nRequest,
+			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_FLOAT,&(pold->value),&options,
-			&nRequest);
+			&nRequest,pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -734,13 +746,14 @@ unsigned short	no_elements;
 
 		options=DBR_STATUS;
 		nRequest=0;
-		status = dbGetField(paddr,DBR_ENUM,&new,&options,&nRequest);
+		status = dbGetField(paddr,DBR_ENUM,&new,&options,&nRequest,
+			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_ENUM,&(pold->value),&options,
-			&nRequest);
+			&nRequest,pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -754,13 +767,14 @@ unsigned short	no_elements;
 
 		options=DBR_STATUS;
 		nRequest=0;
-		status = dbGetField(paddr,DBR_UCHAR,&new,&options,&nRequest);
+		status = dbGetField(paddr,DBR_UCHAR,&new,&options,&nRequest,
+			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_UCHAR,&(pold->value),&options,
-			&nRequest);
+			&nRequest,pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -774,13 +788,14 @@ unsigned short	no_elements;
 
 		options=DBR_STATUS;
 		nRequest=0;
-		status = dbGetField(paddr,DBR_LONG,&new,&options,&nRequest);
+		status = dbGetField(paddr,DBR_LONG,&new,&options,&nRequest,
+			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_LONG,&(pold->value),&options,
-			&nRequest);
+			&nRequest,pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -794,13 +809,14 @@ unsigned short	no_elements;
 
 		options=DBR_STATUS;
 		nRequest=0;
-		status = dbGetField(paddr,DBR_DOUBLE,&new,&options,&nRequest);
+		status = dbGetField(paddr,DBR_DOUBLE,&new,&options,&nRequest,
+			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_DOUBLE,&(pold->value),&options,
-			&nRequest);
+			&nRequest,pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -815,14 +831,15 @@ unsigned short	no_elements;
 
 		options=DBR_STATUS | DBR_TIME;
 		nRequest=0;
-		status = dbGetField(paddr,DBR_STRING,&new,&options,&nRequest);
+		status = dbGetField(paddr,DBR_STRING,&new,&options,&nRequest,
+			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
 		pold->stamp = new.time;		/* structure copy */
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_STRING,pold->value,&options,
-			&nRequest);
+			&nRequest,pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i][0] = 0;
 	}
 	break;
@@ -838,14 +855,15 @@ unsigned short	no_elements;
 
 		options=DBR_STATUS | DBR_TIME;
 		nRequest=0;
-		status = dbGetField(paddr,DBR_SHORT,&new,&options,&nRequest);
+		status = dbGetField(paddr,DBR_SHORT,&new,&options,&nRequest,
+			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
 		pold->stamp = new.time;		/* structure copy */
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_SHORT,&(pold->value),&options,
-			&nRequest);
+			&nRequest,pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -860,14 +878,15 @@ unsigned short	no_elements;
 
 		options=DBR_STATUS | DBR_TIME;
 		nRequest=0;
-		status = dbGetField(paddr,DBR_FLOAT,&new,&options,&nRequest);
+		status = dbGetField(paddr,DBR_FLOAT,&new,&options,&nRequest,
+			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
 		pold->stamp = new.time;		/* structure copy */
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_FLOAT,&(pold->value),&options,
-			&nRequest);
+			&nRequest,pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -882,14 +901,15 @@ unsigned short	no_elements;
 
 		options=DBR_STATUS | DBR_TIME;
 		nRequest=0;
-		status = dbGetField(paddr,DBR_ENUM,&new,&options,&nRequest);
+		status = dbGetField(paddr,DBR_ENUM,&new,&options,&nRequest,
+			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
 		pold->stamp = new.time;		/* structure copy */
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_ENUM,&(pold->value),&options,
-			&nRequest);
+			&nRequest,pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -904,14 +924,15 @@ unsigned short	no_elements;
 
 		options=DBR_STATUS | DBR_TIME;
 		nRequest=0;
-		status = dbGetField(paddr,DBR_CHAR,&new,&options,&nRequest);
+		status = dbGetField(paddr,DBR_CHAR,&new,&options,&nRequest,
+			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
 		pold->stamp = new.time;		/* structure copy */
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_CHAR,&(pold->value),&options,
-			&nRequest);
+			&nRequest,pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -926,14 +947,15 @@ unsigned short	no_elements;
 
 		options=DBR_STATUS | DBR_TIME;
 		nRequest=0;
-		status = dbGetField(paddr,DBR_LONG,&new,&options,&nRequest);
+		status = dbGetField(paddr,DBR_LONG,&new,&options,&nRequest,
+			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
 		pold->stamp = new.time;		/* structure copy */
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_LONG,&(pold->value),&options,
-			&nRequest);
+			&nRequest,pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -948,14 +970,15 @@ unsigned short	no_elements;
 
 		options=DBR_STATUS | DBR_TIME;
 		nRequest=0;
-		status = dbGetField(paddr,DBR_DOUBLE,&new,&options,&nRequest);
+		status = dbGetField(paddr,DBR_DOUBLE,&new,&options,&nRequest,
+			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
 		pold->stamp = new.time;		/* structure copy */
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_DOUBLE,&(pold->value),&options,
-			&nRequest);
+			&nRequest,pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -974,7 +997,8 @@ unsigned short	no_elements;
 
 		options=DBR_STATUS|DBR_UNITS|DBR_GR_LONG|DBR_AL_LONG;
 		nRequest=0;
-		status = dbGetField(paddr,DBR_SHORT,&new,&options,&nRequest);
+		status = dbGetField(paddr,DBR_SHORT,&new,&options,&nRequest,
+			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
 		strncpy(pold->units,new.units,8);
@@ -987,7 +1011,7 @@ unsigned short	no_elements;
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_SHORT,&(pold->value),&options,
-			&nRequest);
+			&nRequest,pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -1006,7 +1030,8 @@ unsigned short	no_elements;
 		options=DBR_STATUS|DBR_UNITS|DBR_PRECISION|DBR_GR_DOUBLE
 			|DBR_AL_DOUBLE;
 		nRequest=0;
-		status = dbGetField(paddr,DBR_FLOAT,&new,&options,&nRequest);
+		status = dbGetField(paddr,DBR_FLOAT,&new,&options,&nRequest,
+			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
 		pold->precision = new.precision;
@@ -1020,7 +1045,7 @@ unsigned short	no_elements;
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_FLOAT,&(pold->value),&options,
-			&nRequest);
+			&nRequest,pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -1038,7 +1063,8 @@ unsigned short	no_elements;
 
 		options=DBR_STATUS|DBR_UNITS|DBR_GR_LONG|DBR_AL_LONG;
 		nRequest=0;
-		status = dbGetField(paddr,DBR_UCHAR,&new,&options,&nRequest);
+		status = dbGetField(paddr,DBR_UCHAR,&new,&options,&nRequest,
+			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
 		strncpy(pold->units,new.units,8);
@@ -1051,7 +1077,7 @@ unsigned short	no_elements;
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_UCHAR,&(pold->value),&options,
-			&nRequest);
+			&nRequest,pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -1068,7 +1094,8 @@ unsigned short	no_elements;
 
 		options=DBR_STATUS|DBR_UNITS|DBR_GR_LONG|DBR_AL_LONG;
 		nRequest=0;
-		status = dbGetField(paddr,DBR_LONG,&new,&options,&nRequest);
+		status = dbGetField(paddr,DBR_LONG,&new,&options,&nRequest,
+			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
 		strncpy(pold->units,new.units,8);
@@ -1081,7 +1108,7 @@ unsigned short	no_elements;
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_LONG,&(pold->value),&options,
-			&nRequest);
+			&nRequest,pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -1100,7 +1127,8 @@ unsigned short	no_elements;
 		options=DBR_STATUS|DBR_UNITS|DBR_PRECISION|DBR_GR_DOUBLE
 			|DBR_AL_DOUBLE;
 		nRequest=0;
-		status = dbGetField(paddr,DBR_DOUBLE,&new,&options,&nRequest);
+		status = dbGetField(paddr,DBR_DOUBLE,&new,&options,&nRequest,
+			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
 		pold->precision = new.precision;
@@ -1114,7 +1142,7 @@ unsigned short	no_elements;
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_DOUBLE,&(pold->value),&options,
-			&nRequest);
+			&nRequest,pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -1134,7 +1162,8 @@ unsigned short	no_elements;
 		options=DBR_STATUS|DBR_UNITS|DBR_GR_LONG|DBR_CTRL_LONG
 			|DBR_AL_LONG;
 		nRequest=0;
-		status = dbGetField(paddr,DBR_SHORT,&new,&options,&nRequest);
+		status = dbGetField(paddr,DBR_SHORT,&new,&options,&nRequest,
+			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
 		strncpy(pold->units,new.units,8);
@@ -1149,7 +1178,7 @@ unsigned short	no_elements;
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_SHORT,&(pold->value),&options,
-			&nRequest);
+			&nRequest,pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -1169,7 +1198,8 @@ unsigned short	no_elements;
 		options=DBR_STATUS|DBR_UNITS|DBR_PRECISION|DBR_GR_DOUBLE
 			|DBR_CTRL_DOUBLE|DBR_AL_DOUBLE;
 		nRequest=0;
-		status = dbGetField(paddr,DBR_FLOAT,&new,&options,&nRequest);
+		status = dbGetField(paddr,DBR_FLOAT,&new,&options,&nRequest,
+			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
 		pold->precision = new.precision;
@@ -1185,7 +1215,7 @@ unsigned short	no_elements;
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_FLOAT,&(pold->value),&options,
-			&nRequest);
+			&nRequest,pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -1204,7 +1234,7 @@ unsigned short	no_elements;
 		/* first get status and severity */
 		options=DBR_STATUS|DBR_ENUM_STRS;
 		nRequest=0;
-		status = dbGetField(paddr,DBR_ENUM,&new,&options,&nRequest);
+		status = dbGetField(paddr,DBR_ENUM,&new,&options,&nRequest,pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
 		no_str = new.no_str;
@@ -1217,7 +1247,7 @@ unsigned short	no_elements;
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_ENUM,&(pold->value),&options,
-			&nRequest);
+			&nRequest,pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -1236,7 +1266,8 @@ unsigned short	no_elements;
 		options=DBR_STATUS|DBR_UNITS|DBR_GR_LONG|DBR_CTRL_LONG
 			|DBR_AL_LONG;
 		nRequest=0;
-		status = dbGetField(paddr,DBR_UCHAR,&new,&options,&nRequest);
+		status = dbGetField(paddr,DBR_UCHAR,&new,&options,&nRequest,
+			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
 		strncpy(pold->units,new.units,8);
@@ -1251,7 +1282,7 @@ unsigned short	no_elements;
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_UCHAR,&(pold->value),&options,
-			&nRequest);
+			&nRequest,pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -1270,7 +1301,7 @@ unsigned short	no_elements;
 		options=DBR_STATUS|DBR_UNITS|DBR_GR_LONG|DBR_CTRL_LONG
 			|DBR_AL_LONG;
 		nRequest=0;
-		status = dbGetField(paddr,DBR_LONG,&new,&options,&nRequest);
+		status = dbGetField(paddr,DBR_LONG,&new,&options,&nRequest,pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
 		strncpy(pold->units,new.units,8);
@@ -1285,7 +1316,7 @@ unsigned short	no_elements;
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_LONG,&(pold->value),&options,
-			&nRequest);
+			&nRequest,pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
@@ -1305,7 +1336,8 @@ unsigned short	no_elements;
 		options=DBR_STATUS|DBR_UNITS|DBR_PRECISION|DBR_GR_DOUBLE
 			|DBR_CTRL_DOUBLE|DBR_AL_DOUBLE;
 		nRequest=0;
-		status = dbGetField(paddr,DBR_DOUBLE,&new,&options,&nRequest);
+		status = dbGetField(paddr,DBR_DOUBLE,&new,&options,&nRequest,
+			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
 		pold->precision = new.precision;
@@ -1321,7 +1353,7 @@ unsigned short	no_elements;
 		options=0;
 		nRequest=no_elements;
 		status = dbGetField(paddr,DBR_DOUBLE,&(pold->value),&options,
-			&nRequest);
+			&nRequest,pfl);
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;

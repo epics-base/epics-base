@@ -1,6 +1,5 @@
 /* DB_EVENT.C */
 /* share/src/db  $Id$ */
-
 /* routines for scheduling events to lower priority tasks via the RT kernel */
 /*
  * 	Author: 	Jeffrey O. Hill 
@@ -28,10 +27,6 @@
  *              Argonne National Laboratory
  *
  *	NOTES:
- *	01	I have assumed that all C compilers align unions so that
- *		a pointer to a field in the union is also a pointer all
- *		of the other fields in the union. This has been verified
- *		on our current compiler and several other C compilers.
  *
  * Modification Log:
  * -----------------
@@ -53,6 +48,9 @@
  * joh	08	031590	improved flush wait in db_cancel_event()
  * joh	09	112790	added time stamp, alarm, and status logging
  * joh	10	112790	source cleanup
+ * ???	11	????91	anl turned off paddr sanity checking
+ * joh	12	082091	db_event_get_field() comented out
+ * joh	13	091191	updated for v5 vxWorks
  */
 
 #include	<vxWorks.h>
@@ -60,6 +58,7 @@
 #include	<wdLib.h>
 #include	<lstLib.h>
 #include	<semLib.h>
+
 #include 	<tsDefs.h>
 #include	<dbDefs.h>
 #include	<db_access.h>
@@ -163,7 +162,7 @@ struct event_user{
   	int			taskpri;	/* event handler task pri */
 
   	char			pendlck;	/* Only one task can pend */
-  	SEMAPHORE		pendsem;	/* Wait while empty */
+  	SEM_ID			ppendsem;	/* Wait while empty */
   	unsigned char		pendexit;	/* exit pend task */
 
   	unsigned short	queovr;			/* event que overflow count */
@@ -270,6 +269,15 @@ struct event_user
 
   	evuser->firstque.evuser = evuser;
 	FASTLOCKINIT(&(evuser->firstque.writelock));
+#	ifdef V5_vxWorks
+		evuser->ppendsem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
+#	else
+		evuser->ppendsem = semCreate();
+#	endif
+	if(!evuser->ppendsem){
+		free(evuser);
+		return NULL;
+	}
 
   	return evuser;
 }
@@ -277,7 +285,10 @@ struct event_user
 
 /*
  *	DB_CLOSE_EVENTS()
- *
+ *	
+ *	evuser block and additional event queues
+ *	deallocated when the event thread terminates
+ *	itself
  *
  */
 db_close_events(evuser)
@@ -295,7 +306,7 @@ register struct event_user	*evuser;
   	evuser->pendexit = TRUE;
 
   	/* notify the waiting task */
-  	semGive(&evuser->pendsem);
+  	semGive(evuser->ppendsem);
 
 
   	return OK;
@@ -313,64 +324,6 @@ register struct event_user	*evuser;
 db_sizeof_event_block()
 {
   	return sizeof(struct event_block);
-}
-
-
-
-/*
- * DB_EVENT_GET_FIELD()
- *
- *
- */
-db_event_get_field(paddr, buffer_type, pbuffer, no_elements, pfl)
-  struct db_addr	*paddr;
-  short		 buffer_type;
-  char		*pbuffer;
-  unsigned short	 no_elements;
-  db_field_log	*pfl;
-{
-  int status;
-  char * pfield_save;
-
-  if(pfl==NULL) return(db_get_field(paddr,buffer_type,pbuffer,no_elements));
-  pfield_save = paddr->pfield;
-  if(buffer_type>=DBR_INT && buffer_type<=DBR_DOUBLE) {
-	if(pfl!=NULL)paddr->pfield = (char *)(&pfl->field);
-	status = db_get_field(paddr,buffer_type,pbuffer,no_elements);
-	paddr->pfield = pfield_save;
-	return(status);
-  }
- if(buffer_type>=DBR_STS_INT && buffer_type<=DBR_STS_DOUBLE) {
-	struct dbr_sts_int *ps = (struct dbr_sts_int *)pbuffer;
-	short request_type = buffer_type - DBR_STS_STRING;
-
-	if(pfl!=NULL) {
-		ps->status = pfl->stat;
-		ps->severity = pfl->sevr;
-		paddr->pfield = (char *)(&pfl->field);
-		status=db_get_field(paddr,request_type,&ps->value,no_elements);
-		paddr->pfield = pfield_save;
-		return(status);
-	}
-	return(db_get_field(paddr,buffer_type,pbuffer,no_elements));
-  }
-  if(buffer_type>=DBR_TIME_INT && buffer_type<=DBR_TIME_DOUBLE) {
-	struct dbr_time_short *ps = (struct dbr_time_short *)pbuffer;
-	short request_type = buffer_type - DBR_TIME_STRING;
-
-	if(pfl!=NULL) {
-		ps->status = pfl->stat;
-		ps->severity = pfl->sevr;
-		ps->stamp = pfl->time;
-		paddr->pfield = (char *)(&pfl->field);
-		status=db_get_field(paddr,request_type,&ps->value,no_elements);
-		paddr->pfield = pfield_save;
-		return(status);
-	}
-	return(db_get_field(paddr,buffer_type,pbuffer,no_elements));
-  }
-
- return(db_get_field(paddr,buffer_type,pbuffer,no_elements));
 }
 
 
@@ -415,12 +368,13 @@ register struct event_block	*pevent; /* ptr to event blk (not required) */
     		if(!ev_que->nextque){
       			tmp_que = (struct event_que *) 
 				calloc(1, sizeof(*tmp_que));   
+
       			if(!tmp_que)
         			return ERROR;
       			tmp_que->evuser = evuser;
+			FASTLOCKINIT(&(tmp_que->writelock));
       			ev_que->nextque = tmp_que;
       			ev_que = tmp_que;
-			FASTLOCKINIT(&(ev_que->writelock));
       			break;
     		}
     		ev_que = ev_que->nextque;
@@ -449,7 +403,7 @@ register struct event_block	*pevent; /* ptr to event blk (not required) */
   	if(	paddr->no_elements == 1 && 
 		dbr_size[paddr->field_type] <= sizeof(union native_value))
   		pevent->valque = TRUE;
- 	 else
+ 	else
   		pevent->valque = FALSE;
 
   	LOCKREC(precord);
@@ -499,23 +453,32 @@ register struct event_block	*pevent;
 	 * flush without polling.
 	 */
   	if(pevent->npend){
-    		struct event_block	flush_event;
-    		SEMAPHORE		flush_sem;
-    		void			wake_cancel();
+		SEM_ID			pflush_sem;
 
-    		semInit(&flush_sem);
+#		ifdef V5_vxWorks
+			pflush_sem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
+#		else
+			pflush_sem = semCreate();
+#		endif
 
-    		flush_event = *pevent;
-    		flush_event.user_sub = wake_cancel;
-    		flush_event.user_arg = &flush_sem;
-    		flush_event.npend = 0;
+		if(pflush_sem){
+    			struct event_block	flush_event;
 
-    		if(db_post_single_event(&flush_event)==OK)
-      			semTake(&flush_sem);
+    			flush_event = *pevent;
+    			flush_event.user_sub = wake_cancel;
+    			flush_event.user_arg = pflush_sem;
+    			flush_event.npend = 0;
+
+    			if(db_post_single_event(&flush_event)==OK){
+      				semTake(pflush_sem, sysClkRateGet()*10);
+			}
+
+			semDelete(pflush_sem);
+		}
 
     		/* insurance- incase the event could not be queued */
     		while(pevent->npend)
-      			taskDelay(10);
+      			taskDelay(sysClkRateGet());
   	}
 
 	/*
@@ -533,10 +496,10 @@ register struct event_block	*pevent;
  * a very short routine to inform a db_clear thread that the deleted event
  * has been flushed
  */
-static void wake_cancel(sem)
-SEMAPHORE	*sem;
+static void wake_cancel(psem)
+SEM_ID	psem;
 {
-    	semGive(sem);
+    	semGive(psem);
 }
 
 
@@ -602,7 +565,7 @@ register struct event_block		*pevent;
 	
 		}
     		/* notify the event handler */
-    		semGive(&ev_que->evuser->pendsem);
+    		semGive(ev_que->evuser->ppendsem);
     		ev_que->putix = RNGINC(putix);
     		success = TRUE;
   	}
@@ -680,7 +643,7 @@ register unsigned int		select;
 
 				}
         			/* notify the event handler */
-        			semGive(&ev_que->evuser->pendsem);
+        			semGive(ev_que->evuser->ppendsem);
 
         			ev_que->putix = RNGINC(putix);
       			}
@@ -767,7 +730,11 @@ register int			init_func_arg;
 	 * routine at a time
 	 */
   	do{
-    		semTake(&evuser->pendsem);
+#		ifdef V5_vxWorks
+    			semTake(evuser->ppendsem, WAIT_FOREVER);
+#		else
+    			semTake(evuser->ppendsem);
+#		endif
 
     		for(	ev_que= &evuser->firstque; 
 			ev_que; 
@@ -794,19 +761,24 @@ register int			init_func_arg;
 
   	evuser->pendlck = FALSE;
 
+	if(FASTLOCKFREE(&evuser->firstque.writelock)<0)
+		logMsg("evtsk: fast lock free fail 1\n");
+
   	/* joh- added this code to free additional event queues */
   	{
     		struct event_que	*nextque;
-    		for(	ev_que = evuser->firstque.nextque; 
-			ev_que; 
-			ev_que = nextque){
+
+		ev_que = evuser->firstque.nextque;
+    		while(ev_que){ 
 
       			nextque = ev_que->nextque;
+			if(FASTLOCKFREE(&ev_que->writelock)<0)
+				logMsg("evtsk: fast lock free fail 2\n");
       			if(free(ev_que))
         			logMsg("evtsk: sub queue free fail\n");
-    		}
+ 			ev_que = nextque;
+   		}
   	}
- 	/* end added code */
 
   	if(free(evuser))
     		logMsg("evtsk: evuser free fail\n");

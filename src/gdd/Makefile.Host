@@ -4,8 +4,6 @@
 TOP= ../../..
 include $(TOP)/config/CONFIG_BASE
 
-#OPTIM_YES=-g
-
 INC += gdd.h
 INC += gddI.h
 INC += gddContainer.h
@@ -25,6 +23,10 @@ INC += gddAppTable.h
 INC += gddAppFuncTable.h
 INC += gddApps.h
 
+AITGENSRCS := gdd.cc gddTest.cc gddAppTable.cc gddNewDel.cc \
+	gddAppDefs.cc aitTypes.c aitConvert.cc aitHelpers.cc  \
+	gddArray.cc gddContainer.cc gddErrorCodes.cc gddUtils.cc
+
 LIBSRCS := gdd.cc gddTest.cc gddAppTable.cc gddNewDel.cc \
 	gddAppDefs.cc aitTypes.c aitConvert.cc aitHelpers.cc dbMapper.cc \
 	gddArray.cc gddContainer.cc gddErrorCodes.cc gddUtils.cc
@@ -32,15 +34,6 @@ LIBSRCS := gdd.cc gddTest.cc gddAppTable.cc gddNewDel.cc \
 LIBRARY := gdd
 
 LIBTYPE := SHARED
-
-DLL_LIBS := Com
-
-# build locally:
-TESTPROD:=genApps
-TESTPROD_SRCS:=genApps.cc gdd.cc gddArray.cc gddContainer.cc \
-		gddTest.cc gddErrorCodes.cc gddUtils.cc gddAppTable.cc\
-		gddNewDel.cc gddAppDefs.cc \
-		aitTypes.cc aitConvert.cc aitHelpers.cc
 
 include $(TOP)/config/RULES.Host
 
@@ -50,19 +43,21 @@ include $(TOP)/config/RULES.Host
 #	not have been installed if we are building for
 #	the first time
 #	-> use explicit reference to the uninstalled files in '..'
-aitConvert$(OBJ): aitConvert.cc aitConvertGenerated.cc\
+aitConvert$(OBJ): ../aitConvert.cc aitConvertGenerated.cc\
 		../aitConvert.h ../aitTypes.h
+
+
 dbMapper.cc:	../gdd.h ../gddI.h ../gddContainer.h ../gddContainerI.h \
 		../gddArray.h ../gddScalar.h ../gddAppTable.h ../dbMapper.h \
-		./gddApps.h ../aitTypes.h  ../gddUtils.h ../gddUtilsI.h
+		gddApps.h ../aitTypes.h  ../gddUtils.h ../gddUtilsI.h
 
 # Rules for generated files
 #
 aitConvertGenerated.cc: aitGen$(EXE) ../aitTypes.h
 	./aitGen$(EXE)
 
-./gddApps.h: genApps$(EXE)
-	./genApps$(EXE) $@
+gddApps.h : genApps$(EXE)
+	genApps$(EXE) $@
 
 # unfortunately there is only one TESTPROD/TESTPROD_SRCS allowed
 # right now
@@ -73,7 +68,10 @@ aitConvertGenerated.cc: aitGen$(EXE) ../aitTypes.h
 #
 # This rule, however, should be system-independent:
 aitGen$(EXE): aitGen$(OBJ) aitTypes$(OBJ)
-	$(LINK.c) $^ $(LDLIBS)
+	$(LINK.c) $^ 
+
+genApps$(EXE): genApps$(OBJ) $(addsuffix $(OBJ), $(basename $(AITGENSRCS)))
+	$(LINK.c) $^ 
 
 clean::
 	$(RM) aitConvertGenerated.cc aitGen$(EXE) genApps$(EXE)

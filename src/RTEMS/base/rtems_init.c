@@ -415,7 +415,7 @@ Init (rtems_task_argument ignored)
                                             == epicsThreadBooleanStatusSuccess)
             rtems_bsdnet_config.network_task_priority = epicsThreadGetOssPriorityValue(p);
     }
-    printf ("***** Initializing network *****\n");
+    printf ("\n***** Initializing network *****\n");
     rtems_bsdnet_initialize_network ();
     initialize_remote_filesystem (argv);
 

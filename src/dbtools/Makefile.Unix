@@ -2,29 +2,45 @@ EPICS = ../../../..
 include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
+# USR_CFLAGS = -v
+
 LEX = $(ELEX)
 YACC = $(EYACC)
 YACCOPT = -l
 LEXOPT = -L
 
 SRCS.c = ../dbVarSub.c dbLoadTemplate_lex.c dbLoadTemplate.c \
-		dbLoadRecords_lex.c dbLoadRecords.c
+		dbLoadRecords_lex.c dbLoadRecords.c \
+		../BSlib.c ../PVSvx.c ../PVSserver.c ../PVSget.c
 
-OBJS =  dbVarSub.o dbLoadTemplate.o dbLoadRecords.o
+VAR_OBJS =  dbVarSub.o dbLoadTemplate.o dbLoadRecords.o 
+OBJS =  $(VAR_OBJS) BSlib.o PVSvx.o PVSserver.o PVSget.o
 
 PROD = subtool dbLoadTemplate
+TARGETS = PVSvx PVSserver PVSget
 
 include $(EPICS)/config/RULES.Unix
 
 dbLoadTemplate.o: dbLoadTemplate_lex.c
 dbLoadRecords.o: dbLoadRecords_lex.c 
 
-subtool: dbLoadTemplate.c dbLoadTemplate_lex.c dbVarSub.o
-	$(RM) $@
-	$(LINK.c) $(CFLAGS) -DSUB_TOOL -o subtool dbLoadTemplate.c dbVarSub.o -s
+PVSvx: PVSvx.o BSlib.o
+	$(LINK.c) $(ARCH_DEP_LDLIBS) $(LDFLAGS) -o $@ $^
 
-dbLoadTemplate: $(OBJS) 
-	$(LINK.c) -o $@ $(OBJS) $(LDLIBS) -lDb
+PVSserver: PVSserver.o BSlib.o
+	$(LINK.c) $(ARCH_DEP_LDLIBS) $(LDFLAGS) -o $@ $^
+
+PVSget: PVSget.o BSlib.o
+	$(LINK.c) $(ARCH_DEP_LDLIBS) $(LDFLAGS) -o $@ $^
+
+subtool.o: dbLoadTemplate.c dbLoadTemplate_lex.c
+	$(COMPILE.c) $(CFLAGS) -DSUB_TOOL -o $@ $<
+
+subtool: subtool.o dbVarSub.o
+	$(LINK.c) $(CFLAGS) -DSUB_TOOL -o $@ $^ -s
+
+dbLoadTemplate: $(VAR_OBJS) 
+	$(LINK.c) -o $@ $^ $(LDLIBS) -lDb
 
 clean::
 	@$(RM) dbLoadTemplate_lex.c dbLoadTemplate.c dbLoadRecords_lex.c \

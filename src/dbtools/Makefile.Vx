@@ -8,8 +8,9 @@ YACCOPT = -l
 LEXOPT = -L
 
 SRCS.c = ../dbVarSub.c dbLoadTemplate_lex.c dbLoadTemplate.c \
-		dbLoadRecords_lex.c dbLoadRecords.c
-LIBOBJS = dbVarSub.o dbLoadTemplate.o dbLoadRecords.o
+		dbLoadRecords_lex.c dbLoadRecords.c ../BSlib.c ../PVSvx.c
+
+LIBOBJS = dbVarSub.o dbLoadTemplate.o dbLoadRecords.o BSlib.o PVSvx.o
 
 LIBNAME = dbSubs
 

@@ -22,5 +22,5 @@ LIBRARY_vxWorks = bptLibrary
 
 include $(TOP)/configure/RULES_BUILD
 
-$(BPTS): $(EPICS_BASE_HOST_BIN)/makeBpt$(EXE)
+$(BPTS): $(EPICS_BASE_HOST_BIN)/makeBpt$(HOSTEXE)
 

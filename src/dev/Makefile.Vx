@@ -2,7 +2,7 @@ EPICS = ../../../..
 include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
-USR_INCLUDES = -I../../drv/old -I../../drv/ansi
+USR_INCLUDES =  -I../../drv/ansi -I../../drv/old
 
 #	SRCS.c += ../devAaiCamac.c
 #	SRCS.c += ../devAiCamac.c
@@ -15,7 +15,6 @@ SRCS.c += ../devAiTestAsyn.c
 SRCS.c += ../devAiXy566Di.c
 SRCS.c += ../devAiXy566DiL.c
 SRCS.c += ../devAiXy566Se.c
-SRCS.c += ../devAllenBradley.c
 #	SRCS.c += ../devAaoCamac.c
 #	SRCS.c += ../devAoCamac.c
 SRCS.c += ../devAoSoft.c
@@ -96,6 +95,12 @@ SRCS.c += ../devWfSoft.c
 SRCS.c += ../devWfTestAsyn.c
 SRCS.c += ../devWfXy566Sc.c
 SRCS.c += ../devXy240.c
+SRCS.c += ../devAB1771IFE.c
+SRCS.c += ../devAB1771IL.c
+SRCS.c += ../devAB1771IR.c
+SRCS.c += ../devAB1771IXE.c
+SRCS.c += ../devAB1771OFE.c
+SRCS.c += ../devABBINARY.c
 
 #	OBJS += devAaiCamac.o
 #	OBJS += devAiCamac.o
@@ -108,7 +113,6 @@ OBJS += devAiTestAsyn.o
 OBJS += devAiXy566Di.o
 OBJS += devAiXy566DiL.o
 OBJS += devAiXy566Se.o
-OBJS += devAllenBradley.o
 #	OBJS += devAaoCamac.o
 #	OBJS += devAoCamac.o
 OBJS += devAoSoft.o
@@ -189,6 +193,12 @@ OBJS += devWfSoft.o
 OBJS += devWfTestAsyn.o
 OBJS += devWfXy566Sc.o
 OBJS += devXy240.o
+OBJS += devAB1771IFE.o
+OBJS += devAB1771IL.o
+OBJS += devAB1771IR.o
+OBJS += devAB1771IXE.o
+OBJS += devAB1771OFE.o
+OBJS += devABBINARY.o
 
 PROD = devSup
 

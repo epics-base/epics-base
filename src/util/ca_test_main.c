@@ -31,6 +31,7 @@
 #include <stdio.h>
 
 #include "ca_test.h"
+#include "dbDefs.h"
 
 int main(int argc, char **argv)
 {

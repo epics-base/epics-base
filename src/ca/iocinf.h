@@ -185,6 +185,8 @@ private:
     ~nciu (); // force pool allocation
     int issuePut ( ca_uint16_t cmd, unsigned id, chtype type, 
                      unsigned long count, const void *pvalue );
+    void lock () const;
+    void unlock () const;
 };
 
 class baseNMIU : public tsDLNode <baseNMIU>,
@@ -710,6 +712,8 @@ public:
     void uninstallCASG (CASG &);
     void registerService ( cacServiceIO &service );
     bool createChannelIO (const char *name_str, cacChannel &chan);
+    void lock () const;
+    void unlock () const;
 
     osiTimerQueue           timerQueue;
     ELLLIST                 activeCASGOP;

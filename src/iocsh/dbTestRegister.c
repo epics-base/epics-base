@@ -23,145 +23,145 @@ of this distribution.
 #include "dbTestRegister.h"
 
 /* dba */
-static ioccrfArg dbaArg0 = { "record name",ioccrfArgString,0};
-static ioccrfArg *dbaArgs[1] = {&dbaArg0};
-static ioccrfFuncDef dbaFuncDef = {"dba",1,dbaArgs};
-static void dbaCallFunc(ioccrfArg **args) { dba((char *)args[0]->value);}
+static const ioccrfArg dbaArg0 = { "record name",ioccrfArgString};
+static const ioccrfArg *dbaArgs[1] = {&dbaArg0};
+static const ioccrfFuncDef dbaFuncDef = {"dba",1,dbaArgs};
+static void dbaCallFunc(const ioccrfArgBuf *args) { dba(args[0].sval);}
 
 /* dbl */
-static ioccrfArg dblArg0 = { "record type",ioccrfArgString,0};
-static ioccrfArg dblArg1 = { "output file",ioccrfArgString,0};
-static ioccrfArg dblArg2 = { "fields",ioccrfArgString,0};
-static ioccrfArg *dblArgs[3] = {&dblArg0,&dblArg1,&dblArg2};
-static ioccrfFuncDef dblFuncDef = {"dbl",3,dblArgs};
-static void dblCallFunc(ioccrfArg **args)
+static const ioccrfArg dblArg0 = { "record type",ioccrfArgString};
+static const ioccrfArg dblArg1 = { "output file",ioccrfArgString};
+static const ioccrfArg dblArg2 = { "fields",ioccrfArgString};
+static const ioccrfArg *dblArgs[3] = {&dblArg0,&dblArg1,&dblArg2};
+static const ioccrfFuncDef dblFuncDef = {"dbl",3,dblArgs};
+static void dblCallFunc(const ioccrfArgBuf *args)
 {
-    dbl((char *)args[0]->value,(char *)args[1]->value,(char *)args[2]->value);
+    dbl(args[0].sval,args[1].sval,args[2].sval);
 }
 
 /* dbnr */
-static ioccrfArg dbnrArg0 = { "verbose",ioccrfArgInt,0};
-static ioccrfArg *dbnrArgs[1] = {&dbnrArg0};
-static ioccrfFuncDef dbnrFuncDef = {"dbnr",1,dbnrArgs};
-static void dbnrCallFunc(ioccrfArg **args) { dbnr(*(int *)args[0]->value);}
+static const ioccrfArg dbnrArg0 = { "verbose",ioccrfArgInt};
+static const ioccrfArg *dbnrArgs[1] = {&dbnrArg0};
+static const ioccrfFuncDef dbnrFuncDef = {"dbnr",1,dbnrArgs};
+static void dbnrCallFunc(const ioccrfArgBuf *args) { dbnr(args[0].ival);}
 
 /* dbgrep */
-static ioccrfArg dbgrepArg0 = { "record name",ioccrfArgString,0};
-static ioccrfArg *dbgrepArgs[1] = {&dbgrepArg0};
-static ioccrfFuncDef dbgrepFuncDef = {"dbgrep",1,dbgrepArgs};
-static void dbgrepCallFunc(ioccrfArg **args) { dbgrep((char *)args[0]->value);}
+static const ioccrfArg dbgrepArg0 = { "record name",ioccrfArgString};
+static const ioccrfArg *dbgrepArgs[1] = {&dbgrepArg0};
+static const ioccrfFuncDef dbgrepFuncDef = {"dbgrep",1,dbgrepArgs};
+static void dbgrepCallFunc(const ioccrfArgBuf *args) { dbgrep(args[0].sval);}
 
 /* dbgf */
-static ioccrfArg dbgfArg0 = { "record name",ioccrfArgString,0};
-static ioccrfArg *dbgfArgs[1] = {&dbgfArg0};
-static ioccrfFuncDef dbgfFuncDef = {"dbgf",1,dbgfArgs};
-static void dbgfCallFunc(ioccrfArg **args) { dbgf((char *)args[0]->value);}
+static const ioccrfArg dbgfArg0 = { "record name",ioccrfArgString};
+static const ioccrfArg *dbgfArgs[1] = {&dbgfArg0};
+static const ioccrfFuncDef dbgfFuncDef = {"dbgf",1,dbgfArgs};
+static void dbgfCallFunc(const ioccrfArgBuf *args) { dbgf(args[0].sval);}
 
 /* dbpf */
-static ioccrfArg dbpfArg0 = { "record name",ioccrfArgString,0};
-static ioccrfArg dbpfArg1 = { "value",ioccrfArgString,0};
-static ioccrfArg *dbpfArgs[2] = {&dbpfArg0,&dbpfArg1};
-static ioccrfFuncDef dbpfFuncDef = {"dbpf",2,dbpfArgs};
-static void dbpfCallFunc(ioccrfArg **args)
-{ dbpf((char *)args[0]->value,(char *)args[1]->value);}
+static const ioccrfArg dbpfArg0 = { "record name",ioccrfArgString};
+static const ioccrfArg dbpfArg1 = { "value",ioccrfArgString};
+static const ioccrfArg *dbpfArgs[2] = {&dbpfArg0,&dbpfArg1};
+static const ioccrfFuncDef dbpfFuncDef = {"dbpf",2,dbpfArgs};
+static void dbpfCallFunc(const ioccrfArgBuf *args)
+{ dbpf(args[0].sval,args[1].sval);}
 
 /* dbpr */
-static ioccrfArg dbprArg0 = { "record name",ioccrfArgString,0};
-static ioccrfArg dbprArg1 = { "interest_level",ioccrfArgInt,0};
-static ioccrfArg *dbprArgs[2] = {&dbprArg0,&dbprArg1};
-static ioccrfFuncDef dbprFuncDef = {"dbpr",2,dbprArgs};
-static void dbprCallFunc(ioccrfArg **args)
-{ dbpr((char *)args[0]->value,*(int *)args[1]->value);}
+static const ioccrfArg dbprArg0 = { "record name",ioccrfArgString};
+static const ioccrfArg dbprArg1 = { "interest_level",ioccrfArgInt};
+static const ioccrfArg *dbprArgs[2] = {&dbprArg0,&dbprArg1};
+static const ioccrfFuncDef dbprFuncDef = {"dbpr",2,dbprArgs};
+static void dbprCallFunc(const ioccrfArgBuf *args)
+{ dbpr(args[0].sval,args[1].ival);}
 
 /* dbtr */
-static ioccrfArg dbtrArg0 = { "record name",ioccrfArgString,0};
-static ioccrfArg *dbtrArgs[1] = {&dbtrArg0};
-static ioccrfFuncDef dbtrFuncDef = {"dbtr",1,dbtrArgs};
-static void dbtrCallFunc(ioccrfArg **args) { dbtr((char *)args[0]->value);}
+static const ioccrfArg dbtrArg0 = { "record name",ioccrfArgString};
+static const ioccrfArg *dbtrArgs[1] = {&dbtrArg0};
+static const ioccrfFuncDef dbtrFuncDef = {"dbtr",1,dbtrArgs};
+static void dbtrCallFunc(const ioccrfArgBuf *args) { dbtr(args[0].sval);}
 
 /* dbtgf */
-static ioccrfArg dbtgfArg0 = { "record name",ioccrfArgString,0};
-static ioccrfArg *dbtgfArgs[1] = {&dbtgfArg0};
-static ioccrfFuncDef dbtgfFuncDef = {"dbtgf",1,dbtgfArgs};
-static void dbtgfCallFunc(ioccrfArg **args) { dbtgf((char *)args[0]->value);}
+static const ioccrfArg dbtgfArg0 = { "record name",ioccrfArgString};
+static const ioccrfArg *dbtgfArgs[1] = {&dbtgfArg0};
+static const ioccrfFuncDef dbtgfFuncDef = {"dbtgf",1,dbtgfArgs};
+static void dbtgfCallFunc(const ioccrfArgBuf *args) { dbtgf(args[0].sval);}
 
 /* dbtpf */
-static ioccrfArg dbtpfArg0 = { "record name",ioccrfArgString,0};
-static ioccrfArg dbtpfArg1 = { "value",ioccrfArgString,0};
-static ioccrfArg *dbtpfArgs[2] = {&dbtpfArg0,&dbtpfArg1};
-static ioccrfFuncDef dbtpfFuncDef = {"dbtpf",2,dbtpfArgs};
-static void dbtpfCallFunc(ioccrfArg **args)
-{ dbtpf((char *)args[0]->value,(char *)args[1]->value);}
+static const ioccrfArg dbtpfArg0 = { "record name",ioccrfArgString};
+static const ioccrfArg dbtpfArg1 = { "value",ioccrfArgString};
+static const ioccrfArg *dbtpfArgs[2] = {&dbtpfArg0,&dbtpfArg1};
+static const ioccrfFuncDef dbtpfFuncDef = {"dbtpf",2,dbtpfArgs};
+static void dbtpfCallFunc(const ioccrfArgBuf *args)
+{ dbtpf(args[0].sval,args[1].sval);}
 
 /* dbior */
-static ioccrfArg dbiorArg0 = { "record name",ioccrfArgString,0};
-static ioccrfArg dbiorArg1 = { "interest_level",ioccrfArgInt,0};
-static ioccrfArg *dbiorArgs[2] = {&dbiorArg0,&dbiorArg1};
-static ioccrfFuncDef dbiorFuncDef = {"dbior",2,dbiorArgs};
-static void dbiorCallFunc(ioccrfArg **args)
-{ dbior((char *)args[0]->value,*(int *)args[1]->value);}
+static const ioccrfArg dbiorArg0 = { "record name",ioccrfArgString};
+static const ioccrfArg dbiorArg1 = { "interest_level",ioccrfArgInt};
+static const ioccrfArg *dbiorArgs[2] = {&dbiorArg0,&dbiorArg1};
+static const ioccrfFuncDef dbiorFuncDef = {"dbior",2,dbiorArgs};
+static void dbiorCallFunc(const ioccrfArgBuf *args)
+{ dbior(args[0].sval,args[1].ival);}
 
 /* dbhcr */
-static ioccrfArg dbhcrArg0 = { "filename",ioccrfArgString,0};
-static ioccrfArg *dbhcrArgs[1] = {&dbhcrArg0};
-static ioccrfFuncDef dbhcrFuncDef = {"dbhcr",1,dbhcrArgs};
-static void dbhcrCallFunc(ioccrfArg **args) { dbhcr((char *)args[0]->value);}
+static const ioccrfArg dbhcrArg0 = { "filename",ioccrfArgString};
+static const ioccrfArg *dbhcrArgs[1] = {&dbhcrArg0};
+static const ioccrfFuncDef dbhcrFuncDef = {"dbhcr",1,dbhcrArgs};
+static void dbhcrCallFunc(const ioccrfArgBuf *args) { dbhcr(args[0].sval);}
 
 /* gft */
-static ioccrfArg gftArg0 = { "record name",ioccrfArgString,0};
-static ioccrfArg *gftArgs[1] = {&gftArg0};
-static ioccrfFuncDef gftFuncDef = {"gft",1,gftArgs};
-static void gftCallFunc(ioccrfArg **args) { gft((char *)args[0]->value);}
+static const ioccrfArg gftArg0 = { "record name",ioccrfArgString};
+static const ioccrfArg *gftArgs[1] = {&gftArg0};
+static const ioccrfFuncDef gftFuncDef = {"gft",1,gftArgs};
+static void gftCallFunc(const ioccrfArgBuf *args) { gft(args[0].sval);}
 
 /* pft */
-static ioccrfArg pftArg0 = { "record name",ioccrfArgString,0};
-static ioccrfArg pftArg1 = { "value",ioccrfArgString,0};
-static ioccrfArg *pftArgs[2] = {&pftArg0,&pftArg1};
-static ioccrfFuncDef pftFuncDef = {"pft",2,pftArgs};
-static void pftCallFunc(ioccrfArg **args)
-{ pft((char *)args[0]->value,(char *)args[1]->value);}
+static const ioccrfArg pftArg0 = { "record name",ioccrfArgString};
+static const ioccrfArg pftArg1 = { "value",ioccrfArgString};
+static const ioccrfArg *pftArgs[2] = {&pftArg0,&pftArg1};
+static const ioccrfFuncDef pftFuncDef = {"pft",2,pftArgs};
+static void pftCallFunc(const ioccrfArgBuf *args)
+{ pft(args[0].sval,args[1].sval);}
 
 /* dbtpn */
-static ioccrfArg dbtpnArg0 = { "record name",ioccrfArgString,0};
-static ioccrfArg dbtpnArg1 = { "value",ioccrfArgString,0};
-static ioccrfArg *dbtpnArgs[2] = {&dbtpnArg0,&dbtpnArg1};
-static ioccrfFuncDef dbtpnFuncDef = {"dbtpn",2,dbtpnArgs};
-static void dbtpnCallFunc(ioccrfArg **args)
-{ dbtpn((char *)args[0]->value,(char *)args[1]->value);}
+static const ioccrfArg dbtpnArg0 = { "record name",ioccrfArgString};
+static const ioccrfArg dbtpnArg1 = { "value",ioccrfArgString};
+static const ioccrfArg *dbtpnArgs[2] = {&dbtpnArg0,&dbtpnArg1};
+static const ioccrfFuncDef dbtpnFuncDef = {"dbtpn",2,dbtpnArgs};
+static void dbtpnCallFunc(const ioccrfArgBuf *args)
+{ dbtpn(args[0].sval,args[1].sval);}
 
 /* tpn */
-static ioccrfArg tpnArg0 = { "record name",ioccrfArgString,0};
-static ioccrfArg tpnArg1 = { "value",ioccrfArgString,0};
-static ioccrfArg *tpnArgs[2] = {&tpnArg0,&tpnArg1};
-static ioccrfFuncDef tpnFuncDef = {"tpn",2,tpnArgs};
-static void tpnCallFunc(ioccrfArg **args)
-{ tpn((char *)args[0]->value,(char *)args[1]->value);}
+static const ioccrfArg tpnArg0 = { "record name",ioccrfArgString};
+static const ioccrfArg tpnArg1 = { "value",ioccrfArgString};
+static const ioccrfArg *tpnArgs[2] = {&tpnArg0,&tpnArg1};
+static const ioccrfFuncDef tpnFuncDef = {"tpn",2,tpnArgs};
+static void tpnCallFunc(const ioccrfArgBuf *args)
+{ tpn(args[0].sval,args[1].sval);}
 
 /* dblsr */
-static ioccrfArg dblsrArg0 = { "record name",ioccrfArgString,0};
-static ioccrfArg dblsrArg1 = { "interest_level",ioccrfArgInt,0};
-static ioccrfArg *dblsrArgs[2] = {&dblsrArg0,&dblsrArg1};
-static ioccrfFuncDef dblsrFuncDef = {"dblsr",2,dblsrArgs};
-static void dblsrCallFunc(ioccrfArg **args)
-{ dblsr((char *)args[0]->value,*(int *)args[1]->value);}
+static const ioccrfArg dblsrArg0 = { "record name",ioccrfArgString};
+static const ioccrfArg dblsrArg1 = { "interest_level",ioccrfArgInt};
+static const ioccrfArg *dblsrArgs[2] = {&dblsrArg0,&dblsrArg1};
+static const ioccrfFuncDef dblsrFuncDef = {"dblsr",2,dblsrArgs};
+static void dblsrCallFunc(const ioccrfArgBuf *args)
+{ dblsr(args[0].sval,args[1].ival);}
 
 /* scanppl */
-static ioccrfArg scanpplArg0 = { "rate",ioccrfArgDouble,0};
-static ioccrfArg *scanpplArgs[1] = {&scanpplArg0};
-static ioccrfFuncDef scanpplFuncDef = {"scanppl",1,scanpplArgs};
-static void scanpplCallFunc(ioccrfArg **args)
-{ scanppl(*(double *)args[0]->value);}
+static const ioccrfArg scanpplArg0 = { "rate",ioccrfArgDouble};
+static const ioccrfArg *scanpplArgs[1] = {&scanpplArg0};
+static const ioccrfFuncDef scanpplFuncDef = {"scanppl",1,scanpplArgs};
+static void scanpplCallFunc(const ioccrfArgBuf *args)
+{ scanppl(args[0].dval);}
 
 /* scanpel */
-static ioccrfArg scanpelArg0 = { "event_number",ioccrfArgInt,0};
-static ioccrfArg *scanpelArgs[1] = {&scanpelArg0};
-static ioccrfFuncDef scanpelFuncDef = {"scanpel",1,scanpelArgs};
-static void scanpelCallFunc(ioccrfArg **args)
-{ scanpel(*(int *)args[0]->value);}
+static const ioccrfArg scanpelArg0 = { "event_number",ioccrfArgInt};
+static const ioccrfArg *scanpelArgs[1] = {&scanpelArg0};
+static const ioccrfFuncDef scanpelFuncDef = {"scanpel",1,scanpelArgs};
+static void scanpelCallFunc(const ioccrfArgBuf *args)
+{ scanpel(args[0].ival);}
 
 /* scanpiol */
-static ioccrfFuncDef scanpiolFuncDef = {"scanpiol",0,0};
-static void scanpiolCallFunc(ioccrfArg **args) { scanpiol();}
+static const ioccrfFuncDef scanpiolFuncDef = {"scanpiol",0};
+static void scanpiolCallFunc(const ioccrfArgBuf *args) { scanpiol();}
 
 void epicsShareAPI dbTestRegister(void)
 {

@@ -18,8 +18,8 @@ of this distribution.
 #include "envRegister.h"
 
 /* epicsPrtEnvParams */
-static ioccrfFuncDef epicsPrtEnvParamsFuncDef = {"epicsPrtEnvParams",0,0};
-static void epicsPrtEnvParamsCallFunc(ioccrfArg **args) { epicsPrtEnvParams();}
+static const ioccrfFuncDef epicsPrtEnvParamsFuncDef = {"epicsPrtEnvParams",0,0};
+static void epicsPrtEnvParamsCallFunc(const ioccrfArgBuf *args) { epicsPrtEnvParams();}
 
 void epicsShareAPI envRegister(void)
 {

@@ -17,13 +17,13 @@ of this distribution.
 #include "registerRecordDeviceDriverRegister.h"
 
 /* registerRecordDeviceDriver */
-static ioccrfArg registerRecordDeviceDriverArg0 =
-    { "pdbbase",ioccrfArgPdbbase,0};
-static ioccrfArg *registerRecordDeviceDriverArgs[1] =
+static const ioccrfArg registerRecordDeviceDriverArg0 =
+    { "pdbbase",ioccrfArgPdbbase};
+static const ioccrfArg *registerRecordDeviceDriverArgs[1] =
     {&registerRecordDeviceDriverArg0};
-static ioccrfFuncDef registerRecordDeviceDriverFuncDef =
+static const ioccrfFuncDef registerRecordDeviceDriverFuncDef =
     {"registerRecordDeviceDriver",1,registerRecordDeviceDriverArgs};
-static void registerRecordDeviceDriverCallFunc(ioccrfArg **args)
+static void registerRecordDeviceDriverCallFunc(const ioccrfArgBuf *args)
 {
     registerRecordDeviceDriver(pdbbase);
 }

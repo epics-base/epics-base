@@ -16,30 +16,30 @@
 #include "iocUtilRegister.h"
 
 /* < (runScript) command */
-static ioccrfArg runScriptArg0 = { "file name",ioccrfArgString,0};
-static ioccrfArg *runScriptArgs[1] = {&runScriptArg0};
-static ioccrfFuncDef runScriptFuncDef = {"<",1,runScriptArgs};
-static void runScriptCallFunc(ioccrfArg **args)
+static const ioccrfArg runScriptArg0 = { "file name",ioccrfArgString};
+static const ioccrfArg *runScriptArgs[1] = {&runScriptArg0};
+static const ioccrfFuncDef runScriptFuncDef = {"<",1,runScriptArgs};
+static void runScriptCallFunc(const ioccrfArgBuf *args)
 {
-    ioccrf ((char *)args[0]->value);
+    ioccrf (args[0].sval);
 }
 
 /* chdir */
-static ioccrfArg chdirArg0 = { "current directory name",ioccrfArgString,0};
-static ioccrfArg *chdirArgs[1] = {&chdirArg0};
-static ioccrfFuncDef chdirFuncDef = {"cd",1,chdirArgs};
-static void chdirCallFunc(ioccrfArg **args)
+static const ioccrfArg chdirArg0 = { "current directory name",ioccrfArgString};
+static const ioccrfArg *chdirArgs[1] = {&chdirArg0};
+static const ioccrfFuncDef chdirFuncDef = {"cd",1,chdirArgs};
+static void chdirCallFunc(const ioccrfArgBuf *args)
 {
     int status;
-    status = chdir((char *)args[0]->value);
+    status = chdir(args[0].sval);
     if (status) {
         printf ("Invalid directory path ignored\n");
     }
 }
 
 /* print current working directory */
-static ioccrfFuncDef pwdFuncDef = { "pwd", 0, 0 };
-static void pwdCallFunc (ioccrfArg **args)
+static const ioccrfFuncDef pwdFuncDef = { "pwd", 0, 0 };
+static void pwdCallFunc (const ioccrfArgBuf *args)
 {
     char buf[256];
     char *pwd = getcwd ( buf, sizeof(buf) - 1 );
@@ -49,22 +49,22 @@ static void pwdCallFunc (ioccrfArg **args)
 }
 
 /* show (thread information) */
-static ioccrfArg showArg0 = { "task",ioccrfArgString,0};
-static ioccrfArg showArg1 = { "task",ioccrfArgString,0};
-static ioccrfArg showArg2 = { "task",ioccrfArgString,0};
-static ioccrfArg showArg3 = { "task",ioccrfArgString,0};
-static ioccrfArg showArg4 = { "task",ioccrfArgString,0};
-static ioccrfArg showArg5 = { "task",ioccrfArgString,0};
-static ioccrfArg showArg6 = { "task",ioccrfArgString,0};
-static ioccrfArg showArg7 = { "task",ioccrfArgString,0};
-static ioccrfArg showArg8 = { "task",ioccrfArgString,0};
-static ioccrfArg showArg9 = { "task",ioccrfArgString,0};
-static ioccrfArg *showArgs[10] = {
+static const ioccrfArg showArg0 = { "task",ioccrfArgString};
+static const ioccrfArg showArg1 = { "task",ioccrfArgString};
+static const ioccrfArg showArg2 = { "task",ioccrfArgString};
+static const ioccrfArg showArg3 = { "task",ioccrfArgString};
+static const ioccrfArg showArg4 = { "task",ioccrfArgString};
+static const ioccrfArg showArg5 = { "task",ioccrfArgString};
+static const ioccrfArg showArg6 = { "task",ioccrfArgString};
+static const ioccrfArg showArg7 = { "task",ioccrfArgString};
+static const ioccrfArg showArg8 = { "task",ioccrfArgString};
+static const ioccrfArg showArg9 = { "task",ioccrfArgString};
+static const ioccrfArg *showArgs[10] = {
     &showArg0,&showArg1,&showArg2,&showArg3,&showArg4,
     &showArg5,&showArg6,&showArg7,&showArg8,&showArg9,
 };
-static ioccrfFuncDef showFuncDef = {"show",10,showArgs};
-static void showCallFunc(ioccrfArg **args)
+static const ioccrfFuncDef showFuncDef = {"show",10,showArgs};
+static void showCallFunc(const ioccrfArgBuf *args)
 {
     int i = 0;
     int first = 1;
@@ -74,17 +74,17 @@ static void showCallFunc(ioccrfArg **args)
     unsigned long ltmp;
     char *endp;
 
-    if (((cp = (char *)args[i]->value) != NULL)
+    if (((cp = args[i].sval) != NULL)
      && (*cp == '-')) {
         level = atoi (cp + 1);
         i++;
     }
-    if ((cp = (char *)args[i]->value) == NULL) {
+    if ((cp = args[i].sval) == NULL) {
         threadShowAll (level);
         return;
     }
     for ( ; i < 10 ; i++) {
-        if ((cp = (char *)args[i]->value) == NULL)
+        if ((cp = args[i].sval) == NULL)
             return;
         ltmp = strtoul (cp, &endp, 16);
         if (*endp) {
@@ -106,20 +106,21 @@ static void showCallFunc(ioccrfArg **args)
 }
 
 /* threadInit */
-static ioccrfFuncDef threadInitFuncDef =
-    {"threadInit",0,0};
-static void threadInitCallFunc(ioccrfArg **args)
+static const ioccrfFuncDef threadInitFuncDef =
+    {"threadInit",0};
+static void threadInitCallFunc(const ioccrfArgBuf *args)
 {
     threadInit();
 }
 
 /* putenv */
-static ioccrfArg putenvArg0 = { "environment_variable=name",ioccrfArgString,0};
-static ioccrfArg *putenvArgs[1] = {&putenvArg0};
-static ioccrfFuncDef putenvFuncDef = {"putenv",1,putenvArgs};
-static void putenvCallFunc(ioccrfArg **args)
+static const ioccrfArg putenvArg0 = { "environment_variable=name",ioccrfArgString};
+static const ioccrfArg *putenvArgs[1] = {&putenvArg0};
+static const ioccrfFuncDef putenvFuncDef = {"putenv",1,putenvArgs};
+static void putenvCallFunc(const ioccrfArgBuf *args)
 {
-    const char *cp = (char *)args[0]->value;
+    const char *cp = args[0].sval;
+    int putenv(const char *);
 
     if (!cp)
         return;
@@ -128,8 +129,8 @@ static void putenvCallFunc(ioccrfArg **args)
 }
 
 /* iocLogInit */
-static ioccrfFuncDef iocLogInitFuncDef = {"iocLogInit",0,0};
-static void iocLogInitCallFunc(ioccrfArg **args)
+static const ioccrfFuncDef iocLogInitFuncDef = {"iocLogInit",0};
+static void iocLogInitCallFunc(const ioccrfArgBuf *args)
 {
     iocLogInit ();
 }

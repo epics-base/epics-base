@@ -11,8 +11,8 @@ of this distribution.
 #define INCioccrfH
 
 #include <stdio.h>
-
 #include "shareLib.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,22 +24,28 @@ typedef enum {
     ioccrfArgPdbbase
 }ioccrfArgType;
 
+typedef union ioccrfArgBuf {
+    int    ival;
+    double dval;
+    char  *sval;
+    void  *vval;
+}ioccrfArgBuf;
+
 typedef struct ioccrfArg {
     const char *name;
     ioccrfArgType type;
-    void *value;  /* points to value of type typ */
 }ioccrfArg;
 
 typedef struct ioccrfFuncDef {
     const char *name;
     int nargs;
-    ioccrfArg **arg;
+    const ioccrfArg * const *arg;
 }ioccrfFuncDef;
 
-typedef void (*ioccrfCallFunc)(ioccrfArg **argList);
+typedef void (*ioccrfCallFunc)(const ioccrfArgBuf *argBuf);
 
 epicsShareFunc void epicsShareAPI ioccrfRegister(
-    ioccrfFuncDef *pioccrfFuncDef,ioccrfCallFunc func);
+    const ioccrfFuncDef *pioccrfFuncDef, ioccrfCallFunc func);
 
 /* ioccrfFree frees storage used by ioccrfRegister*/
 /* This should only be called when ioccrf is no longer needed*/

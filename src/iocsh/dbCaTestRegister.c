@@ -18,13 +18,13 @@ of this distribution.
 #include "dbCaTestRegister.h"
 
 /* dbcar */
-static ioccrfArg dbcarArg0 = { "record name",ioccrfArgString,0};
-static ioccrfArg dbcarArg1 = { "level",ioccrfArgInt,0};
-static ioccrfArg *dbcarArgs[2] = {&dbcarArg0,&dbcarArg1};
-static ioccrfFuncDef dbcarFuncDef = {"dbcar",2,dbcarArgs};
-static void dbcarCallFunc(ioccrfArg **args)
+static const ioccrfArg dbcarArg0 = { "record name",ioccrfArgString};
+static const ioccrfArg dbcarArg1 = { "level",ioccrfArgInt};
+static const ioccrfArg *dbcarArgs[2] = {&dbcarArg0,&dbcarArg1};
+static const ioccrfFuncDef dbcarFuncDef = {"dbcar",2,dbcarArgs};
+static void dbcarCallFunc(const ioccrfArgBuf *args)
 {
-    dbcar((char *)args[0]->value,*(int *)args[1]->value);
+    dbcar(args[0].sval,args[1].ival);
 }
 
 

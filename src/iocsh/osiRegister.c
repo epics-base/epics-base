@@ -19,23 +19,23 @@ of this distribution.
 #include "osiRegister.h"
 
 /* threadShowAll */
-static ioccrfArg threadShowAllArg0 = { "level",ioccrfArgInt,0};
-static ioccrfArg *threadShowAllArgs[1] = {&threadShowAllArg0};
-static ioccrfFuncDef threadShowAllFuncDef =
+static const ioccrfArg threadShowAllArg0 = { "level",ioccrfArgInt};
+static const ioccrfArg *threadShowAllArgs[1] = {&threadShowAllArg0};
+static const ioccrfFuncDef threadShowAllFuncDef =
     {"threadShowAll",1,threadShowAllArgs};
-static void threadShowAllCallFunc(ioccrfArg **args)
+static void threadShowAllCallFunc(const ioccrfArgBuf *args)
 {
-    threadShowAll(*(int *)args[0]->value);
+    threadShowAll(args[0].ival);
 }
 
 /* threadSleep */
-static ioccrfArg threadSleepArg0 = { "seconds",ioccrfArgDouble,0};
-static ioccrfArg *threadSleepArgs[1] = {&threadSleepArg0};
-static ioccrfFuncDef threadSleepFuncDef =
+static const ioccrfArg threadSleepArg0 = { "seconds",ioccrfArgDouble};
+static const ioccrfArg *threadSleepArgs[1] = {&threadSleepArg0};
+static const ioccrfFuncDef threadSleepFuncDef =
     {"threadSleep",1,threadSleepArgs};
-static void threadSleepCallFunc(ioccrfArg **args)
+static void threadSleepCallFunc(const ioccrfArgBuf *args)
 {
-    threadSleep(*(double *)args[0]->value);
+    threadSleep(args[0].dval);
 }
 
 void epicsShareAPI osiRegister(void)

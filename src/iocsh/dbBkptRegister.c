@@ -28,45 +28,45 @@ of this distribution.
 #include "dbBkptRegister.h"
 
 /* dbb */
-static ioccrfArg dbbArg0 = { "record name",ioccrfArgString,0};
-static ioccrfArg *dbbArgs[1] = {&dbbArg0};
-static ioccrfFuncDef dbbFuncDef = {"dbb",1,dbbArgs};
-static void dbbCallFunc(ioccrfArg **args) { dbb((char *)args[0]->value);}
+static const ioccrfArg dbbArg0 = { "record name",ioccrfArgString};
+static const ioccrfArg *dbbArgs[1] = {&dbbArg0};
+static const ioccrfFuncDef dbbFuncDef = {"dbb",1,dbbArgs};
+static void dbbCallFunc(const ioccrfArgBuf *args) { dbb(args[0].sval);}
 
 /* dbd */
-static ioccrfArg dbdArg0 = { "record name",ioccrfArgString,0};
-static ioccrfArg *dbdArgs[1] = {&dbdArg0};
-static ioccrfFuncDef dbdFuncDef = {"dbd",1,dbdArgs};
-static void dbdCallFunc(ioccrfArg **args) { dbd((char *)args[0]->value);}
+static const ioccrfArg dbdArg0 = { "record name",ioccrfArgString};
+static const ioccrfArg *dbdArgs[1] = {&dbdArg0};
+static const ioccrfFuncDef dbdFuncDef = {"dbd",1,dbdArgs};
+static void dbdCallFunc(const ioccrfArgBuf *args) { dbd(args[0].sval);}
 
 /* dbc */
-static ioccrfArg dbcArg0 = { "record name",ioccrfArgString,0};
-static ioccrfArg *dbcArgs[1] = {&dbcArg0};
-static ioccrfFuncDef dbcFuncDef = {"dbc",1,dbcArgs};
-static void dbcCallFunc(ioccrfArg **args) { dbc((char *)args[0]->value);}
+static const ioccrfArg dbcArg0 = { "record name",ioccrfArgString};
+static const ioccrfArg *dbcArgs[1] = {&dbcArg0};
+static const ioccrfFuncDef dbcFuncDef = {"dbc",1,dbcArgs};
+static void dbcCallFunc(const ioccrfArgBuf *args) { dbc(args[0].sval);}
 
 /* dbs */
-static ioccrfArg dbsArg0 = { "record name",ioccrfArgString,0};
-static ioccrfArg *dbsArgs[1] = {&dbsArg0};
-static ioccrfFuncDef dbsFuncDef = {"dbs",1,dbsArgs};
-static void dbsCallFunc(ioccrfArg **args) { dbs((char *)args[0]->value);}
+static const ioccrfArg dbsArg0 = { "record name",ioccrfArgString};
+static const ioccrfArg *dbsArgs[1] = {&dbsArg0};
+static const ioccrfFuncDef dbsFuncDef = {"dbs",1,dbsArgs};
+static void dbsCallFunc(const ioccrfArgBuf *args) { dbs(args[0].sval);}
 
-static ioccrfFuncDef dbstatFuncDef = {"dbstat",0,0};
-static void dbstatCallFunc(ioccrfArg **args) { dbstat();}
+static const ioccrfFuncDef dbstatFuncDef = {"dbstat",0};
+static void dbstatCallFunc(const ioccrfArgBuf *args) { dbstat();}
 
 /* dbp */
-static ioccrfArg dbpArg0 = { "record name",ioccrfArgString,0};
-static ioccrfArg dbpArg1 = { "interest_level",ioccrfArgInt,0};
-static ioccrfArg *dbpArgs[2] = {&dbpArg0,&dbpArg1};
-static ioccrfFuncDef dbpFuncDef = {"dbp",2,dbpArgs};
-static void dbpCallFunc(ioccrfArg **args)
-{ dbp((char *)args[0]->value,*(int *)args[1]->value);}
+static const ioccrfArg dbpArg0 = { "record name",ioccrfArgString};
+static const ioccrfArg dbpArg1 = { "interest_level",ioccrfArgInt};
+static const ioccrfArg *dbpArgs[2] = {&dbpArg0,&dbpArg1};
+static const ioccrfFuncDef dbpFuncDef = {"dbp",2,dbpArgs};
+static void dbpCallFunc(const ioccrfArgBuf *args)
+{ dbp(args[0].sval,args[1].ival);}
 
 /* dbap */
-static ioccrfArg dbapArg0 = { "record name",ioccrfArgString,0};
-static ioccrfArg *dbapArgs[1] = {&dbapArg0};
-static ioccrfFuncDef dbapFuncDef = {"dbap",1,dbapArgs};
-static void dbapCallFunc(ioccrfArg **args) { dbap((char *)args[0]->value);}
+static const ioccrfArg dbapArg0 = { "record name",ioccrfArgString};
+static const ioccrfArg *dbapArgs[1] = {&dbapArg0};
+static const ioccrfFuncDef dbapFuncDef = {"dbap",1,dbapArgs};
+static void dbapCallFunc(const ioccrfArgBuf *args) { dbap(args[0].sval);}
 
 void epicsShareAPI dbBkptRegister(void)
 {

@@ -18,85 +18,85 @@ of this distribution.
 #include "asTestRegister.h"
 
 /* asSetFilename */
-static ioccrfArg asSetFilenameArg0 = { "ascf",ioccrfArgString,0};
-static ioccrfArg *asSetFilenameArgs[1] = {&asSetFilenameArg0};
-static ioccrfFuncDef asSetFilenameFuncDef =
+static const ioccrfArg asSetFilenameArg0 = { "ascf",ioccrfArgString};
+static const ioccrfArg *asSetFilenameArgs[1] = {&asSetFilenameArg0};
+static const ioccrfFuncDef asSetFilenameFuncDef =
     {"asSetFilename",1,asSetFilenameArgs};
-static void asSetFilenameCallFunc(ioccrfArg **args)
+static void asSetFilenameCallFunc(const ioccrfArgBuf *args)
 {
-    asSetFilename((char *)args[0]->value);
+    asSetFilename(args[0].sval);
 }
 
 /* asSetSubstitutions */
-static ioccrfArg asSetSubstitutionsArg0 = { "substitutions",ioccrfArgString,0};
-static ioccrfArg *asSetSubstitutionsArgs[1] = {&asSetSubstitutionsArg0};
-static ioccrfFuncDef asSetSubstitutionsFuncDef =
+static const ioccrfArg asSetSubstitutionsArg0 = { "substitutions",ioccrfArgString};
+static const ioccrfArg *asSetSubstitutionsArgs[1] = {&asSetSubstitutionsArg0};
+static const ioccrfFuncDef asSetSubstitutionsFuncDef =
     {"asSetSubstitutions",1,asSetSubstitutionsArgs};
-static void asSetSubstitutionsCallFunc(ioccrfArg **args)
+static void asSetSubstitutionsCallFunc(const ioccrfArgBuf *args)
 {
-    asSetSubstitutions((char *)args[0]->value);
+    asSetSubstitutions(args[0].sval);
 }
 
 /* asInit */
-static ioccrfFuncDef asInitFuncDef = {"asInit",0,0};
-static void asInitCallFunc(ioccrfArg **args)
+static const ioccrfFuncDef asInitFuncDef = {"asInit",0};
+static void asInitCallFunc(const ioccrfArgBuf *args)
 {
     asInit();
 }
 
 /* asdbdump */
-static ioccrfFuncDef asdbdumpFuncDef = {"asdbdump",0,0};
-static void asdbdumpCallFunc(ioccrfArg **args)
+static const ioccrfFuncDef asdbdumpFuncDef = {"asdbdump",0};
+static void asdbdumpCallFunc(const ioccrfArgBuf *args)
 {
     asdbdump();
 }
 
 /* aspuag */
-static ioccrfArg aspuagArg0 = { "uagname",ioccrfArgString,0};
-static ioccrfArg *aspuagArgs[1] = {&aspuagArg0};
-static ioccrfFuncDef aspuagFuncDef = {"aspuag",1,aspuagArgs};
-static void aspuagCallFunc(ioccrfArg **args)
+static const ioccrfArg aspuagArg0 = { "uagname",ioccrfArgString};
+static const ioccrfArg *aspuagArgs[1] = {&aspuagArg0};
+static const ioccrfFuncDef aspuagFuncDef = {"aspuag",1,aspuagArgs};
+static void aspuagCallFunc(const ioccrfArgBuf *args)
 {
-    aspuag((char *)args[0]->value);
+    aspuag(args[0].sval);
 }
 
 /* asphag */
-static ioccrfArg asphagArg0 = { "hagname",ioccrfArgString,0};
-static ioccrfArg *asphagArgs[1] = {&asphagArg0};
-static ioccrfFuncDef asphagFuncDef = {"asphag",1,asphagArgs};
-static void asphagCallFunc(ioccrfArg **args)
+static const ioccrfArg asphagArg0 = { "hagname",ioccrfArgString};
+static const ioccrfArg *asphagArgs[1] = {&asphagArg0};
+static const ioccrfFuncDef asphagFuncDef = {"asphag",1,asphagArgs};
+static void asphagCallFunc(const ioccrfArgBuf *args)
 {
-    asphag((char *)args[0]->value);
+    asphag(args[0].sval);
 }
 
 /* asprules */
-static ioccrfArg asprulesArg0 = { "asgname",ioccrfArgString,0};
-static ioccrfArg *asprulesArgs[1] = {&asprulesArg0};
-static ioccrfFuncDef asprulesFuncDef = {"asprules",1,asprulesArgs};
-static void asprulesCallFunc(ioccrfArg **args)
+static const ioccrfArg asprulesArg0 = { "asgname",ioccrfArgString};
+static const ioccrfArg *asprulesArgs[1] = {&asprulesArg0};
+static const ioccrfFuncDef asprulesFuncDef = {"asprules",1,asprulesArgs};
+static void asprulesCallFunc(const ioccrfArgBuf *args)
 {
-    asprules((char *)args[0]->value);
+    asprules(args[0].sval);
 }
 
 /* aspmem */
-static ioccrfArg aspmemArg0 = { "asgname",ioccrfArgString,0};
-static ioccrfArg aspmemArg1 = { "clients",ioccrfArgInt,0};
-static ioccrfArg *aspmemArgs[2] = {&aspmemArg0,&aspmemArg1};
-static ioccrfFuncDef aspmemFuncDef = {"aspmem",2,aspmemArgs};
-static void aspmemCallFunc(ioccrfArg **args)
+static const ioccrfArg aspmemArg0 = { "asgname",ioccrfArgString};
+static const ioccrfArg aspmemArg1 = { "clients",ioccrfArgInt};
+static const ioccrfArg *aspmemArgs[2] = {&aspmemArg0,&aspmemArg1};
+static const ioccrfFuncDef aspmemFuncDef = {"aspmem",2,aspmemArgs};
+static void aspmemCallFunc(const ioccrfArgBuf *args)
 {
-    aspmem((char *)args[0]->value,*(int *)args[1]->value);
+    aspmem(args[0].sval,args[1].ival);
 }
 
 /* astac */
-static ioccrfArg astacArg0 = { "recordname",ioccrfArgString,0};
-static ioccrfArg astacArg1 = { "user",ioccrfArgString,0};
-static ioccrfArg astacArg2 = { "location",ioccrfArgString,0};
-static ioccrfArg *astacArgs[3] = {&astacArg0,&astacArg1,&astacArg2};
-static ioccrfFuncDef astacFuncDef = {"astac",3,astacArgs};
-static void astacCallFunc(ioccrfArg **args)
+static const ioccrfArg astacArg0 = { "recordname",ioccrfArgString};
+static const ioccrfArg astacArg1 = { "user",ioccrfArgString};
+static const ioccrfArg astacArg2 = { "location",ioccrfArgString};
+static const ioccrfArg *astacArgs[3] = {&astacArg0,&astacArg1,&astacArg2};
+static const ioccrfFuncDef astacFuncDef = {"astac",3,astacArgs};
+static void astacCallFunc(const ioccrfArgBuf *args)
 {
-    astac((char *)args[0]->value,(char *)args[1]->value,(char *)args[2]->value);
+    astac(args[0].sval,args[1].sval,args[2].sval);
 }
 
 

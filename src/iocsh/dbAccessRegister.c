@@ -22,45 +22,44 @@ of this distribution.
 #include "ioccrf.h"
 
 /* dbLoadDatabase */
-static ioccrfArg dbLoadDatabaseArg0 = { "file name",ioccrfArgString,0};
-static ioccrfArg dbLoadDatabaseArg1 = { "path",ioccrfArgString,0};
-static ioccrfArg dbLoadDatabaseArg2 = { "substitutions",ioccrfArgString,0};
-static ioccrfArg *dbLoadDatabaseArgs[3] =
+static const ioccrfArg dbLoadDatabaseArg0 = { "file name",ioccrfArgString};
+static const ioccrfArg dbLoadDatabaseArg1 = { "path",ioccrfArgString};
+static const ioccrfArg dbLoadDatabaseArg2 = { "substitutions",ioccrfArgString};
+static const ioccrfArg *dbLoadDatabaseArgs[3] =
 {
     &dbLoadDatabaseArg0,&dbLoadDatabaseArg1,&dbLoadDatabaseArg2
 };
-static ioccrfFuncDef dbLoadDatabaseFuncDef =
+static const ioccrfFuncDef dbLoadDatabaseFuncDef =
     {"dbLoadDatabase",3,dbLoadDatabaseArgs};
-static void dbLoadDatabaseCallFunc(ioccrfArg **args)
+static void dbLoadDatabaseCallFunc(const ioccrfArgBuf *args)
 {
-    dbLoadDatabase(
-        (char *)args[0]->value,(char *)args[1]->value,(char *)args[2]->value);
+    dbLoadDatabase(args[0].sval,args[1].sval,args[2].sval);
 }
 
 /* dbLoadRecords */
-static ioccrfArg dbLoadRecordsArg0 = { "file name",ioccrfArgString,0};
-static ioccrfArg dbLoadRecordsArg1 = { "substitutions",ioccrfArgString,0};
-static ioccrfArg *dbLoadRecordsArgs[2] = {&dbLoadRecordsArg0,&dbLoadRecordsArg1};
-static ioccrfFuncDef dbLoadRecordsFuncDef = {"dbLoadRecords",2,dbLoadRecordsArgs};
-static void dbLoadRecordsCallFunc(ioccrfArg **args)
+static const ioccrfArg dbLoadRecordsArg0 = { "file name",ioccrfArgString};
+static const ioccrfArg dbLoadRecordsArg1 = { "substitutions",ioccrfArgString};
+static const ioccrfArg *dbLoadRecordsArgs[2] = {&dbLoadRecordsArg0,&dbLoadRecordsArg1};
+static const ioccrfFuncDef dbLoadRecordsFuncDef = {"dbLoadRecords",2,dbLoadRecordsArgs};
+static void dbLoadRecordsCallFunc(const ioccrfArgBuf *args)
 {
-    dbLoadRecords((char *)args[0]->value,(char *)args[1]->value);
+    dbLoadRecords(args[0].sval,args[1].sval);
 }
 
 /* dbLoadTemplate */
-static ioccrfArg dbLoadTemplateArg0 = { "file name",ioccrfArgString,0};
-static ioccrfArg *dbLoadTemplateArgs[1] = {&dbLoadTemplateArg0};
-static ioccrfFuncDef dbLoadTemplateFuncDef =
+static const ioccrfArg dbLoadTemplateArg0 = { "file name",ioccrfArgString};
+static const ioccrfArg *dbLoadTemplateArgs[1] = {&dbLoadTemplateArg0};
+static const ioccrfFuncDef dbLoadTemplateFuncDef =
     {"dbLoadTemplate",1,dbLoadTemplateArgs};
-static void dbLoadTemplateCallFunc(ioccrfArg **args)
+static void dbLoadTemplateCallFunc(const ioccrfArgBuf *args)
 {
-    dbLoadTemplate((char *)args[0]->value);
+    dbLoadTemplate(args[0].sval);
 }
 
 /* iocInit */
-static ioccrfFuncDef iocInitFuncDef =
+static const ioccrfFuncDef iocInitFuncDef =
     {"iocInit",0,0};
-static void iocInitCallFunc(ioccrfArg **args)
+static void iocInitCallFunc(const ioccrfArgBuf *args)
 {
     iocInit();
 }

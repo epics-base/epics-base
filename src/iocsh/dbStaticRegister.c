@@ -20,109 +20,109 @@ of this distribution.
 #include "dbStaticRegister.h"
 
 /* dbDumpRecDes */
-static ioccrfArg dbDumpRecDesArg0 = { "pdbbase",ioccrfArgPdbbase,0};
-static ioccrfArg dbDumpRecDesArg1 = { "recordTypeName",ioccrfArgString,0};
-static ioccrfArg *dbDumpRecDesArgs[2] = {&dbDumpRecDesArg0,&dbDumpRecDesArg1};
-static ioccrfFuncDef dbDumpRecDesFuncDef = {"dbDumpRecDes",2,dbDumpRecDesArgs};
-static void dbDumpRecDesCallFunc(ioccrfArg **args)
+static const ioccrfArg dbDumpRecDesArg0 = { "pdbbase",ioccrfArgPdbbase};
+static const ioccrfArg dbDumpRecDesArg1 = { "recordTypeName",ioccrfArgString};
+static const ioccrfArg *dbDumpRecDesArgs[2] = {&dbDumpRecDesArg0,&dbDumpRecDesArg1};
+static const ioccrfFuncDef dbDumpRecDesFuncDef = {"dbDumpRecDes",2,dbDumpRecDesArgs};
+static void dbDumpRecDesCallFunc(const ioccrfArgBuf *args)
 {
-    dbDumpRecDes(pdbbase,(char *)args[1]->value);
+    dbDumpRecDes(pdbbase,args[1].sval);
 }
 
 /* dbDumpPath */
-static ioccrfArg dbDumpPathArg0 = { "pdbbase",ioccrfArgPdbbase,0};
-static ioccrfArg *dbDumpPathArgs[1] = {&dbDumpPathArg0};
-static ioccrfFuncDef dbDumpPathFuncDef = {"dbDumpPath",1,dbDumpPathArgs};
-static void dbDumpPathCallFunc(ioccrfArg **args)
+static const ioccrfArg dbDumpPathArg0 = { "pdbbase",ioccrfArgPdbbase};
+static const ioccrfArg *dbDumpPathArgs[1] = {&dbDumpPathArg0};
+static const ioccrfFuncDef dbDumpPathFuncDef = {"dbDumpPath",1,dbDumpPathArgs};
+static void dbDumpPathCallFunc(const ioccrfArgBuf *args)
 {
     dbDumpPath(pdbbase);
 }
 
 /* dbDumpRecord */
-static ioccrfArg dbDumpRecordArg0 = { "pdbbase",ioccrfArgPdbbase,0};
-static ioccrfArg dbDumpRecordArg1 = { "recordTypeName",ioccrfArgString,0};
-static ioccrfArg dbDumpRecordArg2 = { "interest_level",ioccrfArgInt,0};
-static ioccrfArg *dbDumpRecordArgs[3] =
+static const ioccrfArg dbDumpRecordArg0 = { "pdbbase",ioccrfArgPdbbase};
+static const ioccrfArg dbDumpRecordArg1 = { "recordTypeName",ioccrfArgString};
+static const ioccrfArg dbDumpRecordArg2 = { "interest_level",ioccrfArgInt};
+static const ioccrfArg *dbDumpRecordArgs[3] =
     {&dbDumpRecordArg0,&dbDumpRecordArg1,&dbDumpRecordArg2};
-static ioccrfFuncDef dbDumpRecordFuncDef = {"dbDumpRecord",3,dbDumpRecordArgs};
-static void dbDumpRecordCallFunc(ioccrfArg **args)
+static const ioccrfFuncDef dbDumpRecordFuncDef = {"dbDumpRecord",3,dbDumpRecordArgs};
+static void dbDumpRecordCallFunc(const ioccrfArgBuf *args)
 {
-    dbDumpRecord(pdbbase,(char *)args[1]->value,*(int *)args[2]->value);
+    dbDumpRecord(pdbbase,args[1].sval,args[2].ival);
 }
 
 /* dbDumpMenu */
-static ioccrfArg dbDumpMenuArg0 = { "pdbbase",ioccrfArgPdbbase,0};
-static ioccrfArg dbDumpMenuArg1 = { "menuName",ioccrfArgString,0};
-static ioccrfArg *dbDumpMenuArgs[2] = {&dbDumpMenuArg0,&dbDumpMenuArg1};
-static ioccrfFuncDef dbDumpMenuFuncDef = {"dbDumpMenu",2,dbDumpMenuArgs};
-static void dbDumpMenuCallFunc(ioccrfArg **args)
+static const ioccrfArg dbDumpMenuArg0 = { "pdbbase",ioccrfArgPdbbase};
+static const ioccrfArg dbDumpMenuArg1 = { "menuName",ioccrfArgString};
+static const ioccrfArg *dbDumpMenuArgs[2] = {&dbDumpMenuArg0,&dbDumpMenuArg1};
+static const ioccrfFuncDef dbDumpMenuFuncDef = {"dbDumpMenu",2,dbDumpMenuArgs};
+static void dbDumpMenuCallFunc(const ioccrfArgBuf *args)
 {
-    dbDumpMenu(pdbbase,(char *)args[1]->value);
+    dbDumpMenu(pdbbase,args[1].sval);
 }
 
 /* dbDumpRecordType */
-static ioccrfArg dbDumpRecordTypeArg0 = { "pdbbase",ioccrfArgPdbbase,0};
-static ioccrfArg dbDumpRecordTypeArg1 = { "recordTypeName",ioccrfArgString,0};
-static ioccrfArg *dbDumpRecordTypeArgs[2] =
+static const ioccrfArg dbDumpRecordTypeArg0 = { "pdbbase",ioccrfArgPdbbase};
+static const ioccrfArg dbDumpRecordTypeArg1 = { "recordTypeName",ioccrfArgString};
+static const ioccrfArg *dbDumpRecordTypeArgs[2] =
     {&dbDumpRecordTypeArg0,&dbDumpRecordTypeArg1};
-static ioccrfFuncDef dbDumpRecordTypeFuncDef =
+static const ioccrfFuncDef dbDumpRecordTypeFuncDef =
     {"dbDumpRecordType",2,dbDumpRecordTypeArgs};
-static void dbDumpRecordTypeCallFunc(ioccrfArg **args)
+static void dbDumpRecordTypeCallFunc(const ioccrfArgBuf *args)
 {
-    dbDumpRecordType(pdbbase,(char *)args[1]->value);
+    dbDumpRecordType(pdbbase,args[1].sval);
 }
 
 /* dbDumpFldDes */
-static ioccrfArg dbDumpFldDesArg0 = { "pdbbase",ioccrfArgPdbbase,0};
-static ioccrfArg dbDumpFldDesArg1 = { "recordTypeName",ioccrfArgString,0};
-static ioccrfArg dbDumpFldDesArg2 = { "fieldName",ioccrfArgString,0};
-static ioccrfArg *dbDumpFldDesArgs[3] =
+static const ioccrfArg dbDumpFldDesArg0 = { "pdbbase",ioccrfArgPdbbase};
+static const ioccrfArg dbDumpFldDesArg1 = { "recordTypeName",ioccrfArgString};
+static const ioccrfArg dbDumpFldDesArg2 = { "fieldName",ioccrfArgString};
+static const ioccrfArg *dbDumpFldDesArgs[3] =
     {&dbDumpFldDesArg0,&dbDumpFldDesArg1,&dbDumpFldDesArg2};
-static ioccrfFuncDef dbDumpFldDesFuncDef = {"dbDumpFldDes",3,dbDumpFldDesArgs};
-static void dbDumpFldDesCallFunc(ioccrfArg **args)
+static const ioccrfFuncDef dbDumpFldDesFuncDef = {"dbDumpFldDes",3,dbDumpFldDesArgs};
+static void dbDumpFldDesCallFunc(const ioccrfArgBuf *args)
 {
-    dbDumpFldDes(pdbbase,(char *)args[1]->value,(char *)args[2]->value);
+    dbDumpFldDes(pdbbase,args[1].sval,args[2].sval);
 }
 
 /* dbDumpDevice */
-static ioccrfArg dbDumpDeviceArg0 = { "pdbbase",ioccrfArgPdbbase,0};
-static ioccrfArg dbDumpDeviceArg1 = { "recordTypeName",ioccrfArgString,0};
-static ioccrfArg *dbDumpDeviceArgs[2] = {&dbDumpDeviceArg0,&dbDumpDeviceArg1};
-static ioccrfFuncDef dbDumpDeviceFuncDef = {"dbDumpDevice",2,dbDumpDeviceArgs};
-static void dbDumpDeviceCallFunc(ioccrfArg **args)
+static const ioccrfArg dbDumpDeviceArg0 = { "pdbbase",ioccrfArgPdbbase};
+static const ioccrfArg dbDumpDeviceArg1 = { "recordTypeName",ioccrfArgString};
+static const ioccrfArg *dbDumpDeviceArgs[2] = {&dbDumpDeviceArg0,&dbDumpDeviceArg1};
+static const ioccrfFuncDef dbDumpDeviceFuncDef = {"dbDumpDevice",2,dbDumpDeviceArgs};
+static void dbDumpDeviceCallFunc(const ioccrfArgBuf *args)
 {
-    dbDumpDevice(pdbbase,(char *)args[1]->value);
+    dbDumpDevice(pdbbase,args[1].sval);
 }
 
 /* dbDumpDriver */
-static ioccrfArg dbDumpDriverArg0 = { "pdbbase",ioccrfArgPdbbase,0};
-static ioccrfArg *dbDumpDriverArgs[1] = {&dbDumpDriverArg0};
-static ioccrfFuncDef dbDumpDriverFuncDef = {"dbDumpDriver",1,dbDumpDriverArgs};
-static void dbDumpDriverCallFunc(ioccrfArg **args)
+static const ioccrfArg dbDumpDriverArg0 = { "pdbbase",ioccrfArgPdbbase};
+static const ioccrfArg *dbDumpDriverArgs[1] = {&dbDumpDriverArg0};
+static const ioccrfFuncDef dbDumpDriverFuncDef = {"dbDumpDriver",1,dbDumpDriverArgs};
+static void dbDumpDriverCallFunc(const ioccrfArgBuf *args)
 {
     dbDumpDriver(pdbbase);
 }
 
 /* dbDumpBreaktable */
-static ioccrfArg dbDumpBreaktableArg0 = { "pdbbase",ioccrfArgPdbbase,0};
-static ioccrfArg dbDumpBreaktableArg1 = { "tableName",ioccrfArgString,0};
-static ioccrfArg *dbDumpBreaktableArgs[2] =
+static const ioccrfArg dbDumpBreaktableArg0 = { "pdbbase",ioccrfArgPdbbase};
+static const ioccrfArg dbDumpBreaktableArg1 = { "tableName",ioccrfArgString};
+static const ioccrfArg *dbDumpBreaktableArgs[2] =
     {&dbDumpBreaktableArg0,&dbDumpBreaktableArg1};
-static ioccrfFuncDef dbDumpBreaktableFuncDef =
+static const ioccrfFuncDef dbDumpBreaktableFuncDef =
     {"dbDumpBreaktable",2,dbDumpBreaktableArgs};
-static void dbDumpBreaktableCallFunc(ioccrfArg **args)
+static void dbDumpBreaktableCallFunc(const ioccrfArgBuf *args)
 {
-    dbDumpBreaktable(pdbbase,(char *)args[1]->value);
+    dbDumpBreaktable(pdbbase,args[1].sval);
 }
 
 /* dbPvdDump */
-static ioccrfArg dbPvdDumpArg0 = { "pdbbase",ioccrfArgPdbbase,0};
-static ioccrfArg dbPvdDumpArg1 = { "verbose",ioccrfArgInt,0};
-static ioccrfArg *dbPvdDumpArgs[2] = {&dbPvdDumpArg0,&dbPvdDumpArg1};
-static ioccrfFuncDef dbPvdDumpFuncDef = {"dbPvdDump",2,dbPvdDumpArgs};
-static void dbPvdDumpCallFunc(ioccrfArg **args)
+static const ioccrfArg dbPvdDumpArg0 = { "pdbbase",ioccrfArgPdbbase};
+static const ioccrfArg dbPvdDumpArg1 = { "verbose",ioccrfArgInt};
+static const ioccrfArg *dbPvdDumpArgs[2] = {&dbPvdDumpArg0,&dbPvdDumpArg1};
+static const ioccrfFuncDef dbPvdDumpFuncDef = {"dbPvdDump",2,dbPvdDumpArgs};
+static void dbPvdDumpCallFunc(const ioccrfArgBuf *args)
 {
-    dbPvdDump(pdbbase,*(int *)args[1]->value);
+    dbPvdDump(pdbbase,args[1].ival);
 }
 
 void epicsShareAPI dbStaticRegister(void)

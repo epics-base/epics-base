@@ -26,7 +26,8 @@ INC += registerRecordDeviceDriverRegister.h
 #	2) where to find the sources: ., ./os/<ARCH_CLASS>, ./os/generic, ...
 #
 
-LIBSRCS += ioccrf.c
+LIBSRCS += ioccrf.cpp
+LIBSRCS += epicsReadline.c
 LIBSRCS += osiRegister.c
 LIBSRCS += dbStaticRegister.c
 LIBSRCS += dbTestRegister.c

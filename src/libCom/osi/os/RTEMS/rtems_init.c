@@ -196,22 +196,22 @@ rtems_semstat (int level)
     printf ("%d of %d semaphores used.\n", n, _Semaphore_Information.maximum);
 }
 
-static ioccrfArg netStatArg0 = { "level",ioccrfArgInt,0};
-static ioccrfArg *netStatArgs[1] = {&netStatArg0};
-static ioccrfFuncDef netStatFuncDef = {"netstat",1,netStatArgs};
-static void netStatCallFunc(ioccrfArg **args)
+static const ioccrfArg netStatArg0 = { "level",ioccrfArgInt};
+static const ioccrfArg *netStatArgs[1] = {&netStatArg0};
+static const ioccrfFuncDef netStatFuncDef = {"netstat",1,netStatArgs};
+static void netStatCallFunc(const ioccrfArgBuf *args)
 {
-    rtems_netstat(*(int *)args[0]->value);
+    rtems_netstat(args[0].ival);
 }
-static ioccrfArg semStatArg0 = { "level",ioccrfArgInt,0};
-static ioccrfArg *semStatArgs[1] = {&semStatArg0};
-static ioccrfFuncDef semStatFuncDef = {"semstat",1,semStatArgs};
-static void semStatCallFunc(ioccrfArg **args)
+static const ioccrfArg semStatArg0 = { "level",ioccrfArgInt};
+static const ioccrfArg *semStatArgs[1] = {&semStatArg0};
+static const ioccrfFuncDef semStatFuncDef = {"semstat",1,semStatArgs};
+static void semStatCallFunc(const ioccrfArgBuf *args)
 {
-    rtems_semstat(*(int *)args[0]->value);
+    rtems_semstat(args[0].ival);
 }
-static ioccrfFuncDef stackCheckFuncDef = {"stackCheck",0,NULL};
-static void stackCheckCallFunc(ioccrfArg **args)
+static const ioccrfFuncDef stackCheckFuncDef = {"stackCheck",0,NULL};
+static void stackCheckCallFunc(const ioccrfArgBuf *args)
 {
     Stack_check_Dump_usage ();
 }

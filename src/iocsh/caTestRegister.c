@@ -19,22 +19,22 @@ of this distribution.
 #include "caTestRegister.h"
 
 /* casr */
-static ioccrfArg casrArg0 = { "level",ioccrfArgInt,0};
-static ioccrfArg *casrArgs[1] = {&casrArg0};
-static ioccrfFuncDef casrFuncDef = {"casr",1,casrArgs};
-static void casrCallFunc(ioccrfArg **args)
+static const ioccrfArg casrArg0 = { "level",ioccrfArgInt};
+static const ioccrfArg *casrArgs[1] = {&casrArg0};
+static const ioccrfFuncDef casrFuncDef = {"casr",1,casrArgs};
+static void casrCallFunc(const ioccrfArgBuf *args)
 {
-    casr(*(int *)args[0]->value);
+    casr(args[0].ival);
 }
 
 /* dbel */
-static ioccrfArg dbelArg0 = { "record name",ioccrfArgString,0};
-static ioccrfArg dbelArg1 = { "level",ioccrfArgInt,0};
-static ioccrfArg *dbelArgs[2] = {&dbelArg0,&dbelArg1};
-static ioccrfFuncDef dbelFuncDef = {"dbel",2,dbelArgs};
-static void dbelCallFunc(ioccrfArg **args)
+static const ioccrfArg dbelArg0 = { "record name",ioccrfArgString};
+static const ioccrfArg dbelArg1 = { "level",ioccrfArgInt};
+static const ioccrfArg *dbelArgs[2] = {&dbelArg0,&dbelArg1};
+static const ioccrfFuncDef dbelFuncDef = {"dbel",2,dbelArgs};
+static void dbelCallFunc(const ioccrfArgBuf *args)
 {
-    dbel((char *)args[0]->value, *(int *)args[1]->value);
+    dbel(args[0].sval, args[1].ival);
 }
 
 

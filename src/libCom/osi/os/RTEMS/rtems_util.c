@@ -46,7 +46,7 @@ static char *ip_alias[]   = { "IP",   NULL };
 static char *icmp_alias[] = { "ICMP", NULL };
 static char *tcp_alias[]  = { "TCP",  NULL };
 static char *udp_alias[]  = { "UDP",  NULL };
-static const struct protoent prototab[] = {
+static struct protoent prototab[] = {
             { "IP",    ip_alias,   IPPROTO_IP   },
             { "ICMP",  icmp_alias, IPPROTO_ICMP },
             { "TCP",   tcp_alias,  IPPROTO_TCP  },

@@ -33,6 +33,9 @@
 
 /*
  * $Log$
+ * Revision 1.74.4.2  1999/09/02 21:12:18  jhill
+ * use (void) and not () in func proto when its not a C++ file
+ *
  * Revision 1.74.4.1  1999/07/15 20:52:38  jhill
  * added congestion thresh to search sched alg
  *
@@ -560,7 +563,7 @@ struct  CA_STATIC {
 	void		(*ca_exception_func)
 				(struct exception_handler_args);
 	const void	*ca_exception_arg;
-	int		(*ca_printf_func)(const char *pformat, va_list args);
+	int ( epicsShareAPIV *ca_printf_func)(const char *pformat, va_list args);
 	void		(*ca_fd_register_func)
 				(void *, int, int);
 	const void	*ca_fd_register_arg;

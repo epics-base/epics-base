@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.107.2.5  2000/08/29 20:03:04  jhill
+ * fixed alignment bug check on hosts that have 64 bit longs
+ *
  * Revision 1.107.2.4  2000/06/28 15:48:43  mrk
  * remove blank from task name
  *
@@ -3699,7 +3702,7 @@ int ca_channel_status(int tid)
  * ca_replace_printf_handler ()
  */
 int epicsShareAPI ca_replace_printf_handler (
-int (*ca_printf_func)(const char *pformat, va_list args)
+int (epicsShareAPIV *ca_printf_func)(const char *pformat, va_list args)
 )
 {
 	INITCHK;
@@ -3723,7 +3726,7 @@ int (*ca_printf_func)(const char *pformat, va_list args)
  */
 int epicsShareAPI ca_printf(char *pformat, ...)
 {
-	int		(*ca_printf_func)(const char *pformat, va_list args);
+	int	( epicsShareAPIV *ca_printf_func )(const char *pformat, va_list args);
 	va_list		theArgs;
 	int		status;
 

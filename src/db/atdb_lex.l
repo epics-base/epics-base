@@ -8,7 +8,7 @@ yyreset()
 {
 	line_num=1;
 	BEGIN INITIAL;
-	return;
+	return(0);
 }
 
 %}

@@ -162,14 +162,14 @@ extern "C" void cacSendThreadTCP ( void *pParam )
             if ( piiu->flowControlActive ) {
                 piiu->comQueSend::disableFlowControlRequest ();
                 piiu->flowControlActive = false;
-#               if defined ( DEBUG ) || 1
+#               if defined ( DEBUG )
                     printf ( "fc off\n" );
 #               endif
             }
             else {
                 piiu->comQueSend::enableFlowControlRequest ();
                 piiu->flowControlActive = true;
-#               if defined ( DEBUG ) || 1
+#               if defined ( DEBUG )
                     printf ( "fc on\n" );
 #               endif
             }

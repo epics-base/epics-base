@@ -1,7 +1,9 @@
 /*
  *      $Id$
  *
- *      Author  Jeffrey O. Hill
+ *      Author  Jeffrey O. Hill 
+ *				(string hash alg by Marty Kraimer and Peter K. Pearson)
+ *
  *              johill@lanl.gov
  *              505 665 1831
  *
@@ -29,6 +31,19 @@
  *
  * History
  * $Log$
+ * Revision 1.22  1999/01/29 23:03:02  jhill
+ * doc
+ *
+ * Revision 1.21  1999/01/29 22:51:09  jhill
+ * reinstalled const cast away
+ *
+ * Revision 1.20  1999/01/29 22:36:53  jhill
+ * removed const cast away
+ *
+ * Revision 1.19  1998/10/23 19:23:46  jhill
+ * fixed problem associated with deleting "const char *"
+ * on the solaris compiler
+ *
  * Revision 1.18  1998/10/23 00:20:40  jhill
  * attempted to clean up HP-UX warnings
  *
@@ -692,13 +707,16 @@ stringId::~stringId()
 			//
 			// the HP-UX compiler gives us a warning on
 			// each cast away of const, but in this case
-			// it cant be avoided
+			// it cant be avoided. 
+			//
+			// The DEC compiler complains that const isnt 
+			// really significant in a cast if it is present.
 			//
 			// I hope that deleting a pointer to "char"
 			// is the same as deleting a pointer to 
 			// "const char" on all compilers
 			//
-			delete [] (char * const) this->pStr;
+			delete [] (char *) this->pStr;
 		}
 	}
 }

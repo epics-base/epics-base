@@ -175,7 +175,7 @@ void dbLockSetGblUnlock(void)
 
 void dbLockSetRecordLock(dbCommon *precord)
 {
-    lockRecord	*plockRecord = (lockRecord *)precord->lset;
+    lockRecord	*plockRecord = precord->lset;
     lockSet	*plockSet;
     STATUS	status;
 
@@ -212,7 +212,7 @@ void dbScanLock(dbCommon *precord)
     lockSet	*plockSet;
     STATUS	status;
 
-    if(!(plockRecord= (lockRecord *)precord->lset)) {
+    if(!(plockRecord= precord->lset)) {
 	epicsPrintf("dbScanLock plockRecord is NULL record %s\n",
 	    precord->name);
 	taskSuspend(0);
@@ -235,7 +235,7 @@ void dbScanLock(dbCommon *precord)
 
 void dbScanUnlock(dbCommon *precord)
 {
-    lockRecord	*plockRecord = (lockRecord *)precord->lset;
+    lockRecord	*plockRecord = precord->lset;
 
     if(!plockRecord || !plockRecord->plockSet) {
 	epicsPrintf("dbScanUnlock plockRecord or plockRecord->plockSet NULL\n");
@@ -247,7 +247,7 @@ void dbScanUnlock(dbCommon *precord)
 
 unsigned long dbLockGetLockId(dbCommon *precord)
 {
-    lockRecord	*plockRecord = (lockRecord *)precord->lset;
+    lockRecord	*plockRecord = precord->lset;
     lockSet	*plockSet;
     
     if(!plockRecord) return(0);
@@ -312,7 +312,7 @@ void dbLockInitRecords(dbBase *pdbbase)
 		&& pdbAddr->no_elements<=1) continue;
 		dbLockSetMerge(precord,pdbAddr->precord);
 	    }
-	    plockRecord = (lockRecord *)precord->lset;
+	    plockRecord = precord->lset;
 	    if(!plockRecord->plockSet) allocLock(plockRecord);
 	}
     }
@@ -320,8 +320,8 @@ void dbLockInitRecords(dbBase *pdbbase)
 
 void dbLockSetMerge(dbCommon *pfirst,dbCommon *psecond)
 {
-    lockRecord	*p1lockRecord = (lockRecord *)pfirst->lset;
-    lockRecord	*p2lockRecord = (lockRecord *)psecond->lset;
+    lockRecord	*p1lockRecord = pfirst->lset;
+    lockRecord	*p2lockRecord = psecond->lset;
     lockSet	*p1lockSet;
     lockSet	*p2lockSet;
 
@@ -368,7 +368,7 @@ void dbLockSetSplit(dbCommon *psource)
     int		nrecordsInSet,i;
     dbCommon	**paprecord;
 
-    plockRecord = (lockRecord *)psource->lset;
+    plockRecord = psource->lset;
     if(!plockRecord) {
 	errMessage(-1,"dbLockSetSplit called before lockRecord allocated");
 	return;
@@ -390,9 +390,9 @@ void dbLockSetSplit(dbCommon *psource)
     /*Now recompute lock sets */
     for(i=0; i<nrecordsInSet; i++) {
 	precord = paprecord[i];
-	plockRecord = (lockRecord *)precord->lset;
+	plockRecord = precord->lset;
 	if(!(precord->name[0])) continue;
-	pdbRecordType = (dbRecordType *)precord->rdes;
+	pdbRecordType = precord->rdes;
     	for(link=0; link<pdbRecordType->no_links; link++) {
 	    DBADDR	*pdbAddr;
 
@@ -442,7 +442,7 @@ long dblsr(char *recordname,int level)
 	}
 	precord = pdbentry->precnode->precord;
 	dbFinishEntry(pdbentry);
-	plockRecord = (lockRecord *)precord->lset;
+	plockRecord = precord->lset;
 	if(!plockRecord) return(0);
 	plockSet = plockRecord->plockSet;
     } else {
@@ -473,7 +473,7 @@ long dblsr(char *recordname,int level)
 	for(plockRecord = (lockRecord *)ellFirst(&plockSet->recordList);
 	plockRecord; plockRecord = (lockRecord *)ellNext(&plockRecord->node)) {
 	    precord = plockRecord->precord;
-	    pdbRecordType = (dbRecordType *)precord->rdes;
+	    pdbRecordType = precord->rdes;
 	    printf("%s\n",precord->name);
 	    if(level<=1) continue;
 	    for(link=0; (link<pdbRecordType->no_links) ; link++) {

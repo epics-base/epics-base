@@ -666,34 +666,6 @@ static struct gpibCmd gpibCmds[] =
 
 /******************************************************************************
  *
- * Structure containing the user's functions and operating parameters needed
- * by the gpib library functions.
- *
- * The magic SRQ parm is the parm number that, if specified on a passive
- * record, will cause the record to be processed automatically when an
- * unsolicited SRQ interrupt is detected from the device.
- *
- * If the parm is specified on a non-passive record, it will NOT be processed
- * when an unsolicited SRQ is detected.
- *
- ******************************************************************************/
-static struct  devGpibParmBlock devSupParms = {
-  &Dg535Debug,          /* debugging flag pointer */
-  -1,                   /* set to -1 if the device does NOT respond to writes */
-  TIME_WINDOW,          /* # of clock ticks to skip after a device times out */
-  NULL,                 /* hwpvt list head */
-  gpibCmds,             /* GPIB command array */
-  NUMPARAMS,            /* number of supported parameters */
-  -1,			/* magic SRQ param number (-1 if none) */
-  "devXxDg535Gpib",	/* device support module type name */
-  DMA_TIME,		/* # of clock ticks to wait for DMA completions */
-
-  NULL,			/* pointer to SRQ handler function (NULL if none) */
-  NULL			/* pointer to secondary conversion routine */
-};
-
-/******************************************************************************
- *
  * Initialization for device support
  * This is called one time before any records are initialized with a parm
  * value of 0.  And then again AFTER all record-level init is complete
@@ -703,6 +675,19 @@ static struct  devGpibParmBlock devSupParms = {
 STATIC long 
 init_dev_sup(int parm)
 {
+  if(parm==0)  {
+    devSupParms.debugFlag = &Dg535Debug;
+    devSupParms.respond2Writes = -1;
+    devSupParms.timeWindow = TIME_WINDOW;
+    devSupParms.hwpvtHead = 0;
+    devSupParms.gpibCmds = gpibCmds;
+    devSupParms.numparams = NUMPARAMS;
+    devSupParms.magicSrq = -1;
+    devSupParms.name = "devXxDg535Gpib";
+    devSupParms.dmaTimeout = DMA_TIME;
+    devSupParms.srqHandler = 0;
+    devSupParms.wrConversion = 0;
+  }
   return(devGpibLib_initDevSup(parm, &DSET_AI));
 }
 

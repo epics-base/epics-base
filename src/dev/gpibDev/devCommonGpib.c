@@ -3,6 +3,12 @@
 
 /*
  * $Log$
+ * Revision 1.2  1999/07/07 20:07:13  mrk
+ * sscanf response now checked to be equal to 1 rather than just not zero.
+ *
+ * Revision 1.1  1998/01/21 20:46:55  mrk
+ * restructure; new Symb support
+ *
  * Revision 1.36  1998/01/20 22:08:59  mrk
  * cleanup includes
  *
@@ -1441,13 +1447,16 @@ struct gpibDpvt *pdpvt;
     else  /* interpret msg with predefined format and write into .val */
     {
         /* scan response string, return value will be 1 if successful */
-        if(sscanf(pdpvt->msg,pCmd->format,&value))
+        if(sscanf(pdpvt->msg,pCmd->format,&value)==1)
         {
             pai->val = value;
 	    pai->udf = FALSE;
         }
         else        /* sscanf did not find or assign the parameter */
         {
+            if(ibSrqDebug)
+                printf("error %s msg %s lenmsg %d\n",
+                pai->name,pdpvt->msg,strlen(pdpvt->msg));
             devGpibLib_setPvSevr(pai,READ_ALARM,VALID_ALARM);
         }
     }
@@ -1603,13 +1612,16 @@ struct gpibDpvt *pdpvt;
     else  /* interpret msg with predefined format and write into .val */
     {
         /* scan response string, return value will be 1 if successful */
-        if(sscanf(pdpvt->msg,pCmd->format,&value))
+        if(sscanf(pdpvt->msg,pCmd->format,&value)==1)
         {
             pli->val = value;
 	    pli->udf = FALSE;
         }
         else        /* sscanf did not find or assign the parameter */
         {
+            if(ibSrqDebug)
+                printf("error %s msg %s lenmsg %d\n",
+                pli->name,pdpvt->msg,strlen(pdpvt->msg));
             devGpibLib_setPvSevr(pli,READ_ALARM,VALID_ALARM);
         }
     }
@@ -1766,10 +1778,14 @@ struct gpibDpvt *pdpvt;
         }
 	else
 	{   /* Scan response string, return value will be 1 if successful */
-            if(sscanf(pdpvt->msg,pCmd->format, &value))
+            if(sscanf(pdpvt->msg,pCmd->format, &value)==1) {
 		pbi->rval = value;
-            else        /* sscanf did not find or assign the parameter */
+            } else {       /* sscanf did not find or assign the parameter */
+                if(ibSrqDebug)
+                    printf("error %s msg %s lenmsg %d\n",
+                    pbi->name,pdpvt->msg,strlen(pdpvt->msg));
 		devGpibLib_setPvSevr(pbi,READ_ALARM,VALID_ALARM);
+            }
 	}
     }
     RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
@@ -1927,10 +1943,14 @@ struct gpibDpvt *pdpvt;
         }
         else
         {   /* Scan response string, return value will be 1 if successful */
-            if(sscanf(pdpvt->msg, pCmd->format, &value))
+            if(sscanf(pdpvt->msg,pCmd->format, &value)==1) {
 		pmbbi->rval = value;
-            else        /* sscanf did not find or assign the parameter */
+            } else {       /* sscanf did not find or assign the parameter */
+                if(ibSrqDebug)
+                    printf("error %s msg %s lenmsg %d\n",
+                    pmbbi->name,pdpvt->msg,strlen(pdpvt->msg));
 		devGpibLib_setPvSevr(pmbbi,READ_ALARM,VALID_ALARM);
+            }
 	}
     }
     RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);

@@ -1175,11 +1175,13 @@ static int dbpr_report(
 		char *ptemp_buf = &temp_buf[0];
 		short n = pdbFldDes->size;
 		short i;
+                unsigned int value;
 
 		strcpy(ptemp_buf,"0x"); ptemp_buf+=2;
 		if(n>(sizeof(temp_buf)-2)/2) n = (sizeof(temp_buf)-2)/2;
 		for (i=0; i<n; i++, (ptemp_buf+=2), pchar++) {
-			sprintf(ptemp_buf,"%02x",*pchar);
+                        value = (unsigned int)(*(unsigned char *)pchar);
+			sprintf(ptemp_buf,"%02x",value);
 		}
 		*ptemp_buf = 0;
 		sprintf(pmsg, "%s: %s", pfield_name,temp_buf);

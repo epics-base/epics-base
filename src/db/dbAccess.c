@@ -531,8 +531,8 @@ void dbScanFwdLink(struct link *plink)
  */
 long dbProcess(dbCommon *precord)
 {
-	struct rset	*prset = (struct rset *)precord->rset;
-	dbRecordType	*pdbRecordType = (dbRecordType *)precord->rdes;
+	struct rset	*prset = precord->rset;
+	dbRecordType	*pdbRecordType = precord->rdes;
 	unsigned char	tpro=precord->tpro;
 	unsigned long	lset;
 	long		status = 0;
@@ -624,7 +624,7 @@ long dbProcess(dbCommon *precord)
 
 	/* locate record processing routine */
         /* put this in iocInit() !!! */
-	if (!(prset=(struct rset *)precord->rset) || !(prset->process)) {
+	if (!(prset=precord->rset) || !(prset->process)) {
 		precord->pact=1;/*set pact TRUE so error is issued only once*/
 		recGblRecordError(S_db_noRSET, (void *)precord, "dbProcess");
 		status = S_db_noRSET;

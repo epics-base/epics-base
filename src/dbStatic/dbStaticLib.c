@@ -50,6 +50,7 @@ of this distribution.
 #include "special.h"
 #include "dbmf.h"
 #include "postfix.h"
+#include "sCalcPostfix.h"
 #include "osiFileName.h"
 
 #define epicsExportSharedSymbols
@@ -1445,17 +1446,21 @@ long epicsShareAPI dbCreateRecord(DBENTRY *pdbentry,char *precordName)
     if((status = dbAllocRecord(pdbentry,precordName))) return(status);
     pNewRecNode->recordname = dbRecordName(pdbentry);
     /* install record node in list in sorted postion */
-    precnode = (dbRecordNode *)ellFirst(preclist);
-    while(precnode && strcmp(precordName,(char*)precnode->precord) > 0)
-	precnode = (dbRecordNode *)ellNext(&precnode->node);
-    if(precnode) 
+    status = dbFirstRecord(pdbentry);
+    while(status==0) {
+        if(strcmp(precordName,dbGetRecordName(pdbentry)) < 0) break;
+        status = dbNextRecord(pdbentry);
+    }
+    if(status==0) {
+        precnode = pdbentry->precnode;
 	ellInsert(preclist,ellPrevious(&precnode->node),&pNewRecNode->node);
-    else
-	ellAdd(preclist,&pNewRecNode->node);
+    } else {
+        ellAdd(preclist,&pNewRecNode->node);
+    }
     pdbentry->precnode = pNewRecNode;
     ppvd = dbPvdAdd(pdbentry->pdbbase,precordType,pNewRecNode);
     if(!ppvd) {errMessage(-1,"Logic Err: Could not add to PVD");return(-1);}
-    return(status);
+    return(0);
 }
 
 long epicsShareAPI dbDeleteRecord(DBENTRY *pdbentry)
@@ -1940,9 +1945,14 @@ long epicsShareAPI dbPutString(DBENTRY *pdbentry,char *pstring)
 	strncpy((char *)pfield, pstring,pflddes->size);
 	if((pflddes->special == SPC_CALC) && !stringHasMacro) {
 	    char  rpcl[RPCL_LEN];
+            char  *psCalcrpcl = 0;
 	    short error_number;
 
 	    status = postfix(pstring,rpcl,&error_number);
+            if(status) {
+                status = sCalcPostfix(pstring,&psCalcrpcl,&error_number);
+                free((void *)psCalcrpcl);
+            }
 	    if(status) status = S_dbLib_badField;
 	}
 	if((short)strlen(pstring) >= pflddes->size) status = S_dbLib_strLen;
@@ -2310,10 +2320,15 @@ char * epicsShareAPI dbVerify(DBENTRY *pdbentry,char *pstring)
 	    }
 	    if((pflddes->special == SPC_CALC) && !stringHasMacro) {
 		char  rpcl[RPCL_LEN];
+                char  *psCalcrpcl = 0;
 		short error_number;
 		long  status;
 
 		status = postfix(pstring,rpcl,&error_number);
+                if(status) {
+                    status = sCalcPostfix(pstring,&psCalcrpcl,&error_number);
+                    free((void *)psCalcrpcl);
+                }
 		if(status)  {
 		    sprintf(message,"Illegal Calculation String");
 		    return(message);

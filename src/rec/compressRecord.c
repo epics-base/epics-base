@@ -54,6 +54,9 @@
  * .16  07-15-92        jba     changed VALID_ALARM to INVALID alarm
  * .17  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  * .18  05-09-94        jba     Fixed the updating of pcompress->inx in array_average
+ * .19  03-16-99	wfl	Added "N to 1 Median" algorithm (implemented
+ *				only for array inputs; regular "Median" is not
+ *				implemented)
  */
 
 #include	<vxWorks.h>
@@ -162,6 +165,17 @@ static void put_value(compressRecord *pcompress,double *psource, long n)
 	return;
 }
 
+/* qsort comparison function (for median calculation) */
+static int compare(const void *arg1, const void *arg2)
+{
+    double a = *(double *)arg1;
+    double b = *(double *)arg2;
+
+    if      ( a <  b ) return -1;
+    else if ( a == b ) return  0;
+    else               return  1;
+}
+
 static int compress_array(compressRecord *pcompress,
 	double *psource,long no_elements)
 {
@@ -219,7 +233,16 @@ static int compress_array(compressRecord *pcompress,
 		put_value(pcompress,&value,1);
 	    }
 	    break;
-	}
+        case (compressALG_N_to_1_Median):
+            /* compress N to 1 keeping the median value */
+	    /* note: sorts source array (OK; it's a work pointer) */
+            for (i = 0; i < nnew; i++, psource+=nnew){
+	        qsort(psource,n,sizeof(double),compare);
+		value=psource[n/2];
+                put_value(pcompress,&value,1);
+            }
+            break;
+        }
 	return(0);
 }
 
@@ -285,7 +308,9 @@ static int compress_scalar(struct compressRecord *pcompress,double *psource)
 	    if ((value > *pdest) || (inx == 0))
 		*pdest = value;
 	    break;
+	/* for scalars, Median not implemented => use average */
 	case (compressALG_N_to_1_Average):
+	case (compressALG_N_to_1_Median):
 	    if (inx == 0)
 		*pdest = value;
 	    else {

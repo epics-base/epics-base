@@ -4,6 +4,7 @@ menu(compressALG) {
 	choice(compressALG_N_to_1_Average,"N to 1 Average")
 	choice(compressALG_Average,"Average")
 	choice(compressALG_Circular_Buffer,"Circular Buffer")
+	choice(compressALG_N_to_1_Median,"N to 1 Median")
 }
 recordtype(compress) {
 	include "dbCommon.dbd" 

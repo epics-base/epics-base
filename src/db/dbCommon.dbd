@@ -118,6 +118,7 @@
 	}
 	field(ACKT,DBF_MENU) {
 		prompt("Alarm Ack Transient")
+		promptgroup(GUI_ALARMS)
 		special(SPC_NOMOD)
 		interest(2)
 		menu(menuYesNo)
@@ -159,25 +160,25 @@
 		prompt("addr of PUTNOTIFY")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("void		*ppn")
+		extra("struct putNotify *ppn")
 	}
 	field(PPNN,DBF_NOACCESS) {
 		prompt("next record PUTNOTIFY")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("void		*ppnn")
+		extra("struct pnWaitNode *ppnn")
 	}
 	field(SPVT,DBF_NOACCESS) {
 		prompt("Scan Private")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("void		*spvt")
+		extra("struct scan_element *spvt")
 	}
 	field(RSET,DBF_NOACCESS) {
 		prompt("Address of RSET")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("void		*rset")
+		extra("struct rset	*rset")
 	}
 	field(DSET,DBF_NOACCESS) {
 		prompt("DSET address")
@@ -195,13 +196,13 @@
 		prompt("Address of dbRecordType")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("void		*rdes")
+		extra("struct dbRecordType *rdes")
 	}
 	field(LSET,DBF_NOACCESS) {
 		prompt("Lock Set")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("void		*lset")
+		extra("struct lockRecord *lset")
 	}
 	field(PRIO,DBF_MENU) {
 		prompt("Scheduling Priority")

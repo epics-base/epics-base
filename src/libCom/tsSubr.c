@@ -119,6 +119,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <limits.h>
+#include <math.h>
 
 #define INC_tsDefs_h
 #if defined(vxWorks)

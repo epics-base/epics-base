@@ -206,35 +206,6 @@ static struct gpibCmd gpibCmds[] =
 
 /******************************************************************************
  *
- * Structure containing the user's functions and operating parameters needed
- * by the gpib library functions.
- *
- * The magic SRQ parm is the parm number that, if specified on a passive
- * record, will cause the record to be processed automatically when an
- * unsolicited SRQ interrupt is detected from the device.
- *
- * If the parm is specified on a non-passive record, it will NOT be processed
- * when an unsolicited SRQ is detected.
- *
- ******************************************************************************/
-static struct  devGpibParmBlock devSupParms = {
-  &sr620Debug,          /* debugging flag pointer */
-  -1,                   /* device does not respond to writes */
-  TIME_WINDOW,          /* # of clock ticks to skip after a device times out */
-  NULL,                 /* hwpvt list head */
-  gpibCmds,             /* GPIB command array */
-  NUMPARAMS,            /* number of supported parameters */
-  -1,			/* magic SRQ param number */
-  "devXxSr620Gpib",	/* device support module type name */
-  DMA_TIME,
-
-  srqHandler,           /* pointer to SRQ handler function */
-
-  NULL			/* pointer to secondary converstion routine */
-};
-
-/******************************************************************************
- *
  * This is invoked by the linkTask when an SRQ is detected from a device
  * operated by this module.
  *
@@ -308,6 +279,19 @@ STATIC int srqHandler(struct hwpvt *phwpvt, int srqStatus)
 STATIC long 
 init_dev_sup(int parm)
 {
+  if(parm==0)  {
+    devSupParms.debugFlag = &sr620Debug;
+    devSupParms.respond2Writes = -1;
+    devSupParms.timeWindow = TIME_WINDOW;
+    devSupParms.hwpvtHead = 0;
+    devSupParms.gpibCmds = gpibCmds;
+    devSupParms.numparams = NUMPARAMS;
+    devSupParms.magicSrq = -1;
+    devSupParms.name = "devXxSr620Gpib";
+    devSupParms.dmaTimeout = DMA_TIME;
+    devSupParms.srqHandler = srqHandler;
+    devSupParms.wrConversion = 0;
+  }
   return(devGpibLib_initDevSup(parm, &DSET_AI));
 }
 

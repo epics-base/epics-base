@@ -50,28 +50,19 @@ extern struct dbBase *pdbbase;
 
 static brkTable *findBrkTable(short linr)
 { 
-    brkTable	*pbrkTable;
     dbMenu	*pdbMenu;
-    char	name[50];
-    char	*pname = name;
-    int		len,ind;
-
 
     pdbMenu = dbFindMenu(pdbbase,"menuConvert");
-    len = strlen(pdbMenu->papChoiceValue[linr]);
-    if(len>=sizeof(name)) {
-	epicsPrintf("Break Tables(findBrkTable) choice name too long\n");
+    if(!pdbMenu) {
+	epicsPrintf("findBrkTable: menuConvert does not exist\n");
 	return(0);
     }
-    strcpy(pname,pdbMenu->papChoiceValue[linr]);
-    for(ind=0; ind<strlen(pname); ind++) {
-	if(!isalnum(pname[ind])) {
-	    pname[ind] = '\0';
-	    break;
-	}
+    if(linr<0 || linr>=pdbMenu->nChoice) {
+	epicsPrintf("findBrkTable linr %d  but menuConvert has %d choices\n",
+	    linr,pdbMenu->nChoice);
+	return(0);
     }
-    pbrkTable = dbFindBrkTable(pdbbase,pname);
-    return(pbrkTable);
+    return(dbFindBrkTable(pdbbase,pdbMenu->papChoiceValue[linr]));
 }
 
 long cvtRawToEngBpt(double *pval,short linr,short init, void **ppbrk,

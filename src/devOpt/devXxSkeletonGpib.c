@@ -274,9 +274,13 @@ static struct gpibCmd gpibCmds[] =
 
 /******************************************************************************
  *
- * Structure containing the user's functions and operating parameters needed
- * by the gpib library functions.
+ * Initialization for device support
+ * This is called one time before any records are initialized with a parm
+ * value of 0.  And then again AFTER all record-level init is complete
+ * with a param value of 1.
  *
+ *****************************************************************************/
+/******************************************************************************
  * The magic SRQ parm is the parm number that, if specified on a passive
  * record, will cause the record to be processed automatically when an
  * unsolicited SRQ interrupt is detected from the device.
@@ -287,32 +291,23 @@ static struct gpibCmd gpibCmds[] =
  * In the future, the magic SRQ parm records will be processed as "I/O event
  * scanned"... not passive.
  *
- ******************************************************************************/
-static struct  devGpibParmBlock devSupParms = {
-  &SkeletonDebug,         /* debugging flag pointer */
-  -1,                   /* device does not respond to writes */
-  TIME_WINDOW,          /* # of clock ticks to skip after a device times out */
-  NULL,                 /* hwpvt list head */
-  gpibCmds,             /* GPIB command array */
-  NUMPARAMS,            /* number of supported parameters */
-  -1,			/* magic SRQ param number (-1 if none) */
-  "devXxSkeletonGpib",	/* device support module type name */
-  DMA_TIME,		/* # of clock ticks to wait for DMA completions */
-  NULL,			/* SRQ handler function (NULL if none) */
-  NULL			/* secondary conversion routine (NULL if none) */
-};
-
-/******************************************************************************
- *
- * Initialization for device support
- * This is called one time before any records are initialized with a parm
- * value of 0.  And then again AFTER all record-level init is complete
- * with a param value of 1.
- *
- ******************************************************************************/
+ *****************************************************************************/
 STATIC long 
 init_dev_sup(int parm)
 {
+  if(parm==0)  {
+    devSupParms.debugFlag = &SkeletonDebug;
+    devSupParms.respond2Writes = -1;
+    devSupParms.timeWindow = TIME_WINDOW;
+    devSupParms.hwpvtHead = 0;
+    devSupParms.gpibCmds = gpibCmds;
+    devSupParms.numparams = NUMPARAMS;
+    devSupParms.magicSrq = -1;
+    devSupParms.name = "devXxSkeletonGpib";
+    devSupParms.dmaTimeout = DMA_TIME;
+    devSupParms.srqHandler = 0;
+    devSupParms.wrConversion = 0;
+  }
   return(devGpibLib_initDevSup(parm,&DSET_AI));
 }
 

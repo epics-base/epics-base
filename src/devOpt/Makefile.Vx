@@ -5,7 +5,7 @@ USR_INCLUDES = -I../../drv
 
 SRCS.c += ../devAnalytekGpib.c
 SRCS.c += ../devXxDg535Gpib.c
-SRCS.c += ../devBBInteract.c
+#SRCS.c += ../devBBInteract.c
 SRCS.c += ../devGpibInteract.c
 SRCS.c += ../devXxSr620Gpib.c
 SRCS.c += ../devK486Gpib.c

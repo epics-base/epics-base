@@ -31,6 +31,14 @@
  *
  * History
  * $Log$
+ * Revision 1.15  1998/12/18 19:02:46  jhill
+ * Changed the remove() function in tsSLList class because users were
+ * confused by it. The name is now removeNextItem() and it is now a private
+ * member of class tsSLNode.
+ *
+ * Revision 1.14  1998/10/23 16:40:47  jhill
+ * fixed missing new line at EOF
+ *
  * Revision 1.13  1998/10/23 00:20:41  jhill
  * attempted to clean up HP-UX warnings
  *
@@ -105,6 +113,20 @@ public:
 
 private:
 	T	*pNext;
+
+	//
+	// removeNextItem ()
+	//
+	// removes the item after this node
+	//
+	void removeNextItem ()
+	{
+		T *pItem = this->pNext;
+		if (pItem) {
+			tsSLNode<T> *pNode = pItem;
+			this->pNext = pNode->pNext;
+		}
+	}
 };
 
 
@@ -137,28 +159,13 @@ public:
 	}
 
 	//
-	// remove ()
-	// **** removes item after "itemBefore" ****
-	// (itemBefore might be the list header object and therefore
-	// will not always be of type T)
-	//
-	void remove (tsSLNode<T> &itemBefore)
-	{
-		T *pItem = itemBefore.pNext;
-		if (pItem) {
-			tsSLNode<T> *pNode = pItem;
-			itemBefore.pNext = pNode->pNext;
-		}
-	}
-
-	//
 	// get ()
 	//
 	T * get()
 	{
 		tsSLNode<T> *pThisNode = this;
 		T *pItem = pThisNode->pNext;
-		this->remove(*this);
+		pThisNode->removeNextItem();
 		return pItem;
 	}
 

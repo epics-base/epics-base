@@ -12,27 +12,34 @@ else
 USR_CFLAGS = -fshared-data -fvolatile
 endif
 
-INC += drvBB232.h
-INC += drvBitBus.h
+#The following have been unbundled. DONT USE THESE
+#INC += drvBB232.h
+#INC += drvBitBus.h
 INC += drvBitBusErr.h
+#INC += drvMsg.h
+#drvBitBusInterface APPEARS HERE AND IN UNBUNDLED - BIG PROBLEM
 INC += drvBitBusInterface.h
+#SRCS.c += ../drvBB232.c
+#SRCS.c += ../drvBitBus.c
+#SRCS.c += ../drvMsg.c
+#SRCS.c += ../drvTranServ.c
+
+#The following have not been used
+#INC += drvRs232.h
+#INC += drvTy232.h
+
 INC += drvGpib.h
 INC += drvGpibErr.h
 INC += drvGpibInterface.h
 INC += drvHiDEOSGpib.h
 INC += drvJgvtr1.h
-INC += drvMsg.h
 INC += drvOms.h
-INC += drvRs232.h
-INC += drvTy232.h
 INC += steppermotor.h
 
 
 SRCS.c += ../module_types.c
-SRCS.c += ../drvBB232.c
 SRCS.c += ../drvBb902.c
 SRCS.c += ../drvBb910.c
-SRCS.c += ../drvBitBus.c
 SRCS.c += ../drvComet.c
 SRCS.c += ../drvCompuSm.c
 SRCS.c += ../drvDvx.c
@@ -40,9 +47,7 @@ SRCS.c += ../drvFp.c
 SRCS.c += ../drvFpm.c
 SRCS.c += ../drvGpib.c
 SRCS.c += ../drvJgvtr1.c
-SRCS.c += ../drvMsg.c
 SRCS.c += ../drvOms.c
-#SRCS.c += ../drvTranServ.c
 SRCS.c += ../drvVmi4100.c
 SRCS.c += ../drvXy010.c
 SRCS.c += ../drvXy210.c

@@ -300,6 +300,7 @@ static long special(paddr,after)
             return(S_db_noMod);
         }
 	pao->init=TRUE;
+	pao->eoff = pao->egul;
         if(!(pdset->special_linconv)) return(0);
         return((*pdset->special_linconv)(pao,after));
     default:

@@ -237,6 +237,7 @@ static long special(DBADDR *paddr,int after)
 	    return(S_db_noMod);
 	}
 	pai->init=TRUE;
+	pai->eoff = pai->egul;
 	if(!(pdset->special_linconv)) return(0);
 	return((*pdset->special_linconv)(pai,after));
     default:

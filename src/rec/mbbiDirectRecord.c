@@ -108,27 +108,34 @@ static long readValue();
 
 #define NUM_BITS  16
 
-/* refreshes all the bit fields based on a hardware value */
-static void refresh_bits(pmbbiDirect)
+/* refreshes all the bit fields based on a hardware value
+   and sends monitors if the bit's value or the record's
+   severity/status have changed */
+static void refresh_bits(pmbbiDirect, monitor_mask)
     struct mbbiDirectRecord	*pmbbiDirect;
+    unsigned short monitor_mask;
 {
-   int i, mask = 1;
+   unsigned short i;
+   unsigned short mask = 1;
+   unsigned short momask;
    unsigned char *bit;
 
    bit = &(pmbbiDirect->b0);
    for (i=0; i<NUM_BITS; i++, mask = mask << 1, bit++) {
+      momask = monitor_mask;
       if (pmbbiDirect->val & mask) {
          if (*bit == 0) {
             *bit = 1;
-            db_post_events(pmbbiDirect,bit,DBE_VALUE|DBE_LOG);
+            momask |= DBE_VALUE | DBE_LOG;
          }
-      }
-      else {
+      } else {
          if (*bit != 0) {
             *bit = 0;
-            db_post_events(pmbbiDirect,bit,DBE_VALUE|DBE_LOG);
+            momask |= DBE_VALUE | DBE_LOG;
          }
       }
+      if (momask)
+	 db_post_events(pmbbiDirect,bit,momask);
    }
 }
 
@@ -169,7 +176,7 @@ static long init_record(pmbbiDirect,pass)
     }
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(pmbbiDirect))) return(status);
-        refresh_bits(pmbbiDirect);
+        refresh_bits(pmbbiDirect, 0);
     }
     return(0);
 }
@@ -204,9 +211,6 @@ static long process(pmbbiDirect)
 	}
 	else if(status == 2) status = 0;
 
-	/* Thomas Birke of BESSY suggested */
-	refresh_bits(pmbbiDirect);
-
 	/* check event list */
 	monitor(pmbbiDirect);
 
@@ -222,12 +226,10 @@ static void monitor(pmbbiDirect)
 {
 	unsigned short	monitor_mask;
 
-        /*
-         *  Monitors for Bit Fields are done in the refresh_bits()
-         *   routine.
-         */
-
         monitor_mask = recGblResetAlarms(pmbbiDirect);
+
+	/* send out bit field monitors (value change and sevr change) */
+        refresh_bits(pmbbiDirect, monitor_mask);
 
         /* check for value change */
         if (pmbbiDirect->mlst != pmbbiDirect->val) {
@@ -256,7 +258,6 @@ static long readValue(pmbbiDirect)
 
 	if (pmbbiDirect->pact == TRUE){
 		status=(*pdset->read_mbbi)(pmbbiDirect);
-                refresh_bits(pmbbiDirect);
 		return(status);
 	}
 
@@ -267,23 +268,17 @@ static long readValue(pmbbiDirect)
 
 	if (pmbbiDirect->simm == NO){
 		status=(*pdset->read_mbbi)(pmbbiDirect);
-                refresh_bits(pmbbiDirect);
 		return(status);
 	}
-	if (pmbbiDirect->simm == YES){
-		status=dbGetLink(&(pmbbiDirect->siol),
-			DBR_USHORT,&(pmbbiDirect->sval),0,0);
-		if (status==0){
-			pmbbiDirect->val=pmbbiDirect->sval;
-			pmbbiDirect->udf=FALSE;
-			refresh_bits(pmbbiDirect);
-		}
-                status=2; /* dont convert */
-	} else {
-		status=-1;
-		recGblSetSevr(pmbbiDirect,SOFT_ALARM,INVALID_ALARM);
-		return(status);
+
+	status=dbGetLink(&(pmbbiDirect->siol),
+			 DBR_USHORT,&(pmbbiDirect->sval),0,0);
+	if (status==0){
+	   pmbbiDirect->val=pmbbiDirect->sval;
+	   pmbbiDirect->udf=FALSE;
 	}
+	status=2;		/* don't convert */
+
         recGblSetSevr(pmbbiDirect,SIMM_ALARM,pmbbiDirect->sims);
 
 	return(status);

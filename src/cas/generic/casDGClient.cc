@@ -275,9 +275,9 @@ caStatus casDGClient::searchResponse(const caHdr &msg,
     }
     else {
         caNetAddr addr = this->serverAddress ();
-        struct sockaddr_in ina = addr.getSockIP();
+        struct sockaddr_in inetAddr = addr.getSockIP();
         search_reply->m_cid = ~0U;
-        search_reply->m_dataType = ntohs (ina.sin_port);
+        search_reply->m_dataType = ntohs (inetAddr.sin_port);
     }
     
     search_reply->m_count = 0ul;

@@ -110,6 +110,7 @@ static const ioccrfArg * const putenvArgs[1] = {&putenvArg0};
 static const ioccrfFuncDef putenvFuncDef = {"putenv",1,putenvArgs};
 static void putenvCallFunc(const ioccrfArgBuf *args)
 {
+    char *arg0 = args[0].sval;
     char *cp;
 
     /*
@@ -119,9 +120,9 @@ static void putenvCallFunc(const ioccrfArgBuf *args)
      * Yes, this will cause memory leaks if the same variable is
      * placed in the environment more than once.
      */
-    if (!args[0].sval)
-        return;
-    cp = strdup (args[0].sval);
+    if (arg0) return;
+    cp = calloc(strlen(arg0)+1,sizeof(char));
+    strcpy(cp,arg0);
     if ((cp == NULL) || putenv (cp)) {
         free (cp);
         printf ("putenv(%s) failed.\n", args[0].sval);

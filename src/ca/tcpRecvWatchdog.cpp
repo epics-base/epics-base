@@ -69,7 +69,7 @@ tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ ) // X aCC 361
         {
 #           ifdef DEBUG
                 char hostName[128];
-                this->iiu.hostName ( guard, hostName, sizeof (hostName) );
+                this->iiu.getHostName ( guard, hostName, sizeof (hostName) );
                 debugPrintf ( ( "CA server \"%s\" unresponsive after %g inactive sec"
                             "- disconnecting.\n", 
                     hostName, this->period ) );

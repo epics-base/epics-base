@@ -53,7 +53,7 @@ epicsTimerNotify::expireStatus tcpSendWatchdog::expire (
     }
 #   ifdef DEBUG
         char hostName[128];
-        this->iiu.hostName ( guard, hostName, sizeof ( hostName ) );
+        this->iiu.getHostName ( guard, hostName, sizeof ( hostName ) );
         debugPrintf ( ( "Request not accepted by CA server %s for %g sec. Disconnecting.\n", 
             hostName, this->period ) );
 #   endif

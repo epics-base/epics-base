@@ -124,7 +124,7 @@ typedef struct {
 	DEVSUPFUN	write_ao;
 	DEVSUPFUN	special_linconv;} ABAODSET;
 
-ABAODSET devAoAAbSclDcm{6, NULL, NULL, init_ao, NULL, write_ao, NULL};
+ABAODSET devAoAAbSclDcm = {6, NULL, NULL, init_ao, NULL, write_ao, NULL};
 
 
 LOCAL void devCallback (void * drvPvt)

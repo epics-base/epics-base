@@ -77,7 +77,8 @@ sub ReplaceFilename { # (filename)
     }
     $file =~ s|_APPNAME_|$appname|;
     $file =~ s|_APPTYPE_|$apptype|;
-    $file =~ s|$top/||; 	# Change to the target location
+    my $qmtop = quotemeta($top);
+    $file =~ s|$qmtop/||;   # Change to the target location
     $file = &ReplaceFilenameHook($file); # Call the apptype's hook
     return $file;
 }

@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.39.4.7  2002/05/28 18:41:42  jhill
+ * fixed ellFree cause malloc and free to be in different win32 dlls
+ *
  * Revision 1.39.4.6  2002/03/14 01:13:58  jhill
  * fixed put notify shutdown during channel delete
  *
@@ -918,7 +921,9 @@ LOCAL void ca_extra_event_labor (void *pArg)
 		 */
 		semTake (ca_static->ca_putNotifyLock, WAIT_FOREVER);
 		ppnb = (CACLIENTPUTNOTIFY *) ellGet (&ca_static->ca_putNotifyQue);
-        ppnb->onExtraLaborQueue = FALSE;
+        if ( ppnb ) {
+            ppnb->onExtraLaborQueue = FALSE;
+        }
 		semGive (ca_static->ca_putNotifyLock);
 		
 		/*

@@ -189,7 +189,7 @@ static long process(paddr)
 {
     struct boRecord	*pbo=(struct boRecord *)(paddr->precord);
 	struct bodset	*pdset = (struct bodset *)(pbo->dset);
-	long		 status;
+	long		 status=0;
 	int		wait_time;
 
 	if( (pdset==NULL) || (pdset->write_bo==NULL) ) {
@@ -221,13 +221,15 @@ static long process(paddr)
 			else pbo->rval = pbo->mask;
 		}
 	}
-	if(pbo->val==udfEnum) {
-		if(pbo->nsev < VALID_ALARM) {
-			pbo->nsev = VALID_ALARM;
-			pbo->nsta = SOFT_ALARM;
-		}
-		status = 0;
-	} else status=(*pdset->write_bo)(pbo); /* write the new value */
+	if(status==0) {
+	     if(pbo->val==udfEnum) {
+	      	     if(pbo->nsev < VALID_ALARM) {
+		   	     pbo->nsev = VALID_ALARM;
+			     pbo->nsta = SOFT_ALARM;
+		     }
+		     status = 0;
+	     } else status=(*pdset->write_bo)(pbo); /* write the new value */
+ 	}
 	pbo->pact = TRUE;
 	/* status is one if an asynchronous record is being processed*/
 	if(status==1) return(0);

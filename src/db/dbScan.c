@@ -586,15 +586,16 @@ static void scanList(scan_list *psl)
     /*In reading this code remember that the call to dbProcess can result*/
     /*in the SCAN field being changed in an arbitrary number of records  */
 
-    scan_element *pse,*prev,*next;
+    scan_element 	*pse,*prev;
+    scan_element	*next=0;
 
     FASTLOCK(&psl->lock);
 	psl->modified = FALSE;
 	pse = (scan_element *)ellFirst(&psl->list);
 	prev = NULL;
-	next = (scan_element *)ellNext((void *)pse);
+	if(pse) next = (scan_element *)ellNext((void *)pse);
     FASTUNLOCK(&psl->lock);
-    while(pse!=NULL) {
+    while(pse) {
 	struct dbCommon *precord = pse->precord;
 
 	dbScanLock(precord);
@@ -604,22 +605,22 @@ static void scanList(scan_list *psl)
 	    if(!psl->modified) {
 		prev = pse;
 		pse = (scan_element *)ellNext((void *)pse);
-		if(pse!=NULL)next = (scan_element *)ellNext((void *)pse);
+		if(pse)next = (scan_element *)ellNext((void *)pse);
 	    } else if (pse->pscan_list==psl) {
 		/*This scan element is still in same scan list*/
 		prev = pse;
 		pse = (scan_element *)ellNext((void *)pse);
-		if(pse!=NULL)next = (scan_element *)ellNext((void *)pse);
+		if(pse)next = (scan_element *)ellNext((void *)pse);
 		psl->modified = FALSE;
-	    } else if (prev!=NULL && prev->pscan_list==psl) {
+	    } else if (prev && prev->pscan_list==psl) {
 		/*Previous scan element is still in same scan list*/
 		pse = (scan_element *)ellNext((void *)prev);
-		if(pse!=NULL) {
+		if(pse) {
 		    prev = (scan_element *)ellPrevious((void *)pse);
 		    next = (scan_element *)ellNext((void *)pse);
 		}
 		psl->modified = FALSE;
-	    } else if (next!=NULL && next->pscan_list==psl) {
+	    } else if (next && next->pscan_list==psl) {
 		/*Next scan element is still in same scan list*/
 		pse = next;
 		prev = (scan_element *)ellPrevious((void *)pse);
@@ -667,7 +668,7 @@ static void addToList(struct dbCommon *precord,scan_list *psl)
 	}
 	pse ->pscan_list = psl;
 	ptemp = (scan_element *)ellFirst(&psl->list);
-	while(ptemp!=NULL) {
+	while(ptemp) {
 		if(ptemp->precord->phas>precord->phas) {
 			ellInsert(&psl->list,
 				ellPrevious((void *)ptemp),(void *)pse);

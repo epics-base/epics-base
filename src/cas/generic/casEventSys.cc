@@ -15,38 +15,30 @@
  *              505 665 1831
  */
 
-/*
- * ANSI C
- */
 #include <string.h>
 
-/*
- * EPICS
- */
-#include "server.h"
-#include "casEventSysIL.h" // casMonitor inline func
+#define epicsExportSharedSymbols
+#include "caHdrLargeArray.h"
+#include "casCoreClient.h"
+#include "casAsyncIOI.h"
+#include "casChannelI.h"
 
-//
-// casEventSys::show()
-//
 void casEventSys::show(unsigned level) const
 {
+    epicsGuard < epicsMutex > guard ( this->mutex );
 	printf ( "casEventSys at %p\n", 
         static_cast <const void *> ( this ) );
 	if (level>=1u) {
-		printf ("\tnumEventBlocks = %u, maxLogEntries = %u\n",
-			this->numEventBlocks, this->maxLogEntries);	
-		printf ("\tthere are %d events in the queue\n",
-			this->eventLogQue.count());
-		printf ("Replace events flag = %d, dontProcess flag = %d\n",
+		printf ( "\numSubscriptions = %u, maxLogEntries = %u\n",
+			this->numSubscriptions, this->maxLogEntries );	
+		printf ( "\tthere are %d events in the queue\n",
+			this->eventLogQue.count() );
+		printf ( "Replace events flag = %d, dontProcess flag = %d\n",
 			static_cast < int > ( this->replaceEvents ), 
             static_cast < int > ( this->dontProcess ) );
 	}
 }
 
-//
-// casEventSys::~casEventSys()
-//
 casEventSys::~casEventSys()
 {
 	if ( this->pPurgeEvent != NULL ) {
@@ -54,43 +46,52 @@ casEventSys::~casEventSys()
 		delete this->pPurgeEvent;
 	}
 
-	/*
-	 * all active event blocks must be canceled first
-	 */
-	casVerify ( this->numEventBlocks == 0 );
+    // at this point:
+    // o all channels delete
+    // o all IO deleted
+    // o any subscription events remaining on the queue
+    //   are pending destroy
 
-	while ( casEvent * pE = this->eventLogQue.get () ) {
-        pE->eventSysDestroyNotify ( this->client );
-	}
+    // this will clean up the event queue because all 
+    // channels have been deleted and any events left on 
+    // the queue are there because they are going to
+    // execute a subscription delete
+    this->process ();
+
+    // verify above assertion is true
+    casVerify ( this->eventLogQue.count() == 0 );
+
+	// all active subscriptions should also have been 
+    // uninstalled
+	casVerify ( this->numSubscriptions == 0 );
+    if ( this->numSubscriptions != 0 ) {
+        printf ( "numSubscriptions=%u\n", this->numSubscriptions );
+    }
 }
 
-//
-// casEventSys::installMonitor()
-//
-void casEventSys::installMonitor()
+void casEventSys::installMonitor ()
 {
-	this->numEventBlocks++;
+    epicsGuard < epicsMutex > guard ( this->mutex );
+	assert ( this->numSubscriptions < UINT_MAX );
+	this->numSubscriptions++;
 	this->maxLogEntries += averageEventEntries;
 }
 
-//
-// casEventSys::removeMonitor ()
-//
 void casEventSys::removeMonitor () 
 {       
-	assert (this->numEventBlocks>=1u);
-	this->numEventBlocks--;
+    epicsGuard < epicsMutex > guard ( this->mutex );
+	assert ( this->numSubscriptions >= 1u );
+	this->numSubscriptions--;
 	this->maxLogEntries -= averageEventEntries;
 }
 
-//
-// casEventSys::process()
-//
 casEventSys::processStatus casEventSys::process ()
 {
     casEventSys::processStatus ps;
 	ps.cond = casProcOk;
 	ps.nAccepted = 0u;
+
+    epicsGuard < epicsMutex > guard ( this->mutex );
 
 	while ( ! this->dontProcess ) {
         casEvent * pEvent;
@@ -101,14 +102,15 @@ casEventSys::processStatus casEventSys::process ()
 			break;
 		}
 
-		caStatus status = pEvent->cbFunc ( this->client );
+        caStatus status = pEvent->cbFunc ( 
+                        this->client, guard );
 		if ( status == S_cas_success ) {
 			ps.nAccepted++;
 		}
 		else if ( status == S_cas_sendBlocked ) {
 			// not accepted so return to the head of the list
 		    // (we will try again later)
- 			this->pushOnToEventQueue ( *pEvent );
+	        this->eventLogQue.push ( *pEvent );
 			ps.cond = casProcOk;
 			break;
 		}
@@ -140,11 +142,10 @@ casEventSys::processStatus casEventSys::process ()
 	return ps;
 }
 
-//
-// casEventSys::eventsOn()
-// 
-void casEventSys::eventsOn()
+void casEventSys::eventsOn ()
 {
+    epicsGuard < epicsMutex > guard ( this->mutex );
+
 	//
 	// allow multiple events for each monitor
 	//
@@ -165,62 +166,188 @@ void casEventSys::eventsOn()
 	}
 }
 
-//
-// casEventSys::eventsOff()
-//
-void casEventSys::eventsOff()
+bool casEventSys::eventsOff ()
 {
-	//
-	// new events will replace the last event on
-	// the queue for a particular monitor
-	//
-	this->replaceEvents = true;
+    bool signalNeeded = false;
+    {
+        epicsGuard < epicsMutex > guard ( this->mutex );
 
-	//
-	// suppress the processing and sending of events
-	// only after we have purged the event queue
-	// for this particular client
-	//
-	if ( this->pPurgeEvent == NULL ) {
-		this->pPurgeEvent = new casEventPurgeEv ( *this );
-		if ( this->pPurgeEvent == NULL ) {
-			//
-			// if there is no room for the event then immediately
-			// stop processing and sending events to the client
-			// until we exit flow control
-			//
-			this->dontProcess = true;
-		}
-		else {
-			this->casEventSys::addToEventQueue ( *this->pPurgeEvent );
-		}
-	}
+	    //
+	    // new events will replace the last event on
+	    // the queue for a particular monitor
+	    //
+	    this->replaceEvents = true;
+
+	    //
+	    // suppress the processing and sending of events
+	    // only after we have purged the event queue
+	    // for this particular client
+	    //
+	    if ( this->pPurgeEvent == NULL ) {
+		    this->pPurgeEvent = new casEventPurgeEv ( *this );
+		    if ( this->pPurgeEvent == NULL ) {
+			    //
+			    // if there is no room for the event then immediately
+			    // stop processing and sending events to the client
+			    // until we exit flow control
+			    //
+			    this->dontProcess = true;
+		    }
+		    else {
+                if ( this->eventLogQue.count() == 0 ) {
+                    signalNeeded = true;
+                }
+	            this->eventLogQue.add ( *this->pPurgeEvent );
+                signalNeeded = true;
+		    }
+	    }
+    }
+    return signalNeeded;
 }
 
-//
-// casEventPurgeEv::casEventPurgeEv ()
-// 
 casEventPurgeEv::casEventPurgeEv ( casEventSys & evSysIn ) :
     evSys ( evSysIn )
 {
 }
 
-//
-// casEventPurgeEv::cbFunc()
-// 
-caStatus casEventPurgeEv::cbFunc ( casCoreClient & )
+caStatus casEventPurgeEv::cbFunc ( casCoreClient &, epicsGuard < epicsMutex > & guard )
 {
 	this->evSys.dontProcess = true;
 	this->evSys.pPurgeEvent = NULL;
-
-	delete this;
+    {
+        epicsGuardRelease < epicsMutex > unklocker ( guard );
+	    delete this;
+    }
 
 	return S_cas_success;
 }
 
-void casEventPurgeEv::eventSysDestroyNotify ( casCoreClient & ) 
+caStatus casEventSys::addToEventQueue ( casAsyncIOI & event, 
+    bool & onTheQueue, bool & posted, bool & wakeupNeeded )
 {
-	delete this;
+    wakeupNeeded = false;
+    {
+        epicsGuard < epicsMutex > guard ( this->mutex );
+	    // dont allow them to post completion more than once
+        if ( posted || onTheQueue ) {
+            return S_cas_redundantPost;
+        }
+        posted = true;
+        onTheQueue = true;
+        wakeupNeeded = ! this->dontProcess && this->eventLogQue.count() == 0;
+	    this->eventLogQue.add ( event );
+    }
+
+    return S_cas_success;
 }
 
+bool casEventSys::addToEventQueue ( casChannelI & event, bool & inTheEventQueue )
+{
+    bool wakeupRequired = false;
+    {
+        epicsGuard < epicsMutex > guard ( this->mutex );
+	    if ( ! inTheEventQueue ) {
+		    inTheEventQueue = true;
+            wakeupRequired = ! this->dontProcess && this->eventLogQue.count()==0;
+	        this->eventLogQue.add ( event );
+	    }
+    }
+    return wakeupRequired;
+}
+ 
+void casEventSys::removeFromEventQueue ( casMonEvent & event )
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+	this->eventLogQue.remove ( event );
+}
 
+void casEventSys::removeFromEventQueue ( casAsyncIOI &  io, bool & onTheEventQueue )
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    if ( onTheEventQueue ) {
+        onTheEventQueue = false;
+	    this->eventLogQue.remove ( io );
+    }
+}
+
+void casEventSys::setDestroyPending ()
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+	this->destroyPending = true;
+}
+
+inline bool casEventSys::full () const // X aCC 361
+{
+	if ( this->replaceEvents || this->eventLogQue.count() >= this->maxLogEntries ) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+bool casEventSys::postEvent ( tsDLList < casMonitor > & monitorList, 
+    const casEventMask & select, const gdd & event )
+{
+    bool signalNeeded = false;
+    {
+        epicsGuard < epicsMutex > guard ( this->mutex );
+        tsDLIter < casMonitor > iter = monitorList.firstIter ();
+        while ( iter.valid () ) {
+            if ( iter->selected ( select ) ) {
+	            // get a new block if we havent exceeded quotas
+	            bool full = ( iter->numEventsQueued() >= individualEventEntries ) 
+                            || this->full ();
+	            casMonEvent * pLog;
+	            if ( ! full ) {
+                    // should I get rid of this try block by implementing a no 
+                    // throw version of the free list alloc? However, crude
+                    // tests on windows with ms visual C++ dont appear to argue
+                    // against the try block.
+                    try {
+                        pLog = new ( this->casMonEventFreeList ) 
+                            casMonEvent ( *iter, event );
+                    }
+                    catch ( ... ) {
+                        pLog = 0;
+                    }
+	            }
+	            else {
+		            pLog = 0;
+	            }
+            	
+                if ( this->eventLogQue.count() == 0 ) {
+                    signalNeeded = true;
+                }
+                iter->installNewEventLog ( this->eventLogQue, pLog, event );
+            }
+	        ++iter;
+        }
+    }
+    return signalNeeded;
+}
+
+void casEventSys::casMonEventDestroy ( 
+    casMonEvent & ev, epicsGuard < epicsMutex > & guard )
+{
+    guard.assertIdenticalMutex ( this->mutex );
+    ev.~casMonEvent ();
+    this->casMonEventFreeList.release ( & ev );
+}
+
+void casEventSys::prepareMonitorForDestroy ( casMonitor & mon )
+{
+    bool safeToDestroy = false;
+    {
+        epicsGuard < epicsMutex > guard ( this->mutex );
+        mon.markDestroyPending ();
+        // if events reference it on the queue then it gets 
+        // deleted when it reaches the top of the queue
+        if ( mon.numEventsQueued () == 0 ) {
+            safeToDestroy = true;
+        }
+    }
+    if ( safeToDestroy ) {
+        this->client.destroyMonitor ( mon );
+    }
+}

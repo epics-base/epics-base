@@ -29,7 +29,7 @@ caStatus exAsyncPV::read (const casCtx &ctx, gdd &valueIn)
 
 	this->simultAsychIOCount++;
 
-	pIO = new exAsyncReadIO ( ctx, *this, valueIn );
+	pIO = new exAsyncReadIO ( this->cas, ctx, *this, valueIn );
 	if (!pIO) {
 		return S_casApp_noMemory;
 	}
@@ -51,7 +51,7 @@ caStatus exAsyncPV::write ( const casCtx &ctx, const gdd &valueIn )
 
 	this->simultAsychIOCount++;
 
-	pIO = new exAsyncWriteIO ( ctx, *this, valueIn );
+	pIO = new exAsyncWriteIO ( this->cas, ctx, *this, valueIn );
 	if ( ! pIO ) {
 		return S_casApp_noMemory;
 	}
@@ -62,10 +62,10 @@ caStatus exAsyncPV::write ( const casCtx &ctx, const gdd &valueIn )
 //
 // exAsyncWriteIO::exAsyncWriteIO()
 //
-exAsyncWriteIO::exAsyncWriteIO ( const casCtx &ctxIn, exAsyncPV &pvIn, 
-    const gdd &valueIn ) :
+exAsyncWriteIO::exAsyncWriteIO ( exServer & cas,
+        const casCtx & ctxIn, exAsyncPV & pvIn, const gdd & valueIn ) :
 	casAsyncWriteIO ( ctxIn ), pv ( pvIn ), 
-        timer ( pvIn.getCAS()->createTimer () ), pValue(valueIn)
+        timer ( cas.createTimer () ), pValue(valueIn)
 {
     this->timer.start ( *this, 0.1 );
 }
@@ -76,9 +76,7 @@ exAsyncWriteIO::exAsyncWriteIO ( const casCtx &ctxIn, exAsyncPV &pvIn,
 exAsyncWriteIO::~exAsyncWriteIO()
 {
 	this->pv.removeIO();
-    if ( this->pv.getCAS() ) {
-        this->timer.destroy ();
-    }
+    this->timer.destroy ();
 }
 
 //
@@ -88,7 +86,7 @@ exAsyncWriteIO::~exAsyncWriteIO()
 epicsTimerNotify::expireStatus exAsyncWriteIO::expire ( const epicsTime & /* currentTime */ ) 
 {
 	caStatus status;
-	status = this->pv.update ( this->pValue );
+	status = this->pv.update ( *this->pValue );
 	this->postIOCompletion ( status );
     return noRestart;
 }
@@ -96,10 +94,10 @@ epicsTimerNotify::expireStatus exAsyncWriteIO::expire ( const epicsTime & /* cur
 //
 // exAsyncReadIO::exAsyncReadIO()
 //
-exAsyncReadIO::exAsyncReadIO ( const casCtx &ctxIn, exAsyncPV &pvIn, 
-    gdd &protoIn ) :
+exAsyncReadIO::exAsyncReadIO ( exServer & cas, const casCtx & ctxIn, 
+                              exAsyncPV & pvIn, gdd & protoIn ) :
 	casAsyncReadIO ( ctxIn ), pv ( pvIn ), 
-        timer ( pvIn.getCAS()->createTimer() ), pProto ( protoIn )
+        timer ( cas.createTimer() ), pProto ( protoIn )
 {
     this->timer.start ( *this, 0.1 );
 }
@@ -110,9 +108,7 @@ exAsyncReadIO::exAsyncReadIO ( const casCtx &ctxIn, exAsyncPV &pvIn,
 exAsyncReadIO::~exAsyncReadIO()
 {
 	this->pv.removeIO ();
-    if ( this->pv.getCAS() ) {
-        this->timer.destroy ();
-    }
+    this->timer.destroy ();
 }
 
 

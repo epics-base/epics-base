@@ -11,7 +11,8 @@
 // $Id$
 //
 
-#include "server.h"
+#define epicsExportSharedSymbols
+#include "casStreamIO.h"
 
 //
 // casStreamIO::casStreamIO()
@@ -290,14 +291,10 @@ bufSizeT casStreamIO::optimumBufferSize ()
 	int status;
 
 	/* fetch the TCP send buffer size */
-	n = sizeof(size);
-	status = getsockopt(
-			this->sock,
-			SOL_SOCKET,
-			SO_SNDBUF,
-			(char *)&size,
-			&n);
-	if(status < 0 || n != sizeof(size)){
+	n = sizeof ( size) ;
+	status = getsockopt ( this->sock, SOL_SOCKET,
+			SO_SNDBUF, (char *) & size, & n );
+	if ( status < 0 || n != sizeof ( size ) ) {
 		size = 0x400;
 	}
 

@@ -8,12 +8,20 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-#include "server.h"
+#include <stdio.h>
+#include <string.h>
 
-//
-// casCtx::show()
-//
-void casCtx::show (unsigned level) const
+#define epicsExportSharedSymbols
+#include "casCtx.h"
+
+casCtx::casCtx() :
+	pData(NULL), pCAS(NULL), pClient(NULL),
+	pChannel(NULL), pPV(NULL), nAsyncIO(0u)
+{
+	memset(&this->msg, 0, sizeof(this->msg));
+}
+
+void casCtx::show ( unsigned level ) const
 {
 	printf ( "casCtx at %p\n", 
         static_cast <const void *> ( this ) );

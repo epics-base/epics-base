@@ -18,13 +18,10 @@
 // 	there isnt enough memory
 //
 
-//
-// CA server
-// 
-#include "server.h"
-#include "inBufIL.h" // inBuf inline func
-#include "outBufIL.h" // outBuf inline func
-#include "casCoreClientIL.h" // casCoreClient in line func
+#include "fdManager.h"
+
+#define epicsExportSharedFunc
+#include "casStreamOS.h"
 
 //
 // casStreamReadReg
@@ -262,7 +259,7 @@ inline void casStreamOS::armRecv()
 //
 inline void casStreamOS::disarmRecv()
 {
-	if (this->pRdReg) {
+	if ( this->pRdReg ) {
 		delete this->pRdReg;
 	}
 }
@@ -286,7 +283,7 @@ inline void casStreamOS::armSend()
 //
 inline void casStreamOS::disarmSend ()
 {
-	if (this->pWtReg) {
+	if ( this->pWtReg ) {
 		delete this->pWtReg;
 	}
 }
@@ -329,8 +326,8 @@ casStreamOS::casStreamOS ( caServerI & cas, clientBufMemoryManager & bufMgrIn,
 	    casStreamIO ( cas, bufMgrIn, ioArgs ),
 	pWtReg ( 0 ), pRdReg ( 0 ), sendBlocked ( false )
 {
-	this->xSetNonBlocking();
-	this->armRecv();
+	this->xSetNonBlocking ();
+	this->armRecv ();
 }
 
 //
@@ -341,16 +338,16 @@ casStreamOS::~casStreamOS()
 	//
 	// attempt to flush out any remaining messages
 	//
-	this->flush();
+	this->flush ();
 
-	this->disarmSend();
-	this->disarmRecv();
+	this->disarmSend ();
+	this->disarmRecv ();
 }
 
 //
 // casStreamOS::show()
 //
-void casStreamOS::show(unsigned level) const
+void casStreamOS::show ( unsigned level ) const
 {
 	this->casStrmClient::show(level);
 	printf("casStreamOS at %p\n", 
@@ -371,7 +368,7 @@ void casStreamOS::show(unsigned level) const
 //
 void casStreamReadReg::show(unsigned level) const
 {
-	this->fdReg::show(level);
+	this->fdReg::show ( level );
 	printf ( "casStreamReadReg at %p\n", 
         static_cast <const void *> ( this ) );
 }
@@ -381,7 +378,7 @@ void casStreamReadReg::show(unsigned level) const
 //
 void casStreamReadReg::callBack ()
 {
-	this->os.recvCB();
+	this->os.recvCB ();
 	//
 	// NO CODE HERE
 	// (casStreamOS::recvCB() may up indirectly deleting this object)
@@ -391,7 +388,7 @@ void casStreamReadReg::callBack ()
 //
 // casStreamOS::recvCB()
 //
-void casStreamOS::recvCB()
+void casStreamOS::recvCB ()
 {
 	assert ( this->pRdReg );
 
@@ -400,12 +397,12 @@ void casStreamOS::recvCB()
     //
     inBufClient::fillCondition fillCond = this->in.fill();
 	if ( fillCond == casFillDisconnect ) {
-		delete this;
+        this->getCAS().destroyClient ( *this );
 	}
     else {
 	   casProcCond  procCond = this->processInput();
 	    if (procCond == casProcDisconnect) {
-		    delete this;
+            this->getCAS().destroyClient ( *this );
 	    }	
 	    else if ( this->in.full() ) {
 		    //
@@ -482,7 +479,7 @@ void casStreamOS::sendCB()
 		// called from a client member function
 		// higher up on the stack
 		//
-		delete this;	
+        this->getCAS().destroyClient ( *this );
 		//
 		// must _not_ touch "this" pointer
 		// after the destroy 
@@ -507,7 +504,7 @@ void casStreamOS::sendCB()
 		// called from a client member function
 		// higher up on the stack
 		//
-		delete this;	
+        this->getCAS().destroyClient ( *this );
 		//
 		// must _not_ touch "this" pointer
 		// after the destroy 
@@ -527,9 +524,9 @@ void casStreamOS::sendCB()
 	// to process the input queue in case we were send
 	// blocked.
 	//
-	casProcCond procCond = this->processInput();
-	if (procCond == casProcDisconnect) {
-		delete this;	
+	casProcCond procCond = this->processInput ();
+	if ( procCond == casProcDisconnect ) {
+        this->getCAS().destroyClient ( *this );
 	}
 	else {
 		//

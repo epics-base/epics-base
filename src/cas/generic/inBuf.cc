@@ -15,8 +15,11 @@
  *              505 665 1831
  */
 
-#include "server.h"
-#include "inBufIL.h" // inBuf in line func
+#include <stdio.h>
+#include <string.h>
+
+#define epicsExportSharedSymbols
+#include "inBuf.h"
 
 //
 // inBuf::inBuf()

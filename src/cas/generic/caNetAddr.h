@@ -11,10 +11,9 @@
 // caNetAddr
 //
 // special cas specific network address class so:
-// 1) we dont drag BSD socket headers into 
-//  the server tool
+// 1) we dont drag BSD socket headers into the server tool
 // 2) we are not prevented from using other networking services
-//  besides sockets in the future
+//      besides sockets in the future
 //
 
 #ifndef caNetAddrH
@@ -30,6 +29,8 @@
 #       define epicsExportSharedSymbols
 #       include "shareLib.h"
 #   endif
+#else
+#   include "shareLib.h"
 #endif
 
 class epicsShareClass caNetAddr {

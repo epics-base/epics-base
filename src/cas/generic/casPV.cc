@@ -15,17 +15,10 @@
  *              505 665 1831
  */
 
-//
-// Notes:
-//
-// 1) Always verify that pPVI isnt nill prior to using it
-//
+#define epicsExportSharedSymbols
+#include "casPVI.h"
 
-#include "server.h"
-#include "casPVIIL.h" 	// casPVI inline func
-#include "casCtxIL.h" 	// casCtx inline func
-
-casPV::casPV ()
+casPV::casPV () : pPVI ( 0 )
 {
 }
 
@@ -33,7 +26,7 @@ casPV::casPV ()
 // This constructor is preserved for backwards compatibility only.
 // Please do _not_ use this constructor.
 //
-casPV::casPV (caServer &)
+casPV::casPV ( caServer & ) : pPVI ( 0 )
 {
 }
 
@@ -136,17 +129,18 @@ aitIndex casPV::maxBound (unsigned /* dimension */) const
 //
 // casPV::show (unsigned level) 
 //
-void casPV::show (unsigned level) const
+void casPV::show ( unsigned /* level */ ) const
 {
-    casPVI::show (level);
 }
 
 //
 // Server tool calls this function to post a PV event.
 //
-void casPV::postEvent (const casEventMask &select, const gdd &event)
+void casPV::postEvent ( const casEventMask &select, const gdd &event )
 {
-	this->casPVI::postEvent (select, event);
+    if ( this->pPVI ) {
+	    this->pPVI->postEvent ( select, event );
+    }
 }
 
 //
@@ -156,16 +150,14 @@ void casPV::postEvent (const casEventMask &select, const gdd &event)
 // into a server.
 // ***************
 //
-caServer *casPV::getCAS () const
+caServer * casPV::getCAS () const
 {
-	return this->casPVI::getExtServer ();
+    if ( this->pPVI ) {
+	    return this->pPVI->getExtServer ();
+    }
+    else {
+        return 0;
+    }
 }
 
-//
-// casPV::apiPointer()
-//
-casPV *casPV::apiPointer ()
-{
-    return this;
-}
 

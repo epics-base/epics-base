@@ -15,71 +15,39 @@
  *              505 665 1831
  */
 
+#include <stdexcept>
 
-#include "server.h"
-#include "casChannelIIL.h"	// casChannelI in line func
-#include "casCtxIL.h"		// casCtx in line func
-#include "casCoreClientIL.h"	// casCoreClient in line func
+#define epicsExportSharedSymbols
+#include "casdef.h"
+#include "casAsyncPVExistIOI.h"
 
-//
-// casAsyncPVExistIO::casAsyncPVExistIO()
-//
-casAsyncPVExistIO::casAsyncPVExistIO (const casCtx &ctx) :
-	casAsyncIOI ( ctx ),
-	msg ( *ctx.getMsg () ),
-	retVal (pverDoesNotExistHere),
-	dgOutAddr ( ctx.getClient ()->fetchLastRecvAddr () ),
-    protocolRevision ( ctx.getClient ()->protocolRevision () ),
-    sequenceNumber ( ctx.getClient ()->datagramSequenceNumber () )
+casAsyncPVExistIO::casAsyncPVExistIO ( const casCtx & ctx ) :
+    pAsyncPVExistIOI ( new casAsyncPVExistIOI ( *this, ctx ) ) {}
+
+void casAsyncPVExistIO::serverInitiatedDestroy ()
 {
-	this->client.installAsyncIO (*this);
+    this->pAsyncPVExistIOI = 0;
+    this->destroy ();
 }
 
-//
-// casAsyncPVExistIO::~casAsyncPVExistIO ()
-//
 casAsyncPVExistIO::~casAsyncPVExistIO ()
 {
-	this->client.removeAsyncIO (*this);
+    if ( this->pAsyncPVExistIOI ) {
+        throw std::logic_error ( 
+            "the server library *must* initiate asynchronous IO destroy" );
+    }
 }
 
-//
-// casAsyncPVExistIO::postIOCompletion ()
-//
-caStatus casAsyncPVExistIO::postIOCompletion (const pvExistReturn &retValIn)
+caStatus casAsyncPVExistIO::postIOCompletion ( const pvExistReturn & retValIn )
 {
-	this->retVal = retValIn; 
-	return this->postIOCompletionI ();
-}
-
-//
-// casAsyncPVExistIO::cbFuncAsyncIO()
-// (called when IO completion event reaches top of event queue)
-//
-caStatus casAsyncPVExistIO::cbFuncAsyncIO()
-{
-    caStatus 	status;
-    
-    if (this->msg.m_cmmd==CA_PROTO_SEARCH) {
-        //
-        // pass output DG address parameters
-        //
-        status = this->client.asyncSearchResponse (
-            this->dgOutAddr, this->msg, this->retVal,
-            this->protocolRevision, this->sequenceNumber );
+    if ( this->pAsyncPVExistIOI ) {
+	    return this->pAsyncPVExistIOI->postIOCompletion ( retValIn );
     }
     else {
-        errPrintf (S_cas_invalidAsynchIO, __FILE__, __LINE__,
-            " - client request type = %u", this->msg.m_cmmd);
-		status = S_cas_invalidAsynchIO;
+        return S_cas_redundantPost;
     }
-    
-    return status;
 }
 
-//
-// void casAsyncPVExistIO::destroy ()
-//
 void casAsyncPVExistIO::destroy ()
 {
     delete this;

@@ -16,40 +16,41 @@
  *              505 665 1831
  */
 
-#ifndef beaconAnomalyGovernorh
-#define beaconAnomalyGovernorh
+#ifndef ioBlockedh
+#define ioBlockedh
 
 #ifdef epicsExportSharedSymbols
-#   define epicsExportSharedSymbols_beaconAnomalyGovernorh
+#   define epicsExportSharedSymbols_ioBlockedh
 #   undef epicsExportSharedSymbols
 #endif
 
-// external headers included here
-#include "epicsTimer.h"
-#include "epicsMutex.h"
+#include "tsDLList.h"
 
-#ifdef epicsExportSharedSymbols_beaconAnomalyGovernorh
+#ifdef epicsExportSharedSymbols_ioBlockedh
 #   define epicsExportSharedSymbols
 #   include "shareLib.h"
 #endif
 
-class caServerI;
-
-class beaconAnomalyGovernor : public epicsTimerNotify {
+class ioBlocked : public tsDLNode < ioBlocked > {
+friend class ioBlockedList;
 public:
-	beaconAnomalyGovernor ( caServerI & );
-	virtual ~beaconAnomalyGovernor();
-    void start ();
-	void show ( unsigned level ) const;
+	ioBlocked ();
+	virtual ~ioBlocked ();
 private:
-    // has been checked for thread safety
-    epicsTimer & timer;
-	class caServerI & cas;
-    bool anomalyPending;
-	expireStatus expire( const epicsTime & currentTime );
-	beaconAnomalyGovernor ( const beaconAnomalyGovernor & );
-	beaconAnomalyGovernor & operator = ( const beaconAnomalyGovernor & );
+	ioBlockedList * pList;
+	virtual void ioBlockedSignal ();
 };
 
-#endif // ifdef beaconAnomalyGovernorh
+class ioBlockedList : private tsDLList<ioBlocked> {
+friend class ioBlocked;
+public:
+	ioBlockedList ();
+	virtual ~ioBlockedList ();
+	void signal ();
+	void addItemToIOBLockedList ( ioBlocked & item );
+	ioBlockedList ( const ioBlockedList & );
+	ioBlockedList & operator = ( const ioBlockedList & );
+};
 
+#endif // ioBlockedh
+ 

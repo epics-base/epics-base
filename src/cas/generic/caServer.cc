@@ -17,13 +17,11 @@
 
 #include "dbMapper.h"		// ait to dbr types 
 #include "gddAppTable.h"	// EPICS application type table
+#include "fdManager.h"
 
-#include "server.h"
-#include "caServerIIL.h"	// caServerI in line func
+#define epicsExportSharedSymbols
+#include "caServerI.h"
 
-//
-// caServer::caServer()
-//
 caServer::caServer ()
 {
     static bool init = false;
@@ -33,12 +31,9 @@ caServer::caServer ()
         init = true;
     }    
 
-    this->pCAS = new caServerI(*this);
+    this->pCAS = new caServerI ( *this );
 }
 
-//
-// caServer::~caServer()
-//
 caServer::~caServer()
 {
 	if (this->pCAS) {
@@ -47,36 +42,22 @@ caServer::~caServer()
 	}
 }
 
-//
-// caServer::pvExistTest()
-//
 pvExistReturn caServer::pvExistTest (const casCtx &, const char *)
 {
 	return pverDoesNotExistHere;
 }
 
-//
-// caServer::createPV()
-//
 pvCreateReturn caServer::createPV (const casCtx &, const char *)
 {
 	return S_casApp_pvNotFound;
 }
 
-//
-// caServer::pvAttach()
-//
 pvAttachReturn caServer::pvAttach (const casCtx &ctx, const char *pAliasName)
 {
-	//
 	// remain backwards compatible (call deprecated routine)
-	//
 	return this->createPV(ctx, pAliasName);
 }
 
-//
-// caServer::registerEvent()
-//
 casEventMask caServer::registerEvent (const char *pName) // X aCC 361
 {
 	if (this->pCAS) {
@@ -89,9 +70,6 @@ casEventMask caServer::registerEvent (const char *pName) // X aCC 361
 	}
 }
 
-//
-// caServer::show()
-//
 void caServer::show(unsigned level) const
 {
 	if (this->pCAS) {
@@ -102,9 +80,6 @@ void caServer::show(unsigned level) const
 	}
 }
 
-//
-// caServer::setDebugLevel()
-//
 void caServer::setDebugLevel (unsigned level)
 {
 	if (pCAS) {
@@ -115,9 +90,6 @@ void caServer::setDebugLevel (unsigned level)
 	}
 }
 
-//
-// caServer::getDebugLevel()
-//
 unsigned caServer::getDebugLevel () const // X aCC 361
 {
     if (pCAS) {
@@ -129,9 +101,6 @@ unsigned caServer::getDebugLevel () const // X aCC 361
     }
 }
 
-//
-// caServer::valueEventMask ()
-//
 casEventMask caServer::valueEventMask () const // X aCC 361
 {
     if (pCAS) {
@@ -143,9 +112,6 @@ casEventMask caServer::valueEventMask () const // X aCC 361
     }
 }
 
-//
-// caServer::logEventMask ()
-//
 casEventMask caServer::logEventMask () const // X aCC 361
 {
     if (pCAS) {
@@ -157,44 +123,32 @@ casEventMask caServer::logEventMask () const // X aCC 361
     }
 }
 
-//
-// caServer::alarmEventMask ()
-//
 casEventMask caServer::alarmEventMask () const // X aCC 361
 {
-    if (pCAS) {
-        return this->pCAS->alarmEventMask();
+    if ( pCAS ) {
+        return this->pCAS->alarmEventMask ();
     }
     else {
-        printf("caServer:: no server internals attached\n");
-        return casEventMask();
+        printf ( "caServer:: no server internals attached\n" );
+        return casEventMask ();
     }
 }
 
-//
-// caServer::alarmEventMask ()
-//
 class epicsTimer & caServer::createTimer ()
 {
     return fileDescriptorManager.createTimer ();
 }
 
-//
-// caServer::subscriptionEventsProcessed
-//
 unsigned caServer::subscriptionEventsProcessed () const // X aCC 361
 {
     if ( pCAS ) {
-        return this->pCAS->subscriptionEventsProcessed();
+        return this->pCAS->subscriptionEventsProcessed ();
     }
     else {
         return 0u;
     }
 }
 
-//
-// caServer::subscriptionEventsPosted
-//
 unsigned caServer::subscriptionEventsPosted () const // X aCC 361
 {
     if ( pCAS ) {
@@ -211,22 +165,3 @@ void caServer::generateBeaconAnomaly ()
         this->pCAS->generateBeaconAnomaly ();
     }
 }
-
-//
-// casRes::~casRes()
-//
-// This must be virtual so that derived destructor will
-// be run indirectly. Therefore it cannot be inline.
-//
-casRes::~casRes()
-{
-}
-
-//
-// This must be virtual so that derived destructor will
-// be run indirectly. Therefore it cannot be inline.
-//
-casEvent::~casEvent() 
-{
-}
-

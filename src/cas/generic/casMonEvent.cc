@@ -17,72 +17,36 @@
 
 #include <stdexcept>
 
-#include "server.h"
-#include "casEventSysIL.h" // casEventSys in line func
-#include "casMonEventIL.h" // casMonEvent in line func
-#include "casCtxIL.h" // casCtx in line func
-#include "casCoreClientIL.h" // casCoreClient in line func
+#define epicsExportSharedSymbols
+#include "casMonEvent.h"
+#include "casMonitor.h"
+#include "casCoreClient.h"
 
-//
-// casMonEvent::cbFunc()
-//
-caStatus casMonEvent::cbFunc ( casCoreClient & client )
+caStatus casMonEvent::cbFunc ( 
+    casCoreClient & client, epicsGuard < epicsMutex > & guard )
 {
-    caStatus status;
-
-    //
-    // ignore this event if it is stale and there is
-    // no call back object associated with it
-    //
-	casMonitor * pMon = client.lookupMonitor ( this->id );
-    if ( ! pMon ) {
-        // we know this isnt an overflow event because those are
-        // removed from the queue when the casMonitor object is
-        // destroyed
-        client.casMonEventDestroy ( *this );
-        status = S_casApp_success;
-    }
-    else {
-        // this object may have been destroyed 
-        // here by the executeEvent() call below
-        status = pMon->executeEvent ( *this );
-    }
-
-    return status;
+    return this->monitor.executeEvent ( 
+        client, * this, this->pValue, guard );
 }
 
-void casMonEvent::eventSysDestroyNotify ( casCoreClient & client )
+void casMonEvent::assign ( const gdd & valueIn )
 {
-    client.casMonEventDestroy ( *this );
+	this->pValue = & valueIn;
 }
 
-//
-// casMonEvent::assign ()
-//
-void casMonEvent::assign (casMonitor &monitor, const smartConstGDDPointer &pValueIn)
+void casMonEvent::swapValues ( casMonEvent & in )
 {
-	this->pValue = pValueIn;
-	this->id = monitor.casRes::getId();
+    assert ( & in.monitor == & this->monitor );
+    this->pValue.swap ( in.pValue );
 }
 
-//
-// ~casMonEvent ()
-// (this is not in line because it is virtual in the base)
-//
 casMonEvent::~casMonEvent ()
 {
-	this->clear();
-}
-
-void * casMonEvent::operator new ( size_t size, 
-    tsFreeList < class casMonEvent, 1024 > & freeList )
-{
-    return freeList.allocate ( size );
 }
 
 #ifdef CXX_PLACEMENT_DELETE
-void casMonEvent::operator delete ( void *pCadaver, 
-    tsFreeList < class casMonEvent, 1024 > & freeList ) epicsThrows(())
+void casMonEvent::operator delete ( void * pCadaver, 
+    tsFreeList < class casMonEvent, 1024, epicsMutexNOOP > & freeList ) 
 {
     freeList.release ( pCadaver, sizeof ( casMonEvent ) );
 }

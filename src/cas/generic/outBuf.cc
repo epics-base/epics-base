@@ -15,8 +15,8 @@
  *              505 665 1831
  */
 
-#include "server.h"
-#include "outBufIL.h" // outBuf in line func
+#define epicsExportSharedSymbols
+#include "outBuf.h" 
 #include "osiWireFormat.h"
 
 //

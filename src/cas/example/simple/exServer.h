@@ -38,6 +38,7 @@
 //
 // EPICS
 //
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 #include "gddAppFuncTable.h"
 #include "epicsTimer.h"
 #include "casdef.h"
@@ -124,7 +125,8 @@ private:
 class exPV : public casPV, public epicsTimerNotify, 
     public tsSLNode < exPV > {
 public:
-    exPV ( pvInfo & setup, bool preCreateFlag, bool scanOn );
+    exPV ( exServer & cas, pvInfo & setup, 
+        bool preCreateFlag, bool scanOn );
     virtual ~exPV();
 
     void show ( unsigned level ) const;
@@ -158,7 +160,7 @@ public:
     //
     // This gets called when the pv gets a new value
     //
-    caStatus update ( smartConstGDDPointer pValue );
+    caStatus update ( const gdd & );
 
     //
     // Gets called when we add noise to the current value
@@ -190,7 +192,8 @@ public:
         const char * const pHostName );
 
 protected:
-    smartConstGDDPointer pValue;
+    smartGDDPointer pValue;
+    exServer & cas;
     epicsTimer & timer;
     pvInfo & info; 
     bool interest;
@@ -198,7 +201,7 @@ protected:
     bool scanOn;
     static epicsTime currentTime;
 
-    virtual caStatus updateValue ( smartConstGDDPointer pValue ) = 0;
+    virtual caStatus updateValue ( const gdd & ) = 0;
 
 private:
 
@@ -229,11 +232,13 @@ private:
 //
 class exScalarPV : public exPV {
 public:
-    exScalarPV ( pvInfo &setup, bool preCreateFlag, bool scanOnIn ) :
-            exPV ( setup, preCreateFlag, scanOnIn) {}
+    exScalarPV ( exServer & cas, pvInfo &setup, 
+        bool preCreateFlag, bool scanOnIn ) :
+        exPV ( cas, setup, 
+            preCreateFlag, scanOnIn) {}
     void scan();
 private:
-    caStatus updateValue (smartConstGDDPointer pValue);
+    caStatus updateValue ( const gdd & );
 };
 
 //
@@ -241,35 +246,44 @@ private:
 //
 class exVectorPV : public exPV {
 public:
-    exVectorPV ( pvInfo &setup, bool preCreateFlag, bool scanOnIn ) :
-            exPV ( setup, preCreateFlag, scanOnIn) {}
+    exVectorPV ( exServer & cas, pvInfo &setup, 
+        bool preCreateFlag, bool scanOnIn ) :
+        exPV ( cas, setup, 
+            preCreateFlag, scanOnIn) {}
     void scan();
 
     unsigned maxDimension() const;
     aitIndex maxBound (unsigned dimension) const;
 
 private:
-    caStatus updateValue (smartConstGDDPointer pValue);
+    caStatus updateValue ( const gdd & );
 };
 
 //
 // exServer
 //
-class exServer : public caServer {
+class exServer : private caServer {
 public:
     exServer ( const char * const pvPrefix, 
-        unsigned aliasCount, bool scanOn );
+        unsigned aliasCount, bool scanOn,
+        bool asyncScan );
     ~exServer ();
     void show ( unsigned level ) const;
-    pvExistReturn pvExistTest ( const casCtx &, const char * pPVName );
-    pvAttachReturn pvAttach ( const casCtx &, const char * pPVName );
-    void installAliasName ( pvInfo & info, const char * pAliasName );
-    inline void removeAliasName ( pvEntry & entry );
-    void removeIO();
+    void removeIO ();
+    void removeAliasName ( pvEntry & entry );
+
+    class epicsTimer & createTimer ();
+	void setDebugLevel ( unsigned level );
+
 private:
     resTable < pvEntry, stringId > stringResTbl;
+    epicsTimerQueueActive * pTimerQueue;
     unsigned simultAsychIOCount;
     bool scanOn;
+
+    void installAliasName ( pvInfo & info, const char * pAliasName );
+    pvExistReturn pvExistTest ( const casCtx &, const char * pPVName );
+    pvAttachReturn pvAttach ( const casCtx &, const char * pPVName );
 
     //
     // list of pre-created PVs
@@ -292,7 +306,8 @@ private:
 //
 class exAsyncPV : public exScalarPV {
 public:
-    exAsyncPV ( pvInfo &setup, bool preCreateFlag, bool scanOnIn );
+    exAsyncPV ( exServer & cas, pvInfo &setup, 
+        bool preCreateFlag, bool scanOnIn );
     caStatus read ( const casCtx & ctxIn, gdd & protoIn );
     caStatus write ( const casCtx & ctxIn, const gdd & value );
     void removeIO();
@@ -318,7 +333,7 @@ private:
 //
 class exAsyncWriteIO : public casAsyncWriteIO, public epicsTimerNotify {
 public:
-    exAsyncWriteIO ( const casCtx & ctxIn, exAsyncPV & pvIn, const gdd & valueIn );
+    exAsyncWriteIO ( exServer &, const casCtx & ctxIn, exAsyncPV &, const gdd & );
     ~exAsyncWriteIO ();
 private:
     exAsyncPV & pv;
@@ -332,7 +347,7 @@ private:
 //
 class exAsyncReadIO : public casAsyncReadIO, public epicsTimerNotify {
 public:
-    exAsyncReadIO ( const casCtx & ctxIn, exAsyncPV & pvIn, gdd & protoIn );
+    exAsyncReadIO ( exServer &, const casCtx &, exAsyncPV &, gdd & );
     virtual ~exAsyncReadIO ();
 private:
     exAsyncPV & pv;
@@ -519,9 +534,9 @@ inline void exServer::removeIO()
     }
 }
 
-inline exAsyncPV::exAsyncPV ( pvInfo & setup, bool preCreateFlag, 
-        bool scanOnIn ) :
-    exScalarPV ( setup, preCreateFlag, scanOnIn ),
+inline exAsyncPV::exAsyncPV ( exServer & cas, pvInfo & setup, 
+                             bool preCreateFlag, bool scanOnIn ) :
+    exScalarPV ( cas, setup, preCreateFlag, scanOnIn ),
     simultAsychIOCount ( 0u ) 
 {
 }

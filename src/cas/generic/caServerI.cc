@@ -22,33 +22,34 @@
 
 #include "addrList.h"
 
+#define epicsExportSharedSymbols
 #define caServerGlobal
-#include "server.h"
-#include "casCtxIL.h" // casCtx in line func
+#include "caServerI.h"
 #include "beaconTimer.h"
 #include "beaconAnomalyGovernor.h"
+#include "casStreamOS.h"
+#include "casIntfOS.h"
 
+// include a version string for POSIX systems
 static const char * pVersionCAS = 
-    "@(#) " EPICS_VERSION_STRING ", CA Portable Server Library " 
+    "@(#) " EPICS_VERSION_STRING 
+    ", CA Portable Server Library " 
     "$Date$";
 
-//
-// caServerI::caServerI()
-//
-caServerI::caServerI (caServer &tool) :
+caServerI::caServerI ( caServer & tool ) :
     adapter (tool),
     beaconTmr ( * new beaconTimer ( *this ) ),
     beaconAnomalyGov ( * new beaconAnomalyGovernor ( *this ) ),
-    debugLevel (0u),
-    nEventsProcessed (0u),
-    nEventsPosted (0u)
+    debugLevel ( 0u ),
+    nEventsProcessed ( 0u ),
+    nEventsPosted ( 0u )
 {
 	assert ( & adapter != NULL );
 
     // create predefined event types
-    this->valueEvent = registerEvent ("value");
-	this->logEvent = registerEvent ("log");
-	this->alarmEvent = registerEvent ("alarm");
+    this->valueEvent = registerEvent ( "value" );
+	this->logEvent = registerEvent ( "log" );
+	this->alarmEvent = registerEvent ( "alarm" );
 
     this->locateInterfaces ();
 
@@ -61,26 +62,14 @@ caServerI::caServerI (caServer &tool) :
 	return;
 }
 
-/*
- * caServerI::~caServerI()
- */
 caServerI::~caServerI()
 {
-    epicsGuard < epicsMutex > locker ( this->mutex );
-
     delete & this->beaconAnomalyGov;
     delete & this->beaconTmr;
 
 	// delete all clients
-	tsDLIter <casStrmClient> iter = this->clientList.firstIter ();
-    while ( iter.valid () ) {
-		tsDLIter <casStrmClient> tmp = iter;
-		++tmp;
-		//
-		// destructor takes client out of list
-		//
-		delete iter.pointer ();
-		iter = tmp;
+    while ( casStrmClient * pClient = this->clientList.get() ) {
+		delete pClient;
 	}
 
 	casIntfOS *pIF;
@@ -89,40 +78,29 @@ caServerI::~caServerI()
 	}
 }
 
-//
-// caServerI::installClient()
-//
-void caServerI::installClient(casStrmClient *pClient)
+void caServerI::destroyClient ( casStrmClient & client )
 {
-    epicsGuard < epicsMutex > locker ( this->mutex );
-	this->clientList.add(*pClient);
+    {
+        epicsGuard < epicsMutex > locker ( this->mutex );
+	    this->clientList.remove ( client );
+    }
+    delete & client;
 }
 
-//
-// caServerI::removeClient()
-//
-void caServerI::removeClient (casStrmClient *pClient)
-{
-    epicsGuard < epicsMutex > locker ( this->mutex );
-	this->clientList.remove (*pClient);
-}
-
-//
-// caServerI::connectCB()
-//
 void caServerI::connectCB ( casIntfOS & intf )
 {
     casStreamOS * pClient = intf.newStreamClient ( *this, this->clientBufMemMgr );
     if ( pClient ) {
+        {
+            epicsGuard < epicsMutex > locker ( this->mutex );
+            this->clientList.add ( *pClient );
+        }
         pClient->sendVersion ();
         pClient->flush ();
     }
 }
 
-//
-// casVerifyFunc()
-//
-void casVerifyFunc (const char *pFile, unsigned line, const char *pExp)
+void casVerifyFunc ( const char * pFile, unsigned line, const char * pExp )
 {
     fprintf(stderr, "the expression \"%s\" didnt evaluate to boolean true \n",
         pExp);
@@ -133,9 +111,6 @@ void casVerifyFunc (const char *pFile, unsigned line, const char *pExp)
         "Please forward above text to johill@lanl.gov - thanks\n");
 }
 
-//
-// serverToolDebugFunc()
-// 
 void serverToolDebugFunc (const char *pFile, unsigned line, const char *pComment)
 {
     fprintf (stderr,
@@ -143,9 +118,6 @@ void serverToolDebugFunc (const char *pFile, unsigned line, const char *pComment
                 line, pFile, pComment);
 }
 
-//
-// caServerI::attachInterface()
-//
 caStatus caServerI::attachInterface ( const caNetAddr & addrIn, 
         bool autoBeaconAddr, bool addConfigBeaconAddr)
 {    
@@ -160,14 +132,10 @@ caStatus caServerI::attachInterface ( const caNetAddr & addrIn,
     return S_cas_success;
 }
 
-//
-// caServerI::sendBeacon()
-// send a beacon over each configured address
-//
 void caServerI::sendBeacon ( ca_uint32_t beaconNo )
 {
     epicsGuard < epicsMutex > locker ( this->mutex );
-	tsDLIter <casIntfOS> iter = this->intfList.firstIter ();
+	tsDLIter < casIntfOS > iter = this->intfList.firstIter ();
 	while ( iter.valid () ) {
 		iter->sendBeacon ( beaconNo );
 		iter++;
@@ -179,47 +147,36 @@ void caServerI::generateBeaconAnomaly ()
     this->beaconAnomalyGov.start ();
 }
 
-//
-// caServerI::lookupMonitor ()
-//
-casMonitor * caServerI::lookupMonitor ( const caResId &idIn )
+void caServerI::destroyMonitor ( casMonitor &  mon )
 {
-    chronIntId tmpId ( idIn );
-
-	epicsGuard < epicsMutex > locker ( this->mutex );
-    casRes * pRes = this->chronIntIdResTable<casRes>::lookup ( tmpId );
-	if ( pRes ) {
-		if ( pRes->resourceType() == casMonitorT ) {
-            // ok to avoid overhead of dynamic cast here because
-            // type code was checked above
-            return static_cast < casMonitor * > ( pRes );
-		}
-	}
-	return 0;
+    mon.~casMonitor ();
+    this->casMonitorFreeList.release ( & mon );
 }
 
-//
-// caServerI::lookupChannel ()
-//
-casChannelI * caServerI::lookupChannel ( const caResId &idIn )
+void caServerI::updateEventsPostedCounter ( unsigned nNewPosts )
 {
-    chronIntId tmpId ( idIn );
-
-	epicsGuard < epicsMutex > locker ( this->mutex );
-    casRes * pRes = this->chronIntIdResTable<casRes>::lookup ( tmpId );
-	if ( pRes ) {
-		if ( pRes->resourceType() == casChanT ) {
-            // ok to avoid overhead of dynamic cast here because
-            // type code was checked above
-            return static_cast < casChannelI * > ( pRes );
-		}
-	}
-	return 0;
+    epicsGuard < epicsMutex > guard ( this->diagnosticCountersMutex );
+    this->nEventsPosted += nNewPosts;
 }
 
-//
-// caServerI::show()
-//
+unsigned caServerI::subscriptionEventsPosted () const
+{
+    epicsGuard < epicsMutex > guard ( this->diagnosticCountersMutex );
+    return this->nEventsPosted;
+}
+
+void caServerI::incrEventsProcessedCounter ()
+{
+    epicsGuard < epicsMutex > guard ( this->diagnosticCountersMutex );
+    this->nEventsProcessed ++;
+}
+
+unsigned caServerI::subscriptionEventsProcessed () const
+{
+    epicsGuard < epicsMutex > guard ( this->diagnosticCountersMutex );
+    return this->nEventsProcessed;
+}
+
 void caServerI::show (unsigned level) const
 {
     int bytes_reserved;
@@ -232,13 +189,13 @@ void caServerI::show (unsigned level) const
     
     {
         epicsGuard < epicsMutex > locker ( this->mutex );
-        tsDLIterConst<casStrmClient> iterCl = this->clientList.firstIter ();
+        tsDLIterConst < casStrmClient > iterCl = this->clientList.firstIter ();
         while ( iterCl.valid () ) {
-            iterCl->show (level);
+            iterCl->show ( level );
             ++iterCl;
         }
     
-        tsDLIterConst<casIntfOS> iterIF = this->intfList.firstIter ();
+        tsDLIterConst < casIntfOS > iterIF = this->intfList.firstIter ();
         while ( iterIF.valid () ) {
             iterIF->casIntfOS::show ( level );
             ++iterIF;
@@ -270,22 +227,34 @@ void caServerI::show (unsigned level) const
 #endif
         printf( 
             "The server's integer resource id conversion table:\n");
-        {
-            epicsGuard < epicsMutex > locker ( this->mutex );
-            this->chronIntIdResTable<casRes>::show(level);
-        }
     }
         
     return;
 }
 
-//
-// casEventRegistry::~casEventRegistry()
-//
-// (must not be inline because it is virtual)
-//
+casMonitor & caServerI::casMonitorFactory ( 
+    casChannelI & chan, caResId clientId, 
+    const unsigned long count, const unsigned type, 
+    const casEventMask & mask, 
+    casMonitorCallbackInterface & cb )
+{
+    casMonitor * pMon = 
+        new ( this->casMonitorFreeList ) casMonitor 
+            ( clientId, chan, count, type, mask, cb );
+    return *pMon;
+}
+
+void caServerI::casMonitorDestroy ( casMonitor & cm )
+{
+    cm.~casMonitor ();
+    this->casMonitorFreeList.release ( & cm );
+}
+
 casEventRegistry::~casEventRegistry()
 {
     this->traverse ( &casEventMaskEntry::destroy );
 }
+
+
+
 

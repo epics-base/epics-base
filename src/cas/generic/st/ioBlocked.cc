@@ -18,7 +18,11 @@
 
 #include <stdio.h>
 
-#include "server.h"
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+#include "epicsAssert.h"
+
+#define epicsExportSharedSymbols
+#include "ioBlocked.h"
 
 //
 // ioBlocked::ioBlocked ()

@@ -13,9 +13,18 @@
 // Author Jeff Hill
 //
 
+#include <stdio.h>
 
-#include "server.h"
+#include "errlog.h"
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+#include "epicsAssert.h"
 
+#define epicsExportSharedSymbols
+#include "casdef.h"
+#include "caNetAddr.h"
+#include "casIntfIO.h"
+#include "casStreamIO.h"
+#include "casStreamOS.h"
 
 //
 // 5 appears to be a TCP/IP built in maximum
@@ -25,9 +34,9 @@ const unsigned caServerConnectPendQueueSize = 5u;
 //
 // casIntfIO::casIntfIO()
 //
-casIntfIO::casIntfIO (const caNetAddr &addrIn) : 
-	sock (INVALID_SOCKET),
-    addr (addrIn.getSockIP())
+casIntfIO::casIntfIO ( const caNetAddr & addrIn ) : 
+	sock ( INVALID_SOCKET ),
+    addr ( addrIn.getSockIP() )
 {
 	int status;
 	osiSocklen_t addrSize;
@@ -160,7 +169,7 @@ casStreamOS *casIntfIO::newStreamClient ( caServerI & cas,
     struct sockaddr	newAddr;
     SOCKET newSock;
     osiSocklen_t length;
-    casStreamOS	*pOS;
+    casStreamOS	* pOS;
     
     length = ( osiSocklen_t ) sizeof ( newAddr );
     newSock = accept ( this->sock, & newAddr, & length );
@@ -192,7 +201,7 @@ casStreamOS *casIntfIO::newStreamClient ( caServerI & cas,
         if ( cas.getDebugLevel() > 0u ) {
             char pName[64u];
             
-            pOS->hostName ( pName, sizeof (pName) );
+            pOS->hostName ( pName, sizeof ( pName ) );
             errlogPrintf ( "CAS: allocated client object for \"%s\"\n", pName );
         }
     }

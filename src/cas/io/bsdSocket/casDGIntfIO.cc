@@ -14,18 +14,15 @@
  */
 
 //
-//
 // Should I fetch the MTU from the outgoing interface?
 //
-//
 
-#include "server.h"
 #include "addrList.h"
-#include "casIODIL.h"
 
-/*
- * forcePort ()
- */
+#define epicsExportSharedSymbols
+#include "casDGIntfIO.h"
+#include "ipIgnoreEntry.h"
+
 static void  forcePort (ELLLIST *pList, unsigned short port)
 {
     osiSockAddrNode *pNode;
@@ -40,9 +37,6 @@ static void  forcePort (ELLLIST *pList, unsigned short port)
 }
 
 
-//
-// casDGIntfIO::casDGIntfIO()
-//
 casDGIntfIO::casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager & memMgr,
     const caNetAddr & addr, bool autoBeaconAddr, bool addConfigBeaconAddr ) :
     casDGClient ( serverIn, memMgr )
@@ -276,9 +270,6 @@ casDGIntfIO::~casDGIntfIO()
     osiSockRelease ();
 }
 
-//
-// casDGIntfIO::show()
-//
 void casDGIntfIO::show (unsigned level) const
 {
 	printf ( "casDGIntfIO at %p\n", 
@@ -287,9 +278,6 @@ void casDGIntfIO::show (unsigned level) const
     this->casDGClient::show (level);
 }
 
-//
-// casDGIntfIO::xSetNonBlocking()
-//
 void casDGIntfIO::xSetNonBlocking() 
 {
     int status;
@@ -302,9 +290,6 @@ void casDGIntfIO::xSetNonBlocking()
     }
 }
 
-//
-// casDGIntfIO::osdRecv()
-//
 inBufClient::fillCondition
 casDGIntfIO::osdRecv ( char * pBufIn, bufSizeT size, // X aCC 361
     fillParameter parm, bufSizeT & actualSize, caNetAddr & fromOut )
@@ -352,9 +337,6 @@ casDGIntfIO::osdRecv ( char * pBufIn, bufSizeT size, // X aCC 361
     }
 }
 
-//
-// casDGIntfIO::osdSend()
-//
 outBufClient::flushCondition
 casDGIntfIO::osdSend ( const char * pBufIn, bufSizeT size, // X aCC 361
                       const caNetAddr & to )
@@ -384,9 +366,6 @@ casDGIntfIO::osdSend ( const char * pBufIn, bufSizeT size, // X aCC 361
     }
 }
 
-//
-// casDGIntfIO::incomingBytesPresent()
-//
 bufSizeT casDGIntfIO::incomingBytesPresent () const // X aCC 361
 {
 	int status;
@@ -407,9 +386,6 @@ bufSizeT casDGIntfIO::incomingBytesPresent () const // X aCC 361
 	}
 }
 
-//
-// casDGIntfIO::sendBeaconIO()
-// 
 void casDGIntfIO::sendBeaconIO ( char & msg, unsigned length,
                                 aitUint16 & portField, aitUint32 & addrField ) 
 {
@@ -455,9 +431,6 @@ void casDGIntfIO::sendBeaconIO ( char & msg, unsigned length,
     }
 }
 
-//
-// casDGIntfIO::optimumInBufferSize()
-//
 bufSizeT casDGIntfIO::optimumInBufferSize () 
 {
     
@@ -491,9 +464,6 @@ bufSizeT casDGIntfIO::optimumInBufferSize ()
 #endif
 }
 
-//
-// casDGIntfIO::optimumOutBufferSize()
-//
 bufSizeT casDGIntfIO::optimumOutBufferSize () 
 {
     
@@ -528,10 +498,6 @@ bufSizeT casDGIntfIO::optimumOutBufferSize ()
 #endif
 }
 
-
-//
-// casDGIntfIO::makeSockDG ()
-//
 SOCKET casDGIntfIO::makeSockDG ()
 {
     int yes = true;
@@ -611,10 +577,6 @@ SOCKET casDGIntfIO::makeSockDG ()
     return newSock;
 }
 
-//
-// casDGIntfIO::getFD()
-// (avoid problems with the GNU inliner)
-//
 int casDGIntfIO::getFD() const
 {
     return this->sock;

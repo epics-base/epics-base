@@ -17,10 +17,13 @@
 #include <ctype.h>
 
 #include "epicsSignal.h"
+#include "envDefs.h"
+#include "caProto.h"
 
-#include "server.h"
+#define epicsExportSharedSymbols
+#include "caServerIO.h"
 
-static char *getToken (const char **ppString, char *pBuf, unsigned bufSIze);
+static char * getToken ( const char **ppString, char *pBuf, unsigned bufSIze );
 
 int caServerIO::staticInitialized;
 
@@ -33,7 +36,7 @@ caServerIO::caServerIO ()
 		throw S_cas_internal;
 	}
 
-	caServerIO::staticInit();
+	caServerIO::staticInit ();
 }
 
 //
@@ -55,22 +58,22 @@ void caServerIO::locateInterfaces ()
 	// clients to find the server). If this also isnt available
 	// then use a hard coded default - CA_SERVER_PORT.
 	//
-	if (envGetConfigParamPtr(&EPICS_CAS_SERVER_PORT)) {
+	if ( envGetConfigParamPtr ( & EPICS_CAS_SERVER_PORT ) ) {
 		port = envGetInetPortConfigParam (
                     &EPICS_CAS_SERVER_PORT,
-                    static_cast <unsigned short> (CA_SERVER_PORT));
+                    static_cast <unsigned short> ( CA_SERVER_PORT ) );
 	}
 	else {
 		port = envGetInetPortConfigParam (
-                    &EPICS_CA_SERVER_PORT,
-                    static_cast <unsigned short> (CA_SERVER_PORT));
+                    & EPICS_CA_SERVER_PORT,
+                    static_cast <unsigned short> ( CA_SERVER_PORT ) );
 	}
 
 	memset ((char *)&saddr,0,sizeof(saddr));
 
-    pStr = envGetConfigParam(&EPICS_CAS_AUTO_BEACON_ADDR_LIST, sizeof(buf), buf);
+    pStr = envGetConfigParam ( &EPICS_CAS_AUTO_BEACON_ADDR_LIST, sizeof(buf), buf );
     if ( ! pStr ) {
-	    pStr = envGetConfigParam(&EPICS_CA_AUTO_ADDR_LIST, sizeof(buf), buf);
+	    pStr = envGetConfigParam ( &EPICS_CA_AUTO_ADDR_LIST, sizeof(buf), buf );
     }
 	if (pStr) {
 		if (strstr(pStr,"no")||strstr(pStr,"NO")) {
@@ -93,11 +96,11 @@ void caServerIO::locateInterfaces ()
 	// bind to the the interfaces specified - otherwise wildcard
 	// with INADDR_ANY and allow clients to attach from any interface
 	//
-	pStr = envGetConfigParamPtr(&EPICS_CAS_INTF_ADDR_LIST);
+	pStr = envGetConfigParamPtr ( & EPICS_CAS_INTF_ADDR_LIST );
 	if (pStr) {
 		bool configAddrOnceFlag = true;
 		stat = S_cas_noInterface; 
-		while ( (pToken = getToken(&pStr, buf, sizeof(buf))) ) {
+		while ( (pToken = getToken ( & pStr, buf, sizeof ( buf ) ) ) ) {
 			int status;
 
 			status = aToIPAddr (pToken, port, &saddr);

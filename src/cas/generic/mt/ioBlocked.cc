@@ -15,8 +15,8 @@
 
 #include <stdio.h>
 
+#define epicsExportSharedSymbols
 #include "casdef.h"
-
 
 //
 // ioBlocked::~ioBlocked()

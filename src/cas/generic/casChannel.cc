@@ -15,43 +15,30 @@
  *              505 665 1831
  */
 
-#include "server.h"
-#include "casChannelIIL.h" // casChannelI inline func
-#include "casPVListChanIL.h" // casPVListChan inline func
+#define epicsExportSharedSymbols
+#include "casdef.h"
+#include "casChannelI.h"
 
-//
-// casChannel::casChannel()
-//
-casChannel::casChannel(const casCtx &ctx) : 
-	casPVListChan (ctx) 
+casChannel::casChannel ( const casCtx & ctx ) : 
+    pChanI ( new casChannelI ( *this, ctx ) )
 {
 }
 
-//
-// casChannel::~casChannel()
-//
-casChannel::~casChannel() 
+casChannel::~casChannel () 
 {
 }
 
-//
-// casChannel::getPV()
-//
-casPV *casChannel::getPV() // X aCC 361
+casPV * casChannel::getPV () // X aCC 361
 {
-	casPVI *pPVI = &this->casChannelI::getPVI();
-
-	if (pPVI!=NULL) {
-		return pPVI->apiPointer();
-	}
-	else {
-		return NULL;
-	}
+    if ( this->pChanI ) {
+	    casPVI & pvi = this->pChanI->getPVI ();
+        return pvi.apiPointer ();
+    }
+    else {
+        return 0;
+    }
 }
 
-//
-// casChannel::setOwner()
-//
 void casChannel::setOwner(const char * const /* pUserName */, 
 	const char * const /* pHostName */)
 {
@@ -60,33 +47,21 @@ void casChannel::setOwner(const char * const /* pUserName */,
 	//
 }
 
-//
-// casChannel::readAccess()
-//
 bool casChannel::readAccess () const 
 {
 	return true;
 }
 
-//
-// casChannel::writeAccess()
-//
 bool casChannel::writeAccess() const 
 {
 	return true;
 }
 
-//
-// casChannel::confirmationRequested()
-//
 bool casChannel::confirmationRequested() const 
 {
 	return false;
 }
 
-//
-// casChannel::show()
-//
 void casChannel::show(unsigned level) const
 {
 	if (level>2u) {
@@ -99,19 +74,15 @@ void casChannel::show(unsigned level) const
 	}
 }
 
-//
-// casChannel::destroy()
-//
 void casChannel::destroy()
 {
 	delete this;
 }
 
-//
-// casChannel::postAccessRightsEvent()
-//
 void casChannel::postAccessRightsEvent()
 {
-	this->casChannelI::postAccessRightsEvent();
+    if ( this->pChanI ) {
+	    this->pChanI->postAccessRightsEvent ();
+    }
 }
 

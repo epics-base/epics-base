@@ -9,28 +9,22 @@
 \*************************************************************************/
 
 //
-//
 // casDGIntfOS.cc
 // $Id$
 //
-//
-//
 
-//
-// CA server
-// 
-#include "server.h"
-#include "inBufIL.h" // inBuf in line func
-#include "outBufIL.h" // outBuf in line func
-#include "casIODIL.h" // IO Depen in line func
-#include "casCoreClientIL.h"
+
+#include "fdManager.h"
+
+#define epicsExportSharedFunc
+#include "casDGIntfOS.h"
 
 //
 // casDGReadReg
 //
 class casDGReadReg : public fdReg {
 public:
-	casDGReadReg (casDGIntfOS &osIn) :
+	casDGReadReg ( casDGIntfOS & osIn ) :
 		fdReg (osIn.getFD(), fdrRead), os (osIn) {}
 	~casDGReadReg ();
 

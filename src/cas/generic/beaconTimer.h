@@ -19,14 +19,22 @@
 #ifndef beaconTimerh
 #define beaconTimerh
 
+#ifdef epicsExportSharedSymbols
+#   define epicsExportSharedSymbols_beaconTimerh
+#   undef epicsExportSharedSymbols
+#endif
+
+// external headers included here
 #include "epicsTimer.h"
 #include "caProto.h"
 
+#ifdef epicsExportSharedSymbols_beaconTimerh
+#   define epicsExportSharedSymbols
+#   include "shareLib.h"
+#endif
+
 class caServerI;
 
-//
-// beaconTimer
-//
 class beaconTimer : public epicsTimerNotify {
 public:
     beaconTimer ( caServerI & casIn );

@@ -19,8 +19,11 @@
 
 #include "envDefs.h"
 #include "freeList.h"
+#include "errlog.h"
 
-#include "server.h"
+#define epicsExportSharedSymbols
+#include "clientBufMemoryManager.h"
+#include "caProto.h"
 
 casBufferFactory::casBufferFactory () :
     smallBufFreeList ( 0 ), largeBufFreeList ( 0 ), largeBufferSizePriv ( 0u )

@@ -8,12 +8,12 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 //
-// 	Example EPICS CA directory server
+//  Example EPICS CA directory server
 //
 //
-// 	caServer
-//	|
-//	directoryServer
+//  caServer
+//  |
+//  directoryServer
 //
 //
 
@@ -27,6 +27,7 @@
 //
 // EPICS
 //
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 #define caNetAddrSock
 #include "casdef.h"
 #include "epicsAssert.h"
@@ -34,7 +35,7 @@
 
 
 #ifndef NELEMENTS
-#	define NELEMENTS(A) (sizeof(A)/sizeof(A[0]))
+#   define NELEMENTS(A) (sizeof(A)/sizeof(A[0]))
 #endif
 
 class directoryServer;
@@ -44,24 +45,24 @@ class directoryServer;
 //
 class pvInfo {
 public:
-	pvInfo (const char *pNameIn, sockaddr_in addrIn) : 
-		addr(addrIn), pNext(pvInfo::pFirst)
-	{
-		pvInfo::pFirst = this;
-		this->pName = new char [strlen(pNameIn)+1u];
-		assert(this->pName);
-		strcpy(this->pName, pNameIn);
-	}
-	
-	const struct sockaddr_in getAddr() const { return this->addr; }
-	const char *getName () const { return this->pName; }
-	const pvInfo *getNext () const { return this->pNext; }
-	static const pvInfo *getFirst () { return pvInfo::pFirst; }
+    pvInfo (const char *pNameIn, sockaddr_in addrIn) : 
+        addr(addrIn), pNext(pvInfo::pFirst)
+    {
+        pvInfo::pFirst = this;
+        this->pName = new char [strlen(pNameIn)+1u];
+        assert(this->pName);
+        strcpy(this->pName, pNameIn);
+    }
+    
+    const struct sockaddr_in getAddr() const { return this->addr; }
+    const char *getName () const { return this->pName; }
+    const pvInfo *getNext () const { return this->pNext; }
+    static const pvInfo *getFirst () { return pvInfo::pFirst; }
 private:
-	struct sockaddr_in	addr;
-	char 			*pName;
-	const pvInfo		*pNext;
-	static const pvInfo 	*pFirst;
+    struct sockaddr_in  addr;
+    char * pName;
+    const pvInfo * pNext;
+    static const pvInfo * pFirst;
 };
 
 //
@@ -77,41 +78,39 @@ private:
 class pvEntry // X aCC 655
     : public stringId, public tsSLNode<pvEntry> {
 public:
-	pvEntry (const pvInfo  &infoIn, directoryServer &casIn, 
-			const char *pAliasName) : 
-		stringId(pAliasName), info(infoIn), cas(casIn) 
-	{
-		assert(this->stringId::resourceName()!=NULL);
-	}
+    pvEntry (const pvInfo  &infoIn, directoryServer &casIn, 
+            const char *pAliasName) : 
+        stringId(pAliasName), info(infoIn), cas(casIn) 
+    {
+        assert(this->stringId::resourceName()!=NULL);
+    }
 
-	inline ~pvEntry();
+    inline ~pvEntry();
 
-	const pvInfo &getInfo() const { return this->info; }
-	
-	inline void destroy ();
+    const pvInfo &getInfo() const { return this->info; }
+    
+    inline void destroy ();
 
 private:
-	const pvInfo &info;
-	directoryServer &cas;
+    const pvInfo &info;
+    directoryServer &cas;
 };
-
-
 
 //
 // directoryServer
 //
 class directoryServer : public caServer {
 public:
-	directoryServer (const char * const pvPrefix, unsigned aliasCount);
-	~directoryServer();
-        void show (unsigned level) const;
-        pvExistReturn pvExistTest (const casCtx&, const char *pPVName);
+    directoryServer ( const char * const pvPrefix, unsigned aliasCount );
+    ~directoryServer();
+    void show ( unsigned level ) const;
+    pvExistReturn pvExistTest ( const casCtx&, const char *pPVName );
 
-	void installAliasName (const pvInfo &info, const char *pAliasName);
-	inline void removeAliasName(pvEntry &entry);
+    void installAliasName ( const pvInfo &info, const char *pAliasName );
+    inline void removeAliasName ( pvEntry &entry );
 
 private:
-	resTable<pvEntry,stringId> stringResTbl;
+    resTable < pvEntry, stringId > stringResTbl;
 };
 
 
@@ -120,9 +119,9 @@ private:
 //
 inline void directoryServer::removeAliasName(pvEntry &entry)
 {
-        pvEntry *pE;
-        pE = this->stringResTbl.remove(entry);
-        assert(pE = &entry);
+    pvEntry *pE;
+    pE = this->stringResTbl.remove(entry);
+    assert(pE = &entry);
 }
 
 //
@@ -130,7 +129,7 @@ inline void directoryServer::removeAliasName(pvEntry &entry)
 //
 inline pvEntry::~pvEntry()
 {
-        this->cas.removeAliasName(*this);
+    this->cas.removeAliasName(*this);
 }
 
 //
@@ -138,9 +137,9 @@ inline pvEntry::~pvEntry()
 //
 inline void pvEntry::destroy ()
 {
-	//
-	// always created with new
-	//
-	delete this;
+    //
+    // always created with new
+    //
+    delete this;
 }
  

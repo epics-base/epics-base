@@ -15,73 +15,41 @@
  *              505 665 1831
  */
 
+#include <stdexcept>
 
-#include "server.h"
-#include "casChannelIIL.h" // casChannelI in line func
-#include "casCtxIL.h" // casCtx in line func
+#define epicsExportSharedSymbols
+#include "casdef.h"
+#include "casAsyncWriteIOI.h"
 
-//
-// casAsyncWriteIO::casAsyncWriteIO()
-//
 casAsyncWriteIO::casAsyncWriteIO ( const casCtx & ctx ) :
-	casAsyncIOI ( ctx ),
-	msg ( *ctx.getMsg() ), 
-	chan ( *ctx.getChannel() ),
-	completionStatus ( S_cas_internal )
+	pAsyncWriteIOI ( new casAsyncWriteIOI ( *this, ctx ) )
 {
-	assert ( &this->chan );
-	this->chan.installAsyncIO ( *this );
 }
 
-//
-// casAsyncWriteIO::~casAsyncWriteIO()
-//
+void casAsyncWriteIO::serverInitiatedDestroy ()
+{
+    this->pAsyncWriteIOI = 0;
+    this->destroy ();
+}
+
 casAsyncWriteIO::~casAsyncWriteIO()
 {
-	this->chan.removeAsyncIO ( *this );
+    if ( this->pAsyncWriteIOI ) {
+        throw std::logic_error ( 
+            "the server library *must* initiate asynchronous IO destroy" );
+    }
 }
 
-//
-// casAsyncWriteIO::postIOCompletion()
-//
 caStatus casAsyncWriteIO::postIOCompletion ( caStatus completionStatusIn )
 {
-	this->completionStatus = completionStatusIn;
-	return this->postIOCompletionI ();
-}
-
-//
-// casAsyncWriteIO::cbFuncAsyncIO()
-// (called when IO completion event reaches top of event queue)
-//
-caStatus casAsyncWriteIO::cbFuncAsyncIO ()
-{
-    caStatus status;
-    
-    switch ( this->msg.m_cmmd ) {
-    case CA_PROTO_WRITE:
-        status = client.writeResponse ( this->msg,
-            this->completionStatus );
-        break;
-        
-    case CA_PROTO_WRITE_NOTIFY:
-        status = client.writeNotifyResponse (
-            this->msg, this->completionStatus );
-        break;
-        
-    default:
-        errPrintf ( S_cas_invalidAsynchIO, __FILE__, __LINE__,
-            " - client request type = %u", this->msg.m_cmmd );
-		status = S_cas_invalidAsynchIO;
-        break;
+    if ( this->pAsyncWriteIOI ) {
+	    return this->pAsyncWriteIOI->postIOCompletion ( completionStatusIn );
     }
-    
-    return status;
+    else {
+        return S_cas_redundantPost;
+    }
 }
 
-//
-// void casAsyncWriteIO::destroy ()
-//
 void casAsyncWriteIO::destroy ()
 {
     delete this;

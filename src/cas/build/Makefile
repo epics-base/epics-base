@@ -25,7 +25,6 @@ SRC_DIRS += $(CA)
 
 INC += casdef.h
 INC += casEventMask.h
-INC += casInternal.h
 INC += caNetAddr.h
 
 LIBSRCS += caServer.cc
@@ -38,13 +37,15 @@ LIBSRCS += casPV.cc
 LIBSRCS += casPVI.cc
 LIBSRCS += casChannel.cc
 LIBSRCS += casChannelI.cc
-LIBSRCS += casPVListChan.cc
-LIBSRCS += casChanDelEv.cc
 LIBSRCS += casAsyncIOI.cc
 LIBSRCS += casAsyncReadIO.cc
+LIBSRCS += casAsyncReadIOI.cc
 LIBSRCS += casAsyncWriteIO.cc
+LIBSRCS += casAsyncWriteIOI.cc
 LIBSRCS += casAsyncPVExistIO.cc
+LIBSRCS += casAsyncPVExistIOI.cc
 LIBSRCS += casAsyncPVAttachIO.cc
+LIBSRCS += casAsyncPVAttachIOI.cc
 LIBSRCS += casEventSys.cc
 LIBSRCS += casMonitor.cc
 LIBSRCS += casMonEvent.cc
@@ -60,8 +61,8 @@ LIBSRCS += caNetAddr.cc
 LIBSRCS += beaconTimer.cc
 LIBSRCS += beaconAnomalyGovernor.cc
 LIBSRCS += clientBufMemoryManager.cpp
+LIBSRCS += chanIntfForPV.cc
 
-LIBSRCS += caServerOS.cc
 LIBSRCS += casIntfOS.cc
 LIBSRCS += casDGIntfOS.cc
 LIBSRCS += casStreamOS.cc

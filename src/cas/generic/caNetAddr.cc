@@ -171,12 +171,12 @@ struct sockaddr caNetAddr::getSock() const
 
 caNetAddr::operator sockaddr_in () const
 {
-    return this->getSockIP();
+    return this->getSockIP ();
 }
 
 caNetAddr::operator sockaddr () const
 {
-    return this->getSock();
+    return this->getSock ();
 }
 
 void caNetAddr::selfTest ()

@@ -16,9 +16,12 @@
  *              505 665 1831
  */
 
+#include "fdManager.h"
+
+#define epicsExportSharedSymbols
+#include "caServerI.h"
 #include "beaconAnomalyGovernor.h"
 #include "beaconTimer.h"
-#include "server.h"
 
 //
 // the minimum period between beacon anomalies

@@ -16,7 +16,11 @@
  *              505 665 1831
  */
 
-#include "server.h"
+#include "fdManager.h"
+#include "envDefs.h"
+
+#define epicsExportSharedSymbols
+#include "caServerI.h"
 #include "beaconTimer.h"
 
 // the maximum beacon period if EPICS_CA_BEACON_PERIOD isnt available

@@ -16,15 +16,11 @@
  *
  */
 
+#include "fdManager.h"
 
-//
-// CA server
-// 
-#include "server.h"
+#define epicsExportSharedSymbols
+#include "casIntfOS.h"
 
-//
-// casServerReg
-//
 class casServerReg : public fdReg {
 public:
     casServerReg (casIntfOS &osIn) :
@@ -37,9 +33,6 @@ private:
 	casServerReg & operator = ( const casServerReg & );
 };
 
-//
-// casIntfOS::casIntfOS()
-//
 casIntfOS::casIntfOS ( caServerI & casIn, clientBufMemoryManager & memMgrIn,
     const caNetAddr & addrIn, bool autoBeaconAddr, bool addConfigBeaconAddr ) : 
     casIntfIO ( addrIn ),
@@ -52,9 +45,6 @@ casIntfOS::casIntfOS ( caServerI & casIn, clientBufMemoryManager & memMgrIn,
     this->pRdReg = new casServerReg(*this);
 }
 
-//
-// casIntfOS::~casIntfOS()
-//
 casIntfOS::~casIntfOS()
 {
 	if (this->pRdReg) {
@@ -62,25 +52,16 @@ casIntfOS::~casIntfOS()
 	}
 }
 
-//
-// casServerReg::callBack()
-//
 void casServerReg::callBack()
 {
 	assert(this->os.pRdReg);
 	this->os.cas.connectCB(this->os);	
 }
 
-//
-// casServerReg::~casServerReg()
-//
 casServerReg::~casServerReg()
 {
 }
 
-//
-// casIntfOS::show ()
-//
 void casIntfOS::show ( unsigned level ) const
 {
     printf ( "casIntfOS at %p\n", 
@@ -88,9 +69,6 @@ void casIntfOS::show ( unsigned level ) const
     this->casDGIntfOS::show ( level );
 }
 
-//
-// casIntfOS::serverAddress ()
-//
 caNetAddr casIntfOS::serverAddress () const
 {
     return this->casIntfIO::serverAddress();

@@ -47,26 +47,26 @@ public:
         this->mask = 0u;
     }
     
-    casEventMask (casEventRegistry &reg, const char *pName);
+    casEventMask ( casEventRegistry &reg, const char *pName );
     
     casEventMask () 
     {
         this->clear();
     }
     
-    void show (unsigned level) const;
+    void show ( unsigned level ) const;
     
-    int eventsSelected()
+    bool eventsSelected () const
     {
-        return this->mask!=0u;
+        return this->mask != 0u;
     }
-    int noEventsSelected()
+    bool noEventsSelected () const
     {
-        return this->mask==0u;
+        return this->mask == 0u;
     }
     
-    inline void operator|= (const casEventMask &rhs);
-    inline void operator&= (const casEventMask &rhs);
+    inline void operator |= ( const casEventMask & rhs );
+    inline void operator &= ( const casEventMask & rhs );
     
 private:
     unsigned mask;

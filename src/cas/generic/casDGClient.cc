@@ -14,19 +14,14 @@
  *              johill@lanl.gov
  *              505 665 1831
  */
+
 #include "gddApps.h"
+#include "caerr.h"
+#include "osiWireFormat.h"
 
-#include "server.h"
-#include "caServerIIL.h" // caServerI inline func
-#include "inBufIL.h" // inline functions for inBuf
-#include "outBufIL.h" // inline func for outBuf
-#include "casCtxIL.h" // casCtx inline func
-#include "casCoreClientIL.h" // casCoreClient inline func
+#define epicsExportSharedSymbols
+#include "casDGClient.h"
 #include "osiPoolStatus.h" // osi pool monitoring functions
-
-//
-// CA Server Datagram (DG) Client
-//
 
 //
 // casDGClient::casDGClient()
@@ -130,24 +125,24 @@ caStatus casDGClient::searchAction()
 	// search requests, and therefore dont thrash through
 	// caServer::pvExistTest() and casCreatePV::pvAttach()
 	//
-    if (!osiSufficentSpaceInPool(0)) {
+    if ( ! osiSufficentSpaceInPool ( 0 ) ) {
         return S_cas_success;
     }
 
 	//
 	// ask the server tool if this PV exists
 	//
-	this->asyncIOFlag = false;
+	this->userStartedAsyncIO = false;
 	pvExistReturn pver = 
-		this->getCAS()->pvExistTest(this->ctx, pChanName);
+		this->getCAS()->pvExistTest ( this->ctx, pChanName );
 
 	//
 	// prevent problems when they initiate
 	// async IO but dont return status
 	// indicating so (and vise versa)
 	//
-	if ( this->asyncIOFlag ) {
-        if (pver.getStatus()!=pverAsyncCompletion) {
+	if ( this->userStartedAsyncIO ) {
+        if ( pver.getStatus() != pverAsyncCompletion ) {
 		    errMessage (S_cas_badParameter, 
 		        "- assuming asynch IO status from caServer::pvExistTest()");
         }
@@ -157,7 +152,7 @@ caStatus casDGClient::searchAction()
 	    //
 	    // otherwise we assume sync IO operation was initiated
 	    //
-        switch (pver.getStatus()) {
+        switch ( pver.getStatus() ) {
         case pverExistsHere:
 		    status = this->searchResponse (*mp, pver);
             break;
@@ -213,8 +208,8 @@ caStatus casDGClient::searchResponse ( const caHdrLargeArray & msg,
         // new API was added to the server (they must
         // now use clients at EPICS 3.12 or higher)
         //
-        status = this->sendErr(&msg, ECA_DEFUNCT, 
-            "R3.11 connect sequence from old client was ignored");
+        status = this->sendErr ( &msg, ECA_DEFUNCT, invalidResID,
+            "R3.11 connect sequence from old client was ignored" );
         return status;
     }
 
@@ -457,10 +452,6 @@ caStatus casDGClient::asyncSearchResponse ( const caNetAddr & outAddr,
 
     epicsGuard < epicsMutex > guard ( this->mutex );
 
-    //
-    // start a DG context in the output protocol stream
-    // and grab the send lock
-    //
     void * pRaw;
     const outBufCtx outctx = this->out.pushCtx 
                     ( sizeof(cadg), MAX_UDP_SEND, pRaw );

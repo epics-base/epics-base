@@ -15,83 +15,51 @@
  *              505 665 1831
  */
 
-#include "server.h"
-#include "casChannelIIL.h"	// casChannelI in line func
-#include "casCtxIL.h"		// casCtx in line func
-#include "casCoreClientIL.h"	// casCoreClient in line func
+#include <stdexcept>
 
-//
-// casAsyncPVAttachIO::casAsyncPVAttachIO()
-//
-casAsyncPVAttachIO::casAsyncPVAttachIO (const casCtx &ctx) :
-	casAsyncIOI ( ctx ),
-	msg ( *ctx.getMsg() ),
-	retVal ( S_cas_badParameter )
+#define epicsExportSharedSymbols
+#include "casdef.h"
+#include "casAsyncPVAttachIOI.h"
+
+casAsyncPVAttachIO::casAsyncPVAttachIO ( const casCtx &ctx ) :
+    pAsyncPVAttachIOI ( new casAsyncPVAttachIOI ( *this, ctx ) ) 
 {
-	this->client.installAsyncIO ( *this );
 }
 
-//
-// casAsyncPVAttachIO::~casAsyncPVAttachIO()
-//
+void casAsyncPVAttachIO::serverInitiatedDestroy ()
+{
+    this->pAsyncPVAttachIOI = 0;
+    this->destroy ();
+}
+
 casAsyncPVAttachIO::~casAsyncPVAttachIO ()
 {
-	this->client.removeAsyncIO ( *this );
+    if ( this->pAsyncPVAttachIOI ) {
+        throw std::logic_error ( 
+            "the server library *must* initiate asynchronous IO destroy" );
+    }
 }
 
-//
-// casAsyncPVAttachIO::postIOCompletion()
-//
 caStatus casAsyncPVAttachIO::postIOCompletion ( const pvAttachReturn & retValIn )
 {
-	this->retVal = retValIn; 
-	return this->postIOCompletionI ();
+    if ( this->pAsyncPVAttachIOI ) {
+	    return this->pAsyncPVAttachIOI->postIOCompletion ( retValIn );
+    }
+    else {
+        return S_cas_redundantPost;
+    }
 }
 
-//
-// casAsyncPVAttachIO::cbFuncAsyncIO()
-// (called when IO completion event reaches top of event queue)
-//
-caStatus casAsyncPVAttachIO::cbFuncAsyncIO()
-{
-	caStatus 	status;
-
-	switch ( this->msg.m_cmmd ) {
-	case CA_PROTO_CLAIM_CIU:
-		status = this->client.createChanResponse ( this->msg, this->retVal );
-		break;
-
-	default:
-        errPrintf ( S_cas_invalidAsynchIO, __FILE__, __LINE__,
-            " - client request type = %u", this->msg.m_cmmd );
-		status = S_cas_invalidAsynchIO;
-		break;
-	}
-
-	return status;
-}
-
-//
-// void casAsyncPVAttachIO::destroy ()
-//
 void casAsyncPVAttachIO::destroy ()
 {
     delete this;
 }
 
-//
-// deprecated
-//
 casAsyncPVCreateIO::casAsyncPVCreateIO ( const casCtx & ctx ) : 
 		casAsyncPVAttachIO ( ctx ) 
 {
 }
 
-//
-// deprecated
-//
 casAsyncPVCreateIO::~casAsyncPVCreateIO ()
 {
 }
-
-

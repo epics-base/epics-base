@@ -16,7 +16,8 @@
  *              505 665 1831
  */
 
-#include "server.h"
+#define epicsExportSharedSymbols
+#include "clientBufMemoryManager.h"
 
 bufSizeT clientBufMemoryManager::maxSize () const
 {

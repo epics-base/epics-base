@@ -17,16 +17,14 @@
 
 #include <stdarg.h>
 
-#include "server.h"
-#include "casEventSysIL.h" // inline func for casEventSys
-#include "casCtxIL.h" // inline func for casCtx
-#include "inBufIL.h" // inline func for inBuf 
-#include "outBufIL.h" // inline func for outBuf
-#include "casPVIIL.h" // inline func for casPVI 
+#include "caerr.h"
+#include "osiWireFormat.h"
 #include "db_access.h"
 
-static const caHdr nill_msg = {0u,0u,0u,0u,0u,0u};
+#define epicsExportSharedSymbols
+#include "casClient.h"
 
+static const caHdr nill_msg = {0u,0u,0u,0u,0u,0u};
 
 //
 // static declartions for class casClient
@@ -49,40 +47,6 @@ casClient::casClient ( caServerI & serverInternal,
     // static member init 
     //
     casClient::loadProtoJumpTable();
-}
-
-//
-// find the channel associated with a resource id
-//
-casChannelI * casClient::lookupChannel ( const caResId & idIn )
-{
-	//
-	// look up the id in a hash table
-	//
-	casChannelI * pChan = 
-        this->ctx.getServer()->lookupChannel ( idIn );
-
-	//
-	// update the context
-	//
-	this->ctx.setChannel ( pChan );
-	if ( ! pChan ) {
-		return NULL;
-	}
-
-	//
-	// If the channel isnt attached to this client then
-	// something has gone wrong
-	//
-	if ( &pChan->getClient() != this ) {
-		return NULL;
-	}
-
-	//
-	// update the context
-	//
-	this->ctx.setPV ( &pChan->getPVI() );
-	return pChan;
 }
 
 //
@@ -258,8 +222,8 @@ caStatus casClient::processMsg ()
                             this->dumpMsg ( & msgTmp, 0, 
                                 "The client requested transfer is greater than available " 
                                 "memory in server or EPICS_CA_MAX_ARRAY_BYTES\n" );
-                            status = this->sendErr ( & msgTmp, ECA_TOLARGE, 
-                                "request didnt fit within the CA server's message buffer" );
+                            status = this->sendErr ( & msgTmp, invalidResID, ECA_TOLARGE, 
+                                "client's request didnt fit within the CA server's message buffer" );
                             this->in.removeMsg ( bytesLeft );
                             this->incommingBytesToDrain = msgSize - bytesLeft;
                         }
@@ -303,14 +267,14 @@ caStatus casClient::processMsg ()
     }
     catch ( std::bad_alloc & ) {
         status = this->sendErr ( 
-            this->ctx.getMsg(), ECA_ALLOCMEM, 
+            this->ctx.getMsg(), invalidResID, ECA_ALLOCMEM, 
             "inablility to allocate memory in "
             "the server disconnected client" );
         status = S_cas_noMemory;
     }
     catch ( std::exception & except ) {
 		status = this->sendErr ( 
-            this->ctx.getMsg(), ECA_INTERNAL, 
+            this->ctx.getMsg(), invalidResID, ECA_INTERNAL, 
             "C++ exception \"%s\" in server "
             "diconnected client",
             except.what () );
@@ -318,7 +282,7 @@ caStatus casClient::processMsg ()
     }
     catch (...) {
 		status = this->sendErr ( 
-            this->ctx.getMsg(), ECA_INTERNAL, 
+            this->ctx.getMsg(), invalidResID, ECA_INTERNAL, 
             "unexpected C++ exception in server "
             "diconnected client" );
         status = S_cas_internal;
@@ -420,11 +384,12 @@ void casClient::sendVersion ()
         this->out.commitMsg ();
     }
 }
+
 //
 //	casClient::sendErr()
 //
-caStatus casClient::sendErr ( const caHdrLargeArray *curp, const int reportedStatus,
-    const char	*pformat, ... )
+caStatus casClient::sendErr ( const caHdrLargeArray *curp, 
+    ca_uint32_t cid, const int reportedStatus, const char *pformat, ... )
 {
 	unsigned stringSize;
 	char msgBuf[1024]; /* allocate plenty of space for the message string */
@@ -450,41 +415,6 @@ caStatus casClient::sendErr ( const caHdrLargeArray *curp, const int reportedSta
             CA_V49( this->minor_version_number ) ) {
         hdrSize += 2 * sizeof ( ca_uint32_t );
     }
-
-    ca_uint32_t cid = 0u;
-	switch ( curp->m_cmmd ) {
-	case CA_PROTO_SEARCH:
-		cid = curp->m_cid;
-		break;
-
-	case CA_PROTO_EVENT_ADD:
-	case CA_PROTO_EVENT_CANCEL:
-	case CA_PROTO_READ:
-	case CA_PROTO_READ_NOTIFY:
-	case CA_PROTO_WRITE:
-	case CA_PROTO_WRITE_NOTIFY:
-        {
-		    /*
-		    * Verify the channel
-		    */
-            casChannelI * pciu = this->lookupChannel ( curp->m_cid );
-		    if ( pciu ) {
-			    cid = pciu->getCID();
-		    }
-		    else{
-			    cid = ~0u;
-		    }
-		    break;
-        }
-
-	case CA_PROTO_EVENTS_ON:
-	case CA_PROTO_EVENTS_OFF:
-	case CA_PROTO_READ_SYNC:
-	case CA_PROTO_SNAPSHOT:
-	default:
-		cid = (caResId) ~0UL;
-		break;
-	}
 
     caHdr * pReqOut;
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -539,11 +469,11 @@ caStatus casClient::sendErr ( const caHdrLargeArray *curp, const int reportedSta
  * to a string and send that additional detail
  */
 caStatus casClient::sendErrWithEpicsStatus ( const caHdrLargeArray * pMsg, 
-	caStatus epicsStatus, caStatus clientStatus )
+	ca_uint32_t cid, caStatus epicsStatus, caStatus clientStatus )
 {
 	char buf[0x1ff];
 	errSymLookup ( epicsStatus, buf, sizeof(buf) );
-	return this->sendErr ( pMsg, clientStatus, buf );
+	return this->sendErr ( pMsg, cid, clientStatus, buf );
 }
 
 /*
@@ -567,7 +497,7 @@ caStatus casClient::logBadIdWithFileAndLineno ( const caHdrLargeArray * mp,
     }
 
 	status = this->sendErr (
-			mp, cacStatus, "Bad Resource ID=%u detected at %s.%d",
+			mp, invalidResID, cacStatus, "Bad Resource ID=%u detected at %s.%d",
 			idIn, pFileName, lineno);
 
 	return status;
@@ -581,7 +511,7 @@ caStatus casClient::logBadIdWithFileAndLineno ( const caHdrLargeArray * mp,
 //	dp arg allowed to be null
 //
 //
-void casClient::dumpMsg ( const caHdrLargeArray *mp, 
+void casClient::dumpMsg ( const caHdrLargeArray *mp,
                          const void *dp, const char *pFormat, ... )
 {
     va_list theArgs;
@@ -593,21 +523,7 @@ void casClient::dumpMsg ( const caHdrLargeArray *mp,
     }
 
     char pName[64u];
-    this->hostName (pName, sizeof (pName));
-
-    casChannelI * pciu = this->lookupChannel ( mp->m_cid );
-
-    char pPVName[64u];
-    if (pciu) {
-        strncpy(pPVName, pciu->getPVI().getName(), sizeof(pPVName));
-        if (&pciu->getClient()!=this) {
-            strncat(pPVName, "!Bad Client!", sizeof(pPVName));
-        }
-        pPVName[sizeof(pPVName)-1]='\0';
-    }
-    else {
-        sprintf(pPVName,"%u", mp->m_cid);
-    }
+    this->hostName ( pName, sizeof ( pName ) );
 
     char pUserName[32];
     this->userName ( pUserName, sizeof ( pUserName) );
@@ -615,12 +531,12 @@ void casClient::dumpMsg ( const caHdrLargeArray *mp,
     this->hostName ( pHostName, sizeof ( pHostName) );
 
     fprintf ( stderr, 
-"CAS Request: %s on %s at %s: cmd=%d cid=%s typ=%d cnt=%d psz=%d avail=%x\n",
+"CAS Request: %s on %s at %s: cmd=%u cid=%u typ=%u cnt=%u psz=%u avail=%x\n",
         pUserName,
         pHostName,
         pName,
         mp->m_cmmd,
-        pPVName,
+        mp->m_cid,
         mp->m_dataType,
         mp->m_count,
         mp->m_postsize,

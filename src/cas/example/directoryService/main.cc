@@ -13,10 +13,8 @@
 #include "directoryServer.h"
 #include "fdManager.h"
 
-#define LOCAL static
-
-LOCAL int parseDirectoryFile (const char *pFileName);
-LOCAL int parseDirectoryFP (FILE *pf, const char *pFileName);
+static int parseDirectoryFile (const char *pFileName);
+static int parseDirectoryFP (FILE *pf, const char *pFileName);
 
 #ifndef INADDR_NONE
 #define INADDR_NONE (~0ul)
@@ -109,7 +107,7 @@ extern int main (int argc, const char **argv)
 // <PV name> <host name or dotted ip address> [<optional IP port number>]
 //
 //
-LOCAL int parseDirectoryFile (const char *pFileName)
+static int parseDirectoryFile (const char *pFileName)
 {
 
     FILE *pf;
@@ -139,7 +137,7 @@ LOCAL int parseDirectoryFile (const char *pFileName)
 // <PV name> <host name or dotted ip address> [<optional IP port number>]
 //
 //
-LOCAL int parseDirectoryFP (FILE *pf, const char *pFileName)
+static int parseDirectoryFP (FILE *pf, const char *pFileName)
 {
     pvInfo *pPVI;
     char    pvNameStr[128];
@@ -193,8 +191,8 @@ LOCAL int parseDirectoryFP (FILE *pf, const char *pFileName)
             ipa.sin_port = 0u; // use the default CA server port
         }
 
-        pPVI = new pvInfo (pvNameStr, ipa);
-        if (!pPVI) {
+        pPVI = new pvInfo ( pvNameStr, ipa );
+        if ( ! pPVI ) {
             fprintf (stderr, "Unable to allocate space for a new PV in \"%s\" with PV=\"%s\" host=\"%s\"\n",
                     pFileName, pvNameStr, hostNameStr);
             return -1;

@@ -18,7 +18,9 @@
 #include <stdio.h>
 #include <limits.h>
 
-#include "server.h"
+#define epicsExportSharedSymbols
+#include "casdef.h"
+#include "casEventRegistry.h"
 
 #ifdef TEST
 main ()
@@ -63,117 +65,88 @@ main ()
 }
 #endif
 
-//
-// casEventRegistry::maskAllocator()
-//
-casEventMask casEventRegistry::maskAllocator()
+casEventMask casEventRegistry::maskAllocator ()
 {
 	casEventMask    evMask;
  
-	if (this->maskBitAllocator<CHAR_BIT*sizeof(evMask.mask)) {
-		evMask.mask = 1u<<(this->maskBitAllocator++);
+	if ( this->maskBitAllocator < CHAR_BIT * sizeof ( evMask.mask ) ) {
+		evMask.mask = 1u << ( this->maskBitAllocator++ );
 	}
 	return evMask;
 }
 
-//
-// casEventRegistry::registerEvent()
-//
-casEventMask casEventRegistry::registerEvent(const char *pName)
+casEventMask casEventRegistry::registerEvent ( const char *pName )
 {
 	//
 	// NOTE: pName outlives id here
 	// (so the refString option is ok)
 	//
-	stringId                id (pName, stringId::refString);
-	casEventMaskEntry       *pEntry;
-	casEventMask            mask;
+	stringId id ( pName, stringId::refString );
+	casEventMaskEntry * pEntry;
+	casEventMask mask;
 
-	pEntry = this->lookup (id);
+	pEntry = this->lookup ( id );
 	if (pEntry) {
 		mask = *pEntry;
 	}
 	else {
-		mask = this->maskAllocator();
-		if (mask.mask == 0u) {
-			errMessage (S_cas_tooManyEvents, NULL);
+		mask = this->maskAllocator ();
+		if ( mask.mask == 0u ) {
+			errMessage ( S_cas_tooManyEvents, NULL );
 		}
 		else {
-			pEntry = new casEventMaskEntry(*this, mask, pName);
+			pEntry = new casEventMaskEntry ( *this, mask, pName );
 			mask = *pEntry;
 		}
 	}
 	return mask;
 }
 
-//
-// casEventMask::show()
-//
-void casEventMask::show(unsigned level) const
+void casEventMask::show ( unsigned level ) const
 {
-	if (level>0u) {
-		printf ("casEventMask = %x\n", this->mask);
+	if ( level > 0u ) {
+		printf ( "casEventMask = %x\n", this->mask );
 	}
 }
 
-casEventMask::casEventMask (casEventRegistry &reg, const char *pName)
+casEventMask::casEventMask ( casEventRegistry & reg, const char * pName )
 {
-        *this = reg.registerEvent (pName);
+        *this = reg.registerEvent ( pName );
 }
 
-//
-// casEventRegistry::show()
-//
-void casEventRegistry::show(unsigned level) const
+void casEventRegistry::show ( unsigned level ) const
 {
-	if (level>1u) {
+	if ( level > 1u ) {
 		printf ("casEventRegistry: bit allocator = %d\n", 
 				this->maskBitAllocator);
 	}
-	this->resTable <casEventMaskEntry, stringId>::show(level);
+	this->resTable < casEventMaskEntry, stringId >::show ( level );
 }
 
-//
-// casEventMaskEntry::casEventMaskEntry()
-//
-casEventMaskEntry::casEventMaskEntry(
-	casEventRegistry &regIn, casEventMask maskIn, const char *pName) :
-	casEventMask (maskIn), stringId (pName), reg (regIn)
+casEventMaskEntry::casEventMaskEntry (
+	casEventRegistry & regIn, casEventMask maskIn, const char * pName ) :
+	casEventMask ( maskIn ), stringId ( pName ), reg ( regIn )
 {
 	int 	stat;
 
-	assert (this->resourceName()!=NULL);
-	stat = this->reg.add(*this);
-	assert (stat==0);
+	assert ( this->resourceName() != NULL );
+	stat = this->reg.add ( *this );
+	assert ( stat == 0 );
 }
 
-//
-// casEventMaskEntry::~casEventMaskEntry()
-//
-// empty destructor forces virtual
-//
-// (not inline so that we avoid duplication resulting 
-// in the object code created by some compilers)
-//
 casEventMaskEntry::~casEventMaskEntry()
 {
-        this->reg.remove (*this);
+        this->reg.remove ( *this );
 }
 
-//
-// casEventMaskEntry::destroy()
-//
-void casEventMaskEntry::destroy()
+void casEventMaskEntry::destroy ()
 {
 	delete this;
 }
 
-//
-// casEventMaskEntry::show()
-//
-void casEventMaskEntry::show (unsigned level) const 
+void casEventMaskEntry::show ( unsigned level ) const 
 {
-	this->casEventMask::show(level);
-	this->stringId::show(level);
+	this->casEventMask::show ( level );
+	this->stringId::show ( level );
 }
 

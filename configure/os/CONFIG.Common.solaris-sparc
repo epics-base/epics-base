@@ -26,9 +26,9 @@ POSIX_LDLIBS_YES += -lposix4 -lpthread -lthread
 POSIX_CPPFLAGS_NO =
 POSIX_LDLIBS_NO +=
 
-ARCH_DEP_CPPFLAGS = -DSOLARIS
+OP_SYS_CPPFLAGS = -DSOLARIS
 # socket and nsl needed by libca.a
-ARCH_DEP_LDLIBS += -lsocket -lnsl
+OP_SYS_LDLIBS += -lsocket -lnsl
 
 #  -R does not work unless full path names are specified
 # use loader's -R option

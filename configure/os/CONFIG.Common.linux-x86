@@ -21,10 +21,12 @@ POSIX_LDLIBS_YES = -lpthread
 POSIX_LDLIBS_NO =
 
 # -D_BSD_SOURCE for gethostname() in unistd.h as needed by cacChannelIO.cpp.
-ARCH_DEP_CPPFLAGS += -D_BSD_SOURCE
-ARCH_DEP_CPPFLAGS += -D_X86_ -Dlinux
-ARCH_DEP_LDFLAGS =
-ARCH_DEP_LDLIBS = -lreadline -lcurses -lrt
+OP_SYS_CPPFLAGS += -D_BSD_SOURCE
+OP_SYS_CPPFLAGS += -Dlinux
+OP_SYS_LDFLAGS =
+OP_SYS_LDLIBS = -lreadline -lcurses -lrt
+
+ARCH_DEP_CPPFLAGS += -D_X86_
 
 ifdef CROSS
    GNU_TARGET=i586-pc-linux-gnu

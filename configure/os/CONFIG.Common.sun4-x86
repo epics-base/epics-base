@@ -20,8 +20,10 @@ POSIX_LDLIBS_YES += -lpthread -lthread
 POSIX_CPPFLAGS_NO =
 POSIX_LDLIBS_NO +=
 
-ARCH_DEP_CPPFLAGS = -DSUNOS4
-ARCH_DEP_LDLIBS += -lsocket -lnsl
+OP_SYS_CPPFLAGS = -DSUNOS4
+OP_SYS_LDLIBS += -lsocket -lnsl
+
+ARCH_DEP_CPPFLAGS += -D_X86_
 
 ifdef CROSS
    GNU_TARGET=x86-sun-sunos4

@@ -21,10 +21,10 @@ POSIX_LDLIBS_NO +=
 ######################################################
 # +DAportable causes portable object code to be created for execution
 # on different PA-Risc machines
-ARCH_DEP_CPPFLAGS = -D_HPUX_SOURCE -DHP_UX
-ARCH_DEP_CFLAGS = +DAportable +z
-ARCH_DEP_CXXFLAGS = +DAportable +z
-ARCH_DEP_LDLIBS +=
+OP_SYS_CPPFLAGS = -D_HPUX_SOURCE -DHP_UX
+OP_SYS_CFLAGS = +DAportable +z
+OP_SYS_CXXFLAGS = +DAportable +z
+OP_SYS_LDLIBS +=
 
 SHRLIB_SUFFIX = .sl
 

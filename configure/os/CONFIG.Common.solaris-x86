@@ -26,9 +26,10 @@ POSIX_LDLIBS_YES += -lposix4 -lpthread
 POSIX_CPPFLAGS_NO =
 POSIX_LDLIBS_NO +=
 
-ARCH_DEP_CPPFLAGS = -DSOLARIS -D_X86_
+OP_SYS_CPPFLAGS = -DSOLARIS
+ARCH_DEP_CPPFLAGS = -D_X86_
 # socket and nsl needed by libca.a
-ARCH_DEP_LDLIBS += -lsocket -lnsl
+OP_SYS_LDLIBS += -lsocket -lnsl
 
 ifdef CROSS
    GNU_TARGET=x86-sun-solaris2

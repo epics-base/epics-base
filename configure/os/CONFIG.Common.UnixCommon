@@ -59,10 +59,8 @@ DEPLIB_LDLIBS = $($*_LIBS:%=-l%) $(PROD_LIBS:%=-l%) $(USR_LIBS:%=-l%)\
 
 #--------------------------------------------------
 # Operating system definitions
-OP_SYS_INCLUDES =
-OP_SYS_CPPFLAGS = -DUNIX 
-OP_SYS_LDFLAGS =
-OP_SYS_LDLIBS = -lm
+OP_SYS_CPPFLAGS += -DUNIX 
+OP_SYS_LDLIBS += -lm
 
 #--------------------------------------------------
 # Link definitions

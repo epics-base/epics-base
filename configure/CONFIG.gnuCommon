@@ -19,7 +19,8 @@ CONFORM_CFLAGS_STRICT = -ansi -pedantic
 CONFORM_CFLAGS_TRAD = -traditional
 WARN_CFLAGS_YES = -Wall
 WARN_CFLAGS_NO = -w
-OPT_CFLAGS_YES = -g -O3
+#OPT_CFLAGS_YES = -g -O3
+OPT_CFLAGS_YES = -O3
 OPT_CFLAGS_NO = -g
 
 # Template instantiation c++ flags
@@ -31,7 +32,8 @@ CONFORM_CXXFLAGS_STRICT = -ansi -pedantic
 #WARN_CXXFLAGS_YES = -Wall -Weffc++
 WARN_CXXFLAGS_YES = -Wall 
 WARN_CXXFLAGS_NO = -w
-OPT_CXXFLAGS_YES = -g -O3
+#OPT_CXXFLAGS_YES = -g -O3
+OPT_CXXFLAGS_YES = -O3
 OPT_CXXFLAGS_NO = -g
 
 STATIC_LDFLAGS_YES = -static

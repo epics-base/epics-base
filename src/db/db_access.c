@@ -1608,7 +1608,7 @@ int		no_elements
     return(0);
 }
 
-int dbPutNotifyMapType (PUTNOTIFY *ppn, short oldtype)
+epicsShareFunc int epicsShareAPI dbPutNotifyMapType (PUTNOTIFY *ppn, short oldtype)
 {
     switch(oldtype) {
     case(oldDBR_STRING):

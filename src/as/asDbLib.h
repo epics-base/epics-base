@@ -21,6 +21,9 @@ of this distribution.
 #ifndef INCdbAsLibh
 #define INCdbAsLibh
 
+#include "callback.h"
+#include "shareLib.h"
+
 typedef struct {
     CALLBACK	callback;
     long	status;

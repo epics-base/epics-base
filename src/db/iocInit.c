@@ -79,6 +79,7 @@ of this distribution.
 #include "errMdef.h"
 #include "recSup.h"
 #include "envDefs.h"
+#include "rsrv.h"
 #include "dbStaticLib.h"
 #include "initHooks.h"
 

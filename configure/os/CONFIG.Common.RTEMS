@@ -3,48 +3,39 @@
 #
 # $Id$
 # Author: W. Eric Norum
-#         Canadian Light Source
-#         eric@cls.usask.ca
+#         University of Saskatchewan
+#         eric.norum@usask.ca
+#
+#  Contains definitions common to all RTEMS targets
+#
+#  This file is maintained by the build community.
+#  Sites may override definitions in CONFIG_SITE.Common.RTEMS
+#-------------------------------------------------------
 #
 
-#
-# RTEMS tools are similar to UNIX tools
-#
--include $(CONFIG)/os/CONFIG.Common.UnixCommon 
-
-# Include common gnu compiler definitions
--include $(CONFIG)/CONFIG.gnuCommon
-
-###############################################################################
-#                                                                             #
-#           RTEMS-specific overrides of common UNIX definitions               #
-#                                                                             #
-###############################################################################
-
-#
-# Build types
-#
-VALID_BUILDS = Ioc
-
-#
-# Pick up the RTEMS tool/path definitions from the RTEMS BSP directory.
-#
-ifneq "$(T_A)" ""
+#-------------------------------------------------------
+# Where to find RTEMS
 RTEMS_BASE=/usr/local/RTEMS
+
+#-------------------------------------------------------
+# Pick up the RTEMS tool/path definitions from the RTEMS BSP directory.
 include $(RTEMS_BASE)/$(RTEMS_TARGET_CPU)-rtems/$(subst RTEMS-,,$(T_A))/Makefile.inc
 include $(RTEMS_CUSTOM)
 include $(CONFIG.CC)
-endif
 
-#
-# Override RTEMS optimization flags
-#
-CFLAGS_OPTIMIZE = 
+#-------------------------------------------------------
+# RTEMS cross-development tools
+CC = $(CC_FOR_TARGET) $(GCCSPECS) -fasm
+CCC = $(CC)
+AR = $(AR_FOR_TARGET)
 
-#
+#-------------------------------------------------------
+# Build types
+VALID_BUILDS = Ioc
+
+#--------------------------------------------------
 # The RTEMS Makefiles redefine several macros, so we have to go
 # through the following contortions to get the EPICS flags back.
-#
 CFLAGS = $(CONFORM_CFLAGS) $(CROSS_CFLAGS) $(OPT_CFLAGS) $(DEBUG_CFLAGS)\
  $(WARN_CFLAGS) $(TARGET_CFLAGS) $(USR_CFLAGS) $(ARCH_DEP_CFLAGS)\
  $(CODE_CFLAGS) $(STATIC_CFLAGS) $(OP_SYS_CFLAGS)
@@ -63,6 +54,10 @@ LDLIBS = $(TARGET_LDLIBS) $(USR_LDLIBS) $(DEPLIB_LDLIBS) $(STATIC_LDLIBS)\
 CPPFLAGS += $(CROSS_CPPFLAGS) $(POSIX_CPPFLAGS) $(EPICS_BASE_CPPFLAGS)\
  $(TARGET_CPPFLAGS) $(USR_CPPFLAGS) $(ARCH_DEP_CPPFLAGS)\
  $(OP_SYS_CPPFLAGS) $(CODE_CPPFLAGS)
+
+#--------------------------------------------------
+# Although RTEMS uses gcc, it wants to use gcc its own way
+CROSS_CPPFLAGS =
 
 #--------------------------------------------------
 # operating system class (include/os/<os_class>)
@@ -84,22 +79,17 @@ OP_SYS_LDFLAGS = $(CPU_CFLAGS) -u Init -lCom \
 CXX_EXCEPTIONS = YES
 
 #--------------------------------------------------
-# osithead use default stack, YES or NO
-OSITHREAD_USE_DEFAULT_STACK = NO
-
-#--------------------------------------------------
 # RTEMS has neither shared libraries nor dynamic loading
 STATIC_BUILD=YES
 SHARED_LIBRARIES=NO
-CODE_CPPFLAGS =
+CODE_CFLAGS =
+CODE_CXXFLAGS =
 
 #--------------------------------------------------
-# RTEMS wants nothing to do with POSIX
-POSIX_CPPFLAGS = 
-POSIX_LDLIBS = 
+# RTEMS uses the inline keyword, so get rid of pedantic warnings
+CONFORM_CFLAGS_STRICT = -ansi
+CONFORM_CXXFLAGS_STRICT = -ansi
 
 #--------------------------------------------------
-# RTEMS is not that strict
-CONFORM_CFLAGS_STRICT =
-CONFORM_CXXFLAGS_STRICT =
-
+# Allow site overrides
+-include $(CONFIG)/os/CONFIG_SITE.Common.RTEMS

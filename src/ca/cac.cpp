@@ -1568,7 +1568,7 @@ bool cac::writeNotifyExcep ( epicsGuard < callbackMutex > &, tcpiiu &,
     return true;
 }
 
-bool cac::exceptionRespAction ( epicsGuard < callbackMutex > & cbMutex, tcpiiu & iiu, 
+bool cac::exceptionRespAction ( epicsGuard < callbackMutex > & cbMutexIn, tcpiiu & iiu, 
                             const caHdrLargeArray & hdr, void * pMsgBdy )
 {
     const caHdr * pReq = reinterpret_cast < const caHdr * > ( pMsgBdy );
@@ -1605,7 +1605,7 @@ bool cac::exceptionRespAction ( epicsGuard < callbackMutex > & cbMutex, tcpiiu &
         pStub = cac::tcpExcepJumpTableCAC [req.m_cmmd];
     }
     const char *pCtx = reinterpret_cast < const char * > ( pLW );
-    return ( this->*pStub ) ( cbMutex, iiu, req, pCtx, hdr.m_available );
+    return ( this->*pStub ) ( cbMutexIn, iiu, req, pCtx, hdr.m_available );
 }
 
 bool cac::accessRightsRespAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
@@ -1670,7 +1670,7 @@ bool cac::claimCIURespAction ( epicsGuard < callbackMutex > &, tcpiiu & iiu,
 }
 
 bool cac::verifyAndDisconnectChan ( 
-              epicsGuard < callbackMutex > & cbMutex, tcpiiu & /* iiu */, 
+              epicsGuard < callbackMutex > & cbMutexIn, tcpiiu & /* iiu */, 
               const caHdrLargeArray & hdr, void * /* pMsgBdy */ )
 {
     epicsGuard < epicsMutex > autoMutex ( this->mutex );
@@ -1679,7 +1679,7 @@ bool cac::verifyAndDisconnectChan (
         return true;
     }
     assert ( this->pudpiiu );
-    this->disconnectChannelPrivate ( cbMutex, autoMutex, 
+    this->disconnectChannelPrivate ( cbMutexIn, autoMutex, 
                                     *pChan, *this->pudpiiu );
     this->pSearchTmr->resetPeriod ( 0.0 );
     return true;
@@ -1892,7 +1892,7 @@ void cac::uninstallIIU ( tcpiiu & iiu )
     this->privateUninstallIIU ( cbGuard, iiu );
 }
 
-void cac::privateUninstallIIU ( epicsGuard < callbackMutex > & cbMutex, tcpiiu & iiu )
+void cac::privateUninstallIIU ( epicsGuard < callbackMutex > & cbMutexIn, tcpiiu & iiu )
 {
     epicsGuard < epicsMutex > autoMutexCAC ( this->mutex );
     if ( iiu.channelCount() ) {
@@ -1914,7 +1914,7 @@ void cac::privateUninstallIIU ( epicsGuard < callbackMutex > & cbMutex, tcpiiu &
     this->serverTable.remove ( iiu );
 
     assert ( this->pudpiiu );
-    this->removeAllChan ( cbMutex, autoMutexCAC, iiu, *this->pudpiiu );
+    this->removeAllChan ( cbMutexIn, autoMutexCAC, iiu, *this->pudpiiu );
 
     delete &iiu;
 

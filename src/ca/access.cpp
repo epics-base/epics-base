@@ -37,8 +37,7 @@ epicsThreadPrivateId caClientContextId;
 
 static epicsThreadOnceId caClientContextIdOnce = EPICS_THREAD_ONCE_INIT;
 
-// extern "C"
-void ca_client_exit_handler ()
+extern "C" void ca_client_exit_handler ()
 {
     if ( caClientContextId ) {
         epicsThreadPrivateDelete ( caClientContextId );
@@ -47,8 +46,7 @@ void ca_client_exit_handler ()
 }
 
 // runs once only for each process
-// extern "C"
-void ca_init_client_context ( void * )
+extern "C" void ca_init_client_context ( void * )
 {
     caClientContextId = epicsThreadPrivateCreate ();
     if ( caClientContextId ) {

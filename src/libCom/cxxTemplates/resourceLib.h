@@ -510,19 +510,19 @@ void resTable<T,ID>::setTableSize ( const unsigned newTableSize )
 }
 
 template <class T, class ID>
-bool resTable<T,ID>::setTableSizePrivate ( unsigned logBaseTwoTableSize )
+bool resTable<T,ID>::setTableSizePrivate ( unsigned logBaseTwoTableSizeIn )
 {
     // dont shrink
-    if ( this->logBaseTwoTableSize >= logBaseTwoTableSize ) {
+    if ( this->logBaseTwoTableSize >= logBaseTwoTableSizeIn ) {
         return true;
     }
 
     // dont allow ridiculously small tables
-    if ( logBaseTwoTableSize < 4 ) {
-        logBaseTwoTableSize = 4;
+    if ( logBaseTwoTableSizeIn < 4 ) {
+        logBaseTwoTableSizeIn = 4;
     }
 
-    const unsigned newTableSize = 1 << logBaseTwoTableSize;
+    const unsigned newTableSize = 1 << logBaseTwoTableSizeIn;
 #   if ! defined (__GNUC__) || __GNUC__ > 2 || ( __GNUC__ == 2 && __GNUC_MINOR__ >= 92 )
         const unsigned oldTableSize = this->pTable ? 1 << this->logBaseTwoTableSize : 0;
 #   endif
@@ -555,15 +555,15 @@ bool resTable<T,ID>::setTableSizePrivate ( unsigned logBaseTwoTableSize )
 #   endif
 
     if ( ! this->pTable ) {
-        this->hashIxSplitMask = resTableBitMask ( logBaseTwoTableSize );
-        this->nBitsHashIxSplitMask = logBaseTwoTableSize;
+        this->hashIxSplitMask = resTableBitMask ( logBaseTwoTableSizeIn );
+        this->nBitsHashIxSplitMask = logBaseTwoTableSizeIn;
         this->hashIxMask = this->hashIxSplitMask >> 1;
         this->nextSplitIndex = 0;
     }
 
     operator delete ( this->pTable );
     this->pTable = pNewTable;
-    this->logBaseTwoTableSize = logBaseTwoTableSize;
+    this->logBaseTwoTableSize = logBaseTwoTableSizeIn;
 
     return true;
 }

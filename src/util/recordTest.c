@@ -30,6 +30,7 @@
  * Modification Log:
  * -----------------
  * .01	02-10-92	jba	initial version
+ * .02	09-14-93	jba	modified includes and  fixed strcmp
  *
 Need to do:
 
@@ -42,13 +43,12 @@ Need to do:
 
 #ifdef vxWorks
 #include        <vxWorks.h>
-#include        <stdioLib.h>
-#else
-#include        <stdio.h>
 #endif
 
-#include        <cadef.h>
+#include        <stdlib.h>
+#include        <stdio.h>
 #include        <string.h>
+#include        <cadef.h>
 
 #ifndef ERROR
 #define ERROR -1
@@ -328,7 +328,7 @@ char verify[];
 		}
 	
 		/* compare channel value with value */
-		status=strcmp(value,valueChan);
+		status=strcmp(value,&valueChan[0][0]);
 		if (status) {
 			sprintf(errmsg,"strcmp failed: valueChan=%s",valueChan);
 			return	ERROR;

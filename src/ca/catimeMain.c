@@ -3,23 +3,31 @@
 
 #include "caDiagnostics.h"
 
+static const unsigned defaultIterations = 10000u;
+
 int main(int argc, char **argv)
 {
-    char    *pname;
+    const char *pUsage = "<channel name> [<channel count> [<if 2nd arg present append number to pv name>]]";
 
-    if(argc <= 1 || argc>3){
-printf("usage: %s <channel name> [<if 2nd arg present append number to pv name>]\n", 
-    argv[0]);
-        return -1;
-    }
-    else{
-        pname = argv[1];    
-        if (argc==3) {
-            catime(pname, appendNumber);
+    if ( argc > 1 ) {
+        char *pname = argv[1];
+        if ( argc > 2 ) {
+            int  iterations = atoi (argv[2]);
+            if ( iterations > 0) {
+                if ( argc > 3 ) {
+                    if ( argc == 4 ) {
+                        return catime ( pname, (unsigned) iterations, appendNumber );
+                    }
+                }
+                else {
+                    return catime ( pname, (unsigned) iterations, dontAppendNumber );
+                }
+            }
         }
         else {
-            catime(pname, dontAppendNumber);
+            return catime ( pname, defaultIterations, dontAppendNumber );
         }
     }
-    return 0;
+    printf ( "usage: %s %s\n", argv[0], pUsage);
+    return -1;
 }

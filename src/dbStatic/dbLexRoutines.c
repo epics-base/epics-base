@@ -223,17 +223,18 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     freeListInitPvt(&freeListPvt,sizeof(tempListNode),100);
     pinputFile = dbCalloc(1,sizeof(inputFile));
     if(filename) {
-	pinputFile->filename = epicsStrDup(filename);
+	pinputFile->filename = macEnvExpand(filename);
     }
     if(!fp) {
 	FILE	*fp;
 
-	if(filename) pinputFile->path = dbOpenFile(pdbbase,filename,&fp);
-	if(!filename || !fp) {
+	if(pinputFile->filename) pinputFile->path = dbOpenFile(pdbbase,pinputFile->filename,&fp);
+	if(!pinputFile->filename || !fp) {
 	    errPrintf(0,__FILE__, __LINE__,
-		"dbRead opening file %s",filename);
+		"dbRead opening file %s",pinputFile->filename);
 	    free((void *)my_buffer);
 	    freeListCleanup(freeListPvt);
+	    free((void *)pinputFile->filename);
 	    free((void *)pinputFile);
 	    return(-1);
 	}
@@ -375,15 +376,16 @@ static void dbIncludeNew(char *filename)
     FILE	*fp;
 
     pinputFile = dbCalloc(1,sizeof(inputFile));
-    pinputFile->path = dbOpenFile(pdbbase,filename,&fp);
+    pinputFile->filename = macEnvExpand(filename);
+    pinputFile->path = dbOpenFile(pdbbase,pinputFile->filename,&fp);
     if(!fp) {
 	errPrintf(0,__FILE__, __LINE__,
 		"dbIncludeNew opening file %s",filename);
 	yyerror(NULL);
+	free((void *)pinputFile->filename);
 	free((void *)pinputFile);
 	return;
     }
-    pinputFile->filename = epicsStrDup(filename);
     pinputFile->fp = fp;
     ellAdd(&inputFileList,&pinputFile->node);
     pinputFileNow = pinputFile;

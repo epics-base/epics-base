@@ -10,32 +10,47 @@
 
 <h1>
 EPICS Release base 3.14.0alpha1</h1>
-This is the first release of 3.14. The primary purpose of this release
-is supporting iocCore on platforms besides vxWorks.
+This is the first release of 3.14. This is the first release that supports
+iocCore on platforms besides vxWorks.
 <p>iocCore is now supported on the following platforms:
 <ul>
 <li>
-vxWorks - The intention is to provide an easy migration path for existing
-applications</li>
+vxWorks</li>
 
+<br>Tornado II is required.
 <li>
-RTEMS - This is an open source real time operating system.</li>
+RTEMS</li>
 
+<br>An open source real time operating system. It has been tested on MVME167
+and MC68360 processors. RTEMS also supports powerPC.
 <li>
-solaris - It has been tested on solaris 2.6 and solaris 8.</li>
+solaris</li>
 
+<br>Has been tested on solaris 2.6 and solaris 8.
 <li>
-Linux&nbsp; - It has been tested on ?</li>
+Linux</li>
 
+<br>Has been tested on Redhat x86 platforms.
 <li>
 winNT</li>
 </ul>
-A new version of the Application Developers Guide is available. See
+A new version of the Application Developers Guide is available. The following
+gives links to the new Application Developer's Guide and to RTEMS information.
 <p>http://www.aps.anl.gov/epics/modules/base/R3-14.php
-<p>This page has links for the App Dev Guide and also a link to learn more
-about RTEMS. In the Application Developer's Guide read Chapter 2, which
-describes the new eatures for 3.14.
-<p>It must be emphasized that this is an alpha release.
+<p>Most of the Application Developer's Guide has only minor changes. The
+following are new.
+<ul>
+<li>
+Chapter 2 describes the new features for 3.14.</li>
+
+<li>
+Chapter 4 describes the build facility for 3.14</li>
+
+<li>
+Chapters 19 and 20 describe libCom, which was not previously documented.</li>
+</ul>
+
+<p><br>It must be emphasized that this is an alpha release.
 <ul>
 <li>
 Please don't use it for existing operational systems</li>
@@ -48,7 +63,19 @@ The APIs for new components in libCom are still evolving so if you use
 them be prepared for changes.</li>
 
 <li>
-HPUX - No support currently because we could not find support for multithreading.</li>
+HPUX - No support currently because we could not find good support for
+multithreading.</li>
+</ul>
+Building Applications
+<ul>
+<li>
+For new applications see Chapters 2 (New Features) and Chapter 4 (Build
+Facility) of the Application Developer's Guide.</li>
+
+<li>
+For existing applications the old config rules are still supported. Some
+changes, however, are needed. Documentation is being prepared and will
+appear in these release notes sooon.</li>
 </ul>
 
 </body>

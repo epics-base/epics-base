@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.14  1996/09/07 13:03:05  jbk
+ * fixes to destroyData function
+ *
  * Revision 1.13  1996/09/04 22:47:09  jhill
  * allow vxWorks 5.1 and gnu win 32
  *
@@ -978,49 +981,81 @@ inline gddStatus gdd::put(aitType* d) {
 
 // ---------------------get(pointer) functions--------------------------
 inline void gdd::get(void* d) {
-	aitConvert(primitiveType(),d,primitiveType(),dataPointer(),
-		getDataSizeElements());
+	if(isScalar())
+		aitConvert(primitiveType(),d,primitiveType(),dataAddress(),1);
+	else
+		aitConvert(primitiveType(),d,primitiveType(),dataPointer(),
+			getDataSizeElements());
 }
 inline void gdd::get(void* d,aitEnum e) {
-	aitConvert(e,d,primitiveType(),dataPointer(),
-		getDataSizeElements());
+	if(isScalar())
+		aitConvert(e,d,primitiveType(),dataAddress(),1);
+	else
+		aitConvert(e,d,primitiveType(),dataPointer(),getDataSizeElements());
 }
 inline void gdd::get(aitFloat64* d)
 {
-	aitConvert(aitEnumFloat64,d,primitiveType(),dataPointer(),
-		getDataSizeElements());
+	if(isScalar())
+		aitConvert(aitEnumFloat64,d,primitiveType(),dataAddress(),1);
+	else
+		aitConvert(aitEnumFloat64,d,primitiveType(),dataPointer(),
+			getDataSizeElements());
 }
 inline void gdd::get(aitFloat32* d) {
-	aitConvert(aitEnumFloat32,d,primitiveType(),dataPointer(),
-		getDataSizeElements());
+	if(isScalar())
+		aitConvert(aitEnumFloat32,d,primitiveType(),dataAddress(),1);
+	else
+		aitConvert(aitEnumFloat32,d,primitiveType(),dataPointer(),
+			getDataSizeElements());
 }
 inline void gdd::get(aitUint32* d) {
-	aitConvert(aitEnumUint32,d,primitiveType(),dataPointer(),
-		getDataSizeElements());
+	if(isScalar())
+		aitConvert(aitEnumUint32,d,primitiveType(),dataAddress(),1);
+	else
+		aitConvert(aitEnumUint32,d,primitiveType(),dataPointer(),
+			getDataSizeElements());
 }
 inline void gdd::get(aitInt32* d) {
-	aitConvert(aitEnumInt32,d,primitiveType(),dataPointer(),
-		getDataSizeElements());
+	if(isScalar())
+		aitConvert(aitEnumInt32,d,primitiveType(),dataAddress(),1);
+	else
+		aitConvert(aitEnumInt32,d,primitiveType(),dataPointer(),
+			getDataSizeElements());
 }
 inline void gdd::get(aitUint16* d) {
-	aitConvert(aitEnumUint16,d,primitiveType(),dataPointer(),
-		getDataSizeElements());
+	if(isScalar())
+		aitConvert(aitEnumUint16,d,primitiveType(),dataAddress(),1);
+	else
+		aitConvert(aitEnumUint16,d,primitiveType(),dataPointer(),
+			getDataSizeElements());
 }
 inline void gdd::get(aitInt16* d) {
-	aitConvert(aitEnumInt16,d,primitiveType(),dataPointer(),
-		getDataSizeElements());
+	if(isScalar())
+		aitConvert(aitEnumInt16,d,primitiveType(),dataAddress(),1);
+	else
+		aitConvert(aitEnumInt16,d,primitiveType(),dataPointer(),
+			getDataSizeElements());
 }
 inline void gdd::get(aitUint8* d) {
-	aitConvert(aitEnumUint8,d,primitiveType(),dataPointer(),
-		getDataSizeElements());
+	if(isScalar())
+		aitConvert(aitEnumUint8,d,primitiveType(),dataAddress(),1);
+	else
+		aitConvert(aitEnumUint8,d,primitiveType(),dataPointer(),
+			getDataSizeElements());
 }
 inline void gdd::get(aitString* d) {
-	aitConvert(aitEnumString,d,primitiveType(),dataPointer(),
-		getDataSizeElements());
+	if(isScalar())
+		aitConvert(aitEnumString,d,primitiveType(),dataAddress(),1);
+	else
+		aitConvert(aitEnumString,d,primitiveType(),dataPointer(),
+			getDataSizeElements());
 }
 inline void gdd::get(aitFixedString* d) {
-	aitConvert(aitEnumFixedString,d,primitiveType(),dataPointer(),
-		getDataSizeElements());
+	if(isScalar())
+		aitConvert(aitEnumFixedString,d,primitiveType(),dataAddress(),1);
+	else
+		aitConvert(aitEnumFixedString,d,primitiveType(),dataPointer(),
+			getDataSizeElements());
 }
 
 // special case for string scalar to aitInt8 array!

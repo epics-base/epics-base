@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.13  1996/08/23 20:29:35  jbk
+// completed fixes for the aitString and fixed string management
+//
 // Revision 1.12  1996/08/22 21:05:43  jbk
 // More fixes to make strings and fixed string work better.
 //
@@ -113,7 +116,7 @@ gddDbrToAitTable gddDbrToAit[] = {
 	{ aitEnumInt32,		0,	"value" },
 	{ aitEnumFloat64,	0,	"value" },
 	// Graphic
-	{ aitEnumFixedString,	0,	"dbr_gr_string" },
+	{ aitEnumFixedString,	0,	"value" },
 	{ aitEnumInt16,		0,	"dbr_gr_short" },
 	{ aitEnumFloat32,	0,	"dbr_gr_float" },
 	{ aitEnumEnum16,	0,	"dbr_gr_enum" },
@@ -121,7 +124,7 @@ gddDbrToAitTable gddDbrToAit[] = {
 	{ aitEnumInt32,		0,	"dbr_gr_long" },
 	{ aitEnumFloat64,	0,	"dbr_gr_double" },
 	// control
-	{ aitEnumFixedString,	0,	"dbr_ctrl_string" },
+	{ aitEnumFixedString,	0,	"value" },
 	{ aitEnumInt16,		0,	"dbr_ctrl_short" },
 	{ aitEnumFloat32,	0,	"dbr_ctrl_float" },
 	{ aitEnumEnum16,	0,	"dbr_ctrl_enum" },
@@ -169,7 +172,7 @@ static int mapGddToString(void* v, gdd* dd) {
 		dbx=(aitFixedString*)dd->dataPointer();
 
 	int len = dd->getDataSizeElements();
-	if(dbx!=db) dd->get(db);
+	if(dbx!=db) dd->get(*db);
 	return len;
 }
 
@@ -380,7 +383,7 @@ static int mapStsGddToString(void* v, gdd* dd)
 		dbx=(aitFixedString*)dd->dataPointer();
 
 	// copy string into user buffer for now if not the same as one in gdd
-	if(dbx!=dbv) dd->get(dbv);
+	if(dbx!=dbv) dd->get(*dbv);
 	dd->getStatSevr(db->status,db->severity);
 	return dd->getDataSizeElements();
 }
@@ -521,7 +524,7 @@ static int mapTimeGddToString(void* v, gdd* dd)
 	else
 		dbx=(aitFixedString*)dd->dataPointer();
 
-	if(dbv!=dbx) dd->get(dbv);
+	if(dbv!=dbx) dd->get(*dbv);
 
 	dd->getStatSevr(db->status,db->severity);
 	dd->getTimeStamp((aitTimeStamp*)&db->stamp);

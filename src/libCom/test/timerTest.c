@@ -45,11 +45,11 @@ void timerTest(void)
     timerQueue = osiTimerQueueCreate(threadPriorityLow);
     for(i=0; i<ntimers ; i++) {
         timer[i] = calloc(1,sizeof(myPvt));
-        timer[i]->timer = osiTimerCreate(&jumpTable,(void *)timer[i]);
+        timer[i]->timer = osiTimerCreate(&jumpTable,timerQueue,(void *)timer[i]);
         tsStampGetCurrent(&start);
         timer[i]->start = start;
         timer[i]->requestedDiff = (double)i;
-        osiTimerArm(timer[i]->timer,timerQueue,(double)i);
+        osiTimerArm(timer[i]->timer,(double)i);
     }
     threadSleep((double)(ntimers + 2));
     printf("timerTest returning\n");

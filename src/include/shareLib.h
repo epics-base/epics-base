@@ -65,7 +65,13 @@
 #undef epicsShareAPIV
 #undef READONLY
 
-#if defined(_WIN32)
+/*
+ * if its WIN32 and it isnt the Cygnus GNU environment
+ * (I am assuming Borlund and other MS Vis C++ competitors
+ * support these MS VisC++ defacto standard keywords???? If not
+ * then we should just switch on defined(_MSC_VER) here)
+ */
+#if defined(_WIN32) && !defined(__CYGWIN32__)
 
 #	if defined(epicsExportSharedSymbols)
 #		define epicsShareExtern extern __declspec(dllexport)
@@ -90,7 +96,9 @@
 #	define epicsShareAPIV __cdecl
 #	define epicsShareDef __declspec(dllexport)
 #	define READONLY const
-
+/*
+ * if its the old VAX C Compiler (not DEC C)
+ */
 #elif defined(VAXC)
 
 	/* 

@@ -10,10 +10,6 @@ include $(TOP)/config/CONFIG_BASE
 
 USR_INCLUDES = -I$(SRC) -I$(CAS)/../ca -I$(OSSRC) -I$(IOSRC) -I$(CAS)/../gdd  -I$(CAS)/../gdd/O.$(T_A)
 
-USR_LDLIBS = 
-USR_LDFLAGS = 
-USR_CCFLAGS =  
-
 DEPLIBS_BASE = $(EPICS_BASE_LIB)
 
 #CPLUSPLUS = G++

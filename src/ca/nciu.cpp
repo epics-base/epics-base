@@ -47,10 +47,7 @@ nciu::nciu ( cac & cacIn, netiiu & iiuIn, cacChannelNotify & chanIn,
     typeCode ( USHRT_MAX ),
     priority ( static_cast <ca_uint8_t> ( pri ) ),
     f_connected ( false ),
-    f_previousConn ( false ),
-    f_claimSent ( false ),
-    f_firstConnectDecrementsOutstandingIO ( false ),
-    f_connectTimeOutSeen ( false )
+    f_claimSent ( false )
 {
 	size_t nameLengthTmp = strlen ( pNameIn ) + 1;
 
@@ -73,12 +70,6 @@ nciu::~nciu ()
 {
     // care is taken so that a lock is not applied during this phase
     this->cacCtx.uninstallChannel ( *this );
-
-    if ( ! this->f_connectTimeOutSeen && ! this->f_previousConn ) {
-        if ( this->f_firstConnectDecrementsOutstandingIO ) {
-            this->cacCtx.decrementOutstandingIO ();
-        }
-    }
 
     delete [] this->pNameStr;
 }
@@ -112,17 +103,10 @@ void nciu::connect ( unsigned nativeType,
         return;
     }
 
-    if ( ! this->f_connectTimeOutSeen && ! this->f_previousConn ) {
-        if ( this->f_firstConnectDecrementsOutstandingIO ) {
-            this->cacCtx.decrementOutstandingIO ();
-        }
-    }
-
     this->typeCode = static_cast < unsigned short > ( nativeType );
     this->count = nativeCount;
     this->sid = sidIn;
     this->f_connected = true;
-    this->f_previousConn = true;
 
     /*
      * if less than v4.1 then the server will never
@@ -328,7 +312,6 @@ void nciu::hostName ( char *pBuf, unsigned bufLength ) const
 // deprecated - please do not use, this is _not_ thread safe
 const char * nciu::pHostName () const
 {
-    epicsGuard < cacMutex > locker ( this->cacCtx.mutexRef() );
     return this->piiu->pHostName (); // ouch !
 }
 
@@ -387,26 +370,6 @@ double nciu::beaconPeriod () const
     return this->cacCtx.beaconPeriod ( *this );
 }
 
-void nciu::notifyStateChangeFirstConnectInCountOfOutstandingIO ()
-{
-    epicsGuard < cacMutex > locker ( this->cacCtx.mutexRef() );
-    // test is performed via a callback so that locking is correct
-    if ( ! this->f_connectTimeOutSeen && ! this->f_previousConn ) {
-        if ( this->notify ().includeFirstConnectInCountOfOutstandingIO () ) { 
-            if ( ! this->f_firstConnectDecrementsOutstandingIO ) {
-                this->cacCtx.incrementOutstandingIO ();
-                this->f_firstConnectDecrementsOutstandingIO = true;
-            }
-        }
-        else {
-            if ( this->f_firstConnectDecrementsOutstandingIO ) {
-                this->cacCtx.decrementOutstandingIO ();
-                this->f_firstConnectDecrementsOutstandingIO = false;
-            }
-        }
-    }
-}
-
 void nciu::show ( unsigned level ) const
 {
     epicsGuard < cacMutex > locker ( this->cacCtx.mutexRef() );
@@ -425,11 +388,8 @@ void nciu::show ( unsigned level ) const
         }
         ::printf ( "\n" );
     }
-    else if ( this->f_previousConn ) {
-        ::printf ( "Channel \"%s\" (previously connected to a server)\n", this->pNameStr );
-    }
     else {
-        ::printf ( "Channel \"%s\" (unable to locate server)\n", this->pNameStr );
+        ::printf ( "Channel \"%s\" is disconnected\n", this->pNameStr );
     }
 
     if ( level > 2u ) {

@@ -85,17 +85,14 @@ public:
     void searchReplySetUp ( netiiu &iiu, unsigned sidIn, 
         ca_uint16_t typeIn, arrayElementCount countIn );
     void show ( unsigned level ) const;
-    void connectTimeoutNotify ();
     const char *pName () const;
     unsigned nameLen () const;
     const char * pHostName () const; // deprecated - please do not use
     arrayElementCount nativeElementCount () const;
     bool connected () const;
-    bool previouslyConnected () const;
     void writeException ( epicsGuard < callbackMutex > &,
         int status, const char *pContext, unsigned type, arrayElementCount count );
     cacChannel::priLev getPriority () const;
-    void notifyStateChangeFirstConnectInCountOfOutstandingIO ();
 private:
     caAccessRights accessRightState;
     cac & cacCtx;
@@ -109,10 +106,7 @@ private:
     ca_uint16_t typeCode;
     ca_uint8_t priority; 
     bool f_connected:1;
-    bool f_previousConn:1; // T if connected in the past
     bool f_claimSent:1;
-    bool f_firstConnectDecrementsOutstandingIO:1;
-    bool f_connectTimeOutSeen:1;
     void initiateConnect ();
     ioStatus read ( unsigned type, arrayElementCount count, 
         cacReadNotify &, ioid * );
@@ -196,16 +190,10 @@ inline bool nciu::connected () const
     return this->f_connected;
 }
 
-inline bool nciu::previouslyConnected () const
-{
-    return this->f_previousConn;
-}
-
 inline netiiu * nciu::getPIIU ()
 {
     return this->piiu;
 }
-
 
 inline void nciu::writeException ( epicsGuard < callbackMutex > &, int status,
     const char *pContext, unsigned typeIn, arrayElementCount countIn )
@@ -236,11 +224,6 @@ inline const netiiu * nciu::getConstPIIU () const
 inline cac & nciu::getClient ()
 {
     return this->cacCtx;
-}
-
-inline void nciu::connectTimeoutNotify ()
-{
-    this->f_connectTimeOutSeen = true;
 }
 
 inline cacChannel::priLev nciu::getPriority () const

@@ -29,11 +29,12 @@ AR = ar -rc
 ARFLAGS =
 RANLIB = ranlib -t
 
+# -D_BSD_SOURCE for gethostname() in unistd.h as needed by cacChannelIO.cpp.
 ARCH_DEP_CPPFLAGS += -D_BSD_SOURCE
+# IOCSH_USE_READLINE needed by iocsh/ioccrf.c
 ARCH_DEP_CPPFLAGS += -DIOCSH_USE_READLINE
 ARCH_DEP_CPPFLAGS += -D_X86_ -Dlinux
 
 ARCH_DEP_LDFLAGS =
-###ARCH_DEP_LDLIBS = -ldl -lpthread
 ARCH_DEP_LDLIBS = -lpthread -lreadline
 

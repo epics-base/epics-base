@@ -263,7 +263,7 @@ inline tsSLIter<T>::tsSLIter (const tsSLList<T> &listIn) :
 // tsSLNode<T> is always a base class of a T.
 //
 template <class T>
-T * tsSLIter<T>::next () 
+inline T * tsSLIter<T>::next () 
 {
 	if (this->pCurrent!=0) {
 		tsSLNode<T> *pCurNode = this->pCurrent;
@@ -327,7 +327,7 @@ inline tsSLIterRm<T>::tsSLIterRm (tsSLList<T> &listIn) :
 // tsSLNode<T> is always a base class of a T.
 //
 template <class T>
-T * tsSLIterRm<T>::next () 
+inline T * tsSLIterRm<T>::next () 
 {
 	if (this->pCurrent!=0) {
 		tsSLNode<T> *pCurNode = this->pCurrent;

@@ -74,22 +74,38 @@ int rsrv_online_notify_task()
 {
 	ELLLIST			destAddr;
 	caAddrNode		*pNode;
-	/*
-	 * 1 sec init delay
-	 */
-  	unsigned long		delay = sysClkRateGet();
-	/*
-	 * CA_ONLINE_DELAY max delay in ticks
-	 */
-  	unsigned long		maxdelay = CA_ONLINE_DELAY;
+  	unsigned long		delay;
+	unsigned long		maxdelay;
+	long			longStatus;
+	double			maxPeriod;
 	struct extmsg		msg;
-
   	struct sockaddr_in	recv_addr;
 	int			status;
 	int			sock;
   	int			true = TRUE;
+	short			port;
 
 	taskwdInsert(taskIdSelf(),NULL,NULL);
+
+	longStatus = envGetDoubleConfigParam (
+				&EPICS_CA_BEACON_PERIOD,
+				&maxPeriod);
+	if (longStatus) {
+		maxPeriod = 15.0;
+		ca_printf (
+			"EPICS \"%s\" float fetch failed\n",
+			EPICS_CA_BEACON_PERIOD.name);
+		ca_printf (
+			"Setting \"%s\" = %f\n",
+			EPICS_CA_BEACON_PERIOD.name,
+			maxPeriod);
+	}
+
+	/*
+	 * 1 sec init delay between beacons
+	 */
+	delay = sysClkRateGet();
+	maxdelay = max(maxPeriod*sysClkRateGet(),sysClkRateGet());
 
   	/* 
   	 *  Open the socket.
@@ -128,13 +144,13 @@ int rsrv_online_notify_task()
 	msg.m_cmmd = htons(IOC_RSRV_IS_UP);
 
 	ellInit(&destAddr);
-	caDiscoverInterfaces(&destAddr, sock, CA_CLIENT_PORT);
 
-	caAddConfiguredAddr(
-		&destAddr,
-		&EPICS_CA_ADDR_LIST,
-		sock,
-		CA_CLIENT_PORT);
+	/*
+	 * load user and auto configured
+	 * broadcast address list
+	 */
+	port = caFetchPortConfig(&EPICS_CA_REPEATER_PORT, CA_REPEATER_PORT);
+	caSetupBCastAddrList (&destAddr, sock, port);
 
 #	ifdef DEBUG
 		caPrintAddrList(&destAddr);

@@ -79,6 +79,7 @@ static char	*sccsId = "@(#)cast_server.c	1.24 5/6/94";
 #include <taskwd.h>
 #include <db_access.h>
 #include <task_params.h>
+#include <envDefs.h>
 #include <server.h>
 
 	
@@ -100,8 +101,11 @@ int cast_server(void)
 	struct sockaddr_in		new_recv_addr;
   	int  				recv_addr_size;
   	unsigned			nchars;
+	short				port;
 
 	taskwdInsert((int)taskIdCurrent,NULL,NULL);
+
+	port = caFetchPortConfig(&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
 
   	recv_addr_size = sizeof(new_recv_addr);
 
@@ -137,8 +141,7 @@ int cast_server(void)
   	bfill((char *)&sin, sizeof(sin), 0);
   	sin.sin_family = AF_INET;
   	sin.sin_addr.s_addr = INADDR_ANY;
-  	sin.sin_port = CA_SERVER_PORT;
-
+  	sin.sin_port = htons(port);
 	
   	/* get server's Internet address */
   	if( bind(IOC_cast_sock, (struct sockaddr *)&sin, sizeof (sin)) == ERROR){

@@ -66,6 +66,7 @@ static char *sccsId = "@(#)caservertask.c	1.22 5/6/94";
 #include <taskwd.h>
 #include <db_access.h>
 #include <task_params.h>
+#include <envDefs.h>
 #include <server.h>
 
 LOCAL int terminate_one_client(struct client *client);
@@ -88,6 +89,11 @@ int req_server(void)
 	struct sockaddr_in 	serverAddr;	/* server's address */
 	int        		status;
 	int			i;
+	short			port;
+
+        taskwdInsert((int)taskIdCurrent,NULL,NULL);
+
+	port = caFetchPortConfig(&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
 
 	if (IOC_sock != 0 && IOC_sock != ERROR)
 		if ((status = close(IOC_sock)) == ERROR)
@@ -113,13 +119,11 @@ int req_server(void)
 			NULL);
 		taskSuspend(0);
 	}
-	
-        taskwdInsert((int)taskIdCurrent,NULL,NULL);
 
 	/* Zero the sock_addr structure */
 	bfill((char *)&serverAddr, sizeof(serverAddr), 0);
 	serverAddr.sin_family = AF_INET;
-	serverAddr.sin_port = CA_SERVER_PORT;
+	serverAddr.sin_port = htons(port);
 
 	/* get server's Internet address */
 	if (bind(IOC_sock, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == ERROR) {

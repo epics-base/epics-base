@@ -41,6 +41,7 @@ ca_RCS_WIN32 = ca.rc
 LIBTYPE := SHARED
 
 PROD := caRepeater
+caRepeater_SRCS=caRepeater.c
 
 #	libs needed to build [TEST]PRODUCT
 PROD_LIBS := ca Com

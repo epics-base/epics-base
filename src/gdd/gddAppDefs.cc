@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.9  1997/08/05 00:51:13  jhill
+// fixed problems in aitString and the conversion matrix
+//
 // Revision 1.8  1997/04/23 17:13:00  jhill
 // fixed export of symbols from WIN32 DLL
 //
@@ -78,8 +81,7 @@ void gddApplicationTypeTable::GenerateTypes(void)
 	// not really required attributes - they are contained in DDs
 	registerApplicationType(GDD_NAME_STATUS);
 	registerApplicationType(GDD_NAME_SEVERITY);
-	registerApplicationType(GDD_NAME_SECONDS);
-	registerApplicationType(GDD_NAME_NANOSECONDS);
+	registerApplicationType(GDD_NAME_TIME_STAMP);
 	registerApplicationType(GDD_NAME_PV_NAME);
 
 	// required attributes

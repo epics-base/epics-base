@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.6  1999/04/30 15:24:53  jhill
+ * fixed improper container index bug
+ *
  * Revision 1.5  1997/04/23 17:13:02  jhill
  * fixed export of symbols from WIN32 DLL
  *
@@ -59,8 +62,7 @@
 #define GDD_NAME_MENUITEM			"menuitem"
 #define GDD_NAME_STATUS				"status"
 #define GDD_NAME_SEVERITY			"severity"
-#define GDD_NAME_SECONDS			"seconds"
-#define GDD_NAME_NANOSECONDS		"nanoseconds"
+#define GDD_NAME_TIME_STAMP			"timeStamp"
 #define GDD_NAME_ALL				"all"
 #define GDD_NAME_ATTRIBUTES			"attributes"
 #define GDD_NAME_PV_NAME		"name"

@@ -106,7 +106,8 @@ static long read_wf(pwf)
     nRequest=pwf->nelm;
     status = recGblGetLinkValue(&(pwf->inp),(void *)pwf,pwf->ftvl,pwf->bptr,
               &options,&nRequest);
-    pwf->nord = nRequest;
+    /*If recGblGetLinkValue got no values leave things as they were*/
+    if(nRequest>0) pwf->nord = nRequest;
 
     return(0);
 }

@@ -43,7 +43,6 @@ static char	*sccsId = "@(#) $Id$";
  * also called by the server. All locks required are applied at
  * a higher level.
  */
-#define DEBUG
 #ifdef DEBUG
 #   define ifDepenDebugPrintf(argsInParen) printf argsInParen
 #else
@@ -194,6 +193,13 @@ epicsShareFunc void epicsShareAPI caDiscoverInterfaces
         }
         else {
             errlogPrintf ( "osiSockDiscoverInterfaces(): net intf \"%s\": not pt to pt or bcast?\n", pifreq->ifr_name );
+            free ( pNewNode );
+            continue;
+        }
+
+        status = socket_ioctl (socket, SIOCGIFADDR, pifreq);
+        if ( status ) {
+            errlogPrintf ("osiSockDiscoverInterfaces(): net intf \"%s\": if addr fetch fail\n", pifreq->ifr_name);
             free ( pNewNode );
             continue;
         }

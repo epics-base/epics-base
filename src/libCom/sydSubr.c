@@ -50,6 +50,9 @@
  * .11  02-18-92	rac	finally handle array channels on print
  *				and export; add an export column for
  *				text time stamp
+ * .12	02-26-92	rac	move timestamp rounding to the individual
+ *				read routines, using a new routine here;
+ *				add sydSetAttr and default deadband
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -119,6 +122,8 @@
 *     long  sydSampleSetGet(     pSspec					)
 *     long  sydSampleSetPrint(   pSspec,  out,  fmtFlag, nCol, colWidth	)
 *     long  sydSampleSetWriteSSF(pSspec,  pFile, progDesc, sampDesc     )
+*     long  sydSetAttr(          pSspec,  attr, value, pArg		)
+*                   attr=SYD_ATTR_DEADBAND
 *
 *     long  sydTriggerAddFromText(pSspec,  text				)
 *     long  sydTriggerClose(     pSspec					)
@@ -511,7 +516,7 @@ char	*chanName;	/* I channel name to find in synchronous set spec */
 *	rather than caller-specified type
 *
 * SEE ALSO
-*	sydOpen, sydChanClose
+*	sydOpen, sydChanClose, sydSetAttr
 *	sydInputGet
 *
 * MACROS
@@ -538,11 +543,14 @@ char	*chanName;	/* I channel name to find in synchronous set spec */
 *	without comment.
 * 2.	DBF_ENUM channels are flagged as SYD_ST_STEP; all other channels
 *	are flagged as SYD_ST_SMOOTH.
-* 3.	For retrievals form Channel Access, the usual return status will
+* 3.	For retrievals from Channel Access, the usual return status will
 *	be S_syd_chanNotConn.  To force the connection attempt to completion,
 *	the caller can call ca_pend_event following the call to this routine.
 *	If SydChanDbfType(pSChan) is TYPENOTCONN following the ca_pend_event,
 *	then the caller can assume the channel isn't presently connectable.
+* 4.	For retrievals from Channel Access, the deadband which will be
+*	used is determined by the SYD_ATTR_DEADBAND attribute.  By default,
+*	the ADEL deadband is used.
 *
 * EXAMPLE
 *
@@ -1180,7 +1188,6 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
     long	stat;           /* status return from calls */
     SYD_CHAN	*pSChan;	/* pointer to channel in Sspec */
     int		i, i1, discard;
-    unsigned long roundTemp;
 
     assert(pSspec != NULL);
     assert(pSspec->pChanHead != NULL);
@@ -1242,41 +1249,16 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
     for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
 /*-----------------------------------------------------------------------------
 *    after possibly throwing away the oldest input data, try to get two
-*    buffers of input data; if time stamp rounding is to be done, do it now
+*    buffers of input data
 *----------------------------------------------------------------------------*/
 	if (pSChan->firstInBuf < 0) {
 	    stat = (pSspec->pFunc)(pSspec, pSChan, SYD_FC_READ, NULL);
-	    if (pSspec->roundNsec > 0 && pSChan->firstInBuf >= 0) {
-		i = pSChan->firstInBuf;
-		roundTemp = BUFiTS.nsec;
-		roundTemp = ( (roundTemp + pSspec->roundNsec/2) /
-				pSspec->roundNsec ) * pSspec->roundNsec;
-		if (roundTemp < 1000000000)
-		    BUFiTS.nsec = roundTemp;
-		else {
-		    BUFiTS.nsec = roundTemp - 1000000000;
-		    BUFiTS.secPastEpoch += 1;;
-		}
-	    }
 	    if (pSspec->type == SYD_TY_PFO)
 		goto skipSecondRead;
 	}
-	if (pSChan->firstInBuf == pSChan->lastInBuf) {
+	if (pSChan->firstInBuf == pSChan->lastInBuf)
 	    stat = (pSspec->pFunc)(pSspec, pSChan, SYD_FC_READ, NULL);
-	    if (pSspec->roundNsec > 0 &&
-			pSChan->firstInBuf != pSChan->lastInBuf) {
-		i = pSChan->lastInBuf;
-		roundTemp = BUFiTS.nsec;
-		roundTemp = ( (roundTemp + pSspec->roundNsec/2) /
-				pSspec->roundNsec ) * pSspec->roundNsec;
-		if (roundTemp < 1000000000)
-		    BUFiTS.nsec = roundTemp;
-		else {
-		    BUFiTS.nsec = roundTemp - 1000000000;
-		    BUFiTS.secPastEpoch += 1;;
-		}
-	    }
-	}
+
 skipSecondRead:
 	;
     }
@@ -1736,6 +1718,7 @@ SYD_SPEC **ppSspec;	/* O pointer to synchronous set spec pointer */
     (*ppSspec)->lastData = -1;
     (*ppSspec)->firstData = -1;
     (*ppSspec)->roundNsec = 0;
+    (*ppSspec)->deadband = 0;
     return S_syd_OK;
 }
 
@@ -2610,6 +2593,51 @@ char	*sampDesc;	/* I description for "sample", or NULL */
 }
 
 /*+/subr**********************************************************************
+* NAME	sydSetAttr - set attributes for synchronous set spec
+*
+* DESCRIPTION
+*	Set various attributes for a synchronous set specification.
+*
+*	Set the default deadband to use in monitoring channels.  This
+*	attribute must be set before adding any channels to the sync set spec.
+*	    sydSetAttr(pSspec, SYD_ATTR_DEADBAND, 0, text)
+*		text can be "ADEL", "MDEL", or "HYST"
+*
+* RETURNS
+*	S_syd_OK
+*
+* BUGS
+* o	text
+*
+* SEE ALSO
+*
+* EXAMPLE
+*
+*-*/
+long
+sydSetAttr(pSspec, attr, value, pArg)
+SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
+SYD_ATTR attr;		/* I attribute key; one of the SYD_ATTR_xxx */
+int	value;		/* I value for numeric attributes */
+void	*pArg;		/* I pointer to value for non-numeric attributes */
+{
+    if (attr == SYD_ATTR_DEADBAND) {
+	assert(pSspec->pChanHead == NULL);
+	if (strcmp((char *)pArg, "ADEL") == 0)
+	    pSspec->deadband = DBE_LOG;
+	else if (strcmp((char *)pArg, "MDEL") == 0)
+	    pSspec->deadband = DBE_VALUE;
+	else if (strcmp((char *)pArg, "HYST") == 0)
+	    pSspec->deadband = DBE_ALARM;
+	else
+	    assertAlways(0);
+    }
+    else
+	assertAlways(0);
+    return S_syd_OK;
+}
+
+/*+/subr**********************************************************************
 * NAME	sydTriggerClose - add a sample trigger condition from a text string
 *
 * DESCRIPTION
@@ -2756,4 +2784,24 @@ trigScanErr:
     sydTriggerClose(pTrig);
     free(myText);
     return S_syd_ERROR;
+}
+
+/*+/subr**********************************************************************
+* NAME	sydTsRound - round time stamp to nearest millisecond
+*
+*-*/
+sydTsRound(pStamp, roundNsec)
+TS_STAMP *pStamp;
+int	roundNsec;
+{
+    unsigned long roundTemp;
+
+    roundTemp = pStamp->nsec;
+    roundTemp = ( (roundTemp + roundNsec/2) / roundNsec ) * roundNsec;
+    if (roundTemp < 1000000000)
+	pStamp->nsec = roundTemp;
+    else {
+	pStamp->nsec = roundTemp - 1000000000;
+	pStamp->secPastEpoch++;
+    }
 }

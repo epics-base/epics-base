@@ -607,6 +607,7 @@ long dbProcess(dbCommon *precord)
 		if(*ptrace) printf("disabled:  %s\n",precord->name);
 		/*take care of caching and notifyCompletion*/
 		precord->rpro = FALSE;
+		precord->putf = FALSE;
 		if (precord->ppn) dbNotifyCompletion(precord);
 		/* raise disable alarm */
 		if (precord->stat==DISABLE_ALARM) goto all_done;

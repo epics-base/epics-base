@@ -31,7 +31,7 @@
 #include "gddAppFuncTable.h"
 #include "osiTimer.h"
 #include "resourceLib.h"
-#include "minmax.h"
+#include "tsMinMax.h"
 
 #ifndef NELEMENTS
 #	define NELEMENTS(A) (sizeof(A)/sizeof(A[0]))

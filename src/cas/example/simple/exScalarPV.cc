@@ -55,9 +55,9 @@ void exScalarPV::scan()
         }
         newValue += (float) (sin (radians) / 10.0);
         limit = (float) this->info.getHopr();
-        newValue = min (newValue, limit);
+        newValue = tsMin (newValue, limit);
         limit = (float) this->info.getLopr();
-        newValue = max (newValue, limit);
+        newValue = tsMax (newValue, limit);
         *pDD = newValue;
         status = this->update (*pDD);
         if (status) {

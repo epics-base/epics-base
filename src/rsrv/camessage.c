@@ -1882,15 +1882,12 @@ LOCAL int search_reply(
     /*
      * stop further use of server if memory becomes scarse
      */
-    spaceAvailOnFreeList = freeListItemsAvail(rsrvClientFreeList)>0 
-        && freeListItemsAvail(rsrvChanFreeList)>0
-        && freeListItemsAvail(rsrvEventFreeList)>0;
-    if (!casSufficentSpaceInPool && !spaceAvailOnFreeList) { 
+    spaceAvailOnFreeList = freeListItemsAvail (rsrvClientFreeList) > 0 
+                            && freeListItemsAvail (rsrvChanFreeList) > 0
+                            && freeListItemsAvail (rsrvEventFreeList) > 0;
+    if ( ! casSufficentSpaceInPool && ! spaceAvailOnFreeList ) { 
         SEND_LOCK(client);
-        send_err(mp, 
-            ECA_ALLOCMEM, 
-            client, 
-            "Server memory exhausted");
+        send_err (mp, ECA_ALLOCMEM, client, "Server memory exhausted");
         SEND_UNLOCK(client);
         return RSRV_OK;
     }

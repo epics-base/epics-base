@@ -64,7 +64,7 @@ static char	*sccsId = "@(#)drvEpvxiMsg.c	1.15\t8/27/93";
 enum msgDeviceSyncType {
 	syncInt, 
 	syncSignal, 
-	syncPoll,
+	syncPoll
 };
 
 typedef

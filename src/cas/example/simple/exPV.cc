@@ -86,8 +86,7 @@ caStatus exPV::update(gdd &valueIn)
 		return cas;
 	}
 
-	aitTimeStamp ts (this->currentTime);
-	this->pValue->setTimeStamp (&ts);
+	this->pValue->setTimeStamp (&this->currentTime);
 	this->pValue->setStat (epicsAlarmNone);
 	this->pValue->setSevr (epicsSevNone);
 
@@ -438,7 +437,8 @@ caStatus exPV::read (const casCtx &, gdd &protoIn)
 // for access control - optional
 //
 casChannel *exPV::createChannel (const casCtx &ctx,
-		const char * const pUserName, const char * const pHostName)
+		const char * const /* pUserName */, 
+		const char * const /* pHostName */)
 {
 	return new exChannel (ctx);
 }

@@ -440,3 +440,20 @@ unsigned casDGIntfIO::serverPortNumber()
 	return this->connectWithThisPort;
 }
 
+//
+// this was moved from casIODIL.h to here because
+// of problems inline functions and g++ -g 2.7.2
+//
+// casDGIntfIO::processDG()
+//
+void casDGIntfIO::processDG()
+{
+        assert(this->pAltOutIO);
+ 
+        //
+        // process the request DG and send a response DG
+        // if it is required
+        //
+        this->client.processDG(*this,*this->pAltOutIO);
+}
+

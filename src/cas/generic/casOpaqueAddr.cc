@@ -1,12 +1,28 @@
 
-#include <casInternal.h>
-#include <>
+#include <casdef.h>
 
-
-casOpaqueAddr::checkSize sizeChecker;
-
-checkSize::checkSize()
+//
+// this needs to be here (and not in casOpaqueAddrIL.h) if we
+// are to avoid undefined symbols under gcc 2.7.x without -O
+//
+//
+// casOpaqueAddr::casOpaqueAddr()
+//
+casOpaqueAddr::casOpaqueAddr()
 {
-	assert( sizeof(casOpaqueAddr::opaqueAddr) >= sizeof(caAddr));
+	this->clear();
 }
+
+//
+// this needs to be here (and not in casOpaqueAddrIL.h) if we
+// are to avoid undefined symbols under gcc 2.7.x without -O
+//
+//
+// casOpaqueAddr::clear()
+//
+void casOpaqueAddr::clear()
+{
+	this->init = 0;
+}
+
 

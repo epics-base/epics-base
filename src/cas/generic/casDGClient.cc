@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.7  1996/11/02 00:54:08  jhill
+ * many improvements
+ *
  * Revision 1.6  1996/09/16 18:24:00  jhill
  * vxWorks port changes
  *
@@ -56,8 +59,6 @@
 #include <dgOutBufIL.h> // dgOutBuf inline func
 #include <dgInBufIL.h> // dgInBuf inline func
 #include <casCtxIL.h> // casCtx inline func
-#include <inBufIL.h> // inBuf inline func
-#include <outBufIL.h> // outBuf inline func
 #include <casCoreClientIL.h> // casCoreClient inline func
 #include <gddApps.h>
 

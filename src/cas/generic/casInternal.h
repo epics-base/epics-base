@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.9  1996/12/06 22:33:49  jhill
+ * virtual ~casPVI(), ~casPVListChan(), ~casChannelI()
+ *
  * Revision 1.8  1996/11/02 00:54:14  jhill
  * many improvements
  *
@@ -364,8 +367,16 @@ union ca_addr;
 class casOpaqueAddr
 {
 public:
-	inline casOpaqueAddr();
-	inline void clear();
+	//
+	// casOpaqueAddr()
+	//
+	casOpaqueAddr();
+
+	//
+	// clear()
+	//
+	void clear();
+
 	inline int hasBeenInitialized() const;
 	inline casOpaqueAddr (const union ca_addr &addr);
 	inline void set (const union ca_addr &);
@@ -494,7 +505,7 @@ protected:
 class casPVListChan : public casChannelI, public tsDLNode<casPVListChan>
 {
 public:
-        inline casPVListChan (const casCtx &ctx, casChannel &chanAdapter);
+        casPVListChan (const casCtx &ctx, casChannel &chanAdapter);
         virtual ~casPVListChan();
 };
 

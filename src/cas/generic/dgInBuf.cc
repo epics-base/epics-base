@@ -1,6 +1,18 @@
 
 #include <server.h>
+#include <inBufIL.h>
 #include <casOpaqueAddrIL.h>
+
+//
+// this needs to be here (and not in dgInBufIL.h) if we
+// are to avoid undefined symbols under gcc 2.7.x without -O
+//
+// dgInBuf::dgInBuf ()
+//
+dgInBuf::dgInBuf (osiMutex &mutexIn, unsigned bufSizeIn) :
+                inBuf(mutexIn, bufSizeIn)
+{
+}
 
 //
 // dgInBuf::~dgInBuf()
@@ -8,6 +20,17 @@
 //
 dgInBuf::~dgInBuf()
 {
+}
+
+//
+// this needs to be here (and not in dgInBufIL.h) if we
+// are to avoid undefined symbols under gcc 2.7.x without -O
+//
+// dgInBuf::hasAddress()
+//
+int dgInBuf::hasAddress() const
+{
+	return this->from.hasBeenInitialized();
 }
 
 //

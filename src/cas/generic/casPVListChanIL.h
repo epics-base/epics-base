@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1997/01/09 22:29:17  jhill
+ * installed hostBuild branch
+ *
  * Revision 1.2  1996/12/06 22:36:20  jhill
  * use destroyInProgress flag now functional nativeCount()
  *
@@ -42,15 +45,13 @@
 #ifndef casPVListChanIL_h
 #define casPVListChanIL_h
 
+#include <casPVIIL.h>
+
 //
-// casPVListChan::casPVListChan()
+// empty for now since casPVListChan::casPVListChan()
+// causes undefined sym when it is inline under g++ 2.7.x
+// (without -O)
 //
-inline casPVListChan::casPVListChan 
-	(const casCtx &ctx, casChannel &chanAdapterIn) :
-	casChannelI(ctx, chanAdapterIn)
-{
-	this->pv.installChannel(*this);
-}
 
 #endif // casPVListChanIL_h
 

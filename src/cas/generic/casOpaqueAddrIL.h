@@ -3,22 +3,6 @@
 #define casOpaqueAddrILh
 
 //
-// casOpaqueAddr::clear()
-//
-inline void casOpaqueAddr::clear()
-{
-	this->init = 0;
-}
-
-//
-// casOpaqueAddr::casOpaqueAddr()
-//
-inline casOpaqueAddr::casOpaqueAddr()
-{
-	this->clear();
-}
-
-//
 // casOpaqueAddr::hasBeenInitialized()
 //
 inline int casOpaqueAddr::hasBeenInitialized() const

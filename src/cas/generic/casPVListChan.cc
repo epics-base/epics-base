@@ -30,12 +30,29 @@
  *
  * History
  * $Log$
+ * Revision 1.1  1996/12/06 22:36:18  jhill
+ * use destroyInProgress flag now functional nativeCount()
+ *
  *
  *
  */
 
 #include <server.h>
 #include <casPVIIL.h>
+
+//
+// this needs to be here (and not in dgInBufIL.h) if we
+// are to avoid undefined symbols under gcc 2.7.x with -g
+//
+//
+// casPVListChan::casPVListChan()
+//
+casPVListChan::casPVListChan
+        (const casCtx &ctx, casChannel &chanAdapterIn) :
+        casChannelI(ctx, chanAdapterIn)
+{
+        this->pv.installChannel(*this);
+}
 
 //
 // casPVListChan::~casPVListChan()

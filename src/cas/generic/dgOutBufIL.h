@@ -6,37 +6,9 @@
 #include <outBufIL.h>
 
 //
-// dgOutBuf::dgOutBuf()
+// All of the functions in this file moved to dgOutBuf.cc because
+// of inline problems with g++ 2.7.2 (without -O)
 //
-inline dgOutBuf::dgOutBuf (osiMutex &mutexIn, unsigned bufSizeIn) :
-		outBuf(mutexIn, bufSizeIn) 
-{
-}
-
-//
-// dgOutBuf::getRecipient()
-//
-inline caAddr dgOutBuf::getRecipient()
-{
-	return this->to.get();
-}
-
-//
-// dgOutBuf::setRecipient()
-//
-inline void dgOutBuf::setRecipient(const caAddr &addr)
-{
-	this->to.set(addr);
-}
-
-//
-// dgOutBuf::clear()
-//
-inline void dgOutBuf::clear()
-{
-	this->to.clear();
-	this->outBuf::clear();
-}
 
 #endif // dgOutBufILh
 

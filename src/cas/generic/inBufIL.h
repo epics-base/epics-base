@@ -2,16 +2,12 @@
 #ifndef inBufILh
 #define inBufILh
 
-
 //
 // inBuf::inBuf()
 //
 inline inBuf::inBuf(osiMutex &mutexIn, unsigned bufSizeIn) :
-        mutex(mutexIn),
-        pBuf(NULL),
-        bufSize(bufSizeIn),
-        bytesInBuffer(0u),
-        nextReadIndex(0u)
+        mutex(mutexIn), pBuf(NULL), bufSize(bufSizeIn),
+        bytesInBuffer(0u), nextReadIndex(0u)
 {
 }
 

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.14  1996/12/11 00:57:56  jhill
+ * moved casEventMaskEntry here
+ *
  * Revision 1.13  1996/12/06 22:36:30  jhill
  * use destroyInProgress flag now functional nativeCount()
  *
@@ -265,7 +268,11 @@ enum casFillCondition{
 //
 class inBuf {
 public:
-        inline inBuf (osiMutex &, unsigned bufSizeIn);
+	//
+	// this needs to be here (and not in dgInBufIL.h) if we
+	// are to avoid undefined symbols under gcc 2.7.x without -O
+	//
+	inline inBuf(osiMutex &mutexIn, unsigned bufSizeIn);
 	inline caStatus init(); //constructor does not return status
 	virtual ~inBuf();
 
@@ -308,12 +315,12 @@ private:
 //
 class dgInBuf : public inBuf {
 public:
-        inline dgInBuf (osiMutex &mutexIn, unsigned bufSizeIn); 
+	dgInBuf (osiMutex &mutexIn, unsigned bufSizeIn); 
 	virtual ~dgInBuf();
 
         inline void clear();
 
-	inline int hasAddress() const;
+	int hasAddress() const;
 
 	caAddr getSender() const;
 
@@ -392,15 +399,15 @@ private:
 //
 class dgOutBuf : public outBuf {
 public:
-        inline dgOutBuf (osiMutex &mutexIn, unsigned bufSizeIn);
+        dgOutBuf (osiMutex &mutexIn, unsigned bufSizeIn);
 
         virtual ~dgOutBuf();
 
-	inline caAddr getRecipient();
+	caAddr getRecipient();
 
-	inline void setRecipient(const caAddr &addr);
+	void setRecipient(const caAddr &addr);
 
-	inline void clear();
+	void clear();
 
         xSendStatus xSend (char *pBufIn, bufSizeT nBytesAvailableToSend, 
 			bufSizeT nBytesNeedToBeSent, bufSizeT &nBytesSent);

@@ -6,22 +6,6 @@
 #include <inBufIL.h>
 
 //
-// dgInBuf::dgInBuf()
-//
-inline dgInBuf::dgInBuf (osiMutex &mutexIn, unsigned bufSizeIn) :
-		inBuf(mutexIn, bufSizeIn) 
-{
-}
-
-//
-// dgInBuf::hasAddress()
-//
-inline int dgInBuf::hasAddress() const
-{
-	return this->from.hasBeenInitialized();
-}
-
-//
 // dgInBuf::clear()
 //
 inline void dgInBuf::clear()

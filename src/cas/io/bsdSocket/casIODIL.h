@@ -3,18 +3,10 @@
 #define casIODILh
 
 //
-// casDGIntfIO::processDG()
+// Problems with g++ -g 2.7.2 and inline functions
+// caused all functions in this file to be moved to 
+// casDGIntfIO.cc
 //
-inline void casDGIntfIO::processDG()
-{
-	assert(this->pAltOutIO);
-
-	//
-	// process the request DG and send a response DG 
-	// if it is required
-	//
-	this->client.processDG(*this,*this->pAltOutIO);
-}
 
 #endif // casIODILh
 

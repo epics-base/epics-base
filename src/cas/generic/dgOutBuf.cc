@@ -1,6 +1,19 @@
 
 #include <server.h>
 #include <casOpaqueAddrIL.h>
+#include <outBufIL.h>
+
+//
+// this needs to be here (and not in dgInBufIL.h) if we
+// are to avoid undefined symbols under gcc 2.7.x when
+// -O is not used
+//
+// dgOutBuf::dgOutBuf ()
+//
+dgOutBuf::dgOutBuf (osiMutex &mutexIn, unsigned bufSizeIn) :
+                outBuf(mutexIn, bufSizeIn)
+{
+}
 
 //
 // dgOutBuf::~dgOutBuf()
@@ -20,5 +33,39 @@ xSendStatus dgOutBuf::xSend (char *pBufIn,
         assert(nBytesAvailableToSend>=nBytesNeedToBeSent);
         return xDGSend(pBufIn, nBytesAvailableToSend, nBytesSent,
                         this->to.get());
+}
+
+//
+// this needs to be here (and not in dgInBufIL.h) if we
+// are to avoid undefined symbols under gcc 2.7.x (without -O)
+//
+// dgOutBuf::clear()
+//
+void dgOutBuf::clear()
+{
+        this->to.clear();
+        this->outBuf::clear();
+}
+ 
+//
+// this needs to be here (and not in dgInBufIL.h) if we
+// are to avoid undefined symbols under gcc 2.7.x (without -O) 
+//
+// dgOutBuf::setRecipient()
+//
+void dgOutBuf::setRecipient(const caAddr &addr)
+{
+	this->to.set(addr);
+}
+
+//
+// this needs to be here (and not in dgInBufIL.h) if we
+// are to avoid undefined symbols under gcc 2.7.x (without -O) 
+//
+// dgOutBuf::getRecipient()
+//
+caAddr dgOutBuf::getRecipient()
+{
+        return this->to.get();
 }
 

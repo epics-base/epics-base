@@ -7,6 +7,9 @@
 // Some BSD calls have crept in here
 //
 // $Log$
+// Revision 1.6  1996/11/02 00:54:45  jhill
+// many improvements
+//
 // Revision 1.5  1996/09/16 18:25:15  jhill
 // vxWorks port changes
 //
@@ -66,7 +69,7 @@ public:
 
 	virtual caStatus start()=0; // OS specific
 
-	inline void processDG();
+	void processDG();
 
 private:
         ELLLIST        		beaconAddrList;

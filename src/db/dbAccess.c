@@ -56,7 +56,6 @@ of this distribution.
 #include "dbStaticLib.h"
 #include "dbBase.h"
 #include "link.h"
-#include "dbAddr.h"
 #include "dbFldTypes.h"
 #include "recSup.h"
 #include "caeventmask.h"
@@ -64,12 +63,13 @@ of this distribution.
 #include "dbCommon.h"
 #include "dbFldTypes.h"
 #include "special.h"
+#include "errMdef.h"
 #define epicsExportSharedSymbols
+#include "dbAddr.h"
 #include "callback.h"
 #include "dbScan.h"
 #include "dbLock.h"
 #include "dbEvent.h"
-#include "errMdef.h"
 #include "dbConvert.h"
 #include "dbConvertFast.h"
 #include "dbCa.h"
@@ -79,7 +79,8 @@ of this distribution.
 #include "recGbl.h"
 
 extern long lset_stack_not_empty;
-epicsShareDef struct dbBase *pdbbase;
+
+epicsShareDef struct dbBase *pdbbase = 0;
 
 static short mapDBFToDBR[DBF_NTYPES] = {
 	DBR_STRING, DBR_CHAR, DBR_UCHAR, DBR_SHORT, DBR_USHORT, 

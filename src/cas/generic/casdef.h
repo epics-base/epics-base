@@ -8,7 +8,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 //
-//  $Id$
 //
 //      Author: Jeffrey O. Hill
 //              johill@lanl.gov
@@ -507,6 +506,7 @@ public:
     //
     epicsShareFunc caServer * getCAS () const;
 
+    // not to be called by the user
     void destroyRequest ();
     
 private:
@@ -632,6 +632,7 @@ public:
     //
     epicsShareFunc casPV * getPV ();
 
+    // not to be called by the user
     void destroyRequest ();
 
 private:

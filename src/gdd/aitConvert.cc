@@ -206,7 +206,7 @@ static int aitConvertEnum16FixedString (void* d,const void* s,aitIndex c,
 
 	for (i=0;i<c;i++) {
         //
-        // find the choice that matches
+        // look for a string that matches
         //
 	    for (choice=0;choice<nChoices;choice++) {
             if (strcmp( pEnumStringTable->getString(choice), in[i].fixed_string)==0) {
@@ -216,10 +216,25 @@ static int aitConvertEnum16FixedString (void* d,const void* s,aitIndex c,
             }
         }
         //
-        // if none found that match then abort and return an error
+        // if no string matches then look for a numeric match
         //
         if (choice>=nChoices) {
-            return -1;
+            int temp;
+			if ( sscanf ( in[i].fixed_string,"%i", &temp ) == 1 ) {
+				if ( temp >= 0 && temp < nChoices ) {
+					out[i] = (aitUint16) temp;
+                    status += sizeof(out[i]);
+				}
+				else {
+                    //
+                    // no match, return an error
+                    //
+					return -1;
+				}
+			}
+            else {
+                return -1;
+            }
         }
     }
     return status;
@@ -269,10 +284,25 @@ static int aitConvertEnum16String (void* d,const void* s,
             }
         }
         //
-        // if none found that match then abort and return an error
+        // if no string matches then look for a numeric match
         //
         if (choice>=nChoices) {
-            return -1;
+            int temp;
+			if ( sscanf ( in[i].string(),"%i", &temp ) == 1 ) {
+				if ( temp >= 0 && temp < nChoices ) {
+					out[i] = (aitUint16) temp;
+                    status += sizeof(out[i]);
+				}
+				else {
+                    //
+                    // no match, return an error
+                    //
+					return -1;
+				}
+			}
+            else {
+                return -1;
+            }
         }
     }
     return status;

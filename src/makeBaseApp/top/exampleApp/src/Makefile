@@ -35,6 +35,7 @@ PROD_IOC = example
 
 example_SRCS += xxxRecord.c
 example_SRCS += devXxxSoft.c
+example_SRCS += dbSubExample.cpp
 
 # <name>_registerRecordDeviceDriver.cpp will be created from <name>.dbd
 example_SRCS += example_registerRecordDeviceDriver.cpp

@@ -30,6 +30,7 @@
  *  .01 08-09-90 rac	initial version
  *  .02 06-18-91 rac	installed in SCCS
  *  .03 08-03-92 rac	added tsRound routines
+ *  .04 07-02-96 joh	added ANSI prototypes	
  *
  */
 /*+/mod***********************************************************************
@@ -285,6 +286,8 @@ void TsAddDouble(TS_STAMP *pSum, TS_STAMP *pS1, double dbl);
 *    `prototypes'
 *----------------------------------------------------------------------------*/
 
+#if defined(__STDC__) || defined(__cplusplus)
+
 int nextIntFieldAsInt(
 char    **ppText,       /* I/O pointer to pointer to text to scan */
 int     *pIntVal,       /* O pointer to return field's value */
@@ -304,14 +307,59 @@ char    *pDelim        /* O pointer to return field's delimiter */
 );
 
 long tsLocalTime (TS_STAMP *pStamp);
+
+void tsAddDouble(
+TS_STAMP *pSum,         /* O sum time stamp */
+TS_STAMP *pStamp,       /* I addend time stamp */
+double  dbl             /* I number of seconds to add */
+);
+
+int tsCmpStamps(
+TS_STAMP *pStamp1,      /* pointer to first stamp */
+TS_STAMP *pStamp2       /* pointer to second stamp */
+);
+
+long tsRoundDownLocal(
+TS_STAMP *pStamp,       /* IO pointer to time stamp buffer */
+unsigned long interval  /* I rounding interval, in seconds */
+);
+
+long tsRoundUpLocal(
+TS_STAMP *pStamp,       /* IO pointer to time stamp buffer */
+unsigned long interval  /* I rounding interval, in seconds */
+);
+
+char * tsStampToText(
+TS_STAMP *pStamp,       /* I pointer to time stamp */
+enum tsTextType textType,/* I type of conversion desired; one of TS_TEXT_xxx */
+char    *textBuffer     /* O buffer to receive text */
+);
+
+long tsTextToStamp(
+TS_STAMP *pStamp,       /* O time stamp corresponding to text */
+char    **pText         /* IO ptr to ptr to string containing time and date */
+);
+
+long tsTimeTextToStamp(
+TS_STAMP *pStamp,       /* O time stamp corresponding to text */
+char    **pText         /* IO ptr to ptr to string containing time and date */
+);
+
+#else /* !defined(__STDC__) && !defined(__cplusplus) */
+
+int nextIntFieldAsInt();
+int nextAlph1UCField();
+int nextIntFieldAsLong();
+long tsLocalTime ();
 void tsAddDouble();
 int tsCmpStamps();
-void tsDiffAsDouble();
 long tsRoundDownLocal();
 long tsRoundUpLocal();
 char *tsStampToText();
 long tsTextToStamp();
 long tsTimeTextToStamp();
+
+#endif
 
 #ifdef __cplusplus
 }

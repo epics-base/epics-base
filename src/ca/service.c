@@ -26,6 +26,8 @@
 /*			client after reboot go away			*/
 /*	072391	joh	added event locking for vxWorks			*/
 /*    	100391  joh     added missing ntohs() for the VAX               */
+/*	111991	joh	converted MACRO in iocinf.h to cac_io_done()	*/
+/*			here						*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -299,7 +301,7 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			if (t_cmmd != IOC_READ_BUILD ||
 			    (chan->connection_func == NULL && 
 					chan->state == cs_never_conn))
-				CLRPENDRECV;
+				CLRPENDRECV(TRUE);
 
 			break;
 		}
@@ -641,9 +643,40 @@ struct in_addr			*pnet_addr;
 	}
 	else if(chan->state==cs_never_conn){
           	/* decrement the outstanding IO count */
-          	CLRPENDRECV;
+          	CLRPENDRECV(TRUE);
 	}
 
 	chan->state = cs_conn;
+}
+
+
+/*
+ *
+ *	cas_io_done()
+ *
+ *
+ */
+void
+cac_io_done(lock)
+int 	lock;
+{
+  	register struct pending_io_event	*pioe;
+	
+  	if(ioeventlist.count==0)
+		return;
+
+	if(lock){
+ 		LOCK;
+	}
+
+    	while(pioe = (struct pending_io_event *) lstGet(&ioeventlist)){
+      		(*pioe->io_done_sub)(pioe->io_done_arg);
+      		if(free(pioe)<0)
+			abort();
+	}
+
+	if(lock){
+  		UNLOCK;
+	}
 }
 

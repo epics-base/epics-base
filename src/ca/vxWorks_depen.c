@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.36  1998/05/05 16:07:59  jhill
+ * Use lock macros and task variable in ca_extra_event_labor()
+ *
  * Revision 1.35  1998/04/13 19:14:35  jhill
  * fixed task variable problem
  *
@@ -420,6 +423,7 @@ int ca_task_initialize ()
 
 	status = cac_add_task_variable (pcas);
 	if (status != ECA_NORMAL) {
+		freeListCleanup (pcas->ca_dbMonixFreeList);
 		semDelete (pcas->ca_client_lock);
 		semDelete (pcas->ca_putNotifyLock);
 		semDelete (pcas->ca_io_done_sem);

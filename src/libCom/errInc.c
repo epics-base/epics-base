@@ -21,4 +21,4 @@
 #include "errMdef.h"
 #ifdef VXLIST
 /* epics vxWorks  only*/
-#endif VXLIST
+#endif /* VXLIST */

@@ -40,7 +40,9 @@ build:: pre_build $(MENUS) $(RECTYPES) $(BPTS)\
 inc:: $(INSTALL_INCLUDE) $(INSTALL_INC) $(INSTALL_INCLUDE)/os \
 	$(INSTALL_OSINCLUDE) $(INSTALL_OSINC)
 
-install:: inc build $(INSTALL_INCREC)\
+install:: inc buildInstall 
+
+buildInstall :: build $(INSTALL_INCREC)\
 	 $(INSTALL_LOCATION_BIN) \
          $(INSTALL_LIBS) $(TARGETS) $(INSTALL_PROD) \
 	 $(INSTALL_MAN) $(INSTALL_MANS)\

@@ -10,6 +10,7 @@ all:: install
 ACTIONS += inc
 ACTIONS += build
 ACTIONS += install
+ACTIONS += buildInstall 
 ACTIONS += depends 
 ACTIONS += rebuild 
 

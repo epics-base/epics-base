@@ -78,8 +78,9 @@ static void threadCleanupWIN32 (void)
 /*
  * epicsThreadExitMain ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadExitMain (void)
+epicsShareFunc void epicsShareAPI epicsThreadExitMain ( void )
 {
+    _endthread ();
 }
 
 /*

@@ -64,7 +64,7 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 
 /*Declare storage for Global Variables */
 ASBASE		*pasbase=NULL;
-static int	asActive = FALSE;
+int	asActive = FALSE;
 
 /*Forward declarations for Non ANSI routines*/
 long calcPerform(double *parg,double *presult,char   *post);

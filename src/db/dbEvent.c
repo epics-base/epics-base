@@ -510,7 +510,8 @@ void epicsShareAPI db_cancel_event (dbEventSubscription es)
     }
     assert ( pevent->npend == 0u );
 
-    while ( pevent->callBackInProgress ) {
+    while ( pevent->callBackInProgress && 
+        pevent->ev_que->evUser->taskid != epicsThreadGetIdSelf() ) {
         UNLOCKEVQUE ( pevent->ev_que )
         epicsEventMustWait ( pevent->ev_que->evUser->pflush_sem );
         LOCKEVQUE ( pevent->ev_que )

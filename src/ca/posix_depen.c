@@ -164,8 +164,6 @@ void ca_spawn_repeater()
 {
 	int     status;
 	char	*pImageName;
-    int     fd;
-    int     maxfd;
   
 	/*
 	 * create a duplicate process

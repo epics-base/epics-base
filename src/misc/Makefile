@@ -1,7 +1,12 @@
 
 TOP=../..
 
-include $(TOP)/config/CONFIG_BASE
+include $(TOP)/configure/CONFIG
 
-include $(TOP)/config/RULES_ARCHS
+miscLib_SRCS =  epicsRelease.c
+
+IOC_LIBRARY_vxWorks = miscLib
+
+include $(TOP)/configure/RULES_BUILD
+
 

@@ -47,7 +47,7 @@ public:
 class dbPutNotifyBlocker : public dbBaseIO {
 public:
     dbPutNotifyBlocker ( dbChannelIO &chanIn );
-    void initiatePutNotify ( epicsMutex &mutex, cacWriteNotify &notify, struct dbAddr &addr, 
+    void initiatePutNotify ( epicsAutoMutex &locker, cacWriteNotify &notify, struct dbAddr &addr, 
             unsigned type, unsigned long count, const void *pValue );
     void cancel ();
     void show ( unsigned level ) const;
@@ -151,6 +151,23 @@ private:
 	dbChannelIO & operator = ( const dbChannelIO & );
 };
 
+// allow only one thread at a time to use the cache, but do not hold
+// lock when calling the callback
+class dbServiceIOReadNotifyCache  {
+public:
+    dbServiceIOReadNotifyCache ();
+    ~dbServiceIOReadNotifyCache ();
+    void callReadNotify ( struct dbAddr &addr, unsigned type, unsigned long count, 
+            cacReadNotify &notify );
+    void show ( unsigned level ) const;
+private:
+    epicsMutex mutex;
+    unsigned long readNotifyCacheSize;
+    char *pReadNotifyCache;
+	dbServiceIOReadNotifyCache ( const dbServiceIOReadNotifyCache & );
+	dbServiceIOReadNotifyCache & operator = ( const dbServiceIOReadNotifyCache & );
+};
+
 class dbServiceIO : public cacService {
 public:
     dbServiceIO ();
@@ -172,11 +189,12 @@ public:
     void ioCancel ( dbChannelIO & chan, const cacChannel::ioid &id );
     void ioShow ( const cacChannel::ioid &id, unsigned level ) const;
 private:
-    chronIntIdResTable < dbBaseIO > ioTable;
-    unsigned long eventCallbackCacheSize;
-    dbEventCtx ctx;
-    char *pEventCallbackCache;
     mutable epicsMutex mutex;
+    chronIntIdResTable < dbBaseIO > ioTable;
+    dbServiceIOReadNotifyCache readNotifyCache;
+    dbEventCtx ctx;
+    unsigned long stateNotifyCacheSize;
+    char *pStateNotifyCache;
 	dbServiceIO ( const dbServiceIO & );
 	dbServiceIO & operator = ( const dbServiceIO & );
 };
@@ -185,3 +203,11 @@ inline dbServicePrivateListOfIO::dbServicePrivateListOfIO () :
     pBlocker ( 0 )
 {
 }
+
+inline void dbServiceIO::callReadNotify ( struct dbAddr &addr, 
+        unsigned type, unsigned long count, 
+        cacReadNotify &notify )
+{
+    this->readNotifyCache.callReadNotify ( addr, type, count, notify );
+}
+

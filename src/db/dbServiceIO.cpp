@@ -68,16 +68,14 @@ dbServiceIOLoadTimeInit::dbServiceIOLoadTimeInit ()
 }
 
 dbServiceIO::dbServiceIO () :
-    eventCallbackCacheSize ( 0ul ),
-        ctx ( 0 ), pEventCallbackCache ( 0 ) 
+    ctx ( 0 ), stateNotifyCacheSize ( 0 ),
+        pStateNotifyCache ( 0 )
 {
 }
 
 dbServiceIO::~dbServiceIO ()
 {
-    if ( this->pEventCallbackCache ) {
-        delete [] this->pEventCallbackCache;
-    }
+    delete [] this->pStateNotifyCache;
     if ( this->ctx ) {
         db_close_events ( this->ctx );
     }
@@ -104,55 +102,6 @@ cacChannel *dbServiceIO::createChannel ( // X aCC 361
     }
 }
 
-void dbServiceIO::callReadNotify ( struct dbAddr &addr, 
-        unsigned type, unsigned long count, 
-        cacReadNotify &notify )
-{
-    unsigned long size = dbr_size_n ( type, count );
-
-    if ( type > INT_MAX ) {
-        notify.exception ( ECA_BADTYPE, 
-            "type code out of range (high side)", 
-            type, count );
-        return;
-    }
-
-    if ( count > static_cast<unsigned>(INT_MAX) || 
-		count > static_cast<unsigned>(addr.no_elements) ) {
-        notify.exception ( ECA_BADCOUNT, 
-            "element count out of range (high side)",
-            type, count);
-        return;
-    }
-
-    epicsAutoMutex locker ( this->mutex );
-
-    if ( this->eventCallbackCacheSize < size) {
-        if ( this->pEventCallbackCache ) {
-            delete [] this->pEventCallbackCache;
-        }
-        this->pEventCallbackCache = new char [size];
-        if ( ! this->pEventCallbackCache ) {
-            this->eventCallbackCacheSize = 0ul;
-            notify.exception ( ECA_ALLOCMEM, 
-                "unable to allocate callback cache",
-                type, count );
-            return;
-        }
-        this->eventCallbackCacheSize = size;
-    }
-    int status = db_get_field ( &addr, static_cast <int> ( type ), 
-                    this->pEventCallbackCache, static_cast <int> ( count ), 0 );
-    if ( status ) {
-        notify.exception ( ECA_GETFAIL, 
-            "db_get_field() completed unsuccessfuly",
-            type, count);
-    }
-    else { 
-        notify.completion ( type, count, this->pEventCallbackCache );
-    }
-}
-
 void dbServiceIO::callStateNotify ( struct dbAddr & addr, 
         unsigned type, unsigned long count, 
         const struct db_field_log * pfl, 
@@ -174,32 +123,29 @@ void dbServiceIO::callStateNotify ( struct dbAddr & addr,
         return;
     }
 
-    epicsAutoMutex locker ( this->mutex );
-
-    if ( this->eventCallbackCacheSize < size) {
-        if ( this->pEventCallbackCache ) {
-            delete [] this->pEventCallbackCache;
-        }
-        this->pEventCallbackCache = new char [size];
-        if ( ! this->pEventCallbackCache ) {
-            this->eventCallbackCacheSize = 0ul;
+    // no need to lock this because state notify is 
+    // called from only one event queue consumer thread
+    if ( this->stateNotifyCacheSize < size) {
+        char * pTmp = new ( std::nothrow ) char [size];
+        if ( ! pTmp ) {
             notify.exception ( ECA_ALLOCMEM, 
                 "unable to allocate callback cache",
                 type, count );
             return;
         }
-        this->eventCallbackCacheSize = size;
+        delete [] this->pStateNotifyCache;
+        this->pStateNotifyCache = pTmp;
+        this->stateNotifyCacheSize = size;
     }
     void *pvfl = (void *) pfl;
     int status = db_get_field ( &addr, static_cast <int> ( type ), 
-                    this->pEventCallbackCache, static_cast <int> ( count ), pvfl );
+                    this->pStateNotifyCache, static_cast <int> ( count ), pvfl );
     if ( status ) {
         notify.exception ( ECA_GETFAIL, 
-            "db_get_field() completed unsuccessfuly",
-            type, count );
+            "db_get_field() completed unsuccessfuly", type, count );
     }
     else { 
-        notify.current ( type, count, this->pEventCallbackCache );
+        notify.current ( type, count, this->pStateNotifyCache );
     }
 }
 
@@ -265,7 +211,7 @@ void dbServiceIO::initiatePutNotify ( dbChannelIO &chan, struct dbAddr &addr,
         this->ioTable.add ( *chan.dbServicePrivateListOfIO::pBlocker );
     }
     chan.dbServicePrivateListOfIO::pBlocker->initiatePutNotify ( 
-        this->mutex, notify, addr, type, count, pValue );
+        locker, notify, addr, type, count, pValue );
     if ( pId ) {
         *pId = chan.dbServicePrivateListOfIO::pBlocker->getId ();
     }
@@ -348,7 +294,8 @@ void dbServiceIO::show ( unsigned level ) const
         static_cast <const void *> ( this ) );
     if ( level > 0u ) {
         printf ( "\tevent call back cache location %p, and its size %lu\n", 
-            this->pEventCallbackCache, this->eventCallbackCacheSize );
+            static_cast <void *> ( this->pStateNotifyCache ), this->stateNotifyCacheSize );
+        this->readNotifyCache.show ( level - 1 );
     }
     if ( level > 1u ) {
         this->mutex.show ( level - 2u );

@@ -137,7 +137,7 @@ caStatus casDGClient::searchAction()
 	//
 	// ask the server tool if this PV exists
 	//
-	this->asyncIOFlag = 0u;
+	this->asyncIOFlag = false;
 	pvExistReturn pver = 
 		this->getCAS()->pvExistTest(this->ctx, pChanName);
 
@@ -146,7 +146,7 @@ caStatus casDGClient::searchAction()
 	// async IO but dont return status
 	// indicating so (and vise versa)
 	//
-	if (this->asyncIOFlag) {
+	if ( this->asyncIOFlag ) {
         if (pver.getStatus()!=pverAsyncCompletion) {
 		    errMessage (S_cas_badParameter, 
 		        "- assuming asynch IO status from caServer::pvExistTest()");

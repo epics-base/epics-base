@@ -171,8 +171,8 @@ public:
 private:
 	casMonEvent overFlowEvent;
 	unsigned long const nElem;
-	epicsMutex &mutex;
-	casChannelI &ciu;
+	epicsMutex & mutex;
+	casChannelI & ciu;
 	const casEventMask mask;
 	caResId const clientId;
 	unsigned char const dbrType;
@@ -180,8 +180,8 @@ private:
 	bool ovf;
 	bool enabled;
 
-	void enable();
-	void disable();
+	void enable ();
+	void disable ();
 
 	void push (const smartConstGDDPointer &pValue);
 	casMonitor ( const casMonitor & );
@@ -238,11 +238,11 @@ protected:
 	caStatus postIOCompletionI();
 
 private:
-	unsigned inTheEventQueue:1;
-	unsigned posted:1;
-	unsigned ioComplete:1;
-	unsigned serverDelete:1;
-	unsigned duplicate:1;
+	bool inTheEventQueue:1;
+	bool posted:1;
+	bool ioComplete:1;
+	bool serverDelete:1;
+	bool duplicate:1;
 
 	//
 	// casEvent virtual call back function

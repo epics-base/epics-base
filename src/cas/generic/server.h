@@ -482,7 +482,7 @@ public:
 protected:
     epicsMutex mutex;
 	casCtx ctx;
-	unsigned char asyncIOFlag;
+	bool asyncIOFlag;
 
 private:
 	tsDLList < casAsyncIOI > ioInProgList;

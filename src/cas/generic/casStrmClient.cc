@@ -971,7 +971,7 @@ caStatus casStrmClient::claimChannelAction()
 	// channel references it
 	//
     epicsGuard < casCoreClient > guard ( * this );
-	this->asyncIOFlag = 0u;
+	this->asyncIOFlag = false;
 
 	//
 	// attach to the PV
@@ -983,7 +983,7 @@ caStatus casStrmClient::claimChannelAction()
 	// async IO but dont return status
 	// indicating so (and vise versa)
 	//
-	if (this->asyncIOFlag) {
+	if ( this->asyncIOFlag ) {
 		status = S_cas_success;	
 	}
 	else if (pvar.getStatus() == S_casApp_asyncCompletion) {
@@ -1570,7 +1570,7 @@ caStatus casStrmClient::write()
 	//
 	// clear async IO flag
 	//
-	this->asyncIOFlag = 0u;
+	this->asyncIOFlag = false;
 
 	//
 	// DBR_STRING is stored outside the DD so it
@@ -1588,7 +1588,7 @@ caStatus casStrmClient::write()
 	// async IO but dont return status
 	// indicating so (and vise versa)
 	//
-	if (this->asyncIOFlag) {
+	if ( this->asyncIOFlag ) {
 		if (status!=S_casApp_asyncCompletion) {
 			fprintf(stderr, 
 "Application returned %d from casPV::write() - expected S_casApp_asyncCompletion\n",
@@ -1794,7 +1794,7 @@ caStatus casStrmClient::read (smartGDDPointer &pDescRet)
 	//
 	// clear the async IO flag
 	//
-	this->asyncIOFlag = 0u;
+	this->asyncIOFlag = false;
 
 	//
 	// call the server tool's virtual function

@@ -25,12 +25,9 @@
 //
 // casAsyncIOI::casAsyncIOI()
 //
-casAsyncIOI::casAsyncIOI (casCoreClient &clientIn) :
-	client (clientIn),
-	inTheEventQueue (FALSE),
-	posted (FALSE),
-	ioComplete (FALSE),
-	serverDelete (FALSE)
+casAsyncIOI::casAsyncIOI ( casCoreClient & clientIn ) :
+	client ( clientIn ), inTheEventQueue ( false ),
+	posted ( false ), ioComplete ( false ), serverDelete ( false )
 {
 	//
 	// catch situation where they create more than one

@@ -42,7 +42,7 @@ SRCS.c = \
 	../recTimer.c\
 	../recWaveform.c\
 	../recWait.c\
-	../caMonitor.c
+	../recWaitCa.c
 #	../recPal.c\
 #	../recSwitch.c\
 #	../recGsub.c\
@@ -89,7 +89,7 @@ OBJS = \
 	recDfanout.o\
 	recMbbiDirect.o\
 	recMbboDirect.o\
-	caMonitor.o
+	recWaitCa.o
 #	recPal.o\
 #	recSwitch.o\
 #	recGsub.o\

@@ -35,6 +35,7 @@ recordtype(calcout) {
         }
 	field(VAL,DBF_DOUBLE) {
 		prompt("Result")
+                promptgroup(GUI_OUTPUT)
 		asl(ASL0)
 	}
         field(PVAL,DBF_DOUBLE) {

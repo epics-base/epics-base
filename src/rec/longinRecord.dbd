@@ -2,6 +2,7 @@ recordtype(longin) {
 	include "dbCommon.dbd" 
 	field(VAL,DBF_LONG) {
 		prompt("Current value")
+                promptgroup(GUI_INPUTS)
 		asl(ASL0)
 		pp(TRUE)
 	}

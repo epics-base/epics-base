@@ -36,6 +36,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #define VC_EXTRALEAN
 #define WIN32_LEAN_AND_MEAN 
@@ -48,6 +49,8 @@
 #ifndef _WIN32
 #error This source is specific to WIN32 
 #endif
+
+extern "C" void epicsThreadCleanupWIN32 ();
 
 #if !defined(EPICS_DLL_NO)
 BOOL WINAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
@@ -64,10 +67,16 @@ BOOL WINAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 
 	case DLL_PROCESS_DETACH:
 		osiSockRelease();
+        epicsThreadCleanupWIN32 ();
 #		ifdef _DEBUG
 			fprintf(stderr, "Process detached from Com.dll version %s\n", EPICS_VERSION_STRING);
 #		endif
 		break;
+
+	case DLL_THREAD_DETACH:
+        epicsThreadCleanupWIN32 ();
+        break;
+
 	}
 
 	return TRUE;

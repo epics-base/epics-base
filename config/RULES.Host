@@ -533,17 +533,17 @@ depends:: $(LIBSRCS) $(SRCS) $(COND_PROD_SRCS)
 %$(EXE): %.c
 	@$(RM) $@
 	$(COMPILE.c)  $<
-	$(LINK.c)  $(subst ../,,$(basename $<))$(OBJ) $(LDLIBS)
+	$(LINK.c)  $(notdir $(basename $<))$(OBJ) $(LDLIBS)
 
 %$(EXE): %.cc
 	@$(RM) $@
 	$(COMPILE.cc)  $<
-	$(LINK.cc) $(subst ../,,$(basename $<))$(OBJ) $(LDLIBS)
+	$(LINK.cc) $(notdir $(basename $<))$(OBJ) $(LDLIBS)
 
 %$(EXE): %.C
 	@$(RM) $@
 	$(COMPILE.cc)  $<
-	$(LINK.cc) $(subst ../,,$(basename $<))$(OBJ) $(LDLIBS)
+	$(LINK.cc) $(notdir $(basename $<))$(OBJ) $(LDLIBS)
 
 %$(OBJ): %.c
 	@$(RM) $@

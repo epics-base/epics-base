@@ -18,6 +18,7 @@
 static unsigned long	offset_secs;
 static DWORD		prev_time = 0;
 static UINT		res;
+static char init = 0;
 
 /*
  *	init_osi_time has to be called before using the timer,
@@ -26,6 +27,10 @@ static UINT		res;
 int init_osi_time ()
 {
 	TIMECAPS	tc;
+
+	if (init) {
+		return 1;
+	}
 
 	if (timeGetDevCaps (&tc, sizeof(TIMECAPS)) != TIMERR_NOERROR)
 	{
@@ -42,13 +47,19 @@ int init_osi_time ()
 	prev_time =  timeGetTime();
 	offset_secs = (long)time(NULL) - (long)prev_time/1000;
 
+	init = 1;
 
 	return 0;
 }
 
 int exit_osi_time ()
 {
+	if (!init) {
+		return 0;
+	}
+
 	timeEndPeriod (res);
+	init = 0;
 
 	return 0;
 }
@@ -59,7 +70,16 @@ int exit_osi_time ()
 //
 osiTime osiTime::getCurrent ()
 {
-	unsigned long	now;
+	unsigned long now;
+
+	/*
+	 * this allows the code to work when it is in an object
+	 * library (in addition to inside a dll)
+	 */
+	if (!init) {
+		init_osi_time();
+		init = 1;
+	}
 
 	/* MS Online help:
 	 * Note that the value returned by the timeGetTime function is

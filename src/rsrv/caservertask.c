@@ -36,6 +36,8 @@
  *	.05 joh	103091	print task id and disconnect state in client_stat()
  *	.06 joh	112691	dont print client disconnect message unless
  *			debug is on.
+ *	.07 joh 020592	substitute lstConcat() for lstExtract() to avoid
+ *			replacing the destination list
  */
 
 #include <vxWorks.h>
@@ -216,12 +218,12 @@ register struct client *client;
 			if ((status = close(tmpsock)) == ERROR)	/* close socket	 */
 				logMsg("Unable to close open TCP client socket\n");
 	}
-	FASTLOCK(&rsrv_free_addrq_lck);
+
 	/* free dbaddr str */
-	lstExtract(&client->addrq,
-		   client->addrq.node.next,
-		   client->addrq.node.previous,
-		   &rsrv_free_addrq);
+	FASTLOCK(&rsrv_free_addrq_lck);
+	lstConcat(
+		&rsrv_free_addrq,
+		&client->addrq);
 	FASTUNLOCK(&rsrv_free_addrq_lck);
 
 	if(FASTLOCKFREE(&client->lock)<0){

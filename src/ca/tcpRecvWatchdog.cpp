@@ -51,7 +51,7 @@ tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ ) // X aCC 361
             this->cacRef.printf ( 
     "when there are incoming messages pending probably because the application\n" );
             this->cacRef.printf ( 
-    "isnt properly schedualed.\n" );
+    "isnt properly scheduled.\n" );
         }
         this->cancel ();
 #       ifdef DEBUG

@@ -3,20 +3,15 @@ TOP=../../../..
  
 include $(TOP)/configure/CONFIG
 
-INC += canBus.h
 INC += drvAt5Vxi.h
 INC += drvEpvxi.h
 INC += drvHp1404a.h
 INC += drvHpe1368a.h
-INC += drvIpac.h
 INC += drvKscV215.h
 INC += drvMz8310.h
 INC += drvStc.h
 INC += drvTip810.h
 INC += epvxi.h
-INC += ipModules.h
-INC += ipic.h
-INC += pca82c200.h
 
 SRCS.c += ../drvAt5Vxi.c
 SRCS.c += ../drvEpvxi.c
@@ -29,11 +24,6 @@ SRCS.c += ../drvMz8310.c
 SRCS.c += ../drvStc.c
 #SRCS.c += ../drvCaenV265.c
 
-SRCS.c += ../drvVipc310.c
-SRCS.c += ../drvVipc610.c
-SRCS.c += ../drvIpMv162.c
-SRCS.c += ../drvIpac.c
-SRCS.c += ../drvTip810.c
 #SRCS.c += ../drvVmic2534.c
 
 PROD_vxWorks = $(SRCS.c:../%.c=%.o)

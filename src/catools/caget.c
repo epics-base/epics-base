@@ -131,7 +131,6 @@ void event_handler (evargs args)
  *
  **************************************************************************-*/
  
-/* caget  -  Get PV values */
 int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
            chtype dbrType, unsigned long reqElems)
 {

@@ -166,7 +166,7 @@ static void taskwdTask(void)
 
 		    pname = taskName(pt->id.tid);
 		    if(!pt->suspended) {
-			struct task_list *ptany,*anynext;
+			struct task_list *ptany;
 
 			pt->suspended = TRUE;
 			sprintf(message,"task %x %s suspended",pt->id.tid,pname);
@@ -205,7 +205,7 @@ static struct task_list *allocList(void)
 
     FASTLOCK(&alloclock);
     if(freeHead) {
-	(void *)pt = (void *)freeHead;
+	pt = (struct task_list *)freeHead;
 	freeHead = freeHead->next;
     } else pt = calloc(1,sizeof(struct task_list));
     if(pt==NULL) {

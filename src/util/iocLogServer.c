@@ -35,12 +35,11 @@
  *
  * Modification Log:
  * -----------------
- * .01	08-07-91	joh	Created
+ * .01 080791 joh	Created
+ * .02 102591 joh	Dont try to reopen the log file if a write fails
+ * .03 110691 joh	Disconnect if sent a zero length message
+ *
  */
-
-#if 0
-@@@@@ carefully reexamine file reopen issues.
-#endif
 
 
 #include	<stdio.h>
@@ -70,7 +69,7 @@ void	readFromClient();
 void	logTime();
 int	getConfig();
 int	openLogFile();
-void	reopenLogFile();
+void	handleLogFileError();
 void	failureNoptify();
 
 struct iocLogClient {
@@ -206,19 +205,18 @@ struct ioc_log_server	*pserver;
 
 
 /*
- *	reopenLogFile()
+ *	handleLogFileError()
  *
  */
 static void
-reopenLogFile(pserver)
+handleLogFileError(pserver)
 struct ioc_log_server	*pserver;
 {
 	int status;
 
-	status = openLogFile(pserver);
-	if(status<0){
-		exit();
-	}
+	printf("iocLogServer: log file access problem (errno=%d)\n", errno);
+	exit();
+
 }
 		
 
@@ -287,7 +285,7 @@ struct ioc_log_server	*pserver;
 		pclient->name,
 		pclient->ascii_time);
 	if(status<0){
-		reopenLogFile();
+		handleLogFileError();
 	}
 
 	fdmgr_add_fd(
@@ -321,7 +319,12 @@ readFromClient(pclient)
 	length = read(pclient->insock,
 		      pclient->ptopofstack,
 		      sizeof(pclient->recvbuf)-stacksize-1);
-	if (length < 0) {
+	if (length <= 0) {
+
+		if(length == 0){
+			printf("iocLogServer: nil message disconnect\n");
+		}
+
 		/*
 		 * flush any leftovers
 		 */
@@ -332,7 +335,7 @@ readFromClient(pclient)
 				pclient->name,
 				pclient->ascii_time);
 			if(status<0){
-				reopenLogFile();
+				handleLogFileError();
 			}
 			status = fwrite(
 					pclient->recvbuf,
@@ -340,11 +343,11 @@ readFromClient(pclient)
 					NITEMS,
 					pclient->pserver->poutfile);
 			if (status != NITEMS) {
-				reopenLogFile();
+				handleLogFileError();
 			}
 			status = fprintf(pclient->pserver->poutfile,"\n");
 			if(status<0){
-				reopenLogFile();
+				handleLogFileError();
 			}
 		}
 
@@ -354,7 +357,7 @@ readFromClient(pclient)
 			pclient->name,
 			pclient->ascii_time);
 		if(status<0){
-			reopenLogFile();
+			handleLogFileError();
 		}
 
 		fdmgr_clear_fd(
@@ -392,7 +395,7 @@ readFromClient(pclient)
 			pclient->name,
 			pclient->ascii_time);
 		if(status<0){
-			reopenLogFile();
+			handleLogFileError();
 		}
 
 		status = fwrite(
@@ -401,7 +404,7 @@ readFromClient(pclient)
 				NITEMS,
 				pclient->pserver->poutfile);
 		if (status != NITEMS) {
-			reopenLogFile();
+			handleLogFileError();
 			return;
 		}
 

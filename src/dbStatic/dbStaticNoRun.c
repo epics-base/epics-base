@@ -193,6 +193,7 @@ int  epicsShareAPI dbIsDefaultValue(DBENTRY *pdbentry)
     void       	*pfield = pdbentry->pfield;
 
     if(!pflddes) return(FALSE);
+    if(pflddes->field_type==DBF_DEVICE) return(FALSE);
     if(!pfield) return(TRUE);
     switch (pflddes->field_type) {
 	case DBF_STRING: 
@@ -231,7 +232,7 @@ int  epicsShareAPI dbIsDefaultValue(DBENTRY *pdbentry)
 		if(!pinitial) return(FALSE);
 		return(strcmp(pinitial,pfield)==0);
 	    }
-	case DBF_DEVICE:
+	case DBF_DEVICE: /*Should never reach this state*/
 	    return(FALSE);
 	case DBF_INLINK:
 	case DBF_OUTLINK:

@@ -64,24 +64,34 @@ struct dio_rec dio[XY240_MAX_CARDS];	/*define array of control structures*/
  *task to check for change of state
  *
  */
+ extern int	wakeup_init;
 dio_scan()
  
 {	
 	int i;
+	int	first_scan,first_scan_complete;
 
+ first_scan = first_scan_complete = 0;
  for (;;) 
  {
+   if (wakeup_init & !first_scan_complete) first_scan = 1;
+
    for (i = 0; i < XY240_MAX_CARDS; i++)
     {
     if (dio[i].dptr)
      if (((dio[i].dptr->port0_1) ^ (dio[i].sport0_1)) || 
-		((dio[i].dptr->port2_3) ^ (dio[i].sport2_3)))
+		((dio[i].dptr->port2_3) ^ (dio[i].sport2_3))
+		|| first_scan)
       {
 	 /* printf("io_scanner_wakeup for card no %d\n",i); */
 	  io_scanner_wakeup(IO_BI,XY240,i);	  
 	  dio[i].sport0_1 = dio[i].dptr->port0_1;
 	  dio[i].sport2_3 = dio[i].dptr->port2_3;	  
 	  }
+    }
+    if (first_scan){
+	first_scan = 0;
+	first_scan_complete = 1;
     }
     taskDelay(1);	
   }

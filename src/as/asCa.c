@@ -168,9 +168,8 @@ LOCAL void asCaTask(void)
 	    pasg->inpBad |= (1<<pasginp->inpIndex);
 	    pcapvt = pasginp->capvt = asCalloc(1,sizeof(CAPVT));
 	    /*Note calls connectCallback immediately called for local Pvs*/
-	    SEVCHK(ca_build_and_connect(pasginp->inp,TYPENOTCONN,0,
-		&pcapvt->chid,0,connectCallback,pasginp),
-		"ca_build_and_connect");
+	    SEVCHK(ca_search_and_connect(pasginp->inp,&pcapvt->chid,
+		connectCallback,pasginp),"ca_build_and_connect");
 	    /*Note calls accessRightsCallback immediately called for local Pvs*/
 	    SEVCHK(ca_replace_access_rights_event(pcapvt->chid,accessRightsCallback),
 		"ca_replace_access_rights_event");

@@ -18,8 +18,6 @@ of this distribution.
 #include <taskLib.h>
 #include <taskVarLib.h>
 #include <sysLib.h>
-/* The following not defined in an vxWorks header */
-int sysClkRateGet(void);
 
 #include "errlog.h"
 #include "ellLib.h"

@@ -459,7 +459,7 @@ public:
     epicsShareFunc virtual caStatus beginTransaction () = 0;
     epicsShareFunc virtual void endTransaction () = 0;
     epicsShareFunc virtual caStatus read (const casCtx &ctx, gdd &prototype) = 0;
-    epicsShareFunc virtual caStatus write (const casCtx &ctx, gdd &value) = 0;
+    epicsShareFunc virtual caStatus write (const casCtx &ctx, const gdd &value) = 0;
     epicsShareFunc virtual casChannel *createChannel (const casCtx &ctx,
         const char * const pUserName, const char * const pHostName) = 0;
     epicsShareFunc virtual aitEnum bestExternalType () const = 0;

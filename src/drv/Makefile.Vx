@@ -44,19 +44,19 @@ PROD1 = $(OBDIR)/drvSup
 
 PROD2 = $(OBDIR)/drvSupPEP
 
-install:$(EPICS_BASE_BIN)/$(T_A)/$(PROD1) $(EPICS_BASE_BIN)/$(T_A)/$(PROD2)
-$(EPICS_BASE_BIN)/$(T_A)/$(PROD1): $(PROD1)
-	$(INSTALL) $? $@
+PRODS = $(PROD1) $(PROD2)
 
-$(EPICS_BASE_BIN)/$(T_A)/$(PROD2): $(PROD2)
-	$(INSTALL) $? $@
+install: install_prods
+
+install_prods: $(PRODS)
+	$(INSTALL) $? $(EPICS_BASE_BIN)/$(T_A)
 
 build: $(PROD1) $(PROD2)
 
-$(OBDIR)/drvSup.o: $(OBJS) $(OBJS1)
+$(OBDIR)/drvSup: $(OBJS) $(OBJS1)
 	$(LINK.c) $@ $? $(LDLIBS)
 
-$(OBDIR)/drvSupPEP.o: $(OBJS) $(OBJS2)
+$(OBDIR)/drvSupPEP: $(OBJS) $(OBJS2)
 	$(LINK.c) $@ $? $(LDLIBS)
 
 include $(EPICS)/config/RULES.Vx

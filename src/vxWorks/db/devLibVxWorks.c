@@ -165,6 +165,10 @@ long devDisconnectInterruptVME (
 	void (*psub)();
 	int	status;
 
+#   if CPU_FAMILY == PPC
+        return S_dev_vecInstlFail;
+#   endif
+
 	/*
 	 * If pFunction not connected to this vector
 	 * then they are probably disconnecting from the wrong vector
@@ -335,17 +339,19 @@ LOCAL myISR *isrFetch(unsigned vectorNumber)
 	 */
 	psub = (myISR *) intVecGet((FUNCPTR *)INUM_TO_IVEC(vectorNumber));
 
-	/*
-	 * from libvxWorks/veclist.c
-	 *
-	 * checks to see if it is a C ISR
-	 * and if so finds the function pointer and
-	 * the parameter passed
-	 */
-	s = cISRTest(psub, &pCISR, &pParam);
-	if(!s){
-		psub = pCISR;
-	}
+    if ( psub ) {
+	    /*
+	     * from libvxWorks/veclist.c
+	     *
+	     * checks to see if it is a C ISR
+	     * and if so finds the function pointer and
+	     * the parameter passed
+	     */
+	    s = cISRTest(psub, &pCISR, &pParam);
+	    if(!s){
+		    psub = pCISR;
+	    }
+    }
 
 	return psub;
 }

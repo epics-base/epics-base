@@ -1577,22 +1577,27 @@ void cac::vSignal ( int ca_status, const char *pfilenm,
         "Fatal"
     };
     
-    this->printf ( "CA.Client.Diagnostic..............................................\n" );
+    this->printf ( "CA.Client.Exception...............................................\n" );
     
     this->printf ( "    %s: \"%s\"\n", 
         severity[ CA_EXTRACT_SEVERITY ( ca_status ) ], 
         ca_message ( ca_status ) );
 
     if  ( pFormat ) {
-        this->printf ( "    Context: \"" );
+        this->printf ( "Context: \"" );
         this->vPrintf ( pFormat, args );
         this->printf ( "\"\n" );
     }
         
-    if (pfilenm) {
-        this->printf ( "    Source File: %s Line Number: %d\n",
+    if ( pfilenm ) {
+        this->printf ( "    Source File: %s line %d\n",
             pfilenm, lineno );    
     } 
+
+    epicsTime current = epicsTime::getCurrent ();
+    char date[64];
+    current.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S.%f");
+    this->printf ( "    Current Time: %s\n", date );
     
     /*
      *  Terminate execution if unsuccessful

@@ -40,6 +40,7 @@
 #include "epicsPrint.h"
 #include "epicsVersion.h"
 #include "epicsAssert.h"
+#include "epicsTime.h"
 
 /*
  * epicsAssert ()
@@ -52,6 +53,9 @@ epicsShareFunc void epicsShareAPI epicsAssert (const char *pFile, const unsigned
 	const char *pAuthorName)
 {
     epicsThreadId threadid = epicsThreadGetIdSelf();
+    epicsTimeStamp current;
+    char date[64];
+    int status;
 
     epicsPrintf (	
 "\n\n\n%s: A call to \"assert (%s)\" failed in %s at %d\n", 
@@ -60,28 +64,28 @@ epicsShareFunc void epicsShareAPI epicsAssert (const char *pFile, const unsigned
 		pFile, 
 		line);
 
-	if (pAuthorName) {
+    status = epicsTimeGetCurrent ( & current );
+    if ( status == 0 ) {
+        epicsTimeToStrftime ( date, sizeof ( date ),
+            "%a %b %d %Y %H:%M:%S.%f", & current );
+        epicsPrintf ( 
+"Current time %s.\n", date );
+    }
 
-        	epicsPrintf (	
-"Please send a copy of the output from \"tt (%p)\" and a copy of this message\n",
-		threadid);
+	epicsPrintf (
+"EPICS Release %s.\n", epicsReleaseVersion );
 
-        	epicsPrintf (	
-"to \"%s\" (the author of this call to assert()) or \"tech-talk@aps.anl.gov\"\n", 
+	if ( ! pAuthorName ) {
+        pAuthorName = "the author";
+    }
+
+    epicsPrintf (	
+"Please E-mail this message and the output from \"tt (%p)\"\n",
+		threadid );
+
+    epicsPrintf (	
+"to %s or to tech-talk@aps.anl.gov\n", 
 		pAuthorName);
-
-	}
-	else {
-
-        	epicsPrintf (	
-"Please send a copy of the output from \"tt (%p)\" and a copy of this message\n",
-		threadid);
-
-        	epicsPrintf (	
-"to the author or \"tech-talk@aps.anl.gov\"\n");
-
-	}
-	epicsPrintf ("This problem occurred in \"%s\"\n", epicsReleaseVersion);
 
     epicsThreadSuspendSelf ();
 }

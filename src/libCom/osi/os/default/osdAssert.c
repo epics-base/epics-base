@@ -37,6 +37,7 @@
 #include "epicsVersion.h"
 #include "epicsAssert.h"
 #include "epicsThread.h"
+#include "epicsTime.h"
 #include "cantProceed.h"
 
 /*
@@ -46,38 +47,39 @@ epicsShareFunc void epicsShareAPI
 	epicsAssert (const char *pFile, const unsigned line, 
     const char *pExp, const char *pAuthorName)
 {
+    epicsTimeStamp current;
+    char date[64];
+    int status;
+
 	errlogPrintf (
 "\n\n\nA call to \"assert (%s)\" failed in %s line %d.\n", pExp, pFile, line);
 
 	errlogPrintf (
-"The file \"core\" will be created in the current working directory.\n");
+"EPICS release %s.\n", epicsReleaseVersion );
+
+    status = epicsTimeGetCurrent ( & current );
+
+    if ( status == 0 ) {
+
+        epicsTimeToStrftime ( date, sizeof ( date ),
+            "%a %b %d %Y %H:%M:%S.%f", & current );
+
+        errlogPrintf ( 
+"Current time %s.\n", date );
+
+    }
+
+	if ( ! pAuthorName ) {
+        pAuthorName = "the author";
+    }
 
 	errlogPrintf (
-"Please save this file and the text of this message in order to assist\n");
+"Please E-mail this message to %s or to tech-talk@aps.anl.gov\n", 
+        pAuthorName );
 
-	errlogPrintf (
-"in diagnosing this problem.\n");
+    errlogPrintf (
+"Calling epicsThreadSuspendSelf()\n" );
 
-	if (pAuthorName) {
-
-		errlogPrintf (
-"Please send the text of this message to \"%s\"\n", pAuthorName);
-
-		errlogPrintf (
-"(the author of this call to assert()) or to \"tech-talk@aps.anl.gov\"\n");
-
-	}
-	else {
-
-		errlogPrintf (
-"Please contact the author of this software or else send the text of\n");
-
-		errlogPrintf (
-"this message to \"tech-talk@aps.anl.gov\"\n");
-
-	}
-	errlogPrintf ("This problem occurred in \"%s\"\n", epicsReleaseVersion);
-        errlogPrintf("calling epicsThreadSuspendSelf()\n");
-        epicsThreadSuspendSelf();
+    epicsThreadSuspendSelf ();
 }
 

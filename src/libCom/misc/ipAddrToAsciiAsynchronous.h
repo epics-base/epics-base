@@ -56,15 +56,14 @@ private:
 // - this class implements the asynchronous DNS query
 // - it completes early with the host name in dotted IP address form 
 //   if the ipAddrToAsciiEngine is destroyed before IO completion
-// - ioInitiate fails if there are too many items already in
-//   the engine's queue.
+//   or if there are too many items already in the engine's queue.
 // 
 class ipAddrToAsciiAsynchronous : 
     public tsDLNode < ipAddrToAsciiAsynchronous > {
 public:
     epicsShareFunc ipAddrToAsciiAsynchronous ( const osiSockAddr & addr );
     epicsShareFunc virtual ~ipAddrToAsciiAsynchronous ();
-    epicsShareFunc bool ioInitiate ( ipAddrToAsciiEngine &engine );
+    epicsShareFunc void ioInitiate ( ipAddrToAsciiEngine & engine );
     epicsShareFunc bool identicalAddress ( const osiSockAddr & addr ) const;
     epicsShareFunc osiSockAddr address () const;
     epicsShareFunc void show ( unsigned level ) const;

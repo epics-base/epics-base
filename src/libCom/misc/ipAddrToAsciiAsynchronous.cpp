@@ -82,6 +82,7 @@ void ipAddrToAsciiEngine::run ()
             {
                 epicsGuard < epicsMutex > locker ( ipAddrToAsciiEngine::mutex );
                 if ( this->pCurrent ) {
+                    this->pCurrent->pEngine = 0;
                     this->callbackInProgress = true;
                 }
                 else {
@@ -94,10 +95,7 @@ void ipAddrToAsciiEngine::run ()
 
             {
                 epicsGuard < epicsMutex > locker ( ipAddrToAsciiEngine::mutex );
-                if ( this->pCurrent ) {
-                    this->pCurrent->pEngine = 0;
-                    this->pCurrent = 0;
-                }
+                this->pCurrent = 0;
                 this->callbackInProgress = false;
             }
             if ( this->cancelPending  ) {
@@ -173,7 +171,7 @@ ipAddrToAsciiAsynchronous::~ipAddrToAsciiAsynchronous ()
     }
 }
 
-epicsShareFunc bool ipAddrToAsciiAsynchronous::ioInitiate ( ipAddrToAsciiEngine & engine )
+epicsShareFunc void ipAddrToAsciiAsynchronous::ioInitiate ( ipAddrToAsciiEngine & engine )
 {
     bool success;
 
@@ -193,8 +191,12 @@ epicsShareFunc bool ipAddrToAsciiAsynchronous::ioInitiate ( ipAddrToAsciiEngine 
     if ( success ) {
         engine.laborEvent.signal ();
     }
-
-    return success;
+    else {
+        char autoNameTmp[256];
+        sockAddrToA ( &this->addr.sa, autoNameTmp, 
+            sizeof ( autoNameTmp ) );
+        this->ioCompletionNotify ( autoNameTmp );
+    }
 }
 
 void ipAddrToAsciiAsynchronous::show ( unsigned level ) const

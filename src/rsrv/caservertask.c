@@ -38,6 +38,7 @@
 
 #include "osiSock.h"
 #include "osiPoolStatus.h"
+#include "osiSigPipeIgnore.h"
 #include "epicsEvent.h"
 #include "epicsMutex.h"
 #include "epicsTime.h"
@@ -79,6 +80,8 @@ LOCAL int req_server (void)
     SOCKET clientSock;
     epicsThreadId tid;
     int portChange;
+
+    installSigPipeIgnore ();
 
     taskwdInsert ( epicsThreadGetIdSelf (), NULL, NULL );
 

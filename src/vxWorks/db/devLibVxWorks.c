@@ -190,14 +190,16 @@ long devDisconnectInterruptVME (
  */
 long devEnableInterruptLevelVME (unsigned level)
 {
-	int	s;
-
-	s = sysIntEnable (level);
-	if (s!=OK) {
+#	if CPU_FAMILY != I80X86 
+	    int	s;
+	    s = sysIntEnable (level);
+	    if (s!=OK) {
+		    return S_dev_intEnFail;
+	    }
+	    return SUCCESS;
+#	else
 		return S_dev_intEnFail;
-	}
-
-	return SUCCESS;
+#	endif
 }
 
 /*
@@ -205,7 +207,7 @@ long devEnableInterruptLevelVME (unsigned level)
  */
 long devEnableInterruptLevelISA (unsigned level)
 {
-#	if CPU == I80386
+#	if CPU_FAMILY == I80X86
 		int s;
 		s = sysIntEnablePIC (level);
 		if (s!=OK) {
@@ -222,7 +224,7 @@ long devEnableInterruptLevelISA (unsigned level)
  */
 long devDisableInterruptLevelISA (unsigned level)
 {
-#	if CPU == I80386
+#	if CPU_FAMILY == I80X86
 		int s;
 		s = sysIntDisablePIC (level);
 		if (s!=OK) {
@@ -240,14 +242,16 @@ long devDisableInterruptLevelISA (unsigned level)
  */
 long devDisableInterruptLevelVME (unsigned level)
 {
-	int s;
-
-	s = sysIntDisable (level);
-	if (s!=OK) {
-		return S_dev_intDissFail;
-	}
-
-	return SUCCESS;
+#	if CPU_FAMILY != I80X86
+	    int s;
+	    s = sysIntDisable (level);
+	    if (s!=OK) {
+		    return S_dev_intDissFail;
+	    }
+	    return SUCCESS;
+#	else
+		return S_dev_intEnFail;
+#	endif
 }
 
 /*

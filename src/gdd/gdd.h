@@ -498,7 +498,7 @@ protected:
 
 	gdd_NEWDEL_DATA		// required for using generic new and remove
 private:
-	mutable aitUint16 ref_cnt;
+	mutable aitUint32 ref_cnt;
 	aitUint8 flags;
 
 	const gdd* indexDD (aitIndex index) const;

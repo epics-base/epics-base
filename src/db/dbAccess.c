@@ -563,7 +563,8 @@ long epicsShareAPI dbProcess(dbCommon *precord)
 	if (precord->pact) {
 		unsigned short	monitor_mask;
 
-		if (*ptrace) printf("active:    %s\n",precord->name);
+		if (*ptrace) printf("%s: Active %s\n",
+                        epicsThreadGetNameSelf(), precord->name);
 		/* raise scan alarm after MAX_LOCK times */
 		if (precord->stat==SCAN_ALARM) goto all_done;
 		if (precord->lcnt++ !=MAX_LOCK) goto all_done;
@@ -588,7 +589,8 @@ long epicsShareAPI dbProcess(dbCommon *precord)
 
 	/* if disabled check disable alarm severity and return success */
 	if (precord->disa == precord->disv) {
-		if(*ptrace) printf("disabled:  %s\n",precord->name);
+		if(*ptrace) printf("%s: Disabled %s\n",
+                        epicsThreadGetNameSelf(), precord->name);
 		/*take care of caching and notifyCompletion*/
 		precord->rpro = FALSE;
 		precord->putf = FALSE;
@@ -615,10 +617,12 @@ long epicsShareAPI dbProcess(dbCommon *precord)
 		precord->pact=1;/*set pact TRUE so error is issued only once*/
 		recGblRecordError(S_db_noRSET, (void *)precord, "dbProcess");
 		status = S_db_noRSET;
-		if (*ptrace) printf("failure:   %s\n", precord->name);
+		if (*ptrace) printf("%s: No RSET for %s\n",
+				epicsThreadGetNameSelf(), precord->name);
 		goto all_done;
 	}
-	if(*ptrace) printf("process:   %s\n", precord->name);
+	if(*ptrace) printf("%s: Process %s\n",
+			epicsThreadGetNameSelf(), precord->name);
 	/* process record */
 	status = (*prset->process)(precord);
         /* Print record's fields if PRINT_MASK set in breakpoint field */
@@ -1087,7 +1091,8 @@ done:
 	&& dbrType<DBR_PUT_ACKT)) {
 	    if(precord->pact) {
 		if(precord->tpro)
-		    printf("active:    %s\n",precord->name);
+		    printf("%s: Active %s\n",
+                        epicsThreadGetNameSelf(), precord->name);
 		precord->rpro = TRUE;
 	    } else {
 		/*indicate that dbPutField called dbProcess*/

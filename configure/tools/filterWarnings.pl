@@ -31,13 +31,14 @@ sub Usage
     exit 2;
 }
 
-if ( $ENV{"EPICS_HOST_ARCH"} =~ m/solaris-sparc/ ) {
-  while ( $errline = <> ) {
-    if ( $errline !~ m/invalid white space character in directive/ ) {
-      print $errline;
-    }
-  }
-} else {
+# Invalid whit space filter on solaris not implemented
+#if ( $ENV{"EPICS_HOST_ARCH"} =~ m/solaris-sparc/ ) {
+#  while ( $errline = <> ) {
+#    if ( $errline !~ m/invalid white space character in directive/ ) {
+#      print $errline;
+#    }
+#  }
+#} else {
   while ( $errline = <> ) {
     if ( $errline =~ m/^(Warning|Error)/ ) {
       ($errno) = ($errline =~ m/.* ([0-9]+):/);
@@ -50,4 +51,4 @@ if ( $ENV{"EPICS_HOST_ARCH"} =~ m/solaris-sparc/ ) {
       print $pointline;
     }
   }
-}
+#}

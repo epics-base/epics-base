@@ -1367,6 +1367,14 @@ void tcpiiu::blockUntilBytesArePendingInOS ()
     while ( this->state == tcpiiu::iiucs_connected ) {
         int status = ::recv ( this->sock, 
             & buf, 1, MSG_PEEK );
+
+        // if the circuit was aborted then supress warning message about
+        // bad file descriptor
+        if ( this->state != iiucs_connected && 
+                this->state != iiucs_clean_shutdown ) {
+            return;
+        } 
+
         if ( status > 0 ) {
             break;
         }

@@ -47,6 +47,9 @@
 /*			address in use so that test works on UNIX	*/
 /*			kernels that support multicast			*/
 /* $Log$
+ * Revision 1.73  1997/08/04 23:37:09  jhill
+ * added beacon anomaly flag init/allow ip 255.255.255.255
+ *
  * Revision 1.71  1997/06/13 09:14:19  jhill
  * connect/search proto changes
  *
@@ -390,7 +393,7 @@ int				net_proto
 		piiu->recvBytes = udp_recv_msg; 
 		piiu->sendBytes = cac_udp_send_msg_piiu; 
 		piiu->procInput = ca_process_udp; 
-		piiu->minfreespace = MAX_UDP+2*sizeof(struct udpmsglog);	
+		piiu->minfreespace = ETHERNET_MAX_UDP+2*sizeof(struct udpmsglog);	
 
       		/* 	allocate a socket			*/
       		sock = socket(	AF_INET,	/* domain	*/
@@ -416,7 +419,7 @@ int				net_proto
       		if(status<0){
 			free(piiu);
         		ca_printf("CAC: sso (err=\"%s\")\n",
-				strerror(SOCKERRNO));
+				SOCKERRSTR);
         		status = socket_close(sock);
 			if(status < 0){
 				SEVCHK(ECA_INTERNAL,NULL);
@@ -446,7 +449,7 @@ int				net_proto
 					sizeof(size));
 			if (status<0) {
         			ca_printf("CAC: setsockopt SO_RCVBUF (err=%s)\n",
-					strerror(SOCKERRNO));
+					SOCKERRSTR);
 			}
 		}
 #if 0
@@ -462,7 +465,7 @@ int				net_proto
 				(struct sockaddr *) &saddr, 
 				sizeof(saddr));
       		if(status<0){
-        		ca_printf("CAC: bind (err=%s)\n",strerror(SOCKERRNO));
+        		ca_printf("CAC: bind (err=%s)\n",SOCKERRSTR);
 			genLocalExcep (ECA_INTERNAL,"bind failed");
       		}
 #endif
@@ -542,7 +545,7 @@ LOCAL void cac_set_iiu_non_blocking (struct ioc_in_use *piiu)
 	if(status<0){
 		ca_printf(
 			"CAC: failed to set non-blocking because \"%s\"\n",
-			strerror(SOCKERRNO));
+			SOCKERRSTR);
 	}
 }
 
@@ -564,7 +567,9 @@ LOCAL void cac_connect_iiu (struct ioc_in_use *piiu)
 		return;
 	}
 		
-	assert(ellCount(&piiu->destAddr)==1u);
+	LOCK;
+
+	assert (ellCount(&piiu->destAddr)==1u);
 	pNode = (caAddrNode *) ellFirst(&piiu->destAddr);
 
 	/* 
@@ -577,12 +582,12 @@ LOCAL void cac_connect_iiu (struct ioc_in_use *piiu)
 				piiu->sock_chan,
 				&pNode->destAddr.sa,
 				sizeof(pNode->destAddr.sa));
-		if(status == 0){
+		if (status == 0) {
 			break;
 		}
 
 		errnoCpy = SOCKERRNO;
-		if (errnoCpy==EISCONN) {
+		if (errnoCpy==SOCK_EISCONN) {
 			/*
 			 * called connect after we are already connected 
 			 * (this appears to be how they provide 
@@ -591,35 +596,45 @@ LOCAL void cac_connect_iiu (struct ioc_in_use *piiu)
 			break;
 		}
 		else if (
-			errnoCpy==EINPROGRESS ||
-			errnoCpy==EWOULDBLOCK /* for WINSOCK */
+			errnoCpy==SOCK_EINPROGRESS ||
+			errnoCpy==SOCK_EWOULDBLOCK /* for WINSOCK */
 			) {
 			/*
 			 * The  socket  is   non-blocking   and   a
 			 * connection attempt has been initiated,
 			 * but not completed.
 			 */
+			UNLOCK;
 			return;
 		}
-		else if (
-			errnoCpy==EALREADY ||
-			errnoCpy==EINVAL /* for early WINSOCK */
-			) {
+		else if (errnoCpy==SOCK_EALREADY) {
+			UNLOCK;
 			return;	
 		}
-		else if(errnoCpy==EINTR) {
+#ifdef _WIN32
+		/*
+		 * including this with vxWorks appears to
+		 * cause trouble
+		 */
+		else if (errnoCpy==SOCK_EINVAL) { /* a SOCK_EALREADY alias used by early WINSOCK */
+			UNLOCK;
+			return;	
+		}
+#endif
+		else if(errnoCpy==SOCK_EINTR) {
 			/*
 			 * restart the system call if interrupted
 			 */
 			continue;
 		}
 		else {	
+			TAG_CONN_DOWN(piiu);
+			UNLOCK;
 			ca_printf(
 	"CAC: Unable to connect port %d on \"%s\" because %d=\"%s\"\n", 
 				ntohs(pNode->destAddr.in.sin_port), 
 				piiu->host_name_str, errnoCpy, 
-				strerror(errnoCpy));
-			TAG_CONN_DOWN(piiu);
+				SOCKERRSTR);
 			return;
 		}
 	}
@@ -639,8 +654,9 @@ LOCAL void cac_connect_iiu (struct ioc_in_use *piiu)
 	 * then add them to the outgoing message buffer
 	 */
 	if (piiu->claimsPending) {
-		retryPendingClaims(piiu);
+		retryPendingClaims (piiu);
 	}
+	UNLOCK;
 }
 
 
@@ -780,18 +796,18 @@ void notify_ca_repeater()
        			(struct sockaddr *)&saddr, 
 			sizeof(saddr));
       		if(status < 0){
-			if(	SOCKERRNO != EINTR && 
-				SOCKERRNO != ENOBUFS && 
-				SOCKERRNO != EWOULDBLOCK &&
+			if(	SOCKERRNO != SOCK_EINTR && 
+				SOCKERRNO != SOCK_ENOBUFS && 
+				SOCKERRNO != SOCK_EWOULDBLOCK &&
 				/*
 				 * This is returned from Linux when
 				 * the repeater isnt running
 				 */
-				SOCKERRNO != ECONNREFUSED 
+				SOCKERRNO != SOCK_ECONNREFUSED 
 				){
 				ca_printf(
 				"CAC: error sending to repeater is \"%s\"\n", 
-				strerror(SOCKERRNO));
+				SOCKERRSTR);
 			}
 		}
 		else{
@@ -855,12 +871,12 @@ LOCAL void cac_udp_send_msg_piiu(struct ioc_in_use *piiu)
 
 			localErrno = SOCKERRNO;
 
-			if(	localErrno != EWOULDBLOCK && 
-				localErrno != ENOBUFS && 
-				localErrno != EINTR){
+			if(	localErrno != SOCK_EWOULDBLOCK && 
+				localErrno != SOCK_ENOBUFS && 
+				localErrno != SOCK_EINTR){
 				ca_printf(
 					"CAC: UDP send error = \"%s\"\n",
-					strerror(localErrno));
+					SOCKERRSTR);
 			}
 		}
 	}
@@ -950,19 +966,19 @@ LOCAL void cac_tcp_send_msg_piiu(struct ioc_in_use *piiu)
 
 	localError = SOCKERRNO;
 
-	if(	localError == EWOULDBLOCK ||
-		/* localError == ENOBUFS || */
-		localError == EINTR){
+	if(	localError == SOCK_EWOULDBLOCK ||
+		/* localError == SOCK_ENOBUFS || */
+		localError == SOCK_EINTR){
 			UNLOCK;
 			return;
 	}
 
-	if(	localError != EPIPE && 
-		localError != ECONNRESET &&
-		localError != ETIMEDOUT){
+	if(	localError != SOCK_EPIPE && 
+		localError != SOCK_ECONNRESET &&
+		localError != SOCK_ETIMEDOUT){
 		ca_printf(	
 			"CAC: error on socket send() %s\n",
-			strerror(localError));
+			SOCKERRSTR);
 	}
 
 	TAG_CONN_DOWN(piiu);
@@ -1070,16 +1086,16 @@ LOCAL void tcp_recv_msg(struct ioc_in_use *piiu)
 		}
 		else if(status <0){
 			/* try again on status of -1 and no luck this time */
-			if(SOCKERRNO == EWOULDBLOCK || SOCKERRNO == EINTR){
+			if(SOCKERRNO == SOCK_EWOULDBLOCK || SOCKERRNO == SOCK_EINTR){
 				break;
 			}
 
-			if(	SOCKERRNO != EPIPE && 
-				SOCKERRNO != ECONNRESET &&
-				SOCKERRNO != ETIMEDOUT){
+			if(	SOCKERRNO != SOCK_EPIPE && 
+				SOCKERRNO != SOCK_ECONNRESET &&
+				SOCKERRNO != SOCK_ETIMEDOUT){
 				ca_printf(	
 					"CAC: unexpected TCP recv error (err=%s)\n",
-					strerror(SOCKERRNO));
+					SOCKERRSTR);
 			}
 			TAG_CONN_DOWN(piiu);
 			break;
@@ -1174,14 +1190,14 @@ LOCAL void udp_recv_msg(struct ioc_in_use *piiu)
 	LOCK;
 
 	bytesAvailable = cacRingBufferWriteSize(&piiu->recv, TRUE);
-	assert(bytesAvailable >= MAX_UDP+2*sizeof(*pmsglog));
+	assert(bytesAvailable >= ETHERNET_MAX_UDP+2*sizeof(*pmsglog));
 	pmsglog = (struct udpmsglog *) &piiu->recv.buf[piiu->recv.wtix];
 
   	reply_size = sizeof(pmsglog->addr);
     	status = recvfrom(	
 			piiu->sock_chan,
 			(char *)(pmsglog+1),
-			MAX_UDP,
+			bytesAvailable-2*sizeof(*pmsglog), /* was MAX_UDP before 8-5-97 */
 			0,
 			(struct sockaddr *)&pmsglog->addr, 
 			&reply_size);
@@ -1190,7 +1206,7 @@ LOCAL void udp_recv_msg(struct ioc_in_use *piiu)
 		 * op would block which is ok to ignore till ready
 		 * later
 		 */
-      		if(SOCKERRNO == EWOULDBLOCK || SOCKERRNO == EINTR){
+      		if(SOCKERRNO == SOCK_EWOULDBLOCK || SOCKERRNO == SOCK_EINTR){
 			UNLOCK;
        			return;
 		}
@@ -1199,12 +1215,12 @@ LOCAL void udp_recv_msg(struct ioc_in_use *piiu)
 			 * Avoid spurious ECONNREFUSED bug
 			 * in linux
 			 */
-			if (SOCKERRNO==ECONNREFUSED) {
+			if (SOCKERRNO==SOCK_ECONNREFUSED) {
 				UNLOCK;
        				return;
 			}
 #               endif
-		ca_printf("Unexpected UDP failure %s\n", strerror(SOCKERRNO));
+		ca_printf("Unexpected UDP failure %s\n", SOCKERRSTR);
     	}
 	else if(status > 0){
 		unsigned long		bytesActual;
@@ -1222,7 +1238,7 @@ LOCAL void udp_recv_msg(struct ioc_in_use *piiu)
 		 * to the beginning of the ring
 		 */
 		bytesAvailable = cacRingBufferWriteSize(&piiu->recv, TRUE);
-		if( bytesAvailable < MAX_UDP+2*sizeof(*pmsglog) ){
+		if( bytesAvailable < ETHERNET_MAX_UDP+2*sizeof(*pmsglog) ){
 			assert(bytesAvailable>=sizeof(*pmsglog));
 			pmsglog = (struct udpmsglog *) 
 				&piiu->recv.buf[piiu->recv.wtix];
@@ -1509,23 +1525,23 @@ int repeater_installed()
 	LOCK;
 
      	/* 	allocate a socket			*/
-      	sock = socket(	AF_INET,	/* domain	*/
-			SOCK_DGRAM,	/* type		*/
-			0);		/* deflt proto	*/
-      	if(sock == INVALID_SOCKET) {
+	sock = socket(	AF_INET,	/* domain	*/
+		SOCK_DGRAM,	/* type		*/
+		0);		/* deflt proto	*/
+	if(sock == INVALID_SOCKET) {
 		UNLOCK;
 		return installed;
 	}
 
-      	memset((char *)&bd,0,sizeof bd);
-      	bd.sin_family = AF_INET;
-      	bd.sin_addr.s_addr = INADDR_ANY;	
-     	bd.sin_port = htons(ca_static->ca_repeater_port);	
-      	status = bind(	sock, 
-			(struct sockaddr *) &bd, 
-			sizeof bd);
+	memset((char *)&bd,0,sizeof bd);
+	bd.sin_family = AF_INET;
+	bd.sin_addr.s_addr = INADDR_ANY;	
+	bd.sin_port = htons(ca_static->ca_repeater_port);	
+	status = bind(	sock, 
+		(struct sockaddr *) &bd, 
+		sizeof bd);
      	if(status<0){
-		if(SOCKERRNO == EADDRINUSE){
+		if(SOCKERRNO == SOCK_EADDRINUSE){
 			installed = TRUE;
 		}
 	}
@@ -1755,7 +1771,7 @@ char *localHostName()
 /*
  * caAddConfiguredAddr()
  */
-void caAddConfiguredAddr(ELLLIST *pList, const ENV_PARAM *pEnv, 
+void epicsShareAPI caAddConfiguredAddr(ELLLIST *pList, const ENV_PARAM *pEnv, 
 	SOCKET socket, unsigned short port)
 {
 	caAddrNode *pNode;
@@ -1861,7 +1877,8 @@ void caPrintAddrList(ELLLIST *pList)
 /*
  * caFetchPortConfig()
  */
-unsigned short caFetchPortConfig(const ENV_PARAM *pEnv, unsigned short defaultPort)
+unsigned short epicsShareAPI caFetchPortConfig
+	(const ENV_PARAM *pEnv, unsigned short defaultPort)
 {
 	long		longStatus;
 	long		epicsParam;

@@ -124,7 +124,14 @@ int cast_server(void)
 
     taskwdInsert(epicsThreadGetIdSelf(),NULL,NULL);
 
-    port = envGetInetPortConfigParam (&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
+    if ( envGetConfigParamPtr ( &EPICS_CAS_SERVER_PORT ) ) {
+        port = envGetInetPortConfigParam ( &EPICS_CAS_SERVER_PORT, 
+            (unsigned short) CA_SERVER_PORT );
+    }
+    else {
+        port = envGetInetPortConfigParam ( &EPICS_CA_SERVER_PORT, 
+            (unsigned short) CA_SERVER_PORT );
+    }
 
     recv_addr_size = sizeof(new_recv_addr);
 

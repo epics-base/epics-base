@@ -72,7 +72,14 @@ LOCAL int req_server (void)
 
     taskwdInsert ( epicsThreadGetIdSelf (), NULL, NULL );
 
-    ca_server_port = envGetInetPortConfigParam (&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
+    if ( envGetConfigParamPtr ( &EPICS_CAS_SERVER_PORT ) ) {
+        ca_server_port = envGetInetPortConfigParam ( &EPICS_CAS_SERVER_PORT, 
+            (unsigned short) CA_SERVER_PORT );
+    }
+    else {
+        ca_server_port = envGetInetPortConfigParam ( &EPICS_CA_SERVER_PORT, 
+            (unsigned short) CA_SERVER_PORT );
+    }
 
     if (IOC_sock != 0 && IOC_sock != INVALID_SOCKET)
         if ((status = socket_close(IOC_sock)) < 0)

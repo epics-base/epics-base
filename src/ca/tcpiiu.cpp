@@ -277,6 +277,7 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
         else {
             char buf;
             ::recv ( piiu->sock, &buf, 1, MSG_PEEK );
+            nBytesIn = 0u; // make gnu hoppy
         }
  
         if ( piiu->state != iiu_connected ) {

@@ -229,7 +229,7 @@ long dbProcess(paddr)
 		struct valueDes valueDes;
 
 		if(trace && trace_lset==lset)
-			logMsg("active:    %s\n",precord->name);
+			printf("active:    %s\n",precord->name);
 		/* raise scan alarm after MAX_LOCK times */
 		if(precord->stat==SCAN_ALARM) goto all_done;
 		if(precord->lcnt++ !=MAX_LOCK) goto all_done;
@@ -261,7 +261,7 @@ long dbProcess(paddr)
 	/* if disabled just return success */
 	if(precord->disa == precord->disv) {
 		if(trace && trace_lset==lset)
-			logMsg("disabled:  %s\n",precord->name);
+			printf("disabled:  %s\n",precord->name);
 		goto all_done;
 	}
 
@@ -271,14 +271,14 @@ long dbProcess(paddr)
 		recGblRecSupError(S_db_noRSET,paddr,"dbProcess","process");
 		status = S_db_noRSET;
 		if(trace && trace_lset==lset)
-			logMsg("failure:   %s\n",precord->name);
+			printf("failure:   %s\n",precord->name);
 		goto all_done;
 	}
 
 	/* process record */
 	status = (*prset->process)(paddr);
 	if(trace && trace_lset==lset)
-		logMsg("processed: %s\n",precord->name);
+		printf("processed: %s\n",precord->name);
 
 all_done:
 	if(set_trace) {

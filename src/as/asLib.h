@@ -35,13 +35,19 @@ long asCheckGet(ASCLIENTPVT asClientPvt);
 long asCheckPut(ASCLIENTPVT asClientPvt);
 */
 #define asCheckGet(asClientPvt)\
-	(asActive ?\
-		((asClientPvt)->access>=asREAD ? TRUE : FALSE)\
+	(asActive \
+	? ((asClientPvt)->access>=asREAD ? TRUE : FALSE)\
 	: TRUE)
 #define asCheckPut(asClientPvt)\
-	(asActive ?\
-		((asClientPvt)->access>=asWRITE ? TRUE : FALSE)\
+	(asActive \
+	? ((asClientPvt)->access>=asWRITE ? TRUE : FALSE)\
 	: TRUE)
+#define asTrapWriteBefore(asClientPvt,user,host,addr) \
+    (((asActive) && (asClientPvt)->trapMask) \
+    ? asTrapWriteBeforeWrite((user),(host),(addr)) \
+    : 0)
+
+#define asTrapWriteAfter(pvt) if((pvt)) asTrapWriteAfterWrite((pvt))
 
 epicsShareFunc long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction);
 epicsShareFunc long epicsShareAPI asInitFile(const char *filename,const char *substitutions);
@@ -75,6 +81,11 @@ epicsShareFunc int epicsShareAPI asDumpHag(char *hagname);
 epicsShareFunc int epicsShareAPI asDumpRules(char *asgname);
 epicsShareFunc int epicsShareAPI asDumpMem(char *asgname,void (*memcallback)(ASMEMBERPVT),int clients);
 epicsShareFunc int epicsShareAPI asDumpHash(void);
+
+epicsShareFunc void * epicsShareAPI asTrapWriteBeforeWrite(
+    char *userid,char *hostid,void *addr);
+
+epicsShareFunc void epicsShareAPI asTrapWriteAfterWrite(void *pvt);
 
 #define S_asLib_clientsExist 	(M_asLib| 1) /*Client Exists*/
 #define S_asLib_noUag 		(M_asLib| 2) /*User Access Group does not exist*/
@@ -137,6 +148,7 @@ typedef struct {
 	ELLNODE	node;
 	HAG	*phag;
 }ASGHAG;
+#define AS_TRAP_WRITE 1
 typedef struct{
 	ELLNODE		node;
 	asAccessRights	access;
@@ -147,6 +159,7 @@ typedef struct{
 	void		*rpcl;
 	ELLLIST		uagList; /*List of ASGUAG*/
 	ELLLIST		hagList; /*List of ASGHAG*/
+	int		trapMask;
 } ASGRULE;
 typedef struct{
 	ELLNODE		node;
@@ -173,6 +186,7 @@ typedef struct asgMember {
 	char		*asgName;
 	void		*userPvt;
 } ASGMEMBER;
+
 typedef struct asgClient {
 	ELLNODE		node;	
 	ASGMEMBER	*pasgMember;
@@ -182,6 +196,7 @@ typedef struct asgClient {
 	ASCLIENTCALLBACK pcallback;
 	int		level;
 	asAccessRights	access;
+	int		trapMask;
 } ASGCLIENT;
 
 epicsShareFunc long epicsShareAPI asComputeAsg(ASG *pasg);

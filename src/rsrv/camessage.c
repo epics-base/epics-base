@@ -651,6 +651,7 @@ struct client   *client
     struct channel_in_use   *pciu;
     int                     v41;
     long                    status;
+    void                    *asWritePvt;
 
     pciu = MPTOPCIU(mp);
     if(!pciu){
@@ -699,11 +700,14 @@ struct client   *client
           mp->m_count);
 #endif
 
+    asWritePvt = asTrapWriteBefore(pciu->asClientPVT,
+        pciu->client->pUserName,pciu->client->pHostName,(void *)&pciu->addr);
     status = db_put_field(
                   &pciu->addr,
                   mp->m_dataType,
                   mp + 1,
                   mp->m_count);
+    asTrapWriteAfter(asWritePvt);
     if (status < 0) {
         SEND_LOCK(client);
         send_err(

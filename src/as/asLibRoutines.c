@@ -69,6 +69,7 @@ static long asHagAddHost(HAG *phag,char *host);
 static ASG *asAsgAdd(char *asgName);
 static long asAsgAddInp(ASG *pasg,char *inp,int inpIndex);
 static ASGRULE *asAsgAddRule(ASG *pasg,asAccessRights access,int level);
+static long asAsgAddRuleOptions(ASGRULE *pasgrule,int trapMask);
 static long asAsgRuleUagAdd(ASGRULE *pasgrule,char *name);
 static long asAsgRuleHagAdd(ASGRULE *pasgrule,char *name);
 static long asAsgRuleCalc(ASGRULE *pasgrule,char *calc);
@@ -465,6 +466,7 @@ long epicsShareAPI asCompute(ASCLIENTPVT asClientPvt)
 /*The dump routines do not lock. Thus they may get inconsistant data.*/
 /*HOWEVER if they did lock and a user interrupts one of then then BAD BAD*/
 static char *asAccessName[] = {"NONE","READ","WRITE"};
+static char *asTrapOption[] = {"NOTRAPWRITE","TRAPWRITE"};
 static char *asLevelName[] = {"ASL0","ASL1"};
 int epicsShareAPI asDump(
 	void (*memcallback)(struct asgMember *),
@@ -541,8 +543,9 @@ int epicsShareAPI asDump(
 	while(pasgrule) {
 	    int	print_end_brace;
 
-	    printf("\tRULE(%d,%s)",
-		pasgrule->level,asAccessName[pasgrule->access]);
+	    printf("\tRULE(%d,%s,%s)",
+		pasgrule->level,asAccessName[pasgrule->access],
+                asTrapOption[pasgrule->trapMask]);
 	    pasguag = (ASGUAG *)ellFirst(&pasgrule->uagList);
 	    pasghag = (ASGHAG *)ellFirst(&pasgrule->hagList);
 	    if(pasguag || pasghag || pasgrule->calc) {
@@ -592,7 +595,9 @@ int epicsShareAPI asDump(
 		else
 			printf(" Illegal Level %d",pasgclient->level);
 		if(pasgclient->access>=0 && pasgclient->access<=2)
-			printf(" %s",asAccessName[pasgclient->access]);
+			printf(" %s %s",
+                            asAccessName[pasgclient->access],
+                            asTrapOption[pasgclient->trapMask]);
 		else
 			printf(" Illegal Access %d",pasgclient->access);
 		if(clientcallback) clientcallback(pasgclient);
@@ -698,8 +703,9 @@ int epicsShareAPI asDumpRules(char *asgname)
 	while(pasgrule) {
 	    int	print_end_brace;
 
-	    printf("\tRULE(%d,%s)",
-		pasgrule->level,asAccessName[pasgrule->access]);
+	    printf("\tRULE(%d,%s,%s)",
+		pasgrule->level,asAccessName[pasgrule->access],
+                asTrapOption[pasgrule->trapMask]);
 	    pasguag = (ASGUAG *)ellFirst(&pasgrule->uagList);
 	    pasghag = (ASGHAG *)ellFirst(&pasgrule->hagList);
 	    if(pasguag || pasghag || pasgrule->calc) {
@@ -771,7 +777,9 @@ int epicsShareAPI asDumpMem(char *asgname,void (*memcallback)(ASMEMBERPVT),int c
 		else
 		    printf(" Illegal Level %d",pasgclient->level);
 		if(pasgclient->access>=0 && pasgclient->access<=2)
-		    printf(" %s",asAccessName[pasgclient->access]);
+		    printf(" %s %s",
+                        asAccessName[pasgclient->access],
+                        asTrapOption[pasgclient->trapMask]);
 		else
 		    printf(" Illegal Access %d",pasgclient->access);
 		printf("\n");
@@ -891,6 +899,7 @@ static long asComputeAsgPvt(ASG *pasg)
 static long asComputePvt(ASCLIENTPVT asClientPvt)
 {
     asAccessRights	access=asNOACCESS;
+    int			trapMask=0;
     ASGCLIENT		*pasgclient = asClientPvt;
     ASGMEMBER		*pasgMember;
     ASG			*pasg;
@@ -943,12 +952,15 @@ check_hag:
 	}
 check_calc:
 	if(!pasgrule->calc
-	|| (!(pasg->inpBad & pasgrule->inpUsed) && (pasgrule->result==1)))
+	|| (!(pasg->inpBad & pasgrule->inpUsed) && (pasgrule->result==1))) {
 	    access = pasgrule->access;
+            trapMask = pasgrule->trapMask;
+        }
 next_rule:
 	pasgrule = (ASGRULE *)ellNext((ELLNODE *)pasgrule);
     }
     pasgclient->access = access;
+    pasgclient->trapMask = trapMask;
     if(pasgclient->pcallback && oldaccess!=access) {
 	(*pasgclient->pcallback)(pasgclient,asClientCOAR);
     }
@@ -1187,11 +1199,22 @@ static ASGRULE *asAsgAddRule(ASG *pasg,asAccessRights access,int level)
     if(!pasg) return(0);
     pasgrule = asCalloc(1,sizeof(ASGRULE));
     pasgrule->access = access;
+    pasgrule->trapMask = 0;
     pasgrule->level = level;
     ellInit(&pasgrule->uagList);
     ellInit(&pasgrule->hagList);
     ellAdd(&pasg->ruleList,(ELLNODE *)pasgrule);
     return(pasgrule);
+}
+
+static long asAsgAddRuleOptions(ASGRULE *pasgrule,int trapMask)
+{
+    if(!pasgrule) {
+        errMessage(S_asLib_badConfig," Access Security internal failure");
+        return(0);
+    }
+    pasgrule->trapMask = trapMask;
+    return(0);
 }
 
 static long asAsgRuleUagAdd(ASGRULE *pasgrule,char *name)

@@ -4,11 +4,13 @@ include $(TOP)/configure/CONFIG
 INC += asLib.h
 INC += asDbLib.h
 INC += asCa.h
+INC += asTrapWrite.h
 
 LIBSRCS += asLib.c
 
 asIoc_SRCS += asDbLib.c
 asIoc_SRCS += asCa.c
+asIoc_SRCS += asTrapWrite.c
 
 LIBRARY_HOST = asHost
 LIBRARY_IOC = asIoc

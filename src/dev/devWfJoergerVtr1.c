@@ -50,6 +50,7 @@
 
 #include	<alarm.h>
 #include	<dbDefs.h>
+#include	<epicsPrint.h>
 #include	<dbAccess.h>
 #include        <recSup.h>
 #include	<devSup.h>

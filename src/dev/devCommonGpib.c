@@ -3,6 +3,9 @@
 
 /*
  * $Log$
+ * Revision 1.35  1997/06/30 12:53:06  mrk
+ * GPIBEFASTO: Last fix was TOO strict
+ *
  * Revision 1.34  1997/04/30 18:58:03  mrk
  * Fixed most compiler warning messages
  *
@@ -108,11 +111,11 @@
 #include	<tickLib.h>
 #include	<rngLib.h>
 
+#include	<dbDefs.h>
+#include	<epicsPrint.h>
 #include	<devLib.h>
 #include	<alarm.h>
-#include	<epicsPrint.h>
 #include	<cvtTable.h>
-#include	<dbDefs.h>
 #include	<dbAccess.h>
 #include	<devSup.h>
 #include	<recSup.h>

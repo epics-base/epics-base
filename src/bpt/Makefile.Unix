@@ -3,9 +3,13 @@ include $(TOP)/config/CONFIG_BASE
 
 INC += cvtTable.h
 
-SRCS.c = ../makeBpt
-OBJS = makeBpt
+SRCS.c = ../makeBpt.c
+OBJS = makeBpt.o
 PROD = makeBpt
 
 include $(TOP)/config/RULES.Unix
+
+$(PROD): $(OBJS) $(DEPLIBS)
+	$(RM) $@
+	$(LINK.c) -o $@ ${OBJS} $(LDLIBS)
 

@@ -110,6 +110,9 @@ int nciu::read ( unsigned type, unsigned long countIn, cacNotify &notify )
     //
     // fail out if their arguments are invalid
     //
+    if ( ! this->f_connected ) {
+        return ECA_DISCONNCHID;
+    }
     if ( INVALID_DB_REQ (type) ) {
         return ECA_BADTYPE;
     }
@@ -376,6 +379,11 @@ int nciu::write ( unsigned type, unsigned long countIn, const void *pValue )
 {
     int status;
 
+    // check this first so thet get a decent diagnostic
+    if ( ! this->f_connected ) {
+        return ECA_DISCONNCHID;
+    }
+
     if ( ! this->ar.write_access ) {
         return ECA_NOWTACCESS;
     }
@@ -406,6 +414,11 @@ int nciu::write ( unsigned type, unsigned long countIn, const void *pValue, cacN
 {
     ca_uint32_t newId; 
     int status;
+
+    // check this first so thet get a decent diagnostic
+    if ( ! this->f_connected ) {
+        return ECA_DISCONNCHID;
+    }
 
     if ( ! this->ar.write_access ) {
         return ECA_NOWTACCESS;

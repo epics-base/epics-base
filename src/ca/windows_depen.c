@@ -32,6 +32,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.43.2.1  1999/07/15 21:10:38  jhill
+ * vis C++ version 6.0 ng IP workaround
+ *
  * Revision 1.44  1999/04/29 23:53:32  jhill
  * now compatible with API changes in winsock provided with 6.0 SDK
  *
@@ -88,6 +91,9 @@
  *
  * Revision 1.19  1995/11/29  19:15:42  jhill
  * added $Log$
+ * added Revision 1.43.2.1  1999/07/15 21:10:38  jhill
+ * added vis C++ version 6.0 ng IP workaround
+ * added
  * added Revision 1.44  1999/04/29 23:53:32  jhill
  * added now compatible with API changes in winsock provided with 6.0 SDK
  * added
@@ -409,6 +415,15 @@ void ca_spawn_repeater()
 		);
 
 		if (W32status) {
+#if defined(__BORLANDC__)
+			char *pFmtArgs[] = {
+					"Failed to start the EPICS CA Repeater -",
+					"",
+					"",
+					"Changes may be required in your path environment variable.",
+					"",
+					""};
+#else
 			char *pFmtArgs[] = {
 					"Failed to start the EPICS CA Repeater -",
 					pImageName, 
@@ -416,7 +431,7 @@ void ca_spawn_repeater()
 					"Changes may be required in your \"path\" environment variable.",
 					"PATH = ",
 					getenv ("path")};
-
+#endif
 			if (pFmtArgs[5]==NULL) {
 				pFmtArgs[5] = "<empty string>";
 			}

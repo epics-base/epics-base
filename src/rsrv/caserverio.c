@@ -43,7 +43,7 @@ static char *sccsId = "@(#)caserverio.c	1.10\t7/28/92";
 #include <socket.h>
 #include <ioLib.h>
 #include <in.h>
-#include <tcp.h>
+#include <netinet/tcp.h>
 #include <errno.h>
 #include <server.h>
 

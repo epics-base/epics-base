@@ -51,7 +51,7 @@ static char *sccsId = "@(#)camsgtask.c	1.13\t11/20/92";
 #include <socket.h>
 #include <ioLib.h>
 #include <in.h>
-#include <tcp.h>
+#include <netinet/tcp.h>
 #include <errno.h>
 #include <task_params.h>
 #include <db_access.h>

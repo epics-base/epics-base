@@ -67,7 +67,7 @@ foreach $name ( @nameList ) {
 	print OUT "ifeq (,\$(strip \$(${name}_OBJS) \$(PROD_OBJS)))\n";
 	print OUT "${name}_OBJS+=${name}\$(OBJ)\n";
 	print OUT "endif\n";
-	print OUT "${name}_RESS=\$(addsuffix \$(RES),\$(basename \$(${name}_RCS)))\n";
+	print OUT "${name}_RESS+=\$(addsuffix \$(RES),\$(basename \$(${name}_RCS)))\n";
 	print OUT "${name}_DEPLIBS=\$(foreach lib, \$(${name}_LIBS),\$(firstword \$(wildcard \\\n";
 	print OUT " \$(\$(lib)_DIR)/\$(LIB_PREFIX)\$(lib)\*)))\n";
 	print OUT "${name}\$(EXE): \$(${name}_OBJS) \$(${name}_RESS) \$(${name}_DEPLIBS)\n";

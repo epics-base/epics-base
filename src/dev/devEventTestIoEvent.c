@@ -30,6 +30,7 @@
  * Modification Log:
  * -----------------
  * .00  12-13-91        jba     Initial definition
+ * .02	03-13-92	jba	ANSI C changes
  *      ...
  */
 
@@ -37,6 +38,7 @@
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<wdLib.h>
+#include	<string.h>
 
 #include	<dbDefs.h>
 #include	<dbAccess.h>
@@ -89,7 +91,6 @@ static long get_ioint_info(
 static long read_event(pevent)
     struct eventRecord	*pevent;
 {
-	char message[100];
 	int	wait_time;
 
 	wait_time = (int)(pevent->proc * vxTicksPerSecond);

@@ -31,6 +31,7 @@
  * -----------------
  * .01	mm-dd-yy	iii	Comment
  * .02	mm-dd-yy	iii	Comment
+ * .03	03-13-92	jba	ANSI C changes
  * 	...
  */
 
@@ -39,6 +40,7 @@
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
+#include	<string.h>
 
 #include	<alarm.h>
 #include	<cvtTable.h>

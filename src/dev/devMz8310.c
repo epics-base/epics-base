@@ -33,6 +33,7 @@
  * .02  11-26-91	jba	Initialized clockDiv to 0
  * .03  12-11-91        jba     Moved set of alarm stat and sevr to macros
  * .04  01-14-92        mrk	Added interrupt support
+ * .05	03-13-92	jba	ANSI C changes
  *      ...
  */
 
@@ -46,6 +47,7 @@
 #include	<vme.h>
 #include	<types.h>
 #include	<stdioLib.h>
+#include	<string.h>
 #include	<68k/iv.h>
 
 #include	<alarm.h>

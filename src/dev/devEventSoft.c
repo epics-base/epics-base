@@ -30,12 +30,14 @@
  * Modification Log:
  * -----------------
  * .00  12-13-91        jba     Initial definition
+ * .02	03-13-92	jba	ANSI C changes
 */
 
 
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
+#include	<string.h>
 
 #include	<alarm.h>
 #include	<dbDefs.h>
@@ -69,7 +71,6 @@ static long init_record(pevent)
     struct eventRecord	*pevent;
 {
     char message[100];
-    int precision;
 
     /* event.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pevent->inp.type) {

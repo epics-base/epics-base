@@ -33,6 +33,7 @@
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  * .02  01-08-92        jba     Added cast in call to wdStart to avoid compile warning msg
  * .03  02-05-92	jba	Changed function arguments from paddr to precord 
+ * .04	03-13-92	jba	ANSI C changes
  *      ...
  */
 
@@ -41,6 +42,8 @@
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<wdLib.h>
+#include	<memLib.h>
+#include	<string.h>
 
 #include	<alarm.h>
 #include	<callback.h>
@@ -121,7 +124,6 @@ static long write_mbbo(pmbbo)
     struct mbboRecord	*pmbbo;
 {
     char message[100];
-    long status,options,nRequest;
     struct callback *pcallback=(struct callback *)(pmbbo->dpvt);
     int		wait_time;
 

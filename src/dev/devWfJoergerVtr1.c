@@ -35,6 +35,7 @@
  * .03  12-12-91        jba     Set cmd to zero in io-interrupt processing
  * .04  02-05-92	jba	Changed function arguments from paddr to precord 
  * .05  02-28-92	jba	Changed callback handling, ANSI C changes
+ * .06	03-13-92	jba	ANSI C changes
  *      ...
  */
 
@@ -42,6 +43,7 @@
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
+#include	<string.h>
 
 #include	<alarm.h>
 #include	<dbDefs.h>

@@ -31,12 +31,14 @@
  * Modification Log:
  * -----------------
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
+ * .02	03-13-92	jba	ANSI C changes
  *      ...
  */
 
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
+#include	<string.h>
 
 #include	<alarm.h>
 #include	<cvtTable.h>

@@ -31,6 +31,7 @@
  * Modification Log:
  * -----------------
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
+ * .02	03-13-92	jba	ANSI C changes
  *      ...
  */
 
@@ -38,6 +39,7 @@
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
+#include	<string.h>
 
 #include	<alarm.h>
 #include	<dbDefs.h>
@@ -95,7 +97,7 @@ static long read_wf(pwf)
     struct waveformRecord	*pwf;
 {
     char message[100];
-    long status,options,nRequest;
+    long options,nRequest;
 
     /* wf.inp must be a CONSTANT or a DB_LINK or a CA_LINK*/
     switch (pwf->inp.type) {

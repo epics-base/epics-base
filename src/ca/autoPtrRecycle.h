@@ -42,6 +42,7 @@ private:
     cacRecycle &r;
     tsDLList < class baseNMIU > &eventq;
     chronIntIdResTable < baseNMIU > &ioTable;
+    // not implemented
 	autoPtrRecycle ( const autoPtrRecycle & );
 	autoPtrRecycle & operator = ( const autoPtrRecycle & );
 };

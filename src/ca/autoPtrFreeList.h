@@ -51,6 +51,9 @@ public:
 private:
     T * p;
     tsFreeList < T > & freeList;
+    // not implemented
+    autoPtrFreeList & operator = ( const autoPtrFreeList & );
+    autoPtrFreeList ( const autoPtrFreeList<T> & );
 };
 
 template < class T >

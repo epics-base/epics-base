@@ -39,6 +39,9 @@ public:
     T * release ();
 private:
     T *p;
+    // not implemented
+    autoPtrDestroy<T> & operator = ( const autoPtrDestroy<T> & );
+    autoPtrDestroy ( const autoPtrDestroy<T> & );
 };
 
 template < class T >

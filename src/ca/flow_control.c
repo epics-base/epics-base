@@ -33,7 +33,7 @@
 /************************************************************************/
 /*_end									*/
 
-static char	*sccsId = "$Id$\t$Date$";
+static char	*sccsId = "@(#)flow_control.c	1.7\t6/2/93";
 
 #if defined(vxWorks)
 #	include		<vxWorks.h>
@@ -43,8 +43,7 @@ static char	*sccsId = "$Id$\t$Date$";
 #	ifndef V5_vxWorks
 #		include	<types.h>
 #	endif
-#else
-#  if defined(VMS)
+#elif defined(VMS)
 #	include		<sys/types.h>
 #	include		<sys/socket.h>
 #	if defined(UCX)			/* GeG 09-DEC-1992 */
@@ -53,15 +52,12 @@ static char	*sccsId = "$Id$\t$Date$";
 #	else
 #		include	<sys/ioctl.h>
 #	endif
-#  else
-#    if defined(UNIX)
+#elif defined(UNIX)
 #	include		<sys/types.h>
 #	include		<sys/socket.h>
 #	include		<sys/ioctl.h>
-#    else
+#else
 	@@@@ dont compile @@@@
-#    endif
-#  endif
 #endif
 
 #include		<os_depen.h>

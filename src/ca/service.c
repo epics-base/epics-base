@@ -68,25 +68,21 @@
 /************************************************************************/
 /*_end									*/
 
-static char *sccsId = "$Id$\t$Date$";
+static char *sccsId = "@(#)service.c	1.17\t6/2/93";
 
 #if defined(VMS)
 #	include		<sys/types.h>
 #	include		<stsdef.h>
-#else
-#  if defined(UNIX)
+#elif defined(UNIX)
 #	include		<sys/types.h>
 #	include		<stdio.h>
-#  else
-#    if defined(vxWorks)
+#elif defined(vxWorks)
 #	include		<vxWorks.h>
 #	ifndef V5_vxWorks
 #		include	<types.h>
 #	endif
-#    else
+#else
 	@@@@ dont compile @@@@
-#    endif
-#  endif
 #endif
 
 #include	<os_depen.h>
@@ -204,8 +200,8 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 				UNLOCKEVENTS;
 			}
 			LOCK;
-			ellDelete(&pend_read_list, (ELLNODE *)monix);
-			ellAdd(&free_event_list, (ELLNODE *)monix);
+			dllDelete(&pend_read_list, monix);
+			dllAdd(&free_event_list, monix);
 			UNLOCK;
 
 			piiu->outstanding_ack_count--;
@@ -229,8 +225,8 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			 */
 			if (!t_postsize) {
 				LOCK;
-				ellDelete(&monix->chan->eventq, (ELLNODE *)monix);
-				ellAdd(&free_event_list, (ELLNODE *)monix);
+				dllDelete(&monix->chan->eventq, monix);
+				dllAdd(&free_event_list, monix);
 				UNLOCK;
 
 				piiu->outstanding_ack_count--;
@@ -442,8 +438,8 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			struct ioc_in_use *piiu = &iiu[chix->iocix];
 
 			LOCK;
-			ellDelete(&piiu->chidlist, (ELLNODE *)chix);
-			ellAdd(&iiu[BROADCAST_IIU].chidlist, (ELLNODE *)chix);
+			dllDelete(&piiu->chidlist, chix);
+			dllAdd(&iiu[BROADCAST_IIU].chidlist, chix);
 			chix->iocix = BROADCAST_IIU;
 			if (!piiu->chidlist.count)
 				close_ioc(piiu);
@@ -475,11 +471,11 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			     monix;
 			     monix = (evid) monix->node.next)
 				if (monix->chan == chix) {
-					ellDelete(&pend_read_list, (ELLNODE *)monix);
-					ellAdd(&free_event_list, (ELLNODE *)monix);
+					dllDelete(&pend_read_list, monix);
+					dllAdd(&free_event_list, monix);
 				}
-			ellConcat(&free_event_list, &chix->eventq);
-			ellDelete(&piiu->chidlist, (ELLNODE *)chix);
+			dllConcat(&free_event_list, &chix->eventq);
+			dllDelete(&piiu->chidlist, chix);
 			free(chix);
 			piiu->outstanding_ack_count--;
 			if (!piiu->chidlist.count)
@@ -629,9 +625,9 @@ struct in_addr			*pnet_addr;
 	  	if(chan->iocix != BROADCAST_IIU)
 	   		ca_signal(ECA_NEWADDR, (char *)(chan+1));
 		chpiiu = &iiu[chan->iocix];
-          	ellDelete(&chpiiu->chidlist, (ELLNODE *)chan);
+          	dllDelete(&chpiiu->chidlist, chan);
           	chan->iocix = newiocix;
-          	ellAdd(&iiu[newiocix].chidlist, (ELLNODE *)chan);
+          	dllAdd(&iiu[newiocix].chidlist, chan);
         }
 
 	/*
@@ -712,7 +708,7 @@ int 	lock;
  		LOCK;
 	}
 
-    	while(pioe = (struct pending_io_event *) ellGet(&ioeventlist)){
+    	while(pioe = (struct pending_io_event *) dllGet(&ioeventlist)){
       		(*pioe->io_done_sub)(pioe->io_done_arg);
       		free(pioe);
 	}
@@ -744,9 +740,9 @@ client_channel_exists(chan)
 
         for (piiu = iiu; piiu < pnext_iiu; piiu++) {
                 /*
-                 * ellFind returns the node number or ERROR
+                 * dllFind returns the node number or ERROR
                  */
-                status = ellFind(&piiu->chidlist, (ELLNODE *)chan);
+                status = dllFind(&piiu->chidlist, chan);
                 if (status != ERROR) {
                         return TRUE;
                 }

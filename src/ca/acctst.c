@@ -1,4 +1,4 @@
-static char *sccsId = "$Id$\t$Date$";
+static char *sccsId = "@(#)acctst.c	1.8\t2/19/93";
 
 /*
  * CA test/debug routine
@@ -20,11 +20,9 @@ static char *sccsId = "$Id$\t$Date$";
 /* System includes		 */
 #if defined(UNIX)
 #	include		<stdio.h>
-#else
-#   if defined(vxWorks)
+#elif defined(vxWorks)
 #	include		<vxWorks.h>
 #	include		<taskLib.h>
-#   endif
 #endif
 
 #include 		<cadef.h>

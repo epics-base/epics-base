@@ -88,22 +88,20 @@ static char *sccsId = "@(#)gsd_sync_subr.c	1.8\t11/5/92";
 #	include	<stdio.h>
 #	include	<sys/time.h>
 #	include	<time.h>
-#else
-#  if defined(vxWorks)
+#elif defined(vxWorks)
 #	define abort(A) 	taskSuspend(taskIdSelf())
-#    ifdef V5vxWorks
+#ifdef V5vxWorks
 #	include	<Vxtypes.h>
-#    else
+#else
 #	include	<types.h>
-#    endif
+#endif
 #	if 0 /* needed ?? */
 #		include	<stdioLib.h>
 #		include	<sys/time.h>
 #		include	<time.h>
 #	endif
-#  else
+#else
 	@@@@ dont compile in this case @@@@
-#  endif
 #endif
 
 #include	<cadef.h>

@@ -29,7 +29,7 @@
 #ifndef INCos_depenh
 #define INCos_depenh
 
-static char *os_depenhSccsId = "$Id$\t$Date$";
+static char *os_depenhSccsId = "@(#)os_depen.h	1.12\t2/19/93";
 
 #if defined(UNIX)
 #	ifndef _sys_time_h
@@ -38,8 +38,7 @@ static char *os_depenhSccsId = "$Id$\t$Date$";
 #	ifndef _sys_errno_h
 #		include <sys/errno.h>
 #	endif
-#else 
-#  if defined(vxWorks)
+#elif defined(vxWorks)
 #	ifndef INCvxWorksh
 #		include <vxWorks.h>
 #	endif
@@ -52,12 +51,9 @@ static char *os_depenhSccsId = "$Id$\t$Date$";
 #	ifndef V5_vxWorks
 		IMPORT ULONG taskIdCurrent;
 #	endif
-#  else
-#    if defined(VMS)
-#    else
+#elif defined(VMS)
+#else
 	@@@@ dont compile in this case @@@@
-#    endif
-#  endif
 #endif
 
 
@@ -113,8 +109,7 @@ static char *os_depenhSccsId = "$Id$\t$Date$";
 #  	define	UNLOCKEVENTS
 #	define	EVENTLOCKTEST	(post_msg_active!=0)
 #	define  RECV_ACTIVE(PIIU) (piiu->active)
-#else
-#  if defined(vxWorks)
+#elif defined(vxWorks)
 #	define	VXTASKIDNONE	0
 #  	define	LOCK 		FASTLOCK(&client_lock);
 #  	define	UNLOCK  	FASTUNLOCK(&client_lock);
@@ -122,18 +117,15 @@ static char *os_depenhSccsId = "$Id$\t$Date$";
 #  	define	UNLOCKEVENTS	{event_tid=VXTASKIDNONE; FASTUNLOCK(&event_lock);}
 #	define	EVENTLOCKTEST	(FASTLOCKTEST(&event_lock)&&taskIdCurrent==event_tid)
 #	define  RECV_ACTIVE(PIIU) (piiu->recv_tid == taskIdCurrent)
-#  else
-#    if defined(UNIX)
+#elif defined(UNIX)
 #  	define	LOCK
 #  	define	UNLOCK  
 #  	define	LOCKEVENTS
 #  	define	UNLOCKEVENTS
 #	define	EVENTLOCKTEST	(post_msg_active!=0)
 #	define  RECV_ACTIVE(PIIU) (piiu->active)
-#    else
+#else
 	@@@@ dont compile in this case @@@@
-#    endif
-#  endif
 #endif
 
 #ifdef vxWorks
@@ -145,29 +137,23 @@ static char *os_depenhSccsId = "$Id$\t$Date$";
 
 
 #if defined(VMS)
-#  if defined(WINTCP)	/* Wallangong */
+#	if defined(WINTCP)	/* Wallangong */
 	/* (the VAXC runtime lib has its own close */
 # 		define socket_close(S) netclose(S)
 # 		define socket_ioctl(A,B,C) ioctl(A,B,C) 
-#  else 
-#    if defined(UCX)				/* GeG 09-DEC-1992 */
+#	elif defined(UCX)				/* GeG 09-DEC-1992 */
 # 		define socket_close(S) close(S)
 # 		define socket_ioctl(A,B,C) ioctl(A,B,C) 
-#    else
-#    endif
-#  endif
+#	else
+#	endif
+#elif defined(UNIX)
+#   	define socket_close(S) close(S)
+#   	define socket_ioctl(A,B,C) ioctl(A,B,C) 
+#elif defined(vxWorks)
+#   	define socket_close(S) close(S)
+#   	define socket_ioctl(A,B,C) ioctl(A,B,C) 
 #else
-#  if defined(UNIX)
-#   	define socket_close(S) close(S)
-#   	define socket_ioctl(A,B,C) ioctl(A,B,C) 
-#  else
-#    if defined(vxWorks)
-#   	define socket_close(S) close(S)
-#   	define socket_ioctl(A,B,C) ioctl(A,B,C) 
-#    else
 	@@@@ dont compile in this case @@@@
-#    endif
-#  endif
 #endif
 
 #if defined(VMS)
@@ -178,15 +164,11 @@ static char *os_depenhSccsId = "$Id$\t$Date$";
   		extern volatile int noshare socket_errno;
 # 		define MYERRNO	socket_errno
 #	endif
-#else
-#  if defined(vxWorks)
+#elif defined(vxWorks)
 # 	define MYERRNO	(errnoGet()&0xffff)
-#  else
-#    if defined(UNIX)
+#elif defined(UNIX)
   	extern int	errno;
 # 	define MYERRNO	errno
-#    endif
-#  endif
 #endif
 
 #ifdef VMS
@@ -201,19 +183,15 @@ static char *os_depenhSccsId = "$Id$\t$Date$";
 
 
 #if defined(vxWorks)
-#  ifdef V5_vxWorks
+#ifdef V5_vxWorks
 #  	define POST_IO_EV semGive(io_done_sem)
-#  else
-#  	define POST_IO_EV vrtxPost(&io_done_sem->count, TRUE)
-#  endif
 #else
-#  if defined(VMS)
+#  	define POST_IO_EV vrtxPost(&io_done_sem->count, TRUE)
+#endif
+#elif defined(VMS)
 #  	define POST_IO_EV sys$setef(io_done_flag)
-#  else
-#    if defined(UNIX)
+#elif defined(UNIX)
 #  	define POST_IO_EV 
-#    endif
-#  endif
 #endif
 
 /* delay for when a poll is used	 				*/
@@ -241,13 +219,11 @@ static char *os_depenhSccsId = "$Id$\t$Date$";
   		status = sys$waitfr(ef); \
   		if(~status&STS$M_SUCCESS)lib$signal(status); \
 	};
-#else
-#  if defined(vxWorks)
+#elif defined(vxWorks)
 # 	define SYSFREQ		((long) sysClkRateGet())  /* usually 60 Hz */
 # 	define TCPDELAY 	taskDelay(ca_static->ca_local_ticks);	
 # 	define time(A) 		(tickGet()/SYSFREQ)
-#  else
-#    if defined(UNIX)
+#elif defined(UNIX)
 #	define SYSFREQ		1000000L	/* 1 MHz	*/
 	/*
 	 * this version of TCPDELAY copies tcpdelayval into temporary storage
@@ -269,8 +245,6 @@ static char *os_depenhSccsId = "$Id$\t$Date$";
 #	else
 		extern struct timeval tcpdelayval;
 #	endif
-#    endif
-#  endif
 #endif
 
 #endif

@@ -19,6 +19,7 @@
 /*	.05 072792 joh	better messages					*/
 /*	.06 111892 joh	tuned up cast retries				*/
 /*	.07 010493 joh	print retry count when `<Trying>'		*/
+/*	.08 010493 joh	removed `<Trying>' message			*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -37,15 +38,11 @@ static char 	*sccsId = "$Id$\t$Date$";
 
 #if defined(UNIX)
 #	include		<stdio.h>
-#else
-#  if defined(VMS)
-#  else
-#    if defined(vxWorks)
+#elif defined(VMS)
+#elif defined(vxWorks)
 #include		<vxWorks.h>
-#    else
+#else
 	@@@@ dont compile @@@@
-#    endif
-#  endif
 #endif
 
 #include 		<cadef.h>
@@ -139,10 +136,12 @@ char			silent;
   	}
 
   	if(retry_cnt){
+#ifdef TRYING_MESSAGE
     		ca_printf("<Trying %d> ", retry_cnt);
 #ifdef UNIX
     		fflush(stdout);
-#endif
+#endif UNIX
+#endif TRYING_MESSAGE
 
     		if(!silent && retry_cnt_no_handler){
       			sprintf(sprintf_buf, "%d channels outstanding", retry_cnt);

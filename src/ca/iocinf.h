@@ -52,33 +52,31 @@
 #ifndef INCiocinfh  
 #define INCiocinfh
 
-static char	*iocinfhSccsId = "$Id$\t$Date$";
+static char	*iocinfhSccsId = "@(#)iocinf.h	1.15\t6/2/93";
 
 #define	DONT_COMPILE	@@@@ dont compile in this case @@@@
 
 #if defined(UNIX)
 #  	include	<sys/types.h>
 #	include	<netinet/in.h>
-#else
-#  if defined(VMS)
+#elif defined(VMS)
 # 	include	<ssdef>
 #  	include	<sys/types.h>
 #	include	<netinet/in.h>
-#  else
-#    if defined(vxWorks)
+#elif defined(vxWorks)
 #	ifdef V5_vxWorks
 #  		include	<vxWorks.h>
 #	else
 #  		include	<types.h>
 #	endif
 #	include	<in.h>
-#    else
+#else
 	DONT_COMPILE
-#    endif
-#  endif
 #endif
 
-#	include <ellLib.h> 
+#ifndef INCdllLibh  
+#	include <dllLib.h> 
+#endif
 
 #ifndef INCos_depenh
 #	include	<os_depen.h>
@@ -116,7 +114,7 @@ struct buffer{
 #define BROADCAST_IIU	0
 
 struct pending_io_event{
-  ELLNODE			node;
+  NODE			node;
   void			(*io_done_sub)();
   void			*io_done_arg;
 };
@@ -152,8 +150,7 @@ typedef unsigned long ca_time;
 #	define readch		(ca_static->ca_readch)
 #	define writech		(ca_static->ca_writech)
 #	define excepch		(ca_static->ca_excepch)
-#else
-#  if defined(vxWorks)
+#elif defined(vxWorks)
 #	define io_done_sem	(ca_static->ca_io_done_sem)
 #	define evuser		(ca_static->ca_evuser)
 #	define client_lock	(ca_static->ca_client_lock)
@@ -162,22 +159,19 @@ typedef unsigned long ca_time;
 #	define dbfree_ev_list	(ca_static->ca_dbfree_ev_list)
 #	define lcl_buff_list	(ca_static->ca_lcl_buff_list)
 #	define event_tid	(ca_static->ca_event_tid)
-#  else
-#    if defined(VMS)
+#elif defined(VMS)
 #	define io_done_flag	(ca_static->ca_io_done_flag)
 #	define peek_ast_buf	(ca_static->ca_peek_ast_buf)
 #	define ast_lock_count	(ca_static->ca_ast_lock_count)
-#    else
+#else
 	DONT_COMPILE
-#    endif
-#  endif
 #endif
 
 
 struct  ca_static{
   unsigned short	ca_nxtiiu;
   long			ca_pndrecvcnt;
-  ELLLIST			ca_ioeventlist;
+  LIST			ca_ioeventlist;
   void			(*ca_exception_func)();
   void			*ca_exception_arg;
   void			(*ca_connection_func)();
@@ -186,8 +180,8 @@ struct  ca_static{
   void			*ca_fd_register_arg;
   short			ca_exit_in_progress;  
   unsigned short	ca_post_msg_active; 
-  ELLLIST			ca_free_event_list;
-  ELLLIST			ca_pend_read_list;
+  LIST			ca_free_event_list;
+  LIST			ca_pend_read_list;
   short			ca_repeater_contacted;
   unsigned short	ca_send_msg_active;
   short			ca_cast_available;
@@ -196,27 +190,23 @@ struct  ca_static{
 #if defined(UNIX)
   fd_set                ca_readch;  
   fd_set                ca_excepch;  
-#else
-#  if defined(VMS)
+#elif defined(VMS)
   int			ca_io_done_flag;
   char			ca_peek_ast_buf;
   long			ca_ast_lock_count;
-#  else
-#    if defined(vxWorks)
+#elif defined(vxWorks)
   SEM_ID		ca_io_done_sem;
   void			*ca_evuser;
   FAST_LOCK		ca_client_lock; 
   FAST_LOCK		ca_event_lock; /* dont allow events to preempt */
   int			ca_tid;
-  ELLLIST			ca_local_chidlist;
-  ELLLIST			ca_dbfree_ev_list;
-  ELLLIST			ca_lcl_buff_list;
+  LIST			ca_local_chidlist;
+  LIST			ca_dbfree_ev_list;
+  LIST			ca_lcl_buff_list;
   int			ca_event_tid;
   unsigned		ca_local_ticks;
-#    else
+#else
   DONT_COMPILE
-#    endif
-#  endif
 #endif
   struct ioc_in_use{
     unsigned		outstanding_ack_count;
@@ -233,7 +223,7 @@ struct  ca_static{
     struct buffer	*recv;
     unsigned		read_seq;
     unsigned 		cur_read_seq;
-    ELLLIST		chidlist;		/* chans on this connection */
+    LIST		chidlist;		/* chans on this connection */
     short		conn_up;		/* boolean: T-conn /F-disconn */
     short		send_needed;		/* CA needs a send */
     char		host_name_str[32];
@@ -244,15 +234,11 @@ struct  ca_static{
 #if defined(VMS)	/* for qio ASTs */
     struct sockaddr_in	recvfrom;
     struct iosb		iosb;
-#else
-#  if defined(vxWorks)
+#elif defined(vxWorks)
     int			recv_tid;
-#  else
-#    if defined(UNIX)
-#    else
+#elif defined(UNIX)
+#else
     DONT_COMPILE
-#    endif
-#  endif
 #endif
   }			ca_iiu[MAXIIU];
 };

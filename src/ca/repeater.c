@@ -67,26 +67,22 @@ static char *sccsId = "$Id$\t$Date$";
 #	include		<sys/types.h>
 #	include		<sys/socket.h>
 #	include		<netinet/in.h>
-#else
-#  if defined(UNIX)
+#elif defined(UNIX)
 #	include		<errno.h>
 #	include		<sys/types.h>
 #	include		<sys/socket.h>
 #	include		<netinet/in.h>
-#  else
-#    if defined(vxWorks)
+#elif defined(vxWorks)
 #	include		<vxWorks.h>
 #	include		<errno.h>
 #	include		<types.h>
 #	include		<socket.h>
 #	include		<in.h>
-#    else
+#else
 	@@@@ dont compile @@@@
-#    endif
-#  endif
 #endif
 
-#include		<ellLib.h>
+#include		<dllLib.h>
 #include		<iocmsg.h>
 #include		<os_depen.h>
 
@@ -95,12 +91,12 @@ static char *sccsId = "$Id$\t$Date$";
  *	per machine so we dont care about reentrancy
  */
 struct one_client{
-	ELLNODE			node;
+	NODE			node;
   	struct sockaddr_in	from;
 };
 
 static
-ELLLIST	client_list;
+LIST	client_list;
 
 static
 char	buf[MAX_UDP]; 
@@ -176,7 +172,7 @@ ca_repeater()
   	struct one_client		*pclient;
   	struct one_client		*pnxtclient;
 
-	ellInit(&client_list);
+	dllInit(&client_list);
 
      	/* 	allocate a socket			*/
       	sock = socket(	AF_INET,	/* domain	*/
@@ -214,6 +210,10 @@ ca_repeater()
 		ca_printf("CA Repeater: no inet interfaces online?\n");
 		return FALSE;
 	}
+
+#	ifdef vxWorks
+		taskwdInsert((int)taskIdCurrent, NULL, NULL);
+#	endif
 
 #ifdef DEBUG
 	ca_printf("CA Repeater: Attached and initialized\n");
@@ -274,7 +274,7 @@ ca_repeater()
 					malloc(sizeof *pclient);
 				if(pclient){
 					pclient->from = from;
-					ellAdd(&client_list, (ELLNODE *)pclient);
+					dllAdd(&client_list, pclient);
 #ifdef DEBUG
 					ca_printf("Added %x %d\n", from.sin_port, size);
 #endif
@@ -356,7 +356,7 @@ struct one_client		*pclient;
 	socket_close(sock);
 
 	if(!present){
-		ellDelete(&client_list, (ELLNODE *)pclient);
+		dllDelete(&client_list, pclient);
 		free(pclient);
 #ifdef DEBUG
 		ca_printf("Deleted\n");

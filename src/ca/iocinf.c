@@ -585,7 +585,7 @@ void notify_ca_repeater()
 		 * and we are just porting there for 3.12 so
 		 * we will use the new protocol for 3.12
 		 */
-#		ifdef SOLARIS
+#		ifdef SOLARIS 
 			len = sizeof(msg);
 # 		else /* SOLARIS */
 			len = 0;
@@ -733,11 +733,6 @@ LOCAL void cac_tcp_send_msg_piiu(struct ioc_in_use *piiu)
 		 * return if nothing to send
 		 */
 		if(sendCnt == 0){
-#			ifdef DEBUG
-				if (piiu->sendPending) {
-					printf ("-Unblocked-\n");
-				}
-#			endif /* DEBUG */	
 			piiu->sendPending = FALSE;
 			piiu->send_needed = FALSE;
 			UNLOCK;
@@ -873,9 +868,7 @@ void ca_process_input_queue()
 
 	UNLOCK;
 
-#if 0
 	cac_flush_internal();
-#endif
 }
 
 
@@ -1232,6 +1225,16 @@ void close_ioc (struct ioc_in_use *piiu)
 		if (piiu->chidlist.count) {
 			ca_signal (ECA_DISCONN,piiu->host_name_str);
 		}
+
+		/*
+		 * clear outstanding get call backs 
+		 */
+		caIOBlockListFree (&pend_read_list, chix, TRUE, ECA_DISCONN);
+
+		/*
+		 * clear outstanding put call backs 
+		 */
+		caIOBlockListFree (&pend_write_list, chix, TRUE, ECA_DISCONN);
 
 		/*
 		 * call their connection handler as required

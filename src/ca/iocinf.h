@@ -68,7 +68,6 @@
 /*
  * CA private includes 
  */
-#include "addrList.h"
 #include "caProto.h"
 #include "net_convert.h"
 #include "ringBuffer.h"
@@ -609,9 +608,6 @@ netIIU *iiuToNIIU (baseIIU *pIn);
 lclIIU *iiuToLIIU (baseIIU *pIn);
 int fetchClientContext (cac **ppcac);
 extern "C" void caRepeaterThread (void *pDummy);
-unsigned short caFetchPortConfig
-    (cac *pcac, const ENV_PARAM *pEnv, unsigned short defaultPort);
-
 void initiateShutdownTCPIIU (tcpiiu *piiu);
 void cacShutdownUDP (udpiiu &iiu);
 

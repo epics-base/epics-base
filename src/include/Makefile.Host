@@ -10,6 +10,7 @@ INC += asLib.h
 INC += cadef.h
 INC += caerr.h
 INC += asDbLib.h
+INC += asTrapWrite.h
 
 INC += dbDefs.h
 INC += camacLib.h

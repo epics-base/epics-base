@@ -81,7 +81,7 @@ BUILD INSTRUCTIONS
 ---------------------------------------------------------------------
         mkdir <epicsappdir>
         cd <epicsappdir>
-        perl <epicsBaseReleaseDir>/bin/cygwin32/makeBaseApp -l
-        perl <epicsBaseReleaseDir>/bin/cygwin32/makeBaseApp -t example example
+        perl <epicsBaseReleaseDir>/bin/cygwin32/makeBaseApp.pl -l
+        perl <epicsBaseReleaseDir>/bin/cygwin32/makeBaseApp.pl -t example example
 
 

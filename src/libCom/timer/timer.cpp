@@ -46,20 +46,6 @@ timer::~timer()
     this->cancel ();
 }
 
-inline double timer::privateDelayToFirstExpire () const
-{
-    if ( this->curState == statePending ) {
-        double delay = this->exp - epicsTime::getCurrent ();
-        if ( delay < 0.0 ) {
-            delay = 0.0;
-        }
-        return delay;
-    }
-    else {
-        return -DBL_MAX;
-    }
-}
-
 void timer::start ( double delaySeconds )
 {
     this->start ( epicsTime::getCurrent () + delaySeconds );

@@ -147,6 +147,20 @@ inline void timer::operator delete ( void *pCadaver, size_t size )
     timer::freeList.release ( pCadaver, size );
 }
 
+inline double timer::privateDelayToFirstExpire () const
+{
+    if ( this->curState == statePending ) {
+        double delay = this->exp - epicsTime::getCurrent ();
+        if ( delay < 0.0 ) {
+            delay = 0.0;
+        }
+        return delay;
+    }
+    else {
+        return -DBL_MAX;
+    }
+}
+
 inline void * timerQueueThreaded::operator new ( size_t size )
 {
     return timerQueueThreaded::freeList.allocate ( size );

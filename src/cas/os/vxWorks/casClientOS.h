@@ -8,15 +8,15 @@ class casStreamOS : public casStrmClient {
 	friend int casStrmServer (casStreamOS *);
 	friend int casStrmEvent (casStreamOS *);
 public:
-        casStreamOS(caServerI &, casMsgIO &);
+	casStreamOS(caServerI &, casMsgIO &);
 	caStatus init();
 	~casStreamOS();
 
-        //
-        // process any incomming messages
-        //
-        casProcCond processInput();
-        caStatus start();
+	//
+	// process any incomming messages
+	//
+	casProcCond processInput();
+	caStatus start();
 
 	void eventSignal();
 	void eventFlush();
@@ -43,15 +43,15 @@ class casDGOS : public casDGClient {
 	friend int casDGServer (casDGOS *);
 	friend int casDGEvent (casDGOS *);
 public:
-        casDGOS(caServerI &cas);
+	casDGOS(caServerI &cas);
 	caStatus init();
 	~casDGOS();
 
-        //
-        // process any incomming messages
-        //
-        casProcCond processInput();
-        caStatus start();
+	//
+	// process any incomming messages
+	//
+	casProcCond processInput();
+	caStatus start();
 
 	void eventSignal();
 	void eventFlush();

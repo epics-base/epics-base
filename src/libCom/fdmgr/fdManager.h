@@ -32,6 +32,9 @@
  *
  * History
  * $Log$
+ * Revision 1.7  1997/08/05 00:37:01  jhill
+ * removed warnings
+ *
  * Revision 1.6  1997/06/25 05:45:50  jhill
  * cleaned up pc port
  *
@@ -88,32 +91,13 @@ public:
 	    return this->fd == idIn.fd && this->type==idIn.type;
 	}
 
-	resTableIndex resourceHash (unsigned nBitsId) const
-	{
-		unsigned        src = (unsigned) this->fd;
-		resTableIndex   hashid;
-
-		hashid = src;
-		src = src >> nBitsId;
-		while (src) {
-			hashid = hashid ^ src;
-			src = src >> nBitsId;
-		}
-		hashid = hashid ^ this->type;
-
-		//
-		// the result here is always masked to the
-		// proper size after it is returned to the resource class
-		//
-		return hashid;
-	}
+	resTableIndex resourceHash (unsigned nBitsId) const;
 
 	virtual void show (unsigned level) const;
 private:
       const SOCKET	fd;
 	const fdRegType	type;
 };
-
 
 //
 // fdReg

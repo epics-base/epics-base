@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.11  1997/08/05 00:37:00  jhill
+// removed warnings
+//
 // Revision 1.10  1997/06/25 05:45:49  jhill
 // cleaned up pc port
 //
@@ -53,8 +56,8 @@
 //	Both the functions in osiTimer and fdManager are
 //	implemented in this DLL -> define epicsExportSharesSymbols
 #define epicsExportSharedSymbols
+#define instantiateRecourceLib
 #include "osiTimer.h"
-#define instantiateStringIdFastHash
 #include "fdManager.h"
  
 //
@@ -77,11 +80,6 @@
 #endif
 
 epicsShareDef fdManager fileDescriptorManager;
-
-inline int selectErrno()
-{
-	return SOCKERRNO;
-}
 
 //
 // fdManager::fdManager()
@@ -173,14 +171,14 @@ epicsShareFunc void fdManager::process (const osiTime &delay)
 		return;
 	}
 	else if (status<0) {
-		if (selectErrno() == EINTR) {
+		if (SOCKERRNO == SOCK_EINTR) {
 			this->processInProg = 0;
 			return;
 		}
 		else {
 			fprintf(stderr, 
 			"fdManager: select failed because errno=%d=\"%s\"\n",
-				selectErrno(), strerror(selectErrno()));
+				SOCKERRNO, SOCKERRSTR);
 		}
 	}
 
@@ -277,6 +275,57 @@ void fdRegId::show(unsigned level) const
 }
 
 //
+// fdRegId::resourceHash()
+//
+resTableIndex fdRegId::resourceHash (unsigned nBitsId) const
+{
+	//
+	// 0.5 uS pentium 200
+	//
+	//unsigned src = (unsigned) this->fd;
+	//resTableIndex hashid;
+	//
+	//hashid = src;
+	//while (src = src >> nBitsId) {
+	//	hashid = hashid ^ src;
+	//}
+	//hashid = hashid ^ this->type;
+
+	//
+	// 0.32 uS Pent 200 MHz
+	// 
+	// faster because it does not 
+	// check for the hash id size
+	// (assumes worst case hash id
+	// of 1 bit)
+	//
+	resTableIndex hashid = (unsigned) this->fd;
+#if UINT_MAX >> 128u
+	hashid ^= (hashid>>128u);
+#endif
+#if UINT_MAX >> 64u
+	hashid ^= (hashid>>64u);
+#endif
+#if UINT_MAX >> 32u
+	hashid ^= (hashid>>32u);
+#endif
+#if UINTMAX >> 16u
+	hashid ^= (hashid>>16u);
+#endif
+	hashid ^= (hashid>>8u);
+	hashid ^= (hashid>>4u);
+	hashid ^= (hashid>>2u);
+	hashid ^= (hashid>>1u);
+	hashid ^= this->type;
+
+	//
+	// the result here is always masked to the
+	// proper size after it is returned to the resource class
+	//
+	return hashid;
+}
+
+//
 // fdManager::installReg()
 //
 epicsShareFunc void fdManager::installReg (fdReg &reg)
@@ -302,6 +351,13 @@ void fdManager::removeReg(fdReg &reg)
 {
 	fdReg *pItemFound;
 
+	pItemFound = this->fdTbl.remove(reg);
+	if (pItemFound!=&reg) {
+		fprintf(stderr, 
+			"fdManager::removeReg() bad fd registration object\n");
+		return;
+	}
+
 	//
 	// signal fdManager that the fdReg was deleted
 	// during the call back
@@ -309,22 +365,25 @@ void fdManager::removeReg(fdReg &reg)
 	if (this->pCBReg == &reg) {
 		this->pCBReg = 0;
 	}
-	FD_CLR(reg.getFD(), &this->fdSets[reg.getType()]);
-	pItemFound = this->fdTbl.remove(reg);
-	assert (pItemFound==&reg);
+	
 	switch (reg.state) {
 	case fdrActive:
-        	this->activeList.remove(reg);
+        this->activeList.remove(reg);
 		break;
 	case fdrPending:
-        	this->regList.remove(reg);
+        this->regList.remove(reg);
 		break;
 	case fdrLimbo:
 		break;
 	default:
+		//
+		// here if memory corrupted
+		//
 		assert(0);
 	}
 	reg.state = fdrLimbo;
+
+	FD_CLR(reg.getFD(), &this->fdSets[reg.getType()]);
 }
 
 //
@@ -338,3 +397,4 @@ epicsShareFunc fdReg *fdManager::lookUpFD(const SOCKET fd, const fdRegType type)
 	fdRegId id (fd,type);
 	return this->fdTbl.lookup(id); 
 }
+

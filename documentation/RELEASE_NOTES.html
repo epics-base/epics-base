@@ -7,11 +7,10 @@
 </head>
 
 <body lang="en">
-
-<h1 align='center'>EPICS Base Release 3.14.5<br>
+<h1 align="center">EPICS Base Release 3.14.5<br>
 4 February 2004</h1>
 
-<h2 align='center'>Changes since 3.14.4</h2>
+<h2 align="center">Changes since 3.14.4</h2>
 
 <h4>dbtr</h4>
 
@@ -88,7 +87,7 @@ using INP field as epicsTimeToStrftime format string:
     production CA gateway at the APS.</li>
 </ul>
 
-<h4>Channel Access Original Server (used in IOC) </h4>
+<h4>Channel Access Original Server (used in IOC)</h4>
 <ul>
   <li>A bug causing the server threads to become stuck in a state where they
     process requests, but no longer send responses, if in the past the system
@@ -133,6 +132,10 @@ using INP field as epicsTimeToStrftime format string:
     channels in these situations at 2 seconds but due to the above bug the
     delay was more like 64mS. This bug appears only in earlier versions of
     EPICS R3.14.</li>
+  <li>A bug has been found in the CA repeater supplied with EPICS R3.14.2
+    through R3.14.4 (inclusive). The symptom will be clients running for more
+    than a few minuites do not connect to a newly introduced server. Fixed in
+    R3.14.5.</li>
 </ul>
 
 <h4>dbCa</h4>

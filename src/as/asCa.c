@@ -52,6 +52,7 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
  * .01  03-22-94	mrk	Initial Implementation
  */
 
+/*This module is separate from asDbLib because CA uses old database access*/
 #include <vxWorks.h>
 #include <taskLib.h>
 #include <string.h>
@@ -59,6 +60,7 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <stddef.h>
 #include <stdio.h>
 #include <dbDefs.h>
+#include <taskwd.h>
 #include <asLib.h>
 #include <cadef.h>
 #include <caerr.h>
@@ -77,36 +79,47 @@ typedef struct {
     evid		evid;
 } CAPVT;
 
-void connectCallback(struct connection_handler_args cha)
+static void connectCallback(struct connection_handler_args cha)
 {
     chid		chid = cha.chid;
-    ASGINP		*pasginp = (ASGINP *)ca_puser(chid);
-    ASG			*pasg = (ASG *)pasginp->pasg;
+    ASGINP		*pasginp;
+    ASG			*pasg;
     CAPVT		*pcapvt;
     enum channel_state	state;
+    int			Ilocked=FALSE;
 
-    pasginp = (ASGINP *)ellFirst(&pasg->inpList);
-    pcapvt = pasginp->capvt;
-    if(ca_state(pcapvt->chid)!=cs_conn) {
-	pasg->inpBad |= (1<<pasginp->inpIndex);
-	if(!caInitializing) {
-	    FASTLOCK(&asLock);
-	    asComputeAsg(pasg);
-	    FASTUNLOCK(&asLock);
-	}
+    if(!caInitializing) {
+	FASTLOCK(&asLock);
+	Ilocked = TRUE;
     }
+    pasginp = (ASGINP *)ca_puser(chid);
+    pasg = (ASG *)pasginp->pasg;
+    pcapvt = pasginp->capvt;
+    if(ca_state(chid)!=cs_conn) {
+	pasg->inpBad |= (1<<pasginp->inpIndex);
+	if(!caInitializing) asComputeAsg(pasg);
+    } /*eventCallback will set inpBad false*/
+    if(Ilocked) FASTUNLOCK(&asLock);
 }
 
-void eventCallback(struct event_handler_args eha)
+static void eventCallback(struct event_handler_args eha)
 {
-    ASGINP		*pasginp = (ASGINP *)eha.usr;
-    CAPVT		*pcapvt = (CAPVT *)pasginp->capvt;
-    ASG			*pasg = (ASG *)pasginp->pasg;
+    ASGINP		*pasginp;
+    CAPVT		*pcapvt;
+    ASG			*pasg;
     int			inpOk=TRUE;
     enum channel_state	state;
     struct dbr_sts_double *pdata = eha.dbr;
+    int			Ilocked=FALSE;
 
     
+    if(!caInitializing) {
+	FASTLOCK(&asLock);
+	Ilocked = TRUE;
+    }
+    pasginp = (ASGINP *)eha.usr;
+    pcapvt = (CAPVT *)pasginp->capvt;
+    pasg = (ASG *)pasginp->pasg;
     pcapvt->rtndata = *pdata; /*structure copy*/
     if(pdata->severity==INVALID_ALARM) {
 	pasg->inpBad |= (1<<pasginp->inpIndex);
@@ -114,11 +127,9 @@ void eventCallback(struct event_handler_args eha)
 	pasg->inpBad &= ~((1<<pasginp->inpIndex));
         pasg->pavalue[pasginp->inpIndex] = pdata->value;
     }
-    if(!caInitializing) {
-	FASTLOCK(&asLock);
-	asComputeAsg(pasg);
-	FASTUNLOCK(&asLock);
-    }
+    pasg->inpChanged |= (1<<pasginp->inpIndex);
+    if(!caInitializing) asComputeAsg(pasg);
+    if(Ilocked) FASTUNLOCK(&asLock);
 }
 
 static void asCaTask(void)
@@ -127,6 +138,7 @@ static void asCaTask(void)
     ASGINP	*pasginp;
     CAPVT	*pcapvt;
 
+    taskwdInsert(taskIdSelf(),NULL,NULL);
     SEVCHK(ca_task_initialize(),"ca_task_initialize");
     caInitializing = TRUE;
     pasg = (ASG *)ellFirst(&pasbase->asgList);
@@ -145,19 +157,25 @@ static void asCaTask(void)
 	}
 	pasg = (ASG *)ellNext((ELLNODE *)pasg);
     }
+    FASTLOCK(&asLock);
+    asComputeAllAsg();
     caInitializing = FALSE;
+    FASTUNLOCK(&asLock);
     SEVCHK(ca_pend_event(0.0),"ca_pend_event");
     exit(-1);
 }
     
-
 void asCaStart(void)
 {
     taskid = taskSpawn("asCa",CA_CLIENT_PRI-1,VX_FP_TASK,CA_CLIENT_STACK,
 	(FUNCPTR)asCaTask,0,0,0,0,0,0,0,0,0,0);
-    if(taskid==ERROR) errMessage(0,"asCaStart: taskSpawn Failure\n");
+    if(taskid==ERROR) {
+	errMessage(0,"asCaStart: taskSpawn Failure\n");
+    } else {
+	taskDelay(1);
+    }
 }
-
+
 void asCaStop(void)
 {
     ASG		*pasg;
@@ -166,6 +184,7 @@ void asCaStop(void)
     STATUS	status;
 
     if(taskid==0 || taskid==ERROR) return;
+    taskwdRemove(taskid);
     status = taskDelete(taskid);
     if(status!=OK) errMessage(0,"asCaStop: taskDelete Failure\n");
     while(taskIdVerify(taskid)==OK) {

@@ -3,6 +3,7 @@ static int yyerror();
 static int yy_start;
 static int myParse();
 #include "asLibRoutines.c"
+static int yyFailed = FALSE;
 static int line_num=1;
 static UAG *yyUag=NULL;
 static LAG *yyLag=NULL;
@@ -217,18 +218,22 @@ static int yyerror(str)
 char  *str;
 {
     fprintf(stderr,"Error line %d : %s %s\n",line_num,str,yytext);
+    yyFailed = TRUE;
     return(0);
 }
 static int myParse(ASINPUTFUNCPTR inputfunction)
 {
-    static	int FirstFlag = 1;
+    static int	FirstFlag = 1;
+    int		rtnval;
  
     my_yyinput = &inputfunction;
     if (!FirstFlag) {
 	line_num=1;
+	yyFailed = FALSE;
 	yyreset(NULL);
 	yyrestart(NULL);
     }
     FirstFlag = 0;
-    return(yyparse());
+    rtnval = yyparse();
+    if(rtnval!=0 || yyFailed) return(-1); else return(0);
 }

@@ -58,6 +58,7 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <gpHash.h>
 #ifdef vxWorks
 #include <taskLib.h>
 #endif
@@ -92,6 +93,11 @@ long asInitialize(ASINPUTFUNCPTR inputfunction)
     ASG		*pasg;
     long	status;
     ASBASE	*pasbaseold;
+    GPHENTRY	*pgphentry;
+    UAG		*puag;
+    UAGNAME	*puagname;
+    LAG		*plag;
+    LAGNAME	*plagname;
 
     pasbaseold = pasbase;
     pasbase = asCalloc(1,sizeof(ASBASE));
@@ -106,12 +112,34 @@ long asInitialize(ASINPUTFUNCPTR inputfunction)
 	pasbase = pasbaseold;
 	return(status);
     }
-    asActive = TRUE;
     pasg = (ASG *)ellFirst(&pasbase->asgList);
     while(pasg) {
 	pasg->pavalue = asCalloc(ASMAXINP,sizeof(double));
 	pasg = (ASG *)ellNext((ELLNODE *)pasg);
     }
+    gphInitPvt(&pasbase->phash);
+    /*Hash each uagname and each lagname*/
+    puag = (UAG *)ellFirst(&pasbase->uagList);
+    while(puag) {
+	puagname = (UAGNAME *)ellFirst(&puag->list);
+	while(puagname) {
+	    pgphentry = gphAdd(pasbase->phash,puagname->user,puag);
+	    if(!pgphentry) errMessage(-1,"asInitialize: gphAdd logic error");
+	    puagname = (UAGNAME *)ellNext((ELLNODE *)puagname);
+	}
+	puag = (UAG *)ellNext((ELLNODE *)puag);
+    }
+    plag = (LAG *)ellFirst(&pasbase->lagList);
+    while(plag) {
+	plagname = (LAGNAME *)ellFirst(&plag->list);
+	while(plagname) {
+	    pgphentry = gphAdd(pasbase->phash,plagname->location,plag);
+	    if(!pgphentry) errMessage(-1,"asInitialize: gphAdd logic error");
+	    plagname = (LAGNAME *)ellNext((ELLNODE *)plagname);
+	}
+	plag = (LAG *)ellNext((ELLNODE *)plag);
+    }
+    asActive = TRUE;
     if(pasbaseold) {
 	ASG		*poldasg;
 	ASGMEMBER	*poldmem;
@@ -137,6 +165,7 @@ long asAddMember(ASMEMBERPVT *pasMemberPvt,char *asgName)
 {
     ASGMEMBER	*pasgmember;
     ASG		*pgroup;
+    ASGCLIENT	*pclient;
     long	status;
 
     if(!asActive) return(0);
@@ -188,7 +217,6 @@ long asRemoveMember(ASMEMBERPVT *asMemberPvt)
 long asChangeGroup(ASMEMBERPVT *asMemberPvt,char *newAsgName)
 {
     ASGMEMBER	*pasgmember;
-    ASGCLIENT	*pclient;
     long	status;
 
     if(!asActive) return(0);
@@ -206,14 +234,6 @@ long asChangeGroup(ASMEMBERPVT *asMemberPvt,char *newAsgName)
 	exit(-1);
     }
     status = asAddMember(asMemberPvt,newAsgName);
-    pclient = (ASGCLIENT *)ellFirst(&pasgmember->clientList);
-    while(pclient) {
-	    status = asCompute(pclient);
-	    if(status) {
-		errMessage(status,"asAddMember");
-	    }
-	    pclient = (ASGCLIENT *)ellNext((ELLNODE *)pclient);
-    }
 #ifdef vxWorks
     FASTUNLOCK(&asLock);
 #endif
@@ -306,6 +326,14 @@ long asRemoveClient(ASCLIENTPVT *asClientPvt)
     *asClientPvt = NULL;
     return(0);
 }
+
+void asRegisterClientCallback(ASCLIENTPVT asClientPvt,
+	ASCLIENTCALLBACK pcallback)
+{
+    ASGCLIENT	*pasclient = asClientPvt;
+
+    pasclient->pcallback = pcallback;
+}
 
 void *asGetClientPvt(ASCLIENTPVT asClientPvt)
 {
@@ -323,7 +351,7 @@ void asPutClientPvt(ASCLIENTPVT asClientPvt,void *userPvt)
     if(!pasclient) return;
     pasclient->userPvt = userPvt;
 }
-
+
 long asComputeAllAsg(void)
 {
     ASG         *pasg;
@@ -338,10 +366,28 @@ long asComputeAllAsg(void)
 
 long asComputeAsg(ASG *pasg)
 {
+    ASGLEVEL	*pasglevel;
     ASGMEMBER	*pasgmember;
     ASGCLIENT	*pasgclient;
 
     if(!asActive) return(0);
+    pasglevel = (ASGLEVEL *)ellFirst(&pasg->levelList);
+    while(pasglevel) {
+	double	result;
+	long	status;
+
+	if(pasglevel->calc && (pasg->inpChanged & pasglevel->inpUsed)) {
+	    status = calcPerform(pasg->pavalue,&result,pasglevel->rpcl);
+	    if(status) {
+		pasglevel->result = 0;
+		errMessage(status,"asComputeAsg");
+	    } else {
+		pasglevel->result = ((result>.99) && (result<1.01)) ? 1 : 0;
+	    }
+	}
+	pasglevel = (ASGLEVEL *)ellNext((ELLNODE *)pasglevel);
+    }
+    pasg->inpChanged = FALSE;
     pasgmember = (ASGMEMBER *)ellFirst(&pasg->memberList);
     while(pasgmember) {
 	pasgclient = (ASGCLIENT *)ellFirst(&pasgmember->clientList);
@@ -360,87 +406,64 @@ long asCompute(ASCLIENTPVT asClientPvt)
     ASGMEMBER		*pasgMember = pasgClient->pasgMember;
     ASG			*pasg = pasgMember->pasg;
     ASGLEVEL		*pasglevel;
-    double		result;
-    long		status;
+    asAccessRights	oldaccess=pasgClient->access;
+    GPHENTRY		*pgphentry;
 
     if(!pasg) return(0);
-    while(TRUE) {
-	pasglevel = (ASGLEVEL *)ellFirst(&pasg->levelList);
-	while(pasglevel) {
-	    if(access == asWRITE) break;
-	    if(access>=pasglevel->access) goto next_level;
-	    if(pasgClient->level > pasglevel->level) goto next_level;
-	    /*if uagList is empty then no need to check uag*/
-	    if(ellCount(&pasglevel->uagList)>0){
-		ASGUAG	*pasguag;
-		UAG		*puag;
-		UAGNAME	*puagname;
-
-		pasguag = (ASGUAG *)ellFirst(&pasglevel->uagList);
-		while(pasguag) {
-		    if(puag = pasguag->puag) {
-			puagname = (UAGNAME *)ellFirst(&puag->list);
-			while(puagname) {
-			    if(strcmp(pasgClient->user,puagname->user)==0) 
-				goto check_lag;
-			    puagname = (UAGNAME *)ellNext((ELLNODE *)puagname);
-			}
-		    }
-		    pasguag = (ASGUAG *)ellNext((ELLNODE *)pasguag);
-		}
-		goto next_level;
-	    }
-check_lag:
-	    /*if lagList is empty then no need to check lag*/
-	    if(ellCount(&pasglevel->lagList)>0) {
-		ASGLAG	*pasglag;
-		LAG		*plag;
-		LAGNAME	*plagname;
-
-		pasglag = (ASGLAG *)ellFirst(&pasglevel->lagList);
-		while(pasglag) {
-		    if(plag = pasglag->plag) {
-			plagname = (LAGNAME *)ellFirst(&plag->list);
-			while(plagname) {
-			    if(strcmp(pasgClient->location,plagname->location)==0) 
-				goto check_calc;
-			    plagname = (LAGNAME *)ellNext((ELLNODE *)plagname);
-			}
-		    }
-		    pasglag = (ASGLAG *)ellNext((ELLNODE *)pasglag);
-		}
-		goto next_level;
-	    }
-check_calc:
-	    if(!pasglevel->calc) {
-		access = pasglevel->access;
-		goto next_level;
-	    } else {/*If any INP used in calc is bad NO_ACCESS*/
-		if(pasg->inpBad & pasglevel->inpUsed) goto next_level;
-	    }
-	    status = calcPerform(pasg->pavalue,&result,pasglevel->rpcl);
-	    if(!status && result==1e0) access = pasglevel->access;
-next_level:
-	    pasglevel = (ASGLEVEL *)ellNext((ELLNODE *)pasglevel);
-	}
-	/*Also check DEFAULT*/
+    pasglevel = (ASGLEVEL *)ellFirst(&pasg->levelList);
+    while(pasglevel) {
 	if(access == asWRITE) break;
-	if(strcmp(pasg->name,DEFAULT)==0) break;
-	pasg = (ASG *)ellFirst(&pasbase->asgList);
-	while(pasg) {
-	    if(strcmp(pasg->name,DEFAULT)==0) goto again;
-	    pasg = (ASG *)ellNext((ELLNODE *)pasg);
+	if(access>=pasglevel->access) goto next_level;
+	if(pasgClient->level > pasglevel->level) goto next_level;
+	/*if uagList is empty then no need to check uag*/
+	if(ellCount(&pasglevel->uagList)>0){
+	    ASGUAG	*pasguag;
+	    UAG		*puag;
+	    UAGNAME	*puagname;
+
+	    pasguag = (ASGUAG *)ellFirst(&pasglevel->uagList);
+	    while(pasguag) {
+		if(puag = pasguag->puag) {
+		    pgphentry = gphFind(pasbase->phash,pasgClient->user,puag);
+		    if(pgphentry) goto check_lag;
+		}
+		pasguag = (ASGUAG *)ellNext((ELLNODE *)pasguag);
+	    }
+	    goto next_level;
 	}
-	errMessage(-1,"Logic Error in asCompute");
-	break;
-again:
-	continue;
+check_lag:
+	/*if lagList is empty then no need to check lag*/
+	if(ellCount(&pasglevel->lagList)>0) {
+	    ASGLAG	*pasglag;
+	    LAG		*plag;
+	    LAGNAME	*plagname;
+
+	    pasglag = (ASGLAG *)ellFirst(&pasglevel->lagList);
+	    while(pasglag) {
+		if(plag = pasglag->plag) {
+		    pgphentry=gphFind(pasbase->phash,pasgClient->location,plag);
+		    if(pgphentry) goto check_calc;
+		}
+		pasglag = (ASGLAG *)ellNext((ELLNODE *)pasglag);
+	    }
+	    goto next_level;
+	}
+check_calc:
+	if(!pasglevel->calc
+	|| (!(pasg->inpBad & pasglevel->inpUsed) && (pasglevel->result==1)))
+	    access = pasglevel->access;
+next_level:
+	pasglevel = (ASGLEVEL *)ellNext((ELLNODE *)pasglevel);
     }
     pasgClient->access = access;
+    if(pasgClient->pcallback && oldaccess!=access) {
+	(*pasgClient->pcallback)(pasgClient,asClientCOAR);
+    }
     return(0);
 }
 
 static char *asAccessName[] = {"NONE","READ","WRITE"};
+static char *asLevelName[] = {"ASL0","ASL1"};
 int asDump(
 	void (*memcallback)(struct asgMember *),
 	void (*clientcallback)(struct asgClient *),
@@ -501,14 +524,14 @@ int asDump(
 	    print_end_brace = FALSE;
 	}
 	while(pasginp) {
-	    int		bad;
-	    double	value;
 
 	    printf("\tINP%c(%s)",(pasginp->inpIndex + 'A'),pasginp->inp);
 	    if(verbose) {
-		value = pasg->pavalue[pasginp->inpIndex];
-		bad = (pasg->inpBad & (1<<pasginp->inpIndex)) ? 1 : 0;
-		printf(" Bad=%d value=%f",bad,value);
+		if((pasg->inpBad & (1<<pasginp->inpIndex)))
+			printf(" INVALID");
+		else
+			printf("   VALID");
+		printf(" value=%f",pasg->pavalue[pasginp->inpIndex]);
 	    }
 	    printf("\n");
 	    pasginp = (ASGINP *)ellNext((ELLNODE *)pasginp);
@@ -540,11 +563,17 @@ int asDump(
 		pasglag = (ASGLAG *)ellNext((ELLNODE *)pasglag);
 		if(pasglag) printf(","); else printf(")\n");
 	    }
-	    if(pasglevel->calc) printf("\t\tCALC(\"%s\")\n",pasglevel->calc);
+	    if(pasglevel->calc) {
+		printf("\t\tCALC(\"%s\")",pasglevel->calc);
+		if(verbose)
+		    printf(" result=%s",(pasglevel->result ? "TRUE" : "FALSE"));
+		printf("\n");
+	    }
 	    if(print_end_brace) printf("\t}\n");
 	    pasglevel = (ASGLEVEL *)ellNext((ELLNODE *)pasglevel);
 	}
 	pasgmember = (ASGMEMBER *)ellFirst(&pasg->memberList);
+	if(!verbose) pasgmember = NULL;
 	if(pasgmember) printf("\tMEMBERLIST\n");
 	while(pasgmember) {
 	    if(strlen(pasgmember->asgName)==0) 
@@ -555,9 +584,15 @@ int asDump(
 	    printf("\n");
 	    pasgclient = (ASGCLIENT *)ellFirst(&pasgmember->clientList);
 	    while(pasgclient) {
-		printf("\t\t\t %s %s %d %d",
-		    pasgclient->user,pasgclient->location,
-		    pasgclient->level,pasgclient->access);
+		printf("\t\t\t %s %s",pasgclient->user,pasgclient->location);
+		if(pasgclient->level>=0 && pasgclient->level<=1)
+			printf(" %s",asLevelName[pasgclient->level]);
+		else
+			printf(" Illegal Level %d",pasgclient->level);
+		if(pasgclient->access>=0 && pasgclient->access<=2)
+			printf(" %s",asAccessName[pasgclient->access]);
+		else
+			printf(" Illegal Access %d",pasgclient->access);
 		if(clientcallback) clientcallback(pasgclient);
 		printf("\n");
 		pasgclient = (ASGCLIENT *)ellNext((ELLNODE *)pasgclient);
@@ -651,13 +686,10 @@ int asDumpLev(char *asgname)
 	    print_end_brace = FALSE;
 	}
 	while(pasginp) {
-	    int		bad;
-	    double	value;
 
 	    printf("\tINP%c(%s)",(pasginp->inpIndex + 'A'),pasginp->inp);
-	    value = pasg->pavalue[pasginp->inpIndex];
-	    bad = (pasg->inpBad & (1<<pasginp->inpIndex)) ? 1 : 0;
-	    printf(" Bad=%d value=%f",bad,value);
+	    if((pasg->inpBad & (1<<pasginp->inpIndex))) printf(" INVALID");
+	    printf(" value=%f",pasg->pavalue[pasginp->inpIndex]);
 	    printf("\n");
 	    pasginp = (ASGINP *)ellNext((ELLNODE *)pasginp);
 	}
@@ -688,7 +720,11 @@ int asDumpLev(char *asgname)
 		pasglag = (ASGLAG *)ellNext((ELLNODE *)pasglag);
 		if(pasglag) printf(","); else printf(")\n");
 	    }
-	    if(pasglevel->calc) printf("\t\tCALC(\"%s\")\n",pasglevel->calc);
+	    if(pasglevel->calc) {
+		printf("\t\tCALC(\"%s\")",pasglevel->calc);
+		printf(" result=%s",(pasglevel->result ? "TRUE" : "FALSE"));
+		printf("\n");
+	    }
 	    if(print_end_brace) printf("\t}\n");
 	    pasglevel = (ASGLEVEL *)ellNext((ELLNODE *)pasglevel);
 	}
@@ -727,9 +763,16 @@ int asDumpMem(char *asgname,void (*memcallback)(ASMEMBERPVT),int clients)
 	    pasgclient = (ASGCLIENT *)ellFirst(&pasgmember->clientList);
 	    if(!clients) pasgclient = NULL;
 	    while(pasgclient) {
-		printf("\t\t\t %s %s %d %d",
-		    pasgclient->user,pasgclient->location,
-		    pasgclient->level,pasgclient->access);
+		printf("\t\t\t %s %s",
+		    pasgclient->user,pasgclient->location);
+		if(pasgclient->level>=0 && pasgclient->level<=1)
+		    printf(" %s",asLevelName[pasgclient->level]);
+		else
+		    printf(" Illegal Level %d",pasgclient->level);
+		if(pasgclient->access>=0 && pasgclient->access<=2)
+		    printf(" %s",asAccessName[pasgclient->access]);
+		else
+		    printf(" Illegal Access %d",pasgclient->access);
 		printf("\n");
 		pasgclient = (ASGCLIENT *)ellNext((ELLNODE *)pasgclient);
 	    }
@@ -834,6 +877,7 @@ static void asFreeAll(ASBASE *pasbase)
 	free((void *)pasg);
 	pasg = pnext;
     }
+    gphFreeMem(pasbase->phash);
     free((void *)pasbase);
 }
 
@@ -1050,6 +1094,7 @@ static long asAsgLevelCalc(ASGLEVEL *pasglevel,char *calc)
 
 	for(i=0; i<ASMAXINP; i++) {
 	    if(strchr(calc,'A'+i)) pasglevel->inpUsed |= (1<<i);
+	    if(strchr(calc,'a'+i)) pasglevel->inpUsed |= (1<<i);
 	}
     }
     return(status);

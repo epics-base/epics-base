@@ -59,6 +59,7 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <stdio.h>
 #include <string.h>
 #include <dbDefs.h>
+#include <taskwd.h>
 #include <dbStaticLib.h>
 #include <asLib.h>
 #include <asDbLib.h>
@@ -66,7 +67,7 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <recSup.h>
 #include <subRecord.h>
 #include <task_params.h>
-
+
 extern struct dbBase *pdbBase;
 static FILE *stream;
 
@@ -77,6 +78,7 @@ static char	*pacf=NULL;
 FAST_LOCK	asLock;
 int		asLockInit=TRUE;
 static int	initTaskId=0;
+
 
 static int my_yyinput(char *buf, int max_size)
 {
@@ -118,7 +120,7 @@ static long asDbAddRecords(void)
     dbFinishEntry(pdbentry);
     return(0);
 }
-
+
 int asSetFilename(char *acf)
 {
     if(asLockInit) {
@@ -127,83 +129,137 @@ int asSetFilename(char *acf)
     }
     FASTLOCK(&asLock);
     if(pacf) free ((void *)pacf);
-    pacf = calloc(1,strlen(acf)+1);
-    if(!pacf) {
-	errMessage(0,"asSetFilename calloc failure");
-	FASTUNLOCK(&asLock);
-	return(-1);
+    if(acf) {
+	pacf = calloc(1,strlen(acf)+1);
+	if(!pacf) {
+	    errMessage(0,"asSetFilename calloc failure");
+	} else {
+	    strcpy(pacf,acf);
+	}
+    } else {
+	pacf = NULL;
     }
-    strcpy(pacf,acf);
     FASTUNLOCK(&asLock);
     return(0);
 }
+
+static void wdCallback(ASDBCALLBACK *pcallback)
+{
+    pcallback->status = S_asLib_InitFailed;
+    callbackRequest(&pcallback->callback);
+}
 
-static void asInitTask(void)
+static void asInitTask(ASDBCALLBACK *pcallback)
 {
     long status;
 
+    taskwdInsert(taskIdSelf(),wdCallback,pcallback);
     if(asLockInit) {
 	FASTLOCKINIT(&asLock);
 	asLockInit = FALSE;
     }
     FASTLOCK(&asLock);
-    asCaStop();
     my_buffer = calloc(1,BUF_SIZE);
     my_buffer_ptr = my_buffer;
     if(!my_buffer) {
 	errMessage(0,"asInit malloc failure");
 	FASTUNLOCK(&asLock);
+	taskwdRemove(taskIdSelf());
 	return;
     }
     stream = fopen(pacf,"r");
     if(!stream) {
 	errMessage(0,"asInit failure");
 	FASTUNLOCK(&asLock);
+	taskwdRemove(taskIdSelf());
 	return;
     }
     status = asInitialize(my_yyinput);
     if(fclose(stream)==EOF) errMessage(0,"asInit fclose failure");
     free((void *)my_buffer);
-    asDbAddRecords();
-    asCaStart();
-    taskDelay(60);
-    asComputeAllAsg();
+    if(!status) {
+	asCaStop();
+	asDbAddRecords();
+	asCaStart();
+    }
     FASTUNLOCK(&asLock);
+    if(pcallback) {
+	pcallback->status = status;
+	callbackRequest(&pcallback->callback);
+    }
+    taskwdRemove(taskIdSelf());
     initTaskId = 0;
     status = taskDelete(taskIdSelf());
     if(status!=OK) errMessage(0,"asInitTask: taskDelete Failure");
 }
-
-int asInit(void)
+
+int asInit(ASDBCALLBACK *pcallback)
 {
     long status;
 
     if(!pacf) return(0);
     if(initTaskId) {
 	errMessage(-1,"asInit: asInitTask already active");
+	if(pcallback) {
+	    pcallback->status = S_asLib_InitFailed;
+	    callbackRequest(&pcallback->callback);
+	}
 	return(-1);
     }
     initTaskId = taskSpawn("asInitTask",CA_CLIENT_PRI-1,VX_FP_TASK,CA_CLIENT_STACK,
-	(FUNCPTR)asInitTask,0,0,0,0,0,0,0,0,0,0);
+	(FUNCPTR)asInitTask,(int)pcallback,0,0,0,0,0,0,0,0,0);
     if(initTaskId==ERROR) {
 	errMessage(0,"asInit: taskSpawn Error");
+	if(pcallback) {
+	    pcallback->status = S_asLib_InitFailed;
+	    callbackRequest(&pcallback->callback);
+	}
 	initTaskId = 0;
     }
     return(0);
 }
 
 /*Interface to subroutine record*/
+static void myCallback(CALLBACK *pcallback)
+{
+    ASDBCALLBACK	*pasdbcallback = (ASDBCALLBACK *)pcallback;
+    struct subRecord	*precord;
+    struct rset		*prset;
+
+    callbackGetUser(precord,pcallback);
+    prset=(struct rset *)(precord->rset);
+    precord->val = 0.0;
+    if(pasdbcallback->status) {
+	recGblSetSevr(precord,READ_ALARM,INVALID_ALARM);
+	recGblRecordError(pasdbcallback->status,precord,"asInit Failed");
+    }
+    dbScanLock((struct dbCommon *)precord);
+    (*prset->process)((struct dbCommon *)precord);
+    dbScanUnlock((struct dbCommon *)precord);
+}
+
 long asSubInit(struct subRecord *precord,int pass)
 {
+    ASDBCALLBACK *pcallback;
+
+    pcallback = (ASDBCALLBACK *)calloc(1,sizeof(ASDBCALLBACK));
+    precord->dpvt = (void *)pcallback;
+    callbackSetCallback(myCallback,&pcallback->callback);
+    callbackSetUser(precord,&pcallback->callback);
     return(0);
 }
 
 long asSubProcess(struct subRecord *precord)
 {
-    if(precord->val!=1.0) return(0);
-    asInit();
-    db_post_events(precord,&precord->val,DBE_VALUE);
-    precord->val=0.0;
+    ASDBCALLBACK *pcallback = (ASDBCALLBACK *)precord->dpvt;
+
+    if(!precord->pact && precord->val==1.0)  {
+	db_post_events(precord,&precord->val,DBE_VALUE);
+	callbackSetPriority(precord->prio,&pcallback->callback);
+	asInit(pcallback);
+	precord->pact=TRUE;
+	return(1);
+    }
     db_post_events(precord,&precord->val,DBE_VALUE);
     return(0);
 }
@@ -226,6 +282,13 @@ ASMEMBERPVT  asDbGetMemberPvt(void *paddress)
     return((ASMEMBERPVT)precord->asp);
 }
 
+static void astacCallback(ASCLIENTPVT clientPvt,asClientStatus status)
+{
+    printf("astac callback: status=%d",status);
+    printf(" get %s put %s\n",(asCheckGet(clientPvt) ? "Yes" : "No"),
+	(asCheckPut(clientPvt) ? "Yes" : "No"));
+}
+
 int astac(char *pname,char *user,char *location)
 {
     struct dbAddr	*paddr;
@@ -248,12 +311,14 @@ int astac(char *pname,char *user,char *location)
     if(status) {
 	errMessage(status,"asAddClient error");
 	return(1);
+    } else {
+	asRegisterClientCallback(*pasclientpvt,astacCallback);
     }
     return(0);
 }
 
 static char *asAccessName[] = {"NONE","READ","WRITE"};
-void static myMemberCallback(ASMEMBERPVT memPvt)
+static void myMemberCallback(ASMEMBERPVT memPvt)
 {
     struct dbCommon	*precord;
 

@@ -99,7 +99,7 @@ epicsShareFunc const char * epicsShareAPI
 epicsShareFunc unsigned short epicsShareAPI envGetInetPortConfigParam 
         (const ENV_PARAM *pEnv, unsigned short defaultPort);
 epicsShareFunc long epicsShareAPI epicsPrtEnvParams(void);
-epicsShareFunc void epicsShareAPI epicsEnvSet (char *name, char *value);
+epicsShareFunc void epicsShareAPI epicsEnvSet (const char *name, const char *value);
 epicsShareFunc void epicsShareAPI epicsEnvShow (const char *name);
 
 #ifdef __cplusplus

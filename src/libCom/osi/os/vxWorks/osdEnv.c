@@ -32,7 +32,7 @@
  * Leaks memory, but the assumption is that this routine won't be
  * called often enough for the leak to be a problem.
  */
-epicsShareFunc void epicsShareAPI epicsEnvSet (char *name, char *value)
+epicsShareFunc void epicsShareAPI epicsEnvSet (const char *name, const char *value)
 {
     char *cp;
 

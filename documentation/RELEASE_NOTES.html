@@ -12,6 +12,10 @@ dd Month 2004</h1>
 
 <h2 align="center">Changes since 3.14.5</h2>
 
+<h4>db_access - conversion of double to float</h3>
+<p>When a CA user asked for display or control limits as a float a 0 value
+was returned as -1.17549435E-38. This is now fixed.</p>
+
 <h4>New DBD rule</h4>
 <p>A new dbd rule will create a  &lt;name&gt;Include.dbd from files
 specified in a &lt;name&gt;_DBD macro definition. An include line will
@@ -57,6 +61,8 @@ fields.</p>
 
 <p>The access security configuration rules now accept quoted strings where
 just names were allowed previously.</p>
+
+<p>All dump routines now have FP version.</p>
 
 <p>A new shell command "ascar(int level)" is now available. It produces a
 report of the INP channel access connections. Level (0,1,2) produces (a

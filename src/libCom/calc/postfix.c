@@ -100,7 +100,7 @@
 
 #define epicsExportSharedSymbols
 #include	"dbDefs.h"
-#include	"post.h"
+#include	"postfix.h"
 
 
 /* declarations for postfix */
@@ -314,6 +314,7 @@ long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
 	double		constant;
 	register char   *pposthold, *pc;	
 	char in_stack_pri, in_coming_pri, code;
+	char           *ppostfixStart = ppostfix;
 
 	/* convert infix expression to upper case */
 	for (pc=pinfix; *pc; pc++) {
@@ -335,7 +336,7 @@ long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
 	    case OPERAND:
 		if (!operand_needed){
 		    *perror = 5;
-		    return(-1);
+		    *ppostfixStart = BAD_EXPRESSION; return(-1);
 		}
 
 		/* add operand to the expression */
@@ -348,7 +349,7 @@ long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
 	    case FLOAT_PT_CONST:
 		if (!operand_needed){
 		    *perror = 5;
-		    return(-1);
+		    *ppostfixStart = BAD_EXPRESSION; return(-1);
 		}
 
 		/* add constant to the expression */
@@ -356,6 +357,7 @@ long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
 		pposthold = ppostfix;
 
 		pinfix-=no_bytes;
+		while (*pinfix == ' ') *ppostfix++ = *pinfix++;
 		while (TRUE) {
 			if ( ( *pinfix >= '0' && *pinfix <= '9' ) || *pinfix == '.' ) {
 				*ppostfix++ = *pinfix;
@@ -386,7 +388,7 @@ long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
 	    case BINARY_OPERATOR:
 		if (operand_needed){
 		    *perror = 4;
-		    return(-1);
+		    *ppostfixStart = BAD_EXPRESSION; return(-1);
 		}
 
 		/* add operators of higher or equal priority to	*/
@@ -407,7 +409,7 @@ long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
 	    case UNARY_OPERATOR:
 		if (!operand_needed){
 		    *perror = 5;
-		    return(-1);
+		    *ppostfixStart = BAD_EXPRESSION; return(-1);
 		}
 
 		/* add operators of higher or equal priority to	*/
@@ -460,7 +462,7 @@ long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
 	    case SEPERATOR:
 		if (operand_needed){
 		    *perror = 4;
-		    return(-1);
+		    *ppostfixStart = BAD_EXPRESSION; return(-1);
 		}
 
 		/* add operators to postfix until open paren */
@@ -468,7 +470,7 @@ long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
 		    if (pstacktop == &stack[1] ||
 		        pstacktop == &stack[0]){
 			*perror = 6;
-			return(-1);
+			*ppostfixStart = BAD_EXPRESSION; return(-1);
 		    }
 		    *ppostfix++ = pstacktop->code;
 		    pstacktop--;
@@ -479,7 +481,7 @@ long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
 	    case CLOSE_PAREN:
 		if (operand_needed){
 		    *perror = 4;
-		    return(-1);
+		    *ppostfixStart = BAD_EXPRESSION; return(-1);
 		}
 
 		/* add operators to postfix until matching paren */
@@ -487,7 +489,7 @@ long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
 		    if (pstacktop == &stack[1] ||
 		        pstacktop == &stack[0]){
 			*perror = 6;
-			return(-1);
+			*ppostfixStart = BAD_EXPRESSION; return(-1);
 		    }
 		    *ppostfix++ = pstacktop->code;
 		    pstacktop--;
@@ -498,7 +500,7 @@ long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
 	    case CONDITIONAL:
 		if (operand_needed){
 		    *perror = 4;
-		    return(-1);
+		    *ppostfixStart = BAD_EXPRESSION; return(-1);
 		}
 
 		/* add operators of higher priority to	*/
@@ -525,14 +527,14 @@ long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
 	    case EXPR_TERM:
 		if (operand_needed && !new_expression){
 		    *perror = 4;
-		    return(-1);
+		    *ppostfixStart = BAD_EXPRESSION; return(-1);
 		}
 
 		/* add all operators on stack to postfix */
 		while (pstacktop >= &stack[1]){
 		    if (pstacktop->element[0] == '('){
 			*perror = 6;
-			return(-1);
+			*ppostfixStart = BAD_EXPRESSION; return(-1);
 		    }
 		    *ppostfix++ = pstacktop->code;
 		    pstacktop--;
@@ -548,19 +550,19 @@ long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
 
 	    default:
 		*perror = 8;
-		return(-1);
+		*ppostfixStart = BAD_EXPRESSION; return(-1);
 	    }
 	}
 	if (operand_needed){
 		*perror = 4;
-		return(-1);
+		*ppostfixStart = BAD_EXPRESSION; return(-1);
 	}
 
 	/* add all operators on stack to postfix */
 	while (pstacktop >= &stack[1]){
 	    if (pstacktop->element[0] == '('){
 		*perror = 6;
-		return(-1);
+		*ppostfixStart = BAD_EXPRESSION; return(-1);
 	    }
 	    *ppostfix++ = pstacktop->code;
 	    pstacktop--;

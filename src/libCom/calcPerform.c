@@ -111,7 +111,7 @@
 
 #define epicsExportSharedSymbols
 #include	"dbDefs.h"
-#include	"post.h"
+#include	"postfix.h"
 
 static double	local_random();
 
@@ -148,6 +148,7 @@ if ( post[i] == 71 ) i=i+8;
 }
 printf ("*FINISHED*\n");
 */
+        if(*post == BAD_EXPRESSION) return(-1);
 
 	/* set post to postfix expression in calc structure */
 	top = pstacktop;

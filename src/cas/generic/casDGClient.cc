@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.16  1998/12/19 00:04:51  jhill
+ * renamed createPV() to pvAttach()
+ *
  * Revision 1.15  1998/04/20 18:11:01  jhill
  * better debug mesg
  *
@@ -437,8 +440,10 @@ void casDGClient::processDG(casDGIntfIO &inMsgIO, casDGIntfIO &outMsgIO)
 			//
 			status = this->processMsg();
 			if (status) {
-				errMessage (status,
-			"- unexpected error processing stateless protocol");
+                char pName[64u];
+	            this->clientHostName (pName, sizeof (pName));
+				errPrintf (status, __FILE__, __LINE__,
+			        "- bad stateless protocol from \"%s\"", pName);
 			}
 			//
 			// force all replies to go to the sender
@@ -501,7 +506,7 @@ xSendStatus casDGClient::xDGSend (char *pBufIn, bufSizeT nBytesNeedToBeSent,
 		//
 		// !! this time fetch may be slowing things down !!
 		//
-		this->elapsedAtLastSend = osiTime::getCurrent();
+		this->lastSendTS = osiTime::getCurrent();
 	}
 	return stat;
 }
@@ -523,7 +528,7 @@ xRecvStatus casDGClient::xDGRecv (char *pBufIn, bufSizeT nBytesToRecv,
 		//
 		// !! this time fetch may be slowing things down !!
 		//
-		this->elapsedAtLastRecv = osiTime::getCurrent();
+		this->lastRecvTS = osiTime::getCurrent();
 	}
 	return stat;
 }

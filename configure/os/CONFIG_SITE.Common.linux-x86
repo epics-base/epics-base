@@ -5,18 +5,18 @@
 # Site Specific definitions for linux-x86 target
 # Only the local epics system manager should modify this file
 
-# NOTE for SHARED_LIBRARIES: If YES then either
+# NOTE for SHARED_LIBRARIES: In most cases if this is set to YES the
+# shared libraries will be found automatically.  However if the .so
+# files are installed at a different path to their compile-time path
+# then in order to be found at runtime do one of these:
 # a) LD_LIBRARY_PATH must include the full absolute pathname to
 #    $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH) when invoking base
 #    executables.
-# b) Add the path to SHRLIB_SEARCH_DIRS below, which will burn
-#    the runtime search path into the executables.
-# c) the full pathname above can be added to /etc/ld.so.conf
-#    and ldconfig run to inform the system of the shared libraries.
+# b) Add the runtime path to SHRLIB_SEARCH_DIRS, which will add
+#    the named directory to the list contained in the executables.
+# c) Add the runtime path to /etc/ld.so.conf and run ldconfig
+#    to inform the system of the shared library location.
 SHARED_LIBRARIES=YES
-
-# This is the absolute path to INSTALL_LOCATION, for SHARED_LIBRARY searches.
-#SHRLIB_SEARCH_DIRS += /usr/local/epics/R3.14.1/base
 
 # If readline is installed uncomment the following lines
 # to get command-line editing and history support

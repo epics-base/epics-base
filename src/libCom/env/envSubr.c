@@ -100,14 +100,14 @@
 *
 * EXAMPLES
 * 1.	Get the value for the EPICS-defined environment parameter
-*	EPICS_TS_MIN_WEST.
+*	EPICS_TS_NTP_INET.
 *
 *	#include "envDefs.h"
 *	const char *pStr;
 *
-*	pStr = envGetConfigParamPtr(&EPICS_TS_MIN_WEST);
+*	pStr = envGetConfigParamPtr(&EPICS_TS_NTP_INET);
 *	if (pStr) {
-*		printf("minutes west of UTC is: %s\n", pStr);
+*		printf("NTP time server is: %s\n", pStr);
 *	}
 *
 *-*/
@@ -149,13 +149,13 @@ const ENV_PARAM *pParam /* I pointer to config param structure */
 *
 * EXAMPLES
 * 1.	Get the value for the EPICS-defined environment parameter
-*	EPICS_TS_MIN_WEST.
+*	EPICS_TS_NTP_INET.
 *
 *	#include "envDefs.h"
 *	char       temp[80];
 *
-*	printf("minutes west of UTC is: %s\n",
-*			envGetConfigParam(&EPICS_TS_MIN_WEST, sizeof(temp), temp));
+*	printf("NTP time server is: %s\n",
+*			envGetConfigParam(&EPICS_TS_NTP_INET, sizeof(temp), temp));
 *
 * 2.	Get the value for the DISPLAY environment parameter under UNIX.
 *
@@ -364,11 +364,11 @@ long	*pLong		/* O pointer to place to store value */
 *
 * EXAMPLE
 * 1.	Print the value for the EPICS-defined environment parameter
-*	EPICS_TS_MIN_WEST.
+*	EPICS_TS_NTP_INET.
 *
 *	#include "envDefs.h"
 *
-*	envPrtConfigParam(&EPICS_TS_MIN_WEST);
+*	envPrtConfigParam(&EPICS_TS_NTP_INET);
 *
 *-*/
 long epicsShareAPI envPrtConfigParam(

@@ -186,6 +186,8 @@ SRCS += osdPoolStatus.c
 SRCS += osdSignal.cpp
 SRCS += osdEnv.c
 SRCS += epicsReadline.c
+SRCS += epicsTempFile.cpp
+SRCS += epicsStdio.c
 
 osdEnv_CFLAGS_WIN32= -U__STDC__
 
@@ -222,15 +224,10 @@ INC_WIN32 := getopt.h
 SRCS_WIN32 := getopt.c
 SRCS_WIN32 += dllmain.cpp
 SRCS_WIN32 += forceBadAllocException.cpp
-SRCS_WIN32 += epicsStdio.c
 
 # For vxWorks a clock
 INC_vxWorks += iocClock.h
 SRCS_vxWorks += iocClock.c
-SRCS_vxWorks += epicsStdio.c
-
-# For hpux only the Stdio stuff
-SRCS_hpux += epicsStdio.c
 
 #       Library to build:
 #       lib$(LIBRARY).a  or   ..dll/..exp/..lib

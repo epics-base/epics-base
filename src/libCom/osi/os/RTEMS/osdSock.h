@@ -26,6 +26,8 @@ extern "C" {
 #include <netdb.h>
 #include <unistd.h>
 
+int select(int  n,  fd_set  *readfds,  fd_set  *writefds, fd_set *exceptfds, struct timeval *timeout);
+
 #ifdef __cplusplus
 }
 #endif
@@ -64,7 +66,6 @@ typedef int osiSocklen_t;
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
-int  select(int  n,  fd_set  *readfds,  fd_set  *writefds, fd_set *exceptfds, struct timeval *timeout);
 
 #ifndef INADDR_LOOPBACK
 #define       INADDR_LOOPBACK         (u_long)0x7F000001

@@ -103,7 +103,7 @@ static long process(pdfanout)
         if (!pdfanout->pact && pdfanout->omsl == CLOSED_LOOP){
 		status = dbGetLink(&(pdfanout->dol),
 			 DBR_LONG,&(pdfanout->val),0,0);
-		if(RTN_SUCCESS(status)) pdfanout->udf=FALSE;
+		if(pdfanout->dol.type!=CONSTANT && RTN_SUCCESS(status)) pdfanout->udf=FALSE;
 	}
 
 	pdfanout->pact = TRUE;

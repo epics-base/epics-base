@@ -168,7 +168,7 @@ static long process(plongout)
         if (!plongout->pact && plongout->omsl == CLOSED_LOOP) {
 		status = dbGetLink(&(plongout->dol),DBR_LONG,
 			&(plongout->val),0,0);
-		if (RTN_SUCCESS(status))
+		if (plongout->dol.type!=CONSTANT && RTN_SUCCESS(status))
                    plongout->udf=FALSE;
 	}
 

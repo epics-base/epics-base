@@ -405,3 +405,52 @@ struct subRecord *psub;  /* pointer to subroutine record  */
 	} else psub->udf = FALSE;
 	return(status);
 }
+
+/* The following is provided for access security*/
+/*It allows a CA client to force access security initialization*/
+#include "asLib.h"
+#include "asDbLib.h"
+static void myCallback(CALLBACK *pcallback)
+{
+    ASDBCALLBACK	*pasdbcallback = (ASDBCALLBACK *)pcallback;
+    subRecord	*precord;
+    struct rset		*prset;
+
+    callbackGetUser(precord,pcallback);
+    prset=(struct rset *)(precord->rset);
+    precord->val = 0.0;
+    if(pasdbcallback->status) {
+	recGblSetSevr(precord,READ_ALARM,precord->brsv);
+	recGblRecordError(pasdbcallback->status,precord,"asInit Failed");
+    }
+    dbScanLock((dbCommon *)precord);
+    (*prset->process)((dbCommon *)precord);
+    dbScanUnlock((dbCommon *)precord);
+}
+
+long asSubInit(subRecord *precord,int pass)
+{
+    ASDBCALLBACK *pcallback;
+
+    pcallback = (ASDBCALLBACK *)callocMustSucceed(
+        1,sizeof(ASDBCALLBACK),"asSubInit");
+    precord->dpvt = (void *)pcallback;
+    callbackSetCallback(myCallback,&pcallback->callback);
+    callbackSetUser(precord,&pcallback->callback);
+    return(0);
+}
+
+long asSubProcess(subRecord *precord)
+{
+    ASDBCALLBACK *pcallback = (ASDBCALLBACK *)precord->dpvt;
+
+    if(!precord->pact && precord->val==1.0)  {
+	db_post_events(precord,&precord->val,DBE_VALUE);
+	callbackSetPriority(precord->prio,&pcallback->callback);
+	asInitAsyn(pcallback);
+	precord->pact=TRUE;
+	return(1);
+    }
+    db_post_events(precord,&precord->val,DBE_VALUE);
+    return(0);
+}

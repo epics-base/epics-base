@@ -5,23 +5,37 @@
 #	called from RULES_ARCHS
 #
 #
-#	Usage: perl makeMakefile.pl O.*-dir b_t top
+#	Usage: perl makeMakefile.pl O.*-dir top Makefile-Type
 
 $dir = $ARGV[0];
-$t_a= $ARGV[1];
-$top= $ARGV[2];
-$b_t = $ARGV[3];
+$top= $ARGV[1];
+$type = $ARGV[2];
 $makefile="$dir/Makefile";
+$b_t="";
+
+if ($type ne "")
+{
+	$b_t = "B_T=$type";
+}
+
+if ($dir =~ m'O.(.+)')
+{
+	$t_a = $1;
+}
+else
+{
+	die "Cannot extract T_A from $dir";
+}
 
 mkdir ($dir, 0777)  unless -d $dir;
 
 open OUT, "> $makefile"  or die "Cannot create $makefile";
 
-print OUT "#This Makefile created by makeMakefiles.pl\n\n\n";
+print OUT "#This Makefile created by makeMakefile.pl\n\n\n";
 print OUT "all :\n";
-print OUT "	\$(MAKE) -f ../Makefile.$b_t TOP=../$top T_A=$t_a B_T=$b_t \$@\n\n";
+print OUT "	\$(MAKE) -f ../Makefile$type TOP=$top T_A=$t_a $b_t \$@\n\n";
 print OUT ".DEFAULT: force\n";
-print OUT "	\$(MAKE) -f ../Makefile.$b_t TOP=../$top T_A=$t_a B_T=$b_t \$@\n\n";
+print OUT "	\$(MAKE) -f ../Makefile$type TOP=$top T_A=$t_a $b_t \$@\n\n";
 print OUT "force:  ;\n";
 
 close OUT;

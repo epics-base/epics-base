@@ -14,7 +14,10 @@ void empty();
 class albert : public intId<unsigned,8>, public tsSLNode<albert> {
 public:
 	albert (resTable< albert, intId<unsigned,8> > &atIn, unsigned idIn) : 
-		intId<unsigned,8>(idIn), at(atIn) {}
+		intId<unsigned,8>(idIn), at(atIn) 
+    {
+        assert (at.add (*this)==0);
+    }
 	void show (unsigned /* level */) 
 	{
 	}
@@ -235,16 +238,15 @@ int main()
 	resTable< albert, intId<unsigned,8> > alTbl (tableSize);	
 
 	for (i=0; i<tableSize*8; i++) {
-		albert *pa = new albert(alTbl, i);
+		albert *pa = new albert (alTbl, i);
 		assert (pa);
-		assert (alTbl.add (*pa)==0);
 	}
 	alTbl.show(1u);
 
     resTableIter< albert, intId<unsigned,8> > alTblIter (alTbl);
     albert *pa;
     i=0;
-    while (pa = alTblIter.next()) {
+    while ( (pa = alTblIter.next()) ) {
         i++;
     }
     assert (i==tableSize*8);

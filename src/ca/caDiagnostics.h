@@ -1,4 +1,7 @@
 
+#ifndef caDiagnosticsh
+#define caDiagnosticsh
+
 #include "cadef.h"
 
 #ifdef __cplusplus
@@ -19,5 +22,7 @@ int acctst ( char *pname, unsigned channelCount, unsigned repititionCount,
 #endif
 
 void caConnTest ( const char *pNameIn, unsigned channelCountIn, double delayIn );
+
+#endif /* caDiagnosticsh */
 
 

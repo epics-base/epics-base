@@ -86,13 +86,6 @@ LEX   = $(ELEX)
 #---------------------------------------------------------------
 # External tools and tool flags
 
-# state notation language compiler (built in seq module)
-ifndef SNC
-# Tool from R3.14 extensions bin, R3.13 extensions bin, or user path
-SNC = $(firstword $(wildcard $(SEQ)/bin/$(EPICS_HOST_ARCH)/snc$(HOSTEXE) \
-         $(SEQ)/bin/$(HOST_OS_CLASS)/snc$(HOSTEXE)) snc$(HOSTEXE))
-endif
-
 # adl2dl 
 ifndef ADL2DL
 # Tool from R3.14 extensions bin, R3.13 extensions bin, or user path

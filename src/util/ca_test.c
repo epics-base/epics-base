@@ -49,8 +49,8 @@
 #include        <cadef.h>
 #include        <string.h>
 
-void 		printit();
-void 		verify();
+static void 		printit();
+static void 		verify();
 
 static long	outstanding;
 

@@ -106,7 +106,7 @@ foreach $name ( @nameList ) {
 	print OUT "${name}_RESS+=\$(addsuffix \$(RES),\$(basename \$(${name}_RCS)))\n";
 	print OUT "${name}_OBJSNAME+=\$(addsuffix \$(OBJ),\$(basename \$(${name}_OBJS)))\n";
 	print OUT "${name}_DEPLIBS=\$(foreach lib, \$(${name}_LDLIBS),\\\n";
-	print OUT " \$(firstword \$(wildcard \$(addsuffix /\$(LIB_PREFIX)\$(lib)\*,\\\n";
+	print OUT " \$(firstword \$(wildcard \$(addsuffix /\$(LIB_PREFIX)\$(lib).\*,\\\n";
 	print OUT " \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS)))\\\n";
 	print OUT " \$(addsuffix /\$(LIB_PREFIX)\$(lib)\$(LIB_SUFFIX),\\\n";
 	print OUT " \$(firstword \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS))\/)))\n";
@@ -121,12 +121,12 @@ foreach $name ( @nameList ) {
 	print OUT "${name}_RESS+=\$(addsuffix \$(RES),\$(basename \$(${name}_RCS)))\n";
 	print OUT "${name}_OBJSNAME+=\$(addsuffix \$(OBJ),\$(basename \$(${name}_OBJS)))\n";
 	print OUT "${name}_DEPLIBS=\$(foreach lib, \$(${name}_LDLIBS),\\\n";
-	print OUT " \$(firstword \$(wildcard \$(addsuffix /\$(LIB_PREFIX)\$(lib)\*,\\\n";
+	print OUT " \$(firstword \$(wildcard \$(addsuffix /\$(LIB_PREFIX)\$(lib).\*,\\\n";
 	print OUT " \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS)))\\\n";
 	print OUT " \$(addsuffix /\$(LIB_PREFIX)\$(lib)\$(LIB_SUFFIX),\\\n";
 	print OUT " \$(firstword \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS))\/)))\n";
 	print OUT "${name}_DLL_DEPLIBS=\$(foreach lib, \$(${name}_DLL_LIBS),\\\n";
-	print OUT " \$(firstword \$(wildcard \$(addsuffix /\$(LIB_PREFIX)\$(lib)\*,\\\n";
+	print OUT " \$(firstword \$(wildcard \$(addsuffix /\$(LIB_PREFIX)\$(lib).\*,\\\n";
 	print OUT " \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS)))\\\n";
 	print OUT " \$(addsuffix /\$(LIB_PREFIX)\$(lib)\$(LIB_SUFFIX),\\\n";
 	print OUT " \$(firstword \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS))\/)))\n";
@@ -144,12 +144,12 @@ foreach $name ( @nameList ) {
 	print OUT "${name}_RESS+=\$(addsuffix \$(RES),\$(basename \$(${name}_RCS)))\n";
 	print OUT "${name}_OBJSNAME+=\$(addsuffix \$(OBJ),\$(basename \$(${name}_OBJS)))\n";
 	print OUT "${name}_DEPLIBS=\$(foreach lib, \$(${name}_LDLIBS),\\\n";
-	print OUT " \$(firstword \$(wildcard \$(addsuffix /\$(LIB_PREFIX)\$(lib)\*,\\\n";
+	print OUT " \$(firstword \$(wildcard \$(addsuffix /\$(LIB_PREFIX)\$(lib).\*,\\\n";
 	print OUT " \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS)))\\\n";
 	print OUT " \$(addsuffix /\$(LIB_PREFIX)\$(lib)\$(LIB_SUFFIX),\\\n";
 	print OUT " \$(firstword \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS))\/)))\n";
 	print OUT "${name}_DLL_DEPLIBS=\$(foreach lib, \$(${name}_DLL_LIBS),\\\n";
-	print OUT " \$(firstword \$(wildcard \$(addsuffix /\$(LIB_PREFIX)\$(lib)\*,\\\n";
+	print OUT " \$(firstword \$(wildcard \$(addsuffix /\$(LIB_PREFIX)\$(lib).\*,\\\n";
 	print OUT " \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS)))\\\n";
 	print OUT " \$(addsuffix /\$(LIB_PREFIX)\$(lib)\$(LIB_SUFFIX),\\\n";
 	print OUT " \$(firstword \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS))\/)))\n";

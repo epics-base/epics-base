@@ -16,6 +16,7 @@
 
 #define epicsExportSharedSymbols
 #include "epicsThread.h"
+#include "epicsGuard.h"
 #include "ipAddrToAsciiAsynchronous.h"
 
 epicsMutex ipAddrToAsciiEngine::mutex;
@@ -38,7 +39,7 @@ ipAddrToAsciiEngine::~ipAddrToAsciiEngine ()
 
     // force IO completion for any items that remain
     {
-        epicsAutoMutex locker ( ipAddrToAsciiEngine::mutex );
+        epicsGuard < epicsMutex > locker ( ipAddrToAsciiEngine::mutex );
         while ( ( pItem = this->labor.first () ) ) {
             pItem->pEngine = 0u;
             sockAddrToA ( &pItem->addr.sa, this->nameTmp, 
@@ -64,7 +65,7 @@ void ipAddrToAsciiEngine::run ()
     while ( ! this->exitFlag ) {
         while ( true ) {
             {
-                epicsAutoMutex locker ( ipAddrToAsciiEngine::mutex );
+                epicsGuard < epicsMutex > locker ( ipAddrToAsciiEngine::mutex );
                 ipAddrToAsciiAsynchronous * pItem = this->labor.get ();
                 if ( pItem ) {
                     addr = pItem->addr;
@@ -79,7 +80,7 @@ void ipAddrToAsciiEngine::run ()
             sockAddrToA ( &addr.sa, this->nameTmp, sizeof ( this->nameTmp ) );
 
             {
-                epicsAutoMutex locker ( ipAddrToAsciiEngine::mutex );
+                epicsGuard < epicsMutex > locker ( ipAddrToAsciiEngine::mutex );
                 if ( this->pCurrent ) {
                     this->callbackInProgress = true;
                 }
@@ -92,7 +93,7 @@ void ipAddrToAsciiEngine::run ()
             this->pCurrent->ioCompletionNotify ( this->nameTmp );
 
             {
-                epicsAutoMutex locker ( ipAddrToAsciiEngine::mutex );
+                epicsGuard < epicsMutex > locker ( ipAddrToAsciiEngine::mutex );
                 if ( this->pCurrent ) {
                     this->pCurrent->pEngine = 0;
                     this->pCurrent = 0;
@@ -110,7 +111,7 @@ void ipAddrToAsciiEngine::run ()
 
 void ipAddrToAsciiEngine::show ( unsigned level ) const
 {
-    epicsAutoMutex locker ( ipAddrToAsciiEngine::mutex );
+    epicsGuard < epicsMutex > locker ( ipAddrToAsciiEngine::mutex );
     printf ( "ipAddrToAsciiEngine at %p with %u requests pendingh\n", 
         static_cast <const void *> (this), this->labor.count () );
     if ( level > 0u ) {
@@ -139,7 +140,7 @@ ipAddrToAsciiAsynchronous::ipAddrToAsciiAsynchronous
 
 ipAddrToAsciiAsynchronous::~ipAddrToAsciiAsynchronous ()
 {
-    epicsAutoMutex locker ( ipAddrToAsciiEngine::mutex );
+    epicsGuard < epicsMutex > locker ( ipAddrToAsciiEngine::mutex );
     if ( this->pEngine ) {
         while ( true ) {
             if ( this->pEngine->pCurrent == this && 
@@ -147,7 +148,7 @@ ipAddrToAsciiAsynchronous::~ipAddrToAsciiAsynchronous ()
                     ! this->pEngine->thread.isCurrentThread() ) {
                 this->pEngine->cancelPending = true;
                 {
-                    epicsAutoMutexRelease unlocker ( locker );
+                    epicsGuardRelease < epicsMutex > unlocker ( locker );
                     this->pEngine->destructorBlockEvent.wait ();
                 }
                 if ( ! this->pEngine ) {
@@ -177,7 +178,7 @@ epicsShareFunc bool ipAddrToAsciiAsynchronous::ioInitiate ( ipAddrToAsciiEngine 
     bool success;
 
     {
-        epicsAutoMutex locker ( ipAddrToAsciiEngine::mutex );
+        epicsGuard < epicsMutex > locker ( ipAddrToAsciiEngine::mutex );
         // put some reasonable limit on queue expansion
         if ( !this->pEngine && engine.labor.count () < 16u ) {
             this->pEngine = & engine;
@@ -200,7 +201,7 @@ void ipAddrToAsciiAsynchronous::show ( unsigned level ) const
 {
     char ipAddr [64];
 
-    epicsAutoMutex locker ( ipAddrToAsciiEngine::mutex );
+    epicsGuard < epicsMutex > locker ( ipAddrToAsciiEngine::mutex );
     sockAddrToA ( &this->addr.sa, ipAddr, sizeof ( ipAddr ) );
     printf ( "ipAddrToAsciiAsynchronous for address %s\n", ipAddr );
     if ( level > 0u ) {

@@ -64,7 +64,7 @@ inline caServer * caServerI::operator -> ()
 //
 inline casRes *caServerI::lookupRes(const caResId &idIn, casResType type)
 {
-    chronIntId      tmpId (idIn);
+    chronIntId tmpId (idIn);
 
 	epicsGuard < epicsMutex > locker ( this->mutex );
     casRes *pRes = this->chronIntIdResTable<casRes>::lookup ( tmpId );

@@ -47,21 +47,21 @@ epicsShareFunc osiGetUserNameReturn epicsShareAPI osiGetUserName (char *pBuf, un
 }
 
 epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProcess 
-    (const char *pProcessName, const char *pBaseExecutableName)
+    ( const char *pProcessName, const char *pBaseExecutableName )
 {
 	BOOL status;
 	STARTUPINFO startupInfo;
 	PROCESS_INFORMATION processInfo;
 
-	GetStartupInfo (&startupInfo); 
+	GetStartupInfo ( &startupInfo ); 
 	startupInfo.lpReserved = NULL;
 	startupInfo.lpTitle = (char *) pProcessName;
 	startupInfo.dwFlags = STARTF_USESHOWWINDOW;
 	startupInfo.wShowWindow = SW_SHOWMINNOACTIVE;
 	
-	status =  CreateProcess( 
+	status =  CreateProcess ( 
 		            NULL, // pointer to name of executable module (not required if command line is specified)
-		            (char *)pBaseExecutableName, // pointer to command line string 
+		            (char *) pBaseExecutableName, // pointer to command line string 
 		            NULL, // pointer to process security attributes 
 		            NULL, // pointer to thread security attributes 
 		            FALSE, // handle inheritance flag 
@@ -71,12 +71,12 @@ epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProce
 		            &startupInfo, // pointer to STARTUPINFO 
 		            &processInfo // pointer to PROCESS_INFORMATION 
 	); 
-	if (status==0) {
+	if ( status == 0 ) {
 		DWORD W32status;
 		LPVOID errStrMsgBuf;
 		LPVOID complteMsgBuf;
 
-		W32status = FormatMessage( 
+		W32status = FormatMessage ( 
 			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
 			NULL,
 			GetLastError (),
@@ -86,7 +86,7 @@ epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProce
 			NULL 
 		);
 
-		if (W32status) {
+		if ( W32status ) {
 			char *pFmtArgs[] = {
 					"Failed to start executable -",
 					(char *) pBaseExecutableName, 
@@ -95,7 +95,7 @@ epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProce
 					"PATH = ",
 					getenv ("path")};
 
-			if (pFmtArgs[5]==NULL) {
+			if ( pFmtArgs[5] == NULL ) {
 				pFmtArgs[5] = "<empty string>";
 			}
 
@@ -112,13 +112,13 @@ epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProce
 			if (W32status) {
 				// Display the string.
 				MessageBox (NULL, complteMsgBuf, "Configuration Problem", 
-					MB_OK|MB_ICONINFORMATION);
+					MB_OK | MB_ICONINFORMATION);
 				LocalFree (complteMsgBuf);
 			}
 			else {
 				// Display the string.
 				MessageBox (NULL, errStrMsgBuf, "Failed to start executable", 
-					MB_OK|MB_ICONINFORMATION);
+					MB_OK | MB_ICONINFORMATION);
 			}
 
 			// Free the buffer.
@@ -129,6 +129,7 @@ epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProce
 			errlogPrintf ("Unable to locate executable \"%s\".\n", pBaseExecutableName);
 			errlogPrintf ("You may need to modify your environment.\n");
 		}
+        return osiSpawnDetachedProcessFail;
 	}
 
     return osiSpawnDetachedProcessSuccess;

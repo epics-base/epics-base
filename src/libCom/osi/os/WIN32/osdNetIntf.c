@@ -57,7 +57,7 @@
 /*
  * osiLocalAddr ()
  */
-epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket)
+epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr ( SOCKET socket )
 {
 	static osiSockAddr  addr;
 	static char     	init;

@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.31  2000/06/26 15:37:41  jhill
+// adjusted DLL symbol export
+//
 // Revision 1.30  2000/04/28 01:40:08  jhill
 // many changes
 //
@@ -247,10 +250,10 @@ static smartGDDPointer mapStringToGdd(void* v,aitIndex count) {
 	}
 }
 
-static int mapGddToString(void* vd, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable) {
+static int mapGddToString(void* vd, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable) {
 	aitFixedString* db = (aitFixedString*)vd;
-	aitIndex sz = dd->getDataSizeElements();
-	const void* v = dd->dataVoid();
+	aitIndex sz = dd.getDataSizeElements();
+	const void* v = dd.dataVoid();
 	int status;
 
     if (count>sz) {
@@ -260,14 +263,14 @@ static int mapGddToString(void* vd, aitIndex count, const smartConstGDDReference
 
 	if(local_data_format==aitLocalDataFormat) {
 		if((aitFixedString*)v!=db) {
-			status = aitConvert(aitEnumFixedString,db,dd->primitiveType(),v,count, enumStringTable);
+			status = aitConvert(aitEnumFixedString,db,dd.primitiveType(),v,count, enumStringTable);
 		}
 		else {
 			status = sz*sizeof(aitFixedString);
 		}
 	}
 	else {
-		status = aitConvertToNet(aitEnumFixedString,db,dd->primitiveType(),v,count, enumStringTable);
+		status = aitConvertToNet(aitEnumFixedString,db,dd.primitiveType(),v,count, enumStringTable);
 	}
 	
 	return status;
@@ -292,11 +295,11 @@ static smartGDDPointer mapShortToGdd(void* v,aitIndex count) {
 	}
 }
 
-static int mapGddToShort(void* vd, aitIndex count, const smartConstGDDReference &dd, 
+static int mapGddToShort(void* vd, aitIndex count, const gdd &dd, 
                          const std::vector< std::string > &enumStringTable) {
 	dbr_short_t* sv = (dbr_short_t*)vd;
-    aitIndex sz = dd->getDataSizeElements();
-	const void * v=dd->dataVoid();
+    aitIndex sz = dd.getDataSizeElements();
+	const void * v=dd.dataVoid();
 	int status;
 
     if (count>sz) {
@@ -306,14 +309,14 @@ static int mapGddToShort(void* vd, aitIndex count, const smartConstGDDReference 
 
 	if (local_data_format==aitLocalDataFormat) {
 		if((dbr_short_t*)v!=sv) {
-			status = aitConvert(aitEnumInt16,sv,dd->primitiveType(),v,count, enumStringTable);
+			status = aitConvert(aitEnumInt16,sv,dd.primitiveType(),v,count, enumStringTable);
 		}
 		else {
 			status = count*sizeof(dbr_short_t);
 		}
 	}
 	else {
-		status = aitConvertToNet(aitEnumInt16,sv,dd->primitiveType(),v,count, enumStringTable);
+		status = aitConvertToNet(aitEnumInt16,sv,dd.primitiveType(),v,count, enumStringTable);
 	}
 
 	return status;
@@ -338,10 +341,10 @@ static smartGDDPointer mapFloatToGdd(void* v,aitIndex count) {
 	}
 }
 
-static int mapGddToFloat(void* vd, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable) {
+static int mapGddToFloat(void* vd, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable) {
 	dbr_float_t* sv = (dbr_float_t*)vd;
-    aitIndex sz=dd->getDataSizeElements();
-	const void * v = dd->dataVoid();
+    aitIndex sz=dd.getDataSizeElements();
+	const void * v = dd.dataVoid();
 	int status;
 
     if (count>sz) {
@@ -351,14 +354,14 @@ static int mapGddToFloat(void* vd, aitIndex count, const smartConstGDDReference 
 
 	if(local_data_format==aitLocalDataFormat) {
 		if((dbr_float_t*)v!=sv) {
-			status = aitConvert(aitEnumFloat32,sv,dd->primitiveType(),v,count, enumStringTable);
+			status = aitConvert(aitEnumFloat32,sv,dd.primitiveType(),v,count, enumStringTable);
 		}
 		else {
 			status = sz*sizeof(dbr_float_t);
 		}
 	}
 	else {
-		status = aitConvertToNet(aitEnumFloat32,sv,dd->primitiveType(),v,count, enumStringTable);
+		status = aitConvertToNet(aitEnumFloat32,sv,dd.primitiveType(),v,count, enumStringTable);
 	}
 
 	return status;
@@ -383,10 +386,10 @@ static smartGDDPointer mapEnumToGdd(void* v,aitIndex count) {
 	return dd;
 }
 
-static int mapGddToEnum(void* vd, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable) {
+static int mapGddToEnum(void* vd, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable) {
 	dbr_enum_t* sv = (dbr_enum_t*)vd;
-    aitIndex sz=dd->getDataSizeElements();
-	const void* v = dd->dataVoid();
+    aitIndex sz=dd.getDataSizeElements();
+	const void* v = dd.dataVoid();
 	int status;
 
     if (count>sz) {
@@ -396,14 +399,14 @@ static int mapGddToEnum(void* vd, aitIndex count, const smartConstGDDReference &
 
 	if(local_data_format==aitLocalDataFormat) {
 		if((dbr_enum_t*)v!=sv) {
-			status = aitConvert(aitEnumEnum16,sv,dd->primitiveType(),v,count, enumStringTable);
+			status = aitConvert(aitEnumEnum16,sv,dd.primitiveType(),v,count, enumStringTable);
 		}
 		else {
 			status = sizeof(dbr_enum_t)*count;
 		}
 	}
 	else {
-		status = aitConvertToNet(aitEnumEnum16,sv,dd->primitiveType(),v,count, enumStringTable);
+		status = aitConvertToNet(aitEnumEnum16,sv,dd.primitiveType(),v,count, enumStringTable);
 	}
 
 	return status;
@@ -428,10 +431,10 @@ static smartGDDPointer mapCharToGdd(void* v,aitIndex count) {
 	return dd;
 }
 
-static int mapGddToChar(void* vd, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable) {
+static int mapGddToChar(void* vd, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable) {
 	dbr_char_t* sv = (dbr_char_t*)vd;
-    aitIndex sz=dd->getDataSizeElements();
-	const void* v = dd->dataVoid();
+    aitIndex sz=dd.getDataSizeElements();
+	const void* v = dd.dataVoid();
 	int status;
 
    if (count>sz) {
@@ -441,14 +444,14 @@ static int mapGddToChar(void* vd, aitIndex count, const smartConstGDDReference &
 
 	if (local_data_format==aitLocalDataFormat) {
 		if((dbr_char_t*)v!=sv) {
-			status = aitConvert(aitEnumInt8,sv,dd->primitiveType(),v,count, enumStringTable);
+			status = aitConvert(aitEnumInt8,sv,dd.primitiveType(),v,count, enumStringTable);
 		}
 		else {
 			status = sz*sizeof(dbr_char_t);
 		}
 	}
 	else {
-		status = aitConvertToNet(aitEnumInt8,sv,dd->primitiveType(),v,count, enumStringTable);
+		status = aitConvertToNet(aitEnumInt8,sv,dd.primitiveType(),v,count, enumStringTable);
 	}
 
 	return status;
@@ -473,10 +476,10 @@ static smartGDDPointer mapLongToGdd(void* v,aitIndex count) {
 	return dd;
 }
 
-static int mapGddToLong(void* vd, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable) {
+static int mapGddToLong(void* vd, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable) {
 	dbr_long_t* sv = (dbr_long_t*)vd;
-    aitIndex sz=dd->getDataSizeElements();
-	const void* v = dd->dataVoid();
+    aitIndex sz=dd.getDataSizeElements();
+	const void* v = dd.dataVoid();
 	int status;
 
     if (count>sz) {
@@ -486,14 +489,14 @@ static int mapGddToLong(void* vd, aitIndex count, const smartConstGDDReference &
 
 	if (local_data_format==aitLocalDataFormat) {
 		if ((dbr_long_t*)v!=sv) {
-			status = aitConvert(aitEnumInt32,sv,dd->primitiveType(),v,count, enumStringTable);
+			status = aitConvert(aitEnumInt32,sv,dd.primitiveType(),v,count, enumStringTable);
 		}
 		else {
 			status = count*sizeof(dbr_long_t);
 		}
 	}
 	else {
-		status = aitConvertToNet(aitEnumInt32,sv,dd->primitiveType(),v,count, enumStringTable);
+		status = aitConvertToNet(aitEnumInt32,sv,dd.primitiveType(),v,count, enumStringTable);
 	}
 
 	return status;
@@ -518,10 +521,10 @@ static smartGDDPointer mapDoubleToGdd(void* v,aitIndex count) {
 	return dd;
 }
 
-static int mapGddToDouble(void* vd, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable) {
+static int mapGddToDouble(void* vd, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable) {
 	dbr_double_t* sv = (dbr_double_t*)vd;
-    aitIndex sz=dd->getDataSizeElements();
-	const void* v = dd->dataVoid();
+    aitIndex sz=dd.getDataSizeElements();
+	const void* v = dd.dataVoid();
 	int status;
 
     if (count>sz) {
@@ -531,14 +534,14 @@ static int mapGddToDouble(void* vd, aitIndex count, const smartConstGDDReference
 
 	if (local_data_format==aitLocalDataFormat) {
 		if ((dbr_double_t*)v!=sv) {
-			status = aitConvert(aitEnumFloat64,sv,dd->primitiveType(),v,count, enumStringTable);
+			status = aitConvert(aitEnumFloat64,sv,dd.primitiveType(),v,count, enumStringTable);
 		}
 		else {
 			status = count*sizeof(dbr_double_t);
 		}
 	}
 	else {
-		status = aitConvertToNet(aitEnumFloat64,sv,dd->primitiveType(),v,count, enumStringTable);
+		status = aitConvertToNet(aitEnumFloat64,sv,dd.primitiveType(),v,count, enumStringTable);
 	}
 
 	return status;
@@ -575,12 +578,12 @@ static smartGDDPointer mapStsStringToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapStsGddToString(void* v, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable)
+static int mapStsGddToString(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
 {
 	dbr_sts_string* db = (dbr_sts_string*)v;
 	aitFixedString* dbv = (aitFixedString*)db->value;
 
-	dd->getStatSevr(db->status,db->severity);
+	dd.getStatSevr(db->status,db->severity);
 	return mapGddToString(dbv, count, dd, enumStringTable);
 }
 
@@ -592,10 +595,10 @@ static smartGDDPointer mapStsShortToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapStsGddToShort(void* v, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable)
+static int mapStsGddToShort(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
 {
 	dbr_sts_short* dbv = (dbr_sts_short*)v;
-	dd->getStatSevr(dbv->status,dbv->severity);
+	dd.getStatSevr(dbv->status,dbv->severity);
 	return mapGddToShort(&dbv->value, count, dd, enumStringTable);
 }
 
@@ -607,10 +610,10 @@ static smartGDDPointer mapStsFloatToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapStsGddToFloat(void* v, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable)
+static int mapStsGddToFloat(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
 {
 	dbr_sts_float* dbv = (dbr_sts_float*)v;
-	dd->getStatSevr(dbv->status,dbv->severity);
+	dd.getStatSevr(dbv->status,dbv->severity);
 	return mapGddToFloat(&dbv->value,count,dd, enumStringTable);
 }
 
@@ -622,10 +625,10 @@ static smartGDDPointer mapStsEnumToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapStsGddToEnum(void* v, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable)
+static int mapStsGddToEnum(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
 {
 	dbr_sts_enum* dbv = (dbr_sts_enum*)v;
-	dd->getStatSevr(dbv->status,dbv->severity);
+	dd.getStatSevr(dbv->status,dbv->severity);
 	return mapGddToEnum(&dbv->value,count,dd, enumStringTable);
 }
 
@@ -637,10 +640,10 @@ static smartGDDPointer mapStsCharToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapStsGddToChar(void* v, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable)
+static int mapStsGddToChar(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
 {
 	dbr_sts_char* dbv = (dbr_sts_char*)v;
-	dd->getStatSevr(dbv->status,dbv->severity);
+	dd.getStatSevr(dbv->status,dbv->severity);
 	dbv->RISC_pad = '\0'; // shut up purify
 	return mapGddToChar(&dbv->value,count,dd, enumStringTable);
 }
@@ -653,10 +656,10 @@ static smartGDDPointer mapStsLongToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapStsGddToLong(void* v, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable)
+static int mapStsGddToLong(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
 {
 	dbr_sts_long* dbv = (dbr_sts_long*)v;
-	dd->getStatSevr(dbv->status,dbv->severity);
+	dd.getStatSevr(dbv->status,dbv->severity);
 	return mapGddToLong(&dbv->value,count,dd, enumStringTable);
 }
 
@@ -668,10 +671,10 @@ static smartGDDPointer mapStsDoubleToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapStsGddToDouble(void* v, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable)
+static int mapStsGddToDouble(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
 {
 	dbr_sts_double* dbv = (dbr_sts_double*)v;
-	dd->getStatSevr(dbv->status,dbv->severity);
+	dd.getStatSevr(dbv->status,dbv->severity);
 	dbv->RISC_pad = 0; // shut up purify
 	return mapGddToDouble(&dbv->value,count,dd, enumStringTable);
 }
@@ -708,13 +711,13 @@ static smartGDDPointer mapTimeStringToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapTimeGddToString(void* v, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable)
+static int mapTimeGddToString(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
 {
 	dbr_time_string* db = (dbr_time_string*)v;
 	aitFixedString* dbv = (aitFixedString*)db->value;
 
-	dd->getStatSevr(db->status,db->severity);
-	dd->getTimeStamp(&db->stamp);
+	dd.getStatSevr(db->status,db->severity);
+	dd.getTimeStamp(&db->stamp);
 	return mapGddToString(dbv, count, dd, enumStringTable);
 }
 
@@ -727,11 +730,11 @@ static smartGDDPointer mapTimeShortToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapTimeGddToShort(void* v, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable)
+static int mapTimeGddToShort(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
 {
 	dbr_time_short* dbv = (dbr_time_short*)v;
-	dd->getStatSevr(dbv->status,dbv->severity);
-	dd->getTimeStamp(&dbv->stamp);
+	dd.getStatSevr(dbv->status,dbv->severity);
+	dd.getTimeStamp(&dbv->stamp);
 	dbv->RISC_pad = 0; // shut up purify
 	return mapGddToShort(&dbv->value,count,dd, enumStringTable);
 }
@@ -745,11 +748,11 @@ static smartGDDPointer mapTimeFloatToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapTimeGddToFloat(void* v, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable)
+static int mapTimeGddToFloat(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
 {
 	dbr_time_float* dbv = (dbr_time_float*)v;
-	dd->getStatSevr(dbv->status,dbv->severity);
-	dd->getTimeStamp(&dbv->stamp);
+	dd.getStatSevr(dbv->status,dbv->severity);
+	dd.getTimeStamp(&dbv->stamp);
 	return mapGddToFloat(&dbv->value,count,dd, enumStringTable);
 }
 
@@ -762,11 +765,11 @@ static smartGDDPointer mapTimeEnumToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapTimeGddToEnum(void* v, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable)
+static int mapTimeGddToEnum(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
 {
 	dbr_time_enum* dbv = (dbr_time_enum*)v;
-	dd->getStatSevr(dbv->status,dbv->severity);
-	dd->getTimeStamp(&dbv->stamp);
+	dd.getStatSevr(dbv->status,dbv->severity);
+	dd.getTimeStamp(&dbv->stamp);
 	dbv->RISC_pad = 0; // shut up purify
 	return mapGddToEnum(&dbv->value,count,dd, enumStringTable);
 }
@@ -780,11 +783,11 @@ static smartGDDPointer mapTimeCharToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapTimeGddToChar(void* v, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable)
+static int mapTimeGddToChar(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
 {
 	dbr_time_char* dbv = (dbr_time_char*)v;
-	dd->getStatSevr(dbv->status,dbv->severity);
-	dd->getTimeStamp(&dbv->stamp);
+	dd.getStatSevr(dbv->status,dbv->severity);
+	dd.getTimeStamp(&dbv->stamp);
 	dbv->RISC_pad0 = 0; // shut up purify
 	dbv->RISC_pad1 = '\0'; // shut up purify
 	return mapGddToChar(&dbv->value,count,dd, enumStringTable);
@@ -799,11 +802,11 @@ static smartGDDPointer mapTimeLongToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapTimeGddToLong(void* v, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable)
+static int mapTimeGddToLong(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
 {
 	dbr_time_long* dbv = (dbr_time_long*)v;
-	dd->getStatSevr(dbv->status,dbv->severity);
-	dd->getTimeStamp(&dbv->stamp);
+	dd.getStatSevr(dbv->status,dbv->severity);
+	dd.getTimeStamp(&dbv->stamp);
 	return mapGddToLong(&dbv->value,count,dd, enumStringTable);
 }
 
@@ -816,11 +819,11 @@ static smartGDDPointer mapTimeDoubleToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapTimeGddToDouble(void* v, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable)
+static int mapTimeGddToDouble(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
 {
 	dbr_time_double* dbv = (dbr_time_double*)v;
-	dd->getStatSevr(dbv->status,dbv->severity);
-	dd->getTimeStamp(&dbv->stamp);
+	dd.getStatSevr(dbv->status,dbv->severity);
+	dd.getTimeStamp(&dbv->stamp);
 	dbv->RISC_pad = 0; // shut up purify
 	return mapGddToDouble(&dbv->value,count,dd, enumStringTable);
 }
@@ -902,49 +905,49 @@ static smartGDDPointer mapControlShortToGdd(void* v, aitIndex count)
 	return dd;
 }
 
-static int mapGraphicGddToShort(void* v, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable)
+static int mapGraphicGddToShort(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
 {
 	const aitString* str;
 	dbr_gr_short* db = (dbr_gr_short*)v;
-	const gdd& vdd = (*dd)[gddAppTypeIndex_dbr_gr_short_value];
+	const gdd& vdd = dd[gddAppTypeIndex_dbr_gr_short_value];
 
-	(*dd)[gddAppTypeIndex_dbr_gr_short_units].getRef(str);
+	dd[gddAppTypeIndex_dbr_gr_short_units].getRef(str);
 	if(str->string()) {
 		strncpy(db->units,str->string(), sizeof(db->units));
 		db->units[sizeof(db->units)-1u] = '\0';	
 	}
 
-	db->lower_disp_limit=(*dd)[gddAppTypeIndex_dbr_gr_short_graphicLow];
-	db->upper_disp_limit=(*dd)[gddAppTypeIndex_dbr_gr_short_graphicHigh];
-	db->lower_alarm_limit=(*dd)[gddAppTypeIndex_dbr_gr_short_alarmLow];
-	db->upper_alarm_limit=(*dd)[gddAppTypeIndex_dbr_gr_short_alarmHigh];
-	db->lower_warning_limit=(*dd)[gddAppTypeIndex_dbr_gr_short_alarmLowWarning];
-	db->upper_warning_limit=(*dd)[gddAppTypeIndex_dbr_gr_short_alarmHighWarning];
+	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_gr_short_graphicLow];
+	db->upper_disp_limit=dd[gddAppTypeIndex_dbr_gr_short_graphicHigh];
+	db->lower_alarm_limit=dd[gddAppTypeIndex_dbr_gr_short_alarmLow];
+	db->upper_alarm_limit=dd[gddAppTypeIndex_dbr_gr_short_alarmHigh];
+	db->lower_warning_limit=dd[gddAppTypeIndex_dbr_gr_short_alarmLowWarning];
+	db->upper_warning_limit=dd[gddAppTypeIndex_dbr_gr_short_alarmHighWarning];
 
 	vdd.getStatSevr(db->status,db->severity);
 	return mapGddToShort(&db->value,count,vdd, enumStringTable);
 }
 
-static int mapControlGddToShort(void* v, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable)
+static int mapControlGddToShort(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
 {
 	const aitString* str;
 	dbr_ctrl_short* db = (dbr_ctrl_short*)v;
-	const gdd& vdd = (*dd)[gddAppTypeIndex_dbr_ctrl_short_value];
+	const gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_short_value];
 
-	(*dd)[gddAppTypeIndex_dbr_ctrl_short_units].getRef(str);
+	dd[gddAppTypeIndex_dbr_ctrl_short_units].getRef(str);
 	if(str->string()) {
 		strncpy(db->units,str->string(), sizeof(db->units));
 		db->units[sizeof(db->units)-1u] = '\0';	
 	}
 
-	db->lower_disp_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_short_graphicLow];
-	db->upper_disp_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_short_graphicHigh];
-	db->lower_ctrl_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_short_controlLow];
-	db->upper_ctrl_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_short_controlHigh];
-	db->lower_alarm_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_short_alarmLow];
-	db->upper_alarm_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_short_alarmHigh];
-	db->lower_warning_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_short_alarmLowWarning];
-	db->upper_warning_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_short_alarmHighWarning];
+	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_ctrl_short_graphicLow];
+	db->upper_disp_limit=dd[gddAppTypeIndex_dbr_ctrl_short_graphicHigh];
+	db->lower_ctrl_limit=dd[gddAppTypeIndex_dbr_ctrl_short_controlLow];
+	db->upper_ctrl_limit=dd[gddAppTypeIndex_dbr_ctrl_short_controlHigh];
+	db->lower_alarm_limit=dd[gddAppTypeIndex_dbr_ctrl_short_alarmLow];
+	db->upper_alarm_limit=dd[gddAppTypeIndex_dbr_ctrl_short_alarmHigh];
+	db->lower_warning_limit=dd[gddAppTypeIndex_dbr_ctrl_short_alarmLowWarning];
+	db->upper_warning_limit=dd[gddAppTypeIndex_dbr_ctrl_short_alarmHighWarning];
 
 	vdd.getStatSevr(db->status,db->severity);
 	return mapGddToShort(&db->value,count,vdd, enumStringTable);
@@ -1025,52 +1028,52 @@ static smartGDDPointer mapControlFloatToGdd(void* v, aitIndex count)
 	return dd;
 }
 
-static int mapGraphicGddToFloat(void* v, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable)
+static int mapGraphicGddToFloat(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
 {
 	const aitString* str;
 	dbr_gr_float* db = (dbr_gr_float*)v;
-	const gdd& vdd = (*dd)[gddAppTypeIndex_dbr_gr_float_value];
+	const gdd& vdd = dd[gddAppTypeIndex_dbr_gr_float_value];
 
-	(*dd)[gddAppTypeIndex_dbr_gr_float_units].getRef(str);
+	dd[gddAppTypeIndex_dbr_gr_float_units].getRef(str);
 	if(str->string()) {
 		strncpy(db->units,str->string(), sizeof(db->units));
 		db->units[sizeof(db->units)-1u] = '\0';	
 	}
 
-	db->precision=(*dd)[gddAppTypeIndex_dbr_gr_float_precision];
-	db->lower_disp_limit=(*dd)[gddAppTypeIndex_dbr_gr_float_graphicLow];
-	db->upper_disp_limit=(*dd)[gddAppTypeIndex_dbr_gr_float_graphicHigh];
-	db->lower_alarm_limit=(*dd)[gddAppTypeIndex_dbr_gr_float_alarmLow];
-	db->upper_alarm_limit=(*dd)[gddAppTypeIndex_dbr_gr_float_alarmHigh];
-	db->lower_warning_limit=(*dd)[gddAppTypeIndex_dbr_gr_float_alarmLowWarning];
-	db->upper_warning_limit=(*dd)[gddAppTypeIndex_dbr_gr_float_alarmHighWarning];
+	db->precision=dd[gddAppTypeIndex_dbr_gr_float_precision];
+	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_gr_float_graphicLow];
+	db->upper_disp_limit=dd[gddAppTypeIndex_dbr_gr_float_graphicHigh];
+	db->lower_alarm_limit=dd[gddAppTypeIndex_dbr_gr_float_alarmLow];
+	db->upper_alarm_limit=dd[gddAppTypeIndex_dbr_gr_float_alarmHigh];
+	db->lower_warning_limit=dd[gddAppTypeIndex_dbr_gr_float_alarmLowWarning];
+	db->upper_warning_limit=dd[gddAppTypeIndex_dbr_gr_float_alarmHighWarning];
 	db->RISC_pad0 = 0; // shut up purify
 
 	vdd.getStatSevr(db->status,db->severity);
 	return mapGddToFloat(&db->value,count,vdd, enumStringTable);
 }
 
-static int mapControlGddToFloat(void* v, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable)
+static int mapControlGddToFloat(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
 {
 	const aitString* str;
 	dbr_ctrl_float* db = (dbr_ctrl_float*)v;
-	const gdd& vdd = (*dd)[gddAppTypeIndex_dbr_ctrl_float_value];
+	const gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_float_value];
 
-	(*dd)[gddAppTypeIndex_dbr_ctrl_float_units].getRef(str);
+	dd[gddAppTypeIndex_dbr_ctrl_float_units].getRef(str);
 	if(str->string()) {
 		strncpy(db->units,str->string(), sizeof(db->units));
 		db->units[sizeof(db->units)-1u] = '\0';	
 	}
 
-	db->precision=(*dd)[gddAppTypeIndex_dbr_ctrl_float_precision];
-	db->lower_disp_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_float_graphicLow];
-	db->upper_disp_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_float_graphicHigh];
-	db->lower_ctrl_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_float_controlLow];
-	db->upper_ctrl_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_float_controlHigh];
-	db->lower_alarm_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_float_alarmLow];
-	db->upper_alarm_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_float_alarmHigh];
-	db->lower_warning_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_float_alarmLowWarning];
-	db->upper_warning_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_float_alarmHighWarning];
+	db->precision=dd[gddAppTypeIndex_dbr_ctrl_float_precision];
+	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_ctrl_float_graphicLow];
+	db->upper_disp_limit=dd[gddAppTypeIndex_dbr_ctrl_float_graphicHigh];
+	db->lower_ctrl_limit=dd[gddAppTypeIndex_dbr_ctrl_float_controlLow];
+	db->upper_ctrl_limit=dd[gddAppTypeIndex_dbr_ctrl_float_controlHigh];
+	db->lower_alarm_limit=dd[gddAppTypeIndex_dbr_ctrl_float_alarmLow];
+	db->upper_alarm_limit=dd[gddAppTypeIndex_dbr_ctrl_float_alarmHigh];
+	db->lower_warning_limit=dd[gddAppTypeIndex_dbr_ctrl_float_alarmLowWarning];
+	db->upper_warning_limit=dd[gddAppTypeIndex_dbr_ctrl_float_alarmHighWarning];
 	db->RISC_pad = 0; // shut up purify
 
 	vdd.getStatSevr(db->status,db->severity);
@@ -1162,11 +1165,11 @@ static smartGDDPointer mapControlEnumToGdd(void* v, aitIndex /*count*/)
 	return dd;
 }
 
-static int mapGraphicGddToEnum(void* v, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable)
+static int mapGraphicGddToEnum(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
 {
 	dbr_gr_enum* db = (dbr_gr_enum*)v;
-	const gdd& menu = (*dd)[gddAppTypeIndex_dbr_gr_enum_enums];
-	const gdd& vdd = (*dd)[gddAppTypeIndex_dbr_gr_enum_value];
+	const gdd& menu = dd[gddAppTypeIndex_dbr_gr_enum_enums];
+	const gdd& vdd = dd[gddAppTypeIndex_dbr_gr_enum_value];
 	const aitFixedString* str = menu;
 	aitFixedString* f = (aitFixedString*)db->strs;
 	int i;
@@ -1185,11 +1188,11 @@ static int mapGraphicGddToEnum(void* v, aitIndex count, const smartConstGDDRefer
 	return mapGddToEnum(&db->value, count, vdd, enumStringTable);
 }
 
-static int mapControlGddToEnum(void* v, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable)
+static int mapControlGddToEnum(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
 {
 	dbr_ctrl_enum* db = (dbr_ctrl_enum*)v;
-	const gdd& menu = (*dd)[gddAppTypeIndex_dbr_ctrl_enum_enums];
-	const gdd& vdd = (*dd)[gddAppTypeIndex_dbr_ctrl_enum_value];
+	const gdd& menu = dd[gddAppTypeIndex_dbr_ctrl_enum_enums];
+	const gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_enum_value];
 	const aitFixedString* str = menu;
 	aitFixedString* f = (aitFixedString*)db->strs;
 	int i;
@@ -1281,50 +1284,50 @@ static smartGDDPointer mapControlCharToGdd(void* v, aitIndex count)
 	return dd;
 }
 
-static int mapGraphicGddToChar(void* v, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable)
+static int mapGraphicGddToChar(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
 {
 	const aitString* str;
 	dbr_gr_char* db = (dbr_gr_char*)v;
-	const gdd& vdd = (*dd)[gddAppTypeIndex_dbr_gr_char_value];
+	const gdd& vdd = dd[gddAppTypeIndex_dbr_gr_char_value];
 
-	(*dd)[gddAppTypeIndex_dbr_gr_char_units].getRef(str);
+	dd[gddAppTypeIndex_dbr_gr_char_units].getRef(str);
 	if(str->string()) {
 		strncpy(db->units,str->string(), sizeof(db->units));
 		db->units[sizeof(db->units)-1u] = '\0';	
 	}
 
-	db->lower_disp_limit=(*dd)[gddAppTypeIndex_dbr_gr_char_graphicLow];
-	db->upper_disp_limit=(*dd)[gddAppTypeIndex_dbr_gr_char_graphicHigh];
-	db->lower_alarm_limit=(*dd)[gddAppTypeIndex_dbr_gr_char_alarmLow];
-	db->upper_alarm_limit=(*dd)[gddAppTypeIndex_dbr_gr_char_alarmHigh];
-	db->lower_warning_limit=(*dd)[gddAppTypeIndex_dbr_gr_char_alarmLowWarning];
-	db->upper_warning_limit=(*dd)[gddAppTypeIndex_dbr_gr_char_alarmHighWarning];
+	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_gr_char_graphicLow];
+	db->upper_disp_limit=dd[gddAppTypeIndex_dbr_gr_char_graphicHigh];
+	db->lower_alarm_limit=dd[gddAppTypeIndex_dbr_gr_char_alarmLow];
+	db->upper_alarm_limit=dd[gddAppTypeIndex_dbr_gr_char_alarmHigh];
+	db->lower_warning_limit=dd[gddAppTypeIndex_dbr_gr_char_alarmLowWarning];
+	db->upper_warning_limit=dd[gddAppTypeIndex_dbr_gr_char_alarmHighWarning];
 	db->RISC_pad = 0;
 
 	vdd.getStatSevr(db->status,db->severity);
 	return mapGddToChar(&db->value,count,vdd, enumStringTable);
 }
 
-static int mapControlGddToChar(void* v, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable)
+static int mapControlGddToChar(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
 {
 	const aitString* str;
 	dbr_ctrl_char* db = (dbr_ctrl_char*)v;
-	const gdd& vdd = (*dd)[gddAppTypeIndex_dbr_ctrl_char_value];
+	const gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_char_value];
 
-	(*dd)[gddAppTypeIndex_dbr_ctrl_char_units].getRef(str);
+	dd[gddAppTypeIndex_dbr_ctrl_char_units].getRef(str);
 	if(str->string()) {
 		strncpy(db->units,str->string(), sizeof(db->units));
 		db->units[sizeof(db->units)-1u] = '\0';	
 	}
 
-	db->lower_disp_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_char_graphicLow];
-	db->upper_disp_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_char_graphicHigh];
-	db->lower_ctrl_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_char_controlLow];
-	db->upper_ctrl_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_char_controlHigh];
-	db->lower_alarm_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_char_alarmLow];
-	db->upper_alarm_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_char_alarmHigh];
-	db->lower_warning_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_char_alarmLowWarning];
-	db->upper_warning_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_char_alarmHighWarning];
+	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_ctrl_char_graphicLow];
+	db->upper_disp_limit=dd[gddAppTypeIndex_dbr_ctrl_char_graphicHigh];
+	db->lower_ctrl_limit=dd[gddAppTypeIndex_dbr_ctrl_char_controlLow];
+	db->upper_ctrl_limit=dd[gddAppTypeIndex_dbr_ctrl_char_controlHigh];
+	db->lower_alarm_limit=dd[gddAppTypeIndex_dbr_ctrl_char_alarmLow];
+	db->upper_alarm_limit=dd[gddAppTypeIndex_dbr_ctrl_char_alarmHigh];
+	db->lower_warning_limit=dd[gddAppTypeIndex_dbr_ctrl_char_alarmLowWarning];
+	db->upper_warning_limit=dd[gddAppTypeIndex_dbr_ctrl_char_alarmHighWarning];
 	db->RISC_pad = '\0'; // shut up purify
 
 	vdd.getStatSevr(db->status,db->severity);
@@ -1404,49 +1407,49 @@ static smartGDDPointer mapControlLongToGdd(void* v, aitIndex count)
 	return dd;
 }
 
-static int mapGraphicGddToLong(void* v, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable)
+static int mapGraphicGddToLong(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
 {
 	const aitString* str;
 	dbr_gr_long* db = (dbr_gr_long*)v;
-	const gdd& vdd = (*dd)[gddAppTypeIndex_dbr_gr_long_value];
+	const gdd& vdd = dd[gddAppTypeIndex_dbr_gr_long_value];
 
-	(*dd)[gddAppTypeIndex_dbr_gr_long_units].getRef(str);
+	dd[gddAppTypeIndex_dbr_gr_long_units].getRef(str);
 	if(str->string()) {
 		strncpy(db->units,str->string(), sizeof(db->units));
 		db->units[sizeof(db->units)-1u] = '\0';	
 	}
 
-	db->lower_disp_limit=(*dd)[gddAppTypeIndex_dbr_gr_long_graphicLow];
-	db->upper_disp_limit=(*dd)[gddAppTypeIndex_dbr_gr_long_graphicHigh];
-	db->lower_alarm_limit=(*dd)[gddAppTypeIndex_dbr_gr_long_alarmLow];
-	db->upper_alarm_limit=(*dd)[gddAppTypeIndex_dbr_gr_long_alarmHigh];
-	db->lower_warning_limit=(*dd)[gddAppTypeIndex_dbr_gr_long_alarmLowWarning];
-	db->upper_warning_limit=(*dd)[gddAppTypeIndex_dbr_gr_long_alarmHighWarning];
+	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_gr_long_graphicLow];
+	db->upper_disp_limit=dd[gddAppTypeIndex_dbr_gr_long_graphicHigh];
+	db->lower_alarm_limit=dd[gddAppTypeIndex_dbr_gr_long_alarmLow];
+	db->upper_alarm_limit=dd[gddAppTypeIndex_dbr_gr_long_alarmHigh];
+	db->lower_warning_limit=dd[gddAppTypeIndex_dbr_gr_long_alarmLowWarning];
+	db->upper_warning_limit=dd[gddAppTypeIndex_dbr_gr_long_alarmHighWarning];
 
 	vdd.getStatSevr(db->status,db->severity);
 	return mapGddToLong(&db->value,count,vdd, enumStringTable);
 }
 
-static int mapControlGddToLong(void* v, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable)
+static int mapControlGddToLong(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
 {
 	const aitString* str;
 	dbr_ctrl_long* db = (dbr_ctrl_long*)v;
-	const gdd& vdd = (*dd)[gddAppTypeIndex_dbr_ctrl_long_value];
+	const gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_long_value];
 
-	(*dd)[gddAppTypeIndex_dbr_ctrl_long_units].getRef(str);
+	dd[gddAppTypeIndex_dbr_ctrl_long_units].getRef(str);
 	if(str->string()) {
 		strncpy(db->units,str->string(), sizeof(db->units));
 		db->units[sizeof(db->units)-1u] = '\0';	
 	}
 
-	db->lower_disp_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_long_graphicLow];
-	db->upper_disp_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_long_graphicHigh];
-	db->lower_ctrl_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_long_controlLow];
-	db->upper_ctrl_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_long_controlHigh];
-	db->lower_alarm_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_long_alarmLow];
-	db->upper_alarm_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_long_alarmHigh];
-	db->lower_warning_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_long_alarmLowWarning];
-	db->upper_warning_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_long_alarmHighWarning];
+	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_ctrl_long_graphicLow];
+	db->upper_disp_limit=dd[gddAppTypeIndex_dbr_ctrl_long_graphicHigh];
+	db->lower_ctrl_limit=dd[gddAppTypeIndex_dbr_ctrl_long_controlLow];
+	db->upper_ctrl_limit=dd[gddAppTypeIndex_dbr_ctrl_long_controlHigh];
+	db->lower_alarm_limit=dd[gddAppTypeIndex_dbr_ctrl_long_alarmLow];
+	db->upper_alarm_limit=dd[gddAppTypeIndex_dbr_ctrl_long_alarmHigh];
+	db->lower_warning_limit=dd[gddAppTypeIndex_dbr_ctrl_long_alarmLowWarning];
+	db->upper_warning_limit=dd[gddAppTypeIndex_dbr_ctrl_long_alarmHighWarning];
 
 	vdd.getStatSevr(db->status,db->severity);
 	return mapGddToLong(&db->value,count,vdd, enumStringTable);
@@ -1527,52 +1530,52 @@ static smartGDDPointer mapControlDoubleToGdd(void* v, aitIndex count)
 	return dd;
 }
 
-static int mapGraphicGddToDouble(void* v, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable)
+static int mapGraphicGddToDouble(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
 {
 	const aitString* str;
 	dbr_gr_double* db = (dbr_gr_double*)v;
-	const gdd& vdd = (*dd)[gddAppTypeIndex_dbr_gr_double_value];
+	const gdd& vdd = dd[gddAppTypeIndex_dbr_gr_double_value];
 
-	(*dd)[gddAppTypeIndex_dbr_gr_double_units].getRef(str);
+	dd[gddAppTypeIndex_dbr_gr_double_units].getRef(str);
 	if(str->string()) {
 		strncpy(db->units,str->string(), sizeof(db->units));
 		db->units[sizeof(db->units)-1u] = '\0';	
 	}
 
-	db->precision=(*dd)[gddAppTypeIndex_dbr_gr_double_precision];
-	db->lower_disp_limit=(*dd)[gddAppTypeIndex_dbr_gr_double_graphicLow];
-	db->upper_disp_limit=(*dd)[gddAppTypeIndex_dbr_gr_double_graphicHigh];
-	db->lower_alarm_limit=(*dd)[gddAppTypeIndex_dbr_gr_double_alarmLow];
-	db->upper_alarm_limit=(*dd)[gddAppTypeIndex_dbr_gr_double_alarmHigh];
-	db->lower_warning_limit=(*dd)[gddAppTypeIndex_dbr_gr_double_alarmLowWarning];
-	db->upper_warning_limit=(*dd)[gddAppTypeIndex_dbr_gr_double_alarmHighWarning];
+	db->precision=dd[gddAppTypeIndex_dbr_gr_double_precision];
+	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_gr_double_graphicLow];
+	db->upper_disp_limit=dd[gddAppTypeIndex_dbr_gr_double_graphicHigh];
+	db->lower_alarm_limit=dd[gddAppTypeIndex_dbr_gr_double_alarmLow];
+	db->upper_alarm_limit=dd[gddAppTypeIndex_dbr_gr_double_alarmHigh];
+	db->lower_warning_limit=dd[gddAppTypeIndex_dbr_gr_double_alarmLowWarning];
+	db->upper_warning_limit=dd[gddAppTypeIndex_dbr_gr_double_alarmHighWarning];
 	db->RISC_pad0 = 0; // shut up purify
 
 	vdd.getStatSevr(db->status,db->severity);
 	return mapGddToDouble(&db->value,count,vdd, enumStringTable);
 }
 
-static int mapControlGddToDouble(void* v, aitIndex count, const smartConstGDDReference & dd, const std::vector< std::string > &enumStringTable)
+static int mapControlGddToDouble(void* v, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable)
 {
 	const aitString* str;
 	dbr_ctrl_double* db = (dbr_ctrl_double*)v;
-	const gdd& vdd = (*dd)[gddAppTypeIndex_dbr_ctrl_double_value];
+	const gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_double_value];
 
-	(*dd)[gddAppTypeIndex_dbr_ctrl_double_units].getRef(str);
+	dd[gddAppTypeIndex_dbr_ctrl_double_units].getRef(str);
 	if(str->string()) {
 		strncpy(db->units,str->string(), sizeof(db->units));
 		db->units[sizeof(db->units)-1u] = '\0';	
 	}
 
-	db->precision=(*dd)[gddAppTypeIndex_dbr_ctrl_double_precision];
-	db->lower_disp_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_double_graphicLow];
-	db->upper_disp_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_double_graphicHigh];
-	db->lower_ctrl_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_double_controlLow];
-	db->upper_ctrl_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_double_controlHigh];
-	db->lower_alarm_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_double_alarmLow];
-	db->upper_alarm_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_double_alarmHigh];
-	db->lower_warning_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_double_alarmLowWarning];
-	db->upper_warning_limit=(*dd)[gddAppTypeIndex_dbr_ctrl_double_alarmHighWarning];
+	db->precision=dd[gddAppTypeIndex_dbr_ctrl_double_precision];
+	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_ctrl_double_graphicLow];
+	db->upper_disp_limit=dd[gddAppTypeIndex_dbr_ctrl_double_graphicHigh];
+	db->lower_ctrl_limit=dd[gddAppTypeIndex_dbr_ctrl_double_controlLow];
+	db->upper_ctrl_limit=dd[gddAppTypeIndex_dbr_ctrl_double_controlHigh];
+	db->lower_alarm_limit=dd[gddAppTypeIndex_dbr_ctrl_double_alarmLow];
+	db->upper_alarm_limit=dd[gddAppTypeIndex_dbr_ctrl_double_alarmHigh];
+	db->lower_warning_limit=dd[gddAppTypeIndex_dbr_ctrl_double_alarmLowWarning];
+	db->upper_warning_limit=dd[gddAppTypeIndex_dbr_ctrl_double_alarmHighWarning];
 	db->RISC_pad0 = '\0'; // shut up purify
 
 	vdd.getStatSevr(db->status,db->severity);
@@ -1608,14 +1611,14 @@ static smartGDDPointer mapStsAckStringToGdd(void* v, aitIndex count)
     return dd;
 }
 
-static int mapStsAckGddToString(void* v, aitIndex count, const smartConstGDDReference &dd, 
+static int mapStsAckGddToString(void* v, aitIndex count, const gdd &dd, 
                                 const std::vector< std::string > &enumStringTable)
 {
     dbr_stsack_string* db = (dbr_stsack_string*)v;
-    const gdd& vdd = (*dd)[gddAppTypeIndex_dbr_stsack_string_value];
+    const gdd& vdd = dd[gddAppTypeIndex_dbr_stsack_string_value];
     
-    db->ackt=(*dd)[gddAppTypeIndex_dbr_stsack_string_ackt];
-    db->acks=(*dd)[gddAppTypeIndex_dbr_stsack_string_acks];
+    db->ackt=dd[gddAppTypeIndex_dbr_stsack_string_ackt];
+    db->acks=dd[gddAppTypeIndex_dbr_stsack_string_acks];
     
     // Unlike all the others, which are dbr_short_t, status and
     // severity for a dbr_stsack_string are dbr_ushort_t.  Have to
@@ -1648,11 +1651,11 @@ static smartGDDPointer mapAcktToGdd(void* v,aitIndex count) {
     return dd;
 }
 
-static int mapGddToAckt(void* vd, aitIndex count, const smartConstGDDReference & dd, 
+static int mapGddToAckt(void* vd, aitIndex count, const gdd & dd, 
                         const std::vector< std::string > &enumStringTable) {
     dbr_put_ackt_t* sv = (dbr_put_ackt_t*)vd;
-    aitIndex sz = (*dd).getDataSizeElements();
-    const void* v=(*dd).dataVoid();
+    aitIndex sz = dd.getDataSizeElements();
+    const void* v=dd.dataVoid();
     int status;
     
     // Count should be 1, but leave it general
@@ -1660,7 +1663,7 @@ static int mapGddToAckt(void* vd, aitIndex count, const smartConstGDDReference &
         if (local_data_format==aitLocalDataFormat) {
             if((dbr_put_ackt_t*)v!=sv) {
                 status = 
-                    aitConvert(aitEnumUint16,sv,(*dd).primitiveType(),v,sz,enumStringTable);
+                    aitConvert(aitEnumUint16,sv,dd.primitiveType(),v,sz,enumStringTable);
             }
             else {
                 status = sz*sizeof(dbr_put_ackt_t);
@@ -1668,7 +1671,7 @@ static int mapGddToAckt(void* vd, aitIndex count, const smartConstGDDReference &
         }
         else {
             status = 
-                aitConvertToNet(aitEnumUint16,sv,(*dd).primitiveType(),v,sz, enumStringTable);
+                aitConvertToNet(aitEnumUint16,sv,dd.primitiveType(),v,sz, enumStringTable);
         }
     }
     else {
@@ -1698,11 +1701,11 @@ static smartGDDPointer mapAcksToGdd(void* v,aitIndex count) {
     return dd;
 }
 
-static int mapGddToAcks(void* vd, aitIndex count, const smartConstGDDReference &dd, 
+static int mapGddToAcks(void* vd, aitIndex count, const gdd &dd, 
                         const std::vector< std::string > &enumStringTable) {
     dbr_put_acks_t* sv = (dbr_put_acks_t*)vd;
-    aitIndex sz = (*dd).getDataSizeElements();
-    const void* v=(*dd).dataVoid();
+    aitIndex sz = dd.getDataSizeElements();
+    const void* v=dd.dataVoid();
     int status;
     
     // Count should be 1, but leave it general
@@ -1710,7 +1713,7 @@ static int mapGddToAcks(void* vd, aitIndex count, const smartConstGDDReference &
         if (local_data_format==aitLocalDataFormat) {
             if((dbr_put_acks_t*)v!=sv) {
                 status = 
-                    aitConvert(aitEnumUint16,sv,(*dd).primitiveType(),v,sz, enumStringTable);
+                    aitConvert(aitEnumUint16,sv,dd.primitiveType(),v,sz, enumStringTable);
             }
             else {
                 status = sz*sizeof(dbr_put_acks_t);
@@ -1718,7 +1721,7 @@ static int mapGddToAcks(void* vd, aitIndex count, const smartConstGDDReference &
         }
         else {
             status = 
-                aitConvertToNet(aitEnumUint16,sv,(*dd).primitiveType(),v,sz, enumStringTable);
+                aitConvertToNet(aitEnumUint16,sv,dd.primitiveType(),v,sz, enumStringTable);
         }
     }
     else {
@@ -1754,11 +1757,11 @@ static smartGDDPointer mapClassNameToGdd(void* v,aitIndex count) {
     return dd;
 }
 
-static int mapGddToClassName(void* vd, aitIndex count, const smartConstGDDReference & dd, 
+static int mapGddToClassName(void* vd, aitIndex count, const gdd & dd, 
                              const std::vector< std::string > &enumStringTable) {
     aitFixedString* db = (aitFixedString*)vd;
-    aitIndex sz = (*dd).getDataSizeElements();
-    const void* v = (*dd).dataVoid();
+    aitIndex sz = dd.getDataSizeElements();
+    const void* v = dd.dataVoid();
     int status;
     
     // Count should be 1, but leave it general
@@ -1766,7 +1769,7 @@ static int mapGddToClassName(void* vd, aitIndex count, const smartConstGDDRefere
         if(local_data_format==aitLocalDataFormat) {
             if((aitFixedString*)v!=db) {
                 status = 
-                    aitConvert(aitEnumFixedString,db,(*dd).primitiveType(),v,count, enumStringTable);
+                    aitConvert(aitEnumFixedString,db,dd.primitiveType(),v,count, enumStringTable);
             }
             else {
                 status = sz*sizeof(aitFixedString);
@@ -1774,7 +1777,7 @@ static int mapGddToClassName(void* vd, aitIndex count, const smartConstGDDRefere
         }
         else {
             status = 
-                aitConvertToNet(aitEnumFixedString,db,(*dd).primitiveType(),v,count, enumStringTable);
+                aitConvertToNet(aitEnumFixedString,db,dd.primitiveType(),v,count, enumStringTable);
         }
     }
     else {

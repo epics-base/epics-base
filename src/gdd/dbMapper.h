@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.10  2000/04/28 01:40:08  jhill
+ * many changes
+ *
  * Revision 1.9  2000/03/08 16:23:29  jhill
  * dont wrap include files with extern "C" - let the files themselves take care of it
  *
@@ -62,7 +65,7 @@ typedef smartGDDPointer (*to_gdd)(void* db_struct, aitIndex element_count);
 // gdd points to an array or -1 if the number of elements in the value
 // field is not identical to element_count available in db_struct.
 typedef int (*to_dbr)(void* db_struct, aitIndex element_count, 
-                      const smartConstGDDReference &, const std::vector< std::string > &enumStringTable);
+                      const gdd &, const std::vector< std::string > &enumStringTable);
 
 struct gddDbrMapFuncTable {
 	to_gdd	conv_gdd;

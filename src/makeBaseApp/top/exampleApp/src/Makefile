@@ -61,6 +61,8 @@ example_SRCS_DEFAULT += exampleMain.c
 example_SRCS_vxWorks += -nil-
 
 example_OBJS_vxWorks += $(EPICS_BASE_BIN)/iocCoreLibrary
+#The following adds drvTS support for vxWorks
+#example_OBJS_vxWorks += $(EPICS_BASE_BIN)/drvTS
 
 #example_SRCS += sncExample.stt
 

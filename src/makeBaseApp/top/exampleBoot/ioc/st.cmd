@@ -16,8 +16,7 @@
 cd topbin
 ld < exampleLibrary.munch
 
-#The following uses drvTS for vxWorks
-#ld < <base>/bin/vxWorks-<arch>/drvTS.o
+#The following uses drvTS for vxWorks IF it was included in src/Makefile
 #TSinit
 
 cd top

@@ -58,7 +58,7 @@ void camsgtask ( void *pParm )
     }
     cas_send_bs_msg ( client, TRUE );
 
-    while ( TRUE ) {
+    while ( ! client->disconnect ) {
         client->recv.stk = 0;
             
         assert ( client->recv.maxstk >= client->recv.cnt );
@@ -71,8 +71,20 @@ void camsgtask ( void *pParm )
             }
             break;
         }
-        else if (nchars<0) {
+        else if ( nchars < 0 ) {
             int anerrno = SOCKERRNO;
+
+            if ( anerrno == SOCK_EINTR ) {
+                continue;
+            }
+
+            if ( anerrno == SOCK_ENOBUFS ) {
+                errlogPrintf ( 
+                    "rsrv: system low on network buffers "
+                    "- receive retry in 15 seconds\n" );
+                epicsThreadSleep ( 15.0 );
+                continue;
+            }
 
             /*
              * normal conn lost conditions

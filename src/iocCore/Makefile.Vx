@@ -6,6 +6,19 @@ LINK.c=$(LD) $(LDFLAGS)
 
 SRCS=
 
+IOC_CORE = $(INSTALL_BIN)/$(T_A)/iocCore
+
+IOC_CORE_OBJS = \
+	$(INSTALL_BIN)/$(T_A)/asLibrary \
+	$(INSTALL_BIN)/$(T_A)/dbLib \
+	$(INSTALL_BIN)/$(T_A)/rsrvLib \
+	$(INSTALL_BIN)/$(T_A)/libCom \
+	$(INSTALL_BIN)/$(T_A)/vxComLib \
+	$(INSTALL_BIN)/$(T_A)/caLib \
+	$(INSTALL_BIN)/$(T_A)/miscLib \
+	$(INSTALL_BIN)/$(T_A)/dbSubs
+
+
 include $(EPICS)/config/RULES.Vx
 
 build_libs build_prod build \

@@ -8,7 +8,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
- *      $Id$
  *
  *      Author  Jeffrey O. Hill
  *              johill@lanl.gov
@@ -22,6 +21,8 @@
 // destructor for a passive timer queue which is no longer valid
 // in pool.
 // 
+
+#include <stdio.h>
 
 #define epicsExportSharedSymbols
 #include "timerPrivate.h"

@@ -9,7 +9,6 @@
 \*************************************************************************/
 
 /*
- *      $Id$
  *
  *      Author  Jeffrey O. Hill
  *              johill@lanl.gov
@@ -24,6 +23,7 @@
 #define epicsExportSharedSymbols
 #include "epicsGuard.h"
 #include "timerPrivate.h"
+#include "errlog.h"
 
 #ifdef _MSC_VER
 #   pragma warning ( push )

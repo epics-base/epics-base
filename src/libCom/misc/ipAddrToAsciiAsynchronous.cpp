@@ -9,7 +9,6 @@
 \*************************************************************************/
 
 /*  
- *  $Id$
  *
  *                              
  *                    L O S  A L A M O S
@@ -35,6 +34,7 @@
 #include "epicsGuard.h"
 #include "tsDLList.h"
 #include "tsFreeList.h"
+#include "errlog.h"
 
 // - this class implements the asynchronous DNS query
 // - it completes early with the host name in dotted IP address form 

@@ -8,7 +8,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 //
-//      $Id$
 //
 //      File descriptor management C++ class library
 //      (for multiplexing IO in a single threaded environment)
@@ -25,6 +24,7 @@
 
 #include <stddef.h>
 #define epicsExportSharedSymbols
+#include "locationException.h"
 #include "epicsAssert.h"
 #include "fdManager.h"
 #include "fdmgr.h"

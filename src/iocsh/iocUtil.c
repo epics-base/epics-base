@@ -118,6 +118,17 @@ static void putenvCallFunc(const ioccrfArgBuf *args)
     }
 }
 
+/* env */
+static const ioccrfFuncDef showenvFuncDef = {"env",0,NULL};
+static void showenvCallFunc(const ioccrfArgBuf *args)
+{
+    extern char **environ;
+    char **sp;
+
+    for (sp = environ ; (sp != NULL) && (*sp != NULL) ; sp++)
+        printf ("%s\n", *sp);
+}
+
 /* iocLogInit */
 static const ioccrfFuncDef iocLogInitFuncDef = {"iocLogInit",0};
 static void iocLogInitCallFunc(const ioccrfArgBuf *args)
@@ -132,5 +143,6 @@ void epicsShareAPI iocUtilRegister(void)
     ioccrfRegister(&pwdFuncDef,pwdCallFunc);
     ioccrfRegister(&showFuncDef,showCallFunc);
     ioccrfRegister(&putenvFuncDef,putenvCallFunc);
+    ioccrfRegister(&showenvFuncDef,showenvCallFunc);
     ioccrfRegister(&iocLogInitFuncDef,iocLogInitCallFunc);
 }

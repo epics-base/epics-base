@@ -1181,36 +1181,43 @@ epicsShareDef const unsigned short dbr_size[LAST_BUFFER_TYPE+1] = {
 	sizeof(dbr_float_t),		/* IEEE Float			*/
 	sizeof(dbr_enum_t),		/* item number			*/
 	sizeof(dbr_char_t),		/* character			*/
+
 	sizeof(dbr_long_t),		/* long				*/
 	sizeof(dbr_double_t),		/* double			*/
 	sizeof(struct dbr_sts_string),	/* string field	with status	*/
 	sizeof(struct dbr_sts_short),	/* short field with status	*/
 	sizeof(struct dbr_sts_float),	/* float field with status	*/
+
 	sizeof(struct dbr_sts_enum),	/* item number with status	*/
 	sizeof(struct dbr_sts_char),	/* char field with status	*/
 	sizeof(struct dbr_sts_long),	/* long field with status	*/
 	sizeof(struct dbr_sts_double),	/* double field with time	*/
 	sizeof(struct dbr_time_string),	/* string field	with time	*/
+
 	sizeof(struct dbr_time_short),	/* short field with time	*/
 	sizeof(struct dbr_time_float),	/* float field with time	*/
 	sizeof(struct dbr_time_enum),	/* item number with time	*/
 	sizeof(struct dbr_time_char),	/* char field with time		*/
 	sizeof(struct dbr_time_long),	/* long field with time		*/
+
 	sizeof(struct dbr_time_double),	/* double field with time	*/
 	sizeof(struct dbr_sts_string),	/* graphic string info		*/
 	sizeof(struct dbr_gr_short),	/* graphic short info		*/
 	sizeof(struct dbr_gr_float),	/* graphic float info		*/
 	sizeof(struct dbr_gr_enum),	/* graphic item info		*/
+
 	sizeof(struct dbr_gr_char),	/* graphic char info		*/
 	sizeof(struct dbr_gr_long),	/* graphic long info		*/
 	sizeof(struct dbr_gr_double),	/* graphic double info		*/
 	sizeof(struct dbr_sts_string),	/* control string info		*/
 	sizeof(struct dbr_ctrl_short),	/* control short info		*/
+
 	sizeof(struct dbr_ctrl_float),	/* control float info		*/
 	sizeof(struct dbr_ctrl_enum),	/* control item info		*/
 	sizeof(struct dbr_ctrl_char),	/* control char info		*/
 	sizeof(struct dbr_ctrl_long),	/* control long info		*/
 	sizeof(struct dbr_ctrl_double),	/* control double info		*/
+
 	sizeof(dbr_put_ackt_t),		/* put ackt			*/
 	sizeof(dbr_put_acks_t),		/* put acks			*/
 	sizeof(struct dbr_stsack_string),/* string field with status/ack*/
@@ -1224,36 +1231,43 @@ epicsShareDef const unsigned short dbr_value_size[LAST_BUFFER_TYPE+1] = {
 	sizeof(dbr_float_t),	/* IEEE Float			*/
 	sizeof(dbr_enum_t),	/* item number			*/
 	sizeof(dbr_char_t),	/* character			*/
+
 	sizeof(dbr_long_t),	/* long				*/
 	sizeof(dbr_double_t),	/* double			*/
 	sizeof(dbr_string_t),	/* string max size		*/
 	sizeof(dbr_short_t),	/* short			*/
 	sizeof(dbr_float_t),	/* IEEE Float			*/
+
 	sizeof(dbr_enum_t),	/* item number			*/
 	sizeof(dbr_char_t),	/* character			*/
 	sizeof(dbr_long_t),	/* long				*/
 	sizeof(dbr_double_t),	/* double			*/
 	sizeof(dbr_string_t),	/* string max size		*/
+
 	sizeof(dbr_short_t),	/* short			*/
 	sizeof(dbr_float_t),	/* IEEE Float			*/
 	sizeof(dbr_enum_t),	/* item number			*/
 	sizeof(dbr_char_t),	/* character			*/
 	sizeof(dbr_long_t),	/* long				*/
+
 	sizeof(dbr_double_t),	/* double			*/
 	sizeof(dbr_string_t),	/* string max size		*/
 	sizeof(dbr_short_t),	/* short			*/
 	sizeof(dbr_float_t),	/* IEEE Float			*/
 	sizeof(dbr_enum_t),	/* item number			*/
+
 	sizeof(dbr_char_t),	/* character			*/
 	sizeof(dbr_long_t),	/* long				*/
 	sizeof(dbr_double_t),	/* double			*/
 	sizeof(dbr_string_t),	/* string max size		*/
 	sizeof(dbr_short_t),	/* short			*/
+
 	sizeof(dbr_float_t),	/* IEEE Float			*/
 	sizeof(dbr_enum_t),	/* item number			*/
 	sizeof(dbr_char_t),	/* character			*/
 	sizeof(dbr_long_t),	/* long				*/
 	sizeof(dbr_double_t),	/* double			*/
+
 	sizeof(dbr_ushort_t), 	/* put_ackt			*/
 	sizeof(dbr_ushort_t), 	/* put_acks			*/
 	sizeof(dbr_string_t),	/* string max size		*/

@@ -1,6 +1,5 @@
 /* db_event.c */
 /* share/src/db  $Id$ */
-
 /* routines for scheduling events to lower priority tasks via the RT kernel */
 /*
  * 	Author: 	Jeffrey O. Hill 

@@ -1,5 +1,5 @@
 /* dbls.c - structure listing program */
-/* share/src/db $Id$ */
+/* share/src/db @(#)dbls.c	1.21     2/17/94 */
 
 /*
  *      Author:          Bob Zieman

@@ -1,6 +1,5 @@
 /* dbScan.c */
 /* base/src/db  $Id$ */
-
 /* tasks and subroutines to scan the database */
 /*
  *      Original Author:        Bob Dalesio

@@ -824,7 +824,7 @@ static long cvt_f_st(
    else
      status = S_db_precision;
 
-   if (!RTN_SUCCESS(status)) {
+   if (status) {
       recGblRecSupError(status, paddr, "dbGetField", "get_precision");
       return(status);
    }
@@ -914,7 +914,7 @@ static long cvt_d_st(
    else
      status = S_db_precision;
 
-   if (!RTN_SUCCESS(status)) {
+   if (status) {
       recGblRecSupError(status, paddr, "dbGetField", "get_precision");
       return(status);
    }

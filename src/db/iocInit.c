@@ -69,7 +69,6 @@
 #include	<sysLib.h>
 #include	<symLib.h>
 #include	<sysSymTbl.h>	/* for sysSymTbl*/
-#include	<a_out.h>	/* for N_TEXT */
 #include	<logLib.h>
 #include	<taskLib.h>
 
@@ -157,14 +156,6 @@ int iocInit(char * pResourceFilename)
     strcat(name, "initHooks");
     rtnval = symFindByName(sysSymTbl, name, (void *) &pinitHooks, &type);
 
-   /*
-    *  Check to see if initHooks defined, and make sure it is a TEXT symbol (code)
-    *    rather than any other kind of vxWorks symbol type.
-    */
-    if (rtnval == OK && !((type & N_TEXT) != 0)) {
-	logMsg("iocInit - WARNING symbol initHooks has wrong type - skipping all init hooks\n",0,0,0,0,0,0);
-	pinitHooks=NULL;
-    }
 
    /* Call the user-defined initialization hook before anything else is done */
     if (pinitHooks) (*pinitHooks)(INITHOOKatBeginning);
@@ -369,8 +360,7 @@ static long initDrvSup(void) /* Locate all driver support entry tables */
 
 	vxstatus = symFindByName(sysSymTbl, name, (void *) &(pdrvSup->papDrvet[i]), &type);
 
-       /* Make sure it is program text */
-	if (vxstatus != OK || (type & N_TEXT == 0)) {
+	if (vxstatus != OK) {
 	    strcpy(message,"driver entry table not found for ");
 	    strcat(message,pname);
 	    status = S_drv_noDrvet;
@@ -460,7 +450,7 @@ static long initRecSup(void)
 	vxstatus = symFindByName(sysSymTbl, name,
             (void *) (&precSup->papRset[i]), &type);
 
-	if (vxstatus != OK || ((type & N_TEXT) == 0)) {
+	if (vxstatus != OK) {
 	    strcpy(message,"record support entry table not found for ");
 	    strcat(message,name);
 	    status = S_rec_noRSET;
@@ -532,7 +522,7 @@ static long initDevSup(void)
 	    vxstatus = (long) symFindByName(sysSymTbl, name,
 		(void *) &(pdevSup->papDset[j]), &type);
 
-	    if (vxstatus != OK || ((type & N_TEXT) == 0)) {
+	    if (vxstatus != OK) {
                 pdevSup->papDset[j]=NULL;
 		strcpy(message, "device support entry table not found for ");
 		strcat(message, pname);
@@ -803,8 +793,8 @@ static long initDatabase(void)
                                 strncat(message,pfldDes->fldname,FLDNAME_SZ);
                                 strcat(message,": link process variable =");
                                 strcat(message,name);
-                                strcat(message," not found");
-                                status = S_db_notFound;
+                                strcat(message," PP and/or MS illegal");
+                                status = S_db_badField;
                                 errMessage(status,message);
                                 if(rtnval==OK) rtnval=status;
                             }
@@ -1122,7 +1112,7 @@ static long getResources(char  *fname)
 	strcpy(name, "_");
 	strcat(name, s1);
 	rtnval = symFindByName(sysSymTbl, name, &pSymAddr, &type);
-	if (rtnval != OK || (type & N_TEXT == 0)) {
+	if (rtnval != OK) {
 	    sprintf(message,
 		  "getResources: Symbol name not found - line=%d", lineNum);
 	    errMessage(-1L, message);

@@ -1776,7 +1776,7 @@ long		offset;
 	status = (*prset->get_precision)(paddr,&precision);
     else
 	status=S_db_precision;
-    if(!RTN_SUCCESS(status)) {
+    if(status) {
 	recGblRecSupError(status,paddr,"dbGet","get_precision");
 	return(status);
     }
@@ -2016,7 +2016,7 @@ long		offset;
 	status = (*prset->get_precision)(paddr,&precision);
     else
 	status=S_db_precision;
-    if(!RTN_SUCCESS(status)) {
+    if(status) {
 	recGblRecSupError(status,paddr,"dbGet","get_precision");
 	return(status);
     }
@@ -4643,7 +4643,7 @@ long		offset;
 	status = (*prset->get_precision)(paddr,&precision);
     else
 	status=S_db_precision;
-    if(!RTN_SUCCESS(status)) {
+    if(status) {
 	recGblRecSupError(status,paddr,"dbPutField","get_precision");
 	return(status);
     }
@@ -4884,7 +4884,7 @@ long		offset;
 	status = (*prset->get_precision)(paddr,&precision);
     else
 	status=S_db_precision;
-    if(!RTN_SUCCESS(status)) {
+    if(status) {
 	recGblRecSupError(status,paddr,"dbPutField","get_precision");
 	return(status);
     }
@@ -5434,7 +5434,7 @@ long dbPut(
 	    else {
 		if( prset && (pspecial = (prset->special))) {
 		    status=(*pspecial)(paddr,0);
-		    if(!RTN_SUCCESS(status)) return(status);
+		    if(status) return(status);
 		} else {
 		    recGblRecSupError(S_db_noSupport,paddr,"dbPut",
 			"special");
@@ -5458,7 +5458,7 @@ long dbPut(
 		status= (*prset->put_array_info)(paddr,nRequest);
 	}
 
-	if(!RTN_SUCCESS(status)) return(status);
+	if(status) return(status);
 
 	/* check for special processing	is required */
 	if(special) {
@@ -5485,7 +5485,7 @@ long dbPut(
 	    }
 	    else {
 		status=(*pspecial)(paddr,1);
-		if(!RTN_SUCCESS(status)) return(status);
+		if(status) return(status);
 	    }
 	}
 

@@ -453,7 +453,7 @@ long dbtr(char *pname)
         return(1);
     }
     status=dbProcess(precord);
-    if(!(RTN_SUCCESS(status)))
+    if(status)
 	recGblRecordError(status,precord,"dbtr(dbProcess)");
     dbpr(pname,3);
     return(0);
@@ -1593,13 +1593,15 @@ static void dbprReportLink(
 	break;
     case DB_LINK:
 	if(field_type != DBF_FWDLINK) {
-	sprintf(pmsg,"%4s: DB_LINK pp=%1d ms=%1d %.32s",
+	    struct dbAddr *paddr = (struct dbAddr *)plink->value.db_link.pdbAddr;
+	    struct fldDes *pfldDes = (struct fldDes *)paddr->pfldDes;
+
+	    sprintf(pmsg,"%4s: DB_LINK pp=%1d ms=%1d %.32s.%.4s",
 	    pfield_name,
 	    plink->value.db_link.process_passive,
 	    plink->value.db_link.maximize_sevr,
-	    ((struct dbCommon *)(
-		((struct dbAddr *)plink->value.db_link.pdbAddr)
-		->precord))->name);
+	    paddr->precord->name,
+	    pfldDes->fldname);
 	}else{
 	sprintf(pmsg,"%4s: DB_LINK %.32s",
 	    pfield_name,

@@ -1,5 +1,5 @@
 /*dbta.c*/
-/* base/src/db $Id$ */
+/* share/src/db @(#)dbta.c	1.7     2/25/94 */
 /*
  *
  *     Author:	Marty Kraimer

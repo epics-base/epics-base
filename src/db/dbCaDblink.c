@@ -1,6 +1,5 @@
 /* dbCaDblink.c */
 /* base/src/db  $Id$ */
-
 /****************************************************************
 *
 *      Author:		Nicholas T. Karonis

@@ -35,7 +35,6 @@
 #include <string.h>
 #include <math.h>
 #include <limits.h>
-#include <fcntl.h>
 
 #include	<cvtFast.h>
 #include	<dbStaticLib.h>

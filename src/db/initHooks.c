@@ -1,5 +1,5 @@
 /* initHooks.c	ioc initialization hooks */ 
-/* base/src/db $Id$ */
+/* share/src/db @(#)initHooks.c	1.5     7/11/94 */
 /*
  *      Author:		Marty Kraimer
  *      Date:		06-01-91
@@ -38,7 +38,6 @@
 #include	<vxWorks.h>
 #include	<initHooks.h>
 
-extern void setMasterTimeToSelf();
 
 /*
  * INITHOOKS
@@ -57,9 +56,6 @@ int	callNumber;
 	case INITHOOKatBeginning :
 	    break;
 	case INITHOOKafterSetEnvParams :
-	    /* Note: EPICS_IOCMCLK_INET enabled in the resource.def file*/
-	    /* will override this call to setMasterTimeToSelf */
-	    setMasterTimeToSelf();
 	    break;
 	case INITHOOKafterGetResources :
 	    break;

@@ -492,7 +492,7 @@ register struct db_addr *pdb_addr;
         long    status;
 
         status=dbProcess((void *)pdb_addr->precord);
-        if(!RTN_SUCCESS(status)) errMessage(status,"db_process failed");
+        if(status) errMessage(status,"db_process failed");
         return;
 }
 
@@ -567,7 +567,7 @@ short db_name_to_addr(pname,paddr)
 	short   ftype;
 
         status=dbNameToAddr(pname,paddr);
-        if(RTN_SUCCESS(status)) {
+        if(!status) {
 	    ftype = paddr->dbr_field_type;
 	    if(INVALID_DB_REQ(ftype)) {
 	        recGblDbaddrError(S_db_badDbrtype,paddr,"db_name_to_addr error");
@@ -1366,7 +1366,7 @@ void		*pfl;
     default:
 	return(-1);
     }
-    if(!RTN_SUCCESS(status)) return(-1);
+    if(status) return(-1);
     return(0);
 }
 
@@ -1525,7 +1525,7 @@ char			*psrc;		/* where to get it from */
     default:
 	return(-1);
     }
-    if(!RTN_SUCCESS(status)) return(-1);
+    if(status) return(-1);
     return(0);
 }
 

@@ -1,5 +1,5 @@
 /* callback.c */
-/* base/src/db  $Id$ */
+/* share/src/db  @(#)callback.c	1.7  9/14/93 */
 
 /* general purpose callback tasks		*/
 /*

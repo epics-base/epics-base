@@ -1,5 +1,5 @@
 /*dbStaticLib.c*/
-/* base/src/db $Id$ */
+/* share/src/db @(#)dbStaticLib.c	1.21     7/11/94 */
 /*
  *
  *     Authors:	Marty Kraimer
@@ -53,8 +53,11 @@
 #include <drvSup.h>
 #include <cvtTable.h>
 #include <choice.h>
+#include <special.h>
 
 #define messagesize	100
+#define RPCL_LEN 184
+long postfix(char *pinfix, char *ppostfix,short *perror);
 
 static char *ppstring[2]={"NPP","PP"};
 static char *msstring[2]={"NMS","MS"};
@@ -1455,6 +1458,13 @@ char *pstring;
     switch (pflddes->field_type) {
     case DBF_STRING:
 	strncpy((char *)pfield, pstring,pflddes->size);
+	if(pflddes->special == SPC_CALC) {
+	    char  rpcl[RPCL_LEN];
+	    short error_number;
+
+	    status = postfix(pstring,rpcl,&error_number);
+	    if(status) status = S_dbLib_badField;
+	}
 	break;
     case DBF_CHAR :
     case DBF_SHORT :
@@ -1857,6 +1867,17 @@ char *pstring;
 	    if(length>=pflddes->size) {
 		sprintf(message,"string to big. max=%hd",pflddes->size);
 		return(message);
+	    }
+	    if(pflddes->special == SPC_CALC) {
+		char  rpcl[RPCL_LEN];
+		short error_number;
+		long  status;
+
+		status = postfix(pstring,rpcl,&error_number);
+		if(status)  {
+		    sprintf(message,"Illegal Calculation String");
+		    return(message);
+		}
 	    }
 	}
 	return(NULL);

@@ -1,5 +1,5 @@
 /* devLib.c - support for allocation of common device resources */
-/* base/src/db $Id$ */
+/* @(#)devLib.c	1.2	3/30/94 */
 
 /*
  *	Original Author: Marty Kraimer
@@ -50,7 +50,7 @@
  * .01	06-14-93 	joh	needs devAllocInterruptVector() routine
  */
 
-static char *sccsID = "$Id$\t$Date$";
+static char *sccsID = "@(#)devLib.c	1.2\t3/30/94";
 
 
 #include	<vxWorks.h>

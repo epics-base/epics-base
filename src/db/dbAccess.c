@@ -96,6 +96,7 @@
 #include	<special.h>
 
 extern struct dbBase *pdbBase;
+extern long lset_stack_not_empty;
 
 static short mapDBFToDBR[DBF_NTYPES] = { DBF_STRING, DBF_CHAR, DBF_UCHAR, DBF_SHORT, DBF_USHORT, 
      DBF_LONG, DBF_ULONG, DBF_FLOAT, DBF_DOUBLE, DBF_ENUM, DBF_ENUM, DBF_ENUM, DBF_ENUM, DBF_ENUM, 
@@ -293,7 +294,7 @@ long dbScanPassive(struct dbCommon *pfrom, struct dbCommon *pto)
 }
 
 /*KLUDGE: Following needed so that dbPutLink to PROC field works correctly*/
-static long dbScanLink(struct dbCommon *pfrom, struct dbCommon *pto)
+long dbScanLink(struct dbCommon *pfrom, struct dbCommon *pto)
 {
     long status;
 
@@ -563,7 +564,6 @@ long dbNameToAddr(char *pname,struct dbAddr *paddr)
  *     efficient.
  */
 
-extern struct dbBase *pdbBase;
 
 /*
  *  Get value through fast input link.
@@ -597,7 +597,7 @@ long dbFastLinkGet(
        if (pdb_link->process_passive) {
           status = dbScanPassive(precord, pdb_addr->precord);
 
-          if (!RTN_SUCCESS(status)) {
+          if (status) {
              precord->pact = pact;
              return(status);
           }
@@ -651,18 +651,18 @@ long dbFastLinkPut(
   }
   else {
        struct db_link *pdb_link = &(plink->value.db_link);
-       struct dbAddr *pdb_addr = (struct dbAddr *) (pdb_link->pdbAddr);
-       struct dbCommon *pr_record = (struct dbCommon *) pdb_addr->precord; 
-       struct fldDes *p_fldDes = (struct fldDes *) (pdb_addr->pfldDes);
-       long special = pdb_addr->special;
-       unsigned short acks = pr_record->acks;
+       struct dbAddr *paddr = (struct dbAddr *) (pdb_link->pdbAddr);
+       struct dbCommon *pdest = (struct dbCommon *) paddr->precord; 
+       struct fldDes *p_fldDes = (struct fldDes *) (paddr->pfldDes);
+       long special = paddr->special;
+       unsigned short acks = pdest->acks;
        long *pfield_name;
        long int (*pspecial)() = NULL;
        struct rset *prset;
        static char val[4] = {'V','A','L',' '};
        long *pval = (long *) &val[0];
 
-       prset = GET_PRSET(pdbBase->precSup, pdb_addr->record_type);
+       prset = GET_PRSET(pdbBase->precSup, paddr->record_type);
 
        if (special) {
            if (special < 100) {
@@ -672,20 +672,20 @@ long dbFastLinkPut(
                }
                else { 
                   if (special == SPC_SCAN) {
-                    scanDelete(pr_record);
+                    scanDelete(pdest);
                   }
                }
            }
            else {
                   if (prset && (pspecial = (prset->special))) {
-                     status = (*pspecial)(pdb_addr, 0);
-                     if (!RTN_SUCCESS(status)) {
+                     status = (*pspecial)(paddr, 0);
+                     if (status) {
                          pl_record->pact = pact;
                          return(status);
                      }
                   }
                   else {
-                     recGblRecSupError(S_db_noSupport, pdb_addr, "dbPut", "special");
+                     recGblRecSupError(S_db_noSupport, paddr, "dbPut", "special");
                      pl_record->pact = pact;
                      return(S_db_noSupport);
                   }
@@ -695,9 +695,9 @@ long dbFastLinkPut(
       /*
        *  Call conversion routine
        */
-       status = (*(pdb_link->conversion))(psource, pdb_addr->pfield, pdb_addr);
+       status = (*(pdb_link->conversion))(psource, paddr->pfield, paddr);
 
-       if (!RTN_SUCCESS(status)) {
+       if (status) {
             pl_record->pact = pact;
             return(status);
        }
@@ -708,32 +708,32 @@ long dbFastLinkPut(
        if (special) {
           if (special < 100) { /*global processing*/
                if (special == SPC_SCAN) {
-                  scanAdd(pr_record);
+                  scanAdd(pdest);
                }
                else if (special == SPC_ALARMACK) {
-                  if (pdb_addr->pfield == (void *) &pr_record->acks) {
-                     if (acks > 0 && acks <= pr_record->acks) {
-                         pr_record->acks = 0;
-                         db_post_events(pr_record, &pr_record->acks, DBE_VALUE);
+                  if (paddr->pfield == (void *) &pdest->acks) {
+                     if (acks > 0 && acks <= pdest->acks) {
+                         pdest->acks = 0;
+                         db_post_events(pdest, &pdest->acks, DBE_VALUE);
                      }
                      else { /* Undo change */
-                         pr_record->acks = acks;
+                         pdest->acks = acks;
                      }
                   }
-                  else if (pdb_addr->pfield == (void *) &pr_record->ackt) {
-                         if (!pr_record->ackt && pr_record->acks > pr_record->sevr) {
-                            pr_record->acks = pr_record->sevr;
-                            db_post_events(pr_record, &pr_record->acks, DBE_VALUE);
+                  else if (paddr->pfield == (void *) &pdest->ackt) {
+                         if (!pdest->ackt && pdest->acks > pdest->sevr) {
+                            pdest->acks = pdest->sevr;
+                            db_post_events(pdest, &pdest->acks, DBE_VALUE);
                          }
                   }
                }
                else if (special == SPC_AS) {
-                   asChangeGroup(&pr_record->asp, pr_record->asg);
+                   asChangeGroup(&pdest->asp, pdest->asg);
                }
           }
           else {
-               status = (*pspecial)(pdb_addr, 1);
-               if (!RTN_SUCCESS(status)) {
+               status = (*pspecial)(paddr, 1);
+               if (status) {
                   pl_record->pact = pact;
                   return(status);
                }
@@ -746,42 +746,39 @@ long dbFastLinkPut(
        *    don't propagate.
        */
 
-       p_fldDes = (struct fldDes *) (pdb_addr->pfldDes);
+       p_fldDes = (struct fldDes *) (paddr->pfldDes);
        pfield_name = (long *) &(p_fldDes->fldname[0]);
 
       /* if field is val set udf FALSE */
        if (*pval == *pfield_name)
-            pr_record->udf = FALSE;
+            pdest->udf = FALSE;
 
-       if (pr_record->mlis.count &&
+       if (pdest->mlis.count &&
                 ((*pval != *pfield_name) || (!p_fldDes->process_passive))) {
-            db_post_events(pr_record, pdb_addr->pfield, DBE_VALUE);
+            db_post_events(pdest, paddr->pfield, DBE_VALUE);
        }
-
-       if (status)
-          recGblRecordError(status, (void *) pl_record, "Put Link");
 
        if (pdb_link->maximize_sevr) {
-           recGblSetSevr(pr_record, LINK_ALARM, pl_record->sevr);
+           recGblSetSevr(pdest, LINK_ALARM, pl_record->sevr);
        }
 
-       if (!RTN_SUCCESS(status)) {
+       if (status) {
            pl_record->pact = pact;
            return(status);
        }
 
-       if ((paddr->pfield == (void *) &pr_record->proc) ||
-           (pdb_link->process_passive && pr_record->scan == 0)) {
+       if ((paddr->pfield == (void *) &pdest->proc) ||
+           (pdb_link->process_passive && pdest->scan == 0)) {
 
           /*
            *  Note: If ppn then dbNotifyCancel will handle reprocessing
            *    if dbPutField caused asyn record to process ask for reprocessing
            */
-           if (!psource->ppn && pdest->putf)
+           if (!pl_record->ppn && pdest->putf)
               pdest->rpro = TRUE;
 
           /* otherwise ask for the record to be processed*/
-           else status = dbScanLink(pl_record, pr_record);
+           else status = dbScanLink(pl_record, pdest);
        }
 
        if (status)

@@ -1,5 +1,5 @@
 /*atodb.c*/
-/* base/src/db $Id$ */
+/* share/src/db @(#)atdb.c	1.7     2/25/94 */
 /*
  *
  *     Author:	Marty Kraimer

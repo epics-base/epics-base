@@ -242,12 +242,12 @@ long recGblGetLinkValue(struct link *plink,void *pdbc,short dbrType,
 		case(DB_LINK):
 			status=dbGetLink(&(plink->value.db_link),
 				precord,dbrType,pdest,poptions,pnRequest);
-			if(!RTN_SUCCESS(status))
+			if(status)
 				recGblSetSevr(precord,LINK_ALARM,INVALID_ALARM);
 			break;
 		case(CA_LINK):
 			status=dbCaGetLink(plink);
-			if(!RTN_SUCCESS(status))
+			if(status)
 				recGblSetSevr(precord,LINK_ALARM,INVALID_ALARM);
 			break;
 		default:
@@ -274,12 +274,12 @@ long recGblPutLinkValue(struct link *plink,void *pdbc,short dbrType,
 		case(DB_LINK):
 			status=dbPutLink(&(plink->value.db_link),
 				precord,dbrType,psource,*pnRequest);
-			if(!RTN_SUCCESS(status))
+			if(status)
 				recGblSetSevr(precord,LINK_ALARM,INVALID_ALARM);
 			break;
 		case(CA_LINK):
 			status = dbCaPutLink(plink, &options, pnRequest);
-			if(!RTN_SUCCESS(status))
+			if(status)
 				recGblSetSevr(precord,LINK_ALARM,INVALID_ALARM);
 			break;
 		default:

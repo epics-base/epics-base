@@ -1,4 +1,4 @@
-/* base/src/db  $Id$ */
+/* share/src/db  @(#)db_test.c	1.10     2/3/94 */
 /*      database access subroutines */
 /*
  *      Author: Bob Dalesio

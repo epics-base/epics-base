@@ -13,7 +13,6 @@ INC += db_access.h
 INC += dbAddr.h
 INC += db_field_log.h
 INC += initHooks.h
-INC += recSup.h
 INC += recGbl.h
 INC += dbBkpt.h
 

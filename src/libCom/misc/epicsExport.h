@@ -28,7 +28,7 @@ epicsShareExtern typ *EPICS_EXPORT_POBJ(obj); \
 epicsShareDef typ *EPICS_EXPORT_POBJ(obj) = (typ *)&obj
 
 #define epicsExportRegistrar(func) \
-epicsShareFunc REGISTRAR EPICS_EXPORT_POBJ(func) = (REGISTRAR)&func
+epicsShareFunc REGISTRAR EPICS_EXPORT_POBJ(func) = (REGISTRAR)(void*)&func
 
 #ifdef __cplusplus
 }

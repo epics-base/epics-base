@@ -36,6 +36,7 @@
 #include	<vxWorks.h>
 #include	<stdlib.h>
 #include	<stdio.h>
+#include	<string.h>
 
 #include        "dbDefs.h"
 #include        "errlog.h"
@@ -312,7 +313,7 @@ static void print_returned(type,pbuffer,count)
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,plong++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
-			printf("%ld ",*plong);
+			printf("%d ",*plong);
 		}
 		break;
 	}
@@ -397,7 +398,7 @@ static void print_returned(type,pbuffer,count)
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,plong++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
-			printf("%ld ",*plong);
+			printf("%d ",*plong);
 		}
 		break;
 	}
@@ -500,7 +501,7 @@ static void print_returned(type,pbuffer,count)
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,plong++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
-			printf("%ld ",*plong);
+			printf("%d ",*plong);
 		}
 		break;
 	}
@@ -603,7 +604,7 @@ static void print_returned(type,pbuffer,count)
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,plong++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
-			printf("%ld ",*plong);
+			printf("%d ",*plong);
 		}
 		break;
 	}
@@ -630,6 +631,20 @@ static void print_returned(type,pbuffer,count)
 			if(count!=1 && (i%10 == 0)) printf("\n");
 			printf("%6.6f ",(float)(*pdouble));
 		}
+		break;
+	}
+	case (DBR_STSACK_STRING):
+	{
+		struct dbr_stsack_string *pvalue
+		  = (struct dbr_stsack_string *)pbuffer;
+		printf("%2d %2d",pvalue->status,pvalue->severity);
+		printf(" %2d %2d",pvalue->ackt,pvalue->acks);
+		printf(" %s",pvalue->value);
+		break;
+	}
+	case (DBR_CLASS_NAME):
+	{
+		printf(" %s",(char *)pbuffer);
 		break;
 	}
     }

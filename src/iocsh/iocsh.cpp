@@ -60,6 +60,7 @@ struct iocshRedirect {
     const char *name;
     const char *mode;
     FILE       *fp;
+    FILE       *oldFp;
 };
 
 /*
@@ -312,9 +313,18 @@ startRedirect(const char *filename, int lineno, struct iocshRedirect *redirect)
     for (i = 0 ; i < NREDIRECTS ; i++, redirect++) {
         if (redirect->fp != NULL) {
             switch(i) {
-            case 0: epicsSetStdin(redirect->fp);  break;
-            case 1: epicsSetStdout(redirect->fp); break;
-            case 2: epicsSetStderr(redirect->fp); break;
+            case 0:
+                redirect->oldFp = epicsGetStdin();
+                epicsSetStdin(redirect->fp);
+                break;
+            case 1:
+                redirect->oldFp = epicsGetStdout();
+                epicsSetStdout(redirect->fp);
+                break;
+            case 2:
+                redirect->oldFp = epicsGetStderr();
+                epicsSetStderr(redirect->fp);
+                break;
             }
         }
     }
@@ -335,9 +345,9 @@ stopRedirect(const char *filename, int lineno, struct iocshRedirect *redirect)
                                             redirect->name, strerror(errno));
             redirect->fp = NULL;
             switch(i) {
-            case 0: epicsSetStdin(NULL);  break;
-            case 1: epicsSetStdout(NULL); break;
-            case 2: epicsSetStderr(NULL); break;
+            case 0: epicsSetStdin(redirect->oldFp);  break;
+            case 1: epicsSetStdout(redirect->oldFp); break;
+            case 2: epicsSetStderr(redirect->oldFp); break;
             }
         }
         redirect->name = NULL;

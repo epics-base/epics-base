@@ -167,7 +167,7 @@ static long process(pstringout)
 
         if(pstringout->udf == TRUE ){
                 recGblSetSevr(pstringout,UDF_ALARM,INVALID_ALARM);
-                return(-1);
+                goto finish;
         }
 
         if (pstringout->nsev < INVALID_ALARM )
@@ -194,16 +194,11 @@ static long process(pstringout)
 
 	/* check if device support set pact */
 	if ( !pact && pstringout->pact ) return(0);
+finish:
 	pstringout->pact = TRUE;
-
 	recGblGetTimeStamp(pstringout);
-
-	/* check event list */
 	monitor(pstringout);
-
-	/* process the forward scan link record */
 	recGblFwdLink(pstringout);
-
 	pstringout->pact=FALSE;
 	return(status);
 }

@@ -8,6 +8,10 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.9  1996/08/14 12:30:15  jbk
+ * fixes for converting aitString to aitInt8* and back
+ * fixes for managing the units field for the dbr types
+ *
  * Revision 1.8  1996/08/13 15:07:48  jbk
  * changes for better string manipulation and fixes for the units field
  *
@@ -839,6 +843,8 @@ inline gddStatus gdd::put(const aitUint8* const d)
 // special case for aitInt8 array to aitString scalar
 inline gddStatus gdd::put(const aitInt8* const d)
 {
+	gddStatus rc=0;
+
 	if(primitiveType()==aitEnumString && dim==0)
 	{
 		aitString* p = (aitString*)dataAddress();
@@ -850,7 +856,9 @@ inline gddStatus gdd::put(const aitInt8* const d)
 	else if(primitiveType()==aitEnumFixedString && dim==0)
 		strcpy(data.FString->fixed_string,(char*)d);
 	else
-		return genCopy(aitEnumInt8,d);
+		rc=genCopy(aitEnumInt8,d);
+
+	return rc;
 }
 
 // currently unprotected from destroying an atomic gdd

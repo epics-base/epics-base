@@ -55,6 +55,7 @@
  * .19  01-08-92        jba     Added cast in call to wdStart to remove compile warning message
  * .20  02-05-92	jba	Changed function arguments from paddr to precord 
  * .21  02-28-92	jba	ANSI C changes
+ * .22  03-03-92	jba	Changed callback handling
  */
 
 #include	<vxWorks.h>
@@ -127,9 +128,8 @@ struct bodset { /* binary output dset */
 
 /* control block for callback*/
 struct callback {
-        void (*callback)();
-	int priority;
-        struct dbAddr dbAddr;
+        CALLBACK        callback;
+        struct dbCommon *precord;
         WDOG_ID wd_id;
 };
 
@@ -142,11 +142,13 @@ void monitor();
 static void myCallback(pcallback)
     struct callback *pcallback;
 {
-    struct boRecord *pbo = (struct boRecord *)(pcallback->dbAddr.precord);
+
+    struct boRecord *pbo=(struct boRecord *)pcallback->precord;
+    struct rset     *prset=(struct rset *)(pbo->rset);
 
     dbScanLock((struct dbCommon *)pbo);
     pbo->val = 0;
-    (void)process(pbo);
+    (*prset->process)(pbo);
     dbScanUnlock((struct dbCommon *)pbo);
 }
 
@@ -174,12 +176,9 @@ static long init_record(pbo)
     }
     pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
     pbo->dpvt = (void *)pcallback;
-    pcallback->callback = myCallback;
-    pcallback->priority = priorityMedium;
-    if(dbNameToAddr(pbo->name,&(pcallback->dbAddr))) {
-            logMsg("dbNameToAddr failed in init_record for recBo\n");
-            exit(1);
-    }
+    callbackSetCallback(myCallback,pcallback);
+    pcallback->precord = (struct dbCommon *)pbo;
+
     if( pdset->init_record ) {
 	status=(*pdset->init_record)(pbo,process);
 	if(status==0) {
@@ -235,9 +234,9 @@ static long process(pbo)
 	wait_time = (int)((pbo->high) * vxTicksPerSecond); /* seconds to ticks */
 	if(pbo->val==1 && wait_time>0) {
 		struct callback *pcallback;
-	
 		pcallback = (struct callback *)(pbo->dpvt);
         	if(pcallback->wd_id==NULL) pcallback->wd_id = wdCreate();
+                callbackSetPriority(pbo->prio,pcallback);
                	wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
 	}
 	/* check for alarms */

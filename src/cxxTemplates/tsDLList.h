@@ -31,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/07/24 22:12:03  jhill
+ * added remove() to iter class + made node's prev/next private
+ *
  * Revision 1.1.1.1  1996/06/20 22:15:55  jhill
  * installed  ca server templates
  *
@@ -288,7 +291,7 @@ template <class T>
 class tsDLIter {
 public:
 	tsDLIter(tsDLList<T> &listIn) : 
-		list(listIn), pCurrent(0) {}
+		pList(&listIn), pCurrent(0) {}
 
 	void reset ()
 	{
@@ -298,7 +301,7 @@ public:
 	void reset (tsDLList<T> &listIn)
 	{
 		this->reset();
-		this->list = listIn;
+		this->pList = &listIn;
 	}
 
 	void operator = (tsDLList<T> &listIn) 
@@ -315,7 +318,7 @@ public:
 	{
 		T *pCur = this->pCurrent;
 		if (pCur==0) {
-			pCur = this->list.pLast;
+			pCur = this->pList->pLast;
 		}
 		else {
 			pCur = pCur->tsDLNode<T>::pPrev;
@@ -328,7 +331,7 @@ public:
 	{
 		T *pCur = this->pCurrent;
 		if (pCur==0) {
-			pCur = this->list.pFirst;
+			pCur = this->pList->pFirst;
 		}
 		else {
 			pCur = pCur->tsDLNode<T>::pNext;
@@ -359,11 +362,11 @@ public:
 			//
 			// delete current item
 			//
-			this->list.remove(*pCur);
+			this->pList->remove(*pCur);
 		}
 	}
 private:
-	tsDLList<T>	&list;
+	tsDLList<T>	*pList;
 	T      		*pCurrent;
 };
 

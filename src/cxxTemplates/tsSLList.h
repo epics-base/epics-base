@@ -31,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/07/24 22:12:04  jhill
+ * added remove() to iter class + made node's prev/next private
+ *
  * Revision 1.1.1.1  1996/06/20 22:15:55  jhill
  * installed  ca server templates
  *
@@ -86,6 +89,16 @@ public:
 		this->remove(*this);
 		return pItem;
 	}
+
+	T * pop()
+	{
+		return get();
+	}
+
+	void push(T &item)
+	{
+		this->add(item);
+	}
 };
 
 //
@@ -111,14 +124,24 @@ private:
 template <class T>
 class tsSLIter {
 public:
-	tsSLIter(tsSLList<T> &listIn) : 
-		pCurrent(0), pPrevious(0), list(listIn) {}
+	tsSLIter(tsSLList<T> &listIn) :
+		pList(&listIn), pCurrent(0), pPrevious(0) {}
+
+	void reset()
+	{
+		this->pCurrent = 0;
+		this->pPrevious = 0;
+	}
+
+	void reset (tsSLList<T> &listIn)
+	{
+		this->pList = &listIn;
+		this->reset();
+	}
 
 	void operator = (tsSLList<T> &listIn) 
 	{
-		list = listIn;
-		pCurrent = 0;
-		pPrevious = 0;
+		this->reset(listIn);
 	}
 
 	T * current () 
@@ -128,15 +151,14 @@ public:
 
 	T * next () 
 	{
-		tsSLNode<T> *pPrev = this->pCurrent;
-		T *pCur;
-		if (pPrev==0) {
-			pPrev = &this->list;
+		if (this->pCurrent) {
+			this->pPrevious = this->pCurrent;
 		}
-		this->pPrevious = pPrev;
-		pCur = pPrev->pNext;
-		this->pCurrent = pCur; 
-		return pCur;
+		else {
+			this->pPrevious = this->pList;
+		}
+		this->pCurrent = this->pPrevious->pNext; 
+		return this->pCurrent;
 	}
 
 	// this should move current?
@@ -164,6 +186,6 @@ public:
 private:
 	T      		*pCurrent;
 	tsSLNode<T> 	*pPrevious;
-	tsSLList<T>	&list;
+	tsSLList<T>	*pList;
 };
 

@@ -20,7 +20,7 @@
 #include "shareLib.h"
 
 #ifndef stringOf
-#   ifdef __STDC__ 
+#   if defined (__STDC__ ) || defined (__cplusplus)
 #       define stringOf(TOKEN) #TOKEN
 #   else
 #       define stringOf(TOKEN) "TOKEN"

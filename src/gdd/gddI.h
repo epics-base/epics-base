@@ -179,32 +179,6 @@ inline gddStatus gdd::unreference(void) const
 	return rc;
 }
 
-inline void gdd::destroyData(void)
-{
-	if (isScalar())
-	{
-		//
-		// this destroys the string types
-		//
-		this->setPrimType (aitEnumInvalid);
-	}
-    else {
-	    if(destruct)
-	    {
-		    if(isContainer())
-			    destruct->destroy(this);
-		    else
-			    destruct->destroy(dataPointer());
-
-		    destruct=NULL;
-	    }
-        // required when prototype gdd goes 
-        // back on app table free list
-		freeBounds(); 
-        memset ( & this->data, '\0', sizeof ( this->data ) );
-    }
-}
-
 inline void gdd::adjust(gddDestructor* d, void* v, aitEnum type,aitDataFormat)
 {
 	if(destruct) destruct->destroy(dataPointer());

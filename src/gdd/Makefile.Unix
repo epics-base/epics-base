@@ -5,6 +5,9 @@
 # $Id$
 #
 # $Log$
+# Revision 1.10  1996/07/23 17:13:29  jbk
+# various fixes - dbmapper incorrectly worked with enum types
+#
 # Revision 1.9  1996/07/10 23:48:03  jhill
 # added install for gddAppFuncTable.h
 #
@@ -49,7 +52,7 @@ TOP= ../../..
 
 include $(TOP)/config/CONFIG_BASE
 
-OPTIM_YES=-g
+#OPTIM_YES=-g
 
 INC += gdd.h
 INC += gddNewDel.h

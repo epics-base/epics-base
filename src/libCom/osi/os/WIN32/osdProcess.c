@@ -22,12 +22,7 @@
 
 #include <stdlib.h>
 
-/*
- * Windows includes
- */
-#define VC_EXTRALEAN
-#include <wtypes.h>
-#include <process.h>
+#include <windows.h>
 
 #define epicsExportSharedSymbols
 #include "osiProcess.h"

@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.2  1996/08/27 13:05:09  jbk
+ * final repairs to string functions, put() functions, and error code printing
+ *
  * Revision 1.1  1996/06/25 19:11:42  jbk
  * new in EPICS base
  *
@@ -51,7 +54,7 @@
 #define GDD_NAME_NANOSECONDS		"nanoseconds"
 #define GDD_NAME_ALL				"all"
 #define GDD_NAME_ATTRIBUTES			"attributes"
-
+#define GDD_NAME_PV_NAME		"name"
 typedef enum
 {
 	gddApplicationTypeUndefined,

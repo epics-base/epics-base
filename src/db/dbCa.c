@@ -178,7 +178,6 @@ void epicsShareAPI dbCaRemoveLink( struct link *plink)
     addAction(pca,CA_CLEAR_CHANNEL);
     epicsMutexUnlock(pca->lock);
 }
-
 
 long epicsShareAPI dbCaGetLink(struct link *plink,short dbrType, void *pdest,
     unsigned short	*psevr,long *nelements)
@@ -735,6 +734,9 @@ void dbCaTask()
             if(link_action&CA_CLEAR_CHANNEL) --removesOutstanding;
             epicsMutexUnlock(caListSem); /*Give it back immediately*/
             if(link_action&CA_CLEAR_CHANNEL) {/*This must be first*/
+                /*must lock/unlock so that dbCaRemove can unlock*/
+                epicsMutexMustLock(pca->lock);
+                epicsMutexUnlock(pca->lock);
                 if(pca->chid) ca_clear_channel(pca->chid);    
                 free(pca->pgetNative);
                 free(pca->pputNative);

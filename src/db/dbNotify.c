@@ -206,7 +206,6 @@ static long putNotify(PUTNOTIFY *ppn)
     status=dbProcess(precord);
     if(status!=0) {
 	ppn->status = status;
-	issueCallback(ppn);
     }
 ret_pending:
     return(S_db_Pending);

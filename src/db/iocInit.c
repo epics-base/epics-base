@@ -110,14 +110,8 @@ static long initRecSup(void);
 static long initDevSup(void);
 static long finishDevSup(void);
 static long initDatabase(void);
-static long addToSet(
-    struct dbCommon *precord,	/* record being added to lock set*/
-    short  record_type,	/* record being added to lock set*/
-    short lookAhead,	/*should following records be checked*/
-    short  i,		/*record before 1st following: index into papRecLoc*/
-    RECNODE *prootNod,	/*precNode before 1st following	*/
-    short  lset		/* current lock set		*/
-);
+static void createLockSets(void);
+static short makeSameSet(struct dbAddr *paddr,short set);
 static long initialProcess(void);
 static long getResources(char  *fname);
 void setMasterTimeToSelf(void);
@@ -185,6 +179,7 @@ int iocInit(char * pResourceFilename)
     ts_init();
     if (pinitHooks) (*pinitHooks)(INITHOOKafterTS_init);
     if(initDatabase()!=0) logMsg("iocInit: Database Failed during Initialization\n",0,0,0,0,0,0);
+    createLockSets();
     if (pinitHooks) (*pinitHooks)(INITHOOKafterInitDatabase);
     /* added for Channel Access Links */
     dbCaLinkInit((int) 2);
@@ -352,13 +347,11 @@ static long finishDevSup(void)
 
 static long initDatabase(void)
 {
-    char	name[PVNAME_SZ+FLDNAME_SZ+2];
-    short	i,j;
-    char	message[120];
-    long	status=0;
-    long	rtnval=0;
-    short	nset=0;
-    short	lookAhead;
+    char		name[PVNAME_SZ+FLDNAME_SZ+2];
+    short		i,j;
+    char		message[120];
+    long		status=0;
+    long		rtnval=0;
     struct recLoc	*precLoc;
     struct rset		*prset;
     struct recDes	*precDes;
@@ -410,8 +403,6 @@ static long initDatabase(void)
 	    FASTLOCKINIT(&precord->mlok);
 	    ellInit(&(precord->mlis));
 	    precord->pact=FALSE;
-	    /* set lset=0 See determine lock set below*/
-	    precord->lset = 0;
 	    /* Init DSET NOTE that result may be NULL*/
 	    precord->dset=(struct dset *)GET_PDSET(pdevSup,precord->dtyp);
 	    /* call record support init_record routine - First pass */
@@ -440,13 +431,6 @@ static long initDatabase(void)
 			strcat(name,".");
 			strncat(name,plink->value.pv_link.fldname,FLDNAME_SZ);
 			if(dbNameToAddr(name,&dbAddr) == 0) {
-			    /* show that refered to record has link. */
-			    /* See determine lock set below.*/
-			    if( pfldDes->field_type!=DBF_INLINK
-				|| plink->value.pv_link.process_passive
-				|| plink->value.pv_link.maximize_sevr
-				|| dbAddr.no_elements>1 )
-			    	((struct dbCommon *)(dbAddr.precord))->lset= -1;
 			    plink->type = DB_LINK;
 			    plink->value.db_link.pdbAddr =
 				dbCalloc(1,sizeof(struct dbAddr));
@@ -497,130 +481,106 @@ static long initDatabase(void)
 		if(status==0) status = rtnval;
 	}
     }
-
-    /* Now determine lock sets*/
-    /* When each record is examined lset has one of the following values
-     * -1   Record is not in a set and at least one following record refers
-     *      to this record unless INLINK && no_elements<=1 && ( !process_passive
-     *      && !maximize_sevr )
-     *  0   record is not in a set and no following records refer to it.
-     * >0   Record is already in a set
-     */
-    for(i=0; i<precHeader->number; i++) {
-	if(!(precLoc = precHeader->papRecLoc[i]))continue;
-	precTypDes = precDes->papRecTypDes[i];
-	for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
-	    precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
-		precord = precNode->precord;
-	        /* If NAME is null then skip this record*/
-		if(!(precord->name[0])) continue;
-		if(precord->lset > 0) continue; /*already in a lock set */
-		lookAhead = ( (precord->lset == -1) ? TRUE : FALSE);
-		nset++;
-		rtnval = addToSet(precord,i,lookAhead,i,precNode,nset);
-		if(status==0) status=rtnval;
-		if(rtnval) return(status); /*I really mean rtnval*/
-	}
-    }    
-    dbScanLockInit(nset);
     return(status);
 }
 
-static long addToSet(
-    struct dbCommon *precord,	/* record being added to lock set*/
-    short  record_type,	/* record being added to lock set*/
-    short lookAhead,	/*should following records be checked*/
-    short  i,		/*record before 1st following: index into papRecLoc*/
-    RECNODE *prootNode,	/*precNode before 1st following	*/
-    short  lset		/* current lock set		*/
-)
+static void createLockSets(void)
 {
-    short  k,in;
-    long status;
-    struct fldDes       *pfldDes;
-    struct link		*plink;
+    int			i,link;
+    struct recLoc	*precLoc;
+    struct recDes	*precDes;
     struct recTypDes	*precTypDes;
     struct recHeader	*precHeader;
-    struct recDes	*precDes;
-    struct recLoc	*precLoc;
     RECNODE		*precNode;
-
-    if(!(precDes = pdbBase->precDes)) return(0);
-    if(precord->lset > 0) {
-	status = S_db_lsetLogic;
-	errMessage(status,"Logic Error in iocInit(addToSet)");
-	return(status);
-    }
-    precord->lset = lset;
-   /* add all DB_LINKs in this record to the set */
-   /* unless (!process_passive && !maximize_sevr) or no_elements>1*/
-    precTypDes = precDes->papRecTypDes[record_type];
-    for(k=0; k<precTypDes->no_links; k++) {
-	struct dbAddr	*pdbAddr;
-	struct dbCommon	*pk;
-
-	pfldDes = precTypDes->papFldDes[precTypDes->link_ind[k]];
-	plink = (struct link *)((char *)precord + pfldDes->offset);
-	if(plink->type != DB_LINK) continue;
-	pdbAddr = (struct dbAddr *)(plink->value.db_link.pdbAddr);
-	if( pfldDes->field_type==DBF_INLINK
-	    && ( !(plink->value.db_link.process_passive)
-	         && !(plink->value.db_link.maximize_sevr) )
-	    && pdbAddr->no_elements<=1) continue;
-	pk = (struct dbCommon *)(pdbAddr->precord);
-	if(pk->lset > 0){
-		if(pk->lset == lset) continue; /*already in lock set*/
-		status = S_db_lsetLogic;
-		errMessage(status,"Logic Error in iocInit(addToSet)");
-		return(status);
-	}
-	status = addToSet(pk,pdbAddr->record_type,TRUE,i,prootNode,lset);
-	if(status) return(status);
-    }
-    /* Now look for all later records that refer to this record*/
-    /* unless (!process_passive && !maximize_sevr) or no_elements>1*/
-    /* remember that all earlier records already have lock set determined*/
-    if(!lookAhead) return(0);
-    precNode = (RECNODE *)ellNext(&prootNode->node);
-    if(!(precHeader = pdbBase->precHeader)) return(0);
-    for(in=i; in<precHeader->number; in++) {
-	struct dbCommon	*pn;
-
-	if(!(precLoc = precHeader->papRecLoc[in])) continue;
-	precTypDes = precDes->papRecTypDes[in];
-	if(!precNode) precNode = (RECNODE *)ellFirst(precLoc->preclist);
-	while(precNode) {
-		pn = precNode->precord;
-		/* If NAME is null then skip this record*/
-                if(!(pn->name[0])) continue;
-		for(k=0; k<precTypDes->no_links; k++) {
+    struct fldDes	*pfldDes;
+    struct dbCommon	*precord;
+    struct link		*plink;
+    short		nset,maxnset,newset;
+    int			again;
+    
+    nset = 0;
+    if(!(precHeader = pdbBase->precHeader)) return;
+    if(!(precDes = pdbBase->precDes)) return;
+    for(i=0; i< (precHeader->number); i++) {
+	if(!(precLoc = precHeader->papRecLoc[i]))continue;
+	precTypDes = precDes->papRecTypDes[i];
+	for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
+	precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
+	    precord = precNode->precord;
+	    /* If NAME is null then skip this record*/
+	    if(!(precord->name[0])) continue;
+	    if(precord->lset) continue; /*already in a lock set*/
+	    precord->lset = maxnset = ++nset;
+	    precord->pact = TRUE; again = TRUE;
+	    while(again) {
+		again = FALSE;
+    		for(link=0; link<precTypDes->no_links; link++) {
 		    struct dbAddr	*pdbAddr;
-		    struct dbCommon	*pk;
 
-		    pfldDes = precTypDes->papFldDes[precTypDes->link_ind[k]];
-		    plink = (struct link *)((char *)pn + pfldDes->offset);
+		    pfldDes = precTypDes->papFldDes[precTypDes->link_ind[link]];
+		    plink = (struct link *)((char *)precord + pfldDes->offset);
 		    if(plink->type != DB_LINK) continue;
 		    pdbAddr = (struct dbAddr *)(plink->value.db_link.pdbAddr);
 		    if( pfldDes->field_type==DBF_INLINK
-		        && ( !(plink->value.db_link.process_passive)
-		             && !(plink->value.db_link.maximize_sevr) )
-			&& pdbAddr->no_elements<=1 ) continue;
-		    pk = (struct dbCommon *)(pdbAddr->precord);
-		    if(pk != precord) continue;
-		    if(pn->lset > 0) {
-			if(pn->lset == lset) continue;
-			status = S_db_lsetLogic;
-			errMessage(status,"Logic Error in iocInit(addToSet)");
-			return(status);
+	    	    && ( !(plink->value.db_link.process_passive)
+	       	    && !(plink->value.db_link.maximize_sevr) )
+		    && pdbAddr->no_elements<=1) continue;
+		    newset = makeSameSet(pdbAddr,precord->lset);
+		    if(newset!=precord->lset) {
+			if(precord->lset==maxnset && maxnset==nset) nset--;
+			precord->lset = newset;
+			again = TRUE;
+			break;
 		    }
-		    status = addToSet(pn,in,TRUE,i,prootNode,lset);
-		    if(status) return(status);
 		}
-		precNode = (RECNODE *)ellNext(&precNode->node);
+	    }
+	    precord->pact = FALSE;
 	}
-	precNode = NULL;
     }
-    return(0);
+    dbScanLockInit(nset);
+}
+
+static short makeSameSet( struct dbAddr *paddr, short lset)
+{
+    struct dbCommon 	*precord = paddr->precord;
+    short  		link;
+    struct fldDes       *pfldDes;
+    struct link		*plink;
+    struct recTypDes	*precTypDes;
+    struct recDes	*precDes;
+    int			again;
+
+    if(precord->pact) return(((precord->lset<lset) ? precord->lset : lset));
+    if(lset == precord->lset) return(lset);
+    if(precord->lset == 0) precord->lset = lset;
+    if(precord->lset < lset) return(precord->lset);
+    if(!(precDes = pdbBase->precDes)) return(0);
+    precord->lset = lset; precord->pact = TRUE; again = TRUE;
+    while(again) {
+	again = FALSE;
+	precTypDes = precDes->papRecTypDes[paddr->record_type];
+	for(link=0; link<precTypDes->no_links; link++) {
+	    struct dbAddr	*pdbAddr;
+	    short		newset;
+
+	    pfldDes = precTypDes->papFldDes[precTypDes->link_ind[link]];
+	    plink = (struct link *)((char *)precord + pfldDes->offset);
+	    if(plink->type != DB_LINK) continue;
+	    pdbAddr = (struct dbAddr *)(plink->value.db_link.pdbAddr);
+	    if( pfldDes->field_type==DBF_INLINK
+	    && ( !(plink->value.db_link.process_passive)
+	    && !(plink->value.db_link.maximize_sevr) )
+	    && pdbAddr->no_elements<=1) continue;
+	    newset = makeSameSet(pdbAddr,precord->lset);
+	    if(newset != precord->lset) {
+		precord->lset = newset;
+		again = TRUE;
+		break;
+	    }
+	}
+    }
+    precord->pact = FALSE;
+    return(precord->lset);
 }
 
 static long initialProcess(void)

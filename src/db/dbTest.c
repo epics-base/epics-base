@@ -43,7 +43,6 @@ of this distribution.
 #include "callback.h"
 #include "dbTest.h"
 
-extern struct dbBase *pdbbase;
 #define MAXLINE 80
 struct msgBuff {		/* line output structure */
     char            out_buff[MAXLINE + 1];

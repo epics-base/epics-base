@@ -388,7 +388,6 @@ void epicsShareAPI dbLockSetSplit(dbCommon *psource)
     free((void *)paprecord);
 }
 
-extern struct dbBase *pdbbase;
 long epicsShareAPI dblsr(char *recordname,int level)
 {
     int			link;

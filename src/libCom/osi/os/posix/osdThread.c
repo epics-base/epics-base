@@ -456,7 +456,6 @@ void threadShow(threadId id,unsigned int level)
 	errlogPrintf("%16.16s %8x %8d %8.8s\n", pthreadInfo->name,(threadId)
 		     pthreadInfo,pthreadInfo->osiPriority,pthreadInfo->
 		     isSuspended?"SUSPEND":"OK");
-	threadSleep(0.05);
 	if(level>0)
 	    ; /* more info */
     }

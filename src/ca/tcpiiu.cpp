@@ -175,8 +175,11 @@ unsigned tcpiiu::sendBytes ( const void *pBuf,
                 continue;
             }
 
-            if ( localError != SOCK_EPIPE && localError != SOCK_ECONNRESET &&
-                localError != SOCK_ETIMEDOUT && localError != SOCK_ECONNABORTED ) {
+            if ( 
+                    localError != SOCK_EPIPE && 
+                    localError != SOCK_ECONNRESET &&
+                    localError != SOCK_ETIMEDOUT && 
+                    localError != SOCK_ECONNABORTED ) {
                 this->cacRef.printf ( "CAC: unexpected TCP send error: %s\n", 
                     SOCKERRSTR ( localError ) );
             }

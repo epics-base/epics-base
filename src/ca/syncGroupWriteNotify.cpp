@@ -52,7 +52,7 @@ void syncGroupWriteNotify::destroy ( casgRecycle & recycle )
 syncGroupWriteNotify::~syncGroupWriteNotify ()
 {
     if ( this->idIsValid ) {
-        this->chan->ioCancel ( this-> id );
+        this->chan->ioCancel ( this->id );
     }
 }
 

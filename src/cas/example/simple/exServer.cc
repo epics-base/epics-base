@@ -156,7 +156,7 @@ pvExistReturn exServer::pvExistTest(const casCtx& ctxIn, const char *pPVName)
 		return pverDoesNotExistHere;
 	}
 
-	pvInfo &pvi(pPVE->getInfo());
+	pvInfo &pvi = pPVE->getInfo();
 
 	//
 	// Initiate async IO if this is an async PV
@@ -199,7 +199,7 @@ pvCreateReturn exServer::createPV (const casCtx &ctx, const char *pName)
 		return pvCreateReturn(S_casApp_pvNotFound);
 	}
 
-	pvInfo &pvi(pPVE->getInfo());
+	pvInfo &pvi = pPVE->getInfo();
 
 	//
 	// If this is a synchronous PV create the PV now 

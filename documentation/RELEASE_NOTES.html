@@ -24,7 +24,8 @@ The good news is that the rules for support and ioc applications
 are now greatly simplified. The bad news is that it does mean
 changes for existing 3.14.1 applications. Please see:</p>
 <p><a href="ConvertingR3.14.1AppsToR3.14.2.html">ConvertingR3.14.1AppsToR3.14.2</a></p>
-<p>for details.</p>
+<p>for details. If you are using the function DBD keyword it no
+longer exists. Please read this conversion document for details.</p>
 
 <p><strong>Application Developer's Guide</strong></p>
 <p>The old chapter "New Feature's for 3.14" has been replaced by
@@ -62,8 +63,8 @@ is processed (analagous to setting ADEL/MDEL=-1 for numeric record types).</p>
 <p><strong>epicsStdio and errlogPrintf</strong></p>
 <p>A new facility has been added to libCom described by epicsStdio.h.
 It contains the functions epicsSnprintf and epicsVsnprintf.
-These are like the C99 functions snprintf and vsnprintf.
-These are like printf except that thet accept a argument
+These are like the C99 functions snprintf and vsnprintf,
+which are like sprintf and vsprintf except that they accept a argument
 limiting the number of characters written.</p>
 <p>The errlogPrintf facility has been modified to use this facility.
 Thus it is not longer subject to a possible buffer overflow.</p>

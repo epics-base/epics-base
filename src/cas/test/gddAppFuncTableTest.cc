@@ -30,8 +30,8 @@ main ()
 	gddAppFuncTableTable<casPVII> pvAttrDB;
 	unsigned appPrecision= pvAttrDB.RegisterApplicationType ("precision");
 	unsigned appValue = pvAttrDB.RegisterApplicationType ("value");
-	gddScaler *pPrec = new gddScaler (appPrecision, aitEnumFloat32);
-	gddScaler *pVal = new gddScaler (appValue, aitEnumFloat32);
+	gddScalar *pPrec = new gddScalar (appPrecision, aitEnumFloat32);
+	gddScalar *pVal = new gddScalar (appValue, aitEnumFloat32);
 	casPV pv ("jane");
 	casPVII pvII ("fred");
 	casPVII pvIIa ("albert");

@@ -150,19 +150,18 @@ endif
 	@if [ ! -f cad.rc -a -r ../cad.rc ] ; then ln -s ../cad.rc ; fi
 	$(SCH2EDIF) $(SCH2EDIF_SYSFLAGS) $(SCH2EDIF_FLAGS) $<
 
+# Adl2dl rule
+%.dl : ../%.adl
+	-$(ADL2DL) $< $
+
 # Mangen Rule:
 %.1:%
-	$(RM) $(<F).nr
 	$(MANGEN) -s $<
 	$(MV) $(<F).nr $(<F).1
 
 # Mangen Rule:
 %.1:../%
-	$(RM) $(<F)
-	$(RM) $(<F).nr
-	$(CP) $< $(<F)
 	$(MANGEN) -s $<
-	$(RM) $(<F)
 	$(MV) $(<F).nr $(<F).1
 
 binInstalls:  $(BIN_INSTALLS)

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/08/13 22:56:13  jhill
+ * added init for mutex class
+ *
  * Revision 1.2  1996/07/09 22:54:31  jhill
  * store msg copy in the ctx
  *
@@ -41,6 +44,7 @@
 
 #include <server.h>
 #include <casClientIL.h> // inline func for casClient
+#include <db_access.h>
 
 VERSIONID(camsgtaskc,"%W% %G%")
 

@@ -55,7 +55,7 @@ casDGIntfOS::~casDGIntfOS()
 //
 void casDGIntfOS::show(unsigned level) const
 {
-	printf ("casDGIntfOS at %x\n", (unsigned) this);
+	printf ("casDGIntfOS at %p\n", this);
 	if (this->pRdReg) {
 		this->pRdReg->show(level);
 	}
@@ -97,6 +97,6 @@ casDGReadReg::~casDGReadReg()
 void casDGReadReg::show(unsigned level) const
 {
 	this->fdReg::show(level);
-	printf("casDGReadReg at %x\n", (unsigned) this);
+	printf("casDGReadReg at %p\n", this);
 }
 

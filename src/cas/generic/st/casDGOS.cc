@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  1997/04/10 19:34:30  jhill
+ * API changes
+ *
  * Revision 1.1  1996/11/02 01:01:29  jhill
  * installed
  *
@@ -62,7 +65,7 @@ const char *casDGEvWakeup::name() const
 void casDGEvWakeup::show(unsigned level) const
 {
 	this->osiTimer::show(level);
-	printf("casDGEvWakeup at %x\n", (unsigned) this);
+	printf("casDGEvWakeup at %p\n", this);
 }
 
 //
@@ -139,7 +142,7 @@ casDGOS::~casDGOS()
 //
 void casDGOS::show(unsigned level) const
 {
-	printf ("casDGOS at %lx\n", (unsigned long) this);
+	printf ("casDGOS at %p\n", this);
 	this->casDGClient::show(level);
 	if (this->pEvWk) {
 		this->pEvWk->show(level);

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.17  1997/06/13 09:16:06  jhill
+ * connect proto changes
+ *
  * Revision 1.16  1997/04/10 19:34:23  jhill
  * API changes
  *
@@ -80,22 +83,6 @@
 #ifndef INCLserverh
 #define INCLserverh
 
-#ifdef __STDC__
-#       define VERSIONID(NAME,VERS) \
-                const char *EPICS_CAS_VID_ ## NAME = VERS;
-#else /*__STDC__*/
-#       define VERSIONID(NAME,VERS) \
-                const char *EPICS_CAS_VID_/* */NAME = VERS;
-#endif /*__STDC__*/
-
-#if defined(CAS_VERSION_GLOBAL) && 0
-#       define HDRVERSIONID(NAME,VERS) VERSIONID(NAME,VERS)
-#else /*CAS_VERSION_GLOBAL*/
-#       define HDRVERSIONID(NAME,VERS)
-#endif /*CAS_VERSION_GLOBAL*/
-
-HDRVERSIONID(serverh, "%W% %G%")
-
 //
 // ANSI C
 //
@@ -104,7 +91,7 @@ HDRVERSIONID(serverh, "%W% %G%")
 //
 // EPICS
 //
-#define	 epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 #include "epicsAssert.h"
 
 //

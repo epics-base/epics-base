@@ -6,14 +6,14 @@
 //
 void casCtx::show (unsigned level) const
 {
-	printf ("casCtx at %lx\n", (unsigned long) this);
+	printf ("casCtx at %p\n", this);
 	if (level >= 3u) {
-		printf ("\tpMsg = %lx\n", (unsigned long) &this->msg);
-		printf ("\tpData = %lx\n", (unsigned long) pData);
-		printf ("\tpCAS = %lx\n", (unsigned long) pCAS);
-		printf ("\tpClient = %lx\n", (unsigned long) pClient);
-		printf ("\tpChannel = %lx\n", (unsigned long) pChannel);
-		printf ("\tpPV = %lx\n", (unsigned long) pPV);
+		printf ("\tpMsg = %p\n", &this->msg);
+		printf ("\tpData = %p\n", pData);
+		printf ("\tpCAS = %p\n", pCAS);
+		printf ("\tpClient = %p\n", pClient);
+		printf ("\tpChannel = %p\n", pChannel);
+		printf ("\tpPV = %p\n", pPV);
 	}
 }
 

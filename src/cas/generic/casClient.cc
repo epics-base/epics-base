@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.7  1997/04/10 19:34:01  jhill
+ * API changes
+ *
  * Revision 1.6  1996/12/11 00:58:35  jhill
  * better diagnostic
  *
@@ -59,8 +62,6 @@
 #include "inBufIL.h" // inline func for inBuf 
 #include "casPVIIL.h" // inline func for casPVI 
 #include "db_access.h"
-
-VERSIONID(camsgtaskc,"%W% %G%")
 
 static const caHdr nill_msg = {0u,0u,0u,0u,0u,0u};
 
@@ -201,7 +202,7 @@ casClient::~casClient ()
 //
 void casClient::show(unsigned level) const
 {
-	printf ("casClient at %x\n", (unsigned) this);
+	printf ("casClient at %p\n", this);
 	this->casCoreClient::show(level);
 }
 

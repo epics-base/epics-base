@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.16  1997/06/13 09:16:00  jhill
+ * connect proto changes
+ *
  * Revision 1.15  1997/04/10 19:34:18  jhill
  * API changes
  *
@@ -88,8 +91,6 @@
 #include "outBufIL.h"		// outBuf inline functions
 #include "gddApps.h"
 #include "net_convert.h"	// byte order conversion from libca
-
-VERSIONID(casStrmClientcc,"%W% %G%")
 
 static const caHdr nill_msg = {0u,0u,0u,0u,0u,0u};
 
@@ -240,7 +241,7 @@ inline casClientMon *caServerI::resIdToClientMon(const caResId &idIn)
 void casStrmClient::show (unsigned level) const
 {
 	this->casClient::show (level);
-	printf ("casStrmClient at %x\n", (unsigned) this);
+	printf ("casStrmClient at %p\n", this);
 	if (level > 1u) {
 		printf ("\tuser %s at %s\n", this->pUserName, this->pHostName);
 	}

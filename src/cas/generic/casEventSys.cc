@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1997/04/10 19:34:09  jhill
+ * API changes
+ *
  * Revision 1.4  1996/11/02 00:54:12  jhill
  * many improvements
  *
@@ -60,14 +63,14 @@
 //
 void casEventSys::show(unsigned level) const
 {
-	printf ("casEventSys at %x\n", (unsigned) this);
+	printf ("casEventSys at %p\n", this);
 	if (level>=1u) {
-		printf ("\thas coreClient at %x\n", (unsigned) &this->coreClient);
+		printf ("\thas coreClient at %p\n", &this->coreClient);
 		printf ("\tnumEventBlocks = %d, maxLogEntries = %d\n",
 			this->numEventBlocks, this->maxLogEntries);	
 		printf ("\tthere are %d events in the queue\n",
 			this->eventLogQue.count());
-		printf ("\tevents off =  %d\n", this->eventsOff);
+		printf ("\tevents off = %d\n", this->eventsOff);
 	}
 }
 

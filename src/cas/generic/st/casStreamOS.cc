@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.5  1997/04/10 19:34:32  jhill
+// API changes
+//
 // Revision 1.4  1996/12/12 21:24:17  jhill
 // moved casStreamOS *pStrmOS decl down
 //
@@ -163,7 +166,7 @@ const char *casStreamEvWakeup::name() const
 //
 void casStreamEvWakeup::show(unsigned level) const
 {
-	printf ("casStreamEvWakeup at %x {\n", (unsigned) this);
+	printf ("casStreamEvWakeup at %p {\n", this);
 	this->osiTimer::show(level);
 	printf ("}\n");
 }
@@ -233,7 +236,7 @@ const char *casStreamIOWakeup::name() const
 //
 void casStreamIOWakeup::show(unsigned level) const
 {
-	printf ("casStreamIOWakeup at %x {\n", (unsigned) this);
+	printf ("casStreamIOWakeup at %p {\n", this);
 	this->osiTimer::show(level);
 	printf ("}\n");
 }
@@ -410,7 +413,7 @@ casStreamOS::~casStreamOS()
 void casStreamOS::show(unsigned level) const
 {
 	this->casStrmClient::show(level);
-	printf("casStreamOS at %x\n", (unsigned) this);
+	printf("casStreamOS at %p\n", this);
 	printf("\tsendBlocked = %d\n", this->sendBlocked);
 	if (this->pWtReg) {
 		this->pWtReg->show(level);
@@ -440,7 +443,7 @@ caStatus casStreamOS::start()
 void casStreamReadReg::show(unsigned level) const
 {
 	this->fdReg::show(level);
-	printf ("casStreamReadReg at %x\n", (unsigned) this);
+	printf ("casStreamReadReg at %p\n", this);
 }
 
 //
@@ -499,7 +502,7 @@ void casStreamOS::sendBlockSignal()
 void casStreamWriteReg::show(unsigned level) const
 {
 	this->fdReg::show (level);
-	printf ("casStreamWriteReg at %x\n", (unsigned) this);
+	printf ("casStreamWriteReg at %p\n", this);
 }
 
 

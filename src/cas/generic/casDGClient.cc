@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.10  1997/06/13 09:15:56  jhill
+ * connect proto changes
+ *
  * Revision 1.9  1997/04/10 19:34:06  jhill
  * API changes
  *
@@ -116,7 +119,7 @@ void casDGClient::destroy()
 void casDGClient::show(unsigned level) const
 {
 	this->casClient::show(level);
-	printf("casDGClient at %x\n", (unsigned) this);
+	printf("casDGClient at %p\n", this);
         this->dgInBuf::show(level);
 	this->dgOutBuf::show(level);
 }

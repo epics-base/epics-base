@@ -258,7 +258,7 @@ static void notifyCancel(PUTNOTIFY *ppn)
     PNRESTARTNODE	*pfirst;
 
     /*Remove everything on waitList*/
-    while(ppnnode = (PNWAITNODE *)ellLast(&ppn->waitList)) {
+    while((ppnnode = (PNWAITNODE *)ellLast(&ppn->waitList))) {
 	precord = ppnnode->precord;
 	precord->ppn = NULL;
 	ellDelete(&ppn->waitList,&ppnnode->node);
@@ -268,7 +268,7 @@ static void notifyCancel(PUTNOTIFY *ppn)
 	ellDelete(&ppn->restartNode.ppnrestartList->restartList,
 		&ppn->restartNode.node);
     /*If this ppn has a restartList move it */
-    if(pfirst = (PNRESTARTNODE *)ellFirst(&ppn->restartList)) {
+    if((pfirst = (PNRESTARTNODE *)ellFirst(&ppn->restartList))) {
 	PNRESTARTNODE	*pnext;
 	PUTNOTIFY	*pfirstppn;
 

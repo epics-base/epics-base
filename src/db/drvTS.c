@@ -1,6 +1,9 @@
 
 /*
  * $Log$
+ * Revision 1.21  1998/01/20 16:20:04  mrk
+ * Fix include statements
+ *
  * Revision 1.20  1997/05/30 13:17:21  mrk
  * get rid of warning messages when using TS_1900_TO_*
  *
@@ -238,11 +241,13 @@ void TSprintCurrentTime();
 #endif
 
 /* data used by all */
-TSinfo TSdata = { TS_master_dead, TS_async_slave, TS_async_none,
-					0,NULL,
-					TS_SYNC_RATE_SEC,TS_CLOCK_RATE_HZ,0,TS_TIME_OUT_MS,0,
-					TS_MASTER_PORT,TS_SLAVE_PORT,1,0,0,0,0,
-					NULL, NULL, NULL };
+TSinfo TSdata =
+{ 	TS_master_dead, TS_async_slave, TS_async_none,
+	0,NULL,
+	TS_SYNC_RATE_SEC,TS_CLOCK_RATE_HZ,0,TS_TIME_OUT_MS,0,
+	TS_MASTER_PORT,TS_SLAVE_PORT,1,0,0,0,0,
+	NULL, {NULL}, {NULL}
+};
 
 extern char* sysBootLine;
 

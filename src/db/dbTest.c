@@ -797,7 +797,7 @@ static void printBuffer(
 	if (retOptions & DBR_TIME) {
 	    struct dbr_time *pdbr_time =  (void *)pbuffer;
 
-	    printf("time=%lu %lu\n", pdbr_time->time.secPastEpoch,
+	    printf("time=%u %u\n", pdbr_time->time.secPastEpoch,
 		pdbr_time->time.nsec);
 	}else{
 	    printf("time not returned\n");
@@ -1110,13 +1110,11 @@ static int dbpr_report(
 		char *ptemp_buf = &temp_buf[0];
 		short n = pdbFldDes->size;
 		short i;
-		unsigned long value;
 
 		strcpy(ptemp_buf,"0x"); ptemp_buf+=2;
 		if(n>(sizeof(temp_buf)-2)/2) n = (sizeof(temp_buf)-2)/2;
 		for (i=0; i<n; i++, (ptemp_buf+=2), pchar++) {
-			value = *((unsigned char *)pchar);
-			sprintf(ptemp_buf,"%02x",value);
+			sprintf(ptemp_buf,"%02x",*pchar);
 		}
 		*ptemp_buf = 0;
 		sprintf(pmsg, "%s: %s", pfield_name,temp_buf);

@@ -350,7 +350,7 @@ void dbFreePath(DBBASE *pdbbase)
     if(!pdbbase) return;
     ppathList = (ELLLIST *)pdbbase->pathPvt;
     if(!ppathList) return;
-    while(pdbPathNode = (dbPathNode *)ellFirst(ppathList)) {
+    while((pdbPathNode = (dbPathNode *)ellFirst(ppathList))) {
 	ellDelete(ppathList,&pdbPathNode->node);
 	free((void *)pdbPathNode->directory);
 	free((void *)pdbPathNode);
@@ -1309,7 +1309,7 @@ long dbCreateRecord(DBENTRY *pdbentry,char *precordName)
     pNewRecNode = dbCalloc(1,sizeof(dbRecordNode));
     /* create a new record of this record type */
     pdbentry->precnode = pNewRecNode;
-    if(status = dbAllocRecord(pdbentry,precordName)) return(status);
+    if((status = dbAllocRecord(pdbentry,precordName))) return(status);
     pNewRecNode->recordname = dbRecordName(pdbentry);
     /* install record node in list in sorted postion */
     precnode = (dbRecordNode *)ellFirst(preclist);
@@ -1337,7 +1337,7 @@ long dbDeleteRecord(DBENTRY *pdbentry)
     preclist = &precordType->recList;
     ellDelete(preclist,&precnode->node);
     dbPvdDelete(pdbbase,precnode);
-    if(status = dbFreeRecord(pdbentry)) return(status);
+    if((status = dbFreeRecord(pdbentry))) return(status);
     free((void *)precnode);
     pdbentry->precnode = NULL;
     return (0);
@@ -1456,7 +1456,7 @@ long dbRenameRecord(DBENTRY *pdbentry,char *newName)
     if(!status) return(S_dbLib_recExists);
     dbPvdDelete(pdbbase,precnode);
     pdbentry->pflddes = precordType->papFldDes[0];
-    if(status = dbGetFieldAddress(pdbentry)) return(status);
+    if((status = dbGetFieldAddress(pdbentry))) return(status);
     strcpy(pdbentry->pfield,newName);
     ppvd = dbPvdAdd(pdbbase,precordType,precnode);
     if(!ppvd) {errMessage(-1,"Logic Err: Could not add to PVD");return(-1);}
@@ -1530,10 +1530,10 @@ long dbCopyRecord(DBENTRY *pdbentry,char *newRecordName,int overWriteOK)
 	if(status) return(status);
     }
     dbFinishEntry(&dbentry);
-    if(status = dbFindRecordType(&dbentry,precordType->name)) return(status);
-    if(status = dbCreateRecord(&dbentry,newRecordName)) return(status);
-    if(status = dbFirstField(pdbentry,TRUE)) return(status);
-    if(status = dbFirstField(&dbentry,TRUE)) return(status);
+    if((status = dbFindRecordType(&dbentry,precordType->name))) return(status);
+    if((status = dbCreateRecord(&dbentry,newRecordName))) return(status);
+    if((status = dbFirstField(pdbentry,TRUE))) return(status);
+    if((status = dbFirstField(&dbentry,TRUE))) return(status);
     while(!status) {
 	if(!dbIsDefaultValue(pdbentry)) {
 	    pvalue = dbGetString(pdbentry);
@@ -2124,7 +2124,7 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
 		        pstr = end + 1;
 		        sscanf(pstr,"%hd",&plink->value.vxiio.slot);
 		    }
-		    if(end = strchr(pstr,'S')) {
+		    if((end = strchr(pstr,'S'))) {
 			pstr = end + 1;
 			sscanf(pstr,"%hd",&plink->value.vxiio.signal);
 		    } else {

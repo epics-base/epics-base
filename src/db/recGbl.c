@@ -234,10 +234,10 @@ int  recGblInitConstantLink(struct link *plink,short dbftype,void *pdest)
 	sscanf(plink->value.constantStr,"%hu",(unsigned short *)pdest);
 	break;
     case DBF_LONG : 
-	sscanf(plink->value.constantStr,"%d",(long *)pdest);
+	sscanf(plink->value.constantStr,"%ld",(long *)pdest);
 	break;
     case DBF_ULONG : 
-	sscanf(plink->value.constantStr,"%u",(unsigned long *)pdest);
+	sscanf(plink->value.constantStr,"%lu",(unsigned long *)pdest);
 	break;
     case DBF_FLOAT : 
 	sscanf(plink->value.constantStr,"%f",(float *)pdest);

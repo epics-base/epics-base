@@ -613,7 +613,7 @@ void dbCaTask()
 	semTake(caWakeupSem,WAIT_FOREVER);
 	while(TRUE) { /* process all requests in caList*/
 	    semTake(caListSem,WAIT_FOREVER);
-	    if(pca = (caLink *)ellFirst(&caList)){/*Take off list head*/
+	    if((pca = (caLink *)ellFirst(&caList))){/*Take off list head*/
 		ellDelete(&caList,&pca->node);
 		link_action = pca->link_action;
 		pca->link_action = 0;

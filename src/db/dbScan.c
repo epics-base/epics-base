@@ -542,7 +542,7 @@ static void spawnPeriodic(int ind)
     char		taskName[20];
 
     psl = papPeriodic[ind];
-    sprintf(taskName,"scan%d",psl->ticks);
+    sprintf(taskName,"scan%ld",psl->ticks);
     periodicTaskId[ind] = taskSpawn(taskName,PERIODSCAN_PRI-ind,
 				PERIODSCAN_OPT,PERIODSCAN_STACK,
 				(FUNCPTR )periodicTask,(int)psl,

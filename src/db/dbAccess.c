@@ -326,18 +326,18 @@ static void getOptions(DBADDR *paddr,void **poriginal,long *options,void *pflin)
 	/* Process options */
 	pcommon = (dbCommon *)(paddr->precord);
 	if( (*options) & DBR_STATUS ) {
+	    unsigned short *pushort = (unsigned short *)pbuffer;
+
 	    if(pfl!=NULL) {
-		/* This gives warning:
-		 * ANSI C forbids use of cast expressions as lvalues
-		 */
-		*((unsigned short *)pbuffer)++ = pfl->stat;
-		*((unsigned short *)pbuffer)++ = pfl->sevr;
+		*pushort++ = pfl->stat;
+		*pushort++ = pfl->sevr;
 	    } else {
-		*((unsigned short *)pbuffer)++ = pcommon->stat;
-		*((unsigned short *)pbuffer)++ = pcommon->sevr;
+		*pushort++ = pcommon->stat;
+		*pushort++ = pcommon->sevr;
 	    }
-	    *((unsigned short *)pbuffer)++ = pcommon->acks;
-	    *((unsigned short *)pbuffer)++ = pcommon->ackt;
+	    *pushort++ = pcommon->acks;
+	    *pushort++ = pcommon->ackt;
+	    pbuffer = pushort;
 	}
 	if( (*options) & DBR_UNITS ) {
 	    memset(pbuffer,'\0',dbr_units_size);
@@ -368,13 +368,15 @@ static void getOptions(DBADDR *paddr,void **poriginal,long *options,void *pflin)
 	    pbuffer = (char *)pbuffer + dbr_precision_size;
 	}
 	if( (*options) & DBR_TIME ) {
+	    unsigned long *pulong = (unsigned long *)pbuffer;
 	    if(pfl!=NULL) {
-		*((unsigned long *)pbuffer)++ = pfl->time.secPastEpoch;
-		*((unsigned long *)pbuffer)++ = pfl->time.nsec;
+		*pulong++ = pfl->time.secPastEpoch;
+		*pulong++ = pfl->time.nsec;
 	    } else {
-		*((unsigned long *)pbuffer)++ = pcommon->time.secPastEpoch;
-		*((unsigned long *)pbuffer)++ = pcommon->time.nsec;
+		*pulong++ = pcommon->time.secPastEpoch;
+		*pulong++ = pcommon->time.nsec;
 	    }
+	    pbuffer = pulong;
 	}
 	if( (*options) & DBR_ENUM_STRS )
 		get_enum_strs(paddr,&pbuffer,prset,options);
@@ -632,10 +634,10 @@ long dbNameToAddr(const char *pname,DBADDR *paddr)
 
         if(!pdbbase) return(S_db_notFound);
 	dbInitEntry(pdbbase,&dbEntry);
-	if(status = dbFindRecord(&dbEntry,pname)) return(status);
+	if((status = dbFindRecord(&dbEntry,pname))) return(status);
 	paddr->precord = dbEntry.precnode->precord;
 	if(!dbEntry.pfield) {
-		if(status=dbFindField(&dbEntry,"VAL"))return(status);
+		if((status=dbFindField(&dbEntry,"VAL"))) return(status);
 	}
 	paddr->pfield = dbEntry.pfield;
 	pflddes = dbEntry.pflddes;
@@ -835,8 +837,8 @@ long dbGetField( DBADDR	*paddr,short dbrType,void *pbuffer,
 			getOptions(paddr,(void **)&pbuf,options,pflin);
 		if(nRequest && *nRequest==0) goto done;
 		dbInitEntry(pdbbase,&dbEntry);
-		if(status = dbFindRecord(&dbEntry,precord->name)) goto done;
-		if(status = dbFindField(&dbEntry,pfldDes->name)) goto done;
+		if((status = dbFindRecord(&dbEntry,precord->name))) goto done;
+		if((status = dbFindField(&dbEntry,pfldDes->name))) goto done;
 		rtnString = dbGetString(&dbEntry);
 		/*begin kludge for old db_access MAX_STRING_SIZE*/
 		if(strlen(rtnString)>=MAX_STRING_SIZE) {
@@ -997,14 +999,14 @@ long dbPutField(DBADDR *paddr,short dbrType,const void *pbuffer,long  nRequest)
 		    plink->type = PV_LINK;
 		}
 		dbInitEntry(pdbbase,&dbEntry);
-		if(status=dbFindRecord(&dbEntry,precord->name)) goto done;
-		if(status=dbFindField(&dbEntry,pfldDes->name))  goto done;
+		if((status=dbFindRecord(&dbEntry,precord->name))) goto done;
+		if((status=dbFindField(&dbEntry,pfldDes->name)))  goto done;
 		/* check for special processing	is required */
 		if(special) {
 		    status = putSpecial(paddr,0);
 		    if(status) return(status);
 		}
-		if(status=dbPutString(&dbEntry,buffer)) goto done;
+		if((status=dbPutString(&dbEntry,buffer))) goto done;
 		if(special) {
 		    status = putSpecial(paddr,1);
 		    if(status) return(status);

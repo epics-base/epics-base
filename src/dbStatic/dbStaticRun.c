@@ -630,7 +630,7 @@ long dbPutMenuIndex(DBENTRY *pdbentry,int index)
 	    dbMenu	*pdbMenu = (dbMenu *)pflddes->ftPvt;
 
 	    if(!pdbMenu) return(S_dbLib_menuNotFound);
-	    if(index<0 | index>=pdbMenu->nChoice) return(S_dbLib_badField);
+	    if(index<0 || index>=pdbMenu->nChoice) return(S_dbLib_badField);
 	    *pfield = (unsigned short)index;
 	    return(0);
 	}
@@ -639,7 +639,7 @@ long dbPutMenuIndex(DBENTRY *pdbentry,int index)
 
 	    pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
 	    if(!pdbDeviceMenu) return(S_dbLib_menuNotFound);
-	    if(index<0 | index>=pdbDeviceMenu->nChoice)
+	    if(index<0 || index>=pdbDeviceMenu->nChoice)
 		return(S_dbLib_badField);
 	    return(dbPutString(pdbentry,pdbDeviceMenu->papChoice[index]));
 	}

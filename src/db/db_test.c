@@ -237,7 +237,7 @@ static void print_returned(type,pbuffer,count)
 		long *pvalue = (long *)pbuffer;
 		for (i = 0; i < count; i++,pvalue++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
-			printf("0x%lx ", (unsigned long)*pvalue);
+			printf("%ld ", (unsigned long)*pvalue);
 		}
 		break;
 	}
@@ -312,7 +312,7 @@ static void print_returned(type,pbuffer,count)
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,plong++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
-			printf("0x%x ",(unsigned)*plong);
+			printf("%ld ",*plong);
 		}
 		break;
 	}
@@ -334,7 +334,7 @@ static void print_returned(type,pbuffer,count)
 		struct dbr_time_string *pvalue 
 		  = (struct dbr_time_string *) pbuffer;
 		printf("%2d %2d",pvalue->status,pvalue->severity);
-		printf("\tTimeStamp: %lx %lx",
+		printf("\tTimeStamp: %u %u",
 			pvalue->stamp.secPastEpoch, pvalue->stamp.nsec);
 		printf("\tValue: ");
 		printf("%s",pvalue->value);
@@ -347,7 +347,7 @@ static void print_returned(type,pbuffer,count)
 		  = (struct dbr_time_short *)pbuffer;
 		short *pshort = &pvalue->value;
 		printf("%2d %2d",pvalue->status,pvalue->severity);
-		printf("\tTimeStamp: %lx %lx",
+		printf("\tTimeStamp: %u %u",
 			pvalue->stamp.secPastEpoch, pvalue->stamp.nsec);
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,pshort++){
@@ -362,7 +362,7 @@ static void print_returned(type,pbuffer,count)
 		  = (struct dbr_time_float *)pbuffer;
 		float *pfloat = &pvalue->value;
 		printf("%2d %2d",pvalue->status,pvalue->severity);
-		printf("\tTimeStamp: %lx %lx",
+		printf("\tTimeStamp: %u %u",
 			pvalue->stamp.secPastEpoch, pvalue->stamp.nsec);
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,pfloat++){
@@ -377,7 +377,7 @@ static void print_returned(type,pbuffer,count)
 		  = (struct dbr_time_char *)pbuffer;
 		unsigned char *pchar = &pvalue->value;
 		printf("%2d %2d",pvalue->status,pvalue->severity);
-		printf("\tTimeStamp: %lx %lx",
+		printf("\tTimeStamp: %u %u",
 			pvalue->stamp.secPastEpoch, pvalue->stamp.nsec);
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,pchar++){
@@ -392,12 +392,12 @@ static void print_returned(type,pbuffer,count)
 		  = (struct dbr_time_long *)pbuffer;
 		dbr_long_t *plong = &pvalue->value;
 		printf("%2d %2d",pvalue->status,pvalue->severity);
-		printf("\tTimeStamp: %lx %lx",
+		printf("\tTimeStamp: %u %u",
 			pvalue->stamp.secPastEpoch, pvalue->stamp.nsec);
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,plong++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
-			printf("0x%lx ",*plong);
+			printf("%ld ",*plong);
 		}
 		break;
 	}
@@ -407,7 +407,7 @@ static void print_returned(type,pbuffer,count)
 		  = (struct dbr_time_double *)pbuffer;
 		double *pdouble = &pvalue->value;
 		printf("%2d %2d",pvalue->status,pvalue->severity);
-		printf("\tTimeStamp: %lx %lx",
+		printf("\tTimeStamp: %u %u",
 			pvalue->stamp.secPastEpoch, pvalue->stamp.nsec);
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,pdouble++){
@@ -500,7 +500,7 @@ static void print_returned(type,pbuffer,count)
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,plong++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
-			printf("0x%lx ",*plong);
+			printf("%ld ",*plong);
 		}
 		break;
 	}
@@ -603,7 +603,7 @@ static void print_returned(type,pbuffer,count)
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,plong++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
-			printf("0x%lx ",*plong);
+			printf("%ld ",*plong);
 		}
 		break;
 	}

@@ -40,15 +40,15 @@ of this distribution.
 #include "errMdef.h"
 #include "epicsPrint.h"
 #include "dbCommon.h"
-/*following because we cant include dbStaticLib.h*/
-epicsShareFunc void * epicsShareAPI dbCalloc(size_t nobj,size_t size);
-#include "dbCaPvt.h"
-#define epicsExportSharedSymbols
 #include "cadef.h"
 #include "caerr.h"
+/*following because we cant include dbStaticLib.h*/
+epicsShareFunc void * epicsShareAPI dbCalloc(size_t nobj,size_t size);
+#define epicsExportSharedSymbols
 #include "db_access.h"
 #include "dbScan.h"
 #include "dbCa.h"
+#include "dbCaPvt.h"
 
 static ELLLIST caList;	/* Work list for dbCaTask */
 static semMutexId caListSem; /*Mutual exclusions semaphores for caList*/

@@ -33,6 +33,7 @@ of this distribution.
 #include "shareLib.h"
 
 epicsShareExtern struct dbBase *pdbbase;
+epicsShareExtern volatile int interruptAccept;
 
 /*  The database field and request types are defined in dbFldTypes.h*/
 /* Data Base Request Options	*/

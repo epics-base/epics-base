@@ -101,6 +101,10 @@ extern "C" {
 #include "ellLib.h"
 #include "dbAddr.h"
 
+epicsShareExtern struct dbBase *pdbbase;
+epicsShareExtern volatile int interruptAccept;
+
+
 #define MAX_UNITS_SIZE		8	
 #define MAX_ENUM_STRING_SIZE	26
 #define MAX_ENUM_STATES		16	

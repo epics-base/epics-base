@@ -81,6 +81,7 @@ of this distribution.
 extern long lset_stack_not_empty;
 
 epicsShareDef struct dbBase *pdbbase = 0;
+epicsShareDef volatile int interruptAccept=FALSE;
 
 static short mapDBFToDBR[DBF_NTYPES] = {
 	DBR_STRING, DBR_CHAR, DBR_UCHAR, DBR_SHORT, DBR_USHORT, 

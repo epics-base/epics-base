@@ -41,9 +41,12 @@ of this distribution.
 #include "epicsPrint.h"
 #include "dbCommon.h"
 #include "shareLib.h"
-#include "dbCaPvt.h"
 epicsShareExtern struct dbBase *pdbbase;
 #define epicsExportSharedSymbols
+/*define DB_TEXT_GLBLSOURCE because db_access.d does not include db_access.h*/
+#define DB_TEXT_GLBLSOURCE
+#include "db_access.h"
+#include "dbCaPvt.h"
 #include "dbCa.h"
 
 long dbcar(char	*precordname,int level)

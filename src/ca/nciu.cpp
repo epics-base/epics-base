@@ -70,8 +70,9 @@ nciu::nciu ( cac & cacIn, netiiu & iiuIn, cacChannelNotify & chanIn,
 
 	this->nameLength = static_cast <unsigned short> ( nameLengthTmp );
 
-    this->pNameStr = new char [ this->nameLength ];
-    strcpy ( this->pNameStr, pNameIn );
+    char * pTmpNameStr = new char [ this->nameLength ];
+    strcpy ( pTmpNameStr, pNameIn );
+    this->pNameStr = pTmpNameStr;
 }
 
 nciu::~nciu ()

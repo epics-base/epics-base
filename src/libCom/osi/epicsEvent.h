@@ -27,8 +27,8 @@ public:
     class invalidSemaphore {}; /* exception */
     class noMemory {}; /* exception */
 private:
-    epicsEvent ( const osiEvent & );
-    epicsEvent & operator = ( const osiEvent & );
+    epicsEvent ( const epicsEvent & );
+    epicsEvent & operator = ( const epicsEvent & );
     epicsEventId id;
 };
 #endif /*__cplusplus */

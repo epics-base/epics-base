@@ -5,11 +5,12 @@ SRCS.c = \
 	../iocinf.c ../access.c ../test_event.c ../service.c \
 	../flow_control.c ../repeater.c ../conn.c ../syncgrp.c \
 	../if_depen.c ../bsd_depen.c ../vxWorks_depen.c ../acctst.c \
-	../catime.c
+	../catime.c ../convert.c
 
 LIBOBJS = \
 	iocinf.o access.o test_event.o service.o flow_control.o \
-	repeater.o conn.o syncgrp.o if_depen.o bsd_depen.o vxWorks_depen.o 
+	repeater.o conn.o syncgrp.o if_depen.o bsd_depen.o vxWorks_depen.o \
+	convert.o
 
 LIBNAME = caLib 
 

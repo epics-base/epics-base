@@ -32,3 +32,4 @@ bool comBuf::flushToWire ( wireSendAdapter &wire )
     }
     return true;
 }
+

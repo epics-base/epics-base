@@ -1009,7 +1009,7 @@ LOCAL int constructNetChannel (cac *pcac,
  *  ca_search_and_connect() 
  */
 int epicsShareAPI ca_search_and_connect (const char *name_str, chid *chanptr,
-    void (*conn_func) (struct connection_handler_args), void *puser)
+    caCh *conn_func, void *puser)
 {
     int             caStatus;
     cac             *pcac;
@@ -3020,11 +3020,10 @@ const char * epicsShareAPI ca_version()
 /*
  * ca_replace_printf_handler ()
  */
-int epicsShareAPI ca_replace_printf_handler (
-        caPrintfFunc *ca_printf_func, va_list args)
+int epicsShareAPI ca_replace_printf_handler (caPrintfFunc *ca_printf_func)
 {
-    cac       *pcac;
-    int             caStatus;
+    cac     *pcac;
+    int     caStatus;
 
     caStatus = fetchClientContext (&pcac);
     if ( caStatus != ECA_NORMAL ) {

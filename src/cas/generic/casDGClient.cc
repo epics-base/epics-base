@@ -378,7 +378,7 @@ outBufClient::flushCondition casDGClient::xSend ( char *pBufIn, // X aCC 361
     assert ( nBytesAvailableToSend >= nBytesNeedToBeSent );
 
     totalBytes = 0;
-    while ( true ) {
+    while ( totalBytes < nBytesNeedToBeSent ) {
         pHdr = reinterpret_cast<cadg *>(&pBufIn[totalBytes]);
 
         assert ( totalBytes <= bufSizeT_MAX-pHdr->cadg_nBytes );
@@ -406,10 +406,6 @@ outBufClient::flushCondition casDGClient::xSend ( char *pBufIn, // X aCC 361
         }
 
         totalBytes += pHdr->cadg_nBytes;
-
-        if ( totalBytes >= nBytesNeedToBeSent ) {
-            break;
-        }
     }
 
     if ( totalBytes ) {

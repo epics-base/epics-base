@@ -696,8 +696,6 @@ static struct  devGpibParmBlock devSupParms = {
  * value of 0.  And then again AFTER all record-level init is complete
  * with a param value of 1.
  *
- * This function will no longer be required after epics 3.3 is released
- *
  ******************************************************************************/
 static long 
 init_dev_sup(parm)
@@ -710,8 +708,6 @@ int	parm;
  *
  * Print a report of operating statistics for all devices supported by this
  * module.
- *
- * This function will no longer be required after epics 3.3 is released
  *
  ******************************************************************************/
 static long

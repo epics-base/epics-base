@@ -316,8 +316,6 @@ int	parm;
  * Print a report of operating statistics for all devices supported by this
  * module.
  *
- * This function will no longer be required after epics 3.3 is released
- *
  ******************************************************************************/
 static long
 report()

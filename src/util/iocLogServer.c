@@ -35,10 +35,12 @@
  *
  * Modification Log:
  * -----------------
- * joh	00	080791	Created
+ * .01	08-07-91	joh	Created
  */
 
+#if 0
 @@@@@ carefully reexamine file reopen issues.
+#endif
 
 
 #include	<stdio.h>

@@ -11,10 +11,10 @@
  * In header files, declare variables, classes and functions
  * to be __exported__ like this:
  *
- *	epicsShareAPI     int a_func (int arg); 	reference function 
- *	epicsShareExtern  int a_var; 			reference variable 
- *	epicsShareDecl int a_var= 4; 			create variable instance 
- *	class epicsShareClass a_class; 			reference a class 
+ *	epicsShareAPI     int a_func (int arg); reference function 
+ *	epicsShareExtern  int a_var; 		reference variable 
+ *	epicsShareDecl int a_var= 4; 		create variable instance 
+ *	class epicsShareClass a_class; 		reference a class 
  *
  * Usually the epicsShare... macros expand to
  *  "import this from a DLL"  (on WIN32, on Unix it's a NOP)
@@ -40,10 +40,9 @@
 #undef epicsShareAPI
 #undef READONLY
 
-
 #if defined(WIN32)
 
-#	if defined(_WINDLL)  ||  defined(epicsExportSharedSymbols)
+#	if defined(epicsExportSharedSymbols)
 #		define epicsShareExtern __declspec(dllexport) extern
 #		define epicsShareClass  __declspec(dllexport) 
 #	else
@@ -54,7 +53,7 @@
 	 * Subroutine removes arguments 
 	 */
 #	define epicsShareAPI __stdcall
-#	define epicsShareDecl 
+#	define epicsShareDecl __declspec(dllexport)
 #       define READONLY const
 
 #elif defined(VAXC)
@@ -72,7 +71,6 @@
 #	define epicsShareExtern globalref 
 #	define epicsShareDecl globaldef 
 #       define READONLY const
-
 #else
 
 /* no WIN32 -> no import/export specifiers */
@@ -81,7 +79,7 @@
 #	define epicsShareAPI
 #	define epicsShareClass
 #	define epicsShareDecl 
-#	if defined(__STDC__) || defined(VAXC)
+#	if defined(__STDC__)
 #		define READONLY const
 #	else
 #		define READONLY

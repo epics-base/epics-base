@@ -188,4 +188,8 @@
 #   endif /* ifndef __cplusplus */
 #endif /* ifdef INLINE_defs_EPICS */
 
+/*The following is so that shareLib does not get included recursively*/
+#ifndef epicsStdioh
+#include "epicsStdio.h"
+#endif
 

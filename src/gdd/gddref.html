@@ -1,33 +1,33 @@
 <TITLE>GDD Reference Manual</TITLE>
 <P><h1>GDD Reference Manual</h1>
 
-<a href="refuser.html#gdd">gdd</a><br>
-<a href="refuser.html#gddAtomic">gddAtomic</a><br>
-<a href="refuser.html#gddScalar">gddScalar</a><br>
-<a href="refuser.html#gddContainer">gddContainer</a><br>
-<a href="refuser.html#gddApplicationTypeTable">gddApplicationTypeTable</a><br>
+<a href="gddref.html#gdd">gdd</a><br>
+<a href="gddref2.html#gddAtomic">gddAtomic</a><br>
+<a href="gddref2.html#gddScalar">gddScalar</a><br>
+<a href="gddref2.html#gddContainer">gddContainer</a><br>
+<a href="gddref2.html#gddApplicationTypeTable">gddApplicationTypeTable</a><br>
 <P>
-<a href="refuser.html#gddDestructor">gddDestructor</a><br>
-<a href="refuser.html#gddBounds">gddBounds</a><br>
-<a href="refuser.html#gddBoundsxD">gddBounds1D gddBounds2D gddBounds3D</a><br>
-<a href="refuser.html#gddCursor">gddCursor</a><br>
-<a href="refuser.html#gddSemaphore">gddSemaphore</a><br>
-<a href="refuser.html#gddIntLock">gddIntLock</a><br>
+<a href="gddref2.html#gddDestructor">gddDestructor</a><br>
+<a href="gddref2.html#gddBounds">gddBounds</a><br>
+<a href="gddref2.html#gddBoundsxD">gddBounds1D gddBounds2D gddBounds3D</a><br>
+<a href="gddref2.html#gddCursor">gddCursor</a><br>
+<a href="gddref2.html#gddSemaphore">gddSemaphore</a><br>
+<a href="gddref2.html#gddIntLock">gddIntLock</a><br>
 <P>
-<a href="refuser.html#aitConvert">aitConvert</a><br>
-<a href="refuser.html#aitTimeStamp">aitTimeStamp</a><br>
-<a href="refuser.html#aitString">aitString</a><br>
-<a href="refuser.html#aitTypes_h">aitTypes/aitEnums</a><br>
+<a href="gddref2.html#aitConvert">aitConvert</a><br>
+<a href="gddref2.html#aitTimeStamp">aitTimeStamp</a><br>
+<a href="gddref2.html#aitString">aitString</a><br>
+<a href="gddref2.html#aitTypes_h">aitTypes/aitEnums</a><br>
 <P>
-<a href="refuser.html#gddNewDel_h">new/delete Free List Management</a><br>
-<a href="refuser.html#gddApps_h">Application Type Code Index Labels</a><br>
-<a href="refuser.html#gddErrorCodes_h">gddStatus - Error Codes</a><br>
+<a href="gddref2.html#gddNewDel_h">new/delete Free List Management</a><br>
+<a href="gddref2.html#gddApps_h">Application Type Code Index Labels</a><br>
+<a href="gddref2.html#gddErrorCodes_h">gddStatus - Error Codes</a><br>
 <P>
-<a href="refuser.html#dbMapper_h">DBR To ait Conversion Functions</a><br>
-<a href="refuser.html#dbMapper_h">gddMakeMapDBR</a><br>
-<a href="refuser.html#dbMapper_h">gddMapDbr</a><br>
-<a href="refuser.html#dbMapper_h">gddAitToDbr</a><br>
-<a href="refuser.html#dbMapper_h">gddDbrToAit</a><br>
+<a href="gddref2.html#dbMapper_h">DBR To ait Conversion Functions</a><br>
+<a href="gddref2.html#dbMapper_h">gddMakeMapDBR</a><br>
+<a href="gddref2.html#dbMapper_h">gddMapDbr</a><br>
+<a href="gddref2.html#dbMapper_h">gddAitToDbr</a><br>
+<a href="gddref2.html#dbMapper_h">gddDbrToAit</a><br>
 <P>
 <a href="gdd.html">User's Guide</a><br>
 
@@ -451,6 +451,21 @@ methods, they are meant to adjust the primitive type.
 	<DL>
 		<DT>0 - Success
 		<DT>gddErrorNotAllowed - If this GDD is not a scalar
+	</DL>
+</DL>
+
+<p><b><i>gddStatus put(const gdd* dbuf);</i></b><br>
+Put the data from dbuf into this GDD.  Resets all information in this GDD
+to match dbuf.
+<DL>return codes:
+	<DL>
+		<DT>0 - Success
+		<DT>gddErrorNotSupported - If this GDD or dbuf is a container.  Also if
+		dbuf has dimension greater than one.
+		<DT>gddErrorOutOfBounds - Attempting to copying more dbuf elements
+		into this GDD then this GDD can hold.
+		<DT>gddErrorNotAllowed - If this GDD has no allocated data but has a
+      destructor registered.
 	</DL>
 </DL>
 

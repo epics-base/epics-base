@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.11  1996/08/27 13:05:05  jbk
+// final repairs to string functions, put() functions, and error code printing
+//
 // Revision 1.10  1996/08/23 20:29:36  jbk
 // completed fixes for the aitString and fixed string management
 //
@@ -1475,7 +1478,7 @@ gddStatus gddAtomic::setBoundingBoxOrigin(const aitUint32* const b)
 	gddStatus rc=0;
 
 	if(dimension()>0)
-		for(i=0;i<dimension();i++) bounds[i].setSize(b[i]);
+		for(i=0;i<dimension();i++) bounds[i].setFirst(b[i]);
 	else
 	{
 		gddAutoPrint("gddAtomic::setBoundingBoxOrigin",gddErrorOutOfBounds);

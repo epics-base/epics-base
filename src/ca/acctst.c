@@ -58,6 +58,8 @@ unsigned getCallbackCount;
 
 static epicsTimeStamp showProgressBeginTime;
 
+static double timeoutToPendIO = 1e20;
+
 void showProgressBegin ( const char *pTestName, unsigned interestLevel )
 {
 
@@ -146,7 +148,7 @@ void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan, unsigned
     /* this may fail if there is an unusual deadband */
     status = ca_get ( DBR_CTRL_DOUBLE, chan, &currentVal );
     SEVCHK ( status, NULL );
-    status = ca_pend_io ( 100.0 );
+    status = ca_pend_io ( timeoutToPendIO );
     SEVCHK ( status, NULL );
     eventCount = 0u;
     waitCount = 0u;
@@ -187,7 +189,7 @@ void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan, unsigned
     status = ca_add_event ( DBR_FLOAT, chan2, 
                 nUpdatesTester, &eventCount, 0 );
     SEVCHK ( status, 0 );
-    status = ca_pend_io ( 20.0 );
+    status = ca_pend_io ( timeoutToPendIO );
     SEVCHK (status, 0);
     epicsThreadSleep ( 0.1 );
     ca_poll ();
@@ -203,7 +205,7 @@ void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan, unsigned
     /* this may fail if there is an unusual deadband */
     status = ca_get ( DBR_CTRL_DOUBLE, chan2, &currentVal );
     SEVCHK ( status, NULL );
-    status = ca_pend_io ( 100.0 );
+    status = ca_pend_io ( timeoutToPendIO );
     SEVCHK ( status, NULL );
     eventCount = 0u;
     waitCount = 0u;
@@ -562,7 +564,7 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount,
             SEVCHK ( status, NULL );
         }
 
-        status = ca_pend_io ( 1000.0 );
+        status = ca_pend_io ( timeoutToPendIO );
         SEVCHK ( status, NULL );
 
         ca_self_test ();
@@ -712,7 +714,7 @@ void grEnumTest ( chid chan, unsigned interestLevel )
     status = ca_get (DBR_GR_ENUM, chan, &ge);
     SEVCHK (status, "DBR_GR_ENUM ca_get()");
 
-    status = ca_pend_io (2.0);
+    status = ca_pend_io (timeoutToPendIO);
     assert (status == ECA_NORMAL);
 
     assert ( ge.no_str >= 0 && ge.no_str < NELEMENTS(ge.strs) );
@@ -783,7 +785,7 @@ void ctrlDoubleTest ( chid chan, unsigned interestLevel )
                     ca_element_count(chan),
                     chan, pCtrlDbl);
     SEVCHK (status, "ctrlDoubleTest, ca_array_get");
-    status = ca_pend_io (30.0);
+    status = ca_pend_io ( timeoutToPendIO );
     assert (status==ECA_NORMAL);
 
     /*
@@ -834,7 +836,7 @@ void verifyBlockInPendIO ( chid chan, unsigned interestLevel  )
         resp = -99.99f;
         SEVCHK ( ca_put (DBR_FLOAT, chan, &req), NULL );
         SEVCHK ( ca_get (DBR_FLOAT, chan, &resp), NULL );
-        SEVCHK ( ca_pend_io (2000.0) , NULL );
+        SEVCHK ( ca_pend_io (timeoutToPendIO) , NULL );
         if ( resp != req ) {
             printf (
     "get block test failed - val written %f\n", req);
@@ -867,7 +869,7 @@ void floatTest ( chid chan, dbr_float_t beginValue, dbr_float_t increment,
         SEVCHK ( status, NULL );
         status = ca_get ( DBR_FLOAT, chan, &fretval );
         SEVCHK ( status, NULL );
-        status = ca_pend_io ( 10.0 );
+        status = ca_pend_io ( timeoutToPendIO );
         SEVCHK (status, NULL);
         if ( fabs ( fval - fretval ) > epsilon ) {
             printf ( "float test failed val written %f\n", fval );
@@ -897,7 +899,7 @@ void doubleTest ( chid chan, dbr_double_t beginValue,
         SEVCHK ( status, NULL );
         status = ca_get ( DBR_DOUBLE, chan, &fretval );
         SEVCHK ( status, NULL );
-        status = ca_pend_io ( 100.0 );
+        status = ca_pend_io ( timeoutToPendIO );
         SEVCHK ( status, NULL );
         if ( fabs ( fval - fretval ) > epsilon ) {
             printf ( "double test failed val written %f\n", fval );
@@ -1019,7 +1021,7 @@ void verifyLongIO ( chid chan, unsigned interestLevel  )
 
     status = ca_get ( DBR_CTRL_LONG, chan, &cl );
     SEVCHK ( status, "control long fetch failed\n" );
-    status = ca_pend_io ( 10.0 );
+    status = ca_pend_io ( timeoutToPendIO );
     SEVCHK ( status, "control long pend failed\n" );
 
     incr = ( cl.upper_ctrl_limit - cl.lower_ctrl_limit );
@@ -1034,7 +1036,7 @@ void verifyLongIO ( chid chan, unsigned interestLevel  )
 
             ca_put ( DBR_LONG, chan, &iter );
             ca_get ( DBR_LONG, chan, &rdbk );
-            status = ca_pend_io ( 10.0 );
+            status = ca_pend_io ( timeoutToPendIO );
             SEVCHK ( status, "get pend failed\n" );
             assert ( iter == rdbk );
         }
@@ -1062,7 +1064,7 @@ void verifyShortIO ( chid chan, unsigned interestLevel  )
 
     status = ca_get ( DBR_CTRL_SHORT, chan, &cl );
     SEVCHK ( status, "control short fetch failed\n" );
-    status = ca_pend_io ( 10.0 );
+    status = ca_pend_io ( timeoutToPendIO );
     SEVCHK ( status, "control short pend failed\n" );
 
     incr = (dbr_short_t) ( cl.upper_ctrl_limit - cl.lower_ctrl_limit );
@@ -1079,7 +1081,7 @@ void verifyShortIO ( chid chan, unsigned interestLevel  )
 
             ca_put ( DBR_SHORT, chan, &iter );
             ca_get ( DBR_SHORT, chan, &rdbk );
-            status = ca_pend_io ( 10.0 );
+            status = ca_pend_io ( timeoutToPendIO );
             SEVCHK ( status, "get pend failed\n" );
             assert ( iter == rdbk );
         }
@@ -1106,7 +1108,7 @@ void verifyHighThroughputRead ( chid chan, unsigned interestLevel )
             status = ca_get ( DBR_FLOAT, chan, &temp );
             SEVCHK ( status ,NULL );
         }
-        status = ca_pend_io (2000.0);
+        status = ca_pend_io ( timeoutToPendIO );
         SEVCHK ( status, NULL );
         showProgressEnd ( interestLevel );
     }
@@ -1127,7 +1129,7 @@ void verifyHighThroughputWrite ( chid chan, unsigned interestLevel  )
             status = ca_put ( DBR_DOUBLE, chan, &fval );
             SEVCHK ( status, NULL );
         }
-        SEVCHK ( ca_pend_io (2000.0), NULL );
+        SEVCHK ( ca_pend_io (timeoutToPendIO), NULL );
         showProgressEnd ( interestLevel );
     }
     else{
@@ -1214,7 +1216,7 @@ void verifyBadString ( chid chan, unsigned interestLevel  )
         assert ( status == ECA_NORMAL );
         status = ca_array_get ( DBR_STRING, 1u, chan, respStr );
         assert ( status == ECA_NORMAL );
-        status = ca_pend_io ( 0.0 );
+        status = ca_pend_io ( timeoutToPendIO );
         assert ( status == ECA_NORMAL );
         if ( strcmp ( stimStr, respStr ) ) {
             printf (
@@ -1340,7 +1342,7 @@ void multiSubscriptionDeleteTest ( chid chan, unsigned interestLevel  )
      * is still able to punch through with a request.
      */
     SEVCHK ( ca_get ( DBR_FLOAT,chan,&getResp ), NULL );
-    SEVCHK ( ca_pend_io ( 1000.0 ), NULL );
+    SEVCHK ( ca_pend_io ( timeoutToPendIO ), NULL );
 
     showProgress ( interestLevel );
 
@@ -1380,7 +1382,7 @@ void multiSubscriptionDeleteTest ( chid chan, unsigned interestLevel  )
      * force all of the clear event requests to complete
      */
     SEVCHK ( ca_get (DBR_FLOAT,chan,&temp), NULL );
-    SEVCHK ( ca_pend_io (1000.0), NULL );
+    SEVCHK ( ca_pend_io (timeoutToPendIO), NULL );
 
     showProgressEnd ( interestLevel );
 } 
@@ -1411,7 +1413,7 @@ void singleSubscriptionDeleteTest ( chid chan, unsigned interestLevel  )
          * force the subscription request to complete
          */
         SEVCHK ( ca_get ( DBR_FLOAT, chan, &getResp ), NULL );
-        SEVCHK ( ca_pend_io ( 1000.0 ), NULL );
+        SEVCHK ( ca_pend_io ( timeoutToPendIO ), NULL );
 
         /*
          * attempt to generate heavy event traffic before initiating
@@ -1456,7 +1458,7 @@ void channelClearWithEventTrafficTest ( const char *pName, unsigned interestLeve
 
         int status = ca_create_channel ( pName, 0, 0, 
             CA_PRIORITY_DEFAULT, &chan );
-        status = ca_pend_io ( 100.0 );
+        status = ca_pend_io ( timeoutToPendIO );
         SEVCHK ( status, "channelClearWithEventTrafficTest: channel connect failed" );
         assert ( status == ECA_NORMAL );
 
@@ -1468,7 +1470,7 @@ void channelClearWithEventTrafficTest ( const char *pName, unsigned interestLeve
          * force the subscription request to complete
          */
         SEVCHK ( ca_get ( DBR_FLOAT, chan, &getResp ), NULL );
-        SEVCHK ( ca_pend_io ( 1000.0 ), NULL );
+        SEVCHK ( ca_pend_io ( timeoutToPendIO ), NULL );
 
         /*
          * attempt to generate heavy event traffic before initiating
@@ -1785,7 +1787,7 @@ void arrayTest ( chid chan, unsigned maxArrayBytes, unsigned interestLevel )
     status = ca_array_get ( DBR_DOUBLE,  ca_element_count (chan), 
                     chan, pRF ); 
     SEVCHK ( status, "array read request failed" );
-    status = ca_pend_io ( 30.0 );
+    status = ca_pend_io ( timeoutToPendIO );
     SEVCHK ( status, "array read failed" );
 
     /*
@@ -1809,7 +1811,7 @@ void arrayTest ( chid chan, unsigned maxArrayBytes, unsigned interestLevel )
             status = ca_array_get ( DBR_STRING, 
                 ca_element_count (chan), chan, pRS ); 
             SEVCHK  ( status, "array read request failed" );
-            status = ca_pend_io ( 300.0 );
+            status = ca_pend_io ( timeoutToPendIO );
             SEVCHK ( status, "array read failed" );
             free ( pRS );
         }
@@ -1912,7 +1914,7 @@ void unequalServerBufferSizeTest ( const char * pName, unsigned interestLevel )
 
     status = ca_create_channel ( pName, 0, 0, 0, & newChan );
     assert ( status == ECA_NORMAL );
-    status = ca_pend_io ( 100.0 );
+    status = ca_pend_io ( timeoutToPendIO );
     assert ( status == ECA_NORMAL );
 
     if ( ! ca_write_access ( newChan ) ) {
@@ -1930,20 +1932,20 @@ void unequalServerBufferSizeTest ( const char * pName, unsigned interestLevel )
 
     status = ca_array_get ( DBR_DOUBLE, ca_element_count ( newChan ), 
                 newChan, pRF ); 
-    status = ca_pend_io ( 100.0 );
+    status = ca_pend_io ( timeoutToPendIO );
     assert ( status == ECA_NORMAL );
     status = ca_clear_channel ( newChan );
     assert ( status == ECA_NORMAL );
 
     status = ca_create_channel ( pName, 0, 0, 0, &newChan );
     assert ( status == ECA_NORMAL );
-    status = ca_pend_io ( 100.0 );
+    status = ca_pend_io ( timeoutToPendIO );
     assert ( status == ECA_NORMAL );
     status = ca_array_put ( DBR_DOUBLE, ca_element_count ( newChan ), 
                 newChan, pWF ); 
     status = ca_array_get ( DBR_DOUBLE, 1, 
                 newChan, pRF ); 
-    status = ca_pend_io ( 100.0 );
+    status = ca_pend_io ( timeoutToPendIO );
     assert ( status == ECA_NORMAL );
     status = ca_clear_channel ( newChan );
     assert ( status == ECA_NORMAL );
@@ -2090,7 +2092,7 @@ void monitorUpdateTest ( chid chan, unsigned interestLevel )
      * is still able to punch through with a request.
      */
     SEVCHK ( ca_get ( DBR_FLOAT, chan, &getResp) ,NULL );
-    SEVCHK ( ca_pend_io ( 1000.0 ) ,NULL );
+    SEVCHK ( ca_pend_io ( timeoutToPendIO ) ,NULL );
             
     showProgress ( interestLevel );
 
@@ -2146,7 +2148,7 @@ void monitorUpdateTest ( chid chan, unsigned interestLevel )
          */
         getResp = -1;
         SEVCHK ( ca_get ( DBR_FLOAT, chan, &getResp ), NULL );
-        SEVCHK ( ca_pend_io ( 1000.0 ), NULL );
+        SEVCHK ( ca_pend_io ( timeoutToPendIO ), NULL );
 
         assert ( getResp == temp );
 
@@ -2212,7 +2214,7 @@ void monitorUpdateTest ( chid chan, unsigned interestLevel )
      * complete
      */
     SEVCHK ( ca_get ( DBR_FLOAT, chan, &temp ), NULL );
-    SEVCHK ( ca_pend_io ( 1000.0 ), NULL );
+    SEVCHK ( ca_pend_io ( timeoutToPendIO ), NULL );
 
     /* printf ( "flow control bypassed %u events\n", flowCtrlCount ); */
 
@@ -2294,12 +2296,12 @@ void verifyTimeStamps ( chid chan, unsigned interestLevel )
 
     status = ca_get ( DBR_TIME_DOUBLE, chan, & first );
     SEVCHK ( status, "fetch of dbr time double failed\n" );
-    status = ca_pend_io ( 20.0 );
+    status = ca_pend_io ( timeoutToPendIO );
     assert ( status == ECA_NORMAL );
 
     status = ca_get ( DBR_TIME_DOUBLE, chan, & last );
     SEVCHK ( status, "fetch of dbr time double failed\n" );
-    status = ca_pend_io ( 20.0 );
+    status = ca_pend_io ( timeoutToPendIO );
     assert ( status == ECA_NORMAL );
 
     length = epicsTimeToStrftime ( buf, sizeof ( buf ), 
@@ -2356,7 +2358,7 @@ void verifyChannelPriorities ( const char *pName, unsigned interestLevel )
             priority1, &chan1 );
         SEVCHK ( status, "prioritized channel create failed" );
 
-        status = ca_pend_io ( 100.0 );
+        status = ca_pend_io ( timeoutToPendIO );
         SEVCHK ( status, "prioritized channel connect failed" );
         assert ( status == ECA_NORMAL );
 
@@ -2374,7 +2376,7 @@ void verifyChannelPriorities ( const char *pName, unsigned interestLevel )
         status = ca_get ( DBR_DOUBLE, chan1, &value );
         SEVCHK ( status, "prioritized channel get failed" );
 
-        status = ca_pend_io ( 10.0 );
+        status = ca_pend_io ( timeoutToPendIO );
         SEVCHK ( status, "prioritized channel pend io failed" );
 
         status = ca_clear_channel ( chan0 );
@@ -2406,13 +2408,23 @@ int acctst ( char *pName, unsigned interestLevel, unsigned channelCount,
 {
     chid chan;
     int status;
+    long lstatus;
     unsigned i;
     appChan *pChans;
     unsigned connections;
     unsigned maxArrayBytes = 10000000;
 
-    printf ( "CA Client V%s, channel name \"%s\"\n", 
-        ca_version (), pName );
+    lstatus = envGetDoubleConfigParam ( &EPICS_CA_CONN_TMO, &timeoutToPendIO );
+    if ( lstatus ) {
+        timeoutToPendIO = 1e10;
+        printf ( "EPICS \"%s\" double fetch failed\n", 
+            EPICS_CA_CONN_TMO.name);
+        printf ( "Defaulting \"%s\" = %f\n", 
+            EPICS_CA_CONN_TMO.name, timeoutToPendIO );
+    }
+
+    printf ( "CA Client V%s, channel name \"%s\", timeout %g\n", 
+        ca_version (), pName, timeoutToPendIO );
     if ( select == ca_enable_preemptive_callback ) {
         printf ( "Preemptive call back is enabled.\n" );
     }
@@ -2439,7 +2451,7 @@ int acctst ( char *pName, unsigned interestLevel, unsigned channelCount,
     status = ca_search ( pName, & chan );
     SEVCHK ( status, NULL );
     assert ( strcmp ( pName, ca_name ( chan ) ) == 0 );
-    status = ca_pend_io ( 100.0 );
+    status = ca_pend_io ( timeoutToPendIO );
     SEVCHK ( status, NULL );
     showProgressEnd ( interestLevel );
 
@@ -2520,7 +2532,7 @@ int acctst ( char *pName, unsigned interestLevel, unsigned channelCount,
         SEVCHK ( ca_put ( DBR_PUT_ACKT, chan, &acktIn ), NULL );
         SEVCHK ( ca_put ( DBR_PUT_ACKS, chan, &acksIn ), NULL );
         SEVCHK ( ca_get ( DBR_STSACK_STRING, chan, &stsackOut ), NULL );
-        SEVCHK ( ca_pend_io ( 2000.0 ), NULL );
+        SEVCHK ( ca_pend_io ( timeoutToPendIO ), NULL );
     }
 #endif
 

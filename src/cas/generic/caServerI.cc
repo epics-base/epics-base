@@ -37,21 +37,6 @@
 #include "server.h"
 #include "casCtxIL.h" // casCtx in line func
 
-#if defined ( _MSC_VER )
-#   pragma warning ( push )
-#   pragma warning ( disable: 4660 )
-#endif
-
-template class tsSLNode < casPVI >;
-template class tsSLNode < casRes >;
-template class resTable < casRes, chronIntId >;
-template class resTable < casEventMaskEntry, stringId >;
-template class chronIntIdResTable < casRes >;
-
-#if defined ( _MSC_VER )
-#   pragma warning ( pop )
-#endif
-
 //
 // the maximum beacon period if EPICS_CA_BEACON_PERIOD isnt available
 //
@@ -117,7 +102,7 @@ caServerI::caServerI (caServer &tool) :
  */
 caServerI::~caServerI()
 {
-    epicsAutoMutex locker ( this->mutex );
+    epicsGuard < epicsMutex > locker ( this->mutex );
 
 	//
 	// delete all clients
@@ -144,7 +129,7 @@ caServerI::~caServerI()
 //
 void caServerI::installClient(casStrmClient *pClient)
 {
-    epicsAutoMutex locker ( this->mutex );
+    epicsGuard < epicsMutex > locker ( this->mutex );
 	this->clientList.add(*pClient);
 }
 
@@ -153,7 +138,7 @@ void caServerI::installClient(casStrmClient *pClient)
 //
 void caServerI::removeClient (casStrmClient *pClient)
 {
-    epicsAutoMutex locker ( this->mutex );
+    epicsGuard < epicsMutex > locker ( this->mutex );
 	this->clientList.remove (*pClient);
 }
 
@@ -228,7 +213,7 @@ caStatus caServerI::attachInterface (const caNetAddr &addr, bool autoBeaconAddr,
     }
     
     {
-        epicsAutoMutex locker ( this->mutex );
+        epicsGuard < epicsMutex > locker ( this->mutex );
         this->intfList.add (*pIntf);
     }
 
@@ -249,7 +234,7 @@ void caServerI::sendBeacon()
 	// addresses.
 	// 
     {
-        epicsAutoMutex locker ( this->mutex );
+        epicsGuard < epicsMutex > locker ( this->mutex );
 	    tsDLIterBD <casIntfOS> iter = this->intfList.firstIter ();
 	    while ( iter.valid () ) {
 		    iter->sendBeacon ();
@@ -284,7 +269,7 @@ void caServerI::show (unsigned level) const
     this->mutex.show(level);
     
     {
-        epicsAutoMutex locker ( this->mutex );
+        epicsGuard < epicsMutex > locker ( this->mutex );
         tsDLIterConstBD<casStrmClient> iterCl = this->clientList.firstIter ();
         while ( iterCl.valid () ) {
             iterCl->show (level);
@@ -324,7 +309,7 @@ void caServerI::show (unsigned level) const
         printf( 
             "The server's integer resource id conversion table:\n");
         {
-            epicsAutoMutex locker ( this->mutex );
+            epicsGuard < epicsMutex > locker ( this->mutex );
             this->chronIntIdResTable<casRes>::show(level);
         }
     }

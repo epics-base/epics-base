@@ -182,7 +182,6 @@ long dbPutField(
 	}
 	dbScanLock(precord);
 	status=dbPut(paddr,dbrType,pbuffer,nRequest);
-	if(status) recGblDbaddrError(status,paddr,"dbPutField");
 	if(status==0){
         	if((paddr->pfield==(void *)&precord->proc)
 		||(pfldDes->process_passive && precord->scan==0 && dbrType<DBR_PUT_ACKT)) {
@@ -266,7 +265,6 @@ long dbPutNotify(PUTNOTIFY *ppn)
     }
     dbScanLock(precord);
     status=dbPut(paddr,dbrType,pbuffer,nRequest);
-    if(status) recGblDbaddrError(status,paddr,"dbPutField");
     ppn->status = status;
     if(status==0){
        	if((paddr->pfield==(void *)&precord->proc)
@@ -3530,7 +3528,7 @@ long		offset;
     }
     return(0);
 }
-
+
 static long putStringEnum(paddr,pbuffer,nRequest,no_elements,offset)
 struct dbAddr	*paddr;
 char		*pbuffer;
@@ -3538,15 +3536,41 @@ long		nRequest;
 long		no_elements;
 long		offset;
 {
-    struct rset *prset;
-    short       record_type=(paddr->record_type);
-    long        status;
+    struct rset 	*prset;
+    short       	record_type=(paddr->record_type);
+    unsigned short      *pfield= (unsigned short*)(paddr->pfield);
+    long        	status;
+    unsigned int	nchoices,ind;
+    int			nargs,nchars;
+    struct dbr_enumStrs enumStrs;
 
-    if((prset=GET_PRSET(pdbBase->precSup,record_type)) && (prset->put_enum_str))
-        return( (*prset->put_enum_str)(paddr,pbuffer) );
-    status=S_db_noRSET;
-    recGblRecSupError(status,paddr,"dbPutField","put_enum_str");
-    return(S_db_badDbrtype);
+    if((prset=GET_PRSET(pdbBase->precSup,record_type))
+    && (prset->put_enum_str)) {
+	status = (*prset->put_enum_str)(paddr,pbuffer);
+	if(!status) return(0);
+	if(prset->get_enum_strs) {
+	    status = (*prset->get_enum_strs)(paddr,&enumStrs);
+	    if(!status) {
+		nchoices = enumStrs.no_str;
+		nargs = sscanf(pbuffer," %u %n",&ind,&nchars);
+		if(nargs==1 && nchars==strlen(pbuffer) && ind<nchoices) {
+		    *pfield = ind;
+		    return(0);
+		}
+		status = S_db_badChoice;
+	    }
+	}else {
+	    status=S_db_noRSET;
+	}
+    } else {
+	status=S_db_noRSET;
+    }
+    if(status == S_db_noRSET) {
+	recGblRecSupError(status,paddr,"dbPutField","put_enum_str");
+    } else {
+	recGblDbaddrError(status,paddr,"dbPut(putStringEnum)");
+    }
+    return(status);
 }
 
 static long putStringGchoice(paddr,pbuffer,nRequest,no_elements,offset)
@@ -3560,19 +3584,26 @@ long		offset;
     unsigned short      *pfield= (unsigned short*)(paddr->pfield);
     char                *pchoice;
     struct choiceSet    *pchoiceSet;
-    unsigned short	i;
+    unsigned int	nchoices,ind;
+    int			nargs,nchars;
 
     if(no_elements!=1){
         recGblDbaddrError(S_db_onlyOne,paddr,"dbPut(putStringGchoice)");
         return(S_db_onlyOne);
     }
     if(pchoiceSet=GET_PCHOICE_SET(pdbBase->pchoiceGbl,choice_set)) {
-	for(i=0; i<pchoiceSet->number; i++) {
-	    if(!(pchoice=pchoiceSet->papChoice[i])) continue;
+	nchoices = pchoiceSet->number;
+	for(ind=0; ind<nchoices; ind++) {
+	    if(!(pchoice=pchoiceSet->papChoice[ind])) continue;
 	    if(strcmp(pchoice,pbuffer)==0) {
-		*pfield=i;
+		*pfield = ind;
 		return(0);
 	    }
+	}
+	nargs = sscanf(pbuffer," %u %n",&ind,&nchars);
+	if(nargs==1 && nchars==strlen(pbuffer) && ind<nchoices) {
+	    *pfield = ind;
+	    return(0);
 	}
     }
     recGblDbaddrError(S_db_badChoice,paddr,"dbPut(putStringGchoice)");
@@ -3589,19 +3620,26 @@ long		offset;
     unsigned short      *pfield= (unsigned short*)(paddr->pfield);
     char                *pchoice;
     struct choiceSet    *pchoiceSet;
-    unsigned short	i;
+    unsigned int	nchoices,ind;
+    int			nargs,nchars;
 
     if(no_elements!=1){
         recGblDbaddrError(S_db_onlyOne,paddr,"dbPut(putStringCchoice)");
         return(S_db_onlyOne);
     }
     if(pchoiceSet=pdbBase->pchoiceCvt) {
-	for(i=0; i<pchoiceSet->number; i++) {
-	    if(!(pchoice=pchoiceSet->papChoice[i])) continue;
+	nchoices = pchoiceSet->number;
+	for(ind=0; ind<nchoices; ind++) {
+	    if(!(pchoice=pchoiceSet->papChoice[ind])) continue;
 	    if(strcmp(pchoice,pbuffer)==0) {
-		*pfield=i;
+		*pfield=ind;
 		return(0);
 	    }
+	}
+	nargs = sscanf(pbuffer," %u %n",&ind,&nchars);
+	if(nargs==1 && nchars==strlen(pbuffer) && ind<nchoices) {
+	    *pfield = ind;
+	    return(0);
 	}
     }
     recGblDbaddrError(S_db_badChoice,paddr,"dbPut(putStringCchoice)");
@@ -3620,7 +3658,8 @@ long		offset;
     char                *pchoice;
     struct choiceSet    *pchoiceSet;
     struct arrChoiceSet *parrChoiceSet;
-    unsigned short	i;
+    unsigned int	nchoices,ind;
+    int			nargs,nchars;
 
     if(no_elements!=1){
         recGblDbaddrError(S_db_onlyOne,paddr,"dbPut(putStringRchoice)");
@@ -3628,12 +3667,18 @@ long		offset;
     }
     if((parrChoiceSet=GET_PARR_CHOICE_SET(pdbBase->pchoiceRec,(paddr->record_type)))
     && (pchoiceSet=GET_PCHOICE_SET(parrChoiceSet,choice_set))) {
-	for(i=0; i<pchoiceSet->number; i++) {
-	    if(!(pchoice=pchoiceSet->papChoice[i])) continue;
+	nchoices = pchoiceSet->number;
+	for(ind=0; ind<nchoices; ind++) {
+	    if(!(pchoice=pchoiceSet->papChoice[ind])) continue;
 	    if(strcmp(pchoice,pbuffer)==0) {
-		*pfield=i;
+		*pfield=ind;
 		return(0);
 	    }
+	}
+	nargs = sscanf(pbuffer," %u %n",&ind,&nchars);
+	if(nargs==1 && nchars==strlen(pbuffer) && ind<nchoices) {
+	    *pfield = ind;
+	    return(0);
 	}
     }
     recGblDbaddrError(S_db_badChoice,paddr,"dbPut(putStringRchoice)");
@@ -3650,19 +3695,26 @@ long		offset;
     unsigned short      *pfield= (unsigned short*)(paddr->pfield);
     struct devChoiceSet *pdevChoiceSet;
     char		*pchoice;
-    unsigned short	i;
+    unsigned int	nchoices,ind;
+    int			nargs,nchars;
 
     if(no_elements!=1){
         recGblDbaddrError(S_db_onlyOne,paddr,"dbPut(putStringDchoice)");
         return(S_db_onlyOne);
     }
     if(pdevChoiceSet=GET_PDEV_CHOICE_SET(pdbBase->pchoiceDev,paddr->record_type)) {
-	for(i=0; i<pdevChoiceSet->number; i++) {
-	    if(!(pchoice=pdevChoiceSet->papDevChoice[i]->pchoice)) continue;
+	nchoices = pdevChoiceSet->number;
+	for(ind=0; ind<nchoices; ind++) {
+	    if(!(pchoice=pdevChoiceSet->papDevChoice[ind]->pchoice)) continue;
 	    if(strcmp(pchoice,pbuffer)==0) {
-		*pfield=i;
+		*pfield=ind;
 		return(0);
 	    }
+	}
+	nargs = sscanf(pbuffer," %u %n",&ind,&nchars);
+	if(nargs==1 && nchars==strlen(pbuffer) && ind<nchoices) {
+	    *pfield = ind;
+	    return(0);
 	}
     }
     recGblDbaddrError(S_db_badChoice,paddr,"dbPut(putStringDchoice)");
@@ -5875,7 +5927,9 @@ long dbPut(
 	if(special) {
 	    if(special<100) { /*global processing*/
 		if(special==SPC_NOMOD) {
-		    return(S_db_noMod);
+		    status = S_db_noMod;
+		    recGblDbaddrError(status,paddr,"dbPut");
+		    return(status);
 		}else if(special==SPC_SCAN){
 		    scanDelete(precord);
 		}

@@ -15,7 +15,7 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
 # Parse configure/RELEASE file(s) and generate a derived output file.
 #
 
-use Cwd;
+use Cwd qw(cwd abs_path);
 use Getopt::Std;
 
 $cwd = cwd();
@@ -302,7 +302,8 @@ sub checkRelease {
 	delete $check{TOP};
 	
 	while (($parent, $ppath) = each %check) {
-	    if (exists $macros{$parent} && ($macros{$parent} ne $ppath)) {
+	    if (exists $macros{$parent} &&
+		abs_path($macros{$parent}) ne abs_path($ppath)) {
 		print "\n" unless ($status);
 		print "Definition of $parent conflicts with $app support.\n";
 		print "In this application configure/RELEASE defines\n";

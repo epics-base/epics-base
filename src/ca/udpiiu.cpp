@@ -734,11 +734,11 @@ void udpiiu::postMsg ( const osiSockAddr & net_addr,
 bool udpiiu::pushDatagramMsg ( const caHdr &msg, const void *pExt, ca_uint16_t extsize )
 {
     arrayElementCount   msgsize;
-    ca_uint16_t         allignedExtSize;
+    ca_uint16_t         alignedExtSize;
     caHdr               *pbufmsg;
 
-    allignedExtSize = static_cast <ca_uint16_t> (CA_MESSAGE_ALIGN ( extsize ));
-    msgsize = sizeof ( caHdr ) + allignedExtSize;
+    alignedExtSize = static_cast <ca_uint16_t> (CA_MESSAGE_ALIGN ( extsize ));
+    msgsize = sizeof ( caHdr ) + alignedExtSize;
 
 
     /* fail out if max message size exceeded */
@@ -753,11 +753,11 @@ bool udpiiu::pushDatagramMsg ( const caHdr &msg, const void *pExt, ca_uint16_t e
     pbufmsg = (caHdr *) &this->xmitBuf[this->nBytesInXmitBuf];
     *pbufmsg = msg;
     memcpy ( pbufmsg + 1, pExt, extsize );
-    if ( extsize != allignedExtSize ) {
+    if ( extsize != alignedExtSize ) {
         char *pDest = (char *) ( pbufmsg + 1 );
-        memset ( pDest + extsize, '\0', allignedExtSize - extsize );
+        memset ( pDest + extsize, '\0', alignedExtSize - extsize );
     }
-    pbufmsg->m_postsize = htons ( allignedExtSize );
+    pbufmsg->m_postsize = htons ( alignedExtSize );
     this->nBytesInXmitBuf += msgsize;
 
     return true;

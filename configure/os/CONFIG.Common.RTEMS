@@ -92,10 +92,9 @@ CODE_CFLAGS =
 CODE_CXXFLAGS =
 
 #--------------------------------------------------
-# RTEMS uses the inline keyword and some non-ANSI C library functions
-# so -ansi -pedantic causes too many problems.
-CONFORM_CFLAGS_STRICT =
-CONFORM_CXXFLAGS_STRICT =
+# RTEMS uses the inline keyword so -pedantic causes too many problems.
+CONFORM_CFLAGS_STRICT = -ansi
+CONFORM_CXXFLAGS_STRICT = -ansi
 
 #--------------------------------------------------
 # Command-line input support

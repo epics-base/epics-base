@@ -150,7 +150,7 @@ enum sydFuncCode funcCode;/* I function code */
 void	*pArg;		/* I pointer to arg, as required by funcCode */
 {
     SYD_CHAN	*pSChan;	/* pointer to syncSet channel descriptor */
-    AR_CHAN_DESC *pChanDesc;	/* pointer to chanDesc for channel */
+    AR_CHAN_DESC *pChanDesc=NULL;/* pointer to chanDesc for channel */
     AR_CF_DESC	*pCfDesc;	/* pointer to cfDesc for channel file */
     long	retStat=S_syd_OK;
     long	stat, inStatus;

@@ -78,7 +78,7 @@ foreach $name ( @nameList ) {
 	print OUT "BUILD_LIBRARY += ${name}\n";
 	print OUT "endif\n";
 	print OUT "\$(LIB_PREFIX)${name}\$(LIB_SUFFIX):\$(${name}_OBJS)\n";
-	print OUT "\$(SHRLIB_PREFIX)${name}\$(SHRLIB_SUFFIX):\$(${name}_OBJS)\n";
+	print OUT "\$(LIB_PREFIX)${name}\$(SHRLIB_SUFFIX):\$(${name}_OBJS)\n";
 	print OUT "endif\n";
 	print OUT "\n";
 }

@@ -11,8 +11,6 @@ VPATH = $(SRC) $(SRC)/mt $(IOSRC) $(OSSRC)
 
 include $(TOP)/config/CONFIG_BASE
 
-CXXCMPLR = STRICT
-
 USR_INCLUDES = -I$(SRC) -I$(OSSRC) -I$(IOSRC) -I$(CA)\
 	-I$(TOP)/src/include/os/vxWorks
 

@@ -1,12 +1,13 @@
 
 # $Log$
+# Revision 1.2  1997/05/13 14:22:59  jbk
+# added comments at top
+#
 
 CAS = ../../..
 TOP = $(CAS)/../..
 
 include $(TOP)/config/CONFIG_BASE
-
-CXXCMPLR = STRICT
 
 PROD_LIBS := cas ca gdd Com
 

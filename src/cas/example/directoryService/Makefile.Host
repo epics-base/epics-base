@@ -4,8 +4,6 @@ TOP = $(CAS)/../..
 
 include $(TOP)/config/CONFIG_BASE
 
-CXXCMPLR = STRICT
-
 PROD_LIBS := cas ca gdd Com
 #
 # Added winmm user32 for the non-dll build

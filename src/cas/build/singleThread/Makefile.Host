@@ -8,8 +8,6 @@ USER_VPATH := $(SRC) $(STSRC) $(IOSRC)
 
 include $(TOP)/config/CONFIG_BASE
 
-CXXCMPLR = STRICT
-
 # sometimes it's good to have different C/C++ flags, not now:
 USR_CFLAGS = -I$(SRC) -I$(IOSRC) -I$(STSRC) -I$(CA) -DcaNetAddrSock
 USR_CXXFLAGS = $(USR_CFLAGS)

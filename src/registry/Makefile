@@ -5,6 +5,10 @@ include $(TOP)/configure/CONFIG
 #
 
 INC += registry.h
+INC += registryDeviceSupport.h
+INC += registryDriverSupport.h
+INC += registryRecordType.h
+
 
 #       general contents of library on all platforms
 #

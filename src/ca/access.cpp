@@ -194,6 +194,10 @@ int epicsShareAPI ca_context_create (
 
         pcac = ( ca_client_context * ) epicsThreadPrivateGet ( caClientContextId );
 	    if ( pcac ) {
+            if ( premptiveCallbackSelect == ca_enable_preemptive_callback &&
+                ! pcac->preemptiveCallbakIsEnabled() ) {
+                return ECA_NOTTHREADED;
+            }
 		    return ECA_NORMAL;
 	    }
 

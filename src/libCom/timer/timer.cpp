@@ -118,7 +118,7 @@ void timer::cancel ()
         this->privateCancel ();
         // dont wait if this was called indirectly by expire ()
         if ( this->queue.pExpireTmr == this && 
-            this->queue.processThread != epicsThreadGetIdSelf () ) {
+            this->queue.processThread != epicsThreadGetIdSelf() ) {
             this->queue.cancelPending = true;
         }
     }

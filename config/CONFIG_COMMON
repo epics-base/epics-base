@@ -39,6 +39,8 @@ OBJ = .
 RES = .
 
 EPICS_BASE_HOST_BIN = $(EPICS_BASE)/bin/$(HOST_ARCH)
+EPICS_BASE_HOST_LIB = $(EPICS_BASE)/lib/$(HOST_ARCH)
+INSTALL_HOST_LIB = $(INSTALL_LOCATION)/lib/$(HOST_ARCH)
 
 
 # private versions of lex/yacc from EPICS

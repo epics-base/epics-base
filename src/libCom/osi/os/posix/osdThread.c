@@ -244,10 +244,11 @@ static void * start_routine(void *arg)
 {
     epicsThreadOSD *pthreadInfo = (epicsThreadOSD *)arg;
     int status;
+    int oldtype;
 
     status = pthread_setspecific(getpthreadInfo,arg);
     checkStatusQuit(status,"pthread_setspecific","start_routine");
-    status = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
+    status = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&oldtype);
     checkStatusQuit(status,"pthread_setcanceltype","start_routine");
     epicsMutexMustLock(listLock);
     ellAdd(&pthreadList,&pthreadInfo->node);
@@ -513,17 +514,17 @@ void epicsThreadShow(epicsThreadId pthreadInfo,unsigned int level)
 {
     if(!epicsThreadInitCalled) epicsThreadInit();
     if(!pthreadInfo) {
-	printf ("            NAME       ID   OSIPRI   OSSPRI    STATE\n");
+	printf ("            NAME        ID     OSIPRI  OSSPRI  STATE\n");
     }
     else {
         struct sched_param param;
         int policy;
-        int status;
-        int priority;
+        int priority = 0;
 
-        status = pthread_getschedparam(pthreadInfo->tid,&policy,&param);
-        priority = (status ? 0 : param.sched_priority);
-	printf("%16.16s %p %d %8d %8.8s\n", pthreadInfo->name,(void *)
+        if ((pthreadInfo->tid != 0)
+         && (pthread_getschedparam(pthreadInfo->tid,&policy,&param) == 0))
+            priority = param.sched_priority;
+	printf("%16.16s %12p   %3d%8d %8.8s\n", pthreadInfo->name,(void *)
 	       pthreadInfo,pthreadInfo->osiPriority,priority,pthreadInfo->
 		     isSuspended?"SUSPEND":"OK");
 	if(level>0)

@@ -1764,7 +1764,6 @@ void cac_mux_io(struct timeval  *ptimeout)
 {
         int                     count;
         struct timeval          timeout;
-	int			eventFlush;
 
         cac_clean_iiu_list();
 

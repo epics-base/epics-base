@@ -80,6 +80,8 @@
  *	char	*pname		Driver name. If null all drivers
  *	int	type		<0,1> => <short, full> report
  *
+ * dbhcr(null)			hardware configuration report
+ *
  * dblls(ptypeName)		list lock sets
  *	char	*ptypeName;	Record type. If null all record types
  *
@@ -694,6 +696,16 @@ long dbior(char	*pdrvName,int type)
 	    }
 	}
     }
+    return(0);
+}
+int dbhcr(void)
+{
+
+    if(!pdbBase) {
+	printf("No database\n");
+	return(0);
+    }
+    dbReportDeviceConfig(pdbBase,stdout);
     return(0);
 }
 

@@ -111,7 +111,7 @@ typedef aitUint32 caStatus;
 enum pvExistReturnEnum {pverExistsHere, pverDoesNotExistHere, 
 	pverAsyncCompletion};
 
-class epicsShareClass pvExistReturn {
+class epicsShareClass pvExistReturn { // X aCC 361
 public:
 	//
 	// most server tools will use this

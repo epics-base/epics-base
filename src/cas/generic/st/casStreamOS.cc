@@ -566,7 +566,7 @@ void casStreamOS::sendCB()
 //
 // casStreamOS::processInput()
 //
-casProcCond casStreamOS::processInput()
+casProcCond casStreamOS::processInput() // X aCC 361
 {
 	caStatus status;
 

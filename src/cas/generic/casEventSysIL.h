@@ -109,7 +109,7 @@ inline void casEventSys::removeFromEventQueue(casEvent &event)
 //
 // casEventSys::full()
 //
-inline bool casEventSys::full()
+inline bool casEventSys::full() // X aCC 361
 {
 	if (this->replaceEvents || this->eventLogQue.count()>=this->maxLogEntries) {
 		return true;

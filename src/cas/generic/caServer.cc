@@ -95,7 +95,7 @@ epicsShareFunc pvAttachReturn caServer::pvAttach (const casCtx &ctx, const char 
 //
 // caServer::registerEvent()
 //
-epicsShareFunc casEventMask caServer::registerEvent (const char *pName)
+epicsShareFunc casEventMask caServer::registerEvent (const char *pName) // X aCC 361
 {
 	if (this->pCAS) {
 		return this->pCAS->registerEvent(pName);
@@ -136,7 +136,7 @@ epicsShareFunc void caServer::setDebugLevel (unsigned level)
 //
 // caServer::getDebugLevel()
 //
-epicsShareFunc unsigned caServer::getDebugLevel () const
+epicsShareFunc unsigned caServer::getDebugLevel () const // X aCC 361
 {
     if (pCAS) {
         return this->pCAS->getDebugLevel();
@@ -150,7 +150,7 @@ epicsShareFunc unsigned caServer::getDebugLevel () const
 //
 // caServer::valueEventMask ()
 //
-epicsShareFunc casEventMask caServer::valueEventMask () const
+epicsShareFunc casEventMask caServer::valueEventMask () const // X aCC 361
 {
     if (pCAS) {
         return this->pCAS->valueEventMask();
@@ -164,7 +164,7 @@ epicsShareFunc casEventMask caServer::valueEventMask () const
 //
 // caServer::logEventMask ()
 //
-epicsShareFunc casEventMask caServer::logEventMask () const
+epicsShareFunc casEventMask caServer::logEventMask () const // X aCC 361
 {
     if (pCAS) {
         return this->pCAS->logEventMask();
@@ -178,7 +178,7 @@ epicsShareFunc casEventMask caServer::logEventMask () const
 //
 // caServer::alarmEventMask ()
 //
-epicsShareFunc casEventMask caServer::alarmEventMask () const
+epicsShareFunc casEventMask caServer::alarmEventMask () const // X aCC 361
 {
     if (pCAS) {
         return this->pCAS->alarmEventMask();
@@ -201,7 +201,7 @@ class epicsTimer & caServer::createTimer ()
 // caServer::readEventsProcessedCounter
 //
 #ifdef CAS_DIAGNOSTICS_API_WHICH_MAY_VANISH_IN_THE_FUTURE
-epicsShareFunc unsigned caServer::readEventsProcessedCounter (void) const
+epicsShareFunc unsigned caServer::readEventsProcessedCounter (void) const // X aCC 361
 {
     if (pCAS) {
         return this->pCAS->readEventsProcessedCounter();
@@ -228,7 +228,7 @@ epicsShareFunc void caServer::clearEventsProcessedCounter (void)
 // caServer::readEventsPostedCounter
 //
 #ifdef CAS_DIAGNOSTICS_API_WHICH_MAY_VANISH_IN_THE_FUTURE
-epicsShareFunc unsigned caServer::readEventsPostedCounter (void) const
+epicsShareFunc unsigned caServer::readEventsPostedCounter (void) const // X aCC 361
 {
     if (pCAS) {
         return this->pCAS->readEventsPostedCounter ();

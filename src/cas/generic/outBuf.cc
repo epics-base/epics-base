@@ -31,6 +31,7 @@
 
 #include "server.h"
 #include "outBufIL.h" // outBuf in line func
+#include "osiWireFormat.h"
 
 //
 // outBuf::outBuf()
@@ -131,12 +132,12 @@ void outBuf::commitMsg ()
 	// convert to network byte order
 	// (data following header is handled elsewhere)
 	//
-	mp->m_cmmd = htons (mp->m_cmmd);
-	mp->m_postsize = htons (extSize);
-	mp->m_dataType = htons (mp->m_dataType);
-	mp->m_count = htons (mp->m_count);
-	mp->m_cid = htonl (mp->m_cid);
-	mp->m_available = htonl (mp->m_available);
+	mp->m_cmmd = epicsHTON16 (mp->m_cmmd);
+	mp->m_postsize = epicsHTON16 (extSize);
+	mp->m_dataType = epicsHTON16 (mp->m_dataType);
+	mp->m_count = epicsHTON16 (mp->m_count);
+	mp->m_cid = epicsHTON32 (mp->m_cid);
+	mp->m_available = epicsHTON32 (mp->m_available);
 
     commitRawMsg (extSize + sizeof(*mp));
 }
@@ -203,7 +204,9 @@ outBuf::flushCondition outBuf::flush (bufSizeT spaceRequired)
 //
 // outBuf::pushCtx ()
 //
-const outBufCtx outBuf::pushCtx (bufSizeT headerSize, bufSizeT maxBodySize, void *&pHeader)
+const outBufCtx outBuf::pushCtx (bufSizeT headerSize, // X aCC 361
+                                 bufSizeT maxBodySize,
+                                 void *&pHeader)
 {
     bufSizeT totalSize = headerSize + maxBodySize;
     caStatus status;
@@ -228,7 +231,7 @@ const outBufCtx outBuf::pushCtx (bufSizeT headerSize, bufSizeT maxBodySize, void
 //
 // outBuf::popCtx ()
 //
-bufSizeT outBuf::popCtx (const outBufCtx &ctx)
+bufSizeT outBuf::popCtx (const outBufCtx &ctx) // X aCC 361
 {
     if (ctx.stat==outBufCtx::pushCtxSuccess) {
         bufSizeT bytesAdded = this->stack;

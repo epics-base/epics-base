@@ -107,7 +107,7 @@ inline void casPVI::unregisterIO()
 //
 // casPVI::bestDBRType()
 //
-inline caStatus  casPVI::bestDBRType (unsigned &dbrType)
+inline caStatus  casPVI::bestDBRType (unsigned &dbrType) // X aCC 361
 {
 	unsigned bestAIT = this->bestExternalType();
 

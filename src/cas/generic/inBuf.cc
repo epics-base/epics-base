@@ -123,7 +123,7 @@ inBuf::fillCondition inBuf::fill (fillParameter parm)
 
 		    this->clientHostName(buf, sizeof(buf));
 
-		    printf ("CAS: incomming %u byte msg from %s\n",
+		    printf ("CAS: incoming %u byte msg from %s\n",
 			    bytesRecv, buf);
 	    }
 	}
@@ -134,7 +134,8 @@ inBuf::fillCondition inBuf::fill (fillParameter parm)
 //
 // inBuf::pushCtx ()
 //
-const inBufCtx inBuf::pushCtx (bufSizeT headerSize, bufSizeT bodySize)
+const inBufCtx inBuf::pushCtx (bufSizeT headerSize, // X aCC 361
+                               bufSizeT bodySize)
 {
     if (headerSize+bodySize>(this->bytesInBuffer - this->nextReadIndex) || 
         this->ctxRecursCount==UINT_MAX) {
@@ -156,7 +157,7 @@ const inBufCtx inBuf::pushCtx (bufSizeT headerSize, bufSizeT bodySize)
 //
 // inBuf::popCtx ()
 //
-bufSizeT inBuf::popCtx (const inBufCtx &ctx)
+bufSizeT inBuf::popCtx (const inBufCtx &ctx) // X aCC 361
 {
     if (ctx.stat==inBufCtx::pushCtxSuccess) {
         this->mutex.lock();

@@ -348,7 +348,7 @@ inline comBuf::statusPopUInt16 comBuf::popUInt16 ()
     if ( this->occupiedBytes () >= 2u ) {
         unsigned byte1 = this->buf[ this->nextReadIndex++ ];
         unsigned byte2 = this->buf[ this->nextReadIndex++ ];
-        tmp.val  = static_cast < epicsUInt16 > ( byte1 << 8u | byte2 );
+        tmp.val = static_cast < epicsUInt16 > ( byte1 << 8u | byte2 );
         tmp.success = true;
     }
     else {
@@ -362,14 +362,12 @@ inline comBuf::statusPopUInt32 comBuf::popUInt32 ()
 {
     statusPopUInt32 tmp;
     if ( this->occupiedBytes () >= 4u ) {
-        unsigned tmpByte = this->buf[ this->nextReadIndex++ ];
-        tmp.val =  static_cast < epicsUInt32 > ( tmpByte << 24u );
-        tmpByte =  this->buf[ this->nextReadIndex++ ];
-        tmp.val |= static_cast < epicsUInt32 > ( tmpByte << 16u );
-        tmpByte = this->buf[ this->nextReadIndex++ ];
-        tmp.val |= static_cast < epicsUInt32 > ( tmpByte << 8u );
-        tmpByte = this->buf[ this->nextReadIndex++ ];
-        tmp.val |= static_cast < epicsUInt32 > ( tmpByte );
+        unsigned byte1 = this->buf[ this->nextReadIndex++ ];
+        unsigned byte2 = this->buf[ this->nextReadIndex++ ];
+        unsigned byte3 = this->buf[ this->nextReadIndex++ ];
+        unsigned byte4 = this->buf[ this->nextReadIndex++ ];
+        tmp.val = static_cast < epicsUInt32 >
+            ( byte1 << 24u | byte2 << 16u | byte3 << 8u | byte4 ); //X aCC 392
         tmp.success = true;
     }
     else {

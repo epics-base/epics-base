@@ -1,5 +1,4 @@
 /*
- *
  *	Author:	Jeffrey O. Hill
  *		hill@luke.lanl.gov
  *		(505) 665 1831
@@ -45,12 +44,12 @@ static void  forcePort (ELLLIST *pList, unsigned short port)
 {
     osiSockAddrNode *pNode;
 
-    pNode  = (osiSockAddrNode *) ellFirst ( pList );
+    pNode  = reinterpret_cast <osiSockAddrNode *> (ellFirst ( pList ));
     while ( pNode ) {
         if ( pNode->addr.sa.sa_family == AF_INET ) {
             pNode->addr.ia.sin_port = htons (port);
         }
-        pNode = (osiSockAddrNode *) ellNext ( &pNode->node );
+        pNode = reinterpret_cast <osiSockAddrNode *> (ellNext ( &pNode->node ));
     }
 }
 
@@ -91,14 +90,14 @@ casDGIntfIO::casDGIntfIO (caServerI &serverIn, const caNetAddr &addr,
     //
     if (envGetConfigParamPtr(&EPICS_CAS_SERVER_PORT)) {
         this->dgPort = envGetInetPortConfigParam (&EPICS_CAS_SERVER_PORT, 
-            CA_SERVER_PORT);
+            static_cast <unsigned short> (CA_SERVER_PORT));
     }
     else {
         this->dgPort = envGetInetPortConfigParam (&EPICS_CA_SERVER_PORT, 
-            CA_SERVER_PORT);
+            static_cast <unsigned short> (CA_SERVER_PORT));
     }
     beaconPort = envGetInetPortConfigParam (&EPICS_CA_REPEATER_PORT, 
-        CA_REPEATER_PORT);
+        static_cast <unsigned short> (CA_REPEATER_PORT));
 
     //
     // set up the primary address of the server
@@ -122,7 +121,7 @@ casDGIntfIO::casDGIntfIO (caServerI &serverIn, const caNetAddr &addr,
             socket_close (this->sock);
             throw S_cas_noInterface;
         }
-        pAddr = (osiSockAddrNode *) ellFirst (&BCastAddrList);
+        pAddr = reinterpret_cast <osiSockAddrNode *> (ellFirst (&BCastAddrList));
         serverBCastAddr.ia = pAddr->addr.ia; 
         serverBCastAddr.ia.sin_port = htons (this->dgPort);
 
@@ -261,7 +260,7 @@ void casDGIntfIO::xSetNonBlocking()
     int status;
     osiSockIoctl_t yes = TRUE;
     
-    status = socket_ioctl(this->sock, FIONBIO, &yes);
+    status = socket_ioctl(this->sock, FIONBIO, &yes); // X aCC 392
     if (status<0) {
         errlogPrintf("%s:CAS: UDP non blocking IO set fail because \"%s\"\n",
             __FILE__, SOCKERRSTR(SOCKERRNO));
@@ -271,11 +270,12 @@ void casDGIntfIO::xSetNonBlocking()
 //
 // casDGIntfIO::osdRecv()
 //
-inBuf::fillCondition casDGIntfIO::osdRecv(char *pBufIn, bufSizeT size, 
-	fillParameter parm, bufSizeT &actualSize, caNetAddr &fromOut)
+inBuf::fillCondition
+casDGIntfIO::osdRecv(char *pBufIn, bufSizeT size, // X aCC 361
+                     fillParameter parm, bufSizeT &actualSize, caNetAddr &fromOut)
 {
-	int status;
-	osiSocklen_t addrSize;
+    int status;
+    osiSocklen_t addrSize;
     sockaddr addr;
     SOCKET sockThisTime;
 
@@ -286,69 +286,70 @@ inBuf::fillCondition casDGIntfIO::osdRecv(char *pBufIn, bufSizeT size,
         sockThisTime = this->sock;
     }
 
-	addrSize = ( osiSocklen_t ) sizeof (addr);
-	status = recvfrom (this->sock, pBufIn, size, 0,
-					&addr, &addrSize);
-	if (status<=0) {
+    addrSize = ( osiSocklen_t ) sizeof (addr);
+    status = recvfrom (this->sock, pBufIn, size, 0,
+                       &addr, &addrSize);
+    if (status<=0) {
         if (status<0) {
             int errnoCpy = SOCKERRNO;
             if( errnoCpy != SOCK_EWOULDBLOCK ){
-			    errlogPrintf("CAS: UDP recv error was %s",
-			        SOCKERRSTR(errnoCpy));
+                errlogPrintf("CAS: UDP recv error was %s",
+                             SOCKERRSTR(errnoCpy));
             }
-		}
+        }
         return casFillNone;
-	}
+    }
     else {
-	    fromOut = addr;
-	    actualSize = (bufSizeT) status;
-	    return casFillProgress;
+        fromOut = addr;
+        actualSize = (bufSizeT) status;
+        return casFillProgress;
     }
 }
 
 //
 // casDGIntfIO::osdSend()
 //
-outBuf::flushCondition casDGIntfIO::osdSend (const char *pBufIn, bufSizeT size, 
-				const caNetAddr &to)
+outBuf::flushCondition
+casDGIntfIO::osdSend (const char *pBufIn, bufSizeT size, // X aCC 361
+                      const caNetAddr &to)
 {
-	int		status;
+    int	status;
 
-	//
-	// (char *) cast below is for brain dead wrs prototype
-	//
-	struct sockaddr dest = to;
-	status = sendto (this->sock, (char *) pBufIn, size, 0,
-                        &dest, sizeof(dest));
-	if (status>=0) {
+    //
+    // (char *) cast below is for brain dead wrs prototype
+    //
+    struct sockaddr dest = to;
+    status = sendto (this->sock, (char *) pBufIn, size, 0,
+                     &dest, sizeof(dest));
+    if (status>=0) {
         assert ( size == (unsigned) status );
         return outBuf::flushProgress;
-	}
-	else {
+    }
+    else {
         int errnoCpy = SOCKERRNO;
-		if (errnoCpy != SOCK_EWOULDBLOCK) {
-			char buf[64];
+        if (errnoCpy != SOCK_EWOULDBLOCK) {
+            char buf[64];
             sockAddrToA (&dest, buf, sizeof(buf));
-			errlogPrintf (
-	"CAS: UDP socket send to \"%s\" failed because \"%s\"\n",
-				buf, SOCKERRSTR(errnoCpy));
-		}
+            errlogPrintf (
+                "CAS: UDP socket send to \"%s\" failed because \"%s\"\n",
+                buf, SOCKERRSTR(errnoCpy));
+        }
         return outBuf::flushNone;
-	}
+    }
 }
 
 //
-// casDGIntfIO::incommingBytesPresent()
+// casDGIntfIO::incomingBytesPresent()
 //
 // ok to return a size of one here when a datagram is present, and
 // zero otherwise.
 //
-bufSizeT casDGIntfIO::incommingBytesPresent () const
+bufSizeT casDGIntfIO::incomingBytesPresent () const // X aCC 361
 {
 	int status;
 	osiSockIoctl_t nchars = 0;
 
-	status = socket_ioctl (this->sock, FIONREAD, &nchars);
+	status = socket_ioctl (this->sock, FIONREAD, &nchars); // X aCC 392
 	if (status<0) {
 		errlogPrintf ("CAS: FIONREAD failed because \"%s\"\n",
 			SOCKERRSTR(SOCKERRNO));
@@ -365,7 +366,8 @@ bufSizeT casDGIntfIO::incommingBytesPresent () const
 //
 // casDGIntfIO::sendBeaconIO()
 // 
-void casDGIntfIO::sendBeaconIO (char &msg, unsigned length, aitUint16 &portField, aitUint32 &addrField) 
+void casDGIntfIO::sendBeaconIO (char &msg, unsigned length,
+                                aitUint16 &portField, aitUint32 &addrField) 
 {
     caNetAddr           addr = this->serverAddress ();
     struct sockaddr_in  inetAddr = addr.getSockIP();
@@ -375,8 +377,8 @@ void casDGIntfIO::sendBeaconIO (char &msg, unsigned length, aitUint16 &portField
 
     portField = inetAddr.sin_port; // the TCP port
 
-	for (pAddr = (osiSockAddrNode *)ellFirst(&this->beaconAddrList);
-				pAddr; pAddr = (osiSockAddrNode *)ellNext(&pAddr->node)) {
+    for (pAddr = reinterpret_cast <osiSockAddrNode *> (ellFirst(&this->beaconAddrList));
+         pAddr; pAddr = reinterpret_cast <osiSockAddrNode *> (ellNext(&pAddr->node))) {
         status = connect (this->beaconSock, &pAddr->addr.sa, sizeof(pAddr->addr.sa));
         if (status<0) {
             ipAddrToA (&pAddr->addr.ia, buf, sizeof(buf));
@@ -523,7 +525,7 @@ SOCKET casDGIntfIO::makeSockDG ()
         //
         //
         // this allows for faster connects by queuing
-        // additional incomming UDP search frames
+        // additional incoming UDP search frames
         //
         // this allocates a 32k buffer
         // (uses a power of two)

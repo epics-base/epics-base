@@ -541,7 +541,7 @@ static smartGDDPointer createDBRDD (unsigned dbrType, aitIndex dbrCount)
 		// returned for DBR types
 		//
 		if ( dbrCount > 1 ) {
-			pDescRet = (gdd *) new gdd (*pDescRet);
+			pDescRet = new gdd (*pDescRet);
 			//
 			// smart pointer class maintains the ref count from here down
 			//
@@ -604,7 +604,7 @@ static smartGDDPointer createDBRDD (unsigned dbrType, aitIndex dbrCount)
 			modAllowed = TRUE;
 		}
 		
-		for ( dim=0u; dim < (unsigned) pVal->dimension (); dim++ ) {
+		for ( dim=0u; dim < pVal->dimension (); dim++ ) {
 			if ( pB[dim].first () != 0u && pB[dim].size() != bound ) {
 				if ( modAllowed ) {
 					pVal->setBound( dim, 0u, bound );
@@ -1360,7 +1360,7 @@ caStatus casStrmClient::eventAddAction ()
 	//
 	// place monitor mask in correct byte order
 	//
-	caProtoMask = ntohs (pMonInfo->m_mask);
+	caProtoMask = epicsNTOH16 (pMonInfo->m_mask);
 	if (caProtoMask&DBE_VALUE) {
 		mask |= this->getCAS().valueEventMask();
 	}
@@ -2036,19 +2036,21 @@ void casStrmClient::removeChannel(casChannelI &chan)
 //
 //  casStrmClient::xSend()
 //
-outBuf::flushCondition casStrmClient::xSend (char *pBufIn, bufSizeT nBytesAvailableToSend,
-								 bufSizeT nBytesNeedToBeSent, bufSizeT &nActualBytes)
+outBuf::flushCondition casStrmClient::xSend (char *pBufIn,
+                                             bufSizeT nBytesAvailableToSend,
+                                             bufSizeT nBytesNeedToBeSent,
+                                             bufSizeT &nActualBytes)
 {
     outBuf::flushCondition stat;
-	bufSizeT nActualBytesDelta;
+    bufSizeT nActualBytesDelta;
     bufSizeT totalBytes;
 
-	assert (nBytesAvailableToSend>=nBytesNeedToBeSent);
+    assert (nBytesAvailableToSend>=nBytesNeedToBeSent);
 	
-	totalBytes = 0u;
-	while ( true ) {
-		stat = this->osdSend (&pBufIn[totalBytes],
-            nBytesAvailableToSend-totalBytes, nActualBytesDelta);
+    totalBytes = 0u;
+    while ( true ) {
+        stat = this->osdSend (&pBufIn[totalBytes],
+                              nBytesAvailableToSend-totalBytes, nActualBytesDelta);
         if (stat != outBuf::flushProgress) {
             if (totalBytes>0) {
                 nActualBytes = totalBytes;
@@ -2059,21 +2061,22 @@ outBuf::flushCondition casStrmClient::xSend (char *pBufIn, bufSizeT nBytesAvaila
                 return outBuf::flushProgress;
             }
             else {
-			    return stat;
+                return stat;
             }
-		}
+        }
 		
-		totalBytes += nActualBytesDelta;
+        totalBytes += nActualBytesDelta;
 		
-		if (totalBytes>=nBytesNeedToBeSent) {
+        if (totalBytes>=nBytesNeedToBeSent) {
 		    //
 		    // !! this time fetch may be slowing things down !!
 		    //
 		    //this->lastSendTS = epicsTime::getCurrent();
             nActualBytes = totalBytes;
-			return outBuf::flushProgress;
-		}
-	}
+            return outBuf::flushProgress;
+        }
+    }
+    return static_cast <outBuf::flushCondition> (0); // Make compiler happy
 }
 
 //

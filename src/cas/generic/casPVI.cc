@@ -361,7 +361,7 @@ void casPVI::unregisterEvent()
 // (not inline because details of caServerI must not
 // leak into server tool)
 //
-caServer *casPVI::getExtServer() const
+caServer *casPVI::getExtServer() const // X aCC 361
 {
 	if (this->pCAS) {
 		return this->pCAS->getAdapter();

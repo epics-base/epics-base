@@ -426,7 +426,7 @@ void casDGIntfOS::sendCB()
 		}
         //
         // this reenables receipt of incoming frames once
-        // the output has been flushed when the incomming
+        // the output has been flushed when the incoming
         // address is different
         //
         this->armRecv ();

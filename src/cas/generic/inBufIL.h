@@ -17,7 +17,7 @@ inline bufSizeT inBuf::bytesAvailable () const
 {
 	bufSizeT bp;
 	bp = this->bytesPresent();
-	bp += this->incommingBytesPresent();
+	bp += this->incomingBytesPresent();
 	return bp;
 }
 

@@ -5,6 +5,9 @@
 //
 //
 // $Log$
+// Revision 1.22  2001/07/11 23:31:45  jhill
+// adapt to new timer API
+//
 // Revision 1.21  2001/02/16 03:13:27  jhill
 // fixed gnu warnings
 //
@@ -205,33 +208,34 @@ outBuf::flushCondition casStreamIO::osdSend (const char *pInBuf, bufSizeT nBytes
 //
 // casStreamIO::osdRecv()
 //
-inBuf::fillCondition casStreamIO::osdRecv (char *pInBuf, bufSizeT nBytes, 
-		bufSizeT &nBytesActual)
+inBuf::fillCondition
+casStreamIO::osdRecv (char *pInBuf, bufSizeT nBytes, // X aCC 361
+                      bufSizeT &nBytesActual)
 {
-  	int nchars;
+    int nchars;
 
-	nchars = recv (this->sock, pInBuf, nBytes, 0);
-	if (nchars==0) {
-		return casFillDisconnect;
-	}
-	else if (nchars<0) {
+    nchars = recv (this->sock, pInBuf, nBytes, 0);
+    if (nchars==0) {
+        return casFillDisconnect;
+    }
+    else if (nchars<0) {
         int myerrno = SOCKERRNO;
-		char buf[64];
+        char buf[64];
 
         if (myerrno==SOCK_EWOULDBLOCK) {
             return casFillNone;
         }
         else  {
-			ipAddrToA (&this->addr, buf, sizeof(buf));
-			errlogPrintf(
+            ipAddrToA (&this->addr, buf, sizeof(buf));
+            errlogPrintf(
 		"CAS: client %s disconnected because \"%s\"\n",
-				buf, SOCKERRSTR(myerrno));
-		    return casFillDisconnect;
+                buf, SOCKERRSTR(myerrno));
+            return casFillDisconnect;
         }
-	}
+    }
     else {
     	nBytesActual = (bufSizeT) nchars;
-	    return casFillProgress;
+        return casFillProgress;
     }
 }
 
@@ -259,7 +263,7 @@ void casStreamIO::xSetNonBlocking()
 	int status;
 	osiSockIoctl_t yes = TRUE;
 
-	status = socket_ioctl(this->sock, FIONBIO, &yes);
+	status = socket_ioctl(this->sock, FIONBIO, &yes); // X aCC 392
 	if (status>=0) {
 		this->blockingFlag = xIsntBlocking;
 	}
@@ -279,14 +283,14 @@ xBlockingStatus casStreamIO::blockingState() const
 }
 
 //
-// casStreamIO::incommingBytesPresent()
+// casStreamIO::incomingBytesPresent()
 //
-bufSizeT casStreamIO::incommingBytesPresent() const
+bufSizeT casStreamIO::incomingBytesPresent() const // X aCC 361
 {
     int status;
     osiSockIoctl_t nchars = 0;
     
-    status = socket_ioctl(this->sock, FIONREAD, &nchars);
+    status = socket_ioctl(this->sock, FIONREAD, &nchars); // X aCC 392
     if (status<0) {
         char buf[64];
         int errnoCpy = SOCKERRNO;
@@ -342,7 +346,7 @@ printf("the tcp buf size is %d\n", size);
 	return (bufSizeT) size;
 #else
 // this needs to be MAX_TCP (until we fix the array problem)
-	return (bufSizeT) MAX_TCP;
+	return (bufSizeT) MAX_TCP; // X aCC 392
 #endif
 }
 

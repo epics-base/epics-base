@@ -196,4 +196,5 @@ LOCAL int parseDirectoryFP (FILE *pf, const char *pFileName)
 		}
 		nPV++;
 	}
+        return 0;               // Make compiler happy
 }

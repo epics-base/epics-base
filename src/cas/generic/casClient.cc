@@ -462,12 +462,12 @@ const char	*pformat,
 	 * copy back the request protocol
 	 * (in network byte order)
 	 */
-	reply[1].m_postsize = htons (curp->m_postsize);
-	reply[1].m_cmmd = htons (curp->m_cmmd);
-	reply[1].m_dataType = htons (curp->m_dataType);
-	reply[1].m_count = htons (curp->m_count);
-	reply[1].m_cid = htonl (curp->m_cid);
-	reply[1].m_available = htonl (curp->m_available);
+	reply[1].m_postsize = epicsHTON16 (curp->m_postsize);
+	reply[1].m_cmmd = epicsHTON16 (curp->m_cmmd);
+	reply[1].m_dataType = epicsHTON16 (curp->m_dataType);
+	reply[1].m_count = epicsHTON16 (curp->m_count);
+	reply[1].m_cid = epicsHTON32 (curp->m_cid);
+	reply[1].m_available = epicsHTON32 (curp->m_available);
 
 	/*
 	 * add their optional context string into the protocol

@@ -46,10 +46,14 @@ void caServerIO::locateInterfaces ()
 	// then use a hard coded default - CA_SERVER_PORT.
 	//
 	if (envGetConfigParamPtr(&EPICS_CAS_SERVER_PORT)) {
-		port = envGetInetPortConfigParam (&EPICS_CAS_SERVER_PORT, CA_SERVER_PORT);
+		port = envGetInetPortConfigParam (
+                    &EPICS_CAS_SERVER_PORT,
+                    static_cast <unsigned short> (CA_SERVER_PORT));
 	}
 	else {
-		port = envGetInetPortConfigParam (&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
+		port = envGetInetPortConfigParam (
+                    &EPICS_CA_SERVER_PORT,
+                    static_cast <unsigned short> (CA_SERVER_PORT));
 	}
 
 	memset ((char *)&saddr,0,sizeof(saddr));
@@ -147,7 +151,8 @@ void caServerIO::show (unsigned /* level */) const
 //
 // getToken()
 //
-static char *getToken(const char **ppString, char *pBuf, unsigned bufSIze)
+static char *getToken(const char **ppString, // X aCC 361
+                      char *pBuf, unsigned bufSIze)
 {
     const char *pToken;
     unsigned i;

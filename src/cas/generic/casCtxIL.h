@@ -2,6 +2,8 @@
 #ifndef casCtxILh
 #define casCtxILh
 
+#include "osiWireFormat.h"
+
 //
 // casCtx::casCtx()
 //
@@ -17,7 +19,7 @@ inline casCtx::casCtx() :
 //
 inline const caHdr *casCtx::getMsg() const 
 {	
-	return (const caHdr *) &this->msg;
+	return &this->msg;
 }
 
 //
@@ -71,12 +73,12 @@ inline void casCtx::setMsg(const char *pBuf)
 	// alignment problems
 	//
 	memcpy (&this->msg, pBuf, sizeof(this->msg));
-	this->msg.m_cmmd = ntohs (this->msg.m_cmmd);
-	this->msg.m_postsize = ntohs (this->msg.m_postsize);
-	this->msg.m_dataType = ntohs (this->msg.m_dataType);
-	this->msg.m_count = ntohs (this->msg.m_count);
-	this->msg.m_cid = ntohl (this->msg.m_cid);
-	this->msg.m_available = ntohl (this->msg.m_available);
+	this->msg.m_cmmd = epicsNTOH16 (this->msg.m_cmmd);
+	this->msg.m_postsize = epicsNTOH16 (this->msg.m_postsize);
+	this->msg.m_dataType = epicsNTOH16 (this->msg.m_dataType);
+	this->msg.m_count = epicsNTOH16 (this->msg.m_count);
+	this->msg.m_cid = epicsNTOH32 (this->msg.m_cid);
+	this->msg.m_available = epicsNTOH32 (this->msg.m_available);
 }
 
 //

@@ -141,7 +141,7 @@ void casMonitor::push (const smartConstGDDPointer &pNewValue)
 	if (!full) {
 		pLog = new casMonEvent (*this, pNewValue);
 		if (pLog) {
-			this->nPend++;
+			this->nPend++; // X aCC 818
 		}
 	}
 	else {
@@ -179,7 +179,7 @@ void casMonitor::push (const smartConstGDDPointer &pNewValue)
 		//
 		this->ovf = true;
 		this->overFlowEvent.assign (*this, pNewValue);
-		this->nPend++;
+		this->nPend++; // X aCC 818
 		pLog = &this->overFlowEvent;
 	}
 	
@@ -216,7 +216,7 @@ caStatus casMonitor::executeEvent(casMonEvent *pEV)
 	//
 	// decrement the count of the number of events pending
 	//
-	this->nPend--;
+	this->nPend--; // X aCC 818
 	
 	//
 	// delete event object if it isnt a cache entry

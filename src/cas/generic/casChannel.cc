@@ -51,7 +51,7 @@ epicsShareFunc casChannel::~casChannel()
 //
 // casChannel::getPV()
 //
-epicsShareFunc casPV *casChannel::getPV()
+epicsShareFunc casPV *casChannel::getPV() // X aCC 361
 {
 	casPVI *pPVI = &this->casChannelI::getPVI();
 

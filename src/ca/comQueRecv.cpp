@@ -135,10 +135,9 @@ epicsUInt16 comQueRecv::popUInt16 ()
             // 1) split between buffers expected to run slower
             // 2) using canonical unsigned tmp avoids ANSI C conversions to int
             // 3) cast required because sizeof(unsigned) >= sizeof(epicsUInt32)
-            unsigned tmp = this->popUInt8();
-            ret.val = static_cast <epicsUInt16> ( tmp << 8u ); // X aCC 818
-            tmp = this->popUInt8();
-            ret.val |= static_cast <epicsUInt16> ( tmp << 0u ); // X aCC 818
+            unsigned byte1 = this->popUInt8();
+            unsigned byte2 = this->popUInt8();
+            ret.val = static_cast <epicsUInt16> ( byte1 << 8u | byte2 );
         }
         return ret.val;
     }
@@ -164,14 +163,12 @@ epicsUInt32 comQueRecv::popUInt32 ()
             // 1) split between buffers expected to run slower
             // 2) using canonical unsigned tmp avoids ANSI C conversions to int
             // 3) cast required because sizeof(unsigned) >= sizeof(epicsUInt32)
-            unsigned tmp = this->popUInt8();
-            ret.val  = static_cast <epicsUInt32> ( tmp << 24u );
-            tmp = this->popUInt8();
-            ret.val |= static_cast <epicsUInt32> ( tmp << 16u );
-            tmp = this->popUInt8();
-            ret.val |= static_cast <epicsUInt32> ( tmp << 8u );
-            tmp = this->popUInt8();
-            ret.val |= static_cast <epicsUInt32> ( tmp << 0u );
+            unsigned byte1 = this->popUInt8();
+            unsigned byte2 = this->popUInt8();
+            unsigned byte3 = this->popUInt8();
+            unsigned byte4 = this->popUInt8();
+            ret.val = static_cast <epicsUInt32>
+                ( byte1 << 24u | byte2 << 16u | byte3 << 8u | byte4 ); //X aCC 392
         }
         return ret.val;
     }

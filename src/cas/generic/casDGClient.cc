@@ -259,7 +259,7 @@ caStatus casDGClient::searchResponse(const caHdr &msg,
             // server's port when it is a redirect).
             //
             if (ina.sin_port==0u) {
-                ina.sin_port = htons (CA_SERVER_PORT);
+                ina.sin_port = epicsHTON16 (static_cast <unsigned short> (CA_SERVER_PORT));
             }
         }
         else {
@@ -277,17 +277,17 @@ caStatus casDGClient::searchResponse(const caHdr &msg,
             // o disconnect UDP socket from the destination IP
             //
             if ( ina.sin_addr.s_addr == INADDR_ANY ) {
-                ina.sin_addr.s_addr = ntohl(~0U);
+                ina.sin_addr.s_addr = epicsNTOH32 (~0U);
             }
         }
-        search_reply->m_cid = ntohl (ina.sin_addr.s_addr);
-        search_reply->m_dataType = ntohs (ina.sin_port);
+        search_reply->m_cid = epicsNTOH32 (ina.sin_addr.s_addr);
+        search_reply->m_dataType = epicsNTOH16 (ina.sin_port);
     }
     else {
         caNetAddr addr = this->serverAddress ();
         struct sockaddr_in inetAddr = addr.getSockIP();
         search_reply->m_cid = ~0U;
-        search_reply->m_dataType = ntohs (inetAddr.sin_port);
+        search_reply->m_dataType = epicsNTOH16 (inetAddr.sin_port);
     }
     
     search_reply->m_count = 0ul;
@@ -298,7 +298,7 @@ caStatus casDGClient::searchResponse(const caHdr &msg,
     // This value is ignored by earlier clients. 
     //
     pMinorVersion = (unsigned short *) (search_reply+1);
-    *pMinorVersion = htons ( CA_MINOR_PROTOCOL_REVISION );
+    *pMinorVersion = epicsHTON16 ( CA_MINOR_PROTOCOL_REVISION );
     
     this->commitMsg();
     
@@ -344,7 +344,7 @@ void casDGClient::sendBeacon ()
 	// create the message
 	//
 	memset ( &buf, 0, sizeof (msg) );
-    msg.m_cmmd = htons (CA_PROTO_RSRV_IS_UP);
+    msg.m_cmmd = epicsHTON16 (CA_PROTO_RSRV_IS_UP);
 
 	//
 	// send it to all addresses on the beacon list,
@@ -357,7 +357,7 @@ void casDGClient::sendBeacon ()
 //
 // casDGClient::xSend()
 //
-outBuf::flushCondition casDGClient::xSend (char *pBufIn,
+outBuf::flushCondition casDGClient::xSend (char *pBufIn, // X aCC 361
         bufSizeT nBytesAvailableToSend, bufSizeT nBytesNeedToBeSent,
         bufSizeT &nBytesSent)
 {
@@ -405,7 +405,7 @@ outBuf::flushCondition casDGClient::xSend (char *pBufIn,
 //
 // casDGClient::xRecv ()
 //
-inBuf::fillCondition casDGClient::xRecv (char *pBufIn, bufSizeT nBytesToRecv,
+inBuf::fillCondition casDGClient::xRecv (char *pBufIn, bufSizeT nBytesToRecv, // X aCC 361
         fillParameter parm, bufSizeT &nByesRecv)
 {
     const char *pAfter = pBufIn + nBytesToRecv;

@@ -112,7 +112,8 @@ caStatus exPV::update(smartConstGDDPointer pValueIn)
 //
 // exScanTimer::expire ()
 //
-epicsTimerNotify::expireStatus exPV::expire ( const epicsTime & currentTime )
+epicsTimerNotify::expireStatus
+exPV::expire ( const epicsTime & /*currentTime*/ ) // X aCC 361
 {
     this->scan();
     if ( this->scanOn ) {

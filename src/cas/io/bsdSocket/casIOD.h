@@ -45,7 +45,7 @@ public:
 	static bufSizeT optimumOutBufferSize ();
 	static bufSizeT optimumInBufferSize ();
 
-    bufSizeT incommingBytesPresent () const;
+    bufSizeT incomingBytesPresent () const;
 
 private:
 	ELLLIST beaconAddrList;
@@ -85,7 +85,7 @@ public:
 
 	xBlockingStatus blockingState() const;
 
-	bufSizeT incommingBytesPresent() const;
+	bufSizeT incomingBytesPresent() const;
 
 	static bufSizeT optimumBufferSize ();
 

@@ -306,7 +306,7 @@ private:
     bufSizeT    ioMinSize;
     unsigned    ctxRecursCount;
     virtual unsigned getDebugLevel () const = 0;
-    virtual bufSizeT incommingBytesPresent () const = 0;
+    virtual bufSizeT incomingBytesPresent () const = 0;
     virtual fillCondition xRecv (char *pBuf, bufSizeT nBytesToRecv, 
         enum inBuf::fillParameter parm, bufSizeT &nByesRecv) = 0;
     virtual void clientHostName (char *pBuf, unsigned bufSize) const = 0;
@@ -343,7 +343,7 @@ public:
     enum flushCondition {flushNone, flushProgress, flushDisconnect};
 
 	outBuf (bufSizeT bufSizeIn);
-	virtual ~outBuf ()=0;
+	virtual ~outBuf ();
 
 	bufSizeT bytesPresent() const;
 

@@ -139,7 +139,7 @@ void exServer::installAliasName(pvInfo &info, const char *pAliasName)
 //
 // exServer::pvExistTest()
 //
-pvExistReturn exServer::pvExistTest
+pvExistReturn exServer::pvExistTest // X aCC 361
     (const casCtx& ctxIn, const char *pPVName)
 {
     //
@@ -185,7 +185,7 @@ pvExistReturn exServer::pvExistTest
 //
 // exServer::pvAttach()
 //
-pvAttachReturn exServer::pvAttach 
+pvAttachReturn exServer::pvAttach // X aCC 361
     (const casCtx &ctx, const char *pName)
 {
     //
@@ -238,7 +238,8 @@ pvAttachReturn exServer::pvAttach
 //
 // pvInfo::createPV()
 //
-exPV *pvInfo::createPV ( exServer &cas, bool preCreateFlag, bool scanOn )
+exPV *pvInfo::createPV ( exServer & /*cas*/,
+                         bool preCreateFlag, bool scanOn )
 {
     if (this->pPV) {
         return this->pPV;
@@ -331,7 +332,7 @@ exAsyncExistIO::~exAsyncExistIO()
 // exAsyncExistIO::expire()
 // (a virtual function that runs when the base timer expires)
 //
-epicsTimerNotify::expireStatus exAsyncExistIO::expire ( const epicsTime & currentTime )
+epicsTimerNotify::expireStatus exAsyncExistIO::expire ( const epicsTime & /*currentTime*/ )
 {
     //
     // post IO completion
@@ -366,7 +367,7 @@ exAsyncCreateIO::~exAsyncCreateIO()
 // exAsyncCreateIO::expire()
 // (a virtual function that runs when the base timer expires)
 //
-epicsTimerNotify::expireStatus exAsyncCreateIO::expire ( const epicsTime & currentTime )
+epicsTimerNotify::expireStatus exAsyncCreateIO::expire ( const epicsTime & /*currentTime*/ )
 {
     exPV *pPV;
 

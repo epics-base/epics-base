@@ -57,7 +57,7 @@ public:
 		return this->type != casnaUDF;
 	}
 
-	inline bool operator == (const caNetAddr &rhs) const
+	inline bool operator == (const caNetAddr &rhs) const // X aCC 361
 	{
         if (this->type != rhs.type) {
             return false;
@@ -125,7 +125,7 @@ public:
 			assert (sock.sa_family == AF_INET);
 			this->type = casnaInet;
 			const struct sockaddr_in *psip = 
-				(const struct sockaddr_in *) &sock;
+				reinterpret_cast <const struct sockaddr_in*> (&sock);
 			this->addr.ip = *psip;
 		}	
 
@@ -156,7 +156,8 @@ public:
 		{
 			struct sockaddr sa;
 			assert (this->type==casnaInet);
-			struct sockaddr_in *psain = (struct sockaddr_in *) &sa;
+			struct sockaddr_in *psain =
+				reinterpret_cast <struct sockaddr_in*> (&sa);
 			*psain = this->addr.ip;
 
 			return sa;

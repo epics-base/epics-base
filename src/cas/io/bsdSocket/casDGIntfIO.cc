@@ -35,8 +35,8 @@
 //
 
 #include "server.h"
-#include "bsdSocketResource.h"
 #include "addrList.h"
+#include "bsdSocketResource.h"
 
 //
 // casDGIntfIO::casDGIntfIO()
@@ -247,13 +247,9 @@ casDGIntfIO::~casDGIntfIO()
 //
 // casDGIntfIO::clientHostName()
 //
-void casDGIntfIO::clientHostName (char *pBuf, unsigned /* bufSize */) const
+void casDGIntfIO::clientHostName (char *pBufIn, unsigned bufSizeIn) const
 {
-	//
-	// should eventually get the address of the last DG
-	// received
-	//
-	pBuf[0] = '\0';
+    sockAddrToA (&this->lastRecvAddr, pBufIn, bufSizeIn);
 }
 
 //
@@ -264,8 +260,8 @@ void casDGIntfIO::osdShow (unsigned level) const
 	printf ("casDGIntfIO at %p\n", this);
 	if (level>=1u) {
 		char buf[64];
-		this->clientHostName(buf, sizeof(buf));
-        	printf("Client Host=%s\n", buf);
+		this->clientHostName (buf, sizeof(buf));
+        	printf ("Client Host=%s\n", buf);
 	}
 }
 
@@ -297,15 +293,14 @@ xRecvStatus casDGIntfIO::osdRecv(char *pBuf, bufSizeT size,
 {
 	int status;
 	int addrSize;
-	struct sockaddr from;
 
 	if (this->sockState!=casOnLine) {
 		return xRecvDisconnect;
 	}
 
-	addrSize = sizeof(from);
-	status = recvfrom(this->sock, pBuf, size, 0,
-					&from, &addrSize);
+	addrSize = sizeof (this->lastRecvAddr);
+	status = recvfrom (this->sock, pBuf, size, 0,
+					&this->lastRecvAddr, &addrSize);
 	if (status<0) {
 		if(SOCKERRNO == SOCK_EWOULDBLOCK){
 			actualSize = 0u;
@@ -319,7 +314,7 @@ xRecvStatus casDGIntfIO::osdRecv(char *pBuf, bufSizeT size,
 		}
 	}
 
-	fromOut = from;
+	fromOut = this->lastRecvAddr;
 	actualSize = (bufSizeT) status;
 	return xRecvOK;
 }

@@ -56,6 +56,7 @@ public:
 
 private:
 	ELLLIST beaconAddrList;
+    struct sockaddr lastRecvAddr;
 	casDGIntfIO *pAltOutIO;
 	casDGClient &client;
 	SOCKET sock;

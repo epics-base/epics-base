@@ -139,8 +139,10 @@ int GI(void)
    for (cnt=0; cnt < LIST_SIZE; cnt++)
    {   /* init the elements of the command table */
 
+#if 0
 	gpibIntCmds[cnt].head.header.list.list1 = NULL;
 	gpibIntCmds[cnt].head.header.list.list2 = NULL;
+#endif
 	gpibIntCmds[cnt].head.workStart = gpibWork;
 	gpibIntCmds[cnt].head.link = 0;
 	gpibIntCmds[cnt].head.device = 0;

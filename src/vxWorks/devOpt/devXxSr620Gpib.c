@@ -282,8 +282,8 @@ STATIC int srqHandler(struct hwpvt *phwpvt, int srqStatus)
       logMsg("Unsolicited SRQ being handled from link %d, device %d, status = 0x%02.2X\n",
           phwpvt->link, phwpvt->device, srqStatus);
   
-      ((struct gpibDpvt*)(phwpvt->unsolicitedDpvt))->head.header.callback.callback = ((struct gpibDpvt *)(phwpvt->unsolicitedDpvt))->process;
-      ((struct gpibDpvt *)(phwpvt->unsolicitedDpvt))->head.header.callback.priority = ((struct gpibDpvt *)(phwpvt->unsolicitedDpvt))->processPri;
+      ((struct gpibDpvt*)(phwpvt->unsolicitedDpvt))->head.callback.callback = ((struct gpibDpvt *)(phwpvt->unsolicitedDpvt))->process;
+      ((struct gpibDpvt *)(phwpvt->unsolicitedDpvt))->head.callback.priority = ((struct gpibDpvt *)(phwpvt->unsolicitedDpvt))->processPri;
       callbackRequest((CALLBACK*)phwpvt->unsolicitedDpvt);
     }
     else

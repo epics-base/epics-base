@@ -1931,8 +1931,14 @@ char           *pformat,
 
 	/*
 	 * copy back the request protocol
+	 * (in network byte order)
 	 */
-	reply[1] = *curp;
+	reply[1].m_postsize = htons (curp->m_postsize);
+	reply[1].m_cmmd = htons (curp->m_cmmd);
+	reply[1].m_type = htons (curp->m_type);
+	reply[1].m_count = htons (curp->m_count);
+	reply[1].m_cid = curp->m_cid;
+	reply[1].m_available = curp->m_available;
 
 	/*
 	 * add their context string into the protocol

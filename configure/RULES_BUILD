@@ -130,18 +130,18 @@ endif
 
 #	Main targets
 
-inc : $(COMMON_INC) $(INSTALL_INC)
-
-build : inc 
+install: buildInstall 
 
 buildInstall : build 
 
-install: buildInstall 
-
 rebuild: clean install
+
+build : inc 
 
 build: $(OBJSNAME) $(LIBTARGETS) $(PRODTARGETS) $(TESTPRODNAME) \
 	$(TARGETS)
+
+inc : $(COMMON_INC) $(INSTALL_INC)
 
 buildInstall : \
 	$(INSTALL_SCRIPTS) $(INSTALL_PROD) $(INSTALL_MUNCHS) \

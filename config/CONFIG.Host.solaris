@@ -64,7 +64,7 @@ CCC_SLIBS_NO=
 CCC_DEPENDS_FLAG = -xM1
 CCC_SHRLIB_CFLAGS_YES =
 CCC_SHRLIB_LDFLAGS_YES =  -G -h $@ -z ignore -z combreloc -z lazyload
- 
+
 SOLARIS_VERSION = $(subst 5.,,$(shell uname -r))
 ARCH_DEP_CPPFLAGS += -DSOLARIS=$(SOLARIS_VERSION) 
 POSIX_CPPFLAGS_YES += -D__EXTENSIONS__

@@ -83,7 +83,7 @@ OP_SYS_LDLIBS = -lm
 # Link definitions
 LINK.c = $(CC) -o $@ $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
 LINK.cc = $(CXX) -o $@ $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS)
- 
+
 #--------------------------------------------------
 # Allow site overrides
 -include $(EPICS_BASE)/config/CONFIG_SITE.Host.UnixCommon

@@ -115,4 +115,5 @@ int epicsTime_localtime ( const time_t *clock, struct tm *result )
     }
 }
 
-}
+} /* extern "C" */
+

@@ -55,12 +55,29 @@ static commonAttr *pcommonAttr = 0;
 
 #define checkStatus(status,message) \
 if((status))  {\
-    errlogPrintf("%s error %s\n",(message),strerror((status))); }
+    errlogPrintf("%s error %s\n",(message),strerror((status))); \
+}
 
 #define checkStatusQuit(status,message,method) \
 if(status) { \
     errlogPrintf("%s  error %s\n",(message),strerror((status))); \
     cantProceed((method)); \
+}
+
+/* The following are for use by once, which is only invoked from threadInit*/
+/* Until threadInit completes errlogInit will not work                     */
+/* It must also be used by init_threadInfo otherwise errlogInit could get  */
+/* called recursively                                                      */
+#define checkStatusOnce(status,message) \
+if((status))  {\
+    fprintf(stderr,"%s error %s\n",(message),strerror((status))); }
+
+#define checkStatusOnceQuit(status,message,method) \
+if(status) { \
+    fprintf(stderr,"%s  error %s",(message),strerror((status))); \
+    fprintf(stderr," %s\n",method); \
+    fprintf(stderr,"threadInit cant proceed. Program exiting\n"); \
+    exit(-1);\
 }
 
 static int getOssPriorityValue(threadInfo *pthreadInfo)
@@ -87,38 +104,38 @@ static threadInfo * init_threadInfo(const char *name,
     pthreadInfo->createFunc = funptr;
     pthreadInfo->createArg = parm;
     status = pthread_attr_init(&pthreadInfo->attr);
-    checkStatusQuit(status,"pthread_attr_init","init_threadInfo");
+    checkStatusOnceQuit(status,"pthread_attr_init","init_threadInfo");
     status = pthread_attr_setdetachstate(
         &pthreadInfo->attr, PTHREAD_CREATE_DETACHED);
-    if(errVerbose) checkStatus(status,"pthread_attr_setdetachstate");
+    if(errVerbose) checkStatusOnce(status,"pthread_attr_setdetachstate");
 #if defined (_POSIX_THREAD_ATTR_STACKSIZE)
 #if defined (OSITHREAD_USE_DEFAULT_STACK)
     stackSize = 0;
 #else
     status = pthread_attr_setstacksize(
         &pthreadInfo->attr, (size_t)stackSize);
-    if(errVerbose) checkStatus(status,"pthread_attr_setstacksize");
+    if(errVerbose) checkStatusOnce(status,"pthread_attr_setstacksize");
 #endif /*OSITHREAD_USE_DEFAULT_STACK*/
 #endif /*_POSIX_THREAD_ATTR_STACKSIZE*/
     status = pthread_attr_setscope(&pthreadInfo->attr,PTHREAD_SCOPE_PROCESS);
-    if(errVerbose) checkStatus(status,"pthread_attr_setscope");
+    if(errVerbose) checkStatusOnce(status,"pthread_attr_setscope");
     pthreadInfo->osiPriority = priority;
 #if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) 
     status = pthread_attr_getschedparam(
         &pthreadInfo->attr,&pthreadInfo->schedParam);
-    if(errVerbose) checkStatus(status,"pthread_attr_getschedparam");
+    if(errVerbose) checkStatusOnce(status,"pthread_attr_getschedparam");
     pthreadInfo->schedParam.sched_priority = getOssPriorityValue(pthreadInfo);
     status = pthread_attr_setschedparam(
         &pthreadInfo->attr,&pthreadInfo->schedParam);
     if(status && errVerbose) {
-         errlogPrintf("threadCreate: pthread_attr_setschedparam failed %s",
+         fprintf(stderr,"threadCreate: pthread_attr_setschedparam failed %s",
              strerror(status));
-         errlogPrintf(" sched_priority %d\n",
+         fprintf(stderr," sched_priority %d\n",
              pthreadInfo->schedParam.sched_priority);
     }
     status = pthread_attr_setinheritsched(
         &pthreadInfo->attr,PTHREAD_EXPLICIT_SCHED);
-    if(errVerbose) checkStatus(status,"pthread_attr_setinheritsched");
+    if(errVerbose) checkStatusOnce(status,"pthread_attr_setinheritsched");
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
     pthreadInfo->suspendSem = semBinaryMustCreate(semEmpty);
     pthreadInfo->name = mallocMustSucceed(strlen(name)+1,"threadCreate");
@@ -149,40 +166,42 @@ static void once(void)
     onceMutex = semMutexMustCreate();
     listMutex = semMutexMustCreate();
     ellInit(&pthreadList);
-    pcommonAttr = callocMustSucceed(1,sizeof(commonAttr),"threadInit");
+    pcommonAttr = calloc(1,sizeof(commonAttr));
+    if(!pcommonAttr) checkStatusOnceQuit(errno,"calloc","threadInit");
     status = pthread_attr_init(&pcommonAttr->attr);
-    checkStatusQuit(status,"pthread_attr_init","threadInit");
+    checkStatusOnceQuit(status,"pthread_attr_init","threadInit");
     status = pthread_attr_setdetachstate(
         &pcommonAttr->attr, PTHREAD_CREATE_DETACHED);
-    checkStatus(status,"pthread_attr_setdetachstate");
+    checkStatusOnce(status,"pthread_attr_setdetachstate");
     status = pthread_attr_setscope(&pcommonAttr->attr,PTHREAD_SCOPE_PROCESS);
-    if(errVerbose) checkStatus(status,"pthread_attr_setscope");
+    if(errVerbose) checkStatusOnce(status,"pthread_attr_setscope");
 #if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) 
     status = pthread_attr_getschedpolicy(
         &pcommonAttr->attr,&pcommonAttr->schedPolicy);
-    checkStatus(status,"pthread_attr_getschedpolicy");
+    checkStatusOnce(status,"pthread_attr_getschedpolicy");
     status = pthread_attr_getschedparam(
         &pcommonAttr->attr,&pcommonAttr->schedParam);
-    checkStatus(status,"pthread_attr_getschedparam");
+    checkStatusOnce(status,"pthread_attr_getschedparam");
     pcommonAttr->maxPriority = sched_get_priority_max(pcommonAttr->schedPolicy);
     if(pcommonAttr->maxPriority == -1) {
         pcommonAttr->maxPriority = pcommonAttr->schedParam.sched_priority;
-        errlogPrintf("sched_get_priority_max failed set to %d\n",
+        fprintf(stderr,"sched_get_priority_max failed set to %d\n",
             pcommonAttr->maxPriority);
     }
     pcommonAttr->minPriority = sched_get_priority_min(pcommonAttr->schedPolicy);
     if(pcommonAttr->minPriority == -1) {
         pcommonAttr->minPriority = pcommonAttr->schedParam.sched_priority;
-        errlogPrintf("sched_get_priority_min failed set to %d\n",
+        fprintf(stderr,"sched_get_priority_min failed set to %d\n",
             pcommonAttr->maxPriority);
     }
 #else
-    if(errVerbose) errlogPrintf("task priorities are not implemented\n");
+    if(errVerbose) fprintf(stderr,"task priorities are not implemented\n");
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
     pthreadInfo = init_threadInfo("_main_",0,0,0,0);
     status = pthread_setspecific(getpthreadInfo,(void *)pthreadInfo);
-    checkStatusQuit(status,"pthread_setspecific","start_routine");
-    semMutexMustTake(listMutex);
+    checkStatusOnceQuit(status,"pthread_setspecific","threadInit");
+    status = semMutexTake(listMutex);
+    checkStatusOnceQuit(status,"semMutexTake","threadInit");
     ellAdd(&pthreadList,(ELLNODE *)pthreadInfo);
     semMutexGive(listMutex);
 }

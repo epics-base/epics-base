@@ -46,8 +46,6 @@
 #include <string.h>
 
 #include "alarm.h"
-#include "osiWatchdog.h"
-#include "osiClock.h"
 #include "callback.h"
 #include "dbDefs.h"
 #include "dbAccess.h"
@@ -76,38 +74,17 @@ struct {
 	NULL,
 	read_wf,
 	NULL};
-
-/* control block for callback*/
-struct callback {
-        CALLBACK        callback;
-        struct dbCommon *precord;
-        watchdogId wd_id;
-};
 
-static void myCallback(pcallback)
-    struct callback *pcallback;
-{
-    struct dbCommon *precord=pcallback->precord;
-    struct rset     *prset=(struct rset *)(precord->rset);
-
-    dbScanLock(precord);
-    (*prset->process)(precord);
-    dbScanUnlock(precord);
-}
-
 static long init_record(pwf)
     struct waveformRecord	*pwf;
 {
-    struct callback *pcallback;
+    CALLBACK *pcallback;
 
     /* wf.inp must be a CONSTANT*/
     switch (pwf->inp.type) {
     case (CONSTANT) :
-	pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
+	pcallback = (CALLBACK *)(calloc(1,sizeof(CALLBACK)));
 	pwf->dpvt = (void *)pcallback;
-	callbackSetCallback(myCallback,&pcallback->callback);
-        pcallback->precord = (struct dbCommon *)pwf;
-	pcallback->wd_id = watchdogCreate();
 	pwf->nord = 0;
 	break;
     default :
@@ -117,12 +94,11 @@ static long init_record(pwf)
     }
     return(0);
 }
-
+
 static long read_wf(pwf)
     struct waveformRecord	*pwf;
 {
-    struct callback *pcallback=(struct callback *)(pwf->dpvt);
-    int		wait_time;
+    CALLBACK *pcallback=(CALLBACK *)(pwf->dpvt);
 
     /* wf.inp must be a CONSTANT*/
     switch (pwf->inp.type) {
@@ -131,12 +107,11 @@ static long read_wf(pwf)
 		printf("%s Completed\n",pwf->name);
 		return(0); /* don`t convert*/
 	} else {
-		wait_time = (int)(pwf->disv * clockGetRate());
-		if(wait_time<=0) return(0);
-		callbackSetPriority(pwf->prio,&pcallback->callback);
-		printf("%s Starting asynchronous processing\n",pwf->name);
-		watchdogStart(pcallback->wd_id,wait_time,
-                    (WATCHDOGFUNC)callbackRequest,(void *)pcallback);
+                if(pwf->disv<=0) return(2);
+                printf("Starting asynchronous processing: %s\n",pwf->name);
+                pwf->pact=TRUE;
+                callbackRequestProcessCallbackDelayed(
+                    pcallback,pwf->prio,pwf,(double)pwf->disv);
 		pwf->pact=TRUE;
 		return(0);
 	}

@@ -46,8 +46,6 @@
 #include <stdio.h>
 
 #include "alarm.h"
-#include "osiWatchdog.h"
-#include "osiClock.h"
 #include "callback.h"
 #include "cvtTable.h"
 #include "dbDefs.h"
@@ -77,40 +75,17 @@ struct {
 	NULL,
 	write_ao,
 	NULL};
-
-/* control block for callback*/
-struct callback {
-	CALLBACK        callback;
-	struct dbCommon *precord;
-	watchdogId wd_id;
-};
 
-static void myCallback(pcallback)
-    struct callback *pcallback;
-{
-    struct dbCommon *precord=pcallback->precord;
-    struct rset     *prset=(struct rset *)(precord->rset);
-
-    dbScanLock(precord);
-    (*prset->process)(precord);
-    dbScanUnlock(precord);
-}
-    
-    
-
 static long init_record(pao)
     struct aoRecord	*pao;
 {
-    struct callback *pcallback;
+    CALLBACK *pcallback;
 
     /* ao.out must be a CONSTANT*/
     switch (pao->out.type) {
     case (CONSTANT) :
-	pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
+	pcallback = (CALLBACK *)(calloc(1,sizeof(CALLBACK)));
 	pao->dpvt = (void *)pcallback;
-	callbackSetCallback(myCallback,&pcallback->callback);
-	pcallback->precord = (struct dbCommon *)pao;
-	pcallback->wd_id = watchdogCreate();
 	break;
     default :
 	recGblRecordError(S_db_badField,(void *)pao,
@@ -119,12 +94,11 @@ static long init_record(pao)
     }
     return(2);
 }
-
+
 static long write_ao(pao)
     struct aoRecord	*pao;
 {
-    struct callback *pcallback=(struct callback *)(pao->dpvt);
-    int		wait_time;
+    CALLBACK *pcallback=(CALLBACK *)(pao->dpvt);
 
     /* ao.out must be a CONSTANT*/
     switch (pao->out.type) {
@@ -133,13 +107,11 @@ static long write_ao(pao)
 		printf("Completed asynchronous processing: %s\n",pao->name);
 		return(0);
 	} else {
-		wait_time = (int)(pao->disv * clockGetRate());
-		if(wait_time<=0) return(0);
-		callbackSetPriority(pao->prio,&pcallback->callback);
+                if(pao->disv<=0) return(0);
 		printf("Starting asynchronous processing: %s\n",pao->name);
-		watchdogStart(pcallback->wd_id,wait_time,
-                    (WATCHDOGFUNC)callbackRequest,(void *)pcallback);
 		pao->pact=TRUE;
+                callbackRequestProcessCallbackDelayed(
+                    pcallback,pao->prio,pao,(double)pao->disv);
 		return(0);
 	}
     default :

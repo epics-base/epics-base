@@ -41,8 +41,6 @@
 #include <string.h>
 
 #include "alarm.h"
-#include "osiWatchdog.h"
-#include "osiClock.h"
 #include "callback.h"
 #include "cvtTable.h"
 #include "dbDefs.h"
@@ -72,38 +70,17 @@ struct {
 	NULL,
 	read_histogram,
 	NULL};
-
-/* control block for callback*/
-struct callback {
-        CALLBACK        callback;
-        struct dbCommon *precord;
-        watchdogId wd_id;
-};
 
-static void myCallback(pcallback)
-    struct callback *pcallback;
-{
-    struct dbCommon *precord=pcallback->precord;
-    struct rset     *prset=(struct rset *)(precord->rset);
-
-    dbScanLock(precord);
-    (*prset->process)(precord);
-    dbScanUnlock(precord);
-}
-
 static long init_record(phistogram)
     struct histogramRecord	*phistogram;
 {
-    struct callback *pcallback;
+    CALLBACK *pcallback;
 
     /* histogram.svl must be a CONSTANT*/
     switch (phistogram->svl.type) {
     case (CONSTANT) :
-	pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
+	pcallback = (CALLBACK *)(calloc(1,sizeof(CALLBACK)));
 	phistogram->dpvt = (void *)pcallback;
-	callbackSetCallback(myCallback,&pcallback->callback);
-        pcallback->precord = (struct dbCommon *)phistogram;
-	pcallback->wd_id = watchdogCreate();
         if(recGblInitConstantLink(&phistogram->svl,DBF_DOUBLE,&phistogram->sgnl))
             phistogram->udf = FALSE;
 	break;
@@ -118,8 +95,7 @@ static long init_record(phistogram)
 static long read_histogram(phistogram)
     struct histogramRecord	*phistogram;
 {
-    struct callback *pcallback=(struct callback *)(phistogram->dpvt);
-    int		wait_time;
+    CALLBACK *pcallback=(CALLBACK *)(phistogram->dpvt);
 
     /* histogram.svl must be a CONSTANT*/
     switch (phistogram->svl.type) {
@@ -128,13 +104,13 @@ static long read_histogram(phistogram)
 		printf("%s Completed\n",phistogram->name);
 		return(0); /*add count*/
 	} else {
-		wait_time = (int)(phistogram->disv * clockGetRate());
-		if(wait_time<=0) return(0);
-		callbackSetPriority(phistogram->prio,&pcallback->callback);
-		printf("%s Starting asynchronous processing\n",phistogram->name);
-		watchdogStart(pcallback->wd_id,wait_time,
-                    (WATCHDOGFUNC)callbackRequest,(void *)pcallback);
-		phistogram->pact=TRUE;
+                if(phistogram->disv<=0) return(2);
+                printf("Starting asynchronous processing: %s\n",
+                    phistogram->name);
+                phistogram->pact=TRUE;
+                callbackRequestProcessCallbackDelayed(
+                    pcallback,phistogram->prio,phistogram,
+                    (double)phistogram->disv);
 		return(0);
 	}
     default :

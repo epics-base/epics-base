@@ -46,8 +46,6 @@
 #include <string.h>
 
 #include "alarm.h"
-#include "osiWatchdog.h"
-#include "osiClock.h"
 #include "callback.h"
 #include "dbDefs.h"
 #include "dbAccess.h"
@@ -76,40 +74,17 @@ struct {
 	NULL,
 	read_bi,
 	NULL};
-
-/* control block for callback*/
-struct callback {
-	CALLBACK        callback;
-	struct dbCommon *precord;
-	watchdogId wd_id;
-};
-
 
-static void myCallback(pcallback)
-    struct callback *pcallback;
-{
-    struct dbCommon *precord=pcallback->precord;
-    struct rset     *prset=(struct rset *)(precord->rset);
-
-    dbScanLock(precord);
-    (*prset->process)(precord);
-    dbScanUnlock(precord);
-}
-    
-
 static long init_record(pbi)
     struct biRecord	*pbi;
 {
-    struct callback *pcallback;
+    CALLBACK *pcallback;
 
     /* bi.inp must be a CONSTANT*/
     switch (pbi->inp.type) {
     case (CONSTANT) :
-	pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
+	pcallback = (CALLBACK *)(calloc(1,sizeof(CALLBACK)));
 	pbi->dpvt = (void *)pcallback;
-	callbackSetCallback(myCallback,&pcallback->callback);
-	pcallback->precord = (struct dbCommon *)pbi;
-	pcallback->wd_id = watchdogCreate();
 	if(recGblInitConstantLink(&pbi->inp,DBF_ENUM,&pbi->val))
 	    pbi->udf = FALSE;
 	break;
@@ -120,12 +95,11 @@ static long init_record(pbi)
     }
     return(0);
 }
-
+
 static long read_bi(pbi)
     struct biRecord	*pbi;
 {
-    struct callback *pcallback=(struct callback *)(pbi->dpvt);
-    int		wait_time;
+    CALLBACK *pcallback=(CALLBACK *)(pbi->dpvt);
 
     /* bi.inp must be a CONSTANT*/
     switch (pbi->inp.type) {
@@ -134,13 +108,11 @@ static long read_bi(pbi)
 		printf("%s Completed\n",pbi->name);
 		return(2); /* don't convert */
 	} else {
-		wait_time = (int)(pbi->disv * clockGetRate());
-		if(wait_time<=0) return(0);
-		callbackSetPriority(pbi->prio,&pcallback->callback);
-		printf("%s Starting asynchronous processing\n",pbi->name);
-		watchdogStart(pcallback->wd_id,wait_time,
-                    (WATCHDOGFUNC)callbackRequest,(void *)pcallback);
-		pbi->pact=TRUE;	
+                if(pbi->disv<=0) return(2);
+                printf("Starting asynchronous processing: %s\n",pbi->name);
+                pbi->pact=TRUE;
+                callbackRequestProcessCallbackDelayed(
+                    pcallback,pbi->prio,pbi,(double)pbi->disv);
 		return(0);
 	}
     default :

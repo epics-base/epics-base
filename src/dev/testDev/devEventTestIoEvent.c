@@ -38,14 +38,14 @@
 #include <string.h>
 
 #include "dbDefs.h"
-#include "osiWatchdog.h"
 #include "dbAccess.h"
+#include "callback.h"
 #include "dbScan.h"
 #include "recSup.h"
 #include "devSup.h"
 #include "eventRecord.h"
 /* Create the dset for devEventTestIoEvent */
-static long init();
+static long init_record();
 static long get_ioint_info();
 static long read_event();
 struct {
@@ -58,45 +58,59 @@ struct {
 }devEventTestIoEvent={
 	5,
 	NULL,
-	init,
 	NULL,
+	init_record,
 	get_ioint_info,
 	read_event
 };
 
-static IOSCANPVT ioscanpvt;
-watchdogId wd_id=NULL;
-
-static long init(after)
-int after;
+typedef struct myCallback {
+    CALLBACK callback;
+    IOSCANPVT ioscanpvt;
+}myCallback;
+
+static void myCallbackFunc(CALLBACK *arg)
 {
-    if(after) return(0);
-    scanIoInit(&ioscanpvt);
-    return(0);
+    myCallback *pcallback;
+
+    callbackGetUser(pcallback,arg);
+    scanIoRequest(pcallback->ioscanpvt);
 }
 
+
+static long init_record(pevent,pass)
+    eventRecord *pevent;
+    int pass;
+{
+    myCallback *pcallback;
+
+    pcallback = (myCallback *)(calloc(1,sizeof(myCallback)));
+    scanIoInit(&pcallback->ioscanpvt);
+    callbackSetCallback(myCallbackFunc,&pcallback->callback);
+    callbackSetUser(pcallback,&pcallback->callback);
+    pevent->dpvt = (void *)pcallback;
+    return(0);
+}
 
 static long get_ioint_info(
 	int 			cmd,
-	struct eventRecord 	*pr,
+	struct eventRecord 	*pevent,
 	IOSCANPVT		*ppvt)
 {
+    myCallback *pcallback = (myCallback *)pevent->dpvt;
 
-    *ppvt = ioscanpvt;
+    *ppvt = pcallback->ioscanpvt;
     return(0);
 }
-
+    
 static long read_event(pevent)
     struct eventRecord	*pevent;
 {
-	int	wait_time;
+    myCallback *pcallback= (myCallback *)pevent->dpvt;
 
-	wait_time = (int)pevent->proc;
-	if(wait_time<=0) return(0);
-	pevent->udf = FALSE;
-	if(wd_id==NULL) wd_id = watchdogCreate();
-	printf("%s Requesting Next ioEnevt\n",pevent->name);
-        watchdogStart(wd_id,wait_time,
-            (WATCHDOGFUNC)scanIoRequest,(void *)ioscanpvt);
-	return(0);
+    if(pevent->proc<=0) return(0);
+    pevent->udf = FALSE;
+    printf("%s Requesting Next ioEnevt\n",pevent->name);
+    callbackRequestDelayed(&pcallback->callback,(double)pevent->proc);
+    return(0);
 }

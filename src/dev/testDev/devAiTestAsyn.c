@@ -44,8 +44,6 @@
 #include <string.h>
 
 #include "alarm.h"
-#include "osiWatchdog.h"
-#include "osiClock.h"
 #include "callback.h"
 #include "cvtTable.h"
 #include "dbDefs.h"
@@ -75,39 +73,16 @@ struct {
 	NULL,
 	read_ai,
 	NULL};
-
-/* control block for callback*/
-struct callback {
-	CALLBACK	callback;
-	struct dbCommon *precord;
-	watchdogId wd_id;
-};
-
 
-static void myCallback(pcallback)
-    struct callback *pcallback;
-{
-    struct dbCommon *precord=pcallback->precord;
-    struct rset     *prset=(struct rset *)(precord->rset);
-
-    dbScanLock(precord);
-    (*prset->process)(precord);
-    dbScanUnlock(precord);
-}
-
 static long init_record(pai)
     struct aiRecord	*pai;
 {
-    struct callback *pcallback;
-
+    CALLBACK *pcallback;
     /* ai.inp must be a CONSTANT*/
     switch (pai->inp.type) {
     case (CONSTANT) :
-	pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
+	pcallback = (CALLBACK *)(calloc(1,sizeof(CALLBACK)));
 	pai->dpvt = (void *)pcallback;
-	callbackSetCallback(myCallback,&pcallback->callback);
-	pcallback->precord = (struct dbCommon *)pai;
-	pcallback->wd_id = watchdogCreate();
 	if(recGblInitConstantLink(&pai->inp,DBF_DOUBLE,&pai->val))
 	    pai->udf = FALSE;
 	break;
@@ -118,13 +93,11 @@ static long init_record(pai)
     }
     return(0);
 }
-
+
 static long read_ai(pai)
     struct aiRecord	*pai;
 {
-    struct callback *pcallback=(struct callback *)(pai->dpvt);
-    int		wait_time;
-
+    CALLBACK *pcallback = (CALLBACK *)pai->dpvt;
     /* ai.inp must be a CONSTANT*/
     switch (pai->inp.type) {
     case (CONSTANT) :
@@ -132,13 +105,11 @@ static long read_ai(pai)
 		printf("Completed asynchronous processing: %s\n",pai->name);
 		return(2); /* don`t convert*/
 	} else {
-		wait_time = (int)(pai->disv * clockGetRate());
-		if(wait_time<=0) return(2);
-		callbackSetPriority(pai->prio,&pcallback->callback);
+                if(pai->disv<=0) return(2);
 		printf("Starting asynchronous processing: %s\n",pai->name);
-		watchdogStart(pcallback->wd_id,wait_time,
-                    (WATCHDOGFUNC)callbackRequest,(void *)pcallback);
 		pai->pact=TRUE;
+                callbackRequestProcessCallbackDelayed(
+                    pcallback,pai->prio,pai,(double)pai->disv);
     		return(0);
 	}
     default :

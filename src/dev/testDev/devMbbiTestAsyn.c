@@ -46,8 +46,6 @@
 #include <string.h>
 
 #include "alarm.h"
-#include "osiWatchdog.h"
-#include "osiClock.h"
 #include "callback.h"
 #include "dbDefs.h"
 #include "dbAccess.h"
@@ -76,39 +74,17 @@ struct {
 	NULL,
 	read_mbbi,
 	NULL};
-
-/* control block for callback*/
-struct callback {
-        CALLBACK        callback;
-        struct dbCommon *precord;
-        watchdogId wd_id;
-};
 
-static void myCallback(pcallback)
-    struct callback *pcallback;
-{
-    struct dbCommon *precord=pcallback->precord;
-    struct rset     *prset=(struct rset *)(precord->rset);
-
-    dbScanLock(precord);
-    (*prset->process)(precord);
-    dbScanUnlock(precord);
-}
-    
-
 static long init_record(pmbbi)
     struct mbbiRecord	*pmbbi;
 {
-    struct callback *pcallback;
+    CALLBACK *pcallback;
 
     /* mbbi.inp must be a CONSTANT*/
     switch (pmbbi->inp.type) {
     case (CONSTANT) :
-	pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
+	pcallback = (CALLBACK *)(calloc(1,sizeof(CALLBACK)));
 	pmbbi->dpvt = (void *)pcallback;
-	callbackSetCallback(myCallback,&pcallback->callback);
-        pcallback->precord = (struct dbCommon *)pmbbi;
-	pcallback->wd_id = watchdogCreate();
 	if(recGblInitConstantLink(&pmbbi->inp,DBF_ENUM,&pmbbi->val))
 	    pmbbi->udf = FALSE;
 	break;
@@ -119,12 +95,11 @@ static long init_record(pmbbi)
     }
     return(0);
 }
-
+
 static long read_mbbi(pmbbi)
     struct mbbiRecord	*pmbbi;
 {
-    struct callback *pcallback=(struct callback *)(pmbbi->dpvt);
-    int		wait_time;
+    CALLBACK *pcallback=(CALLBACK *)(pmbbi->dpvt);
 
     /* mbbi.inp must be a CONSTANT*/
     switch (pmbbi->inp.type) {
@@ -133,13 +108,11 @@ static long read_mbbi(pmbbi)
 		printf("%s Completed\n",pmbbi->name);
 		return(2); /* don't convert */
 	} else {
-		wait_time = (int)(pmbbi->disv * clockGetRate());
-		if(wait_time<=0) return(0);
-		callbackSetPriority(pmbbi->prio,&pcallback->callback);
-		printf("%s Starting asynchronous processing\n",pmbbi->name);
-                watchdogStart(pcallback->wd_id,wait_time,
-                    (WATCHDOGFUNC)callbackRequest,(void *)pcallback);
-		pmbbi->pact=TRUE;
+                if(pmbbi->disv<=0) return(2);
+                printf("Starting asynchronous processing: %s\n",pmbbi->name);
+                pmbbi->pact=TRUE;
+                callbackRequestProcessCallbackDelayed(
+                    pcallback,pmbbi->prio,pmbbi,(double)pmbbi->disv);
 		return(0);
 	}
     default :

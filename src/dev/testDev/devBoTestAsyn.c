@@ -46,8 +46,6 @@
 #include <string.h>
 
 #include "alarm.h"
-#include "osiWatchdog.h"
-#include "osiClock.h"
 #include "callback.h"
 #include "cvtTable.h"
 #include "dbDefs.h"
@@ -77,39 +75,17 @@ struct {
 	NULL,
 	write_bo,
 	NULL};
-
-/* control block for callback*/
-struct callback {
-        CALLBACK        callback;
-        struct dbCommon *precord;
-        watchdogId wd_id;
-};
 
-static void myCallback(pcallback)
-    struct callback *pcallback;
-{
-    struct dbCommon *precord=pcallback->precord;
-    struct rset     *prset=(struct rset *)(precord->rset);
-
-    dbScanLock(precord);
-    (*prset->process)(precord);
-    dbScanUnlock(precord);
-}
-
-
 static long init_record(pbo)
     struct boRecord	*pbo;
 {
-    struct callback *pcallback;
+    CALLBACK *pcallback;
 
     /* bo.out must be a CONSTANT*/
     switch (pbo->out.type) {
     case (CONSTANT) :
-	pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
+	pcallback = (CALLBACK *)(calloc(1,sizeof(CALLBACK)));
 	pbo->dpvt = (void *)pcallback;
-	callbackSetCallback(myCallback,&pcallback->callback);
-	pcallback->precord = (struct dbCommon *)pbo;
-	pcallback->wd_id = watchdogCreate();
 	break;
     default :
 	recGblRecordError(S_db_badField,(void *)pbo,
@@ -118,12 +94,11 @@ static long init_record(pbo)
     }
     return(2);
 }
-
+
 static long write_bo(pbo)
     struct boRecord	*pbo;
 {
-    struct callback *pcallback=(struct callback *)(pbo->dpvt);
-    int		wait_time;
+    CALLBACK *pcallback=(CALLBACK *)(pbo->dpvt);
 
     /* bo.out must be a CONSTANT*/
     switch (pbo->out.type) {
@@ -132,13 +107,11 @@ static long write_bo(pbo)
 		printf("%s Completed\n",pbo->name);
 		return(0);
 	} else {
-		wait_time = (int)(pbo->disv * clockGetRate());
-		if(wait_time<=0) return(0);
-		callbackSetPriority(pbo->prio,&pcallback->callback);
-		printf("%s Starting asynchronous processing\n",pbo->name);
-                watchdogStart(pcallback->wd_id,wait_time,
-                    (WATCHDOGFUNC)callbackRequest,(void *)pcallback);
-		pbo->pact=TRUE;
+                if(pbo->disv<=0) return(2);
+                printf("Starting asynchronous processing: %s\n",pbo->name);
+                pbo->pact=TRUE;
+                callbackRequestProcessCallbackDelayed(
+                    pcallback,pbo->prio,pbo,(double)pbo->disv);
 		return(0);
 	}
     default :

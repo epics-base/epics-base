@@ -45,8 +45,6 @@
 #include <string.h>
 
 #include "alarm.h"
-#include "osiWatchdog.h"
-#include "osiClock.h"
 #include "callback.h"
 #include "dbDefs.h"
 #include "dbAccess.h"
@@ -75,39 +73,17 @@ struct {
 	NULL,
 	read_stringin,
 	NULL};
-
-/* control block for callback*/
-struct callback {
-        CALLBACK        callback;
-        struct dbCommon *precord;
-        watchdogId wd_id;
-};
 
-static void myCallback(pcallback)
-    struct callback *pcallback;
-{
-    struct dbCommon *precord=pcallback->precord;
-    struct rset     *prset=(struct rset *)(precord->rset);
-
-    dbScanLock(precord);
-    (*prset->process)(precord);
-    dbScanUnlock(precord);
-}
-    
-
 static long init_record(pstringin)
     struct stringinRecord	*pstringin;
 {
-    struct callback *pcallback;
+    CALLBACK *pcallback;
 
     /* stringin.inp must be a CONSTANT*/
     switch (pstringin->inp.type) {
     case (CONSTANT) :
-	pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
+	pcallback = (CALLBACK *)(calloc(1,sizeof(CALLBACK)));
 	pstringin->dpvt = (void *)pcallback;
-	callbackSetCallback(myCallback,&pcallback->callback);
-        pcallback->precord = (struct dbCommon *)pstringin;
-	pcallback->wd_id = watchdogCreate();
 	if(recGblInitConstantLink(&pstringin->inp,DBF_STRING,pstringin->val))
 	    pstringin->udf = FALSE;
 	break;
@@ -122,8 +98,7 @@ static long init_record(pstringin)
 static long read_stringin(pstringin)
     struct stringinRecord	*pstringin;
 {
-    struct callback *pcallback=(struct callback *)(pstringin->dpvt);
-    int		wait_time;
+    CALLBACK *pcallback=(CALLBACK *)(pstringin->dpvt);
 
     /* stringin.inp must be a CONSTANT*/
     switch (pstringin->inp.type) {
@@ -132,13 +107,13 @@ static long read_stringin(pstringin)
 		printf("%s Completed\n",pstringin->name);
 		return(0);
 	} else {
-		wait_time = (int)(pstringin->disv * clockGetRate());
-		if(wait_time<=0) return(0);
-		callbackSetPriority(pstringin->prio,&pcallback->callback);
-		printf("%s Starting asynchronous processing\n",pstringin->name);
-		watchdogStart(pcallback->wd_id,wait_time,
-                    (WATCHDOGFUNC)callbackRequest,(void *)pcallback);
-		pstringin->pact=TRUE;
+                if(pstringin->disv<=0) return(2);
+                printf("Starting asynchronous processing: %s\n",
+                    pstringin->name);
+                pstringin->pact=TRUE;
+                callbackRequestProcessCallbackDelayed(
+                    pcallback,pstringin->prio,pstringin,
+                    (double)pstringin->disv);
 		return(0);
 	}
     default :

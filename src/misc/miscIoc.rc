@@ -2,8 +2,8 @@
 #include "epicsVersion.h"
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION BASE_VERSION,BASE_REVISION,BASE_MODIFICATION,BASE_UPDATE_LEVEL
- PRODUCTVERSION BASE_VERSION,BASE_REVISION,BASE_MODIFICATION,BASE_UPDATE_LEVEL
+ FILEVERSION EPICS_VERSION,EPICS_REVISION,EPICS_MODIFICATION,EPICS_UPDATE_LEVEL
+ PRODUCTVERSION EPICS_VERSION,EPICS_REVISION,EPICS_MODIFICATION,EPICS_UPDATE_LEVEL
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -21,12 +21,12 @@ BEGIN
             VALUE "Comments","Miscellaneous Ioc Tools Library for EPICS\0"
             VALUE "CompanyName", "The EPICS collaboration\0"
             VALUE "FileDescription", "Miscellaneous Ioc Tools Library\0"
-            VALUE "FileVersion", BASE_VERSION_STRING "\0"
+            VALUE "FileVersion", EPICS_VERSION_STRING "\0"
             VALUE "InternalName", "miscIoc\0"
             VALUE "LegalCopyright", "Copyright (C) Univ. of California, Univ. of Chicago\0"
             VALUE "OriginalFilename", "miscIoc.dll\0"
             VALUE "ProductName", "Experimental Physics and Industrial Control System (EPICS)\0"
-            VALUE "ProductVersion", BASE_VERSION_STRING "\0"
+            VALUE "ProductVersion", EPICS_VERSION_STRING "\0"
         END
     END
     BLOCK "VarFileInfo"

@@ -7,6 +7,9 @@
 // Some BSD calls have crept in here
 //
 // $Log$
+// Revision 1.2  1996/07/24 22:03:36  jhill
+// fixed net proto for gnu compiler
+//
 // Revision 1.1.1.1  1996/06/20 00:28:18  jhill
 // ca server installation
 //
@@ -26,7 +29,6 @@ extern "C" {
 #include <netinet/tcp.h>
 #ifndef SUNOS4 // func proto do not have args for C++ (under sunos4)
 #include <arpa/inet.h>
-#include <netdb.h>
 #endif
 
 #ifdef __cplusplus

@@ -51,7 +51,7 @@ unsigned comQueRecv::occupiedBytes () const
         // copyIn ( comBuf & bufIn )
         nBytes = this->bufs.first ()->occupiedBytes ();
         nBytes += this->bufs.last ()->occupiedBytes ();
-        nBytes += ( count - 2u ) * comBuf::maxBytes ();
+        nBytes += ( count - 2u ) * comBuf::capacityBytes ();
     }
 
     return nBytes;

@@ -37,7 +37,7 @@
 //
 // Implementation:
 // 1) When queuing a complete message, first test to see if a flush is 
-// required. If it is a receive thread schedual the flush with the
+// required. If it is a receive thread scheduals the flush with the
 // send thread, and otherwise directly execute the system call. The
 // send thread must run at a higher priority than the receive thread
 // if we are to minimize memory consumption.
@@ -61,6 +61,7 @@
 #include "comQueSend_IL.h"
 
 tsFreeList < class comBuf, 0x20 > comBuf::freeList;
+epicsMutex comBuf::freeListMutex;
 
 comQueSend::comQueSend ( wireSendAdapter & wireIn ) :
     wire ( wireIn ), nBytesPending ( 0u )
@@ -102,7 +103,7 @@ int comQueSend::reserveSpace ( unsigned msgSize )
 
     while ( bytesReserved < msgSize ) {
         if ( reservoir.addOneBuffer () ) {
-            bytesReserved += comBuf::maxBytes ();
+            bytesReserved += comBuf::capacityBytes ();
         }
         else {
             return ECA_ALLOCMEM;

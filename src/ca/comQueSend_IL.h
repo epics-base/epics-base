@@ -44,7 +44,7 @@ inline bool bufferReservoir::addOneBuffer ()
 
 inline unsigned bufferReservoir::nBytes ()
 {
-    return ( this->reservedBufs.count () * comBuf::maxBytes () );
+    return ( this->reservedBufs.count () * comBuf::capacityBytes () );
 }
 
 inline void bufferReservoir::drain ()
@@ -181,7 +181,7 @@ inline unsigned comQueSend::occupiedBytes () const
 
 inline bool comQueSend::flushThreshold ( unsigned nBytesThisMsg ) const
 {
-    return ( this->nBytesPending + nBytesThisMsg > 4 * comBuf::maxBytes () );
+    return ( this->nBytesPending + nBytesThisMsg > 4 * comBuf::capacityBytes () );
 }
 
 inline comBuf * comQueSend::popNextComBufToSend ()

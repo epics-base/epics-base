@@ -28,7 +28,8 @@ typedef struct pnRestartNode {
         ELLNODE         node;
         struct putNotify *ppn;
         struct putNotify *ppnrestartList; /*ppn with restartList*/
-}PNRESTARTNODE;
+}pnRestartNode;
+typedef pnRestartNode PNRESTARTNODE;
  
  
 typedef struct putNotify{
@@ -49,7 +50,8 @@ typedef struct putNotify{
         short           restart;
         short           callbackState;
         void            *waitForCallback;
-}PUTNOTIFY;
+}putNotify;
+typedef putNotify PUTNOTIFY;
 
 epicsShareFunc int epicsShareAPI dbPutNotifyMapType (PUTNOTIFY *ppn, short oldtype);
 

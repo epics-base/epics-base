@@ -54,6 +54,7 @@
 #include "errlog.h"
 #include "ellLib.h"
 #include "tsStamp.h"
+#include "pvAdapter.h"
 #include "dbStaticLib.h"
 #include "dbBase.h"
 #include "dbCommon.h"
@@ -63,6 +64,7 @@
 #define epicsExportSharedSymbols
 #include "dbNotify.h"
 #include "dbAccessDefs.h"
+#include "dbEvent.h"
 #include "db_access_routines.h"
 
 #ifndef NULL
@@ -1606,6 +1608,135 @@ int		no_elements
     }
     if(status) return(-1);
     return(0);
+}
+
+pvId pvNameToId(const char *pname)
+{
+    int status;
+    dbAddr addr;
+    dbAddr *paddr;
+    status = db_name_to_addr(pname, &addr);
+    if(status) return(0);
+    paddr = dbCalloc(1,sizeof(dbAddr));
+    *paddr = addr;
+    return(paddr);
+}
+
+int pvPutField(pvId id, int src_type,
+                const void *psrc, int no_elements)
+{
+    dbAddr *pdbAddr = (dbAddr *)id;
+    return(db_put_field(pdbAddr,src_type,psrc,no_elements));
+}
+
+int pvGetField(pvId id, int dest_type,
+                void *pdest, int no_elements, void *pfl)
+{
+    dbAddr *pdbAddr = (dbAddr *)id;
+    return(db_get_field(pdbAddr,dest_type,pdest,no_elements,pfl));
+}
+
+long pvPutNotifyInitiate(pvId id, unsigned type, unsigned long count,
+    const void *pValue, putNotifyCallback func, void *usrPvt, putNotifyId * pID)
+{
+    return( dbPutNotifyInitiate(
+        (dbAddr *)id,type,count,pValue,func,usrPvt,(dbPutNotifyID *)pID));
+}
+
+void pvPutNotifyDestroy(putNotifyId id)
+{
+    dbPutNotifyDestroy((dbPutNotifyID)id);
+}
+
+const char * pvName(pvId id)
+{
+    dbAddr *pdbAddr = (dbAddr *)id;
+    return(pdbAddr->precord->name);
+}
+
+unsigned long pvNoElements(pvId id)
+{
+    dbAddr *pdbAddr = (dbAddr *)id;
+    return(pdbAddr->no_elements);
+}
+
+short pvType(pvId id)
+{
+    dbAddr *pdbAddr = (dbAddr *)id;
+    return(pdbAddr->dbr_field_type);
+}
+
+void * pvEventQueueInit(void)
+{
+    return((void *)db_init_events());
+}
+
+int pvEventQueueStart(void *id, const char *taskname,
+    eventQueueInit initFunc, void *init_func_arg, int priority_offset)
+{
+    return(db_start_events(
+        (dbEventCtx)id,taskname,initFunc,init_func_arg,priority_offset));
+}
+
+void pvEventQueueClose(void * id)
+{
+    db_close_events((dbEventCtx)id);
+}
+
+int pvEventQueuePostSingleEvent(void *es)
+{
+    db_post_single_event((dbEventSubscription)es);
+printf("pvEventQueuePostSingleEvent why does this return int\n");
+    return(0);
+}
+
+void * pvEventQueueAddEvent(void *ctx, pvId id,
+    eventQueueEventUser func, void *user_arg, unsigned select)
+{
+    return((void *)db_add_event(
+        (dbEventCtx)ctx,(dbAddr *)id,(EVENTFUNC*)func,user_arg,select));
+}
+
+void pvEventQueueCancelEvent(void *es)
+{
+    db_cancel_event((dbEventSubscription)es);
+}
+
+int pvEventQueueAddExtraLaborEvent(void *ctx,
+    eventQueueExtraLaborUser func, void *arg)
+{
+    return(db_add_extra_labor_event((dbEventCtx)ctx,func,arg));
+}
+
+int pvEventQueuePostExtraLabor(void *ctx)
+{
+    return(db_post_extra_labor((dbEventCtx)ctx));
+}
+
+
+static pvAdapter adapter = {
+    pvNameToId,
+    pvPutField,
+    pvGetField,
+    pvPutNotifyInitiate,
+    pvPutNotifyDestroy,
+    pvName,
+    pvNoElements,
+    pvType,
+    pvEventQueueInit,
+    pvEventQueueStart,
+    pvEventQueueClose,
+    pvEventQueuePostSingleEvent,
+    pvEventQueueAddEvent,
+    pvEventQueueCancelEvent,
+    pvEventQueueAddExtraLaborEvent,
+    pvEventQueuePostExtraLabor
+};
+
+
+epicsShareFunc void epicsShareAPI db_attach_pvAdapter(void)
+{
+printf("db_attach_pvAdapter I dont know what to call\n");
 }
 
 epicsShareFunc int epicsShareAPI dbPutNotifyMapType (PUTNOTIFY *ppn, short oldtype)

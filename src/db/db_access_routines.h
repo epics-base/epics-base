@@ -43,6 +43,8 @@ epicsShareFunc int epicsShareAPI db_put_field(
 epicsShareFunc int epicsShareAPI db_get_field(
     DBADDR *paddr, int dest_type,void *pdest, int no_elements, void *pfl);
 
+epicsShareFunc void epicsShareAPI db_attach_pvAdapter(void);
+
 
 #ifdef __cplusplus
 }

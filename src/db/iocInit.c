@@ -79,8 +79,10 @@ of this distribution.
 #include "errMdef.h"
 #include "recSup.h"
 #include "envDefs.h"
-#include "rsrv.h"
+epicsShareFunc int epicsShareAPI rsrv_init (void);
+epicsShareFunc int epicsShareAPI asInit (void);
 #include "dbStaticLib.h"
+#include "db_access_routines.h"
 #include "initHooks.h"
 
 LOCAL int initialized=FALSE;
@@ -145,6 +147,7 @@ int iocInit()
 
    /*  Start up CA server */
     rsrv_init();
+    db_attach_pvAdapter();
 
     errlogPrintf("iocInit: All initialization complete\n");
     initHooks(initHookAtEnd);

@@ -68,7 +68,7 @@ typedef struct pnWaitNode {
 /*Local routines*/
 static void restartAdd(PUTNOTIFY *ppnto, PUTNOTIFY *ppnfrom);
 static void waitAdd(struct dbCommon *precord,PUTNOTIFY *ppn);
-static long putNotify(PUTNOTIFY *ppn);
+static long doPutNotify(PUTNOTIFY *ppn);
 static void notifyCallback(CALLBACK *pcallback);
 static void notifyCancel(PUTNOTIFY *ppn);
 static void issueCallback(PUTNOTIFY *ppn);
@@ -153,12 +153,12 @@ long epicsShareAPI dbPutNotify(PUTNOTIFY *ppn)
     dbScanLock(precord);
     ellInit(&ppn->restartList);
     memset(&ppn->restartNode,'\0',sizeof(PNRESTARTNODE));
-    status = putNotify(ppn);
+    status = doPutNotify(ppn);
     dbScanUnlock(precord);
     return(status);
 }
 
-static long putNotify(PUTNOTIFY *ppn)
+static long doPutNotify(PUTNOTIFY *ppn)
 {
     struct dbAddr *paddr = ppn->paddr;
     short	dbrType = ppn->dbrType;
@@ -237,7 +237,7 @@ static void notifyCallback(CALLBACK *pcallback)
     }
     if(ppn->callbackState==callbackActive) {
 	if(ppn->restart) {
-	    putNotify(ppn);
+	    doPutNotify(ppn);
 	    dbScanUnlock(precord);
 	} else {
 	    dbScanUnlock(precord);
@@ -460,3 +460,4 @@ epicsShareFunc void epicsShareAPI dbPutNotifyDestroy (dbPutNotifyID idIn)
 }
 
 #endif
+

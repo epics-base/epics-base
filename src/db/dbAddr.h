@@ -20,6 +20,8 @@ typedef struct dbAddr{
         short   special;        /* special processing                   */
         short   dbr_field_type; /* field type as seen by database request*/
                                 /*DBR_STRING,...,DBR_ENUM,DBR_NOACCESS*/
-}DBADDR;
+}dbAddr;
+
+typedef dbAddr DBADDR;
 
 #endif /* dbAddrh */

@@ -136,9 +136,10 @@ endif
 
 %.c: %.stt
 	@echo "converting $<
-	@$(RM) $@
-	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $<
-
+	ln -s $< $*.st
+	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.st
+	@$(RM) $*.st
+ 
 # Capfast Rules:
 %.db: %.edf
 	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) $<

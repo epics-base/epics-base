@@ -437,9 +437,10 @@ endif
 	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.i
 
 %.c:	%.stt
-	@echo "converting $<"
-	@$(RM) $@
-	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $<
+	@echo "converting $<
+	ln -s $< $*.st
+	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.st
+	@$(RM) $*.st
 	
 # Capfast Rules:
 %.db: %.edf

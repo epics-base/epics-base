@@ -5,17 +5,14 @@
 
 < envPaths
 
-cd ${TOP}
-
 ## Register all support components
-dbLoadDatabase("dbd/_APPNAME_.dbd")
+dbLoadDatabase("../../dbd/_APPNAME_.dbd")
 _APPNAME__registerRecordDeviceDriver(pdbbase)
 
 ## Load record instances
-dbLoadRecords("db/xxMedmDemo.db","user=_USER_")
-dbLoadRecords("db/xxVirtualLinac.db","user=_USER_")
+dbLoadRecords("../../db/xxMedmDemo.db","user=_USER_")
+dbLoadRecords("../../db/xxVirtualLinac.db","user=_USER_")
 
-cd ${TOP}/iocBoot/${IOC}
 iocInit()
 
 ## Start any sequence programs

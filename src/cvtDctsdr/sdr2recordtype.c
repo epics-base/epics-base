@@ -259,6 +259,7 @@ gen_rectype:
 	if(pfldDes->field_type==DBF_NOACCESS) {
 	    char	*prtn;
 	    char	fldname[5];
+	    char	*ptemp;
 
 	    strcpy(fldname,pfldDes->fldname);
 	    pstr = fldname;
@@ -277,8 +278,21 @@ gen_rectype:
 			    pfldDes->fldname,recordtypeInclude);
 		    break;
 		}
-		if(!(pstr = strstr(includeLine,fldname))) continue;
-		if(isalnum(*(pstr + strlen(fldname)))) continue;
+		ptemp = &includeLine[0];
+		while(TRUE) {
+		    if(!ptemp) break;
+		    if(!(pstr = strstr(ptemp,fldname))) {
+			ptemp = NULL;
+			break;
+		    }
+		    if(isalnum(*(pstr-1))
+		    || isalnum(*(pstr + strlen(fldname)))) {
+			ptemp = pstr + 1;
+			continue;
+		    }
+		    break;
+		}
+		if(!ptemp) continue;
 		break;
 	    }
 	    if(!prtn) continue;

@@ -82,6 +82,7 @@ epicsShareFunc int epicsShareAPI asInit (void);
 #include "dbStaticLib.h"
 #include "db_access_routines.h"
 #include "initHooks.h"
+#include "epicsTime.h"
 
 #define epicsExportSharedSymbols
 #include "epicsRelease.h"
@@ -103,6 +104,7 @@ LOCAL void initialProcess(void);
  */
 int epicsShareAPI iocInit()
 {
+    epicsTimeStamp timeStamp;
     if (initialized) {
 	errlogPrintf("iocInit can only be called once\n");
 	return(-1);
@@ -119,6 +121,10 @@ int epicsShareAPI iocInit()
 
     taskwdInit();
     callbackInit();
+    /* The following forces iocClockInit to be called on vxWorks.
+       This is a kludge so that TSinit can be used before iocInit.
+    */
+    epicsTimeGetCurrent(&timeStamp);
     /* let threads start */
     epicsThreadSleep(.1);
     initHooks(initHookAfterCallbackInit);

@@ -362,7 +362,8 @@ void currentTime::getCurrentTime ( epicsTimeStamp & dest )
         }
         LONGLONG epicsTimeCurrent = this->epicsTimeLast + offset;
         if ( this->epicsTimeLast > epicsTimeCurrent ) {
-            double diff = this->epicsTimeLast - epicsTimeCurrent;
+            double diff = static_cast < double > 
+                ( this->epicsTimeLast - epicsTimeCurrent );
             errlogPrintf ( 
                 "currentTime::getCurrentTime(): %f sec "
                 "time discontinuity detected\n",

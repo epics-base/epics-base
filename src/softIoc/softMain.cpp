@@ -55,7 +55,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "registerRecordDeviceDriver.h"
 #include "registryFunction.h"
 #include "epicsThread.h"
 #include "dbStaticLib.h"
@@ -64,6 +63,8 @@
 #include "asDbLib.h"
 #include "iocInit.h"
 #include "iocsh.h"
+
+extern "C" int softIoc_registerRecordDeviceDriver(struct dbBase *pdbbase);
 
 #define QUOTE(x) #x
 #define DBD_FILE(top) QUOTE(top) "/dbd/softIoc.dbd"
@@ -117,7 +118,7 @@ int main(int argc, char *argv[])
 	exit(EXIT_FAILURE);
     }
     
-    registerRecordDeviceDriver(pdbbase);
+    softIoc_registerRecordDeviceDriver(pdbbase);
     registryFunctionAdd("exit", (REGISTRYFUNCTION) exitSubroutine); // X aCC 331
 
     while (argc>1 && **argv == '-') {

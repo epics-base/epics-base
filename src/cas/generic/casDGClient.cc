@@ -371,15 +371,11 @@ outBufClient::flushCondition casDGClient::xSend ( char *pBufIn, // X aCC 361
         bufSizeT nBytesAvailableToSend, bufSizeT nBytesNeedToBeSent,
         bufSizeT &nBytesSent ) 
 {
-    outBufClient::flushCondition stat;
-    bufSizeT totalBytes;
-    cadg *pHdr;
-
     assert ( nBytesAvailableToSend >= nBytesNeedToBeSent );
 
-    totalBytes = 0;
+    bufSizeT totalBytes = 0;
     while ( totalBytes < nBytesNeedToBeSent ) {
-        pHdr = reinterpret_cast<cadg *>(&pBufIn[totalBytes]);
+        cadg *pHdr = reinterpret_cast<cadg *>(&pBufIn[totalBytes]);
 
         assert ( totalBytes <= bufSizeT_MAX-pHdr->cadg_nBytes );
         assert ( totalBytes+pHdr->cadg_nBytes <= nBytesAvailableToSend );
@@ -399,7 +395,8 @@ outBufClient::flushCondition casDGClient::xSend ( char *pBufIn, // X aCC 361
                 sizeDG -= sizeof (caHdr);
             }
 
-	        stat = this->osdSend ( pDG, sizeDG, pHdr->cadg_addr );	
+            outBufClient::flushCondition stat = 
+                this->osdSend ( pDG, sizeDG, pHdr->cadg_addr );	
 	        if ( stat != outBufClient::flushProgress ) {
                 break;
             }

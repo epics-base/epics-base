@@ -14,10 +14,12 @@ SRCS.c = ../dbVarSub.c dbLoadTemplate_lex.c dbLoadTemplate.c \
 		../BSlib.c ../PVSserver.c ../rdbapplist.c ../rdbls.o
 
 VAR_OBJS =  dbVarSub.o dbLoadTemplate.o dbLoadRecords.o 
-OBJS =  $(VAR_OBJS) BSlib.o PVSserver.o rdbapplist.o rdbls.o
+OBJS =  $(VAR_OBJS) PVSserver.o rdbapplist.o rdbls.o
 
-PROD = subtool dbLoadTemplate rdbls rdbapplist
-TARGETS = PVSserver
+LIBOBJS = BSlib.o
+LIBNAME = BSlib.a
+
+PROD = subtool dbLoadTemplate rdbls rdbapplist PVSserver
 
 MAN1 = dbLoadTemplate.1 subtool.1
 MAN3 = dbLoadRecords.3 dbLoadTemplate.3

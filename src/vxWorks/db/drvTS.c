@@ -1,6 +1,10 @@
 
 /*
  * $Log$
+ * Revision 1.15  1995/09/12 15:01:09  jbk
+ * Fixed bug in TSinit - Gives defaults to TSdirectTime() and TSdriverInit() if
+ * event time disabled with TSconfigure().
+ *
  * Revision 1.14  1995/08/30 15:38:39  jbk
  * *** empty log message ***
  *
@@ -182,6 +186,7 @@ static long TSstartSyncServer();
 static long TSstartSyncClient();
 static long TSstartAsyncClient();
 static long TSstartStampServer();
+static long TSuserGetJunk(int event_number,struct timespec* sp);
 
 /* event system and time clock functions */
 static long (*TSregisterEventHandler)(int Card, void(*func)());
@@ -193,6 +198,7 @@ static long (*TSgetTime)(struct timespec*);
 static long (*TSsyncEvent)();
 static long (*TSdirectTime)();
 static long (*TSdriverInit)();
+static long (*TSuserGet)(int event_number,struct timespec* sp);
 
 /* global functions */
 #ifdef __cplusplus
@@ -364,6 +370,15 @@ void TSconfigure(int master, int sync_rate_sec, int clock_rate_hz,
 	return;
 }
 
+/*
+   this sucks, but who cares, user should not be using event number if not
+   prepared to handle them by defining an ErUserGetTimeStamp() routine.
+*/
+static long TSuserGetJunk(int event_number,struct timespec* sp)
+{
+	return TSgetTimeStamp(0,sp);
+}
+
 /*-----------------------------------------------------------------------*/
 /*	
 	TSgetTimeStamp() - This routine returns the time stamp which represents
@@ -382,7 +397,10 @@ long TSgetTimeStamp(int event_number,struct timespec* sp)
 	{
 	case TS_async_master:
 	case TS_async_slave:
-		*sp = TSdata.event_table[TSdata.sync_event];
+		if(event_number<=0)
+			*sp = TSdata.event_table[TSdata.sync_event];
+		else
+			return TSuserGet(event_number,sp);
 		break;
 	case TS_direct_slave:
 	case TS_direct_master:
@@ -490,6 +508,10 @@ long TSinit(void)
 		if(symFindByName(sysSymTbl,"_ErGetTime",
 						(char**)&TSgetTime,&stype)==ERROR)
 			TSgetTime = TSgetCurrentTime;
+	
+		if(symFindByName(sysSymTbl,"_ErUserGetTimeStamp",
+						(char**)&TSuserGet,&stype)==ERROR)
+			TSuserGet = TSuserGetJunk;
 	
 		if(symFindByName(sysSymTbl,"_ErSyncEvent",
 						(char**)&TSsyncEvent,&stype)==ERROR)

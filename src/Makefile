@@ -43,6 +43,7 @@ endif
 ifneq (,$(findstring RTEMS,$(BUILD_ARCHS)))
 DIRS += RTEMS
 endif
+DIRS += softIoc
 DIRS += libCom/test
 DIRS += gdd
 DIRS += cas

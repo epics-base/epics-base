@@ -14,8 +14,8 @@ of this distribution.
 
 #include "osiThread.h"
 #include "dbEvent.h"
-#include "ioccrf.h"
 #define epicsExportSharedSymbols
+#include "ioccrf.h"
 #include "osiRegister.h"
 
 /* threadShowAll */

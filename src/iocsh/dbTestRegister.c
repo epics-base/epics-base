@@ -16,8 +16,8 @@ of this distribution.
 #include "db_test.h"
 #include "dbLock.h"
 #include "dbScan.h"
-#include "ioccrf.h"
 #define epicsExportSharedSymbols
+#include "ioccrf.h"
 #include "dbTestRegister.h"
 
 /* dba */

@@ -23,8 +23,8 @@ of this distribution.
 #include "link.h"
 #include "dbCommon.h"
 #include "dbBkpt.h"
-#include "ioccrf.h"
 #define epicsExportSharedSymbols
+#include "ioccrf.h"
 #include "dbBkptRegister.h"
 
 /* dbb */

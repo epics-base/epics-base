@@ -13,8 +13,8 @@ of this distribution.
 #include <ctype.h>
 
 #include "dbCaTest.h"
-#include "ioccrf.h"
 #define epicsExportSharedSymbols
+#include "ioccrf.h"
 #include "dbCaTestRegister.h"
 
 /* dbcar */

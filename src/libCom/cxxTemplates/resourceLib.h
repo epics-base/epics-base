@@ -193,7 +193,7 @@ public:
 private:
     tsSLIter<T>             iter;
     unsigned                index;
-	const resTable<T,ID>    *pTable;
+	const resTable<T,ID>    table;
 };
 
 //
@@ -611,7 +611,7 @@ resTable<T,ID>::~resTable()
 //
 template <class T, class ID>
 inline resTableIter<T,ID>::resTableIter (const resTable<T,ID> &tableIn) : 
-    iter (tableIn.pTable[0]), index (1), pTable (&tableIn) {} 
+    iter (tableIn.pTable[0]), index (1), table (tableIn) {} 
 
 //
 // resTableIter<T,ID>::next ()
@@ -627,7 +627,7 @@ inline T * resTableIter<T,ID>::next ()
         return 0;
     }
     ;
-    this->iter = tsSLIter<T> (this->pTable->pTable[this->index++]);
+    this->iter = tsSLIter<T> (this->table.pTable[this->index++]);
     return this->iter.next ();
 }
 

@@ -1337,7 +1337,9 @@ void tcpiiu::blockUntilBytesArePendingInOS ()
 #if 0
     FD_SET readBits;
     FD_ZERO ( & readBits );
-    while ( this->state == tcpiiu::iiucs_connected ) {
+    while ( this->state == tcpiiu::iiucs_connected || 
+        this->state == iiucs_clean_shutdown ) {
+
         FD_SET ( this->sock, & readBits );
         struct timeval tmo;
         tmo.tv_sec = 1;
@@ -1355,7 +1357,9 @@ void tcpiiu::blockUntilBytesArePendingInOS ()
         }
     }
 #else
-    while ( this->state == tcpiiu::iiucs_connected ) {
+    while ( this->state == tcpiiu::iiucs_connected || 
+        this->state == iiucs_clean_shutdown ) {
+        
         char buf;
         int status = ::recv ( this->sock, 
             & buf, 1, MSG_PEEK );

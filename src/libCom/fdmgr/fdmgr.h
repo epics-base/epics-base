@@ -55,31 +55,31 @@ enum fdi_type {fdi_read, fdi_write, fdi_excp};
 enum alarm_list_type {alt_invalid, alt_alarm, alt_expired, alt_free};
 
 typedef struct{
-        ELLLIST         fdentry_list;
-        ELLLIST         fdentry_in_use_list;
-        ELLLIST         fdentry_free_list;
-        ELLLIST         alarm_list;
-        ELLLIST        	expired_alarm_list;
-        ELLLIST   	free_alarm_list;
-        fd_set		readch;
-        fd_set          writech;
-        fd_set          excpch;
+    ELLLIST		fdentry_list;
+    ELLLIST		fdentry_in_use_list;
+    ELLLIST		fdentry_free_list;
+    ELLLIST		alarm_list;
+    ELLLIST		expired_alarm_list;
+    ELLLIST   	free_alarm_list;
+    fd_set		readch;
+    fd_set		writech;
+    fd_set		excpch;
 	BUCKET		*pAlarmBucket;
 	unsigned	nextAlarmId;
-        SOCKET		maxfd;
+    SOCKET		maxfd;
 	int		select_tmo;
-#       if defined (vxWorks)
-        SEM_ID		lock;
-        SEM_ID		fdmgr_pend_event_lock;
+#	if defined (vxWorks)
+	SEM_ID		lock;
+    SEM_ID		fdmgr_pend_event_lock;
 	SEM_ID		expired_alarm_lock;
 	SEM_ID		fd_handler_lock;
-        unsigned long   clk_rate;       /* ticks per sec */
+	unsigned long   clk_rate;       /* ticks per sec */
 	unsigned long	last_tick_count;
 	unsigned long	sec_offset;
 	WIND_TCB	*fdmgr_pend_event_tid;
-#       else 
-        unsigned        fdmgr_pend_event_in_use;
-#       endif
+#	else 
+	unsigned	fdmgr_pend_event_in_use;
+#	endif
 }fdctx;
 
 /*

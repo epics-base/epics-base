@@ -13,26 +13,14 @@ of this distribution.
 #ifndef INCerrlogh
 #define INCerrlogh
 
-
+#include <stdarg.h>
 
 #include "shareLib.h"
 
 #ifdef __cplusplus
 extern "C" {
-#define epicsPrintUseProtoANSI
 #endif
 
-#ifdef __STDC__
-#ifndef epicsPrintUseProtoANSI
-#define epicsPrintUseProtoANSI
-#endif
-#endif
-
-#ifdef epicsPrintUseProtoANSI
-#	include <stdarg.h>
-#else
-#	include <varargs.h>
-#endif
 
 /* define errMessage with a macro so we can print the file and line number*/
 #define errMessage(S, PM) \
@@ -41,11 +29,8 @@ extern "C" {
 #define epicsPrintf errlogPrintf
 #define epicsVprintf errlogVprintf
 
-#ifdef __STDC__
 typedef void(*errlogListener) (void *pPrivate, const char *message);
-#else
-typedef void(*errlogListener) ();
-#endif
+
 typedef enum {errlogInfo,errlogMinor,errlogMajor,errlogFatal} errlogSevEnum;
 
 #ifdef ERRLOG_INIT
@@ -53,8 +38,6 @@ epicsShareDef char * errlogSevEnumString[] = {"info","minor","major","fatal"};
 #else
 epicsShareExtern char * errlogSevEnumString[];
 #endif
-
-#ifdef epicsPrintUseProtoANSI
 
 epicsShareFunc int epicsShareAPIV errlogPrintf(
     const char *pformat, ...);
@@ -80,26 +63,11 @@ epicsShareFunc void epicsShareAPI errlogRemoveListener(
 
 epicsShareFunc int epicsShareAPI eltc(int yesno);
 epicsShareFunc int epicsShareAPI errlogInit(int bufsize);
+epicsShareFunc void epicsShareAPI errlogStop(void);
 
 /*other routines that write to log file*/
 epicsShareFunc void epicsShareAPIV errPrintf(long status, const char *pFileName,
     int lineno, const char *pformat, ...);
-
-#else /* not epicsPrintUseProtoANSI */
-epicsShareFunc int epicsShareAPI errlogPrintf();
-epicsShareFunc int epicsShareAPI errlogVprintf();
-epicsShareFunc int epicsShareAPI errlogSevPrintf();
-epicsShareFunc int epicsShareAPI errlogSevVprintf();
-epicsShareFunc int epicsShareAPI errlogMessage();
-epicsShareFunc char * epicsShareAPI errlogGetSevEnumString();
-epicsShareFunc void epicsShareAPI errlogSetSevToLog();
-epicsShareFunc errlogSevEnum epicsShareAPI errlogGetSevToLog();
-epicsShareFunc void epicsShareAPI errlogAddListener();
-epicsShareFunc void epicsShareAPI errlogRemoveListener();
-epicsShareFunc void epicsShareAPI eltc();
-epicsShareFunc void epicsShareAPI errlogInit();
-epicsShareFunc void epicsShareAPI errPrintf();
-#endif /* ifdef epicsPrintUseProtoANSI */
 
 epicsShareExtern int errVerbose;
 

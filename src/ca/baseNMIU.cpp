@@ -36,6 +36,11 @@ void baseNMIU::subscriptionCancelMsg ()
 {
 }
 
+bool baseNMIU::isSubscription () const
+{
+    return false;
+}
+
 void baseNMIU::show ( unsigned /* level */ ) const
 {
     printf ( "CA IO primitive at %p for channel %s\n", 

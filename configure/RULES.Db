@@ -112,6 +112,16 @@ $(DBDDEPENDS_FILES):
 
 #####################################################  build dependancies, clean rule
 
+ifdef DBD_INSTALLS
+buildInstall : dbdInstalls
+endif
+
+ifdef DB_INSTALLS
+buildInstall : dbInstalls
+endif
+
+.PHONY: dbdInstalls dbInstalls
+
 inc : $(COMMON_INC) $(INSTALL_INC)
 
 build : $(COMMON_DBDS) $(COMMON_DBS) \
@@ -208,6 +218,10 @@ $(INSTALL_DBD)/%: %
 	@echo "Installing dbd file $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
+dbdInstalls:  $(DBD_INSTALLS)
+	@echo "Installing $(^F)"
+	@$(INSTALL) -d -m 555 $^ $(INSTALL_DBD)
+
 .PRECIOUS: $(COMMON_DBDS)
 
 ##################################################### DB files
@@ -251,6 +265,10 @@ $(INSTALL_DB)/%: %
 	@echo "Installing db file $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 endif
+
+dbInstalls:  $(DB_INSTALLS)
+	@echo "Installing $(^F)"
+	@$(INSTALL) -d -m 555 $^ $(INSTALL_DB)
 
 .PRECIOUS: $(COMMON_DIR)/%.edf
 .PRECIOUS: $(COMMON_DBS)

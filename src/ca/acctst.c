@@ -2406,7 +2406,6 @@ void fdManagerVerify ( const char * pName, unsigned interestLevel )
     struct timeval tmo;
     chid newChan;
     evid subscription;
-    unsigned repCount = 0u;
     unsigned eventCount = 0u;
     epicsTimeStamp begin, end;
     
@@ -2448,7 +2447,7 @@ void fdManagerVerify ( const char * pName, unsigned interestLevel )
     status = ca_flush_io ();
     assert ( status == ECA_NORMAL );
 
-    // look for infinite loop in fd manager schedualing
+    /* look for infinite loop in fd manager schedualing */
     epicsTimeGetCurrent ( & begin );
     eventCount = 0u;
     while ( 1 ) {

@@ -7,8 +7,8 @@ USR_LDFLAGS = -L.
 
 DEPLIBS_BASE = $(EPICS_BASE_LIB)
 DEPLIBS = ./libDb.a\
-	$(DEPLIBS_BASE)/libCom.a\
-	$(DEPLIBS_BASE)/libDb.a
+	$(DEPLIBS_BASE)/libCom.a
+#	$(DEPLIBS_BASE)/libDb.a
 
 
 SRCS.c = \
@@ -39,6 +39,4 @@ atdb_yacc.o: atdb_lex.c
 
 clean::
 	@$(RM) atdb_lex.c atdb_yacc.c 
-
-
 

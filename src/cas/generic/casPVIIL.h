@@ -59,17 +59,18 @@ inline void casPVI::unregisterIO()
 //
 // casPVI::bestDBRType()
 //
-inline caStatus  casPVI::bestDBRType ( unsigned &dbrType ) // X aCC 361
+inline caStatus  casPVI::bestDBRType ( unsigned & dbrType ) // X aCC 361
 {
 	aitEnum bestAIT = this->bestExternalType ();
-
-	if ( bestAIT < NELEMENTS ( gddAitToDbr ) && bestAIT != aitEnumInvalid ) {
-		dbrType = gddAitToDbr[bestAIT];
-		return S_cas_success;
-	}
-	else {
+    if ( bestAIT == aitEnumInvalid || bestAIT < 0 ) {
 		return S_cas_badType;
-	}
+    }
+    unsigned aitIndex = static_cast < unsigned > ( bestAIT );
+	if ( aitIndex >= NELEMENTS ( gddAitToDbr ) ) {
+		return S_cas_badType;
+    }
+	dbrType = gddAitToDbr[bestAIT];
+	return S_cas_success;
 }
 
 #include "casChannelIIL.h" // inline func for casChannelI

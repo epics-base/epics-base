@@ -1,10 +1,10 @@
-/*	$Id$
+/*	@(#)nextFieldSubr.c	1.3 3/9/92
  *	Author:	Roger A. Cole
  *	Date:	10-10-90
  *
  *	Experimental Physics and Industrial Control System (EPICS)
  *
- *	Copyright 1991, the Regents of the University of California,
+ *	Copyright 1991-92, the Regents of the University of California,
  *	and the University of Chicago Board of Governors.
  *
  *	This software was produced under  U.S. Government contracts:
@@ -28,6 +28,7 @@
  * .00	10-10-90	rac	initial version
  * .01	06-18-91	rac	installed in SCCS
  * .02  06-25-91	rac	changed nextNonSpaceField to handle quotes
+ * .03	03-04-92	rac	fixed nextNonSpaceField to honor '\0'
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -353,6 +354,8 @@ char	*pDelim;	/* O pointer to return field's delimiter */
     }
     else {
 	while (!isspace(*pDlm)) {
+	    if (*pDlm == '\0')
+		break;
 	    NEXT_POSTAMBLE
     }
     return count;

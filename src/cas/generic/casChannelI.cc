@@ -198,16 +198,13 @@ bool casChannelI::unistallMonitor ( ca_uint32_t clientIdIn )
 	tsDLIter <casMonitor> iter = this->monitorList.firstIter ();
     while ( iter.valid () ) {
 		if ( clientIdIn == iter->getClientId () ) {
-			break;
+	        this->monitorList.remove ( *iter.pointer() );
+	        this->getClient().destroyMonitor ( *iter.pointer() );
+            return true;
 		}
 		iter++;
 	}
-	if ( ! iter.valid () ) {
-        return false;
-	}
-	this->monitorList.remove ( *iter.pointer() );
-	this->getClient().destroyMonitor ( *iter.pointer() );
-    return true;
+    return false;
 }
 
 //

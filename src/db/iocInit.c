@@ -34,8 +34,8 @@ static initialized=FALSE;
 long initBusController();
 long sdrLoad();
 long initDrvSup();
-long initDevSup();
 long initRecSup();
+long initDevSup();
 long initDatabase();
 long addToSet();
 
@@ -62,8 +62,8 @@ char * pfilename;
     /* enable interrupt level 5 */
     sysIntEnable(5);
     if(initDrvSup()==0) logMsg("Drivers Initialized\n");
-    if(initDevSup()==0) logMsg("Device Support Initialized\n");
     if(initRecSup()==0) logMsg("Record Support Initialized\n");
+    if(initDevSup()==0) logMsg("Device Support Initialized\n");
     if(initDatabase()==0) logMsg("Database Initialized\n");
     scan_init();
     logMsg("Scanners Initialized\n");
@@ -121,46 +121,6 @@ static long initDrvSup() /* Locate all driver support entry tables */
     return(rtnval);
 }
 
-static long initDevSup() /* Locate all device support entry tables */
-{
-    char	*pname;
-    char	name[40];
-    int		i,j;
-    UTINY	type;
-    char	message[100];
-    struct devSup *pdevSup;
-    long	status;
-    long	rtnval=0; /*rtnval will be 0 or first error found*/
-    
-    if(!devSup) {
-	status = S_dev_noDevSup;
-	errMessage(status,"devSup is NULL, i.e. No device support is defined");
-	return(status);
-    }
-    for(i=0; i< (devSup->number); i++) {
-	if((pdevSup = devSup->papDevSup[i]) == NULL) continue;
-	for(j=0; j < (pdevSup->number); j++) {
-	    if(!(pname = pdevSup->dsetName[j])) continue;
-	    strcpy(name,"_");
-	    strcat(name,pname);
-	    rtnval = (long)symFindByName(sysSymTbl,name,
-		&(pdevSup->papDset[j]),&type);
-	    if( rtnval!=OK || ( type&N_TEXT == 0) ) {
-		strcpy(message,"device support entry table not found for ");
-		strcat(message,pname);
-		status = S_dev_noDSET;
-		errMessage(-1L,message);
-		if(rtnval==OK)rtnval=status;
-		continue;
-	    }
-	    if(!(pdevSup->papDset[j]->init)) continue;
-	    status = (*(pdevSup->papDset[j]->init))();
-	    if(rtnval==OK)rtnval=status;
-	}
-    }
-    return(rtnval);
-}
-
 static long initRecSup()
 {
     char	name[40];
@@ -203,6 +163,60 @@ static long initRecSup()
     return(rtnval);
 }
 
+static long initDevSup() /* Locate all device support entry tables */
+{
+    char	*pname;
+    char	name[40];
+    int		i,j;
+    UTINY	type;
+    char	message[100];
+    long	status;
+    long	rtnval=0; /*rtnval will be 0 or first error found*/
+    struct recLoc	*precLoc;
+    struct devSup	*pdevSup;
+    struct dbCommon	*precord;
+    
+    if(!devSup) {
+	status = S_dev_noDevSup;
+	errMessage(status,"devSup is NULL, i.e. No device support is defined");
+	return(status);
+    }
+    for(i=0; i< (devSup->number); i++) {
+	if((pdevSup = devSup->papDevSup[i]) == NULL) continue;
+	for(j=0; j < (pdevSup->number); j++) {
+	    if(!(pname = pdevSup->dsetName[j])) continue;
+	    strcpy(name,"_");
+	    strcat(name,pname);
+	    rtnval = (long)symFindByName(sysSymTbl,name,
+		&(pdevSup->papDset[j]),&type);
+	    if( rtnval!=OK || ( type&N_TEXT == 0) ) {
+		strcpy(message,"device support entry table not found for ");
+		strcat(message,pname);
+		status = S_dev_noDSET;
+		errMessage(-1L,message);
+		if(rtnval==OK)rtnval=status;
+		continue;
+	    }
+	    if(!(pdevSup->papDset[j]->init)) continue;
+	    status = (*(pdevSup->papDset[j]->init))();
+	    if(rtnval==OK)rtnval=status;
+	}
+    
+	/* Now initialize dset for each record */
+	if(!(precLoc = dbRecords->papRecLoc[i]))continue;
+	if(!(pdevSup=GET_DEVSUP(i))) continue;
+	for(j=0, ((char *)precord) = precLoc->pFirst;
+	    j<precLoc->no_records;
+	    j++, ((char *)precord) += precLoc->rec_size ) {
+	        /* If NAME is null then skip this record*/
+		if(!(precord->name[0])) continue;
+		/* Init DSET NOTE that result may be NULL*/
+		precord->dset=(struct dset *)GET_PDSET(pdevSup,precord->dtyp);
+	}
+    }
+    return(rtnval);
+}
+
 static long initDatabase()
 {
     char	name[PVNAME_SZ+FLDNAME_SZ+2];
@@ -214,7 +228,6 @@ static long initDatabase()
     short	lookAhead;
     struct recLoc	*precLoc;
     struct rset		*prset;
-    struct devSup	*pdevSup;
     struct recTypDes	*precTypDes;
     struct fldDes	*pfldDes;
     struct dbCommon	*precord;
@@ -238,7 +251,6 @@ static long initDatabase()
 	    if(rtnval==OK) rtnval = status;
 	    continue;
 	}
-	pdevSup=GET_DEVSUP(i); /* pdevSup may be NULL */
 	precTypDes = dbRecDes->papRecTypDes[i];
 	for(j=0, ((char *)precord) = precLoc->pFirst;
 	    j<precLoc->no_records;
@@ -253,9 +265,6 @@ static long initDatabase()
 
 		/* set lset=0 See determine lock set below*/
 		precord->lset = 0;
-
-		/* Init DSET NOTE that result may be NULL*/
-		precord->dset=(struct dset *)GET_PDSET(pdevSup,precord->dtyp);
 
 		/* Convert all PV_LINKs to DB_LINKs or CA_LINKs*/
 		for(k=0; k<precTypDes->no_links; k++) {

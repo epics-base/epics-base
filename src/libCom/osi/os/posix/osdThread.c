@@ -20,6 +20,7 @@
 #include <errno.h>
 #include <time.h>
 #include <pthread.h>
+#include <signal.h>
 #include <sched.h>
 #include <unistd.h>
 
@@ -268,7 +269,10 @@ static void * start_routine(void *arg)
     epicsThreadOSD *pthreadInfo = (epicsThreadOSD *)arg;
     int status;
     int oldtype;
-
+    sigset_t blockAllSig;
+ 
+    sigfillset(&blockAllSig);
+    pthread_sigmask(SIG_SETMASK,&blockAllSig,NULL);
     status = pthread_setspecific(getpthreadInfo,arg);
     checkStatusQuit(status,"pthread_setspecific","start_routine");
     status = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&oldtype);
@@ -355,12 +359,16 @@ epicsThreadId epicsThreadCreate(const char *name,
 {
     epicsThreadOSD *pthreadInfo;
     int status;
+    sigset_t blockAllSig, oldSig;
 
     epicsThreadInit();
     assert(pcommonAttr);
+    sigfillset(&blockAllSig);
+    pthread_sigmask(SIG_SETMASK,&blockAllSig,&oldSig);
     pthreadInfo = init_threadInfo(name,priority,stackSize,funptr,parm);
     status = pthread_create(&pthreadInfo->tid,&pthreadInfo->attr,
                 start_routine,pthreadInfo);
+    pthread_sigmask(SIG_SETMASK,&oldSig,NULL);
     checkStatusQuit(status,"pthread_create","epicsThreadCreate");
     return(pthreadInfo);
 }
@@ -696,7 +704,6 @@ void epicsThreadPrivateSet (epicsThreadPrivateId id, void *value)
 void *epicsThreadPrivateGet(epicsThreadPrivateId id)
 {
     pthread_key_t *key = (pthread_key_t *)id;
-    void *value;
 
     assert(epicsThreadOnceCalled);
     return pthread_getspecific(*key);

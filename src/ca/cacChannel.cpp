@@ -17,8 +17,6 @@
 
 #include "iocinf.h"
 
-osiMutex cacChannel::defaultMutex;
-
 cacChannel::cacChannel () : pChannelIO (0) 
 {
 }
@@ -33,10 +31,8 @@ cacChannel::~cacChannel ()
 void cacChannel::attachIO (cacChannelIO &io)
 {
     assert ( ! this->pChannelIO );
-    this->lock ();
     this->pChannelIO = &io;
     this->ioAttachNotify ();
-    this->unlock ();
 }
 
 int cacChannel::read ( unsigned type, unsigned long count, cacNotify & notify )
@@ -238,16 +234,6 @@ void cacChannel::connectTimeoutNotify ()
 {
 }
 
-void cacChannel::lock ()
-{
-    this->defaultMutex.lock();
-}
-
-void cacChannel::unlock ()
-{
-    this->defaultMutex.unlock();
-}
-
 unsigned cacChannel::readSequence () const
 {
     if ( this->pChannelIO ) {
@@ -269,5 +255,19 @@ void cacChannel::incrementOutstandingIO ()
 {
     if ( this->pChannelIO ) {
         this->pChannelIO->incrementOutstandingIO ();
+    }
+}
+
+void cacChannel::lock () const
+{
+    if ( this->pChannelIO ) {
+        this->pChannelIO->lock ();
+    }
+}
+
+void cacChannel::unlock () const
+{
+    if ( this->pChannelIO ) {
+        this->pChannelIO->unlock ();
     }
 }

@@ -20,10 +20,7 @@ cacChannelIO::cacChannelIO ( cacChannel &chanIn ) :
 
 cacChannelIO::~cacChannelIO ()
 {
-    this->chan.lock ();
-    this->chan.ioReleaseNotify ();
     this->chan.pChannelIO = 0;
-    this->chan.unlock ();
 }
 
 cacLocalChannelIO::cacLocalChannelIO ( cacChannel &chan ) :
@@ -49,6 +46,11 @@ void cacChannelIO::connectTimeoutNotify ()
 void cacChannelIO::accessRightsNotify ( caar ar )
 {
     this->chan.accessRightsNotify ( ar );
+}
+
+void cacChannelIO::ioReleaseNotify ()
+{
+    this->chan.ioReleaseNotify ();
 }
 
 channel_state cacChannelIO::state () const 
@@ -102,14 +104,3 @@ void cacChannelIO::incrementOutstandingIO ()
 void cacChannelIO::decrementOutstandingIO ()
 {
 }
-
-void cacChannelIO::lock (void)
-{
-    this->chan.lock ();
-}
-
-void cacChannelIO::unlock (void)
-{    
-    this->chan.unlock ();
-}
-

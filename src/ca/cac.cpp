@@ -94,7 +94,7 @@ cac::cac () :
         osiGetUserNameReturn gunRet;
 
         gunRet = osiGetUserName ( tmp, sizeof (tmp) );
-        if (gunRet!=osiGetUserNameSuccess) {
+        if ( gunRet != osiGetUserNameSuccess ) {
             tmp[0] = '\0';
         }
         len = strlen (tmp) + 1;
@@ -841,3 +841,12 @@ bool cac::createChannelIO (const char *pName, cacChannel &chan)
     return true;
 }
 
+void cac::lock () const
+{
+    semMutexMustTake ( this->ca_client_lock );
+}
+
+void cac::unlock () const
+{
+    semMutexGive ( this->ca_client_lock );
+}

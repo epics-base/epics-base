@@ -355,17 +355,85 @@ stopRedirect(const char *filename, int lineno, struct iocshRedirect *redirect)
 }
 
 /*
+ * "help" command
+ */
+static const iocshArg helpArg0 = { "[command ...]",iocshArgArgv};
+static const iocshArg *helpArgs[1] = {&helpArg0};
+static const iocshFuncDef helpFuncDef =
+    {"help",1,helpArgs};
+static void helpCallFunc(const iocshArgBuf *args)
+{
+    int argc = args[0].aval.ac;
+    const char * const * argv = args[0].aval.av;
+    struct iocshFuncDef const *piocshFuncDef;
+    struct iocshCommand *found;
+
+    if (argc == 1) {
+        int l, col = 0;
+
+        printf ("Type `help command_name' to get more information about a particular command.\n");
+        iocshTableLock ();
+        for (found = iocshCommandHead ; found != NULL ; found = found->next) {
+            piocshFuncDef = found->pFuncDef;
+            l = strlen (piocshFuncDef->name);
+            if ((l + col) >= 79) {
+                fputc ('\n', stdout);
+                col = 0;
+            }
+            fputs (piocshFuncDef->name, stdout);
+            col += l;
+            if (col >= 64) {
+                fputc ('\n', stdout);
+                col = 0;
+            }
+            else {
+                do {
+                    fputc (' ', stdout);
+                    col++;
+                } while ((col % 16) != 0);
+            }
+        }
+        if (col)
+            fputc ('\n', stdout);
+        iocshTableUnlock ();
+    }
+    else {
+        for (int iarg = 1 ; iarg < argc ; iarg++) {
+            found = (iocshCommand *)registryFind (iocshCmdID, argv[iarg]);
+            if (found == NULL) {
+                printf ("%s -- no such command.\n", argv[iarg]);
+            }
+            else {
+                piocshFuncDef = found->pFuncDef;
+                fputs (piocshFuncDef->name, stdout);
+                for (int a = 0 ; a < piocshFuncDef->nargs ; a++) {
+                    const char *cp = piocshFuncDef->arg[a]->name;
+                    if ((piocshFuncDef->arg[a]->type == iocshArgArgv)
+                     || (strchr (cp, ' ') == NULL)) {
+                        fprintf (stdout, " %s", cp);
+                    }
+                    else {
+                        fprintf (stdout, " '%s'", cp);
+                    }
+                }
+                fprintf (stdout,"\n");;
+            }
+        }
+    }
+}
+
+/*
  * The body of the command interpreter
  */
-int epicsShareAPI
-iocsh (const char *pathname)
+static int
+iocshBody (const char *pathname, const char *commandLine)
 {
     FILE *fp = NULL;
     const char *filename = NULL;
     int icin, icout;
     char c;
     int quote, inword, backslash;
-    char *raw;
+    const char *raw = NULL;;
     char *line = NULL;
     int lineno = 0;
     int argc;
@@ -373,45 +441,46 @@ iocsh (const char *pathname)
     int argvCapacity = 0;
     struct iocshRedirect *redirects = NULL;
     struct iocshRedirect *redirect = NULL;
-    int iarg;
     int sep;
-    const char *prompt;
+    const char *prompt = NULL;
     const char *ifs = " \t(),";
     iocshArgBuf *argBuf = NULL;
     int argBufCapacity = 0;
     struct iocshCommand *found;
     struct iocshFuncDef const *piocshFuncDef;
-    void *readlineContext;
+    void *readlineContext = NULL;
     int wasOkToBlock;
     
     /*
      * See if command interpreter is interactive
      */
-    if ((pathname == NULL) || (strcmp (pathname, "<telnet>") == 0)) {
-        if ((prompt = envGetConfigParamPtr(&IOCSH_PS1)) == NULL)
-            prompt = "epics> ";
-    }
-    else {
-        fp = fopen (pathname, "r");
-        if (fp == NULL) {
-            fprintf (stderr, "Can't open %s: %s\n", pathname, strerror (errno));
+    if (commandLine == NULL) {
+        if ((pathname == NULL) || (strcmp (pathname, "<telnet>") == 0)) {
+            if ((prompt = envGetConfigParamPtr(&IOCSH_PS1)) == NULL)
+                prompt = "epics> ";
+        }
+        else {
+            fp = fopen (pathname, "r");
+            if (fp == NULL) {
+                fprintf (stderr, "Can't open %s: %s\n", pathname, strerror (errno));
+                return -1;
+            }
+            if ((filename = strrchr (pathname, '/')) == NULL)
+                filename = pathname;
+            else
+                filename++;
+            prompt = NULL;
+        }
+
+        /*
+         * Create a command-line input context
+         */
+        if ((readlineContext = epicsReadlineBegin(fp)) == NULL) {
+            fprintf(stderr, "Can't allocate command-line object.\n");
+            if (fp)
+                fclose(fp);
             return -1;
         }
-        if ((filename = strrchr (pathname, '/')) == NULL)
-            filename = pathname;
-        else
-            filename++;
-        prompt = NULL;
-    }
-
-    /*
-     * Create a command-line input context
-     */
-    if ((readlineContext = epicsReadlineBegin(fp)) == NULL) {
-        fprintf(stderr, "Can't allocate command-line object.\n");
-        if (fp)
-            fclose(fp);
-        return -1;
     }
 
     /*
@@ -437,8 +506,15 @@ iocsh (const char *pathname)
         /*
          * Read a line
          */
-        if ((raw = epicsReadline(prompt, readlineContext)) == NULL)
-            break;
+        if (commandLine) {
+            if (raw != NULL)
+                break;
+            raw = commandLine;
+        }
+        else {
+            if ((raw = epicsReadline(prompt, readlineContext)) == NULL)
+                break;
+        }
         lineno++;
 
         /*
@@ -446,7 +522,7 @@ iocsh (const char *pathname)
          * them if they came from a script.
          */
         if (*raw == '#') {
-            if (prompt == NULL)
+            if ((prompt == NULL) && (commandLine == NULL))
                 puts(raw);
             continue;
         }
@@ -461,7 +537,7 @@ iocsh (const char *pathname)
         /*
          * Echo commands read from scripts
          */
-        if ((prompt == NULL) && *line)
+        if ((prompt == NULL) && *line && (commandLine == NULL))
             puts(line);
 
         /*
@@ -595,7 +671,7 @@ iocsh (const char *pathname)
          * Prepare for redirection
          */
         if ((argc == 0) && (redirects[0].name != NULL)) {
-            iocsh(redirects[0].name);
+            iocshBody(redirects[0].name, NULL);
             continue;
         }
         if (openRedirect(filename, lineno, redirects) < 0)
@@ -612,61 +688,6 @@ iocsh (const char *pathname)
                 break;
             if ((strcmp (argv[0], "?") == 0) 
              || (strncmp (argv[0], "help", 4) == 0)) {
-                if (argc == 1) {
-                    int l, col = 0;
-
-                    startRedirect(filename, lineno, redirects);
-                    printf ("Type `help command_name' to get more information about a particular command.\n");
-                    iocshTableLock ();
-                    for (found = iocshCommandHead ; found != NULL ; found = found->next) {
-                        piocshFuncDef = found->pFuncDef;
-                        l = strlen (piocshFuncDef->name);
-                        if ((l + col) >= 79) {
-                            fputc ('\n', stdout);
-                            col = 0;
-                        }
-                        fputs (piocshFuncDef->name, stdout);
-                        col += l;
-                        if (col >= 64) {
-                            fputc ('\n', stdout);
-                            col = 0;
-                        }
-                        else {
-                            do {
-                                fputc (' ', stdout);
-                                col++;
-                            } while ((col % 16) != 0);
-                        }
-                    }
-                    if (col)
-                        fputc ('\n', stdout);
-                    iocshTableUnlock ();
-                }
-                else {
-                    for (iarg = 1 ; iarg < argc ; iarg++) {
-                        found = (iocshCommand *)registryFind (iocshCmdID, argv[iarg]);
-                        if (found == NULL) {
-                            printf ("%s -- no such command.\n", argv[iarg]);
-                        }
-                        else {
-                            startRedirect(filename, lineno, redirects);
-                            piocshFuncDef = found->pFuncDef;
-                            fputs (piocshFuncDef->name, stdout);
-                            for (int a = 0 ; a < piocshFuncDef->nargs ; a++) {
-                                const char *cp = piocshFuncDef->arg[a]->name;
-                                if ((piocshFuncDef->arg[a]->type == iocshArgArgv)
-                                 || (strchr (cp, ' ') == NULL)) {
-                                    fprintf (stdout, " %s", cp);
-                                }
-                                else {
-                                    fprintf (stdout, " '%s'", cp);
-                                }
-                            }
-                            fprintf (stdout,"\n");;
-                        }
-                    }
-                }
-                continue;
             }
 
             /*
@@ -682,7 +703,7 @@ iocsh (const char *pathname)
             /*
              * Process arguments and call function
              */
-            for (iarg = 0 ; ; iarg++) {
+            for (int iarg = 0 ; ; ) {
                 if (iarg == piocshFuncDef->nargs) {
                     startRedirect(filename, lineno, redirects);
                     (*found->func)(argBuf);
@@ -703,14 +724,15 @@ iocsh (const char *pathname)
                 if (piocshFuncDef->arg[iarg]->type == iocshArgArgv) {
                     argBuf[iarg].aval.ac = argc-iarg;
                     argBuf[iarg].aval.av = argv+iarg;
-                    startRedirect(filename, lineno, redirects);
-                    (*found->func)(argBuf);
-                    break;
+                    iarg = piocshFuncDef->nargs;
                 }
-                if (!cvtArg (filename, lineno,
-                                        ((iarg < argc) ? argv[iarg+1] : NULL),
-                                        &argBuf[iarg], piocshFuncDef->arg[iarg]))
-                    break;
+                else {
+                    if (!cvtArg (filename, lineno,
+                                    ((iarg < argc) ? argv[iarg+1] : NULL),
+                                    &argBuf[iarg], piocshFuncDef->arg[iarg]))
+                        break;
+                    iarg++;
+                }
             }
             if((prompt != NULL) && (strcmp(argv[0], "epicsEnvSet") == 0)) {
                 const char *newPrompt;
@@ -729,9 +751,27 @@ iocsh (const char *pathname)
     free (argv);
     free (argBuf);
     errlogFlush();
-    epicsReadlineEnd(readlineContext);
+    if (readlineContext)
+        epicsReadlineEnd(readlineContext);
     epicsThreadSetOkToBlock( wasOkToBlock);
     return 0;
+}
+
+/*
+ * External access to the command interpreter
+ */
+int epicsShareAPI
+iocsh (const char *pathname)
+{
+    return iocshBody(pathname, NULL);
+}
+
+int epicsShareAPI
+iocshCmd (const char *cmd)
+{
+    if (cmd == NULL)
+        return 0;
+    return iocshBody(NULL, cmd);
 }
 
 /*
@@ -784,8 +824,6 @@ static void varHandler(const iocshVarDef *v, const char *setString)
     }
 }
 
-extern "C" {
-
 static void varCallFunc(const iocshArgBuf *args)
 {
     struct iocshVariable *v;
@@ -804,6 +842,13 @@ static void varCallFunc(const iocshArgBuf *args)
     }
 }
 
+/* iocshCmd */
+static const iocshArg iocshCmdArg0 = { "command",iocshArgString};
+static const iocshArg *iocshCmdArgs[1] = {&iocshCmdArg0};
+static const iocshFuncDef iocshCmdFuncDef = {"iocshCmd",1,iocshCmdArgs};
+static void iocshCmdCallFunc(const iocshArgBuf *args)
+{
+    iocshCmd(args[0].sval);
 }
 
 /*
@@ -812,14 +857,6 @@ static void varCallFunc(const iocshArgBuf *args)
  */
 
 extern "C" {
-/* help */
-static const iocshArg helpArg0 = { "command",iocshArgInt};
-static const iocshArg *helpArgs[1] = {&helpArg0};
-static const iocshFuncDef helpFuncDef =
-    {"help",1,helpArgs};
-static void helpCallFunc(const iocshArgBuf *)
-{
-}
 
 /* comment */
 static const iocshArg commentArg0 = { "newline-terminated comment",iocshArgArgv};
@@ -838,9 +875,10 @@ static void exitCallFunc(const iocshArgBuf *)
 
 static void localRegister (void)
 {
-    iocshRegister(&helpFuncDef,helpCallFunc);
     iocshRegister(&commentFuncDef,helpCallFunc);
     iocshRegister(&exitFuncDef,exitCallFunc);
+    iocshRegister(&helpFuncDef,helpCallFunc);
+    iocshRegister(&iocshCmdFuncDef,iocshCmdCallFunc);
 }
 
 } /* extern "C" */

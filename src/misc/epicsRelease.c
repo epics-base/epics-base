@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 1.12  2000/04/27 17:49:45  jhill
+ * added ms keywords
+ *
  * Revision 1.11  2000/02/29 22:30:24  jba
  * Changes for win32 build.
  *
@@ -49,7 +52,6 @@ epicsShareFunc int epicsShareAPI coreRelease(void)
     printf ("############################################################################\n");
     printf ("###  %s\n", epicsRelease);
     printf ("###  %s\n", epicsRelease1);
-    printf ("###  @(#)Built date %s\n", __DATE__);
     printf ("############################################################################\n");
     return(0);
 }

@@ -33,6 +33,9 @@
 #define INCdbBkptsh 1
 
 #include "shareLib.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
  *  Structure containing a list of set breakpoints
@@ -90,14 +93,21 @@ struct LS_LIST {
 
 #define MAX_EP_COUNT         99999
 
-epicsShareFunc long epicsShareAPI dbb();
-epicsShareFunc long epicsShareAPI dbd();
-epicsShareFunc long epicsShareAPI dbc();
-epicsShareFunc long epicsShareAPI dbs();
-epicsShareFunc long epicsShareAPI dbstat();
-epicsShareFunc int  epicsShareAPI dbBkpt();
-epicsShareFunc void epicsShareAPI dbPrint();
+epicsShareFunc long epicsShareAPI dbb(const char *recordname);
+epicsShareFunc long epicsShareAPI dbd(const char *recordname);
+epicsShareFunc long epicsShareAPI dbc(const char *recordname);
+epicsShareFunc long epicsShareAPI dbs(const char *recordname);
+epicsShareFunc long epicsShareAPI dbstat(void);
+epicsShareFunc long epicsShareAPI dbp(
+    const char *record_name, int interest_level);
+epicsShareFunc long epicsShareAPI  dbap(const char *record_name);
+epicsShareFunc int  epicsShareAPI dbBkpt(dbCommon *precord);
+epicsShareFunc void epicsShareAPI dbPrint(dbCommon *precord);
 
 extern long lset_stack_not_empty;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

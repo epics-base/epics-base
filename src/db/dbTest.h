@@ -16,6 +16,11 @@ of this distribution.
 
 #include "shareLib.h"
 
+#include "shareLib.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*dbAddr info */
 epicsShareFunc long epicsShareAPI dba(char*pname);
 /*list records*/
@@ -37,8 +42,12 @@ epicsShareFunc long epicsShareAPI dbtgf(char *pname);
 /*test put field*/
 epicsShareFunc long epicsShareAPI dbtpf(char	*pname,char *pvalue);
 /*I/O report */
-epicsShareFunc long epicsShareAPI dbior(char	*pdrvName,int type);
+epicsShareFunc long epicsShareAPI dbior(char	*pdrvName,int interest_level);
 /*Hardware Configuration Report*/
 epicsShareFunc int epicsShareAPI dbhcr(char *filename);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*INCdbTesth */

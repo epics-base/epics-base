@@ -35,8 +35,7 @@
 #include "epicsAssert.h"
 #include "epicsExit.h"
 
-/* Until these can be demonstrated to work leave them undefined*/
-#undef _POSIX_THREAD_ATTR_STACKSIZE
+/* Until this can be demonstrated to work leave it undefined*/
 #undef _POSIX_THREAD_PRIORITY_SCHEDULING
 
 typedef struct commonAttr{
@@ -167,15 +166,15 @@ static epicsThreadOSD * init_threadInfo(const char *name,
     pthreadInfo->createFunc = funptr;
     pthreadInfo->createArg = parm;
     status = pthread_attr_init(&pthreadInfo->attr);
-    checkStatusOnceQuit(status,"pthread_attr_init","init_threadInfo");
+    checkStatusOnce(status,"pthread_attr_init");
+    if(status) return 0;
     status = pthread_attr_setdetachstate(
         &pthreadInfo->attr, PTHREAD_CREATE_DETACHED);
-    if(errVerbose) checkStatusOnce(status,"pthread_attr_setdetachstate");
+    checkStatusOnce(status,"pthread_attr_setdetachstate");
 #if defined (_POSIX_THREAD_ATTR_STACKSIZE)
 #if ! defined (OSITHREAD_USE_DEFAULT_STACK)
-    status = pthread_attr_setstacksize(
-        &pthreadInfo->attr, (size_t)stackSize);
-    if(errVerbose) checkStatusOnce(status,"pthread_attr_setstacksize");
+    status = pthread_attr_setstacksize( &pthreadInfo->attr,(size_t)stackSize);
+    checkStatusOnce(status,"pthread_attr_setstacksize");
 #endif /*OSITHREAD_USE_DEFAULT_STACK*/
 #endif /*_POSIX_THREAD_ATTR_STACKSIZE*/
     status = pthread_attr_setscope(&pthreadInfo->attr,PTHREAD_SCOPE_PROCESS);
@@ -184,19 +183,16 @@ static epicsThreadOSD * init_threadInfo(const char *name,
 #if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) 
     status = pthread_attr_getschedparam(
         &pthreadInfo->attr,&pthreadInfo->schedParam);
-    if(errVerbose) checkStatusOnce(status,"pthread_attr_getschedparam");
+    checkStatusOnce(status,"pthread_attr_getschedparam");
     pthreadInfo->schedParam.sched_priority = getOssPriorityValue(pthreadInfo);
     status = pthread_attr_setschedparam(
         &pthreadInfo->attr,&pthreadInfo->schedParam);
-    if(status && errVerbose) {
-         fprintf(stderr,"epicsThreadCreate: pthread_attr_setschedparam failed %s",
-             strerror(status));
-         fprintf(stderr," sched_priority %d\n",
-             pthreadInfo->schedParam.sched_priority);
+    if(status) {
+         checkStatusOnce(status,"pthread_attr_setschedparam");
     }
     status = pthread_attr_setinheritsched(
         &pthreadInfo->attr,PTHREAD_EXPLICIT_SCHED);
-    if(errVerbose) checkStatusOnce(status,"pthread_attr_setinheritsched");
+    checkStatusOnce(status,"pthread_attr_setinheritsched");
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
     return(pthreadInfo);
 }
@@ -259,7 +255,7 @@ static void once(void)
 #else
     if(errVerbose) fprintf(stderr,"task priorities are not implemented\n");
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
-    pthreadInfo = init_threadInfo("_main_",0,0,0,0);
+    pthreadInfo = init_threadInfo("_main_",0,epicsThreadGetStackSize(epicsThreadStackSmall),0,0);
     status = pthread_setspecific(getpthreadInfo,(void *)pthreadInfo);
     checkStatusOnceQuit(status,"pthread_setspecific","epicsThreadInit");
     status = pthread_mutex_lock(&listLock);
@@ -305,13 +301,8 @@ static void epicsThreadInit(void)
 }
 
 
-#if CPU_FAMILY == MC680X0
-#define ARCH_STACK_FACTOR 1
-#elif CPU_FAMILY == SPARC
-#define ARCH_STACK_FACTOR 2
-#else
-#define ARCH_STACK_FACTOR 2
-#endif
+#define ARCH_STACK_FACTOR 1024
+
 
 unsigned int epicsThreadGetStackSize (epicsThreadStackSizeClass stackSizeClass)
 {
@@ -321,7 +312,7 @@ unsigned int epicsThreadGetStackSize (epicsThreadStackSizeClass stackSizeClass)
     return 0;
 #else
     static const unsigned stackSizeTable[epicsThreadStackBig+1] =
-        {4000*ARCH_STACK_FACTOR, 6000*ARCH_STACK_FACTOR, 11000*ARCH_STACK_FACTOR};
+        {128*ARCH_STACK_FACTOR, 256*ARCH_STACK_FACTOR, 512*ARCH_STACK_FACTOR};
     if (stackSizeClass<epicsThreadStackSmall) {
         errlogPrintf("epicsThreadGetStackSize illegal argument (too small)");
         return stackSizeTable[epicsThreadStackBig];
@@ -373,10 +364,12 @@ epicsThreadId epicsThreadCreate(const char *name,
     sigfillset(&blockAllSig);
     pthread_sigmask(SIG_SETMASK,&blockAllSig,&oldSig);
     pthreadInfo = init_threadInfo(name,priority,stackSize,funptr,parm);
+    if(pthreadInfo==0) return 0;
     status = pthread_create(&pthreadInfo->tid,&pthreadInfo->attr,
                 start_routine,pthreadInfo);
+    checkStatus(status,"pthread_create");
+    if(status) return 0;
     pthread_sigmask(SIG_SETMASK,&oldSig,NULL);
-    checkStatusQuit(status,"pthread_create","epicsThreadCreate");
     return(pthreadInfo);
 }
 

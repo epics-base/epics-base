@@ -297,7 +297,7 @@ inline tsSLIterConst <T> & tsSLIterConst<T>::operator = ( const T *pNewEntry )
 template < class T >
 inline tsSLIterConst <T> tsSLIterConst<T>::itemAfter ()
 {
-    tsSLNode < T > *pCurNode = this->pConstEntry;
+    const tsSLNode < T > *pCurNode = this->pConstEntry;
     return pCurNode->pNext;
 }
 

@@ -48,7 +48,6 @@ public:
     void destroy ();
     unsigned unoccupiedBytes () const;
     unsigned occupiedBytes () const;
-    void compress ();
     static unsigned capacityBytes ();
     unsigned copyInBytes ( const void *pBuf, unsigned nBytes );
     unsigned copyIn ( comBuf & );
@@ -69,7 +68,17 @@ public:
     void operator delete ( void *pCadaver, size_t size );
     bool flushToWire ( wireSendAdapter & );
     unsigned fillFromWire ( wireRecvAdapter & );
-    epicsUInt8 getByte ();
+    epicsUInt8 popUInt8 ();
+    struct statusPopUInt16 {
+        epicsUInt16 val;
+        bool success;
+    };
+    statusPopUInt16 popUInt16 ();
+    struct statusPopUInt32 {
+        epicsUInt32 val;
+        bool success;
+    };
+    statusPopUInt32 popUInt32 ();
     class insufficentBytesAvailable {};
 protected:
     ~comBuf ();
@@ -184,16 +193,6 @@ inline unsigned comBuf::removeBytes ( unsigned nBytes )
 inline unsigned comBuf::capacityBytes ()
 {
     return comBufSize;
-}
-
-inline void comBuf::compress ()
-{
-    if ( this->nextReadIndex > 0u ) {
-        memmove ( this->buf, &this->buf[this->nextReadIndex], 
-            this->nextWriteIndex - this->nextReadIndex );
-        this->nextWriteIndex -= this->nextReadIndex;
-        this->nextReadIndex = 0u;
-    }
 }
 
 inline unsigned comBuf::fillFromWire ( wireRecvAdapter &wire )
@@ -323,7 +322,7 @@ inline unsigned comBuf::occupiedElem ( unsigned elemSize, unsigned nElem )
     }
 }
 
-inline epicsUInt8 comBuf::getByte ()
+inline epicsUInt8 comBuf::popUInt8 ()
 {
     if ( this->occupiedBytes () ) {
         return this->buf[ this->nextReadIndex++ ];
@@ -331,6 +330,38 @@ inline epicsUInt8 comBuf::getByte ()
     else {
         throw insufficentBytesAvailable ();
     }
+}
+
+inline comBuf::statusPopUInt16 comBuf::popUInt16 ()
+{
+    statusPopUInt16 tmp;
+    if ( this->occupiedBytes () >= 2u ) {
+        tmp.val  = this->buf[ this->nextReadIndex++ ] << 8u;
+        tmp.val |= this->buf[ this->nextReadIndex++ ] << 0u;
+        tmp.success = true;
+    }
+    else {
+        tmp.val = 0xffff;
+        tmp.success = false;
+    }
+    return tmp;
+}
+
+inline comBuf::statusPopUInt32 comBuf::popUInt32 ()
+{
+    statusPopUInt32 tmp;
+    if ( this->occupiedBytes () >= 4u ) {
+        tmp.val  = this->buf[ this->nextReadIndex++ ] << 24u;
+        tmp.val |= this->buf[ this->nextReadIndex++ ] << 16u;
+        tmp.val |= this->buf[ this->nextReadIndex++ ] << 8u;
+        tmp.val |= this->buf[ this->nextReadIndex++ ] << 0u;
+        tmp.success = true;
+    }
+    else {
+        tmp.val = 0xffffffff;
+        tmp.success = false;
+    }
+    return tmp;
 }
 
 #endif // ifndef comBufh

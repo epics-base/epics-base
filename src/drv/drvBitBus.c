@@ -34,24 +34,12 @@
  * .03	12-16-91	jrw	Made the data portion of the message a pointer
  * .04	01-21-91	jrw	moved the task parameters into task_params.h
  * .05	02-12-92	jrw	removed IRQ based transmission.
+ * .06	04-08-92	jrw	moved the device configs into module_types.h
  *
  * NOTES:
  * This driver currently needs work on error message generation.
  */
 
-/******************************************************************************
- *
- * The following defines should be in module_types.h or derived
- * from a support function.
- *
- ******************************************************************************/
-#define BB_SHORT_OFF	0x1800	/* the first address of link 0's region */
-#define BB_NUM_LINKS	4	/* max number of BB ports allowed */
-#define BB_IVEC_BASE	0x90	/* vectored interrupts (2 used for each link) */
-#define BB_IRQ_LEVEL	5	/* IRQ level */
-/**************** end of stuff that does not belong here **********************/
-
-
 #include <vxWorks.h>
 #include <types.h>
 #include <iosLib.h>
@@ -65,6 +53,7 @@
 #include <vme.h>
 
 #include <task_params.h>
+#include <module_types.h>
 #include <drvSup.h>
 #include <dbDefs.h>
 #include <link.h>

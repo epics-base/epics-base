@@ -39,6 +39,7 @@
  * .04	01-31-92	jrw	added ibSrqLock code
  * .05	02-26-92	jrw	changed pnode references in the link task's
  *				busy-list checking, was an endless loop
+ * .06	04-10-92	jrw	moved the device configs into module_types.h
  *
  ******************************************************************************
  *
@@ -49,19 +50,6 @@
  *  initGpib() function to reset the DMAC properly.
  *
  */
-
-/******************************************************************************
- *
- * The following defines should be in module_types.h or derived
- * from a support functions.
- *
- ******************************************************************************/
-#define NIGPIB_SHORT_OFF  0x5000	/* First address of link 0's region */
-					/* Each link uses 0x0200 bytes */
-#define NIGPIB_NUM_LINKS  4	/* Max number of NI GPIB ports allowed */
-#define NIGPIB_IVEC_BASE  100	/* Vectored interrupts (2 used for each link) */
-#define NIGPIB_IRQ_LEVEL  5	/* IRQ level */
-/**************** end of stuff that does not belong here **********************/
 
 #include <vxWorks.h>
 #include <types.h>
@@ -76,6 +64,7 @@
 #include <sysLib.h>
 
 #include <task_params.h>
+#include <module_types.h>
 #include <drvSup.h>
 #include <dbDefs.h>
 #include <link.h>

@@ -656,26 +656,6 @@ private:
     void repeaterAckAction ( const caHdr &msg, const osiSockAddr &net_addr );
 };
 
-class pendingClaimsTimer : public osiTimer {
-public:
-    pendingClaimsTimer ( tcpiiu &iiuIn, osiTimerQueue & queueIn );
-
-    static void * operator new ( size_t size );
-    static void operator delete ( void *pCadaver, size_t size );
-
-private:
-    void expire ();
-	void destroy ();
-	bool again () const;
-	double delay () const;
-	const char *name () const;
-    ~pendingClaimsTimer ();
-
-    //tcpiiu &iiu;
-
-    static tsFreeList < class pendingClaimsTimer, 1024 > freeList;
-};
-
 class tcpRecvWatchdog : public osiTimer {
 public:
     tcpRecvWatchdog (double periodIn, osiTimerQueue & queueIn, bool echoProtocolAcceptedIn);

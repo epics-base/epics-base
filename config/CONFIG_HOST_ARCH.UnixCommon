@@ -8,7 +8,6 @@ MV = mv
 RM = rm -f
 MKDIR = mkdir
 RMDIR = rm -rf
-CWD  =$(PERL) $(EPICS_BASE_HOST_BIN)/cwd.pl
 CHMOD = "/bin/chmod"
 WHAT = what
 

@@ -111,6 +111,7 @@ int main(int argc,char **argv)
     dbWriteDeviceFP(pdbbase,outFP);
     dbWriteDriverFP(pdbbase,outFP);
     dbWriteRegistrarFP(pdbbase,outFP);
+    dbWriteFunctionFP(pdbbase,outFP);
     dbWriteVariableFP(pdbbase,outFP);
     dbWriteBreaktableFP(pdbbase,outFP);
     dbWriteRecordFP(pdbbase,outFP,0,0);

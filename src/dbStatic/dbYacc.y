@@ -22,7 +22,7 @@ static int yyAbort = 0;
 %token tokenMENU tokenCHOICE tokenRECORDTYPE
 %token tokenFIELD tokenINFO tokenREGISTRAR
 %token tokenDEVICE tokenDRIVER tokenBREAKTABLE
-%token tokenRECORD tokenGRECORD tokenVARIABLE
+%token tokenRECORD tokenGRECORD tokenVARIABLE tokenFUNCTION
 %token <Str> tokenSTRING tokenCDEFS
 
 %union
@@ -42,7 +42,8 @@ database_item:	include
 	|	device
 	|	driver
 	|	registrar
-        |       variable
+	|	function
+	|	variable
 	|	tokenBREAKTABLE	break_head break_body
 	|	tokenRECORD record_head record_body
 	|	tokenGRECORD grecord_head record_body
@@ -154,6 +155,12 @@ registrar: tokenREGISTRAR '(' tokenSTRING ')'
 {
 	if(dbStaticDebug>2) printf("registrar %s\n",$3);
 	dbRegistrar($3); dbmfFree($3);
+};
+
+function: tokenFUNCTION '(' tokenSTRING ')'
+{
+	if(dbStaticDebug>2) printf("function %s\n",$3);
+	dbFunction($3); dbmfFree($3);
 };
 
 variable: tokenVARIABLE '(' tokenSTRING ')'

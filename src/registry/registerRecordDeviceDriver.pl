@@ -14,57 +14,40 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
 $numberRecordType = 0;
 $numberDeviceSupport = 0;
 $numberDriverSupport = 0;
-$numberRegistrar = 0;
 
 open(INP,"$file") or die "$! opening file";
 while(<INP>) {
-    next if /^\s*#/;
-    if (/\brecordtype\s*\(\s*(\w+)/) {
+    next if m/ ^ \s* \# /x;
+    if (m/ \b recordtype \s* \( \s* (\w+) \s* \) /x) {
         $recordType[$numberRecordType++] = $1;
     }
-    elsif (/\bdevice\s*\(\s*(\s*\w+)\W+\w+\W+(\w+)/) {
+    elsif (m/ \b device \s* \( \s* (\w+) \W+ \w+ \W+ (\w+) /x) {
         $deviceRecordType[$numberDeviceSupport] = $1;
         $deviceSupport[$numberDeviceSupport] = $2;
         $numberDeviceSupport++;
     }
-    elsif (/\bdriver\s*\(\s*(\w+)/) {
+    elsif (m/ \b driver \s* \( \s* (\w+) \s* \) /x) {
         $driverSupport[$numberDriverSupport++] = $1;
     }
-    elsif (/\bregistrar\s*\(\s*(\w+)/) {
-        $registrar[$numberRegistrar++] = $1;
+    elsif (m/ \b registrar \s* \( \s* (\w+) \s* \) /x) {
+        push @registrars, $1;
     }
-    elsif (/\bvariable\s*\(\s*(\w+)\s*,\s*(\w+)/) {
+    elsif (m/ \b function \s* \( \s* (\w+) \s* \) /x) {
+        push @registrars, "register_func_$1";
+    }
+    elsif (m/ \b variable \s* \( \s* (\w+) \s* , \s* (\w+) \s* \) /x) {
         $varType{$1} = $2;
         push @variables, $1;
     }
 }
 close(INP) or die "$! closing file";
+
+
 # beginning of generated routine
-
-print << "END" ;
-/*#registerRecordDeviceDriver.cpp */
-/* THIS IS A GENERATED FILE. DO NOT EDIT */
-#include <stddef.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stddef.h>
-#include <stdio.h>
-
-#include "dbBase.h"
-#include "errlog.h"
-#include "dbStaticLib.h"
-#include "dbAccess.h"
-#include "recSup.h"
-#include "devSup.h"
-#include "drvSup.h"
-#include "registryRecordType.h"
-#include "registryDeviceSupport.h"
-#include "registryDriverSupport.h"
-#include "iocsh.h"
-#include "shareLib.h"
-END
-
-print "extern \"C\" {\n";
+print "/* THIS IS A GENERATED FILE. DO NOT EDIT */\n",
+      "/* Generated from $file */\n\n",
+      "#include \"registryCommon.h\"\n\n",
+      "extern \"C\" {\n";
 
 #definitions for recordtype
 if($numberRecordType>0) {
@@ -134,9 +117,9 @@ if($numberDriverSupport>0) {
 }
 
 #definitions registrar
-if($numberRegistrar>0) {
-    for ($i=0; $i<$numberRegistrar; $i++) {
-	print "epicsShareExtern void (*pvar_func_$registrar[$i])(void);\n";
+if(@registrars) {
+    foreach $reg (@registrars) {
+	print "epicsShareExtern void (*pvar_func_$reg)(void);\n";
     }
     print "\n";
 }
@@ -161,73 +144,29 @@ if (@variables) {
 
 #Now actual registration code.
 
-print << "END" ;
-int $subname(DBBASE *pbase)
-{
-END
-if($numberRecordType>0 || $numberDeviceSupport>0 || $numberDriverSupport>0) {
-    print "    int i;\n";
-}
-if($numberRecordType>0) {
-    print << "END" ;
-    for(i=0; i< $numberRecordType;  i++ ) {
-        recordTypeLocation *precordTypeLocation;
-        computeSizeOffset sizeOffset;
-        DBENTRY dbEntry;
+print "int $subname(DBBASE *pbase)\n{\n";
 
-        if(registryRecordTypeFind(recordTypeNames[i])) continue;
-        if(!registryRecordTypeAdd(recordTypeNames[i],&rtl[i])) {
-            errlogPrintf(\"registryRecordTypeAdd failed %s\\n\",
-                recordTypeNames[i]);
-            continue;
-        }
-        dbInitEntry(pbase,&dbEntry);
-        precordTypeLocation = registryRecordTypeFind(recordTypeNames[i]);
-        sizeOffset = precordTypeLocation->sizeOffset;
-        if(dbFindRecordType(&dbEntry,recordTypeNames[i])) {
-            errlogPrintf(\"registerRecordDeviceDriver failed %s\\n\",
-                recordTypeNames[i]);
-        } else {
-            sizeOffset(dbEntry.precordType);
-        }
-    }
-END
+if($numberRecordType>0) {
+    print "    registerRecordTypes(pbase, $numberRecordType, ",
+				  "recordTypeNames, rtl);\n";
 }
 if($numberDeviceSupport>0) {
-    print << "END" ;
-    for(i=0; i< $numberDeviceSupport;  i++ ) {
-        if(registryDeviceSupportFind(deviceSupportNames[i])) continue;
-        if(!registryDeviceSupportAdd(deviceSupportNames[i],devsl[i])) {
-            errlogPrintf(\"registryDeviceSupportAdd failed %s\\n\",
-                deviceSupportNames[i]);
-            continue;
-        }
-    }
-END
+    print "    registerDevices(pbase, $numberDeviceSupport, ",
+				  "deviceSupportNames, devsl);\n";
 }
 if($numberDriverSupport>0) {
-    print << "END" ;
-    for(i=0; i< $numberDriverSupport;  i++ ) {
-        if(registryDriverSupportFind(driverSupportNames[i])) continue;
-        if(!registryDriverSupportAdd(driverSupportNames[i],drvsl[i])) {
-            errlogPrintf(\"registryDriverSupportAdd failed %s\\n\",
-                driverSupportNames[i]);
-            continue;
-        }
-    }
-END
+    print "    registerDrivers(pbase, $numberDriverSupport, ",
+				  "driverSupportNames, drvsl);\n";
 }
-if($numberRegistrar>0) {
-    for($i=0; $i< $numberRegistrar;  $i++ ) {
-        print "    (*pvar_func_$registrar[$i])();\n";
-    }
+foreach $reg (@registrars) {
+    print "    (*pvar_func_$reg)();\n";
 }
 
 if (@variables) {
     print "    iocshRegisterVariable(vardefs);\n";
 }
 print << "END" ;
-    return(0);
+    return 0;
 }
 
 /* registerRecordDeviceDriver */
@@ -242,7 +181,7 @@ static void registerRecordDeviceDriverCallFunc(const iocshArgBuf *)
     $subname(pdbbase);
 }
 
-} // ext C
+} // extern "C"
 /*
  * Register commands on application startup
  */

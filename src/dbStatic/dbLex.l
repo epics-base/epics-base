@@ -41,7 +41,8 @@ static int yyreset(void)
 "grecord"	return(tokenGRECORD);
 "info"		return(tokenINFO);
 "registrar"	return(tokenREGISTRAR);
-"variable"      return(tokenVARIABLE);
+"function"	return(tokenFUNCTION);
+"variable"	return(tokenVARIABLE);
 
 [0-9]+ { /*integer number*/
 	yylval.Str = (char *)dbmfMalloc(strlen(yytext)+1);

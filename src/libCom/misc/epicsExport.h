@@ -31,6 +31,11 @@ epicsShareDef typ *EPICS_EXPORT_POBJ(typ,obj) = (typ *)&obj
 #define epicsExportRegistrar(func) \
 epicsShareFunc REGISTRAR EPICS_EXPORT_PFUNC(func) = (REGISTRAR)(void*)&func
 
+#define epicsRegisterFunction(func) \
+static void register_func_ ## func(void) { \
+    registryFunctionAdd(#func,(REGISTRYFUNCTION)func);} \
+epicsExportRegistrar(register_func_ ## func)
+
 #ifdef __cplusplus
 }
 #endif

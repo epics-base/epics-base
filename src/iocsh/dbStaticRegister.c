@@ -106,6 +106,15 @@ static void dbDumpRegistrarCallFunc(const iocshArgBuf *args)
     dbDumpRegistrar(pdbbase);
 }
 
+/* dbDumpFunction */
+static const iocshArg dbDumpFunctionArg0 = { "pdbbase",iocshArgPdbbase};
+static const iocshArg * const dbDumpFunctionArgs[1] = {&dbDumpFunctionArg0};
+static const iocshFuncDef dbDumpFunctionFuncDef = {"dbDumpFunction",1,dbDumpFunctionArgs};
+static void dbDumpFunctionCallFunc(const iocshArgBuf *args)
+{
+    dbDumpFunction(pdbbase);
+}
+
 /* dbDumpVariable */
 static const iocshArg dbDumpVariableArg0 = { "pdbbase",iocshArgPdbbase};
 static const iocshArg * const dbDumpVariableArgs[1] = {&dbDumpVariableArg0};

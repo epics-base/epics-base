@@ -1,0 +1,91 @@
+
+CAS = ../../..
+TOP = $(CAS)/../..
+SRC = $(CAS)/generic
+CA = $(CAS)/../ca
+IOSRC = $(CAS)/io/bsdSocket
+OSSRC = $(CAS)/os/vxWorks
+VPATH = $(SRC) $(IOSRC) $(OSSRC) 
+
+include $(TOP)/config/CONFIG_BASE
+
+CXXCMPLR = STRICT
+
+USR_INCLUDES = -I$(SRC) -I$(OSSRC) -I$(IOSRC) -I$(CA)\
+	-I$(TOP)/src/include/os/vxWorks
+
+DEPLIBS_BASE = $(EPICS_BASE_LIB)
+
+SRCS.cc += $(SRC)/caServer.cc 
+SRCS.cc += $(SRC)/caServerI.cc 
+SRCS.cc += $(SRC)/casCoreClient.cc 
+SRCS.cc += $(SRC)/casClient.cc 
+SRCS.cc += $(SRC)/casDGClient.cc 
+SRCS.cc += $(SRC)/casStrmClient.cc 
+SRCS.cc += $(SRC)/casPV.cc 
+SRCS.cc += $(SRC)/casPVI.cc 
+SRCS.cc += $(SRC)/casChannel.cc 
+SRCS.cc += $(SRC)/casChannelI.cc 
+SRCS.cc += $(SRC)/casClientMon.cc 
+SRCS.cc += $(SRC)/casChanDelEv.cc 
+SRCS.cc += $(SRC)/casMsgIO.cc 
+SRCS.cc += $(SRC)/casAsyncIO.cc 
+SRCS.cc += $(SRC)/casAsyncIOI.cc 
+SRCS.cc += $(SRC)/casEventSys.cc 
+SRCS.cc += $(SRC)/casMonitor.cc 
+SRCS.cc += $(SRC)/casMonEvent.cc 
+SRCS.cc += $(SRC)/outBuf.cc 
+SRCS.cc += $(SRC)/inBuf.cc 
+SRCS.cc += $(SRC)/casEventMask.cc
+
+SRCS.cc += $(OSSRC)/caServerOS.cc
+SRCS.cc += $(OSSRC)/casDGOS.cc
+SRCS.cc += $(OSSRC)/casStreamOS.cc
+
+SRCS.cc += $(IOSRC)/caServerIO.cc
+SRCS.cc += $(IOSRC)/casDGIO.cc
+SRCS.cc += $(IOSRC)/casStreamIO.cc
+SRCS.c  += $(IOSRC)/sigPipeIgnore.c
+
+LIBOBJS += caServer.o
+LIBOBJS += caServerI.o
+LIBOBJS += casCoreClient.o
+LIBOBJS += casClient.o
+LIBOBJS += casDGClient.o
+LIBOBJS += casStrmClient.o
+LIBOBJS += casPV.o
+LIBOBJS += casPVI.o
+LIBOBJS += casChannel.o
+LIBOBJS += casChannelI.o
+LIBOBJS += casClientMon.o
+LIBOBJS += casChanDelEv.o
+LIBOBJS += casMsgIO.o
+LIBOBJS += casAsyncIO.o
+LIBOBJS += casAsyncIOI.o
+LIBOBJS += casEventSys.o
+LIBOBJS += casMonitor.o
+LIBOBJS += casMonEvent.o
+LIBOBJS += outBuf.o
+LIBOBJS += inBuf.o 
+LIBOBJS += casEventMask.o
+
+LIBOBJS += caServerOS.o
+LIBOBJS += casDGOS.o
+LIBOBJS += casStreamOS.o
+
+LIBOBJS += caServerIO.o
+LIBOBJS += casDGIO.o
+LIBOBJS += casStreamIO.o
+LIBOBJS += sigPipeIgnore.o
+
+LIBNAME = libcas.o
+
+include $(TOP)/config/RULES.Vx
+
+obj: $(LIBOBJS) 
+
+test.o:
+
+clean::
+	@$(RM) -rf Templates.DB
+

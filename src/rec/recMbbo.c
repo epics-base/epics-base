@@ -80,6 +80,7 @@ long get_value();
 #define get_precision NULL
 long get_enum_str();
 long get_enum_strs();
+long put_enum_str();
 #define get_graphic_double NULL
 #define get_control_double NULL
 #define get_alarm_double NULL
@@ -99,6 +100,7 @@ struct rset mbboRSET={
 	get_precision,
 	get_enum_str,
 	get_enum_strs,
+	put_enum_str,
 	get_graphic_double,
 	get_control_double,
 	get_alarm_double };
@@ -127,7 +129,7 @@ static void init_common(pmbbo)
         pstate_values = &(pmbbo->zrvl);
         pmbbo->sdef = FALSE;
         for (i=0; i<16; i++) {
-                if (*(pstate_values+i)) {
+                if (*(pstate_values+i)!= udfUlong) {
                         pmbbo->sdef = TRUE;
                         return;
                 }
@@ -140,11 +142,9 @@ static long init_record(pmbbo)
 {
     struct mbbodset *pdset;
     long status;
-    unsigned long   *pstate_values;
-    short           i,rbv;
+    unsigned short  rbv;
 
     init_common(pmbbo);
-    pmbbo->mlst = -1;
 
     if(!(pdset = (struct mbbodset *)(pmbbo->dset))) {
 	recGblRecordError(S_dev_noDSET,pmbbo,"mbbo: init_record");
@@ -158,10 +158,14 @@ static long init_record(pmbbo)
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(pmbbo,process))) return(status);
         if (pmbbo->sdef){
+    		unsigned long   *pstate_values;
+    		short           i;
+		unsigned long rval = pmbbo->rval;
+
                 pstate_values = &(pmbbo->zrvl);
-                rbv = -1;        /* initalize to unknown state*/
-                for (i = 0; i < 16; i++){
-                        if (*pstate_values == pmbbo->rval){
+                rbv = udfUshort;        /* initalize to unknown state*/
+                if(rval!=udfUlong) for (i = 0; i < 16; i++){
+                        if (*pstate_values == rval){
                                 rbv = i;
                                 break;
                         }
@@ -174,6 +178,9 @@ static long init_record(pmbbo)
         pmbbo->rbv = rbv;
 	pmbbo->val = rbv;
     }
+    if ((pmbbo->dol.type == CONSTANT) && (pmbbo->dol.value.value != udfFloat)){
+	pmbbo->val = pmbbo->dol.value.value;
+    }
     return(0);
 }
 
@@ -183,8 +190,7 @@ static long process(paddr)
     struct mbboRecord	*pmbbo=(struct mbboRecord *)(paddr->precord);
 	struct mbbodset	*pdset = (struct mbbodset *)(pmbbo->dset);
 	long		status;
-	unsigned long   *pstate_values;
-	short      	i,rbv;
+	unsigned short	rbv;
 
 	if( (pdset==NULL) || (pdset->write_mbbo==NULL) ) {
 		pmbbo->pact=TRUE;
@@ -210,12 +216,16 @@ static long process(paddr)
 	/* status is one if an asynchronous record is being processed*/
 	if(status==1) return(0);
 
-	/* convert the value */
+	/* calculate the readback value */
         if (pmbbo->sdef){
+		unsigned long   *pstate_values;
+		short      	i;
+		unsigned long   rval = pmbbo->rval;
+
                	pstate_values = &(pmbbo->zrvl);
-               	rbv = -1;        /* initalize to unknown state*/
-               	for (i = 0; i < 16; i++){
-                       	if (*pstate_values == pmbbo->rval){
+               	rbv = udfShort;        /* initalize to unknown state*/
+               	if(rval!=udfUlong) for (i = 0; i < 16; i++){
+                       	if (*pstate_values == rval){
                                	rbv = i;
                                	break;
                        	}
@@ -283,7 +293,7 @@ static long get_enum_str(paddr,pstring)
     }
     return(0);
 }
-
+
 static long get_enum_strs(paddr,pes)
     struct dbAddr *paddr;
     struct dbr_enumStrs *pes;
@@ -297,6 +307,26 @@ static long get_enum_strs(paddr,pes)
     for(i=0,psource=(pmbbo->zrst); i<15; i++, psource += sizeof(pmbbo->zrst) ) 
 	strncpy(pes->strs[i],psource,sizeof(pmbbo->zrst));
     return(0);
+}
+static long put_enum_str(paddr,pstring)
+    struct dbAddr *paddr;
+    char          *pstring;
+{
+    struct mbboRecord     *pmbbo=(struct mbboRecord *)paddr->precord;
+        char              *pstate_name;
+        short             i;
+
+        if (pmbbo->sdef){
+                pstate_name = pmbbo->zrst;
+                for (i = 0; i < 16; i++){
+                        if(strncmp(pstate_name,pstring,sizeof(pmbbo->zrst))==0){
+                                pmbbo->val = i;
+                                return(0);
+                        }
+                        pstate_name += sizeof(pmbbo->zrst);
+                }
+        }
+	return(S_db_badChoice);
 }
 
 static void alarm(pmbbo)
@@ -323,11 +353,13 @@ static void alarm(pmbbo)
 	}
 
         /* check for cos alarm */
+	if(val == pmbbo->lalm) return;
         if (pmbbo->nsev<pmbbo->cosv){
                 pmbbo->nsta = COS_ALARM;
                 pmbbo->nsev = pmbbo->cosv;
                 return;
         }
+        pmbbo->lalm = val;
 	return;
 }
 

@@ -62,6 +62,7 @@ long get_units();
 long get_precision();
 #define get_enum_str NULL
 #define get_enum_strs NULL
+#define put_enum_str NULL
 long get_graphic_double();
 long get_control_double();
 long get_alarm_double();
@@ -81,6 +82,7 @@ struct rset subRSET={
 	get_precision,
 	get_enum_str,
 	get_enum_strs,
+	put_enum_str,
 	get_graphic_double,
 	get_control_double,
 	get_alarm_double };
@@ -327,7 +329,7 @@ static void monitor(psub)
         }
         /* check for archive change */
         delta = psub->alst - psub->val;
-        if(delta<0.0) delta = 0.0;
+        if(delta<0.0) delta = -delta;
         if (delta > psub->adel) {
                 /* post events on value field for archive change */
                 monitor_mask |= DBE_LOG;

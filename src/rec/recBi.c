@@ -73,6 +73,7 @@ long get_value();
 #define get_precision NULL
 long get_enum_str();
 long get_enum_strs();
+long put_enum_str();
 #define get_graphic_double NULL
 #define get_control_double NULL
 #define get_alarm_double NULL
@@ -91,6 +92,7 @@ struct rset biRSET={
 	get_precision,
 	get_enum_str,
 	get_enum_strs,
+	put_enum_str,
 	get_graphic_double,
 	get_control_double,
 	get_alarm_double };
@@ -123,7 +125,6 @@ static long init_record(pbi)
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(pbi,process))) return(status);
     }
-    pbi->mlst = -1;
     return(0);
 }
 
@@ -197,14 +198,28 @@ static long get_enum_strs(paddr,pes)
     strncpy(pes->strs[1],pbi->onam,sizeof(pbi->onam));
     return(0);
 }
+static long put_enum_str(paddr,pstring)
+    struct dbAddr *paddr;
+    char          *pstring;
+{
+    struct biRecord     *pbi=(struct biRecord *)paddr->precord;
+
+    if(strncmp(pstring,pbi->znam,sizeof(pbi->znam))==0) pbi->val = 0;
+    else  if(strncmp(pstring,pbi->onam,sizeof(pbi->onam))==0) pbi->val = 1;
+    else return(S_db_badChoice);
+    return(0);
+}
+
 
 static void alarm(pbi)
     struct biRecord	*pbi;
 {
+	unsigned short val = pbi->val;
 
 
+	if(val>1)return;
         /* check for  state alarm */
-        if (pbi->val == 0){
+        if (val == 0){
                 if (pbi->nsev<pbi->zsv){
                         pbi->nsta = STATE_ALARM;
                         pbi->nsev = pbi->zsv;
@@ -217,11 +232,12 @@ static void alarm(pbi)
         }
 
         /* check for cos alarm */
+	if(val == pbi->lalm) return;
         if (pbi->nsev<pbi->cosv) {
                 pbi->nsta = COS_ALARM;
                 pbi->nsev = pbi->cosv;
         }
-
+	pbi->lalm = val;
 	return;
 }
 

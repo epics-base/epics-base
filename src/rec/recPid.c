@@ -61,6 +61,7 @@ long get_units();
 long get_precision();
 #define get_enum_str NULL
 #define get_enum_strs NULL
+#define put_enum_str NULL
 long get_graphic_double();
 long get_control_double();
 long get_alarm_double();
@@ -78,6 +79,7 @@ struct rset pidRSET={
 	put_array_info,
 	get_enum_str,
 	get_enum_strs,
+	put_enum_str,
 	get_units,
 	get_precision,
 	get_graphic_double,
@@ -93,11 +95,6 @@ long do_pid();
 static long init_record(ppid)
     struct pidRecord     *ppid;
 {
-	/* initialize so that first alarm, archive, and monitor get generated*/
-	ppid->lalm = 1e30;
-	ppid->alst = 1e30;
-	ppid->mlst = 1e30;
-
         /* initialize the setpoint for constant setpoint */
         if (ppid->stpl.type == CONSTANT)
                 ppid->val = ppid->stpl.value.value;
@@ -293,7 +290,7 @@ static void monitor(ppid)
         }
         /* check for archive change */
         delta = ppid->alst - ppid->val;
-        if(delta<0.0) delta = 0.0;
+        if(delta<0.0) delta = -delta;
         if (delta > ppid->adel) {
                 /* post events on value field for archive change */
                 monitor_mask |= DBE_LOG;

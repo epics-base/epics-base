@@ -79,6 +79,7 @@ long get_units();
 long get_precision();
 #define get_enum_str NULL
 #define get_enum_strs NULL
+#define put_enum_str NULL
 long get_graphic_double();
 long get_control_double();
 #define get_alarm_double NULL
@@ -98,6 +99,7 @@ struct rset compressRSET={
 	get_precision,
 	get_enum_str,
 	get_enum_strs,
+	put_enum_str,
 	get_graphic_double,
 	get_control_double,
 	get_alarm_double };
@@ -119,7 +121,6 @@ static long init_record(pcompress)
 
     /* This routine may get called twice. Once by cvt_dbaddr. Once by iocInit*/
     if(pcompress->bptr==NULL) {
-	if(pcompress->nsam<=0) pcompress->nsam=1;
 	pcompress->bptr = (float *)calloc(pcompress->nsam,sizeof(float));
 	/* allocate memory for the summing buffer for conversions requiring it */
 	if (pcompress->alg == AVERAGE){
@@ -131,12 +132,6 @@ static long init_record(pcompress)
 
 	 pcompress->wptr = (float *)calloc(pdbAddr->no_elements,sizeof(float));
     }
-    /* initialize all counters */
-    pcompress->nuse = 0;
-    pcompress->off= 0;
-    pcompress->inx = 0;
-    pcompress->cvb = 0.0;
-    pcompress->res = 0;
     return(0);
 }
 

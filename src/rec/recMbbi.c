@@ -76,6 +76,7 @@ long get_value();
 #define get_precision NULL
 long get_enum_str();
 long get_enum_strs();
+long put_enum_str();
 #define get_graphic_double NULL
 #define get_control_double NULL
 #define get_alarm_double NULL
@@ -95,6 +96,7 @@ struct rset mbbiRSET={
 	get_precision,
 	get_enum_str,
 	get_enum_strs,
+	put_enum_str,
 	get_graphic_double,
 	get_control_double,
 	get_alarm_double };
@@ -105,7 +107,7 @@ struct mbbidset { /* multi bit binary input dset */
 	DEVSUPFUN	init;
 	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
 	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	read_mbbi;/*(-1,0,1)=>(failure,success,don't Continue*/
+	DEVSUPFUN	read_mbbi;/*(0,1,2)=>(success, asyn, success no convert)*/
 };
 void alarm();
 void monitor();
@@ -120,7 +122,7 @@ static void init_common(pmbbi)
         pstate_values = &(pmbbi->zrvl);
         pmbbi->sdef = FALSE;
         for (i=0; i<16; i++) {
-                if (*(pstate_values+i)) {
+                if (*(pstate_values+i) != udfUlong) {
 			pmbbi->sdef = TRUE;
 			return;
 		}
@@ -135,8 +137,6 @@ static long init_record(pmbbi)
     long status;
 
     init_common(pmbbi);
-    pmbbi->mlst = -1;
-    pmbbi->lalm = -1;
     if(!(pdset = (struct mbbidset *)(pmbbi->dset))) {
 	recGblRecordError(S_dev_noDSET,pmbbi,"mbbi: init_record");
 	return(S_dev_noDSET);
@@ -158,8 +158,7 @@ static long process(paddr)
     struct mbbiRecord	*pmbbi=(struct mbbiRecord *)(paddr->precord);
 	struct mbbidset	*pdset = (struct mbbidset *)(pmbbi->dset);
 	long		status;
-        unsigned long 	*pstate_values;
-        short  		i,val;
+	unsigned short  val;
 
 	if( (pdset==NULL) || (pdset->read_mbbi==NULL) ) {
 		pmbbi->pact=TRUE;
@@ -169,26 +168,29 @@ static long process(paddr)
 
 	status=(*pdset->read_mbbi)(pmbbi); /* read the new value */
 	pmbbi->pact = TRUE;
-
-	/* status is one if an asynchronous record is being processed*/
 	if(status==1) return(0);
+	if(status==0) { /* convert the value */
+        	unsigned long 	*pstate_values;
+        	short  		i;
+		unsigned long rval = pmbbi->rval;
 
-        /* convert the value */
-        if (pmbbi->sdef){
-                pstate_values = &(pmbbi->zrvl);
-                val = -1;        /* initalize to unknown state*/
-                for (i = 0; i < 16; i++){
-                        if (*pstate_values == pmbbi->rval){
+		if (pmbbi->sdef){
+			pstate_values = &(pmbbi->zrvl);
+			val = udfUshort;        /* initalize to unknown state*/
+			if(rval!=udfUlong)for (i = 0; i < 16; i++){
+			    if (*pstate_values == rval){
                                 val = i;
                                 break;
-                        }
-                        pstate_values++;
-                }
-        }else{
-                /* the raw value is the desired value */
-                *((unsigned short *)(&val)) =  (unsigned short)(pmbbi->rval);
+			    }
+			    pstate_values++;
+			}
+		}else{
+			/* the raw value is the desired value */
+			*((unsigned short *)(&val)) =  (unsigned short)(pmbbi->rval);
+		}
+		pmbbi->val = val;
 	}
-	pmbbi->val = val;
+	if(status == 2) status = 0;
 
 	/* check for alarms */
 	alarm(pmbbi);
@@ -265,6 +267,26 @@ static long get_enum_strs(paddr,pes)
 	strncpy(pes->strs[i],psource,sizeof(pmbbi->zrst));
     return(0);
 }
+static long put_enum_str(paddr,pstring)
+    struct dbAddr *paddr;
+    char          *pstring;
+{
+    struct mbbiRecord     *pmbbi=(struct mbbiRecord *)paddr->precord;
+        char              *pstate_name;
+        short             i;
+
+        if (pmbbi->sdef){
+                pstate_name = pmbbi->zrst;
+                for (i = 0; i < 16; i++){
+                        if(strncmp(pstate_name,pstring,sizeof(pmbbi->zrst))==0){
+        			pmbbi->val = i;
+                                return(0);
+                        }
+                	pstate_name += sizeof(pmbbi->zrst);
+                }
+        }
+	return(S_db_badChoice);
+}
 
 static void alarm(pmbbi)
     struct mbbiRecord	*pmbbi;
@@ -290,11 +312,13 @@ static void alarm(pmbbi)
 	}
 
         /* check for cos alarm */
+	if(val == pmbbi->lalm) return;
         if (pmbbi->nsev<pmbbi->cosv){
                 pmbbi->nsta = COS_ALARM;
                 pmbbi->nsev = pmbbi->cosv;
                 return;
         }
+	pmbbi->lalm = val;
 	return;
 }
 

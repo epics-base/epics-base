@@ -87,6 +87,7 @@ long get_units();
 long get_precision();
 #define get_enum_str NULL
 #define get_enum_strs NULL
+#define put_enum_str NULL
 long get_graphic_double();
 long get_control_double();
 long get_alarm_double();
@@ -106,6 +107,7 @@ struct rset calcRSET={
 	get_precision,
 	get_enum_str,
 	get_enum_strs,
+	put_enum_str,
 	get_graphic_double,
 	get_control_double,
 	get_alarm_double };
@@ -122,11 +124,6 @@ static long init_record(pcalc)
     long status;
     short error_number;
     char rpbuf[80];
-
-    /* initialize so that first alarm, archive, and monitor get generated*/
-    pcalc->lalm = 1e30;
-    pcalc->alst = 1e30;
-    pcalc->mlst = 1e30;
 
     if(pcalc->inpa.type==CONSTANT) pcalc->a = pcalc->inpa.value.value;
     if(pcalc->inpb.type==CONSTANT) pcalc->b = pcalc->inpb.value.value;
@@ -257,7 +254,7 @@ static void alarm(pcalc)
 	float	ftemp;
 	float	val=pcalc->val;
 
-        /* if difference is not > hysterisis don't bother */
+        /* if difference is not > hysterisis use lalm not val */
         ftemp = pcalc->lalm - pcalc->val;
         if(ftemp<0.0) ftemp = -ftemp;
         if (ftemp < pcalc->hyst) val=pcalc->lalm;
@@ -350,7 +347,7 @@ static void monitor(pcalc)
         }
         /* check for archive change */
         delta = pcalc->alst - pcalc->val;
-        if(delta<0.0) delta = 0.0;
+        if(delta<0.0) delta = -delta;
         if (delta > pcalc->adel) {
                 /* post events on value field for archive change */
                 monitor_mask |= DBE_LOG;

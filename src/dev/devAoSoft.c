@@ -55,7 +55,7 @@ static long init_record(pao)
 	break;
     default :
 	strcpy(message,pao->name);
-	strcat(message,": devAoSoft (init_record) Illegal INP field");
+	strcat(message,": devAoSoft (init_record) Illegal OUT field");
 	errMessage(S_db_badField,message);
 	return(S_db_badField);
     }
@@ -68,14 +68,21 @@ static long write_ao(pao)
     struct aoRecord	*pao;
 {
     char message[100];
+    long status;
 
     /* ao.out must be a CONSTANT or a DB_LINK or a CA_LINK*/
     switch (pao->out.type) {
     case (CONSTANT) :
 	break;
     case (DB_LINK) :
-	(void)dbPutLink(&pao->out.value.db_link,pao,DBR_FLOAT,
-		&pao->val,1L);
+	status = dbPutLink(&pao->out.value.db_link,pao,DBR_FLOAT,
+		&pao->oval,1L);
+        if(status!=0) {
+                if(pao->nsev<MAJOR_ALARM) {
+                        pao->nsev = MAJOR_ALARM;
+                        pao->nsta = LINK_ALARM;
+                }
+        }
 	break;
     case (CA_LINK) :
 	break;

@@ -66,7 +66,8 @@ static long read_bi(pbi)
     struct biRecord	*pbi;
 {
     char message[100];
-    long options,nRequest;
+    long status,options,nRequest;
+    unsigned short val;
 
     /* bi.inp must be a CONSTANT or a DB_LINK or a CA_LINK*/
     switch (pbi->inp.type) {
@@ -75,8 +76,18 @@ static long read_bi(pbi)
     case (DB_LINK) :
         options=0;
         nRequest=1;
-        (void)dbGetLink(&(pbi->inp.value.db_link),pbi,DBR_SHORT,
-                &(pbi->val),&options,&nRequest);
+        status = dbGetLink(&(pbi->inp.value.db_link),pbi,DBR_USHORT,
+                &val,&options,&nRequest);
+        if(status!=0) {
+                if(pbi->nsev<VALID_ALARM) {
+                        pbi->nsev = VALID_ALARM;
+                        pbi->nsta = LINK_ALARM;
+                }
+        }
+	else {
+		if (val==0) pbi->val = 0;
+		else pbi->val = 1;
+	}
         break;
     case (CA_LINK) :
         break;

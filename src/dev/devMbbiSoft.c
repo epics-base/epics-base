@@ -1,5 +1,5 @@
 /* devMbbiSoft.c */
-/* share/src/dev $Id$ */
+/* share/src/dev @(#)devMbbiSoft.c	1.2     11/30/90 */
 
 /* devMbbiSoft.c - Device Support Routines for  Soft Multibit Binary Input*/
 
@@ -65,17 +65,25 @@ static long read_mbbi(pmbbi)
     struct mbbiRecord	*pmbbi;
 {
     char message[100];
-    long options,nRequest;
+    long status,options,nRequest;
 
     /* mbbi.inp must be a CONSTANT or a DB_LINK or a CA_LINK*/
     switch (pmbbi->inp.type) {
     case (CONSTANT) :
+	return(2);
         break;
     case (DB_LINK) :
         options=0;
         nRequest=1;
-        (void)dbGetLink(&(pmbbi->inp.value.db_link),pmbbi,DBR_ULONG,
+        status = dbGetLink(&(pmbbi->inp.value.db_link),pmbbi,DBR_ULONG,
                 &(pmbbi->rval),&options,&nRequest);
+        if(status!=0) {
+                if(pmbbi->nsev<VALID_ALARM) {
+                        pmbbi->nsev = VALID_ALARM;
+                        pmbbi->nsta = LINK_ALARM;
+                }
+		return(2);
+        }
         break;
     case (CA_LINK) :
         break;
@@ -89,6 +97,7 @@ static long read_mbbi(pmbbi)
                         errMessage(S_db_badField,message);
                 }
         }
+	return(2);
     }
     return(0);
 }

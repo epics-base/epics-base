@@ -62,6 +62,7 @@ long get_units();
 long get_precision();
 #define get_enum_str NULL
 #define get_enum_strs NULL
+#define put_enum_str NULL
 long get_graphic_double();
 long get_control_double();
 long get_alarm_double();
@@ -81,6 +82,7 @@ struct rset selRSET={
 	get_precision,
 	get_enum_str,
 	get_enum_strs,
+	put_enum_str,
 	get_graphic_double,
 	get_control_double,
 	get_alarm_double };
@@ -99,11 +101,6 @@ int do_sel();
 static long init_record(psel)
     struct selRecord     *psel;
 {
-    /* initialize so that first alarm, archive, and monitor get generated*/
-    psel->lalm = 1e30;
-    psel->alst = 1e30;
-    psel->mlst = 1e30;
-
     if(psel->inpa.type==CONSTANT) psel->a = psel->inpa.value.value;
     if(psel->inpb.type==CONSTANT) psel->b = psel->inpb.value.value;
     if(psel->inpc.type==CONSTANT) psel->c = psel->inpc.value.value;
@@ -305,7 +302,7 @@ static void monitor(psel)
         }
         /* check for archive change */
         delta = psel->alst - psel->val;
-        if(delta<0.0) delta = 0.0;
+        if(delta<0.0) delta = -delta;
         if (delta > psel->adel) {
                 /* post events on value field for archive change */
                 monitor_mask |= DBE_LOG;

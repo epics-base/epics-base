@@ -75,8 +75,15 @@ static long read_ai(pai)
     case (DB_LINK) :
 	options=0;
 	nRequest=1;
-	(void)dbGetLink(&(pai->inp.value.db_link),pai,DBR_LONG,
+	status = dbGetLink(&(pai->inp.value.db_link),pai,DBR_LONG,
 		&(pai->rval),&options,&nRequest);
+        if(status!=0) {
+                if(pai->nsev<VALID_ALARM) {
+                        pai->nsev = VALID_ALARM;
+                        pai->nsta = LINK_ALARM;
+                }
+        }
+
 	break;
     case (CA_LINK) :
 	break;
@@ -91,5 +98,5 @@ static long read_ai(pai)
 		}
 	}
     }
-    return(2); /*don't convert*/
+    return(0); /*don't convert*/
 }

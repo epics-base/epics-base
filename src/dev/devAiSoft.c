@@ -77,8 +77,14 @@ static long read_ai(pai)
     case (DB_LINK) :
 	options=0;
 	nRequest=1;
-	(void)dbGetLink(&(pai->inp.value.db_link),pai,DBR_FLOAT,
+	status = dbGetLink(&(pai->inp.value.db_link),pai,DBR_DOUBLE,
 		&(pai->val),&options,&nRequest);
+	if(status!=0) {
+		if(pai->nsev<VALID_ALARM) {
+			pai->nsev = VALID_ALARM;
+			pai->nsta = LINK_ALARM;
+		}
+	}
 	break;
     case (CA_LINK) :
 	break;

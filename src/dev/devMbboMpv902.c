@@ -67,7 +67,7 @@ static long init_record(pmbbo)
 	break;
     default :
 	strcpy(message,pmbbo->name);
-	strcat(message,": devMbboMpv902 (init_record) Illegal INP field");
+	strcat(message,": devMbboMpv902 (init_record) Illegal OUT field");
 	errMessage(S_db_badField,message);
 	return(S_db_badField);
     }

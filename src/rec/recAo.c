@@ -80,6 +80,7 @@ long get_units();
 long get_precision();
 #define get_enum_str NULL
 #define get_enum_strs NULL
+#define put_enum_str NULL
 long get_graphic_double();
 long get_control_double();
 long get_alarm_double();
@@ -99,6 +100,7 @@ struct rset aoRSET={
 	get_precision,
 	get_enum_str,
 	get_enum_strs,
+	put_enum_str,
 	get_graphic_double,
 	get_control_double,
 	get_alarm_double };
@@ -131,12 +133,7 @@ static long init_record(pao)
     struct aoRecord	*pao;
 {
     struct aodset *pdset;
-    long status;
-
-    /* initialize so that first alarm, archive, and monitor get generated*/
-    pao->lalm = 1e30;
-    pao->alst = 1e30;
-    pao->mlst = 1e30;
+    long status=0;
 
     if(!(pdset = (struct aodset *)(pao->dset))) {
 	recGblRecordError(S_dev_noDSET,pao,"ao: init_record");
@@ -151,7 +148,7 @@ static long init_record(pao)
 	if((status=(*pdset->init_record)(pao,process))) return(status);
     }
     /* get the intial value */
-    if ((pao->dol.type == CONSTANT) && (pao->dol.value.value != 0)){
+    if ((pao->dol.type == CONSTANT) && (pao->dol.value.value != udfFloat)){
             pao->val = pao->dol.value.value;
     }
     return(0);
@@ -169,15 +166,10 @@ static long process(paddr)
 		recGblRecordError(S_dev_missingSup,pao,"write_ao");
 		return(S_dev_missingSup);
 	}
-	if(pao->pact == FALSE) {
-		convert(pao);
-		status=(*pdset->write_ao)(pao);
-	} else {
-		status=(*pdset->write_ao)(pao); 
-		pao->pact = TRUE;
-	}
 
-	/* status is one if an asynchronous record is being processed*/
+	if(pao->pact == FALSE) convert(pao);
+	status=(*pdset->write_ao)(pao);
+	pao->pact = TRUE;
 	if(status==1) return(0);
 
 	/* check for alarms */
@@ -369,6 +361,7 @@ static void convert(pao)
 	}
 	pao->val = value;
 
+	if(pao->oval == udfFloat) pao->oval = value;
 	/* now set value equal to desired output value */
         /* apply the output rate of change */
         if (pao->oroc){
@@ -384,7 +377,7 @@ static void convert(pao)
 
         /* convert */
         if (pao->linr == LINEAR){
-                if (pao->eslo == 0) pao->rval = 0;
+                if (pao->eslo == 0.0) pao->rval = 0;
                 else pao->rval = (value - pao->egul) / pao->eslo;
         }else{
                 pao->rval = value;
@@ -436,7 +429,7 @@ static void monitor(pao)
 
         /* check for archive change */
         delta = pao->alst - pao->val;
-        if(delta<0.0) delta = 0.0;
+        if(delta<0.0) delta = -delta;
         if (delta > pao->adel) {
                 /* post events on value field for archive change */
                 monitor_mask |= DBE_LOG;

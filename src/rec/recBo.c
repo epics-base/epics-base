@@ -83,6 +83,7 @@ long get_value();
 #define get_precision NULL
 long get_enum_str();
 long get_enum_strs();
+long put_enum_str();
 #define get_graphic_double NULL
 #define get_control_double NULL
 #define get_alarm_double NULL
@@ -102,6 +103,7 @@ struct rset boRSET={
 	get_precision,
 	get_enum_str,
 	get_enum_strs,
+	put_enum_str,
 	get_graphic_double,
 	get_control_double,
 	get_alarm_double };
@@ -158,8 +160,8 @@ static long init_record(pbo)
 	return(S_dev_missingSup);
     }
     /* get the intial value */
-    if (pbo->dol.type == CONSTANT){
-	if (pbo->dol.value.value != 0)  pbo->val = 1;
+    if (pbo->dol.type == CONSTANT & pbo->dol.value.value!=udfFloat){
+	if (pbo->dol.value.value == 1)  pbo->val = 1;
 	else                            pbo->val = 0;
     }
     if( pdset->init_record ) {
@@ -172,7 +174,6 @@ static long init_record(pbo)
             logMsg("dbNameToAddr failed in init_record for recBo\n");
             exit(1);
     }
-    pbo->mlst = -1;
     return(0);
 }
 
@@ -196,10 +197,19 @@ static long process(paddr)
                long options=0;
                 long nRequest=1;
                 short savepact=pbo->pact;
+		unsigned short val;
 
                 pbo->pact = TRUE;
-                (void)dbGetLink(&pbo->dol.value.db_link,pbo,
-			DBR_SHORT,&(pbo->val),&options,&nRequest);
+                status = dbGetLink(&pbo->dol.value.db_link,pbo,
+			DBR_USHORT,&(pbo->val),&options,&nRequest);
+		if(status) {
+			if(pbo->nsev < VALID_ALARM) {
+				pbo->nsev = VALID_ALARM;
+				pbo->nsta = LINK_ALARM;
+			}
+		}
+		else if(val==0) pbo->val = 0;
+		else pbo->val = 1;
                 pbo->pact = savepact;
         }
 
@@ -270,14 +280,26 @@ static long get_enum_strs(paddr,pes)
     strncpy(pes->strs[1],pbo->onam,sizeof(pbo->onam));
     return(0);
 }
+static long put_enum_str(paddr,pstring)
+    struct dbAddr *paddr;
+    char          *pstring;
+{
+    struct boRecord     *pbo=(struct boRecord *)paddr->precord;
+
+    if(strncmp(pstring,pbo->znam,sizeof(pbo->znam))==0) pbo->val = 0;
+    else  if(strncmp(pstring,pbo->onam,sizeof(pbo->onam))==0) pbo->val = 1;
+    else return(S_db_badChoice);
+    return(0);
+}
 
 static void alarm(pbo)
     struct boRecord	*pbo;
 {
+	unsigned short val = pbo->val;
 
 
         /* check for  state alarm */
-        if (pbo->val == 0){
+        if (val == 0){
                 if (pbo->nsev<pbo->zsv){
                         pbo->nsta = STATE_ALARM;
                         pbo->nsev = pbo->zsv;
@@ -290,11 +312,12 @@ static void alarm(pbo)
         }
 
         /* check for cos alarm */
+	if(val == pbo->lalm) return;
         if (pbo->nsev<pbo->cosv) {
                 pbo->nsta = COS_ALARM;
                 pbo->nsev = pbo->cosv;
         }
-
+	pbo->lalm = val;
         return;
 }
 

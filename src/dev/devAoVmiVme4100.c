@@ -56,7 +56,7 @@ static long init_record(pao)
 	break;
     default :
 	strcpy(message,pao->name);
-	strcat(message,": devAoVmiVme4100 (init_record) Illegal INP field");
+	strcat(message,": devAoVmiVme4100 (init_record) Illegal OUT field");
 	errMessage(S_db_badField,message);
 	return(S_db_badField);
     }

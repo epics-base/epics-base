@@ -59,6 +59,7 @@ long get_value();
 #define get_precision NULL
 #define get_enum_str NULL
 #define get_enum_strs NULL
+#define put_enum_str NULL
 #define get_graphic_double NULL
 #define get_control_double NULL
 #define get_alarm_double NULL
@@ -78,6 +79,7 @@ struct rset stateRSET={
 	get_precision,
 	get_enum_str,
 	get_enum_strs,
+	put_enum_str,
 	get_graphic_double,
 	get_control_double,
 	get_alarm_double };

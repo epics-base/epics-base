@@ -85,6 +85,7 @@ long get_units();
 long get_precision();
 #define get_enum_str NULL
 #define get_enum_strs NULL
+#define put_enum_str NULL
 long get_graphic_double();
 long get_control_double();
 long get_alarm_double();
@@ -104,6 +105,7 @@ struct rset aiRSET={
 	get_precision,
 	get_enum_str,
 	get_enum_strs,
+	put_enum_str,
 	get_graphic_double,
 	get_control_double,
 	get_alarm_double};
@@ -129,11 +131,6 @@ static long init_record(pai)
 {
     struct aidset *pdset;
     long status;
-
-    /* initialize so that first alarm, archive, and monitor get generated*/
-    pai->lalm = 1e30;
-    pai->alst = 1e30;
-    pai->mlst = 1e30;
 
     if(!(pdset = (struct aidset *)(pai->dset))) {
 	recGblRecordError(S_dev_noDSET,pai,"ai: init_record");
@@ -177,8 +174,9 @@ static long process(paddr)
 	status=(*pdset->read_ai)(pai); /* read the new value */
 	pai->pact = TRUE;
 	/* status is one if an asynchronous record is being processed*/
-	if(status==1) return(0);
-	if(status==2) status=0; else convert(pai);
+	if (status==0)convert(pai);
+	else if(status==1) return(0);
+	else if(status==2) status=0;
 
 	/* check for alarms */
 	alarm(pai);
@@ -218,9 +216,9 @@ static long get_value(pai,pvdes)
     struct aiRecord		*pai;
     struct valueDes	*pvdes;
 {
-    pvdes->field_type = DBF_FLOAT;
+    pvdes->field_type = DBF_DOUBLE;
     pvdes->no_elements=1;
-    (float *)(pvdes->pvalue) = &pai->val;
+    (double *)(pvdes->pvalue) = &pai->val;
     return(0);
 }
 
@@ -448,7 +446,7 @@ static void monitor(pai)
 
 	/* check for archive change */
 	delta = pai->alst - pai->val;
-	if(delta<0.0) delta = 0.0;
+	if(delta<0.0) delta = -delta;
 	if (delta > pai->adel) {
 		/* post events on value field for archive change */
 		monitor_mask |= DBE_LOG;

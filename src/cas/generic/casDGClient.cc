@@ -522,18 +522,15 @@ caStatus casDGClient::processDG ()
             status = S_cas_sendBlocked;
             break;
         }
-
-        // insert version header at the start of the reply message
-        this->sendVersion ();
         
         cadg *pRespHdr = reinterpret_cast <cadg *> (pRaw);
         
         //
         // select the next DG in the input stream and start processing it
         //
-        const bufSizeT reqBodySize = pReqHdr->cadg_nBytes-sizeof (*pReqHdr);
+        const bufSizeT reqBodySize = pReqHdr->cadg_nBytes - sizeof (*pReqHdr);
 
-        const inBufCtx inctx = this->in.pushCtx (sizeof (*pReqHdr), reqBodySize);
+        const inBufCtx inctx = this->in.pushCtx ( sizeof (*pReqHdr), reqBodySize);
         if ( inctx.pushResult() != inBufCtx::pushCtxSuccess ) {
             this->in.removeMsg ( bytesLeft );
             this->out.popCtx ( outctx );
@@ -545,6 +542,9 @@ caStatus casDGClient::processDG ()
         this->lastRecvAddr = pReqHdr->cadg_addr;
         this->seqNoOfReq = 0;
         this->minor_version_number = 0;
+
+        // insert version header at the start of the reply message
+        this->sendVersion ();
 
         status = this->processMsg ();
         dgInBytesConsumed = this->in.popCtx ( inctx );

@@ -1,0 +1,61 @@
+src/cvtDctsdr
+   removed. If users are upgrading form 3.12 they will have to use 3.13
+src/libvxWorks
+   moved to src/vxWorks/
+   The following are gone
+        bus_error_recovery.c
+        ldpp*
+        timerLib.*
+        vxldscript.MRI
+src/dev
+   Except for softDev and testDev all moved to src/vxWorks/dev
+
+   Following are completely unbundled
+   
+        allenBradleyDev
+src/db
+   Following moved to src/vxWorks/db
+
+        devLib.h
+	devLib.c
+	devLibVxWorks.c
+	drvTS.h
+	drvTS.c
+        TSdriver.html
+src/include
+    Following moved to src/vxWorks/include
+
+	camacLib.h
+	fast_lock.h
+	module_types.h
+	task_params.h
+
+src/iocCore
+    Moved to src/vxWorks/iocCore
+src/dbtools
+    The following no longer exist
+    dbLoadRecords 
+    dbfile.5
+    templatefile.5
+src/devOpt
+    The following are unbundled
+         devBBInteract.c
+    The rest has been moved to src/vxWorks/devOpt
+src/osi
+    os/solaris
+	This should really be os/singleThreaded
+    os/vxWorks
+	Macros for most things
+    
+src/rec
+    following deleted
+
+	choiceWait.h
+        recDynLink*
+        recWaitCa*
+        scanRecord.*
+        waitRecord.*
+src/rsrv/globalsource.c
+    added #include <semLib.h>
+src/makeBaseApp/configure
+    Not ready - Waiting for Janet

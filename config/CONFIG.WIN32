@@ -16,9 +16,24 @@
 #	Set this to the UNIX-like shell that you have:
 SHELL=knts
 
+# 	Use std path variables from ms
+HOME = $(HOMEDRIVE)$(HOMEPATH)
+
 # BUILD_TYPE
 #   Currently either Vx or Host (latter used to be Unix
 BUILD_TYPE=Host
+
+#
+# optimize/debug flags
+#
+HOST_OPT = YES
+CXX_OPT_FLAGS_YES = -Ox
+#	-Zi  : included debugging info
+CXX_OPT_FLAGS_NO = -Zi
+CXX_OPT_FLAGS = $(CXX_OPT_FLAGS_$(HOST_OPT))
+LINK_OPT_FLAGS_YES = 
+LINK_OPT_FLAGS_NO = -debug
+LINK_OPT_FLAGS = $(LINK_OPT_FLAGS_$(HOST_OPT))
 
 #	to identify the general architecture class:
 #	should be BSD, SYSV, WIN32, ...
@@ -56,9 +71,8 @@ HOST_INCLUDES = -I. -I.. $(USR_INCLUDES) -I$(INSTALL_INCLUDE) \
 #
 #	-MDd : use MSVCRTD (run-time as DLL, multi-thread support)
 #	       this also calls for _DLL
-#	-Zi  : included debugging info
 #
-OP_SYS_FLAGS:=-MDd -Zi -VMG -VMV -DWIN32 -D_WIN32 -D_DEBUG -D_WINDOWS \
+OP_SYS_FLAGS:=-MDd $(CXX_OPT_FLAGS) -VMG -VMV -DWIN32 -D_WIN32 -D_DEBUG -D_WINDOWS \
 	-D_X86_ -D_NTSDK -D_DLL -D__STDC__=0
 
 
@@ -75,7 +89,7 @@ DLLENTRY:=@12
 #	yes, for MS it's I386 for 386, 486, Pentium!
 #	don't mix this with VxWorks which has different BSPs for [34]86 !
 WIN32_DLLFLAGS:=$(HOST_LDFLAGS) $(HOST_LDLIBS)\
-	-subsystem:windows -dll -incremental:no -debug -machine:I386 
+	-subsystem:windows -dll -incremental:no $(LINK_OPT_FLAGS) -machine:I386 
 
 
 ARCH_DEP_CFLAGS =
@@ -109,7 +123,7 @@ COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c
 #	i.e.  -Tp  has to be immediately before the source file name
 COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -DEXPL_TEMPL -c -Tp
 
-LINK.c=link $(LDFLAGS) -out:$@
+LINK.c=link $(LINK_OPT_FLAGS) $(LDFLAGS) -out:$@
 LINK.cc=$(LINK.c)
 
 #	The DEPENDS_RULE may be a script on other systems,

@@ -94,20 +94,6 @@ STATIC_BUILD=NO
 #        must be either YES or NO
 HDEPENDS=YES
 
-# Command to generate header dependancy files for host builds
-# only used if HDEPENDS=YES
-# must be either CMPLR or MKMF
-# CMPLR - use c/c++ compiler 
-# MKMF  - use mkmf.pl perl script in <base>/configure/tools directory 
-#
-# CMPLR Note: On WIN32 hosts, gnu compilers gcc and g++ are used to
-#             generate dependancy files for host builds,and they must
-#             be in your path. 
-# WIN32 Note: CONFIG.win32-x86.win32-x86 distribution file contains
-#             HOST_HDEPENDS_CMD=MKMF override
-#
-HOST_HDEPENDS_CMD=MKMF
-
 #  Host build optimization
 #	must be either YES or NO
 HOST_OPT=YES

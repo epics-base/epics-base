@@ -98,13 +98,13 @@ char * pResourceFilename;
     logMsg("getResources completed\n");
     initialized = TRUE;
     logMsg("sdrLoad completed\n");
-    /* enable interrupt level 5 and 6 */
-    sysIntEnable(5);
-    sysIntEnable(6);
     if(initDrvSup()==0) logMsg("Drivers Initialized\n");
     if(initRecSup()==0) logMsg("Record Support Initialized\n");
     if(initDevSup()==0) logMsg("Device Support Initialized\n");
     ts_init(); logMsg("Time Stamp Driver Initialized\n");
+    /* enable interrupt level 5 and 6 */
+    sysIntEnable(5);
+    sysIntEnable(6);
     if(initDatabase()==0) logMsg("Database Initialized\n");
     /* if user exit exists call it */
     strcpy(name,"_");

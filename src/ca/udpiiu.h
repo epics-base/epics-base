@@ -57,7 +57,7 @@ class cac;
 class cacContextNotify;
 
 class udpRecvThread : 
-        public epicsThreadRunable {
+        private epicsThreadRunable {
 public:
     udpRecvThread ( 
         class udpiiu & iiuIn, cacContextNotify &, epicsMutex &,
@@ -65,6 +65,7 @@ public:
     virtual ~udpRecvThread ();
     void start ();
     bool exitWait ( double delay );
+    void show ( unsigned level ) const;
 private:
     class udpiiu & iiu;
     epicsMutex & cbMutex;
@@ -180,7 +181,7 @@ private:
         epicsGuard < epicsMutex > &, const caHdr &msg, 
         const osiSockAddr &net_addr, const epicsTime & );
 
-    friend void udpRecvThread::run ();
+    friend class udpRecvThread;
 
     void hostName ( 
         epicsGuard < epicsMutex > &,

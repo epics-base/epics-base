@@ -290,6 +290,10 @@ bool udpRecvThread::exitWait ( double delay )
     return this->thread.exitWait ( delay );
 }
 
+void udpRecvThread::show ( unsigned /* level */ ) const
+{
+}
+
 void udpRecvThread::run ()
 {
     epicsThreadPrivateSet ( caClientCallbackThreadId, &this->iiu );

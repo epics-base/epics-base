@@ -16,9 +16,9 @@ value	[a-zA-Z0-9_\,\^~\./\*#\[\]%: ;!|\'\-&\(\)@\?\+<>=\$\{\}]
 "nowhere"   {  return(NOWHERE); }
 "application"   {  return(APPL); }
 
-\"{value}*\"    { yylval.Str=(char *)malloc(strlen(yytext)+1); strcpy(yylval.Str,yytext+1); yylval.Str[strlen(yylval.Str)-1] = '\0'; return(VALUE); }
+\"{value}*\"    { yylval.Str=(char *)dbmfMalloc(handle,strlen(yytext)+1); strcpy(yylval.Str,yytext+1); yylval.Str[strlen(yylval.Str)-1] = '\0'; return(VALUE); }
 
-{pvname}+		{ yylval.Str=(char *)malloc(strlen(yytext)+1); strcpy(yylval.Str,yytext); return(WORD);	}
+{pvname}+		{ yylval.Str=(char *)dbmfMalloc(handle,strlen(yytext)+1); strcpy(yylval.Str,yytext); return(WORD);	}
 
 "{"	{ return(O_BRACE);	}
 "}"	{ return(C_BRACE);	}

@@ -36,7 +36,8 @@
 #include <stdlib.h>
 
 #include "dbVarSub.h"
-#include <epicsVersion.h>
+#include "dbmf.h"
+#include "epicsVersion.h"
 
 static int line_num;
 static int yyerror();
@@ -52,6 +53,7 @@ static char sub_collect[VAR_MAX_VAR_STRING];
 static char** vars;
 static char* db_file_name = (char*)NULL;
 static int var_count,sub_count;
+static void* handle=NULL;
 
 %}
 
@@ -145,7 +147,7 @@ sub: WORD O_BRACE vals C_BRACE
 		sub_it();
 #endif
 
-		free($1);
+		dbmfFree(handle,$1);
 		sub_collect[0]='\0';
 		sub_count=0;
 	}
@@ -181,7 +183,7 @@ val: QUOTE
 			strcat(sub_collect,"=\"");
 			strcat(sub_collect,$1);
 			strcat(sub_collect,"\",");
-			free($1);
+			dbmfFree(handle,$1);
 			sub_count++;
 		}
 	}
@@ -193,7 +195,7 @@ val: QUOTE
 			strcat(sub_collect,"=");
 			strcat(sub_collect,$1);
 			strcat(sub_collect,",");
-			free($1);
+			dbmfFree(handle,$1);
 			sub_count++;
 		}
 	}
@@ -218,7 +220,7 @@ var_sub: WORD O_BRACE sub_pats C_BRACE
 		sub_it();
 #endif
 
-		free($1);
+		dbmfFree(handle,$1);
 		sub_collect[0]='\0';
 		sub_count=0;
 	}
@@ -252,7 +254,7 @@ sub_pat: WORD EQUALS WORD
 		strcat(sub_collect,"=");
 		strcat(sub_collect,$3);
 		strcat(sub_collect,",");
-		free($1); free($3);
+		dbmfFree(handle,$1); dbmfFree(handle,$3);
 		sub_count++;
 	}
 	| WORD EQUALS QUOTE
@@ -261,7 +263,7 @@ sub_pat: WORD EQUALS WORD
 		strcat(sub_collect,"=\"");
 		strcat(sub_collect,$3);
 		strcat(sub_collect,"\",");
-		free($1); free($3);
+		dbmfFree(handle,$1); dbmfFree(handle,$3);
 		sub_count++;
 	}
 	;
@@ -305,6 +307,7 @@ int dbLoadTemplate(char* sub_file)
 	{
 		yyin=fp;
 		is_not_inited=0;
+		handle=dbmfInit(55,1,4);
 	}
 	else
 	{

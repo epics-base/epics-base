@@ -41,7 +41,7 @@ LIBRARY := BSlib
 #
 #	but
 #
-PROD_LIBS := BSlib Db
+PROD_LIBS := BSlib Db Com
 PROD      := subtool dbLoadTemplate rdbls rdbapplist PVSserver
 
 endif

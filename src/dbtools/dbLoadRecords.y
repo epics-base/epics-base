@@ -36,8 +36,9 @@
 #include <stdlib.h>
 
 #include "dbVarSub.h"
-#include <dbStaticLib.h>
-#include <epicsVersion.h>
+#include "dbStaticLib.h"
+#include "dbmf.h"
+#include "epicsVersion.h"
 
 static char subst_buffer[VAR_MAX_SUB_SIZE];
 static int subst_used;
@@ -61,6 +62,7 @@ static void sub_pvname(char*,char*);
 static DBENTRY* pdbentry;
 extern struct dbBase *pdbbase;
 #endif
+static void* handle=NULL;
 
 %}
 
@@ -90,9 +92,9 @@ database:	DATABASE d_head d_body
 	;
 
 d_head:	O_PAREN WORD C_PAREN
-	{ free($2); }
+	{ dbmfFree(handle,$2); }
 	| O_PAREN WORD COMMA VALUE C_PAREN
-	{ free($2); free($4); }
+	{ dbmfFree(handle,$2); dbmfFree(handle,$4); }
 	;
 
 d_body:	O_BRACE nowhere_records db_components C_BRACE
@@ -126,7 +128,7 @@ applic: APPL O_PAREN VALUE C_PAREN
 				fprintf(stderr,"dbDoSubst failed\n");
 #ifdef vxWorks
 			an->name=strdup(subst_buffer);
-			free($3);
+			dbmfFree(handle,$3);
 #else
 			printf("\napplication(\"%s\")\n",subst_buffer);
 #endif
@@ -161,12 +163,12 @@ record:	RECORD r_head r_body
 r_head:	O_PAREN WORD COMMA WORD C_PAREN
 	{
 		sub_pvname($2,$4);
-		free($2); free($4);
+		dbmfFree(handle,$2); dbmfFree(handle,$4);
 	}
 	| O_PAREN WORD COMMA VALUE C_PAREN
 	{
 		sub_pvname($2,$4);
-		free($2); free($4);
+		dbmfFree(handle,$2); dbmfFree(handle,$4);
 	}
 	;
 
@@ -206,7 +208,7 @@ field:	FIELD O_PAREN WORD COMMA VALUE C_PAREN
 			printf("\n\t\tfield(%s, \"%s\")",$<Str>3,$<Str>5);
 #endif
 		}
-		free($3); free($5);
+		dbmfFree(handle,$3); dbmfFree(handle,$5);
 	}
 	;
 
@@ -222,7 +224,7 @@ char  *str;
 static char* strdup(char* x)
 {
 	char* c;
-	c=(char*)malloc(strlen(x)+1);
+	c=(char*)dbmfMalloc(handle,strlen(x)+1);
 	strcpy(c,x);
 	return c;
 }
@@ -264,6 +266,7 @@ int dbLoadRecords(char* pfilename, char* pattern)
 	{
 		yyin=fp;
 		is_not_inited=0;
+		handle=dbmfInit(55,1,4);
 	}
 	else
 	{

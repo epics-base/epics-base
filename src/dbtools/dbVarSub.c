@@ -37,8 +37,9 @@
 #include <memLib.h>
 #endif
 
-#include <dbVarSub.h>
-#include <dbStaticLib.h>
+#include "dbmf.h"
+#include "dbVarSub.h"
+#include "dbStaticLib.h"
 
 static int subst_total;
 static struct var_sub *subst = (struct var_sub*)NULL;
@@ -49,7 +50,7 @@ static char* get_sub(char*, char*);
 
 /* ------------------ variable substitution routines --------------*/
 #ifdef vxWorks
-static char* strdup(char*p) { return strcpy((char*)malloc(strlen(p)+1),p); }
+static char* strdup(char*p) { return strcpy((char*)dbmfMalloc(NULL,strlen(p)+1),p); }
 #endif
 
 void dbFreeSubst()

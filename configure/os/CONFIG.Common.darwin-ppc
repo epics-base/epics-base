@@ -20,6 +20,11 @@ ARCH_CLASS = ppc
 OP_SYS_CFLAGS += -fno-common
 
 #
+# Don't try to use precompiled headers when converting sequencer files
+#
+CPPSNCFLAGS += -no-cpp-precomp
+
+#
 # Need to get some fink-installed packages (readline, etc.).
 # If you don't have readline on your system you must remove
 # or comment out these lines and make the appropriate changes

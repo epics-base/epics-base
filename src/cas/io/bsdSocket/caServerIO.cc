@@ -14,6 +14,9 @@
 //
 //
 // $Log$
+// Revision 1.9.8.1  2002/07/12 22:16:49  jba
+// Updated license comments.
+//
 // Revision 1.9  1998/06/16 02:35:50  jhill
 // use aToIPAddr and auto attach to winsock if its a static build
 //
@@ -142,7 +145,7 @@ caStatus caServerIO::init(caServerI &cas)
 		while ( (pToken = getToken(&pStr, buf, sizeof(buf))) ) {
 			int status;
 
-			status = aToIPAddr (pToken, 0u, &saddr);
+			status = aToIPAddr (pToken, port, &saddr);
 			if (status) {
 				ca_printf(
 					"%s: Parsing '%s'\n",

@@ -196,4 +196,10 @@ NT resource kit.
 include from <epics>\base\include, include from <epics>\base\include\os\win32,
 and augment the link path with <epics>\base\lib\win32-x86. If the visual C++
 /Za option is not used then you will also need to define __STDC__ to be zero 
-on the command line.
+on the command line. Its important that all .DLL and .EXE files in the same
+process use the same version of the Microsoft run-time support. Therefore,
+you must also use the /MDd (multithreaded debug DLL version of the Microsoft 
+run-time libraries) or /MD (multithreaded DLL version of the Microsoft run-time 
+libraries) options depending on if it is an debug build or not. The above assumes 
+that you are linking with the DLL versions of the EPICS libraries (xxx.lib) and
+not with th object libraries (xxxObj.lib).

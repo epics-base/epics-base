@@ -25,37 +25,40 @@ extern int main (int argc, const char **argv)
     double      executionTime;
     char        pvPrefix[128] = "";
     unsigned    aliasCount = 1u;
-    unsigned    scanOnAsUnsignedInt = true;
+    unsigned    scanOn = true;
+    unsigned    syncScan = true;
     char        arraySize[64] = "";
-    bool        scanOn;
     bool        forever = true;
     int         i;
 
     for ( i = 1; i < argc; i++ ) {
-        if (sscanf(argv[i], "-d %u", &debugLevel)==1) {
+        if ( sscanf(argv[i], "-d %u", & debugLevel ) == 1 ) {
             continue;
         }
-        if (sscanf(argv[i],"-t %lf", &executionTime)==1) {
+        if ( sscanf ( argv[i],"-t %lf", & executionTime ) == 1 ) {
             forever = false;
             continue;
         }
-        if (sscanf(argv[i],"-p %127s", pvPrefix)==1) {
+        if ( sscanf ( argv[i], "-p %127s", pvPrefix ) == 1 ) {
             continue;
         }
-        if (sscanf(argv[i],"-c %u", &aliasCount)==1) {
+        if ( sscanf ( argv[i],"-c %u", & aliasCount ) == 1 ) {
             continue;
         }
-        if (sscanf(argv[i],"-s %u", &scanOnAsUnsignedInt)==1) {
+        if ( sscanf ( argv[i],"-s %u", & scanOn ) == 1 ) {
             continue;
         }
-        if (sscanf(argv[i],"-a %63s", arraySize)==1) {
+        if ( sscanf ( argv[i],"-a %63s", arraySize ) == 1 ) {
+            continue;
+        }
+        if ( sscanf ( argv[i],"-ss %u", & syncScan ) == 1 ) {
             continue;
         }
         printf ("\"%s\"?\n", argv[i]);
         printf (
             "usage: %s [-d<debug level> -t<execution time> -p<PV name prefix> " 
-            "-c<numbered alias count> -s<1=scan on (default), 0=scan off]> "
-            "-a<max array size>]\n", 
+            "-c<numbered alias count> -s<1=scan on (default), 0=scan off> "
+            "-ss<1=synchronous scan (default), 0=asynchronous scan>]\n", 
             argv[0]);
 
         return (1);
@@ -65,15 +68,9 @@ extern int main (int argc, const char **argv)
         epicsEnvSet ( "EPICS_CA_MAX_ARRAY_BYTES", arraySize );
     }
 
-    if (scanOnAsUnsignedInt) {
-        scanOn = true;
-    }
-    else {
-        scanOn = false;
-    }
-
     try {
-        pCAS = new exServer ( pvPrefix, aliasCount, scanOn );
+        pCAS = new exServer ( pvPrefix, aliasCount, 
+            scanOn != 0, syncScan == 0 );
     }
     catch ( ... ) {
         errlogPrintf ( "Server initialization error\n" );

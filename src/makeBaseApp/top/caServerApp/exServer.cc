@@ -44,9 +44,10 @@ pvInfo exServer::bloaty (-1.0, "bloaty", 10.0f, -10.0f, aitEnumFloat64, excasIoS
 // exServer::exServer()
 //
 exServer::exServer ( const char * const pvPrefix, 
-                    unsigned aliasCount, bool scanOnIn ) : 
-    simultAsychIOCount (0u),
-    scanOn (scanOnIn)
+        unsigned aliasCount, bool scanOnIn, 
+        bool asyncScan ) : 
+    pTimerQueue ( 0 ), simultAsychIOCount ( 0u ), 
+        scanOn ( scanOnIn )
 {
     unsigned i;
     exPV *pPV;
@@ -57,6 +58,16 @@ exServer::exServer ( const char * const pvPrefix,
     const char * const pAliasFmtStr = "%.100s%.20s%u";
 
     exPV::initFT();
+
+    if ( asyncScan ) {
+        unsigned timerPriotity;
+        epicsThreadBooleanStatus etbs = epicsThreadLowestPriorityLevelAbove (
+                epicsThreadGetPrioritySelf (), & timerPriotity );
+        if ( etbs != epicsThreadBooleanStatusSuccess ) {
+            timerPriotity = epicsThreadGetPrioritySelf ();
+        }
+        this->pTimerQueue = & epicsTimerQueueActive::allocate ( false, timerPriotity );
+    }
 
     //
     // pre-create all of the simple PVs that this server will export
@@ -237,9 +248,30 @@ pvAttachReturn exServer::pvAttach // X aCC 361
 }
 
 //
+// exServer::setDebugLevel ()
+//
+void exServer::setDebugLevel ( unsigned level )
+{
+    this->caServer::setDebugLevel ( level );
+}
+
+//
+// exServer::createTimer ()
+//
+class epicsTimer & exServer::createTimer ()
+{
+    if ( this->pTimerQueue ) {
+        return this->pTimerQueue->createTimer ();
+    }
+    else {
+        return this->caServer::createTimer ();
+    }
+}
+
+//
 // pvInfo::createPV()
 //
-exPV *pvInfo::createPV ( exServer & /*cas*/,
+exPV *pvInfo::createPV ( exServer & cas,
                          bool preCreateFlag, bool scanOn )
 {
     if (this->pPV) {
@@ -256,10 +288,10 @@ exPV *pvInfo::createPV ( exServer & /*cas*/,
     if (this->elementCount==1u) {
         switch (this->ioType){
         case excasIoSync:
-            pNewPV = new exScalarPV ( *this, preCreateFlag, scanOn );
+            pNewPV = new exScalarPV ( cas, *this, preCreateFlag, scanOn );
             break;
         case excasIoAsync:
-            pNewPV = new exAsyncPV ( *this, preCreateFlag, scanOn );
+            pNewPV = new exAsyncPV ( cas, *this, preCreateFlag, scanOn );
             break;
         default:
             pNewPV = NULL;
@@ -268,7 +300,7 @@ exPV *pvInfo::createPV ( exServer & /*cas*/,
     }
     else {
         if ( this->ioType == excasIoSync ) {
-            pNewPV = new exVectorPV ( *this, preCreateFlag, scanOn );
+            pNewPV = new exVectorPV ( cas, *this, preCreateFlag, scanOn );
         }
         else {
             pNewPV = NULL;

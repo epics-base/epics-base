@@ -49,9 +49,9 @@ void exScalarPV::scan()
     // throughput under sunos4 because gettimeofday() is
     // slow)
     //
-    this->currentTime = epicsTime::getCurrent();
+    this->currentTime = epicsTime::getCurrent ();
 
-    pDD = new gddScalar (gddAppType_value, aitEnumFloat64);
+    pDD = new gddScalar ( gddAppType_value, aitEnumFloat64 );
     if ( ! pDD.valid () ) {
         return;
     }
@@ -59,27 +59,27 @@ void exScalarPV::scan()
     //
     // smart pointer class manages reference count after this point
     //
-    gddStatus = pDD->unreference();
-    assert (!gddStatus);
+    gddStatus = pDD->unreference ();
+    assert ( ! gddStatus );
 
-    radians = (rand () * 2.0 * myPI)/RAND_MAX;
+    radians = ( rand () * 2.0 * myPI ) / RAND_MAX;
     if ( this->pValue.valid () ) {
         this->pValue->getConvert(newValue);
     }
     else {
         newValue = 0.0f;
     }
-    newValue += (float) (sin (radians) / 10.0);
-    limit = (float) this->info.getHopr();
-    newValue = tsMin (newValue, limit);
-    limit = (float) this->info.getLopr();
-    newValue = tsMax (newValue, limit);
+    newValue += (float) ( sin (radians) / 10.0 );
+    limit = (float) this->info.getHopr ();
+    newValue = tsMin ( newValue, limit );
+    limit = (float) this->info.getLopr ();
+    newValue = tsMax ( newValue, limit );
     *pDD = newValue;
     aitTimeStamp gddts = this->currentTime;
-    pDD->setTimeStamp (&gddts);
-    status = this->update (pDD);
+    pDD->setTimeStamp ( & gddts );
+    status = this->update ( *pDD );
     if (status!=S_casApp_success) {
-        errMessage (status, "scalar scan update failed\n");
+        errMessage ( status, "scalar scan update failed\n" );
     }
 }
 
@@ -95,21 +95,25 @@ void exScalarPV::scan()
 // result in each value change events retaining an
 // independent value on the event queue.
 //
-caStatus exScalarPV::updateValue (smartConstGDDPointer pValueIn)
+caStatus exScalarPV::updateValue ( const gdd & valueIn )
 {
-    if ( ! pValueIn.valid () ) {
-        return S_casApp_undefined;
-    }
-
     //
     // Really no need to perform this check since the
     // server lib verifies that all requests are in range
     //
-    if (!pValueIn->isScalar()) {
+    if ( ! valueIn.isScalar() ) {
         return S_casApp_outOfBounds;
     }
 
-    this->pValue = pValueIn;
+    if ( ! pValue.valid () ) {
+        this->pValue = new gddScalar ( 
+            gddAppType_value, aitEnumFloat64 );
+        if ( ! pValue.valid () ) {
+            return S_casApp_noMemory;
+        }
+    }
+
+    this->pValue->put ( & valueIn );
 
     return S_casApp_success;
 }

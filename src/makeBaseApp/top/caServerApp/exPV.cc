@@ -30,8 +30,10 @@ class exFixedStringDestructor: public gddDestructor {
 //
 // exPV::exPV()
 //
-exPV::exPV ( pvInfo &setup, bool preCreateFlag, bool scanOnIn ) : 
-    timer ( this->getCAS()->createTimer() ),
+exPV::exPV ( exServer & casIn, pvInfo & setup, 
+            bool preCreateFlag, bool scanOnIn ) : 
+    cas ( casIn ),
+    timer ( cas.createTimer() ),
     info ( setup ),
     interest ( false ),
     preCreate ( preCreateFlag ),
@@ -77,27 +79,25 @@ void exPV::destroy()
 //
 // exPV::update()
 //
-caStatus exPV::update(smartConstGDDPointer pValueIn)
+caStatus exPV::update ( const gdd & valueIn )
 {
-    caServer *pCAS = this->getCAS();
-    caStatus cas;
- 
 #   if DEBUG
         printf("Setting %s too:\n", this->info.getName().string());
         valueIn.dump();
 #   endif
 
-    cas = this->updateValue (pValueIn);
-    if ( cas || ( ! this->pValue.valid() ) ) {
-        return cas;
+    caStatus status = this->updateValue ( valueIn );
+    if ( status || ( ! this->pValue.valid() ) ) {
+        return status;
     }
 
     //
     // post a value change event
     //
-    if (this->interest==true && pCAS!=NULL) {
-        casEventMask select(pCAS->valueEventMask()|pCAS->logEventMask());
-        this->postEvent (select, *this->pValue);
+    caServer * pCAS = this->getCAS();
+    if ( this->interest == true && pCAS != NULL ) {
+        casEventMask select ( pCAS->valueEventMask() | pCAS->logEventMask() );
+        this->postEvent ( select, valueIn );
     }
 
     return S_casApp_success;
@@ -129,16 +129,13 @@ aitEnum exPV::bestExternalType () const
 //
 // exPV::interestRegister()
 //
-caStatus exPV::interestRegister()
+caStatus exPV::interestRegister ()
 {
-    caServer *pCAS = this->getCAS();
-
-    if ( ! pCAS ) {
+    if ( ! this->getCAS() ) {
         return S_casApp_success;
     }
 
     this->interest = true;
-
     if ( this->scanOn && this->getScanPeriod() > 0.0 && 
             this->getScanPeriod() < this->timer.getExpireDelay() ) {
         this->timer.start ( *this, this->getScanPeriod() );
@@ -174,7 +171,7 @@ void exPV::show ( unsigned level ) const
 //
 // exPV::initFT()
 //
-void exPV::initFT()
+void exPV::initFT ()
 {
     if ( exPV::hasBeenInitialized ) {
             return;
@@ -203,7 +200,7 @@ void exPV::initFT()
 //
 // exPV::getPrecision()
 //
-caStatus exPV::getPrecision(gdd &prec)
+caStatus exPV::getPrecision ( gdd & prec )
 {
     prec.put(4u);
     return S_cas_success;
@@ -212,7 +209,7 @@ caStatus exPV::getPrecision(gdd &prec)
 //
 // exPV::getHighLimit()
 //
-caStatus exPV::getHighLimit(gdd &value)
+caStatus exPV::getHighLimit ( gdd & value )
 {
     value.put(info.getHopr());
     return S_cas_success;
@@ -221,7 +218,7 @@ caStatus exPV::getHighLimit(gdd &value)
 //
 // exPV::getLowLimit()
 //
-caStatus exPV::getLowLimit(gdd &value)
+caStatus exPV::getLowLimit ( gdd & value )
 {
     value.put(info.getLopr());
     return S_cas_success;
@@ -230,7 +227,7 @@ caStatus exPV::getLowLimit(gdd &value)
 //
 // exPV::getUnits()
 //
-caStatus exPV::getUnits(gdd &units)
+caStatus exPV::getUnits( gdd & units )
 {
     aitString str("furlongs", aitStrRefConstImortal);
     units.put(str);
@@ -283,7 +280,7 @@ caStatus exPV::getEnums ( gdd & enumsIn )
 //
 // exPV::getValue()
 //
-caStatus exPV::getValue(gdd &value)
+caStatus exPV::getValue ( gdd & value )
 {
     caStatus status;
 
@@ -309,18 +306,18 @@ caStatus exPV::getValue(gdd &value)
 // exPV::write()
 // (synchronous default)
 //
-caStatus exPV::write (const casCtx &, const gdd &valueIn)
+caStatus exPV::write ( const casCtx &, const gdd & valueIn )
 {
-    return this->update (valueIn);
+    return this->update ( valueIn );
 }
  
 //
 // exPV::read()
 // (synchronous default)
 //
-caStatus exPV::read (const casCtx &, gdd &protoIn)
+caStatus exPV::read ( const casCtx &, gdd & protoIn )
 {
-    return this->ft.read (*this, protoIn);
+    return this->ft.read ( *this, protoIn );
 }
 
 //
@@ -328,11 +325,11 @@ caStatus exPV::read (const casCtx &, gdd &protoIn)
 //
 // for access control - optional
 //
-casChannel *exPV::createChannel (const casCtx &ctx,
+casChannel *exPV::createChannel ( const casCtx &ctx,
         const char * const /* pUserName */, 
-        const char * const /* pHostName */)
+        const char * const /* pHostName */ )
 {
-    return new exChannel (ctx);
+    return new exChannel ( ctx );
 }
 
 //
@@ -340,7 +337,7 @@ casChannel *exPV::createChannel (const casCtx &ctx,
 //
 // special gddDestructor guarantees same form of new and delete
 //
-void exFixedStringDestructor::run (void *pUntyped)
+void exFixedStringDestructor::run ( void * pUntyped )
 {
     aitFixedString *ps = (aitFixedString *) pUntyped;
     delete [] ps;

@@ -141,8 +141,8 @@ void exVectorPV::scan()
         *(pF++) = newValue;
     }
 
-    status = this->update (pDD);
-    if (status!=S_casApp_success) {
+    status = this->update ( *pDD );
+    if ( status != S_casApp_success ) {
         errMessage (status, "vector scan update failed\n");
     }
 }
@@ -161,16 +161,8 @@ void exVectorPV::scan()
 // this may result in too much memory consumtion on
 // the event queue.
 //
-caStatus exVectorPV::updateValue(smartConstGDDPointer pValueIn)
+caStatus exVectorPV::updateValue ( const gdd & value )
 {
-    gddStatus gdds;
-    smartGDDPointer pNewValue;
-    exVecDestructor *pDest;
-    unsigned i;
-
-    if ( ! pValueIn.valid () ) {
-        return S_casApp_undefined;
-    }
 
     //
     // Check bounds of incoming request
@@ -180,50 +172,47 @@ caStatus exVectorPV::updateValue(smartConstGDDPointer pValueIn)
     // Perhaps much of this is unnecessary since the
     // server lib checks the bounds of all requests
     //
-    if (pValueIn->isAtomic()) {
-        if (pValueIn->dimension()!=1u) {
+    if ( value.isAtomic()) {
+        if ( value.dimension() != 1u ) {
             return S_casApp_badDimension;
         }
-        const gddBounds* pb = pValueIn->getBounds();
-        if (pb[0u].first()!=0u) {
+        const gddBounds* pb = value.getBounds ();
+        if ( pb[0u].first() != 0u ) {
             return S_casApp_outOfBounds;
         }
-        else if (pb[0u].size()>this->info.getElementCount()) {
+        else if ( pb[0u].size() > this->info.getElementCount() ) {
             return S_casApp_outOfBounds;
         }
     }
-    else if (!pValueIn->isScalar()) {
+    else if ( ! value.isScalar() ) {
         //
         // no containers
         //
         return S_casApp_outOfBounds;
     }
-    
-    aitFloat64 *pF;
-    int gddStatus;
-    
+        
     //
     // Create a new array data descriptor
     // (so that old values that may be referenced on the
     // event queue are not replaced)
     //
-    pNewValue = new gddAtomic (gddAppType_value, aitEnumFloat64, 
-        1u, this->info.getElementCount());
-    if ( ! pNewValue.valid () ) {
+    smartGDDPointer pNewValue ( new gddAtomic ( gddAppType_value, aitEnumFloat64, 
+        1u, this->info.getElementCount() ) );
+    if ( ! pNewValue.valid() ) {
         return S_casApp_noMemory;
     }
-    
+
     //
     // smart pointer class takes care of the reference count
     // from here down
     //
-    gddStatus = pNewValue->unreference();
-    assert (!gddStatus);
-
+    gddStatus gdds = pNewValue->unreference( );
+    assert ( ! gdds );
+    
     //
     // allocate array buffer
     //
-    pF = new aitFloat64 [this->info.getElementCount()];
+    aitFloat64 * pF = new aitFloat64 [this->info.getElementCount()];
     if (!pF) {
         return S_casApp_noMemory;
     }
@@ -233,11 +222,11 @@ caStatus exVectorPV::updateValue(smartConstGDDPointer pValueIn)
     // if no old values exist
     //
     unsigned count = this->info.getElementCount();
-    for ( i = 0u; i < count; i++ ) {
+    for ( unsigned i = 0u; i < count; i++ ) {
         pF[i] = 0.0f;
     }
 
-    pDest = new exVecDestructor;
+    exVecDestructor * pDest = new exVecDestructor;
     if (!pDest) {
         delete [] pF;
         return S_casApp_noMemory;
@@ -247,13 +236,13 @@ caStatus exVectorPV::updateValue(smartConstGDDPointer pValueIn)
     // install the buffer into the DD
     // (do this before we increment pF)
     //
-    pNewValue->putRef(pF, pDest);
+    pNewValue->putRef ( pF, pDest );
     
     //
     // copy in the values that they are writing
     //
-    gdds = pNewValue->put( & (*pValueIn) );
-    if (gdds) {
+    gdds = pNewValue->put( & value );
+    if ( gdds ) {
         return S_cas_noConvert;
     }
     
@@ -267,8 +256,8 @@ caStatus exVectorPV::updateValue(smartConstGDDPointer pValueIn)
 //
 // special gddDestructor guarantees same form of new and delete
 //
-void exVecDestructor::run (void *pUntyped)
+void exVecDestructor::run ( void *pUntyped )
 {
-    aitFloat32 *pf = (aitFloat32 *) pUntyped;
+    aitFloat32 * pf = reinterpret_cast < aitFloat32 * > ( pUntyped );
     delete [] pf;
 }

@@ -32,7 +32,7 @@ inline void netSubscription::operator delete ( void *pCadaver, size_t size )
 
 inline unsigned long netSubscription::getCount () const
 {
-    unsigned long nativeCount = chan.nativeElementCount ();
+    unsigned long nativeCount = this->chan.nativeElementCount ();
     if ( this->count == 0u || this->count > nativeCount ) {
         return nativeCount;
     }

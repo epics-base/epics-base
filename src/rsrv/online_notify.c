@@ -131,7 +131,7 @@ int rsrv_online_notify_task()
 
       	bfill((char *)&recv_addr, sizeof recv_addr, 0);
       	recv_addr.sin_family = AF_INET;
-      	recv_addr.sin_addr.s_addr = INADDR_ANY; /* let slib pick lcl addr */
+      	recv_addr.sin_addr.s_addr = htonl(INADDR_ANY); /* let slib pick lcl addr */
       	recv_addr.sin_port = htons(0);	 /* let slib pick port */
       	status = bind(sock, (struct sockaddr *)&recv_addr, sizeof recv_addr);
       	if(status<0)

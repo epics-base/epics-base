@@ -167,7 +167,7 @@ int cast_server(void)
   	/*  Zero the sock_addr structure */
   	bfill((char *)&sin, sizeof(sin), 0);
   	sin.sin_family = AF_INET;
-  	sin.sin_addr.s_addr = INADDR_ANY;
+  	sin.sin_addr.s_addr = htonl(INADDR_ANY);
   	sin.sin_port = htons(port);
 	
   	/* get server's Internet address */

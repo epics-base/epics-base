@@ -210,6 +210,7 @@ HOST_OPT_FLAGS += $(subst $@, /_WINDLL, $(findstring $@,$(LIBOBJS_HOST)))
 #
 LINK.shrlib = $(WINLINK) /nologo $(WIN32_DLLFLAGS) /implib:$*.lib /out:$*.dll $(DLL_DEF_FLAG)
 LINK.shrlib += $(LIBRARY_LD_OBJS) $(LIBRARY_LD_RESS) $(SHRLIB_LDLIBS)
+LDCMD =  $(CCC) /Fo $@ $^
 
 
 #	adjust names of libraries to build

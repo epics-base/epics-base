@@ -12,6 +12,7 @@ CCC = cxx
 CPP = $(CCC) -E
 RANLIB =
 AR = ar
+LD = -r
 
 # Configure OS vendor C compiler
 CONFORM_CFLAGS_ANSI = -std

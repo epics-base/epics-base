@@ -14,6 +14,8 @@ CCC = $(SPARCWORKS)/bin/CC
 #CPP = $(CCC) -E
 #CPP = $(CCC) -P
 CPP = g++ -x c -E
+LD = ld -r
+
 
 RANLIB =
 # required by sun's C++ compiler

@@ -18,6 +18,7 @@ CPP = $(CCC) -E
 RANLIB =
 # required by sun's C++ compiler
 AR = $(CCC) -xar -o
+LD = ld -r
 
 #Prepare the object code for profiling with prof. (YES or NO)
 PROFILE=YES

@@ -44,6 +44,7 @@ ARCMD = $(BORLAND_BIN)/tlib $@   $(foreach lib,$(LIBRARY_LD_OBJS),+$(lib))
 # -D_RTLDLL macro defined to use Borland C++ RTL library
 CCLINKOPT = -q -tWM -tWD -a8 -D_WIN32 -D_RTLDLL
 CC = $(BORLAND_BIN)/bcc32 $(CCLINKOPT)
+LD = $(BORLAND_BIN)/bcc32 -r
 
 #
 # __STDC__=0 works but not as cleanly as with

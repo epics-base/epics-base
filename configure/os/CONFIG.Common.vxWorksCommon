@@ -44,7 +44,6 @@ GNU_DIR = $(VX_DIR)/host/$(WIND_HOST_TYPE)
 
 #-------------------------------------------------------
 # Command definition overrides
-LD = $(GNU_BIN)/$(CMPLR_PREFIX)ld$(CMPLR_SUFFIX) -r
 
 # use ld  partial linking not ar to create libraries)
 AR = $(LD)

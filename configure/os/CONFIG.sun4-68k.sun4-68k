@@ -18,7 +18,7 @@ CCC = CC
 CPP = $(CCC) -E
 RANLIB = ranlib -t
 AR = $(CCC) -xar -o
-
+LD = ld -r
 
 # Configure OS vendor C compilers
 CONFORM_CFLAGS_ANSI = -Xa

@@ -36,7 +36,8 @@ epicsThreadPrivateId caClientContextId;
 
 static epicsThreadOnceId caClientContextIdOnce = EPICS_THREAD_ONCE_INIT;
 
-extern "C" void ca_client_exit_handler ()
+// extern "C"
+void ca_client_exit_handler ()
 {
     if ( caClientContextId ) {
         epicsThreadPrivateDelete ( caClientContextId );
@@ -45,7 +46,8 @@ extern "C" void ca_client_exit_handler ()
 }
 
 // runs once only for each process
-extern "C" void ca_init_client_context ( void * )
+// extern "C"
+void ca_init_client_context ( void * )
 {
     caClientContextId = epicsThreadPrivateCreate ();
     if ( caClientContextId ) {
@@ -86,12 +88,14 @@ int fetchClientContext ( oldCAC **ppcac )
 /*
  *  ca_task_initialize ()
  */
-extern "C" int epicsShareAPI ca_task_initialize ( void )
+// extern "C"
+int epicsShareAPI ca_task_initialize ( void )
 {
     return ca_context_create ( ca_disable_preemptive_callback );
 }
 
-extern "C" int epicsShareAPI ca_context_create ( 
+// extern "C"
+int epicsShareAPI ca_context_create ( 
             ca_preemptive_callback_select premptiveCallbackSelect )
 {
     oldCAC *pcac;
@@ -143,7 +147,8 @@ int epicsShareAPI ca_register_service ( cacService *pService )
 //
 // defunct
 //
-extern "C" int epicsShareAPI ca_modify_host_name ( const char * )
+// extern "C"
+int epicsShareAPI ca_modify_host_name ( const char * )
 {
     return ECA_NORMAL;
 }
@@ -153,7 +158,8 @@ extern "C" int epicsShareAPI ca_modify_host_name ( const char * )
 //
 // defunct
 //
-extern "C" int epicsShareAPI ca_modify_user_name ( const char * )
+// extern "C"
+int epicsShareAPI ca_modify_user_name ( const char * )
 {
     return ECA_NORMAL;
 }
@@ -161,7 +167,8 @@ extern "C" int epicsShareAPI ca_modify_user_name ( const char * )
 //
 // ca_context_destroy ()
 //
-extern "C" void epicsShareAPI ca_context_destroy ()
+// extern "C"
+void epicsShareAPI ca_context_destroy ()
 {
     oldCAC   *pcac;
 
@@ -179,7 +186,8 @@ extern "C" void epicsShareAPI ca_context_destroy ()
  *
  *  releases all resources alloc to a channel access client
  */
-extern "C" int epicsShareAPI ca_task_exit ()
+// extern "C"
+int epicsShareAPI ca_task_exit ()
 {
     ca_context_destroy ();
     return ECA_NORMAL;
@@ -191,7 +199,8 @@ extern "C" int epicsShareAPI ca_task_exit ()
  *
  *      backwards compatible entry point to ca_search_and_connect()
  */
-extern "C" int epicsShareAPI ca_build_and_connect ( const char *name_str, chtype get_type,
+// extern "C"
+int epicsShareAPI ca_build_and_connect ( const char *name_str, chtype get_type,
             arrayElementCount get_count, chid * chan, void *pvalue, 
             caCh *conn_func, void *puser )
 {
@@ -205,7 +214,8 @@ extern "C" int epicsShareAPI ca_build_and_connect ( const char *name_str, chtype
 /*
  *  ca_search_and_connect() 
  */
-extern "C" int epicsShareAPI ca_search_and_connect (
+// extern "C"
+int epicsShareAPI ca_search_and_connect (
     const char * name_str, chid * chanptr,
     caCh * conn_func, void * puser )
 {
@@ -213,7 +223,8 @@ extern "C" int epicsShareAPI ca_search_and_connect (
         puser, CA_PRIORITY_DEFAULT, chanptr );
 }
 
-extern "C" int epicsShareAPI ca_create_channel (
+// extern "C"
+int epicsShareAPI ca_create_channel (
      const char *name_str, caCh * conn_func, void * puser,
      capri priority, chid * chanptr )
 {
@@ -253,7 +264,8 @@ extern "C" int epicsShareAPI ca_create_channel (
 /*
  *  ca_clear_channel ()
  */
-extern "C" int epicsShareAPI ca_clear_channel ( chid pChan )
+// extern "C"
+int epicsShareAPI ca_clear_channel ( chid pChan )
 {
     pChan->destroy ();
     return ECA_NORMAL;
@@ -262,7 +274,8 @@ extern "C" int epicsShareAPI ca_clear_channel ( chid pChan )
 /*
  * ca_array_get ()
  */
-extern "C" int epicsShareAPI ca_array_get ( chtype type, 
+// extern "C"
+int epicsShareAPI ca_array_get ( chtype type, 
             arrayElementCount count, chid pChan, void *pValue )
 {
     oldCAC *pcac;
@@ -341,7 +354,8 @@ extern "C" int epicsShareAPI ca_array_get ( chtype type,
 /*
  * ca_array_get_callback ()
  */
-extern "C" int epicsShareAPI ca_array_get_callback ( chtype type, 
+// extern "C"
+int epicsShareAPI ca_array_get_callback ( chtype type, 
             arrayElementCount count, chid pChan,
             caEventCallBackFunc *pfunc, void *arg )
 {
@@ -405,7 +419,8 @@ extern "C" int epicsShareAPI ca_array_get_callback ( chtype type,
 /*
  *  ca_array_put_callback ()
  */
-extern "C" int epicsShareAPI ca_array_put_callback ( chtype type, arrayElementCount count, 
+// extern "C"
+int epicsShareAPI ca_array_put_callback ( chtype type, arrayElementCount count, 
     chid pChan, const void *pValue, caEventCallBackFunc *pfunc, void *usrarg )
 {
     if ( type < 0 ) {
@@ -465,7 +480,8 @@ extern "C" int epicsShareAPI ca_array_put_callback ( chtype type, arrayElementCo
 /*
  *  ca_array_put ()
  */
-extern "C" int epicsShareAPI ca_array_put ( chtype type, arrayElementCount count, 
+// extern "C"
+int epicsShareAPI ca_array_put ( chtype type, arrayElementCount count, 
                                 chid pChan, const void *pValue )
 {
     if ( type < 0 ) {
@@ -518,7 +534,8 @@ extern "C" int epicsShareAPI ca_array_put ( chtype type, arrayElementCount count
 /*
  *  Specify an event subroutine to be run for connection events
  */
-extern "C" int epicsShareAPI ca_change_connection_event ( chid pChan, caCh *pfunc )
+// extern "C"
+int epicsShareAPI ca_change_connection_event ( chid pChan, caCh *pfunc )
 {
     return pChan->changeConnCallBack ( pfunc );
     return ECA_INTERNAL;
@@ -527,7 +544,8 @@ extern "C" int epicsShareAPI ca_change_connection_event ( chid pChan, caCh *pfun
 /*
  * ca_replace_access_rights_event
  */
-extern "C" int epicsShareAPI ca_replace_access_rights_event ( chid pChan, caArh *pfunc )
+// extern "C"
+int epicsShareAPI ca_replace_access_rights_event ( chid pChan, caArh *pfunc )
 {
     return pChan->replaceAccessRightsEvent ( pfunc );
 }
@@ -535,7 +553,8 @@ extern "C" int epicsShareAPI ca_replace_access_rights_event ( chid pChan, caArh 
 /*
  *  Specify an event subroutine to be run for asynch exceptions
  */
-extern "C" int epicsShareAPI ca_add_exception_event ( caExceptionHandler *pfunc, void *arg )
+// extern "C"
+int epicsShareAPI ca_add_exception_event ( caExceptionHandler *pfunc, void *arg )
 {
     oldCAC *pcac;
     int caStatus = fetchClientContext ( &pcac );
@@ -551,7 +570,8 @@ extern "C" int epicsShareAPI ca_add_exception_event ( caExceptionHandler *pfunc,
 /*
  *  ca_add_masked_array_event
  */
-extern "C" int epicsShareAPI ca_add_masked_array_event ( 
+// extern "C"
+int epicsShareAPI ca_add_masked_array_event ( 
         chtype type, arrayElementCount count, chid pChan, 
         caEventCallBackFunc *pCallBack, void *pCallBackArg, 
         ca_real, ca_real, ca_real, 
@@ -632,18 +652,21 @@ extern "C" int epicsShareAPI ca_add_masked_array_event (
 /*
  *  ca_clear_event ()
  */
-extern "C" int epicsShareAPI ca_clear_event ( evid pMon )
+// extern "C"
+int epicsShareAPI ca_clear_event ( evid pMon )
 {
     pMon->destroy ();
     return ECA_NORMAL;
 }
 
-extern "C" chid epicsShareAPI ca_evid_to_chid ( evid pMon )
+// extern "C"
+chid epicsShareAPI ca_evid_to_chid ( evid pMon )
 {
     return & pMon->channel (); 
 }
 
-extern "C" int epicsShareAPI ca_pend ( ca_real timeout, int early )
+// extern "C"
+int epicsShareAPI ca_pend ( ca_real timeout, int early )
 {
     if ( early ) {
         return ca_pend_io ( timeout );
@@ -656,7 +679,8 @@ extern "C" int epicsShareAPI ca_pend ( ca_real timeout, int early )
 /*
  * ca_pend_event ()
  */
-extern "C" int epicsShareAPI ca_pend_event ( ca_real timeout )
+// extern "C"
+int epicsShareAPI ca_pend_event ( ca_real timeout )
 {
     oldCAC *pcac;
     int status = fetchClientContext ( &pcac );
@@ -682,7 +706,8 @@ extern "C" int epicsShareAPI ca_pend_event ( ca_real timeout )
 /*
  * ca_pend_io ()
  */
-extern "C" int epicsShareAPI ca_pend_io ( ca_real timeout )
+// extern "C"
+int epicsShareAPI ca_pend_io ( ca_real timeout )
 {
     oldCAC *pcac;
     int status = fetchClientContext ( &pcac );
@@ -707,7 +732,8 @@ extern "C" int epicsShareAPI ca_pend_io ( ca_real timeout )
 /*
  *  ca_flush_io ()
  */ 
-extern "C" int epicsShareAPI ca_flush_io ()
+// extern "C"
+int epicsShareAPI ca_flush_io ()
 {
     oldCAC *pcac;
     int caStatus = fetchClientContext (&pcac);
@@ -723,7 +749,8 @@ extern "C" int epicsShareAPI ca_flush_io ()
 /*
  *  CA_TEST_IO ()
  */
-extern "C" int epicsShareAPI ca_test_io ()
+// extern "C"
+int epicsShareAPI ca_test_io ()
 {
     oldCAC *pcac;
     int caStatus = fetchClientContext ( &pcac );
@@ -742,7 +769,8 @@ extern "C" int epicsShareAPI ca_test_io ()
 /*
  *  CA_SIGNAL()
  */
-extern "C" void epicsShareAPI ca_signal ( long ca_status, const char *message )
+// extern "C"
+void epicsShareAPI ca_signal ( long ca_status, const char *message )
 {
     ca_signal_with_file_and_lineno ( ca_status, message, NULL, 0 );
 }
@@ -756,7 +784,8 @@ extern "C" void epicsShareAPI ca_signal ( long ca_status, const char *message )
  * of this routine is calling this routine
  * (if they call this routine again).
  */
-extern "C" const char * epicsShareAPI ca_message ( long ca_status )
+// extern "C"
+const char * epicsShareAPI ca_message ( long ca_status )
 {
     unsigned msgNo = CA_EXTRACT_MSG_NO ( ca_status );
 
@@ -771,7 +800,8 @@ extern "C" const char * epicsShareAPI ca_message ( long ca_status )
 /*
  * ca_signal_with_file_and_lineno()
  */
-extern "C" void epicsShareAPI ca_signal_with_file_and_lineno ( long ca_status, 
+// extern "C"
+void epicsShareAPI ca_signal_with_file_and_lineno ( long ca_status, 
             const char *message, const char *pfilenm, int lineno )
 {
     ca_signal_formated ( ca_status, pfilenm, lineno, message );
@@ -780,7 +810,8 @@ extern "C" void epicsShareAPI ca_signal_with_file_and_lineno ( long ca_status,
 /*
  * ca_signal_formated()
  */
-extern "C" void epicsShareAPI ca_signal_formated ( long ca_status, const char *pfilenm, 
+// extern "C"
+void epicsShareAPI ca_signal_formated ( long ca_status, const char *pfilenm, 
                                        int lineno, const char *pFormat, ... )
 {
     oldCAC *pcac;
@@ -813,7 +844,8 @@ extern "C" void epicsShareAPI ca_signal_formated ( long ca_status, const char *p
  *  (for a manager of the select system call under UNIX)
  *
  */
-extern "C" int epicsShareAPI ca_add_fd_registration (CAFDHANDLER *func, void *arg)
+// extern "C"
+int epicsShareAPI ca_add_fd_registration (CAFDHANDLER *func, void *arg)
 {
     oldCAC *pcac;
     int caStatus = fetchClientContext ( &pcac );
@@ -829,7 +861,8 @@ extern "C" int epicsShareAPI ca_add_fd_registration (CAFDHANDLER *func, void *ar
 /*
  * ca_get_host_name ()
  */
-extern "C" void epicsShareAPI ca_get_host_name ( chid pChan, char *pBuf, unsigned bufLength )
+// extern "C"
+void epicsShareAPI ca_get_host_name ( chid pChan, char *pBuf, unsigned bufLength )
 {
     pChan->hostName ( pBuf, bufLength );
 }
@@ -837,7 +870,8 @@ extern "C" void epicsShareAPI ca_get_host_name ( chid pChan, char *pBuf, unsigne
 /*
  * ca_host_name ()
  */
-extern "C" const char * epicsShareAPI ca_host_name ( chid pChan )
+// extern "C"
+const char * epicsShareAPI ca_host_name ( chid pChan )
 {
     return pChan->pHostName ();
 }
@@ -845,7 +879,8 @@ extern "C" const char * epicsShareAPI ca_host_name ( chid pChan )
 /*
  * ca_v42_ok(chid chan)
  */
-extern "C" int epicsShareAPI ca_v42_ok ( chid pChan )
+// extern "C"
+int epicsShareAPI ca_v42_ok ( chid pChan )
 {
     return pChan->ca_v42_ok ();
 }
@@ -854,7 +889,8 @@ extern "C" int epicsShareAPI ca_v42_ok ( chid pChan )
  * ca_version()
  * function that returns the CA version string
  */
-extern "C" const char * epicsShareAPI ca_version () 
+// extern "C"
+const char * epicsShareAPI ca_version () 
 {
     return CA_VERSION_STRING ( CA_MINOR_PROTOCOL_REVISION );
 }
@@ -862,7 +898,8 @@ extern "C" const char * epicsShareAPI ca_version ()
 /*
  * ca_replace_printf_handler ()
  */
-extern "C" int epicsShareAPI ca_replace_printf_handler ( caPrintfFunc *ca_printf_func )
+// extern "C"
+int epicsShareAPI ca_replace_printf_handler ( caPrintfFunc *ca_printf_func )
 {
     oldCAC *pcac;
     int caStatus = fetchClientContext (&pcac);
@@ -878,7 +915,8 @@ extern "C" int epicsShareAPI ca_replace_printf_handler ( caPrintfFunc *ca_printf
 /*
  * ca_field_type()
  */
-extern "C" short epicsShareAPI ca_field_type ( chid pChan ) 
+// extern "C"
+short epicsShareAPI ca_field_type ( chid pChan ) 
 {
     return pChan->nativeType ();
 }
@@ -886,7 +924,8 @@ extern "C" short epicsShareAPI ca_field_type ( chid pChan )
 /*
  * ca_element_count ()
  */
-extern "C" arrayElementCount epicsShareAPI ca_element_count ( chid pChan ) 
+// extern "C"
+arrayElementCount epicsShareAPI ca_element_count ( chid pChan ) 
 {
     return pChan->nativeElementCount ();
 }
@@ -894,7 +933,8 @@ extern "C" arrayElementCount epicsShareAPI ca_element_count ( chid pChan )
 /*
  * ca_state ()
  */
-extern "C" enum channel_state epicsShareAPI ca_state ( chid pChan )
+// extern "C"
+enum channel_state epicsShareAPI ca_state ( chid pChan )
 {
     if ( pChan->connected() ) {
         return cs_conn;
@@ -910,7 +950,8 @@ extern "C" enum channel_state epicsShareAPI ca_state ( chid pChan )
 /*
  * ca_set_puser ()
  */
-extern "C" void epicsShareAPI ca_set_puser ( chid pChan, void *puser )
+// extern "C"
+void epicsShareAPI ca_set_puser ( chid pChan, void *puser )
 {
     pChan->setPrivatePointer ( puser );
 }
@@ -918,7 +959,8 @@ extern "C" void epicsShareAPI ca_set_puser ( chid pChan, void *puser )
 /*
  * ca_get_puser ()
  */
-extern "C" void * epicsShareAPI ca_puser ( chid pChan )
+// extern "C"
+void * epicsShareAPI ca_puser ( chid pChan )
 {
     return pChan->privatePointer ();
 }
@@ -926,7 +968,8 @@ extern "C" void * epicsShareAPI ca_puser ( chid pChan )
 /*
  * ca_read_access ()
  */
-extern "C" unsigned epicsShareAPI ca_read_access ( chid pChan )
+// extern "C"
+unsigned epicsShareAPI ca_read_access ( chid pChan )
 {
     return pChan->accessRights().readPermit();
 }
@@ -934,7 +977,8 @@ extern "C" unsigned epicsShareAPI ca_read_access ( chid pChan )
 /*
  * ca_write_access ()
  */
-extern "C" unsigned epicsShareAPI ca_write_access ( chid pChan )
+// extern "C"
+unsigned epicsShareAPI ca_write_access ( chid pChan )
 {
     return pChan->accessRights().writePermit();
 }
@@ -942,17 +986,20 @@ extern "C" unsigned epicsShareAPI ca_write_access ( chid pChan )
 /*
  * ca_name ()
  */
-extern "C" const char * epicsShareAPI ca_name ( chid pChan )
+// extern "C"
+const char * epicsShareAPI ca_name ( chid pChan )
 {
     return pChan->pName ();
 }
 
-extern "C" unsigned epicsShareAPI ca_search_attempts ( chid pChan )
+// extern "C"
+unsigned epicsShareAPI ca_search_attempts ( chid pChan )
 {
     return pChan->searchAttempts ();
 }
 
-extern "C" double epicsShareAPI ca_beacon_period ( chid pChan )
+// extern "C"
+double epicsShareAPI ca_beacon_period ( chid pChan )
 {
     return pChan->beaconPeriod ();
 }
@@ -963,7 +1010,8 @@ extern "C" double epicsShareAPI ca_beacon_period ( chid pChan )
  * returns the number of IOC's that CA is connected to
  * (for testing purposes only)
  */
-extern "C" unsigned epicsShareAPI ca_get_ioc_connection_count () 
+// extern "C"
+unsigned epicsShareAPI ca_get_ioc_connection_count () 
 {
     oldCAC *pcac;
     int caStatus = fetchClientContext ( &pcac );
@@ -974,14 +1022,16 @@ extern "C" unsigned epicsShareAPI ca_get_ioc_connection_count ()
     return pcac->connectionCount ();
 }
 
-extern "C" int epicsShareAPI ca_channel_status ( epicsThreadId /* tid */ )
+// extern "C"
+int epicsShareAPI ca_channel_status ( epicsThreadId /* tid */ )
 {
     ::printf ("new OSI API does not allow peeking at thread private storage of another thread\n");
     ::printf ("please call \"ca_client_status ( unsigned level )\" from the subsystem specific diagnostic code.\n");
 	return ECA_ANACHRONISM;
 }
 
-extern "C" int epicsShareAPI ca_client_status ( unsigned level )
+// extern "C"
+int epicsShareAPI ca_client_status ( unsigned level )
 {
     oldCAC *pcac;
     int caStatus = fetchClientContext ( &pcac );
@@ -999,7 +1049,8 @@ extern "C" int epicsShareAPI ca_client_status ( unsigned level )
  * used when an auxillary thread needs to join a CA client context started
  * by another thread
  */
-extern "C" struct oldCAC * epicsShareAPI ca_current_context ()
+// extern "C"
+struct oldCAC * epicsShareAPI ca_current_context ()
 {
     struct oldCAC *pCtx;
     if ( caClientContextId ) {
@@ -1018,7 +1069,8 @@ extern "C" struct oldCAC * epicsShareAPI ca_current_context ()
  * used when an auxillary thread needs to join a CA client context started
  * by another thread
  */
-extern "C" int epicsShareAPI ca_attach_context ( struct oldCAC * pCtx )
+// extern "C"
+int epicsShareAPI ca_attach_context ( struct oldCAC * pCtx )
 {
     oldCAC *pcac = (oldCAC *) epicsThreadPrivateGet ( caClientContextId );
     if ( pcac && pCtx != 0 ) {
@@ -1041,7 +1093,8 @@ int epicsShareAPI ca_preemtive_callback_is_enabled ()
 }
 
 
-extern "C" void epicsShareAPI ca_self_test ()
+// extern "C"
+void epicsShareAPI ca_self_test ()
 {
     oldCAC *pcac = (oldCAC *) epicsThreadPrivateGet ( caClientContextId );
     if ( ! pcac ) {
@@ -1050,7 +1103,8 @@ extern "C" void epicsShareAPI ca_self_test ()
     pcac->selfTest ();
 }
 
-extern "C" epicsShareDef const int epicsTypeToDBR_XXXX [lastEpicsType+1] = {
+// extern "C"
+epicsShareDef const int epicsTypeToDBR_XXXX [lastEpicsType+1] = {
     DBR_SHORT, /* forces conversion fronm uint8 to int16 */
     DBR_CHAR,
     DBR_SHORT,
@@ -1064,7 +1118,8 @@ extern "C" epicsShareDef const int epicsTypeToDBR_XXXX [lastEpicsType+1] = {
     DBR_STRING
 };
 
-extern "C" epicsShareDef const epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1] = {
+// extern "C"
+epicsShareDef const epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1] = {
 	epicsOldStringT,
 	epicsInt16T,	
 	epicsFloat32T,	
@@ -1111,7 +1166,8 @@ extern "C" epicsShareDef const epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1
 	epicsOldStringT
 };
 
-extern "C" epicsShareDef const unsigned short dbr_size[LAST_BUFFER_TYPE+1] = {
+// extern "C"
+epicsShareDef const unsigned short dbr_size[LAST_BUFFER_TYPE+1] = {
 	sizeof(dbr_string_t),		/* string max size		*/
 	sizeof(dbr_short_t),		/* short			*/
 	sizeof(dbr_float_t),		/* IEEE Float			*/
@@ -1153,7 +1209,8 @@ extern "C" epicsShareDef const unsigned short dbr_size[LAST_BUFFER_TYPE+1] = {
 	sizeof(dbr_string_t),		/* string max size		*/
 };
 
-extern "C" epicsShareDef const unsigned short dbr_value_size[LAST_BUFFER_TYPE+1] = {
+// extern "C"
+epicsShareDef const unsigned short dbr_value_size[LAST_BUFFER_TYPE+1] = {
 	sizeof(dbr_string_t),	/* string max size		*/
 	sizeof(dbr_short_t),	/* short			*/
 	sizeof(dbr_float_t),	/* IEEE Float			*/
@@ -1195,7 +1252,8 @@ extern "C" epicsShareDef const unsigned short dbr_value_size[LAST_BUFFER_TYPE+1]
 	sizeof(dbr_string_t),	/* string max size		*/
 };
 
-extern "C" epicsShareDef const enum dbr_value_class dbr_value_class[LAST_BUFFER_TYPE+1] = {
+// extern "C"
+epicsShareDef const enum dbr_value_class dbr_value_class[LAST_BUFFER_TYPE+1] = {
 	dbr_class_string,	/* string max size		*/
 	dbr_class_int,		/* short			*/
 	dbr_class_float,	/* IEEE Float			*/
@@ -1241,7 +1299,8 @@ extern "C" epicsShareDef const enum dbr_value_class dbr_value_class[LAST_BUFFER_
 	dbr_class_string,	/* string max size		*/
 };
 
-extern "C" epicsShareDef const unsigned short dbr_value_offset[LAST_BUFFER_TYPE+1] = {
+// extern "C"
+epicsShareDef const unsigned short dbr_value_offset[LAST_BUFFER_TYPE+1] = {
 	0,					/* string			*/
 	0,					/* short			*/
 	0,					/* IEEE Float			*/
@@ -1283,7 +1342,8 @@ extern "C" epicsShareDef const unsigned short dbr_value_offset[LAST_BUFFER_TYPE+
 	0,					/* string			*/
 };
 
-extern "C" epicsShareDef const char *dbf_text[LAST_TYPE+3] = {
+// extern "C"
+epicsShareDef const char *dbf_text[LAST_TYPE+3] = {
 	"TYPENOTCONN",
 	"DBF_STRING",
 	"DBF_SHORT",
@@ -1295,11 +1355,14 @@ extern "C" epicsShareDef const char *dbf_text[LAST_TYPE+3] = {
 	"DBF_NO_ACCESS"
 };
 
-extern "C" epicsShareDef const char *dbf_text_invalid = "DBF_invalid";
+// extern "C"
+epicsShareDef const char *dbf_text_invalid = "DBF_invalid";
 
-extern "C" epicsShareDef const short dbf_text_dim = (sizeof dbf_text)/(sizeof (char *));
+// extern "C"
+epicsShareDef const short dbf_text_dim = (sizeof dbf_text)/(sizeof (char *));
 
-extern "C" epicsShareDef const char *dbr_text[LAST_BUFFER_TYPE+1] = {
+// extern "C"
+epicsShareDef const char *dbr_text[LAST_BUFFER_TYPE+1] = {
     "DBR_STRING",
     "DBR_SHORT",
     "DBR_FLOAT",
@@ -1341,5 +1404,7 @@ extern "C" epicsShareDef const char *dbr_text[LAST_BUFFER_TYPE+1] = {
     "DBR_CLASS_NAME"
 };
 
-extern "C" epicsShareDef const char *dbr_text_invalid = "DBR_invalid";
-extern "C" epicsShareDef const short dbr_text_dim = (sizeof dbr_text) / (sizeof (char *)) + 1;
+// extern "C"
+epicsShareDef const char *dbr_text_invalid = "DBR_invalid";
+// extern "C"
+epicsShareDef const short dbr_text_dim = (sizeof dbr_text) / (sizeof (char *)) + 1;

@@ -1,0 +1,28 @@
+#	adjust names of libraries to build
+#
+
+# <lib> ->  lib<lib>.a
+LIBNAME = $(LIBRARY:%=lib%.a)
+
+#	On Unix: library "ca" is linked with "-lca"  etc.
+PRODDEPLIBS = $(PROD_LIBS:%=$(INSTALL_LIB)/lib%.a)
+USR_LDLIBS += -L$(INSTALL_LIB) $(PROD_LIBS:%=-l%) 
+
+#	On Unix: it is difficult to determine where the
+# 	system lib is (because of add on compilere).
+#	Therefore no additions to PRODDEPLIBS for
+#	system libraries.
+#
+USR_LDLIBS += $(SYS_PROD_LIBS:%=-l%) 
+SYSPRODDEPLIBS = # ?????? unimplemented dependency
+
+#	libs defined that we need to link the DLL with
+DLL_DEP_LIBS = -L$(INSTALL_LIB) $(DLL_LIBS:%=-l%)
+DLL_LDLIBS = $(DLL_DEP_LIBS) $(ARCH_DEP_LDLIBS) $(HOST_LDLIBS)
+
+#
+#	A NOOP on all UNIX systems that dont implement
+#	shared libraries
+#
+#DLLNAME = lib$(LIBRARY).???
+LINK.dll = echo share lib build for UNIX archictecture is a NOOP

@@ -41,7 +41,6 @@ of this distribution.
 #include "epicsPrint.h"
 #include "dbCommon.h"
 #include "shareLib.h"
-epicsShareExtern struct dbBase *pdbbase;
 #define epicsExportSharedSymbols
 /*define DB_TEXT_GLBLSOURCE because db_access.d does not include db_access.h*/
 #define DB_TEXT_GLBLSOURCE

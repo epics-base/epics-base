@@ -23,7 +23,6 @@ of this distribution.
 
 /*definitions for SCAN_IO_EVENT */
 typedef void * IOSCANPVT;
-extern volatile int interruptAccept;
 
 epicsShareFunc long epicsShareAPI scanInit(void);
 epicsShareFunc void epicsShareAPI post_event(int event);

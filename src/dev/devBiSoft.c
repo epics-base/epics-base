@@ -1,5 +1,5 @@
 /* devBiSoft.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /* devBiSoft.c - Device Support Routines for  Soft Binary Input*/
 /*
@@ -78,19 +78,17 @@ static long init_record(pbi)
 {
     long status;
 
-    /* bi.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
+    /* bi.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK */
     switch (pbi->inp.type) {
     case (CONSTANT) :
         pbi->val = pbi->inp.value.value;
 	pbi->udf = FALSE;
         break;
-    case (PV_LINK) :
-        status = dbCaAddInlink(&(pbi->inp), (void *) pbi, "VAL");
-        if(status) return(status);
-        break;
     case (DB_LINK) :
-        break;
-    case (CA_LINK) :
+    case (PV_LINK) :
+        status = recGblInitFastInLink(&(pbi->inp), (void *) pbi, DBR_USHORT, "VAL");
+        if (status)
+           return(status);
         break;
     default :
 	recGblRecordError(S_db_badField,(void *)pbi,
@@ -103,10 +101,9 @@ static long init_record(pbi)
 static long read_bi(pbi)
     struct biRecord	*pbi;
 {
-    long status,options=0,nRequest=1;
+    long status;
 
-    status = recGblGetLinkValue(&(pbi->inp),(void *)pbi,DBR_USHORT,&(pbi->val),
-              &options,&nRequest);
+    status = recGblGetFastLink(&(pbi->inp), (void *)pbi, &(pbi->val));
 
     if(RTN_SUCCESS(status)) pbi->udf=FALSE;
 

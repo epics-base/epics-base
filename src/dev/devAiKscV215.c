@@ -1,5 +1,5 @@
 /* devAiKscV215.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /*
  *      Original Author: Bob Dalesio

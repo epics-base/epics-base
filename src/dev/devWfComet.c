@@ -1,5 +1,5 @@
 /* devComet.c */
-/* share/src/dev @(#)devWfComet.c	1.3     3/8/93 */
+/* base/src/dev $Id$ */
 
 /*
  *      Original Author: Bob Dalesio

@@ -1,5 +1,5 @@
 /* devAoSoft.c */
-/* share/src/dev @(#)devAoSoft.c	1.13     4/6/92 */
+/* base/src/dev $Id$ */
 
 /* Device Support Routines for soft Analog Output Records*/
 /*
@@ -53,8 +53,6 @@
 #include	<aoRecord.h>
 
 /* added for Channel Access Links */
-long dbCaAddOutlink();
-long dbCaPutLink();
 static long init_record();
 
 /* Create the dset for devAoSoft */
@@ -83,11 +81,10 @@ struct aoRecord *pao;
 
     long status=0;
 
-    if (pao->out.type == PV_LINK)
-	status = dbCaAddOutlink(&(pao->out), (void *) pao, "OVAL");
+    status = recGblInitFastOutLink(&(pao->out), (void *) pao, DBR_DOUBLE, "OVAL");
 
     /* dont convert */
-    if ( status == 0 ) status = 2;
+    if (status == 0) status = 2;
 
     return status;
 
@@ -96,9 +93,9 @@ struct aoRecord *pao;
 static long write_ao(pao)
     struct aoRecord	*pao;
 {
-    long status,nRequest=1;
+    long status;
 
-    status = recGblPutLinkValue(&(pao->out),(void *)pao,DBR_DOUBLE,&(pao->oval),&nRequest);
+    status = recGblPutFastLink(&(pao->out), (void *)pao, &(pao->oval));
 
     return(status);
 }

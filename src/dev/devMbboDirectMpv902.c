@@ -1,12 +1,12 @@
-/* devMbboMpv902.c */
+/* devMbboDirectMpv902.c */
 /* base/src/dev $Id$ */
 
-/* devMbboMpv902.c - Device Support Routines	*/
+/* devMbboDirectMpv902.c - Device Support Routines	*/
 /* Burr Brown MPV 902 				*/
 /*
  *      Original Author: Bob Dalesio
- *      Current Author:  Marty Kraimer
- *      Date:            6-1-90
+ *      Current Author:  Matthew Needes
+ *      Date:            10-08-93
  *
  *      Experimental Physics and Industrial Control System (EPICS)
  *
@@ -29,12 +29,9 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
- * Modification Log:
+ * Modification Log:  (Log for DevMbboMpv902 also applies)
  * -----------------
- * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
- * .02	03-13-92	jba	ANSI C changes
- * .03	02-08-94	mrk	Issue Hardware Errors BUT prevent Error Message Storms
- *      ...
+ *  1. 10-08-93   mcn       (created) dev support for MbboDirect records
  */
 
 
@@ -49,10 +46,10 @@
 #include        <recSup.h>
 #include	<devSup.h>
 #include	<module_types.h>
-#include	<mbboRecord.h>
+#include	<mbboDirectRecord.h>
 
 
-/* Create the dset for devAiMbboMpv902 */
+/* Create the dset for devMbboDirectMpv902 */
 static long init_record();
 static long write_mbbo();
 
@@ -63,7 +60,7 @@ struct {
 	DEVSUPFUN	init_record;
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	write_mbbo;
-}devMbboMpv902={
+}devMbboDirectMpv902={
 	5,
 	NULL,
 	NULL,
@@ -72,9 +69,9 @@ struct {
 	write_mbbo};
 
 static long init_record(pmbbo)
-    struct mbboRecord	*pmbbo;
+    struct mbboDirectRecord	*pmbbo;
 {
-    unsigned int value,mask;
+    unsigned long value;
     struct vmeio *pvmeio;
     int		status=0;
 
@@ -84,44 +81,35 @@ static long init_record(pmbbo)
 	pvmeio = &(pmbbo->out.value.vmeio);
 	pmbbo->shft = pvmeio->signal;
 	pmbbo->mask <<= pmbbo->shft;
-	mask = pmbbo->mask;
-	status = bb902_read(pvmeio->card,mask,&value);
+	status = bb902_read(pvmeio->card,pmbbo->mask,&value);
 	if(status==0) pmbbo->rbv = pmbbo->rval = value;
 	else status = 2;
 	break;
     default :
 	status = S_db_badField;
 	recGblRecordError(status,(void *)pmbbo,
-		"devMbboMpv902 (init_record) Illegal OUT field");
+		"devMbboDirectMpv902 (init_record) Illegal OUT field");
     }
     return(status);
 }
 
 static long write_mbbo(pmbbo)
-    struct mbboRecord	*pmbbo;
+    struct mbboDirectRecord	*pmbbo;
 {
 	struct vmeio *pvmeio;
 	int	    status;
-	unsigned int value,mask;
+	unsigned long value;
 
 	
 	pvmeio = &(pmbbo->out.value.vmeio);
 
-	value = pmbbo->rval;
-	mask = pmbbo->mask;
-	status = bb902_driver(pvmeio->card,value,mask);
+	status = bb902_driver(pvmeio->card,pmbbo->rval,pmbbo->mask);
 	if(status==0) {
-		status = bb902_read(pvmeio->card,mask,&value);
+		status = bb902_read(pvmeio->card,pmbbo->mask,&value);
 		if(status==0) pmbbo->rbv = value;
-                else {
-			if(recGblSetSevr(pmbbo,READ_ALARM,INVALID_ALARM) && errVerbose
-			&& (pmbbo->stat!=READ_ALARM || pmbbo->sevr!=INVALID_ALARM))
-				recGblRecordError(-1,(void *)pmbbo,"bb902_read Error");
-		}
+                else recGblSetSevr(pmbbo,READ_ALARM,INVALID_ALARM);
 	} else {
-                if(recGblSetSevr(pmbbo,WRITE_ALARM,INVALID_ALARM) && errVerbose
-		&& (pmbbo->stat!=WRITE_ALARM || pmbbo->sevr!=INVALID_ALARM))
-			recGblRecordError(-1,(void *)pmbbo,"bb902_driver Error");
+                recGblSetSevr(pmbbo,WRITE_ALARM,INVALID_ALARM);
 	}
-	return(0);
+	return(status);
 }

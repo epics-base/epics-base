@@ -1,10 +1,11 @@
-/* devAoSoftRaw.c */
+/* devMbboDirectSoftRaw.c */
 /* base/src/dev $Id$ */
 
-/* Device Support Routines for soft raw Analog Output Records*/
+/* devMbboDirectSoftRaw.c - Device Support SoftRaw Direct mbbo */
 /*
- *      Author:         Janet Anderson
- *      Date:           09-25-91
+ *      Author:		Janet Anderson
+ *      Current Author: Matthew Needes
+ *      Date:		10-08-93
  *
  *      Experimental Physics and Industrial Control System (EPICS)
  *
@@ -29,12 +30,10 @@
  *
  * Modification Log:
  * -----------------
- * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
- * .02  03-04-92        jba     Added special_linconv
- * .03	03-13-92	jba	ANSI C changes
- * .04  10-10-92        jba     replaced code with recGblGetLinkValue call
- *      ...
+ *    (log for devMbboSoftRaw.c applies)
+ * .01  10-08-93  mcn   (created)     device support for devMbboDirect records
  */
+
 
 #include	<vxWorks.h>
 #include	<types.h>
@@ -46,60 +45,51 @@
 #include	<dbAccess.h>
 #include        <recSup.h>
 #include	<devSup.h>
-#include	<link.h>
-#include	<special.h>
-#include	<aoRecord.h>
+#include	<module_types.h>
+#include	<mbboDirectRecord.h>
 
 static long init_record();
 
-/* Create the dset for devAoSoftRaw */
-static long write_ao();
-static long special_linconv();
+/* Create the dset for devMbboDirectSoftRaw */
+static long write_mbbo();
+
 struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
 	DEVSUPFUN	init_record;
 	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_ao;
-	DEVSUPFUN	special_linconv;
-}devAoSoftRaw={
-	6,
+	DEVSUPFUN	write_mbbo;
+}devMbboDirectSoftRaw={
+	5,
 	NULL,
 	NULL,
 	init_record,
 	NULL,
-	write_ao,
-	special_linconv};
+	write_mbbo};
+
+
 
-static long init_record(pao)
-struct aoRecord *pao;
+static long init_record(pmbbo)
+struct mbboDirectRecord *pmbbo;
 {
-    long status = 0L;
+    long status;
+ 
+    status = recGblInitFastOutLink(&(pmbbo->out), (void *) pmbbo, DBR_ULONG, "RVAL");
 
-    status = recGblInitFastOutLink(&(pao->out), (void *) pao, DBR_LONG, "RVAL");
-
+    if (pmbbo->out.type != PV_LINK)
+       status = 2;
+ 
     return status;
-
+ 
 } /* end init_record() */
 
-static long write_ao(pao)
-    struct aoRecord	*pao;
+static long write_mbbo(pmbbo)
+    struct mbboDirectRecord	*pmbbo;
 {
     long status;
 
-    status = recGblPutFastLink(&(pao->out), (void *)pao, &(pao->rval));
-
-    return(status);
-}
-
-static long special_linconv(pao,after)
-    struct aoRecord	*pao;
-    int after;
-{
-
-    if(!after) return(0);
+    status = recGblPutFastLink(&(pmbbo->out), (void *)pmbbo, &(pmbbo->rval));
 
     return(0);
 }
-

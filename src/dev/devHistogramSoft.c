@@ -1,5 +1,5 @@
 /* devHistogramSoft.c */
-/* share/src/dev	$Id$   */ 
+/* base/src/dev $Id$ */
 
 /* devHistogramSoft.c - Device Support Routines for soft Histogram Input */
 /*
@@ -46,6 +46,7 @@
 #include	<cvtTable.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include	<recSup.h>
 #include	<devSup.h>
 #include	<link.h>
 #include        <histogramRecord.h>
@@ -74,6 +75,7 @@ struct {
 static long init_record(phistogram)
     struct histogramRecord	*phistogram;
 {
+    long status = 0;
 
     /* histogram.svl must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (phistogram->svl.type) {
@@ -81,26 +83,27 @@ static long init_record(phistogram)
 	phistogram->sgnl = phistogram->svl.value.value;
 	break;
     case (PV_LINK) :
-	break;
     case (DB_LINK) :
-	break;
-    case (CA_LINK) :
+        status = recGblInitFastInLink(&phistogram->svl, phistogram, DBR_DOUBLE, "SGNL");
+
+        if (status != 0)
+           return(status);
+
 	break;
     default :
 	recGblRecordError(S_db_badField,(void *)phistogram,
 		"devHistogramSoft (init_record) Illegal SVL field");
 	return(S_db_badField);
     }
-    return(0);
+    return(status);
 }
 
 static long read_histogram(phistogram)
     struct histogramRecord	*phistogram;
 {
-    long status,options=0,nRequest=1;
+    long status;
 
-    status = recGblGetLinkValue(&(phistogram->svl),(void *)phistogram,DBR_DOUBLE,&(phistogram->sgnl),
-              &options,&nRequest);
+    status = recGblGetFastLink(&(phistogram->svl), (void *)phistogram, &(phistogram->sgnl));
 
     return(0); /*add count*/
 }

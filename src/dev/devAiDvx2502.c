@@ -1,5 +1,5 @@
 /* devAiDvx2502.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /* devAiDvx2502.c - Device Support Routines */
 /*

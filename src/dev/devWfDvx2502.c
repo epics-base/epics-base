@@ -1,4 +1,4 @@
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /*
 	Author:	John Winans

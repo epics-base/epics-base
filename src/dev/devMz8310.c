@@ -1,5 +1,5 @@
 /* devMz8310.c.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /* Device Support Routines for MZ8310 */
 /*

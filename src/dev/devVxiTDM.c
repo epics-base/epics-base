@@ -1,5 +1,5 @@
 /* devVxiTDM.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /* Device Support Routines for Custom Vxi Time Delay Module */
 /*

@@ -1,5 +1,5 @@
 /* devEventSoft.c */
-/* share/src/dev  $Id$ */
+/* base/src/dev $Id$ */
 
 /* devEventSoft.c - Device Support Routines for Soft Event Input */
 /*

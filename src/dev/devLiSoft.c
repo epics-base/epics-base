@@ -1,5 +1,5 @@
 /* devLiSoft.c */
-/* share/src/dev  $Id$ */
+/* base/src/dev $Id$ */
 
 /* devLiSoft.c - Device Support Routines for Soft Longin Input */
 /*
@@ -82,12 +82,12 @@ static long init_record(plongin)
 	plongin->udf = FALSE;
 	break;
     case (PV_LINK) :
-        status = dbCaAddInlink(&(plongin->inp), (void *) plongin, "VAL");
-        if(status) return(status);
-        break;
     case (DB_LINK) :
-        break;
-    case (CA_LINK) :
+        status = recGblInitFastInLink(&(plongin->inp), (void *) plongin, DBR_LONG, "VAL");
+
+        if (status)
+           return(status);
+
         break;
     default :
 	recGblRecordError(S_db_badField,(void *)plongin,
@@ -100,10 +100,9 @@ static long init_record(plongin)
 static long read_longin(plongin)
     struct longinRecord	*plongin;
 {
-    long status,options=0,nRequest=1;
+    long status;
 
-    status = recGblGetLinkValue(&(plongin->inp),(void *)plongin,DBR_LONG,&(plongin->val),
-              &options,&nRequest);
+    status = recGblGetFastLink(&(plongin->inp), (void *)plongin, &(plongin->val));
 
     if(RTN_SUCCESS(status)) plongin->udf=FALSE;
 

@@ -1,5 +1,5 @@
 /* devAoVmiVme4100.c.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /* Device Support Routines for VMI4100 analog output*/
 /*

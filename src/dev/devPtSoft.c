@@ -1,5 +1,5 @@
 /* devPtSoft.c */
-/* share/src/dev  $Id$ */
+/* base/src/dev $Id$ */
 
 /* devPtSoft.c - Device Support Routines for Soft Pulse Generator Output */
 /*

@@ -1,5 +1,5 @@
 /* devMz8310.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /* Device Support Routines for MZ8310 Timer */
 /*

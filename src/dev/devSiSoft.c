@@ -1,5 +1,5 @@
 /* devSiSoft.c */
- /* share/src/dev   $Id$ */
+/* base/src/dev $Id$ */
 
 /* devSiSoft.c - Device Support Routines for Soft String Input */
 /*

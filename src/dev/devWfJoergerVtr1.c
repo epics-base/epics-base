@@ -1,5 +1,5 @@
 /* devWfJoergerVtr1.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /* devWfJoergerVtr1.c - Device Support Routines */
 /*

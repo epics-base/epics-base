@@ -1,5 +1,5 @@
 /* devMbbiSoft.c */
-/* share/src/dev @(#)devMbbiSoft.c	1.2     11/30/90 */
+/* base/src/dev $Id$ */
 
 /* devMbbiSoft.c - Device Support Routines for  Soft Multibit Binary Input*/
 /*
@@ -79,35 +79,27 @@ static long init_record(pmbbi)
 {
     long status;
 
-    /* mbbi.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
-    switch (pmbbi->inp.type) {
-    case (CONSTANT) :
+    if (pmbbi->inp.type == CONSTANT) {
         pmbbi->val = pmbbi->inp.value.value;
 	pmbbi->udf = FALSE;
-        break;
-    case (PV_LINK) :
-        status = dbCaAddInlink(&(pmbbi->inp), (void *) pmbbi, "VAL");
-        if(status) return(status);
-        break;
-    case (DB_LINK) :
-        break;
-    case (CA_LINK) :
-        break;
-    default :
-	recGblRecordError(S_db_badField,(void *)pmbbi,
-		"devMbbiSoft (init_record) Illegal INP field");
-	return(S_db_badField);
     }
+    else {
+        status = recGblInitFastInLink(&(pmbbi->inp), (void *) pmbbi, DBR_USHORT, "VAL");
+
+        if (status)
+           return(status);
+
+    }
+
     return(0);
 }
 
 static long read_mbbi(pmbbi)
     struct mbbiRecord	*pmbbi;
 {
-    long status,options=0,nRequest=1;
+    long status;
 
-    status = recGblGetLinkValue(&(pmbbi->inp),(void *)pmbbi,DBR_USHORT,&(pmbbi->val),
-              &options,&nRequest);
+    status = recGblGetFastLink(&(pmbbi->inp), (void *)pmbbi, &(pmbbi->val));
 
     if(RTN_SUCCESS(status)) pmbbi->udf=FALSE;
 

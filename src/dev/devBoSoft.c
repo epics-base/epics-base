@@ -1,5 +1,5 @@
 /* devBoSoft.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /* devBoSoft.c - Device Support Routines for  Soft Binary Output*/
 /*
@@ -51,9 +51,6 @@
 #include	<module_types.h>
 #include	<boRecord.h>
 
-/* added for Channel Access Links */
-long dbCaAddOutlink();
-long dbCaPutLink();
 static long init_record();
 
 /* Create the dset for devBoSoft */
@@ -80,22 +77,21 @@ struct boRecord *pbo;
  
    long status=0;
  
-    if (pbo->out.type == PV_LINK)
-        status = dbCaAddOutlink(&(pbo->out), (void *) pbo, "VAL");
+   status = recGblInitFastOutLink(&(pbo->out), (void *) pbo, DBR_USHORT, "VAL");
  
     /* dont convert */
-    if (status == 0 ) status=2;
+   if (status == 0 ) status=2;
 
-    return status;
+   return status;
  
 } /* end init_record() */
 
 static long write_bo(pbo)
     struct boRecord	*pbo;
 {
-    long status,nRequest=1;
+    long status;
 
-    status = recGblPutLinkValue(&(pbo->out),(void *)pbo,DBR_USHORT,&(pbo->val),&nRequest);
+    status = recGblPutFastLink(&(pbo->out), (void *)pbo, &(pbo->val));
 
     return(status);
 }

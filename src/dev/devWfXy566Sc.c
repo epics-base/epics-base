@@ -1,5 +1,5 @@
 /* devWfXy566Sc.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /* devWfXy566Sc.c - Device Support Routines */
 /*

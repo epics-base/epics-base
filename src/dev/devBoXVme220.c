@@ -1,5 +1,5 @@
 /* devBoXVme220.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /* devBoXVme220.c - Device Support Routines for XYcom 32 bit binary output*/
 /*

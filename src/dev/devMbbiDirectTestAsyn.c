@@ -1,10 +1,11 @@
-/* devSoTestAsyn.c */
+/* devMbbiDirectTestAsyn.c */
 /* base/src/dev $Id$ */
 
-/* devSoTestAsyn.c - Device Support Routines for testing asynchronous processing*/
+/* devMbbiDirectTestAsyn.c - Device Support for testing asynch processing */
 /*
- *      Author:          Janet Anderson
- *      Date:            5-1-91
+ *      Original Author: Bob Dalesio
+ *      Current Author:  Matthew Needes
+ *      Date:            10-08-93
  *
  *      Experimental Physics and Industrial Control System (EPICS)
  *
@@ -29,13 +30,8 @@
  *
  * Modification Log:
  * -----------------
- * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
- * .02  01-08-92        jba     Added cast in call to wdStart to avoid compile warning msg
- * .03  02-05-92	jba	Changed function arguments from paddr to precord 
- * .04	03-13-92	jba	ANSI C changes
- * .05  04-10-92        jba     pact now used to test for asyn processing, not return value
- * .06  04-05-94        mrk	ANSI changes to callback routines
- *      ...
+ *  (modification log of devMbbiDirectTestAsyn.c applies)
+ *  .01 10-08-93  mcn     added support for direct mbbi records
  */
 
 
@@ -48,33 +44,32 @@
 
 #include	<alarm.h>
 #include	<callback.h>
-#include	<cvtTable.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
 #include	<recSup.h>
 #include	<devSup.h>
 #include	<link.h>
 #include	<rec/dbCommon.h>
-#include	<stringoutRecord.h>
+#include	<mbbiDirectRecord.h>
 
-/* Create the dset for devSoTestAsyn */
+/* Create the dset for devMbbiDirectTestAsyn */
 static long init_record();
-static long write_stringout();
+static long read_mbbi();
 struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
 	DEVSUPFUN	init_record;
 	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_stringout;
+	DEVSUPFUN	read_mbbi;
 	DEVSUPFUN	special_linconv;
-}devSoTestAsyn={
+}devMbbiDirectTestAsyn={
 	6,
 	NULL,
 	NULL,
 	init_record,
 	NULL,
-	write_stringout,
+	read_mbbi,
 	NULL};
 
 /* control block for callback*/
@@ -96,54 +91,56 @@ static void myCallback(pcallback)
 }
     
 
-static long init_record(pstringout)
-    struct stringoutRecord	*pstringout;
+static long init_record(pmbbi)
+    struct mbbiDirectRecord	*pmbbi;
 {
     struct callback *pcallback;
 
-    /* stringout.out must be a CONSTANT*/
-    switch (pstringout->out.type) {
+    /* mbbi.inp must be a CONSTANT*/
+    switch (pmbbi->inp.type) {
     case (CONSTANT) :
 	pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
-	pstringout->dpvt = (void *)pcallback;
-	callbackSetCallback(myCallback,&pcallback->callback);
-        pcallback->precord = (struct dbCommon *)pstringout;
+	pmbbi->dpvt = (void *)pcallback;
+	callbackSetCallback(myCallback,pcallback);
+        pcallback->precord = (struct dbCommon *)pmbbi;
 	pcallback->wd_id = wdCreate();
+	pmbbi->val = pmbbi->inp.value.value;
+	pmbbi->udf = FALSE;
 	break;
     default :
-	recGblRecordError(S_db_badField,(void *)pstringout,
-		"devSoTestAsyn (init_record) Illegal OUT field");
+	recGblRecordError(S_db_badField,(void *)pmbbi,
+		"devMbbiDirectTestAsyn (init_record) Illegal INP field");
 	return(S_db_badField);
     }
     return(0);
 }
 
-static long write_stringout(pstringout)
-    struct stringoutRecord	*pstringout;
+static long read_mbbi(pmbbi)
+    struct mbbiDirectRecord	*pmbbi;
 {
-    struct callback *pcallback=(struct callback *)(pstringout->dpvt);
+    struct callback *pcallback=(struct callback *)(pmbbi->dpvt);
     int		wait_time;
 
-    /* stringout.out must be a CONSTANT*/
-    switch (pstringout->out.type) {
+    /* mbbi.inp must be a CONSTANT*/
+    switch (pmbbi->inp.type) {
     case (CONSTANT) :
-	if(pstringout->pact) {
-		printf("%s Completed\n",pstringout->name);
-		return(0); /* don`t convert*/
+	if(pmbbi->pact) {
+		printf("%s Completed\n",pmbbi->name);
+		return(2); /* don't convert */
 	} else {
-		wait_time = (int)(pstringout->disv * vxTicksPerSecond);
+		wait_time = (int)(pmbbi->disv * vxTicksPerSecond);
 		if(wait_time<=0) return(0);
-		callbackSetPriority(pstringout->prio,&pcallback->callback);
-		printf("%s Starting asynchronous processing\n",pstringout->name);
+		callbackSetPriority(pmbbi->prio,pcallback);
+		printf("%s Starting asynchronous processing\n",pmbbi->name);
 		wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
-		pstringout->pact=TRUE;
+		pmbbi->pact=TRUE;
 		return(0);
 	}
     default :
-        if(recGblSetSevr(pstringout,SOFT_ALARM,INVALID_ALARM)){
-		if(pstringout->stat!=SOFT_ALARM) {
-			recGblRecordError(S_db_badField,(void *)pstringout,
-			    "devSoTestAsyn (read_stringout) Illegal OUT field");
+        if(recGblSetSevr(pmbbi,SOFT_ALARM,INVALID_ALARM)){
+		if(pmbbi->stat!=SOFT_ALARM) {
+			recGblRecordError(S_db_badField,(void *)pmbbi,
+			    "devMbbiDirectTestAsyn (read_mbbi) Illegal INP field");
 		}
 	}
     }

@@ -1,5 +1,5 @@
 /* devWfTestAsyn.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /* devWfTestAsyn.c - Device Support Routines for testing asynchronous processing*/
 /*

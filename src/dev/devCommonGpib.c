@@ -1,5 +1,6 @@
 /* devCommonGpib.c */
-/* share/src/devOpt $Id$ */
+/* base/src/dev $Id$ */
+
 /*
  *      Author: 		John Winans
  *      Origional Author:	Ned D. Arnold

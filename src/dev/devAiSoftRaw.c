@@ -1,5 +1,5 @@
 /* devAiSoftRaw.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /* devAiSoftRaw.c - Device Support Routines for soft Analog Input Records*/
 /*
@@ -88,12 +88,9 @@ static long init_record(pai)
 	pai->rval = pai->inp.value.value;
 	break;
     case (PV_LINK) :
-        status = dbCaAddInlink(&(pai->inp), (void *) pai, "RVAL");
-        if(status) return(status);
-	break;
     case (DB_LINK) :
-	break;
-    case (CA_LINK) :
+        status = recGblInitFastInLink(&(pai->inp), (void *) pai, DBR_LONG, "RVAL");
+        if(status) return(status);
 	break;
     default :
 	recGblRecordError(S_db_badField,(void *)pai,
@@ -106,10 +103,9 @@ static long init_record(pai)
 static long read_ai(pai)
     struct aiRecord	*pai;
 {
-    long status,options=0,nRequest=1;
+    long status;
 
-    status = recGblGetLinkValue(&(pai->inp),(void *)pai,DBR_LONG,&(pai->rval),
-              &options,&nRequest);
+    status = recGblGetFastLink(&(pai->inp),(void *)pai,&(pai->rval));
 
     return(0);
 }

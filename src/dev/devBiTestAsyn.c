@@ -1,5 +1,5 @@
 /* devBiTestAsyn.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /* devBiTestAsyn.c - Device Support Routines for testing asynchronous processing*/
 /*

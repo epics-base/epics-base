@@ -1,5 +1,5 @@
 /* devLoSoft.c */
-/* share/src/dev  $Id$ */
+/* base/src/dev $Id$ */
 
 /* devLoSoft.c - Device Support Routines for Soft Longout Output */
 /*
@@ -47,9 +47,6 @@
 #include	<module_types.h>
 #include	<longoutRecord.h>
 
-/* added for Channel Access Links */
-long dbCaAddOutlink();
-long dbCaPutLink();
 static long init_record();
 
 /* Create the dset for devLoSoft */
@@ -74,27 +71,23 @@ struct {
 static long init_record(plongout)
 struct longoutRecord *plongout;
 {
+    long status = 0L;
  
-long status;
+    status = recGblInitFastOutLink(&(plongout->out), (void *) plongout, DBR_LONG, "VAL");
  
-    if (plongout->out.type == PV_LINK)
-        status = dbCaAddOutlink(&(plongout->out), (void *) plongout, "VAL");
-    else
-        status = 0L;
- 
-    return status;
+    return(status);
  
 } /* end init_record() */
 
 static long write_longout(plongout)
     struct longoutRecord	*plongout;
 {
-    long status,nRequest=1;
+    long status;
 
-    status = recGblPutLinkValue(&(plongout->out),(void *)plongout,DBR_LONG,&(plongout->val),
-              &nRequest);
+    status = recGblPutFastLink(&(plongout->out), (void *)plongout, &(plongout->val));
 
-    if(RTN_SUCCESS(status)) plongout->udf=FALSE;
+    if (RTN_SUCCESS(status))
+       plongout->udf=FALSE;
 
     return(0);
 }

@@ -1,5 +1,5 @@
 /* devBiSoftRaw.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /* devBiSoftRaw.c - Device Support Routines for  Soft Binary Input*/
 /*
@@ -84,13 +84,13 @@ static long init_record(pbi)
     case (CONSTANT) :
         pbi->rval = pbi->inp.value.value;
         break;
-    case (PV_LINK) :
-        status = dbCaAddInlink(&(pbi->inp), (void *) pbi, "RVAL");
-        if(status) return(status);
-        break;
     case (DB_LINK) :
-        break;
-    case (CA_LINK) :
+    case (PV_LINK) :
+        status = recGblInitFastInLink(&(pbi->inp), (void *) pbi, DBR_ULONG, "RVAL");
+
+        if (status)
+           return(status);
+
         break;
     default :
 	recGblRecordError(S_db_badField,(void *)pbi,
@@ -103,10 +103,9 @@ static long init_record(pbi)
 static long read_bi(pbi)
     struct biRecord	*pbi;
 {
-    long status,options=0,nRequest=1;
+    long status;
 
-    status = recGblGetLinkValue(&(pbi->inp),(void *)pbi,DBR_ULONG,&(pbi->rval),
-              &options,&nRequest);
+    status = recGblGetFastLink(&(pbi->inp), (void *)pbi, &(pbi->rval));
 
     return(0);
 }

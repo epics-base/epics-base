@@ -1,3 +1,5 @@
+/* base/src/dev $Id$ */
+
 /* @(#)devLiSymb.c	1.1	6/4/93
  *      Device Support for VxWorks Global Symbol Longin Input Records
  *

@@ -1,5 +1,5 @@
 /* devBiXVme210.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /* devBiXVme210.c - Device Support Routines for XYcom 32 bit binary input*/
 /*

@@ -1,5 +1,5 @@
 /* devAiSoft.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /* devAiSoft.c - Device Support Routines for soft Analog Input Records*/
 /*
@@ -73,7 +73,7 @@ struct {
 	init_record,
 	NULL,
 	read_ai,
-	NULL};
+	NULL };
 
 
 static long init_record(pai)
@@ -86,32 +86,37 @@ static long init_record(pai)
     case (CONSTANT) :
 	pai->val = pai->inp.value.value;
 	pai->udf = FALSE;
+
 	break;
     case (PV_LINK) :
-	status = dbCaAddInlink(&(pai->inp), (void *) pai, "VAL");
-	if(status) return(status);
-	break;
     case (DB_LINK) :
+	status = recGblInitFastInLink(&(pai->inp), (struct dbCommon *) pai,
+                               DBR_DOUBLE, "VAL");
+
+	if (status)
+           return(status);
+
 	break;
     default :
-	recGblRecordError(S_db_badField,(void *)pai,
+	recGblRecordError(S_db_badField, (void *)pai,
 		"devAiSoft (init_record) Illegal INP field");
+
 	return(S_db_badField);
     }
     /* Make sure record processing routine does not perform any conversion*/
-    pai->linr=0;
+    pai->linr = 0;
     return(0);
 }
 
 static long read_ai(pai)
     struct aiRecord	*pai;
 {
-    long status,options=0,nRequest=1;
+    long status;
 
-    status = recGblGetLinkValue(&(pai->inp),(void *)pai,DBR_DOUBLE,&(pai->val),
-              &options,&nRequest);
+    status = recGblGetFastLink(&(pai->inp), (void *) pai, &(pai->val));
 
-    if(RTN_SUCCESS(status)) pai->udf=FALSE;
+    if (RTN_SUCCESS(status))
+       pai->udf = FALSE;
 
     return(2); /*don't convert*/
 }

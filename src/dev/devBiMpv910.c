@@ -1,5 +1,5 @@
 /* devBiMpv910.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /* devBiMpv910.c - Device Support Routines for  Burr Brown MPV 910  Binary input */
 /*

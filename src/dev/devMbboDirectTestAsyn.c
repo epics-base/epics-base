@@ -1,10 +1,11 @@
-/* devSoTestAsyn.c */
+/* devMbboDirectTestAsyn.c */
 /* base/src/dev $Id$ */
 
-/* devSoTestAsyn.c - Device Support Routines for testing asynchronous processing*/
+/* devMbboDirectTestAsyn.c - Device Support for testing asynch processing */
 /*
- *      Author:          Janet Anderson
- *      Date:            5-1-91
+ *      Original Author: Bob Dalesio
+ *      Current Author:  Matthew Needes
+ *      Date:            10-08-93
  *
  *      Experimental Physics and Industrial Control System (EPICS)
  *
@@ -29,13 +30,8 @@
  *
  * Modification Log:
  * -----------------
- * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
- * .02  01-08-92        jba     Added cast in call to wdStart to avoid compile warning msg
- * .03  02-05-92	jba	Changed function arguments from paddr to precord 
- * .04	03-13-92	jba	ANSI C changes
- * .05  04-10-92        jba     pact now used to test for asyn processing, not return value
- * .06  04-05-94        mrk	ANSI changes to callback routines
- *      ...
+ *  (modification log for devMbboTestAsyn applies)
+ *  .01  10-08-93   mcn    device support for MbboDirect records
  */
 
 
@@ -55,26 +51,26 @@
 #include	<devSup.h>
 #include	<link.h>
 #include	<rec/dbCommon.h>
-#include	<stringoutRecord.h>
+#include	<mbboDirectRecord.h>
 
-/* Create the dset for devSoTestAsyn */
+/* Create the dset for devMbboDirectTestAsyn */
 static long init_record();
-static long write_stringout();
+static long write_mbbo();
 struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
 	DEVSUPFUN	init_record;
 	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_stringout;
+	DEVSUPFUN	write_mbbo;
 	DEVSUPFUN	special_linconv;
-}devSoTestAsyn={
+}devMbboDirectTestAsyn={
 	6,
 	NULL,
 	NULL,
 	init_record,
 	NULL,
-	write_stringout,
+	write_mbbo,
 	NULL};
 
 /* control block for callback*/
@@ -94,56 +90,55 @@ static void myCallback(pcallback)
     (*prset->process)(precord);
     dbScanUnlock(precord);
 }
-    
 
-static long init_record(pstringout)
-    struct stringoutRecord	*pstringout;
+static long init_record(pmbbo)
+    struct mbboDirectRecord	*pmbbo;
 {
     struct callback *pcallback;
 
-    /* stringout.out must be a CONSTANT*/
-    switch (pstringout->out.type) {
+    /* mbbo.out must be a CONSTANT*/
+    switch (pmbbo->out.type) {
     case (CONSTANT) :
 	pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
-	pstringout->dpvt = (void *)pcallback;
-	callbackSetCallback(myCallback,&pcallback->callback);
-        pcallback->precord = (struct dbCommon *)pstringout;
+	pmbbo->dpvt = (void *)pcallback;
+	callbackSetCallback(myCallback,pcallback);
+        pcallback->precord = (struct dbCommon *)pmbbo;
 	pcallback->wd_id = wdCreate();
 	break;
     default :
-	recGblRecordError(S_db_badField,(void *)pstringout,
-		"devSoTestAsyn (init_record) Illegal OUT field");
+	recGblRecordError(S_db_badField,(void *)pmbbo,
+	    "devMbboDirectTestAsyn (init_record) Illegal OUT field");
 	return(S_db_badField);
     }
-    return(0);
+    return(2);
 }
 
-static long write_stringout(pstringout)
-    struct stringoutRecord	*pstringout;
+static long write_mbbo(pmbbo)
+    struct mbboDirectRecord	*pmbbo;
 {
-    struct callback *pcallback=(struct callback *)(pstringout->dpvt);
+    struct callback *pcallback=(struct callback *)(pmbbo->dpvt);
     int		wait_time;
 
-    /* stringout.out must be a CONSTANT*/
-    switch (pstringout->out.type) {
+    /* mbbo.out must be a CONSTANT*/
+    switch (pmbbo->out.type) {
     case (CONSTANT) :
-	if(pstringout->pact) {
-		printf("%s Completed\n",pstringout->name);
-		return(0); /* don`t convert*/
+	if(pmbbo->pact) {
+		printf("%s Completed\n",pmbbo->name);
+		return(0);
 	} else {
-		wait_time = (int)(pstringout->disv * vxTicksPerSecond);
+		wait_time = (int)(pmbbo->disv * vxTicksPerSecond);
 		if(wait_time<=0) return(0);
-		callbackSetPriority(pstringout->prio,&pcallback->callback);
-		printf("%s Starting asynchronous processing\n",pstringout->name);
+		callbackSetPriority(pmbbo->prio,pcallback);
+		printf("%s Starting asynchronous processing\n",pmbbo->name);
 		wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
-		pstringout->pact=TRUE;
+		pmbbo->pact=TRUE;
 		return(0);
 	}
     default :
-        if(recGblSetSevr(pstringout,SOFT_ALARM,INVALID_ALARM)){
-		if(pstringout->stat!=SOFT_ALARM) {
-			recGblRecordError(S_db_badField,(void *)pstringout,
-			    "devSoTestAsyn (read_stringout) Illegal OUT field");
+        if(recGblSetSevr(pmbbo,SOFT_ALARM,INVALID_ALARM)){
+		if(pmbbo->stat!=SOFT_ALARM) {
+			recGblRecordError(S_db_badField,(void *)pmbbo,
+			    "devMbboDirectTestAsyn (read_mbbo) Illegal OUT field");
 		}
 	}
     }

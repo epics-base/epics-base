@@ -1,5 +1,5 @@
 /* devSmCompumotor1830.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /* devSmCompumotor1830.c - Device Support Routines */
 /*

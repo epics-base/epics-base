@@ -1,5 +1,5 @@
 /* devAiTestAsyn.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /* devAiTestAsyn.c - Device Support Routines for testing asynchronous processing*/
 /*

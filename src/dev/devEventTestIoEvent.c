@@ -1,5 +1,5 @@
 /* devEventTestIoEvent.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /* devEventTestIoEvent.c - Device Support Routines for ioEvent*/
 /*

@@ -1,5 +1,5 @@
 /* devAt8At8Fp.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /*
  *      Original Author: Bob Dalesio

@@ -1,5 +1,5 @@
 /* devSmOms6Axis.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /* devSmOms6Axis.c - Device Support Routines */
 /*

@@ -1,5 +1,5 @@
 /* devBoMpv902.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /* devBoMpv902.c - Device Support Routines for  Burr Brown MPV 902  Binary output */
 /*

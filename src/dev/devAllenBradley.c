@@ -1,5 +1,5 @@
 /* devAllenBradley.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /* devAllenBradley.c - Device Support Routines for  Allen Bradley*/
 /*
@@ -32,7 +32,8 @@
  * -----------------
  * .01  08-27-92	mrk	Combined all Allen Bradley devive support
  * .02  02-08-94	mrk	Issue Hardware Errors BUT prevent Error Message Storms
- * .02  04-13-94	mrk	Fixed IXE problems
+ * .03  03-30-94        mcn     support for devMbboDirect and devMbbiDirect
+ * .04  04-13-94	mrk	Fixed IXE problems
  * 	...
  */
 
@@ -56,10 +57,10 @@
 #include        <biRecord.h>
 #include        <boRecord.h>
 #include        <mbbiRecord.h>
+#include        <mbbiDirectRecord.h>
 #include        <mbboRecord.h>
+#include        <mbboDirectRecord.h>
 #include        <drvAb.h>
-
-
 
 /* Create the dsets*/
 static long init_1771Ife();
@@ -131,11 +132,17 @@ static long init_bi16();
 static long ioinfo_bi16();
 static long read_bi16();
 static long init_mbbi();
+static long init_mbbiDirect();
 static long ioinfo_mbbi();
+static long ioinfo_mbbiDirect();
 static long read_mbbi();
+static long read_mbbiDirect();
 static long init_mbbi16();
+static long init_mbbiDirect16();
 static long ioinfo_mbbi16();
+static long ioinfo_mbbiDirect16();
 static long read_mbbi16();
+static long read_mbbiDirect16();
 typedef struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -147,16 +154,22 @@ typedef struct {
 ABBIDSET devBiAb={ 5, NULL, NULL, init_bi, ioinfo_bi, read_bi};
 ABBIDSET devBiAb16={ 5, NULL, NULL, init_bi16, ioinfo_bi16, read_bi16};
 ABBIDSET devMbbiAb={ 5, NULL, NULL, init_mbbi, ioinfo_mbbi, read_mbbi};
+ABBIDSET devMbbiDirectAb={ 5, NULL, NULL, init_mbbiDirect, ioinfo_mbbiDirect, read_mbbiDirect};
 ABBIDSET devMbbiAb16={ 5, NULL, NULL, init_mbbi16, ioinfo_mbbi16, read_mbbi16};
+ABBIDSET devMbbiDirectAb16={ 5, NULL, NULL, init_mbbiDirect16, ioinfo_mbbiDirect16, read_mbbiDirect16};
 
 static long init_bo();
 static long write_bo();
 static long init_bo16();
 static long write_bo16();
 static long init_mbbo();
+static long init_mbboDirect();
 static long write_mbbo();
+static long write_mbboDirect();
 static long init_mbbo16();
+static long init_mbboDirect16();
 static long write_mbbo16();
+static long write_mbboDirect16();
 typedef struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -168,7 +181,9 @@ typedef struct {
 ABBODSET devBoAb={ 5, NULL, NULL, init_bo, NULL, write_bo};
 ABBODSET devBoAb16={ 5, NULL, NULL, init_bo16, NULL, write_bo16};
 ABBODSET devMbboAb={ 5, NULL, NULL, init_mbbo, NULL, write_mbbo};
+ABBODSET devMbboDirectAb={ 5, NULL, NULL, init_mbboDirect, NULL, write_mbboDirect};
 ABBODSET devMbboAb16={ 5, NULL, NULL, init_mbbo16, NULL, write_mbbo16};
+ABBODSET devMbboDirectAb16={ 5, NULL, NULL, init_mbboDirect16, NULL, write_mbboDirect16};
 
 
 static long init_1771Ife(struct aiRecord	*pai)
@@ -943,6 +958,62 @@ static long read_mbbi(struct mbbiRecord	*pmbbi)
 	}
 }
 
+static long init_mbbiDirect(struct mbbiDirectRecord	*pmbbi)
+{
+
+    /* mbbi.inp must be an AB_IO */
+    switch (pmbbi->inp.type) {
+    case (AB_IO) :
+	pmbbi->shft = pmbbi->inp.value.abio.signal;
+	pmbbi->mask <<= pmbbi->shft;
+	break;
+    default :
+	recGblRecordError(S_db_badField,(void *)pmbbi,
+	    "devMbbiDirectAb (init_record) Illegal INP field");
+	return(S_db_badField);
+    }
+    return(0);
+}
+
+static long ioinfo_mbbiDirect(
+    int			cmd,
+    struct mbbiDirectRecord	*pmbbi,
+    IOSCANPVT		*ppvt)
+{
+    struct abio *pabio;
+    unsigned long value;
+
+    pabio = (struct abio *)&(pmbbi->inp.value);
+    ab_bi_getioscanpvt(pabio->link,pabio->adapter,pabio->card,ppvt);
+    /*call ab_bidriver so that it knows it has a binary input*/
+    if(cmd==0) {
+	(void) ab_bidriver(ABBI_08_BIT,pabio->link,pabio->adapter,
+		pabio->card,pabio->plc_flag,pmbbi->mask,&value);
+    }
+    return(0);
+}
+
+static long read_mbbiDirect(struct mbbiDirectRecord	*pmbbi)
+{
+	struct abio *pabio;
+	int	    status;
+	unsigned long value;
+
+	
+	pabio = (struct abio *)&(pmbbi->inp.value);
+	status = ab_bidriver(ABBI_08_BIT,pabio->link,pabio->adapter,
+	   pabio->card,pabio->plc_flag,pmbbi->mask,&value);
+	if(status==0) {
+		pmbbi->rval = value;
+		return(0);
+	} else {
+                if(recGblSetSevr(pmbbi,READ_ALARM,INVALID_ALARM) && errVerbose
+		&& (pmbbi->stat!=READ_ALARM || pmbbi->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pmbbi,"ab_bidriver Error");
+		return(2);
+	}
+}
+
 static long init_mbbi16(struct mbbiRecord *pmbbi)
 {
 
@@ -979,6 +1050,61 @@ static long ioinfo_mbbi16(
 }
 
 static long read_mbbi16(struct mbbiRecord *pmbbi)
+{
+	struct abio *pabio;
+	int	    status;
+	unsigned long value;
+	
+	pabio = (struct abio *)&(pmbbi->inp.value);
+	status = ab_bidriver(ABBI_16_BIT,pabio->link,pabio->adapter,
+	   pabio->card,pabio->plc_flag,pmbbi->mask,&value);
+	if(status==0) {
+		pmbbi->rval = value;
+		return(0);
+	} else {
+                if(recGblSetSevr(pmbbi,READ_ALARM,INVALID_ALARM) && errVerbose
+		&& (pmbbi->stat!=READ_ALARM || pmbbi->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pmbbi,"ab_bidriver Error");
+		return(2);
+	}
+}
+
+static long init_mbbiDirect16(struct mbbiDirectRecord *pmbbi)
+{
+
+    /* mbbi.inp must be an AB_IO */
+    switch (pmbbi->inp.type) {
+    case (AB_IO) :
+	pmbbi->shft = pmbbi->inp.value.abio.signal;
+	pmbbi->mask <<= pmbbi->shft;
+	break;
+    default :
+	recGblRecordError(S_db_badField,(void *)pmbbi,
+	    "devMbbiDirectAb16 (init_record) Illegal INP field");
+	return(S_db_badField);
+    }
+    return(0);
+}
+
+static long ioinfo_mbbiDirect16(
+    int			cmd,
+    struct mbbiDirectRecord	*pmbbi,
+    IOSCANPVT		*ppvt)
+{
+    struct abio *pabio;
+    unsigned long value;
+
+    pabio = (struct abio *)&(pmbbi->inp.value);
+    ab_bi_getioscanpvt(pabio->link,pabio->adapter,pabio->card,ppvt);
+    /*call ab_bidriver so that it knows it has a binary input*/
+    if(cmd==0) {
+	(void) ab_bidriver(ABBI_16_BIT,pabio->link,pabio->adapter,
+		pabio->card,pabio->plc_flag,pmbbi->mask,&value);
+    }
+    return(0);
+}
+
+static long read_mbbiDirect16(struct mbbiDirectRecord *pmbbi)
 {
 	struct abio *pabio;
 	int	    status;
@@ -1125,6 +1251,48 @@ static long write_mbbo(struct mbboRecord *pmbbo)
 	return(0);
 }
 
+static long init_mbboDirect(struct mbboDirectRecord	*pmbbo)
+{
+    unsigned long value;
+    struct abio *pabio;
+    int		status=0;
+
+    /* mbbo.out must be an AB_IO */
+    switch (pmbbo->out.type) {
+    case (AB_IO) :
+	pabio = &(pmbbo->out.value.abio);
+	pmbbo->shft = pabio->signal;
+	pmbbo->mask <<= pmbbo->shft;
+	status = ab_boread(ABBO_08_BIT,pabio->link,pabio->adapter,pabio->card,&value,pmbbo->mask);
+	if(status==0) pmbbo->rval = value;
+	else status = 2;
+	break;
+    default :
+	status = S_db_badField;
+	recGblRecordError(status,(void *)pmbbo,
+		"devMbboDirectAb (init_record) Illegal OUT field");
+    }
+    return(status);
+}
+
+static long write_mbboDirect(struct mbboDirectRecord *pmbbo)
+{
+	struct abio *pabio;
+	int	    status;
+	unsigned long value;
+
+	
+	pabio = &(pmbbo->out.value.abio);
+	status = ab_bodriver(ABBO_08_BIT,pabio->link,pabio->adapter,
+	   pabio->card,pabio->plc_flag,pmbbo->rval,pmbbo->mask);
+	if(status!=0) {
+                if(recGblSetSevr(pmbbo,WRITE_ALARM,INVALID_ALARM) && errVerbose
+		&& (pmbbo->stat!=WRITE_ALARM || pmbbo->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pmbbo,"ab_bodriver Error");
+	}
+	return(0);
+}
+
 static long init_mbbo16(struct mbboRecord *pmbbo)
 {
     unsigned long value;
@@ -1165,3 +1333,45 @@ static long write_mbbo16(struct mbboRecord *pmbbo)
 	}
 	return(0);
 }
+
+static long init_mbboDirect16(struct mbboDirectRecord *pmbbo)
+{
+    unsigned long value;
+    struct abio *pabio;
+    int		status=0;
+
+    /* mbbo.out must be an AB_IO */
+    switch (pmbbo->out.type) {
+    case (AB_IO) :
+	pabio = &(pmbbo->out.value.abio);
+	pmbbo->shft = pabio->signal;
+	pmbbo->mask <<= pmbbo->shft;
+	status = ab_boread(ABBO_16_BIT,pabio->link,pabio->adapter,pabio->card,&value,pmbbo->mask);
+	if(status==0) pmbbo->rval = value;
+	else status = 2;
+	break;
+    default :
+	status = S_db_badField;
+	recGblRecordError(status,(void *)pmbbo,
+		"devMbboDirectAb16 (init_record) Illegal OUT field");
+    }
+    return(status);
+}
+
+static long write_mbboDirect16(struct mbboDirectRecord *pmbbo)
+{
+	struct abio *pabio;
+	int	    status;
+
+	
+	pabio = &(pmbbo->out.value.abio);
+	status = ab_bodriver(ABBO_16_BIT,pabio->link,pabio->adapter,
+	   pabio->card,pabio->plc_flag,pmbbo->rval,pmbbo->mask);
+	if(status!=0) {
+                if(recGblSetSevr(pmbbo,WRITE_ALARM,INVALID_ALARM) && errVerbose
+		&& (pmbbo->stat!=WRITE_ALARM || pmbbo->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pmbbo,"ab_bodriver Error");
+	}
+	return(0);
+}
+

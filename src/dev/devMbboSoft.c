@@ -1,5 +1,5 @@
 /* devMbboSoft.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /* devMbboSoft.c - Device Support Routines for  Soft Multibit Binary Output*/
 /*
@@ -51,9 +51,6 @@
 #include	<module_types.h>
 #include	<mbboRecord.h>
 
-/* added for Channel Access Links */
-long dbCaAddOutlink();
-long dbCaPutLink();
 static long init_record();
 
 /* Create the dset for devMbboSoft */
@@ -82,8 +79,7 @@ struct mbboRecord *pmbbo;
  
     long status=0;
  
-    if (pmbbo->out.type == PV_LINK)
-        status = dbCaAddOutlink(&(pmbbo->out), (void *) pmbbo, "VAL");
+    status = recGblInitFastOutLink(&(pmbbo->out), (void *) pmbbo, DBR_USHORT, "VAL");
  
     /* dont convert */
     if ( status == 0 ) status=2;
@@ -95,10 +91,9 @@ struct mbboRecord *pmbbo;
 static long write_mbbo(pmbbo)
     struct mbboRecord	*pmbbo;
 {
-    long status,nRequest=1;
+    long status;
 
-    status = recGblPutLinkValue(&(pmbbo->out),(void *)pmbbo,DBR_USHORT,&(pmbbo->val),
-              &nRequest);
+    status = recGblPutFastLink(&(pmbbo->out), (void *)pmbbo, &(pmbbo->val));
 
     if(RTN_SUCCESS(status)) pmbbo->udf=FALSE;
 

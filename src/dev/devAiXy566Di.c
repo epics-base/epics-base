@@ -1,5 +1,5 @@
 /* devAiXy566Di.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /* devAiXy566Di.c - Device Support Routines */
 /*

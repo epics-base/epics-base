@@ -1,11 +1,11 @@
-/* devWfSoft.c */
+/* devMbbiDirectSoftRaw.c */
 /* base/src/dev $Id$ */
 
-/* devWfSoft.c - Device Support Routines for soft Waveform Records*/
+/* devMbbiDirectSoftRaw.c - Device Support for Direct Soft MBBI */
 /*
  *      Original Author: Bob Dalesio
- *      Current Author:  Marty Kraimer
- *      Date:            6-1-90
+ *      Current Author:  Matthew Needes
+ *      Date:            10-08-93
  *
  *      Experimental Physics and Industrial Control System (EPICS)
  *
@@ -30,12 +30,9 @@
  *
  * Modification Log:
  * -----------------
- * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
- * .02	03-13-92	jba	ANSI C changes
- * .03  10-10-92        jba     replaced code with recGblGetLinkValue call
- *      ...
+ *   (modification log of devMbbiDirectSoftRaw applies)
+ *  .01  10-08-93   mcn   device support for direct mbbi records.
  */
-
 
 #include	<vxWorks.h>
 #include	<types.h>
@@ -47,66 +44,64 @@
 #include	<dbAccess.h>
 #include        <recSup.h>
 #include	<devSup.h>
-#include	<link.h>
-#include	<waveformRecord.h>
+#include	<module_types.h>
+#include	<mbbiDirectRecord.h>
+
 /* Added for Channel Access Links */
 long dbCaAddInlink();
 long dbCaGetLink();
 
-/* Create the dset for devWfSoft */
+
+/* Create the dset for devMbbiDirectSoftRaw */
 static long init_record();
-static long read_wf();
+static long read_mbbi();
+
 struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
 	DEVSUPFUN	init_record;
 	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	read_wf;
-}devWfSoft={
+	DEVSUPFUN	read_mbbi;
+}devMbbiDirectSoftRaw={
 	5,
 	NULL,
 	NULL,
 	init_record,
 	NULL,
-	read_wf};
+	read_mbbi};
 
 
-static long init_record(pwf)
-    struct waveformRecord	*pwf;
+static long init_record(pmbbi)
+    struct mbbiDirectRecord	*pmbbi;
 {
     long status;
 
-    /* wf.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
-    switch (pwf->inp.type) {
+    /* mbbi.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
+    switch (pmbbi->inp.type) {
     case (CONSTANT) :
-	pwf->nord = 0;
-	break;
-    case (PV_LINK) :
-        status = dbCaAddInlink(&(pwf->inp), (void *) pwf, "VAL");
-        if(status) return(status);
-	break;
+        pmbbi->rval = pmbbi->inp.value.value;
+        break;
     case (DB_LINK) :
-	break;
-    case (CA_LINK) :
-	break;
+    case (PV_LINK) :
+        status = recGblInitFastInLink(&(pmbbi->inp), (void *) pmbbi, DBR_ULONG, "RVAL");
+        if (status)
+           return(status);
+        break;
     default :
-	recGblRecordError(S_db_badField,(void *)pwf,
-		"devWfSoft (init_record) Illegal INP field");
+	recGblRecordError(S_db_badField,(void *)pmbbi,
+		"devMbbiDirectSoftRaw (init_record) Illegal INP field");
 	return(S_db_badField);
     }
     return(0);
 }
 
-static long read_wf(pwf)
-    struct waveformRecord	*pwf;
+static long read_mbbi(pmbbi)
+    struct mbbiDirectRecord	*pmbbi;
 {
-    long status,options=0,nRequest;
+    long status;
 
-    nRequest=pwf->nelm;
-    status = recGblGetLinkValue(&(pwf->inp),(void *)pwf,pwf->ftvl,pwf->bptr,
-              &options,&nRequest);
-    pwf->nord = nRequest;
+    status = recGblGetFastLink(&(pmbbi->inp), (void *) pmbbi, &(pmbbi->rval));
 
     return(0);
 }

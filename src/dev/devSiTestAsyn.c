@@ -1,5 +1,5 @@
 /* devSiTestAsyn.c */
- /* share/src/dev   $Id$ */
+/* base/src/dev $Id$ */
 
 /* devSiTestAsyn.c - Device Support Routines for testing asynchronous processing*/
 /*

@@ -1,5 +1,5 @@
 /* devAt5Vxi.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /* devAt5Vxi.c - Device Support Routines */
 /*
@@ -33,6 +33,8 @@
  * .01  08-21-92	mrk	Replaces individual At5Vxi modules
  * .02 	05-27-93	joh	changed linear conversion
  * .03 	09-01-93	joh	expects EPICS status from driver	
+ * .04	09-02-93	mcn	added AT5VXI Timer support
+ * .05	10-08-93	mcn	added support for Direct mbbo and mbbi
  */
 
 #include	<vxWorks.h>
@@ -54,7 +56,9 @@
 #include	<biRecord.h>
 #include	<boRecord.h>
 #include	<mbbiRecord.h>
-#include	<mbboRecord.h>
+#include        <mbbiDirectRecord.h>
+#include        <mbboRecord.h>
+#include        <mbboDirectRecord.h>
 #include	<timerRecord.h>
 
 #include 	<drvAt5Vxi.h>
@@ -67,10 +71,13 @@ static long init_ao();
 static long init_bi();
 static long init_bo();
 static long init_mbbi();
+static long init_mbbiDirect();
 static long init_mbbo();
+static long init_mbboDirect();
 static long ai_ioinfo();
 static long bi_ioinfo();
 static long mbbi_ioinfo();
+static long mbbiDirect_ioinfo();
 static long read_timer();
 static long read_ai();
 static long write_ao();
@@ -78,7 +85,9 @@ static long read_bi();
 static long write_timer();
 static long write_bo();
 static long read_mbbi();
+static long read_mbbiDirect();
 static long write_mbbo();
+static long write_mbboDirect();
 static long ai_lincvt();
 static long ao_lincvt();
 
@@ -97,7 +106,9 @@ AT5VXIDSET devAoAt5Vxi=   {6, NULL, NULL, init_ao, NULL, write_ao, ao_lincvt};
 AT5VXIDSET devBiAt5Vxi=   {6, NULL, NULL, init_bi, bi_ioinfo, read_bi, NULL};
 AT5VXIDSET devBoAt5Vxi=   {6, NULL, NULL, init_bo, NULL, write_bo, NULL};
 AT5VXIDSET devMbbiAt5Vxi= {6, NULL, NULL, init_mbbi, mbbi_ioinfo, read_mbbi, NULL};
+AT5VXIDSET devMbbiDirectAt5Vxi= {6, NULL, NULL, init_mbbiDirect, mbbiDirect_ioinfo, read_mbbiDirect, NULL};
 AT5VXIDSET devMbboAt5Vxi= {6, NULL, NULL, init_mbbo, NULL, write_mbbo, NULL};
+AT5VXIDSET devMbboDirectAt5Vxi= {6, NULL, NULL, init_mbboDirect, NULL, write_mbboDirect, NULL};
  
  /* DSET structure for timer records */
  typedef struct {
@@ -400,6 +411,23 @@ static long init_mbbi(struct mbbiRecord	*pmbbi)
     return(0);
 }
 
+static long init_mbbiDirect(struct mbbiDirectRecord	*pmbbi)
+{
+
+    /* mbbi.inp must be an VME_IO */
+    switch (pmbbi->inp.type) {
+    case (VME_IO) :
+	pmbbi->shft = pmbbi->inp.value.vmeio.signal;
+	pmbbi->mask <<= pmbbi->shft;
+	break;
+    default :
+	recGblRecordError(S_db_badField,(void *)pmbbi,
+		"devMbbiDirectAt5Vxi (init_record) Illegal INP field");
+	return(S_db_badField);
+    }
+    return(0);
+}
+
 static long mbbi_ioinfo(
     int               cmd,
     struct mbbiRecord     *pmbbi,
@@ -408,7 +436,32 @@ static long mbbi_ioinfo(
     return at5vxi_getioscanpvt(pmbbi->inp.value.vmeio.card,ppvt);
 }
 
+static long mbbiDirect_ioinfo(
+    int               cmd,
+    struct mbbiDirectRecord     *pmbbi,
+    IOSCANPVT		*ppvt)
+{
+    return at5vxi_getioscanpvt(pmbbi->inp.value.vmeio.card,ppvt);
+}
+
 static long read_mbbi(struct mbbiRecord	*pmbbi)
+{
+	struct vmeio	*pvmeio;
+	long		status;
+	unsigned long	value;
+
+	
+	pvmeio = (struct vmeio *)&(pmbbi->inp.value);
+	status = at5vxi_bi_driver(pvmeio->card,pmbbi->mask,&value);
+	if(status==0) {
+		pmbbi->rval = value;
+	} else {
+                recGblSetSevr(pmbbi,READ_ALARM,INVALID_ALARM);
+	}
+	return(status);
+}
+
+static long read_mbbiDirect(struct mbbiDirectRecord	*pmbbi)
 {
 	struct vmeio	*pvmeio;
 	long		status;
@@ -448,6 +501,29 @@ static long init_mbbo(struct mbboRecord	*pmbbo)
     return(status);
 }
 
+static long init_mbboDirect(struct mbboDirectRecord	*pmbbo)
+{
+    unsigned long value;
+    struct vmeio *pvmeio;
+    long	status = 0;
+
+    /* mbbo.out must be an VME_IO */
+    switch (pmbbo->out.type) {
+    case (VME_IO) :
+	pvmeio = &(pmbbo->out.value.vmeio);
+	pmbbo->shft = pvmeio->signal;
+	pmbbo->mask <<= pmbbo->shft;
+	status = at5vxi_bi_driver(pvmeio->card,pmbbo->mask,&value);
+	if(status==0) pmbbo->rbv = pmbbo->rval = value;
+	break;
+    default :
+	status = S_db_badField;
+	recGblRecordError(status,(void *)pmbbo,
+		"devMbboDirectAt5Vxi (init_record) Illegal OUT field");
+    }
+    return(status);
+}
+
 static long write_mbbo(struct mbboRecord	*pmbbo)
 {
 	struct vmeio *pvmeio;
@@ -466,3 +542,23 @@ static long write_mbbo(struct mbboRecord	*pmbbo)
 	}
 	return(status);
 }
+
+static long write_mbboDirect(struct mbboDirectRecord	*pmbbo)
+{
+	struct vmeio *pvmeio;
+	long		status;
+	unsigned long value;
+
+	
+	pvmeio = &(pmbbo->out.value.vmeio);
+	status = at5vxi_bo_driver(pvmeio->card,pmbbo->rval,pmbbo->mask);
+	if(status==0) {
+		status = at5vxi_bi_driver(pvmeio->card,pmbbo->mask,&value);
+		if(status==0) pmbbo->rbv = value;
+                else recGblSetSevr(pmbbo,READ_ALARM,INVALID_ALARM);
+	} else {
+                recGblSetSevr(pmbbo,WRITE_ALARM,INVALID_ALARM);
+	}
+	return(status);
+}
+

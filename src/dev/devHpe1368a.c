@@ -1,5 +1,5 @@
 /* devHpe1368a.c */
-/* share/src/dev $Id$ */
+/* base/src/dev $Id$ */
 
 /*
  *      Original Author: Bob Dalesio

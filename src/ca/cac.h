@@ -103,7 +103,7 @@ public:
     void * allocate ( size_t ) epicsThrows (( std::bad_alloc ));
     void release ( void * ) epicsThrows (());
 private:
-    tsFreeList < class comBuf, 0x20 > freeList;
+    tsFreeList < comBuf, 0x20 > freeList;
 };
 
 class cacDisconnectChannelPrivate { // X aCC 655
@@ -229,7 +229,7 @@ private:
     tsFreeList 
         < class netSubscription, 1024, epicsMutexNOOP > 
             freeListSubscription;
-    tsFreeList < class nciu, 1024 > channelFreeList;
+    tsFreeList < nciu, 1024 > channelFreeList;
     tsFreeList 
         < class msgForMultiplyDefinedPV, 16 > 
             mdpvFreeList;

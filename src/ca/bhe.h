@@ -90,7 +90,7 @@ public:
     void * allocate ( size_t );
     void release ( void * );
 private:
-    tsFreeList < class bhe, 0x100 > freeList;
+    tsFreeList < bhe, 0x100 > freeList;
 };
 
 inline void * bhe::operator new ( size_t size, 

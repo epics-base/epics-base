@@ -71,7 +71,7 @@ aitGen$(EXE): aitGen$(OBJ) aitTypes$(OBJ)
 	$(LINK.c) $^ 
 
 genApps$(EXE): genApps$(OBJ) $(addsuffix $(OBJ), $(basename $(AITGENSRCS)))
-	$(LINK.c) $^ 
+	$(LINK.cc) $^ 
 
 clean::
 	$(RM) aitConvertGenerated.cc aitGen$(EXE) genApps$(EXE)

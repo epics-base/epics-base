@@ -44,7 +44,7 @@ public:
     virtual epicsShareFunc void show ( unsigned int level ) const;
 };
 
-class epicsTimer {
+class epicsTimer {              // X aCC 655
 public:
     virtual void destroy () = 0; // requires existence of timer queue
     virtual void start ( epicsTimerNotify &, const epicsTime & ) = 0;
@@ -62,7 +62,7 @@ protected:
     virtual ~epicsTimer () = 0; // use destroy
 };
 
-class epicsTimerQueue {
+class epicsTimerQueue {         // X aCC 655
 public:
     virtual epicsTimer & createTimer () = 0;
     virtual void show ( unsigned int level ) const = 0;
@@ -70,7 +70,8 @@ protected:
     virtual ~epicsTimerQueue () = 0;
 };
 
-class epicsTimerQueueActive : public epicsTimerQueue {
+class epicsTimerQueueActive // X aCC 655
+    : public epicsTimerQueue {
 public:
     static epicsShareFunc epicsTimerQueueActive & allocate (
         bool okToShare, unsigned threadPriority = epicsThreadPriorityMin + 10 );
@@ -79,7 +80,7 @@ protected:
     virtual ~epicsTimerQueueActive () = 0;
 };
 
-class epicsTimerQueueNotify {
+class epicsTimerQueueNotify {   // X aCC 655
 public:
     // called when a new timer is inserted into the queue and the
     // delay to the next expire has changed
@@ -88,7 +89,8 @@ protected:
     virtual ~epicsTimerQueueNotify () = 0;
 };
 
-class epicsTimerQueuePassive : public epicsTimerQueue {
+class epicsTimerQueuePassive // X aCC 655
+    : public epicsTimerQueue {
 public:
     static epicsShareFunc epicsTimerQueuePassive & create ( epicsTimerQueueNotify & );
     virtual ~epicsTimerQueuePassive () = 0;

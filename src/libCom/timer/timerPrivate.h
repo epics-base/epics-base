@@ -99,7 +99,7 @@ private:
     friend class timer;
 };
 
-class timerQueueActiveMgrPrivate {
+class timerQueueActiveMgrPrivate { // X aCC 655
 public:
     timerQueueActiveMgrPrivate ();
 protected:

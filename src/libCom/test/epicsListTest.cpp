@@ -5,7 +5,10 @@
 // Test code for the epics::List class
 
 #include "epicsList.h"
-#include <iostream.h>
+#include <iostream>
+
+using std::cout;
+using std::endl;
 
 #ifdef vxWorks
   #define MAIN epicsListTest
@@ -41,10 +44,10 @@ int MAIN(int /*argc*/, char* /*argv[]*/) {
 	"A", "B", "C", "D", "E", "F", "G", "H", "I", "J"
     };
     int i;
-    
+
     for (i=0; i<10; i++)
 	apf[i] = new fred(names[i]);
-    
+
     epicsList<fred*> Fred;
     test(Fred.empty());
     test(Fred.size() == 0);

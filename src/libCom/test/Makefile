@@ -4,8 +4,6 @@ include $(TOP)/configure/CONFIG
 
 PROD_LIBS += Com
 
-USR_LIBS_hpux += cma
-
 #epicsListTest_SRCS += epicsListTest.cpp
 PROD_HOST += epicsListTest
 #epicsListTest build fails for vxWorks-ppc604 on win32-x86 host 

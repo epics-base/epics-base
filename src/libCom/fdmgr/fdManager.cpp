@@ -1,4 +1,3 @@
-
 //
 //      $Id$
 //
@@ -94,7 +93,7 @@ epicsShareFunc fdManager::fdManager () : pTimerQueue ( 0 )
     assert (status);
 
     for ( i=0u; i < sizeof (this->fdSets) / sizeof ( this->fdSets[0u] ); i++ ) {
-        FD_ZERO ( &this->fdSets[i] );
+        FD_ZERO ( &this->fdSets[i] ); // X aCC 392
     }
     this->maxFD = 0;
     this->processInProg = 0u;

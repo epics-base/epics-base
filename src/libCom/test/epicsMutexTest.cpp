@@ -2,7 +2,7 @@
 
 /* 
  * Author:  Marty Kraimer Date:    26JAN2000 
- *          Jeff HIll (added mutex performance test )
+ *          Jeff Hill (added mutex performance test )
  */
 
 /********************COPYRIGHT NOTIFICATION**********************************
@@ -135,7 +135,7 @@ void verifyTryLock ()
 
     epicsThreadCreate ( "verifyTryLockThread", 40, 
         epicsThreadGetStackSize(epicsThreadStackSmall),
-        (EPICSTHREADFUNC )verifyTryLockThread, &verify );
+        verifyTryLockThread, &verify );
 
     epicsEventWait ( verify.done );
 
@@ -196,7 +196,9 @@ extern "C" void epicsMutexTest(int nthreads,int verbose)
         pinfo[i]->threadnum = i;
         pinfo[i]->mutex = mutex;
         arg[i] = pinfo[i];
-        id[i] = epicsThreadCreate(name[i],40,stackSize,(EPICSTHREADFUNC)mutexThread,arg[i]);
+        id[i] = epicsThreadCreate(name[i],40,stackSize,
+                                  mutexThread,
+                                  arg[i]);
         printf("semTest created mutexThread %d id %p time %ld\n",
             i, id[i],time(&tp));
     }

@@ -737,7 +737,7 @@ intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::intId (const T &idIn)
 // intId::operator == ()
 //
 template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
-inline bool intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::operator == 
+inline bool intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::operator == // X aCC 361
         (const intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH> &idIn) const
 {
     return this->id == idIn.id;
@@ -747,7 +747,7 @@ inline bool intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::operator ==
 // intId::getId ()
 //
 template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
-inline const T intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::getId () const
+inline const T intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::getId () const // X aCC 361
 {
     return this->id;
 }
@@ -756,7 +756,7 @@ inline const T intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::getId () const
 // const unsigned intId::minIndexBitWidth ()
 //
 template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
-inline const unsigned intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::minIndexBitWidth ()
+inline const unsigned intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::minIndexBitWidth () // X aCC 361
 {
     return MIN_INDEX_WIDTH;
 }
@@ -766,7 +766,7 @@ inline const unsigned intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::minIndexBitWidth 
 //  const unsigned intId::maxIndexBitWidth ()
 //
 template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
-inline const unsigned intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::maxIndexBitWidth ()
+inline const unsigned intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::maxIndexBitWidth () // X aCC 361
 {
     return sizeof (resTableIndex) * CHAR_BIT;
 }
@@ -813,7 +813,7 @@ inline resTableIndex integerHash ( unsigned MIN_INDEX_WIDTH,
 // intId::hash()
 //
 template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
-inline resTableIndex intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::hash () const
+inline resTableIndex intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::hash () const // X aCC 361
 {
     return integerHash ( MIN_INDEX_WIDTH, MAX_ID_WIDTH, this->id );
 }

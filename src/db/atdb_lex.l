@@ -21,7 +21,7 @@ yyreset()
 
 ^"PV:"		{ return(PV); }
 "Type:" 	{ return(TYPE); }
-		{ return(CLOSE); }
+""		{ return(CLOSE); }
 "$$end"		{ return(CLOSE); }
 
 {d}+		{ yylval.Str=(char *)malloc(strlen(yytext)+1);

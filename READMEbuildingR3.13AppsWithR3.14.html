@@ -5,7 +5,7 @@
    <meta name="ProgId" content="Word.Document">
    <meta name="Generator" content="Microsoft Word 9">
    <meta name="Originator" content="Microsoft Word 9">
-   <meta name="GENERATOR" content="Mozilla/4.76 [en] (X11; U; SunOS 5.8 sun4u) [Netscape]">
+   <meta name="GENERATOR" content="Mozilla/4.77 [en] (X11; U; SunOS 5.8 sun4u) [Netscape]">
    <title>Instruction on building existing R3</title>
 <link rel=File-List href="./READMEbuildingR3.13AppsWithR3.14_files/filelist.xml">
 <!--[if gte mso 9]><xml>
@@ -85,10 +85,10 @@ div.Section1
 
 <center>
 <h2>
-Building EPICS R3.13 applications with R3.14.0alpha3 base</h2></center>
+Building EPICS R3.13 applications with R3.14.0beta1 base</h2></center>
 
 <p><br>This document describes how to modify a R3.13 vxWorks application
-so that it builds with release R3.14.0alpha3.&nbsp; It describes an easy
+so that it builds with release R3.14.0beta1.&nbsp; It describes an easy
 way to modify applications subject to the following restrictions:
 <ul>
 <li>
@@ -142,19 +142,22 @@ files.</blockquote>
 State Notation Language changes</h3>
 
 <blockquote>snc is no longer in base. If snc is used in your application,
-you must download and build the seq module with baseR3.14.0alpha3. See
-the Application Developer's Guide to see how to build sequence programs.</blockquote>
+you must download and build the seq module with baseR3.14.0beta1. See the
+Application Developer's Guide to see how to build sequence programs.</blockquote>
 
 <blockquote>Change
 <pre>INSTALLS=seq</pre>
 to
-<pre>LIBOBJS = $(SEQ_BIN)/seqLibrary.o</pre>
+<pre>LIBOBJS += $(SEQ_BIN)/seqLibrary.o</pre>
 
 <p><br>in application src/Makefile.Vx files to link seq library into your
 application library,.
 <br>Also add
 <pre>SEQ=&lt;full path to seq module directory></pre>
-to config/RELEASE.</blockquote>
+to config/RELEASE.
+<br>Also remove
+<pre>ld &lt; seq</pre>
+from the st.cmd files in the iocBoot subdirectories.</blockquote>
 
 <h3>
 iocCore changes</h3>
@@ -163,7 +166,7 @@ iocCore changes</h3>
 <br>Change
 <pre>INSTALLS=iocCore</pre>
 to
-<pre>LIBOBJS = $(EPICS_BASE_BIN)/iocCoreLibrary.o</pre>
+<pre>LIBOBJS += $(EPICS_BASE_BIN)/iocCoreLibrary.o</pre>
 in your application src/Makefile.Vx files .
 <br>Also remove
 <pre>ld &lt; iocCore</pre>
@@ -239,7 +242,7 @@ application.</blockquote>
 Hardware support changes</h3>
 
 <blockquote>All hardware support (dev, drv and dbd files) has been unbundled
-from base R3.14. This support includes the files <tt>symb.dbd, drvHp1404a.o,
+from base R3.14. This support includes the files <tt>symb, symb.dbd, drvHp1404a.o,
 drvEpvxiMsg.o, and drvEpvxi.o</tt>.&nbsp; If they are not used in your
 application, comment out references to these files in base.dbd and baseLIBOBJS.
 <p>Hardware support files now exist as separate modules available for download
@@ -282,13 +285,14 @@ and change line:
 <pre>@$(DBLOADTEMPLATE) $&lt; > $@</pre>
 to
 <pre>@$(MSI) $&lt; > $@</pre>
-Also add the definition
+Also, if dbLoadTemplate was used by your application,&nbsp; add the definition
 <blockquote>
 <pre>EPICS_EXTENSIONS=&lt;full path name to epics extensions directory></pre>
 </blockquote>
 to your application config/RELEASE file.</blockquote>
 depends changes
-<p>&nbsp;&nbsp;&nbsp;&nbsp; Remove any SRCS.c and SRCS.cc definitions.
-Depends no longer uses these definitions.
+<p>&nbsp;&nbsp;&nbsp;&nbsp; Remove any SRCS.c and SRCS.cc definitions in
+your application src/Makefile..*files. The depends rule no longer uses
+these definitions.
 </body>
 </html>

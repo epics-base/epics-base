@@ -1,5 +1,5 @@
 
-Compiling EPICS and Building IOC Applications on WIN32 (Windows95/NT) 
+Compiling EPICS and Building IOC Applications on win32-x86 (Windows95/NT) 
 ---------------------------------------------------------------------
 
 Original port of EPICS base build system to WIN32 (Windows95/NT)
@@ -11,9 +11,9 @@ please mail questions, comments, corrections, additional examples, etc
 0) what you will get
 --------------------
 
-Right now this port of EPICS to WIN32 should allow you to
+Right now this port of EPICS to win32-x86 should allow you to
 
-* compile almost all of EPICS base using {Tornado, MS Visual C, perl,
+* compile all of EPICS base using {Tornado, MS Visual C, perl,
   GNU make} (only {MS Visual C, perl, GNU make} if you prefer
   to compile only the host portions of EPICS base).
 * load EPICS on an IOC (486, pentium, 68k, ...),
@@ -23,16 +23,16 @@ Right now this port of EPICS to WIN32 should allow you to
 * build and use ca.dll on NT or Win95 to access all IOCs,
   as well as the Com-library, gdd-library, cas-library,
   and all other EPICS base libraries as DLLs.
-* build gdd, cas and a demo of the new portable CA server on WIN32.
+* build gdd, cas and a demo of the new portable CA server on win32-x86.
 
-To build only for WIN32 and not cross compile for IOC development type 
-"make host" or in your config files set "CROSS_COMPILER_HOST_ARCHS=void"
-
+To build only for win32-x86 and not cross compile for IOC development type 
+"make win32-x86" or in your configure/CONFIG_SITE file set 
+"CROSS_COMPILER_HOST_ARCHS="
 
 1) see what you have
 --------------------
 
-To compile EPICS on WIN32, we need
+To compile EPICS on win32-x86, we need
 
 	WindRiver System's Tornado (used: 1.0)  (not required if host only build)
 	Microsoft's Visual C/C++   (used: 6.0)  (borland C++ rumored to work also)
@@ -51,7 +51,7 @@ If you cannot/don't want to find them, contact me, please!
 (Setting env. vars. is different: for NT, use Settings/System,
 for Win95 use autoexec.bat)
 
-When setting paths in the EPICS CONFIG files for WIN32 the following
+When setting paths in the EPICS CONFIG files for win32-x86 the following
 are hints in case you have trouble. You should not need to worry about 
 this unless you type a path into one of the EPICS config files that 
 includes a "\". In most situations gnu make, windows NT, the MS compiler,
@@ -66,7 +66,7 @@ and the MS linker will accept "/" and this will result in less trouble.
         a "\ " (this is because GNU make treats all " " separated
         input as independent tokens in the input stream.
 
-	** WIN32 will generally allow "/" and "\" interchangeably in file paths,
+	** win32-x86 will generally allow "/" and "\" interchangeably in file paths,
 		but the DOS shell only accepts "\".
 
     ** Certain command line utilities such as the MS linker are known to in rare
@@ -75,7 +75,7 @@ and the MS linker will accept "/" and this will result in less trouble.
         the bulk of our experience indicates that this is not the necessary.
 
 Your path should include:
-- The EPICS-binaries that we are about to build in <EPICS>base/bin/WIN32
+- The EPICS-binaries that we are about to build in <EPICS>base/bin/win32-x86
 - The System (for me it's in NT40...)
 - The MS Visual C compiler binaries
 
@@ -108,7 +108,7 @@ include=c:\msdev\include;c:\msdev\mfc\include
 lib=c:\msdev\lib;c:\msdev\mfc\lib
 
 Select host arch to build:
-HOST_ARCH=WIN32			(used by the make system)
+EPICS_HOST_ARCH=win32-x86			(used by the make system)
 
 Set the "TMP" environment variable if you need to specify where 
 temporary files are created.
@@ -139,7 +139,7 @@ Prepare apx. 2 ltr. Tee and type:
 Watch for errors and send them to me.
 
 Known problems:
-* gnumake seems to be faster than WIN32 sometimes
+* gnumake seems to be faster than win32-x86 sometimes
   which results in warnings/errors like
   "file has modification date in the future"
   for newly created things.
@@ -150,7 +150,7 @@ Known problems:
   WIN32 is WIN32, not win32. Gnumake fails
   if e.g. base/src/include/os/WIN32 is ...win32.
 
-4) Creating EPICS IOC applications under WIN32
+4) Creating EPICS IOC applications under win32-x86
 
 o create application development folder
 	

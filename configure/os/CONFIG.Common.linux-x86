@@ -27,7 +27,7 @@ OP_SYS_LDFLAGS =
 OP_SYS_LDLIBS = -lreadline -lcurses -lrt
 
 ARCH_DEP_CPPFLAGS += -D_X86_
-ARCH_DEP_CFLAGS += -mpentium
+ARCH_DEP_CFLAGS += -mcpu=pentium
 
 ifdef CROSS
    GNU_TARGET=i586-pc-linux-gnu
@@ -36,4 +36,4 @@ ifdef CROSS
 endif
 
 #Allow R3.13 built extensions to load R3.14 shared libs
-SYS_SHRLIB_LIBS += pthread
+SYS_SHRLIB_LIBS += pthread readline curses rt

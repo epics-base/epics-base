@@ -164,61 +164,61 @@ unsigned    *pInlineIter
                 pi->count,
                 pi->chix,
                 &pi->val);
-            SEVCHK (status, NULL);
+        SEVCHK (status, NULL);
         status = ca_array_put(
                 pi->type,
                 pi->count,
                 pi->chix,
                 &pi->val);
-            SEVCHK (status, NULL);
+        SEVCHK (status, NULL);
         status = ca_array_put(
                 pi->type,
                 pi->count,
                 pi->chix,
                 &pi->val);
-            SEVCHK (status, NULL);
+        SEVCHK (status, NULL);
         status = ca_array_put(
                 pi->type,
                 pi->count,
                 pi->chix,
                 &pi->val);
-            SEVCHK (status, NULL);
+        SEVCHK (status, NULL);
         status = ca_array_put(
                 pi->type,
                 pi->count,
                 pi->chix,
                 &pi->val);
-            SEVCHK (status, NULL);
+        SEVCHK (status, NULL);
         status = ca_array_put(
                 pi->type,
                 pi->count,
                 pi->chix,
                 &pi->val);
-            SEVCHK (status, NULL);
+        SEVCHK (status, NULL);
         status = ca_array_put(
                 pi->type,
                 pi->count,
                 pi->chix,
                 &pi->val);
-            SEVCHK (status, NULL);
+        SEVCHK (status, NULL);
         status = ca_array_put(
                 pi->type,
                 pi->count,
                 pi->chix,
                 &pi->val);
-            SEVCHK (status, NULL);
+        SEVCHK (status, NULL);
         status = ca_array_put(
                 pi->type,
                 pi->count,
                 pi->chix,
                 &pi->val);
-            SEVCHK (status, NULL);
+        SEVCHK (status, NULL);
         status = ca_array_put(
                 pi->type,
                 pi->count,
                 pi->chix,
                 &pi->val);
-            SEVCHK (status, NULL);
+        SEVCHK (status, NULL);
     }
 #ifdef WAIT_FOR_ACK
     status = ca_array_get (DBR_INT, 1, pItems[0].chix, &val);

@@ -1,0 +1,69 @@
+.\" @(#)dbfile.5 1 93/11/04 SMI;
+.TH DBFILE 5 "04 Nov 1993"
+.SH NAME
+".db" \- File containing textual EPICS database records and field values
+.SH SYNOPSIS
+.B file_name.db
+.SH DESCRIPTION
+.LP
+This is a file which holds EPICS database record instances in a human
+readable format.  It is a replacement for the old dct short form report.
+The general format is as follows:
+.sp
+.nf
+database(database_name,"epics_release")
+{
+	record( rec_type, "record_name-1" )
+	{
+		field( field_name-1, "field_value-1" )
+		field( field_name-2, "field_value-2" )
+		field( field_name-3, "field_value-3" )
+		.
+		.
+		.
+	}
+	record( rec_type, "record_name-2" )
+	{
+		field( field_name-1, "field_value-1" )
+		field( field_name-2, "field_value-2" )
+		field( field_name-3, "field_value-3" )
+		.
+		.
+		.
+	}
+	.
+	.
+	.
+}
+.fi
+.sp
+The database_name is a name used to generate a binary ".database" file
+with (do not use the extension ".database").
+The epics_release will probably be the 3.11 or greater.  The rec_type
+is any valid record type defined in a default.dctsdr file.  The record_name
+can be any string up to 29 characters in length.  The field_name is any
+valid field name for the record type, always four or less alphanumeric
+characters.  The field_value is any string that is valid 
+input for the field_name.
+.SH EXAMPLES
+The following is an example of a database with three records.  The first
+two records use all default values, the third replaces the SCAN field and
+VAL field.
+.sp
+.nf
+database(test)
+{
+	record(ai,"ai_record")
+	record(bo,"bo_record")
+	record(stringout,"sout_record")
+	{
+		field(SCAN,"1 second")
+		field(VAL,"This is a string")
+	}
+}
+.fi
+.SH "SEE ALSO"
+.BR gdct(1),
+.BR db2database(1),
+.BR dbLoadRecords(3),
+.BR sf2db(1)

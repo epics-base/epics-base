@@ -1,0 +1,51 @@
+.\" @(#)
+.TH SUBTOOL 1 "04 Nov 1993"
+.SH NAME
+subtool \- Perform substitutions on variables in an ascii text file.
+.SH SYNOPSIS
+.B subtool
+.IR file_name
+.IR substitution_file
+.SH AVAILABILITY
+The tool in available under Unix from the EPICS application directory 
+provided by getrel in release 3.11 or greater.
+.SH DESCRIPTION
+.LP
+This tool applies variable substitutions to 
+.B file_name
+according to rules in the
+.B substitution_file
+to produce a file at standard out.  See templatefile(5) for a full
+description of the substitution file.
+.SH EXAMPLE
+Running the command "subtool file_name sub_file" with sub_file contents of
+.sp
+.nf
+{ a=test1,b=one }
+{ a=test2,b=two }
+.fi
+.sp
+and file_name contents of
+.sp
+.nf
+This is var a: $(a), this is var b: $(b)
+This is another var a: $(a), this is another var b: $(b)
+.fi
+.sp
+writes to standard out the following:
+.sp
+.nf
+This is var a: test1, this is var b: one
+This is another var a: test1, this is another var b: one
+This is var a: test2, this is var b: two
+This is another var a: test2, this is another var b: two
+.fi
+.sp
+.SH NOTES
+This tool will use all type of templatefile(5) definitions.  If an
+IOC type is used by the tool, the dbfile(5) information will be ignored
+and the
+.I file_name
+will be used.
+.SH "SEE ALSO"
+.BR templatefile(5)

@@ -1,0 +1,56 @@
+.\" @(#)
+.TH DBLOADTEMPLATE 1 "04 Nov 1993"
+.SH NAME
+dbLoadTemplate \- Perform substitutions on variables in an ".db" file.
+.SH SYNOPSIS
+.B dbLoadTemplate
+.IR substitution_file
+.SH AVAILABILITY
+The tool in available under Unix from the EPICS application directory 
+provided by getrel in release 3.11 or greater.
+.SH DESCRIPTION
+.LP
+This tool applies variable substitutions specified in the
+.B substitution_file.
+It is specifically meant to operate on ".db" files.  The template file
+must be in the form used by an IOC to load database records using 
+dbLoadTemplate(3) on the IOC.  A ".db" file with all the rules in the
+.B substitution_file
+applied will be printed to standard out.
+See templatefile(5) for a full description of the template file.
+.sp
+.SH EXAMPLE
+Running the command "dbLoadTemplate sub_file" with sub_file contents of
+.sp
+.nf
+file a.db
+{
+	{ a=test1,b=one }
+	{ a=test2,b=two }
+}
+.fi
+.sp
+and a.db contents of
+.sp
+.nf
+database(tester)
+{
+	record(ai,"$(a)rec1$(b)")
+	record(ai,"$(a)rec2$(b)")
+}
+.fi
+.sp
+writes to standard out the following:
+.sp
+.nf
+database(tester)
+{
+	record(ai,"test1rec1one")
+	record(ai,"test1rec2one")
+	record(ai,"test2rec1two")
+	record(ai,"test2rec2two")
+}
+.fi
+.sp
+.SH "SEE ALSO"
+.BR templatefile(5)

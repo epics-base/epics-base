@@ -1,0 +1,116 @@
+.\" @(#)dbLoadRecords.3 1 93/11/04 SMI;
+.TH DBLOADRECORDS 3 "11 Nov 1993"
+.SH NAME
+dbLoadRecords, dbLoadTemplate \- load ascii database records into an IOC
+.SH SYNOPSIS
+.LP
+dbLoadRecords(char* db_file, char* substitutions)
+.LP
+dbLoadTemplate(char* template_file)
+.SH DESCRIPTION
+.LP
+These routines are available from IOC core on the vxWorks command line.
+Both provide a way to load ascii ".db" files (usually created by
+.B gdct(1)
+) into the IOC. The ".db" files contain ascii versions of record instances
+and are described in more detail in dbfile(5).  In addition to
+loading the ".db" ascii files into the IOC, both routines provide a method
+of performing variable substitution on record names and field values.
+.sp
+.B dbLoadRecords()
+reads the ".db" file
+.I db_file
+performing substitutions specified in string
+.I substitutions.
+The substitution must be a string specified as follows:
+.sp
+.nf
+"var1=sub1,var2=sub3,..."
+.fi
+.sp
+Variables are specified in the ".db" file as $(variable_name).  If the 
+substitution string "a=1,b=2,c=\\"this is a test\\"" were used, any
+variables $(a), $(b), or $(c) would be substituted with the appropriate data.
+See the
+.B EXAMPLES
+section for more details.
+.sp
+.B dbLoadTemplate()
+will read a
+.I template_file.
+The
+.I template_file
+resides in the your IOC boot directory and 
+contains rules about loading ".db" files and performing substitutions.
+The template_file must be in the form used by an IOC and is described in
+templatefile(5).  The
+.B EXAMPLES
+section descibes how it can be used.
+.SH EXAMPLES
+The next two examples of dbLoadRecords() and dbLoadTemplate() will
+use the following ".db" file named
+.I test.db
+:
+.sp
+.nf
+database(test)
+{
+	record(ai,"$(pre)testrec1")
+	record(ai,"$(pre)testrec2")
+	record(stringout,"$(pre)testrec3")
+	{
+		field(VAL,"$(STRING)")
+		field(SCAN,"$(SCAN)")
+	}
+}
+.fi
+.sp
+Running
+.B dbLoadRecords
+("test.db","pre=TEST,STRING=\\"this is a test\\",SCAN=Passive")
+will produce the following records in the IOC's database:
+.sp
+.nf
+	TESTtestrec1
+	TESTtestrec2
+	TESTtestrec3
+.fi
+.sp
+The third record will have VAL set to "this is a test" and SCAN set to
+"Passive".
+.sp
+Running
+.B dbLoadTemplate
+("test.template") with test.template containing:
+.nf
+file test.db
+{
+	{pre=TEST1, STRING = "this is a test two", SCAN="1 Second" }
+	{pre=TEST2, STRING = "this is a test one", SCAN=Passive }
+	{pre=TEST3, STRING = "this is a test three", SCAN=Passive }
+}
+.fi
+will produce a total of nine records in the IOC's database:
+.nf
+	TEST1testrec1
+	TEST1testrec2
+	TEST1testrec3 - (VAL="this is a test two", SCAN="1 Second")
+	TEST2testrec1
+	TEST2testrec2
+	TEST2testrec3 - (VAL="this is a test one", SCAN="Passive")
+	TEST3testrec1
+	TEST3testrec2
+	TEST3testrec3 - (VAL="this is a test three", SCAN="Passive")
+.fi
+.SH NOTES
+The binary file
+.IR "default.dctsdr"
+must be loaded prior to running either of these routines.  This file
+contains the rules on how to construct records and change field values.
+.sp
+After the default.dctsdr file is loaded, these routines can be run as
+many times as desired until iocInit is run.
+.SH "SEE ALSO"
+.BR gdct(1),
+.BR templatefile(5),
+.BR dbfile(5)

@@ -6,17 +6,7 @@ include $(TOP)/config/CONFIG_BASE
 
 #	install these scripts:
 #
-#	WIN32 also uses rm.pl, cp.pl, mkdir.pl, rmdir.pl
-#	byt they are called from here, not installed
-SCRIPTS       := installEpics.pl makeBaseApp.pl makeBaseApp installEpics
-
-#	Before anything is done, installEpics has to be in place.
-#	The first action in a full build & install is 'make inc.host',
-#	that's where we hook into:
-inc:: $(INSTALL_BIN)/installEpics.pl
-
-$(INSTALL_BIN)/installEpics.pl: ../installEpics.pl
-	$(PERL) ../installEpics.pl -d -m 555 ../installEpics.pl $(INSTALL_BIN)
+SCRIPTS       := makeBaseApp installEpics
 
 include $(TOP)/config/RULES.Host
 

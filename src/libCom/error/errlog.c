@@ -136,11 +136,14 @@ epicsShareFunc int errlogVprintf(
 	return 0;
     }
     errlogInit(0);
+    if(isOkToBlock && pvtData.toConsole) {
+        vfprintf(stdout,pFormat,pvar);
+        fflush(stdout);
+    }
     pbuffer = msgbufGetFree(isOkToBlock);
     if(!pbuffer) return(0);
     nchar = tvsnPrint(pbuffer,MAX_MESSAGE_SIZE,pFormat?pFormat:"",pvar);
     msgbufSetSize(nchar);
-    if(isOkToBlock && pvtData.toConsole) printf("%s",pbuffer);
     return nchar;
 }
 
@@ -212,7 +215,6 @@ epicsShareFunc int errlogSevVprintf(
     int	 nchar;
     int	 totalChar=0;
     int  isOkToBlock = epicsThreadIsOkToBlock();
-    char *pmessage;
 
     if(pvtData.sevToLog>severity) return(0);
     if(epicsInterruptIsInterruptContext()) {
@@ -221,8 +223,12 @@ epicsShareFunc int errlogSevVprintf(
 	return 0;
     }
     errlogInit(0);
+    if(isOkToBlock && pvtData.toConsole) {
+        fprintf(stdout,"sevr=%s ",errlogGetSevEnumString(severity));
+        vfprintf(stdout,pFormat,pvar);
+        fflush(stdout);
+    }
     pnext = msgbufGetFree(isOkToBlock);
-    pmessage = pnext;
     if(!pnext) return(0);
     nchar = sprintf(pnext,"sevr=%s ",errlogGetSevEnumString(severity));
     pnext += nchar; totalChar += nchar;
@@ -233,7 +239,6 @@ epicsShareFunc int errlogSevVprintf(
         totalChar++;
     }
     msgbufSetSize(totalChar);
-    if(isOkToBlock && pvtData.toConsole) printf("%s",pmessage);
     return(nchar);
 }
 
@@ -309,26 +314,34 @@ epicsShareFunc void errPrintf(long status, const char *pFileName,
     int     nchar;
     int     totalChar=0;
     int     isOkToBlock = epicsThreadIsOkToBlock();
-    char    *pmessage;
+    char    name[256];
 
     if(epicsInterruptIsInterruptContext()) {
         epicsInterruptContextMessage("errPrintf called from interrupt level\n");
         return;
     }
     errlogInit(0);
+    if(status==0) status = errno;
+    if(status>0) {
+        errSymLookup(status,name,sizeof(name));
+    }
+    if(isOkToBlock && pvtData.toConsole) {
+        if(pFileName) fprintf(stdout,
+            "filename=\"%s\" line number=%d\n",pFileName, lineno);
+        if(status>0) fprintf(stdout,"%s ",name);
+        va_start (pvar, pformat);
+        vfprintf(stdout,pformat,pvar);
+        va_end (pvar);
+        fflush(stdout);
+    }
     pnext = msgbufGetFree(isOkToBlock);
-    pmessage = pnext;
     if(!pnext) return;
     if(pFileName){
         nchar = sprintf(pnext,"filename=\"%s\" line number=%d\n",
             pFileName, lineno);
         pnext += nchar; totalChar += nchar;
     }
-    if(status==0) status = errno;
     if(status>0) {
-         char    name[256];
-
-        errSymLookup(status,name,sizeof(name));
         nchar = sprintf(pnext,"%s ",name);
         pnext += nchar; totalChar += nchar;
     }
@@ -342,7 +355,6 @@ epicsShareFunc void errPrintf(long status, const char *pFileName,
     strcpy(pnext,"\n");
     totalChar++ ; /*include the \n */
     msgbufSetSize(totalChar);
-    if(isOkToBlock && pvtData.toConsole) printf("%s",pmessage);
 }
 
 static void errlogInitPvt(void *arg)
@@ -413,7 +425,10 @@ LOCAL void errlogThread(void)
 	epicsEventMustWait(pvtData.waitForWork);
 	while((pmessage = msgbufGetSend(&noConsoleMessage))) {
 	    epicsMutexMustLock(pvtData.listenerLock);
-	    if(pvtData.toConsole && !noConsoleMessage) printf("%s",pmessage);
+	    if(pvtData.toConsole && !noConsoleMessage) {
+                fprintf(stdout,"%s",pmessage);
+                fflush(stdout);
+            }
 	    plistenerNode = (listenerNode *)ellFirst(&pvtData.listenerList);
 	    while(plistenerNode) {
 		(*plistenerNode->listener)(plistenerNode->pPrivate, pmessage);

@@ -98,6 +98,7 @@ void casCoreClient::show (unsigned level) const
 	this->casEventSys::show (level);
 	printf ("\t%d io ops in progess\n", this->ioInProgList.count());
 	this->ctx.show (level);
+    this->osiMutex::show (level);
 }
 
 //

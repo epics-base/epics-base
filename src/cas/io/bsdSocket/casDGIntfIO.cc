@@ -218,9 +218,10 @@ casDGIntfIO::~casDGIntfIO()
 //
 // casDGIntfIO::show()
 //
-void casDGIntfIO::osdShow (unsigned level) const
+void casDGIntfIO::show (unsigned level) const
 {
 	printf ("casDGIntfIO at %p\n", this);
+    this->casDGClient::show (level);
 }
 
 //

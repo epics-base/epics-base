@@ -178,10 +178,12 @@ casClient::~casClient ()
 //
 // casClient::show()
 //
-void casClient::show(unsigned level) const
+void casClient::show (unsigned level) const
 {
 	printf ("casClient at %p\n", this);
-	this->casCoreClient::show(level);
+	this->casCoreClient::show (level);
+	this->inBuf::show (level);
+	this->outBuf::show (level);
 }
 
 //

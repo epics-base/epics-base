@@ -479,7 +479,7 @@ public:
 	casClient (caServerI &, bufSizeT ioMinSizeIn);
 	virtual ~casClient ();
 
-	void show (unsigned level) const;
+	virtual void show (unsigned level) const;
 
 	//
 	// send error response to a message
@@ -693,7 +693,7 @@ public:
 	casDGClient (caServerI &serverIn);
 	virtual ~casDGClient();
 
-	void show (unsigned level) const;
+	virtual void show (unsigned level) const;
 
 	//
 	// only for use with DG io

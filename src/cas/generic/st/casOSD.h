@@ -61,7 +61,7 @@ public:
 
 	virtual ~casDGIntfOS ();
 
-	void show (unsigned level) const;
+	virtual void show (unsigned level) const;
 
 private:
 	casDGReadReg        *pRdReg;
@@ -103,7 +103,7 @@ public:
         bool autoBeaconAddr=true, bool addConfigBeaconAddr=false);
 	virtual ~casIntfOS();
 
-    void show (unsigned level);
+    virtual void show (unsigned level);
 
     caNetAddr serverAddress () const;
 
@@ -111,8 +111,8 @@ private:
 	caServerI       &cas;
 	casServerReg    *pRdReg;
 
-	void recvCB ();
-	void sendCB () {}; // NOOP satifies template
+	//void recvCB ();
+	//void sendCB () {}; // NOOP satifies template
 };
 
 class casStreamWriteReg;

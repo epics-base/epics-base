@@ -39,7 +39,7 @@ public:
 			const caNetAddr &addr);
 	inBuf::fillCondition osdRecv (char *pBuf, bufSizeT nBytesReq, 
         fillParameter parm, bufSizeT &nBytesActual, caNetAddr &addr);
-	void osdShow (unsigned level) const;
+	virtual void show (unsigned level) const;
 
 	static bufSizeT optimumOutBufferSize ();
 	static bufSizeT optimumInBufferSize ();

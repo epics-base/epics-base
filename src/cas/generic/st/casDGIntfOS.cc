@@ -348,6 +348,7 @@ void casDGIntfOS::show(unsigned level) const
     if (this->pIOWk) {
 		this->pIOWk->show (level);
     }
+    this->casDGIntfIO::show (level);
 }
 
 //

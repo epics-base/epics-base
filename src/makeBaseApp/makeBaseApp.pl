@@ -130,7 +130,7 @@ if ($opt_i) {
 foreach $app ( @ARGV ) {
     ($appname = $app) =~ s/App$//;
     $appdir  = $appname . "App";
-    if (-d $appdir) {
+    if (-d "$appdir") {
 	print "$appname exists, not modified.\n";
 	next;
     }
@@ -160,7 +160,7 @@ sub get_commandline_opts { #no args
 	$epics_base = $command;
 	$epics_base =~ s|(/.*)/bin/.*makeBaseApp.*|$1|;
     }
-    $epics_base and -d $epics_base or Cleanup(1, "Can't find EPICS base");
+    $epics_base and -d "$epics_base" or Cleanup(1, "Can't find EPICS base");
     $app_epics_base = $epics_base;
     $app_epics_base=~s|^\.\.|\$(TOP)/..|;
 
@@ -174,7 +174,7 @@ sub get_commandline_opts { #no args
     }
     $top = $ENV{EPICS_MBA_TEMPLATE_TOP} unless $top; # third choice is env var
     $top = $epics_base . "/templates/makeBaseApp/top" unless $top; # final
-    $top and -d $top or Cleanup(1, "Can't find template top directory");
+    $top and -d "$top" or Cleanup(1, "Can't find template top directory");
     $app_template_top = $top;
     $app_template_top =~s|^\.\.|\$(TOP)/..|;
     $app_template_top =~s|^$epics_base/|\$\(EPICS_BASE\)/|;
@@ -238,6 +238,7 @@ sub ReadReleaseFile {
 	open(RELEASE, "configure/RELEASE") or die "Can't open configure/RELEASE: $!";
 	while (<RELEASE>) {
 	    chomp;
+	    s/\r$//;	# Shouldn't really need this, but sometimes we do...
 	    my ($variable,$value) = split /\s*=\s*/;
 	    $release{$variable} = $value;
 	}
@@ -290,10 +291,10 @@ sub CopyFile { # (source)
 #
 sub FCopyTree {
     chdir $app_top;		# Sigh
-    if (-d $File::Find::name
+    if (-d "$File::Find::name"
 	and ($dir = &ReplaceFilename($File::Find::name))) {
 	print "Creating directory $dir\n" if $opt_d;
-	&mkpath($dir) unless (-d $dir);
+	&mkpath($dir) unless (-d "$dir");
     } else {
 	&CopyFile($File::Find::name);
     }

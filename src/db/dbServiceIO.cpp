@@ -61,21 +61,23 @@ dbServiceIO::~dbServiceIO ()
     }
 }
 
-cacLocalChannelIO *dbServiceIO::createChannelIO ( const char *pName, cac &cacCtx, cacChannel &chan )
+cacChannelIO *dbServiceIO::createChannelIO ( 
+    const char *pName, cac &cacCtx, cacChannelNotify &notify )
 {
     struct dbAddr addr;
 
     int status = db_name_to_addr ( pName, &addr );
-    if (status) {
+    if ( status ) {
         return 0;
     }
     else {
-        return new dbChannelIO ( cacCtx, chan, addr, *this ); 
+        return new dbChannelIO ( notify, addr, *this ); 
     }
 }
 
-void dbServiceIO::subscriptionUpdate ( struct dbAddr &addr, unsigned type, unsigned long count, 
-        const struct db_field_log *pfl, cacNotifyIO &notify )
+void dbServiceIO::subscriptionUpdate ( struct dbAddr &addr, 
+        unsigned type, unsigned long count, 
+        const struct db_field_log *pfl, dbSubscriptionIO &io )
 {
     unsigned long size = dbr_size_n ( type, count );
 
@@ -88,7 +90,8 @@ void dbServiceIO::subscriptionUpdate ( struct dbAddr &addr, unsigned type, unsig
         if ( ! this->pEventCallbackCache ) {
             this->eventCallbackCacheSize = 0ul;
             this->mutex.unlock ();
-            notify.exceptionNotify ( ECA_ALLOCMEM, "unable to allocate callback cache" );
+            io.notify ().exceptionNotify ( io.channelIO (), ECA_ALLOCMEM, 
+                "unable to allocate callback cache" );
             return;
         }
         this->eventCallbackCacheSize = size;
@@ -97,10 +100,12 @@ void dbServiceIO::subscriptionUpdate ( struct dbAddr &addr, unsigned type, unsig
     int status = db_get_field ( &addr, static_cast <int> ( type ), 
                     this->pEventCallbackCache, static_cast <int> ( count ), pvfl );
     if ( status ) {
-        notify.exceptionNotify ( ECA_GETFAIL, "subscription update db_get_field () completed unsuccessfuly" );
+        io.notify ().exceptionNotify ( io.channelIO (), ECA_GETFAIL, 
+            "subscription update db_get_field () completed unsuccessfuly" );
     }
     else { 
-        notify.completionNotify ( type, count, this->pEventCallbackCache );
+        io.notify ().completionNotify ( io.channelIO (), type, 
+            count, this->pEventCallbackCache );
     }
     this->mutex.unlock ();
 }

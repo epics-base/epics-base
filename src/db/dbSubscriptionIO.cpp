@@ -55,8 +55,9 @@ void dbSubscriptionIO::destroy ()
     delete this;
 }
 
-void dbSubscriptionIO::uninstall ()
+cacChannelIO & dbSubscriptionIO::channelIO () const
 {
+    return this->chan;
 }
 
 void * dbSubscriptionIO::operator new ( size_t size )

@@ -53,7 +53,7 @@ inline short dbChannelIO::nativeType () const
 }
 
 inline void dbChannelIO::subscriptionUpdate ( unsigned type, unsigned long count, 
-        const struct db_field_log *pfl, cacNotifyIO &notify )
+        const struct db_field_log *pfl, dbSubscriptionIO &notify )
 {
     this->serviceIO.subscriptionUpdate ( this->addr, type, count, pfl, notify );
 }

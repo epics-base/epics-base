@@ -30,20 +30,21 @@
 
 tsFreeList < dbChannelIO > dbChannelIO::freeList;
 
-dbChannelIO::dbChannelIO ( cac &cacCtx, cacChannel &chan, const dbAddr &addrIn, dbServiceIO &serviceIO ) :
-    cacLocalChannelIO ( cacCtx, chan ), serviceIO ( serviceIO ), pGetCallbackCache ( 0 ), 
-    pBlocker ( 0 ), getCallbackCacheSize ( 0ul ), addr ( addrIn )
+dbChannelIO::dbChannelIO ( cacChannelNotify &notify, 
+    const dbAddr &addrIn, dbServiceIO &serviceIO ) :
+    cacChannelIO ( notify ), serviceIO ( serviceIO ), 
+    pGetCallbackCache ( 0 ), pBlocker ( 0 ), 
+    getCallbackCacheSize ( 0ul ), addr ( addrIn )
 {
-    chan.attachIO ( *this );
-    this->connectNotify ();
+}
+
+void dbChannelIO::initiateConnect ()
+{
+    this->notify ().connectNotify ( *this );
 }
 
 dbChannelIO::~dbChannelIO ()
 {
-    // this must go in the derived class's destructor because
-    // this calls virtual functions in the cacChannelIO base
-    this->ioReleaseNotify ();
-
     this->lock ();
 
     /*
@@ -111,13 +112,14 @@ int dbChannelIO::read ( unsigned type, unsigned long count, cacNotify &notify )
     int status = db_get_field ( &this->addr, static_cast <int> ( type ), 
                     this->pGetCallbackCache, static_cast <int> ( count ), 0);
     if ( status ) {
-        notify.exceptionNotify ( ECA_GETFAIL, "db_get_field () completed unsuccessfuly" );
+        notify.exceptionNotify ( *this, ECA_GETFAIL, 
+            "db_get_field () completed unsuccessfuly" );
     }
     else { 
-        notify.completionNotify ( type, count, this->pGetCallbackCache );
+        notify.completionNotify ( *this, type, count, this->pGetCallbackCache );
     }
     this->unlock ();
-    notify.destroy ();
+    notify.release ();
     return ECA_NORMAL;
 }
 
@@ -164,7 +166,7 @@ int dbChannelIO::write ( unsigned type, unsigned long count,
 }
 
 int dbChannelIO::subscribe ( unsigned type, unsigned long count, 
-                            unsigned mask, cacNotify &notify ) 
+    unsigned mask, cacNotify &notify, cacNotifyIO *&pReturnIO ) 
 {
     dbSubscriptionIO *pIO = new dbSubscriptionIO ( *this, notify, type, count );
     if ( ! pIO ) {
@@ -172,7 +174,10 @@ int dbChannelIO::subscribe ( unsigned type, unsigned long count,
     }
 
     int status = pIO->begin ( this->addr, mask );
-    if ( status != ECA_NORMAL ) {
+    if ( status == ECA_NORMAL ) {
+        pReturnIO = pIO;
+    }
+    else {
         pIO->destroy ();
     }
     return status;

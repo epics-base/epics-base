@@ -51,8 +51,9 @@ dbPutNotifyIO::~dbPutNotifyIO ()
     this->blocker.putNotifyDestroyNotify ();
 }
 
-void dbPutNotifyIO::uninstall ()
+cacChannelIO & dbPutNotifyIO::channelIO () const
 {
+    return this->blocker.channel ();
 }
 
 int dbPutNotifyIO::initiate ( struct dbAddr &addr, unsigned type, 
@@ -69,7 +70,8 @@ int dbPutNotifyIO::initiate ( struct dbAddr &addr, unsigned type,
     this->pn.pbuffer = const_cast <void *> ( pValue );
     this->pn.nRequest = static_cast <unsigned> ( count );
     this->pn.paddr = &addr;
-    status = this->pn.dbrType = dbPutNotifyMapType ( &this->pn, static_cast <short> ( type ) );
+    status = this->pn.dbrType = dbPutNotifyMapType ( 
+        &this->pn, static_cast <short> ( type ) );
     if (status) {
         this->pn.paddr = 0;
         return ECA_BADTYPE;
@@ -79,7 +81,8 @@ int dbPutNotifyIO::initiate ( struct dbAddr &addr, unsigned type,
     if ( status && status != S_db_Pending ) {
         this->pn.paddr = 0;
         this->pn.status = status;
-        this->cacNotifyIO::exceptionNotify ( ECA_PUTFAIL,  "dbPutNotify() returned failure");
+        this->notify ().exceptionNotify ( this->blocker.channel (),
+            ECA_PUTFAIL, "dbPutNotify() returned failure" );
     }
     return ECA_NORMAL;
 }
@@ -92,14 +95,16 @@ void dbPutNotifyIO::completion ()
     this->pn.paddr = 0;
     if ( this->pn.status ) {
         if ( this->pn.status == S_db_Blocked ) {
-            this->cacNotifyIO::exceptionNotify ( ECA_PUTCBINPROG, "put notify blocked" );
+            this->notify ().exceptionNotify ( this->blocker.channel (),
+                ECA_PUTCBINPROG, "put notify blocked" );
         }
         else {
-            this->cacNotifyIO::exceptionNotify ( ECA_PUTFAIL,  "put notify unsuccessful");
+            this->notify ().exceptionNotify ( this->blocker.channel (),
+                ECA_PUTFAIL,  "put notify unsuccessful");
         }
     }
     else {
-        this->cacNotifyIO::completionNotify ();
+        this->notify ().completionNotify ( this->blocker.channel () );
     }
 }
 

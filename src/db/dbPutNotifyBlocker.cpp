@@ -59,6 +59,10 @@ void dbPutNotifyBlocker::putNotifyDestroyNotify ()
     this->unlock ();
 }
 
+dbChannelIO & dbPutNotifyBlocker::channel () const
+{
+    return this->chan;
+}
 
 int dbPutNotifyBlocker::initiatePutNotify ( cacNotify &notify, 
         struct dbAddr &addr, unsigned type, unsigned long count, 

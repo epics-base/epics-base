@@ -33,19 +33,20 @@ class dbPutNotifyBlocker;
 
 class dbPutNotifyIO : public cacNotifyIO {
 public:
-    dbPutNotifyIO ( cacNotify &notify, dbPutNotifyBlocker &blocker );
+    dbPutNotifyIO ( cacNotify &, dbPutNotifyBlocker & );
     int initiate ( struct dbAddr &addr, unsigned type, 
         unsigned long count, const void *pValue);
     void completion ();
     void destroy ();
+    cacChannelIO & channelIO () const;
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
+protected:
+    ~dbPutNotifyIO (); // must allocate out of pool
 private:
     putNotify pn;
     dbPutNotifyBlocker &blocker;
     static tsFreeList < dbPutNotifyIO > freeList;
-    ~dbPutNotifyIO (); // must allocate out of pool
-    void uninstall ();
 };
 
 extern "C" void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr *paddr,
@@ -57,16 +58,17 @@ public:
     int begin ( struct dbAddr &addr, unsigned mask );
     void destroy ();
     void show ( unsigned level ) const;
+    cacChannelIO & channelIO () const;
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
+protected:
+    ~dbSubscriptionIO (); // must be allocated from pool
 private:
     dbChannelIO &chan;
     dbEventSubscription es;
     unsigned type;
     unsigned long count;
     static tsFreeList < dbSubscriptionIO > freeList;
-    ~dbSubscriptionIO (); // must be allocated from pool
-    void uninstall ();
     friend void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr *paddr,
 	    int eventsRemaining, struct db_field_log *pfl );
 };
@@ -77,35 +79,38 @@ class dbPutNotifyBlocker {
 public:
     dbPutNotifyBlocker ( dbChannelIO &chanIn );
     void destroy ();
-    int initiatePutNotify (cacNotify &notify, struct dbAddr &addr, 
-            unsigned type, unsigned long count, const void *pValue);
+    int initiatePutNotify ( cacNotify &notify, struct dbAddr &addr, 
+            unsigned type, unsigned long count, const void *pValue );
     void putNotifyDestroyNotify ();
+    dbChannelIO & channel () const;
     void show ( unsigned level ) const;
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
+protected:
+    ~dbPutNotifyBlocker (); // must allocate out of pool
 private:
     epicsEvent block;
     dbPutNotifyIO *pPN;
     dbChannelIO &chan;
-
-    static tsFreeList < dbPutNotifyBlocker > freeList;
-    ~dbPutNotifyBlocker (); // must allocate out of pool
     void lock () const;
     void unlock () const;
+    static tsFreeList < dbPutNotifyBlocker > freeList;
     friend void putNotifyCompletion ( putNotify *ppn );
 };
 
-class dbChannelIO : public cacLocalChannelIO {
+class dbChannelIO : public cacChannelIO {
 public:
-    dbChannelIO ( cac &, cacChannel &chan, const dbAddr &addr, dbServiceIO &serviceIO );
+    dbChannelIO ( cacChannelNotify &notify, 
+        const dbAddr &addr, dbServiceIO &serviceIO );
     void destroy ();
     void subscriptionUpdate ( unsigned type, unsigned long count, 
-            const struct db_field_log *pfl, cacNotifyIO &notify );
+            const struct db_field_log *pfl, dbSubscriptionIO &notify );
     dbEventSubscription subscribe ( dbSubscriptionIO &subscr, unsigned mask );
     void show ( unsigned level ) const;
     void * operator new ( size_t size);
     void operator delete ( void *pCadaver, size_t size );
-
+protected:
+    ~dbChannelIO (); // allocate only from pool
 private:
     dbServiceIO &serviceIO;
     char *pGetCallbackCache;
@@ -113,28 +118,24 @@ private:
     unsigned long getCallbackCacheSize;
     tsDLList < dbSubscriptionIO > eventq;
     dbAddr addr;
-
-    static tsFreeList < dbChannelIO > freeList;
-
-    ~dbChannelIO (); // allocate only from pool
-
     const char *pName () const;
+    void initiateConnect ();
     int read ( unsigned type, unsigned long count, void *pValue );
     int read ( unsigned type, unsigned long count, cacNotify & );
     int write ( unsigned type, unsigned long count, const void *pvalue );
     int write ( unsigned type, unsigned long count, const void *pvalue, cacNotify & );
-    int subscribe ( unsigned type, unsigned long count, unsigned mask, cacNotify &notify );
+    int subscribe ( unsigned type, unsigned long count, 
+        unsigned mask, cacNotify &notify, cacNotifyIO *& );
     short nativeType () const;
     unsigned long nativeElementCount () const;
-
     void lock () const;
     void unlock () const;
     void lockOutstandingIO () const;
     void unlockOutstandingIO () const;
-
-    friend dbSubscriptionIO::dbSubscriptionIO ( dbChannelIO &chanIO, cacNotify &, unsigned type, unsigned long count );
+    static tsFreeList < dbChannelIO > freeList;
+    friend dbSubscriptionIO::dbSubscriptionIO ( dbChannelIO &chanIO, 
+        cacNotify &, unsigned type, unsigned long count );
     friend dbSubscriptionIO::~dbSubscriptionIO ();
-
     friend void dbPutNotifyBlocker::lock () const;
     friend void dbPutNotifyBlocker::unlock () const;
 };
@@ -143,9 +144,9 @@ class dbServiceIO : public cacServiceIO {
 public:
     dbServiceIO ();
     virtual ~dbServiceIO ();
-    cacLocalChannelIO *createChannelIO ( const char *pName, cac &, cacChannel & );
+    cacChannelIO *createChannelIO ( const char *pName, cac &, cacChannelNotify & );
     void subscriptionUpdate ( struct dbAddr &addr, unsigned type, unsigned long count, 
-            const struct db_field_log *pfl, cacNotifyIO &notify );
+            const struct db_field_log *pfl, dbSubscriptionIO &notify );
     dbEventSubscription subscribe ( struct dbAddr &addr, dbSubscriptionIO &subscr, unsigned mask );
     void show ( unsigned level ) const;
 private:

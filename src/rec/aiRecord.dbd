@@ -38,20 +38,6 @@ recordtype(ai) {
 		pp(TRUE)
 		interest(1)
 	}
-	field(RAWF,DBF_LONG) {
-		prompt("Raw Value Full")
-		promptgroup(GUI_CONVERT)
-		special(SPC_LINCONV)
-		pp(TRUE)
-		interest(1)
-	}
-	field(RAWL,DBF_LONG) {
-		prompt("Raw Value Low")
-		promptgroup(GUI_CONVERT)
-		special(SPC_LINCONV)
-		pp(TRUE)
-		interest(1)
-	}
 	field(EGU,DBF_STRING) {
 		prompt("Engineering Units")
 		promptgroup(GUI_DISPLAY)
@@ -170,13 +156,15 @@ recordtype(ai) {
 	}
 	field(ESLO,DBF_DOUBLE) {
 		prompt("Rawto EGU Slope")
-		special(SPC_NOMOD)
+		promptgroup(GUI_CONVERT)
+		asl(ASL0)
 		interest(2)
 		initial("1")
 	}
 	field(EOFF,DBF_DOUBLE) {
 		prompt("Eng Unit Offset")
-		special(SPC_NOMOD)
+		promptgroup(GUI_CONVERT)
+		asl(ASL0)
 		interest(2)
 	}
 	field(ROFF,DBF_LONG) {

@@ -90,7 +90,6 @@ private:
     caArh * pAccessRightsFunc;
     unsigned ioSeqNo;
     bool prevConnected;
-    bool connCallbackInProress;
     void connectNotify ();
     void disconnectNotify ();
     void accessRightsNotify ( const caAccessRights & );
@@ -271,9 +270,9 @@ int fetchClientContext ( oldCAC **ppcac );
 inline void oldChannelNotify::destroy ()
 {
     delete this;
-}
+};
 
-inline const char *oldChannelNotify::pName () const 
+inline const char * oldChannelNotify::pName () const 
 {
     return this->io.pName ();
 }

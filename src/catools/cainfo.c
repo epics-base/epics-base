@@ -37,8 +37,7 @@ void usage (void)
     "Channel Access options:\n"
     "  -w <sec>:   Wait time, specifies longer CA timeout, default is %f second\n"
     "  -s <level>: Call ca_client_status with the specified interest level\n"
-    "\nExample: cainfo my_channel another_channel\n"
-    "  (uses wide output format, doubles are printed as %%f with precision of 8)\n\n"
+    "\nExample: cainfo my_channel another_channel\n\n"
 	, DEFAULT_TIMEOUT);
 }
 

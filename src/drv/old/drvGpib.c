@@ -59,6 +59,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  1995/04/12  19:31:41  winans
+ * Added support for the HiDEOS system as a GPIB bus transport agent.
+ *
  * Revision 1.28  1995/02/14  22:33:01  winans
  * Cleaned up some Hideos hacking and commented out the LANL debug code because
  * APS has had some add behaviour from GPIB lately and it is one of few things
@@ -2721,13 +2724,13 @@ HiDEOSSrqPollInhibit(int link, int gpibAddr)
  *
  ******************************************************************************/
 int
-HiDEOSLinkConfig(int link, int BoardId, char *TaskName)
+HiDEOSGpibLinkConfig(int link, int BoardId, char *TaskName)
 {
 	SYM_TYPE			stype;
 	HideosIbLinkStruct	*pHiDEOSIbLink;
 
 	if (ibDebug)
-		logMsg("HiDEOSLinkConfig(%d): entered\n", link);
+		logMsg("HiDEOSGpibLinkConfig(%d): entered\n", link);
 
 	/* First check to see if there is already a link set up */
 	pHiDEOSIbLink = findHiDEOSIbLink(link);
@@ -2735,13 +2738,13 @@ HiDEOSLinkConfig(int link, int BoardId, char *TaskName)
 	if (pHiDEOSIbLink != NULL)
 	{ /* Already have initialized the link for this guy...  */
 		if (ibDebug)
-			logMsg("HiDEOSLinkConfig(%d): link already initialized\n", link);
+			logMsg("HiDEOSGpibLinkConfig(%d): link already initialized\n", link);
 
 		return(OK);
 	}
 	if ((pHiDEOSIbLink = (HideosIbLinkStruct *) malloc(sizeof(HideosIbLinkStruct))) == NULL)
 	{
-		logMsg("HiDEOSLinkConfig(%d): can't malloc memory for link structure\n", link);
+		logMsg("HiDEOSGpibLinkConfig(%d): can't malloc memory for link structure\n", link);
 		return(ERROR);
 	}
 
@@ -2752,14 +2755,14 @@ HiDEOSLinkConfig(int link, int BoardId, char *TaskName)
 		|| (symFindByName(sysSymTbl,"_GpibHideosWriteCmd", (char**)&LHideosWriteCmd,&stype)==ERROR))
 	{
 		free (pHiDEOSIbLink);
-		logMsg("HiDEOSLinkConfig: Can not locate Hideos GPIB services\n");
+		logMsg("HiDEOSGpibLinkConfig: Can not locate Hideos GPIB services\n");
 		return(-1);
 	}
 	/* get a logical connection into HiDEOS-land */
 	if ((pHiDEOSIbLink->remote_td = LHideosInit(BoardId, TaskName)) == NULL)
 	{
 		free (pHiDEOSIbLink);
-		logMsg("HiDEOSLinkConfig: Can not locate Hideos task %s\n", TaskName);
+		logMsg("HiDEOSGpibLinkConfig: Can not locate Hideos task %s\n", TaskName);
 		return(-1);
 	}
 

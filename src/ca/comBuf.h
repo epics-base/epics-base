@@ -412,7 +412,7 @@ inline epicsUInt16 comBuf::popUInt16 ()
     }
     unsigned byte1 = this->buf[ this->nextReadIndex++ ];
     unsigned byte2 = this->buf[ this->nextReadIndex++ ];
-    return static_cast < epicsUInt16 > ( byte1 << 8u | byte2 );
+    return static_cast < epicsUInt16 > ( byte1 << ( 8u | byte2 ) );
 }
 
 inline epicsUInt32 comBuf::popUInt32 () 
@@ -426,7 +426,8 @@ inline epicsUInt32 comBuf::popUInt32 ()
     unsigned byte3 = this->buf[ this->nextReadIndex++ ];
     unsigned byte4 = this->buf[ this->nextReadIndex++ ];
     return static_cast < epicsUInt32 > 
-        ( byte1 << 24u | byte2 << 16u | byte3 << 8u | byte4 ); //X aCC 392
+        ( ( byte1 << 24u ) | ( byte2 << 16u ) | //X aCC 392
+        ( byte3 << 8u ) | byte4 ); //X aCC 392
 }
 
 #endif // ifndef comBufh

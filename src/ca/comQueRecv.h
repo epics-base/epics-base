@@ -73,8 +73,8 @@ inline epicsInt8 comQueRecv::popInt8 ()
 inline epicsInt16 comQueRecv::popInt16 ()
     epics_throws (( comBuf::insufficentBytesAvailable ))
 {
-    return static_cast < epicsInt16 > (  this->popInt8() << 8u
-                                       | this->popInt8() << 0u );
+    return static_cast < epicsInt16 > ( ( this->popInt8() << 8u )
+                                       | ( this->popInt8() << 0u ) );
 }
 
 inline epicsInt32 comQueRecv::popInt32 ()

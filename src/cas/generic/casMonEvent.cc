@@ -15,6 +15,7 @@
  *              505 665 1831
  */
 
+#include <stdexcept>
 
 #include "server.h"
 #include "casEventSysIL.h" // casEventSys in line func
@@ -24,30 +25,37 @@
 //
 // casMonEvent::cbFunc()
 //
-caStatus casMonEvent::cbFunc(casEventSys &eSys)
+caStatus casMonEvent::cbFunc ( casCoreClient & client )
 {
-        casMonitor      *pMon;
-        caStatus        status;
- 
-        //
-        // ignore this event if it is stale and there is
-        // no call back object associated with it
-        //
-        pMon = eSys.resIdToMon(this->id);
-        if (!pMon) {
-                /*
-                 * we know this isnt an overflow event because those are
-                 * removed from the queue when the call back object
-                 * is deleted
-                 */
-                status = S_casApp_success;
-                delete this;
-        }
-        else {
-                status = pMon->executeEvent(this);
-        }
- 
-        return status;
+    caStatus status;
+
+    //
+    // ignore this event if it is stale and there is
+    // no call back object associated with it
+    //
+	// safe to cast because we have checked the type code 
+	//
+	casMonitor * pMon = reinterpret_cast < casMonitor * > 
+        ( client.lookupRes ( this->id, casMonitorT ) );
+    if ( ! pMon ) {
+        // we know this isnt an overflow event because those are
+        // removed from the queue when the casMonitor object is
+        // destroyed
+        client.casMonEventDestroy ( *this );
+        status = S_casApp_success;
+    }
+    else {
+        // this object may have been destroyed 
+        // here by the executeEvent() call below
+        status = pMon->executeEvent ( *this );
+    }
+
+    return status;
+}
+
+void casMonEvent::eventSysDestroyNotify ( casCoreClient & client )
+{
+    client.casMonEventDestroy ( *this );
 }
 
 //
@@ -67,4 +75,38 @@ casMonEvent::~casMonEvent ()
 {
 	this->clear();
 }
+
+void * casMonEvent::operator new ( size_t size, 
+    tsFreeList < class casMonEvent, 1024 > & freeList )
+{
+    return freeList.allocate ( size );
+}
+
+#ifdef CXX_PLACEMENT_DELETE
+void casMonEvent::operator delete ( void *pCadaver, 
+    tsFreeList < class casMonEvent, 1024 > & freeList ) epicsThrows(())
+{
+    freeList.release ( pCadaver, sizeof ( casMonEvent ) );
+}
+#endif
+
+void * casMonEvent::operator new ( size_t ) // X aCC 361
+{
+    // The HPUX compiler seems to require this even though no code
+    // calls it directly
+    throw std::logic_error ( "why is the compiler calling private operator new" );
+}
+
+void casMonEvent::operator delete ( void * )
+{
+    // Visual C++ .net appears to require operator delete if
+    // placement operator delete is defined? I smell a ms rat
+    // because if I declare placement new and delete, but
+    // comment out the placement delete definition there are
+    // no undefined symbols.
+    errlogPrintf ( "%s:%d this compiler is confused about placement delete - memory was probably leaked",
+        __FILE__, __LINE__ );
+}
+
+
 

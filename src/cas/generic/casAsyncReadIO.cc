@@ -59,7 +59,7 @@ caStatus casAsyncReadIO::postIOCompletion (caStatus completionStatusIn,
 //
 // casAsyncReadIO::readOP()
 //
-epicsShareFunc bool casAsyncReadIO::readOP() const
+bool casAsyncReadIO::readOP() const
 {
 	return true; // it is a read op
 }
@@ -68,7 +68,7 @@ epicsShareFunc bool casAsyncReadIO::readOP() const
 // casAsyncReadIO::cbFuncAsyncIO()
 // (called when IO completion event reaches top of event queue)
 //
-epicsShareFunc caStatus casAsyncReadIO::cbFuncAsyncIO()
+caStatus casAsyncReadIO::cbFuncAsyncIO()
 {
 	caStatus 	status;
 

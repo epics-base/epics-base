@@ -54,7 +54,7 @@ casIntfIO::casIntfIO (const caNetAddr &addrIn) :
      * they exit ( even if SO_REUSEADDR isnt set ).
      */
 #   ifndef SO_REUSEADDR_ALLOWS_SIMULTANEOUS_TCP_SERVERS_TO_USE_SAME_PORT
-		int yes = TRUE;
+		int yes = true;
 	    status = setsockopt (
 					    this->sock,
 					    SOL_SOCKET,
@@ -203,7 +203,7 @@ casStreamOS *casIntfIO::newStreamClient ( caServerI & cas,
 void casIntfIO::setNonBlocking()
 {
         int status;
-        osiSockIoctl_t yes = TRUE;
+        osiSockIoctl_t yes = true;
  
         status = socket_ioctl(this->sock, FIONBIO, &yes); // X aCC 392
         if (status<0) {

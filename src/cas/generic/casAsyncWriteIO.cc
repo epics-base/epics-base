@@ -55,7 +55,7 @@ caStatus casAsyncWriteIO::postIOCompletion ( caStatus completionStatusIn )
 // casAsyncWriteIO::cbFuncAsyncIO()
 // (called when IO completion event reaches top of event queue)
 //
-epicsShareFunc caStatus casAsyncWriteIO::cbFuncAsyncIO ()
+caStatus casAsyncWriteIO::cbFuncAsyncIO ()
 {
     caStatus status;
     

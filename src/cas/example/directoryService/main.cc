@@ -18,10 +18,6 @@
 LOCAL int parseDirectoryFile (const char *pFileName);
 LOCAL int parseDirectoryFP (FILE *pf, const char *pFileName);
 
-#ifndef TRUE
-#define TRUE 1
-#endif
-
 #ifndef INADDR_NONE
 #define INADDR_NONE (~0ul)
 #endif
@@ -152,7 +148,7 @@ LOCAL int parseDirectoryFP (FILE *pf, const char *pFileName)
     int nPV=0;
     
     ipa.sin_family = AF_INET;
-    while (TRUE) {
+    while ( true ) {
     
         //
         // parse the PV name entry from the file

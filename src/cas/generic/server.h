@@ -96,83 +96,6 @@ typedef caResId caEventId;
 //
 class caServerI;
 
-//
-// casEventSys
-//
-class casEventSys {
-friend class casEventPurgeEv;
-public:
-	casEventSys ();
-	virtual ~casEventSys ();
-
-	void show (unsigned level) const;
-	casProcCond process ();
-
-	void installMonitor ();
-	void removeMonitor ();
-
-	void removeFromEventQueue (casEvent &);
-	void addToEventQueue (casEvent &);
-
-	void insertEventQueue (casEvent &insert, casEvent &prevEvent);
-	void pushOnToEventQueue (casEvent &event);
-
-	bool full ();
-
-	casMonitor *resIdToMon (const caResId id);
-
-	bool getNDuplicateEvents () const;
-
-	void setDestroyPending ();
-
-	void eventsOn ();
-
-	caStatus eventsOff ();
-
-	virtual caStatus disconnectChan (caResId id) = 0;
-
-private:
-	tsDLList<casEvent> eventLogQue;
-	epicsMutex mutex;
-	casEventPurgeEv *pPurgeEvent; // flow control purge complete event
-	unsigned numEventBlocks;	// N event blocks installed
-	unsigned maxLogEntries; // max log entries
-	unsigned char destroyPending;
-	unsigned char replaceEvents; // replace last existing event on queue
-	unsigned char dontProcess; // flow ctl is on - dont process event queue
-
-	virtual void eventFlush () = 0;
-	virtual void eventSignal () = 0;
-    virtual casRes *lookupRes (const caResId &idIn, casResType type) = 0;
-	casEventSys ( const casEventSys & );
-	casEventSys & operator = ( const casEventSys & );
-};
-
-//
-// casClientMon
-//
-class casClientMon : public casMonitor {
-public:
-	casClientMon(casChannelI &, caResId clientId,
-		const unsigned long count, const unsigned type,
-		const casEventMask &maskIn, epicsMutex &mutexIn);
-	virtual ~casClientMon();
-
-	caStatus callBack (const smartConstGDDPointer &pValue);
-
-	virtual casResType resourceType() const;
-
-	caResId getId() const
-	{
-		return this->casRes::getId();
-	}
-
-	virtual void destroy();
-private:
-	casClientMon ( const casClientMon & );
-	casClientMon & operator = ( const casClientMon & );
-};
-
 class casCtx {
 public:
 	casCtx();
@@ -195,7 +118,7 @@ public:
 
 	void setPV ( casPVI * p );
 
-	 void setChannel ( casChannelI * p );
+	void setChannel ( casChannelI * p );
 
 	void show ( unsigned level ) const;
 	
@@ -431,24 +354,88 @@ private:
 };
 
 //
+// casEventSys
+//
+class casEventSys {
+public:
+	casEventSys ( casCoreClient & );
+	~casEventSys ();
+
+	void show ( unsigned level ) const;
+    struct processStatus {
+        casProcCond cond;
+        unsigned nAccepted;
+    };
+	processStatus process ();
+
+	void installMonitor ();
+	void removeMonitor ();
+
+	void removeFromEventQueue ( casEvent & );
+	void addToEventQueue ( casEvent & );
+
+	void insertEventQueue ( casEvent & insert, casEvent & prevEvent );
+	void pushOnToEventQueue ( casEvent & event );
+
+	bool full ();
+
+	bool getNDuplicateEvents () const;
+
+	void setDestroyPending ();
+
+	void eventsOn ();
+	void eventsOff ();
+
+private:
+	tsDLList < casEvent > eventLogQue;
+	epicsMutex mutex;
+    casCoreClient & client;
+	class casEventPurgeEv * pPurgeEvent; // flow control purge complete event
+	unsigned numEventBlocks;	// N event blocks installed
+	unsigned maxLogEntries; // max log entries
+	bool destroyPending;
+	bool replaceEvents; // replace last existing event on queue
+	bool dontProcess; // flow ctl is on - dont process event queue
+
+	casEventSys ( const casEventSys & );
+	casEventSys & operator = ( const casEventSys & );
+    friend class casEventPurgeEv;
+};
+
+/*
+ * when this event reaches the top of the queue we
+ * know that all duplicate events have been purged
+ * and that now no events should not be sent to the
+ * client until it exits flow control mode
+ */
+class casEventPurgeEv : public casEvent {
+public:
+    casEventPurgeEv ( class casEventSys & );
+private:
+    casEventSys & evSys;
+	caStatus cbFunc ( casCoreClient & );
+    void eventSysDestroyNotify ( casCoreClient & );
+};
+
+//
 // casCoreClient
 // (this will eventually support direct communication
 // between the client lib and the server lib)
 //
-class casCoreClient : public ioBlocked, 
-	public casEventSys {
+class casCoreClient : public ioBlocked,
+    private casMonitorCallbackInterface {
 public:
-	casCoreClient ( caServerI &serverInternal ); 
-	virtual ~casCoreClient();
-	virtual void destroy();
+	casCoreClient ( caServerI & serverInternal ); 
+	virtual ~casCoreClient ();
+	virtual void destroy ();
 	virtual caStatus disconnectChan( caResId id );
-	virtual void show  (unsigned level ) const;
+	virtual void show  ( unsigned level ) const;
 	virtual void installChannel ( casChannelI & );
 	virtual void removeChannel ( casChannelI & );
 
-	void installAsyncIO( casAsyncIOI & ioIn );
+	void installAsyncIO ( casAsyncIOI & ioIn );
 
-	void removeAsyncIO( casAsyncIOI & ioIn );
+	void removeAsyncIO ( casAsyncIOI & ioIn );
 
 	casRes * lookupRes ( const caResId &idIn, casResType type );
 
@@ -481,6 +468,8 @@ public:
 	virtual caStatus channelCreateFailedResp ( const caHdrLargeArray &, 
         caStatus createStatus );
 
+    virtual void eventSignal () = 0;
+
 	virtual ca_uint16_t protocolRevision () const = 0;
 
 	//
@@ -491,12 +480,42 @@ public:
 
     bool okToStartAsynchIO ();
 
+    casMonEvent & casMonEventFactory ( casMonitor & monitor, 
+            const smartConstGDDPointer & pNewValue );
+    void casMonEventDestroy ( casMonEvent & );
+
+    casEventSys::processStatus eventSysProcess();
+
+	void addToEventQueue ( casEvent & );
+	void insertEventQueue ( casEvent & insert, 
+        casEvent & prevEvent );
+	void removeFromEventQueue ( casEvent & );
+    void enableEvents ();
+    void disableEvents ();
+    bool eventSysIsFull ();
+	void installMonitor ();
+	void removeMonitor ();
+
+	void setDestroyPending ();
+
+    casMonitor & monitorFactory ( 
+        casChannelI & ,
+        caResId clientId, 
+        const unsigned long count, 
+        const unsigned type, 
+        const casEventMask & );
+    void destroyMonitor ( casMonitor & );
+
+    caStatus casMonitorCallBack ( casMonitor &,
+        const smartConstGDDPointer & );
+
 protected:
     epicsMutex mutex;
 	casCtx ctx;
 	bool asyncIOFlag;
 
 private:
+    casEventSys eventSys;
 	tsDLList < casAsyncIOI > ioInProgList;
 	casCoreClient ( const casCoreClient & );
 	casCoreClient & operator = ( const casCoreClient & );
@@ -585,7 +604,7 @@ private:
 	//
 	static void loadProtoJumpTable();
 	static pCASMsgHandler msgHandlers[CA_PROTO_LAST_CMMD+1u];
-	static int msgHandlersInit;
+	static bool msgHandlersInit;
 
 	casClient ( const casClient & );
 	casClient & operator = ( const casClient & );
@@ -594,13 +613,14 @@ private:
 //
 // casStrmClient 
 //
-class casStrmClient : public casClient,
+class casStrmClient : 
+    public casClient,
 	public tsDLNode<casStrmClient> {
 public:
 	casStrmClient ( caServerI &, clientBufMemoryManager & );
 	virtual ~casStrmClient();
 
-	void show (unsigned level) const;
+	void show ( unsigned level ) const;
 
     void flush ();
 
@@ -632,17 +652,12 @@ public:
 	caStatus channelCreateFailedResp ( const caHdrLargeArray &, 
         caStatus createStatus );
 
-	caStatus noReadAccessEvent( casClientMon * );
-
-
 	caStatus disconnectChan ( caResId id );
 
 	unsigned getDebugLevel () const;
 
     virtual void hostName ( char * pBuf, unsigned bufSize ) const = 0;
 	void userName ( char * pBuf, unsigned bufSize ) const;
-
-protected:
 
 private:
 	tsDLList<casChannelI>	chanList;
@@ -716,6 +731,9 @@ private:
 	caStatus writeNotifyResponseECA_XXX ( const caHdrLargeArray &msg,
 			const caStatus status );
 
+	caStatus casMonitorCallBack ( casMonitor &,
+        const smartConstGDDPointer & pValue );
+
 	casStrmClient ( const casStrmClient & );
 	casStrmClient & operator = ( const casStrmClient & );
 };
@@ -753,11 +771,6 @@ public:
     virtual caNetAddr serverAddress () const = 0;
 
 protected:
-
-	casProcCond eventSysProcess()
-	{
-		return this->casEventSys::process();
-	}
 
     caStatus processDG ();
 
@@ -906,9 +919,9 @@ public:
 
 	caServer *getAdapter ();
 
-	void installItem (casRes &res);
+	void installItem ( casRes & res );
 
-	casRes *removeItem (casRes &res);
+	casRes * removeItem ( casRes & res );
 
 	//
 	// call virtual function in the interface class
@@ -936,24 +949,36 @@ public:
 
     void generateBeaconAnomaly ();
 
+    casMonEvent & casMonEventFactory ( casMonitor & monitor, 
+            const smartConstGDDPointer & pNewValue );
+    void casMonEventDestroy ( casMonEvent & );
+
+    casMonitor & casMonitorFactory (  casChannelI &, 
+        caResId clientId, const unsigned long count, 
+        const unsigned type, const casEventMask &, 
+        epicsMutex & , casMonitorCallbackInterface & );
+    void casMonitorDestroy ( casMonitor & );
+
 private:
-    clientBufMemoryManager  clientBufMemMgr;
-	mutable epicsMutex      mutex;
-	tsDLList<casStrmClient> clientList;
-    tsDLList<casIntfOS>     intfList;
-	caServer                & adapter;
-    beaconTimer	            & beaconTmr;
-    beaconAnomalyGovernor   & beaconAnomalyGov;
-	unsigned                debugLevel;
-    unsigned                nEventsProcessed; 
-    unsigned                nEventsPosted; 
+    clientBufMemoryManager clientBufMemMgr;
+	mutable epicsMutex mutex;
+	tsDLList < casStrmClient > clientList;
+    tsDLList < casIntfOS > intfList;
+    tsFreeList < casMonEvent, 1024 > casMonEventFreeList;
+    tsFreeList < casMonitor, 1024 > casMonitorFreeList;
+	caServer & adapter;
+    beaconTimer & beaconTmr;
+    beaconAnomalyGovernor & beaconAnomalyGov;
+	unsigned debugLevel;
+    unsigned nEventsProcessed; 
+    unsigned nEventsPosted; 
 
     //
     // predefined event types
     //
-    casEventMask            valueEvent; // DBE_VALUE registerEvent("value")
-	casEventMask            logEvent; 	// DBE_LOG registerEvent("log") 
-	casEventMask            alarmEvent; // DBE_ALARM registerEvent("alarm")
+    casEventMask valueEvent; // DBE_VALUE registerEvent("value")
+	casEventMask logEvent; 	// DBE_LOG registerEvent("log") 
+	casEventMask alarmEvent; // DBE_ALARM registerEvent("alarm")
 
 	caStatus attachInterface (const caNetAddr &addr, bool autoBeaconAddr,
 			bool addConfigAddr);
@@ -977,18 +1002,6 @@ private:
  * invocation of async IO on the same PV.
  */
 #define maxIOInProg 50 
-
-/*
- * when this event reaches the top of the queue we
- * know that all duplicate events have been purged
- * and that now no events should not be sent to the
- * client until it exits flow control mode
- */
-class casEventPurgeEv : public casEvent {
-public:
-private:
-	caStatus cbFunc(casEventSys &);
-};
 
 bool convertContainerMemberToAtomic ( gdd & dd, 
          aitUint32 appType, aitUint32 elemCount );

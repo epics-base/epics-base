@@ -31,7 +31,7 @@ static const caHdr nill_msg = {0u,0u,0u,0u,0u,0u};
 //
 // static declartions for class casClient
 //
-int casClient::msgHandlersInit;
+bool casClient::msgHandlersInit;
 casClient::pCASMsgHandler casClient::msgHandlers[CA_PROTO_LAST_CMMD+1u];
 
 //
@@ -94,7 +94,7 @@ void casClient::loadProtoJumpTable()
 	//
 	// Load the static protocol handler tables
 	//
-	if (casClient::msgHandlersInit) {
+	if ( casClient::msgHandlersInit ) {
 		return;
 	}
 
@@ -155,7 +155,7 @@ void casClient::loadProtoJumpTable()
 	casClient::msgHandlers[CA_PROTO_CLAIM_CIU_FAILED] = 
 			&casClient::uknownMessageAction;
 
-	casClient::msgHandlersInit = TRUE;
+	casClient::msgHandlersInit = true;
 }
 
 //
@@ -182,123 +182,148 @@ void casClient::show (unsigned level) const
 //
 caStatus casClient::processMsg ()
 {
-    // drain message that does not fit
-    if ( this->incommingBytesToDrain ) {
-        unsigned bytesLeft = this->in.bytesPresent();
-        if ( bytesLeft  < this->incommingBytesToDrain ) {
-            this->in.removeMsg ( bytesLeft );
-            this->incommingBytesToDrain -= bytesLeft;
-            return S_cas_success;
-        }
-        else {
-            this->in.removeMsg ( this->incommingBytesToDrain );
-            this->incommingBytesToDrain = 0u;
-        }
-    }
-
-	//
-	// process any messages in the in buffer
-	//
 	int status = S_cas_success;
 
-	unsigned bytesLeft;
-	while ( ( bytesLeft = this->in.bytesPresent() ) ) {
-        caHdrLargeArray msgTmp;
-        unsigned msgSize;
-        ca_uint32_t hdrSize;
-        char * rawMP;
-        {
-	        //
-	        // copy as raw bytes in order to avoid
-	        // alignment problems
-	        //
-            caHdr smallHdr;
-            if ( bytesLeft < sizeof ( smallHdr ) ) {
-                break;
-            }
-
-            rawMP = this->in.msgPtr ();
-	        memcpy ( & smallHdr, rawMP, sizeof ( smallHdr ) );
-
-            ca_uint32_t payloadSize = epicsNTOH16 ( smallHdr.m_postsize );
-            ca_uint32_t nElem = epicsNTOH16 ( smallHdr.m_count );
-            if ( payloadSize != 0xffff && nElem != 0xffff ) {
-                hdrSize = sizeof ( smallHdr );
+    try {
+        // drain message that does not fit
+        if ( this->incommingBytesToDrain ) {
+            unsigned bytesLeft = this->in.bytesPresent();
+            if ( bytesLeft  < this->incommingBytesToDrain ) {
+                this->in.removeMsg ( bytesLeft );
+                this->incommingBytesToDrain -= bytesLeft;
+                return S_cas_success;
             }
             else {
-                ca_uint32_t LWA[2];
-                hdrSize = sizeof ( smallHdr ) + sizeof ( LWA );
-                if ( bytesLeft < hdrSize ) {
+                this->in.removeMsg ( this->incommingBytesToDrain );
+                this->incommingBytesToDrain = 0u;
+            }
+        }
+
+	    //
+	    // process any messages in the in buffer
+	    //
+
+	    unsigned bytesLeft;
+	    while ( ( bytesLeft = this->in.bytesPresent() ) ) {
+            caHdrLargeArray msgTmp;
+            unsigned msgSize;
+            ca_uint32_t hdrSize;
+            char * rawMP;
+            {
+	            //
+	            // copy as raw bytes in order to avoid
+	            // alignment problems
+	            //
+                caHdr smallHdr;
+                if ( bytesLeft < sizeof ( smallHdr ) ) {
                     break;
                 }
-                //
-                // copy as raw bytes in order to avoid
-                // alignment problems
-                //
-                memcpy ( LWA, rawMP + sizeof ( caHdr ), sizeof( LWA ) );
-                payloadSize = epicsNTOH32 ( LWA[0] );
-                nElem = epicsNTOH32 ( LWA[1] );
-            }
 
-            msgTmp.m_cmmd = epicsNTOH16 ( smallHdr.m_cmmd );
-            msgTmp.m_postsize = payloadSize;
-            msgTmp.m_dataType = epicsNTOH16 ( smallHdr.m_dataType );
-            msgTmp.m_count = nElem;
-            msgTmp.m_cid = epicsNTOH32 ( smallHdr.m_cid );
-            msgTmp.m_available = epicsNTOH32 ( smallHdr.m_available );
+                rawMP = this->in.msgPtr ();
+	            memcpy ( & smallHdr, rawMP, sizeof ( smallHdr ) );
 
-
-            msgSize = hdrSize + payloadSize;
-            if ( bytesLeft < msgSize ) {
-                if ( msgSize > this->in.bufferSize() ) {
-                    this->in.expandBuffer ();
-                    // msg to large - set up message drain
-                    if ( msgSize > this->in.bufferSize() ) {
-                        this->dumpMsg ( & msgTmp, 0, 
-                            "The client requested transfer is greater than available " 
-                            "memory in server or EPICS_CA_MAX_ARRAY_BYTES\n" );
-                        status = this->sendErr ( & msgTmp, ECA_TOLARGE, 
-                            "request didnt fit within the CA server's message buffer" );
-                        this->in.removeMsg ( bytesLeft );
-                        this->incommingBytesToDrain = msgSize - bytesLeft;
-                    }
+                ca_uint32_t payloadSize = epicsNTOH16 ( smallHdr.m_postsize );
+                ca_uint32_t nElem = epicsNTOH16 ( smallHdr.m_count );
+                if ( payloadSize != 0xffff && nElem != 0xffff ) {
+                    hdrSize = sizeof ( smallHdr );
                 }
-                break;
+                else {
+                    ca_uint32_t LWA[2];
+                    hdrSize = sizeof ( smallHdr ) + sizeof ( LWA );
+                    if ( bytesLeft < hdrSize ) {
+                        break;
+                    }
+                    //
+                    // copy as raw bytes in order to avoid
+                    // alignment problems
+                    //
+                    memcpy ( LWA, rawMP + sizeof ( caHdr ), sizeof( LWA ) );
+                    payloadSize = epicsNTOH32 ( LWA[0] );
+                    nElem = epicsNTOH32 ( LWA[1] );
+                }
+
+                msgTmp.m_cmmd = epicsNTOH16 ( smallHdr.m_cmmd );
+                msgTmp.m_postsize = payloadSize;
+                msgTmp.m_dataType = epicsNTOH16 ( smallHdr.m_dataType );
+                msgTmp.m_count = nElem;
+                msgTmp.m_cid = epicsNTOH32 ( smallHdr.m_cid );
+                msgTmp.m_available = epicsNTOH32 ( smallHdr.m_available );
+
+
+                msgSize = hdrSize + payloadSize;
+                if ( bytesLeft < msgSize ) {
+                    if ( msgSize > this->in.bufferSize() ) {
+                        this->in.expandBuffer ();
+                        // msg to large - set up message drain
+                        if ( msgSize > this->in.bufferSize() ) {
+                            this->dumpMsg ( & msgTmp, 0, 
+                                "The client requested transfer is greater than available " 
+                                "memory in server or EPICS_CA_MAX_ARRAY_BYTES\n" );
+                            status = this->sendErr ( & msgTmp, ECA_TOLARGE, 
+                                "request didnt fit within the CA server's message buffer" );
+                            this->in.removeMsg ( bytesLeft );
+                            this->incommingBytesToDrain = msgSize - bytesLeft;
+                        }
+                    }
+                    break;
+                }
+
+                this->ctx.setMsg ( msgTmp, rawMP + hdrSize );
+
+		        if ( this->getCAS().getDebugLevel() > 2u ) {
+			        this->dumpMsg ( & msgTmp, rawMP + hdrSize, 0 );
+		        }
+
             }
 
-            this->ctx.setMsg ( msgTmp, rawMP + hdrSize );
+		    //
+		    // Reset the context to the default
+		    // (guarantees that previous message does not get mixed 
+		    // up with the current message)
+		    //
+		    this->ctx.setChannel ( NULL );
+		    this->ctx.setPV ( NULL );
 
-		    if ( this->getCAS().getDebugLevel() > 2u ) {
-			    this->dumpMsg ( & msgTmp, rawMP + hdrSize, 0 );
+		    //
+		    // Call protocol stub
+		    //
+            pCASMsgHandler pHandler;
+		    if ( msgTmp.m_cmmd < NELEMENTS ( casClient::msgHandlers ) ) {
+                pHandler = this->casClient::msgHandlers[msgTmp.m_cmmd];
+		    }
+            else {
+                pHandler = & casClient::uknownMessageAction;
+            }
+		    status = ( this->*pHandler ) ();
+		    if ( status ) {
+			    break;
 		    }
 
-        }
-
-		//
-		// Reset the context to the default
-		// (guarantees that previous message does not get mixed 
-		// up with the current message)
-		//
-		this->ctx.setChannel ( NULL );
-		this->ctx.setPV ( NULL );
-
-		//
-		// Call protocol stub
-		//
-        pCASMsgHandler pHandler;
-		if ( msgTmp.m_cmmd < NELEMENTS ( casClient::msgHandlers ) ) {
-            pHandler = this->casClient::msgHandlers[msgTmp.m_cmmd];
-		}
-        else {
-            pHandler = & casClient::uknownMessageAction;
-        }
-		status = ( this->*pHandler ) ();
-		if ( status ) {
-			break;
-		}
-
-        this->in.removeMsg ( msgSize );
-	}
+            this->in.removeMsg ( msgSize );
+	    }
+    }
+    catch ( std::bad_alloc & ) {
+        status = this->sendErr ( 
+            this->ctx.getMsg(), ECA_ALLOCMEM, 
+            "inablility to allocate memory in "
+            "the server disconnected client" );
+        status = S_cas_noMemory;
+    }
+    catch ( std::exception & except ) {
+		status = this->sendErr ( 
+            this->ctx.getMsg(), ECA_INTERNAL, 
+            "C++ exception \"%s\" in server "
+            "diconnected client",
+            except.what () );
+        status = S_cas_internal;
+    }
+    catch (...) {
+		status = this->sendErr ( 
+            this->ctx.getMsg(), ECA_INTERNAL, 
+            "unexpected C++ exception in server "
+            "diconnected client" );
+        status = S_cas_internal;
+    }
 
 	return status;
 }

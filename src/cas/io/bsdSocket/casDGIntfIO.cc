@@ -293,7 +293,7 @@ void casDGIntfIO::show (unsigned level) const
 void casDGIntfIO::xSetNonBlocking() 
 {
     int status;
-    osiSockIoctl_t yes = TRUE;
+    osiSockIoctl_t yes = true;
     
     status = socket_ioctl(this->sock, FIONBIO, &yes); // X aCC 392
     if (status<0) {
@@ -544,7 +544,7 @@ bufSizeT casDGIntfIO::optimumOutBufferSize ()
 //
 SOCKET casDGIntfIO::makeSockDG ()
 {
-    int yes = TRUE;
+    int yes = true;
     int status;
     SOCKET newSock;
 

@@ -22,7 +22,7 @@
 //
 // casChannel::casChannel()
 //
-epicsShareFunc casChannel::casChannel(const casCtx &ctx) : 
+casChannel::casChannel(const casCtx &ctx) : 
 	casPVListChan (ctx) 
 {
 }
@@ -30,14 +30,14 @@ epicsShareFunc casChannel::casChannel(const casCtx &ctx) :
 //
 // casChannel::~casChannel()
 //
-epicsShareFunc casChannel::~casChannel() 
+casChannel::~casChannel() 
 {
 }
 
 //
 // casChannel::getPV()
 //
-epicsShareFunc casPV *casChannel::getPV() // X aCC 361
+casPV *casChannel::getPV() // X aCC 361
 {
 	casPVI *pPVI = &this->casChannelI::getPVI();
 
@@ -52,7 +52,7 @@ epicsShareFunc casPV *casChannel::getPV() // X aCC 361
 //
 // casChannel::setOwner()
 //
-epicsShareFunc void casChannel::setOwner(const char * const /* pUserName */, 
+void casChannel::setOwner(const char * const /* pUserName */, 
 	const char * const /* pHostName */)
 {
 	//
@@ -63,7 +63,7 @@ epicsShareFunc void casChannel::setOwner(const char * const /* pUserName */,
 //
 // casChannel::readAccess()
 //
-epicsShareFunc bool casChannel::readAccess () const 
+bool casChannel::readAccess () const 
 {
 	return true;
 }
@@ -71,16 +71,15 @@ epicsShareFunc bool casChannel::readAccess () const
 //
 // casChannel::writeAccess()
 //
-epicsShareFunc bool casChannel::writeAccess() const 
+bool casChannel::writeAccess() const 
 {
 	return true;
 }
 
-
 //
 // casChannel::confirmationRequested()
 //
-epicsShareFunc bool casChannel::confirmationRequested() const 
+bool casChannel::confirmationRequested() const 
 {
 	return false;
 }
@@ -88,7 +87,7 @@ epicsShareFunc bool casChannel::confirmationRequested() const
 //
 // casChannel::show()
 //
-epicsShareFunc void casChannel::show(unsigned level) const
+void casChannel::show(unsigned level) const
 {
 	if (level>2u) {
 		printf("casChannel: read access = %d\n",
@@ -103,7 +102,7 @@ epicsShareFunc void casChannel::show(unsigned level) const
 //
 // casChannel::destroy()
 //
-epicsShareFunc void casChannel::destroy()
+void casChannel::destroy()
 {
 	delete this;
 }
@@ -111,7 +110,7 @@ epicsShareFunc void casChannel::destroy()
 //
 // casChannel::postAccessRightsEvent()
 //
-epicsShareFunc void casChannel::postAccessRightsEvent()
+void casChannel::postAccessRightsEvent()
 {
 	this->casChannelI::postAccessRightsEvent();
 }

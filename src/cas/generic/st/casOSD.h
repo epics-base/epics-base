@@ -100,6 +100,8 @@ public:
 
     void processInput();
 
+	void eventFlush ();
+
 private:
     casDGIOWakeup ioWk;
     casDGEvWakeup evWk;
@@ -122,7 +124,6 @@ private:
 	void ioBlockedSignal ();
 
 	void eventSignal ();
-	void eventFlush ();
 
 	casDGIntfOS ( const casDGIntfOS & );
 	casDGIntfOS & operator = ( const casDGIntfOS & );
@@ -199,6 +200,8 @@ public:
 
 	casProcCond processInput ();
 
+	void eventFlush ();
+
 private:
 	casStreamEvWakeup evWk;
 	casStreamIOWakeup ioWk;
@@ -221,7 +224,6 @@ private:
 	void ioBlockedSignal ();
 
 	void eventSignal ();
-	void eventFlush ();
 
 	casStreamOS ( const casStreamOS & );
 	casStreamOS & operator = ( const casStreamOS & );

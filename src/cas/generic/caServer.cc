@@ -24,11 +24,11 @@
 //
 // caServer::caServer()
 //
-epicsShareFunc caServer::caServer ()
+caServer::caServer ()
 {
     static bool init = false;
     
-    if (!init) {
+    if ( ! init ) {
         gddMakeMapDBR(gddApplicationTypeTable::app_table);
         init = true;
     }    
@@ -39,7 +39,7 @@ epicsShareFunc caServer::caServer ()
 //
 // caServer::~caServer()
 //
-epicsShareFunc caServer::~caServer()
+caServer::~caServer()
 {
 	if (this->pCAS) {
 		delete this->pCAS;
@@ -50,7 +50,7 @@ epicsShareFunc caServer::~caServer()
 //
 // caServer::pvExistTest()
 //
-epicsShareFunc pvExistReturn caServer::pvExistTest (const casCtx &, const char *)
+pvExistReturn caServer::pvExistTest (const casCtx &, const char *)
 {
 	return pverDoesNotExistHere;
 }
@@ -58,7 +58,7 @@ epicsShareFunc pvExistReturn caServer::pvExistTest (const casCtx &, const char *
 //
 // caServer::createPV()
 //
-epicsShareFunc pvCreateReturn caServer::createPV (const casCtx &, const char *)
+pvCreateReturn caServer::createPV (const casCtx &, const char *)
 {
 	return S_casApp_pvNotFound;
 }
@@ -66,7 +66,7 @@ epicsShareFunc pvCreateReturn caServer::createPV (const casCtx &, const char *)
 //
 // caServer::pvAttach()
 //
-epicsShareFunc pvAttachReturn caServer::pvAttach (const casCtx &ctx, const char *pAliasName)
+pvAttachReturn caServer::pvAttach (const casCtx &ctx, const char *pAliasName)
 {
 	//
 	// remain backwards compatible (call deprecated routine)
@@ -77,7 +77,7 @@ epicsShareFunc pvAttachReturn caServer::pvAttach (const casCtx &ctx, const char 
 //
 // caServer::registerEvent()
 //
-epicsShareFunc casEventMask caServer::registerEvent (const char *pName) // X aCC 361
+casEventMask caServer::registerEvent (const char *pName) // X aCC 361
 {
 	if (this->pCAS) {
 		return this->pCAS->registerEvent(pName);
@@ -92,7 +92,7 @@ epicsShareFunc casEventMask caServer::registerEvent (const char *pName) // X aCC
 //
 // caServer::show()
 //
-epicsShareFunc void caServer::show(unsigned level) const
+void caServer::show(unsigned level) const
 {
 	if (this->pCAS) {
 		this->pCAS->show(level);
@@ -105,7 +105,7 @@ epicsShareFunc void caServer::show(unsigned level) const
 //
 // caServer::setDebugLevel()
 //
-epicsShareFunc void caServer::setDebugLevel (unsigned level)
+void caServer::setDebugLevel (unsigned level)
 {
 	if (pCAS) {
 		this->pCAS->setDebugLevel(level);
@@ -118,7 +118,7 @@ epicsShareFunc void caServer::setDebugLevel (unsigned level)
 //
 // caServer::getDebugLevel()
 //
-epicsShareFunc unsigned caServer::getDebugLevel () const // X aCC 361
+unsigned caServer::getDebugLevel () const // X aCC 361
 {
     if (pCAS) {
         return this->pCAS->getDebugLevel();
@@ -132,7 +132,7 @@ epicsShareFunc unsigned caServer::getDebugLevel () const // X aCC 361
 //
 // caServer::valueEventMask ()
 //
-epicsShareFunc casEventMask caServer::valueEventMask () const // X aCC 361
+casEventMask caServer::valueEventMask () const // X aCC 361
 {
     if (pCAS) {
         return this->pCAS->valueEventMask();
@@ -146,7 +146,7 @@ epicsShareFunc casEventMask caServer::valueEventMask () const // X aCC 361
 //
 // caServer::logEventMask ()
 //
-epicsShareFunc casEventMask caServer::logEventMask () const // X aCC 361
+casEventMask caServer::logEventMask () const // X aCC 361
 {
     if (pCAS) {
         return this->pCAS->logEventMask();
@@ -160,7 +160,7 @@ epicsShareFunc casEventMask caServer::logEventMask () const // X aCC 361
 //
 // caServer::alarmEventMask ()
 //
-epicsShareFunc casEventMask caServer::alarmEventMask () const // X aCC 361
+casEventMask caServer::alarmEventMask () const // X aCC 361
 {
     if (pCAS) {
         return this->pCAS->alarmEventMask();
@@ -182,7 +182,7 @@ class epicsTimer & caServer::createTimer ()
 //
 // caServer::subscriptionEventsProcessed
 //
-epicsShareFunc unsigned caServer::subscriptionEventsProcessed () const // X aCC 361
+unsigned caServer::subscriptionEventsProcessed () const // X aCC 361
 {
     if ( pCAS ) {
         return this->pCAS->subscriptionEventsProcessed();
@@ -195,7 +195,7 @@ epicsShareFunc unsigned caServer::subscriptionEventsProcessed () const // X aCC 
 //
 // caServer::subscriptionEventsPosted
 //
-epicsShareFunc unsigned caServer::subscriptionEventsPosted () const // X aCC 361
+unsigned caServer::subscriptionEventsPosted () const // X aCC 361
 {
     if ( pCAS ) {
         return this->pCAS->subscriptionEventsPosted ();
@@ -205,7 +205,7 @@ epicsShareFunc unsigned caServer::subscriptionEventsPosted () const // X aCC 361
     }
 }
 
-epicsShareFunc void caServer::generateBeaconAnomaly ()
+void caServer::generateBeaconAnomaly ()
 {
     if ( pCAS ) {
         this->pCAS->generateBeaconAnomaly ();

@@ -18,7 +18,9 @@
 //
 // EPICS
 //
+#include "cxxCompilerDependencies.h"
 #include "tsDLList.h"
+#include "tsFreeList.h"
 #include "resourceLib.h"
 #define CA_MINOR_PROTOCOL_REVISION 11
 #include "caProto.h"
@@ -26,38 +28,40 @@
 
 typedef aitUint32 caResId;
 
-class casEventSys;
 class casChannelI;
+class casCoreClient;
 
 //
 // casEvent
 //
-class casEvent : public tsDLNode<casEvent> {
+class casEvent : public tsDLNode < casEvent > {
 public:
-    epicsShareFunc virtual ~casEvent();
-    virtual caStatus cbFunc (casEventSys &)=0;
-private:
+    virtual caStatus cbFunc ( casCoreClient & ) = 0;
+    virtual void eventSysDestroyNotify ( casCoreClient & ) = 0;
+protected:
+    virtual ~casEvent();
 };
 
 class casChanDelEv : public casEvent {
 public:
-	casChanDelEv(caResId idIn) : id(idIn) {}
-	~casChanDelEv();
-	caStatus cbFunc(casEventSys &);
+	casChanDelEv ( caResId idIn ) : id(idIn) {}
+	~casChanDelEv ();
 private:
 	caResId	id;
+	caStatus cbFunc ( casCoreClient & ); 
+    void eventSysDestroyNotify ( casCoreClient & );
 };
 
-enum casResType {casChanT=1, casClientMonT, casPVT};
+enum casResType {casChanT=1, casMonitorT, casPVT};
 
 class casRes : public chronIntIdRes<casRes>
 {
 public:
 	casRes ();
 	epicsShareFunc virtual ~casRes();
-	virtual casResType resourceType() const = 0;
-	virtual void show (unsigned level) const = 0;
-	virtual void destroy() = 0;
+	virtual casResType resourceType () const = 0;
+	virtual void show ( unsigned level ) const = 0;
+	//virtual void destroy() = 0;
 private:
 	casRes ( const casRes & );
 	casRes & operator = ( const casRes & );
@@ -100,90 +104,90 @@ class casMonitor;
 //
 class casMonEvent : public casEvent {
 public:
-	//
-	// only used when this is part of another structure
-	// (and we need to postpone true construction)
-	//
-	inline casMonEvent ();
-	inline casMonEvent (casMonitor &monitor, const smartConstGDDPointer &pNewValue);
-	inline casMonEvent (const casMonEvent &initValue);
-
-	//
-	// ~casMonEvent ()
-	// (not inline because this is virtual in the base class)
-	//
+	casMonEvent ();
+	casMonEvent (casMonitor &monitor, const smartConstGDDPointer &pNewValue);
+	casMonEvent (const casMonEvent &initValue);
 	~casMonEvent ();
-
-	caStatus cbFunc (casEventSys &);
-
-	//
-	// casMonEvent::getValue()
-	//
-	inline smartConstGDDPointer getValue () const;
-
-	inline void operator = (const class casMonEvent &monEventIn);
-	
-	inline void clear ();
-
+	smartConstGDDPointer getValue () const;
+	void operator = (const class casMonEvent &monEventIn);
+	void clear ();
 	void assign (casMonitor &monitor, const smartConstGDDPointer &pValueIn);
+    void * operator new ( size_t size, tsFreeList < class casMonEvent, 1024 > & );
+    epicsPlacementDeleteOperator (( void *, tsFreeList < class casMonEvent, 1024 > & ))
 private:
 	smartConstGDDPointer pValue;
 	caResId id;
+    void * operator new ( size_t );
+    void operator delete ( void * );
+	caStatus cbFunc ( casCoreClient & );
+    void eventSysDestroyNotify ( casCoreClient & );
 };
 
+class casMonitorCallbackInterface {
+public:
+	virtual caStatus casMonitorCallBack ( casMonitor &,
+        const smartConstGDDPointer & pValue ) = 0;
+};
 
 //
 // casMonitor()
 //
-class casMonitor : public tsDLNode<casMonitor>, public casRes {
+class casMonitor : 
+    public tsDLNode < casMonitor >, public casRes {
 public:
-	casMonitor(caResId clientIdIn, casChannelI &chan, 
-	unsigned long nElem, unsigned dbrType,
-	const casEventMask &maskIn, epicsMutex &mutexIn);
+	casMonitor ( caResId clientIdIn, casChannelI & chan, 
+	    unsigned long nElem, unsigned dbrType,
+	    const casEventMask & maskIn, epicsMutex & mutexIn,
+        casMonitorCallbackInterface & );
 	virtual ~casMonitor();
 
-	caStatus executeEvent(casMonEvent *);
+    void show ( unsigned level ) const;
 
-	inline void post(const casEventMask &select, const smartConstGDDPointer &pValue);
+	caStatus executeEvent ( casMonEvent & );
 
-	virtual void show (unsigned level) const;
-	virtual caStatus callBack (const smartConstGDDPointer &pValue) = 0;
+	void post ( const casEventMask & select, const smartConstGDDPointer & pValue );
 
-	caResId getClientId() const 
+	caResId getClientId () const 
 	{
 		return this->clientId;
 	}
 
-	unsigned getType() const 
+	unsigned getType () const 
 	{
 		return this->dbrType;
 	}
 
-	unsigned long getCount() const 
+	unsigned long getCount () const 
 	{
 		return this->nElem;
 	}
-	casChannelI &getChannel() const 
+	casChannelI & getChannel () const 
 	{	
 		return this->ciu;
 	}
+    void * operator new ( size_t size, 
+        tsFreeList < casMonitor, 1024 > & );
+    epicsPlacementDeleteOperator (( void *, 
+        tsFreeList < casMonitor, 1024 > & ))
 
 private:
 	casMonEvent overFlowEvent;
 	unsigned long const nElem;
 	epicsMutex & mutex;
 	casChannelI & ciu;
+    casMonitorCallbackInterface & callBackIntf;
 	const casEventMask mask;
 	caResId const clientId;
 	unsigned char const dbrType;
 	unsigned char nPend;
 	bool ovf;
 	bool enabled;
-
 	void enable ();
 	void disable ();
-
-	void push (const smartConstGDDPointer &pValue);
+    casResType resourceType () const;
+	void push ( const smartConstGDDPointer & pValue );
+    void * operator new ( size_t );
+    void operator delete ( void * );
 	casMonitor ( const casMonitor & );
 	casMonitor & operator = ( const casMonitor & );
 };
@@ -210,7 +214,6 @@ inline void casMonitor::post (const casEventMask &select, const smartConstGDDPoi
 }
 
 class caServer;
-class casCoreClient;
 class casChannelI;
 class casCtx;
 class caServer;
@@ -248,7 +251,9 @@ private:
 	// casEvent virtual call back function
 	// (called when IO completion event reaches top of event queue)
 	//
-	epicsShareFunc caStatus cbFunc(casEventSys &);
+	epicsShareFunc caStatus cbFunc ( casCoreClient & );
+
+    epicsShareFunc void eventSysDestroyNotify ( casCoreClient & );
 
     //
     // derived class specic call back
@@ -274,15 +279,16 @@ class casPVI;
 // this derives from casEvent so that access rights
 // events can be posted
 //
-class casChannelI : public tsDLNode<casChannelI>, public casRes, 
-				public casEvent {
+class casChannelI : public tsDLNode < casChannelI >, 
+    public casRes, public casEvent {
 public:
-	casChannelI (const casCtx &ctx);
-	epicsShareFunc virtual ~casChannelI();
+	casChannelI ( const casCtx & ctx );
+	epicsShareFunc virtual ~casChannelI ();
 
-    void bindToClientI ( casCoreClient & client, casPVI & pv, caResId cid );
+    void bindToClientI ( class casCoreClient & client, 
+        casPVI & pv, caResId cid );
 
-	casCoreClient &getClient () const
+	class casCoreClient & getClient () const
 	{	
 		return *this->pClient;
 	}
@@ -295,33 +301,23 @@ public:
 	//
 	const caResId getSID ();
 
-	//
-	// addMonitor()
-	//
-	void addMonitor (casMonitor &mon);
+	void installMonitor ( 
+        caResId clientId, 
+        const unsigned long count, 
+        const unsigned type, 
+        const casEventMask & );
 
-	//
-	// deleteMonitor()
-	//
-	void deleteMonitor (casMonitor &mon);
-
-	//
-	// findMonitor
-	// (it is reasonable to do a linear search here because
-	// sane clients will require only one or two monitors 
-	// per channel)
-	//
-	tsDLIter <casMonitor> findMonitor (const caResId clientIdIn);
+    bool unistallMonitor ( ca_uint32_t monId );
 
 	casPVI &getPVI () const 
 	{
 		return *this->pPV;
 	}
 
-	void installAsyncIO (casAsyncIOI &);
-	void removeAsyncIO (casAsyncIOI &);
+	void installAsyncIO ( casAsyncIOI & );
+	void removeAsyncIO ( casAsyncIOI & );
 
-	void postEvent (const casEventMask &select, const gdd &event);
+	void postEvent ( const casEventMask & select, const gdd & event );
 
 	epicsShareFunc virtual casResType resourceType () const;
 
@@ -330,11 +326,6 @@ public:
 
 	void clearOutstandingReads ();
 
-	//
-	// access rights event call back
-	//
-	epicsShareFunc caStatus cbFunc (casEventSys &);
-
 	void postAccessRightsEvent ();
 
     const gddEnumStringTable & enumStringTable () const;
@@ -342,22 +333,24 @@ public:
     //
     // virtual functions
     //
-	epicsShareFunc virtual void setOwner (const char * const pUserName, 
-		const char * const pHostName) = 0;
+	epicsShareFunc virtual void setOwner ( const char * const pUserName, 
+		const char * const pHostName ) = 0;
 	epicsShareFunc virtual bool readAccess () const = 0;
 	epicsShareFunc virtual bool writeAccess () const = 0;
 	epicsShareFunc virtual bool confirmationRequested () const = 0;
-	epicsShareFunc virtual void show (unsigned level) const;
+	epicsShareFunc virtual void show ( unsigned level ) const;
 
 protected:
-	tsDLList<casMonitor>    monitorList;
-	tsDLList<casAsyncIOI>   ioInProgList;
-	casCoreClient           * pClient;
-	casPVI                  * pPV;
-	caResId                 cid;    // client id 
-	bool                    accessRightsEvPending:1;
+	tsDLList < casMonitor > monitorList;
+	tsDLList < casAsyncIOI > ioInProgList;
+	class casCoreClient * pClient;
+	casPVI * pPV;
+	caResId cid;    // client id 
+	bool accessRightsEvPending:1;
 
 	epicsShareFunc virtual void destroy ();
+	epicsShareFunc caStatus cbFunc ( casCoreClient & ); // access rights event call back
+    epicsShareFunc void eventSysDestroyNotify ( casCoreClient & );
 	casChannelI ( const casChannelI & );
 	casChannelI & operator = ( const casChannelI & );
 };
@@ -369,7 +362,8 @@ class casPVListChan : public casChannelI, public tsDLNode<casPVListChan>
 {
 public:
     casPVListChan ( const casCtx &ctx );
-    void bindToClient ( casCoreClient & client, casPVI & pv, caResId cid );
+    void bindToClient ( casCoreClient & client, 
+        casPVI & pv, caResId cidIn );
     epicsShareFunc virtual ~casPVListChan();
 private:
 	casPVListChan ( const casPVListChan & );

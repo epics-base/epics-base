@@ -22,13 +22,14 @@
 //
 // casEventSys::casEventSys ()
 //
-inline casEventSys::casEventSys () :
-	pPurgeEvent (NULL),
-	numEventBlocks (0u),
-	maxLogEntries (individualEventEntries),
-	destroyPending (false),
-	replaceEvents (false), 
-	dontProcess (false) 
+inline casEventSys::casEventSys ( casCoreClient & clientIn ) :
+    client ( clientIn ),
+	pPurgeEvent ( NULL ),
+	numEventBlocks ( 0u ),
+	maxLogEntries ( individualEventEntries ),
+	destroyPending ( false ),
+	replaceEvents ( false ), 
+	dontProcess ( false ) 
 {
 }
 
@@ -48,7 +49,7 @@ inline void casEventSys::addToEventQueue ( casEvent & event )
 	// is in flow control
 	//
 	if ( ! this->dontProcess ) {
-		this->eventSignal ();
+		this->client.eventSignal ();
 	}
 }
 
@@ -61,7 +62,7 @@ inline void casEventSys::setDestroyPending()
     //
     // wakes up the event queue consumer
     //
-    this->eventSignal ();
+    this->client.eventSignal ();
 }
 
 //
@@ -102,20 +103,6 @@ inline bool casEventSys::full() // X aCC 361
 	else {
 		return false;
 	}
-}
-
-//
-// casMonitor::resIdToMon()
-//
-inline casMonitor *casEventSys::resIdToMon(const caResId id)
-{
-	casRes *pRes = this->lookupRes (id, casClientMonT);
-	
-	//
-	// safe to cast because we have checked the type code above
-	// (and we know that casMonitor derived from casRes)
-	//
-	return (casMonitor *) pRes;
 }
 
 #endif // casEventSysIL_h

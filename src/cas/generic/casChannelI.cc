@@ -29,7 +29,8 @@ casChannelI::casChannelI ( const casCtx & ) :
 {
 }
 
-void casChannelI::bindToClientI ( casCoreClient & client, casPVI & pv, caResId cidIn )
+void casChannelI::bindToClientI ( 
+    casCoreClient & client, casPVI & pv, caResId cidIn )
 {
     this->pClient = & client;
     this->pPV = & pv;
@@ -42,7 +43,8 @@ void casChannelI::bindToClientI ( casCoreClient & client, casPVI & pv, caResId c
 //
 casChannelI::~casChannelI()
 {	
-    epicsGuard < casCoreClient > guard ( * this->pClient );
+    epicsGuard < casCoreClient > 
+        guard ( * this->pClient );
     
     //
     // cancel any pending asynchronous IO 
@@ -61,23 +63,16 @@ casChannelI::~casChannelI()
     //
     // cancel the monitors 
     //
-    tsDLIter <casMonitor> iterMon = this->monitorList.firstIter ();
-    while ( iterMon.valid () ) {
-        //
-        // destructor removes from this list
-        //
-        tsDLIter <casMonitor> tmpMon = iterMon;
-        ++tmpMon;
-        iterMon->destroy ();
-        iterMon = tmpMon;
+    while ( casMonitor * pMon = this->monitorList.get () ) {
+	    this->getClient().destroyMonitor ( *pMon );
     }
     
-    this->pClient->removeChannel(*this);
+    this->pClient->removeChannel ( *this );
     
     //
     // force PV delete if this is the last channel attached
     //
-    this->pPV->deleteSignal();
+    this->pPV->deleteSignal ();
 }
 
 //
@@ -109,7 +104,8 @@ void casChannelI::show ( unsigned level ) const
 {
     epicsGuard < casCoreClient > guard ( * this->pClient );
 
-	tsDLIterConst <casMonitor> iter = this->monitorList.firstIter ();
+	tsDLIterConst < casMonitor > iter = 
+        this->monitorList.firstIter ();
 	if ( iter.valid () ) {
 		printf("List of CA events (monitors) for \"%s\".\n",
 			this->pPV->getName());
@@ -127,15 +123,20 @@ void casChannelI::show ( unsigned level ) const
 //
 // access rights event call back
 //
-caStatus casChannelI::cbFunc(casEventSys &)
+caStatus casChannelI::cbFunc ( casCoreClient & )
 {
 	caStatus stat;
 
-	stat = this->pClient->accessRightsResponse(this);
-	if (stat==S_cas_success) {
+	stat = this->pClient->accessRightsResponse ( this );
+	if ( stat == S_cas_success ) {
 		this->accessRightsEvPending = false;
 	}
 	return stat;
+}
+
+void casChannelI::eventSysDestroyNotify ( casCoreClient & ) 
+{
+	delete this;
 }
 
 //
@@ -152,7 +153,7 @@ casResType casChannelI::resourceType() const
 // this noop version is safe to be called indirectly
 // from casChannelI::~casChannelI
 //
-epicsShareFunc void casChannelI::destroy()
+void casChannelI::destroy()
 {
 }
 
@@ -161,13 +162,13 @@ void casChannelI::destroyClientNotify ()
 	casChanDelEv *pCDEV;
     caStatus status;
 
-	pCDEV = new casChanDelEv (this->getCID());
-	if (pCDEV) {
-		this->pClient->casEventSys::addToEventQueue (*pCDEV);
+	pCDEV = new casChanDelEv ( this->getCID() );
+	if ( pCDEV ) {
+		this->pClient->addToEventQueue ( *pCDEV );
 	}
 	else {	
-		status = this->pClient->disconnectChan (this->getCID());
-		if (status) {
+		status = this->pClient->disconnectChan ( this->getCID () );
+		if ( status ) {
 			//
 			// At this point there is no space in pool
 			// for a tiny object and there is also
@@ -180,21 +181,20 @@ void casChannelI::destroyClientNotify ()
 			// will result in bugs because no doubt this
 			// could be called by a client member function.
 			//
-			this->pClient->setDestroyPending();
+			this->pClient->setDestroyPending ();
 		}
 	}
-    this->destroy();
+    this->destroy ();
 }
 
-//
-// casChannelI::findMonitor
-// (it is reasonable to do a linear search here because
-// sane clients will require only one or two monitors
-// per channel)
-//
-tsDLIter <casMonitor> casChannelI::findMonitor (const caResId clientIdIn)
+bool casChannelI::unistallMonitor ( ca_uint32_t clientIdIn )
 {
     epicsGuard < casCoreClient > guard ( * this->pClient );
+	//
+	// (it is reasonable to do a linear search here because
+	// sane clients will require only one or two monitors 
+	// per channel)
+	//
 	tsDLIter <casMonitor> iter = this->monitorList.firstIter ();
     while ( iter.valid () ) {
 		if ( clientIdIn == iter->getClientId () ) {
@@ -202,6 +202,26 @@ tsDLIter <casMonitor> casChannelI::findMonitor (const caResId clientIdIn)
 		}
 		iter++;
 	}
-	return iter;
+	if ( ! iter.valid () ) {
+        return false;
+	}
+	this->monitorList.remove ( *iter.pointer() );
+	this->getClient().destroyMonitor ( *iter.pointer() );
+    return true;
+}
+
+//
+// casChannelI::installMonitor ()
+//
+void casChannelI::installMonitor ( 
+    caResId clientId, 
+    const unsigned long count, 
+    const unsigned type, 
+    const casEventMask & mask )
+{
+    epicsGuard < casCoreClient > guard ( * this->pClient );
+    casMonitor & mon = this->pClient->monitorFactory (
+        *this, clientId, count, type, mask );
+	this->monitorList.add ( mon );
 }
 

@@ -601,6 +601,7 @@ public:
 	//
 	epicsShareFunc casPV *getPV ();
 
+private:
 	casChannel ( const casChannel & );
 	casChannel & operator = ( const casChannel & );
 

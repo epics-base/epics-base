@@ -39,7 +39,6 @@ LIBSRCS += casPVI.cc
 LIBSRCS += casChannel.cc
 LIBSRCS += casChannelI.cc
 LIBSRCS += casPVListChan.cc
-LIBSRCS += casClientMon.cc
 LIBSRCS += casChanDelEv.cc
 LIBSRCS += casAsyncIOI.cc
 LIBSRCS += casAsyncReadIO.cc

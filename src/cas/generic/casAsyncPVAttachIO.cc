@@ -52,7 +52,7 @@ caStatus casAsyncPVAttachIO::postIOCompletion ( const pvAttachReturn & retValIn 
 // casAsyncPVAttachIO::cbFuncAsyncIO()
 // (called when IO completion event reaches top of event queue)
 //
-epicsShareFunc caStatus casAsyncPVAttachIO::cbFuncAsyncIO()
+caStatus casAsyncPVAttachIO::cbFuncAsyncIO()
 {
 	caStatus 	status;
 
@@ -90,7 +90,7 @@ casAsyncPVCreateIO::casAsyncPVCreateIO ( const casCtx & ctx ) :
 //
 // deprecated
 //
-epicsShareFunc casAsyncPVCreateIO::~casAsyncPVCreateIO ()
+casAsyncPVCreateIO::~casAsyncPVCreateIO ()
 {
 }
 

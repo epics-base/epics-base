@@ -144,22 +144,21 @@ caStatus casStrmClient::verifyRequest (casChannelI *&pChan)
 //
 // find the monitor associated with a resource id
 //
-inline casClientMon *caServerI::resIdToClientMon (const caResId &idIn)
+inline casClientMon * caServerI::resIdToClientMon (
+    const caResId & idIn )
 {
-	casRes *pRes;
-
-	pRes = this->lookupRes(idIn, casClientMonT);
+	casRes * pRes = this->lookupRes ( idIn, casMonitorT );
 	//
 	// cast is ok since the type code was verified 
 	// (and we know casClientMon derived from resource)
 	//
-	return (casClientMon *) pRes;
+	return reinterpret_cast < casClientMon * > ( pRes );
 }
 
 //
 // casStrmClient::show (unsigned level)
 //
-void casStrmClient::show (unsigned level) const
+void casStrmClient::show ( unsigned level ) const
 {
 	this->casClient::show (level);
 	printf ( "casStrmClient at %p\n", 
@@ -259,7 +258,7 @@ caStatus casStrmClient::readResponse ( casChannelI * pChan, const caHdrLargeArra
 	}
 #ifdef CONVERSION_REQUIRED
 	( * cac_dbr_cvrt[msg.m_dataType] )
-		( pPayload, pPayload, TRUE, msg.m_count );
+		( pPayload, pPayload, true, msg.m_count );
 #endif
 
     if ( msg.m_dataType == DBR_STRING && msg.m_count == 1u ) {
@@ -380,7 +379,7 @@ caStatus casStrmClient::readNotifyResponse ( casChannelI * pChan,
 
 #ifdef CONVERSION_REQUIRED
 	( * cac_dbr_cvrt[ msg.m_dataType ] )
-		( pPayload, pPayload, TRUE, msg.m_count );
+		( pPayload, pPayload, true, msg.m_count );
 #endif
 
 	if ( msg.m_dataType == DBR_STRING && msg.m_count == 1u ) {
@@ -515,7 +514,7 @@ static smartGDDPointer createDBRDD ( unsigned dbrType, unsigned elemCount )
 }
 
 //
-// casStrmClient::monitorResponse ()
+// casStrmClient::monitorFailureResponse ()
 //
 caStatus casStrmClient::monitorFailureResponse ( const caHdrLargeArray & msg, 
     const caStatus ECA_XXXX )
@@ -604,7 +603,7 @@ caStatus casStrmClient::monitorResponse ( casChannelI & chan, const caHdrLargeAr
 #ifdef CONVERSION_REQUIRED
 	/* use type as index into conversion jumptable */
 	(* cac_dbr_cvrt[msg.m_dataType])
-		( pPayload, pPayload, TRUE,  msg.m_count );
+		( pPayload, pPayload, true,  msg.m_count );
 #endif
 	//
 	// force string message size to be the true size 
@@ -1026,7 +1025,8 @@ caStatus casStrmClient::createChanResponse ( const caHdrLargeArray & hdr, const 
 	// create server tool XXX derived from casChannel
 	//
 	this->ctx.setPV ( pPV );
-	casChannel * pChan = pPV->createChannel ( this->ctx, this->pUserName, this->pHostName );
+	casChannel * pChan = pPV->createChannel ( 
+        this->ctx, this->pUserName, this->pHostName );
 	if ( ! pChan ) {
 		pPV->deleteSignal();
 		return this->channelCreateFailedResp ( hdr, S_cas_noMemory );
@@ -1220,7 +1220,7 @@ caStatus casStrmClient::disconnectChan ( caResId id )
 //
 caStatus casStrmClient::eventsOnAction ()
 {
-	this->casEventSys::eventsOn();
+    this->enableEvents ();
 	return S_cas_success;
 }
 
@@ -1229,7 +1229,8 @@ caStatus casStrmClient::eventsOnAction ()
 //
 caStatus casStrmClient::eventsOffAction()
 {
-	return this->casEventSys::eventsOff();
+    this->disableEvents ();
+	return S_cas_success;
 }
 
 //
@@ -1240,7 +1241,6 @@ caStatus casStrmClient::eventAddAction ()
 	const caHdrLargeArray *mp = this->ctx.getMsg();
 	struct mon_info *pMonInfo = (struct mon_info *) 
 					this->ctx.getData();
-	casClientMon *pMonitor;
 	casChannelI *pciu;
 	smartGDDPointer pDD;
 	caStatus status;
@@ -1306,24 +1306,14 @@ caStatus casStrmClient::eventAddAction ()
 		return S_cas_success;
 	}
 	else {
-		status = this->monitorResponse ( *pciu, *mp, pDD, status );
+		status = this->monitorResponse ( *pciu, 
+                    *mp, pDD, status );
 	}
 
 	if ( status == S_cas_success ) {
-
-		pMonitor = new casClientMon ( *pciu, mp->m_available, 
-					mp->m_count, mp->m_dataType, mask, this->mutex );
-		if ( ! pMonitor ) {
-			status = this->sendErr ( mp, ECA_ALLOCMEM, NULL );
-			if ( status==S_cas_success ) {
-				//
-				// If we cant allocate space for a monitor then
-				// delete (disconnect) the channel
-				//
-				pciu->destroyClientNotify ();
-			}
-			return status;
-		}
+        pciu->installMonitor (
+                mp->m_available, mp->m_count, 
+                mp->m_dataType, mask );
 	}
 
 	return status;
@@ -1390,13 +1380,11 @@ caStatus casStrmClient::eventCancelAction ()
 {
 	const caHdrLargeArray * mp = this->ctx.getMsg ();
 	const void * dp = this->ctx.getData ();
-	casChannelI *pciu;
-	int status;
 	
 	/*
 	 * Verify the channel
 	 */
-	pciu = this->resIdToChannel ( mp->m_cid );
+	casChannelI *pciu = this->resIdToChannel ( mp->m_cid );
 	if ( ! pciu ) {
 		/*
 		 * it is possible that the event delete arrives just 
@@ -1409,27 +1397,21 @@ caStatus casStrmClient::eventCancelAction ()
         return S_cas_badResourceId;
 	}
 
-	/*
-	 * verify the event (monitor)
-	 */
-    tsDLIter <casMonitor> pMon = pciu->findMonitor ( mp->m_available );
-	if ( ! pMon.valid () ) {
-		//
-		// this indicates client or server library corruption so a
-        // disconnect is the best response
-		//
-		logBadId ( mp, dp, ECA_BADMONID, mp->m_available );
-        return S_cas_badResourceId;
-	}
-
-	unsigned type = pMon->getType ();
-	assert ( type <= 0xff );
-    status = this->out.copyInHeader ( CA_PROTO_EVENT_ADD, 0,
-        static_cast <unsigned char> ( type ), pMon->getCount (), 
-        pciu->getCID (), pMon->getClientId (), 0 );
+    int status = this->out.copyInHeader ( 
+        CA_PROTO_EVENT_ADD, 0,
+        mp->m_dataType, mp->m_count, 
+        pciu->getCID (), mp->m_available, 0 );
 	if ( ! status ) {
+        if ( ! pciu->unistallMonitor ( mp->m_available ) ) {
+		    //
+		    // this indicates client or server library 
+            // corruption so a disconnect is probably
+            // the best option
+		    //
+		    logBadId ( mp, dp, ECA_BADMONID, mp->m_available );
+            status = S_cas_badResourceId;
+        }
 	    this->out.commitMsg ();
-	    pMon->destroy ();
 	}	
 	
 	return status;
@@ -1444,10 +1426,10 @@ caStatus casStrmClient::eventCancelAction ()
  */
 caStatus casStrmClient::noReadAccessEvent(casClientMon *pMon)
 {
-	caHdr 		falseReply;
-	unsigned	size;
-	caHdr 		*reply;
-	int		status;
+	caHdr falseReply;
+	unsigned size;
+	caHdr * reply;
+	int status;
 
 	size = dbr_size_n ( pMon->getType(), pMon->getCount() );
 
@@ -1581,7 +1563,7 @@ caStatus casStrmClient::write()
 	(* cac_dbr_cvrt[pHdr->m_dataType])
 		( this->ctx.getData(),
 		  this->ctx.getData(),
-		  FALSE,       /* net -> host format */
+		  false,       /* net -> host format */
 		  pHdr->m_count);
 #endif
 
@@ -1973,5 +1955,32 @@ void casStrmClient::flush ()
     this->out.flush ();
 }
 
+//
+// casStrmClient::casMonitorCallBack()
+//
+caStatus casStrmClient::casMonitorCallBack ( 
+    casMonitor & mon, const smartConstGDDPointer & value )
+{
+	caStatus status;
+	caHdrLargeArray msg;
+
+	//
+	// reconstruct the msg header
+	//
+	msg.m_cmmd = CA_PROTO_EVENT_ADD;
+	msg.m_postsize = 0u;
+	unsigned type = mon.getType();
+	assert ( type <= 0xffff );
+	msg.m_dataType = static_cast <ca_uint16_t> ( type );
+	unsigned long count = mon.getCount();
+	assert ( count <= 0xffffffff );
+	msg.m_count = static_cast <ca_uint32_t> ( count );
+	msg.m_cid = mon.getChannel().getSID();
+	msg.m_available = mon.getClientId();
+
+	status = this->monitorResponse ( mon.getChannel(),
+		msg, value, S_cas_success );
+	return status;
+}
 
 

@@ -71,7 +71,7 @@ casAsyncIOI::casAsyncIOI ( const casCtx & ctx ) :
 //
 casAsyncIOI::~casAsyncIOI()
 {
-	if (!this->serverDelete) {
+	if ( ! this->serverDelete ) {
 		fprintf(stderr, 
 	"WARNING: An async IO operation was deleted prematurely\n");
 		fprintf(stderr, 
@@ -90,8 +90,8 @@ casAsyncIOI::~casAsyncIOI()
 	// pulls itself out of the event queue
 	// if it is installed there
 	//
-	if (this->inTheEventQueue) {
-		this->client.casEventSys::removeFromEventQueue(*this);
+	if ( this->inTheEventQueue ) {
+		this->client.removeFromEventQueue ( *this );
 	}
 }
 
@@ -99,7 +99,7 @@ casAsyncIOI::~casAsyncIOI()
 // casAsyncIOI::cbFunc()
 // (called when IO completion event reaches top of event queue)
 //
-caStatus casAsyncIOI::cbFunc(class casEventSys &)
+caStatus casAsyncIOI::cbFunc ( casCoreClient & )
 {
 	//
 	// Use the client's lock here (which is the same as the
@@ -108,7 +108,7 @@ caStatus casAsyncIOI::cbFunc(class casEventSys &)
 	//
     epicsGuard < casCoreClient > guard ( this->client );
 
-	this->inTheEventQueue = FALSE;
+	this->inTheEventQueue = false;
 
 	caStatus status = this->cbFuncAsyncIO();
 
@@ -116,14 +116,14 @@ caStatus casAsyncIOI::cbFunc(class casEventSys &)
 		//
 		// causes this op to be pushed back on the queue 
 		//
-		this->inTheEventQueue = TRUE;
+		this->inTheEventQueue = true;
 		return status;
 	}
 	else if (status != S_cas_success) {
 		errMessage (status, "Asynch IO completion failed");
 	}
 
-	this->ioComplete = TRUE;
+	this->ioComplete = true;
 
 	//
 	// dont use "this" after potentially destroying the
@@ -132,6 +132,11 @@ caStatus casAsyncIOI::cbFunc(class casEventSys &)
 	this->serverDestroy();
 
 	return S_cas_success;
+}
+
+void casAsyncIOI::eventSysDestroyNotify ( casCoreClient & )
+{
+	this->serverDestroy();
 }
 
 //
@@ -145,7 +150,7 @@ caStatus casAsyncIOI::postIOCompletionI()
 	// and then it called postIOCompletion() on this object 
 	// when it was currently not in use by the server.
 	//
-	if (this->serverDelete) {
+	if ( this->serverDelete ) {
 		return S_cas_redundantPost;
 	}
 
@@ -165,21 +170,21 @@ caStatus casAsyncIOI::postIOCompletionI()
 	//
 	// verify that they dont post completion more than once
 	//
-	if (this->posted) {
+	if ( this->posted ) {
 		return S_cas_redundantPost;
 	}
 
 	//
 	// dont call the server tool's cancel() when this object deletes 
 	//
-	this->posted = TRUE;
+	this->posted = true;
 
 	//
 	// place this event in the event queue
 	// (this also signals the event consumer)
 	//
-	this->inTheEventQueue = TRUE;
-	this->client.casEventSys::addToEventQueue(*this);
+	this->inTheEventQueue = true;
+	this->client.addToEventQueue ( *this );
 
 	return S_cas_success;
 }
@@ -196,7 +201,7 @@ caServer *casAsyncIOI::getCAS() const
 //
 // casAsyncIOI::readOP()
 //
-epicsShareFunc bool casAsyncIOI::readOP() const
+bool casAsyncIOI::readOP() const
 {
 	//
 	// not a read op
@@ -230,7 +235,7 @@ void casAsyncIOI::serverDestroyIfReadOP()
 //
 void casAsyncIOI::serverDestroy ()
 {
-	this->serverDelete = TRUE;
+	this->serverDelete = true;
 	this->destroy();
 }
 

@@ -26,27 +26,27 @@
 //
 // casMonitor::casMonitor()
 //
-casMonitor::casMonitor(caResId clientIdIn, casChannelI &chan,
-	unsigned long nElemIn, unsigned dbrTypeIn,
-	const casEventMask &maskIn, epicsMutex &mutexIn) :
-	nElem(nElemIn),
-	mutex(mutexIn),
-	ciu(chan),
-	mask(maskIn),
-	clientId(clientIdIn),
-	dbrType(static_cast <unsigned char> ( dbrTypeIn ) ),
-	nPend(0u),
-	ovf(false),
-	enabled(false)
+casMonitor::casMonitor ( 
+        caResId clientIdIn, 
+        casChannelI & chan,
+	    unsigned long nElemIn, 
+        unsigned dbrTypeIn,
+	    const casEventMask & maskIn, 
+        epicsMutex & mutexIn,
+        casMonitorCallbackInterface & cb ) :
+	nElem ( nElemIn ),
+	mutex ( mutexIn ),
+	ciu ( chan ),
+    callBackIntf ( cb ),
+	mask ( maskIn ),
+	clientId ( clientIdIn ),
+	dbrType ( static_cast <unsigned char> ( dbrTypeIn ) ),
+	nPend ( 0u ),
+	ovf ( false ),
+	enabled ( false )
 {
-	//
-	// If these are nill it is a programmer error
-	//
-	assert (&this->ciu);
-	assert (dbrTypeIn<=0xff);
-
-	this->ciu.addMonitor(*this);
-
+	assert ( &this->ciu );
+	assert ( dbrTypeIn <= 0xff );
 	this->enable();
 }
 
@@ -56,18 +56,11 @@ casMonitor::casMonitor(caResId clientIdIn, casChannelI &chan,
 casMonitor::~casMonitor()
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
-	
 	this->disable();
-	
-	//
-	// remove from the event system
-	//
 	if ( this->ovf ) {
 	    casCoreClient &client = this->ciu.getClient();
 		client.removeFromEventQueue ( this->overFlowEvent );
 	}
-
-	this->ciu.deleteMonitor ( * this );
 }
 
 //
@@ -101,22 +94,22 @@ void casMonitor::disable()
 //
 // casMonitor::push()
 //
-void casMonitor::push (const smartConstGDDPointer &pNewValue)
+void casMonitor::push ( const smartConstGDDPointer & pNewValue )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
 	
-	casCoreClient	&client = this->ciu.getClient ();
+	casCoreClient & client = this->ciu.getClient ();
     client.getCAS().incrEventsPostedCounter ();
 
 	//
 	// get a new block if we havent exceeded quotas
 	//
 	bool full = ( this->nPend >= individualEventEntries ) 
-		|| client.casEventSys::full ();
+		|| client.eventSysIsFull ();
 	casMonEvent * pLog;
 	if ( ! full ) {
-		pLog = new casMonEvent (*this, pNewValue);
-		if (pLog) {
+        pLog = & client.casMonEventFactory ( *this, pNewValue );
+		if ( pLog ) {
 			this->nPend++; // X aCC 818
 		}
 	}
@@ -165,19 +158,19 @@ void casMonitor::push (const smartConstGDDPointer &pNewValue)
 //
 // casMonitor::executeEvent()
 //
-caStatus casMonitor::executeEvent(casMonEvent *pEV)
+caStatus casMonitor::executeEvent ( casMonEvent & ev )
 {
-	caStatus status;
-	smartConstGDDPointer pVal;
-	
-	pVal = pEV->getValue ();
+	smartConstGDDPointer pVal = ev.getValue ();
     if ( ! pVal ) {
         assert ( 0 );
     }
 	
+	caStatus status;
     {
         epicsGuard < epicsMutex > guard ( this->mutex );
-	    status = this->callBack ( * pVal );
+	    status = 
+            this->callBackIntf.
+                casMonitorCallBack ( *this, *pVal );
     }
 	
 	//
@@ -197,13 +190,13 @@ caStatus casMonitor::executeEvent(casMonEvent *pEV)
 	// delete event object if it isnt a cache entry
 	// saved in the call back object
 	//
-	if ( pEV == &this->overFlowEvent ) {
+	if ( &ev == &this->overFlowEvent ) {
 		assert ( this->ovf );
 		this->ovf = false;
-		pEV->clear();
+		ev.clear();
 	}
 	else {
-		delete pEV;
+        this->ciu.getClient().casMonEventDestroy ( ev );
 	}
 
     this->ciu.getClient().getCAS().incrEventsProcessedCounter ();
@@ -224,3 +217,32 @@ void casMonitor::show ( unsigned level ) const
     }
 }
 
+//
+// casMonitor::resourceType()
+//
+casResType casMonitor::resourceType() const
+{
+	return casMonitorT;
+}
+
+void * casMonitor::operator new ( 
+            size_t size, 
+            tsFreeList < casMonitor, 1024 > & freeList ) 
+            epicsThrows ( ( std::bad_alloc ) )
+{
+    return freeList.allocate ( size );
+}
+
+#ifdef CXX_PLACEMENT_DELETE
+void casMonitor::operator delete ( void * pCadaver, 
+                     tsFreeList < casMonitor, 1024 > & freeList ) epicsThrows(())
+{
+    freeList.release ( pCadaver );
+}
+#endif
+
+void casMonitor::operator delete ( void * ) 
+{
+    errlogPrintf ( "casMonitor: compiler is confused "
+        "about placement delete?\n" );
+}

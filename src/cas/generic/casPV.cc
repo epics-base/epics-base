@@ -25,7 +25,7 @@
 #include "casPVIIL.h" 	// casPVI inline func
 #include "casCtxIL.h" 	// casCtx inline func
 
-epicsShareFunc casPV::casPV ()
+casPV::casPV ()
 {
 }
 
@@ -33,11 +33,11 @@ epicsShareFunc casPV::casPV ()
 // This constructor is preserved for backwards compatibility only.
 // Please do _not_ use this constructor.
 //
-epicsShareFunc casPV::casPV (caServer &)
+casPV::casPV (caServer &)
 {
 }
 
-epicsShareFunc casPV::~casPV ()
+casPV::~casPV ()
 {
 }
 
@@ -55,7 +55,7 @@ void casPV::destroy ()
 //
 // casPV::createChannel()
 //
-epicsShareFunc casChannel *casPV::createChannel (const casCtx &ctx, const char * const,
+casChannel *casPV::createChannel (const casCtx &ctx, const char * const,
 		const char * const)
 {
 	return new casChannel (ctx);
@@ -64,7 +64,7 @@ epicsShareFunc casChannel *casPV::createChannel (const casCtx &ctx, const char *
 //
 // casPV::interestRegister()
 //
-epicsShareFunc caStatus casPV::interestRegister ()
+caStatus casPV::interestRegister ()
 {
 	return S_casApp_success;
 }
@@ -72,14 +72,14 @@ epicsShareFunc caStatus casPV::interestRegister ()
 //
 // casPV::interestDelete()
 //
-epicsShareFunc void casPV::interestDelete ()
+void casPV::interestDelete ()
 {
 }
 
 //
 // casPV::beginTransaction()
 //
-epicsShareFunc caStatus casPV::beginTransaction () 
+caStatus casPV::beginTransaction () 
 {
 	return S_casApp_success;
 }
@@ -87,14 +87,14 @@ epicsShareFunc caStatus casPV::beginTransaction ()
 //
 // casPV::endTransaction()
 //
-epicsShareFunc void casPV::endTransaction ()
+void casPV::endTransaction ()
 {
 }
 
 //
 // casPV::read()
 //
-epicsShareFunc caStatus casPV::read (const casCtx &, gdd &)
+caStatus casPV::read (const casCtx &, gdd &)
 {
 	return S_casApp_noSupport;
 }
@@ -102,7 +102,7 @@ epicsShareFunc caStatus casPV::read (const casCtx &, gdd &)
 //
 // casPV::write()
 //
-epicsShareFunc caStatus casPV::write (const casCtx &, const gdd &)
+caStatus casPV::write (const casCtx &, const gdd &)
 {
 	return S_casApp_noSupport;
 }
@@ -110,7 +110,7 @@ epicsShareFunc caStatus casPV::write (const casCtx &, const gdd &)
 //
 // casPV::bestExternalType()
 //
-epicsShareFunc aitEnum casPV::bestExternalType () const
+aitEnum casPV::bestExternalType () const
 {
 	return aitEnumString;
 }
@@ -119,7 +119,7 @@ epicsShareFunc aitEnum casPV::bestExternalType () const
 // casPV::maxDimension()
 // (base returns zero - scalar)
 //
-epicsShareFunc unsigned casPV::maxDimension () const
+unsigned casPV::maxDimension () const
 {
 	return 0u;
 }
@@ -128,7 +128,7 @@ epicsShareFunc unsigned casPV::maxDimension () const
 // casPV::maxBound()
 // (base returns scalar bound independent of the dimension arg)
 //
-epicsShareFunc aitIndex casPV::maxBound (unsigned /* dimension */) const
+aitIndex casPV::maxBound (unsigned /* dimension */) const
 {
 	return 1u;
 }
@@ -136,7 +136,7 @@ epicsShareFunc aitIndex casPV::maxBound (unsigned /* dimension */) const
 //
 // casPV::show (unsigned level) 
 //
-epicsShareFunc void casPV::show (unsigned level) const
+void casPV::show (unsigned level) const
 {
     casPVI::show (level);
 }
@@ -144,7 +144,7 @@ epicsShareFunc void casPV::show (unsigned level) const
 //
 // Server tool calls this function to post a PV event.
 //
-epicsShareFunc void casPV::postEvent (const casEventMask &select, const gdd &event)
+void casPV::postEvent (const casEventMask &select, const gdd &event)
 {
 	this->casPVI::postEvent (select, event);
 }
@@ -156,7 +156,7 @@ epicsShareFunc void casPV::postEvent (const casEventMask &select, const gdd &eve
 // into a server.
 // ***************
 //
-epicsShareFunc caServer *casPV::getCAS () const
+caServer *casPV::getCAS () const
 {
 	return this->casPVI::getExtServer ();
 }

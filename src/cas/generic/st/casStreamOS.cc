@@ -90,7 +90,7 @@ private:
 // casStreamWriteReg::casStreamWriteReg()
 //
 inline casStreamWriteReg::casStreamWriteReg (casStreamOS &osIn) :
-	fdReg (osIn.getFD(), fdrWrite, TRUE), os (osIn)
+	fdReg (osIn.getFD(), fdrWrite, true), os (osIn)
 {
 #	if defined(DEBUG) 
 		printf ("Write on %d\n", this->os.getFD());
@@ -148,10 +148,14 @@ void casStreamEvWakeup::show(unsigned level) const
 //
 epicsTimerNotify::expireStatus casStreamEvWakeup::expire ( const epicsTime & /* currentTime */ )
 {
-    casStreamOS &os = *this->pOS;
+    casStreamOS & os = *this->pOS;
     this->pOS = 0;
-	casProcCond cond = os.casEventSys::process();
-	if ( cond != casProcOk ) {
+
+    casEventSys::processStatus ps = os.eventSysProcess ();
+    if ( ps.nAccepted > 0u ) {
+        os.eventFlush ();
+    }
+	if ( ps.cond != casProcOk ) {
 		//
 		// ok to delete the client here
 		// because casStreamEvWakeup::expire()
@@ -396,20 +400,17 @@ void casStreamReadReg::callBack ()
 //
 void casStreamOS::recvCB()
 {
-	inBufClient::fillCondition fillCond;
-	casProcCond procCond;
-
 	assert ( this->pRdReg );
 
     //
     // copy in new messages 
     //
-    fillCond = this->in.fill();
+    inBufClient::fillCondition fillCond = this->in.fill();
 	if ( fillCond == casFillDisconnect ) {
 		delete this;
 	}
     else {
-	    procCond = this->processInput();
+	   casProcCond  procCond = this->processInput();
 	    if (procCond == casProcDisconnect) {
 		    delete this;
 	    }	
@@ -438,8 +439,8 @@ void casStreamOS::recvCB()
 //
 void casStreamOS::sendBlockSignal()
 {
-	this->sendBlocked=TRUE;
-	this->armSend();
+	this->sendBlocked = true;
+	this->armSend ();
 }
 
 //
@@ -470,16 +471,13 @@ void casStreamWriteReg::callBack()
 //
 void casStreamOS::sendCB()
 {
-    outBufClient::flushCondition flushCond;
-	casProcCond procCond; 
-
 	//
 	// attempt to flush the output buffer 
 	//
-	flushCond = this->out.flush ();
+	outBufClient::flushCondition flushCond = this->out.flush ();
 	if (flushCond==flushProgress) {
-		if (this->sendBlocked) {
-			this->sendBlocked = FALSE;
+		if ( this->sendBlocked ) {
+			this->sendBlocked = false;
 		}
 	}
 	else if ( flushCond == outBufClient::flushDisconnect ) {
@@ -506,8 +504,8 @@ void casStreamOS::sendCB()
 	// we _are_ able to write to see if additional events 
 	// can be sent to the slow client.
 	//
-	procCond = this->casEventSys::process();
-	if (procCond != casProcOk) {
+    casEventSys::processStatus ps = this->eventSysProcess ();
+	if ( ps.cond != casProcOk ) {
 		//
 		// ok to delete the client here
 		// because casStreamWriteReg::callBack()
@@ -536,7 +534,7 @@ void casStreamOS::sendCB()
 	// to process the input queue in case we were send
 	// blocked.
 	//
-	procCond = this->processInput();
+	casProcCond procCond = this->processInput();
 	if (procCond == casProcDisconnect) {
 		delete this;	
 	}

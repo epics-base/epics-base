@@ -27,7 +27,8 @@ casPVListChan::casPVListChan (const casCtx &ctx) :
 {
 }
 
-void casPVListChan::bindToClient ( casCoreClient & client, casPVI & pv, caResId cidIn )
+void casPVListChan::bindToClient ( 
+    casCoreClient & client, casPVI & pv, caResId cidIn )
 {
     this->bindToClientI ( client, pv, cidIn );
     this->pPV->installChannel ( *this );

@@ -23,6 +23,7 @@
 #include "inBufIL.h" // inBuf in line func
 #include "outBufIL.h" // outBuf in line func
 #include "casIODIL.h" // IO Depen in line func
+#include "casCoreClientIL.h"
 
 //
 // casDGReadReg
@@ -145,7 +146,10 @@ void casDGEvWakeup::show ( unsigned level ) const
 //
 epicsTimerNotify::expireStatus casDGEvWakeup::expire ( const epicsTime & /* currentTime */ )
 {
-	this->pOS->casEventSys::process();
+    casEventSys::processStatus ps = this->pOS->eventSysProcess ();
+    if ( ps.nAccepted > 0u ) {
+        this->pOS->eventFlush ();
+    }
     this->pOS = 0;
     return noRestart;
 }
@@ -441,7 +445,7 @@ void casDGIntfOS::sendCB()
 	// we _are_ able to write to see if additional events 
 	// can be sent to the slow client.
 	//
-	this->casEventSys::process();
+    this->eventSysProcess ();
 
 	//
 	// If we were able to send something then we need

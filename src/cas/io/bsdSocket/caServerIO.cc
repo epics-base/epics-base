@@ -149,7 +149,7 @@ inline void caServerIO::staticInit()
 
 	epicsSignalInstallSigPipeIgnore ();
 
-	caServerIO::staticInitialized = TRUE;
+	caServerIO::staticInitialized = true;
 }
 
 //

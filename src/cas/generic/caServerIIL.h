@@ -169,6 +169,38 @@ inline void caServerI::unlock () const
     this->mutex.unlock ();
 }
 
+inline casMonEvent & caServerI::casMonEventFactory ( casMonitor & monitor, 
+            const smartConstGDDPointer & pNewValue )
+{
+    return * new ( this->casMonEventFreeList ) casMonEvent ( monitor, pNewValue );
+}
+
+inline void caServerI::casMonEventDestroy ( casMonEvent & monEvent )
+{
+    monEvent.~casMonEvent ();
+    this->casMonEventFreeList.release ( & monEvent );
+}
+
+inline casMonitor & caServerI::casMonitorFactory ( 
+    casChannelI & chan, caResId clientId, 
+    const unsigned long count, const unsigned type, 
+    const casEventMask & mask, epicsMutex & mutex,
+    casMonitorCallbackInterface & cb )
+{
+    casMonitor * pMon = 
+        new ( this->casMonitorFreeList ) casMonitor 
+            ( clientId, chan, count, type, mask, mutex, cb );
+	this->installItem ( *pMon );
+    return *pMon;
+}
+
+inline void caServerI::casMonitorDestroy ( casMonitor & cm )
+{
+	casRes * pRes = this->removeItem ( cm );
+	assert ( & cm == ( casMonitor * ) pRes );
+    cm.~casMonitor ();
+    this->casMonitorFreeList.release ( & cm );
+}
 
 #endif // caServerIIL_h
 

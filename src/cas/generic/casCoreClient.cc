@@ -17,16 +17,18 @@
 
 
 #include "server.h"
-#include "caServerIIL.h"	// caServerI in line func
-#include "casEventSysIL.h"	// casEventSys in line func
-#include "casCtxIL.h"		// casCtx in line func
-#include "inBufIL.h"		// inBuf in line func
-#include "outBufIL.h"		// outBuf in line func
+#include "caServerIIL.h"	
+#include "casEventSysIL.h"	
+#include "casCtxIL.h"		
+#include "inBufIL.h"		
+#include "outBufIL.h"		
+#include "casCoreClientIL.h" 
 
 //
 // casCoreClient::casCoreClient()
 //
-casCoreClient::casCoreClient (caServerI &serverInternal)
+casCoreClient::casCoreClient ( caServerI & serverInternal ) :
+    eventSys ( *this )
 {
 	assert (&serverInternal);
 	ctx.setServer (&serverInternal);
@@ -77,10 +79,10 @@ caStatus casCoreClient::disconnectChan(caResId)
 	return S_cas_success;
 }
 
-void casCoreClient::show (unsigned level) const
+void casCoreClient::show ( unsigned level ) const
 {
 	printf ( "Core client\n" );
-	this->casEventSys::show ( level );
+	this->eventSys.show ( level );
 	printf ( "\t%d io ops in progess\n", this->ioInProgList.count() );
 	this->ctx.show ( level );
     this->mutex.show ( level );
@@ -183,9 +185,46 @@ ca_uint16_t casCoreClient::protocolRevision() const
 //
 // casCoreClient::lookupRes()
 //
-casRes *casCoreClient::lookupRes (const caResId &idIn, casResType type)
+casRes * casCoreClient::lookupRes (const caResId &idIn, casResType type)
 {
-	casRes *pRes;
-	pRes = this->ctx.getServer()->lookupRes(idIn, type);
-	return pRes;
+	return this->ctx.getServer()->lookupRes(idIn, type);
 }
+
+// this is a pure virtual function, but we nevertheless need a  
+// noop to be called if they post events when a channel is being 
+// destroyed when we are in the casStrmClient destructor
+void casCoreClient::eventSignal()
+{
+}
+
+caStatus casCoreClient::casMonitorCallBack ( casMonitor &,
+    const smartConstGDDPointer & )
+{
+    return S_cas_internal;
+}
+
+casMonitor & casCoreClient::monitorFactory ( 
+    casChannelI & chan,
+    caResId clientId, 
+    const unsigned long count, 
+    const unsigned type, 
+    const casEventMask & mask )
+{
+    casMonitor & mon = this->ctx.getServer()->casMonitorFactory ( 
+            chan, clientId, count, 
+            type, mask, 
+            this->mutex,
+            *this );
+	this->installMonitor ();
+    return mon;
+}
+
+void casCoreClient::destroyMonitor ( casMonitor & mon )
+{
+    this->removeMonitor ();
+    this->ctx.getServer()->casMonitorDestroy ( mon );
+}
+
+
+
+

@@ -29,13 +29,18 @@ casChanDelEv::~casChanDelEv()
 //
 // casChanDelEv()
 //
-caStatus casChanDelEv::cbFunc(casEventSys &eSys)
+caStatus casChanDelEv::cbFunc ( casCoreClient & client )
 {
 	caStatus status;
-	status = eSys.disconnectChan (this->id);
-	if (status == S_cas_success) {
+	status = client.disconnectChan ( this->id );
+	if ( status == S_cas_success ) {
 		delete this;
 	}
 	return status;
+}
+
+void casChanDelEv::eventSysDestroyNotify ( casCoreClient & ) 
+{
+	delete this;
 }
 

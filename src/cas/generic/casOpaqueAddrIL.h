@@ -24,7 +24,7 @@ inline void casOpaqueAddr::set (const caAddr &addr)
 	// sizeof(casOpaqueAddr::opaqueAddr) < sizeof(caAddr)
 	//
 	*p = addr;
-	this->init = TRUE;
+	this->init = true;
 }
 
 //
@@ -42,7 +42,7 @@ inline caAddr casOpaqueAddr::get () const
 {
 	caAddr *p = (caAddr *) this->opaqueAddr;	
 
-	assert(this->init);
+	assert ( this->init );
 	//
 	// see class casOpaqueAddr::checkSize
 	// for assert fail when

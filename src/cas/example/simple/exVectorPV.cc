@@ -175,7 +175,7 @@ caStatus exVectorPV::updateValue(smartConstGDDPointer pValueIn)
     //
     // Check bounds of incoming request
     // (and see if we are replacing all elements -
-    // replaceOk==TRUE)
+    // replaceOk==true)
     //
     // Perhaps much of this is unnecessary since the
     // server lib checks the bounds of all requests

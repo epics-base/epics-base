@@ -31,7 +31,7 @@ casOpaqueAddr::casOpaqueAddr()
 //
 void casOpaqueAddr::clear()
 {
-	this->init = 0;
+	this->init = false;
 }
 
 

@@ -350,7 +350,7 @@ caServer *casPVI::getExtServer() const // X aCC 361
 //
 // casPVI::show()
 //
-epicsShareFunc void casPVI::show (unsigned level)  const
+void casPVI::show (unsigned level)  const
 {
 	if (level>1u) {
 		printf ("CA Server PV: nChanAttached=%u nMonAttached=%u nIOAttached=%u\n",
@@ -364,7 +364,7 @@ epicsShareFunc void casPVI::show (unsigned level)  const
 //
 // casPVI::resourceType()
 //
-epicsShareFunc casResType casPVI::resourceType() const
+casResType casPVI::resourceType() const
 {
 	return casPVT;
 }
@@ -373,7 +373,7 @@ epicsShareFunc casResType casPVI::resourceType() const
 // casPVI::apiPointer()
 // retuns NULL if casPVI isnt a base of casPV
 //
-epicsShareFunc casPV *casPVI::apiPointer ()
+casPV *casPVI::apiPointer ()
 {
     return NULL;
 }

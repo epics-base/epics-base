@@ -47,7 +47,7 @@ inline caServerI &casCoreClient::getCAS() const
 inline void casCoreClient::installAsyncIO(casAsyncIOI &ioIn)
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
-	this->ioInProgList.add(ioIn);
+	this->ioInProgList.add ( ioIn );
 }
 
 //
@@ -56,8 +56,8 @@ inline void casCoreClient::installAsyncIO(casAsyncIOI &ioIn)
 inline void casCoreClient::removeAsyncIO(casAsyncIOI &ioIn)
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
-	this->ioInProgList.remove(ioIn);
-	this->ctx.getServer()->ioBlockedList::signal();
+	this->ioInProgList.remove ( ioIn );
+	this->ctx.getServer()->ioBlockedList::signal ();
 }
 
 inline bool casCoreClient::okToStartAsynchIO ()
@@ -67,6 +67,68 @@ inline bool casCoreClient::okToStartAsynchIO ()
         return true;
     }
     return false;
+}
+
+inline casMonEvent & casCoreClient::casMonEventFactory ( casMonitor & monitor, 
+        const smartConstGDDPointer & pNewValue )
+{
+    return this->ctx.getServer()->casMonEventFactory ( monitor, pNewValue );
+}
+
+inline void casCoreClient::casMonEventDestroy ( casMonEvent & event )
+{
+    this->ctx.getServer()->casMonEventDestroy ( event );
+}
+
+inline casEventSys::processStatus casCoreClient::eventSysProcess ()
+{
+	return this->eventSys.process ();
+}
+
+inline void casCoreClient::addToEventQueue ( casEvent & ev )
+{
+	this->eventSys.addToEventQueue ( ev );
+}
+
+inline void casCoreClient::insertEventQueue ( casEvent & insert, casEvent & prevEvent )
+{
+	this->eventSys.insertEventQueue ( insert, prevEvent );
+}
+
+inline void casCoreClient::removeFromEventQueue ( casEvent &  ev )
+{
+    this->eventSys.removeFromEventQueue ( ev );
+}
+
+inline void casCoreClient::enableEvents ()
+{
+    this->eventSys.eventsOn ();
+    this->eventSignal (); // wake up the event queue consumer
+}
+
+inline void casCoreClient::disableEvents ()
+{
+    this->eventSys.eventsOff ();
+}
+
+inline void casCoreClient::setDestroyPending ()
+{
+    this->eventSys.setDestroyPending ();
+}
+
+inline bool casCoreClient::eventSysIsFull ()
+{
+    return this->eventSys.full ();
+}
+
+inline void casCoreClient::installMonitor ()
+{
+    this->eventSys.installMonitor ();
+}
+
+inline void casCoreClient::removeMonitor ()
+{    
+    this->eventSys.removeMonitor ();
 }
 
 #endif // casCoreClientIL_h

@@ -27,36 +27,12 @@
 //
 inline void casChannelI::postEvent (const casEventMask &select, const gdd &event)
 {
-    epicsGuard < casCoreClient > guard ( * this->pClient );
+    epicsGuard < casCoreClient > guard ( *this->pClient );
     tsDLIter<casMonitor> iter = this->monitorList.firstIter ();
     while ( iter.valid () ) {
         iter->post (select, event);
 	    ++iter;
     }
-}
-
-
-//
-// casChannelI::deleteMonitor()
-//
-inline void casChannelI::deleteMonitor(casMonitor &mon)
-{
-    epicsGuard < casCoreClient > guard ( * this->pClient );
-	this->getClient().casEventSys::removeMonitor();
-	this->monitorList.remove(mon);
-	casRes *pRes = this->getClient().getCAS().removeItem(mon);
-	assert ( & mon == (casMonitor *) pRes );
-}
-
-//
-// casChannelI::addMonitor()
-//
-inline void casChannelI::addMonitor(casMonitor &mon)
-{
-    epicsGuard < casCoreClient > guard ( * this->pClient );
-	this->monitorList.add(mon);
-	this->getClient().getCAS().installItem(mon);
-	this->getClient().casEventSys::installMonitor();
 }
 
 //
@@ -78,16 +54,16 @@ inline void casChannelI::destroyNoClientNotify()
 //
 inline void casChannelI::installAsyncIO(casAsyncIOI &io)
 {
-    epicsGuard < casCoreClient > guard ( * this->pClient );
+    epicsGuard < casCoreClient > guard ( *this->pClient );
     this->ioInProgList.add(io);
 }
 
 //
 // casChannelI::removeAsyncIO()
 //
-inline void casChannelI::removeAsyncIO(casAsyncIOI &io)
+inline void casChannelI::removeAsyncIO ( casAsyncIOI & io )
 {
-    epicsGuard < casCoreClient > guard ( * this->pClient );
+    epicsGuard < casCoreClient > guard ( *this->pClient );
     this->ioInProgList.remove(io);
     this->pPV->unregisterIO();
 }

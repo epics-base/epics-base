@@ -56,7 +56,7 @@ caStatus casAsyncPVExistIO::postIOCompletion (const pvExistReturn &retValIn)
 // casAsyncPVExistIO::cbFuncAsyncIO()
 // (called when IO completion event reaches top of event queue)
 //
-epicsShareFunc caStatus casAsyncPVExistIO::cbFuncAsyncIO()
+caStatus casAsyncPVExistIO::cbFuncAsyncIO()
 {
     caStatus 	status;
     

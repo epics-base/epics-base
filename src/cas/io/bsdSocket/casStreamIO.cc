@@ -22,7 +22,7 @@ casStreamIO::casStreamIO ( caServerI & cas, clientBufMemoryManager & bufMgr,
         blockingFlag ( xIsBlocking )
  {
 	assert (sock>=0);
-	int yes = TRUE;
+	int yes = true;
 	int	status;
 
 	/*
@@ -129,16 +129,16 @@ outBufClient::flushCondition casStreamIO::osdSend ( const char *pInBuf, bufSizeT
         int anerrno = SOCKERRNO;
         
         if (anerrno != SOCK_EWOULDBLOCK) {
- 			char buf[64];
             int errnoCpy = SOCKERRNO;
-
-            ipAddrToA (&this->addr, buf, sizeof(buf));
-
             if (  
                 errnoCpy != SOCK_ECONNABORTED &&
                 errnoCpy != SOCK_ECONNRESET &&
                 errnoCpy != SOCK_EPIPE &&
                 errnoCpy != SOCK_ETIMEDOUT ) {
+
+ 			    char buf[64];
+                ipAddrToA (&this->addr, buf, sizeof(buf));
+
 			    errlogPrintf(
 	"CAS: TCP socket send to \"%s\" failed because \"%s\"\n",
 				    buf, SOCKERRSTR(errnoCpy));
@@ -215,7 +215,7 @@ void casStreamIO::osdShow (unsigned level) const
 void casStreamIO::xSetNonBlocking()
 {
 	int status;
-	osiSockIoctl_t yes = TRUE;
+	osiSockIoctl_t yes = true;
 
 	status = socket_ioctl(this->sock, FIONBIO, &yes); // X aCC 392
 	if (status>=0) {

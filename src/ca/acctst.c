@@ -1834,6 +1834,40 @@ void verifyOldPend ()
     assert ( status = ECA_TIMEOUT );
 }
 
+void verifyTimeStamps ( chid chan )
+{
+    struct dbr_time_double first, last;
+    epicsTimeStamp localTime;
+    char buf[128];
+    size_t length;
+    double diff;
+    int status;
+
+    status = epicsTimeGetCurrent ( &localTime );
+    assert ( status >= 0 );
+
+    status = ca_get ( DBR_TIME_DOUBLE, chan, &first );
+    SEVCHK ( status, "fetch of dbr time double failed\n" );
+    status = ca_pend_io ( 20.0 );
+    assert ( status = ECA_NORMAL );
+
+    status = ca_get ( DBR_TIME_DOUBLE, chan, &last );
+    SEVCHK ( status, "fetch of dbr time double failed\n" );
+    status = ca_pend_io ( 20.0 );
+    assert ( status = ECA_NORMAL );
+
+    length = epicsTimeToStrftime ( buf, sizeof ( buf ), 
+        "%a %b %d %H:%M:%S %Y", &first.stamp );
+    assert ( length );
+    printf ("Processing time of channel \"%s\" was \"%s\"\n", ca_name ( chan ), buf );
+
+    diff = epicsTimeDiffInSeconds ( &last.stamp, &first.stamp );
+    printf ("Time difference between two successive reads was %g sec\n", diff );
+
+    diff = epicsTimeDiffInSeconds ( &first.stamp, &localTime );
+    printf ("Time difference between client and server %g sec\n", diff );
+}
+
 int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
 {
     chid chan;
@@ -1863,6 +1897,7 @@ int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
         printf ( "testing with a local channel\n" );
     }
 
+    verifyTimeStamps ( chan );
     verifyOldPend ();
     exceptionTest ( chan );
     arrayTest ( chan ); 

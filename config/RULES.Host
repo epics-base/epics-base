@@ -400,7 +400,7 @@ endif
 PRODNAME_OBJS=$(addsuffix $(OBJ), $(basename $(PRODNAME_SRCS)))
 PRODNAME_RESS=$(addsuffix $(RES), $(basename $(PRODNAME_RCS)))
 
-ifeq ($(HOST_ARCH),Borland)
+ifdef BORLANDC
 $(PRODNAME): $(PRODNAME_OBJS) $(PRODNAME_RESS)
 	@$(RM) $@
 	$(PRODNAME_LINKER) $(PRODNAME_OBJS) , $@ ,,$(LINKLIBS) $(subst /,\\,$(LDLIBS)),, $(PRODNAME_RESS)
@@ -519,7 +519,7 @@ ifneq ($(strip $(LIBSRCS) $(SRCS) $(COND_PROD_SRCS) $(SRCS.c) $(SRCS.cc)),)
 	$(DEPENDS_RULE)
 endif
 
-ifeq ($(HOST_ARCH),Borland)
+ifdef BORLANDC
 %$(EXE): %.c
 	@$(RM) $@
 	$(COMPILE.c)  $<
@@ -696,7 +696,7 @@ $(DBDNAME): ../base.dbd
 endif
 endif
 
-ifeq ($(HOST_ARCH),Borland)
+ifdef BORLANDC
 $(DLL_LINK_LIBNAME) $(SHRLIBNAME): $(LIBOBJS) $(LIBNAME_RESS)
 	$(LINK.shrlib) $(LIBOBJS) , $@ ,,$(LINKLIBS) $(subst /,\\,$(DLL_LDLIBS)), $(DLL_DEF_FLAG), $(LIBNAME_RESS)
 
@@ -705,7 +705,7 @@ $(DLL_LINK_LIBNAME) $(SHRLIBNAME): $(LIBOBJS) $(LIBNAME_RESS)
 	$(LINK.shrlib) $(LIBOBJS) $(DLL_LDLIBS) $(LIBNAME_RESS)
 
 endif
-ifeq ($(HOST_ARCH),Borland)
+ifdef BORLANDC
 # rule for lib (archive of object files) creation
 $(LIBNAME): $(LIBOBJS)
 	$(RM) $@

@@ -11,6 +11,7 @@
 #include <stdio.h>
 
 #include "cantProceed.h"
+#include "errlog.h"
 
 template <class T>
 class sourceFileLocation : public T {
@@ -45,7 +46,7 @@ template <class T>
 inline void throwExceptionWithLocation (const T &parm, const char *pFileName, unsigned lineNo)
 {
 #   ifdef noExceptionsFromCXX
-        fprintf (stderr, "C++ exception in file=%s at line=%u, and no compiler support - cant proceed.\n",
+        errlogPrintf ("C++ exception in file=%s at line=%u, and no compiler support - cant proceed.\n",
             pFileName, lineNo);
         cantProceed ("No compiler support for C++ exception");
 #   else

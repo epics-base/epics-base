@@ -20,10 +20,14 @@ foreach( @files ) {
     open(INPUT, "<$_");
     $backup = "$_.bak";
     rename( $_, $backup) || die "Unable to rename $_\n$!\n";
+    # Make the output be binary so it won't convert /n back to /r/n
+    binmode OUTPUT, ":raw";
     open(OUTPUT, ">$_");
+    binmode OUTPUT, ":raw";
     while(<INPUT>) {
-    s/\r\n/\n/;
-    print OUTPUT;
+	# Remove CR-LF sequences
+	s/\r\n/\n/;
+	print OUTPUT;
     }
     close INPUT;
     close OUTPUT;

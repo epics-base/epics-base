@@ -61,13 +61,7 @@ inline const char * sourceFileLocation<T>::fileName () const
 template <class T>
 inline void throwExceptionWithLocation (const T &parm, const char *pFileName, unsigned lineNo)
 {
-#   ifdef noExceptionsFromCXX
-        errlogPrintf ("C++ exception in file=%s at line=%u, and no compiler support - cant proceed.\n",
-            pFileName, lineNo);
-        cantProceed ("No compiler support for C++ exception");
-#   else
-        throw sourceFileLocation<T> (parm, pFileName, lineNo);
-#   endif
+    throw sourceFileLocation<T> (parm, pFileName, lineNo);
 }
 
 #endif // ifdef locationException_h

@@ -62,11 +62,7 @@ endif # EPICS_BASE
 #---------------------------------------------------------------
 # Epics base c preprocessor flags
 
-# c++ exceptions
-CXX_EXCEPTIONS = YES
-CXX_EXCEPTIONS_FLAGS_YES =
-CXX_EXCEPTIONS_FLAGS_NO = -DnoExceptionsFromCXX
-EPICS_BASE_CPPFLAGS = $(CXX_EXCEPTIONS_FLAGS_$(CXX_EXCEPTIONS))
+EPICS_BASE_CPPFLAGS = 
 
 # osithread default stack
 OSITHREAD_USE_DEFAULT_STACK = YES

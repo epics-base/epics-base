@@ -84,10 +84,6 @@ OP_SYS_LDFLAGS = $(CPU_CFLAGS) -u Init \
                  $(PROJECT_RELEASE)/lib/no-rtmon.rel
 
 #--------------------------------------------------
-# c++ exceptions,  YES or NO
-CXX_EXCEPTIONS = YES
-
-#--------------------------------------------------
 # RTEMS has neither shared libraries nor dynamic loading
 STATIC_BUILD=YES
 SHARED_LIBRARIES=NO

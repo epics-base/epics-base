@@ -671,49 +671,36 @@ extern "C" {
     //
     epicsShareFunc int epicsShareAPI epicsTimeToTime_t (time_t *pDest, const epicsTimeStamp *pSrc)
     {
-#       ifdef noExceptionsFromCXX
+        try {
             time_t_wrapper dst = epicsTime (*pSrc);
             *pDest = dst.ts;
-#       else
-            try {
-                time_t_wrapper dst = epicsTime (*pSrc);
-                *pDest = dst.ts;
-            }
-            catch (...) {
-                return epicsTimeERROR;
-            }
-#       endif
+        }
+        catch (...) {
+            return epicsTimeERROR;
+        }
         return epicsTimeOK;
     }
     epicsShareFunc int epicsShareAPI epicsTimeFromTime_t (epicsTimeStamp *pDest, time_t src)
     {
         time_t_wrapper dst;
         dst.ts = src;
-#       ifdef noExceptionsFromCXX
+        try {
             *pDest = epicsTime (dst);
-#       else
-            try {
-                *pDest = epicsTime (dst);
-            }
-            catch (...) {
-                return epicsTimeERROR;
-            }
-#       endif
+        }
+        catch (...) {
+            return epicsTimeERROR;
+        }
         return epicsTimeOK;
     }
     epicsShareFunc int epicsShareAPI epicsTimeToTM (struct tm *pDest, unsigned long *pNSecDest, const epicsTimeStamp *pSrc)
     {
         tm_nano_sec tmns;
-#       ifdef noExceptionsFromCXX
+        try {
             tmns = epicsTime (*pSrc);
-#       else
-            try {
-                tmns = epicsTime (*pSrc);
-            }
-            catch (...) {
-                return epicsTimeERROR;
-            }
-#       endif       
+        }
+        catch (...) {
+            return epicsTimeERROR;
+        }
         *pDest = tmns.ansi_tm;
         *pNSecDest = tmns.nSec;
         return epicsTimeOK;
@@ -724,72 +711,52 @@ extern "C" {
         tmns.ansi_tm = *pSrc;
         tmns.nSec = nSecSrc;
 
-#       ifdef noExceptionsFromCXX
+        try {
             *pDest = epicsTime (tmns);
-#       else
-            try {
-                *pDest = epicsTime (tmns);
-            }
-            catch (...) {
-                return epicsTimeERROR;
-            }
-#       endif
+        }
+        catch (...) {
+            return epicsTimeERROR;
+        }
         return epicsTimeOK;
     }
     epicsShareFunc int epicsShareAPI epicsTimeToTimespec (struct timespec *pDest, const epicsTimeStamp *pSrc)
     {
-#       ifdef noExceptionsFromCXX
+        try {
             *pDest = epicsTime (*pSrc);
-#       else
-            try {
-                *pDest = epicsTime (*pSrc);
-            }
-            catch (...) {
-                return epicsTimeERROR;
-            }
-#       endif
+        }
+        catch (...) {
+            return epicsTimeERROR;
+        }
         return epicsTimeOK;
     }
     epicsShareFunc int epicsShareAPI epicsTimeFromTimespec (epicsTimeStamp *pDest, const struct timespec *pSrc)
     {
-#       ifdef noExceptionsFromCXX
+        try {
             *pDest = epicsTime (*pSrc);
-#       else
-            try {
-                *pDest = epicsTime (*pSrc);
-            }
-            catch (...) {
-                return epicsTimeERROR;
-            }
-#       endif
+        }
+        catch (...) {
+            return epicsTimeERROR;
+        }
         return epicsTimeOK;
     }
     epicsShareFunc int epicsShareAPI epicsTimeToTimeval (struct timeval *pDest, const epicsTimeStamp *pSrc)
     {
-#       ifdef noExceptionsFromCXX
+        try {
             *pDest = epicsTime (*pSrc);
-#       else
-            try {
-                *pDest = epicsTime (*pSrc);
-            }
-            catch (...) {
-                return epicsTimeERROR;
-            }
-#       endif
+        }
+        catch (...) {
+            return epicsTimeERROR;
+        }
         return epicsTimeOK;
     }
     epicsShareFunc int epicsShareAPI epicsTimeFromTimeval (epicsTimeStamp *pDest, const struct timeval *pSrc)
     {
-#       ifdef noExceptionsFromCXX
+        try {
             *pDest = epicsTime (*pSrc);
-#       else
-            try {
-                *pDest = epicsTime (*pSrc);
-            }
-            catch (...) {
-                return epicsTimeERROR;
-            }
-#       endif
+        }
+        catch (...) {
+            return epicsTimeERROR;
+        }
         return epicsTimeOK;
     }
     epicsShareFunc double epicsShareAPI epicsTimeDiffInSeconds (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)

@@ -181,77 +181,12 @@ typedef epicsUInt16	dbr_put_acks_t;
  * larger type to avoid loss of information
  */
 epicsShareExtern READONLY int epicsTypeToDBR_XXXX [lastEpicsType+1];
-#ifdef DB_TEXT_GLBLSOURCE
-epicsShareDef READONLY int epicsTypeToDBR_XXXX [lastEpicsType+1] = {
-                        DBR_SHORT, /* forces conversion fronm uint8 to int16 */
-                        DBR_CHAR,
-                        DBR_SHORT,
-                        DBR_LONG, /* forces conversion fronm uint16 to int32 */
-                        DBR_ENUM,
-                        DBR_LONG,
-                        DBR_LONG, /* very large unsigned number will not map */
-                        DBR_FLOAT,
-                        DBR_DOUBLE,
-                        DBR_STRING,
-                        DBR_STRING
-};
-#endif
 
 /*
  * The DBR_XXXX types are indicies into this array
  */
-#if defined(DB_TEXT_GLBLSOURCE) 
-epicsShareDef READONLY epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1] = {
-			epicsOldStringT,
-			epicsInt16T,	
-			epicsFloat32T,	
-			epicsEnum16T,	
-			epicsUInt8T,	
-			epicsInt32T,	
-			epicsFloat64T,
-
-			epicsOldStringT,
-			epicsInt16T,	
-			epicsFloat32T,	
-			epicsEnum16T,	
-			epicsUInt8T,	
-			epicsInt32T,	
-			epicsFloat64T,
-
-			epicsOldStringT,
-			epicsInt16T,	
-			epicsFloat32T,	
-			epicsEnum16T,	
-			epicsUInt8T,	
-			epicsInt32T,	
-			epicsFloat64T,
-
-			epicsOldStringT,
-			epicsInt16T,	
-			epicsFloat32T,	
-			epicsEnum16T,	
-			epicsUInt8T,	
-			epicsInt32T,	
-			epicsFloat64T,
-
-			epicsOldStringT,
-			epicsInt16T,	
-			epicsFloat32T,	
-			epicsEnum16T,	
-			epicsUInt8T,	
-			epicsInt32T,	
-			epicsFloat64T,
-
-			epicsUInt16T,
-			epicsUInt16T,
-			epicsOldStringT,
-			epicsOldStringT
-};
-#else
 epicsShareExtern READONLY epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1];
-#endif
 
-
 /* values returned for each field type
  * 	DBR_STRING	returns a NULL terminated string
  *	DBR_SHORT	returns an unsigned short
@@ -640,171 +575,30 @@ struct dbr_ctrl_double{
 	dbr_double_t	lower_ctrl_limit;	/* lower control limit */
 	dbr_double_t	value;			/* current value */
 };
-
+
 #define dbr_size_n(TYPE,COUNT)\
 ((unsigned)((COUNT)==1?dbr_size[TYPE]:dbr_size[TYPE]+((COUNT)-1)*dbr_value_size[TYPE]))
-/* size for each type */
 
+/* size for each type - array indexed by the DBR_ type code */
 epicsShareExtern READONLY unsigned short dbr_size[LAST_BUFFER_TYPE+1];
-#ifdef DB_TEXT_GLBLSOURCE
-epicsShareDef READONLY unsigned short dbr_size[LAST_BUFFER_TYPE+1] = {
-	sizeof(dbr_string_t),		/* string max size		*/
-	sizeof(dbr_short_t),		/* short			*/
-	sizeof(dbr_float_t),		/* IEEE Float			*/
-	sizeof(dbr_enum_t),		/* item number			*/
-	sizeof(dbr_char_t),		/* character			*/
-	sizeof(dbr_long_t),		/* long				*/
-	sizeof(dbr_double_t),		/* double			*/
-	sizeof(struct dbr_sts_string),	/* string field	with status	*/
-	sizeof(struct dbr_sts_short),	/* short field with status	*/
-	sizeof(struct dbr_sts_float),	/* float field with status	*/
-	sizeof(struct dbr_sts_enum),	/* item number with status	*/
-	sizeof(struct dbr_sts_char),	/* char field with status	*/
-	sizeof(struct dbr_sts_long),	/* long field with status	*/
-	sizeof(struct dbr_sts_double),	/* double field with time	*/
-	sizeof(struct dbr_time_string),	/* string field	with time	*/
-	sizeof(struct dbr_time_short),	/* short field with time	*/
-	sizeof(struct dbr_time_float),	/* float field with time	*/
-	sizeof(struct dbr_time_enum),	/* item number with time	*/
-	sizeof(struct dbr_time_char),	/* char field with time		*/
-	sizeof(struct dbr_time_long),	/* long field with time		*/
-	sizeof(struct dbr_time_double),	/* double field with time	*/
-	sizeof(struct dbr_sts_string),	/* graphic string info		*/
-	sizeof(struct dbr_gr_short),	/* graphic short info		*/
-	sizeof(struct dbr_gr_float),	/* graphic float info		*/
-	sizeof(struct dbr_gr_enum),	/* graphic item info		*/
-	sizeof(struct dbr_gr_char),	/* graphic char info		*/
-	sizeof(struct dbr_gr_long),	/* graphic long info		*/
-	sizeof(struct dbr_gr_double),	/* graphic double info		*/
-	sizeof(struct dbr_sts_string),	/* control string info		*/
-	sizeof(struct dbr_ctrl_short),	/* control short info		*/
-	sizeof(struct dbr_ctrl_float),	/* control float info		*/
-	sizeof(struct dbr_ctrl_enum),	/* control item info		*/
-	sizeof(struct dbr_ctrl_char),	/* control char info		*/
-	sizeof(struct dbr_ctrl_long),	/* control long info		*/
-	sizeof(struct dbr_ctrl_double),	/* control double info		*/
-	sizeof(dbr_put_ackt_t),		/* put ackt			*/
-	sizeof(dbr_put_acks_t),		/* put acks			*/
-	sizeof(struct dbr_stsack_string),/* string field with status/ack*/
-	sizeof(dbr_string_t),		/* string max size		*/
-};
-#endif
-
-/* size for each type's value */
-epicsShareExtern READONLY unsigned short dbr_value_size[LAST_BUFFER_TYPE+1];
-#ifdef DB_TEXT_GLBLSOURCE
-epicsShareDef READONLY unsigned short dbr_value_size[LAST_BUFFER_TYPE+1] = {
-	sizeof(dbr_string_t),	/* string max size		*/
-	sizeof(dbr_short_t),	/* short			*/
-	sizeof(dbr_float_t),	/* IEEE Float			*/
-	sizeof(dbr_enum_t),	/* item number			*/
-	sizeof(dbr_char_t),	/* character			*/
-	sizeof(dbr_long_t),	/* long				*/
-	sizeof(dbr_double_t),	/* double			*/
-	sizeof(dbr_string_t),	/* string max size		*/
-	sizeof(dbr_short_t),	/* short			*/
-	sizeof(dbr_float_t),	/* IEEE Float			*/
-	sizeof(dbr_enum_t),	/* item number			*/
-	sizeof(dbr_char_t),	/* character			*/
-	sizeof(dbr_long_t),	/* long				*/
-	sizeof(dbr_double_t),	/* double			*/
-	sizeof(dbr_string_t),	/* string max size		*/
-	sizeof(dbr_short_t),	/* short			*/
-	sizeof(dbr_float_t),	/* IEEE Float			*/
-	sizeof(dbr_enum_t),	/* item number			*/
-	sizeof(dbr_char_t),	/* character			*/
-	sizeof(dbr_long_t),	/* long				*/
-	sizeof(dbr_double_t),	/* double			*/
-	sizeof(dbr_string_t),	/* string max size		*/
-	sizeof(dbr_short_t),	/* short			*/
-	sizeof(dbr_float_t),	/* IEEE Float			*/
-	sizeof(dbr_enum_t),	/* item number			*/
-	sizeof(dbr_char_t),	/* character			*/
-	sizeof(dbr_long_t),	/* long				*/
-	sizeof(dbr_double_t),	/* double			*/
-	sizeof(dbr_string_t),	/* string max size		*/
-	sizeof(dbr_short_t),	/* short			*/
-	sizeof(dbr_float_t),	/* IEEE Float			*/
-	sizeof(dbr_enum_t),	/* item number			*/
-	sizeof(dbr_char_t),	/* character			*/
-	sizeof(dbr_long_t),	/* long				*/
-	sizeof(dbr_double_t),	/* double			*/
-	sizeof(dbr_ushort_t), 	/* put_ackt			*/
-	sizeof(dbr_ushort_t), 	/* put_acks			*/
-	sizeof(dbr_string_t),	/* string max size		*/
-	sizeof(dbr_string_t),	/* string max size		*/
-};
-#endif
 
-
+/* size for each type's value - array indexed by the DBR_ type code */
+epicsShareExtern READONLY unsigned short dbr_value_size[LAST_BUFFER_TYPE+1];
+
 /* class for each type's value */
 enum dbr_value_class { 
 		dbr_class_int, 
 		dbr_class_float, 
 		dbr_class_string, 
 		dbr_class_max};
-#ifndef DB_TEXT_GLBLSOURCE
+
 epicsShareExtern READONLY enum dbr_value_class dbr_value_class[LAST_BUFFER_TYPE+1];
-#else
-epicsShareDef READONLY enum dbr_value_class dbr_value_class[LAST_BUFFER_TYPE+1] = {
-	dbr_class_string,	/* string max size		*/
-	dbr_class_int,		/* short			*/
-	dbr_class_float,	/* IEEE Float			*/
-	dbr_class_int,		/* item number			*/
-	dbr_class_int,		/* character			*/
-	dbr_class_int,		/* long				*/
-	dbr_class_float,	/* double			*/
 
-	dbr_class_string,	/* string max size		*/
-	dbr_class_int,		/* short			*/
-	dbr_class_float,	/* IEEE Float			*/
-	dbr_class_int,		/* item number			*/
-	dbr_class_int,		/* character			*/
-	dbr_class_int,		/* long				*/
-	dbr_class_float,	/* double			*/
-
-	dbr_class_string,	/* string max size		*/
-	dbr_class_int,		/* short			*/
-	dbr_class_float,	/* IEEE Float			*/
-	dbr_class_int,		/* item number			*/
-	dbr_class_int,		/* character			*/
-	dbr_class_int,		/* long				*/
-	dbr_class_float,	/* double			*/
-
-	dbr_class_string,	/* string max size		*/
-	dbr_class_int,		/* short			*/
-	dbr_class_float,	/* IEEE Float			*/
-	dbr_class_int,		/* item number			*/
-	dbr_class_int,		/* character			*/
-	dbr_class_int,		/* long				*/
-	dbr_class_float,	/* double			*/
-
-	dbr_class_string,	/* string max size		*/
-	dbr_class_int,		/* short			*/
-	dbr_class_float,	/* IEEE Float			*/
-	dbr_class_int,		/* item number			*/
-	dbr_class_int,		/* character			*/
-	dbr_class_int,		/* long				*/
-	dbr_class_float,	/* double			*/
-	dbr_class_int,
-	dbr_class_int,
-	dbr_class_string,
-	dbr_class_string,	/* string max size		*/
-};
-#endif
-
-
 /* 
  * ptr to value given a pointer to the structure and the DBR type
  */
 #define dbr_value_ptr(PDBR, DBR_TYPE) \
 ((void *)(((char *)PDBR)+dbr_value_offset[DBR_TYPE]))
-
-/* 
- * byte offset of member in structure
- */
-#define BYTE_OS(STRUCTURE, MEMBER) \
-((int) & (((STRUCTURE *)0) -> MEMBER))
 
 /* 
  * ptr to value given a pointer to the structure and the structure declaration
@@ -813,49 +607,7 @@ epicsShareDef READONLY enum dbr_value_class dbr_value_class[LAST_BUFFER_TYPE+1] 
 ((void *)(((char *)PDBR)+BYTE_OS(STRUCTURE, value)))
 
 epicsShareExtern READONLY unsigned short dbr_value_offset[LAST_BUFFER_TYPE+1];
-#ifdef DB_TEXT_GLBLSOURCE
-epicsShareDef READONLY unsigned short dbr_value_offset[LAST_BUFFER_TYPE+1] = {
-	0,					/* string			*/
-	0,					/* short			*/
-	0,					/* IEEE Float			*/
-	0,					/* item number			*/
-	0,					/* character			*/
-	0,					/* long				*/
-	0,					/* IEEE double			*/
-	BYTE_OS(struct dbr_sts_string,value[0]),/* string field	with status	*/
-	BYTE_OS(struct dbr_sts_short,value),	/* short field with status	*/
-	BYTE_OS(struct dbr_sts_float,value),	/* float field with status	*/
-	BYTE_OS(struct dbr_sts_enum,value),	/* item number with status	*/
-	BYTE_OS(struct dbr_sts_char,value),	/* char field with status	*/
-	BYTE_OS(struct dbr_sts_long,value),	/* long field with status	*/
-	BYTE_OS(struct dbr_sts_double,value),	/* double field with time	*/
-	BYTE_OS(struct dbr_time_string,value[0]),/* string field with time	*/
-	BYTE_OS(struct dbr_time_short,value),	/* short field with time	*/
-	BYTE_OS(struct dbr_time_float,value),	/* float field with time	*/
-	BYTE_OS(struct dbr_time_enum,value),	/* item number with time	*/
-	BYTE_OS(struct dbr_time_char,value),	/* char field with time		*/
-	BYTE_OS(struct dbr_time_long,value),	/* long field with time		*/
-	BYTE_OS(struct dbr_time_double,value),	/* double field with time	*/
-	BYTE_OS(struct dbr_sts_string,value[0]),/* graphic string info		*/
-	BYTE_OS(struct dbr_gr_short,value),	/* graphic short info		*/
-	BYTE_OS(struct dbr_gr_float,value),	/* graphic float info		*/
-	BYTE_OS(struct dbr_gr_enum,value),	/* graphic item info		*/
-	BYTE_OS(struct dbr_gr_char,value),	/* graphic char info		*/
-	BYTE_OS(struct dbr_gr_long,value),	/* graphic long info		*/
-	BYTE_OS(struct dbr_gr_double,value),	/* graphic double info		*/
-	BYTE_OS(struct dbr_sts_string,value[0]),/* control string info		*/
-	BYTE_OS(struct dbr_ctrl_short,value),	/* control short info		*/
-	BYTE_OS(struct dbr_ctrl_float,value),	/* control float info		*/
-	BYTE_OS(struct dbr_ctrl_enum,value),	/* control item info		*/
-	BYTE_OS(struct dbr_ctrl_char,value),	/* control char info		*/
-	BYTE_OS(struct dbr_ctrl_long,value),	/* control long info		*/
-	BYTE_OS(struct dbr_ctrl_double,value),	/* control double info		*/
-	0,					/* put ackt			*/
-	0,					/* put acks			*/
-	BYTE_OS(struct dbr_stsack_string,value[0]),/* string field	with status	*/
-	0,					/* string			*/
-};
-#endif
+
 
 /* union for each fetch buffers */
 union db_access_val{
@@ -983,12 +735,12 @@ union db_access_val{
 		 (type)%(LAST_TYPE+1) == DBR_DOUBLE)
 
 #define dbf_type_to_text(type)   \
-    (  ((type) >= -1 && (type) <= dbf_text_dim-2) ? \
-        dbf_text[(type+1)] : dbf_text_invalid  )
+    (  ((type) >= 0 && (type) < dbf_text_dim) ? \
+        db_field_text[type] : dbf_text_invalid  )
 
 #define dbf_text_to_type(text, type)   \
-    for (type=dbf_text_dim-3; type>=0; type--) { \
-        if (strcmp(text, dbf_text[type+1]) == 0) \
+    for (type=dbf_text_dim-1; type>=0; type--) { \
+        if (strcmp(text, dbf_text[type]) == 0) \
         break; \
     }
 
@@ -1023,74 +775,13 @@ union db_access_val{
         (type) + 4*(dbf_text_dim-2)   :  -1  )
 
 
+epicsShareExtern READONLY char	    *dbf_text[LAST_TYPE+2];
+epicsShareExtern READONLY short	    dbf_text_dim;
+epicsShareExtern READONLY char      *dbf_text_invalid;
 
-#ifndef DB_TEXT_GLBLSOURCE
-    epicsShareExtern READONLY char	*dbf_text[LAST_TYPE+2], *dbf_text_invalid;
-    epicsShareExtern READONLY short	dbf_text_dim;
-#else
-    epicsShareDef READONLY char *dbf_text[] = {
-	"TYPENOTCONN",
-	"DBF_STRING",
-	"DBF_SHORT",
-	"DBF_FLOAT",
-	"DBF_ENUM",
-	"DBF_CHAR",
-	"DBF_LONG",
-	"DBF_DOUBLE",
-	"DBF_NO_ACCESS"
-    };
-    epicsShareDef READONLY char    *dbf_text_invalid = "DBF_invalid";
-    epicsShareDef READONLY short   dbf_text_dim = (sizeof dbf_text)/(sizeof (char *));
-#endif
-
-#ifndef DB_TEXT_GLBLSOURCE
-    epicsShareExtern READONLY char	*dbr_text[LAST_BUFFER_TYPE+1], *dbr_text_invalid;
-    epicsShareExtern READONLY short	dbr_text_dim;
-#else
-    epicsShareDef READONLY char *dbr_text[LAST_BUFFER_TYPE+1] = {
-	"DBR_STRING",
-	"DBR_SHORT",
-	"DBR_FLOAT",
-	"DBR_ENUM",
-	"DBR_CHAR",
-	"DBR_LONG",
-	"DBR_DOUBLE",
-	"DBR_STS_STRING",
-	"DBR_STS_SHORT",
-	"DBR_STS_FLOAT",
-	"DBR_STS_ENUM",
-	"DBR_STS_CHAR",
-	"DBR_STS_LONG",
-	"DBR_STS_DOUBLE",
-	"DBR_TIME_STRING",
-	"DBR_TIME_SHORT",
-	"DBR_TIME_FLOAT",
-	"DBR_TIME_ENUM",
-	"DBR_TIME_CHAR",
-	"DBR_TIME_LONG",
-	"DBR_TIME_DOUBLE",
-	"DBR_GR_STRING",
-	"DBR_GR_SHORT",
-	"DBR_GR_FLOAT",
-	"DBR_GR_ENUM",
-	"DBR_GR_CHAR",
-	"DBR_GR_LONG",
-	"DBR_GR_DOUBLE",
-	"DBR_CTRL_STRING",
-	"DBR_CTRL_SHORT",
-	"DBR_CTRL_FLOAT",
-	"DBR_CTRL_ENUM",
-	"DBR_CTRL_CHAR",
-	"DBR_CTRL_LONG",
-	"DBR_CTRL_DOUBLE",
-	"DBR_PUT_ACKT",
-	"DBR_PUT_ACKS",
-	"DBR_STSACK_STRING",
-	"DBR_CLASS_NAME",
-    };
-    epicsShareDef READONLY char * dbr_text_invalid = "DBR_invalid";
-    epicsShareDef READONLY short   dbr_text_dim = (sizeof dbr_text)/(sizeof (char *)) + 1;
-#endif
+epicsShareExtern READONLY char	    *dbr_text[LAST_BUFFER_TYPE+1];
+epicsShareExtern READONLY short	    dbr_text_dim;
+epicsShareExtern READONLY char      *dbr_text_invalid;
 
 #ifdef __cplusplus
 }

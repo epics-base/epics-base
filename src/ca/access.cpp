@@ -23,11 +23,6 @@
 #define CA_ERROR_GLBLSOURCE
 
 /*
- * allocate db_access message strings here
- */
-#define DB_TEXT_GLBLSOURCE
-
-/*
  * allocate header version strings here
  */
 #define CAC_VERSION_GLOBAL
@@ -343,9 +338,11 @@ LOCAL const pvAdapter pvAdapterNOOP =
 /*
  * event_import()
  */
-static void event_import (void *pParam)
-{
-    threadPrivateSet (caClientContextId, pParam);
+extern "C" {
+    static void event_import (void *pParam)
+    {
+        threadPrivateSet (caClientContextId, pParam);
+    }
 }
 
 /*
@@ -2595,7 +2592,7 @@ void epicsShareAPI ca_signal (long ca_status, const char *message)
  * of this routine is calling this routine
  * (if they call this routine again).
  */
-READONLY char * epicsShareAPI ca_message (long ca_status)
+const char * epicsShareAPI ca_message (long ca_status)
 {
     unsigned msgNo = CA_EXTRACT_MSG_NO (ca_status);
 
@@ -3362,4 +3359,294 @@ epicsShareFunc int epicsShareAPI ca_attach_context (caClientCtx context)
     return ECA_NORMAL;
 }
 
+epicsShareDef const int epicsTypeToDBR_XXXX [lastEpicsType+1] = {
+    DBR_SHORT, /* forces conversion fronm uint8 to int16 */
+    DBR_CHAR,
+    DBR_SHORT,
+    DBR_LONG, /* forces conversion fronm uint16 to int32 */
+    DBR_ENUM,
+    DBR_LONG,
+    DBR_LONG, /* very large unsigned number will not map */
+    DBR_FLOAT,
+    DBR_DOUBLE,
+    DBR_STRING,
+    DBR_STRING
+};
 
+epicsShareDef READONLY epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1] = {
+	epicsOldStringT,
+	epicsInt16T,	
+	epicsFloat32T,	
+	epicsEnum16T,	
+	epicsUInt8T,	
+	epicsInt32T,	
+	epicsFloat64T,
+
+	epicsOldStringT,
+	epicsInt16T,	
+	epicsFloat32T,	
+	epicsEnum16T,	
+	epicsUInt8T,	
+	epicsInt32T,	
+	epicsFloat64T,
+
+	epicsOldStringT,
+	epicsInt16T,	
+	epicsFloat32T,	
+	epicsEnum16T,	
+	epicsUInt8T,	
+	epicsInt32T,	
+	epicsFloat64T,
+
+	epicsOldStringT,
+	epicsInt16T,	
+	epicsFloat32T,	
+	epicsEnum16T,	
+	epicsUInt8T,	
+	epicsInt32T,	
+	epicsFloat64T,
+
+	epicsOldStringT,
+	epicsInt16T,	
+	epicsFloat32T,	
+	epicsEnum16T,	
+	epicsUInt8T,	
+	epicsInt32T,	
+	epicsFloat64T,
+
+	epicsUInt16T,
+	epicsUInt16T,
+	epicsOldStringT,
+	epicsOldStringT
+};
+
+epicsShareDef const unsigned short dbr_size[LAST_BUFFER_TYPE+1] = {
+	sizeof(dbr_string_t),		/* string max size		*/
+	sizeof(dbr_short_t),		/* short			*/
+	sizeof(dbr_float_t),		/* IEEE Float			*/
+	sizeof(dbr_enum_t),		/* item number			*/
+	sizeof(dbr_char_t),		/* character			*/
+	sizeof(dbr_long_t),		/* long				*/
+	sizeof(dbr_double_t),		/* double			*/
+	sizeof(struct dbr_sts_string),	/* string field	with status	*/
+	sizeof(struct dbr_sts_short),	/* short field with status	*/
+	sizeof(struct dbr_sts_float),	/* float field with status	*/
+	sizeof(struct dbr_sts_enum),	/* item number with status	*/
+	sizeof(struct dbr_sts_char),	/* char field with status	*/
+	sizeof(struct dbr_sts_long),	/* long field with status	*/
+	sizeof(struct dbr_sts_double),	/* double field with time	*/
+	sizeof(struct dbr_time_string),	/* string field	with time	*/
+	sizeof(struct dbr_time_short),	/* short field with time	*/
+	sizeof(struct dbr_time_float),	/* float field with time	*/
+	sizeof(struct dbr_time_enum),	/* item number with time	*/
+	sizeof(struct dbr_time_char),	/* char field with time		*/
+	sizeof(struct dbr_time_long),	/* long field with time		*/
+	sizeof(struct dbr_time_double),	/* double field with time	*/
+	sizeof(struct dbr_sts_string),	/* graphic string info		*/
+	sizeof(struct dbr_gr_short),	/* graphic short info		*/
+	sizeof(struct dbr_gr_float),	/* graphic float info		*/
+	sizeof(struct dbr_gr_enum),	/* graphic item info		*/
+	sizeof(struct dbr_gr_char),	/* graphic char info		*/
+	sizeof(struct dbr_gr_long),	/* graphic long info		*/
+	sizeof(struct dbr_gr_double),	/* graphic double info		*/
+	sizeof(struct dbr_sts_string),	/* control string info		*/
+	sizeof(struct dbr_ctrl_short),	/* control short info		*/
+	sizeof(struct dbr_ctrl_float),	/* control float info		*/
+	sizeof(struct dbr_ctrl_enum),	/* control item info		*/
+	sizeof(struct dbr_ctrl_char),	/* control char info		*/
+	sizeof(struct dbr_ctrl_long),	/* control long info		*/
+	sizeof(struct dbr_ctrl_double),	/* control double info		*/
+	sizeof(dbr_put_ackt_t),		/* put ackt			*/
+	sizeof(dbr_put_acks_t),		/* put acks			*/
+	sizeof(struct dbr_stsack_string),/* string field with status/ack*/
+	sizeof(dbr_string_t),		/* string max size		*/
+};
+
+epicsShareDef const unsigned short dbr_value_size[LAST_BUFFER_TYPE+1] = {
+	sizeof(dbr_string_t),	/* string max size		*/
+	sizeof(dbr_short_t),	/* short			*/
+	sizeof(dbr_float_t),	/* IEEE Float			*/
+	sizeof(dbr_enum_t),	/* item number			*/
+	sizeof(dbr_char_t),	/* character			*/
+	sizeof(dbr_long_t),	/* long				*/
+	sizeof(dbr_double_t),	/* double			*/
+	sizeof(dbr_string_t),	/* string max size		*/
+	sizeof(dbr_short_t),	/* short			*/
+	sizeof(dbr_float_t),	/* IEEE Float			*/
+	sizeof(dbr_enum_t),	/* item number			*/
+	sizeof(dbr_char_t),	/* character			*/
+	sizeof(dbr_long_t),	/* long				*/
+	sizeof(dbr_double_t),	/* double			*/
+	sizeof(dbr_string_t),	/* string max size		*/
+	sizeof(dbr_short_t),	/* short			*/
+	sizeof(dbr_float_t),	/* IEEE Float			*/
+	sizeof(dbr_enum_t),	/* item number			*/
+	sizeof(dbr_char_t),	/* character			*/
+	sizeof(dbr_long_t),	/* long				*/
+	sizeof(dbr_double_t),	/* double			*/
+	sizeof(dbr_string_t),	/* string max size		*/
+	sizeof(dbr_short_t),	/* short			*/
+	sizeof(dbr_float_t),	/* IEEE Float			*/
+	sizeof(dbr_enum_t),	/* item number			*/
+	sizeof(dbr_char_t),	/* character			*/
+	sizeof(dbr_long_t),	/* long				*/
+	sizeof(dbr_double_t),	/* double			*/
+	sizeof(dbr_string_t),	/* string max size		*/
+	sizeof(dbr_short_t),	/* short			*/
+	sizeof(dbr_float_t),	/* IEEE Float			*/
+	sizeof(dbr_enum_t),	/* item number			*/
+	sizeof(dbr_char_t),	/* character			*/
+	sizeof(dbr_long_t),	/* long				*/
+	sizeof(dbr_double_t),	/* double			*/
+	sizeof(dbr_ushort_t), 	/* put_ackt			*/
+	sizeof(dbr_ushort_t), 	/* put_acks			*/
+	sizeof(dbr_string_t),	/* string max size		*/
+	sizeof(dbr_string_t),	/* string max size		*/
+};
+
+epicsShareDef const enum dbr_value_class dbr_value_class[LAST_BUFFER_TYPE+1] = {
+	dbr_class_string,	/* string max size		*/
+	dbr_class_int,		/* short			*/
+	dbr_class_float,	/* IEEE Float			*/
+	dbr_class_int,		/* item number			*/
+	dbr_class_int,		/* character			*/
+	dbr_class_int,		/* long				*/
+	dbr_class_float,	/* double			*/
+
+	dbr_class_string,	/* string max size		*/
+	dbr_class_int,		/* short			*/
+	dbr_class_float,	/* IEEE Float			*/
+	dbr_class_int,		/* item number			*/
+	dbr_class_int,		/* character			*/
+	dbr_class_int,		/* long				*/
+	dbr_class_float,	/* double			*/
+
+	dbr_class_string,	/* string max size		*/
+	dbr_class_int,		/* short			*/
+	dbr_class_float,	/* IEEE Float			*/
+	dbr_class_int,		/* item number			*/
+	dbr_class_int,		/* character			*/
+	dbr_class_int,		/* long				*/
+	dbr_class_float,	/* double			*/
+
+	dbr_class_string,	/* string max size		*/
+	dbr_class_int,		/* short			*/
+	dbr_class_float,	/* IEEE Float			*/
+	dbr_class_int,		/* item number			*/
+	dbr_class_int,		/* character			*/
+	dbr_class_int,		/* long				*/
+	dbr_class_float,	/* double			*/
+
+	dbr_class_string,	/* string max size		*/
+	dbr_class_int,		/* short			*/
+	dbr_class_float,	/* IEEE Float			*/
+	dbr_class_int,		/* item number			*/
+	dbr_class_int,		/* character			*/
+	dbr_class_int,		/* long				*/
+	dbr_class_float,	/* double			*/
+	dbr_class_int,
+	dbr_class_int,
+	dbr_class_string,
+	dbr_class_string,	/* string max size		*/
+};
+
+epicsShareDef const unsigned short dbr_value_offset[LAST_BUFFER_TYPE+1] = {
+	0,					/* string			*/
+	0,					/* short			*/
+	0,					/* IEEE Float			*/
+	0,					/* item number			*/
+	0,					/* character			*/
+	0,					/* long				*/
+	0,					/* IEEE double			*/
+	offsetof(dbr_sts_string,value[0]),/* string field	with status	*/
+	offsetof(dbr_sts_short,value),	/* short field with status	*/
+	offsetof(dbr_sts_float,value),	/* float field with status	*/
+	offsetof(dbr_sts_enum,value),	/* item number with status	*/
+	offsetof(dbr_sts_char,value),	/* char field with status	*/
+	offsetof(dbr_sts_long,value),	/* long field with status	*/
+	offsetof(dbr_sts_double,value),	/* double field with time	*/
+	offsetof(dbr_time_string,value[0]),/* string field with time	*/
+	offsetof(dbr_time_short,value),	/* short field with time	*/
+	offsetof(dbr_time_float,value),	/* float field with time	*/
+	offsetof(dbr_time_enum,value),	/* item number with time	*/
+	offsetof(dbr_time_char,value),	/* char field with time		*/
+	offsetof(dbr_time_long,value),	/* long field with time		*/
+	offsetof(dbr_time_double,value),	/* double field with time	*/
+	offsetof(dbr_sts_string,value[0]),/* graphic string info		*/
+	offsetof(dbr_gr_short,value),	/* graphic short info		*/
+	offsetof(dbr_gr_float,value),	/* graphic float info		*/
+	offsetof(dbr_gr_enum,value),	/* graphic item info		*/
+	offsetof(dbr_gr_char,value),	/* graphic char info		*/
+	offsetof(dbr_gr_long,value),	/* graphic long info		*/
+	offsetof(dbr_gr_double,value),	/* graphic double info		*/
+	offsetof(dbr_sts_string,value[0]),/* control string info		*/
+	offsetof(dbr_ctrl_short,value),	/* control short info		*/
+	offsetof(dbr_ctrl_float,value),	/* control float info		*/
+	offsetof(dbr_ctrl_enum,value),	/* control item info		*/
+	offsetof(dbr_ctrl_char,value),	/* control char info		*/
+	offsetof(dbr_ctrl_long,value),	/* control long info		*/
+	offsetof(dbr_ctrl_double,value),	/* control double info		*/
+	0,					/* put ackt			*/
+	0,					/* put acks			*/
+	offsetof(dbr_stsack_string,value[0]),/* string field	with status	*/
+	0,					/* string			*/
+};
+
+epicsShareDef const char *db_field_text[] = {
+    "DBF_STRING",
+    "DBF_SHORT",
+    "DBF_FLOAT",
+    "DBF_ENUM",
+    "DBF_CHAR",
+    "DBF_LONG",
+    "DBF_DOUBLE"
+};
+
+epicsShareDef const char    *dbf_text_invalid = "DBF_invalid";
+
+epicsShareDef const short   dbf_text_dim = (sizeof dbf_text)/(sizeof (char *));
+
+epicsShareDef const char *dbr_text[LAST_BUFFER_TYPE+1] = {
+    "DBR_STRING",
+    "DBR_SHORT",
+    "DBR_FLOAT",
+    "DBR_ENUM",
+    "DBR_CHAR",
+    "DBR_LONG",
+    "DBR_DOUBLE",
+    "DBR_STS_STRING",
+    "DBR_STS_SHORT",
+    "DBR_STS_FLOAT",
+    "DBR_STS_ENUM",
+    "DBR_STS_CHAR",
+    "DBR_STS_LONG",
+    "DBR_STS_DOUBLE",
+    "DBR_TIME_STRING",
+    "DBR_TIME_SHORT",
+    "DBR_TIME_FLOAT",
+    "DBR_TIME_ENUM",
+    "DBR_TIME_CHAR",
+    "DBR_TIME_LONG",
+    "DBR_TIME_DOUBLE",
+    "DBR_GR_STRING",
+    "DBR_GR_SHORT",
+    "DBR_GR_FLOAT",
+    "DBR_GR_ENUM",
+    "DBR_GR_CHAR",
+    "DBR_GR_LONG",
+    "DBR_GR_DOUBLE",
+    "DBR_CTRL_STRING",
+    "DBR_CTRL_SHORT",
+    "DBR_CTRL_FLOAT",
+    "DBR_CTRL_ENUM",
+    "DBR_CTRL_CHAR",
+    "DBR_CTRL_LONG",
+    "DBR_CTRL_DOUBLE",
+    "DBR_PUT_ACKT",
+    "DBR_PUT_ACKS",
+    "DBR_STSACK_STRING",
+    "DBR_CLASS_NAME"
+};
+
+epicsShareDef const char *  dbr_text_invalid = "DBR_invalid";
+epicsShareDef const short   dbr_text_dim = (sizeof dbr_text) / (sizeof (char *)) + 1;

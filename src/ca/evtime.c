@@ -4,8 +4,8 @@
 #include "dbDefs.h"
 #include "tsStamp.h"
 
-void event_handler(struct event_handler_args args);
-int evtime(char *pname);
+void event_handler (struct event_handler_args args);
+int evtime (char *pname);
 
 static unsigned 	iteration_count;
 static epicsUInt32	last_time;

@@ -147,7 +147,7 @@ struct caPutNotify {
     ELLNODE             node;
     void                *dbPutNotify;
     unsigned long       valueSize; /* size of block pointed to by pValue */
-    void                (*caUserCallback) (struct event_handler_args);
+    caEventCallBackFunc *caUserCallback;
     void                *caUserArg;
     void                *pValue;
 };
@@ -161,7 +161,7 @@ struct lciu {
 };
 
 struct baseMIU {
-    void                (*usr_func) (struct  event_handler_args args);
+    caEventCallBackFunc *usr_func;
     void                *usr_arg;
     chtype              type;       /* requested type for local CA  */
     unsigned long       count;      /* requested count for local CA */
@@ -486,11 +486,10 @@ struct cac {
     TS_STAMP                ca_last_repeater_try;
     ca_real                 ca_connectTMO;
     udpiiu                  *pudpiiu;
-    void                    (*ca_exception_func)
-                                (struct exception_handler_args);
+    caExceptionHandler      *ca_exception_func;
     void                    *ca_exception_arg;
-    int                     (*ca_printf_func) (const char *pformat, va_list args);
-    void                    (*ca_fd_register_func) (void *, int, int);
+    caPrintfFunc            *ca_printf_func;
+    CAFDHANDLER             *ca_fd_register_func;
     void                    *ca_fd_register_arg;
     char                    *ca_pUserName;
     char                    *ca_pHostName;

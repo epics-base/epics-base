@@ -185,7 +185,6 @@ void recGblGetPrec(paddr,precision)
     struct dbAddr *paddr;
     long           *precision;
 {
-    struct dbCommon *precord=(struct dbCommon *)(paddr->precord);
     struct fldDes               *pfldDes=(struct fldDes *)(paddr->pfldDes);
 
     switch(pfldDes->field_type){
@@ -261,6 +260,7 @@ static void getConRangeValue(field_type,range,plimit)
     case(DBF_SHORT):
          *plimit = (double)range.value.short_value;
          break;
+    case(DBF_ENUM):
     case(DBF_USHORT):
          *plimit = (double)range.value.ushort_value;
          break;
@@ -290,13 +290,15 @@ static void getMaxRangeValues(field_type,pupper_limit,plower_limit)
          *pupper_limit = (double)SHRT_MAX;
          *plower_limit = (double)SHRT_MIN;
          break;
+    case(DBF_ENUM):
     case(DBF_USHORT):
          *pupper_limit = (double)USHRT_MAX;
          *plower_limit = (double)0;
          break;
     case(DBF_LONG):
-         *pupper_limit = (double)LONG_MAX;
-         *plower_limit = (double)LONG_MIN;
+	/* long did not work using cast to double */
+         *pupper_limit = 2147483647.;
+         *plower_limit = -2147483648.;
          break;
     case(DBF_ULONG):
          *pupper_limit = (double)ULONG_MAX;

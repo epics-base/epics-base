@@ -34,7 +34,7 @@ oldCAC::oldCAC ( bool enablePreemptiveCallback ) :
     pVPrintfFunc ( errlogVprintf ), fdRegFunc ( 0 ), fdRegArg ( 0 ),
     pndRecvCnt ( 0u ), ioSeqNo ( 0u )
 {
-    if ( enablePreemptiveCallback ) {
+    if ( ! enablePreemptiveCallback ) {
         this->pCallbackGuard = new epicsGuard < callbackMutex > 
             ( this->clientCtx.callbackGuardFactory () );
     }

@@ -39,4 +39,6 @@ epicsShareFunc int     epicsShareAPI ringIsFull(ringId id);
     If there is a single reader it is not necessary to lock for puts
 */
 
+#include "osdRing.h"
+
 #endif /* INCosiRingh */

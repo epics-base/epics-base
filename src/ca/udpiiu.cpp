@@ -398,7 +398,7 @@ udpiiu::~udpiiu ()
     this->shutdown ();
 
     this->pcas->lock ();
-    tsDLIter<nciu> iter (this->chidList);
+    tsDLIter <nciu> iter (this->chidList);
     pChan = iter ();
     while (pChan) {
         pNext = iter ();
@@ -428,8 +428,15 @@ void udpiiu::shutdown ()
         this->shutdownCmd = true;
         //
         // use of shutdown () for this purpose on UDP
-        // sockets does not work on certain OS (i.e. solaris).
+        // sockets does not work on certain OS (i.e. solaris)
+        // because the thread in recv() does not drop out of recv().
+        // On other OS (i.e. linux) shutdown() is required?
         //
+        status = ::shutdown ( this->sock, SD_BOTH );
+        if ( status ) {
+            errlogPrintf ( "CAC UDP socket shutdown error was %s\n", 
+                SOCKERRSTR (SOCKERRNO) );
+        }
         status = socket_close ( this->sock );
         if ( status ) {
             errlogPrintf ( "CAC UDP socket close error was %s\n", 
@@ -611,21 +618,21 @@ LOCAL void beacon_action ( udpiiu * piiu,
      *   1) set this field to one of the ip addresses of the host _or_
      *   2) set this field to htonl(INADDR_ANY)
      * new servers:
-     *      always set this field to htonl(INADDR_ANY)
+     *   always set this field to htonl(INADDR_ANY)
      *
      * clients always assume that if this
      * field is set to something that isnt htonl(INADDR_ANY)
      * then it is the overriding IP address of the server.
      */
     ina.sin_family = AF_INET;
-    if (pMsg->m_available != htonl(INADDR_ANY)) {
+    if ( pMsg->m_available != htonl (INADDR_ANY) ) {
         ina.sin_addr.s_addr = pMsg->m_available;
     }
     else {
         ina.sin_addr = pnet_addr->sin_addr;
     }
-    if (pMsg->m_count != 0) {
-        ina.sin_port = htons (pMsg->m_count);
+    if ( pMsg->m_count != 0 ) {
+        ina.sin_port = htons ( pMsg->m_count );
     }
     else {
         /*
@@ -784,9 +791,14 @@ int udpiiu::post_msg (const struct sockaddr_in *pnet_addr,
 void udpiiu::hostName ( char *pBuf, unsigned bufLength ) const
 {
     if ( bufLength ) {
-        strncpy ( pBuf, "<disconnected>", bufLength );
+        strncpy ( pBuf, this->pHostName (), bufLength );
         pBuf[bufLength - 1u] = '\0';
     }
+}
+
+const char * udpiiu::pHostName () const
+{
+    return "<disconnected>";
 }
 
 bool udpiiu::ca_v42_ok () const
@@ -837,7 +849,7 @@ void udpiiu::removeFromChanList ( nciu &chan )
 
     this->pcas->lock ();
     if ( chan.piiu->pcas->endOfBCastList == iter ) {
-        if ( iter.itemBefore () != tsDLIterBD<nciu>::eol () ) {
+        if ( iter.itemBefore ().valid () ) {
             chan.piiu->pcas->endOfBCastList = iter.itemBefore ();
         }
         else {

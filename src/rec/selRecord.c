@@ -116,7 +116,7 @@ static void monitor();
 
 #define ARG_MAX 12
  /* Fldnames should have as many as ARG_MAX */
- static char Fldnames[ARG_MAX][FLDNAME_SZ] =
+ static char *Fldnames[ARG_MAX] =
      {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"};
 
 

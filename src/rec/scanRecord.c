@@ -96,7 +96,6 @@
 #include	<taskLib.h>
 
 #include	<alarm.h>
-#include	<cvtTable.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
 #include	<dbScan.h>

@@ -1,0 +1,96 @@
+recordtype(waveform) {
+	include "dbCommon.db" 
+	field(VAL,DBF_NOACCESS) {
+		prompt("Value")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		pp(TRUE)
+		size(4)
+		extra("void *		val")
+	}
+	field(RARM,DBF_SHORT) {
+		prompt("Rearm the waveform")
+		promptgroup(GUI_WAVE)
+		pp(TRUE)
+		interest(1)
+	}
+	field(PREC,DBF_SHORT) {
+		prompt("Display Precision")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
+	}
+	field(INP,DBF_INLINK) {
+		prompt("Input Specification")
+		promptgroup(GUI_INPUTS)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(EGU,DBF_STRING) {
+		prompt("Engineering Units Name")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
+		size(16)
+	}
+	field(HOPR,DBF_FLOAT) {
+		prompt("High Operating Range")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
+	}
+	field(LOPR,DBF_FLOAT) {
+		prompt("Low Operating Range")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
+	}
+	field(NELM,DBF_ULONG) {
+		prompt("Number of Elements")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(FTVL,DBF_MENU) {
+		prompt("Field Type of Value")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		menu(menuFtype)
+	}
+	field(BUSY,DBF_SHORT) {
+		prompt("Busy Indicator")
+		special(SPC_NOMOD)
+	}
+	field(NORD,DBF_ULONG) {
+		prompt("Number elements read")
+		special(SPC_NOMOD)
+	}
+	field(BPTR,DBF_NOACCESS) {
+		prompt("Buffer Pointer")
+		special(SPC_NOMOD)
+		interest(4)
+		size(4)
+		extra("void *		bptr")
+	}
+	field(SIOL,DBF_INLINK) {
+		prompt("Sim Input Specifctn")
+		promptgroup(GUI_INPUTS)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(SIML,DBF_INLINK) {
+		prompt("Sim Mode Location")
+		promptgroup(GUI_INPUTS)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(SIMM,DBF_MENU) {
+		prompt("Simulation Mode")
+		interest(1)
+		menu(menuYesNo)
+	}
+	field(SIMS,DBF_MENU) {
+		prompt("Sim mode Alarm Svrty")
+		promptgroup(GUI_INPUTS)
+		interest(2)
+		menu(menuAlarmSevr)
+	}
+}

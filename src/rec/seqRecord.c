@@ -51,7 +51,6 @@
 #define GEN_SIZE_OFFSET
 #include	<seqRecord.h>
 #undef  GEN_SIZE_OFFSET
-#include	<choiceSeq.h>
 
 int	seqRecDebug = 0;
 
@@ -241,12 +240,12 @@ struct seqRecord *pseq;
   pcb->callBack.priority = pseq->prio;
 
   /*
-   * We should not bother supporting REC_SEQ_SELM_ALL or REC_SEQ_SELM_SPECIFIC
-   * they can both be supported by simply providing REC_SEQ_SELM_MASK.
+   * We should not bother supporting seqSELM_All or seqSELM_Specified
+   * they can both be supported by simply providing seqSELM_Mask.
    * build the proper mask using these other silly modes if necessary.
    */
 
-  if (pseq->selm == REC_SEQ_SELM_ALL)
+  if (pseq->selm == seqSELM_All)
   {
     lmask = SELN_BIT_MASK;
   }
@@ -259,7 +258,7 @@ struct seqRecord *pseq;
       nRequest = 1;
       recGblGetLinkValue(&(pseq->sell), (void *)pseq, DBR_USHORT, &(pseq->seln), &options,&nRequest);
     }
-    if  (pseq->selm == REC_SEQ_SELM_SPECIFIC)
+    if  (pseq->selm == seqSELM_Specified)
     {
       if(pseq->seln>10)
       { /* Invalid selection number */
@@ -272,7 +271,7 @@ struct seqRecord *pseq;
       lmask = 1;
       lmask <<= pseq->seln - 1;
     }
-    else if (pseq->selm == REC_SEQ_SELM_MASK)
+    else if (pseq->selm == seqSELM_Mask)
     {
       lmask = (pseq->seln) & SELN_BIT_MASK;
     }

@@ -98,7 +98,7 @@
 static long init_record();
 static long process();
 static long special();
-static long get_value();
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -131,7 +131,7 @@ struct rset aiRSET={
 	get_control_double,
 	get_alarm_double};
 
-struct aidset { /* analog input dset */
+typedef struct aidset { /* analog input dset */
 	long		number;
 	DEVSUPFUN	dev_report;
 	DEVSUPFUN	init;
@@ -140,7 +140,7 @@ struct aidset { /* analog input dset */
 	DEVSUPFUN	read_ai;/*(0,2)=> success and convert,don't convert)*/
 			/* if convert then raw value stored in rval */
 	DEVSUPFUN	special_linconv;
-};
+}aidset;
 
 
 /*Following from timing system		*/
@@ -148,17 +148,16 @@ struct aidset { /* analog input dset */
 extern unsigned int     gts_trigger_counter;
 */
 
-static void alarm();
-static void convert();
-static void monitor();
-static long readValue();
+static void alarm(aiRecord *pai);
+static void convert(aiRecord *pai);
+static void monitor(aiRecord *pai);
+static long readValue(aiRecord *pai);
 
-static long init_record(pai,pass)
-    struct aiRecord	*pai;
-    int pass;
+static long init_record(void *precord,int pass)
 {
-    struct aidset *pdset;
-    long status;
+    aiRecord	*pai = (aiRecord *)precord;
+    aidset	*pdset;
+    long	status;
 
     if (pass==0) return(0);
 
@@ -180,7 +179,7 @@ static long init_record(pai,pass)
 	if (status) return(status);
     }
 
-    if(!(pdset = (struct aidset *)(pai->dset))) {
+    if(!(pdset = (aidset *)(pai->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)pai,"ai: init_record");
 	return(S_dev_noDSET);
     }
@@ -197,10 +196,10 @@ static long init_record(pai,pass)
     return(0);
 }
 
-static long process(pai)
-	struct aiRecord	*pai;
+static long process(void *precord)
 {
-	struct aidset	*pdset = (struct aidset *)(pai->dset);
+	aiRecord	*pai = (aiRecord *)precord;
+	aidset		*pdset = (aidset *)(pai->dset);
 	long		 status;
 	unsigned char    pact=pai->pact;
 
@@ -243,13 +242,11 @@ static long process(pai)
 	return(status);
 }
 
-static long special(paddr,after)
-    struct dbAddr *paddr;
-    int	   	  after;
+static long special(DBADDR *paddr,int after)
 {
-    struct aiRecord  	*pai = (struct aiRecord *)(paddr->precord);
-    struct aidset 	*pdset = (struct aidset *) (pai->dset);
-    int           	special_type = paddr->special;
+    aiRecord  	*pai = (aiRecord *)(paddr->precord);
+    aidset 	*pdset = (aidset *) (pai->dset);
+    int          special_type = paddr->special;
 
     switch(special_type) {
     case(SPC_LINCONV):
@@ -265,32 +262,18 @@ static long special(paddr,after)
 	return(S_db_badChoice);
     }
 }
-
-static long get_value(pai,pvdes)
-    struct aiRecord		*pai;
-    struct valueDes	*pvdes;
-{
-    pvdes->field_type = DBF_DOUBLE;
-    pvdes->no_elements=1;
-    (double *)(pvdes->pvalue) = &pai->val;
-    return(0);
-}
 
-static long get_units(paddr,units)
-    struct dbAddr *paddr;
-    char	  *units;
+static long get_units(DBADDR *paddr, char *units)
 {
-    struct aiRecord	*pai=(struct aiRecord *)paddr->precord;
+    aiRecord	*pai=(aiRecord *)paddr->precord;
 
     strncpy(units,pai->egu,DB_UNITS_SIZE);
     return(0);
 }
 
-static long get_precision(paddr,precision)
-    struct dbAddr *paddr;
-    long	  *precision;
+static long get_precision(DBADDR *paddr, long *precision)
 {
-    struct aiRecord	*pai=(struct aiRecord *)paddr->precord;
+    aiRecord	*pai=(aiRecord *)paddr->precord;
 
     *precision = pai->prec;
     if(paddr->pfield == (void *)&pai->val) return(0);
@@ -298,57 +281,55 @@ static long get_precision(paddr,precision)
     return(0);
 }
 
-static long get_graphic_double(paddr,pgd)
-    struct dbAddr *paddr;
-    struct dbr_grDouble	*pgd;
+static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd)
 {
-    struct aiRecord	*pai=(struct aiRecord *)paddr->precord;
+    aiRecord	*pai=(aiRecord *)paddr->precord;
+    int		fieldIndex = dbGetFieldIndex(paddr);
 
-    if(paddr->pfield==(void *)&pai->val ||
-       paddr->pfield==(void *)&pai->hihi ||
-       paddr->pfield==(void *)&pai->high ||
-       paddr->pfield==(void *)&pai->low ||
-       paddr->pfield==(void *)&pai->lolo){
+    if(fieldIndex == aiRecordVAL
+    || fieldIndex == aiRecordHIHI
+    || fieldIndex == aiRecordHIGH
+    || fieldIndex == aiRecordLOW
+    || fieldIndex == aiRecordLOLO
+    || fieldIndex == aiRecordHOPR
+    || fieldIndex == aiRecordLOPR) {
         pgd->upper_disp_limit = pai->hopr;
         pgd->lower_disp_limit = pai->lopr;
     } else recGblGetGraphicDouble(paddr,pgd);
     return(0);
 }
 
-static long get_control_double(paddr,pcd)
-    struct dbAddr *paddr;
-    struct dbr_ctrlDouble *pcd;
+static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
 {
-    struct aiRecord	*pai=(struct aiRecord *)paddr->precord;
+    aiRecord	*pai=(aiRecord *)paddr->precord;
+    int		fieldIndex = dbGetFieldIndex(paddr);
 
-    if(paddr->pfield==(void *)&pai->val ||
-       paddr->pfield==(void *)&pai->hihi ||
-       paddr->pfield==(void *)&pai->high ||
-       paddr->pfield==(void *)&pai->low ||
-       paddr->pfield==(void *)&pai->lolo){
-    pcd->upper_ctrl_limit = pai->hopr;
-    pcd->lower_ctrl_limit = pai->lopr;
+    if(fieldIndex == aiRecordVAL
+    || fieldIndex == aiRecordHIHI
+    || fieldIndex == aiRecordHIGH
+    || fieldIndex == aiRecordLOW
+    || fieldIndex == aiRecordLOLO) {
+	pcd->upper_ctrl_limit = pai->hopr;
+	pcd->lower_ctrl_limit = pai->lopr;
     } else recGblGetControlDouble(paddr,pcd);
     return(0);
 }
 
-static long get_alarm_double(paddr,pad)
-    struct dbAddr *paddr;
-    struct dbr_alDouble	*pad;
+static long get_alarm_double(DBADDR *paddr,struct dbr_alDouble *pad)
 {
-    struct aiRecord	*pai=(struct aiRecord *)paddr->precord;
+    aiRecord	*pai=(aiRecord *)paddr->precord;
+    int		fieldIndex = dbGetFieldIndex(paddr);
 
-    if(paddr->pfield==(void *)&pai->val){
-         pad->upper_alarm_limit = pai->hihi;
-         pad->upper_warning_limit = pai->high;
-         pad->lower_warning_limit = pai->low;
-         pad->lower_alarm_limit = pai->lolo;
+    if(fieldIndex == aiRecordVAL) {
+	pad->upper_alarm_limit = pai->hihi;
+	pad->upper_warning_limit = pai->high;
+	pad->lower_warning_limit = pai->low;
+	pad->lower_alarm_limit = pai->lolo;
     } else recGblGetAlarmDouble(paddr,pad);
     return(0);
 }
 
-static void alarm(pai)
-    struct aiRecord	*pai;
+static void alarm(aiRecord *pai)
 {
 	double		val;
 	float		hyst, lalm, hihi, high, low, lolo;
@@ -391,8 +372,7 @@ static void alarm(pai)
 	return;
 }
 
-static void convert(pai)
-struct aiRecord	*pai;
+static void convert(aiRecord *pai)
 {
 	double			 val;
 	float		aslo=pai->aslo;
@@ -428,8 +408,7 @@ struct aiRecord	*pai;
 	return;
 }
 
-static void monitor(pai)
-    struct aiRecord	*pai;
+static void monitor(aiRecord *pai)
 {
 	unsigned short	monitor_mask;
 	double		delta;
@@ -466,11 +445,10 @@ static void monitor(pai)
 	return;
 }
 
-static long readValue(pai)
-	struct aiRecord	*pai;
+static long readValue(aiRecord *pai)
 {
 	long		status;
-        struct aidset 	*pdset = (struct aidset *) (pai->dset);
+        aidset 	*pdset = (aidset *) (pai->dset);
 
 	if (pai->pact == TRUE){
 		status=(*pdset->read_ai)(pai);

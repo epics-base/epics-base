@@ -77,7 +77,6 @@
 #include        <wdLib.h>
 
 #include	<alarm.h>
-#include	<cvtTable.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
 #include	<dbScan.h>
@@ -165,7 +164,7 @@ struct {
 #define   DOL_INDEX  ARG_MAX 
 #define   OUT_INDEX  (ARG_MAX + IN_PVS)
 #define   NUM_LINKS  (ARG_MAX + IN_PVS + OUT_PVS)
-#define   PVN_SIZE  40  /*must match the length defined in waitRecord.ascii*/
+#define   PVN_SIZE  40  /*must match the length defined in waitRecord.db*/
 #define   Q_SIZE    50
 #define   PV_OK     REC_WAIT_DYNL_OK     /* from choiceWait.h */
 #define   PV_NC     REC_WAIT_DYNL_NC     /* from choiceWait.h */

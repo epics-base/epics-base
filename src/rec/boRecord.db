@@ -1,0 +1,147 @@
+recordtype(bo) {
+	include "dbCommon.db" 
+	field(VAL,DBF_ENUM) {
+		prompt("Current Value")
+		asl(ASL0)
+		pp(TRUE)
+	}
+	field(OMSL,DBF_MENU) {
+		prompt("Output Mode Select")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+		menu(menuOmsl)
+	}
+	field(DOL,DBF_INLINK) {
+		prompt("Desired Output Loc")
+		promptgroup(GUI_OUTPUT)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(OUT,DBF_OUTLINK) {
+		prompt("Output Specification")
+		promptgroup(GUI_OUTPUT)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(HIGH,DBF_FLOAT) {
+		prompt("Seconds to Hold High")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+	}
+	field(ZNAM,DBF_STRING) {
+		prompt("Zero Name")
+		promptgroup(GUI_DISPLAY)
+		pp(TRUE)
+		interest(1)
+		size(20)
+	}
+	field(ONAM,DBF_STRING) {
+		prompt("One Name")
+		promptgroup(GUI_DISPLAY)
+		pp(TRUE)
+		interest(1)
+		size(20)
+	}
+	field(RVAL,DBF_ULONG) {
+		prompt("Raw Value")
+		pp(TRUE)
+	}
+	field(ORAW,DBF_ULONG) {
+		prompt("prev Raw Value")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(MASK,DBF_ULONG) {
+		prompt("Hardware Mask")
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(RPVT,DBF_NOACCESS) {
+		prompt("Record Private")
+		special(SPC_NOMOD)
+		interest(4)
+		size(4)
+		extra("void *  rpvt")
+	}
+	field(WDPT,DBF_NOACCESS) {
+		prompt("Watch Dog Timer ID")
+		special(SPC_NOMOD)
+		interest(4)
+		size(4)
+		extra("void *	wdpt")
+	}
+	field(ZSV,DBF_MENU) {
+		prompt("Zero Error Severity")
+		promptgroup(GUI_ALARMS)
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(OSV,DBF_MENU) {
+		prompt("One Error Severity")
+		promptgroup(GUI_ALARMS)
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(COSV,DBF_MENU) {
+		prompt("Change of State Sevr")
+		promptgroup(GUI_ALARMS)
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(RBV,DBF_ULONG) {
+		prompt("Readback Value")
+		special(SPC_NOMOD)
+	}
+	field(ORBV,DBF_ULONG) {
+		prompt("Prev Readback Value")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(MLST,DBF_USHORT) {
+		prompt("Last Value Monitored")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LALM,DBF_USHORT) {
+		prompt("Last Value Alarmed")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(SIOL,DBF_OUTLINK) {
+		prompt("Sim Output Specifctn")
+		promptgroup(GUI_INPUTS)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(SIML,DBF_INLINK) {
+		prompt("Sim Mode Location")
+		promptgroup(GUI_INPUTS)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(SIMM,DBF_MENU) {
+		prompt("Simulation Mode")
+		interest(1)
+		menu(menuYesNo)
+	}
+	field(SIMS,DBF_MENU) {
+		prompt("Sim mode Alarm Svrty")
+		promptgroup(GUI_INPUTS)
+		interest(2)
+		menu(menuAlarmSevr)
+	}
+	field(IVOA,DBF_MENU) {
+		prompt("INVALID outpt action")
+		promptgroup(GUI_OUTPUT)
+		interest(2)
+		menu(menuIvoa)
+	}
+	field(IVOV,DBF_USHORT) {
+		prompt("INVALID output value")
+		promptgroup(GUI_OUTPUT)
+		interest(2)
+	}
+}

@@ -4,6 +4,10 @@ include $(EPICS)/config/CONFIG_BASE
 
 USR_INCLUDES = -I../drv/ansi -I../../drv/old
 
+INC += egDefs.h
+INC += erDefs.h
+INC += ereventDefs.h
+
 RECTYPES += aaiRecord.h
 RECTYPES += aaoRecord.h
 RECTYPES += aiRecord.h

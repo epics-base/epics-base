@@ -76,7 +76,7 @@ static long push_values();
 
 #define OUT_ARG_MAX 8
 
-static char Ofldnames[OUT_ARG_MAX][FLDNAME_SZ] =
+static char *Ofldnames[OUT_ARG_MAX] =
    {"OUTA", "OUTB", "OUTC", "OUTD", "OUTE", "OUTF", "OUTG", "OUTH"};
 
 

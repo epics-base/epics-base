@@ -1,0 +1,69 @@
+recordtype(stringout) {
+	include "dbCommon.db" 
+	field(VAL,DBF_STRING) {
+		prompt("Current Value")
+		promptgroup(GUI_OUTPUT)
+		asl(ASL0)
+		pp(TRUE)
+		size(40)
+	}
+	field(OVAL,DBF_STRING) {
+		prompt("Previous Value")
+		special(SPC_NOMOD)
+		interest(3)
+		size(40)
+	}
+	field(DOL,DBF_INLINK) {
+		prompt("Desired Output Loc")
+		promptgroup(GUI_OUTPUT)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(OMSL,DBF_MENU) {
+		prompt("Output Mode Select")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+		menu(menuOmsl)
+	}
+	field(OUT,DBF_OUTLINK) {
+		prompt("Output Specification")
+		promptgroup(GUI_OUTPUT)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(SIOL,DBF_OUTLINK) {
+		prompt("Sim Output Specifctn")
+		promptgroup(GUI_INPUTS)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(SIML,DBF_INLINK) {
+		prompt("Sim Mode Location")
+		promptgroup(GUI_INPUTS)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(SIMM,DBF_MENU) {
+		prompt("Simulation Mode")
+		interest(1)
+		menu(menuYesNo)
+	}
+	field(SIMS,DBF_MENU) {
+		prompt("Sim mode Alarm Svrty")
+		promptgroup(GUI_INPUTS)
+		interest(2)
+		menu(menuAlarmSevr)
+	}
+	field(IVOA,DBF_MENU) {
+		prompt("INVALID output action")
+		promptgroup(GUI_OUTPUT)
+		interest(2)
+		menu(menuIvoa)
+	}
+	field(IVOV,DBF_STRING) {
+		prompt("INVALID output value")
+		promptgroup(GUI_OUTPUT)
+		interest(2)
+		size(40)
+	}
+}

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/11/02 00:54:11  jhill
+ * many improvements
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
  * ca server installation
  *
@@ -92,6 +95,7 @@ class casEventMaskEntry : public tsSLNode<casEventMaskEntry>,
 public:
 	casEventMaskEntry (casEventMask maskIn, const char *pName) : 
 		casEventMask (maskIn), stringId (pName)	{}
+	virtual ~casEventMaskEntry();
 	void show (unsigned level) 
 	{
 		this->casEventMask::show(level);

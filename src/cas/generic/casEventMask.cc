@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/11/02 00:54:10  jhill
+ * many improvements
+ *
  * Revision 1.2  1996/09/04 20:20:44  jhill
  * removed sizeof(casEventMask::mask) for MSVISC++
  *
@@ -195,5 +198,17 @@ void casEventRegistry::show(unsigned level)
 	}
 	this->resTable <casEventMaskEntry, stringId>::show(level);
 	this->mutex.osiUnlock();
+}
+
+//
+// casEventMaskEntry::~casEventMaskEntry()
+//
+// empty destructor forces virtual
+//
+// (not inline so that we avoid duplication resulting 
+// in the object code created by some compilers)
+//
+casEventMaskEntry::~casEventMaskEntry()
+{
 }
 

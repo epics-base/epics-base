@@ -801,7 +801,7 @@ static long cvt_f_st(
  {
    struct rset *prset = 0;
    long status = 0;
-   long precision = 0;
+   long precision = 6;
 
    if(paddr) prset = dbGetRset(paddr);
  
@@ -882,7 +882,7 @@ static long cvt_d_st(
  {
    struct rset *prset = 0;
    long status = 0;
-   long precision = 0;
+   long precision = 6;
 
    if(paddr) prset = dbGetRset(paddr);
  

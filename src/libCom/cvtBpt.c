@@ -49,8 +49,8 @@ long cvtRawToEngBpt(pval,linr,init,ppbrk,plbrk)
      caddr_t    *ppbrk;
      short      *plbrk;
 { 
-     double     val=*pval;
-
+     double           val=*pval;
+     long             status=0;
      struct brkTable *pbrkTable;
      struct brkInt   *pInt;     
      struct brkInt   *pnxtInt;
@@ -72,7 +72,6 @@ long cvtRawToEngBpt(pval,linr,init,ppbrk,plbrk)
      pbrkTable = (struct brkTable *)*ppbrk;
      number = pbrkTable->number;
      lbrk = *plbrk;
-printf("DEBUG:  cvtRawtoEngBpt = %d\n",number);
      /*make sure we dont go off end of table*/
      if( (lbrk+1) >= number ) lbrk--;
      pInt = pbrkTable->papBrkInt[lbrk];
@@ -82,20 +81,20 @@ printf("DEBUG:  cvtRawtoEngBpt = %d\n",number);
          lbrk++;
          pInt = pbrkTable->papBrkInt[lbrk];
          if( lbrk >= number-1) {
-                return(1);
+                status=1;
          }
          pnxtInt = pbrkTable->papBrkInt[lbrk+1];
      }
      while( (pInt->raw) > val) {
          if(lbrk==0) {
-                return(1);
+                status=1;
             }
          lbrk--;
          pInt = pbrkTable->papBrkInt[lbrk];
      }
      *plbrk = lbrk;
      *pval = pInt->eng + (val - pInt->raw) * pInt->slope;
-     return(0);
+     return(status);
 }
 
 long cvtEngToRawBpt(pval,linr,init,ppbrk,plbrk)
@@ -105,8 +104,8 @@ long cvtEngToRawBpt(pval,linr,init,ppbrk,plbrk)
      caddr_t    *ppbrk;
      short      *plbrk;
 { 
-     double     val=*pval;
-
+     double           val=*pval;
+     long             status=0;
      struct brkTable *pbrkTable;
      struct brkInt   *pInt;     
      struct brkInt   *pnxtInt;
@@ -129,7 +128,6 @@ long cvtEngToRawBpt(pval,linr,init,ppbrk,plbrk)
      pbrkTable = (struct brkTable *)*ppbrk;
      number = pbrkTable->number;
      lbrk = *plbrk;
-printf("DEBUG:  cvtEngToRawBpt = %d\n",number);
      /*make sure we dont go off end of table*/
      if( (lbrk+1) >= number ) lbrk--;
      pInt = pbrkTable->papBrkInt[lbrk];
@@ -139,13 +137,13 @@ printf("DEBUG:  cvtEngToRawBpt = %d\n",number);
          lbrk++;
          pInt = pbrkTable->papBrkInt[lbrk];
          if( lbrk >= number-1) {
-                return(1);
+                status=1;
          }
          pnxtInt = pbrkTable->papBrkInt[lbrk+1];
      }
      while( (pInt->eng) > val) {
          if(lbrk==0) {
-                return(1);
+                status=1;
             }
          lbrk--;
          pInt = pbrkTable->papBrkInt[lbrk];
@@ -155,7 +153,7 @@ printf("DEBUG:  cvtEngToRawBpt = %d\n",number);
          *pval = pInt->raw + (val - pInt->eng) / pInt->slope;
      }
      else {
-         return(1);
+         return(status);
      }
      return(0);
 }

@@ -174,13 +174,10 @@ casStreamOS *casIntfIO::newStreamClient ( caServerI & cas,
                                clientBufMemoryManager & bufMgr ) const
 {
     static bool oneMsgFlag = false;
+
     struct sockaddr	newAddr;
-    SOCKET newSock;
-    osiSocklen_t length;
-    casStreamOS	* pOS;
-    
-    length = ( osiSocklen_t ) sizeof ( newAddr );
-    newSock = accept ( this->sock, & newAddr, & length );
+    osiSocklen_t length = ( osiSocklen_t ) sizeof ( newAddr );
+    SOCKET newSock = epicsSocketAccept ( this->sock, & newAddr, & length );
     if ( newSock == INVALID_SOCKET ) {
         int errnoCpy = SOCKERRNO;
         if ( errnoCpy != SOCK_EWOULDBLOCK && ! oneMsgFlag ) {
@@ -201,7 +198,7 @@ casStreamOS *casIntfIO::newStreamClient ( caServerI & cas,
     ioArgsToNewStreamIO args;
     args.addr = newAddr;
     args.sock = newSock;
-    pOS = new casStreamOS ( cas, bufMgr, args );
+    casStreamOS	* pOS = new casStreamOS ( cas, bufMgr, args );
     if ( ! pOS ) {
         errMessage ( S_cas_noMemory, 
             "unable to create data structures for a new client" );

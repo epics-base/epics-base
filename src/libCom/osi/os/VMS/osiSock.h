@@ -60,7 +60,6 @@ extern "C" {
 #if defined(MULTINET) && defined(MULTINET_NO_PROTOTYPES)
 int gettimeofday (struct timeval *tp, struct timezone *tzp);
 int gethostname (char *name, int namelen); 
-int accept (int socket, struct sockaddr *addr, int *addrlen);
 int getpeername (int socket, struct sockaddr *name, int *namelen);
 int connect (int socket, struct sockaddr *name, int namelen);
 int setsockopt (int socket, int level, int optname,

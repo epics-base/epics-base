@@ -122,6 +122,12 @@ epicsShareFunc SOCKET epicsShareAPI epicsSocketCreate (
     return socket ( domain, type, protocol );
 }
 
+epicsShareFunc int epicsShareAPI epicsSocketAccept ( 
+    int sock, struct sockaddr * pAddr, osiSocklen_t * addrlen )
+{
+    return accept ( sock, pAddr, addrlen );
+}
+
 epicsShareFunc void epicsShareAPI epicsSocketDestroy ( SOCKET s )
 {
     int status = closesocket ( s );

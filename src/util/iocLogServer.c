@@ -442,8 +442,8 @@ static void acceptNewClient ( void *pParam )
 	}
 
 	addrSize = sizeof ( addr );
-	pclient->insock = accept ( pserver->sock, (struct sockaddr *)&addr, &addrSize );
-	if ( pclient->insock<0 || addrSize < sizeof (addr) ) {
+	pclient->insock = epicsSocketAccept ( pserver->sock, (struct sockaddr *)&addr, &addrSize );
+	if ( pclient->insock==INVALID_SOCKET || addrSize < sizeof (addr) ) {
         static unsigned acceptErrCount;
         static int lastErrno;
         int thisErrno;

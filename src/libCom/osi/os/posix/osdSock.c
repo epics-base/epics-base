@@ -93,6 +93,29 @@ epicsShareFunc SOCKET epicsShareAPI epicsSocketCreate (
     return sock;
 }
 
+epicsShareFunc int epicsShareAPI epicsSocketAccept ( 
+    int sock, struct sockaddr * pAddr, osiSocklen_t * addrlen )
+{
+    int newSock = accept ( sock, pAddr, addrlen );
+    if ( newSock < 0 ) {
+        newSock = INVALID_SOCKET;
+    }
+    else {
+        int status = fcntl ( newSock, F_SETFD, FD_CLOEXEC );
+        if ( status < 0 ) {
+            char buf [ 64 ];
+            epicsSocketConvertErrnoToString (  buf, sizeof ( buf ) );
+            errlogPrintf ( 
+                "epicsSocketCreate: failed to "
+                "fcntl FD_CLOEXEC because \"%s\"\n",
+                buf ):
+            close ( newSock );
+            newSock = INVALID_SOCKET;
+        }
+    }
+    return newSock;
+}
+
 epicsShareFunc void epicsShareAPI epicsSocketDestroy ( SOCKET s )
 {
     int status = close ( s );

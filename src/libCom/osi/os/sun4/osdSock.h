@@ -55,7 +55,6 @@ int gethostname (char *name, int namelen);
 #else
 #	ifdef OSISOCK_ANSI_FUNC_PROTO
 		int listen (int socket, int backlog);
-		int accept (int socket, struct sockaddr *addr, int *addrlen);
 		int shutdown (int socket, int how);
 		int getpeername (int socket, struct sockaddr *name, int *namelen);
 		int connect (int socket, struct sockaddr *name, int namelen);

@@ -196,7 +196,8 @@ LOCAL void req_server (void *pParm)
         struct sockaddr     sockAddr;
         osiSocklen_t        addLen = sizeof(sockAddr);
 
-        if ( ( clientSock = accept ( IOC_sock, &sockAddr, &addLen ) ) == INVALID_SOCKET ) {
+        clientSock = epicsSocketAccept ( IOC_sock, &sockAddr, &addLen );
+        if ( clientSock == INVALID_SOCKET ) {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( 
                 sockErrBuf, sizeof ( sockErrBuf ) );

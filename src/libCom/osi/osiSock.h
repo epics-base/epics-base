@@ -30,8 +30,12 @@ struct sockaddr;
 struct sockaddr_in;
 struct in_addr;
 
-epicsShareFunc SOCKET epicsShareAPI epicsSocketCreate ( int domain, int type, int protocol );
-epicsShareFunc void epicsShareAPI epicsSocketDestroy ( SOCKET );
+epicsShareFunc SOCKET epicsShareAPI epicsSocketCreate ( 
+    int domain, int type, int protocol );
+epicsShareFunc int epicsShareAPI epicsSocketAccept ( 
+    int sock, struct sockaddr * pAddr, osiSocklen_t * addrlen );
+epicsShareFunc void epicsShareAPI epicsSocketDestroy ( 
+    SOCKET );
 
 /*
  * Fortunately, on most systems the combination of a shutdown of both

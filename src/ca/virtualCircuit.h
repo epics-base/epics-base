@@ -63,6 +63,7 @@ public:
     virtual ~tcpRecvThread ();
     void start ();
     void exitWait ();
+    bool exitWait ( double delay );
     void interruptSocketRecv ();
 private:
     epicsThread thread;
@@ -101,11 +102,6 @@ public:
     ~tcpiiu ();
     void start (
         epicsGuard < epicsMutex > & );
-    void initiateCleanShutdown ( 
-        epicsGuard < epicsMutex > & );
-    void initiateAbortShutdown ( 
-        callbackManager &, 
-        epicsGuard < epicsMutex > & ); 
     void responsiveCircuitNotify ( 
         epicsGuard < epicsMutex > & cbGuard,
         epicsGuard < epicsMutex > & guard );
@@ -245,6 +241,10 @@ private:
     void unresponsiveCircuitNotify ( 
         epicsGuard < epicsMutex > & cbGuard, 
         epicsGuard < epicsMutex > & guard );
+    void initiateCleanShutdown ( 
+        epicsGuard < epicsMutex > & );
+    void initiateAbortShutdown ( 
+        epicsGuard < epicsMutex > & ); 
     void disconnectNotify ();
 
     // send protocol stubs

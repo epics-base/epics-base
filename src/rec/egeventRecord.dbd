@@ -48,13 +48,13 @@ recordtype(egevent) {
 		interest(1)
 		menu(egeventRAM)
 	}
-	field(DELY,DBF_FLOAT) {
+	field(DELY,DBF_DOUBLE) {
 		prompt("Desired Delay Time")
 		promptgroup(GUI_DISPLAY)
 		pp(TRUE)
 		interest(1)
 	}
-	field(ADLY,DBF_FLOAT) {
+	field(ADLY,DBF_DOUBLE) {
 		prompt("Actual Delay")
 		special(SPC_NOMOD)
 		interest(1)
@@ -69,7 +69,7 @@ recordtype(egevent) {
 		special(SPC_NOMOD)
 		interest(1)
 	}
-	field(LDLY,DBF_FLOAT) {
+	field(LDLY,DBF_DOUBLE) {
 		prompt("Last Desired Delay")
 		special(SPC_NOMOD)
 		interest(1)

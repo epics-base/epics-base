@@ -22,7 +22,7 @@ menu(calcoutINAV) {
 }
 recordtype(calcout) {
 	include "dbCommon.dbd" 
-        field(VERS,DBF_FLOAT) {
+        field(VERS,DBF_DOUBLE) {
                 prompt("Code Version")
                 special(SPC_NOMOD)
                 initial("1")
@@ -296,7 +296,7 @@ recordtype(calcout) {
                 interest(1)
                 menu(calcoutOOPT)
         }
-        field(ODLY,DBF_FLOAT) {
+        field(ODLY,DBF_DOUBLE) {
                 prompt("Output Execute Delay")
                 promptgroup(GUI_ALARMS)
                 asl(ASL0)
@@ -351,35 +351,35 @@ recordtype(calcout) {
 		promptgroup(GUI_DISPLAY)
 		interest(1)
 	}
-	field(HOPR,DBF_FLOAT) {
+	field(HOPR,DBF_DOUBLE) {
 		prompt("High Operating Rng")
 		promptgroup(GUI_DISPLAY)
 		interest(1)
 	}
-	field(LOPR,DBF_FLOAT) {
+	field(LOPR,DBF_DOUBLE) {
 		prompt("Low Operating Range")
 		promptgroup(GUI_DISPLAY)
 		interest(1)
 	}
-	field(HIHI,DBF_FLOAT) {
+	field(HIHI,DBF_DOUBLE) {
 		prompt("Hihi Alarm Limit")
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
 	}
-	field(LOLO,DBF_FLOAT) {
+	field(LOLO,DBF_DOUBLE) {
 		prompt("Lolo Alarm Limit")
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
 	}
-	field(HIGH,DBF_FLOAT) {
+	field(HIGH,DBF_DOUBLE) {
 		prompt("High Alarm Limit")
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
 	}
-	field(LOW,DBF_FLOAT) {
+	field(LOW,DBF_DOUBLE) {
 		prompt("Low Alarm Limit")
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)

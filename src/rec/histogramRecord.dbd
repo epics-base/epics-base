@@ -85,7 +85,7 @@ recordtype(histogram) {
 		special(SPC_NOMOD)
 		interest(3)
 	}
-	field(SDEL,DBF_FLOAT) {
+	field(SDEL,DBF_DOUBLE) {
 		prompt("Monitor Seconds Dband")
 		promptgroup(GUI_HIST)
 		special(SPC_RESET)

@@ -30,12 +30,12 @@ recordtype(subArray) {
 		interest(1)
 		size(16)
 	}
-	field(HOPR,DBF_FLOAT) {
+	field(HOPR,DBF_DOUBLE) {
 		prompt("High Operating Range")
 		promptgroup(GUI_CALC)
 		interest(1)
 	}
-	field(LOPR,DBF_FLOAT) {
+	field(LOPR,DBF_DOUBLE) {
 		prompt("Low Operating Range")
 		promptgroup(GUI_CLOCK)
 		interest(1)

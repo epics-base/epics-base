@@ -17,7 +17,7 @@ recordtype(ao) {
 		promptgroup(GUI_OUTPUT)
 		interest(1)
 	}
-	field(OROC,DBF_FLOAT) {
+	field(OROC,DBF_DOUBLE) {
 		prompt("Output Rate of Chang")
 		promptgroup(GUI_OUTPUT)
 		interest(1)
@@ -52,14 +52,14 @@ recordtype(ao) {
 		interest(1)
 		menu(menuConvert)
 	}
-	field(EGUF,DBF_FLOAT) {
+	field(EGUF,DBF_DOUBLE) {
 		prompt("Eng Units Full")
 		promptgroup(GUI_CONVERT)
 		special(SPC_LINCONV)
 		pp(TRUE)
 		interest(1)
 	}
-	field(EGUL,DBF_FLOAT) {
+	field(EGUL,DBF_DOUBLE) {
 		prompt("Eng Units Low")
 		promptgroup(GUI_CONVERT)
 		special(SPC_LINCONV)
@@ -88,59 +88,59 @@ recordtype(ao) {
 		interest(2)
 		initial("1")
 	}
-	field(DRVH,DBF_FLOAT) {
+	field(DRVH,DBF_DOUBLE) {
 		prompt("Drive High Limit")
 		promptgroup(GUI_OUTPUT)
 		pp(TRUE)
 		interest(1)
 	}
-	field(DRVL,DBF_FLOAT) {
+	field(DRVL,DBF_DOUBLE) {
 		prompt("Drive Low Limit")
 		promptgroup(GUI_OUTPUT)
 		pp(TRUE)
 		interest(1)
 	}
-	field(HOPR,DBF_FLOAT) {
+	field(HOPR,DBF_DOUBLE) {
 		prompt("High Operating Range")
 		promptgroup(GUI_DISPLAY)
 		interest(1)
 	}
-	field(LOPR,DBF_FLOAT) {
+	field(LOPR,DBF_DOUBLE) {
 		prompt("Low Operating Range")
 		promptgroup(GUI_DISPLAY)
 		interest(1)
 	}
-	field(AOFF,DBF_FLOAT) {
+	field(AOFF,DBF_DOUBLE) {
 		prompt("Adjustment Offset")
 		promptgroup(GUI_CONVERT)
 		pp(TRUE)
 		interest(1)
 	}
-	field(ASLO,DBF_FLOAT) {
+	field(ASLO,DBF_DOUBLE) {
 		prompt("Adjustment Slope")
 		promptgroup(GUI_CONVERT)
 		pp(TRUE)
 		interest(1)
 	}
-	field(HIHI,DBF_FLOAT) {
+	field(HIHI,DBF_DOUBLE) {
 		prompt("Hihi Alarm Limit")
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
 	}
-	field(LOLO,DBF_FLOAT) {
+	field(LOLO,DBF_DOUBLE) {
 		prompt("Lolo Alarm Limit")
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
 	}
-	field(HIGH,DBF_FLOAT) {
+	field(HIGH,DBF_DOUBLE) {
 		prompt("High Alarm Limit")
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
 	}
-	field(LOW,DBF_FLOAT) {
+	field(LOW,DBF_DOUBLE) {
 		prompt("Low Alarm Limit")
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)

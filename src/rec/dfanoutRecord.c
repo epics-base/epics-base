@@ -74,7 +74,7 @@ struct rset dfanoutRSET={
 
 static void alarm();
 static void monitor();
-static long push_values();
+static void push_values();
 
 #define OUT_ARG_MAX 8
 
@@ -105,8 +105,8 @@ static long process(pdfanout)
     pdfanout->pact = TRUE;
     recGblGetTimeStamp(pdfanout);
     /* Push out the data to all the forward links */
-    status = push_values(pdfanout);
     alarm(pdfanout);
+    push_values(pdfanout);
     monitor(pdfanout);
     recGblFwdLink(pdfanout);
     pdfanout->pact=FALSE;
@@ -175,7 +175,7 @@ static void alarm(pdfanout)
     struct dfanoutRecord	*pdfanout;
 {
 	double		val;
-	float		hyst, lalm, hihi, high, low, lolo;
+	double		hyst, lalm, hihi, high, low, lolo;
 	unsigned short	hhsv, llsv, hsv, lsv;
 
 	if(pdfanout->udf == TRUE ){
@@ -250,7 +250,7 @@ static void monitor(pdfanout)
 	return;
 }
 
-static long push_values(pdfanout)
+static void push_values(pdfanout)
 struct dfanoutRecord *pdfanout;
 {
         struct link     *plink; /* structure of the link field  */
@@ -259,7 +259,6 @@ struct dfanoutRecord *pdfanout;
 
         for(i=0, plink=&(pdfanout->outa); i<OUT_ARG_MAX; i++, plink++) {
                 status=dbPutLink(plink,DBR_LONG,&(pdfanout->val),1);
-                if (!RTN_SUCCESS(status)) return(-1);
+                if(status) recGblSetSevr(pdfanout,LINK_ALARM,MAJOR_ALARM);
         }
-        return(0);
 }

@@ -37,6 +37,12 @@
 #	darwin-ppc
 #	linux-mpc82xx
 
+#  Debugging builds 
+#	linux-x86-debug			(GNU compiler with -g option for host builds)
+#	solaris-sparc-debug		(sun compiler with -g option for host builds)
+#	win32-x86-debug			(MS Visual C++ compiler with debug option for host builds)
+
+
 #  EPICS_HOST_ARCH is a required environment variable
 #  Do not set EPICS_HOST_ARCH in this file. 
 #  Use base/startup files to set EPICS_HOST_ARCH or 
@@ -84,17 +90,12 @@ CMPLR=STRICT
 CXXCMPLR=STRICT
 
 #  Build shared libraries?
-#  (archive libraries will also be built)
 #        must be either YES or NO
 #     NOTE: os/CONFIG.$(EPICS_HOST_ARCH).$(EPICS_HOST_ARCH) files and
 #     os/CONFIG_SITE.$(EPICS_HOST_ARCH).$(EPICS_HOST_ARCH) files may override
 #
-#     NOTE WIN32: YES results in a DLL. CONFIG_SITE.Host.WIN32
-#                 distribution file contains YES override
+#     NOTE WIN32: YES results in a DLL.
 #
-#     NOTE solaris,Linux, and sun4: If YES then LD_LIBRARY_PATH must
-#     include fullpathname to $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH)
-#     for both the base build and when invoking base executables
 SHARED_LIBRARIES=YES
 
 #  Build client objects statically ?

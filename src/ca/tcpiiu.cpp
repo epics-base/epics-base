@@ -461,7 +461,7 @@ tcpiiu::tcpiiu ( cac &cac, double connectionTimeout,
     }
 
     epicsThreadId tid = epicsThreadCreate ( "CAC-TCP-recv", priorityOfRecv,
-            epicsThreadGetStackSize ( epicsThreadStackMedium ), 
+            epicsThreadGetStackSize ( epicsThreadStackBig ), 
             cacRecvThreadTCP, this);
     if ( tid == 0 ) {
         this->printf ("CA: unable to create CA client receive thread\n");
@@ -586,14 +586,22 @@ void tcpiiu::forcedShutdown ()
                 SOCKERRSTR (SOCKERRNO) );
         }
 
-        status = socket_close ( this->sock );
+        status = ::shutdown ( this->sock, SD_BOTH );
         if ( status ) {
-            errlogPrintf ("CAC TCP socket close error was %s\n", 
-                SOCKERRSTR (SOCKERRNO) );
-        }
-        else {
+	    errlogPrintf ("CAC TCP socket shutdown error was %s\n", 
+	        SOCKERRSTR (SOCKERRNO) );
+            status = socket_close ( this->sock );
+            if ( status ) {
+                errlogPrintf ("CAC TCP socket close error was %s\n", 
+                    SOCKERRSTR (SOCKERRNO) );
+            }
+            else {
+                this->state = iiu_disconnected;
+                this->sockCloseCompleted = true;
+            }
+	}
+        else { 
             this->state = iiu_disconnected;
-            this->sockCloseCompleted = true;
         }
     }
 

@@ -19,11 +19,11 @@
  *
  */
 
-#include <assert.h>
-#include <stdio.h>
+#include <iocinf.h>
 
 main()
 {
-	ca_repeater();
-	assert(0);
+	ca_repeater ();
+	assert (0);
+	return (0);
 }

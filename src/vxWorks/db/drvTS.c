@@ -13,6 +13,10 @@
 
 /*
  * $Log$
+ * Revision 1.39  2000/10/11 23:08:56  anj
+ * Fixed bug in TSgetMasterTime() - round-trip adjustment was garbage
+ * Replaced TSprintf() with printf() where logging inappropriate
+ *
  * Revision 1.38  2000/10/11 22:27:48  jhill
  * avoid synchronous DNS calls
  *
@@ -334,7 +338,6 @@ unsigned long TSfractionToNano(unsigned long fraction)
 {
     double value;
     
-    if(!TSinitialized) TSinit();
     /*value = 1e9 * fraction / 2**32 */
     value = (1e9 * (double)fraction)/4294967296.0;
     return((unsigned long)value);
@@ -345,7 +348,6 @@ unsigned long TSepochNtpToEpics(struct timespec* ts)
     unsigned long nfssecs = (unsigned long)ts->tv_sec;
     unsigned long secs = 0;
     
-    if(!TSinitialized) TSinit();
     /*If high order bit is not set then nfssecs has overflowed */
     if(!(nfssecs & 0x80000000ul)) {
         /*secs = nfssecs - TS_1900_TO_EPICS_EPOCH + 2**32 */
@@ -363,7 +365,6 @@ unsigned long TSepochUnixToEpics(struct timespec* ts)
     unsigned long unixsecs = (unsigned long)ts->tv_sec;
     unsigned long secs;
     
-    if(!TSinitialized) TSinit();
     secs = unixsecs - TS_VXWORKS_TO_EPICS_EPOCH;
     return(secs);
 }
@@ -373,7 +374,6 @@ unsigned long TSepochEpicsToUnix(struct timespec* ts)
     unsigned long epicssecs = (unsigned long)ts->tv_sec;
     unsigned long secs;
     
-    if(!TSinitialized) TSinit();
     secs = epicssecs + TS_VXWORKS_TO_EPICS_EPOCH;
     return(secs);
 }

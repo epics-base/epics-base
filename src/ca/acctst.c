@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.40  1996/11/22 19:07:01  jhill
+ * included string.h
+ *
  * Revision 1.39  1996/11/02 00:50:36  jhill
  * many pc port, const in API, and other changes
  *
@@ -746,6 +749,55 @@ int doacctst(char *pname)
 			assert(0);
 
 	SEVCHK(ca_pend_io(4000.0), NULL);
+
+	/*
+	 * array test
+	 * o verifies that we can at least write and read back the same array
+	 * if multiple elements are present
+	 */
+printf("Element Count %u\n", ca_element_count(chix1));
+	if (VALID_DB_REQ(chix1->type)) {
+		if (ca_element_count(chix1)>1u) {
+			dbr_float_t	*pRF, *pWF, *pEF, *pT;
+
+			printf("Performing array test...");
+			fflush(stdout);
+
+			pRF = (dbr_float_t *) calloc(ca_element_count(chix1), sizeof(*pRF));
+			assert(pRF!=NULL);
+
+			pWF = (dbr_float_t *)calloc(ca_element_count(chix1), sizeof(*pWF));
+			assert(pWF!=NULL);
+
+			if (ca_write_access(chix1)) {
+				pT = pWF;
+				while(pRF<pEF) {
+					*pT++ = rand();
+				}
+				status = ca_array_put(
+						DBR_FLOAT, 
+						ca_element_count(chix1), 
+						chix1, 
+						pWF); 
+				SEVCHK(status, "array write test failed");
+			}
+			if (ca_read_access(chix1)) {
+				status = ca_array_get(
+						DBR_FLOAT, 
+						ca_element_count(chix1), 
+						chix1, 
+						pRF); 
+				SEVCHK(status, "array read test failed");
+			}
+			if (ca_read_access(chix1) && ca_write_access(chix1)) {
+				pEF = &pRF[ca_element_count(chix1)];
+				while(pRF<pEF) {
+					assert(*pRF++ == *pWF++);
+				}
+			}
+			printf("done");
+		}
+	}
 
 #ifdef VMS
 	lib$show_timer();

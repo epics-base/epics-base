@@ -61,13 +61,13 @@
  * .31	02-10-95	joh	static => LOCAL 
  */
 
+#include	<vxWorks.h>
 #include	<stdlib.h>
 #include	<stdarg.h>
 #include	<stdio.h>
 #include	<string.h>
 #include 	<errno.h>
 
-#include	<vxWorks.h>
 #include	<sysLib.h>
 #include	<symLib.h>
 #include	<sysSymTbl.h>	/* for sysSymTbl*/

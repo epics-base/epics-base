@@ -36,6 +36,7 @@
  * .04  08-11-92	jba	ANSI C changes
  * .05  08-26-92	jba	init piosl NULL in scanAdd,scanDelete & added test 
  * .06  08-27-92	mrk	removed support for old I/O event scanning
+ * .07  12-11-92	mrk	scanDelete crashed if no get_ioint_info existed.
  */
 
 #include	<vxWorks.h>
@@ -252,6 +253,7 @@ void scanDelete(struct dbCommon *precord)
 	    get_ioint_info=precord->dset->get_ioint_info;
 	    if(get_ioint_info==NULL) {
 		recGblRecordError(-1,(void *)precord,"scanDelete: I/O Intr not valid (no get_ioint_info)");
+		return;
 	    }
 	    if(get_ioint_info(1,precord,&piosl)) return;/*return if error*/
 	    if(piosl==NULL) {

@@ -240,4 +240,13 @@ const char *epicsThread::getNameSelf ()
     return epicsThreadGetNameSelf ();
 }
 
+bool epicsThread::isShellContext () const
+{
+    return static_cast<int>(epicsThreadIsShellContext(this->id));
+}
+
+void epicsThread::setShellContext(bool isShell)
+{
+    epicsThreadSetShellContext(this->id,static_cast<int>(isShell));
+}
 

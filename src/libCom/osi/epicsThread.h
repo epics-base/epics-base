@@ -97,6 +97,10 @@ epicsShareFunc const char * epicsShareAPI epicsThreadGetNameSelf(void);
 epicsShareFunc void epicsShareAPI epicsThreadGetName(
     epicsThreadId id, char *name, size_t size);
 
+epicsShareFunc int epicsShareAPI epicsThreadIsShellContext(epicsThreadId id);
+epicsShareFunc void epicsShareAPI epicsThreadSetShellContext(
+     epicsThreadId id,int isShell);
+
 epicsShareFunc void epicsShareAPI epicsThreadShowAll(unsigned int level);
 epicsShareFunc void epicsShareAPI epicsThreadShow(
     epicsThreadId id,unsigned int level);
@@ -151,6 +155,8 @@ public:
     static void sleep (double seconds);
     /* static epicsThread & getSelf (); */
     static const char * getNameSelf ();
+    bool isShellContext () const;
+    void setShellContext(bool isShell) ;
     class mustBeCalledByManagedThread {}; /* exception */
 private:
     epicsThreadRunable & runable;

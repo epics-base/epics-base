@@ -55,6 +55,7 @@ typedef struct epicsThreadOSD {
     int                isSuspended;
     unsigned int       osiPriority;
     char              *name;
+    int               isShell;
 } epicsThreadOSD;
 
 static pthread_key_t getpthreadInfo;
@@ -580,6 +581,18 @@ const char *epicsThreadGetNameSelf()
     if(pthreadInfo==NULL)
         pthreadInfo = createImplicit();
     return(pthreadInfo->name);
+}
+
+int epicsThreadIsShellContext(epicsThreadId pthreadInfo) {
+    assert(epicsThreadOnceCalled);
+    assert(pthreadInfo);
+    return pthreadInfo->isShell;
+}
+
+void epicsThreadSetShellContext(epicsThreadId pthreadInfo,int isShell) {
+    assert(epicsThreadOnceCalled);
+    assert(pthreadInfo);
+    pthreadInfo->isShell = isShell;
 }
 
 void epicsThreadGetName(epicsThreadId pthreadInfo, char *name, size_t size)

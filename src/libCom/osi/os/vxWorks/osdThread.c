@@ -40,6 +40,9 @@
 static const unsigned stackSizeTable[epicsThreadStackBig+1] = 
    {4000*ARCH_STACK_FACTOR, 6000*ARCH_STACK_FACTOR, 11000*ARCH_STACK_FACTOR};
 
+/*tasVar for isShell*/
+int isShell;
+
 /* definitions for implementation of epicsThreadPrivate */
 static void **papTSD = 0;
 static int nepicsThreadPrivate = 0;
@@ -125,6 +128,7 @@ static void createFunction(EPICSTHREADFUNC func, void *parm)
     (*func)(parm);
     free(papTSD);
     taskVarDelete(tid,(int *)&papTSD);
+    taskVarDelete(tid,&isShell);
 }
 
 epicsThreadId epicsThreadCreate(const char *name,
@@ -145,6 +149,8 @@ epicsThreadId epicsThreadCreate(const char *name,
         errlogPrintf("epicsThreadCreate taskSpawn failure for %s\n",name);
         return(0);
     }
+    taskVarAdd(tid,&isShell);
+    taskVarSet(tid,&isShell,0);
     return((epicsThreadId)tid);
 }
 
@@ -268,6 +274,16 @@ void epicsThreadGetName (epicsThreadId id, char *name, size_t size)
     int tid = (int)id;
     strncpy(name,taskName(tid),size-1);
     name[size-1] = '\0';
+}
+
+int epicsThreadIsShellContext(epicsThreadId id)
+{
+    return isShell;
+}
+
+void epicsThreadSetShellContext(epicsThreadId id,int yesNo)
+{
+    isShell = yesNo;
 }
 
 void epicsThreadShowAll(unsigned int level)

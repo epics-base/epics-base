@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.7  1997/04/10 19:34:12  jhill
+ * API changes
+ *
  * Revision 1.6  1996/11/02 00:54:18  jhill
  * many improvements
  *
@@ -149,7 +152,7 @@ void casMonitor::disable()
 void casMonitor::push(gdd &newValue)
 {
         casCoreClient	&client = this->ciu.getClient();
-        casMonEvent 	*pLog = NULL;
+        casMonEvent 	*pLog;
         char            full;
  
         this->mutex.osiLock();
@@ -165,6 +168,9 @@ void casMonitor::push(gdd &newValue)
                         this->nPend++;
                 }
         }
+	else {
+		pLog = NULL;
+	}
  
         if (this->ovf) {
                 if (pLog) {

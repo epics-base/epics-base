@@ -109,14 +109,12 @@ static long init_record(psub,pass)
 
     if(strlen(psub->inam)!=0) {
         /* convert the initialization subroutine name  */
-        psub->sadr = (void *)registryFunctionFind(psub->inam);
-        if(psub->sadr==0) {
+        psubroutine = (void *)registryFunctionFind(psub->inam);
+        if(psubroutine==0) {
 	    recGblRecordError(S_db_BadSub,(void *)psub,"recSub(init_record)");
 	    return(S_db_BadSub);
         }
-
         /* invoke the initialization subroutine */
-        psubroutine = (SUBFUNCPTR)(psub->sadr);
         status = (*psubroutine)(psub,process);
     }
 

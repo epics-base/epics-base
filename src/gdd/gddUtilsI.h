@@ -7,6 +7,9 @@
  *
  * $Id$
  * $Log$
+ * Revision 1.1  1997/03/21 01:56:12  jbk
+ * *** empty log message ***
+ *
  *
  */
 
@@ -21,7 +24,7 @@ inline aitIndex gddBounds::size(void) const			{ return count; }
 inline aitIndex gddBounds::first(void) const		{ return start; }
 
 inline gddDestructor::gddDestructor(void) { ref_cnt=0; arg=NULL; }
-inline gddDestructor::gddDestructor(void* usr_arg) { ref_cnt=1; arg=usr_arg; }
+inline gddDestructor::gddDestructor(void* usr_arg) { ref_cnt=0; arg=usr_arg; }
 inline void gddDestructor::reference(void)      { ref_cnt++; }
 inline int gddDestructor::refCount(void) const  { return ref_cnt; }
 

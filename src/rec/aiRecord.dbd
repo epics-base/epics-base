@@ -2,7 +2,7 @@ recordtype(ai) {
 	include "dbCommon.dbd" 
 	field(VAL,DBF_DOUBLE) {
 		prompt("Current EGU Value")
-                promptgroup(GUI_INPUTS)
+		promptgroup(GUI_INPUTS)
 		asl(ASL0)
 		pp(TRUE)
 	}
@@ -155,16 +155,16 @@ recordtype(ai) {
 		interest(3)
 	}
 	field(ESLO,DBF_DOUBLE) {
-		prompt("Rawto EGU Slope")
+		prompt("Raw to EGU Slope")
 		promptgroup(GUI_CONVERT)
-		asl(ASL0)
+		pp(TRUE)
 		interest(2)
 		initial("1")
 	}
 	field(EOFF,DBF_DOUBLE) {
-		prompt("Eng Unit Offset")
+		prompt("Raw to EGU Offset")
 		promptgroup(GUI_CONVERT)
-		asl(ASL0)
+		pp(TRUE)
 		interest(2)
 	}
 	field(ROFF,DBF_LONG) {

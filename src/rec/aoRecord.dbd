@@ -79,15 +79,15 @@ recordtype(ao) {
 		interest(2)
 	}
 	field(EOFF,DBF_DOUBLE) {
-		prompt("Eng Unit Offset")
+		prompt("EGU to Raw Offset")
 		promptgroup(GUI_CONVERT)
-		asl(ASL0)
+		pp(TRUE)
 		interest(2)
 	}
 	field(ESLO,DBF_DOUBLE) {
 		prompt("EGU to Raw Slope")
 		promptgroup(GUI_CONVERT)
-		asl(ASL0)
+		pp(TRUE)
 		interest(2)
 		initial("1")
 	}

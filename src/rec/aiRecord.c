@@ -183,8 +183,10 @@ static long init_record(void *precord,int pass)
 	return(S_dev_missingSup);
     }
     pai->init = TRUE;
-    pai->eoff = pai->egul;
-
+    if ((pai->linr == menuConvertLINEAR) && pdset->special_linconv) {
+	pai->eoff = pai->egul;
+    }
+    
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(pai))) return(status);
     }
@@ -237,9 +239,19 @@ static long special(DBADDR *paddr,int after)
 	    return(S_db_noMod);
 	}
 	pai->init=TRUE;
-	pai->eoff = pai->egul;
-	if(!(pdset->special_linconv)) return(0);
-	return((*pdset->special_linconv)(pai,after));
+	if ((pai->linr == menuConvertLINEAR) && pdset->special_linconv) {
+	    double eoff = pai->eoff;
+	    double eslo = pai->eslo;
+	    long status;
+	    pai->eoff = pai->egul;
+	    status = (*pdset->special_linconv)(pai,after);
+	    if (eoff != pai->eoff)
+		db_post_events(pai, &pai->eoff, DBE_VALUE|DBE_LOG);
+	    if (eslo != pai->eslo)
+		db_post_events(pai, &pai->eslo, DBE_VALUE|DBE_LOG);
+	    return(status);
+	}
+	return(0);
     default:
 	recGblDbaddrError(S_db_badChoice,paddr,"ai: special");
 	return(S_db_badChoice);

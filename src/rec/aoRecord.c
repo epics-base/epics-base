@@ -182,7 +182,9 @@ static long init_record(pao,pass)
 	return(S_dev_missingSup);
     }
     pao->init = TRUE;
-    pao->eoff = pao->egul;
+    if ((pao->linr == menuConvertLINEAR) && pdset->special_linconv) {
+	pao->eoff = pao->egul;
+    }
 
     if (pdset->init_record) {
         status=(*pdset->init_record)(pao);
@@ -299,9 +301,19 @@ static long special(paddr,after)
             return(S_db_noMod);
         }
 	pao->init=TRUE;
-	pao->eoff = pao->egul;
-        if(!(pdset->special_linconv)) return(0);
-        return((*pdset->special_linconv)(pao,after));
+	if ((pao->linr == menuConvertLINEAR) && pdset->special_linconv) {
+	    double eoff = pao->eoff;
+	    double eslo = pao->eslo;
+	    long status;
+	    pao->eoff = pao->egul;
+	    status = (*pdset->special_linconv)(pao,after);
+	    if (eoff != pao->eoff)
+		db_post_events(pao, &pao->eoff, DBE_VALUE|DBE_LOG);
+	    if (eslo != pao->eslo)
+		db_post_events(pao, &pao->eslo, DBE_VALUE|DBE_LOG);
+	    return (status);
+       }
+       return (0);
     default:
         recGblDbaddrError(S_db_badChoice,paddr,"ao: special");
         return(S_db_badChoice);

@@ -197,8 +197,7 @@ void dbServiceIO::subscribe (
     dbSubscriptionIO & subscr =
         * new ( this->dbSubscriptionIOFreeList ) 
         dbSubscriptionIO ( *this, chan, 
-            addr, notify, type, count, mask, pId );
-
+            addr, notify, type, count, mask, this->ctx );
     {
         epicsGuard < epicsMutex > locker ( this->mutex );
         chan.dbServicePrivateListOfIO::eventq.add ( subscr );

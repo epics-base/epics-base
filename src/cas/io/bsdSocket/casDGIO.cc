@@ -32,6 +32,10 @@
 #include "dgInBufIL.h" // in line func for dgInBuf
 #include "ipAddrToA.h"
 
+casDGIO::~casDGIO()
+{
+}
+
 //
 // casDGIO::clientHostName()
 //

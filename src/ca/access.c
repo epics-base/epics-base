@@ -259,6 +259,7 @@ int		hold,
 void		*pfl
 );
 LOCAL void 	ca_pend_io_cleanup();
+void 		create_udp_fd();
 
 #else
 
@@ -277,7 +278,7 @@ LOCAL void    	ca_event_handler();
 LOCAL void	ca_pend_io_cleanup();
 
 void 		ca_default_exception_handler();
-void		ca_default_exception_handler();
+void 		create_udp_fd();
 
 #endif
 
@@ -407,57 +408,6 @@ int ca_task_initialize()
 		if(!ca_static->ca_pBucket)
 			abort(0);
 
-		status = broadcast_addr(&ca_static->ca_castaddr);
-		if(status == OK){
-			int     pri;
-			char	name[64];
-
-			status = alloc_ioc(
-				   &ca_static->ca_castaddr,
-				   IPPROTO_UDP,
-				   &ca_static->ca_piiuCast);
-			if (~status & CA_M_SUCCESS) {
-				ca_static->ca_piiuCast = NULL;
-			}
-
-#ifdef vxWorks
-			status = taskPriorityGet(VXTASKIDSELF, &pri);
-			if(status<0)
-				ca_signal(ECA_INTERNAL,NULL);
-
-			strcpy(name,"RD ");
-			strncat(
-				name,
-				taskName(VXTHISTASKID),
-				sizeof(name)-strlen(name)-1);
-
-			status = taskSpawn(
-				name,
-                                pri-1,
-                                VX_FP_TASK,
-                                4096,
-                                (FUNCPTR)cac_recv_task,
-                                (int)taskIdCurrent,
-                                NULL,
-                                NULL,
-                                NULL,
-                                NULL,
-                                NULL,
-                                NULL,
-                                NULL,
-                                NULL,
-                                NULL);
-			if(status<0)
-				ca_signal(ECA_INTERNAL,NULL);
-
-			ca_static->recv_tid = status;
-#endif
-		}
-
-		if(!ca_static->ca_piiuCast){
-			SEVCHK(ECA_NOCAST, NULL);
-		}
-
 #if defined(VMS)
 		{
 			status = lib$get_ef(&io_done_flag);
@@ -511,6 +461,68 @@ int ca_task_initialize()
 	return ECA_NORMAL;
 }
 
+
+/*
+ * create_udp_fd
+ */
+void create_udp_fd()
+{
+	int     pri;
+	char	name[64];
+	int	status;
+
+	if(ca_static->ca_piiuCast){
+		return;
+	}
+
+	status = broadcast_addr(&ca_static->ca_castaddr);
+	if(status != OK){
+		return;
+	}
+
+	status = alloc_ioc(
+		   &ca_static->ca_castaddr,
+		   IPPROTO_UDP,
+		   &ca_static->ca_piiuCast);
+	if (~status & CA_M_SUCCESS) {
+		ca_static->ca_piiuCast = NULL;
+		return;
+	}
+
+#ifdef vxWorks
+	status = taskPriorityGet(VXTASKIDSELF, &pri);
+	if(status<0)
+		ca_signal(ECA_INTERNAL,NULL);
+
+	strcpy(name,"RD ");
+	strncat(
+		name,
+		taskName(VXTHISTASKID),
+		sizeof(name)-strlen(name)-1);
+
+	status = taskSpawn(
+				name,
+                           	pri-1,
+                               	VX_FP_TASK,
+                                4096,
+                                (FUNCPTR)cac_recv_task,
+                                (int)taskIdCurrent,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL);
+	if(status<0)
+		ca_signal(ECA_INTERNAL,NULL);
+
+	ca_static->recv_tid = status;
+
+#endif
+}
 
 
 /*
@@ -1182,7 +1194,10 @@ int ca_build_and_connect
 #endif
 
 	if (!ca_static->ca_piiuCast) {
-		return ECA_NOCAST;
+		create_udp_fd();
+		if(!ca_static->ca_piiuCast){
+			return ECA_NOCAST;
+		}
 	}
 
 	/* allocate CHIU (channel in use) block */

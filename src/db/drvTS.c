@@ -12,6 +12,10 @@ of this distribution.
 **********************************************************************/
 /*
  * $Log$
+ * Revision 1.28.2.3  2000/10/12 15:47:13  anj
+ * Fixed TSgetMasterTime() bug - round-trip adjustment was garbage
+ * Replaced TSprintf() with printf() where logging inappropriate
+ *
  * Revision 1.28.2.2  1999/08/31 16:21:11  jhill
  * fixed bug where time sync UDP client was getting in a state where
  * it was using the response from the previous request, and ending
@@ -227,6 +231,8 @@ static long (*TSsyncEvent)();
 static long (*TSdirectTime)();
 static long (*TSdriverInit)();
 static long (*TSuserGet)(int event_number,struct timespec* sp);
+
+static int TSinitialized = 0;
 
 /* global functions */
 #ifdef __cplusplus
@@ -472,6 +478,7 @@ long TSgetTimeStamp(int event_number,struct timespec* sp)
 	an invalid time stamp, so use the vxworks clock. Also remember that
 	the IOC vxWorks clock may not be in sync with time stamps if 
 	default TSgetTime() in use and master failure is detected */
+        if(!TSinitialized) TSinit();
 
 	switch(TSdata.type)
 	{
@@ -549,6 +556,8 @@ long TSinit(void)
 
     Debug0(5,"In TSinit()\n");
 
+    if(TSinitialized) return(0);
+    TSinitialized=1;
     /* 0=default, 1=none, 2=direct */
 
     if(	TSdata.UserRequestedType==DEFAULT_TIME)
@@ -1128,6 +1137,7 @@ long TSsetClockFromUnix(void)
     int key;
     unsigned long ulongtemp;
 
+    if(!TSinitialized) TSinit();
     Debug0(3,"in TSsetClockFromUnix()\n");
 
     if(TSgetUnixTime(&tp)!=0) return -1;
@@ -1719,6 +1729,7 @@ long TSaccurateTimeStamp(struct timespec* sp)
     struct timespec ts;
     unsigned long ticks;
 
+    if(!TSinitialized) TSinit();
     if(TSdata.has_direct_time==1)
     {
 	TSgetTime(sp);
@@ -1979,6 +1990,7 @@ long TSgetFirstOfYearVx(struct timespec* ts)
     time_t tloc;
     struct tm t;
 
+    if(!TSinitialized) TSinit();
     time(&tloc); /* retrieve the current time */
     localtime_r(&tloc,&t);
     t.tm_sec=0;

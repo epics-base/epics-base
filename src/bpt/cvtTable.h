@@ -36,10 +36,10 @@
 #define INCcvtTableh	1
 
 /* Global Routines*/
-long cvtEngToRawBpt(double *pval,short linr,short init,
+epicsShareFunc long epicsShareAPI cvtEngToRawBpt(double *pval,short linr,short init,
      void **ppbrk,short *plbrk);
 
-long cvtRawToEngBpt(double *pval,short linr,short init,
+epicsShareFunc long epicsShareAPI cvtRawToEngBpt(double *pval,short linr,short init,
      void **ppbrk, short *plbrk);
 
 #endif

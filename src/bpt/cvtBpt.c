@@ -39,10 +39,13 @@
 #include "ellLib.h"
 #include "dbBase.h"
 #include "dbStaticLib.h"
-#include "cvtTable.h"
 #include "epicsPrint.h"
 
-extern struct dbBase *pdbbase;
+#define epicsExportSharedSymbols
+#include <shareLib.h>
+#include "cvtTable.h"
+
+epicsShareExtern struct dbBase *pdbbase;
 
 
 
@@ -63,7 +66,7 @@ static brkTable *findBrkTable(short linr)
     return(dbFindBrkTable(pdbbase,pdbMenu->papChoiceValue[linr]));
 }
 
-long cvtRawToEngBpt(double *pval,short linr,short init, void **ppbrk,
+epicsShareFunc long epicsShareAPI cvtRawToEngBpt(double *pval,short linr,short init, void **ppbrk,
 	short *plbrk)
 { 
     double	val=*pval;
@@ -113,7 +116,7 @@ long cvtRawToEngBpt(double *pval,short linr,short init, void **ppbrk,
     return(status);
 }
 
-long cvtEngToRawBpt(double *pval,short linr,short init,
+epicsShareFunc long epicsShareAPI cvtEngToRawBpt(double *pval,short linr,short init,
 	 void **ppbrk,short *plbrk)
 { 
      double	val=*pval;

@@ -184,14 +184,14 @@ $(COMMON_DIR)/bpt%.dbd: bpt%.data
 	$(MAKEBPT) $< $@
 
 $(COMMON_DIR)/%.dbd: ../%Include.dbd 
-	@$(RM) $@
+	@$(RM) $@$(DEP)
 	@$(DBDDEPENDS_CMD)
 	@echo "Expanding dbd"
 	@$(RM) $@
 	$(DBEXPAND) $(DBDFLAGS) $< > $@
 
 $(COMMON_DIR)/%.dbd: %Include.dbd 
-	@$(RM) $@
+	@$(RM) $@$(DEP)
 	@$(DBDDEPENDS_CMD)
 	@echo "Expanding dbd"
 	@$(RM) $@
@@ -214,7 +214,7 @@ $(COMMON_DIR)/%.db$(RAW): %.edf
 	@$(RM) $@.VAR
 
 $(COMMON_DIR)/%.db$(RAW): %.substitutions %.template
-	@$(RM) $@
+	@$(RM) $@$(DEP)
 	@$(DBDDEPENDS_CMD)
 	@echo "Inflating database from $<"
 	@$(RM) $@

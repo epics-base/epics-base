@@ -43,7 +43,9 @@ of this distribution.
 #include "errMdef.h"
 #include "epicsPrint.h"
 #include "dbCommon.h"
+#define epicsExportSharedSymbols
 #include "dbCa.h"
+#include "dbCaPvt.h"
 /*Following is because we cant include dbAccess.h*/
 void *dbCalloc(size_t nobj,size_t size);
 /*Following is because dbScan.h causes include for dbAccess.h*/
@@ -77,7 +79,7 @@ static void addAction(caLink *pca, short link_action)
     if(callAdd) semBinaryGive(caWakeupSem);
 }
 
-void dbCaLinkInit(void)
+void epicsShareAPI dbCaLinkInit(void)
 {
 	ellInit(&caList);
 	caListSem = semMutexMustCreate();
@@ -90,7 +92,7 @@ void dbCaLinkInit(void)
 	    threadGetStackSize(threadStackBig), (THREADFUNC) dbCaTask,0);
 }
 
-void dbCaAddLink( struct link *plink)
+void epicsShareAPI dbCaAddLink( struct link *plink)
 {
 	caLink *pca;
 
@@ -103,7 +105,7 @@ void dbCaAddLink( struct link *plink)
 	return;
 }
 
-void dbCaRemoveLink( struct link *plink)
+void epicsShareAPI dbCaRemoveLink( struct link *plink)
 {
     caLink	*pca = (caLink *)plink->value.pv_link.pvt;
 
@@ -116,7 +118,7 @@ void dbCaRemoveLink( struct link *plink)
 }
 
 
-long dbCaGetLink(struct link *plink,short dbrType, char *pdest,
+long epicsShareAPI dbCaGetLink(struct link *plink,short dbrType, void *pdest,
 	unsigned short	*psevr,long *nelements)
 {
     caLink		*pca = (caLink *)plink->value.pv_link.pvt;
@@ -186,7 +188,7 @@ done:
     return(status);
 }
 
-long dbCaPutLink(struct link *plink,short dbrType,
+long epicsShareAPI dbCaPutLink(struct link *plink,short dbrType,
 	const void *psource,long nelements)
 {
     caLink	*pca = (caLink *)plink->value.pv_link.pvt;
@@ -247,7 +249,7 @@ long dbCaPutLink(struct link *plink,short dbrType,
     return(status);
 }
 
-long dbCaGetAttributes(struct link *plink,
+long epicsShareAPI dbCaGetAttributes(struct link *plink,
 	void (*callback)(void *usrPvt),void *usrPvt)
 {
     caLink	*pca;
@@ -291,7 +293,7 @@ caAttributes *getpcaAttributes(struct link *plink)
     return(pca->pcaAttributes);
 }
 
-long dbCaGetControlLimits(struct link *plink,double *low, double *high)
+long epicsShareAPI dbCaGetControlLimits(struct link *plink,double *low, double *high)
 {
     caAttributes *pcaAttributes;
 
@@ -302,7 +304,7 @@ long dbCaGetControlLimits(struct link *plink,double *low, double *high)
     return(0);
 }
 
-long dbCaGetGraphicLimits(struct link *plink,double *low, double *high)
+long epicsShareAPI dbCaGetGraphicLimits(struct link *plink,double *low, double *high)
 {
     caAttributes *pcaAttributes;
 
@@ -313,7 +315,7 @@ long dbCaGetGraphicLimits(struct link *plink,double *low, double *high)
     return(0);
 }
 
-long dbCaGetAlarmLimits(struct link *plink,
+long epicsShareAPI dbCaGetAlarmLimits(struct link *plink,
 	double *lolo, double *low, double *high, double *hihi)
 {
     caAttributes *pcaAttributes;
@@ -327,7 +329,7 @@ long dbCaGetAlarmLimits(struct link *plink,
     return(0);
 }
 
-long dbCaGetPrecision(struct link *plink,short *precision)
+long epicsShareAPI dbCaGetPrecision(struct link *plink,short *precision)
 {
     caAttributes *pcaAttributes;
 
@@ -337,7 +339,7 @@ long dbCaGetPrecision(struct link *plink,short *precision)
     return(0);
 }
 
-long dbCaGetUnits(struct link *plink,char *units,int unitsSize)
+long epicsShareAPI dbCaGetUnits(struct link *plink,char *units,int unitsSize)
 {
     caAttributes *pcaAttributes;
 
@@ -348,7 +350,7 @@ long dbCaGetUnits(struct link *plink,char *units,int unitsSize)
     return(0);
 }
 
-long dbCaGetNelements(struct link *plink,long *nelements)
+long epicsShareAPI dbCaGetNelements(struct link *plink,long *nelements)
 {
     caLink	*pca;
 
@@ -360,7 +362,7 @@ long dbCaGetNelements(struct link *plink,long *nelements)
     return(0);
 }
 
-long dbCaGetSevr(struct link *plink,short *severity)
+long epicsShareAPI dbCaGetSevr(struct link *plink,short *severity)
 {
     caLink	*pca;
 
@@ -372,7 +374,7 @@ long dbCaGetSevr(struct link *plink,short *severity)
     return(0);
 }
 
-long dbCaGetTimeStamp(struct link *plink,TS_STAMP *pstamp)
+long epicsShareAPI dbCaGetTimeStamp(struct link *plink,TS_STAMP *pstamp)
 {
     caLink	*pca;
 
@@ -384,7 +386,7 @@ long dbCaGetTimeStamp(struct link *plink,TS_STAMP *pstamp)
     return(0);
 }
 
-int dbCaIsLinkConnected(struct link *plink)
+int epicsShareAPI dbCaIsLinkConnected(struct link *plink)
 {
     caLink	*pca;
 
@@ -396,7 +398,7 @@ int dbCaIsLinkConnected(struct link *plink)
     if(ca_state(pca->chid)==cs_conn) return(TRUE);
     return(FALSE);
 }
-int dbCaGetLinkDBFtype(struct link *plink)
+int epicsShareAPI dbCaGetLinkDBFtype(struct link *plink)
 {
     caLink	*pca;
 

@@ -39,14 +39,22 @@
 #include "dbDefs.h"
 #include "osiSem.h"
 #include "errlog.h"
-#include "dbBase.h"
-#include "dbAccess.h"
-#include "dbStaticLib.h"
-#include "dbScan.h"
-#include "dbCommon.h"
 #include "errMdef.h"
 #include "ellLib.h"
+#include "tsStamp.h"
+#include "dbBase.h"
+#include "dbStaticLib.h"
+#include "dbFldTypes.h"
+#include "link.h"
+#include "dbScan.h"
+#include "dbCommon.h"
+#include "dbLock.h"
+#include "callback.h"
+#include "dbAddr.h"
+#include "dbAccess.h"
 #include "recGbl.h"
+#define epicsExportSharedSymbols
+#include "dbNotify.h"
 
 /*NODE structure attached to ppnn field of each record in list*/
 typedef struct pnWaitNode {
@@ -127,9 +135,10 @@ long dbPutNotify(PUTNOTIFY *ppn)
 
     if(dbfType>=DBF_INLINK && dbfType<=DBF_FWDLINK) {
 	/*Initialize everything in PUTNOTIFY except restart list and node*/
-	callbackSetCallback(notifyCallback,&ppn->callback);
-	callbackSetUser(ppn,&ppn->callback);
-	callbackSetPriority(priorityLow,&ppn->callback);
+        if(!ppn->callback) ppn->callback = dbCalloc(1,sizeof(CALLBACK));
+	callbackSetCallback(notifyCallback,ppn->callback);
+	callbackSetUser(ppn,ppn->callback);
+	callbackSetPriority(priorityLow,ppn->callback);
 	ppn->status = 0;
 	ppn->restart = FALSE;
 	ppn->callbackState = callbackNotActive;
@@ -160,9 +169,10 @@ static long putNotify(PUTNOTIFY *ppn)
 	return(S_db_Blocked);
     }
     /*Initialize everything in PUTNOTIFY except restart list and node*/
-    callbackSetCallback(notifyCallback,&ppn->callback);
-    callbackSetUser(ppn,&ppn->callback);
-    callbackSetPriority(priorityLow,&ppn->callback);
+    if(!ppn->callback) ppn->callback = dbCalloc(1,sizeof(CALLBACK));
+    callbackSetCallback(notifyCallback,ppn->callback);
+    callbackSetUser(ppn,ppn->callback);
+    callbackSetPriority(priorityLow,ppn->callback);
     ppn->status = 0;
     ppn->restart = FALSE;
     ppn->callbackState = callbackNotActive;
@@ -237,10 +247,10 @@ static void issueCallback(PUTNOTIFY *ppn)
 {
     notifyCancel(ppn);
     ppn->callbackState = callbackActive;
-    callbackRequest(&ppn->callback);
+    callbackRequest(ppn->callback);
 }
 
-void dbNotifyCancel(PUTNOTIFY *ppn)
+void epicsShareAPI dbNotifyCancel(PUTNOTIFY *ppn)
 {
     struct dbCommon *precord = ppn->paddr->precord;;
 
@@ -291,12 +301,12 @@ static void notifyCancel(PUTNOTIFY *ppn)
 	}
 	pfirstppn->restart = TRUE;
 	pfirstppn->callbackState = callbackActive;
-	callbackRequest(&pfirstppn->callback);
+	callbackRequest(pfirstppn->callback);
     }
     memset(&ppn->restartNode,'\0',sizeof(PNRESTARTNODE));
 }
 
-void dbNotifyCompletion(struct dbCommon *precord)
+void epicsShareAPI dbNotifyCompletion(struct dbCommon *precord)
 {
     PUTNOTIFY	*ppn = precord->ppn;
     PNWAITNODE	*ppnnode = precord->ppnn;;
@@ -307,7 +317,7 @@ void dbNotifyCompletion(struct dbCommon *precord)
 	issueCallback(ppn);
 }
 
-void dbNotifyAdd(struct dbCommon *pfrom, struct dbCommon *pto)
+void epicsShareAPI dbNotifyAdd(struct dbCommon *pfrom, struct dbCommon *pto)
 {
     PUTNOTIFY *pfromppn = pfrom->ppn;
     PUTNOTIFY *ppn=NULL;

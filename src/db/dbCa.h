@@ -1,68 +1,47 @@
-/* dbCa.h */
+/* dbCa.h	*/
 /*****************************************************************
                           COPYRIGHT NOTIFICATION
 *****************************************************************
  
-(C)  COPYRIGHT 1991 Regents of the University of California,
-and the University of Chicago Board of Governors.
+(C)  COPYRIGHT 1993 UNIVERSITY OF CHICAGO
  
 This software was developed under a United States Government license
-described on the COPYRIGHT_Combined file included as part
+described on the COPYRIGHT_UniversityOfChicago file included as part
 of this distribution.
 **********************************************************************/
 
-/****************************************************************
-*
-*	Current Author:		Bob Dalesio
-*	Contributing Author:	Marty Kraimer
-*	Date:			08APR96
-*
-*
-* Modification Log:
-* -----------------
-* .01  08APR96	mrk	Made separate module for dbcar
-****************************************************************/
+#ifndef INCdbCah
+#define INCdbCah
 
-/* link_action mask */
-#define	CA_DELETE			0x1
-#define	CA_CONNECT			0x2
-#define	CA_WRITE_NATIVE			0x4
-#define	CA_WRITE_STRING			0x8
-#define	CA_MONITOR_NATIVE		0x10
-#define	CA_MONITOR_STRING		0x20
-#define	CA_GET_ATTRIBUTES		0x40
+#include "shareLib.h"
 
-typedef struct caAttributes
-{
-    void (*callback)(void *usrPvt);
- struct dbr_ctrl_double	data;
-	void		*usrPvt;
-	int		gotData;
-}caAttributes;
+epicsShareFunc void epicsShareAPI dbCaLinkInit(void);
+epicsShareFunc void epicsShareAPI dbCaAddLink(struct link *plink);
+epicsShareFunc void epicsShareAPI dbCaRemoveLink(struct link *plink);
+epicsShareFunc long epicsShareAPI dbCaGetLink(
+    struct link *plink,short dbrType,void *pbuffer,
+    unsigned short *psevr,long *nRequest);
+epicsShareFunc long epicsShareAPI dbCaPutLink(
+    struct link *plink,short dbrType,const void *pbuffer,long nRequest);
+epicsShareFunc long epicsShareAPI dbCaGetAttributes(
+    struct link *plink,void (*callback)(void *usrPvt),void *usrPvt);
+epicsShareFunc long epicsShareAPI dbCaGetControlLimits(
+    struct link *plink,double *low, double *high);
+epicsShareFunc long epicsShareAPI dbCaGetGraphicLimits(
+    struct link *plink,double *low, double *high);
+epicsShareFunc long epicsShareAPI dbCaGetAlarmLimits(
+    struct link *plink,double *lolo, double *low, double *high, double *hihi);
+epicsShareFunc long epicsShareAPI dbCaGetPrecision(
+    struct link *plink,short *precision);
+epicsShareFunc long epicsShareAPI dbCaGetUnits(
+    struct link *plink,char *units,int unitsSize);
+epicsShareFunc long epicsShareAPI dbCaGetNelements(
+    struct link *plink,long *nelements);
+epicsShareFunc long epicsShareAPI dbCaGetSevr(
+    struct link *plink,short *severity);
+epicsShareFunc long epicsShareAPI dbCaGetTimeStamp(
+    struct link *plink,TS_STAMP *pstamp);
+epicsShareFunc int epicsShareAPI dbCaIsLinkConnected(struct link *plink);
+epicsShareFunc int epicsShareAPI dbCaGetLinkDBFtype(struct link *plink);
 
-typedef struct caLink
-{
-	ELLNODE		node;
-	struct link	*plink;
-	chid 		chid;
-	void 		*pgetNative;
-	void		*pputNative;
-	char		*pgetString;
-	char		*pputString;
-	caAttributes	*pcaAttributes;
-	long		nelements;
-	semMutexId	lock;
-	unsigned long	nDisconnect;
-	unsigned long	nNoWrite;
-	short		dbrType;
-	short		link_action;
-	unsigned short	sevr;
-	TS_STAMP	timeStamp;
-	char		gotInNative;
-	char		gotOutNative;
-	char		gotInString;
-	char		gotOutString;
-	char		newOutNative;
-	char		newOutString;
-	char		gotFirstConnection;
-}caLink;
+#endif /*INCdbCah*/

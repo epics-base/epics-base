@@ -67,7 +67,7 @@ void callbackTest(void)
         tsStampGetCurrent(&start);
         wait[i]->start = start;
         wait[i]->requestedDiff = (double)i;
-        callbackRequest(&wait[i]->callback);
+        callbackRequestDelayed(&wait[i]->callback,wait[i]->requestedDiff);
     }
     threadSleep((double)(ncallbacks + 2));
     printf("callbackTest returning\n");

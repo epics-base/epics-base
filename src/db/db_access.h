@@ -97,7 +97,6 @@ extern "C" {
 
 #include "epicsTypes.h"
 #include "tsStamp.h"
-#include "callback.h"
 #include "ellLib.h"
 #include "dbAddr.h"
 

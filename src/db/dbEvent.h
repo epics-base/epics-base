@@ -30,46 +30,45 @@
 #ifndef INCLdbEventh
 #define INCLdbEventh
 
-/*
- * collides with db_access.h used in the CA client
- */
-#ifndef caClient
-#include <dbCommon.h>
-#endif /*caClient*/
+#include "shareLib.h"
 
-#include <db_field_log.h>
-#include <osiThread.h>
 
-int db_event_list (const char *name, unsigned level);
-int dbel (const char *name, unsigned level);
-int db_post_events (void *precord, void *pvalue, unsigned select);
+epicsShareFunc int epicsShareAPI db_event_list (
+    const char *name, unsigned level);
+epicsShareFunc int epicsShareAPI dbel (
+    const char *name, unsigned level);
+epicsShareFunc int epicsShareAPI db_post_events (
+    void *precord, void *pvalue, unsigned select);
 
 typedef void * dbEventCtx;
 
 typedef void OVRFFUNC (void *overflow_arg, unsigned count);
 typedef void EXTRALABORFUNC (void *extralabor_arg);
-dbEventCtx db_init_events (void);
-int db_start_events (dbEventCtx ctx, char *taskname, int (*init_func)(threadId), 
-                     threadId init_func_arg, int priority_offset);
-void db_close_events (dbEventCtx ctx);
-void db_event_flow_ctrl_mode_on (dbEventCtx ctx);
-void db_event_flow_ctrl_mode_off (dbEventCtx ctx);
-int db_add_overflow_event (dbEventCtx ctx, OVRFFUNC *overflow_sub, 
-                           void *overflow_arg);
-int db_add_extra_labor_event (dbEventCtx ctx, EXTRALABORFUNC *func, void *arg);
-int db_flush_extra_labor_event (dbEventCtx);
-int db_post_extra_labor (dbEventCtx ctx);
+epicsShareFunc dbEventCtx epicsShareAPI db_init_events (void);
+epicsShareFunc int epicsShareAPI db_start_events (
+    dbEventCtx ctx, char *taskname, int (*init_func)(threadId), 
+    void *init_func_arg, int priority_offset);
+epicsShareFunc void epicsShareAPI db_close_events (dbEventCtx ctx);
+epicsShareFunc void epicsShareAPI db_event_flow_ctrl_mode_on (dbEventCtx ctx);
+epicsShareFunc void epicsShareAPI db_event_flow_ctrl_mode_off (dbEventCtx ctx);
+epicsShareFunc int epicsShareAPI db_add_overflow_event (
+    dbEventCtx ctx, OVRFFUNC *overflow_sub, void *overflow_arg);
+epicsShareFunc int epicsShareAPI db_add_extra_labor_event (
+    dbEventCtx ctx, EXTRALABORFUNC *func, void *arg);
+epicsShareFunc int epicsShareAPI db_flush_extra_labor_event (dbEventCtx);
+epicsShareFunc int epicsShareAPI db_post_extra_labor (dbEventCtx ctx);
 
 typedef void EVENTFUNC (void *user_arg, struct dbAddr *paddr,
 	int eventsRemaining, struct db_field_log *pfl);
 
 typedef void * dbEventSubscription;
-dbEventSubscription db_add_event (dbEventCtx ctx, struct dbAddr *paddr,
+epicsShareFunc dbEventSubscription epicsShareAPI db_add_event (
+    dbEventCtx ctx, struct dbAddr *paddr,
     EVENTFUNC *user_sub, void *user_arg, unsigned select);
-void db_cancel_event (dbEventSubscription es);
-void db_post_single_event (dbEventSubscription es);
-void db_event_enable (dbEventSubscription es);
-void db_event_disable (dbEventSubscription es);
+epicsShareFunc void epicsShareAPI db_cancel_event (dbEventSubscription es);
+epicsShareFunc void epicsShareAPI db_post_single_event (dbEventSubscription es);
+epicsShareFunc void epicsShareAPI db_event_enable (dbEventSubscription es);
+epicsShareFunc void epicsShareAPI db_event_disable (dbEventSubscription es);
 
 #define DB_EVENT_OK 0
 #define DB_EVENT_ERROR (-1)

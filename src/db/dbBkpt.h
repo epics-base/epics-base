@@ -32,12 +32,7 @@
 #ifndef INCdbBkptsh
 #define INCdbBkptsh 1
 
-#include <ellLib.h>
-#include <osiSem.h>
-#include <tsStamp.h>
-#include <osiThread.h>
-/* Needs to be put into dbTest.h ! */
-long dbpr(char *name, int level);
+#include "shareLib.h"
 
 /*
  *  Structure containing a list of set breakpoints
@@ -95,14 +90,13 @@ struct LS_LIST {
 
 #define MAX_EP_COUNT         99999
 
-long dbb();
-long dbd();
-long dbc();
-long dbs();
-long dbstat();
-long dbtap();
-int  dbBkpt();
-void dbPrint();
+epicsShareFunc long epicsShareAPI dbb();
+epicsShareFunc long epicsShareAPI dbd();
+epicsShareFunc long epicsShareAPI dbc();
+epicsShareFunc long epicsShareAPI dbs();
+epicsShareFunc long epicsShareAPI dbstat();
+epicsShareFunc int  epicsShareAPI dbBkpt();
+epicsShareFunc void epicsShareAPI dbPrint();
 
 extern long lset_stack_not_empty;
 

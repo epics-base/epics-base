@@ -32,11 +32,7 @@ typedef struct pnRestartNode {
  
 typedef struct putNotify{
         /*The following members MUST be set by user*/
-#ifdef __STDC__
-        void            (*userCallback)(struct putNotify *); /*callback provided by user*/
-#else
-        void            (*userCallback)(); /*callback provided by user*/
-#endif
+        void            (*userCallback)(struct putNotify *);
         struct dbAddr   *paddr;         /*dbAddr set by dbNameToAddr*/
         void            *pbuffer;       /*address of data*/
         long            nRequest;       /*number of elements to be written*/
@@ -45,7 +41,7 @@ typedef struct putNotify{
         /*The following is status of request. Set by dbPutNotify*/
         long            status;
         /*The following are private to database access*/
-        CALLBACK        callback;
+        struct callbackPvt *callback;
         ELLLIST         waitList;       /*list of records for which to wait*/
         ELLLIST         restartList;    /*list of PUTNOTIFYs to restart*/
         PNRESTARTNODE   restartNode;

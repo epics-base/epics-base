@@ -23,7 +23,9 @@ of this distribution.
 
 #ifndef INCcallbackh
 #define INCcallbackh 1
-
+
+#include "shareLib.h"
+
 /*
  * WINDOWS also has a "CALLBACK" type def
  */
@@ -32,28 +34,20 @@ of this distribution.
 #		undef CALLBACK
 #	endif /*CALLBACK*/
 #endif /*_WIN32*/
-
+
 #define NUM_CALLBACK_PRIORITIES 3
 #define priorityLow     0
 #define priorityMedium  1
 #define priorityHigh    2
 
 typedef struct callbackPvt {
-#ifdef __STDC__
 	void (*callback)(struct callbackPvt*);
-#else
-	void(*callback)();
-#endif
 	int		priority;
 	void		*user; /*for use by callback user*/
         void            *timer; /*for use by callback itself*/
 }CALLBACK;
 
-#ifdef __STDC__
 typedef void    (*CALLBACKFUNC)(struct callbackPvt*);
-#else
-typedef void (*CALLBACKFUNC)();
-#endif
 
 #define callbackSetCallback(PFUN,PCALLBACK)\
 ( (PCALLBACK)->callback = (PFUN) )
@@ -64,22 +58,14 @@ typedef void (*CALLBACKFUNC)();
 #define callbackGetUser(USER,PCALLBACK)\
 ( (USER) = (void *)((CALLBACK *)(PCALLBACK))->user )
 
-#ifdef __STDC__
-long callbackInit();
-void callbackRequest(CALLBACK *pCallback);
-void callbackRequestProcessCallback(CALLBACK *pCallback,
-	int Priority, void *pRec);
-void callbackRequestDelayed(CALLBACK *pCallback,double seconds);
-void callbackRequestProcessCallbackDelayed(CALLBACK *pCallback,
-	int Priority, void *pRec,double seconds);
-int callbackSetQueueSize(int size);
-#else
-long callbackInit();
-void callbackRequest();
-void callbackRequestProcessCallback();
-void callbackRequestDelayed();
-void callbackRequestProcessCallbackDelayed();
-int callbackSetQueueSize();
-#endif /*__STDC__*/
+epicsShareFunc long epicsShareAPI callbackInit();
+epicsShareFunc void epicsShareAPI callbackRequest(CALLBACK *pCallback);
+epicsShareFunc void epicsShareAPI callbackRequestProcessCallback(
+    CALLBACK *pCallback,int Priority, void *pRec);
+epicsShareFunc void epicsShareAPI callbackRequestDelayed(
+    CALLBACK *pCallback,double seconds);
+epicsShareFunc void epicsShareAPI callbackRequestProcessCallbackDelayed(
+    CALLBACK *pCallback, int Priority, void *pRec,double seconds);
+epicsShareFunc int epicsShareAPI callbackSetQueueSize(int size);
 
 #endif /*INCcallbackh*/

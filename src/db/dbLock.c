@@ -75,10 +75,11 @@ since this will delay all other threads.
 #include "dbStaticLib.h"
 #include "dbConvert.h"
 #include "dbCommon.h"
-#include "dbLock.h"
 #include "epicsPrint.h"
 #include "dbFldTypes.h"
 #include "errMdef.h"
+#define epicsExportSharedSymbols
+#include "dbLock.h"
 
 #define STATIC static
 
@@ -136,21 +137,21 @@ STATIC void lockAddRecord(lockSet *plockSet,lockRecord *pnew)
     ellAdd(&plockSet->recordList,&pnew->node);
 }
 
-void dbLockSetGblLock(void)
+void epicsShareAPI dbLockSetGblLock(void)
 {
     if(!lockListInitialized) initLockList();
     semMutexMustTake(globalLock);
     changingLockSets = TRUE;
 }
 
-void dbLockSetGblUnlock(void)
+void epicsShareAPI dbLockSetGblUnlock(void)
 {
     changingLockSets = FALSE;
     semMutexGive(globalLock);
     return;
 }
 
-void dbLockSetRecordLock(dbCommon *precord)
+void epicsShareAPI dbLockSetRecordLock(dbCommon *precord)
 {
     lockRecord	*plockRecord = precord->lset;
     lockSet	*plockSet;
@@ -182,7 +183,7 @@ void dbLockSetRecordLock(dbCommon *precord)
     return;
 }
 
-void dbScanLock(dbCommon *precord)
+void epicsShareAPI dbScanLock(dbCommon *precord)
 {
     lockRecord	*plockRecord;
     lockSet	*plockSet;
@@ -206,7 +207,7 @@ void dbScanLock(dbCommon *precord)
     return;
 }
 
-void dbScanUnlock(dbCommon *precord)
+void epicsShareAPI dbScanUnlock(dbCommon *precord)
 {
     lockRecord	*plockRecord = precord->lset;
 
@@ -218,7 +219,7 @@ void dbScanUnlock(dbCommon *precord)
     return;
 }
 
-unsigned long dbLockGetLockId(dbCommon *precord)
+unsigned long epicsShareAPI dbLockGetLockId(dbCommon *precord)
 {
     lockRecord	*plockRecord = precord->lset;
     lockSet	*plockSet;
@@ -229,7 +230,7 @@ unsigned long dbLockGetLockId(dbCommon *precord)
     return(plockSet->id);
 }
 
-void dbLockInitRecords(dbBase *pdbbase)
+void epicsShareAPI dbLockInitRecords(dbBase *pdbbase)
 {
     int			link;
     dbRecordType		*pdbRecordType;
@@ -291,7 +292,7 @@ void dbLockInitRecords(dbBase *pdbbase)
     }
 }
 
-void dbLockSetMerge(dbCommon *pfirst,dbCommon *psecond)
+void epicsShareAPI dbLockSetMerge(dbCommon *pfirst,dbCommon *psecond)
 {
     lockRecord	*p1lockRecord = pfirst->lset;
     lockRecord	*p2lockRecord = psecond->lset;
@@ -326,7 +327,7 @@ void dbLockSetMerge(dbCommon *pfirst,dbCommon *psecond)
     return;
 }
 
-void dbLockSetSplit(dbCommon *psource)
+void epicsShareAPI dbLockSetSplit(dbCommon *psource)
 {
     lockSet	*plockSet;
     lockRecord	*plockRecord;
@@ -386,7 +387,7 @@ void dbLockSetSplit(dbCommon *psource)
 }
 
 extern struct dbBase *pdbbase;
-long dblsr(char *recordname,int level)
+long epicsShareAPI dblsr(char *recordname,int level)
 {
     int			link;
     DBENTRY		dbentry;

@@ -4,17 +4,19 @@ include $(TOP)/configure/CONFIG
 #       includes to install from this sub-project
 #
 INC += callback.h
-INC += dbLock.h
 INC += dbAccess.h
+INC += dbAddr.h
+INC += dbBkpt.h
 INC += dbConvert.h
 INC += dbEvent.h
+INC += dbLock.h
+INC += dbNotify.h
 INC += dbScan.h
+INC += dbTest.h
 INC += db_access.h
-INC += dbAddr.h
 INC += db_field_log.h
 INC += initHooks.h
 INC += recGbl.h
-INC += dbBkpt.h
 
 MENUS += menuAlarmSevr.h
 MENUS += menuAlarmStat.h

@@ -40,8 +40,10 @@ of this distribution.
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "dbCommon.h"
+#include "shareLib.h"
+#include "dbCaPvt.h"
+epicsShareExtern struct dbBase *pdbbase;
 #include "dbCa.h"
-extern struct dbBase *pdbbase;
 
 long dbcar(char	*precordname,int level)
 {

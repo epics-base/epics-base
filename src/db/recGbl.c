@@ -48,17 +48,26 @@
 #include <limits.h>
 
 #include "dbDefs.h"
+#include "osiThread.h"
 #include "tsStamp.h"
 #include "epicsPrint.h"
 #include "dbBase.h"
+#include "dbFldTypes.h"
+#include "link.h"
+#include "dbAddr.h"
 #include "dbAccess.h"
+#include "db_field_log.h"
+#include "dbNotify.h"
+#include "dbCa.h"
 #include "dbEvent.h"
 #include "errlog.h"
 #include "dbConvert.h"
 #include "dbScan.h"
 #include "devSup.h"
-#include "recGbl.h"
 #include "dbCommon.h"
+#include "caeventmask.h"
+#define epicsExportSharedSymbols
+#include "recGbl.h"
 
 
 /* local routines */
@@ -66,7 +75,8 @@ static void getMaxRangeValues();
 
 
 
-void recGblDbaddrError(long status,struct dbAddr *paddr,char *pcaller_name)
+void epicsShareAPI recGblDbaddrError(
+    long status,struct dbAddr *paddr,char *pcaller_name)
 {
 	char		buffer[200];
 	struct dbCommon *precord;
@@ -89,7 +99,7 @@ void recGblDbaddrError(long status,struct dbAddr *paddr,char *pcaller_name)
 	return;
 }
 
-void recGblRecordError(long status,void *pdbc,char *pcaller_name)
+void epicsShareAPI recGblRecordError(long status,void *pdbc,char *pcaller_name)
 {
 	struct dbCommon	*precord = pdbc;
 	char		buffer[200];
@@ -107,8 +117,9 @@ void recGblRecordError(long status,void *pdbc,char *pcaller_name)
 	return;
 }
 
-void recGblRecSupError(long status,struct dbAddr *paddr,char *pcaller_name,
-	char *psupport_name)
+void epicsShareAPI recGblRecSupError(
+    long status,struct dbAddr *paddr,char *pcaller_name,
+    char *psupport_name)
 {
 	char 		buffer[200];
 	struct dbCommon *precord;
@@ -144,7 +155,7 @@ void recGblRecSupError(long status,struct dbAddr *paddr,char *pcaller_name,
 	return;
 }
 
-void recGblGetPrec(struct dbAddr *paddr,long *precision)
+void epicsShareAPI recGblGetPrec(struct dbAddr *paddr,long *precision)
 {
     dbFldDes               *pdbFldDes=(dbFldDes *)(paddr->pfldDes);
 
@@ -171,7 +182,8 @@ void recGblGetPrec(struct dbAddr *paddr,long *precision)
     return;
 }
 
-void recGblGetGraphicDouble(struct dbAddr *paddr,struct dbr_grDouble *pgd)
+void epicsShareAPI recGblGetGraphicDouble(
+    struct dbAddr *paddr,struct dbr_grDouble *pgd)
 {
     dbFldDes               *pdbFldDes=(dbFldDes *)(paddr->pfldDes);
 
@@ -181,7 +193,8 @@ void recGblGetGraphicDouble(struct dbAddr *paddr,struct dbr_grDouble *pgd)
     return;
 }
 
-void recGblGetAlarmDouble(struct dbAddr *paddr,struct dbr_alDouble *pad)
+void epicsShareAPI recGblGetAlarmDouble(
+    struct dbAddr *paddr,struct dbr_alDouble *pad)
 {
     pad->upper_alarm_limit = 0;
     pad->upper_warning_limit = 0;
@@ -191,7 +204,8 @@ void recGblGetAlarmDouble(struct dbAddr *paddr,struct dbr_alDouble *pad)
     return;
 }
 
-void recGblGetControlDouble(struct dbAddr *paddr,struct dbr_ctrlDouble *pcd)
+void epicsShareAPI recGblGetControlDouble(
+    struct dbAddr *paddr,struct dbr_ctrlDouble *pcd)
 {
     dbFldDes               *pdbFldDes=(dbFldDes *)(paddr->pfldDes);
 
@@ -201,7 +215,8 @@ void recGblGetControlDouble(struct dbAddr *paddr,struct dbr_ctrlDouble *pcd)
     return;
 }
 
-int  recGblInitConstantLink(struct link *plink,short dbftype,void *pdest)
+int  epicsShareAPI recGblInitConstantLink(
+    struct link *plink,short dbftype,void *pdest)
 {
     if(plink->type != CONSTANT) return(FALSE);
     if(!plink->value.constantStr) return(FALSE);
@@ -253,7 +268,7 @@ int  recGblInitConstantLink(struct link *plink,short dbftype,void *pdest)
     return(TRUE);
 }
 
-unsigned short recGblResetAlarms(void *precord)
+unsigned short epicsShareAPI recGblResetAlarms(void *precord)
 {
     struct dbCommon *pdbc = precord;
     unsigned short mask,stat,sevr,nsta,nsev,ackt,acks;
@@ -282,7 +297,7 @@ unsigned short recGblResetAlarms(void *precord)
     return(mask);
 }
 
-void recGblFwdLink(void *precord)
+void epicsShareAPI recGblFwdLink(void *precord)
 {
     struct dbCommon *pdbc = precord;
     static short    fwdLinkValue = 1;
@@ -307,7 +322,7 @@ void recGblFwdLink(void *precord)
 }
 
 
-void recGblGetTimeStamp(void* prec)
+void epicsShareAPI recGblGetTimeStamp(void* prec)
 {
     struct dbCommon* pr = (struct dbCommon*)prec;
     int status;

@@ -43,6 +43,7 @@
 #include <dbDefs.h>
 
 #include "ellLib.h"
+#define epicsExportSharedSymbols
 #include "initHooks.h"
 
 typedef struct initHookLink {
@@ -62,7 +63,7 @@ static void initFunctionList(void)
 /*
  * To be called before iocInit reaches state desired.
  */
-int initHookRegister(initHookFunction func)
+int epicsShareAPI initHookRegister(initHookFunction func)
 {
 	initHookLink *newHook;
 
@@ -82,7 +83,7 @@ int initHookRegister(initHookFunction func)
  * Called by iocInit at various points during initialization.
  * Do not call this function from any other function than iocInit.
  */
-void initHooks(initHookState state)
+void epicsShareAPI initHooks(initHookState state)
 {
 	initHookLink *hook;
 

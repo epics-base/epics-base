@@ -24,13 +24,14 @@ of this distribution.
 #include "osiTimer.h"
 #include "osiRing.h"
 #include "errlog.h"
-#include "callback.h"
 #include "dbAccess.h"
 #include "recSup.h"
 #include "taskwd.h"
 #include "errMdef.h"
 #include "dbCommon.h"
 #include "dbLock.h"
+#define epicsExportSharedSymbols
+#include "callback.h"
 
 int callbackQueueSize = 2000;
 static semBinaryId callbackSem[NUM_CALLBACK_PRIORITIES];
@@ -56,13 +57,13 @@ static void wdCallback(void *ind); /*callback from taskwd*/
 static void start(int ind); /*start or restart a callbackTask*/
 
 /*public routines */
-int callbackSetQueueSize(int size)
+int epicsShareAPI callbackSetQueueSize(int size)
 {
     callbackQueueSize = size;
     return(0);
 }
 
-long callbackInit()
+long epicsShareAPI callbackInit()
 {
     int i;
 
@@ -75,7 +76,7 @@ long callbackInit()
 
 /* Routine which places requests into callback queue*/
 /* This routine can be called from interrupt routine*/
-void callbackRequest(CALLBACK *pcallback)
+void epicsShareAPI callbackRequest(CALLBACK *pcallback)
 {
     int priority = pcallback->priority;
     int nput;
@@ -169,7 +170,7 @@ static void ProcessCallback(CALLBACK *pcallback)
     (*pRec->rset->process)(pRec);
     dbScanUnlock(pRec);
 }
-void callbackRequestProcessCallback(CALLBACK *pcallback,
+void epicsShareAPI callbackRequestProcessCallback(CALLBACK *pcallback,
 	int Priority, void *pRec)
 {
     callbackSetCallback(ProcessCallback, pcallback);
@@ -205,7 +206,7 @@ void show(void *pPrivate, unsigned level)
 }
 
 
-void callbackRequestDelayed(CALLBACK *pcallback,double seconds)
+void epicsShareAPI callbackRequestDelayed(CALLBACK *pcallback,double seconds)
 {
     osiTimerId timer = (osiTimerId *)pcallback->timer;
 
@@ -216,7 +217,7 @@ void callbackRequestDelayed(CALLBACK *pcallback,double seconds)
     osiTimerArm(timer,timerQueue,seconds);
 }
 
-void callbackRequestProcessCallbackDelayed(CALLBACK *pcallback,
+void epicsShareAPI callbackRequestProcessCallbackDelayed(CALLBACK *pcallback,
     int Priority, void *pRec,double seconds)
 {
     callbackSetCallback(ProcessCallback, pcallback);

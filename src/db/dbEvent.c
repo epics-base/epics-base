@@ -32,11 +32,18 @@ of this distribution.
 #include "errlog.h"
 #include "taskwd.h"
 #include "freeList.h"
+#include "dbBase.h"
+#include "dbFldTypes.h"
+#include "dbAddr.h"
+#include "dbLock.h"
+#include "link.h"
 #include "tsStamp.h"
 #include "dbCommon.h"
 #include "dbAccess.h"
-#include "dbEvent.h"
 #include "caeventmask.h"
+#include "db_field_log.h"
+#define epicsExportSharedSymbols
+#include "dbEvent.h"
 
 #define EVENTSPERQUE    32
 #define EVENTQUESIZE    (EVENTENTRIES  * EVENTSPERQUE)
@@ -144,7 +151,7 @@ static char *EVENT_PEND_NAME = "eventTask";
 /*
  *  db_event_list ()
  */
-int db_event_list (const char *pname, unsigned level)
+int epicsShareAPI db_event_list (const char *pname, unsigned level)
 {
     return dbel (pname, level);
 }
@@ -152,7 +159,7 @@ int db_event_list (const char *pname, unsigned level)
 /*
  * dbel ()
  */
-int dbel (const char *pname, unsigned level)
+int epicsShareAPI dbel (const char *pname, unsigned level)
 {
     DBADDR              addr;
     long                status;
@@ -184,7 +191,7 @@ int dbel (const char *pname, unsigned level)
 
         /* they should never see this one */
         if (pevent->ev_que->evUser->queovr) {
-            printf (" !! joint event discard count=%ld !!", 
+            printf (" !! joint event discard count=%d !!", 
                 pevent->ev_que->evUser->queovr);
         }
 
@@ -236,7 +243,7 @@ int dbel (const char *pname, unsigned level)
  * 
  * returns: ptr to event user block or NULL if memory can't be allocated
  */
-dbEventCtx db_init_events (void)
+dbEventCtx epicsShareAPI db_init_events (void)
 {
     struct event_user   *evUser;
     
@@ -288,7 +295,7 @@ dbEventCtx db_init_events (void)
  *  itself
  *
  */
-void db_close_events (dbEventCtx ctx)
+void epicsShareAPI db_close_events (dbEventCtx ctx)
 {
     struct event_user *evUser = (struct event_user *) ctx;
 
@@ -310,7 +317,8 @@ void db_close_events (dbEventCtx ctx)
 /*
  * DB_ADD_EVENT()
  */
-dbEventSubscription db_add_event (dbEventCtx ctx, struct dbAddr *paddr,
+dbEventSubscription epicsShareAPI db_add_event (
+    dbEventCtx ctx, struct dbAddr *paddr,
     EVENTFUNC *user_sub, void *user_arg, unsigned select)
 {
     struct event_user   *evUser = (struct event_user *) ctx;
@@ -397,7 +405,7 @@ dbEventSubscription db_add_event (dbEventCtx ctx, struct dbAddr *paddr,
 /*
  * db_event_enable()
  */
-void db_event_enable (dbEventSubscription es)
+void epicsShareAPI db_event_enable (dbEventSubscription es)
 {
     struct evSubscrip *pevent = (struct evSubscrip *) es;
     struct dbCommon *precord;
@@ -419,7 +427,7 @@ void db_event_enable (dbEventSubscription es)
 /*
  * db_event_disable()
  */
-void db_event_disable (dbEventSubscription es)
+void epicsShareAPI db_event_disable (dbEventSubscription es)
 {
     struct evSubscrip *pevent = (struct evSubscrip *) es;
     struct dbCommon *precord;
@@ -448,7 +456,7 @@ void db_event_disable (dbEventSubscription es)
  * This routine does not deallocate the event block since it normally will be
  * part of a larger structure.
  */
-void db_cancel_event (dbEventSubscription es)
+void epicsShareAPI db_cancel_event (dbEventSubscription es)
 {
     struct evSubscrip *pevent = (struct evSubscrip *) es;
     struct dbCommon *precord;
@@ -497,8 +505,8 @@ void db_cancel_event (dbEventSubscription es)
  *
  * Specify a routine to be executed for event que overflow condition
  */
-int db_add_overflow_event (dbEventCtx ctx, OVRFFUNC *overflow_sub, 
-                           void *overflow_arg)
+int epicsShareAPI db_add_overflow_event (
+    dbEventCtx ctx, OVRFFUNC *overflow_sub, void *overflow_arg)
 {
     struct event_user *evUser = (struct event_user *) ctx;
 
@@ -513,7 +521,7 @@ int db_add_overflow_event (dbEventCtx ctx, OVRFFUNC *overflow_sub,
  *
  * waits for extra labor in progress to finish
  */
-int db_flush_extra_labor_event (dbEventCtx ctx)
+int epicsShareAPI db_flush_extra_labor_event (dbEventCtx ctx)
 {
     struct event_user *evUser = (struct event_user *) ctx;
 
@@ -531,8 +539,8 @@ int db_flush_extra_labor_event (dbEventCtx ctx)
  * when labor is offloaded to the
  * event task
  */
-int db_add_extra_labor_event (dbEventCtx ctx, 
-                      EXTRALABORFUNC *func, void *arg)
+int epicsShareAPI db_add_extra_labor_event (
+    dbEventCtx ctx, EXTRALABORFUNC *func, void *arg)
 {
     struct event_user *evUser = (struct event_user *) ctx;
 
@@ -545,7 +553,7 @@ int db_add_extra_labor_event (dbEventCtx ctx,
 /*
  *  DB_POST_EXTRA_LABOR()
  */
-int db_post_extra_labor (dbEventCtx ctx)
+int epicsShareAPI db_post_extra_labor (dbEventCtx ctx)
 {
     struct event_user *evUser = (struct event_user *) ctx;
 
@@ -560,7 +568,7 @@ int db_post_extra_labor (dbEventCtx ctx)
  *
  *  NOTE: This assumes that the db scan lock is already applied
  */
-LOCAL void db_post_single_event_private (struct evSubscrip *event)
+LOCAL void epicsShareAPI db_post_single_event_private (struct evSubscrip *event)
 {  
     struct event_que    *ev_que;
     db_field_log        *pLog;
@@ -684,7 +692,7 @@ LOCAL void db_post_single_event_private (struct evSubscrip *event)
  *  NOTE: This assumes that the db scan lock is already applied
  *
  */
-int db_post_events(
+int epicsShareAPI db_post_events(
 void            *prec,
 void            *pval,
 unsigned int    select
@@ -941,8 +949,9 @@ LOCAL void event_task (void *pParm)
 /*
  * DB_START_EVENTS()
  */
-int db_start_events (dbEventCtx ctx, char *taskname, int (*init_func)(void *), 
-                     void *init_func_arg, int priority_offset)
+int epicsShareAPI db_start_events (
+    dbEventCtx ctx, char *taskname, int (*init_func)(threadId), 
+    void *init_func_arg, int priority_offset)
 {
      struct event_user *evUser = (struct event_user *) ctx;
      int     taskpri;
@@ -980,7 +989,7 @@ int db_start_events (dbEventCtx ctx, char *taskname, int (*init_func)(void *),
 /*
  * db_event_flow_ctrl_mode_on()
  */
-void db_event_flow_ctrl_mode_on (dbEventCtx ctx)
+void epicsShareAPI db_event_flow_ctrl_mode_on (dbEventCtx ctx)
 {
     struct event_user *evUser = (struct event_user *) ctx;
 
@@ -997,7 +1006,7 @@ void db_event_flow_ctrl_mode_on (dbEventCtx ctx)
 /*
  * db_event_flow_ctrl_mode_off()
  */
-void db_event_flow_ctrl_mode_off (dbEventCtx ctx)
+void epicsShareAPI db_event_flow_ctrl_mode_off (dbEventCtx ctx)
 {
     struct event_user *evUser = (struct event_user *) ctx;
 

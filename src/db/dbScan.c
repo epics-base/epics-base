@@ -51,6 +51,7 @@
 
 #include "dbDefs.h"
 #include "ellLib.h"
+#include "taskwd.h"
 #include "osiSem.h"
 #include "osiInterrupt.h"
 #include "osiThread.h"
@@ -60,18 +61,18 @@
 #include "epicsPrint.h"
 #include "dbBase.h"
 #include "dbStaticLib.h"
-#include "dbAccess.h"
-#include "dbScan.h"
-#include "taskwd.h"
+#include "dbAddr.h"
+#include "dbFldTypes.h"
+#include "link.h"
+#include "devSup.h"
 #include "callback.h"
-#include "dbBase.h"
+#include "dbAccess.h"
 #include "dbCommon.h"
 #include "dbLock.h"
-#include "devSup.h"
 #include "recGbl.h"
-#include "dbStaticLib.h"
+#define epicsExportSharedSymbols
+#include "dbScan.h"
 
-extern struct dbBase *pdbbase;
 
 /* SCAN ONCE */
 int onceQueueSize = 1000;
@@ -132,7 +133,7 @@ static void buildScanLists(void);
 static void addToList(struct dbCommon *precord,scan_list *psl);
 static void deleteFromList(struct dbCommon *precord,scan_list *psl);
 
-long scanInit()
+long epicsShareAPI scanInit()
 {
 	int i;
 
@@ -144,7 +145,7 @@ long scanInit()
 	return(0);
 }
 
-void scanAdd(struct dbCommon *precord)
+void epicsShareAPI scanAdd(struct dbCommon *precord)
 {
 	short		scan;
 	scan_list *psl;
@@ -233,7 +234,7 @@ void scanAdd(struct dbCommon *precord)
 	return;
 }
 
-void scanDelete(struct dbCommon *precord)
+void epicsShareAPI scanDelete(struct dbCommon *precord)
 {
 	short scan;
 	scan_list *psl = 0;
@@ -310,7 +311,7 @@ void scanDelete(struct dbCommon *precord)
 	return;
 }
 
-int scanppl(double rate)	/*print periodic list*/
+int epicsShareAPI scanppl(double rate)	/*print periodic list*/
 {
     scan_list	*psl;
     char	message[80];
@@ -326,7 +327,7 @@ int scanppl(double rate)	/*print periodic list*/
     return(0);
 }
 
-int scanpel(int event_number)  /*print event list */
+int epicsShareAPI scanpel(int event_number)  /*print event list */
 {
     char		message[80];
     int			priority,evnt;
@@ -346,7 +347,7 @@ int scanpel(int event_number)  /*print event list */
     return(0);
 }
 
-int scanpiol()  /* print io_event list */
+int epicsShareAPI scanpiol()  /* print io_event list */
 {
     io_scan_list *piosl;
     int			priority;
@@ -383,7 +384,7 @@ static void initEvent(void)
     }
 }
 
-void post_event(int event)
+void epicsShareAPI post_event(int event)
 {
 	unsigned char	evnt;
 	int		priority;
@@ -403,7 +404,7 @@ void post_event(int event)
 	}
 }
 
-void scanIoInit(IOSCANPVT *ppioscanpvt)
+void epicsShareAPI scanIoInit(IOSCANPVT *ppioscanpvt)
 {
     io_scan_list *piosl;
     int priority;
@@ -425,7 +426,7 @@ void scanIoInit(IOSCANPVT *ppioscanpvt)
 }
 
 
-void scanIoRequest(IOSCANPVT pioscanpvt)
+void epicsShareAPI scanIoRequest(IOSCANPVT pioscanpvt)
 {
     io_scan_list *piosl;
     int priority;
@@ -437,7 +438,7 @@ void scanIoRequest(IOSCANPVT pioscanpvt)
     }
 }
 
-void scanOnce(void *precord)
+void epicsShareAPI scanOnce(void *precord)
 {
     static int newOverflow=TRUE;
     int lockKey;
@@ -474,7 +475,7 @@ static void onceTask(void)
     }
 }
 
-int scanOnceSetQueueSize(int size)
+int epicsShareAPI scanOnceSetQueueSize(int size)
 {
     onceQueueSize = size;
     return(0);

@@ -32,21 +32,8 @@
 #define INCrecGblh 1
 
 
-#include <dbCommon.h>
+#include "shareLib.h"
 
-/*
- *  One ABSOLUTELY must include dbAccess.h before the
- *     definitions in this file
- */
-
-#ifndef INCdbAccessh
-#include <dbAccess.h>
-#endif
-#ifndef INCalarmh
-#include <alarm.h>
-#endif
-#include <dbFldTypes.h>
-
 /*************************************************************************/
 
 #define recGblSetSevr(PREC,NSTA,NSEV) \
@@ -58,15 +45,23 @@
 
 
 /* Global Record Support Routines*/
-void recGblDbaddrError(long status, struct dbAddr *paddr, char *pcaller_name);
-void recGblRecordError(long status, void *precord, char *pcaller_name);
-void recGblRecSupError(long status, struct dbAddr *paddr, char *pcaller_name, char *psupport_name);
-void recGblGetGraphicDouble(struct dbAddr *paddr, struct dbr_grDouble *pgd);
-void recGblGetControlDouble(struct dbAddr *paddr, struct dbr_ctrlDouble *pcd);
-void recGblGetAlarmDouble(struct dbAddr *paddr, struct dbr_alDouble *pad);
-void recGblGetPrec(struct dbAddr *paddr, long *pprecision);
-int  recGblInitConstantLink(struct link *plink,short dbftype,void *pdest);
-unsigned short recGblResetAlarms(void *precord);
-void recGblFwdLink(void *precord);
-void recGblGetTimeStamp(void *precord);
+epicsShareFunc void epicsShareAPI recGblDbaddrError(
+    long status, struct dbAddr *paddr, char *pcaller_name);
+epicsShareFunc void epicsShareAPI recGblRecordError(
+    long status, void *precord, char *pcaller_name);
+epicsShareFunc void epicsShareAPI recGblRecSupError(
+    long status, struct dbAddr *paddr, char *pcaller_name, char *psupport_name);
+epicsShareFunc void epicsShareAPI recGblGetGraphicDouble(
+    struct dbAddr *paddr, struct dbr_grDouble *pgd);
+epicsShareFunc void epicsShareAPI recGblGetControlDouble(
+    struct dbAddr *paddr, struct dbr_ctrlDouble *pcd);
+epicsShareFunc void epicsShareAPI recGblGetAlarmDouble(
+    struct dbAddr *paddr, struct dbr_alDouble *pad);
+epicsShareFunc void epicsShareAPI recGblGetPrec(
+    struct dbAddr *paddr, long *pprecision);
+epicsShareFunc int  epicsShareAPI recGblInitConstantLink(
+    struct link *plink,short dbftype,void *pdest);
+epicsShareFunc unsigned short epicsShareAPI recGblResetAlarms(void *precord);
+epicsShareFunc void epicsShareAPI recGblFwdLink(void *precord);
+epicsShareFunc void epicsShareAPI recGblGetTimeStamp(void *precord);
 #endif /*INCrecGblh*/

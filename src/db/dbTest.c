@@ -1,62 +1,17 @@
 /* dbTest.c */
 /* base/src/db  $Id$ */
 /*	database access test subroutines */
-/*
- *      Original Author: Bob Dalesio
- *      Current Author:  Marty Kraimer
- *      Date:            11-7-90
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01  08-13-91	mrk	Added extra NULL arg to dbGetField calls
- * .02  10-23-91	mrk	Changed dbior so it also reports device support
- * .03  11-26-91	jba	Fixed initializations and added hex print to printBuffer
- * .04  02-05-92	jba	Changed function arguments from paddr to precord 
- * .05  02-28-92        jba     ANSI C changes
- * .06  04-17-92        rcz     removed dbPvd for mrk
- * .07  05-19-92        mrk	Mods for changes to internal database structures
- * .08  07-21-92        jba	ansi c changes
- * .09  09-24-93        jbk 	adjusted dbpr to print vxi links correctly
- * .10  02-02-94	mrk	added dbtpn (test dbPutNotify)
- * .11	03-18-94	mcn	added dbgrep and timing routines.
- * .12  08-14-95	mrk	Moved dbtpn to dbNotify
- */
-
-/* Global Database Test Routines - All can be invoked via vxWorks shell*/
-long dba(char*pname);		/*dbAddr info */
-long dbl(char	*precordTypename,char *filename,char *fields);  /*list records*/
-long dbnr(int verbose);		/*list number of records of each type*/
-long dbgrep(char *pmask);	/*list records with mask*/
-long dbgf(char	*pname);	/*get field value*/
-long dbpf(char	*pname,char *pvalue); /*put field value*/
-long dbpr(char *pname,int interest_level); /*print record*/
-long dbtr(char *pname);		/*test record*/
-long dbtgf(char *pname);	/*test get field*/
-long dbtpf(char	*pname,char *pvalue); /*test put field*/
-long dbior(char	*pdrvName,int type); /*I/O report */
-int dbhcr(char *filename);		/*Hardware Configuration Report*/
-
+/*****************************************************************
+                          COPYRIGHT NOTIFICATION
+*****************************************************************
+
+(C)  COPYRIGHT 1993 UNIVERSITY OF CHICAGO
+
+This software was developed under a United States Government license
+described on the COPYRIGHT_UniversityOfChicago file included as part
+of this distribution.
+**********************************************************************/
+
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
@@ -80,9 +35,10 @@ int dbhcr(char *filename);		/*Hardware Configuration Report*/
 #include "dbEvent.h"
 #include "ellLib.h"
 #include "callback.h"
-
+#define epicsExportSharedSymbols
+#include "dbTest.h"
+
 extern struct dbBase *pdbbase;
-
 #define MAXLINE 80
 struct msgBuff {		/* line output structure */
     char            out_buff[MAXLINE + 1];
@@ -109,7 +65,7 @@ static void dbpr_init_msg(TAB_BUFFER *pMsgBuff,int tab_size);
 static void dbpr_insert_msg(TAB_BUFFER *pMsgBuff,int len,int tab_size);
 static void dbpr_msg_flush(TAB_BUFFER *pMsgBuff,int tab_size);
 
-long dba(char*pname)
+long epicsShareAPI dba(char*pname)
 {
     DBADDR 	addr;
     long		status;
@@ -119,7 +75,7 @@ long dba(char*pname)
     return(status);
 }
 
-long dbl(char	*precordTypename,char *filename,char *fields)
+long epicsShareAPI dbl(char	*precordTypename,char *filename,char *fields)
 {
     DBENTRY	dbentry;
     DBENTRY	*pdbentry=&dbentry;
@@ -205,7 +161,7 @@ long dbl(char	*precordTypename,char *filename,char *fields)
     return(0);
 }
 
-long dbnr(int verbose)
+long epicsShareAPI dbnr(int verbose)
 {
     DBENTRY	dbentry;
     DBENTRY	*pdbentry=&dbentry;
@@ -275,7 +231,7 @@ static int specified_by(char *ptest, char *pspec)
         }
 }
  
-long dbgrep(char *pmask)
+long epicsShareAPI dbgrep(char *pmask)
 {
     DBENTRY	dbentry;
     DBENTRY	*pdbentry=&dbentry;
@@ -297,7 +253,7 @@ long dbgrep(char *pmask)
     return(0);
 }
 
-long dbgf(char	*pname)
+long epicsShareAPI dbgf(char	*pname)
 {
     /* declare buffer long just to ensure correct alignment */
     long 		buffer[100];
@@ -334,7 +290,7 @@ long dbgf(char	*pname)
     return(0);
 }
 
-long dbpf(char	*pname,char *pvalue)
+long epicsShareAPI dbpf(char	*pname,char *pvalue)
 {
     /* declare buffer long just to ensure correct alignment */
     DBADDR addr;
@@ -369,7 +325,7 @@ long dbpf(char	*pname,char *pvalue)
     return(status);
 }
 
-long dbpr(char *pname,int interest_level)
+long epicsShareAPI dbpr(char *pname,int interest_level)
 {
     static TAB_BUFFER msg_Buff;
     TAB_BUFFER       *pMsgBuff = &msg_Buff;
@@ -393,7 +349,7 @@ long dbpr(char *pname,int interest_level)
     return (0);
 }
 
-long dbtr(char *pname)
+long epicsShareAPI dbtr(char *pname)
 {
     DBADDR addr;
     long 	     status;
@@ -421,7 +377,7 @@ long dbtr(char *pname)
     return(0);
 }
 
-long dbtgf(char *pname)
+long epicsShareAPI dbtgf(char *pname)
 {
     /* declare buffer long just to ensure correct alignment */
     long              buffer[400];
@@ -496,7 +452,7 @@ long dbtgf(char *pname)
     return(0);
 }
 
-long dbtpf(char	*pname,char *pvalue)
+long epicsShareAPI dbtpf(char	*pname,char *pvalue)
 {
     /* declare buffer long just to ensure correct alignment */
     long          buffer[100];
@@ -661,7 +617,7 @@ long dbtpf(char	*pname,char *pvalue)
     return(0);
 }
 
-long dbior(char	*pdrvName,int type)
+long epicsShareAPI dbior(char	*pdrvName,int type)
 {
     char		*pname;
     drvSup		*pdrvSup;
@@ -704,7 +660,7 @@ long dbior(char	*pdrvName,int type)
     return(0);
 }
 
-int dbhcr(char *filename)
+int epicsShareAPI dbhcr(char *filename)
 {
     FILE	*stream = NULL;
     int		isStdout = TRUE;

@@ -37,6 +37,8 @@
 #ifndef INCinitHooksh
 #define INCinitHooksh 1
 
+#include "shareLib.h"
+
 typedef enum {
     initHookAtBeginning,
     initHookAfterCallbackInit,
@@ -56,15 +58,9 @@ typedef enum {
 extern "C" {
 #endif
 
-#ifdef __STDC__
 typedef void (*initHookFunction)(initHookState state);
-int initHookRegister(initHookFunction func);
-void initHooks(initHookState state);
-#else /*__STDC__*/
-typedef void (*initHookFunction)();
-int initHookRegister();
-void initHooks();
-#endif /*__STDC__*/
+epicsShareFunc int epicsShareAPI initHookRegister(initHookFunction func);
+epicsShareFunc void epicsShareAPI initHooks(initHookState state);
 
 #ifdef __cplusplus
 }

@@ -29,17 +29,10 @@ of this distribution.
 
 #ifndef INCdbAccessh
 #define INCdbAccessh
-#include "dbDefs.h"
-#include "dbBase.h"
-#include "dbFldTypes.h"
-#include "link.h"
-#include "dbCommon.h"
-#include "dbLock.h"
-#include "tsStamp.h"
-#include "callback.h"
-#include "ellLib.h"
-#include "caeventmask.h"
-#include "dbAddr.h"
+
+#include "shareLib.h"
+
+epicsShareExtern struct dbBase *pdbbase;
 
 /*  The database field and request types are defined in dbFldTypes.h*/
 /* Data Base Request Options	*/
@@ -217,86 +210,43 @@ struct dbr_alDouble     {DBRalDouble};
         : (((DBADDR*)((PLNK)->value.pv_link.pvt))) \
     )
 
-#ifdef __STDC__
-struct rset *dbGetRset(struct dbAddr *paddr);
-long dbPutAttribute(char *recordTypename,char *name,char*value);
-int dbIsValueField(struct dbFldDes *pdbFldDes);
-int dbGetFieldIndex(struct dbAddr *paddr);
-long dbGetNelements(struct link *plink,long *nelements);
-int dbIsLinkConnected(struct link *plink);
-int dbGetLinkDBFtype(struct link *plink);
-long dbScanLink(struct dbCommon *pfrom, struct dbCommon *pto);
-long dbScanPassive(struct dbCommon *pfrom,struct dbCommon *pto);
-void dbScanFwdLink(struct link *plink);
-long dbProcess(struct dbCommon *precord);
-long dbNameToAddr(const char *pname,struct dbAddr *);
-long dbGetLinkValue(struct link *,short dbrType,
-		void *pbuffer,long *options,long *nRequest);
-long dbGetField(struct dbAddr *,short dbrType,void *pbuffer,long *options,
-	long *nRequest,void *pfl);
-long dbGet(struct dbAddr *,short dbrType,void *pbuffer,long *options,
-	long *nRequest,void *pfl);
-long dbPutLinkValue(struct link *,short dbrType,const void *pbuffer,long nRequest);
-long dbPutField(struct dbAddr *,short dbrType,const void *pbuffer,long nRequest);
-long dbPut(struct dbAddr *,short dbrType,const void *pbuffer,long nRequest);
-long dbPutNotify(PUTNOTIFY *pputnotify);
-/*dbNotifyAdd called by dbScanPassive and dbScanLink*/
-void dbNotifyAdd(struct dbCommon *pfrom,struct dbCommon *pto);
-void dbNotifyCancel(PUTNOTIFY *pputnotify);
-/*dbNotifyCompletion called by recGblFwdLink */
-void dbNotifyCompletion(struct dbCommon *precord);
+epicsShareFunc struct rset * epicsShareAPI dbGetRset(struct dbAddr *paddr);
+epicsShareFunc long epicsShareAPI dbPutAttribute(
+    char *recordTypename,char *name,char*value);
+epicsShareFunc int epicsShareAPI dbIsValueField(struct dbFldDes *pdbFldDes);
+epicsShareFunc int epicsShareAPI dbGetFieldIndex(struct dbAddr *paddr);
+epicsShareFunc long epicsShareAPI dbGetNelements(
+    struct link *plink,long *nelements);
+epicsShareFunc int epicsShareAPI dbIsLinkConnected(struct link *plink);
+epicsShareFunc int epicsShareAPI dbGetLinkDBFtype(struct link *plink);
+epicsShareFunc long epicsShareAPI dbScanLink(
+    struct dbCommon *pfrom, struct dbCommon *pto);
+epicsShareFunc long epicsShareAPI dbScanPassive(
+    struct dbCommon *pfrom,struct dbCommon *pto);
+epicsShareFunc void epicsShareAPI dbScanFwdLink(struct link *plink);
+epicsShareFunc long epicsShareAPI dbProcess(struct dbCommon *precord);
+epicsShareFunc long epicsShareAPI dbNameToAddr(
+    const char *pname,struct dbAddr *);
+epicsShareFunc long epicsShareAPI dbGetLinkValue(
+    struct link *,short dbrType,void *pbuffer,long *options,long *nRequest);
+epicsShareFunc long epicsShareAPI dbGetField(
+    struct dbAddr *,short dbrType,void *pbuffer,long *options,
+    long *nRequest,void *pfl);
+epicsShareFunc long epicsShareAPI dbGet(
+    struct dbAddr *,short dbrType,void *pbuffer,long *options,
+    long *nRequest,void *pfl);
+epicsShareFunc long epicsShareAPI dbPutLinkValue(
+    struct link *,short dbrType,const void *pbuffer,long nRequest);
+epicsShareFunc long epicsShareAPI dbPutField(
+    struct dbAddr *,short dbrType,const void *pbuffer,long nRequest);
+epicsShareFunc long epicsShareAPI dbPut(
+    struct dbAddr *,short dbrType,const void *pbuffer,long nRequest);
+epicsShareFunc long epicsShareAPI dbPutNotify(PUTNOTIFY *pputnotify);
 typedef void(*SPC_ASCALLBACK)(struct dbCommon *);
 /*dbSpcAsRegisterCallback called by access security */
-void dbSpcAsRegisterCallback(SPC_ASCALLBACK func);
-long dbBufferSize(short dbrType,long options,long nRequest);
-long dbValueSize(short dbrType);
-
-void dbCaLinkInit(void);
-void dbCaAddLink(struct link *plink);
-void dbCaRemoveLink(struct link *plink);
-long dbCaGetLink(struct link *plink,short dbrType,void *pbuffer,
-	unsigned short *psevr,long *nRequest);
-long dbCaPutLink(struct link *plink,short dbrType,
-	const void *pbuffer,long nRequest);
-long dbCaGetAttributes(struct link *plink,
-	void (*callback)(void *usrPvt),void *usrPvt);
-long dbCaGetControlLimits(struct link *plink,double *low, double *high);
-long dbCaGetGraphicLimits(struct link *plink,double *low, double *high);
-long dbCaGetAlarmLimits(struct link *plink,
-	double *lolo, double *low, double *high, double *hihi);
-long dbCaGetNelements(struct link *plink,long *nelements);
-long dbCaGetPrecision(struct link *plink,short *precision);
-long dbCaGetSevr(struct link *plink,short *severity);
-long dbCaGetTimeStamp(struct link *plink,TS_STAMP *pstamp);
-long dbCaGetUnits(struct link *plink,char *units,int unitsSize);
-int dbCaIsLinkConnected(struct link *plink);
-int dbCaGetLinkDBFtype(struct link *plink);
-
-#else
-struct rset *dbGetRset();
-int dbIsValueField();
-int dbGetFieldIndex();
-long dbScanPassive();
-long dbScanLink();
-long dbProcess();
-long dbNameToAddr();
-long dbGetLinkValue();
-long dbGetField();
-long dbGet();
-long dbPutLinkValue();
-long dbPutField();
-long dbPut();
-long dbPutNotify();
-void dbNotifyAdd();
-void dbNotifyCancel();
-void dbNotifyCompletion();
-long dbBufferSize();
-long dbValueSize();
-void dbCaLinkInit();
-void dbCaAddLink();
-void dbCaRemoveLink();
-long dbCaGetLink();
-long dbCaPutLink();
-#endif /*__STDC__*/
+epicsShareFunc void epicsShareAPI dbSpcAsRegisterCallback(SPC_ASCALLBACK func);
+epicsShareFunc long epicsShareAPI dbBufferSize(
+    short dbrType,long options,long nRequest);
+epicsShareFunc long epicsShareAPI dbValueSize(short dbrType);
 
 #endif /*INCdbAccessh*/

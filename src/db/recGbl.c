@@ -90,11 +90,12 @@ extern struct dbBase *pdbBase;
 *     struct dbAddr	  *paddr;
 *     long		  *pprecision;
 *
-*long recGblGetLinkValue(plink,precord,dbrType,pdest,pnRequest)
+*long recGblGetLinkValue(plink,precord,dbrType,pdest,poptions,pnRequest)
 *	struct link	*plink;
 *	struct dbCommon	*precord;
 *	short		dbrType;
 *	void		*pdest;
+*	long		*poptions;
 *	long		*pnRequest;
 *
 *long recGblPutLinkValue(plink,precord,dbrType,psource,pnRequest)
@@ -293,10 +294,10 @@ long recGblGetLinkValue(
 	struct dbCommon *precord,
 	short           dbrType,
 	void            *pdest,
+	long		*poptions,
 	long		*pnRequest
 )
 {
-	long		options=0;
 	long		status=0;
 
 	switch (plink->type){
@@ -304,7 +305,7 @@ long recGblGetLinkValue(
 			break;
 		case(DB_LINK):
 			status=dbGetLink(&(plink->value.db_link),
-				precord,dbrType,pdest,&options,pnRequest);
+				precord,dbrType,pdest,poptions,pnRequest);
 			if(status)
 				recGblSetSevr(precord,LINK_ALARM,INVALID_ALARM);
 			break;

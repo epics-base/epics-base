@@ -61,7 +61,7 @@ int	callNumber;
 	    break;
 	case INITHOOKafterCallbackInit :
 	    break;
-	case INITHOOKafterCaLinkInit1 :
+	case INITHOOKafterCaLinkInit :
 	    break;
 	case INITHOOKafterInitDrvSup :
 	    break;

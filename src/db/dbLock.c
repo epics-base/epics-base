@@ -54,7 +54,7 @@ Each problem above is solved as follows:
 Note that all other tasks are prevented from processing records between
 dbLockSetGblLock and dbLockSetGblUnlock. 
 
-dblls may crash if executed while lock sets are being modified.
+dblsr may crash if executed while lock sets are being modified.
 It is NOT a good idea to make it more robust by issuing dbLockSetGblLock
 since this will delay all other tasks.
 *****************************************************************************/
@@ -411,7 +411,7 @@ void dbLockSetSplit(dbCommon *psource)
 }
 
 extern struct dbBase *pdbbase;
-long dblls(char *recordname,int level)
+long dblsr(char *recordname,int level)
 {
     int			link;
     DBENTRY		dbentry;

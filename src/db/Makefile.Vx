@@ -42,7 +42,7 @@ SRCS.c = \
 	../callback.c\
 	../taskwd.c \
 	../dbCa.c\
-	../dbcal.c\
+	../dbcar.c\
 	../devLib.c\
 	../initHooks.c
 
@@ -64,7 +64,7 @@ LIBOBJS = \
 	callback.o\
 	taskwd.o\
 	dbCa.o \
-	dbcal.o \
+	dbcar.o \
 	devLib.o
 
 PROD = initHooks.o

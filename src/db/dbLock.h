@@ -29,7 +29,7 @@ void dbLockSetGblLock(void);
 void dbLockSetGblUnlock(void);
 void dbLockSetRecordLock(struct dbCommon *precord);
 
-long dblls(char *recordname,int level);       /*list all records in same lock set*/
+long dblsr(char *recordname,int level);/*Lock Set Report */
 /* If recordname NULL then all records*/
 /* level = (0,1,2) (lock set state, + recordname, +DB links) */
 

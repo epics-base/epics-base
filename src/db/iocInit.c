@@ -182,7 +182,7 @@ int iocInit(char * pResourceFilename)
 
    /* Initialize Channel Access Link mechanism.  */
     dbCaLinkInit();
-    if (pinitHooks) (*pinitHooks)(INITHOOKafterCaLinkInit1);
+    if (pinitHooks) (*pinitHooks)(INITHOOKafterCaLinkInit);
 
     if (initDrvSup() != 0)
          logMsg("iocInit: Drivers Failed during Initialization\n",0,0,0,0,0,0);

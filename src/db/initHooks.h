@@ -39,7 +39,7 @@
 #define INITHOOKafterGetResources	1
 #define INITHOOKafterLogInit		2
 #define INITHOOKafterCallbackInit	3
-#define INITHOOKafterCaLinkInit1	4
+#define INITHOOKafterCaLinkInit		4
 #define INITHOOKafterInitDrvSup		5
 #define INITHOOKafterInitRecSup		6
 #define INITHOOKafterInitDevSup		7

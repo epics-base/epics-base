@@ -270,6 +270,7 @@ struct dbr_alDouble     {DBRalDouble};
 struct rset *dbGetRset(struct dbAddr *paddr);
 int dbIsValueField(struct dbFldDes *pdbFldDes);
 int dbGetFieldIndex(struct dbAddr *paddr);
+long dbScanLink(struct dbCommon *pfrom, struct dbCommon *pto);
 long dbScanPassive(struct dbCommon *pfrom,struct dbCommon *pto);
 long dbProcess(struct dbCommon *precord);
 long dbNameToAddr(char *pname,struct dbAddr *);
@@ -298,12 +299,12 @@ long dbCaGetLink(struct link *plink,short dbrType,void *pbuffer,
 	unsigned short *psevr,long *nRequest);
 long dbCaPutLink(struct link *plink,short dbrType,void *pbuffer,long nRequest);
 
-long dbScanLink(struct dbCommon *pfrom, struct dbCommon *pto);
 #else
 struct rset *dbGetRset();
 int dbIsValueField();
 int dbGetFieldIndex();
 long dbScanPassive();
+long dbScanLink();
 long dbProcess();
 long dbNameToAddr();
 long dbGetLinkValue();
@@ -323,7 +324,6 @@ void dbCaAddLink();
 void dbCaRemoveLink();
 long dbCaGetLink();
 long dbCaPutLink();
-long dbScanLink();
 #endif /*__STDC__*/
 
 #endif /*INCdbAccessh*/

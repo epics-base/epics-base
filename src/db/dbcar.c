@@ -1,4 +1,4 @@
-/* dbcal.c */
+/* dbcar.c */
 /*****************************************************************
                           COPYRIGHT NOTIFICATION
 *****************************************************************
@@ -44,7 +44,7 @@ of this distribution.
 #include "dbCa.h"
 extern struct dbBase *pdbbase;
 
-long dbcal(char	*precordname,int level)
+long dbcar(char	*precordname,int level)
 {
     DBENTRY		dbentry;
     DBENTRY		*pdbentry=&dbentry;

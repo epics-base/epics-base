@@ -2157,7 +2157,7 @@ char  **dbGetFormValue(DBENTRY *pdbentry)
 	if(plink->value.constantStr) {
 	    strcpy(*value,plink->value.constantStr);
 	} else {
-	    *value = 0;
+	    strcpy(*value,"");
 	}
 	break;
     case PV_LINK: {

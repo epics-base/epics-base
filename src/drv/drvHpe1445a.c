@@ -29,6 +29,9 @@
  *
  *      Modification Log:
  *      -----------------
+ *	.01 021192 joh	Fixed hpe1445aUnloadWaveformLocked() ANSI C 
+ *			function prototype missmatch. Changed
+ *			unsigned short to unsigned. 
  *		
  *
  */
@@ -801,7 +804,7 @@ char		*pWaveformName
  */
 LOCAL long	 
 hpe1445aUnloadWaveformLocked(
-unsigned short 	la,
+unsigned 	la,
 char		*pWaveformName
 )
 {

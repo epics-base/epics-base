@@ -831,10 +831,10 @@ void nciu::show ( unsigned level ) const
         printf ( "\n" );
     }
     else if ( this->previousConn ) {
-        printf ( "Channel \"%s\" (previously connected to a server)\n", this->pNameStr, hostName );
+        printf ( "Channel \"%s\" (previously connected to a server)\n", this->pNameStr );
     }
     else {
-        printf ( "Channel \"%s\" (unable to locate server)\n", this->pNameStr, hostName );
+        printf ( "Channel \"%s\" (unable to locate server)\n", this->pNameStr );
     }
 
     if ( level > 2u ) {

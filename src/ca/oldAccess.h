@@ -350,8 +350,10 @@ inline oldSubscription::oldSubscription  (
 inline void oldSubscription::begin  ( unsigned type, 
               arrayElementCount nElem, unsigned mask )
 {
-    this->chan.subscribe ( type, nElem, mask, *this, this->id );
     this->subscribed = true;
+    this->chan.subscribe ( type, nElem, mask, *this, this->id );
+    // dont touch this pointer after this point because the
+    // 1st update callback might cancel the subscription
 }
 
 inline void oldSubscription::destroy ()

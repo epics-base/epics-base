@@ -588,6 +588,8 @@ extern "C" int epicsShareAPI ca_add_masked_array_event (
                 *monixptr = pTmp;
             }
             pTmp->begin ( tmpType, count, mask );
+            // dont touch pTmp after this because
+            // the first callback might have canceled it
             return ECA_NORMAL;
         }
         else {

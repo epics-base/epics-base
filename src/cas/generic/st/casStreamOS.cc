@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.3  1996/12/12 19:02:36  jhill
+// fixed send does not get armed after complete flush bug
+//
 // Revision 1.2  1996/12/11 00:55:14  jhill
 // better message
 //
@@ -548,6 +551,7 @@ void casStreamWriteReg::callBack()
 		delete &this->os;	
 	}
 	else {
+		casStreamOS *pStrmOS = &this->os;
 		//
 		// anything left in the send buffer that
 		// still needs to be sent ?
@@ -559,7 +563,6 @@ void casStreamWriteReg::callBack()
 		// we flushed the out buffer
 		//
 		if (pStrmOS->outBuf::bytesPresent()>0u) {
-			casStreamOS *pStrmOS = &this->os;
 			//
 			// delete this object now so that the
 			// arm will work 

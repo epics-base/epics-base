@@ -12,6 +12,12 @@ dd Month 2004</h1>
 
 <h2 align="center">Changes since 3.14.5</h2>
 
+<h4>EPICS_TS_NTP_INET</h4>
+
+<p>The time server's IP address used by the vxWorks clock routines was not
+reading the default value from the generated envData.c file but going
+straight to the boot host if no environment variable by that name was set.</p>
+
 <h4>CONFIG_ENV and CONFIG_SITE_ENV</h4>
 
 <p>These files are now parsed by a program that recognizes and ignores

@@ -13,6 +13,8 @@ SRCS.c += ../devEventSoft.c
 SRCS.c += ../devHistogramSoft.c
 SRCS.c += ../devLiSoft.c
 SRCS.c += ../devLoSoft.c
+SRCS.c += ../devMbbiDirectSoft.c
+SRCS.c += ../devMbbiDirectSoftRaw.c
 SRCS.c += ../devMbbiSoft.c
 SRCS.c += ../devMbbiSoftRaw.c
 SRCS.c += ../devMbboDirectSoft.c
@@ -25,7 +27,9 @@ SRCS.c += ../devSiSoft.c
 SRCS.c += ../devSoSoft.c
 SRCS.c += ../devWfSoft.c
 
-PROD = $(SRCS.c:../%.c=%.o)
+OBJS = $(SRCS.c:../%.c=%.o)
+
+PROD = $(OBJS)
 
 include $(TOP)/config/RULES.Vx
 

@@ -9,7 +9,9 @@
 <body lang="en">
 <h1>EPICS Release 3.13.7</h1>
 
-<h3>IOC resident CA server </h3>
+<h3>Changes since 3.13.6</h3>
+
+<p><strong>IOC resident CA server</strong></p>
 <ul>
   <li>put callback failure
     <p><em>Symptom</em>:  IOCs  produce unexpected "ca put callback timeout"
@@ -20,8 +22,49 @@
   </li>
 </ul>
 
-<h3>Changes since 3.13.6</h3>
+<p><strong>dbCommon.dbd</strong></p>
 
+<p>UDF how has a promptgroup. This allows database configuration tools to mset UDF false.</p>
+
+<p><strong>mbboRecord</strong></p>
+
+<p>Field VAL now has a cvt_dbaddr method.
+If any state strings are defined the field type and dbr_field_type are declared ENUM. If no state strings are defined then the type is USHORT. Previously the types were always ENUM.</p>
+
+<p><strong>mbboRecord</strong></p>
+
+<p>mbboRecord now implements method cvt_dbaddr for the VAL field. If no state vales or state strings are defined then it sets field_type and dbr_field_type to DBF_USHORT.</p>
+
+<p><strong>camacDev</strong></p>
+<p>
+ai and ao now support special_linconv. NOTE: NOT TESTED.</p>
+
+<p><strong>drvGpib.c</strong></p>
+<p>Add some cacheFlush statements</p>
+
+<p><strong>aiRecord and aoRecord: Setting eoff=egul</strong></p>
+
+<p>Instead of init_record executing code like</p>
+<pre>    if ((pai-&gt;linr == menuConvertLINEAR) &amp;&amp; pdset-&gt;special_linconv) {
+        pai-&gt;eoff = pai-&gt;egul;
+    }
+</pre>
+
+<p>It now executes:</p>
+<pre>    if ((pai-&gt;eslo==1.0) &amp;&amp; (pai-&gt;eoff==0.0)) {
+        pai-&gt;eoff = pai-&gt;egul;
+    }
+</pre>
+<p>aoRecord has a similar change</p>
+
+<p>This was done so that old device support which does not implement
+special_linconv still works.</p>
+
+<p><strong>CA puts to disabled record</strong></p>
+
+<p>If a CA client issues a put to a disabled record then, when the record is
+enabled, database puts to the record will not make the record process until
+a CA put is again issued. This is fixed</p>
 <p><strong>dbb - database breakpoints</strong></p>
 
 <p>The database breakpoint facility was not working. This has probably been
@@ -65,10 +108,13 @@ occur when recGblGetTimeStamp is called.</p>
 
 <p>This now returns a non zero value if the result is nan (not a number).</p>
 
+<p><strong>dbCa</strong></p>
+
+<p>Improved diagnostic message.</p>
+
 <p><strong>CA server (rsrv)</strong></p>
 
-<p>Fixed race condition occuring when a put notify is canceled by a ca clear
-channel at the same instant that it completes. This problem was introduced in
+<p>Fixed race condition occuring when a put notify is canceled by a ca_clear_channel at the same instant that it completes. This problem was introduced in
 R3.13.5.</p>
 
 <h3>Changes since 3.13.5</h3>

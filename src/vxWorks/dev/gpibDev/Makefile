@@ -2,5 +2,12 @@ TOP=../../../..
 
 include $(TOP)/configure/CONFIG
 
-include $(TOP)/configure/RULES_ARCHS
+INC += devCommonGpib.h
+
+SRCS += devCommonGpib.c
+
+OBJS_IOC += $(SRCS:%.c=%.o)
+
+include $(TOP)/configure/RULES
+
 

@@ -2,5 +2,10 @@ TOP=../../../..
 
 include $(TOP)/configure/CONFIG
 
-include $(TOP)/configure/RULES_ARCHS
+SRCS += devSmCompumotor1830.c
+
+OBJS_IOC  = $(SRCS:%.c=%.o)
+
+include $(TOP)/configure/RULES
+
 

@@ -136,13 +136,14 @@ static void init_common(pmbbo)
     struct mbboRecord   *pmbbo;
 {
         unsigned long   *pstate_values;
+	char		*pstate_string;
         short           i;
 
         /* determine if any states are defined */
-        pstate_values = &(pmbbo->zrvl);
+        pstate_values = &(pmbbo->zrvl); pstate_string = pmbbo->zrst;
         pmbbo->sdef = FALSE;
-        for (i=0; i<16; i++) {
-                if (*(pstate_values+i)!= 0) {
+        for (i=0; i<16; i++, pstate_string += sizeof(pmbbo->zrst)) {
+                if((*(pstate_values+i)!= 0) || (*pstate_string !='\0')) {
                         pmbbo->sdef = TRUE;
                         return;
                 }

@@ -128,13 +128,14 @@ static void init_common(pmbbi)
     struct mbbiRecord	*pmbbi;
 {
         unsigned long 	*pstate_values;
+	char		*pstate_string;
         short  		i;
 
         /* determine if any states are defined */
-        pstate_values = &(pmbbi->zrvl);
+        pstate_values = &(pmbbi->zrvl); pstate_string = pmbbi->zrst;
         pmbbi->sdef = FALSE;
-        for (i=0; i<16; i++) {
-                if (*(pstate_values+i) != 0) {
+        for (i=0; i<16; i++, pstate_string += sizeof(pmbbi->zrst)) {
+                if((*(pstate_values+i) != 0) || (*pstate_string !='\0')) {
 			pmbbi->sdef = TRUE;
 			return;
 		}

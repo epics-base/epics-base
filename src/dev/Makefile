@@ -3,7 +3,7 @@ TOP=../..
 
 include $(TOP)/config/CONFIG_BASE
 
-DIRS += apsDev
+DIRS = apsDev
 DIRS += atDev
 DIRS += avme9440Dev
 DIRS += camacDev

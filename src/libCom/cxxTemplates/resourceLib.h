@@ -175,23 +175,6 @@ private:
 };
 
 //
-// resTableIntHash()
-//
-// converts any integer into a hash table index
-//
-// idWidth: the maximum number of ls bits in "id" which might
-// be set during any given call be set.
-//
-// minIndexWidth: the minimum number of bits in a hash table 
-// index. This dermines the minimum size of the hash table.
-// Knowing this value at compile time improves the performance 
-// of the hash. Set this parameter to zero if unsure of the 
-// correct minimum hash table size.
-//
-template <class T, unsigned minIndexWidth, unsigned idWidth>
-resTableIndex resTableIntHash (const T &id);
-
-//
 // Some ID classes that work with the above template
 //
 
@@ -314,7 +297,7 @@ private:
 // converts any integer into a hash table index
 //
 // idWidth: the maximum number of ls bits in "id" which might
-// be set during any given call be set.
+// be set during any call to this function.
 //
 // minIndexWidth: the minimum number of bits in a hash table 
 // index. This dermines the minimum size of the hash table.

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.11  1998/06/16 02:24:24  jhill
+ * better diagnostics
+ *
  * Revision 1.10  1998/04/20 18:07:09  jhill
  * fixed exception message for DG clients
  *
@@ -269,8 +272,12 @@ caStatus casClient::processMsg()
 	bytesLeft = this->inBufRef.bytesPresent();
 	while (bytesLeft) {
 
+		/*
+		 * incomplete message - return success and
+		 * wait for more bytes to arrive
+		 */
 		if (bytesLeft < sizeof(*mp)) {
-			status = S_cas_partialMessage;
+			status = S_cas_success;
 			break;
 		}
 
@@ -284,8 +291,12 @@ caStatus casClient::processMsg()
 
 		msgsize = mp->m_postsize + sizeof(*mp);
 
+		/*
+		 * incomplete message - return success and
+		 * wait for more bytes to arrive
+		 */
 		if (msgsize > bytesLeft) { 
-			status = S_cas_partialMessage;
+			status = S_cas_success;
 			break;
 		}
 
@@ -342,6 +353,7 @@ caStatus casClient::ignoreMsgAction ()
 caStatus casClient::uknownMessageAction ()
 {
 	const caHdr *mp = this->ctx.getMsg();
+	caStatus status;
 
 	ca_printf ("CAS: bad message type=%u\n", mp->m_cmmd);
 	this->dumpMsg (mp, this->ctx.getData() );
@@ -349,7 +361,10 @@ caStatus casClient::uknownMessageAction ()
 	/* 
 	 *	most clients dont recover from this
 	 */
-	this->sendErr (mp, ECA_INTERNAL, "Invalid Msg Type");
+	status = this->sendErr (mp, ECA_INTERNAL, "Invalid Msg Type");
+	if (status) {
+		return status;
+	}
 
 	/*
 	 * returning S_cas_internal here disconnects
@@ -481,8 +496,6 @@ const char	*pformat,
 	 */
 	status = this->outBufRef.allocMsg (size+sizeof(caHdr), &reply);
 	if (status) {
-		errPrintf (S_cas_internal, __FILE__, __LINE__,
-				"bad sendErr(%s)", pformat);
 		return status;
 	}
 
@@ -524,8 +537,14 @@ const char	*pformat,
 
 	/*
 	 * copy back the request protocol
+	 * (in network byte order)
 	 */
-	reply[1] = *curp;
+	reply[1].m_postsize = htons (curp->m_postsize);
+	reply[1].m_cmmd = htons (curp->m_cmmd);
+	reply[1].m_type = htons (curp->m_type);
+	reply[1].m_count = htons (curp->m_count);
+	reply[1].m_cid = curp->m_cid;
+	reply[1].m_available = curp->m_available;
 
 	/*
 	 * add their optional context string into the protocol
@@ -574,7 +593,8 @@ const caHdr 	*mp,
 const void	*dp,
 const int cacStatus,
 const char	*pFileName,
-const unsigned	lineno
+const unsigned	lineno,
+const unsigned id
 )
 {
 	int status;
@@ -588,7 +608,8 @@ const unsigned	lineno
 	status = this->sendErr(
 			mp, 
 			cacStatus, 
-			"Bad Resource ID detected at %s.%d",
+			"Bad Resource ID=%u detected at %s.%d",
+			id,
 			pFileName,
 			lineno);
 

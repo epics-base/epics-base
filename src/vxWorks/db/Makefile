@@ -11,6 +11,7 @@ vxDb_SRCS += devLib.c
 vxDb_SRCS += devLibVxWorks.c
 vxDb_SRCS += tsSubr.c
 vxDb_SRCS += date.c
+vxDb_SRCS += drvTSinit.cpp
 
 LIBRARY_vxWorks = vxDb
 

@@ -167,11 +167,6 @@ static long init_record(pwf,pass)
 	recGblInitConstantLink(&pwf->siml,DBF_USHORT,&pwf->simm);
     }
 
-    /* wf.siol must be a CONSTANT or a PV_LINK or a DB_LINK */
-    if (pwf->siol.type == CONSTANT) {
-	recGblInitConstantLink(&pwf->siol,DBF_DOUBLE,&pwf->sval);
-    }
-
     /* must have dset defined */
     if(!(pdset = (struct wfdset *)(pwf->dset))) {
         recGblRecordError(S_dev_noDSET,(void *)pwf,"wf: init_record");

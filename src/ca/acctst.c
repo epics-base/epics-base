@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.30  1995/09/29  21:47:58  jhill
+ * MS windows changes
+ *
  * Revision 1.29  1995/08/22  00:16:34  jhill
  * Added test of the duration of ca_pend_event()
  *
@@ -646,6 +649,11 @@ unsigned 	iterations)
 void null_event(struct event_handler_args args)
 {
 	static int      i;
+	dbr_double_t	fval = 3.8;
+	int		status;
+
+	status = ca_put (DBR_DOUBLE, args.chid, &fval);
+	SEVCHK (status, NULL);
 
 	if (i++ > 1000) {
 		printf("1000 occurred\n");

@@ -67,10 +67,11 @@ searchTimer::~searchTimer ()
 }
 
 void searchTimer::newChannelNotify ( 
-    epicsGuard < udpMutex > & guard, const epicsTime & currentTime, bool firstChannel )
+    epicsGuard < udpMutex > & guard, const epicsTime & currentTime, 
+    bool firstChannel, unsigned minRetryNo )
 {
     if ( firstChannel ) {
-        this->recomputeTimerPeriod ( guard, 0 );
+        this->recomputeTimerPeriod ( guard, minRetryNo );
         double newPeriod = this->period;
         {
             // avoid timer cancel block deadlock
@@ -79,7 +80,8 @@ void searchTimer::newChannelNotify (
         }
     }
     else {
-        this->recomputeTimerPeriodAndStartTimer ( guard, currentTime, 0, 0.0 );
+        this->recomputeTimerPeriodAndStartTimer ( guard, 
+            currentTime, minRetryNo, 0.0 );
     }
 }
 

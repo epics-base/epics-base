@@ -1044,11 +1044,12 @@ bool udpiiu::searchMsg ( epicsGuard < udpMutex > & /* guard */,
     return success;
 }
 
-void udpiiu::installChannel ( const epicsTime & currentTime, nciu & chan )
+void installChannel ( const epicsTime & currentTime, 
+                     nciu & chan, unsigned minRetryNo )
 {
     bool firstChannel = false;
 
-    epicsGuard < udpMutex> guard ( this->mutex );
+    epicsGuard < udpMutex > guard ( this->mutex );
     // add it to the front of the list so that 
     // a search request is sent immediately, and 
     // so that the new channel's retry count is 
@@ -1058,7 +1059,8 @@ void udpiiu::installChannel ( const epicsTime & currentTime, nciu & chan )
     if ( this->channelList.count() == 1 ) {
         firstChannel = true;
     }
-    this->pSearchTmr->newChannelNotify ( guard, currentTime, firstChannel );
+    this->pSearchTmr->newChannelNotify ( guard, currentTime, 
+        firstChannel, minRetryNo );
 }
 
 int udpiiu::printf ( const char *pformat, ... )

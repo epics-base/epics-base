@@ -149,7 +149,7 @@ void nciu::connect ( unsigned nativeType,
 void nciu::disconnect ( netiiu & newiiu )
 {
     this->piiu = & newiiu;
-    this->retry = 0u;
+    this->retry = disconnectRetrySetpoint;
     this->typeCode = USHRT_MAX;
     this->count = 0u;
     this->sid = UINT_MAX;

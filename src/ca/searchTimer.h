@@ -53,7 +53,8 @@ public:
         ca_uint32_t respDatagramSeqNo, 
         bool seqNumberIsValid, const epicsTime & currentTime );
     void newChannelNotify ( epicsGuard < udpMutex > &,
-        const epicsTime & currentTime, bool firstChannel );
+        const epicsTime &, bool firstChannel,
+        unsigned minRetryNo );
     void beaconAnomalyNotify ( epicsGuard < udpMutex > &,
         const epicsTime & currentTime, const double & delay );
     void show ( unsigned level ) const;

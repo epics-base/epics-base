@@ -84,7 +84,8 @@ class udpiiu : public netiiu {
 public:
     udpiiu ( class epicsTimerQueueActive &, callbackMutex &, class cac & );
     virtual ~udpiiu ();
-    void installChannel ( const epicsTime & currentTime, nciu & );
+    void installNewChannel ( const epicsTime & currentTime, nciu & );
+    void installDisconnectedChannel ( const epicsTime & currentTime, nciu & );
     void repeaterRegistrationMessage ( unsigned attemptNumber );
     bool searchMsg ( epicsGuard < udpMutex > &, unsigned & retryNoForThisChannel );
     void datagramFlush ( epicsGuard < udpMutex > &, const epicsTime & currentTime );
@@ -183,6 +184,7 @@ private:
     void requestRecvProcessPostponedFlush ();
     osiSockAddr getNetworkAddress () const;
     double receiveWatchdogDelay () const;
+    void installChannel ( const epicsTime & currentTime, nciu &, unsigned minRetryNo );
 
 	udpiiu ( const udpiiu & );
 	udpiiu & operator = ( const udpiiu & );
@@ -190,9 +192,11 @@ private:
 
 // This impacts the exponential backoff delay between search messages.
 // This delay is two to the power of the minimum channel retry count
-// times the estimated round trip time. So this results in about a
-// one second delay.
-static const unsigned beaconAnomalyRetrySetpoint = 10u;
+// times the estimated round trip time or the OS's delay quantum 
+// whichever is greater. So this results in about a one second delay. 
+// 
+static const unsigned beaconAnomalyRetrySetpoint = 6u;
+static const unsigned disconnectRetrySetpoint = 6u;
 
 inline void udpMutex::lock ()
 {
@@ -225,6 +229,16 @@ inline double udpiiu::roundTripDelayEstimate (
     epicsGuard < udpMutex > & ) const
 {
     return this->rtteMean;
+}
+
+inline void udpiiu::installNewChannel ( const epicsTime & currentTime, nciu & chan )
+{
+    this->installChannel ( currentTime, chan, 0 );
+}
+
+inline void udpiiu::installDisconnectedChannel ( const epicsTime & currentTime, nciu & chan )
+{
+    this->installChannel ( currentTime, chan, disconnectRetrySetpoint );
 }
 
 #endif // udpiiuh

@@ -1407,7 +1407,7 @@ void cac::disconnectChannel (
     this->disconnectAllIO ( guard, chan, true );
     chan.getPIIU()->uninstallChan ( guard, chan );
     chan.disconnect ( *this->pudpiiu );
-    this->pudpiiu->installChannel ( currentTime, chan );
+    this->pudpiiu->installDisconnectedChannel ( currentTime, chan );
     epicsGuardRelease < cacMutex > autoMutexRelease ( guard );
     chan.connectStateNotify ( cbGuard );
     chan.accessRightsNotify ( cbGuard );
@@ -1575,7 +1575,7 @@ double cac::beaconPeriod ( const nciu & chan ) const
 void cac::initiateConnect ( nciu & chan )
 {
     assert ( this->pudpiiu );
-    this->pudpiiu->installChannel ( 
+    this->pudpiiu->installNewChannel ( 
         epicsTime::getCurrent(), chan );
 }
 

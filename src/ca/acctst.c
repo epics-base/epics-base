@@ -2111,7 +2111,8 @@ void verifyImmediateTearDown ()
     ca_task_exit ();
 }
 
-int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
+int acctst ( char *pName, unsigned channelCount, 
+			unsigned repetitionCount, enum ca_preemptive_callback_select select )
 {
     chid chan;
     int status;
@@ -2124,6 +2125,9 @@ int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
     epicsEnvSet ( "EPICS_CA_MAX_ARRAY_BYTES", "10000000" ); 
 
     verifyImmediateTearDown ();
+
+	status = ca_context_create ( select );
+    SEVCHK ( status, NULL );
 
     verifyDataTypeMacros ();
 

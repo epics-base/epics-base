@@ -2,15 +2,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "cadef.h"
 #include "caDiagnostics.h"
 
 int main ( int argc, char **argv )
 {
     unsigned channelCount;
     unsigned repetitionCount;
+	enum ca_preemptive_callback_select preempt;
+	int aBoolean;
 
-    if ( argc < 2 || argc > 4 ) {
-        printf ( "usage: %s <PV name> [channel count] [repetition count]\n", argv[0] );
+
+    if ( argc < 2 || argc > 5 ) {
+        printf ( 
+"usage: %s <PV name> [channel count] [repetition count] [enable preemptive callback]\n", 
+			argv[0] );
     }
 
     if ( argc >= 3 ) {
@@ -27,7 +33,20 @@ int main ( int argc, char **argv )
         repetitionCount = 1;
     }
 
-    acctst ( argv[1], channelCount, repetitionCount );
+    if ( argc >= 5 ) {
+        aBoolean = atoi ( argv[4] );
+    }
+    else {
+        aBoolean = 0;
+    }
+	if ( aBoolean ) {
+		preempt = ca_disable_preemptive_callback;
+	}
+	else {
+		preempt = ca_enable_preemptive_callback;
+	}
+
+    acctst ( argv[1], channelCount, repetitionCount, preempt );
 
     return 0;
 }

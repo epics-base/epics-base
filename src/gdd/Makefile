@@ -51,12 +51,14 @@ gdd_SRCS := gdd.cc gddTest.cc gddAppTable.cc gddNewDel.cc \
 
 LIBRARY = gdd
 
-DLL_LIBS = Com
-PROD_LIBS = Com
+gdd_LIBS = Com
 
+gdd_RCS_WIN32 = gdd.rc
+
+PROD_HOST = aitGen genApps
 genApps_SRCS = genApps.cc $(AITGENSRCS)
 aitGen_SRCS = aitTypes.c aitGen.c
-PROD_HOST = aitGen genApps
+PROD_LIBS = Com
 
 # i386-rtems-gcc version 2.95.2 can't compile this with optimization.
 # Remove the following line once a better version of gcc is available.
@@ -68,8 +70,6 @@ aitConvert_OPT_RTEMS-pc386 = NO
 
 HPWARNFLAGS_NO = +W361 +W392 +W655 +W749 +W818 +W930
 USR_CXXFLAGS_hpux = $(HPWARNFLAGS_$(GNU))
-
-gdd_RCS_WIN32 = gdd.rc
 
 include $(TOP)/configure/RULES
 

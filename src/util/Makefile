@@ -18,7 +18,9 @@ PROD_LIBS  = ca Com
 #
 PROD_HOST_DEFAULT = ca_test iocLogServer startCArepeater 
 PROD_HOST_WIN32   = ca_test iocLogServer
-SYS_PROD_LIBS_WIN32 = ws2_32 advapi32 user32
+PROD_SYS_LIBS_WIN32 = ws2_32 advapi32 user32
+
+iocLogServer_SYS_LIBS_solaris = socket
 
 ca_test_SRCS = ca_test_main.c ca_test.c
 iocLogServer_SRCS = iocLogServer.c

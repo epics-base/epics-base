@@ -17,3 +17,9 @@ CCC = $(GNU_BIN)/g++
 AR = ar -rc
 RANLIB=
 LD = ld -r
+
+SHRLIB_LDFLAGS = -G -h $@ 
+SHRLIB_LDFLAGS += -z defs
+
+OP_SYS_LDFLAGS = -z ignore -z combreloc -z lazyload
+

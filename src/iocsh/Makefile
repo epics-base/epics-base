@@ -53,8 +53,7 @@ LIBSRCS += registryRegister.c
 
 LIBRARY_IOC = iocsh
 
-iocsh_DLL_LIBS  = miscIoc rsrvIoc dbtoolsIoc asIoc dbIoc registryIoc dbStaticIoc Com
-
+iocsh_LIBS  = miscIoc rsrvIoc dbtoolsIoc asIoc dbIoc registryIoc dbStaticIoc Com
 iocsh_RCS_WIN32 = iocsh.rc
 
 # For R3.13 compatibility only

@@ -18,28 +18,22 @@ CODE_CPPFLAGS = -D_REENTRANT
 POSIX_CPPFLAGS_YES = -D_POSIX_C_SOURCE=199506L -D_POSIX_THREADS -D_XOPEN_SOURCE=500
 POSIX_CPPFLAGS_NO =
 POSIX_LDLIBS_YES = -lpthread
-POSIX_LDLIBS_NO =
 
 # -D_BSD_SOURCE for gethostname() in unistd.h as needed by cacChannelIO.cpp.
 OP_SYS_CPPFLAGS += -D_BSD_SOURCE
 OP_SYS_CPPFLAGS += -Dlinux
-OP_SYS_LDFLAGS +=
 OP_SYS_LDLIBS += -lrt
 
 ARCH_DEP_CPPFLAGS += -D_X86_
 ARCH_DEP_CFLAGS += -mcpu=pentium
 
 # Set runtime path for shared libraries
-DIR_LDFLAGS_YES = $(sort $(SHRLIB_SEARCH_DIRS:%=-Wl,-rpath,%))
-DIR_LDFLAGS += $(DIR_LDFLAGS_$(SHARED_LIBRARIES))
+RUNTIME_LDFLAGS_YES = $(SHRLIB_SEARCH_DIRS:%=-Wl,-rpath,%)
+RUNTIME_LDFLAGS += $(RUNTIME_LDFLAGS_$(SHARED_LIBRARIES))
 
 ifdef CROSS
    GNU_TARGET=i586-pc-linux-gnu
    CMPLR_SUFFIX=
    CMPLR_PREFIX=$(addsuffix -,$(GNU_TARGET))
 endif
-
-#Allow R3.13 built extensions to load R3.14 shared libs
-SYS_SHRLIB_LIBS += pthread rt
-
 

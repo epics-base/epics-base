@@ -39,6 +39,7 @@ $hostarch = $opt_h if ($opt_h);
 
 # Find $top from current path; NB only works under iocBoot/* and configure/*
 $top = $cwd;
+$top =~ s/^\/cygdrive\/(\w)\//$1:\//;
 $top =~ s/\/iocBoot.*$//;
 $top =~ s/\/configure.*$//;
 
@@ -117,8 +118,12 @@ sub readRelease {
 	# Handle "<macro> = <path>"
 	($macro, $path) = /^\s*(\w+)\s*=\s*(.*)/;
 	if ($macro ne "") {
+		if (exists $Rmacros->{$macro}) {
+			delete $Rmacros->{$macro};
+		} else {
+			push @$Rapps, $macro;
+		}
 	    $Rmacros->{$macro} = $path;
-	    push @$Rapps, $macro;
 	    next;
 	}
 	# Handle "include <path>" syntax
@@ -172,7 +177,7 @@ sub configAppInclude {
 	# 1. The lib directory probably doesn't exist yet, and
 	# 2. We need an abolute path but $(TOP_LIB) is relative
 	$path = $macros{"TOP"};
-	print OUT "SHRLIB_SEARCH_DIRS += $path/lib/$arch\n";
+	print OUT "SHRLIB_SEARCH_DIRS = $path/lib/$arch\n";
 	foreach $app (@includes) {
 	    $path = $macros{$app};
             next unless (-d "$path/lib/$arch");

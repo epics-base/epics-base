@@ -20,11 +20,11 @@ LIBSRCS += dbLoadTemplate.c
 
 LIBRARY_IOC = dbtoolsIoc
 
-dbtoolsIoc_DLL_LIBS  = dbIoc Com
-
-HTMLS += dbLoadTemplate.html
+dbtoolsIoc_LIBS  = dbIoc Com
 
 dbtoolsIoc_RCS_WIN32 = dbtoolsIoc.rc
+
+HTMLS += dbLoadTemplate.html
 
 # For R3.13 compatibility only
 OBJLIB_vxWorks=dbtoolsIoc

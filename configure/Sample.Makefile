@@ -152,10 +152,10 @@ PROD_LIBS_WIN32   = -nil-
 #	system libs needed to link PROD, TESTPROD and sharable library
 #
 # for all systems:
-SYS_PROD_LIBS     = m
+PROD_SYS_LIBS     = m
 # for most systems:
-SYS_PROD_LIBS_DEFAULT = foolib
-SYS_PROD_LIBS_WIN32   = -nil-
+PROD_SYS_LIBS_DEFAULT = foolib
+PROD_SYS_LIBS_WIN32   = -nil-
 
 #	other libs needed to link PROD, TESTPROD and sharable library
 #

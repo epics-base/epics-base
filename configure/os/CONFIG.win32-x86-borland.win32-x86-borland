@@ -136,8 +136,7 @@ OPT_CXXFLAGS_NO =
 #
 # no special libs for static link
 #
-STATIC_LDLIBS_YES=
-STATIC_LDLIBS_NO=
+LDLIBSws2_32.lib advapi32.lib user32.lib kernel32.lib winmm.lib
 
 # -c case sensitive linking
 # -C clear state before linking
@@ -181,7 +180,6 @@ OP_SYS_CFLAGS =
 #
 OP_SYS_INCLUDES = -I$(BORLAND_INC)
 #
-OP_SYS_LDLIBS = 
 
 #
 # specify dll .def file only if it exists
@@ -228,26 +226,55 @@ INSTALL_SHRLIB = $(INSTALL_BIN)
 
 #--------------------------------------------------
 # Object lib name suffix
-OBJECT_LIB_EXT_YES = Obj.lib # object library extension for static build
-OBJECT_LIB_EXT_NO = .lib # object library extension for dynamic build
-OBJECT_LIB_EXT = $(OBJECT_LIB_EXT_$(STATIC_BUILD))
+LIB_EXT_YES = Obj.lib # object library extension for static build
+LIB_EXT_NO = .lib # library extension for dynamic build
+LIB_EXT = $(LIB_EXT_$(STATIC_BUILD))
 
 #--------------------------------------------------
 # Products dependancy definitions
-PROD_DEPLIBS = $(foreach lib,$(PROD_LIBS) $(USR_LIBS),$(firstword \
-		$($(lib)_DIR)/$(lib)$(OBJECT_LIB_EXT)))
-PROD_LDLIBS = $($*_DEPLIBS) $(PROD_DEPLIBS) \
-		$($*_SYS_LIBS:%=%.lib) $(SYS_PROD_LIBS:%=%.lib)
+
+# SYS_PROD_LIBS deprecated
+# Use PROD_SYS_LIBS
+
+PROD_DEPLIBS=$(foreach lib, $(PROD_LIBS) $(USR_LIBS), \
+    $(firstword $(wildcard $(addsuffix /$(LIB_PREFIX)$(lib)$(LIB_EXT), \
+    $($(lib)_DIR) $(SHRLIB_SEARCH_DIRS))) \
+    $(addsuffix /$(LIB_PREFIX)$(lib)$(LIB_EXT), \
+    $(firstword $($(lib)_DIR) $(INSTALL_LIB)))))
+
+PROD_LDLIBS += $($*_DEPLIBS) $(PROD_DEPLIBS)
+PROD_LDLIBS += $(addsuffix .lib, \
+         $($*_SYS_LIBS) $(PROD_SYS_LIBS) $(USR_SYS_LIBS) )
+
+LDLIBS_STATIC_YES = LDLIBS
+LDLIBS_SHARED_NO = LDLIBS
+PROD_LDLIBS += $($(firstword $(LDLIBS_STATIC_$(STATIC_BUILD)) \
+               $(LDLIBS_SHARED_$(SHARED_LIBRARIES))))
 
 #--------------------------------------------------
 #Libraries dependancy definitions
 
-#	EPICS libs that we need to link the DLL with
-#	(it isnt necessary to rebuild the dll if these change)
-DLL_DEPLIBS = $(foreach lib,$($*_DLL_LIBS) $(DLL_LIBS),$($(lib)_DIR)/$(lib).lib)
+# <name>_DLL_LIBS <name>_SYS_DLL_LIBS deprecated.
+# Use <name>_LIBS and <name>_SYS_LIBS.
+# DLL_LIBS, and SYS_DLL_LIBS deprecated
+# Use LIB_LIBS and LIB_SYS_LIBS
+LIB_LIBS += $(DLL_LIBS)
+LIB_SYS_LIBS += $(SYS_DLL_LIBS)
 
-SHRLIB_LDLIBS = $(DLL_DEPLIBS) $($*_SYS_DLL_LIBS:%=%.lib) \
-	$(SYS_DLL_LIBS:%=%.lib) $(OP_SYS_LDLIBS)
+#   libs that we need to link the DLL with
+#   (it isnt necessary to rebuild the dll if these change)
+
+SHRLIB_DEPLIBS += $(foreach lib, $(LIB_LIBS) $(USR_LIBS), \
+    $(firstword $(wildcard $(addsuffix /$(LIB_PREFIX)$(lib)$(LIB_EXT), \
+    $($(lib)_DIR) $(SHRLIB_SEARCH_DIRS))) \
+    $(addsuffix /$(LIB_PREFIX)$(lib)$(LIB_EXT), \
+    $(firstword $($(lib)_DIR) $(INSTALL_LIB)))))
+
+SHRLIB_LDLIBS += $($*_DLL_DEPLIBS) $($*_DEPLIBS) $(SHRLIB_DEPLIBS)
+SHRLIB_LDLIBS += $(addsuffix .lib, \
+         $($*_SYS_DLL_LIBS) \
+         $($*_SYS_LIBS) $(LIB_SYS_LIBS) $(USR_SYS_LIBS) )
+
 
 #--------------------------------------------------
 
@@ -264,12 +291,9 @@ LINKSTARTUP = c0x32.obj
 LINKLIBS=import32.lib cw32$(LIBSUF).lib
 
 LINK.cpp = $(WINLINK) $(STATIC_LDFLAGS) $(LDFLAGS) $(PROD_LDFLAGS) $(LINKSTARTUP) $(subst /,\\,$(PROD_LD_OBJS))
-LINK.cpp += , $@ ,,$(LINKLIBS)  $(subst /,\\,$(LDLIBS))
+LINK.cpp += , $@ ,,$(LINKLIBS)  $(subst /,\\,$(PROD_LDLIBS))
 
 #--------------------------------------------------
-
-# override of CONFIG_SITE default
-SHARED_LIBRARIES = YES
 
 # override of CONFIG_COMMON
 HDEPENDS_INCLUDES_MKMF = $(filter-out $(BORLAND_INC),$(subst -I,,$(INCLUDES)))

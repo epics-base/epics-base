@@ -16,7 +16,6 @@
 #    the named directory to the list contained in the executables.
 # c) Add the runtime path to /etc/ld.so.conf and run ldconfig
 #    to inform the system of the shared library location.
-SHARED_LIBRARIES=YES
 
 # If readline is installed uncomment the following line
 # to get command-line editing and history support

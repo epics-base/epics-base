@@ -75,7 +75,7 @@ LIBSRCS += dbServiceIOReadNotifyCache.cpp
 LIBSRCS += templateInstances.cpp
 
 LIBRARY_IOC = dbIoc
-DLL_LIBS = dbStaticIoc ca Com
+dbIoc_LIBS = dbStaticIoc ca Com
 
 dbIoc_RCS_WIN32 = dbIoc.rc
 

@@ -61,6 +61,7 @@
 # override 
 #
 CROSS_COMPILER_TARGET_ARCHS=
+#CROSS_COMPILER_TARGET_ARCHS= vxWorks-68040
 
 
 #  If only a subset of the host architectures perform
@@ -94,7 +95,7 @@ CXXCMPLR=STRICT
 #     NOTE solaris,Linux, and sun4: If YES then LD_LIBRARY_PATH must
 #     include fullpathname to $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH)
 #     for both the base build and when invoking base executables
-SHARED_LIBRARIES=NO
+SHARED_LIBRARIES=YES
 
 #  Build client objects statically ?
 #        must be either YES or NO

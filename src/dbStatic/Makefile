@@ -37,19 +37,19 @@ LIBRARY_IOC += dbStaticIoc
 OBJLIB_vxWorks=dbStaticIoc
 OBJLIB_SRCS = $(LIBSRCS) $(dbStaticIoc_SRCS)
 
-dbStaticHost_DLL_LIBS = Com
-dbStaticIoc_DLL_LIBS = Com
+dbStaticHost_LIBS = Com
+dbStaticIoc_LIBS = Com
+
+dbStaticHost_RCS_WIN32 = dbStaticHost.rc
+dbStaticIoc_RCS_WIN32 = dbStaticIoc.rc
 
 PROD_LIBS := dbStaticHost Com
-dbStaticHost_DIR=.
+#dbStaticHost_DIR=.
 PROD_HOST = dbReadTest dbExpand dbToMenuH dbToRecordtypeH
 dbReadTest_SRCS = dbReadTest.c
 dbExpand_SRCS = dbExpand.c
 dbToMenuH_SRCS = dbToMenuH.c
 dbToRecordtypeH_SRCS = dbToRecordtypeH.c
-
-dbStaticHost_RCS_WIN32 = dbStaticHost.rc
-dbStaticIoc_RCS_WIN32 = dbStaticIoc.rc
 
 include $(TOP)/configure/RULES
 

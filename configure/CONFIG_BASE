@@ -21,28 +21,22 @@ ifdef T_A
 EPICS_BASE_LIB      = $(EPICS_BASE)/lib/$(T_A)
 endif
 
-#Definitions for extensions convenience
-Com_DIR             = $(EPICS_BASE_LIB)
-asHost_DIR          = $(EPICS_BASE_LIB)
-asIoc_DIR           = $(EPICS_BASE_LIB)
-ca_DIR              = $(EPICS_BASE_LIB)
-cas_DIR             = $(EPICS_BASE_LIB)
-dbIoc_DIR           = $(EPICS_BASE_LIB)
-dbStaticHost_DIR    = $(EPICS_BASE_LIB)
-dbStaticIoc_DIR     = $(EPICS_BASE_LIB)
-dbtoolsIoc_DIR      = $(EPICS_BASE_LIB)
-gdd_DIR             = $(EPICS_BASE_LIB)
-iocsh_DIR           = $(EPICS_BASE_LIB)
-miscIoc_DIR         = $(EPICS_BASE_LIB)
-registryIoc_DIR     = $(EPICS_BASE_LIB)
-rsrvIoc_DIR         = $(EPICS_BASE_LIB)
-recIoc_DIR          = $(EPICS_BASE_LIB)
-softDevIoc_DIR      = $(EPICS_BASE_LIB)
-testDevIoc_DIR      = $(EPICS_BASE_LIB)
-recIocObj_DIR       = $(EPICS_BASE_LIB)
-softDevIocObj_DIR   = $(EPICS_BASE_LIB)
-testDevIocObj_DIR   = $(EPICS_BASE_LIB)
-iocCore_DIR         = $(EPICS_BASE_LIB)
+#---------------------------------------------------------------
+# Epics base Ioc libraries 
+
+EPICS_BASE_IOC_LIBRARIES += recIoc
+EPICS_BASE_IOC_LIBRARIES += softDevIoc
+EPICS_BASE_IOC_LIBRARIES += testDevIoc
+EPICS_BASE_IOC_LIBRARIES += iocsh
+EPICS_BASE_IOC_LIBRARIES += miscIoc
+EPICS_BASE_IOC_LIBRARIES += rsrvIoc
+EPICS_BASE_IOC_LIBRARIES += dbtoolsIoc
+EPICS_BASE_IOC_LIBRARIES += asIoc
+EPICS_BASE_IOC_LIBRARIES += dbIoc
+EPICS_BASE_IOC_LIBRARIES += registryIoc
+EPICS_BASE_IOC_LIBRARIES += dbStaticIoc
+EPICS_BASE_IOC_LIBRARIES += ca
+EPICS_BASE_IOC_LIBRARIES += Com
 
 #---------------------------------------------------------------
 # Version number for base shared libraries (and win32 products)

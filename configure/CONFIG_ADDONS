@@ -44,11 +44,12 @@
 #	USR_SRCS	source files for building library and prod
 #	LIBSRCS		source files for building library
 #	LIB_SRCS	source files for building library
-#	SHRLIB_LIBS	libs needed by shared LIBRARY
+#	LIB_LIBS	libs needed by shared LIBRARY
 #	PROD_LIBS	libs needed by PROD and TESTPROD
-#	USR_LIBS	libs needed by PROD and TESTPROD
+#	USR_LIBS	libs needed by PROD and TESTPROD and LIBRARY
+#	LIB_SYS_LIBS	system libs needed by LIBRARY
+#	PROD_SYS_LIBS	system libs needed by PROD and TESTPROD
 #	USR_LDFLAGS	ld flags
-#	SYS_PROD_LIBS	system libs needed by PROD and TESTPROD
 #	PROD		products to build and install
 #	SCRIPTS		scripts to install
 #	USR_INCLUDES	include directories
@@ -305,11 +306,20 @@ PROD_LIBS += $(PROD_LIBS_DEFAULT)
 endif
 endif
 
+# SHRLIB_LIBS deprecated
 ifneq ($(strip $(SHRLIB_LIBS_$(OS_CLASS))),)
 SHRLIB_LIBS += $(subst -nil-,,$(SHRLIB_LIBS_$(OS_CLASS)))
 else
 ifdef SHRLIB_LIBS_DEFAULT
 SHRLIB_LIBS += $(SHRLIB_LIBS_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(LIB_LIBS_$(OS_CLASS))),)
+LIB_LIBS += $(subst -nil-,,$(LIB_LIBS_$(OS_CLASS)))
+else
+ifdef LIB_LIBS_DEFAULT
+LIB_LIBS += $(LIB_LIBS_DEFAULT)
 endif
 endif
 
@@ -324,11 +334,37 @@ endif
 #
 #	concat specific library contents (if defined) to SYS_PROD_LIBS
 #
+# SYS_PROD_LIBS deprecated
 ifneq ($(strip $(SYS_PROD_LIBS_$(OS_CLASS))),)
 SYS_PROD_LIBS += $(subst -nil-,,$(SYS_PROD_LIBS_$(OS_CLASS)))
 else
 ifdef SYS_PROD_LIBS_DEFAULT
 SYS_PROD_LIBS += $(SYS_PROD_LIBS_DEFAULT)
+endif
+endif
+PROD_SYS_LIBS+=$(SYS_PROD_LIBS)
+
+ifneq ($(strip $(PROD_SYS_LIBS_$(OS_CLASS))),)
+PROD_SYS_LIBS += $(subst -nil-,,$(PROD_SYS_LIBS_$(OS_CLASS)))
+else
+ifdef PROD_SYS_LIBS_DEFAULT
+PROD_SYS_LIBS += $(PROD_SYS_LIBS_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(LIB_SYS_LIBS_$(OS_CLASS))),)
+LIB_SYS_LIBS += $(subst -nil-,,$(LIB_SYS_LIBS_$(OS_CLASS)))
+else
+ifdef LIB_SYS_LIBS_DEFAULT
+LIB_SYS_LIBS += $(LIB_SYS_LIBS_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(USR_SYS_LIBS_$(OS_CLASS))),)
+USR_SYS_LIBS += $(subst -nil-,,$(USR_SYS_LIBS_$(OS_CLASS)))
+else
+ifdef USR_SYS_LIBS_DEFAULT
+USR_SYS_LIBS += $(USR_SYS_LIBS_DEFAULT)
 endif
 endif
 

@@ -15,7 +15,7 @@ INC += asDbLib.h
 INC += asCa.h
 INC += asTrapWrite.h
 
-LIBSRCS += asLib.c
+LIB_SRCS += asLib.c
 
 asIoc_SRCS += asDbLib.c
 asIoc_SRCS += asCa.c
@@ -24,16 +24,15 @@ asIoc_SRCS += asTrapWrite.c
 LIBRARY_HOST = asHost
 LIBRARY_IOC = asIoc
 
-asHost_DLL_LIBS  = dbStaticHost ca Com
-asIoc_DLL_LIBS  = dbIoc dbStaticIoc ca Com
-
-asHost_DIR=.
-PROD_LIBS = asHost dbStaticHost Com
-PROD_HOST = ascheck
-ascheck_SRCS = ascheck.c
+asHost_LIBS  = dbStaticHost ca Com
+asIoc_LIBS  = dbIoc dbStaticIoc ca Com
 
 asHost_RCS_WIN32 = asHost.rc
 asIoc_RCS_WIN32 = asIoc.rc
+
+PROD_HOST = ascheck
+ascheck_SRCS = ascheck.c
+PROD_LIBS = asHost dbStaticHost Com
 
 # For R3.13 compatibility only
 OBJLIB_vxWorks=asIoc

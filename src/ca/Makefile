@@ -79,19 +79,14 @@ ca_RCS_WIN32 = ca.rc
 OBJLIB_vxWorks=ca
 OBJLIB_SRCS = $(LIBSRCS)
 
-#   only for WIN32:
-SYS_DLL_LIBS = ws2_32
-DLL_LIBS = Com
+ca_LIBS = Com
+
+ca_SYS_LIBS_WIN32 = ws2_32 advapi32 user32
 
 #   libs needed for PROD and TESTPRODUCT
 PROD_LIBS = ca Com 
 # needed when its an object library build
-SYS_PROD_LIBS_WIN32 = ws2_32 advapi32 user32
-
-#	libs needed to build [TEST]PRODUCT
-
-ca_DIR = .
-Com_DIR = $(INSTALL_LIB)
+PROD_SYS_LIBS_WIN32 = ws2_32 advapi32 user32
 
 PROD_HOST += caRepeater catime acctst caConnTest casw caEventRate
 OBJS_IOC += catime acctst caConnTest casw caEventRate
@@ -101,6 +96,8 @@ acctst_SRCS = acctstMain.c acctst.c
 caEventRate_SRCS = caEventRateMain.cpp caEventRate.cpp
 casw_SRCS = casw.cpp
 caConnTest_SRCS = caConnTestMain.cpp caConnTest.cpp 
+
+casw_SYS_LIBS_solaris = socket
 
 include $(TOP)/configure/RULES
 

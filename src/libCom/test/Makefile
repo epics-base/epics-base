@@ -12,7 +12,6 @@ TOP=../../..
 include $(TOP)/configure/CONFIG
 
 PROD_LIBS += Com
-Com_DIR = $(INSTALL_LIB)
 
 #epicsListTest_SRCS += epicsListTest.cpp
 PROD_HOST += epicsListTest

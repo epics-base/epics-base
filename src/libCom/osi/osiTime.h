@@ -65,33 +65,6 @@ struct time_t_wrapper {
 	time_t ts;
 };
 
-//
-// This comment is from the NTP header files:
-//
-// NTP uses two fixed point formats.  The first (l_fp) is the "long"
-// format and is 64 bits long with the decimal between bits 31 and 32.
-// This is used for time stamps in the NTP packet header (in network
-// byte order) and for internal computations of offsets (in local host
-// byte order). We use the same structure for both signed and unsigned
-// values, which is a big hack but saves rewriting all the operators
-// twice. Just to confuse this, we also sometimes just carry the
-// fractional part in calculations, in both signed and unsigned forms.
-// Anyway, an l_fp looks like:
-//
-//    0			  1		      2			  3
-//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |			       Integral Part			     |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |			       Fractional Part			     |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//
-//
-struct ntpTimeStamp {
-    epicsUInt32 l_ui; /* sec past NTP epoch */
-    epicsUInt32 l_uf; /* fractional seconds */
-};
-
 class osiTime;
 
 //
@@ -172,13 +145,6 @@ public:
 	operator struct timeval () const;
 	osiTime (const struct timeval &ts);
 	osiTime operator = (const struct timeval &rhs);
-
-    //
-    // convert to and from NTP timestamp format
-    //
-	operator ntpTimeStamp () const;
-	osiTime (const ntpTimeStamp &ts);
-	osiTime operator = (const ntpTimeStamp &rhs);
 
 	//
 	// convert to and from GDD's aitTimeStamp format
@@ -363,13 +329,6 @@ inline osiTime::operator TS_STAMP () const
     return ts;
 }
 
-#ifdef NTP_SUPPORT
-inline osiTime osiTime::operator = (const ntpTimeStamp &rhs)
-{
-    *this = osiTime (rhs);
-    return *this;
-}
-#endif
 
 inline osiTime osiTime::operator = (const time_t_wrapper &rhs)
 {

@@ -50,10 +50,9 @@ const unsigned osiTime::nSecPerSec = 1000u*osiTime::uSecPerSec;
 const unsigned osiTime::nSecPerUSec = 1000u;
 const unsigned osiTime::secPerMin = 60u;
 
-static const unsigned ntpEpochYear = 1900;
-static const unsigned ntpEpocMonth = 0; // January
-static const unsigned ntpEpocDayOfTheMonth = 1; // the 1st day of the month
-static const double ULONG_MAX_PLUS_ONE = (static_cast<double>(ULONG_MAX) + 1.0);
+//Following is (SEC_IN_YEAR*20)+(5*SEC_IN_DAY)
+// 5 is leap years from 1970 to 1990
+static const double posixEpochToEpicsEpoch = 631152000.0;
 
 //
 // force this module to include code that can convert
@@ -67,10 +66,6 @@ public:
 };
 
 static const unsigned tmStructEpochYear = 1900;
-
-static const unsigned epicsEpochYear = 1990;
-static const unsigned epicsEpocMonth = 0; // January
-static const unsigned epicsEpocDayOfTheMonth = 1; // the 1st day of the month
 
 //
 // forward declarations for utility routines
@@ -92,12 +87,7 @@ inline osiTime::osiTime (const unsigned long secIn, const unsigned long nSecIn)
 class osiTimeLoadTimeInit {
 public:
 	osiTimeLoadTimeInit ();
-
-	double epicsEpochOffset; // seconds
-#ifdef NTP_SUPPORT
-    double ntpEpochOffset; // seconds
-#endif
-	double time_tSecPerTick; // seconds (both NTP and EPICS use int sec)
+	double time_tSecPerTick; // seconds ( EPICS uses int sec)
 };
 
 static const osiTimeLoadTimeInit lti;
@@ -107,63 +97,9 @@ static const osiTimeLoadTimeInit lti;
 //
 osiTimeLoadTimeInit::osiTimeLoadTimeInit ()
 {
-    static const time_t ansiEpoch = 0;
-	double secWest;
-
-	{
-		time_t current = time (NULL);
-		time_t error;
-		tm date;
-
-		gmtime_r (&current, &date);
-		error = mktime (&date);
-		assert (error!=(time_t)-1);
-		secWest =  difftime (error, current);
-	}
-	
-	{
-		time_t first = static_cast<time_t> (0);
-		time_t last = static_cast<time_t> (1);
-		this->time_tSecPerTick = difftime (last, first);
-	}
-
-	{
-		struct tm tmEpicsEpoch;
-		time_t epicsEpoch;
-
-		tmEpicsEpoch.tm_sec = 0;
-		tmEpicsEpoch.tm_min = 0;
-		tmEpicsEpoch.tm_hour = 0;
-		tmEpicsEpoch.tm_mday = epicsEpocDayOfTheMonth;
-		tmEpicsEpoch.tm_mon = epicsEpocMonth;
-		tmEpicsEpoch.tm_year = epicsEpochYear-tmStructEpochYear;
-		tmEpicsEpoch.tm_isdst = -1; // dont know if its daylight savings time
-
-		epicsEpoch = mktime (&tmEpicsEpoch);
-		assert (epicsEpoch!=(time_t)-1);
-		this->epicsEpochOffset = difftime (epicsEpoch, ansiEpoch) - secWest;
-	}
-
-#ifdef NTP_SUPPORT
-    /* unfortunately, on NT mktime cant calculate a time_t for a date before 1970 */
-	{
-		struct tm tmEpochNTP;
-		time_t ntpEpoch;
-
-        tmEpochNTP.tm_sec = 0;
-		tmEpochNTP.tm_min = 0;
-		tmEpochNTP.tm_hour = 0;
-		tmEpochNTP.tm_mday = ntpEpocDayOfTheMonth;
-		tmEpochNTP.tm_mon = ntpEpocMonth;
-		tmEpochNTP.tm_year = ntpEpochYear-tmStructEpochYear;
-		tmEpochNTP.tm_isdst = -1; // dont know if its daylight savings time
-
-		ntpEpoch = mktime (&tmEpochNTP);
-		assert (ntpEpoch!=(time_t)-1);
-
-        this->ntpEpochOffset = static_cast<long> (difftime (ansiEpoch, ntpEpoch) + this->epicsEpochOffset - secWest);
-	}
-#endif
+	time_t first = static_cast<time_t> (0);
+	time_t last = static_cast<time_t> (1);
+	this->time_tSecPerTick = difftime (last, first);
 }
 
 //
@@ -188,7 +124,7 @@ osiTime::osiTime (const time_t_wrapper &ansiTimeTicks)
     //
     // map time_t, which ansi C defines as some arithmetic type, into type double 
     //
-	sec = ansiTimeTicks.ts * lti.time_tSecPerTick - lti.epicsEpochOffset;
+	sec = ansiTimeTicks.ts * lti.time_tSecPerTick - posixEpochToEpicsEpoch;
 
     //
     // map into the the EPICS time stamp range (which allows rollover)
@@ -215,7 +151,7 @@ osiTime::operator time_t_wrapper () const
 	double tmp;
 	time_t_wrapper wrap;
 
-    tmp = (this->secPastEpoch + lti.epicsEpochOffset) / lti.time_tSecPerTick;
+    tmp = (this->secPastEpoch + posixEpochToEpicsEpoch) / lti.time_tSecPerTick;
 	tmp += (this->nSec / lti.time_tSecPerTick) / nSecPerSec;
 
     //
@@ -243,7 +179,6 @@ osiTime::operator tm_nano_sec () const
     // succes?
     //
 	localtime_r (&ansiTimeTicks.ts, &tm.ansi_tm);
-
 	tm.nSec = this->nSec;
 
 	return tm;
@@ -350,53 +285,6 @@ osiTime::osiTime (const aitTimeStamp &ts)
     unsigned long nSecAdj = ts.tv_nsec % nSecPerSec;
     *this = osiTime (this->secPastEpoch+secAdj, this->nSec+nSecAdj);
 }
-
-//
-// osiTime::ntpTimeStamp ()
-//
-#ifdef NTP_SUPPORT
-osiTime::operator ntpTimeStamp () const
-{
-    ntpTimeStamp ts;
-
-    if (lti.ntpEpochOffset>=0) {
-        unsigned long offset = static_cast<unsigned long> (lti.ntpEpochOffset);
-        // underflow expected
-        ts.l_ui = this->secPastEpoch - offset;
-    }
-    else {
-        unsigned long offset = static_cast<unsigned long> (-lti.ntpEpochOffset);
-        // overflow expected
-        ts.l_ui = this->secPastEpoch + offset;
-    }
-
-    ts.l_uf = static_cast<unsigned long> ( ( this->nSec * ULONG_MAX_PLUS_ONE ) / nSecPerSec );
-
-    return ts;
-}
-#endif
-
-//
-// osiTime::osiTime (const ntpTimeStamp &ts)
-//
-#ifdef NTP_SUPPORT
-osiTime::osiTime (const ntpTimeStamp &ts)
-{
-
-    if (lti.ntpEpochOffset>=0) {
-        unsigned long offset = static_cast<unsigned long> (lti.ntpEpochOffset);
-        // overflow expected
-        this->secPastEpoch = ts.l_ui + this->secPastEpoch + offset;
-    }
-    else {
-        unsigned long offset = static_cast<unsigned long> (-lti.ntpEpochOffset);
-        // underflow expected
-        this->secPastEpoch = ts.l_ui + this->secPastEpoch - offset;
-    }
-
-    this->nSec = static_cast<unsigned long> ( ( ts.l_uf / ULONG_MAX_PLUS_ONE ) * nSecPerSec );
-}
-#endif
 
 //
 // size_t osiTime::strftime (char *pBuff, size_t bufLength, const char *pFormat)

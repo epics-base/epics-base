@@ -47,6 +47,9 @@
  * .09 050494 pg        HPUX port changes.
  * .10 021694 joh	ANSI C	
  * $Log$
+ * Revision 1.25  1997/04/10 19:53:03  jhill
+ * api changes
+ *
  * Revision 1.24  1996/11/22 20:43:03  jhill
  * doc
  *
@@ -72,70 +75,69 @@
 
 static char	*pSCCSID = "@(#)iocLogServer.c	1.9\t05/05/94";
 
-#include 	<osiSock.h>
-
 /*
- * _XOPEN_SOURCE & _POSIX_C_SOURCE must not be defined
- * prior to including the socket headers on solaris
- *
- * functions involved here:
- * popen() stdio.h (only in xopen)
- * sigaction() signal.h (only in posix)
+ * Under solaris if dont define _POSIX_C_SOURCE or _XOPEN_SOURCE
+ * then none of the POSIX stuff (such as signals or pipes) can be used
+ * with cc -v. However if one of _POSIX_C_SOURCE or _XOPEN_SOURCE
+ * are defined then we cant use the socket library. Therefore I 
+ * have been adding the following in order to use POSIX signals 
+ * and also sockets on solaris with cc -v. What a pain....
  */
-#define _XOPEN_SOURCE /* for solaris and "cc -Xc"/"gcc -ansi" */
-#define _POSIX_C_SOURCE 3 /* for solaris and "cc -Xc"/"gcc -ansi" */
+#if defined(SOLARIS)
+#define __EXTENSIONS__ 
+#endif
 
 #include	<stdlib.h>
 #include	<string.h>
 #include	<errno.h>
 #include 	<stdio.h>
+#include	<limits.h>
+
+#ifdef UNIX
 #include 	<unistd.h>
 #include	<signal.h>
+#endif
 
-#include	<epicsAssert.h>
-#include 	<fdmgr.h>
-#include 	<envDefs.h>
+#include	"epicsAssert.h"
+#include 	"fdmgr.h"
+#include 	"envDefs.h"
+#include 	"osiSock.h"
+#include	"truncateFile.h"
 
 static unsigned short	ioc_log_port;
 static long		ioc_log_file_limit;
 static char		ioc_log_file_name[256];
 static char		ioc_log_file_command[256];
 
-static int		sighupPipe[2];
 
 #ifndef TRUE
-#define	TRUE			1
+#define	TRUE	1
 #endif
 #ifndef FALSE
-#define	FALSE			0
+#define	FALSE	0
 #endif
-
 
 struct iocLogClient {
 	int			insock;
 	struct ioc_log_server	*pserver;
-	int			need_prefix;
-	char			*ptopofstack;
+	size_t			nChar;
 	char			recvbuf[1024];
 	char			name[32];
 	char			ascii_time[32];
 };
 
 struct ioc_log_server {
-	int		sock;
 	char		outfile[256];
+	long		filePos;
 	FILE		*poutfile;
-	unsigned	max_file_size;
 	void   		*pfdctx;
+	SOCKET		sock;
+	unsigned	max_file_size;
 };
 
-#ifndef ERROR
-#define ERROR -1
-#endif
 
-#ifndef OK
-#define OK 0
-#endif
+#define IOCLS_ERROR (-1)
+#define IOCLS_OK 0
 
 static void acceptNewClient (void *pParam);
 static void readFromClient(void *pParam);
@@ -145,10 +147,16 @@ static int openLogFile(struct ioc_log_server *pserver);
 static void handleLogFileError(void);
 static void envFailureNotify(const ENV_PARAM *pparam);
 static void freeLogClient(struct iocLogClient *pclient);
+static void writeMessagesToLog (struct iocLogClient *pclient);
 
-static void sighupHandler(void);
+#ifdef UNIX
+static int setupSIGHUP(struct ioc_log_server *);
+static void sighupHandler(int);
 static void serviceSighupRequest(void *pParam);
 static int getDirectory(void);
+static int sighupPipe[2];
+#endif
+
 
 
 /*
@@ -162,46 +170,27 @@ int main()
 	struct timeval          timeout;
 	int			status;
 	struct ioc_log_server	*pserver;
-	struct sigaction	sigact;
+
 	int			optval;
 
 	status = getConfig();
 	if(status<0){
 		fprintf(stderr, "iocLogServer: EPICS environment underspecified\n");
 		fprintf(stderr, "iocLogServer: failed to initialize\n");
-		return ERROR;
-	}
-
-	status = getDirectory();
-	if (status<0){
-		fprintf(stderr, "iocLogServer: failed to determine log file "
-			"directory\n");
-		return ERROR;
+		return IOCLS_ERROR;
 	}
 
 	pserver = (struct ioc_log_server *) 
 			calloc(1, sizeof *pserver);
 	if(!pserver){
 		fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
-		return ERROR;
+		return IOCLS_ERROR;
 	}
 
 	pserver->pfdctx = (void *) fdmgr_init();
 	if(!pserver->pfdctx){
 		fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
-		return ERROR;
-	}
-
-	/*
-	 * Set up SIGHUP handler. SIGHUP will cause the log file to be
-	 * closed and re-opened, possibly with a different name.
-	 */
-	sigact.sa_handler = sighupHandler;
-	sigemptyset (&sigact.sa_mask);
-	sigact.sa_flags = 0;
-	if (sigaction(SIGHUP, &sigact, NULL)){
-		fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
-		return ERROR;
+		return IOCLS_ERROR;
 	}
 
 	/*
@@ -209,9 +198,9 @@ int main()
 	 * sockets. Format described in <sys/socket.h>.
 	 */
 	pserver->sock = socket(AF_INET, SOCK_STREAM, 0);
-	if (pserver->sock<0) {
-		fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
-		return ERROR;
+	if (pserver->sock==INVALID_SOCKET) {
+		fprintf(stderr, "iocLogServer: %d=%s\n", SOCKERRNO, strerror(SOCKERRNO));
+		return IOCLS_ERROR;
 	}
 	
 	optval = TRUE;
@@ -221,8 +210,8 @@ int main()
                                 (char *) &optval,
                                 sizeof(optval));
         if(status<0){
-		fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
-		return ERROR;
+		fprintf(stderr, "iocLogServer: %d=%s\n", SOCKERRNO, strerror(SOCKERRNO));
+		return IOCLS_ERROR;
         }
 
 	/* Zero the sock_addr structure */
@@ -238,15 +227,15 @@ int main()
 		fprintf(stderr,
 			"iocLogServer: a server is already installed on port %u?\n", 
 			(unsigned)ioc_log_port);
-		fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
-		return ERROR;
+		fprintf(stderr, "iocLogServer: %d=%s\n", SOCKERRNO, strerror(SOCKERRNO));
+		return IOCLS_ERROR;
 	}
 
 	/* listen and accept new connections */
 	status = listen(pserver->sock, 10);
 	if (status<0) {
-		fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
-		return ERROR;
+		fprintf(stderr, "iocLogServer: %d=%s\n", SOCKERRNO, strerror(SOCKERRNO));
+		return IOCLS_ERROR;
 	}
 
         /*
@@ -254,22 +243,29 @@ int main()
          * to prevent dead locks
          */
 	optval = TRUE;
-        status = ioctl(
+        status = socket_ioctl(
                        	pserver->sock,
                         FIONBIO,
                         &optval);
         if(status<0){
-		fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
-		return ERROR;
+		fprintf(stderr, "iocLogServer: %d=%s\n", SOCKERRNO, strerror(SOCKERRNO));
+		return IOCLS_ERROR;
         }
 
+#	ifdef UNIX
+		status = setupSIGHUP(pserver);
+		if (status<0) {
+			return IOCLS_ERROR;
+		}
+#	endif
+
 	status = openLogFile(pserver);
-	if(status<0){
+	if (status<0) {
 		fprintf(stderr,
 			"File access problems to `%s' because `%s'\n", 
 			ioc_log_file_name,
 			strerror(errno));
-		return ERROR;
+		return IOCLS_ERROR;
 	}
 
 	status = fdmgr_add_callback(
@@ -281,28 +277,9 @@ int main()
 	if(status<0){
 		fprintf(stderr,
 			"iocLogServer: failed to add read callback\n");
-		return ERROR;
+		return IOCLS_ERROR;
 	}
 
-	status = pipe(sighupPipe);
-	if(status<0){
-                fprintf(stderr,
-                        "iocLogServer: failed to create pipe because `%s'\n",
-                        strerror(errno));
-                return ERROR;
-        }
-
-	status = fdmgr_add_callback(
-			pserver->pfdctx, 
-			sighupPipe[0], 
-			fdi_read,
-			serviceSighupRequest,
-			pserver);
-	if(status<0){
-		fprintf(stderr,
-			"iocLogServer: failed to add SIGHUP callback\n");
-		return ERROR;
-	}
 
 	while(TRUE){
 		timeout.tv_sec = 60; /* 1 min */
@@ -317,24 +294,59 @@ int main()
  *	openLogFile()
  *
  */
-static int openLogFile(struct ioc_log_server *pserver)
+static int openLogFile (struct ioc_log_server *pserver)
 {
-	if(pserver->poutfile && pserver->poutfile != stderr){
-		pserver->poutfile = freopen(
-					ioc_log_file_name, 
-					"a+", 
-					pserver->poutfile);
-	}else{
-		pserver->max_file_size = ioc_log_file_limit; 
-		pserver->poutfile = fopen(ioc_log_file_name, "a+");
-	}
-	if(!pserver->poutfile){
+	int status;
+	enum TF_RETURN ret;
+
+	if (ioc_log_file_limit==0u) {
 		pserver->poutfile = stderr;
-		return ERROR;
+		return IOCLS_ERROR;
 	}
-	strcpy(pserver->outfile, ioc_log_file_name);
-	return OK;
+
+	if (pserver->poutfile && pserver->poutfile != stderr){
+		fclose (pserver->poutfile);
+		pserver->poutfile = NULL;
+	}
+
+	pserver->poutfile = fopen(ioc_log_file_name, "r+");
+	if (pserver->poutfile) {
+		fclose (pserver->poutfile);
+		pserver->poutfile = NULL;
+		ret = truncateFile (ioc_log_file_name, ioc_log_file_limit);
+		if (ret==TF_OK) {
+			return IOCLS_ERROR;
+		}
+		pserver->poutfile = fopen(ioc_log_file_name, "r+");
+	}
+	else {
+		pserver->poutfile = fopen(ioc_log_file_name, "w");
+	}
+
+	if (!pserver->poutfile) {
+		pserver->poutfile = stderr;
+		return IOCLS_ERROR;
+	}
+	strcpy (pserver->outfile, ioc_log_file_name);
+	pserver->max_file_size = ioc_log_file_limit;
+
+	/*
+	 * This is not required under UNIX but does appear
+	 * to be required under WIN32. 
+	 */
+	status = fseek (pserver->poutfile, 0L, SEEK_END);
+	if (status!=IOCLS_OK) {
+		fclose (pserver->poutfile);
+		pserver->poutfile = stderr;
+		return IOCLS_ERROR;
+	}
+
+	pserver->filePos = ftell (pserver->poutfile);
+
+	return IOCLS_OK;
 }
+
+
 
 
 /*
@@ -346,8 +358,7 @@ static void handleLogFileError(void)
 	fprintf(stderr,
 		"iocLogServer: log file access problem (errno=%s)\n", 
 		strerror(errno));
-	exit(ERROR);
-
+	exit(IOCLS_ERROR);
 }
 		
 
@@ -372,11 +383,12 @@ static void acceptNewClient(void *pParam)
 		return;
 	}
 
-	pclient->insock = accept(pserver->sock, NULL, 0);
-	if(pclient->insock<0){
+	size = sizeof(addr);
+	pclient->insock = accept(pserver->sock, (struct sockaddr *)&addr, &size);
+	if (pclient->insock<0 || size<sizeof(addr)) {
 		free(pclient);
-		if (errno!=EWOULDBLOCK) {
-			fprintf(stderr, "Accept Error %d\n", errno);
+		if (SOCKERRNO!=EWOULDBLOCK) {
+			fprintf(stderr, "Accept Error %d\n", SOCKERRNO);
 		}
 		return;
 	}
@@ -386,29 +398,21 @@ static void acceptNewClient(void *pParam)
          * to prevent dead locks
          */
 	optval = TRUE;
-        status = ioctl(
+        status = socket_ioctl(
                        	pclient->insock,
                         FIONBIO,
                         &optval);
         if(status<0){
-		close(pclient->insock);
+		socket_close(pclient->insock);
 		free(pclient);
-		fprintf(stderr, "%s:%d %s\n", __FILE__, __LINE__, strerror(errno));
+		fprintf(stderr, "%s:%d %s\n", __FILE__, __LINE__, strerror(SOCKERRNO));
 		return;
         }
 
 	pclient->pserver = pserver;
-	pclient->need_prefix = TRUE;
-	pclient->ptopofstack = pclient->recvbuf;
+	pclient->nChar = 0u;
 
-	pname = "<ukn>";
-        size = sizeof addr;
-	memset((void *)&addr, 0, sizeof addr);
-        status = getpeername(
-                        pclient->insock,
-                        (struct sockaddr *) &addr, 
-                        &size); 
-        if(status>=0){
+        if (addr.sin_family==AF_INET) {
   		struct hostent      *pent;   
 
     		pent = gethostbyaddr(
@@ -421,6 +425,9 @@ static void acceptNewClient(void *pParam)
 			pname = inet_ntoa (addr.sin_addr);
 		}
         }
+	else {
+		pname = "<ukn>";
+	}
 
 	strncpy(pclient->name, pname, sizeof(pclient->name));
 	pclient->name[sizeof(pclient->name) - 1u] = '\0';
@@ -459,10 +466,10 @@ static void acceptNewClient(void *pParam)
 #       define SOCKET_SHUTDOWN_WRITE_SIDE 1
         status = shutdown(pclient->insock, SOCKET_SHUTDOWN_WRITE_SIDE);
         if(status<0){
-                close(pclient->insock);
+		socket_close(pclient->insock);
 		free(pclient);
                 printf("%s:%d %s\n", __FILE__, __LINE__,
-                        strerror(errno));
+                        strerror(SOCKERRNO));
                 return;
         }
 
@@ -473,7 +480,7 @@ static void acceptNewClient(void *pParam)
 			readFromClient,
 			pclient);
 	if (status<0) {
-		close(pclient->insock);
+		socket_close(pclient->insock);
 		free(pclient);
 		fprintf(stderr, "%s:%d client fdmgr_add_callback() failed\n", 
 			__FILE__, __LINE__);
@@ -492,107 +499,138 @@ static void acceptNewClient(void *pParam)
 static void readFromClient(void *pParam)
 {
 	struct iocLogClient	*pclient = (struct iocLogClient *)pParam;
-	int             	status;
-	int             	length;
-	char			*pcr;
-	char			*pline;
-	int			stacksize;
+	int             	recvLength;
 	int			size;
 
 	logTime(pclient);
 
-	stacksize = pclient->ptopofstack - pclient->recvbuf;
-	size = sizeof(pclient->recvbuf)-stacksize-1;
-	assert(size>0);
-	length = recv(pclient->insock,
-		      pclient->ptopofstack,
+	size = (int) (sizeof(pclient->recvbuf) - pclient->nChar);
+	recvLength = recv(pclient->insock,
+		      &pclient->recvbuf[pclient->nChar],
 		      size,
 		      0);
-	if (length <= 0) {
-		if (length<0) {
-			if (errno==EWOULDBLOCK || errno==EINTR) {
+	if (recvLength <= 0) {
+		if (recvLength<0) {
+			if (SOCKERRNO==EWOULDBLOCK || SOCKERRNO==EINTR) {
 				return;
 			}
-			if (	errno != ECONNRESET &&
-				errno != ECONNABORTED &&
-				errno != EPIPE &&
-				errno != ETIMEDOUT
+			if (	SOCKERRNO != ECONNRESET &&
+				SOCKERRNO != ECONNABORTED &&
+				SOCKERRNO != EPIPE &&
+				SOCKERRNO != ETIMEDOUT
 				) {
 				fprintf(stderr, 
-		"%s:%d socket=%d addr=%x size=%d read error=%s errno=%d\n",
+		"%s:%d socket=%d size=%d read error=%s errno=%d\n",
 					__FILE__, __LINE__, pclient->insock, 
-					pclient->ptopofstack, size, 
-					strerror(errno), errno);
+					size, strerror(SOCKERRNO), SOCKERRNO);
 			}
 		}
 		/*
 		 * disconnect
 		 */
-		freeLogClient(pclient);
+		freeLogClient (pclient);
 		return;
-	
 	}
 
-	pclient->ptopofstack[length] = '\0';
+	pclient->nChar += (size_t) recvLength;
+
+	writeMessagesToLog (pclient);
+}
+
+/*
+ * writeMessagesToLog()
+ */
+static void writeMessagesToLog (struct iocLogClient *pclient)
+{
+	struct ioc_log_server	*pserver = pclient->pserver;
+	int             	status;
+	char			*pcr;
+	char			*pline;
+	
 	pline = pclient->recvbuf;
-	while(TRUE){
-		unsigned nchar;
+	while (TRUE) {
+		size_t nchar;
+		size_t nTotChar;
 
-		pcr = strchr(pline, '\n');
-
-		if(pcr){
-			nchar = pcr-pline+1;
-		}
-		else{
-			nchar = strlen(pline);
-			pclient->ptopofstack = pclient->recvbuf + nchar;
-			memcpy(	pclient->recvbuf, 
-				pline, 
-				nchar);
+		if (pline >= &pclient->recvbuf[pclient->nChar]) {
+			pclient->nChar = 0u;
 			break;
 		}
 
+		/*
+		 * find the first carrage return and create
+		 * an entry in the log for the message associated
+		 * with it. If a carrage return does not exist and 
+		 * the buffer isnt full then move the partial message 
+		 * to the front of the buffer and wait for a carrage 
+		 * return to arrive. If the buffer is full and there
+		 * is no carrage return then force the message out and 
+		 * insert an artificial carrage return.
+		 */
+		pcr = strchr(pline, '\n');
+		if (pcr) {
+			nchar = pcr-pline;
+		}
+		else {
+			nchar = pclient->nChar - (pline - pclient->recvbuf);
+			if (nchar<sizeof(pclient->recvbuf)) {
+				if (pline != pclient->recvbuf) {
+					pclient->nChar = nchar;
+					memmove (pclient->recvbuf, pline, nchar);
+				}
+				break;
+			}
+		}
+
+		/*
+		 * reset the file pointer if we hit the end of the file
+		 */
+		nTotChar = strlen(pclient->name) +
+				strlen(pclient->ascii_time) + nchar + 3u;
+		if (pserver->filePos+nTotChar >= pserver->max_file_size) {
+			if (pserver->max_file_size>=pserver->filePos) {
+				unsigned nPadChar;
+				/*
+				 * this gets rid of leftover junk at the end of the file
+				 */
+				nPadChar = pserver->max_file_size - pserver->filePos;
+				while (nPadChar--) {
+					status = putc(' ', pserver->poutfile);
+					if (status == EOF) {
+						handleLogFileError();
+					}
+				}
+			}
+
+#			ifdef DEBUG
+				fprintf(stderr,
+					"ioc log server: resetting the file pointer\n");
+#			endif
+			fflush (pserver->poutfile);
+			rewind (pserver->poutfile);
+			pserver->filePos = ftell(pserver->poutfile);
+		}
+	
+		/*
+		 * NOTE: !! change format string here then must
+		 * change nTotChar calc above !!
+		 */
+		assert (nchar<INT_MAX);
 		status = fprintf(
-			pclient->pserver->poutfile,
-			"%s %s ",
+			pserver->poutfile,
+			"%s %s %.*s\n",
 			pclient->name,
-			pclient->ascii_time);
-		if(status<0){
+			pclient->ascii_time,
+			(int) nchar,
+			pline);
+		if (status<0) {
 			handleLogFileError();
 		}
-
-		status = fwrite(
-				pline,
-				nchar,
-				NITEMS,
-				pclient->pserver->poutfile);
-		if (status != NITEMS) {
-			handleLogFileError();
-			return;
+		if (status != nTotChar) {
+			fprintf(stderr, "iocLogServer: didnt calculate number of characters correctly?\n");
 		}
-
-		pline = pcr+1;
-	}
-
-
-	/*
-	 * limit file length by reseting to the beginning of the file if it
-	 * becomes to large
-	 */
-	length = ftell(pclient->pserver->poutfile);
-	if (length > pclient->pserver->max_file_size   &&
-		     pclient->pserver->max_file_size > 0) {
-#		ifdef DEBUG
-			fprintf(stderr,
-				"ioc log server: resetting the file pointer\n");
-#		endif
-		rewind (pclient->pserver->poutfile);
-		status = ftruncate(
-				   fileno(pclient->pserver->poutfile),
-				   length);
-		if (status < 0) {
-			fprintf(stderr,"truncation error %d\n", errno);
-		}
+		pserver->filePos += status;
+		pline += nchar+1u;
 	}
 }
 
@@ -602,10 +640,7 @@ static void readFromClient(void *pParam)
  */
 static void freeLogClient(struct iocLogClient     *pclient)
 {
-	unsigned	stacksize;
 	int		status;
-
-	stacksize = pclient->ptopofstack - pclient->recvbuf;
 
 #	ifdef	DEBUG
 	if(length == 0){
@@ -616,27 +651,14 @@ static void freeLogClient(struct iocLogClient     *pclient)
 	/*
 	 * flush any left overs
 	 */
-	if(stacksize){
-		status = fprintf(
-			pclient->pserver->poutfile,
-			"%s %s ",
-			pclient->name,
-			pclient->ascii_time);
-		if(status<0){
-			handleLogFileError();
+	if (pclient->nChar) {
+		/*
+		 * this forces a flush
+		 */
+		if (pclient->nChar<sizeof(pclient->recvbuf)) {
+			pclient->recvbuf[pclient->nChar] = '\n';
 		}
-		status = fwrite(
-				pclient->recvbuf,
-				stacksize,
-				NITEMS,
-				pclient->pserver->poutfile);
-		if (status != NITEMS) {
-			handleLogFileError();
-		}
-		status = fprintf(pclient->pserver->poutfile,"\n");
-		if(status<0){
-			handleLogFileError();
-		}
+		writeMessagesToLog (pclient);
 	}
 
 #if 0
@@ -654,12 +676,12 @@ static void freeLogClient(struct iocLogClient     *pclient)
 		       pclient->pserver->pfdctx,
 		       pclient->insock,
 		       fdi_read);
-	if (status!=OK) {
+	if (status!=IOCLS_OK) {
 		fprintf(stderr, "%s:%d fdmgr_clear_callback() failed\n",
 			__FILE__, __LINE__);
 	}
 
-	if(close(pclient->insock)<0)
+	if(socket_close(pclient->insock)<0)
 		abort();
 
 	free (pclient);
@@ -728,18 +750,17 @@ static int getConfig(void)
 			ioc_log_file_name);
 	if(pstring == NULL){
 		envFailureNotify(&EPICS_IOC_LOG_FILE_NAME);
-		return ERROR;
+		return IOCLS_ERROR;
 	}
 
+	/*
+	 * its ok to not specify the IOC_LOG_FILE_COMMAND
+	 */
 	pstring = envGetConfigParam(
 			&EPICS_IOC_LOG_FILE_COMMAND, 
 			sizeof ioc_log_file_command,
 			ioc_log_file_command);
-	if(pstring == NULL){
-		envFailureNotify(&EPICS_IOC_LOG_FILE_COMMAND);
-		return ERROR;
-	}
-	return OK;
+	return IOCLS_OK;
 }
 
 
@@ -759,17 +780,64 @@ static void envFailureNotify(const ENV_PARAM *pparam)
 
 
 
+#ifdef UNIX
+static int setupSIGHUP(struct ioc_log_server *pserver)
+{
+	int status;
+	struct sigaction sigact;
+
+	status = getDirectory();
+	if (status<0){
+		fprintf(stderr, "iocLogServer: failed to determine log file "
+			"directory\n");
+		return IOCLS_ERROR;
+	}
+
+	/*
+	 * Set up SIGHUP handler. SIGHUP will cause the log file to be
+	 * closed and re-opened, possibly with a different name.
+	 */
+	sigact.sa_handler = sighupHandler;
+	sigemptyset (&sigact.sa_mask);
+	sigact.sa_flags = 0;
+	if (sigaction(SIGHUP, &sigact, NULL)){
+		fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
+		return IOCLS_ERROR;
+	}
+	
+	status = pipe(sighupPipe);
+	if(status<0){
+                fprintf(stderr,
+                        "iocLogServer: failed to create pipe because `%s'\n",
+                        strerror(errno));
+                return IOCLS_ERROR;
+        }
+
+	status = fdmgr_add_callback(
+			pserver->pfdctx, 
+			sighupPipe[0], 
+			fdi_read,
+			serviceSighupRequest,
+			pserver);
+	if(status<0){
+		fprintf(stderr,
+			"iocLogServer: failed to add SIGHUP callback\n");
+		return IOCLS_ERROR;
+	}
+	return IOCLS_OK;
+}
+
 /*
  *
  *	sighupHandler()
  *
  *
  */
-static void sighupHandler()
+static void sighupHandler(int signo)
 {
 	(void) write(sighupPipe[1], "SIGHUP\n", 7);
 }
-		
+
 
 
 /*
@@ -859,14 +927,14 @@ static int getDirectory()
 				"Problem executing `%s' because `%s'\n", 
 				ioc_log_file_command,
 				strerror(errno));
-			return ERROR;
+			return IOCLS_ERROR;
 		}
 		if (fgets(dir, sizeof(dir), pipe) == NULL) {
 			fprintf(stderr,
 				"Problem reading o/p from `%s' because `%s'\n", 
 				ioc_log_file_command,
 				strerror(errno));
-			return ERROR;
+			return IOCLS_ERROR;
 		}
 		(void) pclose(pipe);
 
@@ -894,5 +962,6 @@ static int getDirectory()
 			sprintf(ioc_log_file_name,"%s/%s",dir,temp);
 		}
 	}
-	return OK;
+	return IOCLS_OK;
 }
+#endif

@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.13  1996/11/02 01:24:46  jhill
+// strcpy => styrcpy (shuts up purify)
+//
 // Revision 1.12  1996/10/29 15:39:58  jbk
 // Much new doc added.  Fixed bug in gdd.cc.
 //
@@ -1559,10 +1562,17 @@ gddContainer::gddContainer(gddContainer* ec)
 
 gdd* gddContainer::getDD(aitIndex index)
 {
-	aitIndex i;
-	gdd* dd=(gdd*)dataPointer();
-	for(i=0;i<index && i<bounds->size();i++) dd=(gdd*)dd->next();
-	return dd;
+	if (index==0u) {
+		return this;
+	}
+	else {
+		aitIndex i;
+		gdd* dd=(gdd*)dataPointer();
+		for(i=1u;i<index && i<bounds->size();i++) {
+			dd=(gdd*)dd->next();
+		}
+		return dd;
+	}
 }
 
 gddStatus gddContainer::insert(gdd* dd)
@@ -1624,7 +1634,6 @@ gdd* gddCursor::operator[](int index)
 	curr=dd;
 	return dd;
 }
-
 
 #if 0
 	code section for handling transfer of element from

@@ -92,8 +92,8 @@ LOCAL const double      LOG_RESTART_DELAY = 5.0; /* sec */
 LOCAL const unsigned    LOG_MAX_CONNECT_RETRIES = 12 * 60; 
 
 /*
- *	getConfig()
- *	Get Server Configuration
+ *  getConfig()
+ *  Get Server Configuration
  */
 LOCAL int getConfig (logClient *pClient)
 {
@@ -271,12 +271,12 @@ epicsShareFunc void epicsShareAPI logClientSendMessage (logClientId id, const ch
 }
 
 /*
- *	logClientMakeSock ()
+ *  logClientMakeSock ()
  */
 LOCAL void logClientMakeSock (logClient *pClient)
 {
-    int			    status;
-	osiSockIoctl_t	optval;
+    int             status;
+    osiSockIoctl_t  optval;
 
 #   ifdef DEBUG
         fprintf (stderr, "log client: creating socket...");
@@ -295,16 +295,16 @@ LOCAL void logClientMakeSock (logClient *pClient)
         return;
     }
     
-	optval = TRUE;
-	status = socket_ioctl (pClient->sock, FIONBIO, &optval);
-	if (status<0) {
-		fprintf (stderr, "%s:%d ioctl FBIO client er %s\n", 
-			__FILE__, __LINE__, SOCKERRSTR(SOCKERRNO));
-		socket_close (pClient->sock);
+    optval = TRUE;
+    status = socket_ioctl (pClient->sock, FIONBIO, &optval);
+    if (status<0) {
+        fprintf (stderr, "%s:%d ioctl FBIO client er %s\n", 
+            __FILE__, __LINE__, SOCKERRSTR(SOCKERRNO));
+        socket_close (pClient->sock);
         pClient->sock = INVALID_SOCKET;
         epicsMutexUnlock (pClient->mutex);
-		return;
-	}
+        return;
+    }
     
     epicsMutexUnlock (pClient->mutex);
 
@@ -315,11 +315,11 @@ LOCAL void logClientMakeSock (logClient *pClient)
 }
 
 /*
- *	logClientConnect()
+ *  logClientConnect()
  */
 LOCAL void logClientConnect (logClient *pClient)
 {
-	osiSockIoctl_t  optval;
+    osiSockIoctl_t  optval;
     int             errnoCpy;
     int             status;
    
@@ -327,63 +327,63 @@ LOCAL void logClientConnect (logClient *pClient)
         pClient->connectTries++;
         status = connect (pClient->sock, (struct sockaddr *)&pClient->addr, sizeof(pClient->addr));
         if (status < 0) {
-		    errnoCpy = SOCKERRNO;
-		    if (errnoCpy==SOCK_EISCONN) {
-			    /*
-			     * called connect after we are already connected 
-			     * (this appears to be how they provide 
-			     * connect completion notification)
-			     */
-			    break;
-		    }
-            else if (errnoCpy==SOCK_EINTR) {
-			    continue;
+            errnoCpy = SOCKERRNO;
+            if (errnoCpy==SOCK_EISCONN) {
+                /*
+                 * called connect after we are already connected 
+                 * (this appears to be how they provide 
+                 * connect completion notification)
+                 */
+                break;
             }
-		    else if (
-			    errnoCpy==SOCK_EINPROGRESS ||
-			    errnoCpy==SOCK_EWOULDBLOCK ||
+            else if (errnoCpy==SOCK_EINTR) {
+                continue;
+            }
+            else if (
+                errnoCpy==SOCK_EINPROGRESS ||
+                errnoCpy==SOCK_EWOULDBLOCK ||
                 errnoCpy==SOCK_EALREADY) {
-			    return;
-		    }
+                return;
+            }
 #ifdef _WIN32
-		    /*
+            /*
              * a SOCK_EALREADY alias used by early WINSOCK
              *
-		     * including this with vxWorks appears to
-		     * cause trouble
-		     */
-		    else if (errnoCpy==SOCK_EINVAL) { 
-			    return;	
-		    }
+             * including this with vxWorks appears to
+             * cause trouble
+             */
+            else if (errnoCpy==SOCK_EINVAL) { 
+                return; 
+            }
 #endif
-		    else {
+            else {
                 char name[64];
             
                 ipAddrToDottedIP (&pClient->addr, name, sizeof(name));
 
                 if (pClient->connectReset==0) {
-			        fprintf (stderr,
-	                    "log client: Unable to connect to \"%s\" because %d=\"%s\"\n", 
-				        name, errnoCpy, SOCKERRSTR(errnoCpy));
+                    fprintf (stderr,
+                        "log client: Unable to connect to \"%s\" because %d=\"%s\"\n", 
+                        name, errnoCpy, SOCKERRSTR(errnoCpy));
                 }
 
                 logClientReset (pClient);
-			    return;
-		    }
+                return;
+            }
         }
     }
 
     /*
      * now we are connected so set the socket out of non-blocking IO
      */
-	optval = FALSE;
-	status = socket_ioctl (pClient->sock, FIONBIO, &optval);
-	if (status<0) {
-		fprintf (stderr, "%s:%d ioctl FIONBIO log client error was \"%s\"\n", 
-			__FILE__, __LINE__, SOCKERRSTR(SOCKERRNO));
+    optval = FALSE;
+    status = socket_ioctl (pClient->sock, FIONBIO, &optval);
+    if (status<0) {
+        fprintf (stderr, "%s:%d ioctl FIONBIO log client error was \"%s\"\n", 
+            __FILE__, __LINE__, SOCKERRSTR(SOCKERRNO));
         logClientReset (pClient);
-		return;
-	}
+        return;
+    }
 
     /*
      * discover that the connection has expired
@@ -402,7 +402,7 @@ LOCAL void logClientConnect (logClient *pClient)
      * switch connections.
      */
     {
-        struct  linger		lingerval;
+        struct  linger      lingerval;
         
         lingerval.l_onoff = TRUE;
         lingerval.l_linger = 60*5; 
@@ -434,7 +434,7 @@ LOCAL void logClientConnect (logClient *pClient)
     
         ipAddrToDottedIP (&pClient->addr, name, sizeof(name));
 
-		fprintf (stderr, "log client: connected to error message log server at \"%s\"\n", name);
+        fprintf (stderr, "log client: connected to error message log server at \"%s\"\n", name);
     }
 
     return;
@@ -465,12 +465,12 @@ LOCAL void logRestart (void *pPrivate)
         for ( pClient = (logClient *) ellFirst (&logClientList); pClient; 
                 pClient = (logClient *) ellNext(&pClient->node) ) {
 
-    		if (pClient->sock==INVALID_SOCKET) {
+            if (pClient->sock==INVALID_SOCKET) {
                 logClientMakeSock (pClient);
                 if (pClient->sock==INVALID_SOCKET) {
                     continue;
                 }
-		    }
+            }
 
             if (pClient->file==NULL) {
                 logClientConnect (pClient);
@@ -497,7 +497,7 @@ LOCAL void logRestart (void *pPrivate)
 }
 
 /*
- *	logClientGlobalInit ()
+ *  logClientGlobalInit ()
  */
 LOCAL void logClientGlobalInit ()
 {
@@ -545,7 +545,7 @@ LOCAL void logClientGlobalInit ()
 }
 
 /*
- *	logClientInit()
+ *  logClientInit()
  */
 epicsShareFunc logClientId epicsShareAPI logClientInit ()
 {
@@ -553,7 +553,7 @@ epicsShareFunc logClientId epicsShareAPI logClientInit ()
     unsigned connectTries = 0;
     logClient *pClient;
     logClientId id;
-    int	status;
+    int status;
   
     /*
      * lazy init
@@ -617,7 +617,7 @@ epicsShareFunc logClientId epicsShareAPI logClientInit ()
 }
 
 /*
- *	iocLogInit()
+ *  iocLogInit()
  */
 epicsShareFunc int epicsShareAPI iocLogInit (void)
 {
@@ -669,7 +669,7 @@ epicsShareFunc void epicsShareAPI logClientShow (logClientId id, unsigned level)
 }
 
 /*
- *	iocLogShow ()
+ *  iocLogShow ()
  */
 epicsShareFunc void epicsShareAPI iocLogShow (unsigned level)
 {
@@ -690,7 +690,7 @@ epicsShareFunc void epicsShareAPI iocLogShow (unsigned level)
  */
 LOCAL void logClientRollLocalPort (void)
 {
-    int	status;
+    int status;
     
     /*
      * roll the local port forward so that we dont collide

@@ -32,6 +32,7 @@
  *  .04 09-05-91 joh	updated for v5 vxWorks
  *  .05 01-27-92 rac	fixed off-by-1 bug for leap years in tsTextToStamp
  *  .06 08-03-92 rac	added tsRound... routines
+ *  .07 10-06-92 rac	minor fixes to the documentation
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -137,7 +138,7 @@ static char	monthText[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
 /*/subhead tsTest-------------------------------------------------------------
 *    some test code.
 *----------------------------------------------------------------------------*/
-#if 0 || LINT		/* change to #if 1 to invoke the test code */
+#if TS_TEST || LINT
 
 #  ifndef vxWorks
   main()
@@ -317,6 +318,7 @@ tsTest()
 }
 #endif
 
+#ifdef vxWorks
 /*+/subr**********************************************************************
 * NAME	date - print present time and date
 *
@@ -327,7 +329,6 @@ tsTest()
 *	void
 *
 *-*/
-#ifdef vxWorks
 void
 date()
 {
@@ -616,7 +617,7 @@ TS_STAMP *pStamp;	/* O pointer to time stamp buffer */
 }
 
 /*+/subr**********************************************************************
-* NAME	tsRoundDownLocal - round a time stamp to interval, based on local time
+* NAME	tsRoundDownLocal - round stamp down to interval, based on local time
 *
 * DESCRIPTION
 *	The time stamp is rounded down to the prior interval, based on
@@ -660,10 +661,10 @@ unsigned long interval;	/* I rounding interval, in seconds */
 }
 
 /*+/subr**********************************************************************
-* NAME	tsRoundUpLocal - round a time stamp to interval, based on local time
+* NAME	tsRoundUpLocal - round stamp up to interval, based on local time
 *
 * DESCRIPTION
-*	The time stamp is rounded down to the prior interval, based on
+*	The time stamp is rounded up to the following interval, based on
 *	local time.  The rounding interval must be between 1 second and
 *	86400 seconds (a full day).
 *

@@ -35,6 +35,14 @@ SRC_DIRS += $(LIBCOM)/cvtFast
 INC += cvtFast.h
 SRCS += cvtFast.c
 
+# From cppStd
+SRC_DIRS += $(LIBCOM)/cppStd
+INC += epicsCppStd.h
+INC += epicsExcept.h
+INC += epicsList.h
+INC += epicsListBase.h
+SRCS += epicsListBase.cpp
+
 # From cxxTemplates
 SRC_DIRS += $(LIBCOM)/cxxTemplates
 INC += resourceLib.h

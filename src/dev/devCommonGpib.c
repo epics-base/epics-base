@@ -50,6 +50,7 @@
  * .14	02-26-92	jrw	added return codes to the output work functions
  * .15	02-27-92	jrw	added the setting of PACT to 1 when init fails
  * .16	04-08-92	jrw	reordered initXx to clean up SRQ init code
+ * .17  04-30-93	jrw	added waveform record support
  *
  * WISH LIST:
  *  It would be nice to read and write directly to/from the val field
@@ -88,6 +89,7 @@
 #include	<stringoutRecord.h>
 #include	<longinRecord.h>
 #include	<longoutRecord.h>
+#include        <waveformRecord.h>
 
 #include	<drvGpibInterface.h>
 #include	<devCommonGpib.h>
@@ -2295,4 +2297,215 @@ char	**enums;
 	i++;
     }
     return(-1);		/* not found, return error */
+}
+
+/******************************************************************************
+ *
+ * wf record init
+ *
+ ******************************************************************************/
+
+long 
+devGpibLib_initWf(pwf, process)
+struct waveformRecord	*pwf;
+void		(*process)();
+{
+  long		result;
+  char		message[100];
+  struct devGpibParmBlock *parmBlock;
+  
+  parmBlock = (struct devGpibParmBlock *)(((gDset*)(pwf->dset))->funPtr[pwf->dset->number]);
+
+  /* Do common initialization */
+  if (result = devGpibLib_initXx((caddr_t) pwf, &(pwf->inp) ))
+  {
+    return(result);
+  }
+
+  /* make sure the command type makes sendse for the record type */
+
+  if (parmBlock->gpibCmds[((struct gpibDpvt *)pwf->dpvt)->parm].type != GPIBREAD &&
+      parmBlock->gpibCmds[((struct gpibDpvt *)pwf->dpvt)->parm].type != GPIBSOFT &&
+      parmBlock->gpibCmds[((struct gpibDpvt *)pwf->dpvt)->parm].type != GPIBREADW)
+  {
+    sprintf(message, "%s: devGpibLib_initWf: invalid command type for an WF record in param %d\n", pwf->name, ((struct gpibDpvt *)pwf->dpvt)->parm);
+    errMessage(S_db_badField, message);
+    pwf->pact = TRUE;
+    return(S_db_badField);
+  }
+  return(0);
+ }
+
+/******************************************************************************
+ *
+ * These are the functions that are called to actually communicate with
+ * the GPIB device.
+ *
+ * They are called by record-processing to perform an I/O operation.  In the
+ * GPIB case, all I/O is done via anynchronous processing, so all these
+ * functions do is queue requests for the driver to take care of when it is
+ * ready.
+ *
+ ******************************************************************************/
+/******************************************************************************
+ *
+ * read_wf()
+ *
+ ******************************************************************************/
+
+long 
+devGpibLib_readWf(pwf)
+struct waveformRecord	*pwf;
+{
+    struct gpibDpvt *pdpvt = (struct gpibDpvt *)(pwf->dpvt);
+    struct gpibCmd *pCmd;
+    struct devGpibParmBlock *parmBlock;
+
+    parmBlock = (struct devGpibParmBlock *)(((gDset*)(pwf->dset))->funPtr[pwf->dset->number]);
+
+    pCmd = &(parmBlock->gpibCmds[pdpvt->parm]); 
+    if (pwf->pact)
+    {
+        return(2);	/* work is all done, return '2' to indicate val */
+    }
+    else if (pCmd->type == GPIBSOFT)
+    {
+	 return((*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3));
+    }
+    else
+    {	/* put pointer to dpvt field on ring buffer */
+	if((*(drvGpib.qGpibReq))(pdpvt, pCmd->pri) == ERROR)
+        {
+            devGpibLib_setPvSevr(pwf,MAJOR_ALARM,VALID_ALARM);
+	    return(0);
+        }
+	pwf->pact = TRUE;
+	return(0);
+    }
+}
+
+/******************************************************************************
+ *
+ * Routines that do the actual GPIB work.  They are called by the linkTask in
+ * response to work requests passed in from the read_xx and write_xx functions
+ * above.
+ *
+ ******************************************************************************/
+/******************************************************************************
+ *
+ * devGpibLib_wfGpibWork()
+ *
+ ******************************************************************************/
+
+int 
+devGpibLib_wfGpibWork(pdpvt)
+struct gpibDpvt *pdpvt;
+{
+    struct waveformRecord *pwf= ((struct waveformRecord *)(pdpvt->precord));
+    struct gpibCmd	*pCmd;
+    struct devGpibParmBlock *parmBlock;
+
+    parmBlock = (struct devGpibParmBlock *)(((gDset*)(pwf->dset))->funPtr[pwf->dset->number]);
+
+    pCmd = &(parmBlock->gpibCmds[pdpvt->parm]);
+
+    /* go send predefined cmd msg and read response into msg[] */
+
+    if(*(parmBlock->debugFlag))
+        printf("devGpibLib_wfGpibWork: starting ...command type = %d\n",pCmd->type);
+
+    if (devGpibLib_xxGpibWork(pdpvt, pCmd->type, -1) == ERROR) 
+    {
+	devGpibLib_setPvSevr(pwf,READ_ALARM,VALID_ALARM);
+
+        pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+        pdpvt->head.header.callback.priority = priorityLow;
+        callbackRequest((void *)pdpvt);
+    }
+    else
+    {
+        if (pCmd->type != GPIBREADW)
+            devGpibLib_wfGpibFinish(pdpvt);	/* If not waiting on SRQ, finish */
+	else
+	{
+            if (*(parmBlock->debugFlag) || ibSrqDebug)
+	      printf("%s: marking srq Handler for READW operation\n", parmBlock->name);
+            pdpvt->phwpvt->srqCallback = (int (*)())(((gDset*)(pwf->dset))->funPtr[pwf->dset->number + 2]);
+            pdpvt->phwpvt->parm = (caddr_t)pdpvt; /* mark the handler */
+	    return(BUSY);		/* indicate device still in use */
+	}
+    }
+    return(IDLE);			/* indicate device is now idle */
+}
+
+/******************************************************************************
+ *
+ * devGpibLib_wfGpibSrq()
+ *
+ ******************************************************************************/
+
+int 
+devGpibLib_wfGpibSrq(pdpvt, srqStatus)
+struct gpibDpvt *pdpvt;
+int		srqStatus;
+{
+    struct waveformRecord *pwf= ((struct waveformRecord *)(pdpvt->precord));
+    struct devGpibParmBlock *parmBlock;
+
+    parmBlock = (struct devGpibParmBlock *)(((gDset*)(pwf->dset))->funPtr[pwf->dset->number]);
+
+    if (*parmBlock->debugFlag || ibSrqDebug)
+        printf("devGpibLib_wfGpibSrq(0x%08.8X, 0x%02.2X): processing srq\n", pdpvt, srqStatus);
+
+    pdpvt->phwpvt->srqCallback = NULL;	/* unmark the handler */
+    pdpvt->phwpvt->parm = (caddr_t)NULL;
+
+    /* read the response back */
+    if (devGpibLib_xxGpibWork(pdpvt, GPIBRAWREAD, -1) == ERROR)
+    {
+        devGpibLib_setPvSevr(pwf,READ_ALARM,VALID_ALARM);
+
+        pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+        pdpvt->head.header.callback.priority = priorityLow;
+        callbackRequest((void *)pdpvt);
+    }
+
+    devGpibLib_wfGpibFinish(pdpvt);	/* and finish the processing */
+    return(IDLE);		/* indicate device now idle */
+}
+
+/******************************************************************************
+ *
+ * devGpibLib_wfGpibFinish()
+ *
+ ******************************************************************************/
+
+int
+devGpibLib_wfGpibFinish(pdpvt)
+struct gpibDpvt *pdpvt;
+{
+    double	value;
+    struct waveformRecord *pwf = ((struct waveformRecord *)(pdpvt->precord));
+    struct devGpibParmBlock *parmBlock;
+    struct gpibCmd      *pCmd;
+
+    parmBlock = (struct devGpibParmBlock *)(((gDset*)(pwf->dset))->funPtr[pwf->dset->number]);
+    pCmd = &(parmBlock->gpibCmds[pdpvt->parm]);
+
+    if (pCmd->convert != NULL)
+    {
+        if(*parmBlock->debugFlag)
+            printf("devGpibLib_wfGpibWork: calling convert ...\n");
+
+        (*(pCmd->convert))(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3);
+    }
+    else  /* for waveforms no standard conversion is supplied */
+    {
+               devGpibLib_setPvSevr(pwf,READ_ALARM,VALID_ALARM);
+    }
+    pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+    pdpvt->head.header.callback.priority = priorityLow;
+    callbackRequest((void *)pdpvt);
+
+    return(0);
 }

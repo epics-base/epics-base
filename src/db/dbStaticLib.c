@@ -913,8 +913,13 @@ char *newName;
     PVDENTRY		*ppvd;
     ELLLIST		*preclist;
     RECNODE		*plistnode;
+    long		status;
+    DBENTRY		dbentry;
 
     if(!precnode) return(S_dbLib_recNotFound);
+    dbInitEntry(pdbentry->pdbbase,&dbentry);
+    status = dbFindRecord(&dbentry,newName);
+    if(!status) return(S_dbLib_recExists);
     precord = precnode->precord;
     dbPvdDelete(pdbbase,precnode);
     strcpy(precord,newName);
@@ -2462,17 +2467,17 @@ DBENTRY *pdbentry;
     case VXI_IO:
 	strcpy(*value,(plink->value.vxiio.flag == VXIDYNAMIC ? "Yes" : "No"));
 	value++;
-	if(plink->value.vxiio.flag = VXIDYNAMIC)
+	if(plink->value.vxiio.flag == VXIDYNAMIC)
 	    cvtShortToString(plink->value.vxiio.frame,*value);
 	else
 	    **value = 0;
 	value++;
-	if(plink->value.vxiio.flag = VXIDYNAMIC)
+	if(plink->value.vxiio.flag == VXIDYNAMIC)
 	    cvtShortToString(plink->value.vxiio.slot,*value);
 	else
 	    **value = 0;
 	value++;
-	if(plink->value.vxiio.flag = VXISTATIC)
+	if(plink->value.vxiio.flag == VXISTATIC)
 	    cvtShortToString(plink->value.vxiio.la,*value);
 	else
 	    **value = 0;

@@ -83,7 +83,7 @@ private:
     pCallBackFDMgr pFunc;
     void *pParam;
     unsigned id;
-    epicsShareFunc expireStatus expire ();
+    epicsShareFunc expireStatus expire ( const epicsTime & currentTime );
 };
 
 class oldFdmgr : public fdManager {
@@ -122,14 +122,14 @@ epicsShareFunc void fdRegForOldFdmgr::callBack ()
 
 timerForOldFdmgr::timerForOldFdmgr ( oldFdmgr &fdmgrIn, 
     double delayIn, pCallBackFDMgr pFuncIn, void * pParamIn ) :
-    timer ( fdmgrIn.timerQueueRef().createTimer( *this ) ), 
+    timer ( fdmgrIn.timerQueueRef().createTimer() ), 
     fdmgr ( fdmgrIn ), pFunc ( pFuncIn ), pParam( pParamIn )
 {
     if ( pFuncIn == NULL ) {
         throwWithLocation ( noFunctionSpecified () );
     }
     this->fdmgr.resTbl.add (*this);
-    this->timer.start ( delayIn );
+    this->timer.start ( *this, delayIn );
 }
 
 timerForOldFdmgr::~timerForOldFdmgr ()
@@ -143,7 +143,7 @@ timerForOldFdmgr::~timerForOldFdmgr ()
     delete & this->timer;
 }
 
-epicsTimerNotify::expireStatus timerForOldFdmgr::expire ()
+epicsTimerNotify::expireStatus timerForOldFdmgr::expire ( const epicsTime & )
 {
     (*this->pFunc) (this->pParam);
     return noRestart;

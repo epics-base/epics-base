@@ -154,11 +154,7 @@ epicsShareFunc void fdManager::process (double delay)
     // more than once here so that fd activity get serviced
     // in a reasonable length of time.
     //
-    minDelay = this->pTimerQueue->getNextExpireDelay ();
-    if ( minDelay <= 0.0 ) {
-        this->pTimerQueue->process();
-        minDelay = this->pTimerQueue->getNextExpireDelay ();
-    } 
+    minDelay = this->pTimerQueue->process(epicsTime::getCurrent());
 
     if ( minDelay >= delay ) {
         minDelay = delay;
@@ -192,7 +188,7 @@ epicsShareFunc void fdManager::process (double delay)
             &this->fdSets[fdrWrite], &this->fdSets[fdrException], &tv);
     }
 
-    this->pTimerQueue->process();
+    this->pTimerQueue->process(epicsTime::getCurrent());
     if (status==0) {
         this->processInProg = 0;
         return;

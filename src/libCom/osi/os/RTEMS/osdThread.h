@@ -7,4 +7,6 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* osdThread.h not needed */
+
+int epicsThreadGetOssPriorityValue(unsigned int osiPriority);
+

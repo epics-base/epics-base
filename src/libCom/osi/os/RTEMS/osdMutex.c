@@ -7,7 +7,7 @@
  */
 
 /*
- * We want to print out some information which is
+ * We want to access information which is
  * normally hidden from application programs.
  */
 #define __RTEMS_VIOLATE_KERNEL_VISIBILITY__ 1
@@ -27,8 +27,8 @@
  * Some performance tuning instrumentation
  */
 #ifdef EPICS_RTEMS_SEMAPHORE_STATS
-unsigned long semStat[6];
-#define SEMSTAT(i)  semStat[i]++;
+unsigned long semMstat[4];
+#define SEMSTAT(i)  semMstat[i]++;
 #else
 #define SEMSTAT(i) 
 #endif
@@ -127,7 +127,7 @@ epicsMutexLockStatus epicsMutexLock(epicsMutexId id)
 #ifdef RTEMS_FAST_MUTEX
     Semaphore_Control *the_semaphore = (Semaphore_Control *)id;
     ISR_Level level;
-    SEMSTAT(3)
+    SEMSTAT(0)
     _ISR_Disable( level );
     _CORE_mutex_Seize(
         &the_semaphore->Core_control.mutex,
@@ -141,7 +141,7 @@ epicsMutexLockStatus epicsMutexLock(epicsMutexId id)
     else
         return epicsMutexLockError;
 #else
-    SEMSTAT(3)
+    SEMSTAT(0)
     return((epicsEventWait (id) == epicsEventWaitOK)
         ?epicsMutexLockOK : epicsMutexLockError);
 #endif
@@ -156,7 +156,7 @@ epicsMutexLockStatus epicsMutexLockWithTimeout(
     rtems_interval delay;
     extern double rtemsTicksPerSecond_double;
 
-    SEMSTAT(4)
+    SEMSTAT(1)
     delay = timeOut * rtemsTicksPerSecond_double;
     if (delay == 0)
         delay = 1;
@@ -174,7 +174,7 @@ epicsMutexLockStatus epicsMutexLockWithTimeout(
         return epicsMutexLockError;
 #else
     epicsEventWaitStatus status;
-    SEMSTAT(4)
+    SEMSTAT(1)
     status = epicsEventWaitWithTimeout(id,timeOut);
     return((status==epicsEventWaitOK
         ? epicsMutexLockOK
@@ -189,7 +189,7 @@ epicsMutexLockStatus epicsMutexTryLock(epicsMutexId id)
 #ifdef RTEMS_FAST_MUTEX
     Semaphore_Control *the_semaphore = (Semaphore_Control *)id;
     ISR_Level level;
-    SEMSTAT(5)
+    SEMSTAT(2)
     _ISR_Disable( level );
     _CORE_mutex_Seize(
         &the_semaphore->Core_control.mutex,
@@ -204,7 +204,7 @@ epicsMutexLockStatus epicsMutexTryLock(epicsMutexId id)
         return epicsMutexLockError;
 #else
     epicsEventWaitStatus status;
-    SEMSTAT(5)
+    SEMSTAT(2)
     status = epicsEventTryWait(id);
     return((status==epicsEventWaitOK
         ? epicsMutexLockOK

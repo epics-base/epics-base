@@ -7,7 +7,7 @@
  */
 
 /*
- * We want to print out some information which is
+ * We want to access information which is
  * normally hidden from application programs.
  */
 #define __RTEMS_VIOLATE_KERNEL_VISIBILITY__ 1
@@ -21,12 +21,13 @@
 #include "epicsThread.h"
 #include "errlog.h"
 
+/* #define EPICS_RTEMS_SEMAPHORE_STATS */
 /*
  * Some performance tuning instrumentation
  */
 #ifdef EPICS_RTEMS_SEMAPHORE_STATS
-unsigned long semStat[6];
-#define SEMSTAT(i)  semStat[i]++;
+unsigned long semEstat[4];
+#define SEMSTAT(i)  semEstat[i]++;
 #else
 #define SEMSTAT(i) 
 #endif

@@ -323,14 +323,14 @@ void nciu::subscribe ( unsigned type, unsigned long nElem,
     }
 }
 
-void nciu::ioCancel ( const ioid &id )
+void nciu::ioCancel ( const ioid &idIn )
 {
-    this->cacCtx.ioCancel ( *this, id );
+    this->cacCtx.ioCancel ( *this, idIn );
 }
 
-void nciu::ioShow ( const ioid &id, unsigned level ) const
+void nciu::ioShow ( const ioid &idIn, unsigned level ) const
 {
-    this->cacCtx.ioShow ( id, level );
+    this->cacCtx.ioShow ( idIn, level );
 }
 
 void nciu::initiateConnect ()

@@ -1261,7 +1261,7 @@ void tcpiiu::subscriptionRequest ( nciu &chan, netSubscription & subscr )
         return;
     }
 
-    unsigned long count = subscr.getCount ( chan );
+    unsigned long count = subscr.getCount ();
     if ( count == 0u || count > 0xffff ) {
         this->pCAC()->printf ( "CAC: subscriptionRequest() ignored because of unexpected bad count that was checked earlier\n" );
         return;
@@ -1291,7 +1291,7 @@ void tcpiiu::subscriptionCancelRequest ( nciu &chan, netSubscription &subscr )
     this->sendQue.pushUInt16 ( CA_PROTO_EVENT_CANCEL ); // cmd
     this->sendQue.pushUInt16 ( 0u ); // postsize
     this->sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( subscr.getType () ) ); // dataType
-    this->sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( subscr.getCount ( chan ) ) ); // count
+    this->sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( subscr.getCount () ) ); // count
     this->sendQue.pushUInt32 ( chan.getSID () ); // cid
     this->sendQue.pushUInt32 ( subscr.getID() ); // available
 }

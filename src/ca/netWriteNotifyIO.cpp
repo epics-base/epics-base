@@ -49,14 +49,14 @@ void netWriteNotifyIO::exception ( int status, const char *pContext )
     this->notify.exception ( status, pContext );
 }
 
-void netWriteNotifyIO::completion ( unsigned type, 
-    unsigned long count, const void *pData )
+void netWriteNotifyIO::completion ( unsigned /* type */, 
+    unsigned long /* count */, const void * /* pData */ )
 {
     this->chan.getClient().printf ( "Write response with data ?\n" );
 }
 
 void netWriteNotifyIO::exception ( int status, 
-    const char *pContext, unsigned type, unsigned long count )
+    const char *pContext, unsigned /* type */, unsigned long /* count */ )
 {
     this->notify.exception ( status, pContext );
 }

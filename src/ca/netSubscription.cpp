@@ -59,10 +59,10 @@ void netSubscription::exception ( int status, const char *pContext )
     this->notify.exception ( status, pContext, UINT_MAX, 0 );
 }
 
-void netSubscription::completion ( unsigned type, 
-    unsigned long count, const void *pData )
+void netSubscription::completion ( unsigned typeIn, 
+    unsigned long countIn, const void *pDataIn )
 {
-    this->notify.completion ( type, count, pData );
+    this->notify.completion ( typeIn, countIn, pDataIn );
 }
 
 void netSubscription::exception ( int status, 

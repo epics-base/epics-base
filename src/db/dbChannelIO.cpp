@@ -55,7 +55,7 @@ cacChannel::ioStatus dbChannelIO::read ( unsigned type,
      unsigned long count, cacDataNotify &notify, ioid * ) 
 {
     this->serviceIO.callReadNotify ( this->addr, 
-        type, count, 0, *this, notify );
+        type, count, 0, notify );
     return iosSynch;
 }
 

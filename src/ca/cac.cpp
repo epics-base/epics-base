@@ -1249,17 +1249,17 @@ cacChannel::ioid cac::subscriptionRequest ( nciu &chan, unsigned type,
     }
 }
 
-bool cac::noopAction ( tcpiiu &iiu, const caHdr &, void *pMsgBdy )
+bool cac::noopAction ( tcpiiu &, const caHdr &, void * /* pMsgBdy */ )
 {
     return true;
 }
  
-bool cac::echoRespAction ( tcpiiu &iiu, const caHdr &, void *pMsgBdy )
+bool cac::echoRespAction ( tcpiiu &, const caHdr &, void * /* pMsgBdy */ )
 {
     return true;
 }
 
-bool cac::writeNotifyRespAction ( tcpiiu &iiu, const caHdr &hdr, void *pMsgBdy )
+bool cac::writeNotifyRespAction ( tcpiiu &, const caHdr &hdr, void * /* pMsgBdy */ )
 {
     int caStatus = hdr.m_cid;
     if ( caStatus == ECA_NORMAL ) {
@@ -1358,13 +1358,13 @@ bool cac::eventRespAction ( tcpiiu &iiu, const caHdr &hdr, void *pMsgBdy )
     }
 }
 
-bool cac::readRespAction ( tcpiiu &iiu, const caHdr &hdr, void *pMsgBdy )
+bool cac::readRespAction ( tcpiiu &, const caHdr &hdr, void *pMsgBdy )
 {
     return this->ioCompletionNotifyAndDestroy ( hdr.m_available,
         hdr.m_dataType, hdr.m_count, pMsgBdy );
 }
 
-bool cac::clearChannelRespAction ( tcpiiu &iiu, const caHdr &, void *pMsgBdy )
+bool cac::clearChannelRespAction ( tcpiiu &, const caHdr &, void * /* pMsgBdy */ )
 {
     return true; // currently a noop
 }
@@ -1412,7 +1412,7 @@ bool cac::exceptionRespAction ( tcpiiu &iiu, const caHdr &hdr, void *pMsgBdy )
     }
 }
 
-bool cac::accessRightsRespAction ( tcpiiu &iiu, const caHdr &hdr, void *pMsgBdy )
+bool cac::accessRightsRespAction ( tcpiiu &, const caHdr &hdr, void * /* pMsgBdy */ )
 {
     nciu * pChan = this->chanTable.lookup ( hdr.m_cid );
     if ( pChan ) {
@@ -1425,7 +1425,7 @@ bool cac::accessRightsRespAction ( tcpiiu &iiu, const caHdr &hdr, void *pMsgBdy 
     return true;
 }
 
-bool cac::claimCIURespAction ( tcpiiu &iiu, const caHdr &hdr, void *pMsgBdy )
+bool cac::claimCIURespAction ( tcpiiu &iiu, const caHdr &hdr, void * /* pMsgBdy */ )
 {
     nciu * pChan = this->chanTable.lookup ( hdr.m_cid );
     if ( pChan ) {
@@ -1444,7 +1444,7 @@ bool cac::claimCIURespAction ( tcpiiu &iiu, const caHdr &hdr, void *pMsgBdy )
     }
 }
 
-bool cac::verifyAndDisconnectChan ( tcpiiu &iiu, const caHdr &hdr, void *pMsgBdy )
+bool cac::verifyAndDisconnectChan ( tcpiiu &, const caHdr &hdr, void * /* pMsgBdy */ )
 {
     nciu * pChan = this->chanTable.lookup ( hdr.m_cid );
     if ( pChan ) {
@@ -1455,7 +1455,7 @@ bool cac::verifyAndDisconnectChan ( tcpiiu &iiu, const caHdr &hdr, void *pMsgBdy
     return true;
 }
 
-bool cac::badTCPRespAction ( tcpiiu &iiu, const caHdr &hdr, void *pMsgBdy )
+bool cac::badTCPRespAction ( tcpiiu &iiu, const caHdr &hdr, void * /* pMsgBdy */ )
 {
     char hostName[64];
     iiu.hostName ( hostName, sizeof(hostName) );

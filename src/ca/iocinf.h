@@ -331,7 +331,7 @@ public:
         nciu &chan, unsigned type, unsigned long count, 
         unsigned mask, cacDataNotify &notify );
     void show ( unsigned level ) const;
-    unsigned long getCount ( nciu & ) const;
+    unsigned long getCount () const;
     unsigned getType () const;
     unsigned getMask () const;
     void destroy ( class cacRecycle & );

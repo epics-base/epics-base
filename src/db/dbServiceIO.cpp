@@ -84,7 +84,7 @@ cacChannel *dbServiceIO::createChannel (
 void dbServiceIO::callReadNotify ( struct dbAddr &addr, 
         unsigned type, unsigned long count, 
         const struct db_field_log *pfl, 
-        cacChannel &chan, cacDataNotify &notify )
+        cacDataNotify &notify )
 {
     unsigned long size = dbr_size_n ( type, count );
 

@@ -143,7 +143,7 @@ public:
     virtual ~dbServiceIO ();
     cacChannel *createChannel ( const char *pName, cacChannelNotify & );
     void callReadNotify ( struct dbAddr &addr, unsigned type, unsigned long count, 
-            const struct db_field_log *pfl, cacChannel &, cacDataNotify &notify );
+            const struct db_field_log *pfl, cacDataNotify &notify );
     dbEventSubscription subscribe ( struct dbAddr &addr, dbChannelIO &chan,
         dbSubscriptionIO &subscr, unsigned mask, cacChannel::ioid * );
     void initiatePutNotify ( dbChannelIO &, struct dbAddr &, unsigned type, 

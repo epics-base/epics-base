@@ -5,9 +5,9 @@ YACCOPT = -l
 LEXOPT = -L
 
 SRCS.c = ../dbVarSub.c dbLoadTemplate_lex.c dbLoadTemplate.c \
-		dbLoadRecords_lex.c dbLoadRecords.c ../BSlib.c ../PVSvx.c
+		dbLoadRecords_lex.c dbLoadRecords.c ../BSlib.c ../PVSvx.c ../vx_stats.c ../client_stats.c
 
-LIBOBJS = dbVarSub.o dbLoadTemplate.o dbLoadRecords.o BSlib.o PVSvx.o
+LIBOBJS = dbVarSub.o dbLoadTemplate.o dbLoadRecords.o BSlib.o PVSvx.o vx_stats.o client_stats.o
 
 LIBNAME = dbSubs
 
@@ -16,6 +16,8 @@ MAN3 = dbLoadRecords.3 dbLoadTemplate.3
 MAN5 = templatefile.5 dbfile.5
  
 include $(TOP)/config/RULES.Vx
+
+USR_CFLAGS = -I../../rsrv -I../../ca
 
 #dbLoadTemplate.o: dbLoadTemplate_lex.c dbLoadTemplate.c
 #dbLoadRecords.o: dbLoadRecords_lex.c dbLoadRecords.c

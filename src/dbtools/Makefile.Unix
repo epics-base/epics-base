@@ -10,14 +10,14 @@ INC += dbVarSub.h
 
 SRCS.c = ../dbVarSub.c dbLoadTemplate_lex.c dbLoadTemplate.c \
 		dbLoadRecords_lex.c dbLoadRecords.c \
-		../BSlib.c ../PVSserver.c ../rdbapplist.c ../rdbls.c
+		../BSlib.c ../PVSserver.c ../rdbapplist.c ../rdbls.c ../ioc_stats.c
 
 VAR_OBJS =  dbVarSub.o dbLoadTemplate.o dbLoadRecords.o 
 
 LIBOBJS = BSlib.o
 LIBNAME = BSlib.a
 
-PROD = subtool dbLoadTemplate rdbls rdbapplist PVSserver
+PROD = subtool dbLoadTemplate rdbls rdbapplist PVSserver ioc_stats
 
 MAN1 = dbLoadTemplate.1 subtool.1
 MAN3 = dbLoadRecords.3 dbLoadTemplate.3
@@ -32,6 +32,9 @@ PVSserver: PVSserver.o BSlib.o
 	$(LINK.c) -o $@ $^ $(LDLIBS)
 
 rdbls: rdbls.o BSlib.o
+	$(LINK.c) -o $@ $^ $(LDLIBS)
+
+ioc_stats: ioc_stats.o BSlib.o
 	$(LINK.c) -o $@ $^ $(LDLIBS)
 
 rdbapplist: rdbapplist.o BSlib.o

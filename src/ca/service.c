@@ -478,7 +478,8 @@ const struct in_addr  	*pnet_addr
 					FALSE,
 					piiu->curMsg.m_count);
 #			else
-				if (piiu->curMsg.m_type == DBR_STRING) {
+				if (piiu->curMsg.m_type == DBR_STRING &&
+					piiu->curMsg.m_count == 1u) {
 					strcpy ((char *)pIOBlock->usr_arg,
 						piiu->pCurData);
 				}

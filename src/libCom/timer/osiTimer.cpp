@@ -43,11 +43,17 @@
 
 #define epicsExportSharedSymbols
 #include "osiTimer.h"
+#include "locationException.h"
+#include "errlog.h"
 
-//
-// global lock used when moving a timer between timer queues
-//
-osiMutex osiTimer::mutex;
+class osiTimerThread : public osiThread {
+public:
+    osiTimerThread (osiTimerQueue &, unsigned priority);
+private:
+    osiTimerQueue &queue;
+
+    virtual void entryPoint ();
+};
 
 //
 // default global timer queue
@@ -59,9 +65,34 @@ osiTimerQueue osiDefaultTimerQueue;
 //
 // create an active timer that will expire in delay seconds
 //
-osiTimer::osiTimer (double delay, osiTimerQueue & queueIn)
+osiTimer::osiTimer (double delay, osiTimerQueue & queueIn) :
+    queue (queueIn)
 {
-	this->arm (queueIn, delay);
+	this->arm (delay);
+}
+
+//
+// osiTimer::osiTimer ()
+//
+// create an active timer that will expire in delay seconds
+//
+osiTimer::osiTimer (double delay) :
+    queue (osiDefaultTimerQueue)
+{
+	this->arm (delay);
+}
+
+//
+// osiTimer::osiTimer ()
+//
+// create an inactive timer
+//
+osiTimer::osiTimer (osiTimerQueue & queueIn) :
+curState (osiTimer::stateIdle), queue (queueIn) 
+{
+    this->queue.mutex.lock ();
+	this->queue.idle.add (*this);
+    this->queue.mutex.unlock ();
 }
 
 //
@@ -70,20 +101,47 @@ osiTimer::osiTimer (double delay, osiTimerQueue & queueIn)
 // create an inactive timer
 //
 osiTimer::osiTimer () :
-curState (osiTimer::stateLimbo), pQueue (0) 
+curState (osiTimer::stateIdle), queue (osiDefaultTimerQueue) 
 {
+    this->queue.mutex.lock ();
+	this->queue.idle.add (*this);
+    this->queue.mutex.unlock ();
 }
 
 //
 // osiTimer::~osiTimer()
-// NOTE: The osiTimer lock is not applied for cleanup here because we are 
-// synchronizing properly with the queue, and the creator of this object 
-// should have removed all knowledge of this object from other threads 
-// before deleting it.
 //
 osiTimer::~osiTimer()
 {
-    this->cleanup ();
+    if ( this->curState == stateLimbo ) {
+        return; // queue was destroyed
+    }
+
+    this->queue.mutex.lock ();
+	//
+	// signal the timer queue if this
+	// occurring during the expire call
+	// back
+	//	    
+    if (this == this->queue.pExpireTmr) {
+		this->queue.pExpireTmr = 0;
+	}
+	switch (this->curState) {
+	case statePending:
+		this->queue.pending.remove (*this);
+		break;
+	case stateExpired:
+		this->queue.expired.remove (*this);
+		break;
+	case stateIdle:
+		this->queue.idle.remove (*this);
+		break;
+	default:
+        errlogPrintf ("observed osiTimer is in undefined state?\n");
+        break;
+	}
+    this->curState = stateLimbo;
+    this->queue.mutex.unlock ();
 }
 
 //
@@ -91,9 +149,38 @@ osiTimer::~osiTimer()
 //
 void osiTimer::cancel ()
 {
-    this->lock ();
-    this->cleanup ();
-    this->unlock ();
+    if ( this->curState == stateLimbo ) {
+        return; // queue was destroyed
+    }
+
+    this->queue.mutex.lock ();
+
+	//
+	// signal the timer queue if this
+	// occurring during the expire call
+	// back
+	//	    
+    if (this == this->queue.pExpireTmr) {
+		this->queue.pExpireTmr = 0;
+	}
+	switch (this->curState) {
+	case statePending:
+		this->queue.pending.remove (*this);
+        this->queue.idle.add (*this);
+		break;
+	case stateExpired:
+		this->queue.expired.remove (*this);
+        this->queue.idle.add (*this);
+		break;
+	case stateIdle:
+		break;
+	default:
+        errlogPrintf ("observed osiTimer is in undefined state?\n");
+        break;
+	}
+
+    this->queue.mutex.unlock ();
+
     this->destroy ();
 }
 
@@ -103,9 +190,9 @@ void osiTimer::cancel ()
 // pull this timer out of the queue and reinstall
 // it with a new experation time
 //
-void osiTimer::reschedule (osiTimerQueue & queueIn)
+void osiTimer::reschedule ()
 {
-    this->reschedule (this->delay(), queueIn);
+    this->reschedule ( this->delay () );
 }
 
 //
@@ -114,46 +201,39 @@ void osiTimer::reschedule (osiTimerQueue & queueIn)
 // pull this timer out of the queue ans reinstall
 // it with a new experation time
 //
-void osiTimer::reschedule (double newDelay, osiTimerQueue & queueIn)
+void osiTimer::reschedule (double newDelay)
 {
-    this->lock ();
-    this->cleanup ();
-	this->arm (queueIn, newDelay);
-    this->unlock ();
-}
-
-//
-// osiTimer::cleanup ()
-// NOTE: osiTimer lock is applied externally because we must guarantee 
-// that the lock virtual function is not called by the destructor
-//
-void osiTimer::cleanup ()
-{
-    if (this->pQueue) {
-        this->pQueue->mutex.lock ();
-	    //
-	    // signal the timer queue if this
-	    // occurring during the expire call
-	    // back
-	    //	    
-        if (this == this->pQueue->pExpireTmr) {
-		    this->pQueue->pExpireTmr = 0;
-	    }
-	    switch (this->curState) {
-	    case statePending:
-		    this->pQueue->pending.remove (*this);
-		    break;
-	    case stateExpired:
-		    this->pQueue->expired.remove (*this);
-		    break;
-	    default:
-            break;
-	    }
-        this->pQueue = NULL;
-        this->curState = stateLimbo;
-
-        this->pQueue->mutex.unlock ();
+    if ( this->curState == stateLimbo ) {
+        return; // queue was destroyed
     }
+
+    this->queue.mutex.lock ();
+
+	//
+	// signal the timer queue if this
+	// occurring during the expire call
+	// back
+	//	    
+    if (this == this->queue.pExpireTmr) {
+		this->queue.pExpireTmr = 0;
+	}
+	switch (this->curState) {
+	case statePending:
+		this->queue.pending.remove (*this);
+		break;
+	case stateExpired:
+		this->queue.expired.remove (*this);
+		break;
+	case stateIdle:
+		this->queue.idle.remove (*this);
+		break;
+	default:
+        errlogPrintf ("observed osiTimer is in undefined state?\n");
+        break;
+	}
+    this->curState = stateLimbo;
+    this->arm (newDelay);
+    this->queue.mutex.unlock ();
 }
 
 //
@@ -161,13 +241,25 @@ void osiTimer::cleanup ()
 // NOTE: The osiTimer lock is properly applied externally to this routine
 // when it is needed.
 //
-void osiTimer::arm (osiTimerQueue &queueIn, double initialDelay)
+void osiTimer::arm (double initialDelay)
 {
 #	ifdef DEBUG
 	unsigned preemptCount=0u;
 #	endif
-	
-    queueIn.mutex.lock ();
+
+    this->queue.mutex.lock ();
+
+    //
+    // create manager thread on demand so we dont have threads hanging
+    // around that are not used
+    //
+    if ( this->queue.pMgrThread == NULL ) {
+        this->queue.pMgrThread = new osiTimerThread (this->queue, this->queue.mgrThreadPriority);
+        if ( this->queue.pMgrThread == NULL ) {
+            this->queue.mutex.unlock ();
+            throwWithLocation ( noMemory () );
+        }
+    }
 
 	//
 	// calculate absolute expiration time
@@ -182,20 +274,20 @@ void osiTimer::arm (osiTimerQueue &queueIn, double initialDelay)
 	//
 	// **** this should use a binary tree ????
 	//
-	tsDLIterBD<osiTimer> iter = queueIn.pending.last ();
+	tsDLIterBD<osiTimer> iter = this->queue.pending.last ();
 	while (1) {
 		if ( iter == tsDLIterBD<osiTimer>::eol () ) {
 			//
 			// add to the beginning of the list
 			//
-			queueIn.pending.push (*this);
+			this->queue.pending.push (*this);
 			break;
 		}
 		if ( iter->exp <= this->exp ) {
 			//
 			// add after the item found that expires earlier
 			//
-			queueIn.pending.insertAfter (*this, *iter);
+			this->queue.pending.insertAfter (*this, *iter);
 			break;
 		}
 #		ifdef DEBUG
@@ -205,7 +297,6 @@ void osiTimer::arm (osiTimerQueue &queueIn, double initialDelay)
 	}
 
 	this->curState = osiTimer::statePending;
-	this->pQueue = &queueIn;
 
 #	ifdef DEBUG
 	this->show (10u);
@@ -221,9 +312,9 @@ void osiTimer::arm (osiTimerQueue &queueIn, double initialDelay)
 		this->name(), initialDelay, (unsigned long)this, preemptCount);
 #	endif
 
-    queueIn.mutex.unlock ();
+    this->queue.mutex.unlock ();
 
-    queueIn.rescheduleEvent.signal ();
+    this->queue.rescheduleEvent.signal ();
 }
 
 //
@@ -250,14 +341,13 @@ void osiTimer::destroy ()
 //
 double osiTimer::delay () const
 {
-#   ifdef noExceptionsFromCXX
-        assert (0);
-#   else            
-        throw noDelaySpecified ();
-#   endif
-    return DBL_MAX;
+    throwWithLocation ( noDelaySpecified () );
+    return DBL_MAX; // never here
 }
 
+//
+// osiTimer::show()
+//
 void osiTimer::show (unsigned level) const
 {
 	osiTime	cur = osiTime::getCurrent ();
@@ -287,39 +377,48 @@ const char *osiTimer::name() const
 //
 double osiTimer::timeRemaining () const
 {
-	double remaining = this->exp - osiTime::getCurrent();
-	if (remaining>0.0) {
-		return remaining;
-	}
-	else {
-		return 0.0;
-	}
-}
+    double delay;
 
-//
-// osiTimer::lock ()
-// (defaults to one global lock for all timers)
-//
-void osiTimer::lock () const
-{
-    this->mutex.lock ();
-}
+    if ( this->curState == stateLimbo ) {
+        errlogPrintf ("time remaning fetched on a osiTimer with no queue?\n");
+        return DBL_MAX; // queue was destroyed
+    }
 
-//
-// osiTimer::unlock ()
-// (defaults to one global lock for all timers)
-//
-void osiTimer::unlock () const
-{
-    this->mutex.unlock ();
+    this->queue.mutex.lock ();
+    switch (this->curState) {
+    case statePending:
+        {
+	        double remaining = this->exp - osiTime::getCurrent();
+	        if ( remaining > 0.0 ) {
+		        delay = remaining;
+	        }
+	        else {
+		        delay = 0.0;
+	        }
+            break;
+        }
+    case stateIdle:
+        delay = DBL_MAX;
+        break;
+    case stateExpired:
+        delay = 0.0;
+        break;
+    default:
+        errlogPrintf ("saw osiTimer in undefined state\n");
+        delay = DBL_MAX;
+        break;
+    }
+    this->queue.mutex.unlock ();
+
+    return delay;
 }
 
 //
 // osiTimerQueue::osiTimerQueue ()
 //
 osiTimerQueue::osiTimerQueue (unsigned managerThreadPriority) :
-    osiThread ("osiTimerQueue", threadGetStackSize (threadStackMedium), managerThreadPriority),
-    pExpireTmr (0), inProcess (false), terminateFlag (false), exitFlag (false)
+    pExpireTmr (0), pMgrThread(0), mgrThreadPriority(managerThreadPriority), 
+    inProcess (false), terminateFlag (false), exitFlag (false)
 {
 }
 
@@ -330,21 +429,24 @@ osiTimerQueue::~osiTimerQueue()
 {
 	osiTimer *pTmr;
 
-    this->terminateFlag = true;
-    this->rescheduleEvent.signal ();
-    this->exitEvent.wait (0.1);
-    if ( ! this->exitFlag && ! this->isSuspended () ) {
-        static const unsigned maxCount = 25;
-        static const double delay = 0.25;
-        unsigned count = 0;
-        printf ("waiting %f seconds for timer queue to shut down", 
-            delay * maxCount);
-        while ( ! this->exitFlag && ! this->isSuspended () && count < 10) {
-            this->exitEvent.wait (delay);
-            printf (".");
-            count++;
+    if (this->pMgrThread) {
+        this->terminateFlag = true;
+        this->rescheduleEvent.signal ();
+        this->exitEvent.wait (0.1);
+        if ( ! this->exitFlag && ! this->pMgrThread->isSuspended () ) {
+            static const unsigned maxCount = 25;
+            static const double delay = 0.25;
+            unsigned count = 0;
+            printf ("waiting %f seconds for timer queue to shut down", 
+                delay * maxCount);
+            while ( ! this->exitFlag && ! this->pMgrThread->isSuspended () && count < 10) {
+                this->exitEvent.wait (delay);
+                printf (".");
+                count++;
+            }
+            printf ("\n");
         }
-        printf ("\n");
+        delete this->pMgrThread;
     }
 
     this->mutex.lock ();
@@ -367,17 +469,26 @@ osiTimerQueue::~osiTimerQueue()
 }
 
 //
-// osiTimerQueue::entryPoint ()
+// osiTimerThread::osiTimerThread ()
 //
-void osiTimerQueue::entryPoint ()
+osiTimerThread::osiTimerThread (osiTimerQueue &queueIn, unsigned priority) :
+    osiThread ("osiTimerQueue", threadGetStackSize (threadStackMedium), priority),
+        queue (queueIn)
 {
-    this->exitFlag = false;
-    while (!this->terminateFlag) {
-        this->process ();
-        this->rescheduleEvent.wait ( this->delayToFirstExpire () );
+}
+
+//
+// osiTimerThread::entryPoint ()
+//
+void osiTimerThread::entryPoint ()
+{
+    queue.exitFlag = false;
+    while (!queue.terminateFlag) {
+        queue.process ();
+        queue.rescheduleEvent.wait ( queue.delayToFirstExpire () );
     }
-    this->exitFlag = true; 
-    this->exitEvent.signal (); // no access to this ptr after this statement
+    queue.exitFlag = true; 
+    queue.exitEvent.signal (); // no access to queue after exitEvent signal
 }
 
 //
@@ -446,8 +557,9 @@ void osiTimerQueue::process ()
 	//
 	while ( ( pTmr = this->expired.get () ) ) {
 		
-		pTmr->curState = osiTimer::stateLimbo;
-		
+		pTmr->curState = osiTimer::stateIdle;
+		this->idle.add (*pTmr);
+
 #ifdef DEBUG
 		double diff = cur-pTmr->exp;
 		printf ("expired %lx for \"%s\" with error %f\n", 
@@ -463,10 +575,10 @@ void osiTimerQueue::process ()
 		pTmr->expire();
 		if ( this->pExpireTmr == pTmr ) {
 			if ( pTmr->again () ) {
-				pTmr->arm (*pTmr->pQueue, pTmr->delay());
+		        this->idle.remove (*pTmr);
+				pTmr->arm (pTmr->delay());
 			}
 			else {
-                pTmr->pQueue = NULL;
 				pTmr->destroy ();
 			}
 		}
@@ -512,11 +624,11 @@ class osiTimerForC : public osiTimer {
     const osiTimerJumpTable &jt;
     void * pPrivate;
 public:
-    osiTimerForC (const osiTimerJumpTable &jtIn, void *pPrivateIn);
+    osiTimerForC (const osiTimerJumpTable &jtIn, osiTimerQueue &queue, void *pPrivateIn);
 };
 
-osiTimerForC::osiTimerForC (const osiTimerJumpTable &jtIn, void *pPrivateIn) :
-    jt (jtIn), pPrivate (pPrivateIn) {}
+osiTimerForC::osiTimerForC (const osiTimerJumpTable &jtIn, osiTimerQueue &queue, void *pPrivateIn) :
+    osiTimer (queue), jt (jtIn), pPrivate (pPrivateIn) {}
 
 void osiTimerForC::expire ()
 {
@@ -543,18 +655,18 @@ void osiTimerForC::show (unsigned level) const
     (*this->jt.show) (this->pPrivate, level);
 }
 
-extern "C" epicsShareFunc osiTimerId epicsShareAPI osiTimerCreate (const osiTimerJumpTable *pjtIn, void *pPrivateIn)
+extern "C" epicsShareFunc osiTimerId epicsShareAPI osiTimerCreate (const osiTimerJumpTable *pjtIn, osiTimerQueueId queueIdIn, void *pPrivateIn)
 {
     assert (pjtIn);
-    return (osiTimerId) new osiTimerForC (*pjtIn, pPrivateIn);
+    assert (queueIdIn);
+    return (osiTimerId) new osiTimerForC (*pjtIn, *static_cast<osiTimerQueue *>(queueIdIn), pPrivateIn);
 }
 
-extern "C" epicsShareFunc void epicsShareAPI osiTimerArm  (osiTimerId tmrIdIn, osiTimerQueueId queueIdIn, double delay)
+extern "C" epicsShareFunc void epicsShareAPI osiTimerArm  (osiTimerId tmrIdIn, double delay)
 {
     osiTimerForC *pTmr = static_cast<osiTimerForC *>(tmrIdIn);
     assert (pTmr);
-    assert (queueIdIn);
-    pTmr->reschedule (delay, *static_cast<osiTimerQueue *>(queueIdIn));
+    pTmr->reschedule (delay);
 }
 
 extern "C" epicsShareFunc void epicsShareAPI osiTimerCancel (osiTimerId tmrIdIn)

@@ -113,11 +113,6 @@ static void ascarCallFunc(const iocshArgBuf *args)
     ascar(args[0].ival);
 }
 
-static struct iocshVarDef vardefs[] = {
-    {"asCaDebug", iocshArgInt,(void * const )pasCaDebug},
-    {0,iocshArgInt,0}
-};
-
 void epicsShareAPI asTestRegister(void)
 {
     iocshRegister(&asSetFilenameFuncDef,asSetFilenameCallFunc);
@@ -130,5 +125,4 @@ void epicsShareAPI asTestRegister(void)
     iocshRegister(&aspmemFuncDef,aspmemCallFunc);
     iocshRegister(&astacFuncDef,astacCallFunc);
     iocshRegister(&ascarFuncDef,ascarCallFunc);
-    iocshRegisterVariable(vardefs);
 }

@@ -15,6 +15,7 @@
 20jul95,ajk	Added "unsigned" types (see UNSIGNED token).
 11jul96,ajk	Added character constants (CHAR_CONST).
 13jan98,wfl	Added "down a level" handling of compound expressions
+09jun98,wfl	Permitted pre-processor "#" lines between state-sets
 ***************************************************************************/
 /*	SNC - State Notation Compiler.
  *	The general structure of a state program is:
@@ -218,7 +219,7 @@ state_set 	/* define a state set */
 				{ $$ = expression(E_SS, $2, $4, 0); }
 |	EXIT L_BRACKET stmt_list R_BRACKET
 				{ exit_code($3); $$ = 0; }
-
+|	pp_code			{ $$ = 0; }
 |	error { snc_err("state set"); }
 ;
 

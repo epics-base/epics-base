@@ -12,4 +12,5 @@ include $(CONFIG)/os/CONFIG.Common.solaris-sparc
 # CONFIG.Common.solaris-sparc
 
 OP_SYS_LDLIBS_8 = -lc
+OP_SYS_LDLIBS_9 = -lc
 

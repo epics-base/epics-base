@@ -1900,51 +1900,53 @@ void arrayTest ( chid chan, unsigned maxArrayBytes, unsigned interestLevel )
 void unequalServerBufferSizeTest ( const char * pName, unsigned interestLevel )
 {
     dbr_double_t *pRF, *pWF;
+    unsigned connections;
+    chid newChan;
     int status;
 
     showProgressBegin ( "unequalServerBufferSizeTest", interestLevel );
 
-    {
-        chid newChan;
+    /* this test must be run when no channels are connected */
+    connections = ca_get_ioc_connection_count ();
+    assert ( connections == 0u );
 
-        status = ca_create_channel ( pName, 0, 0, 0, & newChan );
-        assert ( status == ECA_NORMAL );
-        status = ca_pend_io ( 100.0 );
-        assert ( status == ECA_NORMAL );
+    status = ca_create_channel ( pName, 0, 0, 0, & newChan );
+    assert ( status == ECA_NORMAL );
+    status = ca_pend_io ( 100.0 );
+    assert ( status == ECA_NORMAL );
 
-        if ( ! ca_write_access ( newChan ) ) {
-            printf ( "skipping unequal buffer size test - no write access\n" );
-            status = ca_clear_channel ( newChan );
-            assert ( status == ECA_NORMAL );
-            return;
-        }
-
-        pRF = (dbr_double_t *) calloc ( ca_element_count (newChan), sizeof (*pRF) );
-        assert ( pRF != NULL );
-
-        pWF = (dbr_double_t *) calloc ( ca_element_count (newChan), sizeof (*pWF) );
-        assert ( pWF != NULL );
-
-        status = ca_array_get ( DBR_DOUBLE, ca_element_count ( newChan ), 
-                    newChan, pRF ); 
-        status = ca_pend_io ( 100.0 );
-        assert ( status == ECA_NORMAL );
+    if ( ! ca_write_access ( newChan ) ) {
+        printf ( "skipping unequal buffer size test - no write access\n" );
         status = ca_clear_channel ( newChan );
         assert ( status == ECA_NORMAL );
-
-        status = ca_create_channel ( pName, 0, 0, 0, &newChan );
-        assert ( status == ECA_NORMAL );
-        status = ca_pend_io ( 100.0 );
-        assert ( status == ECA_NORMAL );
-        status = ca_array_put ( DBR_DOUBLE, ca_element_count ( newChan ), 
-                    newChan, pWF ); 
-        status = ca_array_get ( DBR_DOUBLE, 1, 
-                    newChan, pRF ); 
-        status = ca_pend_io ( 100.0 );
-        assert ( status == ECA_NORMAL );
-        status = ca_clear_channel ( newChan );
-        assert ( status == ECA_NORMAL );
+        return;
     }
+
+    pRF = (dbr_double_t *) calloc ( ca_element_count (newChan), sizeof (*pRF) );
+    assert ( pRF != NULL );
+
+    pWF = (dbr_double_t *) calloc ( ca_element_count (newChan), sizeof (*pWF) );
+    assert ( pWF != NULL );
+
+    status = ca_array_get ( DBR_DOUBLE, ca_element_count ( newChan ), 
+                newChan, pRF ); 
+    status = ca_pend_io ( 100.0 );
+    assert ( status == ECA_NORMAL );
+    status = ca_clear_channel ( newChan );
+    assert ( status == ECA_NORMAL );
+
+    status = ca_create_channel ( pName, 0, 0, 0, &newChan );
+    assert ( status == ECA_NORMAL );
+    status = ca_pend_io ( 100.0 );
+    assert ( status == ECA_NORMAL );
+    status = ca_array_put ( DBR_DOUBLE, ca_element_count ( newChan ), 
+                newChan, pWF ); 
+    status = ca_array_get ( DBR_DOUBLE, 1, 
+                newChan, pRF ); 
+    status = ca_pend_io ( 100.0 );
+    assert ( status == ECA_NORMAL );
+    status = ca_clear_channel ( newChan );
+    assert ( status == ECA_NORMAL );
 
     free ( pRF );
     free ( pWF );
@@ -2413,7 +2415,6 @@ int acctst ( char *pName, unsigned interestLevel, unsigned channelCount,
     connections = ca_get_ioc_connection_count ();
     assert ( connections == 0u );
 
-    /* this test must be run when no channels are connected */
     unequalServerBufferSizeTest ( pName, interestLevel );
 
     status = ca_search ( pName, & chan );

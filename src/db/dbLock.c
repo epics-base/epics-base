@@ -126,7 +126,7 @@ STATIC void dbLockInitialize(void)
     dbLockIsInitialized = TRUE;
 }
 
-STATIC lockSet * allocLock(
+STATIC lockSet * allocLockSet(
     lockRecord *plockRecord, listType type,
     lockSetState state, epicsThreadId thread_id)
 {
@@ -137,8 +137,6 @@ STATIC lockSet * allocLock(
     if(plockSet) {
         ellDelete(&lockSetList[listTypeFree],&plockSet->node);
     } else {
-if(interruptAccept)
-printf("allocLock\n");
         plockSet = dbCalloc(1,sizeof(lockSet));
         plockSet->lock = epicsMutexMustCreate();
     }
@@ -227,6 +225,7 @@ void epicsShareAPI dbLockSetRecordLock(dbCommon *precord)
     }
     assert(plockSet->nWaiting == 0 && plockSet->nRecursion==0);
     assert(plockSet->type==listTypeScanLock);
+    assert(plockSet->state==lockSetStateRecordLock);
     ellDelete(&lockSetList[plockSet->type],&plockSet->node);
     ellAdd(&lockSetList[listTypeRecordLock],&plockSet->node);
     plockSet->type = listTypeRecordLock;
@@ -250,13 +249,7 @@ void epicsShareAPI dbScanLock(dbCommon *precord)
         switch(plockSet->state) {
             case lockSetStateFree:
                 status = epicsMutexTryLock(plockSet->lock);
-                if(status!=epicsMutexLockOK) {
-                    errlogPrintf("dbScanLock lockSetStateFree "
-                        "but epicsMutexTryLock failed. lock %p\n",
-                        plockSet->lock);
-                    epicsMutexShowAll(1,2);
-                    cantProceed("dbScanLock");
-                }
+                assert(status==epicsMutexLockOK);
                 plockSet->nRecursion = 1;
                 plockSet->thread_id = idSelf;
                 plockSet->precord = precord;
@@ -266,14 +259,6 @@ void epicsShareAPI dbScanLock(dbCommon *precord)
             case lockSetStateScanLock:
                 if(plockSet->thread_id!=idSelf) {
                     plockSet->nWaiting +=1;
-if(!plockSet->thread_id) {
-printf("lockSetStateScanLock thread_id 0 requestor %s\n",precord->name);
-printf(" type %d state %d nRecursion %d nWaiting %d owner %p",
-plockSet->type,plockSet->state,plockSet->nRecursion,plockSet->nWaiting,plockSet->precord);
-if(plockSet->precord)printf(" owner %s",plockSet->precord->name);
-printf("\n");
-}
-/*assert(plockSet->thread_id);*/
                     epicsMutexUnlock(lockSetModifyLock);
                     epicsMutexMustLock(plockSet->lock);
                     epicsMutexMustLock(lockSetModifyLock);
@@ -282,6 +267,7 @@ printf("\n");
                        epicsMutexUnlock(plockSet->lock);
                        goto getGlobalLock;
                     }
+                    assert(plockSet->state==lockSetStateScanLock);
                     plockSet->nRecursion = 1;
                     plockSet->thread_id = idSelf;
                     plockSet->precord = precord;
@@ -294,7 +280,6 @@ printf("\n");
                 /*Only recursive locking is permitted*/
                 if((plockSet->nRecursion==0) || (plockSet->thread_id!=idSelf))
                     goto getGlobalLock;
-printf("lockSetStateRecordLock %s\n",precord->name);
                 plockSet->nRecursion += 1;
                 epicsMutexUnlock(lockSetModifyLock);
                 return;
@@ -312,14 +297,13 @@ void epicsShareAPI dbScanUnlock(dbCommon *precord)
 {
     lockRecord	*plockRecord = precord->lset;
     lockSet	*plockSet;
-epicsThreadId idSelf = epicsThreadGetIdSelf();
 
     assert(plockRecord);
     epicsMutexMustLock(lockSetModifyLock);
     plockSet = plockRecord->plockSet;
     assert(plockSet);
-assert(idSelf==plockSet->thread_id);
-assert(plockSet->nRecursion>=1);
+    assert(epicsThreadGetIdSelf()==plockSet->thread_id);
+    assert(plockSet->nRecursion>=1);
     plockSet->nRecursion -= 1;
     if(plockSet->nRecursion==0) {
         plockSet->thread_id = 0;
@@ -374,7 +358,7 @@ void epicsShareAPI dbLockInitRecords(dbBase *pdbbase)
             if(!(precord->name[0])) continue;
             plockRecord = precord->lset;
             if(!plockRecord->plockSet) 
-                allocLock(plockRecord,listTypeScanLock,lockSetStateFree,0);
+                allocLockSet(plockRecord,listTypeScanLock,lockSetStateFree,0);
             for(link=0; link<pdbRecordType->no_links; link++) {
                 DBADDR	*pdbAddr;
         
@@ -443,6 +427,7 @@ void epicsShareAPI dbLockSetSplit(dbCommon *psource)
     DBLINK	*plink;
     int         indlockRecord,nlockRecords;
     lockRecord  **paplockRecord;
+    epicsThreadId idself = epicsThreadGetIdSelf();
     
 
     plockRecord = psource->lset;
@@ -455,7 +440,6 @@ void epicsShareAPI dbLockSetSplit(dbCommon *psource)
     nlockRecords = ellCount(&plockSet->lockRecordList);
     paplockRecord = dbCalloc(nlockRecords,sizeof(lockRecord*));
     epicsMutexMustLock(lockSetModifyLock);
-    indlockRecord=0;
     plockRecord = (lockRecord *)ellFirst(&plockSet->lockRecordList);
     for(indlockRecord=0; indlockRecord<nlockRecords; indlockRecord++) {
         pnext = (lockRecord *)ellNext(&plockRecord->node);
@@ -474,15 +458,11 @@ void epicsShareAPI dbLockSetSplit(dbCommon *psource)
         plockRecord = paplockRecord[indlockRecord];
         epicsMutexMustLock(lockSetModifyLock);
         if(!plockRecord->plockSet) {
-            allocLock(plockRecord,listTypeRecordLock,lockSetStateRecordLock,
-                epicsThreadGetIdSelf());
+            allocLockSet(plockRecord,listTypeRecordLock,
+                lockSetStateRecordLock,idself);
         }
         precord = plockRecord->precord;
         epicsMutexUnlock(lockSetModifyLock);
-        if(!(precord->name[0])) {
-            plockRecord = pnext;
-            continue;
-        }
         pdbRecordType = precord->rdes;
     	for(link=0; link<pdbRecordType->no_links; link++) {
             DBADDR    *pdbAddr;
@@ -550,7 +530,6 @@ long epicsShareAPI dblsr(char *recordname,int level)
             if(level<=1) continue;
             for(link=0; (link<pdbRecordType->no_links) ; link++) {
                 DBADDR	*pdbAddr;
-        
                 pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->link_ind[link]];
                 plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
                 if(plink->type != DB_LINK) continue;

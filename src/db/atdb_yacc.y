@@ -112,7 +112,7 @@ words:
 	else if((p=strstr($2,".PP.NMS"))) {p[0]=' ';p[3]=' ';}
 	else if((p=strstr($2,".NPP.MS"))) {p[0]=' ';p[4]=' ';}
 	else if((p=strstr($2,".NPP.NMS"))) {p[0]=' ';p[4]=' ';}
-	else if(strlen(curr_value)>0) { strcat(curr_value," "); }
+	else if(strlen(curr_value)>(size_t)0) { strcat(curr_value," "); }
 	strcat(curr_value,$2);
 }
 	;

@@ -120,7 +120,7 @@ if (strcmp(dbl_option,"-1") == 0)
 	ntype = dbl_dbGetRecTypes(pdbbase);
 
 else {
-	if (strlen(dbl_option) > 1) DBL_OPTION = 2;
+	if (strlen(dbl_option) > (size_t)1) DBL_OPTION = 2;
 	else if (strcmp(dbl_option,"1") == 0) DBL_OPTION = 1; 
 	else if (strcmp(dbl_option,"2") == 0) DBL_OPTION = 3; 
 	else DBL_OPTION = 0;

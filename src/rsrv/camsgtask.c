@@ -290,7 +290,7 @@ FAST int 		sock;
 			}
 			break;
 		}
-		else if(nchars<=0){
+		else if(nchars<0){
 			long	anerrno;
 
 			anerrno = errnoGet();

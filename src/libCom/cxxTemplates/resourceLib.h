@@ -226,7 +226,7 @@ private:
 #if defined(__GNUC__) && ( __GNUC__<2 || (__GNUC__==2 && __GNUC__<8) )
 template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
 #else
-template <class T, unsigned MIN_INDEX_WIDTH=4, unsigned MAX_ID_WIDTH = sizeof(T)*CHAR_BIT>
+template <class T, unsigned MIN_INDEX_WIDTH=4u, unsigned MAX_ID_WIDTH = sizeof(T)*CHAR_BIT>
 #endif
 class intId {
 public:
@@ -250,11 +250,8 @@ protected:
 // 
 // NOTE: ITEM must public inherit from chronIntIdRes <ITEM>
 //
-#if defined(__GNUC__) && ( __GNUC__<2 || (__GNUC__==2 && __GNUC__<8) )
-typedef intId<unsigned, 8, sizeof(unsigned)*CHAR_BIT> chronIntId;
-#else
-typedef intId<unsigned, 8> chronIntId;
-#endif
+typedef intId<unsigned, 8u, sizeof(unsigned)*CHAR_BIT> chronIntId;
+
 template <class ITEM>
 class chronIntIdResTable : public resTable<ITEM, chronIntId> {
 public:

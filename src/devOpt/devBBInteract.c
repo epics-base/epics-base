@@ -81,6 +81,8 @@ static struct dpvtBitBusHead	adpvt[LIST_SIZE+1];	/* last one is used for the 'F'
 
 /* declare other required variables used by more than one routine */
 
+int	bbMsgDly = 0;
+
 extern int bbDebug;
 static int	replyIsBack;
 
@@ -304,17 +306,23 @@ sendMsg()
 
   printf("\nEnter Message # to Send (1 thru 5) > ");
   if (!getInt(&msgNum))
-    return;             /* if no entry, return to main menu */
+    return(ERROR);             /* if no entry, return to main menu */
   if((msgNum >= LIST_SIZE) || (msgNum < 0))
-    return;
+    return(ERROR);
 
   adpvt[msgNum].ageLimit = 10;	/* need to reset each time */
-  (*(drvBitBus.qReq))(&(adpvt[msgNum]), BB_Q_HIGH); /* queue the msg */
+  if ((*(drvBitBus.qReq))(&(adpvt[msgNum]), BB_Q_HIGH) != ERROR)
+  {
+    FASTLOCK(&msgReply);	/* wait for response to return */
 
-  FASTLOCK(&msgReply);	/* wait for response to return */
+    taskDelay(bbMsgDly);
 
-  printf("response message:\n");
-  showBbMsg(&(adpvt[msgNum].rxMsg));
+    printf("response message:\n");
+    showBbMsg(&(adpvt[msgNum].rxMsg));
+    return(OK);
+  }
+  else
+    return(ERROR);
 }
 
 static int
@@ -530,20 +538,24 @@ downLoadCode()
   
         pdpvt->ageLimit = 30;  /* need to reset each time */
 
-        (*(drvBitBus.qReq))(pdpvt, BB_Q_LOW); /* queue the msg */
-        FASTLOCK(&msgReply);  		/* wait for last message to finish */
-  
-	*((unsigned short int *)(pdpvt->txMsg.data)) += msgBytes-2;	/* ready for next message */
-
-        totalBytes += msgBytes-2;
-        totalMsg++;
-        msgBytes=2;
-
-	if (pdpvt->rxMsg.cmd != 0)
+        if ((*(drvBitBus.qReq))(pdpvt, BB_Q_LOW) != ERROR)
 	{
-	  printf("Bad message response status 0x%02.2X\n", pdpvt->rxMsg.cmd);
+          FASTLOCK(&msgReply);  		/* wait for last message to finish */
+    
+	  *((unsigned short int *)(pdpvt->txMsg.data)) += msgBytes-2;	/* ready for next message */
+  
+          totalBytes += msgBytes-2;
+          totalMsg++;
+          msgBytes=2;
+
+	  if (pdpvt->rxMsg.cmd != 0)
+	  {
+	    printf("Bad message response status 0x%02.2X\n", pdpvt->rxMsg.cmd);
+	    status = ERROR;
+	  }
+        }
+	else
 	  status = ERROR;
-	}
       }
     }
   }

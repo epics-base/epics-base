@@ -523,7 +523,7 @@ static void print_returned(type,pbuffer,count)
 	{
 		struct dbr_sts_long *pvalue
 		  = (struct dbr_sts_long *)pbuffer;
-		long *plong = &pvalue->value;
+		dbr_long_t *plong = &pvalue->value;
 		printf("%2d %2d",pvalue->status,pvalue->severity);
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,plong++){
@@ -620,7 +620,7 @@ static void print_returned(type,pbuffer,count)
 	{
 		struct dbr_time_long *pvalue
 		  = (struct dbr_time_long *)pbuffer;
-		long *plong = &pvalue->value;
+		dbr_long_t *plong = &pvalue->value;
 		printf("%2d %2d",pvalue->status,pvalue->severity);
 		printf("\tTimeStamp: %lx %lx",
 			pvalue->stamp.secPastEpoch, pvalue->stamp.nsec);
@@ -720,7 +720,7 @@ static void print_returned(type,pbuffer,count)
 	{
 		struct dbr_gr_long *pvalue
 		  = (struct dbr_gr_long *)pbuffer;
-		long *plong = &pvalue->value;
+		dbr_long_t *plong = &pvalue->value;
 		printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
 			pvalue->units);
 		printf("\n\t%8d %8d %8d %8d %8d %8d",
@@ -821,7 +821,7 @@ static void print_returned(type,pbuffer,count)
 	{
 		struct dbr_ctrl_long *pvalue
 		  = (struct dbr_ctrl_long *)pbuffer;
-		long *plong = &pvalue->value;
+		dbr_long_t *plong = &pvalue->value;
 		printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
 			pvalue->units);
 		printf("\n\t%8d %8d %8d %8d %8d %8d",

@@ -121,12 +121,13 @@ pvExistReturn directoryServer::pvExistTest
 	// (for compatibility with EPICS
 	// function block database).
 	//
-	pStr = pPVName;
-	do {
+	pLastStr = pPVName;
+	pStr = strstr (pPVName, ".");
+	while (pStr) {
 		pLastStr = pStr;
+		pStr += 1;
 		pStr = strstr (pStr, ".");
 	}
-	while (pStr);
 
 	if (pLastStr==pPVName) {
 		pPVE = this->stringResTbl.lookup(id);

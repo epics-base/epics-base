@@ -27,8 +27,13 @@
  *              Argonne National Laboratory
  *
  *
+<<<<<<< caServer.cc
+=======
  * History
  * $Log$
+ * Revision 1.10  1999/01/28 20:18:14  jhill
+ * removed implicit int
+ *
  * Revision 1.9  1998/12/19 00:04:49  jhill
  * renamed createPV() to pvAttach()
  *
@@ -57,6 +62,7 @@
  * ca server installation
  *
  *
+>>>>>>> 1.8
  */
 
 #include "dbMapper.h"		// ait to dbr types 
@@ -78,10 +84,9 @@
 	// functions into "templInst.o"
 	//
 	template class resTable <casEventMaskEntry, stringId>;
-	template class resTable <casRes, uintId>;
+	template class resTable <casRes, chronIntId>;
 #endif
 
-
 //
 // caServer::caServer()
 //

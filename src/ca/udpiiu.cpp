@@ -214,6 +214,7 @@ void udpiiu::recvMsg ()
         osiSocklen_t src_size = sizeof ( src );
         recvfrom ( this->sock, & peek, sizeof ( peek ), MSG_PEEK,
                             &src.sa, &src_size );
+        status = 0;
     }
 
     {

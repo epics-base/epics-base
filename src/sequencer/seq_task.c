@@ -8,6 +8,9 @@
 	state sets.
 
 	ENVIRONMENT: VxWorks
+
+	HISTORY:
+10dec91,ajk	removed "if ( .... );" bug in function sequencer().
 ***************************************************************************/
 
 #include	"seq.h"
@@ -62,7 +65,7 @@ char		*ptask_name;	/* Parent task name */
 	seq_connect(sp_ptr);
 
 	/* Create the state set tasks */
-	if (strlen(ptask_name) > TASK_NAME_SIZE);
+	if (strlen(ptask_name) > TASK_NAME_SIZE)
 		ptask_name[TASK_NAME_SIZE] = 0;
 
 	ss_ptr = sp_ptr->sscb + 1;

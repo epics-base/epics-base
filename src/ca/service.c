@@ -39,6 +39,7 @@
 /*	042892	joh	No longer checking the status from free() 	*/
 /*			since it varies from os to os			*/
 /*	040592	joh	took out extra cac_send_msg() calls		*/
+/*	072792	joh	better messages					*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -89,7 +90,7 @@ void 		reconnect_channel();
 void		ca_request_event();
 int		client_channel_exists();
 
-#define BUFSTAT 	ca_printf("expected %d left %d\n",msgcnt,*pbufcnt);
+#define BUFSTAT 	ca_printf("CAC: expected %d left %d\n",msgcnt,*pbufcnt);
 
 
 
@@ -122,7 +123,7 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 
 	while (*pbufcnt >= sizeof(*hdrptr)) {
 #ifdef DEBUG
-		ca_printf("bytes left %d, pending msgcnt %d\n",
+		ca_printf("CAC: bytes left %d, pending msgcnt %d\n",
 		       *pbufcnt,
 		       pndrecvcnt);
 #endif
@@ -135,7 +136,7 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 		t_count = ntohs(hdrptr->m_count);
 
 #ifdef DEBUG
-		ca_printf("MSG: cmd:%d type:%d cnt:%d npost:%d avail:%x\n",
+		ca_printf("CAC: MSG=> cmd:%d type:%d cnt:%d npost:%d avail:%x\n",
 		       t_cmmd,
 		       t_type,
 		       t_count,
@@ -410,7 +411,7 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 		case REPEATER_CONFIRM:
 			ca_static->ca_repeater_contacted = TRUE;
 #ifdef DEBUG
-			ca_printf("repeater confirmation recv\n");
+			ca_printf("CAC: repeater confirmation recv\n");
 #endif
 			break;
 
@@ -540,7 +541,7 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			break;
 		}
 		default:
-			ca_printf("post_msg(): Corrupt cmd in msg %x\n", 
+			ca_printf("CAC: post_msg(): Corrupt cmd in msg %x\n", 
 				t_cmmd);
 
 			*pbufcnt = 0;
@@ -584,9 +585,9 @@ struct in_addr			*pnet_addr;
 				&newiocix
 				);
 	if(status != ECA_NORMAL){
-	  	ca_printf("... %s ...\n", ca_message(status));
-	 	ca_printf("for %s on %s\n", chan+1, host_from_addr(pnet_addr));
-	 	ca_printf("ignored search reply- proceeding\n");
+	  	ca_printf("CAC: ... %s ...\n", ca_message(status));
+	 	ca_printf("CAC: for %s on %s\n", chan+1, host_from_addr(pnet_addr));
+	 	ca_printf("CAC: ignored search reply- proceeding\n");
 	  	return;
 	}
 

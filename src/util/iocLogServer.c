@@ -47,6 +47,9 @@
  * .09 050494 pg        HPUX port changes.
  * .10 021694 joh	ANSI C	
  * $Log$
+ * Revision 1.16  1995/11/08  23:48:26  jhill
+ * improvents for better client reconnect
+ *
  */
 
 static char	*pSCCSID = "@(#)iocLogServer.c	1.9\t05/05/94";
@@ -65,6 +68,10 @@ static char	*pSCCSID = "@(#)iocLogServer.c	1.9\t05/05/94";
 #include	<sys/ioctl.h>
 #include	<netinet/in.h>
 #include        <netdb.h>
+
+#   ifdef SOLARIS
+#       include <sys/filio.h>
+#   endif
 
 #include 	<bsdProto.h>
 

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  1998/07/08 15:38:03  jhill
+ * fixed lost monitors during flow control problem
+ *
  * Revision 1.5  1998/04/14 00:50:00  jhill
  * cosmetic
  *
@@ -78,18 +81,18 @@ casChannelI::casChannelI(const casCtx &ctx, casChannel &chanAdapter) :
 //
 casChannelI::~casChannelI()
 {
-	casChanDelEv		*pCDEV;
-	caStatus		status;
-
+	casChanDelEv *pCDEV;
+	caStatus status;
+	
 	this->lock();
-
-        //
-        // cancel any pending asynchronous IO 
-        //
+	
+	//
+	// cancel any pending asynchronous IO 
+	//
 	tsDLIterBD<casAsyncIOI> iterAIO(this->ioInProgList.first());
 	const tsDLIterBD<casAsyncIOI> eolAIO;
 	tsDLIterBD<casAsyncIOI> tmpAIO;
-        while ( iterAIO!=eolAIO ) {
+	while ( iterAIO!=eolAIO ) {
 		//
 		// destructor removes from this list
 		//
@@ -97,16 +100,16 @@ casChannelI::~casChannelI()
 		++tmpAIO;
 		iterAIO->destroy();
 		iterAIO = tmpAIO;
-        }
-
+	}
+	
 	//
 	// cancel the monitors 
 	//
 	tsDLIterBD<casMonitor> iterMon(this->monitorList.first());
 	const tsDLIterBD<casMonitor> eolMon;
 	tsDLIterBD<casMonitor> tmpMon;
-        while ( iterMon!=eolMon ) {
-        	casMonitor *pMonitor;
+	while ( iterMon!=eolMon ) {
+		casMonitor *pMonitor;
 		//
 		// destructor removes from this list
 		//
@@ -114,15 +117,15 @@ casChannelI::~casChannelI()
 		++tmpMon;
 		delete pMonitor;
 		iterMon = tmpMon;
-        }
-
+	}
+	
 	this->client.removeChannel(*this);
-
-        //
-        // force PV delete if this is the last channel attached
-        //
-        this->pv.deleteSignal();
-
+	
+	//
+	// force PV delete if this is the last channel attached
+	//
+	this->pv.deleteSignal();
+	
 	//
 	// If we are not in the process of deleting the client
 	// then inform the client that we have deleted its 
@@ -152,7 +155,7 @@ casChannelI::~casChannelI()
 			}
 		}
 	}
-
+	
 	this->unlock();
 }
 

@@ -3053,6 +3053,66 @@ int modOnly;
     dbFinishEntry(pdbentry);
 }
 
+static char *bus[VXI_IO+1] = {"","","VME","CAMAC","AB",
+	"GPIB","BITBUS","","","","","","INST","BBGPIB","VXI"};
+#ifdef __STDC__
+void dbReportDeviceConfig(DBBASE *pdbbase,FILE *report)
+#else
+void dbReportDeviceConfig(pdbbase,report)
+DBBASE	*pdbbase;
+FILE	*report;
+#endif /*__STDC__*/
+{
+    DBENTRY	dbentry;
+    DBENTRY	*pdbentry=&dbentry;
+    long	status;
+    char	busName[40];
+    char	linkValue[40];
+    char	dtypValue[40];
+    char	cvtValue[40];
+    int		ilink,nlinks;
+    struct link	*plink;
+
+    dbInitEntry(pdbbase,pdbentry);
+    status = dbFirstRecdes(pdbentry);
+    while(!status) {
+	status = dbFirstRecord(pdbentry);
+	while(!status) {
+	    nlinks = dbGetNLinks(pdbentry);
+	    for(ilink=0; ilink<nlinks; ilink++) {
+		status = dbGetLinkField(pdbentry,ilink);
+		if(status || dbGetLinkType(pdbentry)!=DCT_LINK_DEVICE) continue;
+		plink = pdbentry->pfield;
+		strcpy(busName,bus[plink->type]);
+		if(strlen(busName)==0) continue;
+		strcpy(linkValue,dbGetString(pdbentry));
+		status = dbFindField(pdbentry,"DTYP");
+		if(status) break;
+		strcpy(dtypValue,dbGetString(pdbentry));
+		status = dbFindField(pdbentry,"LINR");
+		if(status || *((short *)pdbentry->pfield) <=1 ) {
+			cvtValue[0] = 0;
+		} else {
+			strcpy(cvtValue,"cvt(");
+			status = dbFindField(pdbentry,"EGUL");
+			if(!status) strcat(cvtValue,dbGetString(pdbentry));
+			status = dbFindField(pdbentry,"EGUH");
+			if(!status) strcat(cvtValue,dbGetString(pdbentry));
+			strcat(cvtValue,")");
+		}
+		fprintf(report,"%-8s %-20s %-20s %-20s %-s\n",
+			busName,linkValue,dtypValue,
+			dbGetRecordName(pdbentry),cvtValue);
+		break;
+	    }
+	    status = dbNextRecord(pdbentry);
+	}
+	status = dbNextRecdes(pdbentry);
+    }
+    dbFinishEntry(pdbentry);
+    return;
+}
+
 /* Read/Write routines*/
 /* Loads self defining records */
 

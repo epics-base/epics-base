@@ -59,6 +59,10 @@
  *
  *
  * $Log$
+ * Revision 1.4  1995/07/31  19:44:18  winans
+ * Changed the parameter table and associated support routines to support
+ * buffer length specifications of size long instead of short.
+ *
  * Revision 1.3  1995/04/25  15:32:23  winans
  * Changed name of HiDEOS link configuration command/function.
  *
@@ -122,7 +126,7 @@
 #include "drvBitBusInterface.h"
 #include "drvGpib.h"
 
-#define STATIC /* static */
+#define STATIC  static 
 
 long	reportGpib(void);
 /*STATIC*/ long	initGpib(void);

@@ -47,11 +47,16 @@ tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ ) // X aCC 361
     if ( this->responsePending ) {
         if ( this->iiu.bytesArePendingInOS() ) {
             this->cacRef.printf ( 
-    "The CA client library is disconnecting because a CA server isnt responding\n" );
+    "The CA client library's server inactivity timer initiated server disconnect\n" );
             this->cacRef.printf ( 
-    "when there are incoming messages pending probably because the application\n" );
+    "despite the fact that messages from this server are pending for processing in\n" );
             this->cacRef.printf ( 
-    "isnt properly scheduled.\n" );
+    "the client library. Here are some possible causes of the unnecessary disconnect:\n" );
+            this->cacRef.printf ( 
+    "o ca_pend_event() or ca_poll() have not been called for %f seconds\n", 
+                this->period  );
+            this->cacRef.printf ( 
+    "o application is blocked in a callback from the client library\n" );
         }
         this->cancel ();
 #       ifdef DEBUG

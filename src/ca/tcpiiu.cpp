@@ -119,8 +119,9 @@ unsigned tcpiiu::sendBytes ( const void *pBuf,
         else {
             int localError = SOCKERRNO;
 
+            // winsock indicates disconnect by returniing zero here
             if ( status == 0 ) {
-                this->cleanShutdown ();
+                this->state = iiu_disconnected;
                 nBytes = 0u;
                 break;
             }
@@ -139,7 +140,7 @@ unsigned tcpiiu::sendBytes ( const void *pBuf,
                 this->printf ( "CAC: unexpected TCP send error: %s\n", SOCKERRSTR (localError) );
             }
 
-            this->cleanShutdown ();
+            this->state = iiu_disconnected;
             nBytes = 0u;
             break;
         }
@@ -164,11 +165,12 @@ unsigned tcpiiu::recvBytes ( void *pBuf, unsigned nBytesInBuf )
         int localErrno = SOCKERRNO;
 
         if ( status == 0 ) {
-            this->cleanShutdown ();
+            this->state = iiu_disconnected;
             return 0u;
         }
 
         if ( localErrno == SOCK_SHUTDOWN ) {
+            this->state = iiu_disconnected;
             return 0u;
         }
 
@@ -177,10 +179,12 @@ unsigned tcpiiu::recvBytes ( void *pBuf, unsigned nBytesInBuf )
         }
         
         if ( localErrno == SOCK_ECONNABORTED ) {
+            this->state = iiu_disconnected;
             return 0u;
         }
 
         if ( localErrno == SOCK_ECONNRESET ) {
+            this->state = iiu_disconnected;
             return 0u;
         }
 
@@ -260,15 +264,46 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
         // file manager call backs works correctly. This does not 
         // appear to impact performance.
         //
-        unsigned nBytesIn;
-        if ( piiu->preemptiveCallbackEnable ) {
-            nBytesIn = pComBuf->fillFromWire ( *piiu );
+        // We also use select() here because shutdown() does not
+        // unblock a thread in recv() on WIN32 and probably also on
+        // vxWorks. This is a problem even if preemptive callbacks
+        // are enabled.
+        //
+        while ( true ) {
+            fd_set recvInterest;
+            struct timeval tmo;
+            tmo.tv_sec = 5.0;   // seconds
+            tmo.tv_usec = 0.0;  // micro seconds
+            FD_ZERO ( & recvInterest );
+            FD_SET ( piiu->sock, & recvInterest );
+            int status = select ( piiu->sock + 1, 
+                & recvInterest, 0, 0, & tmo );
+            if ( piiu->state != iiu_connected ) {
+                break;
+            }
+            if ( status < 0 ) {
+                int localErrno = SOCKERRNO;
+                if ( localErrno == SOCK_EINTR ) {
+                    continue;
+                }
+                else if ( localErrno == SOCK_EBADF ) {
+                    piiu->state = iiu_disconnected;
+                    break;
+                }
+                else {
+                    errlogPrintf ( "Select error was %s\n",
+                        SOCKERRSTR ( localErrno ) );
+                    epicsThreadSleep ( 1.0 );
+                    continue;
+                }
+            }
+            else if ( status == 1 ) {
+                break;
+            }
         }
-        else {
-            char oneByte;
-            ::recv ( piiu->sock, & oneByte, 
-                sizeof ( oneByte ), MSG_PEEK );
-            nBytesIn = 0u;
+
+        if ( piiu->state != iiu_connected ) {
+            break;
         }
 
         // only one recv thread at a time may call callbacks
@@ -276,11 +311,11 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
 
         osiSockIoctl_t bytesPending = 0;
         do {
+            unsigned nBytesIn = pComBuf->fillFromWire ( *piiu );
             if ( nBytesIn == 0u ) {
-                nBytesIn = pComBuf->fillFromWire ( *piiu );
-                if ( nBytesIn == 0u ) {
-                    break;
-                }
+                // outer loop checks to see if state is connected
+                // ( properly set by fillFromWire() )
+                break;
             }
 
             piiu->recvQue.pushLastComBufReceived ( *pComBuf );
@@ -342,8 +377,7 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
 tcpiiu::tcpiiu ( cac &cac, double connectionTimeout, 
         epicsTimerQueue &timerQueue, const osiSockAddr &addrIn, 
         unsigned minorVersion, class bhe &bheIn, 
-        ipAddrToAsciiEngine &engineIn,
-        bool preemptiveCallbackEnableIn ) :
+        ipAddrToAsciiEngine &engineIn ) :
     netiiu ( &cac ),
     recvDog ( *this, connectionTimeout, timerQueue ),
     sendDog ( *this, connectionTimeout, timerQueue ),
@@ -368,8 +402,7 @@ tcpiiu::tcpiiu ( cac &cac, double connectionTimeout,
     msgHeaderAvailable ( false ),
     sockCloseCompleted ( false ),
     earlyFlush ( false ),
-    recvProcessPostponedFlush ( false ),
-    preemptiveCallbackEnable ( preemptiveCallbackEnableIn )
+    recvProcessPostponedFlush ( false )
 {
     if ( ! this->pCurData ) {
         throw std::bad_alloc ();
@@ -480,7 +513,8 @@ void tcpiiu::connect ()
      * attempt to connect to a CA server
      */
     this->sendDog.start ();
-    while ( ! this->sockCloseCompleted ) {
+
+    while ( true ) {
 
         int status = ::connect ( this->sock, &this->addr.sa, sizeof ( addr.sa ) );
 
@@ -508,9 +542,7 @@ void tcpiiu::connect ()
                 this->sendDog.cancel ();
                 return;
             }
-            else {
-                continue;
-            }
+            continue;
         }
         else if ( errnoCpy == SOCK_SHUTDOWN ) {
             this->sendDog.cancel ();
@@ -532,9 +564,14 @@ void tcpiiu::connect ()
 void tcpiiu::cleanShutdown ()
 {
     epicsAutoMutex autoMutex ( this->pCAC()->mutexRef() );
-
     if ( this->state == iiu_connected || this->state == iiu_connecting ) {
-        int status = ::shutdown ( this->sock, SD_BOTH );
+        int status;
+        /*
+         * on winsock and probably vxWorks shutdown() does not
+         * unblock a thread in recv() so we use close and introduce
+         * some complexity because we must unregister the fd early
+         */
+        status = shutdown ( this->sock, SD_BOTH );
         if ( status ) {
             errlogPrintf ("CAC TCP socket shutdown error was %s\n", 
                 SOCKERRSTR (SOCKERRNO) );
@@ -551,8 +588,8 @@ void tcpiiu::cleanShutdown ()
         else {
             this->state = iiu_disconnected;
         }
+        this->sendThreadFlushEvent.signal ();
     }
-    this->sendThreadFlushEvent.signal ();
 }
 
 /*
@@ -574,27 +611,8 @@ void tcpiiu::forcedShutdown ()
             errlogPrintf ( "CAC TCP socket linger set error was %s\n", 
                 SOCKERRSTR (SOCKERRNO) );
         }
-
-        status = ::shutdown ( this->sock, SD_BOTH );
-        if ( status ) {
-            errlogPrintf ("CAC TCP socket shutdown error was %s\n", 
-                SOCKERRSTR (SOCKERRNO) );
-            status = socket_close ( this->sock );
-            if ( status ) {
-                errlogPrintf ("CAC TCP socket close error was %s\n", 
-                    SOCKERRSTR (SOCKERRNO) );
-            }
-            else {
-                this->state = iiu_disconnected;
-                this->sockCloseCompleted = true;
-            }
-        }
-        else { 
-            this->state = iiu_disconnected;
-        }
+        this->cleanShutdown ();
     }
-
-    this->sendThreadFlushEvent.signal ();
 }
 
 //

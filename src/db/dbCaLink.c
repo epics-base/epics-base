@@ -1974,7 +1974,7 @@ struct output_pvar *op;
 *
 * Description:
 *     Queues a monitor on a remote source process input variable and registers 
-* my_event_handler() as the event hanlder by calling ca_add_event().
+* my_event_handler() as the event hanlder by calling ca_add_array_event().
 *
 * Input:
 *     struct input_pvar *pi     pointer to input pvar structure to estab monitor
@@ -1988,7 +1988,7 @@ struct output_pvar *op;
 *     S_dbCa_ECA_BADTYPE  - ECA_BADTYPE
 *     S_dbCa_ECA_ALLOCMEM - ECA_ALLOCMEM
 *     S_dbCa_ECA_ADDFAIL  - ECA_ADDFAIL
-*     S_dbCa_unknownECA   - unknown rc from ca_add_event()
+*     S_dbCa_unknownECA   - unknown rc from ca_add_array_event()
 *
 * Notes: None.
 *
@@ -2005,8 +2005,9 @@ long rc;
     if (pi)
     {
 
-	status = ca_add_event((chtype) pi->dest_old_dbr_sts_type,
-		    pi->cid, my_event_handler, pi, (evid *) NULL);
+	status = ca_add_array_event((chtype) pi->dest_old_dbr_sts_type,
+		pi->dest_nelements,
+		pi->cid, my_event_handler, pi,0.0,0.0,0.0, (evid *) NULL);
 
 	switch (status)
 	{

@@ -15,6 +15,7 @@ INC += caProto.h
 INC += db_access.h
 INC += addrList.h
 INC += cacIO.h
+INC += caDiagnostics.h
 
 LIBSRCS += cacChannel.cpp
 LIBSRCS += cacChannelNotify.cpp

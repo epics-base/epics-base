@@ -35,10 +35,12 @@ epicsTimerNotify::expireStatus tcpRecvWatchdog::expire ( const epicsTime & /* cu
 {
     if ( this->responsePending ) {
         this->cancel ();
-        char hostName[128];
-        this->iiu.hostName ( hostName, sizeof (hostName) );
-        this->iiu.printf ( "CA server \"%s\" unresponsive after %g inactive sec - disconnecting.\n", 
-            hostName, this->period );
+#       ifdef DEBUG
+            char hostName[128];
+            this->iiu.hostName ( hostName, sizeof (hostName) );
+            debugPrintf ( ( "CA server \"%s\" unresponsive after %g inactive sec - disconnecting.\n", 
+                hostName, this->period ) );
+#       endif
         this->iiu.forcedShutdown ();
         return noRestart;
     }

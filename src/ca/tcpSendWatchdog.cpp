@@ -30,10 +30,12 @@ tcpSendWatchdog::~tcpSendWatchdog ()
 epicsTimerNotify::expireStatus tcpSendWatchdog::expire ( 
                  const epicsTime & /* currentTime */ )
 {
-    char hostName[128];
-    this->iiu.hostName ( hostName, sizeof ( hostName ) );
-    this->iiu.printf ( "Request not accepted by CA server %s for %g sec. Disconnecting.\n", 
-        hostName, this->period );
+#   ifdef DEBUG
+        char hostName[128];
+        this->iiu.hostName ( hostName, sizeof ( hostName ) );
+        debugPrintf ( ( "Request not accepted by CA server %s for %g sec. Disconnecting.\n", 
+            hostName, this->period ) );
+#   endif
     this->iiu.forcedShutdown ();
     return noRestart;
 }

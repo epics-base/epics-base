@@ -41,7 +41,7 @@
 #   pragma warning ( disable:4660 )
 #endif
 
-template class tsFreeList < bhe, 1024 >;
+template class tsFreeList < bhe, 256 >;
 template class resTable < nciu, chronIntId >;
 template class chronIntIdResTable < nciu >;
 template class resTable < baseNMIU, chronIntId >;

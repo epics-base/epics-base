@@ -37,10 +37,7 @@
 
 static char	*sccsId = "@(#) $Id$";
 
-
 #include "iocinf.h"
-
-#include <net/if.h>
 
 /*
  * Dont use ca_static based lock macros here because this is

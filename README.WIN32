@@ -63,7 +63,7 @@ When setting paths in the EPICS CONFIG files for WIN32:
 
     ** Certain command line utilities such as the MS linker are known to confuse
         "/" in a path with command line options, and so in these situations it may be
-        necessary to replae a "/" in a path with "\\".
+        necessary to replace a "/" in a configured path with "\\".
 
 Your path should include:
 - The EPICS-binaries that we are about to build in <EPICS>base/bin/WIN32

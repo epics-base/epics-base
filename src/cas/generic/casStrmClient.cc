@@ -1340,7 +1340,7 @@ caStatus casStrmClient::createChanResponse (
     // while an asynchronous IO fetching the enum
     // string table is outstanding
     //
-    this->chanTable.add ( *pChan->pChanI );
+    this->chanTable.idAssignAdd ( *pChan->pChanI );
     this->chanList.add ( *pChan->pChanI );
     pChan->pChanI->installIntoPV ();
 

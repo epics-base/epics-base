@@ -689,7 +689,7 @@ void ca_client_context::installCASG (
     epicsGuard < epicsMutex > & guard, CASG & sg )
 {
     guard.assertIdenticalMutex ( this->mutex );
-    this->sgTable.add ( sg );
+    this->sgTable.idAssignAdd ( sg );
 }
 
 void ca_client_context::uninstallCASG ( 

@@ -137,7 +137,7 @@ timerForOldFdmgr::timerForOldFdmgr ( oldFdmgr &fdmgrIn,
     if ( pFuncIn == NULL ) {
         throwWithLocation ( noFunctionSpecified () );
     }
-    this->fdmgr.resTbl.add (*this);
+    this->fdmgr.resTbl.idAssignAdd (*this);
     this->timer.start ( *this, delayIn );
 }
 

@@ -460,7 +460,7 @@ cacChannel & cac::createChannel (
 
     nciu * pNetChan = new ( this->channelFreeList ) 
             nciu ( *this, *this->pudpiiu, chan, pName, pri );
-    this->chanTable.add ( *pNetChan );
+    this->chanTable.idAssignAdd ( *pNetChan );
     return *pNetChan;
 }
 
@@ -627,7 +627,7 @@ netWriteNotifyIO & cac::writeNotifyRequest (
     autoPtrRecycle  < netWriteNotifyIO > pIO ( 
         guard, this->ioTable, *this, 
         netWriteNotifyIO::factory ( this->freeListWriteNotifyIO, icni, notifyIn ) );
-    this->ioTable.add ( *pIO );
+    this->ioTable.idAssignAdd ( *pIO );
     chan.getPIIU(guard)->writeNotifyRequest ( 
         guard, chan, *pIO, type, nElem, pValue );
     return *pIO.release();
@@ -641,7 +641,7 @@ netReadNotifyIO & cac::readNotifyRequest (
     autoPtrRecycle  < netReadNotifyIO > pIO ( 
         guard, this->ioTable, *this,
         netReadNotifyIO::factory ( this->freeListReadNotifyIO, icni, notifyIn ) );
-    this->ioTable.add ( *pIO );
+    this->ioTable.idAssignAdd ( *pIO );
     chan.getPIIU(guard)->readNotifyRequest ( guard, chan, *pIO, type, nElem );
     return *pIO.release();
 }
@@ -735,7 +735,7 @@ netSubscription & cac::subscriptionRequest (
         guard, this->ioTable, *this, 
         netSubscription::factory ( this->freeListSubscription,
                                    privChan, type, nElem, mask, notifyIn ) );
-    this->ioTable.add ( *pIO );
+    this->ioTable.idAssignAdd ( *pIO );
     if ( chanIsInstalled ) {
         pIO->subscribeIfRequired ( guard, chan );
     }
@@ -817,6 +817,7 @@ bool cac::readNotifyRespAction ( callbackManager &, tcpiiu & iiu,
         // then we need to reinstall the IO into the table
         netSubscription * pSubscr = pmiu->isSubscription ();
         if ( pSubscr ) {
+            // this does *not* assign a new resource id
             this->ioTable.add ( *pmiu );
         }
         if ( caStatus == ECA_NORMAL ) {

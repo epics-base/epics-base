@@ -52,8 +52,8 @@ DEPLIB_LDLIBS = $($*_LIBS:%=-l%) $(PROD_LIBS:%=-l%) $(USR_LIBS:%=-l%)\
 
 #--------------------------------------------------
 #  Allow code to be used in a shared library
-GCC_DEP_CFLAGS =  -fPIC
-G++_DEP_CFLAGS =  -fPIC
+GCC_CODE_CFLAGS += -fPIC
+G++_CODE_CFLAGS += -fPIC
 
 #--------------------------------------------------
 # Operating system definitions
@@ -64,10 +64,11 @@ OP_SYS_LDLIBS = -lm
 
 #--------------------------------------------------
 # Link definitions
-LINK.c = $(CC) -o $@ $(LDFLAGS)
 LINK.cpp = $(CXX) -o $@ $(LDFLAGS)
-LINK.shrlib = $(SHRLIB_LINKER) -o $@ $(SHRLIB_LDFLAGS) $(LDFLAGS)
+LINK.shrlib = $(CXX) -o $@ $(SHRLIB_LDFLAGS) $(LDFLAGS)
+
 #--------------------------------------------------
 # Allow site overrides
 -include $(CONFIG)/os/CONFIG_SITE.Common.UnixCommon
 -include $(CONFIG)/os/CONFIG_SITE.$(EPICS_HOST_ARCH).UnixCommon
+

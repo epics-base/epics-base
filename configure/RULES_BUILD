@@ -44,16 +44,6 @@ vpath %.skel.static $(USR_VPATH) $(GENERIC_SRC_DIRS)
 include $(CONFIG)/CONFIG_ADDONS
 
 #---------------------------------------------------------------
-# Set opt and warn
-ifneq ($(BUILD_CLASS),CROSS)
-OPT=$(HOST_OPT)
-WARN=$(HOST_WARN)
-else
-OPT=$(CROSS_OPT)
-WARN=$(CROSS_WARN)
-endif
-
-#---------------------------------------------------------------
 # Set PROD, OBJS, LIBRARY_HOST, and LIBRARY_IOC
 
 ifeq ($(findstring Host,$(VALID_BUILDS)),Host)
@@ -62,7 +52,7 @@ OBJS += $(OBJS_HOST)
 else 
 # PROD and TESTPROD not built for ioc only builds
 PROD = $(PROD_$(OS_CLASS))
-TESTPROD = 
+TESTPROD = $(TESTPROD_$(OS_CLASS))
 LIBRARY_HOST =
 LIBRARY_IOC += $(LIBRARY)
 endif
@@ -80,10 +70,6 @@ INSTALL_TEMPLATES_SUBDIR = $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
 else
 INSTALL_TEMPLATES_SUBDIR = $(INSTALL_TEMPLATES)
 endif
-
-#---------------------------------------------------------------
-# must use c++ linker if linking to shared libs with c++ code
-LINK.c = $(LINK.cpp)
 
 #---------------------------------------------------------------
 #	First target
@@ -111,9 +97,6 @@ LIBTARGETS += $(LIBNAME) $(MUNCHNAME)
 ifneq (,$(strip $(LIBTARGETS)))
 LIBTARGETS += $(INSTALL_LIBS) $(INSTALL_MUNCHS)
 ifeq ($(strip $(SHARED_LIBRARIES)),YES)
-CFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
-CXXFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
-SHRLIB_LINKER = $(CXX)
 LIBTARGETS += $(SHRLIBNAME) $(INSTALL_SHRLIBS) $(INSTALL_DLL_LINK_LIBS)
 endif # SHARED_LIBRARIES=YES
 endif # LIBTARGETS
@@ -155,7 +138,7 @@ clean::
 	$(INC) *$(RES) $(TARGETS) $(DBDINSTALL) \
 	*.out MakefileInclude
 ifdef MUNCH
-	@$(RM) $(MUNCHNAME) ctdt.c ctdt.o
+	@$(RM) $(MUNCHNAME) ctdt.c ctdt.o nm.out
 endif
 ifdef BAF
 	@$(RM) $(PROD_BAF) $(LIB_BAF_IOC) $(LIB_BAF_HOST) *$(BOF)
@@ -190,7 +173,7 @@ depends: $(LIBSRCS) $(SRCS) $(PROD_SRCS)
 	touch DEPENDS
 	$(DEPENDS_RULE)
 
-$(PRODNAME):%$(EXE): $(PROD_OBJS) $(PROD_RESS) $(PROD_DEPLIBS)
+$(TESTPRODNAME) $(PRODNAME):%$(EXE): $(PROD_OBJS) $(PROD_RESS) $(PROD_DEPLIBS)
 	@$(RM) $@
 	$(LINK.cpp) $(PROD_LD_OBJS) $(PROD_LD_RESS) $(LDLIBS)
 
@@ -243,18 +226,18 @@ endif
 	$(MV) lex.yy.c $@
 
 #state notation language rule
-%.c: ../%.st
+%.cpp: ../%.st
 	@echo "preprocessing $*.st"
 	@$(RM) $*.i
 	$(CPP) $(CPPSNCFLAGS) $< > $*.i
 	@echo "converting $*.i"
 	@$(RM) $@
-	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.i
+	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.i -o $@
 
-%.c:	%.stt
+%.cpp:	%.stt
 	@echo "converting $<
 	ln -s $< $*.st
-	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.st
+	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.st -o $@
 	@$(RM) $*.st
 
 # Capfast Rules:
@@ -350,18 +333,19 @@ ifneq ($(strip $(RANLIB)),)
 	$(RANLIB) $@
 endif # RANLIB
 
-$(DLL_LINK_LIBNAME):$(LIB_PREFIX)%.lib: $(LIBRARY_OBJS)
-	$(LINK.shrlib) $(LIBRARY_LD_OBJS) $(SHRLIB_LDLIBS)
+$(DLL_LINK_LIBNAME):$(LIB_PREFIX)%.lib: $(LIBRARY_OBJS) $(LIBRARY_RESS)
+	$(LINK.shrlib) $(LIBRARY_LD_OBJS) $(SHRLIB_LDLIBS) $(LIBRARY_LD_RESS)
 
-$(SHRLIBNAME):$(LIB_PREFIX)%$(SHRLIB_SUFFIX): $(LIBRARY_OBJS)
-	$(LINK.shrlib) $(LIBRARY_LD_OBJS) $(SHRLIB_LDLIBS)
+$(SHRLIBNAME):$(LIB_PREFIX)%$(SHRLIB_SUFFIX): $(LIBRARY_OBJS) $(LIBRARY_RESS)
+	$(LINK.shrlib) $(LIBRARY_LD_OBJS) $(SHRLIB_LDLIBS) $(LIBRARY_LD_RESS)
 
 # C++ munching for VxWorks
 $(MUNCHNAME):%.munch : %.o
-	@ $(RM) ctct.o ctdt.c
-	$(NM) $< | $(MUNCH) > ctdt.c
+	@ $(RM) ctct.o ctdt.c nm.out
+	$(NM) $<  > nm.out
+	$(MUNCH) < nm.out > ctdt.c
 	$(COMPILE.c) -traditional ctdt.c
-	$(LINK.c) $< ctdt.o
+	$(LINK.cpp) $< ctdt.o
 
 binInstalls:  $(BIN_INSTALLS)
 	@echo "Installing $(^F)"

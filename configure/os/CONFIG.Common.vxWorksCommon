@@ -51,8 +51,9 @@ GCC_RANLIB =
 
 #--------------------------------------------------
 # C++ host processing
-NM = $(GNU_BIN)/$(CMPLR_PREFIX)nm$(CMPLR_SUFFIX)
+NM = $(GNU_BIN)/$(CMPLR_PREFIX)nm$(CMPLR_SUFFIX)$(HOSTEXE)
 ifneq ($(wildcard $(GNU_BIN)/munch.tcl),)
+##ifeq ($(wildcard $(GNU_BIN)/$(CMPLR_PREFIX)munch$(HOSTEXE)),)
 #tornado2
 export WIND_BASE = $(VX_DIR)
 export WIND_HOST_TYPE
@@ -62,17 +63,13 @@ endif
 MUNCH = $(GNU_BIN)/wtxtcl$(HOSTEXE) $(GNU_BIN)/munch.tcl -asm $(ARCH_CLASS)
 else
 #tornado101
-MUNCH = $(GNU_BIN)/$(CMPLR_PREFIX)munch$(EXE)
+MUNCH = $(GNU_BIN)/$(CMPLR_PREFIX)munch$(HOSTEXE)
 endif
-
-#-------------------------------------------------------
-# Compile flag overrides
-GCC_DEP_CPPFLAGS = -D_REENTRANT
-G++_DEP_CPPFLAGS = -D_REENTRANT
 
 #--------------------------------------------------
 # Posix flags override
-POSIX_CPPFLAGS =
+GCC_POSIX_CPPFLAGS = -D_POSIX_SOURCE
+G++_POSIX_CPPFLAGS = -D_POSIX_SOURCE
 
 #--------------------------------------------------
 # Operating system flags
@@ -89,9 +86,9 @@ OP_SYS_CFLAGS += -include $(VX_INCLUDE)/vxWorks.h
 #--------------------------------------------------
 # Optimization flag overrides
 GCC_OPT_YES = -O2
-GCC_OPT_NO = -g
+GCC_OPT_NO =
 G++_OPT_YES = -O2
-G++_OPT_NO = -g
+G++_OPT_NO =
 
 #--------------------------------------------------
 # c++ exceptions,  YES or NO override
@@ -103,7 +100,6 @@ OSITHREAD_USE_DEFAULT_STACK = NO
 
 #--------------------------------------------------
 # Link definitions
-LINK.c = $(GCC_LD) -o $@ $(LDFLAGS)
 LINK.cpp = $(GCC_LD) -o $@ $(LDFLAGS)
 
 #--------------------------------------------------

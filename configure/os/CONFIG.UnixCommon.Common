@@ -13,8 +13,14 @@ MV = mv
 RM = rm -f
 MKDIR = mkdir
 RMDIR = rm -rf
-CHMOD = "/bin/chmod"
 TOUCH = touch
+
+# Set LD_LIBRARY_PATH for shared library builds
+ifneq ($(EPICS_BASE),$(INSTALL_LOCATION))
+export LD_LIBRARY_PATH := $(INSTALL_HOST_LIB):$(EPICS_BASE_HOST_LIB):$(LD_LIBRARY_PATH)
+else
+export LD_LIBRARY_PATH := $(EPICS_BASE_HOST_LIB):$(LD_LIBRARY_PATH)
+endif
 
 # Allow site overrides
 -include $(CONFIG)/os/CONFIG_SITE.UnixCommon.Common

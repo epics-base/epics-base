@@ -12,7 +12,6 @@ MV = $(PERL) $(CONFIG)/tools/mv.pl
 RM = $(PERL) $(CONFIG)/tools/rm.pl -f
 MKDIR = $(PERL) $(CONFIG)/tools/mkdir.pl
 RMDIR = $(PERL) $(CONFIG)/tools/rm.pl -rf
-CHMOD = echo
 ECHO = echo
 TOUCH = type NUL >>
 

@@ -30,10 +30,10 @@ CPLUSPLUS = CCC
 MSVISC = c:\\Program\ Files\\DevStudio\\Vc
 WINLINK = link
 
-RCCMD = rc -l 0x409  -fo $@ $<
+RCCMD = rc -l 0x409 -i . -i .. -i $(INSTALL_INCLUDE) -i $(EPICS_BASE_INCLUDE) -fo $@ $<
 
-ARCMD = lib /nologo /verbose /out:$@ \
-	$(addsuffix .lib,$($*_SYS_DLL_LIBS) $(SYS_DLL_LIBS))
+ARCMD = lib /nologo /verbose /out:$@ 
+###	$(addsuffix .lib,$($*_SYS_DLL_LIBS) $(SYS_DLL_LIBS))
 
 BAFCMD = bscmake /nologo /o $@
 
@@ -49,9 +49,9 @@ ACC = cl
 #
 # Use of /Za would dissable DLL import/export keywords which
 # include/excludes using architecture neutral macros
-ACC_CMPLR_CPPFLAGS_ANSI = /nologo /D__STDC__=0 
-ACC_CMPLR_CPPFLAGS_STRICT = /nologo /D__STDC__=0 
-ACC_CMPLR_CPPFLAGS_TRAD = /nologo
+ACC_CONFORM_CFLAGS_ANSI = /nologo /D__STDC__=0 
+ACC_CONFORM_CFLAGS_STRICT = /nologo /D__STDC__=0 
+ACC_CONFORM_CFLAGS_TRAD = /nologo
 
 #
 # /W<N> use warning level N
@@ -106,8 +106,8 @@ ACC_CPP = cl  /E
 # Use of /Za would dissable DLL import/export keywords which
 # include/excludes using architecture neutral macros
 CCC = cl 
-CCC_CMPLR_CPPFLAGS_NORMAL = /nologo /D__STDC__=0 /GX
-CCC_CMPLR_CPPFLAGS_STRICT = /nologo /D__STDC__=0 /GX
+CCC_CONFORM_CFLAGS_NORMAL = /nologo /D__STDC__=0 /GX
+CCC_CONFORM_CFLAGS_STRICT = /nologo /D__STDC__=0 /GX
 CCC_TEMPL_INST_FLAG =
 
 #
@@ -268,8 +268,7 @@ SHRLIB_LDLIBS = $(DLL_DEPLIBS) $($*_SYS_DLL_LIBS:%=%.lib) \
 	$(SYS_DLL_LIBS:%=%.lib) $(OP_SYS_LDLIBS)
 
 #--------------------------------------------------
-
-LINK.c = $(WINLINK) -nologo $(LDFLAGS) -out:$@
+# Linker definition
 LINK.cpp = $(WINLINK) -nologo $(LDFLAGS) -out:$@
 
 #--------------------------------------------------

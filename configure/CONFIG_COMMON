@@ -20,8 +20,11 @@ CROSS2 = $(CROSS_COMPILER_TARGET_ARCHS$(filter-out 1,$(words $(filter $(EPICS_HO
 BUILD_ARCHS = $(EPICS_HOST_ARCH) $(CROSS1) $(CROSS2)
 
 #-------------------------------------------------------
-# Divider and suffix
+# Build class default, HOST or CROSS, CONFIG will override 
+BUILD_CLASS = HOST
 
+#-------------------------------------------------------
+# Divider and suffix
 DIVIDER = .
 OBJ = .
 RES = .
@@ -64,14 +67,12 @@ INSTALL_SHRLIB              = $(INSTALL_LOCATION_LIB)/$(T_A)
 INSTALL_TCLLIB              = $(INSTALL_LOCATION_LIB)/$(T_A)
 INSTALL_BIN                 = $(INSTALL_LOCATION_BIN)/$(T_A)
 
-#-------------------------------------------------------
 # vpath directories
 GENERIC_SRC_DIRS = .. $(SRC_DIRS)
 OS_SRC_DIRS += . $(foreach dir, $(SRC_DIRS) .., \
             $(dir)/os/$(OS_CLASS) $(dir)/os/posix $(dir)/os/default )
 ALL_SRC_DIRS = $(OS_SRC_DIRS) $(GENERIC_SRC_DIRS)
 
-#-------------------------------------------------------
 # compile line include directories
 INSTALL_INCLUDES += \
        -I$(INSTALL_INCLUDE)/os/$(OS_CLASS) \
@@ -85,38 +86,40 @@ GNU_BIN = $(GNU_DIR)/bin
 GNU_LIB = $(GNU_DIR)/lib
 export GCC_EXEC_PREFIX = $(GNU_LIB)/gcc-lib/
 
-GCC = $(GNU_BIN)/$(CMPLR_PREFIX)cc$(CMPLR_SUFFIX)
-
 GCC_AR = $(GNU_BIN)/$(CMPLR_PREFIX)ar$(CMPLR_SUFFIX) -rc
 GCC_CPP = $(GCC) -x c -E
 GCC_RANLIB = $(GNU_BIN)/$(CMPLR_PREFIX)ranlib$(CMPLR_SUFFIX) 
 
-GCC_CMPLR_CPPFLAGS_ANSI = -ansi 
-GCC_CMPLR_CPPFLAGS_STRICT = -ansi -pedantic -Wtraditional
-GCC_CMPLR_CPPFLAGS_TRAD = -traditional
+GCC = $(GNU_BIN)/$(CMPLR_PREFIX)cc$(CMPLR_SUFFIX)
+
+GCC_CONFORM_CFLAGS_ANSI = -ansi 
+GCC_CONFORM_CFLAGS_STRICT = -ansi -pedantic
+GCC_CONFORM_CFLAGS_TRAD = -traditional
 GCC_WARN_YES = -Wall
 GCC_WARN_NO = -w
-GCC_OPT_YES = -O3 -g
+GCC_OPT_YES = -O3
 GCC_OPT_NO = -g
 GCC_STATIC_CFLAGS_YES = -static
 GCC_STATIC_CFLAGS_NO =
 GCC_BUILD_CFLAGS_CROSS = -B$(GNU_LIB)/gcc-lib/ -nostdinc
 GCC_BUILD_CPPFLAGS_CROSS = -nostdinc
 GCC_SHRLIB_LDFLAGS_YES =  -shared
-GCC_POSIX_CPPFLAGS = -D_POSIX_C_SOURCE=199506L -D_POSIX_THREADS -D_REENTRANT
+GCC_CODE_CPPFLAGS = -D_REENTRANT
+GCC_POSIX_CPPFLAGS = -D_POSIX_C_SOURCE=199506L -D_POSIX_THREADS
 
 G++ = $(GNU_BIN)/$(CMPLR_PREFIX)cc$(CMPLR_SUFFIX)
 
-G++_CMPLR_CPPFLAGS_NORMAL = -ansi -pedantic
-G++_CMPLR_CPPFLAGS_STRICT = -ansi -pedantic -Wtraditional
-G++_WARN_YES = -Wall
+G++_CONFORM_CFLAGS_NORMAL = -ansi -pedantic
+G++_CONFORM_CFLAGS_STRICT = -ansi -pedantic
+G++_WARN_YES = -Wall 
 G++_WARN_NO = -w
-G++_OPT_YES = -O3 -g
+G++_OPT_YES = -O3
 G++_OPT_NO = -g
 G++_STATIC_CFLAGS_YES = -static
 G++_STATIC_CFLAGS_NO =
 G++_SHRLIB_LDFLAGS_YES =  -shared
-G++_POSIX_CPPFLAGS = -D_POSIX_C_SOURCE=199506L -D_POSIX_THREADS -D_REENTRANT
+G++_CODE_CPPFLAGS = -D_REENTRANT
+G++_POSIX_CPPFLAGS = -D_POSIX_C_SOURCE=199506L -D_POSIX_THREADS
 
 G++_TEMPL_INST_FLAG = -DEXPL_TEMPL
 G++_DEPENDS_FLAG = -MM
@@ -133,22 +136,26 @@ TESTPRODNAME = $(addsuffix $(EXE),$(TESTPROD))
 DIRECTORY_TARGETS += $(INSTALL_DBD) $(INSTALL_INCLUDE)
 
 #--------------------------------------------------
-# obj and resource(WIN32) files
+# obj files
 
 TARGET_OBJS = $(addsuffix $(OBJ),$(basename $($*_OBJS)))
-TARGET_RESS = $(addsuffix $(RES),$(basename $($*_RESS)))
 
-# Product dependancies
 PROD_OBJS = $(addsuffix $(OBJ),$(basename $(SRCS) $(PROD_SRCS)))
-PROD_RESS = $(addsuffix $(RES),$(basename $(RCS) $(PROD_RCS)))
-
-# Product obj and ress files for link line
 PROD_LD_OBJS = $(TARGET_OBJS) $(PROD_OBJS)
-PROD_LD_RESS = $(TARGET_RESS) $(PROD_RESS)
 
-# Library specific obj files
 LIBRARY_OBJS = $(addsuffix $(OBJ),$(basename $(SRCS) $(LIBSRCS)))
 LIBRARY_LD_OBJS = $(TARGET_OBJS) $(LIBRARY_OBJS)
+
+#--------------------------------------------------
+# resource(WIN32) files
+
+TARGET_RESS = $(addsuffix $(RES),$(basename $($*_RESS)))
+
+PROD_RESS = $(addsuffix $(RES),$(basename $(RCS) $(PROD_RCS)))
+PROD_LD_RESS = $(TARGET_RESS) $(PROD_RESS)
+
+LIBRARY_RESS = $(addsuffix $(RES),$(basename $(RCS) $(LIBRARY_RCS)))
+LIBRARY_LD_RESS = $(TARGET_RESS) $(LIBRARY_RESS)
 
 #--------------------------------------------------
 # WIN95/NT source browser
@@ -162,32 +169,27 @@ LIB_BAF_HOST=$(addsuffix $(BAF),$(basename $(LIBRARY_HOST)))
 INSTALL_DBDFLAGS = -I $(INSTALL_LOCATION)/dbd
 
 #--------------------------------------------------
-# C preprocessor, compiler, and linker flags
+# C preprocessor, compiler, and linker flag defaults
 
-# CMPLR options
-CMPLR_CPPFLAGS = $($(ANSI)_CMPLR_CPPFLAGS_$(CMPLR))
-CMPLR_CFLAGS = $($(ANSI)_CMPLR_CFLAGS_$(CMPLR))
-CMPLR_CXXFLAGS = $($(CPLUSPLUS)_CMPLR_CFLAGS_$(CMPLR))
-
-# Build class options
+# Build class (CROSS,HOST) flags
 BUILD_CLASS_CFLAGS = $($(ANSI)_BUILD_CFLAGS_$(BUILD_CLASS))
 BUILD_CLASS_CPPFLAGS = $($(ANSI)_BUILD_CPPFLAGS_$(BUILD_CLASS))
 
-# C++ template flag option
+# C++ template flag
 TEMPL_INST_CXXFLAG = $($(CPLUSPLUS)_TEMPL_INST_FLAG)
 
-# Vendor compiler dependent options
-VENDOR_DEP_CFLAGS = $($(ANSI)_DEP_CFLAGS)
-VENDOR_DEP_CXXFLAGS = $($(CPLUSPLUS)_DEP_CFLAGS)
+# Code (position independant and  reentrant) flags
+CODE_CFLAGS = $($(ANSI)_CODE_CFLAGS)
+CODE_CXXFLAGS = $($(CPLUSPLUS)_CODE_CFLAGS)
 
-# Architecture dependent options (solaris,sun4,mv167,...)
+# Target architecture specific (solaris,sun4,mv167,...) flags
 ARCH_DEP_CPPFLAGS =
 ARCH_DEP_CFLAGS =
 ARCH_DEP_CXXFLAGS = $(ARCH_DEP_CFLAGS)
 ARCH_DEP_LDFLAGS =
 ARCH_DEP_LDLIBS =
 
-# Operating system dependent options (Unix,Vx,WIN32...)
+# Target operating system specific (Unix,Vx,WIN32...) flags
 OP_SYS_CPPFLAGS =
 OP_SYS_CFLAGS =
 OP_SYS_LDFLAGS =
@@ -198,7 +200,7 @@ OP_SYS_LDLIBS =
 SOURCE_CFLAG =
 SOURCE_CXXCFLAG =
 
-# Makefile specific options
+# Makefile specific flags
 USR_INCLUDES =
 USR_CFLAGS =
 USR_CXXFLAGS =
@@ -216,19 +218,23 @@ TARGET_LDLIBS = $($(basename $@)_LDLIBS) $($(basename $@)_LDLIBS_$(OS_CLASS))
 TARGET_CPPFLAGS = $($(basename $@)_CPPFLAGS) $($(basename $@)_CPPFLAGS_$(OS_CLASS))
 TARGET_SNCFLAGS = $($(basename $@)_SNCFLAGS) $($(basename $@)_SNCFLAGS_$(OS_CLASS))
 
-# POSIX flags
+# POSIX specific flags
 POSIX_CPPFLAGS = $($(ANSI)_POSIX_CPPFLAGS)
 
+# CMPLR level of ansi conformance flags
+CONFORM_CFLAGS = $($(ANSI)_CONFORM_CFLAGS_$(CMPLR))
+CONFORM_CXXFLAGS = $($(CPLUSPLUS)_CONFORM_CFLAGS_$(CMPLR))
+
 # Warnings flags
-WARN_CFLAGS = $($(ANSI)_WARN_$(WARN))
-WARN_CXXFLAGS = $($(CPLUSPLUS)_WARN_$(WARN))
+WARN_CFLAGS = $($(ANSI)_WARN_$($(BUILD_CLASS)_WARN))
+WARN_CXXFLAGS = $($(CPLUSPLUS)_WARN_$($(BUILD_CLASS)_WARN))
 
 # Optimization flags
-OPT_CFLAGS = $($(ANSI)_OPT_$(OPT))
-OPT_CXXFLAGS = $($(CPLUSPLUS)_OPT_$(OPT))
+OPT_CFLAGS = $($(ANSI)_OPT_$($(BUILD_CLASS)_OPT))
+OPT_CXXFLAGS = $($(CPLUSPLUS)_OPT_$($(BUILD_CLASS)_OPT))
 OPT_LDFLAGS =
 
-# Static build options
+# Static build flags
 STATIC_CFLAGS = $($(ANSI)_STATIC_CFLAGS_$(STATIC_BUILD))
 STATIC_CXXCFLAGS = $($(CPLUSPLUS)_STATIC_CFLAGS_$(STATIC_BUILD))
 STATIC_LDFLAGS = $($(ANSI)_STATIC_LDFLAGS_$(STATIC_BUILD))
@@ -243,12 +249,12 @@ DEPENDS_FLAG = $($(CPLUSPLUS)_DEPENDS_FLAG)
 INCLUDES = -I. $(USR_INCLUDES) $(INSTALL_INCLUDES) \
     $(TARGET_INCLUDES) $(GENERIC_SRC_INCLUDES) $(OP_SYS_INCLUDES)
 
-CFLAGS = $(CMPLR_CFLAGS) $(OPT_CFLAGS) $(DEBUG_CFLAGS) $(WARN_CFLAGS)\
- $(TARGET_CFLAGS) $(USR_CFLAGS) $(ARCH_DEP_CFLAGS) $(VENDOR_DEP_CFLAGS)\
+CFLAGS = $(CONFORM_CFLAGS) $(OPT_CFLAGS) $(DEBUG_CFLAGS) $(WARN_CFLAGS)\
+ $(TARGET_CFLAGS) $(USR_CFLAGS) $(ARCH_DEP_CFLAGS) $(CODE_CFLAGS)\
  $(STATIC_CFLAGS) $(OP_SYS_CFLAGS)
 
-CXXFLAGS = $(CMPLR_CXXFLAGS) $(OPT_CXXFLAGS) $(DEBUG_CXXFLAGS) $(WARN_CXXFLAGS)\
- $(TARGET_CXXFLAGS) $(USR_CXXFLAGS) $(ARCH_DEP_CXXFLAGS) $(VENDOR_DEP_CXXFLAGS)\
+CXXFLAGS = $(CONFORM_CXXFLAGS) $(OPT_CXXFLAGS) $(DEBUG_CXXFLAGS) $(WARN_CXXFLAGS)\
+ $(TARGET_CXXFLAGS) $(USR_CXXFLAGS) $(ARCH_DEP_CXXFLAGS) $(CODE_CXXFLAGS)\
  $(STATIC_CXXCFLAGS) $(OP_SYS_CFLAGS) $(TEMPL_INST_CXXFLAG)
 
 LDFLAGS = $(OPT_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS) $(DEPLIB_LDFLAGS)\
@@ -257,7 +263,7 @@ LDFLAGS = $(OPT_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS) $(DEPLIB_LDFLAGS)\
 LDLIBS = $(TARGET_LDLIBS) $(USR_LDLIBS) $(DEPLIB_LDLIBS) $(ARCH_DEP_LDLIBS)\
  $(STATIC_LDLIBS) $(OP_SYS_LDLIBS)
 
-CPPFLAGS += $(CMPLR_CPPFLAGS) $(POSIX_CPPFLAGS) $(EPICS_BASE_CPPFLAGS)\
+CPPFLAGS += $(POSIX_CPPFLAGS) $(EPICS_BASE_CPPFLAGS)\
  $(TARGET_CPPFLAGS) $(USR_CPPFLAGS) $(ARCH_DEP_CPPFLAGS) $(OP_SYS_CPPFLAGS)
 
 CPPSNCFLAGS = $(CPPFLAGS) $(INCLUDES)

@@ -72,7 +72,7 @@ static void taskwdInitPvt(void *arg)
     ellInit(&list);
     ellInit(&anylist);
     taskwdid = threadCreate(
-        "taskwd",threadPriorityChannelAccessServer-2,
+        "taskwd",threadPriorityLow,
          threadGetStackSize(threadStackSmall),
         (THREADFUNC)taskwdTask,0);
 }

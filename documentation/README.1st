@@ -114,10 +114,9 @@ Software requirements
      more board support packages. Consult the vxWorks documentation for
      details. 
 
-     Optional GNU compiler requirement for solaris-sparc  and
-     win32-x86 hosts 
+     Optional GNU compiler requirement for solaris-sparc and win32-x86 hosts
      If you have state notation language source files (*.st files) which require
-     c preprocessing before conversion to c source,  gcc must be in your path.
+     c preprocessing before conversion to c source, gcc must be in your path.
 
 Host system storage requirements
 

@@ -1,0 +1,33 @@
+#  CONFIG.linux-x86.linux-x86
+#
+# $Id$
+#
+#  This file is maintained by the build community.
+#  Sites may override these definitions in CONFIG_SITE.linux-x86.linux-x86
+#-------------------------------------------------------
+ 
+OS_CLASS = Linux
+ARCH_CLASS = x86
+
+GNU_DIR = /usr
+
+# Configure OS vendor C compiler
+# These are overrides of ANSI and CPLUSPLUS values in CONFIG_SITE
+# since OS vendor compilers is gnu compiler
+ANSI=GCC
+CPLUSPLUS=G++
+
+# Configure gnu C compiler
+GCC = gcc
+G++ = g++
+
+AR = ar -rc
+ARFLAGS =
+RANLIB = ranlib -t
+
+ARCH_DEP_CPPFLAGS += -D_BSD_SOURCE
+
+ARCH_DEP_LDFLAGS =
+###ARCH_DEP_LDLIBS = -ldl -lpthread
+ARCH_DEP_LDLIBS = -lpthread
+

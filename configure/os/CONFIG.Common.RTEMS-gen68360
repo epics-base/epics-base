@@ -1,0 +1,9 @@
+#
+# $Id$
+# Author: W. Eric Norum
+#         Canadian Light Source
+#         eric@cls.usask.ca
+#
+# All RTEMS targets use the same Makefile fragment
+#
+include $(CONFIG)/os/CONFIG.Target.RTEMS

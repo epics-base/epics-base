@@ -1,8 +1,10 @@
+# CONFIG_COMPAT
 #
 # $Id$
 #
 # Convert old HOST_ARCH environment variable to
 # new EPICS_HOST_ARCH environment variable 
+#-------------------------------------------------------
 
 #Syntax:
 # ARCH_<host_arch> = <epics_host_arch>

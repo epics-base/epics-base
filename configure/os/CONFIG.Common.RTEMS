@@ -1,0 +1,113 @@
+#
+# This file contains definitions for RTEMS builds
+#
+# $Id$
+# Author: W. Eric Norum
+#         Canadian Light Source
+#         eric@cls.usask.ca
+#
+
+#
+# Build types
+#
+VALID_BUILDS = Ioc
+
+#
+# Pick up the RTEMS tool/path definitions from the RTEMS BSP directory.
+#
+ifneq "$(T_A)" ""
+RTEMS_MAKEFILE_PATH := $(dir $(RTEMS_MAKEFILE_PATH))/$(subst RTEMS-,,$(T_A))
+-include $(RTEMS_MAKEFILE_PATH)/Makefile.inc
+-include $(RTEMS_CUSTOM)
+-include $(CONFIG.CC)
+endif
+
+#
+# Override RTEMS optimization flags
+#
+CFLAGS_OPTIMIZE = 
+
+#
+# The RTEMS Makefiles redefine several macros, so we have to go
+# through the following contortions to get the EPICS flags back.
+# Another compilication is that the RTEMS Makefiles use CPPFLAGS for
+# c++ compilation.
+#
+CFLAGS += $(OPT_CFLAGS) $(DEBUG_CFLAGS) $(WARN_CFLAGS) $(TARGET_CFLAGS) \
+	    $(USR_CFLAGS) $(ARCH_DEP_CFLAGS) $(VENDOR_DEP_CFLAGS) \
+	    $(STATIC_CFLAGS) $(OP_SYS_CFLAGS) $(INCLUDES)
+CPPFLAGS += $(EPICS_BASE_CPPFLAGS) $(TARGET_CPPFLAGS) $(USR_CPPFLAGS) $(ARCH_DEP_CPPFLAGS)
+CXXFLAGS += $(OPT_CXXFLAGS) $(DEBUG_CXXFLAGS) $(WARN_CXXFLAGS) $(TARGET_CXXFLAGS) \
+	    $(USR_CXXFLAGS) $(ARCH_DEP_CXXFLAGS) $(VENDOR_DEP_CXXFLAGS) $(STATIC_CXXCFLAGS) \
+	    $(OP_SYS_CFLAGS) $(TEMPL_INST_CXXFLAG) $(INCLUDES)
+CPPSNCFLAGS += -x c
+
+#
+# RTEMS already uses `main'
+#
+ARCH_DEP_CFLAGS = -Dmain=rtems_main
+
+#--------------------------------------------------
+# operating system class (include/os/<os_class>)
+OS_CLASS = RTEMS
+
+#-------------------------------------------------------
+# Prefix and suffix definitions
+EXE =
+OBJ = .o
+
+LIB_PREFIX=lib
+LIB_SUFFIX=.a
+
+#-------------------------------------------------------
+# Library definition
+LIBNAME = $(BUILD_LIBRARY:%=$(LIB_PREFIX)%$(LIB_SUFFIX))
+
+#-------------------------------------------------------
+ARFLAGS = -rc
+
+#--------------------------------------------------
+# C++ compiler definition
+
+#CPLUSPLUS = $(CC_FOR_TARGET)
+
+#--------------------------------------------------
+# Operating system flags
+OP_SYS_INCLUDES = 
+OP_SYS_CFLAGS =
+OP_SYS_LDFLAGS =
+OP_SYS_LDLIBS = 
+
+#--------------------------------------------------
+# Optimization flag overrides
+GCC_OPT_YES = -g -O4
+GCC_OPT_NO = -g
+G++_OPT_YES = -g -O4
+G++_OPT_NO = -g
+
+#--------------------------------------------------
+# c++ exceptions,  YES or NO
+CXX_EXCEPTIONS = NO
+
+#--------------------------------------------------
+# osithead use default stack, YES or NO
+OSITHREAD_USE_DEFAULT_STACK = NO
+
+#--------------------------------------------------
+# Link definitions
+#
+LDFLAGS += -L$(EPICS_BASE)/lib/RTEMS-$(RTEMS_BSP)
+DEPLIB_LDLIBS = $($*_LIBS:%=-l%) $(PROD_LIBS:%=-l%) $(USR_LIBS:%=-l%)\
+ $($*_SYS_LIBS:%=-l%) $(SYS_PROD_LIBS:%=-l%)
+LINK.cpp = $(CC) $(CXXFLAGS) $(CFLAGS) $(CFLAGS_LD) $(LDFLAGS) \
+	$(OPT_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS) $(DEPLIB_LDFLAGS) \
+	$(ARCH_DEP_LDFLAGS) $(STATIC_LDFLAGS) $(OP_SYS_LDFLAGS) \
+	-o $@ \
+    -u Init -lCom \
+    $(PROJECT_RELEASE)/lib/no-dpmem.rel \
+    $(PROJECT_RELEASE)/lib/no-mp.rel \
+    $(PROJECT_RELEASE)/lib/no-part.rel \
+    $(PROJECT_RELEASE)/lib/no-signal.rel \
+    $(PROJECT_RELEASE)/lib/no-rtmon.rel \
+     
+STATIC_BUILD=YES

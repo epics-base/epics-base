@@ -1,0 +1,9 @@
+# CONFIG_SITE.solaris-sparc.Common
+#
+# $Id$
+#
+# Site specific definitions for solaris-sparc host
+# Only the local epics system manager should modify this file
+ 
+#INSTALL_LOCATION = /home/phoebus/JBA/testBaseNew
+

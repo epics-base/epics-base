@@ -1,0 +1,13 @@
+#
+# $Id$
+#
+# Site Specific Configuration Information
+# Only the local epics system manager should modify this file
+ 
+# JBA test override values
+GNU_DIR=/home/phoebus/JBA/gnu
+VX_INCLUDE=$(GNU_DIR)/$(GNU_TARGET)/include
+GCC = $(GNU_BIN)/$(GNU_TARGET_PREFIX)gcc$(CMPLR_SUFFIX)
+G++ = $(GNU_BIN)/$(GNU_TARGET_PREFIX)gcc$(CMPLR_SUFFIX)
+MUNCH = echo "  " 
+

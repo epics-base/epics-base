@@ -30,21 +30,29 @@ include $(CONFIG)/CONFIG_SITE
 
 #  Host architecture specific definitions
 #
-include $(CONFIG)/os/CONFIG.Host.$(EPICS_HOST_ARCH)
--include $(CONFIG)/os/CONFIG_SITE.Host.$(EPICS_HOST_ARCH)
+include $(CONFIG)/os/CONFIG.$(EPICS_HOST_ARCH).Common
+-include $(CONFIG)/os/CONFIG_SITE.$(EPICS_HOST_ARCH).Common
 
 
 ifdef T_A
 
-#  Architecture specific definitions
+#  Cross compile specific definitions
 #
 ifneq ($(EPICS_HOST_ARCH),$(T_A))
 include $(CONFIG)/CONFIG.CrossCommon
 endif
 
-include $(CONFIG)/os/CONFIG.Target.$(T_A)
+#  Target architecture specific definitions
 #
--include $(CONFIG)/os/CONFIG_SITE.Target.$(T_A)
+-include $(CONFIG)/os/CONFIG.Common.$(T_A)
+
+#  Host-Target architecture specific definitions
+#
+-include $(CONFIG)/os/CONFIG.$(EPICS_HOST_ARCH).$(T_A)
+
+#  Site specific target and host-target definitions
+#
+-include $(CONFIG)/os/CONFIG_SITE.Common.$(T_A)
 -include $(CONFIG)/os/CONFIG_SITE.$(EPICS_HOST_ARCH).$(T_A)
 
 endif
@@ -54,12 +62,16 @@ endif
 -include $(HOME)/configure/CONFIG
 -include $(HOME)/os/configure/CONFIG.Host.$(HOST_ARCH)
 -include $(HOME)/os/configure/CONFIG.Host.$(EPICS_HOST_ARCH)
+-include $(HOME)/os/configure/CONFIG.$(HOST_ARCH).Common
+-include $(HOME)/os/configure/CONFIG.$(EPICS_HOST_ARCH).Common
 ifdef T_A
 -include $(HOME)/configure/CONFIG.$(OS_CLASS)
 -include $(HOME)/configure/CONFIG.Target.$(T_A)
+-include $(HOME)/configure/CONFIG.Common.$(T_A)
 -include $(HOME)/configure/CONFIG.$(HOST_ARCH).$(T_A)
 -include $(HOME)/configure/CONFIG.$(EPICS_HOST_ARCH).$(T_A)
 -include $(HOME)/configure/os/CONFIG.Target.$(T_A)
+-include $(HOME)/configure/os/CONFIG.Common.$(T_A)
 -include $(HOME)/configure/os/CONFIG.$(HOST_ARCH).$(T_A)
 -include $(HOME)/configure/os/CONFIG.$(EPICS_HOST_ARCH).$(T_A)
 endif

@@ -1,0 +1,86 @@
+# CONFIG.Common.UnixCommon
+#
+# $Id$
+#
+#  Contains definitions common to all Unix target archs
+#  CONFIG.Common.<os_arch> files will override
+#
+#  This file is maintained by the build community.
+#  Sites may override common definitions in CONFIG_SITE.Common.UnixCommon
+#-------------------------------------------------------
+ 
+# Unix valid build types
+
+VALID_BUILDS = Host Ioc
+
+#-------------------------------------------------------
+# Gnu directory
+
+GNU_DIR = /usr/local
+
+#-------------------------------------------------------
+# Unix prefix and suffix definitions
+
+EXE =
+OBJ = .o
+#Library prefix and suffixes
+LIB_PREFIX = lib
+LIB_SUFFIX = .a
+SHRLIB_SUFFIX = .so$(addprefix .,$(SHRLIB_VERSION))
+
+#-------------------------------------------------------
+#	adjust names of libraries to build
+#
+# <lib> ->  lib<lib>.a
+LIBNAME = $(BUILD_LIBRARY:%=$(LIB_PREFIX)%$(LIB_SUFFIX))
+# <lib> ->  lib<lib>.so.<version>
+SHRLIBNAME = $(BUILD_LIBRARY:%=$(LIB_PREFIX)%$(SHRLIB_SUFFIX))
+
+#-------------------------------------------------------
+# Shared library definitions
+
+SHRLIB_LDFLAGS = $($(ANSI)_SHRLIB_LDFLAGS_$(strip $(SHARED_LIBRARIES)))
+SHRLIB_LDLIBS = $($*_LIBS:%=-l%)
+
+INSTALL_SHRLIB = $(INSTALL_LIB)
+
+#--------------------------------------------------
+# Prod: dependancy definitions
+
+PROD_DEPLIBS = $(foreach lib,$(PROD_LIBS) $(USR_LIBS),$(firstword $(wildcard  \
+$($(lib)_DIR)/$(LIB_PREFIX)$(lib).*)))
+
+#--------------------------------------------------
+# Prod: LDFLAGS and LDLIBS definitions
+
+DEPLIB_DIRS = $(dir $($*_DEPLIBS)) $(dir $(PROD_DEPLIBS))
+DEPLIB_LDFLAGS += $(sort $(DEPLIB_DIRS:%=-L%))
+
+DEPLIB_LDLIBS = $($*_LIBS:%=-l%) $(PROD_LIBS:%=-l%) $(USR_LIBS:%=-l%)\
+ $($*_SYS_LIBS:%=-l%) $(SYS_PROD_LIBS:%=-l%)
+
+######Above DEPLIB_LDFLAGS and DEPLIB_LDLIBS defs might be able to be replaced by the
+###### following def if we look for *.so followed by *.a with check for STATIC BUILD
+######DEPLIB_LDLIBS = $($*_DEPLIBS) $(PROD_DEPLIBS) $(SYS_PROD_LIBS:%=-l%)
+
+#--------------------------------------------------
+#  Allow code to be used in a shared library
+GCC_DEP_CFLAGS =  -fPIC
+G++_DEP_CFLAGS =  -fPIC
+
+#--------------------------------------------------
+# Operating system definitions
+OP_SYS_INCLUDES =
+OP_SYS_CPPFLAGS = -DUNIX 
+OP_SYS_LDFLAGS =
+OP_SYS_LDLIBS = -lm
+
+#--------------------------------------------------
+# Link definitions
+LINK.c = $(CC) -o $@ $(LDFLAGS)
+LINK.cpp = $(CXX) -o $@ $(LDFLAGS)
+LINK.shrlib = $(SHRLIB_LINKER) -o $@ $(SHRLIB_LDFLAGS) $(LDFLAGS)
+#--------------------------------------------------
+# Allow site overrides
+-include $(CONFIG)/os/CONFIG_SITE.Common.UnixCommon
+-include $(CONFIG)/os/CONFIG_SITE.$(EPICS_HOST_ARCH).UnixCommon

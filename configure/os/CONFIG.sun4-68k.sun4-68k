@@ -1,0 +1,89 @@
+# CONFIG.sun4-68k.sun4-68k
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for sun4-68k target arch when host arch is sun4-68k
+# Sites may override these definitions in CONFIG_SITE.sun4-68k.sun4-68k
+#-------------------------------------------------------
+
+# Include definitions common to all Unix target archs
+include $(CONFIG)/os/CONFIG.common.UnixCommon
+
+OS_CLASS = sun4
+ARCH_CLASS = 68k
+
+RANLIB = ranlib -t
+
+# required by sun's C++ compiler
+AR = $(CCC) -xar -o
+
+# Configure OS vendor C compilers
+ACC = /usr/lang/acc
+ACC_CMPLR_CPPFLAGS_ANSI = -Xa
+ACC_CMPLR_CPPFLAGS_STRICT = -Xc
+ACC_CMPLR_CPPFLAGS_TRAD = -Xs
+ACC_WARN_YES = -vc
+ACC_WARN_NO = -w
+ACC_OPT_YES = -O
+ACC_OPT_NO = -g
+ACC_STATIC_CFLAGS_YES= -Bstatic
+ACC_STATIC_CFLAGS_NO=
+ACC_STATIC_LDLIBS_YES=
+ACC_STATIC_LDLIBS_NO=
+#ACC_OP_SYS_LDFLAGS = -L$(SPECIAL_LANG)
+ACC_SHRLIB_CFLAGS_YES =  -pic
+ACC_SHRLIB_LDFLAGS_YES =  -assert pure-text -h $@
+
+SUNCC = cc
+SUNCC_CMPLR_CPPFLAGS_NORMAL = echo SUNCC_ANSI not defined
+SUNCC_CMPLR_CPPFLAGS_STRICT = echo SUNCC_STRICT not defined
+SUNCC_CMPLR_TRAD = $(SUNCC)
+SUNCC_WARN_YES =
+SUNCC_WARN_NO = -w
+SUNCC_OPT_YES = -O
+SUNCC_OPT_NO = -g
+SUNCC_STATIC_CFLAGS_YES= -Bstatic
+SUNCC_STATIC_CFLAGS_NO=
+SUNCC_STATIC_LDLIBS_YES=
+SUNCC_STATIC_LDLIBS_NO=
+SUNCC_SHRLIB_CFLAGS_YES =  -pic
+SUNCC_SHRLIB_LDFLAGS_YES =  -assert pure-text -h $@
+
+# Configure OS vendor C++ compiler
+CCC = /usr/lang/CC
+CCC_CMPLR_CPPFLAGS_NORMAL =
+CCC_CMPLR_CPPFLAGS_STRICT =
+CCC_TEMPL_INST_FLAG =
+CCC_WARN_YES =
+CCC_WARN_NO =
+CCC_TEMPL_INST_FLAG =
+CCC_WARN_YES = +w
+CCC_WARN_NO = 
+CCC_OPT_YES =  -O
+CCC_OPT_NO = -g
+CCC_STATIC_CFLAGS_YES= -Bstatic
+CCC_STATIC_CFLAGS_NO=
+CCC_STATIC_LDLIBS_YES=
+CCC_STATIC_LDLIBS_NO=
+CCC_DEPENDS_FLAG = -xM1
+
+ACC_CPP = cpp
+
+#Configure gnu compiler
+GCC = gcc
+G++ = g++
+GCC_CPP = $(GCC) -x c -E
+
+GCC_ANSI += -D__USE_FIXED_PROTOTYPES__
+GCC_STRICT += -D__USE_FIXED_PROTOTYPES__
+
+ACC_ARCH_DEP_LDLIBS =
+GCC_ARCH_DEP_LDLIBS = -liberty
+ARCH_DEP_LDLIBS = $($(ANSI)_ARCH_DEP_LDLIBS) -lposix4 -lpthread -lthread
+
+ARCH_DEP_CFLAGS =
+
+#SPECIAL_LANG = /usr/lang/SC3.0.1
+#SPECIAL_LANG = /usr/lang/lib
+

@@ -130,7 +130,6 @@ private:
     friend class resTableIter<T,ID>;
 };
 
-
 //
 // class resTableIter
 //

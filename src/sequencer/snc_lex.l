@@ -9,6 +9,8 @@
 	HISTORY:
 20nov91,ajk	Added OPTION token.
 15jan92,ajk	Fixed to allow "!" as a unary operator.
+17Jul92,rcz	changed warn_flag to warn_opt
+17Jul92,rcz	Ported ajk version from lanl
 ***************************************************************************/
 /* Lexical analyzer for State Notation Compiler (snc).
  *
@@ -35,7 +37,7 @@
 #define	STR_BFR_SIZE	30000
 
 extern int	line_num, c_line_num; /* input line number */
-extern int	warn_flag; /* compiler warning flag */
+extern int	warn_opt; /* compiler warning flag */
 char		str_bfr[STR_BFR_SIZE]; /* holding place for strings */
 char		*str_next = str_bfr; /* current ptr to str_bfr */
 char		*c_str; /* Start of current string in str_bfr */
@@ -85,7 +87,7 @@ FPNUM	(\-?(([0-9]+)(\.[0-9]*)?)|(\.[0-9]+))
 }
 <STR>.		{ *str_next++ = yytext[0]; }
 <STR>\n	{	*str_next++ = '?';
-		if (warn_flag)
+		if (warn_opt)
 			fprintf(stderr, "Warning:  newline in string, line %d\n",
 			 line_num);
 		line_num++;

@@ -20,7 +20,6 @@ DIRS += omsDev
 DIRS += pentekDev
 DIRS += softDev
 DIRS += symbDev
-DIRS += temp
 DIRS += testDev
 DIRS += vmiDev
 DIRS += vxStatsDev

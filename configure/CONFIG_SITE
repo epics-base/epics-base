@@ -91,11 +91,18 @@ STATIC_BUILD=NO
 #  Should header dependancy files be automatically generated
 #  for each C/C++ source code file?
 #        must be either YES or NO
-#
-#  Note: On solaris and WIN32 hosts, the gnu compilers gcc and g++ are
-#        used to generate the dependancy files, and they must be in
-#        your path.
 HDEPENDS=YES
+
+# Default command to generate header dependancies for host builds
+# only used if HDEPENDS=YES
+# must be either CMPLR or MKMF
+# CMPLR - use c/c++ compiler (recommended)
+# MKMF  - use mkmf.pl perl script in tools directory (has limitations)
+#
+# CMPLR Note: On solaris and WIN32 hosts, gnu compilers gcc and g++
+#             are used to generate dependancy files for host builds,
+#             and they must be in your path. 
+HOST_HDEPENDS_CMD=CMPLR
 
 #  Host build optimization
 #	must be either YES or NO

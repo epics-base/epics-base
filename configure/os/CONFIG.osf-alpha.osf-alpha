@@ -43,7 +43,7 @@ STATIC_LDLIBS_NO=
 
 SHRLIB_LDFLAGS_YES = -shared
 
-HDEPENDS_FLAGS =
+HDEPENDS_FLAGS_CMPLR =
 
 #############  ???????????
 #####ACC_SFLAGS_YES= -non_shared

@@ -57,6 +57,7 @@ SHRLIB_LDFLAGS_YES = -G -h $@
 # gnu compiler used because Sun compiler output
 # includes headers from /opt/SUNWspro and does
 # not work for c++ headers without .h suffix.
-HDEPENDS_FLAGS = -MM
-HDEPENDS.cpp = g++
+HDEPENDS_FLAGS_CMPLR = -MM
+HDEPENDS.c_CMPLR = gcc
+HDEPENDS.cpp_CMPLR = g++
 

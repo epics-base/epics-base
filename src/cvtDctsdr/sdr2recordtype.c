@@ -381,17 +381,29 @@ gen_rectype:
 	    break;
 	case DBF_GBLCHOICE: {
 		fprintf(fp,"\t\tmenu(%s)\n",pgblMenuNames[pfldDes->choice_set]);
+		if(pfldDes->initial.ushort_value)
+		    fprintf(fp,"\t\tinitial(\"%u\")\n",
+			pfldDes->initial.ushort_value);
 	    }
 	    break;
 	case DBF_CVTCHOICE: {
 		fprintf(fp,"\t\tmenu(menuConvert)\n");
+		if(pfldDes->initial.ushort_value)
+		    fprintf(fp,"\t\tinitial(\"%u\")\n",
+			pfldDes->initial.ushort_value);
 	    }
 	    break;
 	case DBF_RECCHOICE: {
 		fprintf(fp,"\t\tmenu(%s)\n",paprecChoiceNames[pfldDes->choice_set]);
+		if(pfldDes->initial.ushort_value)
+		    fprintf(fp,"\t\tinitial(\"%u\")\n",
+			pfldDes->initial.ushort_value);
 	    }
 	    break;
 	case DBF_DEVCHOICE: {
+		if(pfldDes->initial.ushort_value)
+		    fprintf(fp,"\t\tinitial(\"%u\")\n",
+			pfldDes->initial.ushort_value);
 	    }
 	    break;
 	case DBF_INLINK: {

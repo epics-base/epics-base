@@ -40,7 +40,6 @@
 #endif
 
 template class tsSLNode < casEventMaskEntry >;
-template class resTable < casEventMaskEntry, stringId >;
 
 #if defined ( _MSC_VER )
 #   pragma warning ( pop )

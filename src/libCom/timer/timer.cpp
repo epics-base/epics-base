@@ -37,11 +37,9 @@ timer::timer ( timerQueue &queueIn ) :
 {
 }
 
-void timer::destroyTimerForC ( epicsTimerForC &cTmr )
+timer::~timer ()
 {
-    epicsAutoMutex autoLock ( this->queue.mutex );
-    this->privateCancel ();
-    this->queue.cTimerfreeList.release ( &cTmr, sizeof(cTmr) );
+    this->cancel ();
 }
 
 void timer::start ( epicsTimerNotify & notify, double delaySeconds )
@@ -118,11 +116,13 @@ void timer::privateCancel ()
 {
     while ( true ) {
         if ( this->curState == statePending ) {
+	    if ( this->queue.timerList.first() == this ) {
+            	this->queue.notify.reschedule ();
+            }
             this->queue.timerList.remove ( *this );
             this->curState = stateLimbo;
             this->pNotify = 0;
         }
-        // dont wait if this was called indirectly by expire ()
         if ( this->queue.pExpireTmr == this && 
             this->queue.processThread != epicsThreadGetIdSelf() ) {
             this->queue.cancelPending = true;
@@ -138,6 +138,7 @@ void timer::privateCancel ()
             }
         }
         else {
+            // dont wait if this was called indirectly by expire ()
             return;
         }
     }
@@ -175,3 +176,14 @@ void timer::show ( unsigned int level ) const
         this->pNotify->show ( level - 1u );
     }
 }
+
+epicsTimerQueue & timer::getQueue () const
+{
+    return this->queue.getEpicsTimerQueue ();
+}
+
+timerQueue & timer::getPrivTimerQueue()
+{
+    return this->queue;
+}
+

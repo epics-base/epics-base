@@ -166,7 +166,7 @@ timer & timerQueue::createTimer ()
 void timerQueue::destroyTimer ( timer & tmr ) 
 {
     epicsAutoMutex autoLock ( this->mutex );
-    tmr.privateCancel ();
+    tmr.~timer ();
     this->timerFreeList.release ( &tmr, sizeof( tmr ) );
 }
 

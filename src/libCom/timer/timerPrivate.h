@@ -48,7 +48,8 @@ public:
     void cancel ();
     expireInfo getExpireInfo () const;
     void show ( unsigned int level ) const;
-    void destroyTimerForC ( epicsTimerForC & );
+    epicsTimerQueue & getQueue () const;
+    class timerQueue & getPrivTimerQueue ();
 protected:
     timer ( class timerQueue & );
     ~timer (); 
@@ -65,20 +66,21 @@ private:
 
 struct epicsTimerForC : public epicsTimerNotify, public timer {
 public:
-    epicsTimerForC ( timerQueue &, epicsTimerCallback, void *pPrivateIn );
     void destroy ();
 protected:
-    ~epicsTimerForC (); // intentionally not implemented ( see destroy )
+    epicsTimerForC ( timerQueue &, epicsTimerCallback, void *pPrivateIn );
+    ~epicsTimerForC (); 
 private:
     epicsTimerCallback pCallBack;
     void * pPrivate;
     expireStatus expire ( const epicsTime & currentTime );
+    friend class timerQueue;
 };
 
 class timerQueue {
 public:
     timerQueue ( epicsTimerQueueNotify &notify );
-    ~timerQueue ();
+    virtual ~timerQueue ();
     double process ( const epicsTime & currentTime );
     void show ( unsigned int level ) const;
     timer & createTimer ();
@@ -95,6 +97,7 @@ private:
     timer *pExpireTmr;
     epicsThreadId processThread;
     bool cancelPending;
+    virtual epicsTimerQueue & getEpicsTimerQueue () = 0;
     friend class timer;
 };
 
@@ -110,7 +113,7 @@ private:
 
 class timerQueueActive : public epicsTimerQueueActive, 
     public epicsThreadRunable, public epicsTimerQueueNotify,
-    public timerQueueActiveMgrPrivate {
+    public timerQueueActiveMgrPrivate, private timerQueue {
 public:
     timerQueueActive ( bool okToShare, unsigned priority );
     ~timerQueueActive () = 0;
@@ -119,9 +122,9 @@ public:
     void show ( unsigned int level ) const;
     bool sharingOK () const;
     int threadPriority () const;
-    timerQueue & getTimerQueue ();
+    epicsTimerForC & createTimerForC ( epicsTimerCallback, void *pPrivateIn );
+    void destroyTimerForC ( epicsTimerForC & );
 private:
-    timerQueue queue;
     epicsEvent rescheduleEvent;
     epicsEvent exitEvent;
     epicsThread thread;
@@ -130,6 +133,7 @@ private:
     bool terminateFlag;
     void run ();
     void reschedule ();
+    epicsTimerQueue & getEpicsTimerQueue ();
 };
 
 struct epicsTimerQueueActiveForC : public timerQueueActive, 
@@ -159,19 +163,19 @@ private:
 
 extern timerQueueActiveMgr queueMgr;
 
-class timerQueuePassive : public epicsTimerQueuePassive {
+class timerQueuePassive : public epicsTimerQueuePassive,
+    private timerQueue {
 public:
     timerQueuePassive ( epicsTimerQueueNotify & );
     epicsTimer & createTimer ();
     void destroyTimer ( epicsTimer & );
-    double process ( const epicsTime & currentTime );
     void show ( unsigned int level ) const;
-    void release ();
-    timerQueue & getTimerQueue ();
+    double process ( const epicsTime & currentTime );
+    epicsTimerForC & createTimerForC ( epicsTimerCallback, void *pPrivateIn );
+    void destroyTimerForC ( epicsTimerForC & );
 protected:
     ~timerQueuePassive ();
-private:
-    timerQueue queue;
+    epicsTimerQueue & getEpicsTimerQueue ();
 };
 
 inline epicsTimerForC & timerQueue::createTimerForC 
@@ -185,6 +189,12 @@ inline epicsTimerForC & timerQueue::createTimerForC
     return * new ( pBuf ) epicsTimerForC ( *this, pCB, pPriv );
 }
 
+inline void timerQueue::destroyTimerForC ( epicsTimerForC & tmr )
+{
+    tmr.~epicsTimerForC ();
+    this->cTimerfreeList.release ( &tmr, sizeof ( tmr ) );
+}
+
 inline bool timerQueueActive::sharingOK () const
 {
     return this->okToShare;
@@ -193,16 +203,6 @@ inline bool timerQueueActive::sharingOK () const
 inline int timerQueueActive::threadPriority () const
 {
     return thread.getPriority ();
-}
-
-inline timerQueue & timerQueueActive::getTimerQueue ()
-{
-    return this->queue;
-}
-
-inline timerQueue & timerQueuePassive::getTimerQueue ()
-{
-    return this->queue;
 }
 
 inline void * epicsTimerQueueActiveForC::operator new ( size_t size )

@@ -48,6 +48,8 @@ private:
     static epicsMutex freeListMutex;
 };
 
+epicsTimer::~epicsTimer () {}
+
 void epicsTimerNotify::show ( unsigned /* level */ ) const {}
 
 epicsTimerForC::epicsTimerForC ( timerQueue &queue, epicsTimerCallback pCBIn, void *pPrivateIn ) :
@@ -55,9 +57,13 @@ epicsTimerForC::epicsTimerForC ( timerQueue &queue, epicsTimerCallback pCBIn, vo
 {
 }
 
+epicsTimerForC::~epicsTimerForC ()
+{
+}
+
 inline void epicsTimerForC::destroy ()
 {
-    this->destroyTimerForC ( *this );
+    this->getPrivTimerQueue().destroyTimerForC ( *this );
 }
 
 epicsTimerNotify::expireStatus epicsTimerForC::expire ( const epicsTime & )
@@ -146,7 +152,7 @@ extern "C" epicsTimerId epicsShareAPI epicsTimerQueuePassiveCreateTimer (
     epicsTimerQueuePassiveId pQueue, epicsTimerCallback pCallback, void *pArg )
 {
     try {
-        return new epicsTimerForC ( pQueue->getTimerQueue (), pCallback, pArg );
+        return & pQueue->createTimerForC ( pCallback, pArg );
     }
     catch ( ... ) {
         return 0;
@@ -180,7 +186,7 @@ extern "C" epicsTimerId epicsShareAPI epicsTimerQueueCreateTimer (
     epicsTimerQueueId pQueue, epicsTimerCallback pCallback, void *pArg )
 {
     try {
-        return new epicsTimerForC ( pQueue->getTimerQueue (), pCallback, pArg );
+        return & pQueue->createTimerForC ( pCallback, pArg );
     }
     catch ( ... ) {
         return 0;

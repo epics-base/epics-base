@@ -51,24 +51,34 @@ epicsTimerQueuePassive &epicsTimerQueuePassive::create ( epicsTimerQueueNotify &
 }
 
 timerQueuePassive::timerQueuePassive ( epicsTimerQueueNotify &notifyIn ) :
-    queue ( notifyIn ) {}
+    timerQueue ( notifyIn ) {}
 
 timerQueuePassive::~timerQueuePassive () {}
 
 epicsTimer & timerQueuePassive::createTimer ()
 {
-    return this->queue.createTimer ();
+    return this->timerQueue::createTimer ();
 }
 
 void timerQueuePassive::destroyTimer ( epicsTimer & et )
 {
     timer & tmr = dynamic_cast < timer & > ( et );
-    this->queue.destroyTimer ( tmr );
+    this->timerQueue::destroyTimer ( tmr );
+}
+
+epicsTimerForC & timerQueuePassive::createTimerForC ( epicsTimerCallback pCB, void *pPrivateIn )
+{
+    return this->timerQueue::createTimerForC ( pCB, pPrivateIn );
+}
+
+void timerQueuePassive::destroyTimerForC ( epicsTimerForC &tmr )
+{
+    this->timerQueue::destroyTimerForC ( tmr );
 }
 
 double timerQueuePassive::process ( const epicsTime & currentTime )
 {
-    return this->queue.process ( currentTime );
+    return this->timerQueue::process ( currentTime );
 }
 
 void timerQueuePassive::show ( unsigned int level ) const
@@ -76,6 +86,12 @@ void timerQueuePassive::show ( unsigned int level ) const
     printf ( "EPICS non-threaded timer queue at %p\n", 
         static_cast <const void *> ( this ) );
     if ( level >=1u ) {
-        this->queue.show ( level - 1u );
+        this->timerQueue::show ( level - 1u );
     }
 }
+
+epicsTimerQueue & timerQueuePassive::getEpicsTimerQueue () 
+{
+    return static_cast < epicsTimerQueue &> ( * this );
+}
+

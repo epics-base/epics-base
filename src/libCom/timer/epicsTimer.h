@@ -57,6 +57,7 @@ public:
     virtual expireInfo getExpireInfo () const = 0;
     double getExpireDelay ();
     virtual void show ( unsigned int level ) const = 0;
+    virtual class epicsTimerQueue & getQueue () const = 0;
 protected:
     virtual ~epicsTimer (); 
 };

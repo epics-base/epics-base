@@ -41,7 +41,8 @@ epicsTimerQueueActive &epicsTimerQueueActive::allocate ( bool okToShare, int thr
 }
 
 timerQueueActive::timerQueueActive ( bool okToShareIn, unsigned priority ) :
-    queue ( *this ), thread ( *this, "epicsTimerQueueActive",
+    timerQueue ( static_cast <epicsTimerQueueNotify &> ( *this ) ), 
+    thread ( *this, "epicsTimerQueueActive", 
         epicsThreadGetStackSize ( epicsThreadStackMedium ), priority ),
     okToShare ( okToShareIn ), exitFlag ( false ), terminateFlag ( false )
 {
@@ -63,7 +64,7 @@ void timerQueueActive::run ()
 {
     this->exitFlag = false;
     while ( ! this->terminateFlag ) {
-        double delay = this->queue.process ( epicsTime::getCurrent() );
+        double delay = this->timerQueue::process ( epicsTime::getCurrent() );
         debugPrintf ( ( "timer thread sleeping for %g sec (max)\n", delay ) );
         this->rescheduleEvent.wait ( delay );
     }
@@ -73,13 +74,23 @@ void timerQueueActive::run ()
 
 epicsTimer & timerQueueActive::createTimer ()
 {
-    return this->queue.createTimer ();
+    return this->timerQueue::createTimer ();
 }
 
 void timerQueueActive::destroyTimer ( epicsTimer & et )
 {
     timer & tmr = dynamic_cast < timer & > ( et );
-    this->queue.destroyTimer ( tmr );
+    this->timerQueue::destroyTimer ( tmr );
+}
+
+epicsTimerForC & timerQueueActive::createTimerForC ( epicsTimerCallback pCB, void *pPrivateIn )
+{
+    return this->timerQueue::createTimerForC ( pCB, pPrivateIn );
+}
+
+void timerQueueActive::destroyTimerForC ( epicsTimerForC &tmr )
+{
+    this->timerQueue::destroyTimerForC ( tmr );
 }
 
 void timerQueueActive::reschedule ()
@@ -92,7 +103,7 @@ void timerQueueActive::show ( unsigned int level ) const
     printf ( "EPICS threaded timer queue at %p\n", 
         static_cast <const void *> ( this ) );
     if ( level >=1u ) {
-        this->queue.show ( level - 1u );
+        this->timerQueue::show ( level - 1u );
         printf ( "reschedule event\n" );
         this->rescheduleEvent.show ( level - 1u );
         printf ( "exit event\n" );
@@ -102,3 +113,9 @@ void timerQueueActive::show ( unsigned int level ) const
             this->terminateFlag ? 'T' : 'F' );
     }
 }
+
+epicsTimerQueue & timerQueueActive::getEpicsTimerQueue () 
+{
+    return static_cast < epicsTimerQueue &> ( * this );
+}
+

@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.25  1998/06/23 15:10:36  jhill
+// fixed use of nill ptr in gdd::put(const gdd* dd)
+//
 // Revision 1.24  1998/06/16 03:15:34  jhill
 // fixed big problems with leaked ait/fixedString in gdd union
 //
@@ -210,15 +213,18 @@ gdd::~gdd(void)
 			freeBounds();
 		}
 	}
-	else
+	else if(isAtomic())
 	{
 		if(destruct) destruct->destroy(dataPointer());
 		if(bounds) freeBounds();
 	}
-	//
-	// this destroys any scalar string data that may be present
-	//
-	this->setPrimType (aitEnumInvalid);
+	else
+	{
+		//
+		// this destroys any scalar string data that may be present
+		//
+		this->setPrimType (aitEnumInvalid);
+	}
 	this->setApplType (0);
 }
 

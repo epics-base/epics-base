@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.32  2000/06/27 22:32:21  jhill
+// backed out over-zelous use of smart pointers
+//
 // Revision 1.31  2000/06/26 15:37:41  jhill
 // adjusted DLL symbol export
 //
@@ -124,6 +127,10 @@
 #include "gddAppTable.h"
 #include "dbMapper.h"
 // #include "templates/dbMapperTempl.h"
+
+#ifndef min
+#    define min(a,b) (((a)<(b))?(a):(b))
+#endif
 
 // hardcoded in same order as aitConvert.h
 // no way to detect a string type!!!!!!!

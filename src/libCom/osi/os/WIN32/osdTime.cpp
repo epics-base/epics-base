@@ -33,6 +33,7 @@
 #define epicsExportSharedSymbols
 #include "osiTime.h"
 #include "errlog.h"
+#include "epicsAssert.h"
 
 //
 // performance counter last value, ticks per sec,

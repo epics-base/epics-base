@@ -654,7 +654,7 @@ static void print_returned(type,pbuffer,count)
     printf("\n");
 }
 
-static void tpnCallback(PUTNOTIFY *ppn)
+static void tpnCallback(putNotify *ppn)
 {
     struct dbAddr	*pdbaddr = (struct dbAddr *)ppn->paddr;
     long	status = ppn->status;
@@ -674,7 +674,7 @@ int epicsShareAPI tpn(char	*pname,char *pvalue)
 {
     long		status;
     struct dbAddr	*pdbaddr=NULL;
-    PUTNOTIFY		*ppn=NULL;
+    putNotify		*ppn=NULL;
     char		*psavevalue;
     int			len;
 
@@ -693,7 +693,7 @@ int epicsShareAPI tpn(char	*pname,char *pvalue)
 	free((void *)pdbaddr);
 	return(-1);
     }
-    ppn = calloc(1,sizeof(PUTNOTIFY));
+    ppn = calloc(1,sizeof(putNotify));
     if(!pdbaddr) {
 	printf("calloc failed\n");
 	return(-1);

@@ -550,6 +550,7 @@ long epicsShareAPI dbProcess(dbCommon *precord)
 	static unsigned long trace_lset=0;
 	int		set_trace=FALSE;
 	dbFldDes	*pdbFldDes;
+        int             callNotifyCompletion = FALSE;
 
 	lset = dbLockGetLockId(precord);
         /*
@@ -617,7 +618,7 @@ long epicsShareAPI dbProcess(dbCommon *precord)
 
 		/*take care of caching and notifyCompletion*/
 		precord->rpro = FALSE;
-		if (precord->ppn) dbNotifyCompletion(precord);
+                callNotifyCompletion = TRUE;
 		/* raise disable alarm */
 		if (precord->stat==DISABLE_ALARM) goto all_done;
 		precord->sevr = precord->diss;
@@ -636,6 +637,7 @@ long epicsShareAPI dbProcess(dbCommon *precord)
 	/* locate record processing routine */
         /* put this in iocInit() !!! */
 	if (!(prset=precord->rset) || !(prset->process)) {
+                callNotifyCompletion = TRUE;
 		precord->pact=1;/*set pact TRUE so error is issued only once*/
 		recGblRecordError(S_db_noRSET, (void *)precord, "dbProcess");
 		status = S_db_noRSET;
@@ -656,6 +658,7 @@ all_done:
 		trace_lset = 0;
 		trace = 0;
 	}
+	if(callNotifyCompletion && precord->ppn) dbNotifyCompletion(precord);
 	return(status);
 }
 
@@ -1008,7 +1011,7 @@ long epicsShareAPI dbPutField(
     if(special==SPC_ATTRIBUTE) return(S_db_noMod);
     /*check for putField disabled*/
     if(precord->disp) {
-	if((void *)(&precord->disp) != paddr->pfield) return(0);
+	if((void *)(&precord->disp) != paddr->pfield) return(S_db_putDisabled);
     }
     if(dbfType>=DBF_INLINK && dbfType<=DBF_FWDLINK) {
 	DBLINK  *plink = (DBLINK *)paddr->pfield;

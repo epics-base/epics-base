@@ -162,11 +162,11 @@
 		interest(4)
 		extra("struct putNotify *ppn")
 	}
-	field(PPNN,DBF_NOACCESS) {
-		prompt("next record PUTNOTIFY")
+	field(PPNR,DBF_NOACCESS) {
+		prompt("pputNotifyRecord")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("struct pnWaitNode *ppnn")
+		extra("struct putNotifyRecord *ppnr")
 	}
 	field(SPVT,DBF_NOACCESS) {
 		prompt("Scan Private")

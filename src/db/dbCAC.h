@@ -53,7 +53,7 @@ public:
     void operator delete ( void *pCadaver, size_t size );
     void destroy ();
 protected:
-    ~dbPutNotifyBlocker ();
+    virtual ~dbPutNotifyBlocker ();
 private:
     putNotify pn;
     epicsEvent block;
@@ -78,7 +78,7 @@ public:
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
 protected:
-    ~dbSubscriptionIO ();
+    virtual ~dbSubscriptionIO ();
 private:
     cacDataNotify &notify;
     dbChannelIO &chan;

@@ -15,8 +15,8 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdio.h>
-#include <fcntl.h>
 
+#include "epicsStdio.h"
 #include "dbDefs.h"
 #include "errlog.h"
 #include "ellLib.h"
@@ -64,14 +64,14 @@ static void printBuffer(
 	long status,short dbr_type,void *pbuffer,long reqOptions,
 	long retOptions,long no_elements,TAB_BUFFER *pMsgBuff,int tab_size);
 static int dbpr_report(
-	char *pname,DBADDR *paddr,int interest_level,
+	const char *pname,DBADDR *paddr,int interest_level,
 	TAB_BUFFER *pMsgBuff,int tab_size);
 static void dbpr_msgOut(TAB_BUFFER *pMsgBuff,int tab_size);
 static void dbpr_init_msg(TAB_BUFFER *pMsgBuff,int tab_size);
 static void dbpr_insert_msg(TAB_BUFFER *pMsgBuff,int len,int tab_size);
 static void dbpr_msg_flush(TAB_BUFFER *pMsgBuff,int tab_size);
 
-long epicsShareAPI dba(char*pname)
+long epicsShareAPI dba(const char*pname)
 {
     DBADDR 	addr;
     long		status;
@@ -89,21 +89,17 @@ long epicsShareAPI dba(char*pname)
     return 0;
 }
 
-long epicsShareAPI dbl(char	*precordTypename,char *filename,char *fields)
+long epicsShareAPI dbl(
+    const char *precordTypename,const char *fields)
 {
     DBENTRY	dbentry;
     DBENTRY	*pdbentry=&dbentry;
     long	status;
-    FILE	*stream = NULL;
     int		nfields = 0;
     int		ifield;
     char	*fieldnames = 0;
     char 	**papfields = 0;
 
-    if (precordTypename && ((*precordTypename == '\0') || !strcmp(precordTypename,"*")))
-        precordTypename = NULL;
-    if (filename && (*filename == '\0'))
-        filename = NULL;
     if (fields && (*fields == '\0'))
         fields = NULL;
     if(fields) {
@@ -128,20 +124,6 @@ long epicsShareAPI dbl(char	*precordTypename,char *filename,char *fields)
 	    }
 	}
     }
-    if(filename && strlen(filename)) {
-        int fd;
-
-        fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0644 );
-        if(fd<0) {
-            fprintf(stderr,"%s could not be created\n",filename);
-            return(0);
-        }
-        stream = fdopen(fd,"w");
-        if(stream==NULL) {
-            fprintf(stderr,"%s could not be opened for output\n",filename);
-            return(0);
-        }
-    }
     if(!pdbbase) {
         fprintf(stderr,"no database has been loaded\n");
         return(0);
@@ -152,26 +134,23 @@ long epicsShareAPI dbl(char	*precordTypename,char *filename,char *fields)
     else
 	status = dbFindRecordType(pdbentry,precordTypename);
     if(status) {
-	if(stream) fprintf(stream,"No record description\n");
-	else printf("No record description\n");
+	fprintf(stdout,"No record description\n");
     }
     while(!status) {
 	status = dbFirstRecord(pdbentry);
 	while(!status) {
-	    if(stream) fprintf(stream,"%s",dbGetRecordName(pdbentry));
-	    else printf("%s",dbGetRecordName(pdbentry));
+	    fprintf(stdout,"%s",dbGetRecordName(pdbentry));
 	    for(ifield=0; ifield<nfields; ifield++) {
 		char *pvalue;
 		status = dbFindField(pdbentry,papfields[ifield]);
 		if(status) continue;
 		pvalue = dbGetString(pdbentry);
 		if(pvalue) {
-		    if(stream) fprintf(stream,",\"%s\"",pvalue);
-		    else printf(",\"%s\"",pvalue);
+		    fprintf(stdout,",\"%s\"",pvalue);
 		}
 	    }
-	    if(stream) fprintf(stream,"\n"); else printf("\n");
-	    status = dbNextRecord(pdbentry);
+	    fprintf(stdout,"\n");
+            status = dbNextRecord(pdbentry);
 	}
 	if(precordTypename) break;
 	status = dbNextRecordType(pdbentry);
@@ -181,7 +160,6 @@ long epicsShareAPI dbl(char	*precordTypename,char *filename,char *fields)
 	free((void *)fieldnames);
     }
     dbFinishEntry(pdbentry);
-    if(stream) fclose(stream);
     return(0);
 }
 
@@ -212,7 +190,7 @@ long epicsShareAPI dbnr(int verbose)
     return(0);
 }
 
-static int specified_by(char *ptest, char *pspec)
+static int specified_by(const char *ptest, const char *pspec)
 {
     short               inx;
     short               wild_card_start;
@@ -259,7 +237,7 @@ static int specified_by(char *ptest, char *pspec)
         }
 }
  
-long epicsShareAPI dbgrep(char *pmask)
+long epicsShareAPI dbgrep(const char *pmask)
 {
     DBENTRY	dbentry;
     DBENTRY	*pdbentry=&dbentry;
@@ -289,7 +267,7 @@ long epicsShareAPI dbgrep(char *pmask)
     return(0);
 }
 
-long epicsShareAPI dbgf(char	*pname)
+long epicsShareAPI dbgf(const char *pname)
 {
     /* declare buffer long just to ensure correct alignment */
     long 		buffer[100];
@@ -330,7 +308,7 @@ long epicsShareAPI dbgf(char	*pname)
     return(0);
 }
 
-long epicsShareAPI dbpf(char	*pname,char *pvalue)
+long epicsShareAPI dbpf(const char *pname,const char *pvalue)
 {
     /* declare buffer long just to ensure correct alignment */
     DBADDR addr;
@@ -369,7 +347,7 @@ long epicsShareAPI dbpf(char	*pname,char *pvalue)
     return(status);
 }
 
-long epicsShareAPI dbpr(char *pname,int interest_level)
+long epicsShareAPI dbpr(const char *pname,int interest_level)
 {
     static TAB_BUFFER msg_Buff;
     TAB_BUFFER       *pMsgBuff = &msg_Buff;
@@ -402,7 +380,7 @@ long epicsShareAPI dbpr(char *pname,int interest_level)
     return (0);
 }
 
-long epicsShareAPI dbtr(char *pname)
+long epicsShareAPI dbtr(const char *pname)
 {
     DBADDR addr;
     long 	     status;
@@ -434,7 +412,7 @@ long epicsShareAPI dbtr(char *pname)
     return(0);
 }
 
-long epicsShareAPI dbtgf(char *pname)
+long epicsShareAPI dbtgf(const char *pname)
 {
     /* declare buffer long just to ensure correct alignment */
     long              buffer[400];
@@ -513,7 +491,7 @@ long epicsShareAPI dbtgf(char *pname)
     return(0);
 }
 
-long epicsShareAPI dbtpf(char	*pname,char *pvalue)
+long epicsShareAPI dbtpf(const char *pname,const char *pvalue)
 {
     /* declare buffer long just to ensure correct alignment */
     long          buffer[100];
@@ -682,14 +660,14 @@ long epicsShareAPI dbtpf(char	*pname,char *pvalue)
     return(0);
 }
 
-long epicsShareAPI dbior(char	*pdrvName,int type)
+long epicsShareAPI dbior(const char *pdrvName,int interest_level)
 {
-    char		*pname;
-    drvSup		*pdrvSup;
-    struct drvet	*pdrvet;
-    dbRecordType		*pdbRecordType;
-    devSup		*pdevSup;
-    struct dset		*pdset;
+    char	 *pname;
+    drvSup	 *pdrvSup;
+    struct drvet *pdrvet;
+    dbRecordType *pdbRecordType;
+    devSup	 *pdevSup;
+    struct dset	 *pdset;
 
     if(!pdbbase) {
         fprintf(stderr,"no database has been loaded\n");
@@ -708,7 +686,7 @@ long epicsShareAPI dbior(char	*pdrvName,int type)
 	    printf("Driver: %s No report available\n",pname);
 	else {
 	    printf("Driver: %s\n",pname);
-	    (*pdrvet->report)(type);
+	    (*pdrvet->report)(interest_level);
 	}
     }
     /* now check devSup reports */
@@ -722,46 +700,20 @@ long epicsShareAPI dbior(char	*pdrvName,int type)
 	    if(pdrvName!=NULL && *pdrvName!='\0' && (strcmp(pdrvName,pname)!=0)) continue;
 	    if(pdset->report!=NULL) {
 		printf("Device Support: %s\n",pname);
-		(*pdset->report)(type);
+		(*pdset->report)(interest_level);
 	    }
 	}
     }
     return(0);
 }
 
-int epicsShareAPI dbhcr(char *filename)
+int epicsShareAPI dbhcr(void)
 {
-    FILE	*stream = NULL;
-    int		isStdout = TRUE;
-
     if(!pdbbase) {
         fprintf(stderr,"no database has been loaded\n");
         return(0);
     }
-    if(filename && strlen(filename)) {
-        int fd;
-
-        fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0644 );
-        if(fd<0) {
-            fprintf(stderr,"%s could not be created\n",filename);
-            return(0);
-        }
-        stream = fdopen(fd,"w");
-        if(stream==NULL) {
-            fprintf(stderr,"%s could not be opened for output\n",filename);
-            return(0);
-        }
-	isStdout = FALSE;
-    } else {
-	stream = stdout;
-    }
-
-    dbReportDeviceConfig(pdbbase,stream);
-    if(isStdout) {
-	fflush(stream);
-    } else {
-        fclose(stream);
-    }
+    dbReportDeviceConfig(pdbbase,stdout);
     return(0);
 }
 
@@ -1097,7 +1049,7 @@ static void printBuffer(
 }
 
 static int dbpr_report(
-	char *pname,DBADDR *paddr,int interest_level,
+	const char *pname,DBADDR *paddr,int interest_level,
 	TAB_BUFFER *pMsgBuff,int tab_size)
 {
 

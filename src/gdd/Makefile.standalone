@@ -5,6 +5,9 @@
 # $Id$
 #
 # $Log$
+# Revision 1.1  1996/06/25 19:11:26  jbk
+# new in EPICS base
+#
 #
 
 # Simple build system for all the platforms I've tested on
@@ -203,7 +206,7 @@ genApps: genApps.o $(OBJS) $(DEPLIB)
 	$(CCC) $(LDFLAGS) -o $@ $< $(LIBFLAGS_T)
 
 gddApps.h: genApps
-	$< gddApps.h
+	./$< gddApps.h
 	cp gddApps.h ..
 
 genApps.o: genApps.cc gddAppTable.h aitTypes.h $(INCS)
@@ -220,7 +223,7 @@ aitGen.o: aitGen.c aitTypes.h
 	$(CC_NORMAL) -D$(CCTYPE) -O -c -I. $<
 
 aitConvertGenerated.cc: aitGen aitTypes.h aitConvert.h aitConvert.cc aitTypes.c
-	aitGen
+	./aitGen
 
 # -----------------------------
 gdd.o: gdd.cc $(INCS)

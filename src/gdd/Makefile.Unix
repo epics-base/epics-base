@@ -5,6 +5,9 @@
 # $Id$
 #
 # $Log$
+# Revision 1.5  1996/06/28 19:17:31  jhill
+# took out purify etc - also include dbMapper
+#
 # Revision 1.4  1996/06/28 15:19:44  jba
 # Moved config dir to base/config.
 #
@@ -55,7 +58,7 @@ TARGETS = dbMapper.o
 aitConvert.o: aitConvert.cc aitConvert.h aitConvertGenerated.cc aitTypes.h
 
 aitConvertGenerated.cc: aitGen aitTypes.h
-	aitGen
+	./aitGen
 
 aitGen: aitGen.o aitTypes.o
 	$(LINK.c) -o $@ $^ $(LDLIBS)
@@ -67,7 +70,7 @@ dbMapper.o: ../dbMapper.cc gdd.h gddAppTable.h dbMapper.h gddApps.h aitTypes.h
 	$(AR) r $(LIBNAME) $@
 
 gddApps.h: genApps
-	genApps $@
+	./genApps $@
 
 genApps: genApps.o $(LIBOBJS)
 	$(LINK.cc) -o $@ $^ $(LDLIBS)

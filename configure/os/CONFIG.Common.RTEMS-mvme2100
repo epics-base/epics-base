@@ -25,4 +25,3 @@ define MUNCH_CMD
 endef
 
 include $(CONFIG)/os/CONFIG.Common.RTEMS
-OP_SYS_LDLIBS += -lrtemsNfs

@@ -23,4 +23,3 @@ include $(CONFIG)/os/CONFIG.Common.RTEMS
 # Put text segment where it will work with etherboot
 #
 OP_SYS_LDFLAGS += -Wl,-Ttext,0x100000
-OP_SYS_LDLIBS += -lrtemsNfs

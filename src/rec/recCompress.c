@@ -55,6 +55,7 @@
  * .15  06-02-92        jba     changed graphic/control limits for hil,ilil 
  * .16  07-15-92        jba     changed VALID_ALARM to INVALID alarm
  * .17  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
+ * .18  05-09-94        jba     Fixed the updating of pcompress->inx in array_average
  */
 
 #include	<vxWorks.h>
@@ -457,7 +458,10 @@ long			no_elements;
 	inx++;
 	if(pcompress->n<=0)pcompress->n=1;
 	n = pcompress->n;
-	if(inx<n) return(1);
+	if(inx<n) {
+		pcompress->inx = inx;
+		return(1);
+	}
 	if(n>1) {
 		psum = (double *)pcompress->sptr;
 		multiplier = 1.0/((double)n);
@@ -465,6 +469,7 @@ long			no_elements;
 	    		*psum = *psum * multiplier;
 	}
 	put_value(pcompress,pcompress->sptr,nuse);
+	pcompress->inx = 0;
 	return(0);
 }
 

@@ -33,16 +33,23 @@ if (-f $depfile) {
     open(OUT,">> $depfile") or die "$! opening $depfile";
     open(IN,"< $tempfile") or die "$! opening $tempfile";
     print OUT "\n#Depend files must be targets to avoid 'No rule to make target ...' errors\n";
-    
+    $startline = 1; 
     while ($line = <IN>) {
-        next if ( $line =~ /\s*#/ );
+        next if ( $line =~ /\s*#/ ); # skip comments
         chomp($line);
         #$line =~ s/[ 	]//g; # remove blanks and tabs
-        #next if ( $line =~ /^$/ ); # skip empty lines
+        next if ( $line =~ /^$/ ); # skip empty lines
         $depends = $line;
-    
-        $depends =~ s/.*://;
-        $depends =~ s/\\$//;
+        if ( $startline ) {
+            $depends =~ s/.*?://;
+        }
+        @dependsarray = split(//,$depends);
+        if ( $dependsarray[$#dependsarray] =~ /\\/ ) {
+            $depends =~ s/[ 	]*\\$//;
+            $startline = 0;
+        } else {
+            $startline = 1;
+        }
         print OUT "$depends : \n";
     }
 

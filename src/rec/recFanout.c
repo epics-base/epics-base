@@ -162,7 +162,7 @@ static long process(pfanout)
 		dbScanPassive(((struct dbAddr *)pfanout->lnk6.value.db_link.pdbAddr)->precord);
         break;
     case (SELECTED):
-        if(pfanout->seln<0 || pfanout->seln>6) {
+        if(pfanout->seln>6) {
 		recGblSetSevr(pfanout,SOFT_ALARM,INVALID_ALARM);
             break;
         }
@@ -177,7 +177,7 @@ static long process(pfanout)
         if(pfanout->seln==0) {
             break;
         }
-        if(pfanout->seln<0 || pfanout->seln>63 ) {
+        if(pfanout->seln>63 ) {
             recGblSetSevr(pfanout,SOFT_ALARM,INVALID_ALARM);
             break;
         }

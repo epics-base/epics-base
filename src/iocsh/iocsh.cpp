@@ -468,6 +468,7 @@ iocsh (const char *pathname)
     free (line);
     free (argv);
     free (argBuf);
+    errlogFlush();
     return 0;
 }
 

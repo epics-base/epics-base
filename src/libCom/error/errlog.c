@@ -48,7 +48,7 @@ of this distribution.
 /*Declare storage for errVerbose */
 epicsShareDef int errVerbose=0;
 
-LOCAL void errlogTask(void);
+LOCAL void errlogThread(void);
 
 LOCAL char *msgbufGetFree(void);
 LOCAL void msgbufSetSize(int size);
@@ -71,14 +71,15 @@ typedef struct msgNode {
 } msgNode;
 
 LOCAL struct {
-    epicsEventId errlogTaskWaitForWork;
-    epicsEventId errlogFlushWaitForFlush;
+    epicsEventId waitForWork; /*errlogThread waits for this*/
     epicsMutexId msgQueueLock;
     epicsMutexId listenerLock;
+    epicsEventId waitForFlush; /*errlogFlush waits for this*/
+    epicsEventId flush; /*errlogFlush sets errlogThread does a Try*/
+    epicsMutexId flushLock;
     ELLLIST      listenerList;
     ELLLIST      msgQueue;
     msgNode      *pnextSend;
-    int          flushNow;
     int	         errlogInitFailed;
     int	         buffersize;
     int	         sevToLog;
@@ -299,8 +300,6 @@ epicsShareFunc void epicsShareAPIV errPrintf(long status, const char *pFileName,
     msgbufSetSize(totalChar);
 }
 
-static void exitHandler(void) {errlogFlush();}
-
 static void errlogInitPvt(void *arg)
 {
     int bufsize = *(int *)arg;
@@ -313,19 +312,20 @@ static void errlogInitPvt(void *arg)
     ellInit(&pvtData.listenerList);
     ellInit(&pvtData.msgQueue);
     pvtData.toConsole = TRUE;
-    pvtData.errlogTaskWaitForWork = epicsEventMustCreate(epicsEventEmpty);
-    pvtData.errlogFlushWaitForFlush = epicsEventMustCreate(epicsEventEmpty);
+    pvtData.waitForWork = epicsEventMustCreate(epicsEventEmpty);
     pvtData.listenerLock = epicsMutexMustCreate();
     pvtData.msgQueueLock = epicsMutexMustCreate();
+    pvtData.waitForFlush = epicsEventMustCreate(epicsEventEmpty);
+    pvtData.flush = epicsEventMustCreate(epicsEventEmpty);
+    pvtData.flushLock = epicsMutexMustCreate();
     /*Allow an extra MAX_MESSAGE_SIZE for extra margain of safety*/
     pbuffer = pvtCalloc(pvtData.buffersize+MAX_MESSAGE_SIZE,sizeof(char));
     pvtData.pbuffer = pbuffer;
     tid = epicsThreadCreate("errlog",epicsThreadPriorityLow,
         epicsThreadGetStackSize(epicsThreadStackSmall),
-        (EPICSTHREADFUNC)errlogTask,0);
+        (EPICSTHREADFUNC)errlogThread,0);
     if(tid) {
         pvtData.errlogInitFailed = FALSE;
-        atexit(exitHandler);
     }
 }
 
@@ -343,19 +343,28 @@ epicsShareFunc int epicsShareAPI errlogInit(int bufsize)
 
 epicsShareFunc void epicsShareAPI errlogFlush(void)
 {
-    pvtData.flushNow = 1;
-    epicsEventSignal(pvtData.errlogTaskWaitForWork);
-    epicsEventMustWait(pvtData.errlogFlushWaitForFlush);
+    int count;
+   /*If nothing in queue dont wake up errlogThread*/
+    epicsMutexMustLock(pvtData.msgQueueLock);
+    count = ellCount(&pvtData.msgQueue);
+    epicsMutexUnlock(pvtData.msgQueueLock);
+    if(count<=0) return;
+    /*must let errlogThread empty queue*/
+    epicsMutexMustLock(pvtData.flushLock);
+    epicsEventSignal(pvtData.flush);
+    epicsEventSignal(pvtData.waitForWork);
+    epicsEventMustWait(pvtData.waitForFlush);
+    epicsMutexUnlock(pvtData.flushLock);
 }
 
-LOCAL void errlogTask(void)
+LOCAL void errlogThread(void)
 {
     listenerNode *plistenerNode;
 
     while(TRUE) {
 	char	*pmessage;
 
-	epicsEventMustWait(pvtData.errlogTaskWaitForWork);
+	epicsEventMustWait(pvtData.waitForWork);
 	while((pmessage = msgbufGetSend())) {
 	    epicsMutexMustLock(pvtData.listenerLock);
 	    if(pvtData.toConsole) printf("%s",pmessage);
@@ -367,9 +376,9 @@ LOCAL void errlogTask(void)
             epicsMutexUnlock(pvtData.listenerLock);
 	    msgbufFreeSend();
 	}
-        if(!pvtData.flushNow) continue;
+        if(epicsEventTryWait(pvtData.flush)!=epicsEventWaitOK) continue;
         epicsThreadSleep(.2); /*just wait an extra .2 seconds*/
-        epicsEventSignal(pvtData.errlogFlushWaitForFlush);
+        epicsEventSignal(pvtData.waitForFlush);
     }
 }
 
@@ -456,13 +465,13 @@ LOCAL void msgbufSetSize(int size)
     }
     ellAdd(&pvtData.msgQueue,&pnextSend->node);
     epicsMutexUnlock(pvtData.msgQueueLock);
-    epicsEventSignal(pvtData.errlogTaskWaitForWork);
+    epicsEventSignal(pvtData.waitForWork);
 }
 
-/*errlogTask is the only task that calls msgbufGetSend and msgbufFreeSend*/
-/*Thus errlogTask is the ONLY task that removes messages from msgQueue	*/
+/*errlogThread is the only task that calls msgbufGetSend and msgbufFreeSend*/
+/*Thus errlogThread is the ONLY task that removes messages from msgQueue	*/
 /*This is why each can lock and unlock msgQueue				*/
-/*This is necessary to prevent other tasks from waiting for errlogTask	*/
+/*This is necessary to prevent other tasks from waiting for errlogThread	*/
 LOCAL char * msgbufGetSend()
 {
     msgNode	*pnextSend;

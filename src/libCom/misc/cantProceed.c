@@ -23,10 +23,9 @@ epicsShareFunc void * epicsShareAPI callocMustSucceed(size_t count, size_t size,
 {
     void *mem = calloc(count,size);
     if(mem==0) {
-        printf("%s callocMustSucceed failed count %d size %d\n",
+        errlogPrintf("%s callocMustSucceed failed count %d size %d\n",
             errorMessage,count,size);
-        epicsThreadSleep(1.0);
-        epicsThreadSuspendSelf();
+        cantProceed(0);
     }
     return(mem);
 }
@@ -46,6 +45,7 @@ epicsShareFunc void epicsShareAPI cantProceed(const char *errorMessage)
 {
     if(errorMessage) errlogPrintf("fatal error: %s\n",errorMessage);
     else errlogPrintf("fatal error\n");
+    errlogFlush();
     epicsThreadSleep(1.0);
     epicsThreadSuspendSelf();
 }

@@ -20,8 +20,6 @@
 
 #define epicsExportSharedSymbols
 #include "epicsTime.h"
-#include "epicsThread.h"
-#include "epicsMutex.h"
 
 
 //
@@ -65,32 +63,14 @@ extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetEvent (epicsTimeStamp *p
     return epicsTimeERROR;
 }
 
-/*
- * Darwin provides neither gmtime_r nor localtime_r and I can't confirm
- * the gmtime and localtime are thread-safe, so protect calls to these
- * functions with a mutex.
- */
-static epicsMutexId timeLock;
-static epicsThreadOnceId osdTimeOnceFlag = EPICS_THREAD_ONCE_INIT;
-static void osdTimeInit ( void * )
-{
-    timeLock = epicsMutexMustCreate();
-}
-
 int epicsTime_gmtime ( const time_t *pAnsiTime, // X aCC 361
                        struct tm *pTM )
 {
-    struct tm * pRet;
-    epicsThreadOnce ( &osdTimeOnceFlag, osdTimeInit, 0 );
-    epicsMutexLock(timeLock);
-    pRet = gmtime ( pAnsiTime );
+    struct tm * pRet = gmtime_r ( pAnsiTime, pTM );
     if ( pRet ) {
-        *pTM = *pRet;
-        epicsMutexUnlock(timeLock);
         return epicsTimeOK;
     }
     else {
-        epicsMutexUnlock(timeLock);
         return epicsTimeERROR;
     }
 }
@@ -98,17 +78,11 @@ int epicsTime_gmtime ( const time_t *pAnsiTime, // X aCC 361
 int epicsTime_localtime ( const time_t *clock, // X aCC 361
                           struct tm *result )
 {
-    struct tm * pRet;
-    epicsThreadOnce ( &osdTimeOnceFlag, osdTimeInit, 0 );
-    epicsMutexLock(timeLock);
-    pRet = localtime ( clock );
+    struct tm * pRet = localtime_r ( clock, result );
     if ( pRet ) {
-        *result = *pRet;
-        epicsMutexUnlock(timeLock);
         return epicsTimeOK;
     }
     else {
-        epicsMutexUnlock(timeLock);
         return epicsTimeERROR;
     }
 }

@@ -103,26 +103,26 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
     pIfreqListEnd = (struct ifreq *) (ifconf.ifc_len + (char *) pIfreqList);
     pIfreqListEnd--;
 
-    for (pifreq = pIfreqList; pifreq <= pIfreqListEnd; pifreq = pnextifreq ) {
+    for ( pifreq = pIfreqList; pifreq <= pIfreqListEnd; pifreq = pnextifreq ) {
         unsigned flags;
         struct sockaddr dest;
 
-	/*
-	 * find the next if req
-	 */
+        /*
+         * find the next if req
+         */
         pnextifreq = ifreqNext(pifreq);
 
         /*
          * If its not an internet inteface then dont use it 
          */
-        if (pifreq->ifr_ifru.ifru_addr.sa_family != AF_INET) {
-             ifDepenDebugPrintf ( ("osiSockDiscoverInterfaces(): interface %s was not AF_INET\n", pifreq->ifr_name) );
+        if ( pifreq->ifr_ifru.ifru_addr.sa_family != AF_INET ) {
+             ifDepenDebugPrintf ( ("osiSockDiscoverInterfaces(): interface \"%s\" was not AF_INET\n", pifreq->ifr_name) );
              continue;
         }
 
         status = socket_ioctl (socket, SIOCGIFFLAGS, pifreq);
         if (status) {
-            errlogPrintf ("osiSockDiscoverInterfaces(): net intf flags fetch for %s failed\n", pifreq->ifr_name);
+            errlogPrintf ("osiSockDiscoverInterfaces(): net intf flags fetch for \"%s\" failed\n", pifreq->ifr_name);
             continue;
         }
         
@@ -134,25 +134,25 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
         /*
          * dont bother with interfaces that have been disabled
          */
-        if (!(flags & IFF_UP)) {
-             ifDepenDebugPrintf ( ("osiSockDiscoverInterfaces(): net intf %s was down\n", pifreq->ifr_name) );
+        if ( ! ( flags & IFF_UP ) ) {
+             ifDepenDebugPrintf ( ("osiSockDiscoverInterfaces(): net intf \"%s\" was down\n", pifreq->ifr_name) );
              continue;
         }
 
         /*
          * dont use the loop back interface
          */
-        if (flags & IFF_LOOPBACK) {
-             ifDepenDebugPrintf ( ("osiSockDiscoverInterfaces(): ignoring loopback interface: %s\n", pifreq->ifr_name) );
+        if ( flags & IFF_LOOPBACK ) {
+             ifDepenDebugPrintf ( ("osiSockDiscoverInterfaces(): ignoring loopback interface: \"%s\"\n", pifreq->ifr_name) );
              continue;
         }
 
         /*
          * Fetch the local address for this interface
          */
-        status = socket_ioctl (socket, SIOCGIFADDR, pifreq);
-        if (status) {
-             ifDepenDebugPrintf ( ("osiSockDiscoverInterfaces(): could not obtain addr for %s\n", pifreq->ifr_name) );
+        status = socket_ioctl ( socket, SIOCGIFADDR, pifreq );
+        if ( status ) {
+             errlogPrintf ( "osiSockDiscoverInterfaces(): could not obtain addr for \"%s\"\n", pifreq->ifr_name );
              continue;
         }
 
@@ -160,7 +160,7 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
          * verify the address family of the interface that was loaded
          */
         if (pifreq->ifr_ifru.ifru_addr.sa_family != AF_INET) {
-             ifDepenDebugPrintf ( ("osiSockDiscoverInterfaces(): interface %s was not AF_INET\n", pifreq->ifr_name) );
+             ifDepenDebugPrintf ( ("osiSockDiscoverInterfaces(): interface \"%s\" was not AF_INET\n", pifreq->ifr_name) );
              continue;
         }
 
@@ -168,20 +168,20 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
          * if it isnt a wildcarded interface then look for
          * an exact match
          */
-        if (pMatchAddr->sa.sa_family != AF_UNSPEC) {
-            if (pifreq->ifr_ifru.ifru_addr.sa_family != pMatchAddr->sa.sa_family) {
+        if ( pMatchAddr->sa.sa_family != AF_UNSPEC ) {
+            if ( pifreq->ifr_ifru.ifru_addr.sa_family != pMatchAddr->sa.sa_family ) {
                 continue;
             }
-            if (pifreq->ifr_ifru.ifru_addr.sa_family != AF_INET) {
+            if ( pifreq->ifr_ifru.ifru_addr.sa_family != AF_INET ) {
                 continue;
             }
-            if (pMatchAddr->sa.sa_family != AF_INET) {
+            if ( pMatchAddr->sa.sa_family != AF_INET ) {
                 continue;
             }
-            if (pMatchAddr->ia.sin_addr.s_addr != htonl(INADDR_ANY)) {
+            if ( pMatchAddr->ia.sin_addr.s_addr != htonl (INADDR_ANY) ) {
                  struct sockaddr_in *pInetAddr = (struct sockaddr_in *) &pifreq->ifr_ifru.ifru_addr;
-                 if (pInetAddr->sin_addr.s_addr != pMatchAddr->ia.sin_addr.s_addr) {
-                     ifDepenDebugPrintf ( ("osiSockDiscoverInterfaces(): net intf %s didnt match\n", pifreq->ifr_name) );
+                 if ( pInetAddr->sin_addr.s_addr != pMatchAddr->ia.sin_addr.s_addr ) {
+                     ifDepenDebugPrintf ( ("osiSockDiscoverInterfaces(): net intf \"%s\" didnt match\n", pifreq->ifr_name) );
                      continue;
                  }
             }
@@ -197,36 +197,36 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
          * Otherwise CA will not query through the 
          * interface.
          */
-        if (flags & IFF_BROADCAST) {
+        if ( flags & IFF_BROADCAST ) {
             status = socket_ioctl (socket, SIOCGIFBRDADDR, pifreq);
             if (status) {
-                errlogPrintf ("osiSockDiscoverInterfaces(): net intf %s: bcast addr fetch fail\n", pifreq->ifr_name);
+                errlogPrintf ("osiSockDiscoverInterfaces(): net intf \"%s\": bcast addr fetch fail\n", pifreq->ifr_name);
                 continue;
             }
             dest = pifreq->ifr_ifru.ifru_broadaddr;
         }
-        else if (flags & IFF_POINTOPOINT) {
+        else if ( flags & IFF_POINTOPOINT ) {
             status = socket_ioctl(
                          socket, 
                          SIOCGIFDSTADDR, 
                          pifreq);
             if (status) {
-                ifDepenDebugPrintf ( ("osiSockDiscoverInterfaces(): net intf %s: pt to pt addr fetch fail\n", pifreq->ifr_name) );
+                ifDepenDebugPrintf ( ("osiSockDiscoverInterfaces(): net intf \"%s\": pt to pt addr fetch fail\n", pifreq->ifr_name) );
                 continue;
             }
             dest = pifreq->ifr_ifru.ifru_dstaddr;
         }
         else {
-            ifDepenDebugPrintf ( ("osiSockDiscoverInterfaces(): net intf %s: not pt to pt or bcast?\n", pifreq->ifr_name) );
+            errlogPrintf ( "osiSockDiscoverInterfaces(): net intf \"%s\": not pt to pt or bcast?\n", pifreq->ifr_name );
             continue;
         }
 
-        ifDepenDebugPrintf ( ("osiSockDiscoverInterfaces(): net intf %s found\n", pifreq->ifr_name) );
+        ifDepenDebugPrintf ( ("osiSockDiscoverInterfaces(): net intf \"%s\" found\n", pifreq->ifr_name) );
 
         pNewNode = (osiSockAddrNode *) calloc (1, sizeof(*pNewNode));
         if (pNewNode==NULL) {
-            errlogPrintf ("osiSockDiscoverInterfaces(): no memory available for configuration\n");
-            free (pIfreqList);
+            errlogPrintf ( "osiSockDiscoverInterfaces(): no memory available for configuration\n" );
+            free ( pIfreqList );
             return;
         }
 
@@ -235,10 +235,10 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
 		/*
 		 * LOCK applied externally
 		 */
-        ellAdd (pList, &pNewNode->node);
+        ellAdd ( pList, &pNewNode->node );
     }
 
-    free (pIfreqList);
+    free ( pIfreqList );
 }
      
 /*

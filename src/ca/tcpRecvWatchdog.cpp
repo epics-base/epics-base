@@ -12,12 +12,20 @@
 
 #include "iocinf.h"
 
+#ifdef DEBUG
+#   define debugPrintf(argsInParen) printf argsInParen
+#else 
+#   define debugPrintf(argsInParen)
+#endif
+
+//
+// the recv watchdog timer is active when this object is created
+//
 tcpRecvWatchdog::tcpRecvWatchdog 
-    ( double periodIn, osiTimerQueue & queueIn ) :
-            osiTimer ( queueIn ),
-    period ( periodIn ),
-    responsePending ( false ),
-    beaconAnomaly ( true )
+    ( tcpiiu &iiuIn, double periodIn, osiTimerQueue & queueIn ) :
+        osiTimer ( queueIn ),
+    period ( periodIn ), iiu ( iiuIn ), responsePending ( false ),
+        beaconAnomaly ( true )
 {
 }
 
@@ -30,13 +38,14 @@ void tcpRecvWatchdog::expire ()
     if ( this->responsePending ) {
         this->cancel ();
         char hostName[128];
-        this->hostName ( hostName, sizeof (hostName) );
-        ca_printf ( "CA server %s unresponsive for %g sec. Disconnecting.\n", 
-            hostName, this->period + CA_ECHO_TIMEOUT );
-        this->forcedShutdown ();
+        this->iiu.hostName ( hostName, sizeof (hostName) );
+        ca_printf ( "CA server \"%s\" unresponsive after %g inactive sec - disconnecting.\n", 
+            hostName, this->period );
+        this->iiu.forcedShutdown ();
     }
     else {
-        this->responsePending = this->setEchoRequestPending ();
+        this->responsePending = this->iiu.setEchoRequestPending ();
+        debugPrintf ( ("TCP connection timed out - sending echo request\n") );
     }
 }
 
@@ -64,19 +73,21 @@ void tcpRecvWatchdog::beaconArrivalNotify ()
 {
     if ( ! this->beaconAnomaly && ! this->responsePending ) {
         this->reschedule ( this->period );
+        debugPrintf ( ("Saw a normal beacon - reseting TCP recv watchdog\n") );
     }
 }
 
-/*
- * be careful about using beacons to reset the connection
- * time out watchdog until we have received a ping response 
- * from the IOC (this makes the software detect reconnects
- * faster when the server is rebooted twice in rapid 
- * succession before a 1st or 2nd beacon has been received)
- */
+//
+// be careful about using beacons to reset the connection
+// time out watchdog until we have received a ping response 
+// from the IOC (this makes the software detect reconnects
+// faster when the server is rebooted twice in rapid 
+// succession before a 1st or 2nd beacon has been received)
+//
 void tcpRecvWatchdog::beaconAnomalyNotify ()
 {
     this->beaconAnomaly = true;
+    debugPrintf ( ("Saw an abnormal beacon\n") );
 }
 
 void tcpRecvWatchdog::messageArrivalNotify ()
@@ -84,11 +95,13 @@ void tcpRecvWatchdog::messageArrivalNotify ()
     this->beaconAnomaly = false;
     this->responsePending = false;
     this->reschedule ( this->period );
+    debugPrintf ( ("received a message - reseting TCP recv watchdog\n") );
 }
 
 void tcpRecvWatchdog::connectNotify ()
 {
     this->reschedule ( this->period );
+    debugPrintf ( ("connected to the server - reseting TCP recv watchdog\n") );
 }
 
 const char *tcpRecvWatchdog::name () const
@@ -96,9 +109,10 @@ const char *tcpRecvWatchdog::name () const
     return "TCP Receive Watchdog";
 }
 
-void tcpRecvWatchdog::cancelRecvWatchdog ()
+void tcpRecvWatchdog::cancel ()
 {
-    this->cancel ();
+    this->osiTimer::cancel ();
+    debugPrintf ( ("canceling TCP recv watchdog\n") );
 }
 
 void tcpRecvWatchdog::show ( unsigned level ) const

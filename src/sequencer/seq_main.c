@@ -114,7 +114,7 @@ long			stack_size;	/* optional stack size (bytes) */
 	/* Spawn the sequencer auxillary task */
 	if (seqAuxTaskId == 0)
 	{
-		taskSpawn("seqAux", SPAWN_PRIORITY-1, VX_FP_TASK, 2000, seqAuxTask,
+		taskSpawn("seqAux", SPAWN_PRIORITY-1, VX_FP_TASK, 4000, seqAuxTask,
 		 0,0,0,0,0,0,0,0,0,0);
 		while (seqAuxTaskId == 0)
 			taskDelay(5); /* wait for task to init. ch'l access */

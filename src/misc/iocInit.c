@@ -63,6 +63,7 @@ of this distribution.
 #include "link.h"
 #include "dbLock.h"
 #include "dbAccess.h"
+#include "recGbl.h"
 #include "dbNotify.h"
 #include "dbCa.h"
 #include "dbScan.h"
@@ -307,6 +308,7 @@ LOCAL void initDatabase(void)
 		pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->link_ind[j]];
 		plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
 		if (plink->type == PV_LINK) {
+                    if(plink==&precord->tsel) recGblTSELwasModified(plink);
 		    if(!(plink->value.pv_link.pvlMask&(pvlOptCA|pvlOptCP|pvlOptCPP))
 		    && (dbNameToAddr(plink->value.pv_link.pvname,&dbaddr)==0)) {
 			DBADDR	*pdbAddr;

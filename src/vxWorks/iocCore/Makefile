@@ -4,19 +4,19 @@ include $(TOP)/configure/CONFIG
 
 LIBRARY_vxWorks = iocCore
 
-LIBOBJS = \
-	$(INSTALL_BIN)/ComLibrary \
-	$(INSTALL_BIN)/asLibrary \
-	$(INSTALL_BIN)/bptLibrary \
-	$(INSTALL_BIN)/dbLibrary \
-	$(INSTALL_BIN)/dbStaticLibrary \
-	$(INSTALL_BIN)/dbSubsLibrary \
-	$(INSTALL_BIN)/caLibrary \
-	$(INSTALL_BIN)/miscLibrary \
-	$(INSTALL_BIN)/registryLibrary \
-	$(INSTALL_BIN)/rsrvLibrary \
-	$(INSTALL_BIN)/vxComLibrary \
-	$(INSTALL_BIN)/vxDbLibrary
+iocCore_OBJS = \
+	$(INSTALL_BIN)/ComLibrary.a \
+	$(INSTALL_BIN)/asLibrary.a \
+	$(INSTALL_BIN)/bptLibrary.a \
+	$(INSTALL_BIN)/dbLibrary.a \
+	$(INSTALL_BIN)/dbStaticLibrary.a \
+	$(INSTALL_BIN)/dbSubsLibrary.a \
+	$(INSTALL_BIN)/caLibrary.a \
+	$(INSTALL_BIN)/miscLibrary.a \
+	$(INSTALL_BIN)/registryLibrary.a \
+	$(INSTALL_BIN)/rsrvLibrary.a \
+	$(INSTALL_BIN)/vxComLibrary.a \
+	$(INSTALL_BIN)/vxDbLibrary.a
 
 include $(TOP)/configure/RULES
 

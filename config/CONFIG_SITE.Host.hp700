@@ -1,0 +1,20 @@
+#
+# $Id$
+#
+# Site Specific Configuration Information
+# Only the local epics system manager should modify this file
+
+# by default, build and use shared libraries
+SHARED_LIBRARIES=YES
+
+# where we expect to find shared libraries if not found elsewhere
+DEFAULT_SHRLIB_SEARCH_PATH = /cs/op/lib/R$(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION).$(EPICS_UPDATE_NAME)$(EPICS_UPDATE_LEVEL):$(INSTALL_LIB)
+ 
+# cal added this so that libraries can be built with position
+# independent code even if shared libraries aren't being built
+ifeq ($(RELOCATABLE), YES)
+    ARCH_DEP_CFLAGS     += +Z
+    ARCH_DEP_CXXFLAGS   += +Z
+endif
+
+

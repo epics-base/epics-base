@@ -663,6 +663,14 @@ void tcpiiu::initiateAbortShutdown ( epicsGuard < callbackMutex > & cbGuard,
                 SOCKERRSTR (SOCKERRNO) );
         }
 
+        //
+        // on HPUX close() and shutdown() are not enough so we must also
+        // throw signals to interrupt the threads that may be in the 
+        // send() and recv() system calls.
+        //
+        this->recvThread.interruptSocketRecv ();
+        this->sendThread.interruptSocketSend ();
+
         // linux threads in recv() dont wakeup unless we also
         // call shutdown ( close() by itself is not enough )
         if ( oldState == iiucs_connected ) {
@@ -683,14 +691,6 @@ void tcpiiu::initiateAbortShutdown ( epicsGuard < callbackMutex > & cbGuard,
             errlogPrintf ("CAC TCP socket close error was %s\n", 
                 SOCKERRSTR (SOCKERRNO) );
         }
-
-        //
-        // on HPUX close() and shutdown() are not enough so we must also
-        // throw signals to interrupt the threads that may be in the 
-        // send() and recv() system calls.
-        //
-        this->recvThread.interruptSocketRecv ();
-        this->sendThread.interruptSocketSend ();
 
         // 
         // wake up the send thread if it isnt blocking in send()

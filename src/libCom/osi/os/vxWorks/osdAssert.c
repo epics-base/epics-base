@@ -81,6 +81,6 @@ epicsShareFunc void epicsShareAPI epicsAssert (const char *pFile, const unsigned
 	}
 	epicsPrintf ("This problem occurred in \"%s\"\n", epicsReleaseVersion);
 
-    threadSuspend (threadid);
+    threadSuspend ();
 }
 

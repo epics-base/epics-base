@@ -21,6 +21,7 @@
 #include "envDefs.h"
 #include "caDiagnostics.h"
 #include "cadef.h"
+#include "osiUnistd.h"
 
 #ifndef min
 #define min(A,B) ((A)>(B)?(B):(A))
@@ -1147,9 +1148,11 @@ void verifyBadString ( chid chan )
         assert ( status == ECA_NORMAL );
         status = ca_pend_io ( 0.0 );
         assert ( status == ECA_NORMAL );
-        printf (
-"Test fails if stim \"%s\" isnt roughly equiv to resp \"%s\"\n",
-            stimStr, respStr);
+        if ( strcmp ( stimStr, respStr ) ) {
+            printf (
+    "Test fails if stim \"%s\" isnt roughly equiv to resp \"%s\"\n",
+                stimStr, respStr);
+        }
         showProgressEnd ();
     }
     else {
@@ -1304,6 +1307,15 @@ void performDeleteTest ( chid chan )
     showProgressEnd ();
 } 
 
+evid globalEventID;
+
+void selfDeleteEvent ( struct event_handler_args args )
+{
+    int status;
+    status = ca_clear_event ( globalEventID );
+    assert ( status == ECA_NORMAL ); 
+}
+
 void eventClearTest ( chid chan )
 {
     int status;
@@ -1343,6 +1355,10 @@ void eventClearTest ( chid chan )
 
     status = ca_clear_event ( monix3 );
     SEVCHK ( status, NULL);
+
+    status = ca_add_event ( DBR_FLOAT, chan, selfDeleteEvent, 
+                0, &globalEventID);
+    SEVCHK ( status, NULL );
 }
 
 unsigned acctstExceptionCount = 0u;

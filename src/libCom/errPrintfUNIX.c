@@ -77,7 +77,9 @@ void errPrintf(long status, const char *pFileName,
 	    printf("%s ",name);
 	}
     }
-    vprintf(pformat,pvar);
+    if (pformat) {
+    	vprintf(pformat,pvar);
+    }
     printf("\n");
 }
 

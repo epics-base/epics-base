@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/local/bin/perl
 #
 #	makeStatTbl.pl - Create Error Symbol Table
 #
@@ -37,6 +37,11 @@ while (<>)
 		chomp;
 		push @err_sym_line, $_;
 	}
+	if (m'^#[ \t]*define[ /t]+M_')
+	{
+		chomp;
+		push @err_facility_line, $_;
+	}
 }
 
 $out_name = "errSymTbl.c";
@@ -55,6 +60,17 @@ print OUT "\n";
 print OUT "#include \"errMdef.h\"\n";
 print OUT "#include \"errSymTbl.h\"\n";
 print OUT "\n";
+
+
+foreach $line ( @err_facility_line )
+{
+	if ($line =~ m'^#[ \t]*define[ \t]+(M_[A-Za-z0-9_]+)[ \t]+(.*)')
+	{
+		printf OUT "#ifndef %s\n", $1;
+		printf OUT "#define %s %s\n", $1, $2;
+		printf OUT "#endif /* ifdef %s */\n", $1;
+	}
+}
 
 $count = 0;
 foreach $line ( @err_sym_line )

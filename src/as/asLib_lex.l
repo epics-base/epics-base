@@ -8,7 +8,7 @@ static ASINPUTFUNCPTR *my_yyinput;
 #undef YY_INPUT
 #define YY_INPUT(b,r,ms) (r=(*my_yyinput)(b,ms))
 
-yyreset()
+static int yyreset()
 {
 	line_num=1;
 	BEGIN INITIAL;
@@ -66,9 +66,13 @@ INP[A-L] {/* If A-L is changed then ASMAXINP must also be changed*/
 \n      { line_num ++;}
 .       { 
 		char message[20];
+		YY_BUFFER_STATE *dummy=0;
 	  
 		sprintf(message,"invalid character '%c'",yytext[0]);
 	  	yyerror(message);
+		/*The following suppresses compiler warning messages*/
+		if(FALSE) yyunput('c',message);
+		if(FALSE) yy_switch_to_buffer(*dummy);
 	}
 
 %%

@@ -65,6 +65,7 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <caeventmask.h>
 #include <dbStaticLib.h>
 #include <dbAccess.h>
+#include <dbEvent.h>
 #include <asLib.h>
 #include <asDbLib.h>
 #include <dbCommon.h>

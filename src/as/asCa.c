@@ -127,7 +127,7 @@ LOCAL void eventCallback(struct event_handler_args eha)
     ASGINP		*pasginp;
     CAPVT		*pcapvt;
     ASG			*pasg;
-    struct dbr_sts_double *pdata = eha.dbr;
+    READONLY struct dbr_sts_double *pdata = eha.dbr;
     int			Ilocked=FALSE;
 
     if(!caInitializing) {

@@ -32,6 +32,8 @@
 #define epicsExportSharedSymbols
 #include "iocsh.h"
 
+extern "C" {
+
 /*
  * File-local information
  */
@@ -66,11 +68,9 @@ struct iocshRedirect {
 /*
  * Set up command table mutex
  */
-extern "C" {
 static void iocshTableOnce (void *)
 {
     iocshTableMutex = epicsMutexMustCreate ();
-}
 }
 
 /*
@@ -855,8 +855,6 @@ static void iocshCmdCallFunc(const iocshArgBuf *args)
  * Dummy internal commands -- register and install in command table
  * so they show up in the help display
  */
-
-extern "C" {
 
 /* comment */
 static const iocshArg commentArg0 = { "newline-terminated comment",iocshArgArgv};

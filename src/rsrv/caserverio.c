@@ -24,6 +24,7 @@
 #include "dbDefs.h"
 #include "osiSock.h"
 #include "epicsTime.h"
+#include "epicsSignal.h"
 #include "errlog.h"
 #include "caerr.h"
 
@@ -103,7 +104,40 @@ void cas_send_bs_msg ( struct client *pclient, int lock_needed )
             }
             pclient->disconnect = TRUE;
             pclient->send.stk = 0u;
-            break;
+
+            /*
+             * wakeup the receive thread
+             */
+            {
+                enum epicsSocketSystemCallInterruptMechanismQueryInfo info  =
+                    epicsSocketSystemCallInterruptMechanismQuery ();
+                switch ( info ) {
+                case esscimqi_socketCloseRequired:
+                    if ( pclient->sock != INVALID_SOCKET ) {
+                        epicsSocketDestroy ( pclient->sock );
+                        pclient->sock = INVALID_SOCKET;
+                    }
+                    break;
+                case esscimqi_socketBothShutdownRequired:
+                    {
+                        int status = shutdown ( pclient->sock, SHUT_RDWR );
+                        if ( status ) {
+                            char sockErrBuf[64];
+                            epicsSocketConvertErrnoToString ( 
+                                sockErrBuf, sizeof ( sockErrBuf ) );
+                            errlogPrintf ("rsrv: socket shutdown error was %s\n", 
+                                sockErrBuf );
+                        }
+                    }
+                    break;
+                case esscimqi_socketSigAlarmRequired:
+                    epicsSignalRaiseSigAlarm ( pclient->tid );
+                    break;
+                default:
+                    break;
+                };
+                break;
+            }
         }
     }
 

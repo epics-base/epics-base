@@ -546,6 +546,10 @@ static void spawnPeriodic(int ind)
 
     psl = papPeriodic[ind];
     sprintf(taskName,"scan%f",psl->rate);
+    /*strip off trailing 0s*/
+    while(taskName[strlen(taskName)-1]=='0') taskName[strlen(taskName)-1] = 0;
+    /*strip trailing . */
+    if(taskName[strlen(taskName)-1]=='.') taskName[strlen(taskName)-1] = 0;
     periodicTaskId[ind] = threadCreate(
         taskName,
         threadPriorityScanLow + ind,

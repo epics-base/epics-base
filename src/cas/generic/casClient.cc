@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/07/09 22:54:31  jhill
+ * store msg copy in the ctx
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:14  jhill
  * ca server installation
  *
@@ -84,6 +87,10 @@ caStatus casClient::init()
 		return status;
 	}
 	status = this->outBuf::init();
+	if (status) {
+		return status;
+	}
+	status = this->casCoreClient::init();
 	if (status) {
 		return status;
 	}

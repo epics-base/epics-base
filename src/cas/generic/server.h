@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.8  1996/08/05 23:22:58  jhill
+ * gddScaler => gddScalar
+ *
  * Revision 1.7  1996/08/05 19:27:28  jhill
  * added process()
  *
@@ -171,8 +174,8 @@ private:
         virtual void osdShow (unsigned level) const = 0;
 };
 
-#include <casIOD.h> // IO dependent
 #include <casOSD.h> // OS dependent
+#include <casIOD.h> // IO dependent
 
 enum casProcCond {casProcOk, casProcDisconnect};
 
@@ -208,6 +211,13 @@ public:
 		maxLogEntries(individualEventEntries),
 		eventsOff(aitFalse)
 	{
+	}
+	init()
+	{
+		if (mutex.init()) {
+			return S_cas_noMemory;
+		}
+		return S_cas_success;
 	}
 	~casEventSys();
 
@@ -535,6 +545,13 @@ class casCoreClient : public osiMutex, public ioBlocked,
 	public casEventSys {
 public:
 	casCoreClient(caServerI &serverInternal); 
+	caStatus init()
+	{
+		if (this->osiMutex::init()) {
+			return S_cas_noMemory;
+		}
+		return this->casEventSys::init();
+	}
 	virtual ~casCoreClient();
 	virtual void destroy();
 	virtual caStatus disconnectChan(caResId id);

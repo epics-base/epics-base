@@ -59,7 +59,7 @@ void repeaterSubscribeTimer::shutdown (
 {
     epicsGuardRelease < epicsMutex > unguard ( guard );
     {
-        epicsGuardRelease < epicsMutex > unguard ( cbGuard );
+        epicsGuardRelease < epicsMutex > cbUnguard ( cbGuard );
         this->timer.cancel ();
     }
 }

@@ -53,7 +53,7 @@ void disconnectGovernorTimer::shutdown (
 {
     epicsGuardRelease < epicsMutex > unguard ( guard );
     {
-        epicsGuardRelease < epicsMutex > unguard ( cbGuard );
+        epicsGuardRelease < epicsMutex > cbUnguard ( cbGuard );
         this->timer.cancel ();
     }
     while ( nciu * pChan = this->chanList.get () ) {

@@ -16,6 +16,8 @@
 09dec91,ajk	Modified to used state program linked list.
 		Added option to display all programs when tid=0.
 19dec91,ajk	Allow task name as well as task id.
+25feb92,ajk	V5.0 accepts 0 as a valid task id: fixed it.
+26feb92,ajk	Fixed formatting of task/program listing.
 ***************************************************************************/
 
 /*	#define	DEBUG	1	*/
@@ -53,7 +55,9 @@ int	tid;
 	char		file_name[100];
 	extern SPROG	*seqQryFind();
 
-	tid = taskIdFigure(tid);	/* convert (possible) name to id */
+	/* convert (possible) name to task id */
+	if (tid != 0)
+		tid = taskIdFigure(tid);
 	pSP = seqQryFind(tid);
 	if (pSP == NULL)
 		return 0;
@@ -134,7 +138,9 @@ int	tid;
 	int		nch;
 	float		time;
 
-	tid = taskIdFigure(tid);	/* convert (possible) name to id */
+	/* convert (possible) name to task id */
+	if (tid != 0)
+		tid = taskIdFigure(tid);
 	pSP = seqQryFind(tid);
 	if (tid == NULL)
 		return 0;
@@ -330,9 +336,9 @@ SPROG		*pSP;
 
 	pSS = pSP->sscb;
 	if (seqProgCount++ == 0)
-		printf("TID      Prog Name   Task Name\n");
+		printf("TID        Program Name       Task Name\n");
 
-	printf("%-8d %-12s %-12s\n", pSP->task_id,pSP->name, taskName(pSS->task_id) );
+	printf("%-10d %-18s %-18s\n", pSP->task_id,pSP->name, taskName(pSS->task_id) );
 }
 
 /* Print a brief summary of all state programs */
@@ -342,5 +348,7 @@ LOCAL seqShowAll()
 
 	seqProgCount = 0;
 	seqTraverseProg(seqShowSP, 0);
+	if (seqProgCount == 0)
+		printf("No active state programs\n");
 	return 0;
 }

@@ -30,6 +30,7 @@
  * Modification Log:
  * -----------------
  * .01  08-13-91	mrk	Added extra NULL arg to dbGetField calls
+ * .02  10-23-91	mrk	Changed dbior so it also reports device support
  */
 
 /* Global Database Test Routines - All can be invoked via vxWorks shell
@@ -81,6 +82,7 @@
 #include	<dbRecords.h>
 #include	<dbCommon.h>
 #include	<recSup.h>
+#include	<devSup.h>
 #include	<drvSup.h>
 #include	<choice.h>
 #include	<special.h>
@@ -549,10 +551,9 @@ long dbior(pdrvName,type)
     char	*pdrvName;
     int		type;
 {
-    int		 i;
+    int		 i,j;
     char	 *pname;
     struct drvet *pdrvet;
-    int printIt;
 
     if(!drvSup) {
 	printf("No drivers\n");
@@ -560,25 +561,39 @@ long dbior(pdrvName,type)
     }
     for (i=0; i<drvSup->number; i++) {
 	if((pname=drvSup->drvetName[i])==NULL) continue;
-	if(pdrvName==NULL)
-	    printIt=TRUE;
-	else {
-	    printIt = (strcmp(pdrvName,pname)==0 ? TRUE : FALSE);
-	    if(!printIt) continue;
-	}
+	if(pdrvName!=NULL && (strcmp(pdrvName,pname)!=0)) continue;
 	if((pdrvet=drvSup->papDrvet[i])==NULL) {
 		printf("No driver entry table is present for %s\n",pname);
 		continue;
 	}
-	if(pdrvet->report==NULL) {
-		if(printIt&&(pdrvName!=NULL)) printf("No report available\n");	
-	}
+	if(pdrvet->report==NULL)
+	    printf("Driver: %s No report available\n",pname);
 	else {
 	    printf("Driver: %s\n",pname);
 	    (*pdrvet->report)(stdout,type);
 	}
-	if(pdrvName!=NULL) break;
+    }
+    /* now check devSup reports */
+    if(!devSup) {
+	printf("No device support\n");
+	return(0);
+    }
+    for (i=0; i<devSup->number; i++) {
+	struct devSup	*pdevSup;
+
+	if(!(pdevSup=GET_DEVSUP(i))) continue;
+	for(j=0; j<pdevSup->number; j++) {
+	    struct dset	*pdset;
+
+	    if(!(pdset=GET_PDSET(pdevSup,j))) continue;
+	    if((pname=pdevSup->dsetName[j])==NULL) continue;
+	    if(pdrvName!=NULL && (strcmp(pdrvName,pname)!=0)) continue;
+	    if(pdset->report!=NULL) {
+		printf("Device Support: %s\n",pname);
+	    		(*pdset->report)(stdout,type);
+	    }
 	}
+    }
     return(0);
 }
 

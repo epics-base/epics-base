@@ -123,22 +123,8 @@ long dbFreeRecord(DBENTRY *pdbentry)
 	field_type = pflddes->field_type;
 	if(field_type==DBF_INLINK
 	|| field_type==DBF_OUTLINK
-	|| field_type==DBF_FWDLINK) {
-	    struct link *plink = (struct link *)pap[i];
-
-	    switch(plink->type) {
-	    case CONSTANT: free((void *)plink->value.constantStr); break;
-	    case PV_LINK: free((void *)plink->value.pv_link.pvname); break;
-	    case VME_IO: dbFreeParmString(&plink->value.vmeio.parm); break;
-	    case CAMAC_IO: dbFreeParmString(&plink->value.camacio.parm); break;
-	    case AB_IO: dbFreeParmString(&plink->value.abio.parm); break;
-	    case GPIB_IO: dbFreeParmString(&plink->value.gpibio.parm); break;
-	    case BITBUS_IO: dbFreeParmString(&plink->value.bitbusio.parm);break;
-	    case INST_IO: dbFreeParmString(&plink->value.instio.string); break;
-	    case BBGPIB_IO: dbFreeParmString(&plink->value.bbgpibio.parm);break;
-	    case VXI_IO: dbFreeParmString(&plink->value.vxiio.parm); break;
-	    }
-	}
+	|| field_type==DBF_FWDLINK)
+		dbFreeLinkContents((struct link *)pap[i]);
 	free(pap[i]);
     }
     free((void *)pap);

@@ -81,11 +81,11 @@ static char *promptCONSTANT[] = {
 	"Constant:"};
 static char *promptINLINK[] = {
 	"         PV Name:",
-	"NPP PP CA CP CPP:"
+	"NPP PP CA CP CPP:",
 	"       NMS or MS:"};
 static char *promptOUTLINK[] = {
 	"  PV Name:",
-	"NPP PP CA:"
+	"NPP PP CA:",
 	"NMS or MS:"};
 static char *promptFWDLINK[] = {
 	" PV Name:"};
@@ -151,8 +151,45 @@ static char *promptVXI_IO[] = {
 #define FORM_RF_IO	11
 #define FORM_VXI_IO	12
 #define FORM_NTYPES	(FORM_VXI_IO + 1)
-static char **promptAddr[FORM_NTYPES];
-static int formlines[FORM_NTYPES];
+
+static char **promptAddr[FORM_NTYPES] = {
+promptCONSTANT,
+promptINLINK,
+promptOUTLINK,
+promptFWDLINK,
+promptVME_IO,
+promptCAMAC_IO,
+promptAB_IO,
+promptGPIB_IO,
+promptBITBUS_IO,
+promptINST_IO,
+promptBBGPIB_IO,
+promptRF_IO,
+promptVXI_IO};
+
+static int formlines[FORM_NTYPES] = {
+sizeof(promptCONSTANT)/sizeof(char *),
+sizeof(promptINLINK)/sizeof(char *),
+sizeof(promptOUTLINK)/sizeof(char *),
+sizeof(promptFWDLINK)/sizeof(char *),
+sizeof(promptVME_IO)/sizeof(char *),
+sizeof(promptCAMAC_IO)/sizeof(char *),
+sizeof(promptAB_IO)/sizeof(char *),
+sizeof(promptGPIB_IO)/sizeof(char *),
+sizeof(promptBITBUS_IO)/sizeof(char *),
+sizeof(promptINST_IO)/sizeof(char *),
+sizeof(promptBBGPIB_IO)/sizeof(char *),
+sizeof(promptRF_IO)/sizeof(char *),
+sizeof(promptVXI_IO)/sizeof(char *)};
+
+/*forward references for private routines*/
+static long checkDevChoice(DBENTRY *pcheck, long link_type);
+static long putParmString(char **pparm,char *pstring);
+static long mapLINKTtoFORMT(DBLINK *plink,dbFldDes *pflddes,int *ind);
+static void entryErrMessage(DBENTRY *pdbentry,long status,char *mess);
+static void zeroDbentry(DBENTRY *pdbentry);
+static char *getpMessage(DBENTRY *pdbentry);
+static long putPvLink(DBENTRY *pdbentry,short pvlMask,char *pvname);
 
 /*Following are obsolete. Will go away next release*/
 long dbRead(DBBASE *pdbbase,FILE *fp)
@@ -208,13 +245,7 @@ static long checkDevChoice(DBENTRY *pcheck, long link_type)
 	if(plink->type == link_type) goto done;
 	if(link_type==CONSTANT && plink->type==PV_LINK)goto done;
 	if(link_type==PV_LINK && plink->type==CONSTANT)goto done;
-	if(plink->type==CONSTANT) {
-	    free((void *)plink->value.constantStr);
-	}
-	if(plink->type==PV_LINK) {
-	    free((void *)plink->value.pv_link.pvname);
-	}
-	memset((char *)plink,0,sizeof(struct link));
+	dbFreeLinkContents(plink);
 	plink->type = link_type;
 	switch(plink->type) {
 	    case VME_IO: plink->value.vmeio.parm = pNullString; break;
@@ -248,18 +279,32 @@ static long putParmString(char **pparm,char *pstring)
     pstring++;
     size = strlen(pstring) + 1;
     if(size==1) return(0);
-    if(size>=MAX_STRING_SIZE) return(S_dbLib_badLink);
+    if(size>=MAX_STRING_SIZE) return(S_dbLib_strLen);
     *pparm = dbCalloc(size, sizeof(char *));
     strcpy(*pparm,pstring);
     return(0);
 }
 
-void dbFreeParmString(char **pparm)
-{
-    if(*pparm && (*pparm != pNullString)){
-	free((void *)(*pparm));
-	*pparm = NULL;
+void dbFreeLinkContents(struct link *plink)
+{ 
+    char *parm = NULL;
+
+    switch(plink->type) {
+	case CONSTANT: free((void *)plink->value.constantStr); break;
+	case PV_LINK: free((void *)plink->value.pv_link.pvname); break;
+	case VME_IO: parm = plink->value.vmeio.parm; break;
+	case CAMAC_IO: parm = plink->value.camacio.parm; break;
+	case AB_IO: parm = plink->value.abio.parm; break;
+	case GPIB_IO: parm = plink->value.gpibio.parm; break;
+	case BITBUS_IO: parm = plink->value.bitbusio.parm;break;
+	case INST_IO: parm = plink->value.instio.string; break;
+	case BBGPIB_IO: parm = plink->value.bbgpibio.parm;break;
+	case VXI_IO: parm = plink->value.vxiio.parm; break;
+   	default:
+	     epicsPrintf("dbFreeLink called but link type unknown\n");
     }
+    if(parm && (parm != pNullString)) free((void *)parm);
+    memset((char *)plink,0,sizeof(struct link));
 }
 
 void dbFreePath(DBBASE *pdbbase)
@@ -287,13 +332,13 @@ void dbCatString(char **string,int *stringLength,char *new,
     if((*string==NULL)
     || ((strlen(*string)+strlen(new)+2) > (size_t)*stringLength)) {
 	char	*newString;
-	int	size;
+	size_t	size;
 
 	size = strlen(new);
 	if(*string) size += strlen(*string);
 	/*Make size multiple of INC_SIZE*/
 	size = ((size + 2 + INC_SIZE)/INC_SIZE) * INC_SIZE;
-	newString = dbCalloc(1,(size_t)size);
+	newString = dbCalloc(size,sizeof(char));
 	if(*string) {
 	    strcpy(newString,*string);
 	    free((void *)(*string));
@@ -347,32 +392,6 @@ static long mapLINKTtoFORMT(DBLINK *plink,dbFldDes *pflddes,int *ind)
 	break;
     }
     return(S_dbLib_badLink);
-}
-
-static void initForms(void)
-{
-    static int	firstTime=TRUE;
-    int		i;
-
-    if(!firstTime) return;
-    firstTime = FALSE;
-    for(i=0; i<FORM_NTYPES; i++) {
-	promptAddr[i] = NULL;
-	formlines[i] = 0;
-    }
-    promptAddr[FORM_CONSTANT] = promptCONSTANT; formlines[FORM_CONSTANT] = 1;
-    promptAddr[FORM_INLINK]   = promptINLINK;   formlines[FORM_INLINK]   = 3;
-    promptAddr[FORM_OUTLINK]  = promptOUTLINK;  formlines[FORM_OUTLINK]  = 3;
-    promptAddr[FORM_FWDLINK]  = promptFWDLINK;  formlines[FORM_FWDLINK]  = 1;
-    promptAddr[FORM_VME_IO]   = promptVME_IO;   formlines[FORM_VME_IO]   = 3;
-    promptAddr[FORM_CAMAC_IO] = promptCAMAC_IO; formlines[FORM_CAMAC_IO] = 6;
-    promptAddr[FORM_AB_IO]    = promptAB_IO;    formlines[FORM_AB_IO]    = 5;
-    promptAddr[FORM_GPIB_IO]  = promptGPIB_IO;  formlines[FORM_GPIB_IO]  = 3;
-    promptAddr[FORM_BITBUS_IO]= promptBITBUS_IO;formlines[FORM_BITBUS_IO]= 5;
-    promptAddr[FORM_INST_IO]  = promptINST_IO;  formlines[FORM_INST_IO]  = 1;
-    promptAddr[FORM_BBGPIB_IO]= promptBBGPIB_IO;formlines[FORM_BBGPIB_IO]= 4;
-    promptAddr[FORM_RF_IO]    = promptRF_IO;    formlines[FORM_RF_IO]    = 4;
-    promptAddr[FORM_VXI_IO]   = promptVXI_IO;   formlines[FORM_VXI_IO]   = 6;
 }
 
 static void entryErrMessage(DBENTRY *pdbentry,long status,char *mess)
@@ -449,8 +468,8 @@ static long putPvLink(DBENTRY *pdbentry,short pvlMask,char *pvname)
     return(S_dbLib_badLink);
 }
 
-/*Public only for dbStaticRun*/
-void dbInitDeviceMenu(DBENTRY *pdbentry)
+/*Public only for dbStaticNoRun*/
+dbDeviceMenu *dbGetDeviceMenu(DBENTRY *pdbentry)
 {
     dbRecordType	*precordType = pdbentry->precordType;
     dbFldDes	*pflddes = pdbentry->pflddes;
@@ -459,13 +478,14 @@ void dbInitDeviceMenu(DBENTRY *pdbentry)
     int		ind;
     int		nChoice;
 
-    if(!precordType) return;
-    if(!pflddes) return;
+    if(!precordType) return(NULL);
+    if(!pflddes) return(NULL);
+    if(pflddes->field_type!=DBF_DEVICE) return(NULL);
+    if(pflddes->ftPvt) return((dbDeviceMenu *)pflddes->ftPvt);
     nChoice = ellCount(&precordType->devList);
-    if(nChoice <= 0) return;
+    if(nChoice <= 0) return(NULL);
     pdbDeviceMenu = dbCalloc(1,sizeof(dbDeviceMenu));
     pdbDeviceMenu->nChoice = nChoice;
-    pflddes->ftPvt = pdbDeviceMenu;
     pdbDeviceMenu->papChoice = dbCalloc(pdbDeviceMenu->nChoice,sizeof(char *));
     pdevSup = (devSup *)ellFirst(&precordType->devList);
     ind = 0;
@@ -474,6 +494,8 @@ void dbInitDeviceMenu(DBENTRY *pdbentry)
 	ind++;
 	pdevSup = (devSup *)ellNext(&pdevSup->node);
     }
+    pflddes->ftPvt = pdbDeviceMenu;
+    return(pdbDeviceMenu);
 }
 
 /* Beginning of Public Routines */
@@ -517,7 +539,6 @@ dbBase *dbAllocBase(void)
     ellInit(&pdbbase->bptList);
     gphInitPvt(&pdbbase->pgpHash,256);
     dbPvdInitPvt(pdbbase);
-    initForms();
     return (pdbbase);
 }
 
@@ -1532,8 +1553,7 @@ char *dbGetString(DBENTRY *pdbentry)
 	    short		choice_ind;
 
 	    if(!pfield) {strcpy(message,"Field not found"); return(message);}
-	    if(!pflddes->ftPvt) dbInitDeviceMenu(pdbentry);
-	    pdbDeviceMenu = (dbDeviceMenu *)pflddes->ftPvt;
+	    pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
 	    if(!pdbDeviceMenu) return(NULL);
 	    choice_ind = *((short *) pdbentry->pfield);
 	    if(choice_ind<0 || choice_ind>=pdbDeviceMenu->nChoice)
@@ -1708,8 +1728,7 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
 	    int			i;
 
 	    if(!pfield) return(S_dbLib_fieldNotFound);
-	    if(!pflddes->ftPvt) dbInitDeviceMenu(pdbentry);
-	    pdbDeviceMenu = (dbDeviceMenu *)pflddes->ftPvt;
+	    pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
 	    if(!pdbDeviceMenu) return(S_dbLib_menuNotFound);
 	    for (i = 0; i < pdbDeviceMenu->nChoice; i++) {
 		if (!(pchoice = pdbDeviceMenu->papChoice[i]))
@@ -2114,8 +2133,7 @@ char *dbVerify(DBENTRY *pdbentry,char *pstring)
 	    char		*pchoice;
 	    int			i;
 
-	    if(!pflddes->ftPvt) dbInitDeviceMenu(pdbentry);
-	    pdbDeviceMenu = (dbDeviceMenu *)pflddes->ftPvt;
+	    pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
 	    if(!pdbDeviceMenu) return(NULL);
 	    if(pdbDeviceMenu->nChoice == 0) return(NULL);
 	    for (i = 0; i < pdbDeviceMenu->nChoice; i++) {
@@ -2203,8 +2221,7 @@ char   **dbGetMenuChoices(DBENTRY *pdbentry)
     case DBF_DEVICE: {
 	    dbDeviceMenu *pdbDeviceMenu;
 
-	    if(!pflddes->ftPvt) dbInitDeviceMenu(pdbentry);
-	    pdbDeviceMenu = (dbDeviceMenu *)pflddes->ftPvt;
+	    pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
 	    if(!pdbDeviceMenu) return(NULL);
 	    return(pdbDeviceMenu->papChoice);
 	}
@@ -2249,8 +2266,7 @@ long dbPutMenuIndex(DBENTRY *pdbentry,int index)
     case DBF_DEVICE: {
 	    dbDeviceMenu *pdbDeviceMenu;
 
-	    if(!pflddes->ftPvt) dbInitDeviceMenu(pdbentry);
-	    pdbDeviceMenu = (dbDeviceMenu *)pflddes->ftPvt;
+	    pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
 	    if(!pdbDeviceMenu) return(S_dbLib_menuNotFound);
 	    if(index<0 | index>=pdbDeviceMenu->nChoice)
 		return(S_dbLib_badField);
@@ -2277,8 +2293,7 @@ int dbGetNMenuChoices(DBENTRY *pdbentry)
     case DBF_DEVICE: {
 	    dbDeviceMenu *pdbDeviceMenu;
 
-	    if(!pflddes->ftPvt) dbInitDeviceMenu(pdbentry);
-	    pdbDeviceMenu = (dbDeviceMenu *)pflddes->ftPvt;
+	    pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
 	    if(!pdbDeviceMenu) return(0);
 	    return(pdbDeviceMenu->nChoice);
 	}
@@ -2565,6 +2580,8 @@ long  dbPutForm(DBENTRY *pdbentry,char **value)
 	strcpy(plink->value.constantStr,*value);
 	break;
     case FORM_INLINK: {
+	    DBENTRY	dbEntry;
+	    DBENTRY	*plinkentry = &dbEntry;
 	    short	ppOpt = 0;
 	    short	msOpt = 0;
 	    char	*pstr;
@@ -2586,10 +2603,21 @@ long  dbPutForm(DBENTRY *pdbentry,char **value)
 	    else if(strstr(*value,"NMS")) msOpt = 0;
 	    else if(strstr(*value,"MS")) msOpt = pvlOptMS;
 	    else strcpy(*verify,"Illegal. Chose a value");
-	    putPvLink(pdbentry,ppOpt|msOpt,pstr);
+	    copyEntry(pdbentry,plinkentry);
+	    if(pdbentry->pflddes->field_type == DBF_DEVICE) {
+        	status = dbFindField(plinkentry,"INP");
+		if(status) {
+		    dbFinishEntry(plinkentry);
+		    return(status);
+		}
+	    }
+	    putPvLink(plinkentry,ppOpt|msOpt,pstr);
+	    dbFinishEntry(plinkentry);
 	}
 	break;
     case FORM_OUTLINK: {
+	    DBENTRY	dbEntry;
+	    DBENTRY	*plinkentry = &dbEntry;
 	    short	ppOpt = 0;
 	    short	msOpt = 0;
 	    char	*pstr;
@@ -2609,7 +2637,16 @@ long  dbPutForm(DBENTRY *pdbentry,char **value)
 	    else if(strstr(*value,"NMS")) msOpt = 0;
 	    else if(strstr(*value,"MS")) msOpt = pvlOptMS;
 	    else strcpy(*verify,"Illegal. Chose a value");
-	    putPvLink(pdbentry,ppOpt|msOpt,pstr);
+	    copyEntry(pdbentry,plinkentry);
+	    if(pdbentry->pflddes->field_type == DBF_DEVICE) {
+        	status = dbFindField(plinkentry,"OUT");
+		if(status) {
+		    dbFinishEntry(plinkentry);
+		    return(status);
+		}
+	    }
+	    putPvLink(plinkentry,ppOpt|msOpt,pstr);
+	    dbFinishEntry(plinkentry);
 	}
 	break;
     case FORM_FWDLINK: {
@@ -2852,7 +2889,7 @@ long  dbPutForm(DBENTRY *pdbentry,char **value)
 	**verify = 0;
 	break;
     default :
-	return(S_dbLib_badLink);
+	status = S_dbLib_badLink;
     }
     return(status);
 }

@@ -33,8 +33,8 @@
 #define INCdbStaticPvth 1
 
 /*Following are not intended for client code */
-void dbInitDeviceMenu(DBENTRY *pdbentry);
-void dbFreeParmString(char **pparm);
+dbDeviceMenu *dbGetDeviceMenu(DBENTRY *pdbentry);
+void dbFreeLinkContents(struct link *plink);
 void dbFreePath(DBBASE *pdbbase);
 void dbCatString(char **string,int *stringLength,char *new,char *separator);
 

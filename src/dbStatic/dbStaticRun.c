@@ -215,7 +215,7 @@ long dbAllocRecord(DBENTRY *pdbentry,char *precordName)
 	    }
 	    break;
 	case DBF_DEVICE:
-	    if(!pflddes->ftPvt) dbInitDeviceMenu(pdbentry);
+	    if(!pflddes->ftPvt) dbGetDeviceMenu(pdbentry);
 	    break;
 	case DBF_INLINK:
 	case DBF_OUTLINK:

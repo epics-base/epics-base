@@ -57,7 +57,6 @@
 #include "tsSLList.h"
 #include "shareLib.h"
 #include "locationException.h"
-
 typedef size_t resTableIndex;
 
 template <class T, class ID> class resTableIter;
@@ -223,11 +222,8 @@ private:
 // efficiently. Hash indexes are produced more efficiently 
 // when (MAX_ID_WIDTH - MIN_INDEX_WIDTH) is minimized.
 //
-#if defined(__GNUC__) && ( __GNUC__<2 || (__GNUC__==2 && __GNUC__<8) )
-template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
-#else
-template <class T, unsigned MIN_INDEX_WIDTH=4u, unsigned MAX_ID_WIDTH = sizeof(T)*CHAR_BIT>
-#endif
+template <class T, unsigned MIN_INDEX_WIDTH=4u, 
+    unsigned MAX_ID_WIDTH = sizeof(T)*CHAR_BIT>
 class intId {
 public:
 	intId (const T &idIn);

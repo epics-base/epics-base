@@ -1737,6 +1737,13 @@ static long TSgetData(char* buf, int buf_size, int soc,
     volatile unsigned long s,us;
     struct timeval timeOut;
     struct timespec send_time,recv_time;
+    struct sockaddr local_sin;
+
+    if (!from_sin) {
+        /* Tornado 2.2 doesn't like NULLs in recvfrom() */
+        from_sin = &local_sin;
+    }
+    flen = sizeof(*from_sin);
 
     /*
      * joh 08-26-99
@@ -1756,14 +1763,7 @@ static long TSgetData(char* buf, int buf_size, int soc,
             break;
         }
         Debug(1,"removing stale response of %d bytes\n", mlen);
-        if(from_sin) {
-            flen = sizeof(*from_sin);
-            recvfrom(soc,buf,buf_size,0,from_sin,&flen);
-        } else {
-            struct sockaddr from;
-            flen = sizeof(struct sockaddr);
-            recvfrom(soc,buf,buf_size,0,&from,&flen);
-        }
+        recvfrom(soc,buf,buf_size,0,from_sin,&flen);
     }
     
     /* convert millisecond time out to seconds/microseconds */
@@ -1790,14 +1790,7 @@ static long TSgetData(char* buf, int buf_size, int soc,
     else
     {
 	/* data available */
-        if (from_sin == NULL) {
-            struct sockaddr dummy_from; 
-            flen = sizeof(struct sockaddr); 
-            mlen = recvfrom(soc, buf, buf_size, 0, &dummy_from, &flen); 
-        } else {
-            flen = sizeof(struct sockaddr); 
-	    mlen=recvfrom(soc,buf,buf_size,0,from_sin,&flen);
-        }
+	mlen=recvfrom(soc,buf,buf_size,0,from_sin,&flen);
 	if(mlen < 0) { perror("recvfrom failed"); return -1; }
 	if(from_sin)
 	{

@@ -8,6 +8,10 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.2  1996/06/26 21:00:05  jbk
+ * Fixed up code in aitHelpers, removed unused variables in others
+ * Fixed potential problem in gddAppTable.cc with the map functions
+ *
  * Revision 1.1  1996/06/25 19:11:31  jbk
  * new in EPICS base
  *
@@ -138,10 +142,10 @@ private:
 		if(p)
 		{
 			len=strlen(p); 
-			str=(const char*)new char[len+1];
+			str=new char[len+1];
 			if(str)
 			{
-				strcpy((char*)str, p);
+				strcpy(str, p);
 				type=aitStrMalloc;
 			}
 			else
@@ -166,7 +170,7 @@ private:
 
 	void cset(const char* p)
 	{
-		str=p;
+		str=(char*)p;
 		type=aitStrConst;
 		if(str)
 			len=strlen(str);
@@ -179,6 +183,7 @@ public:
 	aitString(void)			 { cset((char*)NULL); }
 	aitString(const char* x) { cset(x); }
 	aitString(char* x)		 { cset(x); }
+	~aitString(void)		 { clear(); }
 
 	operator aitUint16(void)		{ return len; }
 	operator const char*(void)		{ return str; }
@@ -192,15 +197,21 @@ public:
 	{
 		if (str && type==aitStrMalloc)
 		{
-			char *pStr=(char*)str;
-			delete [] pStr;
+			delete [] str;
+			type=aitStrConst;
+			str=NULL;
+			len=0;
 		}
 	}
 
-	int installString(const char* p)	{ clear(); return set(p); }
-	int installString(char* p)			{ clear(); return set(p); }
+
+	int installString(const char* p);
+	int installString(char* p);
+
 	void copy(const char* p)			{ clear(); cset(p); }
 	void copy(char* p)					{ clear(); cset(p); }
+	void replaceData(const char* p)		{ strncpy(str,p,len+1); }
+
 	aitString& operator=(const char* p) { this->copy(p); return *this; }
 	aitString& operator=(char* p)		{ this->copy(p); return *this; }
 
@@ -212,7 +223,7 @@ public:
 		void* buf, aitIndex bufSize);
 
 private:
-	const char * str;
+	char* str;
 	aitUint16 len;
 	aitUint16 type;	// aitStrType goes here
 };

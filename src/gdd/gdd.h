@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.5  1996/07/26 02:23:17  jbk
+ * Fixed the spelling error with Scalar.
+ *
  * Revision 1.4  1996/07/24 22:17:17  jhill
  * removed gdd:: from func proto
  *
@@ -707,6 +710,14 @@ inline void gdd::destroyData(void)
 			destruct->run(this);
 		else
 			destruct->run(voidData());
+	}
+	else
+	{
+		if(primitiveType()==aitEnumString && isScalar())
+		{
+			aitString* str = (aitString*)dataAddress();
+			str->clear();
+		}
 	}
 }
 

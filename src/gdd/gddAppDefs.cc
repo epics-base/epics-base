@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.3  1996/07/26 02:23:18  jbk
+// Fixed the spelling error with Scalar.
+//
 // Revision 1.2  1996/07/23 17:13:34  jbk
 // various fixes - dbmapper incorrectly worked with enum types
 //
@@ -34,13 +37,17 @@ gddApplicationTypeTable* gddGenerateApplicationTypeTable(long x/*=(1<<13)*/)
 
 void gddApplicationTypeTable::GenerateTypes(void)
 {
-	gddAtomic* add_units = new gddAtomic(0,aitEnumInt8,1,8);
-	gddAtomic* add_enum = new gddAtomic(0,aitEnumString,1,16);
+	gddScalar* add_units = new gddScalar(0,aitEnumString);
 
-	aitString add_enum_buf[16];
+	// One attempt at building a menu using aitString, which is not so
+	// good.
+	// gddAtomic* add_enum = new gddAtomic(0,aitEnumString,1,16);
+	// aitString add_enum_buf[16];
+	// add_enum->putRef(add_enum_buf);
 
-	add_units->putRef(thing);
-	add_enum->putRef(add_enum_buf);
+	// Just describe the menu - allow the block of choiced to be
+	// referenced in.
+	gddAtomic* add_enum = new gddAtomic(0,aitEnumFixedString,1);
 
 	// ----------------------------------------------------------------
 	// register simple types

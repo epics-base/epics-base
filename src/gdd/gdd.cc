@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.5  1996/07/26 02:23:16  jbk
+// Fixed the spelling error with Scalar.
+//
 // Revision 1.4  1996/07/23 17:13:31  jbk
 // various fixes - dbmapper incorrectly worked with enum types
 //
@@ -600,7 +603,6 @@ gddStatus gdd::flattenData(gdd* dd, int tot_dds, void* buf,size_t size)
 	size_t sz;
 	gddBounds* bnds;
 	aitUint8* ptr = (aitUint8*)buf;
-	unsigned long tmp;
 
 	// This functions needs to be divided into two sections
 	// 1) copy ALL the bounds out

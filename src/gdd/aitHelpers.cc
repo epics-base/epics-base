@@ -5,15 +5,21 @@
 // $Id$
 //
 // $Log$
+// Revision 1.1  1996/06/25 19:11:30  jbk
+// new in EPICS base
+//
 //
 
 #include "aitTypes.h"
 #include "aitHelpers.h"
 
+int aitString::installString(const char* p)    { clear(); return set(p); }
+int aitString::installString(char* p)          { clear(); return set(p); }
+
 aitIndex aitString::compact(aitString* array, aitIndex arraySize,
 		void* buf, aitIndex bufSize)
 {
-	aitIndex i,j;
+	aitIndex i;
 	aitUint32 pos;
 	char* ptr=(char*)buf;
 	aitString* str=(aitString*)buf;

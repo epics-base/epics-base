@@ -57,9 +57,9 @@
 #include "epicsGuard.h"
 
 #ifdef EPICS_FREELIST_DEBUG
-    static const bool tsFreeListDebugBypass = true;
+#   define tsFreeListDebugBypass 1
 #else
-    static const bool tsFreeListDebugBypass = false;
+#   define tsFreeListDebugBypass 0
 #endif
 
 // these versions of the microsoft compiler incorrectly

@@ -31,6 +31,7 @@ include $(CONFIG.CC)
 # RTEMS cross-development tools
 CC = $(CC_FOR_TARGET) $(GCCSPECS) -fasm
 CCC = $(CC)
+CPP = $(CC_FOR_TARGET) -x c -E
 AR = $(AR_FOR_TARGET)
 RTEMS_LDFLAGS := $(LDFLAGS)
 LINK.cpp = $(CCC) -o $@ $(RTEMS_LDFLAGS) $(LDFLAGS) $(LINK_OBJS) $(PROD_LD_OBJS) $(PROD_LD_RESS) $(LDLIBS)

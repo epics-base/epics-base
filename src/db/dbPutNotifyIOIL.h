@@ -16,18 +16,15 @@
  *	505 665 1831
  */
 
-inline void dbPutNotifyIO::destroy () 
-{
-    delete this;
-}
-
 inline void * dbPutNotifyIO::operator new ( size_t size )
 {
+    epicsAutoMutex locker ( dbPutNotifyIO::freeListMutex );
     return dbPutNotifyIO::freeList.allocate ( size );
 }
 
 inline void dbPutNotifyIO::operator delete ( void *pCadaver, size_t size )
 {
+    epicsAutoMutex locker ( dbPutNotifyIO::freeListMutex );
     dbPutNotifyIO::freeList.release ( pCadaver, size );
 }
 

@@ -61,8 +61,8 @@ dbServiceIO::~dbServiceIO ()
     }
 }
 
-cacChannelIO *dbServiceIO::createChannelIO ( 
-    const char *pName, cac &cacCtx, cacChannelNotify &notify )
+cacChannelIO *dbServiceIO::createChannelIO (
+            const char *pName, cacChannelNotify &notify )
 {
     struct dbAddr addr;
 
@@ -81,7 +81,8 @@ void dbServiceIO::subscriptionUpdate ( struct dbAddr &addr,
 {
     unsigned long size = dbr_size_n ( type, count );
 
-    this->mutex.lock ();
+    epicsAutoMutex locker ( this->mutex );
+
     if ( this->eventCallbackCacheSize < size) {
         if ( this->pEventCallbackCache ) {
             delete [] this->pEventCallbackCache;
@@ -89,7 +90,6 @@ void dbServiceIO::subscriptionUpdate ( struct dbAddr &addr,
         this->pEventCallbackCache = new char [size];
         if ( ! this->pEventCallbackCache ) {
             this->eventCallbackCacheSize = 0ul;
-            this->mutex.unlock ();
             io.notify ().exceptionNotify ( io.channelIO (), ECA_ALLOCMEM, 
                 "unable to allocate callback cache" );
             return;
@@ -107,7 +107,6 @@ void dbServiceIO::subscriptionUpdate ( struct dbAddr &addr,
         io.notify ().completionNotify ( io.channelIO (), type, 
             count, this->pEventCallbackCache );
     }
-    this->mutex.unlock ();
 }
 
 extern "C" void cacAttachClientCtx ( void * pPrivate )
@@ -129,29 +128,29 @@ dbEventSubscription dbServiceIO::subscribe ( struct dbAddr &addr, dbSubscription
         return 0;
     }
 
-    this->mutex.lock ();
-    if ( ! this->ctx ) {
-        this->ctx = db_init_events ();
+    {
+        epicsAutoMutex locker ( this->mutex );
         if ( ! this->ctx ) {
-            this->mutex.unlock ();
-            return 0;
-        }
+            this->ctx = db_init_events ();
+            if ( ! this->ctx ) {
+                return 0;
+            }
    
-        unsigned selfPriority = epicsThreadGetPrioritySelf ();
-        unsigned above;
-        epicsThreadBooleanStatus tbs = epicsThreadLowestPriorityLevelAbove (selfPriority, &above);
-        if ( tbs != epicsThreadBooleanStatusSuccess ) {
-            above = selfPriority;
-        }
-        status = db_start_events ( this->ctx, "CAC-event", 
-            cacAttachClientCtx, clientCtx, above );
-        if ( status ) {
-            db_close_events ( this->ctx );
-            this->ctx = 0;
-            return 0;
+            unsigned selfPriority = epicsThreadGetPrioritySelf ();
+            unsigned above;
+            epicsThreadBooleanStatus tbs = epicsThreadLowestPriorityLevelAbove (selfPriority, &above);
+            if ( tbs != epicsThreadBooleanStatusSuccess ) {
+                above = selfPriority;
+            }
+            status = db_start_events ( this->ctx, "CAC-event", 
+                cacAttachClientCtx, clientCtx, above );
+            if ( status ) {
+                db_close_events ( this->ctx );
+                this->ctx = 0;
+                return 0;
+            }
         }
     }
-    this->mutex.unlock ();
 
     es = db_add_event ( this->ctx, &addr,
         dbSubscriptionEventCallback, (void *) &subscr, mask );
@@ -164,7 +163,7 @@ dbEventSubscription dbServiceIO::subscribe ( struct dbAddr &addr, dbSubscription
 
 void dbServiceIO::show ( unsigned level ) const
 {
-    this->mutex.lock ();
+    epicsAutoMutex locker ( this->mutex );
     printf ( "dbServiceIO at %p\n", 
         static_cast <const void *> ( this ) );
     if (level > 0u ) {
@@ -174,6 +173,5 @@ void dbServiceIO::show ( unsigned level ) const
     if ( level > 1u ) {
         this->mutex.show ( level - 2u );
     }
-    this->mutex.unlock ();
 }
 

@@ -34,10 +34,12 @@ class dbPutNotifyBlocker;
 class dbPutNotifyIO : public cacNotifyIO {
 public:
     dbPutNotifyIO ( cacNotify &, dbPutNotifyBlocker & );
+    void cancel ();
     int initiate ( struct dbAddr &addr, unsigned type, 
         unsigned long count, const void *pValue);
     void completion ();
-    void destroy ();
+    void show ( unsigned level ) const;
+    //void destroy ();
     cacChannelIO & channelIO () const;
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
@@ -47,6 +49,7 @@ private:
     putNotify pn;
     dbPutNotifyBlocker &blocker;
     static tsFreeList < dbPutNotifyIO > freeList;
+    static epicsMutex freeListMutex;
 };
 
 extern "C" void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr *paddr,
@@ -55,8 +58,9 @@ extern "C" void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr *pad
 class dbSubscriptionIO : public cacNotifyIO, public tsDLNode <dbSubscriptionIO> {
 public:
     dbSubscriptionIO ( dbChannelIO &chanIO, cacNotify &, unsigned type, unsigned long count );
+    void cancel ();
     int begin ( struct dbAddr &addr, unsigned mask );
-    void destroy ();
+    //void destroy ();
     void show ( unsigned level ) const;
     cacChannelIO & channelIO () const;
     void * operator new ( size_t size );
@@ -69,6 +73,7 @@ private:
     unsigned type;
     unsigned long count;
     static tsFreeList < dbSubscriptionIO > freeList;
+    static epicsMutex freeListMutex;
     friend void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr *paddr,
 	    int eventsRemaining, struct db_field_log *pfl );
 };
@@ -92,9 +97,8 @@ private:
     epicsEvent block;
     dbPutNotifyIO *pPN;
     dbChannelIO &chan;
-    void lock () const;
-    void unlock () const;
     static tsFreeList < dbPutNotifyBlocker > freeList;
+    static epicsMutex freeListMutex;
     friend void putNotifyCompletion ( putNotify *ppn );
 };
 
@@ -128,23 +132,37 @@ private:
         unsigned mask, cacNotify &notify, cacNotifyIO *& );
     short nativeType () const;
     unsigned long nativeElementCount () const;
-    void lock () const;
-    void unlock () const;
-    void lockOutstandingIO () const;
-    void unlockOutstandingIO () const;
     static tsFreeList < dbChannelIO > freeList;
+    static epicsMutex freeListMutex;
     friend dbSubscriptionIO::dbSubscriptionIO ( dbChannelIO &chanIO, 
         cacNotify &, unsigned type, unsigned long count );
     friend dbSubscriptionIO::~dbSubscriptionIO ();
-    friend void dbPutNotifyBlocker::lock () const;
-    friend void dbPutNotifyBlocker::unlock () const;
+    friend class dbAutoScanLockCA;
+};
+
+class dbAutoScanLock {
+public:
+    dbAutoScanLock ( dbCommon & );
+    ~dbAutoScanLock ();
+private:
+    dbAutoScanLock ( const dbAutoScanLock & );
+    dbAutoScanLock & operator = ( const dbAutoScanLock & );
+    dbCommon & rCommon;
+};
+
+class dbAutoScanLockCA : public dbAutoScanLock {
+public:
+    dbAutoScanLockCA ( dbChannelIO & );
+private:
+    dbAutoScanLockCA ( const dbAutoScanLockCA & );
+    dbAutoScanLockCA & operator = ( const dbAutoScanLockCA & );
 };
 
 class dbServiceIO : public cacServiceIO {
 public:
     dbServiceIO ();
     virtual ~dbServiceIO ();
-    cacChannelIO *createChannelIO ( const char *pName, cac &, cacChannelNotify & );
+    cacChannelIO *createChannelIO ( const char *pName, cacChannelNotify & );
     void subscriptionUpdate ( struct dbAddr &addr, unsigned type, unsigned long count, 
             const struct db_field_log *pfl, dbSubscriptionIO &notify );
     dbEventSubscription subscribe ( struct dbAddr &addr, dbSubscriptionIO &subscr, unsigned mask );
@@ -153,6 +171,21 @@ private:
     dbEventCtx ctx;
     char *pEventCallbackCache;
     unsigned long eventCallbackCacheSize;
-    epicsMutex mutex;
+    mutable epicsMutex mutex;
 };
 
+inline dbAutoScanLock :: dbAutoScanLock ( dbCommon & dbCommonIn ) :
+    rCommon ( dbCommonIn )
+{
+    dbScanLock ( &this->rCommon );
+}
+
+inline dbAutoScanLock :: ~dbAutoScanLock ()
+{
+    dbScanUnlock ( &this->rCommon );
+}
+
+inline dbAutoScanLockCA::dbAutoScanLockCA ( dbChannelIO &chan ) :
+    dbAutoScanLock ( *chan.addr.precord )
+{
+}

@@ -29,28 +29,29 @@
 #include "db_access_routines.h"
 
 tsFreeList < dbSubscriptionIO > dbSubscriptionIO::freeList;
+epicsMutex dbSubscriptionIO::freeListMutex;
 
 dbSubscriptionIO::dbSubscriptionIO ( dbChannelIO &chanIO, 
     cacNotify &notifyIn, unsigned typeIn, unsigned long countIn ) :
     cacNotifyIO ( notifyIn ), chan ( chanIO ), es ( 0 ), 
         type ( typeIn ), count ( countIn )
 {
-    this->chan.lock ();
+    dbAutoScanLockCA locker ( this->chan );
     this->chan.eventq.add ( *this );
-    this->chan.unlock ();
 }
 
 dbSubscriptionIO::~dbSubscriptionIO ()
 {
-    this->chan.lock ();
-    this->chan.eventq.remove ( *this );
-    this->chan.unlock ();
+    {
+        dbAutoScanLockCA locker ( this->chan );
+        this->chan.eventq.remove ( *this );
+    }
     if ( this->es ) {
         db_cancel_event ( this->es );
     }
 }
 
-void dbSubscriptionIO::destroy ()
+void dbSubscriptionIO::cancel ()
 {
     delete this;
 }
@@ -62,11 +63,13 @@ cacChannelIO & dbSubscriptionIO::channelIO () const
 
 void * dbSubscriptionIO::operator new ( size_t size )
 {
+    epicsAutoMutex locker ( dbSubscriptionIO::freeListMutex );
     return dbSubscriptionIO::freeList.allocate ( size );
 }
 
 void dbSubscriptionIO::operator delete ( void *pCadaver, size_t size )
 {
+    epicsAutoMutex locker ( dbSubscriptionIO::freeListMutex );
     dbSubscriptionIO::freeList.release ( pCadaver, size );
 }
 

@@ -41,6 +41,17 @@ randBelow(int n)
 }
 
 static void
+receiver0(void *arg)
+{
+    epicsMessageQueue *q = (epicsMessageQueue *)arg;
+    char cbuf[80];
+
+    assert(q->receive(cbuf) == 5);
+    assert(q->receive(cbuf) == 0);
+    delete q;
+}
+
+static void
 receiver(void *arg)
 {
     epicsMessageQueue *q = (epicsMessageQueue *)arg;
@@ -201,16 +212,25 @@ epicsMessageQueueTest()
     assert(q1->pending() == 0);
 
     /*
+     * Single receiver, single sender, 0-length queue
+     */
+    epicsMessageQueue *q0 = new epicsMessageQueue(0, 20);
+    epicsThreadCreate("Receiver zero", epicsThreadPriorityMedium, epicsThreadStackMedium, receiver0, q0);
+    epicsThreadSleep(1.0);
+    assert(q0->trySend((void *)msg1, 5) == 0);
+    epicsThreadSleep(1.0);
+    assert(q0->trySend((void *)msg1, 0) == 0);
+    epicsThreadSleep(1.0);
+
+    /*
      * Single receiver, single sender tests
      */
+    epicsThreadSetPriority(epicsThreadGetIdSelf(), epicsThreadPriorityHigh);
     epicsThreadCreate("Receiver one", epicsThreadPriorityMedium, epicsThreadStackMedium, receiver, q1);
     for (pass = 1 ; pass <= 3 ; pass++) {
-        epicsThreadSetPriority(epicsThreadGetIdSelf(), pass == 1 ?
-                                                        epicsThreadPriorityHigh :
-                                                        epicsThreadPriorityLow);
         switch (pass) {
         case 1: printf ("Should send/receive only 4 messages (sender priority > receiver priority).\n"); break;
-        case 2: printf ("Should send/receive 4 to 10 messages (depends on how host handles thread priorities).\n"); break;
+        case 2: printf ("Should send/receive 5 to 10 messages (depends on how host handles thread priorities).\n"); break;
         case 3: printf ("Should send/receive 10 messages (sender pauses after sending).\n"); break;
         }
         for (i = 0 ; i < 10 ; i++) {
@@ -220,6 +240,7 @@ epicsMessageQueueTest()
                 epicsThreadSleep(0.5);
         }
         printf ("Sent %d messages.\n", i);
+        epicsThreadSetPriority(epicsThreadGetIdSelf(), epicsThreadPriorityLow);
         epicsThreadSleep(1.0);
     }
 

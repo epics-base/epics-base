@@ -15,13 +15,6 @@
  *              630 252 4793
  */
 
-/*
- * Machines with 'traditional' memory access semantics could get by without
- * the queueMutex for single producer/consumers, but architectures such as
- * symmetric-multiprocessing machines with out-of-order writes require
- * mutex locks to ensure correct operation.  I decided to always use the
- * mutex rather having two versions of this code.
- */
 #define epicsExportSharedSymbols
 #include "epicsMessageQueue.h"
 #include <ellLib.h>
@@ -80,18 +73,24 @@ epicsShareFunc epicsMessageQueueId epicsShareAPI epicsMessageQueueCreate(
     epicsMessageQueueId pmsg;
     unsigned int slotBytes, slotLongs;
 
-    assert(capacity != 0);
-    assert(maxMessageSize != 0);
     pmsg = (epicsMessageQueueId)callocMustSucceed(1, sizeof(*pmsg), "epicsMessageQueueCreate");
     pmsg->capacity = capacity;
     pmsg->maxMessageSize = maxMessageSize;
     slotLongs = 1 + ((maxMessageSize + sizeof(unsigned long) - 1) / sizeof(unsigned long));
     slotBytes = slotLongs * sizeof(unsigned long);
-    pmsg->buf = (unsigned long *)callocMustSucceed(pmsg->capacity, slotBytes, "epicsMessageQueueCreate");
-    pmsg->inPtr = pmsg->outPtr = pmsg->firstMessageSlot = (char *)&pmsg->buf[0];
-    pmsg->lastMessageSlot = (char *)&pmsg->buf[(capacity - 1) * slotLongs];
+    if (pmsg->capacity == 0) {
+        pmsg->buf = NULL;
+        pmsg->inPtr = pmsg->outPtr = pmsg->firstMessageSlot = NULL;
+        pmsg->lastMessageSlot = NULL;
+        pmsg->full = true;
+    }
+    else {
+        pmsg->buf = (unsigned long *)callocMustSucceed(pmsg->capacity, slotBytes, "epicsMessageQueueCreate");
+        pmsg->inPtr = pmsg->outPtr = pmsg->firstMessageSlot = (char *)&pmsg->buf[0];
+        pmsg->lastMessageSlot = (char *)&pmsg->buf[(capacity - 1) * slotLongs];
+        pmsg->full = false;
+    }
     pmsg->slotSize = slotBytes;
-    pmsg->full = false;
     pmsg->mutex = epicsMutexMustCreate();
     ellInit(&pmsg->sendQueue);
     ellInit(&pmsg->receiveQueue);
@@ -129,18 +128,20 @@ getEventNode(epicsMessageQueueId pmsg)
 static int
 mySend(epicsMessageQueueId pmsg, void *message, unsigned int size, bool wait, bool haveTimeout, double timeout)
 {
-    char *myInPtr, *myOutPtr, *nextPtr;
+    char *myInPtr, *nextPtr;
     struct threadNode *pthr;
 
     if(size > pmsg->maxMessageSize)
         return -1;
-    epicsMutexLock(pmsg->mutex);
+
     /*
      * See if message can be sent
      */
-    if ((pmsg->numberOfSendersWaiting > 0) || (pmsg->full)) {
+    epicsMutexLock(pmsg->mutex);
+    if ((pmsg->numberOfSendersWaiting > 0)
+     || (pmsg->full && (ellFirst(&pmsg->receiveQueue) == NULL))) {
         /*
-         * Return error if not waiting
+         * Return if not allowed to wait
          */
         if (!wait) {
             epicsMutexUnlock(pmsg->mutex);
@@ -165,7 +166,7 @@ mySend(epicsMessageQueueId pmsg, void *message, unsigned int size, bool wait, bo
             ellDelete(&pmsg->sendQueue, &threadNode.link);
         pmsg->numberOfSendersWaiting--;
         ellAdd(&pmsg->eventFreeList, &threadNode.evp->link);
-        if (pmsg->full) {
+        if (pmsg->full && (ellFirst(&pmsg->receiveQueue) == NULL)) {
             epicsMutexUnlock(pmsg->mutex);
             return -1;
         }
@@ -225,19 +226,20 @@ myReceive(epicsMessageQueueId pmsg, void *message, bool wait, bool haveTimeout, 
     unsigned long l;
     struct threadNode *pthr;
 
-    epicsMutexLock(pmsg->mutex);
     /*
      * If there's a message on the queue, copy it
      */
+    epicsMutexLock(pmsg->mutex);
     myOutPtr = (char *)pmsg->outPtr;
-    if ((myOutPtr != pmsg->inPtr) || pmsg->full) {
+    if ((pmsg->capacity != 0) && ((myOutPtr != pmsg->inPtr) || pmsg->full)) {
         l = *(unsigned long *)myOutPtr;
         memcpy(message, (unsigned long *)myOutPtr + 1, l);
         if (myOutPtr == pmsg->lastMessageSlot)
             pmsg->outPtr = pmsg->firstMessageSlot;
         else
             pmsg->outPtr += pmsg->slotSize;
-        pmsg->full = false;
+        if (pmsg->capacity)
+            pmsg->full = false;
 
         /*
          * Wake up the oldest task waiting to send
@@ -251,11 +253,19 @@ myReceive(epicsMessageQueueId pmsg, void *message, bool wait, bool haveTimeout, 
     }
 
     /*
-     * Return if not waiting
+     * Return if not allowed to wait
      */
     if (!wait) {
         epicsMutexUnlock(pmsg->mutex);
         return -1;
+    }
+
+    /*
+     * Wake up the oldest task waiting to send
+     */
+    if ((pthr = (struct threadNode *)ellGet(&pmsg->sendQueue)) != NULL) {
+        pthr->eventSent = true;
+        epicsEventSignal(pthr->evp->event);
     }
 
     /*

@@ -164,6 +164,8 @@ public:
 protected:
 	T       *pCurrent;
 	tsDLList<T> *pList;
+
+    T * current (); // certain compilers require this
 };
 
 //
@@ -202,6 +204,8 @@ public:
 	// is removed)
 	//
 	void remove ();
+protected:
+    T *current ();
 };
 
 //
@@ -240,6 +244,8 @@ public:
 	// is removed)
 	//
 	void remove ();
+protected:
+    T * current ();
 };
 
 
@@ -782,6 +788,16 @@ inline T * tsDLIter<T>::operator () ()
 	return this->next();
 }
 
+//
+// tsDLIter<T>::current()
+//
+template <class T>
+inline T * tsDLIter<T>::current()
+{
+	return this->pCurrent;
+}
+
+
 ///////////////////////////////////////////
 // tsDLBwdIter<T> member functions
 ///////////////////////////////////////////
@@ -871,6 +887,12 @@ inline T * tsDLBwdIter<T>::prev ()
 	return this->tsDLIter<T>::prev();
 }
 
+template <class T>
+inline T * tsDLBwdIter<T>::current()
+{
+	return this->tsDLIter<T>::current ();
+}
+
 //////////////////////////////////////////
 // tsDLFwdIter<T> member functions
 //////////////////////////////////////////
@@ -902,6 +924,12 @@ inline T * tsDLFwdIter<T>::first()
 {
 	tsDLIter<T> &iterBase = *this;
 	return iterBase.first();
+}
+
+template <class T>
+inline T * tsDLFwdIter<T>::current()
+{
+	return this->tsDLIter<T>::current ();
 }
 
 //

@@ -27,7 +27,6 @@
 #include "epicsExport.h"
 
 /* Create the dset for devMbboSoftCallback */
-static long init_record();
 static long write_mbbo();
 struct {
 	long		number;
@@ -40,31 +39,11 @@ struct {
 	5,
 	NULL,
 	NULL,
-	init_record,
+	NULL,
 	NULL,
 	write_mbbo
 };
 epicsExportAddress(dset,devMbboSoftCallback);
-
-static void putCallback(struct link *plink)
-{
-    dbCommon *pdbCommon = (dbCommon *)plink->value.pv_link.precord;
-
-    dbScanLock(pdbCommon);
-    (*pdbCommon->rset->process)(pdbCommon);
-    dbScanUnlock(pdbCommon);
-}
-
-static long init_record(mbboRecord *pmbbo)
-{
- 
-    long status=0;
- 
-    /*dont convert*/
-    status=2;
-    return status;
- 
-} /* end init_record() */
 
 static long write_mbbo(mbboRecord *pmbbo)
 {
@@ -73,10 +52,11 @@ static long write_mbbo(mbboRecord *pmbbo)
 
     if(pmbbo->pact) return(0);
     if(plink->type!=CA_LINK) {
-        status = dbPutLink(&pmbbo->out,DBR_USHORT,&pmbbo->val,1);
+        status = dbPutLink(plink,DBR_USHORT,&pmbbo->val,1);
         return(status);
     }
-    status = dbCaPutLinkCallback(plink,DBR_USHORT,&pmbbo->val,1,putCallback);
+    status = dbCaPutLinkCallback(plink,DBR_USHORT,&pmbbo->val,1,
+        (dbCaCallback)dbCaCallbackProcess,plink);
     if(status) {
         recGblSetSevr(pmbbo,LINK_ALARM,INVALID_ALARM);
         return(status);

@@ -34,7 +34,7 @@ include "subRecord.dbd"
 include "subArrayRecord.dbd"
 include "waveformRecord.dbd"
 
-# Soft and SoftRaw device support
+# "Soft Channel", "Raw Soft Channel", and "Async Soft Channel" device support
 include "devSoft.dbd"
 
 # Access security subroutines

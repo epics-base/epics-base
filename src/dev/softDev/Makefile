@@ -12,7 +12,6 @@ TOP=../../..
 include $(TOP)/configure/CONFIG
 
 DBD += devSoft.dbd
-DBD += devSoftCallback.dbd
 
 LIBSRCS += devAiSoft.c
 LIBSRCS += devAiSoftRaw.c
@@ -22,6 +21,7 @@ LIBSRCS += devBiSoft.c
 LIBSRCS += devBiSoftRaw.c
 LIBSRCS += devBoSoft.c
 LIBSRCS += devBoSoftRaw.c
+LIBSRCS += devCalcoutSoft.c
 LIBSRCS += devEventSoft.c
 LIBSRCS += devHistogramSoft.c
 LIBSRCS += devLiSoft.c
@@ -41,6 +41,7 @@ LIBSRCS += devWfSoft.c
 
 LIBSRCS += devAoSoftCallback.c
 LIBSRCS += devBoSoftCallback.c
+LIBSRCS += devCalcoutSoftCallback.c
 LIBSRCS += devLoSoftCallback.c
 LIBSRCS += devMbboSoftCallback.c
 LIBSRCS += devMbboDirectSoftCallback.c

@@ -30,7 +30,6 @@
 #include "epicsExport.h"
 
 /* Create the dset for devBoCallbackSoft */
-static long init_record();
 static long write_bo();
 
 struct {
@@ -44,31 +43,11 @@ struct {
 	5,
 	NULL,
 	NULL,
-	init_record,
+	NULL,
 	NULL,
 	write_bo
 };
 epicsExportAddress(dset,devBoSoftCallback);
-
-static void putCallback(struct link *plink)
-{
-    dbCommon *pdbCommon = (dbCommon *)plink->value.pv_link.precord;
-
-    dbScanLock(pdbCommon);
-    (*pdbCommon->rset->process)(pdbCommon);
-    dbScanUnlock(pdbCommon);
-}
-    
-static long init_record(boRecord *pbo)
-{
- 
-   long status=0;
- 
-    /* dont convert */
-   status=2;
-   return status;
- 
-} /* end init_record() */
 
 static long write_bo(boRecord *pbo)
 {
@@ -77,10 +56,11 @@ static long write_bo(boRecord *pbo)
 
     if(pbo->pact) return(0);
     if(plink->type!=CA_LINK) {
-        status = dbPutLink(&pbo->out,DBR_USHORT,&pbo->val,1);
+        status = dbPutLink(plink,DBR_USHORT,&pbo->val,1);
         return(status);
     }
-    status = dbCaPutLinkCallback(plink,DBR_USHORT,&pbo->val,1,putCallback);
+    status = dbCaPutLinkCallback(plink,DBR_USHORT,&pbo->val,1,
+        (dbCaCallback)dbCaCallbackProcess,plink);
     if(status) {
         recGblSetSevr(pbo,LINK_ALARM,INVALID_ALARM);
         return(status);

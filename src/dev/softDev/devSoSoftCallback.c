@@ -27,7 +27,6 @@
 #include "epicsExport.h"
 
 /* Create the dset for devSoSoftCallback */
-static long init_record();
 static long write_stringout();
 struct {
 	long		number;
@@ -40,25 +39,11 @@ struct {
 	5,
 	NULL,
 	NULL,
-	init_record,
+	NULL,
 	NULL,
 	write_stringout
 };
 epicsExportAddress(dset,devSoSoftCallback);
-
-static void putCallback(struct link *plink)
-{
-    dbCommon *pdbCommon = (dbCommon *)plink->value.pv_link.precord;
-
-    dbScanLock(pdbCommon);
-    (*pdbCommon->rset->process)(pdbCommon);
-    dbScanUnlock(pdbCommon);
-}
-
-static long init_record(stringoutRecord *pstringout)
-{
-    return 0;
-} /* end init_record() */
 
 static long write_stringout(pstringout)
     struct stringoutRecord	*pstringout;
@@ -68,10 +53,11 @@ static long write_stringout(pstringout)
 
     if(pstringout->pact) return(0);
     if(plink->type!=CA_LINK) {
-        status = dbPutLink(&pstringout->out,DBR_STRING,&pstringout->val,1);
+        status = dbPutLink(plink,DBR_STRING,&pstringout->val,1);
         return(status);
     }
-    status = dbCaPutLinkCallback(plink,DBR_STRING,&pstringout->val,1,putCallback);
+    status = dbCaPutLinkCallback(plink,DBR_STRING,&pstringout->val,1,
+        (dbCaCallback)dbCaCallbackProcess,plink);
     if(status) {
         recGblSetSevr(pstringout,LINK_ALARM,INVALID_ALARM);
         return(status);

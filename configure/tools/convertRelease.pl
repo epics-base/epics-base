@@ -118,6 +118,7 @@ sub readRelease {
 	# Handle "<macro> = <path>"
 	($macro, $path) = /^\s*(\w+)\s*=\s*(.*)/;
 	if ($macro ne "") {
+		$macro="TOP" if $macro =~ /^INSTALL_LOCATION/ ;
 		if (exists $Rmacros->{$macro}) {
 			delete $Rmacros->{$macro};
 		} else {

@@ -45,7 +45,7 @@ CHECK_RELEASE_NO =
 #-------------------------------------------------------
 # Directories
 
-INSTALL_LOCATION            = $(TOP)
+INSTALL_LOCATION            ?= $(TOP)
 TOOLS                       = $(CONFIG)/tools
 
 INSTALL_LOCATION_LIB        = $(INSTALL_LOCATION)/lib

@@ -157,6 +157,7 @@ static long process(paddr)
         if(status==0) status = do_sub(psub);
         psub->pact = TRUE;
 	if(status==1) return(0);
+	tsLocalTime(&psub->time);
         /* check for alarms */
         alarm(psub);
         /* check event list */

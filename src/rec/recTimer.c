@@ -125,6 +125,7 @@ static long process(paddr)
 
 	/* write the new value */
 	write_timer(ptimer);
+	tsLocalTime(&ptimer->time);
 
         /* check event list */
         monitor(ptimer);

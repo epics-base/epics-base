@@ -79,7 +79,7 @@ long get_precision();
 #define put_enum_str NULL
 long get_graphic_double();
 long get_control_double();
-long get_alarm_double();
+#define get_alarm_double NULL
 
 struct rset waveformRSET={
 	RSETNUMBER,
@@ -166,6 +166,7 @@ static long process(paddr)
         pwf->pact = TRUE;
         /* status is one if an asynchronous record is being processed*/
         if(status==1) return(0);
+	tsLocalTime(&pwf->time);
 
 	monitor(pwf);
         /* process the forward scan link record */
@@ -263,18 +264,6 @@ static long get_control_double(paddr,pcd)
 
     pcd->upper_ctrl_limit = pwf->hopr;
     pcd->lower_ctrl_limit = pwf->lopr;
-    return(0);
-}
-static long get_alarm_double(paddr,pgd)
-    struct dbAddr *paddr;
-    struct dbr_alDouble *pgd;
-{
-    struct waveformRecord     *pwf=(struct waveformRecord *)paddr->precord;
-
-    pgd->upper_alarm_limit = 0.0;
-    pgd->upper_warning_limit = 0.0;
-    pgd->lower_warning_limit = 0.0;
-    pgd->lower_alarm_limit = 0.0;
     return(0);
 }
 

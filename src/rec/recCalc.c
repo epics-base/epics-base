@@ -154,6 +154,7 @@ static long process(paddr)
 			}
 		}
 	}
+	tsLocalTime(&pcalc->time);
 	/* check for alarms */
 	alarm(pcalc);
 	/* check event list */

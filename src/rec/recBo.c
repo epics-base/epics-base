@@ -162,7 +162,7 @@ static long init_record(pbo)
     }
     /* get the initial value */
     if (pbo->dol.type == CONSTANT
-    && (pbo->dol.value.value<0.0 || pbo->dol.value.value>=udfFtest)){
+    && (pbo->dol.value.value<=0.0 || pbo->dol.value.value>=udfFtest)){
 	if (pbo->dol.value.value == 0)  pbo->val = 0;
 	else                            pbo->val = 1;
     }
@@ -231,6 +231,7 @@ static long process(paddr)
 	pbo->pact = TRUE;
 	/* status is one if an asynchronous record is being processed*/
 	if(status==1) return(0);
+	tsLocalTime(&pbo->time);
 	wait_time = (int)(pbo->high) * vxTicksPerSecond; /* seconds to ticks */
 	if(pbo->val==1 && wait_time>0) {
 		struct callback *pcallback;

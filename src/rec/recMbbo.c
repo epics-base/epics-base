@@ -156,7 +156,7 @@ static long init_record(pmbbo)
 	return(S_dev_missingSup);
     }
     if ((pmbbo->dol.type == CONSTANT)
-    && (pmbbo->dol.value.value<0.0 || pmbbo->dol.value.value>=udfFtest)){
+    && (pmbbo->dol.value.value<=0.0 || pmbbo->dol.value.value>=udfFtest)){
 	pmbbo->val = pmbbo->dol.value.value;
     }
     /* initialize mask*/
@@ -169,26 +169,28 @@ static long init_record(pmbbo)
 	unsigned long rval;
 
 	if((status=(*pdset->init_record)(pmbbo,process))) return(status);
+        /* init_record might set status */
+        init_common(pmbbo);
 	rval = pmbbo->rval;
-	if(pmbbo->shft>0 && rval!=udfUlong) rval >>= pmbbo->shft;
-        if (pmbbo->sdef){
-	    unsigned long   *pstate_values;
-	    short           i;
+	if(rval!=udfUlong) {
+	    if(pmbbo->shft>0) rval >>= pmbbo->shft;
+            if (pmbbo->sdef){
+	        unsigned long   *pstate_values;
+	        short           i;
 
-	    pstate_values = &(pmbbo->zrvl);
-	    pmbbo->val = udfUshort;        /* initalize to unknown state*/
-	    if(rval!=udfUlong) {
+	        pstate_values = &(pmbbo->zrvl);
+	        pmbbo->val = udfUshort;        /* initalize to unknown state*/
 		for (i = 0; i < 16; i++){
 		    if (*pstate_values == rval){
 			pmbbo->val = i;
 			break;
 		   }
 		   pstate_values++;
-		}
-	    }
-        }else{
-	    /* the raw  is the desired val */
-	    pmbbo->val =  (unsigned short)rval;
+	        }
+            }else{
+	        /* the raw  is the desired val */
+	        pmbbo->val =  (unsigned short)rval;
+            }
         }
     }
     return(0);
@@ -257,6 +259,7 @@ DONT_WRITE:
 
     /* status is one if an asynchronous record is being processed*/
     if(status==1) return(0);
+    tsLocalTime(&pmbbo->time);
     /* check for alarms */
     alarm(pmbbo);
     /* check event list */

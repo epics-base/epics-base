@@ -126,6 +126,7 @@ static long process(paddr)
 	    pfanout->nsta = SOFT_ALARM;
 	}
     }
+    tsLocalTime(&pfanout->time);
     /* check monitors*/
     /* get previous stat and sevr  and new stat and sevr*/
     stat=pfanout->stat;

@@ -92,6 +92,7 @@ static long process(paddr)
 	struct stateRecord	*pstate=(struct stateRecord *)(paddr->precord);
 
         pstate->pact=TRUE;
+	tsLocalTime(&pstate->time);
 	monitor(pstate);
         /* process the forward scan link record */
         if (pstate->flnk.type==DB_LINK) dbScanPassive(pstate->flnk.value.db_link.pdbAddr);

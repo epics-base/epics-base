@@ -91,6 +91,7 @@ static long process(paddr)
     struct permissiveRecord    *ppermissive=(struct permissiveRecord *)(paddr->precord);
 
     ppermissive->pact=TRUE;
+    tsLocalTime(&ppermissive->time);
     monitor(ppermissive);
     if (ppermissive->flnk.type==DB_LINK)
         dbScanPassive(ppermissive->flnk.value.db_link.pdbAddr);

@@ -120,6 +120,7 @@ static long process(paddr)
 		return(0);
 	}
 
+	tsLocalTime(&ppid->time);
 	/* check for alarms */
 	alarm(ppid);
 
@@ -304,12 +305,12 @@ static void monitor(ppid)
         if (monitor_mask){
                 db_post_events(ppid,&ppid->val,monitor_mask);
         }
-	delta = ppid->oout - ppid->out;
+	delta = ppid->odm - ppid->dm;
 	if(delta<0.0) delta = -delta;
 	if(delta > ppid->odel) {
-		ppid->oout = ppid->out;
+		ppid->odm = ppid->dm;
 		monitor_mask = DBE_LOG|DBE_VALUE;
-		db_post_events(ppid,&ppid->out,monitor_mask);
+		db_post_events(ppid,&ppid->dm,monitor_mask);
 		db_post_events(ppid,&ppid->p,monitor_mask);
 		db_post_events(ppid,&ppid->i,monitor_mask);
 		db_post_events(ppid,&ppid->d,monitor_mask);
@@ -337,7 +338,7 @@ static void monitor(ppid)
  * delM(n) = KP*((E(n)-E(n-1)) + E(n)*dT(n)*KI
  *		+ KD*((E(n)-E(n-1))/dT(n) - (E(n-1)-E(n-2))/dT(n-1))
  * or using variables defined in following
- * out = kp*(de + e*dt*ki + kd*(de/dt - dep/dtp)
+ * dm = kp*(de + e*dt*ki + kd*(de/dt - dep/dtp)
  */
 
 static long do_pid(ppid)
@@ -355,7 +356,7 @@ struct pidRecord     *ppid;
 	float		ep;	/*previous error	*/
 	float		de;	/*change in error	*/
 	float		dep;	/*prev change in error	*/
-	float		out;	/*output value		*/
+	float		dm;	/*output value		*/
 	float		p;	/*proportional contribution*/
 	float		i;	/*integral contribution*/
 	float		d;	/*derivative contribution*/
@@ -421,14 +422,14 @@ struct pidRecord     *ppid;
 	i = kp*e*dt*ki;
 	if(dtp>0.0 && dt>0.0) d = kp*kd*(de/dt - dep/dtp);
 	else d = 0.0;
-	out = p + i + d;
+	dm = p + i + d;
 	/* update record*/
 	ppid->ct  = ct;
 	ppid->dt   = dt;
 	ppid->err  = e;
 	ppid->derr = de;
 	ppid->cval  = cval;
-	ppid->out  = out;
+	ppid->dm  = dm;
 	ppid->p  = p;
 	ppid->i  = i;
 	ppid->d  = d;

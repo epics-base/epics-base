@@ -140,7 +140,8 @@ static long init_record(pao)
 	return(S_dev_noDSET);
     }
     /* get the initial value if dol is a constant*/
-    if (pao->dol.type == CONSTANT){
+    if (pao->dol.type == CONSTANT &&
+	(pao->dol.value.value<=0.0 || pao->dol.value.value>udfFtest)){
             pao->val = pao->dol.value.value;
     }
     /* must have write_ao function defined */
@@ -181,6 +182,7 @@ static long process(paddr)
 	}
 	pao->pact = TRUE;
 	if(status==1) return(0);
+	tsLocalTime(&pao->time);
 
 	/* check for alarms */
 	alarm(pao);
@@ -206,10 +208,11 @@ static long special(paddr,after)
 
     switch(special_type) {
     case(SPC_LINCONV):
-        if(pdset->number<6 || !(pdset->special_linconv)) {
+        if(pdset->number<6 ) {
             recGblDbaddrError(S_db_noMod,paddr,"ao: special");
             return(S_db_noMod);
         }
+        if(!(pdset->special_linconv)) return(0);
         return((*pdset->special_linconv)(pao,after));
     default:
         recGblDbaddrError(S_db_badChoice,paddr,"ao: special");
@@ -221,9 +224,9 @@ static long get_value(pao,pvdes)
     struct aoRecord		*pao;
     struct valueDes	*pvdes;
 {
-    pvdes->field_type = DBF_FLOAT;
+    pvdes->field_type = DBF_DOUBLE;
     pvdes->no_elements=1;
-    (float *)(pvdes->pvalue) = &pao->val;
+    (double *)(pvdes->pvalue) = &pao->val;
     return(0);
 }
 
@@ -285,10 +288,10 @@ static long get_alarm_double(paddr,pad)
 static void alarm(pao)
     struct aoRecord	*pao;
 {
-	float	ftemp;
-	float	val=pao->val;
+	double	ftemp;
+	double	val=pao->val;
 
-        if(val>0.0 && val<udfFtest){
+        if(val>0.0 && val<udfDtest){
                 if (pao->nsev<VALID_ALARM){
                         pao->nsta = SOFT_ALARM;
                         pao->nsev = VALID_ALARM;
@@ -347,7 +350,7 @@ static void alarm(pao)
 static int convert(pao)
     struct aoRecord  *pao;
 {
-	float		value;
+	double		value;
 
         if ((pao->dol.type == DB_LINK) && (pao->omsl == CLOSED_LOOP)){
 		long		nRequest;
@@ -359,7 +362,7 @@ static int convert(pao)
 		nRequest=1;
 		save_pact = pao->pact;
 		pao->pact = TRUE;
-                status = dbGetLink(&pao->dol.value.db_link,pao,DBR_FLOAT,
+                status = dbGetLink(&pao->dol.value.db_link,pao,DBR_DOUBLE,
 			&value,&options,&nRequest);
 		pao->pact = save_pact;
 		if(status) {
@@ -387,10 +390,10 @@ static int convert(pao)
 	}
 	pao->val = value;
 
-	if(pao->oval>0.0 && pao->oval<udfFtest) pao->oval = value;
+	if(pao->oval>0.0 && pao->oval<udfDtest) pao->oval = value;
 	/* now set value equal to desired output value */
         /* apply the output rate of change */
-        if (pao->oroc<0.0 || pao->oroc>=udfFtest){/*must be defined and >0*/
+        if ( pao->oroc>=udfDtest){/*must be defined and >0*/
 		float		diff;
 
                 diff = value - pao->oval;
@@ -418,7 +421,7 @@ static void monitor(pao)
     struct aoRecord	*pao;
 {
 	unsigned short	monitor_mask;
-	float		delta;
+	double		delta;
         short           stat,sevr,nsta,nsev;
 
         /* get previous stat and sevr  and new stat and sevr*/

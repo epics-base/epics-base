@@ -174,9 +174,10 @@ static long process(paddr)
 	status=(*pdset->read_ai)(pai); /* read the new value */
 	pai->pact = TRUE;
 	/* status is one if an asynchronous record is being processed*/
-	if (status==0)convert(pai);
-	else if(status==1) return(0);
-	else if(status==2) status=0;
+	if (status==1) return(0);
+	tsLocalTime(&pai->time);
+	if (status==0) convert(pai);
+	else if (status==2) status=0;
 
 	/* check for alarms */
 	alarm(pai);
@@ -200,11 +201,12 @@ static long special(paddr,after)
 
     switch(special_type) {
     case(SPC_LINCONV):
-	if(pdset->number<6 || !(pdset->special_linconv)) {
+	if(pdset->number<6) {
 	    recGblDbaddrError(S_db_noMod,paddr,"ai: special");
 	    return(S_db_noMod);
 	}
 	pai->init=TRUE;
+	if(!(pdset->special_linconv)) return(0);
 	return((*pdset->special_linconv)(pai,after));
     default:
 	recGblDbaddrError(S_db_badChoice,paddr,"ai: special");
@@ -341,11 +343,14 @@ static void convert(pai)
 struct aiRecord	*pai;
 {
 	double			 val;
+	float		aslo=pai->aslo;
+	float		aoff=pai->aoff;
 
 
 	val = pai->rval + pai->roff;
 	/* adjust slope and offset */
-	if(pai->aslo != 0.0) val = val * pai->aslo + pai->aoff;
+	if(aslo < 0.0 || aslo>udfFtest) val = val * aslo;
+	if(aoff < 0.0 || aoff>udfFtest) val = val + aoff;
 
 	/* convert raw to engineering units and signal units */
 	if(pai->linr == 0) {
@@ -401,7 +406,7 @@ struct aiRecord	*pai;
 
 	/* apply smoothing algorithm */
 	if (pai->smoo != 0.0){
-	    if (pai->init == 0) pai->val = val;	/* initial condition */
+	    if (pai->init == TRUE) pai->val = val;	/* initial condition */
 	    pai->val = val * (1.00 - pai->smoo) + (pai->val * pai->smoo);
 	}else{
 	    pai->val = val;

@@ -176,6 +176,7 @@ static long process(paddr)
 
 	/* check event list */
 	if(status!=1) {
+		tsLocalTime(&pcompress->time);	
 		monitor(pcompress);
 		/* process the forward scan link record */
 		if (pcompress->flnk.type==DB_LINK) dbScanPassive(pcompress->flnk.value.db_link.pdbAddr);
@@ -242,7 +243,8 @@ static long get_array_info(paddr,no_elements,offset)
     struct compressRecord *pcompress=(struct compressRecord *)paddr->precord;
 
     *no_elements =  pcompress->nuse;
-    *offset = pcompress->off;
+    if(pcompress->nuse==pcompress->nsam) *offset = pcompress->off;
+    else *offset = 0;
     return(0);
 }
 

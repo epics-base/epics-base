@@ -145,12 +145,13 @@ static long process(paddr)
 
 	status=(*pdset->read_bi)(pbi); /* read the new value */
 	pbi->pact = TRUE;
+	if (status==1) return(0);
+	tsLocalTime(&pbi->time);
 	if(status==0) { /* convert rval to val */
 		if(pbi->rval==0) pbi->val =0;
 		else pbi->val = 1;
 	}
 	/* status is one if an asynchronous record is being processed*/
-	else if(status==1) return(0);
 	else if(status==2) status=0;
 	/* check for alarms */
 	alarm(pbi);

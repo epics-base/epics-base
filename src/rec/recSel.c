@@ -128,6 +128,7 @@ static long process(paddr)
 		}
 	}
 
+	tsLocalTime(&psel->time);
 	/* check for alarms */
 	alarm(psel);
 

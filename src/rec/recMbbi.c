@@ -137,7 +137,6 @@ static long init_record(pmbbi)
     long status;
     int i;
 
-    init_common(pmbbi);
     if(!(pdset = (struct mbbidset *)(pmbbi->dset))) {
 	recGblRecordError(S_dev_noDSET,pmbbi,"mbbi: init_record");
 	return(S_dev_noDSET);
@@ -156,6 +155,7 @@ static long init_record(pmbbi)
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(pmbbi,process))) return(status);
     }
+    init_common(pmbbi);
     return(0);
 }
 
@@ -174,6 +174,8 @@ static long process(paddr)
 
 	status=(*pdset->read_mbbi)(pmbbi); /* read the new value */
 	pmbbi->pact = TRUE;
+	if (status==1) return(0);
+	tsLocalTime(&pmbbi->time);
 	if(status==0) { /* convert the value */
         	unsigned long 	*pstate_values;
         	short  		i;
@@ -197,7 +199,6 @@ static long process(paddr)
 			pmbbi->val =  (unsigned short)rval;
 		}
 	}
-	else if(status==1) return(0);
 	else if(status == 2) status = 0;
 
 	/* check for alarms */

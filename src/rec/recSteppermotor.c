@@ -134,6 +134,7 @@ static long process(paddr)
 	/* the init is set when the readback returns */
 	if (psm->init == 0){
 		init_sm(psm);
+		tsLocalTime(&psm->time);
 		monitor(psm);
 		return(0);
 	}
@@ -145,6 +146,7 @@ static long process(paddr)
 		velocity_sm(psm);
 
 
+	tsLocalTime(&psm->time);
 	/* check event list */
 	monitor(psm);
 
@@ -605,11 +607,11 @@ struct steppermotorRecord	*psm;
 	}
 
 	/* fetch the desired value if there is a database link */
-        if (psm->dvl.type == DB_LINK && psm->omsl == CLOSED_LOOP){
+        if (psm->dol.type == DB_LINK && psm->omsl == CLOSED_LOOP){
 		long options=0;
 		long nRequest=1;
 
-		if(dbGetLink(&(psm->dvl.value.db_link),psm,DBR_FLOAT,&(psm->val),&options,&nRequest)){
+		if(dbGetLink(&(psm->dol.value.db_link),psm,DBR_FLOAT,&(psm->val),&options,&nRequest)){
 			if (psm->nsev < MAJOR_ALARM) {
 				psm->nsta = READ_ALARM;
 				psm->nsev = MAJOR_ALARM;
@@ -681,11 +683,11 @@ struct steppermotorRecord	*psm;
 	if (psm->out.type != VME_IO) return;
 
 	/* fetch the desired value if there is a database link */
-        if (psm->dvl.type == DB_LINK && psm->omsl == CLOSED_LOOP){
+        if (psm->dol.type == DB_LINK && psm->omsl == CLOSED_LOOP){
 		long options=0;
 		long nRequest=1;
 
-		if(dbGetLink(&(psm->dvl.value.db_link),psm,DBR_FLOAT,&(psm->val),&options,&nRequest)) {
+		if(dbGetLink(&(psm->dol.value.db_link),psm,DBR_FLOAT,&(psm->val),&options,&nRequest)) {
 			if (psm->nsev < MAJOR_ALARM) {
 				psm->nsta = READ_ALARM;
 				psm->nsev = MAJOR_ALARM;

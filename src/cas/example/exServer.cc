@@ -7,9 +7,7 @@
 // Example EPICS CA server
 //
 
-
 #include <exServer.h>
-#include <fdManager.h>
 
 const pvInfo exServer::pvList[] = {
 	pvInfo (1.0e-1, "jane", 10.0f, 0.0f, excasIoSync),
@@ -18,67 +16,10 @@ const pvInfo exServer::pvList[] = {
 	pvInfo (2.0, "freddy", 10.0f, -10.0f, excasIoAsync)
 };
 
-
 //
 // static data for exServer
 //
 gddAppFuncTable<exPV> exServer::ft;
-
-//
-// main()
-//
-int main (int argc, const char **argv)
-{
-	osiTime		begin(osiTime::getCurrent());
-	exServer	*pCAS;
-	unsigned 	debugLevel = 0u;
-	float		executionTime;
-	aitBool		forever = aitTrue;
-	int		i;
-
-	pCAS = new exServer(32u,5u,500u);
-	if (!pCAS) {
-		return (-1);
-	}
-
-	for (i=1; i<argc; i++) {
-		if (sscanf(argv[i], "-d %u", &debugLevel)==1) {
-			continue;
-		}
-		if (sscanf(argv[i],"-t %f", &executionTime)==1) {
-			forever = aitFalse;
-			continue;
-		}
-		printf ("usage: %s -d<debug level> -t<execution time>\n", 
-			argv[0]);
-		return (1);
-	}
-
-	pCAS->setDebugLevel(debugLevel);
-
-	if (forever) {
-		osiTime	delay(1000u,0u);
-		//
-		// loop here forever
-		//
-		while (aitTrue) {
-			fileDescriptorManager.process(delay);
-		}
-	}
-	else {
-		osiTime total(executionTime);
-		osiTime delay(osiTime::getCurrent() - begin);
-		//
-		// loop here untime the specified execution time
-		// expires
-		//
-		while (delay < total) {
-			fileDescriptorManager.process(delay);
-			delay = osiTime::getCurrent() - begin;
-		}
-	}
-	return (0);
-}
 
 //
 // exServer::exServer()
@@ -102,6 +43,7 @@ exServer::exServer(unsigned pvMaxNameLength, unsigned pvCountEstimate,
 	ft.installReadFunc("alarmLowWarning",exPV::getLowLimit);
 	ft.installReadFunc("units",exPV::getUnits);
 	ft.installReadFunc("value",exPV::getValue);
+	ft.installReadFunc("enums",exPV::getEnums);
 }
 
 //

@@ -87,7 +87,7 @@ static unsigned char T0[256] = {
 #ifdef __STDC__
 static void *myCalloc(size_t nobj,size_t size)
 #else
-static void *myCalloc()
+static void *myCalloc(nobj,size)
   size_t nobj;
   size_t size;
 #endif
@@ -107,7 +107,7 @@ static void *myCalloc()
 #ifdef __STDC__
 static unsigned char hash( char *pname)
 #else
-static unsigned char hash()
+static unsigned char hash(pname)
  char *pname;
 #endif
 {
@@ -123,7 +123,7 @@ static unsigned char hash()
 #ifdef __STDC__
 void gphInitPvt(void **pgphPvt)
 #else
-void gphInitPvt()
+void gphInitPvt(pgphPvt)
   void **pgphPvt;
 #endif
 {
@@ -136,7 +136,7 @@ void gphInitPvt()
 #ifdef __STDC__
 GPHENTRY *gphFind(void *gphPvt,char *name,void *pvtid)
 #else
-GPHENTRY *gphFind()
+GPHENTRY *gphFind(gphPvt,name,pvtid)
 void *gphPvt;
 char *name;
 void *pvtid;
@@ -162,7 +162,7 @@ void *pvtid;
 #ifdef __STDC__
 GPHENTRY *gphAdd(void *gphPvt,char *name,void *pvtid)
 #else
-GPHENTRY *gphAdd()
+GPHENTRY *gphAdd(gphPvt,name,pvtid)
 void *gphPvt;
 char *name;
 void *pvtid;
@@ -195,6 +195,7 @@ void *pvtid;
 #ifdef __STDC__
 void gphDelete(void *gphPvt,char *name,void *pvtid)
 #else
+void gphDelete(gphPvt,name,pvtid)
 void *gphPvt;
 char *name;
 void *pvtid;
@@ -224,7 +225,7 @@ void *pvtid;
 #ifdef __STDC__
 void gphFreeMem(void * gphPvt)
 #else
-void gphFreeMem()
+void gphFreeMem(gphPvt)
 void * gphPvt;
 #endif
 {
@@ -253,7 +254,7 @@ void * gphPvt;
 #ifdef __STDC__
 void gphDump(void * gphPvt)
 #else
-void gphDump()
+void gphDump(gphPvt)
 void * gphPvt;
 #endif
 {

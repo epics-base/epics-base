@@ -2,14 +2,169 @@
 <html>
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.5 [en] (X11; U; SunOS 5.6 sun4u) [Netscape]">
+   <meta name="GENERATOR" content="Mozilla/4.61 [en] (X11; U; SunOS 5.6 sun4u) [Netscape]">
    <title>EPICS Release baseR3.13.0.beta12
 </title>
 </head>
 <body>
 
 <h1>
-EPICS Release baseR3.13.1</h1>
+EPICS Release baseNEXT</h1>
+
+<h4>
+July 7, 1999</h4>
+
+<h3>
+Changes since 3.13.1</h3>
+<b>config</b>
+<br>&nbsp;
+<ul>
+<li>
+Many changes.</li>
+
+<li>
+Currently gdd and cas are not built. LEFT&nbsp;FOR&nbsp;JEFF&nbsp;TO&nbsp;MAKE&nbsp;WORK</li>
+</ul>
+
+<p><br><b>dbCommon.dbd</b>
+<br><b></b>&nbsp;
+<ul>
+<li>
+several extra definitions were changed from void * to correct struct types.</li>
+
+<li>
+ACKT was changed so it can be set by database configuration tools.</li>
+</ul>
+<b></b>
+<p><br><b>dbStaticLib</b>
+<ul>
+<li>
+The DTYP field is always written.</li>
+
+<li>
+The NoRun version now keeps record instances keeps all records of each
+type in alphabetical order.</li>
+
+<li>
+CALC fields are OK if either postfix or sCalcPostfix returns success.</li>
+</ul>
+<b>breakpoint tables</b>
+<p>Tables names were previously forced to be alphanumeric. This restriction
+is removed.
+<p><b>drvTS.c</b>
+<p>removed potential infinite recursion from tsForceSoftSync()
+<p><b>drvSup.h</b>
+<p>removed definition for&nbsp; reboot.
+<p><b>dbNotify</b>
+<p>If&nbsp; dbPutNotify called dbProcess and dbProcess returned an error
+the notify completion callback was called twice. This bug is fixed.
+<p><b>drvBB232</b>
+<p>This support was defining storage twice. A bug in the current gcc compiler
+supplied with tornado does not properl;y compile such code. The extra definitions
+are removed.
+<p><b>aiRecord and aoRecord</b>
+<p>eoff was not being reinitialized when conversion related fields were
+dynamically modified.
+<p><b>compressRecord</b>
+<p>compressALG_N_to_1_Median (compress keeping median value) added.
+<p><b>mbbiDirectRecord</b>
+<p>When just the record's severity changed, only monitors on the VAL fields
+were posted, no monitors on the single bit fields.
+<p><b>devApsEr.c</b>
+<p>ErGetTicks now locks while updating ticks
+<p><b>devCommonGpib</b>
+<p>sscanf response now checked to be equal to 1 rather than just not zero.
+<p><b>bitbus support</b>
+<p>This support is now unbundled. DO NOT use the version in base. This
+includes the following
+<ul>
+<li>
+devBBInteract.c</li>
+
+<li>
+devBUG.dbd</li>
+
+<li>
+devBitbusStats.dbd</li>
+
+<li>
+devIObug.c</li>
+
+<li>
+drvBB232.c</li>
+
+<li>
+drvBB232.h</li>
+
+<li>
+drvBitBus.c</li>
+
+<li>
+drvBitBus.h</li>
+
+<li>
+drvBitBusErr.h</li>
+
+<li>
+drvBitBusInterface.h</li>
+
+<li>
+drvMsg.c</li>
+
+<li>
+drvMsg.h</li>
+
+<li>
+drvRs232.h</li>
+</ul>
+NOTE: drvBitBusInterface.h and drvBitBusErr.h appear in both base and unbundled
+because drvGib uses it.&nbsp; Must be fixed when gpib is unbundled.
+<p><b>devOpt support</b>
+<p>The following gpib support modules have been changed to fix compiler
+bug fot vxWorks 5.3:
+<ul>
+<li>
+devAnalytekGpib.c</li>
+
+<li>
+devK486Gpib.c</li>
+
+<li>
+devXxDc5009Gpib.c</li>
+
+<li>
+devXxDg535Gpib.c</li>
+
+<li>
+devXxK196Gpib.c</li>
+
+<li>
+devXxK263Gpib.c</li>
+
+<li>
+devXxSkeletonGpib.c</li>
+
+<li>
+devXxSr620Gpib.c</li>
+</ul>
+<b>mkdir.pl and rm.pl</b>
+<p>&nbsp;getopt() changed to&nbsp; getopt "";
+<p><b>rc2.logServer</b>
+<p>Moved&nbsp; export statements to the right place.
+<p><b>access security</b>
+<p>Issue better error message if access security initialization fails.
+<p><b>makeBaseApp</b>
+<ul>
+<li>
+dbExample2.template</li>
+
+<br>fixed mistake
+<li>
+makeIocCdCommands.pl</li>
+
+<br>This now looks for all external products in config/RELEASE and generates
+commands
+<br>to cd to product top and product bin.</ul>
 
 <h3>
 Changes between beta12 and 3.13.1</h3>
@@ -259,8 +414,9 @@ in 2036. However it was modified so that no overflows should occur while
 converting between NTP, UNIX, and EPICS epochs. In addition the conversion
 of fractions of a second to nanaoseconds was changed and formatting was
 changed so that interesting code does not run off right side of page. Hopefully
-EPICS base is now fine for Y2K. In fact it should be fine (as far as time
-is converned) until the Unix epoch overflows a 32 unsigned integer in the
+EPICS
+base is now fine for Y2K. In fact it should be fine (as far as time is
+converned) until the Unix epoch overflows a 32 unsigned integer in the
 year 2106.
 <br>&nbsp;
 <h3>
@@ -1271,8 +1427,9 @@ devLoSoft, devLoSymb, devMbboDirectSoft, devMbboSoft, devPtSoft, devSoSymb
 
 <li>
 devHistogramSoft, devHistogramTestAsyn - In init_record the udf field is
-set to false only if svl is a constant link and recGblInitConstantLink
-returns success.</li>
+set
+to false only if svl is a constant link and recGblInitConstantLink returns
+success.</li>
 </ul>
 </ul>
 

@@ -51,7 +51,7 @@ inline const char *dbChannelIO::pName () const
 
 inline short dbChannelIO::nativeType () const 
 {
-    return dbDBRnewToDBRold[this->addr.field_type];
+    return this->addr.dbr_field_type;
 }
 
 inline void dbChannelIO::callReadNotify ( unsigned type, unsigned long count, 

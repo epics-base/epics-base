@@ -39,7 +39,7 @@ public:
         bool again;
         double delay;
     };
-    // return noRestart OR return expireStatus ( restart, 30.0 /* sec */ );
+    // return "noRestart" or "expireStatus ( restart, 30.0 /* sec */ )"
     virtual expireStatus expire ( const epicsTime & currentTime ) = 0;
     virtual epicsShareFunc void show ( unsigned int level ) const;
 };

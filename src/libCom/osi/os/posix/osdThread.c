@@ -469,7 +469,7 @@ epicsThreadId epicsThreadGetIdSelf(void) {
     return(pthreadInfo);
 }
 
-pthread_t epicsThreadGetPthreadIdSelf ( epicsThreadPrivateId threadId )
+pthread_t epicsThreadGetPosixThreadIdSelf ( epicsThreadPrivateId threadId )
 {
     struct epicsThreadOSD * pThreadInfo = threadId;
     return pThreadInfo->tid;

@@ -12,6 +12,6 @@
 
 #include <pthread.h>
 
-pthread_t epicsThreadGetPthreadIdSelf ( epicsThreadPrivateId id );
+pthread_t epicsThreadGetPosixThreadIdSelf ( epicsThreadPrivateId id );
 
 #endif /* osdThreadh */

@@ -1,4 +1,4 @@
-/* dbTestRegister.h */
+/* dbTestRegister.c */
 /* Author:  Marty Kraimer Date: 26APR2000 */
 
 /********************COPYRIGHT NOTIFICATION**********************************

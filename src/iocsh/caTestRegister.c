@@ -1,4 +1,4 @@
-/* dbCaTestRegister.c */
+/* caTestRegister.c */
 /* Author:  Marty Kraimer Date: 01MAY2000 */
 
 /********************COPYRIGHT NOTIFICATION**********************************
@@ -13,22 +13,21 @@ of this distribution.
 #include <ctype.h>
 
 #include "ioccrf.h"
-#include "dbCaTest.h"
+#include "rsrv.h"
 #define epicsExportSharedSymbols
-#include "dbCaTestRegister.h"
+#include "caTestRegister.h"
 
-/* dbcar */
-ioccrfArg dbcarArg0 = { "record name",ioccrfArgString,0};
-ioccrfArg dbcarArg1 = { "level",ioccrfArgInt,0};
-ioccrfArg *dbcarArgs[2] = {&dbcarArg0,&dbcarArg1};
-ioccrfFuncDef dbcarFuncDef = {"dbcar",2,dbcarArgs};
-void dbcarCallFunc(ioccrfArg **args)
+/* casr */
+ioccrfArg casrArg0 = { "level",ioccrfArgInt,0};
+ioccrfArg *casrArgs[1] = {&casrArg0};
+ioccrfFuncDef casrFuncDef = {"casr",1,casrArgs};
+void casrCallFunc(ioccrfArg **args)
 {
-    dbcar((char *)args[0]->value,*(int *)args[1]->value);
+    casr(*(int *)args[0]->value);
 }
 
 
-void epicsShareAPI dbCaTestRegister(void)
+void epicsShareAPI caTestRegister(void)
 {
-    ioccrfRegister(&dbcarFuncDef,dbcarCallFunc);
+    ioccrfRegister(&casrFuncDef,casrCallFunc);
 }

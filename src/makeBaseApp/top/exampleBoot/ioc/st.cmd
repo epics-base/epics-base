@@ -7,7 +7,12 @@
 
 #< ../nfsCommands
 
+#The following sets timezone properly on vxWorks
 #putenv("TIMEZONE=<name>::<minutesWest>:<start daylight>:<end daylight>")
+
+#The following uses drvTS for vxWorks
+#ld < <base>/bin/vxWorks-<arch>/drvTS.o
+#TSinit
 
 cd topbin
 ld < exampleLibrary.munch

@@ -27,7 +27,7 @@ tsFreeList < struct oldChannel, 1024 > oldChannel::freeList;
  * out so that we will not decrement the pending
  * recv count in the future.
  */
-extern "C" void cacAlreadyConnHandler (struct connection_handler_args)
+static void cacAlreadyConnHandler (struct connection_handler_args)
 {
 }
 

@@ -1244,7 +1244,7 @@ void pend_event_delay_test(dbr_double_t request)
     assert (fabs(accuracy) < 10.0);
 }
 
-caTaskExistTest ()
+void caTaskExistTest ()
 {
     int status;
 

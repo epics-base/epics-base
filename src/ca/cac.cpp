@@ -19,7 +19,7 @@
 #include "tcpiiu_IL.h"
 #include "nciu_IL.h"
 
-extern "C" void cacRecursionLockExitHandler ()
+static void cacRecursionLockExitHandler ()
 {
     if ( cacRecursionLock ) {
         threadPrivateDelete ( cacRecursionLock );
@@ -27,7 +27,7 @@ extern "C" void cacRecursionLockExitHandler ()
     }
 }
 
-static void cacInitRecursionLock ( void * dummy )
+static void cacInitRecursionLock ( void * )
 {
     cacRecursionLock = threadPrivateCreate ();
     if ( cacRecursionLock ) {
@@ -58,7 +58,7 @@ cac::cac ( bool enablePreemptiveCallbackIn ) :
 
     threadOnce ( &once, cacInitRecursionLock, 0 );
 
-    if ( cacInitRecursionLock == 0 ) {
+    if ( cacRecursionLock == 0 ) {
         throwWithLocation ( caErrorCode (ECA_ALLOCMEM) );
     }
 

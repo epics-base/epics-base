@@ -72,7 +72,7 @@ static const char nillBytes[] =
 inline bufferReservoir::~bufferReservoir ()
 {
     comBuf *pBuf;
-    while ( pBuf = this->reservedBufs.get () ) {
+    while ( ( pBuf = this->reservedBufs.get () ) ) {
         pBuf->destroy ();
     }
 }
@@ -322,7 +322,7 @@ unsigned comQueSend::occupiedBytes () const
 
 bool comQueSend::flushToWire ()
 {
-    bool success;
+    bool success = false;
 
     // the recv thread is not permitted to flush as this
     // can result in a push / pull deadlock on the TCP pipe,
@@ -345,17 +345,14 @@ bool comQueSend::flushToWire ()
             success = true;
             break;
         }
-        bool success = pBuf->flushToWire ( *this );
+        success = pBuf->flushToWire ( *this );
         pBuf->destroy ();
         if ( ! success ) {
-            comBuf *pBuf;
-
             this->mutex.lock ();
             while ( ( pBuf = this->bufs.get () ) ) {
                 pBuf->destroy ();
             }
             this->mutex.unlock ();
-
             break; 
         }
     }

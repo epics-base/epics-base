@@ -198,7 +198,7 @@ bool netiiu::pushDatagramMsg ( const caHdr &, const void *, ca_uint16_t )
     return false;
 }
 
-bool netiiu::connectionInProgress ( const char *pChannelName, const osiSockAddr &addr ) const
+bool netiiu::connectionInProgress ( const char *, const osiSockAddr & ) const
 {
     return false;
 }
@@ -212,37 +212,37 @@ int netiiu::writeRequest ( unsigned, unsigned, unsigned, const void * )
     return ECA_DISCONNCHID;
 }
 
-int netiiu::writeNotifyRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem, const void *pValue )
+int netiiu::writeNotifyRequest ( unsigned, unsigned, unsigned, unsigned, const void * )
 {
     return ECA_DISCONNCHID;
 }
 
-int netiiu::readCopyRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem )
+int netiiu::readCopyRequest ( unsigned, unsigned, unsigned, unsigned )
 {
     return ECA_DISCONNCHID;
 }
 
-int netiiu::readNotifyRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem )
+int netiiu::readNotifyRequest ( unsigned, unsigned, unsigned, unsigned )
 {
     return ECA_DISCONNCHID;
 }
 
-int netiiu::createChannelRequest ( unsigned clientId, const char *pName, unsigned nameLength )
+int netiiu::createChannelRequest ( unsigned, const char *, unsigned )
 {
     return ECA_DISCONNCHID;
 }
 
-int netiiu::clearChannelRequest ( unsigned clientId, unsigned serverId )
+int netiiu::clearChannelRequest ( unsigned, unsigned )
 {
     return ECA_DISCONNCHID;
 }
 
-int netiiu::subscriptionRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem, unsigned mask )
+int netiiu::subscriptionRequest ( unsigned, unsigned, unsigned, unsigned, unsigned )
 {
     return ECA_DISCONNCHID;
 }
 
-int netiiu::subscriptionCancelRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem )
+int netiiu::subscriptionCancelRequest ( unsigned, unsigned, unsigned, unsigned )
 {
     return ECA_DISCONNCHID;
 }

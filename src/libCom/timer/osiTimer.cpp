@@ -28,7 +28,9 @@
  *
  */
 
+#ifndef assert // allow use of epicsAssert.h
 #include <assert.h>
+#endif
 #include <stdio.h>
 #include <float.h>
 

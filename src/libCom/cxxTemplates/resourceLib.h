@@ -50,7 +50,9 @@
 #include <limits.h>
 #include <string.h>
 #include <math.h>
+#ifndef assert // allow use of epicsAssert.h
 #include <assert.h>
+#endif
 
 #include "tsSLList.h"
 #include "shareLib.h"

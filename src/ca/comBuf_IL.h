@@ -17,7 +17,7 @@
 #ifndef comBuf_ILh
 #define comBuf_ILh
 
-#include <assert.h>
+#include <epicsAssert.h>
 #include "epicsTypes.h"
 #include "osiWireFormat.h"
 
@@ -122,8 +122,6 @@ inline unsigned comBuf::maxBytes ()
 inline bool comBuf::flushToWire ( class comQueSend &que )
 {
     unsigned occupied = this->occupiedBytes ();
-
-    unsigned nSent = 0u;
     while ( occupied ) {
         unsigned nBytes = que.sendBytes ( &this->buf[this->nextReadIndex], occupied );
         if ( nBytes == 0u ) {

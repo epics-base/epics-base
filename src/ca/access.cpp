@@ -33,7 +33,7 @@ threadPrivateId cacRecursionLock;
 
 static threadOnceId caClientContextIdOnce = OSITHREAD_ONCE_INIT;
 
-void ca_client_exit_handler ()
+static void ca_client_exit_handler ()
 {
     if ( caClientContextId ) {
         threadPrivateDelete ( caClientContextId );
@@ -42,7 +42,7 @@ void ca_client_exit_handler ()
 }
 
 // runs once only for each process
-static void ca_init_client_context ( void * dummy )
+static void ca_init_client_context ( void * )
 {
     caClientContextId = threadPrivateCreate ();
     if ( caClientContextId ) {
@@ -693,11 +693,11 @@ int ca_vPrintf ( const char *pformat, va_list args )
             return pcac->vPrintf ( pformat, args );
         }
         else {
-            return ( *errlogVprintf ) ( pformat, args );
+            return errlogVprintf ( pformat, args );
         }
     }
     else {
-        return ( *errlogVprintf ) ( pformat, args );
+        return errlogVprintf ( pformat, args );
     }
 }
 
@@ -846,9 +846,7 @@ epicsShareFunc int epicsShareAPI ca_attach_context (caClientCtx context)
     return ECA_NORMAL;
 }
 
-extern "C" {
-
-extern epicsShareDef const int epicsTypeToDBR_XXXX [lastEpicsType+1] = {
+extern "C" epicsShareDef const int epicsTypeToDBR_XXXX [lastEpicsType+1] = {
     DBR_SHORT, /* forces conversion fronm uint8 to int16 */
     DBR_CHAR,
     DBR_SHORT,
@@ -862,7 +860,7 @@ extern epicsShareDef const int epicsTypeToDBR_XXXX [lastEpicsType+1] = {
     DBR_STRING
 };
 
-extern epicsShareDef const epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1] = {
+extern "C" epicsShareDef const epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1] = {
 	epicsOldStringT,
 	epicsInt16T,	
 	epicsFloat32T,	
@@ -909,7 +907,7 @@ extern epicsShareDef const epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1] = 
 	epicsOldStringT
 };
 
-extern epicsShareDef const unsigned short dbr_size[LAST_BUFFER_TYPE+1] = {
+extern "C" epicsShareDef const unsigned short dbr_size[LAST_BUFFER_TYPE+1] = {
 	sizeof(dbr_string_t),		/* string max size		*/
 	sizeof(dbr_short_t),		/* short			*/
 	sizeof(dbr_float_t),		/* IEEE Float			*/
@@ -951,7 +949,7 @@ extern epicsShareDef const unsigned short dbr_size[LAST_BUFFER_TYPE+1] = {
 	sizeof(dbr_string_t),		/* string max size		*/
 };
 
-extern epicsShareDef const unsigned short dbr_value_size[LAST_BUFFER_TYPE+1] = {
+extern "C" epicsShareDef const unsigned short dbr_value_size[LAST_BUFFER_TYPE+1] = {
 	sizeof(dbr_string_t),	/* string max size		*/
 	sizeof(dbr_short_t),	/* short			*/
 	sizeof(dbr_float_t),	/* IEEE Float			*/
@@ -993,7 +991,7 @@ extern epicsShareDef const unsigned short dbr_value_size[LAST_BUFFER_TYPE+1] = {
 	sizeof(dbr_string_t),	/* string max size		*/
 };
 
-extern epicsShareDef const enum dbr_value_class dbr_value_class[LAST_BUFFER_TYPE+1] = {
+extern "C" epicsShareDef const enum dbr_value_class dbr_value_class[LAST_BUFFER_TYPE+1] = {
 	dbr_class_string,	/* string max size		*/
 	dbr_class_int,		/* short			*/
 	dbr_class_float,	/* IEEE Float			*/
@@ -1039,7 +1037,7 @@ extern epicsShareDef const enum dbr_value_class dbr_value_class[LAST_BUFFER_TYPE
 	dbr_class_string,	/* string max size		*/
 };
 
-extern epicsShareDef const unsigned short dbr_value_offset[LAST_BUFFER_TYPE+1] = {
+extern "C" epicsShareDef const unsigned short dbr_value_offset[LAST_BUFFER_TYPE+1] = {
 	0,					/* string			*/
 	0,					/* short			*/
 	0,					/* IEEE Float			*/
@@ -1081,7 +1079,7 @@ extern epicsShareDef const unsigned short dbr_value_offset[LAST_BUFFER_TYPE+1] =
 	0,					/* string			*/
 };
 
-extern epicsShareDef const char *db_field_text[] = {
+extern "C" epicsShareDef const char *db_field_text[] = {
     "DBF_STRING",
     "DBF_SHORT",
     "DBF_FLOAT",
@@ -1091,11 +1089,11 @@ extern epicsShareDef const char *db_field_text[] = {
     "DBF_DOUBLE"
 };
 
-extern epicsShareDef const char *dbf_text_invalid = "DBF_invalid";
+extern "C" epicsShareDef const char *dbf_text_invalid = "DBF_invalid";
 
-extern epicsShareDef const short dbf_text_dim = (sizeof dbf_text)/(sizeof (char *));
+extern "C" epicsShareDef const short dbf_text_dim = (sizeof dbf_text)/(sizeof (char *));
 
-extern epicsShareDef const char *dbr_text[LAST_BUFFER_TYPE+1] = {
+extern "C" epicsShareDef const char *dbr_text[LAST_BUFFER_TYPE+1] = {
     "DBR_STRING",
     "DBR_SHORT",
     "DBR_FLOAT",
@@ -1137,7 +1135,5 @@ extern epicsShareDef const char *dbr_text[LAST_BUFFER_TYPE+1] = {
     "DBR_CLASS_NAME"
 };
 
-extern epicsShareDef const char *dbr_text_invalid = "DBR_invalid";
-extern epicsShareDef const short dbr_text_dim = (sizeof dbr_text) / (sizeof (char *)) + 1;
-
-}
+extern "C" epicsShareDef const char *dbr_text_invalid = "DBR_invalid";
+extern "C" epicsShareDef const short dbr_text_dim = (sizeof dbr_text) / (sizeof (char *)) + 1;

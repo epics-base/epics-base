@@ -57,7 +57,7 @@ inline void nciu::resetRetryCount ()
 
 inline void nciu::accessRightsStateChange ( const caar &arIn )
 {
-    this->ar = ar;
+    this->ar = arIn;
     this->accessRightsNotify ( this->ar );
 }
 
@@ -158,8 +158,8 @@ inline void nciu::ioInstall ( class baseNMIU &nmiu )
     this->cacCtx.ioInstall ( *this, nmiu );
 }
 
-inline void nciu::ioDestroy ( unsigned id )
+inline void nciu::ioDestroy ( unsigned idIn )
 {
-    this->cacCtx.ioDestroy ( id );
+    this->cacCtx.ioDestroy ( idIn );
 }
 

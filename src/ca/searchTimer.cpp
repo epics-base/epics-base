@@ -105,19 +105,19 @@ void searchTimer::setRetryInterval (unsigned retryNo)
 // at least one response. However, dont reset this delay if we
 // get a delayed response to an old search request.
 //
-void searchTimer::notifySearchResponse ( unsigned short retrySeqNo )
+void searchTimer::notifySearchResponse ( unsigned short retrySeqNoIn )
 {
     bool reschedualNeeded;
 
     this->lock ();
 
-    if ( this->retrySeqAtPassBegin <= retrySeqNo ) {
+    if ( this->retrySeqAtPassBegin <= retrySeqNoIn ) {
         if ( this->searchResponsesWithinThisPass < UINT_MAX ) {
             this->searchResponsesWithinThisPass++;
         }
     }    
 
-    reschedualNeeded = ( retrySeqNo == this->retrySeqNo );
+    reschedualNeeded = ( retrySeqNoIn == this->retrySeqNo );
         
     this->unlock ();
 

@@ -30,8 +30,8 @@
 
 tsFreeList < class nciu, 1024 > nciu::freeList;
 
-nciu::nciu ( cac &cacIn, cacChannel &chan, const char *pNameIn ) :
-    cacChannelIO ( chan ), cacPrivate ( cacIn )
+nciu::nciu ( cac &cacIn, cacChannel &chanIn, const char *pNameIn ) :
+    cacChannelIO ( chanIn ), cacPrivate ( cacIn )
 {
     static const caar defaultAccessRights = { false, false };
     size_t strcnt;
@@ -67,7 +67,7 @@ nciu::nciu ( cac &cacIn, cacChannel &chan, const char *pNameIn ) :
 
     this->cacCtx.installDisconnectedChannel ( *this );
 
-    chan.attachIO ( *this );
+    chanIn.attachIO ( *this );
 }
 
 void nciu::destroy ()
@@ -105,7 +105,7 @@ nciu::~nciu ()
 int nciu::read ( unsigned type, unsigned long countIn, cacNotify &notify )
 {
     int status;
-    unsigned id;
+    unsigned idCopy;
 
     //
     // fail out if their arguments are invalid
@@ -123,14 +123,14 @@ int nciu::read ( unsigned type, unsigned long countIn, cacNotify &notify )
         countIn = this->count;
     }
     
-    bool success = netReadNotifyIO::factory ( *this, notify, id );
+    bool success = netReadNotifyIO::factory ( *this, notify, idCopy );
     if ( ! success ) {
         return ECA_ALLOCMEM;
     }
 
     this->lockPIIU ();
     if ( this->piiu ) {
-        status = this->piiu->readNotifyRequest ( id, this->sid, type, countIn );
+        status = this->piiu->readNotifyRequest ( idCopy, this->sid, type, countIn );
     }
     else {
         status = ECA_DISCONNCHID;
@@ -146,7 +146,7 @@ int nciu::read ( unsigned type, unsigned long countIn, cacNotify &notify )
 
 int nciu::read ( unsigned type, unsigned long countIn, void *pValue )
 {
-    unsigned id;
+    unsigned idCopy;
     bool success;
     int status;
 
@@ -171,14 +171,14 @@ int nciu::read ( unsigned type, unsigned long countIn, void *pValue )
     }
 
     success = netReadCopyIO::factory ( *this, type, countIn, pValue, 
-                this->readSequence (), id );
+                this->readSequence (), idCopy );
     if ( ! success ) {
         return ECA_ALLOCMEM;
     }
 
     this->lockPIIU ();
     if ( this->piiu ) {
-        status = this->piiu->readCopyRequest ( id, this->sid, type, countIn );
+        status = this->piiu->readCopyRequest ( idCopy, this->sid, type, countIn );
     }
     else {
         status = ECA_DISCONNCHID;
@@ -785,9 +785,9 @@ unsigned nciu::searchAttempts () const
 int nciu::subscribe ( unsigned type, unsigned long countIn, 
                          unsigned mask, cacNotify &notify )
 {
-    unsigned id;
+    unsigned idCopy;
     bool success = netSubscription::factory ( *this, type, countIn, 
-        static_cast <unsigned short> (mask), notify, id );
+        static_cast <unsigned short> (mask), notify, idCopy );
     if ( success ) {
         return ECA_NORMAL;
     }

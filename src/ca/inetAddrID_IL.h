@@ -25,7 +25,7 @@ inline bool inetAddrID::operator == (const inetAddrID &rhs)
     return false;
 }
 
-inline resTableIndex inetAddrID::hash (unsigned nBitsHashIndex) const
+inline resTableIndex inetAddrID::hash ( unsigned ) const
 {
     unsigned index;
     index = this->addr.sin_addr.s_addr;

@@ -40,6 +40,7 @@ void cacPrivate::destroyAllIO ()
                 done = false;
             }
             else {
+                id = UINT_MAX;
                 done = true;
             }
         }

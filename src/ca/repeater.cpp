@@ -219,7 +219,7 @@ bool repeaterClient::sendMessage ( const void *pBuf, unsigned bufSize )
 
     status = send ( this->sock, (char *) pBuf, bufSize, 0 );
     if ( status >= 0 ) {
-        assert ( status == bufSize );
+        assert ( static_cast <unsigned> ( status ) == bufSize );
         debugPrintf ( ("Sent to %u\n", ntohs ( this->from.ia.sin_port ) ) );
         return true;
     }
@@ -263,11 +263,11 @@ inline unsigned repeaterClient::port () const
     return ntohs ( this->from.ia.sin_port );
 }
 
-inline bool repeaterClient::identicalAddress ( const osiSockAddr &from )
+inline bool repeaterClient::identicalAddress ( const osiSockAddr &fromIn )
 {
-    if ( from.sa.sa_family == this->from.sa.sa_family ) {
-        if ( from.ia.sin_port == this->from.ia.sin_port) {
-            if ( from.ia.sin_addr.s_addr == this->from.ia.sin_addr.s_addr ) {
+    if ( fromIn.sa.sa_family == this->from.sa.sa_family ) {
+        if ( fromIn.ia.sin_port == this->from.ia.sin_port) {
+            if ( fromIn.ia.sin_addr.s_addr == this->from.ia.sin_addr.s_addr ) {
                 return true;
             }
         }
@@ -316,7 +316,7 @@ LOCAL void verifyClients()
     static tsDLList < repeaterClient > theClients;
     repeaterClient *pclient;
 
-    while ( pclient = client_list.get () ) {
+    while ( ( pclient = client_list.get () ) ) {
         if ( pclient->verify () ) {
             theClients.add ( *pclient );
         }
@@ -335,7 +335,7 @@ LOCAL void fanOut ( const osiSockAddr &from, const void *pMsg, unsigned msgSize 
     static tsDLList < repeaterClient > theClients;
     repeaterClient *pclient;
 
-    while ( pclient = client_list.get () ) {
+    while ( ( pclient = client_list.get () ) ) {
         theClients.add ( *pclient );
         /* Dont reflect back to sender */
         if ( pclient->identicalAddress ( from ) ) {

@@ -357,7 +357,8 @@ buildInstall :: build $(TARGETS) \
 
 clean::
 	@echo "Cleaning"
-	@$(RM) *.i *$(OBJ) *.a $(PROD) $(TESTPROD) $(LIBNAME) $(SHRLIBNAME) $(INC) *$(RES) $(TARGETS)
+	@$(RM) *.i *$(OBJ) *.a $(PROD) $(TESTPROD) $(LIBNAME) $(SHRLIBNAME) $(INC) *$(RES) $(TARGETS) \
+	$(DBDINSTALL) $(MENUS) $(RECTYPES) $(BPTS) $(DBDNAME)
 
 #---------------------------------------------------------------
 #	Products

@@ -3,11 +3,15 @@
 			GTA PROJECT   AT division
 	Copyright, 1990, The Regents of the University of California.
 		         Los Alamos National Laboratory
-
-	$Id$
+	snc.y,v 1.2 1995/06/27 15:26:07 wright Exp
 	ENVIRONMENT: UNIX
 	HISTORY:
 20nov91,ajk	Added new "option" statement.
+08nov93,ajk	Implemented additional declarations (see VC_CLASS in parse.h).
+08nov93,ajk	Implemented assignment of array elements to pv's.
+02may93,ajk	Removed "parameter" definition for functions, and added "%prec"
+		qualifications to some "expr" definitions.
+31may94,ajk	Changed method for handling global C code.
 ***************************************************************************/
 /*	SNC - State Notation Compiler.
  *	The general structure of a state program is:
@@ -31,13 +35,12 @@
  */
 #include	<stdio.h>
 #include	<ctype.h>
-#include	<string.h>
 #include	"parse.h"
 
 #ifndef	TRUE
 #define	TRUE	1
 #define	FALSE	0
-#endif	/* TRUE */
+#endif	TRUE
 
 extern	int line_num; /* input file line no. */
 %}
@@ -74,10 +77,11 @@ extern	int line_num; /* input file line no. */
 %type	<ival>	type
 %type	<pchar>	subscript binop asgnop unop
 %type	<pexpr> state_set_list state_set state_list state transition_list transition
-%type	<pexpr> parameter expr
+%type	<pexpr> expr compound_expr assign_list bracked_expr
 %type	<pexpr> statement stmt_list compound_stmt if_stmt else_stmt while_stmt
-%type	<pexpr> for_stmt
+%type	<pexpr> for_stmt escaped_c_list
 /* precidence rules for expr evaluation */
+%right	EQUAL COMMA
 %left	OR AND
 %left	GT GE EQ NE LE LT
 %left	PLUS MINUS
@@ -112,33 +116,60 @@ defn_stmt	/* individual definitions for SNL (preceeds state sets) */
 |	debug_stmt
 |	sync_stmt
 |	option_stmt
-|	C_STMT			{ defn_c_stmt($1); }
+|	defn_c_stmt
 |	pp_code
 |	error { snc_err("definitions/declarations"); }
 ;
 
-assign_stmt	/* 'assign <var name> to <db name>;' */
-:	ASSIGN NAME TO STRING SEMI_COLON { assign_stmt($2, $4); }
+assign_stmt	/* assign <var name> to <db name>; */
+:	ASSIGN NAME TO STRING SEMI_COLON { assign_single($2, $4); }
+
+		/* assign <var name>[<n>] to <db name>; */
+|	ASSIGN NAME subscript TO STRING SEMI_COLON { assign_subscr($2, $3, $5); }
+
+		/* assign <var name> to {<db name>, ... }; */
+|	ASSIGN NAME TO L_BRACKET assign_list R_BRACKET SEMI_COLON
+			{ assign_list($2, $5); }
+;
+
+assign_list	/* {"<db name>", .... } */ 
+:	STRING				{ $$ = expression(E_STRING, $1, 0, 0); }
+|	assign_list COMMA STRING
+			{ $$ = link_expr($1, expression(E_STRING, $3, 0, 0)); }
 ;
 
 monitor_stmt	/* variable to be monitored; delta is optional */
-:	MONITOR NAME SEMI_COLON		{ monitor_stmt($2, "0"); }
-|	MONITOR NAME COMMA NUMBER SEMI_COLON	{ monitor_stmt($2, $4); }
+:	MONITOR NAME SEMI_COLON			{ monitor_stmt($2, NULL); }
+|	MONITOR NAME subscript SEMI_COLON	{ monitor_stmt($2, $3); }
 ;
 
 subscript	/* e.g. [10] */
-:	/* empty */				{ $$ = 0; }
-|	L_SQ_BRACKET NUMBER R_SQ_BRACKET	{ $$ = $2; }
+:	L_SQ_BRACKET NUMBER R_SQ_BRACKET	{ $$ = $2; }
 ;
 
 debug_stmt
 :	DEBUG_PRINT NUMBER SEMI_COLON		{ set_debug_print($2); }
 ;
 
-decl_stmt	/* variable declarations (e.g. float x[20];) */
-:	type NAME subscript SEMI_COLON			{ decl_stmt($1, $2, $3, (char *)0); }
-|	type NAME subscript EQUAL NUMBER SEMI_COLON	{ decl_stmt($1, $2, $3, $5); }
-|	type NAME subscript EQUAL STRING SEMI_COLON	{ decl_stmt($1, $2, $3, $5); }
+decl_stmt	/* variable declarations (e.g. float x[20];)
+		 * decl_stmt(type, class, name, <1-st dim>, <2-nd dim>, value) */
+:	type NAME SEMI_COLON
+			{ decl_stmt($1, VC_SIMPLE,  $2,  NULL, NULL, NULL); }
+
+|	type NAME EQUAL NUMBER SEMI_COLON
+			{ decl_stmt($1, VC_SIMPLE,  $2,  NULL, NULL, $4  ); }
+ 
+|	type NAME subscript SEMI_COLON
+			{ decl_stmt($1, VC_ARRAY1,  $2,  $3,   NULL, NULL); }
+
+|	type NAME subscript subscript SEMI_COLON
+			{ decl_stmt($1, VC_ARRAY2,  $2,  $3,   $4,   NULL); }
+
+|	type ASTERISK NAME SEMI_COLON
+			{ decl_stmt($1, VC_POINTER, $3,  NULL, NULL, NULL); }
+
+|	type ASTERISK NAME subscript SEMI_COLON
+			{ decl_stmt($1, VC_ARRAYP,  $3,  $4,   NULL, NULL); }
 ;
 
 type		/* types for variables defined in SNL */
@@ -153,8 +184,14 @@ type		/* types for variables defined in SNL */
 ;
 
 sync_stmt	/* sync <variable> <event flag> */
-:	SYNC NAME TO NAME SEMI_COLON	{ sync_stmt($2, $4); }
-|	SYNC NAME NAME SEMI_COLON	{ sync_stmt($2, $3); /* archaic syntax */ }
+:	SYNC NAME TO NAME SEMI_COLON		{ sync_stmt($2, NULL, $4); }
+|	SYNC NAME    NAME SEMI_COLON		{ sync_stmt($2, NULL, $3); }
+|	SYNC NAME subscript TO NAME SEMI_COLON	{ sync_stmt($2, $3,   $5); }
+|	SYNC NAME subscript    NAME SEMI_COLON	{ sync_stmt($2, $3,   $4); }
+;
+
+defn_c_stmt	/* escaped C in definitions */
+:	escaped_c_list		{ defn_c_stmt($1); }
 ;
 
 option_stmt	/* option +/-<option>;  e.g. option +a; */
@@ -201,7 +238,8 @@ transition	/* define a transition ("when" statment ) */
 
 expr	/* general expr: e.g. (-b+2*a/(c+d)) != 0 || (func1(x,y) < 5.0) */
 	/* Expr *expression(int type, char *value, Expr *left, Expr *right) */
-:	expr binop expr 		{ $$ = expression(E_BINOP, $2, $1, $3); }
+:	compound_expr			{ $$ = $1; }
+|	expr binop expr %prec UOP	{ $$ = expression(E_BINOP, $2, $1, $3); }
 |	expr asgnop expr		{ $$ = expression(E_ASGNOP, $2, $1, $3); }
 |	unop expr  %prec UOP		{ $$ = expression(E_UNOP, $1, $2, 0); }
 |	AUTO_INCR expr  %prec UOP	{ $$ = expression(E_PRE, "++", $2, 0); }
@@ -211,12 +249,20 @@ expr	/* general expr: e.g. (-b+2*a/(c+d)) != 0 || (func1(x,y) < 5.0) */
 |	NUMBER				{ $$ = expression(E_CONST, $1, 0, 0); }
 |	STRING				{ $$ = expression(E_STRING, $1, 0, 0); }
 |	NAME				{ $$ = expression(E_VAR, $1, 0, 0); }
-|	NAME L_PAREN parameter R_PAREN	{ $$ = expression(E_FUNC, $1, $3, 0); }
-|	EXIT L_PAREN parameter R_PAREN	{ $$ = expression(E_FUNC, "exit", $3, 0); }
+|	NAME L_PAREN expr R_PAREN	{ $$ = expression(E_FUNC, $1, $3, 0); }
+|	EXIT L_PAREN expr R_PAREN	{ $$ = expression(E_FUNC, "exit", $3, 0); }
 |	L_PAREN expr R_PAREN		{ $$ = expression(E_PAREN, "", $2, 0); }
-|	expr L_SQ_BRACKET expr R_SQ_BRACKET %prec SUBSCRIPT
-					{ $$ = expression(E_SUBSCR, "", $1, $3); }
-|	/* empty */			{ $$ = expression(E_EMPTY, "", 0, 0); }
+|	expr bracked_expr %prec SUBSCRIPT { $$ = expression(E_SUBSCR, "", $1, $2); }
+|	/* empty */			{ $$ = 0; }
+;
+
+compound_expr
+:	expr COMMA expr			{ $$ = link_expr($1, $3); }
+|	compound_expr COMMA expr	{ $$ = link_expr($1, $3); }
+;
+
+bracked_expr	/* e.g. [k-1] */
+:	L_SQ_BRACKET expr R_SQ_BRACKET	{ $$ = $2; }
 ;
 
 unop	/* Unary operators */
@@ -246,7 +292,6 @@ binop	/* Binary operators */
 |	BIT_AND		{ $$ = "&"; }
 |	COMPLEMENT	{ $$ = "^"; }
 |	MODULO		{ $$ = "%"; }
-|	COMMA		{ $$ = ","; }
 |	PERIOD		{ $$ = "."; }	/* fudges structure elements */
 |	POINTER		{ $$ = "->"; }	/* fudges ptr to structure elements */
 ;
@@ -263,12 +308,6 @@ asgnop	/* Assignment operators */
 |	LEFT_EQUAL	{ $$ = "<<="; }
 |	RIGHT_EQUAL	{ $$ = ">>="; }
 |	CMPL_EQUAL	{ $$ = "^="; }
-;
-
-parameter	/* expr, expr, .... */
-:	expr			{ $$ = $1; }
-|	parameter COMMA expr	{ $$ = link_expr($1, $3); }
-|	/* empty */		{ $$ = 0; }
 ;
 
 compound_stmt		/* compound statement e.g. { ...; ...; ...; } */
@@ -319,8 +358,21 @@ pp_code		/* pre-processor code (e.g. # 1 "test.st") */
 ;
 
 global_c
-:	C_STMT		{ global_c_stmt($1); }
+:	escaped_c_list	{ global_c_stmt($1); }
+;
+
+escaped_c_list
+:	C_STMT			{ $$ = expression(E_TEXT, "", $1, 0); }
+|	escaped_c_list C_STMT	{ $$ = link_expr($1, expression(E_TEXT, "", $2, 0)); }
 ;
 %%
-#include "snc_lex.c"
-#include "snc_main.c"
+#include	"snc_lex.c"
+
+static int yyparse (void);
+
+/* yyparse() is static, so we create global access to it */
+void Global_yyparse (void)
+{
+	yyparse ();
+}
+

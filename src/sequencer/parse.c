@@ -4,7 +4,7 @@
 	Copyright, 1990, The Regents of the University of California.
 		         Los Alamos National Laboratory
 
-	$Id$
+< 	parse.c,v 1.3 1995/10/19 16:30:16 wright Exp
 	DESCRIPTION: Parsing support routines for state notation compiler.
 	 The 'yacc' parser calls these routines to build the tables
 	 and linked lists, which are then passed on to the phase 2 routines.
@@ -15,6 +15,10 @@
 20nov91,ajk	Removed snc_init() - no longer did anything useful.
 20nov91,ajk	Added option_stmt() routine.
 28apr92,ajk	Implemented new event flag mode.
+29opc93,ajk	Implemented assignment of pv's to array elements.
+29oct93,ajk	Implemented variable class (VC_SIMPLE, VC_ARRAY, & VC_POINTER).
+29oct93,ajk	Added 'v' (vxWorks include) option.
+17may94,ajk	Removed old event flag (-e) option.
 ***************************************************************************/
 
 /*====================== Includes, globals, & defines ====================*/
@@ -22,12 +26,11 @@
 #include	<stdio.h>
 #include	"parse.h"	/* defines linked list structures */
 #include	<math.h>
-#include	"db_access.h"
 
 #ifndef	TRUE
 #define	TRUE	1
 #define	FALSE	0
-#endif	/* TRUE */
+#endif	TRUE
 
 int	debug_print_opt = 0;	/* Debug level (set by source file) */
 
@@ -65,8 +68,6 @@ Expr	*global_c_list;		/* global C code following state program */
 program_name(pname, pparam)
 char	*pname, *pparam;
 {
-	extern	char *prog_name, *prog_param;
-
 	prog_name = pname;
 	prog_param = pparam;
 #ifdef	DEBUG
@@ -76,29 +77,40 @@ char	*pname, *pparam;
 }
 
 /* Parsing a declaration statement */
-decl_stmt(type, name, s_length, value)
+decl_stmt(type, class, name, s_length1, s_length2, value)
 int	type;		/* variable type (e.g. V_FLOAT) */
+int	class;		/* variable class (e.g. VC_ARRAY) */
 char	*name;		/* ptr to variable name */
-char	*s_length;	/* array lth (NULL=single element) */
+char	*s_length1;	/* array lth (1st dim, arrays only) */
+char	*s_length2;	/* array lth (2nd dim, [n]x[m] arrays only) */
 char	*value;		/* initial value or NULL */
 {
 	Var		*vp;
-	int		length;
+	int		length1, length2;
 	extern int	line_num;
 
-	if (s_length == 0)
-		length = 0;
-	else if (type == V_STRING)
-		length = 0;
-	else
-	{
-		length = atoi(s_length);
-		if (length < 0)
-			length = 0;
-	}
 #ifdef	DEBUG
-	fprintf(stderr, "variable decl: type=%d, name=%s, length=%d\n",
-	 type, name, length);
+	fprintf(stderr, 
+	 "variable decl: type=%d, class=%d, name=%s, ", type, class, name);
+#endif
+	length1 = length2 = 1;
+
+	if (s_length1 != NULL)
+	{
+		length1 = atoi(s_length1);
+		if (length1 <= 0)
+			length1 = 1;
+	}
+
+	if (s_length2 != NULL)
+	{
+		length2 = atoi(s_length2);
+		if (length2 <= 0)
+			length2 = 1;
+	}
+
+#ifdef	DEBUG
+	fprintf(stderr, "length1=%d, length2=%d\n", length1, length2);
 #endif
 	/* See if variable already declared */
 	vp = (Var *)findVar(name);
@@ -112,9 +124,12 @@ char	*value;		/* initial value or NULL */
 	vp = allocVar();
 	addVar(vp); /* add to var list */
 	vp->name = name;
+	vp->class = class;
 	vp->type = type;
-	vp->length = length;
+	vp->length1 = length1;
+	vp->length2 = length2;
 	vp->value = value; /* initial value or NULL */
+	vp->chan = NULL;
 	return;
 }
 
@@ -123,8 +138,8 @@ option_stmt(option, value)
 char		*option; /* "a", "r", ... */
 int		value;	/* TRUE means +, FALSE means - */
 {
-	extern int	async_opt, conn_opt, debug_opt,
-			line_opt, reent_opt, warn_opt, newef_opt;
+	extern int	async_opt, conn_opt, debug_opt, line_opt, 
+			reent_opt, warn_opt, vx_opt, newef_opt;
 
 	switch(*option)
 	{
@@ -137,6 +152,10 @@ int		value;	/* TRUE means +, FALSE means - */
 	    case 'd':
 		debug_opt = value;
 		break;
+ 		case 'e':
+		newef_opt = value;
+		break;
+
 	    case 'l':
 		line_opt = value;
 		break;
@@ -145,28 +164,30 @@ int		value;	/* TRUE means +, FALSE means - */
 		break;
 	    case 'w':
 		warn_opt = value;
-
-	    case 'e':
-		newef_opt = value;
-
+		break;
+	    case 'v':
+		vx_opt = value;
 		break;
 	}
 	return;
 }
 
-/* "Assign" statement: assign a variable to a DB channel.
-	elem_num is ignored in this version) */
-assign_stmt(name, db_name)
+/* "Assign" statement: Assign a variable to a DB channel.
+ * Format: assign <variable> to <string;
+ * Note: Variable may be subscripted.
+ */
+assign_single(name, db_name)
 char	*name;		/* ptr to variable name */
 char	*db_name;	/* ptr to db name */
 {
 	Chan		*cp;
 	Var		*vp;
+	int		subNum;
 	extern int	line_num;
 
 #ifdef	DEBUG
-	fprintf(stderr, "assign_stmt: name=%s, db_name=%s\n", name, db_name);
-#endif	 /* DEBUG */
+	fprintf(stderr, "assign %s to \"%s\";\n", name, db_name);
+#endif	DEBUG
 	/* Find the variable */
 	vp = (Var *)findVar(name);
 	if (vp == 0)
@@ -176,29 +197,240 @@ char	*db_name;	/* ptr to db name */
 		return;
 	}
 
-	/* Build structure for this channel */
-	cp = allocChan();
-	addChan(cp);		/* add to Chan list */
-	cp->var = vp;		/* make connection to variable */
-	vp->chan = cp;		/* reverse ptr */
-	cp->db_name = db_name;	/* DB name */
-	cp->count = vp->length;	/* default count is variable length */
+	cp = vp->chan;
+	if (cp != NULL)
+	{
+		fprintf(stderr, "assign: %s already assigned, line %d\n",
+		 name, line_num);
+		return;
+	}
 
-	cp->mon_flag = FALSE;	/* assume no monitor */
-	cp->ef_var = NULL;	/* assume no sync event flag */
+	/* Build structure for this channel */
+	cp = (Chan *)build_db_struct(vp);
+
+	cp->db_name = db_name;	/* DB name */
+
+	/* The entire variable is assigned */
+	cp->count = vp->length1 * vp->length2;
+
 	return;
 }
 
-/* Parsing a "monitor" statement */
-monitor_stmt(name, delta)
-char	*name;		/* variable name (should be assigned) */
-char	*delta;		/* monitor delta */
+/* "Assign" statement: assign an array element to a DB channel.
+ * Format: assign <variable>[<subscr>] to <string>; */
+assign_subscr(name, subscript, db_name)
+char	*name;		/* ptr to variable name */
+char	*subscript;	/* subscript value or NULL */
+char	*db_name;	/* ptr to db name */
 {
-	Chan	*cp;
+	Chan		*cp;
+	Var		*vp;
+	int		subNum;
 	extern int	line_num;
 
+#ifdef	DEBUG
+	fprintf(stderr, "assign %s[%s] to \"%s\";\n", name, subscript, db_name);
+#endif	DEBUG
+	/* Find the variable */
+	vp = (Var *)findVar(name);
+	if (vp == 0)
+	{
+		fprintf(stderr, "assign: variable %s not declared, line %d\n",
+		 name, line_num);
+		return;
+	}
+
+	if (vp->class != VC_ARRAY1 && vp->class != VC_ARRAY2)
+	{
+		fprintf(stderr, "assign: variable %s not an array, line %d\n",
+		 name, line_num);
+		return;
+	}
+
+	cp = vp->chan;
+	if (cp == NULL)
+	{
+		/* Build structure for this channel */
+		cp = (Chan *)build_db_struct(vp);
+	}
+	else if (cp->db_name != NULL)
+	{
+		fprintf(stderr, "assign: array %s already assigned, line %d\n",
+		 name, line_num);
+		return;
+	}
+
+	subNum = atoi(subscript);
+	if (subNum < 0 || subNum >= vp->length1)
+	{
+		fprintf(stderr, 
+		 "assign: subscript %s[%d] is out of range, line %d\n",
+		 name, subNum, line_num);
+		return;
+	}
+
+	if (cp->db_name_list == NULL)
+		alloc_db_lists(cp, vp->length1); /* allocate lists */
+	else if (cp->db_name_list[subNum] != NULL)
+	{
+		fprintf(stderr, "assign: %s[%d] already assigned, line %d\n",
+		 name, subNum, line_num);
+		return;
+	}
+	
+	cp->db_name_list[subNum] = db_name;
+	cp->count = vp->length2; /* could be a 2-dimensioned array */
+
+	return;
+}
+
+/* Assign statement: assign an array to multiple DB channels.
+ * Format: assign <variable> to { <string>, <string>, ... };
+ * Assignments for double dimensioned arrays:
+ * <var>[0][0] assigned to 1st db name,
+ * <var>[1][0] assigned to 2nd db name, etc.
+ * If db name list contains fewer names than the array dimension,
+ * the remaining elements receive NULL assignments.
+ */
+assign_list(name, db_name_list)
+char	*name;		/* ptr to variable name */
+Expr	*db_name_list;	/* ptr to db name list */
+{
+	Chan		*cp;
+	Var		*vp;
+	int		elem_num;
+	extern int	line_num;
+
+#ifdef	DEBUG
+	fprintf(stderr, "assign %s to {", name);
+#endif	DEBUG
+	/* Find the variable */
+	vp = (Var *)findVar(name);
+	if (vp == 0)
+	{
+		fprintf(stderr, "assign: variable %s not declared, line %d\n",
+		 name, line_num);
+		return;
+	}
+
+	if (vp->class != VC_ARRAY1 && vp->class != VC_ARRAY2)
+	{
+		fprintf(stderr, "assign: variable %s is not an array, line %d\n",
+		 name, line_num);
+		return;
+	}
+
+	cp = vp->chan;
+	if (cp != NULL)
+	{
+		fprintf(stderr, "assign: variable %s already assigned, line %d\n",
+		 name, line_num);
+		return;
+	}
+
+	/* Build a db structure for this variable */
+	cp = (Chan *)build_db_struct(vp);
+
+	/* Allocate lists */
+	alloc_db_lists(cp, vp->length1); /* allocate lists */
+
+	/* fill in the array of pv names */
+	for (elem_num = 0; elem_num < vp->length1; elem_num++)
+	{
+		if (db_name_list == NULL)
+			break; /* end of list */
+
+#ifdef	DEBUG
+		fprintf(stderr, "\"%s\", ", db_name_list->value);
+#endif	DEBUG
+		cp->db_name_list[elem_num] = db_name_list->value; /* DB name */
+		cp->count = vp->length2;
+ 
+		db_name_list = db_name_list->next;
+	}
+#ifdef	DEBUG
+		fprintf(stderr, "};\n");
+#endif	DEBUG
+
+	return;
+}
+
+/* Build a db structure for this variable */
+build_db_struct(vp)
+Var		*vp;
+{
+	Chan		*cp;
+
+	cp = allocChan();
+	addChan(cp);		/* add to Chan list */
+
+	/* make connections between Var & Chan structures */
+	cp->var = vp;
+	vp->chan = cp;
+
+	/* Initialize the structure */
+	cp->db_name_list = 0;
+	cp->mon_flag_list = 0;
+	cp->ef_var_list = 0;
+	cp->ef_num_list = 0;
+	cp->num_elem = 0;
+	cp->mon_flag = 0;
+	cp->ef_var = 0;
+	cp->ef_num = 0;
+
+	return (int)cp;
+}
+
+/* Allocate lists for assigning multiple pv's to a variable */
+alloc_db_lists(cp, length)
+Chan		*cp;
+int		length;
+{
+	/* allocate an array of pv names */
+	cp->db_name_list = (char **)calloc(sizeof(char **), length);
+
+	/* allocate an array for monitor flags */
+	cp->mon_flag_list = (int *)calloc(sizeof(int **), length);
+
+	/* allocate an array for event flag var ptrs */
+	cp->ef_var_list = (Var **)calloc(sizeof(Var **), length);
+
+	/* allocate an array for event flag numbers */
+	cp->ef_num_list = (int *)calloc(sizeof(int **), length);
+
+	cp->num_elem = length;
+
+}
+
+/* Parsing a "monitor" statement.
+ * Format:
+ * 	monitor <var>; - monitor a single variable or all elements in an array.
+ * 	monitor <var>[<m>]; - monitor m-th element of an array.
+ */
+monitor_stmt(name, subscript)
+char		*name;		/* variable name (should be assigned) */
+char		*subscript;	/* element number or NULL */
+{
+	Var		*vp;
+	Chan		*cp;
+	int		subNum;
+	extern int	line_num;
+
+#ifdef	DEBUG
+	fprintf(stderr, "monitor_stmt: name=%s[%s]\n", name, subscript);
+#endif	DEBUG
+
+	/* Find the variable */
+	vp = (Var *)findVar(name);
+	if (vp == 0)
+	{
+		fprintf(stderr, "assign: variable %s not declared, line %d\n",
+		 name, line_num);
+		return;
+	}
+
 	/* Find a channel assigned to this variable */
-	cp = (Chan *)findChan(name);
+	cp = vp->chan;
 	if (cp == 0)
 	{
 		fprintf(stderr, "monitor: variable %s not assigned, line %d\n",
@@ -206,22 +438,67 @@ char	*delta;		/* monitor delta */
 		return;
 	}
 
-	/* Enter monitor parameters */
-	cp->mon_flag = TRUE;
-	cp->delta = atof(delta);
+	if (subscript == NULL)
+	{
+		if (cp->num_elem == 0)
+		{	/* monitor one channel for this variable */
+			cp->mon_flag = TRUE;
+			return;
+		}
+
+		/* else monitor all channels in db list */
+		for (subNum = 0; subNum < cp->num_elem; subNum++)
+		{	/* 1 pv per element of the array */
+			cp->mon_flag_list[subNum] = TRUE;
+		}
+		return;
+	}
+
+	/* subscript != NULL */
+	subNum = atoi(subscript);
+	if (subNum < 0 || subNum >= cp->num_elem)
+	{
+		fprintf(stderr, "monitor: subscript of %s out of range, line %d\n",
+		 name, line_num);
+		return;
+	}
+
+	if (cp->num_elem == 0 || cp->db_name_list[subNum] == NULL)
+	{
+		fprintf(stderr, "monitor: %s[%d] not assigned, line %d\n",
+		 name, subNum, line_num);
+		return;
+	}
+
+	cp->mon_flag_list[subNum] = TRUE;
 	return;
 }
 	
 /* Parsing "sync" statement */
-sync_stmt(name, ef_name)
-char	*name;
-char	*ef_name;
+sync_stmt(name, subscript, ef_name)
+char		*name;
+char		*subscript;
+char		*ef_name;
 {
 	Chan		*cp;
 	Var		*vp;
 	extern int	line_num;
+	int		subNum;
 
-	cp = (Chan *)findChan(name);
+#ifdef	DEBUG
+	fprintf(stderr, "sync_stmt: name=%s, subNum=%s, ef_name=%s\n",
+	 name, subscript, ef_name);
+#endif	DEBUG
+
+	vp = (Var *)findVar(name);
+	if (vp == 0)
+	{
+		fprintf(stderr, "sync: variable %s not declared, line %d\n",
+		 name, line_num);
+		return;
+	}
+
+	cp = vp->chan;
 	if (cp == 0)
 	{
 		fprintf(stderr, "sync: variable %s not assigned, line %d\n",
@@ -238,36 +515,56 @@ char	*ef_name;
 		return;
 	}
 
-	/* Insert pointers between Var & Chan structures */
-	cp->ef_var = vp;
-	vp->chan = cp;
+	if (subscript == NULL)
+	{	/* no subscript */
+		if (cp->db_name != NULL)
+		{	/* 1 pv assigned to this variable */
+			cp->ef_var = vp;
+			return;
+		}
+
+		/* 1 pv per element in the array */
+		for (subNum = 0; subNum < cp->num_elem; subNum++)
+		{
+			cp->ef_var_list[subNum] = vp;
+		}
+		return;
+	}
+
+	/* subscript != NULL */
+	subNum = atoi(subscript);
+	if (subNum < 0 || subNum >= cp->num_elem)
+	{
+		fprintf(stderr,
+		 "sync: subscript %s[%d] out of range, line %d\n",
+		 name, subNum, line_num);
+		return;
+	}
+	cp->ef_var_list[subNum] = vp; /* sync to a specific element of the array */
 
 	return;
 }
 	
 /* Definition C code */
-defn_c_stmt(c_str)
-char		*c_str; /* ptr to C code string */
+defn_c_stmt(c_list)
+Expr		*c_list; /* ptr to C code */
 {
-	Expr		*ep;
-
 #ifdef	DEBUG
 	fprintf(stderr, "defn_c_stmt\n");
 #endif
-	ep = expression(E_TEXT, "", c_str, 0);
 	if (defn_c_list == 0)
-		defn_c_list = ep;
+		defn_c_list = c_list;
 	else
-		link_expr(defn_c_list, ep);	
+		link_expr(defn_c_list, c_list);	
 	
 	return;
 }
 
 /* Global C code (follows state program) */
-global_c_stmt(c_str)
-char		*c_str; /* ptr to C code */
+global_c_stmt(c_list)
+Expr		*c_list; /* ptr to C code */
 {
-	global_c_list = expression(E_TEXT, "", c_str, 0);
+	global_c_list = c_list;
 
 	return;
 }
@@ -292,22 +589,13 @@ char		*name;
 {
 	Var		*vp;
 
-#ifdef	DEBUG
-	fprintf(stderr, "findVar, name=%s: ", name);
-#endif
 	for (vp = var_list; vp != NULL; vp = vp->next)
 	{
 		if (strcmp(vp->name, name) == 0)
 		{
-#ifdef	DEBUG
-			fprintf(stderr, "found\n");
-#endif
 			return vp;
 		}
 	}
-#ifdef	DEBUG
-	fprintf(stderr, "not found\n");
-#endif
 	return 0;
 }
 
@@ -321,35 +609,6 @@ Chan		*cp;
 		chan_tail->next = cp;
 	chan_tail = cp;
 	cp->next = NULL;
-}
-	
-/* Find a channel with a given associated variable name */
-Chan *findChan(name)
-char		*name;	/* variable name */
-{
-	Chan		*cp;
-	Var		*vp;
-
-#ifdef	DEBUG
-	fprintf(stderr, "findChan, var name=%s: ", name);
-#endif
-	for (cp = chan_list; cp != NULL; cp = cp->next)
-	{
-		vp = cp->var;
-		if (vp == 0)
-			continue;
-		if (strcmp(vp->name, name) == 0)
-		{
-#ifdef	DEBUG
-			fprintf(stderr, "found chan name=%s\n", cp->db_name);
-#endif
-			return cp;
-		}
-	}
-#ifdef	DEBUG
-	fprintf(stderr, "not found\n");
-#endif
-	return 0;
 }
 
 /* Set debug print opt */
@@ -366,7 +625,7 @@ Expr		*prog_list;
 	ss_list = prog_list;
 #ifdef	DEBUG
 	fprintf(stderr, "----Phase2---\n");
-#endif	/* DEBUG */
+#endif	DEBUG
 	phase2(ss_list);
 
 	exit(0);
@@ -442,7 +701,7 @@ Expr		*ep2;	/* beginning 2-nd (append it to 1-st) */
 			break;
 	}
 	fprintf(stderr, ")\n");	
-#endif	/* DEBUG */
+#endif	DEBUG
 	return ep1;
 }
 
@@ -452,7 +711,7 @@ char		*line;
 char		*fname;
 {
 	extern int		line_num;
-	extern char             *src_file;
+	extern char		*src_file;
 
 	line_num = atoi(line);
 	src_file = fname;
@@ -462,4 +721,6 @@ char		*fname;
 char	*stype[] = {
 	"E_EMPTY", "E_CONST", "E_VAR", "E_FUNC", "E_STRING", "E_UNOP", "E_BINOP",
 	"E_ASGNOP", "E_PAREN", "E_SUBSCR", "E_TEXT", "E_STMT", "E_CMPND",
-	"E_IF", "E_ELSE", "E_WHILE", "E_SS", "E_STATE", "E_WHEN" };
+	"E_IF", "E_ELSE", "E_WHILE", "E_SS", "E_STATE", "E_WHEN",
+	"E_FOR", "E_X", "E_PRE", "E_POST", "E_BREAK", "E_COMMA",
+	"E_?", "E_?", "E_?", "E_?", "E_?", "E_?", "E_?", "E_?", "E_?" };

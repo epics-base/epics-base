@@ -4,7 +4,7 @@
 	Copyright, 1990, The Regents of the University of California.
 		         Los Alamos National Laboratory
 
-	$Id$
+	snc_lex.l,v 1.2 1995/06/27 15:26:09 wright Exp
 	ENVIRONMENT: UNIX
 	HISTORY:
 20nov91,ajk	Added OPTION token.
@@ -12,6 +12,14 @@
 17Jul92,rcz	changed warn_flag to warn_opt
 17Jul92,rcz	Ported ajk version from lanl
 04apr93,ajk	Increased STR_BFR_SIZE from 30000 to 300000
+19nov93,ajk	Added definitions for octal and hex numbers.
+19nov93,ajk	Removed optional "-" from definition of FPNUM.  This was
+		causing problems with statements like "k-1".
+27man94,ajk	Implemented dynamic allocation of strings, thus eliminating
+		huge string buffer.
+31may94,ajk	Changed handling of escaped C code.
+17feb95,ajk	Removed includes "parse.h" & "snc.h", because this module
+		now gets included in snc.y.
 ***************************************************************************/
 /* Lexical analyzer for State Notation Compiler (snc).
  *
@@ -22,10 +30,8 @@
  * Comments are recognized as part of the syntax.
  */
 
-/*
-#include	"parse.h"
-#include	"snc.h"	
-*/
+#include	"string.h"
+
 #ifndef	TRUE
 #define	TRUE	1
 #define	FALSE	0
@@ -36,16 +42,14 @@
 #else
 #define	RETURN(param)	return(param);
 #endif
-#define	STR_BFR_SIZE	300000
+#define	STR_BFR_SIZE	1000
 
-extern int	line_num, c_line_num; /* input line number */
-extern int	warn_opt; /* compiler warning flag */
-char		str_bfr[STR_BFR_SIZE]; /* holding place for strings */
-char		*str_next = str_bfr; /* current ptr to str_bfr */
-char		*c_str; /* Start of current string in str_bfr */
-int		nc;
+extern int	line_num, c_line_num;	/* input line number */
+extern int	warn_opt;		/* compiler warning flag */
+char		strBfr[STR_BFR_SIZE];	/* holding place for strings */
+char		*pStr;			/* current ptr to strBfr */
 double		atof();
-int		one_line_c_code;
+int		one_line_c_code;	/* TRUE for %%; FALSE for %{...}% */
 
 %}
 
@@ -53,24 +57,25 @@ int		one_line_c_code;
 %Start	SNL C_CODE COMMENT STR PP PP_STR
 
 NAME	[a-zA-Z][a-zA-Z0-9_]*
-FPNUM	(\-?(([0-9]+)(\.[0-9]*)?)|(\.[0-9]+))
+FPNUM	(([0-9]+)(\.[0-9]*)?)|(\.[0-9]+)
+OCTAL	0[0-7]+
+HEX	0x([0-9a-fA-F])+
 
 %% /* Begin rules */
-<C_CODE>.	*str_next++ = yytext[0];
+<C_CODE>.	*pStr++ = yytext[0];
 <C_CODE>\n {
-		*str_next++ = '\n';
+		*pStr++ = 0;
 		line_num++;
+		c_line_num = line_num;
+		yylval.pchar = strdup(strBfr);
+		pStr = strBfr;
 		if (one_line_c_code)
-		{
-			*str_next++ = 0;
-			yylval.pchar = c_str;
 			BEGIN SNL;
-			RETURN(C_STMT);
-		}
+		RETURN(C_STMT);
 }
 <C_CODE>"}%" {
-		*str_next++ = 0;
-		yylval.pchar = c_str;
+		*pStr++ = 0;
+		yylval.pchar = strdup(strBfr);
 		BEGIN SNL;
 		RETURN(C_STMT);
 }
@@ -78,29 +83,26 @@ FPNUM	(\-?(([0-9]+)(\.[0-9]*)?)|(\.[0-9]+))
 <COMMENT>"*/"	BEGIN SNL;
 <COMMENT>.	;
 <STR>"\\\"" {
-		*str_next++ = yytext[0];
-		*str_next++ = yytext[1];
+		*pStr++ = yytext[0];
+		*pStr++ = yytext[1];
 }
 <STR>\"	 {
-		*str_next++ = 0;
-		yylval.pchar = c_str;
+		*pStr++ = 0;
+		yylval.pchar = strdup(strBfr);
 		BEGIN SNL;
 		RETURN(STRING);
 }
-<STR>.		{ *str_next++ = yytext[0]; }
-<STR>\n	{	*str_next++ = '?';
+<STR>.		{ *pStr++ = yytext[0]; }
+<STR>\n	{	*pStr++ = '?';
 		if (warn_opt)
 			fprintf(stderr, "Warning:  newline in string, line %d\n",
 			 line_num);
 		line_num++;
 }
-<PP>{FPNUM} {	nc = strlen(yytext);
-		memcpy(str_next, yytext, nc+1);
-		yylval.pchar = str_next;
-		str_next += nc+1;
+<PP>{FPNUM} {	yylval.pchar = strdup(yytext);
 		RETURN(NUMBER);
 }
-<PP>\"		{ c_str = str_next; BEGIN PP_STR; }
+<PP>\"		{ pStr = strBfr; BEGIN PP_STR; }
 <PP>\n {
 		BEGIN SNL;
 		RETURN(CR);
@@ -109,22 +111,22 @@ FPNUM	(\-?(([0-9]+)(\.[0-9]*)?)|(\.[0-9]+))
 <PP>. {
 }
 <PP_STR>\" {
-		*str_next++ = 0;
-		yylval.pchar = c_str;
+		*pStr++ = 0;
+		yylval.pchar = strdup(strBfr);
 		BEGIN PP;
 		RETURN(STRING);
 }
-<PP_STR>.	{ *str_next++ = yytext[0]; }
-<PP_STR>\n	{ *str_next++ = '?'; line_num++; }
+<PP_STR>.	{ *pStr++ = yytext[0]; }
+<PP_STR>\n	{ *pStr++ = '?'; line_num++; }
 <SNL>\n		{ line_num++; }
 <SNL>"%{" {
-		c_str = str_next;
+		pStr = strBfr;
 		one_line_c_code = FALSE;
 		c_line_num = line_num;
 		BEGIN C_CODE;
 }
 <SNL>"%%" {
-		c_str = str_next;
+		pStr = strBfr;
 		one_line_c_code = TRUE;
 		c_line_num = line_num;
 		BEGIN C_CODE;
@@ -134,7 +136,7 @@ FPNUM	(\-?(([0-9]+)(\.[0-9]*)?)|(\.[0-9]+))
 		RETURN(PP_SYMBOL);
 }
 <SNL>"/*"	BEGIN COMMENT;
-<SNL>\"		{ c_str = str_next; BEGIN STR; }
+<SNL>\"		{ pStr = strBfr; BEGIN STR; }
 <SNL>"ss"	RETURN(STATE_SET);
 <SNL>"state"	RETURN(STATE);
 <SNL>"when"	RETURN(WHEN);
@@ -167,10 +169,7 @@ FPNUM	(\-?(([0-9]+)(\.[0-9]*)?)|(\.[0-9]+))
 		RETURN(NUMBER);
 }
 <SNL>{NAME} {
-		nc = strlen(yytext);
-		memcpy(str_next, yytext, nc+1);
-		yylval.pchar = str_next;
-		str_next += nc+1;
+		yylval.pchar = strdup(yytext);
 		RETURN(NAME);
 }
 <SNL>"++"	RETURN(AUTO_INCR);
@@ -217,11 +216,16 @@ FPNUM	(\-?(([0-9]+)(\.[0-9]*)?)|(\.[0-9]+))
 <SNL>"("	RETURN(L_PAREN);
 <SNL>")"	RETURN(R_PAREN);
 <SNL>","	RETURN(COMMA);
+<SNL>{HEX} {
+		yylval.pchar = strdup(yytext);
+		RETURN(NUMBER);
+}
+<SNL>{OCTAL} {
+		yylval.pchar = strdup(yytext);
+		RETURN(NUMBER);
+}
 <SNL>{FPNUM} {
-		nc = strlen(yytext);
-		memcpy(str_next, yytext, nc+1);
-		yylval.pchar = str_next;
-		str_next += nc+1;
+		yylval.pchar = strdup(yytext);
 		RETURN(NUMBER);
 }
 <SNL>[\t\ ]*	/* no action */ ;

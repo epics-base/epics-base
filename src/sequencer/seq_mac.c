@@ -3,7 +3,9 @@
 	Copyright, 1990, The Regents of the University of California.
 		         Los Alamos National Laboratory
 
-	$Id$
+
+ 	seq_mac.c,v 1.2 1995/06/27 15:25:56 wright Exp
+
 	DESCRIPTION: Macro routines for Sequencer.
 	The macro table contains name & value pairs.  These are both pointers
 	to strings.
@@ -11,77 +13,72 @@
 	ENVIRONMENT: VxWorks
 
 	HISTORY:
+01mar94,ajk	Added seq_macValueGet() as state program interface routine.
+
 ***************************************************************************/
 #define		ANSI
 #include	"seq.h"
-#include    <string.h>
 
-LOCAL int macNameLth(char *);
 LOCAL int seqMacParseName(char *);
 LOCAL int seqMacParseValue(char *);
 LOCAL char *skipBlanks(char *);
-LOCAL MACRO *seqMacTblGet(char *, MACRO *);
+LOCAL MACRO *seqMacTblGet(MACRO *, char *);
 
 /*#define	DEBUG*/
-
-/* 
- *seqMacTblInit - initialize macro the table.
- */
-seqMacTblInit(pMac)
-MACRO	*pMac;
-{
-	int	i;
-
-	for (i = 0 ; i < MAX_MACROS; i++, pMac++)
-	{
-		pMac->name = NULL;
-		pMac->value = NULL;
-	}
-}	
 
 /* 
  *seqMacEval - substitute macro value into a string containing:
  * ....{mac_name}....
  */
-seqMacEval(pInStr, pOutStr, maxChar, macTbl)
+VOID seqMacEval(pInStr, pOutStr, maxChar, pMac)
 char	*pInStr;
 char	*pOutStr;
 int	maxChar;
-MACRO	*macTbl;
+MACRO	*pMac;
 {
-	char		*pMacVal, *pTmp;
+	char		name[50], *pValue, *pTmp;
 	int		nameLth, valLth;
 
 #ifdef	DEBUG
-	printf("seqMacEval: InStr=%s\n", pInStr);
+	logMsg("seqMacEval: InStr=%s\n", pInStr);
+	taskDelay(30);
 #endif
 	pTmp = pOutStr;
 	while (*pInStr != 0 && maxChar > 0)
 	{
 		if (*pInStr == '{')
-		{	/* Macro substitution */
+		{	/* Do macro substitution */
 			pInStr++; /* points to macro name */
-			nameLth = macNameLth(pInStr);
+			/* Copy the macro name */
+			nameLth = 0;
+			while (*pInStr != '}' && *pInStr != 0)
+			{
+				name[nameLth] = *pInStr++;
+				if (nameLth < (sizeof(name) - 1))
+					nameLth++;
+			}
+			name[nameLth] = 0;
+			if (*pInStr != 0)
+				pInStr++;
+				
 #ifdef	DEBUG
-			printf("Name=%s[%d]\n", pInStr, nameLth);
+			logMsg("Macro name=%s\n", name);
+			taskDelay(30);
 #endif
 			/* Find macro value from macro name */
-			pMacVal = seqMacValGet(pInStr, nameLth, macTbl);
-			if (pMacVal != NULL)
+			pValue = seqMacValGet(pMac, name);
+			if (pValue != NULL)
 			{	/* Substitute macro value */
-				valLth = strlen(pMacVal);
+				valLth = strlen(pValue);
 				if (valLth > maxChar)
 					valLth = maxChar;
 #ifdef	DEBUG
-				printf("Val=%s[%d]\n", pMacVal, valLth);
+				logMsg("Value=%s\n", pValue);
 #endif
-				strncpy(pOutStr, pMacVal, valLth);
+				strncpy(pOutStr, pValue, valLth);
 				maxChar -= valLth;
 				pOutStr += valLth;
 			}
-			pInStr += nameLth;
-			if (*pInStr != 0)
-				pInStr++; /* skip '}' */
 			
 		}
 		else
@@ -89,51 +86,57 @@ MACRO	*macTbl;
 			*pOutStr++ = *pInStr++;
 			maxChar--;
 		}
-		*pOutStr = 0;
-#ifdef	DEBUG
-		printf("OutStr=%s\n", pTmp);
-#endif
 	}
 	*pOutStr = 0;
+#ifdef	DEBUG
+	logMsg("OutStr=%s\n", pTmp);
+	taskDelay(30);
+#endif
 }
 /* 
- * seqMacValGet - given macro name, return pointer to its value.
+ * seq_macValueGet - given macro name, return pointer to its value.
  */
-char	*seqMacValGet(macName, macNameLth, macTbl)
-char	*macName;
-int	macNameLth;
-MACRO	*macTbl;
+char	*seq_macValueGet(ssId, pName)
+SS_ID		ssId;
+char		*pName;
 {
-	int	i;
+	SPROG		*pSP;
+	MACRO		*pMac;
 
-	for (i = 0 ; i < MAX_MACROS; i++, macTbl++)
+	pSP = ((SSCB *)ssId)->sprog;
+	pMac = pSP->pMacros;
+
+	return seqMacValGet(pMac, pName);
+}
+/*
+ * seqMacValGet - internal routine to convert macro name to macro value.
+ */
+char *seqMacValGet(pMac, pName)
+MACRO		*pMac;
+char		*pName;
+{
+	int		i;
+
+#ifdef	DEBUG
+	logMsg("seqMacValGet: name=%s", pName);
+#endif	DEBUG
+	for (i = 0 ; i < MAX_MACROS; i++, pMac++)
 	{
-		if ((macTbl->name != NULL) &&
-		 (strlen(macTbl->name) == macNameLth))
+		if (pMac->pName != NULL)
 		{
-			if (strncmp(macName, macTbl->name, macNameLth) == 0)
+			if (strcmp(pName, pMac->pName) == 0)
 			{
-				return macTbl->value;
+#ifdef	DEBUG
+				logMsg(", value=%s\n", pMac->pValue);
+#endif	DEBUG
+				return pMac->pValue;
 			}
 		}
 	}
+#ifdef	DEBUG
+	logMsg(", no value\n");
+#endif	DEBUG
 	return NULL;
-}
-
-/*
- * macNameLth() - Return number of characters in a macro name */
-LOCAL int macNameLth(pstr)
-char	*pstr;
-{
-	int	nchar;
-
-	nchar = 0;
-	while ( (*pstr != 0) && (*pstr != '}') )
-	{
-		pstr++;
-		nchar++;
-	}
-	return nchar;
 }
 /*
  * seqMacParse - parse the macro definition string and build
@@ -147,11 +150,11 @@ SPROG		*pSP;
 {
 	int		nMac, nChar;
 	char		*skipBlanks();
-	MACRO		*macTbl;	/* macro table */
+	MACRO		*pMac;		/* macro table */
 	MACRO		*pMacTbl;	/* macro tbl entry */
-	char		*name, *value;
+	char		*pName, *pValue;
 
-	macTbl = pSP->mac_ptr;
+	pMac = pSP->pMacros;
 	for ( ;; )
 	{
 		/* Skip blanks */
@@ -162,23 +165,24 @@ SPROG		*pSP;
 		nChar = seqMacParseName(pMacStr);
 		if (nChar == 0)
 			break; /* finished or error */
-		name = seqAlloc(pSP, nChar+1);
-		if (name == NULL)
+		pName = (char *)calloc(nChar+1, 1);
+		if (pName == NULL)
 			break;
-		memcpy(name, pMacStr, nChar);
-		name[nChar] = 0;
+		bcopy(pMacStr, pName, nChar);
+		pName[nChar] = 0;
 #ifdef	DEBUG
-		printf("name=%s, nChar=%d\n", name, nChar);
+		logMsg("name=%s, nChar=%d\n", pName, nChar);
+		taskDelay(30);
 #endif
 		pMacStr += nChar;
 
 		/* Find a slot in the table */
-		pMacTbl = seqMacTblGet(name, macTbl);
+		pMacTbl = seqMacTblGet(pMac, pName);
 		if (pMacTbl == NULL)
 			break; /* table is full */
-		if (pMacTbl->name == NULL)
+		if (pMacTbl->pName == NULL)
 		{	/* Empty slot, insert macro name */
-			pMacTbl->name = name;
+			pMacTbl->pName = pName;
 		}
 
 		/* Skip over blanks and equal sign or comma */
@@ -196,20 +200,26 @@ SPROG		*pSP;
 		nChar = seqMacParseValue(pMacStr);
 		if (nChar == 0)
 			break;
-		value = seqAlloc(pSP, nChar+1);
-		if (value == NULL)
+
+		/* Remove previous value if it exists */
+		pValue = pMacTbl->pValue;
+		if (pValue != NULL)
+			free(pValue);
+
+		/* Copy value string into newly allocated space */
+		pValue = (char *)calloc(nChar+1, 1);
+		if (pValue == NULL)
 			break;
-		memcpy(value, pMacStr, nChar);
-		value[nChar] = 0;
-		pMacStr += nChar;
+		pMacTbl->pValue = pValue;
+		bcopy(pMacStr, pValue, nChar);
+		pValue[nChar] = 0;
 #ifdef	DEBUG
-		printf("value=%s, nChar=%d\n", value, nChar);
+		logMsg("value=%s, nChar=%d\n", pValue, nChar);
+		taskDelay(30);
 #endif
 
-		/* Insert or replace macro value */
-		pMacTbl->value = value;
-
-		/* Skip blanks and comma */
+		/* Skip past last value and over blanks and comma */
+		pMacStr += nChar;
 		pMacStr = skipBlanks(pMacStr);
 		if (*pMacStr++ != ',')
 			break;
@@ -245,7 +255,8 @@ char	*pStr;
 
 /*
  * seqMacParseValue() - Parse a macro value from the input string.
- */LOCAL int seqMacParseValue(pStr)
+ */
+LOCAL int seqMacParseValue(pStr)
 char	*pStr;
 {
 	int	nChar;
@@ -260,6 +271,7 @@ char	*pStr;
 	return nChar;
 }
 
+/* skipBlanks() - skip blank characters */
 LOCAL char *skipBlanks(pChar)
 char	*pChar;
 {
@@ -272,21 +284,22 @@ char	*pChar;
  * seqMacTblGet - find a match for the specified name, otherwise
  * return an empty slot in macro table.
  */
-LOCAL MACRO *seqMacTblGet(name, macTbl)
-char	*name;	/* macro name */
-MACRO	*macTbl;
+LOCAL MACRO *seqMacTblGet(pMac, pName)
+MACRO	*pMac;
+char	*pName;	/* macro name */
 {
 	int		i;
 	MACRO		*pMacTbl;
 
 #ifdef	DEBUG
-	printf("seqMacTblGet: name=%s\n", name);
+	logMsg("seqMacTblGet: name=%s\n", pName);
+	taskDelay(30);
 #endif
-	for (i = 0, pMacTbl = macTbl; i < MAX_MACROS; i++, pMacTbl++)
+	for (i = 0, pMacTbl = pMac; i < MAX_MACROS; i++, pMacTbl++)
 	{
-		if (pMacTbl->name != NULL)
+		if (pMacTbl->pName != NULL)
 		{
-			if (strcmp(name, pMacTbl->name) == 0)
+			if (strcmp(pName, pMacTbl->pName) == 0)
 			{
 				return pMacTbl;
 			}
@@ -294,9 +307,9 @@ MACRO	*macTbl;
 	}
 
 	/* Not found, find an empty slot */
-	for (i = 0, pMacTbl = macTbl; i < MAX_MACROS; i++, pMacTbl++)
+	for (i = 0, pMacTbl = pMac; i < MAX_MACROS; i++, pMacTbl++)
 	{
-		if (pMacTbl->name == NULL)
+		if (pMacTbl->pName == NULL)
 		{
 			return pMacTbl;
 		}

@@ -1,5 +1,5 @@
 #!/bin/sh
-# epics/release $Id$
+# epics/release chmod.sh,v 1.1.1.1 1995/08/15 03:15:26 epicss Exp
 #       Author: Roger A. Cole (LANL)
 #       Date:   08-20-91
 #

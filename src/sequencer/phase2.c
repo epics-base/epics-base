@@ -3,23 +3,29 @@
 	Copyright, 1990, The Regents of the University of California.
 		 Los Alamos National Laboratory
 
-	$Id$
+ 	phase2.c,v 1.2 1995/06/27 15:25:52 wright Exp
+
 	DESCRIPTION: Phase 2 code generation routines for SNC.
 	Produces code and tables in C output file.
-	See also:  gen_ss_code.c
+	See also:  gen_ss_code.c and gen_tables.c
 	ENVIRONMENT: UNIX
 	HISTORY:
 19nov91,ajk	Replaced lstLib calls with built-in linked list.
 19nov91,ajk	Removed extraneous "static" from "UserVar" declaration.
+01mar94,ajk	Implemented new interface to sequencer (seqCom.h).
+01mar94,ajk	Implemented assignment of array elements to db channels.
+01mar94,ajk	Changed algorithm for assigning event bits.
 ***************************************************************************/
+/*#define	DEBUG	1*/
 
 #include	<stdio.h>
 #include	"parse.h"
-#include <dbDefs.h>
-#include <seqU.h>
+#include 	<seqCom.h>
 
 int	num_channels = 0;	/* number of db channels */
+int	num_events = 0;		/* number of event flags */
 int	num_ss = 0;		/* number of state sets */
+int	max_delays = 0;		/* maximum number of delays per state */
 int	num_errors = 0;		/* number of errors detected in phase 2 processing */
 
 /*+************************************************************************
@@ -31,7 +37,7 @@ int	num_errors = 0;		/* number of errors detected in phase 2 processing */
 *
 *  RETURNS: n/a
 *
-*  FUNCTION: Generate C code from tables.
+*  FUNCTION: Generate C code from parsing lists.
 *
 *  NOTES: All inputs are external globals.
 *-*************************************************************************/
@@ -51,6 +57,12 @@ phase2()
 	/* reconcile all state names, including next state in transitions */
 	reconcile_states();
 
+	/* Assign bits for event flags */
+	assign_ef_bits();
+
+	/* Assign delay id's */
+	assign_delay_ids();
+
 	/* Generate preamble code */
 	gen_preamble();
 
@@ -59,12 +71,6 @@ phase2()
 
 	/* Generate definition C code */
 	gen_defn_c_code();
-
-	/* Assign bits for event flags */
-	assign_ef_bits();
-
-	/* Assign delay id's */
-	assign_delay_ids();
 
 	/* Generate code for each state set */
 	gen_ss_code();
@@ -87,11 +93,16 @@ gen_preamble()
 	printf("/* Program \"%s\" */\n", prog_name);
 
 	/* Include files */
-	printf("#include \"seq.h\"\n");
+	printf("#define ANSI\n"); /* Expands ANSI prototypes in seqCom.h */
+	printf("#include \"seqCom.h\"\n");
 
 	/* Local definitions */
 	printf("\n#define NUM_SS %d\n", num_ss);
 	printf("#define NUM_CHANNELS %d\n", num_channels);
+	printf("#define NUM_EVENTS %d\n", num_events);
+
+	/* The following definition should be consistant with db_access.h */
+	printf("#define MAX_STRING_SIZE 40\n");
 
 	/* #define's for compiler options */
 	gen_opt_defn(async_opt, "ASYNC_OPT");
@@ -101,12 +112,13 @@ gen_preamble()
 	printf("\n");
 
 	/* Forward references of tables: */
-	printf("\nextern SPROG %s;\n", prog_name);
-	printf("extern CHAN db_channels[];\n");
+	printf("\nextern struct seqProgram %s;\n", prog_name);
+	printf("extern struct seqChan seqChan[];\n");
 
 	return;
 }
 
+/* Generate defines for compiler options */
 gen_opt_defn(opt, defn_name)
 int		opt;
 char		*defn_name;
@@ -118,8 +130,9 @@ char		*defn_name;
 }
 
 /* Reconcile all variables in an expression,
- and tie each to the appropriate VAR struct */
-int	printTree = FALSE;
+ * and tie each to the appropriate VAR structure.
+ */
+int	printTree = FALSE; /* For debugging only */
 
 reconcile_variables()
 {
@@ -131,7 +144,7 @@ reconcile_variables()
 	{
 #ifdef	DEBUG
 		fprintf(stderr, "reconcile_variables: ss=%s\n", ssp->value);
-#endif	/* DEBUG */
+#endif	DEBUG
 		traverseExprTree(ssp, E_VAR, 0, connect_variable, 0);
 	}
 
@@ -151,6 +164,11 @@ Expr		*ep;
 	extern char	*stype[];
 	extern int	warn_opt;
 
+	if (ep->type != E_VAR)
+		return;
+#ifdef	DEBUG
+	fprintf(stderr, "connect_variable: \"%s\", line %d\n", ep->value, ep->line_num);
+#endif
 	vp = (Var *)findVar(ep->value);
 	if (vp == 0)
 	{	/* variable not declared; add it to the variable list */
@@ -162,39 +180,39 @@ Expr		*ep;
 		addVar(vp);
 		vp->name = ep->value;
 		vp->type = V_NONE; /* undeclared type */
-		vp->length = 0;
+		vp->length1 = 1;
+		vp->length2 = 1;
 		vp->value = 0;
 	}
 	ep->left = (Expr *)vp; /* make connection */
-#ifdef	DEBUG
-	fprintf(stderr, "connect_variable: %s\n", ep->value);
-#endif
 	return;
 } 
 
 /* Reconcile state names */
 reconcile_states()
 {
+
+	extern Expr		*ss_list;
+
 	extern int	num_errors;
-	extern  Expr    *ss_list;
 	Expr		*ssp, *sp, *sp1, tr;
 
 	for (ssp = ss_list; ssp != 0; ssp = ssp->next)
 	{
-		for (sp = ssp->left; sp != 0; sp = sp->next)
+	    for (sp = ssp->left; sp != 0; sp = sp->next)
+	    {
+		/* Check for duplicate state names in this state set */
+		for (sp1 = sp->next; sp1 != 0; sp1 = sp1->next)
 		{
-			/* Check for duplicate state names in this state set */
-			for (sp1 = sp->next; sp1 != 0; sp1 = sp1->next)
+			if (strcmp(sp->value, sp1->value) == 0)
 			{
-				if (strcmp(sp->value, sp1->value) == 0)
-				{
-					fprintf(stderr,
-			"State \"%s\" is duplicated in state set \"%s\"\n",
-				     sp->value, ssp->value);
-					num_errors++;
-				}
-			}		
-		}
+			    fprintf(stderr,
+			       "State \"%s\" is duplicated in state set \"%s\"\n",
+			       sp->value, ssp->value);
+			    num_errors++;
+			}
+		}		
+	    }
 	}
 }
 
@@ -231,47 +249,60 @@ gen_var_decl()
 	{
 		switch (vp->type)
 		{
-		case V_CHAR:
+		  case V_CHAR:
 			vstr = "char";
 			break;
-		case V_INT:
-		case V_LONG:
+		  case V_INT:
+			vstr = "int";
+			break;
+		  case V_LONG:
 			vstr = "long";
 			break;
-		case V_SHORT:
+		  case V_SHORT:
 			vstr = "short";
 			break;
-		case V_FLOAT:
+		  case V_FLOAT:
 			vstr = "float";
 			break;
- 		case V_DOUBLE:
+ 		  case V_DOUBLE:
 			vstr = "double";
 			break;
-		case V_STRING:
+		  case V_STRING:
 			vstr = "char";
 			break;
-		case V_EVFLAG:
-		case V_NONE:
+		  case V_EVFLAG:
+		  case V_NONE:
 			vstr = NULL;
 			break;
-		default:
+		  default:
 			vstr = "int";
 			break;
 		}
+		if (vstr == NULL)
+			continue;
 
-		if (vstr != NULL)
-		{
-			if (reent_opt)
-				printf("\t");
-			else
-				printf("static ");
-			printf("%s\t%s", vstr, vp->name);
-			if (vp->length > 0)
-				printf("[%d]", vp->length);
-			else if (vp->type == V_STRING)
-				printf("[MAX_STRING_SIZE]");
-			printf(";\n");
-		}
+		if (reent_opt)
+			printf("\t");
+		else
+			printf("static ");
+
+		printf("%s\t", vstr);
+
+		if (vp->class == VC_POINTER || vp->class == VC_ARRAYP)
+			printf("*");
+
+		printf("%s", vp->name);
+
+		if (vp->class == VC_ARRAY1 || vp->class == VC_ARRAYP)
+			printf("[%d]", vp->length1);
+
+		else if (vp->class == VC_ARRAY2)
+			printf("[%d][%d]", vp->length1, vp->length2);
+
+		if (vp->type == V_STRING)
+			printf("[MAX_STRING_SIZE]");
+
+		printf(";\n");
 	}
 	if (reent_opt)
 		printf("};\n");
@@ -306,16 +337,17 @@ gen_global_c_code()
 	if (ep != NULL)
 	{
 		printf("\f\t/* Global C code */\n");
+		print_line_num(ep->line_num, ep->src_file);
 		for (; ep != NULL; ep = ep->next)
 		{
-			print_line_num(ep->line_num, ep->src_file);
 			printf("%s\n", ep->left);
 		}
 	}
 	return;
 }
 
-/* Returns number of db channels defined & inserts index into each channel struct */
+/* Sets cp->index for each variable, & returns number of db channels defined. 
+ */
 db_chan_count()
 {
 	extern	Chan	*chan_list;
@@ -325,57 +357,68 @@ db_chan_count()
 	nchan = 0;
 	for (cp = chan_list; cp != NULL; cp = cp->next)
 	{
-		if (cp->db_name != NULL)
-		{
-			cp->index = nchan;
-			nchan++;
-#ifdef	DEBUG
-			fprintf(stderr, "db_name=%s, index=%d\n",
-			 cp->db_name, cp->index);
-#endif
-		}
+		cp->index = nchan;
+		if (cp->num_elem == 0)
+			nchan += 1;
+		else
+			nchan += cp->num_elem; /* array with multiple channels */
 	}
+
 	return nchan;
 }
 
 
-/* Assign bits to event flags and database variables */
+/* Assign event bits to event flags and associate db channels with
+ * event flags.
+ */
 assign_ef_bits()
 {
-	extern Var		*var_list;
-	Var			*vp;
-	Chan			*cp;
-	int			ef_num;
-	extern int		num_channels;
+	extern Var	*var_list;
+	extern	Chan	*chan_list;
+	Var		*vp;
+	Chan		*cp;
+	extern int	num_events;
+	int		n;
 
-	ef_num = num_channels + 1; /* start with 1-st avail mask bit */
+	/* Assign event flag numbers (starting at 1) */
 	printf("\n/* Event flags */\n");
-#ifdef	DEBUG
-	fprintf(stderr, "\nAssign values to event flags\n");
-#endif
+	num_events = 0;
 	for (vp = var_list; vp != NULL; vp = vp->next)
 	{
-		cp = vp->chan;
-		/* First see if this is an event flag  */
 		if (vp->type == V_EVFLAG)
 		{
-			if (cp != 0)
-				vp->ef_num = cp->index + 1; /* sync'ed */
-			else
-				vp->ef_num = ef_num++;
-			printf("#define %s\t%d\n", vp->name, vp->ef_num);
+			num_events++;
+			vp->ef_num = num_events;
+			printf("#define %s\t%d\n", vp->name, num_events);
 		}
-
-		else
-		{
-			if (cp != 0)
-				vp->ef_num = cp->index + 1;
-		}
-
-#ifdef	DEBUG
-		fprintf(stderr, "%s: ef_num=%d\n", vp->name, vp->ef_num);
-#endif
 	}
+			
+	/* Associate event flags with DB channels */
+	for (cp = chan_list; cp != NULL; cp = cp->next)
+	{
+		if (cp->num_elem == 0)
+		{
+			if (cp->ef_var != NULL)
+			{
+				vp = cp->ef_var;
+				cp->ef_num = vp->ef_num;
+			}
+		}
+
+		else /* cp->num_elem != 0 */
+		{
+			for (n = 0; n < cp->num_elem; n++)
+			{
+			    vp = cp->ef_var_list[n];
+			    if (vp != NULL)
+			    {
+				cp->ef_num_list[n] = vp->ef_num;
+			    }
+			}
+		}
+
+	}
+
 	return;
 }
 
@@ -387,6 +430,9 @@ assign_delay_ids()
 	int			delay_id;
 	int			assign_next_delay_id();
 
+#ifdef	DEBUG
+	fprintf(stderr, "assign_delay_ids:\n");
+#endif	DEBUG
 	for (ssp = ss_list; ssp != 0; ssp = ssp->next)
 	{
 		for (sp = ssp->left; sp != 0; sp = sp->next)
@@ -398,6 +444,10 @@ assign_delay_ids()
 				traverseExprTree(tp->left, E_FUNC, "delay",
 				 assign_next_delay_id, &delay_id);
 			}
+
+			/* Keep track of number of delay id's requied */
+			if (delay_id > max_delays)
+				max_delays = delay_id;
 		}
 	}
 }
@@ -409,9 +459,10 @@ int			*delay_id;
 	ep->right = (Expr *)*delay_id;
 	*delay_id += 1;
 }
-
-/* Traverse the expression tree, and call the supplied
- * function on matched conditions */
+/* Traverse the expression tree, and call the supplied
+ * function whenever type = ep->type AND value matches ep->value.
+ * The condition value = 0 matches all.
+ * The function is called with the current ep and a supplied argument (argp) */
 traverseExprTree(ep, type, value, funcp, argp)
 Expr		*ep;		/* ptr to start of expression */
 int		type;		/* to search for */
@@ -430,8 +481,7 @@ void		*argp;		/* ptr to argument to pass on to function */
 		 stype[ep->type], ep->value);
 
 	/* Call the function? */
-	if ((ep->type == type) &&
-		(value == 0 || strcmp(ep->value, value) == 0) )
+	if ((ep->type == type) && (value == 0 || strcmp(ep->value, value) == 0) )
 	{
 		funcp(ep, argp);
 	}
@@ -439,7 +489,6 @@ void		*argp;		/* ptr to argument to pass on to function */
 	/* Continue traversing the expression tree */
 	switch(ep->type)
 	{
-	case E_EMPTY:
 	case E_VAR:
 	case E_CONST:
 	case E_STRING:

@@ -1,9 +1,9 @@
 /**************************************************************************
 			GTA PROJECT   AT division
-	Copyright, 1990, The Regents of the University of California.
+	Copyright, 1990-1994, The Regents of the University of California.
 		         Los Alamos National Laboratory
+	seq_qry.c,v 1.2 1995/06/27 15:26:02 wright Exp
 
-	$Id$
 	DESCRIPTION: Task querry & debug routines for run-time sequencer:
 	seqShow - prints state set info.
 	seqChanShow - printf channel (pv) info.
@@ -21,17 +21,17 @@
 29apr92,ajk	Modified to interpret encoded options.
 21may92,ajk	Modified format for listing programs & tasks.
 21feb93,ajk	Some minor code cleanup.
+01mar94,ajk	Major changes to print more meaningful information.
 ***************************************************************************/
 
-/*	#define	DEBUG	1	*/
+/*#define	DEBUG	1*/
 
 #include	"seq.h"
 
 int	seqShow(int);
-int	seqChanShow(int);
-LOCAL	VOID wait_rtn();
-LOCAL	VOID printValue(void *, int, int, int);
-LOCAL	VOID printType(int);
+int	seqChanShow(int, char *);
+LOCAL	int wait_rtn();
+LOCAL	VOID printValue(char *, int, int);
 LOCAL	SPROG *seqQryFind(int);
 LOCAL	seqShowAll();
 
@@ -53,32 +53,27 @@ int	tid;
 
 	/* convert (possible) name to task id */
 	if (tid != 0)
+	{
 		tid = taskIdFigure(tid);
+		if (tid == ERROR)
+			return 0;
+	}
 	pSP = seqQryFind(tid);
 	if (pSP == NULL)
 		return 0;
 
 	/* Print info about state program */
-	printf("State Program: \"%s\"\n", pSP->name);
-	printf("  Memory layout:\n");
-	printf("\tpSP=%d=0x%x\n", pSP, pSP);
-	printf("\tdyn_ptr=%d=0x%x\n", pSP->dyn_ptr, pSP->dyn_ptr);
-	printf("\tsscb=%d=0x%x\n", pSP->sscb, pSP->sscb);
-	printf("\tstates=%d=0x%x\n", pSP->states, pSP->states);
-	printf("\tuser_area=%d=0x%x\n", pSP->user_area, pSP->user_area);
-	printf("\tuser_size=%d=0x%x\n", pSP->user_size, pSP->user_size);
-	printf("\tmac_ptr=%d=0x%x\n", pSP->mac_ptr, pSP->mac_ptr);
-	printf("\tscr_ptr=%d=0x%x\n", pSP->scr_ptr, pSP->scr_ptr);
-	printf("\tscr_nleft=%d=0x%x\n\n", pSP->scr_nleft, pSP->scr_nleft);
-	printf("  initial task id=%d=0x%x\n", pSP->task_id, pSP->task_id);
-	printf("  task priority=%d\n", pSP->task_priority);
-	printf("  number of state sets=%d\n", pSP->nss);
-	printf("  number of channels=%d\n", pSP->nchan);
-	printf("  number of channels connected=%d\n", pSP->conn_count);
-	printf("  options: async=%d, debug=%d, reent=%d, conn=%d, newef=%d\n",
+	printf("State Program: \"%s\"\n", pSP->pProgName);
+	printf("  initial task id=%d=0x%x\n", pSP->taskId, pSP->taskId);
+	printf("  task priority=%d\n", pSP->taskPriority);
+	printf("  number of state sets=%d\n", pSP->numSS);
+	printf("  number of channels=%d\n", pSP->numChans);
+	printf("  number of channels assigned=%d\n", pSP->assignCount);
+	printf("  number of channels connected=%d\n", pSP->connCount);
+	printf("  options: async=%d, debug=%d,  newef=%d, reent=%d, conn=%d\n",
 	 ((pSP->options & OPT_ASYNC) != 0), ((pSP->options & OPT_DEBUG) != 0),
-	 ((pSP->options & OPT_REENT) != 0), ((pSP->options & OPT_CONN) != 0),
-	 ((pSP->options & OPT_NEWEF) != 0) );
+	 ((pSP->options & OPT_NEWEF) != 0), ((pSP->options & OPT_REENT) != 0),
+	 ((pSP->options & OPT_CONN) != 0) );
 	printf("  log file fd=%d\n", pSP->logFd);
 	status = ioctl(pSP->logFd, FIOGETNAME, (int)file_name);
 	if (status != ERROR)
@@ -87,88 +82,129 @@ int	tid;
 	printf("\n");
 
 	/* Print state set info */
-	for (nss = 0, pSS = pSP->sscb; nss < pSP->nss; nss++, pSS++)
+	for (nss = 0, pSS = pSP->pSS; nss < pSP->numSS; nss++, pSS++)
 	{
-		wait_rtn();
+		printf("  State Set: \"%s\"\n", pSS->pSSName);
 
-		printf("  State Set: \"%s\"\n", pSS->name);
+		printf("  task name=%s;  ", taskName(pSS->taskId));
 
-		printf("  task name=%s;  ", taskName(pSS->task_id));
+		printf("  task id=%d=0x%x\n", pSS->taskId, pSS->taskId);
 
-		printf("  id=%d=0x%x\n", pSS->task_id, pSS->task_id);
+		pST = pSS->pStates;
+		printf("  First state = \"%s\"\n", pST->pStateName);
 
-		pST = pSS->states;
-		printf("  First state = \"%s\"\n", pSS->states->name);
+		pST = pSS->pStates + pSS->currentState;
+		printf("  Current state = \"%s\"\n", pST->pStateName);
 
-		pST = pSS->states + pSS->current_state;
-		printf("  Current state = \"%s\"\n", pST->name);
+		pST = pSS->pStates + pSS->prevState;
+		printf("  Previous state = \"%s\"\n", pST->pStateName);
 
-		pST = pSS->states + pSS->prev_state;
-		printf("  Previous state = \"%s\"\n", pST->name);
-
-		time = pSS->time/60.0;
-		printf("\tTime state was entered = %.1f seconds)\n", time);
-		time = (tickGet() - pSS->time)/60.0;
+		time = (tickGet() - pSS->timeEntered)/60.0;
 		printf("\tElapsed time since state was entered = %.1f seconds)\n",
 		 time);
-
-		printf("\tNumber delays queued=%d\n", pSS->ndelay);
-		for (n = 0; n < pSS->ndelay; n++)
+#ifdef	DEBUG
+		printf("  Queued time delays:\n");
+		for (n = 0; n < pSS->numDelays; n++)
 		{
-			time = pSS->timeout[n]/60.0;
-			printf("\t\ttimeout[%d] = %.1f seconds\n", n, time);
+			printf("\tdelay[%2d]=%d", n, pSS->delay[n]);
+			if (pSS->delayExpired[n])
+				printf(" - expired");
+			printf("\n");
 		}
+#endif	DEBUG
+		printf("\n");
 	}
 
 	return 0;
 }
 /*
- * seqChanQry() - Querry the sequencer for channel information.
+ * seqChanShow() - Show channel information for a state program.
  */
-int seqChanShow(tid)
-int	tid;
+int seqChanShow(tid, pStr)
+int		tid;	/* task id or name */
+char		*pStr;	/* optional pattern matching string */
 {
 	SPROG		*pSP;
 	CHAN		*pDB;
-	int		nch;
+	int		nch, n;
 	float		time;
+	char		tsBfr[50], connQual;
+	int		match, showAll;
 
 	/* convert (possible) name to task id */
 	if (tid != 0)
+	{
 		tid = taskIdFigure(tid);
+		if (tid == ERROR)
+			return 0;
+	}
 	pSP = seqQryFind(tid);
 	if (tid == NULL)
 		return 0;
 
-	pDB = pSP->channels;
-	printf("State Program: \"%s\"\n", pSP->name);
-	printf("Number of channels=%d\n", pSP->nchan);
+	printf("State Program: \"%s\"\n", pSP->pProgName);
+	printf("Number of channels=%d\n", pSP->numChans);
 
-	for (nch = 0; nch < pSP->nchan; nch++, pDB++)
+	if (pStr != NULL)
 	{
-		printf("\nChannel name: \"%s\"\n", pDB->db_name);
-		printf("  Unexpanded name: \"%s\"\n", pDB->db_uname);
-		printf("  Variable=%d=0x%x\n", pDB->var, pDB->var);
-		printf("  Size=%d bytes\n", pDB->size);
-		printf("  Count=%d\n", pDB->count);
-		printType(pDB->put_type);
-		printValue((void *)pDB->var, pDB->size, pDB->count,
-			   pDB->put_type);
-		printf("  DB get request type=%d\n", pDB->get_type);
-		printf("  DB put request type=%d\n", pDB->put_type);
-		printf("  monitor flag=%d\n", pDB->mon_flag);
+		connQual = pStr[0];
+		/* Check for channel connect qualifier */
+		if ((connQual == '+') || (connQual == '-'))
+		{
+			pStr += 1;
+		}
+	}
+	else
+		connQual = 0;
+
+	pDB = pSP->pChan;
+	for (nch = 0; nch < pSP->numChans; )
+	{
+		if (pStr != NULL)
+		{
+			/* Check for channel connect qualifier */
+			if (connQual == '+')
+				showAll = pDB->connected; /* TRUE if connected */
+			else if (connQual == '-')
+				showAll = !pDB->connected; /* TRUE if NOT connected */
+			else
+				showAll = TRUE; /* Always TRUE */
+
+			/* Check for pattern match if specified */
+			match = (pStr[0] == 0) || (strstr(pDB->dbName, pStr) != NULL);
+			if (!(match && showAll))
+			{
+				pDB += 1;
+				nch += 1;
+				continue; /* skip this channel */
+			}
+		}
+		printf("\n#%d of %d:\n", nch+1, pSP->numChans);
+		printf("Channel name: \"%s\"\n", pDB->dbName);
+		printf("  Unexpanded (assigned) name: \"%s\"\n", pDB->dbAsName);
+		printf("  Variable name: \"%s\"\n", pDB->pVarName);
+		printf("    address = %d = 0x%x\n", pDB->pVar, pDB->pVar);
+		printf("    type = %s\n", pDB->pVarType);
+		printf("    count = %d\n", pDB->count);
+		printValue(pDB->pVar, pDB->putType, pDB->count);
+		printf("  Monitor flag=%d\n", pDB->monFlag);
 
 		if (pDB->monitored)
-			printf("  Monitored\n");
+			printf("    Monitored\n");
 		else
-			printf("  Not monitored\n");
+			printf("    Not monitored\n");
+
+		if (pDB->assigned)
+			printf("  Assigned\n");
+		else
+			printf("  Not assigned\n");
 
 		if(pDB->connected)
 			printf("  Connected\n");
 		else
 			printf("  Not connected\n");
 
-		if(pDB->get_complete)
+		if(pDB->getComplete)
 			printf("  Last get completed\n");
 		else
 			printf("  Get not completed or no get issued\n");
@@ -176,118 +212,117 @@ int	tid;
 		printf("  Status=%d\n", pDB->status);
 		printf("  Severity=%d\n", pDB->severity);
 
-		printf("  Delta=%g\n", pDB->delta);
-		printf("  Timeout=%g\n", pDB->timeout);
-		wait_rtn();
+		/* Print time stamp in text format: "mm/dd/yy hh:mm:ss.nano-sec" */
+		tsStampToText(&pDB->timeStamp, TS_TEXT_MMDDYY, tsBfr);
+		if (tsBfr[2] == '/') /* valid t-s? */
+			printf("  Time stamp = %s\n", tsBfr);
+
+		n = wait_rtn();
+		if (n == 0)
+			return 0;
+		nch += n;
+		if (nch < 0)
+			nch = 0;
+		pDB = pSP->pChan + nch;
 	}
 
 	return 0;
 }
 
 /* Read from console until a RETURN is detected */
-LOCAL VOID wait_rtn()
+LOCAL int wait_rtn()
 {
-	char	bfr;
-	printf("Hit RETURN to continue\n");
-	do {
-		read(STD_IN, &bfr, 1);
-	} while (bfr != '\n');
+	char		bfr[10];
+	int		i, n;
+
+	printf("Next? (+/- skip count)\n");
+	for (i = 0;  i < 10; i++)
+	{
+		read(STD_IN, &bfr[i], 1);
+		if (bfr[i] == '\n')
+			break;
+	}
+	bfr[i] = 0;
+	if (bfr[0] == 'q')
+		return 0; /* quit */
+
+	n = atoi(bfr);
+	if (n == 0)
+		n = 1;
+	return n;
 }
 
-/* Special union to simplify printing values */
-struct	dbr_union {
-	union {
-		char	c;
-		short	s;
-		long	l;
-		float	f;
-		double	d;
-	} u;
-};
-
 /* Print the current internal value of a database channel */
-LOCAL VOID printValue(pvar, size, count, type)
-void		*pvar;
-int		size, count, type;
+LOCAL VOID printValue(pVal, type, count)
+char		*pVal;
+int		count, type;
 {
-	struct dbr_union	*pv = pvar;
+	int		i;
+	char		*c;
+	short		*s;
+	long		*l;
+	float		*f;
+	double		*d;
 
 	if (count > 5)
 		count = 5;
 
 	printf("  Value =");
-	while (count-- > 0)
+	for (i = 0; i < count; i++)
 	{
-		switch (type)
-		{
-		    case DBR_STRING:
-			printf(" %s", pv->u.c);
-			break;
-
-	  	    case DBR_CHAR:
-			printf(" %d", pv->u.c);
-			break;
-
-		    case DBR_SHORT:
-			printf(" %d", pv->u.s);
-			break;
-
-		    case DBR_LONG:
-			printf(" %d", pv->u.l);
-			break;
-
-		    case DBR_FLOAT:
-			printf(" %g", pv->u.f);
-			break;
-
-		    case DBR_DOUBLE:
-			printf(" %lg", pv->u.d);
-			break;
-		}
-
-		pv = (struct dbr_union *)((char *)pv + size);
-	}
-
-	printf("\n");
-}
-
-/* Print the data type of a channel */
-LOCAL VOID printType(type)
-int		type;
-{
-	char		*type_str;
-
-	switch (type)
-	{
+	  switch (type)
+	  {
 	    case DBR_STRING:
-		type_str = "string";
+		c = (char *)pVal;
+		for (i = 0; i < count; i++, c += MAX_STRING_SIZE)
+		{
+			printf(" %s", c);
+		}
 		break;
 
-	    case DBR_CHAR:
-		type_str = "char";
+	     case DBR_CHAR:
+		c = (char *)pVal;
+		for (i = 0; i < count; i++, c++)
+		{
+			printf(" %d", *c);
+		}
 		break;
 
 	    case DBR_SHORT:
-		type_str = "short";
+		s = (short *)pVal;
+		for (i = 0; i < count; i++, s++)
+		{
+			printf(" %d", *s);
+		}
 		break;
 
 	    case DBR_LONG:
-		type_str = "long";
+		l = (long *)pVal;
+		for (i = 0; i < count; i++, l++)
+		{
+			printf(" %d", *l);
+		}
 		break;
 
 	    case DBR_FLOAT:
-		type_str = "float";
+		f = (float *)pVal;
+		for (i = 0; i < count; i++, f++)
+		{
+			printf(" %g", *f);
+		}
 		break;
 
 	    case DBR_DOUBLE:
-		type_str = "double";
+		d = (double *)pVal;
+		for (i = 0; i < count; i++, d++)
+		{
+			printf(" %g", *d);
+		}
 		break;
-
-	    default:
-		type_str = "?";
-		break;
+	  }
 	}
-	printf("  Type = %s\n", type_str);
+
+	printf("\n");
 }
 
 /* Find a state program associated with a given task id */
@@ -311,13 +346,6 @@ int		tid;
 		return NULL;
 	}
 
-	/* Check for correct magic number */
-	if (pSP->magic != MAGIC)
-	{
-		printf("Sorry, wrong magic number\n");
-		return NULL;
-	}
-
 	return pSP;
 }
 
@@ -334,15 +362,15 @@ SPROG		*pSP;
 	if (seqProgCount++ == 0)
 		printf("Program Name     Task ID    Task Name        SS Name\n\n");
 
-	progName = pSP->name;
-	for (nss = 0, pSS = pSP->sscb; nss < pSP->nss; nss++, pSS++)
+	progName = pSP->pProgName;
+	for (nss = 0, pSS = pSP->pSS; nss < pSP->numSS; nss++, pSS++)
 	{
-		if (pSS->task_id == 0)
+		if (pSS->taskId == 0)
 			ptaskName = "(no task)";
 		else
-			ptaskName = taskName(pSS->task_id);
+			ptaskName = taskName(pSS->taskId);
 		printf("%-16s %-10d %-16s %-16s\n",
-		 progName, pSS->task_id, ptaskName, pSS->name );
+		 progName, pSS->taskId, ptaskName, pSS->pSSName );
 		progName = "";
 	}
 	printf("\n");

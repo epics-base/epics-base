@@ -3,7 +3,9 @@
 	Copyright, 1990, The Regents of the University of California.
 		         Los Alamos National Laboratory
 
-	$Id$
+	snc_main.c,v 1.2 1995/06/27 15:26:11 wright Exp
+		
+
 	DESCRIPTION: Main program and miscellaneous routines for
 	State Notation Compiler.
 
@@ -12,11 +14,17 @@
 20nov91,ajk	Removed call to init_snc().
 20nov91,ajk	Removed some debug stuff.
 28apr92,ajk	Implemented new event flag mode.
+29oct93,ajk	Added 'v' (vxWorks include) option.
+17may94,ajk	Changed setlinebuf() to setvbuf().
+17may94,ajk	Removed event flag option (-e).
+17feb95,ajk	Changed yyparse() to Global_yyparse(), because FLEX makes
+		yyparse() static.
+02mar95,ajk	Changed bcopy () to strcpy () in 2 places.
+26jun95,ajk	Due to popular demand, reinstated event flag (-e) option.
 ***************************************************************************/
 extern	char *sncVersion;	/* snc version and date created */
 
 #include	<stdio.h>
-#include    <string.h>
 
 #ifndef	TRUE
 #define	TRUE 1
@@ -33,10 +41,11 @@ int		c_line_num;	/* line number for beginning of C code */
 int		async_opt = FALSE;	/* do pvGet() asynchronously */
 int		conn_opt = TRUE;	/* wait for all connections to complete */
 int		debug_opt = FALSE;	/* run-time debug */
-int		newef_opt = TRUE;	/* use new event flag mode */
+int		newef_opt = TRUE;	/* new event flag mode */
 int		line_opt = TRUE;	/* line numbering */
 int		reent_opt = FALSE;	/* reentrant at run-time */
 int		warn_opt = TRUE;	/* compiler warnings */
+int		vx_opt = TRUE;		/* include vxWorks def's */
 
 /*+************************************************************************
 *  NAME: main
@@ -62,7 +71,6 @@ int	argc;
 char	*argv[];
 {
 	FILE	*infp, *outfp, *freopen();
-	extern	char in_file[], out_file[];
 
 	/* Get command arguments */
 	get_args(argc, argv);
@@ -87,17 +95,13 @@ char	*argv[];
 	src_file = in_file;
 
 	/* Use line buffered output */
-	setvbuf(stdout,NULL,_IOLBF,0);
-	setvbuf(stderr,NULL,_IOLBF,0);
-/* setlinebuf() isn't ANSI-C or XPG2/3/4
-	setlinebuf(stdout);
-	setlinebuf(stderr);
-*/
+	setvbuf(stdout, NULL, _IOLBF, 0);
+ 	setvbuf(stderr, NULL, _IOLBF, 0);
 	
 	printf("/* %s: %s */\n\n", sncVersion, in_file);
 
 	/* Call the SNC parser */
-	yyparse();
+	Global_yyparse();
 }
 /*+************************************************************************
 *  NAME: get_args
@@ -129,10 +133,11 @@ char	*argv[];
 		fprintf(stderr, "  +a - do async. pvGet\n");
 		fprintf(stderr, "  -c - don't wait for all connects\n");
 		fprintf(stderr, "  +d - turn on debug run-time option\n");
+		fprintf(stderr, "  -e - don't use new event flag mode\n");
 		fprintf(stderr, "  -l - supress line numbering\n");
 		fprintf(stderr, "  +r - make reentrant at run-time\n");
 		fprintf(stderr, "  -w - supress compiler warnings\n");
-		fprintf(stderr, "  -e - don't use new event flag mode\n");
+		fprintf(stderr, "  -v - don't include VxWorks definitions\n");
 		fprintf(stderr, "example:\n snc +a -c vacuum.st\n");
 		exit(1);
 	}
@@ -151,7 +156,6 @@ get_options(s)
 char		*s;
 {
 	int		opt_val;
-	extern int	debug_opt, line_opt, reent_opt, warn_opt, async_opt, newef_opt;
 
 	if (*s == '+')
 		opt_val = TRUE;
@@ -172,6 +176,10 @@ char		*s;
 		debug_opt = opt_val;
 		break;
 
+	case 'e':
+		newef_opt = opt_val;
+		break;
+
 	case 'l':
 		line_opt = opt_val;
 		break;
@@ -184,8 +192,8 @@ char		*s;
 		warn_opt = opt_val;
 		break;
 
-	case 'e':
-		newef_opt = opt_val;
+	case 'v':
+		vx_opt = opt_val;
 		break;
 
 	default:
@@ -194,17 +202,15 @@ char		*s;
 	}
 }
 
-get_in_file(s)
+get_in_file (s)
 char		*s;
 {				
-	extern char	in_file[], out_file[];
 	int		ls;
 
-	ls = strlen(s);
-	memcpy(in_file, s, ls);
-	in_file[ls] = 0;
-	memcpy(out_file, s, ls);
-	if ( strcmp(&in_file[ls-3], ".st") == 0 )
+	ls = strlen (s);
+	strcpy (in_file, s);
+	strcpy (out_file, s);
+	if ( strcmp (&in_file[ls-3], ".st") == 0 )
 	{
 		out_file[ls-2] = 'c';
 		out_file[ls-1] = 0;
@@ -260,9 +266,6 @@ char	*err_txt;
 yyerror(err)
 char	*err;
 {
-	extern char	*src_file;
-	extern int	line_num;
-
 	fprintf(stderr, "%s: line no. %d (%s)\n", err, line_num, src_file);
 	return;
 }
@@ -287,8 +290,6 @@ print_line_num(line_num, src_file)
 int		line_num;
 char		*src_file;
 {
-	extern int	line_opt;
-
 	if (line_opt)
 		printf("# line %d \"%s\"\n", line_num, src_file);
 	return;

@@ -2,8 +2,9 @@
 			GTA PROJECT   AT division
 	Copyright, 1991, The Regents of the University of California.
 		         Los Alamos National Laboratory
+	seq_prog.c,v 1.2 1995/06/27 15:26:00 wright Exp
 
-	$Id$
+
 	DESCRIPTION: Seq_prog.c: state program list management functions.
 	All active state programs are inserted into the list when created
 	and removed from the list when deleted.
@@ -15,37 +16,38 @@
 29apr92,ajk	Added mutual exclusion locks	
 17Jul92,rcz	Changed semBCreate call for V5 vxWorks, maybe should be semMCreate ???
 ***************************************************************************/
-#define	DEBUG
+/*#define	DEBUG*/
 #define		ANSI
 #include	"seq.h"
+#include	"lstLib.h"
 
 LOCAL	SEM_ID	seqProgListSemId;
 LOCAL	int	seqProgListInited = FALSE;
-LOCAL	ELLLIST	seqProgList;
+LOCAL	LIST	seqProgList;
 LOCAL	VOID	seqProgListInit();
 
 typedef struct prog_node
 {
-	ELLNODE		node;
+	NODE		node;
 	SPROG		*pSP;
 } PROG_NODE;
 
-#define	seqListFirst(pList)	(PROG_NODE *)ellFirst((ELLLIST *)pList)
+#define	seqListFirst(pList)	(PROG_NODE *)lstFirst((LIST *)pList)
 
-#define	seqListNext(pNode)	(PROG_NODE *)ellNext((ELLNODE *)pNode)
+#define	seqListNext(pNode)	(PROG_NODE *)lstNext((NODE *)pNode)
 
 /*
  * seqFindProg() - find a program in the state program list from task id.
  */
-SPROG *seqFindProg(task_id)
-int		task_id;
+SPROG *seqFindProg(taskId)
+int		taskId;
 {
 	PROG_NODE	*pNode;
 	SPROG		*pSP;
 	SSCB		*pSS;
 	int		n;
 
-	if (!seqProgListInited || task_id == 0)
+	if (!seqProgListInited || taskId == 0)
 		return NULL;
 
 	semTake(seqProgListSemId, WAIT_FOREVER);
@@ -54,15 +56,15 @@ int		task_id;
 	     pNode = seqListNext(pNode) )
 	{
 		pSP = pNode->pSP;
-		if (pSP->task_id == task_id)
+		if (pSP->taskId == taskId)
 		{
 			semGive(seqProgListSemId);
 			return pSP;
 		}
-		pSS = pSP->sscb;
-		for (n = 0; n < pSP->nss; n++, pSS++)
+		pSS = pSP->pSS;
+		for (n = 0; n < pSP->numSS; n++, pSS++)
 		{
-			if (pSS->task_id == task_id)
+			if (pSS->taskId == taskId)
 			{
 				semGive(seqProgListSemId);
 				return pSP;
@@ -122,7 +124,7 @@ SPROG		*pSP;
 		{
 			semGive(seqProgListSemId);
 #ifdef DEBUG
-			printf("Task %d already in list\n", pSP->task_id);
+			printf("Task %d already in list\n", pSP->taskId);
 #endif
 			return ERROR; /* already in list */
 		}
@@ -137,10 +139,10 @@ SPROG		*pSP;
 	}
 
 	pNode->pSP = pSP;
-	ellAdd((ELLLIST *)&seqProgList, (ELLNODE *)pNode);
+	lstAdd((LIST *)&seqProgList, (NODE *)pNode);
 	semGive(seqProgListSemId);
 #ifdef DEBUG
-	printf("Added task %d to list.\n", pSP->task_id);
+	printf("Added task %d to list.\n", pSP->taskId);
 #endif
 
 	return OK;
@@ -164,11 +166,11 @@ SPROG		*pSP;
 	{
 		if (pNode->pSP == pSP)
 		{
-			ellDelete((ELLLIST *)&seqProgList, (ELLNODE *)pNode);
+			lstDelete((LIST *)&seqProgList, (NODE *)pNode);
 			semGive(seqProgListSemId);
 
 #ifdef DEBUG
-			printf("Deleted task %d from list.\n", pSP->task_id);
+			printf("Deleted task %d from list.\n", pSP->taskId);
 #endif
 			return OK;
 		}
@@ -184,7 +186,7 @@ SPROG		*pSP;
 LOCAL VOID seqProgListInit()
 {
 	/* Init linked list */
-	ellInit(&seqProgList);
+	lstInit(&seqProgList);
 
 	/* Create a semaphore for mutual exclusion */
 	seqProgListSemId = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);

@@ -71,7 +71,7 @@ INC         = file.h
 #	are derived automatically.
 #
 #	Platform specific objects:
-#	use LIBOBJS_$(OS_CLASS)  or  .._DEFAULT
+#	use .._OBJS_$(OS_CLASS)  or  .._OBJS_DEFAULT
 #
 #	Platform specific files can also be put in
 #	separate os/OS_CLASS directories!

@@ -26,14 +26,17 @@
 // network byte stream.
 //
 
-static const unsigned osiWireFormatEndianTest = 1u;
-static const char * const pOSIWireFormatEndianTest = reinterpret_cast < const char * > ( &osiWireFormatEndianTest );
-
 // this endian test should vanish during optimization
 // and therefore be executed only at compile time
 inline bool osiLittleEndian ()
 {
-    if ( *pOSIWireFormatEndianTest ) {
+    union {
+        epicsUInt32 uint;
+        epicsUInt8 uchar[4];
+    } osiWireFormatEndianTest;
+
+    osiWireFormatEndianTest.uint = 1;
+    if ( osiWireFormatEndianTest.uchar[0] == 1 ) {
         return true;
     }
     else {

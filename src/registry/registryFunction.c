@@ -28,5 +28,11 @@ epicsShareFunc int epicsShareAPI registryFunctionAdd(
 epicsShareFunc REGISTRYFUNCTION epicsShareAPI registryFunctionFind(
     const char *name)
 {
-    return((REGISTRYFUNCTION)registryFind(registryID,name));
+    REGISTRYFUNCTION func;
+    func = (REGISTRYFUNCTION)registryFind(registryID,name);
+    if(!func) {
+        func = (REGISTRYFUNCTION)registryFind(0,name);
+        if(func)registryFunctionAdd(name,func);
+    }
+    return(func);
 }

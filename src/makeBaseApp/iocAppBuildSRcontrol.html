@@ -1,7 +1,7 @@
 <HTML>
 <HEAD>
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; I; HP-UX B.10.20 9000/778) [Netscape]">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.05 [en] (X11; U; SunOS 5.5.1 sun4u) [Netscape]">
    <TITLE>EPICS: IOC Applications: Building and Source Release Control</TITLE>
 </HEAD>
 <BODY>
@@ -15,20 +15,21 @@ Source Release Control</H1></CENTER>
 
 <CENTER>
 <H2>
-Marty Kraimer and Janet Anderson&nbsp;<BR>
-Argonne National Laboratory, Advanced Photon Source&nbsp;<BR>
-June 12, 1998&nbsp;<BR>
+Marty Kraimer, Janet Anderson , and Ralph Lange<BR>
+June 15, 1998&nbsp;<BR>
 EPICS Release 3.13.0.beta12</H2></CENTER>
 
 <CENTER>
 <H2>
-Acknowledgements</H2></CENTER>
+Changes since beta11</H2></CENTER>
 Between release 3.13.0.beta11 and 3.13.0.beta12 makeBaseApp was changed
 from one very long perl script to a four page perl script plus template
 files. It supports templates in addition to those supplied with EPICS base.
-Other improvements were made including support for capfast. The following
-people contributed to this effort: Ralph Lange (BESSY),&nbsp; Rozelle Wright
-(LANL) and Thomas Birke (BESSY).
+Other improvements were made including support for capfast. The primary
+developer of the new version of makeBaseApp was Ralph Lange (BESSY). Rozelle
+Wright (LANL) and Thomas Birke (BESSY) contributed to this development.
+In addition no soft links are required so that makeBaseApp works on winXX
+hosts.
 <CENTER>
 <H2>
 Quick Start</H2></CENTER>
@@ -384,8 +385,7 @@ to meet these needs.
 <H3>
 Overview of Application Source Release Control</H3>
 The application directory structure appears as follows:
-<PRE>&nbsp;&nbsp;&nbsp; iocsys/
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;top>/
+<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;top>/
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; config/
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; xxxApp/
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; src/
@@ -414,10 +414,12 @@ developers as needed. The iocBoot directory contains a subdirectory for
 each IOC that belongs to that &lt;<TT>top</TT>> area. No IOC belongs to
 more than one &lt;<TT>top</TT>> area. All software components needed by
 IOCs are built in the xxxApp directories. Each IOC is booted from <TT>bin/&lt;target_arch>
-</TT>and uses a startup file from it's subdirectory under iocBoot. The
-only important source file in a boot directory is the <TT>st.cmd</TT> file
-which is executed after vxWorks is started on an IOC. The <TT>st.cmd </TT>file
-loads various files built in the xxxApp directories.
+</TT>(actually from any directory containing a vxWorks and vxWorks.sym
+compatible with the version of vxWorks against which the target was built)
+and uses a startup file from a subdirectory under iocBoot. The only important
+source file in a boot directory is the <TT>st.cmd</TT> file which is executed
+after vxWorks is started on an IOC. The <TT>st.cmd </TT>file loads various
+files built in the xxxApp directories.
 
 <P>Application developers decide what constitutes a &lt;<TT>top</TT>>.
 For example, at APS, the Linac is completely contained in a single &lt;<TT>top</TT>>
@@ -467,11 +469,17 @@ If it is necessary to obtain a bug fix or enhancement to a single module
 from EPICS base or a <TT>share</TT> release, the application developer
 has at least two choices. The first is to build a new release of base or
 <TT>share</TT>. A second choice is to copy the source module to an appropriate
-<TT>src</TT> directory and build it there. In this case you should do something
-so that you remember to use the version from <TT>share</TT> after <TT>share</TT>
-is rebuilt.
+<TT>src</TT> directory and build it there. In this case the developer must
+remember to use the version from <TT>share</TT> after <TT>share</TT> is
+rebuilt.
 
 <P><B>Note: </B>Other software packages can be handled like <TT>share</TT>.
+<H2>
+templates</H2>
+The makeBaseApp.pl utility creates new application areas. It does this
+by copying and transforming directory trees from a template area. EPICS
+base provides templates for a simple application and for an example application.
+Each site can, however, create their own set of templates.
 <H3>
 Tools</H3>
 The following tools are used:
@@ -532,8 +540,10 @@ Structure</H3>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES_ARCHS
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES_DIRS
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES_TOP
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; makeDbDepends.pl
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; makeIocCdCommands.pl
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; xxxApp/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; replaceVAR.pl
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; xxxApp/ or xxxapp
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; src/ or xxxSrc or xxxsrc
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile
 *&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile.Host
@@ -541,16 +551,17 @@ Structure</H3>
 *&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; base.dbd
 *&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; baseLIBOBJS
 *&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;app>Include.dbd
-*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;example and/or user supplied code>
-*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;example and/or user supplied state programs>
-*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;user menu, recordtype, device, driver database defs>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Db/ or xxxDb or xxxdb
+*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;source code>
+*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;state programs>
+*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt; menu, recordtype, device, driver database defs>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Db/ or db or xxxDb or xxxdb
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile
 *&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;record instance files>
 *&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;record template and substitution files>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; privately managed directories
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; iocBoot/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; iocBoot/ or iocboot
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile.Host
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nfsCommands
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; iocxxx/
 *&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile
@@ -558,6 +569,8 @@ Structure</H3>
 **&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cdCommands
 **&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbd/
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;installed database description files>
+**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; db/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;installed record instance files>
 **&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; include/
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;installed include files>
 **&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bin/
@@ -566,9 +579,7 @@ Structure</H3>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;ioc_arch>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;installed IOC products>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...
-**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; lib/
-**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; man/
-**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; db/</PRE>
+**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; lib/</PRE>
 Files marked with an "*" are user created and/or edited. Each such file
 is discussed in this section.
 
@@ -586,12 +597,12 @@ The directories are:
 Directory containing configuration files for gnumake.</DD>
 
 <DT>
-<TT>xxxApp</TT></DT>
+<TT>xxxApp or xxxapp</TT></DT>
 
 <DD>
 Directory containing source files and database files. An arbitrary number
 of <TT>xxxApp</TT> directories are allowed. Each must have <TT>App</TT>
-appended to the name because Makefile looks for it.</DD>
+or <TT>app </TT>appended to the name because Makefile looks for it.</DD>
 
 <DL>
 <DT>
@@ -614,7 +625,7 @@ substitution files or the equivalent CapFast schematics.</DD>
 </DL>
 
 <DT>
-<TT>iocBoot</TT></DT>
+<TT>iocBoot or iocboot</TT></DT>
 
 <DD>
 Directory containing a subdirectory for each IOC.</DD>
@@ -658,13 +669,6 @@ architecture and for each target architectiure. These are the directories
 in which libraries are installed.</DD>
 
 <DT>
-<TT>man</TT></DT>
-
-<DD>
-Man pages Directory. This directory contains a subdirectory for each section
-of the Unix style man pages. This is where man pages are installed.</DD>
-
-<DT>
 <TT>db</TT></DT>
 
 <DD>
@@ -688,9 +692,19 @@ This is the file in which you add to or modify make variables in EPICS
 base. A useful definition to override is:</DD>
 
 <PRE>&nbsp;&nbsp;&nbsp; CROSS_COMPILER_TARGET_ARCHS =</PRE>
+
+<DD>
 This specifies the vxWorks architecture to build. If your site builds base
 for multiple target architectures but your IOCs only use a single architecture,
-overriding this variables saves build time.
+overriding this variables saves build time.</DD>
+
+<DD>
+If you are using capfast you may want to add the definition:</DD>
+
+<DL>
+<PRE>DB_OPT = YES</PRE>
+</DL>
+
 <DT>
 <TT>CONFIG_APP</TT></DT>
 
@@ -962,7 +976,6 @@ EPICS_MBA_TEMPLATE_TOP&nbsp; Template top directory</PRE>
 <PRE>&nbsp;&nbsp;&nbsp; mkdir &lt;top>&nbsp;&nbsp;&nbsp; # If &lt;top> does not exist
 &nbsp;&nbsp;&nbsp; cd &lt;top>
 &nbsp;&nbsp;&nbsp; &lt;base>/bin/&lt;arch>/makeBaseApp -t &lt;apptype> &lt;app> ...
-&nbsp;&nbsp;&nbsp; or
 &nbsp;&nbsp;&nbsp; &lt;base>/bin/&lt;arch>/makeBaseApp -i -t &lt;apptype> &lt;ioc> ...</PRE>
 makeBaseApp does the following:
 <UL>
@@ -1020,7 +1033,12 @@ If <TT>-t </TT>is specified it is used.</LI>
 If&nbsp; <TT>EPICS_MBA_DEF_APP_TYPE </TT>is defined it is used.</LI>
 
 <LI>
-The application type is set equal to <TT>default</TT>.</LI>
+If template <TT>defaultApp </TT>exists, the application type is set equal
+to <TT>default</TT>.</LI>
+
+<LI>
+If template <TT>exampleApp </TT>exists, the application type is set equal
+to <TT>example</TT>.</LI>
 </UL>
 
 <LI>
@@ -1127,11 +1145,9 @@ is created and populated with the directory tree from the template (with
 
 <UL>
 <UL>
-<UL>
 <H2>
 <A NAME="Templates Supplied with base"></A>Application Templates Supplied
 with base</H2>
-</UL>
 </UL>
 </UL>
 </UL>
@@ -1173,6 +1189,7 @@ contains the following files.
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; baseLIBOBJS
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Db/
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile.Host
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbExample1.db
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbExample2.template
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbExample2.substitutions</PRE>
@@ -1254,7 +1271,7 @@ This is another example of record instances. The database is generated
 from a template database, which is instantiated using the entries in the
 substitutions file. Each name is proceeded by <TT>&lt;userid></TT>, which
 is the userid of the person who executed makeBaseApp. Each line in the
-substitutions file creates a two record database, whose records are desribed
+substitutions file creates a two record database, whose records are described
 above (aiExample and calcExample).</DD>
 
 <DT>
@@ -1283,8 +1300,9 @@ synchronous support for the record support.</DD>
 <CENTER>
 <H2>
 <A NAME="ST.CMD"></A>st.cmd</H2></CENTER>
-NOTE: The commands dbLoadDatabase, dbExpand, and dbLoadRecords are described
-in Chapter 4, "Database Definition" of the Application Developer's Guide.
+NOTE: The commands dbLoadDatabase, dbExpand, dbLoadRecords, and dbLoadTemplate
+are described in chapter , "Database Definition" of the Application Developer's
+Guide.
 
 <P>This file is the vxWorks startup file. The version created by makeBaseApp
 is:
@@ -1409,11 +1427,25 @@ the CVS directories excluded.</UL>
 <TT>xxxApp</TT></DT>
 
 <DD>
-The most useful command at this level is</DD>
+Two useful commands at this level are</DD>
 
-<PRE>&nbsp;&nbsp;&nbsp; gnumake rebuild</PRE>
-which is the same as issuing "gnumake rebuild" in each subdirectory of
-<TT>xxxApp</TT>.
+<DD>
+</DD>
+
+<DL>
+<DL>
+<PRE>gnumake</PRE>
+
+<PRE>or</PRE>
+
+<PRE>gnumake rebuild</PRE>
+</DL>
+</DL>
+
+<DD>
+which is the same as issuing the command in each subdirectory of <TT>xxxApp</TT>.</DD>
+
+<BR>&nbsp;
 <DT>
 <TT>xxxApp/src</TT> or <TT>xxxApp/xxxSrc</TT></DT>
 
@@ -1423,20 +1455,56 @@ Running the command:</DD>
 <PRE>&nbsp;&nbsp;&nbsp; gnumake</PRE>
 
 <DD>
-in a <TT>src</TT> directory builds and installs all out of date Host and
-IOC components described by the files <TT>Makefile.Host</TT> and <TT>Makefile.Vx</TT>.
-The builds are performed in subdirectories <TT>O.&lt;arch></TT>.</DD>
+which is the same as executing "<TT>gnumake install</TT>"&nbsp; builds
+and installs all out of date Host and IOC components described by the files
+<TT>Makefile.Host</TT> and <TT>Makefile.Vx</TT>. The builds are performed
+in subdirectories <TT>O.&lt;arch></TT>.</DD>
 
+<BR>&nbsp;
+<DD>
+It is possible to build for a single architecture via the command:</DD>
 
-<P>It is possible to build for a single architecture via the command:
+<DL>
 <PRE>&nbsp;&nbsp;&nbsp; gnumake &lt;arch></PRE>
+</DL>
+
+<DD>
 For example, if your IOC is an MV167 system, then the directory is <TT>O.mv167</TT>,
-and the make command is:
+and the make command is:</DD>
+
+<DL>
 <PRE>&nbsp;&nbsp;&nbsp; gnumake mv167</PRE>
-Another useful command is:
+</DL>
+
+<DD>
+Another useful command is:</DD>
+
+<DL>
 <PRE>&nbsp;&nbsp;&nbsp; gnumake clean</PRE>
+</DL>
+
+<DD>
 This removes the host and target architecture directories created by make.
-".&lt;arch>" can be appended to invoke clean for a particular architecture.
+".&lt;arch>" can be appended to invoke clean for a particular architecture.</DD>
+
+<DD>
+</DD>
+
+<DD>
+The command:</DD>
+
+<DL>
+<DL>
+<PRE>gnumake rebuild</PRE>
+</DL>
+</DL>
+
+<DD>
+is the same as "<TT>gnumake clean install</TT>".</DD>
+
+<DD>
+</DD>
+
 <DT>
 <TT>xxxApp/xxxDb</TT></DT>
 
@@ -1444,19 +1512,28 @@ This removes the host and target architecture directories created by make.
 Executing gnumake in this directory generates and installs database instance
 files, template and substitution files plain sources or CapFast schematics.</DD>
 
+<DD>
+</DD>
+
 <DT>
 <TT>iocBoot</TT></DT>
 
 <DD>
-The most useful command at this level is</DD>
+Executing</DD>
 
 <PRE>&nbsp;&nbsp;&nbsp; gnumake</PRE>
-which is the same as issuing "gnumake" in each subdirectory of <TT>iocBoot</TT>.
+
+<DD>
+is the same as issuing "gnumake" in each subdirectory of <TT>iocBoot</TT>.</DD>
+
+<DD>
+</DD>
+
 <DT>
 <TT>iocBoot/iocxxx</TT></DT>
 
 <DD>
-Running <TT>gnumake </TT>in this directory creates the <TT>cdCommands</TT>
+Executing <TT>gnumake</TT> in this directory creates the <TT>cdCommands</TT>
 file.</DD>
 </DL>
 
@@ -1935,13 +2012,17 @@ specified in <TT>DB</TT>), must be specified:
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; USES_TEMPLATE += $(SHARE)/installDb/zzz.template</PRE>
 </UL>
 If specified with a path (full or relative), the templates will be soft
-linked (UNIX) resp. copied (WIN) into the <TT>O.&lt;arch></TT> directory.
+linked (UNIX) or copied (WIN) into the <TT>O.&lt;arch></TT> directory.
 After the first make run, template dependencies will be generated automatically.
 
 <P>If there is no *.substitutions source for a needed substitutions file,
 but a variable defining a script name (like <TT>CREATESUBSTITUTIONS=CreateSubst.pl</TT>),
 this script will be called with the prefix of the substitution file name
 to be generated.
+
+<P>NOTE: If (and only if) there are script generated substitutions files,
+the prefix of any inflated database's name may not equal the prefix of
+the name of any template used within the directory.
 
 <P>Other definitions:
 <PRE>E2DB_FLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; e2db options
@@ -2025,9 +2106,10 @@ CVSROOT</H3>
 Your environment variable CVSROOT should point to the CVS repository for
 IOC Applications. The following command displays the location of CVSROOT:
 <PRE>&nbsp;&nbsp;&nbsp; echo $CVSROOT</PRE>
-At APS/ASD the command should show:
+For example, at APS/ASD the command should show:
 <PRE>&nbsp;&nbsp;&nbsp; /usr/local/iocapps/cvsroot</PRE>
-
+At APS all <TT>&lt;top></TT> applications are stored under <TT>$CVSROOT/iocsys</TT>.
+Other sites may use a different convention.
 <H3>
 Commands</H3>
 This section gives a brief description of the CVS commands. Wherever &lt;filename>
@@ -2046,53 +2128,21 @@ Typing</DD>
 
 <PRE>&nbsp;&nbsp;&nbsp; cvs help</PRE>
 gives overall cvs help.
-<DT>
-<B>Initial Checkout</B></DT>
-
-<DD>
-Each user performs application development in his/her private area. The
-developer must checkout <TT>iocsys/ascf.</TT> Then entire <TT>&lt;top></TT>
-areas can be checked out or else just a subset of a <TT>&lt;top> </TT>area.</DD>
-
-
-<P>The first step is to checkout ascf. The easiest way is to create the
-application area with a high level directory called <TT>iocsys</TT>. The
-following commands are issued:
-<PRE>&nbsp;&nbsp;&nbsp; cd &lt;anywhere>
-&nbsp;&nbsp;&nbsp; cvs checkout iocsys/ascf</PRE>
-<TT>iocsys</TT> will appear as a subdirectory of <TT>&lt;anywhere></TT>.
-If <TT>&lt;anywhere></TT> is null then <TT>iocsys</TT> appears in the user's
-home directory.
+<BR>&nbsp;
 <DT>
 <B>Checkout Entire <TT>&lt;top></TT> Area</B></DT>
 
 <DD>
 To check out an entire <TT>&lt;top></TT> area issue the commands:</DD>
 
-<PRE>&nbsp;&nbsp;&nbsp; cd &lt;anywhere>
-&nbsp;&nbsp;&nbsp; cvs checkout iocsys/&lt;top></PRE>
+<PRE>cd &lt;anywhere>
+cvs checkout iocsys/&lt;top></PRE>
 
 <DD>
 <TT>iocsys/&lt;top></TT> appears under <TT>&lt;anywhere></TT></DD>
 
-<DT>
-<B>Checkout Subset of <TT>&lt;top></TT> Area</B></DT>
-
 <DD>
-It is possible to checkout a subset of the the <TT>xxxApps</TT> and a subset
-of the <TT>iocBoot</TT> directories. The commands to accomplish this are:</DD>
-
-<PRE>&nbsp;&nbsp;&nbsp; cd &lt;anywhere>
-&nbsp;&nbsp;&nbsp; cvs checkout iocsys/&lt;top>/Makefile
-&nbsp;&nbsp;&nbsp; cvs checkout iocsys/&lt;top>/config
-&nbsp;&nbsp;&nbsp; cvs checkout iocsys/&lt;top>/xxxApp
-&nbsp;&nbsp;&nbsp; ...</PRE>
-The entire iocBoot directory can be checked out via the command:
-<PRE>&nbsp;&nbsp;&nbsp; cvs checkout iocsys/&lt;top>/iocBoot</PRE>
-A subset of the iocBoot directory can be checked out via the commands:
-<PRE>&nbsp;&nbsp;&nbsp; cvs checkout iocsys/&lt;top>/iocBoot/Makefile
-&nbsp;&nbsp;&nbsp; cvs checkout iocsys/&lt;top>/iocBoot/iocxxx
-&nbsp;&nbsp;&nbsp; ...</PRE>
+<TT></TT></DD>
 
 <DT>
 <B>watch</B></DT>

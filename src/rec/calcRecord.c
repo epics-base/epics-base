@@ -82,7 +82,7 @@ static void monitor();
 static int fetch_values();
 
 
-#define ARG_MAX 12
+#define NO_OF_INPUTS 12
 
 static long init_record(pcalc,pass)
     struct calcRecord	*pcalc;
@@ -98,7 +98,7 @@ static long init_record(pcalc,pass)
 
     plink = &pcalc->inpa;
     pvalue = &pcalc->a;
-    for(i=0; i<ARG_MAX; i++, plink++, pvalue++) {
+    for(i=0; i<NO_OF_INPUTS; i++, plink++, pvalue++) {
         if (plink->type == CONSTANT) {
 	    recGblInitConstantLink(plink,DBF_DOUBLE,pvalue);
         }
@@ -327,7 +327,7 @@ static void monitor(pcalc)
                 db_post_events(pcalc,&pcalc->val,monitor_mask);
         }
         /* check all input fields for changes*/
-        for(i=0, pnew=&pcalc->a, pprev=&pcalc->la; i<ARG_MAX; i++, pnew++, pprev++) {
+        for(i=0, pnew=&pcalc->a, pprev=&pcalc->la; i<NO_OF_INPUTS; i++, pnew++, pprev++) {
              if((*pnew != *pprev) || (monitor_mask&DBE_ALARM)) {
                   db_post_events(pcalc,pnew,monitor_mask|DBE_VALUE|DBE_LOG);
                   *pprev = *pnew;
@@ -344,7 +344,9 @@ struct calcRecord *pcalc;
 	long		status = 0;
 	int		i;
 
-	for(i=0, plink=&pcalc->inpa, pvalue=&pcalc->a; i<ARG_MAX; i++, plink++, pvalue++) {
+	for(i=0, plink=&pcalc->inpa, pvalue=&pcalc->a;
+            i<NO_OF_INPUTS;
+            i++, plink++, pvalue++) {
 
             status = dbGetLink(plink,DBR_DOUBLE, pvalue,0,0);
 

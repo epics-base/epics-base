@@ -1,8 +1,4 @@
 
-#ifndef CLOCKS_PER_SEC
-#define CLOCKS_PER_SEC 1000000
-#endif
-
 #include <tsDLList.h>
 #include <assert.h>
 #include <time.h>
@@ -24,7 +20,7 @@ private:
 
 #define LOOPCOUNT 100000
 
-main ()
+int main ()
 {
 	tsDLList<fred>		list;
 	tsDLFwdIter<fred>	iter(list);
@@ -59,5 +55,7 @@ main ()
 	delay = delay/CLOCKS_PER_SEC;
 	delay = delay/LOOPCOUNT;
 	printf("delay = %15.10f\n", delay);
+
+	return 0;
 }
 

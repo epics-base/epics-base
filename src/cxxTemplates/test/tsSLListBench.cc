@@ -29,7 +29,7 @@ private:
 
 #define LOOPCOUNT 100000
 
-main ()
+int main ()
 {
 	tsSLList<fred>	list;
 	fred		*pFred;
@@ -69,5 +69,7 @@ main ()
 	delay = delay/CLOCKS_PER_SEC;
 	delay = delay/LOOPCOUNT;
 	printf("delay = %15.10f\n", delay);
+
+	return 0;
 }
 

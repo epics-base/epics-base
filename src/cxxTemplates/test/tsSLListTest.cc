@@ -19,7 +19,7 @@ public:
 private:
 };
 
-main ()
+int main ()
 {
 	tsSLList<fred>	list;
 	fred		*pFred;
@@ -97,5 +97,7 @@ main ()
 		pFredBack = iter();
 		assert(pFredBack==NULL);
 	}
+
+	return 0;
 }
 

@@ -19,7 +19,7 @@ public:
 private:
 };
 
-main ()
+int main ()
 {
 	tsDLList<fred>		list;
 	tsDLFwdIter<fred>	iter(list);
@@ -96,5 +96,7 @@ main ()
 		janeBwdIter.remove();
 	}
 	assert(janeList.count()==0);
+
+	return 0;
 }
 

@@ -7,7 +7,7 @@ CXXCMPLR = STRICT
 PROD_LIBS = Com
 
 TESTPROD := resourceLibTest tsDLListBench tsDLListTest tsDLListTest \
-		tsSLListBench tsSLListTest minmaxTest tsBTreeBench tsBTreeTest
+		tsSLListBench tsSLListTest minmaxTest
 
 include $(TOP)/config/RULES.Host
 

@@ -5,6 +5,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.7  1997/08/05 00:51:04  jhill
+ * fixed problems in aitString and the conversion matrix
+ *
  * Revision 1.6  1997/06/13 09:26:04  jhill
  * fixed generated conversion functions
  *
@@ -119,10 +122,12 @@ int main(int argc,char* argv[])
 		pr(dfd,"%s\n",table_def[k]);
 		for(i=aitConvertAutoFirst;i<=aitConvertAutoLast;i++)
 		{
-			MakeStringFuncTo(i,aitEnumString,k);
-			MakeStringFuncFrom(aitEnumString,i,k);
-			MakeFStringFuncTo(i,aitEnumFixedString,k);
-			MakeFStringFuncFrom(aitEnumFixedString,i,k);
+            if (i!=aitEnumEnum16) {
+			    MakeStringFuncTo(i,aitEnumString,k);
+			    MakeStringFuncFrom(aitEnumString,i,k);
+			    MakeFStringFuncTo(i,aitEnumFixedString,k);
+			    MakeFStringFuncFrom(aitEnumFixedString,i,k);
+            }
 		}
 	}
 	pr(dfd,"#endif\n\n");
@@ -170,7 +175,7 @@ void MakeStringFuncFrom(int i,int j,int k)
 	/* assumes that void* d in an array of char pointers of length c */
 	/* takes numeric data from source j and convert it to string in dest i */
 
-	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c)\n",
+	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const vector<string> &)\n",
 		table_type[k],&(aitName[i])[3],&(aitName[j])[3]);
 	pr(dfd,"{\n");
 	pr(dfd,"\taitIndex i;\n");
@@ -200,7 +205,7 @@ void MakeStringFuncTo(int i,int j,int k)
 	/* assumes that void* d in an array of char pointers of length c */
 	/* takes string data from source j and convert it to numeric in dest i */
 
-	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c)\n",
+	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const vector<string> &)\n",
 		table_type[k],&(aitName[i])[3],&(aitName[j])[3]);
 	pr(dfd,"{\n");
 	pr(dfd,"\taitIndex i;\n");
@@ -248,7 +253,7 @@ void MakeFStringFuncFrom(int i,int j,int k)
 	/* assumes that void* d in an array of char pointers of length c */
 	/* takes numeric data from source j and convert it to string in dest i */
 
-	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c)\n",
+	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const vector<string> &)\n",
 		table_type[k],&(aitName[i])[3],&(aitName[j])[3]);
 	pr(dfd,"{\n");
 	pr(dfd,"\taitIndex i;\n");
@@ -285,7 +290,7 @@ void MakeFStringFuncTo(int i,int j,int k)
 {
 	/* assumes that void* d in an array of char pointers of length c */
 	/* takes string data from source j and convert it to numeric in dest i */
-	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c)\n",
+	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const vector<string> &)\n",
 		table_type[k],&(aitName[i])[3],&(aitName[j])[3]);
 	pr(dfd,"{\n");
 	pr(dfd,"\taitIndex i;\n");
@@ -331,7 +336,7 @@ void GenName(int i,int j,int k)
 	const char* i_name = &((aitName[i])[3]);
 	const char* j_name = &((aitName[j])[3]);
 
-	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c)\n",
+	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const vector<string> &)\n",
 			table_type[k],i_name,j_name);
 }
 

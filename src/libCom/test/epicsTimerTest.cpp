@@ -66,6 +66,7 @@ delayVerify::delayVerify ( double expectedDelayIn, epicsTimerQueue &queue ) :
 
 delayVerify::~delayVerify ()
 {
+    delete & this->timer;
 }
 
 inline void delayVerify::setBegin ( const epicsTime &beginIn )
@@ -128,7 +129,8 @@ void testAccuracy ()
     delayVerify *pTimers[nTimers];
     unsigned i;
 
-    epicsTimerQueue &queue = epicsTimerQueue::allocate ( true, epicsThreadPriorityMax );
+    epicsTimerQueueActive &queue = 
+        epicsTimerQueueActive::allocate ( true, epicsThreadPriorityMax );
 
     for ( i = 0u; i < nTimers; i++ ) {
         pTimers[i] = new delayVerify ( ( nTimers - i ) * 0.1, queue );
@@ -173,6 +175,7 @@ cancelVerify::cancelVerify ( epicsTimerQueue &queue ) :
 
 cancelVerify::~cancelVerify ()
 {
+    delete & this->timer;
 }
 
 inline void cancelVerify::start ( const epicsTime &expireTime )
@@ -220,7 +223,8 @@ void testCancel ()
     cancelVerify *pTimers[nTimers];
     unsigned i;
 
-    epicsTimerQueue &queue = epicsTimerQueue::allocate ( true, epicsThreadPriorityMin );
+    epicsTimerQueueActive &queue = 
+        epicsTimerQueueActive::allocate ( true, epicsThreadPriorityMin );
 
     for ( i = 0u; i < nTimers; i++ ) {
         pTimers[i] = new cancelVerify ( queue );
@@ -259,12 +263,12 @@ private:
 
 periodicVerify::periodicVerify ( epicsTimerQueue &queue ) :
     nExpire ( 0u ), timer ( queue.createTimer ( *this ) ), failOutIfExpireIsCalled ( false )
-        
 {
 }
 
 periodicVerify::~periodicVerify ()
 {
+    delete & this->timer;
 }
 
 inline void periodicVerify::start ( const epicsTime &expireTime )
@@ -321,7 +325,8 @@ void testPeriodic ()
     periodicVerify *pTimers[nTimers];
     unsigned i;
 
-    epicsTimerQueue &queue = epicsTimerQueue::allocate ( true, epicsThreadPriorityMin );
+    epicsTimerQueueActive &queue = 
+        epicsTimerQueueActive::allocate ( true, epicsThreadPriorityMin );
 
     for ( i = 0u; i < nTimers; i++ ) {
         pTimers[i] = new periodicVerify ( queue );

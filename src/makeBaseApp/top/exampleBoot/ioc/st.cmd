@@ -21,7 +21,7 @@ ld < exampleLibrary.munch
 #TSinit
 
 cd top
-dbLoadDatabase("dbd/exampleApp.dbd")
+dbLoadDatabase("dbd/example.dbd")
 registerRecordDeviceDriver(pdbbase)
 dbLoadRecords("db/dbExample1.db","user=_USER_")
 dbLoadRecords("db/dbExample2.db","user=_USER_,no=1,scan=1 second")

@@ -22,9 +22,7 @@ inline unsigned long dbChannelIO::nativeElementCount () const
     if ( this->addr.no_elements >= 0u ) {
         return static_cast < unsigned long > ( this->addr.no_elements );
     }
-    else {
-        return 0u;
-    }
+    return 0u;
 }
 
 inline void dbChannelIO::destroy () 

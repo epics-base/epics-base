@@ -44,8 +44,6 @@ USER_DBDFLAGS += -I ..
 
 DBDINSTALL +=  dbCommonRecord.dbd 
 DBDINSTALL +=  menuGlobal.dbd
-DBDINSTALL +=  base.dbd
-DBDINSTALL += baseLIBOBJS
 
 include $(TOP)/config/RULES.Host
 

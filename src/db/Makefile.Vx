@@ -1,25 +1,7 @@
 TOP = ../../..
 include $(TOP)/config/CONFIG_BASE
 
-MENUS += menuAlarmSevr.h
-MENUS += menuAlarmStat.h
-MENUS += menuArrType.h
-MENUS += menuCompress.h
-MENUS += menuFtype.h
-MENUS += menuIvoa.h
-MENUS += menuLinr.h
-MENUS += menuOmsl.h
-MENUS += menuPriority.h
-MENUS += menuScan.h
-MENUS += menuYesNo.h
-
-RECTYPES += dbCommon.h
 USER_DBDFLAGS += -I ..
-
-DBDINSTALL +=  dbCommonRecord.dbd 
-DBDINSTALL +=  menuGlobal.dbd
-DBDINSTALL +=  base.dbd
-DBDINSTALL += baseLIBOBJS
 
 SRCS.c = \
 	../dbLock.c\

@@ -181,6 +181,8 @@ struct ioCard {
 #define 	CONST_NUM_LINKS	6
 #define         STATIC
 
+STATIC int devAvme9440Report();
+
 static unsigned short BASEADD;
 #define         LED_INIT        0x02
 #define         LED_OKRUN       0x03
@@ -206,7 +208,7 @@ struct {
 	DEVSUPFUN	write_bo;	/* output command goes here */
 }devBoAvme9440={
 	5,
-	NULL,
+	(DEVSUPFUN) devAvme9440Report,
 	init,
 	init_bo_record,
 	NULL,
@@ -263,7 +265,36 @@ struct {
 	NULL,
         read_mbbi
 };
+
+/**************************************************************************
+ *
+ * Ultra groovy and useful reporting function called from 'dbior'.
+ *
+ **************************************************************************/
+STATIC int devAvme9440Report()
+{
+	int		LinkNum = 0;
+	int		CardBase = BASEADD;
+	int		IntVec = INT_VEC_BASE;
 
+	while (LinkNum < avme9440_num_links)
+	{
+		if (cards[LinkNum].card != NULL)
+		{
+			printf("    Link %02.2d at 0x%4.4X, IRQ 0x%2.2X, input %04.4X, output %04.4X\n", 
+					LinkNum, 
+					CardBase, 
+					IntVec, 
+					cards[LinkNum].card->inputData, 
+					cards[LinkNum].card->outputData);
+
+		}
+		LinkNum++;
+		CardBase += sizeof(struct avme9440);
+		IntVec++;
+	}
+	return(0);
+}
 
 /**************************************************************************
 *

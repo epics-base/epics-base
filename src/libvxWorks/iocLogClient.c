@@ -1,5 +1,5 @@
-/* $Id$
- *
+/* $Id$ */
+/*
  *
  *      Author:         Jeffrey O. Hill 
  *      Date:           080791 
@@ -33,18 +33,6 @@
  * .01 joh 081591	Added epics env config
  * .02 joh 011995	Allow stdio also	
  * $Log$
- * Revision 1.10  1996/01/25 21:20:56  mrk
- * made iocLogDisable global
- *
- * Revision 1.9  1995/12/20 16:56:47  jhill
- * dont print no connect msg if it is benign
- *
- * Revision 1.8  1995/12/19  19:49:20  jhill
- * Use connectWithTimeout() instead of connect()
- *
- * Revision 1.7  1995/11/29  19:34:59  jhill
- * doc updated
- *
  */
 
 #include <string.h>
@@ -68,9 +56,13 @@
 #include <envDefs.h>
 #include <task_params.h>
 
+/*
+ * for use by the vxWorks shell
+ */
+int 		iocLogDisable = 0;
+
 LOCAL FILE		*iocLogFile = NULL;
 LOCAL int 		iocLogFD = ERROR;
-      int 		iocLogDisable = 0;
 LOCAL unsigned		iocLogTries = 0U;
 LOCAL unsigned		iocLogConnectCount = 0U;
 
@@ -101,6 +93,13 @@ int iocLogInit(void)
 	int	options;
 
 	if(iocLogDisable){
+		return OK;
+	}
+
+	/*
+	 * dont init twice
+	 */
+	if (iocLogMutex) {
 		return OK;
 	}
 
@@ -449,6 +448,19 @@ LOCAL void failureNotify(ENV_PARAM *pparam)
 	printf(
 	"IocLogClient: EPICS environment variable \"%s\" undefined\n",
 		pparam->name);
+}
+
+
+/*
+ * iocLogPrintf()
+ */
+int iocLogPrintf(const char *pFormat, ...)
+{
+	va_list		pvar;
+
+	va_start (pvar, pFormat);
+
+	return iocLogVPrintf (pFormat, pvar);
 }
 
 

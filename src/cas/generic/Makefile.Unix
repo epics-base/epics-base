@@ -3,6 +3,7 @@ TOP = ../../../..
 include $(TOP)/src/config/CONFIG_BASE
 
 INC += casdef.h
+INC += casInternal.h
 INC += casEventMask.h
 INC += gddAppFuncTable.h
 

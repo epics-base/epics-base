@@ -23,6 +23,8 @@ all:: install
 
 pre_build::
 
+rebuild:: clean install
+
 build:: pre_build $(LIBNAME) $(TARGETS) $(PROD)
 
 inc:: $(INSTALL_INC)
@@ -252,7 +254,7 @@ $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: %
 
 .PRECIOUS: %.o %.c
 
-.PHONY: all inc depends build install pre-build clean
+.PHONY: all inc depends build install pre-build clean rebuild
 
 -include .DEPENDS
 

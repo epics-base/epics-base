@@ -11,6 +11,7 @@ ACTIONS += inc
 ACTIONS += build
 ACTIONS += install
 ACTIONS += depends 
+ACTIONS += rebuild 
 
 actionPart = $(word 1, $(subst $(DIVIDER), ,$@))
 archPart = $(word 2, $(subst $(DIVIDER), ,$@))

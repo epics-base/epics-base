@@ -27,6 +27,8 @@ INSTALL_DBDNAME=$(DBDNAME:%=$(INSTALL_DBD)/%)
 
 all:: install
 
+rebuild:: clean install
+
 pre_build:: 
 
 build:: pre_build $(MENUS) $(RECTYPES) $(BPTS)\
@@ -90,20 +92,20 @@ clean::
 	$(YACC) $(YACCOPT) $<
 	@if [ -f y.tab.c ]; \
 		then \
-			echo "/bin/mv y.tab.c $*.c"; \
-			/bin/mv y.tab.c $*.c; \
+			echo "$(MV) y.tab.c $*.c"; \
+			$(MV) y.tab.c $*.c; \
 	fi
 	@if [ -f y.tab.h ]; \
 		then \
-			echo "/bin/mv y.tab.h $*.h"; \
-			/bin/mv y.tab.h $*.h; \
+			echo "$(MV) y.tab.h $*.h"; \
+			$(MV) y.tab.h $*.h; \
 	fi
 
 %.c: ../%.l
 	$(RM) lex.yy.c
 	$(LEX) $(LEXOPT) $<
 	$(RM) $@
-	/bin/mv lex.yy.c $@
+	$(MV) lex.yy.c $@
 
 #state notation language rules
 %.c: ../%.st
@@ -254,7 +256,7 @@ $(INSTALL_DOC)/%: ../%
 
 .PRECIOUS: %.o %.c
 
-.PHONY: all inc depends build install pre-build clean
+.PHONY: all inc depends build install pre-build clean rebuild
 
 -include .DEPENDS
 

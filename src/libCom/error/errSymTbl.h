@@ -20,4 +20,11 @@ typedef struct		/* ERRSYMTAB - symbol table */
     } ERRSYMTAB;
 typedef ERRSYMTAB *ERRSYMTAB_ID;
 
+
+#ifdef __STDC__
+static unsigned short errhash(long errNum);
+#else /*__STDC__*/
+static unsigned short errhash();
+#endif /*__STDC__*/
+
 #endif /* INCerrSymTblh */

@@ -772,14 +772,15 @@ specified in EPICS_CA_REPEATER_PORT.</p>
 <h4>Binding a Server to a Limited Set of Network Interfaces</h4>
 
 <p>The parameter EPICS_CAS_INTF_ADDR_LIST allows a ca server to bind itself
-to, and therefore accept messages only from, a limited set of network
-interfaces (each specified by it's IP address). Specifically, UDP search
-messages addressed to both the IP addresses in EPICS_CAS_INTF_ADDR_LIST and
-also to the broadcast addresses of the corresponding LAN interfaces will be
-accepted by the server. By default, the CA server is accessible from all
-network interfaces configured into its host.  <em>In R3.14 and previous
-releases the CA server employed by iocCore does not implemet this
-feature</em>.</p>
+to, and therefore accept messages only over, a limited set of the local
+host's network interfaces (each specified by it's IP address). On UNIX
+systems type "netstat -i" (type "ipconfig" on windows) to see a list of the
+local host's network interfaces. Specifically, UDP search messages addressed
+to both the IP addresses in EPICS_CAS_INTF_ADDR_LIST and also to the
+broadcast addresses of the corresponding LAN interfaces will be accepted by
+the server. By default, the CA server is accessible from all network
+interfaces configured into its host. <em>In R3.14 and previous releases the
+CA server employed by iocCore does not implemet this feature</em>.</p>
 
 <h4>Ignoring Process Variable Name Resolution Requests From Certain Hosts</h4>
 
@@ -1709,13 +1710,63 @@ properties such as units, limits, time stamp, or alarm status. The primitive
 C types follow a naming convention where the C typedef dbr_xxxx_t corresponds
 to the DBR_XXXX data type code. The compound (C structure) types follow a
 naming convention where the C structure tag dbr_xxxx corresponds to the
-DBR_XXXX data type code. The following table provides more details on the
+DBR_XXXX data type code. The following tables provides more details on the
 structure of the CA data type space. Since data addresses are passed to the
 CA client library as typeless "void *" pointers then care should be taken to
 ensure that you have passed the correct C data type corresponding to the
 DBR_XXXX type that you have specified. Architecture independent types are
 provided in db_access.h to assist programmers in writing portable code. For
-example "dbr_short_t" should be used to send or receive type DBR_SHORT.</p>
+example "dbr_short_t" should be used to send or receive type DBR_SHORT. Be
+aware that type name DBR_INT has been deprecated in favor of the less
+confusing type name DBR_SHORT. In practice, both the DBR_INT type code and
+the DBR_SHORT type code refer to a 16 bit integer type, and are functionally
+equivalent.</p>
+
+<table border="1">
+  <caption>Channel Access Primitive Data Types</caption>
+  <tbody>
+    <tr>
+      <th>CA Type Code</th>
+      <th>Primitive C Data Type</th>
+      <th>Data Size</th>
+    </tr>
+    <tr>
+      <td>DBR_CHAR</td>
+      <td>dbr_char_t</td>
+      <td>8 bit character</td>
+    </tr>
+    <tr>
+      <td>DBR_SHORT</td>
+      <td>dbr_short_t</td>
+      <td>16 bit integer</td>
+    </tr>
+    <tr>
+      <td>DBR_ENUM</td>
+      <td>dbr_enum_t</td>
+      <td>16 bit unsigned integer</td>
+    </tr>
+    <tr>
+      <td>DBR_LONG</td>
+      <td>dbr_long_t</td>
+      <td>32 bit signed integer</td>
+    </tr>
+    <tr>
+      <td>DBR_FLOAT</td>
+      <td>dbr_float_t</td>
+      <td>32 bit IEEE floating point</td>
+    </tr>
+    <tr>
+      <td>DBR_DOUBLE</td>
+      <td>dbr_double_t</td>
+      <td>64 bit IEEE floating point</td>
+    </tr>
+    <tr>
+      <td>DBR_STRING</td>
+      <td>dbr_string_t</td>
+      <td>40 character string</td>
+    </tr>
+  </tbody>
+</table>
 
 <table border="1">
   <caption>Structure of the Channel Access Data Type Space</caption>

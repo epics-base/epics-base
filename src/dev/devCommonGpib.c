@@ -1,4 +1,4 @@
-/* devXxCommonGpib.c */
+/* devCommonGpib.c */
 /* share/src/devOpt $Id$ */
 /*
  *      Author: 		John Winans

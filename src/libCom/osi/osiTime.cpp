@@ -768,6 +768,34 @@ extern "C" {
 #       endif
         return tsStampOK;
     }
+    epicsShareFunc int epicsShareAPI tsStampToTimeval (struct timeval *pDest, const TS_STAMP *pSrc)
+    {
+#       ifdef noExceptionsFromCXX
+            *pDest = osiTime (*pSrc);
+#       else
+            try {
+                *pDest = osiTime (*pSrc);
+            }
+            catch (...) {
+                return tsStampERROR;
+            }
+#       endif
+        return tsStampOK;
+    }
+    epicsShareFunc int epicsShareAPI tsStampFromTimeval (TS_STAMP *pDest, const struct timeval *pSrc)
+    {
+#       ifdef noExceptionsFromCXX
+            *pDest = osiTime (*pSrc);
+#       else
+            try {
+                *pDest = osiTime (*pSrc);
+            }
+            catch (...) {
+                return tsStampERROR;
+            }
+#       endif
+        return tsStampOK;
+    }
     epicsShareFunc double epicsShareAPI tsStampDiffInSeconds (const TS_STAMP *pLeft, const TS_STAMP *pRight)
     {
         return osiTime (*pLeft) - osiTime (*pRight);

@@ -24,6 +24,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 struct timespec;
+struct timeval;
 
 #define tsStampOK 0
 #define tsStampERROR (-1)
@@ -62,6 +63,12 @@ epicsShareFunc int epicsShareAPI tsStampFromTM (TS_STAMP *pDest, const struct tm
  */
 epicsShareFunc int epicsShareAPI tsStampToTimespec (struct timespec *pDest, const TS_STAMP *pSrc);
 epicsShareFunc int epicsShareAPI tsStampFromTimespec (TS_STAMP *pDest, const struct timespec *pSrc);
+
+/*
+ * convert to and from BSD's "struct timeval"
+ */
+epicsShareFunc int epicsShareAPI tsStampToTimeval (struct timeval *pDest, const TS_STAMP *pSrc);
+epicsShareFunc int epicsShareAPI tsStampFromTimeval (TS_STAMP *pDest, const struct timeval *pSrc);
 
 /*
  * arithmetic operations

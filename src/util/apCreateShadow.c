@@ -119,8 +119,9 @@ if ( access(dpath,R_OK|F_OK)) {
 DIRWALK applies a function to each file in a directory
 ****************************************************************************/
 static void
-dirwalk(dir, fcn)
+dirwalk(dir, dbflag,  fcn)
     char           *dir;
+    int             dbflag; /* in database directory flag*/
     void            (*fcn) ();
 {
     char            name[MAXNAMLEN];
@@ -139,7 +140,7 @@ dirwalk(dir, fcn)
 		    dir, dp->d_name);
 	else {
 	    sprintf(name, "%s/%s", dir, dp->d_name);
-	    (*fcn) (name, dir);
+	    (*fcn) (name, dir, dbflag);
 	}
     }
     closedir(dfd);
@@ -155,9 +156,13 @@ PROCESSFILE
 	create a soft link and return
 ****************************************************************************/
 static void
-processFile(name)
+processFile(name, indbdirflag)
     char           *name;	/* regular file */
+    int             indbdirflag;/* in database directory flag */
 {
+
+    char           *ptr;
+    char            cmd[2 * MAXNAMLEN];
     strcpy(spath, src_base);
     strcat(spath, "/");
     strcat(spath, name);
@@ -165,9 +170,20 @@ processFile(name)
     strcpy(dpath, dest_base);
     strcat(dpath, "/");
     strcat(dpath, name);
-    createLink();
-}
 
+    if ((ptr = (char *) strstr(name, "Db.")) != NULL
+	    && indbdirflag != 0) {
+	/* only link in <*>Db.database files */
+	if ((ptr = (char *) strstr(name, "Db.database")) != NULL) {
+	    createLink();
+	} else {
+	    return;
+	}
+    } else {
+	createLink();
+    }
+    return;
+}
 /****************************************************************************
 INIT_SETUP
 ****************************************************************************/
@@ -292,8 +308,9 @@ startFromHere()
     char            name[MAXNAMLEN];
     struct dirent  *dp;
     DIR            *dfd;
+    int             localdbflag=0; /* in database directory flag*/
     if ((dfd = opendir(dir)) == NULL) {
-	fprintf(stderr, "dirwalk: can't open %s\n", dir);
+	fprintf(stderr, "startFromHere: can't open %s\n", dir);
 	exit(1);
     }
     while ((dp = readdir(dfd)) != NULL) {
@@ -301,11 +318,11 @@ startFromHere()
 		|| strcmp(dp->d_name, "..") == 0)
 	    continue;		/* skip self and parent */
 	if (strlen(dir) + strlen(dp->d_name) + 2 > sizeof(name))
-	    fprintf(stderr, "dirwalk: name %s/%s too long\n",
+	    fprintf(stderr, "startFromHere: name %s/%s too long\n",
 		    dir, dp->d_name);
 	else {
 	    sprintf(name, "%s/%s", dir, dp->d_name);
-	    procDirEntries(name);
+	    procDirEntries(name,dir,localdbflag);
 	}
     }
     printf("\n");
@@ -316,27 +333,34 @@ PROCDIRENTRIES
     process directory entries
 ****************************************************************************/
 static void
-procDirEntries(name)
+procDirEntries(name, dir, indbdirflag)
     char           *name;	/* entry name */
+    char           *dir;
+    int             indbdirflag; /* in database directory flag*/
 {
     char           *ptr;
+    char           *ptr2;
     struct stat     stbuf;
+    int             localdbflag=0; /* in database directory flag*/
     if (lstat(name, &stbuf) == -1) {
 	fprintf(stderr, "procDirEntries: can't access %s\n", name);
 	exit(1);
     }
+	printf("."); fflush(stdout);
     if ((stbuf.st_mode & S_IFMT) == S_IFLNK) {
-	procLink(name);
+	procLink(name); 
 	return;
     }
     if ((stbuf.st_mode & S_IFMT) == S_IFREG) {
-	processFile(name);
+	processFile(name,indbdirflag);
 	return;
     }
-    printf("."); fflush(stdout);
     if ((stbuf.st_mode & S_IFMT) == S_IFDIR) {
 	/* access the last component (directory) in name */
 	ptr = (char *) strrchr(name, '/');
+	if ((ptr2 = (char *) strstr(ptr, "Db")) != NULL ) {
+	    localdbflag=1; /*set in database directory flag*/
+	}
 	if ((strcmp(ptr, "/SCCS")) == SAME) {
 	    /* dpath should be composed of - dest_base/SCCS */
 	    strcpy(dpath, dest_base);
@@ -352,14 +376,14 @@ procDirEntries(name)
 	strcpy(dpath, dest_base);
 	strcat(dpath, "/");
 	strcat(dpath, name);
-if ( access(dpath,R_OK|F_OK)) {
-	if ((mkdir(dpath, 0755)) != 0) {
-	    printf("####################################################\n");
-	    printf("procDirEntries: Can't mkdir %s - errno=%d\n", dpath,errno);
-	    printf("####################################################\n");
+	if (access(dpath, R_OK | F_OK)) {
+	    if ((mkdir(dpath, 0755)) != 0) {
+		printf("####################################################\n");
+		printf("procDirEntries: Can't mkdir %s - errno=%d\n", dpath, errno);
+		printf("####################################################\n");
+	    }
 	}
-}
-	dirwalk(name, procDirEntries);
+	dirwalk(name, localdbflag,  procDirEntries);
     }
     return;
 }

@@ -1,0 +1,10 @@
+
+TOP = ../../../..
+include $(TOP)/config/CONFIG_BASE
+
+TESTPROD := resourceLibTest tsDLListBench tsDLListTest tsDLListTest \
+		tsSLListBench tsSLListTest
+
+include $(TOP)/config/RULES.Host
+
+

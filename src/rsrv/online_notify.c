@@ -87,7 +87,7 @@ int rsrv_online_notify_task()
 	longStatus = envGetDoubleConfigParam (
 				&EPICS_CA_BEACON_PERIOD,
 				&maxPeriod);
-	if (longStatus) {
+	if (longStatus || maxPeriod<=0.0) {
 		maxPeriod = 15.0;
 		ca_printf (
 			"EPICS \"%s\" float fetch failed\n",
@@ -99,10 +99,10 @@ int rsrv_online_notify_task()
 	}
 
 	/*
-	 * 1 sec init delay between beacons
+	 * 1 tick initial delay between beacons
 	 */
-	delay = sysClkRateGet();
-	maxdelay = max(maxPeriod*sysClkRateGet(),sysClkRateGet());
+	delay = 1ul;
+	maxdelay = (unsigned long) maxPeriod*sysClkRateGet();
 
   	/* 
   	 *  Open the socket.

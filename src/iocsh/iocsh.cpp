@@ -21,6 +21,7 @@
 
 #include "errlog.h"
 #include "dbAccess.h"
+#include "epicsString.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
 #include "registry.h"
@@ -177,6 +178,10 @@ cvtArg (const char *filename, int lineno, char *arg, iocshArgBuf *argBuf, const 
 
     case iocshArgString:
         argBuf->sval = arg;
+        break;
+
+    case iocshArgPersistentString:
+        argBuf->sval = epicsStrDup(arg);
         break;
 
     case iocshArgPdbbase:

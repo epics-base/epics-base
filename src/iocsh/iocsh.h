@@ -25,7 +25,8 @@ typedef enum {
     iocshArgDouble,
     iocshArgString,
     iocshArgPdbbase,
-    iocshArgArgv
+    iocshArgArgv,
+    iocshArgPersistentString
 }iocshArgType;
 
 typedef union iocshArgBuf {

@@ -1,4 +1,38 @@
 
+/*
+ *	    $Id$
+ *
+ *      socket support library API def
+ *
+ *      7-1-97  -joh-
+ *
+ *      Experimental Physics and Industrial Control System (EPICS)
+ *
+ *      Copyright 1991, the Regents of the University of California,
+ *      and the University of Chicago Board of Governors.
+ *
+ *      This software was produced under  U.S. Government contracts:
+ *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *      and (W-31-109-ENG-38) at Argonne National Laboratory.
+ *
+ *      Initial development by:
+ *              The Controls and Automation Group (AT-8)
+ *              Ground Test Accelerator
+ *              Accelerator Technology Division
+ *              Los Alamos National Laboratory
+ *
+ *      Co-developed with
+ *              The Controls and Computing Group
+ *              Accelerator Systems Division
+ *              Advanced Photon Source
+ *              Argonne National Laboratory
+ *
+ *		Lawrence Berkley National Laboratory
+ *
+ *      Modification Log:
+ *      -----------------
+ */
+
 #include "osiSock.h"
 #include "shareLib.h"
 
@@ -9,10 +43,30 @@ extern "C" {
 /*
  * convert IP address to ASCII in this order
  * 1) look for matching host name
- * 2) convert to traditional dotted IP address (with trailing port)
+ * 2) convert to raw dotted IP address with trailing port
  */
 epicsShareFunc void epicsShareAPI ipAddrToA
 	(const struct sockaddr_in *pInetAddr, char *pBuf, unsigned bufSize);
+
+/*
+ * convert socket address to ASCII in this order
+ * 1) look for matching host name
+ * 2) convert to raw ascii address (typically this is a 
+ *      dotted IP address with trailing port)
+ */
+epicsShareFunc void epicsShareAPI sockAddrToA 
+			(const struct sockaddr *paddr, char *pBuf, unsigned bufSize);
+
+/*
+ * convert inet address to a host name string
+ *
+ * returns the number of bytes stored in buffer not counting the terminating 
+ * null character, or zero on failure
+ *
+ * OS specific
+ */
+epicsShareFunc unsigned epicsShareAPI ipAddrToHostName 
+            (const struct in_addr *pAddr, char *pBuf, unsigned bufSize);
 
 /*
  * attempt to convert ASCII string to an IP address in this order

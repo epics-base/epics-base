@@ -28,6 +28,8 @@
 #include <ioccrf.h>
 #include <dbStaticLib.h>
 
+static void logReset (void);
+
 /*
  ***********************************************************************
  *                         FATAL ERROR REPORTING                       *
@@ -258,7 +260,7 @@ Init (rtems_task_argument ignored)
     }
     printf ("***** Initializing syslog *****\n");
     openlog ("IOC", LOG_CONS, LOG_DAEMON);
-    syslog (LOG_NOTICE, "IOC started.");
+    logReset ();
 
     /*
      * Run the EPICS startup script
@@ -274,3 +276,53 @@ Init (rtems_task_argument ignored)
     ioccrf (NULL);
     LogFatal ("Console command interpreter terminated");
 }
+
+/*
+ * Architecture-dependent routines
+ */
+#ifdef __mcpu32__
+
+#include <m68360.h>
+static void
+logReset (void)
+{
+    int bit, rsr;
+    int i;
+    const char *cp;
+    char cbuf[80];
+
+    rsr = m360.rsr;
+    for (i = 0, bit = 0x80 ; bit != 0 ; bit >>= 1) {
+        if (rsr & bit) {
+            switch (bit) {
+            case 0x80:  cp = "RESETH*";         break;
+            case 0x40:  cp = "POWER-UP";        break;
+            case 0x20:  cp = "WATCHDOG";        break;
+            case 0x10:  cp = "DOUBLE FAULT";    break;
+            case 0x04:  cp = "LOST CLOCK";      break;
+            case 0x02:  cp = "RESET";           break;
+            case 0x01:  cp = "RESETS*";         break;
+            default:    cp = "??";              break;
+            }
+            i += sprintf (cbuf+i, cp); 
+            rsr &= ~bit;
+            if (rsr)
+                i += sprintf (cbuf+i, ", "); 
+            else
+                break;
+        }
+    }
+    syslog (LOG_NOTICE, "IOC startup after %s.", cbuf);
+    printf ("IOC startup after %s.\n", cbuf);
+    m360.rsr = ~0;
+}
+
+#else
+
+static void
+logReset (void)
+{
+    syslog (LOG_NOTICE, "IOC started.");
+}
+
+#endif

@@ -230,18 +230,13 @@ base.dbd. If these record types are used at your site, they  should be
 downloaded and built with base R3.14 by your EPICS administrator. To update
 the R3.14 location of these record types in your application you must  add
 appropriate module definitions to your application's config/RELEASE file and
-change the <tt>LIBOBJS</tt> definitions.</p>
+add <tt>LIBOBJS</tt> definitions to the src Makefile.</p>
 
 <p>For example add</p>
 
 <p>         <tt>PID=&lt;full path to modules directory&gt;/pid</tt></p>
 
-<p>to config/RELEASE. <br>
-Remove</p>
-
-<p>         <tt>LIBOBJS += $(EPICS_BASE_BIN)/pidRecord.o</tt></p>
-
-<p>from baseLIBOBJS, and add</p>
+<p>to config/RELEASE and add <br>
 
 <p></p>
 
@@ -298,8 +293,7 @@ administrator. dbLoadTemplate is still supported on iocs.  If, in your
 application, db files are created from template and substitution files you
 should  add the definition</p>
 
-<p><tt>EPICS_EXTENSIONS=&lt;full path name to epics extensions
-directory&gt;</tt></p>
+<p><tt>MSI=&lt;full path name to msi executable&gt;</tt></p>
 
 <p>to your application config/RELEASE file.</p>
 <br>

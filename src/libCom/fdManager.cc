@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.8  1997/05/29 21:37:38  tang
+// add ifdef for select call to support HP-UX
+//
 // Revision 1.7  1997/05/27 14:53:11  tang
 // fd_set cast in select for both Hp and Sun
 //
@@ -68,7 +71,7 @@ fdManager fileDescriptorManager;
 
 inline int selectErrno()
 {
-	return errno;
+	return SOCKERRNO;
 }
 
 //
@@ -151,7 +154,8 @@ void fdManager::process (const osiTime &delay)
 	for (iter=this->regList.first(); iter!=eol; ++iter) {
 		FD_SET(iter->getFD(), &this->fdSets[iter->getType()]); 
 	}
-	minDelay.getTV (tv.tv_sec, tv.tv_usec);
+	tv.tv_sec = minDelay.getSecTruncToLong ();
+	tv.tv_usec = minDelay.getUSecTruncToLong ();
 #ifdef __hpux
 	status = select (this->maxFD, (int *)&this->fdSets[fdrRead], 
 		(int *)&this->fdSets[fdrWrite], (int *)&this->fdSets[fdrExcp], &tv);
@@ -159,7 +163,6 @@ void fdManager::process (const osiTime &delay)
 	status = select (this->maxFD, (fd_set *)&this->fdSets[fdrRead], 
 		(fd_set *)&this->fdSets[fdrWrite], (fd_set *)&this->fdSets[fdrExcp], &tv);
 #endif
-
 	staticTimerQueue.process();
 	if (status==0) {
 		this->processInProg = 0;
@@ -172,8 +175,8 @@ void fdManager::process (const osiTime &delay)
 		}
 		else {
 			fprintf(stderr, 
-			"fdManager: select failed because \"%s\"\n",
-				strerror(selectErrno()));
+			"fdManager: select failed because errno=%d=\"%s\"\n",
+				selectErrno(), strerror(selectErrno()));
 		}
 	}
 
@@ -249,7 +252,7 @@ fdReg::~fdReg()
 //
 void fdReg::show(unsigned level) const
 {
-	printf ("fdReg at %x\n", (unsigned) this);
+	printf ("fdReg at %p\n", (void *) this);
 	if (level>1u) {
 		printf ("\tstate = %d, onceOnly = %d\n",
 			this->state, this->onceOnly);

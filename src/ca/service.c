@@ -31,6 +31,8 @@
 /*	022692	joh	moved modify of chan->state inside lock to	*/
 /*			provide sync necissary for new use of this 	*/
 /*			field.						*/
+/*	031692	joh	When bad cmd in message detected disconnect	*/
+/*			instead of terminating the client		*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -90,7 +92,7 @@ void		ca_request_event();
  * 
  * 
  */
-void 
+int
 post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 	register struct extmsg 		*hdrptr;
 	register long   		*pbufcnt;
@@ -138,7 +140,7 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 		msgcnt = sizeof(*hdrptr) + t_postsize;
 		if (*pbufcnt < msgcnt) {
 			post_msg_active--;
-			return;
+			return OK;
 		}
 
 		switch (t_cmmd) {
@@ -533,9 +535,12 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			break;
 		}
 		default:
-			printf("post_msg(): Corrupt Cmd in msg %x\n", 
+			printf("post_msg(): Corrupt cmd in msg %x\n", 
 				t_cmmd);
-			abort();
+
+			*pbufcnt = 0;
+			post_msg_active--;
+			return ERROR;
 		}
 
 		*pbufcnt -= msgcnt;
@@ -546,6 +551,7 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 
 	post_msg_active--;
 
+	return OK;
 }
 
 

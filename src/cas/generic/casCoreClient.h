@@ -108,6 +108,8 @@ public:
         bool & onTheEventQueue );
 	void addToEventQueue ( 
         casChannelI &, bool & inTheEventQueue );
+    void removeFromEventQueue ( class casChannelI &, 
+        bool & inTheEventQueue );
     void addToEventQueue ( class channelDestroyEvent & ev );
     void enableEvents ();
     void disableEvents ();
@@ -203,6 +205,12 @@ inline void casCoreClient::addToEventQueue (
 	if ( signalNeeded ) {
 		this->eventSignal ();
 	}
+}
+
+inline void casCoreClient::removeFromEventQueue ( class casChannelI & io, 
+    bool & inTheEventQueue )
+{
+    this->eventSys.removeFromEventQueue ( io, inTheEventQueue );
 }
 
 inline void casCoreClient::addToEventQueue ( class channelDestroyEvent & ev )

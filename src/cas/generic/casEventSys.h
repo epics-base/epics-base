@@ -85,6 +85,8 @@ public:
         bool & onTheEventQueue );
 	bool addToEventQueue ( 
         casChannelI &, bool & inTheEventQueue );
+    void removeFromEventQueue ( class casChannelI &, 
+        bool & inTheEventQueue );
 	bool addToEventQueue ( class channelDestroyEvent & );
 	bool getNDuplicateEvents () const;
 	void setDestroyPending ();

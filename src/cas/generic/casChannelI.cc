@@ -32,6 +32,9 @@ casChannelI::casChannelI ( casCoreClient & clientIn,
 
 casChannelI::~casChannelI ()
 {	    
+    this->privateForPV.client().removeFromEventQueue ( 
+        *this, this->accessRightsEvPending );
+
     this->pv.destroyAllIO ( this->ioList );
 
     this->serverDeletePending = true;

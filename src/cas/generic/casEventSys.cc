@@ -235,7 +235,17 @@ caStatus casEventSys::addToEventQueue ( casAsyncIOI & event,
     return S_cas_success;
 }
 
-bool casEventSys::addToEventQueue ( casChannelI & event, bool & inTheEventQueue )
+void casEventSys::removeFromEventQueue ( casAsyncIOI &  io, bool & onTheEventQueue )
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    if ( onTheEventQueue ) {
+        onTheEventQueue = false;
+	    this->eventLogQue.remove ( io );
+    }
+}
+
+bool casEventSys::addToEventQueue ( casChannelI & event, 
+    bool & inTheEventQueue )
 {
     bool wakeupRequired = false;
     {
@@ -248,14 +258,15 @@ bool casEventSys::addToEventQueue ( casChannelI & event, bool & inTheEventQueue 
     }
     return wakeupRequired;
 }
- 
-void casEventSys::removeFromEventQueue ( casAsyncIOI &  io, bool & onTheEventQueue )
+
+void casEventSys::removeFromEventQueue ( class casChannelI & io, 
+    bool & inTheEventQueue )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
-    if ( onTheEventQueue ) {
-        onTheEventQueue = false;
+	if ( inTheEventQueue ) {
+		inTheEventQueue = false;
 	    this->eventLogQue.remove ( io );
-    }
+	}
 }
 
 bool casEventSys::addToEventQueue ( channelDestroyEvent & event )

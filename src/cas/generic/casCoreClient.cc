@@ -19,6 +19,7 @@
 #include "casCoreClient.h"
 #include "casAsyncPVExistIOI.h"
 #include "casAsyncPVAttachIOI.h"
+#include "casChannelI.h"
 
 casCoreClient::casCoreClient ( caServerI & serverInternal ) :
     eventSys ( *this )
@@ -124,9 +125,10 @@ caStatus casCoreClient::channelCreateFailedResp (
 }
 caStatus casCoreClient::channelDestroyEventNotify ( 
     epicsGuard < casClientMutex > &, 
-    casChannelI * const, ca_uint32_t )
+    casChannelI * const pChan, ca_uint32_t )
 {
-	return S_casApp_noSupport;
+    delete pChan;
+	return S_casApp_success;
 }
 
 void casCoreClient::casChannelDestroyFromInterfaceNotify ( 

@@ -139,7 +139,6 @@ static int getOssPriorityValue(epicsThreadOSD *pthreadInfo)
 static epicsThreadOSD * create_threadInfo(const char *name)
 {
     epicsThreadOSD *pthreadInfo;
-    int status;
 
     pthreadInfo = callocMustSucceed(1,sizeof(*pthreadInfo),"create_threadInfo");
     pthreadInfo->suspendEvent = epicsEventMustCreate(epicsEventEmpty);

@@ -2219,6 +2219,8 @@ void verifyReasonableBeaconPeriod ( chid chan, unsigned interestLevel )
 {
     if ( ca_get_ioc_connection_count () > 0 ) {
         double beaconPeriod;
+        double watchDogDelay;
+        unsigned i;
 
         showProgressBegin ( "verifyReasonableBeaconPeriod", interestLevel );
 
@@ -2229,8 +2231,32 @@ void verifyReasonableBeaconPeriod ( chid chan, unsigned interestLevel )
         beaconPeriod = ca_beacon_period ( chan );
         assert ( beaconPeriod >= 0.0 );
 
-        printf ( "Estimated beacon period for channel %s = %f sec.\n", 
+        printf ( "Estimated beacon period for channel %s = %g sec.\n", 
             ca_name ( chan ), beaconPeriod );
+
+        watchDogDelay = ca_receive_watchdog_delay ( chan );
+        assert ( watchDogDelay >= 0.0 );
+
+        printf ( "busy: receive watchdog for \"%s\" expires in %g sec.\n",
+            ca_name ( chan ), watchDogDelay );
+
+        /* 
+         * let one default connection timeout go by w/o receive activity 
+         * so we can see if beacons reset the watchdog
+         */
+        for ( i = 0u; i < 15u; i++ ) {
+            showProgress ( interestLevel );
+            ca_pend_event ( 2.0 );
+        }
+        if ( interestLevel > 0 ) {
+            printf ( "\n" );
+        }
+
+        watchDogDelay = ca_receive_watchdog_delay ( chan );
+        assert ( watchDogDelay >= 0.0 );
+
+        printf ( "inactive: receive watchdog for \"%s\" expires in %g sec.\n",
+            ca_name ( chan ), watchDogDelay );
 
         showProgressEnd ( interestLevel );
     }

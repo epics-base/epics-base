@@ -413,7 +413,7 @@ void resTable<T,ID>::traverseConst ( void (T::*pCB)() const ) const
     while ( pList < &this->pTable[this->hashIdMask+1] ) {
         tsSLIterConst<T> pItem = pList->firstIter ();
         while ( pItem.valid () ) {
-            const tsSLIter<T> pNext = pItem;
+            tsSLIterConst<T> pNext = pItem;
             pNext++;
             ( pItem.pointer ()->*pCB ) ();
             pItem = pNext;

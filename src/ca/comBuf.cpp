@@ -133,7 +133,7 @@ void comBuf::throwInsufficentBytesException ()
     throw insufficentBytesAvailable ();
 }
 
-void comBuf::operator delete ( void *pCadaver ) 
+void comBuf::operator delete ( void *pCadaver ) epics_throws (())
 {
     // Visual C++ .net appears to require operator delete if
     // placement operator delete is defined? I smell a ms rat

@@ -55,7 +55,7 @@ recordtype(calcout) {
 		promptgroup(GUI_CALC)
 		special(SPC_CALC)
 		pp(TRUE)
-		size(36)
+		size(40)
 	}
         field(CLCV,DBF_LONG) {
                 prompt("CALC Valid")
@@ -328,7 +328,7 @@ recordtype(calcout) {
                 promptgroup(GUI_CALC)
                 special(SPC_CALC)
                 pp(TRUE)
-                size(36)
+                size(40)
         }
         field(OCLV,DBF_LONG) {
                 prompt("OCAL Valid")

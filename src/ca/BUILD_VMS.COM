@@ -23,7 +23,7 @@ $!
 $!========================================================================
 $!
 $! Example FTP script moves sources from UNIX to VMS
-$! (remove "$!" comment delimeters)
+$! (remove "$!" comment delimiters)
 $!
 $! user XXXXXXX 
 $! cd [.ca]
@@ -35,7 +35,9 @@ $! put BUILD_VMS.COM
 $! lcd ../libCom
 $! mput *.c
 $! mput *.h
-$! lcd ../../include
+$! lcd O.sun4
+$! mput envData.c
+$! lcd ../../../include
 $! mput *.h
 $!========================================================================
 $!
@@ -73,6 +75,7 @@ ENVSUBR, -
 TSSUBR, -
 NEXTFIELDSUBR, -
 ASSERTUNIX, -
+ENVDATA, -
 CATIME, - 
 ACCTST 
 $ endif
@@ -96,6 +99,7 @@ BUCKETLIB, -
 TSSUBR, -
 ENVSUBR, -
 NEXTFIELDSUBR, -
+ENVDATA, -
 ASSERTUNIX, -
 ELLLIB
 $! Link the test programs

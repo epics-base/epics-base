@@ -109,7 +109,7 @@ epicsShareFunc void epicsShareAPI epicsEventSignal (epicsEventId id)
 }
 
 /*
- * epicsEventLock ()
+ * epicsEventWait ()
  */
 epicsShareFunc epicsEventWaitStatus epicsShareAPI epicsEventWait (epicsEventId id) 
 { 
@@ -136,14 +136,17 @@ epicsShareFunc epicsEventWaitStatus epicsShareAPI epicsEventWaitWithTimeout (
     DWORD status;
     DWORD tmo;
 
-    if ( timeOut >= INFINITE / mSecPerSec ) {
-        tmo = INFINITE - 1;
-    }
-    else if ( timeOut < 0.0 ) {
+    if ( timeOut <= 0.0 ) {
         tmo = 0u;
+    }
+    else if ( timeOut >= INFINITE / mSecPerSec ) {
+        tmo = INFINITE - 1;
     }
     else {
         tmo = ( DWORD ) ( ( timeOut * mSecPerSec ) + 0.5 );
+        if ( tmo == 0 ) {
+            tmo = 1;
+        }
     }
     status = WaitForSingleObject ( pSem->handle, tmo );
     if ( status == WAIT_OBJECT_0 ) {

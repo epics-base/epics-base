@@ -84,7 +84,7 @@ int fetchClientContext ( cac **ppcac )
 /*
  *  Default Exception Handler
  */
-void ca_default_exception_handler ( struct exception_handler_args args )
+extern "C" void ca_default_exception_handler ( struct exception_handler_args args )
 {
     if ( args.chid && args.op != CA_OP_OTHER ) {
         ca_signal_formated (
@@ -110,12 +110,12 @@ void ca_default_exception_handler ( struct exception_handler_args args )
 /*
  *  ca_task_initialize ()
  */
-int epicsShareAPI ca_task_initialize ( void )
+extern "C" int epicsShareAPI ca_task_initialize ( void )
 {
     return ca_context_create ( false );
 }
 
-epicsShareFunc int epicsShareAPI ca_context_create ( int preemptiveCallBackEnable )
+extern "C" epicsShareFunc int epicsShareAPI ca_context_create ( int preemptiveCallBackEnable )
 {
     cac *pcac;
 
@@ -162,7 +162,7 @@ epicsShareFunc int epicsShareAPI ca_register_service ( cacServiceIO *pService )
 //
 // defunct
 //
-int epicsShareAPI ca_modify_host_name ( const char * )
+extern "C" int epicsShareAPI ca_modify_host_name ( const char * )
 {
     return ECA_NORMAL;
 }
@@ -172,7 +172,7 @@ int epicsShareAPI ca_modify_host_name ( const char * )
 //
 // defunct
 //
-int epicsShareAPI ca_modify_user_name ( const char * )
+extern "C" int epicsShareAPI ca_modify_user_name ( const char * )
 {
     return ECA_NORMAL;
 }
@@ -180,7 +180,7 @@ int epicsShareAPI ca_modify_user_name ( const char * )
 //
 // ca_context_destroy ()
 //
-epicsShareFunc int epicsShareAPI ca_context_destroy ()
+extern "C" epicsShareFunc int epicsShareAPI ca_context_destroy ()
 {
     cac   *pcac;
 
@@ -200,7 +200,7 @@ epicsShareFunc int epicsShareAPI ca_context_destroy ()
  *
  *  releases all resources alloc to a channel access client
  */
-epicsShareFunc int epicsShareAPI ca_task_exit ()
+extern "C" epicsShareFunc int epicsShareAPI ca_task_exit ()
 {
     return ca_context_destroy ();
 }
@@ -211,7 +211,7 @@ epicsShareFunc int epicsShareAPI ca_task_exit ()
  *
  *      backwards compatible entry point to ca_search_and_connect()
  */
-int epicsShareAPI ca_build_and_connect ( const char *name_str, chtype get_type,
+extern "C" int epicsShareAPI ca_build_and_connect ( const char *name_str, chtype get_type,
             unsigned long get_count, chid * chan, void *pvalue, 
             caCh *conn_func, void *puser )
 {
@@ -225,7 +225,7 @@ int epicsShareAPI ca_build_and_connect ( const char *name_str, chtype get_type,
 /*
  *  ca_search_and_connect() 
  */
-int epicsShareAPI ca_search_and_connect ( const char *name_str, chid *chanptr,
+extern "C" int epicsShareAPI ca_search_and_connect ( const char *name_str, chid *chanptr,
     caCh *conn_func, void *puser )
 {
     oldChannel      *pChan;
@@ -267,7 +267,7 @@ int epicsShareAPI ca_search_and_connect ( const char *name_str, chid *chanptr,
 /*
  * ca_array_get ()
  */
-int epicsShareAPI ca_array_get ( chtype type, unsigned long count, chid pChan, void *pValue )
+extern "C" int epicsShareAPI ca_array_get ( chtype type, unsigned long count, chid pChan, void *pValue )
 {
     return pChan->read ( type, count, pValue );
 }
@@ -275,7 +275,7 @@ int epicsShareAPI ca_array_get ( chtype type, unsigned long count, chid pChan, v
 /*
  * ca_array_get_callback ()
  */
-int epicsShareAPI ca_array_get_callback (chtype type, unsigned long count, chid pChan,
+extern "C" int epicsShareAPI ca_array_get_callback (chtype type, unsigned long count, chid pChan,
             caEventCallBackFunc *pfunc, void *arg)
 {
     getCallback *pNotify = new getCallback ( *pChan, pfunc, arg );
@@ -289,7 +289,7 @@ int epicsShareAPI ca_array_get_callback (chtype type, unsigned long count, chid 
 /*
  *  ca_array_put_callback ()
  */
-int epicsShareAPI ca_array_put_callback (chtype type, unsigned long count, 
+extern "C" int epicsShareAPI ca_array_put_callback (chtype type, unsigned long count, 
     chid pChan, const void *pvalue, caEventCallBackFunc *pfunc, void *usrarg)
 {
     putCallback *pNotify = new putCallback ( *pChan, pfunc, usrarg );
@@ -303,7 +303,7 @@ int epicsShareAPI ca_array_put_callback (chtype type, unsigned long count,
 /*
  *  ca_array_put ()
  */
-int epicsShareAPI ca_array_put ( chtype type, unsigned long count, 
+extern "C" int epicsShareAPI ca_array_put ( chtype type, unsigned long count, 
                                 chid pChan, const void *pvalue )
 {
      return pChan->write ( type, count, pvalue );
@@ -312,7 +312,7 @@ int epicsShareAPI ca_array_put ( chtype type, unsigned long count,
 /*
  *  Specify an event subroutine to be run for connection events
  */
-int epicsShareAPI ca_change_connection_event (chid pChan, caCh *pfunc)
+extern "C" int epicsShareAPI ca_change_connection_event (chid pChan, caCh *pfunc)
 {
     return pChan->changeConnCallBack ( pfunc );
 }
@@ -320,7 +320,7 @@ int epicsShareAPI ca_change_connection_event (chid pChan, caCh *pfunc)
 /*
  * ca_replace_access_rights_event
  */
-int epicsShareAPI ca_replace_access_rights_event ( chid pChan, caArh *pfunc )
+extern "C" int epicsShareAPI ca_replace_access_rights_event ( chid pChan, caArh *pfunc )
 {
     return pChan->replaceAccessRightsEvent ( pfunc );
 }
@@ -328,7 +328,7 @@ int epicsShareAPI ca_replace_access_rights_event ( chid pChan, caArh *pfunc )
 /*
  *  Specify an event subroutine to be run for asynch exceptions
  */
-int epicsShareAPI ca_add_exception_event ( caExceptionHandler *pfunc, void *arg )
+extern "C" int epicsShareAPI ca_add_exception_event ( caExceptionHandler *pfunc, void *arg )
 {
     cac *pcac;
     int caStatus;
@@ -346,7 +346,7 @@ int epicsShareAPI ca_add_exception_event ( caExceptionHandler *pfunc, void *arg 
 /*
  *  ca_add_masked_array_event
  */
-int epicsShareAPI ca_add_masked_array_event ( 
+extern "C" int epicsShareAPI ca_add_masked_array_event ( 
         chtype type, unsigned long count, chid pChan, 
         caEventCallBackFunc *pCallBack, void *pCallBackArg, 
         ca_real, ca_real, ca_real, 
@@ -419,13 +419,13 @@ int epicsShareAPI ca_add_masked_array_event (
  *  after leaving this routine.
  *
  */
-int epicsShareAPI ca_clear_event ( evid pMon )
+extern "C" int epicsShareAPI ca_clear_event ( evid pMon )
 {
     pMon->destroy ();
     return ECA_NORMAL;
 }
 
-chid epicsShareAPI ca_evid_to_chid ( evid pMon )
+extern "C" chid epicsShareAPI ca_evid_to_chid ( evid pMon )
 {
     return & pMon->channel ();
 }
@@ -433,7 +433,7 @@ chid epicsShareAPI ca_evid_to_chid ( evid pMon )
 /*
  *  ca_clear_channel ()
  */
-int epicsShareAPI ca_clear_channel (chid pChan)
+extern "C" int epicsShareAPI ca_clear_channel (chid pChan)
 {
     pChan->destroy ();
     return ECA_NORMAL;
@@ -442,7 +442,7 @@ int epicsShareAPI ca_clear_channel (chid pChan)
 /*
  * ca_pend ()
  */
-int epicsShareAPI ca_pend (ca_real timeout, int early)
+extern "C" int epicsShareAPI ca_pend (ca_real timeout, int early)
 {
     cac *pcac;
     int status;
@@ -458,7 +458,7 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 /*
  *  ca_flush_io ()
  */ 
-int epicsShareAPI ca_flush_io ()
+extern "C" int epicsShareAPI ca_flush_io ()
 {
     int caStatus;
     cac *pcac;
@@ -476,7 +476,7 @@ int epicsShareAPI ca_flush_io ()
 /*
  *  CA_TEST_IO ()
  */
-int epicsShareAPI ca_test_io ()
+extern "C" int epicsShareAPI ca_test_io ()
 {
     int caStatus;
     cac *pcac;
@@ -497,7 +497,7 @@ int epicsShareAPI ca_test_io ()
 /*
  *  CA_SIGNAL()
  */
-void epicsShareAPI ca_signal ( long ca_status, const char *message )
+extern "C" void epicsShareAPI ca_signal ( long ca_status, const char *message )
 {
     ca_signal_with_file_and_lineno ( ca_status, message, NULL, 0 );
 }
@@ -511,7 +511,7 @@ void epicsShareAPI ca_signal ( long ca_status, const char *message )
  * of this routine is calling this routine
  * (if they call this routine again).
  */
-const char * epicsShareAPI ca_message (long ca_status)
+extern "C" const char * epicsShareAPI ca_message (long ca_status)
 {
     unsigned msgNo = CA_EXTRACT_MSG_NO (ca_status);
 
@@ -526,7 +526,7 @@ const char * epicsShareAPI ca_message (long ca_status)
 /*
  * ca_signal_with_file_and_lineno()
  */
-void epicsShareAPI ca_signal_with_file_and_lineno ( long ca_status, 
+extern "C" void epicsShareAPI ca_signal_with_file_and_lineno ( long ca_status, 
             const char *message, const char *pfilenm, int lineno )
 {
     ca_signal_formated ( ca_status, pfilenm, lineno, message );
@@ -535,7 +535,7 @@ void epicsShareAPI ca_signal_with_file_and_lineno ( long ca_status,
 /*
  * ca_signal_formated()
  */
-void epicsShareAPI ca_signal_formated ( long ca_status, const char *pfilenm, 
+extern "C" void epicsShareAPI ca_signal_formated ( long ca_status, const char *pfilenm, 
                                        int lineno, const char *pFormat, ... )
 {
     cac           *pcac;
@@ -599,7 +599,7 @@ void epicsShareAPI ca_signal_formated ( long ca_status, const char *pfilenm,
  *  (for a manager of the select system call under UNIX)
  *
  */
-int epicsShareAPI ca_add_fd_registration (CAFDHANDLER *func, void *arg)
+extern "C" int epicsShareAPI ca_add_fd_registration (CAFDHANDLER *func, void *arg)
 {
     cac *pcac;
     int caStatus;
@@ -615,20 +615,9 @@ int epicsShareAPI ca_add_fd_registration (CAFDHANDLER *func, void *arg)
 }
 
 /*
- *  CA_DEFUNCT
- *
- *  what is called by vacated entries in the VMS share image jump table
- */
-int ca_defunct ()
-{
-    SEVCHK ( ECA_DEFUNCT, NULL );
-    return ECA_DEFUNCT;
-}
-
-/*
  * ca_get_host_name ()
  */
-void epicsShareAPI ca_get_host_name ( chid pChan, char *pBuf, unsigned bufLength )
+extern "C" void epicsShareAPI ca_get_host_name ( chid pChan, char *pBuf, unsigned bufLength )
 {
     pChan->hostName ( pBuf, bufLength );
 }
@@ -636,7 +625,7 @@ void epicsShareAPI ca_get_host_name ( chid pChan, char *pBuf, unsigned bufLength
 /*
  * ca_host_name ()
  */
-const char * epicsShareAPI ca_host_name ( chid pChan )
+extern "C" const char * epicsShareAPI ca_host_name ( chid pChan )
 {
     return pChan->pHostName ();
 }
@@ -644,7 +633,7 @@ const char * epicsShareAPI ca_host_name ( chid pChan )
 /*
  * ca_v42_ok(chid chan)
  */
-int epicsShareAPI ca_v42_ok (chid pChan)
+extern "C" int epicsShareAPI ca_v42_ok (chid pChan)
 {
     return pChan->ca_v42_ok ();
 }
@@ -653,7 +642,7 @@ int epicsShareAPI ca_v42_ok (chid pChan)
  * ca_version()
  * function that returns the CA version string
  */
-const char * epicsShareAPI ca_version()
+extern "C" const char * epicsShareAPI ca_version()
 {
     return CA_VERSION_STRING; 
 }
@@ -661,7 +650,7 @@ const char * epicsShareAPI ca_version()
 /*
  * ca_replace_printf_handler ()
  */
-int epicsShareAPI ca_replace_printf_handler (caPrintfFunc *ca_printf_func)
+extern "C" int epicsShareAPI ca_replace_printf_handler (caPrintfFunc *ca_printf_func)
 {
     cac     *pcac;
     int     caStatus;
@@ -716,7 +705,7 @@ int ca_vPrintf ( const char *pformat, va_list args )
 /*
  * ca_field_type()
  */
-short epicsShareAPI ca_field_type ( chid pChan ) 
+extern "C" short epicsShareAPI ca_field_type ( chid pChan ) 
 {
     return pChan->nativeType ();
 }
@@ -724,7 +713,7 @@ short epicsShareAPI ca_field_type ( chid pChan )
 /*
  * ca_element_count ()
  */
-unsigned long epicsShareAPI ca_element_count (chid pChan) 
+extern "C" unsigned long epicsShareAPI ca_element_count (chid pChan) 
 {
     return pChan->nativeElementCount ();
 }
@@ -732,7 +721,7 @@ unsigned long epicsShareAPI ca_element_count (chid pChan)
 /*
  * ca_state ()
  */
-epicsShareFunc enum channel_state epicsShareAPI ca_state (chid pChan)
+extern "C" epicsShareFunc enum channel_state epicsShareAPI ca_state (chid pChan)
 {
     return pChan->state ();
 }
@@ -740,7 +729,7 @@ epicsShareFunc enum channel_state epicsShareAPI ca_state (chid pChan)
 /*
  * ca_set_puser ()
  */
-epicsShareFunc void epicsShareAPI ca_set_puser (chid pChan, void *puser)
+extern "C" epicsShareFunc void epicsShareAPI ca_set_puser (chid pChan, void *puser)
 {
     pChan->setPrivatePointer (puser);
 }
@@ -748,7 +737,7 @@ epicsShareFunc void epicsShareAPI ca_set_puser (chid pChan, void *puser)
 /*
  * ca_get_puser ()
  */
-epicsShareFunc void * epicsShareAPI ca_puser (chid pChan)
+extern "C" epicsShareFunc void * epicsShareAPI ca_puser (chid pChan)
 {
     return pChan->privatePointer ();
 }
@@ -756,7 +745,7 @@ epicsShareFunc void * epicsShareAPI ca_puser (chid pChan)
 /*
  * ca_read_access ()
  */
-epicsShareFunc unsigned epicsShareAPI ca_read_access (chid pChan)
+extern "C" epicsShareFunc unsigned epicsShareAPI ca_read_access (chid pChan)
 {
     return pChan->readAccess ();
 }
@@ -764,7 +753,7 @@ epicsShareFunc unsigned epicsShareAPI ca_read_access (chid pChan)
 /*
  * ca_write_access ()
  */
-epicsShareFunc unsigned epicsShareAPI ca_write_access (chid pChan)
+extern "C" epicsShareFunc unsigned epicsShareAPI ca_write_access (chid pChan)
 {
     return pChan->writeAccess ();
 }
@@ -772,12 +761,12 @@ epicsShareFunc unsigned epicsShareAPI ca_write_access (chid pChan)
 /*
  * ca_name ()
  */
-epicsShareFunc const char * epicsShareAPI ca_name (chid pChan)
+extern "C" epicsShareFunc const char * epicsShareAPI ca_name (chid pChan)
 {
     return pChan->pName ();
 }
 
-epicsShareFunc unsigned epicsShareAPI ca_search_attempts (chid pChan)
+extern "C" epicsShareFunc unsigned epicsShareAPI ca_search_attempts (chid pChan)
 {
     return pChan->searchAttempts ();
 }
@@ -788,7 +777,7 @@ epicsShareFunc unsigned epicsShareAPI ca_search_attempts (chid pChan)
  * returns the number of IOC's that CA is connected to
  * (for testing purposes only)
  */
-unsigned epicsShareAPI ca_get_ioc_connection_count () 
+extern "C" unsigned epicsShareAPI ca_get_ioc_connection_count () 
 {
     cac *pcac;
     int caStatus;
@@ -801,14 +790,14 @@ unsigned epicsShareAPI ca_get_ioc_connection_count ()
     return pcac->connectionCount ();
 }
 
-epicsShareFunc int epicsShareAPI ca_channel_status ( threadId tid )
+extern "C" epicsShareFunc int epicsShareAPI ca_channel_status ( threadId tid )
 {
     printf ("new OSI API does not allow peeking at thread private storage of another thread\n");
     printf ("please call \"ca_client_status ( unsigned level )\" from the subsystem specific diagnostic code.\n");
 	return ECA_ANACHRONISM;
 }
 
-epicsShareFunc int epicsShareAPI ca_client_status ( unsigned level )
+extern "C" epicsShareFunc int epicsShareAPI ca_client_status ( unsigned level )
 {
     cac *pcac;
     int caStatus;
@@ -828,7 +817,7 @@ epicsShareFunc int epicsShareAPI ca_client_status ( unsigned level )
  * used when an auxillary thread needs to join a CA client context started
  * by another thread
  */
-epicsShareFunc int epicsShareAPI ca_current_context (caClientCtx *pCurrentContext)
+extern "C" epicsShareFunc int epicsShareAPI ca_current_context (caClientCtx *pCurrentContext)
 {
     if ( caClientContextId ) {
         void *pCtx = threadPrivateGet ( caClientContextId );
@@ -851,7 +840,7 @@ epicsShareFunc int epicsShareAPI ca_current_context (caClientCtx *pCurrentContex
  * used when an auxillary thread needs to join a CA client context started
  * by another thread
  */
-epicsShareFunc int epicsShareAPI ca_attach_context (caClientCtx context)
+extern "C" epicsShareFunc int epicsShareAPI ca_attach_context (caClientCtx context)
 {
     cac *pcac;
 

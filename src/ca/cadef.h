@@ -942,7 +942,7 @@ epicsShareFunc int epicsShareAPI ca_current_context (caClientCtx *pCurrentContex
 epicsShareFunc int epicsShareAPI ca_attach_context (caClientCtx context);
 
 epicsShareFunc int epicsShareAPI ca_channel_status (threadId tid);
-epicsShareFunc int epicsShareAPI ca_client_status (threadId tid, unsigned level);
+epicsShareFunc int epicsShareAPI ca_client_status (unsigned level);
 
 /*
  * deprecated

@@ -1153,7 +1153,6 @@ private:
 /*
  * CA internal functions
  */
-int ca_defunct (void);
 int ca_printf (const char *pformat, ...);
 int ca_vPrintf (const char *pformat, va_list args);
 epicsShareFunc void epicsShareAPI ca_repeater (void);

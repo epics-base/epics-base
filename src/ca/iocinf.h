@@ -36,9 +36,6 @@
 #   define NELEMENTS(array)    (sizeof(array)/sizeof((array)[0]))
 #endif
 
-#define MSEC_PER_SEC    1000L
-#define USEC_PER_SEC    1000000L
-
 #if defined ( CLOCKS_PER_SEC )
 #   define CAC_SIGNIFICANT_DELAY ( 1.0 / CLOCKS_PER_SEC )
 #else
@@ -55,8 +52,8 @@
  * CA_CONN_VERIFY_PERIOD is normally obtained from an
  * EPICS environment variable.
  */
-const static double CA_ECHO_TIMEOUT = 5.0; /* (sec) disconn no echo reply tmo */ 
-const static double CA_CONN_VERIFY_PERIOD = 30.0; /* (sec) how often to request echo */
+static const double CA_ECHO_TIMEOUT = 5.0; /* (sec) disconn no echo reply tmo */ 
+static const double CA_CONN_VERIFY_PERIOD = 30.0; /* (sec) how often to request echo */
 
 /*
  * this determines the number of messages received

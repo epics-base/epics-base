@@ -66,7 +66,8 @@ public:
         ( cacNotify &, epicsGuard < cacMutex > & ) = 0;
     virtual void requestRecvProcessPostponedFlush () = 0;
     virtual osiSockAddr getNetworkAddress () const = 0;
-    virtual void uninstallChan ( epicsGuard < cacMutex > &, nciu & ) = 0;
+    virtual void uninstallChan ( epicsGuard < callbackMutex > &, 
+        epicsGuard < cacMutex > &, nciu & ) = 0;
     virtual double receiveWatchdogDelay () const = 0;
 };
 

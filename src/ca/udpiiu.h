@@ -96,7 +96,8 @@ public:
     void beaconAnomalyNotify ( const epicsTime & currentTime );
     int printf ( const char *pformat, ... );
     unsigned channelCount ( epicsGuard < udpMutex > & ) const;
-    void uninstallChan ( epicsGuard < cacMutex > &, nciu & );
+    void uninstallChan ( 
+        epicsGuard < callbackMutex > &, epicsGuard < cacMutex > &, nciu & );
     bool pushDatagramMsg ( const caHdr & hdr, 
         const void * pExt, ca_uint16_t extsize);
     void shutdown ();

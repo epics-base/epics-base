@@ -1072,6 +1072,7 @@ int udpiiu::printf ( const char *pformat, ... )
 }
 
 void udpiiu::uninstallChan ( 
+    epicsGuard < callbackMutex > &,
     epicsGuard < cacMutex > &, nciu & chan )
 {
     epicsGuard < udpMutex > guard ( this->mutex );

@@ -152,6 +152,7 @@ LINK_OPT_FLAGS_NO = -c -C -Gi -Gn -Tpd -x -w-
 WIN32_DLLFLAGS = $(LINK_OPT_FLAGS_$(HOST_OPT)) $(TARGET_LDFLAGS) $(LIB_LDFLAGS)
 OPT_LDFLAGS =
 
+SHRLIB_CFLAGS=
 ARCH_DEP_CFLAGS=
 
 #	to identify the general architecture class:

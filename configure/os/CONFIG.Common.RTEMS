@@ -98,13 +98,13 @@ GCC_CONFORM_CFLAGS_STRICT =
 G++_CONFORM_CFLAGS_STRICT =
 
 #--------------------------------------------------
-# RTEMS uses C++ constructors to register commands/programs
+# RTEMS uses C++ constructors to register commands/programs (snc +i option)
 %.o: ../%.st
 	@echo "preprocessing $*.st"
 	@$(RM) $*.i
 	$(CPP) $(CPPSNCFLAGS) $< > $*.i
 	@echo "converting $*.i"
 	@$(RM) $*.c
-	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.i
+	$(SNC) +i $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.i
 	@$(RM) $@
 	$(COMPILE.cpp) -x c++ -Wno-deprecated $*.c

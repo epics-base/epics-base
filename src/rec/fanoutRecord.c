@@ -142,17 +142,17 @@ static long process(pfanout)
     dbGetLink(&(pfanout->sell),DBR_USHORT,&(pfanout->seln),0,0);
     switch (pfanout->selm){
     case (SELECT_ALL):
-        if (pfanout->lnk1.type==DB_LINK) 
+        if (pfanout->lnk1.type!=CONSTANT) 
 		dbScanPassive((void *)pfanout,((struct dbAddr *)pfanout->lnk1.value.pv_link.pvt)->precord);
-        if (pfanout->lnk2.type==DB_LINK)
+        if (pfanout->lnk2.type!=CONSTANT)
 		dbScanPassive((void *)pfanout,((struct dbAddr *)pfanout->lnk2.value.pv_link.pvt)->precord);
-        if (pfanout->lnk3.type==DB_LINK)
+        if (pfanout->lnk3.type!=CONSTANT)
 		dbScanPassive((void *)pfanout,((struct dbAddr *)pfanout->lnk3.value.pv_link.pvt)->precord);
-        if (pfanout->lnk4.type==DB_LINK)
+        if (pfanout->lnk4.type!=CONSTANT)
 		dbScanPassive((void *)pfanout,((struct dbAddr *)pfanout->lnk4.value.pv_link.pvt)->precord);
-        if (pfanout->lnk5.type==DB_LINK)
+        if (pfanout->lnk5.type!=CONSTANT)
 		dbScanPassive((void *)pfanout,((struct dbAddr *)pfanout->lnk5.value.pv_link.pvt)->precord);
-        if (pfanout->lnk6.type==DB_LINK)
+        if (pfanout->lnk6.type!=CONSTANT)
 		dbScanPassive((void *)pfanout,((struct dbAddr *)pfanout->lnk6.value.pv_link.pvt)->precord);
         break;
     case (SELECTED):
@@ -178,7 +178,7 @@ static long process(pfanout)
         plink=&(pfanout->lnk1);
         state=pfanout->seln;
         for ( i=0; i<6; i++, state>>=1, plink++) {
-            if(state & 1 && plink->type==DB_LINK)
+            if(state & 1 && plink->type!=CONSTANT)
 			dbScanPassive((void *)pfanout,((struct dbAddr *)plink->value.pv_link.pvt)->precord);
         }
         break;

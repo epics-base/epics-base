@@ -13,11 +13,11 @@ DIRS += include
 DIRS += cxxTemplates 
 DIRS += toolsComm
 DIRS += makeBaseApp 
+DIRS += osi 
 DIRS += libCom 
-DIRS += libvxWorks
-DIRS += cvtDctsdr 
 DIRS += dbStatic 
 DIRS += db 
+DIRS += registry 
 DIRS += bpt 
 DIRS += ca 
 DIRS += util 
@@ -27,10 +27,9 @@ DIRS += dbtools
 DIRS += rsrv
 DIRS += rec
 DIRS += as 
-DIRS += drv
 DIRS += dev
-DIRS += devOpt
-DIRS += iocCore
+#FOR NOW JUST BUILD vxWorks dependent stuff
+DIRS += vxWorks
 
 #
 # if CPLUSPLUS isnt empty then include C++ src codes

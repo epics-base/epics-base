@@ -27,4 +27,13 @@
  * -----------------
  * .01	21JAN2000	mrk	split main from ca_test.c
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int ca_test(char *pname, char *pvalue);
+
+#ifdef __cplusplus
+}
+#endif

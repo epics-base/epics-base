@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.31  1999/08/10 17:11:01  jhill
+ * moved inlines in order to eliminate g++ warnings
+ *
  * Revision 1.30  1999/08/10 16:51:05  jhill
  * moved inlines in order to eliminate g++ warnings
  *
@@ -121,15 +124,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
+#include <stdlib.h>
+
 #include <sys/types.h>
 
 #if defined(_WIN32)
-#       include <stdlib.h>
 #elif defined(vxWorks)
 #       include <time.h>
 #elif defined(UNIX)
         // hopefully a posix compliant OS
-#       include <stdlib.h>
 #       include <unistd.h>
 #       include <sys/time.h>
 #endif

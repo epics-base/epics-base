@@ -21,6 +21,7 @@ of this distribution.
 #include <string.h>
 
 #define ERRLOG_INIT
+#include "dbDefs.h"
 #include "osiThread.h"
 #include "osiSem.h"
 #include "osiInterrupt.h"

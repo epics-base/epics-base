@@ -5,6 +5,9 @@
 //
 //
 // $Log$
+// Revision 1.6  1996/11/02 00:54:46  jhill
+// many improvements
+//
 // Revision 1.5  1996/09/16 18:25:16  jhill
 // vxWorks port changes
 //
@@ -271,14 +274,30 @@ bufSizeT casStreamIO::incommingBytesPresent() const
 
 	status = socket_ioctl(this->sock, FIONREAD, &nchars);
 	if (status<0) {
-		ca_printf("CAS: FIONREAD err %s\n", strerror(SOCKERRNO));
+		char buf[64];
+
+		/*
+		 * normal conn lost conditions
+		 */
+		switch(SOCKERRNO){
+		case ECONNABORTED:
+		case ECONNRESET:
+		case ETIMEDOUT:
+			break;
+
+		default:
+			ipAddrToA(&this->addr.in, buf, sizeof(buf));
+			ca_printf(
+		"CAS: FIONREAD for %s failed because \"%s\"\n",
+				buf, strerror(SOCKERRNO));
+		}
 		return 0u;
 	}
 	else if (nchars<0) {
 		return 0u;
 	}
 	else {
-		return (bufSizeT) status;
+		return (bufSizeT) nchars;
 	}
 }
 

@@ -4,6 +4,8 @@ include $(TOP)/config/CONFIG_BASE
 
 CXXCMPLR = STRICT
 
+PROD_LIBS = Com
+
 TESTPROD := resourceLibTest tsDLListBench tsDLListTest tsDLListTest \
 		tsSLListBench tsSLListTest minmaxTest tsBTreeBench tsBTreeTest
 

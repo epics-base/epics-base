@@ -52,6 +52,9 @@
  * .01	 1-04-96	rc	Created using existing Allen Bradley device
  *				support as a model
  * .02   6-17-96	rc	Mods to make -Wall -pedantic not complain
+ * .03   7-30-96	rc	Changed alarm severity reporting in Hstp1Write
+ * .04  10-09-96        rc/saa  Fix bug when there's no hardware and remove
+ *                              HW limit alarm.
  * 	...
  */
 
@@ -304,7 +307,7 @@
 #define HSTP1_K_SCANDELAY           (sysClkRateGet () / 3)
 
 #define VELOCITY  0                     /* From recSteppermotor.c */
-#define POSITION  1                     /*          "             */
+#define POSITION  1                     /*   "      "             */
 
 /* Create the dsets*/
 static long report     (int);
@@ -1200,10 +1203,6 @@ static void StateCmdRead (Hstp1Pvt *hstp1,
   {
     recGblSetSevr (hstp1->rec, UDF_ALARM, INVALID_ALARM);
   }
-  else if (cmd->status[0] & HSTP1_M_INPERRS)
-  {
-    recGblSetSevr (hstp1->rec, HW_LIMIT_ALARM, MAJOR_ALARM);
-  }
   else if (cmd->status[0] & HSTP1_M_CMDERR)
   {
     recGblSetSevr (hstp1->rec, WRITE_ALARM, MINOR_ALARM);
@@ -1320,8 +1319,11 @@ static int Hstp1Write (Hstp1Pvt  *hstp1,
   /* If not queued within the timeout period, indicate error */
   if (status != abBtqueued)
   {
+    unsigned short  severity = INVALID_ALARM;
+
     Dbg (Printf (FN, "btWrite failed with %s", abStatusMessage[status]));
-    recGblSetSevr (hstp1->rec, WRITE_ALARM, MAJOR_ALARM);
+    if ((status == abBusy) || (status == abTimeout))  severity = MAJOR_ALARM;
+    recGblSetSevr (hstp1->rec, WRITE_ALARM, severity);
     semGive (hstp1->allocSem);
     return (ERROR);
   }
@@ -1595,8 +1597,15 @@ static long report (int level)
 */
 {
   Hstp1Blk           *hstp1Blk = Hstp1;
-  register Hstp1Pvt  *hstp1    = (Hstp1Pvt *) lstFirst (&hstp1Blk->scanLst);
+  register Hstp1Pvt  *hstp1;
 
+
+  if (hstp1Blk == 0)
+  {
+    epicsPrintf ("AB-1746HSTP1 card(s) not initialized\n");
+    return (0);
+  }
+  hstp1 = (Hstp1Pvt *) lstFirst (&hstp1Blk->scanLst);
 
   while (hstp1)
   {
@@ -1700,4 +1709,3 @@ static int Hstp1Printf (const char *fn, char *fmt, ...)
   va_start (var, fmt);
   return (epicsVprintf (fmtBuf, var));
 }
-

@@ -46,8 +46,6 @@ short	update_count;
 short	stop_count;
 };
 
-#define SM_BASE_ADDR	0xfffc00
-
 #define	MIRQE			0x80
 #define	TRANSMIT_BUFFER_EMPTY	0x40
 #define	INPUT_BUFFER_FULL	0x20

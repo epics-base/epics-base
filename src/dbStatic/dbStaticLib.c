@@ -55,7 +55,6 @@ int dbStaticDebug = 0;
 #define messagesize	100
 #define RPCL_LEN 184
 #define MAX_FIELD_NAME_LENGTH 20
-long postfix(char *pinfix, char *ppostfix,short *perror);
 
 static char *ppstring[5]={"NPP","PP","CA","CP","CPP"};
 static char *msstring[2]={"NMS","MS"};

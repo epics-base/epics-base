@@ -78,6 +78,7 @@ int gethostname (char *name, int namelen);
 #	define h_addr  h_addr_list[0]  /* address, for backward compatiblity */
 	};
 	struct hostent *gethostbyaddr(char *addr, int len, int type);
+	struct hostent *gethostnyname(const char *name);
 
 #endif /* !defined(__SUNPRO_CC) */
 

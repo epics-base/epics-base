@@ -11,7 +11,7 @@ CMPLR = STRICT
 
 #	Add-on CFLAGS that are needed by this Makefile.
 #	(If possible, all system specific flags should be
-#	 defined in CONFIG.Host.$(ARCH_CLASS))
+#	 defined in CONFIG.Host.$(OS_CLASS))
 #
 #       These CFLAGS rules also apply to these Makefile-variables:
 #		CXXFLAGS    C++ flags
@@ -19,7 +19,7 @@ CMPLR = STRICT
 #
 #	This is used on all systems:
 USR_CFLAGS         = -DVAR=value -Ddefine_for_all_systems
-#	This is added to the above, but only for ARCH_CLASS=BSD:
+#	This is added to the above, but only for OS_CLASS=BSD:
 USR_CFLAGS_BSD     = -DVERSION='Berkeley enhanced'
 #	..only for WIN32:
 USR_CFLAGS_WIN32   = -DVERSION='WIN32 port'
@@ -47,14 +47,14 @@ a_file_CFLAGS_WIN32   = -DVERSION='WIN32 port'
 #	sources are extracted from either the
 #	             '..'
 #	dir or - if it exists - the dir
-#	             '../$(ARCH_CLASS)'
+#	             '../$(OS_CLASS)'
 #	is preferred.
 #	---------------------------------------------------------
 
 
 #	includes to install from this Makefile
 #
-#	again: if INC_$(ARCH_CLASS) is defined, it is added to INC,
+#	again: if INC_$(OS_CLASS) is defined, it is added to INC,
 #	otherwise INC_DEFAULT (if defined) is added:
 #
 INC_DEFAULT = for_all_but_WIN32_or_hp700.h
@@ -71,13 +71,13 @@ INC         = file.h
 #	are derived automatically.
 #
 #	Platform specific objects:
-#	use LIBOBJS_$(ARCH_CLASS)  or  .._DEFAULT
+#	use LIBOBJS_$(OS_CLASS)  or  .._DEFAULT
 #
 #	Platform specific files can also be put in
-#	separate os/ARCH_CLASS directories!
+#	separate os/OS_CLASS directories!
 #
 #	For almost every file the seach order is:
-#	./os/ARCH_CLASS
+#	./os/OS_CLASS
 #	./os/generic
 #	.
 #	So usually only LIBSRCS should be sufficient!
@@ -164,7 +164,7 @@ PROD_VERSION =
 
 #	Scripts to install
 #
-#	If there is  both  ../$(SCRIPT) and  ../$(ARCH_CLASS)/$(SCRIPT),
+#	If there is  both  ../$(SCRIPT) and  ../$(OS_CLASS)/$(SCRIPT),
 #	the latter, system specific version will be installed!
 #
 SCRIPTS_DEFAULT = script_for_rest

@@ -42,7 +42,7 @@ endif
 #	hkbaja47
 #
 #CROSS_COMPILER_TARGET_ARCHS= vxWorks_68040
-CROSS_COMPILER_TARGET_ARCHS= mv167
+CROSS_COMPILER_TARGET_ARCHS= mv167 ppc604
 
 
 #  If only a subset of the host architectures perform
@@ -101,7 +101,7 @@ HOST_OPT=YES
 
 #  VxWorks Optimization
 #	must be either YES or NO
-VX_OPT=YES
+CROSS_OPT=YES
 
 #  Generate Verbose Compiler Warnings for Unix
 #	must be either YES or NO
@@ -109,4 +109,4 @@ HOST_WARN=YES
 
 #  Generate Verbose Compiler Warnings for crosscompiles
 #	must be either YES or NO
-VX_WARN=YES
+CROSS_WARN=YES

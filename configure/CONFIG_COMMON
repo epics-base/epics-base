@@ -6,10 +6,9 @@
 #  This file is to be maintained by the community.
 #
 
-# Common Configuration Information 
+BUILD_TYPE = HOST
 
-####################################################################
-####################################################################
+# Common Configuration Information 
 
 # CROSS1 will be defined only when CROSS_COMPILER_HOST_ARCHS is NOT defined
 CROSS1 = $(CROSS_COMPILER_TARGET_ARCHS$(word 1,$(CROSS_COMPILER_HOST_ARCHS)))
@@ -19,9 +18,6 @@ CROSS1 = $(CROSS_COMPILER_TARGET_ARCHS$(word 1,$(CROSS_COMPILER_HOST_ARCHS)))
 CROSS2 = $(CROSS_COMPILER_TARGET_ARCHS$(filter-out 1,$(words $(filter $(HOST_ARCH),$(CROSS_COMPILER_HOST_ARCHS)))))
 
 BUILD_ARCHS = $(HOST_ARCH) $(CROSS1) $(CROSS2)
-
-####################################################################
-####################################################################
 
 INSTALL_LOCATION            = $(TOP)
 
@@ -80,9 +76,9 @@ GCC_SFLAGS_YES = -static
 GCC_SFLAGS_NO =
 GCC_SLIBS_YES =
 GCC_SLIBS_NO =
-GCC_CROSSFLAGS_YES = -B$(GNU_LIB)/gcc-lib/ -nostdinc
-GCC_CPPCROSSFLAGS_YES = -nostdinc
-###############GCC_SHRLIB_CFLAGS_YES =  -fPIC
+GCC_CFLAGS_CROSS = -B$(GNU_LIB)/gcc-lib/ -nostdinc
+GCC_CPPFLAGS_CROSS = -nostdinc
+GCC_SHRLIB_CFLAGS_YES =  -fPIC
 GCC_SHRLIB_LDFLAGS_YES =  -shared
 
 G++ = $(GNU_BIN)/cc$(CMPLR_SUFFIX)
@@ -104,21 +100,20 @@ G++_SFLAGS_NO =
 G++_SLIBS_YES =
 G++_SLIBS_NO =
 G++_DEPENDS_FLAG = -MM
-###############G++_SHRLIB_CFLAGS_YES =  -fPIC
+G++_SHRLIB_CFLAGS_YES =  -fPIC
 G++_SHRLIB_LDFLAGS_YES =  -shared
 
 #--------------------------------------------------
 # C compiler
-CC = $($(ANSI)_$(CMPLR)) $(GCC_CROSSFLAGS_$(CROSS))
+CC = $($(ANSI)_$(CMPLR)) $(GCC_CFLAGS_$(BUILD_TYPE))
 AR = $($(ANSI)_AR)
-CPP =  $($(ANSI)_CPP) $(GCC_CPPCROSSFLAGS_$(CROSS))
+CPP =  $($(ANSI)_CPP) $(GCC_CPPFLAGS_$(BUILD_TYPE))
 RANLIB =  $($(ANSI)_RANLIB)
 LD = $($(ANSI)_LD)
 
 #--------------------------------------------------
 # C++ compiler
-CXX = $($(CPLUSPLUS)_$(CXXCMPLR)) $(GCC_CROSSFLAGS_$(CROSS))
-#####################  CXX_LD definition may not be necessary
+CXX = $($(CPLUSPLUS)_$(CXXCMPLR)) $(GCC_CFLAGS_$(BUILD_TYPE))
 CXX_LD = $($(CPLUSPLUS)_LD)
 
 #---------------------------------------------------------------
@@ -174,12 +169,7 @@ DEPENDS_FLAG = $($(CPLUSPLUS)_DEPENDS_FLAG)
 TEMPL_INST_CXXFLAG = $($(CPLUSPLUS)_TEMPL_INST_FLAG)
 
 #--------------------------------------------------
-#  (CONFIG.Vx will override OS_CLASS)
-OS_CLASS = $(ARCH_CLASS)
-
-#--------------------------------------------------
-# Install includes and dbd directory
-INSTALL_INCLUDES = -I$(INSTALL_INCLUDE)/os/$(OS_CLASS) -I$(INSTALL_INCLUDE)
+# dbd directory
 INSTALL_DBDFLAGS = -I $(INSTALL_LOCATION)/dbd
 
 #--------------------------------------------------
@@ -211,7 +201,7 @@ DEPENDS_RULE = -$(COMPILE.cc) $(DEPENDS_FLAG) $^ > DEPENDS
 #--------------------------------------------------
 # Include files
 
-INCLUDES = -I- $(USR_INCLUDES) -I. -I.. $(INSTALL_INCLUDES) $(TARGET_INCLUDES) $(OP_SYS_INCLUDES)
+INCLUDES = -I. -I.. $(USR_INCLUDES) $(INSTALL_INCLUDES) $(TARGET_INCLUDES) $(OP_SYS_INCLUDES)
 
 CFLAGS = $(OPT_CFLAGS) $(DEBUG_CFLAGS) $(WARN_CFLAGS) $(TARGET_CFLAGS)\
  $(USR_CFLAGS) $(ARCH_DEP_CFLAGS) $(VENDOR_DEP_CFLAGS) $(STATIC_CFLAGS)\

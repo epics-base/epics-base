@@ -19,6 +19,7 @@ CONFIGS += $(subst ../,,$(wildcard ../CONFIG.Target.*))
 CONFIGS += $(subst ../,,$(wildcard ../CONFIG_SITE*))
 
 CONFIGS += RELEASE
+CONFIGS += $(subst ../,,$(wildcard ../RELEASE.*))
 CONFIGS += RULES_ARCHS
 CONFIGS += RULES_BUILD
 CONFIGS += RULES_DIRS

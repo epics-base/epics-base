@@ -4,7 +4,7 @@
  
 
 ARCHS += $(BUILD_ARCHS) host cross
-ACTIONS += clean inc depends buildInstall
+ACTIONS += clean depends buildInstall
  
 dirPart = $(word 1, $(subst $(DIVIDER), ,$@))
 actionArchPart = $(subst $(dirPart)$(DIVIDER), ,$@)
@@ -27,16 +27,14 @@ installArchTargets = $(foreach action, install,\
                     $(foreach arch, $(ARCHS), \
                     $(action)$(DIVIDER)$(arch)))
 
-all install :: inc buildInstall 
+all install : buildInstall 
 
-rebuild:: clean all
-
-$(ARCHS) $(installArchTargets) :: inc
+rebuild : clean all
 
 $(DIRS) $(dirActionTargets) $(dirArchTargets)$(dirActionArchTargets) ::
 	$(MAKE) -C $(dirPart) $(actionArchPart)
 
-$(ARCHS) $(ACTIONS) $(actionArchTargets) ::%: \
+$(ARCHS) $(ACTIONS) $(actionArchTargets) :%: \
 	$(foreach dir, $(DIRS), $(dir)$(DIVIDER)%)
  
 

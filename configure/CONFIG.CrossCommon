@@ -1,6 +1,6 @@
 # Cross compiler default definitions
 
-CROSS = YES
+BUILD_TYPE = CROSS
 
 ANSI = GCC
 CPLUSPLUS = G++

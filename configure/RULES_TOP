@@ -7,7 +7,7 @@ include $(CONFIG)/RULES_DIRS
 uninstall$(DIVIDER)%::
 	@$(RMDIR) $(INSTALL_LOCATION_BIN)/$* $(INSTALL_LOCATION_LIB)/$* 
 
-cleandirs:
+cleandirs::
 ifeq ($(wildcard $(INSTALL_LOCATION_BIN)/*),)
 	@$(RMDIR) $(INSTALL_LOCATION_BIN)
 endif
@@ -15,6 +15,7 @@ ifeq ($(wildcard $(INSTALL_LOCATION_LIB)/*),)
 	@$(RMDIR) $(INSTALL_LOCATION_LIB)
 endif
 
+distClean: clean uninstall
 
 uninstall:: $(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS))
 	@$(RMDIR)  rec.bak rec
@@ -22,7 +23,7 @@ uninstall:: $(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS))
 		$(INSTALL_HTML) $(INSTALL_JAVA) $(INSTALL_TEMPLATES)
 	@$(MAKE) -f Makefile  cleandirs
 
-tar:
+tar::
 	@DIRNAME=$(notdir $(shell pwd)); \
 	echo "TOP: Creating $$DIRNAME.tar file..."; \
 	ls Makefile* | xargs tar vcf $$DIRNAME.tar; \
@@ -37,7 +38,7 @@ tar:
 		| grep -v "/O\..*$$" | xargs tar vrf $$DIRNAME.tar; \
 	done
 
-help:
+help::
 	@echo "Usage: gnumake [options] [target] ..."
 	@echo "Targets supported by all Makefiles:"
 	@echo "     install		- Installs executables in bin/<arch> (default rule)"

@@ -8,13 +8,12 @@
 #  Common build definitions
 #
 
-####################################################
 ifndef CONFIG
 CONFIG = $(TOP)/configure
 endif
+
 -include $(CONFIG)/RELEASE
 -include $(CONFIG)/RELEASE.$(HOST_ARCH)
-####################################################
 
 include $(CONFIG)/CONFIG_COMMON
 
@@ -67,12 +66,12 @@ endif
 #STATIC_BUILD=NO
 #  Unix Optimization,   must be either YES or NO
 #HOST_OPT=YES
-#  VxWorks Optimization,  must be either YES or NO
-#VX_OPT=YES
-#  Generate Verbose Compiler Warnings for Unix,  must be either YES or NO
-#UNIX_WARN=YES
-#  Generate Verbose Compiler Warnings for VxWorks,  must be either YES or NO
-#VX_WARN=YES
+#  Cross builds Optimization,  must be either YES or NO
+#CROSS_OPT=YES
+#  Generate Verbose Compiler Warnings for host build,  must be either YES or NO
+#HOST_WARN=YES
+#  Generate Verbose Compiler Warnings for cross builds,  must be either YES or NO
+#CROSS_WARN=YES
 #etc.
 
 #CROSS_COMPILER_TARGET_ARCHS=mv167

@@ -21,7 +21,7 @@
 #
 #	-kuk-
 
-#	we are in O.$(ARCH_CLASS), but most sources are one dir above:
+#	we are in O.$(OS_CLASS), but most sources are one dir above:
 #
 #	The use of VPATH (no suffix specification) caused everything
 #	to break several times.
@@ -30,24 +30,72 @@
 
 include $(CONFIG)/RULES_ARCHS
 ifdef T_A
+BUILD=YES
+ifneq ($(THREAD_TYPE),)
+ifneq ($(OS_THREAD_TYPE),)
+ifneq ($(THREAD_TYPE),$(findstring $(THREAD_TYPE),$(OS_THREAD_TYPE)))
+BUILD=NO
+endif
+endif
+endif
+ifeq ($(BUILD),YES)
 
-vpath %.c $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/$(OS_CLASS) ../os/generic .. 
-vpath %.cc $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/$(OS_CLASS) ../os/generic ..
-vpath %.C $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/$(OS_CLASS) ../os/generic ..
-vpath %.rc $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
+ifneq ($(THREAD_TYPE),ST)
+OS_SRC_DIRS += $(foreach dir,$(SRC_DIRS), \
+            $(dir)/os/$(OS_CLASS)MT $(dir)/os/posixMT \
+            $(dir)/os/$(OS_CLASS) $(dir)/os/posix \
+            $(dir)/generic $(dir)) . ..
+INSTALL_INCLUDES += $(foreach dir,$(SRC_DIRS) $(INSTALL_INCLUDE), \
+       -I$(dir)/os/$(OS_CLASS)MT -I$(dir)/os/posixMT \
+       -I$(dir)/os/$(OS_CLASS) -I$(dir)/os/posix \
+       -I$(dir)/generic -I$(dir))
+
+INSTALL_INC += $(foreach inc,$(INC), \
+    $(firstword $(foreach dir,$(SRC_DIRS) .., \
+    $(subst $(dir),$(INSTALL_INCLUDE),$(firstword $(wildcard \
+         $(dir)/os/$(OS_CLASS)MT/$(inc) \
+         $(dir)/os/posixMT/$(inc) \
+         $(dir)/os/$(OS_CLASS)/$(inc) \
+         $(dir)/os/posix/$(inc)\
+         $(dir)/generic/$(inc) \
+         $(dir)/$(inc) \
+         ../$(inc) \
+    )))) $(INSTALL_INCLUDE)/$(inc)))
+
+else
+OS_SRC_DIRS += $(foreach dir,$(SRC_DIRS), \
+         $(dir)/os/$(OS_CLASS) $(dir)/os/posix $(dir)/generic $(dir)) . ..
+INSTALL_INCLUDES += $(foreach dir,$(SRC_DIRS) $(INSTALL_INCLUDE), \
+         -I$(dir)/os/$(OS_CLASS) -I$(dir)/os/posix -I$(dir)/generic -I$(dir))
+INSTALL_INC += $(foreach inc,$(INC), \
+    $(firstword $(foreach dir,$(SRC_DIRS) .., \
+    $(subst $(dir),$(INSTALL_INCLUDE),$(firstword $(wildcard \
+         $(dir)/os/$(OS_CLASS)/$(inc) \
+         $(dir)/os/posix/$(inc)\
+         $(dir)/generic/$(inc) \
+         $(dir)/$(inc) \
+         ../$(inc) \
+    )))) $(INSTALL_INCLUDE)/$(inc)))
+
+endif
+
+vpath %.c $(USER_VPATH) $(OS_SRC_DIRS) ../os/$(OS_CLASS) ../os/generic .. 
+vpath %.cc $(USER_VPATH) $(OS_SRC_DIRS) ../os/$(OS_CLASS) ../os/generic ..
+vpath %.C $(USER_VPATH) $(OS_SRC_DIRS) ../os/$(OS_CLASS) ../os/generic ..
+vpath %.rc $(USER_VPATH) $(OS_SRC_DIRS) ../os/$(OS_CLASS) ../os/generic ..
 #	This prevents base/src/include/*.h from being installed. Why??
-#vpath %.h ../os/$(ARCH_CLASS) ../os/generic ..
-vpath %.h $(USER_VPATH)   
+#vpath %.h ../os/$(OS_CLASS) ../os/generic ..
+vpath %.h $(USER_VPATH)  $(SRC_DIRS) .. .
 
 #	check for add-on CFLAGS and CXXFLAGS
 #
 #	Rules:
 #	1) USR_CFLAGS is used
-#	2) if there is a special USR_CFLAGS_$(ARCH_CLASS), it's
+#	2) if there is a special USR_CFLAGS_$(OS_CLASS), it's
 #	   appended to 1)
 #	3) if there is no special defined, but a generic USR_CFLAGS_DEFAULT,
 #	   this one is appended
-#	4) if you have the special case that your USR_CFLAGS_$(ARCH_CLASS) is
+#	4) if you have the special case that your USR_CFLAGS_$(OS_CLASS) is
 #	   empty but you don't want 3), you have to define it as '-nil-', e.g.:
 #		USR_CFLAGS = <defines for all systems>
 #		USR_CFLAGS_sun4 = -nil-
@@ -56,54 +104,57 @@ vpath %.h $(USER_VPATH)
 #	These rules apply to these Makefile-variables:
 #	USR_CFLAGS	C flags
 #	USR_CXXFLAGS	C++ flags
+#	USR_CPPFLAGS	c preprocesser flags
 #	INC		include-files to install
 #	LIBSRCS		source files for building library
 #	PROD_LIBS	EPICS libs needed by PROD and TESTPROD
 #	USR_LIBS	NONEPICS libs needed by PROD and TESTPROD
+#	USR_LDFLAGS	ld flags
 #	SYS_PROD_LIBS	system libs needed by PROD and TESTPROD
 #	PROD		products to build and install
 #	SCRIPTS		scripts to install
+#	USR_INCLUDES	include directories
 #
 #	Remark:
-#	If you define OSINC, e.g. OSINC = getopt.h, the source
+#	If you define INC, e.g. INC = getopt.h, the source
 #	(getopt.h) must be in the source directory (..) and/or
-#	in one or more ../os/<ARCH_CLASS> directories.
-#	The OSINC source files cannot be created by the build.
+#	in one or more ../os/<OS_CLASS> directories.
+#	The INC source files cannot be created by the build.
 #
-ifneq ($(strip $(USR_CFLAGS_$(ARCH_CLASS))),)
-USR_CFLAGS+=$(subst -nil-,,$(USR_CFLAGS_$(ARCH_CLASS)))
+ifneq ($(strip $(USR_CFLAGS_$(OS_CLASS))),)
+USR_CFLAGS+=$(subst -nil-,,$(USR_CFLAGS_$(OS_CLASS)))
 else
 ifdef USR_CFLAGS_DEFAULT
 USR_CFLAGS+=$(USR_CFLAGS_DEFAULT)
 endif
 endif
 
-ifneq ($(strip $(USR_INCLUDES_$(ARCH_CLASS))),)
-USR_INCLUDES+=$(subst -nil-,,$(USR_INCLUDES_$(ARCH_CLASS)))
+ifneq ($(strip $(USR_INCLUDES_$(OS_CLASS))),)
+USR_INCLUDES+=$(subst -nil-,,$(USR_INCLUDES_$(OS_CLASS)))
 else
 ifdef USR_INCLUDES_DEFAULT
 USR_INCLUDES+=$(USR_INCLUDES_DEFAULT)
 endif
 endif
 
-ifneq ($(strip $(USR_CXXFLAGS_$(ARCH_CLASS))),)
-USR_CXXFLAGS+=$(subst -nil-,,$(USR_CXXFLAGS_$(ARCH_CLASS)))
+ifneq ($(strip $(USR_CXXFLAGS_$(OS_CLASS))),)
+USR_CXXFLAGS+=$(subst -nil-,,$(USR_CXXFLAGS_$(OS_CLASS)))
 else
 ifdef USR_CXXFLAGS_DEFAULT
 USR_CXXFLAGS+=$(USR_CXXFLAGS_DEFAULT)
 endif
 endif
 
-ifneq ($(strip $(USR_CPPFLAGS_$(ARCH_CLASS))),)
-USR_CPPFLAGS+=$(subst -nil-,,$(USR_CPPFLAGS_$(ARCH_CLASS)))
+ifneq ($(strip $(USR_CPPFLAGS_$(OS_CLASS))),)
+USR_CPPFLAGS+=$(subst -nil-,,$(USR_CPPFLAGS_$(OS_CLASS)))
 else
 ifdef USR_CPPFLAGS_DEFAULT
 USR_CPPFLAGS+=$(USR_CPPFLAGS_DEFAULT)
 endif
 endif
 
-ifneq ($(strip $(USR_LDFLAGS_$(ARCH_CLASS))),)
-USR_LDFLAGS+=$(subst -nil-,,$(USR_LDFLAGS_$(ARCH_CLASS)))
+ifneq ($(strip $(USR_LDFLAGS_$(OS_CLASS))),)
+USR_LDFLAGS+=$(subst -nil-,,$(USR_LDFLAGS_$(OS_CLASS)))
 else
 ifdef USR_LDFLAGS_DEFAULT
 USR_LDFLAGS+=$(USR_LDFLAGS_DEFAULT)
@@ -114,7 +165,7 @@ endif
 #
 ifneq ($(strip $(INC_$(OS_CLASS))),)
 #	os-specific includes go to the include/os-directory:
-OSINC += $(subst -nil-,,$(INC_$(OS_CLASS)))
+INC += $(subst -nil-,,$(INC_$(OS_CLASS)))
 else
 ifdef INC_DEFAULT
 INC += $(INC_DEFAULT)
@@ -123,103 +174,74 @@ endif
 
 #	concat specific library contents (if defined)
 #
-ifneq ($(strip $(LIBSRCS_$(ARCH_CLASS))),)
-LIBSRCS += $(subst -nil-,,$(LIBSRCS_$(ARCH_CLASS)))
+ifneq ($(strip $(LIBSRCS_$(OS_CLASS))),)
+LIBSRCS += $(subst -nil-,,$(LIBSRCS_$(OS_CLASS)))
 else
 ifdef LIBSRCS_DEFAULT
 LIBSRCS+=$(LIBSRCS_DEFAULT)
 endif
 endif
 
-LIBSRCS += $($(addsuffix _SRCS,$(LIBRARY)))
-
-ifneq ($($(addsuffix _SRCS_$(ARCH_CLASS),$(LIBRARY))),)
-LIBSRCS += $(subst -nil-,,$($(addsuffix _SRCS_$(ARCH_CLASS),$(LIBRARY))))
+ifneq ($(strip $(BIN_INSTALLS_$(OS_CLASS))),)
+BIN_INSTALLS+=$(subst -nil-,,$(BIN_INSTALLS_$(OS_CLASS)))
 else
-ifdef $(LIBRARY))_SRCS_DEFAULT
-LIBSRCS+=$($(addsuffix _SRCS_DEFAULT,$(LIBRARY)))
+ifdef BIN_INSTALLS_DEFAULT
+BIN_INSTALLS+=$(BIN_INSTALLS_DEFAULT)
 endif
 endif
 
-#	adjust object names for library contents
-#
-ifdef LIBSRCS
-LIB_OBJS+=$(addsuffix $(OBJ), $(basename $(LIBSRCS)))
-endif
-
-IOC_LIBSRCS += $($(addsuffix _SRCS,$(IOC_LIBRARY)))
-
-ifneq ($($(addsuffix _SRCS_$(ARCH_CLASS),$(IOC_LIBRARY))),)
-IOC_LIBSRCS += $(subst -nil-,,$($(addsuffix _SRCS_$(ARCH_CLASS),$(IOC_LIBRARY))))
+ifneq ($(strip $(LIBRARY_$(OS_CLASS))),)
+LIBRARY+=$(subst -nil-,,$(LIBRARY_$(OS_CLASS)))
 else
-ifdef $(IOC_LIBRARY))_SRCS_DEFAULT
-IOC_LIBSRCS+=$($(addsuffix _SRCS_DEFAULT,$(IOC_LIBRARY)))
+ifdef LIBRARY_DEFAULT
+LIBRARY+=$(LIBRARY_DEFAULT)
 endif
 endif
 
-#	adjust object names for library contents
-#
-ifdef IOC_LIBSRCS
-IOC_LIB_OBJS+=$(addsuffix $(OBJ), $(basename $(IOC_LIBSRCS)))
-endif
-
-# compatibility
-IOC_LIB_OBJS+=$(LIBOBJS)
-
-#
-#	concat specific library contents (if defined) to PROD_LIBS
-#
-ifneq ($(strip $(PROD_LIBS_$(ARCH_CLASS))),)
-PROD_LIBS += $(subst -nil-,,$(PROD_LIBS_$(ARCH_CLASS)))
-
+ifneq ($(strip $(SHARED_LIBRARIES_$(OS_CLASS))),)
+SHARED_LIBRARIES+=$(subst -nil-,,$(SHARED_LIBRARIES_$(OS_CLASS)))
 else
+ifdef SHARED_LIBRARIES_DEFAULT
+SHARED_LIBRARIES_+=$(SHARED_LIBRARIES_DEFAULT)
+endif
+endif
 
+ifneq ($(strip $(PROD_LIBS_$(OS_CLASS))),)
+PROD_LIBS += $(subst -nil-,,$(PROD_LIBS_$(OS_CLASS)))
+else
 ifdef PROD_LIBS_DEFAULT
 PROD_LIBS += $(PROD_LIBS_DEFAULT)
 endif
-
 endif
 
-#
-#	concat specific library contents (if defined) to USR_LIBS
-#
-ifneq ($(strip $(USR_LIBS_$(ARCH_CLASS))),)
-USR_LIBS += $(subst -nil-,,$(USR_LIBS_$(ARCH_CLASS)))
-
+ifneq ($(strip $(USR_LIBS_$(OS_CLASS))),)
+USR_LIBS += $(subst -nil-,,$(USR_LIBS_$(OS_CLASS)))
 else
-
 ifdef USR_LIBS_DEFAULT
 USR_LIBS += $(USR_LIBS_DEFAULT)
 endif
-
 endif
 
 #
 #	concat specific library contents (if defined) to SYS_PROD_LIBS
 #
-ifneq ($(strip $(SYS_PROD_LIBS_$(ARCH_CLASS))),)
-SYS_PROD_LIBS += $(subst -nil-,,$(SYS_PROD_LIBS_$(ARCH_CLASS)))
-
+ifneq ($(strip $(SYS_PROD_LIBS_$(OS_CLASS))),)
+SYS_PROD_LIBS += $(subst -nil-,,$(SYS_PROD_LIBS_$(OS_CLASS)))
 else
-
 ifdef SYS_PROD_LIBS_DEFAULT
 SYS_PROD_LIBS += $(SYS_PROD_LIBS_DEFAULT)
 endif
-
 endif
 
 #
 #	concat specific products
 #
-ifneq ($(strip $(PROD_$(ARCH_CLASS))),)
-PROD += $(subst -nil-,,$(PROD_$(ARCH_CLASS)))
-
+ifneq ($(strip $(PROD_$(OS_CLASS))),)
+PROD += $(subst -nil-,,$(PROD_$(OS_CLASS)))
 else
-
 ifdef PROD_DEFAULT
 PROD += $(PROD_DEFAULT)
 endif
-
 endif
 
 #
@@ -227,26 +249,42 @@ endif
 #
 ifneq ($(strip $(SCRIPTS_$(OS_CLASS))),)
 SCRIPTS += $(subst -nil-,,$(SCRIPTS_$(OS_CLASS)))
-
 else
-
 ifdef SCRIPTS_DEFAULT
 SCRIPTS += $(SCRIPTS_DEFAULT)
 endif
-
 endif
 
 #
 #	concat specific resource files
 #
-ifneq ($(strip $(RCS_$(ARCH_CLASS))),)
-RCS += $(subst -nil-,,$(RCS_$(ARCH_CLASS)))
+ifneq ($(strip $(RCS_$(OS_CLASS))),)
+RCS += $(subst -nil-,,$(RCS_$(OS_CLASS)))
 else
 ifdef RCS_DEFAULT
 RCS += $(RCS_DEFAULT)
 endif
 endif
 
+#---------------------------------------------------------------
+
+LIBSRCS += $($(addsuffix _SRCS,$(LIBRARY)))
+
+###### The following stmt does not work #########
+ifneq ($($(addsuffix _SRCS_$(OS_CLASS),$(LIBRARY))),)
+XXX=aaa
+LIBSRCS += $(subst -nil-,,$($(addsuffix _SRCS_$(OS_CLASS),$(LIBRARY))))
+else
+XXX=bbb
+LIBSRCS+=$($(addsuffix _SRCS_DEFAULT,$(LIBRARY)))
+endif
+
+#	adjust object names for library contents
+#
+ifdef LIBSRCS
+LIBOBJS+=$(addsuffix $(OBJ), $(basename $(LIBSRCS)))
+endif
+  
 #	adjust executables
 ifdef TESTPROD
 TESTPROD := $(addsuffix $(EXE), $(TESTPROD))
@@ -275,9 +313,6 @@ INSTALL_DLL_LINK_LIBS=$(DLL_LINK_LIBNAME:%=$(INSTALL_LIB)/%)
 INSTALL_TCLLIBS=$(TCLLIBNAME:%=$(INSTALL_TCLLIB)/%)
 INSTALL_TCLINDEX=$(TCLINDEX:%=$(INSTALL_TCLLIB)/%)
 
-INSTALL_INC= $(INC:%=$(INSTALL_INCLUDE)/%)
-OSINCLUDE=$(subst ../,,$(wildcard $(foreach h,$(OSINC),../$(h) ../os/$(OS_CLASS)/$(h))))
-INSTALL_OSINC= $(OSINCLUDE:%= $(INSTALL_INCLUDE)/%)
 INSTALL_INCREC = $(INCREC:%= $(INSTALL_INCLUDE)/%)
 MANLIST = 1 2 3 4 5 6 7 8 9
 INSTALL_MANS = $(foreach n, \
@@ -292,7 +327,6 @@ INSTALL_TEMPLATES_SUBDIR = $(INSTALL_TEMPLATES)
 endif
 INSTALL_TEMPLATE = $(addprefix $(INSTALL_TEMPLATES_SUBDIR)/, \
                    $(subst $(CONFIG),top/configure,$(TEMPLATES)))
-#INSTALL_TEMPLATE = $($(subst $(CONFIG),top/configure,$(TEMPLATES)):%= $(INSTALL_TEMPLATES_SUBDIR)/%)
 INSTALL_CONFIGS = $(CONFIGS:%= $(INSTALL_CONFIG)/%)
 
 INSTALL_BPTS = $(BPTS:%= $(INSTALL_DBD)/%)
@@ -302,65 +336,8 @@ INSTALL_DBS = $(DBDINSTALL:%= $(INSTALL_DBD)/%)\
 
 INSTALL_DBDNAME = $(DBDNAME:%= $(INSTALL_DBD)/%)
 
-INSTALL_IOC_PROD= $(IOC_PROD:%=$(INSTALL_BIN)/%)
-INSTALL_IOC_LIBNAME= $(IOC_LIBNAME:%=$(INSTALL_BIN)/%)
-INSTALL_IOC_SCRIPTS= $(IOC_SCRIPTS_$(OS_CLASS):%=$(INSTALL_BIN)/%)
-
 MAN_DIRECTORY_TARGETS = $(foreach n, $(MANLIST),$(INSTALL_MAN)/man$(n))
 #---------------------------------------------------------------
-ifneq ($(strip $(BIN_INSTALLS_$(OS_CLASS))),)
-BIN_INSTALLS+=$(subst -nil-,,$(BIN_INSTALLS_$(OS_CLASS)))
-else
-ifdef BIN_INSTALLS_DEFAULT
-BIN_INSTALLS+=$(BIN_INSTALLS_DEFAULT)
-endif
-endif
-
-#---------------------------------------------------------------
-ifneq ($(strip $(IOC_BIN_INSTALLS_$(OS_CLASS))),)
-IOC_BIN_INSTALLS+=$(subst -nil-,,$(IOC_BIN_INSTALLS_$(OS_CLASS)))
-else
-ifdef IOC_BIN_INSTALLS_DEFAULT
-IOC_BIN_INSTALLS+=$(IOC_BIN_INSTALLS_DEFAULT)
-endif
-endif
-
-#---------------------------------------------------------------
-ifneq ($(strip $(IOC_PROD_$(OS_CLASS))),)
-IOC_PROD+=$(subst -nil-,,$(IOC_PROD_$(OS_CLASS)))
-else
-ifdef IOC_PROD_DEFAULT
-IOC_PROD+=$(IOC_PROD_DEFAULT)
-endif
-endif
-
-#---------------------------------------------------------------
-ifneq ($(strip $(LIBRARY_$(OS_CLASS))),)
-LIBRARY+=$(subst -nil-,,$(LIBRARY_$(OS_CLASS)))
-else
-ifdef LIBRARY_DEFAULT
-LIBRARY+=$(LIBRARY_DEFAULT)
-endif
-endif
-
-#---------------------------------------------------------------
-ifneq ($(strip $(IOC_LIBRARY_$(OS_CLASS))),)
-IOC_LIBRARY+=$(subst -nil-,,$(IOC_LIBRARY_$(OS_CLASS)))
-else
-ifdef IOC_LIBRARY_DEFAULT
-IOC_LIBRARY+=$(IOC_LIBRARY_DEFAULT)
-endif
-endif
-
-#---------------------------------------------------------------
-ifneq ($(strip $(SHARED_LIBRARIES_$(ARCH_CLASS))),)
-SHARED_LIBRARIES+=$(subst -nil-,,$(SHARED_LIBRARIES_$(ARCH_CLASS)))
-else
-ifdef SHARED_LIBRARIES_DEFAULT
-SHARED_LIBRARIES_+=$(SHARED_LIBRARIES_DEFAULT)
-endif
-endif
-
 #---------------------------------------------------------------
 # must use c++ linker if linking to shared libs with c++ code
 #ifeq ($(strip $(SHARED_LIBRARIES)),YES)
@@ -375,20 +352,9 @@ endif # CPLUSPLUS
 #	if there are no objects LIBOBJS to include
 #	in this library (may be for e.g. base/src/libCompat
 #	on some archs), don't define (and build) any library!
-ifdef IOC_LIBRARY
-IOC_LIBTARGETS += $(IOC_LIBNAME) $(INSTALL_IOC_LIBNAME)
-CFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
-CXXFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
-
-ifneq ($(strip $(CPLUSPLUS)),)
-SHRLIB_LINKER = $(CXX)
-else
-SHRLIB_LINKER = $(CC)
-endif
-endif
 
 ifdef LIBRARY
-ifdef LIB_OBJS
+ifdef LIBOBJS
 LIBTARGETS += $(LIBNAME) $(INSTALL_LIBS)
 CFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
 CXXFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
@@ -406,7 +372,7 @@ LIBTARGETS += $(SHRLIBNAME) $(INSTALL_SHRLIBS) $(INSTALL_DLL_LINK_LIBS)
 
 endif # SHARED_LIBRARIES=YES
 
-endif # LIB_OBJS
+endif # LIBOBJS
 endif # LIBRARY
 
 #---------------------------------------------------------------
@@ -416,33 +382,13 @@ all::	install
 
 buildInstall :: build 
 
-ifdef RUNTYPE
-ifeq ($(strip $(RUNTYPE)),IOC)
-build:: $(IOC_LIBTARGETS) $(IOC_PROD) $(IOC_SCRIPTS_$(OS_CLASS))
+build :: inc 
 
-buildInstall :: $(IOC_TARGETS) \
-	$(INSTALL_IOC_PROD)  $(INSTALL_IOC_SCRIPTS)
-endif
-
-ifeq ($(strip $(RUNTYPE)),NOTIOC)
 build:: $(LIBTARGETS) $(PROD) $(TESTPROD) 
 
 buildInstall :: $(TARGETS) \
 	$(INSTALL_SCRIPTS) $(INSTALL_PROD) \
 	$(INSTALL_TCLLIBS) $(INSTALL_TCLINDEX)
-endif
-
-else
-build:: $(LIBTARGETS) $(PROD) $(TESTPROD) 
-
-buildInstall :: $(TARGETS) \
-	$(INSTALL_SCRIPTS) $(INSTALL_PROD) \
-	$(INSTALL_TCLLIBS) $(INSTALL_TCLINDEX)
-
-build:: $(IOC_LIBTARGETS) $(IOC_PROD) $(IOC_SCRIPTS_$(OS_CLASS))
-
-buildInstall :: $(INSTALL_IOC_PROD)  $(INSTALL_IOC_SCRIPTS)
-endif
 
 build:: $(MENUS) $(RECTYPES) $(BPTS)
 
@@ -450,7 +396,7 @@ ifdef DBDEXPAND
 build::	$(DBDNAME)
 endif
 
-inc:: $(INSTALL_INC) $(INSTALL_OSINC)
+inc:: $(INSTALL_INC)
 
 rebuild:: clean install
 
@@ -464,18 +410,13 @@ buildInstall :: $(INSTALL_MANS) \
 	$(INSTALL_DBS) $(INSTALL_BPTS) \
 	$(INSTALL_DBDNAME) $(INSTALL_INCREC)
 
-ifdef IOC_BIN_INSTALLS
-buildInstall :: iocBinInstalls
-endif
-
-
 ifdef BIN_INSTALLS
 buildInstall :: binInstalls
 endif
 
 clean::
 	@echo "Cleaning"
-	@$(RM) *.i *$(OBJ) *.a $(PROD) $(TESTPROD) $(LIBNAME) $(IOC_LIBNAME) $(SHRLIBNAME) \
+	@$(RM) *.i *$(OBJ) *.a $(PROD) $(TESTPROD) $(LIBNAME) $(SHRLIBNAME) \
 	$(INC) *$(RES) $(TARGETS) \
 	$(DBDINSTALL) $(MENUS) $(RECTYPES) $(BPTS) $(DBDNAME) *.out
 
@@ -486,22 +427,22 @@ clean::
 PROD += $(TESTPROD)
 ifdef PROD
 
-COND_PROD_SRCS=$(foreach prod, $(basename $(PROD)), $($(prod)_SRCS))
-COND_PROD_RCS=$(foreach prod, $(basename $(PROD)), $($(prod)_RCS) $($(prod)_RCS_$(ARCH_CLASS)))
+COND_PROD_SRCS=$(foreach prod, $(basename $(PROD)), $($(prod)_SRCS) $($(prod)_SRCS_$(OS_CLASS)))
+COND_PROD_RCS=$(foreach prod, $(basename $(PROD)), $($(prod)_RCS) $($(prod)_RCS_$(OS_CLASS)))
 COND_PROD_LIBS=$(foreach prod, $(basename $(PROD)), $($(prod)_LIBS))
 
 ifdef PRODNAME
 
-ifneq ($(strip $(PRODNAME_SRCS_$(ARCH_CLASS))),)
-PRODNAME_SRCS += $(subst -nil-,,$(PRODNAME_SRCS_$(ARCH_CLASS)))
+ifneq ($(strip $(PRODNAME_SRCS_$(OS_CLASS))),)
+PRODNAME_SRCS += $(subst -nil-,,$(PRODNAME_SRCS_$(OS_CLASS)))
 else
 ifdef PRODNAME_SRCS_DEFAULT
 PRODNAME_SRCS += $(PRODNAME_SRCS_DEFAULT)
 endif
 endif
 
-ifneq ($(strip $(PRODNAME_RCS_$(ARCH_CLASS))),)
-PRODNAME_RCS += $(subst -nil-,,$(PRODNAME_RCS_$(ARCH_CLASS)))
+ifneq ($(strip $(PRODNAME_RCS_$(OS_CLASS))),)
+PRODNAME_RCS += $(subst -nil-,,$(PRODNAME_RCS_$(OS_CLASS)))
 else
 ifdef PRODNAME_RCS_DEFAULT
 PRODNAME_RCS += $(PRODNAME_RCS_DEFAULT)
@@ -541,10 +482,10 @@ PROD_MAKE_COMMAND=$(MAKE) -f ../Makefile $@\
 	PRODNAME="$@"\
 	PRODNAME_SRCS="$(SRCS) $($(basename $@)_SRCS)"\
 	PRODNAME_SRCS_DEFAULT="$($(basename $@)_SRCS_DEFAULT)"\
-	PRODNAME_SRCS_$(ARCH_CLASS)="$($(basename $@)_SRCS_$(ARCH_CLASS))"\
+	PRODNAME_SRCS_$(OS_CLASS)="$($(basename $@)_SRCS_$(OS_CLASS))"\
 	PRODNAME_RCS="$(RCS) $($(basename $@)_RCS)"\
 	PRODNAME_RCS_DEFAULT="$($(basename $@)_RCS_DEFAULT)"\
-	PRODNAME_RCS_$(ARCH_CLASS)="$($(basename $@)_RCS_$(ARCH_CLASS))"\
+	PRODNAME_RCS_$(OS_CLASS)="$($(basename $@)_RCS_$(OS_CLASS))"\
 	PRODNAME_LIBS="$($(basename $@)_LIBS)"
 
 $(PROD): $(SRCS) $(COND_PROD_SRCS) $(PROD_RESS) $(PROD_DEPLIBS) $(COND_PROD_DEPLIBS)
@@ -772,12 +713,12 @@ $(DBDNAME): ../$(DBDEXPAND)
 endif
 
 ifneq (,$(wildcard ../baseLIBOBJS))
-$(IOC_LIBNAME): ../baseLIBOBJS
+$(LIBNAME_vxWorks): ../baseLIBOBJS
 endif
 
-$(IOC_LIBNAME): $(IOC_LIB_OBJS)
+$(LIBNAME_vxWorks): $(LIBOBJS)
 	$(RM) $@
-	$(ARCMD) $(IOC_LIB_OBJS)
+	$(ARCMD) $(LIBOBJS)
 ifneq ($(RANLIB)xx,xx)
 	$(RANLIB) $@;
 endif # RANLIB
@@ -786,9 +727,9 @@ $(DLL_LINK_LIBNAME) $(SHRLIBNAME): $(LIBOBJS)
 	$(LINK.shrlib) $(LIBOBJS) $(DLL_LDLIBS)
 
 # rule for lib (archive of object files) creation
-$(LIBNAME): $(LIB_OBJS)
+$(LIBNAME): $(LIBOBJS)
 	$(RM) $@
-	$(ARCMD) $(LIB_OBJS)
+	$(ARCMD) $(LIBOBJS)
 ifneq ($(RANLIB)xx,xx)
 	$(RANLIB) $@;
 endif # RANLIB
@@ -797,11 +738,7 @@ binInstalls:  $(BIN_INSTALLS)
 	@echo "Installing $(^F)"
 	@$(INSTALL) -d -m 555 $^ $(INSTALL_BIN)
 
-iocBinInstalls:  $(IOC_BIN_INSTALLS)
-	@echo "Installing $(^F)"
-	@$(INSTALL) -d -m 555 $^ $(INSTALL_BIN)
-
-$(INSTALL_BIN)/%: ../os/$(ARCH_CLASS)/%
+$(INSTALL_BIN)/%: ../os/$(OS_CLASS)/%
 	@echo "Installing os-specific script $@"
 	@$(INSTALL_PRODUCT) -d -m 555 $< $(INSTALL_BIN)
 
@@ -832,6 +769,7 @@ ifdef SHRLIB_VERSION
 	ln -s $< $(@:%.$(SHRLIB_VERSION)=%) 
 endif # SHRLIB_VERSION
 
+ifneq ($(INSTALL_TCLLIB),$(INSTALL_BIN))
 $(INSTALL_TCLLIB)/%: %
 	@echo "Installing Tcl library $@"
 	@$(INSTALL) -d -m 555 $< $(INSTALL_TCLLIB)
@@ -839,6 +777,7 @@ $(INSTALL_TCLLIB)/%: %
 $(INSTALL_TCLLIB)/%: ../%
 	@echo "Installing Tcl library $@"
 	@$(INSTALL) -d -m 555 $< $(INSTALL_TCLLIB)
+endif
 
 $(INSTALL_CONFIG)/%: %
 	@echo "Installing config file $@"
@@ -863,6 +802,14 @@ $(INSTALL_INCLUDE)/%: %
 $(INSTALL_INCLUDE)/%: ../%
 	@echo "Installing include file $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
+
+#$(INSTALL_INCLUDE)/os/%: %
+#	@echo "Installing os include file $@"
+#	@$(INSTALL) -d -m 644 $< $(@D)
+#
+#$(INSTALL_INCLUDE)/os/%: ../%
+#	@echo "Installing os include file $@"
+#	@$(INSTALL) -d -m 644 $< $(@D)
 
 $(INSTALL_DOC)/%: %
 	@echo "Installing doc $@"
@@ -901,5 +848,17 @@ else
 $(DBDNAME): $(RECTYPES:%.h=../%.dbd)
 endif
 
+else
+
+all::
+buildInstall ::
+build ::
+inc::
+rebuild::
+install::
+clean::
+
+endif #BUILD
+endif #T_A
 #	EOF RULES.Host
-endif
+

@@ -136,6 +136,8 @@ inline gddStatus gdd::noReferencing(void)
 }
 inline gddStatus gdd::reference(void) const
 {
+    epicsGuard < epicsMutex > guard ( * gdd::pGlobalMutex );
+
     int rc=0;
 
     if(isNoRef())
@@ -157,6 +159,8 @@ inline gddStatus gdd::reference(void) const
 
 inline gddStatus gdd::unreference(void) const
 {
+    epicsGuard < epicsMutex > guard ( * gdd::pGlobalMutex );
+
 	int rc=0;
 
     if ( ref_cnt > 1u ) {

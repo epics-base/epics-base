@@ -32,7 +32,8 @@ public:
     bool validBCastFD () const;
 
 	void xSetNonBlocking ();
-	void sendBeaconIO (char &msg, bufSizeT length, aitUint16 &m_port);
+	void sendBeaconIO (char &msg, bufSizeT length, 
+        aitUint16 &portField, aitUint32 &addrField);
 	casIOState state () const;
 
 	outBuf::flushCondition osdSend (const char *pBuf, bufSizeT nBytesReq,
@@ -50,6 +51,7 @@ private:
 	ELLLIST beaconAddrList;
 	SOCKET sock;
 	SOCKET bcastRecvSock; // fix for solaris bug
+	SOCKET beaconSock; // allow connect
 	unsigned short dgPort;
 
     static SOCKET makeSockDG ();

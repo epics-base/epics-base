@@ -36,7 +36,6 @@
 
 #include "server.h"
 #include "addrList.h"
-#include "bsdSocketResource.h"
 
 //
 // casDGIntfIO::casDGIntfIO()
@@ -45,8 +44,8 @@ casDGIntfIO::casDGIntfIO (caServerI &serverIn, const caNetAddr &addr,
                           bool autoBeaconAddr, bool addConfigBeaconAddr) :
     casDGClient (serverIn)
 {
-    struct sockaddr_in serverAddr;
-    struct sockaddr_in serverBCastAddr;
+    osiSockAddr serverAddr;
+    osiSockAddr serverBCastAddr;
     int status;
     unsigned short beaconPort;
     
@@ -61,60 +60,64 @@ casDGIntfIO::casDGIntfIO (caServerI &serverIn, const caNetAddr &addr,
         throw S_cas_internal;
     }
 
+    this->beaconSock = casDGIntfIO::makeSockDG();
+    if (this->beaconSock==INVALID_SOCKET) {
+        socket_close (this->sock);
+        throw S_cas_internal;
+    }
+
     //
     // Fetch port configuration from EPICS environment variables
     //
     if (envGetConfigParamPtr(&EPICS_CAS_SERVER_PORT)) {
-        this->dgPort = caFetchPortConfig(&EPICS_CAS_SERVER_PORT, 
+        this->dgPort = envGetInetPortConfigParam (&EPICS_CAS_SERVER_PORT, 
             CA_SERVER_PORT);
     }
     else {
-        this->dgPort = caFetchPortConfig(&EPICS_CA_SERVER_PORT, 
+        this->dgPort = envGetInetPortConfigParam (&EPICS_CA_SERVER_PORT, 
             CA_SERVER_PORT);
     }
-    beaconPort = caFetchPortConfig(&EPICS_CA_REPEATER_PORT, 
+    beaconPort = envGetInetPortConfigParam (&EPICS_CA_REPEATER_PORT, 
         CA_REPEATER_PORT);
 
     //
     // set up the primary address of the server
     //
-    serverAddr = addr;
-    serverAddr.sin_port = htons (this->dgPort);
+    serverAddr.ia = addr;
+    serverAddr.ia.sin_port = htons (this->dgPort);
     
     //
     // discover beacon addresses associated with this interface
     //
     {
         ELLLIST BCastAddrList;
-        caAddrNode *pAddr;
+        osiSockAddrNode *pAddr;
 
         ellInit (&BCastAddrList);
-        caDiscoverInterfaces (&BCastAddrList, this->sock, beaconPort,
-            serverAddr.sin_addr); // match addr 
-
+        osiSockDiscoverBroadcastAddresses (&BCastAddrList, 
+            this->sock, &serverAddr); // match addr 
         if (ellCount(&BCastAddrList)<1) {
             errMessage (S_cas_noInterface, "unable to continue");
             socket_close (this->sock);
             throw S_cas_noInterface;
         }
-        pAddr = (caAddrNode *) ellFirst (&BCastAddrList);
-        serverBCastAddr = pAddr->destAddr.in; 
-        serverBCastAddr.sin_port = htons (this->dgPort);
+        pAddr = (osiSockAddrNode *) ellFirst (&BCastAddrList);
+        serverBCastAddr.ia = pAddr->addr.ia; 
+        serverBCastAddr.ia.sin_port = htons (this->dgPort);
 
         if (autoBeaconAddr) {
-            ellConcat(&this->beaconAddrList, &BCastAddrList);
+            setPortAndRemoveDuplicates (&this->beaconAddrList, &BCastAddrList, beaconPort);
         }
         else {
-            ellFree(&BCastAddrList);
+            ellFree (&BCastAddrList);
         }
     }
     
-    status = bind(this->sock, (struct sockaddr *)&serverAddr,
-        sizeof (serverAddr));
+    status = bind ( this->sock, &serverAddr.sa, sizeof (serverAddr) );
     if (status<0) {
         char buf[64];
         int errnoCpy = SOCKERRNO;
-        ipAddrToA (&serverAddr, buf, sizeof(buf));
+        ipAddrToA (&serverAddr.ia, buf, sizeof(buf));
         errPrintf (S_cas_bindFail, __FILE__, __LINE__, 
             "- bind UDP IP addr=%s failed because %s", buf, SOCKERRSTR(errnoCpy) );
         socket_close (this->sock);
@@ -140,11 +143,8 @@ casDGIntfIO::casDGIntfIO (caServerI &serverIn, const caNetAddr &addr,
         // 
         // add in the configured addresses
         //
-        caAddConfiguredAddr(
-            &this->beaconAddrList,
-            pParam,
-            this->sock,
-            beaconPort);
+        addAddrToChannelAccessAddressList (
+            &this->beaconAddrList, pParam, beaconPort);
     }
        
 	//
@@ -167,7 +167,7 @@ casDGIntfIO::casDGIntfIO (caServerI &serverIn, const caNetAddr &addr,
     // address.
     // 
 #if !defined(_WIN32)
-	if (serverAddr.sin_addr.s_addr != htonl(INADDR_ANY)) {
+	if (serverAddr.ia.sin_addr.s_addr != htonl(INADDR_ANY)) {
 
         this->bcastRecvSock = casDGIntfIO::makeSockDG ();
         if (this->bcastRecvSock==INVALID_SOCKET) {
@@ -175,12 +175,12 @@ casDGIntfIO::casDGIntfIO (caServerI &serverIn, const caNetAddr &addr,
             throw S_cas_internal;
         }
 
-        status = bind (this->bcastRecvSock, (struct sockaddr *)&serverBCastAddr,
-                        sizeof (serverAddr));
+        status = bind (this->bcastRecvSock, &serverBCastAddr.sa,
+                        sizeof (serverBCastAddr.sa);
         if (status<0) {
             char buf[64];
             int errnoCpy = SOCKERRNO;
-            ipAddrToA (&serverBCastAddr, buf, sizeof(buf));
+            ipAddrToA (&serverBCastAddr.ia, buf, sizeof(buf));
             errPrintf (S_cas_bindFail, __FILE__, __LINE__,
                 "- bind UDP IP addr=%s failed because %s", 
                 buf, SOCKERRSTR(errnoCpy));
@@ -221,6 +221,7 @@ casDGIntfIO::~casDGIntfIO()
 void casDGIntfIO::show (unsigned level) const
 {
 	printf ("casDGIntfIO at %p\n", this);
+    printChannelAccessAddressList (&this->beaconAddrList);
     this->casDGClient::show (level);
 }
 
@@ -234,7 +235,7 @@ void casDGIntfIO::xSetNonBlocking()
     
     status = socket_ioctl(this->sock, FIONBIO, &yes);
     if (status<0) {
-        ca_printf("%s:CAS: UDP non blocking IO set fail because \"%s\"\n",
+        errlogPrintf("%s:CAS: UDP non blocking IO set fail because \"%s\"\n",
             __FILE__, SOCKERRSTR(SOCKERRNO));
     }
 }
@@ -264,7 +265,7 @@ inBuf::fillCondition casDGIntfIO::osdRecv(char *pBufIn, bufSizeT size,
         if (status<0) {
             int errnoCpy = SOCKERRNO;
             if( errnoCpy != SOCK_EWOULDBLOCK ){
-			    ca_printf("CAS: UDP recv error was %s",
+			    errlogPrintf("CAS: UDP recv error was %s",
 			        SOCKERRSTR(errnoCpy));
             }
 		}
@@ -300,7 +301,7 @@ outBuf::flushCondition casDGIntfIO::osdSend (const char *pBufIn, bufSizeT size,
 		if (errnoCpy != SOCK_EWOULDBLOCK) {
 			char buf[64];
             sockAddrToA (&dest, buf, sizeof(buf));
-			ca_printf (
+			errlogPrintf (
 	"CAS: UDP socket send to \"%s\" failed because \"%s\"\n",
 				buf, SOCKERRSTR(errnoCpy));
 		}
@@ -311,7 +312,7 @@ outBuf::flushCondition casDGIntfIO::osdSend (const char *pBufIn, bufSizeT size,
 //
 // casDGIntfIO::incommingBytesPresent()
 //
-// OK to return a size of one here when a datagram is present, and
+// ok to return a size of one here when a datagram is present, and
 // zero otherwise.
 //
 bufSizeT casDGIntfIO::incommingBytesPresent () const
@@ -321,7 +322,7 @@ bufSizeT casDGIntfIO::incommingBytesPresent () const
 
 	status = socket_ioctl (this->sock, FIONREAD, &nchars);
 	if (status<0) {
-		ca_printf ("CAS: FIONREAD failed because \"%s\"\n",
+		errlogPrintf ("CAS: FIONREAD failed because \"%s\"\n",
 			SOCKERRSTR(SOCKERRNO));
 		return 0u;
 	}
@@ -333,35 +334,54 @@ bufSizeT casDGIntfIO::incommingBytesPresent () const
 	}
 }
 
-
 //
 // casDGIntfIO::sendBeacon()
 // 
-void casDGIntfIO::sendBeaconIO (char &msg, unsigned length, aitUint16 &m_port) 
+void casDGIntfIO::sendBeaconIO (char &msg, unsigned length, aitUint16 &portField, aitUint32 &addrField) 
 {
-	caAddrNode		*pAddr;
-	int 			status;
-	
-	//
-	// the broadcast bound socket is not used here because
-	// it will have the wrong source address. 
-	//
-	for (pAddr = (caAddrNode *)ellFirst(&this->beaconAddrList);
-				pAddr; pAddr = (caAddrNode *)ellNext(&pAddr->node)) {
-		m_port = htons (this->dgPort);
-		status = sendto (this->sock, &msg, length, 0,
-					&pAddr->destAddr.sa, sizeof(pAddr->destAddr.sa));
-		if (status < 0) {
-			char buf[64];
-            int errnoCpy = SOCKERRNO;
+    caNetAddr           addr = this->serverAddress ();
+    struct sockaddr_in  inetAddr = addr.getSockIP();
+	osiSockAddrNode		*pAddr;
+	int 			    status;
+    char                buf[64];
 
-			ipAddrToA(&pAddr->destAddr.in, buf, sizeof(buf));
-			
-			ca_printf(
-				"CAS:beacon error was \"%s\" dest=%s sock=%d\n",
-				SOCKERRSTR(errnoCpy), buf, this->sock);
-		}
-	}
+    portField = htons (inetAddr.sin_port); // the TCP port
+
+	for (pAddr = (osiSockAddrNode *)ellFirst(&this->beaconAddrList);
+				pAddr; pAddr = (osiSockAddrNode *)ellNext(&pAddr->node)) {
+        status = connect (this->beaconSock, &pAddr->addr.sa, sizeof(pAddr->addr.sa));
+        if (status<0) {
+            ipAddrToA (&pAddr->addr.ia, buf, sizeof(buf));
+            errlogPrintf ( "%s: CA beacon routing (connect to \"%s\") error was \"%s\"\n",
+                __FILE__, buf, SOCKERRSTR(SOCKERRNO));
+        }
+        else {
+            osiSockAddr addr;
+
+            int size = sizeof (addr.sa);
+            status = getsockname (this->beaconSock, &addr.sa, &size);
+            if (status<0) {
+                errlogPrintf ( "%s: CA beacon routing (getsockname) error was \"%s\"\n",
+                    __FILE__, SOCKERRSTR(SOCKERRNO));
+            }
+            else if (addr.sa.sa_family==AF_INET) {
+                addrField = addr.ia.sin_addr.s_addr;
+
+printf ("sending beacon specifying port %u addr %x\n", portField, addr.ia.sin_addr.s_addr);
+
+                status = sendto (this->beaconSock, &msg, length, 0, 
+                    &pAddr->addr.sa, sizeof(pAddr->addr.sa));
+                if (status < 0) {
+                    ipAddrToA (&pAddr->addr.ia, buf, sizeof(buf));
+                    errlogPrintf ( "%s: CA beacon (send to \"%s\") error was \"%s\"\n",
+                        __FILE__, buf, SOCKERRSTR(SOCKERRNO));
+                }
+                else {
+                    assert (status == length);
+                }
+            }
+        }
+    }
 }
 
 //
@@ -507,7 +527,7 @@ SOCKET casDGIntfIO::makeSockDG ()
     status = setsockopt(
         newSock,
         SOL_SOCKET,
-        SO_REUSEADDR,
+s        SO_REUSEADDR,
         (char *) &yes,
         sizeof (yes));
     if (status<0) {

@@ -64,8 +64,8 @@ casAsyncReadIO::~casAsyncReadIO()
 //
 // casAsyncReadIO::postIOCompletion()
 //
-caStatus casAsyncReadIO::postIOCompletion(caStatus completionStatusIn,
-				gdd &valueRead)
+caStatus casAsyncReadIO::postIOCompletion (caStatus completionStatusIn,
+				const gdd &valueRead)
 {
 	this->lock();
 	this->pDD = &valueRead;
@@ -93,18 +93,18 @@ epicsShareFunc caStatus casAsyncReadIO::cbFuncAsyncIO()
 
 	switch (this->msg.m_cmmd) {
 	case CA_PROTO_READ:
-		status = client.readResponse(&this->chan, this->msg,
+		status = client.readResponse (&this->chan, this->msg,
 				*this->pDD, this->completionStatus);
 		break;
 
 	case CA_PROTO_READ_NOTIFY:
-		status = client.readNotifyResponse(&this->chan, 
+		status = client.readNotifyResponse (&this->chan, 
 				this->msg, this->pDD, 
 				this->completionStatus);
 		break;
 
 	case CA_PROTO_EVENT_ADD:
-		status = client.monitorResponse(this->chan,
+		status = client.monitorResponse (this->chan,
 				this->msg, this->pDD,
 				this->completionStatus);
 		break;

@@ -52,7 +52,7 @@ aitIndex exVectorPV::maxBound (unsigned dimension) const
 void exVectorPV::scan()
 {
 	caStatus		status;
-	double		radians;
+	double          radians;
 	smartGDDPointer	pDD;
 	aitFloat32		*pF, *pFE, *pCF;
 	float			newValue;
@@ -256,6 +256,12 @@ caStatus exVectorPV::updateValue(gdd &valueIn)
 		if (gdds) {
 			return S_cas_noConvert;
 		}
+
+	    aitTimeStamp ts;
+        valueIn.getTimeStamp (&ts);
+	    pNewValue->setTimeStamp (&ts);
+	    pNewValue->setStat (valueIn.getStat());
+	    pNewValue->setSevr (valueIn.getSevr());
 	}
 	
 	this->pValue = pNewValue;

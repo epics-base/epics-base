@@ -2,7 +2,6 @@
 #ifndef casIODILh
 #define casIODILh
 
-#include "bsdSocketResource.h"
 
 //
 // casDGIntfIO::getFD()

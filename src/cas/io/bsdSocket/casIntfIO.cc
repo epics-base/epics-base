@@ -8,7 +8,7 @@
 //
 
 #include "server.h"
-#include "bsdSocketResource.h"
+
 
 //
 // 5 appears to be a TCP/IP built in maximum
@@ -49,7 +49,7 @@ casIntfIO::casIntfIO (const caNetAddr &addrIn) :
 					(char *) &yes,
 					sizeof (yes));
 	if (status<0) {
-		ca_printf("CAS: server set SO_REUSEADDR failed? %s\n",
+		errlogPrintf("CAS: server set SO_REUSEADDR failed? %s\n",
 			SOCKERRSTR(SOCKERRNO));
         socket_close (this->sock);
 		throw S_cas_internal;
@@ -88,7 +88,7 @@ casIntfIO::casIntfIO (const caNetAddr &addrIn) :
 	status = getsockname (this->sock, 
 			(struct sockaddr *)&this->addr, &addrSize);
 	if (status) {
-		ca_printf("CAS: getsockname() error %s\n", 
+		errlogPrintf("CAS: getsockname() error %s\n", 
 			SOCKERRSTR(SOCKERRNO));
         socket_close (this->sock);
 		throw S_cas_internal;
@@ -102,7 +102,7 @@ casIntfIO::casIntfIO (const caNetAddr &addrIn) :
 
     status = listen(this->sock, caServerConnectPendQueueSize);
     if(status < 0) {
-		ca_printf("CAS: listen() error %s\n", SOCKERRSTR(SOCKERRNO));
+		errlogPrintf("CAS: listen() error %s\n", SOCKERRSTR(SOCKERRNO));
         socket_close (this->sock);
 		throw S_cas_internal;
     }
@@ -135,14 +135,14 @@ casStreamOS *casIntfIO::newStreamClient(caServerI &cas) const
     if (newSock==INVALID_SOCKET) {
         int errnoCpy = SOCKERRNO;
         if (errnoCpy!=SOCK_EWOULDBLOCK) {
-            ca_printf ("CAS: %s accept error %s\n",
+            errlogPrintf ("CAS: %s accept error %s\n",
                 __FILE__,SOCKERRSTR(errnoCpy));
         }
         return NULL;
     }
     else if (sizeof(newAddr)>(size_t)length) {
         socket_close(newSock);
-        ca_printf("CAS: accept returned bad address len?\n");
+        errlogPrintf("CAS: accept returned bad address len?\n");
         return NULL;
     }
     
@@ -158,7 +158,7 @@ casStreamOS *casIntfIO::newStreamClient(caServerI &cas) const
             char pName[64u];
             
             pOS->clientHostName (pName, sizeof (pName));
-            ca_printf("CAS: allocated client object for \"%s\"\n", pName);
+            errlogPrintf("CAS: allocated client object for \"%s\"\n", pName);
         }
     }
     return pOS;
@@ -174,7 +174,7 @@ void casIntfIO::setNonBlocking()
  
         status = socket_ioctl(this->sock, FIONBIO, &yes);
         if (status<0) {
-                ca_printf(
+                errlogPrintf(
                 "%s:CAS: server non blocking IO set fail because \"%s\"\n",
                                 __FILE__, SOCKERRSTR(SOCKERRNO));
         }

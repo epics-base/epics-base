@@ -472,6 +472,11 @@ public:
     // asynchronous IO operation (read or write) completes
     // against the PV.
     //
+    // NOTE:
+    // o the server tool is encouraged to change the prototype GDD's
+    // primitive type to whatever primitive data type is most convient
+    // for the server side tool.
+    //
     epicsShareFunc virtual caStatus read (const casCtx &ctx, gdd &prototype);
     
     //
@@ -486,7 +491,15 @@ public:
     // asynchronous IO operation (read or write) completes
     // against the PV.
     //
-    epicsShareFunc virtual caStatus write (const casCtx &ctx, gdd &value);
+    // NOTE:
+    // o The incoming GDD with application type "value" is always 
+    // converted to the PV.bestExternalType() primitive type.
+    // o The time stamp in the incoming GDD is set to the time that
+    // the last message was received from the client.
+    // o Currently, no container type GDD's are passed here and
+    // the application type is always "value". This may change.
+    //
+    epicsShareFunc virtual caStatus write (const casCtx &ctx, const gdd &value);
     
     //
     // chCreate() is called each time that a PV is attached to
@@ -564,7 +577,7 @@ public:
     //
     // Server tool calls this function to post a PV event.
     //
-    epicsShareFunc void postEvent (const casEventMask &select, gdd &event);
+    epicsShareFunc void postEvent (const casEventMask &select, const gdd &event);
     
     //
     // peek at the pv name
@@ -767,7 +780,7 @@ public:
     //
 	// only the first call to this function has any effect
 	//
-	epicsShareFunc caStatus postIOCompletion (caStatus completionStatusIn, gdd &valueRead);
+	epicsShareFunc caStatus postIOCompletion (caStatus completionStatusIn, const gdd &valueRead);
 
 	//
 	// Find the server associated with this async IO 
@@ -790,7 +803,7 @@ public:
 private:
 	caHdr const msg;
 	casChannelI &chan; 
-	smartGDDPointer pDD;
+	smartConstGDDPointer pDD;
 	caStatus completionStatus;
 
     epicsShareFunc bool readOP() const;

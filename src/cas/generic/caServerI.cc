@@ -31,6 +31,8 @@
 
 #define CAS_VERSION_GLOBAL
 
+#include "addrList.h"
+
 #define caServerGlobal
 #include "server.h"
 #include "casCtxIL.h" // casCtx in line func
@@ -76,9 +78,9 @@ caServerI::caServerI (caServer &tool, unsigned nPV) :
 	status = envGetDoubleConfigParam (&EPICS_CA_BEACON_PERIOD, &maxPeriod);
 	if (status || maxPeriod<=0.0) {
 		this->maxBeaconInterval = CAServerMaxBeaconPeriod;
-		ca_printf (
+		errlogPrintf (
 			"EPICS \"%s\" float fetch failed\n", EPICS_CA_BEACON_PERIOD.name);
-		ca_printf (
+		errlogPrintf (
 			"Setting \"%s\" = %f\n", EPICS_CA_BEACON_PERIOD.name, 
 			this->maxBeaconInterval);
 	}
@@ -321,9 +323,7 @@ void caServerI::show (unsigned level) const
         this->chronIntIdResTable<casRes>::show(level);
         this->unlock();
     }
-    
-    // @@@@@@ caPrintAddrList(&destAddr);
-    
+        
     return;
 }
 

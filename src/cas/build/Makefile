@@ -8,8 +8,6 @@ USER_VPATH := $(SRC) $(STSRC) $(IOSRC)
 
 include $(TOP)/configure/CONFIG
 
-CXXCMPLR = STRICT
-
 # sometimes it's good to have different C/C++ flags, not now:
 USR_CFLAGS = -I$(SRC) -I$(IOSRC) -I$(STSRC) -I$(CA) -DcaNetAddrSock
 USR_CXXFLAGS = $(USR_CFLAGS)
@@ -56,6 +54,8 @@ LIBSRCS += casDGIO.cc
 LIBSRCS += casStreamIO.cc
 
 LIBRARY = cas
+DLL_LIBS = ca gdd Com
+SYS_DLL_LIBS = ws2_32
 
 PROD_LIBS := cas ca gdd Com 
 SYS_PROD_LIBS_WIN32 := ws2_32

@@ -86,11 +86,6 @@ caStatus exPV::update(gdd &valueIn)
 		return cas;
 	}
 
-	aitTimeStamp ts = this->currentTime;
-	this->pValue->setTimeStamp (&ts);
-	this->pValue->setStat (epicsAlarmNone);
-	this->pValue->setSevr (epicsSevNone);
-
 	//
 	// post a value change event
 	//

@@ -3,8 +3,6 @@ TOP=../../../..
 
 include $(TOP)/configure/CONFIG
 
-CXXCMPLR = STRICT
-
 PROD_LIBS := cas ca gdd Com
 cas_DIR = $(INSTALL_LIB)
 ca_DIR = $(INSTALL_LIB)

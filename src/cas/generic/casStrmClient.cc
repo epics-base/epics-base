@@ -117,8 +117,8 @@ caStatus casStrmClient::uknownMessageAction ()
 	const caHdr *mp = this->ctx.getMsg();
 	caStatus status;
 
-	ca_printf ("CAS: bad request code from virtual circuit=%u\n", mp->m_cmmd);
-	this->dumpMsg (mp, this->ctx.getData());
+	this->dumpMsg (mp, this->ctx.getData(),
+        "bad request code from virtual circuit=%u\n", mp->m_cmmd);
 
 	/* 
 	 *	most clients dont recover from this
@@ -228,7 +228,7 @@ caStatus casStrmClient::readAction ()
 		return this->sendErr(mp, status, "read access denied");
 	}
 
-	status = this->read(pDesc); 
+	status = this->read (pDesc); 
 	if (status==S_casApp_success) {
 		status = this->readResponse(pChan, *mp, *pDesc, S_cas_success);
 	}
@@ -249,7 +249,7 @@ caStatus casStrmClient::readAction ()
 // casStrmClient::readResponse()
 //
 caStatus casStrmClient::readResponse (casChannelI *pChan, const caHdr &msg, 
-					const gdd &desc, const caStatus status)
+					const smartConstGDDPointer &pDesc, const caStatus status)
 {
 	caHdr 		*reply;
 	unsigned	size;
@@ -281,9 +281,9 @@ caStatus casStrmClient::readResponse (casChannelI *pChan, const caHdr &msg,
 	// convert gdd to db_access type
 	// (places the data in network format)
 	//
-	mapDBRStatus = gddMapDbr[msg.m_dataType].conv_dbr((reply+1), msg.m_count, desc, pChan->enumStringTable());
+	mapDBRStatus = gddMapDbr[msg.m_dataType].conv_dbr((reply+1), msg.m_count, *pDesc, pChan->enumStringTable());
 	if (mapDBRStatus<0) {
-		desc.dump();
+		pDesc->dump();
 		errPrintf (S_cas_badBounds, __FILE__, __LINE__, "- get with PV=%s type=%u count=%u",
 				pChan->getPVI().getName(), msg.m_dataType, msg.m_count);
 		return this->sendErrWithEpicsStatus(&msg, S_cas_badBounds, ECA_GETFAIL);
@@ -338,9 +338,9 @@ caStatus casStrmClient::readNotifyAction ()
 		}
 	}
 
-	status = this->read(pDesc); 
+	status = this->read (pDesc); 
 	if (status == S_casApp_success) {
-		status = this->readNotifyResponse(pChan, *mp, pDesc, status);
+		status = this->readNotifyResponse (pChan, *mp, pDesc, status);
 	}
 	else if (status == S_casApp_asyncCompletion) {
 		status = S_cas_success;
@@ -359,7 +359,7 @@ caStatus casStrmClient::readNotifyAction ()
 // casStrmClient::readNotifyResponse()
 //
 caStatus casStrmClient::readNotifyResponse (casChannelI *pChan, 
-		const caHdr &msg, const gdd *pDesc, const caStatus completionStatus)
+		const caHdr &msg, const smartConstGDDPointer &pDesc, const caStatus completionStatus)
 {
 	caStatus ecaStatus;
 
@@ -369,7 +369,7 @@ caStatus casStrmClient::readNotifyResponse (casChannelI *pChan,
 	else {
 		ecaStatus = ECA_NORMAL;
 	}
-	ecaStatus = this->readNotifyResponseECA_XXX(pChan, msg, pDesc, ecaStatus);
+	ecaStatus = this->readNotifyResponseECA_XXX (pChan, msg, pDesc, ecaStatus);
 	if (ecaStatus) {
 		return ecaStatus;
 	}
@@ -400,7 +400,7 @@ caStatus casStrmClient::readNotifyResponse (casChannelI *pChan,
 // casStrmClient::readNotifyResponseECA_XXX ()
 //
 caStatus casStrmClient::readNotifyResponseECA_XXX (casChannelI *pChan, 
-		const caHdr &msg, const gdd *pDesc, const caStatus ecaStatus)
+		const caHdr &msg, const smartConstGDDPointer &pDesc, const caStatus ecaStatus)
 {
 	caHdr 		*reply;
 	unsigned	size;
@@ -437,7 +437,12 @@ caStatus casStrmClient::readNotifyResponseECA_XXX (casChannelI *pChan,
 	// cid field abused to store the status here
 	//
 	if (ecaStatus == ECA_NORMAL) {
-		if (pDesc) {
+		if (!pDesc) {
+			errMessage(S_cas_badParameter, 
+			"because no data in server tool asynch read resp");
+			reply->m_cid = ECA_GETFAIL;
+		}
+		else {
 			int mapDBRStatus;
 			//
 			// convert gdd to db_access type
@@ -453,11 +458,6 @@ caStatus casStrmClient::readNotifyResponseECA_XXX (casChannelI *pChan,
 			else {
 				reply->m_cid = ECA_NORMAL;
 			}
-		}
-		else {
-			errMessage(S_cas_badParameter, 
-			"because no data in server tool asynch read resp");
-			reply->m_cid = ECA_GETFAIL;
 		}
 	}
 	else {
@@ -502,10 +502,136 @@ caStatus casStrmClient::readNotifyResponseECA_XXX (casChannelI *pChan,
 }
 
 //
-// casStrmClient::monitorResponse()
+// createDBRDD ()
 //
-caStatus casStrmClient::monitorResponse(casChannelI &chan, const caHdr &msg, 
-		const gdd *pDesc, const caStatus completionStatus)
+static smartGDDPointer createDBRDD (unsigned dbrType, aitIndex dbrCount)
+{
+    smartGDDPointer pDescRet;
+	aitUint32 valIndex;
+	aitUint32 gddStatus;
+	aitUint16 appType;
+    smartGDDPointer pVal;
+	
+	/*
+	 * DBR type has already been checked, but it is possible
+	 * that "gddDbrToAit" will not track with changes in
+	 * the DBR_XXXX type system
+	 */
+	if (dbrType>=NELEMENTS(gddDbrToAit)) {
+		return pDescRet;
+	}
+	if (gddDbrToAit[dbrType].type==aitEnumInvalid) {
+		return pDescRet;
+	}
+	appType = gddDbrToAit[dbrType].app;
+	
+	//
+	// create the descriptor
+	//
+	pDescRet = gddApplicationTypeTable::app_table.getDD (appType);
+	if (!pDescRet) {
+		return pDescRet;
+	}
+	
+	if (pDescRet->isContainer()) {
+		
+		//
+		// unable to change the bounds on the managed GDD that is
+		// returned for DBR types
+		//
+		if (dbrCount>1 ) {
+			pDescRet = (gdd *) new gdd (*pDescRet);
+			//
+			// smart pointer class maintains the ref count from here down
+			//
+			gddStatus = pDescRet->unreference();
+			assert (!gddStatus);
+		}
+
+		//
+		// All DBR types have a value member 
+		//
+		gddStatus = 
+			gddApplicationTypeTable::app_table.mapAppToIndex
+			(appType, gddAppType_value, valIndex);
+		if (gddStatus) {
+			pDescRet = NULL;
+			return pDescRet;
+		}
+		pVal = pDescRet->getDD (valIndex);
+		if (!pVal) {
+            pDescRet = NULL;
+			return pDescRet;
+		}
+	}
+	else {
+		pVal = pDescRet;
+	}
+	
+	if (pVal->isScalar()) {
+		if (dbrCount<=1u) {
+			return S_cas_success;
+		}
+		
+		//
+		// scalar and managed (and need to set the bounds)
+		//	=> out of luck (cant modify bounds)
+		//
+		if (pDescRet->isManaged()) {
+			pDescRet = NULL;
+			return pDescRet;
+		}
+		
+		//
+		// convert to atomic
+		//
+		gddBounds bds;
+		bds.setSize(dbrCount);
+		bds.setFirst(0u);
+		pVal->setDimension(1u, &bds);
+	}
+	else if (pVal->isAtomic()) {
+		const gddBounds* pB = pVal->getBounds();
+		aitIndex bound = dbrCount;
+		unsigned dim;
+		int modAllowed;
+		
+		if (pDescRet->isManaged() || pDescRet->isFlat()) {
+			modAllowed = FALSE;
+		}
+		else {
+			modAllowed = TRUE;
+		}
+		
+		for (dim=0u; dim<(unsigned)pVal->dimension(); dim++) {
+			if (pB[dim].first()!=0u && pB[dim].size()!=bound) {
+				if (modAllowed) {
+					pVal->setBound(dim, 0u, bound);
+				}
+				else {
+					pDescRet = NULL;
+					return pDescRet;
+				}
+			}
+			bound = 1u;
+		}
+	}
+	else {
+		//
+		// the GDD is container or isnt any of the normal types
+		//
+		pDescRet = NULL;
+		return pDescRet;
+	}
+	
+	return pDescRet;
+}
+
+//
+// casStrmClient::monitorResponse ()
+//
+caStatus casStrmClient::monitorResponse (casChannelI &chan, const caHdr &msg, 
+		const smartConstGDDPointer &pDesc, const caStatus completionStatus)
 {
 	caStatus completionStatusCopy = completionStatus;
 	smartGDDPointer pDBRDD;
@@ -548,12 +674,17 @@ caStatus casStrmClient::monitorResponse(casChannelI &chan, const caHdr &msg,
 	//
 	if (completionStatusCopy == S_cas_success) {
 
-		if (pDesc) {
-			completionStatusCopy = createDBRDD(msg.m_dataType, 
-							msg.m_count, pDBRDD);
-			if (completionStatusCopy==S_cas_success) {
+		if (!pDesc) {
+            completionStatusCopy = S_cas_badParameter;
+		}
+		else {
+			pDBRDD = createDBRDD (msg.m_dataType, msg.m_count);
+            if (!pDBRDD) {
+                completionStatusCopy = S_cas_noMemory;
+            }
+            else {
 				gdds = gddApplicationTypeTable::
-					app_table.smartCopy(pDBRDD, pDesc);
+					app_table.smartCopy ( & (*pDBRDD), & (*pDesc) );
 				if (gdds) {
 					errPrintf (status, __FILE__, __LINE__,
 "no conversion between event app type=%d and DBR type=%d Element count=%d",
@@ -563,9 +694,6 @@ caStatus casStrmClient::monitorResponse(casChannelI &chan, const caHdr &msg,
 					completionStatusCopy = S_cas_noConvert;
 				}
 			}
-		}
-		else {
-			completionStatusCopy = S_cas_badParameter;
 		}
 	}
 
@@ -680,7 +808,6 @@ caStatus casStrmClient::writeAction()
 
 }
 
-
 //
 // casStrmClient::writeResponse()
 //
@@ -914,7 +1041,6 @@ caStatus casStrmClient::claimChannelAction()
 	const caHdr *mp = this->ctx.getMsg();
 	char *pName = (char *) this->ctx.getData();
 	caServerI &cas = *this->ctx.getServer();
-	unsigned nameLength;
 	caStatus status;
 
 	/*
@@ -944,16 +1070,13 @@ caStatus casStrmClient::claimChannelAction()
 		return S_cas_badProtocol; // disconnect client
 	}
 
-	if (mp->m_postsize == 0u) {
+	if (mp->m_postsize <= 1u) {
 		return S_cas_badProtocol; // disconnect client
 	}
 
-	nameLength = strlen(pName);
-	if (nameLength>mp->m_postsize) {
-		return S_cas_badProtocol; // disconnect client
-	}
+    pName[mp->m_postsize-1] = '\0';
 
-	if (nameLength>unreasonablePVNameSize) {
+	if (mp->m_postsize-1>unreasonablePVNameSize) {
 		return S_cas_badProtocol; // disconnect client
 	}
 
@@ -1074,7 +1197,7 @@ caStatus casStrmClient::createChanResponse(const caHdr &hdr, const pvAttachRetur
 	status = casStrmClient::accessRightsResponse(pChanI);
 	if (status) {
         this->outBuf::popCtx (outctx);
-		errMessage(status, "incompplete channel create?");
+		errMessage(status, "incomplete channel create?");
 		pChanI->destroyNoClientNotify();
 		return this->channelCreateFailed(&hdr, status);
 	}
@@ -1090,7 +1213,12 @@ caStatus casStrmClient::createChanResponse(const caHdr &hdr, const pvAttachRetur
 	// the protocol buffer.
 	//
 	status = this->allocMsg (0u, &claim_reply);
-    assert (status==S_cas_success);
+    if (status!=S_cas_success) {
+        this->outBuf::popCtx (outctx);
+		errMessage(status, "incomplete channel create?");
+		pChanI->destroyNoClientNotify();
+		return this->channelCreateFailed(&hdr, status);
+	}
 
 	*claim_reply = nill_msg;
 	claim_reply->m_cmmd = CA_PROTO_CLAIM_CIU;
@@ -1179,7 +1307,7 @@ caStatus casStrmClient::disconnectChan(caResId id)
 		createStatus = S_cas_success;
 	}
 	else {
-		ca_printf(
+		errlogPrintf(
 		"Disconnecting old client because of internal channel or PV delete\n");
 		createStatus = S_cas_disconnect;
 	}
@@ -1652,8 +1780,10 @@ caStatus casStrmClient::writeScalarData()
 		return S_cas_badType;
 	}
 
-	pDD = new gddScalar (gddAppType_value, type);
-	if (pDD==NULL) {
+    aitEnum	bestExternalType = this->ctx.getPV()->bestExternalType ();
+
+	pDD = new gddScalar (gddAppType_value, bestExternalType);
+	if (!pDD) {
 		return S_cas_noMemory;
 	}
 
@@ -1664,36 +1794,36 @@ caStatus casStrmClient::writeScalarData()
 	gddStat = pDD->unreference();
 	assert (!gddStat);
 
-	if (type==aitEnumFixedString) {
-		aitFixedString *pFStr = 
-			(aitFixedString *) this->ctx.getData();
-		gddStat = pDD->put(*pFStr);
-	}
-	else {
-		gddStat = pDD->genCopy(type, this->ctx.getData());
-	}
-	if (gddStat) {
-		return S_cas_badType;
-	}
+    //
+    // copy in, and convert to native type, the incoming data
+    //
+    gddStat = aitConvert (pDD->primitiveType(), pDD->dataAddress(), type, 
+        this->ctx.getData(), 1, this->ctx.getPV()->enumStringTable());
+    if (gddStat<0) { 
+        status = S_cas_noConvert;
+    }
+    else {
+        //
+        // set the status and severity to normal
+        //
+	    pDD->setStat (epicsAlarmNone);
+	    pDD->setSevr (epicsSevNone);
 
-	pDD->setStat(epicsAlarmNone);
-	pDD->setSevr(epicsSevNone);
+        //
+        // set the time stamp to the last time that
+        // we added bytes to the in buf
+        //
+        aitTimeStamp gddts = this->lastRecvTS;
+        pDD->setTimeStamp (&gddts);
 
-	//
-	// No suprises when multiple codes are looking
-	// at the same data
-	//
-	pDD->markConstant ();
-
-	//
-	// call the server tool's virtual function
-	//
-	status = this->ctx.getPV()->write(this->ctx, *pDD);
-
+	    //
+	    // call the server tool's virtual function
+	    //
+	    status = this->ctx.getPV()->write (this->ctx, *pDD);
+    }
 	return status;
 }
 
-
 //
 // casStrmClient::writeArrayData()
 //
@@ -1721,7 +1851,9 @@ caStatus casStrmClient::writeArrayData()
 		return S_cas_badType;
 	}
 
-	pDD = new gddAtomic(gddAppType_value, type, 1, pHdr->m_count);
+    aitEnum	bestExternalType = this->ctx.getPV()->bestExternalType ();
+
+	pDD = new gddAtomic(gddAppType_value, bestExternalType, 1, pHdr->m_count);
 	if (!pDD) {
 		return S_cas_noMemory;
 	}
@@ -1732,7 +1864,7 @@ caStatus casStrmClient::writeArrayData()
 	gddStat = pDD->unreference();
 	assert (!gddStat);
 
-	size = dbr_size_n (pHdr->m_dataType, pHdr->m_count);
+    size = aitSize[bestExternalType] * pHdr->m_count;
 	pData = new char [size];
 	if (!pData) {
 		return S_cas_noMemory;
@@ -1749,49 +1881,54 @@ caStatus casStrmClient::writeArrayData()
 	}
 
 	//
-	// move the data from the protocol buffer
+	// convert the data from the protocol buffer
 	// to the allocated area so that they
 	// will be allowed to ref the DD
 	//
-	memcpy (pData, this->ctx.getData(), size);
+    gddStat = aitConvert (bestExternalType, pData, type, this->ctx.getData(), 
+        pHdr->m_count, this->ctx.getPV()->enumStringTable() );
+    if (gddStat<0) { 
+        status = S_cas_noConvert;
+        delete pDestructor;
+        delete [] pData;
+    }
+    else {
+	    //
+	    // install allocated area into the DD
+	    //
+	    pDD->putRef (pData, type, pDestructor);
 
-	//
-	// install allocated area into the DD
-	//
-	pDD->putRef (pData, type, pDestructor);
+        //
+        // set the status and severity to normal
+        //
+        pDD->setStat (epicsAlarmNone);
+	    pDD->setSevr (epicsSevNone);
 
-	pDD->setStat(epicsAlarmNone);
-	pDD->setSevr(epicsSevNone);
+        //
+        // set the time stamp to the last time that
+        // we added bytes to the in buf
+        //
+        aitTimeStamp gddts = this->lastRecvTS;
+        pDD->setTimeStamp (&gddts);
 
-	//
-	// No suprises when multiple codes are looking
-	// at the same data
-	//
-	pDD->markConstant ();
-
-	//
-	// call the server tool's virtual function
-	//
-	status = this->ctx.getPV()->write(this->ctx, *pDD);
-
+	    //
+	    // call the server tool's virtual function
+	    //
+	    status = this->ctx.getPV()->write(this->ctx, *pDD);
+    }
 	return status;
 }
 
 //
 // casStrmClient::read()
 //
-caStatus casStrmClient::read(smartGDDPointer &pDescRet)
+caStatus casStrmClient::read (smartGDDPointer &pDescRet)
 {
 	const caHdr	    *pHdr = this->ctx.getMsg();
 	caStatus        status;
 
-	pDescRet = NULL;
-	status = createDBRDD (pHdr->m_dataType, pHdr->m_count, pDescRet);
-	if (status) {
-		return status;
-	}
-
-	if (pDescRet==NULL) {
+	pDescRet = createDBRDD (pHdr->m_dataType, pHdr->m_count);
+	if (!pDescRet) {
 		return S_cas_noMemory;
 	}
 
@@ -1811,7 +1948,7 @@ caStatus casStrmClient::read(smartGDDPointer &pDescRet)
 	//
 	// call the server tool's virtual function
 	//
-	status = this->ctx.getPV()->read(this->ctx, *pDescRet);
+	status = this->ctx.getPV()->read (this->ctx, *pDescRet);
 
 	//
 	// prevent problems when they initiate
@@ -1840,144 +1977,6 @@ caStatus casStrmClient::read(smartGDDPointer &pDescRet)
 
 	return status;
 }
-
-//
-// createDBRDD ()
-//
-caStatus createDBRDD (unsigned dbrType, aitIndex dbrCount, smartGDDPointer &pDescRet)
-{
-	aitUint32 valIndex;
-	aitUint32 gddStatus;
-	aitUint16 appType;
-	gdd *pVal;
-	
-	/*
-	 * DBR type has already been checked, but it is possible
-	 * that "gddDbrToAit" will not track with changes in
-	 * the DBR_XXXX type system
-	 */
-	if (dbrType>=NELEMENTS(gddDbrToAit)) {
-		return S_cas_badType;
-	}
-	if (gddDbrToAit[dbrType].type==aitEnumInvalid) {
-		return S_cas_badType;
-	}
-	appType = gddDbrToAit[dbrType].app;
-	
-	//
-	// create the descriptor
-	//
-	pDescRet = gddApplicationTypeTable::app_table.getDD (appType);
-	if (!pDescRet) {
-		return S_cas_noMemory;
-	}
-	
-	//
-	// smart pointer class maintains the ref count from here down
-	//
-	gddStatus = pDescRet->unreference();
-	assert (!gddStatus);
-	
-	if (pDescRet->isContainer()) {
-		gdd *pGdd = pDescRet;
-		//
-		// this cast is ugly and dangerous
-		// (Jim should have used virtual functions in gdd)
-		//
-		gddContainer *pCont = (gddContainer *) pGdd;
-		
-		//
-		// unable to change the bounds on the managed GDD that is
-		// returned for DBR types
-		//
-		if (dbrCount>1 ) {
-				pDescRet = (gdd *) new gddContainer (pCont);
-				//
-				// smart pointer class maintains the ref count from here down
-				//
-				gddStatus = pDescRet->unreference();
-				assert (!gddStatus);
-		}
-
-		//
-		// All DBR types have a value member 
-		//
-		gddStatus = 
-			gddApplicationTypeTable::app_table.mapAppToIndex
-			(appType, gddAppType_value, valIndex);
-		if (gddStatus) {
-			pDescRet = NULL;
-			return S_cas_internal;
-		}
-		pVal = pCont->getDD(valIndex);
-		if (!pVal) {
-			pDescRet = NULL;
-			return S_cas_internal;
-		}
-	}
-	else {
-		pVal = pDescRet;
-	}
-	
-	if (pVal->isScalar()) {
-		if (dbrCount<=1u) {
-			return S_cas_success;
-		}
-		
-		//
-		// scalar and managed (and need to set the bounds)
-		//	=> out of luck (cant modify bounds)
-		//
-		if (pDescRet->isManaged()) {
-			pDescRet = NULL;
-			return S_cas_internal;
-		}
-		
-		//
-		// convert to atomic
-		//
-		gddBounds bds;
-		bds.setSize(dbrCount);
-		bds.setFirst(0u);
-		pVal->setDimension(1u, &bds);
-	}
-	else if (pVal->isAtomic()) {
-		const gddBounds* pB = pVal->getBounds();
-		aitIndex bound = dbrCount;
-		unsigned dim;
-		int modAllowed;
-		
-		if (pDescRet->isManaged() || pDescRet->isFlat()) {
-			modAllowed = FALSE;
-		}
-		else {
-			modAllowed = TRUE;
-		}
-		
-		for (dim=0u; dim<(unsigned)pVal->dimension(); dim++) {
-			if (pB[dim].first()!=0u && pB[dim].size()!=bound) {
-				if (modAllowed) {
-					pVal->setBound(dim, 0u, bound);
-				}
-				else {
-					pDescRet = NULL;
-					return S_cas_internal;
-				}
-			}
-			bound = 1u;
-		}
-	}
-	else {
-		//
-		// the GDD is container or isnt any of the normal types
-		//
-		pDescRet = NULL;
-		return S_cas_internal;
-	}
-	
-	return S_cas_success;
-}
-
 
 //
 // casStrmClient::userName() 
@@ -2080,12 +2079,10 @@ inBuf::fillCondition casStrmClient::xRecv(char *pBufIn, bufSizeT nBytes,
 	inBuf::fillCondition stat;
 	
 	stat = this->osdRecv (pBufIn, nBytes, nActualBytes);
-	//if (stat==casFillProgress) {
-		//
-		// !! this time fetch may be slowing things down !!
-		//
-		//this->lastRecvTS = osiTime::getCurrent();
-	//}
+    //
+    // this is used to set the time stamp for write GDD's
+    //
+    this->lastRecvTS = osiTime::getCurrent();
 	return stat;
 }
 

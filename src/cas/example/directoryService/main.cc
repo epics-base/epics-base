@@ -3,7 +3,6 @@
 
 #include "directoryServer.h"
 #include "fdManager.h"
-#include "bsdSocketResource.h"
 
 #define LOCAL static
 

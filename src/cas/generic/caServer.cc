@@ -31,6 +31,7 @@
 #include "dbMapper.h"		// ait to dbr types 
 #include "gddAppTable.h"	// EPICS application type table
 
+#define CAS_DIAGNOSTICS_API_WHICH_MAY_VANISH_IN_THE_FUTURE
 #include "server.h"
 #include "caServerIIL.h"	// caServerI in line func
 

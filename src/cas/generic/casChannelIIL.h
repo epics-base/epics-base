@@ -56,14 +56,16 @@ inline void casChannelI::unlock() const
 //
 // casChannelI::postEvent()
 //
-inline void casChannelI::postEvent(const casEventMask &select, gdd &event)
+inline void casChannelI::postEvent (const casEventMask &select, const smartConstGDDPointer &pEvent)
 {
 	this->lock();
-        tsDLIterBD<casMonitor> iter(this->monitorList.first());
-        while ( iter!=tsDLIterBD<casMonitor>::eol() ) {
-                iter->post(select, event);
-		++iter;
-        }
+
+    tsDLIterBD<casMonitor> iter(this->monitorList.first());
+    while ( iter != tsDLIterBD<casMonitor>::eol() ) {
+        iter->post (select, pEvent);
+	    ++iter;
+    }
+
 	this->unlock();
 }
 

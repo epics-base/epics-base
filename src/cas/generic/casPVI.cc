@@ -91,10 +91,49 @@ casPVI::~casPVI()
 }
 
 //
+// casPVI::deleteSignal()
+// check for none attached and delete self if so
+//
+void casPVI::deleteSignal ()
+{
+	caServerI *pLocalCAS = this->pCAS;
+
+	//
+	// if we are not attached to a server then the
+	// following steps are not relevant
+	//
+	if (pLocalCAS) {
+		//
+		// We dont take the PV lock here because
+		// the PV may be destroyed and we must
+		// keep the lock unlock pairs consistent
+		// (because the PV's lock is really a ref
+		// to the server's lock)
+		//
+		// This is safe to do because we take the PV
+		// lock when we add a new channel (and the
+		// PV lock is realy the server's lock)
+		//
+		pLocalCAS->lock();
+
+		if (this->chanList.count()==0u) {
+            pLocalCAS->removeItem (*this);
+            this->pCAS = NULL;
+			this->destroy ();
+			//
+			// !! dont access self after destroy !!
+			//
+		}
+
+		pLocalCAS->unlock();
+	}
+}
+
+//
 // casPVI::destroy()
 //
 // This version of destroy() is provided only because it can
-// be safely calle din the casPVI destructor as a side effect
+// be safely called in the casPVI destructor as a side effect
 // of deleting the last channel.
 //
 void casPVI::destroy ()

@@ -121,7 +121,7 @@ void outBuf::commitMsg ()
 	}
 
   	if (this->getDebugLevel()) {
-		ca_printf (
+		errlogPrintf (
 "CAS Response => cmd=%d id=%x typ=%d cnt=%d psz=%d avail=%x outBuf ptr=%lx\n",
 			mp->m_cmmd, mp->m_cid, mp->m_dataType, mp->m_count, mp->m_postsize,
 			mp->m_available, (long)mp);
@@ -192,7 +192,7 @@ outBuf::flushCondition outBuf::flush (bufSizeT spaceRequired)
 		if (this->getDebugLevel()>2u) {
 		    char buf[64];
 			this->clientHostName (buf, sizeof(buf));
-			ca_printf ("CAS: Sent a %d byte reply to %s\n",
+			errlogPrintf ("CAS: Sent a %d byte reply to %s\n",
 				nBytes, buf);
 		}
     }
@@ -212,8 +212,7 @@ const outBufCtx outBuf::pushCtx (bufSizeT headerSize, bufSizeT maxBodySize, void
     if (status!=S_cas_success) {
         return outBufCtx ();
     }
-    else if (this->ctxRecursCount==UINT_MAX) {
-        this->mutex.unlock();
+    else if (this->ctxRecursCount>=UINT_MAX) {
         return outBufCtx ();
     }
     else {

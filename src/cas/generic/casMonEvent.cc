@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  1998/07/08 15:38:06  jhill
+ * fixed lost monitors during flow control problem
+ *
  * Revision 1.5  1998/06/16 02:27:06  jhill
  * use smart gdd ptr
  *
@@ -85,7 +88,7 @@ caStatus casMonEvent::cbFunc(casEventSys &eSys)
 //
 // casMonEvent::assign ()
 //
-void casMonEvent::assign (casMonitor &monitor, gdd *pValueIn)
+void casMonEvent::assign (casMonitor &monitor, const smartConstGDDPointer &pValueIn)
 {
 	this->pValue = pValueIn;
 	this->id = monitor.casRes::getId();

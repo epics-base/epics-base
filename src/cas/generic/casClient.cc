@@ -235,7 +235,7 @@ caStatus casClient::processMsg ()
 		this->ctx.setData((void *)(rawMP+sizeof(*mp)));
 
 		if (this->getCAS().getDebugLevel()> 2u) {
-			this->dumpMsg (mp, (void *)(mp+1));
+			this->dumpMsg (mp, (void *)(mp+1), NULL);
 		}
 
 		//
@@ -264,8 +264,7 @@ caStatus casClient::processMsg ()
 		    }
         }
         catch (...) {
-            this->dumpMsg (mp, this->ctx.getData() );
-            epicsPrintf ("Attempt to execute client request failed (C++ exception)\n");
+            this->dumpMsg (mp, this->ctx.getData(), "request resulted in C++ exception\n");
             status = this->sendErr (mp, ECA_INTERNAL, "request resulted in C++ exception");
 	        if (status) {
 		        break;
@@ -507,12 +506,16 @@ const unsigned id
 	int status;
 
 	if (pFileName) {
-		ca_printf("Bad client request detected in \"%s\" at line %d\n",
+	    this->dumpMsg (mp, dp, 
+            "bad resource id in \"%s\" at line %d\n",
 			pFileName, lineno);
 	}
-	this->dumpMsg(mp, dp);
+    else {
+	    this->dumpMsg (mp, dp, 
+            "bad resource id\n");
+    }
 
-	status = this->sendErr(
+	status = this->sendErr (
 			mp, 
 			cacStatus, 
 			"Bad Resource ID=%u detected at %s.%d",
@@ -531,41 +534,49 @@ const unsigned id
 //	dp arg allowed to be null
 //
 //
-void casClient::dumpMsg(const caHdr *mp, const void *dp)
+void casClient::dumpMsg(const caHdr *mp, const void *dp, const char *pFormat, ...)
 {
-        casChannelI	*pciu;
-	char		pName[64u];
-	char		pPVName[64u];
+    casChannelI *pciu;
+    char        pName[64u];
+    char        pPVName[64u];
+    va_list     theArgs;
+        
+    if (pFormat) {
+        va_start (theArgs, pFormat);
+        errlogPrintf ("CAS: ");
+        errlogVprintf (pFormat, theArgs);
+        va_end (theArgs);
+    }
 
-	this->clientHostName (pName, sizeof (pName));
+    this->clientHostName (pName, sizeof (pName));
 
-	pciu = this->resIdToChannel(mp->m_cid);
+    pciu = this->resIdToChannel(mp->m_cid);
 
-	if (pciu) {
-		strncpy(pPVName, pciu->getPVI().getName(), sizeof(pPVName));
-		if (&pciu->getClient()!=this) {
-			strncat(pPVName, "!Bad Client!", sizeof(pPVName));
-		}
-		pPVName[sizeof(pPVName)-1]='\0';
-	}
-	else {
-		sprintf(pPVName,"%u", mp->m_cid);
-	}
-	ca_printf(	
-"CAS %s on %s at %s: cmd=%d cid=%s typ=%d cnt=%d psz=%d avail=%x\n",
-		this->userName(),
-		this->hostName(),
-		pName,
-		mp->m_cmmd,
-		pPVName,
-		mp->m_dataType,
-		mp->m_count,
-		mp->m_postsize,
-		mp->m_available);
+    if (pciu) {
+        strncpy(pPVName, pciu->getPVI().getName(), sizeof(pPVName));
+        if (&pciu->getClient()!=this) {
+            strncat(pPVName, "!Bad Client!", sizeof(pPVName));
+        }
+        pPVName[sizeof(pPVName)-1]='\0';
+    }
+    else {
+        sprintf(pPVName,"%u", mp->m_cid);
+    }
+    errlogPrintf(  
+"CAS: %s on %s at %s: cmd=%d cid=%s typ=%d cnt=%d psz=%d avail=%x\n",
+        this->userName(),
+        this->hostName(),
+        pName,
+        mp->m_cmmd,
+        pPVName,
+        mp->m_dataType,
+        mp->m_count,
+        mp->m_postsize,
+        mp->m_available);
 
-  	if (mp->m_cmmd==CA_PROTO_WRITE && mp->m_dataType==DBR_STRING && dp) {
-    		ca_printf("CAS: The string written: %s \n", (char *)dp);
-	}
+    if (mp->m_cmmd==CA_PROTO_WRITE && mp->m_dataType==DBR_STRING && dp) {
+            errlogPrintf("CAS: The string written: %s \n", (char *)dp);
+    }
 }
 
 //

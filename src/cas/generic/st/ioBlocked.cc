@@ -10,8 +10,6 @@
 #include <stdio.h>
 
 #include "casdef.h"
-#include "osiMutexNOOP.h"
-
 
 //
 // ioBlocked::ioBlocked ()
@@ -26,6 +24,24 @@ ioBlocked::ioBlocked () :
 //
 ioBlocked::~ioBlocked ()
 {
+    if (this->pList) {
+        this->pList->remove (*this);
+        this->pList = NULL;
+    }
+}
+
+//
+// ioBlocked::ioBlockedSignal ()
+//
+void ioBlocked::ioBlockedSignal ()
+{
+    //
+    // this must _not_ be pure virtual because
+    // there are situations where this is called
+    // inbetween the derived class's and this base 
+    // class's destructors, and therefore a
+    // NOOP is required
+    //
 }
 
 //
@@ -67,17 +83,6 @@ void ioBlockedList::signal ()
     while ( (pB = tmp.get ()) ) {
         pB->pList = NULL;
         pB->ioBlockedSignal ();
-    }
-}
-
-//
-// ioBlockedList::removeItemFromIOBLockedList ()
-//
-void ioBlockedList::removeItemFromIOBLockedList (ioBlocked &item)
-{
-    if (item.pList==this) {
-        this->remove (item);
-        item.pList = NULL;
     }
 }
 

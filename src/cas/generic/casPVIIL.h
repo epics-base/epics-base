@@ -104,44 +104,6 @@ inline void casPVI::unregisterIO()
 }
 
 //
-// casPVI::deleteSignal()
-// check for none attached and delete self if so
-//
-inline void casPVI::deleteSignal()
-{
-	caServerI *pLocalCAS = this->pCAS;
-
-	//
-	// if we are not attached to a server then the
-	// following steps are not relevant
-	//
-	if (pLocalCAS) {
-		//
-		// We dont take the PV lock here because
-		// the PV may be destroyed and we must
-		// keep the lock unlock pairs consistent
-		// (because the PV's lock is really a ref
-		// to the server's lock)
-		//
-		// This is safe to do because we take the PV
-		// lock when we add a new channel (and the
-		// PV lock is realy the server's lock)
-		//
-		pLocalCAS->lock();
-
-		if (this->chanList.count()==0u) {
-            this->pCAS = NULL;
-			this->destroy ();
-			//
-			// !! dont access self after destroy !!
-			//
-		}
-
-		pLocalCAS->unlock();
-	}
-}
-
-//
 // casPVI::bestDBRType()
 //
 inline caStatus  casPVI::bestDBRType (unsigned &dbrType)
@@ -166,22 +128,16 @@ inline caStatus  casPVI::bestDBRType (unsigned &dbrType)
 //
 // casPVI::postEvent()
 //
-inline void casPVI::postEvent (const casEventMask &select, gdd &event)
+inline void casPVI::postEvent (const casEventMask &select, const smartConstGDDPointer &pEvent)
 {
 	if (this->nMonAttached==0u) {
 		return;
 	}
 
-	//
-	// the event queue is looking at the DD 
-	// now so it must not be changed
-	//
-	event.markConstant();
-
 	this->lock();
 	tsDLIterBD<casPVListChan> iter(this->chanList.first());
     while ( iter != tsDLIterBD<casPVListChan>::eol() ) {
-		iter->postEvent(select, event);
+		iter->postEvent(select, pEvent);
 		++iter;
 	}
 	this->unlock();

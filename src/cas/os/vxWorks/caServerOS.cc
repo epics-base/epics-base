@@ -5,6 +5,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  1996/09/16 18:27:09  jhill
+ * vxWorks port changes
+ *
  * Revision 1.1  1996/09/04 22:06:43  jhill
  * installed
  *
@@ -62,7 +65,7 @@ caStatus caServerOS::init()
 {
 	this->pBTmr = new casBeaconTimer((*this)->getBeaconPeriod(), *this);
 	if (!this->pBTmr) {
-                ca_printf("CAS: Unable to start server beacon\n");
+                errlogPrintf("CAS: Unable to start server beacon\n");
 		return S_cas_noMemory;
         }
 

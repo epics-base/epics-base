@@ -53,7 +53,7 @@ casCoreClient::casCoreClient (caServerI &serverInternal)
 casCoreClient::~casCoreClient()
 {
     if (this->ctx.getServer()->getDebugLevel()>0u) {
-		ca_printf ("CAS: Connection Terminated\n");
+		errlogPrintf ("CAS: Connection Terminated\n");
     }
 
 	this->lock();
@@ -110,36 +110,36 @@ caStatus casCoreClient::asyncSearchResponse (
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::createChanResponse(const caHdr &, const pvAttachReturn &)
+caStatus casCoreClient::createChanResponse (const caHdr &, const pvAttachReturn &)
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::readResponse(casChannelI *, const caHdr &, 
-	const gdd &, const caStatus)
+caStatus casCoreClient::readResponse (casChannelI *, const caHdr &, 
+	const smartConstGDDPointer &, const caStatus)
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::readNotifyResponse(casChannelI *, const caHdr &, 
-	const gdd *, const caStatus)
+caStatus casCoreClient::readNotifyResponse (casChannelI *, const caHdr &, 
+	const smartConstGDDPointer &, const caStatus)
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::writeResponse(const caHdr &, 
+caStatus casCoreClient::writeResponse (const caHdr &, 
 	const caStatus)
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::writeNotifyResponse(const caHdr &, 
+caStatus casCoreClient::writeNotifyResponse (const caHdr &, 
 	const caStatus)
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::monitorResponse(casChannelI &, const caHdr &, 
-	const gdd *, const caStatus)
+caStatus casCoreClient::monitorResponse (casChannelI &, const caHdr &, 
+	const smartConstGDDPointer &, const caStatus)
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::accessRightsResponse(casChannelI *)
+caStatus casCoreClient::accessRightsResponse (casChannelI *)
 {
 	return S_casApp_noSupport;
 }
@@ -147,17 +147,17 @@ caStatus casCoreClient::accessRightsResponse(casChannelI *)
 //
 // casCoreClient::installChannel()
 //
-void casCoreClient::installChannel(casChannelI &)
+void casCoreClient::installChannel (casChannelI &)
 {
-	assert(0); // dont install channels on the wrong type of client
+	assert (0); // dont install channels on the wrong type of client
 }
  
 //
 // casCoreClient::removeChannel()
 //
-void casCoreClient::removeChannel(casChannelI &)
+void casCoreClient::removeChannel (casChannelI &)
 {
-	assert(0); // dont install channels on the wrong type of client
+	assert (0); // dont install channels on the wrong type of client
 }
 
 //
@@ -171,7 +171,7 @@ caNetAddr casCoreClient::fetchLastRecvAddr () const
 //
 // casCoreClient::lookupRes()
 //
-casRes *casCoreClient::lookupRes(const caResId &idIn, casResType type)
+casRes *casCoreClient::lookupRes (const caResId &idIn, casResType type)
 {
 	casRes *pRes;
 	pRes = this->ctx.getServer()->lookupRes(idIn, type);

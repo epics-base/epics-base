@@ -5,6 +5,10 @@
 //
 //
 // $Log$
+// Revision 1.19  1999/09/02 21:50:28  jhill
+// o changed UDP to non-blocking IO
+// o cleaned up (consolodated) UDP interface class structure
+//
 // Revision 1.18  1998/12/18 18:58:20  jhill
 // fixed warning
 //
@@ -65,7 +69,6 @@
 //
 
 #include "server.h"
-#include "bsdSocketResource.h"
 
 //
 // casStreamIO::casStreamIO()
@@ -88,7 +91,7 @@ casStreamIO::casStreamIO(caServerI &cas, const ioArgsToNewStreamIO &args) :
 							(char *)&yes,
 							sizeof(yes));
 	if (status<0) {
-		ca_printf(
+		errlogPrintf(
 			"CAS: %s TCP_NODELAY option set failed %s\n",
 			__FILE__, SOCKERRSTR(SOCKERRNO));
 		throw S_cas_internal;
@@ -105,7 +108,7 @@ casStreamIO::casStreamIO(caServerI &cas, const ioArgsToNewStreamIO &args) :
 					(char *)&yes,
 					sizeof(yes));
 	if (status<0) {
-		ca_printf(
+		errlogPrintf(
 			"CAS: %s SO_KEEPALIVE option set failed %s\n",
 			__FILE__, SOCKERRSTR(SOCKERRNO));
 		throw S_cas_internal;
@@ -132,7 +135,7 @@ casStreamIO::casStreamIO(caServerI &cas, const ioArgsToNewStreamIO &args) :
 					(char *)&i,
 					sizeof(i));
 	if(status < 0){
-			ca_printf("CAS: SO_SNDBUF set failed\n");
+			errlogPrintf("CAS: SO_SNDBUF set failed\n");
 	    throw S_cas_internal;
 	}
 	i = MAX_MSG_SIZE;
@@ -143,7 +146,7 @@ casStreamIO::casStreamIO(caServerI &cas, const ioArgsToNewStreamIO &args) :
 					(char *)&i,
 					sizeof(i));
 	if(status < 0){
-			ca_printf("CAS: SO_RCVBUF set failed\n");
+			errlogPrintf("CAS: SO_RCVBUF set failed\n");
 	    throw S_cas_internal;
 	}
 #endif
@@ -180,11 +183,14 @@ outBuf::flushCondition casStreamIO::osdSend (const char *pInBuf, bufSizeT nBytes
             int errnoCpy = SOCKERRNO;
 
             ipAddrToA (&this->addr, buf, sizeof(buf));
-			ca_printf(
+			errlogPrintf(
 	"CAS: TCP socket send to \"%s\" failed because \"%s\"\n",
 				buf, SOCKERRSTR(errnoCpy));
+            return outBuf::flushDisconnect;
         }
-        return outBuf::flushNone;
+        else {
+            return outBuf::flushNone;
+        }
     }
     nBytesActual = (bufSizeT) status;
     return outBuf::flushProgress;
@@ -211,7 +217,7 @@ inBuf::fillCondition casStreamIO::osdRecv (char *pInBuf, bufSizeT nBytes,
         }
         else  {
 			ipAddrToA (&this->addr, buf, sizeof(buf));
-			ca_printf(
+			errlogPrintf(
 		"CAS: client %s disconnected because \"%s\"\n",
 				buf, SOCKERRSTR(myerrno));
 		    return casFillDisconnect;
@@ -251,7 +257,7 @@ void casStreamIO::xSetNonBlocking()
 		this->blockingFlag = xIsntBlocking;
 	}
 	else {
-		ca_printf("%s:CAS: TCP non blocking IO set fail because \"%s\"\n", 
+		errlogPrintf("%s:CAS: TCP non blocking IO set fail because \"%s\"\n", 
 				__FILE__, SOCKERRSTR(SOCKERRNO));
 	    throw S_cas_internal;
 	}
@@ -279,7 +285,7 @@ bufSizeT casStreamIO::incommingBytesPresent() const
         int errnoCpy = SOCKERRNO;
         
         ipAddrToA (&this->addr, buf, sizeof(buf) );
-        ca_printf ("CAS: FIONREAD for %s failed because \"%s\"\n",
+        errlogPrintf ("CAS: FIONREAD for %s failed because \"%s\"\n",
             buf, SOCKERRSTR(errnoCpy));
         return 0u;
     }

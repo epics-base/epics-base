@@ -12,8 +12,8 @@
 #undef epicsExportSharedSymbols
 #include "osiTimer.h"
 #include "fdManager.h"
-#define epicsExportSharedSymbols
 
+#define epicsExportSharedSymbols
 #include "shareLib.h" // redefine share lib defines
 
 class caServerI;

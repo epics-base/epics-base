@@ -7,6 +7,10 @@
 // Some BSD calls have crept in here
 //
 // $Log$
+// Revision 1.6  1999/09/02 21:50:29  jhill
+// o changed UDP to non-blocking IO
+// o cleaned up (consolodated) UDP interface class structure
+//
 // Revision 1.5  1997/08/05 00:47:26  jhill
 // fixed warnings
 //
@@ -29,9 +33,6 @@
 
 #ifndef includeCASOSDH 
 #define includeCASOSDH 
-
-#include "osiMutex.h"
-#include "osiTimer.h"
 
 class caServerI;
 

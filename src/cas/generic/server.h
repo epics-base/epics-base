@@ -46,6 +46,7 @@
 // are included first here so that they are included
 // once only before epicsExportSharedSymbols is defined)
 //
+#undef epicsAssertAuthor
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 #include "epicsAssert.h" // EPICS assert() macros
 #include "osiTime.h" // EPICS os independent time
@@ -53,6 +54,7 @@
 #include "errMdef.h" // EPICS error codes 
 #include "gdd.h" // EPICS data descriptors 
 #include "resourceLib.h" // EPICS hashing templates
+#include "errlog.h" // EPICS error logging interface
 
 //
 // CA
@@ -69,13 +71,12 @@
 //
 #define epicsExportSharedSymbols
 #include "casdef.h" // sets proper def for shareLib.h defines
-#include "osiMutexCAS.h" // NOOP on single threaded OS
+#include "osiMutex.h" 
 void casVerifyFunc(const char *pFile, unsigned line, const char *pExp);
 void serverToolDebugFunc(const char *pFile, unsigned line, const char *pComment);
 #define serverToolDebug(COMMENT) \
 {serverToolDebugFunc(__FILE__, __LINE__, COMMENT); } 
 #define casVerify(EXP) {if ((EXP)==0) casVerifyFunc(__FILE__, __LINE__, #EXP); } 
-caStatus createDBRDD(unsigned dbrType, aitIndex dbrCount, smartGDDPointer &pDescRet);
 caStatus copyBetweenDD(gdd &dest, gdd &src);
 
 enum xBlockingStatus {xIsBlocking, xIsntBlocking};
@@ -168,7 +169,7 @@ public:
 		const casEventMask &maskIn, osiMutex &mutexIn);
 	virtual ~casClientMon();
 
-	caStatus callBack(gdd &value);
+	caStatus callBack (const smartConstGDDPointer &pValue);
 
 	virtual casResType resourceType() const;
 
@@ -436,7 +437,7 @@ public:
 	caServerI &getCAS() const;
 
 	virtual caStatus monitorResponse (casChannelI &chan, const caHdr &msg, 
-		const gdd *pDesc, const caStatus status);
+		const smartConstGDDPointer &pDesc, const caStatus status);
 
 	virtual caStatus accessRightsResponse(casChannelI *);
 
@@ -444,15 +445,15 @@ public:
 	// one virtual function for each CA request type that has
 	// asynchronous completion
 	//
-	virtual caStatus asyncSearchResponse(
+	virtual caStatus asyncSearchResponse (
 		const caNetAddr &outAddr, 
 		const caHdr &, const pvExistReturn &);
-	virtual caStatus createChanResponse(
+	virtual caStatus createChanResponse (
 		const caHdr &, const pvAttachReturn &);
-	virtual caStatus readResponse(
-		casChannelI *, const caHdr &, const gdd &, const caStatus); 
-	virtual caStatus readNotifyResponse(
-		casChannelI *, const caHdr &, const gdd *, const caStatus);
+	virtual caStatus readResponse (
+		casChannelI *, const caHdr &, const smartConstGDDPointer &, const caStatus); 
+	virtual caStatus readNotifyResponse (
+		casChannelI *, const caHdr &, const smartConstGDDPointer &, const caStatus);
 	virtual caStatus writeResponse (const caHdr &, const caStatus);
 	virtual caStatus writeNotifyResponse (const caHdr &, const caStatus);
 
@@ -516,7 +517,7 @@ protected:
 	//
 	// dump message to stderr
 	//
-	void dumpMsg(const caHdr *mp, const void *dp);
+	void dumpMsg (const caHdr *mp, const void *dp, const char *pFormat, ...);
 
 private:
 
@@ -581,16 +582,15 @@ public:
 	// one function for each CA request type that has
 	// asynchronous completion
 	//
-	virtual caStatus createChanResponse(const caHdr &, const pvAttachReturn &);
-	caStatus readResponse(casChannelI *pChan, const caHdr &msg,
-			const gdd &desc, const caStatus status);
-	caStatus readNotifyResponse(casChannelI *pChan, const caHdr &msg,
-			const gdd *pDesc, const caStatus status);
-	caStatus writeResponse(const caHdr &msg,
-			const caStatus status);
-	caStatus writeNotifyResponse(const caHdr &msg, const caStatus status);
-	caStatus monitorResponse(casChannelI &chan, const caHdr &msg, 
-		const gdd *pDesc, const caStatus status);
+	virtual caStatus createChanResponse (const caHdr &, const pvAttachReturn &);
+	caStatus readResponse (casChannelI *pChan, const caHdr &msg,
+			const smartConstGDDPointer &pDesc, const caStatus status);
+	caStatus readNotifyResponse (casChannelI *pChan, const caHdr &msg,
+			const smartConstGDDPointer &pDesc, const caStatus status);
+	caStatus writeResponse (const caHdr &msg, const caStatus status);
+	caStatus writeNotifyResponse (const caHdr &msg, const caStatus status);
+	caStatus monitorResponse (casChannelI &chan, const caHdr &msg, 
+		const smartConstGDDPointer &pDesc, const caStatus status);
 
 	caStatus noReadAccessEvent(casClientMon *);
 
@@ -645,8 +645,8 @@ private:
 	// accessRightsResponse()
 	//
 	caStatus accessRightsResponse (casChannelI *pciu);
-	//
 
+	//
 	// these prepare the gdd based on what is in the ca hdr
 	//
 	caStatus read (smartGDDPointer &pDesc);
@@ -677,8 +677,8 @@ private:
 			bufSizeT &nBytesActual) = 0;
 
 	caStatus readNotifyResponseECA_XXX (casChannelI *pChan, 
-		const caHdr &msg, const gdd *pDesc, const caStatus ecaStatus);
-	caStatus writeNotifyResponseECA_XXX(const caHdr &msg,
+		const caHdr &msg, const smartConstGDDPointer &pDesc, const caStatus ecaStatus);
+	caStatus writeNotifyResponseECA_XXX (const caHdr &msg,
 			const caStatus status);
 };
 
@@ -699,7 +699,9 @@ public:
 	// only for use with DG io
 	//
 	void sendBeacon ();
-    virtual void sendBeaconIO (char &msg, unsigned length, aitUint16 &m_port) = 0;
+
+    virtual void sendBeaconIO (char &msg, bufSizeT length, 
+        aitUint16 &portField, aitUint32 &addrField) = 0;
 
 	void destroy();
 
@@ -827,17 +829,17 @@ public:
 	//
 	// find the channel associated with a resource id
 	//
-	casChannelI *resIdToChannel(const caResId &id);
+	casChannelI *resIdToChannel (const caResId &id);
 
 	//
 	// find the PV associated with a resource id
 	//
-	casPVI *resIdToPV(const caResId &id);
+	casPVI *resIdToPV (const caResId &id);
 
 	//
 	// find the client monitor associated with a resource id
 	//
-	casClientMon *resIdToClientMon(const caResId &idIn);
+	casClientMon *resIdToClientMon (const caResId &idIn);
 
 	void installClient (casStrmClient *pClient);
 
@@ -851,7 +853,7 @@ public:
 	unsigned getDebugLevel() const { return debugLevel; }
 	inline void setDebugLevel (unsigned debugLevelIn);
 
-	void show(unsigned level) const;
+	void show (unsigned level) const;
 
 	casRes *lookupRes (const caResId &idIn, casResType type);
 
@@ -903,12 +905,12 @@ private:
 	casEventMask            logEvent; 	// DBE_LOG registerEvent("log") 
 	casEventMask            alarmEvent; // DBE_ALARM registerEvent("alarm")
 
-	double getBeaconPeriod() const;
+	double getBeaconPeriod () const;
 
 	//
 	// send beacon and advance beacon timer
 	//
-	void sendBeacon();
+	void sendBeacon ();
 
 	caStatus attachInterface (const caNetAddr &addr, bool autoBeaconAddr,
 			bool addConfigAddr);
@@ -936,14 +938,6 @@ public:
 private:
 	caStatus cbFunc(casEventSys &);
 };
-
-
-/*
- * this really should be in another header file
- */
-extern "C" {
-void		ca_printf (const char *pFormat, ...);
-}
 
 #endif /*INCLserverh*/
 

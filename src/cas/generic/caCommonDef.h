@@ -27,14 +27,6 @@
  *              Argonne National Laboratory
  *
  *
- * History
- * $Log$
- * Revision 1.2  1996/08/05 19:24:23  jhill
- * removed ERROR and OK
- *
- * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
- * ca server installation
- *
  *
  */
 

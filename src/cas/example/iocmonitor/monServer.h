@@ -7,6 +7,9 @@
  * 
  * $Id$
  * $Log$
+ * Revision 1.3  1998/12/19 00:04:46  jhill
+ * renamed createPV() to pvAttach()
+ *
  * Revision 1.2  1997/05/13 14:23:02  jbk
  * added comments at top
  *
@@ -31,11 +34,11 @@ class monServer;
 class monFd : public fdReg
 {
 public:
-	monFd(const int fdIn,const fdRegType typ,monServer& s):
-		fdReg(fdIn,typ),server(s) { } 
-	virtual ~monFd(void);
+	monFd (const int fdIn,const fdRegType typ,monServer& s) :
+		fdReg (fdIn,typ),server(s) { } 
+	virtual ~monFd (void);
 private:
-	virtual void callBack(void);
+	virtual void callBack (void);
 	monServer& server;
 };
 

@@ -8,9 +8,7 @@
 #include <ctype.h>
 
 #include "server.h"
-#include "sigPipeIgnore.h"
-#include "addrList.h"
-#include "bsdSocketResource.h"
+#include "osiSigPipeIgnore.h"
 
 static char *getToken(const char **ppString, char *pBuf, unsigned bufSIze);
 
@@ -48,10 +46,10 @@ void caServerIO::locateInterfaces ()
 	// then use a hard coded default - CA_SERVER_PORT.
 	//
 	if (envGetConfigParamPtr(&EPICS_CAS_SERVER_PORT)) {
-		port = caFetchPortConfig(&EPICS_CAS_SERVER_PORT, CA_SERVER_PORT);
+		port = envGetInetPortConfigParam (&EPICS_CAS_SERVER_PORT, CA_SERVER_PORT);
 	}
 	else {
-		port = caFetchPortConfig(&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
+		port = envGetInetPortConfigParam (&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
 	}
 
 	memset ((char *)&saddr,0,sizeof(saddr));
@@ -89,11 +87,11 @@ void caServerIO::locateInterfaces ()
 
 			status = aToIPAddr (pToken, 0u, &saddr);
 			if (status) {
-				ca_printf(
+				errlogPrintf(
 					"%s: Parsing '%s'\n",
 					__FILE__,
 					EPICS_CAS_INTF_ADDR_LIST.name);
-				ca_printf(
+				errlogPrintf(
 					"\tBad internet address or host name: '%s'\n",
 					pToken);
 				continue;

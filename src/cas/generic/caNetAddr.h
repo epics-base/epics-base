@@ -16,7 +16,6 @@
 
 #ifdef caNetAddrSock
 #include "osiSock.h"
-#include "bsdSocketResource.h"
 #endif
 
 #include "epicsAssert.h"

@@ -86,19 +86,19 @@ public:
 	virtual ~ioBlocked ();
 private:
 	ioBlockedList	*pList;
-	virtual void ioBlockedSignal () = 0;
+	virtual void ioBlockedSignal ();
 };
 
 //
 // ioBlockedList
 //
 class ioBlockedList : private tsDLList<ioBlocked> {
+friend class ioBlocked;
 public:
 	ioBlockedList ();
 	virtual ~ioBlockedList ();
 	void signal ();
-	void removeItemFromIOBLockedList(ioBlocked &item);
-	void addItemToIOBLockedList(ioBlocked &item);
+	void addItemToIOBLockedList (ioBlocked &item);
 };
  
 class casMonitor;
@@ -113,7 +113,7 @@ public:
 	// (and we need to postpone true construction)
 	//
 	inline casMonEvent ();
-	inline casMonEvent (casMonitor &monitor, gdd &newValue);
+	inline casMonEvent (casMonitor &monitor, const smartConstGDDPointer &pNewValue);
 	inline casMonEvent (const casMonEvent &initValue);
 
 	//
@@ -122,20 +122,20 @@ public:
 	//
 	~casMonEvent ();
 
-	caStatus cbFunc(casEventSys &);
+	caStatus cbFunc (casEventSys &);
 
 	//
 	// casMonEvent::getValue()
 	//
-	inline gdd *getValue() const;
+	inline smartConstGDDPointer getValue () const;
 
 	inline void operator = (const class casMonEvent &monEventIn);
 	
-	inline void clear();
+	inline void clear ();
 
-	void assign (casMonitor &monitor, gdd *pValueIn);
+	void assign (casMonitor &monitor, const smartConstGDDPointer &pValueIn);
 private:
-	smartGDDPointer pValue;
+	smartConstGDDPointer pValue;
 	caResId id;
 };
 
@@ -152,10 +152,10 @@ public:
 
 	caStatus executeEvent(casMonEvent *);
 
-	inline void post(const casEventMask &select, gdd &value);
+	inline void post(const casEventMask &select, const smartConstGDDPointer &pValue);
 
 	virtual void show (unsigned level) const;
-	virtual caStatus callBack(gdd &value)=0;
+	virtual caStatus callBack (const smartConstGDDPointer &pValue) = 0;
 
 	caResId getClientId() const 
 	{
@@ -191,28 +191,28 @@ private:
 	void enable();
 	void disable();
 
-	void push (gdd &value);
+	void push (const smartConstGDDPointer &pValue);
 };
 
 //
 // casMonitor::post()
 // (check for NOOP case in line)
 //
-inline void casMonitor::post(const casEventMask &select, gdd &value)
+inline void casMonitor::post (const casEventMask &select, const smartConstGDDPointer &pValue)
 {
-	casEventMask	result(select&this->mask);
+	casEventMask	result (select&this->mask);
 	//
 	// NOOP if this event isnt selected
 	// or if it is disabled
 	//
-	if (result.noEventsSelected() || !this->enabled) {
+	if ( result.noEventsSelected() || !this->enabled ) {
 		return;
 	}
 
 	//
 	// else push it on the queue
 	//
-	this->push(value);
+	this->push (pValue);
 }
 
 class caServer;
@@ -325,7 +325,7 @@ public:
 	void installAsyncIO (casAsyncIOI &);
 	void removeAsyncIO (casAsyncIOI &);
 
-	void postEvent (const casEventMask &select, gdd &event);
+	void postEvent (const casEventMask &select, const smartConstGDDPointer &pEvent);
 
 	epicsShareFunc virtual casResType resourceType () const;
 
@@ -436,7 +436,7 @@ public:
     //
     void deleteSignal ();
     
-    void postEvent (const casEventMask &select, gdd &event);
+    void postEvent (const casEventMask &select, const smartConstGDDPointer &pEvent);
     
     caServer *getExtServer () const;
     

@@ -30,4 +30,3 @@
 
 #include "server.h"
 #include "dgInBufIL.h" // in line func for dgInBuf
-#include "bsdSocketResource.h"

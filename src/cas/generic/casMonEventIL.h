@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  1998/10/27 21:34:19  jhill
+ * avoid problems with early g++
+ *
  * Revision 1.5  1998/10/23 00:28:20  jhill
  * fixed HP-UX warnings
  *
@@ -60,26 +63,23 @@ inline casMonEvent::casMonEvent () :
 //
 // casMonEvent::casMonEvent()
 //
-inline casMonEvent::casMonEvent (casMonitor &monitor, gdd &newValue) :
-        pValue(&newValue),
-        id(monitor.casRes::getId()) {}
+inline casMonEvent::casMonEvent (casMonitor &monitor, const smartConstGDDPointer &pNewValue) :
+        pValue ( pNewValue ),
+        id ( monitor.casRes::getId () ) {}
 
 //
 // casMonEvent::casMonEvent()
 //
 inline casMonEvent::casMonEvent (const casMonEvent &initValue) :
-        pValue(initValue.pValue),
-        id(initValue.id) {}
+        pValue ( initValue.pValue ),
+        id ( initValue.id ) {}
 
 //
 // casMonEvent::operator =  ()
 //
 inline void casMonEvent::operator = (const class casMonEvent &monEventIn)
 {
-	//
-	// this cast is a workaround for defects in early versions of GNU g++
-	//
-	this->pValue = (gdd *) monEventIn.pValue;
+	this->pValue = monEventIn.pValue;
 	this->id = monEventIn.id;
 }
 
@@ -95,7 +95,7 @@ inline void casMonEvent::clear()
 //
 // casMonEvent::getValue()
 //
-inline gdd *casMonEvent::getValue() const
+inline smartConstGDDPointer casMonEvent::getValue() const
 {
 	return this->pValue;
 }

@@ -89,11 +89,11 @@ inline void casEventSys::insertEventQueue(casEvent &insert, casEvent &prevEvent)
 //
 // casEventSys::pushOnToEventQueue()
 //
-inline void casEventSys::pushOnToEventQueue(casEvent &event)
+inline void casEventSys::pushOnToEventQueue (casEvent &event)
 {
-	this->mutex.lock();
-	this->eventLogQue.push(event);
-	this->mutex.unlock();
+	this->mutex.lock ();
+	this->eventLogQue.push (event);
+	this->mutex.unlock ();
 }
  
 //

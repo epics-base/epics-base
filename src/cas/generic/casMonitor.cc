@@ -122,9 +122,9 @@ void casMonitor::disable()
 //
 // casMonitor::push()
 //
-void casMonitor::push(gdd &newValue)
+void casMonitor::push (const smartConstGDDPointer &pNewValue)
 {
-	casCoreClient	&client = this->ciu.getClient();
+	casCoreClient	&client = this->ciu.getClient ();
 	casMonEvent 	*pLog;
 	char			full;
 	
@@ -135,10 +135,10 @@ void casMonitor::push(gdd &newValue)
 	//
 	// get a new block if we havent exceeded quotas
 	//
-	full = (this->nPend>=individualEventEntries) 
-		|| client.casEventSys::full();
+	full = ( this->nPend >= individualEventEntries ) 
+		|| client.casEventSys::full ();
 	if (!full) {
-		pLog = new casMonEvent(*this, newValue);
+		pLog = new casMonEvent (*this, pNewValue);
 		if (pLog) {
 			this->nPend++;
 		}
@@ -154,19 +154,21 @@ void casMonitor::push(gdd &newValue)
 			// (ugly - but avoids purify ukn sym type problem)
 			// (better to create a temp event object)
 			//
-			smartGDDPointer pValue = this->overFlowEvent.getValue();
-			assert (pValue!=NULL);
+			smartConstGDDPointer pValue = this->overFlowEvent.getValue ();
+            if (!pValue) {
+                assert (0);
+            }
 			this->overFlowEvent = *pLog;
-			pLog->assign(*this, pValue);
-			client.insertEventQueue(*pLog, this->overFlowEvent);
+			pLog->assign (*this, pValue);
+			client.insertEventQueue (*pLog, this->overFlowEvent);
 		}
 		else {
 			//
 			// replace the value with the current one
 			//
-			this->overFlowEvent.assign(*this, &newValue);
+			this->overFlowEvent.assign (*this, pNewValue);
 		}
-		client.removeFromEventQueue(this->overFlowEvent);
+		client.removeFromEventQueue (this->overFlowEvent);
 		pLog = &this->overFlowEvent;
 	}
 	else if (!pLog) {
@@ -175,14 +177,14 @@ void casMonitor::push(gdd &newValue)
 		// => use the over flow block in the event structure
 		//
 		this->ovf = TRUE;
-		this->overFlowEvent.assign(*this, &newValue);
+		this->overFlowEvent.assign (*this, pNewValue);
 		this->nPend++;
 		pLog = &this->overFlowEvent;
 	}
 	
-	client.addToEventQueue(*pLog);
+	client.addToEventQueue (*pLog);
 	
-	this->mutex.unlock();
+	this->mutex.unlock ();
 }
 
 //
@@ -191,14 +193,16 @@ void casMonitor::push(gdd &newValue)
 caStatus casMonitor::executeEvent(casMonEvent *pEV)
 {
 	caStatus status;
-	smartGDDPointer pVal;
+	smartConstGDDPointer pVal;
 	
 	pVal = pEV->getValue ();
-	assert (pVal!=NULL);
+    if (!pVal) {
+        assert (0);
+    }
 	
-	this->mutex.lock();
+	this->mutex.lock ();
 	status = this->callBack (*pVal);
-	this->mutex.unlock();
+	this->mutex.unlock ();
 	
 	//
 	// if the event isnt accepted we will try

@@ -87,8 +87,8 @@ caStatus casDGClient::uknownMessageAction ()
 {
 	const caHdr *mp = this->ctx.getMsg();
 
-	ca_printf ("CAS: bad request code in DG =%u\n", mp->m_cmmd);
-	this->dumpMsg (mp, this->ctx.getData());
+	this->dumpMsg (mp, this->ctx.getData(), 
+        "bad request code=%u in DG\n", mp->m_cmmd);
 
 	return S_cas_internal;
 }
@@ -100,12 +100,22 @@ caStatus casDGClient::searchAction()
 {
 	const caHdr	*mp = this->ctx.getMsg();
 	void		*dp = this->ctx.getData();
-	const char	*pChanName = (const char *) dp;
+    char	    *pChanName = (char *) dp;
 	caStatus	status;
+
+    //
+    // check the sanity of the message
+    //
+    if (mp->m_postsize<=1) {
+	    this->dumpMsg (mp, dp, 
+            "empty PV name in UDP search request?\n");
+        return S_cas_success;
+    }
+    pChanName[mp->m_postsize-1] = '\0';
 
 	if (this->getCAS().getDebugLevel()>2u) {
 		char pName[64u];
-		this->clientHostName (pName, sizeof (pName));
+		this->clientHostName (pChanName, sizeof (pChanName));
 		printf("%s is searching for \"%s\"\n", pName, pChanName);
 	}
 
@@ -332,14 +342,14 @@ void casDGClient::sendBeacon ()
 	//
 	// create the message
 	//
-	memset(&buf, 0, sizeof(msg));
-	msg.m_cmmd = htons(CA_PROTO_RSRV_IS_UP);
-    msg.m_available = htonl (INADDR_ANY);
+	memset (&buf, 0, sizeof(msg));
 
 	//
-	// send it to all addresses on the beacon list
+	// send it to all addresses on the beacon list,
+    // but let the IO specific code set the address
+    // field and the port field
 	//
-	this->sendBeaconIO (buf, sizeof(msg), msg.m_count);
+	this->sendBeaconIO (buf, sizeof(msg), msg.m_cmmd, msg.m_available);
 }
 
 //
@@ -479,7 +489,7 @@ caStatus casDGClient::processDG ()
 
         if (bytesLeft<sizeof(*pReqHdr)) {
             this->inBuf::removeMsg (bytesLeft);
-            ca_printf ("casDGClient::processMsg: incomplete DG header?");
+            errlogPrintf ("casDGClient::processMsg: incomplete DG header?");
             status = S_cas_internal;
             break;
         }
@@ -505,7 +515,7 @@ caStatus casDGClient::processDG ()
         if ( inctx.pushResult() != inBufCtx::pushCtxSuccess ) {
             this->inBuf::removeMsg (bytesLeft);
             this->outBuf::popCtx (outctx);
-            ca_printf ("casDGClient::processMsg: incomplete DG?\n");
+            errlogPrintf ("casDGClient::processMsg: incomplete DG?\n");
             status = S_cas_internal;
             break;
         }

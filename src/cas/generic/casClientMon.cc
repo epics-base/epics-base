@@ -29,6 +29,11 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1999/09/15 00:00:40  jhill
+ * changed the field name "m_type" to "m_dataType" to avoid
+ * collision with a MACRO that is defined by the SENS IP stack
+ * which is mandatory in WRS's Tornado II product.
+ *
  * Revision 1.4  1998/07/08 15:38:04  jhill
  * fixed lost monitors during flow control problem
  *
@@ -72,7 +77,7 @@ casClientMon::~casClientMon()
 //
 // casClientMon::callBack()
 //
-caStatus casClientMon::callBack(gdd &value)
+caStatus casClientMon::callBack (const smartConstGDDPointer &value)
 {
 	casCoreClient &client = this->getChannel().getClient();
 	caStatus status;
@@ -89,7 +94,7 @@ caStatus casClientMon::callBack(gdd &value)
 	msg.m_available = this->getClientId();
 
 	status = client.monitorResponse (this->getChannel(),
-		msg, &value, S_cas_success);
+		msg, value, S_cas_success);
 	return status;
 }
 

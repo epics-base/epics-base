@@ -1,4 +1,3 @@
-
 # $Id$
 #
 #	Rules for making things specified in Makefile.Host
@@ -307,11 +306,12 @@ endif # EPICS_BASE
 ifdef LIBRARY
 ifdef LIBOBJS
 LIBTARGETS += $(LIBNAME) $(INSTALL_LIBS)
-CFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
-CXXFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
 
 #  check if shared libraries requested
 ifeq ($(strip $(SHARED_LIBRARIES)),YES)
+
+CFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
+CXXFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
 
 PROD_VERSION =$(SHRLIB_VERSION)
 ifeq ($(findstring cc,$(suffix $(LIBSRCS))),cc)
@@ -332,7 +332,10 @@ endif # LIBRARY
 all::	install
 
 build:: $(LIBTARGETS) $(PROD) $(TESTPROD) $(INSTALLS) \
-	$(MENUS) $(RECTYPES) $(BPTS) $(DBDNAME)
+	$(MENUS) $(RECTYPES) $(BPTS)
+ifdef DBDEXPAND
+build::	$(DBDNAME)
+endif
 
 inc:: $(INSTALL_INC) $(INSTALL_OSINC)
 
@@ -353,8 +356,11 @@ buildInstall :: build $(TARGETS) \
 
 clean::
 	@echo "Cleaning"
-	@$(RM) *.i *$(OBJ) *.a $(PROD) $(TESTPROD) $(LIBNAME) $(SHRLIBNAME) $(INC) *$(RES) $(TARGETS) \
-	$(DBDINSTALL) $(MENUS) $(RECTYPES) $(BPTS) $(DBDNAME)
+	@$(RM) *.i *$(OBJ) *.a $(PROD) $(TESTPROD) $(LIBNAME) $(SHRLIBNAME) $(INC) \
+	*$(RES) $(TARGETS) $(DBDINSTALL) $(MENUS) $(RECTYPES) $(BPTS)
+ifdef DBDEXPAND
+	@$(RM) $(DBDNAME)
+endif
 
 #---------------------------------------------------------------
 #	Products
@@ -572,7 +578,7 @@ endif
 	ln -s $< $*.st
 	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.st
 	@$(RM) $*.st
-	
+
 # Capfast Rules:
 %.db: %.edf
 	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) $<
@@ -632,10 +638,12 @@ bpt%.dbd: ../bpt%.data
 	$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt$(EXE) $<
  
+ifdef DBDEXPAND
 $(DBDNAME): ../$(DBDEXPAND)
-	@echo expanding dbd
+	@echo Expanding dbd
 	@$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand$(EXE) $(USER_DBDFLAGS) $< > $@
+endif
 
 $(DLL_LINK_LIBNAME) $(SHRLIBNAME): $(LIBOBJS)
 	$(LINK.shrlib) $(LIBOBJS) $(DLL_LDLIBS)

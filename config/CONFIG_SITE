@@ -130,3 +130,6 @@ E2DB = $(EPICS_EXTENSIONS)/bin/$(HOST_ARCH)/e2db
 E2DB_SYSFLAGS = -ate -d $(EPICS_EXTENSIONS)/templates/capfast/edb.def
 E2DB_FLAGS =
 
+#dbst 
+DBST = $(EPICS_EXTENSIONS)/bin/$(HOST_ARCH)/dbst
+

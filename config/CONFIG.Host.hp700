@@ -9,7 +9,7 @@ ARCH_CLASS = hp700
 include $(EPICS_BASE)/config/CONFIG.Host.UnixCommon
 
 SHRLIB_SUFFIX = .sl
- 
+
 AR = ar
 
 # Configure OS vendor C compiler
@@ -51,7 +51,7 @@ HPCC_SHRLIB_LDFLAGS_YES = -b
 #New HP C++ compiler
 CCC = aCC
 # avoid treating "future errors" as actual errors
-CCC_NORMAL = $(CCC) +W302 +W829 +W818 +W392 +W469 +W495 +W749 +W667 +W749 +W392 +W684
+CCC_NORMAL = $(CCC) +W302 +W829 +W818 +W392 +W469 +W495 +W749 +W667 +W392 +W684
 CCC_STRICT = $(CCC) +p
 CCC_TEMPL_INST_FLAG =
 CCC_WARN_YES = +w
@@ -62,7 +62,7 @@ CCC_SFLAGS_YES= -Wl,-a,archive
 CCC_SFLAGS_NO=
 CCC_SLIBS_YES =
 CCC_SLIBS_NO=
-CCC_SHRLIB_CFLAGS_YES =
+CCC_SHRLIB_CFLAGS_YES = +Z
 # shared libs will be found by searching environment variable SHLIB_PATH,
 # then by searching the specified path (see below)
 CCC_SHRLIB_LDFLAGS_YES = -b

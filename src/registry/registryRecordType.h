@@ -2,6 +2,11 @@
 #define INCregistryRecordTypeh
 
 #include "shareLib.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct dbRecordType;
 struct rset;
 struct dbBase;
@@ -14,10 +19,6 @@ typedef struct recordTypeLocation {
     computeSizeOffset sizeOffset;
 }recordTypeLocation;
     
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 epicsShareFunc int epicsShareAPI registryRecordTypeAdd(
     const char *name,const recordTypeLocation *prtl);

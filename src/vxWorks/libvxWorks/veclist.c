@@ -9,6 +9,7 @@
  *
  *	.01 010393 Applied fix for zero C ISR param causes incorrect 
  *		   identification as MACRO ISR problem. 
+ *	.02 022195 Compiler warnings fixed
  */
 
 /*
@@ -156,17 +157,17 @@ int	cISRTest(FUNCPTR proutine, FUNCPTR *ppisr, void **pparam)
 		pchk++, pref++){
 
 		status = vxMemProbe(	
-				pchk,
+				(char *) pchk,
 				READ,
 				sizeof(val),
-				&val);
+				(char *) &val);
 		if(status < 0){
 			return ERROR;
 		}
 
 		if(val != *pref){
 			if(*pref == (unsigned char) ISR_PATTERN){
-				*ppisr = fetch_pointer(pchk);
+				*ppisr = (FUNCPTR) fetch_pointer(pchk);
 				pref += sizeof(*ppisr)-1;
 				pchk += sizeof(*ppisr)-1;
 				found_isr = TRUE;	

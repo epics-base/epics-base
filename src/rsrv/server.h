@@ -175,7 +175,7 @@ GLBLTYPE void               *rsrvPutNotifyFreeList;
 void camsgtask (struct client *client);
 void cas_send_bs_msg ( struct client *pclient, int lock_needed );
 void cas_send_dg_msg ( struct client *pclient );
-int rsrv_online_notify_task (void);
+void rsrv_online_notify_task (void);
 int cast_server (void);
 struct client *create_client ( SOCKET sock, int proto );
 void destroy_client ( struct client * );

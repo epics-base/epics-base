@@ -56,7 +56,7 @@ static void  forcePort (ELLLIST *pList, unsigned short port)
 /*
  *  RSRV_ONLINE_NOTIFY_TASK
  */
-int rsrv_online_notify_task()
+void rsrv_online_notify_task()
 {
     osiSockAddrNode     *pNode;
     double              delay;

@@ -56,7 +56,7 @@ if(threadNameToId(NAME)!=0)threadDestroy(threadNameToId(NAME));
  *  handle each of them
  *
  */
-LOCAL int req_server (void)
+LOCAL void req_server (void)
 {
     unsigned priorityOfSelf = epicsThreadGetPrioritySelf ();
     unsigned priorityOfUDP;
@@ -290,7 +290,7 @@ epicsShareFunc int epicsShareAPI rsrv_init (void)
     tid = epicsThreadCreate ( "CAS-TCP",
         priorityOfConnectDaemon,
         epicsThreadGetStackSize(epicsThreadStackMedium),
-        (EPICSTHREADFUNC)req_server, 0);
+        req_server, 0);
     if ( tid == 0 ) {
         epicsPrintf ( "CAS: unable to start connection request thread\n" );
     }

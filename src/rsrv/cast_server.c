@@ -218,7 +218,7 @@ int cast_server(void)
 
     tid = epicsThreadCreate ( "CAS-beacon", priorityOfBeacon,
         epicsThreadGetStackSize (epicsThreadStackSmall),
-        (EPICSTHREADFUNC) rsrv_online_notify_task, 0 );
+        rsrv_online_notify_task, 0 );
     if ( tid == 0 ) {
         epicsPrintf ( "CAS: unable to start beacon thread\n" );
     }

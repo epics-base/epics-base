@@ -59,7 +59,7 @@ static void myCallback(pcallback,no_read,pdata)
         struct waveformRecord   *pwf=
 		(struct waveformRecord *)(pcallback->dbAddr.precord);
 	short ftvl = pwf->ftvl;
-	int   i;
+	long   i;
 
 	if(!pwf->busy) return;
         dbScanLock(pwf);

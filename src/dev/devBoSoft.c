@@ -18,7 +18,6 @@
 
 
 /* Create the dset for devBoSoft */
-long init_record();
 long write_bo();
 
 struct {
@@ -32,33 +31,10 @@ struct {
 	5,
 	NULL,
 	NULL,
-	init_record,
+	NULL,
 	NULL,
 	write_bo};
 
-static long init_record(pbo)
-    struct boRecord	*pbo;
-{
-    char message[100];
-    /* bo.out must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
-    switch (pbo->out.type) {
-    case (CONSTANT) :
-        pbo->val = pbo->out.value.value;
-        break;
-    case (PV_LINK) :
-        break;
-    case (DB_LINK) :
-        break;
-    case (CA_LINK) :
-        break;
-    default :
-	strcpy(message,pbo->name);
-	strcat(message,": devBoSoft (init_record) Illegal INP field");
-	errMessage(S_db_badField,message);
-	return(S_db_badField);
-    }
-    return(0);
-}
 
 static long write_bo(pbo)
     struct boRecord	*pbo;

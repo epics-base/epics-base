@@ -98,5 +98,5 @@ static long read_ai(pai)
 		}
 	}
     }
-    return(0); /*don't convert*/
+    return(0);
 }

@@ -18,7 +18,6 @@
 
 
 /* Create the dset for devMbboSoft */
-long init_record();
 long write_mbbo();
 
 struct {
@@ -32,34 +31,12 @@ struct {
 	5,
 	NULL,
 	NULL,
-	init_record,
+	NULL,
 	NULL,
 	write_mbbo};
-
 
-static long init_record(pmbbo)
-    struct mbboRecord	*pmbbo;
-{
-    char message[100];
-    /* mbbo.out must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
-    switch (pmbbo->out.type) {
-    case (CONSTANT) :
-        pmbbo->val = pmbbo->out.value.value;
-        break;
-    case (PV_LINK) :
-        break;
-    case (DB_LINK) :
-        break;
-    case (CA_LINK) :
-        break;
-    default :
-	strcpy(message,pmbbo->name);
-	strcat(message,": devMbboSoft (init_record) Illegal OUT field");
-	errMessage(S_db_badField,message);
-	return(S_db_badField);
-    }
-    return(0);
-}
+
+
 
 static long write_mbbo(pmbbo)
     struct mbboRecord	*pmbbo;

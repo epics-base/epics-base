@@ -1,4 +1,5 @@
 %{
+static int yyerror();
 #include "asLibRoutines.c"
 static int line_num=1;
 static UAG *yyUag=NULL;
@@ -37,6 +38,7 @@ asconfig_item:	tokenUAG uag_head uag_body
 uag_head:	O_PAREN tokenNAME C_PAREN
 	{
 		yyUag = asUagAdd($2);
+		if(!yyUag) yyerror($2);
 		free((void *)$2);
 	}
 	;
@@ -67,6 +69,7 @@ uag_user_list_name:	tokenNAME
 lag_head:	O_PAREN tokenNAME C_PAREN
 	{
 		yyLag = asLagAdd($2);
+		if(!yyLag) yyerror($2);
 		free((void *)$2);
 	}
 	;
@@ -94,6 +97,7 @@ lag_user_list_name:	tokenNAME
 asg_head:	O_PAREN tokenNAME C_PAREN
 	{
 		yyAsg = asAsgAdd($2);
+		if(!yyAsg) yyerror($2);
 		free((void *)$2);
 	}
 	;
@@ -125,6 +129,7 @@ inp_body:	tokenNAME | tokenPVNAME
 	;
 
 level_config:	tokenLEVEL level_head level_body
+	|	tokenLEVEL level_head
 
 level_head:	O_PAREN level_range ',' tokenNAME C_PAREN
 	{
@@ -162,17 +167,7 @@ level_list:	level_list level_list_item
 	;
 
 level_list_item: tokenUAG O_PAREN level_uag_list C_PAREN
-	|	tokenUAG O_PAREN '*' C_PAREN
-	{
-		if(asAsgLevelSetUagAll(yyAsgLevel))
-		    yyerror("Why did asAsgLevelSetUagAll fail");
-	}
 	|	tokenLAG  O_PAREN level_lag_list C_PAREN
-	|	tokenLAG  O_PAREN '*' C_PAREN
-	{
-		if(asAsgLevelSetLagAll(yyAsgLevel))
-		    yyerror("Why did asAsgLevelSetLagAll fail");
-	}
 	|	tokenCALC O_PAREN tokenSTRING C_PAREN
 	{
 		long status;
@@ -217,6 +212,7 @@ static int yyerror(str)
 char  *str;
 {
     fprintf(stderr,"Error line %d : %s %s\n",line_num,str,yytext);
+    return(0);
 }
 static int myParse(ASINPUTFUNCPTR inputfunction)
 {

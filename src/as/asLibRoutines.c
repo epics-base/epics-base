@@ -35,9 +35,19 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
+#ifdef vxWorks
+#include <taskLib.h>
+#endif
+
+/*Forward declarations for Non ANSI routines*/
+long calcPerform(double *parg,double *presult,char   *post);
+long postfix(char *pinfix, char *ppostfix,short *perror);
+
 #define RPCL_LEN 184
+#define DEFAULT "DEFAULT"
 
 static ASBASE *pasbase=NULL;
+int asActive = FALSE;
 
 /*private routines */
 void * asCalloc(size_t nobj,size_t size);
@@ -50,9 +60,7 @@ static ASG *asAsgAdd(char *asgName);
 static long asAsgAddInp(ASG *pasg,char *inp,int inpIndex);
 static ASGLEVEL *asAsgAddLevel(ASG *pasg,asAccessRights access,
 	int levlow,int levHigh);
-static long asAsgLevelSetUagAll(ASGLEVEL *pasglevel);
 static long asAsgLevelUagAdd(ASGLEVEL *pasglevel,char *name);
-static long asAsgLevelSetLagAll(ASGLEVEL *pasglevel);
 static long asAsgLevelLagAdd(ASGLEVEL *pasglevel,char *name);
 static long asAsgLevelCalc(ASGLEVEL *pasglevel,char *calc);
 static void asCaStart(void);
@@ -62,19 +70,18 @@ static int myParse(ASINPUTFUNCPTR inputfunction);
 long asInitialize(ASINPUTFUNCPTR inputfunction)
 {
     ASG		*pasg;
-    ASGMEMBER	*porphan;
-    ASGMEMBER	*pnextorphan;
     long	status;
     ASBASE	*pasbaseold = pasbase;
 
     if(pasbaseold) {
 	asCaStop();
     }
+    asActive = TRUE;
     pasbase = asCalloc(1,sizeof(ASBASE));
     ellInit(&pasbase->uagList);
     ellInit(&pasbase->lagList);
     ellInit(&pasbase->asgList);
-    ellInit(&pasbase->orphanList);
+    asAsgAdd(DEFAULT);
     status = myParse(inputfunction);
     if(status) {
 	status = S_asLib_badConfig;
@@ -88,19 +95,20 @@ long asInitialize(ASINPUTFUNCPTR inputfunction)
 	pasg = (ASG *)ellNext((ELLNODE *)pasg);
     }
     if(pasbaseold) {
-	porphan = (ASGMEMBER *)ellFirst(&pasbase->asgList);
-	while(porphan) {
-	    pnextorphan = (ASGMEMBER *)ellNext((ELLNODE *)porphan);
-	    ellDelete(&pasbase->orphanList,(ELLNODE *)porphan);
-	    status = asAddMember(&porphan,porphan->asgName);
-	    porphan = pnextorphan;
-	}
-	porphan = (ASGMEMBER *)ellFirst(&pasbase->orphanList);
-	while(porphan) {
-	    pnextorphan = (ASGMEMBER *)ellNext((ELLNODE *)porphan);
-	    ellDelete(&pasbase->orphanList,(ELLNODE *)porphan);
-	    status = asAddMember(&porphan,porphan->asgName);
-	    porphan = pnextorphan;
+	ASG		*poldasg;
+	ASGMEMBER	*poldmem;
+	ASGMEMBER	*pnextoldmem;
+
+	poldasg = (ASG *)ellFirst(&pasbaseold->asgList);
+	while(poldasg) {
+	    poldmem = (ASGMEMBER *)ellFirst(&poldasg->memberList);
+	    while(poldmem) {
+		pnextoldmem = (ASGMEMBER *)ellNext((ELLNODE *)poldmem);
+		ellDelete(&poldasg->memberList,(ELLNODE *)poldmem);
+		status = asAddMember(&poldmem,poldmem->asgName);
+		poldmem = pnextoldmem;
+	    }
+	    poldasg = (ASG *)ellNext((ELLNODE *)poldasg);
 	}
 	asFreeAll(pasbaseold);
     }
@@ -115,6 +123,7 @@ long asAddMember(ASMEMBERPVT *asMemberPvt,char *asgName)
     ASGCLIENT	*pclient;
     long	status;
 
+    if(!asActive) return(0);
     if(*asMemberPvt) {
 	pasgmember = *asMemberPvt;
     } else {
@@ -125,24 +134,27 @@ long asAddMember(ASMEMBERPVT *asMemberPvt,char *asgName)
     pasgmember->asgName = asgName;
     pgroup = (ASG *)ellFirst(&pasbase->asgList);
     while(pgroup) {
-	if(strcmp(pgroup->name,pasgmember->asgName)==0) {
-	    pasgmember->pasg = pgroup;
-	    ellAdd(&pgroup->memberList,(ELLNODE *)pasgmember);
-	    pclient = (ASGCLIENT *)ellFirst(&pasgmember->clientList);
-	    while(pclient) {
-		    status = asCompute(pclient);
-		    if(status) {
-			errMessage(status,"asAddMember");
-		    }
-		    pclient = (ASGCLIENT *)ellNext((ELLNODE *)pclient);
-	    }
-	    break;
-	}
+	if(strcmp(pgroup->name,pasgmember->asgName)==0) goto got_it;
 	pgroup = (ASG *)ellNext((ELLNODE *)pgroup);
     }
-    if(!pgroup) {
-	pasgmember->pasg = NULL;
-	ellAdd(&pasbase->orphanList,(ELLNODE *)pasgmember);
+    /* Put it in DEFAULT*/
+    pgroup = (ASG *)ellFirst(&pasbase->asgList);
+    while(pgroup) {
+	if(strcmp(pgroup->name,DEFAULT)==0) goto got_it;
+	pgroup = (ASG *)ellNext((ELLNODE *)pgroup);
+    }
+    errMessage(-1,"Logic Error in asAddMember");
+    exit(1);
+got_it:
+    pasgmember->pasg = pgroup;
+    ellAdd(&pgroup->memberList,(ELLNODE *)pasgmember);
+    pclient = (ASGCLIENT *)ellFirst(&pasgmember->clientList);
+    while(pclient) {
+	    status = asCompute(pclient);
+	    if(status) {
+		errMessage(status,"asAddMember");
+	    }
+	    pclient = (ASGCLIENT *)ellNext((ELLNODE *)pclient);
     }
     return(0);
 }
@@ -151,12 +163,14 @@ long asRemoveMember(ASMEMBERPVT *asMemberPvt)
 {
     ASGMEMBER	*pasgmember;
 
+    if(!asActive) return(0);
     pasgmember = *asMemberPvt;
     if(ellCount(&pasgmember->clientList)>0) return(S_asLib_clientsExist);
     if(pasgmember->pasg) {
 	ellDelete(&pasgmember->pasg->memberList,(ELLNODE *)pasgmember);
     } else {
-	ellDelete(&pasbase->orphanList,(ELLNODE *)pasgmember);
+	errMessage(-1,"Logic error in asRemoveMember");
+	exit(-1);
     }
     free((void *)pasgmember);
     *asMemberPvt = NULL;
@@ -168,33 +182,56 @@ long asChangeGroup(ASMEMBERPVT *asMemberPvt,char *newAsgName)
     ASGMEMBER	*pasgmember;
     long	status;
 
+    if(!asActive) return(0);
     pasgmember = *asMemberPvt;
     if(pasgmember->pasg) {
 	ellDelete(&pasgmember->pasg->memberList,(ELLNODE *)pasgmember);
     } else {
-	ellDelete(&pasbase->orphanList,(ELLNODE *)pasgmember);
+	errMessage(-1,"Logic error in asChangeGroup");
+	exit(-1);
     }
     status = asAddMember(asMemberPvt,newAsgName);
     return(status);
 }
 
+void *asGetMemberPvt(ASMEMBERPVT asMemberPvt)
+{
+    ASGMEMBER	*pasmember = asMemberPvt;
+
+    if(!asActive) return(NULL);
+    if(!pasmember) return(NULL);
+    return(pasmember->userPvt);
+}
+
+void asPutMemberPvt(ASMEMBERPVT asMemberPvt,void *userPvt)
+{
+    ASGMEMBER	*pasmember = asMemberPvt;
+    if(!asActive) return;
+    if(!pasmember) return;
+    pasmember->userPvt = userPvt;
+}
+
 long asAddClient(ASCLIENTPVT *asClientPvt,ASMEMBERPVT asMemberPvt,
 	int asl,char *user,char *location)
 {
+    ASGMEMBER	*pasmember = asMemberPvt;
     ASGCLIENT	*pasclient;
     long	status;
 
+    if(!asActive) return(0);
     pasclient = asCalloc(1,sizeof(ASCLIENTPVT));
     *asClientPvt = pasclient;
     pasclient->pasgMember = asMemberPvt;
     pasclient->level = asl;
     pasclient->user = user;
     pasclient->location = location;
+printf("Calling asCompute\n");
     status = asCompute(pasclient);
+    if(status) return(status);
     if(!asCheckGet((*asClientPvt))) {
-	asRemoveClient(asClientPvt);
 	return(S_asLib_noAccess);
     }
+    ellAdd(&pasmember->clientList,(ELLNODE *)pasclient);
     return(status);
 }
 
@@ -203,6 +240,7 @@ long asChangeClient(ASCLIENTPVT asClientPvt,int asl,char *user,char *location)
     ASGCLIENT	*pasclient = asClientPvt;
     long	status;
 
+    if(!asActive) return(0);
     pasclient->level = asl;
     pasclient->user = user;
     pasclient->location = location;
@@ -215,6 +253,7 @@ long asRemoveClient(ASCLIENTPVT *asClientPvt)
     ASGCLIENT	*pasgClient = *asClientPvt;
     ASGMEMBER	*pasgMember;
 
+    if(!asActive) return(0);
     if(!pasgClient) return(0);
     pasgMember = pasgClient->pasgMember;
     if(!pasgMember) {
@@ -225,6 +264,23 @@ long asRemoveClient(ASCLIENTPVT *asClientPvt)
     free((void *)pasgClient);
     *asClientPvt = NULL;
     return(0);
+}
+
+void *asGetClientPvt(ASCLIENTPVT asClientPvt)
+{
+    ASGCLIENT	*pasclient = asClientPvt;
+
+    if(!asActive) return(NULL);
+    if(!pasclient) return(NULL);
+    return(pasclient->userPvt);
+}
+
+void asPutClientPvt(ASCLIENTPVT asClientPvt,void *userPvt)
+{
+    ASGCLIENT	*pasclient = asClientPvt;
+    if(!asActive) return;
+    if(!pasclient) return;
+    pasclient->userPvt = userPvt;
 }
 
 long asCompute(ASCLIENTPVT asClientPvt)
@@ -242,7 +298,8 @@ long asCompute(ASCLIENTPVT asClientPvt)
     while(pasglevel) {
 	if(access>=pasglevel->access) goto next_level;
 	if(!((1<<pasgClient->level)&pasglevel->level_mask)) goto next_level;
-	if(!pasglevel->all_uag) {/*if all_uag then no need to check uag*/
+	/*if uagList is empty then no need to check uag*/
+	if(ellCount(&pasglevel->uagList)>0){
 	    ASGUAG	*pasguag;
 	    UAG		*puag;
 	    UAGNAME	*puagname;
@@ -262,7 +319,8 @@ long asCompute(ASCLIENTPVT asClientPvt)
 	    goto next_level;
 	}
 check_lag:
-	if(!pasglevel->all_lag) {/*if all_lag then no need to check lag*/
+	/*if lagList is empty then no need to check lag*/
+	if(ellCount(&pasglevel->lagList)>0) {
 	    ASGLAG	*pasglag;
 	    LAG		*plag;
 	    LAGNAME	*plagname;
@@ -295,7 +353,9 @@ next_level:
     return(0);
 }
 
-void asDump(void)
+void asDump(
+	void (*memcallback)(struct asgMember *),
+	void (*clientcallback)(struct asgClient *))
 {
     UAG		*puag;
     UAGNAME	*puagname;
@@ -346,7 +406,7 @@ void asDump(void)
 	}
 	pasglevel = (ASGLEVEL *)ellFirst(&pasg->levelList);
 	while(pasglevel) {
-	    printf("\tLEVEL(0x%0.2x,%d) {\n",
+	    printf("\tLEVEL(0x%.2x,%d) {\n",
 		pasglevel->level_mask,pasglevel->access);
 	    pasguag = (ASGUAG *)ellFirst(&pasglevel->uagList);
 	    if(pasguag) printf("\t\tUAG(");
@@ -355,7 +415,6 @@ void asDump(void)
 		pasguag = (ASGUAG *)ellNext((ELLNODE *)pasguag);
 		if(pasguag) printf(","); else printf(")\n");
 	    }
-	    if(pasglevel->all_uag) printf("\t\tUAG(*)\n");
 	    pasglag = (ASGLAG *)ellFirst(&pasglevel->lagList);
 	    if(pasglag) printf("\t\tLAG(");
 	    while(pasglag) {
@@ -363,7 +422,6 @@ void asDump(void)
 		pasglag = (ASGLAG *)ellNext((ELLNODE *)pasglag);
 		if(pasglag) printf(","); else printf(")\n");
 	    }
-	    if(pasglevel->all_lag) printf("\t\tLAG(*)\n");
 	    if(pasglevel->calc) printf("\t\tCALC(\"%s\")\n",pasglevel->calc);
 	    pasglevel = (ASGLEVEL *)ellNext((ELLNODE *)pasglevel);
 	    if(!pasglevel) printf("\t}\n");
@@ -371,31 +429,25 @@ void asDump(void)
 	pasgmember = (ASGMEMBER *)ellFirst(&pasg->memberList);
 	if(pasgmember) printf("\tMEMBERLIST\n");
 	while(pasgmember) {
-	    printf("\t\t%s\n",pasgmember->asgName);
+	    if(strlen(pasgmember->asgName)==0) 
+		printf("\t\t<null>");
+	    else
+		printf("\t\t%s",pasgmember->asgName);
+	    if(memcallback) memcallback(pasgmember);
+	    printf("\n");
 	    pasgclient = (ASGCLIENT *)ellFirst(&pasgmember->clientList);
 	    while(pasgclient) {
-		printf("\t\t\t %s %s %d %d\n",
+		printf("\t\t\t %s %s %d %d",
 		    pasgclient->user,pasgclient->location,
 		    pasgclient->level,pasgclient->access);
-		pasgclient = (ASGCLIENT *)((ELLNODE *)pasgclient);
+		if(clientcallback) clientcallback(pasgclient);
+		printf("\n");
+		pasgclient = (ASGCLIENT *)ellNext((ELLNODE *)pasgclient);
 	    }
 	    pasgmember = (ASGMEMBER *)ellNext((ELLNODE *)pasgmember);
 	}
+	printf("}\n");
 	pasg = (ASG *)ellNext((ELLNODE *)pasg);
-	if(!pasg) printf("}\n");
-    }
-    pasgmember = (ASGMEMBER *)ellFirst(&pasbase->orphanList);
-    if(pasgmember) printf("ORPHANLIST\n");
-    while(pasgmember) {
-	printf("\t%s\n",pasgmember->asgName);
-	pasgclient = (ASGCLIENT *)ellFirst(&pasgmember->clientList);
-	while(pasgclient) {
-	    printf("\t\t %s %s %d %d\n",
-		pasgclient->user,pasgclient->location,
-		pasgclient->level,pasgclient->access);
-	    pasgclient = (ASGCLIENT *)((ELLNODE *)pasgclient);
-	}
-	pasgmember = (ASGMEMBER *)ellNext((ELLNODE *)pasgmember);
     }
 }
 
@@ -498,13 +550,28 @@ static void asFreeAll(ASBASE *pasbase)
 
 static UAG *asUagAdd(char *uagName)
 {
+    UAG *pprev;
+    UAG *pnext;
     UAG	*puag;
+    int cmpvalue;
 
+    /*Insert in alphabetic order*/
+    pprev = pnext = (UAG *)ellFirst(&pasbase->uagList);
+    while(pnext) {
+	cmpvalue = strcmp(uagName,pnext->name);
+	if(cmpvalue > 0) break;
+	if(cmpvalue==0) {
+	    errMessage(-1,"Duplicate User Access Group");
+	    return(NULL);
+	}
+	pprev = pnext;
+	pnext = (UAG *)ellNext((ELLNODE *)pnext);
+    }
     puag = asCalloc(1,sizeof(UAG)+strlen(uagName)+1);
     ellInit(&puag->list);
     puag->name = (char *)(puag+1);
     strcpy(puag->name,uagName);
-    ellAdd(&pasbase->uagList,(ELLNODE *)puag);
+    ellInsert(&pasbase->uagList,(ELLNODE *)pprev,(ELLNODE *)puag);
     return(puag);
 }
 
@@ -512,6 +579,7 @@ static long asUagAddUser(UAG *puag,char *user)
 {
     UAGNAME	*puagname;
 
+    if(!puag) return(0);
     puagname = asCalloc(1,sizeof(UAG)+strlen(user)+1);
     puagname->user = (char *)(puagname+1);
     strcpy(puagname->user,user);
@@ -521,13 +589,28 @@ static long asUagAddUser(UAG *puag,char *user)
 
 static LAG *asLagAdd(char *lagName)
 {
+    LAG *pprev;
+    LAG *pnext;
     LAG	*plag;
+    int	cmpvalue;
 
+    /*Insert in alphabetic order*/
+    pprev = pnext = (LAG *)ellFirst(&pasbase->lagList);
+    while(pnext) {
+	cmpvalue = strcmp(lagName,pnext->name);
+	if(cmpvalue > 0) break;
+	if(cmpvalue==0) {
+	    errMessage(-1,"Duplicate Location Access Group");
+	    return(NULL);
+	}
+	pprev = pnext;
+	pnext = (LAG *)ellNext((ELLNODE *)pnext);
+    }
     plag = asCalloc(1,sizeof(LAG)+strlen(lagName)+1);
     ellInit(&plag->list);
     plag->name = (char *)(plag+1);
     strcpy(plag->name,lagName);
-    ellAdd(&pasbase->lagList,(ELLNODE *)plag);
+    ellInsert(&pasbase->lagList,(ELLNODE *)pprev,(ELLNODE *)plag);
     return(plag);
 }
 
@@ -535,6 +618,7 @@ static long asLagAddLocation(LAG *plag,char *location)
 {
     LAGNAME	*plagname;
 
+    if(!plag) return(0);
     plagname = asCalloc(1,sizeof(LAG)+strlen(location)+1);
     plagname->location = (char *)(plagname+1);
     strcpy(plagname->location,location);
@@ -544,15 +628,35 @@ static long asLagAddLocation(LAG *plag,char *location)
 
 static ASG *asAsgAdd(char *asgName)
 {
+    ASG *pprev;
+    ASG *pnext;
     ASG	*pasg;
+    int cmpvalue;
 
+    /*Insert in alphabetic order*/
+    pprev = pnext = (ASG *)ellFirst(&pasbase->asgList);
+    while(pnext) {
+	cmpvalue = strcmp(asgName,pnext->name);
+	if(cmpvalue > 0) break;
+	if(cmpvalue==0) {
+	    if(strcmp(DEFAULT,pnext->name)==0) {
+		if(ellCount(&pnext->inpList)==0
+		&& ellCount(&pnext->levelList)==0)
+			return(pnext);
+	    }
+	    errMessage(-1,"Access Security Group");
+	    return(NULL);
+	}
+	pprev = pnext;
+	pnext = (ASG *)ellNext((ELLNODE *)pnext);
+    }
     pasg = asCalloc(1,sizeof(ASG)+strlen(asgName)+1);
     ellInit(&pasg->inpList);
     ellInit(&pasg->levelList);
     ellInit(&pasg->memberList);
     pasg->name = (char *)(pasg+1);
     strcpy(pasg->name,asgName);
-    ellAdd(&pasbase->asgList,(ELLNODE *)pasg);
+    ellInsert(&pasbase->asgList,(ELLNODE *)pprev,(ELLNODE *)pasg);
     return(pasg);
 }
 
@@ -560,6 +664,7 @@ static long asAsgAddInp(ASG *pasg,char *inp,int inpIndex)
 {
     ASGINP	*pasginp;
 
+    if(!pasg) return(0);
     pasginp = asCalloc(1,sizeof(ASGINP)+strlen(inp)+1);
     pasginp->inp = (char *)(pasginp+1);
     strcpy(pasginp->inp,inp);
@@ -575,6 +680,7 @@ static ASGLEVEL *asAsgAddLevel(ASG *pasg,asAccessRights access,
     ASGLEVEL	*pasglevel;
     int		bit;
 
+    if(!pasg) return(0);
     pasglevel = asCalloc(1,sizeof(ASGLEVEL));
     pasglevel->access = access;
     for(bit=levlow; bit<=levHigh; bit++) {
@@ -586,17 +692,12 @@ static ASGLEVEL *asAsgAddLevel(ASG *pasg,asAccessRights access,
     return(pasglevel);
 }
 
-static long asAsgLevelSetUagAll(ASGLEVEL *pasglevel)
-{
-    pasglevel->all_uag = TRUE;
-    return(0);
-}
-
 static long asAsgLevelUagAdd(ASGLEVEL *pasglevel,char *name)
 {
     ASGUAG	*pasguag;
     UAG		*puag;
 
+    if(!pasglevel) return(0);
     puag = (UAG *)ellFirst(&pasbase->uagList);
     while(puag) {
 	if(strcmp(puag->name,name)==0) break;
@@ -609,17 +710,12 @@ static long asAsgLevelUagAdd(ASGLEVEL *pasglevel,char *name)
     return(0);
 }
 
-static long asAsgLevelSetLagAll(ASGLEVEL *pasglevel)
-{
-    pasglevel->all_lag = TRUE;
-    return(0);
-}
-
 static long asAsgLevelLagAdd(ASGLEVEL *pasglevel,char *name)
 {
     ASGLAG	*pasglag;
     LAG		*plag;
 
+    if(!pasglevel) return(0);
     plag = (LAG *)ellFirst(&pasbase->lagList);
     while(plag) {
 	if(strcmp(plag->name,name)==0) break;
@@ -637,6 +733,7 @@ static long asAsgLevelCalc(ASGLEVEL *pasglevel,char *calc)
     short	error_number;
     long	status;
 
+    if(!pasglevel) return(0);
     pasglevel->calc = asCalloc(1,strlen(calc)+1);
     strcpy(pasglevel->calc,calc);
     pasglevel->rpcl = asCalloc(1,RPCL_LEN);

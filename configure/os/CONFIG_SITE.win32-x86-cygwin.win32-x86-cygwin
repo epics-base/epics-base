@@ -6,5 +6,5 @@
 # Site override definitions for win32-x86-cygwin host - win32-x86-cygwin target builds
 #-------------------------------------------------------
  
-GNU_DIR=C:/cygwin
+##GNU_DIR=C:/cygwin
 

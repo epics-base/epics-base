@@ -88,6 +88,8 @@
 #ifndef INCLdb_accessh
 #define INCLdb_accessh
 
+#include <stddef.h>
+
 #include <epicsTypes.h>
 #include <tsDefs.h>
 #include <callback.h>

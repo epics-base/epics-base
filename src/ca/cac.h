@@ -74,16 +74,19 @@ public:
     void flushRequest ();
     int pendIO ( const double &timeout );
     int pendEvent ( const double &timeout );
-    bool executeResponse ( tcpiiu &, caHdrLargeArray &, char *pMsgBody );
+    bool executeResponse ( class callbackAutoMutex &, tcpiiu &, 
+        caHdrLargeArray &, char *pMsgBody );
     void ioCancel ( nciu &chan, const cacChannel::ioid &id );
     void ioShow ( const cacChannel::ioid &id, unsigned level ) const;
 
     // channel routines
     void installNetworkChannel ( nciu &, netiiu *&piiu );
-    bool lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid, 
-             ca_uint16_t typeCode, arrayElementCount count, 
-             unsigned minorVersionNumber, const osiSockAddr &, 
-             const epicsTime & currentTime );
+    bool lookupChannelAndTransferToTCP ( 
+            class callbackAutoMutex & cbMutex,
+            unsigned cid, unsigned sid, 
+            ca_uint16_t typeCode, arrayElementCount count, 
+            unsigned minorVersionNumber, const osiSockAddr &, 
+            const epicsTime & currentTime );
     void uninstallChannel ( nciu & );
     cacChannel & createChannel ( const char *name_str, 
         cacChannelNotify &chan, cacChannel::priLev pri );
@@ -135,14 +138,14 @@ public:
     epicsMutex & mutexRef ();
     void attachToClientCtx ();
     void selfTest () const;
-    void notifyNewFD ( SOCKET ) const;
-    void notifyDestroyFD ( SOCKET ) const;
+    void notifyNewFD ( class callbackAutoMutex &, SOCKET ) const;
+    void notifyDestroyFD ( class callbackAutoMutex &, SOCKET ) const;
     void uninstallIIU ( tcpiiu &iiu ); 
     bool preemptiveCallbakIsEnabled () const;
     double beaconPeriod ( const nciu & chan ) const;
-    void udpWakeup ();
     static unsigned lowestPriorityLevelAbove ( unsigned priority );
     static unsigned highestPriorityLevelBelow ( unsigned priority );
+    void tcpCircuitShutdown ( tcpiiu &, bool discardMessages );
 
 private:
     ipAddrToAsciiEngine         ipToAEngine;
@@ -168,6 +171,9 @@ private:
                                 freeListSubscription;
     epicsTime                   programBeginTime;
     double                      connTMO;
+    // **** lock hierarchy ****
+    // callback lock must always be acquired before
+    // the primary mutex if both locks are needed
     mutable epicsMutex          mutex; 
     epicsMutex                  callbackMutex; 
     epicsEvent                  ioDone;
@@ -190,21 +196,24 @@ private:
     unsigned                    readSeq;
     unsigned                    recvThreadsPendingCount;
 
-    void privateUninstallIIU ( tcpiiu &iiu ); 
+    void privateUninstallIIU ( class callbackAutoMutex &, tcpiiu &iiu ); 
     void flushRequestPrivate ();
     void run ();
     bool setupUDP ();
     void connectAllIO ( nciu &chan );
-    void disconnectAllIO ( nciu &chan, bool enableCallbacks );
-    void ioCancelPrivate ( nciu &chan, const cacChannel::ioid &id );
+    void disconnectAllIO ( epicsAutoMutex &locker, nciu &chan, bool enableCallbacks );
     void flushIfRequired ( netiiu & ); 
     void recycleReadNotifyIO ( netReadNotifyIO &io );
     void recycleWriteNotifyIO ( netWriteNotifyIO &io );
     void recycleSubscription ( netSubscription &io );
     void preemptiveCallbackLock ();
     void preemptiveCallbackUnlock ();
-    void removeAllChan ( netiiu & srcIIU, netiiu * pDstIIU = 0 );
-    void disconnectChannelPrivate ( nciu & chan, netiiu *pDstIIU );
+    void removeAllChan ( 
+                callbackAutoMutex & cbLocker, epicsAutoMutex &locker, 
+                netiiu & srcIIU, netiiu & dstIIU );
+    void disconnectChannelPrivate ( 
+        class callbackAutoMutex &, epicsAutoMutex &, 
+        nciu & chan, netiiu & dstIIU );
 
     void ioCompletionNotify ( unsigned id, unsigned type, 
         arrayElementCount count, const void *pData );
@@ -222,42 +231,56 @@ private:
        int status, const char *pContext, unsigned type, arrayElementCount count );
 
     // recv protocol stubs
-    bool noopAction ( tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );
-    bool echoRespAction ( tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );
-    bool writeNotifyRespAction ( tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );
-    bool readNotifyRespAction ( tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );
-    bool eventRespAction ( tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );
-    bool readRespAction ( tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );
-    bool clearChannelRespAction ( tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );
-    bool exceptionRespAction ( tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );
-    bool accessRightsRespAction ( tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );
-    bool claimCIURespAction ( tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );
-    bool verifyAndDisconnectChan ( tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );
-    bool badTCPRespAction ( tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );
+    bool noopAction ( callbackAutoMutex &, tcpiiu &, 
+        const caHdrLargeArray &, void *pMsgBdy );
+    bool echoRespAction ( callbackAutoMutex &, tcpiiu &, 
+        const caHdrLargeArray &, void *pMsgBdy );
+    bool writeNotifyRespAction ( callbackAutoMutex &, tcpiiu &, 
+        const caHdrLargeArray &, void *pMsgBdy );
+    bool readNotifyRespAction ( callbackAutoMutex &, tcpiiu &, 
+        const caHdrLargeArray &, void *pMsgBdy );
+    bool eventRespAction ( callbackAutoMutex &, tcpiiu &, 
+        const caHdrLargeArray &, void *pMsgBdy );
+    bool readRespAction ( callbackAutoMutex &, tcpiiu &, 
+        const caHdrLargeArray &, void *pMsgBdy );
+    bool clearChannelRespAction ( callbackAutoMutex &, tcpiiu &, 
+        const caHdrLargeArray &, void *pMsgBdy );
+    bool exceptionRespAction ( callbackAutoMutex &, tcpiiu &, 
+        const caHdrLargeArray &, void *pMsgBdy );
+    bool accessRightsRespAction ( callbackAutoMutex &, tcpiiu &, 
+        const caHdrLargeArray &, void *pMsgBdy );
+    bool claimCIURespAction ( callbackAutoMutex &, tcpiiu &, 
+        const caHdrLargeArray &, void *pMsgBdy );
+    bool verifyAndDisconnectChan ( callbackAutoMutex &, tcpiiu &, 
+                const caHdrLargeArray &, void *pMsgBdy );
+    bool badTCPRespAction ( callbackAutoMutex &, tcpiiu &, 
+        const caHdrLargeArray &, void *pMsgBdy );
     typedef bool ( cac::*pProtoStubTCP ) ( 
-        tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );
+        callbackAutoMutex &, tcpiiu &, 
+        const caHdrLargeArray &, void *pMsgBdy );
     static const pProtoStubTCP tcpJumpTableCAC [];
 
-    bool defaultExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr, 
+    bool defaultExcep ( callbackAutoMutex &, tcpiiu &iiu, const caHdrLargeArray &hdr, 
                     const char *pCtx, unsigned status );
-    bool eventAddExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr, 
+    bool eventAddExcep ( callbackAutoMutex &, tcpiiu &iiu, const caHdrLargeArray &hdr, 
                     const char *pCtx, unsigned status );
-    bool readExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr, 
+    bool readExcep ( callbackAutoMutex &, tcpiiu &iiu, const caHdrLargeArray &hdr, 
                     const char *pCtx, unsigned status );
-    bool writeExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr, 
+    bool writeExcep ( callbackAutoMutex &, tcpiiu &iiu, const caHdrLargeArray &hdr, 
                     const char *pCtx, unsigned status );
-    bool clearChanExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr, 
+    bool clearChanExcep ( callbackAutoMutex &, tcpiiu &iiu, const caHdrLargeArray &hdr, 
                     const char *pCtx, unsigned status );
-    bool readNotifyExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr, 
+    bool readNotifyExcep ( callbackAutoMutex &, tcpiiu &iiu, const caHdrLargeArray &hdr, 
                     const char *pCtx, unsigned status );
-    bool writeNotifyExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr, 
+    bool writeNotifyExcep ( callbackAutoMutex &, tcpiiu &iiu, const caHdrLargeArray &hdr, 
                     const char *pCtx, unsigned status );
     typedef bool ( cac::*pExcepProtoStubTCP ) ( 
-                    tcpiiu &iiu, const caHdrLargeArray &hdr, 
+                    callbackAutoMutex &, tcpiiu &iiu, const caHdrLargeArray &hdr, 
                     const char *pCtx, unsigned status );
     static const pExcepProtoStubTCP tcpExcepJumpTableCAC [];
 
     friend class callbackAutoMutex;
+    friend class callbackAutoMutexRelease;
 
 	cac ( const cac & );
 	cac & operator = ( const cac & );
@@ -271,6 +294,17 @@ private:
     cac & ctx;
 	callbackAutoMutex ( const callbackAutoMutex & );
 	callbackAutoMutex & operator = ( const callbackAutoMutex & );
+    friend class callbackAutoMutexRelease;
+};
+
+class callbackAutoMutexRelease {
+public:
+    callbackAutoMutexRelease ( callbackAutoMutex & autoMutexIn );
+    ~callbackAutoMutexRelease ();
+private:
+    callbackAutoMutex & autoMutex;
+	callbackAutoMutexRelease ( const callbackAutoMutexRelease & );
+	callbackAutoMutexRelease & operator = ( const callbackAutoMutexRelease & );
 };
 
 inline const char * cac::userNamePointer () const
@@ -362,6 +396,17 @@ inline callbackAutoMutex::callbackAutoMutex ( cac & ctxIn ) :
 inline callbackAutoMutex::~callbackAutoMutex ()
 {
     this->ctx.preemptiveCallbackUnlock ();
+}
+
+inline callbackAutoMutexRelease::callbackAutoMutexRelease ( callbackAutoMutex & autoMutexIn ) :
+    autoMutex ( autoMutexIn )
+{
+    this->autoMutex.ctx.preemptiveCallbackUnlock ();
+}
+
+inline callbackAutoMutexRelease::~callbackAutoMutexRelease ()
+{
+    this->autoMutex.ctx.preemptiveCallbackLock ();
 }
 
 #endif // ifdef cach

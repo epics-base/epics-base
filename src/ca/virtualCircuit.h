@@ -57,17 +57,18 @@ public:
         unsigned minorVersion, ipAddrToAsciiEngine & engineIn,
         const cacChannel::priLev & priorityIn );
     ~tcpiiu ();
-    bool start ();
+    bool start ( class callbackAutoMutex & );
     void cleanShutdown ();
+    void forcedShutdown ();
+    void shutdown ( class callbackAutoMutex & cbLocker, bool discardPendingMessages );
     void beaconAnomalyNotify ();
     void beaconArrivalNotify ();
-    void forcedShutdown ();
 
     void flushRequest ();
     bool flushBlockThreshold () const;
     void flushRequestIfAboveEarlyThreshold ();
     void blockUntilSendBacklogIsReasonable 
-        ( epicsMutex * pCallBack, epicsMutex & primary );
+        ( epicsAutoMutex * pCallBackLocker, epicsAutoMutex & primaryLocker );
     virtual void show ( unsigned level ) const;
     bool setEchoRequestPending ();
     void requestRecvProcessPostponedFlush ();
@@ -113,12 +114,11 @@ private:
     bool earlyFlush;
     bool recvProcessPostponedFlush;
 
-    void shutdown ( bool discardPendingMessages );
     void stopThreads ();
-    bool processIncoming ();
+    bool processIncoming ( callbackAutoMutex & );
     unsigned sendBytes ( const void *pBuf, unsigned nBytesInBuf );
     unsigned recvBytes ( void *pBuf, unsigned nBytesInBuf );
-    void lastChannelDetachNotify ();
+    void lastChannelDetachNotify ( class callbackAutoMutex & cbLocker );
     void connect ();
 
     // send protocol stubs

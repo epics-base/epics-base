@@ -107,7 +107,7 @@ extern "C" void putNotifyCompletion ( putNotify *ppn )
     pBlocker->block.signal ();
 }
 
-void dbPutNotifyBlocker::initiatePutNotify ( epicsMutex &mutex, cacWriteNotify & notify, 
+void dbPutNotifyBlocker::initiatePutNotify ( epicsAutoMutex &locker, cacWriteNotify & notify, 
         struct dbAddr & addr, unsigned type, unsigned long count, const void * pValue )
 {
     int status;
@@ -129,7 +129,7 @@ void dbPutNotifyBlocker::initiatePutNotify ( epicsMutex &mutex, cacWriteNotify &
             beginTimeInit = true;
         }
         {
-            epicsAutoMutexRelease autoRelease ( mutex );
+            epicsAutoMutexRelease autoRelease ( locker );
             this->block.wait ( 1.0 );
         }
     }
@@ -161,7 +161,7 @@ void dbPutNotifyBlocker::initiatePutNotify ( epicsMutex &mutex, cacWriteNotify &
         memset ( &this->pn, '\0', sizeof ( this->pn ) );
         this->pNotify = 0;
         {
-            epicsAutoMutexRelease autoRelease ( mutex );
+            epicsAutoMutexRelease autoRelease ( locker );
             notify.exception (
                 ECA_PUTFAIL, "dbPutNotify() returned failure",
                 static_cast <unsigned> (this->pn.dbrType), 

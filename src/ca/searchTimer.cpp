@@ -67,30 +67,37 @@ void searchTimer::resetPeriod ( double delayToNextTry )
 {
     bool start;
 
-    // upper bound
-    double newPeriod = this->roundTripDelayEstimate * 2.0;
-    if ( newPeriod > initialRoundTripEstimate * 2.0 ) {
-        newPeriod = initialRoundTripEstimate * 2.0;
-    }
-    // lower bound
-    if ( newPeriod < minSearchPeriod ) {
-        newPeriod = minSearchPeriod;
-    }
-        
-    this->retry = 0;
-    if ( this->iiu.channelCount() > 0 ) {
-        if ( ! this->active ) {
-            this->active = true;
-            this->noDelay = ( delayToNextTry == 0.0 );
-            start = true;
+    {
+        epicsAutoMutex locker ( this->mutex );
+
+        // upper bound
+        double newPeriod = this->roundTripDelayEstimate * 2.0;
+        if ( newPeriod > initialRoundTripEstimate * 2.0 ) {
+            newPeriod = initialRoundTripEstimate * 2.0;
         }
-        else if ( this->period > newPeriod ) {
-            double delay = this->timer.getExpireDelay();
-            if ( delay > newPeriod ) {
+        // lower bound
+        if ( newPeriod < minSearchPeriod ) {
+            newPeriod = minSearchPeriod;
+        }
+        
+        this->retry = 0;
+        if ( this->iiu.channelCount() > 0 ) {
+            if ( ! this->active ) {
                 this->active = true;
                 this->noDelay = ( delayToNextTry == 0.0 );
-                delayToNextTry = newPeriod;
                 start = true;
+            }
+            else if ( this->period > newPeriod ) {
+                double delay = this->timer.getExpireDelay();
+                if ( delay > newPeriod ) {
+                    this->active = true;
+                    this->noDelay = ( delayToNextTry == 0.0 );
+                    delayToNextTry = newPeriod;
+                    start = true;
+                }
+                else {
+                    start = false;
+                }
             }
             else {
                 start = false;
@@ -99,15 +106,11 @@ void searchTimer::resetPeriod ( double delayToNextTry )
         else {
             start = false;
         }
-    }
-    else {
-        start = false;
-    }
 
-    this->period = newPeriod;
+        this->period = newPeriod;
+    }
 
     if ( start ) {
-        epicsAutoMutexRelease autoRelease ( this->mutex );
         this->timer.start ( *this, delayToNextTry );
         // debugPrintf ( ("rescheduled search timer for completion in %f sec\n", delayToNextTry) );
     }
@@ -115,6 +118,7 @@ void searchTimer::resetPeriod ( double delayToNextTry )
 
 /* 
  * searchTimer::setRetryInterval ()
+ * (lock must be applied)
  */
 void searchTimer::setRetryInterval ( unsigned retryNo )
 {
@@ -152,35 +156,38 @@ void searchTimer::notifySearchResponse ( unsigned short retrySeqNoIn,
 {
     bool reschedualNeeded;
 
-    if ( this->retrySeqAtPassBegin <= retrySeqNoIn ) {
-        if ( this->searchResponses < UINT_MAX ) {
-            this->searchResponses++;
+    {
+        epicsAutoMutex locker ( this->mutex );
+
+        if ( this->retrySeqAtPassBegin <= retrySeqNoIn ) {
+            if ( this->searchResponses < UINT_MAX ) {
+                this->searchResponses++;
+            }
+        }    
+
+        if ( retrySeqNoIn == this->retrySeqNo && ! this->noDelay ) {
+            double curRTT = currentTime - this->timeAtLastRetry;
+            this->roundTripDelayEstimate = 
+                ( this->roundTripDelayEstimate + curRTT ) / 2.0;
+            this->period = this->roundTripDelayEstimate * 2.0;
+            this->period = tsMin ( maxSearchPeriod, this->period );
+            this->period = tsMax ( minSearchPeriod, this->period );
+            reschedualNeeded = true;
+            this->active = true;
+            this->noDelay = true;
         }
-    }    
 
-    if ( retrySeqNoIn == this->retrySeqNo && ! this->noDelay ) {
-        double curRTT = currentTime - this->timeAtLastRetry;
-        this->roundTripDelayEstimate = 
-            ( this->roundTripDelayEstimate + curRTT ) / 2.0;
-        this->period = this->roundTripDelayEstimate * 2.0;
-        this->period = tsMin ( maxSearchPeriod, this->period );
-        this->period = tsMax ( minSearchPeriod, this->period );
-        reschedualNeeded = true;
-        this->active = true;
-        this->noDelay = true;
-    }
-
-    if ( this->searchResponses == this->searchAttempts ) {
-        reschedualNeeded = true;
-        this->active = true;
-        this->noDelay = true;
-    }
-    else {
-        reschedualNeeded = false;
+        if ( this->searchResponses == this->searchAttempts ) {
+            reschedualNeeded = true;
+            this->active = true;
+            this->noDelay = true;
+        }
+        else {
+            reschedualNeeded = false;
+        }
     }
 
     if ( reschedualNeeded ) {
-        epicsAutoMutexRelease autoRelease (this->mutex );
 #       if defined(DEBUG) && 0
             char buf[64];
             epicsTime ts = epicsTime::getCurrent();

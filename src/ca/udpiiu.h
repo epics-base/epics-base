@@ -43,11 +43,11 @@ class epicsTime;
 
 class udpiiu : public netiiu {
 public:
-    udpiiu ( class cac & );
+    udpiiu ( callbackAutoMutex &, class cac & );
     virtual ~udpiiu ();
     void shutdown ();
     void recvMsg ();
-    void postMsg ( const osiSockAddr & net_addr, 
+    void postMsg ( callbackAutoMutex &, const osiSockAddr & net_addr, 
               char *pInBuf, arrayElementCount blockSize,
               const epicsTime &currenTime );
     void repeaterRegistrationMessage ( unsigned attemptNumber );
@@ -76,26 +76,27 @@ private:
 
     bool pushDatagramMsg ( const caHdr &msg, const void *pExt, ca_uint16_t extsize );
 
-    typedef bool ( udpiiu::*pProtoStubUDP ) ( const caHdr &, 
+    typedef bool ( udpiiu::*pProtoStubUDP ) ( 
+        callbackAutoMutex &, const caHdr &, 
         const osiSockAddr &, const epicsTime & );
 
     // UDP protocol dispatch table
     static const pProtoStubUDP udpJumpTableCAC[];
 
     // UDP protocol stubs
-    bool noopAction ( const caHdr &, 
+    bool noopAction ( callbackAutoMutex &, const caHdr &, 
         const osiSockAddr &, const epicsTime & );
-    bool badUDPRespAction ( const caHdr &msg, 
+    bool badUDPRespAction ( callbackAutoMutex &, const caHdr &msg, 
         const osiSockAddr &netAddr, const epicsTime & );
-    bool searchRespAction ( const caHdr &msg, 
+    bool searchRespAction ( callbackAutoMutex &, const caHdr &msg, 
         const osiSockAddr &net_addr, const epicsTime & );
-    bool exceptionRespAction ( const caHdr &msg, 
+    bool exceptionRespAction ( callbackAutoMutex &, const caHdr &msg, 
         const osiSockAddr &net_addr, const epicsTime & );
-    bool beaconAction ( const caHdr &msg, 
+    bool beaconAction ( callbackAutoMutex &, const caHdr &msg, 
         const osiSockAddr &net_addr, const epicsTime & );
-    bool notHereRespAction ( const caHdr &msg, 
+    bool notHereRespAction ( callbackAutoMutex &, const caHdr &msg, 
         const osiSockAddr &net_addr, const epicsTime & );
-    bool repeaterAckAction ( const caHdr &msg, 
+    bool repeaterAckAction ( callbackAutoMutex &, const caHdr &msg, 
         const osiSockAddr &net_addr, const epicsTime & );
 
     friend void cacRecvThreadUDP ( void *pParam );

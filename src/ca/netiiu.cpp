@@ -107,7 +107,7 @@ bool netiiu::isVirtualCircuit ( const char *, const osiSockAddr & ) const
     return false;
 }
 
-void netiiu::lastChannelDetachNotify ()
+void netiiu::lastChannelDetachNotify ( class callbackAutoMutex & /* cbLocker */ )
 {
 }
 

@@ -38,7 +38,7 @@ public:
     bool searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThisChannel );
     void resetChannelRetryCounts ();
     void attachChannel ( nciu &chan );
-    void detachChannel ( nciu &chan );
+    void detachChannel ( class callbackAutoMutex & cbLocker, nciu &chan );
     nciu * firstChannel ();
     int printf ( const char *pformat, ... );
     virtual void hostName (char *pBuf, unsigned bufLength) const;
@@ -64,7 +64,7 @@ protected:
 private:
     tsDLList < nciu > channelList;
     cac *pClientCtx;
-    virtual void lastChannelDetachNotify ();
+    virtual void lastChannelDetachNotify ( class callbackAutoMutex & cbLocker );
 	netiiu ( const netiiu & );
 	netiiu & operator = ( const netiiu & );
 };
@@ -96,11 +96,12 @@ inline void netiiu::attachChannel ( class nciu &chan )
 }
 
 // cac lock must also be applied when calling this
-inline void netiiu::detachChannel ( class nciu & chan )
+inline void netiiu::detachChannel ( 
+    class callbackAutoMutex & cbLocker, class nciu & chan )
 {
     this->channelList.remove ( chan );
     if ( this->channelList.count () == 0u ) {
-        this->lastChannelDetachNotify ();
+        this->lastChannelDetachNotify ( cbLocker );
     }
 }
 

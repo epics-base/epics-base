@@ -37,8 +37,10 @@
 #	darwin-ppc
 #	linux-mpc82xx
 
-#  EPICS_HOST_ARCH is an environment variable
-#  EPICS_HOST_ARCH=$(shell /usr/local/epics/startup/EpicsHostArch)
+#  EPICS_HOST_ARCH is a required environment variable
+#  Do not set EPICS_HOST_ARCH in this file. 
+#  Use base/startup files to set EPICS_HOST_ARCH or 
+#  set EPICS_HOST_ARCH on the GNU make command line.
 
 #  The cross-compiler architectures to build EPICS for
 #

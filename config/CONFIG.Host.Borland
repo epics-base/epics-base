@@ -5,6 +5,10 @@
 # 	Use std path variables from ms
 HOME = $(HOMEDRIVE)$(HOMEPATH)
 
+BORLAND_LIB = $(BORLAND)\\lib
+BORLAND_INC = $(BORLAND)\\include
+BORLAND_BIN = $(BORLAND)\\bin
+
 #
 #
 ANSI = ACC
@@ -12,13 +16,13 @@ CPLUSPLUS = CCC
 
 #
 # -q supress command line banner
-WINLINK = ilink32 -q
+WINLINK = $(BORLAND_BIN)/ilink32 -q
 
 # -l specifies default language
 # -fo Renames the output .RES file
-RCCMD = brcc32 -i. -i.. -i$(INSTALL_INCLUDE) -i$(EPICS_BASE_INCLUDE) -l0x409  -fo$@ $<
+RCCMD = $(BORLAND_BIN)/brcc32 $(subst -I,-i,$(INCLUDES)) -l0x409  -fo$@ $<
 
-ARCMD = tlib $@
+ARCMD = $(BORLAND_BIN)/tlib $@
 
 #
 # Configure Borland C compiler
@@ -29,7 +33,7 @@ ARCMD = tlib $@
 # -D_WIN32 macro defined to be consistant with Microsoft Visual C++
 # -D_RTLDLL macro defined to use Borland C++ RTL library
 CCLINKOPT = -q -tWM -tWD -a8 -D_WIN32 -D_RTLDLL
-ACC = bcc32 $(CCLINKOPT)
+ACC = $(BORLAND_BIN)/bcc32 $(CCLINKOPT)
 
 #
 # __STDC__=0 works but not as cleanly as with
@@ -85,7 +89,7 @@ ACC_SLIBS_NO=
 # to disable many nice things. This is overridden
 # by defining NO_BORLAND_STDC in the Makefile.Host.
 #
-CCC = bcc32 $(CCLINKOPT)
+CCC = $(BORLAND_BIN)/bcc32 $(CCLINKOPT)
 ifdef NO_BORLAND_STDC
 CCC_NORMAL = $(CCC)
 CCC_STRICT = $(CCC)
@@ -161,7 +165,7 @@ OP_SYS_CFLAGS =
 #
 # Borland specific include files
 #
-OP_SYS_INCLUDES = -I$(INCLUDE)
+OP_SYS_INCLUDES = -I$(BORLAND_INC)
 #
 OP_SYS_LDLIBS =
 
@@ -188,7 +192,7 @@ HOST_OPT_FLAGS += $(subst $@, /_WINDLL, $(findstring $@,$(LIBOBJS)))
 #	x.lib: what you link to progs that use the dll (LIBNAME)
 #	x.exp: what you need to build the dll (in no variable)
 #
-LINK.shrlib = $(WINLINK) $(WIN32_DLLFLAGS) -L$(LIB) -L$(LIB)\\Psdk c0d32.obj
+LINK.shrlib = $(WINLINK) $(WIN32_DLLFLAGS) -L$(BORLAND_LIB) -L$(BORLAND_LIB)\\Psdk c0d32.obj
 
 #	adjust names of libraries to build
 #
@@ -251,7 +255,7 @@ LIBSUF=mti
 # -Tpe targets a Windows .EXE file
 # -x no map
 # -w display warnings on
-LDFLAGS += -c -C -Gn -Tpe -x -w -L$(LIB) -L$(LIB)\\Psdk
+LDFLAGS += -c -C -Gn -Tpe -x -w -L$(BORLAND_LIB) -L$(BORLAND_LIB)\\Psdk
 LINKSTARTUP = c0x32.obj
 LINKLIBS=import32.lib cw32$(LIBSUF).lib
 

@@ -68,7 +68,6 @@ nciu::nciu ( cac & cacIn, netiiu & iiuIn, cacChannelNotify & chanIn,
 nciu::~nciu ()
 {
     // care is taken so that a lock is not applied during this phase
-    this->cacCtx.destroyAllIO ( *this );
     this->cacCtx.uninstallChannel ( *this );
 
     if ( ! this->f_connectTimeOutSeen && ! this->f_previousConn ) {

@@ -78,6 +78,14 @@ macEnvExpandTestHost_SRCS += macEnvExpandTestMain.cpp macEnvExpandTest.c
 PROD_HOST += macEnvExpandTestHost
 OBJS_IOC_vxWorks += macEnvExpandTest
 
+blockingSockTestHost_SRCS += blockingSockTestMain.cpp blockingSockTest.cpp
+PROD_HOST += blockingSockTestHost
+OBJS_IOC_vxWorks += blockingSockTest
+# needed when its an object library build
+blockingSockTestHost_SYS_LIBS_WIN32 = ws2_32 advapi32 user32
+blockingSockTestHost_SYS_LIBS_solaris = socket
+
+
 #fdmgrTest_SRCS += fdmgrTest.c
 #PROD_HOST += fdmgrTest
 

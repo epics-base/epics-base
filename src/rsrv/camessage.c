@@ -1614,6 +1614,7 @@ LOCAL int write_notify_action ( caHdrLargeArray *mp, void *pPayload,
 LOCAL int event_add_action (caHdrLargeArray *mp, void *pPayload, struct client *client)
 {
     struct mon_info *pmi = (struct mon_info *) pPayload;
+    int spaceAvailOnFreeList;
     struct channel_in_use *pciu;
     struct event_ext *pevext;
 
@@ -1623,7 +1624,17 @@ LOCAL int event_add_action (caHdrLargeArray *mp, void *pPayload, struct client *
         return RSRV_ERROR;
     }
 
-    pevext = (struct event_ext *) freeListCalloc (rsrvEventFreeList);
+    /*
+     * stop further use of server if memory becomes scarse
+     */
+    spaceAvailOnFreeList = freeListItemsAvail ( rsrvEventFreeList ) > 0;
+    if ( casSufficentSpaceInPool || spaceAvailOnFreeList ) { 
+        pevext = (struct event_ext *) freeListCalloc (rsrvEventFreeList);
+    }
+    else {
+        pevext = 0;
+    }
+
     if (!pevext) {
         log_header ("no memory to add subscription", 
             client, mp, pPayload, 0);
@@ -1963,10 +1974,9 @@ LOCAL int search_reply ( caHdrLargeArray *mp, void *pPayload, struct client *cli
     /*
      * stop further use of server if memory becomes scarse
      */
-    spaceAvailOnFreeList = freeListItemsAvail (rsrvClientFreeList) > 0 
-                            && freeListItemsAvail (rsrvChanFreeList) > 0
-                            && freeListItemsAvail (rsrvEventFreeList) > 0;
-    if ( ! casSufficentSpaceInPool && ! spaceAvailOnFreeList ) { 
+    spaceAvailOnFreeList =     freeListItemsAvail ( rsrvChanFreeList ) > 0
+                            && freeListItemsAvail ( rsrvEventFreeList ) > 0;
+    if ( ! ( casSufficentSpaceInPool || spaceAvailOnFreeList ) ) { 
         SEND_LOCK(client);
         send_err ( mp, ECA_ALLOCMEM, client, "Server memory exhausted" );
         SEND_UNLOCK(client);

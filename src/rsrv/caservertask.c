@@ -202,8 +202,6 @@ LOCAL int req_server (void)
 
             pClient = create_tcp_client ( clientSock );
             if ( ! pClient ) {
-                errlogPrintf ( "CAS: unable to create new client because \"%s\"\n",
-                    strerror ( errno ) );
                 epicsThreadSleep ( 15.0 );
                 continue;
             }
@@ -461,7 +459,7 @@ void epicsShareAPI casr (unsigned level)
             freeListItemsAvail (rsrvEventFreeList));
         printf( "%u small buffers (%u bytes ea), and %u jumbo buffers (%u bytes ea)\n",
             freeListItemsAvail ( rsrvSmallBufFreeListTCP ), MAX_TCP,
-            freeListItemsAvail (rsrvLargeBufFreeListTCP), rsrvSizeofLargeBufTCP );
+            freeListItemsAvail ( rsrvLargeBufFreeListTCP ), rsrvSizeofLargeBufTCP );
         if(pCaBucket){
             printf( "The server's resource id conversion table:\n");
             LOCK_CLIENTQ;
@@ -631,10 +629,21 @@ void destroy_tcp_client ( struct client *client )
 struct client * create_client ( SOCKET sock, int proto )
 {
     struct client *client;
-    
+    int           spaceAvailOnFreeList;
+
+    /*
+     * stop further use of server if memory becomes scarse
+     */
+    spaceAvailOnFreeList =     freeListItemsAvail ( rsrvClientFreeList ) > 0
+                            && freeListItemsAvail ( rsrvSmallBufFreeListTCP ) > 0;
+    if ( ! ( casSufficentSpaceInPool || spaceAvailOnFreeList ) ) { 
+        epicsPrintf ("CAS: no space in pool for a new client (below max block thresh)\n");
+        return NULL;
+    }
+
     client = freeListCalloc ( rsrvClientFreeList );
     if ( ! client ) {
-        epicsPrintf ("CAS: no space in pool for a new client\n");
+        epicsPrintf ("CAS: no space in pool for a new client (alloc failed)\n");
         return NULL;
     }    
 
@@ -704,12 +713,17 @@ void casExpandSendBuffer ( struct client *pClient, ca_uint32_t size )
 {
     if ( pClient->send.type == mbtSmallTCP && rsrvSizeofLargeBufTCP > MAX_TCP 
             && size <= rsrvSizeofLargeBufTCP ) {
-        char *pNewBuf = ( char * ) freeListCalloc ( rsrvLargeBufFreeListTCP );
-        memcpy ( pNewBuf, pClient->send.buf, pClient->send.stk );
-        freeListFree ( rsrvSmallBufFreeListTCP,  pClient->send.buf );
-        pClient->send.buf = pNewBuf;
-        pClient->send.maxstk = rsrvSizeofLargeBufTCP;
-        pClient->send.type = mbtLargeTCP;
+        int spaceAvailOnFreeList = freeListItemsAvail ( rsrvLargeBufFreeListTCP ) > 0;
+        if ( casSufficentSpaceInPool || spaceAvailOnFreeList ) { 
+            char *pNewBuf = ( char * ) freeListCalloc ( rsrvLargeBufFreeListTCP );
+            if ( pNewBuf ) {
+                memcpy ( pNewBuf, pClient->send.buf, pClient->send.stk );
+                freeListFree ( rsrvSmallBufFreeListTCP,  pClient->send.buf );
+                pClient->send.buf = pNewBuf;
+                pClient->send.maxstk = rsrvSizeofLargeBufTCP;
+                pClient->send.type = mbtLargeTCP;
+            }
+        }
     }
 }
 
@@ -717,15 +731,20 @@ void casExpandRecvBuffer ( struct client *pClient, ca_uint32_t size )
 {
     if ( pClient->recv.type == mbtSmallTCP && rsrvSizeofLargeBufTCP > MAX_TCP
             && size <= rsrvSizeofLargeBufTCP) {
-        char *pNewBuf = ( char * ) freeListCalloc ( rsrvLargeBufFreeListTCP );
-        assert ( pClient->recv.cnt >= pClient->recv.stk );
-        memcpy ( pNewBuf, &pClient->recv.buf[pClient->recv.stk], pClient->recv.cnt - pClient->recv.stk );
-        freeListFree ( rsrvSmallBufFreeListTCP,  pClient->recv.buf );
-        pClient->recv.buf = pNewBuf;
-        pClient->recv.cnt = pClient->recv.cnt - pClient->recv.stk;
-        pClient->recv.stk = 0u;
-        pClient->recv.maxstk = rsrvSizeofLargeBufTCP;
-        pClient->recv.type = mbtLargeTCP;
+        int spaceAvailOnFreeList = freeListItemsAvail ( rsrvLargeBufFreeListTCP ) > 0;
+        if ( casSufficentSpaceInPool || spaceAvailOnFreeList ) { 
+            char *pNewBuf = ( char * ) freeListCalloc ( rsrvLargeBufFreeListTCP );
+            if ( pNewBuf ) {
+                assert ( pClient->recv.cnt >= pClient->recv.stk );
+                memcpy ( pNewBuf, &pClient->recv.buf[pClient->recv.stk], pClient->recv.cnt - pClient->recv.stk );
+                freeListFree ( rsrvSmallBufFreeListTCP,  pClient->recv.buf );
+                pClient->recv.buf = pNewBuf;
+                pClient->recv.cnt = pClient->recv.cnt - pClient->recv.stk;
+                pClient->recv.stk = 0u;
+                pClient->recv.maxstk = rsrvSizeofLargeBufTCP;
+                pClient->recv.type = mbtLargeTCP;
+            }
+        }
     }
 }
 
@@ -742,7 +761,6 @@ struct client *create_tcp_client ( SOCKET sock )
 
     client = create_client ( sock, IPPROTO_TCP );
     if ( ! client ) {
-        errlogPrintf ("CAS: no space in pool for a new TCP client\n");
         return NULL;
     }
 

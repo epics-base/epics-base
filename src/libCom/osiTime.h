@@ -296,3 +296,4 @@ inline osiTime osiTime::operator = (const time_t_wrapper &rhs)
 }
 
 #endif // osiTimehInclude
+

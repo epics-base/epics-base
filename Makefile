@@ -1,5 +1,9 @@
 #
+<<<<<<< Makefile
 # $Id$
+=======
+# $Id$
+>>>>>>> 1.20
 #
 # Top Level EPICS Makefile
 #        by Matthew Needes and Mike Bordua
@@ -13,9 +17,18 @@
 #         install because the release.% syntax is illegal.
 #
 # $Log$
+<<<<<<< Makefile
+# Revision 1.1.1.1  1994/11/09  01:08:53  epics
+# Import of R3.12.0Beta
+#
+=======
+# Revision 1.20  1994/11/01  11:57:58  jba
+# Removed install dependancy from release rule
+#
 # Revision 1.19  1994/10/31  21:47:02  jba
 # Removed depends dependancy in release and built_release rules
 #
+>>>>>>> 1.20
 # Revision 1.18  1994/10/13  19:44:34  mda
 # Introduce temporary symbol (ARCH_TYPE=$$ARCH) and use in later targets/rules
 # to avoid problem with $* symbol resolution in some versions of gnumake.
@@ -72,7 +85,11 @@ depends:
 			${MAKE} ${MFLAGS} $@.$$ARCH;			\
 		done)
 
+<<<<<<< Makefile
+release: 
+=======
 release:
+>>>>>>> 1.20
 	@echo TOP: Creating Release...
 	@tools/MakeRelease
 
@@ -106,25 +123,21 @@ uninstall:
 #     basis.
 
 dirs.%:
-	@tools/CheckArch $(ARCH_TYPE)
-	@echo $(ARCH_TYPE): Creating Directories
-	@tools/MakeDirs $(ARCH_TYPE)
+	@tools/CheckArch $*
+	@echo $*: Creating Directories
+	@tools/MakeDirs $*
 
 build.%: dirs.% 
-	@echo $(ARCH_TYPE): Building
-	@${MAKE} ${MFLAGS} T_A=$(ARCH_TYPE) -f Makefile.subdirs build
+	@echo $*: Building
+	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs build
 
 install.%: dirs.%
-	@echo $(ARCH_TYPE): Installing
-	@${MAKE} ${MFLAGS} T_A=$(ARCH_TYPE) -f Makefile.subdirs install
+	@echo $*: Installing
+	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs install
 
 depends.%: dirs.%
-	@echo $(ARCH_TYPE): Performing Make Depends
-	@${MAKE} ${MFLAGS} T_A=$(ARCH_TYPE) -f Makefile.subdirs depends
-
-clean.%: dirs.%
-	@echo $(ARCH_TYPE): Cleaning
-	@${MAKE} ${MFLAGS} T_A=$(ARCH_TYPE) -f Makefile.subdirs clean
+	@echo $*: Performing Make Depends
+	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs depends
 
 # Illegal Syntax
 
@@ -138,15 +151,8 @@ uninstall.%:
 	@echo
 	@echo "The uninstall.arch syntax is not supported by this build."
 	@echo
-	
-
-# Clean RULE  syntax:  make clean.arch
-#             e.g.:    make clean.mv167
-#
-#  Clean files for a particular architecture
-#
 
 clean.%:
-	@echo "$(ARCH_TYPE): Cleaning"
-	@tools/Clean $(ARCH_TYPE)
+	@echo "$*: Cleaning"
+	@tools/Clean $*
 

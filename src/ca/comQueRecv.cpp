@@ -134,7 +134,7 @@ epicsUInt16 comQueRecv::multiBufferPopUInt16 ()
     if ( this->occupiedBytes() >= sizeof (tmp) ) {
         unsigned byte1 = this->popUInt8();
         unsigned byte2 = this->popUInt8();
-        tmp = static_cast <epicsUInt16> ( byte1 << 8u | byte2 );
+        tmp = static_cast <epicsUInt16> ( byte1 << ( 8u | byte2 ) );
     }
     else {
         comBuf::throwInsufficentBytesException ();
@@ -159,7 +159,8 @@ epicsUInt32 comQueRecv::multiBufferPopUInt32 ()
         unsigned byte3 = this->popUInt8();
         unsigned byte4 = this->popUInt8();
         tmp = static_cast <epicsUInt32>
-            ( byte1 << 24u | byte2 << 16u | byte3 << 8u | byte4 ); //X aCC 392
+            ( ( byte1 << 24u ) | ( byte2 << 16u ) | 
+                ( byte3 << 8u ) | byte4 ); //X aCC 392
     }
     else {
         comBuf::throwInsufficentBytesException ();

@@ -125,6 +125,7 @@
 #   include <stdioLib.h>
 #   include <strLib.h>
 #elif defined(VMS)
+#   include <sys/types.h>
 #   include <sys/time.h>
 #   include <sys/socket.h>
 #elif defined(WIN32)

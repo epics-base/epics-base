@@ -208,32 +208,31 @@ epicsShareFunc int epicsShareAPI epicsStrSnPrintEscaped(
 epicsShareFunc int epicsShareAPI epicsStrGlobMatch(
     const char *str, const char *pattern)
 {
-        const char *cp, *mp;
-        
-        while ((*str) && (*pattern != '*')) {
-                if ((*pattern != *str) && (*pattern != '?')) {
-                        return 0;
-                }
-                pattern++;
-                str++;
+    const char *cp=NULL, *mp=NULL;
+    
+    while ((*str) && (*pattern != '*')) {
+        if ((*pattern != *str) && (*pattern != '?'))
+            return 0;
+        pattern++;
+        str++;
+    }
+    while (*str) {
+        if (*pattern == '*') {
+            if (!*++pattern)
+                return 1;
+            mp = pattern;
+            cp = str+1;
         }
-        while (*str) {
-                if (*pattern == '*') {
-                        if (!*++pattern) {
-                                return 1;
-                        }
-                        mp = pattern;
-                        cp = str+1;
-                } else if ((*pattern == *str) || (*pattern == '?')) {
-                        pattern++;
-                        str++;
-                } else {
-                        pattern = mp;
-                        str = cp++;
-                }
+        else if ((*pattern == *str) || (*pattern == '?')) {
+            pattern++;
+            str++;
         }
-        while (*pattern == '*') {
-                pattern++;
+        else {
+            pattern = mp;
+            str = cp++;
         }
-        return !*pattern;
+    }
+    while (*pattern == '*')
+        pattern++;
+    return !*pattern;
 }

@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.6  1997/05/08 19:49:12  tang
+// added int * cast in select for HP port compatibility
+//
 // Revision 1.5  1997/04/23 17:22:57  jhill
 // fixed WIN32 DLL symbol exports
 //
@@ -146,8 +149,8 @@ void fdManager::process (const osiTime &delay)
 		FD_SET(iter->getFD(), &this->fdSets[iter->getType()]); 
 	}
 	minDelay.getTV (tv.tv_sec, tv.tv_usec);
-	status = select (this->maxFD, (int *)&this->fdSets[fdrRead], 
-		(int *)&this->fdSets[fdrWrite], (int *)&this->fdSets[fdrExcp], &tv);
+	status = select (this->maxFD, (fd_set *)&this->fdSets[fdrRead], 
+		(fd_set *)&this->fdSets[fdrWrite], (fd_set *)&this->fdSets[fdrExcp], &tv);
 	staticTimerQueue.process();
 	if (status==0) {
 		this->processInProg = 0;

@@ -15,7 +15,7 @@ all: install
 
 build install buildInstall: $(CHECK_RELEASE_$(CHECK_RELEASE))
 
-rebuild: clean all
+rebuild: clean install
 
 ACTIONS = inc
 ACTIONS += build
@@ -28,6 +28,8 @@ archPart = $(word 2, $(subst $(DIVIDER), ,$@))
 
 actionArchTargets = $(foreach x, $(ACTIONS),\
 		$(foreach arch,$(BUILD_ARCHS), $(x)$(DIVIDER)$(arch)))
+
+cleanArchTargets = $(foreach arch,$(BUILD_ARCHS), clean$(DIVIDER)$(arch)))
 
 buildDirs = $(addprefix O.,$(BUILD_ARCHS))
 
@@ -54,15 +56,15 @@ checkRelease: $(wildcard $(TOP)/configure/RELEASE*)
 clean ::
 	$(RMDIR) $(addprefix O.,$(BUILD_ARCHS)) O.Common
 
-clean$(DIVIDER)% :: 
-	$(RMDIR) O.$*
+$(cleanArchTargets) ::
+	$(RMDIR) O.$(archPart)
 
 realclean :: 
 	$(RMDIR) O.*
 
-.PHONY : $(buildActionTargets)
-.PHONY : $(buildActionArchTargets)
-.PHONY : $(buildArchs)
+.PHONY : $(actionArchTargets)
+.PHONY : $(cleanArchTargets)
+.PHONY : $(BUILD_ARCHS)
 .PHONY : $(ACTIONS) clean realclean all
 .PHONY : checkRelease
 

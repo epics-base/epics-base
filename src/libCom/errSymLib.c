@@ -70,9 +70,9 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#include <ellLib.h>
-#include <dbDefs.h>
-#include <errMdef.h>
+#include "ellLib.h"
+#include "dbDefs.h"
+#include "errMdef.h"
 #include "errSymTbl.h"
 
 #ifdef vxWorks

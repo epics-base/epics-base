@@ -56,9 +56,9 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #ifndef INCgpHashh
 #define INCgpHashh 1
 
-#include <ellLib.h>
+#include "ellLib.h"
 #ifdef vxWorks
-#include <fast_lock.h>
+#include "fast_lock.h"
 #endif
 
 typedef struct{

@@ -27,6 +27,9 @@
  * Modification Log: 
  * -----------------
  * $Log$
+ * Revision 1.7  1997/01/22 22:06:49  jhill
+ * doc
+ *
  * Revision 1.6  1996/11/02 01:56:55  jhill
  * improved message
  *
@@ -46,9 +49,9 @@
 #include <string.h>
 #include <errno.h>
 
-#include <epicsAssert.h>
-#include <epicsPrint.h>
-#include <epicsVersion.h>
+#include "epicsAssert.h"
+#include "epicsPrint.h"
+#include "epicsVersion.h"
 
 
 /*

@@ -73,7 +73,7 @@
 *	time zone.
 *
 * QUICK REFERENCE
-* #include <tsDefs.h>
+* #include "tsDefs.h"
 * TS_STAMP  timeStamp;
 *  void  date(								)
 *  void  tsAddDouble(      >pStampSum,    pStamp,        secAsDouble	)

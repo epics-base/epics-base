@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1996/11/02 02:06:00  jhill
+ * const param => #define
+ *
  * Revision 1.3  1996/09/04 21:53:36  jhill
  * allow use with goofy vxWorks 5.2 time spec - which has unsigned sec and
  * signed nsec
@@ -62,20 +65,20 @@
 #define nSecPerUSec 1000u
 #define secPerMin 60u
 
-#include <shareLib.h>
+#include "shareLib.h"
 
 class epicsShareClass osiTime {
-	static friend osiTime operator+ 
+	static friend inline osiTime operator+ 
 		(const osiTime &lhs, const osiTime &rhs);
-	static friend osiTime operator- 
+	static friend inline osiTime operator- 
 		(const osiTime &lhs, const osiTime &rhs);
-	static friend int operator>= 
+	static friend inline int operator>= 
 		(const osiTime &lhs, const osiTime &rhs);
-	static friend int operator> 
+	static friend inline int operator> 
 		(const osiTime &lhs, const osiTime &rhs);
-	static friend int operator<=
+	static friend inline int operator<=
 		(const osiTime &lhs, const osiTime &rhs);
-	static friend int operator< 
+	static friend inline int operator< 
 		(const osiTime &lhs, const osiTime &rhs);
 public:
 	osiTime () : sec(0u), nSec(0u) {}

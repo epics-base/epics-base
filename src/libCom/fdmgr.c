@@ -71,6 +71,9 @@
  *			we eliminate delete ambiguity (chance of the same
  *			being reused).
  * $Log$
+ * Revision 1.22  1996/07/09 23:01:31  jhill
+ * nill 2nd arg to gettimeofday()
+ *
  * Revision 1.21  1996/06/19 17:12:40  jhill
  * check for fd>FD_SETSIZE and improved func proto
  *
@@ -122,12 +125,12 @@ static char	*pSccsId = "@(#) $Id$";
 #include <semLib.h>
 #endif
 
-#include <epicsAssert.h>
-#include <fdmgr.h>
-#include <epicsTypes.h>
+#include "epicsAssert.h"
+#include "fdmgr.h"
+#include "epicsTypes.h"
 
 #define NOBSDNETPROTO
-#include <bsdProto.h>
+#include "bsdProto.h"
 
 #ifndef TRUE
 #define TRUE 1

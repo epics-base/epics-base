@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  1996/11/02 02:06:58  jhill
+ * fixed several subtle problems
+ *
  * Revision 1.5  1996/09/16 21:19:25  jhill
  * removed unused variable
  *
@@ -62,16 +65,17 @@
 #include <stdio.h>
 
 #define epicsExportSharedSymbols
-#include <osiTimer.h>
+#include "osiTimer.h"
 
 osiTimerQueue staticTimerQueue;
+static const tsDLIterBD<osiTimer> eol; // end of list
 
 //
 // osiTimer::arm()
 //
 void osiTimer::arm (const osiTime * const pInitialDelay)
 {
-	osiTimer *pTmr;
+	tsDLIterBD<osiTimer> iter;
 #	ifdef DEBUG
 		unsigned preemptCount=0u;
 #	endif
@@ -97,27 +101,27 @@ void osiTimer::arm (const osiTime * const pInitialDelay)
 	//
 	// **** this should use a binary tree ????
 	//
-	tsDLIter<osiTimer> iter (staticTimerQueue.pending);
-        while ( (pTmr = iter.prev()) ) {
-                if (pTmr->exp <= this->exp) {
+	iter = staticTimerQueue.pending.last();
+        while (1) {
+		if (iter==eol) {
+			//
+			// add to the beginning of the list
+			//
+			staticTimerQueue.pending.push (*this);
+			break;
+		}
+                if (iter->exp <= this->exp) {
+			//
+			// add after the item found that expires earlier
+			//
+			staticTimerQueue.pending.insertAfter (*this, *iter);
                         break;
                 }
 #		ifdef DEBUG
 			preemptCount++;
 #		endif
+		--iter;
         }
-	if (pTmr) {
-		//
-		// add after the item found that expires earlier
-		//
-        	staticTimerQueue.pending.insertAfter (*this, *pTmr);
-	}
-	else {
-		//
-		// add to the beginning of the list
-		//
-        	staticTimerQueue.pending.push (*this);
-	}
 	this->state = ositPending;
 	
 #	ifdef DEBUG
@@ -228,17 +232,11 @@ osiTime osiTimerQueue::delayToFirstExpire() const
 {
 	osiTimer *pTmr;
 	osiTime cur(osiTime::getCurrent());
-	tsDLIter<osiTimer> iter(this->pending);
 	osiTime delay;
 
-	pTmr = iter.next();
+	pTmr = this->pending.first();
 	if (pTmr) {
-		if (pTmr->exp>=cur) {
-			delay = pTmr->exp - cur;
-		}
-		else {
-			delay = osiTime(0u,0u);
-		}
+		delay = pTmr->timeRemaining();
 	}
 	else {
 		//
@@ -257,7 +255,8 @@ osiTime osiTimerQueue::delayToFirstExpire() const
 //
 void osiTimerQueue::process()
 {
-	tsDLFwdIter<osiTimer> pendIter (this->pending);
+	tsDLIterBD<osiTimer> iter;
+	tsDLIterBD<osiTimer> tmp;
 	osiTime cur(osiTime::getCurrent());
 	osiTimer *pTmr;
 
@@ -267,13 +266,17 @@ void osiTimerQueue::process()
 	}
 	this->inProcess = osiTrue;
 
-	while ( (pTmr = pendIter.next()) ) {	
-		if (pTmr->exp >= cur) {
+	iter = this->pending.first();
+	while ( iter!=eol ) {	
+		if (iter->exp >= cur) {
 			break;
 		}
-		pendIter.remove();
-		pTmr->state = ositExpired;
-		this->expired.add(*pTmr);
+		tmp = iter;
+		++tmp;
+		this->pending.remove(*iter);
+		iter->state = ositExpired;
+		this->expired.add(*iter);
+		iter = tmp;
 	}
 
 	//
@@ -320,13 +323,12 @@ void osiTimerQueue::process()
 //
 void osiTimerQueue::show(unsigned level) const
 {
-	osiTimer *pTmr;
-
-	printf("osiTimerQueue with %d items pending and %d items expired\n",
+	printf("osiTimerQueue with %u items pending and %u items expired\n",
 		this->pending.count(), this->expired.count());
-	tsDLIter<osiTimer> iter (this->pending);
-	while ( (pTmr = iter.next()) ) {	
-		pTmr->show(level);
+	tsDLIterBD<osiTimer> iter(this->pending.first());
+	while ( iter!=eol ) {	
+		iter->show(level);
+		++iter;
 	}
 }
 
@@ -361,5 +363,57 @@ osiTimerQueue::~osiTimerQueue()
 const char *osiTimer::name() const
 {
 	return "osiTimer";
+}
+
+//
+// osiTimer::reschedule()
+// 
+// pull this timer out of the queue ans reinstall
+// it with a new experation time
+//
+void osiTimer::reschedule(const osiTime &newDelay)
+{
+	//
+	// signal the timer queue if this
+	// occurrring during the expire call
+	// back
+	//
+	if (this == staticTimerQueue.pExpireTmr) {
+		staticTimerQueue.pExpireTmr = 0;
+	}
+	switch (this->state) {
+	case ositPending:
+		staticTimerQueue.pending.remove(*this);
+		break;
+	case ositExpired:
+		staticTimerQueue.expired.remove(*this);
+		break;
+	case ositLimbo:
+		break;
+	default:
+		assert(0);
+	}
+	this->state = ositLimbo;
+	this->arm(&newDelay);
+}
+
+//
+// osiTimer::timeRemaining()
+//
+// return the number of seconds remaining before
+// this timer will expire
+//
+osiTime osiTimer::timeRemaining()
+{
+	osiTime cur = osiTime::getCurrent();
+	osiTime delay;
+
+	if (this->exp>cur) {
+		delay = this->exp - cur;
+	}
+	else {
+		delay = osiTime(0u,0u);
+	}
+	return delay;
 }
 

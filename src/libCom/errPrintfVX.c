@@ -28,6 +28,9 @@
  * -----------------
  * .01  02-16-95        mrk     Extracted from errSymLib.c
  * $Log$
+ * Revision 1.8  1996/09/04 21:46:20  jhill
+ * fixed gcc warning
+ *
  * Revision 1.7  1995/11/08 23:44:41  jhill
  * changes associated with fixing the log client
  *
@@ -50,12 +53,12 @@
 #include <error.h>
 #include <logLib.h>
 
-#include <epicsAssert.h>
-#include <ellLib.h>
-#include <dbDefs.h>
-#include <task_params.h>
-#include <errMdef.h>
-#include <epicsPrint.h>
+#include "epicsAssert.h"
+#include "ellLib.h"
+#include "dbDefs.h"
+#include "task_params.h"
+#include "errMdef.h"
+#include "epicsPrint.h"
 #ifndef LOCAL
 #define LOCAL static
 #endif /* LOCAL */

@@ -27,6 +27,9 @@
  * Modification Log: 
  * -----------------
  * $Log$
+ * Revision 1.6  1997/01/22 22:07:22  jhill
+ * doc
+ *
  * Revision 1.5  1996/06/19 17:14:12  jhill
  * print out the EPICS release when there is an assert failure
  *
@@ -47,9 +50,9 @@
 #include <vxWorks.h>
 #include <taskLib.h>
 
-#include <epicsAssert.h>
-#include <epicsPrint.h>
-#include <epicsVersion.h>
+#include "epicsAssert.h"
+#include "epicsPrint.h"
+#include "epicsVersion.h"
 
 
 /*

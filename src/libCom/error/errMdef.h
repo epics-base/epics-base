@@ -50,7 +50,7 @@ extern "C" {
 #else
 #       include <varargs.h>
 #endif
-#include <ellLib.h>
+#include "ellLib.h"
 
 #define RTN_SUCCESS(STATUS) ((STATUS)==0)
 

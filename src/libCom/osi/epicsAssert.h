@@ -45,8 +45,16 @@ extern "C" {
 
 #if defined(__STDC__) || defined(__cplusplus)
 
-extern void epicsAssert (const char *pFile, const unsigned line, 
-		const char *pMsg, const char *pAuthorName);
+	extern void epicsAssert (const char *pFile, const unsigned line, 
+			const char *pMsg, const char *pAuthorName);
+
+#else /*__STDC__ or __cplusplus*/
+
+	extern void epicsAssert ();
+
+#endif /*__STDC__ or __cplusplus*/
+
+#if (defined(__STDC__) || defined(__cplusplus)) && !defined(VAXC)
 
 #ifdef epicsAssertAuthor
 #define assert(exp) \
@@ -58,7 +66,6 @@ extern void epicsAssert (const char *pFile, const unsigned line,
 
 #else /*__STDC__ or __cplusplus*/
 
-extern void epicsAssert ();
 
 #ifdef epicsAssertAuthor
 #define assert(exp) \
@@ -68,7 +75,7 @@ extern void epicsAssert ();
 {if (!(exp)) epicsAssert (__FILE__, __LINE__, "", 0);}
 #endif /* epicsAssertAuthor */
 
-#endif /*__STDC__ or __cplusplus*/
+#endif /* (__STDC__ or __cplusplus) and not VAXC */
 
 #endif  /* NDEBUG */
 

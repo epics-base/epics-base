@@ -32,6 +32,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/11/02 02:04:41  jhill
+ * fixed several subtle bugs
+ *
  * Revision 1.2  1996/09/04 21:50:16  jhill
  * added hashed fd to fdi convert
  *
@@ -114,17 +117,7 @@ public:
 	virtual ~fdReg ();
 
 	virtual void show(unsigned level) const;
-private:
-
-        //
-        // called when there is activity on the fd
-	// NOTES
-	// 1) the fdManager will call this only once during the
-	// lifetime of a fdReg object if the constructor
-	// specified "onceOnly"
-        //
-        virtual void callBack ()=0;
-
+	
 	//
 	// Called by the file descriptor manager:
 	// 1) If the fdManager is deleted and there are still 
@@ -135,6 +128,16 @@ private:
 	// fdReg::destroy() does a "delete this"
 	//
 	virtual void destroy ();
+private:
+
+        //
+        // called when there is activity on the fd
+	// NOTES
+	// 1) the fdManager will call this only once during the
+	// lifetime of a fdReg object if the constructor
+	// specified "onceOnly"
+        //
+        virtual void callBack ()=0;
 
 	unsigned char 	state; // fdRegState goes here
 	unsigned char	onceOnly;

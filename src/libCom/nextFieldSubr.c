@@ -140,8 +140,8 @@
 #   include <ctype.h>
 #   include <stdio.h>
 #endif
-#include <epicsAssert.h>
-#include <tsDefs.h>
+#include "epicsAssert.h"
+#include "tsDefs.h"
 
 
 /*-----------------------------------------------------------------------------

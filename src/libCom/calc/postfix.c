@@ -98,8 +98,8 @@
 #endif
 
 #include	<string.h>
-#include	<dbDefs.h>
-#include	<post.h>
+#include	"dbDefs.h"
+#include	"post.h"
 #include	<ctype.h>
 
 /* declarations for postfix */

@@ -33,6 +33,9 @@
  * 	.02 121693 joh	added bucketFree() 
  * 	.03 052395 joh	use std EPICS status 
  *	$Log$
+ *	Revision 1.2  1996/06/19 19:44:53  jhill
+ *	C++ support
+ *
  *
  *	NOTES:
  *	.01 Storage for identifier must persist until an item is deleted
@@ -45,8 +48,8 @@
 extern "C" {
 #endif
 
-#include <errMdef.h>
-#include <epicsTypes.h>
+#include "errMdef.h"
+#include "epicsTypes.h"
 
 typedef	unsigned 	BUCKETID;
 

@@ -60,4 +60,5 @@ void *freeListCalloc(void *pvt);
 void *freeListMalloc(void *pvt);
 void freeListFree(void *pvt,void*pmem);
 void freeListCleanup(void *pvt);
+size_t freeListItemsAvail(void *pvt);
 #endif /*INCfreeListh*/

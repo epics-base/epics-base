@@ -32,6 +32,7 @@
  * .05  04-20-95	anj	moved defaults to CONFIG_ENV
  * .06  09-11-96	joh 	ANSI prototypes	
  * .07  09-18-96	joh 	added envParamIsEmpty()	
+ * .08  03-18-97	joh 	remove env param length limit	
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -59,35 +60,39 @@
 #ifndef envDefsH
 #define envDefsH
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "shareLib.h"
 #include "osiSock.h"
 
 typedef struct envParam {
     char	*name;		/* text name of the parameter */
-    char	dflt[80];	/* default value for the parameter */
+    char	*pdflt;
 } ENV_PARAM;
 
 /*
  * bldEnvData looks for "epicsShareExtern ENV_PARAM"
  */
-epicsShareExtern ENV_PARAM EPICS_CA_ADDR_LIST; 
-epicsShareExtern ENV_PARAM EPICS_CA_CONN_TMO; 
-epicsShareExtern ENV_PARAM EPICS_CA_BEACON_PERIOD; 
-epicsShareExtern ENV_PARAM EPICS_CA_AUTO_ADDR_LIST;
-epicsShareExtern ENV_PARAM EPICS_CA_REPEATER_PORT;
-epicsShareExtern ENV_PARAM EPICS_CA_SERVER_PORT;
-epicsShareExtern ENV_PARAM EPICS_CAS_INTF_ADDR_LIST;
-epicsShareExtern ENV_PARAM EPICS_CAS_BEACON_ADDR_LIST; 
-epicsShareExtern ENV_PARAM EPICS_CAS_SERVER_PORT;
-epicsShareExtern ENV_PARAM EPICS_TS_MIN_WEST;
-epicsShareExtern ENV_PARAM EPICS_TS_NTP_INET;
-epicsShareExtern ENV_PARAM EPICS_IOC_LOG_PORT;
-epicsShareExtern ENV_PARAM EPICS_IOC_LOG_INET;
-epicsShareExtern ENV_PARAM EPICS_IOC_LOG_FILE_LIMIT;
-epicsShareExtern ENV_PARAM EPICS_IOC_LOG_FILE_NAME;
-epicsShareExtern ENV_PARAM EPICS_IOC_LOG_FILE_COMMAND;
-epicsShareExtern ENV_PARAM EPICS_CMD_PROTO_PORT;
-epicsShareExtern ENV_PARAM EPICS_AR_PORT;
+epicsShareExtern const ENV_PARAM EPICS_CA_ADDR_LIST; 
+epicsShareExtern const ENV_PARAM EPICS_CA_CONN_TMO; 
+epicsShareExtern const ENV_PARAM EPICS_CA_BEACON_PERIOD; 
+epicsShareExtern const ENV_PARAM EPICS_CA_AUTO_ADDR_LIST;
+epicsShareExtern const ENV_PARAM EPICS_CA_REPEATER_PORT;
+epicsShareExtern const ENV_PARAM EPICS_CA_SERVER_PORT;
+epicsShareExtern const ENV_PARAM EPICS_CAS_INTF_ADDR_LIST;
+epicsShareExtern const ENV_PARAM EPICS_CAS_BEACON_ADDR_LIST; 
+epicsShareExtern const ENV_PARAM EPICS_CAS_SERVER_PORT;
+epicsShareExtern const ENV_PARAM EPICS_TS_MIN_WEST;
+epicsShareExtern const ENV_PARAM EPICS_TS_NTP_INET;
+epicsShareExtern const ENV_PARAM EPICS_IOC_LOG_PORT;
+epicsShareExtern const ENV_PARAM EPICS_IOC_LOG_INET;
+epicsShareExtern const ENV_PARAM EPICS_IOC_LOG_FILE_LIMIT;
+epicsShareExtern const ENV_PARAM EPICS_IOC_LOG_FILE_NAME;
+epicsShareExtern const ENV_PARAM EPICS_IOC_LOG_FILE_COMMAND;
+epicsShareExtern const ENV_PARAM EPICS_CMD_PROTO_PORT;
+epicsShareExtern const ENV_PARAM EPICS_AR_PORT;
 #define EPICS_ENV_VARIABLE_COUNT 18
 
 /*
@@ -97,30 +102,34 @@ epicsShareExtern ENV_PARAM EPICS_AR_PORT;
  * bldEnvData looks for "epicsShareExtern ENV_PARAM" so
  * this always needs to be divided into two lines
  */
-epicsShareExtern ENV_PARAM
+epicsShareExtern const ENV_PARAM
 	*env_param_list[EPICS_ENV_VARIABLE_COUNT+1];
 
-#ifdef __STDC__
-char * epicsShareAPI envGetConfigParam(ENV_PARAM *pParam, 
+#if defined(__STDC__) || defined(__cplusplus)
+char * epicsShareAPI envGetConfigParam(const ENV_PARAM *pParam, 
 				int bufDim, char *pBuf);
-long epicsShareAPI envPrtConfigParam(ENV_PARAM *pParam);
-long epicsShareAPI envSetConfigParam(ENV_PARAM *pParam, 
+const char * epicsShareAPI envGetConfigParamPtr(const ENV_PARAM *pParam);
+long epicsShareAPI envPrtConfigParam(const ENV_PARAM *pParam);
+long epicsShareAPI envSetConfigParam(const ENV_PARAM *pParam, 
 			char *value);
-long epicsShareAPI envGetInetAddrConfigParam(ENV_PARAM *pParam, 
+long epicsShareAPI envGetInetAddrConfigParam(const ENV_PARAM *pParam, 
 			struct in_addr *pAddr);
-long epicsShareAPI envGetDoubleConfigParam(ENV_PARAM *pParam, 
+long epicsShareAPI envGetDoubleConfigParam(const ENV_PARAM *pParam, 
 			double *pDouble);
-long epicsShareAPI envGetLongConfigParam(ENV_PARAM *pParam, 
+long epicsShareAPI envGetLongConfigParam(const ENV_PARAM *pParam, 
 			long *pLong);
-int epicsShareAPI envParamIsEmpty(ENV_PARAM *pParam);
 #else
 char * epicsShareAPI envGetConfigParam();
+const char * epicsShareAPI envGetConfigParamPtr();
 long epicsShareAPI envPrtConfigParam();
 long epicsShareAPI envSetConfigParam();
 long epicsShareAPI envGetInetAddrConfigParam();
 long epicsShareAPI envGetDoubleConfigParam();
 long epicsShareAPI envGetLongConfigParam();
-int epicsShareAPI envParamIsEmpty();
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /*envDefsH*/

@@ -57,13 +57,13 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <taskLib.h>
 #endif
 
-#include <dbDefs.h>
+#include "dbDefs.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
-#include <gpHash.h>
-#include <ellLib.h>
-#include <epicsPrint.h>
+#include "gpHash.h"
+#include "ellLib.h"
+#include "epicsPrint.h"
 
 typedef struct gphPvt {
     int		tableSize;

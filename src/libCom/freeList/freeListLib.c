@@ -49,17 +49,19 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
  * Modification Log:
  * -----------------
  * .01  04-19-94	mrk	Initial Implementation
+ * .02  03-28-97	joh	added freeListItemAvail() function	
  */
 
 #ifdef vxWorks
 #include <vxWorks.h>
-#include <fast_lock.h>
+#include <taskLib.h>
+#include "fast_lock.h"
 #endif
 
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
-#include <freeList.h>
+#include "freeList.h"
 
 typedef struct allocMem {
     struct allocMem	*next;
@@ -70,6 +72,7 @@ typedef struct {
     int		nmalloc;
     void	*head;
     allocMem	*mallochead;
+    size_t	nBlocksAvailable;
 #ifdef vxWorks
     FAST_LOCK	lock;
 #endif
@@ -90,6 +93,7 @@ void freeListInitPvt(void **ppvt,int size,int nmalloc)
     pfl->nmalloc = nmalloc;
     pfl->head = NULL;
     pfl->mallochead = NULL;
+    pfl->nBlocksAvailable = 0u;
 #ifdef vxWorks
     FASTLOCKINIT(&pfl->lock);
 #endif
@@ -139,9 +143,11 @@ void *freeListMalloc(void *pvt)
 	    ptemp = ((char *)ptemp) + pfl->size;
 	}
 	ptemp = pfl->head;
+        pfl->nBlocksAvailable += pfl->nmalloc;
     }
     ppnext = pfl->head;
     pfl->head = *ppnext;
+    pfl->nBlocksAvailable--;
 #ifdef vxWorks
     FASTUNLOCK(&pfl->lock);
 #endif
@@ -159,6 +165,7 @@ void freeListFree(void *pvt,void*pmem)
     ppnext = pmem;
     *ppnext = pfl->head;
     pfl->head = pmem;
+    pfl->nBlocksAvailable++;
 #ifdef vxWorks
     FASTUNLOCK(&pfl->lock);
 #endif
@@ -179,3 +186,10 @@ void freeListCleanup(void *pvt)
     }
     free(pvt);
 }
+
+size_t freeListItemsAvail(void *pvt)
+{
+    FREELISTPVT *pfl = pvt;
+    return pfl->nBlocksAvailable;
+}
+

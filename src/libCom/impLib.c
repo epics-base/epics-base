@@ -24,9 +24,9 @@ of this distribution.
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-#include <ellLib.h>
-#include <epicsPrint.h>
-#include <impLib.h>
+#include "ellLib.h"
+#include "epicsPrint.h"
+#include "impLib.h"
 
 /*private declarations*/
 typedef struct pathNode {

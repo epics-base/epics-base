@@ -35,7 +35,10 @@
  * .07  11-03-96	joh	fixed bug occuring when diagnostic is
  *				printed and the env var cant be found
  * .08  09-11-96        joh     ANSI prototypes
- * .09  10-18-96        joh    	added envParamIsEmpty() 
+ * .09  10-18-96        joh     added envParamIsEmpty()
+ * .10  03-18-97        joh    	added envGetConfigParamPtr() 
+ *				(replaces envParamIsEmpty())
+ * .11  03-18-97        joh    	remove env param length limits 
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -54,16 +57,15 @@
 *	Many EPICS environment parameters are predefined in envDefs.h.
 *
 * QUICK REFERENCE
-* #include <envDefs.h>
+* #include "envDefs.h"
 * ENV_PARAM	param;
+*  char *envGetConfigParamPtr(       pParam			      )
 *  char *envGetConfigParam(          pParam,    bufDim,    pBuf       )
 *  long  envGetLongConfigParam(      pParam,    pLong                 )
 *  long  envGetDoubleConfigParam(    pParam,    pDouble               )
 *  long  envGetInetAddrConfigParam(  pParam,    pAddr                 )
 *  long  envPrtConfigParam(          pParam                           )
 *  long  envSetConfigParam(          pParam,    valueString           )
-*  int envParamIsEmpty(		     pParam			      )
-)
 *
 * SEE ALSO
 *	$epics/share/bin/envSetupParams, envDefs.h
@@ -84,6 +86,55 @@
 #define epicsExportSharedSymbols
 #include "envDefs.h"
 
+
+/*+/subr**********************************************************************
+* NAME	envGetConfigParamPtr - returns a pointer to the configuration 
+* 		parameter value string
+*
+* DESCRIPTION
+*	Returns a pointer to a configuration parameter value. 
+*	If the configuration parameter isn't found in the environment, 
+*	then a pointer to the default value for the parameter is copied.  
+* 	If no parameter is found and there is no default, then 
+* 	NULL is returned.
+*
+* RETURNS
+*	pointer to the environment variable value string, or
+*	NULL if no parameter value and no default value was found
+*
+* EXAMPLES
+* 1.	Get the value for the EPICS-defined environment parameter
+*	EPICS_TS_MIN_WEST.
+*
+*	#include "envDefs.h"
+*	const char *pStr;
+*
+*	pStr = envGetConfigParamPtr(&EPICS_TS_MIN_WEST);
+*	if (pStr) {
+*		printf("minutes west of UTC is: %s\n", pStr);
+*	}
+*
+*-*/
+const char * epicsShareAPI envGetConfigParamPtr(
+const ENV_PARAM *pParam /* I pointer to config param structure */
+)
+{
+    const char *pEnv;		/* pointer to environment string */
+
+    pEnv = getenv(pParam->name);
+
+    if (pEnv == NULL) {
+	pEnv = pParam->pdflt;
+    }
+
+    if (pEnv) {
+	if (pEnv[0u] == '\0') {
+	    pEnv = NULL;
+	}
+    }
+
+    return pEnv;
+}
 
 
 /*+/subr**********************************************************************
@@ -104,39 +155,34 @@
 * 1.	Get the value for the EPICS-defined environment parameter
 *	EPICS_TS_MIN_WEST.
 *
-*	#include <envDefs.h>
+*	#include "envDefs.h"
 *	char       temp[80];
 *
 *	printf("minutes west of UTC is: %s\n",
-*			envGetConfigParam(&EPICS_TS_MIN_WEST, 80, temp));
+*			envGetConfigParam(&EPICS_TS_MIN_WEST, sizeof(temp), temp));
 *
 * 2.	Get the value for the DISPLAY environment parameter under UNIX.
 *
-*	#include <envDefs.h>
+*	#include "envDefs.h"
 *	char       temp[80];
 *	ENV_PARAM  display={"DISPLAY",""}
 *
-*	if (envGetConfigParam(&display, 80, temp) == NULL)
+*	if (envGetConfigParam(&display, sizeof(temp), temp) == NULL)
 *	    printf("DISPLAY isn't defined\n");
 *	else
 *	    printf("DISPLAY is %s\n", temp);
 *
 *-*/
 char * epicsShareAPI envGetConfigParam(
-ENV_PARAM *pParam,	/* I pointer to config param structure */
+const ENV_PARAM *pParam,/* I pointer to config param structure */
 int	bufDim,		/* I dimension of parameter buffer */
 char	*pBuf		/* I pointer to parameter buffer  */
 )
 {
-    char	*pEnv;		/* pointer to environment string */
+    const char *pEnv;		/* pointer to environment string */
 
-    pEnv = getenv(pParam->name);
-
-    if (pEnv == NULL) {
-	pEnv = pParam->dflt;
-    }
-
-    if (pEnv[0u] == '\0') {
+    pEnv = epicsShareAPI envGetConfigParamPtr(pParam);
+    if (!pEnv) {
 	return NULL;
     }
 
@@ -165,7 +211,7 @@ char	*pBuf		/* I pointer to parameter buffer  */
 * EXAMPLE
 * 1.	Get the value for the real environment parameter EPICS_THRESHOLD.
 *
-*	#include <envDefs.h>
+*	#include "envDefs.h"
 *	double	threshold;
 *	long	status;
 *
@@ -180,7 +226,7 @@ char	*pBuf		/* I pointer to parameter buffer  */
 *
 *-*/
 long epicsShareAPI envGetDoubleConfigParam(
-ENV_PARAM *pParam,	/* I pointer to config param structure */
+const ENV_PARAM *pParam,/* I pointer to config param structure */
 double	*pDouble	/* O pointer to place to store value */
 )
 {
@@ -194,7 +240,7 @@ double	*pDouble	/* O pointer to place to store value */
 	if (count == 1) {
 	    return 0;
 	}
-        (void)printf("Unable to find a real number in %s=%s\n", 
+        (void)fprintf(stderr,"Unable to find a real number in %s=%s\n", 
 		pParam->name, text);
     }
 
@@ -220,7 +266,7 @@ double	*pDouble	/* O pointer to place to store value */
 * EXAMPLE
 * 1.	Get the value for the inet address environment parameter EPICS_INET.
 *
-*	#include <envDefs.h>
+*	#include "envDefs.h"
 *	struct	in_addr	addr;
 *	long	status;
 *
@@ -235,7 +281,7 @@ double	*pDouble	/* O pointer to place to store value */
 *
 *-*/
 long epicsShareAPI envGetInetAddrConfigParam(
-ENV_PARAM *pParam,	/* I pointer to config param structure */
+const ENV_PARAM *pParam,/* I pointer to config param structure */
 struct in_addr *pAddr	/* O pointer to struct to receive inet addr */
 )
 {
@@ -250,7 +296,7 @@ struct in_addr *pAddr	/* O pointer to struct to receive inet addr */
 	    pAddr->s_addr = status;
 	    return 0;
 	}
-        (void)printf("Unable to find an IP address in %s=%s\n", 
+        (void)fprintf(stderr,"Unable to find an IP address in %s=%s\n", 
 		pParam->name, text);
     }
     return -1;
@@ -276,7 +322,7 @@ struct in_addr *pAddr	/* O pointer to struct to receive inet addr */
 * 1.	Get the value as a long for the integer environment parameter
 *	EPICS_NUMBER_OF_ITEMS.
 *
-*	#include <envDefs.h>
+*	#include "envDefs.h"
 *	long	count;
 *	long	status;
 *
@@ -291,7 +337,7 @@ struct in_addr *pAddr	/* O pointer to struct to receive inet addr */
 *
 *-*/
 long epicsShareAPI envGetLongConfigParam(
-ENV_PARAM *pParam,	/* I pointer to config param structure */
+const ENV_PARAM *pParam,/* I pointer to config param structure */
 long	*pLong		/* O pointer to place to store value */
 )
 {
@@ -304,7 +350,7 @@ long	*pLong		/* O pointer to place to store value */
 	count = sscanf(text, "%ld", pLong);
 	if (count == 1)
 		return 0;
-        (void)printf("Unable to find an integer in %s=%s\n", 
+        (void)fprintf(stderr,"Unable to find an integer in %s=%s\n", 
 		pParam->name, text);
     }
     return -1;
@@ -323,19 +369,21 @@ long	*pLong		/* O pointer to place to store value */
 * 1.	Print the value for the EPICS-defined environment parameter
 *	EPICS_TS_MIN_WEST.
 *
-*	#include <envDefs.h>
+*	#include "envDefs.h"
 *
 *	envPrtConfigParam(&EPICS_TS_MIN_WEST);
 *
 *-*/
 long epicsShareAPI envPrtConfigParam(
-ENV_PARAM *pParam)	/* pointer to config param structure */
+const ENV_PARAM *pParam)	/* pointer to config param structure */
 {
-    char	text[80];
-    if (envGetConfigParam(pParam, 80, text) == NULL)
-	printf("%s is undefined\n", pParam->name);
+    const char *pVal;
+
+    pVal = epicsShareAPI envGetConfigParamPtr(pParam);
+    if (pVal == NULL)
+	fprintf(stderr, "%s is undefined\n", pParam->name);
     else
-	printf("%s: %s\n", pParam->name, text);
+	fprintf(stdout,"%s: %s\n", pParam->name, pVal);
     return 0;
 }
 
@@ -361,7 +409,7 @@ ENV_PARAM *pParam)	/* pointer to config param structure */
 *
 *	In a program running under VxWorks:
 *
-*		#include <envDefs.h>
+*		#include "envDefs.h"
 *
 *		envSetConfigParam(&EPICS_TS_MIN_WEST, "360");
 *
@@ -371,12 +419,12 @@ ENV_PARAM *pParam)	/* pointer to config param structure */
 *
 *-*/
 long epicsShareAPI envSetConfigParam (
-ENV_PARAM 	*pParam,	/* I pointer to config param structure */
+const ENV_PARAM *pParam,	/* I pointer to config param structure */
 char		*value		/* I pointer to value string */
 )
 {
 #ifndef vxWorks
-    	printf("envSetConfigParam can only be used under vxWorks\n");
+    	fprintf(stderr, "envSetConfigParam can only be used under vxWorks\n");
 	return -1L;
 #else
 	long	retCode = 0;
@@ -437,7 +485,7 @@ char		*value		/* I pointer to value string */
 * EXAMPLE
 * 1.    Print the value for all EPICS-defined environment parameters.
 *
-*       #include <envDefs.h>
+*       #include "envDefs.h"
 *
 *       epicsPrtEnvParams();
 *
@@ -445,46 +493,11 @@ char		*value		/* I pointer to value string */
 long
 epicsPrtEnvParams()
 {
-    ENV_PARAM **ppParam = env_param_list;
+    const ENV_PARAM **ppParam = env_param_list;
      
     while (*ppParam != NULL)
 	envPrtConfigParam(*(ppParam++));
 
     return 0;
-}
-
-/*+/subr**********************************************************************
-* NAME  envParamIsEmpty - test for empty environment parameter 
-*
-* DESCRIPTION
-*	Return TRUE if the environment parameter is empty - else false
-*
-* AUTHOR
-*	Jeff Hill
-* RETURNS
-*	0 or 1
-*
-* EXAMPLE
-*       #include <envDefs.h>
-*
-*       if (envParamIsEmpty(&EPICS_CAS_SERVER_PORT)) {
-*		 port = caFetchPortConfig(&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
-*	}
-*
-*-*/
-int epicsShareAPI envParamIsEmpty(
-ENV_PARAM *pParam	/* I pointer to config param structure */
-)
-{
-    char	*pEnv;		/* pointer to environment string */
-
-    pEnv = getenv(pParam->name);
-
-    if (pEnv == NULL && pParam->dflt[0u] == '\0') {
-	return 1;
-    }
-    else {
-	return 0;
-    }
 }
 

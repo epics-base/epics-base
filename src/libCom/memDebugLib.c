@@ -33,8 +33,8 @@
 #include <string.h>
 #include <time.h>
 
-#include <epicsAssert.h>
-#include <ellLib.h>
+#include "epicsAssert.h"
+#include "ellLib.h"
 
 #ifdef vxWorks
 #define LOCKS_REQUIRED
@@ -42,7 +42,7 @@
 #endif /*vxWorks*/
 
 #ifdef LOCKS_REQUIRED
-#include <fast_lock.h>
+#include "fast_lock.h"
 #else /*LOCKS_REQUIRED*/
 #define FASTLOCK(A) 
 #define FASTUNLOCK(A)
@@ -65,7 +65,7 @@ typedef struct debugMallocHeader{
         unsigned long   magic;
 }DMH;
 
-#include <memDebugLib.h>
+#include "memDebugLib.h"
 #undef free
 #undef malloc
 #undef calloc

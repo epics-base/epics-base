@@ -38,7 +38,7 @@
 
 #include <stdlib.h>
 
-#include <ellLib.h>
+#include "ellLib.h"
 
 #if     !defined(NULL) 
 #define NULL            0

@@ -51,7 +51,7 @@ struct ELLLIST {
 };
 typedef struct ELLLIST ELLLIST;
 
-#ifdef __STDC__
+#if defined(__STDC__) || defined(__cplusplus)
 
 #ifdef DLLLIB_USE_MACROS
 

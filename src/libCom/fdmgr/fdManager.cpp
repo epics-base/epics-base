@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.3  1996/11/02 02:04:42  jhill
+// fixed several subtle bugs
+//
 // Revision 1.2  1996/09/04 21:50:16  jhill
 // added hashed fd to fdi convert
 //
@@ -31,16 +34,21 @@
 #define epicsExportSharedSymbols
 #include "osiTimer.h"
 #include "fdManager.h"
-
-#if !defined(__SUNPRO_CC)
+#define INSTANCIATE_RES_LIB_STATIC
+#include "resourceLib.cc"
+ 
+//
+// if the compiler supports explicit instantiation of
+// template member functions
+//
+#if defined(EXPL_TEMPL)
         //
         // From Stroustrups's "The C++ Programming Language"
         // Appendix A: r.14.9
         //
         // This explicitly instantiates the template class's member
-        // functions into "fdManager.o"
+        // functions used by fdManager 
         //
-#	include <resourceLib.cc>
         template class resTable <fdReg, fdRegId>;
 #endif
 
@@ -94,7 +102,9 @@ fdManager::~fdManager()
 //
 void fdManager::process (const osiTime &delay)
 {
-	tsDLFwdIter<fdReg> regIter(this->regList);
+	static const tsDLIterBD<fdReg> eol; // end of list
+	tsDLIterBD<fdReg> iter;
+	tsDLIterBD<fdReg> tmp;
 	osiTime minDelay;
 	osiTime zeroDelay;
 	fdReg *pReg;
@@ -126,8 +136,8 @@ void fdManager::process (const osiTime &delay)
 		minDelay = delay;
 	}
 
-	while ( (pReg=regIter()) ) {
-		FD_SET(pReg->getFD(), &this->fdSets[pReg->getType()]); 
+	for (iter=this->regList.first(); iter!=eol; ++iter) {
+		FD_SET(iter->getFD(), &this->fdSets[iter->getType()]); 
 	}
 	minDelay.getTV (tv.tv_sec, tv.tv_usec);
 	status = select (this->maxFD, &this->fdSets[fdrRead], 
@@ -152,14 +162,17 @@ void fdManager::process (const osiTime &delay)
 	//
 	// Look for activity
 	//
-	regIter.reset();
-	while ( (pReg=regIter()) ) {
-		if (FD_ISSET(pReg->getFD(), &this->fdSets[pReg->getType()])) {
-			FD_CLR(pReg->getFD(), &this->fdSets[pReg->getType()]);
-			regIter.remove();
-			this->activeList.add(*pReg);
-			pReg->state = fdrActive;
+	iter=this->regList.first();
+	while (iter!=eol) {
+		tmp = iter;
+		tmp++;
+		if (FD_ISSET(iter->getFD(), &this->fdSets[iter->getType()])) {
+			FD_CLR(iter->getFD(), &this->fdSets[iter->getType()]);
+			this->regList.remove(*iter);
+			this->activeList.add(*iter);
+			iter->state = fdrActive;
 		}
+		iter=tmp;
 	}
 
 	//

@@ -46,8 +46,8 @@
 extern "C" {
 #endif
 
-#include        <ellLib.h>
-#include        <bucketLib.h>
+#include        "ellLib.h"
+#include        "bucketLib.h"
 
 #if defined(vxWorks)
 #      	include <vxWorks.h>
@@ -71,7 +71,7 @@ extern "C" {
 #       include <stdlib.h>
 #       include <errno.h>
 #       include <malloc.h>
-#       include <winsock.h>
+#       include <windows.h>
 #	define FDMGR_OS WIN32 
 #endif
 

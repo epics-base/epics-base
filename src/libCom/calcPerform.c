@@ -109,8 +109,8 @@
 #endif
 
 #include	<string.h>
-#include	<dbDefs.h>
-#include	<post.h>
+#include	"dbDefs.h"
+#include	"post.h"
 #include	<math.h>
 
 static double	local_random();

@@ -55,7 +55,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>		/* XPG2/XPG3/POSIX.1/FIPS151-1/ANSI-C */
-#include <cvtFast.h>
+#include "cvtFast.h"
 
 /*
  * This routine converts numbers less than 10,000,000. It defers to f_to_str for

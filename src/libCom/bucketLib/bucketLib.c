@@ -41,8 +41,8 @@
 #include <math.h>
 #include <time.h>
 
-#include <epicsAssert.h>
-#include <bucketLib.h>
+#include "epicsAssert.h"
+#include "bucketLib.h"
 
 #ifndef TRUE
 #define TRUE 1

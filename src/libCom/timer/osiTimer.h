@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/11/02 02:06:59  jhill
+ * fixed several subtle problems
+ *
  * Revision 1.2  1996/08/05 21:51:11  jhill
  * fixed delete this confusion
  *
@@ -45,8 +48,8 @@
 #ifndef osiTimerHInclude
 #define osiTimerHInclude
 
-#include <tsDLList.h>
-#include <osiTime.h>
+#include "tsDLList.h"
+#include "osiTime.h"
 
 enum osiBool {osiFalse=0, osiTrue=1};
 enum osiTimerState {ositPending, ositExpired, ositLimbo};
@@ -94,6 +97,18 @@ public:
 	// osiTimer::delay() returns 1 sec
 	//
 	virtual const osiTime delay() const;
+
+	//
+	// change the timers expiration to newDelay
+	// seconds after when reschedule() is called
+	//
+	void reschedule(const osiTime &newDelay);
+
+	//
+	// return the number of seconds remaining before
+	// this timer will expire
+	//
+	osiTime timeRemaining();
 
 	virtual void show (unsigned level) const;
 

@@ -41,10 +41,10 @@
 #include <string.h>
 #include <errno.h>
 
-#include <epicsAssert.h>
-#include <dbDefs.h>
-#include <errMdef.h>
-#include <epicsPrint.h>
+#include "epicsAssert.h"
+#include "dbDefs.h"
+#include "errMdef.h"
+#include "epicsPrint.h"
 #include "errSymTbl.h"
 
 

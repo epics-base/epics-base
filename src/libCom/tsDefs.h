@@ -54,9 +54,9 @@
 extern "C" {
 #endif
 
-#include <shareLib.h>
+#include "shareLib.h"
 
-#include <errMdef.h>	/* get M_ts for this subsystem's `number' */
+#include "errMdef.h"	/* get M_ts for this subsystem's `number' */
 
 /*---------------------------------------------------------------------------
 -
@@ -185,7 +185,7 @@ struct tsDetail {
 #ifndef TS_PRIVATE_DATA
     epicsShareExtern char *glTsStatText[7];
 #else
-    char *glTsStatText[] = {
+    epicsShareDecl char *glTsStatText[] = {
 	/* S_ts_OK                */ "success",
 	/* S_ts_sysTimeError      */ "error getting system time",
 	/* S_ts_badTextCode       */ "invalid TS_TEXT_xxx code",

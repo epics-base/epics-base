@@ -8,7 +8,10 @@ CMPLR = STRICT
 #
 #	includes to install from this subproject
 #
+INC += cadef.h
+INC += caerr.h
 INC += caProto.h
+INC += db_access.h
 
 #LIBSRCS += caOsDependent.c
 LIBSRCS += access.cpp

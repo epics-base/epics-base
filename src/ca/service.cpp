@@ -14,30 +14,35 @@
 
 #include    "iocinf.h"
 #include    "net_convert.h"
-#include    "bsdSocketResource.h"
 
 #ifdef CONVERSION_REQUIRED 
 extern CACVRTFUNC *cac_dbr_cvrt[];
 #endif /*CONVERSION_REQUIRED*/
 
-typedef void (*pProtoStub) ( IIU *piiu, const struct sockaddr_in *pnet_addr);
+typedef void (*pProtoStubTCP) (tcpiiu *piiu, const struct sockaddr_in *pnet_addr);
+typedef void (*pProtoStubUDP) (udpiiu *piiu, const struct sockaddr_in *pnet_addr);
 
 /*
- * noop_action ()
+ * tcp_noop_action ()
  */
-LOCAL void noop_action (
-IIU *piiu,
-const struct sockaddr_in *pnet_addr)
+LOCAL void tcp_noop_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
 {
     return;
 }
 
 /*
+ * udp_noop_action ()
+ */
+LOCAL void udp_noop_action (udpiiu *piiu, const struct sockaddr_in *pnet_addr)
+{
+    return;
+}
+
+
+/*
  * echo_resp_action ()
  */
-LOCAL void echo_resp_action (
-IIU *piiu,
-const struct sockaddr_in *pnet_addr)
+LOCAL void echo_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
 {
     piiu->echoPending = FALSE;
     piiu->beaconAnomaly = FALSE;
@@ -47,22 +52,19 @@ const struct sockaddr_in *pnet_addr)
 /*
  * write_notify_resp_action ()
  */
-LOCAL void write_notify_resp_action (
-IIU *piiu,
-const struct sockaddr_in *pnet_addr)
+LOCAL void write_notify_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
 {
-    CA_STATIC *ca_static = piiu->pcas;
     struct event_handler_args args;
-    miu monix;
+    nmiu *monix;
 
     /*
      * run the user's event handler
      */
-    LOCK;
-    monix = (miu) bucketLookupItemUnsignedId (pFastBucket, 
-                &piiu->curMsg.m_available);
-    if(!monix){
-        UNLOCK;
+    LOCK (piiu->niiu.iiu.pcas);
+    monix = (nmiu *) bucketLookupItemUnsignedId (piiu->niiu.iiu.pcas->ca_pFastBucket, 
+                &piiu->niiu.curMsg.m_available);
+    if (!monix) {
+        UNLOCK (piiu->niiu.iiu.pcas);
         return;
     }
 
@@ -71,11 +73,11 @@ const struct sockaddr_in *pnet_addr)
      * call handler, only if they did not clear the
      * chid in the interim
      */
-    if (monix->usr_func) {
-        args.usr = (void *) monix->usr_arg;
-        args.chid = monix->chan;
-        args.type = monix->type;
-        args.count = monix->count;
+    if (monix->miu.usr_func) {
+        args.usr = (void *) monix->miu.usr_arg;
+        args.chid = monix->miu.pChan;
+        args.type = monix->miu.type;
+        args.count = monix->miu.count;
         args.dbr = NULL;
         /*
          * the channel id field is abused for
@@ -83,13 +85,12 @@ const struct sockaddr_in *pnet_addr)
          *
          * write notify was added vo CA V4.1
          */
-        args.status = ntohl(piiu->curMsg.m_cid); 
+        args.status = ntohl (piiu->niiu.curMsg.m_cid); 
 
-        (*monix->usr_func) (args);
+        (*monix->miu.usr_func) (args);
     }
-    ellDelete (&pend_write_list, &monix->node);
-    caIOBlockFree (ca_static, monix);
-    UNLOCK;
+    caIOBlockFree (piiu->niiu.iiu.pcas, monix->id);
+    UNLOCK (piiu->niiu.iiu.pcas);
 
     return;
 }
@@ -97,23 +98,20 @@ const struct sockaddr_in *pnet_addr)
 /*
  * read_notify_resp_action ()
  */
-LOCAL void read_notify_resp_action (
-IIU *piiu,
-const struct sockaddr_in *pnet_addr)
+LOCAL void read_notify_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
 {
-    CA_STATIC *ca_static = piiu->pcas;
-    miu monix;
+    nmiu *monix;
     struct event_handler_args args;
 
     /*
      * run the user's event handler
      */
-    LOCK;
-    monix = (miu) bucketLookupItemUnsignedId(
-            pFastBucket, 
-            &piiu->curMsg.m_available);
+    LOCK (piiu->niiu.iiu.pcas);
+    monix = (nmiu *) bucketLookupItemUnsignedId(
+            piiu->niiu.iiu.pcas->ca_pFastBucket, 
+            &piiu->niiu.curMsg.m_available);
     if(!monix){
-        UNLOCK;
+        UNLOCK (piiu->niiu.iiu.pcas);
         return;
     }
 
@@ -121,7 +119,7 @@ const struct sockaddr_in *pnet_addr)
      * call handler, only if they did not clear the
      * chid in the interim
      */
-    if (monix->usr_func) {
+    if (monix->miu.usr_func) {
         int v41;
 
         /*
@@ -129,23 +127,23 @@ const struct sockaddr_in *pnet_addr)
          * format to host format
          */
 #       ifdef CONVERSION_REQUIRED 
-            if (piiu->curMsg.m_dataType<NELEMENTS(cac_dbr_cvrt)) {
-                (*cac_dbr_cvrt[piiu->curMsg.m_dataType])(
-                     piiu->pCurData, 
-                     piiu->pCurData, 
+            if (piiu->niiu.curMsg.m_dataType<NELEMENTS(cac_dbr_cvrt)) {
+                (*cac_dbr_cvrt[piiu->niiu.curMsg.m_dataType])(
+                     piiu->niiu.pCurData, 
+                     piiu->niiu.pCurData, 
                      FALSE,
-                     piiu->curMsg.m_count);
+                     piiu->niiu.curMsg.m_count);
             }
             else {
-                piiu->curMsg.m_cid = htonl(ECA_BADTYPE);
+                piiu->niiu.curMsg.m_cid = htonl(ECA_BADTYPE);
             }
 #       endif
 
-        args.usr = (void *) monix->usr_arg;
-        args.chid = monix->chan;
-        args.type = piiu->curMsg.m_dataType;
-        args.count = piiu->curMsg.m_count;
-        args.dbr = piiu->pCurData;
+        args.usr = (void *)monix->miu.usr_arg;
+        args.chid = monix->miu.pChan;
+        args.type = piiu->niiu.curMsg.m_dataType;
+        args.count = piiu->niiu.curMsg.m_count;
+        args.dbr = piiu->niiu.pCurData;
         /*
          * the channel id field is abused for
          * read notify status starting
@@ -155,17 +153,16 @@ const struct sockaddr_in *pnet_addr)
             CA_PROTOCOL_VERSION, 
             piiu->minor_version_number);
         if(v41){
-            args.status = ntohl(piiu->curMsg.m_cid);
+            args.status = ntohl(piiu->niiu.curMsg.m_cid);
         }
         else{
             args.status = ECA_NORMAL;
         }
 
-        (*monix->usr_func) (args);
+        (*monix->miu.usr_func) (args);
     }
-    ellDelete (&pend_read_list, &monix->node);
-    caIOBlockFree (ca_static, monix);
-    UNLOCK;
+    caIOBlockFree (piiu->niiu.iiu.pcas, monix->id);
+    UNLOCK (piiu->niiu.iiu.pcas);
 
     return;
 }
@@ -173,40 +170,37 @@ const struct sockaddr_in *pnet_addr)
 /*
  * event_resp_action ()
  */
-LOCAL void event_resp_action (
-IIU *piiu,
-const struct sockaddr_in *pnet_addr)
+LOCAL void event_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
 {
-    CA_STATIC *ca_static = piiu->pcas;
     struct event_handler_args args;
-    miu monix;
+    nmiu *monix;
     int v41;
 
 
     /*
      * run the user's event handler 
      */
-    LOCK;
-    monix = (miu) bucketLookupItemUnsignedId(
-            pFastBucket, &piiu->curMsg.m_available);
+    LOCK (piiu->niiu.iiu.pcas);
+    monix = (nmiu *) bucketLookupItemUnsignedId(
+            piiu->niiu.iiu.pcas->ca_pFastBucket, &piiu->niiu.curMsg.m_available);
     if (!monix) {
-        UNLOCK;
+        UNLOCK (piiu->niiu.iiu.pcas);
         return;
     }
 
     /*
-     * m_postsize = 0  is a confirmation of a
-     * monitor cancel
+     * m_postsize = 0 used to be a confirmation, but is
+     * now a noop because the above hash lookup will 
+     * not find a matching IO block
      */
-    if (!piiu->curMsg.m_postsize) {
-        ellDelete(&monix->chan->eventq, &monix->node);
-        caIOBlockFree(ca_static, monix);
-        UNLOCK;
+    if (!piiu->niiu.curMsg.m_postsize) {
+        caIOBlockFree (piiu->niiu.iiu.pcas, monix->id);
+        UNLOCK (piiu->niiu.iiu.pcas);
         return;
     }
     /* only call if not disabled */
-    if (!monix->usr_func) {
-        UNLOCK;
+    if (!monix->miu.usr_func) {
+        UNLOCK (piiu->niiu.iiu.pcas);
         return;
     }
 
@@ -215,15 +209,15 @@ const struct sockaddr_in *pnet_addr)
      * format to host format
      */
 #   ifdef CONVERSION_REQUIRED 
-        if (piiu->curMsg.m_dataType<NELEMENTS(cac_dbr_cvrt)) {
-             (*cac_dbr_cvrt[piiu->curMsg.m_dataType])(
-                   piiu->pCurData, 
-                   piiu->pCurData, 
+        if (piiu->niiu.curMsg.m_dataType<NELEMENTS(cac_dbr_cvrt)) {
+             (*cac_dbr_cvrt[piiu->niiu.curMsg.m_dataType])(
+                   piiu->niiu.pCurData, 
+                   piiu->niiu.pCurData, 
                    FALSE,
-                   piiu->curMsg.m_count);
+                   piiu->niiu.curMsg.m_count);
         }
         else {
-             piiu->curMsg.m_cid = htonl(ECA_BADTYPE);
+             piiu->niiu.curMsg.m_cid = htonl(ECA_BADTYPE);
         }
 #   endif
 
@@ -234,11 +228,11 @@ const struct sockaddr_in *pnet_addr)
      * structure rather than the structure itself
      * early on.
      */
-    args.usr = (void *) monix->usr_arg;
-    args.chid = monix->chan;
-    args.type = piiu->curMsg.m_dataType;
-    args.count = piiu->curMsg.m_count;
-    args.dbr = piiu->pCurData;
+    args.usr = (void *) monix->miu.usr_arg;
+    args.chid = monix->miu.pChan;
+    args.type = piiu->niiu.curMsg.m_dataType;
+    args.count = piiu->niiu.curMsg.m_count;
+    args.dbr = piiu->niiu.pCurData;
     /*
      * the channel id field is abused for
      * event status starting
@@ -248,15 +242,15 @@ const struct sockaddr_in *pnet_addr)
         CA_PROTOCOL_VERSION, 
         piiu->minor_version_number);
     if(v41){
-        args.status = ntohl(piiu->curMsg.m_cid); 
+        args.status = ntohl(piiu->niiu.curMsg.m_cid); 
     }
     else{
         args.status = ECA_NORMAL;
     }
 
     /* call their handler */
-    (*monix->usr_func) (args);
-    UNLOCK;
+    (*monix->miu.usr_func) (args);
+    UNLOCK (piiu->niiu.iiu.pcas);
 
     return;
 }
@@ -264,22 +258,18 @@ const struct sockaddr_in *pnet_addr)
 /*
  * read_resp_action ()
  */
-LOCAL void read_resp_action (
-IIU *piiu,
-const struct sockaddr_in *pnet_addr)
+LOCAL void read_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
 {
-    CA_STATIC *ca_static = piiu->pcas;
-    miu pIOBlock;
+    nmiu *pIOBlock;
 
     /*
      * verify the event id
      */
-    LOCK;
-    pIOBlock = (miu) bucketLookupItemUnsignedId(
-                pFastBucket, 
-                &piiu->curMsg.m_available);
-    if(!pIOBlock){
-        UNLOCK;
+    LOCK (piiu->niiu.iiu.pcas);
+    pIOBlock = (nmiu *) bucketLookupItemUnsignedId (piiu->niiu.iiu.pcas->ca_pFastBucket, 
+                        &piiu->niiu.curMsg.m_available);
+    if (!pIOBlock) {
+        UNLOCK (piiu->niiu.iiu.pcas);
         return;
     }
 
@@ -292,38 +282,39 @@ const struct sockaddr_in *pnet_addr)
          * convert the data buffer from net
          * format to host format
          */
-        if (piiu->curMsg.m_dataType <= (unsigned) LAST_BUFFER_TYPE) {
+        if (piiu->niiu.curMsg.m_dataType <= (unsigned) LAST_BUFFER_TYPE) {
 #               ifdef CONVERSION_REQUIRED 
-                (*cac_dbr_cvrt[piiu->curMsg.m_dataType])(
-                     piiu->pCurData, 
-                     (void *) pIOBlock->usr_arg, 
+                (*cac_dbr_cvrt[piiu->niiu.curMsg.m_dataType])(
+                     piiu->niiu.pCurData, 
+                     pIOBlock->miu.usr_arg, 
                      FALSE,
-                     piiu->curMsg.m_count);
+                     piiu->niiu.curMsg.m_count);
 #               else
-                if (piiu->curMsg.m_dataType == DBR_STRING &&
-                     piiu->curMsg.m_count == 1u) {
+                if (piiu->niiu.curMsg.m_dataType == DBR_STRING &&
+                     piiu->niiu.curMsg.m_count == 1u) {
                      strcpy ((char *)pIOBlock->usr_arg,
-                         piiu->pCurData);
+                         piiu->niiu.pCurData);
                 }
                 else {
                      memcpy(
                          (char *)pIOBlock->usr_arg,
-                         piiu->pCurData,
+                         piiu->niiu.pCurData,
                          dbr_size_n (
-                               piiu->curMsg.m_dataType, 
-                               piiu->curMsg.m_count)
+                               piiu->niiu.curMsg.m_dataType, 
+                               piiu->niiu.curMsg.m_count)
                          );
                 }
 #               endif
             /*
              * decrement the outstanding IO count
              */
-            CLRPENDRECV;
+            if (--piiu->niiu.iiu.pcas->ca_pndrecvcnt==0u) {
+                semBinaryGive (piiu->niiu.iiu.pcas->ca_io_done_sem);
+            }
         }
     }
-    ellDelete (&pend_read_list, &pIOBlock->node);
-    caIOBlockFree (ca_static, pIOBlock);
-    UNLOCK;
+    caIOBlockFree (piiu->niiu.iiu.pcas, pIOBlock->id);
+    UNLOCK (piiu->niiu.iiu.pcas);
 
     return;
 }
@@ -331,16 +322,12 @@ const struct sockaddr_in *pnet_addr)
 /*
  * search_resp_action ()
  */
-LOCAL void search_resp_action (
-IIU *piiu,
-const struct sockaddr_in *pnet_addr)
+LOCAL void search_resp_action (udpiiu *piiu, const struct sockaddr_in *pnet_addr)
 {
-    CA_STATIC *ca_static = piiu->pcas;
     struct sockaddr_in  ina;
     char                rej[64];
-    ciu                 chan;
-    int                 status;
-    IIU                 *allocpiiu;
+    nciu                *chan;
+    tcpiiu              *allocpiiu;
     unsigned short      *pMinorVersion;
     unsigned            minorVersion;
 
@@ -349,26 +336,11 @@ const struct sockaddr_in *pnet_addr)
      * 
      * lock required around use of the sprintf buffer
      */
-    LOCK;
-    chan = (ciu) bucketLookupItemUnsignedId(
-            pSlowBucket, 
-            &piiu->curMsg.m_available);
-    if(!chan){
-        UNLOCK;
-        return;
-    }
-
-    if(!chan->piiu){
-        ca_printf("cast reply to local channel??\n");
-        UNLOCK;
-        return;
-    }
-
-    /*
-     * Ignore search replies to closing channels 
-     */ 
-    if(chan->state == cs_closed) {
-        UNLOCK;
+    LOCK (piiu->niiu.iiu.pcas);
+    chan = (nciu *) bucketLookupItemUnsignedId (piiu->niiu.iiu.pcas->ca_pSlowBucket, 
+                    &piiu->niiu.curMsg.m_available);
+    if (!chan) {
+        UNLOCK (piiu->niiu.iiu.pcas);
         return;
     }
 
@@ -377,9 +349,9 @@ const struct sockaddr_in *pnet_addr)
      * is appended to the end of each search reply.
      * This value is ignored by earlier clients.
      */
-    if(piiu->curMsg.m_postsize >= sizeof(*pMinorVersion)){
-        pMinorVersion = (unsigned short *)(piiu->pCurData);
-            minorVersion = ntohs(*pMinorVersion);      
+    if(piiu->niiu.curMsg.m_postsize >= sizeof(*pMinorVersion)){
+        pMinorVersion = (unsigned short *)(piiu->niiu.pCurData);
+        minorVersion = ntohs(*pMinorVersion);      
     }
     else{
         minorVersion = CA_UKN_MINOR_VERSION;
@@ -391,105 +363,68 @@ const struct sockaddr_in *pnet_addr)
      */
     ina.sin_family = AF_INET;
     if (CA_V48 (CA_PROTOCOL_VERSION,minorVersion)) {
-        if (piiu->curMsg.m_cid != INADDR_BROADCAST) {
+        if (piiu->niiu.curMsg.m_cid != INADDR_BROADCAST) {
             /*
              * Leave address in network byte order (m_cid has not been 
              * converted to the local byte order)
              */
-            ina.sin_addr.s_addr = piiu->curMsg.m_cid;
+            ina.sin_addr.s_addr = piiu->niiu.curMsg.m_cid;
         }
         else {
             ina.sin_addr = pnet_addr->sin_addr;
         }
-        ina.sin_port = htons (piiu->curMsg.m_dataType);
+        ina.sin_port = htons (piiu->niiu.curMsg.m_dataType);
     }
     else if (CA_V45 (CA_PROTOCOL_VERSION,minorVersion)) {
-        ina.sin_port = htons(piiu->curMsg.m_dataType);
+        ina.sin_port = htons(piiu->niiu.curMsg.m_dataType);
         ina.sin_addr = pnet_addr->sin_addr;
     }
     else {
-        ina.sin_port = htons(ca_static->ca_server_port);
+        ina.sin_port = htons(piiu->niiu.iiu.pcas->ca_server_port);
         ina.sin_addr = pnet_addr->sin_addr;
     }
 
     /*
      * Ignore duplicate search replies
      */
-    if (piiuCast != (IIU *) chan->piiu) {
-        caAddrNode  *pNode;
-        IIU     *tcpPIIU = (IIU *) chan->piiu;
+    if (&piiu->niiu.iiu.pcas->pudpiiu->niiu.iiu != chan->ciu.piiu) {
+        tcpiiu *ptcpiiu = iiuToTCPIIU (chan->ciu.piiu);
 
-        pNode = (caAddrNode *) ellFirst(&tcpPIIU->destAddr);
-        assert(pNode);
-        if (pNode->destAddr.in.sin_addr.s_addr != ina.sin_addr.s_addr ||
-            pNode->destAddr.in.sin_port != ina.sin_port) {
+        if (ptcpiiu->dest.ia.sin_addr.s_addr != ina.sin_addr.s_addr ||
+            ptcpiiu->dest.ia.sin_port != ina.sin_port) {
             ipAddrToA (pnet_addr, rej, sizeof(rej));
-            sprintf(
-                sprintf_buf,
-        "Channel: %s Accepted: %s Rejected: %s ",
-                (char *)(chan + 1),
-                tcpPIIU->host_name_str,
-                rej);
-            genLocalExcep (ECA_DBLCHNL, sprintf_buf);
+            sprintf (piiu->niiu.iiu.pcas->ca_sprintf_buf, 
+                    "Channel: %s Accepted: %s Rejected: %s ",
+                    ca_name (&chan->ciu), ptcpiiu->host_name_str, rej);
+            genLocalExcep (piiu->niiu.iiu.pcas, ECA_DBLCHNL, piiu->niiu.iiu.pcas->ca_sprintf_buf);
         }
-        UNLOCK;
+        UNLOCK (piiu->niiu.iiu.pcas);
         return;
     }
 
-    status = alloc_ioc (ca_static, &ina, &allocpiiu);
-    switch (status) {
-
-    case ECA_NORMAL:
-        break;
-
-    case ECA_DISCONN:
-        /*
-         * This indicates that the connection is tagged
-         * for shutdown and we are waiting for 
-         * it to go away. Search replies are ignored
-         * in the interim.
-         */
-        UNLOCK;
+    allocpiiu = constructTCPIIU (piiu->niiu.iiu.pcas, &ina, minorVersion);
+    if (!allocpiiu) {
+        UNLOCK (piiu->niiu.iiu.pcas);
         return;
-
-    default:
-        ipAddrToA (pnet_addr, rej, sizeof(rej));
-        ca_printf("CAC: ... %s ...\n", ca_message(status));
-        ca_printf("CAC: for %s on %s\n", chan+1, rej);
-        ca_printf("CAC: ignored search reply- proceeding\n");
-        UNLOCK;
-        return;
-
     }
-
-    allocpiiu->minor_version_number = minorVersion;
 
     /*
      * If this is the first channel to be
-     * added to this IIU then communicate
+     * added to this niiu then communicate
      * the client's name to the server. 
      * (CA V4.1 or higher)
      */
-    if (ellCount(&allocpiiu->chidlist)==0) {
-        issue_identify_client(allocpiiu);
-        issue_client_host_name( allocpiiu);
+    if (ellCount(&allocpiiu->niiu.chidList)==0) {
+        issue_identify_client (allocpiiu);
+        issue_client_host_name (allocpiiu);
     }
 
-    /*
-     * increase the valid search response count only if this
-     * response matches up with a request since the beginning
-     * of the search list
-     */
-    if (ca_static->ca_seq_no_at_list_begin <= chan->retrySeqNo) {
-        if (ca_static->ca_search_responses<ULONG_MAX) {
-            ca_static->ca_search_responses++;
-        }
-    }
+    piiu->searchTmr.notifySearchResponse (chan);
 
     /*
-     * remove it from the broadcast IIU
+     * remove it from the broadcast niiu
      */
-    removeFromChanList(chan);
+    removeFromChanList (chan);
 
     /*
      * chan->piiu must be correctly set prior to issuing the
@@ -501,7 +436,7 @@ const struct sockaddr_in *pnet_addr)
      *
      * claim pending flag is set here
      */
-    addToChanList( chan, allocpiiu);
+    addToChanList (chan, &allocpiiu->niiu);
     
     /*
      * Assume that we have access once connected briefly
@@ -516,15 +451,6 @@ const struct sockaddr_in *pnet_addr)
     chan->ar.write_access = TRUE;
 
     /*
-     * Reset the delay to the next search request if we get
-     * at least one response. However, dont reset this delay if we
-     * get a delayed response to an old search request.
-     */
-    if (chan->retrySeqNo == ca_static->ca_search_retry_seq_no) {
-        ca_static->ca_conn_next_retry = ca_static->currentTime;
-    }
-
-    /*
      * claim the resource in the IOC
      * over TCP so problems with duplicate UDP port
      * after reboot go away
@@ -534,23 +460,21 @@ const struct sockaddr_in *pnet_addr)
      * If this fails then we will wait for the
      * next search response.
      */
-    chan->id.sid = piiu->curMsg.m_cid;
+    chan->sid = piiu->niiu.curMsg.m_cid;
 
     if (!CA_V42(CA_PROTOCOL_VERSION, minorVersion)) {
-        chan->privType  = piiu->curMsg.m_dataType;      
-        chan->privCount = piiu->curMsg.m_count;
+        chan->type  = piiu->niiu.curMsg.m_dataType;      
+        chan->count = piiu->niiu.curMsg.m_count;
     }
 
-    issue_claim_channel(chan);
-    UNLOCK
+    issue_claim_channel (chan);
+    UNLOCK (piiu->niiu.iiu.pcas);
 }
 
 /*
  * read_sync_resp_action ()
  */
-LOCAL void read_sync_resp_action (
-IIU *piiu,
-const struct sockaddr_in *pnet_addr)
+LOCAL void read_sync_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
 {
     piiu->read_seq++;
     return;
@@ -559,14 +483,11 @@ const struct sockaddr_in *pnet_addr)
 /*
  * beacon_action ()
  */
-LOCAL void beacon_action (
-IIU *piiu,
-const struct sockaddr_in *pnet_addr)
+LOCAL void beacon_action (udpiiu *piiu, const struct sockaddr_in *pnet_addr)
 {
-    CA_STATIC *ca_static = piiu->pcas;
     struct sockaddr_in ina;
 
-    LOCK;
+    LOCK (piiu->niiu.iiu.pcas);
         
     /* 
      * this allows a fan-out server to potentially
@@ -579,29 +500,29 @@ const struct sockaddr_in *pnet_addr)
      *      always set this field to htonl(INADDR_ANY)
      *
      * clients always assume that if this
-     * field is set something that isnt htonl(INADDR_ANY)
+     * field is set to something that isnt htonl(INADDR_ANY)
      * then it is the overriding IP address of the server.
      */
     ina.sin_family = AF_INET;
-    if (piiu->curMsg.m_available != htonl(INADDR_ANY)) {
-        ina.sin_addr.s_addr = piiu->curMsg.m_available;
+    if (piiu->niiu.curMsg.m_available != htonl(INADDR_ANY)) {
+        ina.sin_addr.s_addr = piiu->niiu.curMsg.m_available;
     }
     else {
         ina.sin_addr = pnet_addr->sin_addr;
     }
-    if (piiu->curMsg.m_count != 0) {
-        ina.sin_port = htons (piiu->curMsg.m_count);
+    if (piiu->niiu.curMsg.m_count != 0) {
+        ina.sin_port = htons (piiu->niiu.curMsg.m_count);
     }
     else {
         /*
          * old servers dont supply this and the
          * default port must be assumed
          */
-        ina.sin_port = htons (ca_static->ca_server_port);
+        ina.sin_port = htons (piiu->niiu.iiu.pcas->ca_server_port);
     }
-    mark_server_available(ca_static, &ina);
+    mark_server_available (piiu->niiu.iiu.pcas, &ina);
 
-    UNLOCK;
+    UNLOCK (piiu->niiu.iiu.pcas);
 
     return;
 }
@@ -609,14 +530,11 @@ const struct sockaddr_in *pnet_addr)
 /*
  * repeater_ack_action ()
  */
-LOCAL void repeater_ack_action (
-IIU *piiu,
-const struct sockaddr_in *pnet_addr)
+LOCAL void repeater_ack_action (udpiiu *piiu, const struct sockaddr_in *pnet_addr)
 {
-    CA_STATIC *ca_static = piiu->pcas;
-    ca_static->ca_repeater_contacted = TRUE;
+    piiu->repeaterContacted = 1u;
 #   ifdef DEBUG
-        ca_printf ("CAC: repeater confirmation recv\n");
+        ca_printf (piiu->niiu.iiu.pcas, "CAC: repeater confirmation recv\n");
 #   endif
     return;
 }
@@ -624,9 +542,7 @@ const struct sockaddr_in *pnet_addr)
 /*
  * not_here_resp_action ()
  */
-LOCAL void not_here_resp_action (
-IIU *piiu,
-const struct sockaddr_in *pnet_addr)
+LOCAL void not_here_resp_action (udpiiu *piiu, const struct sockaddr_in *pnet_addr)
 {
     return;
 }
@@ -634,28 +550,22 @@ const struct sockaddr_in *pnet_addr)
 /*
  * clear_channel_resp_action ()
  */
-LOCAL void clear_channel_resp_action (
-IIU *piiu,
-const struct sockaddr_in *pnet_addr)
+LOCAL void clear_channel_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
 {
-    CA_STATIC *ca_static = piiu->pcas;
-    clearChannelResources (ca_static, piiu->curMsg.m_available);
+    /* presently a noop */
     return;
 }
 
 /*
  * exception_resp_action ()
  */
-LOCAL void exception_resp_action (
-IIU *piiu,
-const struct sockaddr_in *pnet_addr)
+LOCAL void exception_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
 {
-    CA_STATIC *ca_static = piiu->pcas;
-    ELLLIST *pList = NULL;
-    miu monix;
+    nmiu *monix;
+    nciu *pChan;
     char nameBuf[64];
     char context[255];
-    caHdr *req = piiu->pCurData;
+    caHdr *req = (caHdr *) piiu->niiu.pCurData;
     int op;
     struct exception_handler_args args;
 
@@ -663,16 +573,14 @@ const struct sockaddr_in *pnet_addr)
      * dont process the message if they have
      * disabled notification
      */
-    if (!ca_static->ca_exception_func){
+    if (!piiu->niiu.iiu.pcas->ca_exception_func){
         return;
     }
 
     ipAddrToA (pnet_addr, nameBuf, sizeof(nameBuf));
-    if (piiu->curMsg.m_postsize > sizeof(caHdr)){
-        sprintf(context, 
-            "detected by: %s for: %s", 
-            nameBuf, 
-            (char *)(req+1));
+    if (piiu->niiu.curMsg.m_postsize > sizeof(caHdr)){
+        sprintf (context, "detected by: %s for: %s", 
+            nameBuf, (char *)(req+1));
     }
     else{
         sprintf(context, "detected by: %s", nameBuf);
@@ -688,78 +596,69 @@ const struct sockaddr_in *pnet_addr)
     args.addr = NULL;
     args.pFile = NULL;
     args.lineNo = 0u;
-    LOCK;
+    args.chid = NULL;
+
+    LOCK (piiu->niiu.iiu.pcas);
     switch (ntohs(req->m_cmmd)) {
     case CA_PROTO_READ_NOTIFY:
-        monix = (miu) bucketLookupItemUnsignedId(
-                pFastBucket, 
-                &req->m_available);
-        pList = &pend_read_list;
+        monix = (nmiu *) bucketLookupItemUnsignedId(
+                piiu->niiu.iiu.pcas->ca_pFastBucket, &req->m_available);
         op = CA_OP_GET;
-        return;
+        break;
     case CA_PROTO_READ:
-        monix = (miu) bucketLookupItemUnsignedId(
-                pFastBucket, 
-                &req->m_available);
-        if(monix){
-            args.addr = (void *) monix->usr_arg;
+        monix = (nmiu *) bucketLookupItemUnsignedId(
+                piiu->niiu.iiu.pcas->ca_pFastBucket, &req->m_available);
+        if (monix) {
+            args.addr = monix->miu.usr_arg;
         }
-        pList = &pend_read_list;
         op = CA_OP_GET;
-        return;
+        break;
     case CA_PROTO_WRITE_NOTIFY:
-        monix = (miu) bucketLookupItemUnsignedId(
-                pFastBucket, 
-                &req->m_available);
-        pList = &pend_write_list;
+        monix = (nmiu *) bucketLookupItemUnsignedId(
+                piiu->niiu.iiu.pcas->ca_pFastBucket, &req->m_available);
         op = CA_OP_PUT;
-        return;
+        break;
     case CA_PROTO_WRITE:
         op = CA_OP_PUT;
-        return;
+        pChan = (nciu *) bucketLookupItemUnsignedId
+                (piiu->niiu.iiu.pcas->ca_pSlowBucket, &piiu->niiu.curMsg.m_cid);
+        args.chid = (chid) &pChan->ciu;
+        break;
     case CA_PROTO_SEARCH:
         op = CA_OP_SEARCH;
-        return;
+        pChan = (nciu *) bucketLookupItemUnsignedId
+                (piiu->niiu.iiu.pcas->ca_pSlowBucket, &piiu->niiu.curMsg.m_cid);
+        args.chid = (chid) &pChan->ciu;
+        break;
     case CA_PROTO_EVENT_ADD:
-        monix = (miu) bucketLookupItemUnsignedId(
-                pFastBucket, 
-                &req->m_available);
+        monix = (nmiu *) bucketLookupItemUnsignedId(
+                piiu->niiu.iiu.pcas->ca_pFastBucket, &req->m_available);
         op = CA_OP_ADD_EVENT;
-        if (monix) {
-            ciu pChan = (ciu) monix->chan;
-            pList = &pChan->eventq;
-        }
-        return;
+        break;
     case CA_PROTO_EVENT_CANCEL:
-        monix = (miu) bucketLookupItemUnsignedId(
-                pFastBucket, 
-                &req->m_available);
+        monix = (nmiu *) bucketLookupItemUnsignedId(
+                piiu->niiu.iiu.pcas->ca_pFastBucket, &req->m_available);
         op = CA_OP_CLEAR_EVENT;
-        return;
+        break;
     default:
         op = CA_OP_OTHER;
-        return;
+        break;
     }
 
     if (monix) {
-        if (pList) {
-            ellDelete(pList, &monix->node);
-        }
-        caIOBlockFree(ca_static, monix);
+        args.chid = monix->miu.pChan;
+        caIOBlockFree (piiu->niiu.iiu.pcas, monix->id);
     }
 
-    args.chid = bucketLookupItemUnsignedId
-            (pSlowBucket, &piiu->curMsg.m_cid);
-
-    args.usr = (void *) ca_static->ca_exception_arg;
+    args.usr = piiu->niiu.iiu.pcas->ca_exception_arg;
     args.type = ntohs (req->m_dataType);    
     args.count = ntohs (req->m_count);
-    args.stat = ntohl (piiu->curMsg.m_available);
+    args.stat = ntohl (piiu->niiu.curMsg.m_available);
     args.op = op;
     args.ctx = context;
 
-    (*ca_static->ca_exception_func) (args);
-    UNLOCK;
+    (*piiu->niiu.iiu.pcas->ca_exception_func) (args);
+    UNLOCK (piiu->niiu.iiu.pcas);
 
     return;
 }
@@ -767,188 +666,161 @@ const struct sockaddr_in *pnet_addr)
 /*
  * access_rights_resp_action ()
  */
-LOCAL void access_rights_resp_action (
-IIU *piiu,
-const struct sockaddr_in *pnet_addr)
+LOCAL void access_rights_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
 {
-    CA_STATIC *ca_static = piiu->pcas;
     int ar;
-    ciu chan;
+    nciu *chan;
 
-    LOCK;
-    chan = (ciu) bucketLookupItemUnsignedId(
-            pSlowBucket, &piiu->curMsg.m_cid);
+    LOCK (piiu->niiu.iiu.pcas);
+    chan = (nciu *) bucketLookupItemUnsignedId(
+            piiu->niiu.iiu.pcas->ca_pSlowBucket, &piiu->niiu.curMsg.m_cid);
     if (!chan) {
         /*
          * end up here if they delete the channel
          * prior to connecting
          */
-        UNLOCK;
+        UNLOCK (piiu->niiu.iiu.pcas);
         return;
     }
 
-    ar = ntohl (piiu->curMsg.m_available);
+    ar = ntohl (piiu->niiu.curMsg.m_available);
     chan->ar.read_access = (ar&CA_PROTO_ACCESS_RIGHT_READ)?1:0;
     chan->ar.write_access = (ar&CA_PROTO_ACCESS_RIGHT_WRITE)?1:0;
 
-    if (chan->pAccessRightsFunc) {
-        struct access_rights_handler_args   args;
+    if (chan->ciu.pAccessRightsFunc) {
+        struct access_rights_handler_args args;
 
-        args.chid = chan;
+        args.chid = (chid) &chan->ciu;
         args.ar = chan->ar;
-        (*chan->pAccessRightsFunc)(args);
+        (*chan->ciu.pAccessRightsFunc)(args);
     }
-    UNLOCK;
+    UNLOCK (piiu->niiu.iiu.pcas);
     return;
 }
 
 /*
  * claim_ciu_resp_action ()
  */
-LOCAL void claim_ciu_resp_action (
-IIU *piiu,
-const struct sockaddr_in *pnet_addr)
+LOCAL void claim_ciu_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
 {
-    CA_STATIC *ca_static = piiu->pcas;
-    cac_reconnect_channel (ca_static, piiu->curMsg.m_cid, 
-        piiu->curMsg.m_dataType, piiu->curMsg.m_count);
+    cac_reconnect_channel (piiu, piiu->niiu.curMsg.m_cid, 
+        piiu->niiu.curMsg.m_dataType, piiu->niiu.curMsg.m_count);
     return;
 }
 
 /*
  * verifyAndDisconnectChan ()
  */
-LOCAL void verifyAndDisconnectChan (
-IIU *piiu,
-const struct sockaddr_in *pnet_addr)
+LOCAL void verifyAndDisconnectChan (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
 {
-    CA_STATIC *ca_static = piiu->pcas;
-    ciu chan;
+    nciu *chan;
 
-    LOCK;
-    chan = (ciu) bucketLookupItemUnsignedId(
-            pSlowBucket, &piiu->curMsg.m_cid);
+    LOCK (piiu->niiu.iiu.pcas);
+    chan = (nciu *) bucketLookupItemUnsignedId(
+            piiu->niiu.iiu.pcas->ca_pSlowBucket, &piiu->niiu.curMsg.m_cid);
     if (!chan) {
         /*
          * end up here if they delete the channel
          * prior to this response 
          */
-        UNLOCK;
+        UNLOCK (piiu->niiu.iiu.pcas);
         return;
     }
 
     /*
-     * need to move the channel back to the cast IIU
+     * need to move the channel back to the cast niiu
      * (so we will be able to reconnect)
      *
-     * this marks the IIU for disconnect if the channel 
+     * this marks the niiu for disconnect if the channel 
      * count goes to zero
      */
     cacDisconnectChannel (chan);
-    UNLOCK;
+    UNLOCK (piiu->niiu.iiu.pcas);
     return;
 }
 
 /*
  * bad_tcp_resp_action ()
  */
-LOCAL void bad_tcp_resp_action (
-IIU *piiu,
-const struct sockaddr_in *pnet_addr)
+LOCAL void bad_tcp_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
 {
-    ca_printf ("CAC: Bad response code in TCP message = %u\n", 
-        piiu->curMsg.m_cmmd);
+    ca_printf (piiu->niiu.iiu.pcas, "CAC: Bad response code in TCP message = %u\n", 
+        piiu->niiu.curMsg.m_cmmd);
 }
 
 /*
  * bad_udp_resp_action ()
  */
-LOCAL void bad_udp_resp_action (
-IIU *piiu,
-const struct sockaddr_in *pnet_addr)
+LOCAL void bad_udp_resp_action (udpiiu *piiu, const struct sockaddr_in *pnet_addr)
 {
-    ca_printf ("CAC: Bad response code in UDP message = %u\n", 
-        piiu->curMsg.m_cmmd);
+    ca_printf (piiu->niiu.iiu.pcas, "CAC: Bad response code in UDP message = %u\n", 
+        piiu->niiu.curMsg.m_cmmd);
 }
 
 /*
  * cac_reconnect_channel()
  */
-void cac_reconnect_channel(CA_STATIC *ca_static, caResId cid,
-short type, unsigned short count)
+void cac_reconnect_channel (tcpiiu *piiu, caResId cid, unsigned short type, unsigned long count)
 {
-    IIU *piiu;
-    evid pevent;
-    enum channel_state prev_cs;
+    nmiu *pevent;
+    unsigned prevConn;
     int v41;
-    ciu chan;
+    nciu *chan;
 
-    LOCK;
-    chan = (ciu) bucketLookupItemUnsignedId(pSlowBucket, &cid);
+    LOCK (piiu->niiu.iiu.pcas);
+    chan = (nciu *) bucketLookupItemUnsignedId (piiu->niiu.iiu.pcas->ca_pSlowBucket, &cid);
     /*
      * this test will fail if they delete the channel
      * prior to the reply from the claim message
      */
     if (!chan) {
-        UNLOCK;
+        UNLOCK (piiu->niiu.iiu.pcas);
         return;
     }
 
-    piiu = (IIU *) chan->piiu;
-
-    prev_cs = chan->state;
-    if (prev_cs == cs_conn) {
-        ca_printf("CAC: Ignored conn resp to conn chan CID=%u SID=%u?\n",
-            chan->cid, chan->id.sid);
-        UNLOCK;
+    if (chan->connected) {
+        ca_printf(piiu->niiu.iiu.pcas,
+            "CAC: Ignored conn resp to conn chan CID=%u SID=%u?\n",
+            chan->cid, chan->sid);
+        UNLOCK (piiu->niiu.iiu.pcas);
         return;
     }
 
     v41 = CA_V41(CA_PROTOCOL_VERSION, piiu->minor_version_number);
 
     if (CA_V44(CA_PROTOCOL_VERSION, piiu->minor_version_number)) {
-        chan->id.sid = piiu->curMsg.m_available;
+        chan->sid = piiu->niiu.curMsg.m_available;
     }
 
     /* 
      * Update rmt chid fields from caHdr fields 
      * if they are valid
      */
-    if (type != TYPENOTCONN) {
-        chan->privType  = type;      
-        chan->privCount = count;
+    if (type != USHRT_MAX) {
+        chan->type  = type;      
+        chan->count = count;
     }
 
     /*
-     * set state to cs_conn before caling 
+     * set state to connected before caling 
      * ca_request_event() so their channel 
      * connect tests wont fail
      */
-    chan->state = cs_conn;
+    chan->connected = 1;
+    prevConn = chan->previousConn;
+    chan->previousConn = 1;
 
     /*
      * NOTE: monitor and callback reissue must occur prior to calling
      * their connection routine otherwise they could be requested twice.
+     * 
+     * resubscribe for monitors from this channel 
      */
-#ifdef CALLBACK_REISSUE
-        /* reissue any outstanding get callbacks for this channel */
-    if(pend_read_list.count){
-            for(    pevent = (evid) pend_read_list.node.next; 
-            pevent; 
-            pevent = (evid) pevent->node.next){
-                    if(pevent->chan == chan){
-                    issue_get_callback(pevent);
-                }
+    if ( ellCount (&chan->eventq) ) {
+        for (pevent = (nmiu *) ellFirst (&chan->eventq); 
+            pevent; pevent = (nmiu *) ellNext (&pevent->node) ) {
+            ca_request_event (chan, pevent);
         }
-        }
-#endif
-
-        /* reissue any events (monitors) for this channel */
-    if(chan->eventq.count){
-            for(    pevent = (evid)chan->eventq.node.next; 
-            pevent; 
-            pevent = (evid)pevent->node.next)
-                ca_request_event(pevent);
     }
 
     /*
@@ -957,39 +829,41 @@ short type, unsigned short count)
      * will always be access and call their call back
      * here
      */
-    if (chan->pAccessRightsFunc && !v41) {
+    if (chan->ciu.pAccessRightsFunc && !v41) {
         struct access_rights_handler_args   args;
 
-        args.chid = chan;
+        args.chid = (chid) &chan->ciu;
         args.ar = chan->ar;
-        (*chan->pAccessRightsFunc)(args);
+        (*chan->ciu.pAccessRightsFunc)(args);
     }
 
-    if(chan->pConnFunc){
+    if (chan->ciu.pConnFunc) {
         struct connection_handler_args  args;
 
-        args.chid = chan;
+        args.chid = (chid) &chan->ciu;
         args.op = CA_OP_CONN_UP;
-        
-            (*chan->pConnFunc)(args);
+
+        (*chan->ciu.pConnFunc)(args);
         
     }
-    else if(prev_cs==cs_never_conn){
-            /*  
+    else if (!prevConn) {
+        /*  
          * decrement the outstanding IO count 
          */
-            CLRPENDRECV;
+        if (--piiu->niiu.iiu.pcas->ca_pndrecvcnt==0u) {
+            semBinaryGive (piiu->niiu.iiu.pcas->ca_io_done_sem);
+        }
     }
-      UNLOCK;
+    UNLOCK (piiu->niiu.iiu.pcas);
 }   
 
 
 /*
  * TCP protocol jump table
  */
-LOCAL const pProtoStub tcpJumpTableCAC[] = 
+LOCAL const pProtoStubTCP tcpJumpTableCAC[] = 
 {
-    noop_action,
+    tcp_noop_action,
     event_resp_action,
     bad_tcp_resp_action,
     read_resp_action,
@@ -1022,9 +896,9 @@ LOCAL const pProtoStub tcpJumpTableCAC[] =
 /*
  * UDP protocol jump table
  */
-LOCAL const pProtoStub udpJumpTableCAC[] = 
+LOCAL const pProtoStubUDP udpJumpTableCAC[] = 
 {
-    bad_udp_resp_action,
+    udp_noop_action,
     bad_udp_resp_action,
     bad_udp_resp_action,
     bad_udp_resp_action,
@@ -1060,40 +934,32 @@ LOCAL const pProtoStub udpJumpTableCAC[] =
  * LOCK should be applied when calling this routine
  *
  */
-int post_msg (
-struct ioc_in_use           *piiu,
-const struct sockaddr_in    *pnet_addr,
-char                        *pInBuf,
-unsigned long               blockSize
-)
+int post_msg (netIIU *piiu, const struct sockaddr_in *pnet_addr, 
+              char *pInBuf, unsigned long blockSize)
 {
     unsigned long   size;
-    pProtoStub      pStub;
-    CA_STATIC *ca_static = piiu->pcas;
 
     while (blockSize) {
 
         /*
          * fetch a complete message header
          */
-        if(piiu->curMsgBytes < sizeof(piiu->curMsg)){
+        if ( piiu->curMsgBytes < sizeof (piiu->curMsg) ) {
             char  *pHdr;
 
             size = sizeof (piiu->curMsg) - piiu->curMsgBytes;
             size = min (size, blockSize);
             
             pHdr = (char *) &piiu->curMsg;
-            memcpy( pHdr + piiu->curMsgBytes, 
-                pInBuf, 
-                size);
+            memcpy( pHdr + piiu->curMsgBytes, pInBuf, size);
             
             piiu->curMsgBytes += size;
-            if(piiu->curMsgBytes < sizeof(piiu->curMsg)){
+            if (piiu->curMsgBytes < sizeof(piiu->curMsg)) {
 #if 0 
                 printf ("waiting for %d msg hdr bytes\n", 
                     sizeof(piiu->curMsg)-piiu->curMsgBytes);
 #endif
-                return OK;
+                return ECA_NORMAL;
             }
 
             pInBuf += size;
@@ -1108,13 +974,15 @@ unsigned long               blockSize
             piiu->curMsg.m_dataType = ntohs(piiu->curMsg.m_dataType);
             piiu->curMsg.m_count = ntohs(piiu->curMsg.m_count);
 #if 0
-            ca_printf("%s Cmd=%3d Type=%3d Count=%4d Size=%4d",
+            ca_printf (piiu->niiu.iiu.pcas,
+                "%s Cmd=%3d Type=%3d Count=%4d Size=%4d",
                 piiu->host_name_str,
                 piiu->curMsg.m_cmmd,
                 piiu->curMsg.m_dataType,
                 piiu->curMsg.m_count,
                 piiu->curMsg.m_postsize);
-            ca_printf(" Avail=%8x Cid=%6d\n",
+            ca_printf (piiu->niiu.iiu.pcas,
+                " Avail=%8x Cid=%6d\n",
                 piiu->curMsg.m_available,
                 piiu->curMsg.m_cid);
 #endif
@@ -1125,10 +993,10 @@ unsigned long               blockSize
          * dont allow huge msg body until
          * the server supports it
          */
-        if(piiu->curMsg.m_postsize>(unsigned)MAX_TCP){
+        if (piiu->curMsg.m_postsize>(unsigned)MAX_TCP) {
             piiu->curMsgBytes = 0;
             piiu->curDataBytes = 0;
-            return ERROR;
+            return ECA_TOLARGE;
         }
 
         /*
@@ -1148,7 +1016,7 @@ unsigned long               blockSize
             size = max(piiu->curMsg.m_postsize,MAX_STRING_SIZE);
             pCurData = (void *) calloc(1u, size);
             if(!pCurData){
-                return ERROR;
+                return ECA_ALLOCMEM;
             }
             if(piiu->pCurData){
                 free(piiu->pCurData);
@@ -1167,17 +1035,15 @@ unsigned long               blockSize
 
             size = piiu->curMsg.m_postsize - piiu->curDataBytes; 
             size = min(size, blockSize);
-            pBdy = piiu->pCurData;
-            memcpy( pBdy+piiu->curDataBytes, 
-                pInBuf, 
-                size);
+            pBdy = (char *) piiu->pCurData;
+            memcpy ( pBdy+piiu->curDataBytes, pInBuf, size);
             piiu->curDataBytes += size;
-            if(piiu->curDataBytes < piiu->curMsg.m_postsize){
+            if (piiu->curDataBytes < piiu->curMsg.m_postsize) {
 #if 0
-            printf ("waiting for %d msg bdy bytes\n", 
+                printf ("waiting for %d msg bdy bytes\n", 
                 piiu->curMsg.m_postsize-piiu->curDataBytes);
 #endif
-                return OK;
+                return ECA_NORMAL;
             }
             pInBuf += size;
             blockSize -= size;
@@ -1186,29 +1052,33 @@ unsigned long               blockSize
         /*
          * execute the response message
          */
-        if (piiu == ca_static->ca_piiuCast) {
+        if (piiu == &piiu->iiu.pcas->pudpiiu->niiu) {
+            pProtoStubUDP      pStub;
             if (piiu->curMsg.m_cmmd>=NELEMENTS(udpJumpTableCAC)) {
                 pStub = bad_udp_resp_action;
             }
             else {
                 pStub = udpJumpTableCAC [piiu->curMsg.m_cmmd];
             }
+            (*pStub) (piiu->iiu.pcas->pudpiiu, pnet_addr);
+
         }
         else {
+            pProtoStubTCP      pStub;
             if (piiu->curMsg.m_cmmd>=NELEMENTS(tcpJumpTableCAC)) {
                 pStub = bad_tcp_resp_action;
             }
             else {
                 pStub = tcpJumpTableCAC [piiu->curMsg.m_cmmd];
             }
+            (*pStub) (iiuToTCPIIU(&piiu->iiu), pnet_addr);
         }
-        (*pStub) (piiu, pnet_addr);
          
         piiu->curMsgBytes = 0;
         piiu->curDataBytes = 0;
 
     }
-    return OK;
+    return ECA_NORMAL;
 }
 
 

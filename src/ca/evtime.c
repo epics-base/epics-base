@@ -40,7 +40,7 @@ int evtime(char *pname)
 	status = ca_pend_io(10.0);
 	if(status != ECA_NORMAL){
 		printf("%s not found\n", pname);
-		return OK;
+		return 0;
 	}
 
 	status = ca_add_event(

@@ -28,8 +28,6 @@
  *
  */
 
-static char	*sccsId = "@(#) $Id$";
-
 #include	<string.h>
 
 #include	"iocinf.h"
@@ -168,8 +166,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	char		*pSrc = s;
-	char		*pDest = d;
+	char		*pSrc = (char *) s;
+	char		*pDest = (char *) d;
 
 	/* convert "in place" -> nothing to do */
 	if (s == d)
@@ -196,8 +194,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	dbr_short_t	*pSrc = s;
-	dbr_short_t	*pDest = d;
+	dbr_short_t	*pSrc = (dbr_short_t *) s;
+	dbr_short_t	*pDest = (dbr_short_t *) d;
       	unsigned long	i;
 
       	for(i=0; i<num; i++){
@@ -225,8 +223,8 @@ unsigned long	num			/* number of values		*/
 )
 {
       	unsigned long	i;
-	dbr_char_t	*pSrc = s;
-	dbr_char_t	*pDest = d;
+	dbr_char_t	*pSrc = (dbr_char_t *) s;
+	dbr_char_t	*pDest = (dbr_char_t *) d;
 
 	/* convert "in place" -> nothing to do */
 	if (s == d)
@@ -251,8 +249,8 @@ unsigned long	num			/* number of values		*/
 )
 {
       	unsigned long	i;
-	dbr_long_t	*pSrc = s;
-	dbr_long_t	*pDest = d;
+	dbr_long_t	*pSrc = (dbr_long_t *) s;
+	dbr_long_t	*pDest = (dbr_long_t *) d;
 
       	for(i=0; i<num; i++){
       	  	*pDest = dbr_ntohl( *pSrc );
@@ -282,8 +280,8 @@ unsigned long	num			/* number of values		*/
 	dbr_enum_t	*pSrc;
 	dbr_enum_t	*pDest;
 
-	pSrc = s;
-	pDest = d;
+	pSrc = (dbr_enum_t *) s;
+	pDest = (dbr_enum_t *) d;
       	for(i=0; i<num; i++){
       	  	*pDest = dbr_ntohs(*pSrc);
 		/*
@@ -311,8 +309,8 @@ unsigned long	num			/* number of values		*/
 )
 {
       	unsigned long	i;
-	dbr_float_t	*pSrc = s;
-	dbr_float_t	*pDest = d;
+	dbr_float_t	*pSrc = (dbr_float_t *) s;
+	dbr_float_t	*pDest = (dbr_float_t *) d;
 
       	for(i=0; i<num; i++){
 		if(encode){
@@ -344,8 +342,8 @@ unsigned long	num			/* number of values		*/
 )
 {
       	unsigned long	i;
-	dbr_double_t	*pSrc = s;
-	dbr_double_t	*pDest = d;
+	dbr_double_t	*pSrc = (dbr_double_t *) s;
+	dbr_double_t	*pDest = (dbr_double_t *) d;
 
       	for(i=0; i<num; i++){
 		if(encode){
@@ -385,8 +383,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	struct dbr_sts_string	*pSrc = s;
-	struct dbr_sts_string 	*pDest = d;
+	struct dbr_sts_string	*pSrc = (struct dbr_sts_string *) s;
+	struct dbr_sts_string 	*pDest = (struct dbr_sts_string *) d;
 			
     	/* convert ieee to vax format or vax to ieee */
     	pDest->status 		= dbr_ntohs(pSrc->status);
@@ -423,8 +421,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	struct dbr_sts_int	*pSrc = s;
-	struct dbr_sts_int	*pDest = d;
+	struct dbr_sts_int	*pSrc = (struct dbr_sts_int *) s;
+	struct dbr_sts_int	*pDest = (struct dbr_sts_int *) d;
 
     	/* convert vax to ieee or ieee to vax format -- same code*/
     	pDest->status 		= dbr_ntohs(pSrc->status);
@@ -458,8 +456,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	struct dbr_sts_float	*pSrc = s;
-	struct dbr_sts_float	*pDest = d;
+	struct dbr_sts_float	*pSrc = (struct dbr_sts_float *) s;
+	struct dbr_sts_float	*pDest = (struct dbr_sts_float *) d;
 
     	pDest->status 		= dbr_ntohs(pSrc->status);
     	pDest->severity		= dbr_ntohs(pSrc->severity);
@@ -484,8 +482,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	struct dbr_sts_double	*pSrc = s;
-	struct dbr_sts_double	*pDest = d;
+	struct dbr_sts_double	*pSrc = (struct dbr_sts_double *) s;
+	struct dbr_sts_double	*pDest = (struct dbr_sts_double *) d;
 
     	pDest->status 		= dbr_ntohs(pSrc->status);
     	pDest->severity		= dbr_ntohs(pSrc->severity);
@@ -513,8 +511,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	struct dbr_sts_enum	*pSrc = s;
-	struct dbr_sts_enum	*pDest = d;
+	struct dbr_sts_enum	*pSrc = (struct dbr_sts_enum *) s;
+	struct dbr_sts_enum	*pDest = (struct dbr_sts_enum *) d;
 
     	pDest->status 		= dbr_ntohs(pSrc->status);
     	pDest->severity		= dbr_ntohs(pSrc->severity);
@@ -541,8 +539,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	struct dbr_gr_int	*pSrc = s;
-	struct dbr_gr_int	*pDest = d;
+	struct dbr_gr_int	*pSrc = (struct dbr_gr_int *) s;
+	struct dbr_gr_int	*pDest = (struct dbr_gr_int *) d;
 
     	pDest->status 		= dbr_ntohs(pSrc->status);
     	pDest->severity		= dbr_ntohs(pSrc->severity);
@@ -578,8 +576,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	struct dbr_gr_char	*pSrc = s;
-	struct dbr_gr_char	*pDest = d;
+	struct dbr_gr_char	*pSrc = (struct dbr_gr_char *) s;
+	struct dbr_gr_char	*pDest = (struct dbr_gr_char *) d;
 
     	pDest->status 		= dbr_ntohs(pSrc->status);
     	pDest->severity		= dbr_ntohs(pSrc->severity);
@@ -619,8 +617,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	struct dbr_gr_long	*pSrc = s;
-	struct dbr_gr_long	*pDest = d;
+	struct dbr_gr_long	*pSrc = (struct dbr_gr_long *) s;
+	struct dbr_gr_long	*pDest = (struct dbr_gr_long *) d;
 
     	pDest->status 		= dbr_ntohs(pSrc->status);
     	pDest->severity		= dbr_ntohs(pSrc->severity);
@@ -657,8 +655,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	struct dbr_gr_enum	*pSrc = s;
-	struct dbr_gr_enum	*pDest = d;
+	struct dbr_gr_enum	*pSrc = (struct dbr_gr_enum *) s;
+	struct dbr_gr_enum	*pDest = (struct dbr_gr_enum *) d;
 
     	pDest->status 			= dbr_ntohs(pSrc->status);
     	pDest->severity			= dbr_ntohs(pSrc->severity);
@@ -690,8 +688,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	struct dbr_gr_double	*pSrc = s;
-	struct dbr_gr_double	*pDest = d;
+	struct dbr_gr_double	*pSrc = (struct dbr_gr_double *) s;
+	struct dbr_gr_double	*pDest = (struct dbr_gr_double *) d;
 
     	/* these are same for vax to ieee or ieee to vax */
     	pDest->status 			= dbr_ntohs(pSrc->status);
@@ -752,8 +750,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	struct dbr_gr_float     *pSrc = s;
-	struct dbr_gr_float     *pDest = d;
+	struct dbr_gr_float     *pSrc = (struct dbr_gr_float *) s;
+	struct dbr_gr_float     *pDest = (struct dbr_gr_float *) d;
 
     	/* these are same for vax to ieee or ieee to vax */
     	pDest->status 			= dbr_ntohs(pSrc->status);
@@ -815,8 +813,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	struct dbr_ctrl_int	*pSrc = s;
-	struct dbr_ctrl_int	*pDest = d;
+	struct dbr_ctrl_int	*pSrc = (struct dbr_ctrl_int *) s;
+	struct dbr_ctrl_int	*pDest = (struct dbr_ctrl_int *) d;
 
     	/* vax to ieee or ieee to vax -- same code */
     	pDest->status 			= dbr_ntohs(pSrc->status);
@@ -855,8 +853,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	struct dbr_ctrl_long	*pSrc = s;
-	struct dbr_ctrl_long	*pDest = d;
+	struct dbr_ctrl_long	*pSrc = (struct dbr_ctrl_long*) s;
+	struct dbr_ctrl_long	*pDest = (struct dbr_ctrl_long *) d;
 
     	/* vax to ieee or ieee to vax -- same code */
     	pDest->status 			= dbr_ntohs(pSrc->status);
@@ -895,8 +893,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	struct dbr_ctrl_char	*pSrc = s;
-	struct dbr_ctrl_char	*pDest = d;
+	struct dbr_ctrl_char	*pSrc = (struct dbr_ctrl_char *) s;
+	struct dbr_ctrl_char	*pDest = (struct dbr_ctrl_char *) d;
 
     	/* vax to ieee or ieee to vax -- same code */
     	pDest->status 			= dbr_ntohs(pSrc->status);
@@ -933,8 +931,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	struct dbr_ctrl_double	*pSrc = s;
-	struct dbr_ctrl_double	*pDest = d;
+	struct dbr_ctrl_double	*pSrc = (struct dbr_ctrl_double *) s;
+	struct dbr_ctrl_double	*pDest = (struct dbr_ctrl_double *) d;
 
 	    /* these are the same for ieee to vax or vax to ieee */
     	pDest->status 		= dbr_ntohs(pSrc->status);
@@ -997,8 +995,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	struct dbr_ctrl_float	*pSrc = s;
-	struct dbr_ctrl_float	*pDest = d;
+	struct dbr_ctrl_float	*pSrc = (struct dbr_ctrl_float *) s;
+	struct dbr_ctrl_float	*pDest = (struct dbr_ctrl_float *) d;
 
 	    /* these are the same for ieee to vaax or vax to ieee */
     	pDest->status 		= dbr_ntohs(pSrc->status);
@@ -1060,8 +1058,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	struct dbr_ctrl_enum	*pSrc = s;
-	struct dbr_ctrl_enum	*pDest = d;
+	struct dbr_ctrl_enum	*pSrc = (struct dbr_ctrl_enum *) s;
+	struct dbr_ctrl_enum	*pDest = (struct dbr_ctrl_enum *) d;
 
     	pDest->status 			= dbr_ntohs(pSrc->status);
     	pDest->severity			= dbr_ntohs(pSrc->severity);
@@ -1096,8 +1094,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	struct dbr_sts_char	*pSrc = s;
-	struct dbr_sts_char	*pDest = d;
+	struct dbr_sts_char	*pSrc = (struct dbr_sts_char *) s;
+	struct dbr_sts_char	*pDest = (struct dbr_sts_char *) d;
 
     	/* convert vax to ieee or ieee to vax format -- same code*/
     	pDest->status 		= dbr_ntohs(pSrc->status);
@@ -1127,8 +1125,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	struct dbr_sts_long	*pSrc = s;
-	struct dbr_sts_long	*pDest = d;
+	struct dbr_sts_long	*pSrc = (struct dbr_sts_long *) s;
+	struct dbr_sts_long	*pDest = (struct dbr_sts_long *) d;
 
     	/* convert vax to ieee or ieee to vax format -- same code*/
     	pDest->status 		= dbr_ntohs(pSrc->status);
@@ -1159,8 +1157,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	struct dbr_time_string	*pSrc = s;
-	struct dbr_time_string 	*pDest = d;
+	struct dbr_time_string	*pSrc = (struct dbr_time_string *) s;
+	struct dbr_time_string 	*pDest = (struct dbr_time_string *) d;
 			
     	/* convert ieee to vax format or vax to ieee */
     	pDest->status 		= dbr_ntohs(pSrc->status);
@@ -1191,8 +1189,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	struct dbr_time_short	*pSrc = s;
-	struct dbr_time_short	*pDest = d;
+	struct dbr_time_short	*pSrc = (struct dbr_time_short *) s;
+	struct dbr_time_short	*pDest = (struct dbr_time_short *) d;
 
     	/* convert vax to ieee or ieee to vax format -- same code*/
     	pDest->status 		= dbr_ntohs(pSrc->status);
@@ -1225,8 +1223,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	struct dbr_time_float	*pSrc = s;
-	struct dbr_time_float	*pDest = d;
+	struct dbr_time_float	*pSrc = (struct dbr_time_float *) s;
+	struct dbr_time_float	*pDest = (struct dbr_time_float *) d;
 
     	pDest->status 		= dbr_ntohs(pSrc->status);
     	pDest->severity		= dbr_ntohs(pSrc->severity);
@@ -1253,8 +1251,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	struct dbr_time_double	*pSrc = s;
-	struct dbr_time_double	*pDest = d;
+	struct dbr_time_double	*pSrc = (struct dbr_time_double *) s;
+	struct dbr_time_double	*pDest = (struct dbr_time_double *) d;
 
     	pDest->status 		= dbr_ntohs(pSrc->status);
     	pDest->severity		= dbr_ntohs(pSrc->severity);
@@ -1282,8 +1280,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	struct dbr_time_enum	*pSrc = s;
-	struct dbr_time_enum	*pDest = d;
+	struct dbr_time_enum	*pSrc = (struct dbr_time_enum *) s;
+	struct dbr_time_enum	*pDest = (struct dbr_time_enum *) d;
 
     	pDest->status 		= dbr_ntohs(pSrc->status);
     	pDest->severity		= dbr_ntohs(pSrc->severity);
@@ -1312,8 +1310,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	struct dbr_time_char	*pSrc = s;
-	struct dbr_time_char	*pDest = d;
+	struct dbr_time_char	*pSrc = (struct dbr_time_char *) s;
+	struct dbr_time_char	*pDest = (struct dbr_time_char *) d;
 
     	/* convert vax to ieee or ieee to vax format -- same code*/
     	pDest->status 		= dbr_ntohs(pSrc->status);
@@ -1344,8 +1342,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	struct dbr_time_long	*pSrc = s;
-	struct dbr_time_long	*pDest = d;
+	struct dbr_time_long	*pSrc = (struct dbr_time_long *) s;
+	struct dbr_time_long	*pDest = (struct dbr_time_long *) d;
 
     	/* convert vax to ieee or ieee to vax format -- same code*/
     	pDest->status 		= dbr_ntohs(pSrc->status);
@@ -1375,8 +1373,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	dbr_put_ackt_t	*pSrc = s;
-	dbr_put_ackt_t	*pDest = d;
+	dbr_put_ackt_t	*pSrc = (dbr_put_ackt_t *) s;
+	dbr_put_ackt_t	*pDest = (dbr_put_ackt_t *) d;
       	unsigned long	i;
 
       	for(i=0; i<num; i++){
@@ -1409,8 +1407,8 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-	struct dbr_stsack_string	*pSrc = s;
-	struct dbr_stsack_string 	*pDest = d;
+	struct dbr_stsack_string	*pSrc = (struct dbr_stsack_string *) s;
+	struct dbr_stsack_string 	*pDest = (struct dbr_stsack_string *) d;
 			
     	/* convert ieee to vax format or vax to ieee */
     	pDest->status 		= dbr_ntohs(pSrc->status);

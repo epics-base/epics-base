@@ -59,20 +59,7 @@ static char *os_depenhSccsId = "$Id$";
 #error Please define one of iocCore, UNIX, VMS, or _WIN32 
 #endif
 
-#if defined(iocCore)
-#  	define POST_IO_EV semBinaryGive(io_done_sem)
-#	define VXTASKIDNONE 0
-#  	define LOCK semMutexMustTake(client_lock); 
-#  	define UNLOCK semMutexGive(client_lock);
-#	define EVENTLOCKTEST (lock_tid==threadGetIdSelf())
-#	define VXTHISTASKID threadGetIdSelf();
-#	define abort() threadSuspend(threadGetIdSelf())
-#else
-#  	define POST_IO_EV 
-#  	define LOCK
-#  	define UNLOCK  
-#	define EVENTLOCKTEST	(post_msg_active)
-#endif /*defined(iocCore) */
+
 
 #endif /* INCos_depenh */
 

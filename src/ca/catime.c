@@ -25,9 +25,7 @@
 #define LOCAL static
 #endif
 
-#ifndef OK
-#define OK 0
-#endif
+#define CATIME_OK 0
 
 #ifndef NULL
 #define NULL 0
@@ -199,7 +197,7 @@ int catime (char *channelName, enum appendNumberFlag appNF)
 
 	SEVCHK (ca_task_exit (), "Unable to free resources at exit");
 
-  	return OK;
+  	return CATIME_OK;
 }
 
 /*
@@ -216,7 +214,7 @@ LOCAL void printSearchStat(unsigned iterations)
 	double 	stdDev;
 
 	for (pi=itemList; pi<&itemList[iterations]; pi++) {
-		double retry = pi->chix->retry;
+		double retry = ca_search_attempts (pi->chix);
 		X += retry;
 		XX += retry*retry;
 		if (retry>max) {

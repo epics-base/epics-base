@@ -14,13 +14,13 @@ INC += caProto.h
 #
 
 # on generic system
-ca_SRCS_DEFAULT = if_depen.c
+#ca_SRCS_DEFAULT = if_depen.c
 
 # on WIN32 only
-ca_SRCS_WIN32   = windows_depen.c
+#ca_SRCS_WIN32   = windows_depen.c
 
 # on vxWorks only
-ca_SRCS_vxWorks   = vxWorks_depen.c
+#ca_SRCS_vxWorks   = vxWorks_depen.c
 
 # on all systems
 ca_SRCS += caOsDependent.c

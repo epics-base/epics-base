@@ -1,14 +1,16 @@
 
+
+#include "envDefs.h"  
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "envDefs.h"  
+#if 0
 
 void caSetupAddrList(
         ELLLIST *pList,
         SOCKET socket);
-
 void caPrintAddrList(ELLLIST *pList);
 
 epicsShareFunc void epicsShareAPI caDiscoverInterfaces(
@@ -17,7 +19,8 @@ epicsShareFunc void epicsShareAPI caDiscoverInterfaces(
 	unsigned short port,
 	struct in_addr matchAddr);
 
-epicsShareFunc void epicsShareAPI caAddConfiguredAddr(
+epicsShareFunc void caAddConfiguredAddr (
+        cac *pcac, 
         ELLLIST *pList,
         const ENV_PARAM *pEnv,
         SOCKET socket,
@@ -28,15 +31,7 @@ int local_addr(SOCKET socket, struct sockaddr_in *plcladdr);
 epicsShareFunc unsigned short epicsShareAPI 
 	caFetchPortConfig(const ENV_PARAM *pEnv, unsigned short defaultPort);
 
-typedef union ca_addr {
-        struct sockaddr_in      in;
-        struct sockaddr         sa;
-}caAddr;
-
-typedef struct {
-        ELLNODE		node;
-        caAddr		destAddr;
-}caAddrNode;
+#endif
 
 #ifdef __cplusplus
 }

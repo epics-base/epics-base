@@ -191,6 +191,7 @@ struct dbr_alDouble     {DBRalDouble};
 #define S_db_bkptLogic  (M_dbAccess|61) /*Logic error in breakpoint routine*/
 #define S_db_cntSpwn    (M_dbAccess|63) /*Cannot spawn dbContTask*/
 #define S_db_cntCont    (M_dbAccess|65) /*Cannot resume dbContTask*/
+#define S_db_noMemory   (M_dbAccess|66) /*unable to allocate data structure from pool*/
 
 /* Global Database Access Routines*/
 #define dbGetLink(PLNK,DBRTYPE,PBUFFER,OPTIONS,NREQUEST) \

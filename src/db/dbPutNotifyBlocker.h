@@ -33,7 +33,7 @@
 #endif
 
 #include "tsFreeList.h"
-#include "cxxCompilerDependencies.h"
+#include "compilerDependencies.h"
 
 #ifdef dbPutNotifyBlockerh_restore_epicsExportSharedSymbols
 #define epicsExportSharedSymbols

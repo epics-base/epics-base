@@ -38,7 +38,7 @@
 #include "tcpRecvWatchdog.h"
 #include "tcpSendWatchdog.h"
 #include "hostNameCache.h"
-#include "cxxCompilerDependencies.h"
+#include "compilerDependencies.h"
 
 // a modified ca header with capacity for large arrays
 struct  caHdrLargeArray {

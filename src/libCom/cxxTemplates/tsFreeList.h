@@ -72,7 +72,7 @@
 #include <new>
 #include "string.h"
 
-#include "cxxCompilerDependencies.h"
+#include "compilerDependencies.h"
 #include "epicsMutex.h"
 #include "epicsGuard.h"
 

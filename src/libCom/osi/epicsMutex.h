@@ -21,7 +21,7 @@ typedef enum {
 
 #ifdef __cplusplus
 
-#include "cxxCompilerDependencies.h"
+#include "compilerDependencies.h"
 
 class epicsShareClass epicsMutex {
 public:

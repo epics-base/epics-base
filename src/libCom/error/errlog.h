@@ -15,7 +15,7 @@
 #include <stdarg.h>
 
 #include "shareLib.h"
-#include "cxxCompilerDependencies.h"
+#include "compilerDependencies.h"
 
 #ifdef __cplusplus
 extern "C" {

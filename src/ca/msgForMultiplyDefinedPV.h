@@ -29,7 +29,7 @@
 
 #include "ipAddrToAsciiAsynchronous.h"
 #include "tsFreeList.h"
-#include "cxxCompilerDependencies.h"
+#include "compilerDependencies.h"
 
 class callbackForMultiplyDefinedPV { // X aCC 655
 public:

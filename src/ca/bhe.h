@@ -31,7 +31,7 @@
 #include "tsDLList.h"
 #include "tsFreeList.h"
 #include "epicsTime.h"
-#include "cxxCompilerDependencies.h"
+#include "compilerDependencies.h"
 
 #ifdef bhehEpicsExportSharedSymbols
 #   define epicsExportSharedSymbols

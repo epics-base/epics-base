@@ -24,7 +24,7 @@
 #include "epicsMutex.h"
 #include "epicsGuard.h"
 #include "epicsThread.h"
-#include "cxxCompilerDependencies.h"
+#include "compilerDependencies.h"
 
 // This class exists for the purpose of avoiding file scope
 // object chicken and egg problems. It implements thread safe

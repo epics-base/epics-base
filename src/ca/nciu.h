@@ -35,7 +35,7 @@
 #include "tsDLList.h"
 #include "tsFreeList.h"
 #include "epicsMutex.h"
-#include "cxxCompilerDependencies.h"
+#include "compilerDependencies.h"
 
 #ifdef nciuh_restore_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols

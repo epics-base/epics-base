@@ -31,7 +31,7 @@
 #   undef epicsExportSharedSymbols
 #endif
 
-#include "cxxCompilerDependencies.h"
+#include "compilerDependencies.h"
 #include "ipAddrToAsciiAsynchronous.h"
 #include "msgForMultiplyDefinedPV.h"
 #include "epicsTimer.h"

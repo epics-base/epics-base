@@ -35,7 +35,7 @@
 #include "tsFreeList.h"
 #include "resourceLib.h"
 #include "epicsEvent.h"
-#include "cxxCompilerDependencies.h"
+#include "compilerDependencies.h"
 
 #ifdef syncGrouph_restore_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols

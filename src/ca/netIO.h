@@ -27,7 +27,7 @@
 #define netIOh
 
 #include "nciu.h"
-#include "cxxCompilerDependencies.h"
+#include "compilerDependencies.h"
 
 // SUN PRO generates multiply defined symbols if the baseNMIU
 // destructor is virtual (therefore it is protected). 

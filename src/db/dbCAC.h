@@ -38,7 +38,7 @@
 #include "tsFreeList.h"
 #include "resourceLib.h"
 #include "cacIO.h"
-#include "cxxCompilerDependencies.h"
+#include "compilerDependencies.h"
 
 #ifdef dbCACh_restore_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols

@@ -24,7 +24,7 @@
 #include "tsFreeList.h"
 #include "osiSock.h"
 #include "inetAddrID.h"
-#include "cxxCompilerDependencies.h"
+#include "compilerDependencies.h"
 
 #ifdef ipIgnoreEntryEpicsExportSharedSymbols
 #   define epicsExportSharedSymbols

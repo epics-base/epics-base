@@ -34,7 +34,7 @@
 #include "tsFreeList.h"
 #include "tsDLList.h"
 #include "osiWireFormat.h"
-#include "cxxCompilerDependencies.h"
+#include "compilerDependencies.h"
 
 static const unsigned comBufSize = 0x4000;
 

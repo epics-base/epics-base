@@ -35,7 +35,7 @@
 #   undef epicsExportSharedSymbols
 #endif
 
-#include "cxxCompilerDependencies.h"
+#include "compilerDependencies.h"
 
 #ifdef dbChannelIOh_restore_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols

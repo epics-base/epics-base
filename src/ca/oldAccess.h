@@ -34,7 +34,7 @@
 
 #include "tsFreeList.h"
 #include "epicsMemory.h"
-#include "cxxCompilerDependencies.h"
+#include "compilerDependencies.h"
 #include "osiSock.h"
 
 #ifdef oldAccessh_restore_epicsExportSharedSymbols

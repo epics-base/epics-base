@@ -22,7 +22,7 @@
 #include "epicsSingleton.h"
 #include "tsDLList.h"
 #include "epicsTimer.h"
-#include "cxxCompilerDependencies.h"
+#include "compilerDependencies.h"
 
 #ifdef DEBUG
 #   define debugPrintf(ARGSINPAREN) printf ARGSINPAREN

@@ -8,6 +8,10 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.3  1996/08/06 19:14:09  jbk
+ * Fixes to the string class.
+ * Changes units field to a aitString instead of aitInt8.
+ *
  * Revision 1.2  1996/06/26 21:00:05  jbk
  * Fixed up code in aitHelpers, removed unused variables in others
  * Fixed potential problem in gddAppTable.cc with the map functions
@@ -133,87 +137,58 @@ inline int operator>= (const aitTimeStamp &lhs, const aitTimeStamp &rhs)
 //
 class aitString
 {
-private:
-	enum aitStrType {aitStrMalloc, aitStrConst};
-
-	int set(const char* p)
-	{
-		int rc=0;
-		if(p)
-		{
-			len=strlen(p); 
-			str=new char[len+1];
-			if(str)
-			{
-				strcpy(str, p);
-				type=aitStrMalloc;
-			}
-			else
-			{
-				// If malloc fails set it to
-				// an empty constant str
-				str = "";
-				len = 0u;
-				type = aitStrConst;
-				printf("aitString: no pool => continuing with nill str\n");
-				rc=-1;
-			}
-		}
-		else
-		{
-			str=NULL;
-			len=0u; 
-			type=aitStrConst;
-		}
-		return rc;
-	}
-
-	void cset(const char* p)
-	{
-		str=(char*)p;
-		type=aitStrConst;
-		if(str)
-			len=strlen(str);
-		else
-			len = 0u;
-	}
-
 public:
+	aitString(char* p);				// copy the user's string
+	aitString(aitString* p);		// copy the user's string
+	aitString(aitString& p);		// copy the user's string
 
-	aitString(void)			 { cset((char*)NULL); }
-	aitString(const char* x) { cset(x); }
-	aitString(char* x)		 { cset(x); }
-	~aitString(void)		 { clear(); }
+	aitString(const char* p);		// reference a user's constant string
+	aitString(const aitString* p);	// reference a user's constant string
+	aitString(const aitString& p);	// reference a user's constant string
 
-	operator aitUint16(void)		{ return len; }
-	operator const char*(void)		{ return str; }
-	aitUint32 length(void)			{ return len; }
+	aitString(void);
+	~aitString(void); // free up string is required
+
+	void clear(void); // clear everything, free string if required
+	void dump(void) const;
+	void dump(const char* id) const;
+
+	// casts from aitString to other things - pulls info out of aitString
+	operator aitUint16(void) const		{ return (aitUint16)len; }
+	operator aitUint32(void) const		{ return (aitUint32)len; }
+	operator aitInt32(void) const		{ return (aitInt32)len; }
+	operator const char*(void) const	{ return str; }
+	operator char*(void) const			{ return str; }
+
+	aitUint32 length(void) const	{ return (aitUint32)len; }
 	const char* string(void) const	{ return str; }
+
+	// completely reset the aitString to a new value
+	aitString& operator=(aitString& p);
+	aitString& operator=(aitString* p);
+	aitString& operator=(char* p);
+	aitString& operator=(const aitString& p);
+	aitString& operator=(const aitString* p);
+	aitString& operator=(const char* p);
+
+	// change strings into the aitString (actually makes new strings)
+	int copy(aitString* p);
+	int copy(aitString& p);
+	int copy(char* p);
+	int copy(const aitString* p);
+	int copy(const aitString& p);
+	int copy(const char* p);
+
+	// set data in the aitString and retrieve data from the aitString
+	void replaceData(const char* p);
+	void replaceData(const aitString* p);
+	void replaceData(aitString& p);
+	void extractString(char* to_here);
+
+	// special function to change the string - internal use with gdd library
 	void force(char* x)				{ str=x; }
 	void force(unsigned char* x)	{ str=(char*)x; }
 	void force(unsigned long x)		{ str=(char*)x; }
-
-	void clear(void)
-	{
-		if (str && type==aitStrMalloc)
-		{
-			delete [] str;
-			type=aitStrConst;
-			str=NULL;
-			len=0;
-		}
-	}
-
-
-	int installString(const char* p);
-	int installString(char* p);
-
-	void copy(const char* p)			{ clear(); cset(p); }
-	void copy(char* p)					{ clear(); cset(p); }
-	void replaceData(const char* p)		{ strncpy(str,p,len+1); }
-
-	aitString& operator=(const char* p) { this->copy(p); return *this; }
-	aitString& operator=(char* p)		{ this->copy(p); return *this; }
 
 	// take the aitString array, and put it and all the string into buf,
 	// return the total length the data copied
@@ -223,9 +198,104 @@ public:
 		void* buf, aitIndex bufSize);
 
 private:
+	enum aitStrType {aitStrMalloc, aitStrConst};
+
 	char* str;
 	aitUint16 len;
 	aitUint16 type;	// aitStrType goes here
+
+	void init(void);
+	void mallocFailure(void);
+	int set(const char* p, aitUint32 len);
+	int cset(const char* p, aitUint32 len);
 };
+
+inline void aitString::clear(void)
+{
+	if(str && type==aitStrMalloc) delete [] str;
+	type=aitStrConst;
+	str=NULL;
+	len=0;
+}
+
+inline int aitString::set(const char* p,aitUint32 l)
+{
+	int rc=0;
+	clear();
+	len=l;
+	str=new char[len+1];
+	if(str)
+	{
+		strcpy(str, p);
+		type=aitStrMalloc;
+	}
+	else
+	{
+		mallocFailure();
+		rc=-1;
+	}
+	return rc;
+}
+
+inline int aitString::cset(const char* p,aitUint32 l)
+{
+	clear();
+	str=(char*)p;
+	type=aitStrConst;
+	len=l;
+	return 0;
+}
+
+inline int aitString::copy(const char* p)
+	{ return p?cset(p,strlen(p)):-1; }
+inline int aitString::copy(char* p)
+	{ return p?set(p,strlen(p)):-1; }
+inline int aitString::copy(aitString* p)
+	{ return p?set((char*)*p,p->length()):-1; }
+inline int aitString::copy(aitString& p)
+	{ return set((char*)p,p.length()); }
+inline int aitString::copy(const aitString* p)
+	{ return p?cset((const char*)*p,p->length()):-1; }
+inline int aitString::copy(const aitString& p)
+	{ return cset((const char*)p,p.length()); }
+
+inline void aitString::replaceData(const char* p)
+	{ if(p && str) strncpy(str,p,len); }
+inline void aitString::replaceData(const aitString* p)
+	{ if(p && str) strncpy(str,p->string(),len); }
+inline void aitString::replaceData(aitString& p)
+	{ if(str) strncpy(str,p.string(),len); }
+inline void aitString::extractString(char* p)
+	{ if(p && str) strcpy(p,str); }
+
+inline aitString& aitString::operator=(const aitString& p)
+	{ this->copy(p); return *this; }
+inline aitString& aitString::operator=(const aitString* p)
+	{ this->copy(p); return *this; }
+inline aitString& aitString::operator=(aitString& p)
+	{ this->copy(p); return *this; }
+inline aitString& aitString::operator=(aitString* p)
+	{ this->copy(p); return *this; }
+inline aitString& aitString::operator=(const char* p)
+	{ this->copy(p); return *this; }
+inline aitString& aitString::operator=(char* p)
+	{ this->copy(p); return *this; }
+
+inline void aitString::init(void) { str=NULL; len=0u; type=aitStrConst; }
+
+inline aitString::~aitString(void)
+{
+	// dump("~aitString");
+	clear();
+}
+inline aitString::aitString(void) { init(); }
+
+inline aitString::aitString(char* p)		{ init(); copy(p); }
+inline aitString::aitString(aitString* p)	{ init(); copy(p); }
+inline aitString::aitString(aitString& p)	{ init(); copy(p); }
+
+inline aitString::aitString(const char* p)		{ init(); copy(p); }
+inline aitString::aitString(const aitString* p)	{ init(); copy(p); }
+inline aitString::aitString(const aitString& p)	{ init(); copy(p); }
 
 #endif // aitHelpersInclude

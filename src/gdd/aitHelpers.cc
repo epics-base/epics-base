@@ -5,6 +5,10 @@
 // $Id$
 //
 // $Log$
+// Revision 1.2  1996/08/06 19:14:06  jbk
+// Fixes to the string class.
+// Changes units field to a aitString instead of aitInt8.
+//
 // Revision 1.1  1996/06/25 19:11:30  jbk
 // new in EPICS base
 //
@@ -13,8 +17,29 @@
 #include "aitTypes.h"
 #include "aitHelpers.h"
 
-int aitString::installString(const char* p)    { clear(); return set(p); }
-int aitString::installString(char* p)          { clear(); return set(p); }
+void aitString::mallocFailure(void)
+{
+	str="";
+	len=0u;
+	type=aitStrConst;
+	fprintf(stderr,"aitString: no pool => continuing with nill str\n");
+}
+
+void aitString::dump(const char* p) const
+{
+	fprintf(stderr,"<%s>:",p);
+	dump();
+}
+
+void aitString::dump(void) const
+{
+	fprintf(stderr,"this=%8.8x ",(int)this);
+	if(str) fprintf(stderr,"string=%8.8x<%s>, ",(int)str,str);
+	else	fprintf(stderr,"no string present, ");
+	fprintf(stderr,"length=%d, ",(int)len);
+	if(type==aitStrConst) fprintf(stderr,"type=Constant\n");
+	else fprintf(stderr,"type=Allocated\n");
+}
 
 aitIndex aitString::compact(aitString* array, aitIndex arraySize,
 		void* buf, aitIndex bufSize)

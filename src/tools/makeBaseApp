@@ -56,10 +56,23 @@ EPICS_BASE=`sed -e "s%EPICS_BASE=%%" < EPICS_BASE`
 
 if [ ! -f Makefile ]; then
 	cat  > Makefile <<-\END
-		DIRS += 
 		TOP = .
 		include $(TOP)/config/CONFIG_APP
+		#add directories as follows
+		#DIRS += <dir>
 		include $(EPICS_BASE)/config/RULES_TOP
+	END
+fi
+
+if [ ! -f .cvsignore ]; then
+	cat  > .cvsignore <<-\END
+		bin
+		include
+		lib
+		man
+		dbd
+		templates
+		doc
 	END
 fi
 
@@ -80,6 +93,9 @@ if [ ! -d config ]; then
 	cat > config/RULES.Vx <<-\END
 		include $(EPICS_BASE)/config/RULES.Vx
 	END
+	cat > config/RULES_DIRS <<-\END
+		include $(EPICS_BASE)/config/RULES_DIRS
+	END
 fi
 
 if [ $# = 0 ]; then Cleanup 0; fi;
@@ -89,16 +105,12 @@ do
 	if [ -d "${APPNAME}" ]; then continue; fi
 	mkdir ${APPNAME}
 	if [ $? -ne 0 ]; then Cleanup 1 "$USAGE"; fi
-	echo "DIRS += ${APPNAME}" > /tmp/'$$'.makeBaseApp.Makefile 
-	cat Makefile >> /tmp/'$$'.makeBaseApp.Makefile
-	mv -f /tmp/'$$'.makeBaseApp.Makefile Makefile
 	cd ${APPNAME}
 	cat > Makefile <<-\END
 		TOP = ..
 		include $(TOP)/config/CONFIG_APP
-		include $(EPICS_BASE)/config/RULES_DIRS
-
 		DIRS = src
+		include $(EPICS_BASE)/config/RULES_DIRS
 	END
 	mkdir db
 	if [ -n "${EXAMPLES}" ]; then
@@ -178,30 +190,32 @@ do
 	sed -e "s/APPNAME/${APPNAME}/" >> src/Makefile.Vx <<-\END
 		RECTYPES += xxxRecord.h
 		USER_DBDFLAGS += -I .. -I $(EPICS_BASE)/dbd
-		DBDEXPAND = APPNAME.dbd
+		DBDEXPAND = APPNAMEInclude.dbd
+		DBDNAME = APPNAME.dbd
 
 		include ../baseLIBOBJS
 		LIBOBJS += xxxRecord.o
 		LIBOBJS += devXxxSoft.o
 		LIBOBJS += sncExample.o
+		LIBNAME = APPNAMESupport
+		SCRIPTS += st.APPNAME
+		SCRIPTS += vxWorks vxWorks.sym iocCore seq
 	END
 	else
 	sed -e "s/APPNAME/${APPNAME}/" >> src/Makefile.Vx <<-\END
 		#RECTYPES += xxxRecord.h
 		USER_DBDFLAGS += -I .. -I $(EPICS_BASE)/dbd
-		DBDEXPAND = APPNAME.dbd
+		#DBDEXPAND = APPNAMEInclude.dbd
+		#DBDNAME = APPNAME.dbd
 
-		include ../baseLIBOBJS
+		#include ../baseLIBOBJS
 		#LIBOBJS += xxx.o
+		#LIBNAME = APPNAMESupport
+		#SCRIPTS += st.APPNAME
+		#SCRIPTS += vxWorks vxWorks.sym iocCore seq
 	END
 	fi
 	sed -e "s/APPNAME/${APPNAME}/" >> src/Makefile.Vx <<-\END
-		LIBNAME = APPNAMESupport
-
-		SCRIPTS += st.APPNAME
-
-		SCRIPTS += vxWorks vxWorks.sym iocCore seq
-
 		include $(TOP)/config/RULES.Vx
 		#----------------------------------------
 		#  ADD RULES AFTER THIS LINE
@@ -244,13 +258,13 @@ do
 		#  ADD RULES AFTER THIS LINE
 	END
 	if [ -n "${EXAMPLES}" ]; then
-	cat > src/${APPNAME}.dbd <<-\END
+	cat > src/${APPNAME}Include.dbd <<-\END
 		include "base.dbd"
 		include "xxxRecord.dbd"
 		device(xxx,CONSTANT,devXxxSoft,"SoftChannel")
 	END
 	else
-	cat > src/${APPNAME}.dbd <<-\END
+	cat > src/${APPNAME}Include.dbd <<-\END
 		include "base.dbd"
 		#private database definitions go here
 		#device(xxx,CONSTANT,devXxxSoft,"SoftChannel")
@@ -816,5 +830,6 @@ do
 		}
 	END
 	cd ..
+	echo "add line to Makefile   DIRS+=$APPNAME "
 done
 Cleanup 0 

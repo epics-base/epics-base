@@ -6,7 +6,6 @@
 #include <stdlib.h>
 
 #define epicsExportSharedSymbols
-#define instantiateRecourceLib
 #include "resourceLib.h"
 
 #ifdef SUNOS4
@@ -51,7 +50,7 @@ private:
 
 class jane : public stringId, public tsSLNode<jane> {
 public:
-	jane (const char *pNameIn) : stringId(pNameIn) {}
+	jane (const char *pNameIn) : stringId (pNameIn) {}
 
 	void testTraverse();
 
@@ -81,7 +80,7 @@ void jane::testTraverse()
         // This explicitly instantiates the template class's member
         // functions into "templInst.o"
         //
-	template class resTable<fred,intId<unsigned,8>>;	
+	template class resTable<fred,intId<unsigned,8> >;	
 	template class resTable<jane,stringId>;	
 #endif
 

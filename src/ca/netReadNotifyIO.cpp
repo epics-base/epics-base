@@ -18,8 +18,8 @@
 #include "nciu.h"
 #include "cac.h"
 
-netReadNotifyIO::netReadNotifyIO ( nciu & chan, cacReadNotify & notify ) :
-    baseNMIU ( chan ), notify ( notify )
+netReadNotifyIO::netReadNotifyIO ( nciu & chanIn, cacReadNotify & notify ) :
+    notify ( notify ), chan ( chanIn )
 {
 }
 
@@ -65,5 +65,11 @@ class netSubscription * netReadNotifyIO::isSubscription ()
 {
     return 0;
 }
+
+nciu & netReadNotifyIO::channel () const
+{
+    return this->chan;
+}
+
 
 

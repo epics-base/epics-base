@@ -20,10 +20,10 @@
 #include "cac.h"
 #include "db_access.h" // for dbf_type_to_text
 
-netSubscription::netSubscription ( nciu &chan, 
+netSubscription::netSubscription ( nciu & chanIn, 
         unsigned typeIn, arrayElementCount countIn, 
         unsigned maskIn, cacStateNotify &notifyIn ) :
-    baseNMIU ( chan ), count ( countIn ), 
+    count ( countIn ), chan ( chanIn ),
     notify ( notifyIn ), type ( typeIn ), mask ( maskIn )
 {
     if ( ! dbr_type_is_valid ( typeIn ) ) {
@@ -77,6 +77,11 @@ void netSubscription::completion ( unsigned typeIn,
     arrayElementCount countIn, const void *pDataIn )
 {
     this->notify.current ( typeIn, countIn, pDataIn );
+}
+
+nciu & netSubscription::channel () const
+{
+    return this->chan;
 }
 
 

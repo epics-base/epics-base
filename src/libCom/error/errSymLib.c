@@ -360,6 +360,8 @@ va_list	pvar;
 	int 		rtnval;
 	int		namelen;
 	int		formatlen;
+	unsigned short modnum;
+	unsigned short errnum;
 
 
 	name[0] = '\0';
@@ -376,11 +378,12 @@ va_list	pvar;
 	else{
 		rtnval = errSymFind(value,name);
 	}
-
+	modnum = status >> 16;
+	errnum = status & 0xffff;
 	if(rtnval) {
 		sprintf(name, 
-			"Error status =0x%8lx not in symbol table", 
-			status);
+			"Error status (module %hu, number %hu) not in symbol table", 
+			modnum, errnum);
 	}
 
 	if(pFormatString){
@@ -656,4 +659,33 @@ int msgcount;
 		}
 	}
 	printf("\nerrSymDump: total number of error messages=%d\n", msgcount);		
+}
+
+
+/****************************************************************
+ * errSymTestPrint
+ ***************************************************************/
+#ifdef __STDC__
+void errSymTestPrint(long errNum)
+#else
+void errSymTestPrint(errNum)
+long errNum;
+#endif /* __STDC__ */
+{
+    char            message[256];
+    unsigned short modnum;
+    unsigned short errnum;
+
+    message[0] = '\0';
+    modnum = errNum >> 16;
+    errnum = errNum & 0xffff;
+    if (modnum < 501) {
+        printf("errSymTestPrint: module number < 501 \n");
+        return;
+    }
+    errSymFind(errNum, message);
+    if ( message[0] == '\0' ) return;
+    printf("module %hu number %hu message='%s'\n",
+		modnum, errnum, message);
+    return;
 }

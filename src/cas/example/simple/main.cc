@@ -72,8 +72,12 @@ extern int main (int argc, const char **argv)
         scanOn = false;
     }
 
-    pCAS = new exServer ( pvPrefix, aliasCount, scanOn );
-    if ( ! pCAS ) {
+    try {
+        pCAS = new exServer ( pvPrefix, aliasCount, scanOn );
+    }
+    catch ( ... ) {
+        errlogPrintf ( "Server initialization error\n" );
+        errlogFlush ();
         return (-1);
     }
 
@@ -100,6 +104,7 @@ extern int main (int argc, const char **argv)
     }
     pCAS->show(2u);
     delete pCAS;
+    errlogFlush ();
     return (0);
 }
 

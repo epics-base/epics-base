@@ -47,6 +47,7 @@ TEMPLATES += top/exampleBoot/nfsCommands@vxWorks
 TEMPLATES += top/exampleBoot/ioc/Makefile@Common
 TEMPLATES += top/exampleBoot/ioc/Makefile@vxWorks
 TEMPLATES += top/exampleBoot/ioc/st.cmd@Common
+TEMPLATES += top/exampleBoot/ioc/st.cmd@Cross
 TEMPLATES += top/exampleBoot/ioc/st.cmd@vxWorks
 TEMPLATES += top/exampleBoot/ioc/st.cmd@RTEMS
 TEMPLATES += top/exampleBoot/ioc/README@Common
@@ -74,6 +75,7 @@ TEMPLATES += top/iocBoot/nfsCommands@vxWorks
 TEMPLATES += top/iocBoot/ioc/Makefile@Common
 TEMPLATES += top/iocBoot/ioc/Makefile@vxWorks
 TEMPLATES += top/iocBoot/ioc/st.cmd@Common
+TEMPLATES += top/iocBoot/ioc/st.cmd@Cross
 TEMPLATES += top/iocBoot/ioc/st.cmd@vxWorks
 TEMPLATES += top/iocBoot/ioc/st.cmd@RTEMS
 

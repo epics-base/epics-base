@@ -1,0 +1,26 @@
+#!../../bin/_ARCH_/_APPNAME_
+
+## You may have to change _APPNAME_ to something else
+## everywhere it appears in this file
+
+#< envPaths
+
+## Register all support components
+dbLoadDatabase("../../dbd/_APPNAME_.dbd",0,0)
+_APPNAME__registerRecordDeviceDriver(pdbbase) 
+
+## Load record instances
+dbLoadRecords("../../db/dbExample1.db","user=_USER_Host")
+dbLoadRecords("../../db/dbExample2.db","user=_USER_Host,no=1,scan=1 second")
+dbLoadRecords("../../db/dbExample2.db","user=_USER_Host,no=2,scan=2 second")
+dbLoadRecords("../../db/dbExample2.db","user=_USER_Host,no=3,scan=5 second")
+dbLoadRecords("../../db/dbSubExample.db","user=_USER_Host")
+
+## Set this to see messages from mySub
+#var mySubDebug 1
+
+iocInit()
+
+## Start any sequence programs
+#seq sncExample,"user=_USER_"
+

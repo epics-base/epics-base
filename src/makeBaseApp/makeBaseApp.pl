@@ -51,11 +51,14 @@ sub ReplaceFilename { # (filename)
 	# NB: Won't work with directories, don't use '@' in a directory name!
 	my($base,$filearch) = split /@/, $file;
 	if ($base ne $file) {		# This file is arch-specific
-	    my($os,$cpu_toolset) = split /-/, $arch, 2;
+	    my($os,$cpu,$toolset) = split /-/, $arch, 3;
 	    if (-r "$base\@$arch") {	# A version exists for this arch
 		$base = '' unless ($filearch eq $arch && -s $file);
 	    } elsif (-r "$base\@$os") {	# A version exists for this os
 		$base = '' unless ($filearch eq $os && -s $file);
+	    } elsif (  $ENV{EPICS_HOST_ARCH} !~ "$os-$cpu" && 
+                  -r "$base\@Cross" ) {	# Cross version exists
+		$base = '' unless ($filearch eq "Cross" && -s $file);
 	    } elsif (-r "$base\@Common") {	# Default version exists
 		$base = '' unless ($filearch eq "Common" && -s $file);
 	    } else {			# No default version

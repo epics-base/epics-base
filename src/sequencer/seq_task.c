@@ -3,7 +3,7 @@
 	Copyright, 1990, The Regents of the University of California.
 		         Los Alamos National Laboratory
 
-	@(#)seq_task.c	1.7	4/23/91
+	$Id$
 	DESCRIPTION: Seq_tasks.c: Task creation and control for sequencer
 	state sets.
 
@@ -95,6 +95,12 @@ SSCB	*ss_ptr;
 	/* Main loop */
 	while (1)
 	{
+		/* Clear event bits */
+		semTake(sp_ptr->sem_id, 0); /* Lock CA */
+		for (i = 0; i < NWRDS; i++)
+			ss_ptr->events[i] = 0;
+		semGive(sp_ptr->sem_id); /* Unlock CA */
+
 		ss_ptr->time = tickGet(); /* record time we entered this state */
 
 		/* Call delay function to set up delays */
@@ -114,28 +120,22 @@ SSCB	*ss_ptr;
 #endif	DEBUG
 			ss_ptr->time = tickGet();
 
-			/* Apply resource lock: any new events coming in will
-			   be deferred until next state is entered */
+			/* Apply CA resource lock: any new events coming in will
+			   be deferred until after event tests */
 			semTake(sp_ptr->sem_id, 0);
 
 			/* Call event function to check for event trigger */
 			ev_trig = st_ptr->event_func(sp_ptr, ss_ptr, var_ptr);
 
-			if (!ev_trig)
-				semGive(sp_ptr->sem_id); /* Unlock resource */
+			/* Unlock CA resource */
+			semGive(sp_ptr->sem_id);
+
 		} while (!ev_trig);
 		/* Event triggered */
 
 		/* Change event mask ptr for next state */
 		st_pNext = ss_ptr->states + ss_ptr->next_state;
 		ss_ptr->pMask = (st_pNext->eventMask);
-
-		/* Clear event bits */
-		for (i = 0; i < NWRDS; i++)
-			ss_ptr->events[i] = 0;
-
-		/* Unlock resource */
-		semGive(sp_ptr->sem_id);
 
 		/* Execute the action for this event */
 		ss_ptr->action_complete = FALSE;

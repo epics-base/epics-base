@@ -9,20 +9,19 @@ extern "C" {
 
 typedef void (*THREADFUNC)(void *parm);
 
-#define threadPriorityMax 99
-#define threadPriorityMin  0
+static const unsigned threadPriorityMax = 99;
+static const unsigned threadPriorityMin = 0;
 
 /*some generic values */
-#define threadPriorityLow 10
-#define threadPriorityMedium 50
-#define threadPriorityHigh 90
-
+static const unsigned threadPriorityLow = 10;
+static const unsigned threadPriorityMedium = 50;
+static const unsigned threadPriorityHigh = 90;
 
 /*some iocCore specific values */
-#define threadPriorityChannelAccessClient 10
-#define threadPriorityChannelAccessServer 20
-#define threadPriorityScanLow 60
-#define threadPriorityScanHigh 70
+static const unsigned threadPriorityChannelAccessClient = 10;
+static const unsigned threadPriorityChannelAccessServer = 20;
+static const unsigned threadPriorityScanLow = 60;
+static const unsigned threadPriorityScanHigh = 70;
 
 /* stack sizes for each stackSizeClass are implementation and CPU dependent */
 typedef enum {
@@ -46,8 +45,53 @@ epicsShareFunc int epicsShareAPI threadIsSuspended(threadId id);
 epicsShareFunc void epicsShareAPI threadSleep(double seconds);
 epicsShareFunc threadId epicsShareAPI threadGetIdSelf(void);
 
+typedef void * threadVarId;
+epicsShareFunc threadVarId epicsShareAPI threadPrivateCreate ();
+epicsShareFunc void epicsShareAPI threadPrivateDelete ();
+epicsShareFunc void epicsShareAPI threadPrivateSet (threadVarId, void *);
+epicsShareFunc void * epicsShareAPI threadPrivateGet (threadVarId);
+
 #ifdef __cplusplus
 }
 #endif
+
+#ifdef __cplusplus
+
+class osiThread : private osdThread {
+public:
+    osiThread (const char *name, threadStackSizeClass = threadStackBig,
+        unsigned priority=threadPriorityLow);
+    //osiThread (const char *name, unsigned stackSize,
+    //    unsigned priority=threadPriorityLow);
+    ~osiThread();
+
+    virtual void entryPoint () = 0;
+
+    void suspend ();
+    void resume ();
+    unsigned getPriority ();
+    void setPriority (unsigned);
+    bool priorityIsEqual (osiThread &otherThread);
+    bool isReady ();
+    bool isSuspended ();
+
+    operator == ();
+
+    /* these operate on the current thread */
+    static void sleep (double seconds);
+    static osiThread & getSelf ();
+};
+
+template <class T>
+class osiThreadPrivate : private osdThreadPrivate {
+public:
+    T *get () const;
+    void set (T *);
+    class unableToCreateThreadPrivate {}; // exception
+};
+
+#endif /* __cplusplus */
+
+#include "osdThread.h"
 
 #endif /* osiThreadh */

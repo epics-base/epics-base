@@ -46,6 +46,8 @@ TEMPLATES += top/exampleBoot/Makefile
 TEMPLATES += top/exampleBoot/nfsCommands
 TEMPLATES += top/exampleBoot/ioc/Makefile
 TEMPLATES += top/exampleBoot/ioc/st.cmd
+TEMPLATES += top/exampleBoot/ioc/stcmd.host
+TEMPLATES += top/exampleBoot/ioc/README
 
 TEMPLATES += top/simpleApp/Makefile
 TEMPLATES += top/simpleApp/Db/Makefile

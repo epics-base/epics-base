@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 1.6  1995/02/13  16:46:04  jba
+ * Removed date from epicsRelease.
+ *
  * Revision 1.5  1994/10/05  18:28:17  jba
  * Renamed version.h to epicsVersion.h
  *
@@ -16,11 +19,14 @@
  * Initial version.
  **/
 
+#include    <stdlib.h>
+#include    <stdio.h>
 #include    <epicsVersion.h>
 
     char *epicsRelease= "@(#)EPICS IOC CORE";
     char *epicsRelease1 = epicsReleaseVersion;
-coreRelease()
+int coreRelease()
 {
     printf("############################################################################\n###  %s\n###  %s\n############################################################################\n", epicsRelease, epicsRelease1);
+    return(0);
 }

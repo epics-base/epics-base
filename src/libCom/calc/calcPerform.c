@@ -101,13 +101,11 @@
  */
 
 #ifdef vxWorks
-#   include <vxWorks.h>
-/*#   include <varargs.h>*/
-#   include <fioLib.h>
-#else
-#   include <stdio.h>
+#include <vxWorks.h>
 #endif
 
+#include	<stdlib.h>
+#include	<stdio.h>
 #include	<string.h>
 #include	"dbDefs.h"
 #include	"post.h"
@@ -123,10 +121,7 @@ static double	local_random();
 #define PI 3.141592654
 #endif
 
-long calcPerform(parg,presult,post)
-double *parg;
-double *presult;
-char   *post;
+long calcPerform( double *parg, double *presult, char  *post)
 {
 	double *pstacktop;	/* stack of values	*/
 	double		stack[80];

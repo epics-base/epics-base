@@ -91,12 +91,10 @@
 
 #ifdef vxWorks
 #include  <vxWorks.h>
-/*#include <varargs.h>*/
-#include <fioLib.h>
-#else
-#include <stdio.h>
 #endif
 
+#include	<stdlib.h>
+#include	<stdio.h>
 #include	<string.h>
 #include	"dbDefs.h"
 #include	"post.h"
@@ -302,10 +300,7 @@ register short		*pno_bytes;
  *
  * convert an infix expression to a postfix expression
  */
-long postfix(pinfix,ppostfix,perror)
-register char	*pinfix;
-register char	*ppostfix;
-short		*perror;
+long postfix(char *pinfix,char *ppostfix,short *perror)
 {
 	short		no_bytes;
 	register short	operand_needed;

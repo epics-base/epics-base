@@ -105,6 +105,7 @@ typedef struct lockSet {
     dbCommon		*precord;
     int			nRecursion;
     int			nWaiting;
+    int                 trace; /*For field TPRO*/
 } lockSet;
 
 /* dbCommon.LSET is a plockRecord */
@@ -602,4 +603,12 @@ long epicsShareAPI dbLockShowLocked(int level)
     if(lockSetModifyLockStatus==epicsMutexLockOK)
         epicsMutexUnlock(lockSetModifyLock);
     return(0);
+}
+
+int * epicsShareAPI dbLockSetAddrTrace(dbCommon *precord)
+{
+    lockRecord	*plockRecord = precord->lset;
+    lockSet	*plockSet = plockRecord->plockSet;
+
+    return(&plockSet->trace);
 }

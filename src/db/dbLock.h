@@ -48,6 +48,9 @@ epicsShareFunc long epicsShareAPI dblsr(char *recordname,int level);
 
 epicsShareFunc long epicsShareAPI dbLockShowLocked(int level);
 
+/*KLUDGE to support field TPRO*/
+epicsShareFunc int * epicsShareAPI dbLockSetAddrTrace(struct dbCommon *precord);
+
 #ifdef __cplusplus
 }
 #endif

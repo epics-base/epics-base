@@ -24,7 +24,7 @@ endif
 #---------------------------------------------------------------
 # Epics base Ioc libraries 
 
-EPICS_BASE_IOC_LIBS += recIoc softDevIoc testDevIoc iocsh 
+EPICS_BASE_IOC_LIBS += recIoc softDevIoc iocsh 
 EPICS_BASE_IOC_LIBS += miscIoc rsrvIoc dbtoolsIoc asIoc
 EPICS_BASE_IOC_LIBS += dbIoc registryIoc dbStaticIoc ca Com 
 

@@ -18,8 +18,7 @@
 #    to inform the system of the shared library location.
 SHARED_LIBRARIES=YES
 
-# If readline is installed uncomment the following lines
+# If readline is installed uncomment the following line
 # to get command-line editing and history support
 #COMMANDLINE_LIBRARY = READLINE
-#LDLIBS_READLINE = -lreadline -lncurses
-
+LDLIBS_READLINE = -lreadline -lncurses

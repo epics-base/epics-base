@@ -72,7 +72,21 @@ case $sysname in
 		echo ${os}-${cpu}${suffix}
         ;;
     * )
-        echo unsupported
+        sysname=`uname -o`
+        case $sysname in
+           Cygwin )
+                os=win32
+                cpu=`uname -m`
+                case $cpu in i386 | i486 | i586 | i686 )
+                        cpu=x86
+                    ;;
+                esac
+                echo ${os}-${cpu}${suffix}
+                ;;
+           * )
+                echo unsupported
+                ;;
+        esac
         ;;
 esac
 

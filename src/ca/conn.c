@@ -30,6 +30,9 @@
 /*			(dont send all chans in a block)		*/
 /*									*/
 /* $Log$
+ * Revision 1.35  1996/06/19 17:59:04  jhill
+ * many 3.13 beta changes
+ *
  * Revision 1.34  1995/08/22  00:19:21  jhill
  * use current time var to init time stamp in a beacon hash entry
  *								*/
@@ -262,7 +265,7 @@ LOCAL void retrySearchRequest (int silent)
 			if (status == ECA_NORMAL) {
 				retry_cnt++;
 				if (!(silent || chix->pConnFunc)) {
-					ca_signal (
+					genLocalExcep (
 						ECA_CHIDNOTFND, 
 						(char *)(chix+1));
 					retry_cnt_no_handler++;
@@ -314,7 +317,7 @@ LOCAL void retrySearchRequest (int silent)
 				sprintf_buf, 
 				"%d channels outstanding", 
 				retry_cnt);
-      			ca_signal (ECA_CHIDRETRY, sprintf_buf);
+      			genLocalExcep (ECA_CHIDRETRY, sprintf_buf);
     		}
   	}
  	UNLOCK; 	

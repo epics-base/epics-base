@@ -8,8 +8,6 @@
 #< ../nfsCommands
 
 cd appbin
-ld < iocCore
-ld < seq
 ld < exampleLib
 
 cd startup

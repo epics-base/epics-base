@@ -7,8 +7,6 @@
 #< ../nfsCommands
 
 cd appbin
-ld < iocCore
-ld < seq
 #ld < _APPNAME_Lib
 
 cd startup

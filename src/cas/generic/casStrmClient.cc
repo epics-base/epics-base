@@ -964,7 +964,8 @@ caStatus casStrmClient::claimChannelAction()
 		if ( pvar.getStatus() != S_casApp_asyncCompletion ) {
 			fprintf ( stderr, 
                 "Application returned %d from cas::pvAttach()"
-                " - expected S_casApp_asyncCompletion\n", status );
+                " - expected S_casApp_asyncCompletion\n",  
+                pvar.getStatus() );
 		}
 		status = S_cas_success;	
 	}

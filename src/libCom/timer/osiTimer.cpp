@@ -271,7 +271,7 @@ void osiTimer::arm (double initialDelay)
 	//
 	// **** this should use a binary tree ????
 	//
-	tsDLIterBD<osiTimer> iter = this->queue.timerLists[statePending].last ();
+	tsDLIterBD<osiTimer> iter = this->queue.timerLists[statePending].lastIter ();
 	while (1) {
 		if ( ! iter.valid () ) {
 			//
@@ -562,7 +562,7 @@ void osiTimerQueue::privateProcess ()
 	this->inProcess = true;
 	
 
-	tsDLIterBD <osiTimer> iter = this->timerLists[osiTimer::statePending].first ();
+	tsDLIterBD <osiTimer> iter = this->timerLists[osiTimer::statePending].firstIter ();
 	while ( iter.valid () ) {	
 		if ( iter->exp > cur ) {
 			break;
@@ -636,7 +636,7 @@ void osiTimerQueue::show(unsigned level) const
 	printf("osiTimerQueue with %u items pending and %u items expired\n",
 		this->timerLists[osiTimer::statePending].count(), 
         this->timerLists[osiTimer::stateExpired].count());
-    tsDLIterBD<osiTimer> iter(this->timerLists[osiTimer::statePending].first());
+    tsDLIterConstBD <osiTimer> iter = this->timerLists[osiTimer::statePending].firstIter ();
 	while ( iter.valid () ) {	
 		iter->show(level);
 		++iter;

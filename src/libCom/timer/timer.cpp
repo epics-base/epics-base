@@ -44,8 +44,8 @@ timer::~timer ()
 
 void timer::destroy () 
 {
-    epicsAutoMutex autoLock ( this->queue.mutex );
     this->~timer ();
+    epicsAutoMutex autoLock ( this->queue.mutex );
     this->queue.timerFreeList.release ( this, sizeof( *this ) );
 }
 

@@ -99,7 +99,7 @@ clean::
 	$(RM) $@
 	/bin/mv lex.yy.c $@
 
-#state notation language rule
+#state notation language rules
 %.c: %.st
 	@echo "preprocessing $*.st"
 	@$(RM) $*.i
@@ -107,6 +107,28 @@ clean::
 	@echo "converting $*.i"
 	@$(RM) $@
 	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.i
+
+%.c: %.stt
+	@echo "converting $<
+	@$(RM) $@
+	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $<
+
+# Capfast Rules:
+%.db: %.edf
+	$(E2DB) $(E2SR_SYSFLAGS) $(E2SR_FLAGS) $<
+
+%.edf: ../%.sch $(DEPSCHS)
+	@if [ ! -f cad.rc -a -r ../cad.rc ] ; then ln -s ../cad.rc ; fi
+	$(SCH2EDIF) $(SCH2EDIF_SYSFLAGS) $(SCH2EDIF_FLAGS) $<
+
+# Mangen Rule:
+%.1:%
+	$(RM) $(<F)
+	$(RM) $(<F).nr
+	ln -s $<
+	$(MANGEN) -s $(<F)
+	mv $(<F).nr $(<F).1
+
 
 $(INSTALL_DBD)/%: %
 	@echo "Installing $@"

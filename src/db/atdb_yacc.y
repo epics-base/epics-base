@@ -18,7 +18,13 @@ char curr_value[200];
 char message[200];
 long status;
 
+#ifdef __STDC__
 static void printMessage(char *mess) {
+#else
+static void printMessage(mess)
+char *mess;
+{
+#endif /*__STDC__*/
 
     sprintf(message,"%s Error near line %d Type: %s Name: %s Field: %s Value: %s",
 	mess,line_num,rectype,recname,curr_field,curr_value);

@@ -15,6 +15,7 @@
 #Syntax:
 # ARCH_<host_arch> = <epics_host_arch>
 ARCH_solarisGnu = solaris-sparc-gnu
+ARCH_solarisNonshared = solaris-sparc-nonshared
 #ARCH_solaris = solaris-sparc-static
 #ARCH_solaris = solaris-sparc-debug
 ARCH_solaris = solaris-sparc
@@ -45,5 +46,4 @@ HOST_ARCH := $(EPICS_HOST_ARCH)
 # ANSI=GCC and CPLUSPLUS=G++ in base/config/CONFIG_SITE.Host.solaris
 # and change ARCH_solaris=solaris-<arch> to ARCH_solaris=solaris-<arch>-gnu
 # in base/config/CONFIG_COMPAT.
-
 

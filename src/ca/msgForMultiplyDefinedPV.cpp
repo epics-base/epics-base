@@ -19,12 +19,12 @@
 #include "msgForMultiplyDefinedPV_IL.h"
 
 tsFreeList < class msgForMultiplyDefinedPV, 16 > msgForMultiplyDefinedPV::freeList;
+epicsMutex msgForMultiplyDefinedPV::freeListMutex;
 
 msgForMultiplyDefinedPV::msgForMultiplyDefinedPV ( 
-        cac &cacRefIn, const char *pChannelName, const char *pAcc, 
+    cac &cacRefIn, const char *pChannelName, const char *pAcc, 
         const osiSockAddr &rej ) :
-    ipAddrToAsciiAsynchronous ( rej ),
-    cacRef ( cacRefIn )
+    ipAddrToAsciiAsynchronous ( rej ), cacRef ( cacRefIn )
 {
     strncpy ( this->acc, pAcc, sizeof ( this->acc ) );
     this->acc[ sizeof ( this->acc ) - 1 ] = '\0';

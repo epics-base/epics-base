@@ -1,4 +1,5 @@
-/* * $Id$
+/* 
+ * $Id$
  *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
@@ -17,7 +18,7 @@
 /*
  * getToken()
  */
-static char *getToken (const char **ppString, char *pBuf, unsigned bufSIze)
+static char *getToken ( const char **ppString, char *pBuf, unsigned bufSIze )
 {
     const char *pToken;
     unsigned i;
@@ -27,8 +28,8 @@ static char *getToken (const char **ppString, char *pBuf, unsigned bufSIze)
         pToken++;
     }
 
-    for (i=0u; i<bufSIze; i++) {
-        if ( isspace (pToken[i]) || pToken[i]=='\0') {
+    for ( i=0u; i<bufSIze; i++ ) {
+        if ( isspace (pToken[i]) || pToken[i]=='\0' ) {
             pBuf[i] = '\0';
             break;
         }
@@ -170,12 +171,12 @@ epicsShareFunc void epicsShareAPI configureChannelAccessAddressList
      * initializing the search b-cast list
      * from the interfaces found.
      */
-    yes = TRUE;
+    yes = true;
     pstr = envGetConfigParam ( &EPICS_CA_AUTO_ADDR_LIST,       
             sizeof (yesno), yesno );
-    if (pstr) {
+    if ( pstr ) {
         if ( strstr ( pstr, "no" ) || strstr ( pstr, "NO" ) ) {
-            yes = FALSE;
+            yes = false;
         }
     }
 

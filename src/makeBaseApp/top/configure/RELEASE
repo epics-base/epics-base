@@ -7,8 +7,5 @@ TEMPLATE_TOP=_TEMPLATE_TOP_
 #If using the sequencer, point SNCSEQ at its top directory:
 #SNCSEQ=$(EPICS_BASE)/../modules/soft/seq
 
-#If using macro substitutions, point MSI at the binary:
-#MSI=<path>extensions/bin/$(EPICS_HOST_ARCH)/msi
-
 # EPICS_BASE usually appears last so other apps can override stuff:
 EPICS_BASE=_EPICS_BASE_

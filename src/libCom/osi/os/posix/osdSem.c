@@ -23,16 +23,13 @@ of this distribution.
 #include "tsStamp.h"
 #include "errlog.h"
 
-
-
 typedef struct binary {
-    pthread_mutexattr_t attr;
     pthread_mutex_t	mutex;
+    pthread_cond_t	cond;
 }binary;
 
-
 typedef struct mutex {
-    pthread_mutexattr_t attr;
+    pthread_mutexattr_t mutexAttr;
     pthread_mutex_t	lock;	/*lock for structure */
     pthread_cond_t	waitToBeOwner;
     int			count;
@@ -40,34 +37,44 @@ typedef struct mutex {
     pthread_t		ownerTid;
 }mutex;
 
+#define checkStatus(status,message) \
+if((status)) { \
+    errlogPrintf("%s failed: error %s\n",(message),strerror((status)));}
+
+#define checkStatusQuit(status,message,method) \
+if(status) { \
+    errlogPrintf("%s failed: error %s\n",(message),strerror((status))); \
+    cantProceed((method)); \
+}
+
+static void convertDoubleToWakeTime(double timeout,struct timespec *wakeTime)
+{
+    struct timespec wait;
+    TS_STAMP stamp;
+
+    tsStampGetCurrent(&stamp);
+    tsStampToTimespec(wakeTime, &stamp);
+    wait.tv_sec = timeout;
+    wait.tv_nsec = (long)((timeout - (double)wait.tv_sec) * 1e9);
+    wakeTime->tv_sec += wait.tv_sec;
+    wakeTime->tv_nsec += wait.tv_nsec;
+    if(wakeTime->tv_nsec>1000000000L) {
+        wakeTime->tv_nsec -= 1000000000L;
+        ++wakeTime->tv_sec;
+    }
+}
+
 semBinaryId semBinaryCreate(int initialState)
 {
     binary *pbinary;
     int   status;
 
     pbinary = callocMustSucceed(1,sizeof(binary),"semBinaryCreate");
-    status = pthread_mutexattr_init(&pbinary->attr);
-    if(status) {
-         errlogPrintf("pthread_mutexattr_init failed: error %s\n",
-             strerror(status));
-         cantProceed("semBinaryCreate");
-    }
-#if defined _POSIX_THREAD_PRIO_PROTECT
-    status = pthread_mutexattr_setprotocol(
-        &pbinary->attr,PTHREAD_PROCESS_PRIVATE);
-    if(status && errVerbose) {
-         errlogPrintf("semBinaryCreate pthread_mutexattr_setprotocal "
-             "failed: error %s\n",
-             strerror(status));
-    }
-#endif
-    status = pthread_mutex_init(&pbinary->mutex,&pbinary->attr);
-    if(status) {
-         errlogPrintf("pthread_mutex_init failed: error %s\n",
-             strerror(status));
-         cantProceed("semBinaryCreate");
-    }
-    if(initialState==semEmpty) semBinaryTakeNoWait((semBinaryId)pbinary);
+    status = pthread_mutex_init(&pbinary->mutex,0);
+    checkStatusQuit(status,"pthread_mutex_init","semBinaryCreate");
+    status = pthread_cond_init(&pbinary->cond,0);
+    checkStatusQuit(status,"pthread_cond_init","semBinaryCreate");
+    if(initialState==semFull) semBinaryGive((semBinaryId)pbinary);
     return((semBinaryId)pbinary);
 }
 
@@ -84,65 +91,56 @@ void semBinaryDestroy(semBinaryId id)
     int   status;
 
     status = pthread_mutex_destroy(&pbinary->mutex);
-    if(status)
-        errlogPrintf("pthread_mutex_destroy error %s\n",strerror(status));
-    status = pthread_mutexattr_destroy(&pbinary->attr);
-    if(status)
-        errlogPrintf("pthread_mutexattr_destroy error %s\n", strerror(status));
+    checkStatus(status,"pthread_mutex_destroy");
+    status = pthread_cond_destroy(&pbinary->cond);
+    checkStatus(status,"pthread_cond_destroy");
     free(pbinary);
 }
-
+
 void semBinaryGive(semBinaryId id)
 {
     binary *pbinary = (binary *)id;
     int   status;
 
-    status = pthread_mutex_unlock(&pbinary->mutex);
-    if(status)
-        errlogPrintf("pthread_mutex_unlock error %s\n",strerror(status));
+    status = pthread_cond_signal(&pbinary->cond);
+    checkStatus(status,"pthread_cond_signal");
 }
-
+
 semTakeStatus semBinaryTake(semBinaryId id)
 {
     binary *pbinary = (binary *)id;
     int   status;
 
     status = pthread_mutex_lock(&pbinary->mutex);
-    if(status) errlogPrintf("pthread_mutex_lock error %s\n",strerror(status));
-    if(status) return(semTakeError);
+    checkStatusQuit(status,"pthread_mutex_lock","semBinaryTake");
+    status = pthread_cond_wait(&pbinary->cond,&pbinary->mutex);
+    checkStatusQuit(status,"pthread_cond_wait","semBinaryTake");
+    status = pthread_mutex_unlock(&pbinary->mutex);
+    checkStatusQuit(status,"pthread_mutex_unlock","semBinaryTake");
     return(semTakeOK);
 }
 
-semTakeStatus semBinaryTakeTimeout(semBinaryId id, double timeOut)
+semTakeStatus semBinaryTakeTimeout(semBinaryId id, double timeout)
 {
     binary *pbinary = (binary *)id;
-    int   status;
-    double waitSoFar=0.0;
+    struct timespec wakeTime;
+    int   status,unlockStatus;
 
-    while(1) {
-        status = pthread_mutex_trylock(&pbinary->mutex);
-        if(!status) return(semTakeOK);
-        if(status!=EBUSY) {
-            errlogPrintf("pthread_mutex_lock error %s\n",strerror(status));
-            return(semTakeError);
-        }
-        threadSleep(1.0);
-        waitSoFar += 1.0;
-        if(waitSoFar>=timeOut) break;
-    }
-    return(semTakeTimeout);
+    convertDoubleToWakeTime(timeout,&wakeTime);
+    status = pthread_mutex_lock(&pbinary->mutex);
+    checkStatusQuit(status,"pthread_mutex_lock","semBinaryTakeTimeout");
+    status = pthread_cond_timedwait(&pbinary->cond,&pbinary->mutex,&wakeTime);
+    unlockStatus = pthread_mutex_unlock(&pbinary->mutex);
+    checkStatusQuit(unlockStatus,"pthread_mutex_unlock","semBinaryTakeTimeout");
+    if(status==0) return(semTakeOK);
+    if(status==ETIMEDOUT) return(semTakeTimeout);
+    checkStatus(status,"pthread_cond_timedwait");
+    return(semTakeError);
 }
 
 semTakeStatus semBinaryTakeNoWait(semBinaryId id)
 {
-    binary *pbinary = (binary *)id;
-    int   status;
-
-    status = pthread_mutex_trylock(&pbinary->mutex);
-    if(!status) return(semTakeOK);
-    if(status==EBUSY) return(semTakeTimeout);
-    errlogPrintf("pthread_mutex_lock error %s\n",strerror(status));
-    return(semTakeError);
+    return(semBinaryTakeTimeout(id,0.0));
 }
 
 void semBinaryShow(semBinaryId id,unsigned int level)
@@ -154,31 +152,17 @@ semMutexId semMutexCreate(void) {
     int   status;
 
     pmutex = callocMustSucceed(1,sizeof(mutex),"semMutexCreate");
-    status = pthread_mutexattr_init(&pmutex->attr);
-    if(status) {
-         errlogPrintf("pthread_mutexattr_init failed: error %s\n",
-             strerror(status));
-         cantProceed("semMutexCreate");
-    }
+    status = pthread_mutexattr_init(&pmutex->mutexAttr);
+    checkStatusQuit(status,"pthread_mutexattr_init","semMutexCreate");
 #ifdef _POSIX_THREAD_PRIO_INHERIT
-    status = pthread_mutexattr_setprotocol(&pmutex->attr,PTHREAD_PRIO_INHERIT);
-    if(status && errVerbose) {
-         errlogPrintf("pthread_mutexattr_setprotocal failed: error %s\n",
-             strerror(status));
-    }
+    status = pthread_mutexattr_setprotocol(
+        &pmutex->mutexAttr,PTHREAD_PRIO_INHERIT);
+    if(errVerbose) checkStatus(status,"pthread_mutexattr_setprotocal");
 #endif
-    status = pthread_mutex_init(&pmutex->lock,&pmutex->attr);
-    if(status) {
-         errlogPrintf("pthread_mutex_init failed: error %s\n",
-             strerror(status));
-         cantProceed("semMutexCreate");
-    }
+    status = pthread_mutex_init(&pmutex->lock,&pmutex->mutexAttr);
+    checkStatusQuit(status,"pthread_mutex_init","semMutexCreate");
     status = pthread_cond_init(&pmutex->waitToBeOwner,0);
-    if(status) {
-         errlogPrintf("pthread_cond_init failed: error %s\n",
-             strerror(status));
-         cantProceed("semMutexCreate");
-    }
+    checkStatusQuit(status,"pthread_cond_init","semMutexCreate");
     return((semMutexId)pmutex);
 }
 
@@ -195,76 +179,81 @@ void semMutexDestroy(semMutexId id)
     int   status;
 
     status = pthread_mutex_destroy(&pmutex->lock);
-    if(status)
-        errlogPrintf("pthread_mutex_destroy error %s\n",strerror(status));
+    checkStatus(status,"pthread_mutex_destroy");
     status = pthread_cond_destroy(&pmutex->waitToBeOwner);
-    if(status)
-        errlogPrintf("pthread_cond_destroy error %s\n",strerror(status));
-    status = pthread_mutexattr_destroy(&pmutex->attr);
-    if(status)
-        errlogPrintf("pthread_mutexattr_destroy error %s\n",strerror(status));
+    checkStatus(status,"pthread_cond_destroy");
+    status = pthread_mutexattr_destroy(&pmutex->mutexAttr);
+    checkStatus(status,"pthread_mutexattr_destroy");
     free(pmutex);
 }
-
+
 void semMutexGive(semMutexId id)
 {
     mutex *pmutex = (mutex *)id;
-    pthread_mutex_lock(&pmutex->lock);
-    if(pmutex->count>0) pmutex->count--;
+    int status,unlockStatus;
+
+    status = pthread_mutex_lock(&pmutex->lock);
+    checkStatusQuit(status,"pthread_mutex_lock","semMutexGive");
+    if((pmutex->count<=0) || (pmutex->ownerTid != pthread_self())) {
+        errlogPrintf("semMutexGive but caller is not owner\n");
+        status = pthread_mutex_unlock(&pmutex->lock);
+        checkStatusQuit(status,"pthread_mutex_unlock","semMutexGive");
+        return;
+    }
+    pmutex->count--;
     if(pmutex->count == 0) {
         pmutex->owned = 0;
         pmutex->ownerTid = 0;
         pthread_cond_signal(&pmutex->waitToBeOwner);
     }
-    pthread_mutex_unlock(&pmutex->lock);
+    status = pthread_mutex_unlock(&pmutex->lock);
+    checkStatusQuit(status,"pthread_mutex_unlock","semMutexGive");
 }
+
 semTakeStatus semMutexTake(semMutexId id)
 {
     mutex *pmutex = (mutex *)id;
     pthread_t tid = pthread_self();
+    int status;
 
-    pthread_mutex_lock(&pmutex->lock);
+    status = pthread_mutex_lock(&pmutex->lock);
+    checkStatusQuit(status,"pthread_mutex_lock","semMutexTake");
     while(pmutex->owned && !pthread_equal(pmutex->ownerTid,tid))
         pthread_cond_wait(&pmutex->waitToBeOwner,&pmutex->lock);
     pmutex->ownerTid = tid;
     pmutex->owned = 1;
     pmutex->count++;
-    pthread_mutex_unlock(&pmutex->lock);
-    return(0);
-}
-semTakeStatus semMutexTakeTimeout(semMutexId id, double timeOut)
+    status = pthread_mutex_unlock(&pmutex->lock);
+    checkStatusQuit(status,"pthread_mutex_unlock","semMutexTake");
+    return(semTakeOK);
+}
+
+semTakeStatus semMutexTakeTimeout(semMutexId id, double timeout)
 {
     mutex *pmutex = (mutex *)id;
     pthread_t tid = pthread_self();
-    struct timespec wait;
-    struct timespec abstime;
-    int status;
-    TS_STAMP stamp;
+    struct timespec wakeTime;
+    int status,unlockStatus;
 
-    tsStampGetCurrent(&stamp);
-    tsStampToTimespec(&abstime, &stamp);
-    wait.tv_sec = timeOut;
-    wait.tv_nsec = (long)((timeOut - (double)wait.tv_sec) * 1e9);
-    abstime.tv_sec += wait.tv_sec;
-    abstime.tv_nsec += wait.tv_nsec;
-    if(abstime.tv_nsec>1000000000L) {
-        abstime.tv_nsec -= 1000000000L;
-        ++abstime.tv_sec;
-    }
-    pthread_mutex_lock(&pmutex->lock);
+    convertDoubleToWakeTime(timeout,&wakeTime);
+    status = pthread_mutex_lock(&pmutex->lock);
+    checkStatusQuit(status,"pthread_mutex_lock","semMutexTakeTimeout");
     while(pmutex->owned && !pthread_equal(pmutex->ownerTid,tid)) {
-        int status;
         status = pthread_cond_timedwait(
-            &pmutex->waitToBeOwner,&pmutex->lock,&abstime);
+            &pmutex->waitToBeOwner,&pmutex->lock,&wakeTime);
         if(!status) break;
-        if(status==ETIMEDOUT) return(semTakeTimeout);
-        return(semTakeError);
     }
-    pmutex->ownerTid = tid;
-    pmutex->owned = 1;
-    pmutex->count++;
-    pthread_mutex_unlock(&pmutex->lock);
-    return(0);
+    if(status==0) {
+        pmutex->ownerTid = tid;
+        pmutex->owned = 1;
+        pmutex->count++;
+    }
+    unlockStatus = pthread_mutex_unlock(&pmutex->lock);
+    checkStatusQuit(unlockStatus,"pthread_mutex_lock","semMutexTakeTimeout");
+    if(status==0) return(semTakeOK);
+    if(status==ETIMEDOUT) return(semTakeTimeout);
+    checkStatusQuit(status,"pthread_cond_timedwait","semMutexTakeTimeout");
+    return(semTakeError);
 }
 
 semTakeStatus semMutexTakeNoWait(semMutexId id)
@@ -272,15 +261,18 @@ semTakeStatus semMutexTakeNoWait(semMutexId id)
     mutex *pmutex = (mutex *)id;
     pthread_t tid = pthread_self();
     semTakeStatus status = semTakeError;
+    int pthreadStatus;
 
-    pthread_mutex_lock(&pmutex->lock);
+    pthreadStatus = pthread_mutex_lock(&pmutex->lock);
+    checkStatusQuit(pthreadStatus,"pthread_mutex_lock","semMutexTakeNoWait");
     if(!pmutex->owned || pthread_equal(pmutex->ownerTid,tid)) {
         pmutex->ownerTid = tid;
         pmutex->owned = 1;
         pmutex->count++;
         status = 0;
     }
-    pthread_mutex_unlock(&pmutex->lock);
+    pthreadStatus = pthread_mutex_unlock(&pmutex->lock);
+    checkStatusQuit(pthreadStatus,"pthread_mutex_unlock","semMutexTakeNoWait");
     return(status);
 }
 

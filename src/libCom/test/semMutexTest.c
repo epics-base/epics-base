@@ -31,25 +31,24 @@ static void mutexThread(void *arg)
 {
     info *pinfo = (info *)arg;
     time_t tp;
-    printf("mutexThread %d starting time %d\n",pinfo->threadnum,time(&tp));
-    threadSleep(1.0);
+    printf("mutexThread %d starting time %ld\n",pinfo->threadnum,time(&tp));
     while(1) {
         semTakeStatus status;
         if(pinfo->quit) {
-            printf("mutexThread %d returning time %d\n",
+            printf("mutexThread %d returning time %ld\n",
                 pinfo->threadnum,time(&tp));
-            semMutexGive(pinfo->mutex);
             return;
         }
         status = semMutexTake(pinfo->mutex);
         if(status!=semTakeOK) {
-            printf("task %d semMutexTake returned %d  time %d\n",
+            printf("task %d semMutexTake returned %d  time %ld\n",
                 pinfo->threadnum,(int)status,time(&tp));
         }
-        printf("mutexThread %d semMutexTake time %d\n",
+        printf("mutexThread %d semMutexTake time %ld\n",
             pinfo->threadnum,time(&tp));
+        threadSleep(.1);
         semMutexGive(pinfo->mutex);
-        threadSleep(1.0);
+        threadSleep(.9);
     }
 }
 
@@ -68,21 +67,21 @@ void semMutexTest(int nthreads,int verbose)
 
     errVerbose = verbose;
     mutex = semMutexMustCreate();
-    printf("calling semMutexTake(mutex) time %d\n",time(&tp));
+    printf("calling semMutexTake(mutex) time %ld\n",time(&tp));
     status = semMutexTake(mutex);
     if(status) printf("status %d\n",status);
-    printf("calling semMutexTakeTimeout(mutex,2.0) time %d\n",time(&tp));
+    printf("calling semMutexTakeTimeout(mutex,2.0) time %ld\n",time(&tp));
     status = semMutexTakeTimeout(mutex,2.0);
     if(status) printf("status %d\n",status);
-    printf("calling semMutexTakeNoWait(mutex) time %d\n",time(&tp));
+    printf("calling semMutexTakeNoWait(mutex) time %ld\n",time(&tp));
     status = semMutexTakeNoWait(mutex);
     if(status) printf("status %d\n",status);
     semMutexShow(mutex,1);
-    printf("calling semMutexGive() time %d\n",time(&tp));
+    printf("calling semMutexGive() time %ld\n",time(&tp));
     semMutexGive(mutex);
-    printf("calling semMutexGive() time %d\n",time(&tp));
+    printf("calling semMutexGive() time %ld\n",time(&tp));
     semMutexGive(mutex);
-    printf("calling semMutexGive() time %d\n",time(&tp));
+    printf("calling semMutexGive() time %ld\n",time(&tp));
     semMutexGive(mutex);
     semMutexShow(mutex,1);
 
@@ -103,18 +102,14 @@ void semMutexTest(int nthreads,int verbose)
         pinfo[i]->mutex = mutex;
         arg[i] = pinfo[i];
         id[i] = threadCreate(name[i],40,stackSize,mutexThread,arg[i]);
-        printf("semTest created mutexThread %d id %p time %d\n",
+        printf("semTest created mutexThread %d id %p time %ld\n",
             i, id[i],time(&tp));
     }
-    threadSleep(2.0);
-    printf("semTest calling semMutexGive(mutex) time %d\n",time(&tp));
-    semMutexGive(mutex);
     threadSleep(5.0);
-    printf("semTest setting quit time %d\n",time(&tp));
+    printf("semTest setting quit time %ld\n",time(&tp));
     for(i=0; i<nthreads; i++) {
         pinfo[i]->quit = 1;
     }
-    semMutexGive(mutex);
     threadSleep(2.0);
     errVerbose = errVerboseSave;
 }

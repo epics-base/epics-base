@@ -48,6 +48,16 @@ typedef struct threadInfo {
 static pthread_key_t getpthreadInfo;
 static commonAttr *pcommonAttr = 0;
 
+#define checkStatus(status,message) \
+if((status))  {\
+    errlogPrintf("%s error %s\n",(message),strerror((status))); }
+
+#define checkStatusQuit(status,message,method) \
+if(status) { \
+    errlogPrintf("%s  error %s\n",(message),strerror((status))); \
+    cantProceed((method)); \
+}
+
 static void once(void)
 {
     int status;
@@ -55,34 +65,19 @@ static void once(void)
     pthread_key_create(&getpthreadInfo,0);
     pcommonAttr = callocMustSucceed(1,sizeof(commonAttr),"osdThread:once");
     status = pthread_attr_init(&pcommonAttr->attr);
-    if(status) {
-         printf("pthread_attr_init failed: error %s\n",strerror(status));
-         cantProceed("threadCreate::once");
-    }
+    checkStatusQuit(status,"pthread_attr_init","threadCreate::once");
     status = pthread_attr_setdetachstate(
         &pcommonAttr->attr, PTHREAD_CREATE_DETACHED);
-    if(status) {
-         printf("pthread_attr_setdetachstate1 failed: error %s\n",
-             strerror(status));
-    }
+    checkStatus(status,"pthread_attr_setdetachstate");
     status = pthread_attr_setscope(&pcommonAttr->attr,PTHREAD_SCOPE_PROCESS);
-    if(status) {
-         printf("pthread_attr_setscope failed: error %s\n",
-             strerror(status));
-    }
+    if(errVerbose) checkStatus(status,"pthread_attr_setscope");
 #if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) 
     status = pthread_attr_getschedpolicy(
         &pcommonAttr->attr,&pcommonAttr->schedPolicy);
-    if(status) {
-         printf("pthread_attr_getschedparam failed %s\n",
-             strerror(status));
-    }
+    checkStatus(status,"pthread_attr_getschedpolicy");
     status = pthread_attr_getschedparam(
         &pcommonAttr->attr,&pcommonAttr->schedParam);
-    if(status) {
-         printf("pthread_attr_getschedparam failed %s\n",
-             strerror(status));
-    }
+    checkStatus(status,"pthread_attr_getschedparam");
     pcommonAttr->maxPriority = sched_get_priority_max(pcommonAttr->schedPolicy);
     if(pcommonAttr->maxPriority == -1) {
         pcommonAttr->maxPriority = pcommonAttr->schedParam.sched_priority;
@@ -96,17 +91,20 @@ static void once(void)
             pcommonAttr->maxPriority);
     }
 #else
-    printf("task priorities are not implemented\n");
+    if(errVerbose) printf("task priorities are not implemented\n");
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
 }
 
 static void * start_routine(void *arg)
 {
     threadInfo *pthreadInfo = (threadInfo *)arg;
-    pthread_setspecific(getpthreadInfo,arg);
+    int status;
+    status = pthread_setspecific(getpthreadInfo,arg);
+    checkStatusQuit(status,"pthread_setspecific","start_routine");
     (*pthreadInfo->createFunc)(pthreadInfo->createArg);
     semBinaryDestroy(pthreadInfo->suspendSem);
-    pthread_attr_destroy(&pthreadInfo->attr);
+    status = pthread_attr_destroy(&pthreadInfo->attr);
+    checkStatusQuit(status,"pthread_attr_destroy","start_routine");
     free(pthreadInfo);
     return(0);
 }
@@ -167,37 +165,22 @@ threadId threadCreate(const char *name,
     pthreadInfo->createFunc = funptr;
     pthreadInfo->createArg = parm;
     status = pthread_attr_init(&pthreadInfo->attr);
-    if(status) {
-         errlogPrintf("pthread_attr_init failed: error %s\n",strerror(status));
-         cantProceed("threadCreate");
-    }
+    checkStatusQuit(status,"pthread_attr_init","threadCreate");
     status = pthread_attr_setdetachstate(
         &pthreadInfo->attr, PTHREAD_CREATE_DETACHED);
-    if(status && errVerbose) {
-         errlogPrintf("pthread_attr_setdetachstate1 failed: error %s\n",
-             strerror(status));
-    }
+    if(errVerbose) checkStatus(status,"pthread_attr_setdetachstate");
 #if defined (_POSIX_THREAD_ATTR_STACKSIZE)
     status = pthread_attr_setstacksize(
         &pthreadInfo->attr, (size_t)stackSize);
-    if(status && errVerbose) {
-         errlogPrintf("pthread_attr_setstacksize failed: error %s\n",
-             strerror(status));
-    }
+    if(errVerbose) checkStatus(status,"pthread_attr_setstacksize");
 #endif
     status = pthread_attr_setscope(&pthreadInfo->attr,PTHREAD_SCOPE_PROCESS);
-    if(status && errVerbose) {
-         errlogPrintf("pthread_attr_setscope failed: error %s\n",
-             strerror(status));
-    }
+    if(errVerbose) checkStatus(status,"pthread_attr_setscope");
     pthreadInfo->osiPriority = priority;
 #if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) 
     status = pthread_attr_getschedparam(
         &pthreadInfo->attr,&pthreadInfo->schedParam);
-    if(status && errVerbose) {
-         errlogPrintf("pthread_attr_getschedparam failed %s\n",
-             strerror(status));
-    }
+    if(errVerbose) checkStatus(status,"pthread_attr_getschedparam");
     pthreadInfo->schedParam.sched_priority = getOssPriorityValue(pthreadInfo);
     status = pthread_attr_setschedparam(
         &pthreadInfo->attr,&pthreadInfo->schedParam);
@@ -209,18 +192,12 @@ threadId threadCreate(const char *name,
     }
     status = pthread_attr_setinheritsched(
         &pthreadInfo->attr,PTHREAD_EXPLICIT_SCHED);
-    if(status && errVerbose) {
-         errlogPrintf("threadCreate: pthread_attr_setinheritsched failed %s\n",
-             strerror(status));
-    }
+    if(errVerbose) checkStatus(status,"pthread_attr_setinheritsched");
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
     pthreadInfo->suspendSem = semBinaryMustCreate(semFull);
     status = pthread_create(&pthreadInfo->tid,
 	&pthreadInfo->attr,start_routine,pthreadInfo);
-    if(status) {
-         errlogPrintf("pthread_create failed: error %s\n",strerror(status));
-         cantProceed("threadCreate");
-    }
+    checkStatusQuit(status,"pthread_create","threadCreate");
     return((threadId)pthreadInfo);
 }
 
@@ -256,16 +233,10 @@ void threadSetPriority(threadId id,unsigned int priority)
     pthreadInfo->schedParam.sched_priority = getOssPriorityValue(pthreadInfo);
     status = pthread_attr_setschedparam(
         &pthreadInfo->attr,&pthreadInfo->schedParam);
-    if(status && errVerbose) {
-         errlogPrintf("threadSetPriority: pthread_attr_setschedparam "
-             "failed %s\n", strerror(status));
-    }
+    if(errVerbose) checkStatus(status,"pthread_attr_setschedparam");
     status = pthread_setschedparam(
         pthreadInfo->tid,pcommonAttr->schedPolicy,&pthreadInfo->schedParam);
-    if(status && errVerbose) {
-         errlogPrintf("threadSetPriority: pthread_setschedparam failed %s\n",
-             strerror(status));
-    }
+    if(errVerbose) checkStatus(status,"pthread_setschedparam");
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
 }
 
@@ -289,9 +260,11 @@ void threadSleep(double seconds)
 {
     struct timespec delayTime;
     struct timespec remainingTime;
+    double nanoseconds;
 
     delayTime.tv_sec = (time_t)seconds;
-    delayTime.tv_nsec = (long)(seconds - (double)delayTime.tv_sec);
+    nanoseconds = (seconds - (double)delayTime.tv_sec) *1e9;
+    delayTime.tv_nsec = (long)nanoseconds;
     nanosleep(&delayTime,&remainingTime);
 }
 

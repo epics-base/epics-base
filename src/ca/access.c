@@ -37,6 +37,7 @@
 /*	082391	joh	check for connection down when reissuing	*/
 /*			monitors					*/
 /*	090991	joh	converted to v5 vxWorks				*/
+/*	092691	joh	check for connection down when inserting msg	*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -61,21 +62,16 @@
 /************************************************************************/
 /*_end									*/
 
-/* the following support riu.h */
-#ifdef VMS
-#include		stsdef.h
-#include		ssdef.h
-#include		psldef.h
-#include		prcdef.h
-#include 		descrip.h
-#else
-#endif
-
-#include		<vxWorks.h>
-
-#ifdef vxWorks
-# include		<taskLib.h>
-# include		<task_params.h>
+#if defined(VMS)
+#	include		stsdef.h
+#	include		ssdef.h
+#	include		psldef.h
+#	include		prcdef.h
+#	include 	descrip.h
+#elif defined(vxWorks)
+#	include		<vxWorks.h>
+# 	include		<taskLib.h>
+# 	include		<task_params.h>
 #endif
 
 /*
@@ -1108,8 +1104,9 @@ issue_get_callback(monix)
 	 * dont send the message if the conn is down 
 	 * (it will be sent once connected)
   	 */
-    	if(!iiu[chix->iocix].conn_up)
+    	if(!iiu[chix->iocix].conn_up || chix->iocix == BROADCAST_IIU)
 		return;
+
 	/*
 	 * set to the native count if they specify zero
 	 */
@@ -1569,7 +1566,7 @@ ca_request_event(monix)
 	 * dont send the message if the conn is down 
 	 * (it will be sent once connected)
   	 */
-    	if(!iiu[chix->iocix].conn_up)
+    	if(!iiu[chix->iocix].conn_up || chix->iocix == BROADCAST_IIU)
 		return;
 
 	/*
@@ -2248,7 +2245,7 @@ ca_busy_message(piiu)
   	/* 
 	 * dont send the message if the conn is down 
   	 */
-    	if(!piiu->conn_up)
+    	if(!piiu->conn_up || piiu == &iiu[BROADCAST_IIU])
 		return;
 
 	LOCK;
@@ -2274,7 +2271,7 @@ ca_ready_message(piiu)
   	/* 
 	 * dont send the message if the conn is down 
   	 */
-    	if(!piiu->conn_up)
+    	if(!piiu->conn_up || piiu == &iiu[BROADCAST_IIU])
 		return;
 
 	LOCK;
@@ -2319,7 +2316,7 @@ chid 			pchan;
   	/* 
 	 * dont send the message if the conn is down 
   	 */
-    	if(!piiu->conn_up)
+    	if(!piiu->conn_up || piiu == &iiu[BROADCAST_IIU])
 		return;
 
 	mptr = CAC_ALLOC_MSG(piiu, 0);

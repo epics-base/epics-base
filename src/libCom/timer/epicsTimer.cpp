@@ -41,7 +41,7 @@ epicsTimerNotify::~epicsTimerNotify  () {}
 
 void epicsTimerNotify::show ( unsigned /* level */ ) const {}
 
-epicsTimerForC::epicsTimerForC ( timerQueue &queue, epicsTimerCallback pCBIn, void *pPrivateIn ) epicsThrows (()) :
+epicsTimerForC::epicsTimerForC ( timerQueue &queue, epicsTimerCallback pCBIn, void *pPrivateIn ) :
     timer ( queue ), pCallBack ( pCBIn ), pPrivate ( pPrivateIn )
 {
 }
@@ -72,7 +72,7 @@ epicsTimerQueueActiveForC::~epicsTimerQueueActiveForC ()
 {
 }
 
-void epicsTimerQueueActiveForC::release () epicsThrows (())
+void epicsTimerQueueActiveForC::release ()
 {
     epicsSingleton < timerQueueActiveMgr >::reference pMgr = 
         timerQueueMgrEPICS.getReference ();

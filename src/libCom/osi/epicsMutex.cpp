@@ -192,7 +192,7 @@ void epicsShareAPI epicsMutexShowAll(int onlyLocked,unsigned  int level)
     epicsMutexOsdUnlock(epicsMutexGlobalLock);
 }
 
-epicsMutex :: epicsMutex () epicsThrows (( epicsMutex::mutexCreateFailed )) :
+epicsMutex :: epicsMutex () :
     id ( epicsMutexCreate () )
 {
     if ( this->id == 0 ) {
@@ -201,13 +201,11 @@ epicsMutex :: epicsMutex () epicsThrows (( epicsMutex::mutexCreateFailed )) :
 }
 
 epicsMutex ::~epicsMutex () 
-    epicsThrows (())
 {
     epicsMutexDestroy ( this->id );
 }
 
 void epicsMutex::lock ()
-    epicsThrows (( epicsMutex::invalidMutex ))
 {
     epicsMutexLockStatus status = epicsMutexLock ( this->id );
     if ( status != epicsMutexLockOK ) {
@@ -216,7 +214,6 @@ void epicsMutex::lock ()
 }
 
 bool epicsMutex::tryLock () // X aCC 361
-    epicsThrows (( epicsMutex::invalidMutex ))
 {
     epicsMutexLockStatus status = epicsMutexTryLock ( this->id );
     if ( status == epicsMutexLockOK ) {
@@ -229,13 +226,11 @@ bool epicsMutex::tryLock () // X aCC 361
 }
 
 void epicsMutex::unlock ()
-    epicsThrows (())
 {
     epicsMutexUnlock ( this->id );
 }
 
 void epicsMutex :: show ( unsigned level ) const 
-    epicsThrows (())
 {
     epicsMutexShow ( this->id, level );
 }

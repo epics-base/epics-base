@@ -42,33 +42,33 @@ public:
     // inline mf def for class within a template required by visual c++ 7
     class reference {
     public:
-        reference ( TYPE & tIn ) epicsThrows (()) :
+        reference ( TYPE & tIn ):
             instance ( tIn ) 
         {
         }
 
-        ~reference () epicsThrows (()) 
+        ~reference ()
         {
         }
 
-        TYPE * operator -> () epicsThrows (()) 
+        TYPE * operator -> ()
         { 
             return & this->instance; 
         }
 
-        const TYPE * operator -> () const epicsThrows (())
+        const TYPE * operator -> () const 
         {
             typename epicsSingleton<TYPE>::reference & ref = 
                 const_cast < typename epicsSingleton<TYPE>::reference & > ( *this );
             return ref.operator -> ();
         }
 
-        TYPE & operator * () epicsThrows (())
+        TYPE & operator * () 
         {
             return * this->operator -> ();
         }
 
-        const TYPE & operator * () const epicsThrows (())
+        const TYPE & operator * () const 
         {
             return * this->operator -> ();
         }

@@ -27,18 +27,12 @@ class epicsShareClass epicsMutex {
 public:
     class mutexCreateFailed {}; // exception
     class invalidMutex {}; // exception
-    epicsMutex ()
-        epicsThrows (( mutexCreateFailed ));
-    ~epicsMutex ()
-        epicsThrows (());
-    void show ( unsigned level ) const 
-        epicsThrows (());
-    void lock () /* blocks until success */
-        epicsThrows (( invalidMutex )); 
-    void unlock () 
-        epicsThrows (());
-    bool tryLock () /* true if successful */
-        epicsThrows (( invalidMutex ));
+    epicsMutex ();
+    ~epicsMutex ();
+    void show ( unsigned level ) const;
+    void lock (); /* blocks until success */
+    void unlock ();
+    bool tryLock (); /* true if successful */
 private:
     epicsMutexId id;
     epicsMutex ( const epicsMutex & );

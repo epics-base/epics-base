@@ -35,7 +35,7 @@ template class tsFreeList < timer, 0x20 >;
 #   pragma warning ( pop )
 #endif
 
-timer::timer ( timerQueue & queueIn ) epicsThrows (()):
+timer::timer ( timerQueue & queueIn ) :
     queue ( queueIn ), curState ( stateLimbo ), pNotify ( 0 ) 
 {
 }

@@ -63,7 +63,7 @@
 
 // usage: epicsPlacementDeleteOperator (( void *, myMemoryManager & ))
 #if defined ( CXX_PLACEMENT_DELETE )
-#   define epicsPlacementDeleteOperator(X) void operator delete X epicsThrows (());
+#   define epicsPlacementDeleteOperator(X) void operator delete X;
 #else
 #   define epicsPlacementDeleteOperator(X)
 #endif

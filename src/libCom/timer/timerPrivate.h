@@ -43,7 +43,7 @@ public:
     void * operator new ( size_t size, tsFreeList < timer, 0x20 > & );
     epicsPlacementDeleteOperator (( void *, tsFreeList < timer, 0x20 > & ))
 protected:
-    timer ( class timerQueue & ) epicsThrows (());
+    timer ( class timerQueue & );
     ~timer (); 
     timerQueue & queue;
 private:
@@ -67,7 +67,7 @@ struct epicsTimerForC : public epicsTimerNotify, public timer {
 public:
     void destroy ();
 protected:
-    epicsTimerForC ( timerQueue &, epicsTimerCallback, void *pPrivateIn ) epicsThrows (());
+    epicsTimerForC ( timerQueue &, epicsTimerCallback, void *pPrivateIn );
     ~epicsTimerForC (); 
     void * operator new ( size_t size, tsFreeList < epicsTimerForC, 0x20 > & );
     epicsPlacementDeleteOperator (( void *, tsFreeList < epicsTimerForC, 0x20 > & ))
@@ -195,7 +195,7 @@ struct epicsTimerQueueActiveForC : public timerQueueActive,
     public tsDLNode < epicsTimerQueueActiveForC > {
 public:
     epicsTimerQueueActiveForC ( bool okToShare, unsigned priority );
-    void release () epicsThrows (());
+    void release ();
     void * operator new ( size_t );
     void operator delete ( void * );
 protected:
@@ -223,7 +223,7 @@ inline void * timer::operator new ( size_t size,
 
 #ifdef CXX_PLACEMENT_DELETE
 inline void timer::operator delete ( void * pCadaver, 
-                     tsFreeList < timer, 0x20 > & freeList ) epicsThrows(())
+                     tsFreeList < timer, 0x20 > & freeList ) 
 {
     freeList.release ( pCadaver );
 }
@@ -237,7 +237,7 @@ inline void * epicsTimerForC::operator new ( size_t size,
 
 #ifdef CXX_PLACEMENT_DELETE
 inline void epicsTimerForC::operator delete ( void * pCadaver, 
-                        tsFreeList < epicsTimerForC, 0x20 > & freeList ) epicsThrows(())
+                        tsFreeList < epicsTimerForC, 0x20 > & freeList ) 
 {
     freeList.release ( pCadaver );
 }

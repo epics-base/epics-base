@@ -114,7 +114,8 @@ long vxDevWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValue)
  */
 const struct devLibVirtualOS devLibVirtualOS = 
 	{vxDevMapAddr, vxDevReadProbe, vxDevWriteProbe, 
-	devConnectInterruptVME, devDisconnectInterruptVME};
+	devConnectInterruptVME, devDisconnectInterruptVME,
+	devEnableInterruptLevelVME, devDisableInterruptLevelVME};
 
 #define SUCCESS 0
 
@@ -185,66 +186,65 @@ long devDisconnectInterruptVME (
 }
 
 /*
- * devEnableInterruptLevel()
- *
- * wrapper to minimize driver dependency on vxWorks
+ * enable VME interrupt level
  */
-long devEnableInterruptLevel(
-epicsInterruptType      intType,
-unsigned                level)
+long devEnableInterruptLevelVME (unsigned level)
 {
 	int	s;
 
-	switch (intType) {
-	case intVME:
-	case intVXI:
-		s = sysIntEnable (level);
-		if(s!=OK){
-			return S_dev_intEnFail;
-		}
-		break;
-	case intISA:
-#		if CPU == I80386
-			s = sysIntEnablePIC (level);
-			if (s!=OK) {
-				return S_dev_intEnFail;
-			}
-#		endif
-	default:
-		return S_dev_uknIntType;
+	s = sysIntEnable (level);
+	if (s!=OK) {
+		return S_dev_intEnFail;
 	}
 
 	return SUCCESS;
 }
 
 /*
- * devDisableInterruptLevel()
- *
- * wrapper to minimize driver dependency on vxWorks
+ * enable ISA interrupt level
  */
-long    devDisableInterruptLevel (
-epicsInterruptType      intType,
-unsigned                level)
+long devEnableInterruptLevelISA (unsigned level)
+{
+#	if CPU == I80386
+		int s;
+		s = sysIntEnablePIC (level);
+		if (s!=OK) {
+			return S_dev_intEnFail;
+		}
+		return SUCCESS;
+#	else
+		return S_dev_intEnFail;
+#	endif
+}
+
+/*
+ * disable ISA interrupt level
+ */
+long devDisableInterruptLevelISA (unsigned level)
+{
+#	if CPU == I80386
+		int s;
+		s = sysIntDisablePIC (level);
+		if (s!=OK) {
+			return S_dev_intEnFail;
+		}
+#	else
+		return S_dev_intEnFail;
+#	endif
+
+	return SUCCESS;
+}
+
+/*
+ * disable VME interrupt level
+ */
+long devDisableInterruptLevelVME (unsigned level)
 {
 	int s;
 
-	switch (intType) {
-	case intVME:
-	case intVXI:
-		s = sysIntDisable (level);
-		if(s!=OK){
-			return S_dev_intDissFail;
-		}
-		break;
-	case intISA:
-#		if CPU == I80386
-			s = sysIntDisablePIC (level);
-			if (s!=OK) {
-				return S_dev_intEnFail;
-			}
-#		endif
-	default:
-		return S_dev_uknIntType; 
+	s = sysIntDisable (level);
+	if (s!=OK) {
+		return S_dev_intDissFail;
 	}
 
 	return SUCCESS;

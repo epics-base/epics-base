@@ -53,36 +53,32 @@
 
 static char *sccsID = "@(#) $Id$";
 
-
-#include	<vxWorks.h>
-#include        <types.h>
-#include        <iv.h>
-#include        <vme.h>
-#include	<lstLib.h>
-#include	<sysLib.h>
-#include 	<sysSymTbl.h>
-#include	<memLib.h>
-#include        <intLib.h>
-#include	<logLib.h>
-#include 	<string.h>
-#include 	<stdioLib.h>
-#include	<stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#include	"dbDefs.h"
-#include	"errlog.h"
-#include	"fast_lock.h"
+#include "dbDefs.h"
+#include "errlog.h"
+#include "fast_lock.h"
+#include "epicsDynLink.h"
 #define devLibGlobal
-#include	"devLib.h"
+#include "devLib.h"
 
+LOCAL ELLLIST addrAlloc[atLast];
+LOCAL ELLLIST addrFree[atLast];
 
-LOCAL LIST addrAlloc[atLast];
-LOCAL LIST addrFree[atLast];
+LOCAL size_t addrLast[atLast] = {
+			0xffff,
+			0xffffff,
+			0xffffffff,
+			0xffffff
+			};
 
-LOCAL void	*addrLast[atLast] = {
-			(void *) 0xffff,
-			(void *) 0xffffff,
-			(void *) 0xffffffff,
-			(void *) 0xffffff
+LOCAL unsigned addrHexDig[atLast] = {
+			4,
+			6,
+			8,
+			6
 			};
 
 LOCAL long	addrFail[atLast] = {
@@ -93,602 +89,463 @@ LOCAL long	addrFail[atLast] = {
 			};
 
 LOCAL FAST_LOCK	addrListLock;
-LOCAL char	addrListInit;
- 
-typedef struct{
-	NODE		node;
-	const char	*pOwnerName;
-        char		*pFirst;
-	char		*pLast;
-}rangeItem;
+LOCAL char devLibInitFlag;
 
-/*
- * A list of the names of the unexpected interrupt handlers
- * ( some of these are provided by wrs )
- */
-LOCAL char	*defaultHandlerNames[] = {
-			"_excStub",
-			"_excIntStub",
-			"_unsolicitedHandlerEPICS"};
-typedef void	myISR (void *pParam);
-LOCAL myISR	*defaultHandlerAddr[NELEMENTS(defaultHandlerNames)];
+const char *epicsAddressTypeName[]
+		= {
+		"VME A16",
+		"VME A24",
+		"VME A32",
+		"ISA"
+	};
+
+typedef struct{
+	ELLNODE node;
+	const char *pOwnerName;
+	volatile void *pPhysical;
+	/*
+	 * first, last is used here instead of base, size
+	 * so that we can store a block that is the maximum size
+	 * available in type size_t
+	 */
+	size_t begin;
+	size_t end;
+}rangeItem;
 
 /*
  * These routines are not exported
  */
-LOCAL void	initHandlerAddrList(void);
-LOCAL int 	vectorInUse(unsigned vectorNumber);
-LOCAL long	initAddrList(void);
-LOCAL long    	addrVerify(epicsAddressType addrType, void *address);
-LOCAL myISR	*isrFetch(unsigned vectorNumber);
-LOCAL long 	blockFind(
-			epicsAddressType	addrType,
-			char			*pBlockFirst,
-			char			*pBlockLast,
+
+LOCAL long devLibInit(void);
+
+LOCAL long addrVerify(
+			epicsAddressType addrType, 
+			size_t base,
+			size_t size);
+
+LOCAL long blockFind (
+			epicsAddressType addrType,
+			const rangeItem *pRange,
 			/* size needed */
-			unsigned long		size,
+			size_t requestSize,
 			/* n ls bits zero in base addr */
-			unsigned 		alignment,
+			unsigned alignment,
 			/* base address found */
-			char			**ppBase);
-LOCAL long 	report_conflict(
-			epicsAddressType        addrType,
-			char			*pFirst,
-			char			*pLast,
-			const char		*pOwnerName);
-LOCAL long    	devInsertAddress(
-			LIST			*pRangeList,
+			size_t *pFirst);
+
+LOCAL void report_conflict(
+			epicsAddressType addrType,
+			size_t base,
+			size_t size,
+			const char *pOwnerName);
+
+LOCAL void report_conflict_device(
+			epicsAddressType addrType, 
+			const rangeItem *pRange);
+
+LOCAL void devInsertAddress(
+			ELLLIST			*pRangeList,
 			rangeItem		*pNewRange);
-LOCAL long 	devListAddressMap(
-			LIST 			*pRangeList);
-LOCAL long    	devCombineAdjacentBlocks(
-			LIST		*pRangeList,
+
+LOCAL long devListAddressMap(
+			ELLLIST 			*pRangeList);
+
+LOCAL long devCombineAdjacentBlocks(
+			ELLLIST		*pRangeList,
 			rangeItem	*pRange);
-LOCAL long 	devInstallAddr(
-			rangeItem		*pRange, 
-			const char		*pOwnerName,
-			epicsAddressType        addrType,
-			char			*pFirst,
-			char			*pLast,
-			void                    **pLocalAddress);
-LOCAL long 	blockDivide(
-			epicsAddressType	addrType,
-			char			*pBlockFirst,
-			char			*pBlockLast,
-			/* base address found */
-			char			**ppBase,	
-			unsigned long		requestSize
-);
-LOCAL long 	blockProbe(
-			epicsAddressType	addrType,
-			char			*pFirst,
-			char			*pLast
-);
-long locationProbe(
-			epicsAddressType	addrType,
-			char			*pLocation
+
+LOCAL long devInstallAddr(
+			rangeItem *pRange, /* item on the free list to be split */
+			const char *pOwnerName,
+			epicsAddressType addrType,
+			size_t base,
+			size_t size,
+			volatile void **ppPhysicalAddress);
+
+LOCAL long blockProbe(
+			epicsAddressType addrType,
+			size_t base,
+			size_t size
 );
 
-/*
- * this routine needs to be in the symbol table
- * for this code to work correctly
- */
-void		unsolicitedHandlerEPICS(int vectorNumber);
-/*
- * this is in veclist.c
- */
-int     	cISRTest(void (*)(), void (**)(), void **);
+LOCAL struct devLibVirtualOS *pVirtOS;
 
 #define SUCCESS 0
 
-
-
 /*
- *
- *      devConnectInterrupt
- *
- *	coded to support other interrupting types in the future
- *
- *	wrapper to minimize driver dependency on vxWorks
+ * devRegisterAddress()
  */
-long    devConnectInterrupt(
-epicsInterruptType      intType,
-unsigned                vectorNumber,
-void                    (*pFunction)(),
-void                    *parameter)
+long devRegisterAddress(
+	const char *pOwnerName,
+	epicsAddressType addrType,
+	size_t base,
+	size_t size,
+	volatile void **ppPhysicalAddress)
 {
-	int	status;
+	rangeItem *pRange;
+	long s;
 
-	switch(intType){
-	case intCPU:
-	case intVME:
-	case intVXI:
-		if(vectorInUse(vectorNumber)){
-			return S_dev_vectorInUse; 
-		}
-		status = intConnect(
-				(void *)INUM_TO_IVEC(vectorNumber),
-				pFunction,
-				(int) parameter);		
-		if(status<0){
-			return S_dev_vxWorksVecInstlFail;
-		}
-		break;
-	default:
-		return S_dev_uknIntType;
-	}
-
-	return SUCCESS;
-}
-
-
-/*
- *
- *	devDisconnectInterrupt()
- *
- *	wrapper to minimize driver dependency on vxWorks
- *
- * 	The parameter pFunction should be set to the C function pointer that 
- * 	was connected. It is used as a key to prevent a driver from removing 
- * 	an interrupt handler that was installed by another driver
- *
- */
-long    devDisconnectInterrupt(
-epicsInterruptType      intType,
-unsigned                vectorNumber,
-void			(*pFunction)() 
-)
-{
-	void	(*psub)();
-	int	status;
-
-	/*
-	 * If pFunction not connected to this vector
-	 * then they are probably disconnecting from the wrong vector
-	 */
-	psub = isrFetch(vectorNumber);
-	if(psub != pFunction){
-		return S_dev_vectorNotInUse;
-	}
-
-	switch(intType){
-	case intCPU:
-	case intVME:
-	case intVXI:
-		status = intConnect(
-				(void *)INUM_TO_IVEC(vectorNumber),
-				unsolicitedHandlerEPICS,
-				(int) vectorNumber);		
-		if(status<0){
-			return S_dev_vxWorksVecInstlFail;
-		}
-		break;
-	default:
-		return S_dev_uknIntType;
-	}
-
-	return SUCCESS;
-}
-
-
-/*
- *
- *      devEnableInterruptLevel()
- *
- *	wrapper to minimize driver dependency on vxWorks
- *
- */
-long    devEnableInterruptLevel(
-epicsInterruptType      intType,
-unsigned                level)
-{
-	int	s;
-
-	switch(intType){
-	case intCPU:
-	case intVME:
-	case intVXI:
-		s = sysIntEnable(level);
-		if(s<0){
-			return S_dev_vxWorksIntEnFail;
-		}
-		break;
-	default:
-		return S_dev_uknIntType;
-	}
-
-	return SUCCESS;
-}
-
-
-/*
- *
- *      devDisableInterruptLevel()
- *
- *	wrapper to minimize driver dependency on vxWorks
- *
- */
-long    devDisableInterruptLevel(
-epicsInterruptType      intType,
-unsigned                level)
-{
-	int s;
-
-	switch(intType){
-	case intCPU:
-	case intVME:
-	case intVXI:
-		s = sysIntDisable(level);
-		if(s<0){
-                        return S_dev_vxWorksIntDissFail;
-		}
-		break;
-	default:
-		return S_dev_uknIntType; 
-	}
-
-	return SUCCESS;
-}
-
-
-/*
- *
- *      devRegisterAddress()
- *
- *
- */
-long    devRegisterAddress(
-const char		*pOwnerName,
-epicsAddressType        addrType,
-void                    *baseAddress,
-unsigned long		size,
-void                    **pLocalAddress)
-{
-	char		*pFirst;
-	char		*pLast;
-        rangeItem      	*pRange;
-	long		s;
-
-	if(!addrListInit){
-		s = initAddrList();
+	if (!devLibInitFlag) {
+		s = devLibInit();
 		if(s){
 			return s;
 		}
 	}
 
-	s = addrVerify(addrType, (void *) size);
-	if(s){
+	s = addrVerify (addrType, base, size);
+	if (s) {
 		return s;
 	}
 
-	if(size == 0){
+	if (size == 0) {
 		return S_dev_lowValue;
 	}
  
-	pFirst = (char *) baseAddress;
-	pLast = pFirst + size - 1;
+#ifdef DEBUG
+	printf ("Req Addr 0X%X Size 0X%X\n", base, size);
+#endif
 
 	FASTLOCK(&addrListLock);
-        pRange = (rangeItem *) addrFree[addrType].node.next;
-        while(pRange){
- 
-		if(pRange->pFirst > pLast){
+	pRange = (rangeItem *) ellFirst(&addrFree[addrType]);
+	while (TRUE) {
+		if (pRange->begin > base) {
 			pRange = NULL;
+#			ifdef DEBUG
+				printf ("Unable to locate a free block\n");
+				devListAddressMap (&addrFree[addrType]);
+#			endif
+			break;
+		}
+		else if (base + (size - 1) <= pRange->end) {
+#			ifdef DEBUG
+				printf ("Found free block Begin 0X%X End 0X%X\n", 
+						pRange->begin, pRange->end);
+#			endif
 			break;
 		}
 
-		if(pRange->pFirst <= pFirst && pRange->pLast >= pLast){
-			break;
-		}
-
-		pRange = (rangeItem *) pRange->node.next;
+		pRange = (rangeItem *) ellNext (&pRange->node);
 	}
 	FASTUNLOCK(&addrListLock);
 
-	if(!pRange){
-		s = report_conflict(addrType, pFirst, pLast, pOwnerName);
-		if(s){
-			return s;
-		}
-		else{
-			return S_dev_internal;
-		}
+	if (pRange==NULL) {
+		report_conflict (addrType, base, size, pOwnerName);
+		return S_dev_addressOverlap;
 	}
 
 	s = devInstallAddr(
-			pRange,
+			pRange, /* item on the free list to be split */
 			pOwnerName,
 			addrType,
-			pFirst,
-			pLast,
-			pLocalAddress);
+			base,
+			size,
+			ppPhysicalAddress);
+
 	return s;
 }
 
-
 /*
+ * devReadProbe()
  *
- *	devInstallAddr()
- *
+ * a bus error safe "wordSize" read at the specified address which returns 
+ * unsuccessful status if the device isnt present
  */
-LOCAL long devInstallAddr(
-rangeItem		*pRange, /* item on the free list to be split */
-const char		*pOwnerName,
-epicsAddressType        addrType,
-char			*pFirst,
-char			*pLast,
-void			**ppLocalAddress)
+long devReadProbe (unsigned wordSize, volatile const void *ptr, void *pValue)
 {
-	rangeItem 	*pNewRange;
-	int		s;
+	long status;
 
-	if(ppLocalAddress){
-		char	*pAddr;
-		int 	s1;
-		int 	s2;
-
-		if (EPICStovxWorksAddrType[addrType] == EPICSAddrTypeNoConvert)
-		{
-			*ppLocalAddress = pFirst;
+	if (!devLibInitFlag) {
+		status = devLibInit();
+		if (status) {
+			return status;
 		}
-		else
-		{
-			s1 = sysBusToLocalAdrs(
-	               	        EPICStovxWorksAddrType[addrType],
-	                        pLast,
-	                        &pAddr);
-			s2 = sysBusToLocalAdrs(
-	               	        EPICStovxWorksAddrType[addrType],
-	                        pFirst,
-	                        &pAddr);
-			if(s1 || s2){
-				errPrintf(
-					S_dev_vxWorksAddrMapFail,
-					__FILE__,
-					__LINE__,
-					"%s base=0X %X size = 0X %X",
-					epicsAddressTypeName[addrType],
-					pFirst,
-					pLast-pFirst+1);
-				return S_dev_vxWorksAddrMapFail;
-			}
+	}
 
-			*ppLocalAddress = (void *) pAddr;
+	return (*pVirtOS->pDevReadProbe) (wordSize, ptr, pValue);
+}
+
+/*
+ * devWriteProbe
+ *
+ * a bus error safe "wordSize" write at the specified address which returns 
+ * unsuccessful status if the device isnt present
+ */
+long devWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValue)
+{
+	long status;
+
+	if (!devLibInitFlag) {
+		status = devLibInit();
+		if (status) {
+			return status;
 		}
+	}
+
+	return (*pVirtOS->pDevWriteProbe) (wordSize, ptr, pValue);
+}
+
+/*
+ *	devInstallAddr()
+ */
+LOCAL long devInstallAddr (
+	rangeItem *pRange, /* item on the free list to be split */
+	const char *pOwnerName,
+	epicsAddressType addrType,
+	size_t base,
+	size_t size,
+	volatile void **ppPhysicalAddress)
+{
+	volatile void *pPhysicalAddress;
+	rangeItem *pNewRange;
+	size_t reqEnd = base + (size-1);
+	long status;
+
+	/*
+	 * does it start below the specified block
+	 */
+	if (base < pRange->begin) {
+		return S_dev_badArgument;
 	}
 
 	/*
-	 * split the item on the free list
-	 * (when required)
+	 * does it end above the specified block
 	 */
-	if(pRange->pFirst == pFirst && pRange->pLast == pLast){
-		FASTLOCK(&addrListLock);
-		lstDelete(&addrFree[addrType], &pRange->node);
-		FASTUNLOCK(&addrListLock);
-		free((void *)pRange);
+	if (reqEnd > pRange->end) {
+		return S_dev_badArgument;
 	}
-	else if(pRange->pFirst == pFirst){
-		pRange->pFirst = pLast+1;
-	}
-	else if(pRange->pLast == pLast){
-		pRange->pLast = pFirst-1;
-	}
-	else{
 
-		pNewRange = (rangeItem *) malloc(sizeof(*pRange));
+	/*
+	 * always map through the virtual os in case the memory
+	 * management is set up there
+	 */
+	status = (*pVirtOS->pDevMapAddr) (addrType, 0, base, 
+				size, &pPhysicalAddress);
+	if (status) {
+		errPrintf (status, __FILE__, __LINE__, "%s base=0X%X size = 0X%X",
+			epicsAddressTypeName[addrType], base, size);
+		return status;
+	}
+
+	/*
+	 * set the callers variable if the pointer is supplied
+	 */
+	if (ppPhysicalAddress) {
+		*ppPhysicalAddress = pPhysicalAddress;
+	}
+
+	/*
+	 * does it start at the beginning of the block
+	 */
+	if (pRange->begin == base) {
+		if (pRange->end == reqEnd) {
+			FASTLOCK(&addrListLock);
+			ellDelete(&addrFree[addrType], &pRange->node);
+			FASTUNLOCK(&addrListLock);
+			free ((void *)pRange);
+		}
+		else {
+			pRange->begin = base + size;
+		}
+	}
+	/*
+	 * does it end at the end of the block
+	 */
+	else if (pRange->end == reqEnd) {
+		pRange->end = base-1;
+	}
+	/*
+	 * otherwise split the item on the free list
+	 */
+	else {
+
+		pNewRange = (rangeItem *) calloc (1, sizeof(*pRange));
 		if(!pNewRange){
 			return S_dev_noMemory;
 		}
-		pNewRange->pFirst = pLast+1;
-		pNewRange->pLast = pRange->pLast;
+
+		pNewRange->begin = base + size;
+		pNewRange->end = pRange->end;
 		pNewRange->pOwnerName = "<fragmented block>";
-		pRange->pLast = pFirst-1;
+		pNewRange->pPhysical = NULL;
+		pRange->end = base - 1;
+
 		/*
 		 * add the node after the old item on the free list
 		 * (blocks end up ordered by address)
 		 */
 		FASTLOCK(&addrListLock);
-		lstInsert(&addrFree[addrType], &pRange->node, &pNewRange->node);
+		ellInsert(&addrFree[addrType], &pRange->node, &pNewRange->node);
 		FASTUNLOCK(&addrListLock);
 	}
 
-        /*
-         * allocate a new address range entry and add it to
-         * the list
-         */
-        pNewRange = (rangeItem *)calloc(1,sizeof(*pRange));
-	if(!pNewRange){
+	/*
+	 * allocate a new address range entry and add it to
+	 * the list
+	 */
+	pNewRange = (rangeItem *)calloc (1, sizeof(*pRange));
+	if (!pNewRange) {
 		return S_dev_noMemory;
 	}
 
-	pNewRange->pFirst = pFirst;
-	pNewRange->pLast = pLast;
+	pNewRange->begin = base;
+	pNewRange->end = reqEnd;
 	pNewRange->pOwnerName = pOwnerName;
+	pNewRange->pPhysical = pPhysicalAddress;
 
-	s = devInsertAddress(&addrAlloc[addrType], pNewRange);
-	if(s){
-		free((void *)pNewRange);
-		return s;
-	}
+	devInsertAddress (&addrAlloc[addrType], pNewRange);
 
 	return SUCCESS;
 }
 
-
 /*
- *
  * report_conflict()
- *
- *
  */
-LOCAL long report_conflict(
-epicsAddressType        addrType,
-char			*pFirst,
-char			*pLast,
-const char		*pOwnerName
+LOCAL void report_conflict (
+	epicsAddressType addrType,
+	size_t base,
+	size_t size,
+	const char *pOwnerName
 )
 {
-        rangeItem      	*pRange;
+	const rangeItem *pRange;
 
-        pRange = (rangeItem *) addrAlloc[addrType].node.next;
-        while(pRange){
- 
-		if(pRange->pFirst <= pFirst && pRange->pLast >= pFirst){
-			break;
-		}
-		if(pRange->pFirst <= pLast && pRange->pLast >= pLast){
-			break;
-		}
-		if(pRange->pFirst > pLast){
-			pRange = NULL;
-			break;
+	errPrintf (
+			S_dev_addressOverlap,
+			__FILE__,
+			__LINE__,
+			"%10s 0X%08X - OX%08X Requested by %s",
+			epicsAddressTypeName[addrType],
+			base,
+			base+size-1,
+			pOwnerName);
+
+	pRange = (rangeItem *) ellFirst(&addrAlloc[addrType]);
+	while (pRange) {
+	
+		if (pRange->begin <= base + (size-1) && pRange->end >= base) {
+			report_conflict_device (addrType, pRange);
 		}
 
 		pRange = (rangeItem *) pRange->node.next;
 	}
-	
-	if(pRange){
-		errPrintf(
-				S_dev_addressOverlap,
-				__FILE__,
-				__LINE__,
-				"%10s 0X %08X - %08X Requested by %s",
-				epicsAddressTypeName[addrType],
-				pFirst,
-				pLast,
-				pOwnerName);
-
-		errPrintf(
-				S_dev_identifyOverlap,
-				__FILE__,
-				__LINE__,
-				"%10s 0X %08X - %08X Owned by %s",
-				epicsAddressTypeName[addrType],
-				pRange->pFirst,
-				pRange->pLast,
-				pRange->pOwnerName);
-
-		return S_dev_addressOverlap;
-        }
-
-	return S_dev_internal;
 }
 
-
 /*
- *
+ * report_conflict_device()
+ */
+LOCAL void report_conflict_device(epicsAddressType addrType, const rangeItem *pRange)
+{
+	errPrintf (
+			S_dev_identifyOverlap,
+			__FILE__,
+			__LINE__,
+			"%10s 0X%08X - 0X%08X Owned by %s",
+			epicsAddressTypeName[addrType],
+			pRange->begin,
+			pRange->end,
+			pRange->pOwnerName);
+}
+
+/*
  *	devUnregisterAddress()
- *
  */
 long devUnregisterAddress(
-epicsAddressType        addrType,
-void                    *baseAddress,
-const char		*pOwnerName)
+	epicsAddressType addrType,
+	size_t baseAddress,
+	const char *pOwnerName)
 {
-	char		*charAddress = (char *) baseAddress;
-        rangeItem       *pRange;
-	int 		s;
+	rangeItem *pRange;
+	int s;
 
-	if(!addrListInit){
-		s = initAddrList();
-		if(s){
+	if (!devLibInitFlag) {
+		s = devLibInit();
+		if(s) {
 			return s;
 		}
 	}
 
-	s = addrVerify(addrType, charAddress);
-	if(s != SUCCESS){
+	s = addrVerify (addrType, baseAddress, 1);
+	if (s != SUCCESS) {
 		return s;
 	}
 
 	FASTLOCK(&addrListLock);
-        pRange = (rangeItem *) addrAlloc[addrType].node.next;
-        while(pRange){
-		if(pRange->pFirst == charAddress){
+	pRange = (rangeItem *) ellFirst(&addrAlloc[addrType]);
+	while (pRange) {
+		if (pRange->begin == baseAddress) {
 			break;
 		}
-		if(pRange->pFirst > charAddress){
+		if (pRange->begin > baseAddress) {
 			pRange = NULL;
 			break;
 		}
-		pRange = (rangeItem *) pRange->node.next;
+		pRange = (rangeItem *) ellNext(&pRange->node);
 	}
 	FASTUNLOCK(&addrListLock);
 	
-	if(!pRange){
+	if (!pRange) {
 		return S_dev_addressNotFound;
 	}
 
-	if(strcmp(pOwnerName,pRange->pOwnerName)){
+	if (strcmp(pOwnerName,pRange->pOwnerName)) {
 		s = S_dev_addressOverlap;
-		errPrintf(
+		errPrintf (
 			s, 
 			__FILE__,
 			__LINE__,
-	"unregister address for %s at 0X %X failed because %s owns it",
+	"unregister address for %s at 0X%X failed because %s owns it",
 			pOwnerName,
-			charAddress,
+			baseAddress,
 			pRange->pOwnerName);
 		return s;
 	}	
 
-	FASTLOCK(&addrListLock);
-	lstDelete(
-		&addrAlloc[addrType],
-		&pRange->node);
-	FASTUNLOCK(&addrListLock);
+	FASTLOCK (&addrListLock);
+	ellDelete (&addrAlloc[addrType], &pRange->node);
+	FASTUNLOCK (&addrListLock);
 
 	pRange->pOwnerName = "<released fragment>";
-	s = devInsertAddress(&addrFree[addrType], pRange);
+	devInsertAddress (&addrFree[addrType], pRange);
+	s = devCombineAdjacentBlocks (&addrFree[addrType], pRange);
 	if(s){
-		free((void *)pRange);
-		errMessage(s, "Allocated Device Address Leak");
-		return s;
-	}
-	s = devCombineAdjacentBlocks(&addrFree[addrType], pRange);
-	if(s){
-		errMessage(s, NULL);
+		errMessage (s, NULL);
 		return s;
 	}
 
 	return SUCCESS;
 }
 
-
 /*
- *
  *      devCombineAdjacentBlocks()
- *
- *
  */
-LOCAL long    	devCombineAdjacentBlocks(
-LIST		*pRangeList,
-rangeItem	*pRange)
+LOCAL long devCombineAdjacentBlocks(
+	ELLLIST *pRangeList,
+	rangeItem *pRange)
 {
 	rangeItem	*pBefore;
 	rangeItem	*pAfter;
 
-	pBefore = (rangeItem *) pRange->node.previous;
-	pAfter = (rangeItem *) pRange->node.next;
+	pBefore = (rangeItem *) ellPrevious (&pRange->node);
+	pAfter = (rangeItem *) ellNext (&pRange->node);
 
 	/*
 	 * combine adjacent blocks
 	 */
-	if(pBefore){
-		if(pBefore->pLast == pRange->pFirst-1){
+	if (pBefore) {
+		if (pBefore->end == pRange->begin-1) {
 			FASTLOCK(&addrListLock);
-			pRange->pFirst = pBefore->pFirst;
-			lstDelete(pRangeList, &pBefore->node);
+			pRange->begin = pBefore->begin;
+			ellDelete (pRangeList, &pBefore->node);
 			FASTUNLOCK(&addrListLock);
-			free((void *)pBefore);
+			free ((void *)pBefore);
 		}
 	}
 
-	if(pAfter){
-		if(pAfter->pFirst-1 == pRange->pLast){
+	if (pAfter) {
+		if (pAfter->begin == pRange->end+1) {
 			FASTLOCK(&addrListLock);
-			pRange->pLast = pAfter->pLast;
-			lstDelete(pRangeList, &pAfter->node);
+			pRange->end = pAfter->end;
+			ellDelete (pRangeList, &pAfter->node);
 			FASTUNLOCK(&addrListLock);
 			free((void *)pAfter);
 		}
@@ -697,81 +554,76 @@ rangeItem	*pRange)
 	return SUCCESS;
 }
 
-
 /*
- *
  *      devInsertAddress()
- *
- *
  */
-LOCAL long    devInsertAddress(
-LIST		*pRangeList,
+LOCAL void devInsertAddress(
+ELLLIST		*pRangeList,
 rangeItem	*pNewRange)
 {
 	rangeItem	*pBefore;
 	rangeItem	*pAfter;
 
 	FASTLOCK(&addrListLock);
-        pAfter = (rangeItem *) pRangeList->node.next;
-	while(pAfter){
-		if(pNewRange->pLast < pAfter->pFirst){
+	pAfter = (rangeItem *) ellFirst (pRangeList);
+	while (pAfter) {
+		if (pNewRange->end < pAfter->begin) {
 			break;
 		}
-		pAfter = (rangeItem *) pAfter->node.next;
+		pAfter = (rangeItem *) ellNext (&pAfter->node);
 	}
 
-	if(pAfter){
-		pBefore = (rangeItem *) pAfter->node.previous;
-		lstInsert(pRangeList, &pBefore->node, &pNewRange->node);
+	if (pAfter) {
+		pBefore = (rangeItem *) ellPrevious (&pAfter->node);
+		ellInsert (pRangeList, &pBefore->node, &pNewRange->node);
 	}
-	else{
-		lstAdd(pRangeList, &pNewRange->node);
+	else {
+		ellAdd (pRangeList, &pNewRange->node);
 	}
 	FASTUNLOCK(&addrListLock);
-
-	return SUCCESS;
 }
 
-
-
 /*
- *
- *      devAllocAddress()
- *
- *
+ * devAllocAddress()
  */
-long    devAllocAddress(
-const char		*pOwnerName,
-epicsAddressType        addrType,
-unsigned long		size,
-unsigned		alignment, /* n ls bits zero in base addr*/
-void                    **pLocalAddress)
+long devAllocAddress(
+	const char *pOwnerName,
+	epicsAddressType addrType,
+	size_t size,
+	unsigned alignment, /* n ls bits zero in base addr*/
+	volatile void **pLocalAddress)
 {
-	int		s;
-	rangeItem	*pRange;
-	char		*pBase;
+	int s;
+	rangeItem *pRange;
+	size_t base;
 
-	s = addrVerify(addrType, (void *)size);
+	if (!devLibInitFlag) {
+		s = devLibInit();
+		if(s){
+			return s;
+		}
+	}
+
+	s = addrVerify (addrType, 0, size);
 	if(s){
 		return s;
 	}
 
-	if(size == 0){
+	if (size == 0) {
 		return S_dev_lowValue;
 	}
 
 	FASTLOCK(&addrListLock);
-        pRange = (rangeItem *) addrFree[addrType].node.next;
-	while(pRange){
-		if(pRange->pLast-pRange->pFirst>=size-1){
-			s = blockFind(
+	pRange = (rangeItem *) ellFirst (&addrFree[addrType]);
+	while (pRange) {
+		if ((pRange->end - pRange->begin) + 1 >= size){
+			s = blockFind (
 				addrType,
-				pRange->pFirst,
-				pRange->pLast,
+				pRange,
 				size,
 				alignment,
-				&pBase);
-			if(!s){
+				&base);
+			if (s==SUCCESS) {
 				break;
 			}
 		}
@@ -785,80 +637,95 @@ void                    **pLocalAddress)
 		return s;
 	}
 
+	s = devInstallAddr (pRange, pOwnerName, addrType, base,
+			size, NULL);
 
-	s = devInstallAddr(
-			pRange,
-			pOwnerName,
-			addrType,
-			pBase,
-			pBase + size - 1,
-			pLocalAddress);
 	return s;
 }
 
-
-
 /*
- *	addrVerify()
+ * addrVerify()
+ *
+ * care has been taken here not to overflow type size_t
  */
-LOCAL long    addrVerify(
-epicsAddressType        addrType,
-void                    *address)
+LOCAL long addrVerify(epicsAddressType addrType, size_t base, size_t size)
 {
-	if(addrType>=atLast){
+	if (addrType>=atLast) {
 		return S_dev_uknAddrType;
 	}
 
-	if(address > addrLast[addrType]){
+	if (size == 0) {
+		return addrFail[addrType];
+	}
+
+	if (size-1 > addrLast[addrType]) {
+		return addrFail[addrType];
+	}
+
+	if (base > addrLast[addrType]) {
+		return addrFail[addrType];
+	}
+
+	if (size - 1 > addrLast[addrType] - base) {
 		return addrFail[addrType];
 	}
 
 	return SUCCESS;
 }
 
-
-
 /*
- * 	initAddrList()
+ * 	devLibInit()
  */
-LOCAL long initAddrList(void)
+LOCAL long devLibInit (void)
 {
-        rangeItem       *pRange;
+	rangeItem       *pRange;
 
-	if(NELEMENTS(addrAlloc) != NELEMENTS(addrFree)){
-		return S_dev_internal;
-	}
 
-	if(!addrListInit){
-		int i;
+	if (!devLibInitFlag) {
+		unsigned i;
+		SYM_TYPE stype;
+		const char *pSymName = "_devLibVirtualOS";
+	
+		/*
+		 * dynamic bind to the virtual os layer for devLib 
+		 */
+		if (symFindByNameEPICS (sysSymTbl, "_devLibVirtualOS", 
+				(char**)&pVirtOS, &stype)==ERROR)
+		{
+			epicsPrintf ("unable to locate symbol \"%s\" - unable to initialize devLib\n", pSymName);
+			return S_dev_internal;
+		}
+
+		if (NELEMENTS(addrAlloc) != NELEMENTS(addrFree)) {
+			return S_dev_internal;
+		}
 
 		FASTLOCKINIT(&addrListLock);
 
 		FASTLOCK(&addrListLock);
-		for(i=0; i<NELEMENTS(addrAlloc); i++){
-			lstInit(&addrAlloc[i]);
-			lstInit(&addrFree[i]);
+		for (i=0; i<NELEMENTS(addrAlloc); i++) {
+			ellInit (&addrAlloc[i]);
+			ellInit (&addrFree[i]);
 		}
 
-		addrListInit = TRUE;
-
-		for(i=0; i<NELEMENTS(addrAlloc); i++){
-			pRange = (rangeItem *)malloc(sizeof *pRange);
-			if(!pRange){
+		for (i=0; i<NELEMENTS(addrAlloc); i++) {
+			pRange = (rangeItem *) malloc (sizeof(*pRange));
+			if (!pRange) {
 				return S_dev_noMemory;
 			}
 			pRange->pOwnerName = "<Vacant>";
-			pRange->pFirst = 0;
-			pRange->pLast = addrLast[i];
-			lstAdd(&addrFree[i], &pRange->node);
+			pRange->pPhysical = NULL;
+			pRange->begin = 0;
+			pRange->end = addrLast[i];
+			ellAdd (&addrFree[i], &pRange->node);
 		}
 		FASTUNLOCK(&addrListLock);
+		devLibInitFlag = TRUE;
 	}
 
 	return SUCCESS;
 }
 
-
 /*
  * 	devAddressMap()
  */
@@ -867,37 +734,37 @@ long devAddressMap(void)
 	return devListAddressMap(addrAlloc);
 }
 
-
 /*
  * 	devListAddressMap()
  */
-LOCAL long devListAddressMap(LIST *pRangeList)
+LOCAL long devListAddressMap(ELLLIST *pRangeList)
 {
-	rangeItem	*pri;
-	int 		i;
-	long		s;
+	rangeItem *pri;
+	int i;
+	long s;
 
-	if(!addrListInit){
-		s = initAddrList();
-		if(s){
+	if (!devLibInitFlag) {
+		s = devLibInit ();
+		if (s) {
 			return s;
 		}
 	}
 
 	FASTLOCK(&addrListLock);
-	for(i=0; i<NELEMENTS(addrAlloc); i++){
-		pri = (rangeItem *) lstFirst(&pRangeList[i]);
-		if(pri){
-			printf("%s Address Map\n", epicsAddressTypeName[i]);
+	for (i=0; i<NELEMENTS(addrAlloc); i++) {
+		pri = (rangeItem *) ellFirst(&pRangeList[i]);
+		if (pri) {
+			printf ("%s Address Map\n", epicsAddressTypeName[i]);
 		}
-		while(pri){
-			printf("0X %0*lX - %0*lX %s\n",
-				(int) (sizeof (pri->pFirst) * 2U),
-				(unsigned long) pri->pFirst,
-				(int) (sizeof (pri->pFirst) * 2U),
-				(unsigned long) pri->pLast,
+		while (pri) {
+			printf ("\t0X%0*lX - 0X%0*lX physical base %p %s\n",
+				addrHexDig[i],
+				(unsigned long) pri->begin,
+				addrHexDig[i],
+				(unsigned long) pri->end,
+				pri->pPhysical,
 				pri->pOwnerName);
-			pri = (rangeItem *) lstNext(&pri->node);
+			pri = (rangeItem *) ellNext (&pri->node);
 		}
 	}
 	FASTUNLOCK(&addrListLock);
@@ -905,135 +772,7 @@ LOCAL long devListAddressMap(LIST *pRangeList)
 	return SUCCESS;
 }
 
-
-/*
- *
- *	unsolicitedHandlerEPICS()
- *     	what gets called if they disconnect from an
- *	interrupt and an interrupt arrives on the
- *	disconnected vector
- *
- */
-void 	unsolicitedHandlerEPICS(int vectorNumber)
-{
-	/*
- 	 * call logMsg() and not errMessage()
-	 * so we are certain that printf()
-	 * does not get called at interrupt level
-	 */
-	logMsg(
-		"%s: line=%d: Interrupt to EPICS disconnected vector = 0X %X",
-		(int)__FILE__,
-		__LINE__,
-		vectorNumber,
-		NULL,
-		NULL,
-		NULL);
-}
- 
-
-/*
- *
- *	initHandlerAddrList()
- *      init list of interrupt handlers to ignore
- *
- */
-LOCAL 
-void initHandlerAddrList(void)
-{
-        int     	i;
-        SYM_TYPE	type;
-        int     	status;
- 
-        for(i=0; i<NELEMENTS(defaultHandlerNames); i++){
-                status =
-                        symFindByNameEPICS(  sysSymTbl,
-                                        defaultHandlerNames[i],
-                                        (char **)&defaultHandlerAddr[i],
-                                        &type);
-                if(status != OK){
-			errPrintf(
-				S_dev_internal,
-				__FILE__,
-				__LINE__,
-				"initHandlerAddrList() %s not in sym table",
-				defaultHandlerNames[i]);
-		}
-        }
-}
 
-
-/*
- *
- *      isrFetch()
- *
- *
- */
-LOCAL myISR *isrFetch(unsigned vectorNumber)
-{
-	myISR	*psub;
-	myISR	*pCISR;
-	void	*pParam;
-	int	s;
-
-	/*
-	 * fetch the handler or C stub attached at this vector
-	 */
-        psub = (myISR *) intVecGet((FUNCPTR *)INUM_TO_IVEC(vectorNumber));
-
-	/*
-	 * from libvxWorks/veclist.c
-	 *
-	 * checks to see if it is a C ISR
-	 * and if so finds the function pointer and
-	 * the parameter passed
-	 */
-	s = cISRTest(psub, &pCISR, &pParam);
-	if(!s){
-		psub = pCISR;
-	}
-
-	return psub;
-}
-
-
-/*
- *
- *	vectorInUse()
- *
- *
- */
-LOCAL int
-vectorInUse(
-unsigned       vectorNumber
-)
-{
-	static int	init;
-        int     	i;
-        myISR		*psub;
-
-	if(!init){
-		initHandlerAddrList();
-		init = TRUE;
-	}
- 
-	psub = isrFetch(vectorNumber);
-
-	/*
-	 * its a C routine. Does it match a default handler?
-	 */
-        for(i=0; i<NELEMENTS(defaultHandlerAddr); i++){
-                if(defaultHandlerAddr[i] == psub){
-			return FALSE;
-		}
-	}
-
-        return TRUE;
-}
-
-
-
-
 /*
  *
  * blockFind()
@@ -1041,219 +780,196 @@ unsigned       vectorNumber
  * Find unoccupied block in a large block
  *
  */
-LOCAL long blockFind(
-epicsAddressType	addrType,
-char			*pBlockFirst,
-char			*pBlockLast,
-unsigned long		size,		/* size needed */
-unsigned 		alignment,	/* n ls bits zero in base addr */
-char			**ppBase	/* base address found */
-)
+LOCAL long blockFind (
+	epicsAddressType addrType,
+	const rangeItem *pRange,
+	/* size needed */
+	size_t requestSize,
+	/* n ls bits zero in base addr */
+	unsigned alignment,
+	/* base address found */
+	size_t *pBase)
 {
-	int		s;
-	unsigned long	mask;
+	int s;
+	size_t bb;
+	size_t mask;
+	size_t newBase;
+	size_t newSize;
 
 	/*
 	 * align the block base
 	 */
-	mask = devCreateMask(alignment);
-	if(mask&(long)pBlockFirst){
-		pBlockFirst = (char *) (mask | (unsigned long) pBlockFirst);
-		pBlockFirst++;
+	mask = devCreateMask (alignment);
+	newBase = pRange->begin;
+	if ( mask & newBase ) {
+		newBase |= mask;
+		newBase++;
 	}
 
-	if(pBlockFirst == 0){
-		return S_dev_badRequest;
-	}
-
-	if(pBlockLast < pBlockFirst){
+	if ( requestSize == 0) {
 		return S_dev_badRequest;
 	}
 
 	/*
 	 * align size of block
 	 */
-	if(mask & size){ 
-		size |= mask;
-		size++;
+	newSize = requestSize;
+	if (mask & newSize) { 
+		newSize |= mask;
+		newSize++;
 	}
 
-	if(size == 0){
+	if (pRange->end - pRange->begin + 1 < newSize) {
 		return S_dev_badRequest;
 	}
 
-	if(pBlockLast-pBlockFirst < size-1){
-		return S_dev_badRequest;
+	bb = pRange->begin;
+	while (bb <= (pRange->end + 1) - newSize) {
+		s = blockProbe (addrType, bb, newSize);
+		if (s==SUCCESS) {
+			*pBase = bb;
+			return SUCCESS;
+		}
+		bb += newSize;
 	}
-
-	s = blockDivide(
-		addrType,
-		pBlockFirst,
-		pBlockFirst + (size-1),
-		ppBase,
-		size);
 
 	return s;
 }
 
-
-/*
- * blockDivide()
- * (binary search within a block)
- * End up at a valid block without stepping through
- * the entire address range.
- */
-LOCAL long blockDivide(
-epicsAddressType	addrType,
-char			*pBlockFirst,
-char			*pBlockLast,
-char			**ppBase,	/* base address found */
-unsigned long		requestSize
-)
-{
-	char		*pBlock;
-	unsigned long	bs;
-	int		s;
-
-	s = blockProbe(addrType, pBlockFirst, pBlockFirst+(requestSize-1));
-	if(!s){
-		*ppBase = pBlockFirst;
-		return SUCCESS;
-	}
-
-	/*
-	 * prevent unsigned long overflow
-	 */
-	bs = pBlockLast - pBlockFirst + 1;
-	if(bs == 0){
-		bs = 0x80000000;
-	}	
-	else{
-		bs = bs >> 1;
-	}
-
-	while(bs > requestSize){
-		pBlock = pBlockFirst;
-		while(pBlock <= pBlockLast-bs+1){
-			pBlock += bs;
-			s = blockProbe(addrType, pBlock, pBlock+(requestSize-1));
-			if(!s){
-				*ppBase = pBlock;
-				return SUCCESS;
-			}
-			pBlock += bs;
-		}
-		bs = bs>>1;
-	}
-	return S_dev_deviceDoesNotFit;
-}
-
-
 /*
  * blockProbe()
  */
 LOCAL long blockProbe(
-epicsAddressType	addrType,
-char			*pFirst,
-char			*pLast
+	epicsAddressType addrType,
+	size_t base,
+	size_t size
 )
 {
-	char	*pProbe;
-	int	s;
+	volatile void *pPhysical;
+	size_t probe;
+	unsigned wordSize;
+	union {
+		char charWord;
+		short shortWord;
+		int intWord;
+		long longWord;
+	}allWordSizes;
+	long s;
 
-	pProbe = pFirst;
-	while(pProbe <= pLast){
-		s = locationProbe(addrType, pProbe);
-		if(s){
-			return s;
+	probe = base;
+	while (probe - base < size) {
+
+		/*
+		 * for all word sizes
+		 */
+		for (wordSize=1; wordSize<=sizeof(allWordSizes); wordSize <<= 1) {
+			/*
+			 * only check naturally aligned words
+			 */
+			if ( (probe&(wordSize-1)) == 0 ) {
+				break;
+			}
+
+			/*
+			 * every byte in the block must 
+			 * map to a physical address
+			 */
+			s = (*pVirtOS->pDevMapAddr) (addrType, 0, probe, wordSize, &pPhysical);
+			if (s!=SUCCESS) {
+				return s;
+			}
+
+			/*
+			 * verify that no device is present
+			 */
+			s = (*pVirtOS->pDevReadProbe)(wordSize, pPhysical, &allWordSizes);
+			if (s==SUCCESS) {
+				return S_dev_addressOverlap;
+			}
 		}
-		pProbe++;
+		probe++;
 	}
 	return SUCCESS;
 }
 
-
 /*
- * locationProbe
+ * devConnectInterrupt ()
+ *
+ * !! DEPRECATED !!
  */
-long locationProbe(
-epicsAddressType	addrType,
-char			*pLocation
+long    devConnectInterrupt(
+epicsInterruptType      intType,
+unsigned                vectorNumber,
+void                    (*pFunction)(),
+void                    *parameter)
+{
+	switch(intType){
+	case intVME:
+	case intVXI:
+		return (*pVirtOS->pDevConnectInterruptVME) (vectorNumber, 
+					pFunction, parameter);
+	default:
+		return S_dev_uknIntType;
+	}
+}
+
+/*
+ *
+ * devDisconnectInterrupt()
+ *
+ * !! DEPRECATED !!
+ */
+long    devDisconnectInterrupt(
+epicsInterruptType      intType,
+unsigned                vectorNumber,
+void			(*pFunction)() 
 )
 {
-	char	*pPhysical;
-	int	s;
-
-	/*
-	 * every byte in the block must 
-	 * map to a physical address
-	 */
-	if (EPICStovxWorksAddrType[addrType] == EPICSAddrTypeNoConvert)
-	{
-		pPhysical = pLocation;
+	switch(intType){
+	case intVME:
+	case intVXI:
+		return (*pVirtOS->pDevDisconnectInterruptVME) (vectorNumber, 
+					pFunction);
+		break;
+	default:
+		return S_dev_uknIntType;
 	}
-	else
-	{
-		s = sysBusToLocalAdrs(
-             	        EPICStovxWorksAddrType[addrType],
-			pLocation,
-                        &pPhysical);
-		if(s<0){
-			return S_dev_vxWorksAddrMapFail;
-		}
+}
+
+/*
+ * devEnableInterruptLevel()
+ *
+ * !! DEPRECATED !!
+ */
+long devEnableInterruptLevel(
+epicsInterruptType      intType,
+unsigned                level)
+{
+	switch(intType){
+	case intVME:
+	case intVXI:
+		return (*pVirtOS->pDevEnableInterruptLevelVME) (level);
+	default:
+		return S_dev_uknIntType;
 	}
+}
 
-
-	{
-		int8_t	*pChar;
-		int8_t	byte;
-
-		pChar = (int8_t *) pPhysical;
-		if(devPtrAlignTest(pChar)){
-			s = vxMemProbe(
-				(char *) pChar,
-				READ,
-				sizeof(byte),
-				(char *) &byte);
-			if(s!=ERROR){
-				return S_dev_addressOverlap;
-			}			
-		}
+/*
+ * devDisableInterruptLevel()
+ *
+ * !! DEPRECATED !!
+ */
+long    devDisableInterruptLevel (
+epicsInterruptType      intType,
+unsigned                level)
+{
+	switch(intType){
+	case intVME:
+	case intVXI:
+		return (*pVirtOS->pDevDisableInterruptLevelVME) (level);
+	default:
+		return S_dev_uknIntType;
 	}
-	{
-		int16_t	*pWord;
-		int16_t	word;
-
-		pWord = (int16_t *)pPhysical;
-		if(devPtrAlignTest(pWord)){
-			s = vxMemProbe(
-				(char *)pWord,
-				READ,
-				sizeof(word),
-				(char *) &word);
-			if(s!=ERROR){
-				return S_dev_addressOverlap;
-			}			
-		}
-	}
-	{
-		int32_t	*pLongWord;
-		int32_t	longWord;
-
-		pLongWord = (int32_t *) pPhysical;
-		if(devPtrAlignTest(pLongWord)){
-			s = vxMemProbe(
-				(char *)pLongWord,
-				READ,
-				sizeof(longWord),
-				(char *)&longWord);
-			if(s!=ERROR){
-				return S_dev_addressOverlap;
-			}			
-		}
-	}
-
-	return SUCCESS;
 }
 
 /******************************************************************************
@@ -1261,7 +977,7 @@ char			*pLocation
  * The follwing may, or may not be present in the BSP for the CPU in use.
  *
  */
-void *sysA24Malloc(unsigned long size);
+void *sysA24Malloc(size_t size);
 STATUS sysA24Free(void *pBlock);
 
 /******************************************************************************
@@ -1289,48 +1005,48 @@ void *devLibA24Calloc(size_t size)
 
 void *devLibA24Malloc(size_t size)
 {
-  SYM_TYPE stype;
-  static int    UsingBSP = 0;
-  void		*ret;
-
-  if (devLibA24Debug)
-    logMsg("devLibA24Malloc(%d) entered\n", size, 0,0,0,0,0);
-
-  if (A24MallocFunc == NULL)
-  {
-    /* See if the sysA24Malloc() function is present. */
-    if(symFindByNameEPICS(sysSymTbl,"_sysA24Malloc", (char**)&A24MallocFunc,&stype)==ERROR)
-    { /* Could not find sysA24Malloc... use the malloc one and hope we are OK */
-      if (devLibA24Debug)
-	logMsg("devLibA24Malloc() using regular malloc\n",0,0,0,0,0,0);
-      A24MallocFunc = malloc;
-      A24FreeFunc   = free;
-    }
-    else
-    {
-      if(symFindByNameEPICS(sysSymTbl,"_sysA24Free", (char**)&A24FreeFunc, &stype) == ERROR)
-      { /* That's strange... we have malloc, but no free! */
-        if (devLibA24Debug)
-	  logMsg("devLibA24Malloc() using regular malloc\n",0,0,0,0,0,0);
-        A24MallocFunc = malloc;
-        A24FreeFunc   = free;
-      }
-      else
-	UsingBSP = 1;
-    }
-  }
-  ret = A24MallocFunc(size);
-
-  if ((ret == NULL) && (UsingBSP))
-    errMessage(S_dev_noMemory, "devLibA24Malloc ran out of A24 memory, try sysA24MapRam(size)");
-
-  return(ret);
+	SYM_TYPE stype;
+	static int    UsingBSP = 0;
+	void		*ret;
+	
+	if (devLibA24Debug)
+		epicsPrintf ("devLibA24Malloc(%d) entered\n", size);
+	
+	if (A24MallocFunc == NULL)
+	{
+		/* See if the sysA24Malloc() function is present. */
+		if(symFindByNameEPICS (sysSymTbl,"_sysA24Malloc", (char**)&A24MallocFunc, &stype)==ERROR)
+		{ /* Could not find sysA24Malloc... use the malloc one and hope we are OK */
+			if (devLibA24Debug)
+				epicsPrintf ("devLibA24Malloc() using regular malloc\n");
+			A24MallocFunc = malloc;
+			A24FreeFunc   = free;
+		}
+		else
+		{
+			if(symFindByNameEPICS(sysSymTbl,"_sysA24Free", (char**)&A24FreeFunc, &stype) == ERROR)
+			{ /* That's strange... we have malloc, but no free! */
+				if (devLibA24Debug)
+					epicsPrintf ("devLibA24Malloc() using regular malloc\n");
+				A24MallocFunc = malloc;
+				A24FreeFunc   = free;
+			}
+			else
+				UsingBSP = 1;
+		}
+	}
+	ret = A24MallocFunc(size);
+	
+	if ((ret == NULL) && (UsingBSP))
+		errMessage(S_dev_noMemory, "devLibA24Malloc ran out of A24 memory, try sysA24MapRam(size)");
+	
+	return(ret);
 }
 
 void devLibA24Free(void *pBlock)
 {
-  if (devLibA24Debug)
-    logMsg("devLibA24Free(%p) entered\n", (unsigned long)pBlock,0,0,0,0,0);
-
-  A24FreeFunc(pBlock);
+	if (devLibA24Debug)
+		epicsPrintf("devLibA24Free(%p) entered\n", pBlock);
+	
+	A24FreeFunc(pBlock);
 }

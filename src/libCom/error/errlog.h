@@ -42,7 +42,7 @@ extern "C" {
 #define epicsVprintf errlogVprintf
 
 #ifdef __STDC__
-typedef void(*errlogListener) (const char *message);
+typedef void(*errlogListener) (void *pPrivate, const char *message);
 #else
 typedef void(*errlogListener) ();
 #endif
@@ -74,7 +74,7 @@ epicsShareFunc void epicsShareAPI errlogSetSevToLog(
 epicsShareFunc errlogSevEnum epicsShareAPI errlogGetSevToLog(void);
 
 epicsShareFunc void epicsShareAPI errlogAddListener(
-    errlogListener listener);
+    errlogListener listener, void *pPrivate);
 epicsShareFunc void epicsShareAPI errlogRemoveListener(
     errlogListener listener);
 

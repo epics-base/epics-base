@@ -478,9 +478,15 @@ inline void pvEntry::destroy ()
 
 inline pvInfo::~pvInfo ()
 {
-    if ( this->pPV != NULL ) {
-        delete this->pPV;
-    }
+    //
+    // GDD cleanup gets rid of GDD's that are in use 
+    // by the PV before the file scope destructer for 
+    // this class runs here so this does not seem to 
+    // be a good idea
+    //
+    //if ( this->pPV != NULL ) {
+    //   delete this->pPV;
+    //}
 }
 
 inline void pvInfo::deletePV ()

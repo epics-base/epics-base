@@ -124,6 +124,7 @@ INC += tsStamp.h
 INC += osiMutex.h
 INC += osiEvent.h
 INC += osiProcess.h
+INC += osiUnistd.h
 
 SRCS += osdSock.c
 SRCS += osiSock.c

@@ -16,6 +16,7 @@
  */
 
 #include "gddAppTable.h" // EPICS application type table
+#include "gddApps.h"
 #include "dbMapper.h" // EPICS application type table
 
 #include "server.h"
@@ -157,9 +158,6 @@ caStatus casPVI::attachToServer ( caServerI & cas )
 //
 caStatus casPVI::updateEnumStringTable ( casCtx & ctx )
 {
-    static const aitUint32 stringTableTypeStaticInit = 0xffffffff;
-    static aitUint32 stringTableType = stringTableTypeStaticInit;
-
     //
     // keep trying to fill in the table if client disconnects 
     // prevented previous asynchronous IO from finishing, but if
@@ -170,21 +168,24 @@ caStatus casPVI::updateEnumStringTable ( casCtx & ctx )
     }
     
     //
-    // lazy init
-    //
-    if ( stringTableType == stringTableTypeStaticInit ) {
-        stringTableType = 
-            gddApplicationTypeTable::app_table.registerApplicationType ("enums");
-    }
-    
-    //
     // create a gdd with the "enum string table" application type
     //
-    gdd *pTmp = new gddScalar ( stringTableType );
+    //	gddArray(int app, aitEnum prim, int dimen, ...);
+    gdd *pTmp = new gddScalar ( gddAppType_enums );
     if ( pTmp == NULL ) {
         errMessage ( S_cas_noMemory, 
             "unable to read application type \"enums\" string"
             " conversion table for enumerated PV" );
+        return S_cas_noMemory;
+    }
+
+    bool success = convertContainerMemberToAtomic ( *pTmp, 
+         gddAppType_enums, MAX_ENUM_STATES );
+    if ( ! success ) {
+        pTmp->unreference ();
+        errMessage ( S_cas_noMemory, 
+            "unable to read application type \"enums\" string"
+            " conversion table for enumerated PV");
         return S_cas_noMemory;
     }
 
@@ -202,7 +203,7 @@ caStatus casPVI::updateEnumStringTable ( casCtx & ctx )
     else if ( status ) {
         pTmp->unreference ();
         errMessage ( status, 
-            "unable to read application type \"enums\" string"
+            "- unable to read application type \"enums\" string"
             " conversion table for enumerated PV");
         return status;
 	}

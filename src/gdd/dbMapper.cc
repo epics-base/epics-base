@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.6  1996/07/23 17:13:30  jbk
+// various fixes - dbmapper incorrectly worked with enum types
+//
 // Revision 1.5  1996/07/01 19:59:12  jhill
 // fixed case where gdd was mapped to a string without cvrt
 //
@@ -1256,7 +1259,7 @@ void gddMakeMapDBR(gddApplicationTypeTable& tt) { gddMakeMapDBR(&tt); }
 void gddMakeMapDBR(gddApplicationTypeTable* tt)
 {
 	type_table=tt;
-	int i;
+	size_t i;
 
 	// Storing the DBRxxx type code in the app table will not work
 	// for most of the types.  This is because many share the same

@@ -10,11 +10,13 @@ Notes:
 1. Before you can build or really use EPICS, you must set your
 	path properly:
 
-set path = ( $path EPICS/base/tools EPICS/base/bin/HOST_ARCH )
+set path = ( $path EPICS/base/tools EPICS/base/bin/HOST_ARCH \
+			EPICS/extensions/bin HOST_ARCH )
 
 	e.g.:
 
-set path = ( $path /home/epics/base/tools /home/epics/base/bin/sun4 )
+set path = ( $path /home/epics/base/tools /home/epics/base/bin/sun4 \
+			/home/epics/extensions/bin/sun4 )
 
 2. You must use GNU make (which is now THE supported make utility) for
    the build. A script, gmake,  exists in the base/tools directory to invoke
@@ -130,11 +132,16 @@ define compile and link flags.
 ----------------------------------------------------------------------------
 CONFIG_COMMON - Contains definitions describing the layout of base.
 ----------------------------------------------------------------------------
-HRULES - Rules for traversing hierarchical directories.
+CONFIG_BASE
+CONFIG_EXTENSIONS - Defines what subdirectories get built by default under
+base and extensions.
 ----------------------------------------------------------------------------
 RULES.Vx - Rules for building with VxWorks makefiles.
 ----------------------------------------------------------------------------
 RULES.Unix - Rules for building with Unix makefiles.
+----------------------------------------------------------------------------
+RULES_ARCHS
+RULES_DIRS - Allows top-level type command syntax in low-level directories.
 ----------------------------------------------------------------------------
 
     Table of files to change when building and adding architectures.
@@ -149,10 +156,13 @@ CONFIG_SITE.Unix.ARCH_CLASS  m         -             c*            -
 CONFIG_SITE.Vx.ARCH_CLASS    m         c*            -             -
 CONFIG.Unix.ARCH_CLASS       -         -             c*            -
 CONFIG.Vx.ARCH_CLASS         -         c*            -             -
-CONFIG_COMMON                -         -             -             -
-HRULES                       -         -             -             -
 RULES.Vx                     -         -             -             -
 RULES.Unix                   -         -             -             -
+CONFIG_BASE                  -         -             -             -
+CONFIG_EXTENSIONS            -         -             -             -
+CONFIG_COMMON                -         -             -             -
+RULES_ARCHS                  -         -             -             -
+RULES_DIRS                   -         -             -             -
 
      m -  Modify an existing file.
      c -  Create a new file.

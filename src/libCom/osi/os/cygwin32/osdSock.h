@@ -15,7 +15,6 @@ extern "C" {
 #include <sys/types.h>
 #include <sys/param.h> /* for MAXHOSTNAMELEN */
 #include <sys/time.h>
-#include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -55,7 +54,6 @@ typedef int                     SOCKET;
 #define WSAETIMEDOUT		(WSABASEERR+60)
 
 
-#define	IOCPARM_MASK	0xff		/* parameters must be < 256 bytes */
 #define	IOC_OUT		0x40000000	/* copy out parameters */
 #define	IOC_IN		0x80000000	/* copy in parameters */
 #define	IOC_INOUT	(IOC_IN|IOC_OUT)
@@ -74,6 +72,14 @@ typedef int                     SOCKET;
 /* Used by ca/if_depends.c ca/ucx.h */
 #define    IFF_POINTOPOINT 0x10
 
+/* Used by ca/iocinf.c  */
+#define SO_RCVBUF          0x1002   /* receive buffer size */
+#define WSAEISCONN         (WSABASEERR+56)
+#define WSAEINPROGRESS     (WSABASEERR+36)
+#define WSAEALREADY        (WSABASEERR+37)
+#define EISCONN            WSAEISCONN
+#define EINPROGRESS        WSAEINPROGRESS
+#define EALREADY           WSAEALREADY
 
 
 #endif /*osiSockH*/

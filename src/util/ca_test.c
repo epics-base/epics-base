@@ -31,10 +31,17 @@
  *				to a long
  * .04	01-14-91	joh	documentation
  * .05	09-14-93	jba	added def of print_returned
+ * .06	01-05-94	joh	ANSI C	
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
  */
+
+/*
+ * ANSI
+ */
+#include <string.h>
+#include <stdio.h>
 
 #ifdef vxWorks
 #include <vxWorks.h>
@@ -43,16 +50,23 @@
 #ifndef ERROR
 #define ERROR -1
 #endif
+
 #ifndef OK
 #define OK 0
 #endif
 
-#include        <cadef.h>
-#include        <string.h>
+#ifndef LOCAL
+#define LOCAL static
+#endif
 
-static void 		printit();
-static void 		verify();
-static void			print_returned();
+#include        <cadef.h>
+
+LOCAL int ca_test(char *pname, char *pvalue);
+LOCAL int cagft(char *pname);
+LOCAL void printit(struct  event_handler_args args);
+LOCAL int capft(char *pname, char *pvalue);
+LOCAL void verify(chid chan_id, int type);
+LOCAL void print_returned(short type, char *pbuffer, short count);
 
 static long	outstanding;
 
@@ -64,9 +78,10 @@ static long	outstanding;
  *	parse command line arguments
  */
 #ifndef vxWorks
-main(argc,argv)
-int     argc;
-char    **argv;
+main(
+int     argc,
+char    **argv
+)
 {
 
 	/*
@@ -112,9 +127,10 @@ char    **argv;
  *	read back the current value
  *
  */
-int ca_test(pname, pvalue )
-char	*pname;
-char	*pvalue;
+LOCAL int ca_test(
+char	*pname,
+char	*pvalue
+)
 {
 
 	if(pvalue){
@@ -134,8 +150,7 @@ char	*pvalue;
  *
  *	test ca get over the range of CA data types
  */
-int cagft(pname)
-char	*pname;
+LOCAL int cagft(char *pname)
 {	
 	chid		chan_id;
 	int		status;
@@ -202,10 +217,8 @@ char	*pname;
 /*
  *	PRINTIT()
  */
-static void printit(args)
-struct  event_handler_args	args;
+LOCAL void printit(struct  event_handler_args args)
 {
-	int	i;
 
 	print_returned(
 		args.type,
@@ -224,9 +237,10 @@ struct  event_handler_args	args;
  *	test ca_put() over a range of data types
  *	
  */
-int capft(pname,pvalue)
-char		*pname;
-char		*pvalue;
+LOCAL int capft(
+char		*pname,
+char		*pvalue
+)
 {
 	short			shortvalue;
 	long			longvalue;
@@ -354,9 +368,7 @@ skip_rest:
  *
  * initiate print out the values in a database access interface structure
  */
-static void verify(chan_id, type)
-chid		chan_id;
-int		type;
+LOCAL void verify(chid chan_id, int type)
 {
 	int status;
 
@@ -374,6 +386,7 @@ int		type;
 
 	outstanding++;
 }
+
 
 /*
  * PRINT_RETURNED
@@ -382,10 +395,7 @@ int		type;
  *
  * switches over the range of CA data types and reports the value
  */
-static void print_returned(type,pbuffer,count)
-  short	type;
-  char	*pbuffer;
-  short		count;
+LOCAL void print_returned(short type, char *pbuffer, short count)
 {
     short i;
 
@@ -523,7 +533,12 @@ static void print_returned(type,pbuffer,count)
 	{
 		struct dbr_sts_long *pvalue
 		  = (struct dbr_sts_long *)pbuffer;
+<<<<<<< ca_test.c
+		int *plong = &pvalue->value;
+
+=======
 		dbr_long_t *plong = &pvalue->value;
+>>>>>>> 1.11
 		printf("%2d %2d",pvalue->status,pvalue->severity);
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,plong++){
@@ -620,7 +635,11 @@ static void print_returned(type,pbuffer,count)
 	{
 		struct dbr_time_long *pvalue
 		  = (struct dbr_time_long *)pbuffer;
+<<<<<<< ca_test.c
+		int *plong = &pvalue->value;
+=======
 		dbr_long_t *plong = &pvalue->value;
+>>>>>>> 1.11
 		printf("%2d %2d",pvalue->status,pvalue->severity);
 		printf("\tTimeStamp: %lx %lx",
 			pvalue->stamp.secPastEpoch, pvalue->stamp.nsec);
@@ -720,7 +739,11 @@ static void print_returned(type,pbuffer,count)
 	{
 		struct dbr_gr_long *pvalue
 		  = (struct dbr_gr_long *)pbuffer;
+<<<<<<< ca_test.c
+		int *plong = &pvalue->value;
+=======
 		dbr_long_t *plong = &pvalue->value;
+>>>>>>> 1.11
 		printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
 			pvalue->units);
 		printf("\n\t%8d %8d %8d %8d %8d %8d",
@@ -821,7 +844,11 @@ static void print_returned(type,pbuffer,count)
 	{
 		struct dbr_ctrl_long *pvalue
 		  = (struct dbr_ctrl_long *)pbuffer;
+<<<<<<< ca_test.c
+		int *plong = &pvalue->value;
+=======
 		dbr_long_t *plong = &pvalue->value;
+>>>>>>> 1.11
 		printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
 			pvalue->units);
 		printf("\n\t%8d %8d %8d %8d %8d %8d",

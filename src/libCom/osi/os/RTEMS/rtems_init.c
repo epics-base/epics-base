@@ -11,15 +11,17 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <errno.h>
+#include <syslog.h>
+#include <sys/termios.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <syslog.h>
-#include <bsp.h>
+#include <rtems.h>
+#include <rtems/error.h>
 #include <rtems/rtems_bsdnet.h>
 #include <rtems/tftp.h>
-#include <rtems/monitor.h>
 
 #include <osiThread.h>
 #include <logClient.h>
@@ -27,67 +29,6 @@
 #include <ioccrfRegisterCommon.h>
 #include <registerRecordDeviceDriverRegister.h>
 #include <dbStaticLib.h>
-
-/*
- ***********************************************************************
- *                         RTEMS CONFIGURATION                         *
- ***********************************************************************
- */
-/* #define STACK_CHECKER_ON                1 */
-
-#define CONFIGURE_RTEMS_INIT_TASKS_TABLE
-
-#define CONFIGURE_EXECUTIVE_RAM_SIZE        (2000*1024)
-#define CONFIGURE_MAXIMUM_TASKS             rtems_resource_unlimited(30)
-#define CONFIGURE_MAXIMUM_SEMAPHORES        rtems_resource_unlimited(500)
-#define CONFIGURE_MAXIMUM_TIMERS            rtems_resource_unlimited(20)
-#define CONFIGURE_MAXIMUM_MESSAGE_QUEUES    rtems_resource_unlimited(5)
-
-#define CONFIGURE_LIBIO_MAXIMUM_FILE_DESCRIPTORS 50
-#define CONFIGURE_USE_IMFS_AS_BASE_FILESYSTEM
-
-#define CONFIGURE_MICROSECONDS_PER_TICK 20000
-
-#define CONFIGURE_INIT_TASK_PRIORITY    80
-#define NETWORK_TASK_PRIORITY           90
-
-#define CONFIGURE_INIT
-#define CONFIGURE_INIT_TASK_INITIAL_MODES (RTEMS_PREEMPT | \
-                    RTEMS_NO_TIMESLICE | \
-                    RTEMS_NO_ASR | \
-                    RTEMS_INTERRUPT_LEVEL(0))
-#define CONFIGURE_INIT_TASK_ATTRIBUTES (RTEMS_FLOATING_POINT | RTEMS_LOCAL)
-#define CONFIGURE_INIT_TASK_STACK_SIZE  (16*1024)
-rtems_task Init (rtems_task_argument argument);
-
-#define CONFIGURE_APPLICATION_NEEDS_CONSOLE_DRIVER
-#define CONFIGURE_APPLICATION_NEEDS_CLOCK_DRIVER
-
-#include <confdefs.h>
-
-/*
- * Network configuration
- */
-extern void rtems_bsdnet_loopattach();
-static struct rtems_bsdnet_ifconfig loopback_config = {
-    "lo0",                          /* name */
-    (int (*)(struct rtems_bsdnet_ifconfig *))rtems_bsdnet_loopattach, /* attach function */
-    NULL,                           /* link to next interface */
-    "127.0.0.1",                    /* IP address */
-    "255.0.0.0",                    /* IP net mask */
-};
-static struct rtems_bsdnet_ifconfig netdriver_config = {
-    RTEMS_BSP_NETWORK_DRIVER_NAME,      /* name */
-    RTEMS_BSP_NETWORK_DRIVER_ATTACH,    /* attach function */
-    &loopback_config,                   /* link to next interface */
-};
-struct rtems_bsdnet_config rtems_bsdnet_config = {
-    &netdriver_config,        /* Network interface */
-    rtems_bsdnet_do_bootp,    /* Use BOOTP to get network configuration */
-    NETWORK_TASK_PRIORITY,    /* Network task priority */
-    180*1024,                 /* MBUF space */
-    350*1024,                 /* MBUF cluster space */
-};
 
 /*
  ***********************************************************************
@@ -324,6 +265,17 @@ initConsole (void)
         return;
     }
 }
+
+/*
+ * Ensure that the configuration object files
+ * get pulled in from the library
+ */
+extern rtems_configuration_table Configuration;
+extern struct rtems_bsdnet_config rtems_bsdnet_config;
+const void *rtemsConfigArray[] = {
+    &Configuration,
+    &rtems_bsdnet_config
+};
 
 /*
  * RTEMS Startup task

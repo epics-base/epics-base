@@ -163,6 +163,8 @@ SRCS_WIN32 := getopt.c
 SRCS_WIN32 += dllmain.cpp
 
 # For RTEMS startup
+SRCS_RTEMS += rtems_config.c
+SRCS_RTEMS += rtems_netconfig.c
 SRCS_RTEMS += rtems_init.c
 SRCS_RTEMS += rtems_util.c
 

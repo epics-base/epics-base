@@ -75,11 +75,27 @@ private:
     epicsEvent noRecvThreadsPending;
     unsigned recvThreadsPendingCount;
     bool threadsMayBeBlockingForRecvThreadsToFinish;
-    //callbackMutex ( callbackMutex & );
-    //callbackMutex & operator = ( callbackMutex & );
+    callbackMutex ( callbackMutex & );
+    callbackMutex & operator = ( callbackMutex & );
 };
 
-class cac : private cacRecycle
+class cacMutex {
+public:
+    void lock ();
+    void unlock ();
+    void show ( unsigned level ) const;
+private:
+    epicsMutex mutex;
+};
+
+class cacDisconnectChannelPrivate {
+public:
+    virtual void disconnectChannel ( 
+        epicsGuard < callbackMutex > &, 
+        epicsGuard < cacMutex > &, nciu & chan ) = 0;
+};
+
+class cac : private cacRecycle, private cacDisconnectChannelPrivate
 {
 public:
     cac ( cacNotify &, bool enablePreemptiveCallback = false );
@@ -107,7 +123,6 @@ public:
     void ioShow ( const cacChannel::ioid &id, unsigned level ) const;
 
     // channel routines
-    void installNetworkChannel ( nciu &, netiiu *&piiu );
     bool lookupChannelAndTransferToTCP ( 
             epicsGuard < callbackMutex > &,
             unsigned cid, unsigned sid, 
@@ -118,6 +133,7 @@ public:
     cacChannel & createChannel ( const char *name_str, 
         cacChannelNotify &chan, cacChannel::priLev pri );
     void registerService ( cacService &service );
+    void initiateConnect ( nciu & );
 
     // IO request stubs
     void writeRequest ( nciu &, unsigned type, 
@@ -162,7 +178,7 @@ public:
     // misc
     const char * userNamePointer () const;
     unsigned getInitializingThreadsPriority () const;
-    epicsMutex & mutexRef ();
+    cacMutex & mutexRef ();
     void attachToClientCtx ();
     void selfTest () const;
     void notifyNewFD ( epicsGuard < callbackMutex > &, SOCKET ) const;
@@ -202,15 +218,12 @@ private:
     // callback lock must always be acquired before
     // the primary mutex if both locks are needed
     callbackMutex               cbMutex;
-    mutable epicsMutex          mutex; 
+    mutable cacMutex            mutex; 
     epicsEvent                  ioDone;
     epicsEvent                  iiuUninstall;
     epicsTimerQueueActive       & timerQueue;
     char                        * pUserName;
     class udpiiu                * pudpiiu;
-    class searchTimer           * pSearchTmr;
-    class repeaterSubscribeTimer  
-                                * pRepeaterSubscribeTmr;
     void                        * tcpSmallRecvBufFreeList;
     void                        * tcpLargeRecvBufFreeList;
     epicsGuard <callbackMutex>  * pCallbackGuard;
@@ -224,20 +237,15 @@ private:
     void privateUninstallIIU ( epicsGuard < callbackMutex > &, tcpiiu &iiu ); 
     void flushRequestPrivate ();
     void run ();
-    bool setupUDP ();
-    void connectAllIO ( nciu &chan );
-    void disconnectAllIO ( epicsGuard < epicsMutex > & locker, nciu & chan, bool enableCallbacks );
-    void flushIfRequired ( epicsGuard < epicsMutex > &, netiiu & ); 
+    void connectAllIO ( epicsGuard < cacMutex > &, nciu &chan );
+    void disconnectAllIO ( epicsGuard < cacMutex > & locker, nciu & chan, bool enableCallbacks );
+    void flushIfRequired ( epicsGuard < cacMutex > &, netiiu & ); 
     void recycleReadNotifyIO ( netReadNotifyIO &io );
     void recycleWriteNotifyIO ( netWriteNotifyIO &io );
     void recycleSubscription ( netSubscription &io );
 
-    void removeAllChan ( 
-                epicsGuard < callbackMutex > & cbLocker, epicsGuard < epicsMutex > &locker, 
-                netiiu & srcIIU, netiiu & dstIIU );
-    void disconnectChannelPrivate ( 
-        epicsGuard < callbackMutex > &, epicsGuard < epicsMutex > &, 
-        nciu & chan, netiiu & dstIIU );
+    void disconnectChannel ( 
+        epicsGuard < callbackMutex > &, epicsGuard < cacMutex > &, nciu & chan );
 
     void ioCompletionNotify ( unsigned id, unsigned type, 
         arrayElementCount count, const void *pData );
@@ -327,7 +335,7 @@ inline unsigned cac::sequenceNumberOfOutstandingIO () const
     return this->readSeq;
 }
 
-inline epicsMutex & cac::mutexRef ()
+inline cacMutex & cac::mutexRef ()
 {
     return this->mutex;
 }
@@ -385,6 +393,21 @@ inline bool cac::ioComplete () const
 inline bool cac::preemptiveCallbakIsEnabled () const
 {
     return ! this->pCallbackGuard;
+}
+
+inline void cacMutex::lock ()
+{
+    this->mutex.lock ();
+}
+
+inline void cacMutex::unlock ()
+{
+    this->mutex.unlock ();
+}
+
+inline void cacMutex::show ( unsigned level ) const
+{
+    this->mutex.show ( level );
 }
 
 #endif // ifdef cach

@@ -122,7 +122,7 @@ typedef ca_uint32_t     caResId;
 #define CA_PROTO_READ_NOTIFY    15u /* add a one shot event */
 #define CA_PROTO_READ_BUILD     16u /* read and build - obsolete */
 #define REPEATER_CONFIRM        17u /* registration confirmation */
-#define CA_PROTO_CLAIM_CIU      18u /* client claims resource in server */
+#define CA_PROTO_CREATE_CHAN    18u /* client creates channel in server */
 #define CA_PROTO_WRITE_NOTIFY   19u /* notify after write chan value */
 #define CA_PROTO_CLIENT_NAME    20u /* CA V4.1 identify client */
 #define CA_PROTO_HOST_NAME      21u /* CA V4.1 identify client */
@@ -130,7 +130,7 @@ typedef ca_uint32_t     caResId;
 #define CA_PROTO_ECHO           23u /* CA V4.3 connection verify */
 #define REPEATER_REGISTER       24u /* register for repeater fan out */
 #define CA_PROTO_SIGNAL         25u /* knock the server out of select */
-#define CA_PROTO_CLAIM_CIU_FAILED 26u   /* unable to create chan resource in server */
+#define CA_PROTO_CREATE_CH_FAIL 26u /* unable to create chan resource in server */
 #define CA_PROTO_SERVER_DISCONN 27u /* server deletes PV (or channel) */
 
 #define CA_PROTO_LAST_CMMD CA_PROTO_SERVER_DISCONN

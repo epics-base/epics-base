@@ -885,12 +885,10 @@ void tcpiiu::hostNameSetRequest ( epicsGuard < cacMutex > & locker )
     }
 
     comQueSendMsgMinder minder ( this->sendQue, locker );
-    this->sendQue.pushUInt16 ( CA_PROTO_HOST_NAME ); // cmd
-    this->sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( postSize ) ); // postsize
-    this->sendQue.pushUInt16 ( 0u ); // dataType
-    this->sendQue.pushUInt16 ( 0u ); // count
-    this->sendQue.pushUInt32 ( 0u ); // cid
-    this->sendQue.pushUInt32 ( 0u ); // available 
+    this->sendQue.insertRequestHeader ( 
+        CA_PROTO_HOST_NAME, postSize, 
+        0u, 0u, 0u, 0u, 
+        CA_V49 ( this->minorProtocolVersion ) );
     this->sendQue.pushString ( pName, size );
     this->sendQue.pushString ( cacNillBytes, postSize - size );
     minder.commit ();
@@ -915,12 +913,10 @@ void tcpiiu::userNameSetRequest ( epicsGuard < cacMutex > & locker )
     }
 
     comQueSendMsgMinder minder ( this->sendQue, locker );
-    this->sendQue.pushUInt16 ( CA_PROTO_CLIENT_NAME ); // cmd
-    this->sendQue.pushUInt16 ( static_cast <epicsUInt16> ( postSize ) ); // postsize
-    this->sendQue.pushUInt16 ( 0u ); // dataType
-    this->sendQue.pushUInt16 ( 0u ); // count
-    this->sendQue.pushUInt32 ( 0u ); // cid
-    this->sendQue.pushUInt32 ( 0u ); // available 
+    this->sendQue.insertRequestHeader ( 
+        CA_PROTO_CLIENT_NAME, postSize, 
+        0u, 0u, 0u, 0u, 
+        CA_V49 ( this->minorProtocolVersion ) );
     this->sendQue.pushString ( pName, size );
     this->sendQue.pushString ( cacNillBytes, postSize - size );
     minder.commit ();
@@ -932,12 +928,10 @@ void tcpiiu::disableFlowControlRequest ( epicsGuard < cacMutex > & locker )
         this->flushRequest ();
     }
     comQueSendMsgMinder minder ( this->sendQue, locker );
-    this->sendQue.pushUInt16 ( CA_PROTO_EVENTS_ON ); // cmd
-    this->sendQue.pushUInt16 ( 0u ); // postsize
-    this->sendQue.pushUInt16 ( 0u ); // dataType
-    this->sendQue.pushUInt16 ( 0u ); // count
-    this->sendQue.pushUInt32 ( 0u ); // cid
-    this->sendQue.pushUInt32 ( 0u ); // available 
+    this->sendQue.insertRequestHeader ( 
+        CA_PROTO_EVENTS_ON, 0u, 
+        0u, 0u, 0u, 0u, 
+        CA_V49 ( this->minorProtocolVersion ) );
     minder.commit ();
 }
 
@@ -947,12 +941,10 @@ void tcpiiu::enableFlowControlRequest ( epicsGuard < cacMutex > & locker )
         this->flushRequest ();
     }
     comQueSendMsgMinder minder ( this->sendQue, locker );
-    this->sendQue.pushUInt16 ( CA_PROTO_EVENTS_OFF ); // cmd
-    this->sendQue.pushUInt16 ( 0u ); // postsize
-    this->sendQue.pushUInt16 ( 0u ); // dataType
-    this->sendQue.pushUInt16 ( 0u ); // count
-    this->sendQue.pushUInt32 ( 0u ); // cid
-    this->sendQue.pushUInt32 ( 0u ); // available 
+    this->sendQue.insertRequestHeader ( 
+        CA_PROTO_EVENTS_OFF, 0u, 
+        0u, 0u, 0u, 0u, 
+        CA_V49 ( this->minorProtocolVersion ) );
     minder.commit ();
 }
 
@@ -966,12 +958,10 @@ void tcpiiu::versionMessage ( epicsGuard < cacMutex > & locker,
     }
 
     comQueSendMsgMinder minder ( this->sendQue, locker );
-    this->sendQue.pushUInt16 ( CA_PROTO_VERSION ); // cmd
-    this->sendQue.pushUInt16 ( 0u ); // old postsize field
-    this->sendQue.pushUInt16 ( static_cast <ca_uint16_t> ( priority ) ); // old dataType field
-    this->sendQue.pushUInt16 ( CA_MINOR_PROTOCOL_REVISION ); // old count field
-    this->sendQue.pushUInt32 ( 0u ); // ( old cid field )
-    this->sendQue.pushUInt32 ( 0u ); // ( old available field )
+    this->sendQue.insertRequestHeader ( 
+        CA_PROTO_VERSION, 0u, 
+        priority, CA_MINOR_PROTOCOL_REVISION, 0u, 0u, 
+        CA_V49 ( this->minorProtocolVersion ) );
     minder.commit ();
 }
 
@@ -981,12 +971,10 @@ void tcpiiu::echoRequest ( epicsGuard < cacMutex > & locker )
         this->flushRequest ();
     }
     comQueSendMsgMinder minder ( this->sendQue, locker );
-    this->sendQue.pushUInt16 ( CA_PROTO_ECHO ); // cmd
-    this->sendQue.pushUInt16 ( 0u ); // postsize
-    this->sendQue.pushUInt16 ( 0u ); // dataType
-    this->sendQue.pushUInt16 ( 0u ); // count
-    this->sendQue.pushUInt32 ( 0u ); // cid
-    this->sendQue.pushUInt32 ( 0u ); // available 
+    this->sendQue.insertRequestHeader ( 
+        CA_PROTO_ECHO, 0u, 
+        0u, 0u, 0u, 0u, 
+        CA_V49 ( this->minorProtocolVersion ) );
     minder.commit ();
 }
 
@@ -1078,17 +1066,15 @@ void tcpiiu::createChannelRequest (
     }
 
     comQueSendMsgMinder minder ( this->sendQue, guard );
-    this->sendQue.pushUInt16 ( CA_PROTO_CLAIM_CIU ); // cmd
-    this->sendQue.pushUInt16 ( static_cast < epicsUInt16 > ( postCnt ) ); // postsize
-    this->sendQue.pushUInt16 ( 0u ); // dataType
-    this->sendQue.pushUInt16 ( 0u ); // count
-    this->sendQue.pushUInt32 ( identity ); // cid
     //
     // The available field is used (abused)
     // here to communicate the minor version number
     // starting with CA 4.1.
     //
-    this->sendQue.pushUInt32 ( CA_MINOR_PROTOCOL_REVISION ); // available 
+    this->sendQue.insertRequestHeader ( 
+        CA_PROTO_CREATE_CHAN, postCnt, 
+        0u, 0u, identity, CA_MINOR_PROTOCOL_REVISION, 
+        CA_V49 ( this->minorProtocolVersion ) );
     if ( nameLength ) {
         this->sendQue.pushString ( pName, nameLength );
     }
@@ -1102,12 +1088,10 @@ void tcpiiu::clearChannelRequest ( epicsGuard < cacMutex > & locker,
                                   ca_uint32_t sid, ca_uint32_t cid )
 {
     comQueSendMsgMinder minder ( this->sendQue, locker );
-    this->sendQue.pushUInt16 ( CA_PROTO_CLEAR_CHANNEL ); // cmd
-    this->sendQue.pushUInt16 ( 0u ); // postsize
-    this->sendQue.pushUInt16 ( 0u ); // dataType
-    this->sendQue.pushUInt16 ( 0u ); // count
-    this->sendQue.pushUInt32 ( sid ); // cid
-    this->sendQue.pushUInt32 ( cid ); // available 
+    this->sendQue.insertRequestHeader ( 
+        CA_PROTO_CLEAR_CHANNEL, 0u, 
+        0u, 0u, sid, cid, 
+        CA_V49 ( this->minorProtocolVersion ) );
     minder.commit ();
 }
 

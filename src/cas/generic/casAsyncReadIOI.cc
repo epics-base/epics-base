@@ -32,7 +32,7 @@ casAsyncReadIOI::casAsyncReadIOI (
 casAsyncReadIOI::~casAsyncReadIOI ()
 {
     this->asyncReadIO.serverInitiatedDestroy ();
-    if ( this->msg.m_cmmd == CA_PROTO_CLAIM_CIU && 
+    if ( this->msg.m_cmmd == CA_PROTO_CREATE_CHAN && 
         ! this->createChannelWasSuccessful ) {
         delete & this->chan;
     }
@@ -75,7 +75,7 @@ caStatus casAsyncReadIOI::cbFuncAsyncIO (
 			this->completionStatus );
 		break;
 
-	case CA_PROTO_CLAIM_CIU:
+	case CA_PROTO_CREATE_CHAN:
         unsigned nativeTypeDBR;
         status = this->chan.getPVI().bestDBRType ( nativeTypeDBR );
         if ( status ) {

@@ -102,7 +102,7 @@ const cac::pExcepProtoStubTCP cac::tcpExcepJumpTableCAC [] =
     &cac::readNotifyExcep,  // CA_PROTO_READ_NOTIFY
     &cac::defaultExcep,     // CA_PROTO_READ_BUILD
     &cac::defaultExcep,     // REPEATER_CONFIRM
-    &cac::defaultExcep,     // CA_PROTO_CLAIM_CIU 
+    &cac::defaultExcep,     // CA_PROTO_CREATE_CHAN 
     &cac::writeNotifyExcep, // CA_PROTO_WRITE_NOTIFY
     &cac::defaultExcep,     // CA_PROTO_CLIENT_NAME
     &cac::defaultExcep,     // CA_PROTO_HOST_NAME
@@ -110,7 +110,7 @@ const cac::pExcepProtoStubTCP cac::tcpExcepJumpTableCAC [] =
     &cac::defaultExcep,     // CA_PROTO_ECHO
     &cac::defaultExcep,     // REPEATER_REGISTER
     &cac::defaultExcep,     // CA_PROTO_SIGNAL
-    &cac::defaultExcep,     // CA_PROTO_CLAIM_CIU_FAILED
+    &cac::defaultExcep,     // CA_PROTO_CREATE_CH_FAIL
     &cac::defaultExcep      // CA_PROTO_SERVER_DISCONN
 };
 

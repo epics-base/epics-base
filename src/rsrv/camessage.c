@@ -1350,7 +1350,7 @@ LOCAL int claim_ciu_action ( caHdrLargeArray *mp,
             }
         }
         status = cas_copy_in_header ( 
-            client, CA_PROTO_CLAIM_CIU, 0u,
+            client, CA_PROTO_CREATE_CHAN, 0u,
             pciu->addr.dbr_field_type, nElem, pciu->cid, 
             pciu->sid, NULL );
         if ( status == ECA_NORMAL ) {

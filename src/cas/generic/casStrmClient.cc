@@ -1449,7 +1449,7 @@ caStatus casStrmClient::enumPostponedCreateChanResponse (
 	assert ( nativeTypeDBR <= 0xffff );
 	aitIndex nativeCount = chan.getPVI().nativeCount();
 	assert ( nativeCount <= 0xffffffff );
-    status = this->out.copyInHeader ( CA_PROTO_CLAIM_CIU, 0,
+    status = this->out.copyInHeader ( CA_PROTO_CREATE_CHAN, 0,
         static_cast <ca_uint16_t> ( nativeTypeDBR ), 
         static_cast <ca_uint32_t> ( nativeCount ), 
         hdr.m_cid, chan.getSID(), 0 );
@@ -1502,7 +1502,7 @@ caStatus casStrmClient::channelCreateFailedResp (
     caStatus status;
 	if ( CA_V46 ( this->minor_version_number ) ) {
         status = this->out.copyInHeader ( 
-            CA_PROTO_CLAIM_CIU_FAILED, 0,
+            CA_PROTO_CREATE_CH_FAIL, 0,
             0, 0, hdr.m_cid, 0, 0 );
 		if ( status == S_cas_success ) {
 		    this->out.commitMsg ();

@@ -45,6 +45,7 @@
 #include "devSup.h"
 #include "errMdef.h"
 #include "recSup.h"
+#include "recGbl.h"
 #include "special.h"
 #include "callback.h"
 

@@ -56,6 +56,7 @@
 #include "devSup.h"
 #include "errMdef.h"
 #include "recSup.h"
+#include "recGbl.h"
 #define GEN_SIZE_OFFSET
 #include "pulseDelayRecord.h"
 #undef  GEN_SIZE_OFFSET

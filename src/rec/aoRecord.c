@@ -87,6 +87,7 @@
 #include "errMdef.h"
 #include "special.h"
 #include "recSup.h"
+#include "recGbl.h"
 #include "menuConvert.h"
 #define GEN_SIZE_OFFSET
 #include "aoRecord.h"

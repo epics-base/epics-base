@@ -59,6 +59,7 @@
 #include "devSup.h"
 #include "errMdef.h"
 #include "recSup.h"
+#include "recGbl.h"
 #define GEN_SIZE_OFFSET
 #include "pulseTrainRecord.h"
 #undef  GEN_SIZE_OFFSET

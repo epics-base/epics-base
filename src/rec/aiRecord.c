@@ -88,6 +88,7 @@
 #include "dbFldTypes.h"
 #include "devSup.h"
 #include "recSup.h"
+#include "recGbl.h"
 #include "special.h"
 #include "menuConvert.h"
 #define GEN_SIZE_OFFSET

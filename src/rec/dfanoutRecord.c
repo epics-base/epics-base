@@ -21,15 +21,16 @@
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "alarm.h"
-#include"dbAccess.h"
-#include"dbEvent.h"
-#include"dbFldTypes.h"
-#include"devSup.h"
-#include"errMdef.h"
-#include"recSup.h"
-#include"special.h"
+#include "dbAccess.h"
+#include "dbEvent.h"
+#include "dbFldTypes.h"
+#include "devSup.h"
+#include "errMdef.h"
+#include "recSup.h"
+#include "recGbl.h"
+#include "special.h"
 #define GEN_SIZE_OFFSET
-#include"dfanoutRecord.h"
+#include "dfanoutRecord.h"
 #undef  GEN_SIZE_OFFSET
 
 /* Create RSET - Record Support Entry Table*/

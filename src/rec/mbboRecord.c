@@ -76,6 +76,7 @@
 #include "devSup.h"
 #include "errMdef.h"
 #include "recSup.h"
+#include "recGbl.h"
 #include "special.h"
 #define GEN_SIZE_OFFSET
 #include "mbboRecord.h"

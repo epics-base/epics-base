@@ -53,6 +53,7 @@
 #include "devSup.h"
 #include "errMdef.h"
 #include "recSup.h"
+#include "recGbl.h"
 #include "callback.h"
 #define GEN_SIZE_OFFSET
 #include "pulseCounterRecord.h"

@@ -68,6 +68,7 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include "devSup.h"
 #include "errMdef.h"
 #include "recSup.h"
+#include "recGbl.h"
 
 #include "ereventDefs.h"
 #define GEN_SIZE_OFFSET

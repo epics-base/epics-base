@@ -161,11 +161,6 @@ LOCAL void logClientReset (logClient *pClient)
  */
 LOCAL void logClientDestroy (logClient *pClient)
 {
-    /*
-     * mutex on (and left on)
-     */
-    epicsMutexMustLock (pClient->mutex);
-
     logClientReset (pClient);
 
     epicsMutexDestroy (pClient->mutex);

@@ -40,6 +40,8 @@
 #include "hostNameCache.h"
 #include "compilerDependencies.h"
 
+class callbackManager;
+
 // a modified ca header with capacity for large arrays
 struct caHdrLargeArray {
     ca_uint32_t m_postsize;     // size of message extension 
@@ -52,11 +54,11 @@ struct caHdrLargeArray {
 
 class hostNameCache;
 class ipAddrToAsciiEngine;
-class callbackMutex;
 
 class tcpRecvThread : public epicsThreadRunable {
 public:
-    tcpRecvThread ( class tcpiiu & iiuIn, callbackMutex & cbMutexIn,
+    tcpRecvThread ( 
+        class tcpiiu & iiuIn, epicsMutex & cbMutexIn, cacContextNotify &,
         const char * pName, unsigned int stackSize, unsigned int priority );
     virtual ~tcpRecvThread ();
     void start ();
@@ -65,15 +67,17 @@ public:
 private:
     epicsThread thread;
     class tcpiiu & iiu;
-    callbackMutex & cbMutex;
+    epicsMutex & cbMutex;
+    cacContextNotify & ctxNotify;
     void run ();
+    void connect ();
 };
 
 class tcpSendThread : public epicsThreadRunable {
 public:
-    tcpSendThread ( class tcpiiu & iiuIn, callbackMutex &,
-        const char * pName, unsigned int stackSize, 
-        unsigned int priority );
+    tcpSendThread ( 
+        class tcpiiu & iiuIn, const char * pName, 
+        unsigned int stackSize, unsigned int priority );
     virtual ~tcpSendThread ();
     void start ();
     void exitWait ();
@@ -82,7 +86,6 @@ public:
 private:
     epicsThread thread;
     class tcpiiu & iiu;
-    callbackMutex & cbMutex;
     void run ();
 };
 
@@ -91,29 +94,32 @@ class tcpiiu :
         public tsSLNode < tcpiiu >, public caServerID, 
         private wireSendAdapter, private wireRecvAdapter {
 public:
-    tcpiiu ( cac & cac, callbackMutex & cbMutex, double connectionTimeout, 
-        epicsTimerQueue & timerQueue, const osiSockAddr & addrIn, 
-        comBufMemoryManager &, unsigned minorVersion, ipAddrToAsciiEngine & engineIn,
-        const cacChannel::priLev & priorityIn );
+    tcpiiu ( cac & cac, epicsMutex & mutualExclusion, epicsMutex & callbackControl, 
+        cacContextNotify &, double connectionTimeout, epicsTimerQueue & timerQueue, 
+        const osiSockAddr & addrIn, comBufMemoryManager &, unsigned minorVersion, 
+        ipAddrToAsciiEngine & engineIn, const cacChannel::priLev & priorityIn );
     ~tcpiiu ();
     void start ();
-    void initiateCleanShutdown ( epicsGuard < epicsMutex > & );
-    void initiateAbortShutdown ( epicsGuard < callbackMutex > &, 
-                                    epicsGuard < epicsMutex > & ); 
+    void initiateCleanShutdown ( 
+        epicsGuard < epicsMutex > & );
+    void initiateAbortShutdown ( 
+        callbackManager &, 
+        epicsGuard < epicsMutex > & ); 
     void responsiveCircuitNotify ( 
-        epicsGuard < callbackMutex > & cbGuard,
+        epicsGuard < epicsMutex > & cbGuard,
         epicsGuard < epicsMutex > & guard );
-    void sendTimeoutNotify ( const epicsTime & currentTime,
-        epicsGuard < callbackMutex > & cbGuard );
+    void sendTimeoutNotify ( 
+        const epicsTime & currentTime,
+        callbackManager & );
     void receiveTimeoutNotify( 
-        epicsGuard < callbackMutex > & cbGuard,
+        callbackManager &,
         epicsGuard < epicsMutex > & );
     void beaconAnomalyNotify ( epicsGuard < epicsMutex > & );
     void beaconArrivalNotify ( 
         epicsGuard < epicsMutex > &,
         const epicsTime & currentTime );
     void probeResponseNotify ( 
-        epicsGuard < callbackMutex > &,
+        epicsGuard < epicsMutex > &,
         const epicsTime & currentTime );
 
     void flushRequest ( epicsGuard < epicsMutex > & );
@@ -136,15 +142,17 @@ public:
     bool alive () const;
     bool connecting () const;
     osiSockAddr getNetworkAddress () const;
-    int printf ( const char *pformat, ... );
-    unsigned channelCount ( epicsGuard < callbackMutex > & );
+    int printf ( epicsGuard < epicsMutex > & cbGuard, 
+        const char *pformat, ... );
+    unsigned channelCount ( epicsGuard < epicsMutex > & );
     void removeAllChannels (
-        epicsGuard < callbackMutex > & cbGuard, 
+        epicsGuard < epicsMutex > & cbGuard, 
         epicsGuard < epicsMutex > & guard, udpiiu & );
-    void installChannel ( epicsGuard < callbackMutex > &,
+    void installChannel ( epicsGuard < epicsMutex > &,
         epicsGuard < epicsMutex > &, nciu & chan, 
         unsigned sidIn, ca_uint16_t typeIn, arrayElementCount countIn );
-    void uninstallChan ( epicsGuard < epicsMutex > &, nciu & chan );
+    void uninstallChan ( epicsGuard < epicsMutex > & cbGuard, 
+        epicsGuard < epicsMutex > & guard, nciu & chan );
     void connectNotify ( epicsGuard < epicsMutex > &, nciu & chan );
     void nameResolutionMsgEndNotify ();
 
@@ -177,6 +185,8 @@ private:
     comBufMemoryManager & comBufMemMgr;
     cac & cacRef;
     char * pCurData;
+    epicsMutex & mutex;
+    epicsMutex & cbMutex;
     unsigned minorProtocolVersion;
     enum iiu_conn_state { 
         iiucs_connecting, // pending circuit connect
@@ -205,16 +215,15 @@ private:
     bool unresponsiveCircuit;
 
     bool processIncoming ( 
-        const epicsTime & currentTime, epicsGuard < callbackMutex > & );
+        const epicsTime & currentTime, callbackManager & );
     unsigned sendBytes ( const void *pBuf, 
         unsigned nBytesInBuf, const epicsTime & currentTime );
-    unsigned recvBytes ( void *pBuf, unsigned nBytesInBuf );
-    void connect ();
+    void recvBytes ( 
+        void * pBuf, unsigned nBytesInBuf, statusWireIO & );
     const char * pHostName () const;
-    void blockUntilBytesArePendingInOS ();
     double receiveWatchdogDelay () const;
     void unresponsiveCircuitNotify ( 
-        epicsGuard < callbackMutex > & cbGuard, 
+        epicsGuard < epicsMutex > & cbGuard, 
         epicsGuard < epicsMutex > & guard );
     void disconnectNotify ();
 
@@ -243,6 +252,7 @@ private:
     bool flush ( epicsGuard < epicsMutex > & ); // only to be called by the send thread
 
     friend void tcpRecvThread::run ();
+    friend void tcpRecvThread::connect ();
     friend void tcpSendThread::run ();
 
 	tcpiiu ( const tcpiiu & );
@@ -305,7 +315,7 @@ inline void tcpiiu::beaconArrivalNotify (
 }
 
 inline void tcpiiu::probeResponseNotify (
-    epicsGuard < callbackMutex > & cbGuard,
+    epicsGuard < epicsMutex > & cbGuard,
     const epicsTime & currentTime )
 {
     this->recvDog.probeResponseNotify ( cbGuard, currentTime );

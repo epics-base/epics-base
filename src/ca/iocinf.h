@@ -76,7 +76,7 @@ private:
 /*
  * CA internal functions
  */
-#define genLocalExcep( GUARD, CAC, STAT, PCTX ) \
-(CAC).exception ( GUARD, STAT, PCTX, __FILE__, __LINE__ )
+#define genLocalExcep( CBGUARD, GUARD, CAC, STAT, PCTX ) \
+(CAC).exception ( CBGUARD, GUARD, STAT, PCTX, __FILE__, __LINE__ )
 
 #endif // ifdef INCiocinfh 

@@ -60,15 +60,29 @@ extern "C" int epicsShareAPI ca_sg_delete ( const CA_SYNC_GID gid )
         return caStatus;
     }
 
-    epicsGuard < epicsMutex > guard ( pcac->mutexRef() );
+    if ( pcac->pCallbackGuard.get() ) {
+        epicsGuard < epicsMutex > guard ( pcac->mutexRef() );
 
-    CASG * pcasg = pcac->lookupCASG ( guard, gid );
-    if ( ! pcasg ) {
-        return ECA_BADSYNCGRP;
+        CASG * pcasg = pcac->lookupCASG ( guard, gid );
+        if ( ! pcasg ) {
+            return ECA_BADSYNCGRP;
+        }
+
+        pcasg->destructor ( *pcac->pCallbackGuard, guard );
+        pcac->casgFreeList.release ( pcasg );
     }
+    else {
+        epicsGuard < epicsMutex > cbGuard ( pcac->cbMutex );
+        epicsGuard < epicsMutex > guard ( pcac->mutexRef() );
 
-    pcasg->destructor ( guard );
-    pcac->casgFreeList.release ( pcasg );
+        CASG * pcasg = pcac->lookupCASG ( guard, gid );
+        if ( ! pcasg ) {
+            return ECA_BADSYNCGRP;
+        }
+
+        pcasg->destructor ( cbGuard, guard );
+        pcac->casgFreeList.release ( pcasg );
+    }
 
     return ECA_NORMAL;
 }
@@ -82,19 +96,33 @@ extern "C" int epicsShareAPI ca_sg_block ( const CA_SYNC_GID gid, ca_real timeou
     CASG *pcasg;
     int status;
 
-    status = fetchClientContext (&pcac);
+    status = fetchClientContext ( &pcac );
     if ( status != ECA_NORMAL ) {
         return status;
     }
 
-    epicsGuard < epicsMutex > guard ( pcac->mutexRef() );
+    if ( pcac->pCallbackGuard.get() ) {
+        epicsGuard < epicsMutex > guard ( pcac->mutex );
 
-    pcasg = pcac->lookupCASG ( guard, gid );
-    if ( ! pcasg ) {
-        status = ECA_BADSYNCGRP;
+        pcasg = pcac->lookupCASG ( guard, gid );
+        if ( ! pcasg ) {
+            status = ECA_BADSYNCGRP;
+        }
+        else {
+            status = pcasg->block ( *pcac->pCallbackGuard, guard, timeout );
+        }
     }
     else {
-        status = pcasg->block ( guard, timeout );
+        epicsGuard < epicsMutex > cbGuard ( pcac->cbMutex);
+        epicsGuard < epicsMutex > guard ( pcac->mutex );
+
+        pcasg = pcac->lookupCASG ( guard, gid );
+        if ( ! pcasg ) {
+            status = ECA_BADSYNCGRP;
+        }
+        else {
+            status = pcasg->block ( cbGuard, guard, timeout );
+        }
     }
 
     return status;
@@ -114,15 +142,30 @@ extern "C" int epicsShareAPI ca_sg_reset ( const CA_SYNC_GID gid )
         return caStatus;
     }
 
-    epicsGuard < epicsMutex > guard ( pcac->mutexRef() );
+    if ( pcac->pCallbackGuard.get() ) {
+        epicsGuard < epicsMutex > guard ( pcac->mutex );
 
-    pcasg = pcac->lookupCASG ( guard, gid );
-    if ( ! pcasg ) {
-        caStatus = ECA_BADSYNCGRP;
+        pcasg = pcac->lookupCASG ( guard, gid );
+        if ( ! pcasg ) {
+            caStatus = ECA_BADSYNCGRP;
+        }
+        else {
+            caStatus = ECA_NORMAL;
+            pcasg->reset ( *pcac->pCallbackGuard, guard );
+        }
     }
     else {
-        caStatus = ECA_NORMAL;
-        pcasg->reset ( guard );
+        epicsGuard < epicsMutex > cbGuard ( pcac->cbMutex );
+        epicsGuard < epicsMutex > guard ( pcac->mutex );
+
+        pcasg = pcac->lookupCASG ( guard, gid );
+        if ( ! pcasg ) {
+            caStatus = ECA_BADSYNCGRP;
+        }
+        else {
+            caStatus = ECA_NORMAL;
+            pcasg->reset ( cbGuard, guard );
+        }
     }
 
     return caStatus;
@@ -160,22 +203,39 @@ extern "C" int epicsShareAPI ca_sg_test ( const CA_SYNC_GID gid ) // X aCC 361
     CASG *pcasg;
     int caStatus;
 
-    caStatus = fetchClientContext (&pcac);
+    caStatus = fetchClientContext ( &pcac );
     if ( caStatus != ECA_NORMAL ) {
         return caStatus;
     }
 
-    epicsGuard < epicsMutex > guard ( pcac->mutexRef() );
+    if ( pcac->pCallbackGuard.get() ) {
+        epicsGuard < epicsMutex > guard ( pcac->mutexRef() );
 
-    pcasg = pcac->lookupCASG ( guard, gid );
-    if ( ! pcasg ) {
-        return ECA_BADSYNCGRP;
+        pcasg = pcac->lookupCASG ( guard, gid );
+        if ( ! pcasg ) {
+            return ECA_BADSYNCGRP;
+        }
+        if ( pcasg->ioComplete ( *pcac->pCallbackGuard, guard ) ) {
+            return ECA_IODONE;
+        }
+        else{
+            return ECA_IOINPROGRESS;
+        }
     }
-    if ( pcasg->ioComplete ( guard ) ) {
-        return ECA_IODONE;
-    }
-    else{
-        return ECA_IOINPROGRESS;
+    else {
+        epicsGuard < epicsMutex > cbGuard ( pcac->cbMutex );
+        epicsGuard < epicsMutex > guard ( pcac->mutexRef() );
+
+        pcasg = pcac->lookupCASG ( guard, gid );
+        if ( ! pcasg ) {
+            return ECA_BADSYNCGRP;
+        }
+        if ( pcasg->ioComplete ( cbGuard, guard ) ) {
+            return ECA_IODONE;
+        }
+        else{
+            return ECA_IOINPROGRESS;
+        }
     }
 }
 

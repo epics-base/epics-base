@@ -687,11 +687,11 @@ int epicsShareAPI ca_create_subscription (
                 new ( pChan->getClientCtx().subscriptionFreeList )
                     oldSubscription  ( *pChan, 
                         pCallBack, pCallBackArg ) );
-        evid pTmp = pSubsr.release ();
+        pSubsr->begin ( guard, tmpType, count, mask );
         if ( monixptr ) {
-            *monixptr = pTmp;
+            *monixptr = pSubsr.get ();
         }
-        pTmp->begin ( guard, tmpType, count, mask );
+        pSubsr.release ();
         // dont touch pTmp after this because
         // the first callback might have canceled it
         return ECA_NORMAL;
@@ -746,8 +746,15 @@ epicsShareFunc int epicsShareAPI ca_clear_subscription ( evid pMon )
 {
     oldChannelNotify & chan = pMon->channel ();
     ca_client_context & cac = chan.getClientCtx ();
-    epicsGuard < epicsMutex > guard ( cac.mutex );
-    pMon->ioCancel ( guard );
+    if ( cac.pCallbackGuard.get() ) {
+        epicsGuard < epicsMutex > guard ( cac.mutex );
+        pMon->ioCancel ( *cac.pCallbackGuard, guard );
+    }
+    else {
+        epicsGuard < epicsMutex > cbGuard ( cac.cbMutex );
+        epicsGuard < epicsMutex > guard ( cac.mutex );
+        pMon->ioCancel ( cbGuard, guard );
+    }
     return ECA_NORMAL;
 }
 

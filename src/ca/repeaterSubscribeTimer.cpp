@@ -22,6 +22,7 @@
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
+#include "cac.h"
 #include "iocinf.h"
 #include "repeaterSubscribeTimer.h"
 
@@ -29,8 +30,11 @@
 #include "udpiiu.h"
 #undef epicsExportSharedSymbols
 
-repeaterSubscribeTimer::repeaterSubscribeTimer ( udpiiu &iiuIn, epicsTimerQueue &queueIn ) :
+repeaterSubscribeTimer::repeaterSubscribeTimer ( 
+    udpiiu & iiuIn, epicsTimerQueue & queueIn,
+    epicsMutex & cbMutexIn, cacContextNotify & ctxNotifyIn ) :
     timer ( queueIn.createTimer () ), iiu ( iiuIn ), 
+        cbMutex ( cbMutexIn ),ctxNotify ( ctxNotifyIn ),
         attempts ( 0 ), registered ( false ), once ( false )
 {
     this->timer.start ( *this, 10.0 );
@@ -51,12 +55,13 @@ epicsTimerNotify::expireStatus repeaterSubscribeTimer::
 {
     static const unsigned nTriesToMsg = 50;
     if ( this->attempts > nTriesToMsg && ! this->once ) {
-        this->iiu.printf (
+        callbackManager mgr ( this->ctxNotify, this->cbMutex );
+        this->iiu.printf ( mgr.cbGuard,
     "CA client library is unable to contact CA repeater after %u tries.\n", 
             nTriesToMsg);
-        this->iiu.printf (
+        this->iiu.printf ( mgr.cbGuard,
     "Silence this message by starting a CA repeater daemon\n");
-        this->iiu.printf (
+        this->iiu.printf ( mgr.cbGuard,
     "or by calling ca_pend_event() and or ca_poll() more often.\n");
         this->once = true;
     }

@@ -44,15 +44,20 @@
 class dbService : public cacService {
 public:
     cacContext & contextCreate ( 
-        epicsMutex &, cacContextNotify & );
+        epicsMutex & mutualExclusion, 
+        epicsMutex & callbackControl, 
+        cacContextNotify & );
 };
 
 static dbService dbs;
 
 cacContext & dbService::contextCreate ( 
-    epicsMutex & mutex, cacContextNotify & notify )
+    epicsMutex & mutualExclusion, 
+    epicsMutex & callbackControl, 
+    cacContextNotify & notify )
 {
-    return * new dbContext ( mutex, notify );
+    return * new dbContext ( callbackControl, 
+        mutualExclusion, notify );
 }
 
 extern "C" void dbServiceIOInit ()
@@ -62,9 +67,10 @@ extern "C" void dbServiceIOInit ()
 
 dbBaseIO::dbBaseIO () {}
 
-dbContext::dbContext ( epicsMutex & mutexIn, cacContextNotify & notifyIn ) :
+dbContext::dbContext ( epicsMutex & cbMutexIn, 
+        epicsMutex & mutexIn, cacContextNotify & notifyIn ) :
     readNotifyCache ( mutexIn ), ctx ( 0 ), 
-    stateNotifyCacheSize ( 0 ), mutex ( mutexIn ),
+    stateNotifyCacheSize ( 0 ), mutex ( mutexIn ), cbMutex ( cbMutexIn ),
     notify ( notifyIn ), pNetContext ( 0 ), pStateNotifyCache ( 0 )
 {
 }
@@ -94,7 +100,8 @@ cacChannel & dbContext::createChannel ( // X aCC 361
     if ( status ) {
         if ( ! this->pNetContext.get() ) {
             this->pNetContext.reset (
-                & this->notify.createNetworkContext ( this->mutex ) );
+                & this->notify.createNetworkContext ( 
+                    this->mutex, this->cbMutex ) );
         }
         return this->pNetContext->createChannel (
                     guard, pName, notifyIn, priority );
@@ -115,6 +122,14 @@ void dbContext::destroyChannel (
     epicsGuard < epicsMutex > & guard, dbChannelIO & chan )
 {
     guard.assertIdenticalMutex ( this->mutex );
+
+    if ( chan.dbContextPrivateListOfIO::pBlocker ) {
+        this->ioTable.remove ( *chan.dbContextPrivateListOfIO::pBlocker );
+        chan.dbContextPrivateListOfIO::pBlocker->destructor ( guard );
+        this->dbPutNotifyBlockerFreeList.release ( chan.dbContextPrivateListOfIO::pBlocker );
+        chan.dbContextPrivateListOfIO::pBlocker = 0;
+    }
+
     chan.destructor ( guard );
     this->dbChannelIOFreeList.release ( & chan );
 }

@@ -80,7 +80,7 @@ void netSubscription::completion (
     else {
         this->updateWhileDisconnected = true;
     }
-    this->privateChanForIO.printf ( "subscription update w/o data ?\n" );
+    errlogPrintf ( "subscription update w/o data ?\n" );
 }
 
 void netSubscription::exception ( 

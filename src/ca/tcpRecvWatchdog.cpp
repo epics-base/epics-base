@@ -29,10 +29,12 @@
 // the recv watchdog timer is active when this object is created
 //
 tcpRecvWatchdog::tcpRecvWatchdog 
-    ( callbackMutex & cbMutexIn, epicsMutex & mutexIn, tcpiiu & iiuIn, 
+    ( epicsMutex & cbMutexIn, cacContextNotify & ctxNotifyIn,
+            epicsMutex & mutexIn, tcpiiu & iiuIn, 
             double periodIn, epicsTimerQueue & queueIn ) :
         period ( periodIn ), timer ( queueIn.createTimer () ),
-        cbMutex ( cbMutexIn ), mutex ( mutexIn ), iiu ( iiuIn ), 
+        cbMutex ( cbMutexIn ), ctxNotify ( ctxNotifyIn ), 
+        mutex ( mutexIn ), iiu ( iiuIn ), 
         probeResponsePending ( false ), beaconAnomaly ( true ), 
         probeTimeoutDetected ( false )
 {
@@ -46,18 +48,19 @@ tcpRecvWatchdog::~tcpRecvWatchdog ()
 epicsTimerNotify::expireStatus
 tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ ) // X aCC 361
 {
+    callbackManager mgr ( this->ctxNotify, this->cbMutex );
     if ( this->probeResponsePending ) {
         if ( this->iiu.bytesArePendingInOS() ) {
-            this->iiu.printf ( 
+            this->iiu.printf ( mgr.cbGuard,
     "The CA client library's server inactivity timer initiated server disconnect\n" );
-            this->iiu.printf ( 
+            this->iiu.printf ( mgr.cbGuard,
     "despite the fact that messages from this server are pending for processing in\n" );
-            this->iiu.printf ( 
+            this->iiu.printf ( mgr.cbGuard,
     "the client library. Here are some possible causes of the unnecessary disconnect:\n" );
-            this->iiu.printf ( 
+            this->iiu.printf ( mgr.cbGuard,
     "o ca_pend_event() or ca_poll() have not been called for %f seconds\n", 
                 this->period  );
-            this->iiu.printf ( 
+            this->iiu.printf ( mgr.cbGuard,
     "o application is blocked in a callback from the client library\n" );
         }
 #       ifdef DEBUG
@@ -68,9 +71,8 @@ tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ ) // X aCC 361
                 hostName, this->period ) );
 #       endif
         {
-            epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
             epicsGuard < epicsMutex > guard ( this->mutex );
-            this->iiu.receiveTimeoutNotify ( cbGuard, guard );
+            this->iiu.receiveTimeoutNotify ( mgr, guard );
             this->probeTimeoutDetected = true;
         }
         return noRestart;
@@ -134,7 +136,7 @@ void tcpRecvWatchdog::messageArrivalNotify (
 }
 
 void tcpRecvWatchdog::probeResponseNotify ( 
-    epicsGuard < callbackMutex > & cbGuard, 
+    epicsGuard < epicsMutex > & cbGuard, 
     const epicsTime & currentTime )
 {
     bool restartNeeded = false;
@@ -159,7 +161,7 @@ void tcpRecvWatchdog::probeResponseNotify (
     }
     if ( restartNeeded ) {
         // timer callback takes the callback mutex and the cac mutex
-        epicsGuardRelease < callbackMutex > cbGuardRelease ( cbGuard );
+        epicsGuardRelease < epicsMutex > cbGuardRelease ( cbGuard );
         epicsTime expireTime = currentTime + restartDelay;
         this->timer.start ( *this, expireTime );
     }
@@ -207,7 +209,7 @@ void tcpRecvWatchdog::connectNotify ()
 }
 
 void tcpRecvWatchdog::sendTimeoutNotify ( 
-    epicsGuard < callbackMutex > & cbGuard,
+    epicsGuard < epicsMutex > & cbGuard,
     epicsGuard < epicsMutex > & guard,
     const epicsTime & currentTime )
 {
@@ -221,7 +223,7 @@ void tcpRecvWatchdog::sendTimeoutNotify (
     if ( restartNeeded ) {
         epicsGuardRelease < epicsMutex > unguard ( guard );
         {
-            epicsGuardRelease < callbackMutex > cbUnguard ( cbGuard );
+            epicsGuardRelease < epicsMutex > cbUnguard ( cbGuard );
             this->timer.start ( *this, currentTime + CA_ECHO_TIMEOUT );
         }
     }

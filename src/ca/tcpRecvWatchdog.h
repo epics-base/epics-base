@@ -33,8 +33,9 @@ class tcpiiu;
 
 class tcpRecvWatchdog : private epicsTimerNotify {
 public:
-    tcpRecvWatchdog ( callbackMutex &, 
-        epicsMutex &, tcpiiu &, 
+    tcpRecvWatchdog ( epicsMutex & cbMutex, 
+        cacContextNotify & ctxNotify,
+        epicsMutex & mutex, tcpiiu &, 
         double periodIn, epicsTimerQueue & );
     virtual ~tcpRecvWatchdog ();
     void sendBacklogProgressNotify (
@@ -43,7 +44,7 @@ public:
     void messageArrivalNotify (
         const epicsTime & currentTime );
     void probeResponseNotify ( 
-        epicsGuard < callbackMutex > &,
+        epicsGuard < epicsMutex > &,
         const epicsTime & currentTime );
     void beaconArrivalNotify ( 
         epicsGuard < epicsMutex > &,
@@ -51,8 +52,8 @@ public:
     void beaconAnomalyNotify ( epicsGuard < epicsMutex > & );
     void connectNotify ();
     void sendTimeoutNotify (
-        epicsGuard < callbackMutex > &,
-        epicsGuard < epicsMutex > &,
+        epicsGuard < epicsMutex > & cbMutex,
+        epicsGuard < epicsMutex > & mutex,
         const epicsTime & currentTime );
     void cancel ();
     void show ( unsigned level ) const;
@@ -60,7 +61,8 @@ public:
 private:
     const double period;
     epicsTimer & timer;
-    callbackMutex & cbMutex;
+    epicsMutex & cbMutex;
+    cacContextNotify & ctxNotify;
     epicsMutex & mutex;
     tcpiiu & iiu;
     bool probeResponsePending;

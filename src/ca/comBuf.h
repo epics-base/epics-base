@@ -53,10 +53,22 @@ public:
         const class epicsTime & currentTime ) = 0;
 };
 
+enum swioCircuitState { 
+        swioConnected, 
+        swioPeerHangup, 
+        swioPeerAbort, 
+        swioLinkFailure,
+        swioLocalAbort
+};
+struct statusWireIO {
+    unsigned bytesCopied;
+    swioCircuitState circuitState;
+};
+
 class wireRecvAdapter { // X aCC 655
 public:
-    virtual unsigned recvBytes ( void *pBuf, 
-        unsigned nBytesInBuf ) = 0;
+    virtual void recvBytes ( void * pBuf, 
+        unsigned nBytesInBuf, statusWireIO & ) = 0;
 };
 
 class comBuf : public tsDLNode < comBuf > {
@@ -95,7 +107,7 @@ public:
     bool copyOutAllBytes ( void *pBuf, unsigned nBytes );
     unsigned removeBytes ( unsigned nBytes );
     bool flushToWire ( wireSendAdapter &, const epicsTime & currentTime );
-    unsigned fillFromWire ( wireRecvAdapter & );
+    void fillFromWire ( wireRecvAdapter &, statusWireIO & );
     struct popStatus {
         bool success;
         bool nowEmpty;
@@ -171,13 +183,15 @@ inline unsigned comBuf::capacityBytes ()
     return comBufSize;
 }
 
-inline unsigned comBuf::fillFromWire ( wireRecvAdapter & wire )
+inline void comBuf::fillFromWire ( 
+    wireRecvAdapter & wire, statusWireIO & stat )
 {
-    unsigned nNewBytes = wire.recvBytes ( 
+    wire.recvBytes ( 
         & this->buf[this->nextWriteIndex], 
-        sizeof ( this->buf ) - this->nextWriteIndex );
-    this->nextWriteIndex += nNewBytes;
-    return nNewBytes;
+        sizeof ( this->buf ) - this->nextWriteIndex, stat );
+    if ( stat.circuitState == swioConnected ) {
+        this->nextWriteIndex += stat.bytesCopied;
+    }
 }
 
 inline bool comBuf::push ( const epicsInt8 value )

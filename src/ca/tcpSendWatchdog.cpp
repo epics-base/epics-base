@@ -25,11 +25,12 @@
 #include "cac.h"
 #include "virtualCircuit.h"
 
-tcpSendWatchdog::tcpSendWatchdog 
-    ( callbackMutex & cbMutexIn, tcpiiu & iiuIn, 
-        double periodIn, epicsTimerQueue & queueIn ) :
+tcpSendWatchdog::tcpSendWatchdog ( 
+        epicsMutex & cbMutexIn, cacContextNotify & ctxNotifyIn, 
+        tcpiiu & iiuIn, double periodIn, epicsTimerQueue & queueIn ) :
     period ( periodIn ), timer ( queueIn.createTimer () ),
-        cbMutex ( cbMutexIn ), iiu ( iiuIn )
+        cbMutex ( cbMutexIn ), ctxNotify ( ctxNotifyIn ), 
+        iiu ( iiuIn )
 {
 }
 
@@ -41,8 +42,9 @@ tcpSendWatchdog::~tcpSendWatchdog ()
 epicsTimerNotify::expireStatus tcpSendWatchdog::expire ( 
                  const epicsTime & currentTime )
 {
+    callbackManager mgr ( this->ctxNotify, this->cbMutex );
     if ( this->iiu.bytesArePendingInOS() ) {
-        this->iiu.printf ( 
+        this->iiu.printf ( mgr.cbGuard,
             "The CA client library is disconnecting after a flush request "
             "timed out, but receive data is pending, probably because of an "
             "application schedualing problem\n" );
@@ -53,10 +55,7 @@ epicsTimerNotify::expireStatus tcpSendWatchdog::expire (
         debugPrintf ( ( "Request not accepted by CA server %s for %g sec. Disconnecting.\n", 
             hostName, this->period ) );
 #   endif
-    {
-        epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
-        this->iiu.sendTimeoutNotify ( currentTime, cbGuard );
-    }
+    this->iiu.sendTimeoutNotify ( currentTime, mgr );
     return noRestart;
 }
 

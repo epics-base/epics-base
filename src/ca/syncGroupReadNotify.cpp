@@ -27,8 +27,9 @@
 
 syncGroupReadNotify::syncGroupReadNotify ( 
     CASG & sgIn, chid pChan, void * pValueIn ) :
-    chan ( pChan ), sg ( sgIn ), magic ( CASG_MAGIC ), 
-        id ( 0u ), idIsValid ( false ), pValue ( pValueIn )
+    chan ( pChan ), sg ( sgIn ), pValue ( pValueIn ), 
+    magic ( CASG_MAGIC ), id ( 0u ), 
+    idIsValid ( false ), ioComplete ( false )
 {
 }
 
@@ -36,8 +37,20 @@ void syncGroupReadNotify::begin (
     epicsGuard < epicsMutex > & guard, 
     unsigned type, arrayElementCount count )
 {
+    this->ioComplete = false;
+    boolFlagManager mgr ( this->idIsValid );
     this->chan->read ( guard, type, count, *this, &this->id );
-    this->idIsValid = true;
+    mgr.release ();
+}
+
+void syncGroupReadNotify::cancel ( 
+    epicsGuard < epicsMutex > & cbGuard,
+    epicsGuard < epicsMutex > & guard )
+{
+    if ( this->idIsValid ) {
+        this->chan->ioCancel ( cbGuard, guard, this->id );
+        this->idIsValid = false;
+    }
 }
 
 syncGroupReadNotify * syncGroupReadNotify::factory ( 
@@ -51,15 +64,13 @@ syncGroupReadNotify * syncGroupReadNotify::factory (
 void syncGroupReadNotify::destroy ( 
     epicsGuard < epicsMutex > & guard, casgRecycle & recycle )
 {
-    if ( this->idIsValid ) {
-        this->chan->ioCancel ( guard, this->id );
-    }
     this->~syncGroupReadNotify ();
     recycle.recycleSyncGroupReadNotify ( guard, *this );
 }
 
 syncGroupReadNotify::~syncGroupReadNotify ()
 {
+    assert ( ! this->idIsValid );
 }
 
 void syncGroupReadNotify::completion (
@@ -76,14 +87,20 @@ void syncGroupReadNotify::completion (
         size_t size = dbr_size_n ( type, count );
         memcpy ( this->pValue, pData, size );
     }
-    this->idIsValid = false;
     this->sg.completionNotify ( guard, *this );
+    this->idIsValid = false;
+    this->ioComplete = true;
 }
 
 void syncGroupReadNotify::exception (
     epicsGuard < epicsMutex > & guard, int status, const char * pContext, 
     unsigned type, arrayElementCount count )
 {
+    if ( this->magic != CASG_MAGIC ) {
+        this->sg.printf ( 
+            "cac: sync group io_complete(): bad sync grp op magic number?\n" );
+        return;
+    }
     this->idIsValid = false;
     this->sg.exception ( guard, status, pContext, 
         __FILE__, __LINE__, *this->chan, type, count, CA_OP_GET );

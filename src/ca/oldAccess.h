@@ -54,7 +54,8 @@ public:
         const char * pName, caCh * pConnCallBackIn, 
         void * pPrivateIn, capri priority );
     void destructor ( 
-        epicsGuard < epicsMutex > & );
+        epicsGuard < epicsMutex > & cbGuard,
+        epicsGuard < epicsMutex > & guard );
     void setPrivatePointer ( void * );
     void * privatePointer () const;
     int changeConnCallBack ( caCh *pfunc );
@@ -84,7 +85,9 @@ public:
         unsigned type, arrayElementCount count, unsigned mask, 
         cacStateNotify &, cacChannel::ioid & );
     void ioCancel ( 
-        epicsGuard < epicsMutex > &, const cacChannel::ioid & );
+        epicsGuard < epicsMutex > & callbackControl, 
+        epicsGuard < epicsMutex > & mutualExclusionGuard, 
+        const cacChannel::ioid & );
     void ioShow ( const cacChannel::ioid &, unsigned level ) const;
     short nativeType () const;
     arrayElementCount nativeElementCount () const;
@@ -149,7 +152,7 @@ private:
     arrayElementCount count;
     ca_client_context & cacCtx;
     oldChannelNotify & chan;
-    void *pValue;
+    void * pValue;
     unsigned ioSeqNo;
     unsigned type;
     void completion (
@@ -226,7 +229,8 @@ public:
         tsFreeList < struct oldSubscription, 1024, epicsMutexNOOP > & );
     epicsPlacementDeleteOperator (( void *, 
         tsFreeList < struct oldSubscription, 1024, epicsMutexNOOP > & ))
-    void ioCancel ( epicsGuard < epicsMutex > & );
+    void ioCancel ( epicsGuard < epicsMutex > & cbGuard,
+                    epicsGuard < epicsMutex > & guard );
 private:
     oldChannelNotify & chan;
     cacChannel::ioid id;
@@ -310,7 +314,7 @@ private:
     tsFreeList < struct oldSubscription, 1024, epicsMutexNOOP > subscriptionFreeList;
     tsFreeList < struct CASG, 128, epicsMutexNOOP > casgFreeList;
     mutable epicsMutex mutex;
-    epicsMutex callbackMutex; 
+    mutable epicsMutex cbMutex; 
     epicsEvent ioDone;
     epicsEvent callbackThreadActivityComplete;
     epics_auto_ptr < epicsGuard < epicsMutex > > pCallbackGuard;
@@ -328,10 +332,11 @@ private:
     bool fdRegFuncNeedsToBeCalled;
     bool noWakeupSincePend;
 
-    void callbackLock ();
-    void callbackUnlock ();
     void attachToClientCtx ();
-    cacContext & createNetworkContext ( epicsMutex & mutex );
+    void callbackProcessingInitiateNotify ();
+    void callbackProcessingCompleteNotify ();
+    cacContext & createNetworkContext ( 
+        epicsMutex & mutualExclusion, epicsMutex & callbackControl );
 	ca_client_context ( const ca_client_context & );
 	ca_client_context & operator = ( const ca_client_context & );
 
@@ -359,6 +364,9 @@ private:
     friend int epicsShareAPI ca_flush_io ();
     friend int epicsShareAPI ca_sg_create ( CA_SYNC_GID * pgid );
     friend int epicsShareAPI ca_sg_delete ( const CA_SYNC_GID gid );
+    friend int epicsShareAPI ca_sg_block ( const CA_SYNC_GID gid, ca_real timeout );
+    friend int epicsShareAPI ca_sg_reset ( const CA_SYNC_GID gid );
+    friend int epicsShareAPI ca_sg_test ( const CA_SYNC_GID gid );
     friend void epicsShareAPI caInstallDefaultService ( cacService & );
 };
 
@@ -385,10 +393,12 @@ inline void oldChannelNotify::initiateConnect (
     this->io.initiateConnect ( guard );
 }
 
-inline void oldChannelNotify::ioCancel ( 
-    epicsGuard < epicsMutex > & guard, const cacChannel::ioid & id )
+inline void oldChannelNotify::ioCancel (    
+    epicsGuard < epicsMutex > & cbGuard, 
+    epicsGuard < epicsMutex > & guard, 
+    const cacChannel::ioid & id )
 {
-    this->io.ioCancel ( guard, id );
+    this->io.ioCancel ( cbGuard, guard, id );
 }
 
 inline void oldChannelNotify::ioShow ( 

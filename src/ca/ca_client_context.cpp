@@ -36,6 +36,23 @@
 #include "oldAccess.h"
 #include "cac.h"
 
+epicsShareDef epicsThreadPrivateId caClientCallbackThreadId;
+
+static epicsThreadOnceId cacOnce = EPICS_THREAD_ONCE_INIT;
+
+extern "C" void cacExitHandler ()
+{
+    epicsThreadPrivateDelete ( caClientCallbackThreadId );
+}
+
+// runs once only for each process
+extern "C" void cacOnceFunc ( void * )
+{
+    caClientCallbackThreadId = epicsThreadPrivateCreate ();
+    assert ( caClientCallbackThreadId );
+    atexit ( cacExitHandler );
+}
+
 extern epicsThreadPrivateId caClientContextId;
 
 cacService * ca_client_context::pDefaultService = 0;
@@ -54,15 +71,18 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
         throwWithLocation ( noSocket () );
     }
 
+    epicsThreadOnce ( & cacOnce, cacOnceFunc, 0 );
+
     {
         // this wont consistently work if called from file scope constructor
         epicsGuard < epicsMutex > guard ( ca_client_context::defaultServiceInstallMutex );
         if ( ca_client_context::pDefaultService ) {
             this->pServiceContext.reset (
-                & ca_client_context::pDefaultService->contextCreate ( this->mutex, *this ) );
+                & ca_client_context::pDefaultService->contextCreate ( 
+                    this->mutex, this->cbMutex, *this ) );
         }
         else {
-            this->pServiceContext.reset ( new cac ( this->mutex, *this ) );
+            this->pServiceContext.reset ( new cac ( this->mutex, this->cbMutex, *this ) );
         }
     }
 
@@ -134,7 +154,7 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
 
     epics_auto_ptr < epicsGuard < epicsMutex > > pCBGuard;
     if ( ! enablePreemptiveCallback ) {
-        pCBGuard.reset ( new epicsGuard < epicsMutex > ( this->callbackMutex ) );
+        pCBGuard.reset ( new epicsGuard < epicsMutex > ( this->cbMutex ) );
     }
 
     // multiple steps ensure exception safety
@@ -167,9 +187,17 @@ ca_client_context::~ca_client_context ()
 
 void ca_client_context::destroyChannel ( oldChannelNotify & chan )
 {
-    epicsGuard < epicsMutex > guard ( this->mutex );
-    chan.destructor ( guard );
-    this->oldChannelNotifyFreeList.release ( & chan );
+    if ( this->pCallbackGuard.get() ) {
+        epicsGuard < epicsMutex > guard ( this->mutex );
+        chan.destructor ( *this->pCallbackGuard.get(), guard );
+        this->oldChannelNotifyFreeList.release ( & chan );
+    }
+    else {
+        epicsGuard < epicsMutex > cbGuard ( this->cbMutex );
+        epicsGuard < epicsMutex > guard ( this->mutex );
+        chan.destructor ( cbGuard, guard );
+        this->oldChannelNotifyFreeList.release ( & chan );
+    }
 }
 
 void ca_client_context::destroyGetCopy ( 
@@ -578,9 +606,8 @@ void ca_client_context::blockForEventAndEnableCallbacks (
     }
 }
 
-void ca_client_context::callbackLock ()
+void ca_client_context::callbackProcessingInitiateNotify ()
 {
-
     // if preemptive callback is enabled then this is a noop
     if ( this->pCallbackGuard.get() ) {
         bool sendNeeded = false;
@@ -604,14 +631,10 @@ void ca_client_context::callbackLock ()
                     0, & tmpAddr.sa, sizeof ( tmpAddr.sa ) );
         }
     }
-
-    this->callbackMutex.lock ();
 }
 
-void ca_client_context::callbackUnlock ()
+void ca_client_context::callbackProcessingCompleteNotify ()
 {
-    this->callbackMutex.unlock ();
-
     // if preemptive callback is enabled then this is a noop
     if ( this->pCallbackGuard.get() ) {
         bool signalNeeded = false;
@@ -717,11 +740,11 @@ epicsMutex & ca_client_context::mutexRef () const
     return this->mutex;
 }
 
-cacContext & ca_client_context::createNetworkContext ( epicsMutex & mutex )
+cacContext & ca_client_context::createNetworkContext ( 
+    epicsMutex & mutex, epicsMutex & cbMutex )
 {
-    return * new cac ( mutex, *this );
+    return * new cac ( mutex, cbMutex, *this );
 }
-
 
 void epicsShareAPI caInstallDefaultService ( cacService & service )
 {

@@ -2444,6 +2444,8 @@ void verifyImmediateTearDown ( const char * pName,
         }
         status = ca_put ( DBR_LONG, chan, & value );
         SEVCHK ( status, "immediate tear down channel put failed" );
+        status = ca_clear_channel ( chan );
+        SEVCHK ( status, "immediate tear down channel clear failed" );
         ca_task_exit ();
         epicsThreadSleep ( 1e-15 );
         if ( i % 100 == 0 ) {

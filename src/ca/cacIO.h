@@ -173,9 +173,10 @@ public:
     enum ioStatus { iosSynch, iosAsynch };
 
     cacChannel ( cacChannelNotify & );
-    cacChannelNotify & notify () const;
     virtual void destroy (
-        epicsGuard < epicsMutex > & ) = 0;
+        epicsGuard < epicsMutex > & callbackControlGuard, 
+        epicsGuard < epicsMutex > & mutualExclusionGuard ) = 0;
+    cacChannelNotify & notify () const;
     virtual const char * pName () const = 0; // not thread safe
     virtual void show ( 
         unsigned level ) const = 0;
@@ -198,7 +199,9 @@ public:
         arrayElementCount count, unsigned mask, cacStateNotify &, 
         ioid * = 0 ) = 0;
     virtual void ioCancel ( 
-        epicsGuard < epicsMutex > &, const ioid & ) = 0;
+        epicsGuard < epicsMutex > & callbackControlGuard, 
+        epicsGuard < epicsMutex > & mutualExclusionGuard,
+        const ioid & ) = 0;
     virtual void ioShow ( 
         const ioid &, unsigned level ) const = 0;
     virtual short nativeType () const = 0;
@@ -259,7 +262,8 @@ public:
 class epicsShareClass cacContextNotify { // X aCC 655
 public:
     virtual ~cacContextNotify () = 0;
-    virtual cacContext & createNetworkContext ( epicsMutex & ) = 0;
+    virtual cacContext & createNetworkContext ( 
+        epicsMutex & mutualExclusion, epicsMutex & callbackControl ) = 0;
 // we should probably have a different vf for each type of exception ????
     virtual void exception ( 
         epicsGuard < epicsMutex > &, int status, const char * pContext, 
@@ -270,18 +274,25 @@ public:
     virtual void attachToClientCtx () = 0;
     virtual void blockForEventAndEnableCallbacks ( 
         class epicsEvent & event, const double & timeout ) = 0;
-    virtual void callbackLock () = 0;
-    virtual void callbackUnlock () = 0;
+    virtual void callbackProcessingInitiateNotify () = 0;
+    virtual void callbackProcessingCompleteNotify () = 0;
 };
 
+// **** Lock Hierarchy ****
+// callbackControl must be taken before mutualExclusion if both are held at
+// the same time
 class epicsShareClass cacService {
 public:
     virtual ~cacService () = 0;
     virtual cacContext & contextCreate ( 
-        epicsMutex &, cacContextNotify & ) = 0;
+        epicsMutex & mutualExclusion, 
+        epicsMutex & callbackControl, 
+        cacContextNotify & ) = 0;
 };
 
 epicsShareFunc void epicsShareAPI caInstallDefaultService ( cacService & service );
+
+epicsShareExtern epicsThreadPrivateId caClientCallbackThreadId;
 
 inline cacChannel::cacChannel ( cacChannelNotify & notify ) :
     callback ( notify )

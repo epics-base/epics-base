@@ -22,6 +22,7 @@
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #include <new>
+#include <stdexcept>
 
 #include "epicsGuard.h"
 #include "epicsVersion.h"
@@ -114,31 +115,17 @@ const cac::pExcepProtoStubTCP cac::tcpExcepJumpTableCAC [] =
     &cac::defaultExcep      // CA_PROTO_SERVER_DISCONN
 };
 
-epicsThreadPrivateId caClientCallbackThreadId;
-
-static epicsThreadOnceId cacOnce = EPICS_THREAD_ONCE_INIT;
-
-extern "C" void cacExitHandler ()
-{
-    epicsThreadPrivateDelete ( caClientCallbackThreadId );
-}
-
-// runs once only for each process
-extern "C" void cacOnceFunc ( void * )
-{
-    caClientCallbackThreadId = epicsThreadPrivateCreate ();
-    assert ( caClientCallbackThreadId );
-    atexit ( cacExitHandler );
-}
-
 //
 // cac::cac ()
 //
-cac::cac ( epicsMutex & mutexIn, cacContextNotify & notifyIn ) :
+cac::cac ( 
+    epicsMutex & mutualExclusionIn, 
+    epicsMutex & callbackControlIn, 
+    cacContextNotify & notifyIn ) :
     programBeginTime ( epicsTime::getCurrent() ),
     connTMO ( CA_CONN_VERIFY_PERIOD ),
-    cbMutex ( notifyIn ),
-    mutex ( mutexIn ),
+    mutex ( mutualExclusionIn ),
+    cbMutex ( callbackControlIn ),
     ipToAEngine ( ipAddrToAsciiEngine::allocate () ),
     timerQueue ( epicsTimerQueueActive::allocate ( false, 
         lowestPriorityLevelAbove(epicsThreadGetPrioritySelf()) ) ),
@@ -155,8 +142,6 @@ cac::cac ( epicsMutex & mutexIn, cacContextNotify & notifyIn ) :
 	if ( ! osiSockAttach () ) {
         throwWithLocation ( caErrorCode (ECA_INTERNAL) );
 	}
-
-    epicsThreadOnce ( &cacOnce, cacOnceFunc, 0 );
 
     try {
 	    long status;
@@ -187,8 +172,9 @@ cac::cac ( epicsMutex & mutexIn, cacContextNotify & notifyIn ) :
         status = envGetDoubleConfigParam ( &EPICS_CA_CONN_TMO, &this->connTMO );
         if ( status ) {
             this->connTMO = CA_CONN_VERIFY_PERIOD;
-            this->printf ( "EPICS \"%s\" double fetch failed\n", EPICS_CA_CONN_TMO.name);
-            this->printf ( "Defaulting \"%s\" = %f\n", EPICS_CA_CONN_TMO.name, this->connTMO);
+            epicsGuard < epicsMutex > cbGuard ( this->cbMutex );
+            errlogPrintf ( "EPICS \"%s\" double fetch failed\n", EPICS_CA_CONN_TMO.name );
+            errlogPrintf ( "Defaulting \"%s\" = %f\n", EPICS_CA_CONN_TMO.name, this->connTMO );
         }
 
         long maxBytesAsALong;
@@ -251,7 +237,7 @@ cac::~cac ()
         //
         // shutdown all tcp circuits
         //
-        epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
+        epicsGuard < epicsMutex > cbGuard ( this->cbMutex );
         epicsGuard < epicsMutex > guard ( this->mutex );
         tsDLIter < tcpiiu > iter = this->serverList.firstIter ();
         while ( iter.valid() ) {
@@ -467,7 +453,8 @@ cacChannel & cac::createChannel (
 
     if ( ! this->pudpiiu ) {
         this->pudpiiu = new udpiiu ( 
-            this->timerQueue, this->cbMutex, *this );
+            this->timerQueue, this->cbMutex, 
+            this->mutex, this->notify, *this );
     }
 
     nciu * pNetChan = new ( this->channelFreeList ) 
@@ -484,7 +471,7 @@ void cac::repeaterSubscribeConfirmNotify ()
 }
 
 bool cac::transferChanToVirtCircuit ( 
-    epicsGuard < callbackMutex > & cbGuard, unsigned cid, unsigned sid, // X aCC 431
+    epicsGuard < epicsMutex > & cbGuard, unsigned cid, unsigned sid, // X aCC 431
     ca_uint16_t typeCode, arrayElementCount count, 
     unsigned minorVersionNumber, const osiSockAddr & addr )
 {
@@ -535,10 +522,10 @@ bool cac::transferChanToVirtCircuit (
         else {
             try {
                 autoPtrFreeList < tcpiiu, 32, epicsMutexNOOP > pnewiiu (
-                            this->freeListVirtualCircuit,
-                            new ( this->freeListVirtualCircuit ) tcpiiu ( 
-                            *this, this->cbMutex, this->connTMO, this->timerQueue,
-                            addr, this->comBufMemMgr, minorVersionNumber, 
+                        this->freeListVirtualCircuit,
+                        new ( this->freeListVirtualCircuit ) tcpiiu ( 
+                            *this, this->mutex, this->cbMutex, this->notify, this->connTMO, 
+                            this->timerQueue, addr, this->comBufMemMgr, minorVersionNumber, 
                             this->ipToAEngine, pChan->getPriority() ) );
                 bhe * pBHE = this->beaconTable.lookup ( addr.ia );
                 if ( ! pBHE ) {
@@ -558,12 +545,13 @@ bool cac::transferChanToVirtCircuit (
                 return false;
             }
             catch ( ... ) {
-                this->printf ( "CAC: Unexpected exception during virtual circuit creation\n" );
+                errlogPrintf ( 
+                    "CAC: Unexpected exception during virtual circuit creation\n" );
                 return false;
             }
         }
 
-        this->pudpiiu->uninstallChan ( guard, *pChan );
+        this->pudpiiu->uninstallChan ( cbGuard, guard, *pChan );
         piiu->installChannel ( cbGuard, guard, *pChan, sid, typeCode, count );
 
         if ( ! piiu->ca_v42_ok () ) {
@@ -580,48 +568,28 @@ bool cac::transferChanToVirtCircuit (
 }
 
 void cac::destroyChannel ( 
-    epicsGuard < epicsMutex > & guard, nciu & chan )
+    epicsGuard < epicsMutex > & cbGuard, 
+    epicsGuard < epicsMutex > & guard,
+    nciu & chan ) 
 {
     guard.assertIdenticalMutex ( this->mutex );
+    cbGuard.assertIdenticalMutex ( this->cbMutex );
 
     // uninstall channel so that recv threads
     // will not start a new callback for this channel's IO. 
     if ( this->chanTable.remove ( chan ) != & chan ) {
-        errlogPrintf ( 
-            "CAC: Attemt to uninstall unregisterred channel ID=%u ignored.\n",
-            chan.getId () );
-        return;
+        throw std::logic_error ( "Invalid channel identifier" );
     }
 
-    // if the claim reply has not returned yet then we will issue
-    // the clear channel request to the server when the claim reply
-    // arrives and there is no matching nciu in the client
-    if ( chan.connected ( guard ) ) {
-        chan.getPIIU()->clearChannelRequest ( 
-            guard, chan.getSID(), chan.getCID() );
-    }
-
-    {
-        // reverse the lock order so that we dont botch the lock hierarchy
-        epicsGuardRelease < epicsMutex > unguard ( guard );
-        {
-            // taking the callback mutex prior to deleting the channel 
-            // guarantees that we will not delete a channel out from under a callback
-            epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
-        }
-    }
-    
-    // run channel's destructor and return it to the free list
-    chan.destructor ( guard );
-    
-    // IIU must be valid until after IO is destroyed in the destructor
-    chan.getPIIU()->uninstallChan ( guard, chan );
+    chan.getPIIU()->uninstallChan ( cbGuard, guard, chan );
+  
+    chan.destructor ( cbGuard, guard );
 
     this->channelFreeList.release ( & chan );
 }
 
 void cac::disconnectAllIO ( 
-    epicsGuard < callbackMutex > & cbGuard,
+    epicsGuard < epicsMutex > & cbGuard,
     epicsGuard < epicsMutex > & guard, 
     nciu & chan, tsDLList < baseNMIU > & ioList )
 {
@@ -643,17 +611,13 @@ void cac::disconnectAllIO (
     }
 }
 
-int cac::printf ( const char *pformat, ... ) const
+int cac::printf ( epicsGuard < epicsMutex > & callbackControl, 
+                 const char *pformat, ... ) const
 {
     va_list theArgs;
-    int status;
-
     va_start ( theArgs, pformat );
-    
-    status = this->vPrintf ( pformat, theArgs );
-    
+    int status = this->vPrintf ( callbackControl, pformat, theArgs );
     va_end ( theArgs );
-    
     return status;
 }
 
@@ -720,10 +684,13 @@ netReadNotifyIO & cac::readNotifyRequest (
 }
 
 baseNMIU * cac::destroyIO (
+    epicsGuard < epicsMutex > & cbGuard, 
     epicsGuard < epicsMutex > & guard, 
     const cacChannel::ioid & idIn, nciu & chan )
 {
+    cbGuard.assertIdenticalMutex ( this->cbMutex );
     guard.assertIdenticalMutex ( this->mutex );
+
     // unistall the IO object so that a receive thread will not find it,
     // but do _not_ hold the callback lock here because this could result 
     // in deadlock
@@ -735,19 +702,9 @@ baseNMIU * cac::destroyIO (
                 guard, chan, *pSubscr );  
         }
 
-        {
-            // reverse the lock order so that we dont botch the lock hierarchy
-            epicsGuardRelease < epicsMutex > unguard ( guard );
-            {
-                // taking the callback mutex prior to deleting the IO and channel 
-                // guarantees that we will not delete a channel out from under a callback
-                epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
-                epicsGuard < epicsMutex > tmpGuard ( this->mutexRef () );
-                // this uninstalls from the list and destroys the IO
-                pIO->exception ( tmpGuard, *this,
-                    ECA_CHANDESTROY, chan.pName() );
-            }
-        }
+        // this uninstalls from the list and destroys the IO
+        pIO->exception ( guard, *this,
+            ECA_CHANDESTROY, chan.pName() );
     }       
     return pIO;
 }
@@ -824,22 +781,22 @@ netSubscription & cac::subscriptionRequest (
     return *pIO.release ();
 }
 
-bool cac::versionAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
+bool cac::versionAction ( callbackManager &, tcpiiu &, 
     const epicsTime &, const caHdrLargeArray &, void * )
 {
     return true;
 }
  
 bool cac::echoRespAction ( 
-    epicsGuard < callbackMutex > & cbGuard, tcpiiu & iiu, 
+    callbackManager & mgr, tcpiiu & iiu, 
     const epicsTime & current, const caHdrLargeArray &, void * )
 {
-    iiu.probeResponseNotify ( cbGuard, current );
+    iiu.probeResponseNotify ( mgr.cbGuard, current );
     return true;
 }
 
 bool cac::writeNotifyRespAction ( 
-    epicsGuard < callbackMutex > &, tcpiiu &, 
+    callbackManager &, tcpiiu &, 
     const epicsTime &, const caHdrLargeArray & hdr, void * )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -856,7 +813,7 @@ bool cac::writeNotifyRespAction (
     return true;
 }
 
-bool cac::readNotifyRespAction ( epicsGuard < callbackMutex > &, tcpiiu & iiu, 
+bool cac::readNotifyRespAction ( callbackManager &, tcpiiu & iiu, 
     const epicsTime &, const caHdrLargeArray & hdr, void * pMsgBdy )
 {
     /*
@@ -913,7 +870,7 @@ bool cac::readNotifyRespAction ( epicsGuard < callbackMutex > &, tcpiiu & iiu,
     return true;
 }
 
-bool cac::eventRespAction ( epicsGuard < callbackMutex > &, tcpiiu &iiu, 
+bool cac::eventRespAction ( callbackManager &, tcpiiu &iiu, 
     const epicsTime &, const caHdrLargeArray & hdr, void * pMsgBdy )
 {   
     int caStatus;
@@ -972,7 +929,7 @@ bool cac::eventRespAction ( epicsGuard < callbackMutex > &, tcpiiu &iiu,
     return true;
 }
 
-bool cac::readRespAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
+bool cac::readRespAction ( callbackManager &, tcpiiu &, 
     const epicsTime &, const caHdrLargeArray & hdr, void * pMsgBdy )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -990,14 +947,14 @@ bool cac::readRespAction ( epicsGuard < callbackMutex > &, tcpiiu &,
     return true;
 }
 
-bool cac::clearChannelRespAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
+bool cac::clearChannelRespAction ( callbackManager &, tcpiiu &, 
     const epicsTime &, const caHdrLargeArray &, void * /* pMsgBdy */ )
 {
     return true; // currently a noop
 }
 
 bool cac::defaultExcep ( 
-    epicsGuard < callbackMutex > &, tcpiiu & iiu, 
+    callbackManager &, tcpiiu & iiu, 
     const caHdrLargeArray &, const char * pCtx, unsigned status )
 {
     char buf[512];
@@ -1012,16 +969,18 @@ bool cac::defaultExcep (
 }
 
 void cac::exception ( 
-    epicsGuard < callbackMutex > & cbGuard, int status, 
-    const char *pContext, const char *pFileName, unsigned lineNo )
+    epicsGuard < epicsMutex > & cbGuard, 
+    epicsGuard < epicsMutex > & guard, int status, 
+    const char * pContext, const char * pFileName, unsigned lineNo )
 {
-    epicsGuard < epicsMutex > guard ( this->mutex );
+    cbGuard.assertIdenticalMutex ( this->cbMutex );
+    guard.assertIdenticalMutex ( this->mutex );
     this->notify.exception ( guard, status, pContext, 
         pFileName, lineNo );
 }
 
 bool cac::eventAddExcep ( 
-    epicsGuard < callbackMutex > &, tcpiiu & /* iiu */, 
+    callbackManager &, tcpiiu & /* iiu */, 
     const caHdrLargeArray &hdr, 
     const char *pCtx, unsigned status )
 {
@@ -1030,7 +989,7 @@ bool cac::eventAddExcep (
     return true;
 }
 
-bool cac::readExcep ( epicsGuard < callbackMutex > &, tcpiiu &, 
+bool cac::readExcep ( callbackManager &, tcpiiu &, 
                      const caHdrLargeArray & hdr, 
                      const char * pCtx, unsigned status )
 {
@@ -1040,20 +999,20 @@ bool cac::readExcep ( epicsGuard < callbackMutex > &, tcpiiu &,
 }
 
 bool cac::writeExcep ( 
-    epicsGuard < callbackMutex > & cbGuard, // X aCC 431
+    callbackManager & mgr, // X aCC 431
     tcpiiu &, const caHdrLargeArray & hdr, 
     const char * pCtx, unsigned status )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
     nciu * pChan = this->chanTable.lookup ( hdr.m_available );
     if ( pChan ) {
-        pChan->writeException ( cbGuard, guard, status, pCtx, 
+        pChan->writeException ( mgr.cbGuard, guard, status, pCtx, 
             hdr.m_dataType, hdr.m_count );
     }
     return true;
 }
 
-bool cac::readNotifyExcep ( epicsGuard < callbackMutex > &, tcpiiu &, 
+bool cac::readNotifyExcep ( callbackManager &, tcpiiu &, 
                            const caHdrLargeArray &hdr, 
                            const char *pCtx, unsigned status )
 {
@@ -1062,7 +1021,7 @@ bool cac::readNotifyExcep ( epicsGuard < callbackMutex > &, tcpiiu &,
     return true;
 }
 
-bool cac::writeNotifyExcep ( epicsGuard < callbackMutex > &, tcpiiu &, 
+bool cac::writeNotifyExcep ( callbackManager &, tcpiiu &, 
                             const caHdrLargeArray &hdr, 
                             const char *pCtx, unsigned status )
 {
@@ -1071,7 +1030,7 @@ bool cac::writeNotifyExcep ( epicsGuard < callbackMutex > &, tcpiiu &,
     return true;
 }
 
-bool cac::exceptionRespAction ( epicsGuard < callbackMutex > & cbMutexIn, tcpiiu & iiu, 
+bool cac::exceptionRespAction ( callbackManager & cbMutexIn, tcpiiu & iiu, 
     const epicsTime &, const caHdrLargeArray & hdr, void * pMsgBdy )
 {
     const caHdr * pReq = reinterpret_cast < const caHdr * > ( pMsgBdy );
@@ -1112,7 +1071,7 @@ bool cac::exceptionRespAction ( epicsGuard < callbackMutex > & cbMutexIn, tcpiiu
 }
 
 bool cac::accessRightsRespAction (
-    epicsGuard < callbackMutex > & cbGuard, tcpiiu &, // X aCC 431
+    callbackManager & mgr, tcpiiu &, // X aCC 431
     const epicsTime &, const caHdrLargeArray & hdr, void * /* pMsgBdy */ )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -1122,14 +1081,14 @@ bool cac::accessRightsRespAction (
         caAccessRights accessRights ( 
             ( ar & CA_PROTO_ACCESS_RIGHT_READ ) ? true : false, 
             ( ar & CA_PROTO_ACCESS_RIGHT_WRITE ) ? true : false); 
-        pChan->accessRightsStateChange ( accessRights, cbGuard, guard );
+        pChan->accessRightsStateChange ( accessRights, mgr.cbGuard, guard );
     }
 
     return true;
 }
 
 bool cac::createChannelRespAction (
-    epicsGuard < callbackMutex > &cbGuard, tcpiiu & iiu, // X aCC 431
+    callbackManager & mgr, tcpiiu & iiu, // X aCC 431
     const epicsTime &, const caHdrLargeArray & hdr, void * /* pMsgBdy */ )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -1144,7 +1103,7 @@ bool cac::createChannelRespAction (
         }
         iiu.connectNotify ( guard, *pChan );
         pChan->connect ( hdr.m_dataType, hdr.m_count, sidTmp, 
-            cbGuard, guard );
+            mgr.cbGuard, guard );
     }
     else if ( iiu.ca_v44_ok() ) {
         // this indicates a claim response for a resource that does
@@ -1156,7 +1115,7 @@ bool cac::createChannelRespAction (
 }
 
 bool cac::verifyAndDisconnectChan ( 
-    epicsGuard < callbackMutex > & cbGuard, tcpiiu & /* iiu */, 
+    callbackManager & mgr, tcpiiu & /* iiu */, 
     const epicsTime & currentTime, const caHdrLargeArray & hdr, void * /* pMsgBdy */ )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -1164,35 +1123,35 @@ bool cac::verifyAndDisconnectChan (
     if ( ! pChan ) {
         return true;
     }
-    this->disconnectChannel ( currentTime, cbGuard, guard, *pChan );
+    this->disconnectChannel ( currentTime, mgr.cbGuard, guard, *pChan );
     return true;
 }
 
 void cac::disconnectChannel (
         const epicsTime & currentTime, 
-        epicsGuard < callbackMutex > & cbGuard, // X aCC 431
+        epicsGuard < epicsMutex > & cbGuard, // X aCC 431
         epicsGuard < epicsMutex > & guard, nciu & chan )
 {
     guard.assertIdenticalMutex ( this->mutex );
     assert ( this->pudpiiu );
     chan.disconnectAllIO ( cbGuard, guard );
-    chan.getPIIU()->uninstallChan ( guard, chan );
+    chan.getPIIU()->uninstallChan ( cbGuard, guard, chan );
     this->pudpiiu->installDisconnectedChannel ( chan );
     chan.setServerAddressUnknown ( *this->pudpiiu, guard );
     chan.unresponsiveCircuitNotify ( cbGuard, guard );
 }
 
-bool cac::badTCPRespAction ( epicsGuard < callbackMutex > &, tcpiiu & iiu, 
+bool cac::badTCPRespAction ( callbackManager &, tcpiiu & iiu, 
     const epicsTime &, const caHdrLargeArray & hdr, void * /* pMsgBdy */ )
 {
     char hostName[64];
     iiu.hostName ( hostName, sizeof ( hostName ) );
-    this->printf ( "CAC: Undecipherable TCP message ( bad response type %u ) from %s\n", 
+    errlogPrintf ( "CAC: Undecipherable TCP message ( bad response type %u ) from %s\n", 
         hdr.m_cmmd, hostName );
     return false;
 }
 
-bool cac::executeResponse ( epicsGuard < callbackMutex > & cbLocker, tcpiiu & iiu, 
+bool cac::executeResponse ( callbackManager & mgr, tcpiiu & iiu, 
     const epicsTime & currentTime, caHdrLargeArray & hdr, char * pMshBody )
 {
     // execute the response message
@@ -1203,7 +1162,7 @@ bool cac::executeResponse ( epicsGuard < callbackMutex > & cbLocker, tcpiiu & ii
     else {
         pStub = cac::tcpJumpTableCAC [hdr.m_cmmd];
     }
-    return ( this->*pStub ) ( cbLocker, iiu, currentTime, hdr, pMshBody );
+    return ( this->*pStub ) ( mgr, iiu, currentTime, hdr, pMshBody );
 }
 
 void cac::selfTest ( 
@@ -1215,46 +1174,15 @@ void cac::selfTest (
     this->beaconTable.verify ();
 }
 
-void cac::initiateAbortShutdown ( tcpiiu & iiu )
-{
-    int exception = ECA_DISCONN;
-    char hostNameTmp[64];
-    bool exceptionNeeded = false;
-    epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
-    {
-        epicsGuard < epicsMutex > guard ( this->mutex );
-
-        if ( iiu.channelCount( cbGuard ) ) {
-            iiu.hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
-            if ( iiu.connecting () ) {
-                exception = ECA_CONNSEQTMO;
-            }
-            exceptionNeeded = true;
-        }
-
-        iiu.initiateAbortShutdown ( cbGuard, guard );
-
-        // Disconnect all channels immediately from the timer thread
-        // because on certain OS such as HPUX it's difficult to 
-        // unblock a blocking send() call, and we need immediate 
-        // disconnect notification.
-        iiu.removeAllChannels ( cbGuard, guard, *this->pudpiiu );
-    }
-
-    if ( exceptionNeeded ) {
-        genLocalExcep ( cbGuard, *this, exception, hostNameTmp );
-    }
-}
-
 void cac::destroyIIU ( tcpiiu & iiu )
 {
     {
-        epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
+        epicsGuard < epicsMutex > cbGuard ( this->cbMutex );
         epicsGuard < epicsMutex > guard ( this->mutex );
-        if ( iiu.channelCount ( cbGuard ) ) {
+        if ( iiu.channelCount ( guard ) ) {
             char hostNameTmp[64];
             iiu.hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
-            genLocalExcep ( cbGuard, *this, ECA_DISCONN, hostNameTmp );
+            genLocalExcep ( cbGuard, guard, *this, ECA_DISCONN, hostNameTmp );
         }
         osiSockAddr addr = iiu.getNetworkAddress();
         if ( addr.sa.sa_family == AF_INET ) {
@@ -1331,8 +1259,9 @@ void cac::pvMultiplyDefinedNotify ( msgForMultiplyDefinedPV & mfmdpv,
     sprintf ( buf, "Channel: \"%.64s\", Connecting to: %.64s, Ignored: %.64s",
             pChannelName, pAcc, pRej );
     {
-        epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
-        this->exception ( cbGuard, ECA_DBLCHNL, buf, __FILE__, __LINE__ );
+        callbackManager mgr ( this->notify, this->cbMutex );
+        epicsGuard < epicsMutex > guard ( this->mutex );
+        this->exception ( mgr.cbGuard, guard, ECA_DBLCHNL, buf, __FILE__, __LINE__ );
     }
     mfmdpv.~msgForMultiplyDefinedPV ();
     this->mdpvFreeList.release ( & mfmdpv );

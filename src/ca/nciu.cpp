@@ -76,7 +76,17 @@ nciu::~nciu ()
 {
 }
 
-void nciu::destructor ( epicsGuard < epicsMutex > & guard )
+void nciu::destroy (
+    epicsGuard < epicsMutex > & callbackControlGuard, 
+    epicsGuard < epicsMutex > & mutualExclusionGuard )
+{
+    this->cacCtx.destroyChannel ( 
+        callbackControlGuard, mutualExclusionGuard, *this );
+}
+
+void nciu::destructor ( 
+    epicsGuard < epicsMutex > & cbGuard, 
+    epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
     // Send any side effect IO requests w/o holding the callback lock so that 
@@ -85,19 +95,22 @@ void nciu::destructor ( epicsGuard < epicsMutex > & guard )
     // this is the tcp receive thread.
     // must not hold callback lock here
     this->cacCtx.flushIfRequired ( guard, *this->piiu );
+
     while ( baseNMIU * pNetIO = this->eventq.first () ) {
-        assert ( this->cacCtx.destroyIO ( guard, 
+        assert ( this->cacCtx.destroyIO ( cbGuard, guard, 
             pNetIO->getId (), *this ) );
     }
+
+    // if the claim reply has not returned yet then we will issue
+    // the clear channel request to the server when the claim reply
+    // arrives and there is no matching nciu in the client
+    if ( this->connected ( guard ) ) {
+        this->getPIIU()->clearChannelRequest ( 
+            guard, this->sid, this->id );
+    }
+
     delete [] this->pNameStr;
     this->~nciu ();
-}
-
-// called virtually
-void nciu::destroy ( epicsGuard < epicsMutex > & guard )
-{
-    // must not hold callback lock here
-    this->cacCtx.destroyChannel ( guard, *this );
 }
 
 void * nciu::operator new ( size_t ) // X aCC 361
@@ -126,15 +139,12 @@ void nciu::initiateConnect (
 
 void nciu::connect ( unsigned nativeType, 
 	unsigned nativeCount, unsigned sidIn, 
-    epicsGuard < callbackMutex > & cbGuard, 
+    epicsGuard < epicsMutex > & cbGuard, 
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
     if ( ! dbf_type_is_valid ( nativeType ) ) {
-        this->cacCtx.printf (
-            "CAC: Ignored conn resp with bad native data type CID=%u SID=%u?\n",
-            this->getId (), sidIn );
-        return;
+        throw std::logic_error ( "Ignored conn resp with bad native data type" );
     }
 
     this->typeCode = static_cast < unsigned short > ( nativeType );
@@ -174,7 +184,7 @@ void nciu::connect ( unsigned nativeType,
 }
 
 void nciu::unresponsiveCircuitNotify ( 
-    epicsGuard < callbackMutex > & cbGuard, 
+    epicsGuard < epicsMutex > & cbGuard, 
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
@@ -199,7 +209,7 @@ void nciu::setServerAddressUnknown ( udpiiu & newiiu,
 }
 
 void nciu::accessRightsStateChange ( 
-    const caAccessRights & arIn, epicsGuard < callbackMutex > &, 
+    const caAccessRights & arIn, epicsGuard < epicsMutex > & cbGuard, 
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
@@ -365,9 +375,10 @@ void nciu::subscribe (
 }
 
 void nciu::ioCancel ( 
+    epicsGuard < epicsMutex > & cbGuard, 
     epicsGuard < epicsMutex > & guard, const ioid & idIn )
 {
-    this->cacCtx.destroyIO ( guard, idIn, *this );
+    this->cacCtx.destroyIO ( cbGuard, guard, idIn, *this );
 }
 
 void nciu::ioShow ( const ioid &idIn, unsigned level ) const
@@ -478,19 +489,6 @@ void nciu::show ( unsigned level ) const
     }
 }
 
-int nciu::printf ( const char *pFormat, ... )
-{
-    va_list theArgs;
-
-    va_start ( theArgs, pFormat );
-    
-    int status = this->cacCtx.vPrintf ( pFormat, theArgs );
-    
-    va_end ( theArgs );
-    
-    return status;
-}
-
 void nciu::beaconAnomalyNotify () 
 {
     if ( this->retry > beaconAnomalyRetrySetpoint ) {
@@ -520,7 +518,7 @@ void nciu::resubscribe ( epicsGuard < epicsMutex > & guard )
                 this->getPIIU()->subscriptionRequest ( guard, *this, *pSubscr );
             }
             catch ( ... ) {
-                this->printf ( "CAC: failed to send subscription request during channel connect\n" );
+                errlogPrintf ( "CAC: failed to send subscription request during channel connect\n" );
             }
         }
         pNetIO = next;
@@ -541,14 +539,14 @@ void nciu::sendSubscriptionUpdateRequests ( epicsGuard < epicsMutex > & guard )
             pSubscr->subscriptionUpdateIfRequired ( guard, *this );
         }
         catch ( ... ) {
-            this->printf ( "CAC: failed to send subscription request during channel connect\n" );
+            errlogPrintf ( "CAC: failed to send subscription request during channel connect\n" );
         }
         pNetIO = next;
     }
 }
 
 void nciu::disconnectAllIO ( 
-    epicsGuard < callbackMutex > & cbGuard, 
+    epicsGuard < epicsMutex > & cbGuard, 
     epicsGuard < epicsMutex > & guard )
 {
     this->cacCtx.disconnectAllIO ( cbGuard, guard, 

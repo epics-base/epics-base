@@ -29,10 +29,12 @@ oldSubscription::~oldSubscription ()
 {
 }
 
-void oldSubscription::ioCancel ( epicsGuard < epicsMutex > & guard )
+void oldSubscription::ioCancel ( 
+    epicsGuard < epicsMutex > & cbGuard,
+    epicsGuard < epicsMutex > & guard )
 {
     if ( this->subscribed ) {
-        this->chan.ioCancel ( guard, this->id );
+        this->chan.ioCancel ( cbGuard, guard, this->id );
     }
 }
 

@@ -30,17 +30,22 @@
 #include "epicsTimer.h"
 
 class udpiiu;
+class epicsMutex;
+class cacContextNotify;
 
 class repeaterSubscribeTimer : private epicsTimerNotify {
 public:
-    repeaterSubscribeTimer ( udpiiu &, epicsTimerQueue & );
+    repeaterSubscribeTimer ( udpiiu &, epicsTimerQueue &, 
+        epicsMutex & cbMutex, cacContextNotify & ctxNotify );
     virtual ~repeaterSubscribeTimer ();
     void shutdown ();
     void confirmNotify ();
 	void show ( unsigned level ) const;
 private:
-    epicsTimer &timer;
-    udpiiu &iiu;
+    epicsTimer & timer;
+    udpiiu & iiu;
+    epicsMutex & cbMutex;
+    cacContextNotify & ctxNotify;
     unsigned attempts;
     bool registered;
     bool once;

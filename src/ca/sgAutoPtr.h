@@ -30,7 +30,8 @@
 template < class T >
 class sgAutoPtr {
 public:
-    sgAutoPtr ( epicsGuard < epicsMutex > &, struct CASG & );
+    sgAutoPtr ( epicsGuard < epicsMutex > &, 
+        struct CASG &, tsDLList < syncGroupNotify > & );
     ~sgAutoPtr ();
     sgAutoPtr < T > & operator = ( T * );
     T * operator -> ();
@@ -38,6 +39,7 @@ public:
     T * get ();
     T * release ();
 private:
+    tsDLList < syncGroupNotify > & list;
     T * pNotify;
     struct CASG & sg;
     epicsGuard < epicsMutex > & guard;
@@ -45,24 +47,30 @@ private:
 
 template < class T >
 inline sgAutoPtr < T > :: sgAutoPtr ( 
-        epicsGuard < epicsMutex > & guardIn, struct CASG & sgIn  ) : 
-    pNotify ( 0 ), sg ( sgIn ), guard ( guardIn )
+    epicsGuard < epicsMutex > & guardIn, 
+    struct CASG & sgIn, tsDLList < syncGroupNotify > & listIn  ) : 
+    list ( listIn ), pNotify ( 0 ), sg ( sgIn ), guard ( guardIn )
 {
 }
 
 template < class T >
 inline sgAutoPtr < T > :: ~sgAutoPtr () 
 {
-    this->sg.destroyPendingIO ( this->guard, this->pNotify );
+    if ( this->pNotify ) {
+        list.remove ( *this->pNotify );
+        pNotify->destroy ( this->guard, this->sg );
+    }
 }
 
 template < class T >
 inline sgAutoPtr < T > & sgAutoPtr < T > :: operator = ( T * pNotifyIn )
 {
     if ( this->pNotify ) {
-        this->sg.destroyPendingIO ( this->guard, this->pNotify );
+        list.remove ( *this->pNotify );
+        pNotify->destroy ( this->guard, this->sg );
     }
     this->pNotify = pNotifyIn;
+    list.add ( *this->pNotify );
     return *this;
 }
 

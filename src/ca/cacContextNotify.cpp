@@ -31,11 +31,11 @@ cacContextNotify::~cacContextNotify ()
 {
 }
 
-void cacContextNotify::callbackLock () 
+void cacContextNotify::callbackProcessingInitiateNotify () 
 {
 }
 
-void cacContextNotify::callbackUnlock () 
+void cacContextNotify::callbackProcessingCompleteNotify () 
 {
 }
 

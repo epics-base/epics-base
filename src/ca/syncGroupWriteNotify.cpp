@@ -27,7 +27,7 @@
 
 syncGroupWriteNotify::syncGroupWriteNotify ( CASG & sgIn, chid pChan ) :
     chan ( pChan ), sg ( sgIn ), magic ( CASG_MAGIC ), 
-        id ( 0u ), idIsValid ( false )
+        id ( 0u ), idIsValid ( false ), ioComplete ( false )
 {
 }
 
@@ -35,9 +35,21 @@ void syncGroupWriteNotify::begin (
     epicsGuard < epicsMutex > & guard, unsigned type, 
     arrayElementCount count, const void * pValueIn )
 {
+    this->ioComplete = false;
+    boolFlagManager mgr ( this->idIsValid );
     this->chan->write ( guard, type, count, 
         pValueIn, *this, &this->id );
-    this->idIsValid = true;
+    mgr.release ();
+}
+
+void syncGroupWriteNotify::cancel ( 
+    epicsGuard < epicsMutex > & cbGuard,
+    epicsGuard < epicsMutex > & guard )
+{
+    if ( this->idIsValid ) {
+        this->chan->ioCancel ( cbGuard, guard, this->id );
+        this->idIsValid = false;
+    }
 }
 
 syncGroupWriteNotify * syncGroupWriteNotify::factory ( 
@@ -50,15 +62,13 @@ syncGroupWriteNotify * syncGroupWriteNotify::factory (
 void syncGroupWriteNotify::destroy ( 
     epicsGuard < epicsMutex > & guard, casgRecycle & recycle )
 {
-    if ( this->idIsValid ) {
-        this->chan->ioCancel ( guard, this->id );
-    }
     this->~syncGroupWriteNotify ();
     recycle.recycleSyncGroupWriteNotify ( guard, *this );
 }
 
 syncGroupWriteNotify::~syncGroupWriteNotify ()
 {
+    assert ( ! this->idIsValid );
 }
 
 void syncGroupWriteNotify::completion ( 
@@ -68,18 +78,22 @@ void syncGroupWriteNotify::completion (
         this->sg.printf ( "cac: sync group io_complete(): bad sync grp op magic number?\n" );
         return;
     }
-    this->idIsValid = false;
     this->sg.completionNotify ( guard, *this );
+    this->idIsValid = false;
+    this->ioComplete = true;
 }
 
 void syncGroupWriteNotify::exception (
     epicsGuard < epicsMutex > & guard, 
     int status, const char *pContext, unsigned type, arrayElementCount count )
 {
-   this->sg.exception ( guard, status, pContext, 
-        __FILE__, __LINE__, *this->chan, type, count, CA_OP_PUT );
-   this->idIsValid = false;
-
+    if ( this->magic != CASG_MAGIC ) {
+        this->sg.printf ( "cac: sync group io_complete(): bad sync grp op magic number?\n" );
+        return;
+    }
+    this->sg.exception ( guard, status, pContext, 
+            __FILE__, __LINE__, *this->chan, type, count, CA_OP_PUT );
+    this->idIsValid = false;
     //
     // This notify is left installed at this point as a place holder indicating that
     // all requests have not been completed. This notify is not uninstalled until

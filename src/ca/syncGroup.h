@@ -64,9 +64,16 @@ class syncGroupNotify : public tsDLNode < syncGroupNotify > {
 public:
     syncGroupNotify ();
     virtual void destroy (  
-        epicsGuard < epicsMutex > &, casgRecycle & ) = 0;
+        epicsGuard < epicsMutex > & guard, 
+        casgRecycle & ) = 0;
+    virtual bool ioPending (  
+        epicsGuard < epicsMutex > & guard ) = 0;
+    virtual void cancel (
+        epicsGuard < epicsMutex > & cbGuard,
+        epicsGuard < epicsMutex > & guard ) = 0;
     virtual void show ( 
-         epicsGuard < epicsMutex > &, unsigned level ) const = 0;
+        epicsGuard < epicsMutex > &, 
+        unsigned level ) const = 0;
 protected:
     virtual ~syncGroupNotify (); 
 	syncGroupNotify ( const syncGroupNotify & );
@@ -78,19 +85,27 @@ public:
     static syncGroupReadNotify * factory ( 
         tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > &, 
         struct CASG &, chid, void *pValueIn );
+    void destroy (  
+        epicsGuard < epicsMutex > & guard, 
+        casgRecycle & );
+    bool ioPending (  
+        epicsGuard < epicsMutex > & guard );
     void begin (  epicsGuard < epicsMutex > &, 
         unsigned type, arrayElementCount count );
-    void destroy (  epicsGuard < epicsMutex > &, casgRecycle & );
+    void cancel (
+        epicsGuard < epicsMutex > & cbGuard,
+        epicsGuard < epicsMutex > & guard );
     void show (  epicsGuard < epicsMutex > &, unsigned level ) const;
 protected:
     virtual ~syncGroupReadNotify ();
 private:
     chid chan;
     struct CASG & sg;
+    void * pValue;
     const unsigned magic;
     cacChannel::ioid id;
     bool idIsValid;
-    void * pValue;
+    bool ioComplete;
     syncGroupReadNotify ( struct CASG & sgIn, chid, void * pValueIn );
     void * operator new ( size_t );
     void operator delete ( void * );
@@ -113,9 +128,16 @@ public:
     static syncGroupWriteNotify * factory ( 
         tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > &, 
         struct CASG &, chid );
+    void destroy (  
+        epicsGuard < epicsMutex > & guard, 
+        casgRecycle & );
+    bool ioPending (  
+        epicsGuard < epicsMutex > & guard );
     void begin (  epicsGuard < epicsMutex > &, unsigned type, 
         arrayElementCount count, const void * pValueIn );
-    void destroy (  epicsGuard < epicsMutex > &, casgRecycle & );
+    void cancel (
+        epicsGuard < epicsMutex > & cbGuard,
+        epicsGuard < epicsMutex > & guard );
     void show (  epicsGuard < epicsMutex > &, unsigned level ) const;
 protected:
     virtual ~syncGroupWriteNotify (); // allocate only from pool
@@ -125,6 +147,7 @@ private:
     const unsigned magic;
     cacChannel::ioid id;
     bool idIsValid;
+    bool ioComplete;
     syncGroupWriteNotify  ( struct CASG &, chid );
     void * operator new ( size_t );
     void operator delete ( void * );
@@ -147,11 +170,17 @@ template < class T > class sgAutoPtr;
 struct CASG : public chronIntIdRes < CASG >, private casgRecycle {
 public:
     CASG ( epicsGuard < epicsMutex > &, ca_client_context & cacIn );
-    void destructor ( epicsGuard < epicsMutex > & );
-    bool ioComplete (  epicsGuard < epicsMutex > & );
+    void destructor ( 
+        epicsGuard < epicsMutex > & cbGuard, 
+        epicsGuard < epicsMutex > & guard );
+    bool ioComplete ( 
+        epicsGuard < epicsMutex > & cbGuard, 
+        epicsGuard < epicsMutex > & guard );
     bool verify ( epicsGuard < epicsMutex > & ) const;
-    int block ( epicsGuard < epicsMutex > &, double timeout );
-    void reset ( epicsGuard < epicsMutex > & );
+    int block ( epicsGuard < epicsMutex > & cbGuard, 
+        epicsGuard < epicsMutex > & guard, double timeout );
+    void reset ( epicsGuard < epicsMutex > & cbGuard, 
+        epicsGuard < epicsMutex > & guard );
     void show ( epicsGuard < epicsMutex > &, unsigned level ) const;
     void show ( unsigned level ) const;
     void get ( epicsGuard < epicsMutex > &, chid pChan, 
@@ -185,9 +214,11 @@ private:
     void recycleSyncGroupReadNotify (  
         epicsGuard < epicsMutex > &, syncGroupReadNotify & io );
 
-    void destroyPendingIO ( epicsGuard < epicsMutex > &, syncGroupNotify * );
-    void destroyCompletedIO ( epicsGuard < epicsMutex > & );
-    void destroyPendingIO ( epicsGuard < epicsMutex > & );
+    void destroyPendingIO ( 
+        epicsGuard < epicsMutex > & cbGuard, 
+        epicsGuard < epicsMutex > & guard );
+    void destroyCompletedIO ( 
+        epicsGuard < epicsMutex > & guard );
 
 	CASG ( const CASG & );
 	CASG & operator = ( const CASG & );
@@ -201,18 +232,57 @@ private:
     friend class sgAutoPtr < syncGroupReadNotify >;
 };
 
+class boolFlagManager {
+public:
+    boolFlagManager ( bool & flag );
+    ~boolFlagManager ();
+    void release ();
+private:
+    bool * pBool;
+};
+
+inline boolFlagManager::boolFlagManager ( bool & flagIn ) :
+    pBool ( & flagIn )
+{
+    *this->pBool = true;
+}
+
+inline boolFlagManager::~boolFlagManager ()
+{
+    if ( this->pBool ) {
+        *this->pBool = false;
+    }
+}
+
+inline void boolFlagManager::release ()
+{
+    this->pBool = 0;
+}
+
 inline void * CASG::operator new ( size_t size, 
     tsFreeList < struct CASG, 128, epicsMutexNOOP > & freeList )
 {
     return freeList.allocate ( size );
 }
 
-#   if defined ( CXX_PLACEMENT_DELETE )
+#if defined ( CXX_PLACEMENT_DELETE )
 inline void CASG::operator delete ( void * pCadaver, 
     tsFreeList < struct CASG, 128, epicsMutexNOOP > & freeList ) 
 {
     freeList.release ( pCadaver );
 }
 #endif
+
+inline bool syncGroupWriteNotify::ioPending (  
+    epicsGuard < epicsMutex > & guard )
+{
+    return ! this->ioComplete;
+}
+
+inline bool syncGroupReadNotify::ioPending (  
+    epicsGuard < epicsMutex > & guard )
+{
+    return ! this->ioComplete;
+}
 
 #endif // ifdef syncGrouph

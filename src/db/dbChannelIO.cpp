@@ -65,14 +65,15 @@ void dbChannelIO::destructor ( epicsGuard < epicsMutex > & guard )
     this->~dbChannelIO ();
 }
 
-void dbChannelIO::destroy ( epicsGuard < epicsMutex > & guard ) 
+void dbChannelIO::destroy ( 
+    epicsGuard < epicsMutex > & callbackControlGuard, 
+    epicsGuard < epicsMutex > & mutualExclusionGuard )
 {
-    guard.assertIdenticalMutex ( this->mutex );
-    this->serviceIO.destroyChannel ( guard, *this );
+    mutualExclusionGuard.assertIdenticalMutex ( this->mutex );
+    this->serviceIO.destroyChannel ( mutualExclusionGuard, *this );
     // dont access this pointer after above call because
     // object nolonger exists
 }
-
 
 cacChannel::ioStatus dbChannelIO::read ( 
      epicsGuard < epicsMutex > & guard, unsigned type, 
@@ -129,10 +130,12 @@ void dbChannelIO::subscribe (
 }
 
 void dbChannelIO::ioCancel ( 
-    epicsGuard < epicsMutex > & guard, const ioid & id )
+    epicsGuard < epicsMutex > & callbackControlGuard, 
+    epicsGuard < epicsMutex > & mutualExclusionGuard,
+    const ioid & id )
 {
-    guard.assertIdenticalMutex ( this->mutex );
-    this->serviceIO.ioCancel ( guard, *this, id );
+    mutualExclusionGuard.assertIdenticalMutex ( this->mutex );
+    this->serviceIO.ioCancel ( mutualExclusionGuard, *this, id );
 }
 
 void dbChannelIO::ioShow ( 

@@ -49,7 +49,6 @@
 
 class cac;
 class netiiu;
-class callbackMutex;
 
 // The node and the state which tracks the list membership
 // are in the channel, but belong to the circuit.
@@ -82,7 +81,6 @@ public:
         epicsGuard < epicsMutex > &, class baseNMIU & ) = 0;
     virtual arrayElementCount nativeElementCount ( 
         epicsGuard < epicsMutex > & ) const = 0;
-    virtual int printf ( const char *pFormat, ... ) = 0;
     virtual bool connected ( epicsGuard < epicsMutex > & ) const = 0;
 };
 
@@ -95,18 +93,19 @@ public:
     nciu ( cac &, netiiu &, cacChannelNotify &, 
         const char * pNameIn, cacChannel::priLev );
     void destructor ( 
-        epicsGuard < epicsMutex > & );
+        epicsGuard < epicsMutex > & cbGuard,
+        epicsGuard < epicsMutex > & guard );
     void connect ( unsigned nativeType, 
         unsigned nativeCount, unsigned sid, 
-        epicsGuard < callbackMutex > & cbGuard, 
+        epicsGuard < epicsMutex > & cbGuard, 
         epicsGuard < epicsMutex > & guard );
-    void connect ( epicsGuard < callbackMutex > & cbGuard, 
+    void connect ( epicsGuard < epicsMutex > & cbGuard, 
         epicsGuard < epicsMutex > & guard );
     void unresponsiveCircuitNotify ( 
-        epicsGuard < callbackMutex > & cbGuard, 
+        epicsGuard < epicsMutex > & cbGuard, 
         epicsGuard < epicsMutex > & guard );
     void circuitHangupNotify ( class udpiiu &, 
-        epicsGuard < callbackMutex > & cbGuard, 
+        epicsGuard < epicsMutex > & cbGuard, 
         epicsGuard < epicsMutex > & guard );
     void setServerAddressUnknown ( 
         udpiiu & newiiu, epicsGuard < epicsMutex > & guard );
@@ -114,13 +113,13 @@ public:
     void beaconAnomalyNotify ();
     void serviceShutdownNotify ();
     void accessRightsStateChange ( const caAccessRights &, 
-        epicsGuard < callbackMutex > &, epicsGuard < epicsMutex > & );
+        epicsGuard < epicsMutex > & cbGuard, 
+        epicsGuard < epicsMutex > & guard );
     ca_uint32_t getSID () const;
     ca_uint32_t getCID () const;
     netiiu * getPIIU ();
     const netiiu * getConstPIIU () const;
     cac & getClient ();
-    int printf ( const char *pFormat, ... );
     void searchReplySetUp ( netiiu &iiu, unsigned sidIn, 
         ca_uint16_t typeIn, arrayElementCount countIn,
         epicsGuard < epicsMutex > & );
@@ -129,7 +128,7 @@ public:
     unsigned nameLen () const;
     const char * pHostName () const; // deprecated - please do not use
     void writeException ( 
-        epicsGuard < callbackMutex > &, epicsGuard < epicsMutex > &,
+        epicsGuard < epicsMutex > &, epicsGuard < epicsMutex > &,
         int status, const char *pContext, unsigned type, arrayElementCount count );
     cacChannel::priLev getPriority () const;
     void * operator new ( 
@@ -140,7 +139,7 @@ public:
     void resubscribe ( epicsGuard < epicsMutex > & );
     void sendSubscriptionUpdateRequests ( epicsGuard < epicsMutex > & );
     void disconnectAllIO ( 
-        epicsGuard < callbackMutex > &, epicsGuard < epicsMutex > & );
+        epicsGuard < epicsMutex > &, epicsGuard < epicsMutex > & );
     bool connected ( epicsGuard < epicsMutex > & ) const;
 
 private:
@@ -156,8 +155,9 @@ private:
     ca_uint16_t typeCode;
     ca_uint8_t priority; 
     ~nciu ();
-    void destroy ( 
-        epicsGuard < epicsMutex > & );
+    virtual void destroy (
+        epicsGuard < epicsMutex > & callbackControlGuard, 
+        epicsGuard < epicsMutex > & mutualExclusionGuard );
     void initiateConnect (
         epicsGuard < epicsMutex > & );
     ioStatus read ( 
@@ -176,8 +176,10 @@ private:
         epicsGuard < epicsMutex > & guard, 
         unsigned type, arrayElementCount nElem, 
         unsigned mask, cacStateNotify &notify, ioid * );
-    void ioCancel ( 
-        epicsGuard < epicsMutex > &, const ioid & );
+    virtual void ioCancel ( 
+        epicsGuard < epicsMutex > & callbackControlGuard, 
+        epicsGuard < epicsMutex > & mutualExclusionGuard,
+        const ioid & );
     void ioShow ( 
         const ioid &, unsigned level ) const;
     short nativeType () const;
@@ -222,7 +224,7 @@ inline ca_uint32_t nciu::getCID () const
 }
 
 // this is to only be used by early protocol revisions
-inline void nciu::connect ( epicsGuard < callbackMutex > & cbGuard, 
+inline void nciu::connect ( epicsGuard < epicsMutex > & cbGuard, 
                 epicsGuard < epicsMutex > & guard )
 {
     this->connect ( this->typeCode, this->count, 
@@ -245,7 +247,7 @@ inline netiiu * nciu::getPIIU ()
 }
 
 inline void nciu::writeException ( 
-    epicsGuard < callbackMutex > & cbGuard, 
+    epicsGuard < epicsMutex > & cbGuard, 
     epicsGuard < epicsMutex > & guard, 
     int status, const char * pContext, 
     unsigned typeIn, arrayElementCount countIn )

@@ -53,20 +53,22 @@ epicsShareFunc void epicsShareAPI caRepeaterRegistrationMessage ( SOCKET sock, u
 extern "C" epicsShareFunc void caRepeaterThread ( void *pDummy );
 epicsShareFunc void ca_repeater ( void );
 
-class epicsTime;
-class callbackMutex;
+class cac;
+class cacContextNotify;
 
 class udpRecvThread : 
         public epicsThreadRunable {
 public:
-    udpRecvThread ( class udpiiu & iiuIn, callbackMutex & cbMutexIn,
+    udpRecvThread ( 
+        class udpiiu & iiuIn, cacContextNotify &, epicsMutex &,
         const char * pName, unsigned stackSize, unsigned priority );
     virtual ~udpRecvThread ();
     void start ();
     bool exitWait ( double delay );
 private:
     class udpiiu & iiu;
-    callbackMutex & cbMutex;
+    epicsMutex & cbMutex;
+    cacContextNotify & ctxNotify;
     epicsThread thread;
     void run();
 };
@@ -82,7 +84,12 @@ private:
 
 class udpiiu : public netiiu {
 public:
-    udpiiu ( class epicsTimerQueueActive &, callbackMutex &, class cac & );
+    udpiiu ( 
+        class epicsTimerQueueActive &, 
+        epicsMutex & callbackControl, 
+        epicsMutex & mutualExclusion, 
+        cacContextNotify &,
+        class cac & );
     virtual ~udpiiu ();
     void installNewChannel ( const epicsTime & currentTime, nciu & );
     void installDisconnectedChannel ( nciu & );
@@ -95,13 +102,16 @@ public:
     void repeaterConfirmNotify ();
     void beaconAnomalyNotify ( const epicsTime & currentTime );
     void govExpireNotify ( const epicsTime & currentTime );
-    int printf ( const char *pformat, ... );
     unsigned unresolvedChannelCount ( epicsGuard < udpMutex > & ) const;
-    void uninstallChan ( epicsGuard < epicsMutex > &, nciu & );
+    void uninstallChan ( 
+        epicsGuard < epicsMutex > & cbGuard, 
+        epicsGuard < epicsMutex > & guard, 
+        nciu & );
     bool pushDatagramMsg ( const caHdr & hdr, 
         const void * pExt, ca_uint16_t extsize);
     void shutdown ();
     double roundTripDelayEstimate ( epicsGuard < udpMutex > & ) const;
+    int printf ( epicsGuard < epicsMutex > & callbackControl, const char *pformat, ... );
 
     // exceptions
     class noSocket {};
@@ -118,6 +128,8 @@ private:
     epicsTime rtteTimeStamp;
     double rtteMean;
     cac & cacRef;
+    mutable epicsMutex & cbMutex;
+    mutable epicsMutex & cacMutex;
     unsigned nBytesInXmitBuf;
     ca_uint32_t sequenceNumber;
     ca_uint32_t rtteSequenceNumber;
@@ -133,33 +145,32 @@ private:
     bool rtteActive;
     bool lastReceivedSeqNoIsValid;
 
-    void recvMsg ( callbackMutex & );
-    void postMsg ( epicsGuard < callbackMutex > &, 
+    void postMsg ( epicsGuard < epicsMutex > &, 
             const osiSockAddr & net_addr, 
             char *pInBuf, arrayElementCount blockSize,
             const epicsTime &currenTime );
 
     typedef bool ( udpiiu::*pProtoStubUDP ) ( 
-        epicsGuard < callbackMutex > &, const caHdr &, 
+        epicsGuard < epicsMutex > &, const caHdr &, 
         const osiSockAddr &, const epicsTime & );
 
     // UDP protocol dispatch table
     static const pProtoStubUDP udpJumpTableCAC[];
 
     // UDP protocol stubs
-    bool versionAction ( epicsGuard < callbackMutex > &, const caHdr &, 
+    bool versionAction ( epicsGuard < epicsMutex > &, const caHdr &, 
         const osiSockAddr &, const epicsTime & );
-    bool badUDPRespAction ( epicsGuard < callbackMutex > &, const caHdr &msg, 
+    bool badUDPRespAction ( epicsGuard < epicsMutex > &, const caHdr &msg, 
         const osiSockAddr &netAddr, const epicsTime & );
-    bool searchRespAction ( epicsGuard < callbackMutex > &, const caHdr &msg, 
+    bool searchRespAction ( epicsGuard < epicsMutex > &, const caHdr &msg, 
         const osiSockAddr &net_addr, const epicsTime & );
-    bool exceptionRespAction ( epicsGuard < callbackMutex > &, const caHdr &msg, 
+    bool exceptionRespAction ( epicsGuard < epicsMutex > &, const caHdr &msg, 
         const osiSockAddr &net_addr, const epicsTime & );
-    bool beaconAction ( epicsGuard < callbackMutex > &, const caHdr &msg, 
+    bool beaconAction ( epicsGuard < epicsMutex > &, const caHdr &msg, 
         const osiSockAddr &net_addr, const epicsTime & );
-    bool notHereRespAction ( epicsGuard < callbackMutex > &, const caHdr &msg, 
+    bool notHereRespAction ( epicsGuard < epicsMutex > &, const caHdr &msg, 
         const osiSockAddr &net_addr, const epicsTime & );
-    bool repeaterAckAction ( epicsGuard < callbackMutex > &, const caHdr &msg, 
+    bool repeaterAckAction ( epicsGuard < epicsMutex > &, const caHdr &msg, 
         const osiSockAddr &net_addr, const epicsTime & );
 
     friend void udpRecvThread::run ();

@@ -117,6 +117,7 @@ class dbContext;
 class dbContextPrivateListOfIO {
 public:
     dbContextPrivateListOfIO ();
+    ~dbContextPrivateListOfIO ();
 private:
     tsDLList < dbSubscriptionIO > eventq;
     dbPutNotifyBlocker * pBlocker;
@@ -145,7 +146,8 @@ private:
 
 class dbContext : public cacContext {
 public:
-    dbContext ( epicsMutex & mutex, cacContextNotify & notify );
+    dbContext ( epicsMutex & cbMutex, epicsMutex & mutex, 
+        cacContextNotify & notify );
     virtual ~dbContext ();
     void destroyChannel ( epicsGuard < epicsMutex > &, dbChannelIO & );
     void callReadNotify ( epicsGuard < epicsMutex > &, 
@@ -179,6 +181,7 @@ private:
     dbEventCtx ctx;
     unsigned long stateNotifyCacheSize;
     mutable epicsMutex & mutex;
+    mutable epicsMutex & cbMutex;
     cacContextNotify & notify;
     epics_auto_ptr < cacContext > pNetContext;
     char * pStateNotifyCache;
@@ -205,6 +208,11 @@ private:
 inline dbContextPrivateListOfIO::dbContextPrivateListOfIO () :
     pBlocker ( 0 )
 {
+}
+
+inline dbContextPrivateListOfIO::~dbContextPrivateListOfIO () 
+{
+    assert ( ! this->pBlocker );
 }
 
 inline void dbContext::callReadNotify ( 

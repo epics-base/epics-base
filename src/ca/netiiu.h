@@ -36,7 +36,6 @@ class netSubscription;
 union osiSockAddr;
 
 class cac;
-class callbackMutex;
 
 class netiiu {
 public:
@@ -67,7 +66,9 @@ public:
         ( cacContextNotify &, epicsGuard < epicsMutex > & ) = 0;
     virtual void requestRecvProcessPostponedFlush () = 0;
     virtual osiSockAddr getNetworkAddress () const = 0;
-    virtual void uninstallChan ( epicsGuard < epicsMutex > &, nciu & ) = 0;
+    virtual void uninstallChan ( 
+        epicsGuard < epicsMutex > & cbMutex, 
+        epicsGuard < epicsMutex > & mutex, nciu & ) = 0;
     virtual double receiveWatchdogDelay () const = 0;
 };
 

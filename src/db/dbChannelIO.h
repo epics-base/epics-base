@@ -46,7 +46,9 @@ public:
     dbChannelIO ( epicsMutex &, cacChannelNotify &, 
         const dbAddr &, dbContext & );
     void destructor ( epicsGuard < epicsMutex > & );
-    void destroy ( epicsGuard < epicsMutex > & );
+    void destroy (
+        epicsGuard < epicsMutex > & callbackControlGuard, 
+        epicsGuard < epicsMutex > & mutualExclusionGuard );
     void callReadNotify ( epicsGuard < epicsMutex > &, 
             unsigned type, unsigned long count, 
             cacReadNotify & notify );
@@ -76,7 +78,9 @@ private:
     void subscribe ( epicsGuard < epicsMutex > &,
         unsigned type, unsigned long count, 
         unsigned mask, cacStateNotify &notify, ioid * );
-    void ioCancel ( epicsGuard < epicsMutex > &,
+    void ioCancel ( 
+        epicsGuard < epicsMutex > & callbackControlGuard, 
+        epicsGuard < epicsMutex > & mutualExclusionGuard,
         const ioid & );
     void ioShow ( 
         const ioid &, unsigned level ) const;

@@ -63,10 +63,11 @@ oldChannelNotify::~oldChannelNotify ()
 }
 
 void  oldChannelNotify::destructor (
+    epicsGuard < epicsMutex > & cbGuard,
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
-    this->io.destroy ( guard );
+    this->io.destroy ( cbGuard, guard );
     // no need to worry about a connect preempting here because
     // the io (the nciu) has been destroyed above
     if ( this->pConnCallBack == 0 && ! this->currentlyConnected ) {

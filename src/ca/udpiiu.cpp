@@ -66,15 +66,21 @@ const udpiiu::pProtoStubUDP udpiiu::udpJumpTableCAC [] =
 //
 // udpiiu::udpiiu ()
 //
-udpiiu::udpiiu ( epicsTimerQueueActive & timerQueue, callbackMutex & cbMutex, cac & cac ) :
-    recvThread ( *this, cbMutex,
-        "CAC-UDP", 
+udpiiu::udpiiu ( 
+    epicsTimerQueueActive & timerQueue, 
+    epicsMutex & cbMutexIn, 
+    epicsMutex & cacMutexIn,
+    cacContextNotify & ctxNotifyIn,
+    cac & cac ) :
+    recvThread ( *this, ctxNotifyIn, cbMutexIn, "CAC-UDP", 
         epicsThreadGetStackSize ( epicsThreadStackMedium ),
         cac::lowestPriorityLevelAbove (
             cac::lowestPriorityLevelAbove (
                 cac.getInitializingThreadsPriority () ) ) ),
     rtteMean ( 5.0e-3 ), // seconds
     cacRef ( cac ),
+    cbMutex ( cbMutexIn ),
+    cacMutex ( cacMutexIn ),
     nBytesInXmitBuf ( 0 ),
     sequenceNumber ( 0 ),
     rtteSequenceNumber ( 0 ),
@@ -85,7 +91,9 @@ udpiiu::udpiiu ( epicsTimerQueueActive & timerQueue, callbackMutex & cbMutex, ca
     // this is much more efficent with recursive locks. Also, access
     // to the udp's netiiu base list is protected.
     pSearchTmr ( new searchTimer ( *this, timerQueue, this->mutex ) ),
-    pRepeaterSubscribeTmr ( new repeaterSubscribeTimer ( *this, timerQueue ) ),
+    pRepeaterSubscribeTmr ( 
+        new repeaterSubscribeTimer ( 
+            *this, timerQueue, cbMutexIn, ctxNotifyIn ) ),
     repeaterPort ( 0 ),
     serverPort ( 0 ),
     localPort ( 0 ),
@@ -111,7 +119,7 @@ udpiiu::udpiiu ( epicsTimerQueueActive & timerQueue, callbackMutex & cbMutex, ca
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
-        this->printf ("CAC: unable to create datagram socket because = \"%s\"\n",
+        errlogPrintf ("CAC: unable to create datagram socket because = \"%s\"\n",
             sockErrBuf );
         throwWithLocation ( noSocket () );
     }
@@ -122,7 +130,7 @@ udpiiu::udpiiu ( epicsTimerQueueActive & timerQueue, callbackMutex & cbMutex, ca
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
-        this->printf ("CAC: IP broadcasting enable failed because = \"%s\"\n",
+        errlogPrintf ("CAC: IP broadcasting enable failed because = \"%s\"\n",
             sockErrBuf );
     }
 
@@ -140,7 +148,7 @@ udpiiu::udpiiu ( epicsTimerQueueActive & timerQueue, callbackMutex & cbMutex, ca
         if (status<0) {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
-            this->printf ( "CAC: unable to set socket option SO_RCVBUF because \"%s\"\n",
+            errlogPrintf ( "CAC: unable to set socket option SO_RCVBUF because \"%s\"\n",
                 sockErrBuf );
         }
     }
@@ -158,7 +166,7 @@ udpiiu::udpiiu ( epicsTimerQueueActive & timerQueue, callbackMutex & cbMutex, ca
         epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         epicsSocketDestroy (this->sock);
-        this->printf ( "CAC: unable to bind to an unconstrained address because = \"%s\"\n",
+        errlogPrintf ( "CAC: unable to bind to an unconstrained address because = \"%s\"\n",
             sockErrBuf );
         throwWithLocation ( noSocket () );
     }
@@ -172,12 +180,12 @@ udpiiu::udpiiu ( epicsTimerQueueActive & timerQueue, callbackMutex & cbMutex, ca
             epicsSocketConvertErrnoToString ( 
                 sockErrBuf, sizeof ( sockErrBuf ) );
             epicsSocketDestroy ( this->sock );
-            this->printf ( "CAC: getsockname () error was \"%s\"\n", sockErrBuf );
+            errlogPrintf ( "CAC: getsockname () error was \"%s\"\n", sockErrBuf );
             throwWithLocation ( noSocket () );
         }
         if ( tmpAddr.sa.sa_family != AF_INET) {
             epicsSocketDestroy ( this->sock );
-            this->printf ( "CAC: UDP socket was not inet addr family\n" );
+            errlogPrintf ( "CAC: UDP socket was not inet addr family\n" );
             throwWithLocation ( noSocket () );
         }
         this->localPort = epicsNTOH16 ( tmpAddr.ia.sin_port );
@@ -262,63 +270,10 @@ void udpiiu::shutdown ()
     }
 }
 
-//
-//  udpiiu::recvMsg ()
-//
-void udpiiu::recvMsg ( callbackMutex & cbMutex )
-{
-    osiSockAddr src;
-    osiSocklen_t src_size = sizeof ( src );
-    int status = recvfrom ( this->sock, 
-        this->recvBuf, sizeof ( this->recvBuf ), 0,
-        & src.sa, & src_size );
-
-    epicsGuard < callbackMutex > guard ( cbMutex );
-
-    if ( status <= 0 ) {
-
-        if ( status == 0 ) {
-            return;
-        }
-
-        int errnoCpy = SOCKERRNO;
-
-        if ( errnoCpy == SOCK_SHUTDOWN ) {
-            return;
-        }
-        if ( errnoCpy == SOCK_ENOTSOCK ) {
-            return;
-        }
-        if ( errnoCpy == SOCK_EBADF ) {
-            return;
-        }
-        if ( errnoCpy == SOCK_EINTR ) {
-            return;
-        }
-        // Avoid spurious ECONNREFUSED bug in linux
-        if ( errnoCpy == SOCK_ECONNREFUSED ) {
-            return;
-        }
-        // Avoid ECONNRESET from disconnected socket bug
-        // in windows
-        if ( errnoCpy == SOCK_ECONNRESET ) {
-            return;
-        }
-        char sockErrBuf[64];
-        epicsSocketConvertErrnoToString ( 
-            sockErrBuf, sizeof ( sockErrBuf ) );
-        this->printf ( "CAC: UDP recv error was \"%s\"\n", 
-            sockErrBuf );
-    }
-    else if ( status > 0 ) {
-        this->postMsg ( guard, src, this->recvBuf, 
-            (arrayElementCount) status, epicsTime::getCurrent() );
-    }
-}
-
-udpRecvThread::udpRecvThread ( udpiiu & iiuIn, callbackMutex & cbMutexIn,
+udpRecvThread::udpRecvThread ( 
+    udpiiu & iiuIn, cacContextNotify & ctxNotifyIn, epicsMutex & cbMutexIn,
     const char * pName, unsigned stackSize, unsigned priority ) :
-        iiu ( iiuIn ), cbMutex ( cbMutexIn ), 
+        iiu ( iiuIn ), ctxNotify ( ctxNotifyIn ), cbMutex ( cbMutexIn ), 
         thread ( *this, pName, stackSize, priority ) {}
 
 udpRecvThread::~udpRecvThread () 
@@ -340,12 +295,49 @@ void udpRecvThread::run ()
     epicsThreadPrivateSet ( caClientCallbackThreadId, &this->iiu );
 
     if ( ellCount ( & this->iiu.dest ) == 0 ) { // X aCC 392
-        epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
-        genLocalExcep ( cbGuard, this->iiu.cacRef, ECA_NOSEARCHADDR, NULL );
+        callbackManager mgr ( this->ctxNotify, this->cbMutex );
+        epicsGuard < epicsMutex > guard ( this->iiu.cacMutex );
+        genLocalExcep ( mgr.cbGuard, guard, 
+            this->iiu.cacRef, ECA_NOSEARCHADDR, NULL );
     }
 
     do {
-        this->iiu.recvMsg ( this->cbMutex );
+        osiSockAddr src;
+        osiSocklen_t src_size = sizeof ( src );
+        int status = recvfrom ( this->iiu.sock, 
+            this->iiu.recvBuf, sizeof ( this->iiu.recvBuf ), 0,
+            & src.sa, & src_size );
+
+        callbackManager mgr ( this->ctxNotify, this->cbMutex );
+
+        if ( status <= 0 ) {
+
+            if ( status < 0 ) {
+                int errnoCpy = SOCKERRNO;
+                if ( 
+                    errnoCpy != SOCK_EINTR &&
+                    errnoCpy != SOCK_SHUTDOWN &&
+                    errnoCpy != SOCK_ENOTSOCK &&
+                    errnoCpy != SOCK_EBADF &&
+                    // Avoid spurious ECONNREFUSED bug in linux
+                    errnoCpy != SOCK_ECONNREFUSED &&
+                    // Avoid ECONNRESET from disconnected socket bug
+                    // in windows
+                    errnoCpy != SOCK_ECONNRESET ) {
+
+                    char sockErrBuf[64];
+                    epicsSocketConvertErrnoToString ( 
+                        sockErrBuf, sizeof ( sockErrBuf ) );
+                    errlogPrintf ( "CAC: UDP recv error was \"%s\"\n", 
+                        sockErrBuf );
+                }
+            }
+        }
+        else if ( status > 0 ) {
+            this->iiu.postMsg ( mgr.cbGuard, src, this->iiu.recvBuf, 
+                (arrayElementCount) status, epicsTime::getCurrent() );
+        }
+
     } while ( ! this->iiu.shutdownCmd );
 }
 
@@ -548,19 +540,20 @@ void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
     }
 }
 
-bool udpiiu::badUDPRespAction ( epicsGuard < callbackMutex > &, const caHdr &msg, 
+bool udpiiu::badUDPRespAction ( 
+    epicsGuard < epicsMutex > & guard, const caHdr &msg, 
     const osiSockAddr &netAddr, const epicsTime &currentTime )
 {
     char buf[64];
     sockAddrToDottedIP ( &netAddr.sa, buf, sizeof ( buf ) );
     char date[64];
     currentTime.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S");
-    this->printf ( "CAC: Undecipherable ( bad msg code %u ) UDP message from %s at %s\n", 
+    this->printf ( guard, "CAC: Undecipherable ( bad msg code %u ) UDP message from %s at %s\n", 
                 msg.m_cmmd, buf, date );
     return false;
 }
 
-bool udpiiu::versionAction ( epicsGuard < callbackMutex > &,
+bool udpiiu::versionAction ( epicsGuard < epicsMutex > &,
     const caHdr & hdr, const osiSockAddr &, const epicsTime & currentTime )
 {
     epicsGuard < udpMutex > guard ( this->mutex );
@@ -586,8 +579,8 @@ bool udpiiu::versionAction ( epicsGuard < callbackMutex > &,
 }
 
 bool udpiiu::searchRespAction ( // X aCC 361
-        epicsGuard < callbackMutex > & cbLocker, const caHdr &msg,
-        const osiSockAddr &addr, const epicsTime & currentTime )
+        epicsGuard < epicsMutex > & cbGuard, const caHdr &msg,
+        const osiSockAddr &  addr, const epicsTime & currentTime )
 {
     if ( addr.sa.sa_family != AF_INET ) {
         return false;
@@ -640,12 +633,12 @@ bool udpiiu::searchRespAction ( // X aCC 361
     bool success;
     if ( CA_V42 ( minorVersion ) ) {
         success = this->cacRef.transferChanToVirtCircuit 
-            ( cbLocker, msg.m_available, msg.m_cid, 0xffff, 
+            ( cbGuard, msg.m_available, msg.m_cid, 0xffff, 
                 0, minorVersion, serverAddr );
     }
     else {
         success = this->cacRef.transferChanToVirtCircuit 
-            ( cbLocker, msg.m_available, msg.m_cid, msg.m_dataType, 
+            ( cbGuard, msg.m_available, msg.m_cid, msg.m_dataType, 
                 msg.m_count, minorVersion, serverAddr );
     }
 
@@ -660,7 +653,7 @@ bool udpiiu::searchRespAction ( // X aCC 361
     return true;
 }
 
-bool udpiiu::beaconAction ( epicsGuard < callbackMutex > &, const caHdr &msg, 
+bool udpiiu::beaconAction ( epicsGuard < epicsMutex > &, const caHdr &msg, 
     const osiSockAddr &net_addr, const epicsTime &currentTime )
 {
     struct sockaddr_in ina;
@@ -704,21 +697,22 @@ bool udpiiu::beaconAction ( epicsGuard < callbackMutex > &, const caHdr &msg,
     return true;
 }
 
-bool udpiiu::repeaterAckAction ( epicsGuard < callbackMutex > &, const caHdr &,  
+bool udpiiu::repeaterAckAction ( epicsGuard < epicsMutex > &, const caHdr &,  
         const osiSockAddr &, const epicsTime &)
 {
     this->cacRef.repeaterSubscribeConfirmNotify ();
     return true;
 }
 
-bool udpiiu::notHereRespAction ( epicsGuard < callbackMutex > &, const caHdr &,  
+bool udpiiu::notHereRespAction ( epicsGuard < epicsMutex > &, const caHdr &,  
         const osiSockAddr &, const epicsTime & )
 {
     return true;
 }
 
-bool udpiiu::exceptionRespAction ( epicsGuard < callbackMutex > &, const caHdr &msg, 
-        const osiSockAddr &net_addr, const epicsTime &currentTime )
+bool udpiiu::exceptionRespAction ( 
+    epicsGuard < epicsMutex > & cbGuard, const caHdr &msg, 
+    const osiSockAddr & net_addr, const epicsTime & currentTime )
 {
     const caHdr &reqMsg = * ( &msg + 1 );
     char name[64];
@@ -727,19 +721,21 @@ bool udpiiu::exceptionRespAction ( epicsGuard < callbackMutex > &, const caHdr &
     currentTime.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S");
 
     if ( msg.m_postsize > sizeof ( caHdr ) ){
-        errlogPrintf ( "error condition \"%s\" detected by %s with context \"%s\" at %s\n", 
+        this->cacRef.printf ( cbGuard, 
+            "error condition \"%s\" detected by %s with context \"%s\" at %s\n", 
             ca_message ( msg.m_available ), 
             name, reinterpret_cast <const char *> ( &reqMsg + 1 ), date );
     }
     else{
-        errlogPrintf ( "error condition \"%s\" detected by %s at %s\n", 
+        this->cacRef.printf ( cbGuard,
+            "error condition \"%s\" detected by %s at %s\n", 
             ca_message ( msg.m_available ), name, date );
     }
 
     return true;
 }
 
-void udpiiu::postMsg ( epicsGuard < callbackMutex > & guard, 
+void udpiiu::postMsg ( epicsGuard < epicsMutex > & guard, 
               const osiSockAddr & net_addr, 
               char * pInBuf, arrayElementCount blockSize,
               const epicsTime & currentTime )
@@ -755,7 +751,7 @@ void udpiiu::postMsg ( epicsGuard < callbackMutex > & guard,
         if ( blockSize < sizeof ( *pCurMsg ) ) {
             char buf[64];
             sockAddrToDottedIP ( &net_addr.sa, buf, sizeof ( buf ) );
-            this->printf (
+            this->printf ( guard,
                 "%s: Undecipherable (too small) UDP msg from %s ignored\n", 
                     __FILE__,  buf );
             return;
@@ -792,7 +788,7 @@ void udpiiu::postMsg ( epicsGuard < callbackMutex > & guard,
         if ( size > blockSize ) {
             char buf[64];
             sockAddrToDottedIP ( &net_addr.sa, buf, sizeof ( buf ) );
-            this->printf (
+            this->printf ( guard,
                 "%s: Undecipherable (payload too small) UDP msg from %s ignored\n", __FILE__, 
                             buf );
             return;
@@ -812,7 +808,7 @@ void udpiiu::postMsg ( epicsGuard < callbackMutex > & guard,
         if ( ! success ) {
             char buf[256];
             sockAddrToDottedIP ( &net_addr.sa, buf, sizeof ( buf ) );
-            this->printf ( "CAC: Undecipherable UDP message from %s\n", buf );
+            this->printf ( guard, "CAC: Undecipherable UDP message from %s\n", buf );
             return;
         }
 
@@ -837,7 +833,8 @@ bool udpiiu::pushVersionMsg ()
     return pushDatagramMsg ( msg, 0, 0 );
 }
 
-bool udpiiu::pushDatagramMsg ( const caHdr & msg, const void *pExt, ca_uint16_t extsize )
+bool udpiiu::pushDatagramMsg ( const caHdr & msg, 
+    const void * pExt, ca_uint16_t extsize )
 {
     epicsGuard < udpMutex > guard ( this->mutex );
 
@@ -898,7 +895,7 @@ void udpiiu::datagramFlush (
                 &pNode->addr.sa, sizeof ( pNode->addr.sa ) );
         if ( status != (int) this->nBytesInXmitBuf ) {
             if ( status >= 0 ) {
-                this->printf ( "CAC: UDP sendto () call returned strange xmit count?\n" );
+                errlogPrintf ( "CAC: UDP sendto () call returned strange xmit count?\n" );
                 break;
             }
             else {
@@ -927,7 +924,7 @@ void udpiiu::datagramFlush (
                     char sockErrBuf[64];
                     epicsSocketConvertErrnoToString ( 
                         sockErrBuf, sizeof ( sockErrBuf ) );
-                    this->printf (
+                    errlogPrintf (
                         "CAC: error = \"%s\" sending UDP msg to %s\n",
                         sockErrBuf, buf);
                     break;
@@ -1111,14 +1108,15 @@ void udpiiu::govExpireNotify ( const epicsTime & currentTime )
     }
 }
 
-int udpiiu::printf ( const char *pformat, ... )
+int udpiiu::printf ( epicsGuard < epicsMutex > & cbGuard, 
+                    const char * pformat, ... )
 {
     va_list theArgs;
     int status;
 
     va_start ( theArgs, pformat );
     
-    status = this->cacRef.vPrintf ( pformat, theArgs );
+    status = this->cacRef.vPrintf ( cbGuard, pformat, theArgs );
     
     va_end ( theArgs );
     
@@ -1126,9 +1124,12 @@ int udpiiu::printf ( const char *pformat, ... )
 }
 
 void udpiiu::uninstallChan (
-    epicsGuard < epicsMutex > & guardIn, nciu & chan )
+    epicsGuard < epicsMutex > & cbGuard, 
+    epicsGuard < epicsMutex > & cacGuard, 
+    nciu & chan )
 {
-    guardIn.assertIdenticalMutex ( this->cacRef.mutexRef () );
+    cbGuard.assertIdenticalMutex ( this->cbMutex );
+    cacGuard.assertIdenticalMutex ( this->cacMutex );
 
     epicsGuard < udpMutex > guard ( this->mutex );
     if ( chan.channelNode::listMember == channelNode::cs_disconnGov ) {
@@ -1138,7 +1139,7 @@ void udpiiu::uninstallChan (
         this->serverAddrRes.remove ( chan );
     }
     else {
-        this->cacRef.printf ( 
+        this->cacRef.printf ( cbGuard,
             "cac: attempt to uninstall channel from udp iiu, but it inst installed there?" );
     }
     chan.channelNode::listMember = channelNode::cs_none;
@@ -1167,35 +1168,35 @@ bool udpiiu::ca_v41_ok () const
 void udpiiu::writeRequest ( epicsGuard < epicsMutex > & guard, 
     nciu & chan, unsigned type, arrayElementCount nElem, const void * pValue )
 {
-    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+    guard.assertIdenticalMutex ( this->cacMutex );
     netiiu::writeRequest ( guard, chan, type, nElem, pValue );
 }
 
 void udpiiu::writeNotifyRequest ( epicsGuard < epicsMutex > & guard, nciu & chan, 
                 netWriteNotifyIO & io, unsigned type, arrayElementCount nElem, const void *pValue )
 {
-    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+    guard.assertIdenticalMutex ( this->cacMutex );
     netiiu::writeNotifyRequest ( guard, chan, io, type, nElem, pValue );
 }
 
 void udpiiu::readNotifyRequest ( epicsGuard < epicsMutex > & guard, nciu & chan, 
                 netReadNotifyIO & io, unsigned type, arrayElementCount nElem )
 {
-    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+    guard.assertIdenticalMutex ( this->cacMutex );
     netiiu::readNotifyRequest ( guard, chan, io, type, nElem );
 }
 
 void udpiiu::clearChannelRequest ( epicsGuard < epicsMutex > & guard, 
                 ca_uint32_t sid, ca_uint32_t cid )
 {
-    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+    guard.assertIdenticalMutex ( this->cacMutex );
     netiiu::clearChannelRequest ( guard, sid, cid );
 }
 
 void udpiiu::subscriptionRequest ( epicsGuard < epicsMutex > & guard, nciu & chan, 
                 netSubscription & subscr )
 {
-    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+    guard.assertIdenticalMutex ( this->cacMutex );
     netiiu::subscriptionRequest ( guard, chan, subscr );
 }
 
@@ -1207,7 +1208,7 @@ void udpiiu::subscriptionUpdateRequest ( epicsGuard < epicsMutex > &, nciu &,
 void udpiiu::subscriptionCancelRequest ( epicsGuard < epicsMutex > & guard, 
                 nciu & chan, netSubscription & subscr )
 {
-    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+    guard.assertIdenticalMutex ( this->cacMutex );
     netiiu::subscriptionCancelRequest ( guard, chan, subscr );
 }
 
@@ -1218,20 +1219,20 @@ void udpiiu::flushRequest ( epicsGuard < epicsMutex > & guard )
 
 bool udpiiu::flushBlockThreshold ( epicsGuard < epicsMutex > & guard ) const
 {
-    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+    guard.assertIdenticalMutex ( this->cacMutex );
     return netiiu::flushBlockThreshold ( guard );
 }
 
 void udpiiu::flushRequestIfAboveEarlyThreshold ( epicsGuard < epicsMutex > & guard )
 {
-    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+    guard.assertIdenticalMutex ( this->cacMutex );
     netiiu::flushRequestIfAboveEarlyThreshold ( guard );
 }
 
 void udpiiu::blockUntilSendBacklogIsReasonable 
     ( cacContextNotify & notify, epicsGuard < epicsMutex > & guard )
 {
-    guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
+    guard.assertIdenticalMutex ( this->cacMutex );
     netiiu::blockUntilSendBacklogIsReasonable ( notify, guard );
 }
 

@@ -47,8 +47,6 @@
 #include <epvxiLib.h>
 #include <fast_lock.h>
 
-#define LOCAL
-
 enum msgDeviceSyncType {
 	syncInt, 
 	syncSignal, 

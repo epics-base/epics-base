@@ -68,7 +68,6 @@ static long write_ao(pao)
     struct aoRecord	*pao;
 {
     char message[100];
-    long status;
 
     /* ao.out must be a CONSTANT or a DB_LINK or a CA_LINK*/
     switch (pao->out.type) {

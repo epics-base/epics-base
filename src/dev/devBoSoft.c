@@ -71,7 +71,7 @@ static long write_bo(pbo)
     case (CONSTANT) :
         break;
     case (DB_LINK) :
-        (void)dbPutLink(&pbo->out.value.db_link,pbo,DBR_SHORT,&pbo->val,1L);
+        (void)dbPutLink(&pbo->out.value.db_link,pbo,DBR_USHORT,&pbo->val,1L);
         break;
     case (CA_LINK) :
         break;
@@ -81,7 +81,7 @@ static long write_bo(pbo)
                 pbo->nsta = SOFT_ALARM;
                 if(pbo->stat!=SOFT_ALARM) {
                         strcpy(message,pbo->name);
-                        strcat(message,": devBoSoft (write_ai) Illegal INP field");
+                        strcat(message,": devBoSoft (write_bo) Illegal INP field");
                         errMessage(S_db_badField,message);
                 }
         }

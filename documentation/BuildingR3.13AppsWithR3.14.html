@@ -28,6 +28,12 @@ applications subject to the following restrictions:</p>
 Ultimately applications should be converted to use the new configure rules so
 that the OSI features are available.
 
+<h3>Prerequisite for building R3.13 applications</h3>
+<p>The macro COMPAT_313 must be set to YES in base/configure/CONFIG_SITE
+before the base build. This will install vxWorks object files and perl
+scripts needed for building R3.13 ioc applications.
+</p>
+
 <h3><b>Gnumake clean uninstall</b></h3>
 
 <p>At the top of the application execute:</p>

@@ -26,6 +26,11 @@ cacChannelIO::~cacChannelIO ()
     this->chan.unlock ();
 }
 
+cacLocalChannelIO::cacLocalChannelIO ( cacChannel &chan ) :
+  cacChannelIO (chan) {};
+
+cacLocalChannelIO::~cacLocalChannelIO () {}
+
 void cacChannelIO::connectNotify ()
 {
     this->chan.connectNotify ();
@@ -97,3 +102,14 @@ void cacChannelIO::incrementOutstandingIO ()
 void cacChannelIO::decrementOutstandingIO ()
 {
 }
+
+void cacChannelIO::lock (void)
+{
+    this->chan.lock ();
+}
+
+void cacChannelIO::unlock (void)
+{    
+    this->chan.unlock ();
+}
+

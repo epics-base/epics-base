@@ -81,9 +81,8 @@ void syncGroupReadNotify::completion (
 void syncGroupReadNotify::exception (
     int status, const char *pContext, unsigned type, arrayElementCount count )
 {
-    ca_signal_formated ( status, __FILE__, __LINE__, 
-            "CA sync group read request failed with chan=%s type=%d count=%ld because \"%s\"\n", 
-            this->chan->pName(), type, count, pContext);
+   this->sg.exception ( status, pContext, 
+        __FILE__, __LINE__, *this->chan, type, count, CA_OP_GET );
     //
     // This notify is left installed at this point as a place holder indicating that
     // all requests have not been completed. This notify is not uninstalled until

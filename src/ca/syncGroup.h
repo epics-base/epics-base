@@ -120,6 +120,11 @@ public:
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
     int printf ( const char * pFormat, ... );
+    void exception ( int status, const char *pContext, 
+        const char *pFileName, unsigned lineNo );
+    void exception ( int status, const char *pContext,
+        const char *pFileName, unsigned lineNo, oldChannelNotify &chan, 
+        unsigned type, arrayElementCount count, unsigned op );
 protected:
     virtual ~CASG ();
 private:

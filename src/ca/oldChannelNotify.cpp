@@ -34,7 +34,7 @@ extern "C" void cacNoopAccesRightsHandler ( struct access_rights_handler_args )
 
 oldChannelNotify::oldChannelNotify ( oldCAC &cacIn, const char *pName, 
                                     caCh *pConnCallBackIn, void *pPrivateIn ) :
-    io ( cacIn.createChannel ( pName, *this ) ),
+    io ( cacIn.createChannel ( pName, *this ) ), cacCtx ( cacIn ),
     pConnCallBack ( pConnCallBackIn ? pConnCallBackIn : cacNoopConnHandler ), 
     pPrivate ( pPrivateIn ), pAccessRightsFunc ( cacNoopAccesRightsHandler )
 {
@@ -110,22 +110,21 @@ void oldChannelNotify::accessRightsNotify ( const caAccessRights &ar )
 
 void oldChannelNotify::exception ( int status, const char *pContext )
 {
-    ca_signal ( status, pContext );
+    this->cacCtx.exception ( status, pContext, __FILE__, __LINE__ );
 }
 
 void oldChannelNotify::readException ( int status, const char *pContext,
     unsigned type, arrayElementCount count, void *pValue )
 {
-    ca_signal_formated ( status, 0, 0u, "ctx=%s type=%s count=%u ptr=%p", 
-        pContext, dbr_type_to_text ( static_cast < int > ( type ) ), 
-        count, pValue );
+    this->cacCtx.exception ( status, pContext, 
+        __FILE__, __LINE__, *this, type, count, CA_OP_GET );
 }
 
 void oldChannelNotify::writeException ( int status, const char *pContext,
     unsigned type, arrayElementCount count )
 {
-    ca_signal_formated ( status, 0, 0u, "ctx=%s type=%s count=%u", 
-        pContext, dbr_type_to_text ( static_cast < int > ( type ) ), count );
+    this->cacCtx.exception ( status, pContext, 
+        __FILE__, __LINE__, *this, type, count, CA_OP_PUT );
 }
 
 bool oldChannelNotify::includeFirstConnectInCountOfOutstandingIO () const

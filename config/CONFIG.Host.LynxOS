@@ -53,4 +53,4 @@ GCC_STRICT = $(GCC)
 G++_STRICT = $(G++) -Wtraditional -DEXPL_TEMP
 
 ARCH_DEP_CFLAGS = -DLynxOS -mposix -D_X86_ -DLYNXOS_RELEASE_2_4_0
-ARCH_DEP_LDFLAGS = -lc -lbsd -lnsl -lm -lposix4d9 -llynx
+ARCH_DEP_LDLIBS = -lc -lbsd -lnsl -lm -lposix4d9 -llynx

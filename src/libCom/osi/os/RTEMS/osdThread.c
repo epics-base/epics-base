@@ -27,6 +27,7 @@
 #include "epicsMutex.h"
 #include "epicsThread.h"
 #include "cantProceed.h"
+#include "osdInterrupt.h"
 
 /*
  * Per-task variables

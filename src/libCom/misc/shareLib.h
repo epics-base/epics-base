@@ -74,16 +74,28 @@
  * Also check for "EPICS_DLL_NO" not defined so that we will not use these
  * keywords if it is an object library build of base under WIN32.
  */
-#if (defined(_WIN32) && !defined(EPICS_DLL_NO)) && !defined(__CYGWIN32__) 
+#if defined(_WIN32) && !defined(__CYGWIN32__) 
 
 #	if defined(epicsExportSharedSymbols)
-#		define epicsShareExtern extern __declspec(dllexport)
-#		define epicsShareClass  __declspec(dllexport) 
-#		define epicsShareFunc  __declspec(dllexport)
+#		if defined(EPICS_DLL_NO) /* this indicates that we are not building a DLL */
+#			define epicsShareExtern extern 
+#			define epicsShareClass 
+#			define epicsShareFunc
+#		else
+#			define epicsShareExtern extern __declspec(dllexport)
+#			define epicsShareClass  __declspec(dllexport) 
+#			define epicsShareFunc  __declspec(dllexport)
+#		endif
 #	else
-#		define epicsShareExtern extern __declspec(dllimport)
-#		define epicsShareClass  __declspec(dllimport) 
-#		define epicsShareFunc  __declspec(dllimport)
+#		if defined(_DLL) /* this indicates that we are being compiled to call a DLL */
+#			define epicsShareExtern extern __declspec(dllimport)
+#			define epicsShareClass  __declspec(dllimport) 
+#			define epicsShareFunc  __declspec(dllimport)
+#		else
+#			define epicsShareExtern extern
+#			define epicsShareClass
+#			define epicsShareFunc
+#		endif
 #	endif
 	/*
 	 * Subroutine removes arguments 
@@ -97,7 +109,11 @@
 	 * (Those using either ... or va_list arguments)
 	 */
 #	define epicsShareAPIV __cdecl
-#	define epicsShareDef __declspec(dllexport)
+#	if defined(EPICS_DLL_NO) /* this indicates that we are not building a DLL */
+#		define epicsShareDef
+#	else
+#		define epicsShareDef __declspec(dllexport)
+#	endif
 #	define READONLY const
 /*
  * if its the old VAX C Compiler (not DEC C)

@@ -67,6 +67,7 @@ epicsShareFunc int  epicsShareAPI recGblInitConstantLink(
 epicsShareFunc unsigned short epicsShareAPI recGblResetAlarms(void *precord);
 epicsShareFunc void epicsShareAPI recGblFwdLink(void *precord);
 epicsShareFunc void epicsShareAPI recGblGetTimeStamp(void *precord);
+epicsShareFunc void epicsShareAPI recGblTSELwasModified(struct link *plink);
 
 #ifdef __cplusplus
 }

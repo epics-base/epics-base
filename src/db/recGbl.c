@@ -301,16 +301,8 @@ unsigned short epicsShareAPI recGblResetAlarms(void *precord)
 void epicsShareAPI recGblFwdLink(void *precord)
 {
     struct dbCommon *pdbc = precord;
-    static short    fwdLinkValue = 1;
 
-    if(pdbc->flnk.type==DB_LINK ) {
-	struct dbAddr	*paddr = pdbc->flnk.value.pv_link.pvt;
-	dbScanPassive(precord,paddr->precord);
-    } else
-    if((pdbc->flnk.type==CA_LINK) 
-    && (pdbc->flnk.value.pv_link.pvlMask & pvlOptFWD)) {
-	dbCaPutLink(&pdbc->flnk,DBR_SHORT,&fwdLinkValue,1);
-    }
+    dbScanFwdLink(&pdbc->flnk);
     /*Handle dbPutFieldNotify record completions*/
     if(pdbc->ppn) dbNotifyCompletion(pdbc);
     if(pdbc->rpro) {
@@ -322,19 +314,47 @@ void epicsShareAPI recGblFwdLink(void *precord)
     pdbc->putf = FALSE;
 }
 
-
 void epicsShareAPI recGblGetTimeStamp(void* prec)
 {
     struct dbCommon* pr = (struct dbCommon*)prec;
-    int status = 0;
+    struct link *plink = &pr->tsel;
  
-    if(pr->tsel.type!=CONSTANT) 
+    if(plink->type!=CONSTANT) {
+        struct pv_link *ppv_link = &plink->value.pv_link;
+
+        if(ppv_link->pvlMask&pvlOptTSELisTime) {
+            long status = dbGetTimeStamp(plink,&pr->time);
+            if(status)
+                errlogPrintf("%s recGblGetTimeStamp dbGetTimeStamp failed\n",
+                    pr->name);
+            return;
+        }
         dbGetLink(&(pr->tsel), DBR_SHORT,&(pr->tse),0,0);
-    if (pr->tse!=-1) 
-        status = epicsTimeGetEvent(&pr->time,(unsigned)pr->tse);
-    if(status) errlogPrintf("%s recGblGetTimeStamp failed\n",pr->name);
+    }
+    if(pr->tse!=epicsTimeEventDeviceTime) {
+        int status;
+        status = epicsTimeGetEvent(&pr->time,pr->tse);
+        if(status) errlogPrintf("%s recGblGetTimeStamp failed\n",pr->name);
+    }
 }
 
+void epicsShareAPI recGblTSELwasModified(struct link *plink)
+{
+    struct pv_link *ppv_link = &plink->value.pv_link;
+    char *pfieldname;
+
+    if(plink->type!=PV_LINK) {
+        errlogPrintf("recGblTSELwasModified called for non PV_LINK\n");
+        return;
+    }
+    /*If pvname ends in .TIME then just ask for VAL*/
+    /*Note that the VAL value will not be used*/
+    pfieldname = strstr(ppv_link->pvname,".TIME");
+    if(pfieldname) {
+        strcpy(pfieldname,".VAL");
+        ppv_link->pvlMask |= pvlOptTSELisTime;
+    }
+}
 
 static void getMaxRangeValues(field_type,pupper_limit,plower_limit)
     short           field_type;

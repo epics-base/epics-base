@@ -41,7 +41,8 @@
 #
 # EPICS_CA_MAX_ARRAY_BYTES
 #   This parameter specifies the size (in bytes) of the largest array 
-#   that the CA server will transport.
+#   that will transport through CA. It must be specified for both the 
+#   client and the server library. 
 #
 
 EPICS_CA_ADDR_LIST=""

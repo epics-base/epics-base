@@ -81,7 +81,7 @@ nciu & netWriteNotifyIO::channel () const
     return this->chan;
 }
 
-void netWriteNotifyIO::operator delete ( void * p )
+void netWriteNotifyIO::operator delete ( void * )
 {
     // Visual C++ .net appears to require operator delete if
     // placement operator delete is defined? I smell a ms rat

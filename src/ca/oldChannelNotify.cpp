@@ -183,7 +183,7 @@ void oldChannelNotify::writeException ( int status, const char *pContext,
         __FILE__, __LINE__, *this, type, count, CA_OP_PUT );
 }
 
-void oldChannelNotify::operator delete ( void *pCadaver )
+void oldChannelNotify::operator delete ( void * )
 {
     // Visual C++ .net appears to require operator delete if
     // placement operator delete is defined? I smell a ms rat

@@ -249,7 +249,7 @@ repeaterClient::~repeaterClient ()
     debugPrintf ( ( "Deleted client %u\n", epicsNTOH16 ( this->from.ia.sin_port ) ) );
 }
 
-inline void repeaterClient::operator delete ( void *pCadaver )
+inline void repeaterClient::operator delete ( void * )
 { 
     // Visual C++ .net appears to require operator delete if
     // placement operator delete is defined? I smell a ms rat

@@ -24,7 +24,8 @@ SRCS += exScalarPV.cc
 SRCS += exAsyncPV.cc
 SRCS += exChannel.cc
 
-PROD := excas
+PROD_DEFAULT := excas
+PROD_vxWorks :=
 
 include $(TOP)/configure/RULES_BUILD
 

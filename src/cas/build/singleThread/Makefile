@@ -55,9 +55,8 @@ LIBSRCS += casDGIntfIO.cc
 LIBSRCS += casDGIO.cc
 LIBSRCS += casStreamIO.cc
 
-LIBRARY := cas
-
-LIBTYPE := SHARED
+LIBRARY_DEFAULT := cas
+LIBRARY_vxWorks :=
 
 PROD_LIBS := cas ca gdd Com 
 SYS_PROD_LIBS_WIN32 := ws2_32

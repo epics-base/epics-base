@@ -18,7 +18,8 @@ SYS_PROD_LIBS_WIN32 := ws2_32 advapi32 user32
 SRCS += main.cc
 SRCS += directoryServer.cc
 
-PROD := caDirServ
+PROD_DEFAULT := caDirServ
+PROD_vxWorks :=
 
 include $(TOP)/configure/RULES_BUILD
 

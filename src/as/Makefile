@@ -5,28 +5,29 @@ include $(TOP)/configure/CONFIG
 
 USR_CFLAGS += -D_NO_PROTO
 
-INC := asDbLib.h asLib.h
+#INC += asDbLib.h moved header to src/include
+#INC += asLib.h moved header to src/include
 
 #	build lib As from asLib.c:
 #
-LIBSRCS := asLib.c
-LIBRARY := As
-
+LIBRARY_DEFAULT := As
+As_SRCS := asLib.c
 
 #	All systems link the libs As, Com, Db (and again Com ??),
 #	generic Unix needs also lib m:
 #
 SYS_PROD_LIBS_DEFAULT := m
 SYS_PROD_LIBS_WIN32   := -nil-
-PROD_LIBS         := As Com Db Com Osi
+PROD_LIBS         := As Com Db Com
 
-PROD := ascheck
+PROD_DEFAULT := ascheck
+PROD_vxWorks = -nil-
+
+LIBRARY_vxWorks = asLibrary
 
 asLibrary_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
 
 asLibrary_SRCS = asDbLib.c asCa.c asLib.c
-
-IOC_LIBRARY_vxWorks = asLibrary
 
 include $(TOP)/configure/RULES_BUILD
 

@@ -5,7 +5,7 @@ include $(TOP)/configure/CONFIG
 
 #       includes to install from this sub-project
 #
-INC += drvSup.h
+#INC += drvSup.h moved to include dir
 INC += callback.h
 INC += dbLock.h
 INC += dbAccess.h
@@ -17,7 +17,7 @@ INC += dbAddr.h
 INC += db_field_log.h
 INC += initHooks.h
 INC += recSup.h
-INC += devSup.h
+#INC += devSup.h moved to include dir
 INC += taskwd.h
 INC += recGbl.h
 INC += dbBkpt.h
@@ -39,8 +39,6 @@ USER_DBDFLAGS += -I ..
 
 DBDINSTALL +=  dbCommonRecord.dbd 
 DBDINSTALL +=  menuGlobal.dbd
-
-#===================================================
 
 USR_CFLAGS += -ansi
 
@@ -65,9 +63,7 @@ dbLib_SRCS = \
 	dbcar.c 
 
 
-IOC_LIBRARY_vxWorks = dbLib
-
-#===================================================
+LIBRARY_vxWorks = dbLib
 
 include $(TOP)/configure/RULES_BUILD
 

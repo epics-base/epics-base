@@ -9,7 +9,7 @@ LEXOPT  := -L
 #dbSubs_SRCS  = dbLoadTemplate_lex.c
 dbSubs_SRCS += dbLoadTemplate.c
 
-IOC_LIBRARY_vxWorks = dbSubs
+LIBRARY_vxWorks = dbSubs
 
 include $(TOP)/configure/RULES_BUILD
  

@@ -6,7 +6,8 @@ include $(TOP)/configure/CONFIG
 INC := cvtTable.h
 
 SRCS := makeBpt.c
-PROD := makeBpt
+PROD_DEFAULT := makeBpt
+PROD_vxWorks :=
 
 MENUS += menuConvert.h
 
@@ -17,7 +18,7 @@ BPTS += bptTypeKdegF.dbd
 
 bptLibrary_SRCS = cvtBpt.c
 
-IOC_LIBRARY_vxWorks = bptLibrary
+LIBRARY_vxWorks = bptLibrary
 
 include $(TOP)/configure/RULES_BUILD
 

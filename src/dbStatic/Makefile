@@ -10,21 +10,20 @@ INC += dbStaticLib.h link.h special.h guigroup.h
 
 #       Sources to compile & put into lib:
 #
-LIBSRCS := dbStaticLib.c dbYacc.c dbPvdLib.c dbStaticNoRun.c 
+Db_SRCS := dbStaticLib.c dbYacc.c dbPvdLib.c dbStaticNoRun.c 
 
 #       Library to build:
 #
-LIBRARY := Db
+LIBRARY_DEFAULT := Db
 
 #       Products to build:
 #
-PROD := dbReadTest dbExpand dbToMenuH dbToRecordtypeH
+PROD_DEFAULT := dbReadTest dbExpand dbToMenuH dbToRecordtypeH
+PROD_vxWorks := -nil-
 
 #       libs needed by PROD:
 #
-PROD_LIBS := Db Com Osi 
-
-#====================================================
+PROD_LIBS := Db Com
 
 dbStaticLib_SRCS = \
 	dbYacc.c\
@@ -32,9 +31,8 @@ dbStaticLib_SRCS = \
 	dbStaticRun.c\
 	dbStaticLib.c
 
-IOC_LIBRARY_vxWorks = dbStaticLib
+LIBRARY_vxWorks = dbStaticLib
 
-#====================================================
 include $(TOP)/configure/RULES_BUILD
 
 # Extra rule since dbLexRoutines.c is included in dbYacc.c

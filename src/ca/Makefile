@@ -8,9 +8,9 @@ CMPLR = STRICT
 #
 #	includes to install from this subproject
 #
-INC += cadef.h
-INC += caerr.h
-INC += caeventmask.h
+#INC += cadef.h moved header to src/include
+#INC += caerr.h moved header to src/include
+#INC += caeventmask.h moved header to src/include
 INC += caProto.h
 
 #
@@ -18,45 +18,47 @@ INC += caProto.h
 #
 
 # on generic system
-LIBSRCS_DEFAULT := posix_depen.c if_depen.c
+ca_SRCS_DEFAULT = posix_depen.c if_depen.c
 
 # on WIN32 only
-LIBSRCS_WIN32   := windows_depen.c
+ca_SRCS_WIN32   = windows_depen.c
 
 # on all systems
-LIBSRCS += iocinf.c
-LIBSRCS += service.c
-LIBSRCS += conn.c
-LIBSRCS += flow_control.c
-LIBSRCS += syncgrp.c
-LIBSRCS += access.c
-LIBSRCS += convert.c
-LIBSRCS += test_event.c
-LIBSRCS += bsd_depen.c
-LIBSRCS += repeater.c
+ca_SRCS += iocinf.c
+ca_SRCS += service.c
+ca_SRCS += conn.c
+ca_SRCS += flow_control.c
+ca_SRCS += syncgrp.c
+ca_SRCS += access.c
+ca_SRCS += convert.c
+ca_SRCS += test_event.c
+ca_SRCS += bsd_depen.c
+ca_SRCS += repeater.c
 
 #       Library to build:
 #       lib$(LIBRARY).a  or   ..dll/..exp/..lib
 #
-LIBRARY := ca
+LIBRARY_DEFAULT = ca
 
-#	build LIBRARY as a DLL on WIN32, other systems may ignore this
-LIBTYPE := SHARED
-
-PROD := caRepeater
+PROD_DEFAULT := caRepeater
+PROD_vxWorks := -nil-
 
 #	libs needed to build [TEST]PRODUCT
-PROD_LIBS := ca Com Osi
-SYS_PROD_LIBS_WIN32 := ws2_32 user32 advapi32
+PROD_LIBS = ca Com
+ca_DIR = .
+Com_DIR = $(INSTALL_LIB)
 
-TESTPROD := catime acctst 
+SYS_PROD_LIBS_WIN32 = ws2_32 user32 advapi32
+
+TESTPROD_DEFAULT := catime acctst 
+TESTPROD_vxWorks :=
 
 caLib_SRCS = \
 	iocinf.o access.c test_event.c service.c flow_control.c \
 	repeater.c conn.c syncgrp.c if_depen.c bsd_depen.c vxWorks_depen.c \
 	convert.c
 
-IOC_LIBRARY_vxWorks = caLib 
+LIBRARY_vxWorks = caLib 
 
 include $(TOP)/configure/RULES_BUILD
 
@@ -67,4 +69,3 @@ pacctst : acctst.o $(PRODDEPLIBS)
 	$(PURIFY) $(LINK.c) acctst.o $(LDLIBS)
 
 #	EOF Makefile.Host
-

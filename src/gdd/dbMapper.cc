@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.28  2000/03/08 16:25:20  jhill
+// win32 related keywords
+//
 // Revision 1.27  1999/10/28 23:33:41  jhill
 // use fully qualified namespace names for C++ RTL classes
 //
@@ -1078,16 +1081,10 @@ static gdd* mapGraphicEnumToGdd(void* v, aitIndex /*count*/)
 			sz=db->no_str;
 	}
 
-	unsigned minl;
-	if (sizeof(aitFixedString)<sizeof(str[0].fixed_string)) {
-		minl = sizeof(aitFixedString)-1;
-	}
-	else {
-		minl = sizeof(str[0].fixed_string)-1;
-	}
+	unsigned minl = min(sizeof(aitFixedString),sizeof(str[0].fixed_string)) - 1;
 	for (i=0;i<sz;i++) {
 		strncpy (str[i].fixed_string, &(db->strs[i][0]), minl);
-		memset (&str[i].fixed_string[minl], '\0', sizeof(aitFixedString)-minl);
+		memset(&str[i].fixed_string[minl], '\0', sizeof(aitFixedString)-minl);
 	}
 	menu.setBound(0,0,sz);
 
@@ -1126,10 +1123,10 @@ static gdd* mapControlEnumToGdd(void* v, aitIndex /*count*/)
 			sz=db->no_str;
 	}
 
+	unsigned minl = min(sizeof(aitFixedString),MAX_ENUM_STRING_SIZE) - 1;
 	for (i=0;i<sz;i++) {
-		strncpy(str[i].fixed_string,&(db->strs[i][0]),
-			sizeof(aitFixedString));
-		str[i].fixed_string[sizeof(aitFixedString)-1u] = '\0';
+		strncpy(str[i].fixed_string,&(db->strs[i][0]), minl);
+		memset(&str[i].fixed_string[minl], '\0', sizeof(aitFixedString)-minl);
 	}
 	menu.setBound(0,0,sz);
 
@@ -1179,8 +1176,8 @@ static int mapControlGddToEnum(void* v, aitIndex count, const gdd& dd, const std
 	{
 		for(i=0;i<db->no_str;i++) {
 			strncpy(&(db->strs[i][0]),str[i].fixed_string, 
-				sizeof(aitFixedString));
-			db->strs[i][sizeof(aitFixedString)-1u] = '\0';
+				MAX_ENUM_STRING_SIZE);
+			db->strs[i][MAX_ENUM_STRING_SIZE-1u] = '\0';
 		}
 	}
 	return mapGddToEnum(&db->value, count, vdd, enumStringTable);

@@ -38,9 +38,9 @@ module_types()
 ai_num_cards[AB1771IL]		= 12;
 ai_num_cards[AB1771IFE]		= 12;
 ai_num_cards[AB1771IXE]		= 12;
-ai_num_cards[XY566SE]		= 4;
-ai_num_cards[XY566DI]		= 4;
-ai_num_cards[XY566DIL]		= 6;
+ai_num_cards[XY566SE]		= 2;
+ai_num_cards[XY566DI]		= 2;
+ai_num_cards[XY566DIL]		= 2;
 ai_num_cards[VXI_AT5_AI]	= 32;
 ai_num_cards[AB1771IFE_SE]	= 12;
 ai_num_cards[AB1771IFE_4to20MA]	= 12;
@@ -66,7 +66,7 @@ ai_addrs[AB1771IFE]		= 0;
 ai_addrs[AB1771IXE]		= 0;
 ai_addrs[XY566SE]		= 0x6000;
 ai_addrs[XY566DI]		= 0x7000;
-ai_addrs[XY566DIL]		= 0xe000;
+ai_addrs[XY566DIL]		= 0x7800;
 ai_addrs[VXI_AT5_AI]		= 0xc014;
 ai_addrs[AB1771IFE_SE]		= 0;
 ai_addrs[AB1771IFE_4to20MA]	= 0;
@@ -105,7 +105,7 @@ ao_addrs[VXI_AT5_AO]		= 0xc000;
 bi_num_cards[ABBI_08_BIT]	= 12;
 bi_num_cards[ABBI_16_BIT]	= 12;
 bi_num_cards[BB910]		= 4;
-bi_num_cards[XY210]		= 4;
+bi_num_cards[XY210]		= 2;
 bi_num_cards[VXI_AT5_BI]	= 32;
 bi_num_cards[HPE1368A_BI]	= 32;
 bi_num_cards[AT8_FP10S_BI]	= 8;
@@ -127,7 +127,7 @@ bi_addrs[XY210]		= 0xa000;
 bi_addrs[VXI_AT5_BI]	= 0xc000;
 bi_addrs[HPE1368A_BI]	= 0xc000;
 bi_addrs[AT8_FP10S_BI]	= 0x0e00;
-bi_addrs[XY240_BI]	= 0xd000;
+bi_addrs[XY240_BI]	= 0x3000;
 
 bo_num_cards[ABBO_08_BIT]	= 12;
 bo_num_cards[ABBO_16_BIT]	= 12;
@@ -149,25 +149,25 @@ bo_num_channels[XY240_BO]	= 32;
 
 bo_addrs[ABBO_08_BIT]	= 0;
 bo_addrs[ABBO_16_BIT]	= 0;
-bo_addrs[BB902]		= 0xd800;
-bo_addrs[XY220]		= 0xc800;
+bo_addrs[BB902]		= 0x0400;
+bo_addrs[XY220]		= 0xa800;
 bo_addrs[VXI_AT5_BO]	= 0xc000;
 bo_addrs[HPE1368A_BO]	= 0xc000;
 bo_addrs[AT8_FP10M_BO]	= 0xc000;
-bo_addrs[XY240_BO]	= 0xd000;
+bo_addrs[XY240_BO]	= 0x3000;
 
-sm_num_cards[CM57_83E]	= 8;
-sm_num_cards[OMS_6AXIS]	= 8;
+sm_num_cards[CM57_83E]	= 4;
+sm_num_cards[OMS_6AXIS]	= 4;
 
 sm_num_channels[CM57_83E]	= 1;
 sm_num_channels[OMS_6AXIS]	= 6;
 
 sm_addrs[CM57_83E]	= 0x8000;
-sm_addrs[OMS_6AXIS]	= 0xfc00;
+sm_addrs[OMS_6AXIS]	= 0x4000;
 
-wf_num_cards[XY566WF]		= 4;
+wf_num_cards[XY566WF]		= 2;
 wf_num_cards[CAMAC_THING]	= 4;
-wf_num_cards[JGVTR1]		= 8;
+wf_num_cards[JGVTR1]		= 4;
 wf_num_cards[COMET]		= 4;
 
 wf_num_channels[XY566WF]	= 1;
@@ -198,7 +198,7 @@ tm_num_channels[MZ8310]		= 10;
 tm_num_channels[DG535]		= 1;
 tm_num_channels[VXI_AT5_TIME]	= 10;
 
-tm_addrs[MZ8310]	= 0xf800;
+tm_addrs[MZ8310]	= 0x1000;
 tm_addrs[DG535]		= 0;
 tm_addrs[VXI_AT5_TIME]	= 0xc000;
 

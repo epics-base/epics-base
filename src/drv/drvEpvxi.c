@@ -42,6 +42,8 @@
  *	.08 joh 12-05-91	split vxi_driver.c into vxi_driver.c and 
  *				vxi_resman.c
  *	.09 joh 01-29-91	added MXI support & removed KLUDGE
+ *	.10 joh 07-06-92	added A24 & A32 address config
+ *	.11 joh 07-07-92	added routine to return A24 or A32 base
  *
  * To do
  * -----
@@ -56,7 +58,7 @@
  * -------------------
  *	1. does not handle multiple dc in one slot
  *	2. does not handle blocked address devices
- *	3. does not configure std and ext addr spaces
+ *	3. does not configure std and ext addr windows on the MXI
  *	4. Assigning the hierachy from within a DC res man
  *	   needs to be revisited
  *
@@ -97,6 +99,7 @@
  *	mxi_map			mat the addresses on a MXI bus extender
  *	vxi_find_mxi_devices	search for and open mxi bus repeaters
  *	map_mxi_inward		map from a VXI crate towards the RM
+ *	vxi_address_config	setup A24 and A32 offsets
  *
  * for use by IOC core
  *	epvxiResman		entry for a VXI resource manager which
@@ -130,8 +133,6 @@
 #define SRCepvxiLib	/* allocate externals here */
 #include <epvxiLib.h>
 
-#define LOCAL
-
 #define NICPU030
 
 #define VXI_HP_MODEL_E1404		0x110
@@ -153,6 +154,11 @@
 
 #define UKN_SLOT (-1)
 #define UKN_CRATE (-1)
+
+#define DEFAULT_VXI_A24_BASE	0x90000
+#define DEFAULT_VXI_A24_SIZE	0x10000
+#define DEFAULT_VXI_A32_BASE	0x90000000
+#define DEFAULT_VXI_A32_SIZE	0x10000000
 
 /*
  * bits for the device type and a pointer
@@ -206,6 +212,8 @@ void	open_slot0_device();
 void	vxi_configure_hierarchies();
 void	vxi_find_mxi_devices();
 void	vxi_unmap_mxi_devices();
+void	vxi_address_config();
+
 	
 
 /*
@@ -245,6 +253,7 @@ epvxiResman()
         unsigned       		lla;
         unsigned        	hla;
         int             	status;
+	unsigned char		EPICS_VXI_LA_COUNT;
 
         /* 
  	 * find out where the VXI LA space is on this processor
@@ -257,6 +266,27 @@ epvxiResman()
                 printf("Addressing error in vxi driver\n");
                 return ERROR;
         }
+
+	/*
+	 * lookup the symbol for the number of devices
+  	 * (if we are running under EPICS)
+	 */
+	{
+		UTINY		type;
+		unsigned char 	*pEPICS_VXI_LA_COUNT;
+
+		status = symFindByName(
+				sysSymTbl,
+				"_EPICS_VXI_LA_COUNT",	
+				&pEPICS_VXI_LA_COUNT,
+				&type);
+		if(status == OK){
+			EPICS_VXI_LA_COUNT = *pEPICS_VXI_LA_COUNT;
+		}
+		else{
+			EPICS_VXI_LA_COUNT = 0xff;
+		}
+	}
 
 	/*
  	 * clip the EPICS logical address range
@@ -295,6 +325,8 @@ epvxiResman()
 	}
 
         vxi_self_test();
+
+	vxi_address_config();
 
 	vxi_configure_hierarchies(
 		VXI_RESMAN_LA, 
@@ -1548,6 +1580,7 @@ vxi_self_test()
 	struct vxi_csr		*pcsr;
 	VXIDI			**ppvxidi;
 
+
 	for(	la=0, ppvxidi = epvxiLibDeviceList;
 		ppvxidi < epvxiLibDeviceList+NELEMENTS(epvxiLibDeviceList);
 		ppvxidi++, la++){
@@ -1581,6 +1614,203 @@ vxi_self_test()
 	}
 
 	return OK;
+}
+
+
+/*
+ *
+ *	VXI_ADDRESS_CONFIG
+ *
+ */
+LOCAL void 
+vxi_address_config()
+{
+	unsigned 		la;
+	short			wd;
+	int			status;
+	struct vxi_csr		*pcsr;
+	VXIDI			**ppvxidi;
+	unsigned long		a24_base;
+	unsigned long		a24_size;
+	unsigned long		a32_base;
+	unsigned long		a32_size;
+	void			*pA24;
+	void			*pA32;
+	int			A24_ok;
+	int			A32_ok;
+
+        /* 
+ 	 * find A24 and A32 on this processor
+	 */
+	status = sysBusToLocalAdrs(
+                                VME_AM_STD_USR_DATA,
+                                (char *)0,
+                                &pA24);
+	if(status == OK){
+		A24_ok = TRUE;
+	}
+	else{
+		A24_ok = FALSE;
+                printf("Addressing error in vxi driver\n");
+        }
+	status = sysBusToLocalAdrs(
+                                VME_AM_EXT_USR_DATA,
+                                (char *)0,
+                                &pA32);
+	if(status == OK){
+		A32_ok = TRUE;
+	}
+	else{
+		A32_ok = FALSE;
+                printf("Addressing error in vxi driver\n");
+        }
+
+	/*
+	 * fetch the EPICS address ranges from the global
+	 * symbol table if they are available
+	 */
+	status = symbol_value_fetch(
+			"_EPICS_VXI_A24_BASE", 
+			&a24_base, 
+			sizeof(a24_base));
+	if(status<0){
+		a24_base = DEFAULT_VXI_A24_BASE;
+	}
+	status = symbol_value_fetch(
+			"_EPICS_VXI_A24_SIZE", 
+			&a24_size, 
+			sizeof(a24_size));
+	if(status<0){
+		a24_size = DEFAULT_VXI_A24_SIZE;
+	}
+	status = symbol_value_fetch(
+			"_EPICS_VXI_A32_BASE", 
+			&a32_base, 
+			sizeof(a32_base));
+	if(status<0){
+		a32_base = DEFAULT_VXI_A32_BASE;
+	}
+	status = symbol_value_fetch(
+			"_EPICS_VXI_A32_SIZE", 
+			&a32_size, 
+			sizeof(a32_size));
+	if(status<0){
+		a32_size = DEFAULT_VXI_A32_SIZE;
+	}
+	
+	if(A24_ok){
+		a24_base += (unsigned) pA24;
+	}
+	if(A32_ok){
+		a32_base += (unsigned) pA32;
+	}
+
+	for(	la=0, ppvxidi = epvxiLibDeviceList;
+		ppvxidi < epvxiLibDeviceList+NELEMENTS(epvxiLibDeviceList);
+		ppvxidi++, la++){
+
+		unsigned long	m;
+		unsigned long	size;
+		unsigned long	mask;
+
+		if(!*ppvxidi){
+			continue;
+		}
+
+		pcsr = VXIBASE(la);
+
+		m = VXIREQMEM(pcsr);
+
+		switch(VXIADDRSPACE(pcsr)){
+		case VXI_ADDR_EXT_A24:
+			if(!A24_ok){
+				break;
+			}
+
+			/*
+			 * perform any needed alignment
+			 */
+			size = VXIA24MEMSIZE(m);
+			if(size>a24_size){
+				logMsg("VXI A24 device does not fit\n");
+				logMsg(	"\tmake %x\t model %x\n",
+					pcsr->dir.r.make,
+					pcsr->dir.r.model);
+				logMsg("\taddr %x\n",la);
+				pcsr->dir.w.control = VXISAFECONTROL;
+				break;
+			}
+			mask = size-1;
+			a24_base = (a24_base+mask)&(~mask);
+			pcsr->dir.w.offset = a24_base>>8;		
+			(*ppvxidi)->pExtendedAddrBase = (void *) a24_base;
+			logMsg("set A24 LA=%d base addr to %x\n", la, a24_base);
+			a24_base += size;
+			a24_size -= size;
+			break;
+		case VXI_ADDR_EXT_A32:
+			if(!A32_ok){
+				break;
+			}
+
+			/*
+			 * perform any needed alignment
+			 */
+			size = VXIA32MEMSIZE(m);
+			if(size>a32_size){
+				logMsg("VXI A32 device does not fit\n");
+				logMsg(	"\tmake %x\t model %x\n",
+					pcsr->dir.r.make,
+					pcsr->dir.r.model);
+				logMsg("\taddr %x\n",la);
+				pcsr->dir.w.control = VXISAFECONTROL;
+				break;
+			}
+			mask = size-1;
+			a32_base = (a32_base+mask)&(~mask);
+			pcsr->dir.w.offset = a32_base>>16;		
+			(*ppvxidi)->pExtendedAddrBase = (void *) a32_base;
+			logMsg("set A32 LA=%d base addr to %x\n", la, a32_base);
+			a32_base += size;
+			a32_size -= size;
+			break;
+		default:
+			/*
+			 * do nothing
+			 */
+			break;
+		}
+	}
+}
+
+
+/*
+ *
+ * symbol_value_fetch
+ *
+ */
+LOCAL int
+symbol_value_fetch(pname, pdest, dest_size)
+char 		*pname;
+void 		*pdest;
+unsigned 	dest_size;
+{
+	int			status;
+	UTINY			type;
+	void			*pvalue;
+
+	status = symFindByName(
+				sysSymTbl,
+				pname,	
+				&pvalue,
+				&type);
+	if(status == OK){
+		bcopy(pvalue, pdest, dest_size);
+		return OK;
+	}
+	else{
+		return ERROR;
+	}
 }
 
 
@@ -1754,7 +1984,7 @@ vxiUniqueDriverID()
 
 /*
  *
- * vxiOpen()
+ * epvxiOpen()
  *
  * 1)	Register the driver which will own a VXI device
  * 2)	Verify that the resource manager has run
@@ -1764,7 +1994,7 @@ vxiUniqueDriverID()
  *
  */
 int
-vxiOpen(la, vxiDriverID, driverConfigSize, pio_report_func)
+epvxiOpen(la, vxiDriverID, driverConfigSize, pio_report_func)
 unsigned	la;
 int		vxiDriverID;
 unsigned long	driverConfigSize; 
@@ -1820,13 +2050,13 @@ void		(*pio_report_func)();
 
 /*
  *
- * vxiClose()
+ * epvxiClose()
  *
  * 1)	Unregister a driver's ownership of a device
  * 2) 	Free driver's configuration block if one is allocated
  */
 int
-vxiClose(la, vxiDriverID)
+epvxiClose(la, vxiDriverID)
 unsigned        la;
 int		vxiDriverID;
 {
@@ -1840,7 +2070,11 @@ int		vxiDriverID;
 
         if(pvxidi){
                 if(pvxidi->driverID == vxiDriverID){
-			free(pvxidi);
+			pvxidi->driverID = NO_DRIVER_ATTACHED_ID;
+			if(pvxidi->pDriverConfig){
+				free(pvxidi->pDriverConfig);
+				pvxidi->pDriverConfig = NULL;
+			}
                         return VXI_SUCCESS;
                 }
                 return VXI_NOT_OWNER;
@@ -1935,9 +2169,20 @@ unsigned	io_map;		/* bits 0-5  correspond to trig 0-5	*/
 				/* a 1 sources the front panel		*/ 
 				/* a 0 sources the back plane		*/ 
 {
+	VXIDI			*plac;
         struct vxi_csr          *pcsr;
 	char			mask;
 	int			status;
+
+	plac = epvxiLibDeviceList[la];
+	if(plac){
+		if(!plac->st_passed){
+			return VXI_SELF_TEST_FAILED;
+		}
+	}
+	else{
+		return VXI_NO_DEVICE;
+	}
 
 	mask = (1<<VXI_N_ECL_TRIGGERS)-1;
 
@@ -2025,9 +2270,20 @@ unsigned	io_map;		/* bits 0-5  correspond to trig 0-5	*/
 				/* a 1 sources the front panel		*/ 
 				/* a 0 sources the back plane		*/ 
 {
+	VXIDI			*plac;
         struct vxi_csr          *pcsr;
 	unsigned		mask;
 	int			status;
+
+	plac = epvxiLibDeviceList[la];
+	if(plac){
+		if(!plac->st_passed){
+			return VXI_SELF_TEST_FAILED;
+		}
+	}
+	else{
+		return VXI_NO_DEVICE;
+	}
 
 	mask = (1<<VXI_N_TTL_TRIGGERS)-1;
 
@@ -2115,8 +2371,6 @@ unsigned 	level;
 			return ERROR;
 		}
 	}
-
-        printf("<< VXI logical address table >>\n");
 
         for(la=0; la<=last_la; la++){
 		char	*pmake;

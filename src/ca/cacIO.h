@@ -222,7 +222,8 @@ public:
     virtual void attachToClientCtx () = 0;
     virtual void blockForEventAndEnableCallbacks ( 
         class epicsEvent & event, const double & timeout ) = 0;
-    virtual void messageArrivalNotify () = 0;
+    virtual void callbackLock () = 0;
+    virtual void callbackUnlock () = 0;
 };
 
 class cacService : public tsDLNode < cacService > { // X aCC 655

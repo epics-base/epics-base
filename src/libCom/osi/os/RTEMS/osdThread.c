@@ -51,10 +51,13 @@ static struct taskVar *taskVarHead;
 static int initialized;
 static semMutexId onceMutex;
 
-/* Just map osi 0 to 99 into RTEMS 199 to 100 */
-/* For RTEMS lower number means higher priority */
-/* RTEMS = 100 + (99 - osi)  = 199 - osi */
-/* osi =  199 - RTEMS */
+/*
+ * Just map osi 0 to 99 into RTEMS 199 to 100
+ * For RTEMS lower number means higher priority
+ * RTEMS = 100 + (99 - osi)
+  *      = 199 - osi
+ *   osi =  199 - RTEMS
+ */
 int threadGetOsiPriorityValue(int ossPriority)
 {
     return (199 - ossPriority);
@@ -63,6 +66,37 @@ int threadGetOsiPriorityValue(int ossPriority)
 int threadGetOssPriorityValue(int osiPriority)
 {
     return (199 - osiPriority);
+}
+
+/*
+ * threadLowestPriorityLevelAbove ()
+ */
+epicsShareFunc threadBoolStatus epicsShareAPI threadLowestPriorityLevelAbove 
+            (unsigned int priority, unsigned *pPriorityJustAbove)
+{
+    unsigned newPriority = priority + 1;
+
+    newPriority = priority + 1;
+    if (newPriority <= 99) {
+        *pPriorityJustAbove = newPriority;
+        return tbsSuccess;
+    }
+    return tbsFail;
+}
+
+/*
+ * threadHighestPriorityLevelBelow ()
+ */
+epicsShareFunc threadBoolStatus epicsShareAPI threadHighestPriorityLevelBelow 
+            (unsigned int priority, unsigned *pPriorityJustBelow)
+{
+    unsigned newPriority = priority - 1;
+
+    if (newPriority <= 99) {
+        *pPriorityJustBelow = newPriority;
+        return tbsSuccess;
+    }
+    return tbsFail;
 }
 
 #define ARCH_STACK_FACTOR 2
@@ -132,6 +166,33 @@ badInit (const char *msg)
     rtems_task_suspend (RTEMS_SELF);
 }
 
+static void
+setThreadInfo (rtems_id tid, const char *name, THREADFUNC funptr,void *parm)
+{
+    struct taskVar *v;
+    rtems_unsigned32 note;
+
+    v = mallocMustSucceed (sizeof *v, "threadCreate_vars");
+    v->name = mallocMustSucceed (strlen (name) + 1, "threadCreate_name");
+    strcpy (v->name, name);
+    v->id = tid;
+    v->funptr = funptr;
+    v->parm = parm;
+    v->threadVariableCapacity = 0;
+    v->threadVariables = NULL;
+    note = (rtems_unsigned32)v;
+    rtems_task_set_note (RTEMS_SELF, RTEMS_NOTEPAD_TASKVAR, note);
+    taskVarLock ();
+    v->forw = taskVarHead;
+    v->back = NULL;
+    if (v->forw)
+	v->forw->back = v;
+    taskVarHead = v;
+    taskVarUnlock ();
+    if (funptr)
+	rtems_task_start (tid, threadWrapper, (rtems_task_argument)v);
+}
+
 /*
  * OS-dependent initialization
  * No need to worry about making this thread-safe since
@@ -142,8 +203,14 @@ void
 threadInit (void)
 {
     if (!initialized) {
+	rtems_id tid;
+	rtems_task_priority old;
+
+	rtems_task_set_priority (RTEMS_SELF, threadGetOssPriorityValue(99), &old);
 	onceMutex = semMutexMustCreate();
 	taskVarMutex = semMutexMustCreate ();
+	rtems_task_ident (RTEMS_SELF, 0, &tid);
+	setThreadInfo (tid, "_main_", NULL, NULL);
 	initialized = 1;
 	threadCreate ("ImsgDaemon", 99,
 		    threadGetStackSize (threadStackSmall),
@@ -159,10 +226,8 @@ threadCreate (const char *name,
     unsigned int priority, unsigned int stackSize,
     THREADFUNC funptr,void *parm)
 {
-    struct taskVar *v;
     rtems_id tid;
     rtems_status_code sc;
-    rtems_unsigned32 note;
     char c[4];
 
     if (!initialized)
@@ -182,24 +247,7 @@ threadCreate (const char *name,
         errlogPrintf ("threadCreate create failure for %s: %s\n",name, rtems_status_text (sc));
         return 0;
     }
-    v = mallocMustSucceed (sizeof *v, "threadCreate_vars");
-    v->name = mallocMustSucceed (strlen (name) + 1, "threadCreate_name");
-    strcpy (v->name, name);
-    v->id = tid;
-    v->funptr = funptr;
-    v->parm = parm;
-    v->threadVariableCapacity = 0;
-    v->threadVariables = NULL;
-    note = (rtems_unsigned32)v;
-    rtems_task_set_note (RTEMS_SELF, RTEMS_NOTEPAD_TASKVAR, note);
-    taskVarLock ();
-    v->forw = taskVarHead;
-    v->back = NULL;
-    if (v->forw)
-	v->forw->back = v;
-    taskVarHead = v;
-    taskVarUnlock ();
-    rtems_task_start (tid, threadWrapper, (rtems_task_argument)v);
+    setThreadInfo (tid, name, funptr,parm);
     return (threadId)tid;
 }
 
@@ -525,7 +573,14 @@ void threadShowAll (unsigned int level)
 
     threadShowHeader ();
     taskVarLock ();
-    for (v = taskVarHead ; v != NULL ; v = v->forw)
+    /*
+     * Show tasks in the order of creation (backwards through list)
+     */
+    for (v = taskVarHead ; v != NULL && v->forw != NULL ; v = v->forw)
+	continue;
+    while (v) {
 	threadShowInfo (v, level);
+	v = v->back;
+    }
     taskVarUnlock ();
 }

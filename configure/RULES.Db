@@ -1,7 +1,10 @@
 #RULES.Db
 
-include $(CONFIG)/RULES
-ifdef T_A
+ifndef T_A
+
+include $(CONFIG)/RULES_ARCHS
+
+else  #T_A
 
 MAKEBPT		= $(EPICS_BASE_HOST_BIN)/makeBpt$(HOSTEXE)
 DBEXPAND	= $(EPICS_BASE_HOST_BIN)/dbExpand$(HOSTEXE)
@@ -89,7 +92,7 @@ endif
 %.t.db.raw: %.substitutions
 	@echo "Inflating database from $<"
 	@$(RM) $@
-	@$(MSI) -S $<  > $@
+	$(MSI) -S $< $*.template > $@
 
 ##################################################### CapFast filter
 
@@ -103,7 +106,7 @@ $(INSTALL_DB)/%.substitutions: %.substitutions
 	@echo "Installing $@"
 	@$(INSTALL) -d -m 644 $(@F) $(@D)
 
-%.substitutions: ../%.substitutions
+%.substitutions: ../%.substitutions %.template
 	@$(CP) $< $@
 
 ifdef CREATESUBSTITUTIONS
@@ -112,7 +115,7 @@ ifdef CREATESUBSTITUTIONS
 endif
 
 # Better make it PRECIOUS (to get around make bug)
-.PRECIOUS: %.substitutions
+.PRECIOUS: %.substitutions %.template
 
 ##################################################### Template databases
 
@@ -123,6 +126,9 @@ $(INSTALL_DB)/%.template: %.template
 
 %.template: ../%.template
 	@$(CP) $< $@
+
+%.template:
+	@$(TOUCH) $@
 
 %.template: %.edf
 	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) -n $@.VAR $<
@@ -162,7 +168,7 @@ endif
 
 ##################################################### Dependencies
 
-DEPENDS: $(filter $(patsubst %.db, %.substitutions, $(DB)), $(wildcard *.substitutions))
+DEPENDS: $(filter $(patsubst %.db, ../%.substitutions, $(DB)), $(wildcard ../*.substitutions))
 	@echo "Making template database dependencies"
 	@$(MAKEDBDEPENDS) $^
 

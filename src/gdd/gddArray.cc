@@ -16,6 +16,9 @@
 //
 // $Id$
 
+#define epicsExportSharedSymbols
+#include "gdd.h"
+
 // ----------------------The gddAtomic functions-------------------------
 
 gddAtomic::gddAtomic(int app, aitEnum prim, int dimen, ...):

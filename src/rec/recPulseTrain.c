@@ -32,6 +32,8 @@
  * .01  10-24-91        jba     New device support changes
  * .02  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  * .03  02-05-92	jba	Changed function arguments from paddr to precord 
+ * .04  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
+ * .05  02-28-92	jba	ANSI C changes
  */ 
 
 #include     <vxWorks.h>
@@ -52,20 +54,20 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-long init_record();
-long process();
+static long init_record();
+static long process();
 #define special NULL
-long get_value();
+static long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
 #define get_units NULL
-long get_precision();
+static long get_precision();
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
-long get_graphic_double();
-long get_control_double();
+static long get_graphic_double();
+static long get_control_double();
 #define get_alarm_double NULL
 
 struct rset pulseTrainRSET={
@@ -222,6 +224,9 @@ static long get_precision(paddr,precision)
     struct pulseTrainRecord    *ppt=(struct pulseTrainRecord *)paddr->precord;
 
     *precision = ppt->prec;
+    if(paddr->pfield == (void *)&ppt->val) return(0);
+    recGblGetPrec(paddr,precision);
+
     return(0);
 }
 
@@ -230,25 +235,11 @@ static long get_graphic_double(paddr,pgd)
     struct dbr_grDouble *pgd;
 {
     struct pulseTrainRecord     *ppt=(struct pulseTrainRecord *)paddr->precord;
-    struct fldDes               *pfldDes=(struct fldDes *)(paddr->pfldDes);
 
-    if(((void *)(paddr->pfield))==((void *)&(ppt->clks))){ 
-         pgd->upper_disp_limit = (double)pfldDes->range2.value.short_value;
-         pgd->lower_disp_limit = (double)pfldDes->range1.value.short_value;
-         return(0);
-    }
-    if(((void *)(paddr->pfield))==((void *)&(ppt->gate))){
-         pgd->upper_disp_limit = (double)pfldDes->range2.value.short_value;
-         pgd->lower_disp_limit = (double)pfldDes->range1.value.short_value;
-         return(0);
-    }
-    if(((void *)(paddr->pfield))==((void *)&(ppt->dcy ))){
-         pgd->upper_disp_limit = (double)pfldDes->range2.value.double_value;
-         pgd->lower_disp_limit = (double)pfldDes->range1.value.double_value;
-         return(0);
-    }
-    pgd->upper_disp_limit = ppt->hopr;
-    pgd->lower_disp_limit = ppt->lopr;
+    if(paddr->pfield==(void *)&ppt->val){
+        pgd->upper_disp_limit = ppt->hopr;
+        pgd->lower_disp_limit = ppt->lopr;
+    } else recGblGetGraphicDouble(paddr,pgd);
 
     return(0);
 }
@@ -258,25 +249,11 @@ static long get_control_double(paddr,pcd)
     struct dbr_ctrlDouble *pcd;
 {
     struct pulseTrainRecord     *ppt=(struct pulseTrainRecord *)paddr->precord;
-    struct fldDes               *pfldDes=(struct fldDes *)(paddr->pfldDes);
 
-    if(((void *)(paddr->pfield))==((void *)&(ppt->clks))){ 
-         pcd->upper_ctrl_limit = (double)pfldDes->range2.value.short_value;
-         pcd->lower_ctrl_limit = (double)pfldDes->range1.value.short_value;
-         return(0);
-    }
-    if(((void *)(paddr->pfield))==((void *)&(ppt->gate))){
-         pcd->upper_ctrl_limit = (double)pfldDes->range2.value.short_value;
-         pcd->lower_ctrl_limit = (double)pfldDes->range1.value.short_value;
-         return(0);
-    }
-    if(((void *)(paddr->pfield))==((void *)&(ppt->dcy ))){
-         pcd->upper_ctrl_limit = (double)pfldDes->range2.value.double_value;
-         pcd->lower_ctrl_limit = (double)pfldDes->range1.value.double_value;
-         return(0);
-    }
-    pcd->upper_ctrl_limit = ppt->hopr;
-    pcd->lower_ctrl_limit = ppt->lopr;
+    if(paddr->pfield==(void *)&ppt->val){
+        pcd->upper_ctrl_limit = ppt->hopr;
+        pcd->lower_ctrl_limit = ppt->lopr;
+    } else recGblGetControlDouble(paddr,pcd);
 
     return(0);
 }

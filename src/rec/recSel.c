@@ -35,12 +35,15 @@
  * .02  10-12-90	mrk	changes for new record support
  * .03  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  * .04  02-05-92	jba	Changed function arguments from paddr to precord 
+ * .05  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
+ * .06  02-28-92	jba	ANSI C changes
  */
 
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<lstLib.h>
+#include	<string.h>
 
 #include	<alarm.h>
 #include	<dbDefs.h>
@@ -53,21 +56,21 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-long init_record();
-long process();
+static long init_record();
+static long process();
 #define special NULL
-long get_value();
+static long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
-long get_units();
-long get_precision();
+static long get_units();
+static long get_precision();
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
-long get_graphic_double();
-long get_control_double();
-long get_alarm_double();
+static long get_graphic_double();
+static long get_control_double();
+static long get_alarm_double();
 
 struct rset selRSET={
 	RSETNUMBER,
@@ -171,8 +174,22 @@ static long get_precision(paddr,precision)
     long	  *precision;
 {
     struct selRecord	*psel=(struct selRecord *)paddr->precord;
+    double *pvalue,*plvalue;
+    int i;
 
     *precision = psel->prec;
+    if(paddr->pfield==(void *)&psel->val){
+        return(0);
+    }
+    pvalue = &psel->a;
+    plvalue = &psel->la;
+    for(i=0; i<SEL_MAX; i++, pvalue++, plvalue++) {
+        if(paddr->pfield==(void *)&pvalue
+        || paddr->pfield==(void *)&plvalue){
+            return(0);
+        }
+    }
+    recGblGetPrec(paddr,precision);
     return(0);
 }
 
@@ -182,9 +199,26 @@ static long get_graphic_double(paddr,pgd)
     struct dbr_grDouble	*pgd;
 {
     struct selRecord	*psel=(struct selRecord *)paddr->precord;
+    double *pvalue,*plvalue;
+    int i;
 
-    pgd->upper_disp_limit = psel->hopr;
-    pgd->lower_disp_limit = psel->lopr;
+    if(paddr->pfield==(void *)&psel->val){
+        pgd->upper_disp_limit = psel->hopr;
+        pgd->lower_disp_limit = psel->lopr;
+        return(0);
+    }
+
+    pvalue = &psel->a;
+    plvalue = &psel->la;
+    for(i=0; i<SEL_MAX; i++, pvalue++, plvalue++) {
+        if(paddr->pfield==(void *)&pvalue
+        || paddr->pfield==(void *)&plvalue){
+            pgd->upper_disp_limit = psel->hopr;
+            pgd->lower_disp_limit = psel->lopr;
+            return(0);
+        }
+    }
+    recGblGetGraphicDouble(paddr,pgd);
     return(0);
 }
 
@@ -193,9 +227,24 @@ static long get_control_double(paddr,pcd)
     struct dbr_ctrlDouble *pcd;
 {
     struct selRecord	*psel=(struct selRecord *)paddr->precord;
+    double *pvalue;
+    int i;
 
-    pcd->upper_ctrl_limit = psel->hopr;
-    pcd->lower_ctrl_limit = psel->lopr;
+    if(paddr->pfield==(void *)&psel->val){
+        pcd->upper_ctrl_limit = psel->hopr;
+        pcd->lower_ctrl_limit = psel->lopr;
+        return(0);
+    }
+
+    pvalue = &psel->a;
+    for(i=0; i<SEL_MAX; i++, pvalue++) {
+        if(paddr->pfield==(void *)&pvalue){
+            pcd->upper_ctrl_limit = psel->hopr;
+            pcd->lower_ctrl_limit = psel->lopr;
+            return(0);
+        }
+    }
+    recGblGetControlDouble(paddr,pcd);
     return(0);
 }
 

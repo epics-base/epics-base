@@ -51,12 +51,16 @@
  * .11  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  * .12  12-18-91        jba     Changed E_IO_INTERRUPT to SCAN_IO_EVENT, added dbScan.h
  * .13  02-05-92	jba	Changed function arguments from paddr to precord 
+ * .14  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
+ * .15  02-28-92	jba	ANSI C changes
  */
 
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<lstLib.h>
+#include	<string.h>
+#include	<memLib.h>
 
 #include	<alarm.h>
 #include	<dbDefs.h>
@@ -71,20 +75,20 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-long init_record();
-long process();
+static long init_record();
+static long process();
 #define special NULL
-long get_value();
-long cvt_dbaddr();
-long get_array_info();
-long put_array_info();
-long get_units();
-long get_precision();
+static long get_value();
+static long cvt_dbaddr();
+static long get_array_info();
+static long put_array_info();
+static long get_units();
+static long get_precision();
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
-long get_graphic_double();
-long get_control_double();
+static long get_graphic_double();
+static long get_control_double();
 #define get_alarm_double NULL
 
 struct rset waveformRSET={
@@ -214,7 +218,7 @@ static long cvt_dbaddr(paddr)
 
     /* This may get called before init_record. If so just call it*/
     if(pwf->bptr==NULL) init_record(pwf);
-    paddr->pfield = (caddr_t)(pwf->bptr);
+    paddr->pfield = (void *)(pwf->bptr);
     paddr->no_elements = pwf->nelm;
     paddr->field_type = pwf->ftvl;
     if(pwf->ftvl==0)  paddr->field_size = MAX_STRING_SIZE;
@@ -263,6 +267,8 @@ static long get_precision(paddr,precision)
     struct waveformRecord	*pwf=(struct waveformRecord *)paddr->precord;
 
     *precision = pwf->prec;
+    if(paddr->pfield==(void *)&pwf->val) return(0);
+    recGblGetPrec(paddr,precision);
     return(0);
 }
 
@@ -272,8 +278,10 @@ static long get_graphic_double(paddr,pgd)
 {
     struct waveformRecord     *pwf=(struct waveformRecord *)paddr->precord;
 
-    pgd->upper_disp_limit = pwf->hopr;
-    pgd->lower_disp_limit = pwf->lopr;
+    if(paddr->pfield==(void *)&pwf->val){
+        pgd->upper_disp_limit = pwf->hopr;
+        pgd->lower_disp_limit = pwf->lopr;
+    } else recGblGetGraphicDouble(paddr,pgd);
     return(0);
 }
 static long get_control_double(paddr,pcd)
@@ -282,8 +290,10 @@ static long get_control_double(paddr,pcd)
 {
     struct waveformRecord     *pwf=(struct waveformRecord *)paddr->precord;
 
-    pcd->upper_ctrl_limit = pwf->hopr;
-    pcd->lower_ctrl_limit = pwf->lopr;
+    if(paddr->pfield==(void *)&pwf->val){
+        pcd->upper_ctrl_limit = pwf->hopr;
+        pcd->lower_ctrl_limit = pwf->lopr;
+    } else recGblGetControlDouble(paddr,pcd);
     return(0);
 }
 

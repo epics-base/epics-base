@@ -64,12 +64,15 @@
  * .21  10-15-90	mrk	extensible record and device support
  * .22  10-24-91	jba	bug fix to alarms
  * .23  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
+ * .24  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
+ * .25  02-28-92	jba	ANSI C changes
  */
 
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<lstLib.h>
+#include	<string.h>
 
 #include	<alarm.h>
 #include	<dbDefs.h>
@@ -85,21 +88,21 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-long init_record();
-long process();
+static long init_record();
+static long process();
 #define special NULL
-long get_value();
+static long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
-long get_units();
-long get_precision();
+static long get_units();
+static long get_precision();
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
-long get_graphic_double();
-long get_control_double();
-long get_alarm_double();
+static long get_graphic_double();
+static long get_control_double();
+static long get_alarm_double();
 
 struct rset steppermotorRSET={
 	RSETNUMBER,
@@ -216,6 +219,9 @@ static long get_precision(paddr,precision)
     struct steppermotorRecord	*psm=(struct steppermotorRecord *)paddr->precord;
 
     *precision = psm->prec;
+    if(paddr->pfield==(void *)&psm->val
+    || paddr->pfield==(void *)&psm->lval) return(0);
+    recGblGetPrec(paddr,precision);
     return(0);
 }
 
@@ -225,8 +231,11 @@ static long get_graphic_double(paddr,pgd)
 {
     struct steppermotorRecord	*psm=(struct steppermotorRecord *)paddr->precord;
 
-    pgd->upper_disp_limit = psm->hopr;
-    pgd->lower_disp_limit = psm->lopr;
+    if(paddr->pfield==(void *)&psm->val
+    || paddr->pfield==(void *)&psm->lval){
+        pgd->upper_disp_limit = psm->hopr;
+        pgd->lower_disp_limit = psm->lopr;
+    } else recGblGetGraphicDouble(paddr,pgd);
     return(0);
 }
 
@@ -236,8 +245,11 @@ static long get_control_double(paddr,pcd)
 {
     struct steppermotorRecord	*psm=(struct steppermotorRecord *)paddr->precord;
 
-    pcd->upper_ctrl_limit = psm->drvh;
-    pcd->lower_ctrl_limit = psm->drvl;
+    if(paddr->pfield==(void *)&psm->val
+    || paddr->pfield==(void *)&psm->lval){
+        pcd->upper_ctrl_limit = psm->drvh;
+        pcd->lower_ctrl_limit = psm->drvl;
+    } else recGblGetControlDouble(paddr,pcd);
     return(0);
 }
 

@@ -60,12 +60,15 @@
  *				to libCalc
  * .19  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  * .20  02-05-92	jba	Changed function arguments from paddr to precord 
+ * .21  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
+ * .22  02-28-92	jba	ANSI C changes
  */
 
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<lstLib.h>
+#include	<string.h>
 
 #include	<alarm.h>
 #include	<dbDefs.h>
@@ -79,21 +82,21 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-long init_record();
-long process();
-long special();
-long get_value();
+static long init_record();
+static long process();
+static long special();
+static long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
-long get_units();
-long get_precision();
+static static long get_units();
+static long get_precision();
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
-long get_graphic_double();
-long get_control_double();
-long get_alarm_double();
+static long get_graphic_double();
+static long get_control_double();
+static long get_alarm_double();
 
 struct rset calcRSET={
 	RSETNUMBER,
@@ -139,7 +142,7 @@ static long init_record(pcalc)
     }
     status=postfix(pcalc->calc,rpbuf,&error_number);
     if(status) return(status);
-    bcopy(rpbuf,pcalc->rpcl,sizeof(pcalc->rpcl));
+    memcpy(rpbuf,pcalc->rpcl,sizeof(pcalc->rpcl));
     return(0);
 }
 
@@ -179,7 +182,7 @@ static long special(paddr,after)
     case(SPC_CALC):
 	status=postfix(pcalc->calc,rpbuf,&error_number);
 	if(status) return(status);
-	bcopy(rpbuf,pcalc->rpcl,sizeof(pcalc->rpcl));
+	memcpy(rpbuf,pcalc->rpcl,sizeof(pcalc->rpcl));
 	db_post_events(pcalc,pcalc->calc,DBE_VALUE);
 	return(0);
     default:
@@ -215,6 +218,8 @@ static long get_precision(paddr,precision)
     struct calcRecord	*pcalc=(struct calcRecord *)paddr->precord;
 
     *precision = pcalc->prec;
+    if(paddr->pfield == (void *)&pcalc->val) return(0);
+    recGblGetPrec(paddr,precision);
     return(0);
 }
 
@@ -224,8 +229,10 @@ static long get_graphic_double(paddr,pgd)
 {
     struct calcRecord	*pcalc=(struct calcRecord *)paddr->precord;
 
-    pgd->upper_disp_limit = pcalc->hopr;
-    pgd->lower_disp_limit = pcalc->lopr;
+    if(paddr->pfield==(void *)&pcalc->val){
+        pgd->upper_disp_limit = pcalc->hopr;
+        pgd->lower_disp_limit = pcalc->lopr;
+    } else recGblGetGraphicDouble(paddr,pgd);
     return(0);
 }
 
@@ -235,8 +242,10 @@ static long get_control_double(paddr,pcd)
 {
     struct calcRecord	*pcalc=(struct calcRecord *)paddr->precord;
 
-    pcd->upper_ctrl_limit = pcalc->hopr;
-    pcd->lower_ctrl_limit = pcalc->lopr;
+    if(paddr->pfield==(void *)&pcalc->val){
+        pcd->upper_ctrl_limit = pcalc->hopr;
+        pcd->lower_ctrl_limit = pcalc->lopr;
+    } else recGblGetControlDouble(paddr,pcd);
     return(0);
 }
 static long get_alarm_double(paddr,pad)

@@ -33,12 +33,15 @@
  * .01  10-15-90	mrk	changes for new record support
  * .02  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  * .03  02-05-92	jba	Changed function arguments from paddr to precord 
+ * .04  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
+ * .05  02-28-92	jba	ANSI C changes
  */
 
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<lstLib.h>
+#include	<string.h>
 /*since tickLib is not defined just define tickGet*/
 unsigned long tickGet();
 
@@ -53,21 +56,21 @@ unsigned long tickGet();
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-long init_record();
-long process();
+static long init_record();
+static long process();
 #define special NULL
-long get_value();
+static long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
-long get_units();
-long get_precision();
+static long get_units();
+static long get_precision();
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
-long get_graphic_double();
-long get_control_double();
-long get_alarm_double();
+static long get_graphic_double();
+static long get_control_double();
+static long get_alarm_double();
 
 struct rset pidRSET={
 	RSETNUMBER,
@@ -160,6 +163,9 @@ static long get_precision(paddr,precision)
     struct pidRecord	*ppid=(struct pidRecord *)paddr->precord;
 
     *precision = ppid->prec;
+    if(paddr->pfield == (void *)&ppid->val
+    || paddr->pfield == (void *)&ppid->cval) return(0);
+    recGblGetPrec(paddr,precision);
     return(0);
 }
 
@@ -170,8 +176,14 @@ static long get_graphic_double(paddr,pgd)
 {
     struct pidRecord	*ppid=(struct pidRecord *)paddr->precord;
 
-    pgd->upper_disp_limit = ppid->hopr;
-    pgd->lower_disp_limit = ppid->lopr;
+    if(paddr->pfield==(void *)&ppid->val
+    || paddr->pfield==(void *)&ppid->p
+    || paddr->pfield==(void *)&ppid->i
+    || paddr->pfield==(void *)&ppid->d
+    || paddr->pfield==(void *)&ppid->cval){
+        pgd->upper_disp_limit = ppid->hopr;
+        pgd->lower_disp_limit = ppid->lopr;
+    } else recGblGetGraphicDouble(paddr,pgd);
     return(0);
 }
 
@@ -181,8 +193,14 @@ static long get_control_double(paddr,pcd)
 {
     struct pidRecord	*ppid=(struct pidRecord *)paddr->precord;
 
-    pcd->upper_ctrl_limit = ppid->hopr;
-    pcd->lower_ctrl_limit = ppid->lopr;
+    if(paddr->pfield==(void *)&ppid->val
+    || paddr->pfield==(void *)&ppid->p
+    || paddr->pfield==(void *)&ppid->i
+    || paddr->pfield==(void *)&ppid->d
+    || paddr->pfield==(void *)&ppid->cval){
+        pcd->upper_ctrl_limit = ppid->hopr;
+        pcd->lower_ctrl_limit = ppid->lopr;
+    } else recGblGetControlDouble(paddr,pcd);
     return(0);
 }
 static long get_alarm_double(paddr,pad)

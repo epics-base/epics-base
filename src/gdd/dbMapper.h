@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.9  2000/03/08 16:23:29  jhill
+ * dont wrap include files with extern "C" - let the files themselves take care of it
+ *
  * Revision 1.8  1999/10/28 23:33:41  jhill
  * use fully qualified namespace names for C++ RTL classes
  *
@@ -38,12 +41,13 @@
  *
  */
 
+#include "db_access.h"
+#include "cadef.h"
+
 #include "shareLib.h"
 #include "aitTypes.h"
 #include "gdd.h"
-
-#include "db_access.h"
-#include "cadef.h"
+#include "smartGDDPointer.h"
 
 class gddApplicationTypeTable;
 
@@ -51,14 +55,14 @@ class gddApplicationTypeTable;
 // reference the data in the db_struct if the db_struct points to an
 // array.  The second argument is the number of elements if db_struct
 // represents an array, or zero if the db_struct is a scalar.
-typedef gdd* (*to_gdd)(void* db_struct, aitIndex element_count);
+typedef smartGDDPointer (*to_gdd)(void* db_struct, aitIndex element_count);
 
 // Function proto to convert from a gdd to a dbr structure, returns the
 // number of elements that the value field of db_struct points to if the
 // gdd points to an array or -1 if the number of elements in the value
 // field is not identical to element_count available in db_struct.
 typedef int (*to_dbr)(void* db_struct, aitIndex element_count, 
-                      const gdd &, const std::vector< std::string > &enumStringTable);
+                      const smartConstGDDReference &, const std::vector< std::string > &enumStringTable);
 
 struct gddDbrMapFuncTable {
 	to_gdd	conv_gdd;

@@ -228,11 +228,11 @@ int UnixSymFind(status, pname, pvalue)
 {
     if (status >= sys_nerr || status < 1) {
 	*pvalue = -1;
-	return;
+	return(0);
     }
     strcpy(pname, sys_errlist[status]);
     *pvalue = status;
-    return;
+    return(0);
 }
 #endif
 
@@ -256,7 +256,7 @@ int ModSymFind(status, pname, pvalue)
     modNum = (status >> 16);
     if (modNum < 501) {
 	*pvalue = -1;
-	return;
+	return(0);
     }
     hashInd = errhash(status);
     phashnode = (ERRNUMNODE**)&hashtable[hashInd];
@@ -265,14 +265,14 @@ int ModSymFind(status, pname, pvalue)
         if (pNextNode->errNum == status) {
     	    strcpy(pname, pNextNode->message);
     	    *pvalue = status;
-    	    return;
+    	    return(0);
         }
 	phashnode = &pNextNode->hashnode;
 	pNextNode = *phashnode;
     }
     *pname  = 0;
     *pvalue = -1;
-    return ;
+    return(0);
 }
 
 /****************************************************************

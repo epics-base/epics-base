@@ -64,6 +64,7 @@ example_OBJS_vxWorks += $(EPICS_BASE_BIN)/iocCoreLibrary
 #example_OBJS_vxWorks += $(SNCSEQ_BIN)/seqLibrary
 #example_OBJS_vxWorks += $(SNCSEQ_BIN)/pvLibrary
 #seq_DIR    = $(SNCSEQ_LIB)
+#pv_DIR     = $(SNCSEQ_LIB)
 #example_LIBS += seq
 #example_LIBS += pv
 
@@ -72,6 +73,7 @@ example_OBJS_vxWorks += $(EPICS_BASE_BIN)/iocCoreLibrary
 #sncExample_SNCFLAGS += +m
 #sncExample_SRCS += sncExample.stt
 #seq_DIR    = $(SNCSEQ_LIB)
+#pv_DIR     = $(SNCSEQ_LIB)
 #sncExample_LIBS += seq
 #sncExample_LIBS += pv
 #sncExample_LIBS += iocsh
